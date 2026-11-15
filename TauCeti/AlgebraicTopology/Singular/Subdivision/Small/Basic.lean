@@ -98,7 +98,6 @@ theorem dist_weights_affineMapMk_vertex_le {k : ℕ} (v : Fin (k + 1) → StdSim
     apply mul_le_mul_of_nonneg_right _ hd₀
     have hi : (i : ℝ) < k + 1 := by exact_mod_cast i.is_lt
     have hj : (j : ℝ) ≤ k := by exact_mod_cast j.is_le
-    have hi₀ : (0 : ℝ) ≤ i := by positivity
     apply (div_le_div_iff₀ (sub_pos.mpr hi) (by positivity)).mpr
     nlinarith [mul_nonneg (sub_nonneg.mpr hj) (show (0 : ℝ) ≤ k + 1 by positivity)]
   rcases le_total i j with h | h

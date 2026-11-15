@@ -23,7 +23,7 @@ Jordan–Chevalley decomposition identifies the extended factors.
 * `LinearMap.GeneralLinearGroup.IsSemisimple.mapValue`: scalar extension preserves semisimple
   automorphisms when the source field is perfect.
 * `LinearMap.GeneralLinearGroup.IsUnipotent.mapValue`: scalar extension preserves unipotent
-  automorphisms, for arbitrary commutative value rings.
+  automorphisms, for an arbitrary source value ring and a commutative target value ring.
 * `LinearMap.GeneralLinearGroup.jordanDecomposition_mapValue`: multiplicative Jordan
   decomposition commutes with scalar extension between perfect fields.
 
@@ -48,9 +48,9 @@ universe u v w x
 variable {R : Type u} {K : Type v} {L : Type w} {V : Type x}
 variable [CommSemiring R] [AddCommMonoid V] [Module R V]
 
-section CommRing
+section Ring
 
-variable [CommRing K] [Algebra R K] [CommRing L] [Algebra R L]
+variable [Ring K] [Algebra R K] [CommRing L] [Algebra R L]
 
 /-- Scalar extension preserves unipotence of a linear automorphism. -/
 theorem IsUnipotent.mapValue
@@ -58,15 +58,11 @@ theorem IsUnipotent.mapValue
     (f : K →ₐ[R] L) :
     IsUnipotent (Module.End.mapValueGL f g) := by
   rw [isUnipotent_def] at hg ⊢
-  have hsub : Module.End.mapValue f ((g : Module.End K (K ⊗[R] V)) - 1) =
-      Module.End.mapValue f (g : Module.End K (K ⊗[R] V)) - 1 := by
-    simpa only [Module.End.mapValueRingHom_apply, Module.End.mapValue_one] using
-      map_sub (Module.End.mapValueRingHom (M := V) f) (g : Module.End K (K ⊗[R] V)) 1
-  rw [Module.End.mapValueGL_coe, ← hsub]
-  simpa only [Module.End.mapValueRingHom_apply] using
+  rw [Module.End.mapValueGL_coe, ← Module.End.mapValueRingHom_apply]
+  simpa only [map_sub (Module.End.mapValueRingHom (M := V) f), map_one] using
     hg.map (Module.End.mapValueRingHom (M := V) f)
 
-end CommRing
+end Ring
 
 section Field
 

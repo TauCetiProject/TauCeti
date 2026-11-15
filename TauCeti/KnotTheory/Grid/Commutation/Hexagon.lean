@@ -55,7 +55,9 @@ it vanishes.
 `GridDiagram.hexagonMap` and `GridDiagram.initialHexagonMap` count the empty hexagons of the two
 kinds carrying no `X`-marking, and `GridDiagram.commutationHomotopy` is their sum, the map `H`
 above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here;
-`Commutation/Homotopy.lean` writes it as an identity between matrix coefficients.
+`GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff` writes it as an identity
+between matrix coefficients, and `GridDiagram.unblockedDifferential_commutationHomotopy_add_eq`
+proves it.
 
 ## Main definitions
 
@@ -69,7 +71,8 @@ above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is no
   versions: the monomial weights and the matrix coefficients.
 * `TauCeti.GridDiagram.hexagonMap`, `TauCeti.GridDiagram.initialHexagonMap`: the maps
   `GC⁻(G) → GC⁻(G)` counting each kind.
-* `TauCeti.GridDiagram.commutationHomotopy`: their sum.
+* `TauCeti.GridDiagram.commutationHomotopy`: their sum, with matrix coefficients
+  `TauCeti.GridDiagram.commutationHexagonCoefficient`.
 
 ## Main results
 
@@ -82,7 +85,8 @@ above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is no
 * `TauCeti.GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon` and its
   initial version: the rectangle under a hexagon carrying no `X`-marking carries exactly one
   `X`-marking, that of the cut-off column.
-* `TauCeti.GridDiagram.commutationHomotopy_apply_apply`: the matrix coefficients of the
+* `TauCeti.GridDiagram.commutationHomotopy_single_apply` and
+  `TauCeti.GridDiagram.commutationHomotopy_apply_apply`: the matrix coefficients of the
   commutation homotopy.
 
 ## References
@@ -106,8 +110,10 @@ from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose terminal side
 is the grid line `finRotate n a`; the rows that side spans must contain the lower intersection row
-`s` and, above it, the upper intersection row `s'`. A hexagon-counting map only uses these shapes
-through `GridDiagram.ColumnCommutationData`, which places the column-`a` markings in the bigon. -/
+`s` and, above it, the upper intersection row `s'`. The shape records only the corners and the two
+turn rows. Its `coveredSquares` describe the squares of the hexagon when
+`GridDiagram.ColumnCommutationData` places the column-`a` markings in the bigon; the crossing change
+counts the same shapes for interleaving columns, with `crossingCoveredSquares` instead. -/
 structure GridHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The terminal side lies on the grid line between column `a` and the next column. -/
@@ -213,6 +219,23 @@ theorem mem_coveredSquares (P : GridHexagonBetween a s s' x y) (p : Fin n × Fin
     GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
     P.right_eq, and_assoc]
 
+/-- The underlying rectangle of a hexagon covers the squares from its left column up to column
+`finRotate n a`, in its rows. -/
+theorem mem_toGridRectangle_coveredSquares (P : GridHexagonBetween a s s' x y)
+    (p : Fin n × Fin n) :
+    p ∈ P.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco P.left (finRotate n a) ∧ p.2 ∈ Grid.cIco P.bottom P.top := by
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
+    GridRectangleBetween.top_def, P.right_eq]
+
+/-- The rectangle underlying a hexagon covers every square of column `a` in the rows of the bigon
+it cuts away. -/
+theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridHexagonBetween a s s' x y)
+    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
+    (a, r) ∈ P.toGridRectangle.coveredSquares :=
+  (P.mem_toGridRectangle_coveredSquares _).mpr
+    ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hr⟩
+
 /-- A hexagon carries no `X`-marking exactly when its underlying rectangle carries none outside
 column `a`. -/
 theorem disjoint_coveredSquares_XSet_iff (P : GridHexagonBetween a s s' x y) (G : GridDiagram n) :
@@ -229,6 +252,41 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridHexagonBetween a s s' x y) (G 
     rw [G.mem_XSet] at hp
     exact h p.1 hmem.1.1 hmem.1.2 (hp ▸ hmem.2)
 
+/-- Transfer a hexagon to new endpoint states when its underlying toroidal rectangle is
+unchanged. The turn side and both intersection rows are preserved. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridHexagonBetween a s s' x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridHexagonBetween a s s' u v where
+  toGridRectangleBetween := r
+  right_eq := by
+    have hs := congrArg GridRectangle.right h
+    simpa only [GridRectangleBetween.toGridRectangle_right] using hs.trans P.right_eq
+  lower_mem := by
+    have hb := congrArg GridRectangle.bottom h
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def] at hb ht
+    simpa only [hb, ht] using P.lower_mem
+  upper_mem := by
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.top_def] at ht
+    simpa only [ht] using P.upper_mem
+
+/-- The rectangle underlying the transferred hexagon is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridHexagonBetween a s s' x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := (rfl)
+
+/-- The squares covered by a hexagon depend only on its underlying toroidal rectangle. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridHexagonBetween a s s' x y) (Q : GridHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  ext p
+  simp only [mem_coveredSquares, h]
+
 end GridHexagonBetween
 
 /-- The combinatorial shape of a hexagon whose initial side turns at both intersection points, for
@@ -237,9 +295,11 @@ from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose initial side
 is the grid line `finRotate n a`; the rows that side spans must contain the lower intersection row
-`s` and, above it, the upper intersection row `s'`. A hexagon-counting map only uses these shapes
-through `GridDiagram.ColumnCommutationData`, which places the column-`finRotate n a` markings in the
-bigon. -/
+`s` and, above it, the upper intersection row `s'`. The shape records only the corners and the two
+turn rows. Its `coveredSquares` describe the squares of the hexagon when
+`GridDiagram.ColumnCommutationData` places the column-`finRotate n a` markings in the bigon; the
+crossing change counts the same shapes for interleaving columns, with `crossingCoveredSquares`
+instead. -/
 structure GridInitialHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The initial side lies on the grid line between column `a` and the next column. -/
@@ -340,6 +400,23 @@ theorem mem_coveredSquares (P : GridInitialHexagonBetween a s s' x y) (p : Fin n
     GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
     P.left_eq, and_assoc]
 
+/-- The underlying rectangle of a hexagon turning on its initial side covers the squares from
+column `finRotate n a` up to its right column, in its rows. -/
+theorem mem_toGridRectangle_coveredSquares (P : GridInitialHexagonBetween a s s' x y)
+    (p : Fin n × Fin n) :
+    p ∈ P.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco (finRotate n a) P.right ∧ p.2 ∈ Grid.cIco P.bottom P.top := by
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
+    GridRectangleBetween.top_def, P.left_eq]
+
+/-- The rectangle underlying a hexagon turning on its initial side covers every square of the
+column after `a` in the rows of the bigon it cuts away. -/
+theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridInitialHexagonBetween a s s' x y)
+    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
+    (finRotate n a, r) ∈ P.toGridRectangle.coveredSquares :=
+  (P.mem_toGridRectangle_coveredSquares _).mpr
+    ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hr⟩
+
 /-- A hexagon turning on its initial side carries no `X`-marking exactly when its underlying
 rectangle carries none outside column `finRotate n a`. -/
 theorem disjoint_coveredSquares_XSet_iff (P : GridInitialHexagonBetween a s s' x y)
@@ -357,6 +434,41 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridInitialHexagonBetween a s s' x
     simp only [coveredSquares, Finset.mem_product, Finset.mem_erase] at hmem
     rw [G.mem_XSet] at hp
     exact h p.1 hmem.1.1 hmem.1.2 (hp ▸ hmem.2)
+
+/-- Transfer a hexagon to new endpoint states when its underlying toroidal rectangle is
+unchanged. The turn side and both intersection rows are preserved. -/
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridInitialHexagonBetween a s s' x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridInitialHexagonBetween a s s' u v where
+  toGridRectangleBetween := r
+  left_eq := by
+    have hs := congrArg GridRectangle.left h
+    simpa only [GridRectangleBetween.toGridRectangle_left] using hs.trans P.left_eq
+  lower_mem := by
+    have hb := congrArg GridRectangle.bottom h
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def] at hb ht
+    simpa only [hb, ht] using P.lower_mem
+  upper_mem := by
+    have ht := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_top, GridRectangleBetween.top_def] at ht
+    simpa only [ht] using P.upper_mem
+
+/-- The rectangle underlying the transferred hexagon is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridInitialHexagonBetween a s s' x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := (rfl)
+
+/-- The squares covered by a hexagon depend only on its underlying toroidal rectangle. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) (Q : GridInitialHexagonBetween a s s' u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  ext p
+  simp only [mem_coveredSquares, h]
 
 end GridInitialHexagonBetween
 
@@ -401,28 +513,6 @@ theorem mem_initialHexagons {C : ColumnCommutationData G} {x y : GridState n}
 
 /-! ### The markings of the cut-off column -/
 
-/-- The rectangle underlying a hexagon of a validated column commutation covers both markings of
-`C.column`, since its rows contain the bigon holding them. -/
-private theorem column_mem_toGridRectangle_coveredSquares {C : ColumnCommutationData G}
-    {x y : GridState n} (P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y)
-    {r : Fin n} (hr : r ∈ insert C.turnRow (Grid.cIco C.oppositeTurnRow C.turnRow)) :
-    (C.column, r) ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, P.right_eq]
-  exact ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hr⟩
-
-/-- The rectangle underlying a hexagon turning on its initial side covers both markings of the
-column after `C.column`, since its rows contain the bigon holding them. -/
-private theorem next_mem_toGridRectangle_coveredSquares {C : ColumnCommutationData G}
-    {x y : GridState n} (P : GridInitialHexagonBetween C.column C.turnRow C.oppositeTurnRow x y)
-    {r : Fin n} (hr : r ∈ insert C.oppositeTurnRow (Grid.cIco C.turnRow C.oppositeTurnRow)) :
-    (finRotate n C.column, r) ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, P.left_eq]
-  exact ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hr⟩
-
 /-- The rectangle underlying a hexagon carries the `O`-markings of the hexagon together with the
 `O`-marking of `C.column`, which the hexagon cuts away. -/
 theorem OColumns_toGridRectangle_eq_insert_of_hexagon {C : ColumnCommutationData G}
@@ -431,7 +521,7 @@ theorem OColumns_toGridRectangle_eq_insert_of_hexagon {C : ColumnCommutationData
   ext c
   rw [mem_OColumns, Finset.mem_insert, mem_OColumnsOfSquares, P.mem_coveredSquares]
   rcases eq_or_ne c C.column with rfl | hc
-  · simpa using column_mem_toGridRectangle_coveredSquares G P C.O_column_below
+  · simpa using P.mk_mem_toGridRectangle_coveredSquares_of_mem C.O_column_below
   · simp only [hc, false_or, ne_eq, not_false_eq_true, true_and]
 
 /-- The rectangle underlying a hexagon turning on its initial side carries the `O`-markings of the
@@ -444,7 +534,7 @@ theorem OColumns_toGridRectangle_eq_insert_of_initialHexagon {C : ColumnCommutat
   ext c
   rw [mem_OColumns, Finset.mem_insert, mem_OColumnsOfSquares, P.mem_coveredSquares]
   rcases eq_or_ne c (finRotate n C.column) with rfl | hc
-  · simpa using next_mem_toGridRectangle_coveredSquares G P C.O_next_above
+  · simpa using P.mk_mem_toGridRectangle_coveredSquares_of_mem C.O_next_above
   · simp only [hc, false_or, ne_eq, not_false_eq_true, true_and]
 
 /-- The rectangle underlying a hexagon carrying no `X`-marking carries exactly one `X`-marking,
@@ -463,7 +553,7 @@ theorem XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon
     have hpa : p.1 ≠ C.column := fun h => hne (Prod.ext h (by rw [← h, hp]))
     exact hX ((G.mem_XSet p).mpr hp) ((P.mem_coveredSquares p).mpr ⟨hpa, hr⟩)
   · rintro rfl
-    exact ⟨rfl, column_mem_toGridRectangle_coveredSquares G P C.X_column_below⟩
+    exact ⟨rfl, P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_column_below⟩
 
 /-- The rectangle underlying a hexagon turning on its initial side and carrying no `X`-marking
 carries exactly one `X`-marking, that of the column after `C.column`. -/
@@ -482,7 +572,7 @@ theorem XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon
     have hpb : p.1 ≠ finRotate n C.column := fun h => hne (Prod.ext h (by rw [← h, hp]))
     exact hX ((G.mem_XSet p).mpr hp) ((P.mem_coveredSquares p).mpr ⟨hpb, hr⟩)
   · rintro rfl
-    exact ⟨rfl, next_mem_toGridRectangle_coveredSquares G P C.X_next_above⟩
+    exact ⟨rfl, P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_next_above⟩
 
 /-! ### The hexagon maps -/
 
@@ -491,16 +581,20 @@ variable (R : Type*) [CommSemiring R]
 /-- The weight of a hexagon: the product of the variables of the `O`-markings it carries. -/
 noncomputable def hexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.coveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.coveredSquares
+
+/-- The weight of a hexagon is the monomial of the squares it covers. -/
+theorem hexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridHexagonBetween a s s' x y) :
+    G.hexagonWeight R P = G.OMonomialOfSquares R P.coveredSquares :=
+  (rfl)
 
 /-- The weight of a hexagon is the squarefree monomial of the `O`-markings it carries. -/
 theorem hexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) :
     G.hexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [hexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a hexagon is the product, over the squares it covers, of the variable of the
 square's column at the `O`-marked squares and of `1` elsewhere. -/
@@ -508,7 +602,7 @@ theorem hexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : GridState n
     (P : GridHexagonBetween a s s' x y) :
     G.hexagonWeight R P =
       ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
-  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X _).symm
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a hexagon of a validated column commutation times the variable of `C.column` is
 the weight of its underlying rectangle. -/
@@ -524,17 +618,22 @@ theorem X_mul_hexagonWeight {C : ColumnCommutationData G} {x y : GridState n}
 `O`-markings it carries. -/
 noncomputable def initialHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.coveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.coveredSquares
+
+/-- The weight of a hexagon turning on its initial side is the monomial of the squares it
+covers. -/
+theorem initialHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) :
+    G.initialHexagonWeight R P = G.OMonomialOfSquares R P.coveredSquares :=
+  (rfl)
 
 /-- The weight of a hexagon turning on its initial side is the squarefree monomial of the
 `O`-markings it carries. -/
 theorem initialHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) :
     G.initialHexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [initialHexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a hexagon turning on its initial side is the product, over the squares it
 covers, of the variable of the square's column at the `O`-marked squares and of `1` elsewhere. -/
@@ -542,7 +641,7 @@ theorem initialHexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : Grid
     (P : GridInitialHexagonBetween a s s' x y) :
     G.initialHexagonWeight R P =
       ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
-  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X _).symm
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a hexagon turning on its initial side times the variable of the column after
 `C.column` is the weight of its underlying rectangle. -/
@@ -585,43 +684,37 @@ turn on their terminal side, linear over the polynomial ring: a generator `x` go
 the counted hexagons from `x` of their weights times their targets. -/
 noncomputable def hexagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.hexagonCoefficient R C x y
+  GridChain.matrixMap R (G.hexagonCoefficient R C)
 
 /-- The matrix coefficients of the hexagon map. -/
 theorem hexagonMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
     G.hexagonMap R C (Finsupp.single x 1) y = G.hexagonCoefficient R C x y := by
-  rw [hexagonMap, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [hexagonMap, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the hexagon map on an arbitrary chain. -/
 @[simp]
 theorem hexagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
-    G.hexagonMap R C c y = c.sum fun x p => p * G.hexagonCoefficient R C x y := by
-  rw [hexagonMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.hexagonMap R C c y = c.sum fun x p => p * G.hexagonCoefficient R C x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The map `GC⁻(G) → GC⁻(G)` of the validated column commutation `C` counting the hexagons that
 turn on their initial side, linear over the polynomial ring. -/
 noncomputable def initialHexagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.initialHexagonCoefficient R C x y
+  GridChain.matrixMap R (G.initialHexagonCoefficient R C)
 
 /-- The matrix coefficients of the initial-side hexagon map. -/
 theorem initialHexagonMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
     G.initialHexagonMap R C (Finsupp.single x 1) y = G.initialHexagonCoefficient R C x y := by
-  rw [initialHexagonMap, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [initialHexagonMap, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the initial-side hexagon map on an arbitrary chain. -/
 @[simp]
 theorem initialHexagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
-    G.initialHexagonMap R C c y = c.sum fun x p => p * G.initialHexagonCoefficient R C x y := by
-  rw [initialHexagonMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.initialHexagonMap R C c y = c.sum fun x p => p * G.initialHexagonCoefficient R C x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The commutation homotopy `H : GC⁻(G) → GC⁻(G)` of the validated column commutation `C`: it
 counts the empty hexagons carrying no `X`-marking with corners at both intersection points, both
@@ -637,16 +730,34 @@ theorem commutationHomotopy_apply (C : ColumnCommutationData G) (c : GridChainMi
     G.commutationHomotopy R C c = G.hexagonMap R C c + G.initialHexagonMap R C c :=
   LinearMap.add_apply _ _ _
 
-/-- The coefficient formula for the commutation homotopy on an arbitrary chain: its matrix
-coefficients are the sums of those of the two hexagon maps. -/
+/-- The matrix coefficient of the commutation homotopy from `x` to `y`, counting the hexagons
+turning on either side. -/
+noncomputable def commutationHexagonCoefficient (C : ColumnCommutationData G) (x y : GridState n) :
+    MvPolynomial (Fin n) R :=
+  G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y
+
+/-- The commutation hexagon coefficient is the sum of the two turn-side coefficients. -/
+theorem commutationHexagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+    G.commutationHexagonCoefficient R C x y =
+      G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y :=
+  (rfl)
+
+/-- The matrix coefficients of the commutation homotopy are the commutation hexagon
+coefficients. -/
+theorem commutationHomotopy_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
+    G.commutationHomotopy R C (Finsupp.single x 1) y = G.commutationHexagonCoefficient R C x y := by
+  rw [commutationHomotopy_apply, Finsupp.add_apply, hexagonMap_single_apply,
+    initialHexagonMap_single_apply, commutationHexagonCoefficient_def]
+
+/-- The coefficient formula for the commutation homotopy on an arbitrary chain: it is the
+`c`-weighted sum of the commutation hexagon coefficients. -/
 @[simp]
 theorem commutationHomotopy_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
     G.commutationHomotopy R C c y =
-      c.sum fun x p =>
-        p * (G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y) := by
+      c.sum fun x p => p * G.commutationHexagonCoefficient R C x y := by
   simp only [commutationHomotopy_apply, Finsupp.add_apply, hexagonMap_apply_apply,
-    initialHexagonMap_apply_apply, mul_add, Finsupp.sum_add]
+    initialHexagonMap_apply_apply, commutationHexagonCoefficient_def, mul_add, Finsupp.sum_add]
 
 end GridDiagram
 

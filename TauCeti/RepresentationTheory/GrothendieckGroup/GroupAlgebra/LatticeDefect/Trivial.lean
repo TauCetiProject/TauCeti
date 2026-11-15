@@ -41,7 +41,7 @@ public section
 
 namespace TauCeti
 
-open scoped _root_.MonoidAlgebra TensorProduct Pointwise
+open scoped _root_.MonoidAlgebra TensorProduct
 
 variable (k G : Type) [Field k] [Monoid G] [Finite G] (ℓ : ℕ)
 
@@ -53,22 +53,16 @@ theorem latticeDefect_int_eq_one [NeZero ℓ] [CharP k ℓ] [DistribMulAction G 
   have := AddMonoid.FG.to_moduleFinite_int (G := Submodule.torsionBy ℤ ℤ (ℓ : ℤ))
   let ρ := Representation.ofDistribMulAction ℤ G ℤ
   -- the action is trivial, hence so is its reduction
-  have hρ₀ (g : G) : ρ g = LinearMap.id := LinearMap.ext fun n ↦ by
+  have hρ (g : G) : ρ g = LinearMap.id := LinearMap.ext fun n ↦ by
     rw [Representation.ofDistribMulAction_apply_apply, h, LinearMap.id_apply]
-  have hρ (g : G) : Representation.baseChange k (ρ.quotSMulTop ℓ) g = LinearMap.id := by
-    rw [Representation.baseChange_apply, Representation.quotSMulTop_apply, hρ₀,
-      QuotSMulTop.map_id, LinearMap.baseChange_id]
-  -- `k ⊗_ℤ (ℤ ⧸ ℓℤ) ≅ (k ⊗_ℤ ℤ) ⧸ ℓ = k ⊗_ℤ ℤ ≅ k`, as `ℓ` vanishes in `k`
-  have h0 : (algebraMap ℤ k ℓ) • (⊤ : Submodule k (k ⊗[ℤ] ℤ)) = ⊥ := by
-    rw [map_natCast, CharP.cast_eq_zero, zero_smul, Submodule.zero_eq_bot]
+  -- `k ⊗_ℤ (ℤ ⧸ ℓℤ) ≅ k ⊗_ℤ ℤ ≅ k`, as `ℓ` vanishes in `k`
   let e : (Representation.baseChange k (ρ.quotSMulTop ℓ)).Equiv
       (Representation.trivial k G k) :=
-    { toLinearEquiv :=
-        (QuotSMulTop.algebraMapTensorEquivTensorQuotSMulTop (ℓ : ℤ) ℤ k).symm ≪≫ₗ
-          Submodule.quotEquivOfEqBot _ h0 ≪≫ₗ TensorProduct.AlgebraTensorModule.rid ℤ k k
-      isIntertwining' g := by
-        ext
-        simp [hρ] }
+    (ρ.baseChangeQuotSMulTopEquiv (by simp)).symm.trans
+      { toLinearEquiv := TensorProduct.AlgebraTensorModule.rid ℤ k k
+        isIntertwining' g := by
+          ext
+          simp [hρ] }
   rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
     reductionK0_def, exactK0_one_eq_of_trivial]
   have : Module.Finite k[G] (Representation.trivial k G k).asModule :=

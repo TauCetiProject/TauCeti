@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Induced
-public import TauCeti.RepresentationTheory.Induction.Mackey.Quaternion
+public import TauCeti.RepresentationTheory.Induction.Mackey.Quaternion.Basic
 
 /-!
 # The Frobenius-Schur indicator of the two-dimensional representation of `Q₈`

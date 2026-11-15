@@ -17,7 +17,8 @@ so it has one orbit and order `n`. Its powers that are again single cycles throu
 are exactly those with exponent coprime to `n`. The orbit count includes fixed points. The
 formula is useful when a traversal permutation is identified, up to conjugacy, with cyclic
 rotation: it reduces the resulting orbit or component count to whether the underlying ordinal is
-empty.
+empty. Conversely, every permutation of a finite type with a single orbit becomes cyclic rotation
+after numbering the type suitably (`TauCeti.exists_equiv_permCongr_eq_finRotate`).
 -/
 
 public section
@@ -72,5 +73,32 @@ theorem orbitCount_finRotate (n : ℕ) : orbitCount (finRotate n) = if n = 0 the
   · subst hn
     rw [orbitCount_eq_card_parts_partition, parts_partition_of_isEmpty, Multiset.card_zero]
   · rw [orbitCount_eq_card_parts_partition, parts_partition_finRotate hn, Multiset.card_singleton]
+
+/-- **A permutation with one orbit is cyclic rotation in a suitable numbering.** A permutation
+of a finite type with a single orbit is carried to cyclic rotation by some equivalence of the
+type with `Fin n`. -/
+theorem exists_equiv_permCongr_eq_finRotate {α : Type*} [Fintype α] {σ : Perm α}
+    (hσ : orbitCount σ = 1) : ∃ e : α ≃ Fin (Fintype.card α), e.permCongr σ = finRotate _ := by
+  classical
+  set n := Fintype.card α
+  let e₀ := Fintype.equivFin α
+  have hn : n ≠ 0 := by
+    intro hn
+    have : IsEmpty α := Fintype.card_eq_zero_iff.mp hn
+    rw [orbitCount_def, Nat.card_of_isEmpty] at hσ
+    exact zero_ne_one hσ
+  -- The numbered permutation has a single cycle through all `n` points, like the rotation.
+  have hparts : (e₀.permCongr σ).partition.parts = {n} := by
+    have hcard := orbitCount_eq_card_parts_partition (e₀.permCongr σ)
+    rw [Equiv.orbitCount_permCongr, hσ, eq_comm, Multiset.card_eq_one] at hcard
+    obtain ⟨m, hm⟩ := hcard
+    have hsum := (e₀.permCongr σ).partition.parts_sum
+    rw [hm, Multiset.sum_singleton, Fintype.card_fin] at hsum
+    rw [hm, hsum]
+  obtain ⟨c, hc⟩ := isConj_iff.mp (partition_eq_of_isConj.mpr
+    (Nat.Partition.ext (hparts.trans (parts_partition_finRotate hn).symm)))
+  refine ⟨e₀.trans c, Equiv.ext fun x => ?_⟩
+  rw [← hc]
+  simp [Perm.mul_apply]
 
 end TauCeti

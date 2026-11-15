@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictScalars
 
 /-!
@@ -48,6 +49,9 @@ is why the discrete synonyms exist.
   `TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete`: the comparisons for the carrier of a
   discrete smooth representation over any scalars, obtained from the `ℤ`-comparisons by restricting
   scalars.
+* `TopRep.inhomogeneousCocycle1`, `TopRep.inhomogeneousCocycle2`: the inhomogeneous forms
+  `g ↦ a (1, g)` and `(g, h) ↦ a (1, g, g * h)` of homogeneous `1`- and `2`-cocycles `a` of a
+  discrete representation.
 
 ## Main results
 
@@ -67,6 +71,13 @@ is why the discrete synonyms exist.
   pullback along a compatible pair, and in particular the explicit coefficient map, to the
   canonical one; `TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map` is the same
   naturality for discrete representations over any scalars.
+* `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass` and
+  `TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass`: an explicit cocycle
+  and a homogeneous cocycle agreeing at `(1, g)`, respectively `(1, g, g * h)`, have the same class.
+  For the trivial `𝔽₂` coefficients, the corresponding statements through the transport
+  `TauCeti.ofDiscreteModule_trivialF2` are
+  `TauCeti.ContCohomology.eqToHom_explicitH1AddEquivContinuousCohomology_eq_cochainClass` and its
+  degree-two companion.
 
 ## References
 
@@ -357,6 +368,19 @@ theorem explicitH1IsoContinuousCohomology_inv_apply
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 1 c)) = _
   rw [explicitH1AddEquivContinuousCohomology_symm_apply]
 
+omit [CompactSpace G] in
+/-- **Vanishing in degree one transfers to the canonical theory.** If the explicit `H¹(G, M)` is
+trivial, then Mathlib's canonical degree-one continuous cohomology of `M` is zero. -/
+theorem isZero_continuousCohomology_one_of_subsingleton [Subsingleton (H1 G M)] :
+    Limits.IsZero (continuousCohomology 1 (ofDiscreteModule ℤ G M)) := by
+  have : Subsingleton (DiscreteH1 G M) :=
+    (discreteH1Equiv G M).toEquiv.subsingleton_congr.mpr inferInstance
+  have : Subsingleton (continuousCohomology 1 (ofDiscreteModule ℤ G M)) :=
+    (explicitH1AddEquivContinuousCohomology G M).symm.subsingleton
+  rw [Limits.IsZero.iff_id_eq_zero]
+  ext x
+  exact Subsingleton.elim _ _
+
 /-! ### Transport in degree one -/
 
 /-- **Transport of compatible-pair pullback in degree one.** The isomorphisms of
@@ -533,28 +557,6 @@ theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply
         (explicitH2AddEquivContinuousCohomology G X.V x) :=
   (rfl)
 
-omit [ContinuousSMul G X.V] in
-/-- In degree two, `ofDiscreteModuleCocyclesRestrictScalarsIntIso` does not change the values of
-a homogeneous cocycle. -/
--- Not a `simp` lemma, for the same reason as `iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`.
-theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply
-    (w : _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G X.V) 2) (g₀ g₁ g₂ : G) :
-    ((TopRep.homogeneousCochains X).iCycles 2
-        ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).hom w)).val g₀ g₁ g₂ =
-      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂ := by
-  rw [ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
-  refine (iCycles_cocyclesRestrictScalarsIntEquiv_two_apply X _ g₀ g₁ g₂).trans ?_
-  -- The transport along the equality of objects is a `cast` of values once that equality has a
-  -- variable side; here both carriers are `X.V`, so the `cast` is the identity.
-  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G X.V = B),
-      ((TopRep.homogeneousCochains B).iCycles 2
-          (eqToHom (congrArg (_root_.ContinuousCohomology.cocycles · 2) h) w)).val g₀ g₁ g₂ =
-        cast (congrArg TopRep.V h)
-          (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂) := by
-    rintro B rfl
-    simp only [eqToHom_refl, CategoryTheory.id_apply, cast_eq]
-  exact (hev _ (ofDiscreteModule_eq_restrictScalarsInt_obj X)).trans (cast_eq _ _)
-
 /-- The degree-two comparison for discrete representations is natural in compatible pairs: it
 carries the explicit pullback along `φ` and the underlying additive map `f` of a morphism
 `F : res φ X ⟶ Y` to Mathlib's `ContinuousCohomology.map φ F`. -/
@@ -596,6 +598,87 @@ theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map
         (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) _ f
         hF']
     rfl
+
+/-! ### Homogeneous cocycles in inhomogeneous coordinates -/
+
+/-- The continuous inhomogeneous `1`-cocycle `g ↦ a (1, g)` of a homogeneous `1`-cocycle `a` of a
+discrete representation `X`. -/
+noncomputable def _root_.TopRep.inhomogeneousCocycle1 (a : (TopRep.homogeneousCochains X).X 1)
+    (ha : ((TopRep.homogeneousCochains X).d 1 2).hom a = 0) : Z1 G X.V :=
+  (cocycleEquiv1 G X.V).symm ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).inv
+    ((TopRep.homogeneousCochains X).cyclesMkOfEq a 2 (CochainComplex.next ℕ 1) ha))
+
+/-- The inhomogeneous form of a homogeneous `1`-cocycle `a` takes the value `a (1, g)` at `g`. -/
+@[simp]
+theorem _root_.TopRep.inhomogeneousCocycle1_apply (a : (TopRep.homogeneousCochains X).X 1)
+    (ha : ((TopRep.homogeneousCochains X).d 1 2).hom a = 0) (g : G) :
+    (X.inhomogeneousCocycle1 a ha : G → X.V) g = a.val 1 g := by
+  rw [TopRep.inhomogeneousCocycle1, cocycleEquiv1_symm_apply,
+    ← iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
+  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).inv_hom_id_apply
+  -- `key` is stated on the carrier of `restrictScalarsInt.obj (cocycles X 1)`, which is the carrier
+  -- of `cocycles X 1` only up to unfolding, so it is rewritten with `erw`.
+  erw [key]
+  rw [HomologicalComplex.iCycles_cyclesMkOfEq]
+
+/-- **Explicit degree-one classes are canonical cochain classes.** If a continuous inhomogeneous
+`1`-cocycle `c` of a discrete `X` is `g ↦ a (1, g)` for a homogeneous `1`-cocycle `a`, the
+degree-one comparison carries the class of `c` to the class of `a`. -/
+theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass
+    (c : Z1 G X.V) (a : (TopRep.homogeneousCochains X).X 1)
+    (ha : ((TopRep.homogeneousCochains X).d 1 2).hom a = 0)
+    (hca : ∀ g, (c : G → X.V) g = a.val 1 g) :
+    X.explicitH1AddEquivContinuousCohomologyOfDiscrete (c : H1 G X.V) = X.cochainClass 1 a ha := by
+  obtain rfl : c = X.inhomogeneousCocycle1 a ha :=
+    Subtype.ext (funext fun g ↦ (hca g).trans (X.inhomogeneousCocycle1_apply a ha g).symm)
+  rw [TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
+    explicitH1AddEquivContinuousCohomology_apply, TopRep.inhomogeneousCocycle1,
+    AddEquiv.apply_symm_apply, ofDiscreteModuleRestrictScalarsIntEquiv_π]
+  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).inv_hom_id_apply
+  -- `key` is stated on the carrier of `restrictScalarsInt.obj (cocycles X 1)`, which is the carrier
+  -- of `cocycles X 1` only up to unfolding, so it is rewritten with `erw`.
+  erw [key]
+  exact (TopRep.cochainClass_def X 1 a ha).symm
+
+/-- The continuous inhomogeneous `2`-cocycle `(g, h) ↦ a (1, g, g * h)` of a homogeneous
+`2`-cocycle `a` of a discrete representation `X`. -/
+noncomputable def _root_.TopRep.inhomogeneousCocycle2 [LocallyCompactSpace G]
+    (a : (TopRep.homogeneousCochains X).X 2)
+    (ha : ((TopRep.homogeneousCochains X).d 2 3).hom a = 0) : Z2 G X.V :=
+  (cocycleEquiv2 G X.V).symm ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).inv
+    ((TopRep.homogeneousCochains X).cyclesMkOfEq a 3 (CochainComplex.next ℕ 2) ha))
+
+/-- The inhomogeneous form of a homogeneous `2`-cocycle `a` takes the value `a (1, g, g * h)` at
+`(g, h)`. -/
+@[simp]
+theorem _root_.TopRep.inhomogeneousCocycle2_apply [LocallyCompactSpace G]
+    (a : (TopRep.homogeneousCochains X).X 2)
+    (ha : ((TopRep.homogeneousCochains X).d 2 3).hom a = 0) (g h : G) :
+    (X.inhomogeneousCocycle2 a ha : G × G → X.V) (g, h) = a.val 1 g (g * h) := by
+  rw [TopRep.inhomogeneousCocycle2, cocycleEquiv2_symm_apply,
+    ← iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply]
+  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).inv_hom_id_apply
+  -- As in degree one, `key` lives on the carrier of `restrictScalarsInt.obj (cocycles X 2)`.
+  erw [key]
+  rw [HomologicalComplex.iCycles_cyclesMkOfEq]
+
+/-- **Explicit degree-two classes are canonical cochain classes.** If a continuous inhomogeneous
+`2`-cocycle `c` of a discrete `X` is `(g, h) ↦ a (1, g, g * h)` for a homogeneous `2`-cocycle `a`,
+the degree-two comparison carries the class of `c` to the class of `a`. -/
+theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass
+    [LocallyCompactSpace G] (c : Z2 G X.V) (a : (TopRep.homogeneousCochains X).X 2)
+    (ha : ((TopRep.homogeneousCochains X).d 2 3).hom a = 0)
+    (hca : ∀ g h, (c : G × G → X.V) (g, h) = a.val 1 g (g * h)) :
+    X.explicitH2AddEquivContinuousCohomologyOfDiscrete (c : H2 G X.V) = X.cochainClass 2 a ha := by
+  obtain rfl : c = X.inhomogeneousCocycle2 a ha :=
+    Subtype.ext (funext fun p ↦ (hca p.1 p.2).trans (X.inhomogeneousCocycle2_apply a ha _ _).symm)
+  rw [TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply,
+    explicitH2AddEquivContinuousCohomology_apply, TopRep.inhomogeneousCocycle2,
+    AddEquiv.apply_symm_apply, ofDiscreteModuleRestrictScalarsIntEquiv_π]
+  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).inv_hom_id_apply
+  -- As in degree one, `key` lives on the carrier of `restrictScalarsInt.obj (cocycles X 2)`.
+  erw [key]
+  exact (TopRep.cochainClass_def X 2 a ha).symm
 
 end OfDiscrete
 

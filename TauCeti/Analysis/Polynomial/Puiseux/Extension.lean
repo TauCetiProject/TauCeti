@@ -111,11 +111,20 @@ theorem exists_analyticOnNhd_coeff_mul_of_isRoot
     (hF : ∀ i ≤ d, ContinuousOn (fun x => (F x).coeff i) (U ×ˢ s))
     (hl : AnalyticOnNhd ℂ (fun x => (F x).coeff d) (U ×ˢ (s \ {c₀})))
     (hd : ∀ x ∈ U ×ˢ (s \ {c₀}), (F x).natDegree = d)
-    (hne : ∀ x ∈ U ×ˢ (s \ {c₀}), F x ≠ 0)
     (hr : AnalyticOnNhd ℂ r (U ×ˢ (s \ {c₀})))
     (hroot : ∀ x ∈ U ×ˢ (s \ {c₀}), (F x).IsRoot (r x)) :
     ∃ g : V × ℂ → ℂ, AnalyticOnNhd ℂ g (U ×ˢ s) ∧
       EqOn g (fun x => (F x).coeff d * r x) (U ×ˢ (s \ {c₀})) := by
+  rcases Nat.eq_zero_or_pos d with rfl | hd0
+  · -- the fibres are constants, so a root forces the constant to vanish
+    refine ⟨fun _ => 0, analyticOnNhd_const, fun x hx => ?_⟩
+    have h := hroot x hx
+    rw [IsRoot.def, eq_C_of_natDegree_eq_zero (hd x hx), eval_C] at h
+    simp [h]
+  have hne : ∀ x ∈ U ×ˢ (s \ {c₀}), F x ≠ 0 := fun x hx hz => by
+    have := hd x hx
+    rw [hz, natDegree_zero] at this
+    omega
   let c : V × ℂ → Fin d → ℂ := fun x i =>
     (F x).coeff i * (F x).coeff d ^ (d - 1 - i.val)
   have hc : ContinuousOn c (U ×ˢ s) := continuousOn_pi.2 fun i =>
@@ -151,20 +160,13 @@ theorem exists_analyticOnNhd_pow_mul_of_isRoot
     (hroot : ∀ x ∈ U ×ˢ (s \ {c₀}), (F x).IsRoot (r x)) :
     ∃ g : V × ℂ → ℂ, AnalyticOnNhd ℂ g (U ×ˢ s) ∧
       EqOn g (fun x => (x.2 - c₀) ^ a * r x) (U ×ˢ (s \ {c₀})) := by
-  have hne : ∀ x ∈ U ×ˢ (s \ {c₀}), F x ≠ 0 := by
-    intro x hx hzero
-    have hcoef : (F x).coeff d ≠ 0 := by
-      rw [hlc x hx]
-      exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.mpr hx.2.2))
-        (hu0 x (prod_mono subset_rfl sdiff_subset hx))
-    exact hcoef (by simp [hzero])
   have hl : AnalyticOnNhd ℂ (fun x => (F x).coeff d) (U ×ˢ (s \ {c₀})) := by
     intro x hx
     refine (((analyticAt_snd.sub (analyticAt_const (v := c₀))).pow a).mul (hu x
       (prod_mono subset_rfl sdiff_subset hx))).congr ?_
     filter_upwards [(hU.prod (hs.sdiff isClosed_singleton)).mem_nhds hx] with y hy
     exact (hlc y hy).symm
-  obtain ⟨g, hg, hgr⟩ := exists_analyticOnNhd_coeff_mul_of_isRoot F hU hs hF hl hd hne hr hroot
+  obtain ⟨g, hg, hgr⟩ := exists_analyticOnNhd_coeff_mul_of_isRoot F hU hs hF hl hd hr hroot
   refine ⟨fun x => g x / u x, hg.div hu hu0, ?_⟩
   intro x hx
   dsimp only

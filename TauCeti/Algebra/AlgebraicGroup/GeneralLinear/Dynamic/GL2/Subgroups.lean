@@ -42,8 +42,7 @@ torus and positive root subgroup.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This completes the concrete rank-one example in the dynamic parabolic/Levi route of Layer 7,
-"Structure theory", of the ReductiveGroups roadmap.
+This is the concrete rank-one example of the dynamic approach to parabolic and Levi subgroups.
 -/
 
 public section

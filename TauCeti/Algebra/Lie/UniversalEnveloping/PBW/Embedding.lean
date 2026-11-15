@@ -44,7 +44,7 @@ as a module over the base ring. -/
 theorem pbwGradedGenerator_injective [Module.Free R L] :
     Function.Injective (pbwGradedGenerator R L) := by
   intro x y h
-  apply TauCeti.SymmetricAlgebra.ι_injective R L
+  apply SymmetricAlgebra.ι_injective R L
   apply pbwAssociatedGradedMap_injective R L
   simpa only [pbwAssociatedGradedMap_ι] using h
 

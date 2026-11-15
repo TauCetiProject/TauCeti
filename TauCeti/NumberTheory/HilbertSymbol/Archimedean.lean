@@ -102,7 +102,7 @@ theorem hilbertSymbol_real_mul_left (a a' b : ℝˣ) :
   simp only [hilbertSymbol_real, Units.val_mul, mul_neg_iff]
   have := a.ne_zero
   have := a'.ne_zero
-  split_ifs <;> (try simp) <;> grind
+  split_ifs <;> (simp) <;> grind
 
 /-- The real Hilbert symbol is multiplicative in its second parameter.  Being `[simp]`, it
 expands a product in the second parameter of any real symbol, in particular of a symbol read at a

@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.MetricSpace.Thickening
-import TauCeti.Analysis.Contour.Curve.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Contour.Winding.LocallyConstant
 
 /-!
@@ -20,8 +20,6 @@ import TauCeti.Analysis.Contour.Winding.LocallyConstant
 A closed set `K ⊆ ℂ` with `K \ {p}` preconnected, crossed once by a straight segment at `p` with
 `K` adherent from both sides, separates the two ends into different connected components of `Kᶜ`.
 The proof uses winding numbers and needs no Jordan curve theorem.
-
-This is the planar-separation input for layer L5 of the `ConformalMapping` roadmap.
 
 ## Main results
 
@@ -51,18 +49,20 @@ Let `K` be closed with `K \ {p}` preconnected, crossed by a straight segment at 
 `p = v · s + z₀` with `K` adherent from both sides of the segment. Then the two endpoints
 `v · a + z₀` and `v · b + z₀` lie in different connected components of `Kᶜ`. -/
 theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK : IsClosed K)
-    (hv : v ≠ 0) (hs : s ∈ Ioo a b)
+    (hs : s ∈ Ioo a b)
     (hseg : ∀ t ∈ Icc a b, v * t + z₀ ∈ K → t = s)
     (hKp : IsPreconnected (K \ {v * s + z₀}))
     (hleft : v * s + z₀ ∈ closure (K ∩ {q | 0 < ((q - (v * s + z₀)) / v).im}))
     (hright : v * s + z₀ ∈ closure (K ∩ {q | ((q - (v * s + z₀)) / v).im < 0})) :
     v * b + z₀ ∉ connectedComponentIn Kᶜ (v * a + z₀) := by
   intro hmem
-  set p : ℂ := v * s + z₀ with hp_def
+  have hv : v ≠ 0 := by
+    rintro rfl
+    simp at hleft
+  set p : ℂ := v * s + z₀
   have hp : p ∈ K := hK.closure_subset (closure_mono inter_subset_left hleft)
   have hab : a < b := hs.1.trans hs.2
   have hx : v * a + z₀ ∈ Kᶜ := fun h => hs.1.ne (hseg a ⟨le_rfl, hab.le⟩ h)
-  have hy : v * b + z₀ ∈ Kᶜ := fun h => hs.2.ne' (hseg b ⟨hab.le, le_rfl⟩ h)
   -- Stage 1: smooth the return path through `Kᶜ`
   have hCopen : IsOpen (connectedComponentIn Kᶜ (v * a + z₀)) :=
     hK.isOpen_compl.connectedComponentIn
@@ -74,7 +74,7 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
     exact connectedComponentIn_subset _ _ (hπ₀ t)
   obtain ⟨δ, hδ, hthick⟩ :=
     (isCompact_range π₀.continuous).exists_thickening_subset_open hK.isOpen_compl hrangeK
-  obtain ⟨g, hg, hg0, hg1, hgδ⟩ := exists_contDiff_eq_endpoints_dist_lt π₀.toContinuousMap hδ
+  obtain ⟨g, hg, hg0, hg1, hgδ⟩ := π₀.toContinuousMap.exists_contDiff_eq_endpoints_dist_lt hδ
   replace hg0 : g 0 = v * b + z₀ := hg0.trans π₀.source
   replace hg1 : g 1 = v * a + z₀ := hg1.trans π₀.target
   have hgK : ∀ t ∈ Icc (0 : ℝ) 1, g t ∈ Kᶜ := by
@@ -83,7 +83,7 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
     rw [mem_thickening_iff]
     exact ⟨π₀ ⟨t, ht⟩, ⟨_, rfl⟩, by simpa using hgδ ⟨t, ht⟩⟩
   -- Stage 2: construct the closed curve Γ = segment ∪ smooth return
-  set Γ : ℝ → ℂ := fun t => if t ≤ b then v * t + z₀ else g (t - b) with hΓ_def
+  let Γ : ℝ → ℂ := fun t => if t ≤ b then v * t + z₀ else g (t - b)
   have hΓseg : EqOn Γ (fun t : ℝ => v * (t : ℂ) + z₀) (Icc a b) := fun t ht => ite_eq_left ht.2
   have hΓg : ∀ t ∈ Icc b (b + 1), Γ t = g (t - b) := by
     intro t ht
@@ -163,7 +163,7 @@ Under the same hypotheses as
 `notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton`, plus boundedness of `K`,
 at least one of `v · a + z₀` and `v · b + z₀` lies in `filledHull K`. -/
 theorem mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton (hK : IsClosed K)
-    (hKb : IsBounded K) (hv : v ≠ 0) (hs : s ∈ Ioo a b)
+    (hKb : IsBounded K) (hs : s ∈ Ioo a b)
     (hseg : ∀ t ∈ Icc a b, v * t + z₀ ∈ K → t = s)
     (hKp : IsPreconnected (K \ {v * s + z₀}))
     (hleft : v * s + z₀ ∈ closure (K ∩ {q | 0 < ((q - (v * s + z₀)) / v).im}))
@@ -173,7 +173,7 @@ theorem mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton (hK :
     rw [Complex.rank_real_complex]
     exact Cardinal.one_lt_two
   exact mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn hrank hKb
-    (notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton hK hv hs hseg
+    (notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton hK hs hseg
       hKp hleft hright)
 
 end TauCeti.Contour

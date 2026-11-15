@@ -21,12 +21,19 @@ and order depend only on the punctured germ, so
 these point values do not affect either conclusion. The order bounds use the width of the
 chosen normalized cusp datum; growth at rate `2πk / w` gives order at least `-k`.
 
+Conversely, any meromorphic extension forces eventual holomorphy and an exponential growth
+bound at every cusp. This gives an exact criterion for every choice of normalized cusp data,
+without a finiteness or cofiniteness assumption. The criterion characterizes existence rather
+than uniqueness of cusp point values, since meromorphic germs ignore those values.
+
 ## Main declarations
 
 * `TauCeti.Fuchsian.meromorphicAt_of_forall_isBigO`: meromorphy of a function on the compactified
   quotient from its meromorphic pullback and cusp growth.
 * `TauCeti.Fuchsian.exists_meromorphicAt_comp_ofQuotient`: descent and extension of an invariant
   meromorphic function with controlled growth at every cusp.
+* `TauCeti.Fuchsian.exists_meromorphicAt_comp_ofQuotient_iff`: extension is equivalent to
+  eventual holomorphy and exponential growth at each cusp.
 
 ## References
 
@@ -92,5 +99,30 @@ theorem exists_meromorphicAt_comp_ofQuotient (hinv : ∀ (g : Γ) (z : ℍ), f (
   have hF : ∀ z, F (ofQuotient (Quotient.mk _ z)) = f z := fun z ↦ by
     simpa only [F, equivSum_ofQuotient, Sum.elim_inl, Function.comp_apply] using congrFun hpull z
   exact ⟨F, meromorphicAt_of_forall_isBigO hF hmero hgrowth, funext hF⟩
+
+/-- An invariant meromorphic function extends meromorphically to the compactified quotient
+exactly when it is holomorphic sufficiently high and satisfies an exponential growth bound at
+each cusp. The criterion holds for every choice of normalized cusp data, with each bound
+expressed using that datum's width. Interior poles are allowed. -/
+theorem exists_meromorphicAt_comp_ofQuotient_iff
+    (hinv : ∀ (g : Γ) (z : ℍ), f (g • z) = f z)
+    (hmero : ∀ z, RiemannSurface.MeromorphicAt f z)
+    (D : Γ.CuspOrbit → Γ.CuspDatum) (hD : ∀ C, (D C).cuspOrbit = C) :
+    (∃ F : Γ.CompactifiedQuotient → ℂ,
+      (∀ x, RiemannSurface.MeromorphicAt F x) ∧ F ∘ ofQuotient ∘ Quotient.mk _ = f) ↔
+      ∀ C, (∀ᶠ z in atImInfty,
+        MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f ((D C).scaling⁻¹ • z)) ∧
+          ∃ k : ℤ, (fun z : ℍ ↦ f ((D C).scaling⁻¹ • z)) =O[atImInfty]
+            fun z ↦ Real.exp (2 * Real.pi * k * z.im / (D C).width) := by
+  constructor
+  · rintro ⟨F, hF, hpull⟩ C
+    apply (Subgroup.CuspDatum.meromorphicAt_cuspExtension_zero_iff
+      (D C) f (fun g ↦ hinv g.1)).1
+    exact (meromorphicAt_ofCusp_iff (D C) (congrFun hpull)).1 (hF _)
+  · intro hgrowth
+    apply exists_meromorphicAt_comp_ofQuotient hinv hmero
+    intro C
+    obtain ⟨hhol, k, hk⟩ := hgrowth C
+    exact ⟨D C, k, hD C, hhol, hk⟩
 
 end TauCeti.Fuchsian

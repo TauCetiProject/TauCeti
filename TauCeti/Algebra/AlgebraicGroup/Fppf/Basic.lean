@@ -36,10 +36,6 @@ assert that such a quotient sheaf is representable; representability requires se
 
 * J. S. Milne, *Algebraic Groups* (2017), Sections 2 and 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 1 and 14.
-
-This advances the cross-cutting sheaves-and-descent prerequisite and Layer 3, "Normality and
-quotients", of the ReductiveGroups roadmap. The next step is to sheafify the existing pointwise
-quotient presheaf and prove its quotient universal property in the fppf topos.
 -/
 
 public section

@@ -75,7 +75,7 @@ open MeasureTheory ProbabilityTheory unitInterval
 
 namespace TauCeti.Probability
 
-variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
+variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
   {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
 
 /-- **The crossing strips are coded by i.i.d. vertex noise given the hidden block.** Let `e`, `f`
@@ -98,6 +98,11 @@ theorem SeparatelyExchangeable.exists_vertex_strip_coding
             (fun p ↦ (p.1, fun i ↦ r p.1 (p.2.1 i), fun j ↦ c p.1 (p.2.2 j))) =
           ρ.map fun x ↦ (fun q ↦ x (e q.1, f q.2), fun i b ↦ x (g i, f b),
             fun j a ↦ x (e a, g' j)) := by
+  refine (isEmpty_or_nonempty α).elim (fun hα => ?_) fun hα => ?_
+  · -- With no state space the array space is empty, so `ρ = 0` and both sides vanish.
+    have hρ : ρ = 0 := Measure.eq_zero_of_isEmpty ρ
+    exact ⟨fun h _ ↦ isEmptyElim (h (0, 0)), fun h _ ↦ isEmptyElim (h (0, 0)),
+      Measurable.of_discrete, Measurable.of_discrete, by simp [hρ]⟩
   -- Code the row strips and the column strips separately by the sequence coding theorem, using
   -- directing laws `R` and `C` that are measurable functions of the hidden block. The two codings
   -- are then glued by the conditional independence of the strip families given the block.

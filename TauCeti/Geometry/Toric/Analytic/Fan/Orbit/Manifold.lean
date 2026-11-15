@@ -23,11 +23,10 @@ holomorphic.
 
 ## Main declarations
 
-* `TauCeti.Toric.Fan.analyticConeOrbitTransition`: the change of affine chart on a fixed global
-  cone orbit.
-* `TauCeti.Toric.Fan.analyticConeOrbitTransition_analyticConeOrbitTransition`: the chart
-  transitions satisfy the cocycle condition.
-* `TauCeti.Toric.Fan.analyticConeOrbitEquiv`: the chart transition as an equivalence.
+* `TauCeti.Toric.Fan.analyticConeOrbitEquiv`: the change of affine chart on a fixed global
+  cone orbit, as an equivalence.
+* `TauCeti.Toric.Fan.analyticConeOrbitEquiv_trans`: the chart transitions satisfy the cocycle
+  condition.
 * `TauCeti.Toric.Fan.analyticConeOrbitDiffeomorph`: the chart transition is biholomorphic for any
   regular coordinate systems on the two affine charts.
 
@@ -49,85 +48,56 @@ universe u
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
 
-/-- A point of the affine orbit of `τ` in the chart of `σ` lies in the global orbit of `τ`. -/
-private theorem analyticAffineChartι_val_mem_analyticConeOrbit {τ σ : Φ.cones} (hτσ : τ ≤ σ)
-    (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
-    Φ.analyticAffineChartι hΦ σ x.1 ∈ Φ.analyticConeOrbit hΦ τ :=
-  (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ x.2).2 (Φ.coe_orbitFace hτσ)
+/-- Every point of an orbit lies in the target of the partial diffeomorphism of a
+containing chart. -/
+theorem mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
+    (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) {k l s : ℕ}
+    {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay υ.1 ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s) (n : ℕ∞ω)
+    {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
+    x ∈ (Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n).target := by
+  rw [analyticAffineChartPartialDiffeomorph_target]
+  exact (Φ.mem_range_analyticAffineChartι_iff hΦ hx).2 h
 
-/-- A point of the chart of `υ` whose image lies in the global orbit of `τ` lies in the affine
-orbit of `τ` as a face of `υ`. -/
-private theorem mem_affineConeOrbit_orbitFace {τ υ : Φ.cones} (hτυ : τ ≤ υ)
-    {y : (Φ.analyticAffineChartDiagram).obj υ}
-    (hy : Φ.analyticAffineChartι hΦ υ y ∈ Φ.analyticConeOrbit hΦ τ) :
-    y ∈ affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) := by
-  obtain ⟨F, hyF, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice
-    ((isRegular_iff.mp hΦ) υ.1 υ.2) y
-  have hF := (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hyF).1 hy
-  rwa [PointedCone.Face.ext fun m ↦ SetLike.ext_iff.mp (hF.trans (Φ.coe_orbitFace hτυ).symm) m]
-    at hyF
-
-/-- Change affine charts on the orbit of `τ`. If `τ` is a face of both `σ` and `υ`, a point of
-the affine orbit in the chart of `σ` has a unique representative in the chart of `υ`; this map
-chooses that representative. -/
-noncomputable def analyticConeOrbitTransition {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
-    affineConeOrbit Φ.lattice (Φ.orbitFace hτσ) →
-      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) := fun x ↦
-  have hx := Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x
-  have hy := (Φ.mem_range_analyticAffineChartι_iff hΦ hx).2 hτυ
-  ⟨hy.choose, Φ.mem_affineConeOrbit_orbitFace hΦ hτυ (by rw [hy.choose_spec]; exact hx)⟩
-
-/-- Changing affine charts on an orbit does not change the represented point of the analytic
-realization. This equation characterizes `analyticConeOrbitTransition`, since affine chart
-inclusions are injective. -/
-@[simp]
-theorem analyticAffineChartι_analyticConeOrbitTransition {τ σ υ : Φ.cones}
-    (hτσ : τ ≤ σ) (hτυ : τ ≤ υ)
-    (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
-    Φ.analyticAffineChartι hΦ υ (Φ.analyticConeOrbitTransition hΦ hτσ hτυ x).1 =
-      Φ.analyticAffineChartι hΦ σ x.1 := by
-  unfold analyticConeOrbitTransition
-  exact ((Φ.mem_range_analyticAffineChartι_iff hΦ
-    (Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x)).2 hτυ).choose_spec
-
-/-- Changing from an affine chart on an orbit to the same chart is the identity. -/
-@[simp]
-theorem analyticConeOrbitTransition_self {τ σ : Φ.cones} (hτσ : τ ≤ σ)
-    (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
-    Φ.analyticConeOrbitTransition hΦ hτσ hτσ x = x :=
-  Subtype.ext <| (Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).injective <|
-    Φ.analyticAffineChartι_analyticConeOrbitTransition hΦ hτσ hτσ x
-
-/-- The cocycle condition: changing affine charts on an orbit from `σ` to `υ` and then from `υ`
-to `ν` is the change of chart from `σ` to `ν`. -/
-@[simp]
-theorem analyticConeOrbitTransition_analyticConeOrbitTransition {τ σ υ ν : Φ.cones}
-    (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) (hτν : τ ≤ ν)
-    (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
-    Φ.analyticConeOrbitTransition hΦ hτυ hτν (Φ.analyticConeOrbitTransition hΦ hτσ hτυ x) =
-      Φ.analyticConeOrbitTransition hΦ hτσ hτν x :=
-  Subtype.ext <| (Φ.isOpenEmbedding_analyticAffineChartι hΦ ν).injective <| by
-    simp only [analyticAffineChartι_analyticConeOrbitTransition]
+/-- On a global orbit, the inverse partial chart agrees with the inverse orbit parametrization. -/
+theorem analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit
+    (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) {k l s : ℕ}
+    {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay υ.1 ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s) (n : ℕ∞ω)
+    (x : Φ.analyticConeOrbit hΦ σ) :
+    let := affinePointTopology g
+    let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
+    let := Φ.analyticChartedSpace hΦ
+    (Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n).toPartialEquiv.symm x.1 =
+      ((Φ.analyticConeOrbitChartEquiv hΦ σ h).symm x).1 := by
+  let := affinePointTopology g
+  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
+  let := Φ.analyticChartedSpace hΦ
+  rw [← Φ.analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply hΦ σ h x]
+  exact Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ υ hB κ g n _
 
 /-- The affine representations of a fixed cone orbit in any two charts containing that cone are
-equivalent. The equivalence is canonical: it is defined only by equality in the glued analytic
-realization. -/
+equivalent. The equivalence passes through the global orbit using the canonical affine
+parametrizations. -/
 noncomputable def analyticConeOrbitEquiv {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
     affineConeOrbit Φ.lattice (Φ.orbitFace hτσ) ≃
-      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) where
-  toFun := Φ.analyticConeOrbitTransition hΦ hτσ hτυ
-  invFun := Φ.analyticConeOrbitTransition hΦ hτυ hτσ
-  left_inv x := by simp
-  right_inv x := by simp
+      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) :=
+  (Φ.analyticConeOrbitChartEquiv hΦ τ hτσ).trans (Φ.analyticConeOrbitChartEquiv hΦ τ hτυ).symm
 
-/-- The canonical equivalence of affine representations of an orbit acts by the orbit chart
-transition. -/
+/-- Changing affine charts on an orbit does not change the represented point of the analytic
+realization. This equation characterizes `analyticConeOrbitEquiv`, since affine chart
+inclusions are injective. -/
 @[simp]
-theorem analyticConeOrbitEquiv_apply {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ)
+theorem analyticAffineChartι_analyticConeOrbitEquiv {τ σ υ : Φ.cones}
+    (hτσ : τ ≤ σ) (hτυ : τ ≤ υ)
     (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
-    Φ.analyticConeOrbitEquiv hΦ hτσ hτυ x =
-      Φ.analyticConeOrbitTransition hΦ hτσ hτυ x :=
-  (rfl)
+    Φ.analyticAffineChartι hΦ υ (Φ.analyticConeOrbitEquiv hΦ hτσ hτυ x).1 =
+      Φ.analyticAffineChartι hΦ σ x.1 := by
+  simp only [analyticConeOrbitEquiv, Equiv.trans_apply,
+    analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply,
+    coe_analyticConeOrbitChartEquiv_apply]
 
 /-- The inverse of the canonical equivalence of affine orbit representations is the canonical
 equivalence in the opposite direction. -/
@@ -140,7 +110,9 @@ theorem analyticConeOrbitEquiv_symm {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (h
 @[simp]
 theorem analyticConeOrbitEquiv_self {τ σ : Φ.cones} (hτσ : τ ≤ σ) :
     Φ.analyticConeOrbitEquiv hΦ hτσ hτσ = Equiv.refl _ :=
-  Equiv.ext <| Φ.analyticConeOrbitTransition_self hΦ hτσ
+  Equiv.ext fun x ↦
+    Subtype.ext <| (Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).injective <|
+      Φ.analyticAffineChartι_analyticConeOrbitEquiv hΦ hτσ hτσ x
 
 /-- The canonical equivalences of affine orbit representations compose according to the cocycle
 condition. -/
@@ -149,7 +121,9 @@ theorem analyticConeOrbitEquiv_trans {τ σ υ ν : Φ.cones}
     (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) (hτν : τ ≤ ν) :
     (Φ.analyticConeOrbitEquiv hΦ hτσ hτυ).trans (Φ.analyticConeOrbitEquiv hΦ hτυ hτν) =
       Φ.analyticConeOrbitEquiv hΦ hτσ hτν :=
-  Equiv.ext <| Φ.analyticConeOrbitTransition_analyticConeOrbitTransition hΦ hτσ hτυ hτν
+  Equiv.ext fun _ ↦
+    Subtype.ext <| (Φ.isOpenEmbedding_analyticAffineChartι hΦ ν).injective <| by
+      simp only [Equiv.trans_apply, analyticAffineChartι_analyticConeOrbitEquiv]
 
 section Holomorphic
 
@@ -171,7 +145,7 @@ include κσ κυ
 
 /-- The change of affine chart on a fixed cone orbit is holomorphic for arbitrary regular
 coordinates on the source and target cone charts. -/
-theorem contMDiff_analyticConeOrbitTransition
+theorem contMDiff_analyticConeOrbitEquiv
     [Fintype {ρ : ToricRay σ.1 // ρ ∉
       ((isRegular_iff.mp hΦ) σ.1 σ.2).faceOrderIso Φ.lattice Fσ}]
     [Fintype {ρ : ToricRay υ.1 // ρ ∉
@@ -188,7 +162,7 @@ theorem contMDiff_analyticConeOrbitTransition
         ((isRegular_iff.mp hΦ) σ.1 σ.2).faceOrderIso Φ.lattice Fσ} → ℂ) × (Fin lσ → ℂ)))
       𝓘(ℂ, (({ρ : ToricRay υ.1 // ρ ∉
         ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice Fυ} → ℂ) × (Fin lυ → ℂ))) n
-      (Φ.analyticConeOrbitTransition hΦ hτσ hτυ) := by
+      (Φ.analyticConeOrbitEquiv hΦ hτσ hτυ) := by
   let hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
   let hυ := (isRegular_iff.mp hΦ) υ.1 υ.2
   let _ := affinePointTopology gσ
@@ -208,13 +182,14 @@ theorem contMDiff_analyticConeOrbitTransition
     (Φ.contMDiff_analyticAffineChartι hΦ σ hBσ κσ gσ n).comp
       (contMDiff_subtypeVal_affineConeOrbit Φ.lattice hσ hBσ κσ Fσ gσ n)
   have hrange (x : affineConeOrbit Φ.lattice Fσ) :
-      Φ.analyticAffineChartι hΦ σ x.1 ∈ e.target := by
-    rw [analyticAffineChartPartialDiffeomorph_target]
-    exact (Φ.mem_range_analyticAffineChartι_iff hΦ
-      (Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x)).2 hτυ
+      Φ.analyticAffineChartι hΦ σ x.1 ∈ e.target :=
+    Φ.mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
+      hΦ τ hτυ hBυ κυ gυ n (by
+        simpa only [coe_analyticConeOrbitChartEquiv_apply] using
+          (Φ.analyticConeOrbitChartEquiv hΦ τ hτσ x).2)
   refine (e.contMDiffOn_invFun.comp_contMDiff hsource hrange).congr fun x ↦ ?_
   apply (Φ.isOpenEmbedding_analyticAffineChartι hΦ υ).injective
-  rw [Φ.analyticAffineChartι_analyticConeOrbitTransition hΦ hτσ hτυ x]
+  rw [Φ.analyticAffineChartι_analyticConeOrbitEquiv hΦ hτσ hτυ x]
   exact ((Φ.analyticAffineChartPartialDiffeomorph_apply hΦ υ hBυ κυ gυ n _).symm.trans
     (e.right_inv (hrange x))).symm
 
@@ -247,9 +222,9 @@ noncomputable def analyticConeOrbitDiffeomorph
     ((isRegular_iff.mp hΦ) υ.1 υ.2) hBυ Fυ gυ
   exact
     { toEquiv := Φ.analyticConeOrbitEquiv hΦ hτσ hτυ
-      contMDiff_toFun := Φ.contMDiff_analyticConeOrbitTransition hΦ hτσ hτυ
+      contMDiff_toFun := Φ.contMDiff_analyticConeOrbitEquiv hΦ hτσ hτυ
         hBσ κσ gσ hBυ κυ gυ n
-      contMDiff_invFun := Φ.contMDiff_analyticConeOrbitTransition hΦ hτυ hτσ
+      contMDiff_invFun := Φ.contMDiff_analyticConeOrbitEquiv hΦ hτυ hτσ
         hBυ κυ gυ hBσ κσ gσ n }
 
 /-- The orbit-chart biholomorphism is the canonical chart transition. -/
@@ -261,7 +236,7 @@ theorem analyticConeOrbitDiffeomorph_apply
       ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice Fυ}]
     (n : ℕ∞ω) (x : affineConeOrbit Φ.lattice Fσ) :
     Φ.analyticConeOrbitDiffeomorph hΦ hτσ hτυ hBσ κσ gσ hBυ κυ gυ n x =
-      Φ.analyticConeOrbitTransition hΦ hτσ hτυ x :=
+      Φ.analyticConeOrbitEquiv hΦ hτσ hτυ x :=
   (rfl)
 
 /-- The inverse of the orbit-chart biholomorphism is the orbit-chart biholomorphism in the
@@ -304,7 +279,9 @@ theorem analyticConeOrbitDiffeomorph_self
   let _ := affinePointTopology gσ
   let _ := affineConeOrbitChartedSpace Φ.lattice
     ((isRegular_iff.mp hΦ) σ.1 σ.2) hBσ Fσ gσ
-  exact Diffeomorph.ext <| Φ.analyticConeOrbitTransition_self hΦ hτσ
+  exact Diffeomorph.ext fun x ↦ by
+    simp only [analyticConeOrbitDiffeomorph_apply, analyticConeOrbitEquiv_self,
+      Equiv.refl_apply, Diffeomorph.coe_refl, id_eq]
 
 section Trans
 
@@ -345,8 +322,9 @@ theorem analyticConeOrbitDiffeomorph_trans
   let _ := affinePointTopology gν
   let _ := affineConeOrbitChartedSpace Φ.lattice
     ((isRegular_iff.mp hΦ) ν.1 ν.2) hBν (Φ.orbitFace hτν) gν
-  exact Diffeomorph.ext <|
-    Φ.analyticConeOrbitTransition_analyticConeOrbitTransition hΦ hτσ hτυ hτν
+  exact Diffeomorph.ext fun x ↦ by
+    simp only [Diffeomorph.coe_trans, Function.comp_apply, analyticConeOrbitDiffeomorph_apply,
+      ← Equiv.trans_apply, analyticConeOrbitEquiv_trans]
 
 end Trans
 

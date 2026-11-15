@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Basic
 For a nonempty regular fan, the orbit indexed by the zero cone is the analytic dense torus. This
 module records that this set is independent of the witness of nonemptiness and is dense and open
 in the analytic realization. Its canonical parametrization by the coordinate-free complex torus
-is continuous and injective, and determines continuous maps into Hausdorff spaces uniquely.
+is an open embedding, and determines continuous maps into Hausdorff spaces uniquely.
 
 ## Main declarations
 
@@ -21,6 +21,7 @@ is continuous and injective, and determines continuous maps into Hausdorff space
 * `TauCeti.Toric.Fan.dense_analyticDenseTorus`: the analytic dense torus is dense.
 * `TauCeti.Toric.Fan.isOpen_analyticDenseTorus`: the analytic dense torus is open.
 * `TauCeti.Toric.Fan.analyticTorusι`: the canonical parametrization by the complex torus.
+* `TauCeti.Toric.Fan.isOpenEmbedding_analyticTorusι`: the parametrization is an open embedding.
 * `TauCeti.Toric.Fan.analyticRealization_hom_ext_torus`: continuous maps to a Hausdorff space
   are determined by their values on the complex torus.
 
@@ -174,6 +175,21 @@ theorem continuous_analyticTorusι (hPhi0 : Nonempty Phi.cones) :
     Continuous (Phi.analyticTorusι hPhi hPhi0) := by
   unfold analyticTorusι
   exact continuous_id.smul continuous_const
+
+/-- The canonical torus inclusion is an open embedding. -/
+theorem isOpenEmbedding_analyticTorusι (hPhi0 : Nonempty Phi.cones) :
+    IsOpenEmbedding (Phi.analyticTorusι hPhi hPhi0) := by
+  let tau : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
+  obtain ⟨l, B, hB⟩ := (isRegularCone_bot Phi.lattice).exists_basis_sum
+  let h : ComplexTorus N ≃ₜ Phi.analyticAffineChartDiagram.obj tau :=
+    zeroConeChartHomeomorphOfBasis Phi.lattice hB (Phi.analyticChartGenerators tau).2
+  have hι : Phi.analyticTorusι hPhi hPhi0 = Phi.analyticAffineChartι hPhi tau ∘ h := by
+    funext t
+    rw [Function.comp_apply, Phi.analyticTorusι_eq_analyticAffineChartι hPhi hPhi0 tau t]
+    exact congrArg _ (zeroConeChartHomeomorphOfBasis_apply Phi.lattice hB _ t).symm
+  -- The torus is homeomorphic to the affine chart of the zero cone, which embeds openly.
+  rw [hι]
+  exact (Phi.isOpenEmbedding_analyticAffineChartι hPhi tau).comp h.isOpenEmbedding
 
 /-- Maps from a nonempty regular fan realization to a Hausdorff space agree if they agree at
 every point of the canonical complex torus. -/

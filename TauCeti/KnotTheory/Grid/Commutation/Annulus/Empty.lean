@@ -44,7 +44,7 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 /-- A same-side-order rectangle--pentagon term has its pentagon's initial side at the first
 commuted column. Thus its straightening is a thin vertical annulus between the two commuted

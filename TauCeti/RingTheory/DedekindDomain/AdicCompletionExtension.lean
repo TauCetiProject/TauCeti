@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.AdjoinRoot.Factors
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
 
 /-!
@@ -49,7 +49,7 @@ global étale algebra with its images in the completions passes through exactly 
   of it the square-class conditions of the `2`-descent are stated in — on units of `K`, and on the
   image of `K`.
 * `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletionIntegers_ne_two`: at a
-  place not dividing `2`, the residue field of `𝒪_v` has odd characteristic.
+  place not dividing `2`, the residue field of `𝒪_v` does not have characteristic `2`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_unit_not_isSquare`: at such a place, with finite
   residue field, `𝒪_v` carries a unit that is not a square in `K_v`. This is the input the
   local image count at a good odd place needs.
@@ -72,8 +72,7 @@ Dedekind domain and one of its completions.
 ## Provenance
 
 Adapted, with the authors' proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/AdicCompletionExtension.lean`.
 
 That file in turn credits the FLT project
@@ -128,7 +127,7 @@ theorem valuation_maximalIdeal_adicCompletionIntegers (x : v.adicCompletion K) :
     (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
       (v.adicCompletion K) x = Valued.v x := by
   -- reduce to elements of the ring of integers
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
   rw [map_div₀, map_div₀]
   suffices h : ∀ y : v.adicCompletionIntegers K,
       (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
@@ -210,10 +209,11 @@ theorem span_singleton_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e :
   rw [Ideal.span_singleton_eq_span_singleton.mpr (associated_unit_mul_left _ _ u.isUnit),
     ← Ideal.span_singleton_pow, hπ.maximalIdeal_eq]
 
-/-- **At a place not dividing `2`, the residue characteristic is odd.** The residue field of `𝒪_v`
-is the residue field of `v` by `residueFieldEquivAdicCompletionIntegers`, so this is the hypothesis
-`2 ∉ v` transported along that equivalence — stated as a statement about `ringChar` because that is
-the form `FiniteField.exists_nonsquare` consumes. -/
+/-- **At a place not dividing `2`, the residue characteristic is not `2`.** The residue field of
+`𝒪_v` is the residue field of `v` by `residueFieldEquivAdicCompletionIntegers`, so this is the
+hypothesis `2 ∉ v` transported along that equivalence — stated as a statement about `ringChar`
+because that is the form `FiniteField.exists_nonsquare` consumes. The characteristic may also be
+`0`, as at the place `(X)` of `ℚ[X]`. -/
 theorem ringChar_residueField_adicCompletionIntegers_ne_two (hv2 : (2 : R) ∉ v.asIdeal) :
     ringChar (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) ≠ 2 := by
   -- first, `2` is not in the maximal ideal of `𝒪_v`: it contracts to `v`
@@ -377,8 +377,8 @@ lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
     Valued.v (adicCompletionExtension K L v w x) =
       Valued.v x ^ v.asIdeal.ramificationIdx' w.asIdeal := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
-    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
+  rw [← adicCompletion.valued_toCompletion_apply L w (adicCompletionExtension K L v w x),
+    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion_apply K v x]
   have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
     Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (v.valuation_surjective K)
   have hsurjL : Function.Surjective (⇑(Valued.v : Valuation (w.valuation L).Completion ℤᵐ⁰)) :=

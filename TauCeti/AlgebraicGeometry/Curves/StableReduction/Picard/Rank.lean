@@ -96,7 +96,7 @@ private lemma intersectionRat_connected (i j : T.Component) :
     exact Int.cast_pos.mpr hab.2
   induction T.reflTransGen_adj i j with
   | refl => exact .refl
-  | tail hab hbc ih => exact ih.tail (mapEdge hbc)
+  | tail _ hbc ih => exact ih.tail (mapEdge hbc)
 
 /-- An integral row vector is killed by the intersection matrix of a numerical type exactly when
 its cross-products with the multiplicity vector agree. Thus, over the fraction field, every

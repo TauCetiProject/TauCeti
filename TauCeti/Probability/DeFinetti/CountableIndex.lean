@@ -21,10 +21,6 @@ type. This file transports the sequence theorem along an equivalence with `ℕ`.
   explicit equivalence `ι ≃ ℕ`.
 * `conditionallyIID_of_exchangeableFamily` chooses such an equivalence from `[Countable ι]`
   and `[Infinite ι]`.
-
-This implements the Layer 8 target “de Finetti for other countable index types” in
-`TauCetiRoadmap/Exchangeability/README.md`. The proof reuses the sequence theorem
-`conditionallyIID_of_exchangeable`; no new measure-theoretic argument is required.
 -/
 
 public section
@@ -43,7 +39,7 @@ variable {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 an exchangeable family with measurable coordinates whose index type is equivalent to `ℕ` is
 conditionally i.i.d. -/
 theorem conditionallyIID_of_exchangeableFamily_of_equiv_nat
-    [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    [StandardBorelSpace α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ι → Ω → α} (hX : ExchangeableFamily μ X) (e : ι ≃ ℕ)
     (hX_meas : ∀ i, Measurable (X i)) :
     ConditionallyIID μ X := by
@@ -60,9 +56,9 @@ theorem conditionallyIID_of_exchangeableFamily_of_equiv_nat
 
 /-- **De Finetti's theorem for countably infinite index types.** Under a finite measure, every
 exchangeable family with measurable coordinates indexed by a countably infinite type, with values
-in a nonempty standard Borel space, is conditionally i.i.d. -/
+in a standard Borel space, is conditionally i.i.d. -/
 theorem conditionallyIID_of_exchangeableFamily
-    [Countable ι] [Infinite ι] [StandardBorelSpace α] [Nonempty α]
+    [Countable ι] [Infinite ι] [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ι → Ω → α}
     (hX : ExchangeableFamily μ X) (hX_meas : ∀ i, Measurable (X i)) :
     ConditionallyIID μ X :=

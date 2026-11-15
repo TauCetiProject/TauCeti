@@ -71,32 +71,26 @@ private theorem exists_one_sided_tangents {γ : ℝ → ℂ} {a b t₀ : ℝ}
     (by rw [hmin, hmax]; exact ⟨ht₀.1, ht₀.2.le⟩)
   have h_cont : ContinuousAt γ t₀ := h_imm.continuousOn.continuousAt
     (by rw [uIcc_of_le hab]; exact Icc_mem_nhds ht₀.1 ht₀.2)
-  have h_diff_R := h_imm.isPiecewiseC1On.eventually_differentiableAt_right
-    (by rw [hmin, hmax]; exact ht₀)
-  have h_diff_L := h_imm.isPiecewiseC1On.eventually_differentiableAt_left
-    (by rw [hmin, hmax]; exact ht₀)
   exact ⟨L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
-    hasDerivWithinAt_Ioi_of_tendsto_deriv h_cont h_diff_R h_tend_R,
-    hasDerivWithinAt_Iio_of_tendsto_deriv h_cont h_diff_L h_tend_L⟩
+    hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero h_cont.continuousWithinAt hL_R h_tend_R,
+    hasDerivWithinAt_Iio_of_tendsto_deriv_of_ne_zero h_cont.continuousWithinAt hL_L h_tend_L⟩
 
 /-- **Value-exposing form of the per-crossing window radius.** Around each interior crossing
 there is a radius `R > 0` and the crossing's nonzero one-sided tangent limits `L_R`, `L_L` of
 `deriv γ` (from the right and left respectively — `hL_tend_R`, `hL_tend_L` pin them down, so a
 caller can compute with the value below rather than treat `L_R`, `L_L` as opaque), such that at
-every window `[l, u] ⊆ [t₀ - R, t₀ + R]` that lies inside `[a, b]` and contains no other crossing,
-the truncated window integral of the Cauchy kernel converges to that explicit
-log-norm-plus-argument
-value (the value `perWindow_truncated_integral_tendsto` supplies), rather than to a merely
-existentially-bound limit. A consumer that only needs existence of the limit (not its value) can
-take the displayed value itself as the existential witness, so no separate existence-only wrapper
-is kept here. -/
+every window `[l, u] ⊆ [t₀ - R, t₀ + R]` with `l < t₀ < u`, `a < l` and `u ≤ b`, the truncated
+window integral of the Cauchy kernel converges to that explicit log-norm-plus-argument value (the
+value `perWindow_truncated_integral_tendsto` supplies), rather than to a merely existentially-bound
+limit. No crossing-uniqueness hypothesis on `[l, u]` is required. A consumer that only needs
+existence of the limit (not its value) can take the displayed value itself as the existential
+witness, so no separate existence-only wrapper is kept here. -/
 theorem exists_radius_perWindow_tendsto_log_norm_add_arg
     {γ : ℝ → ℂ} {a b t₀ : ℝ} {s : ℂ}
     (h_imm : IsPwC1ImmersionOn γ a b) (ht₀ : t₀ ∈ Ioo a b) (h_at : γ t₀ = s) :
     ∃ R > 0, ∃ L_R L_L : ℂ, L_R ≠ 0 ∧ L_L ≠ 0 ∧
       Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R) ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L) ∧
       ∀ l u : ℝ, t₀ - R ≤ l → l < t₀ → t₀ < u → u ≤ t₀ + R → a < l → u ≤ b →
-      (∀ t ∈ Icc l u, γ t = s → t = t₀) →
       Tendsto (fun ε : ℝ => ∫ v in l..u,
         if ‖γ v - s‖ > ε then (γ v - s)⁻¹ * deriv γ v else 0) (𝓝[>] (0 : ℝ))
         (𝓝 (((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +
@@ -108,27 +102,21 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
   obtain ⟨R, hR_pos, hc_R, hc_L, hc_plus, hc_minus⟩ :=
     exists_crossing_slitPlane_radius h_dR h_dL h_at hL_R hL_L
   obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
-  have ht₀' : t₀ ∈ Ioo (min a b) (max a b) := by
-    rwa [min_eq_left hab.le, max_eq_right hab.le]
   refine ⟨R, hR_pos, L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
-    fun l u hRl hlt htu huR h_lo h_hi h_unique => ?_⟩
+    fun l u hRl hlt htu huR h_lo h_hi => ?_⟩
   have h_endpoint_R : t₀ + (u - t₀) = u := by ring
   have h_endpoint_L : t₀ - (t₀ - l) = l := by ring
   exact perWindow_truncated_integral_tendsto hlt htu h_at
       (h_imm.continuousOn.mono (by
         rw [uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith) h_hi))
-      h_tend_R h_tend_L
-      (h_imm.isPiecewiseC1On.eventually_differentiableAt_right ht₀')
-      (h_imm.isPiecewiseC1On.eventually_differentiableAt_left ht₀')
-      p.countable_toSet
+      h_tend_R h_tend_L p.countable_toSet
       (fun t ht => hp t ⟨by
         rw [min_eq_left hab.le, max_eq_right hab.le]
         exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩, ht.2⟩)
       (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
         rw [uIcc_of_le (hlt.le.trans htu.le), uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith) h_hi))
-      h_unique
       (fun a' b' h1 h2 h3 => hc_R a' b' h1 h2 (h3.trans huR))
       (fun b' h1 h2 => hc_L l b' hRl h1 h2)
       (by simpa only [h_endpoint_R] using
@@ -146,7 +134,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
     CauchyPVExistsAt γ a b (fun z => (z - s)⁻¹) s := by
   classical
   rcases hab.eq_or_lt with rfl | hab
-  · exact CauchyPVExistsAt.of_eq γ rfl _ s
+  · exact CauchyPVExistsAt.refl γ a _ s
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} => by
     rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]
@@ -157,7 +145,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t => if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0)
       MeasureTheory.volume a b :=
-    fun _ hε => intervalIntegrable_inv_sub_truncated h_imm.continuousOn
+    fun _ hε => intervalIntegrable_inv_sub_truncated
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   choose! R hR_pos _ _ _ _ _ _ h_spec using
     fun t₀ (ht₀ : t₀ ∈ T) =>
@@ -167,7 +155,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
   -- window hypothesis below is a `∀` over `T`
   obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R⟩ :=
     exists_common_window_radius_le h_Ioo R hR_pos
-  exact cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint hab.le T (fun _ => hρ_pos.le)
+  exact cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint hab.le T
     (fun t ht => by linarith [(h_endpts t ht).1])
     (fun t ht => by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne => (h_pair t ht t' ht' hne).le)
@@ -175,9 +163,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
     (fun t₀ ht₀ => ⟨_, h_spec t₀ ht₀ (t₀ - ρ) (t₀ + ρ)
       (by linarith [hρ_le_R t₀ ht₀]) (by linarith [hρ_pos]) (by linarith [hρ_pos])
       (by linarith [hρ_le_R t₀ ht₀]) (by linarith [(h_endpts t₀ ht₀).1])
-      (by linarith [(h_endpts t₀ ht₀).2])
-      fun t ht h_eq => eq_of_mem_window_of_eq_of_lt_of_two_mul_lt (h_endpts t₀ ht₀)
-        (h_pair t₀ ht₀) h_complete ht h_eq⟩)
+      (by linarith [(h_endpts t₀ ht₀).2])⟩)
     (exists_complement_windows_dist_lower_bound hγ_cont h_complete (fun _ => ρ)
       fun t _ => hρ_pos)
 

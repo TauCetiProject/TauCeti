@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Topology.LocallyConnected
 import Mathlib.Analysis.Convex.GaugeRescale
+import TauCeti.Topology.Homeomorph.CompactQuotient
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 /-!
@@ -47,9 +49,9 @@ transporting the property back to a compact set from an image already known to b
   `TauCeti.IsJordanCurve.nonempty` and `TauCeti.IsJordanCurve.not_subsingleton` — a Jordan curve is
   a nonempty compact path-connected set with more than one point.
 * `TauCeti.IsJordanCurve.image` and `TauCeti.IsJordanCurve.of_image` — being a Jordan curve
-  transfers in both directions along a map that is continuous and injective on the set, provided
-  the codomain is Hausdorff (and, in the direction that transports the property back from the
-  image, the source set is known to be compact).
+  transfers in both directions along a map that is continuous and injective on the set. Carrying a
+  Jordan curve forward (`image`) requires a Hausdorff codomain; carrying the property back from the
+  image (`of_image`) requires a compact source set but no separation axiom on the ambient space.
 * `TauCeti.IsJordanCurve.image_homeomorph` and `TauCeti.isJordanCurve_image_homeomorph_iff` — being
   a Jordan curve is invariant under a homeomorphism of the ambient spaces; no separation axiom is
   needed.
@@ -69,15 +71,13 @@ transporting the property back to a compact set from an image already known to b
 
 ## Motivation
 
-This is the vocabulary layer **L5** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) is stated in: its milestone, the Carathéodory
-boundary correspondence, is about the Riemann map of a *Jordan domain*, and the roadmap records
-that the pinned Mathlib has no Jordan-curve vocabulary to state it against. The complex-analytic
-half — Jordan domains, the discs among them, and the boundary of a domain that a conformal map
-carries onto a disc — is in `TauCeti/Analysis/Complex/Conformal/Jordan/Domain.lean`.
+This is the vocabulary the Carathéodory boundary correspondence is stated in: it is about the
+Riemann map of a *Jordan domain*. The complex-analytic half — Jordan domains, the discs among them,
+and the boundary of a domain that a conformal map carries onto a disc — is in
+`TauCeti/Analysis/Complex/Conformal/Jordan/Domain.lean`.
 
-Local connectedness of a Jordan curve is what that milestone needs of the *hypothesis* side: the
-route to the extension theorem for a Jordan domain `Ω` runs through Carathéodory's continuity
+Local connectedness of a Jordan curve is what Carathéodory's theorem needs of the *hypothesis* side:
+the route to the extension theorem for a Jordan domain `Ω` runs through Carathéodory's continuity
 theorem, whose hypothesis is that `frontier Ω` be locally connected, and
 `TauCeti.IsJordanCurve.locallyConnectedSpace` is what discharges it (as
 `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier`). Mathlib knows the circle is compact,
@@ -110,15 +110,6 @@ def IsJordanCurve (C : Set X) : Prop := Nonempty (C ≃ₜ Circle)
 /-- A set is a Jordan curve exactly when it is homeomorphic to the circle. This is the interface
 to `TauCeti.IsJordanCurve` outside its defining module. -/
 theorem isJordanCurve_iff : IsJordanCurve C ↔ Nonempty (C ≃ₜ Circle) := Iff.rfl
-
-/-- A continuous injection defined on a compact set is a homeomorphism onto its image, the image
-carrying the subspace topology of a Hausdorff space. This is the set-level form of
-`Continuous.homeoOfEquivCompactToT2`, and the engine of both transfer lemmas below. -/
-private noncomputable def imageHomeomorphOfIsCompact [T2Space Y] (hC : IsCompact C) {g : X → Y}
-    (hg : ContinuousOn g C) (hgi : InjOn g C) : C ≃ₜ g '' C :=
-  haveI : CompactSpace C := isCompact_iff_compactSpace.mp hC
-  Continuous.homeoOfEquivCompactToT2 (f := hgi.bijOn_image.equiv g)
-    (hg.mapsToRestrict hgi.bijOn_image.mapsTo)
 
 /-- A Jordan curve is compact: the circle is. -/
 theorem IsJordanCurve.isCompact (h : IsJordanCurve C) : IsCompact C := by
@@ -158,7 +149,7 @@ theorem IsJordanCurve.image [T2Space Y] (h : IsJordanCurve C) {g : X → Y} (hg 
     (hgi : InjOn g C) : IsJordanCurve (g '' C) := by
   have hC := h.isCompact
   obtain ⟨e⟩ := h
-  exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).symm.trans e⟩
+  exact ⟨(hC.imageHomeomorph hg hgi).symm.trans e⟩
 
 /-- **A compact set carried onto a Jordan curve by a continuous injection is a Jordan curve.**
 This is the converse of `TauCeti.IsJordanCurve.image`; compactness of the source has to be assumed
@@ -166,10 +157,11 @@ here, since it is no longer inherited from the curve. It is the form in which th
 verified when the curve is the *unknown* rather than the parameter: one exhibits a continuous
 injective map of the set onto a set already known to be a Jordan curve, as the boundary
 correspondence does with the boundary of a disc. -/
-theorem IsJordanCurve.of_image [T2Space Y] (hC : IsCompact C) {g : X → Y} (hg : ContinuousOn g C)
+theorem IsJordanCurve.of_image (hC : IsCompact C) {g : X → Y} (hg : ContinuousOn g C)
     (hgi : InjOn g C) (h : IsJordanCurve (g '' C)) : IsJordanCurve C := by
   obtain ⟨e⟩ := h
-  exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).trans e⟩
+  have : T2Space (g '' C) := e.symm.t2Space
+  exact ⟨(hC.imageHomeomorph hg hgi).trans e⟩
 
 /-- The image of a Jordan curve under a homeomorphism of the ambient spaces is a Jordan curve.
 Unlike `TauCeti.IsJordanCurve.image` this needs no separation axiom on the codomain, because
@@ -241,19 +233,6 @@ lemma jordanParam_apply_apply (e : C ≃ₜ Circle) (hp : p ∈ C) :
 
 /-! ## The model curve: a circle in `ℂ` -/
 
-/-- `Circle` is *by definition* the unit sphere of `ℂ`, but it is a `def` rather than an
-abbreviation, so its topology is only definitionally the subtype topology. This identification is
-the one place where that unfolding happens; the lemmas below then compute with the unit sphere
-alone. -/
-private noncomputable def unitSphereCircleHomeomorph : sphere (0 : ℂ) 1 ≃ₜ Circle :=
-  Homeomorph.refl _
-
-private lemma coe_unitSphereCircleHomeomorph (z : sphere (0 : ℂ) 1) :
-    (unitSphereCircleHomeomorph z : ℂ) = (z : ℂ) := rfl
-
-private lemma coe_unitSphereCircleHomeomorph_symm (z : Circle) :
-    ((unitSphereCircleHomeomorph.symm z : sphere (0 : ℂ) 1) : ℂ) = (z : ℂ) := rfl
-
 /-- The affine parametrization `w ↦ (w - c) / r` of a circle of centre `c` and positive radius `r`
 in `ℂ` by the unit circle. It is the restriction to the spheres of the inverse of Mathlib's ambient
 `affineHomeomorph r c`, so only the membership equivalence is proved here. -/
@@ -262,21 +241,21 @@ noncomputable def sphereCircleHomeomorph (c : ℂ) (hr : 0 < r) : sphere c r ≃
   (((affineHomeomorph (r : ℂ) c hr0).symm).subtype fun w => by
       rw [affineHomeomorph_symm_apply]
       simp [mem_sphere_iff_norm, abs_of_pos hr, div_eq_one_iff_eq, hr.ne']).trans
-    unitSphereCircleHomeomorph
+    Circle.homeomorphSphere.symm
 
 /-- The parametrization of `sphere c r` by the unit circle divides out the affine change of
 coordinates. -/
 @[simp]
 lemma coe_sphereCircleHomeomorph_apply (c : ℂ) (hr : 0 < r) (w : sphere c r) :
     (sphereCircleHomeomorph c hr w : ℂ) = ((w : ℂ) - c) / r := by
-  simp [sphereCircleHomeomorph, coe_unitSphereCircleHomeomorph]
+  simp [sphereCircleHomeomorph]
 
 /-- The inverse parametrization of `sphere c r` by the unit circle is the affine change of
 coordinates. -/
 @[simp]
 lemma coe_sphereCircleHomeomorph_symm_apply (c : ℂ) (hr : 0 < r) (z : Circle) :
     (((sphereCircleHomeomorph c hr).symm z : sphere c r) : ℂ) = c + r * (z : ℂ) := by
-  simp [sphereCircleHomeomorph, coe_unitSphereCircleHomeomorph_symm, add_comm]
+  simp [sphereCircleHomeomorph, add_comm]
 
 /-- A circle of positive radius in `ℂ` is a Jordan curve. -/
 theorem isJordanCurve_sphere (c : ℂ) (hr : 0 < r) : IsJordanCurve (sphere c r) :=
@@ -343,8 +322,8 @@ instance locallyConnectedSpace_circle : LocallyConnectedSpace Circle :=
 /-- **A Jordan curve is locally connected**, being homeomorphic to the circle.
 
 This is the form in which the hypothesis of Carathéodory's continuity theorem — that the boundary
-of the domain be locally connected — is met by a Jordan domain, which is what layer **L5** of the
-conformal-mapping roadmap is about; see `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier`. -/
+of the domain be locally connected — is met by a Jordan domain; see
+`TauCeti.IsJordanDomain.locallyConnectedSpace_frontier`. -/
 theorem IsJordanCurve.locallyConnectedSpace (h : IsJordanCurve C) : LocallyConnectedSpace C :=
   (isJordanCurve_iff.mp h).elim fun e => e.locallyConnectedSpace
 

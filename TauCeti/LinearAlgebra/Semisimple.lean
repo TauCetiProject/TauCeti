@@ -23,34 +23,24 @@ module is semisimple.
 
 public section
 
-namespace TauCeti
-
 open Polynomial
 
-section
+namespace Module.End
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- **Semisimplicity descends along an injective intertwiner.** If `i` is injective and carries
 `f` to `g`, and `g` is semisimple, then so is `f`. -/
-theorem _root_.Module.End.IsSemisimple.of_injective {f : _root_.Module.End R M}
-    {g : _root_.Module.End R N}
-    (hg : _root_.Module.End.IsSemisimple g) (i : M →ₗ[R] N) (hi : Function.Injective i)
-    (hcomm : i ∘ₗ f = g ∘ₗ i) : _root_.Module.End.IsSemisimple f := by
-  rw [_root_.Module.End.IsSemisimple] at hg ⊢
+theorem IsSemisimple.of_injective {f : End R M} {g : End R N} (hg : g.IsSemisimple)
+    (i : M →ₗ[R] N) (hi : Function.Injective i) (hcomm : i ∘ₗ f = g ∘ₗ i) :
+    f.IsSemisimple :=
+  have : IsSemisimpleModule R[X] (AEval' g) := hg
   -- `i` is `R[X]`-linear for the two `AEval'` structures precisely because it intertwines the
   -- endomorphisms, so it embeds `AEval' f` into the semisimple module `AEval' g`.
-  let iX : Module.AEval' f →ₗ[R[X]] Module.AEval' g :=
-    LinearMap.ofAEval _ ((Module.AEval'.of g).toLinearMap.comp i) fun x ↦ by
-      simpa [Module.AEval'.X_smul_of] using congrArg (Module.AEval'.of g)
-        (LinearMap.congr_fun hcomm x)
-  apply IsSemisimpleModule.of_injective iX
-  intro x y hxy
-  apply (Module.AEval'.of f).symm.injective
-  apply hi
-  apply (Module.AEval'.of g).injective
-  exact hxy
+  IsSemisimpleModule.of_injective
+    (LinearMap.ofAEval _ ((AEval'.of g).toLinearMap ∘ₗ i) fun x ↦ by
+      simpa [AEval'.X_smul_of] using congr(AEval'.of g ($hcomm x)))
+    -- By definition of `LinearMap.ofAEval`, this embedding is `i` conjugated by `AEval'.of`.
+    ((AEval'.of g).injective.comp hi |>.comp (AEval'.of f).symm.injective)
 
-end
-
-end TauCeti
+end Module.End

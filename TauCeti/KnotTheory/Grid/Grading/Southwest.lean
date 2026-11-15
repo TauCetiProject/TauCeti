@@ -152,8 +152,6 @@ theorem JNumCenter_pointSet_eq_sum_southwestCount (x m : GridState n) :
   push_cast
   exact Finset.sum_congr rfl fun c _ => by
     have h := m.JNumCenterAt_add_add c (x c)
-    have h' : (m.JNumCenterAt c (x c) : ℤ) + c + x c = n + 2 * m.southwestCount c (x c) := by
-      exact_mod_cast h
     linarith
 
 end GridState

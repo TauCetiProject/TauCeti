@@ -7,7 +7,13 @@ module
 
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.HasGoingUp
+public import Mathlib.RingTheory.Ideal.Height
+public import Mathlib.RingTheory.IntegralClosure.GoingDown
 public import Mathlib.RingTheory.KrullDimension.Basic
+public import Mathlib.RingTheory.Localization.Integral
+public import TauCeti.RingTheory.IntegralClosure.GoingDown
+import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Quotient
 
 /-!
 # Krull dimension along integral extensions
@@ -23,7 +29,9 @@ Cohen–Seidenberg theorems.
 
 For an injective integral extension both hold, and the two dimensions agree. This is the step
 that reduces the dimension of a finitely generated algebra over a field to that of a polynomial
-ring through Noether normalization.
+ring through Noether normalization. Conversely, an integral homomorphism from a domain of finite
+Krull dimension is injective if the target has at least the dimension of the source. This
+criterion supplies injectivity of finite local maps before applying going down or purity.
 
 ## Main results
 
@@ -32,10 +40,26 @@ ring through Noether normalization.
   up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
   integral extension.
+* `RingHom.injective_of_isIntegral_of_ringKrullDim_le`: an integral homomorphism from a
+  finite-dimensional domain is injective if the target has at least the source's dimension.
+* `Ideal.height_le_height_under_of_isIntegral`: along an integral extension, a prime has height at
+  most that of its contraction.
+* `Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime`: along an integral extension,
+  heights of all ideals are the heights of their contractions as soon as that holds for primes.
+* `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
+  going down preserves the heights of ideals.
+* `Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient`: a maximal ideal containing a
+  non-zero-divisor `g` has height at least one more than some maximal ideal of `R`, when the
+  quotient by `g` is an integral `R`-algebra with going down.
+* `Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed`: along a torsion-free integral
+  extension of a domain `R`, a prime `Q` over `p` has the height of `p` as soon as `R_p` is
+  integrally closed.
 
 ## References
 
 * [Stacks Project, Tag 00GU](https://stacks.math.columbia.edu/tag/00GU) (going up)
+* [Stacks Project, Tag 00H8](https://stacks.math.columbia.edu/tag/00H8) (going down for integral
+  extensions of a normal domain)
 * M. F. Atiyah, I. G. Macdonald, *Introduction to Commutative Algebra*, Corollary 5.9 and
   Theorem 5.11.
 -/
@@ -43,6 +67,8 @@ ring through Noether normalization.
 public section
 
 namespace TauCeti
+
+open PrimeSpectrum
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
@@ -52,6 +78,95 @@ theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
     StrictMono (PrimeSpectrum.comap (algebraMap R S)) := fun P Q h ↦ by
   rw [← PrimeSpectrum.asIdeal_lt_asIdeal, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.comap_asIdeal]
   exact Ideal.IsIntegral.under_lt_under ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
+
+/-- Along an integral extension, a prime has height at most that of its contraction (a consequence
+of incomparability). -/
+theorem _root_.Ideal.height_le_height_under_of_isIntegral [Algebra.IsIntegral R S] (Q : Ideal S)
+    [Q.IsPrime] : Q.height ≤ (Q.under R).height := by
+  have h := Order.height_le_height_apply_of_strictMono (PrimeSpectrum.comap (algebraMap R S))
+    primeSpectrumComap_strictMono_of_isIntegral (⟨Q, inferInstance⟩ : PrimeSpectrum S)
+  rw [← PrimeSpectrum.height_eq_orderHeight, ← PrimeSpectrum.height_eq_orderHeight] at h
+  exact h
+
+/-- **Heights of ideals from heights of primes along an integral extension.** If the height of
+every prime of `S` is the height of the prime below it, then the same holds for every ideal of
+`S`: heights are infima over primes containing the ideal, and every prime of `R` containing the
+contraction of an ideal `I` is the contraction of a prime containing `I` (going up). -/
+theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime [Algebra.IsIntegral R S]
+    (h : ∀ Q : Ideal S, Q.IsPrime → Q.height = (Q.under R).height) (I : Ideal S) :
+    I.height = (I.under R).height := by
+  refine le_antisymm ?_ ?_
+  · rw [Ideal.height_eq_inf_minimalPrimes (I := I.under R)]
+    refine le_iInf₂ fun p hp ↦ ?_
+    have := hp.1.1
+    obtain ⟨Q, hIQ, hQ, hQp⟩ := Ideal.exists_ideal_over_prime_of_isIntegral p I hp.1.2
+    rw [← hQp, ← h Q hQ]
+    exact Ideal.height_mono hIQ
+  · rw [Ideal.height_eq_inf_minimalPrimes (I := I)]
+    refine le_iInf₂ fun J hJ ↦ ?_
+    have := hJ.1.1
+    rw [h J this]
+    exact Ideal.height_mono (Ideal.comap_mono hJ.1.2)
+
+/-- Along an integral algebra with going down, the height of an ideal is the height of the ideal
+below it. -/
+theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
+    [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S]
+    (P : Ideal S) : P.height = (P.under R).height := by
+  refine Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime (fun Q _ ↦ ?_) P
+  -- For a prime, contraction is strictly monotone by incomparability, and chains below its values
+  -- lift by going down.
+  have h := Order.height_eq_of_strictMono (comap (algebraMap R S))
+    primeSpectrumComap_strictMono_of_isIntegral (fun a b hb ↦ by
+      have : a.asIdeal.LiesOver (comap (algebraMap R S) a).asIdeal := ⟨rfl⟩
+      obtain ⟨Q, hQ, hQp, hQo⟩ :=
+        Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
+      exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨Q, ‹_›⟩
+  rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
+
+open scoped nonZeroDivisors in
+/-- Let `g` be a non-zero-divisor in a maximal ideal `N` of a ring `T`, and suppose that `T ⧸ (g)`
+is isomorphic to an integral `R`-algebra `S` with going down. Then the image of `N` in `S` lies
+over a maximal ideal `p` of `R` of the same height, and quotienting by `g` lowers heights, so
+`p.height + 1 ≤ N.height`. This is the inductive step bounding heights of maximal ideals of
+algebras of power series below by the number of variables. -/
+theorem _root_.Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient
+    [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S] {T : Type*} [CommRing T]
+    (N : Ideal T) [N.IsMaximal] {g : T} (hgN : g ∈ N) (hg : g ∈ T⁰)
+    (e : S ≃+* T ⧸ Ideal.span {g}) :
+    ∃ p : Ideal R, p.IsMaximal ∧ p.height + 1 ≤ N.height := by
+  let Nq : Ideal (T ⧸ Ideal.span {g}) := N.map (Ideal.Quotient.mk _)
+  have : Nq.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
+    (by simpa [Ideal.mk_ker, Ideal.span_singleton_le_iff_mem] using hgN)
+  let Nb : Ideal S := Nq.comap e
+  have : Nb.IsMaximal := Ideal.comap_isMaximal_of_surjective e e.surjective
+  refine ⟨Nb.under R, Ideal.isMaximal_under_of_isIntegral_of_isMaximal Nb, ?_⟩
+  rw [← Nb.height_eq_height_under_of_isIntegral_of_hasGoingDown, RingEquiv.height_comap]
+  exact Ideal.height_map_quotientMk_span_singleton_add_one_le hg N hgN
+
+/-- Let `S` be a torsion-free integral algebra over a domain `R`, and let `Q` be a prime of `S` over
+a prime `p` of `R` such that `R_p` is integrally closed. Then `Q` and `p` have the same height.
+Integral closedness of `R` itself is not required, and `S` need not be a domain. -/
+theorem _root_.Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed [Algebra.IsIntegral R S]
+    [IsDomain R] [Module.IsTorsionFree R S] (p : Ideal R) [p.IsPrime] (Q : Ideal S) [Q.IsPrime]
+    [Q.LiesOver p] [IsIntegrallyClosed (Localization.AtPrime p)] :
+    Q.height = p.height := by
+  -- After localizing at `p`, the extension `R_p → S_p` has going down (Stacks 00H8, through
+  -- `Algebra.HasGoingDown.of_isIntegral_of_isTorsionFree`).
+  let B := Localization (Algebra.algebraMapSubmonoid S p.primeCompl)
+  have hdisj := Ideal.disjoint_primeCompl_of_liesOver Q p
+  have : Algebra.IsIntegral (Localization.AtPrime p) B :=
+    ⟨isIntegral_localization (M := p.primeCompl) (S := S)⟩
+  have : Module.IsTorsionFree (Localization.AtPrime p) B :=
+    IsLocalizedModule.isTorsionFree (IsScalarTower.toAlgHom R S B).toLinearMap p.primeCompl
+  let P := Q.map (algebraMap S B)
+  have : P.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ B Q ‹_› hdisj
+  have hPQ : P.under S = Q := IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj
+  have h := Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
+    (R := Localization.AtPrime p) P
+  rw [IsLocalization.height_map_of_disjoint _ Q hdisj] at h
+  rw [h, ← IsLocalization.height_under p.primeCompl, Ideal.under_under,
+    ← Ideal.under_under (B := S), hPQ, ← Q.over_def p]
 
 /-- The Krull dimension of an integral `R`-algebra is at most that of `R`. -/
 theorem ringKrullDim_le_of_isIntegral [Algebra.IsIntegral R S] :
@@ -79,3 +194,16 @@ theorem ringKrullDim_eq_of_isIntegral_of_faithfulSMul [Algebra.IsIntegral R S] [
     ringKrullDim_le_of_hasGoingUp_of_surjective (Algebra.IsIntegral.comap_surjective R S)
 
 end TauCeti
+
+/-- An integral ring homomorphism from a finite-dimensional domain is injective if its target
+has dimension at least that of its source. No domain hypothesis on the target is needed. -/
+theorem RingHom.injective_of_isIntegral_of_ringKrullDim_le {R S : Type*} [CommRing R]
+    [IsDomain R] [FiniteRingKrullDim R] [CommRing S] (f : R →+* S) (hf : f.IsIntegral)
+    (hdim : ringKrullDim R ≤ ringKrullDim S) : Function.Injective f := by
+  let := f.kerLift.toAlgebra
+  have : Algebra.IsIntegral (R ⧸ RingHom.ker f) S := ⟨hf.kerLift⟩
+  have hquot : Function.Injective (Ideal.Quotient.mk (RingHom.ker f)) :=
+    (RingHom.injective_iff_ringKrullDim_le_of_surjective _ Ideal.Quotient.mk_surjective).2
+      (hdim.trans (TauCeti.ringKrullDim_le_of_isIntegral (R := R ⧸ RingHom.ker f)))
+  rw [RingHom.injective_iff_ker_eq_bot, Ideal.mk_ker] at hquot
+  exact (RingHom.injective_iff_ker_eq_bot f).mpr hquot

@@ -29,19 +29,18 @@ explicit second-derivative form
 
 `(ẋ ÿ - ẏ ẍ) / (2 (ẋ² + ẏ²))`,   `ẋ + i ẏ = γ' t₀`,  `ẍ + i ÿ = γ'' t₀`.
 
-That explicit expression *is* `½ k_Λ(t₀) |Λ̇(t₀)|`; the roadmap prescribes stating it this way
-because Mathlib carries no signed-curvature API for plane curves to cite, so there is no `k_Λ` to
-name. The regularity is pinned per part, as the roadmap asks: the crossing value needs the second
-derivative at `t₀` (the `C²` half of Prop 2.3), whereas the boundedness that the residue theorem
-consumes needs only `C^{1,1}`.
+That explicit expression *is* `½ k_Λ(t₀) |Λ̇(t₀)|`; it is stated this way because Mathlib carries no
+signed-curvature API for plane curves to cite, so there is no `k_Λ` to name. The regularity is
+pinned per part: the crossing value needs the second derivative at `t₀` (the `C²` half of Prop 2.3),
+whereas the boundedness that the residue theorem consumes needs only `C^{1,1}`.
 
 ## Main results
 
 * `Contour.tendsto_realWindingIntegrand_at_crossing_of_hasDerivAt_deriv` — the crossing value for a
   curve that is differentiable near `t₀` and whose derivative is differentiable at `t₀`, stated with
   the acceleration `A` supplied by `HasDerivAt (deriv γ) A t₀`.
-* `Contour.tendsto_realWindingIntegrand_at_crossing_of_contDiffAt` — the same limit under the
-  roadmap's `C²` hypothesis, with the acceleration read off as `deriv (deriv γ) t₀`.
+* `Contour.tendsto_realWindingIntegrand_at_crossing_of_contDiffAt` — the same limit under a
+  `C²` hypothesis, with the acceleration read off as `deriv (deriv γ) t₀`.
 * `Contour.tendsto_realWindingIntegrand_circleMap_crossing` — the value `½` at every point of a
   circle, the smooth-crossing check (`½ · |r|⁻¹ · |r|`) of the formula above.
 
@@ -171,10 +170,10 @@ theorem tendsto_realWindingIntegrand_at_crossing_of_hasDerivAt_deriv {z₀ : ℂ
     rw [slope_def_module, Complex.real_smul, Complex.ofReal_inv, ← div_eq_inv_mul,
       Complex.ofReal_sub]
 
-/-- **Hungerbühler–Wasem Proposition 2.3, crossing value, under the roadmap's `C²` hypothesis.**
-For a curve that is `C²` at the crossing parameter `t₀` with nonvanishing velocity there, the real
-winding integrand about `z₀ = γ t₀` tends to `(ẋ ÿ - ẏ ẍ) / (2 (ẋ² + ẏ²))`, where `ẋ + i ẏ` and
-`ẍ + i ÿ` are the first and second derivatives of `γ` at `t₀`. -/
+/-- **Hungerbühler–Wasem Proposition 2.3, crossing value, under a `C²` hypothesis.** For a curve
+that is `C²` at the crossing parameter `t₀` with nonvanishing velocity there, the real winding
+integrand about `z₀ = γ t₀` tends to `(ẋ ÿ - ẏ ẍ) / (2 (ẋ² + ẏ²))`, where `ẋ + i ẏ` and `ẍ + i ÿ`
+are the first and second derivatives of `γ` at `t₀`. -/
 theorem tendsto_realWindingIntegrand_at_crossing_of_contDiffAt {z₀ : ℂ}
     (hγ : ContDiffAt ℝ 2 γ t₀) (hcross : γ t₀ = z₀) (hL : deriv γ t₀ ≠ 0) :
     Tendsto (fun t ↦ realWindingIntegrand (γ t - z₀) (deriv γ t)) (𝓝[≠] t₀)
@@ -198,7 +197,7 @@ theorem tendsto_realWindingIntegrand_at_crossing_of_contDiffAt {z₀ : ℂ}
 winding integrand about the point of the circle reached there tends to `½`: the circle has signed
 curvature `|r|⁻¹` and `circleMap c r` has speed `|r|` (a negative `r` traverses the circle of radius
 `|r|` counterclockwise too, only from the antipodal parameter), so `½ k |Λ̇| = ½`. This is the value
-the roadmap's smooth crossing (opening angle `π`) carries, computed from
+a smooth crossing (opening angle `π`) carries, computed from
 `tendsto_realWindingIntegrand_at_crossing_of_contDiffAt` rather than assumed. -/
 theorem tendsto_realWindingIntegrand_circleMap_crossing {c : ℂ} {r : ℝ} (hr : r ≠ 0) (t₀ : ℝ) :
     Tendsto (fun t ↦ realWindingIntegrand (circleMap c r t - circleMap c r t₀)

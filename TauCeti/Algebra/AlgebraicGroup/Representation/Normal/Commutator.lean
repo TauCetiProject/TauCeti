@@ -89,7 +89,7 @@ private theorem commutator_weight_apply_commutator_eq_one
         (Subgroup.mem_top x) (Subgroup.mem_top h)⟩ : k) := by
     have hq : AlgHom.mapValue (H := H) x.ofConv q = ⁅x, h⁆ := by
       simp only [q, map_commutatorElement]
-      rw [AlgHom.mapValue_algebraOfId]
+      rw [WithConv.mapValue_algebraOfId]
       simp [u, AlgHom.mapValue_apply]
     have he := congrArg (fun y : WithConv (H →ₐ[k] k) ↦
       y.ofConv (matrixCoefficient (R := k) (C := H) φ v)) hq

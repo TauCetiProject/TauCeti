@@ -13,10 +13,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 # Tori are reductive
 
 A torus over a field is smooth and geometrically connected, and its geometric fibre is a
-diagonalizable group. Every closed subgroup of a diagonalizable group has only semisimple
-geometric points. If such a subgroup is also smooth and unipotent, smoothness makes its
-coordinate ring reduced, while semisimple--unipotent rigidity makes it trivial. Thus a torus
-has no nontrivial connected normal smooth unipotent closed subgroup and is reductive.
+diagonalizable group. Every closed subgroup of a diagonalizable group has only semisimple geometric
+points. If such a subgroup is also smooth and unipotent, smoothness makes its coordinate ring
+reduced, while semisimple--unipotent rigidity makes it trivial. Thus a torus has no nontrivial
+connected normal smooth unipotent closed subgroup and is reductive. This holds over every field, in
+every characteristic.
 
 The proof applies equally to non-split tori: all subgroup tests in the definition of reductivity
 are made after extension to an algebraic closure, where the torus is split.
@@ -30,10 +31,6 @@ are made after extension to an algebraic closure, where the torus is split.
 
 * J. S. Milne, *Algebraic Groups* (2017), Corollary 12.41 and §21.a.
 * T. A. Springer, *Linear Algebraic Groups*, Chapter 8.
-
-This completes the torus worked example requested in Layers 4 and 6 of the ReductiveGroups
-roadmap. It uses geometric unipotence, rather than complete reducibility, so it is valid in every
-characteristic.
 -/
 
 public section

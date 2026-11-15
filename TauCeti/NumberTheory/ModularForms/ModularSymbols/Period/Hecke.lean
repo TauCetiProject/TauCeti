@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic
+public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Diamond
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Map
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
 
 /-!
 # Hecke equivariance of the period map
@@ -40,6 +41,7 @@ operators on modular symbols is transferred to the Hecke operators on cusp forms
   operator of a double coset on cusp forms with the transpose of its operator on modular symbols.
 * `TauCeti.ModularSymbols.periodMap_heckeTCuspNat`: the same for the Hecke operators `T_n` at
   level `Γ₁(N)`.
+* `TauCeti.ModularSymbols.periodMap_diamondOpCusp`: the corresponding identity for diamonds.
 
 ## Provenance
 
@@ -88,7 +90,7 @@ theorem periodMap_heckeSlashCuspFormEnd {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteInd
     coe_heckeSlashCuspFormEnd, heckeSlashSum_def, periodIntegrand_sum_left]
   -- each summand is the substitution `z ↦ aᵥ z`; the summands are integrable along the geodesic
   -- because they are themselves periods of `f`, along the geodesic moved by `aᵥ`
-  rw [cuspIntegral_sum _ hγ fun v _ ↦ ?_]
+  rw [cuspIntegral_sum _ fun v _ ↦ ?_]
   · exact Finset.sum_congr rfl fun v _ ↦
       cuspIntegral_periodIntegrand_slash hk f P (hA v) (hpos v) _ _
   · rw [← periodIntegrand_adjugate_slash hk f P (hA v) (hpos v), ← SlashAction.slash_mul]
@@ -107,6 +109,25 @@ theorem periodMap_heckeTCuspNat (N : ℕ) [NeZero N] (n : ℕ) [NeZero n] (hk : 
       heckeSlashCuspFormEnd k (diagCosetGamma1 N n) (out_mem_glpos_of_delta0 N _) f :=
     DFunLike.coe_injective (by rw [coe_heckeTCuspNat, coe_heckeSlashCuspFormEnd])
   rw [h, heckeTSymbol_def, periodMap_heckeSlashCuspFormEnd]
+
+/-- **Diamond equivariance of the period map.** A diamond acts on symbols through the single
+double coset of any lift in `Γ₀(N)`, and on period functionals by precomposition. -/
+theorem periodMap_diamondOpCusp (N : ℕ) [NeZero N] (d : (ZMod N)ˣ) (hk : k = w + 2)
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    periodMap R (Gamma1 N) hk (diamondOpCusp k d f) =
+      periodMap R (Gamma1 N) hk f ∘ₗ diamondSymbol R w N d := by
+  let γ := (Gamma0Map_toHomUnits_surjective d).choose
+  rw [← (Gamma0Map_toHomUnits_surjective d).choose_spec]
+  rw [diamondSymbol_eq_heckeSymbol γ rfl]
+  rw [← heckeSlashGamma1CuspFormEnd_diamondCosetGamma1 k γ]
+  -- Compare the sealed level-specific and general operators through their slash-sum API.
+  have h : heckeSlashGamma1CuspFormEnd k (diamondCosetGamma1 N γ) f =
+      heckeSlashCuspFormEnd k (diamondCosetGamma1 N γ) (out_mem_glpos_of_delta0 N _) f :=
+    DFunLike.coe_injective (by
+      rw [coe_heckeSlashGamma1CuspFormEnd, coe_heckeSlashCuspFormEnd])
+  rw [h]
+  exact periodMap_heckeSlashCuspFormEnd (R := R) (diamondCosetGamma1 N γ)
+    (out_mem_glpos_of_delta0 N _) _ hk f
 
 end TauCeti.ModularSymbols
 

@@ -137,9 +137,9 @@ theorem cohomFpAddEquivH2_cohomFpMap [LocallyCompactSpace G] {H : Type u} [Group
   let f : (trivialFp p G).V →+ (trivialFp p H).V :=
     ((trivialFpEquiv p H).symm.toLinearMap ∘ₗ (trivialFpEquiv p G).toLinearMap).toAddMonoidHom
   have hF (m : (TopRep.res (φ : H →* G) (trivialFp p G)).V) :
-      (eqToHom (res_trivialFp_hom p φ)).hom m = f m :=
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom)).hom m = f m :=
     (trivialFpEquiv p H).injective <| by
-      simpa [f] using trivialFpEquiv_eqToHom_res_trivialFp_hom p φ m
+      simpa [f] using trivialFpEquiv_eqToHom_res_trivialFp_hom p φ.toMonoidHom m
   have hf (h : H) (m : (trivialFp p G).V) : f (φ h • m) = h • f m := by
     rw [smul_trivialFp_V, smul_trivialFp_V]
   obtain ⟨y, rfl⟩ := (trivialFp p G).explicitH2AddEquivContinuousCohomologyOfDiscrete.surjective x

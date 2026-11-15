@@ -10,6 +10,8 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
+public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 
 /-!
 # The path-length grading of the preprojective algebra
@@ -24,7 +26,8 @@ Because the relation ideal is homogeneous, the generic descent
 `TauCeti.GradedAlgebra.quotientPiece` applies to it: the preprojective algebra `Pi_k(Q)` carries the
 induced path-length grading `TauCeti.preprojectiveGrade`, in which the vertex idempotents have
 degree `0`, the doubled arrows degree `1`, and the relator degree `2`. This file packages the
-graded-algebra structure and computes the concrete pieces.
+graded-algebra structure and computes the concrete pieces. Its extension by zero to integer
+degrees allows the path grading to be used with internal shifts and graded module resolutions.
 
 ## Main definitions
 
@@ -244,9 +247,9 @@ theorem preprojectiveGrade_zero_eq_span_range_vertexIdempotent :
         preprojectiveMk k Q (vertexIdempotent k v)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (Symmetrify Q)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (Symmetrify Q))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← preprojectiveMk_apply k Q]
     exact Submodule.subset_span ⟨v, rfl⟩
@@ -263,9 +266,9 @@ theorem preprojectiveGrade_one_eq_span_range_ofArrow :
         preprojectiveMk k Q (PathAlgebra.ofArrow e.2.2)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := 1)
-      PathAlgebra.grade_one_eq_span_range_ofArrow ?_ hw
+      PathAlgebra.grade_one_eq_span_range_ofArrow).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← preprojectiveMk_apply k Q]
     exact Submodule.subset_span
@@ -284,9 +287,9 @@ theorem preprojectiveGrade_eq_span_range_ofPath (n : ℕ) :
           preprojectiveMk k Q (PathAlgebra.ofPath x.1)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+    refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := n)
-      (PathAlgebra.grade_eq_span_range k (Symmetrify Q) n) ?_ hw
+      (PathAlgebra.grade_eq_span_range k (Symmetrify Q) n)).2 ?_ hw
     rintro z ⟨x, rfl⟩
     rw [← preprojectiveMk_apply k Q]
     exact Submodule.subset_span ⟨x, rfl⟩
@@ -296,5 +299,56 @@ theorem preprojectiveGrade_eq_span_range_ofPath (n : ℕ) :
       (PathAlgebra.ofPath_mem_grade_of_length x.2)
 
 end Grade
+
+/-! ### Integer indexing for internal shifts -/
+
+section IntegerGrade
+
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
+  [∀ i j : Q, Fintype (i ⟶ j)]
+
+/-- The path-length grading extended by zero to negative integer degrees. -/
+noncomputable def preprojectiveIntegerGrade (p : ℤ) : Submodule k (preprojectiveAlgebra k Q) :=
+  Graded.extendByZero (preprojectiveGrade k Q) p
+
+@[simp]
+theorem preprojectiveIntegerGrade_ofNat (n : ℕ) :
+    preprojectiveIntegerGrade k (Q := Q) n = preprojectiveGrade k Q n :=
+  Graded.extendByZero_natCast _ n
+
+@[simp]
+theorem preprojectiveIntegerGrade_eq_bot_of_neg {p : ℤ} (hp : p < 0) :
+    preprojectiveIntegerGrade k (Q := Q) p = ⊥ :=
+  Graded.extendByZero_of_neg _ hp
+
+/-- The extended path-length grading is multiplicative and internal. Introduce this locally
+when using integer-indexed graded algebra or graded module constructions. -/
+@[instance_reducible]
+noncomputable def preprojectiveIntegerGradedAlgebra :
+    GradedAlgebra (preprojectiveIntegerGrade k (Q := Q)) := by
+  letI := preprojectiveGradedAlgebra k Q
+  exact Graded.gradedAlgebraExtendByZero (preprojectiveGrade k Q)
+
+attribute [local instance] preprojectiveIntegerGradedAlgebra
+
+/-- The internal path grading of the regular preprojective module. -/
+noncomputable abbrev preprojectiveInternalGrading :
+    InternalGrading k (preprojectiveAlgebra k Q) ℤ :=
+  InternalGrading.ofDecomposition (preprojectiveIntegerGrade k (Q := Q))
+
+/-- Vertex idempotent classes have integer degree zero. -/
+theorem preprojectiveMk_vertexIdempotent_mem_preprojectiveIntegerGrade_zero (i : Symmetrify Q) :
+    preprojectiveMk k Q (vertexIdempotent k i) ∈ preprojectiveIntegerGrade k (Q := Q) 0 := by
+  rw [← Nat.cast_zero, preprojectiveIntegerGrade_ofNat]
+  exact preprojectiveMk_mem_preprojectiveGrade k Q (vertexIdempotent_mem_grade_zero i)
+
+/-- Doubled arrow classes have integer degree one. -/
+theorem preprojectiveMk_ofArrow_mem_preprojectiveIntegerGrade_one {i j : Symmetrify Q}
+    (b : i ⟶ j) :
+    preprojectiveMk k Q (ofArrow b) ∈ preprojectiveIntegerGrade k (Q := Q) 1 := by
+  rw [← Nat.cast_one, preprojectiveIntegerGrade_ofNat]
+  exact preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)
+
+end IntegerGrade
 
 end TauCeti

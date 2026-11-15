@@ -39,7 +39,7 @@ variable {G H : Type*} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpac
   (f : A →+ B) (hf : ∀ (v : V) (a : A), f (ψ v • a) = v • f a)
 
 /-- Shapiro in degree zero commutes with compatible subgroup and coefficient pullback. -/
-theorem explicitShapiro0_pullback [ContinuousMul G] [ContinuousMul H]
+theorem explicitShapiro0_pullback [SeparatelyContinuousMul G] [SeparatelyContinuousMul H]
     (x : H0 G (DiscreteCoind G U A)) :
     explicitShapiro0 H V B
       (explicitMap0 G (DiscreteCoind G U A) (φ : H →* G)

@@ -14,8 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 This file passes from the local elementary-collapse move to finite simplicial collapses.  A
 complex `K` collapses to `L` when there is a finite, possibly empty, sequence of elementary
 collapses from `K` to `L`; it is collapsible when the endpoint can be a one-vertex complex.
-These are the collapse notions used in layer 11 of the geometric-topology roadmap and in the
-statement of Zeeman's conjecture.
+These are the collapse notions used in the statement of Zeeman's conjecture.
 
 As in `ElementaryCollapse`, the definitions use `PreAbstractSimplicialComplex`: collapsing a
 free vertex changes the set of vertices actually used by a complex.  The definitions follow
@@ -118,11 +117,22 @@ theorem head (hKL : ElementaryCollapsesTo K L) (hLP : CollapsesTo L P) : Collaps
 theorem tail (hKL : CollapsesTo K L) (hLP : ElementaryCollapsesTo L P) : CollapsesTo K P :=
   Relation.ReflTransGen.tail hKL hLP
 
+/-- Prove a property of collapse sequences by treating the empty sequence, a single
+elementary collapse, and concatenation. -/
+@[elab_as_elim]
+theorem trans_induction_on
+    {motive : ∀ {K L : _root_.PreAbstractSimplicialComplex ι}, CollapsesTo K L → Prop}
+    (h : CollapsesTo K L) (refl : ∀ K, motive (CollapsesTo.refl K))
+    (single : ∀ {K L} (h : ElementaryCollapsesTo K L), motive (CollapsesTo.single h))
+    (trans : ∀ {K L P} (hKL : CollapsesTo K L) (hLP : CollapsesTo L P),
+      motive hKL → motive hLP → motive (hKL.trans hLP)) : motive h :=
+  Relation.ReflTransGen.trans_induction_on h refl single trans
+
 /-- The endpoint of a collapse is a subcomplex of its starting complex. -/
 theorem le (h : CollapsesTo K L) : L ≤ K := by
   induction h with
   | refl => exact le_rfl
-  | tail hKL hLP ih => exact hLP.le.trans ih
+  | tail _ hLP ih => exact hLP.le.trans ih
 
 /-- If `K` collapses to a complex `L` that contains `K`, then `K` and `L` are equal. -/
 theorem eq_of_le (h : CollapsesTo K L) (hKL : K ≤ L) : K = L :=
@@ -152,7 +162,22 @@ theorem property_of_elementaryCollapsesTo {p : _root_.PreAbstractSimplicialCompl
     (h : CollapsesTo K L) (hK : p K) : p L := by
   induction h with
   | refl => exact hK
-  | tail hAB hBC ih => exact hp hBC ih
+  | tail _ hBC ih => exact hp hBC ih
+
+/-- A complex that collapses to a complex with finitely many faces also has finitely many
+faces: each elementary collapse removes just its free pair. -/
+theorem finite_faces (h : CollapsesTo K L) (hL : L.faces.Finite) : K.faces.Finite := by
+  induction h using Relation.ReflTransGen.head_induction_on with
+  | refl => exact hL
+  | @head A B hAB _ ih =>
+    obtain ⟨σ, τ, _, _, hmem⟩ := hAB.exists_pair
+    refine (ih.union ((Set.finite_singleton τ).insert σ)).subset ?_
+    intro ω hω
+    by_cases hωσ : ω = σ
+    · exact Or.inr (by simp [hωσ])
+    by_cases hωτ : ω = τ
+    · exact Or.inr (by simp [hωτ])
+    exact Or.inl ((hmem ω).mpr ⟨hω, hωσ, hωτ⟩)
 
 end CollapsesTo
 
@@ -197,7 +222,33 @@ theorem exists_vertex (h : Collapsible K) : ∃ v : ι, ({v} : Finset ι) ∈ K 
   obtain ⟨v, hv⟩ := h
   exact ⟨v, point_le_iff.mp hv.le⟩
 
+/-- A collapsible complex without free pairs is a one-vertex complex: a nontrivial collapse
+sequence starts with an elementary collapse, which deletes a free pair. -/
+theorem exists_eq_point_of_forall_not_isFreePair (h : Collapsible K)
+    (hfree : ∀ σ τ, ¬ IsFreePair K σ τ) : ∃ v : ι, K = PreAbstractSimplicialComplex.point v := by
+  obtain ⟨v, hv⟩ := h
+  rcases hv.eq_or_exists_head with hK | ⟨P, hP, -⟩
+  · exact ⟨v, hK⟩
+  · obtain ⟨σ, τ, hστ, -⟩ := hP.exists_pair
+    exact (hfree σ τ hστ).elim
+
+/-- A collapsible complex has finitely many faces. -/
+theorem finite_faces (h : Collapsible K) : K.faces.Finite := by
+  obtain ⟨v, hv⟩ := h
+  apply hv.finite_faces
+  rw [← simplex_singleton]
+  exact finite_faces_simplex {v}
+
 end Collapsible
+
+/-- A complex without free pairs and with a face of at least two vertices is not collapsible. -/
+theorem not_collapsible_of_forall_not_isFreePair {K : _root_.PreAbstractSimplicialComplex ι}
+    {σ : Finset ι} (hfree : ∀ σ τ, ¬ IsFreePair K σ τ) (hσ : σ ∈ K) (hcard : 1 < σ.card) :
+    ¬ Collapsible K := by
+  intro hcol
+  obtain ⟨v, hv⟩ := hcol.exists_eq_point_of_forall_not_isFreePair hfree
+  rw [hv, mem_point] at hσ
+  simp [hσ] at hcard
 
 end PreAbstractSimplicialComplex
 

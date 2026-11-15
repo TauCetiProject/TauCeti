@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
 
 /-!
 # Basic identities for cyclotomic polynomials
@@ -21,6 +22,20 @@ containing `√5` in `TauCeti.RingTheory.Polynomial.Cyclotomic.SqrtFive`, and to
 `X⁴ + X³ + X² + X + 1` with `Φ₅` in the worked quartic examples in
 `TauCeti.FieldTheory.GaloisGroups.Quartic.Examples`, where its Galois group over `ℚ` is
 computed as `(ℤ/5)ˣ`.
+
+`Polynomial.cyclotomic_twelve`, `Polynomial.cyclotomic_eighteen` and
+`Polynomial.cyclotomic_thirty` expand `Φ₁₂`, `Φ₁₈` and `Φ₃₀` in the same way, which is what is
+needed to check that these polynomials annihilate an explicit matrix.
+
+Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
+`Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
+`Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
+`Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
+prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. For a
+prime `p`, `Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of
+`Φ_p(X + 1)` as the binomial coefficients `p choose (n + 1)`; this is the explicit form behind the
+Eisenstein property of `Φ_p(X + 1)` at `p`, and it computes the Newton polygon of `Φ_p(X + 1)` over
+a `p`-adic field.
 -/
 
 public section
@@ -34,5 +49,79 @@ theorem cyclotomic_five (R : Type*) [Ring R] : cyclotomic 5 R = X ^ 4 + X ^ 3 + 
   rw [cyclotomic_prime]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one, zero_add]
   abel
+
+/-- The twelfth cyclotomic polynomial is `X ^ 4 - X ^ 2 + 1`. -/
+@[simp]
+theorem cyclotomic_twelve (R : Type*) [Ring R] : cyclotomic 12 R = X ^ 4 - X ^ 2 + 1 := by
+  suffices cyclotomic 12 ℤ = X ^ 4 - X ^ 2 + 1 by
+    rw [← map_cyclotomic_int, this]
+    simp
+  rw [show (12 : ℕ) = 6 * 2 from rfl,
+    ← cyclotomic_expand_eq_cyclotomic Nat.prime_two (by decide), cyclotomic_six]
+  simp only [map_add, map_sub, map_pow, expand_X, map_one]
+  ring
+
+/-- The eighteenth cyclotomic polynomial is `X ^ 6 - X ^ 3 + 1`. -/
+@[simp]
+theorem cyclotomic_eighteen (R : Type*) [Ring R] : cyclotomic 18 R = X ^ 6 - X ^ 3 + 1 := by
+  suffices cyclotomic 18 ℤ = X ^ 6 - X ^ 3 + 1 by
+    rw [← map_cyclotomic_int, this]
+    simp
+  rw [show (18 : ℕ) = 6 * 3 from rfl,
+    ← cyclotomic_expand_eq_cyclotomic Nat.prime_three (by decide), cyclotomic_six]
+  simp only [map_add, map_sub, map_pow, expand_X, map_one]
+  ring
+
+/-- The thirtieth cyclotomic polynomial is `X ^ 8 + X ^ 7 - X ^ 5 - X ^ 4 - X ^ 3 + X + 1`. -/
+@[simp]
+theorem cyclotomic_thirty (R : Type*) [Ring R] :
+    cyclotomic 30 R = X ^ 8 + X ^ 7 - X ^ 5 - X ^ 4 - X ^ 3 + X + 1 := by
+  suffices cyclotomic 30 ℤ = X ^ 8 + X ^ 7 - X ^ 5 - X ^ 4 - X ^ 3 + X + 1 by
+    rw [← map_cyclotomic_int, this]
+    simp
+  have h := cyclotomic_expand_eq_cyclotomic_mul (p := 5) (n := 6) Nat.prime_five (by decide) ℤ
+  apply mul_right_cancel₀ (cyclotomic_ne_zero 6 ℤ)
+  rw [show (30 : ℕ) = 6 * 5 from rfl, ← h, cyclotomic_six]
+  simp only [map_add, map_sub, map_pow, expand_X, map_one]
+  ring
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- `Φ_n(X + 1)` has degree `φ(n)`. -/
+@[simp]
+theorem natDegree_cyclotomic_comp_X_add_one [Nontrivial R] (n : ℕ) :
+    ((cyclotomic n R).comp (X + 1)).natDegree = n.totient := by
+  have h1 : (X + 1 : R[X]).leadingCoeff = 1 := by simpa using (monic_X_add_C (1 : R)).leadingCoeff
+  rw [natDegree_comp_eq_of_mul_ne_zero (by simp [(cyclotomic.monic n R).leadingCoeff, h1]),
+    natDegree_cyclotomic]
+  simp
+
+/-- `Φ_n(X + 1)` is monic. -/
+theorem monic_cyclotomic_comp_X_add_one (n : ℕ) : ((cyclotomic n R).comp (X + 1)).Monic := by
+  simpa using (cyclotomic.monic n R).comp_X_add_C 1
+
+/-- For a prime `p`, the coefficients of `Φ_p(X + 1)` are the binomial coefficients
+`p choose (n + 1)`. -/
+@[simp]
+theorem coeff_cyclotomic_prime_comp_X_add_one (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    ((cyclotomic p R).comp (X + 1)).coeff n = (p.choose (n + 1) : R) := by
+  rw [cyclotomic_prime, geom_sum_X_comp_X_add_one_eq_sum, finsetSum_coeff]
+  simp only [← C_eq_natCast, coeff_C_mul_X_pow, Finset.sum_ite_eq, Finset.mem_range]
+  split_ifs with h
+  · rfl
+  · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+
+/-- `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. -/
+theorem cyclotomic_comp_X_add_one_dvd {m n : ℕ} (h : m ∣ n) :
+    (cyclotomic m R).comp (X + 1) ∣ (1 + X) ^ n - 1 := by
+  have hZ : (cyclotomic m ℤ).comp (X + 1) ∣ (1 + X : ℤ[X]) ^ n - 1 := by
+    simpa [add_comm (1 : ℤ[X]) X] using
+      _root_.map_dvd (compRingHom (X + 1 : ℤ[X]))
+        ((cyclotomic.dvd_X_pow_sub_one m ℤ).trans (dvd_pow_sub_one_of_dvd h))
+  simpa [Polynomial.map_comp] using _root_.map_dvd (mapRingHom (Int.castRingHom R)) hZ
+
+end Ring
 
 end Polynomial

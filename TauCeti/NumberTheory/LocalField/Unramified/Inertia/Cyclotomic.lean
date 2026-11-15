@@ -36,7 +36,7 @@ public section
 
 namespace TauCeti
 
-open ValuativeRel
+open _root_.ValuativeRel
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime]

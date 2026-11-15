@@ -43,10 +43,6 @@ inductive OneLoop : Type
 
 namespace OneLoop
 
-instance : Fintype OneLoop where
-  elems := {vertex}
-  complete x := by cases x; simp
-
 instance : Unique OneLoop where
   default := vertex
   uniq x := by cases x; rfl
@@ -66,22 +62,20 @@ private def pathOfLength : ℕ → _root_.Quiver.Path (vertex : OneLoop) vertex
 
 @[simp]
 private theorem length_pathOfLength (n : ℕ) : (pathOfLength n).length = n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [pathOfLength, ih]
+  induction n <;> simp [pathOfLength, *]
 
 /-- Paths in the one-loop quiver are classified by their length. -/
 def totalPathEquivNat : (Σ a b : OneLoop, _root_.Quiver.Path a b) ≃ ℕ where
   toFun x := x.2.2.length
   invFun n := ⟨vertex, vertex, pathOfLength n⟩
   left_inv := by
-    rintro ⟨a, b, p⟩
+    rintro ⟨⟨⟩, b, p⟩
     induction p with
-    | nil => cases a; rfl
+    | nil => rfl
     | @cons b c p e ih =>
-      cases a; cases b; cases c
-      simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at ih
-      simp [pathOfLength, ih, eq_iff_true_of_subsingleton]
+      cases b; cases c
+      obtain rfl := Subsingleton.elim e loop
+      simp_all [pathOfLength]
   right_inv := length_pathOfLength
 
 /-- The path classification sends each path to its length. -/

@@ -90,9 +90,13 @@ theorem exchangeableLaw_infinitePi_const (P : ProbabilityMeasure α) :
 coordinatewise to a parameter and an independent exchangeable noise sequence gives an
 exchangeable law. -/
 theorem exchangeableLaw_map_prod_coding {T β : Type*} [MeasurableSpace T] [MeasurableSpace β]
-    (π : Measure T) [SFinite π] {ρ : Measure (ℕ → β)} [SFinite ρ]
+    (π : Measure T) {ρ : Measure (ℕ → β)}
     (hρ : ExchangeableLaw ρ) {f : T → β → α} (hf : Measurable (Function.uncurry f)) :
     ExchangeableLaw ((π.prod ρ).map fun p i => f p.1 (p.2 i)) := by
+  by_cases hs : SFinite ρ
+  swap
+  · rw [Measure.prod_eq_zero_of_not_sfinite hs, Measure.map_zero]
+    exact ExchangeableLaw.intro fun τ => Measure.map_zero _
   refine ExchangeableLaw.intro fun τ => ?_
   have hG := measurable_pi_uncurry_prod (ι := ℕ) fun _ => hf
   have hcomp : permReindex (α := α) τ ∘ (fun p : T × (ℕ → β) => fun i => f p.1 (p.2 i))
@@ -115,15 +119,6 @@ theorem exchangeableLaw_iff_forall_measurePreserving_permReindex {ρ : Measure (
   · intro hρ π
     exact (hρ π).map_eq
 
-/-- The first-`n` prefix marginal of a path-space measure reindexed by `φ : ℕ → ℕ` is its
-finite coordinate marginal along `i ↦ φ i`. This only uses coordinate reindexing, so it holds
-for an arbitrary function `φ`, not just a permutation. -/
-theorem map_reindex_prefixProj (ρ : Measure (ℕ → α)) (φ : ℕ → ℕ) (n : ℕ) :
-    (ρ.map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n) =
-      ρ.map (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) := by
-  rw [Measure.map_map (measurable_prefixProj n) (measurable_reindex φ)]
-  rfl
-
 /-- The finite marginal of an exchangeable path law along any injective selection
 `k : Fin n → ℕ` equals its first-`n` prefix marginal: an exchangeable law has the same
 finite-dimensional distribution along every injective finite selection of coordinates. -/
@@ -145,7 +140,7 @@ theorem ExchangeableLaw.map_prefixProj_of_injective {ρ : Measure (ℕ → α)}
     ρ.map (fun x : ℕ → α => fun i : Fin n => x (k i))
         = ρ.map (fun x : ℕ → α => fun i : Fin n => x (π i.val)) := by rw [← hidx]
     _ = (ρ.map (permReindex (α := α) π)).map (prefixProj α n) := by
-          rw [hperm, map_reindex_prefixProj]
+          rw [hperm, MeasureTheory.Measure.map_reindex_prefixProj]
     _ = ρ.map (prefixProj α n) := by rw [hρ.map_permReindex π]
 
 /-- The prefix marginal of an exchangeable path law is invariant under permutations of the

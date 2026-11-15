@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
 import TauCeti.NumberTheory.LocalField.Herbrand.Tower
@@ -109,12 +110,18 @@ theorem map_restrictNormalHom_upperRamificationGroup (v : RamificationIndexDomai
     herbrand_inverseHerbrand]
 
 variable {K L M} in
+omit [ValuativeExtension L M] in
 /-- In a tower `M/L/K` of Galois extensions, every upper break of `L/K` is an upper break of
-`M/K`. -/
+`M/K`. The valuative relation of `M` over `L` is not assumed: it is the unique one extending that
+of `K`. -/
 theorem UpperJump.of_tower {v : RamificationIndexDomain} (h : UpperJump K L v) :
     haveI : Module.Finite K M := Module.Finite.trans L M
     UpperJump K M v := by
   have : Module.Finite K M := Module.Finite.trans L M
+  have : ValuativeExtension L M := by
+    have h := algebraicExtension_valuativeExtension_tower K L M
+    rw [algebraicExtensionValuativeRel_eq K M] at h
+    exact h
   refine (upperJump_iff K M v).2 fun w hvw ↦ ?_
   -- If `G^w = G^v`, then their images `(G/H)^w` and `(G/H)^v` would agree.
   refine lt_of_le_of_ne (upperRamificationGroup_antitone K M hvw.le) fun heq ↦

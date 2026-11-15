@@ -87,7 +87,7 @@ lemma deckFundamentalGroupEquiv_symm_op [SimplyConnectedSpace E]
 transformation on the chosen lift. -/
 lemma deckFundamentalGroupEquiv_unop_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : deck p) :
-    (hp.monodromy ((hreg.deckFundamentalGroupEquiv hp e φ).unop) e : E) = φ • (e : E) := by
+    (hp.monodromy ((hreg.deckFundamentalGroupEquiv hp e φ).unop).toPath e : E) = φ • (e : E) := by
   rw [deckFundamentalGroupEquiv_apply, MulOpposite.unop_op]
   exact fundamentalGroupEquiv_symm_op_monodromy hreg hp e φ
 
@@ -97,7 +97,7 @@ lemma deckFundamentalGroupEquiv_apply_eq_op_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (φ : deck p) (γ : FundamentalGroup X x) :
     hreg.deckFundamentalGroupEquiv hp e φ = MulOpposite.op γ ↔
-      (hp.monodromy γ e : E) = φ • (e : E) := by
+      (hp.monodromy γ.toPath e : E) = φ • (e : E) := by
   constructor
   · intro h
     have hunop : (hreg.deckFundamentalGroupEquiv hp e φ).unop = γ := by
@@ -118,7 +118,7 @@ lemma deckFundamentalGroupEquiv_symm_op_eq_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (γ : FundamentalGroup X x) (φ : deck p) :
     (hreg.deckFundamentalGroupEquiv hp e).symm (MulOpposite.op γ) = φ ↔
-      (hp.monodromy γ e : E) = φ • (e : E) := by
+      (hp.monodromy γ.toPath e : E) = φ • (e : E) := by
   rw [← deckFundamentalGroupEquiv_apply_eq_op_iff hreg hp e φ γ]
   constructor
   · intro h
@@ -134,7 +134,7 @@ lemma deckFundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : deck p) :
     hreg.deckFundamentalGroupEquiv hp e φ = 1 ↔ φ • (e : E) = e := by
   rw [← MulOpposite.op_one, deckFundamentalGroupEquiv_apply_eq_op_iff]
-  have hmon : (hp.monodromy (1 : FundamentalGroup X x) e : E) = e := by
+  have hmon : (hp.monodromy (1 : FundamentalGroup X x).toPath e : E) = e := by
     exact congrArg Subtype.val ((fundamentalGroupEquiv_eq_one_iff hreg hp e 1).1 (by simp))
   rw [hmon]
   constructor

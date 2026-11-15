@@ -15,7 +15,7 @@ import TauCeti.RingTheory.MvPowerSeries.Rename
 `formalAdd` is indexed by `Unit ⊕ Unit`, one variable per chord parameter, which is the shape every
 series-level lemma about it is stated in. Mathlib's `FormalGroup`, by contrast, carries a power
 series in `MvPowerSeries (Fin 2) R`. This file transports the two linear coefficients along the
-reindexing `unitSumUnitEquivFinTwo`.
+reindexing `TauCeti.unitSumUnitEquivFinTwo`.
 
 Those two are the `lin_coeff_X` and `lin_coeff_Y` fields of the `FormalGroup` structure built by
 `WeierstrassCurve.formalGroup`. The constant coefficient is discharged directly by `simp`, while
@@ -44,7 +44,7 @@ public section
 
 namespace WeierstrassCurve
 
-open MvPowerSeries Filter Finsupp
+open MvPowerSeries Filter Finsupp TauCeti
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 

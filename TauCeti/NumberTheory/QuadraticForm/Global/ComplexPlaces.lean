@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Complex
+public import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 
 /-!
@@ -68,7 +69,7 @@ theorem equivalent_atComplexEmbedding_iff_finrank_eq [FiniteDimensional K V]
     (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) ↔
       Module.finrank K V = Module.finrank K W := by
   let _ : Algebra K ℂ := w.embedding.toAlgebra
-  rw [equivalent_iff_finrank_eq_of_isAlgClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
+  rw [equivalent_iff_finrank_eq_of_isSepClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
       (Nondegenerate.atComplexEmbedding hR w), Module.finrank_baseChange,
     Module.finrank_baseChange]
 
@@ -85,20 +86,31 @@ theorem equivalent_atComplexEmbedding_weightedSumSquares_one_iff_finrank_eq
   rw [equivalent_weightedSumSquares_one_iff_finrank_eq _ (Nondegenerate.atComplexEmbedding hQ w),
     Module.finrank_baseChange]
 
-/-- A locally isotropic quadratic form is isotropic after scalar extension along the complex
-embedding of every infinite place. -/
-theorem IsLocallyIsotropic.not_anisotropic_atComplexEmbedding [FiniteDimensional K V]
+/-- A locally isotropic quadratic form, on a possibly infinite-dimensional space, is isotropic
+after scalar extension along the complex embedding of every infinite place. -/
+theorem IsLocallyIsotropic.not_anisotropic_atComplexEmbedding
     {Q : _root_.QuadraticForm K V} (h : Q.IsLocallyIsotropic) (w : InfinitePlace K) :
     ¬ (Q.atComplexEmbedding w).Anisotropic := by
   let : Algebra K ℂ := w.embedding.toAlgebra
   rw [atComplexEmbedding_def]
-  rcases le_or_gt (Module.finrank K V) 1 with hV | hV
-  · -- In dimension at most one, isotropy at a finite place is already isotropy over `K`.
-    have hQ := ((isLocallyIsotropic_iff Q).1 h).1 (Classical.arbitrary _)
-    rw [atFinitePlace_def, anisotropic_baseChange_iff_of_finrank_le_one hV] at hQ
-    exact not_anisotropic_baseChange hQ
-  · exact _root_.QuadraticForm.not_anisotropic_of_isAlgClosed _
-      (by rw [Module.finrank_baseChange]; omega)
+  by_cases hV : FiniteDimensional K V
+  · rcases le_or_gt (Module.finrank K V) 1 with hdim | hdim
+    · -- In dimension at most one, isotropy at a finite place is already isotropy over `K`.
+      have hQ := ((isLocallyIsotropic_iff Q).1 h).1 (Classical.arbitrary _)
+      rw [atFinitePlace_def, anisotropic_baseChange_iff_of_finrank_le_one hdim] at hQ
+      exact not_anisotropic_baseChange hQ
+    · exact _root_.QuadraticForm.not_anisotropic_of_isSepClosed _
+        (by rw [Module.finrank_baseChange]; omega)
+  · -- An infinite-dimensional space contains a binary subspace, which is isotropic over `ℂ`.
+    obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank (R := K) (M := V) (n := 2)
+      ((Cardinal.natCast_le_aleph0 (n := 2)).trans
+        (not_lt.mp (hV ∘ Module.rank_lt_aleph0_iff.mp)))
+    let f := Fintype.linearCombination K v
+    have hrep : (Q.comp f).IsRepresentedBy Q :=
+      (QuadraticMap.isRepresentedBy_iff _ _).mpr
+        ⟨f, hv.fintypeLinearCombination_injective, fun _ ↦ rfl⟩
+    apply hrep.baseChange.not_anisotropic
+    exact _root_.QuadraticForm.not_anisotropic_of_isSepClosed _ (by simp)
 
 /-- A scalar that a quadratic form represents locally is represented after scalar extension along
 the complex embedding of every infinite place. -/
@@ -129,7 +141,7 @@ theorem LocallyRepresents.isRepresentedBy_atComplexEmbedding [FiniteDimensional 
     (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).IsRepresentedBy (R.atComplexEmbedding w) := by
   -- Local representation bounds the dimension, the only invariant over `ℂ`.
-  rw [_root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed _ _
+  rw [_root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isSepClosed _ _
     (Nondegenerate.atComplexEmbedding hQ w) (Nondegenerate.atComplexEmbedding hR w)]
   simpa only [Module.finrank_baseChange] using h.finrank_le
 

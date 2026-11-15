@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import Mathlib.FieldTheory.PurelyInseparable.Tower
 import Mathlib.RingTheory.Finiteness.Quotient
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Splitting of a prime in the inertia field
@@ -45,8 +46,8 @@ the separable case, where the upper residue degree is `1` and the lower one is `
 as a corollary. The prime `𝓟E` is stated as `P.under 𝓞E`, for `𝓞E` a Dedekind domain between
 `A` and `B` with fraction field `E`.
 
-The statements over `E` also apply when `B` is any domain finite and torsion-free over `A`
-with fraction field `L`, equipped with the compatible Galois action. Only `A` and `𝓞E` need
+The statements over `E` also apply when `B` is any domain finite over `A` with fraction field
+`L`, equipped with the compatible Galois action. Only `A` and `𝓞E` need
 to be Dedekind domains; integral closedness of `B` is not required.
 
 ## Main results
@@ -104,25 +105,26 @@ theorem primesOver_eq_singleton [hP : P.IsPrime] [Finite (inertia Gal(L/K) P)]
   exact inertia_le_stabilizer P σ.prop
 
 variable [IsGalois K L] [IsDedekindDomain A] [IsDomain B] [Module.Finite A B]
-  [Module.IsTorsionFree A B] [Algebra A 𝓞E] [Module.Finite A 𝓞E] [IsScalarTower A 𝓞E B]
-  [IsDedekindDomain 𝓞E]
+  [Algebra A 𝓞E] [IsScalarTower A 𝓞E B] [IsDedekindDomain 𝓞E]
 
 omit [IsGalois K L] in
 include K L E P in
 private lemma instances [IsGaloisGroup Gal(L/K) K L] :
-    Module.Finite 𝓞E B ∧ Module.IsTorsionFree 𝓞E B ∧ Module.IsTorsionFree A 𝓞E ∧
-      IsGaloisGroup Gal(L/K) A B ∧ IsGaloisGroup (inertia Gal(L/K) P) 𝓞E B := by
-  have inst₁ : Module.Finite 𝓞E B := Module.Finite.right A 𝓞E B
-  have inst₂ : Module.IsTorsionFree 𝓞E B := by
-    rw [Module.isTorsionFree_iff_faithfulSMul]
-    apply Algebra.IsAlgebraic.faithfulSMul_tower_top A
-  have inst₃ : Module.IsTorsionFree A 𝓞E := Module.IsTorsionFree.of_faithfulSMul _ _ B
-  have inst₄ : IsGaloisGroup Gal(L/K) A B := .of_isFractionRing _ _ _ K L
-  have inst₅ : IsGaloisGroup (inertia Gal(L/K) P) 𝓞E B := .of_isFractionRing _ _ _ E L
-  exact ⟨inst₁, inst₂, inst₃, inst₄, inst₅⟩
+    Module.Finite 𝓞E B ∧ Module.IsTorsionFree 𝓞E B ∧ Module.IsTorsionFree A B ∧
+      Module.Finite A 𝓞E ∧ IsGaloisGroup Gal(L/K) A B ∧
+        IsGaloisGroup (inertia Gal(L/K) P) 𝓞E B := by
+  -- The fraction-field embeddings make both ring maps injective.
+  have : FaithfulSMul A B := .of_field_isFractionRing A B K L
+  have : FaithfulSMul 𝓞E B := .of_field_isFractionRing 𝓞E B E L
+  have : Module.Finite A 𝓞E := .of_injective
+    (IsScalarTower.toAlgHom A 𝓞E B).toLinearMap (FaithfulSMul.algebraMap_injective 𝓞E B)
+  have : Module.Finite 𝓞E B := Module.Finite.right A 𝓞E B
+  exact ⟨inferInstance, inferInstance, inferInstance, inferInstance,
+    .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ E L⟩
 
 variable [FiniteDimensional K L] [P.IsMaximal]
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- Over the inertia field, the ramification index of `P` is unchanged, and the residue extension
 of `P.under 𝓞E` over `P.under A` is separable. -/
@@ -133,7 +135,7 @@ private lemma ramificationIdx_eq_and_isSeparable :
   -- `e(P ∣ P.under 𝓞E) · fᵢ(P ∣ P.under 𝓞E)` and also `e(P ∣ P.under A) · fᵢ(P ∣ P.under A)`.
   -- The tower law for inseparable degrees and `e(P ∣ P.under 𝓞E) ≤ e(P ∣ P.under A)` then force
   -- `fᵢ(P.under 𝓞E ∣ P.under A) = 1` and the equality of the ramification indices.
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P E 𝓞E
   let _ : IsScalarTower (A ⧸ P.under A) (𝓞E ⧸ P.under 𝓞E) (B ⧸ P) :=
     IsScalarTower.of_algebraMap_eq' (by
       ext x
@@ -164,6 +166,7 @@ private lemma ramificationIdx_eq_and_isSeparable :
     exact hle
   exact ⟨by rw [key, hins, mul_one], (isSeparable_iff_finInsepDegree_eq_one _ _).mpr hins⟩
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the ramification index of `P` over
 `P.under 𝓞E` is its ramification index over `P.under A`. No separability of the residue
@@ -171,6 +174,7 @@ extension is assumed. -/
 theorem ramificationIdx_eq : P.ramificationIdx 𝓞E = P.ramificationIdx A :=
   (ramificationIdx_eq_and_isSeparable A K L P E 𝓞E).1
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the residue extension of `P.under 𝓞E` over
 `P.under A` is separable: the inertia field carries exactly the separable part of the residue
@@ -179,12 +183,13 @@ theorem isSeparable_quotient_under :
     Algebra.IsSeparable (A ⧸ P.under A) (𝓞E ⧸ P.under 𝓞E) :=
   (ramificationIdx_eq_and_isSeparable A K L P E 𝓞E).2
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the inertia degree of `P` over `P.under 𝓞E`
 is the inseparable residue degree of `P` over `P.under A`. -/
 theorem inertiaDeg_eq_finInsepDegree :
     P.inertiaDeg 𝓞E = Field.finInsepDegree (A ⧸ P.under A) (B ⧸ P) := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P E 𝓞E
   -- Use the pointwise ideal action induced by the inertia action on `B`, as in the cardinality
   -- formula, rather than the generic restriction of the action on `Ideal B`.
   let _ : MulAction (inertia Gal(L/K) P) (Ideal B) :=
@@ -200,22 +205,24 @@ theorem inertiaDeg_eq_finInsepDegree :
     card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K)) P] at h
   exact Nat.eq_of_mul_eq_mul_left (ramificationIdx_pos A P) h.symm
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then `P.under 𝓞E` has ramification index `1`
 over the prime of `A` below it. No separability of the residue extension is assumed. -/
 theorem ramificationIdx_under_eq_one :
     (P.under 𝓞E).ramificationIdx A = 1 := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P E 𝓞E
   have h := ramificationIdx_tower (R := A) (P.under 𝓞E) P
   rw [ramificationIdx_eq A K L P E 𝓞E] at h
   exact (right_eq_mul₀ (ramificationIdx_pos A P).ne').mp h
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the inertia degree of `P.under 𝓞E` over
 `P.under A` is the separable residue degree of `P` over `P.under A`. -/
 theorem inertiaDeg_under_eq_finSepDegree :
     (P.under 𝓞E).inertiaDeg A = Field.finSepDegree (A ⧸ P.under A) (B ⧸ P) := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P E 𝓞E
   have h := inertiaDeg_tower (R := A) (P.under 𝓞E) P
   rw [inertiaDeg_eq_finInsepDegree A K L P E 𝓞E, inertiaDeg_eq_of_isMaximal (P.under A) P,
     ← Field.finSepDegree_mul_finInsepDegree] at h
@@ -226,6 +233,7 @@ section Separable
 
 variable [Algebra.IsSeparable (A ⧸ P.under A) (B ⧸ P)]
 
+omit [FiniteDimensional K L] in
 include A K L E P in
 /-- When the residue extension of `P` over `P.under A` is separable, the inertia degree of `P`
 over `P.under 𝓞E` is `1`. -/
@@ -233,11 +241,12 @@ theorem inertiaDeg_eq_one : P.inertiaDeg 𝓞E = 1 := by
   rw [inertiaDeg_eq_finInsepDegree A K L P E 𝓞E]
   exact (isSeparable_iff_finInsepDegree_eq_one _ _).mp inferInstance
 
+omit [FiniteDimensional K L] in
 include K L E P in
 /-- When the residue extension of `P` over `P.under A` is separable, the inertia degree of
 `P.under 𝓞E` over `P.under A` is the full inertia degree of `P` over `P.under A`. -/
 theorem inertiaDeg_under_eq : (P.under 𝓞E).inertiaDeg A = P.inertiaDeg A := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P E 𝓞E
   rw [inertiaDeg_under_eq_finSepDegree A K L P E 𝓞E,
     Field.finSepDegree_eq_finrank_of_isSeparable, inertiaDeg_eq_of_isMaximal (P.under A) P]
 

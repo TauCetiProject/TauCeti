@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 
+import TauCeti.MeasureTheory.Measure.Restrict.Basic
+
 /-!
 # Cyclical monotonicity for transport costs
 
@@ -33,6 +35,8 @@ require additional hypotheses.
 * `TauCeti.IsCyclicallyMonotone` — finite `c`-cyclical monotonicity of a set of pairs;
 * `TauCeti.isCyclicallyMonotone_add_add_iff` — adding a split cost `a x + b y` does not change
   the cyclically monotone sets;
+* `TauCeti.IsCyclicallyMonotone.closure` — for a continuous cost, the closure of a cyclically
+  monotone set is cyclically monotone;
 * `TauCeti.isCyclicallyMonotone_ofReal_iff` — for a nonnegative real cost, the property is the
   same for the cost and for its image in `ℝ≥0∞`;
 * `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support` — the support of an optimal coupling
@@ -143,6 +147,31 @@ theorem isCyclicallyMonotone_add_add_iff (c : X × Y → M) (a : X → M) (b : Y
 
 end Split
 
+section Closure
+
+variable [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace M] [ContinuousAdd M]
+  [Preorder M] [OrderClosedTopology M] {c : X × Y → M}
+
+/-- For a continuous cost, the closure of a `c`-cyclically monotone set is `c`-cyclically
+monotone: each defining inequality is a closed condition on the finite family of points. -/
+theorem IsCyclicallyMonotone.closure (hc : Continuous c) {S : Set (X × Y)}
+    (h : IsCyclicallyMonotone c S) : IsCyclicallyMonotone c (_root_.closure S) := by
+  intro n x y hmem σ
+  -- The families of `n` pairs satisfying the inequality for `σ` form a closed set containing `Sⁿ`.
+  have hclosed : IsClosed
+      {v : Fin n → X × Y | ∑ i, c (v i) ≤ ∑ i, c ((v i).1, (v (σ i)).2)} :=
+    isClosed_le (continuous_finsetSum _ fun i _ ↦ hc.comp (continuous_apply i))
+      (continuous_finsetSum _ fun i _ ↦
+        hc.comp ((continuous_apply i).fst.prodMk (continuous_apply (σ i)).snd))
+  have hsub : univ.pi (fun _ ↦ S) ⊆
+      {v : Fin n → X × Y | ∑ i, c (v i) ≤ ∑ i, c ((v i).1, (v (σ i)).2)} :=
+    fun v hv ↦ h n (fun i ↦ (v i).1) (fun i ↦ (v i).2) (fun i ↦ hv i (mem_univ i)) σ
+  have hv : (fun i ↦ (x i, y i)) ∈ univ.pi (fun _ ↦ _root_.closure S) := fun i _ ↦ hmem i
+  rw [← closure_pi_set] at hv
+  exact hclosed.closure_subset_iff.2 hsub hv
+
+end Closure
+
 /-- For a nonnegative real cost, cyclical monotonicity is the same condition for the cost and for
 its image in `ℝ≥0∞`, since `ENNReal.ofReal` is additive and order-reflecting on nonnegative
 reals. This moves the property between the extended-nonnegative primal interface and the real
@@ -164,6 +193,56 @@ open scoped ENNReal
 variable [TopologicalSpace X] [TopologicalSpace Y] [MeasurableSpace X] [MeasurableSpace Y]
   [OpensMeasurableSpace (X × Y)] {c : X × Y → ℝ≥0∞} {π : Measure (X × Y)} {μ : Measure X}
   {ν : Measure Y}
+
+omit [TopologicalSpace X] [TopologicalSpace Y] [OpensMeasurableSpace (X × Y)] in
+/-- Removing the mass `t • ∑ ρ i` from `π` and adding back `t • ∑ τ i`, where `τ i` is the law of
+the `σ`-permuted pair `((w i).1, (w (σ i)).2)` of a sample `w` from `∏ ρ i`, strictly lowers the
+cost when the permuted cost of the sample is almost surely smaller. -/
+private theorem lintegral_sub_add_sum_map_lt [IsFiniteMeasure π] (hcm : Measurable c) {n : ℕ}
+    (ρ : Fin n → Measure (X × Y)) [∀ i, IsProbabilityMeasure (ρ i)] (σ : Equiv.Perm (Fin n))
+    (hGF : ∀ᵐ w ∂Measure.pi ρ,
+      ∑ i, c ((w i).1, (w (σ i)).2) < ∑ i, c (w i)) {t : ℝ≥0∞} (ht0 : t ≠ 0) (httop : t ≠ ∞)
+    (hκ : t • Measure.sum ρ ≤ π) (hfin : ∫⁻ z, c z ∂π ≠ ∞) :
+    ∫⁻ z, c z ∂(π - t • Measure.sum ρ + t • Measure.sum fun i ↦
+      (Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)) < ∫⁻ z, c z ∂π := by
+  let F : (Fin n → X × Y) → ℝ≥0∞ := fun w ↦ ∑ i, c ((w i).1, (w (σ i)).2)
+  let G : (Fin n → X × Y) → ℝ≥0∞ := fun w ↦ ∑ i, c (w i)
+  have hFm : ∀ i, Measurable fun w : Fin n → X × Y ↦ ((w i).1, (w (σ i)).2) := fun i ↦
+    (measurable_pi_apply i).fst.prodMk (measurable_pi_apply (σ i)).snd
+  let P := Measure.pi ρ
+  have hev : ∀ i, MeasurePreserving (Function.eval i) P (ρ i) := measurePreserving_eval ρ
+  let τ : Fin n → Measure (X × Y) := fun i ↦ P.map fun w ↦ ((w i).1, (w (σ i)).2)
+  let κ := t • Measure.sum ρ
+  have : IsFiniteMeasure κ := isFiniteMeasure_of_le π hκ
+  have hlintegral_sum : ∀ ξ : Fin n → Measure (X × Y),
+      ∫⁻ z, c z ∂(t • Measure.sum ξ) = t * ∑ i, ∫⁻ z, c z ∂ξ i := fun ξ ↦ by
+    rw [lintegral_smul_measure, lintegral_sum_measure, tsum_fintype, smul_eq_mul]
+  have hτint : ∑ i, ∫⁻ z, c z ∂τ i = ∫⁻ w, F w ∂P :=
+    calc ∑ i, ∫⁻ z, c z ∂τ i = ∑ i, ∫⁻ w, c ((w i).1, (w (σ i)).2) ∂P :=
+          Finset.sum_congr rfl fun i _ ↦ lintegral_map hcm (hFm i)
+      _ = ∫⁻ w, F w ∂P := (lintegral_finsetSum _ fun i _ ↦ hcm.comp (hFm i)).symm
+  have hρint : ∑ i, ∫⁻ z, c z ∂ρ i = ∫⁻ w, G w ∂P :=
+    calc ∑ i, ∫⁻ z, c z ∂ρ i = ∑ i, ∫⁻ w, c (w i) ∂P :=
+          Finset.sum_congr rfl fun i _ ↦ ((hev i).lintegral_comp hcm).symm
+      _ = ∫⁻ w, G w ∂P :=
+          (lintegral_finsetSum _ fun i _ ↦ hcm.comp (measurable_pi_apply i)).symm
+  have hπeq : ∫⁻ z, c z ∂π = ∫⁻ z, c z ∂(π - κ) + t * ∫⁻ w, G w ∂P := by
+    conv_lhs => rw [← Measure.sub_add_cancel_of_le hκ]
+    rw [lintegral_add_measure, hlintegral_sum, hρint]
+  have hGfin : ∫⁻ w, G w ∂P ≠ ∞ := by
+    intro htop
+    have hle : t * ∫⁻ w, G w ∂P ≤ ∫⁻ z, c z ∂π := by
+      rw [← hρint, ← hlintegral_sum]
+      exact lintegral_mono' hκ le_rfl
+    rw [htop, ENNReal.mul_top ht0] at hle
+    exact hfin (top_le_iff.1 hle)
+  have hFG : ∫⁻ w, F w ∂P < ∫⁻ w, G w ∂P :=
+    lintegral_strict_mono (IsProbabilityMeasure.ne_zero P)
+      (Finset.measurable_sum _ fun i _ ↦ hcm.comp (measurable_pi_apply i)).aemeasurable
+      (ne_top_of_le_ne_top hGfin (lintegral_mono_ae (hGF.mono fun _ h ↦ h.le))) hGF
+  rw [lintegral_add_measure, hlintegral_sum, hτint, hπeq]
+  refine ENNReal.add_lt_add_left ?_ (ENNReal.mul_lt_mul_right ht0 httop hFG)
+  exact ne_top_of_le_ne_top hfin (lintegral_mono' Measure.sub_le le_rfl)
 
 /-- The perturbation behind `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support`. If `n`
 points of the support of a finite coupling of finite cost can be improved by permuting their
@@ -213,29 +292,11 @@ private theorem exists_isCoupling_lintegral_lt [IsFiniteMeasure π] (hc : Contin
   -- `t • ρ i ≤ n⁻¹ • π` for every `i`.
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   obtain ⟨j, hj⟩ := Finite.exists_min fun i ↦ π (W i)
-  set t : ℝ≥0∞ := π (W j) / n with ht_def
+  set t : ℝ≥0∞ := π (W j) / n
   have ht0 : t ≠ 0 := ENNReal.div_ne_zero.2 ⟨hW0 j, ENNReal.natCast_ne_top n⟩
   have httop : t ≠ ∞ := ENNReal.div_ne_top (measure_ne_top π _) (Nat.cast_ne_zero.2 hn)
   let κ := t • Measure.sum ρ
-  have hκ : κ ≤ π := by
-    refine Measure.le_iff.2 fun s hs ↦ ?_
-    have hterm : ∀ i, t * ρ i s ≤ (n : ℝ≥0∞)⁻¹ * π s := fun i ↦ by
-      have hti : t * (π (W i))⁻¹ ≤ (n : ℝ≥0∞)⁻¹ := by
-        calc t * (π (W i))⁻¹ ≤ π (W i) / n * (π (W i))⁻¹ := by
-              rw [ht_def]
-              exact mul_le_mul_left (ENNReal.div_le_div_right (hj i) _) _
-          _ = (n : ℝ≥0∞)⁻¹ := by
-              rw [div_eq_mul_inv, mul_right_comm, ENNReal.mul_inv_cancel (hW0 i)
-                (measure_ne_top π _), one_mul]
-      calc t * ρ i s = t * (π (W i))⁻¹ * π (s ∩ W i) := by
-            simp [ρ, Measure.restrict_apply hs, mul_assoc]
-        _ ≤ (n : ℝ≥0∞)⁻¹ * π s := by gcongr; exact Set.inter_subset_left
-    calc κ s = ∑ i, t * ρ i s := by
-          simp [κ, Finset.mul_sum]
-      _ ≤ ∑ _i : Fin n, (n : ℝ≥0∞)⁻¹ * π s := Finset.sum_le_sum fun i _ ↦ hterm i
-      _ = π s := by
-          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← mul_assoc,
-            ENNReal.mul_inv_cancel (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n), one_mul]
+  have hκ : κ ≤ π := Measure.smul_sum_inv_smul_restrict_le hj
   have : IsFiniteMeasure κ := isFiniteMeasure_of_le π hκ
   have hκ' : IsCoupling κ κ.fst κ.snd := ⟨rfl, rfl⟩
   have hρ' : IsCoupling κ (t • (Measure.sum ρ).fst) (t • (Measure.sum ρ).snd) :=
@@ -243,36 +304,7 @@ private theorem exists_isCoupling_lintegral_lt [IsFiniteMeasure π] (hc : Contin
   refine ⟨π - κ + t • Measure.sum τ, hπ.sub_add hκ ?_, ?_⟩
   · rw [hκ'.fst_eq.symm.trans hρ'.fst_eq, hκ'.snd_eq.symm.trans hρ'.snd_eq]
     exact hτ.smul t
-  -- Compare the two costs through the sample: `∫ c ∂τ i` and `∫ c ∂ρ i` are integrals over `P`.
-  have hlintegral_sum : ∀ ξ : Fin n → Measure (X × Y),
-      ∫⁻ z, c z ∂(t • Measure.sum ξ) = t * ∑ i, ∫⁻ z, c z ∂ξ i := fun ξ ↦ by
-    rw [lintegral_smul_measure, lintegral_sum_measure, tsum_fintype, smul_eq_mul]
-  have hτint : ∑ i, ∫⁻ z, c z ∂τ i = ∫⁻ w, F w ∂P :=
-    calc ∑ i, ∫⁻ z, c z ∂τ i = ∑ i, ∫⁻ w, c ((w i).1, (w (σ i)).2) ∂P :=
-          Finset.sum_congr rfl fun i _ ↦ lintegral_map hcm (hFm i)
-      _ = ∫⁻ w, F w ∂P := (lintegral_finsetSum _ fun i _ ↦ hcm.comp (hFm i)).symm
-  have hρint : ∑ i, ∫⁻ z, c z ∂ρ i = ∫⁻ w, G w ∂P :=
-    calc ∑ i, ∫⁻ z, c z ∂ρ i = ∑ i, ∫⁻ w, c (w i) ∂P :=
-          Finset.sum_congr rfl fun i _ ↦ ((hev i).lintegral_comp hcm).symm
-      _ = ∫⁻ w, G w ∂P :=
-          (lintegral_finsetSum _ fun i _ ↦ hcm.comp (measurable_pi_apply i)).symm
-  have hπeq : ∫⁻ z, c z ∂π = ∫⁻ z, c z ∂(π - κ) + t * ∫⁻ w, G w ∂P := by
-    conv_lhs => rw [← Measure.sub_add_cancel_of_le hκ]
-    rw [lintegral_add_measure, hlintegral_sum, hρint]
-  have hGfin : ∫⁻ w, G w ∂P ≠ ∞ := by
-    intro htop
-    have hle : t * ∫⁻ w, G w ∂P ≤ ∫⁻ z, c z ∂π := by
-      rw [← hρint, ← hlintegral_sum]
-      exact lintegral_mono' hκ le_rfl
-    rw [htop, ENNReal.mul_top ht0] at hle
-    exact hfin (top_le_iff.1 hle)
-  have hFG : ∫⁻ w, F w ∂P < ∫⁻ w, G w ∂P :=
-    lintegral_strict_mono (IsProbabilityMeasure.ne_zero P)
-      (Finset.measurable_sum _ fun i _ ↦ hcm.comp (measurable_pi_apply i)).aemeasurable
-      (ne_top_of_le_ne_top hGfin (lintegral_mono_ae (hGF.mono fun _ h ↦ h.le))) hGF
-  rw [lintegral_add_measure, hlintegral_sum, hτint, hπeq]
-  refine ENNReal.add_lt_add_left ?_ (ENNReal.mul_lt_mul_right ht0 httop hFG)
-  exact ne_top_of_le_ne_top hfin (lintegral_mono' Measure.sub_le le_rfl)
+  exact lintegral_sub_add_sum_map_lt hcm ρ σ hGF ht0 httop hκ hfin
 
 /-- **The support of an optimal plan is cyclically monotone** (Gangbo--McCann). For a continuous
 cost `c : X × Y → ℝ≥0∞` and finite measures, the topological support of an optimal coupling of

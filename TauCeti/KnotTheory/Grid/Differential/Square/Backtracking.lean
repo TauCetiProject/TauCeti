@@ -17,11 +17,10 @@ transpositions. This file records the first exact feature of that two-step suppo
 swaps the same pair of columns twice returns to the starting state, so the source state appears in
 its own two-step neighbour set exactly when the grid has at least two columns.
 
-This is small but useful bookkeeping for the later `∂² = 0` rectangle-pairing argument: diagonal
-targets lie in the two-step search space exactly through such backtracking when `2 ≤ n`. Grids of
-size `0` and `1` have no two-step targets at all, so any coefficient-level vanishing there follows
-from the existing small-grid differential support API rather than from a cancellation argument in
-this file.
+This is small but useful bookkeeping for the `∂² = 0` rectangle-pairing argument: diagonal targets
+lie in the two-step search space exactly through such backtracking when `2 ≤ n`. Grids of size `0`
+and `1` have no two-step targets at all, so any coefficient-level vanishing there follows from the
+small-grid differential support API rather than from a cancellation argument in this file.
 
 ## Main results
 
@@ -36,10 +35,8 @@ this file.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`", where the square-zero proof pairs two-step rectangle
-decompositions. The column-transposition model of rectangle targets follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+The column-transposition model of rectangle targets follows Ozsváth--Stipsicz--Szabó, *Grid Homology
+for Knots and Links*, Chapters 3 and 4.
 -/
 
 public section

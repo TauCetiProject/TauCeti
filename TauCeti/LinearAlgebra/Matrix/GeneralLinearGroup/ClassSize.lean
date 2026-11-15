@@ -109,7 +109,8 @@ theorem ncard_carrier_mk_of_forall_mul_self_ne {g : GL (Fin 2) F}
   have : Fact (ringChar F).Prime := ⟨CharP.char_is_prime F (ringChar F)⟩
   let E := FiniteField.Extension F (ringChar F) 2
   have : Algebra.IsQuadraticExtension F E := ⟨FiniteField.finrank_extension F (ringChar F) 2⟩
-  obtain ⟨x, hx2⟩ := exists_mul_self_eq_of_finite E hroot
+  obtain ⟨x, hx2⟩ := exists_mul_self_eq_of_finite E
+    (g : Matrix (Fin 2) (Fin 2) F).trace (g : Matrix (Fin 2) (Fin 2) F).det
   have hxF : x ∉ Set.range (algebraMap F E) := by
     rintro ⟨a, rfl⟩
     exact hroot a ((algebraMap F E).injective (by simpa using hx2))

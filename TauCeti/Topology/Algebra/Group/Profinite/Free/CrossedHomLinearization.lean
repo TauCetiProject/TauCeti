@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelatorFunctional
@@ -35,10 +36,12 @@ Frattini subgroup, as a function of the values of the character on the generator
 degree-one form of that element as its derivative modulo `p`. It is the linearisation that
 Newton's method uses to find the canonical character of a Demushkin group.
 
-## Main result
+## Main results
 
 * `TauCeti.IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm`: the first-order expansion above,
   modulo `p ^ (k + 1)`, on the Frattini subgroup.
+* `TauCeti.pow_succ_dvd_crossedHom_single_sub_sub_mulVec`: the same expansion for the Kronecker
+  crossed homomorphisms, in terms of the lifted matrix of the degree-one form.
 
 ## References
 
@@ -60,24 +63,19 @@ attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u}
 
-/-- **The first-order expansion of a crossed homomorphism in the character, on the Frattini
-subgroup.** Let `χ, χ' : F → ℤ_pˣ` be continuous characters of the free pro-`p` group on a finite
-type `X`, congruent modulo `p ^ k` on the generators `x_i = of i`, and let `f, f'` be continuous
-crossed homomorphisms for `χ, χ'` with the same values on the generators. Then for `n ∈ λ_1(F)`,
-
-  `f' n ≡ f n + Σ_{i,j} (χ'(x_i) - χ(x_i)) · f(x_j) · B_n(χ_i, χ_j)   mod p^(k+1)`,
-
-where `B_n` is the degree-one form of the class of `n` in `gr_1(F)` and `χ_i` are the coordinate
-`𝔽_p`-characters, the values of `B_n` being lifted from `𝔽_p` to `ℤ_p`. -/
-theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
+/-- The quotients by `p ^ k` of the differences of two characters congruent modulo `p ^ k`, and of
+two crossed homomorphisms with the same values on the generators, are continuous and satisfy the
+twisted multiplication laws. -/
+private theorem exists_quotients_of_pow_dvd
     {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ} {k : ℕ}
     (hχ : ∀ x, (p : ℤ_[p]) ^ k ∣ (χ' (of x) : ℤ_[p]) - χ (of x))
     {f f' : freeProP p X → ℤ_[p]} (hf : IsCrossedHom χ f) (hf' : IsCrossedHom χ' f')
-    (hfc : Continuous f) (hf'c : Continuous f') (hff' : ∀ x, f (of x) = f' (of x))
-    (n : pLowerCentralSeries p (freeProP p X) 1) :
-    (p : ℤ_[p]) ^ (k + 1) ∣ f' n - f n - ∑ i, ∑ j, ((χ' (of i) : ℤ_[p]) - χ (of i)) * f (of j) *
-      (ZMod.cast (degreeOneForm (gradedMk p (freeProP p X) 1 n) (dualBasis p X i)
-        (dualBasis p X j)) : ℤ_[p]) := by
+    (hfc : Continuous f) (hf'c : Continuous f') (hff' : ∀ x, f (of x) = f' (of x)) :
+    ∃ η D : freeProP p X → ℤ_[p], Continuous η ∧ Continuous D ∧
+      (∀ g, (χ' g : ℤ_[p]) - χ g = (p : ℤ_[p]) ^ k * η g) ∧
+      (∀ g, f' g - f g = (p : ℤ_[p]) ^ k * D g) ∧
+      (∀ g h, η (g * h) = (χ' g : ℤ_[p]) * η h + η g * χ h) ∧
+      (∀ g h, D (g * h) = (χ g : ℤ_[p]) * D h + D g + η g * f' h) := by
   have hpk : ((p : ℤ_[p]) ^ k) ≠ 0 :=
     pow_ne_zero _ (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
   -- The characters and the crossed homomorphisms are congruent modulo `p ^ k`; divide by `p ^ k`.
@@ -94,11 +92,6 @@ theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
   have hDc : Continuous D := hemb.continuous_iff.2 (by
     refine (hf'c.sub hfc).congr fun g ↦ ?_
     exact hD g)
-  -- The characters are trivial modulo `p`.
-  have hχ1 : ∀ g, PadicInt.toZMod (χ g : ℤ_[p]) = 1 := fun g ↦
-    mem_unitsPrincipal_one_iff_toZMod.1 ((isProP_freeProP p X).mem_unitsPrincipal_one χ g)
-  have hχ'1 : ∀ g, PadicInt.toZMod (χ' g : ℤ_[p]) = 1 := fun g ↦
-    mem_unitsPrincipal_one_iff_toZMod.1 ((isProP_freeProP p X).mem_unitsPrincipal_one χ' g)
   -- The multiplication laws of the quotients.
   have hηmul : ∀ g h, η (g * h) = (χ' g : ℤ_[p]) * η h + η g * χ h := fun g h ↦ by
     refine mul_left_cancel₀ hpk ?_
@@ -115,6 +108,25 @@ theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
     have e4 := hη g
     rw [hf.map_mul g h, hf'.map_mul g h] at e1
     linear_combination -e1 + (χ g : ℤ_[p]) * e3 + e2 + f' h * e4
+  exact ⟨η, D, hηc, hDc, hη, hD, hηmul, hDmul⟩
+
+/-- Modulo `p`, the quotient `D` is the degree-one form of the class of `n`, evaluated at the
+reductions of `η` and `f'`, which are expanded in the dual basis of the generators. -/
+private theorem toZMod_eq_sum_degreeOneForm [Fintype X]
+    {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ} {f' : freeProP p X → ℤ_[p]}
+    (hf' : IsCrossedHom χ' f') (hf'c : Continuous f') {η D : freeProP p X → ℤ_[p]}
+    (hηc : Continuous η) (hDc : Continuous D)
+    (hηmul : ∀ g h, η (g * h) = (χ' g : ℤ_[p]) * η h + η g * χ h)
+    (hDmul : ∀ g h, D (g * h) = (χ g : ℤ_[p]) * D h + D g + η g * f' h)
+    (n : pLowerCentralSeries p (freeProP p X) 1) :
+    PadicInt.toZMod (D n) = ∑ i, ∑ j, PadicInt.toZMod (η (of i)) *
+      PadicInt.toZMod (f' (of j)) * degreeOneForm (gradedMk p (freeProP p X) 1 n)
+        (dualBasis p X i) (dualBasis p X j) := by
+  -- The characters are trivial modulo `p`.
+  have hχ1 : ∀ g, PadicInt.toZMod (χ g : ℤ_[p]) = 1 := fun g ↦
+    mem_unitsPrincipal_one_iff_toZMod.1 ((isProP_freeProP p X).mem_unitsPrincipal_one χ g)
+  have hχ'1 : ∀ g, PadicInt.toZMod (χ' g : ℤ_[p]) = 1 := fun g ↦
+    mem_unitsPrincipal_one_iff_toZMod.1 ((isProP_freeProP p X).mem_unitsPrincipal_one χ' g)
   -- The trivial action of `F` on `𝔽_p`, and the two `𝔽_p`-characters.
   let _ : DistribMulAction (freeProP p X) (ZMod p) :=
     DistribMulAction.compHom (ZMod p) (1 : freeProP p X →* (ZMod p)ˣ)
@@ -153,6 +165,30 @@ theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
       Finset.mul_sum, hrepr, ψa, ψb, a, b]
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  exact hval.trans hexp
+
+/-- **The first-order expansion of a crossed homomorphism in the character, on the Frattini
+subgroup.** Let `χ, χ' : F → ℤ_pˣ` be continuous characters of the free pro-`p` group on a finite
+type `X`, congruent modulo `p ^ k` on the generators `x_i = of i`, and let `f, f'` be continuous
+crossed homomorphisms for `χ, χ'` with the same values on the generators. Then for `n ∈ λ_1(F)`,
+
+  `f' n ≡ f n + Σ_{i,j} (χ'(x_i) - χ(x_i)) · f(x_j) · B_n(χ_i, χ_j)   mod p^(k+1)`,
+
+where `B_n` is the degree-one form of the class of `n` in `gr_1(F)` and `χ_i` are the coordinate
+`𝔽_p`-characters, the values of `B_n` being lifted from `𝔽_p` to `ℤ_p`. -/
+theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
+    {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ} {k : ℕ}
+    (hχ : ∀ x, (p : ℤ_[p]) ^ k ∣ (χ' (of x) : ℤ_[p]) - χ (of x))
+    {f f' : freeProP p X → ℤ_[p]} (hf : IsCrossedHom χ f) (hf' : IsCrossedHom χ' f')
+    (hfc : Continuous f) (hf'c : Continuous f') (hff' : ∀ x, f (of x) = f' (of x))
+    (n : pLowerCentralSeries p (freeProP p X) 1) :
+    (p : ℤ_[p]) ^ (k + 1) ∣ f' n - f n - ∑ i, ∑ j, ((χ' (of i) : ℤ_[p]) - χ (of i)) * f (of j) *
+      (ZMod.cast (degreeOneForm (gradedMk p (freeProP p X) 1 n) (dualBasis p X i)
+        (dualBasis p X j)) : ℤ_[p]) := by
+  obtain ⟨η, D, hηc, hDc, hη, hD, hηmul, hDmul⟩ :=
+    exists_quotients_of_pow_dvd hχ hf hf' hfc hf'c hff'
+  have hval := toZMod_eq_sum_degreeOneForm hf' hf'c hηc hDc hηmul hDmul n
+  set ρ := gradedMk p (freeProP p X) 1 n
   -- Assemble: the difference is `p ^ k` times an element divisible by `p`.
   have hsum : f' n - f n - ∑ i, ∑ j, ((χ' (of i) : ℤ_[p]) - χ (of i)) * f (of j) *
       (ZMod.cast (degreeOneForm ρ (dualBasis p X i) (dualBasis p X j)) : ℤ_[p]) =
@@ -167,10 +203,34 @@ theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
     ring
   rw [hsum, pow_succ]
   refine mul_dvd_mul_left _ ?_
-  rw [← PadicInt.toZMod_eq_zero_iff_dvd, map_sub, map_sum, sub_eq_zero, hval, hexp]
+  rw [← PadicInt.toZMod_eq_zero_iff_dvd, map_sub, map_sum, sub_eq_zero, hval]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [_root_.map_mul, _root_.map_mul, ZMod.ringHom_map_cast, hff']
+
+
+open Matrix in
+/-- **The linearisation of the Kronecker values on a relator.** For continuous characters `χ, χ'`
+of the free pro-`p` group on a finite type, congruent modulo `p ^ k` on the generators, the values
+at `n ∈ λ_1(F)` of the Kronecker crossed homomorphisms differ, modulo `p ^ (k + 1)`, by the lifted
+matrix of the degree-one form of `n` applied to the difference of the generator values. -/
+theorem pow_succ_dvd_crossedHom_single_sub_sub_mulVec [Fintype X] [DecidableEq X]
+    {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ} {k : ℕ}
+    (hχ : ∀ i, (p : ℤ_[p]) ^ k ∣ (χ' (of i) : ℤ_[p]) - χ (of i))
+    (n : pLowerCentralSeries p (freeProP p X) 1) (j : X) :
+    (p : ℤ_[p]) ^ (k + 1) ∣ crossedHom χ' (Pi.single j 1) n - crossedHom χ (Pi.single j 1) n -
+      (((LinearMap.BilinForm.toMatrix (dualBasis p X)
+        (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map
+          (ZMod.cast : ZMod p → ℤ_[p]))ᵀ *ᵥ (fun i ↦ (χ' (of i) : ℤ_[p]) - χ (of i))) j := by
+  have h := IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm hχ
+    (isCrossedHom_crossedHom _ (Pi.single j 1)) (isCrossedHom_crossedHom _ (Pi.single j 1))
+    (continuous_crossedHom _ _) (continuous_crossedHom _ _)
+    (fun x ↦ by rw [crossedHom_of, crossedHom_of]) n
+  convert h using 2
+  simp only [Matrix.mulVec, dotProduct, Matrix.transpose_apply, Matrix.map_apply,
+    LinearMap.BilinForm.toMatrix_apply, crossedHom_of, Pi.single_apply, mul_ite, mul_one,
+    mul_zero, ite_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
 
 end TauCeti

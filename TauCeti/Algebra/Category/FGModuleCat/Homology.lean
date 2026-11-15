@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.Algebra.Homology.Additive
+public import Mathlib.Algebra.Homology.FullSubcategory
 
 /-!
-# Homology and the forgetful functor from `FGModuleCat`
+# Lifting complexes of modules to `FGModuleCat`
 
-This file records the comparison between taking homology in `FGModuleCat` and taking homology
-after forgetting to `ModuleCat`.  It lets invariants of homology objects, such as finrank, be
-transported between the two categories for Euler-characteristic computations.
+A homological complex of modules whose terms are finitely generated lifts to a complex in
+`FGModuleCat` by Mathlib's `HomologicalComplex.liftObjectProperty`. This file records that the
+lift recovers the original complex after forgetting finite generation
+(`HomologicalComplex.liftFGModuleCatIso`).
 -/
 
 public section
@@ -24,25 +26,17 @@ universe u v
 
 namespace HomologicalComplex
 
-variable {k : Type u} [DivisionRing k]
+variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
+  (K : HomologicalComplex (ModuleCat.{v} R) c) (hK : ∀ i, Module.Finite R (K.X i))
 
-/-- The comparison between homology after forgetting an `FGModuleCat` cochain complex and the
-underlying module of its homology. -/
-noncomputable def homologyForgetIso (K : CochainComplex (FGModuleCat.{v} k) ℤ) (n : ℤ) :
-    (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K).homology n ≅
-      (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).obj (K.homology n) := by
-  let i := n - 1
-  let j := n
-  let l := n + 1
-  have hij : i + 1 = j := by dsimp [i, j]; omega
-  have hjl : j + 1 = l := by dsimp [j, l]
-  exact HomologicalComplex.homologyIsoSc'
-      (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) i j l
-      ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl) ≪≫
-    (K.sc' i j l).mapHomologyIso
-      (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)) ≪≫
-    (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapIso
-      (K.homologyIsoSc' i j l
-        ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl)).symm
+/-- A homological complex of modules with finitely generated terms, lifted to `FGModuleCat R`
+by Mathlib's `HomologicalComplex.liftObjectProperty`, recovers the original complex after
+forgetting finite generation. -/
+noncomputable def liftFGModuleCatIso :
+    ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj
+      (K.liftObjectProperty (ModuleCat.isFG R) fun i ↦ (ModuleCat.isFG_iff _).2 (hK i)) ≅ K :=
+  -- `forget₂` is the inclusion of the full subcategory, so it sends `homMk f` to `f`.
+  Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun _ _ _ ↦
+    (Category.id_comp _).trans (Category.comp_id _).symm
 
 end HomologicalComplex

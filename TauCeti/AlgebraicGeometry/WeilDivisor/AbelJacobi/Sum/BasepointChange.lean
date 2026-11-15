@@ -20,17 +20,13 @@ base points `x₀` and `y₀`, the divisor-level Abel-Jacobi sums satisfy
 
 `AJ_{y₀}(D) = AJ_{x₀}(D) + deg(D) • ([x₀] - [y₀])`.
 
-Here `deg(D)` is the weighted degree for the chosen weight `w`.  The unweighted specialization
-is the same formula with the ordinary degree.  This is the formal divisor-class bookkeeping
-behind the later Abel maps `D ↦ 𝒪_X(D - d·x₀)` used in the Jacobian roadmap: changing the
-normalizing base point translates the degree-`d` Abel map by `d` times the class of
+Here `deg(D)` is the weighted degree for the chosen weight `w`. The unweighted specialization is the
+same formula with the ordinary degree. For the Abel maps `D ↦ 𝒪_X(D - d·x₀)` this says that changing
+the normalizing base point translates the degree-`d` Abel map by `d` times the class of
 `[x₀] - [y₀]`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "`Pic⁰ X = ker deg` (as
-an abstract group)", and supplies a direct prerequisite for the Layer D/F Abel-map lane
-`D ↦ 𝒪_X(D - d·x₀)`.  No external mathematics is vendored; the proofs reuse Tau Ceti's
-existing `weightedAbelJacobiDivisorClass`, `weightedBasepointChangeClass`, and divisor-class
-API.
+No external mathematics is vendored; the proofs reuse Tau Ceti's `weightedAbelJacobiDivisorClass`,
+`weightedBasepointChangeClass`, and divisor-class API.
 -/
 
 public section

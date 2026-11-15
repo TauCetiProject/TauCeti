@@ -45,9 +45,6 @@ parabolic, Levi, and unipotent subgroups of `GLₙ`.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This advances the dynamic approach to parabolic subgroups and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -81,6 +78,7 @@ commutative value algebra `A`. -/
 noncomputable def limitToLeviNatTrans : parabolicFunctor l ⟶ leviFunctor l where
   app A := GrpCat.ofHom (limitToLevi A l)
   naturality {A B} φ := by
+    rw [parabolicFunctor_map, leviFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g
@@ -118,6 +116,7 @@ algebra `A`. -/
 noncomputable def leviToParabolicNatTrans : leviFunctor l ⟶ parabolicFunctor l where
   app A := GrpCat.ofHom (leviToParabolic A l)
   naturality {A B} φ := by
+    rw [leviFunctor_map, parabolicFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g
@@ -203,6 +202,7 @@ unipotent and Levi subgroup functors is naturally isomorphic to the dynamic para
 noncomputable def leviDecompositionNatIso :
     leviSemidirectFunctor l ≅ parabolicFunctor l :=
   NatIso.ofComponents (fun A ↦ (leviDecompositionMulEquiv A l).toGrpIso) fun {A B} φ ↦ by
+    rw [parabolicFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g

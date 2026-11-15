@@ -1,0 +1,34 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
+
+/-!
+# Real part of the complex winding normalization
+
+Multiplication by `(2πi)⁻¹` converts an imaginary part into the real normalized index, and
+integer multiples of `2πi` determine their integer (`Complex.intCast_mul_two_pi_I_injective`).
+-/
+
+public section
+
+namespace Complex
+
+/-- The real part of a normalized complex winding integral is its imaginary part divided by
+`2π`. -/
+theorem re_inv_two_pi_I_mul (w : ℂ) :
+    ((2 * (Real.pi : ℂ) * I)⁻¹ * w).re = w.im / (2 * Real.pi) := by
+  simp [div_eq_inv_mul]
+
+/-- Integer multiples of `2πi` determine their integer. -/
+theorem intCast_mul_two_pi_I_injective :
+    Function.Injective fun n : ℤ ↦ (n : ℂ) * (2 * Real.pi * I) := fun _ _ h ↦
+  Int.cast_injective (mul_right_cancel₀ two_pi_I_ne_zero h)
+
+end Complex

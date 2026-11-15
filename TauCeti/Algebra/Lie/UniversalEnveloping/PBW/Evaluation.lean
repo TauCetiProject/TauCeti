@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Multiset
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.PolynomialRep
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Polynomial.Rep
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.LeadingTerm
 
 /-!

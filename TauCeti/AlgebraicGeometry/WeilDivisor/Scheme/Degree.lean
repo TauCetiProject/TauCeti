@@ -15,9 +15,8 @@ This file specializes `WeilDivisor.weightedDegree` to the residue-degree weights
 scheme morphism. For a curve over a field, applied to its structure morphism, this is the divisor
 degree `Σ_x [κ(x) : k] · ord_x`.
 
-The composition formula records how these weights change through successive scheme morphisms.
-This supplies the residue-field-weighted divisor degree required in Layer A of the Jacobian
-challenge roadmap.
+The composition formula records how these weights change through successive scheme morphisms. This
+supplies the residue-field-weighted divisor degree.
 -/
 
 public section
@@ -58,12 +57,12 @@ lemma relativeDegree_comp (f : X ⟶ Y) (g : Y ⟶ Z) (D : SchemeWeilDivisor X) 
       WeilDivisor.weightedDegree
         (fun x : CodimensionOnePoint X ↦
           (g.residueDegree (f x) : ℤ) * f.residueDegree x) D := by
-  simp only [relativeDegree, residueDegree_comp, Nat.cast_mul]
+  simp only [relativeDegree, Scheme.Hom.residueDegree_comp, Nat.cast_mul]
 
 /-- An effective divisor has nonnegative relative degree: residue degrees are nonnegative. -/
 lemma relativeDegree_nonneg (f : X ⟶ Y) {D : SchemeWeilDivisor X}
-    (hD : WeilDivisor.IsEffective D) : 0 ≤ relativeDegree f D :=
-  hD.weightedDegree_nonneg fun _ ↦ Int.natCast_nonneg _
+    (hD : 0 ≤ D) : 0 ≤ relativeDegree f D :=
+  WeilDivisor.weightedDegree_nonneg (fun _ _ ↦ Int.natCast_nonneg _) hD
 
 end
 

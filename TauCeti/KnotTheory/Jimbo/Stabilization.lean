@@ -59,7 +59,7 @@ private theorem stabilized_diagonal (q : Rˣ) (b : BraidGroup (n + 1))
   have hswap₂ : (![w (Fin.last n), c] : Fin 2 → Fin N) ∘ Equiv.swap 0 1 =
       ![c, w (Fin.last n)] := by
     ext i; fin_cases i <;> simp
-  simp only [map_mul, Units.val_mul, Module.End.mul_apply, jimbo_sigma, jimboUnit_val,
+  simp only [map_mul, Units.val_mul, mul_apply_eq_comp, jimbo_sigma, jimboUnit_val,
     hj, hk, jimboGenerator_single_one, Fin.snoc_castSucc, Fin.snoc_last,
     Matrix.cons_val_zero, Matrix.cons_val_one]
   have hpair : (![c, w (Fin.last n)] : Fin 2 → Fin N) = ![w (Fin.last n), c] ↔

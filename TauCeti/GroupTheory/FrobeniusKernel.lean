@@ -73,9 +73,10 @@ The last section runs the recognition in the other direction.  A semidirect deco
 trivial-intersection subgroup (`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`), and
 then the given `N` is already the Frobenius kernel
 (`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`) -- the inclusion
-`N ⊆ frobeniusKernel H` needs only normality and disjointness, and the count above turns it into
-an equality.  Nothing there is character theory: it is what a concrete Frobenius group is checked
-against once Frobenius's theorem has produced its kernel abstractly.
+`N ⊆ frobeniusKernel H` (`TauCeti.IsTISubgroup.coe_subset_frobeniusKernel_of_isComplement'`)
+follows from the coprimality of `|H|` and `|G : H| = |N|`, and the
+count above turns it into an equality.  Nothing there is character theory: it is what a concrete
+Frobenius group is checked against once Frobenius's theorem has produced its kernel abstractly.
 
 No subgroup hypothesis beyond `TauCeti.IsTISubgroup` is needed for the count once `G` is finite, and
 the two degenerate cases are honest instances rather than exclusions:
@@ -110,23 +111,22 @@ everything and `⊥` has index `|G|`.
 * `TauCeti.IsTISubgroup.mem_frobeniusKernel_of_conj_eq_self` and
   `TauCeti.IsTISubgroup.centralizer_singleton_subset_frobeniusKernel`: the centralizer of a
   nonidentity element of the kernel is contained in the kernel.
-* `TauCeti.IsTISubgroup.card_dvd_index_sub_one`: **`|H| ∣ |G : H| - 1`** for a finite `G`, with
-  `TauCeti.IsTISubgroup.coprime_card_index` the coprimality and
+* `TauCeti.IsTISubgroup.card_dvd_index_sub_one`: **`|H| ∣ |G : H| - 1`**, with
+  `TauCeti.IsTISubgroup.coprime_card_index` the coprimality (for finite `G`) and
   `TauCeti.IsTISubgroup.card_lt_index` the strict inequality `|H| < |G : H|` it implies.
 * `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`: **a complement to a normal subgroup
   on which it acts without nonidentity fixed points is a trivial-intersection subgroup**, with
   `TauCeti.isFrobeniusComplement_of_isComplement'_of_fixedPointFree` its bundled form for a proper
   nontrivial `H`.
-* `TauCeti.coe_subset_frobeniusKernel` and
-  `TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`: **a normal complement meeting
-  `H` trivially lies in the Frobenius kernel, and for a finite `G` it *is* the Frobenius
-  kernel** when `H` is a trivial-intersection subgroup.
+* `TauCeti.coe_subset_frobeniusKernel`,
+  `TauCeti.IsTISubgroup.coe_subset_frobeniusKernel_of_isComplement'` and
+  `TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`: **a normal subgroup meeting
+  `H` trivially lies in the Frobenius kernel, for a finite `G` so does any complement to a
+  trivial-intersection subgroup `H`, and such a complement *is* the Frobenius kernel**.
 
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7, Section 7B.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`frobeniusKernel`, "a set of size `|G : H|`", and `frobeniusKernel_isComplement'`).
 -/
 
 public section
@@ -431,20 +431,26 @@ theorem IsTISubgroup.centralizer_singleton_subset_frobeniusKernel (hH : IsTISubg
 
 /-! ### The order of the complement divides the size of the kernel minus one -/
 
-/-- **The order of a trivial-intersection subgroup of a finite group divides `|G : H| - 1`.**  For
+/-- **The order of a trivial-intersection subgroup divides `|G : H| - 1`.**  For
 a Frobenius complement `H`, Frobenius's theorem makes the kernel a subgroup `N` of order `|G : H|`,
 so this is the classical `|H| ∣ |N| - 1`
-(`TauCeti.card_dvd_card_frobeniusKernelSubgroup_sub_one`). -/
-theorem IsTISubgroup.card_dvd_index_sub_one [Finite G] (hH : IsTISubgroup H) :
+(`TauCeti.card_dvd_card_frobeniusKernelSubgroup_sub_one`).  In an infinite group the index of a
+trivial-intersection subgroup is `0` or `1`
+(`TauCeti.IsTISubgroup.index_eq_zero_or_one_of_infinite`), so the statement holds there by
+convention. -/
+theorem IsTISubgroup.card_dvd_index_sub_one (hH : IsTISubgroup H) :
     Nat.card H ∣ H.index - 1 := by
-  have hcard : Nat.card ↥(frobeniusKernel H \ {1}) = H.index - 1 := by
-    rw [Nat.card_coe_set_eq, Set.ncard_sdiff_singleton_of_mem one_mem_frobeniusKernel,
-      hH.ncard_frobeniusKernel]
-  obtain ⟨q, hq⟩ : ∃ q : ℕ, Nat.card ↥(frobeniusKernel H \ {1}) = q * Nat.card H :=
-    ⟨_, (Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hH.stabilizer_eq_bot)).trans
-      (Nat.card_prod _ _)⟩
-  rw [← hcard, hq]
-  exact dvd_mul_left _ _
+  by_cases hG : Finite G
+  · have hcard : Nat.card ↥(frobeniusKernel H \ {1}) = H.index - 1 := by
+      rw [Nat.card_coe_set_eq, Set.ncard_sdiff_singleton_of_mem one_mem_frobeniusKernel,
+        hH.ncard_frobeniusKernel]
+    obtain ⟨q, hq⟩ : ∃ q : ℕ, Nat.card ↥(frobeniusKernel H \ {1}) = q * Nat.card H :=
+      ⟨_, (Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hH.stabilizer_eq_bot)).trans
+        (Nat.card_prod _ _)⟩
+    rw [← hcard, hq]
+    exact dvd_mul_left _ _
+  · have : Infinite G := not_finite_iff_infinite.1 hG
+    rcases hH.index_eq_zero_or_one_of_infinite with h | h <;> simp [h]
 
 /-- **The order of a trivial-intersection subgroup of a finite group is coprime to its index**, an
 immediate consequence of `TauCeti.IsTISubgroup.card_dvd_index_sub_one`.  For a Frobenius group it
@@ -477,8 +483,9 @@ section Semidirect
 variable {N : Subgroup G}
 
 /-- **A normal subgroup meeting `H` trivially lies in the Frobenius kernel of `H`.**  Neither
-finiteness nor a complement hypothesis is needed; this inclusion is the easy half of
-`TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`. -/
+finiteness nor a complement hypothesis is needed; for a complement to a trivial-intersection
+subgroup `H` in a finite group, normality can be dropped instead
+(`TauCeti.IsTISubgroup.coe_subset_frobeniusKernel_of_isComplement'`). -/
 theorem coe_subset_frobeniusKernel [N.Normal] (hdisj : Disjoint N H) :
     (N : Set G) ⊆ frobeniusKernel H := by
   -- every conjugate of `N` is `N` itself, so a nonidentity element of `N` is conjugated into `H`
@@ -497,19 +504,42 @@ theorem coe_subset_frobeniusKernel [N.Normal] (hdisj : Disjoint N H) :
   calc y = x * (x⁻¹ * y * x) * x⁻¹ := by group
     _ = 1 := by rw [hone, mul_one, mul_inv_cancel]
 
-/-- **The Frobenius kernel of a normal complement to a trivial-intersection subgroup is that
+/-- **In a finite group, a complement to a trivial-intersection subgroup `H` lies in the
+Frobenius kernel of `H`**, with no normality assumed, unlike `TauCeti.coe_subset_frobeniusKernel`.
+This inclusion is the easy half of `TauCeti.IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement'`.
+-/
+theorem IsTISubgroup.coe_subset_frobeniusKernel_of_isComplement' [Finite G]
+    (hH : IsTISubgroup H) (hNH : N.IsComplement' H) :
+    (N : Set G) ⊆ frobeniusKernel H := by
+  -- a nonidentity `y ∈ N` conjugate into `H` would have order dividing both `|N| = |G : H|` and
+  -- `|H|`, which are coprime
+  intro y hy
+  rw [SetLike.mem_coe] at hy
+  rw [mem_frobeniusKernel]
+  by_cases h1 : y = 1
+  · exact Or.inl h1
+  refine Or.inr fun x hx => h1 ?_
+  have hN : orderOf y ∣ H.index := hNH.index_eq_card ▸ Subgroup.orderOf_dvd_natCard N hy
+  have hH' : orderOf y ∣ Nat.card H := by
+    have := Subgroup.orderOf_dvd_natCard H hx
+    rwa [← (show SemiconjBy x⁻¹ y (x⁻¹ * y * x) by simp [SemiconjBy, mul_assoc]).orderOf_eq]
+      at this
+  exact orderOf_eq_one_iff.1 (Nat.eq_one_of_dvd_coprimes hH.coprime_card_index hH' hN)
+
+/-- **The Frobenius kernel of a complement to a trivial-intersection subgroup is that
 complement itself.**  This identifies the kernel that Frobenius's theorem constructs from the
 character theory of `G` with the normal complement a semidirect decomposition `G = N ⋊ H` hands
 over directly; a fixed-point-free action of `H` on `N` supplies the trivial-intersection
 hypothesis through `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`, and the
 subgroup-level statement is `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`. -/
-theorem IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement' [Finite G] [N.Normal]
+theorem IsTISubgroup.coe_eq_frobeniusKernel_of_isComplement' [Finite G]
     (hH : IsTISubgroup H) (hNH : N.IsComplement' H) :
     (N : Set G) = frobeniusKernel H := by
   -- both sides have `|G : H|` elements: `N` because it is a complement, the kernel by
   -- `TauCeti.IsTISubgroup.ncard_frobeniusKernel`
   have hcoe : (N : Set G).ncard = Nat.card N := (Nat.card_coe_set_eq (N : Set G)).symm
-  refine Set.eq_of_subset_of_ncard_le (coe_subset_frobeniusKernel hNH.disjoint) ?_ (Set.toFinite _)
+  refine Set.eq_of_subset_of_ncard_le (hH.coe_subset_frobeniusKernel_of_isComplement' hNH) ?_
+    (Set.toFinite _)
   rw [hH.ncard_frobeniusKernel, hcoe, hNH.index_eq_card]
 
 end Semidirect

@@ -37,6 +37,11 @@ essential along **any** linear map (`TauCeti.IsEssential.comap`, the analogue of
 
 * `TauCeti.isEssential_iff`: the definition, restated so that essentiality can be proved and used
   downstream.
+* `TauCeti.isEssential_iff_forall_exists_smul`: a submodule is essential exactly when every nonzero
+  element has a nonzero multiple in it.
+* `TauCeti.isEssential_comap_subtype_iff` and `TauCeti.isEssential_comap_subtype_sSup`: the same
+  criterion for the trace of `N` on a submodule `P`, and the union of a directed family of
+  essential extensions of `N` inside `M` is again one.
 * `TauCeti.isEssential_top`, `TauCeti.IsEssential.mono`, `TauCeti.isEssential_inf_iff`: the
   essential submodules of `M` are closed upwards and under binary infima, and contain `⊤`.
 * `TauCeti.isEssential_bot_iff`: `⊥` is essential exactly for the zero module.
@@ -50,6 +55,8 @@ essential along **any** linear map (`TauCeti.IsEssential.comap`, the analogue of
   it is an *essential monomorphism*, that is, when every map out of its target whose composite with
   it is injective is itself injective. This is the minimality that makes an injective envelope an
   injective envelope.
+* `TauCeti.isEssential_range_mkQ_comp_subtype`: if `K` is maximal among the submodules disjoint from
+  `E`, then `E` has essential image in `M ⧸ K`.
 * `TauCeti.IsEssential.atom_le` and `TauCeti.isEssential_iff_forall_atom_le`: an essential
   submodule contains every atom of the submodule lattice — every simple submodule — and over an
   atomic submodule lattice that property characterizes essentiality.
@@ -81,6 +88,44 @@ so this is the interface through which essentiality is both proved and used. -/
 theorem isEssential_iff {N : Submodule R M} :
     IsEssential N ↔ ∀ K : Submodule R M, N ⊓ K = ⊥ → K = ⊥ :=
   (Iff.rfl)
+
+/-- **Essentiality, pointwise.** A submodule is essential exactly when every nonzero element has a
+nonzero multiple in it, that is, when it meets every nonzero cyclic submodule. -/
+theorem isEssential_iff_forall_exists_smul {N : Submodule R M} :
+    IsEssential N ↔ ∀ x : M, x ≠ 0 → ∃ r : R, r • x ∈ N ∧ r • x ≠ 0 := by
+  refine ⟨fun hN x hx => ?_, fun H K hK => ?_⟩
+  · by_contra! h
+    refine hx (Submodule.span_singleton_eq_bot.mp (hN _ ((Submodule.eq_bot_iff _).mpr ?_)))
+    rintro _ ⟨hyN, hy⟩
+    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
+    exact h r hyN
+  · refine (Submodule.eq_bot_iff _).mpr fun x hx => ?_
+    by_contra hx0
+    obtain ⟨r, hrN, hr0⟩ := H x hx0
+    exact hr0 ((Submodule.eq_bot_iff _).mp hK _ ⟨hrN, K.smul_mem r hx⟩)
+
+/-- **Essential extensions inside an ambient module, pointwise.** The trace of `N` on a submodule
+`P` is essential in `P` exactly when every nonzero element of `P` has a nonzero multiple in `N`. -/
+theorem isEssential_comap_subtype_iff {N P : Submodule R M} :
+    IsEssential (N.comap P.subtype) ↔ ∀ x ∈ P, x ≠ 0 → ∃ r : R, r • x ∈ N ∧ r • x ≠ 0 := by
+  rw [isEssential_iff_forall_exists_smul]
+  refine ⟨fun h x hx hx0 => ?_, fun h x hx0 => ?_⟩
+  · obtain ⟨r, hrN, hr0⟩ := h ⟨x, hx⟩ fun h0 => hx0 (congrArg Subtype.val h0)
+    exact ⟨r, hrN, fun h0 => hr0 (Subtype.ext h0)⟩
+  · obtain ⟨r, hrN, hr0⟩ := h x x.2 fun h0 => hx0 (Subtype.ext h0)
+    exact ⟨r, hrN, fun h0 => hr0 (congrArg Subtype.val h0)⟩
+
+/-- **Directed unions of essential extensions.** If the trace of `N` is essential in every member
+of a directed family of submodules, it is essential in their supremum. This is the chain condition
+for Zorn's lemma in the construction of maximal essential extensions. -/
+theorem isEssential_comap_subtype_sSup {N : Submodule R M} {c : Set (Submodule R M)}
+    (hc : DirectedOn (· ≤ ·) c) (h : ∀ P ∈ c, IsEssential (N.comap P.subtype)) :
+    IsEssential (N.comap (sSup c).subtype) := by
+  refine isEssential_comap_subtype_iff.mpr fun x hx hx0 => ?_
+  rcases c.eq_empty_or_nonempty with rfl | hne
+  · exact absurd ((Submodule.mem_bot R).mp (by simpa using hx)) hx0
+  obtain ⟨P, hPc, hxP⟩ := (Submodule.mem_sSup_of_directed hne hc).mp hx
+  exact isEssential_comap_subtype_iff.mp (h P hPc) x hxP hx0
 
 /-- The whole module is essential in itself. -/
 @[simp]
@@ -248,6 +293,22 @@ theorem isEssential_range_iff_forall_injective {f : M →ₗ[R] M₂} (hf : Func
       exact hf hmem
     have hmk := H K.mkQ hinj
     rwa [← LinearMap.ker_eq_bot, Submodule.ker_mkQ] at hmk
+
+/-- **Maximal complements give essential embeddings.** If `K` is maximal among the submodules
+disjoint from `E`, then the image of `E` in `M₂ ⧸ K` is essential. (The map `E → M₂ ⧸ K` is
+injective already because `E` and `K` are disjoint.) -/
+theorem isEssential_range_mkQ_comp_subtype {E K : Submodule R M₂} (hK : Maximal (Disjoint E) K) :
+    IsEssential (LinearMap.range (K.mkQ ∘ₗ E.subtype)) := by
+  refine fun L hL => ?_
+  -- The preimage of `L` contains `K` and is still disjoint from `E`, so it is `K` by maximality.
+  have hLK : K = L.comap K.mkQ := by
+    refine hK.eq_of_le (Submodule.disjoint_def.mpr fun x hxE hxL => ?_) fun x hx => by
+      rw [Submodule.mem_comap, Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero K).mpr hx]
+      exact L.zero_mem
+    have hx : K.mkQ x ∈ LinearMap.range (K.mkQ ∘ₗ E.subtype) ⊓ L := ⟨⟨⟨x, hxE⟩, rfl⟩, hxL⟩
+    rw [hL, Submodule.mem_bot, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hx
+    exact Submodule.disjoint_def.mp hK.prop x hxE hx
+  rw [← Submodule.map_comap_eq_of_surjective K.mkQ_surjective L, ← hLK, Submodule.mkQ_map_self]
 
 end Ring
 

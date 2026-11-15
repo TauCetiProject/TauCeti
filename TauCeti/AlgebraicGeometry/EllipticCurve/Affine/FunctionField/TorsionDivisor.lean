@@ -36,7 +36,7 @@ namespace WeierstrassCurve.Affine
 open TauCeti AlgebraicGeometry IsDedekindDomain
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
-  [IsDedekindDomain W.CoordinateRing] [DecidableEq F] [W.IsElliptic]
+  [DecidableEq F] [W.IsElliptic]
 
 /-- **At an `n`-torsion point, `n(T) - n(O)` is the divisor of a function** (Silverman III.8.1). -/
 theorem exists_principal_eq_zsmul_ofPoint_sub_infinity {n : ℤ} {T : W.Point} (hT : n • T = 0) :

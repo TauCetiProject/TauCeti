@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
+import TauCeti.FieldTheory.SquareClassGroup.Real
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.Topology.Algebra.Field.Squares
+import TauCeti.Topology.Algebra.GroupWithZero.Squares
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Algebra.Group.Even
 
@@ -53,23 +54,22 @@ theorem exists_fieldUnit_isSquare_div_at_places
       charZero_of_injective_algebraMap (algebraMap K (v.1.adicCompletion K)).injective
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v) :=
       (continuous_apply v).comp continuous_fst
-    have hopen : IsOpen ((powMonoidHom 2 : (v.1.adicCompletion K)ˣ →*
-        (v.1.adicCompletion K)ˣ).range : Set (v.1.adicCompletion K)ˣ) :=
-      isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
-    exact ContinuousAt.eventually_isSquare_div_of_isOpen_squares
+    have hopen : IsOpen {u : (v.1.adicCompletion K)ˣ | IsSquare u} := by
+      simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
+        using isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
+    exact Filter.Tendsto.eventually_isSquare_div
       (f := fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v)
-      (x := target) hcont.continuousAt hopen (a v).ne_zero
+      hcont.continuousAt (hopen.mem_nhds .one) (a v).ne_zero
   have hr (w : T) : ∀ᶠ y in 𝓝 target, y.2 w ≠ 0 ∧ IsSquare (y.2 w / (b w : ℝ)) := by
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) =>
-        y.2 w / (b w : ℝ)) :=
-      ((continuous_apply w).comp continuous_snd).div_const _
-    have hpos : ∀ᶠ y in 𝓝 target, 0 < y.2 w / (b w : ℝ) :=
-      hcont.continuousAt.eventually
-        (isOpen_Ioi.mem_nhds (by
-          simpa only [target, div_self (b w).ne_zero, Set.mem_Ioi]
-            using (zero_lt_one : (0 : ℝ) < 1)))
-    filter_upwards [hpos] with y hy
-    exact ⟨fun hzero => by simp [hzero] at hy, Real.isSquare_iff.mpr hy.le⟩
+        y.2 w) :=
+      (continuous_apply w).comp continuous_snd
+    exact hcont.continuousAt.eventually_isSquare_div
+      ((by
+        simpa only [Units.isSquare_iff_pos] using
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}) :
+        IsOpen {u : ℝˣ | IsSquare u}).mem_nhds .one)
+      (b w).ne_zero
   have he := (eventually_all.mpr hf).and (eventually_all.mpr hr)
   obtain ⟨y, hy, x, rfl⟩ := mem_closure_iff_nhds.mp
     ((denseRange_algebraMap_embedding_of_isReal S T) target) _ he
@@ -106,7 +106,7 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
     have hhead (j : Fin n) : IsSquare
         (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e j.castSucc) /
           a v j.castSucc) := by
-      apply isSquare_units_val_iff.mp
+      apply Units.isSquare_coe_iff.mp
       -- Expand the square witness to normalize the scalar and unit coercions.
       simpa [e, IsSquare] using hc j v
     refine Fin.lastCases ?_ hhead i
@@ -114,13 +114,13 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
         (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) / ∏ i, a v i) := by
       rw [← map_prod, he]
       exact ha v
-    exact isSquare_div_last_of_isSquare_div_prod
-      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i))
-      (b := a v) hhead hp
+    exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
+      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) (b := a v)
+      (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
   · intro w i
     have hhead (j : Fin n) : IsSquare
         (Units.map (embedding_of_isReal w.1.2).toMonoidHom (e j.castSucc) / b w j.castSucc) := by
-      apply isSquare_units_val_iff.mp
+      apply Units.isSquare_coe_iff.mp
       -- Expand the square witness to normalize the scalar and unit coercions.
       simpa [e, IsSquare] using hr j w
     refine Fin.lastCases ?_ hhead i
@@ -128,8 +128,8 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
         (embedding_of_isReal w.1.2).toMonoidHom (e i)) / ∏ i, b w i) := by
       rw [← map_prod, he]
       exact hb w
-    exact isSquare_div_last_of_isSquare_div_prod
-      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i))
-      (b := b w) hhead hp
+    exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
+      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i)) (b := b w)
+      (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
 
 end TauCeti.GlobalNumberFields

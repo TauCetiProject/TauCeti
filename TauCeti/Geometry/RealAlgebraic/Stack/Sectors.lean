@@ -45,10 +45,9 @@ theorem isAnalyticSubmanifold_image_cylinder_sectorSet
   have hsub : cylinder S '' sectorSet θ j ⊆ {v | Fin.tail v ∈ S} := by
     rintro _ ⟨z, _, rfl⟩
     simpa only [mem_ofPred_eq, tail_cylinder] using z.1.property
-  have hne : (cylinder S '' sectorSet θ j).Nonempty := by
-    obtain ⟨x, hx⟩ := hS.nonempty
-    obtain ⟨σ, _, hσ⟩ := exists_continuous_forall_mem_sectorSet hc hθ j
-    exact ⟨_, ⟨(⟨x, hx⟩, σ ⟨x, hx⟩), hσ _, rfl⟩⟩
+  have hne : (cylinder S '' sectorSet θ j).Nonempty :=
+    have := hS.nonempty.to_subtype
+    (sectorSet_nonempty hθ j).image _
   refine hS.cylinder.of_isOpen_preimage_val hsub ?_ hne
   -- The inverse cylinder coordinates identify the relative sector with the
   -- open sector in `S × ℝ`; the subtype carries exactly the cylinder topology.

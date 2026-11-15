@@ -17,10 +17,8 @@ This file equips the product of two right comodules over a fixed coalgebra with 
 coaction. For comodules `M` and `N`, the coaction on `M × N` is
 `ρ(m, n) = (inl ⊗ id) (ρ m) + (inr ⊗ id) (ρ n)`.
 
-The file also records that the four standard linear maps for a product,
-`fst`, `snd`, `inl`, and `inr`, are comodule morphisms for this coaction. This is additive
-infrastructure for the finite-dimensional comodule representation category in the
-reductive-groups roadmap.
+The file also records that the four standard linear maps for a product, `fst`, `snd`, `inl`, and
+`inr`, are comodule morphisms for this coaction.
 
 ## Main declarations
 
@@ -32,11 +30,7 @@ reductive-groups roadmap.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target
-"Comodules over a coalgebra/Hopf algebra": the finite-dimensional comodule category should be an
-additive category before tensor products, duals, and Tannakian reconstruction are built on top.
-The construction is the standard direct sum of comodules; see Sweedler, *Hopf Algebras*,
-Chapter 2.
+The construction is the standard direct sum of comodules; see Sweedler, *Hopf Algebras*, Chapter 2.
 -/
 
 public section

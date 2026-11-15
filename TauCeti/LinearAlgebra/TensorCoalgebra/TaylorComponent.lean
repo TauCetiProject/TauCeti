@@ -59,7 +59,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 applying the outer endomorphism's letter component to every signed nonempty one-block collapse
 made by the inner expansion. -/
 theorem taylorComponent_comp_gradedCoderiv_of_tprod
-    (G : InternalGrading R M) (b₁ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
+    (G : InternalGrading R M ℤ) (b₁ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
     (F₂ : ReducedTensorWords R M →ₗ[R] M) (q₂ : ℤ)
     {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
     (b₁ ∘ₗ gradedCoderiv G F₂ q₂).taylorComponent ⟨n, hn⟩
@@ -77,7 +77,7 @@ theorem taylorComponent_comp_gradedCoderiv_of_tprod
       exact Finset.sum_congr rfl fun p _ ↦ by
         simp only [map_sum, LinearMap.comp_apply]
     _ = _ := by
-      refine Finset.sum_congr rfl fun p hp ↦ ?_
+      refine Finset.sum_congr rfl fun p _ ↦ ?_
       apply (Finset.sum_subset ?_ ?_).symm
       · intro d hd
         rw [Finset.mem_Icc] at hd
@@ -95,7 +95,7 @@ theorem taylorComponent_comp_gradedCoderiv_of_tprod
 Koszul sign contributed by the inner twist and the degrees of the letters preceding the inserted
 operation. -/
 theorem taylorComponent_comp_gradedCoderiv_of_tprod_of_homogeneous
-    (G : InternalGrading R M) (b₁ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
+    (G : InternalGrading R M ℤ) (b₁ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
     (F₂ : ReducedTensorWords R M →ₗ[R] M) (q₂ : ℤ)
     {n : ℕ} (hn : 0 < n) (x : Fin n → M) (𝒟 : Fin n → ℤ)
     (hx : ∀ i, x i ∈ G.piece (𝒟 i)) :

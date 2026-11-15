@@ -16,8 +16,7 @@ This file adds how `ρ` behaves under the inversion `z ↦ -1/z`, which is what 
 of the standard fundamental domain need: the inversion swaps them, carrying `ρ` to `ρ + 1` and
 back.
 
-Both identities fall straight out of `ρ_sq : (ρ : ℂ) ^ 2 = -ρ - 1`, once the relevant denominator
-is known to be nonzero — and `ρ + 1 ≠ 0` is itself read off from `-1 / ρ = ρ + 1`.
+Both identities are consequences of `ρ_sq : (ρ : ℂ) ^ 2 = -ρ - 1`.
 
 The file also collects the elementary values every consumer of the fundamental domain's boundary
 needs for its three elliptic points — the corners `ρ`, `ρ + 1` and the arc midpoint `i`: the
@@ -51,18 +50,15 @@ lemma neg_one_div_ρ : -1 / (ρ : ℂ) = (ρ : ℂ) + 1 := by
   rw [div_eq_iff (ne_zero ρ)]
   linear_combination -ρ_sq
 
-/-- The second `ρ`-corner has unit modulus, like `ρ` itself: the inversion carries one to the
-other and preserves the norm. -/
+/-- The second `ρ`-corner has unit modulus, like `ρ` itself. -/
 @[simp]
 lemma norm_ρ_add_one : ‖(ρ : ℂ) + 1‖ = 1 := by
-  rw [← neg_one_div_ρ, norm_div]
-  simp [norm_ρ]
+  simp [← neg_one_div_ρ, norm_ρ]
 
 /-- The inversion carries `ρ + 1` to `ρ`. -/
 @[simp]
 lemma neg_one_div_ρ_add_one : -1 / ((ρ : ℂ) + 1) = (ρ : ℂ) := by
-  rw [← neg_one_div_ρ]
-  field_simp
+  simp [← neg_one_div_ρ]
 
 /-- The second corner `ρ + 1` is the unit-circle point of angle `π/3`. -/
 lemma ρ_add_one_eq_exp :
@@ -107,40 +103,29 @@ lemma ρ_ne_vadd_ρ : (ρ : ℍ) ≠ (1 : ℝ) +ᵥ ρ :=
 -- the `ρ + 1` spelling the corner API uses throughout.
 /-- The second corner `ρ + 1` as a point of `ℍ`, computed into `ℂ`. -/
 lemma coe_vadd_one_ρ : (((1 : ℝ) +ᵥ ρ : ℍ) : ℂ) = (ρ : ℂ) + 1 := by
-  rw [coe_vadd]
-  push_cast
-  ring
+  simp [add_comm]
 
 /-- A point of the unit circle with real part `0` is the elliptic point `i`. -/
 lemma eq_I_of_re_eq_zero {p : ℍ} (hnorm : ‖(p : ℂ)‖ = 1) (hre : (p : ℂ).re = 0) :
-    p = I := by
-  have h1 : p.re = I.re := by rw [← coe_re, hre, I_re]
-  have h2 : ‖(p : ℂ)‖ = ‖(I : ℂ)‖ := by rw [hnorm, coe_I, Complex.norm_I]
-  exact eq_of_re_of_norm h1 h2
+    p = I :=
+  eq_of_re_of_norm (by simpa using hre) (by simpa using hnorm)
 
 /-- A point of the unit circle with real part `-1/2` is the corner `ρ`. -/
 lemma eq_ρ_of_re_eq_neg_half {p : ℍ} (hnorm : ‖(p : ℂ)‖ = 1) (hre : (p : ℂ).re = -(1 / 2)) :
-    p = ρ := by
-  have h1 : p.re = ρ.re := by rw [← coe_re, hre, re_ρ]
-  have h2 : ‖(p : ℂ)‖ = ‖(ρ : ℂ)‖ := by rw [hnorm, norm_ρ]
-  exact eq_of_re_of_norm h1 h2
+    p = ρ :=
+  eq_of_re_of_norm (by simpa using hre) (hnorm.trans norm_ρ.symm)
 
 /-- A point of the unit circle with real part `1/2` is the corner `ρ + 1`. -/
 lemma eq_vadd_one_ρ_of_re_eq_half {p : ℍ} (hnorm : ‖(p : ℂ)‖ = 1) (hre : (p : ℂ).re = 1 / 2) :
-    p = (1 : ℝ) +ᵥ ρ := by
-  have h1 : p.re = ((1 : ℝ) +ᵥ ρ).re := by rw [← coe_re, hre, vadd_re, re_ρ]; norm_num
-  have h2 : ‖(p : ℂ)‖ = ‖(((1 : ℝ) +ᵥ ρ : ℍ) : ℂ)‖ := by
-    rw [hnorm, coe_vadd_one_ρ, norm_ρ_add_one]
-  exact eq_of_re_of_norm h1 h2
+    p = (1 : ℝ) +ᵥ ρ :=
+  eq_of_re_of_norm (by rw [vadd_re, re_ρ, ← coe_re, hre]; norm_num)
+    (by rw [hnorm, coe_vadd_one_ρ, norm_ρ_add_one])
 
 /-- The three elliptic points on the boundary of the fundamental domain — the corners `ρ`,
 `ρ + 1` and the arc midpoint `i` — all lie on the unit circle. -/
 lemma norm_eq_one_of_mem_ellipticPoints {z : ℂ}
     (hz : z ∈ ({Complex.I, (ρ : ℂ), (ρ : ℂ) + 1} : Finset ℂ)) : ‖z‖ = 1 := by
   simp only [Finset.mem_insert, Finset.mem_singleton] at hz
-  rcases hz with rfl | rfl | rfl
-  · exact Complex.norm_I
-  · exact norm_ρ
-  · exact norm_ρ_add_one
+  rcases hz with rfl | rfl | rfl <;> simp [norm_ρ]
 
 end UpperHalfPlane

@@ -12,12 +12,16 @@ public import Mathlib.RingTheory.Valuation.Basic
 
 Mathlib's `Valuation.map_sum_le` bounds the value of a finite sum by a common bound on the values
 of its terms. This file records the weighted form: if every term satisfies `v (f i) * c ≤ B`, then
-so does the sum. Weighted bounds of this shape arise when estimating the terms of polynomial
-expressions against a varying scale, as in `TauCeti/RingTheory/Valuation/Polynomial.lean`.
+so does the sum, and `Valuation.map_sub_mul_le` is the corresponding weighted form of
+`Valuation.map_sub_le` for a difference. Weighted bounds of this shape arise when estimating the
+terms of polynomial expressions against a varying scale, as in
+`TauCeti/RingTheory/Valuation/Polynomial.lean`.
 
 ## Main results
 
 * `Valuation.map_sum_mul_le`: the ultrametric bound on a finite sum, with every term weighted by a
+  common factor.
+* `Valuation.map_sub_mul_le`: the ultrametric bound on a difference, with both terms weighted by a
   common factor.
 -/
 
@@ -29,14 +33,14 @@ variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀] (v :
 
 /-- The ultrametric bound on a finite sum, with every term weighted by a common factor `c`. -/
 theorem map_sum_mul_le {ι : Type*} {s : Finset ι} {f : ι → R} {c B : Γ₀}
-    (h : ∀ i ∈ s, v (f i) * c ≤ B) : v (∑ i ∈ s, f i) * c ≤ B := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons i s hi ih =>
-    rw [Finset.sum_cons]
-    refine (mul_le_mul_left (v.map_add _ _) c).trans ?_
-    rw [max_mul]
-    exact max_le (h i (by simp)) (ih fun j hj ↦ h j (by simp [hj]))
+    (h : ∀ i ∈ s, v (f i) * c ≤ B) : v (∑ i ∈ s, f i) * c ≤ B :=
+  Finset.sum_induction f (fun x ↦ v x * c ≤ B) (fun x y hx hy ↦
+    (mul_le_mul_left (v.map_add x y) c).trans ((max_mul ..).trans_le (max_le hx hy))) (by simp) h
+
+/-- The ultrametric bound on a difference, with both terms weighted by a common factor `c`. -/
+theorem map_sub_mul_le {x y : R} {c B : Γ₀} (hx : v x * c ≤ B) (hy : v y * c ≤ B) :
+    v (x - y) * c ≤ B :=
+  (mul_le_mul_left (v.map_sub x y) c).trans ((max_mul ..).trans_le (max_le hx hy))
 
 end Valuation
 

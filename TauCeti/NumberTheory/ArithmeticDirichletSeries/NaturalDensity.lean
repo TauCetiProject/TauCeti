@@ -160,17 +160,13 @@ theorem hasNaturalDensity_biUnion_finset {ι : Type*} {s : Finset ι}
     (hf : ∀ i ∈ s, HasNaturalDensity (f i) (d i))
     (hdisj : (s : Set ι).PairwiseDisjoint f) :
     HasNaturalDensity (⋃ i ∈ s, f i) (∑ i ∈ s, d i) := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.set_biUnion_insert, Finset.sum_insert ha]
-    refine (hf a (Finset.mem_insert_self a s)).union
-      (ih (fun i hi => hf i (Finset.mem_insert_of_mem hi))
-        (hdisj.subset (by simp))) ?_
-    rw [_root_.Set.disjoint_iUnion₂_right]
-    intro i hi
-    exact hdisj (by simp) (by simp [hi]) fun h => ha (h ▸ hi)
+  rw [hasNaturalDensity_def]
+  refine (tendsto_finsetSum s fun i hi ↦ hasNaturalDensity_def.mp (hf i hi)).congr' ?_
+  exact .of_forall fun x ↦ by
+    have hcount := congrArg
+      (fun y : ℝ ↦ y / TauCeti.primeCount K Set.univ x)
+      (TauCeti.primeCount_biUnion_finset s f hdisj x)
+    simpa only [Finset.sum_div] using hcount.symm
 
 /-- The complement of a set of natural density `δ` has natural density `1 - δ`. -/
 theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :
@@ -275,14 +271,10 @@ private theorem exists_tsum_mul_rpow_le_of_eventually_primeSummatory_nonpos
         rw [norm_mul, Real.norm_of_nonneg ha, Real.norm_eq_abs]
         exact mul_le_mul_of_nonneg_right (hB v) ha
   have hbound := TauCeti.tsum_mul_le_of_summatory_le
-    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) (a := 2) (by norm_num)
+    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) (a := 2)
     (fun v ↦ by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm v) w
     (g := fun t ↦ t ^ (-s)) (fun t _ ↦ hF t)
     (fun t ht ↦ (Real.hasDerivAt_rpow_const (Or.inl (by linarith))).differentiableAt)
-    (fun x _ ↦ by
-      rw [Real.deriv_rpow_const']
-      exact ContinuousOn.integrableOn_Icc <| continuousOn_const.mul <|
-        continuousOn_id.rpow_const fun t ht ↦ Or.inl (by rw [id]; linarith [ht.1]))
     (fun t ht ↦ by
       rw [Real.deriv_rpow_const]
       exact mul_nonpos_of_nonpos_of_nonneg (by linarith) (by positivity))

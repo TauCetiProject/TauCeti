@@ -87,7 +87,7 @@ theorem mem_twoTorsion {x : BrauerGroup.{u, u} K} : x ∈ twoTorsion K ↔ x ^ 2
 
 end BrauerGroup
 
-variable (K : Type) [Field K]
+variable (K : Type u) [Field K]
 
 open BrauerGroup
 

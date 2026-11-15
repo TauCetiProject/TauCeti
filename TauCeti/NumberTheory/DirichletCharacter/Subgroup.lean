@@ -149,7 +149,7 @@ end Basic
 
 section RingHom
 
-variable {R R' : Type*} [CommRing R] [CommRing R'] {n : ℕ} [NeZero n]
+variable {R R' : Type*} [CommRing R] [CommRing R'] {n : ℕ}
 
 local instance finite_map {Y : Subgroup (DirichletCharacter R n)} [Finite Y]
     {f : R →+* R'} : Finite ↥(Y.map (MulChar.ringHomCompHom f)) := by

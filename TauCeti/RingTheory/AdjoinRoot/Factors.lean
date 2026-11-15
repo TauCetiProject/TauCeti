@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.Polynomial.Factors
 
@@ -13,6 +14,7 @@ import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.NormTrace.Pi
 
 /-!
 # The field factors of `K[X] ⧸ (f)` and its square classes
@@ -40,6 +42,8 @@ equivalence and its compatibility with products are in
 
 * `AdjoinRoot.isSeparable_of_separable`: each field factor is a separable extension of `K` when
   `f` is separable — the hypothesis `IsIntegralClosure.isDedekindDomain` needs.
+* `AdjoinRoot.norm_eq_prod_norm_projFactor`: the norm of `K[X] ⧸ (f)` over `K` is the product of
+  the norms of the field factors.
 * `AdjoinRoot.modPow_mk_eq_one_iff_forall_factors`: a class of units is trivial exactly when all
   its components at the field factors are.
 
@@ -49,22 +53,21 @@ equivalence and its compatibility with products are in
 elaborated in this module, where the definitions it unfolds are visible, whereas a bare `rfl`
 proof of an exported statement would ask for those definitions to be exposed downstream.
 
-## Roadmap
+## Motivation
 
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil): the `2`-descent map of the weak
-Mordell–Weil theorem lands in the square classes of `K[X] ⧸ (f)` for `f` the Weierstrass cubic, and
-is controlled one field factor at a time; `modPowEquivPiFactors` and
-`modPow_mk_eq_one_iff_forall_factors` are what let a statement about the classes be checked
-componentwise. Nothing here mentions a curve.
+The `2`-descent map of the weak Mordell–Weil theorem lands in the square classes of `K[X] ⧸ (f)`
+for `f` the Weierstrass cubic, and is controlled one field factor at a time;
+`modPowEquivPiFactors` and `modPow_mk_eq_one_iff_forall_factors` are what let a statement about the
+classes be checked componentwise. Nothing here mentions a curve.
 
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `EtaleDecomposition`. The source abbreviates the
 group of `n`-th power classes as `Units.modPow`; here it is the quotient directly. The source is
-written against Lean `v4.32.0`; this is a forward port.
+written against Lean `v4.32.0`; this is a forward port. `norm_eq_prod_norm_projFactor` is the
+source's lemma of that name at its later revision `3bfe124`.
 -/
 
 public section
@@ -106,7 +109,7 @@ noncomputable def equivPiFactors (hf : f ≠ 0) (hsq : Squarefree f) :
     AdjoinRoot f ≃ₐ[K] ((p : f.Factors) → AdjoinRoot (p : K[X])) :=
   have : Finite f.Factors := Factors.finite hf
   AlgEquiv.ofRingEquiv (f :=
-    (Ideal.quotEquivOfEq (Factors.span_eq_iInf_span hf hsq)).trans <|
+    (Ideal.quotEquivOfEq (Factors.span_eq_iInf_span hsq)).trans <|
       Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hpq ↦ Factors.isCoprime_span hpq)
     fun _ ↦ rfl
 
@@ -124,6 +127,14 @@ noncomputable def projFactor (hf : f ≠ 0) (hsq : Squarefree f) (p : f.Factors)
 lemma projFactor_mk (hf : f ≠ 0) (hsq : Squarefree f) (q : K[X]) (p : f.Factors) :
     projFactor hf hsq p (mk f q) = mk (p : K[X]) q :=
   (rfl)
+
+/-- The norm of an element of `K[X] ⧸ (f)` is the product of the norms of its components in the
+field factors. -/
+theorem norm_eq_prod_norm_projFactor [Fintype f.Factors] (hf : f ≠ 0) (hsq : Squarefree f)
+    (a : AdjoinRoot f) :
+    Algebra.norm K a = ∏ p : f.Factors, Algebra.norm K (projFactor hf hsq p a) := by
+  rw [← Algebra.norm_eq_of_algEquiv (equivPiFactors hf hsq) a, TauCeti.Algebra.norm_pi]
+  rfl
 
 /-! ### Square classes, and `n`-th power classes, of the factors -/
 

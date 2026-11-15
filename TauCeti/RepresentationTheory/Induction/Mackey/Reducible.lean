@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 
 /-!
 # An induced representation from a trivially meeting conjugate is never irreducible
@@ -85,7 +85,7 @@ theorem not_mackeyDisjoint_of_mackeySubgroup_eq_bot {A : FDRep k H} {s : G}
     { hom := 𝟙 A.V
       comm := fun g => by
         obtain rfl : g = 1 := Subsingleton.elim g 1
-        simp only [map_one, End.one_def]
+        simp only [map_one, End.one_asHom]
         exact (Category.id_comp _).trans (Category.comp_id _).symm }
   intro hdisj
   have hzero : (𝟙 A.V : A.V ⟶ A.V) = 0 := congrArg Action.Hom.hom (hdisj.eq_zero φ)

@@ -45,9 +45,6 @@ theorem IsProP.module_finite_lcsGradedPiece (hG : IsProP p G)
     rw [hG.gradedPieceModule_def]
     let R := pLowerCentralSeries 0 G 0
     let N := (pLowerCentralSeries 0 G 1).subgroupOf R
-    let _ : IsClosed (R : Set G) := isClosed_pLowerCentralSeries 0
-    let _ : IsClosed (N : Set R) :=
-      (isClosed_pLowerCentralSeries 1).preimage continuous_subtype_val
     let f : G →* R := (MonoidHom.id G).codRestrict R (mem_pLowerCentralSeries_zero 0)
     have hf : Continuous f := continuous_id.subtype_mk _
     have hsurj : Function.Surjective f := fun x ↦ ⟨x, Subtype.ext rfl⟩
@@ -60,7 +57,6 @@ theorem IsProP.module_finite_lcsGradedPiece (hG : IsProP p G)
     let _ := hG.gradedPieceModule 0 n
     let _ := hG.gradedPieceModule 0 (0 + n + 1)
     let _ : Module.Finite ℤ_[p] (gradedPiece 0 G n) := ih
-    let _ : IsClosed (pLowerCentralSeries 0 G n : Set G) := isClosed_pLowerCentralSeries n
     obtain ⟨S, hS⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
     let fs (s : S) : gradedPiece 0 G n →ₗ[ℤ_[p]] gradedPiece 0 G (0 + n + 1) :=
       { toFun := gradedBracket 0 G 0 n (gradedMkZero 0 G s)

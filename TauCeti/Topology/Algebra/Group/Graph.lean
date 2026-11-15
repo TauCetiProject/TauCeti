@@ -37,13 +37,8 @@ def MonoidHomClass.mgraphEquiv (f : F) :
   toFun g := ⟨(g, f g), rfl⟩
   invFun x := x.1.1
   left_inv _ := rfl
-  right_inv x := by
-    apply Subtype.ext
-    apply Prod.ext
-    · rfl
-    · exact x.property
-  map_mul' x y := by
-    ext <;> simp
+  right_inv x := Subtype.ext (Prod.ext rfl x.property)
+  map_mul' x y := by ext <;> simp
   continuous_toFun := (continuous_id.prodMk (map_continuous f)).subtype_mk _
   continuous_invFun := continuous_fst.comp continuous_subtype_val
 
@@ -67,11 +62,7 @@ theorem MonoidHomClass.mgraphEquiv_symm_apply (f : F)
   monoid is closed. -/]
 theorem MonoidHomClass.isClosed_mgraph [T2Space H] (f : F) :
     IsClosed ((MonoidHom.ofClass f).mgraph : Set (G × H)) := by
-  have hgraph :
-      ((MonoidHom.ofClass f).mgraph : Set (G × H)) = {x | f x.1 = x.2} := by
-    ext x
-    exact MonoidHom.mem_mgraph
-  rw [hgraph]
+  rw [MonoidHom.coe_mgraph, MonoidHom.coe_ofClass]
   exact isClosed_eq ((map_continuous f).comp continuous_fst) continuous_snd
 
 end Monoid
@@ -109,6 +100,7 @@ theorem MonoidHomClass.graphEquiv_symm_apply (f : F)
   /-- The graph of a continuous additive homomorphism into a Hausdorff additive group is closed. -/]
 theorem MonoidHomClass.isClosed_graph [T2Space H] (f : F) :
     IsClosed ((MonoidHom.ofClass f).graph : Set (G × H)) := by
+  rw [← Subgroup.coe_toSubmonoid, MonoidHom.graph_toSubmonoid]
   exact MonoidHomClass.isClosed_mgraph f
 
 end Group

@@ -8,15 +8,18 @@ module
 public import TauCeti.MeasureTheory.Function.PolynomialMemLp
 public import TauCeti.Probability.Moments.Determinacy
 public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.VectorMeasure.WithDensity
 public import Mathlib.Probability.Moments.IntegrableExpMul
 
 /-!
 # Vanishing moments force a function to be zero
 
-Roadmap milestone **B1** of the `OrthogonalL2Bases` roadmap, in both the forms the completeness
-step uses.  `TauCeti.Probability.Moments.Determinacy` pins down a *measure* from its moments; this
-file transfers that to *functions*.
+Under an exponential-moment hypothesis, a function on `ℝ` all of whose polynomial moments vanish is
+a.e. zero. This is the step behind completeness of polynomials in weighted `L²` spaces
+(`TauCeti.Analysis.InnerProductSpace.PolynomialCompleteness`).
+`TauCeti.Probability.Moments.Determinacy` pins down a *measure* from its moments; this file
+transfers that to *functions*.
 
 Both forms assume exponential control at a single positive rate; they differ in what carries it.
 
@@ -24,7 +27,7 @@ Both forms assume exponential control at a single positive rate; they differ in 
   `e^{a|x|} · g` is integrable for some `a > 0`, and concludes for a real `g`.
 * `TauCeti.ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp` (measure level) assumes
   it of the *weight* alone -- `e^{a|x|} ∈ L¹(ν)` for some `a > 0` -- and of `g` only that it lies
-  in `L²(ν)`, for scalars in any `RCLike` field.  Cauchy-Schwarz bridges the two.  The roadmap name
+  in `L²(ν)`, for scalars in any `RCLike` field.  Cauchy-Schwarz bridges the two.  The variant
   `ae_eq_zero_of_forall_moment_eq_zero_of_finite_expMoments`, taking the stronger *all-rates*
   hypothesis its name implies, is provided as a public wrapper.
 
@@ -206,9 +209,9 @@ private theorem withDensity_ofReal_eq_withDensity_ofReal_neg {g : ℝ → ℝ} {
       (integrable_toReal_ofReal_smul_pow ha hexpa hmeasp hlep n)
       (integrable_toReal_ofReal_smul_pow ha hexpa hmeasn hlen n) (hmom n)
 
-/-- **Roadmap B1 (function level).** A real function on `ℝ` whose exponentially-weighted product
-`e^{a|x|} · g` is integrable for some `a > 0`, and all of whose polynomial moments `∫ xⁿ g` vanish,
-is a.e. zero.
+/-- **Vanishing moments, function level.** A real function on `ℝ` whose exponentially-weighted
+product `e^{a|x|} · g` is integrable for some `a > 0`, and all of whose polynomial moments `∫ xⁿ g`
+vanish, is a.e. zero.
 
 This is the internal transfer step, not the form the completeness step consumes — that is the
 measure-level `ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp` below, which wraps this
@@ -242,16 +245,6 @@ theorem ae_eq_zero_of_forall_moment_eq_zero (g : ℝ → ℝ)
 /-! ## Vanishing moments at the level of measures -/
 
 variable {𝕜 : Type*} [RCLike 𝕜]
-
-/-- A measure carrying an integrable weight `e^{a|x|}` at a rate `a ≥ 0` is finite: that weight
-dominates the constant `1`. -/
-private theorem isFiniteMeasure_of_integrable_exp_mul_abs {a : ℝ} (ha : 0 ≤ a)
-    (hexp : Integrable (fun x : ℝ => Real.exp (a * |x|)) ν) : IsFiniteMeasure ν := by
-  have hone : Integrable (fun _ : ℝ => (1 : ℝ)) ν := by
-    refine hexp.mono' aestronglyMeasurable_const (Filter.Eventually.of_forall fun x => ?_)
-    rw [Real.norm_eq_abs, abs_one]
-    exact Real.one_le_exp (mul_nonneg ha (abs_nonneg x))
-  exact (integrable_const_iff.mp hone).resolve_left one_ne_zero
 
 /-- Every monomial, cast into `𝕜`, is square-integrable against a measure carrying an integrable
 weight `e^{b|x|}` at a positive rate: that weight dominates `e^{±bx}`, which makes every polynomial
@@ -287,8 +280,8 @@ private theorem integral_pow_mul_clm_eq_zero (L : 𝕜 →L[ℝ] ℝ) {g : ℝ �
       L.map_smul, smul_eq_mul]
   rw [hfun, L.integral_comp_comm hint, hmom, map_zero]
 
-/-- **Roadmap B1, measure level.** A measure `ν` on `ℝ` carrying one finite exponential moment is
-moment-determinate, so a `g ∈ L²(ν)` orthogonal to every monomial is a.e. `0`.
+/-- **Vanishing moments, measure level.** A measure `ν` on `ℝ` carrying one finite exponential
+moment is moment-determinate, so a `g ∈ L²(ν)` orthogonal to every monomial is a.e. `0`.
 
 The rate is existential, matching the convention of the engine this wraps and of the function-level
 form above; a caller holding a bound at every rate supplies it at any single one.  Requiring it at
@@ -296,7 +289,7 @@ form above; a caller holding a bound at every rate supplies it at any single one
 `∫ e^{a|x|} dν` is finite only for `a < 1`, even though they are moment-determinate all the same.
 The `_of_exists_integrable_exp` suffix names the hypothesis exactly — *existence* of one positive
 rate with `e^{a|x|}` integrable — and matches the adjacent determinacy API
-(`Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp`).  The roadmap name
+(`Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp`).  The variant
 `_of_finite_expMoments`, with the matching *all-rates* hypothesis, wraps this one immediately below.
 
 Finiteness of `ν` is not a separate hypothesis: `e^{a|x|} ≥ 1`. -/
@@ -307,7 +300,10 @@ theorem ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp
   obtain ⟨a, ha, hexpa⟩ := hexp
   set b := a / 2 with hb
   have hbpos : (0 : ℝ) < b := by positivity
-  have : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_exp_mul_abs ha.le hexpa
+  have : IsFiniteMeasure ν := hexpa.isFiniteMeasure_of_one_le_norm <|
+    Filter.Eventually.of_forall fun x => by
+      rw [Real.norm_eq_abs, Real.abs_exp]
+      exact Real.one_le_exp (mul_nonneg ha.le (abs_nonneg x))
   -- Half the rate is square-integrable, its square being the full-rate weight.
   have hexp2 : MemLp (fun x : ℝ => Real.exp (b * |x|)) 2 ν := by
     refine (memLp_two_iff_integrable_sq (Real.continuous_exp.comp
@@ -340,10 +336,10 @@ theorem ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp
   simp only [Pi.zero_apply] at hx1 hx2 ⊢
   exact RCLike.ext (by simp [hx1]) (by simp [hx2])
 
-/-- **Roadmap B1, measure level** (roadmap-specified API name).  The name `_of_finite_expMoments`
-is accurate here: the hypothesis is that *every* exponential moment is finite -- `e^{a|x|}` is
-integrable at every rate `a ≥ 0` -- which is the roadmap signature.  This is strictly stronger than
-the primary `_of_exists_integrable_exp`, and follows from it immediately by using the moment at any
+/-- **Vanishing moments, measure level, all-rates form.**  The name `_of_finite_expMoments` is
+accurate here: the hypothesis is that *every* exponential moment is finite -- `e^{a|x|}` is
+integrable at every rate `a ≥ 0`.  This hypothesis is strictly stronger than that of the primary
+`_of_exists_integrable_exp`, and the result follows from it immediately by using the moment at any
 single positive rate. -/
 theorem ae_eq_zero_of_forall_moment_eq_zero_of_finite_expMoments
     (hexp : ∀ a : ℝ, 0 ≤ a → Integrable (fun x : ℝ => Real.exp (a * |x|)) ν)

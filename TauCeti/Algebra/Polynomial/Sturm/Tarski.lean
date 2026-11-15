@@ -125,7 +125,7 @@ theorem sign_eq_of_mul {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd
 zero of the query. -/
 theorem eval_eq_zero_of_mul {d p f q : R[X]} (h : IsTarskiSeed (d * p) f (d * q)) (hd : d ≠ 0)
     {r : R} (hdr : d.eval r = 0) (hp : p.eval r ≠ 0) : f.eval r = 0 := by
-  obtain ⟨a, b, u, e, k, ha, hb, he, hk, heq⟩ := exists_identity_X_sub_C h hd r
+  obtain ⟨a, b, u, e, k, ha, _, he, hk, heq⟩ := exists_identity_X_sub_C h hd r
   have hev := congrArg (eval r) heq
   simp only [eval_mul, eval_add, eval_sub, eval_C, eval_X, sub_self, zero_mul, add_zero] at hev
   simpa [ha.ne', hk hdr, he, hp] using hev

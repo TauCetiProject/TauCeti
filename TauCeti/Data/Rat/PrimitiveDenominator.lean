@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Rat.Defs
+public import Mathlib.RingTheory.Coprime.Lemmas
 
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.LinearCombination
@@ -13,7 +14,7 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # A primitive common denominator of two rationals
 
-For rationals `x` and `y` there is an integer `a` clearing both denominators, `a x = b` and
+For rationals `x` and `y` there is a positive integer `a` clearing both denominators, `a x = b` and
 `a y = c` with `b, c ∈ ℤ`, such that the triple `(a, b, c)` is primitive: some integer
 combination of `a`, `b` and `c` equals `1`. Applied to the coefficients of a monic rational
 quadratic `t² = x t + y`, it rescales the relation to a primitive integral one
@@ -21,7 +22,8 @@ quadratic `t² = x t + y`, it rescales the relation to a primitive integral one
 theory of lattices in quadratic fields (D. A. Cox, *Primes of the Form x² + ny²*, §7).
 
 The integer `a` is the common denominator `x.den * y.den` divided by the greatest common divisor
-of the three resulting integers.
+of the three resulting integers. Dually, any two rationals satisfy a primitive integral linear
+relation `u x + v y = 0` with `u, v` coprime.
 -/
 
 public section
@@ -29,11 +31,13 @@ public section
 namespace Rat
 
 /-- **A primitive common denominator.** For rationals `x` and `y` there are integers `a`, `b`, `c`
-with `a x = b` and `a y = c` such that `a`, `b` and `c` generate the unit ideal of `ℤ`. -/
+with `0 < a`, `a x = b` and `a y = c` such that `a`, `b` and `c` generate the unit ideal of `ℤ`. -/
 theorem exists_primitive_common_denominator (x y : ℚ) :
-    ∃ a b c : ℤ, (a : ℚ) * x = b ∧ (a : ℚ) * y = c ∧ ∃ u v w : ℤ, u * a + v * b + w * c = 1 := by
+    ∃ a b c : ℤ, 0 < a ∧ (a : ℚ) * x = b ∧ (a : ℚ) * y = c ∧
+      ∃ u v w : ℤ, u * a + v * b + w * c = 1 := by
   -- Clear the denominators naively, then divide out the common factor `g`.
   set D : ℤ := x.den * y.den
+  have hDpos : 0 < D := mul_pos (by exact_mod_cast x.den_pos) (by exact_mod_cast y.den_pos)
   set B : ℤ := x.num * y.den
   set C : ℤ := y.num * x.den
   have hDx : (D : ℚ) * x = B := by
@@ -51,7 +55,8 @@ theorem exists_primitive_common_denominator (x y : ℚ) :
   obtain ⟨b, hb⟩ : g ∣ B := (Int.gcd_dvd_right ..).trans (Int.gcd_dvd_left ..)
   obtain ⟨c, hc⟩ : g ∣ C := (Int.gcd_dvd_right ..).trans (Int.gcd_dvd_right ..)
   have hgq : (g : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hg
-  refine ⟨a, b, c, ?_, ?_, Int.gcdA D (Int.gcd B C), Int.gcdB D (Int.gcd B C) * Int.gcdA B C,
+  refine ⟨a, b, c, pos_of_mul_pos_right (ha ▸ hDpos) (Int.natCast_nonneg _),
+    ?_, ?_, Int.gcdA D (Int.gcd B C), Int.gcdB D (Int.gcd B C) * Int.gcdA B C,
     Int.gcdB D (Int.gcd B C) * Int.gcdB B C, ?_⟩
   · refine mul_left_cancel₀ hgq ?_
     rw [← mul_assoc, ← Int.cast_mul, ← ha, hDx, hb, Int.cast_mul]
@@ -64,5 +69,19 @@ theorem exists_primitive_common_denominator (x y : ℚ) :
     linear_combination (-Int.gcdA D (Int.gcd B C)) * ha
       + (-Int.gcdB D (Int.gcd B C) * Int.gcdA B C) * hb
       + (-Int.gcdB D (Int.gcd B C) * Int.gcdB B C) * hc + (-Int.gcdB D (Int.gcd B C)) * h₂ - h₁
+
+/-- **A coprime integral linear relation.** Any two rationals `x` and `y` satisfy `u x + v y = 0`
+for coprime integers `u` and `v`. -/
+theorem exists_isCoprime_intCast_mul_add_intCast_mul_eq_zero (x y : ℚ) :
+    ∃ u v : ℤ, IsCoprime u v ∧ (u : ℚ) * x + (v : ℚ) * y = 0 := by
+  by_cases hy : y = 0
+  · exact ⟨0, 1, isCoprime_one_right, by simp [hy]⟩
+  · let t : ℚ := x / y
+    have hcop : IsCoprime t.num (t.den : ℤ) := Rat.isCoprime_num_den t
+    refine ⟨t.den, -t.num, hcop.symm.neg_right, ?_⟩
+    have hmul := congrArg (fun z : ℚ ↦ z * y) t.mul_den_eq_num
+    have ht : t * y = x := div_mul_cancel₀ x hy
+    push_cast
+    linear_combination hmul - (t.den : ℚ) * ht
 
 end Rat

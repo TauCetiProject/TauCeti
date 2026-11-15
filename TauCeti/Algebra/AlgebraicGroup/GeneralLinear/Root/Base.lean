@@ -44,8 +44,7 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 
 The support and telescoping organization follows
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`, adapted here to the character and
-cocharacter lattices of the diagonal torus in `GL_(n+1)`. This advances Layer 7, "Root datum of
-`(G, T)`", of the ReductiveGroups roadmap.
+cocharacter lattices of the diagonal torus in `GL_(n+1)`.
 -/
 
 public section
@@ -326,7 +325,7 @@ private theorem diagonalRootIndexOfNe_isPos_of_lt (n : ℕ) (i j : Fin (n + 1))
     (hij : i < j) :
     (diagonalRootBase.{u} n).IsPos (diagonalRootIndexOfNe i j hij.ne) := by
   induction hdist : j.val - i.val using Nat.strong_induction_on generalizing i j with
-  | h d ih =>
+  | ind d ih =>
       by_cases hadj : i.val + 1 = j.val
       · let a : Fin n := ⟨i.val, by omega⟩
         have hidx : diagonalRootIndexOfNe i j hij.ne = diagonalSimpleRootIndex n a := by

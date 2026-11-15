@@ -17,8 +17,9 @@ their Grothendieck groups.
 
 The two groups remain distinct because the pairing need not be symmetric.  This file records only
 biadditivity on ordinary exact `K₀`.  Descent to graded `K₀` additionally requires shift identities
-and shift-closed subcategories; those belong to the later sesquilinear packaging of this preliminary
-pairing.
+and shift-closed subcategories; those are added in
+`TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Sesquilinear`, which packages this
+preliminary pairing as the sesquilinear q-Euler form.
 
 ## Main definitions
 
@@ -31,10 +32,6 @@ pairing.
 
 * `TauCeti.gradedExtEulerPairing_of_of`: evaluation on two object classes.
 * `TauCeti.gradedExtEulerPairing_unique`: the universal characterization of the pairing.
-
-## References
-
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, "q-Euler form".
 -/
 
 public section

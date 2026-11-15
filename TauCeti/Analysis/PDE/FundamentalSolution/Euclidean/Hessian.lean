@@ -1,0 +1,232 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
+
+/-!
+# The Hessian of the Newtonian kernel
+
+For `n ≠ 2`, the second derivatives of the Newtonian kernel `Gₙ = TauCeti.newtonianKernel n`
+on `ℝⁿ` are, away from the pole,
+
+`D²Gₙ(x)(v, w) = ωₙ⁻¹ ‖x‖⁻ⁿ⁻² ⟪x, v⟫ ⟪x, w⟫ - (n ωₙ)⁻¹ ‖x‖⁻ⁿ ⟪v, w⟫`,
+
+where `ωₙ` is the volume of the unit ball. This file proves that formula and the two estimates
+that make `K(x, y) = D²Gₙ(x - y)` a **standard Calderón–Zygmund kernel**:
+
+* the size estimate `‖D²Gₙ(x)‖ ≤ (n + 1) (n ωₙ)⁻¹ ‖x‖⁻ⁿ`;
+* the smoothness estimate `‖D²Gₙ(a) - D²Gₙ(b)‖ ≤ 2ⁿ⁺¹ (n + 5) ωₙ⁻¹ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` whenever
+  `2 ‖a - b‖ ≤ ‖b‖`; with `a = x - y` and `b = x - y'` it reads
+  `‖K(x, y) - K(x, y')‖ ≤ C ‖y - y'‖ ‖x - y'‖⁻ⁿ⁻¹` for `2 ‖y - y'‖ ≤ ‖x - y'‖`.
+
+For `n ≥ 3` the kernel is nonzero and homogeneous of degree `-n`, so it is not locally
+integrable, and the operator `f ↦ D²(Gₙ ⋆ f)` is a singular integral. (In dimension one the
+formula vanishes identically, and in dimension two the totalized kernel is zero; see
+below.) The two estimates are the kernel hypotheses of the Calderón–Zygmund theory of such
+operators; together with the `L²` bound of the operator, that theory gives the `Lᵖ` bound
+`‖D²u‖_p ≤ C ‖Δu‖_p`, `1 < p < ∞`, behind the `W^{2,p}` estimates for the Laplacian.
+
+In dimension two `TauCeti.newtonianKernel 2` is the zero function (its normalizing constant is
+`0⁻¹ = 0`), so the formula needs `n ≠ 2`; the two estimates are stated for every `n`, and hold
+trivially at `n = 2`. The logarithmic planar kernel `TauCeti.planarNewtonianKernel` is not
+covered here.
+
+Both estimates are instances of the general bounds for the Hessian of `x ↦ ‖x‖ ^ p`,
+`TauCeti.norm_iteratedFDeriv_two_norm_rpow_le` and
+`TauCeti.norm_iteratedFDeriv_two_norm_rpow_sub_le`, at `p = 2 - n`.
+
+## Main declarations
+
+* `TauCeti.iteratedFDeriv_two_newtonianKernel_apply`: the Hessian formula, and its evenness
+  `TauCeti.iteratedFDeriv_two_newtonianKernel_neg`.
+* `TauCeti.norm_iteratedFDeriv_two_newtonianKernel_le`: the size estimate.
+* `TauCeti.norm_iteratedFDeriv_two_newtonianKernel_sub_le`: the smoothness estimate.
+
+## References
+
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Section 2.4 (the derivatives of the fundamental solution) and Section 9.4.
+* E. Stein, *Singular Integrals and Differentiability Properties of Functions*, Chapter II, §2
+  and §3.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open Filter InnerProductSpace MeasureTheory Metric Topology
+
+open scoped RealInnerProductSpace
+
+variable {n : ℕ}
+
+/-- Away from the pole, the Hessian of `Gₙ` is the Hessian of `‖x‖ ^ (2 - n)` scaled by the
+normalizing constant of `Gₙ`. -/
+private theorem iteratedFDeriv_two_newtonianKernel_eq_smul {x : EuclideanSpace ℝ (Fin n)}
+    (hx : x ≠ 0) :
+    iteratedFDeriv ℝ 2 (newtonianKernel n) x = ((n : ℝ) * ((n : ℝ) - 2) *
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ •
+        iteratedFDeriv ℝ 2 (fun y : EuclideanSpace ℝ (Fin n) ↦ ‖y‖ ^ (2 - (n : ℝ))) x := by
+  have hfun : newtonianKernel n = ((n : ℝ) * ((n : ℝ) - 2) *
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ •
+        fun y : EuclideanSpace ℝ (Fin n) ↦ ‖y‖ ^ (2 - (n : ℝ)) :=
+    funext fun y ↦ newtonianKernel_def n y
+  rw [hfun]
+  exact iteratedFDeriv_const_smul_apply
+    ((contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx))
+
+/-- Away from dimension two, the gradient of the Newtonian kernel is not differentiable at the
+pole. -/
+private theorem not_differentiableAt_fderiv_newtonianKernel_zero (hn : n ≠ 2) (hn0 : n ≠ 0) :
+    ¬ DifferentiableAt ℝ (fderiv ℝ (newtonianKernel n)) 0 := by
+  intro hd
+  have : NeZero n := ⟨hn0⟩
+  set c : ℝ := ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
+  have hc : 0 < c := by
+    have := volume_real_unitBall_pos n
+    have : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn0)
+    positivity
+  -- Continuity of the gradient at the pole forces `‖∇Gₙ x‖ → 0`, but `‖∇Gₙ x‖ = c ‖x‖ ^ (1 - n)`
+  -- is at least `c` for `0 < ‖x‖ ≤ 1`.
+  have hlim : Tendsto (fun x : EuclideanSpace ℝ (Fin n) ↦ ‖fderiv ℝ (newtonianKernel n) x‖)
+      (𝓝[≠] 0) (𝓝 0) := by
+    simpa using hd.continuousAt.norm.tendsto.mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
+  obtain ⟨x, hxc, hx0, hx1⟩ := ((hlim.eventually (gt_mem_nhds hc)).and
+    (eventually_mem_nhdsWithin.and
+      (nhdsWithin_le_nhds (Metric.ball_mem_nhds _ one_pos)))).exists
+  rw [norm_fderiv_newtonianKernel n hn hx0] at hxc
+  have hge : 1 ≤ ‖x‖ ^ (1 - (n : ℝ)) :=
+    Real.one_le_rpow_of_pos_of_le_one_of_nonpos (norm_pos_iff.2 hx0)
+      (mem_ball_zero_iff.1 hx1).le (by
+        have : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn0
+        linarith)
+  nlinarith
+
+/-- The Hessian of the totalized Newtonian kernel vanishes at the pole, in every dimension: in
+dimension two because the kernel is `0`, in dimension zero because `ℝ⁰` is a point, and otherwise
+because the gradient of the kernel is not differentiable at the pole. -/
+@[simp]
+theorem iteratedFDeriv_two_newtonianKernel_zero :
+    iteratedFDeriv ℝ 2 (newtonianKernel n) 0 = 0 := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp
+  ext m
+  rw [iteratedFDeriv_two_apply]
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp [Subsingleton.elim (m 0) 0]
+  · simp [fderiv_zero_of_not_differentiableAt
+      (not_differentiableAt_fderiv_newtonianKernel_zero hn hn0)]
+
+/-- **The Hessian of the Newtonian kernel:**
+`D²Gₙ(x)(v, w) = ωₙ⁻¹ ‖x‖⁻ⁿ⁻² ⟪x, v⟫ ⟪x, w⟫ - (n ωₙ)⁻¹ ‖x‖⁻ⁿ ⟪v, w⟫`. At the pole both sides
+vanish by the junk-value conventions. -/
+theorem iteratedFDeriv_two_newtonianKernel_apply (hn : n ≠ 2)
+    (x v w : EuclideanSpace ℝ (Fin n)) :
+    iteratedFDeriv ℝ 2 (newtonianKernel n) x ![v, w] =
+      (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * ‖x‖ ^ (-((n : ℝ) + 2)) *
+          ⟪x, v⟫_ℝ * ⟪x, w⟫_ℝ -
+        ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+          ‖x‖ ^ (-(n : ℝ)) * ⟪v, w⟫_ℝ := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [iteratedFDeriv_two_newtonianKernel_zero]
+    rcases eq_or_ne n 0 with rfl | hn0
+    · simp
+    · simp [Real.zero_rpow (neg_ne_zero.2 (Nat.cast_ne_zero.2 hn0))]
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by rintro rfl; exact hx (Subsingleton.elim _ _))
+  have hn2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
+  have hvol := (volume_real_unitBall_pos n).ne'
+  have he₄ : (2 : ℝ) - n - 4 = -(n + 2) := by ring
+  have he₂ : (2 : ℝ) - n - 2 = -n := by ring
+  rw [iteratedFDeriv_two_newtonianKernel_eq_smul hx, smul_apply,
+    iteratedFDeriv_two_norm_rpow_apply _ hx, smul_eq_mul, he₄, he₂]
+  field_simp
+  ring
+
+/-- The Hessian of the Newtonian kernel is even: `D²Gₙ(-x) = D²Gₙ(x)`. -/
+@[simp]
+theorem iteratedFDeriv_two_newtonianKernel_neg (x : EuclideanSpace ℝ (Fin n)) :
+    iteratedFDeriv ℝ 2 (newtonianKernel n) (-x) = iteratedFDeriv ℝ 2 (newtonianKernel n) x := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp
+  ext m
+  have hm : m = ![m 0, m 1] := by
+    ext i : 1
+    fin_cases i <;> rfl
+  rw [hm, iteratedFDeriv_two_newtonianKernel_apply hn,
+    iteratedFDeriv_two_newtonianKernel_apply hn, norm_neg, inner_neg_left, inner_neg_left]
+  ring
+
+/-- **The size estimate for the Hessian of the Newtonian kernel**:
+`‖D²Gₙ(x)‖ ≤ (n + 1) (n ωₙ)⁻¹ ‖x‖⁻ⁿ`. At the pole both sides vanish by the junk-value
+conventions. -/
+theorem norm_iteratedFDeriv_two_newtonianKernel_le (x : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ 2 (newtonianKernel n) x‖ ≤
+      ((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        ‖x‖ ^ (-(n : ℝ)) := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · rw [newtonianKernel_two, iteratedFDeriv_zero, Pi.zero_apply, norm_zero]
+    positivity
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [iteratedFDeriv_two_newtonianKernel_zero, norm_zero]
+    positivity
+  have hn0 : (0 : ℝ) < n :=
+    Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by rintro rfl; exact hx (Subsingleton.elim _ _)))
+  have hn2 : 0 < |2 - (n : ℝ)| := abs_pos.mpr (sub_ne_zero.mpr (by exact_mod_cast hn.symm))
+  have hvol := volume_real_unitBall_pos n
+  have he₂ : (2 : ℝ) - n - 2 = -n := by ring
+  rw [iteratedFDeriv_two_newtonianKernel_eq_smul hx, norm_smul]
+  refine (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_two_norm_rpow_le _ hx)
+    (norm_nonneg _)).trans_eq ?_
+  rw [Real.norm_eq_abs, abs_inv, abs_mul, abs_mul, abs_of_pos hn0, abs_of_pos hvol,
+    abs_sub_comm (n : ℝ), he₂, abs_neg, abs_of_pos hn0]
+  field_simp
+
+/-- **The smoothness estimate for the Hessian of the Newtonian kernel.** If
+`2 ‖a - b‖ ≤ ‖b‖`, then
+
+`‖D²Gₙ(a) - D²Gₙ(b)‖ ≤ 2ⁿ⁺¹ (n + 5) ωₙ⁻¹ ‖a - b‖ ‖b‖⁻ⁿ⁻¹`.
+
+With `a = x - y` and `b = x - y'`, this is the smoothness estimate
+`‖K(x, y) - K(x, y')‖ ≤ C ‖y - y'‖ ‖x - y'‖⁻ⁿ⁻¹` for `2 ‖y - y'‖ ≤ ‖x - y'‖` of the
+Calderón–Zygmund kernel `K(x, y) = D²Gₙ(x - y)`. -/
+theorem norm_iteratedFDeriv_two_newtonianKernel_sub_le {a b : EuclideanSpace ℝ (Fin n)}
+    (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
+    ‖iteratedFDeriv ℝ 2 (newtonianKernel n) a - iteratedFDeriv ℝ 2 (newtonianKernel n) b‖ ≤
+      2 ^ (n + 1) * ((n : ℝ) + 5) * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        ‖a - b‖ * ‖b‖ ^ (-((n : ℝ) + 1)) := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · obtain rfl : a = 0 := by
+      rw [sub_zero, norm_zero] at hab
+      exact norm_eq_zero.mp (by linarith [norm_nonneg a])
+    simp
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp only [newtonianKernel_two, iteratedFDeriv_zero, Pi.zero_apply, sub_self, norm_zero]
+    positivity
+  have ha : a ≠ 0 := by
+    have := norm_sub_norm_le b (b - a)
+    rw [sub_sub_cancel, norm_sub_rev] at this
+    exact norm_pos_iff.mp (by linarith [norm_pos_iff.mpr hb])
+  have hn0 : (0 : ℝ) < n :=
+    Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by rintro rfl; exact hb (Subsingleton.elim _ _)))
+  have hn2 : 0 < |2 - (n : ℝ)| := abs_pos.mpr (sub_ne_zero.mpr (by exact_mod_cast hn.symm))
+  have hvol := volume_real_unitBall_pos n
+  have he₂ : (2 : ℝ) - n - 2 = -n := by ring
+  have he₃ : (3 : ℝ) - (2 - n) = n + 1 := by ring
+  have he₃' : (2 : ℝ) - n - 3 = -(n + 1) := by ring
+  rw [iteratedFDeriv_two_newtonianKernel_eq_smul ha,
+    iteratedFDeriv_two_newtonianKernel_eq_smul hb, ← smul_sub, norm_smul]
+  refine (mul_le_mul_of_nonneg_left
+    (norm_iteratedFDeriv_two_norm_rpow_sub_le (by linarith) hab) (norm_nonneg _)).trans_eq ?_
+  rw [Real.norm_eq_abs, abs_inv, abs_mul, abs_mul, abs_mul, abs_of_pos hn0, abs_of_pos hvol,
+    abs_sub_comm (n : ℝ), he₂, abs_neg, abs_of_pos hn0, he₃, he₃',
+    Real.rpow_add two_pos, Real.rpow_natCast, Real.rpow_one, pow_succ]
+  field_simp
+  ring
+
+end TauCeti

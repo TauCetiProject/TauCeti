@@ -13,7 +13,8 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Subfan.Basic
 
 The invariant open subset associated to a face-closed subfan contains exactly the torus orbits
 indexed by cones of that subfan. This characterizes the image of the open-subfan embedding in
-terms of the orbit--cone correspondence.
+terms of the orbit--cone correspondence. In particular, the complement of the orbit closure of a
+cone `σ` is the invariant open subset of the subfan of cones not containing `σ`.
 
 ## References
 
@@ -48,5 +49,17 @@ theorem mem_range_subfanAnalyticMap_iff {sigma : Phi.cones}
     let sigma' : (Phi.subfan S hS hface).cones :=
       ⟨sigma.1, by simpa only [subfan_cones] using h_sigma⟩
     exact ⟨sigma', (Phi.mem_range_analyticAffineChartι_iff hPhi hx).2 le_rfl⟩
+
+/-- The invariant open subset associated to the subfan of cones not containing a cone `sigma` is
+the complement of the orbit closure of `sigma`. -/
+theorem range_subfanAnalyticMap_setOf_not_le (sigma : Phi.cones) :
+    range (Phi.subfanAnalyticMap hPhi _ (Phi.setOf_not_le_subset_cones sigma.1)
+        (Phi.setOf_not_le_closedUnderFaces sigma.1)) =
+      (closure (Phi.analyticConeOrbit hPhi sigma))ᶜ := by
+  ext x
+  obtain ⟨tau, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x
+  refine (Phi.mem_range_subfanAnalyticMap_iff hPhi _ _ _ hx).trans ?_
+  rw [mem_compl_iff, Phi.mem_closure_analyticConeOrbit_iff hPhi hx]
+  exact and_iff_right tau.2
 
 end TauCeti.Toric.Fan

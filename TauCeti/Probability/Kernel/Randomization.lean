@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Probability.Kernel.ProbabilityMeasure
 public import Mathlib.Probability.Kernel.Representation
+public import Mathlib.Probability.Kernel.Condexp
 public import Mathlib.Probability.ProductMeasure
+public import Mathlib.Probability.HasLaw
 import Mathlib.Probability.Kernel.CondDistrib
 import Mathlib.Probability.Kernel.CompProdEqIff
 import TauCeti.MeasureTheory.Measure.Measurability
@@ -49,6 +51,10 @@ randomization step used when a probabilistic representation is converted into la
   on `I` to its parameter.
 * `TauCeti.Probability.map_infinitePi_volume_unitIntervalCoding` — applying it coordinatewise to
   i.i.d. uniform noise produces the `ι`-fold power of the parameter for an arbitrary index type.
+* `TauCeti.Probability.exists_kernel_of_ae_condExpKernel` — parametrizes conditional laws given
+  an arbitrary sub-σ-algebra by a Markov kernel on the unit interval.
+* `TauCeti.Probability.exists_coding_of_ae_condExpKernel` — samples those conditional laws using
+  a second independent uniform variable.
 * `TauCeti.Probability.exists_measurable_map_prod_volume_eq_compProd` — a Markov kernel and
   a base measure are jointly realized from the base point and independent uniform noise.
 * `TauCeti.Probability.exists_measurable_map_prod_volume_eq` — every finite joint law has
@@ -150,14 +156,30 @@ section Conditional
 variable {β : Type*} [MeasurableSpace β]
 
 omit [StandardBorelSpace α] [Nonempty α] in
+/-- A kernel whose fibres are the laws of a jointly measurable family under an s-finite noise
+measure is s-finite. -/
+theorem _root_.ProbabilityTheory.Kernel.isSFiniteKernel_of_map_eq
+    {ξ : Type*} [MeasurableSpace ξ] (κ : Kernel β α) (ρ : Measure ξ) [SFinite ρ]
+    (f : β → ξ → α) (hf : Measurable (Function.uncurry f)) (hmap : ∀ b, ρ.map (f b) = κ b) :
+    IsSFiniteKernel κ := by
+  have hκ : κ = Kernel.map (Kernel.deterministic id measurable_id ×ₖ Kernel.const β ρ)
+      (Function.uncurry f) := by
+    ext1 b
+    rw [Kernel.map_apply _ hf, Kernel.prod_apply, Kernel.deterministic_apply, Kernel.const_apply,
+      Measure.dirac_prod, Measure.map_map hf measurable_prodMk_left, ← hmap b]
+    rfl
+  exact hκ ▸ inferInstance
+
+omit [StandardBorelSpace α] [Nonempty α] in
 /-- A jointly measurable fibrewise realization of a kernel turns independent noise with law `ρ`
 into the corresponding composition-product with any s-finite base measure. -/
 theorem _root_.ProbabilityTheory.Kernel.map_prod_eq_compProd_of_map
     {ξ : Type*} [MeasurableSpace ξ]
-    {μ : Measure β} [SFinite μ] (κ : Kernel β α) [IsSFiniteKernel κ]
+    {μ : Measure β} [SFinite μ] (κ : Kernel β α)
     (ρ : Measure ξ) [SFinite ρ] (f : β → ξ → α) (hf : Measurable (Function.uncurry f))
     (hmap : ∀ b, ρ.map (f b) = κ b) :
     (μ.prod ρ).map (fun p => (p.1, f p.1 p.2)) = μ ⊗ₘ κ := by
+  have := κ.isSFiniteKernel_of_map_eq ρ f hf hmap
   have hF : Measurable (fun p : β × ξ => (p.1, f p.1 p.2)) := by
     fun_prop
   ext s hs
@@ -167,18 +189,41 @@ theorem _root_.ProbabilityTheory.Kernel.map_prod_eq_compProd_of_map
   rfl
 
 omit [StandardBorelSpace α] [Nonempty α] in
+/-- A measurable update driven by independent noise with law `ρ` realizes the
+composition-product of the parameter's law and the update kernel. -/
+theorem _root_.ProbabilityTheory.IndepFun.map_prodMk_eq_compProd_of_map
+    {Ω ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace ξ]
+    {P : Measure Ω} [IsFiniteMeasure P] {W : Ω → β} {U : Ω → ξ}
+    (hindep : IndepFun W U P) (hW : AEMeasurable W P)
+    {ρ : Measure ξ} (hlaw : HasLaw U ρ P)
+    (κ : Kernel β α) (f : β → ξ → α)
+    (hf : Measurable (Function.uncurry f)) (hmap : ∀ w, ρ.map (f w) = κ w) :
+    P.map (fun ω => (W ω, f (W ω) (U ω))) = (P.map W) ⊗ₘ κ := by
+  have : IsFiniteMeasure ρ := hlaw.isFiniteMeasure_iff.mp inferInstance
+  have hpair := hindep.map_prod_eq_prod_map_map hW hlaw.aemeasurable
+  rw [hlaw.map_eq] at hpair
+  calc
+    _ = ((P.map W).prod ρ).map (fun p => (p.1, f p.1 p.2)) := by
+      rw [← hpair, AEMeasurable.map_map_of_aemeasurable (by fun_prop)
+        (hW.prodMk hlaw.aemeasurable)]
+      rfl
+    _ = _ := κ.map_prod_eq_compProd_of_map ρ f hf hmap
+
+omit [StandardBorelSpace α] [Nonempty α] in
 /-- **Separate randomizations realize a product kernel.** If `f b` and `g b` realize two kernels
 from independent noise variables, then applying them to the two coordinates of the product noise
 realizes the product kernel. The base point is retained in the output. -/
 theorem _root_.ProbabilityTheory.Kernel.map_prod_prod_eq_compProd_prod_of_map
     {γ ξ ζ : Type*} [MeasurableSpace γ] [MeasurableSpace ξ] [MeasurableSpace ζ]
-    (κ : Kernel β α) [IsSFiniteKernel κ] (η : Kernel β γ) [IsSFiniteKernel η]
+    (κ : Kernel β α) (η : Kernel β γ)
     {μ : Measure β} [SFinite μ] (ρ₁ : Measure ξ) (ρ₂ : Measure ζ)
     [SFinite ρ₁] [SFinite ρ₂] (f : β → ξ → α) (g : β → ζ → γ)
     (hf : Measurable (Function.uncurry f)) (hg : Measurable (Function.uncurry g))
     (hf_map : ∀ b, ρ₁.map (f b) = κ b) (hg_map : ∀ b, ρ₂.map (g b) = η b) :
     (μ.prod (ρ₁.prod ρ₂)).map
         (fun p => (p.1, f p.1 p.2.1, g p.1 p.2.2)) = μ ⊗ₘ (κ ×ₖ η) := by
+  have := κ.isSFiniteKernel_of_map_eq ρ₁ f hf hf_map
+  have := η.isSFiniteKernel_of_map_eq ρ₂ g hg hg_map
   let F : β → ξ × ζ → α × γ := fun b u => (f b u.1, g b u.2)
   have hF : Measurable (Function.uncurry F) := by
     fun_prop
@@ -265,6 +310,7 @@ theorem ae_map_eq_of_map_prod_eq {ξ γ : Type*} [MeasurableSpace ξ] [Measurabl
     (κ g hg).map_prod_eq_compProd_of_map ρ g hg fun _ => rfl] at hfg
   exact Kernel.ae_eq_of_compProd_eq hfg
 
+omit [Nonempty α] in
 /-- **Conditional randomization of a Markov kernel.** There is a jointly measurable function of
 the kernel parameter and one uniform variable whose skew-product law over any s-finite base
 measure is the corresponding composition-product. -/
@@ -272,8 +318,14 @@ theorem exists_measurable_map_prod_volume_eq_compProd (κ : Kernel β α)
     [IsMarkovKernel κ] {μ : Measure β} [SFinite μ] :
     ∃ f : β → I → α, Measurable (Function.uncurry f) ∧
       (μ.prod (volume : Measure I)).map (fun p => (p.1, f p.1 p.2)) = μ ⊗ₘ κ := by
-  obtain ⟨f, hf, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval κ
-  exact ⟨f, hf, κ.map_prod_eq_compProd_of_map volume f hf hmap⟩
+  rcases isEmpty_or_nonempty β with hβ | ⟨⟨b⟩⟩
+  · -- over an empty parameter space every map is measurable and all measures vanish
+    refine ⟨fun b => isEmptyElim b, fun s _ => ?_, Subsingleton.elim _ _⟩
+    convert MeasurableSet.empty
+    exact Set.eq_empty_of_isEmpty _
+  · have : Nonempty α := nonempty_of_isProbabilityMeasure (κ b)
+    obtain ⟨f, hf, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval κ
+    exact ⟨f, hf, κ.map_prod_eq_compProd_of_map volume f hf hmap⟩
 
 /-- **Conditional randomization of a joint law.** Every finite measure on `β × α` is obtained by
 first drawing its first marginal and then applying a jointly measurable function to that point
@@ -333,6 +385,74 @@ theorem exists_measurable_map_prod_volume_eq_map_prodMk
     _ = μ.map fun ω => (X ω, Y ω) := hcode
 
 end Conditional
+
+section ConditionalLaw
+
+variable {β : Type*} [mβ : MeasurableSpace β] [StandardBorelSpace β]
+  {ρ : @Measure β mβ} [IsProbabilityMeasure ρ] {P : @Measure β mβ → Prop}
+  {m : MeasurableSpace β}
+
+/-- **Conditional laws given a sub-σ-algebra, sampled by a uniform variable.** Drawing the
+conditioning variable through the canonical uniform coding presents the conditional laws as a
+Markov kernel from the unit interval whose composition with the uniform law is the original law.
+Any supplied almost-sure property of the conditional laws holds for almost every component. -/
+theorem exists_kernel_of_ae_condExpKernel
+    (hP : ∀ᵐ x ∂ρ, P (condExpKernel (mΩ := mβ) ρ m x)) :
+    ∃ κ : @Kernel I β _ mβ, IsMarkovKernel κ ∧
+      (∀ᵐ u ∂(volume : Measure I), P (κ u)) ∧ κ ∘ₘ (volume : Measure I) = ρ := by
+  -- `condExpKernel ρ m` only depends on `m ⊓ mβ`, so reduce to a sub-σ-algebra
+  wlog hm : m ≤ mβ generalizing m
+  · have key (x : β) :
+        condExpKernel (mΩ := mβ) ρ (m ⊓ mβ) x = condExpKernel (mΩ := mβ) ρ m x := by
+      have : Nonempty β := nonempty_of_isProbabilityMeasure ρ
+      rw [condExpKernel_apply_eq_condDistrib (mΩ := mβ) (μ := ρ) (m := m ⊓ mβ),
+        condExpKernel_apply_eq_condDistrib (mΩ := mβ) (μ := ρ) (m := m), inf_assoc, inf_idem]
+    exact this (hP.mono fun x hx => by rwa [key]) inf_le_right
+  let _ : MeasurableSpace β := mβ
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ρ
+  let Q : @ProbabilityMeasure β mβ := ⟨ρ, inferInstance⟩
+  let f := unitIntervalCoding β Q
+  have hf : @Measurable I β _ mβ f := measurable_unitIntervalCoding Q
+  have hpres : @MeasurePreserving I β _ mβ f (volume : Measure I) ρ :=
+    ⟨hf, map_volume_unitIntervalCoding Q⟩
+  let K := condExpKernel (mΩ := mβ) ρ m
+  let κ := K.comap f (hf.mono le_rfl hm)
+  refine ⟨κ, inferInstance, hpres.quasiMeasurePreserving.ae hP, ?_⟩
+  -- Integrating the conditional law uses the trimmed measure; the coding map samples the
+  -- ambient law, so pass between them only for sub-σ-algebra-measurable integrands.
+  rw [← condExpKernel_comp_trim (μ := ρ) hm]
+  ext s hs
+  rw [Measure.bind_apply hs κ.aemeasurable, Measure.bind_apply hs K.aemeasurable]
+  simp only [κ, Kernel.comap_apply]
+  rw [lintegral_trim hm (K.measurable_coe hs)]
+  exact hpres.lintegral_comp ((K.measurable_coe hs).mono hm le_rfl)
+
+/-- **A probability law is sampled by two independent uniform variables**, the first selecting a
+conditional law given a sub-σ-algebra and the second sampling from it. The coding is jointly
+measurable, and one almost-sure set of first variables works for the supplied property. -/
+theorem exists_coding_of_ae_condExpKernel
+    (hP : ∀ᵐ x ∂ρ, P (condExpKernel (mΩ := mβ) ρ m x)) :
+    ∃ f : I → I → β, @Measurable (I × I) β _ mβ (Function.uncurry f) ∧
+      (∀ᵐ u ∂(volume : Measure I),
+        P (@Measure.map I β _ mβ (f u) (volume : Measure I))) ∧
+      @Measure.map (I × I) β _ mβ (Function.uncurry f)
+        ((volume : Measure I).prod volume) = ρ := by
+  let _ : MeasurableSpace β := mβ
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ρ
+  obtain ⟨κ, hκ, hgood, hmix⟩ := exists_kernel_of_ae_condExpKernel hP
+  obtain ⟨f, hf, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval κ
+  refine ⟨f, hf, ?_, ?_⟩
+  · simpa only [hmap] using hgood
+  · have hjoint := κ.map_prod_eq_compProd_of_map
+      (μ := (volume : Measure I)) volume f hf hmap
+    have hsnd := congrArg Measure.snd hjoint
+    rw [Measure.snd_compProd, hmix] at hsnd
+    have hpair : Measurable (fun p : I × I => (p.1, f p.1 p.2)) :=
+      measurable_fst.prodMk hf
+    rw [Measure.snd, Measure.map_map measurable_snd hpair] at hsnd
+    exact hsnd
+
+end ConditionalLaw
 
 end Probability
 

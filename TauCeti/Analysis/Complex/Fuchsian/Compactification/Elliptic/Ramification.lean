@@ -34,8 +34,8 @@ theorem compactifiedQuotientMap_ellipticChart (h : Δ ≤ Γ) (z : ℍ)
     [DiscreteTopology Γ] :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     ∀ {ε : ℝ} (hε : 0 < ε)
-      (hΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
-      (hΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+      (hΔ : IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap)
+      (hΓ : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
       {u : ℂ} (_hu : u ∈ (stabilizerBallQuotientChart hε hΔ).target),
       CompactifiedQuotient.ofQuotientChart (stabilizerBallQuotientChart hε hΓ)
           (compactifiedQuotientMap h
@@ -60,8 +60,8 @@ transported charts at points of the uncompactified quotient. -/
 theorem ofQuotientChart_compactifiedQuotientMap_eq_pow_ellipticRamificationIndex
     [DiscreteTopology Γ]
     {ε : ℝ} (hε : 0 < ε)
-    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
-    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    (hopenΔ : IsOpenEmbedding (stabilizerBall Δ z ε).orbitRelQuotientMap)
+    (hopenΓ : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
     {q : orbitRel.Quotient Δ ℍ} :
     let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →

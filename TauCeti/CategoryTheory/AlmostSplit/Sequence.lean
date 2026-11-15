@@ -222,13 +222,11 @@ isomorphism classes of sequences. -/
 theorem isAlmostSplit_of_iso (e : S₁ ≅ S₂) (hS : IsAlmostSplit S₁) : IsAlmostSplit S₂ where
   shortExact := ShortComplex.shortExact_of_iso e hS.shortExact
   isLeftAlmostSplit_f := by
-    have key : (asIso e.hom.τ₁).symm.hom ≫ S₁.f ≫ (asIso e.hom.τ₂).hom = S₂.f := by
-      simp [← e.hom.comm₁₂]
-    exact key ▸ (hS.isLeftAlmostSplit_f.comp_iso (asIso e.hom.τ₂)).iso_comp (asIso e.hom.τ₁).symm
+    have key : inv e.hom.τ₁ ≫ S₁.f ≫ e.hom.τ₂ = S₂.f := by simp [← e.hom.comm₁₂]
+    exact key ▸ (hS.isLeftAlmostSplit_f.comp_iso e.hom.τ₂).iso_comp (inv e.hom.τ₁)
   isRightAlmostSplit_g := by
-    have key : (asIso e.hom.τ₂).symm.hom ≫ S₁.g ≫ (asIso e.hom.τ₃).hom = S₂.g := by
-      simp [← e.hom.comm₂₃]
-    exact key ▸ (hS.isRightAlmostSplit_g.comp_iso (asIso e.hom.τ₃)).iso_comp (asIso e.hom.τ₂).symm
+    have key : inv e.hom.τ₂ ≫ S₁.g ≫ e.hom.τ₃ = S₂.g := by simp [← e.hom.comm₂₃]
+    exact key ▸ (hS.isRightAlmostSplit_g.comp_iso e.hom.τ₃).iso_comp (inv e.hom.τ₂)
 
 /-- Being almost split is invariant under an isomorphism of short complexes. -/
 theorem isAlmostSplit_iff_of_iso (e : S₁ ≅ S₂) : IsAlmostSplit S₁ ↔ IsAlmostSplit S₂ :=

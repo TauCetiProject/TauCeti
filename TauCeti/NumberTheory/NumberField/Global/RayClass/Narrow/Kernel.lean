@@ -173,7 +173,7 @@ private theorem principalRayClass_narrowPrimeToEquiv (x : Kˣ) :
   rw [narrowEquivNarrowClassGroup_narrowRayClassPrincipal, principalRayClass_apply,
     narrowEquivNarrowClassGroup_rayClassMk, NarrowClassGroup.mkPrincipal_apply]
   congr 1
-  rw [coe_principalIdealPrimeTo, coe_narrowPrimeToEquiv_symm]
+  rw [NumberFieldArithmetic.coe_principalIdealAway, coe_narrowPrimeToEquiv_symm]
 
 private noncomputable def narrowSignRayClass :
     ({w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ)) →*

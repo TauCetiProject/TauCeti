@@ -130,15 +130,15 @@ theorem orderAt_eq_of_restrict_eq_rationalUnitClass (D : CartierDivisor X)
 
 /-- A Cartier divisor has order zero at every codimension-one point where it vanishes locally. -/
 theorem orderAt_eq_zero_of_restrict_eq_zero (D : CartierDivisor X)
-    (x : CodimensionOnePoint X) (U : X.Opens) [Nonempty U] (hx : (x : X) ∈ U)
+    (x : CodimensionOnePoint X) (U : X.Opens) (hx : (x : X) ∈ U)
     (hD : D |_ U = 0) : D.orderAt x = 0 := by
+  let _ : Nonempty U := ⟨⟨x, hx⟩⟩
   simpa only [map_zero] using
     orderAt_eq_of_restrict_eq_rationalUnitClass D x U hx 0 (by simpa using hD)
 
 /-- The zero Cartier divisor has order zero at every codimension-one point. -/
 @[simp]
 theorem orderAt_zero (x : CodimensionOnePoint X) : (0 : CartierDivisor X).orderAt x = 0 := by
-  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, by simp⟩⟩
   apply orderAt_eq_zero_of_restrict_eq_zero 0 x ⊤ (by simp)
   simp
 
@@ -229,6 +229,16 @@ def toWeilDivisor (D : CartierDivisor X) : SchemeWeilDivisor X :=
 theorem coeff_toWeilDivisor (D : CartierDivisor X) (x : CodimensionOnePoint X) :
     WeilDivisor.coeff D.toWeilDivisor x = D.orderAt x :=
   congrFun Finsupp.ofSupportFinite_coe x
+
+/-- If `f` is a local equation of `D` on `V`, then the coefficient of the Weil divisor of `D` at a
+codimension-one point of `V` is the order of `f` there. -/
+theorem coeff_toWeilDivisor_eq_ord (D : CartierDivisor X) (y : CodimensionOnePoint X)
+    {V : X.Opens} [Nonempty V] (hyV : (y : X) ∈ V) (f : X.functionFieldˣ)
+    (hV : rationalUnitClass X V (Additive.ofMul f) = D |_ V) :
+    WeilDivisor.coeff D.toWeilDivisor y = X.ord (f : X.functionField) y := by
+  rw [coeff_toWeilDivisor,
+    orderAt_eq_of_restrict_eq_rationalUnitClass D y V hyV (Additive.ofMul f) hV.symm]
+  simp
 
 /-- The construction from Cartier divisors to Weil divisors is additive. -/
 def toWeilDivisorHom : CartierDivisor X →+ SchemeWeilDivisor X where

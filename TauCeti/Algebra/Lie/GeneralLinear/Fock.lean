@@ -61,10 +61,6 @@ one by a right multiplication (`TauCeti.car_lie_sub_mul`) and is not the isotypi
 
 ## References
 
-This implements the "CAR module" target (`carLieRingModule`, `carLieModule`, `car_lie_def`) of the
-`gl_N` worked instance of Layer 9 in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`.
-
 * D. Panyushev, *On the irreducibility of the Clifford module of a semisimple Lie algebra*,
   Prop. 2.4 and Ex. 2.5(1).
 * B. Kostant, *Clifford algebra analogue of the Hopf--Koszul--Samelson theorem*, Adv. Math. 125
@@ -79,9 +75,7 @@ open CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-attribute [local instance] Classical.decEq
-
-variable {K n : Type*} [Field K] [Fintype n] [Invertible (2 : K)]
+variable {K n : Type*} [Field K] [Fintype n] [DecidableEq n] [Invertible (2 : K)]
 
 /-- **The CAR module.** The Clifford algebra of the trace form of `gl n K`, acted on by `gl n K`
 through left multiplication by the normal-ordered quadratic lift. Scoped: the inner derivation
@@ -181,6 +175,7 @@ theorem carLieModule_isFaithful (h : (Fintype.card n : K) ≠ 0) :
 /-! ### The Fock space -/
 
 variable (K n) in
+omit [DecidableEq n] [Invertible (2 : K)] in
 /-- **The carrier of the CAR module is the fermionic Fock space `⋀(gl n K)`**, of dimension
 `2 ^ N²`: the Clifford algebra of any quadratic form on a finite free module has rank two to the
 rank of the module, and `gl n K` has rank `N²`. -/

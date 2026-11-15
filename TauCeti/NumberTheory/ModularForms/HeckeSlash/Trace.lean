@@ -123,7 +123,7 @@ form. -/
   apply DFunLike.coe_injective
   rw [ModularForm.coe_trace, ModularForm.coe_trace]
   exact congrArg DFunLike.coe (SlashInvariantForm.trace_eq_of_eq_of_coe_eq rfl (by
-    rw [CuspForm.coe_translate_gl, ModularForm.coe_translate]))
+    rw [CuspForm.coe_translate, ModularForm.coe_translate]))
 
 variable {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)} {δ : GL (Fin 2) ℚ}
 

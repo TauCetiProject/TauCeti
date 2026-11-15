@@ -57,26 +57,20 @@ theorem tensorProduct_tmul (g : GeneralLinearGroup K V) (h : GeneralLinearGroup 
 theorem tensorProduct_mul (g₁ g₂ : GeneralLinearGroup K V)
     (h₁ h₂ : GeneralLinearGroup K W) :
     tensorProduct (g₁ * g₂) (h₁ * h₂) =
-      tensorProduct g₁ h₁ * tensorProduct g₂ h₂ := by
-  simp only [tensorProduct, LinearMap.GeneralLinearGroup.toLinearEquiv_mul,
-    TensorProduct.congr_mul,
-    LinearMap.GeneralLinearGroup.ofLinearEquiv_mul]
+      tensorProduct g₁ h₁ * tensorProduct g₂ h₂ :=
+  Units.ext <| by simp only [Units.val_mul, coe_tensorProduct, TensorProduct.map_mul]
 
 /-- The tensor product of two identity automorphisms is the identity. -/
 @[simp]
 theorem tensorProduct_one :
-    tensorProduct (1 : GeneralLinearGroup K V) (1 : GeneralLinearGroup K W) = 1 := by
-  symm
-  apply mul_left_cancel (a := tensorProduct (1 : GeneralLinearGroup K V)
-    (1 : GeneralLinearGroup K W))
-  simpa only [one_mul, mul_one] using
-    (tensorProduct_mul (1 : GeneralLinearGroup K V) 1 (1 : GeneralLinearGroup K W) 1)
+    tensorProduct (1 : GeneralLinearGroup K V) (1 : GeneralLinearGroup K W) = 1 :=
+  Units.ext <| by simp only [Units.val_one, coe_tensorProduct, TensorProduct.map_one]
 
 /-- Tensor products preserve inverses. -/
 @[simp]
 theorem tensorProduct_inv (g : GeneralLinearGroup K V) (h : GeneralLinearGroup K W) :
-    tensorProduct g⁻¹ h⁻¹ = (tensorProduct g h)⁻¹ := by
-  exact eq_inv_of_mul_eq_one_left <| by
+    tensorProduct g⁻¹ h⁻¹ = (tensorProduct g h)⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by
     rw [← tensorProduct_mul, inv_mul_cancel, inv_mul_cancel, tensorProduct_one]
 
 end LinearMap.GeneralLinearGroup

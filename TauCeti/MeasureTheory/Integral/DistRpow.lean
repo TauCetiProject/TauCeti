@@ -1,0 +1,174 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecificLimits.Basic
+
+/-!
+# The tail integral of a negative power of the distance
+
+In a pseudometric measure space whose balls of radius `r > R` satisfy the growth bound
+`μ (ball y r) ≤ A rⁿ` (with `A : ℝ≥0∞`), the tail integral of `x ↦ dist x y ^ (-s)` obeys,
+for `n < s` and `R > 0`, the extended-valued bound
+
+`∫_{dist x y > R} dist x y ^ (-s) dx ≤ A 2ⁿ R ^ (n - s) / (1 - 2 ^ (n - s))`
+
+(`TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`). When `A < ∞` the right-hand side is finite, so
+`dist x y ^ (-s)` is integrable on `{x | R < dist x y}`. The exponent `n` need not be an integer.
+For an additive Haar measure on a finite-dimensional real normed space the growth bound holds with
+`n` the dimension and `A` the measure of the unit ball
+(`MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`).
+
+For `0 ≤ s` the proof splits the region `dist x y > R` into the dyadic annuli
+`2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R`. On the `k`-th annulus `dist x y ^ (-s)` is at most `(2ᵏ R) ^ (-s)`,
+and the annulus lies in a ball of measure at most `A (2ᵏ⁺¹ R)ⁿ`, so the annuli contribute a
+convergent geometric series with ratio `2 ^ (n - s)`. For `s < 0` the dyadic bound on an annulus
+fails and the statement is degenerate: if `A < ∞` the growth bound forces `μ = 0`, and if
+`A = ∞` the right-hand side is `∞`.
+
+## Main declarations
+
+* `TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`: the tail bound for `dist x y ^ (-s)`.
+* `TauCeti.ofReal_dist_rpow_neg_le_tsum`: off the ball `B(c, 2 r)`, `dist z c ^ (-s)` is dominated
+  by a sum over the dyadic balls `B(c, 2^(k+2) r)` of the value `(2^(k+1) r) ^ (-s)` it bounds on
+  the `k`-th annulus.
+* `MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`: the tail bound for `‖x‖ ^ (-s)`
+  under an additive Haar measure, for `s` above the dimension.
+-/
+
+public section
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
+open scoped ENNReal
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] {μ : Measure X}
+
+/-- **The tail of a power of the distance.** If the balls about `y` of radius `r > R` satisfy the
+growth bound `μ (ball y r) ≤ A rⁿ`, then for `n < s` and `R > 0`,
+
+`∫_{dist x y > R} dist x y ^ (-s) dx ≤ A 2ⁿ R ^ (n - s) / (1 - 2 ^ (n - s))`. -/
+theorem setLIntegral_ofReal_dist_rpow_neg_le {y : X} {A : ℝ≥0∞} {n s R : ℝ}
+    (hμ : ∀ r, R < r → μ (ball y r) ≤ A * ENNReal.ofReal (r ^ n))
+    (hns : n < s) (hR : 0 < R) :
+    ∫⁻ x in {x | R < dist x y}, ENNReal.ofReal (dist x y ^ (-s)) ∂μ ≤
+      A * ENNReal.ofReal (2 ^ n / (1 - 2 ^ (n - s)) * R ^ (n - s)) := by
+  set q : ℝ := 2 ^ (n - s)
+  have hq1 : q < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  -- For negative `s`, the growth bound forces `μ = 0` unless `A = ⊤`, when the bound is trivial.
+  rcases lt_or_ge s 0 with hs | hs
+  · by_cases hA : A = ⊤
+    · have hpos : 0 < 2 ^ n / (1 - q) * R ^ (n - s) :=
+        mul_pos (div_pos (by positivity) (sub_pos.2 hq1)) (by positivity)
+      simp [hA, hpos]
+    · have hball (r : ℝ) (hr : R < r) : μ (ball y r) = 0 := by
+        refine le_antisymm (ge_of_tendsto (b := μ (ball y r)) (x := Filter.atTop)
+          (f := fun t : ℝ ↦ A * ENNReal.ofReal (t ^ n)) ?_ ?_) bot_le
+        · have h0 : Filter.Tendsto (fun t : ℝ ↦ t ^ n) Filter.atTop (nhds 0) := by
+            simpa using tendsto_rpow_neg_atTop (y := -n) (by linarith)
+          simpa using ENNReal.Tendsto.const_mul (ENNReal.tendsto_ofReal h0) (Or.inr hA)
+        · filter_upwards [Filter.eventually_ge_atTop r] with t ht
+          exact (measure_mono (ball_subset_ball ht)).trans (hμ t (hr.trans_le ht))
+      have hμ0 : μ = 0 := by
+        refine Measure.measure_univ_eq_zero.1 ?_
+        have : (univ : Set X) = ⋃ k : ℕ, ball y (R + k + 1) := by
+          refine (eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_).symm
+          obtain ⟨k, hk⟩ := exists_nat_gt (dist x y - R)
+          exact ⟨k, mem_ball.2 (by linarith)⟩
+        rw [this]
+        exact measure_iUnion_null fun k ↦ hball _ (by linarith [k.cast_nonneg (α := ℝ)])
+      simp [hμ0]
+  have hq0 : 0 ≤ q := by positivity
+  -- The dyadic annuli `2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R` cover the region `R < dist x y`.
+  set S : ℕ → Set X := fun k => (fun x => dist x y) ⁻¹' Ico (2 ^ k * R) (2 ^ (k + 1) * R)
+  have hcover : {x | R < dist x y} ⊆ ⋃ k, S k := by
+    intro x hx
+    obtain ⟨k, hk, hk'⟩ := exists_nat_pow_near ((one_le_div hR).2 hx.le) one_lt_two
+    exact mem_iUnion.2 ⟨k, (le_div_iff₀ hR).1 hk, (div_lt_iff₀ hR).1 hk'⟩
+  -- On the `k`-th annulus the integrand is at most `(2ᵏ R) ^ (-s)`, and the annulus lies in a
+  -- ball of measure at most `A (2ᵏ⁺¹ R)ⁿ`.
+  have hS (k : ℕ) : ∫⁻ x in S k, ENNReal.ofReal (dist x y ^ (-s)) ∂μ ≤
+      A * ENNReal.ofReal (2 ^ n * R ^ (n - s) * q ^ k) := by
+    set u : ℝ := 2 ^ k * R
+    have hRu : R ≤ u := le_mul_of_one_le_left hR.le (one_le_pow₀ one_le_two)
+    have hu : 0 < u := hR.trans_le hRu
+    -- The scalar identity `u ^ (-s) (2u)ⁿ = 2ⁿ R ^ (n - s) qᵏ` for `u = 2ᵏ R`.
+    have hpow : u ^ (-s) * (2 * u) ^ n = 2 ^ n * R ^ (n - s) * q ^ k := by
+      have hqk : q ^ k * R ^ (n - s) = u ^ (n - s) := by
+        rw [Real.rpow_pow_comm zero_le_two, ← Real.mul_rpow (by positivity) hR.le]
+      rw [mul_assoc, mul_comm (R ^ _), hqk, sub_eq_add_neg, Real.rpow_add hu,
+        Real.mul_rpow zero_le_two hu.le]
+      ring
+    calc ∫⁻ x in S k, ENNReal.ofReal (dist x y ^ (-s)) ∂μ
+        ≤ ∫⁻ _ in S k, ENNReal.ofReal (u ^ (-s)) ∂μ :=
+          setLIntegral_mono measurable_const fun x hx => ENNReal.ofReal_le_ofReal <|
+            Real.rpow_le_rpow_of_nonpos hu hx.1 (neg_nonpos.2 hs)
+      _ ≤ ENNReal.ofReal (u ^ (-s)) * (A * ENNReal.ofReal ((2 * u) ^ n)) := by
+          rw [setLIntegral_const]
+          gcongr
+          refine (measure_mono fun x hx => mem_ball.2 ?_).trans (hμ _ ?_)
+          · exact hx.2.trans_eq (by ring)
+          · linarith
+      _ = A * ENNReal.ofReal (2 ^ n * R ^ (n - s) * q ^ k) := by
+          rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity), hpow]
+  have hsum : Summable fun k : ℕ => 2 ^ n * R ^ (n - s) * q ^ k :=
+    (summable_geometric_of_lt_one hq0 hq1).mul_left _
+  calc ∫⁻ x in {x | R < dist x y}, ENNReal.ofReal (dist x y ^ (-s)) ∂μ
+      ≤ ∫⁻ x in ⋃ k, S k, ENNReal.ofReal (dist x y ^ (-s)) ∂μ := lintegral_mono_set hcover
+    _ ≤ ∑' k, ∫⁻ x in S k, ENNReal.ofReal (dist x y ^ (-s)) ∂μ := lintegral_iUnion_le _ _
+    _ ≤ ∑' k, A * ENNReal.ofReal (2 ^ n * R ^ (n - s) * q ^ k) := tsum_le_tsum hS
+    _ = A * ENNReal.ofReal (∑' k, 2 ^ n * R ^ (n - s) * q ^ k) := by
+        rw [ENNReal.tsum_mul_left, ENNReal.ofReal_tsum_of_nonneg (fun _ => by positivity) hsum]
+    _ = A * ENNReal.ofReal (2 ^ n / (1 - q) * R ^ (n - s)) := by
+        rw [tsum_mul_left, tsum_geometric_of_lt_one hq0 hq1]
+        congr 2
+        ring
+
+omit [MeasurableSpace X] in
+/-- **Dyadic annuli.** Off the ball `B(c, 2 r)`, the power `dist z c ^ (-s)`, `s ≥ 0`, is
+dominated by the sum over `k` of `(2^(k+1) r) ^ (-s)` times the indicator of `B(c, 2^(k+2) r)`. -/
+theorem ofReal_dist_rpow_neg_le_tsum {c z : X} {r s : ℝ} (hr : 0 < r) (hs : 0 ≤ s)
+    (hz : 2 * r ≤ dist z c) :
+    ENNReal.ofReal (dist z c ^ (-s)) ≤ ∑' k : ℕ,
+      (ball c (2 ^ (k + 2) * r)).indicator
+        (fun _ => ENNReal.ofReal ((2 ^ (k + 1) * r) ^ (-s))) z := by
+  obtain ⟨k, hk1, hk2⟩ := exists_nat_pow_near (x := dist z c / (2 * r))
+    ((one_le_div (by positivity)).2 hz) one_lt_two
+  rw [le_div_iff₀ (by positivity)] at hk1
+  rw [div_lt_iff₀ (by positivity)] at hk2
+  have hmem : z ∈ ball c (2 ^ (k + 2) * r) := mem_ball.2 (hk2.trans_eq (by ring))
+  refine le_trans ?_ (le_tsum _ k)
+  rw [indicator_of_mem hmem]
+  exact ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (by positivity)
+    ((le_of_eq (by ring)).trans hk1) (by linarith))
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric
+
+/-- **The tail of a negative power of the norm.** For an additive Haar measure `μ` on a
+finite-dimensional real normed space of dimension `n`, `n < s` and `R > 0`,
+
+`∫_{‖x‖ > R} ‖x‖ ^ (-s) dx ≤ μ (B(0, 1)) 2ⁿ R ^ (n - s) / (1 - 2 ^ (n - s))`. -/
+theorem setLIntegral_ofReal_norm_rpow_neg_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] {s : ℝ} (hs : Module.finrank ℝ E < s) {R : ℝ}
+    (hR : 0 < R) :
+    ∫⁻ x in {x | R < ‖x‖}, ENNReal.ofReal (‖x‖ ^ (-s)) ∂μ ≤
+      μ (ball 0 1) * ENNReal.ofReal (2 ^ (Module.finrank ℝ E : ℝ) /
+        (1 - 2 ^ (Module.finrank ℝ E - s)) * R ^ (Module.finrank ℝ E - s)) := by
+  simpa using TauCeti.setLIntegral_ofReal_dist_rpow_neg_le (y := 0) (μ := μ) (A := μ (ball 0 1))
+    (fun r hr ↦ by rw [Measure.addHaar_ball_of_pos μ 0 (hR.trans hr), mul_comm, Real.rpow_natCast])
+    hs hR
+
+end MeasureTheory.Measure

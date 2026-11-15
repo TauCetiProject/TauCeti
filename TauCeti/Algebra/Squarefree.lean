@@ -27,6 +27,7 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   Mathlib's `IsUnit.squarefree`). It is phrased with `Squarefree` dot-notation, so a caller
   holding `ha : Squarefree a` and `hu : ¬ IsUnit a` can write `ha.not_isSquare hu`.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
+* `TauCeti.squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
 * `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
   rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
@@ -39,6 +40,10 @@ that Mathlib does not provide directly, used across the multiquadratic developme
 * `TauCeti.Int.not_four_dvd_of_squarefree` and
   `TauCeti.Int.emod_four_eq_two_or_three_of_squarefree`: the modulo-four restrictions on
   squarefree integers.
+* `TauCeti.Int.not_dvd_two_mul_and_sq_dvd_sq_sub_of_squarefree` and
+  `TauCeti.Int.not_dvd_two_mul_sub_one_and_sq_dvd_sq_sub_sub_of_squarefree`: the integer
+  arithmetic behind Dedekind's criterion at every prime for `ℤ[√d]` (`d ≢ 1 (mod 4)`) and for
+  `ℤ[(1 + √d)/2]` (`d ≡ 1 (mod 4)`), with `d` squarefree.
 * `TauCeti.Int.emod_eight_eq_of_eq_mul_sq_of_not_four_dvd`: removing a square factor
   preserves residues modulo eight when the original integer is not divisible by four.
 * `TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq` and
@@ -66,6 +71,54 @@ theorem emod_four_eq_two_or_three_of_squarefree {n : ℤ} (hn : Squarefree n)
   have := not_four_dvd_of_squarefree hn
   omega
 
+/-- For a squarefree integer `d ≢ 1 (mod 4)` and a prime `p`, no `r` has both `p ∣ 2r` and
+`p² ∣ r² - d`: if `p ∣ r` then `p² ∣ d`, and otherwise `p = ±2` with `r` odd, so
+`d ≡ r² ≡ 1 (mod 4)`. This is Dedekind's criterion for `ℤ[√d]` at `p`. -/
+theorem not_dvd_two_mul_and_sq_dvd_sq_sub_of_squarefree {p d : ℤ} (hp : Prime p)
+    (hd : Squarefree d) (hd4 : d % 4 ≠ 1) (r : ℤ) :
+    ¬ (p ∣ 2 * r ∧ p ^ 2 ∣ r ^ 2 - d) := by
+  rintro ⟨h2r, hsq⟩
+  by_cases hpr : p ∣ r
+  · -- `p ∣ r` gives `p² ∣ r²`, hence `p² ∣ d`.
+    have hpd : p * p ∣ d := by
+      have := dvd_sub (pow_dvd_pow_of_dvd hpr 2) hsq
+      rwa [sub_sub_cancel, sq] at this
+    exact hp.not_isUnit (hd _ hpd)
+  · -- Otherwise `p ∣ 2`, so `p² = 4` and `r` is odd, whence `d ≡ r² ≡ 1 (mod 4)`.
+    have h2 : p ∣ 2 := (hp.dvd_or_dvd h2r).resolve_right hpr
+    have hp4 : p ^ 2 = 4 := by
+      have habs : p.natAbs ∣ 2 := by simpa using Int.natAbs_dvd_natAbs.mpr h2
+      rcases (Nat.dvd_prime Nat.prime_two).mp habs with h | h
+      · exact absurd (Int.isUnit_iff_natAbs_eq.mpr h) hp.not_isUnit
+      · rw [← Int.natAbs_sq, h]
+        norm_num
+    have hodd : r % 2 = 1 := by
+      by_contra hev
+      exact hpr (h2.trans (by omega))
+    rw [hp4] at hsq
+    obtain ⟨k, hk⟩ := hsq
+    have : r ^ 2 % 4 = 1 := by
+      have hr' : r = 2 * (r / 2) + 1 := by omega
+      rw [hr']
+      ring_nf
+      omega
+    omega
+
+/-- For a squarefree integer `d ≡ 1 (mod 4)` and a prime `p`, no `r` has both `p ∣ 2r - 1` and
+`p² ∣ r² - r - (d - 1)/4`: since `d = (2r - 1)² - 4 (r² - r - (d - 1)/4)`, both would force
+`p² ∣ d`. This is Dedekind's criterion for `ℤ[(1 + √d)/2]` at `p`. -/
+theorem not_dvd_two_mul_sub_one_and_sq_dvd_sq_sub_sub_of_squarefree {p d : ℤ} (hp : Prime p)
+    (hd : Squarefree d) (hd4 : d % 4 = 1) (r : ℤ) :
+    ¬ (p ∣ 2 * r - 1 ∧ p ^ 2 ∣ r ^ 2 - r - (d - 1) / 4) := by
+  rintro ⟨⟨t, ht⟩, hsq⟩
+  have h4 : d = (2 * r - 1) ^ 2 - 4 * (r ^ 2 - r - (d - 1) / 4) := by
+    have : 4 * ((d - 1) / 4) = d - 1 := by omega
+    linear_combination -this
+  have hpd : p * p ∣ d := by
+    rw [h4, ht, ← sq]
+    exact dvd_sub (by rw [mul_pow]; exact dvd_mul_right _ _) (dvd_mul_of_dvd_right hsq _)
+  exact hp.not_isUnit (hd _ hpd)
+
 end TauCeti.Int
 
 /-- A squarefree non-unit of a monoid is not a square. -/
@@ -78,6 +131,16 @@ theorem Squarefree.not_isSquare {R : Type*} [Monoid R] {a : R}
 theorem Squarefree.neg {R : Type*} [Monoid R] [HasDistribNeg R] {n : R}
     (hn : Squarefree n) : Squarefree (-n) :=
   ((Associated.refl n).neg_left).squarefree_iff.mpr hn
+
+/-- A multiplicative equivalence preserves and reflects squarefreeness. -/
+@[simp]
+theorem TauCeti.squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivLike F M N]
+    [MulEquivClass F M N] (f : F) {a : M} : Squarefree (f a) ↔ Squarefree a := by
+  refine ⟨fun h x hx ↦ (isUnit_map_iff f x).mp (h _ (by simpa using map_dvd f hx)),
+    fun h y hy ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := EquivLike.surjective f y
+  rw [← map_mul, map_dvd_iff] at hy
+  exact (h x hy).map f
 
 /-- A squarefree integer other than `1` is not a rational square. -/
 theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}

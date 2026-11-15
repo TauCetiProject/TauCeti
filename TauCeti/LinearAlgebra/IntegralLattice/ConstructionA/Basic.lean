@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 public import TauCeti.InformationTheory.Coding.EuclideanDual
 public import Mathlib.Algebra.Module.ZMod
-public import Mathlib.Data.PNat.Basic
 
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
@@ -21,17 +20,18 @@ For an additive code `C ≤ (ZMod m)^ι`, `ConstructionA.lattice m C` is the sub
 `ConstructionA.form m x y = (∑ i, x i * y i) / m`. This rational model becomes the usual
 Construction A lattice after scaling real coordinates by `1 / √m`.
 
-When the coordinate type is finite, the carrier is a full lattice for every code.
+When the coordinate type is finite and `m ≠ 0`, the carrier is a full lattice for every code.
 Its dual carrier is literally the carrier
 constructed from the dual code, so integrality is equivalent to self-orthogonality of the code,
 and the resulting integral lattice is unimodular exactly when the code is self-dual.
 Additive codes over `ZMod m` are canonically submodules through `AddSubgroup.toZModSubmodule`;
 their dual here is the existing `Submodule.euclideanDual`, transported back to an additive
-subgroup. The modulus is a positive natural number; no primality hypothesis is needed.
-Only nonvanishing of the modulus is used here. The type `ℕ+` supplies
-`NeZero (m : ℕ)` and excludes zero even in the carrier and form definitions. The normalized form
-is positive definite, so every Construction A lattice is definite. At `m = 1`, the construction
-is the integer coordinate lattice with the ordinary dot product, and the same results apply.
+subgroup. The carrier and the form are defined for every modulus `m : ℕ` (at `m = 0` the form
+is zero); the results that divide by the modulus assume `[NeZero m]`, and no primality hypothesis
+is needed. For `m ≠ 0` the normalized form is positive definite, so every Construction A
+lattice is definite.
+At `m = 1`, the construction is the integer coordinate lattice with the ordinary dot product, and
+the same results apply.
 
 ## References
 
@@ -49,11 +49,11 @@ namespace TauCeti.ConstructionA
 
 open Matrix
 
-variable (m : ℕ+) {ι : Type*}
+variable (m : ℕ) {ι : Type*}
 
 /-- The rational carrier of Construction A: the integer vectors reducing to the additive code
 `C` modulo `m`. -/
-def lattice (m : ℕ+) (C : AddSubgroup (ι → ZMod m)) : Submodule ℤ (ι → ℚ) :=
+def lattice (m : ℕ) (C : AddSubgroup (ι → ZMod m)) : Submodule ℤ (ι → ℚ) :=
   (C.toIntSubmodule.comap ((Int.castAddHom (ZMod m)).toIntLinearMap.compLeft ι)).map
     ((Int.castAddHom ℚ).toIntLinearMap.compLeft ι)
 
@@ -76,6 +76,19 @@ theorem intCast_mem_lattice {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :
     simpa [this] using hw
   · exact fun h ↦ ⟨z, h, rfl⟩
 
+/-- For a nonzero modulus, every Construction A vector is `c + m z`, where `c` is the lift of a
+codeword with coordinates in `[0, m)`. -/
+theorem exists_eq_val_add_mul [NeZero m] {C : AddSubgroup (ι → ZMod m)} {x : ι → ℚ}
+    (hx : x ∈ lattice m C) :
+    ∃ c ∈ C, ∃ z : ι → ℤ, x = fun i ↦ ((c i).val : ℚ) + m * z i := by
+  obtain ⟨w, hw, rfl⟩ := (mem_lattice m).mp hx
+  refine ⟨fun i ↦ (w i : ZMod m), hw, fun i ↦ w i / m, funext fun i ↦ ?_⟩
+  have hval : (((w i : ZMod m).val : ℤ) : ℚ) = ((w i % m : ℤ) : ℚ) :=
+    congrArg _ (ZMod.val_intCast (w i))
+  push_cast at hval
+  rw [hval]
+  exact_mod_cast (Int.emod_add_mul_ediv (w i) m).symm
+
 /-- Inclusion of Construction A carriers is equivalent to inclusion of codes. -/
 @[simp]
 theorem lattice_le_lattice_iff {C D : AddSubgroup (ι → ZMod m)} :
@@ -97,8 +110,10 @@ theorem single_mem_lattice [DecidableEq ι] (C : AddSubgroup (ι → ZMod m)) (i
   rw [← hcast ℚ, intCast_mem_lattice, hcast (ZMod m)]
   simp
 
-/-- Every Construction A carrier is a full, finitely generated integer lattice. -/
-instance isLattice [Finite ι] (C : AddSubgroup (ι → ZMod m)) : (lattice m C).IsLattice ℚ where
+/-- For a nonzero modulus and finite coordinates, every Construction A carrier is a full,
+finitely generated integer lattice. -/
+instance isLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
+    (lattice m C).IsLattice ℚ where
   fg := (IsNoetherian.noetherian _).map _
   span_eq_top := by
     classical
@@ -114,7 +129,7 @@ variable [Fintype ι]
 
 /-- The rational bilinear form of Construction A, normalized by dividing the dot product by
 the modulus. -/
-def form (m : ℕ+) : LinearMap.BilinForm ℚ (ι → ℚ) :=
+def form (m : ℕ) : LinearMap.BilinForm ℚ (ι → ℚ) :=
   (m : ℚ)⁻¹ • dotProductBilin ℚ ℚ
 
 /-- The form is the dot product divided by the modulus. -/
@@ -128,6 +143,8 @@ theorem form_isSymm : (form m (ι := ι)).IsSymm := by
   intro x y
   simp only [form_apply, dotProduct_comm]
 
+variable [NeZero m]
+
 /-- The Construction A form is nondegenerate. -/
 theorem form_nondegenerate : (form m (ι := ι)).Nondegenerate := by
   rw [form, TauCeti.BilinForm.nondegenerate_smul_iff
@@ -139,7 +156,7 @@ theorem form_posDef : (form m (ι := ι)).toQuadraticMap.PosDef := by
   intro x hx
   rw [LinearMap.BilinMap.toQuadraticMap_apply, form_apply]
   exact div_pos (by simpa using (dotProduct_self_star_pos_iff (v := x)).mpr hx)
-    (by exact_mod_cast m.pos)
+    (by exact_mod_cast NeZero.pos m)
 
 /-- Pairing with `m eᵢ` reads off the `i`th coordinate. -/
 @[simp↓]
@@ -271,6 +288,7 @@ theorem isUnimodular_integralLattice_iff (C : AddSubgroup (ι → ZMod m))
 
 /-! ### Linear codes -/
 
+omit [NeZero m] in
 /-- For a linear code over `ZMod m`, the integrality hypothesis of Construction A is
 self-orthogonality of the code. -/
 theorem toZModSubmodule_toAddSubgroup_le_euclideanDual_iff (C : Submodule (ZMod m) (ι → ZMod m)) :

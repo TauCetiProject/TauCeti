@@ -121,7 +121,6 @@ private theorem map_component_deconcatenation_tprod (n m : {n : ℕ // 0 < n}) (
     · intro hi
       exact absurd (Finset.mem_univ _) hi
   · rw [component_of_of_ne R M hmn, map_zero]
-    have hm : 0 < (m : ℕ) := m.2
     have hmn' : (m : ℕ) ≠ (n : ℕ) := fun h ↦ hmn (Subtype.ext h)
     refine Finset.sum_eq_zero fun i _ ↦ ?_
     have hi1 : i.1 + 1 < (m : ℕ) := by have := i.isLt; omega
@@ -161,7 +160,6 @@ theorem eq_of_deconcatenation_eq_of_letter_eq {x y : ReducedTensorWords R M}
     rwa [letter_apply, letter_apply, LinearEquiv.symm_apply_apply,
       LinearEquiv.symm_apply_apply] at h
   · have h2 : 2 ≤ n.1 := by
-      have h1 := n.2
       rcases Nat.lt_or_ge n.1 2 with h | h
       · exact absurd (Subtype.ext (by omega : n.1 = 1)) hn
       · exact h
@@ -192,6 +190,16 @@ theorem letter_subword_of_ne_one {n : ℕ} (z : Fin n → M) (a : ℕ) {b : ℕ}
       component_of_of_ne R M (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega),
       map_zero]
   · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero]
+
+/-- The letter of a word of length `n` is its only letter if `n = 1`, and zero otherwise. -/
+theorem letter_of_tprod {n : ℕ} (hn : 0 < n) (z : ℕ → M) :
+    letter R M (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
+      if n = 1 then z 0 else 0 := by
+  rw [of_tprod_eq_subword R hn]
+  split_ifs with h
+  · subst h
+    rw [subword_one R M _ Nat.one_pos, letter_ofLetter]
+  · exact letter_subword_of_ne_one R M _ 0 h
 
 section Prepend
 

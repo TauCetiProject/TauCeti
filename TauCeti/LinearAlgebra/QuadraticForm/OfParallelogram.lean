@@ -20,7 +20,7 @@ f (x + y) + f (x - y) = 2 • f x + 2 • f y.
 ```
 
 Then `f` is a quadratic form: its polarisation `QuadraticMap.polar f x y = f (x + y) - f x - f y`
-is biadditive, and `f (n • x) = n ^ 2 • f x`. This file proves that, and packages it as a
+is biadditive, and `f (n • x) = (n * n) • f x`. This file proves that, and packages it as a
 `QuadraticMap ℤ M N`. Both `f 0 = 0` and evenness of `f` come free from the law rather than being
 assumed.
 
@@ -63,14 +63,14 @@ For a torsion-free codomain it is one term: `smul_right_injective N two_ne_zero`
   `QuadraticMap.map_add_add_add_map`.
 * `TauCeti.QuadraticMap.polar_add_left_of_parallelogram` and
   `polar_zsmul_left_of_parallelogram`: the polarisation is additive and `ℤ`-linear on the left.
-* `TauCeti.QuadraticMap.map_nsmul_of_parallelogram`: `f (n • x) = n ^ 2 • f x` for `n : ℕ`,
+* `TauCeti.QuadraticMap.map_nsmul_of_parallelogram`: `f (n • x) = (n * n) • f x` for `n : ℕ`,
   assuming `f 0 = 0`, for an additive group `M` and right-cancellative additive monoid `N`.
-* `TauCeti.QuadraticMap.map_zsmul_of_parallelogram`: `f (n • x) = n ^ 2 • f x` for `n : ℤ`,
+* `TauCeti.QuadraticMap.map_zsmul_of_parallelogram`: `f (n • x) = (n * n) • f x` for `n : ℤ`,
   assuming `f 0 = 0`, without commutativity of either group or injectivity of doubling on `N`.
 * `TauCeti.QuadraticMap.ofParallelogram`: `f` as a `QuadraticMap ℤ M N`, with the polarisation as
   its companion bilinear map.
 
-## Where this is used
+## Applications
 
 Two constructions in arithmetic geometry arrive at a function *known to satisfy the parallelogram
 law* and want it as a quadratic form.
@@ -135,7 +135,7 @@ variable {M N : Type*} [AddGroup M] [AddRightCancelMonoid N] {f : M → N}
 include hzero hf
 
 /-- **Quadraticity**: a parallelogram-law function that preserves zero satisfies
-`f (n • x) = n ^ 2 • f x` for a natural number `n`, with an additive group source and a
+`f (n • x) = (n * n) • f x` for a natural number `n`, with an additive group source and a
 right-cancellative additive monoid target. -/
 theorem map_nsmul_of_parallelogram (n : ℕ) (x : M) :
     f (n • x) = (n * n) • f x := by
@@ -149,13 +149,9 @@ theorem map_nsmul_of_parallelogram (n : ℕ) (x : M) :
     rw [← succ_nsmul x (n + 1), show (n + 1) • x - x = n • x by
       rw [succ_nsmul, add_sub_cancel_right], ih, ih'] at h
     apply add_right_cancel (b := (n * n) • f x)
-    calc
-      f ((n + 2) • x) + (n * n) • f x =
-          2 • ((n + 1) * (n + 1)) • f x + 2 • f x := h
-      _ = ((n + 2) * (n + 2)) • f x + (n * n) • f x := by
-        rw [smul_smul, ← add_nsmul, ← add_nsmul]
-        congr 1
-        ring
+    rw [h, smul_smul, ← add_nsmul, ← add_nsmul]
+    congr 1
+    ring
 
 end NatSmul
 
@@ -170,14 +166,11 @@ include hzero hf
 -- Written `(n * n) • f x` rather than `n ^ 2 • f x` to match the `toFun_smul` field of
 -- `QuadraticMap` syntactically. The negative case composes the natural one with evenness.
 /-- **Quadraticity**: a parallelogram-law function that preserves zero satisfies
-`f (n • x) = n ^ 2 • f x` for an integer `n`, even for noncommutative additive groups. -/
+`f (n • x) = (n * n) • f x` for an integer `n`, even for noncommutative additive groups. -/
 theorem map_zsmul_of_parallelogram (n : ℤ) (x : M) : f (n • x) = (n * n) • f x := by
-  obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg
-  · simpa only [← Int.natCast_mul, natCast_zsmul] using
-      map_nsmul_of_parallelogram hzero hf m x
-  · rw [neg_zsmul, map_neg_of_parallelogram hf, neg_mul_neg]
-    simpa only [← Int.natCast_mul, natCast_zsmul] using
-      map_nsmul_of_parallelogram hzero hf m x
+  obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg <;>
+    simp only [neg_zsmul, map_neg_of_parallelogram hf, neg_mul_neg, ← Int.natCast_mul,
+      natCast_zsmul, map_nsmul_of_parallelogram hzero hf]
 
 end IntSmul
 
@@ -197,7 +190,7 @@ theorem map_add_add_add_map_of_parallelogram (x y z : M) :
   -- `f (z + x)` is the goal's spelling but `f (x + z)` is what the instances below produce, and
   -- commutativity inside an argument of an opaque `f` is invisible to `abel`, `module` and
   -- `linear_combination`; pay for it once here rather than at every use site.
-  rw [show z + x = x + z from by abel]
+  rw [add_comm z x]
   -- Four instances of the law. `x + z - y` and `x - (y - z)` are the same point, which is what
   -- lets the two occurrences of `f` at that point cancel; halving at the end is the only place
   -- torsion-freeness is used.

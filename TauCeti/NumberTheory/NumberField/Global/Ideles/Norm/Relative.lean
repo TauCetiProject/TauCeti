@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm.Continuity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 public import TauCeti.RingTheory.Norm.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
 # The norm map of ideles and idele classes
@@ -48,6 +49,8 @@ homomorphism to `ℝ≥0ˣ`.
   `TauCeti.GlobalNumberFields.ideleClassNormMap_ofCompletion`: the norm of an idele, or of an
   idele class, concentrated at one infinite place `w` is concentrated at the place below `w`,
   with the local norm as coordinate.
+* `TauCeti.GlobalNumberFields.ideleNormMap_ofAdicCompletion`,
+  `TauCeti.GlobalNumberFields.ideleClassNormMap_ofAdicCompletion`: the same at a finite place.
 * `TauCeti.GlobalNumberFields.ideleNormMap_unitEmbedding`: the norm of a principal idele is the
   principal idele of the global norm.
 * `TauCeti.GlobalNumberFields.ideleNormMap_ideleExtension`,
@@ -55,6 +58,14 @@ homomorphism to `ℝ≥0ˣ`.
   an idele class, extended from `K` is its `[L : K]`-th power.
 * `TauCeti.GlobalNumberFields.ideleNormMap_comp`,
   `TauCeti.GlobalNumberFields.ideleClassNormMap_comp`: norm maps compose in towers.
+* `TauCeti.GlobalNumberFields.range_ideleClassNormMap_le_of_algHom`: a larger extension has a
+  smaller idele-class norm group.
+* `TauCeti.GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv`: `K`-isomorphic extensions
+  have the same idele-class norm group.
+* `TauCeti.GlobalNumberFields.range_ideleClassNormMap`,
+  `TauCeti.GlobalNumberFields.index_range_ideleClassNormMap`: the idele-class norm group
+  `N_{L/K}(C_L)` is the image of `N_{L/K}(𝕀_L)` in `C_K`, so its index in `C_K` is the index of
+  `Kˣ · N_{L/K}(𝕀_L)` in `𝕀_K`.
 
 ## References
 
@@ -65,7 +76,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -142,6 +154,34 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
   · simp only [ideleFiniteCoord_ideleNormMap,
       HeightOneSpectrum.ideleFiniteCoord_ofCompletion, map_one, finprod_one]
 
+variable {K L} in
+/-- **The norm of an idele concentrated at one finite place.** If `w` lies over `v`, the norm of
+the idele that is `u` at `w` and `1` elsewhere is the idele that is `N_{L_w/K_v}(u)` at `v` and
+`1` elsewhere. -/
+theorem ideleNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (u : (w.adicCompletion L)ˣ) :
+    ideleNormMap K L (IdeleGroup.ofAdicCompletion (𝓞 L) L w u) =
+      IdeleGroup.ofAdicCompletion (𝓞 K) K v (Algebra.normUnits (v.adicCompletion K) u) := by
+  refine IdeleGroup.ext (fun v' ↦ ?_) (fun v' ↦ ?_)
+  · simp only [ideleInfiniteCoord_ideleNormMap,
+      InfinitePlace.ideleInfiniteCoord_ofAdicCompletion, map_one, finprod_one]
+  · rw [ideleFiniteCoord_ideleNormMap]
+    by_cases hv : v' = v
+    · subst hv
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self, finprod_eq_single _ ⟨w, ‹_›⟩]
+      · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+      · rintro ⟨w', hw'⟩ hne
+        rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'
+          fun h ↦ hne (Subtype.ext h), map_one]
+    · -- No place above `v'` is `w`, so every factor is trivial.
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv]
+      refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
+      have hne : w'.1 ≠ w := by
+        rintro rfl
+        exact hv (HeightOneSpectrum.ext
+          (w'.2.over.trans ‹w'.1.asIdeal.LiesOver v.asIdeal›.over.symm))
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'.1 hne, map_one]
+
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]
 theorem ideleNormMap_unitEmbedding (x : Lˣ) :
@@ -179,9 +219,9 @@ theorem principalSubgroup_le_comap_ideleNormMap :
 /-- **The norm map of idele classes** `N_{L/K} : C_L →ₜ* C_K`, induced by the norm map of
 ideles. -/
 def ideleClassNormMap : IdeleClassGroup (𝓞 L) L →ₜ* IdeleClassGroup (𝓞 K) K :=
-  ContinuousMonoidHom.quotientLift (IdeleGroup.principalSubgroup (𝓞 L) L)
-    ((ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
-      (ideleNormMap K L)) (by
+  ContinuousMonoidHom.quotientLift
+    ((Subgroup.quotientMkContinuousMonoidHom (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+      (ideleNormMap K L)) (IdeleGroup.principalSubgroup (𝓞 L) L) (by
         intro x hx
         simpa using principalSubgroup_le_comap_ideleNormMap K L hx)
 
@@ -194,6 +234,29 @@ theorem ideleClassNormMap_mk (x : IdeleGroup (𝓞 L) L) :
   simp [ideleClassNormMap]
 
 variable {K L} in
+/-- **The idele-class norm group is the image of the idele norm group**: `N_{L/K}(C_L)` is the
+image of `N_{L/K}(𝕀_L)` under the quotient map `𝕀_K → C_K`. -/
+theorem range_ideleClassNormMap :
+    (ideleClassNormMap K L).range =
+      (ideleNormMap K L).range.map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)) := by
+  ext c
+  constructor
+  · rintro ⟨y, rfl⟩
+    induction y using QuotientGroup.induction_on with
+    | H x => exact ⟨_, ⟨x, rfl⟩, (ideleClassNormMap_mk x).symm⟩
+  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨x, ideleClassNormMap_mk x⟩
+
+variable {K L} in
+/-- **The index of the idele-class norm group**: the index of `N_{L/K}(C_L)` in `C_K` is the index
+of `Kˣ · N_{L/K}(𝕀_L)`, the subgroup generated by the principal ideles and the idele norms, in
+`𝕀_K`. -/
+theorem index_range_ideleClassNormMap :
+    (ideleClassNormMap K L).range.index =
+      (IdeleGroup.principalSubgroup (𝓞 K) K ⊔ (ideleNormMap K L).range).index := by
+  rw [range_ideleClassNormMap, Subgroup.index_map_mk'_eq_index_sup, sup_comm]
+
+variable {K L} in
 /-- **The norm of an idele class concentrated at one infinite place.** If `w` lies over `v`, the
 norm of the class of the idele that is `u` at `w` is the class of the idele that is
 `N_{L_w/K_v}(u)` at `v`. -/
@@ -203,6 +266,23 @@ theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace 
       IdeleClassGroup.ofCompletion (𝓞 K) K v (Algebra.normUnits v.Completion u) := by
   rw [IdeleClassGroup.ofCompletion_apply, ideleClassNormMap_mk, ideleNormMap_ofCompletion v w,
     ← IdeleClassGroup.ofCompletion_apply]
+
+variable {K L} in
+/-- **The norm of an idele class concentrated at one finite place.** If `w` lies over `v`, the
+norm of the class of the idele that is `u` at `w` is the class of the idele that is
+`N_{L_w/K_v}(u)` at `v`. -/
+theorem ideleClassNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (u : (w.adicCompletion L)ˣ) :
+    ideleClassNormMap K L (IdeleClassGroup.ofAdicCompletion (𝓞 L) L w u) =
+      IdeleClassGroup.ofAdicCompletion (𝓞 K) K v (Algebra.normUnits (v.adicCompletion K) u) := by
+  rw [IdeleClassGroup.ofAdicCompletion_apply, ideleClassNormMap_mk,
+    ideleNormMap_ofAdicCompletion v w, ← IdeleClassGroup.ofAdicCompletion_apply]
+
+/-- The idele-class norm group `N_{L/K}(C_L)` is normal in `C_K`, which is commutative, so the
+norm quotient `C_K / N_{L/K}(C_L)` is a group. -/
+instance normal_range_ideleClassNormMap :
+    (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.Normal :=
+  Subgroup.normal_of_isMulCommutative _
 
 /-- The relative norm on idele classes is continuous for the quotient topology. -/
 @[continuity, fun_prop]
@@ -228,5 +308,28 @@ theorem ideleClassNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
     simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply, ideleClassNormMap_mk] using
       congrArg (fun y : IdeleGroup (𝓞 K) K ↦ (y : IdeleClassGroup (𝓞 K) K))
         (DFunLike.congr_fun (ideleNormMap_comp K L M) x)
+
+variable {K L} in
+/-- **A larger extension has a smaller idele-class norm group**: if `f : L →ₐ[K] M`, then
+`N_{M/K}(C_M) ≤ N_{L/K}(C_L)`. Through `f`, `M` is an extension of `L`, and
+`N_{M/K} = N_{L/K} ∘ N_{M/L}`. -/
+theorem range_ideleClassNormMap_le_of_algHom {M : Type*} [Field M] [NumberField M]
+    [Algebra K M] (f : L →ₐ[K] M) :
+    (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range ≤
+      (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  let _ : Algebra L M := f.toRingHom.toAlgebra
+  have : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq fun x ↦ (f.commutes x).symm
+  rintro _ ⟨y, rfl⟩
+  exact ⟨ideleClassNormMap L M y, DFunLike.congr_fun (ideleClassNormMap_comp K L M) y⟩
+
+variable {K L} in
+/-- **`K`-isomorphic extensions have the same idele-class norm group**: if `e : L ≃ₐ[K] M`, then
+`N_{L/K}(C_L) = N_{M/K}(C_M)`. -/
+theorem range_ideleClassNormMap_eq_of_algEquiv {M : Type*} [Field M] [NumberField M]
+    [Algebra K M] (e : L ≃ₐ[K] M) :
+    (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range =
+      (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range :=
+  le_antisymm (range_ideleClassNormMap_le_of_algHom e.symm.toAlgHom)
+    (range_ideleClassNormMap_le_of_algHom e.toAlgHom)
 
 end TauCeti.GlobalNumberFields

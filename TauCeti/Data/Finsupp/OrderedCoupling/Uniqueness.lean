@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Algebra.Group.Indicator
 public import Mathlib.Order.Preorder.Chain
 public import Mathlib.Order.UpperLower.Basic
-public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.Finsupp.Order
 
 /-!
 # Uniqueness of ordered couplings
@@ -44,20 +43,16 @@ theorem sum_indicator_prod_eq_right_and_le_of_support_imp {δ : Type*} [AddCommM
     w.sum (fun p r => t.indicator (fun _ => r) (g p)) ≤
       w.sum (fun p r => s.indicator (fun _ => r) (f p)) := by
   classical
-  constructor
-  · apply Finsupp.sum_congr
-    intro p hp
-    by_cases hpt : g p ∈ t <;> simp [hpt, hsub p hp]
-  · simp only [Finsupp.sum]
-    apply Finset.sum_le_sum
-    intro p hp
-    by_cases hpt : g p ∈ t
+  refine ⟨Finsupp.sum_congr fun p hp => ?_, Finsupp.sum_le_sum fun p hp => ?_⟩
+  · by_cases hpt : g p ∈ t <;> simp [hpt, hsub p hp]
+  · by_cases hpt : g p ∈ t
     · simp [hpt, hsub p hp hpt]
     · by_cases hps : f p ∈ s <;> simp [hpt, hps, hw p]
 
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling equals one
-coordinate lower-set mass, and that mass is at most the other. -/
-theorem sum_indicator_prod_eq_left_or_right [Preorder α] [Preorder β] [AddCommMonoid G]
+coordinate lower-set mass, and that mass is at most the other. The coordinate relations need
+not be reflexive or transitive. -/
+theorem sum_indicator_prod_eq_left_or_right [LE α] [LE β] [AddCommMonoid G]
     [Preorder G] [IsOrderedAddMonoid G] (w : (α × β) →₀ G) (hw : ∀ p, 0 ≤ w p)
     (hc : IsChain (· ≤ ·) (w.support : Set (α × β)))
     {s : Set α} {t : Set β} (hs : IsLowerSet s) (ht : IsLowerSet t) :
@@ -75,24 +70,22 @@ theorem sum_indicator_prod_eq_left_or_right [Preorder α] [Preorder β] [AddComm
   · obtain ⟨p, hp, hps, hpt⟩ := h
     have hsub : ∀ q ∈ w.support, q.2 ∈ t → q.1 ∈ s := by
       intro q hq hqt
-      by_cases hpq : p = q
-      · simpa [← hpq] using hps
-      · rcases hc hp hq hpq with hpq | hqp
-        · exact (hpt (ht hpq.2 hqt)).elim
-        · exact hs hqp.1 hps
+      obtain rfl | hpq := eq_or_ne p q
+      · exact hps
+      obtain hpq | hqp := hc hp hq hpq
+      · exact (hpt (ht hpq.2 hqt)).elim
+      · exact hs hqp.1 hps
     exact Or.inr (sum_indicator_prod_eq_right_and_le_of_support_imp w hw
       Prod.fst Prod.snd hsub)
-  · have hsub : ∀ p ∈ w.support, p.1 ∈ s → p.2 ∈ t := by
-      intro p hp hps
-      by_contra hpt
-      exact h ⟨p, hp, hps, hpt⟩
+  · -- Now every support point with first coordinate in `s` has second coordinate in `t`.
+    push Not at h
     refine Or.inl ?_
     simpa only [Set.indicator_apply, Set.mem_prod, and_comm] using
-      sum_indicator_prod_eq_right_and_le_of_support_imp w hw Prod.snd Prod.fst hsub
+      sum_indicator_prod_eq_right_and_le_of_support_imp w hw Prod.snd Prod.fst h
 
 /-- The mass of a lower rectangle in a nonnegative chain-supported coupling is the infimum
 of the masses of its two coordinate lower sets. -/
-theorem sum_indicator_prod_eq_inf [Preorder α] [Preorder β] [AddCommMonoid G] [SemilatticeInf G]
+theorem sum_indicator_prod_eq_inf [LE α] [LE β] [AddCommMonoid G] [SemilatticeInf G]
     [IsOrderedAddMonoid G] (w : (α × β) →₀ G) (hw : ∀ p, 0 ≤ w p)
     (hc : IsChain (· ≤ ·) (w.support : Set (α × β)))
     {s : Set α} {t : Set β} (hs : IsLowerSet s) (ht : IsLowerSet t) :
@@ -107,18 +100,16 @@ theorem sum_indicator_prod_eq_inf [Preorder α] [Preorder β] [AddCommMonoid G] 
 rectangles plus the coefficient at their common upper bound. -/
 theorem sum_indicator_Iic_prod_add_sum_indicator_Iio_prod [PartialOrder α] [PartialOrder β]
     [AddCommMonoid G] (u : (α × β) →₀ G) (a : α) (b : β) :
-    u.sum (fun p r => (Iic (a, b)).indicator (fun _ => r) p) +
+    u.sum (fun p r => (Iic a ×ˢ Iic b).indicator (fun _ => r) p) +
       u.sum (fun p r => (Iio a ×ˢ Iio b).indicator (fun _ => r) p) =
       u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p) +
         u.sum (fun p r => (Iic a ×ˢ Iio b).indicator (fun _ => r) p) + u (a, b) := by
   classical
-  rw [← Iic_prod_Iic]
   calc
     _ = u.sum (fun p r => (Iio a ×ˢ Iic b).indicator (fun _ => r) p +
         (Iic a ×ˢ Iio b).indicator (fun _ => r) p + if p = (a, b) then r else 0) := by
       rw [← Finsupp.sum_add]
-      apply Finsupp.sum_congr
-      intro p _
+      refine Finsupp.sum_congr fun p _ => ?_
       -- Equal coordinates account for the boundary terms; off the corner the strict and
       -- non-strict inequalities agree after excluding coordinate equality.
       by_cases ha : p.1 = a <;> by_cases hb : p.2 = b <;>
@@ -140,35 +131,23 @@ theorem eq_of_mapDomain_eq_of_isChain_support [PartialOrder α] [PartialOrder β
   have hrect {s : Set α} {t : Set β} (hs : IsLowerSet s) (ht : IsLowerSet t) :
       w.sum (fun p r => (s ×ˢ t).indicator (fun _ => r) p) =
         v.sum (fun p r => (s ×ˢ t).indicator (fun _ => r) p) := by
-    have hf := congrArg (fun u : α →₀ G =>
-      u.sum (fun a r => s.indicator (fun _ => r) a)) hfst
-    have hg := congrArg (fun u : β →₀ G =>
-      u.sum (fun b r => t.indicator (fun _ => r) b)) hsnd
-    rw [sum_mapDomain_index (h := fun a r => s.indicator (fun _ => r) a)
-      (by simp) (by simp [indicator_add]),
-      sum_mapDomain_index (h := fun a r => s.indicator (fun _ => r) a)
-        (by simp) (by simp [indicator_add])] at hf
-    rw [sum_mapDomain_index (h := fun b r => t.indicator (fun _ => r) b)
-      (by simp) (by simp [indicator_add]),
-      sum_mapDomain_index (h := fun b r => t.indicator (fun _ => r) b)
-        (by simp) (by simp [indicator_add])] at hg
+    have hf := congrArg (fun u : α →₀ G => u.sum fun a r => s.indicator (fun _ => r) a) hfst
+    have hg := congrArg (fun u : β →₀ G => u.sum fun b r => t.indicator (fun _ => r) b) hsnd
+    simp only [sum_mapDomain_index (h := fun a (r : G) => s.indicator (fun _ => r) a)
+      (by simp) (by simp [indicator_add])] at hf
+    simp only [sum_mapDomain_index (h := fun b (r : G) => t.indicator (fun _ => r) b)
+      (by simp) (by simp [indicator_add])] at hg
     have hwmass := sum_indicator_prod_eq_left_or_right w hw hcw hs ht
     have hvmass := sum_indicator_prod_eq_left_or_right v hv hcv hs ht
     rw [hf, hg] at hwmass
-    rcases hwmass with ⟨hwrect, hwle⟩ | ⟨hwrect, hwle⟩ <;>
-      rcases hvmass with ⟨hvrect, hvle⟩ | ⟨hvrect, hvle⟩
-    · exact hwrect.trans hvrect.symm
-    · exact hwrect.trans ((le_antisymm hwle hvle).trans hvrect.symm)
-    · exact hwrect.trans ((le_antisymm hwle hvle).trans hvrect.symm)
-    · exact hwrect.trans hvrect.symm
+    grind
   ext ⟨a, b⟩
   have hwrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod w a b
   have hvrect := sum_indicator_Iic_prod_add_sum_indicator_Iio_prod v a b
-  simp only [← Iic_prod_Iic] at hwrect hvrect
-  rw [hrect (isLowerSet_Iic a) (isLowerSet_Iic b),
-    hrect (isLowerSet_Iio a) (isLowerSet_Iic b),
-    hrect (isLowerSet_Iic a) (isLowerSet_Iio b),
-    hrect (isLowerSet_Iio a) (isLowerSet_Iio b)] at hwrect
+  rw [hrect (IsLowerSet.Iic a) (IsLowerSet.Iic b),
+    hrect (IsLowerSet.Iio a) (IsLowerSet.Iic b),
+    hrect (IsLowerSet.Iic a) (IsLowerSet.Iio b),
+    hrect (IsLowerSet.Iio a) (IsLowerSet.Iio b)] at hwrect
   exact add_left_cancel (hwrect.symm.trans hvrect)
 
 end Finsupp

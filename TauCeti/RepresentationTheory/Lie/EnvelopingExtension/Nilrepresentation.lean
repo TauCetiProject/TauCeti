@@ -86,7 +86,7 @@ private theorem exists_stable_envelopingIdeal (N : LieIdeal K S) (σ : S →ₗ�
   let f := (UniversalEnvelopingAlgebra.lift K σ).toRingHom
   let I := RingHom.ker f
   have : FiniteDimensional K (UniversalEnvelopingAlgebra K S ⧸ I) :=
-    UniversalEnvelopingAlgebra.finiteDimensional_quotient_ker_lift K S σ
+    UniversalEnvelopingAlgebra.finite_quotient_ker_lift K σ
   have hI (s : S) : IsNilpotent (Ideal.Quotient.mk I (UniversalEnvelopingAlgebra.ι K s)) ↔
       IsNilpotent (σ s) := by
     rw [← IsNilpotent.map_iff (RingHom.kerLift_injective f), RingHom.kerLift_mk]

@@ -66,7 +66,7 @@ theorem pointNatIsoHom_injective :
   let M : ComoduleCat.{u, v, v} R H := ComoduleCat.regular R H
   have happ := congrArg
     (fun a : Aut (ComoduleCat.scalarExtensionFunctor.{u, v, v, x} R H A) =>
-      a.hom.app M) hgh
+      a.asIso.hom.app M) hgh
   rw [pointNatIsoHom_apply, pointNatIso_hom_app,
     pointNatIsoHom_apply, pointNatIso_hom_app] at happ
   rw [cancel_epi] at happ
@@ -106,7 +106,7 @@ theorem fgPointNatIsoHom_injective :
     ⟨ComoduleCat.of R H D.toRegularSubcomodule, hDreg⟩
   have happ := congrArg
     (fun a : Aut (FGComoduleCat.scalarExtensionFunctor.{u, v, v, x} R H A) =>
-      a.hom.app M) hgh
+      a.asIso.hom.app M) hgh
   rw [fgPointNatIsoHom_hom_app, fgPointNatIsoHom_hom_app] at happ
   rw [cancel_epi] at happ
   rw [cancel_mono] at happ
@@ -124,6 +124,7 @@ theorem fgPoint_ext_of_forall_ofLinearEquiv_pointsAction
     g = h := by
   apply fgPointNatIsoHom_injective R H A
   apply Aut.ext
+  apply Iso.ext
   apply NatTrans.ext
   funext M
   rw [fgPointNatIsoHom_hom_app, fgPointNatIsoHom_hom_app]

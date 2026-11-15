@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 
 /-!
 # Determinant-power representations of the general linear group
@@ -29,10 +29,6 @@ polynomial representations.
 * `TauCeti.detPowerRep_comp_toGL`: every determinant power restricts to the trivial
   representation of the special linear subgroup, which is why **the determinant twist is invisible
   to `SL n k`** (`TauCeti.tprodDetPowerSLEquiv`).
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md)
 -/
 
 public section

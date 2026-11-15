@@ -59,6 +59,7 @@ theorem continuous_spinReflectionPair {X : Type w} [TopologicalSpace X] (v w : X
   funext x
   exact coe_spinReflectionPair Q (v x) (w x) (hv x) (hw x)
 
+omit [ContinuousMul (CliffordAlgebra Q)] in
 /-- Mapping a path between unit vectors by Clifford multiplication with the first vector joins the
 identity to their normalized reflection-pair lift. -/
 theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q w = 1)
@@ -66,9 +67,14 @@ theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q
     Joined (1 : spinGroup Q) (spinReflectionPair Q v w hv hw) := by
   let f : {u : M // Q u = 1} → spinGroup Q :=
     fun u => spinReflectionPair Q v u hv u.2
-  have hf : Continuous f :=
-    continuous_spinReflectionPair (fun _ ↦ v) Subtype.val (fun _ ↦ hv) (fun u ↦ u.2)
-      continuous_const continuous_subtype_val
+  have hf : Continuous f := by
+    apply continuous_induced_rng.mpr
+    let _ : ContinuousAdd (CliffordAlgebra Q) := IsModuleTopology.toContinuousAdd R _
+    have hmul : Continuous (fun x : M ↦ ι Q v * ι Q x) :=
+      IsModuleTopology.continuous_of_linearMap ((LinearMap.mulLeft R (ι Q v)).comp (ι Q))
+    convert hmul.comp continuous_subtype_val using 1
+    funext u
+    exact coe_spinReflectionPair Q v u hv u.2
   simpa only [f, spinReflectionPair_self] using h.map hf
 
 /-- In dimension at least two, every normalized reflection-pair lift for the positive-definite real
@@ -78,15 +84,14 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
     (hw : realCliffordForm n 0 w = 1) :
     Joined (1 : realCliffordSpinGroupZero n)
       (spinReflectionPair (realCliffordForm n 0) v w hv hw) := by
-  let uv : realCliffordUnitLevel n :=
-    ⟨v, (mem_realCliffordUnitLevel n v).mpr hv⟩
-  let uw : realCliffordUnitLevel n :=
-    ⟨w, (mem_realCliffordUnitLevel n w).mpr hw⟩
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := by
     exact ⟨n - 2, by omega⟩
   let _ : PathConnectedSpace (realCliffordUnitLevel (k + 2)) :=
     pathConnectedSpace_realCliffordUnitLevel_add_two k
-  have hjoined : Joined uv uw := PathConnectedSpace.joined uv uw
+  have : Joined
+      (⟨v, (mem_realCliffordUnitLevel (k + 2) v).mpr hv⟩ :
+        realCliffordUnitLevel (k + 2))
+      ⟨w, (mem_realCliffordUnitLevel (k + 2) w).mpr hw⟩ := PathConnectedSpace.joined _ _
   let f : realCliffordUnitLevel (k + 2) →
       {u : Fin (k + 2) → ℝ // realCliffordForm (k + 2) 0 u = 1} :=
     fun u => ⟨u.1, (mem_realCliffordUnitLevel (k + 2) _).mp u.2⟩
@@ -94,6 +99,6 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
     apply continuous_induced_rng.mpr
     exact continuous_subtype_val
   exact joined_one_spinReflectionPair_of_joined v w hv hw
-    (by simpa only [f, uv, uw] using hjoined.map hf)
+    (by simpa only [f] using this.map hf)
 
 end CliffordAlgebra

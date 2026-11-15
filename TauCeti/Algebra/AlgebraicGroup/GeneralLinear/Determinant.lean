@@ -24,15 +24,25 @@ the corresponding integral power of this group-like element. Extending that homo
 group algebra and evaluating group-like elements gives the coordinate morphism. Its direction is
 opposite to the represented group morphism `det : GLₙ ⟶ 𝔾ₘ`.
 
+The antipode of a generic entry is the inverse determinant `S(det)` times an entry of the
+adjugate, so the generic entries and `S(det)` generate the coordinate algebra.
+
 On algebra-valued convolution points, precomposition with this coordinate morphism agrees with
 the ordinary unit-valued determinant of an invertible matrix. This comparison is compatible with
 both the group-algebra presentation `D(Multiplicative ℤ)` and Tau Ceti's Laurent-polynomial
 multiplicative-group points API. The construction includes rank zero and the zero ring.
+In positive rank, Mathlib's
+`Matrix.GeneralLinearGroup.det_surjective` gives surjectivity on points, an algebra retraction
+of the coordinate morphism, and hence injectivity of that morphism.
 
 ## Main declarations
 
 * `TauCeti.GeneralLinear.determinantGroupLike`: the localized generic determinant as a
   group-like element.
+* `TauCeti.GeneralLinear.antipode_genericMatrix`: the antipode of a generic entry is the inverse
+  determinant times an adjugate entry.
+* `TauCeti.GeneralLinear.adjoin_genericMatrix_union_antipode_determinant`: the generic entries
+  and the inverse determinant generate the coordinate algebra.
 * `TauCeti.GeneralLinear.determinantCoordinateMap`: the coordinate Hopf-algebra morphism from
   `D(Multiplicative ℤ)` to `GLₙ`.
 * `TauCeti.GeneralLinear.determinantCoordinateMap_single`: its value on every group-algebra
@@ -75,6 +85,46 @@ theorem determinantGroupLike_val :
       coordinateHopfAlgebraAlgEquiv R n
         (Matrix.det (localizedGenericMatrix R n)) :=
   by rw [determinantGroupLike]
+
+/-- The antipode of a generic entry of `GLₙ`, an entry of the inverse generic matrix, is the
+inverse determinant `S(det)` times the corresponding entry of the adjugate. -/
+theorem antipode_genericMatrix (i j : Fin n) :
+    HopfAlgebra.antipode R (genericMatrix R n i j) =
+      HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) *
+        (genericMatrix R n).adjugate i j := by
+  have hdet : (genericMatrix R n).det = (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
+    have hmap : genericMatrix R n =
+        (coordinateHopfAlgebraAlgEquiv R n).mapMatrix (localizedGenericMatrix R n) := by
+      ext i j
+      simp [localizedGenericMatrix_apply]
+    rw [hmap, ← AlgEquiv.map_det, determinantGroupLike_val]
+  have hinv : Ring.inverse (genericMatrix R n).det =
+      HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
+    rw [hdet]
+    exact Ring.inverse_unit (GroupLike.toUnits R (determinantGroupLike R n))
+  rw [genericMatrix_apply, coordinateHopfAlgebra_antipode_X, ← genericMatrix_inv_apply,
+    Matrix.inv_def, hinv, Matrix.smul_apply, smul_eq_mul]
+
+/-- The generic entries and the inverse determinant generate the coordinate algebra of `GLₙ`. -/
+theorem adjoin_genericMatrix_union_antipode_determinant :
+    Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n => genericMatrix R n ij.1 ij.2) ∪
+        {HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n)}) = ⊤ := by
+  set S := Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n => genericMatrix R n ij.1 ij.2) ∪
+    {HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n)})
+  have hentry (i j : Fin n) : genericMatrix R n i j ∈ S :=
+    Algebra.subset_adjoin (Or.inl ⟨(i, j), rfl⟩)
+  -- The adjugate is a polynomial in the entries, so its entries lie in `S`.
+  have hadj (i j : Fin n) : (genericMatrix R n).adjugate i j ∈ S := by
+    let M : Matrix (Fin n) (Fin n) S := fun i j => ⟨genericMatrix R n i j, hentry i j⟩
+    have hM : (S.val : S →+* coordinateHopfAlgebra R n).mapMatrix M = genericMatrix R n := rfl
+    rw [← hM, ← RingHom.map_adjugate]
+    exact ((M.adjugate) i j).property
+  rw [eq_top_iff, ← adjoin_coordinateHopfAlgebra_X_union_antipode_X R n, Algebra.adjoin_le_iff]
+  rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩) <;> beta_reduce <;>
+    rw [SetLike.mem_coe, ← genericMatrix_apply]
+  · exact hentry i j
+  · rw [antipode_genericMatrix]
+    exact mul_mem (Algebra.subset_adjoin (Or.inr rfl)) (hadj i j)
 
 /-- The determinant coordinate morphism
 `O(𝔾ₘ) = R[Multiplicative ℤ] ⟶ O(GLₙ)`, packaged between the underlying commutative
@@ -120,7 +170,7 @@ convolution points to points of the group-algebra presentation of `𝔾ₘ`. -/
 noncomputable def determinantPoints :
     WithConv (coordinateHopfAlgebra R n →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
-  AlgHom.mapDomain
+  BialgHom.mapDomain
     (determinantCoordinateMap R n).hom
 
 /-- The point induced by the determinant coordinate morphism acts by precomposition. -/
@@ -130,7 +180,7 @@ theorem determinantPoints_apply_apply
     (determinantPoints R n f).ofConv x =
       f.ofConv
         ((determinantCoordinateMap R n).hom x) :=
-  by rw [determinantPoints, AlgHom.mapDomain_apply_apply]
+  by rw [determinantPoints, BialgHom.mapDomain_apply_apply]
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
@@ -140,7 +190,7 @@ theorem mapValue_determinantPoints (phi : A →ₐ[R] B) :
         (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi) =
       (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative ℤ)) phi).comp
         (determinantPoints (A := A) R n) := by
-  exact AlgHom.mapValue_mapDomain
+  exact BialgHom.mapValue_mapDomain
     (determinantCoordinateMap R n).hom phi
 
 end Points
@@ -198,25 +248,66 @@ theorem pointsMulEquiv_determinantPoints_symm_apply
 
 /-- The determinant comparison through Tau Ceti's Laurent-polynomial multiplicative-group
 points equivalence. -/
-theorem multiplicativeGroup_pointEquiv_determinantPoints
+theorem laurentEvalEquiv_symm_determinantPoints
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
-    MultiplicativeGroup.pointEquiv
+    laurentEvalEquiv.symm
         ((determinantPoints R n f).ofConv.comp
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) =
       Matrix.GeneralLinearGroup.det (pointsMulEquiv n f) := by
   calc
-    MultiplicativeGroup.pointEquiv
+    laurentEvalEquiv.symm
         ((determinantPoints R n f).ofConv.comp
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) =
         DiagonalizableGroup.charOfPoint (determinantPoints R n f).ofConv
           (Multiplicative.ofAdd (1 : ℤ)) :=
-      (DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply
+      (DiagonalizableGroup.charOfPoint_ofAdd_one
         (determinantPoints R n f).ofConv).symm
     _ = Matrix.GeneralLinearGroup.det (pointsMulEquiv n f) := by
       simpa only [DiagonalizableGroup.pointsMulEquiv_apply] using
         pointsMulEquiv_determinantPoints R n f
 
 end MatrixComparison
+
+section PositiveRank
+
+variable {R n}
+
+/-- In positive rank the determinant is surjective on points over every commutative
+value algebra, including nonreduced algebras. -/
+theorem determinantPoints_surjective (hn : 0 < n)
+    {A : Type w} [CommRing A] [Algebra R A] :
+    Function.Surjective (determinantPoints (A := A) R n) := by
+  let : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  intro y
+  obtain ⟨g, hg⟩ := Matrix.GeneralLinearGroup.det_surjective (n := Fin n)
+    (DiagonalizableGroup.pointsMulEquiv y (Multiplicative.ofAdd 1))
+  refine ⟨(pointsMulEquiv n).symm g, ?_⟩
+  apply (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)
+    (G := Multiplicative ℤ)).injective
+  apply MonoidHom.ext_mint
+  rw [pointsMulEquiv_determinantPoints_symm_apply, hg]
+
+/-- The coordinate morphism of the determinant admits an algebra retraction in positive
+rank. No field, reducedness or characteristic hypothesis is needed. -/
+theorem exists_retraction_determinantCoordinateMap (hn : 0 < n) :
+    ∃ s : coordinateHopfAlgebra R n →ₐ[R] MonoidAlgebra R (Multiplicative ℤ),
+      s.comp (determinantCoordinateMap R n).hom.toAlgHom = AlgHom.id R _ := by
+  obtain ⟨g, hg⟩ := determinantPoints_surjective (R := R) hn
+    (toConv (AlgHom.id R (MonoidAlgebra R (Multiplicative ℤ))))
+  refine ⟨g.ofConv, AlgHom.ext fun x ↦ ?_⟩
+  exact (determinantPoints_apply_apply R n g x).symm.trans
+    (congrArg (fun p ↦ p.ofConv x) hg)
+
+/-- The determinant coordinate map is injective over any commutative base ring in positive
+rank. This is schematic dominance, rather than just surjectivity on ground-field points. -/
+theorem injective_determinantCoordinateMap (hn : 0 < n) :
+    Function.Injective (determinantCoordinateMap R n).hom := by
+  obtain ⟨s, hs⟩ := exists_retraction_determinantCoordinateMap (R := R) hn
+  have hleft : Function.LeftInverse s (determinantCoordinateMap R n).hom :=
+    fun x ↦ DFunLike.congr_fun hs x
+  exact hleft.injective
+
+end PositiveRank
 
 end GeneralLinear
 

@@ -1,0 +1,384 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
+public import TauCeti.FieldTheory.FunctionField.Place.Degree
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
+import TauCeti.LinearAlgebra.Span.Basic
+
+/-!
+# Residue fields in a constant field extension
+
+Let `F' = F · k'` be a separable algebraic constant field extension of an algebraic function
+field `F / k` with exact constant field `k`, finite or not (an algebraic closure of a perfect `k`,
+for instance), and let `P'` be a place of `F' / k'` lying over the place `P` of `F / k`.  The
+residue field of `P'` is the compositum of the residue field of `P` and the new constants:
+
+`F'_{P'} = F_P · k'`.
+
+In fact more is true: `F'_{P'}` is spanned as an `F_P`-vector space by the image of `k'`.  When
+`k' / k` is finite, every residue class at `P'` is represented by a function regular at all the
+places over `P`, hence integral over `𝒪_P`, and such a function is an `𝒪_P`-combination of a
+`k`-basis of `k'` (`TauCeti.Place.isIntegralBasis_constantBasis`).  Reducing that combination at
+`P'` writes the residue class as an `F_P`-combination of residues of constants.  In general, a
+function representing a residue class at `P'` already lies in `F · L` for a finite subextension
+`L` of `k' / k` (`TauCeti.exists_finiteDimensional_constantSubfield_of_mem_constantCompositum`).
+The finite case writes its residue at the place below `P'` in `F · L` over the constants of `L`,
+and the residue-field map into `F'_{P'}` carries that expression to one over `k'`.
+
+Consequently a place becomes rational as soon as the constants are enlarged enough: if `k' / k`
+is normal and the residue field `F_P` admits a `k`-embedding into `k'`, every place of `F'` over
+`P` has degree one.  Each element of `F_P` is a root of its minimal polynomial over `k`, which
+splits in `k'`, so its residue in `F'_{P'}` is already a constant.  For `k'` a separable closure
+of `k`, this applies to every place whose residue field is separable over `k`, hence to every
+place when `k` is perfect.
+
+## Main results
+
+* `TauCeti.Place.span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top`:
+  `F'_{P'}` is spanned over `F_P` by the image of `k'`.
+* `TauCeti.Place.adjoin_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top`:
+  **`F'_{P'} = F_P · k'`** (Stichtenoth, Theorem 3.6.3(g)).
+* `TauCeti.Place.degree_eq_one_of_constantCompositum_eq_top`: a place over `P` is rational when
+  `k' / k` is normal and `F_P` embeds into `k'` over `k`.
+* `TauCeti.Place.card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top`: `F' / k'`
+  has at least as many rational places as there are places of `F` whose residue fields embed
+  into `k'`.
+* `TauCeti.Place.map_map_algebraMap_integers_eq_minpoly_of_constantCompositum_eq_top`: a
+  polynomial over the valuation ring of the restriction that models the minimal polynomial of a
+  primitive element of `F / E` still models it over `E · k'`.
+* `TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`: a place with
+  separable residue field becomes rational after a finite separable extension of constants.
+* `TauCeti.Place.exists_constantCompositum_eq_top_nonempty_algHom`: finitely many residue fields
+  separable over `k` embed into one finite Galois extension of constants.
+
+## Reference
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Theorem 3.6.3(g).
+-/
+
+public section
+
+open Module
+
+open scoped IntermediateField Polynomial
+
+namespace TauCeti
+
+namespace Place
+
+universe u u' v v'
+
+variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
+variable [Field k] [Field k'] [Field F] [Field F']
+variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Algebra.IsSeparable k k']
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- In a finite separable constant field extension, the residues of constants span the residue
+field over the residue field of the restricted place. -/
+private theorem span_range_algebraMap_residueField_eq_top_of_finiteDimensional
+    [FiniteDimensional k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    letI := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') h
+    Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+      ⊤ := by
+  let := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') h
+  set P := P'.restrict k F
+  refine eq_top_iff.2 fun y _ ↦ ?_
+  -- Represent `y` by a function regular at every place over `P`, hence integral over `𝒪_P`.
+  classical
+  obtain ⟨g, hg, hgy⟩ := exists_forall_residue_eq
+    (P := fun Q : {Q : Place k' F' // Q.restrict k F = P} ↦ (Q : Place k' F'))
+    Subtype.val_injective fun Q ↦ if hQ : (Q : Place k' F') = P' then hQ ▸ y else 0
+  have hint : IsIntegral P.integers g :=
+    (isIntegral_iff_forall_restrict_eq_mem_integers (hF.of_constantCompositum_eq_top h) P).2
+      fun Q hQ ↦ hg ⟨Q, hQ⟩
+  -- Expand `g` in a basis of constants, with coordinates in `𝒪_P`.
+  let b := Module.finBasis k k'
+  have hb := isIntegralBasis_constantBasis hex h b P
+  have hrepr := hb.isIntegral_iff_repr_mem.1 hint
+  set a : Fin (finrank k k') → P.integers := fun i ↦ ⟨(constantBasis hex h b).repr g i, hrepr i⟩
+  have hgsum : (⟨g, hg ⟨P', rfl⟩⟩ : P'.integers) =
+      ∑ i, algebraMap P.integers P'.integers (a i) * algebraMap k' P'.integers (b i) := by
+    apply Subtype.ext
+    simp only [AddSubmonoidClass.coe_finsetSum, MulMemClass.coe_mul, coe_algebraMap_constants, a]
+    conv_lhs => rw [← (constantBasis hex h b).sum_repr g]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [coe_algebraMap_integers, constantBasis_apply, Algebra.smul_def]
+  have hy : y = IsLocalRing.residue P'.integers ⟨g, hg ⟨P', rfl⟩⟩ := by
+    simpa using (hgy ⟨P', rfl⟩).symm
+  rw [hy, hgsum, map_sum]
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  rw [map_mul, ← IsLocalRing.ResidueField.algebraMap_residue, ← algebraMap_residueField (R := k'),
+    ← Algebra.smul_def]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self _))
+
+/-- **The residue field of a constant field extension is spanned by the constants**: for a
+separable algebraic constant field extension `F' = F · k'` of `F / k` with exact constant field
+`k`, finite or not, the residue field of a place `P'` of `F' / k'` is spanned over the residue
+field of the place below by the image of `k'`. -/
+theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+    Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+      ⊤ := by
+  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+  set P := P'.restrict k F
+  refine eq_top_iff.2 fun y _ ↦ ?_
+  obtain ⟨g, rfl⟩ := IsLocalRing.residue_surjective y
+  -- The function `g` already lies in `E = F · L` for a finite subextension `L` of `k' / k`.
+  obtain ⟨L, hL, hgL⟩ := exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
+    (k := k) (F := F) (by rw [h]; exact IntermediateField.mem_top (x := (g : F')))
+  let E := constantCompositum F L F'
+  let : Algebra L E := constantCompositumAlgebra F L F'
+  have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
+  have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
+  have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
+  let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
+  let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
+  let Q := P'.restrict L E
+  -- At the place `Q` below `P'`, the finite case writes the residue of `g` over `L`.
+  have hgQ : (⟨g, hgL⟩ : E) ∈ Q.integers := by
+    rw [mem_integers_restrict_iff]
+    exact g.2
+  have hmem : IsLocalRing.residue Q.integers ⟨_, hgQ⟩ ∈
+      Submodule.span (Q.restrict k F).ResidueField (Set.range (algebraMap L Q.ResidueField)) := by
+    rw [span_range_algebraMap_residueField_eq_top_of_finiteDimensional hF hex hE Q]
+    exact Submodule.mem_top
+  -- The residue-field map `E_Q → F'_{P'}` carries that expression to one over `k'`.
+  have hg : algebraMap Q.ResidueField P'.ResidueField (IsLocalRing.residue Q.integers ⟨_, hgQ⟩) =
+      IsLocalRing.residue P'.integers g := by
+    rw [IsLocalRing.ResidueField.algebraMap_residue]
+    exact congrArg _ (Subtype.ext (by simp [Q]))
+  rw [← hg]
+  refine Submodule.map_mem_span_of_forall_exists
+    (algebraMap Q.ResidueField P'.ResidueField) _ _ ?_ ?_ hmem
+  · -- A coefficient from the residue field of `Q ∩ F` is a coefficient from `F_P`.
+    intro r
+    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+    have ha : (a : F) ∈ P.integers := by
+      rw [mem_integers_restrict_iff, IsScalarTower.algebraMap_apply F E F', ←
+        mem_integers_restrict_iff L E P', ← mem_integers_restrict_iff k F Q]
+      exact a.2
+    refine ⟨IsLocalRing.residue P.integers ⟨a, ha⟩, ?_⟩
+    rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue,
+      IsLocalRing.ResidueField.algebraMap_residue]
+    refine congrArg _ (Subtype.ext ?_)
+    simp only [Q, P, coe_algebraMap_integers, IsScalarTower.algebraMap_apply F E F']
+  · -- The residue of a constant of `L` is the residue of the same constant in `k'`.
+    rintro _ ⟨c, rfl⟩
+    refine Submodule.subset_span ⟨c, ?_⟩
+    rw [algebraMap_residueField (R := k'), algebraMap_residueField (R := L),
+      IsLocalRing.ResidueField.algebraMap_residue]
+    refine congrArg _ (Subtype.ext ?_)
+    simpa [Q, coe_algebraMap_constants, coe_algebraMap_integers] using
+      (IsScalarTower.algebraMap_apply L k' F' c).symm.trans
+        (IsScalarTower.algebraMap_apply L E F' c)
+
+/-- **The residue field of a constant field extension is a compositum** (Stichtenoth,
+Theorem 3.6.3(g)): for a separable algebraic constant field extension `F' = F · k'` of `F / k`
+with exact constant field `k`, finite or not, the residue field of a place `P'` of `F' / k'` is
+generated over the residue field `F_P` of the place below by the constants:
+`F'_{P'} = F_P · k'`. -/
+theorem adjoin_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+    IntermediateField.adjoin (P'.restrict k F).ResidueField
+      (Set.range (algebraMap k' P'.ResidueField)) = ⊤ := by
+  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+  -- The adjoined field contains the span, which is already everything.
+  refine eq_top_iff.2 fun y _ ↦
+    (Submodule.span_le (p := (IntermediateField.adjoin _ _).toSubalgebra.toSubmodule)).2
+      (IntermediateField.subset_adjoin _ _) ?_
+  rw [span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top hF hex h P']
+  exact Submodule.mem_top
+
+/-- **A place becomes rational in a large enough normal constant field extension**: for a
+separable normal algebraic constant field extension `F' = F · k'` of `F / k` with exact constant
+field `k`, finite or not, a place `P'` of `F' / k'` has degree one as soon as the residue field of
+the place below admits a `k`-embedding into `k'`. -/
+theorem degree_eq_one_of_constantCompositum_eq_top [Normal k k'] (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    (φ : letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+      (P'.restrict k F).ResidueField →ₐ[k] k') :
+    P'.degree = 1 := by
+  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+  set P := P'.restrict k F
+  let ι := algebraMap k' P'.ResidueField
+  -- Each element of `F_P` reduces to a constant, as a root of a polynomial splitting in `k'`.
+  have hmem (α : P.ResidueField) : algebraMap P.ResidueField P'.ResidueField α ∈ ι.range := by
+    have := P.finiteDimensional_residueField hF
+    have hαint : IsIntegral k α := Algebra.IsIntegral.isIntegral α
+    have hsplit := Normal.splits (F := k) (K := k') inferInstance (φ α)
+    rw [minpoly.algHom_eq φ φ.injective α] at hsplit
+    refine hsplit.mem_range_of_isRoot (Polynomial.map_ne_zero (minpoly.ne_zero hαint)) ?_
+    have hroot : ((minpoly k α).map (algebraMap k P.ResidueField)).IsRoot α := by
+      rw [Polynomial.IsRoot, Polynomial.eval_map_algebraMap, minpoly.aeval]
+    rw [Polynomial.map_map, show ι.comp (algebraMap k k') =
+        (algebraMap P.ResidueField P'.ResidueField).comp (algebraMap k P.ResidueField) from
+        RingHom.ext fun c ↦ (algebraMap_residueField_algebraMap P' c).symm, ← Polynomial.map_map]
+    exact hroot.map (algebraMap P.ResidueField P'.ResidueField)
+  rw [degree_eq_one_iff_algebraMap_surjective]
+  intro y
+  have hy : y ∈ Submodule.span P.ResidueField (Set.range ι) := by
+    rw [span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top hF hex h P']
+    exact Submodule.mem_top
+  induction hy using Submodule.span_induction with
+  | mem _ hx => exact hx
+  | zero => exact ⟨0, map_zero ι⟩
+  | add x y _ _ hx hy => exact ι.range.add_mem hx hy
+  | smul r x _ hx => exact Algebra.smul_def r x ▸ ι.range.mul_mem (hmem r) hx
+
+/-- **Counting rational places in a large enough normal constant field extension**: for a
+separable normal algebraic constant field extension `F' = F · k'` of `F / k` with exact constant
+field `k`, finite or not, if the residue fields of the places in a finite set `T` of places of
+`F / k` admit `k`-embeddings into `k'`, then `F' / k'` has at least `|T|` rational places. -/
+theorem card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top [Normal k k']
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) {T : Finset (Place k F)}
+    (hT : ∀ P ∈ T, Nonempty (P.ResidueField →ₐ[k] k')) :
+    (T.card : ℕ∞) ≤ {P' : Place k' F' | P'.degree = 1}.encard := by
+  have := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+  -- Lift each place of `T` to a place of `F'`; the lifts are distinct and rational.
+  choose R hR using restrict_surjective (k := k) (F := F) (hF.of_constantCompositum_eq_top h)
+  simp only at hR
+  have hinj : Set.InjOn R T := fun P _ P₂ _ hP ↦ by rw [← hR P, ← hR P₂, hP]
+  rw [← Set.encard_coe_eq_coe_finsetCard, ← hinj.encard_image]
+  refine Set.encard_le_encard ?_
+  rintro _ ⟨P, hP, rfl⟩
+  obtain ⟨φ⟩ := hT P hP
+  exact degree_eq_one_of_constantCompositum_eq_top hF hex h (R P) (by rw [hR P]; exact φ)
+
+/-- **An integral model of a minimal polynomial survives a constant field extension**: let `y`
+generate `F` over a subfield `E` containing `k`, over which `F` is finite, and let `φ` be a
+polynomial over `𝒪_P` whose image over `E` is the minimal polynomial of `y`, where `P` is the
+restriction to `E` of a place `P'` of `E · k'`. Carried to `𝒪_{P'}`, `φ` maps to the minimal
+polynomial of `y` over `E · k'`. -/
+theorem map_map_algebraMap_integers_eq_minpoly_of_constantCompositum_eq_top {E : Type*}
+    [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] [FiniteDimensional E F]
+    [Algebra E F'] [IsScalarTower E F F'] [IsScalarTower k E F']
+    [Algebra k' (constantCompositum E k' F')] [IsScalarTower k k' (constantCompositum E k' F')]
+    [FiniteDimensional E (constantCompositum E k' F')] (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) {y : F} (hy : E⟮y⟯ = ⊤)
+    {P' : Place k' (constantCompositum E k' F')} {φ : (P'.restrict k E).integers[X]}
+    (hφ : φ.map (algebraMap (P'.restrict k E).integers E) = minpoly E y) :
+    (φ.map (algebraMap (P'.restrict k E).integers P'.integers)).map
+        (algebraMap P'.integers (constantCompositum E k' F')) =
+      minpoly (constantCompositum E k' F') (algebraMap F F' y) := by
+  have hcomp : (algebraMap P'.integers (constantCompositum E k' F')).comp
+      (algebraMap (P'.restrict k E).integers P'.integers) =
+      (algebraMap E (constantCompositum E k' F')).comp
+        (algebraMap (P'.restrict k E).integers E) :=
+    RingHom.ext fun x ↦ Subtype.ext (by simp [IsScalarTower.algebraMap_apply E F F'])
+  rw [Polynomial.map_map, hcomp, ← Polynomial.map_map, hφ,
+    minpoly_algebraMap_eq_map_of_constantCompositum_eq_top hex h hy]
+
+omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsSeparable k k'] in
+/-- **A place becomes rational after a finite separable extension of constants**: if the residue
+field of a place `P` of `F / k`, with `k` exact, is separable over `k`, then some finite separable
+constant field extension `F' = F · k'`, formed inside an algebraic closure of `F`, has only places
+of degree one over `P`. -/
+theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (P : Place k F) [Algebra.IsSeparable k P.ResidueField] :
+    ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
+      FiniteDimensional k k' ∧ Algebra.IsSeparable k k' ∧ constantCompositum F k' F' = ⊤ ∧
+        ∀ P' : Place k' F', P'.restrict k F = P → P'.degree = 1 := by
+  classical
+  have := P.finiteDimensional_residueField hF
+  -- Adjoin to `F` the roots of the minimal polynomial `p` of a primitive element `γ` of `F_P`.
+  obtain ⟨γ, hγ⟩ := Field.exists_primitive_element k P.ResidueField
+  have hγint : IsIntegral k γ := Algebra.IsIntegral.isIntegral γ
+  set p := minpoly k γ
+  obtain ⟨F', k', _, _, hsplit, _, htop⟩ :=
+    exists_finiteDimensional_normal_splits_constantCompositum_eq_top F p
+  have : Algebra.IsSeparable k k' :=
+    Algebra.isSeparable_of_separable_splitting_field (F := k) (E := k')
+      (Algebra.IsSeparable.isSeparable k γ)
+  -- `F_P = k(γ)` embeds into `k'`, where `p` has a root.
+  obtain ⟨r, hr⟩ := hsplit.exists_eval_eq_zero (by
+    rw [Polynomial.degree_map]; exact (minpoly.degree_pos hγint).ne')
+  have hroot : r ∈ p.aroots k' := by
+    rw [Polynomial.mem_aroots]
+    exact ⟨minpoly.ne_zero hγint, by rwa [Polynomial.eval_map_algebraMap] at hr⟩
+  let φ : P.ResidueField →ₐ[k] k' := ((IntermediateField.algHomAdjoinIntegralEquiv k hγint).symm
+    ⟨r, hroot⟩).comp ((IntermediateField.equivOfEq hγ).trans IntermediateField.topEquiv).symm
+  refine ⟨F', k', inferInstance, inferInstance, htop, fun P' hP' ↦ ?_⟩
+  exact degree_eq_one_of_constantCompositum_eq_top hF hex htop P' (hP' ▸ φ)
+
+omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsSeparable k k'] in
+/-- **Separable residue fields embed into one finite Galois extension of constants**: the residue
+fields of finitely many places of function fields `F / k` and `E / k`, all separable over `k`,
+embed over `k` into one finite Galois extension `k'` of `k`, realised as a constant field
+extension `F · k'` inside an algebraic closure of `F`. -/
+theorem exists_constantCompositum_eq_top_nonempty_algHom {E : Type*} [Field E] [Algebra k E]
+    (hF : IsFunctionField k F) (hE : IsFunctionField k E) (s : Finset (Place k F))
+    (t : Finset (Place k E))
+    (hs : ∀ R ∈ s, Algebra.IsSeparable k R.ResidueField)
+    (ht : ∀ Q ∈ t, Algebra.IsSeparable k Q.ResidueField) :
+    ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
+      FiniteDimensional k k' ∧ Normal k k' ∧ Algebra.IsSeparable k k' ∧
+        constantCompositum F k' F' = ⊤ ∧ (∀ R ∈ s, Nonempty (R.ResidueField →ₐ[k] k')) ∧
+          ∀ Q ∈ t, Nonempty (Q.ResidueField →ₐ[k] k') := by
+  classical
+  /- Each residue field is generated over `k` by one separable element, and `f` is the product of
+  the distinct minimal polynomials of these generators, a separable polynomial. -/
+  choose α hα using fun R : s ↦
+    letI := (R : Place k F).finiteDimensional_residueField hF
+    letI := hs R R.2
+    Field.exists_primitive_element k (R : Place k F).ResidueField
+  choose β hβ using fun Q : t ↦
+    letI := (Q : Place k E).finiteDimensional_residueField hE
+    letI := ht Q Q.2
+    Field.exists_primitive_element k (Q : Place k E).ResidueField
+  have hαsep (R : s) : IsSeparable k (α R) := by
+    have := hs R R.2
+    exact Algebra.IsSeparable.isSeparable k (α R)
+  have hβsep (Q : t) : IsSeparable k (β Q) := by
+    have := ht Q Q.2
+    exact Algebra.IsSeparable.isSeparable k (β Q)
+  set T : Finset k[X] := Finset.univ.image (fun R ↦ minpoly k (α R)) ∪
+    Finset.univ.image (fun Q ↦ minpoly k (β Q))
+  have hT (g : k[X]) (hg : g ∈ T) : g.Monic ∧ Irreducible g ∧ g.Separable := by
+    simp only [T, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and] at hg
+    rcases hg with ⟨R, rfl⟩ | ⟨Q, rfl⟩
+    · exact ⟨minpoly.monic (hαsep R).isIntegral, minpoly.irreducible (hαsep R).isIntegral,
+        hαsep R⟩
+    · exact ⟨minpoly.monic (hβsep Q).isIntegral, minpoly.irreducible (hβsep Q).isIntegral,
+        hβsep Q⟩
+  set f : k[X] := ∏ g ∈ T, g
+  have hfsep : f.Separable := by
+    refine Polynomial.separable_prod' (fun g hg h hh hne ↦ ?_) fun g hg ↦ (hT g hg).2.2
+    -- Distinct monic irreducible polynomials are coprime.
+    refine ((hT g hg).2.1.coprime_iff_not_dvd).mpr fun hdvd ↦ hne ?_
+    exact Polynomial.eq_of_monic_of_associated (hT g hg).1 (hT h hh).1
+      ((hT g hg).2.1.associated_of_dvd (hT h hh).2.1 hdvd)
+  obtain ⟨F', k', _, _, hsplit, _, h⟩ :=
+    exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
+  -- The residue fields embed into `k'`, since `f` splits in `k'`.
+  refine ⟨F', k', inferInstance, inferInstance,
+    Algebra.isSeparable_of_separable_splitting_field k k' hfsep, h, fun R hR ↦ ?_, fun Q hQ ↦ ?_⟩
+  · exact nonempty_algHom_of_minpoly_dvd (hα ⟨R, hR⟩) hfsep.ne_zero
+      (Finset.dvd_prod_of_mem _ (Finset.mem_union_left _
+        (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
+  · exact nonempty_algHom_of_minpoly_dvd (hβ ⟨Q, hQ⟩) hfsep.ne_zero
+      (Finset.dvd_prod_of_mem _ (Finset.mem_union_right _
+        (Finset.mem_image_of_mem _ (Finset.mem_univ _)))) hsplit
+
+end Place
+
+end TauCeti

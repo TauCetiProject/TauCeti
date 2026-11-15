@@ -42,9 +42,6 @@ isogeny from `SLₙ` toward its adjoint form.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Examples 2.4 and 5.49, and §18.a.
-
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap:
-the center and central-isogeny input for the simply connected and adjoint forms.
 -/
 
 public section

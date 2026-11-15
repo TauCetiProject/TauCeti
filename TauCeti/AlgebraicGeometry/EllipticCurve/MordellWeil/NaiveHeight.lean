@@ -44,12 +44,12 @@ lemma Point.naiveHeight_nonneg (P : W.Point) : 0 ≤ P.naiveHeight := by
 /-- The point at infinity has height zero: its representative is `![1, 0]`. -/
 @[simp]
 lemma Point.naiveHeight_zero : (0 : W.Point).naiveHeight = 0 := by
-  simp [naiveHeight_eq_logHeight, Point.xRep_zero]
+  simp [naiveHeight_eq_logHeight]
 
 /-- Negation preserves the naïve height, since `P` and `-P` share an `x`-coordinate. -/
 @[simp]
 lemma Point.naiveHeight_neg (P : W.Point) : (-P).naiveHeight = P.naiveHeight := by
-  simp [naiveHeight_eq_logHeight, Point.xRep_neg]
+  simp [naiveHeight_eq_logHeight]
 
 end WeierstrassCurve.Affine
 

@@ -7,13 +7,14 @@ module
 
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Probability.Exchangeability.PathSpace.HewittSavage
+public import TauCeti.Probability.Process.PathLaw.FinitaryAction
 
 /-!
 # Exchangeable laws and ergodicity of the finitely supported permutation action
 
 An exchangeable path law is invariant under the group of finitely supported permutations of the
-time index.  This file records the resulting **group action** on path space and identifies
-ergodicity of that action with triviality of the exchangeable σ-algebra:
+time index, acting on path space as in `TauCeti.Probability.Process.PathLaw.FinitaryAction`.  This
+file identifies ergodicity of that action with triviality of the exchangeable σ-algebra:
 
 ```text
 (∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1)
@@ -31,15 +32,15 @@ almost invariant event agrees almost everywhere with an exchangeable one
 
 ⚠ The permutation action here is the one on the *time index*, and ergodicity for it is a different
 statement from ergodicity of the one-sided shift, which concerns the smaller σ-algebra of
-shift-invariant events.  For an i.i.d. product law both hold: `ergodic_shift_infinitePi_const` is
-the shift form and `ergodicSMul_infinitePi_const` below is the permutation form.
+shift-invariant events.  For an i.i.d. product law both hold:
+`MeasureTheory.Measure.ergodic_shift_infinitePi_const` is the shift form and
+`ergodicSMul_infinitePi_const` below is the permutation form.
 
 ## Main declarations
 
-* `instSMulFinitaryPermPath` — the path action of the finitary symmetric group
-  `TauCeti.FinitaryPerm` (defined in `Algebra/GroupAction/FiniteSupportPerm.lean`) on `ℕ → α`
-  by finitary reindexing of the time index, `(g • x) n = x (g⁻¹ n)`;
-* `ExchangeableLaw.smulInvariantMeasure` — an exchangeable path law is invariant under it.
+* `ExchangeableLaw.smulInvariantMeasure` — an exchangeable path law is invariant under the action
+  `instMulActionFinitaryPermPath` of the finitary symmetric group `TauCeti.FinitaryPerm` on
+  `ℕ → α`, `(g • x) n = x (g⁻¹ n)`.
 
 ## Main results
 
@@ -52,9 +53,7 @@ the shift form and `ergodicSMul_infinitePi_const` below is the permutation form.
 * `ergodicSMul_infinitePi_const` — Hewitt–Savage in ergodic form: the finitely supported
   permutations act ergodically on an i.i.d. product law.
 
-This discharges the `ErgodicSMul` interface, item (1) ⇔ (2) of the zero-one/ergodic/extreme
-interfaces of Layer 6 of the `Exchangeability` roadmap.  No material is adapted from
-`cameronfreer/exchangeability`.
+No material is adapted from `cameronfreer/exchangeability`.
 -/
 
 public section
@@ -67,37 +66,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α : Type*}
-
-/-- The finitely supported time permutations act on path space by reindexing along the inverse,
-`(g • x) n = x (g⁻¹ n)`.  The inverse is what makes reindexing a *left* action. -/
-instance instSMulFinitaryPermPath : SMul FinitaryPerm (ℕ → α) :=
-  ⟨fun g x => permReindex (FinitaryPerm.toPerm g)⁻¹ x⟩
-
-theorem finitaryPerm_smul_path_def (g : FinitaryPerm) (x : ℕ → α) :
-    g • x = permReindex (FinitaryPerm.toPerm g)⁻¹ x :=
-  rfl
-
-@[simp]
-theorem finitaryPerm_smul_path_apply (g : FinitaryPerm) (x : ℕ → α) (n : ℕ) :
-    (g • x) n = x ((FinitaryPerm.toPerm g)⁻¹ n) :=
-  rfl
-
-instance instMulActionFinitaryPermPath : MulAction FinitaryPerm (ℕ → α) where
-  one_smul x := by ext n; simp
-  mul_smul g h x := by ext n; simp [mul_inv_rev]
-
-/-- Reindexing along a permutation is the same map whether it is read as an action of `FinitaryPerm`
-or written out with `permReindex`.  This is the form in which the exchangeable σ-algebra, which is
-stated with `permReindex`, meets the action. -/
-theorem preimage_finitaryPerm_smul_path (g : FinitaryPerm) (s : Set (ℕ → α)) :
-    (fun x : ℕ → α => g • x) ⁻¹' s = permReindex (FinitaryPerm.toPerm g)⁻¹ ⁻¹' s :=
-  rfl
-
-variable [MeasurableSpace α]
-
-instance instMeasurableConstSMulFinitaryPermPath : MeasurableConstSMul FinitaryPerm (ℕ → α) :=
-  ⟨fun g => measurable_reindex (α := α) ⇑(FinitaryPerm.toPerm g)⁻¹⟩
+variable {α : Type*} [MeasurableSpace α]
 
 /-- An exchangeable path law is invariant under the finitely supported permutation action. -/
 theorem ExchangeableLaw.smulInvariantMeasure {ρ : Measure (ℕ → α)} (hρ : ExchangeableLaw ρ) :
@@ -191,7 +160,7 @@ theorem ergodicSMul_of_exchangeableSigma_trivial {ρ : Measure (ℕ → α)} [Is
     (htrivial : ∀ s, MeasurableSet[exchangeableSigma α] s → ρ s = 0 ∨ ρ s = 1) :
     ErgodicSMul FinitaryPerm (ℕ → α) ρ := by
   have := hρ.smulInvariantMeasure
-  refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun t ht ht_inv => ?_
+  refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t ht ht_inv => ?_
   have ht_exch : MeasurableSet[exchangeableSigma α] t :=
     measurableSet_exchangeableSigma_of_forall_permReindex ht fun π hπ => by
       have hg := ht_inv (FinitaryPerm.ofPerm π⁻¹ (by simpa only [MulAction.fixedBy_inv ℕ] using hπ))
@@ -223,7 +192,8 @@ ergodically on an i.i.d. product law `P^{⊗ℕ}`.
 
 This is the zero-one law `exchangeableSigma_trivial_of_infinitePi` read through
 `exchangeableSigma_trivial_iff_ergodicSMul`.  It is the permutation-action counterpart of the
-shift ergodicity recorded by `ergodic_shift_infinitePi_const`. -/
+shift ergodicity recorded by
+`MeasureTheory.Measure.ergodic_shift_infinitePi_const`. -/
 theorem ergodicSMul_infinitePi_const (P : ProbabilityMeasure α) :
     ErgodicSMul FinitaryPerm (ℕ → α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
   (exchangeableSigma_trivial_iff_ergodicSMul (exchangeableLaw_infinitePi_const P)).mp

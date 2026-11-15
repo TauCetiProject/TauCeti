@@ -58,8 +58,9 @@ averaging this height itself; the associated pairing and regulator use the same 
   defining sequence termwise.
 * `WeierstrassCurve.Affine.Point.canonicalHeight_eq_zero_iff_isOfFinAddOrder`: it vanishes exactly
   on the torsion points. The two directions are also available separately, because they need
-  different hypotheses: `canonicalHeight_eq_zero_of_isOfFinAddOrder` is quadraticity at a
-  vanishing multiple and needs no finiteness, while `isOfFinAddOrder_of_canonicalHeight_eq_zero`
+  different hypotheses: `canonicalHeight_eq_zero_of_isOfFinAddOrder` holds because the
+  multiples `2 ^ n • P` of a torsion point have bounded height, and needs neither ellipticity nor
+  Northcott finiteness, while `isOfFinAddOrder_of_canonicalHeight_eq_zero`
   assumes Northcott finiteness for the canonical height itself.
 * `WeierstrassCurve.Affine.Point.abs_canonicalHeight_sub_naiveHeight_le`: the canonical height stays
   within a bounded distance of the naïve one, by a
@@ -289,16 +290,28 @@ theorem Point.canonicalHeight_nsmul [W.toAffine.IsElliptic] (n : ℕ) (P : W.Poi
   ring
 
 /-- **A torsion point has canonical height zero.** Unlike the converse this needs no Northcott
-hypothesis, so it holds over every field carrying admissible absolute values. -/
-theorem Point.canonicalHeight_eq_zero_of_isOfFinAddOrder [W.toAffine.IsElliptic] {P : W.Point}
+hypothesis, and unlike the quadraticity of the height no ellipticity, so it holds over every field
+carrying admissible absolute values. -/
+theorem Point.canonicalHeight_eq_zero_of_isOfFinAddOrder {P : W.Point}
     (h : IsOfFinAddOrder P) : P.canonicalHeight = 0 := by
-  -- Quadraticity at `n = addOrderOf P`, where `n • P = 0` and `n ≠ 0`: `n² * canonicalHeight P`
-  -- vanishes, and `n² ≠ 0`.
-  simpa [h.addOrderOf_pos.ne'] using (Point.canonicalHeight_nsmul (addOrderOf P) P).symm
+  -- The multiples `2 ^ n • P` run through the finitely many multiples `k • P` with `k` below the
+  -- order of `P`, so their naïve heights are bounded and the defining sequence tends to `0`.
+  have hfin : (Set.range fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight).Finite :=
+    (h.finite_multiples.image Point.naiveHeight).subset <| by
+      rintro _ ⟨n, rfl⟩
+      exact ⟨(2 ^ n) • P, ⟨2 ^ n, rfl⟩, rfl⟩
+  obtain ⟨M, hM⟩ := hfin.bddAbove
+  have hlim : Tendsto (fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / 4 ^ n) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 4)))
+      (fun n ↦ div_nonneg (Point.naiveHeight_nonneg _) (by positivity))
+      fun n ↦ by gcongr; exact hM ⟨n, rfl⟩
+  exact hlim.limUnder_eq
 
 /-- **Northcott finiteness transfers from the naïve height to the canonical one.** This is what
 lets the results below assume Northcott for the canonical height itself while callers supply only
-the naïve height — or, through `MordellWeil/NaiveHeight.lean`, only the field height. -/
+the naïve height — or, through Mathlib's `Northcott` instance for `Point.naiveHeight`, only the
+field height. -/
 instance [W.toAffine.IsElliptic] [Northcott (Point.naiveHeight (W := W))] :
     Northcott (Point.canonicalHeight (W := W)) := by
   -- `abs_canonicalHeight_sub_naiveHeight_le` gives a `D` for which `canonicalHeight Q ≤ B` forces
@@ -312,8 +325,8 @@ instance [W.toAffine.IsElliptic] [Northcott (Point.naiveHeight (W := W))] :
 
 /-- **A point of canonical height zero is torsion.** The hypothesis is `Northcott` for the
 canonical height, the class this API takes finiteness from; the instance above supplies it from
-the naïve height and `MordellWeil/NaiveHeight.lean` from the field height, so a caller carrying
-either of those needs nothing extra. -/
+the naïve height and Mathlib's instance for `Point.naiveHeight` from the field height, so a caller
+carrying either of those needs nothing extra. -/
 theorem Point.isOfFinAddOrder_of_canonicalHeight_eq_zero [W.toAffine.IsElliptic]
     [Northcott (Point.canonicalHeight (W := W))] {P : W.Point} (h : P.canonicalHeight = 0) :
     IsOfFinAddOrder P := by

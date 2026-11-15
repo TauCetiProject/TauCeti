@@ -46,9 +46,6 @@ factorization.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This advances the dynamic approach to parabolic subgroups and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section

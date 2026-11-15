@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import Mathlib.FieldTheory.KummerPolynomial
@@ -36,7 +36,7 @@ explicit, field-specific name because an anonymous `Fact (Irreducible …)` inst
 auto-generated name that ignores the radicand, so the analogous instances for different radicands
 would collide under one name when the whole library is loaded for the axioms audit. -/
 instance irreducible_X_sq_add_five : Fact (Irreducible (X ^ 2 - C (-5 : ℚ))) := ⟨by
-  exact (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+  exact (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr
     (fun q _ => by nlinarith [sq_nonneg q])⟩
 
 /-- The concrete model `AdjoinRoot (X² + 5)` of `ℚ(√-5)` carries an integral generator with minimal
@@ -45,17 +45,7 @@ and `2`-rank worked examples for this field. -/
 theorem exists_minpoly_eq_X_sq_add_five_and_adjoin_eq_top :
     ∃ θ : 𝓞 (AdjoinRoot (X ^ 2 - C (-5 : ℚ))),
       minpoly ℤ θ = X ^ 2 - C (-5 : ℤ) ∧
-        Algebra.adjoin ℚ {(θ : AdjoinRoot (X ^ 2 - C (-5 : ℚ)))} = ⊤ := by
-  let K := AdjoinRoot (X ^ 2 - C (-5 : ℚ))
-  let x : K := AdjoinRoot.root (X ^ 2 - C (-5 : ℚ))
-  have hx : x ^ 2 = algebraMap ℤ K (-5 : ℤ) := by
-    rw [TauCeti.AdjoinRoot.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
-    norm_num
-  refine ⟨integralSqrt hx, minpoly_integralSqrt hx (fun ⟨q, hq⟩ => by
-      norm_num at hq
-      nlinarith [mul_self_nonneg q]), ?_⟩
-  have hθx : ((integralSqrt hx : 𝓞 K) : K) = x := algebraMap_integralSqrt hx
-  rw [hθx]
-  exact AdjoinRoot.adjoinRoot_eq_top
+        Algebra.adjoin ℚ {(θ : AdjoinRoot (X ^ 2 - C (-5 : ℚ)))} = ⊤ :=
+  exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_adjoinRoot (-5 : ℤ) (-5 : ℚ) (by norm_num)
 
 end TauCeti.NumberField

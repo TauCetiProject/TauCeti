@@ -47,6 +47,8 @@ implies the other.
 * `LinearIndependent.exists_smul_eq`: the Jacobson-Chevalley form of density. Over a
   simple module, a single element of `R` carries any finite `D`-linearly independent family
   to an arbitrary family of targets.
+* `Algebra.lsmul_surjective_of_forall_end_eq_smul`: a finite semisimple module with scalar
+  commuting endomorphisms has full endomorphism algebra as the image of its action.
 * `TauCeti.algEquivEndEndOfIsSimpleRing`: the finite-dimensional-algebra form, where the finiteness
   hypothesis is supplied by finiteness over a commutative base ring acting compatibly.
 * `Subalgebra.centralizer_centralizer_of_isSemisimpleModule`: the **subalgebra form**. A subalgebra
@@ -67,6 +69,10 @@ ring itself, rather than finite-dimensionality over an unrelated base ring. That
 surjectivity of the action needs. When a base ring `K` acts compatibly, its scalars are `R`-linear
 endomorphisms, so `Module.Finite K M` gives it by
 `Module.Finite.of_restrictScalars_finite`.
+
+The scalar-commutant form `Algebra.lsmul_surjective_of_forall_end_eq_smul` factors the density
+argument used for monoid representations in `TauCeti.RepresentationTheory.Irreducible`.
+It separates the density input from any particular version of Schur's lemma.
 
 A faithful simple module makes `R` a *primitive* ring, not necessarily a simple one, so
 `TauCeti.toModuleEnd_moduleEnd_bijective` is genuinely more general than its simple-ring corollary.
@@ -205,6 +211,27 @@ theorem _root_.LinearIndependent.exists_smul_eq [IsSimpleModule R M]
 
 /-! ### The finite-dimensional algebra case -/
 
+/-- **Density with scalar commutant.** If a finite semisimple module has only scalar commuting
+endomorphisms, its acting algebra realizes every linear endomorphism over the base ring.
+Neither algebraic closedness nor faithfulness of the action is required. -/
+theorem _root_.Algebra.lsmul_surjective_of_forall_end_eq_smul
+    {K : Type*} [CommSemiring K] [Algebra K R] [Module K M] [IsScalarTower K R M]
+    [Module.Finite K M] [IsSemisimpleModule R M]
+    (h : ∀ g : Module.End R M, ∃ c : K, ∀ m : M, g m = c • m) :
+    Function.Surjective (Algebra.lsmul K K M : R →ₐ[K] Module.End K M) := by
+  have : Module.Finite (Module.End R M) M :=
+    Module.Finite.of_restrictScalars_finite K (Module.End R M) M
+  intro f
+  -- Scalar commutants make every K-linear map linear over the whole commutant.
+  let f' : Module.End (Module.End R M) M :=
+    { toFun := f
+      map_add' := f.map_add
+      map_smul' := fun g m => by
+        obtain ⟨c, hc⟩ := h g
+        simpa only [Module.End.smul_def, RingHom.id_apply, hc] using f.map_smul c m }
+  obtain ⟨r, hr⟩ := Module.Finite.toModuleEnd_moduleEnd_surjective (R := R) (M := M) f'
+  exact ⟨r, LinearMap.ext fun m => LinearMap.congr_fun hr m⟩
+
 variable (R M)
 
 /-- **The double centralizer theorem for a finite module over a simple algebra.** If `R` is a
@@ -274,7 +301,7 @@ theorem _root_.Subalgebra.centralizer_centralizer_of_isSemisimpleModule
         -- `LinearMap.coe_restrictScalars`.
         have h := congrArg (fun t : Module.End K N => t m)
           (hx _ (A.restrictScalars_mem_centralizer g))
-        simpa only [Module.End.smul_def, RingHom.id_apply, Module.End.mul_apply,
+        simpa only [Module.End.smul_def, RingHom.id_apply, _root_.mul_apply_eq_comp,
           LinearMap.coe_restrictScalars] using h.symm }
   obtain ⟨a, ha⟩ := Module.Finite.toModuleEnd_moduleEnd_surjective (R := A) (M := N) f
   have hx' : x = (a : Module.End K N) := by
@@ -283,15 +310,17 @@ theorem _root_.Subalgebra.centralizer_centralizer_of_isSemisimpleModule
   exact hx' ▸ a.2
 
 /-- **The double centralizer theorem for the image of a semisimple algebra.** The image of a
-semisimple `K`-algebra `S` in `Module.End K N`, for a finite `K`-module `N`, is its own double
-centralizer.
+semisimple `K`-algebra `S` in `Module.End K N` is its own double centralizer when `N` is finite
+over the endomorphism ring of the image's action.
 
 The image is a quotient of `S`, hence semisimple, so `N` is a semisimple module over it and
-`Subalgebra.centralizer_centralizer_of_isSemisimpleModule` applies, its finiteness hypothesis coming
-from `Module.Finite.of_restrictScalars_finite`. It is the image and not `S` that is recovered: the
-representation `S → Module.End K N` need not be injective. -/
-theorem _root_.AlgHom.centralizer_centralizer_range [Module.Finite K N]
-    {S : Type*} [Ring S] [Algebra K S] [IsSemisimpleRing S] (ρ : S →ₐ[K] Module.End K N) :
+`Subalgebra.centralizer_centralizer_of_isSemisimpleModule` applies. A caller with a finite
+`K`-module gets the required finiteness from `Module.Finite.of_restrictScalars_finite`. It is the
+image and not `S` that is recovered: the representation `S → Module.End K N` need not be
+injective. -/
+theorem _root_.AlgHom.centralizer_centralizer_range
+    {S : Type*} [Ring S] [Algebra K S] [IsSemisimpleRing S] (ρ : S →ₐ[K] Module.End K N)
+    [Module.Finite (Module.End ρ.range N) N] :
     Subalgebra.centralizer K
         (Subalgebra.centralizer K (ρ.range : Set (Module.End K N)) : Set (Module.End K N)) =
       ρ.range := by
@@ -299,7 +328,6 @@ theorem _root_.AlgHom.centralizer_centralizer_range [Module.Finite K N]
     RingHom.isSemisimpleRing_of_surjective ρ.rangeRestrict.toRingHom
       (AlgHom.rangeRestrict_surjective _)
   have : IsSemisimpleModule ρ.range N := IsSemisimpleRing.isSemisimpleModule
-  have := Module.Finite.of_restrictScalars_finite K (Module.End ρ.range N) N
   exact Subalgebra.centralizer_centralizer_of_isSemisimpleModule _
 
 /-- **The centralizer moves vectors as freely as annihilators allow.** Let `A` be a `K`-subalgebra
@@ -311,9 +339,9 @@ theorem _root_.Subalgebra.exists_mem_centralizer_apply_eq_iff_of_isSemisimpleMod
       ∀ a ∈ A, a w = 0 → a x = 0 := by
   refine ⟨?_, fun h => ?_⟩
   · rintro ⟨f, hf, rfl⟩ a ha haw
-    rw [← Module.End.mul_apply, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
-      Module.End.mul_apply, haw, map_zero]
-  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_end_apply_eq_iff (R := A)).mpr
+    rw [← _root_.mul_apply_eq_comp, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
+      _root_.mul_apply_eq_comp, haw, map_zero]
+  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := A)).mpr
     fun a ha => h a a.2 ha
   exact ⟨f.restrictScalars K, A.restrictScalars_mem_centralizer f, hf⟩
 

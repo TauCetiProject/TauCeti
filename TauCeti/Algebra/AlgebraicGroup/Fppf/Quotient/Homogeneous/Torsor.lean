@@ -32,6 +32,8 @@ The action and product comparisons are those of
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory Opposite
 open CategoryTheory.Limits CategoryTheory.MonoidalCategory
 

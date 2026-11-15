@@ -65,7 +65,7 @@ surjection is an isomorphism.
   isomorphism (`TauCeti.eq_tameQuotientEquiv`).
 * `TauCeti.iwasawaCoordinate_tameQuotientEquiv`: the coordinate of the presented group is the
   unramified coordinate `G_K^t → ℤ̂`.
-* `TauCeti.map_tameQuotientEquiv_inertiaSubgroup`,
+* `TauCeti.map_tameQuotientEquiv_tameInertia`,
   `TauCeti.IsArithFrobeniusLift.inv_iwasawaSigma_mul_tameQuotientEquiv_mem`: whatever the
   marking, tame inertia goes to `⟨⟨τ⟩⟩` and every Frobenius lift to the coset `σ ⟨⟨τ⟩⟩`.
 * `TauCeti.nonempty_continuousMulEquiv_iwasawaGroup`: `G_K^t ≅ ⟨σ, τ | σ τ σ⁻¹ = τ ^ q⟩`.
@@ -147,9 +147,8 @@ theorem IwasawaGroup.topologicalClosure_closure_eq_top :
     · rintro (rfl | rfl)
       exacts [⟨_, rfl⟩, ⟨_, rfl⟩]
   rw [← hrange]
-  exact SetLike.coe_injective <| by
-    rw [Subgroup.topologicalClosure_coe,
-      presentedProfiniteGroup.dense_closure_range_of.closure_eq, Subgroup.coe_top]
+  exact Subgroup.dense_iff_topologicalClosure_eq_top.mp
+    presentedProfiniteGroup.dense_closure_range_of
 
 /-! ### The coordinate to `ℤ̂` -/
 
@@ -184,13 +183,17 @@ theorem ker_iwasawaCoordinate :
   -- The quotient map `π` onto the profinite group `IwasawaGroup K ⧸ ⟨⟨τ⟩⟩` agrees on generators
   -- with the coordinate followed by `ℤ̂ → IwasawaGroup K ⧸ ⟨⟨τ⟩⟩`, `gen ↦ π σ`.
   have : IsClosed (M : Set (IwasawaGroup K)) := Subgroup.isClosed_topologicalClosure _
-  let π := ContinuousMonoidHom.quotientMk M
-  have hτ : π (iwasawaTau K) = 1 :=
-    (QuotientGroup.eq_one_iff _).2
-      (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure rfl))
+  let π := Subgroup.quotientMkContinuousMonoidHom M
+  have hτ : π (iwasawaTau K) = 1 := by
+    -- Expand only the local abbreviation π so the public projection evaluation lemma matches.
+    -- The quotient projection itself stays opaque; its value is supplied by the next rewrite.
+    change Subgroup.quotientMkContinuousMonoidHom M (iwasawaTau K) = 1
+    rw [Subgroup.quotientMkContinuousMonoidHom_apply]
+    exact (QuotientGroup.eq_one_iff _).mpr
+      (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure (by simp)))
   have key : (zHat.lift (π (iwasawaSigma K))).comp (iwasawaCoordinate K) = π :=
     IwasawaGroup.hom_ext (by simp) (by simp [hτ])
-  rw [← QuotientGroup.eq_one_iff, ← ContinuousMonoidHom.quotientMk_apply]
+  rw [← QuotientGroup.eq_one_iff, ← Subgroup.quotientMkContinuousMonoidHom_apply]
   have hg' : iwasawaCoordinate K g = 1 := hg
   rw [← DFunLike.congr_fun key g, ContinuousMonoidHom.comp_toFun, hg', map_one]
 
@@ -273,8 +276,9 @@ private theorem iwasawaTau_zpowHat_eq_one {a : Additive zHat.{u}}
   have : Finite (IwasawaGroup K ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.isOpen
   set t := (iwasawaTau K : IwasawaGroup K ⧸ U.toSubgroup)
   let n : ℕ+ := ⟨orderOf t, (isOfFinOrder_of_finite t).orderOf_pos⟩
-  rw [← QuotientGroup.eq_one_iff, ← ContinuousMonoidHom.quotientMk_apply, map_zpowHat,
-    ContinuousMonoidHom.quotientMk_apply, zpowHat_eq_pow_val_toZMod (n := n) (pow_orderOf_eq_one t),
+  rw [← QuotientGroup.eq_one_iff, ← Subgroup.quotientMkContinuousMonoidHom_apply, map_zpowHat,
+    Subgroup.quotientMkContinuousMonoidHom_apply, zpowHat_eq_pow_val_toZMod (n := n)
+      (pow_orderOf_eq_one t),
     ha n (coprime_orderOf_mk_iwasawaTau K U).symm, ZMod.val_zero, pow_zero]
 
 /-! ### The marked isomorphism -/
@@ -308,7 +312,7 @@ private theorem toZMod_eq_zero_of_zpowHat_eq_one {τ : inertiaSubgroup K}
   have : NeZero ((n : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
     (IsLocalRing.isUnit_natCast_iff_not_dvd.2
       ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 m.2.2.symm))⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (n : ℕ)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (n : ℕ)
   obtain ⟨σ, hσ⟩ := proj_inertiaTameCharacter_surjective K m hζ.toRootsOfUnity
   -- The level-`n` projection is a continuous homomorphism to the finite discrete group `μ_n`.
   let _ : TopologicalSpace (rootsOfUnity (n : ℕ) (AlgebraicClosure K)) := ⊥
@@ -456,8 +460,8 @@ theorem iwasawaCoordinate_tameQuotientEquiv (x : tameQuotient K) :
 
 /-- **The image of tame inertia** under the marked isomorphism is the closed normal closure
 `⟨⟨τ⟩⟩` of the marked generator `τ`, whatever the choice of `σ` and `τ`. -/
-theorem map_tameQuotientEquiv_inertiaSubgroup :
-    ((inertiaSubgroup K).map (toTameQuotient K).toMonoidHom).map
+theorem map_tameQuotientEquiv_tameInertia :
+    (tameInertia K).map
         ((tameQuotientEquiv hσ τ hτ : tameQuotient K ≃* IwasawaGroup K) :
           tameQuotient K →* IwasawaGroup K) =
       (Subgroup.normalClosure {iwasawaTau K}).topologicalClosure := by

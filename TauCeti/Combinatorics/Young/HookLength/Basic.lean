@@ -48,11 +48,6 @@ for such a junk value carry the hypothesis `c ∈ μ` explicitly.
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I, Section
   1, Example 1, where the arm, leg and hook lengths of a cell are introduced.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10, for the hook-length formula.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, where `hookLength` is a pinned, individually claimable target.  Its milestone
-  `standardCount μ * ∏ c ∈ μ.cells, hookLength μ c = μ.card !` is stated in terms of Layer 0's
-  `standardCount`, so nothing here depends on the Specht modules of Layer 3; the Specht-module
-  dimension form is a derived corollary of Layer 5's separate standard-basis target.
 -/
 
 public section
@@ -184,6 +179,22 @@ variable {μ c}
 theorem hookLength_le_card (h : c ∈ μ) : hookLength μ c ≤ μ.card := by
   rw [← card_hook]
   exact Finset.card_le_card (hook_subset_cells h)
+
+variable (μ) in
+/-- The first row and the first column of a diagram together have at most one more cell than the
+diagram: they overlap in the cell `(0, 0)`, whose hook they form. -/
+theorem rowLen_zero_add_colLen_zero_le : μ.rowLen 0 + μ.colLen 0 ≤ μ.card + 1 := by
+  by_cases h : (0, 0) ∈ μ
+  · have hrow : 0 < μ.rowLen 0 := mem_iff_lt_rowLen.mp h
+    have hcol : 0 < μ.colLen 0 := mem_iff_lt_colLen.mp h
+    have := hookLength_le_card h
+    simp only [hookLength_def, armLength_def, legLength_def] at this
+    omega
+  · rw [mem_iff_lt_rowLen, not_lt, Nat.le_zero] at h
+    have hcol : μ.colLen 0 = 0 := by
+      rw [← Nat.le_zero, ← not_lt, ← mem_iff_lt_colLen, mem_iff_lt_rowLen, h]
+      exact Nat.lt_irrefl 0
+    omega
 
 /-! ### Transposition -/
 

@@ -42,7 +42,7 @@ variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGro
 /-- **`cd_p G ≤ 1` kills the explicit `H²`** of every discrete `p`-primary `G`-module. -/
 theorem CohomologicalDimensionLE.subsingleton_H2 (hcd : CohomologicalDimensionLE.{u} p G 1)
     (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
-    [ContinuousSMul G A] (hA : IsPPrimaryTorsion p A) : Subsingleton (H2 G A) :=
+    [ContinuousSMul G A] (hA : IsAddPGroup p A) : Subsingleton (H2 G A) :=
   have := cohomologicalDimensionLE_iff.mp hcd A hA 2 one_lt_two
   (explicitH2AddEquivContinuousCohomology G A).toEquiv.subsingleton
 

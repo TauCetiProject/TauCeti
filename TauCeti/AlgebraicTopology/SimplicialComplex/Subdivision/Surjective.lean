@@ -256,7 +256,6 @@ private theorem orderedWeight_mul_card_prefix_inv {K : AbstractSimplicialComplex
     (σ : Face K) (e : VertexOrder σ) (c : ℕ → ℝ) (i : Fin σ.1.card) :
     orderedWeight c i * ((orderedPrefixFace σ e i).1.card : ℝ)⁻¹ = c i.1 - c (i.1 + 1) := by
   rw [orderedWeight, card_orderedPrefixFace]
-  have hne : (i.1 + 1 : ℝ) ≠ 0 := by positivity
   field_simp
   norm_num [Nat.cast_add, Nat.cast_one]
   ring

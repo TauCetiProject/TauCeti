@@ -25,10 +25,10 @@ fibres into injectivity. Finally,
 `TauCeti.injOn_closure_of_injOn_frontier` propagates boundary injectivity across the closed disc,
 since a boundary value of a conformal map cannot also be an interior value.
 
-For the layer **L5** Carathéodory milestone, the continuous extension is supplied by the
-length–area and plane-separation argument. The result here shows that upgrading it to the requested
-homeomorphism of closures needs exactly the monotonicity of its boundary restriction; it does not
-assume or assert that monotonicity for an arbitrary continuous extension.
+In Carathéodory's theorem, the continuous extension is supplied by the length–area and
+plane-separation argument. The result here shows that upgrading it to a homeomorphism of closures
+needs exactly the monotonicity of its boundary restriction; it does not assume or assert that
+monotonicity for an arbitrary continuous extension.
 
 ## Main results
 

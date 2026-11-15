@@ -15,9 +15,9 @@ public import TauCeti.Algebra.Lie.Weights.Diagonalizable
 /-!
 # Self-duality of a finite-dimensional irreducible highest weight module
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero, let `H` be a Cartan subalgebra and `b` a base of its root
-system, and let `M` be a finite-dimensional irreducible `L`-module with a highest weight vector of
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, let `H` be a split Cartan subalgebra and `b` a base of its root system, and
+let `M` be a finite-dimensional irreducible `L`-module with a highest weight vector of
 weight `lam`. This file identifies the highest weight of the dual module `M*` and reads off the
 self-duality criterion:
 
@@ -78,8 +78,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
 
-variable [IsAlgClosed K]
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] {v : M}
+variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] {v : M}
   [_root_.LieModule.IsIrreducible K L M]
 
 /-! ### The highest weight vector of the dual -/
@@ -102,7 +101,7 @@ theorem exists_isHighestWeightVector_dual (hv : IsHighestWeightVector b lam v) :
   -- the span of the other weight spaces is a proper submodule
   set N : LieSubmodule K H M := genWeightSpaceSpan H M {chi | chi ≠ ⇑mu}
   have hdisj : Disjoint (genWeightSpace M ⇑mu) N :=
-    disjoint_genWeightSpace_genWeightSpaceSpan_ne H M mu
+    disjoint_genWeightSpace_genWeightSpaceSpan H M (by simp)
   have hNtop : N ≠ ⊤ := fun h => hmu_ne (by simpa [h] using hdisj)
   have hlt : N.toSubmodule < ⊤ := by
     rw [lt_top_iff_ne_top]

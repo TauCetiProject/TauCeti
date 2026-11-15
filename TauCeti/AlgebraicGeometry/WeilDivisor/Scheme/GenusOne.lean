@@ -5,19 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.HighDegree
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PointSeparation
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
 
 /-!
-# `Pic⁰` of a curve of genus one
+# Divisors and `Pic⁰` of a curve of genus one
 
 Let `X` be a proper integral curve over a field `k` whose codimension-one local rings are discrete
 valuation rings, with `k` integrally closed in the function field `k(X)`, and suppose that `X` has
-genus one, `dim_k H¹(X, 𝒪_X) = 1`. Fix a codimension-one point `x₀` of residue degree one, for
-instance the image of a `k`-rational point. This file proves that the Abel–Jacobi map
+genus one, `dim_k H¹(X, 𝒪_X) = 1`.
+
+By Riemann–Roch, every divisor `D` of positive degree has `dim_k H⁰(X, 𝒪_X(D)) = deg D`. In
+particular, for a codimension-one point `x` and `n ≥ 1`, `dim_k H⁰(X, 𝒪_X(n x)) = n deg x`, which
+is `n` at a point of residue degree one. This is the cohomological form of the function-field
+ladder `TauCeti.Divisor.dim_natCast_zsmul_ofPoint_of_genus_eq_one`; it is deduced from the
+cohomology of line bundles of high degree.
+
+Fix a codimension-one point `x₀` of residue degree one, for instance the image of a `k`-rational
+point. This file also proves that the Abel–Jacobi map
 
 `x ↦ [𝒪_X(x - x₀)]`
 
@@ -35,9 +44,13 @@ preserves degrees and linear equivalence; the genus of `X` is the genus of `k(X)
 
 ## Main declarations
 
-* `SchemeWeilDivisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one` and
-  `SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
-  degree one is linearly equivalent to exactly one point of residue degree one;
+* `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one`: in genus
+  one, `dim_k H⁰(X, 𝒪_X(D)) = deg D` for every divisor `D` of positive degree;
+* `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one`: the
+  ladder `dim_k H⁰(X, 𝒪_X(n x)) = n deg x` for `n ≥ 1`;
+* `SchemeWeilDivisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one`: in genus one a divisor of
+  degree one is linearly equivalent to a point of residue degree one; uniqueness follows from
+  `SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_pos`;
 * `SchemeWeilDivisor.degreeOneEquivPicZero`: the bijection `x ↦ [𝒪_X(x - x₀)]` from the points of
   residue degree one onto `Pic⁰ X`, with `SchemeWeilDivisor.coe_degreeOneEquivPicZero_apply`;
 * `SchemeWeilDivisor.degreeOneEquivPicZero_base` and
@@ -72,6 +85,58 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [hX : Fact (∀ y : X, coheight y ≤ 1)] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
+/-! ### Global sections of divisors of positive degree in genus one -/
+
+section GlobalSections
+
+/-- **Riemann–Roch on a curve of genus one.** Let `X` be a proper integral curve of genus one over
+`k` whose codimension-one local rings are discrete valuation rings, with `k` integrally closed in
+`k(X)`. Every divisor `D` of positive degree has `dim_k H⁰(X, 𝒪_X(D)) = deg D`. -/
+theorem finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one
+    (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1) {D : SchemeWeilDivisor X}
+    (hD : 0 < relativeDegree (X ↘ Spec (.of k)) D) :
+    (Module.finrank k (Scheme.Modules.Cohomology (sheaf D) 0) : ℤ) =
+      relativeDegree (X ↘ Spec (.of k)) D := by
+  -- A divisor of nonzero degree has a point in its support, so `X` has dimension one.
+  obtain ⟨y, -⟩ : (Finsupp.support D).Nonempty :=
+    Finsupp.support_nonempty_iff.mpr fun h ↦ by simp [h] at hD
+  have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
+    k hX.out y.2
+  have hdeg := InvertibleSheaf.eulerDegree_eq_relativeDegree k hX.out
+    (eqToIso (toInvertibleSheaf_obj hX.out D))
+  rw [Scheme.genus_def] at hg
+  have h := InvertibleSheaf.finrank_cohomology_zero_eq_eulerDegree_add_one_sub_genus hX.out hF hk
+    (toInvertibleSheaf hX.out D) (by rw [hg, hdeg]; omega)
+  rw [toInvertibleSheaf_obj, hdeg, hg] at h
+  omega
+
+/-- **The section-dimension ladder on a curve of genus one.** Let `X` be a proper integral curve
+of genus one over `k` whose codimension-one local rings are discrete valuation rings, with `k`
+integrally closed in `k(X)`. For every codimension-one point `x` and every `n ≥ 1`,
+`dim_k H⁰(X, 𝒪_X(n x)) = n deg x`; at a point of residue degree one, such as a `k`-rational
+point, this reads `dim_k H⁰(X, 𝒪_X(n x)) = n`. -/
+theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
+    (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1)
+    (x : CodimensionOnePoint X) {n : ℕ} (hn : 1 ≤ n) :
+    Module.finrank k (Scheme.Modules.Cohomology (sheaf ((n : ℤ) • WeilDivisor.ofPoint x)) 0) =
+      n * (X ↘ Spec (.of k)).residueDegree x := by
+  have hdeg : relativeDegree (X ↘ Spec (.of k)) ((n : ℤ) • WeilDivisor.ofPoint x) =
+      (n * (X ↘ Spec (.of k)).residueDegree x : ℕ) := by
+    rw [map_zsmul, relativeDegree_ofPoint, smul_eq_mul]
+    push_cast
+    ring
+  -- A codimension-one point of a curve is closed, hence of finite degree over `k`.
+  have hx : (X ↘ Spec (.of k)).residueDegree x ≠ 0 :=
+    Scheme.Hom.residueDegree_ne_zero_of_isClosed _
+      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out x.2)
+  have h := finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one k hk hg
+    (D := (n : ℤ) • WeilDivisor.ofPoint x)
+    (by rw [hdeg]; exact_mod_cast Nat.mul_pos hn (Nat.pos_of_ne_zero hx))
+  rw [hdeg] at h
+  exact_mod_cast h
+
+end GlobalSections
+
 /-! ### Divisors of degree one in genus one -/
 
 section DegreeOne
@@ -104,33 +169,6 @@ theorem exists_linearlyEquivalent_ofPoint_of_genus_eq_one
   · rw [← linearlyEquivalent_equivFunctionFieldDivisor_iff hex hX.out hF,
       equivFunctionFieldDivisor_ofPoint, hPx]
     exact hlin
-
-/-- **Linearly equivalent points of residue degree one on a curve of genus one are equal.** Here
-`X` is a proper integral curve over `k` whose codimension-one local rings are discrete valuation
-rings, with `k` integrally closed in `k(X)`, and only the point `x` is required to have residue
-degree one. -/
-theorem eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one
-    (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1) {x y : CodimensionOnePoint X}
-    (hx : (X ↘ Spec (.of k)).residueDegree x = 1)
-    (h : (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent (WeilDivisor.ofPoint x)
-      (WeilDivisor.ofPoint y)) :
-    x = y := by
-  have : X.IsSeparated := ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
-  have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
-    (UniversallyClosed.eq_valuativeCriterion ▸
-      (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
-  have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out x.2
-  have hgF : genus k X.functionField = 1 :=
-    (genus_eq_genus_functionField hex hX.out hF hk).symm.trans hg
-  apply (CodimensionOnePoint.equivPlace hex hX.out).injective
-  rw [CodimensionOnePoint.equivPlace_apply, CodimensionOnePoint.equivPlace_apply]
-  refine Place.eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one hF hk hgF
-    (by rw [X.toPlace_degree_eq_residueDegree, hx]) ?_
-  rw [← equivFunctionFieldDivisor_ofPoint hex hX.out,
-    ← equivFunctionFieldDivisor_ofPoint hex hX.out,
-    linearlyEquivalent_equivFunctionFieldDivisor_iff hex hX.out hF]
-  exact h
 
 end DegreeOne
 
@@ -198,7 +236,7 @@ private lemma injective_abelJacobiClass :
     abel
   rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff, hdiff,
     ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
-  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg x.2 hlin)
+  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_pos k hk (by omega) x.2 hlin)
 
 /-- In genus one, every degree-zero divisor class is the Abel–Jacobi class of a point of residue
 degree one: if `D` has degree zero, then `D + x₀` is linearly equivalent to a point `x`, so that

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Comap
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Holomorphic
 
@@ -73,7 +73,7 @@ theorem coe_algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     letI := Φ.analyticChartedSpace hΦ
     ⇑(algebraicAnalyticDiffeomorph hΦ n) = algebraicAnalyticEquiv hΦ := by
-  simp only [algebraicAnalyticDiffeomorph, coe_diffeomorphOfBijective,
+  simp only [algebraicAnalyticDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
     coe_algebraicAnalyticHomeomorph]
 
 /-- The inverse biholomorphism is the inverse chartwise comparison. -/

@@ -332,7 +332,7 @@ theorem isNilpotent_rep_serreRootGenerator (k : Fin 4 ⊕ Fin 4) :
 /-! ## The admissible coordinate lattice -/
 
 /-- The coordinate `ℤ`-lattice in the rational short-root module. -/
-def lattice : Submodule ℤ (Fin 26 → ℚ) :=
+noncomputable def lattice : Submodule ℤ (Fin 26 → ℚ) :=
   TauCeti.coordinateLattice (Fin 26)
 
 /-- A short-root module vector belongs to the lattice exactly when every coordinate is

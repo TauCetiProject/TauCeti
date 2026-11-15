@@ -60,6 +60,8 @@ Chevalley–Demazure group of type `A` base changes from.
   elementary matrix of the parameter.
 * `TauCeti.GeneralLinear.rootSubgroupPoints_injective`: the homomorphism on points is injective.
 * `TauCeti.GeneralLinear.mapValue_rootSubgroupPoints`: it is natural in the value algebra.
+* `TauCeti.GeneralLinear.mapDomain_rootSubgroupCoordinateMap`: precomposition by the coordinate
+  morphism is the homomorphism on points.
 * `TauCeti.GeneralLinear.schemePointsMulEquiv_rootSubgroup`: on scheme-valued points, composing
   with the group-scheme morphism is again the elementary matrix of the parameter.
 
@@ -170,7 +172,7 @@ noncomputable def rootSubgroupCoordinateMap (hij : i ≠ j) :
 /-- Precomposition by the root-subgroup coordinate morphism is the previously constructed
 natural map on convolution points. -/
 theorem mapPointsFunctor_rootSubgroupCoordinateMap (hij : i ≠ j) :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u}
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u}
       (rootSubgroupCoordinateMap (R := R) (N := N) hij) :
       HopfAlgebra.pointsFunctor (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R N)) =
@@ -185,11 +187,19 @@ morphism is the elementary root subgroup homomorphism already constructed on poi
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (hij : i ≠ j)
     (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app A f =
       rootSubgroupPoints hij f := by
   rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
   rfl
+
+/-- **Precomposition by the root-subgroup coordinate morphism** sends a point `c` of `𝔾ₐ` to the
+point of `GLₙ` given by the elementary matrix `xᵢⱼ(c)`. -/
+theorem mapDomain_rootSubgroupCoordinateMap (hij : i ≠ j) {A : Type u} [CommRing A]
+    [Algebra R A] (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
+    BialgHom.mapDomain (rootSubgroupCoordinateMap (R := R) (N := N) hij).hom f =
+      rootSubgroupPoints hij f :=
+  mapPointsFunctor_rootSubgroupCoordinateMap_app hij (CommAlgCat.of R A) f
 
 /-- The root-subgroup coordinate map sends a generic matrix entry to the corresponding entry
 of `1 + X Eᵢⱼ`. -/
@@ -203,7 +213,7 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   let A := AdditiveGroup.coordinateHopfAlgebra R
   let q : WithConv (A →ₐ[R] A) := toConv (AlgHom.id R A)
   let p : WithConv (coordinateHopfAlgebra R N →ₐ[R] A) :=
-    (CommHopfAlgCat.mapPointsFunctor
+    (CommHopfAlgCat.Hom.mapPointsFunctor
       (rootSubgroupCoordinateMap (R := R) (N := N) hij)).app (CommAlgCat.of R A) q
   have h := congrArg
     (fun p' : WithConv (coordinateHopfAlgebra R N →ₐ[R] A) ↦
@@ -215,7 +225,7 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   rw [pointsMulEquiv_rootSubgroupPoints, coe_transvectionUnit] at h
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply] at h
   simp only [Matrix.transvection, Matrix.add_apply] at h
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at h
   simp only [AdditiveGroup.toAdd_gaPointsMulEquiv] at h
   dsimp [q] at h
   exact h

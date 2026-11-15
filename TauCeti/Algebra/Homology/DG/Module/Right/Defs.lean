@@ -89,7 +89,7 @@ namespace IsDGRightModule
 up to the shift by one that it applies to degrees. -/
 theorem map_decompose (hM : IsDGRightModule h ℳ dM) (q : ℤ) (x : M) :
     dM (decompose ℳ x q : M) = (decompose ℳ (dM x) (q + 1) : M) :=
-  DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
+  DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) q x
 
 /-- Every homogeneous projection of a boundary is again a boundary. -/
@@ -153,6 +153,20 @@ theorem op_map_smul_mem_range_of_map_eq_zero (hM : IsDGRightModule h ℳ dM) (a 
     (x := (decompose ℳ x q : M)) (SetLike.coe_mem _) a).symm
   rw [hcycle, smul_zero, sub_zero] at key
   exact key
+
+/-- The right action of a cycle of the algebra, twisted by the Koszul sign, anticommutes with the
+differential of the module. -/
+theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (ha : d a = 0)
+    (x : M) :
+    op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
+      -dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) := by
+  have hhom : LinearMap.IsHomogeneous dM (InternalGrading.ofDecomposition ℳ).piece
+      (InternalGrading.ofDecomposition ℳ).piece 1 :=
+    LinearMap.isHomogeneous_def.mpr fun p y hy ↦ by
+      rw [InternalGrading.ofDecomposition_piece] at hy ⊢
+      exact hM.isHomogeneous.map_mem hy
+  rw [hhom.koszulTwist_apply 1 x, hM.leibniz_of_map_eq_zero _ ha]
+  simp
 
 end IsDGRightModule
 

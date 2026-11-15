@@ -6,18 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.NormForm
+public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import Mathlib.Analysis.Quaternion
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 
 /-!
-# Unit Hamilton quaternions as a sphere
+# Unit Hamilton quaternions, spheres and SU(2)
 
 The unitary Hamilton quaternions are exactly the unit sphere in the four-dimensional real normed
 space of quaternions. This gives a canonical homeomorphism between the two subtype presentations.
+The algebraic equivalence `Quaternion.unitaryEquivSpecialUnitaryGroup` with the special unitary
+group of degree two is an isomorphism of topological groups.
+The group of unit Hamilton quaternions is simply connected.
 
-## Main definition
+## Main definitions and results
 
 * `Quaternion.unitaryHomeomorphSphere` identifies the unitary Hamilton quaternions with their unit
   sphere.
+* `Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup` identifies the unit quaternions with
+  the special unitary group of degree two as topological groups.
+* `Quaternion.instSimplyConnectedSpaceUnitary`: the unit Hamilton quaternions are simply
+  connected.
+* `Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex`: the complex special
+  unitary group of degree two is simply connected.
+
+## References
+
+* A. Kirillov Jr., *An Introduction to Lie Groups and Lie Algebras*, Cambridge Studies in
+  Advanced Mathematics 113 (2008), Example 2.5(5) and Exercise 2.11.
 -/
 
 public section
@@ -61,5 +80,50 @@ theorem coe_unitaryHomeomorphSphere_symm_apply (q : sphere (0 : ℍ[ℝ]) 1) :
     (unitaryHomeomorphSphere.symm q : ℍ[ℝ]) = q := by
   rw [unitaryHomeomorphSphere]
   rfl
+
+/-- The group of unit Hamilton quaternions is simply connected. -/
+instance instSimplyConnectedSpaceUnitary : SimplyConnectedSpace (unitary ℍ[ℝ]) := by
+  let _ : SimplyConnectedSpace (sphere (0 : ℍ[ℝ]) 1) := by
+    apply TauCeti.simplyConnectedSpace_sphere
+    · rw [Quaternion.rank_eq_four]
+      norm_num
+    · positivity
+  exact unitaryHomeomorphSphere.toHomotopyEquiv.simplyConnectedSpace
+
+/-- The unit Hamilton quaternions and the special unitary group of degree two are isomorphic
+as topological groups. -/
+noncomputable def unitaryContinuousMulEquivSpecialUnitaryGroup :
+    unitary ℍ[ℝ] ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ := by
+  let _ : CompactSpace (unitary ℍ[ℝ]) := unitaryHomeomorphSphere.symm.compactSpace
+  have hf : Continuous unitaryEquivSpecialUnitaryGroup := by
+    apply continuous_induced_rng.mpr
+    simpa only [Function.comp_def, coe_unitaryEquivSpecialUnitaryGroup_apply,
+      AlgHom.coe_toLinearMap, StarAlgHom.coe_toAlgHom] using
+      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtype_val)
+  exact { __ := unitaryEquivSpecialUnitaryGroup
+          __ := unitaryEquivSpecialUnitaryGroup.toEquiv.toHomeomorphOfContinuousClosed
+            hf hf.isClosedMap }
+
+/-- The topological group equivalence has the forward map of the algebraic equivalence. -/
+@[simp]
+theorem unitaryContinuousMulEquivSpecialUnitaryGroup_apply (q : unitary ℍ[ℝ]) :
+    unitaryContinuousMulEquivSpecialUnitaryGroup q = unitaryEquivSpecialUnitaryGroup q := by
+  rw [unitaryContinuousMulEquivSpecialUnitaryGroup]
+  rfl
+
+/-- The inverse topological group equivalence has the inverse map of the algebraic equivalence. -/
+@[simp]
+theorem unitaryContinuousMulEquivSpecialUnitaryGroup_symm_apply
+    (g : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
+    unitaryContinuousMulEquivSpecialUnitaryGroup.symm g =
+      unitaryEquivSpecialUnitaryGroup.symm g := by
+  rw [unitaryContinuousMulEquivSpecialUnitaryGroup]
+  rfl
+
+/-- The complex special unitary group of degree two is simply connected. -/
+instance _root_.Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex :
+    SimplyConnectedSpace (Matrix.specialUnitaryGroup (Fin 2) ℂ) := by
+  let e := unitaryContinuousMulEquivSpecialUnitaryGroup.symm.toHomeomorph
+  exact e.toHomotopyEquiv.simplyConnectedSpace
 
 end Quaternion

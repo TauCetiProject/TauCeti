@@ -247,9 +247,6 @@ theorem contDiffAt_coe_sectionZeroChart_symm_of_mem {m : ℕ∞ω}
     {k : ↥T.ker} (hk : k ∈ (sectionZeroChart hf hT hker hz).target)
     (hmem : ((sectionZeroChart hf hT hker hz).symm k : X) ∈
       hf.implicitCoordSource hT hker)
-    {A : X →L[𝕜] F}
-    (hA : HasFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) A
-      ((sectionZeroChart hf hT hker hz).symm k : X))
     (hs : ContDiffAt 𝕜 m (fun y ↦ (e ⟨b y, s y⟩).2)
       ((sectionZeroChart hf hT hker hz).symm k : X)) :
     ContDiffAt 𝕜 m (fun j ↦ ((sectionZeroChart hf hT hker hz).symm j : X)) k := by
@@ -259,7 +256,7 @@ theorem contDiffAt_coe_sectionZeroChart_symm_of_mem {m : ℕ∞ω}
   rw [sectionZeroChart_target] at ht
   have hval := coe_sectionZeroChart_symm_apply hf hT hker hz hk
   have hinverse := hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem
-    hT hker ht.1 (hval ▸ hmem) (hval ▸ hA) (hval ▸ hs)
+    hT hker ht.1 (hval ▸ hmem) (hval ▸ hs)
   have hslice : ContDiffAt 𝕜 m
       (fun j : T.ker ↦ (hf.implicitToOpenPartialHomeomorphOfComplemented _ _ hT hker).symm
         (0, j)) k := by

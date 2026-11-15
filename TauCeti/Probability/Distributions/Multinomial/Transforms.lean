@@ -87,11 +87,7 @@ theorem mgf_inner_multinomial (n : ℕ) (p : StdSimplex NNReal ι)
   rw [mgf, integral_map measurable_multinomialToEuclidean.aemeasurable
     (by fun_prop : AEStronglyMeasurable (fun x : EuclideanSpace ℝ ι => exp (t * inner ℝ θ x)) _),
     integral_multinomialMeasure]
-  have hdot : ∀ k : ι → ℕ, inner ℝ θ (multinomialToEuclidean k) = ∑ i, θ i * (k i : ℝ) := by
-    intro k
-    simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
-      multinomialToEuclidean_apply, mul_comm]
-  simp_rw [smul_eq_mul, hdot, multinomialWeightReal_mul_exp]
+  simp_rw [smul_eq_mul, inner_multinomialToEuclidean, multinomialWeightReal_mul_exp]
   simp_rw [← coe_tiltedWeights p.weights θ t]
   exact (sum_multinomialWeightReal n (tiltedWeights p.weights θ t)).symm ▸
     Finset.sum_congr rfl fun k _ => (multinomialWeightReal_def _ k).symm
@@ -132,17 +128,16 @@ theorem charFun_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
     (by fun_prop : AEStronglyMeasurable
       (fun x : EuclideanSpace ℝ ι => Complex.exp ((inner ℝ x t : ℂ) * Complex.I)) _),
     integral_multinomialMeasure]
-  simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
-    multinomialToEuclidean_apply, Complex.real_smul]
+  simp only [real_inner_comm, inner_multinomialToEuclidean, Complex.real_smul]
   simp_rw [multinomialWeightReal_def]
   push_cast
   rw [Finset.sum_pow_eq_sum_piAntidiag]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   rw [Finset.sum_mul, Complex.exp_sum, mul_assoc, ← Finset.prod_mul_distrib]
   congr 1
   apply Finset.prod_congr rfl
-  intro i hi
+  intro i _
   rw [mul_pow, ← Complex.exp_nat_mul]
   congr 1
   ring_nf

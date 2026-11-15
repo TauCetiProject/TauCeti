@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Basic
 
 /-!
@@ -29,8 +29,9 @@ vectors which enter the definition of a regular cone and, later, its affine mono
   nonvanishing, and primitivity lemmas.
 * `TauCeti.Toric.IsPrimitiveGenerator.unique`: two primitive generators of the same salient ray in
   an integral lattice are equal.
-* `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding`: being a primitive generator of a ray does not
-  depend on which cone the ray is viewed as a face of.
+* `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding` and
+  `TauCeti.Toric.primitiveGenerator_faceEmbedding`: being a primitive generator of a ray, and the
+  canonical primitive generator, do not depend on which cone the ray is viewed as a face of.
 * `TauCeti.Toric.IsPrimitiveGenerator.prodInl` and
   `TauCeti.Toric.IsPrimitiveGenerator.prodInr`: primitive generators remain primitive generators
   under the two inclusions into a product cone.
@@ -49,7 +50,6 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V}
 
 /-- A primitive lattice generator of a ray is a primitive lattice vector pointing along the ray. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 def IsPrimitiveGenerator (i : N →+ V) {σ : PointedCone ℝ V}
     (ρ : ToricRay σ) (v : N) : Prop :=
   i v ∈ ρ ∧ IsPrimitive v
@@ -118,29 +118,7 @@ theorem IsPrimitiveGenerator.unique {ρ : ToricRay σ} {v w : N} (hi : IsIntegra
   have hwρ : i w ∈ ρ.toPointedCone := hw.mem
   rw [hρeq] at hwρ
   obtain ⟨a, ha, haw⟩ := PointedCone.mem_hull_singleton.mp hwρ
-  obtain ⟨f, hfv⟩ := isPrimitive_def.mp hv.isPrimitive
-  let g : V →ₗ[ℝ] ℝ := hi.extend (Int.castAddHom ℝ) f.toAddMonoidHom
-  have hg (x : N) : g (i x) = (f x : ℝ) := by
-    have hcast (z : ℤ) : (Int.castAddHom ℝ) z = (z : ℝ) := rfl
-    have hcoe : f.toAddMonoidHom x = f x := rfl
-    simpa only [g, hcast, hcoe] using
-      hi.extend_apply (Int.castAddHom ℝ) f.toAddMonoidHom x
-  have haInt : a = (f w : ℝ) := by
-    have h := congrArg g haw
-    rw [map_smul, hg, hg, hfv, Int.cast_one, smul_eq_mul, mul_one] at h
-    exact h
-  let k := f w
-  have hk0 : 0 ≤ k := by exact_mod_cast haInt ▸ ha
-  let m := k.toNat
-  have hmk : (m : ℤ) = k := Int.toNat_of_nonneg hk0
-  have ham : a = (m : ℝ) := by
-    calc
-      a = (k : ℝ) := haInt
-      _ = (m : ℝ) := by exact_mod_cast hmk.symm
-  have hwv : w = m • v := by
-    apply hi.injective
-    rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← ham, haw]
-  exact (hwv.trans (by rw [hw.isPrimitive.eq_one_of_eq_nsmul hwv, one_nsmul])).symm
+  exact (hi.eq_of_isPrimitive_of_eq_smul hv.isPrimitive hw.isPrimitive ha haw.symm).symm
 
 namespace IsToricCone
 
@@ -205,5 +183,16 @@ theorem isPrimitiveGenerator_iff_eq_primitiveGenerator {v : N} (hi : IsIntegralL
     IsPrimitiveGenerator i ρ v ↔ v = primitiveGenerator hi hσ ρ :=
   ⟨fun hv ↦ hv.eq_primitiveGenerator hi hσ,
     fun hv ↦ hv ▸ isPrimitiveGenerator_primitiveGenerator hi hσ ρ⟩
+
+/-- The canonical primitive generator of a ray of a face `τ` of a toric cone `σ` is its canonical
+primitive generator as a ray of `σ`. -/
+@[simp]
+theorem primitiveGenerator_faceEmbedding (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+    {τ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) (ρ : ToricRay τ) :
+    primitiveGenerator hi hσ (ToricRay.faceEmbedding hτ ρ) =
+      primitiveGenerator hi (hσ.of_isFaceOf hτ) ρ :=
+  (((isPrimitiveGenerator_faceEmbedding hτ ρ).2
+    (isPrimitiveGenerator_primitiveGenerator hi (hσ.of_isFaceOf hτ) ρ)).eq_primitiveGenerator
+      hi hσ).symm
 
 end TauCeti.Toric

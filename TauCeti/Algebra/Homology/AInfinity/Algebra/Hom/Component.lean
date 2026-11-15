@@ -61,7 +61,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 /-- The restriction of the suspended Taylor map of an `A∞` morphism to words of length `n`.
 It is zero in arity zero. -/
 noncomputable def suspendedComponent (f : AInfinityHom AA BB) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) B :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) B :=
   if hn : 0 < n then
     PiTensorProduct.lift.symm
       (f.taylor ∘ₗ ReducedTensorWords.of R A ⟨n, hn⟩)
@@ -85,7 +85,7 @@ theorem suspendedComponent_apply (f : AInfinityHom AA BB) (n : ℕ) (hn : 0 < n)
 zero in arity zero. For positive arity, the Koszul twists undo the tensor-power suspension sign
 in the Taylor map. -/
 noncomputable def component (f : AInfinityHom AA BB) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) B :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) B :=
   (f.suspendedComponent n).compLinearMap fun i ↦
     AA.grading.koszulTwist ((n : ℤ) - 1 - i)
 
@@ -112,7 +112,7 @@ theorem taylor_eq_suspend_component (f : AInfinityHom AA BB) (n : ℕ) (hn : 0 <
         (ReducedTensorWords.of R A ⟨n, hn⟩
           (PiTensorProduct.tprod R fun i : Fin n ↦ x i)) =
       MultilinearMap.evalNat (MultilinearMap.suspend d (f.component n)) x := by
-  rw [AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, component_apply f n hn]
+  rw [MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_def, component_apply f n hn]
   have htwist :
       (fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (x i)) =
         fun i : Fin n ↦
@@ -122,7 +122,7 @@ theorem taylor_eq_suspend_component (f : AInfinityHom AA BB) (n : ℕ) (hn : 0 <
   rw [htwist, (PiTensorProduct.tprod R).map_smul_univ, map_smul, map_smul,
     MultilinearMap.suspExp_def, negOnePowCast_sum,
     ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R _), smul_smul]
-  simp only [← Finset.prod_mul_distrib, ← negOnePowCast_add, ← two_mul,
+  simp only [RingHom.id_apply, ← Finset.prod_mul_distrib, ← negOnePowCast_add, ← two_mul,
     negOnePowCast_two_mul, Finset.prod_const_one, one_smul]
 
 /-! ### Degree and extensionality -/
@@ -169,7 +169,7 @@ theorem isHomogeneous_component (f : AInfinityHom AA BB) (n : ℕ) :
 @[simp]
 theorem component_one (f : AInfinityHom AA BB) :
     f.component 1 =
-      (MultilinearMap.ofSubsingleton R A B (0 : Fin 1)) f.linearPart := by
+      (MultilinearMap.ofSubsingleton (RingHom.id R) A B (0 : Fin 1)) f.linearPart := by
   ext x
   rw [component_apply f 1 (by omega)]
   simp only [PNat.mk_ofNat, Nat.cast_one, sub_self, Fin.val_eq_zero, CharP.cast_eq_zero,
@@ -192,7 +192,7 @@ theorem ext_component {f g : AInfinityHom AA BB}
   intro n z
   have hmaps : f.taylor ∘ₗ ReducedTensorWords.of R A n =
       g.taylor ∘ₗ ReducedTensorWords.of R A n := by
-    apply AA.grading.piTensorProduct_ext
+    apply InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading)
     intro q
     let d : ℕ → ℤ := fun i ↦ if hi : i < n.1 then (q ⟨i, hi⟩).1 else 0
     let x : ℕ → A := fun i ↦ if hi : i < n.1 then (q ⟨i, hi⟩).2 else 0

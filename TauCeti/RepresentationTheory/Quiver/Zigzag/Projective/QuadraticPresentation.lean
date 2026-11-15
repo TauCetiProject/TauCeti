@@ -433,7 +433,7 @@ theorem range_zigzagProjectiveArrowSum
     | @ha j y x _ _ ih =>
         rw [map_add, zigzagProjectiveArrowSum_single]
         exact (zigzagProjectiveRadicalPower k G i 1).add_mem
-          (range_zigzagProjectiveArrowMul_le hns ⟨(i, j.1), (G.mem_neighborSet i j.1).mp j.2⟩
+          (range_zigzagProjectiveArrowMul_le ⟨(i, j.1), (G.mem_neighborSet i j.1).mp j.2⟩
             (LinearMap.mem_range_self _ y)) ih
   · intro x hx
     obtain ⟨j, hj⟩ := hns i

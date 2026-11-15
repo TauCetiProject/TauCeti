@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.AlmostSplit.Sequence
+public import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.Exact.Abelian
-import TauCeti.CategoryTheory.Exact.BaseChange
 
 /-!
 # Minimal morphisms and almost-split sequences
@@ -19,10 +19,13 @@ only one of its two lifting properties.
 
 Minimality is stated explicitly: an endomorphism fixing the specified map is invertible.
 This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducible`.
-No finite-length or locality hypothesis is needed for either criterion.
+No finite-length or locality hypothesis is needed when minimality is supplied. If the opposite
+end has a local endomorphism ring, non-splitness already implies minimality, so a single
+almost-split lifting property suffices. Conversely, the maps of an almost-split sequence are
+always minimal, since its ends have local endomorphism rings by
+`TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`.
 
-The pushout argument uses `TauCeti.ExactStructure.conflation_cobaseChange` for the
-canonical exact structure of an abelian category.
+The pushout argument uses `TauCeti.shortExact_cobaseChange`.
 
 ## References
 
@@ -45,19 +48,11 @@ theorem IsRightAlmostSplit.isLeftAlmostSplit_of_minimal (hg : IsRightAlmostSplit
     (hS : S.ShortExact) (hmin : ∀ b : S.X₂ ⟶ S.X₂, b ≫ S.g = S.g → IsIso b) :
     IsLeftAlmostSplit S.f := by
   have := hS.mono_f
-  have := hS.epi_g
   refine isLeftAlmostSplit_iff.mpr ⟨?_, fun X h hh ↦ ?_⟩
-  · intro hf
-    exact hg.not_isSplitEpi
-      (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
-        (retraction S.f) (IsSplitMono.id S.f) inferInstance).isSplitEpi_g
+  · exact fun hf ↦ hg.not_isSplitEpi (hS.isSplitMono_f_iff_isSplitEpi_g.mp hf)
   · let sq := IsPushout.of_hasPushout S.f h
     let q := cobaseChangeπ S sq
-    have hT : (cobaseChange S sq).ShortExact :=
-      (ExactStructure.abelian_conflation _).mp
-        ((ExactStructure.abelian C).conflation_cobaseChange
-          ((ExactStructure.abelian_conflation S).mpr hS) sq)
-    rw [cobaseChange_def] at hT
+    have hT := shortExact_cobaseChange hS sq
     -- If the pushout splits, its retraction extends `h` across `S.f`.
     by_cases hq : IsSplitEpi q
     · let s := ShortComplex.Splitting.ofExactOfSection _ hT.exact
@@ -104,6 +99,30 @@ end TauCeti
 
 namespace CategoryTheory.ShortComplex
 
+section Balanced
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S : ShortComplex C}
+
+namespace IsAlmostSplit
+
+/-- The final map of an almost-split sequence is right minimal. The left-hand end has a local
+endomorphism ring because the initial map is left almost split. -/
+theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) :
+    IsIso b :=
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
+  hS.shortExact.isIso_of_comp_g_eq hS.isLeftAlmostSplit_f.not_isSplitMono b hb
+
+/-- The initial map of an almost-split sequence is left minimal. The right-hand end has a local
+endomorphism ring because the final map is right almost split. -/
+theorem isIso_of_f_comp_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) :
+    IsIso b :=
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
+  hS.shortExact.isIso_of_f_comp_eq hS.isRightAlmostSplit_g.not_isSplitEpi b hb
+
+end IsAlmostSplit
+
+end Balanced
+
 variable {C : Type u} [Category.{v} C] [Abelian C] {S : ShortComplex C}
 
 /-- A short exact sequence with a right minimal right almost split final map is almost
@@ -120,4 +139,50 @@ theorem ShortExact.isAlmostSplit_of_isLeftAlmostSplit (hS : S.ShortExact)
     (hmin : ∀ b : S.X₂ ⟶ S.X₂, S.f ≫ b = S.f → IsIso b) : S.IsAlmostSplit :=
   ⟨hS, hf, hf.isRightAlmostSplit_of_minimal hS hmin⟩
 
+/-- A short exact sequence with local left-hand endomorphism ring is almost split exactly
+when its final map is right almost split. No separate minimality assumption is needed. -/
+theorem ShortExact.isAlmostSplit_iff_isRightAlmostSplit (hS : S.ShortExact)
+    [IsLocalRing (End S.X₁)] : S.IsAlmostSplit ↔ TauCeti.IsRightAlmostSplit S.g := by
+  refine ⟨fun h ↦ h.isRightAlmostSplit_g, fun hg ↦ ?_⟩
+  have hf : ¬ IsSplitMono S.f := fun hf ↦
+    hg.not_isSplitEpi (hS.isSplitMono_f_iff_isSplitEpi_g.mp hf)
+  exact hS.isAlmostSplit_of_isRightAlmostSplit hg (hS.isIso_of_comp_g_eq hf)
+
+/-- A short exact sequence with local right-hand endomorphism ring is almost split exactly
+when its initial map is left almost split. No separate minimality assumption is needed. -/
+theorem ShortExact.isAlmostSplit_iff_isLeftAlmostSplit (hS : S.ShortExact)
+    [IsLocalRing (End S.X₃)] : S.IsAlmostSplit ↔ TauCeti.IsLeftAlmostSplit S.f := by
+  refine ⟨fun h ↦ h.isLeftAlmostSplit_f, fun hf ↦ ?_⟩
+  have hg : ¬ IsSplitEpi S.g := fun hg ↦
+    hf.not_isSplitMono (hS.isSplitMono_f_iff_isSplitEpi_g.mpr hg)
+  exact hS.isAlmostSplit_of_isLeftAlmostSplit hf (hS.isIso_of_f_comp_eq hg)
+
 end CategoryTheory.ShortComplex
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {C : Type u} [Category.{v} C]
+
+/-- Two right minimal right almost-split morphisms `f : X ⟶ Y` and `g : X' ⟶ Y`
+have an isomorphism `e : X ≅ X'` satisfying `e.hom ≫ g = f`. -/
+theorem IsRightAlmostSplit.exists_iso_of_minimal {X X' Y : C}
+    {f : X ⟶ Y} {g : X' ⟶ Y} (hf : IsRightAlmostSplit f) (hg : IsRightAlmostSplit g)
+    (hminf : ∀ b : X ⟶ X, b ≫ f = f → IsIso b)
+    (hming : ∀ b : X' ⟶ X', b ≫ g = g → IsIso b) :
+    ∃ e : X ≅ X', e.hom ≫ g = f := by
+  obtain ⟨a, hag⟩ := hg.factors X f hf.not_isSplitEpi
+  obtain ⟨b, hbf⟩ := hf.factors X' g hg.not_isSplitEpi
+  have hab : (a ≫ b) ≫ f = f := by
+    rw [Category.assoc, hbf, hag]
+  have hba : (b ≫ a) ≫ g = g := by
+    rw [Category.assoc, hag, hbf]
+  have : IsIso (a ≫ b) := hminf (a ≫ b) hab
+  have : IsIso (b ≫ a) := hming (b ≫ a) hba
+  have : Mono a := mono_of_mono a b
+  have : IsSplitEpi a := IsSplitEpi.mk' ⟨inv (b ≫ a) ≫ b, by simp [Category.assoc]⟩
+  have : IsIso a := isIso_of_mono_of_isSplitEpi a
+  exact ⟨asIso a, hag⟩
+
+end TauCeti

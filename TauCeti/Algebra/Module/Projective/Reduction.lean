@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.Algebra.Module.ProjectiveCover.Basic
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
@@ -138,10 +139,10 @@ theorem nonempty_linearEquiv_of_projective_of_natCard_linearMap_eq
   -- `#Hom(P, S) = #End(S) ^ [P ⧸ J • P : S]`, where `End(S)` is finite with at least two elements.
   have := IsSimpleModule.finite_of_finite_quotient_jacobson (R := R) S
   have := IsSimpleModule.nontrivial R S
-  have : Finite (Module.End R S) := Finite.of_injective _ DFunLike.coe_injective
-  refine Nat.pow_right_injective (Finite.one_lt_card (α := Module.End R S)) ?_
+  refine Nat.pow_right_injective (Module.End.one_lt_natCard (R := R) (M := S)) ?_
   simp only [← natCard_linearMap_eq_pow_jordanHolderMultiplicity,
-    Nat.card_congr (linearMapQuotientJacobsonEquiv _ S).toEquiv]
+    Nat.card_congr
+      (linearMapQuotientSMulTopEquiv _ (IsSemisimpleModule.jacobson_le_annihilator R S)).toEquiv]
   exact h S
 
 end TauCeti

@@ -31,37 +31,37 @@ The sum is indexed by `TauCeti.interlacingFinset`, the sequences interlacing `l`
 `Finset`.  Interlacing is a two-sided bound at each index, so this is nothing but the interval
 `Finset.Icc` of the pointwise order on `Fin n → ℤ`, and no new finiteness argument is needed.
 
-Two further readings of the recursion are recorded.  Which top rows occur at all is settled by
+Two further readings of the recursion are recorded. Which top rows occur at all is settled by
 `TauCeti.GTPattern.nonempty_topRow_eq_iff`: a sequence is the top row of some pattern exactly when
-it is weakly decreasing, that is, exactly when it is a dominant weight.  Both directions are
-one-line consequences of the machinery — reading a top row produces a weakly decreasing sequence,
-and prepending a dominant `l` on top of the pattern built inductively over `l ∘ Fin.castSucc`
-produces a pattern over `l`.  And unwinding the recursion twice gives the `GL 3` count
+it is weakly decreasing, that is, exactly when it is a dominant weight. Both directions are one-line
+consequences of the machinery — reading a top row produces a weakly decreasing sequence, and
+prepending a dominant `l` on top of the pattern built inductively over `l ∘ Fin.castSucc` produces a
+pattern over `l`. And unwinding the recursion twice gives the `GL 3` count
 `TauCeti.GTPattern.card_topRow_three` as an explicit double sum over the two free entries of the
-middle and bottom rows, which settles the roadmap's two `GL 3` acceptance examples: the polynomial
-top row `(2, 1, 0)` and its determinant twist `(1, 0, -1)` both carry exactly `8` patterns.
+middle and bottom rows, which settles two worked examples: the polynomial top row `(2, 1, 0)` and
+its determinant twist `(1, 0, -1)` both carry exactly `8` patterns.
 
 ## Main definitions
 
 * `TauCeti.interlacingFinset`: the sequences interlacing a given one, as a `Finset`.
+* `TauCeti.interlacingWeights`: the dominant weights interlacing a given one, as a `Finset`.
 
 ## Main results
 
 * `TauCeti.card_interlacingFinset`: how many sequences interlace a given one.
 * `TauCeti.GTPattern.truncateSigmaEquiv`: the patterns over `l` sorted by the row below the top.
 * `TauCeti.GTPattern.card_topRow_succ`: **the branching recursion for the pattern count**.
+* `TauCeti.GTPattern.truncateTopWeightSigmaEquiv`: the patterns with top weight `l` sorted by the
+  dominant weight of the row below the top.
 * `TauCeti.GTPattern.nonempty_topRow_eq_iff` and `TauCeti.GTPattern.card_topRow_pos_iff`: a
   sequence is the top row of a pattern exactly when it is weakly decreasing.
 * `TauCeti.GTPattern.card_topWeight_eq_card_topRow`: counting by top weight is counting by top row.
 * `TauCeti.GTPattern.card_topRow_three`: the `GL 3` count as a double sum, and
   `TauCeti.GTPattern.card_topRow_three_two_one_zero`,
-  `TauCeti.GTPattern.card_topRow_three_one_zero_neg_one`: the two `GL 3` acceptance examples.
+  `TauCeti.GTPattern.card_topRow_three_one_zero_neg_one`: two worked `GL 3` examples.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "the Gelfand-Tsetlin dimension formula", which asks for the count to be proved from the
-  branching side, and the two `GL 3` worked examples.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §15.3.
 -/
 
@@ -100,6 +100,22 @@ theorem card_interlacingFinset (l : Fin (n + 1) → ℤ) :
   rw [interlacingFinset, Pi.card_Icc]
   exact Finset.prod_congr rfl fun i _ => Int.card_Icc _ _
 
+/-- The dominant weights interlacing a dominant weight `l`, as a `Finset`.
+
+A sequence interlacing a weakly decreasing sequence is itself weakly decreasing
+(`TauCeti.Interlaces.antitone`), so these are the members of `TauCeti.interlacingFinset l`, each
+read as a dominant weight.  They index the branching rule for the rational representation `V_l` of
+`GL (n + 1)` restricted along `GL n ↪ GL (n + 1)`. -/
+noncomputable def interlacingWeights (l : DominantWeight (n + 1)) : Finset (DominantWeight n) :=
+  (interlacingFinset l.1).preimage Subtype.val Subtype.val_injective.injOn
+
+/-- The members of `TauCeti.interlacingWeights l` are exactly the dominant weights interlacing
+`l`. -/
+@[simp]
+theorem mem_interlacingWeights {l : DominantWeight (n + 1)} {m : DominantWeight n} :
+    m ∈ interlacingWeights l ↔ Interlaces l.1 m.1 := by
+  rw [interlacingWeights, Finset.mem_preimage, mem_interlacingFinset]
+
 namespace GTPattern
 
 /-! ### The branching recursion -/
@@ -126,17 +142,84 @@ def truncateSigmaEquiv (l : Fin (n + 1) → ℤ) :
 rows and top row `l` are counted by the patterns with `n` rows, summed over the sequences
 interlacing `l`.
 
-For a dominant `l` this is the count of a basis of `V_l` read off the multiplicity-free
-restriction `GL (n + 1) ↓ GL n`: each interlacing `m` contributes the dimension of `V_m`.  For an
-arbitrary `l` it is a bijection between finite sets and nothing more; both sides vanish unless `l`
-is weakly decreasing (`TauCeti.GTPattern.card_topRow_pos_iff`).  Iterated, this is the route the
-roadmap asks for to the Gelfand-Tsetlin dimension formula: by induction on `n` from the branching,
-not from the Weyl dimension formula. -/
+For a dominant `l` this is the count of a basis of `V_l` read off the multiplicity-free restriction
+`GL (n + 1) ↓ GL n`: each interlacing `m` contributes the dimension of `V_m`. For an arbitrary `l`
+it is a bijection between finite sets and nothing more; both sides vanish unless `l` is weakly
+decreasing (`TauCeti.GTPattern.card_topRow_pos_iff`). Iterated, this gives the Gelfand-Tsetlin
+dimension formula by induction on `n` from the branching, rather than from the Weyl dimension
+formula. -/
 theorem card_topRow_succ (l : Fin (n + 1) → ℤ) :
     Nat.card {P : GTPattern (n + 1) // P.topRow = l}
       = ∑ m ∈ interlacingFinset l, Nat.card {Q : GTPattern n // Q.topRow = m} := by
   rw [Nat.card_congr (truncateSigmaEquiv l), Nat.card_sigma]
   exact Finset.sum_attach (interlacingFinset l) fun m => Nat.card {Q : GTPattern n // Q.topRow = m}
+
+/-! ### The branching recursion, indexed by dominant weights -/
+
+/-- The top weight of the truncation of a pattern interlaces the top weight of the pattern. -/
+theorem topWeight_truncate_mem_interlacingWeights (P : GTPattern (n + 1)) :
+    P.truncate.topWeight ∈ interlacingWeights P.topWeight := by
+  rw [mem_interlacingWeights, topWeight_coe, topWeight_coe]
+  exact P.interlaces_topRow_truncate
+
+/-- Two sigma-type points built from equal patterns are equal. -/
+private theorem sigma_mk_topWeight_eq {l : DominantWeight (n + 1)} {Q Q' : GTPattern n}
+    (h : Q' = Q) (h' : Q'.topWeight ∈ interlacingWeights l)
+    (hQ : Q.topWeight ∈ interlacingWeights l) :
+    (⟨⟨Q'.topWeight, h'⟩, ⟨Q', rfl⟩⟩ :
+      Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m}) =
+        ⟨⟨Q.topWeight, hQ⟩, ⟨Q, rfl⟩⟩ := by
+  subst h
+  rfl
+
+/-- **The patterns with top weight `λ`, sorted by the dominant weight of their second row.**
+Deleting the top row identifies them with the patterns with one row fewer whose top weight
+interlaces `λ`. This is `TauCeti.GTPattern.truncateSigmaEquiv` indexed by the dominant weights
+`TauCeti.interlacingWeights λ`, the index set of the branching `GL (n + 1) ↓ GL n`. -/
+def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
+    {P : GTPattern (n + 1) // P.topWeight = l} ≃
+      Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m} where
+  toFun P := ⟨⟨P.1.truncate.topWeight, by
+      have h := P.1.topWeight_truncate_mem_interlacingWeights
+      rwa [P.2] at h⟩,
+    ⟨P.1.truncate, rfl⟩⟩
+  invFun x := ⟨x.2.1.extend l.1 (by
+      rw [← topWeight_coe, x.2.2]
+      exact mem_interlacingWeights.mp x.1.2),
+    Subtype.ext (by rw [topWeight_coe, topRow_extend])⟩
+  left_inv P := by
+    obtain ⟨P, rfl⟩ := P
+    exact Subtype.ext (by simp only [topWeight_coe, extend_truncate])
+  right_inv := by
+    rintro ⟨⟨m, hm⟩, ⟨Q, hQ⟩⟩
+    obtain rfl : Q.topWeight = m := hQ
+    exact sigma_mk_topWeight_eq (truncate_extend _ _ _) _ _
+
+/-- `TauCeti.GTPattern.truncateTopWeightSigmaEquiv` sends a pattern to its truncation, indexed by
+the top weight of the truncation. -/
+theorem truncateTopWeightSigmaEquiv_apply (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l})
+    (hm : P.1.truncate.topWeight ∈ interlacingWeights l) :
+    truncateTopWeightSigmaEquiv l P = ⟨⟨P.1.truncate.topWeight, hm⟩, ⟨P.1.truncate, rfl⟩⟩ :=
+  (rfl)
+
+@[simp]
+theorem truncateTopWeightSigmaEquiv_apply_fst_coe (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
+    ((truncateTopWeightSigmaEquiv l P).1 : DominantWeight n) = P.1.truncate.topWeight :=
+  (rfl)
+
+@[simp]
+theorem truncateTopWeightSigmaEquiv_apply_snd_coe (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
+    (truncateTopWeightSigmaEquiv l P).2.1 = P.1.truncate :=
+  (rfl)
+
+@[simp]
+theorem truncate_truncateTopWeightSigmaEquiv_symm_apply_coe (l : DominantWeight (n + 1))
+    (x : Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m}) :
+    ((truncateTopWeightSigmaEquiv l).symm x).1.truncate = x.2.1 :=
+  truncate_extend _ _ _
 
 /-! ### Which sequences are top rows -/
 
@@ -208,20 +291,20 @@ theorem card_topRow_three (l : Fin 3 → ℤ) :
   · intro m _
     exact card_topRow_two_eq_toNat_sub_add_one m
 
-/-- **The `GL 3` acceptance example.**  The top row `(2, 1, 0)` carries exactly `8` Gelfand-Tsetlin
+/-- **A worked `GL 3` example.** The top row `(2, 1, 0)` carries exactly `8` Gelfand-Tsetlin
 patterns, one for each choice of an interlacing middle row `(a, b)` with `2 ≥ a ≥ 1`, `1 ≥ b ≥ 0`
 and a bottom entry between them: the four middle rows `(1, 0)`, `(1, 1)`, `(2, 0)`, `(2, 1)` admit
-`2`, `1`, `3`, `2` bottom entries.  This is the dimension of the `8`-dimensional irreducible
+`2`, `1`, `3`, `2` bottom entries. This is the dimension of the `8`-dimensional irreducible
 representation of `GL 3` of highest weight `(2, 1, 0)`, the adjoint representation of `SL 3`. -/
 theorem card_topRow_three_two_one_zero :
     Nat.card {P : GTPattern 3 // P.topRow = ![2, 1, 0]} = 8 := by
   rw [card_topRow_three]
   decide
 
-/-- **The rational `GL 3` acceptance example.**  The top row `(1, 0, -1)` is the determinant twist
-of `(2, 1, 0)` by `-1`, and it carries the same `8` patterns — now with negative entries in some
-rows, which the sign-free interlacing of `TauCeti.GTPattern` admits.  A nonnegativity constraint
-on the row-final entries would wrongly exclude them. -/
+/-- **A worked rational `GL 3` example.** The top row `(1, 0, -1)` is the determinant twist of
+`(2, 1, 0)` by `-1`, and it carries the same `8` patterns — now with negative entries in some rows,
+which the sign-free interlacing of `TauCeti.GTPattern` admits. A nonnegativity constraint on the
+row-final entries would wrongly exclude them. -/
 theorem card_topRow_three_one_zero_neg_one :
     Nat.card {P : GTPattern 3 // P.topRow = ![1, 0, -1]} = 8 := by
   rw [card_topRow_three]

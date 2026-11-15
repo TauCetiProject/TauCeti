@@ -63,7 +63,7 @@ invariant, with unit factor `t⁻ⁿ`. This equality remains valid when the geom
     (by
       dsimp only [C]
       rw [det_burauColMatrix_submatrix_castSucc]
-      exact t.isUnit.pow n) hAX
+      exact (t.isUnit.pow n).mem_nonZeroDivisors) hAX
   simp only [dotProduct, mul_one, Fin.val_last] at h
   have hcancel : ((t⁻¹ : Rˣ) : R) ^ n * (t : R) ^ n = 1 := by
     rw [← mul_pow, Units.inv_mul, one_pow]

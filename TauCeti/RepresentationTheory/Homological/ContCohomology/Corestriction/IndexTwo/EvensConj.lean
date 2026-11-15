@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.IndexTwo.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Normal
 
 /-!
 # The conjugate class at index two, in every degree
@@ -23,8 +23,10 @@ Its basic laws follow from `cor ∘ res = [G : U] = 2`
 (`TauCeti.trivialF2ResMap_comp_trivialF2CorMap`) alone: it is an involution, it fixes every class
 restricted from `G`, and corestriction does not see it. In degree one it is the explicit
 conjugation `TauCeti.ContCohomology.evensConj1` read through the degree-one comparison
-`TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology`, and so it is conjugation by every
-element outside `U` (`TauCeti.ContCohomology.evensConj1_eq_explicitConj1`).
+`TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology`. In every degree it is pullback
+along conjugation `u ↦ s⁻¹ u s` by any element `s` outside `U`: index two makes `U` normal with
+transversal `{1, s}`, and restriction of corestriction from a normal subgroup is the sum of the
+conjugations over a transversal (`TauCeti.trivialF2CorMap_comp_trivialF2ResMap_eq_sum`).
 
 ## Main definitions
 
@@ -40,6 +42,10 @@ element outside `U` (`TauCeti.ContCohomology.evensConj1_eq_explicitConj1`).
 * `OpenSubgroup.evensConj_comp_trivialF2CorMap`: corestriction is invariant under `evensConj`.
 * `OpenSubgroup.evensConj_explicitH1AddEquivContinuousCohomology`: in degree one, `evensConj` is
   the explicit conjugation `TauCeti.ContCohomology.evensConj1`.
+* `OpenSubgroup.evensConj_eq_trivialF2Map`: `evensConj` is pullback along conjugation by any
+  element outside `U`, in every degree.
+* `OpenSubgroup.evensConj_eq_trivialF2Map_conjNormal`: the same, through the canonical
+  conjugation `ContinuousAut.conjNormal s⁻¹` of `U`.
 
 ## References
 
@@ -195,5 +201,40 @@ theorem evensConj_explicitH1AddEquivContinuousCohomology
     ← trivialF2ResMap_explicitH1AddEquivContinuousCohomology,
     ← trivialF2CorMap_explicitH1AddEquivContinuousCohomology, trivialF2ResMap_trivialF2CorMap,
     add_sub_cancel_left]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex in
+/-- **`evensConj` is conjugation by every element outside `U`**, in every degree. For `s ∉ U` and a
+continuous endomorphism `κ` of `U` with `κ u = s⁻¹ u s`, `evensConj` is pullback along `κ`, which
+is the conjugation `(s)_*` of `Hⁿ(U, 𝔽₂)`. So the choice-free `res ∘ cor - id` is the conjugation
+of the nontrivial coset, read through any of its elements. -/
+theorem evensConj_eq_trivialF2Map (s : G) (hs : s ∉ U) (κ : U.toSubgroup →ₜ* U.toSubgroup)
+    (hκ : ∀ u : U.toSubgroup, (κ u : G) = s⁻¹ * u * s) (n : ℕ) :
+    U.evensConj hU n = trivialF2Map κ n := by
+  have : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+  have : U.toSubgroup.Normal := Subgroup.normal_of_index_eq_two hU
+  -- `κ` is the conjugation `u ↦ s⁻¹ u s` underlying `conjNormalMap`.
+  obtain rfl : κ = ContinuousMonoidHom.toContinuousMonoidHom
+      (ContinuousAut.conjNormal s⁻¹ : ContinuousAut U.toSubgroup) :=
+    ContinuousMonoidHom.ext fun u => Subtype.ext ((hκ u).trans (by simp))
+  -- Conjugation by `1⁻¹` is the identity of `U` as a continuous homomorphism (the form
+  -- `trivialF2Map_id` rewrites).
+  have hid : ContinuousMonoidHom.toContinuousMonoidHom
+      (ContinuousAut.conjNormal (1 : G)⁻¹ : ContinuousAut U.toSubgroup) =
+        ContinuousMonoidHom.id _ :=
+    ContinuousMonoidHom.ext fun u => Subtype.ext (by simp)
+  -- `res ∘ cor` is the sum of the pullbacks along conjugation by `1` and by `s`, computed on the
+  -- transversal `{1, s}`.
+  rw [evensConj_def, trivialF2CorMap_comp_trivialF2ResMap_eq_sum U.toSubgroup U.isOpen
+      (U.toSubgroup.indexTwoTransversal s) (Subgroup.indexTwoTransversal_mk hU hs) n,
+    sum_quotient_eq_add_of_index_two hU hs, Subgroup.indexTwoTransversal_mk_one,
+    Subgroup.indexTwoTransversal_of_ne s (mk_ne_mk_one_of_notMem hs), hid, trivialF2Map_id,
+    add_sub_cancel_left]
+
+/-- **`evensConj` is the conjugation `(s)_*` by any `s ∉ U`**, in every degree, stated with the
+canonical conjugation `ContinuousAut.conjNormal s⁻¹ : u ↦ s⁻¹ u s` of the normal subgroup `U`. -/
+theorem evensConj_eq_trivialF2Map_conjNormal [U.toSubgroup.Normal] (s : G) (hs : s ∉ U) (n : ℕ) :
+    U.evensConj hU n = trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom
+      (ContinuousAut.conjNormal s⁻¹ : ContinuousAut U.toSubgroup)) n :=
+  evensConj_eq_trivialF2Map U hU s hs _ (fun u => by simp) n
 
 end OpenSubgroup

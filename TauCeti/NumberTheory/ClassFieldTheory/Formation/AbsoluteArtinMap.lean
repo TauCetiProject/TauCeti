@@ -86,32 +86,20 @@ attribute [local instance] Subgroup.isClosed_topologicalClosure
 
 namespace NormalLayer
 
-/-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
-whole group. -/
-def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :
-    F.level ⊤ ≃ₗ[ℤ] F.level (ofOpenNormal V).ground :=
-  LinearEquiv.ofEq _ _ (congrArg F.level (ground_ofOpenNormal V).symm)
-
-/-- The identification of `A^G` with the ground level of `V ◁ G` moves no element of the ambient
-module. -/
-@[simp]
-theorem groundEquivOfOpenNormal_apply_coe (F : Formation G) (V : OpenNormalSubgroup G)
-    (a : F.level ⊤) : (dsimp% only (groundEquivOfOpenNormal F V a : F.toRep.V)) = a :=
-  (rfl)
-
 /-- The projection `G^ab → (G/V)^ab` from the topological abelianization of `G` onto the
 abelianized Galois group of the layer `V ◁ G` of an open normal subgroup `V`, written additively.
 It sends the class of `g ∈ G` to the class of `g` (`abelianizationRestrict_mk`). In Galois
 language, it restricts an automorphism of the maximal abelian extension to the maximal abelian
 subextension of the finite layer cut out by `V`. -/
 def abelianizationRestrict (V : OpenNormalSubgroup G) :
-    Additive (TopologicalAbelianization G) →+ Additive (Abelianization (ofOpenNormal V).Gal) :=
+    Additive (TopologicalAbelianization G) →+ Additive (Group.Abelianization (ofOpenNormal
+        V).Gal) :=
   MonoidHom.toAdditive <|
     QuotientGroup.lift _
-      (Abelianization.of.comp
+      (Group.Abelianization.of.comp
         ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp (QuotientGroup.mk' V.toSubgroup))) <| by
       -- The kernel contains `V`, so it is open, hence closed; it contains every commutator.
-      refine Subgroup.topologicalClosure_minimal _ (Abelianization.commutator_subset_ker _) ?_
+      refine Subgroup.topologicalClosure_minimal _ (Group.Abelianization.commutator_le_ker _) ?_
       refine Subgroup.isClosed_of_isOpen _ (Subgroup.isOpen_mono (fun g hg ↦ ?_) V.isOpen)
       rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.comp_apply,
         QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff g).mpr hg, map_one, map_one]
@@ -120,7 +108,7 @@ def abelianizationRestrict (V : OpenNormalSubgroup G) :
 @[simp]
 theorem abelianizationRestrict_mk (V : OpenNormalSubgroup G) (g : (ofOpenNormal V).ground) :
     abelianizationRestrict V (Additive.ofMul ((g : G) : TopologicalAbelianization G)) =
-      Additive.ofMul (Abelianization.of (g : (ofOpenNormal V).Gal)) := by
+      Additive.ofMul (Group.Abelianization.of (g : (ofOpenNormal V).Gal)) := by
   rw [abelianizationRestrict, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     QuotientGroup.lift_mk, MonoidHom.comp_apply, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
     MulEquiv.coe_toMonoidHom,
@@ -130,7 +118,7 @@ theorem abelianizationRestrict_mk (V : OpenNormalSubgroup G) (g : (ofOpenNormal 
 theorem abelianizationRestrict_surjective (V : OpenNormalSubgroup G) :
     Function.Surjective (abelianizationRestrict V) := by
   intro y
-  obtain ⟨γ, hγ⟩ : ∃ γ, Abelianization.of γ = y.toMul := QuotientGroup.mk_surjective y.toMul
+  obtain ⟨γ, hγ⟩ : ∃ γ, Group.Abelianization.of γ = y.toMul := QuotientGroup.mk_surjective y.toMul
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective γ
   exact ⟨_, (abelianizationRestrict_mk V g).trans (congrArg Additive.ofMul hγ)⟩
 
@@ -151,7 +139,7 @@ theorem LayerRefinement.quotientHom_abelianizationRestrict {V W : OpenNormalSubg
     have hg (U : OpenNormalSubgroup G) : g ∈ (NormalLayer.ofOpenNormal U).ground := by simp
     rw [NormalLayer.abelianizationRestrict_mk W ⟨g, hg W⟩,
       NormalLayer.abelianizationRestrict_mk V ⟨g, hg V⟩, quotientHom_of, galHom_mk]
-    exact congrArg (fun w ↦ Additive.ofMul (Abelianization.of
+    exact congrArg (fun w ↦ Additive.ofMul (Group.Abelianization.of
       (QuotientGroup.mk w : (NormalLayer.ofOpenNormal V).Gal)))
       (Subtype.ext (Subgroup.coe_inclusion _ _))
 
@@ -181,17 +169,18 @@ private theorem comapAb_le_comap (U : OpenNormalSubgroup (TopologicalAbelianizat
 class of `g`. It inverts the projection `abelianizationRestrict V` modulo `U`
 (`quotientOfAbelianizationGal_abelianizationRestrict`). -/
 private def quotientOfAbelianizationGal (U : OpenNormalSubgroup (TopologicalAbelianization G)) :
-    Abelianization (ofOpenNormal (comapAb U)).Gal →* TopologicalAbelianization G ⧸ U.toSubgroup :=
-  Abelianization.lift <|
+    Group.Abelianization (ofOpenNormal (comapAb
+        U)).Gal →* TopologicalAbelianization G ⧸ U.toSubgroup :=
+  Group.Abelianization.lift <|
     (QuotientGroup.map _ _ (QuotientGroup.mk' _) (comapAb_le_comap U)).comp
       (galOfOpenNormalEquiv (comapAb U)).toMonoidHom
 
 private theorem quotientOfAbelianizationGal_of_mk
     (U : OpenNormalSubgroup (TopologicalAbelianization G))
     (g : (ofOpenNormal (comapAb U)).ground) :
-    quotientOfAbelianizationGal U (Abelianization.of (g : (ofOpenNormal (comapAb U)).Gal)) =
+    quotientOfAbelianizationGal U (Group.Abelianization.of (g : (ofOpenNormal (comapAb U)).Gal)) =
       (((g : G) : TopologicalAbelianization G) : TopologicalAbelianization G ⧸ U.toSubgroup) := by
-  rw [quotientOfAbelianizationGal, Abelianization.lift_apply_of, MonoidHom.comp_apply,
+  rw [quotientOfAbelianizationGal, Group.Abelianization.lift_apply_of, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, galOfOpenNormalEquiv_mk, QuotientGroup.map_mk,
     QuotientGroup.mk'_apply]
 
@@ -212,10 +201,10 @@ private theorem quotientOfAbelianizationGal_abelianizationRestrict
 private theorem mapOfLE_quotientOfAbelianizationGal
     {U U' : OpenNormalSubgroup (TopologicalAbelianization G)} (hle : U ≤ U')
     (T : LayerRefinement (ofOpenNormal (comapAb U')) (ofOpenNormal (comapAb U)))
-    (z : Abelianization (ofOpenNormal (comapAb U)).Gal) :
+    (z : Group.Abelianization (ofOpenNormal (comapAb U)).Gal) :
     QuotientGroup.mapOfLE hle (quotientOfAbelianizationGal U z) =
       quotientOfAbelianizationGal U' (T.quotientHom (Additive.ofMul z)).toMul := by
-  obtain ⟨γ, rfl⟩ : ∃ γ, Abelianization.of γ = z := QuotientGroup.mk_surjective z
+  obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = z := QuotientGroup.mk_surjective z
   induction γ using QuotientGroup.induction_on with
     | H g =>
       rw [LayerRefinement.quotientHom_of, toMul_ofMul, LayerRefinement.galHom_mk,
@@ -271,14 +260,13 @@ private theorem quotientArtinMap_ofAdd (U : OpenNormalSubgroup (TopologicalAbeli
 private theorem mapOfLE_comp_quotientArtinMap
     {U U' : OpenNormalSubgroup (TopologicalAbelianization G)} (hle : U ≤ U') :
     (QuotientGroup.mapOfLE hle).comp (cf.quotientArtinMap U) = cf.quotientArtinMap U' := by
-  have T := LayerRefinement.ofOpenNormal
-    (OpenNormalSubgroup.toSubgroup_le.mp fun _ hg ↦ mem_comapAb.mpr (hle (mem_comapAb.mp hg)))
+  have hle' : comapAb U ≤ comapAb U' :=
+    OpenNormalSubgroup.toSubgroup_le.mp fun _ hg ↦ mem_comapAb.mpr (hle (mem_comapAb.mp hg))
+  have T := LayerRefinement.ofOpenNormal hle'
   refine MonoidHom.ext fun a ↦ ?_
-  have hground : T.groundEquiv F (groundEquivOfOpenNormal F (comapAb U') a.toAdd) =
-      groundEquivOfOpenNormal F (comapAb U) a.toAdd :=
-    Subtype.ext (by simp)
   rw [MonoidHom.comp_apply, ← ofAdd_toAdd a, quotientArtinMap_ofAdd, quotientArtinMap_ofAdd,
-    mapOfLE_quotientOfAbelianizationGal hle T, ofMul_toMul, cf.artinMap_quotient T, hground]
+    mapOfLE_quotientOfAbelianizationGal hle T, ofMul_toMul, cf.artinMap_quotient T,
+    LayerRefinement.groundEquiv_groundEquivOfOpenNormal F hle']
 
 /-- The **absolute Artin map** `A^G → G^ab` of a class formation over a profinite group `G`: the
 inverse limit of the finite Artin maps `A^G → (G/V)^ab` of the layers `V ◁ G`. Its composite with
@@ -310,7 +298,7 @@ theorem abelianizationRestrict_absoluteArtinMap (V : OpenNormalSubgroup G) (a : 
   set ρ := MonoidHom.toAdditive.symm (abelianizationRestrict V) with hρdef
   have hmem (g : G) : g ∈ (ofOpenNormal V).ground := by simp
   have hρ (g : G) : ρ (g : TopologicalAbelianization G) =
-      Abelianization.of ((⟨g, hmem g⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
+      Group.Abelianization.of ((⟨g, hmem g⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
     rw [hρdef, MonoidHom.toAdditive_symm_apply_apply]
     exact congrArg Additive.toMul (abelianizationRestrict_mk V ⟨g, hmem g⟩)
   -- The kernel `U` of the projection is open in `G^ab`: its preimage in `G` contains `V`.
@@ -323,25 +311,24 @@ theorem abelianizationRestrict_absoluteArtinMap (V : OpenNormalSubgroup G) (a : 
         (Subgroup.isOpen_mono hVU V.isOpen') }
   -- The layer of `V` refines the layer of the preimage of `U`. Modulo `U`, the absolute Artin
   -- symbol is the Artin symbol for the latter layer, hence the image of that for `V`.
-  have T := LayerRefinement.ofOpenNormal
-    (OpenNormalSubgroup.toSubgroup_le.mp fun g hg ↦ mem_comapAb.mpr (hVU hg) : V ≤ comapAb U)
-  have hcomp (y : Additive (Abelianization (ofOpenNormal V).Gal)) :
+  have hVU' : V ≤ comapAb U :=
+    OpenNormalSubgroup.toSubgroup_le.mp fun g hg ↦ mem_comapAb.mpr (hVU hg)
+  have T := LayerRefinement.ofOpenNormal hVU'
+  have hcomp (y : Additive (Group.Abelianization (ofOpenNormal V).Gal)) :
       QuotientGroup.lift U.toSubgroup ρ (fun _ h ↦ h)
         (quotientOfAbelianizationGal U (T.quotientHom y).toMul) = y.toMul := by
     obtain ⟨z, rfl⟩ : ∃ z, Additive.ofMul z = y := ⟨y.toMul, ofMul_toMul y⟩
-    obtain ⟨γ, rfl⟩ : ∃ γ, Abelianization.of γ = z := QuotientGroup.mk_surjective z
+    obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = z := QuotientGroup.mk_surjective z
     induction γ using QuotientGroup.induction_on with
       | H g =>
         rw [LayerRefinement.quotientHom_of, toMul_ofMul, LayerRefinement.galHom_mk,
           quotientOfAbelianizationGal_of_mk, Subgroup.coe_inclusion, QuotientGroup.lift_mk, hρ,
           toMul_ofMul]
-  have hground : T.groundEquiv F (groundEquivOfOpenNormal F (comapAb U) a) =
-      groundEquivOfOpenNormal F V a :=
-    Subtype.ext (by simp)
   have key : QuotientGroup.lift U.toSubgroup ρ (fun _ h ↦ h)
       ((cf.absoluteArtinMap a).toMul : TopologicalAbelianization G ⧸ U.toSubgroup) =
       (cf.artinMap (ofOpenNormal V) (groundEquivOfOpenNormal F V a)).toMul := by
-    rw [mk_absoluteArtinMap, quotientArtinMap_ofAdd, cf.artinMap_quotient T, hground]
+    rw [mk_absoluteArtinMap, quotientArtinMap_ofAdd, cf.artinMap_quotient T,
+      LayerRefinement.groundEquiv_groundEquivOfOpenNormal F hVU']
     exact hcomp _
   rw [QuotientGroup.lift_mk, hρdef, MonoidHom.toAdditive_symm_apply_apply, ofMul_toMul] at key
   exact Additive.toMul.injective key

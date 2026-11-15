@@ -34,10 +34,6 @@ The power-map description also reads off the character–cocharacter pairing dir
 a character `m` after a cocharacter `ψ` of `D(M)` raises a `𝔾ₘ`-point to the `⟨m, ψ⟩` power
 (`DiagonalizableGroup.charPoints_cocharPoints_apply`).
 
-This improves the existing power-endomorphism and character–cocharacter pairing API supporting
-the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 4: "Tori ...
-the character lattice `X*(T)` and cocharacter lattice `X_*(T)` with their perfect pairing").
-
 ## Main results
 
 * `TauCeti.DiagonalizableGroup.powEnd_apply`: `powEnd z f = f ^ z`, the power endomorphism as the
@@ -73,7 +69,7 @@ variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R 
 /-- The convolution group structure on the points of `𝔾ₘ`. -/
 noncomputable local instance multiplicativeGroupPointsCommGroup :
     CommGroup (WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :=
-  AlgHom.instCommGroup
+  AlgHom.convCommGroupOfSemiring
 
 /-- **The power endomorphism is the power map.** The `z`th power endomorphism of
 `𝔾ₘ = D(Multiplicative ℤ)`, defined through the diagonalizable-group functoriality, acts on the

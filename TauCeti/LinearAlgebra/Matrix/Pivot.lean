@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Rank
-public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
 # A symmetric matrix pivot for Gaussian elimination
@@ -27,11 +25,12 @@ decomposition of the symplectic group.
 
 * J. Dieudonné, *La géométrie des groupes classiques*, Chapter II, §1.
 
-The proof is adapted from Mathlib's private lemma
+The statement and the reduction of `C` to rank normal form are adapted from Mathlib's private lemma
 `Matrix.SymplecticGroup.exists_symmetric_X_invertible_add_mul_of_ker_inter_eq_bot` in
 `Mathlib.LinearAlgebra.SymplecticGroup` (Apache-2.0). It is made public here because symplectic
 Gaussian generation needs the constructed symmetric pivot, while Mathlib uses it only internally
-to prove that symplectic matrices have determinant one.
+to prove that symplectic matrices have determinant one. In normal form `C` is a symmetric
+idempotent `P`, and the pivot `P - P Q` is written without block decompositions.
 -/
 
 public section
@@ -40,84 +39,62 @@ open Matrix
 
 namespace TauCeti
 
-universe u
+/-- The normal-form case of the pivot: if `P` is a symmetric idempotent, `Qᵀ P = Pᵀ Q`, and
+the only vector annihilated by both `Q` and `P` is zero, then some symmetric matrix `Y` (namely
+`P - P Q`) makes `Q + Y P` invertible. -/
+private theorem exists_isSymm_isUnit_add_mul_of_isIdempotentElem {K : Type*} [Field K]
+    {l : Type*} [Fintype l] [DecidableEq l] {P Q : Matrix l l K} (hPsymm : P.IsSymm)
+    (hPP : IsIdempotentElem P) (hker : ∀ x : l → K, Q *ᵥ x = 0 → P *ᵥ x = 0 → x = 0)
+    (hcomm : Qᵀ * P = Pᵀ * Q) :
+    ∃ Y : Matrix l l K, Y.IsSymm ∧ IsUnit (Q + Y * P) := by
+  rw [hPsymm.eq] at hcomm
+  have hYP : (P - P * Q) * P = P - P * Q := by
+    rw [sub_mul, hPP.eq, ← hcomm, mul_assoc, hPP.eq]
+  refine ⟨P - P * Q, ?_, ?_⟩
+  · rw [IsSymm, transpose_sub, transpose_mul, hPsymm.eq, hcomm]
+  -- `Q + (P - P Q) P` kills only vectors killed by both `Q` and `P`.
+  rw [← mulVec_injective_iff_isUnit, ← coe_mulVecLin, ← LinearMap.ker_eq_bot,
+    ker_mulVecLin_eq_bot_iff]
+  intro x hx
+  have hPx : P *ᵥ x = 0 := by
+    have hPM : P * (Q + (P - P * Q) * P) = P := by
+      rw [hYP, mul_add, mul_sub, ← mul_assoc, hPP.eq, add_sub_cancel]
+    rw [← hPM, ← mulVec_mulVec, hx, mulVec_zero]
+  refine hker x ?_ hPx
+  rwa [add_mulVec, ← mulVec_mulVec, hPx, mulVec_zero, add_zero] at hx
 
 /-- Given square matrices `A` and `C` over a field, if the only vector annihilated by both is
 zero and `Aᵀ C = Cᵀ A`, then a symmetric left multiplier makes `A + X C` invertible. -/
 theorem exists_isSymm_isUnit_add_mul_of_ker_inter_eq_bot_of_transpose_mul_comm
-    {K : Type u} [Field K] {l : Type*} [Fintype l] [DecidableEq l]
+    {K : Type*} [Field K] {l : Type*} [Fintype l] [DecidableEq l]
     {A C : Matrix l l K}
-    (hker : ∀ x : l → K, A • x = 0 → C • x = 0 → x = 0)
+    (hker : ∀ x : l → K, A *ᵥ x = 0 → C *ᵥ x = 0 → x = 0)
     (hcomm : Aᵀ * C = Cᵀ * A) :
     ∃ X : Matrix l l K, X.IsSymm ∧ IsUnit (A + X * C) := by
-  -- Put `C` into rank normal form and transport `A` by the same basis changes.
-  rcases Matrix.exists_rank_normal_form C with ⟨V, U, s, hV, hU, heq⟩
-  set P := V * C * U with P_def
-  set Q := Vᵀ⁻¹ * A * U with Q_def
-  set f := fun x : Matrix l l K ↦ x.submatrix s.symm s.symm
-  have hf (x : Matrix l l K) : f x = x.submatrix s.symm s.symm := rfl
-  have f_unit {x : Matrix l l K} : IsUnit x → IsUnit (f x) :=
-    (isUnit_submatrix_equiv ..).2
-  have f_mul (x y : Matrix l l K) : f (x * y) = f x * f y :=
-    submatrix_mul _ _ _ _ _ s.symm.bijective
+  -- Put `C` into rank normal form `V C U`, a symmetric idempotent, and transport `A` to
+  -- `Vᵀ⁻¹ A U` by the matching basis changes.
+  obtain ⟨V, U, s, hV, hU, hP⟩ := exists_rank_normal_form C
   have _ : Invertible V := hV.invertible
   have _ : Invertible U := hU.invertible
-  have _ : Invertible (f Vᵀ) := (f_unit (V.isUnit_transpose.2 hV)).invertible
-  have con1 (x : Fin C.rank ⊕ Fin (Fintype.card l - C.rank) → K)
-      (heq1 : f Q • x = 0) (heq2 : f P • x = 0) : x = 0 := by
-    refine (f_unit hU).smul_left_cancel.1 ?_
-    rw [f_mul, f_mul, mul_assoc, mul_smul, IsUnit.smul_eq_zero, mul_smul, hf,
-      smul_eq_mulVec, submatrix_mulVec_equiv, Equiv.symm_symm] at heq1 heq2
-    · rw [Equiv.comp_symm_eq, Pi.zero_comp] at heq1 heq2
-      exact s.surjective.injective_comp_right <| by simpa using hker _ heq1 heq2
-    · exact f_unit hV
-    · exact f_unit <| isUnit_nonsing_inv_iff.2 <| V.isUnit_transpose.2 hV
-  have con2 : Qᵀ * P = Pᵀ * Q := by
-    simp only [P_def, mul_assoc, transpose_mul, transpose_nonsing_inv, transpose_transpose, Q_def,
-      inv_mul_cancel_left_of_invertible, mul_inv_cancel_left_of_invertible]
-    rw [← mul_assoc Aᵀ, hcomm, mul_assoc]
-  -- The commutation equation makes the leading block of `Q` symmetric and its
-  -- upper-right block zero in the decomposition selected by the rank of `C`.
-  replace con2 : (f Q).toBlocks₁₁ᵀ = (f Q).toBlocks₁₁ ∧ (f Q).toBlocks₁₂ = 0 := by
-    apply_fun reindex s s at con2
-    rw [reindex_apply, reindex_apply, ← hf, ← hf, f_mul, f_mul Pᵀ, heq, hf,
-      ← transpose_submatrix, ← hf Q, ← (f Q).fromBlocks_toBlocks, hf _ᵀ,
-      hf ((fromBlocks 1 0 0 0).submatrix _ _)] at con2
-    simp [fromBlocks_transpose, fromBlocks_multiply] at con2
-    tauto
-  have con3 : IsUnit (f Q).toBlocks₂₂ := by
-    refine mulVec_injective_iff_isUnit.1 ?_
-    rw [← coe_mulVecLin, ← LinearMap.ker_eq_bot]
-    refine ker_mulVecLin_eq_bot_iff.2 fun x hx ↦ Sum.elim_injective' <|
-      (con1 _ ?_ ?_).trans Sum.elim_zero_zero.symm
-    · rw [← (f Q).fromBlocks_toBlocks]
-      simp [hx, con2.2, fromBlocks_mulVec]
-    · simp [hf, heq, fromBlocks_mulVec]
-  set Y : Matrix (Fin C.rank ⊕ Fin (Fintype.card l - C.rank))
-      (Fin C.rank ⊕ Fin (Fintype.card l - C.rank)) K :=
-    fromBlocks (1 - (f Q).toBlocks₁₁) 0 0 0 with Y_def
-  have hY : Y.IsSymm := by
-    rw [Y_def, isSymm_fromBlocks_iff]
-    exact ⟨IsSymm.sub isSymm_one con2.1, by simp⟩
-  set X := f Vᵀ * Y * f V with X_def
-  -- Conjugating the block correction `Y` back through `V` preserves symmetry;
-  -- the corrected matrix is block triangular with invertible diagonal blocks.
-  refine ⟨X.submatrix s s, IsSymm.submatrix ?_ s, (isUnit_submatrix_equiv s.symm s.symm).1 ?_⟩
-  · simp_rw [X_def, Matrix.IsSymm, transpose_mul, hY.eq, hf, transpose_submatrix,
-      transpose_transpose, mul_assoc]
-  · have heq' : f (A + X.submatrix s s * C) =
-        f Vᵀ * (f Q + Y * f P) * f U⁻¹ := by
-      simp_rw [hf, submatrix_add, Pi.add_apply, Q_def, P_def, ← hf, f_mul, hf, mul_add,
-        ← mul_assoc, ← inv_submatrix_equiv, add_mul, mul_assoc _ (U.submatrix _ _),
-        mul_inv_of_invertible]
-      simp [X_def]
-      -- The remaining equality is definitional: `f` is the local abbreviation for
-      -- submatrix reindexing, so both sides now apply the same reindexed matrices.
-      rfl
-    rw [← hf, heq', IsUnit.mul_iff, IsUnit.mul_iff]
-    refine ⟨⟨isUnit_of_invertible _, ?_⟩, ?_⟩
-    · nth_rw 1 [Y_def, heq, ← (f Q).fromBlocks_toBlocks, con2.2]
-      simpa [hf, fromBlocks_multiply, fromBlocks_add]
-    · exact f_unit <| isUnit_nonsing_inv_iff.2 hU
+  obtain ⟨Y, hY, hunit⟩ :=
+    exists_isSymm_isUnit_add_mul_of_isIdempotentElem (P := V * C * U) (Q := Vᵀ⁻¹ * A * U)
+      (by rw [hP, IsSymm, transpose_submatrix, fromBlocks_transpose]; simp)
+      (by rw [IsIdempotentElem, hP, submatrix_mul_equiv, fromBlocks_multiply]; simp)
+      (fun x hQx hPx ↦ by
+        have hUx : U *ᵥ x = 0 := hker _
+          (by simpa [mulVec_mulVec, mul_assoc] using congrArg (Vᵀ *ᵥ ·) hQx)
+          (by simpa [mulVec_mulVec, mul_assoc] using congrArg (V⁻¹ *ᵥ ·) hPx)
+        simpa [mulVec_mulVec] using congrArg (U⁻¹ *ᵥ ·) hUx)
+      (by
+        simp only [mul_assoc, transpose_mul, transpose_nonsing_inv, transpose_transpose,
+          inv_mul_cancel_left_of_invertible, mul_inv_cancel_left_of_invertible]
+        rw [← mul_assoc Aᵀ, hcomm, mul_assoc])
+  -- Conjugating `Y` back through `V` gives the required symmetric matrix.
+  refine ⟨Vᵀ * Y * V, by simp [IsSymm, transpose_mul, hY.eq, mul_assoc], ?_⟩
+  have : A + Vᵀ * Y * V * C = Vᵀ * (Vᵀ⁻¹ * A * U + Y * (V * C * U)) * U⁻¹ := by
+    simp only [mul_add, add_mul, mul_assoc, mul_inv_cancel_left_of_invertible,
+      mul_inv_of_invertible, mul_one]
+  rw [this]
+  exact ((isUnit_of_invertible _).mul hunit).mul (isUnit_of_invertible _)
 
 end TauCeti
