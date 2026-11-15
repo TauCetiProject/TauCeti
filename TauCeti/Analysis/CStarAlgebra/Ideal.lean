@@ -227,14 +227,13 @@ noncomputable instance nonUnitalCommCStarAlgebra {A : Type*}
 
 instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
   .of_nonneg_iff' add_le_add_right fun x => by
-    refine ⟨fun (hx : 0 ≤ (x : A)) => ?_, ?_⟩
-    · refine ⟨⟨cfcₙ Real.sqrt (x : A), ?_⟩, Subtype.ext ?_⟩
-      · exact I.mem_toNonUnitalStarSubalgebra.mp <|
-          cfcₙ_mem _ (I.mem_toNonUnitalStarSubalgebra.mpr x.2)
-      · change (x : A) = star (cfcₙ Real.sqrt (x : A)) * cfcₙ Real.sqrt (x : A)
-        rw [IsSelfAdjoint.star_eq (by cfc_tac), ← cfcₙ_mul ..]
-        refine ((cfcₙ_congr fun r hr => ?_).trans (cfcₙ_id' ℝ (x : A))).symm
-        grind [Real.mul_self_sqrt]
+    refine ⟨fun hx => ?_, ?_⟩
+    · have hxA : 0 ≤ (x : A) := by simpa [← Subtype.coe_le_coe] using hx
+      refine ⟨⟨CFC.sqrt (x : A), I.mem_toNonUnitalStarSubalgebra.mp <|
+        cfcₙ_nnreal_mem (𝕜 := ℂ) NNReal.sqrt (I.mem_toNonUnitalStarSubalgebra.mpr x.2)⟩,
+        Subtype.ext ?_⟩
+      simp only [MulMemClass.coe_mul, I.coe_star]
+      rw [(CFC.sqrt_nonneg (x : A)).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self (x : A)]
     · rintro ⟨s, hs⟩
       simpa [← Subtype.coe_le_coe] using congrArg ((↑) : I → A) hs ▸ star_mul_self_nonneg (s : A)
 

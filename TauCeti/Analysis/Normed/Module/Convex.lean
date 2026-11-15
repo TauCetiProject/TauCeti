@@ -14,7 +14,9 @@ Taking the closed convex hull of a set in a real seminormed space preserves both
 diameter. These are the closed-hull counterparts of `isBounded_convexHull` and `convexHull_diam`.
 
 A convex set containing a ball `ball x r` and a point `y` contains the ball of radius `(1 - t) * r`
-about `x + t • (y - x)` for every `0 ≤ t ≤ 1` (`Convex.ball_add_smul_sub_subset`).
+about `x + t • (y - x)` for every `0 ≤ t ≤ 1` (`Convex.ball_add_smul_sub_subset`). Replacing every
+member of a filter by its real convex hull preserves limits of real-linear maps into real
+seminormed spaces (`Filter.Tendsto.lift'_convexHull`).
 -/
 
 public section
@@ -53,3 +55,14 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
   convert hs (hball hb) hy (by linarith : (0 : ℝ) ≤ 1 - t) ht₀ (by ring) using 1
   rw [smul_add, smul_smul, mul_inv_cancel₀ (by linarith : (1 - t) ≠ 0), one_smul]
   module
+
+/-- If an `ℝ`-linear map `f` into a real seminormed space tends to `y` along `l`, then it still
+tends to `y` along the real convexification `l.lift' (convexHull ℝ)`. -/
+theorem Filter.Tendsto.lift'_convexHull {B E : Type*} [AddCommMonoid B] [Module ℝ B]
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {l : Filter B} {f : B →ₗ[ℝ] E} {y : E}
+    (h : Filter.Tendsto f l (nhds y)) :
+    Filter.Tendsto f (l.lift' (convexHull ℝ)) (nhds y) := by
+  rw [Metric.tendsto_nhds] at h ⊢
+  intro ε hε
+  exact Filter.eventually_of_mem (Filter.mem_lift' (h ε hε)) fun _ hx =>
+    convexHull_min subset_rfl ((convex_ball y ε).linear_preimage f) hx
