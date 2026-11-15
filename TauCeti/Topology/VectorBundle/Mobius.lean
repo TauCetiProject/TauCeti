@@ -163,16 +163,6 @@ theorem isEmbedding_totalSpace_mobiusLine :
     Topology.IsEmbedding fun v : TotalSpace ℝ (MobiusLine p) ↦ (v.proj, (v.2 : ℂ)) :=
   isEmbedding_totalSpace_range ℝ mobiusProjection
 
-/-- Two vectors of the Möbius line bundle are equal when they have the same base point and the
-same value in `ℂ`. -/
-theorem totalSpace_mobiusLine_ext {v w : TotalSpace ℝ (MobiusLine p)} (h₁ : v.proj = w.proj)
-    (h₂ : (v.2 : ℂ) = w.2) : v = w :=
-  isEmbedding_totalSpace_mobiusLine.injective (Prod.ext h₁ h₂)
-
-/-- The fibre norm of the Möbius line bundle is continuous on the total space. -/
-theorem continuous_norm_mobiusLine : Continuous fun v : TotalSpace ℝ (MobiusLine p) ↦ ‖v.2‖ :=
-  continuous_norm.comp (continuous_snd.comp isEmbedding_totalSpace_mobiusLine.continuous)
-
 variable [Fact (0 < p)]
 
 /-- **The unit circle bundle of the Möbius line is a circle double covering the base**: for a
@@ -189,7 +179,7 @@ noncomputable def mobiusSphereHomeomorph : AddCircle p ≃ₜ sphereBundle ℝ (
     set u : Circle := ⟨v.1.2, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 v.2)⟩
     have hu : AddCircle.toCircle ((AddCircle.homeomorphCircle hp).symm u) = u := by
       rw [← AddCircle.homeomorphCircle_apply hp, Homeomorph.apply_symm_apply]
-    refine Subtype.ext (totalSpace_mobiusLine_ext ?_ ?_)
+    refine Subtype.ext (totalSpace_range_ext (p := mobiusProjection) ?_ ?_)
     · -- The base point of a unit vector `v` is `v²`.
       refine AddCircle.injective_toCircle hp (Circle.ext ?_)
       rw [AddCircle.toCircle_zsmul, hu, zpow_two, Circle.coe_mul]
@@ -239,6 +229,16 @@ private noncomputable def mobiusCircleHom :
 private noncomputable def doublingHom : TopCat.of (AddCircle p) ⟶ TopCat.of (AddCircle p) :=
   TopCat.ofHom ⟨fun θ : AddCircle p ↦ (2 : ℤ) • θ, continuous_zsmul 2⟩
 
+omit [Fact (0 < p)] in
+/-- The homology map of the singular simplicial map of `doublingHom` is the map induced on
+singular homology by `θ ↦ 2 • θ`. -/
+private theorem homologyMap_doublingHom_apply
+    (x : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
+    (SSet.homologyMap (TopCat.toSSet.map (doublingHom (p := p))) (ModuleCat.of ℤ ℤ) 1).hom x =
+      ContinuousMap.singularHomologyMap ℤ 1
+        ⟨fun θ : AddCircle p ↦ (2 : ℤ) • θ, continuous_zsmul 2⟩ x :=
+  (rfl)
+
 /-- The circle of unit vectors projects to the base as the doubling map. -/
 private theorem mobiusCircleHom_comp_map_comp_thomPairProj :
     mobiusCircleHom ≫ (thomPair ℝ (MobiusLine p)).map ≫ thomPairProj ℝ (MobiusLine p) =
@@ -248,7 +248,8 @@ private theorem mobiusCircleHom_comp_map_comp_thomPairProj :
 
 private instance (n : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (mobiusCircleHom (p := p)))
     (ModuleCat.of ℤ ℤ) n) := by
-  set e := sphereBundleHomotopyEquiv ℝ (MobiusLine p) continuous_norm_mobiusLine
+  set e := sphereBundleHomotopyEquiv ℝ (MobiusLine p)
+    (continuous_norm_totalSpace_range ℝ mobiusProjection)
   have h : mobiusCircleHom (p := p) =
       ((TopCat.isoOfHomeo mobiusSphereHomeomorph).hom ≫ TopCat.ofHom e.toFun :
         _ ⟶ (thomPair ℝ (MobiusLine p)).snd) := by
@@ -293,9 +294,7 @@ private theorem firstHomologyEquiv_homologyMap_thomPairProj_map_mobiusCircleHom
   have h := congrArg (fun f ↦ (SSet.homologyMap (TopCat.toSSet.map f) (ModuleCat.of ℤ ℤ) 1).hom x)
     (mobiusCircleHom_comp_map_comp_thomPairProj (p := p))
   simp only [Functor.map_comp, SSet.homologyMap_comp, ModuleCat.hom_comp] at h
-  -- `SSet.homologyMap (TopCat.toSSet.map doublingHom)` is, by definition of `doublingHom` and of
-  -- the singular chain functor, the map `ContinuousMap.singularHomologyMap ℤ 1` of `θ ↦ 2 • θ`.
-  exact (congrArg AddCircle.firstHomologyEquiv h).trans
+  exact (congrArg AddCircle.firstHomologyEquiv (h.trans (homologyMap_doublingHom_apply x))).trans
     (AddCircle.firstHomologyEquiv_singularHomologyMap_zsmul 2 x)
 
 /-- A first homology class of the total space comes from the nonzero vectors exactly when its

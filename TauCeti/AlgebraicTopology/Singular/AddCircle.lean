@@ -241,6 +241,7 @@ theorem firstHomologyEquiv_symm_apply (n : ℤ) :
     mul_one]
 
 /-- The map `θ ↦ n • θ` of a circle acts on `H₁(S¹; ℤ) ≃ ℤ` as multiplication by `n`. -/
+@[simp]
 theorem firstHomologyEquiv_singularHomologyMap_zsmul (n : ℤ)
     (x : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
     firstHomologyEquiv (ContinuousMap.singularHomologyMap ℤ 1
