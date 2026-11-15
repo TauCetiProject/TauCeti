@@ -452,20 +452,6 @@ private theorem exists_abs_linearCoeff_le [Nonempty ι] (ρ : ℝ) (hρ : 0 ≤ 
           have : 0 ≤ K₁ * (1 + R) ^ 2 := by positivity
           linarith
 
-/-- The elementary bound behind the domination of the difference of two sources:
-`|(x e / 8 + c) - (y e / 8 + c')| ≤ |e| / 8 + 2B` for `x, y ∈ [0, 1]` and `|c|, |c'| ≤ B`. -/
-private theorem abs_sub_add_sub_le {x y e c c' B : ℝ} (hx0 : 0 ≤ x) (hx1 : x ≤ 1) (hy0 : 0 ≤ y)
-    (hy1 : y ≤ 1) (hc : |c| ≤ B) (hc' : |c'| ≤ B) :
-    |x * e / 8 + c - (y * e / 8 + c')| ≤ |e| / 8 + 2 * B := by
-  have hxy : |x - y| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
-  have h1 : |(x - y) * e / 8| ≤ |e| / 8 := by
-    rw [abs_div, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 8)]
-    exact div_le_div_of_nonneg_right (mul_le_of_le_one_left (abs_nonneg _) hxy) (by norm_num)
-  calc |x * e / 8 + c - (y * e / 8 + c')| = |(x - y) * e / 8 + c - c'| := by ring_nf
-    _ ≤ |(x - y) * e / 8 + c| + |c'| := abs_sub _ _
-    _ ≤ |(x - y) * e / 8| + |c| + |c'| := by gcongr; exact abs_add_le _ _
-    _ ≤ |e| / 8 + 2 * B := by linarith
-
 /-- **Convergence of the sources.** For a fixed `w ∈ H¹(ℂ)`, the source of the reduced equation of
 `∏ i, (X - a i)` at `w` converges in `L²` as the roots `a` converge: the coefficients converge
 pointwise, and they are dominated uniformly by `TauCeti.Vortex.exists_abs_linearCoeff_le`. -/
@@ -507,8 +493,20 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
         reducedSource (∏ i, (X - C (a₀ i))) W z| ≤
         |Real.exp (2 * W z) - 1| / 8 + 2 * (K / (1 + ‖z‖) ^ 2) := by
       rw [reducedSource_eq_add, reducedSource_eq_add]
-      exact abs_sub_add_sub_le (backgroundWeight_nonneg _ z) (backgroundWeight_lt_one _ z).le
-        (backgroundWeight_nonneg _ z) (backgroundWeight_lt_one _ z).le hb hb₀
+      -- The weights lie in `[0, 1]`, so their difference has absolute value at most one.
+      set x := backgroundWeight (Polynomial.eval · (∏ i, (X - C (a i)))) z
+      set y := backgroundWeight (Polynomial.eval · (∏ i, (X - C (a₀ i)))) z
+      set e := Real.exp (2 * W z) - 1
+      have h1 : |x * e / 8 - y * e / 8| ≤ |e| / 8 := by
+        rw [← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 8)]
+        exact div_le_div_of_nonneg_right (mul_le_of_le_one_left (abs_nonneg _)
+          (abs_sub_le_of_nonneg_of_le (backgroundWeight_nonneg _ z)
+            (backgroundWeight_lt_one _ z).le (backgroundWeight_nonneg _ z)
+            (backgroundWeight_lt_one _ z).le)) (by norm_num)
+      have h1' := abs_le.1 h1
+      have hb' := abs_le.1 hb
+      have hb₀' := abs_le.1 hb₀
+      exact abs_le.2 ⟨by linarith, by linarith⟩
     have hz4 : (1 + ‖z‖) ^ (-4 : ℝ) = ((1 + ‖z‖) ^ 2)⁻¹ ^ 2 := by
       rw [Real.rpow_neg (by positivity), ← inv_pow, ← pow_mul]
       norm_num
@@ -535,78 +533,6 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
 end Roots
 
 /-! ### Convergence of minimizers -/
-
-/-- The algebra of the uniform `L²` bound: if `G² / 2 + E / 16 ≤ X` and
-`X² ≤ 2 (2 + C G) (E / κ) + (2 + C G)² S`, then `X` is bounded in terms of `C`, `κ` and `S`. -/
-private theorem le_of_le_of_sq_le {X G E C κ S : ℝ} (hX : 0 ≤ X) (hG : 0 ≤ G) (hE : 0 ≤ E)
-    (hC : 0 ≤ C) (hκ : 0 < κ) (hS : 0 ≤ S) (h1 : G ^ 2 / 2 + E / 16 ≤ X)
-    (h2 : X ^ 2 ≤ 2 * (2 + C * G) * (E / κ) + (2 + C * G) ^ 2 * S) :
-    X ≤ 1 + 2 * (64 / κ + 2048 * C ^ 2 / κ ^ 2 + 4 * C ^ 2 * S) + 16 * S := by
-  have hG0 := sq_nonneg G
-  have hE16 : E / κ ≤ 16 * X / κ := div_le_div_of_nonneg_right (by linarith) hκ.le
-  have hG2 : G ^ 2 ≤ 2 * X := by linarith
-  -- `32 C G X / κ ≤ X² / 4 + (32 C G / κ)²`.
-  have hamgm : 32 * C * G * X / κ ≤ X ^ 2 / 4 + 2048 * C ^ 2 / κ ^ 2 * X := by
-    have := sq_nonneg (X / 2 - 32 * C * G / κ)
-    have hb : (32 * C * G / κ) ^ 2 ≤ 2048 * C ^ 2 / κ ^ 2 * X := by
-      rw [div_pow, mul_pow, mul_pow, div_mul_eq_mul_div,
-        div_le_div_iff_of_pos_right (by positivity)]
-      nlinarith [sq_nonneg C]
-    have : 32 * C * G * X / κ = 2 * (X / 2) * (32 * C * G / κ) := by ring
-    nlinarith
-  have hT1 : 2 * (2 + C * G) * (E / κ) ≤ 64 / κ * X + (X ^ 2 / 4 + 2048 * C ^ 2 / κ ^ 2 * X) := by
-    calc 2 * (2 + C * G) * (E / κ) ≤ 2 * (2 + C * G) * (16 * X / κ) := by gcongr
-      _ = 64 / κ * X + 32 * C * G * X / κ := by ring
-      _ ≤ _ := by linarith
-  have hT2 : (2 + C * G) ^ 2 * S ≤ 8 * S + 4 * C ^ 2 * S * X := by
-    have : (2 + C * G) ^ 2 ≤ 8 + 2 * C ^ 2 * G ^ 2 := by nlinarith [sq_nonneg (2 - C * G)]
-    have : C ^ 2 * G ^ 2 ≤ C ^ 2 * (2 * X) := mul_le_mul_of_nonneg_left hG2 (sq_nonneg C)
-    nlinarith
-  set a := 64 / κ + 2048 * C ^ 2 / κ ^ 2 + 4 * C ^ 2 * S
-  have ha : 0 ≤ a := by positivity
-  have : 3 * X ^ 2 / 4 ≤ a * X + 8 * S := by simp only [a]; nlinarith
-  rcases le_total X 1 with hX1 | hX1
-  · linarith
-  · nlinarith
-
-/-- The algebra of the smallness: if `X ≤ B`, `G² / 2 + E / 16 ≤ τ X`, `2 τ B C² ≤ 1` and
-`X² ≤ 2 (2 + C G) (E / κ) + (2 + C G)² S`, then `X² + G² ≤ 96 τ B / κ + 9 S + 2 τ B`. -/
-private theorem sq_add_sq_le {X G E C κ S τ B : ℝ} (hG : 0 ≤ G) (hE : 0 ≤ E)
-    (hC : 0 ≤ C) (hκ : 0 < κ) (hS : 0 ≤ S) (hτ : 0 ≤ τ) (hXB : X ≤ B)
-    (h1 : G ^ 2 / 2 + E / 16 ≤ τ * X) (hτB : 2 * τ * B * C ^ 2 ≤ 1)
-    (h2 : X ^ 2 ≤ 2 * (2 + C * G) * (E / κ) + (2 + C * G) ^ 2 * S) :
-    X ^ 2 + G ^ 2 ≤ 96 * τ * B / κ + 9 * S + 2 * τ * B := by
-  have hτX : τ * X ≤ τ * B := mul_le_mul_of_nonneg_left hXB hτ
-  have hG0 := sq_nonneg G
-  have hG2 : G ^ 2 ≤ 2 * τ * B := by linarith
-  have hE16 : E ≤ 16 * τ * B := by linarith
-  have hCG : C * G ≤ 1 := by
-    have : (C * G) ^ 2 ≤ 1 := by
-      rw [mul_pow]
-      calc C ^ 2 * G ^ 2 ≤ C ^ 2 * (2 * τ * B) := mul_le_mul_of_nonneg_left hG2 (sq_nonneg C)
-        _ ≤ 1 := by linarith
-    nlinarith [mul_nonneg hC hG]
-  have hk : 2 + C * G ≤ 3 := by linarith
-  have : 0 ≤ 2 + C * G := by positivity
-  have hEκ : E / κ ≤ 16 * τ * B / κ := div_le_div_of_nonneg_right hE16 hκ.le
-  have : 2 * (2 + C * G) * (E / κ) ≤ 2 * 3 * (16 * τ * B / κ) := by
-    gcongr
-  have : (2 + C * G) ^ 2 * S ≤ 3 ^ 2 * S := by gcongr
-  have : 2 * 3 * (16 * τ * B / κ) = 96 * τ * B / κ := by ring
-  nlinarith
-
-/-- The choice of the tolerance `τ` in the convergence of minimizers. -/
-private theorem exists_pos_mul_le {B C a η : ℝ} (hB : 0 ≤ B) (ha : 0 ≤ a) (hη : 0 < η) :
-    ∃ τ : ℝ, 0 < τ ∧ τ ≤ 1 ∧ 2 * τ * B * C ^ 2 ≤ 1 ∧ τ * a ≤ η ^ 2 / 4 := by
-  set τ := min (min 1 (1 / (2 * B * C ^ 2 + 1))) (η ^ 2 / (4 * a + 1))
-  have hτ : 0 < τ := by positivity
-  refine ⟨τ, hτ, (min_le_left _ _).trans (min_le_left _ _), ?_, ?_⟩
-  · have h : τ ≤ 1 / (2 * B * C ^ 2 + 1) := (min_le_left _ _).trans (min_le_right _ _)
-    rw [le_div_iff₀ (by positivity)] at h
-    nlinarith [mul_nonneg (mul_nonneg hτ.le hB) (sq_nonneg C)]
-  · have h : τ ≤ η ^ 2 / (4 * a + 1) := min_le_right _ _
-    rw [le_div_iff₀ (by positivity)] at h
-    nlinarith
 
 /-- The stability inequality with the `L²` distance of the sources bounded by `τ`: by the
 Cauchy–Schwarz inequality, `‖∇d‖₂² / 2 + E / 16 ≤ τ ‖d‖₂` for `d = u - w`. -/
@@ -736,6 +662,122 @@ private theorem norm_value_sub_sq_le {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
     _ ≤ _ := add_le_add (mul_le_mul_of_nonneg_left hmod (by positivity))
         (mul_le_mul_of_nonneg_left hsreal (by positivity))
 
+/-- **A uniform bound for `d = u - w`.** Let `w` minimize `I_P` and let `δ > 0`. Then `‖d‖₂` is
+bounded, uniformly in `Q` and `u`, whenever `I_Q(u) ≤ I_Q(w)`, the set where `‖Q‖ < δ` has measure
+at most one and the `L²` distance of the sources `S_Q(w)` and `S_P(w)` is at most one. Write
+`X = ‖d‖₂`, `G = ‖∇d‖₂` and `E` for the integral of the stability inequality. Then
+`G² / 2 + E / 16 ≤ X` by `stability_le_mul_norm`, and
+`X² ≤ 2 (2 + C₀ G) (E / κ) + (2 + C₀ G)² S` by `norm_value_sub_sq_le` with `M = 1`. The
+arithmetic-geometric mean inequality turns these into `3 X² / 4 ≤ a X + 8 S`. -/
+private theorem exists_norm_value_sub_le (hP : 0 < P.natDegree)
+    {w : W1p (volume : Measure ℂ) ⊤ 2}
+    (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hpl : ∀ v : W1p (volume : Measure ℂ) ⊤ 2, ∀ s : Set ℂ, MeasurableSet s → volume s ≠ ∞ →
+      ‖W1p.value v‖ ^ 2 ≤
+        2 * (2 + C₀ * ‖W1p.gradient v‖) * (∫ z in sᶜ, (√(1 + W1p.value v z ^ 2) - 1)) +
+          (2 + C₀ * ‖W1p.gradient v‖) ^ 2 * volume.real s)
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∃ B, 0 ≤ B ∧ ∀ {Q : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}, 0 < Q.natDegree →
+      sobolevReducedFunctional Q u ≤ sobolevReducedFunctional Q w →
+      volume {z | ‖Q.eval z‖ < δ} ≤ ENNReal.ofReal 1 →
+      ∫ z, (reducedSource Q (W1p.value w) z - reducedSource P (W1p.value w) z) ^ 2 ≤ 1 →
+      ‖W1p.value (u - w)‖ ≤ B := by
+  set κ := δ ^ 2 / (1 + δ ^ 2) * Real.exp (-(2 * 1))
+  have hκ : 0 < κ := by positivity
+  set S := 1 + ‖W1p.value w‖ ^ 2 / 1 ^ 2
+  have hS : 0 ≤ S := by positivity
+  set a := 64 / κ + 2048 * C₀ ^ 2 / κ ^ 2 + 4 * C₀ ^ 2 * S
+  have ha : 0 ≤ a := by positivity
+  refine ⟨1 + 2 * a + 16 * S, by positivity, fun {Q u} hQ hu hη hR ↦ ?_⟩
+  set X := ‖W1p.value (u - w)‖
+  set G := ‖W1p.gradient (u - w)‖
+  obtain ⟨E, hE, h1, h2⟩ : ∃ E : ℝ, 0 ≤ E ∧ G ^ 2 / 2 + E / 16 ≤ X ∧
+      X ^ 2 ≤ 2 * (2 + C₀ * G) * (E / κ) + (2 + C₀ * G) ^ 2 * S :=
+    ⟨_, integral_nonneg (stability_integrand_nonneg Q (W1p.value w) (W1p.value (u - w))),
+      by simpa using stability_le_mul_norm hP hQ hw hu zero_le_one (by simpa using hR),
+      norm_value_sub_sq_le hP hQ hw hu hC₀ hpl hδ one_pos hη zero_le_one⟩
+  have hX : 0 ≤ X := norm_nonneg _
+  have hG : 0 ≤ G := norm_nonneg _
+  clear_value X G
+  clear hpl hR hη hu hw
+  have hG0 := sq_nonneg G
+  have hE16 : E / κ ≤ 16 * X / κ := div_le_div_of_nonneg_right (by linarith) hκ.le
+  have hG2 : G ^ 2 ≤ 2 * X := by linarith
+  -- `32 C₀ G X / κ ≤ X² / 4 + (32 C₀ G / κ)²`.
+  have hamgm : 32 * C₀ * G * X / κ ≤ X ^ 2 / 4 + 2048 * C₀ ^ 2 / κ ^ 2 * X := by
+    have := sq_nonneg (X / 2 - 32 * C₀ * G / κ)
+    have hb : (32 * C₀ * G / κ) ^ 2 ≤ 2048 * C₀ ^ 2 / κ ^ 2 * X := by
+      rw [div_pow, mul_pow, mul_pow, div_mul_eq_mul_div,
+        div_le_div_iff_of_pos_right (by positivity)]
+      nlinarith [sq_nonneg C₀]
+    have : 32 * C₀ * G * X / κ = 2 * (X / 2) * (32 * C₀ * G / κ) := by ring
+    nlinarith
+  have hT1 : 2 * (2 + C₀ * G) * (E / κ) ≤ 64 / κ * X + (X ^ 2 / 4 + 2048 * C₀ ^ 2 / κ ^ 2 * X) := by
+    calc 2 * (2 + C₀ * G) * (E / κ) ≤ 2 * (2 + C₀ * G) * (16 * X / κ) := by gcongr
+      _ = 64 / κ * X + 32 * C₀ * G * X / κ := by ring
+      _ ≤ _ := by linarith
+  have hT2 : (2 + C₀ * G) ^ 2 * S ≤ 8 * S + 4 * C₀ ^ 2 * S * X := by
+    have : (2 + C₀ * G) ^ 2 ≤ 8 + 2 * C₀ ^ 2 * G ^ 2 := by nlinarith [sq_nonneg (2 - C₀ * G)]
+    have : C₀ ^ 2 * G ^ 2 ≤ C₀ ^ 2 * (2 * X) := mul_le_mul_of_nonneg_left hG2 (sq_nonneg C₀)
+    nlinarith
+  have : 3 * X ^ 2 / 4 ≤ a * X + 8 * S := by simp only [a]; nlinarith
+  rcases le_total X 1 with hX1 | hX1
+  · linarith
+  · nlinarith
+
+/-- **Smallness of `d = u - w`.** If `‖d‖₂ ≤ B`, the `L²` distance of the sources `S_Q(w)` and
+`S_P(w)` is at most `τ` with `2 τ B C₀² ≤ 1`, and the set where `‖Q‖ < δ` has measure at most
+`θ`, then `‖d‖² ≤ 96 τ B / κ + 9 (θ + ‖w‖₂² / M²) + 2 τ B` in `H¹(ℂ)`, where
+`κ = δ² / (1 + δ²) exp (-2M)`. Indeed `‖∇d‖₂² ≤ 2 τ B` by `stability_le_mul_norm`, so
+`C₀ ‖∇d‖₂ ≤ 1`, and `norm_value_sub_sq_le` bounds `‖d‖₂²`. -/
+private theorem sq_norm_sub_le {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
+    (hQ : 0 < Q.natDegree) {w u : W1p (volume : Measure ℂ) ⊤ 2}
+    (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v)
+    (hu : sobolevReducedFunctional Q u ≤ sobolevReducedFunctional Q w) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hpl : ∀ v : W1p (volume : Measure ℂ) ⊤ 2, ∀ s : Set ℂ, MeasurableSet s → volume s ≠ ∞ →
+      ‖W1p.value v‖ ^ 2 ≤
+        2 * (2 + C₀ * ‖W1p.gradient v‖) * (∫ z in sᶜ, (√(1 + W1p.value v z ^ 2) - 1)) +
+          (2 + C₀ * ‖W1p.gradient v‖) ^ 2 * volume.real s)
+    {δ M θ τ B : ℝ} (hδ : 0 < δ) (hM : 0 < M)
+    (hθ : volume {z | ‖Q.eval z‖ < δ} ≤ ENNReal.ofReal θ) (hθ0 : 0 ≤ θ) (hτ : 0 ≤ τ)
+    (hR : ∫ z, (reducedSource Q (W1p.value w) z - reducedSource P (W1p.value w) z) ^ 2 ≤ τ ^ 2)
+    (hXB : ‖W1p.value (u - w)‖ ≤ B) (hτB : 2 * τ * B * C₀ ^ 2 ≤ 1) :
+    ‖u - w‖ ^ 2 ≤ 96 * τ * B / (δ ^ 2 / (1 + δ ^ 2) * Real.exp (-(2 * M))) +
+      9 * (θ + ‖W1p.value w‖ ^ 2 / M ^ 2) + 2 * τ * B := by
+  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  set κ := δ ^ 2 / (1 + δ ^ 2) * Real.exp (-(2 * M))
+  have hκ : 0 < κ := by positivity
+  set S := θ + ‖W1p.value w‖ ^ 2 / M ^ 2
+  have hS : 0 ≤ S := by positivity
+  set X := ‖W1p.value (u - w)‖
+  set G := ‖W1p.gradient (u - w)‖
+  obtain ⟨E, hE, h1, h2⟩ : ∃ E : ℝ, 0 ≤ E ∧ G ^ 2 / 2 + E / 16 ≤ τ * X ∧
+      X ^ 2 ≤ 2 * (2 + C₀ * G) * (E / κ) + (2 + C₀ * G) ^ 2 * S :=
+    ⟨_, integral_nonneg (stability_integrand_nonneg Q (W1p.value w) (W1p.value (u - w))),
+      stability_le_mul_norm hP hQ hw hu hτ hR,
+      norm_value_sub_sq_le hP hQ hw hu hC₀ hpl hδ hM hθ hθ0⟩
+  have hG : 0 ≤ G := norm_nonneg _
+  clear_value X G S κ
+  clear hpl hR hθ hu hw
+  have hτX : τ * X ≤ τ * B := mul_le_mul_of_nonneg_left hXB hτ
+  have hG0 := sq_nonneg G
+  have hG2 : G ^ 2 ≤ 2 * τ * B := by linarith
+  have hE16 : E ≤ 16 * τ * B := by linarith
+  have hCG : C₀ * G ≤ 1 := by
+    have : (C₀ * G) ^ 2 ≤ 1 := by
+      rw [mul_pow]
+      calc C₀ ^ 2 * G ^ 2 ≤ C₀ ^ 2 * (2 * τ * B) := mul_le_mul_of_nonneg_left hG2 (sq_nonneg C₀)
+        _ ≤ 1 := by linarith
+    nlinarith [mul_nonneg hC₀ hG]
+  have hk : 2 + C₀ * G ≤ 3 := by linarith
+  have : 0 ≤ 2 + C₀ * G := by positivity
+  have hEκ : E / κ ≤ 16 * τ * B / κ := div_le_div_of_nonneg_right hE16 hκ.le
+  have : 2 * (2 + C₀ * G) * (E / κ) ≤ 2 * 3 * (16 * τ * B / κ) := by
+    gcongr
+  have : (2 + C₀ * G) ^ 2 * S ≤ 3 ^ 2 * S := by gcongr
+  have : 2 * 3 * (16 * τ * B / κ) = 96 * τ * B / κ := by ring
+  nlinarith
+
 /-- **Convergence of minimizers.** Let `w` minimize Taubes's functional `I_P`, and let `u x`
 satisfy `I_(Q x)(u x) ≤ I_(Q x)(w)` along a filter. If the sources `S_(Q x)(w)` converge to
 `S_P(w)` in `L²` and the sublevel sets `{‖Q x‖ < δ}` have measure tending to zero with `δ`,
@@ -759,24 +801,9 @@ theorem tendsto_of_forall_sobolevReducedFunctional_le {X : Type*} {l : Filter X}
     Tendsto u l (𝓝 w) := by
   obtain ⟨C₀, hC₀, hpl⟩ :=
     W1p.exists_norm_value_sq_le_of_finrank_eq_two (volume : Measure ℂ) Complex.finrank_real_complex
-  set W : ℂ → ℝ := ⇑(W1p.value w)
-  set F : X → ℂ → ℝ := fun x z ↦ backgroundWeight ((Q x).eval ·) z * Real.exp (2 * W z) *
-    (Real.exp (2 * W1p.value (u x - w) z) - 1 - 2 * W1p.value (u x - w) z)
-  have hF0 (x : X) (z : ℂ) : 0 ≤ F x z := stability_integrand_nonneg _ _ _ z
-  have hE0 (x : X) : 0 ≤ ∫ z, F x z := integral_nonneg (hF0 x)
   -- Stage one: `‖u x - w‖` is eventually bounded.
   obtain ⟨δ₁, hδ₁, hδ₁b⟩ := hlev 1 one_pos
-  set κ₁ := δ₁ ^ 2 / (1 + δ₁ ^ 2) * Real.exp (-(2 * 1))
-  have hκ₁ : 0 < κ₁ := by positivity
-  set S₁ := 1 + ‖W1p.value w‖ ^ 2 / 1 ^ 2
-  set B := 1 + 2 * (64 / κ₁ + 2048 * C₀ ^ 2 / κ₁ ^ 2 + 4 * C₀ ^ 2 * S₁) + 16 * S₁
-  have hB : 0 ≤ B := by positivity
-  have hbound (x : X)
-      (hR : ∫ z, (reducedSource (Q x) W z - reducedSource P W z) ^ 2 ≤ 1) :
-      ‖W1p.value (u x - w)‖ ≤ B :=
-    le_of_le_of_sq_le (norm_nonneg _) (norm_nonneg _) (hE0 x) hC₀ hκ₁ (by positivity)
-      (by simpa using stability_le_mul_norm hP (hQ x) hw (hu x) zero_le_one (by simpa using hR))
-      (norm_value_sub_sq_le hP (hQ x) hw (hu x) hC₀ hpl hδ₁ one_pos (hδ₁b x) zero_le_one)
+  obtain ⟨B, hB, hbound⟩ := exists_norm_value_sub_le hP hw hC₀ hpl hδ₁
   -- Stage two: `‖u x - w‖` is eventually small.
   rw [Metric.tendsto_nhds]
   intro η hη
@@ -789,15 +816,25 @@ theorem tendsto_of_forall_sobolevReducedFunctional_le {X : Type*} {l : Filter X}
     ((eventually_ge_atTop 1).and (hMlim.eventually (eventually_le_nhds (half_pos hθ)))).exists
   set κ := δ ^ 2 / (1 + δ ^ 2) * Real.exp (-(2 * M))
   have hκ : 0 < κ := by positivity
-  obtain ⟨τ, hτ, hτ1, hτC, hτη⟩ := exists_pos_mul_le hB (C := C₀)
-    (by positivity : 0 ≤ 96 * B / κ + 2 * B) hη
+  -- The choice of the tolerance `τ`.
+  obtain ⟨τ, hτ, hτ1, hτC, hτη⟩ : ∃ τ : ℝ, 0 < τ ∧ τ ≤ 1 ∧ 2 * τ * B * C₀ ^ 2 ≤ 1 ∧
+      τ * (96 * B / κ + 2 * B) ≤ η ^ 2 / 4 := by
+    set a := 96 * B / κ + 2 * B
+    have ha : 0 ≤ a := add_nonneg (div_nonneg (by positivity) hκ.le) (by positivity)
+    set τ := min (min 1 (1 / (2 * B * C₀ ^ 2 + 1))) (η ^ 2 / (4 * a + 1))
+    have hτ : 0 < τ := lt_min (lt_min one_pos (by positivity)) (by positivity [ha])
+    refine ⟨τ, hτ, (min_le_left _ _).trans (min_le_left _ _), ?_, ?_⟩
+    · have h : τ ≤ 1 / (2 * B * C₀ ^ 2 + 1) := (min_le_left _ _).trans (min_le_right _ _)
+      rw [le_div_iff₀ (by positivity)] at h
+      nlinarith [mul_nonneg (mul_nonneg hτ.le hB) (sq_nonneg C₀)]
+    · have h : τ ≤ η ^ 2 / (4 * a + 1) := min_le_right _ _
+      rw [le_div_iff₀ (by positivity)] at h
+      nlinarith
   filter_upwards [(tendsto_order.1 hres).2 (τ ^ 2) (by positivity)] with x hx
-  have hXB := hbound x (hx.le.trans (pow_le_one₀ hτ.le hτ1))
-  have hsq := sq_add_sq_le (norm_nonneg _) (hE0 x) hC₀ hκ (by positivity) hτ.le hXB
-    (stability_le_mul_norm hP (hQ x) hw (hu x) hτ.le hx.le) hτC
-    (norm_value_sub_sq_le hP (hQ x) hw (hu x) hC₀ hpl hδ (by linarith) (hδb x) (by positivity))
-  rw [dist_eq_norm, ← sq_lt_sq₀ (norm_nonneg _) hη.le,
-    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  have hXB := hbound (hQ x) (hu x) (hδ₁b x) (hx.le.trans (pow_le_one₀ hτ.le hτ1))
+  have hsq := sq_norm_sub_le hP (hQ x) hw (hu x) hC₀ hpl hδ (M := M) (by linarith) (hδb x)
+    (by positivity) hτ.le hx.le hXB hτC
+  rw [dist_eq_norm, ← sq_lt_sq₀ (norm_nonneg _) hη.le]
   have h96 : 96 * τ * B / κ + 2 * τ * B = τ * (96 * B / κ + 2 * B) := by ring
   have : 0 < η ^ 2 := by positivity
   have hθη : θ = η ^ 2 / 40 := rfl
