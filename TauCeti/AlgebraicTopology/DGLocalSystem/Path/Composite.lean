@@ -96,18 +96,6 @@ theorem pathChainToLoopChain_trans_pathChainConcat (δ : MoorePathBetween B a b)
         (NormalizedCubicalChain.map R F (p + q) _)) (ContinuousMap.ext fun ⟨x, y⟩ ↦ ?_)
       exact MooreLoopSpace.ext (by simp [MoorePath.trans_assoc])
 
-/-- Concatenating the `0`-chains of `δ` and `δ'` gives the `0`-chain of `δ ⋆ δ'`. -/
-@[simp]
-theorem pathChainConcat_tmul_pathChainPoint (δ : MoorePathBetween B a b)
-    (δ' : MoorePathBetween B b c) :
-    pathChainConcat B a b c R
-        (tmul R (loopChainAlgebra B b R) (pathChainPoint R δ) (pathChainPoint R δ')) =
-      pathChainPoint R (δ.trans δ') := by
-  rw [pathChainConcat_tmul_pathChainPoint_left, pathChainPrepend_apply, pathChainPoint_def,
-    cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_ofCube, pathChainPoint_def]
-  exact congrArg (fun σ ↦ cubicalChainModuleLof _ (MooreLoopSpace B c) R 0
-    (NormalizedCubicalChain.ofCube _ R σ)) (ContinuousMap.ext fun _ ↦ by simp)
-
 section Composite
 
 /-- The outer right action on the change of basepoint of a DG local system. Instance search

@@ -46,6 +46,8 @@ along the paths from `a` to `b`.
 * `TauCeti.pathChainConcat_tmul_ofCube`: the composition concatenates cubes pointwise.
 * `TauCeti.pathChainConcat_tmul_pathChainPoint_left`: concatenating the `0`-chain of a path `γ`
   with a chain prepends `γ` to it.
+* `TauCeti.pathChainConcat_tmul_pathChainPoint`: concatenating the `0`-chains of `δ` and `δ'` gives
+  the `0`-chain of `δ ⋆ δ'`.
 * `TauCeti.pathChainConcat_assoc`: the composition is associative.
 * `TauCeti.isQuasiIso_pathChainConcat`: if `a` and `b` are joined by a Moore path, the composition
   is a quasi-isomorphism of right DG modules.
@@ -182,6 +184,18 @@ theorem pathChainConcat_tmul_pathChainPoint_left (γ : MoorePathBetween B a b)
   rw [pathChainConcat_tmul, pathChainPoint_def, cubicalChainPairing_lof_point_left,
     pathChainPrepend_apply]
   exact congrArg (fun F ↦ cubicalChainModuleLinearMap R F y) (ContinuousMap.ext fun _ ↦ by simp)
+
+/-- Concatenating the `0`-chains of `δ` and `δ'` gives the `0`-chain of `δ ⋆ δ'`. -/
+@[simp]
+theorem pathChainConcat_tmul_pathChainPoint (δ : MoorePathBetween B a b)
+    (δ' : MoorePathBetween B b c) :
+    pathChainConcat B a b c R
+        (tmul R (loopChainAlgebra B b R) (pathChainPoint R δ) (pathChainPoint R δ')) =
+      pathChainPoint R (δ.trans δ') := by
+  rw [pathChainConcat_tmul_pathChainPoint_left, pathChainPrepend_apply, pathChainPoint_def,
+    cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_ofCube, pathChainPoint_def]
+  exact congrArg (fun σ ↦ cubicalChainModuleLof _ (MooreLoopSpace B c) R 0
+    (NormalizedCubicalChain.ofCube _ R σ)) (ContinuousMap.ext fun _ ↦ by simp)
 
 /-- Concatenating, prepending `γ⁻¹` and tensoring with the point `γ` is, by the balancing
 relation, prepending `γ⁻¹` and then `γ` on the first factor. -/
