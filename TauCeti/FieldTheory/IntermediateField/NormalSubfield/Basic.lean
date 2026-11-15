@@ -11,10 +11,12 @@ public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 /-!
 # Automorphisms and isomorphism classes over a normal intermediate field
 
-Let `Ω / K` be a field extension and `U` a normal intermediate field of `Ω / K`. Every
-`K`-isomorphism `e : L₁ ≃ₐ[K] L₂` between intermediate fields of `Ω / K` with `U ≤ L₁` carries `U`
-onto itself (`IntermediateField.le_of_algEquiv_of_normal`) and therefore restricts to an
-automorphism `IntermediateField.restrictNormalOfLE h₁ e` of `U / K`.
+Let `Ω / K` be a field extension and `U` a normal intermediate field of `Ω / K`. For intermediate
+fields `L₁, L₂` of `Ω / K` with `U ≤ L₁`, the existence of any `K`-algebra homomorphism
+`L₁ →ₐ[K] L₂` implies `U ≤ L₂` (`IntermediateField.le_of_algHom_of_normal`), and every
+`K`-isomorphism `e : L₁ ≃ₐ[K] L₂` restricts to an automorphism
+`IntermediateField.restrictNormalOfLE h₁ e` of `U / K`
+(`IntermediateField.coe_restrictNormalOfLE_apply`).
 
 For a single intermediate field `L` with `h : U ≤ L`, this restriction is the group homomorphism
 `(inclusion h).restrictNormalHom : (L ≃ₐ[K] L) →* (U ≃ₐ[K] U)`:
@@ -37,7 +39,7 @@ because conjugation of the identity on `U` is again the identity on `U`.
 When the ambient extension `Ω / K` is also normal, the `U`-isomorphism classes of intermediate
 fields `E` of `Ω / U` whose underlying `K`-field `E.restrictScalars K` is `K`-isomorphic to `L`
 correspond bijectively to the left cosets `(U ≃ₐ[K] U) ⧸ (inclusion h).restrictNormalHom.range`
-(`IntermediateField.restrictNormalCoset_eq_iff`, `IntermediateField.restrictNormalCoset_surjective`,
+(`IntermediateField.restrictNormalCoset_eq_iff`, `IntermediateField.exists_restrictNormalCoset_eq`,
 `IntermediateField.restrictNormalCosetEquiv`), giving the orbit-size formula
 `IntermediateField.ncard_isomorphic_restrictScalars_mul_natCard_eq`.
 
@@ -56,8 +58,8 @@ correspond bijectively to the left cosets `(U ≃ₐ[K] U) ⧸ (inclusion h).res
 
 ## Main results
 
-* `IntermediateField.le_of_algEquiv_of_normal`: if `U / K` is normal and `U ≤ L₁`, then `U ≤ L₂`
-  for any `e : L₁ ≃ₐ[K] L₂`.
+* `IntermediateField.le_of_algHom_of_normal`: if `U / K` is normal and `U ≤ L₁`, then `U ≤ L₂`
+  whenever there is a `K`-algebra homomorphism `L₁ →ₐ[K] L₂`.
 * `IntermediateField.natCard_algEquiv_eq_mul_of_le`: decomposition of `Nat.card (L ≃ₐ[K] L)` along
   a normal intermediate field `U ≤ L`.
 * `IntermediateField.natCard_algEquiv_eq_mul_of_normal`: when `L / K` is also normal, every
@@ -84,28 +86,24 @@ section Normal
 
 variable {U L L₁ L₂ L₃ : IntermediateField K Ω} [Normal K U]
 
-/-- If `U / K` is normal and `U ≤ L₁`, then every `K`-isomorphism `L₁ ≃ₐ[K] L₂` carries `U` into
-`L₂`: all `K`-embeddings of `U` into `Ω` have image `U`. -/
-theorem le_of_algEquiv_of_normal (h₁ : U ≤ L₁) (e : L₁ ≃ₐ[K] L₂) : U ≤ L₂ := by
-  let φ : U →ₐ[K] Ω := L₂.val.comp (e.toAlgHom.comp (inclusion h₁))
-  have hφ : φ.fieldRange = U := by
-    rw [← normalClosure_eq_fieldRange, normalClosure_eq_fieldRange U.val, fieldRange_val]
-  rw [← hφ]
+/-- If `U / K` is normal, `U ≤ L₁`, and there is a `K`-algebra homomorphism `L₁ →ₐ[K] L₂`, then
+`U ≤ L₂`. -/
+theorem le_of_algHom_of_normal (h₁ : U ≤ L₁) (f : L₁ →ₐ[K] L₂) : U ≤ L₂ := by
+  rw [← (L₂.val.comp (f.comp (inclusion h₁))).fieldRange_of_normal]
   rintro _ ⟨x, rfl⟩
-  exact (e (inclusion h₁ x)).2
+  exact (f (inclusion h₁ x)).2
 
 /-- The automorphism of a normal intermediate field `U / K` induced by a `K`-isomorphism
 `e : L₁ ≃ₐ[K] L₂` when `U ≤ L₁`. On elements of `U` it acts as `e`. -/
 def restrictNormalOfLE (h₁ : U ≤ L₁) (e : L₁ ≃ₐ[K] L₂) : U ≃ₐ[K] U :=
-  (L₂.val.comp (e.toAlgHom.comp (inclusion h₁))).equivFieldRange.trans
-    (equivOfEq (by
-      rw [← normalClosure_eq_fieldRange, normalClosure_eq_fieldRange U.val, fieldRange_val]))
+  (L₂.val.comp (e.toAlgHom.comp (inclusion h₁))).restrictNormal' U
 
 @[simp]
 theorem coe_restrictNormalOfLE_apply (h₁ : U ≤ L₁) (e : L₁ ≃ₐ[K] L₂) (x : U) :
     (restrictNormalOfLE h₁ e x : Ω) = e ⟨x.1, h₁ x.2⟩ := by
   have hx : inclusion h₁ x = ⟨x.1, h₁ x.2⟩ := Subtype.ext rfl
-  simp [restrictNormalOfLE, hx]
+  rw [← algebraMap_apply U]
+  simp [restrictNormalOfLE, AlgHom.restrictNormal', hx]
 
 /-- `restrictNormalOfLE h₁ e` is characterized by agreeing with `e` on every element of `U`. -/
 theorem restrictNormalOfLE_eq_iff (h₁ : U ≤ L₁) (e : L₁ ≃ₐ[K] L₂) {τ : U ≃ₐ[K] U} :
@@ -157,6 +155,20 @@ theorem range_extendScalarsAlgEquivHom_eq_ker (h : U ≤ L) :
     ← restrictNormalOfLE_eq_restrictNormalHom, restrictNormalOfLE_eq_iff]
   rfl
 
+@[simp]
+theorem restrictNormalOfLE_extendScalarsAlgEquivHom (h : U ≤ L)
+    (f : extendScalars h ≃ₐ[U] extendScalars h) :
+    restrictNormalOfLE h (extendScalarsAlgEquivHom h f) = 1 := by
+  rw [restrictNormalOfLE_eq_restrictNormalHom, ← MonoidHom.mem_ker,
+    ← range_extendScalarsAlgEquivHom_eq_ker]
+  exact ⟨f, rfl⟩
+
+@[simp]
+theorem restrictNormalHom_inclusion_extendScalarsAlgEquivHom (h : U ≤ L)
+    (f : extendScalars h ≃ₐ[U] extendScalars h) :
+    (inclusion h).restrictNormalHom (extendScalarsAlgEquivHom h f) = 1 := by
+  rw [← restrictNormalOfLE_eq_restrictNormalHom, restrictNormalOfLE_extendScalarsAlgEquivHom]
+
 /-- An automorphism `τ` of `U / K` lies in the range of `(inclusion h).restrictNormalHom` precisely
 when it extends to a `K`-automorphism of `L`. -/
 theorem mem_range_restrictNormalHom_inclusion_iff (h : U ≤ L) {τ : U ≃ₐ[K] U} :
@@ -177,19 +189,16 @@ def extendScalarsAlgEquivCongr (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) (e : L₁
       ∀ x : U, ((g.symm.trans ((extendScalarsAlgEquivHom hm₁ f).trans g)) ⟨x.1, hm₂ x.2⟩ : Ω) =
         x := by
     intro M₁ M₂ hm₁ hm₂ g f
-    have hker : restrictNormalOfLE hm₁ (extendScalarsAlgEquivHom hm₁ f) = 1 := by
-      rw [restrictNormalOfLE_eq_restrictNormalHom, ← MonoidHom.mem_ker,
-        ← range_extendScalarsAlgEquivHom_eq_ker]
-      exact ⟨f, rfl⟩
     have hres : restrictNormalOfLE hm₂
         (g.symm.trans ((extendScalarsAlgEquivHom hm₁ f).trans g)) = 1 := by
       rw [restrictNormalOfLE_trans hm₂ hm₁, restrictNormalOfLE_trans hm₁ hm₁,
-        restrictNormalOfLE_symm hm₁ hm₂, hker, mul_one, mul_inv_cancel]
+        restrictNormalOfLE_symm hm₁ hm₂, restrictNormalOfLE_extendScalarsAlgEquivHom, mul_one,
+        mul_inv_cancel]
     exact (restrictNormalOfLE_eq_iff hm₂ _).1 hres
   refine
-    { toFun f := (extendScalarsAlgEquiv h₂ h₂).symm
+    { toFun f := (extendScalarsAlgEquivEquiv h₂ h₂).symm
         ⟨e.symm.trans ((extendScalarsAlgEquivHom h₁ f).trans e), hconj h₁ h₂ e f⟩
-      invFun f := (extendScalarsAlgEquiv h₁ h₁).symm
+      invFun f := (extendScalarsAlgEquivEquiv h₁ h₁).symm
         ⟨e.trans ((extendScalarsAlgEquivHom h₂ f).trans e.symm), hconj h₂ h₁ e.symm f⟩
       left_inv f := by
         ext x
@@ -207,6 +216,34 @@ theorem coe_extendScalarsAlgEquivCongr_apply (h₁ : U ≤ L₁) (h₂ : U ≤ L
     (extendScalarsAlgEquivCongr h₁ h₂ e f x : Ω) =
       e (extendScalarsAlgEquivHom h₁ f (e.symm ⟨x.1, x.2⟩)) := by
   simp [extendScalarsAlgEquivCongr]
+
+@[simp]
+theorem extendScalarsAlgEquivHom_extendScalarsAlgEquivCongr (h₁ : U ≤ L₁) (h₂ : U ≤ L₂)
+    (e : L₁ ≃ₐ[K] L₂) (f : extendScalars h₁ ≃ₐ[U] extendScalars h₁) :
+    extendScalarsAlgEquivHom h₂ (extendScalarsAlgEquivCongr h₁ h₂ e f) =
+      e.symm.trans ((extendScalarsAlgEquivHom h₁ f).trans e) := by
+  ext x
+  simp
+
+@[simp]
+theorem extendScalarsAlgEquivCongr_symm (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) (e : L₁ ≃ₐ[K] L₂) :
+    (extendScalarsAlgEquivCongr h₁ h₂ e).symm = extendScalarsAlgEquivCongr h₂ h₁ e.symm := by
+  ext f x
+  simp [extendScalarsAlgEquivCongr]
+
+@[simp]
+theorem extendScalarsAlgEquivCongr_refl (h : U ≤ L) :
+    extendScalarsAlgEquivCongr h h AlgEquiv.refl = MulEquiv.refl _ := by
+  ext f x
+  simp
+
+@[simp]
+theorem extendScalarsAlgEquivCongr_trans (h₁ : U ≤ L₁) (h₂ : U ≤ L₂) (h₃ : U ≤ L₃)
+    (e₁ : L₁ ≃ₐ[K] L₂) (e₂ : L₂ ≃ₐ[K] L₃) :
+    (extendScalarsAlgEquivCongr h₁ h₂ e₁).trans (extendScalarsAlgEquivCongr h₂ h₃ e₂) =
+      extendScalarsAlgEquivCongr h₁ h₃ (e₁.trans e₂) := by
+  ext f x
+  simp
 
 /-- Two `K`-isomorphic intermediate fields containing a normal `U / K` have the same number of
 `U`-automorphisms. -/
@@ -226,10 +263,9 @@ theorem natCard_extendScalars_algEquiv_eq_of_algEquiv_restrictScalars (h : U ≤
   rw [natCard_extendScalars_algEquiv_eq_of_algEquiv h hE e, heq]
 
 /-- **Decomposition of the automorphism count along a normal intermediate field.** For an
-intermediate field `L` of `Ω / K` containing a normal `U / K`, the restriction homomorphism
-`(inclusion h).restrictNormalHom : (L ≃ₐ[K] L) →* (U ≃ₐ[K] U)` has kernel isomorphic to
-`extendScalars h ≃ₐ[U] extendScalars h` and image the automorphisms of `U / K` extending to `L`.
-No finiteness or separability hypothesis is needed. -/
+intermediate field `L` of `Ω / K` containing a normal `U / K`,
+`#Aut_K(L) = #Aut_U(extendScalars h) · #{τ ∈ Aut_K(U) | τ extends to L}`. No finiteness or
+separability hypothesis is needed. -/
 theorem natCard_algEquiv_eq_mul_of_le (h : U ≤ L) :
     Nat.card (L ≃ₐ[K] L) =
       Nat.card (extendScalars h ≃ₐ[U] extendScalars h) *
@@ -281,6 +317,15 @@ theorem restrictNormalCoset_eq_mk (h : U ≤ L) {E : IntermediateField U Ω}
   rw [← restrictNormalOfLE_eq_restrictNormalHom, restrictNormalOfLE_trans h hE_le,
     restrictNormalOfLE_symm h hE_le]
 
+@[simp]
+theorem restrictNormalCoset_extendScalars (h : U ≤ L)
+    (hE : Nonempty (L ≃ₐ[K] (extendScalars h).restrictScalars K)) :
+    restrictNormalCoset h (extendScalars h) hE = QuotientGroup.mk 1 := by
+  let e : L ≃ₐ[K] (extendScalars h).restrictScalars K :=
+    equivOfEq (extendScalars_restrictScalars h).symm
+  have he : restrictNormalOfLE h e = 1 := (restrictNormalOfLE_eq_iff h e).2 fun _ ↦ rfl
+  rw [restrictNormalCoset_eq_mk h hE e, he]
+
 /-- **Coset classification of `U`-isomorphism classes inside a `K`-isomorphism class.** Two
 intermediate fields `E₁, E₂` of `Ω / U` whose underlying `K`-fields are `K`-isomorphic to `L` have
 the same coset in `(U ≃ₐ[K] U) ⧸ (inclusion h).restrictNormalHom.range` if and only if `E₁` and
@@ -320,7 +365,7 @@ theorem restrictNormalCoset_eq_iff (h : U ≤ L) {E₁ E₂ : IntermediateField 
 `E : IntermediateField U Ω` whose restriction of scalars is `K`-isomorphic to `L`: lifting
 `τ : U ≃ₐ[K] U` to `Ω ≃ₐ[K] Ω` and mapping `L` along the lift produces an intermediate field
 containing `U` with coset `τ`. -/
-theorem restrictNormalCoset_surjective [Normal K Ω] (h : U ≤ L)
+theorem exists_restrictNormalCoset_eq [Normal K Ω] (h : U ≤ L)
     (c : (U ≃ₐ[K] U) ⧸ (inclusion h).restrictNormalHom.range) :
     ∃ (E : IntermediateField U Ω) (hE : Nonempty (L ≃ₐ[K] E.restrictScalars K)),
       restrictNormalCoset h E hE = c := by
@@ -328,7 +373,7 @@ theorem restrictNormalCoset_surjective [Normal K Ω] (h : U ≤ L)
   | H τ =>
     let g : Ω ≃ₐ[K] Ω := τ.liftNormal Ω
     let e₀ : L ≃ₐ[K] L.map g.toAlgHom := intermediateFieldMap g L
-    have hM : U ≤ L.map g.toAlgHom := le_of_algEquiv_of_normal h e₀
+    have hM : U ≤ L.map g.toAlgHom := le_of_algHom_of_normal h e₀
     let e₁ : L ≃ₐ[K] (extendScalars hM).restrictScalars K :=
       e₀.trans (equivOfEq (extendScalars_restrictScalars hM).symm)
     refine ⟨extendScalars hM, ⟨e₁⟩, ?_⟩
@@ -352,12 +397,30 @@ def restrictNormalCosetEquiv [Normal K Ω] (h : U ≤ L) {R : Set (IntermediateF
     have hiso : Nonempty (E₁ ≃ₐ[U] E₂) := (restrictNormalCoset_eq_iff h hL₁ hL₂).1 heq
     exact Subtype.ext (((hR E₁ hL₁).unique ⟨hR₁, ⟨.refl⟩⟩ ⟨hR₂, hiso⟩))
   · intro c
-    obtain ⟨E, ⟨e⟩, rfl⟩ := restrictNormalCoset_surjective h c
+    obtain ⟨E, ⟨e⟩, rfl⟩ := exists_restrictNormalCoset_eq h c
     obtain ⟨F, ⟨hFR, ⟨f⟩⟩, -⟩ := hR E ⟨e⟩
     have hLF : Nonempty (L ≃ₐ[K] F.restrictScalars K) :=
-      ⟨e.trans ((restrictScalarsAlgEquiv K E).trans
-        ((f.restrictScalars K).trans (restrictScalarsAlgEquiv K F).symm))⟩
+      ⟨e.trans (restrictScalarsAlgEquivEquiv K E F f).1⟩
     exact ⟨⟨F, hFR, hLF⟩, ((restrictNormalCoset_eq_iff h ⟨e⟩ hLF).2 ⟨f⟩).symm⟩
+
+@[simp]
+theorem restrictNormalCosetEquiv_apply [Normal K Ω] (h : U ≤ L)
+    {R : Set (IntermediateField U Ω)}
+    (hR : ∀ E : IntermediateField U Ω, Nonempty (L ≃ₐ[K] E.restrictScalars K) →
+      ∃! F, F ∈ R ∧ Nonempty (E ≃ₐ[U] F))
+    (E : {E : IntermediateField U Ω // E ∈ R ∧ Nonempty (L ≃ₐ[K] E.restrictScalars K)}) :
+    restrictNormalCosetEquiv h hR E = restrictNormalCoset h E.1 E.2.2 :=
+  (rfl)
+
+@[simp]
+theorem restrictNormalCoset_restrictNormalCosetEquiv_symm [Normal K Ω] (h : U ≤ L)
+    {R : Set (IntermediateField U Ω)}
+    (hR : ∀ E : IntermediateField U Ω, Nonempty (L ≃ₐ[K] E.restrictScalars K) →
+      ∃! F, F ∈ R ∧ Nonempty (E ≃ₐ[U] F))
+    (c : (U ≃ₐ[K] U) ⧸ (inclusion h).restrictNormalHom.range) :
+    restrictNormalCoset h ((restrictNormalCosetEquiv h hR).symm c).1
+      ((restrictNormalCosetEquiv h hR).symm c).2.2 = c :=
+  (restrictNormalCosetEquiv h hR).apply_symm_apply c
 
 /-- **The Galois orbit count of `U`-classes inside a `K`-class.** When `Ω / K` and `U / K` are
 normal, `h : U ≤ L`, and `R` contains a unique `U`-isomorphic representative of every
@@ -372,9 +435,7 @@ theorem ncard_isomorphic_restrictScalars_mul_natCard_eq [Normal K Ω] (h : U ≤
         Nat.card {τ : U ≃ₐ[K] U //
           ∃ σ : L ≃ₐ[K] L, ∀ x : U, (σ ⟨x.1, h x.2⟩ : Ω) = τ x} =
       Nat.card (U ≃ₐ[K] U) := by
-  have hdom : {E : IntermediateField U Ω // E ∈ R ∧ Nonempty (L ≃ₐ[K] E.restrictScalars K)} ≃
-      {E ∈ R | Nonempty (L ≃ₐ[K] E.restrictScalars K)} := Equiv.refl _
-  rw [← Nat.card_coe_set_eq, ← Nat.card_congr hdom,
+  rw [← Nat.card_coe_set_eq, Set.coe_ofPred,
     Nat.card_congr (restrictNormalCosetEquiv h hR), ← Subgroup.index_eq_card,
     ← Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ mem_range_restrictNormalHom_inclusion_iff h),
     Subgroup.index_mul_card]

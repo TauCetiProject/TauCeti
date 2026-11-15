@@ -58,6 +58,7 @@ of `TauCeti.finiteIntermediateFieldValuativeRel`.
   `TauCeti.isUnramified_unramifiedExtension`: it is unramified over `K`.
 * `TauCeti.finrank_unramifiedExtension_of_isPrimitiveRoot`,
   `TauCeti.finrank_unramifiedExtension`: it has degree `f` over `K`.
+* `TauCeti.natCard_algEquiv_unramifiedExtension`: its Galois group over `K` has cardinality `f`.
 * `IntermediateField.eq_unramifiedExtension_finrank`: every unramified intermediate field `E` of
   `Ω / K` is `unramifiedExtension K Ω [E : K]`.
 * `AlgHom.fieldRange_eq_unramifiedExtension`: the image of any `K`-embedding `ι : F →ₐ[K] Ω` of an
@@ -408,6 +409,12 @@ theorem finrank_unramifiedExtension {f : ℕ} (hf : f ≠ 0) :
     Module.finrank K (unramifiedExtension K Ω f) = f :=
   finrank_unramifiedExtension_of_isPrimitiveRoot hf
     (exists_isPrimitiveRoot_natCard_pow_sub_one (K := K) Ω hf).choose_spec
+
+variable {K Ω} in
+/-- **The Galois group of the unramified extension of degree `f` has cardinality `f`.** -/
+theorem natCard_algEquiv_unramifiedExtension {f : ℕ} (hf : f ≠ 0) :
+    Nat.card (unramifiedExtension K Ω f ≃ₐ[K] unramifiedExtension K Ω f) = f := by
+  rw [IsGalois.card_aut_eq_finrank, finrank_unramifiedExtension hf]
 
 /-- **Existence and uniqueness of unramified extensions.** For `f ≥ 1` there is exactly one
 intermediate field of `Ω / K` which is unramified of degree `f` over `K`, for its canonical

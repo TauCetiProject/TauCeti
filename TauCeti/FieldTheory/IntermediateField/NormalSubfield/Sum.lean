@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-public import TauCeti.FieldTheory.IntermediateField.NormalSubfield
+public import TauCeti.FieldTheory.IntermediateField.NormalSubfield.Basic
 
 /-!
 # Weighted isomorphism-class sums over a normal intermediate field
@@ -29,6 +29,8 @@ subgroup cancels term-by-term between orbit sizes and automorphism counts.
 
 ## Main results
 
+* `TauCeti.tsum_isomorphic_restrictScalars_div_natCard_algEquiv_eq`: single-class weighted sum
+  `∑'_{E ∈ R_U, E ≃_K M} w(E) / #Aut_U(E) = #Aut_K(U) · (w(M) / #Aut_K(M))`.
 * `TauCeti.mul_tsum_div_natCard_algEquiv_eq_of_le`:
   `#Aut_K(U) · ∑'_{M ∈ R_K} w(M) / #Aut_K(M) = ∑'_{E ∈ R_U} w(E) / #Aut_U(E)`.
 * `TauCeti.tsum_div_natCard_algEquiv_eq_inv_mul_of_le`:
@@ -50,12 +52,12 @@ with `Finite (U ≃ₐ[K] U)`, summing `w(E) / #Aut_U(E)` over the `U`-isomorphi
 `E ∈ R_U` lying in the `K`-class of `M` gives `#Aut_K(U) · (w(M) / #Aut_K(M))`: there are
 `#Aut_K(U) / #Stab(M)` such `U`-classes, each with `#Aut_U(M)` automorphisms over `U`, and
 `#Aut_K(M) = #Aut_U(M) · #Stab(M)`. -/
-private theorem tsum_fiber_div_natCard_algEquiv_eq {U M : IntermediateField K Ω} [Normal K U]
-    [Finite (U ≃ₐ[K] U)] (hUM : U ≤ M) {R_U : Set (IntermediateField U Ω)}
+theorem tsum_isomorphic_restrictScalars_div_natCard_algEquiv_eq {U M : IntermediateField K Ω}
+    [Normal K U] [Finite (U ≃ₐ[K] U)] (hUM : U ≤ M) {R_U : Set (IntermediateField U Ω)}
     (hRU : ∀ E : IntermediateField U Ω, Nonempty (M ≃ₐ[K] E.restrictScalars K) →
       ∃! F, F ∈ R_U ∧ Nonempty (E ≃ₐ[U] F))
     (w : IntermediateField K Ω → ℝ≥0∞)
-    (hw : ∀ {L₁ L₂ : IntermediateField K Ω}, (L₁ ≃ₐ[K] L₂) → w L₁ = w L₂) :
+    (hw : ∀ {L : IntermediateField K Ω}, (M ≃ₐ[K] L) → w M = w L) :
     ∑' E : {E ∈ R_U | Nonempty (M ≃ₐ[K] E.restrictScalars K)},
         w (E.1.restrictScalars K) / Nat.card (E.1 ≃ₐ[U] E.1) =
       (Nat.card (U ≃ₐ[K] U) : ℝ≥0∞) * (w M / Nat.card (M ≃ₐ[K] M)) := by
@@ -101,7 +103,7 @@ private theorem tsum_fiber_div_natCard_algEquiv_eq {U M : IntermediateField K Ω
 `K`-isomorphism-closed family `S` of intermediate fields of `Ω / K`, any set `R_K ⊆ S` of
 `K`-isomorphism representatives of `S` with `U ≤ M` for all `M ∈ R_K`, any set `R_U` of
 `U`-isomorphism representatives of `{E : IntermediateField U Ω | E.restrictScalars K ∈ S}`, and any
-`K`-isomorphism-invariant weight `w : IntermediateField K Ω → ℝ≥0∞`,
+weight `w : IntermediateField K Ω → ℝ≥0∞` invariant under `K`-isomorphisms out of `S`,
 `#Aut_K(U) · ∑'_{M ∈ R_K} w(M) / #Aut_K(M) = ∑'_{E ∈ R_U} w(E) / #Aut_U(E)`. -/
 theorem mul_tsum_div_natCard_algEquiv_eq_of_le {U : IntermediateField K Ω} [Normal K U]
     [Finite (U ≃ₐ[K] U)] {S R_K : Set (IntermediateField K Ω)}
@@ -114,7 +116,7 @@ theorem mul_tsum_div_natCard_algEquiv_eq_of_le {U : IntermediateField K Ω} [Nor
     (hRU : ∀ E : IntermediateField U Ω, E.restrictScalars K ∈ S →
       ∃! F, F ∈ R_U ∧ Nonempty (E ≃ₐ[U] F))
     (w : IntermediateField K Ω → ℝ≥0∞)
-    (hw : ∀ {L M : IntermediateField K Ω}, (L ≃ₐ[K] M) → w L = w M) :
+    (hw : ∀ {L M : IntermediateField K Ω}, L ∈ S → (L ≃ₐ[K] M) → w L = w M) :
     (Nat.card (U ≃ₐ[K] U) : ℝ≥0∞) * ∑' M : R_K, w M.1 / Nat.card (M.1 ≃ₐ[K] M.1) =
       ∑' E : R_U, w (E.1.restrictScalars K) / Nat.card (E.1 ≃ₐ[U] E.1) := by
   let g (E : IntermediateField U Ω) : ℝ≥0∞ :=
@@ -137,8 +139,8 @@ theorem mul_tsum_div_natCard_algEquiv_eq_of_le {U : IntermediateField K Ω} [Nor
       ∑' E : R_U, g E := rfl
   rw [hRHS, ← ENNReal.tsum_mul_left, hU_eq, tsum_biUnion hdisj]
   refine tsum_congr fun M ↦ ?_
-  exact (tsum_fiber_div_natCard_algEquiv_eq (hRK_le M.1 M.2)
-    (fun E ⟨e⟩ ↦ hRU E (hS_iso (hRK_sub M.2) e)) w hw).symm
+  exact (tsum_isomorphic_restrictScalars_div_natCard_algEquiv_eq (hRK_le M.1 M.2)
+    (fun E ⟨e⟩ ↦ hRU E (hS_iso (hRK_sub M.2) e)) w (hw (hRK_sub M.2))).symm
 
 /-- **Weighted class-sum relation over a normal intermediate field (divided form).** Divided form of
 `TauCeti.mul_tsum_div_natCard_algEquiv_eq_of_le`:
@@ -154,7 +156,7 @@ theorem tsum_div_natCard_algEquiv_eq_inv_mul_of_le {U : IntermediateField K Ω} 
     (hRU : ∀ E : IntermediateField U Ω, E.restrictScalars K ∈ S →
       ∃! F, F ∈ R_U ∧ Nonempty (E ≃ₐ[U] F))
     (w : IntermediateField K Ω → ℝ≥0∞)
-    (hw : ∀ {L M : IntermediateField K Ω}, (L ≃ₐ[K] M) → w L = w M) :
+    (hw : ∀ {L M : IntermediateField K Ω}, L ∈ S → (L ≃ₐ[K] M) → w L = w M) :
     ∑' M : R_K, w M.1 / Nat.card (M.1 ≃ₐ[K] M.1) =
       (Nat.card (U ≃ₐ[K] U) : ℝ≥0∞)⁻¹ *
         ∑' E : R_U, w (E.1.restrictScalars K) / Nat.card (E.1 ≃ₐ[U] E.1) := by
