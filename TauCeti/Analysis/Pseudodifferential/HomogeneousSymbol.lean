@@ -40,6 +40,8 @@ The file develops:
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions;
+* the pullback `HomogeneousSymbol.compFrequency` of the frequency along a linear isomorphism,
+  which keeps the degree since linear maps commute with positive dilations;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -482,6 +484,79 @@ theorem compPosition_compPosition (a : HomogeneousSymbol X E V W m) (g' : Z → 
   (rfl)
 
 end CompPosition
+
+/-! ### Linear changes of the frequency -/
+
+section CompFrequency
+
+variable {E' E'' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup E'']
+  [NormedSpace ℝ E'']
+
+/-- Pullback in the frequency along a linear isomorphism `B`: the coefficient `a (x, B ξ)` is again
+homogeneous of degree `m`, since `B` commutes with positive dilations and vanishes only at `0`. -/
+def compFrequency (a : HomogeneousSymbol X E V W m) (B : E' ≃L[ℝ] E) :
+    HomogeneousSymbol X E' V W m where
+  coefficient p := a.coefficient (p.1, B p.2)
+  zero_covector x := by simp
+  contDiffOn_coefficient :=
+    a.contDiffOn_coefficient.comp (contDiff_fst.prodMk ((B : E' →L[ℝ] E).contDiff.comp
+      contDiff_snd)).contDiffOn fun _ hp ↦ by simpa using hp
+  homogeneous x ξ t ht := by simpa using a.homogeneous x (B ξ) t ht
+
+@[simp]
+theorem coefficient_compFrequency (a : HomogeneousSymbol X E V W m) (B : E' ≃L[ℝ] E)
+    (p : X × E') : (a.compFrequency B).coefficient p = a.coefficient (p.1, B p.2) :=
+  (rfl)
+
+variable (B : E' ≃L[ℝ] E)
+
+@[simp]
+theorem zero_compFrequency : (0 : HomogeneousSymbol X E V W m).compFrequency B = 0 :=
+  (rfl)
+
+@[simp]
+theorem add_compFrequency (a b : HomogeneousSymbol X E V W m) :
+    (a + b).compFrequency B = a.compFrequency B + b.compFrequency B :=
+  (rfl)
+
+@[simp]
+theorem neg_compFrequency (a : HomogeneousSymbol X E V W m) :
+    (-a).compFrequency B = -a.compFrequency B :=
+  (rfl)
+
+@[simp]
+theorem sub_compFrequency (a b : HomogeneousSymbol X E V W m) :
+    (a - b).compFrequency B = a.compFrequency B - b.compFrequency B :=
+  (rfl)
+
+@[simp]
+theorem smul_compFrequency {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R)
+    (a : HomogeneousSymbol X E V W m) : (c • a).compFrequency B = c • a.compFrequency B :=
+  (rfl)
+
+@[simp]
+theorem comp_compFrequency (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).compFrequency B = (b.compFrequency B).comp (a.compFrequency B) :=
+  (rfl)
+
+@[simp]
+theorem compFrequency_compFrequency (a : HomogeneousSymbol X E V W m) (B' : E'' ≃L[ℝ] E') :
+    (a.compFrequency B).compFrequency B' = a.compFrequency (B'.trans B) :=
+  (rfl)
+
+@[simp]
+theorem compFrequency_refl (a : HomogeneousSymbol X E V W m) :
+    a.compFrequency (ContinuousLinearEquiv.refl ℝ E) = a :=
+  (rfl)
+
+/-- Changing the position and changing the frequency commute. -/
+theorem compPosition_compFrequency {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (a : HomogeneousSymbol X E V W m) (g : Y → X) (hg : ContDiff ℝ ∞ g) :
+    (a.compFrequency B).compPosition g hg = (a.compPosition g hg).compFrequency B :=
+  (rfl)
+
+end CompFrequency
 
 /-! ### Spatial and frequency derivatives -/
 

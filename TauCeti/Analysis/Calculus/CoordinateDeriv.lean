@@ -80,6 +80,11 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   frequency in terms of its first-order coordinate derivatives in the two variables.
 * `TauCeti.norm_mixedDeriv_comp_snd_smul_le`: the Leibniz bound for the product `ψ(ξ) a(x, ξ)`
   with a frequency cutoff.
+* `TauCeti.mixedDeriv_ofFn_eq_iteratedFDeriv`: mixed derivatives along words given as tuples, as
+  values of `iteratedFDeriv`.
+* `TauCeti.norm_mixedDeriv_comp_prodMap_le`: the mixed derivatives of `a(L x, M ξ)` for linear maps
+  `L` and `M` are bounded by those of `a` at `(L x, M ξ)`. This gives the symbol estimates of a
+  symbol pulled back along a linear change of coordinates.
 -/
 
 public section
@@ -1058,5 +1063,116 @@ theorem mixedDeriv_comp_snd_smul_eq_zero_of_notMem_tsupport (hψ : ContDiff ℝ 
     norm_zero, mul_zero, zero_mul]
 
 end Cutoff
+
+/-! ### Linear changes of the position and the frequency -/
+
+section LinearChange
+
+variable {a : CoordinateSpace n × CoordinateSpace n → A}
+
+/-- The mixed derivative along the words `[r 0, …, r (k - 1)]` and `[s 0, …, s (l - 1)]` of a
+`C^(k + l)` function is its Fréchet derivative of order `k + l`, evaluated on the standard basis
+vectors `(e_{r i}, 0)` of the position space followed by the vectors `(0, e_{s i})` of the
+frequency space. -/
+theorem mixedDeriv_ofFn_eq_iteratedFDeriv {k l : ℕ} (r : Fin k → Fin n) (s : Fin l → Fin n)
+    (ha : ContDiff ℝ (k + l) a) (x ξ : CoordinateSpace n) :
+    mixedDeriv (List.ofFn r) (List.ofFn s) a x ξ = iteratedFDeriv ℝ (k + l) a (x, ξ)
+      (Fin.append (fun i => (EuclideanSpace.single (r i) 1, 0))
+        fun i => (0, EuclideanSpace.single (s i) 1)) := by
+  rw [mixedDeriv_eq_iteratedFDeriv_append _ _ (by simpa using ha)]
+  -- Transport along `(List.ofFn r).length = k` and `(List.ofFn s).length = l`.
+  suffices ∀ (α β : List (Fin n)) (hα : α.length = k) (hβ : β.length = l),
+      (∀ i, α.get i = r (Fin.cast hα i)) → (∀ i, β.get i = s (Fin.cast hβ i)) →
+      iteratedFDeriv ℝ (α.length + β.length) a (x, ξ)
+          (Fin.append (fun i => (EuclideanSpace.single (α.get i) 1, 0))
+            fun i => (0, EuclideanSpace.single (β.get i) 1)) =
+        iteratedFDeriv ℝ (k + l) a (x, ξ)
+          (Fin.append (fun i => (EuclideanSpace.single (r i) 1, 0))
+            fun i => (0, EuclideanSpace.single (s i) 1)) from
+    this _ _ List.length_ofFn List.length_ofFn (fun i => List.get_ofFn r i)
+      fun i => List.get_ofFn s i
+  rintro α β rfl rfl hα hβ
+  simp only [hα, hβ, Fin.cast_eq_self]
+
+/-- A continuous multilinear map on `ℝⁿ × ℝⁿ`, evaluated on `k` position vectors `(u i, 0)`
+followed by `l` frequency vectors `(0, w i)`, is bounded by `∏ ‖u i‖ ∏ ‖w i‖` times the sum of its
+values on the corresponding standard basis vectors. This is the two-variable form of
+`ContinuousMultilinearMap.norm_le_sum_single`. -/
+theorem _root_.ContinuousMultilinearMap.norm_append_le_sum_single {k l : ℕ}
+    (G : ContinuousMultilinearMap ℝ (fun _ : Fin (k + l) => CoordinateSpace n × CoordinateSpace n)
+      A) (u : Fin k → CoordinateSpace n) (w : Fin l → CoordinateSpace n) :
+    ‖G (Fin.append (fun i => (u i, 0)) fun i => (0, w i))‖ ≤ (∏ i, ‖u i‖) * (∏ i, ‖w i‖) *
+      ∑ r : Fin k → Fin n, ∑ s : Fin l → Fin n,
+        ‖G (Fin.append (fun i => (EuclideanSpace.single (r i) 1, 0))
+          fun i => (0, EuclideanSpace.single (s i) 1))‖ := by
+  -- Precomposing with `ι` writes the vectors `(u, 0)` and `(0, w)` as `u` and `w`, so that `G`
+  -- becomes a multilinear map `G'` on `ℝⁿ`.
+  set ι : Fin (k + l) → CoordinateSpace n →L[ℝ] CoordinateSpace n × CoordinateSpace n :=
+    Fin.append (fun _ => ContinuousLinearMap.inl ℝ _ _) fun _ => ContinuousLinearMap.inr ℝ _ _
+  set G' := G.compContinuousLinearMap ι
+  have hG (u : Fin k → CoordinateSpace n) (w : Fin l → CoordinateSpace n) :
+      G (Fin.append (fun i => (u i, 0)) fun i => (0, w i)) = G' (Fin.append u w) := by
+    simp only [G', ContinuousMultilinearMap.compContinuousLinearMap_apply]
+    congr 1
+    funext i
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [ι]
+  -- Split a word of length `k + l` into its first `k` and its last `l` letters.
+  let split : (Fin k → Fin n) × (Fin l → Fin n) ≃ (Fin (k + l) → Fin n) :=
+    { toFun p := Fin.append p.1 p.2
+      invFun t := (fun i => t (Fin.castAdd l i), fun i => t (Fin.natAdd k i))
+      left_inv p := by simp
+      right_inv t := funext fun i => by
+        refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp }
+  have hsum : ∑ t : Fin (k + l) → Fin n, ‖G' fun i => EuclideanSpace.single (t i) 1‖ =
+      ∑ r : Fin k → Fin n, ∑ s : Fin l → Fin n,
+        ‖G (Fin.append (fun i => (EuclideanSpace.single (r i) 1, 0))
+          fun i => (0, EuclideanSpace.single (s i) 1))‖ := by
+    rw [← Fintype.sum_prod_type', ← Fintype.sum_equiv split _ _ fun _ => rfl]
+    refine Fintype.sum_congr _ _ fun p => ?_
+    rw [hG]
+    congr 2
+    funext i
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [split]
+  rw [hG]
+  calc ‖G' (Fin.append u w)‖ ≤ ‖G'‖ * ∏ i, ‖Fin.append u w i‖ := G'.le_opNorm _
+    _ ≤ (∑ t : Fin (k + l) → Fin n, ‖G' fun i => EuclideanSpace.single (t i) 1‖) *
+        ((∏ i, ‖u i‖) * ∏ i, ‖w i‖) := by
+      rw [Fin.prod_univ_add]
+      simp only [Fin.append_left, Fin.append_right]
+      exact mul_le_mul_of_nonneg_right G'.norm_le_sum_single (by positivity)
+    _ = _ := by rw [hsum, mul_comm]
+
+/-- **Mixed derivatives under linear changes of the position and the frequency.** The mixed
+derivative `∂_x^α ∂_ξ^β` of `(x, ξ) ↦ a(L x, M ξ)` at `(x, ξ)` is bounded by `‖L‖ ^ |α| ‖M‖ ^ |β|`
+times the sum of the mixed derivatives of `a` at `(L x, M ξ)` along all words of the same
+lengths. -/
+theorem norm_mixedDeriv_comp_prodMap_le (L M : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (α β : List (Fin n)) (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n) :
+    ‖mixedDeriv α β (a ∘ L.prodMap M) x ξ‖ ≤ ‖L‖ ^ α.length * ‖M‖ ^ β.length *
+      ∑ r : Fin α.length → Fin n, ∑ s : Fin β.length → Fin n,
+        ‖mixedDeriv (List.ofFn r) (List.ofFn s) a (L x) (M ξ)‖ := by
+  set e : Fin n → CoordinateSpace n := fun j => EuclideanSpace.single j 1
+  have hdir : (fun i => (L.prodMap M) (Fin.append (fun i => (e (α.get i), 0))
+      (fun i => (0, e (β.get i))) i)) =
+      Fin.append (fun i => (L (e (α.get i)), 0)) fun i => (0, M (e (β.get i))) := by
+    funext i
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp
+  -- The derivative of `a ∘ (L × M)` along the directions of `∂_x^α ∂_ξ^β` is that of `a` along
+  -- their images.
+  rw [mixedDeriv_eq_iteratedFDeriv_append α β (ha.comp (L.prodMap M).contDiff),
+    (L.prodMap M).iteratedFDeriv_comp_right ha _ le_rfl,
+    ContinuousMultilinearMap.compContinuousLinearMap_apply, hdir,
+    ContinuousLinearMap.coe_prodMap', Prod.map_apply]
+  refine (ContinuousMultilinearMap.norm_append_le_sum_single _ _ _).trans ?_
+  simp only [← mixedDeriv_ofFn_eq_iteratedFDeriv _ _ ha]
+  gcongr
+  · refine (Finset.prod_le_prod₀ (g := fun _ => ‖L‖) (fun _ _ => norm_nonneg _)
+      fun i _ => (L.le_opNorm _).trans_eq ?_).trans_eq (by simp)
+    simp [e, PiLp.norm_single]
+  · refine (Finset.prod_le_prod₀ (g := fun _ => ‖M‖) (fun _ _ => norm_nonneg _)
+      fun i _ => (M.le_opNorm _).trans_eq ?_).trans_eq (by simp)
+    simp [e, PiLp.norm_single]
+
+end LinearChange
 
 end TauCeti

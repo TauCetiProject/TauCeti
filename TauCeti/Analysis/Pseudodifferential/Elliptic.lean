@@ -33,6 +33,9 @@ degree:
   estimates of inverse symbols.
 * `HomogeneousSymbol.isElliptic_adjoint_iff`: between Hilbert spaces, the pointwise adjoint of a
   symbol is elliptic exactly when the symbol is.
+* `HomogeneousSymbol.IsElliptic.compPosition` and `HomogeneousSymbol.isElliptic_compFrequency_iff`:
+  pulling back the position preserves ellipticity, and a linear change of the frequency does not
+  change it.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -104,6 +107,20 @@ theorem isElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) {a : HomogeneousSymbol X E 
 theorem isElliptic_castDegree_iff (h : m = m') {a : HomogeneousSymbol X E V W m} :
     (a.castDegree h).IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_castDegree]
+
+/-- Pulling back the position preserves ellipticity. -/
+theorem IsElliptic.compPosition {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) (g : Y → X) (hg : ContDiff ℝ ∞ g) :
+    (a.compPosition g hg).IsElliptic :=
+  fun y ξ hξ ↦ by simpa using ha (g y) ξ hξ
+
+/-- A linear change of the frequency does not change ellipticity. -/
+@[simp]
+theorem isElliptic_compFrequency_iff {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    (B : E' ≃L[ℝ] E) {a : HomogeneousSymbol X E V W m} :
+    (a.compFrequency B).IsElliptic ↔ a.IsElliptic := by
+  refine ⟨fun h x ξ hξ ↦ ?_, fun h x ξ hξ ↦ by simpa using h x (B ξ) (by simpa using hξ)⟩
+  simpa using h x (B.symm ξ) (by simpa using hξ)
 
 /-- The zero symbol is not elliptic as soon as there is a nonzero frequency and a nonzero
 vector. -/
