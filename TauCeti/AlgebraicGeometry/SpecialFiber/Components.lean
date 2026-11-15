@@ -297,12 +297,10 @@ most one, whose generic point does not lie in the special fibre, the special fib
 irreducible component: some codimension-one point of `X` lies over the closed point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint
     [UniversallyClosed toBase] (hη : toBase (genericPoint X) ≠ closedPoint R) :
-    {x : CodimensionOnePoint X | toBase x = closedPoint R}.Nonempty := by
-  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
-  obtain ⟨x, hx⟩ := toBase.preimage_closedPoint_nonempty
-  obtain ⟨y, hy, -⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
-  obtain ⟨hy', hcod⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
-  exact ⟨⟨y, hcod⟩, hy'⟩
+    {x : CodimensionOnePoint X | toBase x = closedPoint R}.Nonempty :=
+  let ⟨η, hη', _⟩ := Set.nonempty_biUnion.mp
+    (toBase.biUnion_closure_eq_preimage_closedPoint hη ▸ toBase.preimage_closedPoint_nonempty)
+  ⟨η, hη'⟩
 
 /-- At a codimension-one point of `X`, the order of vanishing of the pullback of a nonzero
 element `π` of the maximal ideal is positive exactly when the point lies in the special fibre.

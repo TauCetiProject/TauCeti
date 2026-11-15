@@ -74,12 +74,8 @@ theorem specialFiberMultiplicity_congr_of_associated {π π' : R} (h : Associate
   · rw [hf0, zero_mul]
   have hg_unit : IsUnit g :=
     u.isUnit.map (toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom)
-  have hg0 : X.germToFunctionField ⊤ g ≠ 0 :=
-    (hg_unit.map (X.germToFunctionField ⊤).hom).ne_zero
-  have hord_g : X.ord (X.germToFunctionField ⊤ g) x = 0 :=
-    (Scheme.ord_germToFunctionField_eq_zero_iff hg_unit.ne_zero trivial x.property).mpr
-      (by rw [X.basicOpen_of_isUnit hg_unit]; trivial)
-  rw [X.ord_mul hf0 hg0, hord_g, add_zero]
+  have hg0 : X.germToFunctionField ⊤ g ≠ 0 := (hg_unit.map (X.germToFunctionField ⊤).hom).ne_zero
+  rw [X.ord_mul hf0 hg0, X.ord_of_isUnit hg_unit trivial, add_zero]
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- Two generators of the same principal ideal of `R`, at least one of which is a nonzerodivisor,
