@@ -22,9 +22,11 @@ two finsets splits along the traces of the parts of finite partitions on them. T
 `SimpleGraph` results are specializations to the adjacency relation. Edge densities are invariant
 under relabelling the vertices along an equivalence (`SimpleGraph.edgeDensity_comap_symm`).
 
-For graphs, `SimpleGraph.patternDensity G e s t` is the edge density of `(s, t)` if `e` holds and
-the nonedge density `1 - d(s, t)` otherwise: the density factor of a pair in the predicted count
-of an induced pattern. It lies in `[0, 1]` and changes by exactly as much as the edge density.
+For graphs, `SimpleGraph.edgeDensityIcc G s t` bundles the real-valued edge density as an element
+of `Set.Icc (0 : ℝ) 1`, and `SimpleGraph.patternDensity G e s t` is the edge density of `(s, t)` if
+`e` holds and the nonedge density `1 - d(s, t)` otherwise: the density factor of a pair in the
+predicted count of an induced pattern. It lies in `[0, 1]` and changes by exactly as much as the
+edge density.
 -/
 
 public section
@@ -104,6 +106,21 @@ theorem sum_sum_card_interedges_fiber_real {s : Finset α} {t : Finset β}
         (#(Rel.interedges r B.1 D.1) : ℝ) = #(Rel.interedges r A.1 C.1) := by
   exact_mod_cast sum_sum_card_interedges_fiber r h h' A C
 
+/-- Between two singletons, `Rel.interedges` has cardinality `1` if the points are related and `0`
+otherwise. -/
+@[simp]
+theorem card_interedges_singleton (a : α) (b : β) :
+    #(Rel.interedges r {a} {b}) = if r a b then 1 else 0 := by
+  rw [interedges, singleton_product_singleton, filter_singleton]
+  split_ifs <;> simp
+
+/-- Between two singletons, `Rel.edgeDensity` is `1` if the points are related and `0` otherwise. -/
+@[simp]
+theorem edgeDensity_singleton (a : α) (b : β) :
+    Rel.edgeDensity r {a} {b} = if r a b then 1 else 0 := by
+  rw [edgeDensity, card_interedges_singleton]
+  split_ifs <;> simp
+
 end Rel
 
 namespace SimpleGraph
@@ -121,15 +138,27 @@ theorem card_mul_card_mul_edgeDensity_real (s t : Finset V) :
     (#s * #t : ℝ) * (G.edgeDensity s t : ℝ) = #(G.interedges s t) :=
   Rel.card_mul_card_mul_edgeDensity_real G.Adj s t
 
-/-- **Edge densities are invariant under relabelling.** Relabelling the vertices along `e`, the
-graph as `G.comap e.symm` and both finsets by mapping along `e`, leaves the edge density unchanged.
--/
+/-- Between two singletons, `G.interedges` has cardinality `1` if the vertices are adjacent and `0`
+otherwise. -/
 @[simp]
-theorem edgeDensity_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
-    (G.comap e.symm).edgeDensity (s.map e.toEmbedding) (t.map e.toEmbedding) =
-      G.edgeDensity s t := by
-  rw [edgeDensity_def, edgeDensity_def, card_map, card_map]
-  congr 3
+theorem card_interedges_singleton (x y : V) :
+    #(G.interedges {x} {y}) = if G.Adj x y then 1 else 0 :=
+  Rel.card_interedges_singleton G.Adj x y
+
+/-- Between two singletons, `G.edgeDensity` is `1` if the vertices are adjacent and `0`
+otherwise. -/
+@[simp]
+theorem edgeDensity_singleton (x y : V) :
+    G.edgeDensity {x} {y} = if G.Adj x y then 1 else 0 :=
+  Rel.edgeDensity_singleton G.Adj x y
+
+/-- **Edge counts are invariant under relabelling.** Relabelling the vertices along `e`, the graph
+as `G.comap e.symm` and both finsets by mapping along `e`, leaves the number of edges between them
+unchanged. -/
+@[simp]
+theorem card_interedges_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
+    #((G.comap e.symm).interedges (s.map e.toEmbedding) (t.map e.toEmbedding)) =
+      #(G.interedges s t) := by
   -- the related pairs correspond under `e` in each coordinate
   refine card_bij' (fun p _ => (e.symm p.1, e.symm p.2)) (fun p _ => (e p.1, e p.2))
     ?_ ?_ ?_ ?_
@@ -144,6 +173,40 @@ theorem edgeDensity_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
     simp
   · rintro ⟨x, y⟩ _
     simp
+
+/-- **Edge densities are invariant under relabelling.** Relabelling the vertices along `e`, the
+graph as `G.comap e.symm` and both finsets by mapping along `e`, leaves the edge density unchanged.
+-/
+@[simp]
+theorem edgeDensity_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
+    (G.comap e.symm).edgeDensity (s.map e.toEmbedding) (t.map e.toEmbedding) =
+      G.edgeDensity s t := by
+  rw [edgeDensity_def, edgeDensity_def, card_map, card_map, card_interedges_comap_symm]
+
+/-- The edge density between two finsets `s` and `t`, bundled as an element of `Set.Icc (0 : ℝ) 1`.
+-/
+noncomputable def edgeDensityIcc (s t : Finset V) : Set.Icc (0 : ℝ) 1 :=
+  ⟨G.edgeDensity s t, mod_cast G.edgeDensity_nonneg s t, mod_cast G.edgeDensity_le_one s t⟩
+
+/-- The underlying real value of `G.edgeDensityIcc s t` is `G.edgeDensity s t`. -/
+@[simp]
+theorem coe_edgeDensityIcc (s t : Finset V) :
+    (G.edgeDensityIcc s t : ℝ) = G.edgeDensity s t := by
+  rw [edgeDensityIcc]
+
+/-- Bundled edge density is symmetric in the two vertex sets. -/
+theorem edgeDensityIcc_comm (s t : Finset V) :
+    G.edgeDensityIcc s t = G.edgeDensityIcc t s := by
+  apply Subtype.ext
+  simp [G.edgeDensity_comm]
+
+/-- Bundled edge density is invariant under relabelling along an equivalence. -/
+@[simp]
+theorem edgeDensityIcc_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
+    (G.comap e.symm).edgeDensityIcc (s.map e.toEmbedding) (t.map e.toEmbedding) =
+      G.edgeDensityIcc s t := by
+  apply Subtype.ext
+  simp
 
 section patternDensity
 

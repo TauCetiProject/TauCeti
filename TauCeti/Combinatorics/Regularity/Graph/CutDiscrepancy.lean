@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Density
-public import Mathlib.Basic.Real.Basic
+public import TauCeti.Combinatorics.SimpleGraph.Density
+public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
-import TauCeti.Combinatorics.SimpleGraph.Density
-public import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Stepped counts and the cut discrepancy of a partition
@@ -44,7 +42,10 @@ Densities include the diagonal blocks: a part `C` is paired with itself, with th
 * `SimpleGraph.cutDiscrepancy G P`: the maximum deviation of the prediction from the true count.
 * `SimpleGraph.cutDiscrepancy_le_iff` and `SimpleGraph.lt_cutDiscrepancy_iff`: bounds on the cut
   discrepancy are rectangle bounds, and exceeding a bound is witnessed by a rectangle.
-* `SimpleGraph.cutDiscrepancy_bot`: the partition into singletons has cut discrepancy `0`.
+* `SimpleGraph.cutDiscrepancy_bot` and `SimpleGraph.cutDiscrepancy_of_isEmpty`: the partition into
+  singletons, or any partition of an empty vertex type, has cut discrepancy `0`.
+* `SimpleGraph.steppedCount_comap_symm` and `SimpleGraph.cutDiscrepancy_comap_symm`: invariance of
+  stepped predictions and cut discrepancy under relabelling along an equivalence.
 
 ## References
 
@@ -243,5 +244,50 @@ theorem cutDiscrepancy_le_card_sq : G.cutDiscrepancy P ≤ (Fintype.card V : ℝ
 @[simp]
 theorem cutDiscrepancy_bot : G.cutDiscrepancy ⊥ = 0 :=
   le_antisymm (cutDiscrepancy_le_iff.2 fun A B ↦ by simp) (G.cutDiscrepancy_nonneg ⊥)
+
+/-- On an empty vertex type, the cut discrepancy of every partition is `0`. -/
+@[simp]
+theorem cutDiscrepancy_of_isEmpty [IsEmpty V] : G.cutDiscrepancy P = 0 :=
+  le_antisymm ((G.cutDiscrepancy_le_card_sq P).trans_eq (by simp)) (G.cutDiscrepancy_nonneg P)
+
+/-- **Stepped predictions are invariant under relabelling.** Relabel the vertices along `e`: the
+graph becomes `G.comap e.symm`, the partition becomes the pullback of `P` along `e.symm`, and both
+sides of the rectangle are mapped along `e`. -/
+@[simp]
+theorem steppedCount_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V ≃ W)
+    (A B : Finset V) :
+    (G.comap e.symm).steppedCount ((P.copy (image_univ_equiv e.symm).symm).comap e.symm)
+        (A.map e.toEmbedding) (B.map e.toEmbedding) =
+      G.steppedCount P A B := by
+  have hpart (v : V) :
+      ((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part (e v) =
+        (P.part v).map e.toEmbedding := by
+    have hcopy : (P.copy (image_univ_equiv e.symm).symm).part v = P.part v :=
+      Finpartition.part_eq_of_mem _ (by simp) (P.mem_part (mem_univ v))
+    ext y
+    rw [Finpartition.part_comap (mem_univ _), mem_filter, Equiv.symm_apply_apply, hcopy,
+      mem_map_equiv]
+    simp
+  rw [steppedCount_eq_sum_edgeDensity_part, steppedCount_eq_sum_edgeDensity_part, sum_map]
+  refine sum_congr rfl fun x _ => ?_
+  rw [sum_map]
+  refine sum_congr rfl fun y _ => ?_
+  simp only [Equiv.coe_toEmbedding, hpart, edgeDensity_comap_symm]
+
+/-- **The cut discrepancy is invariant under relabelling.** Relabel the vertices along `e`: the
+graph becomes `G.comap e.symm` and the partition becomes the pullback of `P` along `e.symm`. -/
+@[simp]
+theorem cutDiscrepancy_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V ≃ W) :
+    (G.comap e.symm).cutDiscrepancy ((P.copy (image_univ_equiv e.symm).symm).comap e.symm) =
+      G.cutDiscrepancy P := by
+  apply le_antisymm
+  · refine cutDiscrepancy_le_iff.2 fun S T => ?_
+    have hS : (S.map e.symm.toEmbedding).map e.toEmbedding = S := by ext; simp
+    have hT : (T.map e.symm.toEmbedding).map e.toEmbedding = T := by ext; simp
+    rw [← hS, ← hT, card_interedges_comap_symm, steppedCount_comap_symm]
+    exact G.abs_card_interedges_sub_steppedCount_le_cutDiscrepancy P _ _
+  · refine cutDiscrepancy_le_iff.2 fun A B => ?_
+    rw [← G.card_interedges_comap_symm e A B, ← G.steppedCount_comap_symm P e A B]
+    exact (G.comap e.symm).abs_card_interedges_sub_steppedCount_le_cutDiscrepancy _ _ _
 
 end SimpleGraph
