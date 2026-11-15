@@ -44,8 +44,14 @@ with `T W^u(q)` standing for the normal space of `W^s(q)`.
 
 The orientation data are recorded in the coordinates of the chosen Morse charts. A Morse chart
 identifies its space of coordinates of negative weight with the tangent space of the unstable
-manifold at the critical point; comparing the signs obtained from two Morse charts inducing the
-same orientation there is not done in this file.
+manifold at the critical point, through its unstable frame there. The signs depend only on the
+orientations of the unstable manifolds at `p` and `q` that this identification produces: if
+linear equivalences `ψp`, `ψq` match the unstable frames at `p` and `q` of two other Morse charts
+`φp'`, `φq'` with those of `φp`, `φq`, then transporting `op` and `oq` along them gives every
+trajectory the same sign
+(`TauCeti.IsAdaptedPseudoGradient.trajectorySign_map_of_forall_unstableFrame_apply_eq`). Indeed
+the comparison maps of the two pairs of charts then differ by `ψp` at the source and by `id × ψq` at
+the target, by the chart independence of the unstable frame and of the normal coordinates.
 
 The sign does not change when the point moves along the flow
 (`TauCeti.IsAdaptedPseudoGradient.trajectorySign_flow`), so it is the sign of the unparametrized
@@ -81,6 +87,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `intCast_signedTrajectoryCount`,
   `IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount`: the signed count reduces
   modulo two to the number of trajectories, the coefficient of the mod-two Morse boundary.
+* `trajectorySign_map_of_forall_unstableFrame_apply_eq`,
+  `signedTrajectoryCount_map_of_forall_unstableFrame_apply_eq`: the signs and the signed count do
+  not depend on the Morse charts, only on the orientations they induce on the unstable manifolds at
+  the critical points.
 
 ## References
 
@@ -145,6 +155,16 @@ theorem eq_or_eq_neg_trajectoryTargetOrientation
   o.eq_or_eq_neg _ (by
     rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
     omega)
+
+/-- Transporting `oq` along a linear equivalence `e` to the coordinates of negative weight of
+another Morse chart `φ'` transports the target orientation along `id × e`. -/
+theorem trajectoryTargetOrientation_map {φ' : MorseChart E f x}
+    (e : ({i // φ.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ)) :
+    φ'.trajectoryTargetOrientation (Orientation.map _ e oq) hpq =
+      Orientation.map _ ((LinearEquiv.refl ℝ ℝ).prodCongr e)
+        (φ.trajectoryTargetOrientation oq hpq) := by
+  rw [trajectoryTargetOrientation_def, trajectoryTargetOrientation_def, Orientation.map_reindex,
+    Orientation.map_prod, Orientation.map_refl, Equiv.refl_apply]
 
 end MorseChart
 
@@ -452,6 +472,75 @@ theorem IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount
     hMS.morseBoundaryCoeff hf p q = (hX.signedTrajectoryCount φp φq op oq hpq : ZMod 2) := by
   rw [hMS.morseBoundaryCoeff_eq_ncard hf hpq,
     intCast_signedTrajectoryCount hφp hφq hMS hf]
+
+variable {φp' : MorseChart E f p} {φq' : MorseChart E f q}
+  (hφp' : ∀ y ∈ φp'.toChart.source,
+    φp'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp'.toChart y (X y)) =
+      fun i ↦ -(φp'.weight i * φp'.coord (φp'.toChart y) i))
+  (hφq' : ∀ y ∈ φq'.toChart.source,
+    φq'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq'.toChart y (X y)) =
+      fun i ↦ -(φq'.weight i * φq'.coord (φq'.toChart y) i))
+  {ψp : ({i // φp.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φp'.weight i < 0} → ℝ)}
+  {ψq : ({i // φq.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φq'.weight i < 0} → ℝ)}
+include hφp' hφq'
+
+/-- **The sign of a trajectory does not depend on the Morse charts.** Let `φp`, `φp'` be Morse
+charts at `p` and `φq`, `φq'` Morse charts at `q` in which `X` is linear, and let `ψp`, `ψq` be the
+linear equivalences between their coordinates of negative weight along which the charts induce the
+same identification with the tangent spaces of the unstable manifolds at `p` and `q`: the unstable
+frames at the critical points correspond. Then the orientations `op`, `oq` and their transports
+along `ψp`, `ψq`, which orient the unstable manifolds in the same way, give every trajectory from
+`p` to `q` the same sign. -/
+theorem trajectorySign_map_of_forall_unstableFrame_apply_eq (hf : IsMorse 𝓘(ℝ, E) f)
+    (hψp : ∀ c, hX.unstableFrame φp' p (ψp c) = hX.unstableFrame φp p c)
+    (hψq : ∀ c, hX.unstableFrame φq' q (ψq c) = hX.unstableFrame φq q c) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    hX.trajectorySign φp' φq' (Orientation.map _ ψp op) (Orientation.map _ ψq oq) hpq y =
+      hX.trajectorySign φp φq op oq hpq y := by
+  set P := (LinearEquiv.refl ℝ ℝ).prodCongr ψq
+  -- The comparison maps of the two pairs of charts differ by `ψp` at the source and by `id × ψq`
+  -- at the target.
+  have hcomp (c : {i // φp.weight i < 0} → ℝ) :
+      hX.trajectoryComparison φp' φq' y (ψp c) = P (hX.trajectoryComparison φp φq y c) := by
+    have hu := unstableFrame_apply_eq_of_forall_unstableFrame_apply_eq hφp hφp' hf
+      (e := ψp.toLinearMap) hψp hy.1 c
+    rw [LinearEquiv.coe_coe] at hu
+    rw [trajectoryComparison_apply, trajectoryComparison_apply, hu,
+      stableNormal_apply_eq_of_forall_unstableFrame_apply_eq hφq hφq' hf (e := ψq.toLinearMap) hψq
+        hy.2, LinearEquiv.coe_coe]
+    rfl
+  have hfun : ⇑(hX.trajectoryComparison φp' φq' y) =
+      P ∘ hX.trajectoryComparison φp φq y ∘ ψp.symm := funext fun v ↦ by
+    simp only [comp_apply, ← hcomp, LinearEquiv.apply_symm_apply]
+  by_cases hC : Bijective (hX.trajectoryComparison φp φq y)
+  swap
+  · have hC' : ¬Bijective (hX.trajectoryComparison φp' φq' y) := by
+      rwa [hfun, EquivLike.comp_bijective, EquivLike.bijective_comp]
+    rw [trajectorySign_of_not_bijective hC, trajectorySign_of_not_bijective hC']
+  have hC' : Bijective (hX.trajectoryComparison φp' φq' y) := by
+    rwa [hfun, EquivLike.comp_bijective, EquivLike.bijective_comp]
+  rw [trajectorySign_of_bijective hC, trajectorySign_of_bijective hC']
+  set e := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap hC
+  set e' := LinearEquiv.ofBijective (hX.trajectoryComparison φp' φq' y).toLinearMap hC'
+  have hmap : Orientation.map _ e' (Orientation.map _ ψp op) =
+      Orientation.map _ P (Orientation.map _ e op) := by
+    rw [← Orientation.map_trans, ← Orientation.map_trans]
+    exact congrArg (Orientation.map _ · op) (LinearEquiv.ext hcomp)
+  rw [hmap, MorseChart.trajectoryTargetOrientation_map, (Orientation.map _ P).injective.eq_iff]
+
+/-- **The signed count does not depend on the Morse charts**, once the orientations of the unstable
+manifolds at `p` and `q` are transported along the linear equivalences `ψp`, `ψq` by which the
+charts identify their coordinates of negative weight with the tangent spaces of these manifolds. -/
+theorem signedTrajectoryCount_map_of_forall_unstableFrame_apply_eq (hf : IsMorse 𝓘(ℝ, E) f)
+    (hψp : ∀ c, hX.unstableFrame φp' p (ψp c) = hX.unstableFrame φp p c)
+    (hψq : ∀ c, hX.unstableFrame φq' q (ψq c) = hX.unstableFrame φq q c) :
+    hX.signedTrajectoryCount φp' φq' (Orientation.map _ ψp op) (Orientation.map _ ψq oq) hpq =
+      hX.signedTrajectoryCount φp φq op oq hpq := by
+  rw [signedTrajectoryCount_def, signedTrajectoryCount_def]
+  refine finsum_mem_congr rfl fun y hy ↦ ?_
+  rw [mem_morseTrajectorySlice] at hy
+  exact trajectorySign_map_of_forall_unstableFrame_apply_eq hφp hφq hφp' hφq' hf hψp hψq
+    ⟨hy.1, hy.2.1⟩
 
 end IsAdaptedPseudoGradient
 

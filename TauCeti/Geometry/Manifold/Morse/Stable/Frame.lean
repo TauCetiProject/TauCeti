@@ -48,6 +48,16 @@ stable and unstable manifolds
 (`TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`), in which these manifolds
 are the coordinate subspaces of the Morse chart.
 
+The frame and the normal coordinates depend on the Morse chart only through the identification it
+makes, at the critical point, between its coordinates of negative weight and the tangent space of
+`W^u(x)` at `x`. If a linear map `e` carries the unstable frame of a second Morse chart `φ'` at `x`
+to that of `φ`, then it does so at every point of `W^u(x)`, and the normal coordinates of `W^s(x)`
+in `φ'` are `e` applied to those in `φ` at every point of `W^s(x)`. Read at late times of linear
+flow, the two charts differ by the derivative of the transition `φ' ∘ φ⁻¹` near the origin, which
+converges to its value at the origin, where it is `e` on the coordinates of negative weight. So
+orientations of `W^u(x)` at `x` give orientations of the tangent spaces of `W^u(x)` and of the
+normal spaces of `W^s(x)` that do not depend on the chosen Morse chart.
+
 ## Main definitions
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -70,6 +80,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   space of the unstable manifold.
 * `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
   map carries the normal coordinates and the frame to positive multiples of themselves.
+* `exists_linearEquiv_unstableFrame_apply_eq`: two Morse charts at `x` in which `X` is linear
+  identify their coordinates of negative weight through a linear equivalence matching their
+  unstable frames at `x`.
+* `unstableFrame_apply_eq_of_forall_unstableFrame_apply_eq`,
+  `stableNormal_apply_eq_of_forall_unstableFrame_apply_eq`: a map matching the unstable frames of
+  two Morse charts at `x` matches their unstable frames along `W^u(x)` and their normal coordinates
+  along `W^s(x)`.
 
 ## References
 
@@ -502,6 +519,189 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     rw [mfderiv_unstableFrame hφ hT, map_smul, smul_smul, ← Real.exp_add, neg_add_cancel,
       Real.exp_zero, one_smul]
     exact φ.negativeExtend_negativeCoord hv
+
+/-! ### Changing the Morse chart -/
+
+variable {φ' : MorseChart E f x}
+
+omit hφ in
+/-- **The chain rule for a change of Morse chart.** If the orbit of `y` lies in the source of the
+Morse chart `φ` at time `t`, the derivative of `φ' ∘ Φ_t` at `y` is the derivative of
+`φ ∘ Φ_t` followed by the derivative of the transition `φ' ∘ φ⁻¹` at the coordinates of `Φ_t y`. -/
+private theorem mfderiv_toChart_comp_flow_eq_fderiv_comp {y : M} {t : ℝ}
+    (ht : hX.flow t y ∈ φ.toChart.source) (w : TangentSpace 𝓘(ℝ, E) y) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ'.toChart ∘ hX.flow t) y w =
+      fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) (φ.toChart (hX.flow t y))
+        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow t) y w) := by
+  have hq := (hX.flowDiffeomorph t).transOpenPartialHomeomorph_mem_maximalAtlas φ.mem_maximalAtlas
+  have hcoe : ((hX.flowDiffeomorph t).toHomeomorph.transOpenPartialHomeomorph φ.toChart :
+      M → E) = φ.toChart ∘ hX.flow t := by
+    funext z
+    simp
+  have h := mfderiv_eq_fderiv_comp_of_eqOn (f := φ'.toChart ∘ hX.flow t)
+    (h := φ'.toChart ∘ φ.toChart.symm)
+    (IsManifold.maximalAtlas_subset_of_le (by simp) hq) (y := y) (fun z hz ↦ by
+      simp only [Homeomorph.transOpenPartialHomeomorph_source, mem_preimage,
+        Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply] at hz
+      simp [φ.toChart.left_inv hz]) (by simpa using ht)
+  rw [hcoe] at h
+  exact DFunLike.congr_fun h w
+
+omit hφ [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- Along any path converging to the centre `x`, the derivative of the transition `φ' ∘ φ⁻¹`
+between two Morse charts at `x`, read at the coordinates of the path, converges to its derivative
+at the origin. -/
+private theorem tendsto_fderiv_transition {l : Filter ℝ} {z : ℝ → M} (hz : Tendsto z l (𝓝 x))
+    (v : E) :
+    Tendsto (fun T ↦ fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) (φ.toChart (z T)) v) l
+      (𝓝 (fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) 0 v)) := by
+  have h0 : (0 : E) ∈ (φ.toChart.symm.trans φ'.toChart).source := by
+    rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage,
+      OpenPartialHomeomorph.symm_source, φ.toChart_symm_zero]
+    exact ⟨φ.apply_self ▸ φ.toChart.map_source φ.mem_source, φ'.mem_source⟩
+  have hd := contDiffAt_symm_trans_of_mem_maximalAtlas φ.mem_maximalAtlas φ'.mem_maximalAtlas h0
+  rw [OpenPartialHomeomorph.coe_trans] at hd
+  have hc := (hd.fderiv_right (m := 0) (by simp)).continuousAt
+  have hφz : Tendsto (fun T ↦ φ.toChart (z T)) l (𝓝 0) := by
+    have h := (φ.toChart.continuousAt φ.mem_source).tendsto.comp hz
+    rwa [φ.apply_self] at h
+  exact ((ContinuousLinearMap.apply ℝ E v).continuous.tendsto _).comp (hc.tendsto.comp hφz)
+
+/-- If the unstable frames of two Morse charts at `x` agree at a point `y` of `W^u(x)`, read at a
+time of linear backward flow for both, then the coordinates in `φ'` are the image of the
+coordinates in `φ` under the derivative of the transition at the coordinates of `Φ_{-T} y`. -/
+private theorem negativeExtend_eq_fderiv_of_unstableFrame_eq
+    (hφ' : ∀ y ∈ φ'.toChart.source, φ'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ'.toChart y (X y)) =
+      fun i ↦ -(φ'.weight i * φ'.coord (φ'.toChart y) i))
+    {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) (hT' : T ∈ hX.linearBackwardTimes φ' y)
+    {c : {i // φ.weight i < 0} → ℝ} {c' : {i // φ'.weight i < 0} → ℝ}
+    (h : hX.unstableFrame φ y c = hX.unstableFrame φ' y c') :
+    φ'.negativeExtend c' =
+      fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) (φ.toChart (hX.flow (-T) y)) (φ.negativeExtend c) := by
+  have h' := congrArg (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ'.toChart ∘ hX.flow (-T)) y) h
+  rw [mfderiv_unstableFrame hφ' hT', mfderiv_toChart_comp_flow_eq_fderiv_comp hT.1,
+    mfderiv_unstableFrame hφ hT, map_smul] at h'
+  exact smul_right_injective E (Real.exp_ne_zero _) h'.symm
+
+/-- A linear map `e` along which the unstable frames of two Morse charts agree at their centre is
+the block of the derivative of the transition at the origin from the coordinates of negative weight
+of `φ` to those of `φ'`. -/
+private theorem fderiv_transition_negativeExtend
+    (hφ' : ∀ y ∈ φ'.toChart.source, φ'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ'.toChart y (X y)) =
+      fun i ↦ -(φ'.weight i * φ'.coord (φ'.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    {e : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ)}
+    (he : ∀ c, hX.unstableFrame φ' x (e c) = hX.unstableFrame φ x c)
+    (c : {i // φ.weight i < 0} → ℝ) :
+    fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) 0 (φ.negativeExtend c) = φ'.negativeExtend (e c) := by
+  have hfix (t : ℝ) : hX.flow t x = x :=
+    hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl) t
+  have hxu : x ∈ hX.flow.unstableSet x := Flow.self_mem_unstableSet_iff.2 hfix
+  obtain ⟨T, hT, hT'⟩ := ((hX.eventually_mem_linearBackwardTimes hφ hf hxu).and
+    (hX.eventually_mem_linearBackwardTimes hφ' hf hxu)).exists
+  rw [negativeExtend_eq_fderiv_of_unstableFrame_eq hφ hφ' hT hT' (he c).symm, hfix, φ.apply_self]
+
+/-- **The unstable frames of two Morse charts agree along the unstable manifold once they agree at
+the critical point.** Let `φ` and `φ'` be Morse charts at `x` in which `X` is linear, and `e` a
+linear map between their spaces of coordinates of negative weight carrying the unstable frame of
+`φ'` at `x` to that of `φ`, so that `e` describes how the two charts identify their coordinates with
+the tangent space of `W^u(x)` at `x`. Then `e` carries the unstable frame of `φ'` to that of `φ` at
+every point of `W^u(x)`. -/
+theorem unstableFrame_apply_eq_of_forall_unstableFrame_apply_eq
+    (hφ' : ∀ y ∈ φ'.toChart.source, φ'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ'.toChart y (X y)) =
+      fun i ↦ -(φ'.weight i * φ'.coord (φ'.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    {e : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ)}
+    (he : ∀ c, hX.unstableFrame φ' x (e c) = hX.unstableFrame φ x c)
+    {y : M} (hy : y ∈ hX.flow.unstableSet x) (c : {i // φ.weight i < 0} → ℝ) :
+    hX.unstableFrame φ' y (e c) = hX.unstableFrame φ y c := by
+  -- The two frames have the same range, the tangent space of `W^u(x)` at `y`.
+  obtain ⟨c', hc'⟩ : hX.unstableFrame φ y c ∈ range (hX.unstableFrame φ' y) := by
+    rw [range_unstableFrame hφ' hf hy, ← range_unstableFrame hφ hf hy]
+    exact mem_range_self c
+  -- Read at a late time of linear backward flow, the coordinates `c'` are the image of `c` under
+  -- the derivative of the transition near the origin; letting the time grow gives `c' = e c`.
+  have hev : ∀ᶠ T in atTop, φ'.negativeExtend c' =
+      fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) (φ.toChart (hX.flow (-T) y)) (φ.negativeExtend c) := by
+    filter_upwards [hX.eventually_mem_linearBackwardTimes hφ hf hy,
+      hX.eventually_mem_linearBackwardTimes hφ' hf hy] with T hT hT'
+    exact negativeExtend_eq_fderiv_of_unstableFrame_eq hφ hφ' hT hT' hc'.symm
+  have hlim := tendsto_fderiv_transition (φ := φ) (φ' := φ')
+    ((Flow.mem_unstableSet.1 hy).comp tendsto_neg_atTop_atBot) (φ.negativeExtend c)
+  have hcc' : φ'.negativeExtend c' = φ'.negativeExtend (e c) := by
+    rw [tendsto_nhds_unique (tendsto_const_nhds.congr' hev) hlim,
+      fderiv_transition_negativeExtend hφ hφ' hf he]
+  rw [← φ'.injective_negativeExtend hcc', hc']
+
+/-- **The normal coordinates of the stable manifolds of two Morse charts are related by the same
+map as their unstable frames.** Let `φ` and `φ'` be Morse charts at `x` in which `X` is linear, and
+`e` a linear map carrying the unstable frame of `φ'` at `x` to that of `φ`. Then at every point of
+`W^s(x)`, the normal coordinates of `W^s(x)` in `φ'` are the image under `e` of those in `φ`. -/
+theorem stableNormal_apply_eq_of_forall_unstableFrame_apply_eq
+    (hφ' : ∀ y ∈ φ'.toChart.source, φ'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ'.toChart y (X y)) =
+      fun i ↦ -(φ'.weight i * φ'.coord (φ'.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    {e : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ)}
+    (he : ∀ c, hX.unstableFrame φ' x (e c) = hX.unstableFrame φ x c)
+    {y : M} (hy : y ∈ hX.flow.stableSet x) (w : TangentSpace 𝓘(ℝ, E) y) :
+    hX.stableNormal φ' y w = e (hX.stableNormal φ y w) := by
+  set c := hX.stableNormal φ y w
+  -- At a time `T` of linear forward flow for both charts, the vector `w_T` whose image under the
+  -- derivative of `φ ∘ Φ_T` is `e^T` times the vector of coordinates `c` of negative weight has the
+  -- same normal coordinates as `w` in `φ`, hence also in `φ'`, the two normal coordinates having
+  -- the same kernel. Its normal coordinates in `φ'` are read off the transition derivative.
+  have hev : ∀ᶠ T in atTop, hX.stableNormal φ' y w = φ'.negativeCoord
+      (fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) (φ.toChart (hX.flow T y)) (φ.negativeExtend c)) := by
+    filter_upwards [hX.eventually_mem_linearForwardTimes hφ hy,
+      hX.eventually_mem_linearForwardTimes hφ' hy] with T hT hT'
+    have hinv := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ) hT.1
+    set wT := (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y).inverse
+      (Real.exp T • φ.negativeExtend c)
+    have hwT : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y wT =
+        Real.exp T • φ.negativeExtend c :=
+      hinv.self_apply_inverse _
+    have hc : hX.stableNormal φ y wT = c := by
+      rw [stableNormal_apply hφ hT, hwT, map_smul, φ.negativeCoord_negativeExtend, smul_smul,
+        ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+    have hker : hX.stableNormal φ' y (w - wT) = 0 := by
+      rw [stableNormal_eq_zero_iff hφ' hy, ← stableNormal_eq_zero_iff hφ hy, map_sub, hc, sub_self]
+    rw [sub_eq_zero.1 ((map_sub _ _ _).symm.trans hker), stableNormal_apply hφ' hT',
+      mfderiv_toChart_comp_flow_eq_fderiv_comp hT.1, hwT, map_smul,
+      map_smul, smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+  have hlim := ((LinearMap.toContinuousLinearMap φ'.negativeCoord).continuous.tendsto _).comp
+    (tendsto_fderiv_transition (φ := φ) (φ' := φ') (Flow.mem_stableSet.1 hy) (φ.negativeExtend c))
+  rw [tendsto_nhds_unique (tendsto_const_nhds.congr' hev) hlim]
+  simp only [LinearMap.coe_toContinuousLinearMap']
+  rw [fderiv_transition_negativeExtend hφ hφ' hf he,
+    φ'.negativeCoord_negativeExtend]
+
+/-- Any two Morse charts at `x` in which `X` is linear identify their spaces of coordinates of
+negative weight with the tangent space of `W^u(x)` at `x`: there is a linear equivalence between
+these spaces carrying the unstable frame of one chart at `x` to that of the other. -/
+theorem exists_linearEquiv_unstableFrame_apply_eq
+    (hφ' : ∀ y ∈ φ'.toChart.source, φ'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ'.toChart y (X y)) =
+      fun i ↦ -(φ'.weight i * φ'.coord (φ'.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f) :
+    ∃ e : ({i // φ.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ),
+      ∀ c, hX.unstableFrame φ' x (e c) = hX.unstableFrame φ x c := by
+  have hxu : x ∈ hX.flow.unstableSet x := Flow.self_mem_unstableSet_iff.2
+    (hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl))
+  obtain ⟨T, hT, hT'⟩ := ((hX.eventually_mem_linearBackwardTimes hφ hf hxu).and
+    (hX.eventually_mem_linearBackwardTimes hφ' hf hxu)).exists
+  have hinj := injective_unstableFrame hφ hT
+  have hinj' := injective_unstableFrame hφ' hT'
+  have hrange : LinearMap.range (hX.unstableFrame φ x).toLinearMap =
+      LinearMap.range (hX.unstableFrame φ' x).toLinearMap :=
+    SetLike.coe_injective <| by
+      simp only [LinearMap.coe_range, ContinuousLinearMap.coe_coe, range_unstableFrame hφ hf hxu,
+        range_unstableFrame hφ' hf hxu]
+      -- Both sides are the same span, coerced to a set through `TangentSpace 𝓘(ℝ, E) x` and `E`.
+      rfl
+  refine ⟨(LinearEquiv.ofInjective (hX.unstableFrame φ x).toLinearMap hinj).trans
+    ((LinearEquiv.ofEq _ _ hrange).trans
+      (LinearEquiv.ofInjective (hX.unstableFrame φ' x).toLinearMap hinj').symm), fun c ↦ ?_⟩
+  exact LinearEquiv.ofInjective_symm_apply (f := (hX.unstableFrame φ' x).toLinearMap) (h := hinj')
+    (LinearEquiv.ofEq _ _ hrange (LinearEquiv.ofInjective _ hinj c))
 
 end IsAdaptedPseudoGradient
 
