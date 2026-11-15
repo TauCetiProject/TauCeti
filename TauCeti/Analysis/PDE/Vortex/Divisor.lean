@@ -25,9 +25,11 @@ has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`).
 Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, the
 section factors near every point as `(w - z) ^ n z * v w` with `v` of class `Cᵏ` at `z` and
 nonzero there (`TauCeti.Vortex.exists_contDiffAt_section_eq_pow_mul`), so `n` is a zero
-multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). The topological argument
-principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end framing forces the
-multiplicities to add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
+multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). When `|α|² → 1` at infinity,
+the zeros are isolated and bounded, hence form an effective divisor `D : Multiset ℂ`
+(`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue`). Under the degree-`m` end
+framing, the topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that
+the multiplicities add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
 with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
 (`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Only the holomorphicity rows are
 used; the curvature equation is not needed. The divisor is determined by the section, since zero
@@ -83,6 +85,24 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {k : ℕ∞} (hn : 1 ≤ k)
   (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
 
 include hn hb₁ hb₂ hp hq hhol
+
+/-- **The zero divisor of a vortex section with unit modulus at infinity.** If the section of a
+field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has squared
+modulus `|α|² → 1` at infinity, then its zero multiplicities are the counts of an effective divisor
+`D : Multiset ℂ`. -/
+theorem exists_multiset_isZeroMultiplicity_sectionValue
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
+  have htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0 := by
+    filter_upwards [hlim.eventually (lt_mem_nhds zero_lt_one)] with w hw hz
+    rw [sectionValue_eq_zero_iff] at hz
+    simp [hz] at hw
+  choose n v hvc hv₀ hvf using
+    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol htail.exists
+  have hmult : IsZeroMultiplicity (sectionValue x) n :=
+    isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
+  obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
+  exact ⟨D, hmult⟩
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
 field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the

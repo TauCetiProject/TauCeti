@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
 # The analytic order of products, power maps and derivatives
@@ -41,8 +42,10 @@ at `z` keeps its order as that exponent. The finiteness of the zero set itself o
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
-* `AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul`: a factorization
-  `(z - z₀) ^ n • u z` with `u` continuous at `z₀` forces order at least `n`.
+* `AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul` and
+  `AnalyticAt.iteratedDeriv_eq_zero_of_eventually_eq_pow_smul`: a factorization
+  `(z - z₀) ^ n • u z` with `u` continuous at `z₀` forces order at least `n` and vanishing
+  iterated derivatives below order `n`.
 * `AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta` and
   `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order `n`
   exactly when it is comparable to `(z - z₀) ^ n`, and infinite order exactly when it is
@@ -180,6 +183,23 @@ theorem _root_.AnalyticAt.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul {
       (h.mono fun z hz ↦ hz.symm) EventuallyEq.rfl
   have hle := hg.analyticOrderAt_le_of_isBigO hO
   rwa [← Pi.pow_def, analyticOrderAt_centeredMonomial] at hle
+
+/-- If `g` is analytic at `z₀` and factors near `z₀` as `(z - z₀) ^ n • u z`, with `u` only
+continuous at `z₀`, then its iterated derivatives at `z₀` of order below `n` vanish. -/
+theorem _root_.AnalyticAt.iteratedDeriv_eq_zero_of_eventually_eq_pow_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] {g u : 𝕜 → E} {n j : ℕ}
+    (hg : AnalyticAt 𝕜 g z₀) (hu : ContinuousAt u z₀)
+    (h : ∀ᶠ z in 𝓝 z₀, g z = (z - z₀) ^ n • u z) (hj : j < n) :
+    iteratedDeriv j g z₀ = 0 := by
+  obtain ⟨v, hv, hgv⟩ := (natCast_le_analyticOrderAt hg).1
+    (hg.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul hu h)
+  have heq : g =ᶠ[𝓝 z₀] fun z ↦ (z - z₀) ^ j • ((z - z₀) ^ (n - j) • v z) := by
+    filter_upwards [hgv] with z hz
+    rw [hz, ← mul_smul, ← pow_add, Nat.add_sub_cancel' hj.le]
+  have hc : ContDiffAt 𝕜 j (fun z ↦ (z - z₀) ^ (n - j) • v z) z₀ :=
+    ((contDiffAt_id.sub contDiffAt_const).pow (n - j)).smul hv.contDiffAt
+  rw [heq.iteratedDeriv_eq, iteratedDeriv_pow_sub_smul_self hc, sub_self,
+    zero_pow (Nat.sub_ne_zero_of_lt hj), zero_smul, smul_zero]
 
 /-- Two functions analytic at `z₀` that are equivalent up to constant factors near `z₀` vanish to
 the same order there. -/

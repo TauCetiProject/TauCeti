@@ -108,20 +108,22 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (f : TopRep.res (κ : V →* U) (ofDiscreteModule ℤ U M) ⟶ ofDiscreteModule ℤ V M)
   (hf : ∀ m : M, f.hom m = g • m)
 
-omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
+omit [CompactSpace G] [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 include hκ hf in
 /-- **The Shapiro map intertwines conjugation**: Shapiro's map for `U` followed by the conjugation
 `(g)_*` is the coefficient map of the conjugation `Coind_U^G M → Coind_V^G M` followed by Shapiro's
 map for `V`. Both are compatible-pair maps from `Hⁿ(G, Coind_U^G M)` to `Hⁿ(V, M)`; they differ by
 the pair of the inner automorphism `x ↦ g⁻¹ x g` of `G` and the action of `g`, which induces the
-identity. Compactness ensures that the right-translation action on the discrete coinduced module is
-continuous. -/
-theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
+identity (`exists_map_eq_id_conj_smul`, the step that uses local compactness of `G`). -/
+theorem shapiroMap_comp_map_of_conj [LocallyCompactSpace G] (n : ℕ) :
     shapiroMap U M n ≫ _root_.ContinuousCohomology.map κ f n =
       coeffMap (ofDiscreteModuleMap
-          (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
-          fun h F => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h F) n ≫
+          (DiscreteCoind.conj U V M g
+            (V.le_map_conj_of_forall_coe_eq U g κ hκ)).toAddMonoidHom.toIntLinearMap
+          fun h F => _root_.map_smul (DiscreteCoind.conj U V M g
+            (V.le_map_conj_of_forall_coe_eq U g κ hκ)) h F) n ≫
         shapiroMap V M n := by
+  have hVU := V.le_map_conj_of_forall_coe_eq U g κ hκ
   let X := ofDiscreteModule ℤ G (DiscreteCoind G U M)
   obtain ⟨c, B, hc, hBΦ, hB⟩ := exists_map_eq_id_conj_smul (DiscreteCoind G U M) g n
   -- Both sides are the compatible pair of `v ↦ g⁻¹ v g` and `Φ ↦ g • Φ 1`; on the left this needs
@@ -189,7 +191,7 @@ theorem map_comp_corestriction_of_conj (hVU : V = U.map (MulAut.conj g).toMonoid
     _root_.ContinuousCohomology.map κ f n ≫ corestriction V M hV n = corestriction U M hU n := by
   have := isIso_shapiroMap U (U.isClosed_of_isOpen hU) M n
   rw [← cancel_epi (shapiroMap U M n), shapiroMap_comp_corestriction,
-    reassoc_of% (shapiroMap_comp_map_of_conj U V M g κ hκ f hf hVU.le n),
+    reassoc_of% (shapiroMap_comp_map_of_conj U V M g κ hκ f hf n),
     shapiroMap_comp_corestriction, ← coeffMap_comp]
   -- It remains that the conjugation map of coinduced modules commutes with the traces.
   congr 1
@@ -302,7 +304,7 @@ theorem conjNormalMap_comp (g h : G) (n : ℕ) :
 /-- **Shapiro's map intertwines conjugation**: for a normal subgroup `V`, Shapiro's map followed by
 `(g)_*` is the coefficient map of the conjugation of `Coind_V^G M` by `g`, followed by Shapiro's
 map. -/
-theorem shapiroMap_comp_conjNormalMap [CompactSpace G] (g : G) (n : ℕ) :
+theorem shapiroMap_comp_conjNormalMap [LocallyCompactSpace G] (g : G) (n : ℕ) :
     shapiroMap V M n ≫ conjNormalMap V M g n =
       coeffMap (ofDiscreteModuleMap
           (DiscreteCoind.conj V V M g (show V.map (MulAut.conj g).toMonoidHom = V from
@@ -312,8 +314,7 @@ theorem shapiroMap_comp_conjNormalMap [CompactSpace G] (g : G) (n : ℕ) :
               Subgroup.Normal.map_conj_eq V g).ge) h F) n ≫
         shapiroMap V M n :=
   shapiroMap_comp_map_of_conj V V M g _ (fun v => by simp)
-    (conjNormalPair V M g) (conjNormalPair_hom_apply V M g)
-    (show V.map (MulAut.conj g).toMonoidHom = V from Subgroup.Normal.map_conj_eq V g).ge n
+    (conjNormalPair V M g) (conjNormalPair_hom_apply V M g) n
 
 /-- **Conjugation is natural in the coefficients**: for a `G`-equivariant map `f : M → N`, the
 coefficient map of `f` on `Hⁿ(V, -)` commutes with `(g)_*`. -/
