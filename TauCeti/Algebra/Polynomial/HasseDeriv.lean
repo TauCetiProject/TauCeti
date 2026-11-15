@@ -5,31 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.Factorial.NatCast
 public import TauCeti.Algebra.Order.Floor.Semifield
 public import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.Algebra.Polynomial.Taylor
 
+import Mathlib.Algebra.Polynomial.Eval.SMul
 import Mathlib.Data.Int.Interval
+import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.Rat.Floor
 import Mathlib.Data.ZMod.Basic
 
 /-!
-# Nonvanishing of univariate Hasse and ordinary jets on finite sets and integer intervals
+# Univariate Hasse jets: ordinary jets and nonvanishing on finite sets
+
+The `k`-th ordinary derivative is `k!` times the `k`-th Hasse derivative
+(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so whenever `k!` is a unit an ordinary jet
+vanishes exactly when the corresponding Hasse jet does. In a ring of prime characteristic `p` this
+holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and fails at `k = p`, where
+`D^p` kills every polynomial while `D^[p] X^p = 1`.
 
 Over an integral domain, the root multiplicity of a nonzero polynomial `P` at `a` is the order of
 its first nonvanishing Hasse derivative at `a`
 (`Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`), and the sum of its root
 multiplicities over any finite set `S` is at most `P.natDegree`
 (`Polynomial.sum_rootMultiplicity_le_natDegree`). Therefore, whenever `P.natDegree < #S * (k + 1)`,
-some Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`.
-
-Because `derivative^[k] P = k! • hasseDeriv k P` (`Polynomial.factorial_smul_hasseDeriv`), ordinary
-and Hasse derivatives (and their values at any point) vanish simultaneously whenever `k!` is a unit
-in the coefficient ring — in particular for every order `k < p` in prime characteristic `p`
-(`IsUnit.natCast_factorial_iff_of_charP`). Under that invertibility condition, the finite-set
-nonvanishing test carries over to iterated ordinary derivatives; at order `p` it fails, since
-`derivative^[p] (X ^ p) = 0` whereas `hasseDeriv p (X ^ p) = 1`.
+some Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`; when `k!`
+is a unit (in particular for `k < p` in prime characteristic `p`), the same holds for iterated
+ordinary derivatives.
 
 In characteristic zero, applying the Hasse bound to the image in `R` of the integer interval
 `[-⌊B⌋₊, ⌊B⌋₊]` (of cardinality `2 * ⌊B⌋₊ + 1`) with `k = ⌊s / B⌋₊` yields the one-variable case
@@ -40,9 +42,11 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
 ## Main results
 
 * `Polynomial.iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero`,
-  `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero`: when `k!` is a unit,
-  `derivative^[k] P` (or its value at `a`) vanishes iff `hasseDeriv k P` (or its value at `a`)
-  vanishes; `*_of_charP` specializes this to orders `k < p` in characteristic `p`.
+  `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero`: if `k!` is a unit, the
+  ordinary derivative (or jet at a point) of order `k` vanishes if and only if the Hasse one does;
+  `Polynomial.iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero_of_lt` and
+  `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt` specialise this
+  to `k < p` in characteristic `p`.
 * `Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`: over an integral domain, if `P ≠ 0`
   and `P.natDegree < #S * (k + 1)`, some Hasse derivative of `P` of order `≤ k` is nonzero on `S`.
 * `Polynomial.exists_eval_iterate_derivative_ne_zero_of_natDegree_lt`,
@@ -55,10 +59,10 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
 
 ## References
 
+* H. Iwaniec and E. Kowalski, *Analytic Number Theory*, AMS Colloquium Publications 53 (2004),
+  §11.6, pp. 282–283: ordinary and Hasse derivatives in characteristic `p`.
 * J.-H. Evertse, *An improvement of the quantitative subspace theorem*, Compositio Math. 101
   (1996), §7, Lemma 25.
-* H. Iwaniec and E. Kowalski, *Analytic Number Theory*, AMS Colloquium Publications 53 (2004),
-  §11.6, pp. 282–284.
 -/
 
 public section
@@ -68,37 +72,43 @@ open scoped Nat
 
 namespace Polynomial
 
-/-- When `k!` is a unit in `R`, the `k`-th ordinary derivative of `P` vanishes if and only if its
-`k`-th Hasse derivative vanishes. -/
-theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero {R : Type*} [Semiring R] {k : ℕ}
-    (hk : IsUnit (k ! : R)) {P : R[X]} :
-    derivative^[k] P = 0 ↔ hasseDeriv k P = 0 := by
+section Factorial
+
+open Nat
+
+variable {R : Type*} [Semiring R] {k : ℕ}
+
+/-- If `k!` is a unit, the `k`-th ordinary derivative of `f` vanishes exactly when the `k`-th
+Hasse derivative does. -/
+theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)) (f : R[X]) :
+    derivative^[k] f = 0 ↔ hasseDeriv k f = 0 := by
   rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R,
     hk.smul_eq_zero]
 
-/-- When `k!` is a unit in `R`, the `k`-th ordinary derivative of `P` vanishes at `a` if and only
-if its `k`-th Hasse derivative vanishes at `a`. -/
-theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero {R : Type*} [Semiring R]
-    {k : ℕ} (hk : IsUnit (k ! : R)) {P : R[X]} {a : R} :
-    (derivative^[k] P).eval a = 0 ↔ (hasseDeriv k P).eval a = 0 := by
+/-- If `k!` is a unit, the ordinary jet `D^k f (a)` vanishes exactly when the Hasse jet
+`D^[k] f (a)` does. -/
+theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero (hk : IsUnit (k ! : R))
+    (f : R[X]) (a : R) : (derivative^[k] f).eval a = 0 ↔ (hasseDeriv k f).eval a = 0 := by
   rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul,
     hk.mul_right_eq_zero]
 
-/-- In a ring of prime characteristic `p`, an iterated ordinary derivative of order `k < p`
-vanishes if and only if the corresponding Hasse derivative vanishes. -/
-theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero_of_charP {R : Type*} [Ring R]
-    {p k : ℕ} [Fact p.Prime] [CharP R p] (hk : k < p) {P : R[X]} :
-    derivative^[k] P = 0 ↔ hasseDeriv k P = 0 :=
+/-- In characteristic `p`, for `k < p` the `k`-th ordinary derivative of `f` vanishes exactly when
+the `k`-th Hasse derivative does. -/
+theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero_of_lt {R : Type*} [Ring R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] (hk : k < p) (f : R[X]) :
+    derivative^[k] f = 0 ↔ hasseDeriv k f = 0 :=
   iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero
-    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk)
+    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) f
 
-/-- In a ring of prime characteristic `p`, an iterated ordinary derivative of order `k < p`
-vanishes at `a` if and only if the corresponding Hasse derivative vanishes at `a`. -/
-theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_charP {R : Type*} [Ring R]
-    {p k : ℕ} [Fact p.Prime] [CharP R p] (hk : k < p) {P : R[X]} {a : R} :
-    (derivative^[k] P).eval a = 0 ↔ (hasseDeriv k P).eval a = 0 :=
+/-- In characteristic `p`, for `k < p` the ordinary jet `D^k f (a)` vanishes exactly when the Hasse
+jet `D^[k] f (a)` does. -/
+theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt {R : Type*} [Ring R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] (hk : k < p) (f : R[X]) (a : R) :
+    (derivative^[k] f).eval a = 0 ↔ (hasseDeriv k f).eval a = 0 :=
   eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero
-    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk)
+    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) f a
+
+end Factorial
 
 /-- Over an integral domain, if `P ≠ 0` has degree strictly less than `#S * (k + 1)`, then some
 Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`. -/
@@ -123,7 +133,7 @@ theorem exists_eval_iterate_derivative_ne_zero_of_natDegree_lt {R : Type*} [Comm
   obtain ⟨a, ha, i, hi, hne⟩ := exists_eval_hasseDeriv_ne_zero_of_natDegree_lt hP hdeg
   exact ⟨a, ha, i, hi,
     (eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero
-      (hk.natCast_factorial_of_le hi)).not.2 hne⟩
+      (hk.natCast_factorial_of_le hi) P a).not.2 hne⟩
 
 /-- Over an integral domain of prime characteristic `p`, if `P ≠ 0`, `k < p`, and
 `P.natDegree < #S * (k + 1)`, then some ordinary derivative of `P` of order at most `k` does not
@@ -163,24 +173,6 @@ theorem exists_int_eval_hasseDeriv_ne_zero {R K : Type*} [CommRing R] [IsDomain 
   have hza : z.natAbs ≤ a := by omega
   exact ⟨z, i, (Nat.cast_le.2 hza).trans (Nat.floor_le hB.le),
     (Nat.cast_le.2 hi).trans (Nat.floor_le (div_nonneg (Nat.cast_nonneg s) hB.le)), hne⟩
-
-/-- In characteristic `3` at order `k = 2 < 3`, the ordinary and Hasse jets of `X ^ 2` at `0` are
-`2` and `1`, both nonzero. -/
-example : (derivative^[2] (X ^ 2 : (ZMod 3)[X])).eval 0 = 2 ∧
-    (hasseDeriv 2 (X ^ 2 : (ZMod 3)[X])).eval 0 = 1 := by
-  refine ⟨?_, by simpa using eval_hasseDeriv_X_sub_C_pow (0 : ZMod 3) 2 2⟩
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul]
-  simpa using congrArg (2 ! • ·) (eval_hasseDeriv_X_sub_C_pow (0 : ZMod 3) 2 2)
-
-/-- The comparison fails at `k = p`: in characteristic `3`, `derivative^[3] (X ^ 3) = 0` whereas
-`hasseDeriv 3 (X ^ 3) = 1`. -/
-example : derivative^[3] (X ^ 3 : (ZMod 3)[X]) = 0 ∧
-    hasseDeriv 3 (X ^ 3 : (ZMod 3)[X]) = 1 := by
-  refine ⟨?_, ?_⟩
-  · rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul (ZMod 3)]
-    have h6 : ((3 ! : ℕ) : ZMod 3) = 0 := by decide
-    rw [h6, zero_smul]
-  · simp [← monomial_one_one_eq_X, monomial_pow]
 
 /-- Point values alone do not suffice: `X * (X - 1) * (X + 1)` over `ℚ` vanishes on the entire
 `B = 1` integer grid `{-1, 0, 1}`, whereas its first Hasse derivative at `0` is `-1`. -/
@@ -223,5 +215,28 @@ example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
     simp only [hasseDeriv_zero, LinearMap.id_apply, eval_sub, eval_pow, eval_X]
     generalize (z : ZMod 2) = x
     fin_cases x <;> decide
+
+
+/-- `p = 3`, `k = 2`, `f = X²`, `a = 0`: `D² f = 2` and `D^[2] f = 1`, both nonzero. -/
+example : (derivative^[2] (X ^ 2 : (ZMod 3)[X])).eval 0 = 2 ∧
+    (hasseDeriv 2 (X ^ 2 : (ZMod 3)[X])).eval 0 = 1 := by
+  constructor
+  · simp [iterate_derivative_X_pow_eq_smul, eval_smul]
+  · simp [X_pow_eq_monomial, hasseDeriv_monomial]
+
+/-- `p = 3`, `k = 3`: `D³ (X³) = 6 = 0` while `D^[3] (X³) = 1`, so the comparison fails exactly
+at `k = p`, where `3!` is not a unit. -/
+example : derivative^[3] (X ^ 3 : (ZMod 3)[X]) = 0 ∧ hasseDeriv 3 (X ^ 3 : (ZMod 3)[X]) = 1 ∧
+    ¬ IsUnit ((Nat.factorial 3 : ℕ) : ZMod 3) := by
+  refine ⟨?_, by simp [X_pow_eq_monomial, hasseDeriv_monomial], ?_⟩
+  · rw [iterate_derivative_X_pow_eq_smul,
+      show ((Nat.descFactorial 3 3 : ℕ) : ZMod 3) = 0 by decide, zero_smul]
+  · rw [IsUnit.natCast_factorial_iff_of_charP 3]
+    decide
+
+/-- `p = 2`, `k = 1`: `1! = 1` is a unit and `D f = D^[1] f` for every `f`. -/
+example (f : (ZMod 2)[X]) : IsUnit ((Nat.factorial 1 : ℕ) : ZMod 2) ∧
+    derivative f = hasseDeriv 1 f :=
+  ⟨by simp, (hasseDeriv_one' f).symm⟩
 
 end Polynomial

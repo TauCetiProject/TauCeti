@@ -223,8 +223,8 @@ theorem exists_eval_iterate_pderiv_ne_zero_of_natDegree_powerSubstitution_lt
   obtain ⟨a, ha, k, hkm, hne⟩ :=
     exists_eval_hasseDeriv_single_ne_zero_of_natDegree_powerSubstitution_lt hF hZ hm_pow hdeg
   exact ⟨a, ha, k, hkm,
-    (eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_single_eq_zero_of_charP
-      (hkm.trans_lt hm)).not.2 hne⟩
+    (eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt p
+      (hkm.trans_lt hm) 0 F ![a, a ^ p ^ e]).not.2 hne⟩
 
 end Nonvanishing
 
