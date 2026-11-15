@@ -33,23 +33,19 @@ variable {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) {K : Subgroup G} (
 @[to_additive /-- The preimage of a subgroup of finite index under a homomorphism has at most its
 index. -/]
 theorem index_comap_le [H.FiniteIndex] : (H.comap f).index ≤ H.index := by
-  rw [index_comap, ← relIndex_top_right]
-  exact relIndex_le_of_le_right le_top (by rw [relIndex_top_right]; exact FiniteIndex.index_ne_zero)
+  rw [index_comap, ← H.relIndex_top_right]
+  exact relIndex_le_of_le_right le_top (by simpa using FiniteIndex.index_ne_zero)
 
 /-- If the range of `f` lies in a proper subgroup `K` containing a subgroup `H` of finite index,
-then the preimage of `H` has smaller index than `H`: its index is at most `[K : H]`. -/
+then the preimage of `H` has smaller index than `H`. -/
 @[to_additive /-- If the range of `f` lies in a proper subgroup `K` containing a subgroup `H` of
-finite index, then the preimage of `H` has smaller index than `H`: its index is at most
-`[K : H]`. -/]
+finite index, then the preimage of `H` has smaller index than `H`. -/]
 theorem index_comap_lt_of_range_le [H.FiniteIndex] (hHK : H ≤ K) (hK : K ≠ ⊤) (hf : f.range ≤ K) :
     (H.comap f).index < H.index := by
-  have hmul := relIndex_mul_index hHK
-  have hrel : H.relIndex K ≠ 0 := fun h ↦ FiniteIndex.index_ne_zero (by rw [← hmul, h, zero_mul])
-  have hK0 : K.index ≠ 0 := fun h ↦ FiniteIndex.index_ne_zero (by rw [← hmul, h, mul_zero])
-  have hK1 : K.index ≠ 1 := mt index_eq_one.1 hK
-  rw [index_comap]
-  calc H.relIndex f.range ≤ H.relIndex K := relIndex_le_of_le_right hf hrel
-    _ < H.relIndex K * K.index := lt_mul_of_one_lt_right (Nat.pos_of_ne_zero hrel) (by omega)
-    _ = H.index := hmul
+  have : K.FiniteIndex := finiteIndex_of_le hHK
+  have hrel : H.relIndex K ≠ 0 := mt H.index_eq_zero_of_relIndex_eq_zero FiniteIndex.index_ne_zero
+  rw [index_comap, ← relIndex_mul_index hHK]
+  exact (relIndex_le_of_le_right hf hrel).trans_lt
+    (lt_mul_of_one_lt_right (Nat.pos_of_ne_zero hrel) (one_lt_index_of_ne_top hK))
 
 end Subgroup

@@ -77,12 +77,7 @@ constructed symplectic group scheme.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
 
-This advances the base-change target in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`,
-"Base change along `ℤ → k` for any commutative ring `k`, and the compatibility of the pinning with
-it". The resulting specialized pinned carrier is an input to milestone L0, "pinned ambient
-groups", of `TauCetiRoadmap/CFSGStatement/README.md`, which reads the carrier of a finite group of
-Lie type off the points of a pinned Chevalley--Demazure group over an algebraic closure. The
-declaration structure follows the sibling specialization for the pinned Geck carrier in
+The declaration structure follows the sibling specialization for the pinned Geck carrier in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.BaseChange`. Every
 declaration below is the corresponding generic Kostant declaration at this carrier's data; the
 transport reading the generic base-change presentation through a named integral defining ideal is
@@ -372,10 +367,10 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
           (baseChangeDefiningIdeal n A) ≫
         rootSubgroupToBaseChangeCoordinateMap n A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap (rootGenerator n)
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap (rootGenerator n)
         (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n)
-        (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k := by
+        k (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
@@ -511,10 +506,10 @@ theorem baseChangeDefiningIdeal_le_commonKernel :
     baseChangeDefiningIdeal n A ≤
       CommHopfAlgCat.commonKernelHopfIdeal (K := K)
         (fun j => match j with
-          | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap (rootGenerator n)
+          | .inl k => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap (rootGenerator n)
               (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
               (rep_kostantForm_mem_lattice n)
-              (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k
+              k (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A
           | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n)) := by
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup

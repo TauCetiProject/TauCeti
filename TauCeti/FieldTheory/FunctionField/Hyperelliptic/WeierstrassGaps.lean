@@ -116,7 +116,7 @@ private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Plac
   set f := relativeDegree k k⟮x⟯ P
   set c := D₀.coeff P₀
   have hc : 0 < c := by
-    rcases (Int.natCast_nonneg e).lt_or_eq with he | he
+    rcases (Int.natCast_nonneg e).lt_or_eq with _ | he
     · nlinarith
     · rw [← he] at hcoeff
       omega
@@ -207,7 +207,7 @@ theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degre
   -- `ℓ(P₀) ≥ 2` by Riemann's theorem on `k(x)`, of genus zero.
   have hdim₀ : 2 ≤ Divisor.dim (WeilDivisor.ofPoint P₀) := by
     have h := Divisor.degree_add_one_sub_genus_le_dim hK (WeilDivisor.ofPoint P₀)
-    rw [Divisor.degree_ofPoint, hP₀, genus_adjoin_simple_eq_zero hx] at h
+    rw [Divisor.degree_ofPoint, hP₀, genus_adjoin_simple_eq_zero] at h
     omega
   -- `L(P₀)` embeds into `L(2P)`.
   have hmap : ∀ u ∈ riemannRochSpace (WeilDivisor.ofPoint P₀),

@@ -43,10 +43,6 @@ The `ᵐᵒᵖ` in Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` is in
 `K(G, 1)` statement below: being a `K(G, 1)` is invariant under `MulEquiv.inv'`, the
 isomorphism `G ≃* Gᵐᵒᵖ` sending `g` to `op g⁻¹`.
 
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13, "`K(G, 1)`
-spaces", by supplying the covering-space recognition principle for them; the concrete circle
-and torus examples were proved directly.
-
 ## Main declarations
 
 * `IsCoveringMap.subsingleton_homotopyGroup_iff`: a cover and its base have the same

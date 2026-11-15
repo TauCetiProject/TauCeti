@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 
+import TauCeti.LinearAlgebra.Multilinear.Quotient
+
 /-!
 # Descent of basic rough forms
 
@@ -26,6 +28,10 @@ for every `i`. Being basic is a pointwise condition, and it is all that descent 
   forms are exactly the pullbacks (`TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`).
 * When moreover `f` is surjective, pullback along `f` is injective
   (`TauCeti.mpullback_injective_of_surjective`), so the descended form is unique.
+* A form that vanishes when one of its arguments lies in the kernel of the derivative of `f`, and
+  that is invariant under a family of self-maps of `M` over `f` transitive on its fibres, is basic
+  (`TauCeti.RoughForm.isBasic_of_mpullback_eq`). This is how the restriction of a symplectic form
+  to a level of a moment map is shown to be basic for the quotient by the stabilizer.
 
 No regularity of `f` is assumed here. The descent applies along submersions with boundaryless
 source, local diffeomorphisms and orbit projections of properly discontinuous actions, whose
@@ -41,6 +47,8 @@ derivatives all have continuous right inverses.
 
 * `TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`: when the derivatives of `f` have continuous
   right inverses, a form is a pullback along `f` exactly when it is basic.
+* `TauCeti.RoughForm.isBasic_of_mpullback_eq`: invariant forms vanishing on vertical vectors are
+  basic.
 
 ## References
 
@@ -97,6 +105,34 @@ theorem isBasic_mpullback (ω : RoughForm I' M' V k) : IsBasic I' f (mpullback I
   refine isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
   simp only [mpullback_apply, hvw]
   exact apply_tangentSpaceCast hxy.symm _
+
+/-- **Invariant forms killing vertical vectors are basic.** Let `f` be differentiable and let `σ`
+be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the
+fibres of `f`. A form `α` that vanishes as soon as one of its arguments is vertical, that is, lies
+in the kernel of the derivative of `f`, and that is invariant under every `σ i`, is basic for `f`.
+At a single point the first condition makes `α_x` depend only on the images of its arguments under
+`df_x`; invariance compares two points of a fibre. When `f` is a local diffeomorphism the first
+condition is vacuous, as in `IsLocalDiffeomorph.isBasic_of_mpullback_eq`. -/
+theorem isBasic_of_mpullback_eq {ι : Type*} {σ : ι → M → M} (hf : MDifferentiable I I' f)
+    (hσ : ∀ i, MDifferentiable I I (σ i)) (hfσ : ∀ i, f ∘ σ i = f)
+    (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y) {α : RoughForm I M V k}
+    (hvert : ∀ x (v : Fin k → TangentSpace I x) j, mfderiv I I' f x (v j) = 0 → α x v = 0)
+    (hα : ∀ i, mpullback I I (σ i) α = α) : IsBasic I' f α := by
+  -- At one point, `α` only sees the images of its arguments under `df`.
+  have key (x : M) (v w : Fin k → TangentSpace I x)
+      (hvw : ∀ j, mfderiv I I' f x (v j) = mfderiv I I' f x (w j)) : α x v = α x w :=
+    (α x).toMultilinearMap.apply_eq_of_mkQ_eq (fun _ ↦ (mfderiv I I' f x).ker)
+      (fun u j t ht ↦ hvert x _ j (by simpa using ht))
+      fun j ↦ (Submodule.Quotient.eq _).2 (by simp [hvw j])
+  refine isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
+  rcases hσf y x hxy.symm with rfl | ⟨i, rfl⟩
+  · exact key y v w hvw
+  rw [← congrFun (hα i) y, mpullback_apply]
+  refine key _ v _ fun j ↦ ?_
+  -- By the chain rule, `df_y` factors through the derivative of `σ i`.
+  have hcomp := mfderiv_comp y (hf (σ i y)) (hσ i y)
+  rw [hfσ i] at hcomp
+  exact (hvw j).trans (congrArg (· (w j)) hcomp)
 
 open scoped Classical in
 variable (I I') in

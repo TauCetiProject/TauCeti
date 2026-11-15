@@ -50,13 +50,17 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
+* `ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm`: the same for the homeomorphism
+  of a `C^n` map approximating `L` on an open set with a constant less than `‖L⁻¹‖⁻¹`.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
 * `ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`: the same local inverse
-  carries a differential identity `dg_z u = v (g z)` over to `d(g⁻¹)_y (v y) = u`.
+  carries differential identities `dg_z (u i) = v i (g z)` over to `d(g⁻¹)_y (v i y) = u i`.
 * `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
+* `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a disc `z ↦ (a z, b z)` whose second
+  component has invertible derivative at `z₀` is, near `z₀`, the graph of a map `C^n` at `b z₀`.
 
 ## References
 
@@ -92,7 +96,7 @@ since `ApproximatesLinearOn.injOn` only uses the approximation estimate. -/
 theorem exists_mem_nhds_injOn {f : E → F} {L : E ≃L[𝕜] F} {a : E}
     (hf : HasStrictFDerivAt f (L : E →L[𝕜] F) a) : ∃ s ∈ 𝓝 a, InjOn f s := by
   obtain ⟨s, has, hso, happ⟩ := hf.approximates_deriv_on_open_nhds
-  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnnorm_symm_pos.imp id
+  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnNorm_symm_pos.imp id
     fun h => NNReal.half_lt_self (inv_pos.2 h).ne')⟩
 
 variable [CompleteSpace E] {f : E → F} {L : E ≃L[𝕜] F} {a : E}
@@ -117,7 +121,7 @@ theorem isInvertible_of_mem_toOpenPartialHomeomorph_source
   refine ContinuousLinearMap.isInvertible_of_norm_sub_le_half L ?_
   have hbound := hf.approximatesLinearOn_toOpenPartialHomeomorph_source.norm_sub_le_of_hasFDerivAt
     ((hf.toOpenPartialHomeomorph f).open_source.mem_nhds hx) hA
-  rwa [← NNReal.coe_le_coe, coe_nnnorm]
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
 
 /-- **The local inverse of the inverse function theorem is `C^n` at every point of its target.**
 The original inverse-function hypotheses provide an invertible derivative only at the base point.
@@ -177,6 +181,28 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
 
+/-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
+there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source
+`s` whose inverse is `C^n` on its target. -/
+theorem ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm [CompleteSpace E]
+    {n : ℕ∞ω} {f : E → F} {L : E ≃L[𝕜] F} {s : Set E} {c : ℝ≥0}
+    (hf : ApproximatesLinearOn f (L : E →L[𝕜] F) s c)
+    (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) (hs : IsOpen s)
+    (hcont : ContDiffOn 𝕜 n f s) :
+    ContDiffOn 𝕜 n (hf.toOpenPartialHomeomorph f s hc hs).symm
+      (hf.toOpenPartialHomeomorph f s hc hs).target := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffOn_zero.2 (hf.toOpenPartialHomeomorph f s hc hs).continuousOn_symm
+  refine (hf.toOpenPartialHomeomorph f s hc hs).contDiffOn_symm_of_isInvertible_fderiv
+    (by simpa using hcont) fun x hx ↦ ?_
+  simp only [toOpenPartialHomeomorph_source, toOpenPartialHomeomorph_coe] at hx ⊢
+  rcases hc with hE | hc
+  · exact ⟨L, by ext x; simp [Subsingleton.elim x 0]⟩
+  refine ContinuousLinearMap.isInvertible_of_norm_sub_lt L (lt_of_le_of_lt ?_ hc)
+  have h := hf.norm_sub_le_of_hasFDerivAt (hs.mem_nhds hx)
+    ((hcont.contDiffAt (hs.mem_nhds hx)).differentiableAt hn).hasFDerivAt
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
+
 end ContDiffInverse
 
 namespace TauCeti
@@ -205,19 +231,19 @@ theorem ContDiffOn.exists_openPartialHomeomorph
   intro w hw
   exact (hstrict.contDiffAt_toOpenPartialHomeomorph_symm hw.1 (hgAt _ hw.2)).contDiffWithinAt
 
-/-- **Local inversion transports a differential identity.** In the setting of
-`TauCeti.ContDiffOn.exists_openPartialHomeomorph`, if the derivative of `g` at every point `z ∈ s`
-sends a fixed vector `u` to `v (g z)`, then the `C^n` local inverse can be chosen so that its
-derivative at every point `y` of its target sends `v y` back to `u`. -/
+/-- **Local inversion transports differential identities.** In the setting of
+`TauCeti.ContDiffOn.exists_openPartialHomeomorph`, if for each index `i` the derivative of `g` at
+every point `z ∈ s` sends a fixed vector `u i` to `v i (g z)`, then the `C^n` local inverse can be
+chosen so that its derivative at every point `y` of its target sends each `v i y` back to `u i`. -/
 theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
     (hg : ContDiffOn 𝕂 n g s) (hs : IsOpen s) (ha : a ∈ s) (hn : 1 ≤ n)
-    {e : E ≃L[𝕂] F} (he : (e : E →L[𝕂] F) = fderiv 𝕂 g a) {v : F → F} {u : E}
-    (hgu : ∀ z ∈ s, fderiv 𝕂 g z u = v (g z)) :
+    {e : E ≃L[𝕂] F} (he : (e : E →L[𝕂] F) = fderiv 𝕂 g a) {ι : Type*} {v : ι → F → F}
+    {u : ι → E} (hgu : ∀ z ∈ s, ∀ i, fderiv 𝕂 g z (u i) = v i (g z)) :
     ∃ Θ : OpenPartialHomeomorph E F, (Θ : E → F) = g ∧ a ∈ Θ.source ∧ Θ.source ⊆ s ∧
-      ContDiffOn 𝕂 n Θ.symm Θ.target ∧ ∀ y ∈ Θ.target, fderiv 𝕂 Θ.symm y (v y) = u := by
+      ContDiffOn 𝕂 n Θ.symm Θ.target ∧ ∀ y ∈ Θ.target, ∀ i, fderiv 𝕂 Θ.symm y (v i y) = u i := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   obtain ⟨Θ, hΘ, haΘ, hΘs, hΘc⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph hg hs ha hn he
-  refine ⟨Θ, hΘ, haΘ, hΘs, hΘc, fun y hy ↦ ?_⟩
+  refine ⟨Θ, hΘ, haΘ, hΘs, hΘc, fun y hy i ↦ ?_⟩
   -- Differentiate `Θ.symm ∘ g = id`, valid near `Θ.symm y`, at `Θ.symm y`.
   have hz := Θ.map_target hy
   have hgy : g (Θ.symm y) = y := hΘ ▸ Θ.right_inv hy
@@ -230,9 +256,9 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
   have hid : Θ.symm ∘ g =ᶠ[𝓝 (Θ.symm y)] id :=
     eventually_of_mem (Θ.open_source.mem_nhds hz) fun x hx ↦ by
       rw [Function.comp_apply, ← hΘ, Θ.left_inv hx, id]
-  have h := congrArg (fun L : E →L[𝕂] E ↦ L u)
+  have h := congrArg (fun L : E →L[𝕂] E ↦ L (u i))
     ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
-  simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz), hgy,
+  simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz) i, hgy,
     ContinuousLinearMap.id_apply] using h
 
 /-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible
@@ -250,6 +276,27 @@ theorem _root_.Set.MapsTo.interior_of_contDiffOn {t : Set F} (h : MapsTo g s t)
   have hd : HasFDerivAt g (e : E →L[𝕂] F) x := he ▸ (hat.differentiableAt hn0).hasFDerivAt
   rw [mem_interior_iff_mem_nhds, ← (hat.hasStrictFDerivAt hd hn0).map_nhds_eq_of_equiv]
   exact mem_map.2 (mem_of_superset hs fun y hy => h hy)
+
+/-- **A transverse disc is a graph.** Let `z ↦ (a z, b z)` be a disc, `C^n` at `z₀` with
+`n ≠ 0`, whose second component `b` has invertible derivative at `z₀`. Then there is a map `g`,
+`C^n` at `b z₀`, with `g (b z₀) = a z₀` whose graph near `b z₀` is covered by the part of the disc
+over any prescribed neighbourhood `U` of `z₀`: every `w` near `b z₀` is `b z` for some `z ∈ U`
+with `a z = g w`.
+
+The map `g` is `a ∘ b⁻¹` for the local inverse of `b` given by the inverse function theorem. -/
+theorem exists_contDiffAt_graph_of_isInvertible {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕂 G] {a : E → G} {b : E → F} {b' : E →L[𝕂] F} {z₀ : E}
+    (ha : ContDiffAt 𝕂 n a z₀) (hb : ContDiffAt 𝕂 n b z₀) (hb' : HasFDerivAt b b' z₀)
+    (hb'i : b'.IsInvertible) (hn : n ≠ 0) {U : Set E} (hU : U ∈ 𝓝 z₀) :
+    ∃ g : F → G, ContDiffAt 𝕂 n g (b z₀) ∧ g (b z₀) = a z₀ ∧
+      ∀ᶠ w in 𝓝 (b z₀), ∃ z ∈ U, a z = g w ∧ b z = w := by
+  obtain ⟨e, rfl⟩ := hb'i
+  have hσ₀ := hb.localInverse_apply_image hb' hn
+  have hσ := hb.to_localInverse hb' hn
+  refine ⟨a ∘ hb.localInverse hb' hn, (hσ₀ ▸ ha).comp _ hσ, by simp [hσ₀], ?_⟩
+  filter_upwards [(hb.hasStrictFDerivAt hb' hn).eventually_right_inverse,
+    hσ.continuousAt.preimage_mem_nhds (hσ₀ ▸ hU)] with w hw hwU
+  exact ⟨_, hwU, rfl, hw⟩
 
 end TauCeti
 

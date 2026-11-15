@@ -307,8 +307,8 @@ theorem Linked.exists_sum_take_sub_mul_eq_intCast
     (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) :
     ∃ z : ℤ, ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum -
       ((l.take j).map Prod.snd).sum * g (l[j].1 • lam) = z := by
-  set t : ℕ → ℚ := fun k ↦ ((l.take k).map Prod.snd).sum with ht
-  set τ : ℕ → P.weylGroup := fun k ↦ (l.getD k (1, 0)).1 with hτ
+  set t : ℕ → ℚ := fun k ↦ ((l.take k).map Prod.snd).sum
+  set τ : ℕ → P.weylGroup := fun k ↦ (l.getD k (1, 0)).1
   have hτl : ∀ k (hk : k < l.length), τ k = l[k].1 := fun k hk ↦ by
     simp [τ, List.getElem?_eq_getElem hk]
   have ht_succ : ∀ k (hk : k < l.length), t (k + 1) = t k + l[k].2 := fun k hk ↦ by

@@ -133,7 +133,7 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
   have hdeg : (minpoly ℤ (v : 𝓞 K)).natDegree = n := by
     rw [← hdegQ, hQ, natDegree_map_eq_of_injective (algebraMap ℤ ℚ).injective_int]
   refine (mem_unitCandidates_iff _ B).mpr ⟨minpoly.monic (v : 𝓞 K).isIntegral, hdeg,
-    coeff_zero_minpoly_eq_one_or_neg_one v, fun k hk hkn => ?_⟩
+    coeff_zero_minpoly_eq_one_or_neg_one v, fun k _ hkn => ?_⟩
   -- Work over `ℂ`, where the minimal polynomial is the product over the embeddings.
   set p : ℂ[X] := (minpoly ℚ (v : K)).map (algebraMap ℚ ℂ) with hpdef
   have hpdeg : p.natDegree = n := by

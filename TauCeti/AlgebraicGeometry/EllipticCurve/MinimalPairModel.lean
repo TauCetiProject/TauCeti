@@ -438,9 +438,8 @@ equations of a single curve is infinite, so finiteness of bounded-height `ℚ`-i
 is a consequence of this statement, not a statement about terms `E : WeierstrassCurve ℚ`. -/
 theorem finite_minimalPairEquations_bounded_height (H : ℕ) :
     Set.Finite {W : WeierstrassCurve ℤ |
-      IsMinimalPairNF W ∧ (W.baseChange ℚ).IsElliptic ∧
-        max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) ≤ H} :=
-  (finite_shortEquations_bounded_height H).subset fun _ ⟨hW, _, hH⟩ => ⟨hW.isShortNF, hH⟩
+      IsMinimalPairNF W ∧ max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) ≤ H} :=
+  (finite_shortEquations_bounded_height H).subset fun _ ⟨hW, hH⟩ => ⟨hW.isShortNF, hH⟩
 
 end WeierstrassCurve
 

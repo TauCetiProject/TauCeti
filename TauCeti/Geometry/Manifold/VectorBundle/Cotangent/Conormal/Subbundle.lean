@@ -380,9 +380,9 @@ private theorem contMDiffOn_lift_chartConormalFrame [IsManifold I 1 M] [IsManifo
   have : IsManifold I (n + 1) M := .of_le hmn
   have : IsManifold J (n + 1) Q := .of_le hmn
   have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have : FiniteDimensional 𝕜 F := .of_injective (mfderiv J I i q₀).toLinearMap hinj
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
   have hAW₀ := (hi.of_le hmn).mfderiv_inTangentCoordinates le_rfl q₀
   have hT : ContMDiffOn J 𝓘(𝕜, E →L[𝕜] Fin k → 𝕜) n
@@ -462,7 +462,7 @@ theorem exists_isConormalFrameOn {i : Q → M} (hi : ContMDiff J I m i) (hmn : n
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : IsManifold J 1 Q := .of_le (n := n + 1) le_add_self
   have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have : FiniteDimensional 𝕜 F := .of_injective (mfderiv J I i q₀).toLinearMap (hinj q₀)
   -- Read `mfderiv J I i` in fixed tangent charts at `q₀` and `i q₀`; it is `C^n` on their overlap.
   let W₀ : Set Q := (chartAt H' q₀).source ∩ i ⁻¹' (chartAt H (i q₀)).source

@@ -42,16 +42,11 @@ That combination is what fixed starts cannot supply: windows from two distinct f
 once the common length exceeds the gap between the starts, whereas these move outward as the length
 grows. The generic fixed-start selection is `fixedStart` in `Process/BlockAverage/Basic.lean`.
 
-## References
+## Scope
 
 Nothing here involves a measure or the `L²` theory: the module is index arithmetic plus
 block-average algebra, which is why it sits with the process API rather than under
 `Exchangeability/L2/`.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 3** — the `L²` averaging library and
-  the standard-Borel de Finetti route, supporting the finite-block conditional factorization.
 -/
 
 public section

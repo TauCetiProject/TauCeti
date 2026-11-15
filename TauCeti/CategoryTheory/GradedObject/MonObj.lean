@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.CategoryTheory.EqToHom
 
 /-!
@@ -437,6 +438,20 @@ lemma mul_comm_of_laxBraided
   rw [hmul, hmul, ← BraidedCategory.braiding_naturality_assoc, ← Functor.LaxBraided.braided_assoc,
     ← F.map_comp_assoc, mul_comm, TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
   simp
+
+/-- Homogeneous multiplications satisfying commutativity with integer factors `s i j` retain
+those factors when transported along an additive lax braided functor and identifications
+`e n : Y n ≅ F.obj (X n)`. In particular, this transports Koszul signs. -/
+lemma mul_comm_zsmul_of_laxBraided [Preadditive C] [Preadditive D] [F.Additive]
+    (s : I → I → ℤ)
+    (mul_comm : ∀ i j, (β_ (X i) (X j)).hom ≫ mul j i =
+      s i j • (mul i j ≫ eqToHom (congrArg X (add_comm i j)))) (i j : I) :
+    (β_ (Y i) (Y j)).hom ≫ mul' j i =
+      s i j • (mul' i j ≫ eqToHom (congrArg Y (add_comm i j))) := by
+  rw [hmul, hmul, ← BraidedCategory.braiding_naturality_assoc, ← Functor.LaxBraided.braided_assoc,
+    ← F.map_comp_assoc, mul_comm, TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_comm i j)]
+  simp only [Functor.map_zsmul, Functor.map_comp, Preadditive.zsmul_comp,
+    Preadditive.comp_zsmul, Category.assoc, Iso.inv_hom_id_assoc]
 
 end LaxBraided
 

@@ -80,7 +80,7 @@ end IsPRadical
 namespace Module.Flat
 
 variable {A K L : Type*} [CommRing A] [CommRing K] [CommRing L] [Algebra A K] [Algebra A L]
-  [Algebra K L] [IsScalarTower A K L] (p : ℕ) [ExpChar A p] [PerfectRing A p] [ExpChar K p]
+  [Algebra K L] [IsScalarTower A K L] (p : ℕ) [ExpChar A p] [PerfectRing A p]
   [ExpChar L p] [PerfectRing L p] [IsPerfectClosure (algebraMap K L) p]
 
 include p in
@@ -93,6 +93,18 @@ theorem of_isPerfectClosure [Module.Flat A K] : Module.Flat A L := by
   -- image of `yⱼ`, since the kernel of `K → L` consists of `p`-nilpotent elements. Flatness of
   -- `K` makes this relation trivial, and the `p ^ N`-th roots, which exist in `A` and in `L`, of
   -- the coefficients and generators of that trivialization trivialize the original relation.
+  -- `K` lies between `A` and `L`, so it has exponential characteristic `p` as well.
+  have : ExpChar K p := by
+    cases ‹ExpChar L p› with
+    | zero => have := (algebraMap K L).charZero; exact .zero
+    | prime hp =>
+      have hA := (expChar_prime_iff (R := A) hp).1 ‹ExpChar A p›
+      have : CharP K p := by
+        refine ⟨fun n ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩⟩
+        · refine (CharP.cast_eq_zero_iff L p n).1 ?_
+          rw [← map_natCast (algebraMap K L), h, map_zero]
+        · rw [← map_natCast (algebraMap A K), (CharP.cast_eq_zero_iff A p n).2 h, map_zero]
+      exact .prime hp
   refine of_forall_isTrivialRelation fun {l f z} hfz ↦ ?_
   obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem_of_finite (algebraMap K L) p z
   -- The `p ^ n`-th power of the relation is the image of `∑ fⱼ ^ p ^ n • yⱼ`, which is therefore

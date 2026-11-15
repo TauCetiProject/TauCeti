@@ -91,7 +91,7 @@ theorem aeval_weightEnumerator_normalized_of_isSelfDual_of_mul_self
           aeval ![x + (Nat.card F - 1 : A) * y, x - y]
             (C : Set (ι → F)).weightEnumerator := by
     simpa only [Matrix.smul_vec2, smul_eq_mul] using
-      (C : Set (ι → F)).isHomogeneous_weightEnumerator.aeval_smul
+      (C : Set (ι → F)).isHomogeneous_weightEnumerator.aeval_smul_of_algebra
         ![x + (Nat.card F - 1 : A) * y, x - y] t
   have hmac := TauCeti.aeval_macWilliams_identity
     (natCard_mul_weightEnumerator_of_isSelfDual C hC) x y

@@ -13,12 +13,11 @@ import TauCeti.Data.Fin.Basic
 /-!
 # Coordinate reversal of grid states and diagrams
 
-This file adds coordinate reversal on the toroidal grid to the grid-combinatorial lane of the
-Heegaard Floer roadmap, alongside the already-developed diagonal reflection (`transpose`) and
-marking swap (`swapMarkings`). Rotation reverses both the column and the row coordinate by the
-map `(c, r) ↦ (cᵒ, rᵒ)` with `·ᵒ = Fin.rev`. It is the composition of the column and row
-relabelings by the coordinate reversal `Fin.revPerm`, so it reuses the existing relabeling API
-rather than introducing a new primitive. It carries a grid state to a grid state and a grid
+This file adds coordinate reversal on the toroidal grid, alongside the diagonal reflection
+(`transpose`) and marking swap (`swapMarkings`). Rotation reverses both the column and the row
+coordinate by the map `(c, r) ↦ (cᵒ, rᵒ)` with `·ᵒ = Fin.rev`. It is the composition of the column
+and row relabelings by the coordinate reversal `Fin.revPerm`, so it reuses the existing relabeling
+API rather than introducing a new primitive. It carries a grid state to a grid state and a grid
 diagram to a grid diagram.
 
 In the coordinate convention used here, `GridState.rotate` reverses grid-point coordinates,
@@ -60,9 +59,8 @@ This distinction and its grading consequence follow the analysis in
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G item 8,
-"Symmetries and the genus bound": coordinate reversal is among the standard grid symmetries in
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+Coordinate reversal is among the standard grid symmetries in Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapter 3.
 -/
 
 @[expose] public section

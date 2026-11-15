@@ -1,11 +1,11 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
-public import TauCeti.Algebra.PositiveDegrees.Basic
+public import TauCeti.Algebra.PositiveDegrees.Map
 public import TauCeti.Algebra.DirectSum.DegreeTail
 
 /-!
@@ -17,11 +17,13 @@ submodule `PositiveDegrees.degreeSubmodule`, characterized by the vanishing of a
 degree at most the cutoff. For a positive grading, the zero cutoff submodule is the whole module.
 
 These submodules provide degree filtrations without requiring freeness or finite rank of the
-homogeneous pieces.
+homogeneous pieces. Homogeneous linear maps preserve them at the cutoffs prescribed by a
+positive degree map, without a decomposition or positive support on the target.
 
 Adapted from `Mei/Algebra/PositiveDegrees/Grading.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`, released under Apache 2.0.
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` and
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`, released under Apache 2.0.
 -/
 
 public section
@@ -60,6 +62,24 @@ theorem degreeSubmodule_antitone : Antitone (d.degreeSubmodule ℒ) := by
   intro k l h
   simp only [degreeSubmodule]
   exact DirectSum.degreeTail_antitone ℒ d.degree (Nat.succ_le_succ h)
+
+/-- A homogeneous linear map carries degree submodules into degree submodules
+at the cutoffs prescribed by its positive degree map. Only the source grading
+needs positive support; no direct-sum decomposition is required. -/
+theorem map_degreeSubmodule_le {N' M' : Type*} [AddCommMonoid N']
+    [AddCommMonoid M'] [Module R M'] {e : PositiveDegrees N'}
+    (T : PositiveDegreeMap d e) (ℒ' : N' → Submodule R M')
+    [IsPositiveGrading d ℒ] (f : M →ₗ[R] M')
+    (hf : ∀ n, ℒ n ≤ (ℒ' (T n)).comap f) (k : ℕ) :
+    (d.degreeSubmodule ℒ (T.modulus k)).map f ≤ e.degreeSubmodule ℒ' k := by
+  rw [degreeSubmodule_def, Submodule.map_iSup]
+  refine iSup_le fun n => ?_
+  by_cases hn : n.val ∈ d.monoid
+  · exact (Submodule.map_le_iff_le_comap.mpr (hf n.val)).trans
+      (e.le_degreeSubmodule ℒ' (T.degree_gt k hn n.property))
+  · rw [IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n.val (Or.inl hn),
+      Submodule.map_bot]
+    exact bot_le
 
 variable [DecidableEq N] [DirectSum.Decomposition ℒ]
 

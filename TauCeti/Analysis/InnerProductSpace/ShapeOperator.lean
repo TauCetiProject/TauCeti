@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
 public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
@@ -50,7 +51,9 @@ distances `t` and `-t` have the same multiplicity.
 
 * `TauCeti.inner_fderiv_shapeOperator_apply`: the defining identity `g(S_ν v, w) = ⟪ν, B(v, w)⟫`.
 * `TauCeti.eq_shapeOperator_iff`: the shape operator is the unique endomorphism satisfying it.
-* `ContDiffAt.inner_fderiv_shapeOperator_apply_comm`: the shape operator is `g`-self-adjoint.
+* `ContDiffAt.inner_fderiv_shapeOperator_apply_comm` and
+  `ContDiffAt.isSymmetric_conj_shapeOperator`: the shape operator is `g`-self-adjoint, and
+  conjugating it onto `(Di(x)).range` yields a symmetric operator.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply_eq_inner_shapeOperator`: the Hessian of squared
   distance at a critical point is `2 g((1 - S_{a - i x}) v, w)`.
 * `TauCeti.ker_fderiv_fderiv_norm_sq_sub_comp`: the null space of that Hessian is the
@@ -173,6 +176,25 @@ theorem _root_.ContDiffAt.inner_fderiv_shapeOperator_apply_comm (hi : ContDiffAt
   · simp [shapeOperator_of_not_injective h]
   rw [real_inner_comm (fderiv ℝ i x (shapeOperator i x ν w)), inner_fderiv_shapeOperator_apply h,
     inner_fderiv_shapeOperator_apply h, hi.secondFundamentalForm_apply_comm]
+
+/-- Conjugating `shapeOperator i x ν` along `Di(x)` onto `(Di(x)).range` produces a symmetric
+endomorphism when `i` is `C²` at `x` with injective derivative. -/
+theorem _root_.ContDiffAt.isSymmetric_conj_shapeOperator (hi : ContDiffAt ℝ 2 i x)
+    (h : Injective (fderiv ℝ i x)) (ν : E) :
+    ((LinearEquiv.ofInjective (fderiv ℝ i x : V →ₗ[ℝ] E) h).conj
+      (shapeOperator i x ν)).IsSymmetric := by
+  let eR := LinearEquiv.ofInjective (fderiv ℝ i x : V →ₗ[ℝ] E) h
+  have coe_eR (v : V) : (eR v : E) = fderiv ℝ i x v := by simp [eR]
+  intro u w
+  have hu : (u : E) = fderiv ℝ i x (eR.symm u) := by
+    conv_lhs => rw [← eR.apply_symm_apply u]
+    exact coe_eR (eR.symm u)
+  have hw : (w : E) = fderiv ℝ i x (eR.symm w) := by
+    conv_lhs => rw [← eR.apply_symm_apply w]
+    exact coe_eR (eR.symm w)
+  rw [Submodule.coe_inner, Submodule.coe_inner, LinearEquiv.conj_apply_apply,
+    LinearEquiv.conj_apply_apply, coe_eR, coe_eR, hu, hw]
+  exact hi.inner_fderiv_shapeOperator_apply_comm ν (eR.symm u) (eR.symm w)
 
 /-! ### Squared distance and focal points -/
 

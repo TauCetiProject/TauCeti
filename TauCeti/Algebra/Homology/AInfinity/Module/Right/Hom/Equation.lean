@@ -127,7 +127,6 @@ theorem componentEquation (f : AInfinityRightModuleHom MM NN) (n : ℕ)
     Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
       AInfinityRightModule.apply_algebra_splice_of_mem
         (f := fun r ↦ f.component r) f.taylor_tmul_of_tprod
-        (Finset.mem_Icc.1 hs).1
         (by
           have := (Finset.mem_Icc.1 hs).2
           have := Finset.mem_range.1 hp

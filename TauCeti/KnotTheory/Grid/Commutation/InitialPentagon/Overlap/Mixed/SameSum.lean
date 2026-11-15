@@ -97,7 +97,6 @@ theorem mem_initialPentagonInitialSelfPairs_of_left_eq_right
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hD
   have hfirst := ((G.mem_unblockedRectangles _).1 hR).1
   have hpentagon := ((G.mem_initialPentagons _).1 hP).1
-  have hone := D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_right hcommon hother
   have hturn' : C.turnRow ∉ Grid.cIco
       (D.leftRightRecut hcommon hother hfirst hpentagon).first.bottom
       (D.leftRightRecut hcommon hother hfirst hpentagon).first.top := fun h =>

@@ -11,12 +11,11 @@ name: Stuck-automation alerts
 # signal: a run that checks and posts successfully is green even with ten alerts
 # open. Only a persistent Zulip config break (bad key, forbidden bot, not
 # subscribed) fails the run — if we cannot post, the emergency channel itself is
-# down and that must be loud (mirrors zulip-healthcheck.yml).
+# down and that must be loud.
 #
 # Known limitation: a watchdog cannot fully watch itself — if THIS workflow's own
 # cron stops firing (GitHub 60-day disable, org-level pause), it cannot alert on
-# its own silence. That gap is best closed by an external check (e.g. teaching
-# zulip-healthcheck.yml to assert stuck-alerts ran recently); left as a follow-up.
+# its own silence. That gap needs an external check of its recent runs.
 
 on:
   schedule:
@@ -40,17 +39,17 @@ concurrency:
 jobs:
   stuck-alerts:
     if: github.repository == 'TauCetiProject/TauCeti'
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f312d9348b711cb3bac247460ab2f15b94743bdb
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f312d9348b711cb3bac247460ab2f15b94743bdb
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Reconcile stuck-automation alerts
         # No continue-on-error: a broken Zulip integration must go red here too.

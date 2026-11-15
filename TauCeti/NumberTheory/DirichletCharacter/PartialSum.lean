@@ -54,7 +54,7 @@ theorem norm_sum_Icc_le_level {F : Type*} [NormedField F]
     simp [χ.map_zero' (by rintro rfl; exact hχ (Subsingleton.elim _ _))]
   rw [hsum, χ.sum_range_eq_sum_range_mod hχ]
   calc
-    _ ≤ ∑ k ∈ range ((n + 1) % N), (1 : ℝ) :=
+    _ ≤ ∑ _ ∈ range ((n + 1) % N), (1 : ℝ) :=
       (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ χ.norm_le_one k)
     _ ≤ (N : ℝ) := by simpa using (Nat.cast_le.mpr (Nat.mod_lt (n + 1) (NeZero.pos N)).le :
       (((n + 1) % N : ℕ) : ℝ) ≤ N)

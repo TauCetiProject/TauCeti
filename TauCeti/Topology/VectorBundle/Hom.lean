@@ -10,14 +10,17 @@ public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Coordinates
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Continuous bundle homomorphisms and their inverses
 
 For a bundle with finite-dimensional model source, continuity of a fibrewise linear map
 on total spaces is equivalent to continuity as a section of Mathlib's Hom bundle.
-Consequently a continuous fibrewise linear equivalence gives a homeomorphism of total
-spaces: continuity of the inverse need not be supplied separately.
+Consequently a continuous fibrewise linear equivalence, or one whose underlying continuous linear
+maps form a continuous Hom-bundle section, gives a homeomorphism of total spaces
+(`TauCeti.bundleHomeomorph`, `TauCeti.bundleHomeomorphOfHom`): continuity of the inverse need not
+be supplied separately.
 
 We also prove local continuity of inversion for Hom-bundle sections with a Banach model
 source. This local result does not require finite rank or invertibility away from the
@@ -405,14 +408,21 @@ end Comp
 namespace TauCeti
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
-  [∀ x, IsTopologicalAddGroup (E₁ x)] [∀ x, ContinuousSMul 𝕜 (E₁ x)]
+
+section
+
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
 /-- A continuous fibrewise linear equivalence with finite-dimensional model source has a
 continuous inverse on total spaces. No compactness or separation of the base is needed. -/
 theorem continuous_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
     Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
-  let := FiniteDimensional.complete 𝕜 F₁
+  let := FiniteDimensional.completeSpace 𝕜 F₁
+  have : ∀ x, IsTopologicalAddGroup (E₁ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
+  have : ∀ x, ContinuousSMul 𝕜 (E₁ x) := VectorBundle.continuousSMul 𝕜 F₁ E₁
+  have : ∀ x, IsTopologicalAddGroup (E₂ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂
+  have : ∀ x, ContinuousSMul 𝕜 (E₂ x) := VectorBundle.continuousSMul 𝕜 F₂ E₂
   have h := (continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).mpr he
   have hi := h.clm_bundle_inverse (fun x ↦ ContinuousLinearMap.isInvertible_equiv)
   have ha := (hi.comp (continuous_proj F₂ E₂)).clm_bundle_apply continuous_id
@@ -442,6 +452,28 @@ theorem bundleHomeomorph_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (p : TotalSpace F₂ E₂) : (bundleHomeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
   (rfl)
 
+end
+
+section
+
+variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x) (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+  (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
+/-- The homeomorphism of total spaces induced by a family of fibrewise continuous linear
+equivalences whose underlying continuous linear maps form a continuous Hom-bundle section. -/
+def bundleHomeomorphOfHom : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ :=
+  bundleHomeomorph e
+    (((continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr fun _ ↦ rfl)
+
+@[simp] theorem bundleHomeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
+
+@[simp] theorem bundleHomeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+
+end
+
+omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)] in
 /-- A continuous fibrewise bijective linear map between vector bundles with a
 finite-dimensional model source is induced by a homeomorphism of total spaces. -/
 theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x)
@@ -450,6 +482,10 @@ theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂
     ∃ h : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂,
       ∀ (x : B) (v : E₁ x), h ⟨x, v⟩ = ⟨x, ϕ x v⟩ := by
   let e (x : B) : E₁ x ≃L[𝕜] E₂ x := by
+    have := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁ x
+    have := VectorBundle.continuousSMul 𝕜 F₁ E₁ x
+    have := VectorBundle.isTopologicalAddGroup 𝕜 F₂ E₂ x
+    have := VectorBundle.continuousSMul 𝕜 F₂ E₂ x
     let := FiberBundle.t2Space F₁ E₁ x
     let := FiberBundle.t2Space F₂ E₂ x
     let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x

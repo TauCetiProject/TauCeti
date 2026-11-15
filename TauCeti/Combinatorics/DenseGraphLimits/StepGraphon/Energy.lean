@@ -38,9 +38,9 @@ representative at all — it is load-bearing for `stepGraphonAvg_idem` — but i
 this identity true.
 
 This is `‖E[W | P ⊗ P]‖₂²` written entirely in terms of finite block averages; the identification
-with `MeasureTheory.condExp` belongs to the later a.e. layer, and nothing here needs it.  It is also
-distinct from Mathlib's `Finpartition.energy`, which is the finite edge-density energy of a finite
-graph.
+with `MeasureTheory.condExp` is `TauCeti.DenseGraphLimits.stepGraphonAvg_ae_eq_condExp`, and nothing
+here needs it.  It is also distinct from Mathlib's `Finpartition.energy`, which is the finite
+edge-density energy of a finite graph.
 
 ## Main definitions
 
@@ -71,16 +71,9 @@ graph.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
 * A. Frieze and R. Kannan, *Quick approximation to matrices and applications*, Combinatorica 19
   (1999), 175--220.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the analytic energy stack
-  (`graphonPartitionEnergy`, `graphonPartitionEnergy_eq`, the `L²`-Pythagoras increment and its
-  `_mono` / `_nonneg` / `_le_one` corollaries).  The signatures of `graphonPartitionEnergy` and of
-  its `_eq` / `_increment` / `_mono` / `_nonneg` / `_le_one` companions, together with the
-  `_mono` and `_nonneg` proofs, follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` (Layer 2);
-  the block computation, the projection moment identity and the defect identity are developed here.
-* The roadmap lists the null-cell `Finpartition` convention — including unchanged weighted energy,
-  the scope of `stepGraphonAvg_rectIntegral_of_le_of_le` and of the increment — under its
-  migration-backed routes, with an independent development in `Graphon/RegularityFinpartition.lean`
-  in `cameronfreer/graphon` (Apache 2.0) at commit
+* The null-cell `Finpartition` convention — including unchanged weighted energy, the scope of
+  `stepGraphonAvg_rectIntegral_of_le_of_le` and of the increment — has an independent development
+  in `Graphon/RegularityFinpartition.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
   `dfd7ecc9b197d8211842935204bcec6051d57863`.  No material is adapted from that source; the proofs
   here are the `L²` route through `l2inner_stepGraphonAvg_eq_sum`.
 -/

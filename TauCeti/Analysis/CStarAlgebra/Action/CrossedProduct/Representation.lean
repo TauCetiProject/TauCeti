@@ -21,8 +21,8 @@ representation. Applying the intertwiner equivalence to a unitary operator gives
 with unitary equivalence.
 
 These results allow possibly nonunital coefficients and degenerate target representations;
-no separability or global σ-finiteness is assumed. The Hilbert spaces lie in the universe used
-to define the full crossed-product norm.
+no separability or global σ-finiteness is assumed, and the Hilbert spaces may lie in any
+universe.
 
 ## References
 
@@ -46,7 +46,7 @@ universe u v
 variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NonUnitalCStarAlgebra A] {α : CStarAction G A} (μ : Measure G) [μ.IsHaarMeasure]
-  {H K : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {H K : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
   (P : CovariantRepresentation α H)
 

@@ -82,7 +82,7 @@ theorem compoundPoissonMeasure_logarithmicSeriesMeasure {r q : ℝ} (hr : 0 ≤ 
   symm
   apply TauCeti.Measure.ext_of_mgf
   · rw [integrableExpSet_id_map_cast_negativeBinomialMeasure hr
-      (by linarith : 0 < 1 - q) (by linarith)]
+      (by linarith : 0 < 1 - q)]
     have hopen : IsOpen {t : ℝ | (1 - (1 - q)) * exp t < 1} :=
       isOpen_lt (by fun_prop) continuous_const
     rw [hopen.interior_eq]

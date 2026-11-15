@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.Cyclic
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three.Basic
 import Mathlib.Tactic.FinCases
 
 /-!
