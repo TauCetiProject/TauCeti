@@ -10,11 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the second Conway group
 
-This file carries the `Co₂` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation of
-the second Conway group on its standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
-together with the source, the generator convention, transcription notes, the expected counts, and
-decidable checks on the transcription.
+This file carries the `Co₂` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation of the second Conway group on its standard generators `a` and `b` as a
+`TauCeti.GroupPresentation`, together with the source, the generator convention, transcription
+notes, the expected counts, and decidable checks on the transcription.
 
 Writing `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` for the four syllables that occur, the
 ten transcribed relators are
@@ -71,7 +70,7 @@ commutator `[r,s]` as `r⁻¹s⁻¹rs`. Between the ninth and tenth active entri
 comments out `[x,y²xy²]³` with the note "Redundant, but useful."; the presentation page places
 the same word in an HTML element of class `redundant`. It is therefore correctly absent from the
 Lean row. This checks every active source relator, inverse, exponent, and the sole optional-word
-boundary independently of the original transcription and closes this row's S1 source-to-Lean
+boundary independently of the original transcription and closes this row's source-to-Lean
 read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
@@ -98,10 +97,8 @@ subgroup and put `co2a,co2b` back in `⟨a,b⟩`; the pair therefore generates t
 
 The check used Python 3.14.6, pynauty 2.8.8.1, and SymPy 1.14.0. Concatenating the transported
 forward image tables for `a` and then `b`, with each image stored as a two-byte little-endian
-integer, has SHA-256
-`0cf39fc1762ee787a2ead7998b38005878df17f450aabf57ce786bec59fa2f22`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau
-Ceti.
+integer, has SHA-256 `0cf39fc1762ee787a2ead7998b38005878df17f450aabf57ce786bec59fa2f22`. This is the
+independent comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out and this file's private syllable

@@ -80,16 +80,13 @@ private theorem strictMono_rotateTime_finRotate_pow {N k : ℕ} {τ : Fin N → 
     (hτ₀ : ∀ i, 0 ≤ τ i) (hτn : ∀ i, τ i < n) (hkN : k ≤ N) (hk : ∀ i, τ i < 1 ↔ (i : ℕ) < k) :
     StrictMono fun j ↦ rotateTime n (τ ((finRotate N ^ k) j)) := by
   intro j j' hjj'
-  have hj := j.isLt
-  have hj' := j'.isLt
-  have hlt : (j : ℕ) < j' := hjj'
+  have _ : (j : ℕ) < j' := hjj'
   -- The index `(finRotate N ^ k) j` is `j + k` before wrapping around and `j + k - N` after.
   have hσ₁ (j : Fin N) (h : (j : ℕ) + k < N) : ((finRotate N ^ k) j : ℕ) = j + k := by
     rw [Fin.coe_finRotate_pow, Nat.mod_eq_of_lt h]
   have hσ₂ (j : Fin N) (h : N ≤ (j : ℕ) + k) : ((finRotate N ^ k) j : ℕ) = j + k - N := by
     have := j.isLt
     rw [Fin.coe_finRotate_pow, Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
-  have h₀ := hτ₀ ((finRotate N ^ k) j)
   have hn := hτn ((finRotate N ^ k) j)
   simp only [rotateTime]
   by_cases h₁ : (j : ℕ) + k < N <;> by_cases h₂ : (j' : ℕ) + k < N

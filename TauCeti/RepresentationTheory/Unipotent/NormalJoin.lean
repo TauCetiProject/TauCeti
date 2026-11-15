@@ -7,6 +7,7 @@ module
 
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.RepresentationTheory.Unipotent.Solvable
+import TauCeti.RepresentationTheory.Unipotent.Quotient
 import Mathlib.RepresentationTheory.Invariants
 import Mathlib.RingTheory.Nilpotent.Lemmas
 
@@ -37,9 +38,6 @@ of the multiplication image with products of points of the two source subgroups.
 
 * A. Borel, *Linear Algebraic Groups*, Theorem 4.8 and Proposition 14.4.
 * T. A. Springer, *Linear Algebraic Groups*, Proposition 2.4.12.
-
-This supplies the representation-theoretic product step in Layer 5, "The unipotent radical", of
-the ReductiveGroups roadmap.
 -/
 
 public section
@@ -136,52 +134,19 @@ private theorem isNilpotent_sub_one_of_normal_isUnipotent
           have hz : z ∈ U ⊔ W := by rw [hUW]; exact Subgroup.mem_top z
           obtain ⟨u, hu, w, hw, rfl⟩ := (Subgroup.mem_sup_of_right_le_normalizer_left hWU).mp hz
           rw [map_mul, mul_apply_eq_comp, hxW ⟨w, hw⟩, hxU ⟨u, hu⟩]
-        let p : Submodule K V := K ∙ x
-        have hpdim : finrank K p = 1 := finrank_span_singleton hx
-        have hp_fixed (z : G) (y : p) : rho z (y : V) = y := by
-          obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp y.2
-          rw [← ha, map_smul, hfixed]
-        have hp (z : G) : p ≤ p.comap (rho z) := by
-          intro y hy
-          rw [Submodule.mem_comap, hp_fixed z ⟨y, hy⟩]
-          exact hy
-        let q : Representation K G (V ⧸ p) := rho.quotient p hp
-        have quotient_sub_one_eq_mapQ (z : G)
-            (hsub : p ≤ p.comap (rho z - 1)) :
-            q z - 1 = p.mapQ p (rho z - 1) hsub := by
-          ext y
-          simp only [Representation.quotient_apply, LinearMap.coe_comp, Function.comp_apply,
-            Submodule.mkQ_apply, LinearMap.sub_apply, Submodule.mapQ_apply, one_apply_eq_self,
-            Submodule.Quotient.mk_sub, q]
-        have hq (z : G) (hz : IsNilpotent (rho z - 1)) : IsNilpotent (q z - 1) := by
-          have hsub : p ≤ p.comap (rho z - 1) := by
-            intro y hy
-            rw [Submodule.mem_comap]
-            simpa only [LinearMap.sub_apply, one_apply_eq_self] using p.sub_mem (hp z hy) hy
-          rw [quotient_sub_one_eq_mapQ z hsub]
-          exact Module.End.IsNilpotent.mapQ hsub hz
-        have hqdim : finrank K (V ⧸ p) < d := by
-          have hsum := Module.finrank_quotient_add_finrank_le p
-          rw [hpdim, hdim] at hsum
+        have hfix (z : G) (y : V) (hy : y ∈ K ∙ x) : rho z y = y := by
+          obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
+          rw [map_smul, hfixed]
+        have hqdim : finrank K (V ⧸ K ∙ x) < d := by
+          have hsum := Module.finrank_quotient_add_finrank_le (K ∙ x)
+          rw [finrank_span_singleton hx, hdim] at hsum
           omega
-        obtain ⟨n, hn⟩ := ih (finrank K (V ⧸ p)) hqdim q
-          (fun u ↦ hq u (hU u)) (fun w ↦ hq w (hW w)) rfl
-        have hsub : p ≤ p.comap (rho g - 1) := by
-          intro y hy
-          rw [Submodule.mem_comap]
-          simpa only [LinearMap.sub_apply, one_apply_eq_self] using p.sub_mem (hp g hy) hy
-        rw [quotient_sub_one_eq_mapQ g hsub] at hn
-        let f : Module.End K V := rho g - 1
-        refine ⟨n + 1, ?_⟩
-        ext y
-        rw [pow_succ', mul_apply_eq_comp]
-        have hymem : (f ^ n) y ∈ p := by
-          apply (Submodule.Quotient.mk_eq_zero p).mp
-          have hz := LinearMap.congr_fun hn (p.mkQ y)
-          rw [← p.mapQ_pow hsub n] at hz
-          simpa only [Submodule.mkQ_apply, Submodule.mapQ_apply, LinearMap.zero_apply] using hz
-        rw [LinearMap.sub_apply, one_apply_eq_self, hp_fixed g ⟨(f ^ n) y, hymem⟩, sub_self,
-          LinearMap.zero_apply]
+        have hinv : ∀ g, K ∙ x ≤ (K ∙ x).comap (rho g) := fun g ↦
+          (K ∙ x).le_comap_of_fixed (rho g) (hfix g)
+        exact rho.isNilpotent_sub_one_of_quotient (K ∙ x) hinv (hfix g) <|
+          ih _ hqdim (rho.quotient (K ∙ x) hinv)
+            (fun u ↦ rho.isNilpotent_quotient_sub_one _ _ (hU u))
+            (fun w ↦ rho.isNilpotent_quotient_sub_one _ _ (hW w)) rfl
       · let _ : Subsingleton V := not_nontrivial_iff_subsingleton.mp hV
         exact ⟨1, Subsingleton.elim _ _⟩
 

@@ -34,8 +34,7 @@ A map that is injective only on part of the line admits the same change of varia
 price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
-Finally, a weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite
-measure finite.
+A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
 
 ## Main statements
 

@@ -219,13 +219,13 @@ type-`D` root datum.** The index on the right is the datum's full root index, an
 `typeDRootWeight_apply_cartanGenerator` identifies its fundamental-weight coordinates. -/
 theorem rootSpace_typeDDiagonalCartan_ne_bot_iff_exists_eq_typeDRootWeight
     (n : ℕ) (hn : 4 ≤ n) (chi : Module.Dual K (typeDDiagonalCartan K (Fin n)))
-    [IsDomain K] (h2 : (2 : K) ≠ 0) (hchi : chi ≠ 0) :
+    [IsDomain K] (hchi : chi ≠ 0) :
     LieAlgebra.rootSpace (typeDDiagonalCartan K (Fin n)) chi ≠ ⊥ ↔
       ∃ k, chi = typeDRootWeight n hn k := by
   constructor
   · intro hroot
     obtain ⟨i, j, hij, hchi | hchi | hchi⟩ :=
-      (rootSpace_typeDDiagonalCartan_ne_bot_iff h2 chi hchi).mp hroot
+      (rootSpace_typeDDiagonalCartan_ne_bot_iff chi hchi).mp hroot
     · obtain ⟨k, hk⟩ := exists_typeDRootWeight_eq_typeDWeightSub (K := K) n hn hij
       exact ⟨k, hchi.trans hk.symm⟩
     · obtain ⟨k, hk⟩ := exists_typeDRootWeight_eq_typeDWeightAdd (K := K) n hn hij

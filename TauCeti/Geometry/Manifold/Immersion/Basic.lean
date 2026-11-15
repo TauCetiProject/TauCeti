@@ -59,6 +59,9 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
   `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
   lowering the regularity order preserves immersions.
+* `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
+  immersion data, a point `b` of the source chart is sent by `f` to the point read as
+  `h.equiv (b, 0)` in the target chart.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -407,5 +410,25 @@ theorem _root_.Manifold.IsImmersion.of_le
   (h.isImmersionOfComplement_complement.of_le hnm).isImmersion
 
 end OfLe
+
+/-! ### Points of the source read in the immersion charts -/
+
+/-- In the charts `φ = h.domChart.extend I` and `e = h.codChart.extend J` of immersion data `h` of
+`f` at `x`, every point `b` of the target of `φ` is sent to the slice: `f (φ⁻¹ b)` lies in the
+chart `e`, corresponds to `h.equiv (b, 0)`, and `h.equiv (b, 0)` lies in the target of `e`. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq {x : M}
+    (h : IsImmersionAtOfComplement F I J n f x) {b : E} (hb : b ∈ (h.domChart.extend I).target) :
+    f ((h.domChart.extend I).symm b) ∈ h.codChart.source ∧
+      h.codChart.extend J (f ((h.domChart.extend I).symm b)) = h.equiv (b, 0) ∧
+      (h.codChart.extend J).symm (h.equiv (b, 0)) = f ((h.domChart.extend I).symm b) ∧
+      h.equiv (b, 0) ∈ (h.codChart.extend J).target := by
+  have hsrc : (h.domChart.extend I).symm b ∈ h.domChart.source := by
+    simpa using (h.domChart.extend I).map_target hb
+  have hy : f ((h.domChart.extend I).symm b) ∈ h.codChart.source :=
+    h.source_subset_preimage_source hsrc
+  have hw : h.codChart.extend J (f ((h.domChart.extend I).symm b)) = h.equiv (b, 0) :=
+    h.writtenInCharts hb
+  refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
+  rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
 
 end TauCeti

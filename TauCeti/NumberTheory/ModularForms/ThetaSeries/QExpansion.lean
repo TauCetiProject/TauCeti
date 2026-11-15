@@ -84,8 +84,9 @@ private theorem IsEven.exists_one_mul_norm_zero_add_sq_eq (hL : IsEven L) {v : E
   obtain ⟨m, hm⟩ := isEven_iff.mp hL v hv
   exact ⟨m, by rw [zero_add, one_mul, hm]⟩
 
-variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
+variable [DiscreteTopology L] in
 /-- **The `q`-expansion of a coset theta series.** If `h ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`, with
 `h > 0`, then `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / h) q_h^m` with `q_h = exp (2 π i τ / h)`. -/
 theorem hasSum_thetaCoset_qParam (hh : 0 < h)
@@ -127,6 +128,7 @@ theorem hasSum_thetaCoset_qParam (hh : 0 < h)
   rw [TauCeti.Periodic.exp_pi_mul_I_mul_eq_qParam_pow hh.ne' (hg v),
     Set.mem_singleton_iff.mp v.2]
 
+variable [DiscreteTopology L] in
 /-- The coefficients of the `q`-expansion of a coset theta series: if `h ‖γ + v‖² ∈ 2ℤ` for every
 `v ∈ L`, with `h > 0`, the `m`-th coefficient of the expansion of `θ_{γ+L}` in
 `q_h = exp (2 π i τ / h)` is `r_{γ+L}(2m / h)`. -/
@@ -148,6 +150,7 @@ namespace IsEven
 theorem hasSum_thetaSeries_qParam (hL : IsEven L) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ (representationNumber L (2 * m) : ℂ) • Periodic.qParam 1 τ ^ m)
       (thetaSeries L τ) := by
+  have := hL.discreteTopology
   have := hasSum_thetaCoset_qParam one_pos (fun _ hv ↦ hL.exists_one_mul_norm_zero_add_sq_eq hv) τ
   simp_rw [thetaCoset_zero, cosetRepresentationNumber_zero_left, div_one] at this
   exact this
@@ -156,6 +159,7 @@ theorem hasSum_thetaSeries_qParam (hL : IsEven L) (τ : ℍ) :
 coefficient in `q = exp (2 π i τ)` is the number `r_L(2m)` of vectors of half-norm `m`. -/
 theorem qExpansion_thetaSeries_coeff (hL : IsEven L) (m : ℕ) :
     (qExpansion 1 (thetaSeries L)).coeff m = representationNumber L (2 * m) := by
+  have := hL.discreteTopology
   rw [← thetaCoset_zero,
     qExpansion_thetaCoset_coeff one_pos (fun _ hv ↦ hL.exists_one_mul_norm_zero_add_sq_eq hv) m,
     cosetRepresentationNumber_zero_left, div_one]
@@ -175,7 +179,7 @@ private theorem IsIntegral.exists_two_mul_norm_zero_add_sq_eq (hL : IsIntegral L
   obtain ⟨m, hm⟩ := isIntegral_iff.mp hL v hv v hv
   exact ⟨m, by rw [zero_add, ← real_inner_self_eq_norm_sq, hm]⟩
 
-variable [FiniteDimensional ℝ E] [DiscreteTopology L]
+variable [FiniteDimensional ℝ E]
 
 /-! ### Integral lattices -/
 
@@ -186,6 +190,7 @@ namespace IsIntegral
 theorem hasSum_thetaSeries_qParam_two (hL : IsIntegral L) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ (representationNumber L m : ℂ) • Periodic.qParam 2 τ ^ m)
       (thetaSeries L τ) := by
+  have := hL.discreteTopology
   have := hasSum_thetaCoset_qParam two_pos (fun _ hv ↦ hL.exists_two_mul_norm_zero_add_sq_eq hv) τ
   simp_rw [thetaCoset_zero, cosetRepresentationNumber_zero_left,
     mul_div_cancel_left₀ _ (two_ne_zero (α := ℝ))] at this
@@ -196,6 +201,7 @@ lattice: the `m`-th coefficient in `q^{1/2} = exp (π i τ)` is the number `r_L(
 squared norm `m`. -/
 theorem qExpansion_two_thetaSeries_coeff (hL : IsIntegral L) (m : ℕ) :
     (qExpansion 2 (thetaSeries L)).coeff m = representationNumber L m := by
+  have := hL.discreteTopology
   rw [← thetaCoset_zero,
     qExpansion_thetaCoset_coeff two_pos (fun _ hv ↦ hL.exists_two_mul_norm_zero_add_sq_eq hv) m,
     cosetRepresentationNumber_zero_left, mul_div_cancel_left₀ _ (two_ne_zero (α := ℝ))]
@@ -212,8 +218,9 @@ integer `N` with `N ‖γ‖² / 2 ∈ ℤ`, in `q_N = exp (2 π i τ / N)`,
 theorem hasSum_thetaCoset_qParam (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N)
     (hNγ : ∃ n : ℤ, N * ‖γ‖ ^ 2 = 2 * n) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ (cosetRepresentationNumber L γ (2 * m / N) : ℂ) •
-      Periodic.qParam N τ ^ m) (thetaCoset L γ τ) :=
-  ZLattice.hasSum_thetaCoset_qParam (Nat.cast_pos.mpr hN)
+      Periodic.qParam N τ ^ m) (thetaCoset L γ τ) := by
+  have := hL.discreteTopology
+  exact ZLattice.hasSum_thetaCoset_qParam (Nat.cast_pos.mpr hN)
     (fun _ hv ↦ hL.exists_natCast_mul_norm_add_sq_eq hγ hNγ hv) τ
 
 /-- The coefficients of the `q_N`-expansion of a coset theta series of an even lattice: for
@@ -221,8 +228,9 @@ theorem hasSum_thetaCoset_qParam (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ}
 `q_N = exp (2 π i τ / N)` is `r_{γ+L}(2m / N)`. -/
 theorem qExpansion_thetaCoset_coeff (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N)
     (hNγ : ∃ n : ℤ, N * ‖γ‖ ^ 2 = 2 * n) (m : ℕ) :
-    (qExpansion N (thetaCoset L γ)).coeff m = cosetRepresentationNumber L γ (2 * m / N) :=
-  ZLattice.qExpansion_thetaCoset_coeff (Nat.cast_pos.mpr hN)
+    (qExpansion N (thetaCoset L γ)).coeff m = cosetRepresentationNumber L γ (2 * m / N) := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaCoset_coeff (Nat.cast_pos.mpr hN)
     (fun _ hv ↦ hL.exists_natCast_mul_norm_add_sq_eq hγ hNγ hv) m
 
 /-- **The support of the `q_N`-expansion of a coset theta series.** For an even lattice `L`,
@@ -282,7 +290,7 @@ theorem qExpansion_thetaCosetClass_coeff_zero_of_level_dvd (hL : IsEven L)
 
 section FullLattice
 
-variable [IsZLattice ℝ L]
+variable [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- **The `q_N`-expansion of a coset theta series at the level.** For an even full lattice `L` of
 level `N = level L` and `γ ∈ L^∨`, `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`. -/

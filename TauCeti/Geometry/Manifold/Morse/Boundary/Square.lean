@@ -21,7 +21,8 @@ This set is finite, and the `r`-coefficient of `∂ (∂ p)` is its cardinality 
 Consequently `∂ ∘ ∂ = 0` holds exactly when every set of broken index-two trajectories has even
 cardinality. This is the algebraic half of `∂² = 0`. The geometric half, that broken trajectories
 are the boundary points of a compact one-dimensional manifold of trajectories and therefore come in
-pairs, needs the compactification and gluing of index-two trajectory spaces and is not proved here.
+pairs, needs the compactification and gluing of index-two trajectory spaces; it is proved in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Differential`.
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Square`.
 
@@ -87,13 +88,12 @@ many broken index-two trajectories between two critical points. -/
 theorem finite_morseBrokenTrajectorySet (p r : criticalPoints 𝓘(ℝ, E) f) :
     (hX.morseBrokenTrajectorySet p r).Finite := by
   have := hf.finite_criticalPoints.to_subtype
-  have hcrit := fun a : criticalPoints 𝓘(ℝ, E) f ↦ mem_criticalPoints_iff_mfderiv_eq_zero.1 a.2
   -- Sort the broken trajectories by their intermediate critical point `q`.
   refine ((toFinite {q : criticalPoints 𝓘(ℝ, E) f |
       manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
         manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1}).biUnion
-    fun q hq ↦ ((h.finite_morseTrajectorySlice hf (hcrit p) (hcrit q) hq.1).prod
-      (h.finite_morseTrajectorySlice hf (hcrit q) (hcrit r) hq.2)).image (Prod.mk q)).subset
+    fun q hq ↦ ((h.finite_morseTrajectorySlice hf hq.1).prod
+      (h.finite_morseTrajectorySlice hf hq.2)).image (Prod.mk q)).subset
     fun x hx ↦ mem_biUnion ⟨hx.1, hx.2.1⟩ ⟨x.2, ⟨hx.2.2.1, hx.2.2.2⟩, rfl⟩
 
 /-- **`∂ ∘ ∂` counts broken trajectories.** The `r`-coefficient of the boundary of the boundary

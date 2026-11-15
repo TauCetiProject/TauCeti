@@ -42,6 +42,8 @@ exactly when it is universally injective
 (`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
 immersion, which is an isomorphism exactly when it is surjective.
 
+Formally unramified morphisms respect isomorphisms (`TauCeti.formallyUnramified_respectsIso`).
+
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
@@ -54,9 +56,20 @@ public section
 open CategoryTheory Limits
 open scoped TensorProduct
 
-namespace AlgebraicGeometry
-
 universe u
+
+namespace TauCeti
+
+open AlgebraicGeometry
+
+/-- Formally unramified morphisms of schemes respect isomorphisms. -/
+instance formallyUnramified_respectsIso :
+    MorphismProperty.RespectsIso (@FormallyUnramified : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.IsStableUnderBaseChange.respectsIso
+
+end TauCeti
+
+namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
 
@@ -98,9 +111,6 @@ theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_baseChange_field
     ext
     simp [RingHom.algebraMap_toAlgebra]
   rw [hφ, ← pullbackSpecIso_hom_snd R S K] at hK
-  -- Fixing the universe also lets instance search find isomorphism invariance.
-  have : MorphismProperty.RespectsIso @FormallyUnramified.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have hmap := (MorphismProperty.cancel_left_of_respectsIso (P := @FormallyUnramified.{u})
     (pullbackSpecIso R S K).hom _).mp hK
   let : Algebra K (S ⊗[R] K) := Algebra.TensorProduct.rightAlgebra

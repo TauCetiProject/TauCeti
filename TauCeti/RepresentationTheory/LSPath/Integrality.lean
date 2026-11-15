@@ -121,6 +121,7 @@ theorem minHeight_le_duration_mul_dir_zero (π : LSPath P b lam) (f : M →+ V)
 
 variable [P.flip.IsReduced]
 
+omit [P.flip.IsReduced] in
 /-- The endpoint of an LS path has integral value under every height form agreeing with an
 integral linear form on the weight lattice. -/
 theorem exists_apply_endpoint_eq_intCast (π : LSPath P b lam)

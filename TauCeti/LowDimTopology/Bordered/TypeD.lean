@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Idempotent
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+public import TauCeti.LinearAlgebra.PiTensorProduct.Dual
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.StrictMono
 
@@ -51,12 +53,19 @@ on matrices entrywise.
   homomorphisms induce chain maps, a morphism `H` with `∂H = F + G` induces a chain homotopy
   between the maps of `F` and `G`, composition is preserved
   (`TauCeti.continuationMap_matMul`), and the identity morphism acts as the identity on `M ⊗ N`.
+* **Mapping cones.** A homomorphism `F` from `N` to `N'` has a mapping cone
+  (`TauCeti.TypeDStructure.cone`), the type `D` structure on the generators `X ⊕ X'` with
+  coefficient matrix `fromBlocks δ F 0 δ'`; a morphism `fromCols G H` into it has differential
+  `fromCols (∂G) (G * F + ∂H)` (`TauCeti.TypeDStructure.morphismDifferential_cone_fromCols`).
 * **Iterates of `δ¹`.** The coefficient of `z` in `δᵏ x` is the sum over the paths
   `x = r 0, …, r k = z` of `coeff (r 0) (r 1) ⊗ ⋯ ⊗ coeff (r (k-1)) (r k)` in the `k`-th tensor
   power of `A` over `R` (`TauCeti.TypeDStructure.iteratedCoeff`), with `δ⁰` the identity, `δ¹` the
   structure map and `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`. A type `D` structure is bounded when `δᵏ = 0` for
   large `k` (`TauCeti.TypeDStructure.IsBounded`), for instance when its coefficients strictly
-  increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). The tensor power over
+  increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). A finite set of
+  generators does not suffice: a generator whose only coefficient is a nonzero coefficient of
+  itself gives nonzero iterates of every length over a field
+  (`TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`). The tensor power over
   the ring of idempotents is a quotient of the one over `R`, so this boundedness implies the
   vanishing of the iterates over the idempotents. The iterates enter the box tensor product with
   type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -74,6 +83,7 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.morphisms`, `TauCeti.TypeDStructure.morphismDifferential`,
   `TauCeti.TypeDStructure.idMorphism`: morphisms of type `D` structures, their differential and the
   identity morphism.
+* `TauCeti.TypeDStructure.cone`: the mapping cone of a homomorphism.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
@@ -95,6 +105,10 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt` and
   `TauCeti.TypeDStructure.isBounded_of_lt`: a type `D` structure whose coefficients increase a
   height function is bounded.
+* `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero` and
+  `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`: a generator whose only
+  coefficient is a coefficient of itself, with nonzero tensor powers, makes a type `D` structure
+  unbounded.
 
 ## References
 
@@ -312,6 +326,58 @@ theorem morphismDifferential_mem_morphisms (hd : IsUngradedDGAlgebra d) (hι : �
   add_mem (add_mem (map_mem_morphisms hd hι hF) (mul_mem_morphisms hF (coeff_mem_morphisms N')))
     (mul_mem_morphisms (coeff_mem_morphisms N) hF)
 
+/-! ### Mapping cones -/
+
+variable (N N') in
+/-- The **mapping cone** of a homomorphism `F` from `N` to `N'`: the type `D` structure on the
+generators `X ⊕ X'` with the idempotents of `N` and of `N'` and the block upper-triangular
+coefficient matrix `fromBlocks δ F 0 δ'`. It satisfies the structure equation because `F` is a
+cycle (`TauCeti.TypeDStructure.map_fromBlocks_add_fromBlocks_mul_fromBlocks`). -/
+def cone (F : Matrix X X' A) (hF : F ∈ morphisms N N') (hF' : morphismDifferential N N' F = 0) :
+    TypeDStructure d ι (X ⊕ X') where
+  idem := Sum.elim N.idem N'.idem
+  coeff := Matrix.fromBlocks N.coeff F 0 N'.coeff
+  idem_mul_coeff a b := by
+    rcases a with x | x <;> rcases b with y | y
+    · exact N.idem_mul_coeff x y
+    · exact (hF x y).1
+    · simp
+    · exact N'.idem_mul_coeff x y
+  coeff_mul_idem a b := by
+    rcases a with x | x <;> rcases b with y | y
+    · exact N.coeff_mul_idem x y
+    · exact (hF x y).2
+    · simp
+    · exact N'.coeff_mul_idem x y
+  map_coeff_add_coeff_mul_coeff := by
+    rw [map_fromBlocks_add_fromBlocks_mul_fromBlocks, hF', Matrix.fromBlocks_zero]
+
+section Cone
+
+variable {F : Matrix X X' A} {hF : F ∈ morphisms N N'} {hF' : morphismDifferential N N' F = 0}
+
+@[simp]
+theorem cone_idem : (cone N N' F hF hF').idem = Sum.elim N.idem N'.idem :=
+  (rfl)
+
+@[simp]
+theorem cone_coeff : (cone N N' F hF hF').coeff = Matrix.fromBlocks N.coeff F 0 N'.coeff :=
+  (rfl)
+
+/-- The differential of a morphism `fromCols G H` from `N''` to the mapping cone of `F`, with
+components `G` to `N` and `H` to `N'`: its components are `∂G` and `G * F + ∂H`. -/
+theorem morphismDifferential_cone_fromCols (G : Matrix X'' X A) (H : Matrix X'' X' A) :
+    morphismDifferential N'' (cone N N' F hF hF') (Matrix.fromCols G H) =
+      Matrix.fromCols (morphismDifferential N'' N G) (G * F + morphismDifferential N'' N' H) := by
+  simp only [morphismDifferential_apply, cone_coeff, Matrix.fromCols_map,
+    Matrix.fromCols_mul_fromBlocks, Matrix.mul_fromCols, Matrix.mul_zero, add_zero]
+  ext x (y | y)
+  · simp only [Matrix.add_apply, Matrix.fromCols_apply_inl]
+  · simp only [Matrix.add_apply, Matrix.fromCols_apply_inr]
+    abel
+
+end Cone
+
 /-! ### The box tensor product -/
 
 section BoxTensor
@@ -507,7 +573,7 @@ theorem iteratedCoeff_one (x z : X) :
 /-- Evaluating a multilinear map on the iterate `δᵏ` sums it over the paths. -/
 @[simp]
 theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : MultilinearMap R (fun _ : Fin k => A) P) (x z : X) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin k => A) P) (x z : X) :
     PiTensorProduct.lift f (N.iteratedCoeff k x z) =
       ∑ r : Fin (k + 1) → X with r 0 = x ∧ r (Fin.last k) = z,
         f fun t => N.coeff (r t.castSucc) (r t.succ) := by
@@ -516,7 +582,7 @@ theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
 /-- Summing multilinear maps evaluated on the iterates `δᵏ x` over the starting generators `x`
 sums over all the paths ending at `z`. -/
 theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : X → MultilinearMap R (fun _ : Fin k => A) P) (z : X) :
+    (f : X → MultilinearMap (RingHom.id R) (fun _ : Fin k => A) P) (z : X) :
     ∑ x, PiTensorProduct.lift (f x) (N.iteratedCoeff k x z) =
       ∑ r : Fin (k + 1) → X with r (Fin.last k) = z,
         f (r 0) fun t => N.coeff (r t.castSucc) (r t.succ) := by
@@ -530,7 +596,7 @@ theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : �
 /-- The iterate `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`: evaluating a multilinear map on `δᵏ⁺¹ x` evaluates it on
 a first coefficient `coeff x y`, followed by `δᵏ y`. -/
 theorem lift_iteratedCoeff_succ {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : MultilinearMap R (fun _ : Fin (k + 1) => A) P) (x z : X) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) => A) P) (x z : X) :
     PiTensorProduct.lift f (N.iteratedCoeff (k + 1) x z) =
       ∑ y, PiTensorProduct.lift (f.curryLeft (N.coeff x y)) (N.iteratedCoeff k y z) := by
   rw [sum_lift_iteratedCoeff, lift_iteratedCoeff, Finset.sum_filter, Finset.sum_filter,
@@ -574,6 +640,41 @@ theorem isBounded_iff :
 /-- A type `D` structure whose coefficients strictly increase a height function is bounded. -/
 theorem isBounded_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) : N.IsBounded :=
   ⟨Finset.univ.sup h + 1, fun _ hk => N.iteratedCoeff_eq_zero_of_lt h hh hk⟩
+
+/-- If the only coefficient out of the generator `x` is the coefficient `coeff x x` of `x` itself,
+the only path from `x` stays at `x`, and `δᵏ x` has the `k`-th tensor power of `coeff x x` as its
+coefficient of `x`. -/
+theorem iteratedCoeff_self_of_coeff_eq_zero {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (k : ℕ) :
+    N.iteratedCoeff k x x = PiTensorProduct.tprod R fun _ => N.coeff x x := by
+  rw [iteratedCoeff_def, Finset.sum_eq_single_of_mem (fun _ => x) (by simp)]
+  intro r hr' hr
+  have hr₀ := (Finset.mem_filter.1 hr').2.1
+  by_contra hne
+  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
+    hne (MultilinearMap.map_coord_zero _ t h0)
+  -- Along a path of nonzero coefficients from `x`, every step stays at `x`.
+  have hrx (i : Fin (k + 1)) : r i = x := by
+    induction i using Fin.induction with
+    | zero => exact hr₀
+    | succ t ih => exact not_not.1 fun h => hnz t (by rw [ih]; exact hx _ h)
+  exact hr (funext hrx)
+
+/-- **A loop with no exits makes a type `D` structure unbounded.** If the only coefficient out of
+the generator `x` is its own coefficient `coeff x x`, and every tensor power of `coeff x x` is
+nonzero, then the iterates `δᵏ x` never vanish. A finite set of generators therefore does not make
+a type `D` structure bounded. -/
+theorem not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero {x : X}
+    (hx : ∀ y, y ≠ x → N.coeff x y = 0)
+    (hxx : ∀ k, (PiTensorProduct.tprod R fun _ : Fin k => N.coeff x x) ≠ 0) : ¬N.IsBounded :=
+  fun ⟨K, hK⟩ => hxx K (N.iteratedCoeff_self_of_coeff_eq_zero hx K ▸ hK K le_rfl x x)
+
+/-- Over an integral domain, with `A` projective over `R` (for instance over a field), a generator
+`x` whose only coefficient is a nonzero coefficient `coeff x x` of `x` itself makes a type `D`
+structure unbounded: `δᵏ x = (coeff x x)^{⊗ k} ⊗ x ≠ 0` for every `k`. -/
+theorem not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero [IsDomain R] [Module.Projective R A]
+    {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (hxx : N.coeff x x ≠ 0) : ¬N.IsBounded :=
+  N.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero hx fun _ =>
+    PiTensorProduct.tprod_ne_zero fun _ => hxx
 
 end Iterates
 

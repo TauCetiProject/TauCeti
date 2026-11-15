@@ -252,15 +252,18 @@ intertwines the modular three-term polynomial with the scalar-tower inclusion. -
 theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t : A)
     (z : f4ShortRootLieIdeal) (y : f4ChevalleyLieLattice)
-    (hz : (z : f4ModularChevalleyLieAlgebra) = 1 ⊗ₜ[ℤ] y)
-    (hd1 : (f4ShortRootSignedSimpleAdjoint k z : f4ModularChevalleyLieAlgebra) =
-      1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆)
-    (hd2 : (f4ShortRootDividedAdjointSquare k z : f4ModularChevalleyLieAlgebra) =
-      1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) :
+    (hz : (z : f4ModularChevalleyLieAlgebra) = 1 ⊗ₜ[ℤ] y) :
     f4RootExponential k t
         (f4ShortRootBaseChangeInclusion (A := A) ((1 : A) ⊗ₜ[ZMod 2] z)) =
       f4ShortRootBaseChangeInclusion (A := A)
         (f4ShortRootExponential (A := A) k t ((1 : A) ⊗ₜ[ZMod 2] z)) := by
+  have hd1 : (f4ShortRootSignedSimpleAdjoint k z : f4ModularChevalleyLieAlgebra) =
+      1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
+    rw [coe_f4ShortRootSignedSimpleAdjoint_apply, hz, f4ModularRootVector_eq,
+      LieAlgebra.ExtendScalars.bracket_tmul, one_mul]
+  have hd2 : (f4ShortRootDividedAdjointSquare k z : f4ModularChevalleyLieAlgebra) =
+      1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y := by
+    rw [coe_f4ShortRootDividedAdjointSquare_apply, hz, f4ModularDividedAdjointSquare_tmul]
   have hzA : f4ShortRootBaseChangeInclusion (A := A) ((1 : A) ⊗ₜ[ZMod 2] z) =
       (1 : A) ⊗ₜ[ℤ] y :=
     f4ShortRootBaseChangeInclusion_tmul_of_coe_eq (A := A) (1 : A) z y hz
@@ -304,29 +307,7 @@ private theorem f4RootExponential_intertwines_basis_of_coe_eq
       f4ShortRootBaseChangeInclusion (A := A)
         (f4ShortRootExponential (A := A) k t
           ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis b)) := by
-  have hd1 : (f4ShortRootSignedSimpleAdjoint k (f4ShortRootLieIdealBasis b) :
-      f4ModularChevalleyLieAlgebra) =
-        1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
-    calc
-      _ = ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
-            (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra)⁆ :=
-        coe_f4ShortRootSignedSimpleAdjoint_apply k _
-      _ = ⁅f4ModularRootVector (f4SignedSimpleRootIndex k), 1 ⊗ₜ[ℤ] y⁆ :=
-        congrArg (fun z => ⁅f4ModularRootVector (f4SignedSimpleRootIndex k), z⁆) hz
-      _ = _ := by
-        rw [f4ModularRootVector_eq, LieAlgebra.ExtendScalars.bracket_tmul, one_mul]
-  have hd2 : (f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) :
-      f4ModularChevalleyLieAlgebra) =
-        1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y := by
-    calc
-      _ = f4ModularDividedAdjointSquare k
-          (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) :=
-        (f4ModularDividedAdjointSquare_basis k b).symm
-      _ = f4ModularDividedAdjointSquare k (1 ⊗ₜ[ℤ] y) :=
-        congrArg (f4ModularDividedAdjointSquare k) hz
-      _ = _ := f4ModularDividedAdjointSquare_tmul k y
-  exact f4RootExponential_intertwines_tmul_of_coe_eq k t
-    (f4ShortRootLieIdealBasis b) y hz hd1 hd2
+  exact f4RootExponential_intertwines_tmul_of_coe_eq k t (f4ShortRootLieIdealBasis b) y hz
 
 /-- The integral root exponential preserves the scalar-extended modular short-root ideal on every
 canonical basis column, where its action is the base-changed sparse three-term polynomial. -/

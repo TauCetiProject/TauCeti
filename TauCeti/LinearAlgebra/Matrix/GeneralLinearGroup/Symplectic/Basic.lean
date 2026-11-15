@@ -51,6 +51,7 @@ symplectic coordinate Hopf algebra and group scheme live in
 * `TauCeti.GLSymplectic`: the symplectic matrices as a subgroup of `GL (l ⊕ l) R`.
 * `TauCeti.GLSymplectic.mem_iff` and `TauCeti.GLSymplectic.mem_iff'`: the two standard forms of
   the defining condition, `M J Mᵀ = J` and `Mᵀ J M = J`.
+* `TauCeti.GLSymplectic.star_mem`: the subgroup is closed under transposition.
 * `TauCeti.GLSymplectic.ofSymplecticGroup`: Mathlib's symplectic group, read into the general
   linear group as a monoid homomorphism.
 * `TauCeti.GLSymplectic.mulEquivSymplecticGroup`: the group identification with
@@ -135,6 +136,14 @@ theorem mem_iff' {M : GL (l ⊕ l) R} :
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = J l R :=
   SymplecticGroup.mem_iff'
 
+/-- The symplectic subgroup is closed under transposition, written `star` on the units of a
+matrix ring over a ring with trivial star. -/
+theorem star_mem [StarRing R] [TrivialStar R] {M : GL (l ⊕ l) R} (hM : M ∈ GLSymplectic l R) :
+    star M ∈ GLSymplectic l R := by
+  rw [mem_iff_mem_symplecticGroup, Units.coe_star, star_eq_conjTranspose,
+    conjTranspose_eq_transpose_of_trivial]
+  exact SymplecticGroup.transpose_mem (mem_iff_mem_symplecticGroup.1 hM)
+
 variable (l R)
 
 /-- Mathlib's symplectic group, read into the general linear group: `MonoidHom.toHomUnits` of the
@@ -154,6 +163,19 @@ theorem coe_ofSymplecticGroup (S : Matrix.symplecticGroup l R) :
 theorem ofSymplecticGroup_mem (S : Matrix.symplecticGroup l R) :
     ofSymplecticGroup l R S ∈ GLSymplectic l R := by
   simpa only [mem_iff_mem_symplecticGroup, coe_ofSymplecticGroup] using S.2
+
+/-- The canonical inclusion of the matrix symplectic group has range `GLSymplectic`. -/
+@[simp]
+theorem range_ofSymplecticGroup :
+    (ofSymplecticGroup l R).range = GLSymplectic l R := by
+  ext A
+  rw [MonoidHom.mem_range, mem_iff_mem_symplecticGroup]
+  constructor
+  · rintro ⟨X, rfl⟩
+    simpa only [coe_ofSymplecticGroup] using X.property
+  · intro hA
+    exact ⟨⟨(A : Matrix (l ⊕ l) (l ⊕ l) R), hA⟩,
+      Units.ext (coe_ofSymplecticGroup l R _)⟩
 
 /-- **The symplectic subgroup of the general linear group is Mathlib's symplectic group.** The
 two carriers agree because a symplectic matrix is invertible in Mathlib's symplectic group, so the
@@ -227,6 +249,18 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
   simp
 
 end Map
+
+/-- The inverse algebraic equivalence sends a symplectic matrix to its canonical unit. -/
+@[simp]
+theorem coe_mulEquivSymplecticGroup_symm_apply (A : Matrix.symplecticGroup l R) :
+    ((mulEquivSymplecticGroup l R).symm A : GL (l ⊕ l) R) =
+      ofSymplecticGroup l R A := by
+  apply Units.ext
+  have h := coe_mulEquivSymplecticGroup l R
+    ((mulEquivSymplecticGroup l R).symm A)
+  rw [MulEquiv.apply_symm_apply] at h
+  simpa only [coe_ofSymplecticGroup] using h.symm
+
 
 end GLSymplectic
 

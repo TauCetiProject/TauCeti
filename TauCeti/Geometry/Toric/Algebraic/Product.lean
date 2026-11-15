@@ -258,7 +258,7 @@ theorem isPullback_affineToricSchemeMap_fst_snd_bot :
           (algebraMap ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
         (Spec.map (CommRingCat.ofHom
           (algebraMap ℂ (affineCoordinateRing hi' (⊥ : PointedCone ℝ V'))))) := by
-    rintro ξ rfl h₁ h₂
+    rintro ξ rfl _ _
     exact isPullback_affineToricSchemeMap_fst_snd hi hi' ⊥ ⊥
   exact key ⊥ Submodule.prod_bot _ _
 

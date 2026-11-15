@@ -81,8 +81,9 @@ local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
-/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
-with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
+/-- **Uniqueness in overconvergent Weierstrass division.** If `g` is distinguished of degree `s`
+in the separated variable at unit radius and `q * g + r = q' * g + r'` with polynomial
+remainders `r, r'` of degree less than `s` in that variable, then
 `q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
 theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
@@ -147,7 +148,7 @@ theorem irreducible_of_irreducible_polynomialToOption
     (hm : ω.IsMonicOfDegree s) (h : Irreducible (polynomialToOption ω)) : Irreducible ω := by
   have : Nontrivial Tate := nontrivial_of_ne _ _ hω.coeff_ne_zero
   have : Nontrivial W := (toTate σ K).domain_nontrivial
-  exact h.of_map_of_dvd hm.ne_zero fun p ↦ (polynomialToOption_dvd_iff hω hm p).mp
+  exact h.of_map_of_dvd fun p ↦ (polynomialToOption_dvd_iff hω hm p).mp
 
 /-- If a distinguished monic polynomial is prime in `K⟨X, Y⟩†`, it is prime in `K⟨X⟩†[Y]`. This
 holds without assuming `K` complete. -/
@@ -416,7 +417,7 @@ omit [CompleteSpace K] in
 private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
     (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
   intro I _
-  let φ := renameEquiv (R := K) e
+  let φ := renameAlgEquiv (R := K) e
   let J := I.comap φ.toAlgHom
   have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ J) :=
     Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)

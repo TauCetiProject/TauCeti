@@ -346,8 +346,8 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
       (finrank ℝ F - 1) * exp (-2 * torpedoProfile (log ‖y‖)) *
         ((finrank ℝ F - 2) * (1 - torpedoSlope (log ‖y‖) ^ 2) -
           2 * deriv torpedoSlope (log ‖y‖)) := by
-  rw [torpedoMetric, scalarCurvature_rescale_exp_radial contDiff_torpedoExponent_norm hy
-    (contDiff_torpedoProfile.contDiffAt.of_le (by simp)), deriv_torpedoProfile]
+  rw [torpedoMetric, scalarCurvature_rescale_exp_radial contDiff_torpedoExponent_norm hy,
+    deriv_torpedoProfile]
   filter_upwards [isOpen_ne.mem_nhds hy] with z hz
   exact torpedoExponent_of_ne_zero (norm_ne_zero_iff.2 hz)
 
@@ -415,7 +415,6 @@ private theorem exists_pos_le_exp_mul_one_sub_torpedoSlope_sq :
   rcases le_or_gt s (-2) with hs | hs
   · -- On the round cap `e^(-2 w) = cosh² s / R²` and `1 - v² = 1 / cosh² s`.
     refine (min_le_right _ _).trans ((min_le_right _ _).trans_eq ?_)
-    have hc := cosh_pos s
     simp only [torpedoProfile_of_le hs, torpedoSlope_of_le hs, neg_sq, tanh_eq_sinh_div_cosh]
     have harg : -2 * (log torpedoCapRadius - log (cosh s)) =
         log (cosh s ^ 2) - log (torpedoCapRadius ^ 2) := by

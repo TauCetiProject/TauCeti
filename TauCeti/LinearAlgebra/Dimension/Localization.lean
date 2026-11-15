@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Module.LocalizedModule.Lift
 
@@ -35,6 +36,11 @@ after multiplying by a non-zero-divisor of `R`, provided `M` is finitely generat
 `N` is torsion-free. So a rational embedding of lattices restricts, after scaling, to an integral
 embedding.
 
+A finitely generated module over a domain contains a free submodule of full rank whose quotient is
+torsion. This repackages Mathlib's `exists_linearIndepOn_smul_mem_span`, which selects a linearly
+independent subfamily of a generating family, with `Fin n`-indexing and the rank equality, the
+latter read off `rank_quotient_add_rank_of_isDomain`.
+
 ## Main results
 
 * `TauCeti.IsLocalization.finrank_tensorProduct`: `finrank R (M ⊗[R] A) = finrank R M` for a
@@ -48,6 +54,8 @@ embedding.
   rationalizations by a non-zero-divisor is the rationalization of an `A`-linear map.
 * `TauCeti.IsFractionRing.exists_injective_linearMap_of_injective`: an injective `A`-linear map of
   rationalizations of torsion-free modules gives an injective `A`-linear map of the modules.
+* `TauCeti.exists_linearIndependent_smul_mem_span`: a finitely generated module over a domain
+  contains a free submodule of full rank with torsion quotient.
 -/
 
 public section
@@ -162,3 +170,37 @@ theorem exists_injective_linearMap_of_injective [Module.Finite A M] [Module.IsTo
   simp only [key, hmm']
 
 end TauCeti.IsFractionRing
+
+namespace TauCeti
+
+variable {A M : Type*} [CommRing A] [IsDomain A] [AddCommGroup M] [Module A M]
+
+/-- A finitely generated module `M` over a domain contains a free submodule `F` of
+the rank of `M` with `M ⧸ F` torsion: some nonzero `c` multiplies `M` into `F`.
+
+This repackages Mathlib's `exists_linearIndepOn_smul_mem_span` with `Fin n`-indexing and the
+rank equality. -/
+theorem exists_linearIndependent_smul_mem_span [Module.Finite A M] :
+    ∃ (n : ℕ) (v : Fin n → M) (c : A), LinearIndependent A v ∧ c ≠ 0 ∧
+      (∀ m : M, c • m ∈ Submodule.span A (Set.range v)) ∧ Module.finrank A M = n := by
+  classical
+  obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := A) (M := M)
+  obtain ⟨s, hs, c, hc, hcM⟩ := exists_linearIndepOn_smul_mem_span hv
+  rw [Set.image_eq_range] at hcM
+  set F := Submodule.span A (Set.range fun i : s ↦ v i)
+  -- `F` is free on `s`, of the rank of `M`, since `M ⧸ F` is torsion.
+  have hrank : Module.finrank A M = Fintype.card s := by
+    have htors : Module.rank A (M ⧸ F) = 0 := by
+      rw [rank_eq_zero_iff]
+      rintro ⟨m⟩
+      exact ⟨c, hc, (Submodule.Quotient.mk_eq_zero F).2 (hcM m)⟩
+    have h := rank_quotient_add_rank_of_isDomain F
+    rw [htors, zero_add] at h
+    rw [← Module.finrank_eq_card_basis (Module.Basis.span hs), Module.finrank, Module.finrank, h]
+  let e := (Fintype.equivFin s).symm
+  refine ⟨Fintype.card s, fun i ↦ v (e i), c, hs.comp e e.injective, hc, fun m ↦ ?_, hrank⟩
+  have hrange : Set.range (fun i ↦ v (e i)) = Set.range fun i : s ↦ v i :=
+    e.surjective.range_comp fun i : s ↦ v i
+  exact hrange ▸ hcM m
+
+end TauCeti

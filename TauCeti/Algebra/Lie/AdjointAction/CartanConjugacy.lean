@@ -43,9 +43,9 @@ subalgebra, so the Engel subalgebra of `x` is both `g H` and `g' H'`.
 
 public section
 
-namespace TauCeti
+namespace LieSubalgebra
 
-open LieAlgebra MvPolynomial
+open TauCeti LieAlgebra MvPolynomial
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [CharZero K] [IsAlgClosed K]
   [LieAlgebra ℚ L] [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
@@ -53,7 +53,7 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [CharZero K] [IsAl
 /-- **The conjugates of a Cartan subalgebra contain a nonempty principal open set.** Over an
 algebraically closed field, there is a nonzero polynomial `q` in the coordinates of a basis `b`
 of `L` such that every `x` with `q(x) ≠ 0` is of the form `g h` with `g ∈ Int(L)` and `h ∈ H`. -/
-theorem _root_.LieSubalgebra.exists_ne_zero_forall_eval_ne_zero_mem_intCartan
+theorem exists_ne_zero_forall_eval_ne_zero_mem_intCartan
     (H : LieSubalgebra K L) [H.IsCartanSubalgebra] {ι : Type*} [Finite ι]
     (b : Module.Basis ι K L) :
     ∃ q : MvPolynomial ι K, q ≠ 0 ∧ ∀ x : L, eval (b.equivFun x) q ≠ 0 →
@@ -71,7 +71,7 @@ theorem _root_.LieSubalgebra.exists_ne_zero_forall_eval_ne_zero_mem_intCartan
 /-- **Conjugacy of Cartan subalgebras.** In a finite-dimensional Lie algebra with nondegenerate
 Killing form over an algebraically closed field of characteristic zero, any two Cartan
 subalgebras `H` and `H'` are conjugate under the group `Int(L)` of inner automorphisms. -/
-theorem _root_.LieSubalgebra.exists_map_intLieAlgebraLieEquiv_eq (H H' : LieSubalgebra K L)
+theorem exists_map_intLieAlgebraLieEquiv_eq (H H' : LieSubalgebra K L)
     [H.IsCartanSubalgebra] [H'.IsCartanSubalgebra] :
     ∃ g : intLieAlgebra K L, H.map (intLieAlgebraLieEquiv g).toLieHom = H' := by
   classical
@@ -104,4 +104,4 @@ theorem _root_.LieSubalgebra.exists_map_intLieAlgebraLieEquiv_eq (H H' : LieSuba
   simpa [LieSubalgebra.mem_map, intLieAlgebraLieEquiv_mul, LieEquiv.symm_apply_eq] using
     congrArg (intLieAlgebraLieEquiv ⟨g', hg'⟩ z ∈ ·) hH
 
-end TauCeti
+end LieSubalgebra

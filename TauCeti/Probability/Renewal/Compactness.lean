@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Renewal.TranslateBounds
+public import TauCeti.Probability.Renewal.Translate.Bounds
 public import TauCeti.MeasureTheory.Measure.Prokhorov
 
 /-!

@@ -84,8 +84,6 @@ theorem mem_riemannRochSpace_algebraMap_iff_of_coeff_eq [Algebra.IsIntegral F F'
     nlinarith
   · intro h P'
     rw [hD, Place.ord_algebraMap_restrict k F P']
-    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
-      exact_mod_cast Place.ramificationIdx_pos F P'
     nlinarith [h (P'.restrict k F)]
 
 omit [Algebra.IsIntegral k k'] in

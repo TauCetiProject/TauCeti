@@ -103,8 +103,6 @@ private theorem invExpr_zero : invExpr v ι 0 = v := by
 
 /-- The two coordinate expressions agree under the chart transition `w = z⁻¹`. -/
 private theorem invExpr_inv {z : ℂ} (hz : z ≠ 0) : invExpr v ι z⁻¹ = affineExpr v ι z := by
-  have hv : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
-  have hr : 0 < ‖z‖ := norm_pos_iff.2 hz
   -- `conj z⁻¹ = |z|⁻² z`, so both sides are combinations of `ι z` and `v`.
   have hconj : conj z⁻¹ = (‖z‖ ^ 2)⁻¹ • z := by
     rw [map_inv₀, Complex.inv_def]

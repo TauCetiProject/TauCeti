@@ -155,7 +155,7 @@ private lemma exists_mem_ball_eventuallyEq_const (hr : 0 < r) (hV : IsOpen V)
   set G : ℂ → ℂ := (closedBall c r).piecewise (fun z => f z - a) 0 with hGdef
   have hΩo : IsOpen (ball w δ) := isOpen_ball
   have hGan : AnalyticOnNhd ℂ G (ball w δ) :=
-    (differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere hr hΩo
+    (differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere hΩo
       (continuousOn_piecewise_sub_const hr.ne' hδV hcont harc)
       ((differentiableOn_piecewise_sub_const_compl_sphere hdiff).mono
         fun _ hz => hz.2)).analyticOnNhd hΩo

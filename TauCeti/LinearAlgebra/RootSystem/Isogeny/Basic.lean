@@ -83,9 +83,6 @@ isogeny, which is what makes `f.comp f = smulId P p` the root-datum form of the 
 
 * Schémas en groupes (SGA 3), Exposé XXI, 6.8.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
-
-This is a prerequisite for the target "Special isogenies in characteristics two and three" in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section

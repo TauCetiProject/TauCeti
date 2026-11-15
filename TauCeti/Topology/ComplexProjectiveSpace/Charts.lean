@@ -57,6 +57,13 @@ def affineOpen (k : Fin (n + 1)) : Set (ComplexProjectiveSpace n) :=
 theorem mem_affineOpen_iff (k : Fin (n + 1)) (p : ComplexProjectiveSpace n) :
     p ∈ affineOpen k ↔ ratio k k p ≠ 0 := Iff.rfl
 
+/-- The class of a unit vector lies in the `k`th affine open exactly when its `k`th coordinate is
+nonzero. -/
+theorem mk_mem_affineOpen_iff (k : Fin (n + 1))
+    (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    mk n v ∈ affineOpen k ↔ v.1 k ≠ 0 := by
+  simp
+
 /-- The normalizing homogeneous ratio is one on its affine chart domain. -/
 @[simp]
 theorem ratio_self_eq_one (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}

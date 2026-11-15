@@ -7,7 +7,9 @@ module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
 public import Mathlib.Algebra.Module.LocalizedModule.Basic
-import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.RingTheory.Flat.IsBaseChange
+import TauCeti.Algebra.Module.Torsion.Localization
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Injectivity of formal-gluing comparison maps
@@ -25,6 +27,12 @@ the complementary principal opens, its kernel is ideal-power torsion. The torsio
 `1 ⊗ m` for an ideal-power torsion element `m` of the reconstruction. Injectivity on these
 elements then kills the kernel. Surjectivity, and hence reconstruction of arbitrary gluing
 objects, is a separate assertion.
+
+For the actual compatible-pairs module `ker (f.coprod (-g))`, the comparison to the
+prescribed module is injective whenever the comparison for `f` and the localizations of
+`g` are injective. The kernel of `g` is ideal-power torsion, so its multiplication
+comparison is an isomorphism by `TauCeti.isBaseChange_of_primaryComponent_eq_top`.
+The general linear-algebra step is `LinearMap.injective_liftBaseChange_snd_ker_coprod`.
 
 Unlike detection for `f.baseChange S`, the target here is the prescribed `S`-module `N`, not
 `S ⊗[R] N`. Neither faithful flatness nor finite generation of either module is required.
@@ -94,5 +102,27 @@ theorem injective_liftBaseChange_iff_primaryComponent_and_localized (f : M →�
       simpa using (congrArg (f.liftBaseChange S) hmx).trans hx
     have : m = 0 := (injective_iff_map_eq_zero _).mp htors m hmzero
     simpa [this] using hmx.symm
+
+variable {P : Type*} [AddCommGroup P] [Module R P] [Module S P] [IsScalarTower R S P]
+
+/-- For formal-gluing data, the scalar-extension comparison from the module of compatible
+pairs to the prescribed `S`-module is injective. Only injectivity of the comparison for `f`
+and of the map on the complementary principal opens is needed. -/
+theorem injective_liftBaseChange_snd_ker_coprod_of_formalGlueing
+    (f : M →ₗ[R] P) (g : N →ₗ[S] P) (hf : Injective (f.liftBaseChange S)) (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (hloc : ∀ r ∈ G, Injective (LocalizedModule.map (.powers (algebraMap R S r)) g)) :
+    Injective (((LinearMap.snd R M N).domRestrict
+      (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S) := by
+  classical
+  have ht : ((Ideal.span (G : Set R)).map (algebraMap R S)).primaryComponent g.ker = ⊤ := by
+    rw [Ideal.map_span, ← Finset.coe_image,
+      Ideal.primaryComponent_span_eq_top_iff_subsingleton_localized]
+    intro s hs
+    obtain ⟨r, hr, rfl⟩ := Finset.mem_image.mp hs
+    exact (LinearMap.localizedMap_injective_iff_subsingleton_localized_ker _ g).mp (hloc r hr)
+  have hg := TauCeti.isBaseChange_of_primaryComponent_eq_top hG ht
+  exact injective_liftBaseChange_snd_ker_coprod f g hf hg.1
 
 end LinearMap

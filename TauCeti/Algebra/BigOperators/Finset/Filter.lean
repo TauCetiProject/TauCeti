@@ -42,7 +42,7 @@ multiplies it by the factor at `c` exactly when `c ∈ s`. -/
 theorem prod_filter_or_eq_of_not {ι M : Type*} [DecidableEq ι] [CommMonoid M]
     (s : Finset ι) (f : ι → M) (P : ι → Prop) [DecidablePred P] {c : ι} (hc : ¬P c) :
     ∏ i ∈ s with P i ∨ i = c, f i = (∏ i ∈ s with P i, f i) * if c ∈ s then f c else 1 := by
-  rw [Finset.filter_or, Finset.prod_union (by grind [Finset.disjoint_filter]), Finset.filter_eq']
+  rw [filter_or, prod_union (by grind [disjoint_filter]), filter_eq']
   split_ifs <;> simp
 
 /-- If no index of `s` with a nontrivial factor satisfies `p`, the product of `f` over the indices
@@ -52,8 +52,8 @@ indices of `s` satisfying `p` is `0`. -/]
 theorem _root_.Finset.prod_filter_eq_one_of_ne {ι M : Type*} [CommMonoid M] {s : Finset ι}
     {f : ι → M} {p : ι → Prop} [DecidablePred p] (h : ∀ i ∈ s, f i ≠ 1 → ¬p i) :
     ∏ i ∈ s with p i, f i = 1 :=
-  Finset.prod_eq_one fun i hi =>
-    by_contra fun hfi => h i (Finset.mem_filter.mp hi).1 hfi (Finset.mem_filter.mp hi).2
+  prod_eq_one fun i hi =>
+    by_contra fun hfi => h i (mem_filter.mp hi).1 hfi (mem_filter.mp hi).2
 
 /-- If `s` contains every element satisfying `p` and `f` equals `1` on `s` outside `p`, then the
 product of `f` over `Subtype p` equals its product over `s`. Unlike `Finset.prod_congr_set`, the
@@ -66,8 +66,8 @@ theorem prod_subtype_eq_prod_of_mem {ι M : Type*} [CommMonoid M]
     (hs : ∀ x, p x → x ∈ s) (f : ι → M) (hf : ∀ x ∈ s, ¬p x → f x = 1) :
     (∏ x : Subtype p, f x) = ∏ x ∈ s, f x := by
   classical
-  rw [← Finset.prod_subtype (s.filter p) (by grind)]
-  exact Finset.prod_filter_of_ne fun x hx hfx => by_contra (hfx <| hf x hx ·)
+  rw [← prod_subtype (s.filter p) (by grind)]
+  exact prod_filter_of_ne fun x hx hfx => by_contra (hfx <| hf x hx ·)
 
 /-- If `∏_{i ∈ s} u i ^ (k i - j) = 1` for every `j`, then the product of the `u i` with `k i = m`
 is `1` for every `m ≥ 1`. -/
@@ -80,8 +80,8 @@ theorem prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one {ι M : Type*}
   have hgt (j : ℕ) : ∏ i ∈ s with j < k i, u i = 1 := by
     have hj : ∏ i ∈ s, u i ^ (k i - j) =
         (∏ i ∈ s, u i ^ (k i - (j + 1))) * ∏ i ∈ s with j < k i, u i := by
-      rw [Finset.prod_filter, ← Finset.prod_mul_distrib]
-      refine Finset.prod_congr rfl fun i _ ↦ ?_
+      rw [prod_filter, ← prod_mul_distrib]
+      refine prod_congr rfl fun i _ ↦ ?_
       split_ifs with hji
       · rw [← pow_succ]
         congr 1
@@ -94,8 +94,8 @@ theorem prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one {ι M : Type*}
   calc ∏ i ∈ s with k i = m, u i
       = (∏ i ∈ s with k i = m, u i) * ∏ i ∈ s with m < k i, u i := by rw [hgt, mul_one]
     _ = ∏ i ∈ s with m - 1 < k i, u i := by
-        simp only [Finset.prod_filter, ← Finset.prod_mul_distrib]
-        refine Finset.prod_congr rfl fun i _ ↦ ?_
+        simp only [prod_filter, ← prod_mul_distrib]
+        refine prod_congr rfl fun i _ ↦ ?_
         split_ifs <;> first | omega | simp
     _ = 1 := hgt _
 

@@ -14,11 +14,10 @@ public import TauCeti.Probability.Process.MarkovChain
 # Independent product chains
 
 The independent product of two chains uses Mathlib's parallel composition `κ ∥ₖ η`.
-Its path law is obtained by pairing independent coordinate paths. On spaces with measurable
-singletons, products of aperiodic kernels are aperiodic; if both factors are also irreducible,
-the product is irreducible. The key point is that aperiodicity synchronizes the positive
-transition times of the two coordinates. Irreducibility alone does not do so (two deterministic
-two-cycles give a reducible product).
+Its path law is obtained by pairing independent coordinate paths. Products of aperiodic
+kernels are aperiodic; if both factors are also irreducible, the product is irreducible. The key
+point is that aperiodicity synchronizes the positive transition times of the two coordinates.
+Irreducibility alone does not do so (two deterministic two-cycles give a reducible product).
 
 Together with `Kernel.Invariant.parallelComp`, these results provide the independent product
 chain used in meeting-time coupling arguments for convergence to equilibrium.
@@ -38,6 +37,7 @@ variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {κ : Kernel α α} {η : Kernel β β} [IsSFiniteKernel κ] [IsSFiniteKernel η]
   [MeasurableSingletonClass α] [MeasurableSingletonClass β]
 
+omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- Independent products of aperiodic kernels are aperiodic, even without irreducibility. -/
 theorem IsAperiodic.parallelComp (hκ : κ.IsAperiodic) (hη : η.IsAperiodic) :
     (κ ∥ₖ η).IsAperiodic := by
@@ -56,6 +56,7 @@ theorem IsAperiodic.parallelComp (hκ : κ.IsAperiodic) (hη : η.IsAperiodic) :
     (mem_returnLengths.mpr ⟨Nat.succ_pos (N + 1), hN (N + 2) (by omega)⟩)
   exact Nat.dvd_one.mp (by simpa using Nat.dvd_sub h₂ h₁)
 
+omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- In an irreducible aperiodic product, any fixed pair of states has positive transition mass
 at every sufficiently large time. -/
 theorem IsAperiodic.eventually_pos_parallelComp_pow_apply_singleton
@@ -67,6 +68,7 @@ theorem IsAperiodic.eventually_pos_parallelComp_pow_apply_singleton
   rw [parallelComp_pow_apply_singleton]
   exact ENNReal.mul_pos_iff.mpr ⟨hn, hm⟩
 
+omit [MeasurableSingletonClass α] [MeasurableSingletonClass β] in
 /-- The independent product of two irreducible aperiodic kernels is irreducible with respect
 to counting measure. -/
 theorem IsAperiodic.isIrreducible_parallelComp
@@ -129,14 +131,19 @@ theorem prodMk_markovChainLaw
     {α β Ω : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace Ω]
     [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
     {P : Measure Ω} {μ : Measure α} {ν : Measure β}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [IsFiniteMeasure ν]
     {κ : Kernel α α} {η : Kernel β β} [IsMarkovKernel κ] [IsMarkovKernel η]
     {X : ℕ → Ω → α} {Y : ℕ → Ω → β}
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw μ κ) P)
     (hY : HasLaw (fun ω n => Y n ω) (markovChainLaw ν η) P)
     (hindep : IndepFun (fun ω n => X n ω) (fun ω n => Y n ω) P) :
     HasLaw (fun ω n => (X n ω, Y n ω)) (markovChainLaw (μ.prod ν) (κ ∥ₖ η)) P := by
-  have := hX.isFiniteMeasure
+  -- finiteness of `μ` follows from that of `ν` through the shared sample space
+  have : IsFiniteMeasure P := hY.isFiniteMeasure
+  have : IsFiniteMeasure (markovChainLaw μ κ) := hX.isFiniteMeasure_iff.mp inferInstance
+  have : IsFiniteMeasure μ := by
+    rw [← markovChainLaw_map_eval_zero μ κ]
+    infer_instance
   have hzip : HasLaw (fun w n => (w.1 n, w.2 n))
       (markovChainLaw (μ.prod ν) (κ ∥ₖ η))
       ((markovChainLaw μ κ).prod (markovChainLaw ν η)) :=

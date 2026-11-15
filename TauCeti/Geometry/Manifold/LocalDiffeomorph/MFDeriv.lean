@@ -7,28 +7,41 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Differentials of a partial diffeomorphism
 
 The differentials of a partial diffeomorphism and of its inverse are mutually inverse at
 corresponding points, as for a global diffeomorphism
-(`Diffeomorph.mfderiv_symm_apply_mfderiv_apply`), and on the open source of a partial
-diffeomorphism the differential within the source is the differential.
+(`Diffeomorph.mfderiv_symm_apply_mfderiv_apply`). The differential at a point of the source is a
+linear equivalence, as for a global diffeomorphism (`Diffeomorph.isInvertible_mfderiv`), so for a
+partial diffeomorphism into a normed space the differential read in that space is bijective. On the
+open source of a partial diffeomorphism the differential within the source is the differential.
+More generally, this holds at any point of an open partial homeomorphism where it and its inverse
+are differentiable.
 
 For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts, the transitions
 `ψ ∘ φ⁻¹` are differentiable, and their derivatives compose by the chain rule.
 
 ## Main results
 
+* `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
+  `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
+  and its inverse are differentiable, their differentials are mutually inverse.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
   differential.
 * `PartialDiffeomorph.mfderiv_apply_mfderiv_symm_apply`: the differential undoes the differential of
   the inverse.
+* `PartialDiffeomorph.isInvertible_mfderiv`: the differential at a point of the source is a
+  linear equivalence.
+* `PartialDiffeomorph.bijective_mvfderiv`: for a partial diffeomorphism into a normed space, the
+  differential read in that space is bijective at a point of the source.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -49,6 +62,30 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {n : WithTop ℕ∞}
 
+namespace OpenPartialHomeomorph
+
+/-- The differential of the inverse of an open partial homeomorphism undoes its differential at a
+point of the source where both are differentiable. -/
+theorem mfderiv_symm_apply_mfderiv_apply (Φ : OpenPartialHomeomorph M N) {x : M}
+    (hx : x ∈ Φ.source) (hΦ : MDifferentiableAt I J Φ x)
+    (hΦs : MDifferentiableAt J I Φ.symm (Φ x)) (v : TangentSpace I x) :
+    mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x v) = v := by
+  have hcomp := mfderiv_comp x hΦs hΦ
+  have heq : (Φ.symm ∘ Φ : M → M) =ᶠ[𝓝 x] id :=
+    eventually_of_mem (Φ.open_source.mem_nhds hx) fun z hz ↦ Φ.left_inv hz
+  rw [heq.mfderiv_eq, mfderiv_id] at hcomp
+  exact (DFunLike.congr_fun hcomp v).symm
+
+/-- The differential of an open partial homeomorphism undoes the differential of its inverse at a
+point of the target where both are differentiable. -/
+theorem mfderiv_apply_mfderiv_symm_apply (Φ : OpenPartialHomeomorph M N) {y : N}
+    (hy : y ∈ Φ.target) (hΦ : MDifferentiableAt I J Φ (Φ.symm y))
+    (hΦs : MDifferentiableAt J I Φ.symm y) (v : TangentSpace J y) :
+    mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
+  Φ.symm.mfderiv_symm_apply_mfderiv_apply hy hΦs hΦ v
+
+end OpenPartialHomeomorph
+
 namespace PartialDiffeomorph
 
 /-- On the open source of a partial diffeomorphism the differential within the source is the
@@ -60,19 +97,30 @@ theorem mfderivWithin_source (Φ : PartialDiffeomorph I J M N n)
 /-- The differential of the inverse of a partial diffeomorphism undoes its differential. -/
 theorem mfderiv_symm_apply_mfderiv_apply (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
     (hx : x ∈ Φ.source) (v : TangentSpace I x) :
-    mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x v) = v := by
-  have hcomp := mfderiv_comp x (Φ.symm.mdifferentiableAt hn (Φ.map_source hx))
-    (Φ.mdifferentiableAt hn hx)
-  have heq : (Φ.symm ∘ Φ : M → M) =ᶠ[𝓝 x] id :=
-    eventually_of_mem (Φ.open_source.mem_nhds hx) fun z hz ↦ Φ.left_inv hz
-  rw [heq.mfderiv_eq, mfderiv_id] at hcomp
-  exact (DFunLike.congr_fun hcomp v).symm
+    mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x v) = v :=
+  Φ.toOpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply hx (Φ.mdifferentiableAt hn hx)
+    (Φ.symm.mdifferentiableAt hn (Φ.map_source hx)) v
 
 /-- The differential of a partial diffeomorphism undoes the differential of its inverse. -/
 theorem mfderiv_apply_mfderiv_symm_apply (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {y : N}
     (hy : y ∈ Φ.target) (v : TangentSpace J y) :
     mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
   Φ.symm.mfderiv_symm_apply_mfderiv_apply hn hy v
+
+/-- The differential of a partial diffeomorphism at a point of its source is a linear
+equivalence. -/
+theorem isInvertible_mfderiv (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
+    (hx : x ∈ Φ.source) : (mfderiv I J Φ x).IsInvertible :=
+  (Φ.isLocalDiffeomorphAt I J n hx).isInvertible_mfderiv hn
+
+/-- The differential of a partial diffeomorphism into a normed space, read in that space, is
+bijective at a point of the source. -/
+theorem bijective_mvfderiv (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n) (hn : n ≠ 0) {x : M}
+    (hx : x ∈ Φ.source) : Function.Bijective (mvfderiv I Φ x) := by
+  have h := Φ.isInvertible_mfderiv hn hx
+  refine ⟨TauCeti.injective_mvfderiv_iff.2 h.injective, fun w ↦ ?_⟩
+  obtain ⟨v, hv⟩ := h.surjective w
+  exact ⟨v, (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans hv⟩
 
 section Transition
 

@@ -333,8 +333,8 @@ private theorem LayersIndecomposable.succ {m : ℕ} {i : Symmetrify Q}
 /-- The Koszul recursion for weighted dimensions. If the arrows into each vertex `v` carry the
 `(j + 1)`-st layer onto the sum of the `(j + 2)`-nd and `j`-th layers there, and `δ` is
 superadditive, then `2 * s (j + 1) ≤ s (j + 2) + s j` for `s n = ∑ w, δ w * dim (E n i w)`. -/
-private theorem two_mul_weighted_finrank_le_add {S : Type*} [CommRing S] [LinearOrder S]
-    [IsStrictOrderedRing S] {δ : Q → S}
+private theorem two_mul_weighted_finrank_le_add {S : Type*} [CommSemiring S] [PartialOrder S]
+    [IsOrderedRing S] {δ : Q → S}
     (hδle : ∀ i, 2 * δ i ≤
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) {i : Q} (j : ℕ)
     (hv : ∀ v : Q, ∑ w : Q, Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *

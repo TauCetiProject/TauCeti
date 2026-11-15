@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
 # Coordinates of local Sobolev maps
@@ -18,6 +19,11 @@ without choosing compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
+
+For maps on `ℂ`, a weak derivative `D` is likewise tested through its two partial derivatives
+`z ↦ D z 1` and `z ↦ D z I`: `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` characterises
+`W^{k+1,q}_loc(U)` by local `L^q` membership and these two partial derivatives lying in
+`W^{k,q}_loc(U)`, for an arbitrary codomain.
 
 ## References
 
@@ -62,3 +68,40 @@ theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
   simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
 
 end Module.Basis
+
+/-! ### Local Sobolev classes through the two partial derivatives -/
+
+namespace TauCeti
+
+open Complex TopologicalSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {q : ENNReal} {U : Set ℂ} {k : ℕ}
+
+/-- **Assembling a weak derivative from its partial derivatives.** A locally `L^q` map with a
+weak derivative `D` on the interior of `U` whose partial derivatives `z ↦ D z 1` and `z ↦ D z I`
+lie in `W^{k,q}_loc(U)` lies in `W^{k+1,q}_loc(U)`. The derivative `D` is rebuilt from its two
+partial derivatives with `ContinuousLinearMap.smulRightL`. -/
+theorem MemLpLoc.memWkpLoc_succ_of_hasWeakFDerivOn {ξ : ℂ → V} {D : ℂ → ℂ →L[ℝ] V}
+    (hξ : MemLpLoc q U ξ) (hD : HasWeakFDerivOn volume (Opens.interior U) ξ D)
+    (h1 : MemWkpLoc q U k fun z => D z 1) (hI : MemWkpLoc q U k fun z => D z I) :
+    MemWkpLoc q U (k + 1) ξ := by
+  have := hD.completeSpace
+  refine memWkpLoc_succ_iff.2 ⟨hξ, D, hD, ?_⟩
+  rw [ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
+  exact (h1.clm_comp _).add (hI.clm_comp _)
+
+/-- **Local Sobolev classes through partial derivatives.** A map lies in `W^{k+1,q}_loc(U)`
+exactly when it is locally `L^q` on `U` and has a weak derivative on the interior of `U` whose
+partial derivatives `z ↦ D z 1` and `z ↦ D z I` lie in `W^{k,q}_loc(U)`. -/
+theorem memWkpLoc_succ_iff_apply_one_apply_I {ξ : ℂ → V} :
+    MemWkpLoc q U (k + 1) ξ ↔ MemLpLoc q U ξ ∧ ∃ D : ℂ → ℂ →L[ℝ] V,
+      HasWeakFDerivOn volume (Opens.interior U) ξ D ∧
+        (MemWkpLoc q U k fun z => D z 1) ∧ MemWkpLoc q U k fun z => D z I := by
+  refine ⟨fun h => ?_, fun ⟨hξ, D, hD, h1, hI⟩ =>
+    hξ.memWkpLoc_succ_of_hasWeakFDerivOn hD h1 hI⟩
+  obtain ⟨hξ, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 h
+  have := hD.completeSpace
+  exact ⟨hξ, D, hD, hDk.clm_comp (ContinuousLinearMap.apply ℝ V 1),
+    hDk.clm_comp (ContinuousLinearMap.apply ℝ V I)⟩
+
+end TauCeti

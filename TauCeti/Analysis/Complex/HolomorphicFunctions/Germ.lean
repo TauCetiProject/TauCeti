@@ -47,11 +47,11 @@ def toGerm (hs : s ⊆ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicGerms 
   map_zero' := by
     apply Subtype.ext
     rw [holomorphicGerms.coe_ofFun, Subalgebra.coe_zero, ← Germ.coe_zero]
-    exact germ_extend_eq hs 0 0 (fun z => by simp)
+    exact germ_extend_eq hs 0 0 (fun _ => by simp)
   map_one' := by
     apply Subtype.ext
     rw [holomorphicGerms.coe_ofFun, Subalgebra.coe_one, ← Germ.coe_one]
-    exact germ_extend_eq hs 1 1 (fun z => by simp)
+    exact germ_extend_eq hs 1 1 (fun _ => by simp)
   map_add' f g := by
     apply Subtype.ext
     simp only [Subalgebra.coe_add, holomorphicGerms.coe_ofFun, ← Germ.coe_add]

@@ -9,7 +9,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.NeTwo
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Endpoint
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Twisted
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.UnitsPlusMinus
 
@@ -85,20 +84,19 @@ section Relator
 
 variable {n : ℕ}
 
-/-- **Labute's Theorem 2 for `q ≠ 2`.** Let `r, r' ∈ Φ(F)` be relators of the free pro-`p` group
+/-- **Labute's Theorem 2 for `q ≠ 2`.** Let `r, r'` be relators of the free pro-`p` group
 on `n` generators whose presented groups are Demushkin groups with the same `q`-invariant `q ≠ 2`.
 Then a continuous automorphism of `F` carries `r` to `r'`; in particular the closed normal
 closures of `r` and `r'` are carried to each other. -/
 theorem freeProP.exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq
-    {r r' : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
-    (hr' : r' ∈ proPFrattini p (freeProP p (Fin n)))
+    {r r' : freeProP p (Fin n)}
     (hG : IsDemushkin p (presentedProP p (Fin n) {r}))
     (hG' : IsDemushkin p (presentedProP p (Fin n) {r'}))
     (hq : demushkinQ hG = demushkinQ hG') (hq2 : demushkinQ hG ≠ 2) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n), e r = r' := by
   obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr hG hq2
-  obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hr'
+    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two hG hq2
+  obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_two
     hG' fun h ↦ hq2 (hq.trans h)
   rw [← hq] at he'
   exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
@@ -108,12 +106,12 @@ on an odd number `n` of generators whose presented groups are Demushkin groups w
 characters have the same image. Then a continuous automorphism of `F` carries `r` to `r'`; in
 particular the closed normal closures of `r` and `r'` are carried to each other. -/
 theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_eq_of_odd
-    (hn : Odd n) {r r' : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hr' : r' ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
+    (hn : Odd n) {r r' : freeProP 2 (Fin n)} (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
     (hG' : IsDemushkin 2 (presentedProP 2 (Fin n) {r'}))
     (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hG').toMonoidHom.range) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n), e r = r' := by
+  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
+  have hr' := hG'.mem_proPFrattini_of_presentedProP_singleton
   rcases range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn hr hG with
     hrange | ⟨hn₃, f, hf, hrange⟩
   · obtain ⟨e, he⟩ :=
@@ -138,41 +136,29 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
     (hG' : IsDemushkin p (presentedProP p (Fin n) {r'}))
     (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hG').toMonoidHom.range) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n), e r = r' := by
-  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
-  have hr' := hG'.mem_proPFrattini_of_presentedProP_singleton
   by_cases hq : demushkinQ hG = 2
   swap
-  · exact exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq hr hr' hG hG'
+  · exact exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq hG hG'
       (demushkinQ_eq_of_range_demushkinCharacter_eq hG hG' h) hq
   -- `q(G) = 2` forces `p = 2`, since `p ∣ q(G)`.
   obtain rfl : p = 2 :=
     (Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).1 (hq ▸ hG.prime_dvd_demushkinQ)
   rcases Nat.even_or_odd n with hn | hn
   swap
-  · exact exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_eq_of_odd hn hr hr' hG hG'
-      h
+  · exact exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_eq_of_odd hn hG hG' h
   -- Even rank: the image is `{±1}`, `{±1} × U^(f)` or `U^[f]`, and each pins a normal form.
   rcases hG.range_demushkinCharacter_trichotomy_of_demushkinQ_eq_two hq with
     hA | ⟨f, hf, hA⟩ | ⟨f, u, hf, hu, hA⟩
-  · exact exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one hn hr hr' hG hG' hA
+  · exact exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one hn hG hG' hA
       (h.symm.trans hA)
-  · -- The image `{±1} × U^(f)` is not procyclic, so it does not occur at rank two, and `n ≥ 4`.
-    have hn3 : 3 < n := by
-      have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
-      have hrank : demushkinRank hG = n := by
-        simpa using demushkinRank_presentedProP (Set.singleton_subset_iff.2 hr) hG
-      by_contra hn3
-      obtain ⟨k, hk⟩ := hn
-      exact hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
-        (hrank.trans (by omega)) hf hA
-    obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr hG hn hn3 hf hA
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr' hG'
-      hn hn3 hf (h.symm.trans hA)
+  · obtain ⟨e, he⟩ :=
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hG hn hf hA
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hG' hn
+      hf (h.symm.trans hA)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
   · obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hr hG hn hf hu hA
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hr' hG' hn
+      exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hG hn hf hu hA
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hG' hn
       hf hu (h.symm.trans hA)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
 

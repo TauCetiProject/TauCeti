@@ -123,7 +123,7 @@ def sylvesterEquivOne (hg : g.Monic) (n : ℕ) :
       exact ⟨h₁, h₂⟩
     · intro ⟨q, hq⟩
       refine ⟨(⟨q %ₘ g, modByMonic_mem_degreeLT hg q⟩,
-        ⟨q /ₘ g, divByMonic_mem_degreeLT hg hq⟩), ?_⟩
+        ⟨q /ₘ g, divByMonic_mem_degreeLT hq⟩), ?_⟩
       ext1
       simpa [add_comm] using modByMonic_add_div q g
 

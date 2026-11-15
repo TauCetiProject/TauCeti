@@ -175,7 +175,7 @@ namespace Commute
 with its adjoint. -/
 theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
     (h : Commute T S) : Commute T (star S) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   -- Transfer commutation along the endomorphism algebra equivalence in both directions.
   have hc := h.map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E)
   have hs := IsStarNormal.commute_star_right (a := S.toContinuousLinearMap) inferInstance hc
@@ -214,7 +214,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     ∃ (b : OrthonormalBasis κ ℂ E) (μ : ι → κ → ℂ),
       ∀ i j, T i (b j) = μ i j • b j := by
   classical
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have hcomm (i j : ι) : Commute (T i) (T j) :=
     if h : i = j then h ▸ Commute.refl _ else hC h
   -- All real and imaginary parts are symmetric and commute with one another.

@@ -37,7 +37,7 @@ open scoped Interval
 @[simp]
 theorem fderiv_planarNewtonianKernel_self {z : ℂ} (hz : z ≠ 0) :
     fderiv ℝ planarNewtonianKernel z z = -(2 * Real.pi)⁻¹ := by
-  rw [fderiv_planarNewtonianKernel_apply hz, real_inner_self_eq_norm_sq]
+  rw [fderiv_planarNewtonianKernel_apply, real_inner_self_eq_norm_sq]
   field_simp
 
 /-- The derivative of a translated planar Newtonian kernel in the radial direction from its pole

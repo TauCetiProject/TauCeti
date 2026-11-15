@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Sets.Opens
+public import Mathlib.Topology.Separation.Regular
 
 /-!
 # Carrying a basis from families of sets to families of opens
@@ -26,6 +27,8 @@ indexed by.
   satisfying a given predicate form a closed set.
 * `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
   viewed as a subspace, is the trace of an open set contained in `Ω`.
+* `TopologicalSpace.Opens.exists_between_and_isCompact_closure` : in a locally compact regular
+  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
 * `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
   family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
@@ -75,6 +78,15 @@ theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
     ∃ U : Opens X, U ≤ Ω ∧ ((↑) : Ω → X) ⁻¹' (U : Set X) = W :=
   ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩, Subtype.coe_image_subset _ _,
     Set.preimage_image_eq W Subtype.val_injective⟩
+
+/-- In a locally compact regular space, every compact subset `K` of an open set `U` lies in an
+open set whose closure is compact and contained in `U`. This is
+`exists_open_between_and_isCompact_closure` with the open sets bundled as `Opens`. -/
+theorem exists_between_and_isCompact_closure [LocallyCompactSpace X] [RegularSpace X]
+    {K : Set X} (hK : IsCompact K) {U : Opens X} (hKU : K ⊆ U) :
+    ∃ V : Opens X, K ⊆ V ∧ closure (V : Set X) ⊆ U ∧ IsCompact (closure (V : Set X)) := by
+  obtain ⟨V, hVo, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
+  exact ⟨⟨V, hVo⟩, hKV, hVU, hVc⟩
 
 /-- An open set lies below the supremum of a family of open sets exactly when their underlying
 sets cover it. -/

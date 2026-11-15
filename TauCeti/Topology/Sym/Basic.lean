@@ -47,8 +47,8 @@ facts about it used below.
 * `Sym.instCompactSpace` and `Sym.instT2Space`: the symmetric power of a compact
   space is compact, and that of a Hausdorff space is Hausdorff.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap needs `Sym^g(Σ)` as a space before it can be
-given a complex structure; this file supplies the underlying topology, and
+The symmetric power `Sym^g(Σ)` of a surface must be a space before it can be given a complex
+structure; this file supplies the underlying topology, and
 `TauCeti/Analysis/Polynomial/SymmetricPower.lean` identifies it, over an algebraically closed
 normed field, with affine space through the elementary symmetric functions.
 -/

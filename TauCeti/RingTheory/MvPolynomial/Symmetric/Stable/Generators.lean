@@ -32,6 +32,11 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
   `X r` to `e_(r + 1)`.
 * `TauCeti.SymmetricFunction.esymmAlgEquiv R`: this homomorphism as an algebra equivalence.
 
+## Main results
+
+* `TauCeti.SymmetricFunction.algHom_ext`: algebra homomorphisms out of `Λ_R` are determined by
+  their values on the elementary symmetric functions.
+
 ## References
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
@@ -212,6 +217,18 @@ theorem esymmAlgEquiv_apply (p : MvPolynomial ℕ R) : esymmAlgEquiv R p = esymm
 theorem esymmAlgEquiv_symm_of_stableEsymm (r : ℕ) :
     (esymmAlgEquiv R).symm (DirectSum.of _ (r + 1) (stableEsymm R (r + 1))) = X r := by
   rw [AlgEquiv.symm_apply_eq, esymmAlgEquiv_apply, esymmAlgHom_X]
+
+variable {R} in
+/-- **Algebra homomorphisms out of the symmetric functions are determined by their values on the
+elementary symmetric functions** `e₁, e₂, …`. -/
+theorem algHom_ext {A : Type*} [Semiring A] [Algebra R A] {f g : SymmetricFunction R →ₐ[R] A}
+    (h : ∀ n, f (DirectSum.of _ (n + 1) (stableEsymm R (n + 1))) =
+      g (DirectSum.of _ (n + 1) (stableEsymm R (n + 1)))) : f = g := by
+  have hfg : f.comp (esymmAlgEquiv R).toAlgHom = g.comp (esymmAlgEquiv R).toAlgHom :=
+    MvPolynomial.algHom_ext fun r => by simpa using h r
+  refine AlgHom.ext fun x => ?_
+  obtain ⟨p, rfl⟩ := (esymmAlgEquiv R).surjective x
+  exact DFunLike.congr_fun hfg p
 
 end SymmetricFunction
 

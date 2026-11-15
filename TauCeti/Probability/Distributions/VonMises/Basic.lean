@@ -236,9 +236,8 @@ theorem measurable_vonMisesMeasure :
       q.1.2 * cos_periodic.lift (q.2 - q.1.1) :=
     (continuous_snd.comp continuous_fst).mul
       (Real.Angle.continuous_cos.comp (continuous_snd.sub (continuous_fst.comp continuous_fst)))
-  have hm := TauCeti.measurable_tilted (Kernel.const (AddCircle (2 * π) × ℝ) haarAddCircle)
-    (f := fun p θ => p.2 * cos_periodic.lift (θ - p.1)) h.measurable
-  simp only [Kernel.const_apply] at hm
+  have hm := Measure.measurable_tilted haarAddCircle
+    (f := fun (p : AddCircle (2 * π) × ℝ) θ => p.2 * cos_periodic.lift (θ - p.1)) h.measurable
   unfold vonMisesMeasure
   exact Measurable.ite (measurableSet_le measurable_const measurable_snd) hm measurable_const
 

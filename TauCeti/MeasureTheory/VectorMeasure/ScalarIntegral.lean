@@ -138,22 +138,22 @@ theorem scalarMeasureImagPart_eq_im :
 measure. -/
 theorem variation_scalarMeasureRealPart_le (μ : VectorMeasure X 𝕜) :
     (scalarMeasureRealPart μ).variation ≤ μ.variation :=
-  variation_le_of_forall_enorm_le fun s _ => (enorm_le_iff_norm_le.2
-    (RCLike.norm_re_le_norm (μ s))).trans (enorm_measure_le_variation μ s)
+  variation_le_of_forall_eNorm_le fun s _ => (eNorm_le_iff_norm_le.2
+    (RCLike.norm_re_le_norm (μ s))).trans (eNorm_measure_le_variation μ s)
 
 /-- The variation of the imaginary part of a scalar measure is at most the variation of the
 measure. -/
 theorem variation_scalarMeasureImagPart_le (μ : VectorMeasure X 𝕜) :
     (scalarMeasureImagPart μ).variation ≤ μ.variation :=
-  variation_le_of_forall_enorm_le fun s _ => (enorm_le_iff_norm_le.2
-    (RCLike.norm_im_le_norm (μ s))).trans (enorm_measure_le_variation μ s)
+  variation_le_of_forall_eNorm_le fun s _ => (eNorm_le_iff_norm_le.2
+    (RCLike.norm_im_le_norm (μ s))).trans (eNorm_measure_le_variation μ s)
 
 /-- A signed measure and the scalar measure it defines have the same variation. -/
 @[simp]
 theorem variation_scalarMeasureOfReal (σ : SignedMeasure X) :
     (scalarMeasureOfReal σ : VectorMeasure X 𝕜).variation = σ.variation := by
-  refine le_antisymm (variation_le_of_forall_enorm_le fun s _ => ?_) ?_
-  · simpa [enorm_le_iff_norm_le] using enorm_measure_le_variation σ s
+  refine le_antisymm (variation_le_of_forall_eNorm_le fun s _ => ?_) ?_
+  · simpa [eNorm_le_iff_norm_le] using eNorm_measure_le_variation σ s
   · simpa using variation_scalarMeasureRealPart_le (scalarMeasureOfReal σ : VectorMeasure X 𝕜)
 
 /-- A scalar measure has finite variation. -/
@@ -205,22 +205,29 @@ theorem im_integral_ofReal {μ : VectorMeasure X 𝕜} {f : X → ℝ} (hf : μ.
 
 /-- Integrating a real function against a signed measure regarded as a scalar measure gives the
 real integral. -/
-theorem integral_ofReal_scalarMeasureOfReal {σ : SignedMeasure X} {f : X → ℝ}
-    (hf : σ.Integrable f) :
+theorem integral_ofReal_scalarMeasureOfReal {σ : SignedMeasure X} {f : X → ℝ} :
     ∫ᵛ x, (f x : 𝕜) ∂[mul ℝ 𝕜; scalarMeasureOfReal σ] = ∫ᵛ x, f x ∂[mul ℝ ℝ; σ] := by
-  have hf' : (scalarMeasureOfReal σ : VectorMeasure X 𝕜).Integrable f :=
-    integrable_scalarMeasureOfReal_iff.2 hf
-  refine RCLike.ext ?_ ?_
-  · simp [re_integral_ofReal hf']
-  · simp [im_integral_ofReal hf']
+  by_cases hf : σ.Integrable f
+  · have hf' : (scalarMeasureOfReal σ : VectorMeasure X 𝕜).Integrable f :=
+      integrable_scalarMeasureOfReal_iff.2 hf
+    refine RCLike.ext ?_ ?_
+    · simp [re_integral_ofReal hf']
+    · simp [im_integral_ofReal hf']
+  · have hf' : ¬ (scalarMeasureOfReal σ : VectorMeasure X 𝕜).Integrable fun x ↦ (f x : 𝕜) :=
+      fun h ↦ hf (by simpa [VectorMeasure.Integrable] using h.re)
+    rw [integral_undef hf', integral_undef hf]
+    simp
 
 /-- A signed measure with a real density, regarded as a scalar measure, is the scalar measure
 with the same density. -/
-theorem scalarMeasureOfReal_withDensityᵥ {ν : Measure X} {r : X → ℝ} (hr : Integrable r ν) :
+theorem scalarMeasureOfReal_withDensityᵥ {ν : Measure X} {r : X → ℝ} :
     (scalarMeasureOfReal (ν.withDensityᵥ r) : VectorMeasure X 𝕜) =
       ν.withDensityᵥ fun x => (r x : 𝕜) := by
-  ext s hs
-  simp [withDensityᵥ_apply hr hs, withDensityᵥ_apply (hr.ofReal (𝕜 := 𝕜)) hs, integral_ofReal]
+  by_cases hr : Integrable r ν
+  · ext s hs
+    simp [withDensityᵥ_apply hr hs, withDensityᵥ_apply (hr.ofReal (𝕜 := 𝕜)) hs, integral_ofReal]
+  · have hr' : ¬ Integrable (fun x ↦ (r x : 𝕜)) ν := fun h ↦ hr (by simpa using h.re)
+    simp [Measure.withDensityᵥ, hr, hr']
 
 end RCLike
 

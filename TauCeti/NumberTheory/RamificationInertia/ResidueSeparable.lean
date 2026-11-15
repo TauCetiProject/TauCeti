@@ -15,9 +15,10 @@ If a group acts on an algebra while fixing its base, translation by a group elem
 the residue extension at an ideal with the residue extension at the translated ideal.
 Consequently separability of the residue extension is invariant under translation.
 
-Thus separability at one prime suffices throughout its group orbit. The result assumes maximality
-only of the contraction, which makes the base of the residue extension a field; the upper ideal
-need not be maximal.
+Thus separability at one prime suffices throughout its group orbit. No primality or maximality is
+assumed, since `Algebra.IsSeparable` is defined over arbitrary commutative base rings: the
+translated ideal has the same contraction, and translation induces an isomorphism of the quotient
+algebras over it.
 
 ## Main result
 
@@ -30,30 +31,24 @@ open scoped Pointwise
 
 namespace Ideal
 
-attribute [local instance] Ideal.Quotient.field
-
 variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B]
   [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
 
-/-- Residue separability is preserved when an ideal with maximal contraction is translated by a
-group action that fixes the base ring. -/
-theorem Quotient.isSeparable_smul (Q : Ideal B) [(Q.under A).IsMaximal] (σ : G)
+/-- Separability of `B ⧸ Q` over `A ⧸ Q.under A` is preserved when the ideal `Q` is translated by
+a group action that fixes the base ring. -/
+theorem Quotient.isSeparable_smul (Q : Ideal B) (σ : G)
     [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)] :
     Algebra.IsSeparable (A ⧸ (σ • Q).under A) (B ⧸ σ • Q) := by
-  let _ : ((σ • Q).under A).IsMaximal := by
-    rw [under_smul]
-    infer_instance
-  let e : (B ⧸ Q) ≃ₐ[A ⧸ Q.under A] (B ⧸ σ • Q) :=
-    Ideal.Quotient.algEquivOfEqMap (Q.under A) (MulSemiringAction.toAlgEquiv A B σ) (by
-      rw [pointwise_smul_eq_comap, ← map_comap_of_equiv]
-      -- Both maps are the ring-hom coercion of the action of `σ` on `B`.
-      rfl)
-  let eA : (A ⧸ Q.under A) ≃+* (A ⧸ (σ • Q).under A) :=
-    (Ideal.quotientEquivAlgOfEq A (under_smul A Q σ).symm).toRingEquiv
-  exact Algebra.IsSeparable.of_equiv_equiv
-      (A₁ := A ⧸ Q.under A) (B₁ := B ⧸ Q)
-      (A₂ := A ⧸ (σ • Q).under A) (B₂ := B ⧸ σ • Q) eA e.toRingEquiv (by
-    ext x
-    simpa [eA] using (e.commutes (Ideal.Quotient.mk (Q.under A) x)).symm)
+  -- The contractions of `σ • Q` and `Q` are equal but not definitionally so; abstract the lower
+  -- ideal so that the equation can be substituted.
+  have key (p : Ideal A) [(σ • Q).LiesOver p] (hp : p = Q.under A) :
+      Algebra.IsSeparable (A ⧸ p) (B ⧸ σ • Q) := by
+    subst hp
+    exact AlgEquiv.Algebra.isSeparable <|
+      algEquivOfEqMap (Q.under A) (MulSemiringAction.toAlgEquiv A B σ) (by
+        rw [pointwise_smul_eq_comap, ← map_comap_of_equiv]
+        -- Both maps are the ring-hom coercion of the action of `σ` on `B`.
+        rfl)
+  exact key _ (under_smul A Q σ)
 
 end Ideal

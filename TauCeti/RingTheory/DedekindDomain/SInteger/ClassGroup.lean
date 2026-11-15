@@ -51,15 +51,14 @@ The proof is the first isomorphism theorem applied to extension of ideals `Cl(R)
 
 `IsDedekindDomain.finite_integer_classGroup` is the consequence the arithmetic wants: `Cl(𝒪_S)` is
 finite whenever `Cl(R)` is, being a quotient of it. That is one of the two finiteness inputs to
-weak Mordell–Weil (the other being the `S`-unit theorem), so this advances
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 (Mordell–Weil), whose Kummer argument needs
-`E(K)/2E(K)` finite.
+weak Mordell–Weil (the other being the `S`-unit theorem), whose Kummer argument needs `E(K)/2E(K)`
+finite.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
-convention for adapted material, the upstream authorship is credited here rather than in the
-copyright header. Stoll's unprefixed names are given the `integer` prefix that
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
+Stoll's unprefixed names are given the `integer` prefix that
 `TauCeti/RingTheory/DedekindDomain/SInteger/` already uses.
 
 ## References

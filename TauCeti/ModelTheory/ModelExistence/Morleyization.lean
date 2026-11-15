@@ -432,7 +432,7 @@ def Equiv.morleyEquiv (e : M ≃[L] N) (Φ : Set (Σ n, L.BoundedFormulaω Empty
   { e.toEquiv with
     map_fun' := fun f x => e.map_fun f x
     map_rel' := fun R x => by
-      rcases R with R | ⟨φ, hφ⟩
+      rcases R with R | ⟨φ, _⟩
       · exact e.map_rel R x
       · have := StrongHomClass.realize_boundedFormulaInf e φ (v := Empty.elim) (xs := x)
         rwa [Subsingleton.elim (e ∘ (Empty.elim : Empty → M)) Empty.elim] at this }

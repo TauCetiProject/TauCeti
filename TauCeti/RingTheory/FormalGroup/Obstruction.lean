@@ -8,13 +8,14 @@ module
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 -- Proof-only: the order filtration on points, substitution into points, the symmetric 2-cocycle
--- lemma, lowest-degree parts of substitutions, two-variable substitution identities, and the
--- permutations of `Fin 2`.
+-- lemma, lowest-degree parts of substitutions, two-variable substitution identities, symmetric
+-- power series, and the permutations of `Fin 2`.
 import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
 import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Symmetric
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -72,6 +73,51 @@ variable {R : Type*} [CommRing R]
 
 section Cocycle
 
+/-- The degree-`n` part of a series `Φ` vanishing below degree `n` that satisfies the 2-cocycle
+identity up to terms of degree above `n` is an additive 2-cocycle polynomial. -/
+private theorem isAddCocycle₂_homogeneousComponentPolynomial (F : FormalGroup R) {n : ℕ}
+    {Φ : MvPowerSeries (Fin 2) R} (hΦ : n ≤ Φ.order)
+    (hcocycle : ((n + 1 : ℕ) : ℕ∞) ≤ (Φ.subst ![X 0, X 1] +
+      Φ.subst ![F.toPowerSeries.subst ![X 0, X 1], (X 2 : MvPowerSeries (Fin 3) R)] -
+      Φ.subst ![X 0, F.toPowerSeries.subst ![X 1, X 2]] -
+      Φ.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]).order) :
+    (homogeneousComponentPolynomial n Φ).IsAddCocycle₂ := by
+  have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := R) i
+  have hX₀ (i : Fin 3) := constantCoeff_X (R := R) i
+  have hF₀ (i j : Fin 3) :
+      constantCoeff (F.toPowerSeries.subst ![(X i : MvPowerSeries (Fin 3) R), X j]) = 0 := by
+    rw [constantCoeff_subst_of_constantCoeff_zero (hasSubst_finTwo (hX i) (hX j))
+      (fun s ↦ by fin_cases s <;> simp) F.toPowerSeries, F.zero_constantCoeff, map_zero]
+  have h := homogeneousComponent_of_lt_order_eq_zero
+    (lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self n) hcocycle)
+  rw [map_sub, map_sub, map_add,
+    homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 0) (hX 1))
+      (l := ![MvPolynomial.X 0, MvPolynomial.X 1]) (fun i ↦ by fin_cases i <;> simp)
+      (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
+    homogeneousComponent_subst_eq_coe_aeval hΦ
+      (hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2))
+      (l := ![MvPolynomial.X 0 + MvPolynomial.X 1, MvPolynomial.X 2])
+      (fun i ↦ by fin_cases i <;> simp [hF₀])
+      (fun i ↦ by
+        fin_cases i <;>
+          simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
+            F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
+    homogeneousComponent_subst_eq_coe_aeval hΦ
+      (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
+      (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
+      (fun i ↦ by fin_cases i <;> simp [hF₀])
+      (fun i ↦ by
+        fin_cases i <;>
+          simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
+            F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
+    homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 1) (hX 2))
+      (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
+      (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
+  rw [MvPolynomial.isAddCocycle₂_iff]
+  refine MvPolynomial.coe_inj.mp ?_
+  rw [MvPolynomial.coe_add, MvPolynomial.coe_add]
+  linear_combination h
+
 /-- **Leading terms of symmetric 2-cocycles.** Let `F` be a formal group law and let
 `Φ(X, Y)` be a symmetric series vanishing below degree `n ≠ 0` that satisfies the 2-cocycle
 identity `Φ(X, Y) + Φ(F(X, Y), Z) = Φ(X, F(Y, Z)) + Φ(Y, Z)` up to terms of degree above `n`.
@@ -84,64 +130,17 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
       Φ.subst ![X 0, F.toPowerSeries.subst ![X 1, X 2]] -
       Φ.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]).order) :
     ∃ c : R, homogeneousComponent n Φ = ↑(c • TauCeti.lazardCocycle n R) := by
-  have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := R) i
-  have hX₀ (i : Fin 3) := constantCoeff_X (R := R) i
-  have hF₀ (i j : Fin 3) :
-      constantCoeff (F.toPowerSeries.subst ![(X i : MvPowerSeries (Fin 3) R), X j]) = 0 := by
-    rw [constantCoeff_subst_of_constantCoeff_zero (hasSubst_finTwo (hX i) (hX j))
-      (fun s ↦ by fin_cases s <;> simp) F.toPowerSeries, F.zero_constantCoeff, map_zero]
-  -- the leading polynomial is an additive 2-cocycle
-  have hcoc : (homogeneousComponentPolynomial n Φ).IsAddCocycle₂ := by
-    have h := homogeneousComponent_of_lt_order_eq_zero
-      (lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self n) hcocycle)
-    rw [map_sub, map_sub, map_add,
-      homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 0) (hX 1))
-        (l := ![MvPolynomial.X 0, MvPolynomial.X 1]) (fun i ↦ by fin_cases i <;> simp)
-        (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
-      homogeneousComponent_subst_eq_coe_aeval hΦ
-        (hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2))
-        (l := ![MvPolynomial.X 0 + MvPolynomial.X 1, MvPolynomial.X 2])
-        (fun i ↦ by fin_cases i <;> simp [hF₀])
-        (fun i ↦ by
-          fin_cases i <;>
-            simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
-              F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
-      homogeneousComponent_subst_eq_coe_aeval hΦ
-        (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
-        (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
-        (fun i ↦ by fin_cases i <;> simp [hF₀])
-        (fun i ↦ by
-          fin_cases i <;>
-            simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
-              F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
-      homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 1) (hX 2))
-        (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
-        (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
-    rw [MvPolynomial.isAddCocycle₂_iff]
-    refine MvPolynomial.coe_inj.mp ?_
-    rw [MvPolynomial.coe_add, MvPolynomial.coe_add]
-    linear_combination h
-  -- the leading polynomial is symmetric
-  have hsym : (homogeneousComponentPolynomial n Φ).IsSymmetric := by
-    have hX2 (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-    have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0]
-        (homogeneousComponentPolynomial n Φ) = homogeneousComponentPolynomial n Φ := by
-      refine MvPolynomial.coe_inj.mp ?_
-      rw [← homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX2 1) (hX2 0))
-        (fun i ↦ by fin_cases i <;> simp)
-        (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]), hsymm,
-        coe_homogeneousComponentPolynomial]
-    intro e
-    rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
-    · simp
-    · have hswap : (MvPolynomial.X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
-          ![MvPolynomial.X 1, MvPolynomial.X 0] := by
-        funext i
-        fin_cases i <;> simp
-      rw [MvPolynomial.rename_eq_aeval, hswap]
-      exact h
   obtain ⟨c, hc⟩ := TauCeti.exists_eq_smul_lazardCocycle hn
-    (isHomogeneous_homogeneousComponentPolynomial _ _) hsym hcoc
+    (isHomogeneous_homogeneousComponentPolynomial _ _)
+    (MvPowerSeries.IsSymmetric.homogeneousComponentPolynomial (f := Φ) (isSymmetric_iff.2 fun e ↦ by
+      rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
+      · simp
+      · have hswap : (X ∘ ⇑(Equiv.swap (0 : Fin 2) 1) : Fin 2 → MvPowerSeries (Fin 2) R) =
+            ![X 1, X 0] := by
+          funext i
+          fin_cases i <;> simp
+        rw [rename_eq_subst, hswap, hsymm]) n)
+    (isAddCocycle₂_homogeneousComponentPolynomial F hΦ hcocycle)
   exact ⟨c, by rw [← coe_homogeneousComponentPolynomial]; exact congrArg _ hc⟩
 
 end Cocycle
@@ -355,7 +354,6 @@ private theorem exists_homogeneousComponent_defectPoint (hf : PowerSeries.consta
     have hval (y z : F.Point (Fin 3)) : (defectPoint G hf y z).val =
         (coordDefect F G hf).val.subst ![y.val, z.val] := by
       rw [defectPoint_eq_substPointHom, val_substPointHom]
-    have hn' : ((1 : ℕ) : ℕ∞) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn
     have h0 {y z : F.Point (Fin 3)} (hy : constantCoeff y.val = 0)
         (hz : constantCoeff z.val = 0) : constantCoeff (defectPoint G hf y z).val = 0 :=
       order_ne_zero_iff_constCoeff_eq_zero.mp fun h ↦ by
@@ -394,15 +392,22 @@ theorem exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle
 /-- **The obstruction in degree `pᵏ` is read off the `p`-series.** Let `p` be a prime with
 `p = 0` in `R`, let `F` and `G` be commutative formal group laws over `R`, and let `f` be a power
 series without constant term whose homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` vanishes below
-degree `n = pᵏ`, `k ≥ 1`. Then the degree-`n` part of the defect is `c C_n`, where `c` is the
+degree `n = pᵏ`. Then the degree-`n` part of the defect is `c C_n`, where `c` is the
 coefficient of `Xⁿ` in `[p]_G(f(X)) - f([p]_F(X))`. In particular the defect vanishes in degree
 `n` exactly when `f` commutes with multiplication by `p` up to degree `n`. -/
 theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
     (hf : PowerSeries.constantCoeff f = 0) {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0) {k : ℕ}
-    (hk : k ≠ 0) (h : ((p ^ k : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
+    (h : ((p ^ k : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
     homogeneousComponent (p ^ k) (F.homDefect G f) =
       ↑(PowerSeries.coeff (p ^ k) (PowerSeries.subst f (G.nsmulSeries p) -
           PowerSeries.subst (F.nsmulSeries p) f) • TauCeti.lazardCocycle (p ^ k) R) := by
+  by_cases hk : k = 0
+  · -- in degree `1` both sides vanish, since `C₁ = 0`
+    subst hk
+    rw [pow_zero] at h ⊢
+    obtain ⟨c, hc⟩ := exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle (F := F)
+      hf one_ne_zero h
+    rw [hc, TauCeti.lazardCocycle_eq_zero_of_lt_two one_lt_two, smul_zero, smul_zero]
   have hn : p ^ k ≠ 0 := pow_ne_zero k hp.ne_zero
   obtain ⟨hΨ, he⟩ := le_order_defectPoint_coord hf hn h
   obtain ⟨c, hc⟩ := exists_homogeneousComponent_defectPoint hf hn hΨ

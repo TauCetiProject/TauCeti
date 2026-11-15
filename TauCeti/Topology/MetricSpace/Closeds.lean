@@ -10,13 +10,14 @@ public import Mathlib.Topology.MetricSpace.Closeds
 import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
-# Separation from a Hausdorff limit of closed sets
+# Separation from and approximation of a Hausdorff limit of closed sets
 
 The type `TopologicalSpace.Closeds X` of closed subsets of a metric space `X` carries the
 Hausdorff extended distance (`TopologicalSpace.Closeds.edist_eq`). If closed sets `F i` converge
 to `Z` in this distance, then a compact set `K` disjoint from `Z` stays at a uniformly positive
 distance from `F i` for all `i` far enough along the filter
-(`IsCompact.exists_pos_eventually_le_dist_of_tendsto`).
+(`IsCompact.exists_pos_eventually_le_dist_of_tendsto`). Conversely, every point of `Z` is
+eventually arbitrarily close to a point of `F i` (`Filter.Tendsto.eventually_exists_dist_lt`).
 
 This is how Hausdorff convergence of a sequence of zero sets is used: on a compact set away from
 the limit, the sets of the sequence eventually keep a fixed distance, so estimates that hold at
@@ -47,3 +48,13 @@ theorem IsCompact.exists_pos_eventually_le_dist_of_tendsto {ι : Type*} {l : Fil
   rw [edist_dist, ENNReal.ofReal_lt_ofReal_iff (half_pos hδ)] at hyz
   refine hδK (mem_thickening_iff.2 ⟨x, hx, ?_⟩) hz
   linarith [dist_triangle z y x, dist_comm z y, dist_comm x y]
+
+/-- If closed sets `F i` converge to `Z` in the Hausdorff distance, then every point of `Z` is
+eventually within any prescribed positive distance of a point of `F i`. -/
+theorem Filter.Tendsto.eventually_exists_dist_lt {ι : Type*} {l : Filter ι}
+    {F : ι → Closeds X} {Z : Closeds X} (hF : Tendsto F l (𝓝 Z)) {x : X} (hx : x ∈ Z) {ε : ℝ}
+    (hε : 0 < ε) : ∀ᶠ i in l, ∃ y ∈ F i, dist x y < ε := by
+  filter_upwards [EMetric.tendsto_nhds.1 hF (ENNReal.ofReal ε) (by simpa using hε)] with i hi
+  rw [edist_comm, Closeds.edist_eq] at hi
+  obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
+  exact ⟨y, hy, by rwa [edist_dist, ENNReal.ofReal_lt_ofReal_iff hε] at hxy⟩

@@ -86,8 +86,8 @@ theorem ext_suspendedComponent {f g : AInfinityBimoduleHom MM NN}
 
 /-- The unsuspended component of degree `-i-j`, curried with the module variable first. -/
 noncomputable def component (f : AInfinityBimoduleHom MM NN) (i j : ℕ) :
-    M →ₗ[R] MultilinearMap R (fun _ : Fin i ↦ A)
-      (MultilinearMap R (fun _ : Fin j ↦ B) N) :=
+    M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin i ↦ A)
+      (MultilinearMap (RingHom.id R) (fun _ : Fin j ↦ B) N) :=
   unsuspend AA.grading MM.grading BB.grading i j (f.suspendedComponent i j)
 
 /-- An unsuspended component evaluates the suspended component on Koszul-twisted inputs. -/

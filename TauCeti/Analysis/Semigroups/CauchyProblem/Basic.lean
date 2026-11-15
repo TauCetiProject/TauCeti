@@ -140,13 +140,13 @@ theorem isClassicalSolution_realOperator (S : StronglyContinuousSemigroup X) (x 
     S.realOperator_continuousOn_Ici z, fun t ht => ?_⟩
   let hut : S.realOperator t (x : X) ∈ S.generator.domain := by
     rw [S.generator_domain]
-    exact S.realOperator_mem_domain ht x.property
+    exact S.realOperator_mem_domain x.property
   refine ⟨hut, ?_⟩
   refine ⟨?_, ?_⟩
   · dsimp only [z]
-    rw [← S.realOperator_generator_map ht x]
+    rw [← S.realOperator_generator_map x]
     simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt_Ici x ht
-  · simpa only [z, hut] using (S.realOperator_generator_map ht x).symm
+  · simpa only [z, hut] using (S.realOperator_generator_map x).symm
 
 /-- Every orbit is a mild solution of the abstract Cauchy problem for the generator. -/
 theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) :
@@ -154,7 +154,7 @@ theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) 
   rw [isMildSolution_iff]
   refine ⟨inferInstance, S.realOperator_continuousOn_Ici x,
     S.realOperator_zero_apply x, fun t ht => ?_⟩
-  rcases ht.eq_or_lt with rfl | ht
+  rcases ht.eq_or_lt with rfl | _
   · refine ⟨?_, ?_⟩
     · simp
     · have harg : (⟨∫ s in Set.Ioc 0 0, S.realOperator s x, by simp⟩ :

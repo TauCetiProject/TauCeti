@@ -48,8 +48,6 @@ corner, and only at a cell of `μ` that is a corner, nothing but `c` itself is r
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10, where the corner recursion for
   standard Young tableaux is the starting point of the hook-length formula.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose `hookLengthFormula` milestone is proved by induction along the corners of `μ`.
 -/
 
 public section
@@ -152,6 +150,9 @@ theorem mem_erase : d ∈ erase μ c ↔ d ∈ μ ∧ ¬ c ≤ d :=
 theorem mem_of_mem_erase (h : d ∈ erase μ c) : d ∈ μ :=
   (mem_erase.mp h).1
 
+/-- A cell is never in the diagram obtained by erasing it. -/
+theorem notMem_erase : c ∉ erase μ c := fun hc => (mem_erase.mp hc).2 le_rfl
+
 theorem erase_le (μ : YoungDiagram) (c : ℕ × ℕ) : erase μ c ≤ μ :=
   Finset.filter_subset _ _
 
@@ -172,9 +173,6 @@ theorem cells_erase (h : IsCorner μ c) : (erase μ c).cells = μ.cells.erase c 
   ext d
   simp only [Finset.mem_erase, _root_.YoungDiagram.mem_cells, h.mem_erase_iff]
   tauto
-
-theorem notMem_erase (h : IsCorner μ c) : c ∉ erase μ c := fun hc =>
-  (h.mem_erase_iff.mp hc).2 rfl
 
 /-- Erasing a corner drops the number of cells by exactly one. -/
 @[simp]

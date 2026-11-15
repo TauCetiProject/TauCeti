@@ -56,11 +56,29 @@ theorem abs_toReal_sub_le_toReal_symmDiff {s t : Set Ω} (hs : μ s ≠ ∞) (ht
   rw [symmDiff_comm t s] at hts
   exact abs_le.mpr ⟨by linarith, by linarith⟩
 
-/-- If `s` and the two symmetric differences have finite outer measure, the mass of `A ∩ B`
-is within their summed symmetric-difference masses of the mass of `s`. -/
+/-- If the two symmetric differences with `s` have finite outer measure, the mass of `A ∩ B`
+is within their summed symmetric-difference masses of the mass of `s`. When `s` has infinite
+outer measure, so does `A ∩ B`, and both masses are the junk value `0`. -/
 theorem abs_toReal_inter_sub_le_toReal_symmDiff_add {A B s : Set Ω}
-    (hs : μ s ≠ ∞) (hA : μ (A ∆ s) ≠ ∞) (hB : μ (B ∆ s) ≠ ∞) :
+    (hA : μ (A ∆ s) ≠ ∞) (hB : μ (B ∆ s) ≠ ∞) :
     |(μ (A ∩ B)).toReal - (μ s).toReal| ≤ (μ (A ∆ s)).toReal + (μ (B ∆ s)).toReal := by
+  by_cases hs : μ s = ∞
+  · have hsub : s ⊆ (A ∩ B) ∪ (A ∆ s) ∪ (B ∆ s) := by
+      intro x hx
+      by_cases hxA : x ∈ A
+      · by_cases hxB : x ∈ B
+        · exact .inl (.inl ⟨hxA, hxB⟩)
+        · exact .inr (mem_symmDiff.2 (.inr ⟨hx, hxB⟩))
+      · exact .inl (.inr (mem_symmDiff.2 (.inr ⟨hx, hxA⟩)))
+    have hle : μ s ≤ μ (A ∩ B) + μ (A ∆ s) + μ (B ∆ s) :=
+      (measure_mono hsub).trans <| (measure_union_le _ _).trans <|
+        add_le_add_left (measure_union_le _ _) _
+    have hinter : μ (A ∩ B) = ∞ := by
+      by_contra h
+      exact ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨h, hA⟩, hB⟩ (top_le_iff.1 (hs ▸ hle))
+    rw [hs, hinter]
+    simp only [ENNReal.toReal_top, sub_self, abs_zero]
+    positivity
   have hAfin : μ A ≠ ∞ := ne_top_of_le_ne_top (ENNReal.add_ne_top.mpr ⟨hA, hs⟩)
     ((measure_mono (le_symmDiff_sup_right A s)).trans (measure_union_le _ _))
   calc

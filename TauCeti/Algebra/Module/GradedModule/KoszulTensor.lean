@@ -39,13 +39,13 @@ variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- The Koszul sign automorphism of a graded tensor product. On bidegree `(p,q)` it
 multiplies by `(-1)^(p*q)`, without interchanging the factors. -/
-noncomputable def koszulTensorTwist (G : InternalGrading R M) (H : InternalGrading R N) :
+noncomputable def koszulTensorTwist (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
     M ⊗[R] N ≃ₗ[R] M ⊗[R] N :=
   TensorProduct.congr G.quadraticTwistEquiv H.quadraticTwistEquiv ≪≫ₗ
     (G.tensorProduct H).quadraticTwistEquiv
 
 /-- The sign automorphism evaluates to the Koszul sign on homogeneous pure tensors. -/
-theorem koszulTensorTwist_tmul (G : InternalGrading R M) (H : InternalGrading R N)
+theorem koszulTensorTwist_tmul (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     {p q : ℤ} {x : M} {y : N} (hx : x ∈ G.piece p) (hy : y ∈ H.piece q) :
     G.koszulTensorTwist H (x ⊗ₜ[R] y) =
       (p * q).negOnePow • (x ⊗ₜ[R] y) := by
@@ -68,7 +68,7 @@ theorem koszulTensorTwist_tmul (G : InternalGrading R M) (H : InternalGrading R 
   simp only [Units.smul_def, Int.cast_smul_eq_zsmul]
 
 /-- The inverse sign automorphism has the same value on homogeneous pure tensors. -/
-theorem koszulTensorTwist_symm_tmul (G : InternalGrading R M) (H : InternalGrading R N)
+theorem koszulTensorTwist_symm_tmul (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     {p q : ℤ} {x : M} {y : N} (hx : x ∈ G.piece p) (hy : y ∈ H.piece q) :
     (G.koszulTensorTwist H).symm (x ⊗ₜ[R] y) =
       (p * q).negOnePow • (x ⊗ₜ[R] y) := by
@@ -79,7 +79,7 @@ theorem koszulTensorTwist_symm_tmul (G : InternalGrading R M) (H : InternalGradi
   simp
 
 /-- The Koszul sign automorphism preserves total degree. -/
-theorem isHomogeneous_koszulTensorTwist (G : InternalGrading R M) (H : InternalGrading R N) :
+theorem isHomogeneous_koszulTensorTwist (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
     LinearMap.IsHomogeneous (G.koszulTensorTwist H).toLinearMap
       (G.tensorProduct H).piece (G.tensorProduct H).piece 0 := by
   have hG : LinearMap.IsHomogeneous G.quadraticTwistEquiv.toLinearMap G.piece G.piece 0 := by

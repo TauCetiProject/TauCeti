@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
 import TauCeti.RingTheory.Artinian.FiniteLength
@@ -123,6 +124,7 @@ theorem IsInjectiveEnvelope.moduleProjective_op_matlisDual_of_injective [Module 
     (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite R _))
     (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite_trans R A N)).1
 
+omit [Small.{w} A] in
 /-- A finitely generated left `A`-module is projective exactly when its Matlis dual is an injective
 right module. -/
 theorem IsInjectiveEnvelope.moduleInjective_op_matlisDual_iff_projective [Module A N]
@@ -130,6 +132,7 @@ theorem IsInjectiveEnvelope.moduleInjective_op_matlisDual_iff_projective [Module
     Module.Injective Aᵐᵒᵖ (MatlisDual R E N) ↔ Module.Projective A N := by
   have := hf.moduleInjective
   have : Small.{max w v} Aᵐᵒᵖ :=
+    have : Small.{v} A := Module.Finite.small R A
     have : Small.{max w v} A := small_lift A
     small_of_injective MulOpposite.unop_injective
   have : Module.Finite R N := Module.Finite.trans A N
@@ -142,12 +145,14 @@ theorem IsInjectiveEnvelope.moduleInjective_op_matlisDual_iff_projective [Module
     ⟨fun _ => .of_equiv (opOpSemilinearEquiv (A := A)).symm,
       fun _ => .of_equiv (opOpSemilinearEquiv (A := A))⟩
 
+omit [Small.{w} A] in
 /-- A finitely generated right `A`-module is projective exactly when its Matlis dual is an injective
 left module. -/
 theorem IsInjectiveEnvelope.moduleInjective_matlisDual_iff_projective_op [Module Aᵐᵒᵖ N]
     [IsScalarTower R Aᵐᵒᵖ N] [Module.Finite Aᵐᵒᵖ N] (hf : IsInjectiveEnvelope f) :
     Module.Injective A (MatlisDual R E N) ↔ Module.Projective Aᵐᵒᵖ N :=
   have := hf.moduleInjective
+  have : Small.{v} A := Module.Finite.small R A
   have : Small.{max w v} A := small_lift A
   (equivLinearMap R E N).moduleInjective_iff_projective_of_dual_of_bijective smul_apply
     (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite R _))

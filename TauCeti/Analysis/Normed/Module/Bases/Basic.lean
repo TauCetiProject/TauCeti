@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Bases
+import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 
 /-!
 # Basic facts about generalized Schauder bases
@@ -69,6 +71,38 @@ theorem coord_eq_of_hasSum {L' : SummationFilter β} [L'.NeBot] [L'.LeAtTop] {a 
       ext j; by_cases hj : j = i <;> simp [b.ortho, hj]
     rw [this]; exact (hasSum_pi_single i (a i)).mono_left SummationFilter.le_atTop
   exact (h.map (b.coord i) (b.coord i).continuous).unique h2
+
+section CoordinateSeries
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The series of rank-one maps built from basis coordinates has norm bounded by the
+sum of the coordinate norms times the vector norms. -/
+theorem norm_tsum_coord_smulRight_le (v : β → F)
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) :
+    ‖∑' i, (b.coord i).smulRight (v i)‖ ≤ ∑' i, ‖b.coord i‖ * ‖v i‖ :=
+  tsum_of_norm_bounded hs.hasSum fun i ↦
+    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (v i)).le
+
+/-- A summable weighted vector family gives a norm-convergent series of rank-one
+maps built from the basis coordinates. -/
+theorem summable_coord_smulRight [CompleteSpace F] (v : β → F)
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) :
+    Summable (fun i ↦ (b.coord i).smulRight (v i)) :=
+  hs.of_norm_bounded fun i ↦
+    (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (v i)).le
+
+/-- The sum of rank-one coordinate maps takes each basis vector to its prescribed vector. -/
+theorem tsum_coord_smulRight_apply_basis [CompleteSpace F] (v : β → F)
+    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) (i : β) :
+    (∑' k, (b.coord k).smulRight (v k)) (b i) = v i := by
+  classical
+  rw [tsum_apply (b.summable_coord_smulRight v hs), tsum_eq_single i]
+  · simp [b.ortho]
+  · intro k hki
+    simp [b.ortho, hki.symm]
+
+end CoordinateSeries
 
 end GeneralSchauderBasis
 

@@ -250,8 +250,7 @@ private theorem conjPrecomp_comp_fderivWithin_fderivWithin_of_im_eq_zero {U : Se
   ext v e
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply,
     conjPrecomp_apply]
-  exact (D₂ x).toLinearMap₁₂.apply_conj_apply_conj_of_apply_one_I_eq_zero_of_apply_I_one_eq_zero
-    hmixed (hsymm.trans hmixed) v e
+  exact (D₂ x).toLinearMap₁₂.forall_apply_conj_apply_conj_eq_iff.2 ⟨hmixed, hsymm.trans hmixed⟩ v e
 
 /-- The first derivative of the even reflection, glued from the derivative `D₁` of `w` within the
 upper half-plane, exists at every point of `U` once `D₁` is invariant on the axis under
@@ -325,7 +324,7 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
   have hedge₁ : ∀ x ∈ U, x.im = 0 → conjPrecomp F (D₁ x) = D₁ x := fun x hx hx0 ↦ by
     ext v
     rw [conjPrecomp_apply]
-    exact (D₁ x).toLinearMap.apply_conj_of_apply_I_eq_zero (hN x hx hx0) v
+    exact (D₁ x).toLinearMap.forall_apply_conj_eq_iff.2 (hN x hx hx0) v
   have hedge₂ : ∀ x ∈ U, x.im = 0 →
       (conjPrecomp F).comp ((D₂ x).comp (conjCLE : ℂ →L[ℝ] ℂ)) = D₂ x := fun x hx hx0 ↦
     conjPrecomp_comp_fderivWithin_fderivWithin_of_im_eq_zero hU hw hN hD₁S hx hx0

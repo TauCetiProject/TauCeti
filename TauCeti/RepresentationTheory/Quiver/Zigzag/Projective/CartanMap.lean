@@ -162,9 +162,7 @@ theorem map_subtype_smul_zigzagProjectiveGrade (i j : V) (p : ℤ) :
           (zigzagVertexIdempotent k G j) ⊓ zigzagIntegerGrade k G p := by
     rintro _ hI rfl
     exact GradedModuleCat.map_subtype_smul_ofIdeal_span_singleton_piece
-      (isIdempotentElem_zigzagVertexIdempotent k G i)
-      (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
-      (isIdempotentElem_zigzagVertexIdempotent k G j) hI p
+      (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) hI p
   calc
     _ = cornerSubmodule k (zigzagVertexIdempotent k G i)
         (zigzagVertexIdempotent k G j) ⊓ zigzagIntegerGrade k G p :=

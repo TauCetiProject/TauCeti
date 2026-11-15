@@ -223,15 +223,23 @@ private theorem edist_le_edist_and_apply_le_apply (hτ : 0 < τ) (hτσ : τ < �
   refine ⟨(ENNReal.toReal_le_toReal hd₀ hd₁).1 ?_, EReal.coe_le_coe_iff.2 ha⟩
   exact (pow_le_pow_iff_left₀ ENNReal.toReal_nonneg ENNReal.toReal_nonneg two_ne_zero).1 hd
 
-/-- **Monotonicity of resolvent steps in the time step.** For time steps `0 < τ < σ`, a resolvent
+/-- **Monotonicity of resolvent steps in the time step.** For time steps `τ < σ`, a resolvent
 step of time `σ` from `x` goes at least as far as a resolvent step `y` of time `τ`, provided the
 Moreau–Yosida approximation `φ_τ(x)` is finite and `φ y ≠ ⊥`. -/
-theorem edist_le_edist_of_mem_moreauYosidaResolvent (hτ : 0 < τ) (hτσ : τ < σ)
+theorem edist_le_edist_of_mem_moreauYosidaResolvent (hτσ : τ < σ)
     (hy₀ : y ∈ moreauYosidaResolvent φ τ x) {y₁ : X} (hy₁ : y₁ ∈ moreauYosidaResolvent φ σ x)
     (hφy₀ : φ y ≠ ⊥) (hx : moreauYosida φ τ x ≠ ⊤) :
-    edist x y ≤ edist x y₁ :=
-  (edist_le_edist_and_apply_le_apply hτ hτσ hy₀ hy₁ hφy₀
-    (apply_ne_top_of_mem_moreauYosidaResolvent hy₀ hx)).1
+    edist x y ≤ edist x y₁ := by
+  rcases eq_or_ne τ 0 with rfl | hτ
+  · -- With `τ = 0` the penalty is `⊤` away from `x`, so `y` is at distance `0` from `x`.
+    refine le_of_eq_of_le ?_ bot_le
+    by_contra h0
+    have h := (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hy₀).2
+    rw [ENNReal.coe_zero, mul_zero, ENNReal.div_zero (pow_ne_zero 2 h0), EReal.coe_ennreal_top,
+      EReal.add_top_of_ne_bot hφy₀] at h
+    exact hx h.symm
+  · exact (edist_le_edist_and_apply_le_apply (pos_iff_ne_zero.2 hτ) hτσ hy₀ hy₁ hφy₀
+      (apply_ne_top_of_mem_moreauYosidaResolvent hy₀ hx)).1
 
 /-- **Monotonicity of resolvent steps in the time step.** For time steps `0 < τ < σ`, a resolvent
 step of time `σ` from `x` reaches energy at most that of a resolvent step of time `τ`. -/
@@ -273,27 +281,35 @@ theorem antitone_comp_of_forall_mem_moreauYosidaResolvent {u : ℕ → X}
   antitone_nat_of_succ_le fun n ↦ (apply_le_of_mem_moreauYosidaResolvent (hu n) :)
 
 /-- **Local decrease estimate for resolvent steps.** If `y ∈ J_τ x` is a resolvent step with time
-step `τ > 0` from a point where the Moreau–Yosida approximation is finite, and `φ y ≠ ⊥`, then for
-every `z` at finite distance from `y` the decrease `(φ y - φ z)⁺` is at most
+step `τ > 0`, then for every `z` the decrease `(φ y - φ z)⁺` is at most
 `(d(x, y) / τ + d(y, z) / (2τ)) d(y, z)`. With `d = d(x, y)`, `e = d(x, z)` and `r = d(y, z)`,
 minimality of `y` gives `2τ (φ y - φ z) ≤ e² - d² ≤ (d + r)² - d² = 2dr + r²`. -/
 theorem toENNReal_sub_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
-    (hy : y ∈ moreauYosidaResolvent φ τ x) (hφy : φ y ≠ ⊥) (hx : moreauYosida φ τ x ≠ ⊤)
-    {z : X} (hyz : edist y z ≠ ⊤) :
+    (hy : y ∈ moreauYosidaResolvent φ τ x) {z : X} :
     (φ y - φ z).toENNReal ≤ (edist x y / τ + edist y z / (2 * τ)) * edist y z := by
   have hd := edist_ne_top_of_mem_moreauYosidaResolvent hy
+  -- If `d(y, z) = ⊤` the right side is `⊤`.
+  by_cases hyz : edist y z = ⊤
+  · rw [hyz, ENNReal.top_div_of_ne_top (by finiteness)]
+    simp
   have hxz : edist x z ≤ edist x y + edist y z := edist_triangle x y z
   have hxz' : edist x z ≠ ⊤ := ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hd, hyz⟩) hxz
-  -- If `φ z = ⊤` there is no decrease.
+  -- If `φ y = ⊥` or `φ z = ⊤` there is no decrease.
+  by_cases hbot : φ y = ⊥
+  · simp [hbot]
   by_cases htop : φ z = ⊤
   · simp [htop]
-  obtain ⟨a, ha⟩ : ∃ a : ℝ, φ y = a :=
-    ⟨_, (EReal.coe_toReal (apply_ne_top_of_mem_moreauYosidaResolvent hy hx) hφy).symm⟩
+  -- If `φ y = ⊤`, minimality of `y` forces `φ z = ⊤`.
+  have hφy : φ y ≠ ⊤ := fun h ↦ htop <| by
+    by_contra hz
+    have h₁ := hy.2 z hxz'
+    rw [h, EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _), top_le_iff] at h₁
+    exact (EReal.add_lt_top hz (EReal.coe_ennreal_eq_top_iff.not.2 (by finiteness))).ne h₁
+  obtain ⟨a, ha⟩ : ∃ a : ℝ, φ y = a := ⟨_, (EReal.coe_toReal hφy hbot).symm⟩
   obtain ⟨b, hb⟩ : ∃ b : ℝ, φ z = b :=
-    ⟨_, (EReal.coe_toReal htop (apply_ne_bot_of_mem_moreauYosidaResolvent hy hφy hxz')).symm⟩
+    ⟨_, (EReal.coe_toReal htop (apply_ne_bot_of_mem_moreauYosidaResolvent hy hbot hxz')).symm⟩
   have h := add_toReal_sq_div_le_of_mem_moreauYosidaResolvent hτ hy hxz' ha hb
   have he := ENNReal.toReal_le_add hxz hd hyz
-  have hτ' := NNReal.coe_pos.2 hτ
   rw [ha, hb, ← EReal.coe_sub, EReal.real_coe_toENNReal]
   refine ENNReal.ofReal_le_of_le_toReal ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_div,
@@ -351,16 +367,15 @@ section EMetricSpace
 variable {X : Type*} [EMetricSpace X] {φ : X → EReal} {τ : ℝ≥0} {x y : X}
 
 /-- **Slope estimate for resolvent steps.** If `y ∈ J_τ x` is a resolvent step with time step
-`τ > 0` from a point where the Moreau–Yosida approximation is finite, and `φ y ≠ ⊥`, then the
-descending slope of `φ` at `y` is at most `d(x, y) / τ`. -/
+`τ > 0`, then the descending slope of `φ` at `y` is at most `d(x, y) / τ`. -/
 theorem descendingSlope_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
-    (hy : y ∈ moreauYosidaResolvent φ τ x) (hφy : φ y ≠ ⊥) (hx : moreauYosida φ τ x ≠ ⊤) :
+    (hy : y ∈ moreauYosidaResolvent φ τ x) :
     descendingSlope φ y ≤ edist x y / τ := by
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ descendingSlope_le_of_eventually_le ?_
   have hδ : (0 : ℝ≥0∞) < 2 * τ * ε := by simp [hτ, hε]
   filter_upwards [nhdsWithin_le_nhds (Metric.eball_mem_nhds y hδ)] with z hz
   rw [Metric.mem_eball, edist_comm] at hz
-  refine (toENNReal_sub_le_of_mem_moreauYosidaResolvent hτ hy hφy hx hz.ne_top).trans ?_
+  refine (toENNReal_sub_le_of_mem_moreauYosidaResolvent hτ hy).trans ?_
   gcongr
   exact ENNReal.div_le_of_le_mul (hz.le.trans_eq (mul_comm _ _))
 
@@ -382,11 +397,24 @@ theorem half_norm_sq_add_edist_sq_div (hτ : 0 < τ) (x y : E) :
     norm_sq_div_two_add_norm_sub_sq_div (NNReal.coe_pos.2 hτ).ne' (by positivity)]
 
 /-- On a seminormed real inner product space, the Moreau–Yosida approximation of the energy
-`‖·‖² / 2` with time step `τ > 0` is `‖x‖² / (2 (1 + τ))`. -/
+`‖·‖² / 2` with time step `τ` is `‖x‖² / (2 (1 + τ))`. -/
 @[simp]
-theorem moreauYosida_half_norm_sq (hτ : 0 < τ) (x : E) :
+theorem moreauYosida_half_norm_sq (τ : ℝ≥0) (x : E) :
     moreauYosida (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x =
       ((‖x‖ ^ 2 / (2 * (1 + τ)) : ℝ) : EReal) := by
+  rcases eq_or_ne τ 0 with rfl | hτ
+  · -- With `τ = 0` the penalty is `⊤` away from `x`, and `0` at points at distance `0`.
+    apply le_antisymm
+    · simpa using moreauYosida_le (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) 0 (x := x) (y := x)
+        (edist_ne_top _ _)
+    · refine le_moreauYosida_iff.2 fun y _ ↦ ?_
+      by_cases hxy : edist x y = 0
+      · have : ‖x‖ = ‖y‖ := ((EMetric.inseparable_iff.2 hxy).map continuous_norm).eq
+        simp [hxy, this]
+      · rw [ENNReal.coe_zero, mul_zero, ENNReal.div_zero (pow_ne_zero 2 hxy),
+          EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (EReal.coe_ne_bot _)]
+        exact le_top
+  have hτ : 0 < τ := pos_iff_ne_zero.2 hτ
   apply le_antisymm
   · have h := moreauYosida_le (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ
       (x := x) (y := (1 + (τ : ℝ))⁻¹ • x) (edist_ne_top _ _)
@@ -402,14 +430,25 @@ section NormedInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {τ : ℝ≥0}
 
-/-- On a real inner product space, the resolvent of the energy `‖·‖² / 2` with time step `τ > 0`
+/-- On a real inner product space, the resolvent of the energy `‖·‖² / 2` with time step `τ`
 is the single point `x / (1 + τ)`. -/
 @[simp]
-theorem moreauYosidaResolvent_half_norm_sq (hτ : 0 < τ) (x : E) :
+theorem moreauYosidaResolvent_half_norm_sq (τ : ℝ≥0) (x : E) :
     moreauYosidaResolvent (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x = {(1 + (τ : ℝ))⁻¹ • x} := by
+  rcases eq_or_ne τ 0 with rfl | hτ
+  · -- With `τ = 0` the penalty is `⊤` away from `x`, so the resolvent is `{x}`.
+    ext y
+    rw [mem_moreauYosidaResolvent_iff_eq_moreauYosida, moreauYosida_half_norm_sq]
+    by_cases hxy : y = x
+    · simp [hxy]
+    · have h0 : edist x y ≠ 0 := by simpa [eq_comm] using hxy
+      rw [ENNReal.coe_zero, mul_zero, ENNReal.div_zero (pow_ne_zero 2 h0), EReal.coe_ennreal_top,
+        EReal.add_top_of_ne_bot (EReal.coe_ne_bot _)]
+      simp [hxy]
+  have hτ : 0 < τ := pos_iff_ne_zero.2 hτ
   have hk : 0 < (1 + (τ : ℝ)) / (2 * τ) := by have := NNReal.coe_pos.2 hτ; positivity
   ext y
-  rw [mem_moreauYosidaResolvent_iff_eq_moreauYosida, moreauYosida_half_norm_sq hτ,
+  rw [mem_moreauYosidaResolvent_iff_eq_moreauYosida, moreauYosida_half_norm_sq,
     half_norm_sq_add_edist_sq_div hτ]
   simp only [ne_eq, edist_ne_top, not_false_eq_true, true_and, EReal.coe_eq_coe_iff,
     mem_singleton_iff]

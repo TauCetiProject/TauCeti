@@ -76,7 +76,7 @@ theorem ker_branchPermHom [IsAlgClosed k] :
   · refine ker_placePermHomOfInvariant_le _ hx.isFunctionField_adjoin
       ((k⟮x⟯).val.isIntegrallyClosedIn (k⟮x⟯).val.injective hex) (branchPlaces hx) _
       (fun P _ ↦ P.degree_eq_one_of_isAlgClosed_of_isFunctionField hx.isFunctionField_adjoin) ?_
-    rw [genus_adjoin_simple_eq_zero hx, card_branchPlaces hF hex hx hdeg]
+    rw [genus_adjoin_simple_eq_zero hx, card_branchPlaces hx hdeg]
     omega
   · rw [MonoidHom.mem_ker] at hσ ⊢
     refine Equiv.ext fun P ↦ Subtype.ext ?_
@@ -112,7 +112,7 @@ theorem card_algEquiv_le_of_finrank_adjoin_eq_two [IsAlgClosed k] :
     classical
     refine (Nat.card_le_card_of_injective _ (QuotientGroup.kerLift_injective φ)).trans ?_
     rw [Nat.card_eq_fintype_card (α := Equiv.Perm (branchPlaces hx)), Fintype.card_perm,
-      Fintype.card_coe, card_branchPlaces hF hex hx hdeg]
+      Fintype.card_coe, card_branchPlaces hx hdeg]
   have hsub : Nat.card φ.ker = 2 := by
     rw [hφ, ker_branchPermHom hF hex hg hx hdeg,
       IntermediateField.natCard_fixingSubgroup_of_finrank_eq_two k⟮x⟯ hdeg]

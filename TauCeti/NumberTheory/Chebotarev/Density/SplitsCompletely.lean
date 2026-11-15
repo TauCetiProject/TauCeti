@@ -48,7 +48,6 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 private theorem under_mem_frobeniusPrimeSet_one_of_inertiaDeg_eq_one {𝔓 : HeightOneSpectrum (𝓞 L)}
     (hdeg : 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1) (hram : 𝔓.under (𝓞 K) ∉ ramifiedPrimes K L) :
     𝔓.under (𝓞 K) ∈ frobeniusPrimeSet K L 1 := by
-  have : 𝔓.asIdeal.LiesOver (𝔓.under (𝓞 K)).asIdeal := ⟨HeightOneSpectrum.under_asIdeal _ 𝔓⟩
   rw [mem_ramifiedPrimes_iff, not_not] at hram
   exact (mem_frobeniusPrimeSet_one_iff_inertiaDeg_eq_one hram 𝔓.asIdeal).mpr hdeg
 
@@ -61,10 +60,10 @@ private theorem card_inertiaDeg_eq_one_fiber_of_mem_frobeniusPrimeSet_one
   have hdiv (𝔓 : HeightOneSpectrum (𝓞 L)) :
       (𝔓.under (𝓞 K) = 𝔭 ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1) ↔
         𝔓.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) 𝔭.asIdeal := by
-    rw [← Ideal.liesOver_iff_dvd_map 𝔓.isPrime.ne_top]
-    refine ⟨fun h ↦ ⟨(congrArg HeightOneSpectrum.asIdeal h.1).symm⟩, fun h ↦ ?_⟩
-    obtain rfl : 𝔓.under (𝓞 K) = 𝔭 := HeightOneSpectrum.ext h.over.symm
-    exact ⟨rfl, inertiaDeg_eq_one_of_mem_frobeniusPrimeSet_one h𝔭 𝔓.asIdeal⟩
+    rw [← Ideal.liesOver_iff_dvd_map 𝔓.isPrime.ne_top, ← HeightOneSpectrum.under_eq_iff_liesOver]
+    refine and_iff_left_of_imp ?_
+    rintro rfl
+    exact inertiaDeg_eq_one_of_mem_frobeniusPrimeSet_one h𝔭 𝔓.asIdeal
   rw [Nat.card_congr ((Equiv.subtypeEquivRight hdiv).trans
     (HeightOneSpectrum.equivPrimesOver (𝓞 L) 𝔭.ne_bot)), Nat.card_coe_set_eq]
   exact mem_frobeniusPrimeSet_one_iff_ncard_primesOver_eq_finrank.mp h𝔭

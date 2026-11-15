@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.NormalExtension
 public import TauCeti.LinearAlgebra.TotallyReal.Frame
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Charts adapted to a totally real parametrization
@@ -319,5 +320,29 @@ theorem not_isInvertible_fderiv_adaptedNormalExtension_complexLine (x : ℂ) :
     continuousAt_const, ContinuousLinearMap.fderiv] at h
   have h0 := h.bijective.1 (a₁ := (Complex.I, -1)) (a₂ := 0) (by ext <;> simp)
   simpa using congrArg Prod.snd h0
+
+/-- **The rank drop for the complex line.** For the complex line `ℂ × {0}` in `ℂ²` with
+multiplication by `i`, the derivative of the adapted extension at a point `(x, 0)` of the zero
+section is `(v, w) ↦ (v + i w, 0)`. Its range is the line `ℂ × {0}` itself, of real dimension `2`
+rather than `4`: the normal directions `J ∂ⱼγ` repeat the tangent directions `∂ⱼγ`. -/
+theorem finrank_range_fderiv_adaptedNormalExtension_complexLine (x : ℂ) :
+    Module.finrank ℝ (LinearMap.range (fderiv ℝ (adaptedNormalExtension
+      (ContinuousLinearMap.inl ℝ ℂ ℂ) (fun _ ↦ Complex.I • ContinuousLinearMap.id ℝ (ℂ × ℂ)))
+        (x, 0)).toLinearMap) = 2 := by
+  rw [fderiv_adaptedNormalExtension_zero (ContinuousLinearMap.inl ℝ ℂ ℂ).contDiff.contDiffAt
+    continuousAt_const, ContinuousLinearMap.fderiv]
+  have hrange : LinearMap.range ((ContinuousLinearMap.inl ℝ ℂ ℂ).coprod
+      ((Complex.I • ContinuousLinearMap.id ℝ (ℂ × ℂ)).comp
+        (ContinuousLinearMap.inl ℝ ℂ ℂ))).toLinearMap =
+      LinearMap.range (LinearMap.inl ℝ ℂ ℂ) := by
+    ext p
+    simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, LinearMap.inl_apply]
+    constructor
+    · rintro ⟨⟨v, w⟩, rfl⟩
+      exact ⟨v + Complex.I * w, by ext <;> simp⟩
+    · rintro ⟨v, rfl⟩
+      exact ⟨(v, 0), by ext <;> simp⟩
+  rw [hrange, LinearMap.finrank_range_of_inj LinearMap.inl_injective,
+    Complex.finrank_real_complex]
 
 end TauCeti

@@ -273,7 +273,7 @@ theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ
 theorem zpowCeil_norm_zpow_smul (n : ℤ) (m : M) :
     zpowCeil ‖(ϖ.unit : R)‖ ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ =
       ‖(ϖ.unit : R)‖ ^ n * zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ := by
-  rw [ϖ.norm_zpow_smul, zpowCeil_zpow_mul ϖ.norm_pos ϖ.norm_lt_one]
+  rw [ϖ.norm_zpow_smul, zpowCeil_zpow_mul ϖ.norm_pos]
 
 end Module
 

@@ -154,11 +154,6 @@ theorem ker_zigzagProjectiveToHead (i : V) :
 variable (hns : ∀ i : V, ∃ j, G.Adj i j)
 include hns
 
-private theorem zigzagMk_ofArrow_mem_jacobson (d : G.Dart) :
-    zigzagMk k G (ofArrow (arrow G d.adj)) ∈ Ring.jacobson Z := by
-  have h := zigzagMk_ofArrow_mem_zigzagPositiveSpan (k := k) d
-  rwa [← restrictScalars_jacobson_nonisolatedZigzagQuotient_eq_zigzagPositiveSpan hns] at h
-
 /-- A product of an element of `J^m` and an element of `J^n` vanishes when `m + n = 3`. -/
 private theorem mul_eq_zero_of_mem_jacobson_pow {m n : ℕ} (hmn : m + n = 3) (hn : n ≠ 0)
     {x y : Z} (hx : x ∈ Ring.jacobson Z ^ m) (hy : y ∈ Ring.jacobson Z ^ n) : x * y = 0 := by
@@ -176,7 +171,7 @@ theorem range_zigzagProjectiveVolumeMul (i : V) :
   apply le_antisymm
   · rintro _ ⟨y, rfl⟩
     rw [mem_zigzagProjectiveRadicalPower_iff, coe_zigzagProjectiveVolumeMul_apply]
-    exact (Ring.jacobson Z ^ 2).mul_mem_left _ (zigzagVolume_mem_jacobson_sq hns i)
+    exact (Ring.jacobson Z ^ 2).mul_mem_left _ (zigzagVolume_mem_jacobson_sq i)
   · intro x hx
     have hx' : x ∈ (zigzagProjectiveRadicalPower k G i 2).restrictScalars k := hx
     rw [restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns,
@@ -210,10 +205,11 @@ theorem ker_zigzagProjectiveVolumeMul (i : V) :
     apply Subtype.ext
     rw [coe_zigzagProjectiveVolumeMul_apply, ZeroMemClass.coe_zero]
     exact mul_eq_zero_of_mem_jacobson_pow hns (m := 1) (n := 2) rfl two_ne_zero
-      (by rwa [Submodule.pow_one]) (zigzagVolume_mem_jacobson_sq hns i)
+      (by rwa [Submodule.pow_one]) (zigzagVolume_mem_jacobson_sq i)
 
 /-! ### The arrow map -/
 
+omit hns in
 /-- The image of an arrow map lies in the radical of its target. -/
 theorem range_zigzagProjectiveArrowMul_le (d : G.Dart) :
     LinearMap.range (zigzagProjectiveArrowMul k G d) ≤
@@ -221,7 +217,7 @@ theorem range_zigzagProjectiveArrowMul_le (d : G.Dart) :
   rintro _ ⟨y, rfl⟩
   rw [mem_zigzagProjectiveRadicalPower_iff, coe_zigzagProjectiveArrowMul_apply,
     Submodule.pow_one]
-  exact (Ring.jacobson Z).mul_mem_left _ (zigzagMk_ofArrow_mem_jacobson hns d)
+  exact (Ring.jacobson Z).mul_mem_left _ (zigzagMk_ofArrow_mem_jacobson d)
 
 /-- An arrow map kills the socle of its source. -/
 theorem zigzagProjectiveRadicalPower_two_le_ker_zigzagProjectiveArrowMul (d : G.Dart) :
@@ -232,7 +228,7 @@ theorem zigzagProjectiveRadicalPower_two_le_ker_zigzagProjectiveArrowMul (d : G.
   apply Subtype.ext
   rw [coe_zigzagProjectiveArrowMul_apply, ZeroMemClass.coe_zero]
   exact mul_eq_zero_of_mem_jacobson_pow hns (m := 2) (n := 1) rfl one_ne_zero hy
-    (by rw [Submodule.pow_one]; exact zigzagMk_ofArrow_mem_jacobson hns d)
+    (by rw [Submodule.pow_one]; exact zigzagMk_ofArrow_mem_jacobson d)
 
 omit hns in
 private theorem finiteDimensional_zigzagProjective (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
@@ -275,6 +271,7 @@ private theorem two_le_finrank_range_zigzagProjectiveArrowMul (d : G.Dart) :
         rw [finrank_span_eq_card hli, Fintype.card_fin]
     _ ≤ _ := Submodule.finrank_mono hle
 
+omit hns in
 /-- The head quotient at `d.fst` kills the image of the arrow map of `d`. -/
 @[simp]
 theorem zigzagProjectiveToHead_comp_zigzagProjectiveArrowMul (d : G.Dart) :
@@ -282,7 +279,7 @@ theorem zigzagProjectiveToHead_comp_zigzagProjectiveArrowMul (d : G.Dart) :
   ext y
   rw [LinearMap.comp_apply, LinearMap.zero_apply, ← LinearMap.mem_ker,
     ker_zigzagProjectiveToHead]
-  exact range_zigzagProjectiveArrowMul_le hns d (LinearMap.mem_range_self _ y)
+  exact range_zigzagProjectiveArrowMul_le d (LinearMap.mem_range_self _ y)
 
 section Finite
 
@@ -296,7 +293,7 @@ theorem range_zigzagProjectiveArrowMul (d : G.Dart) (hd : G.degree d.fst = 1) :
   have := finiteDimensional_zigzagProjective (k := k) hns d.fst
   apply Submodule.restrictScalars_injective k
   apply Submodule.eq_of_le_of_finrank_le
-  · exact range_zigzagProjectiveArrowMul_le hns d
+  · exact range_zigzagProjectiveArrowMul_le d
   · have h := finrank_restrictScalars_zigzagProjectiveRadicalPower_one hns (k := k) d.fst
     rw [hd] at h
     -- The `k`-structure on the radical is the one of its restriction of scalars.

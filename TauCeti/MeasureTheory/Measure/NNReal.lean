@@ -75,6 +75,11 @@ theorem nnvolume_Ioc (s t : ℝ≥0) : nnvolume (Ioc s t) = ((t - s : ℝ≥0) :
   rw [nnvolume_apply, NNReal.image_coe_Ioc, Real.volume_Ioc]
   simp [ENNReal.ofReal_sub]
 
+/-- A constant-rate half-line intensity assigns rate times length to a half-open interval. -/
+theorem smul_nnvolume_Ioc (r s t : ℝ≥0) :
+    ((r : ℝ≥0∞) • nnvolume) (Ioc s t) = ((r * (t - s) : ℝ≥0) : ℝ≥0∞) := by
+  simp only [smul_apply, nnvolume_Ioc, smul_eq_mul, ENNReal.coe_mul]
+
 /-- Changing either endpoint convention leaves the length unchanged. -/
 @[simp]
 theorem nnvolume_Icc (s t : ℝ≥0) : nnvolume (Icc s t) = ((t - s : ℝ≥0) : ℝ≥0∞) := by

@@ -184,8 +184,6 @@ theorem charFun_map_cast_logarithmicSeriesMeasure {q : ℝ} (hq0 : 0 < q) (hq1 :
     rw [hz_def, norm_mul, Complex.norm_exp_I_mul_ofReal, mul_one, Complex.norm_real,
       Real.norm_of_nonneg hq0.le]
     exact hq1
-  have hlog : (log (1 - q) : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (log_one_sub_neg hq0 hq1).ne
   have hsum := (Complex.hasSum_taylorSeries_neg_log hz).div_const (-(log (1 - q) : ℂ))
   rw [neg_div_neg_eq] at hsum
   have _ := isProbabilityMeasure_logarithmicSeriesMeasure hq0 hq1
