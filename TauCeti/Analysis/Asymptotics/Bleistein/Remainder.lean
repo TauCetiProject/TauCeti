@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.Asymptotics.Bleistein.ChangeOfVariables
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -22,24 +21,28 @@ import TauCeti.Order.Monotone.Basic
 # Uniform remainder bound and expansion in Bleistein's method
 
 After Bleistein's canonical change of variables (`TauCeti.bleisteinCoord`), a Laplace-type integral
-with an interior or coalescing saddle point `α` and an algebraic endpoint singularity `t ^ (λ - 1)`
-at `t = 0` takes the canonical form
+`I(α, x) = ∫ t in s, (exp (-x * g t) * t ^ (λ - 1)) • q t` with an interior or coalescing saddle
+point `α` and an algebraic endpoint singularity `t ^ (λ - 1)` at `t = 0` takes the canonical form
 
-  `∫ w in (0, ∞), (exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (λ - 1)) • f w`
+  `exp (-x * g 0) • ∫ w in (0, ∞), (exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (λ - 1)) • f w`
 
-when the upper canonical limit is `κ = ∞` (DLMF 2.3.29). Expanding the transformed amplitude `f`
-around the canonical saddle `w = a` (`a = bleisteinCenter g α`),
+when the upper canonical limit is `κ = ∞` (DLMF 2.3.29), so `exp (x * g 0) • I(α, x)` equals the
+unprefactored integral on the right. Expanding the transformed amplitude `f` around the canonical
+saddle `w = a` (`a = bleisteinCenter g α`),
 
   `f w = ∑ s < N, (w - a) ^ s • φ s + R_N w`,    `‖R_N w‖ ≤ C * |w - a| ^ N`,
 
-produces a uniform asymptotic approximation in terms of the canonical comparison integrals
-(DLMF 2.3.33)
+produces a uniform asymptotic approximation in terms of two families of canonical integrals:
 
-* `bleisteinF λ s y = ∫ τ in (0, ∞), exp (-τ ^ 2 / 2 + y * τ) * (τ - y) ^ s * τ ^ (λ - 1)`,
+* `bleisteinF λ s y = ∫ τ in (0, ∞), exp (-τ ^ 2 / 2 + y * τ) * (τ - y) ^ s * τ ^ (λ - 1)`
+  (DLMF 2.3.33), the canonical coefficient functions (related to parabolic cylinder functions);
 * `bleisteinG λ N y = ∫ τ in (0, ∞), exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ N * τ ^ (λ - 1)`,
+  the nonnegative comparison integrals controlling the remainder (which agree with `bleisteinF`
+  at even `N` and at `y = 0`).
 
-which are related to parabolic cylinder functions and remain smooth across the coalescence `y = 0`
-(`a = 0`). Because the constant `C` and the data `a`, `φ` are arbitrary, the resulting error bound
+For `λ > 0`, both `bleisteinF λ s` and `bleisteinG λ N` are proved continuous on all of `ℝ`
+(including across the coalescence `y = 0`, `a = 0`), with `bleisteinG λ N` strictly positive.
+Because the constant `C` and the data `a`, `φ` are arbitrary, the resulting error bound
 `C * x ^ (-(N + λ) / 2) * bleisteinG λ N (a * √x)` holds uniformly across any parameter family on
 which `C` is chosen independent of `α` (DLMF 2.3.32). The amplitude `f` takes values in any real
 Banach space `E`, so real- and complex-valued integrals are covered simultaneously.
@@ -57,9 +60,10 @@ Banach space `E`, so real- and complex-valued integrals are covered simultaneous
 * `TauCeti.bleisteinG_nonneg`, `TauCeti.bleisteinG_pos`, `TauCeti.abs_bleisteinF_le_bleisteinG`:
   positivity of `G_N` and domination `|F_s(y)| ≤ G_s(y)`.
 * `TauCeti.bleisteinG_zero`, `TauCeti.bleisteinG_two_mul_eq_bleisteinF`,
-  `TauCeti.bleisteinF_zero_zero`, `TauCeti.bleisteinG_zero_zero`, `TauCeti.bleisteinF_one_one`:
-  special values and parity identities (`G_{2m} = F_{2m}`,
-  `F_0(0) = G_0(0) = 2 ^ (λ / 2 - 1) * Γ(λ / 2)`, and `F_1(y) = 1` for `λ = 1`).
+  `TauCeti.bleisteinG_apply_zero_eq_bleisteinF`, `TauCeti.bleisteinF_apply_zero`,
+  `TauCeti.bleisteinF_zero_apply_zero`, `TauCeti.bleisteinG_zero_apply_zero`,
+  `TauCeti.bleisteinF_one_one`: special values and parity identities (`G_{2m} = F_{2m}`,
+  `G_N(0) = F_N(0) = 2 ^ ((λ + N) / 2 - 1) * Γ((λ + N) / 2)`, and `F_1(y) = 1` for `λ = 1`).
 * `TauCeti.integrableOn_exp_mul_sub_pow_mul_rpow`,
   `TauCeti.integrableOn_exp_mul_abs_sub_pow_mul_rpow`,
   `TauCeti.integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF`,
@@ -71,9 +75,9 @@ Banach space `E`, so real- and complex-valued integrals are covered simultaneous
 * `TauCeti.integrableOn_bleistein_of_taylor_bound`,
   `TauCeti.integrableOn_bleistein_Ioo_of_taylor_bound`,
   `TauCeti.integrableOn_bleistein_Ioi_of_taylor_bound`,
-  `TauCeti.norm_exp_mul_integral_bleistein_sub_le`,
-  `TauCeti.norm_exp_mul_integral_bleistein_Ioo_sub_le`,
-  `TauCeti.norm_exp_mul_integral_bleistein_Ioi_sub_le`: convergence and explicit uniform remainder
+  `TauCeti.norm_exp_smul_integral_bleistein_sub_le`,
+  `TauCeti.norm_exp_smul_integral_bleistein_Ioo_sub_le`,
+  `TauCeti.norm_exp_smul_integral_bleistein_Ioi_sub_le`: convergence and explicit uniform remainder
   bound for the original integral `I(α, x)` (DLMF 2.3.32) on `(0, k)` and `(0, ∞)`.
 
 ## References
@@ -136,12 +140,12 @@ private theorem integrableOn_bleisteinDom {lam : ℝ} (hlam : 0 < lam) (s : ℕ)
     linarith
   exact (integrableOn_rpow_mul_exp_neg_mul_sq (by norm_num : (0 : ℝ) < 1 / 4) hk).const_mul _
 
-/-- Pointwise bound by `bleisteinDom lam s R τ` for `τ > 0` and `|y| ≤ R` (`R ≥ 0`). -/
+/-- Pointwise bound by `bleisteinDom lam s R τ` for `τ > 0` and `|y| ≤ R`. -/
 private theorem le_bleisteinDom {lam y R τ : ℝ} {s : ℕ}
-    (hR : 0 ≤ R) (hy : |y| ≤ R) (hτ : 0 < τ) :
+    (hy : |y| ≤ R) (hτ : 0 < τ) :
     Real.exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ s * τ ^ (lam - 1) ≤ bleisteinDom lam s R τ := by
   have hquad : -τ ^ 2 / 2 + y * τ ≤ -(1 / 4 : ℝ) * τ ^ 2 + R ^ 2 := by
-    have hsq : y ^ 2 ≤ R ^ 2 := sq_le_sq.mpr (by rwa [abs_of_nonneg hR])
+    have hsq : y ^ 2 ≤ R ^ 2 := sq_le_sq.mpr (by rwa [abs_of_nonneg ((abs_nonneg y).trans hy)])
     have hnonneg : 0 ≤ (τ / 2 - y) ^ 2 := sq_nonneg _
     linarith
   have hexp : Real.exp (-τ ^ 2 / 2 + y * τ) ≤
@@ -184,20 +188,29 @@ private theorem aestronglyMeasurable_bleistein_integrand (lam : ℝ) {h : ℝ �
     (hh.comp (continuous_id.sub continuous_const)).continuousOn).mul ?_
   exact continuousOn_id.rpow_const fun τ hτ ↦ Or.inl (mem_Ioi.mp hτ).ne'
 
-/-- Integrability on `(0, ∞)` of `τ ↦ exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (λ - 1)` when `h`
-is continuous and satisfies `|h u| ≤ |u| ^ s`. -/
-private theorem integrableOn_bleistein_integrand_of_le {lam : ℝ} (hlam : 0 < lam) {s : ℕ}
-    {h : ℝ → ℝ} (hh_cont : Continuous h) (hh_le : ∀ u, |h u| ≤ |u| ^ s) (y : ℝ) :
-    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (lam - 1))
-      (Ioi 0) := by
-  refine Integrable.mono' (integrableOn_bleisteinDom hlam s |y|)
-    (aestronglyMeasurable_bleistein_integrand lam hh_cont y) ?_
+/-- Almost-everywhere norm domination on `(0, ∞)` of the Bleistein integrand for a factor `h`
+satisfying `|h u| ≤ |u| ^ s`, uniformly for `|y| ≤ R`. -/
+private theorem ae_norm_bleistein_integrand_le {lam y R : ℝ} {s : ℕ} {h : ℝ → ℝ}
+    (hh_le : ∀ u, |h u| ≤ |u| ^ s) (hy : |y| ≤ R) :
+    ∀ᵐ τ ∂volume.restrict (Ioi 0),
+      ‖Real.exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (lam - 1)‖ ≤
+        bleisteinDom lam s R τ := by
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : 0 < τ)
   rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _),
     abs_of_pos (Real.rpow_pos_of_pos hτ _)]
   exact (mul_le_mul_of_nonneg_right
     (mul_le_mul_of_nonneg_left (hh_le (τ - y)) (Real.exp_pos _).le)
-    (Real.rpow_pos_of_pos hτ _).le).trans (le_bleisteinDom (abs_nonneg y) le_rfl hτ)
+    (Real.rpow_pos_of_pos hτ _).le).trans (le_bleisteinDom hy hτ)
+
+/-- Integrability on `(0, ∞)` of `τ ↦ exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (λ - 1)` when `h`
+is continuous and satisfies `|h u| ≤ |u| ^ s`. -/
+private theorem integrableOn_bleistein_integrand_of_le {lam : ℝ} (hlam : 0 < lam) {s : ℕ}
+    {h : ℝ → ℝ} (hh_cont : Continuous h) (hh_le : ∀ u, |h u| ≤ |u| ^ s) (y : ℝ) :
+    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (lam - 1))
+      (Ioi 0) :=
+  Integrable.mono' (integrableOn_bleisteinDom hlam s |y|)
+    (aestronglyMeasurable_bleistein_integrand lam hh_cont y)
+    (ae_norm_bleistein_integrand_le hh_le le_rfl)
 
 /-- Dominated continuity in `y` of `∫₀^∞ exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (λ - 1) dτ`
 when `h` is continuous and satisfies `|h u| ≤ |u| ^ s`. -/
@@ -215,12 +228,7 @@ private theorem continuous_integral_bleistein_of_le {lam : ℝ} (hlam : 0 < lam)
     have hyR : |y| ≤ |y₀| + 1 := by
       have hdist : |y - y₀| < 1 := by simpa [Real.dist_eq] using Metric.mem_ball.mp hy
       linarith [abs_sub_abs_le_abs_sub y y₀]
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : 0 < τ)
-    rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _),
-      abs_of_pos (Real.rpow_pos_of_pos hτ _)]
-    exact (mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_left (hh_le (τ - y)) (Real.exp_pos _).le)
-      (Real.rpow_pos_of_pos hτ _).le).trans (le_bleisteinDom (by positivity) hyR hτ)
+    exact ae_norm_bleistein_integrand_le hh_le hyR
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ _
     exact ((Real.continuous_exp.comp (by fun_prop)).mul
       (hh_cont.comp (continuous_const.sub continuous_id)) |>.mul continuous_const).continuousAt
@@ -296,32 +304,53 @@ theorem bleisteinG_zero (lam y : ℝ) : bleisteinG lam 0 y = bleisteinF lam 0 y 
   simp [bleisteinG, bleisteinF]
 
 /-- At even orders `2 * m`, `bleisteinG` and `bleisteinF` coincide everywhere. -/
+@[simp]
 theorem bleisteinG_two_mul_eq_bleisteinF (lam : ℝ) (m : ℕ) (y : ℝ) :
     bleisteinG lam (2 * m) y = bleisteinF lam (2 * m) y := by
   simp_rw [bleisteinG, bleisteinF, pow_mul, sq_abs]
 
-/-- Value of `F_0(0)` in terms of the Gamma function:
-`bleisteinF lam 0 0 = 2 ^ (lam / 2 - 1) * Real.Gamma (lam / 2)` for `λ > 0`. -/
-theorem bleisteinF_zero_zero {lam : ℝ} (hlam : 0 < lam) :
-    bleisteinF lam 0 0 = 2 ^ (lam / 2 - 1) * Real.Gamma (lam / 2) := by
-  have hcongr : ∫ τ in Ioi (0 : ℝ), Real.exp (-τ ^ 2 / 2 + 0 * τ) * (τ - 0) ^ 0 * τ ^ (lam - 1) =
-      ∫ τ in Ioi (0 : ℝ), τ ^ (lam - 1) * Real.exp (-(1 / 2 : ℝ) * τ ^ (2 : ℝ)) := by
-    refine setIntegral_congr_fun measurableSet_Ioi fun τ _ ↦ ?_
-    rw [Real.rpow_two]
-    ring_nf
+/-- At `y = 0`, `bleisteinG` and `bleisteinF` coincide for every order `N`. -/
+@[simp]
+theorem bleisteinG_apply_zero_eq_bleisteinF (lam : ℝ) (N : ℕ) :
+    bleisteinG lam N 0 = bleisteinF lam N 0 := by
+  rw [bleisteinG_def, bleisteinF_def]
+  refine setIntegral_congr_fun measurableSet_Ioi fun τ (hτ : 0 < τ) ↦ ?_
+  rw [sub_zero, abs_of_pos hτ]
+
+/-- Value of `F_s(0)` at the coalescence point `y = 0` in terms of the Gamma function:
+`bleisteinF lam s 0 = 2 ^ ((lam + s) / 2 - 1) * Real.Gamma ((lam + s) / 2)` for `0 < λ + s`. -/
+theorem bleisteinF_apply_zero {lam : ℝ} {s : ℕ} (h : 0 < lam + s) :
+    bleisteinF lam s 0 = 2 ^ ((lam + s) / 2 - 1) * Real.Gamma ((lam + s) / 2) := by
+  have hcongr : ∫ τ in Ioi (0 : ℝ), Real.exp (-τ ^ 2 / 2 + 0 * τ) * (τ - 0) ^ s * τ ^ (lam - 1) =
+      ∫ τ in Ioi (0 : ℝ), τ ^ (lam + s - 1) * Real.exp (-(1 / 2 : ℝ) * τ ^ (2 : ℝ)) := by
+    refine setIntegral_congr_fun measurableSet_Ioi fun τ (hτ : 0 < τ) ↦ ?_
+    rw [sub_zero, zero_mul, add_zero, Real.rpow_two, ← Real.rpow_natCast τ s]
+    have hmul : τ ^ (s : ℝ) * τ ^ (lam - 1) = τ ^ (lam + s - 1) := by
+      rw [← Real.rpow_add hτ]
+      congr 1
+      ring
+    calc Real.exp (-τ ^ 2 / 2) * τ ^ (s : ℝ) * τ ^ (lam - 1)
+        = (τ ^ (s : ℝ) * τ ^ (lam - 1)) * Real.exp (-(1 / 2 : ℝ) * τ ^ 2) := by ring_nf
+      _ = τ ^ (lam + s - 1) * Real.exp (-(1 / 2 : ℝ) * τ ^ 2) := by rw [hmul]
   rw [bleisteinF, hcongr,
-    integral_rpow_mul_exp_neg_mul_rpow two_pos (by linarith : -1 < lam - 1) one_half_pos]
-  have h2 : (1 / 2 : ℝ) ^ (-(lam - 1 + 1) / 2) * (1 / 2) = 2 ^ (lam / 2 - 1) := by
+    integral_rpow_mul_exp_neg_mul_rpow two_pos (by linarith : -1 < lam + s - 1) one_half_pos]
+  have h2 : (1 / 2 : ℝ) ^ (-(lam + s - 1 + 1) / 2) * (1 / 2) = 2 ^ ((lam + s) / 2 - 1) := by
     have : (1 / 2 : ℝ) = (2 : ℝ) ^ (-1 : ℝ) := by norm_num
     rw [this, ← Real.rpow_mul zero_le_two, ← Real.rpow_add two_pos]
     congr 1
     ring
-  rw [h2, (by ring : (lam - 1 + 1) / 2 = lam / 2)]
+  rw [h2, (by ring : (lam + s - 1 + 1) / 2 = (lam + s) / 2)]
+
+/-- Value of `F_0(0)` in terms of the Gamma function:
+`bleisteinF lam 0 0 = 2 ^ (lam / 2 - 1) * Real.Gamma (lam / 2)` for `λ > 0`. -/
+theorem bleisteinF_zero_apply_zero {lam : ℝ} (hlam : 0 < lam) :
+    bleisteinF lam 0 0 = 2 ^ (lam / 2 - 1) * Real.Gamma (lam / 2) := by
+  simpa using bleisteinF_apply_zero (s := 0) (by simpa using hlam)
 
 /-- Value of `G_0(0)` in terms of the Gamma function. -/
-theorem bleisteinG_zero_zero {lam : ℝ} (hlam : 0 < lam) :
+theorem bleisteinG_zero_apply_zero {lam : ℝ} (hlam : 0 < lam) :
     bleisteinG lam 0 0 = 2 ^ (lam / 2 - 1) * Real.Gamma (lam / 2) := by
-  rw [bleisteinG_zero, bleisteinF_zero_zero hlam]
+  rw [bleisteinG_zero, bleisteinF_zero_apply_zero hlam]
 
 /-- Exact evaluation `F_1(y) = 1` at `λ = 1` for every real `y`. -/
 @[simp]
@@ -353,13 +382,23 @@ theorem bleisteinF_one_one (y : ℝ) : bleisteinF 1 1 y = 1 := by
 
 /-! ### Rescaled model integrals and uniform remainder bound -/
 
-/-- Algebraic rescaling `τ = √x * w` in the canonical quadratic phase. -/
-private theorem bleistein_rescaled_phase {a x w : ℝ} (hx : 0 ≤ x) :
-    -(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w) =
+/-- Pointwise rescaling `τ = √x * w` of the canonical integrand for a homogeneous factor `h`. -/
+private theorem bleistein_rescaled_integrand {lam a x w : ℝ} {n : ℕ} {h : ℝ → ℝ}
+    (hx : 0 < x) (hw : 0 < w) (hh : ∀ c > 0, ∀ u, h (c * u) = c ^ n * h u) :
+    Real.exp (-(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w)) *
+        h (Real.sqrt x * w - a * Real.sqrt x) * (Real.sqrt x * w) ^ (lam - 1) =
+      ((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1)) *
+        (Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1)) := by
+  have hsq : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx
+  have hphase : -(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w) =
       -x * (w ^ 2 / 2 - a * w) := by
-  calc -(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w)
-      = -(Real.sqrt x ^ 2 * w ^ 2) / 2 + a * (Real.sqrt x * Real.sqrt x) * w := by ring
-    _ = -x * (w ^ 2 / 2 - a * w) := by rw [Real.sq_sqrt hx, Real.mul_self_sqrt hx]; ring
+    calc -(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w)
+        = -(Real.sqrt x ^ 2 * w ^ 2) / 2 + a * (Real.sqrt x * Real.sqrt x) * w := by ring
+      _ = -x * (w ^ 2 / 2 - a * w) := by rw [Real.sq_sqrt hx.le, Real.mul_self_sqrt hx.le]; ring
+  have hhom : h (Real.sqrt x * w - a * Real.sqrt x) = (Real.sqrt x) ^ n * h (w - a) := by
+    rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), hh _ hsq]
+  rw [hphase, hhom, Real.mul_rpow hsq.le hw.le]
+  ring
 
 /-- Rescaled integrability on `(0, ∞)` for a factor `h` homogeneous of degree `n` on `(0, ∞)`. -/
 private theorem integrableOn_exp_mul_homog_mul_rpow {lam x : ℝ} {n : ℕ} {h : ℝ → ℝ}
@@ -378,15 +417,11 @@ private theorem integrableOn_exp_mul_homog_mul_rpow {lam x : ℝ} {n : ℕ} {h :
     mul_ne_zero (pow_ne_zero n hsq.ne') (Real.rpow_pos_of_pos hsq _).ne'
   refine (integrable_smul_iff hc_ne _).mp (hcomp.congr_fun ?_ measurableSet_Ioi)
   intro w (hw : 0 < w)
-  have hhom : h (Real.sqrt x * w - a * Real.sqrt x) = (Real.sqrt x) ^ n * h (w - a) := by
-    rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), hh _ hsq]
-  dsimp only [Pi.smul_apply, smul_eq_mul]
-  rw [bleistein_rescaled_phase hx.le, hhom, Real.mul_rpow hsq.le hw.le]
-  ring
+  exact bleistein_rescaled_integrand hx hw hh
 
 /-- Rescaled integral identity on `(0, ∞)` for a factor `h` homogeneous of degree `n` on
 `(0, ∞)`. -/
-private theorem integral_exp_mul_homog_mul_rpow {a x : ℝ} (lam : ℝ) (hx : 0 < x) {n : ℕ}
+private theorem integral_exp_mul_homog_mul_rpow {x : ℝ} (lam : ℝ) (hx : 0 < x) (a : ℝ) {n : ℕ}
     {h : ℝ → ℝ} (hh : ∀ c > 0, ∀ u, h (c * u) = c ^ n * h u) :
     (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1)) =
       x ^ (-((n : ℝ) + lam) / 2) *
@@ -404,11 +439,8 @@ private theorem integral_exp_mul_homog_mul_rpow {a x : ℝ} (lam : ℝ) (hx : 0 
       ((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1)) *
         ∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1) := by
     rw [← integral_const_mul]
-    refine setIntegral_congr_fun measurableSet_Ioi fun w (hw : 0 < w) ↦ ?_
-    have hhom : h (Real.sqrt x * w - a * Real.sqrt x) = (Real.sqrt x) ^ n * h (w - a) := by
-      rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), hh _ hsq]
-    rw [bleistein_rescaled_phase hx.le, hhom, Real.mul_rpow hsq.le hw.le]
-    ring
+    exact setIntegral_congr_fun measurableSet_Ioi fun w hw ↦
+      bleistein_rescaled_integrand hx hw hh
   rw [hcongr] at hcomp
   have hc_pos : 0 < (Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1) :=
     mul_pos (pow_pos hsq n) (Real.rpow_pos_of_pos hsq _)
@@ -421,22 +453,7 @@ private theorem integral_exp_mul_homog_mul_rpow {a x : ℝ} (lam : ℝ) (hx : 0 
     simp only [← Real.rpow_neg hx.le, ← Real.rpow_add hx]
     congr 1
     ring
-  calc (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1))
-      = ((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1))⁻¹ *
-          (((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1)) *
-            ∫ w in Ioi (0 : ℝ),
-              Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1)) := by
-        rw [inv_mul_cancel_left₀ hc_pos.ne']
-    _ = (((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹) *
-          ∫ τ in Ioi (0 : ℝ),
-            Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) * h (τ - a * Real.sqrt x) *
-              τ ^ (lam - 1) := by
-        rw [hcomp, mul_assoc]
-    _ = x ^ (-((n : ℝ) + lam) / 2) *
-          ∫ τ in Ioi (0 : ℝ),
-            Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) * h (τ - a * Real.sqrt x) *
-              τ ^ (lam - 1) := by
-        rw [hscale]
+  rw [← hscale, mul_assoc, ← hcomp, inv_mul_cancel_left₀ hc_pos.ne']
 
 /-- Integrability on `(0, ∞)` of the rescaled canonical monomial integrand
 `w ↦ exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (λ - 1)` for `λ > 0` and `x > 0`. -/
@@ -449,11 +466,11 @@ theorem integrableOn_exp_mul_sub_pow_mul_rpow {lam x : ℝ}
 
 /-- Change-of-scale identity expressing the canonical monomial integral on `(0, ∞)` in terms of
 `bleisteinF` for `x > 0` (behind DLMF 2.3.32–2.3.33). -/
-theorem integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF {a x : ℝ}
-    (lam : ℝ) (hx : 0 < x) (s : ℕ) :
+theorem integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF {x : ℝ}
+    (lam : ℝ) (hx : 0 < x) (a : ℝ) (s : ℕ) :
     (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1)) =
       x ^ (-lam / 2) * (bleisteinF lam s (a * Real.sqrt x) * x ^ (-(s : ℝ) / 2)) := by
-  rw [integral_exp_mul_homog_mul_rpow (h := (· ^ s)) lam hx (fun _ _ _ ↦ mul_pow _ _ s),
+  rw [integral_exp_mul_homog_mul_rpow (h := (· ^ s)) lam hx a (fun _ _ _ ↦ mul_pow _ _ s),
     ← bleisteinF_def, (by ring : -((s : ℝ) + lam) / 2 = -lam / 2 + -(s : ℝ) / 2),
     Real.rpow_add hx]
   ring
@@ -470,11 +487,11 @@ theorem integrableOn_exp_mul_abs_sub_pow_mul_rpow {lam x : ℝ}
 
 /-- Change-of-scale identity expressing the canonical absolute-power comparison integral on `(0, ∞)`
 in terms of `bleisteinG` for `x > 0`. -/
-theorem integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG {a x : ℝ}
-    (lam : ℝ) (hx : 0 < x) (N : ℕ) :
+theorem integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG {x : ℝ}
+    (lam : ℝ) (hx : 0 < x) (a : ℝ) (N : ℕ) :
     (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) =
       x ^ (-((N : ℝ) + lam) / 2) * bleisteinG lam N (a * Real.sqrt x) := by
-  rw [integral_exp_mul_homog_mul_rpow (h := fun u ↦ |u| ^ N) lam hx
+  rw [integral_exp_mul_homog_mul_rpow (h := fun u ↦ |u| ^ N) lam hx a
     (fun c hc u ↦ by rw [abs_mul, abs_of_pos hc, mul_pow]), ← bleisteinG_def]
 
 /-- Pointwise distribution of Bleistein's canonical kernel across a truncated polynomial sum. -/
@@ -515,7 +532,7 @@ theorem integral_exp_mul_rpow_smul_sum_eq_bleisteinF {E : Type*}
       (integrableOn_exp_mul_sub_pow_mul_rpow hlam hx a s).smul_const (phi s),
     Finset.smul_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [integral_smul_const, integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF lam hx s, smul_smul]
+  rw [integral_smul_const, integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF lam hx a s, smul_smul]
 
 /-- Almost-everywhere norm domination of Bleistein's weighted Taylor remainder on `(0, ∞)`. -/
 private theorem ae_norm_bleistein_remainder_le {E : Type*}
@@ -596,43 +613,58 @@ theorem norm_bleistein_remainder_le {E : Type*} [NormedAddCommGroup E] [NormedSp
   refine (integral_mono_ae ((hf_int.sub hpoly_int).congr_fun
       (fun _ _ ↦ (smul_sub _ _ _).symm) measurableSet_Ioi).norm hdom_int
       (ae_norm_bleistein_remainder_le hf)).trans_eq ?_
-  rw [integral_const_mul, integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG lam hx N, mul_assoc]
+  rw [integral_const_mul, integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG lam hx a N, mul_assoc]
 
 /-! ### Uniform expansion of Laplace-type integrals (DLMF 2.3.32) -/
 
-/-- Shared change-of-variables setup deriving injectivity, positivity, differentiability, positive
-derivative, phase lower bounds, and continuity of `bleisteinAmplitude` on `(0, ∞)`. -/
+/-- Shared change-of-variables setup deriving openness and positivity of `s`, phase lower bounds,
+positivity and injectivity of `bleisteinCoord`, positive derivative, and continuity of
+`bleisteinAmplitude` on `(0, ∞)`. -/
 private theorem bleistein_changeOfVariables_setup {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
     {lam : ℝ} {g : ℝ → ℝ} {q : ℝ → E} {U s : Set ℝ} {α : ℝ}
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U) (hs0 : s ⊆ Ioi 0)
-    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hsU : s ⊆ U)
+    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ s, t ≠ α → deriv g t ≠ 0)
     (hq : ContinuousOn q s) (himg : bleisteinCoord g α '' s = Ioi 0) :
-    g α ≤ g 0 ∧ (∀ t ∈ s, g α ≤ g t) ∧ (∀ t ∈ s, 0 < bleisteinCoord g α t) ∧
-      InjOn (bleisteinCoord g α) s ∧
-      (∀ t ∈ s, HasDerivWithinAt (bleisteinCoord g α) (deriv (bleisteinCoord g α) t) s t) ∧
+    IsOpen s ∧ s ⊆ Ioi 0 ∧ g α ≤ g 0 ∧ (∀ t ∈ s, g α ≤ g t) ∧
+      (∀ t ∈ s, 0 < bleisteinCoord g α t) ∧ InjOn (bleisteinCoord g α) s ∧
       (∀ t ∈ s, 0 < deriv (bleisteinCoord g α) t) ∧
       ContinuousOn (bleisteinAmplitude lam g q s α) (Ioi 0) := by
-  have hw_c1 := contDiffOn_bleisteinCoord hU hα hg hanti hmono hd1 hd2
-  have hinj : InjOn (bleisteinCoord g α) s :=
-    (strictMonoOn_bleisteinCoord hα hanti hmono).injOn.mono hsU
+  have hw_mono := strictMonoOn_bleisteinCoord hα hanti hmono
+  have hs_eq : s = U ∩ Ioi 0 := by
+    ext t
+    constructor
+    · intro ht
+      have hwt : 0 < bleisteinCoord g α t := by
+        have hmem : bleisteinCoord g α t ∈ bleisteinCoord g α '' s := ⟨t, ht, rfl⟩
+        rwa [himg] at hmem
+      rw [← bleisteinCoord_zero g α] at hwt
+      exact ⟨hsU ht, (hw_mono.lt_iff_lt h0 (hsU ht)).mp hwt⟩
+    · rintro ⟨htU, ht0⟩
+      have hwt : bleisteinCoord g α t ∈ bleisteinCoord g α '' s := by
+        rw [himg, mem_Ioi, ← bleisteinCoord_zero g α]
+        exact hw_mono h0 htU ht0
+      rcases hwt with ⟨t', ht', heq⟩
+      exact hw_mono.injOn (hsU ht') htU heq ▸ ht'
+  have hs : IsOpen s := hs_eq ▸ hU.inter isOpen_Ioi
+  have hs0 : s ⊆ Ioi 0 := hs_eq ▸ inter_subset_right
+  have hw_c1 := contDiffOn_bleisteinCoord hU hα hg
+    (fun _ ht hne ↦ lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht hne) hd2
+  have hinj : InjOn (bleisteinCoord g α) s := hw_mono.injOn.mono hsU
   have hw_pos : ∀ t ∈ s, 0 < bleisteinCoord g α t := fun t ht ↦
     bleisteinCoord_pos hα h0 hanti hmono (hsU ht) (hs0 ht)
   have hdpos : ∀ t ∈ s, 0 < deriv (bleisteinCoord g α) t := fun t ht ↦
-    deriv_bleisteinCoord_pos hU hα hg hanti hmono hd1 hd2 (hsU ht) (hreg t ht)
-  have hw_diff : DifferentiableOn ℝ (bleisteinCoord g α) U :=
-    ((contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hw_c1).1
-  have hderiv : ∀ t ∈ s, HasDerivWithinAt (bleisteinCoord g α) (deriv (bleisteinCoord g α) t) s t :=
-    fun t ht ↦ (hw_diff.differentiableAt (hU.mem_nhds (hsU ht))).hasDerivAt.hasDerivWithinAt
+    deriv_bleisteinCoord_pos hU hα (hg.differentiableOn one_ne_zero) hanti hmono hd2 (hsU ht)
+      (hreg t ht)
   have hf_cont : ContinuousOn (bleisteinAmplitude lam g q s α) (Ioi 0) :=
     himg ▸ continuousOn_bleisteinAmplitude hs hs0 (hw_c1.mono hsU) hinj hw_pos
       (fun t ht ↦ (hdpos t ht).ne') hq
   have hmin : ∀ t ∈ U, g α ≤ g t :=
     fun _ ht ↦ le_of_antitoneOn_monotoneOn hα hanti.antitoneOn hmono.monotoneOn ht
-  exact ⟨hmin 0 h0, fun t ht ↦ hmin t (hsU ht), hw_pos, hinj, hderiv, hdpos, hf_cont⟩
+  exact ⟨hs, hs0, hmin 0 h0, fun t ht ↦ hmin t (hsU ht), hw_pos, hinj, hdpos, hf_cont⟩
 
 /-- Convergence (Bochner integrability, hence absolute convergence) of the original integral
 `I(α, x) = ∫ t in s, (exp (-x * g t) * t ^ (λ - 1)) • q t` under the hypotheses of Bleistein's
@@ -642,32 +674,32 @@ theorem integrableOn_bleistein_of_taylor_bound {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
     {lam C x : ℝ} {N : ℕ} {g : ℝ → ℝ} {q : ℝ → E} {phi : ℕ → E} {U s : Set ℝ} {α : ℝ}
     (hlam : 0 < lam) (hx : 0 < x)
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U) (hs0 : s ⊆ Ioi 0)
-    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hsU : s ⊆ U)
+    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ s, t ≠ α → deriv g t ≠ 0)
     (hq : ContinuousOn q s) (himg : bleisteinCoord g α '' s = Ioi 0)
     (hf : ∀ w > 0, ‖bleisteinAmplitude lam g q s α w -
         ∑ n ∈ Finset.range N, (w - bleisteinCenter g α) ^ n • phi n‖ ≤
       C * |w - bleisteinCenter g α| ^ N) :
     IntegrableOn (fun t ↦ (Real.exp (-x * g t) * t ^ (lam - 1)) • q t) s := by
-  obtain ⟨h0_min, hmin, hw_pos, hinj, hderiv, hdpos, hf_cont⟩ :=
-    bleistein_changeOfVariables_setup hU hs hsU hs0 hα h0 hg hanti hmono hd1 hd2 hreg hq himg
-  rw [← integrableOn_bleistein_iff hs.measurableSet hs0 h0_min hmin hw_pos hinj hderiv hdpos, himg]
+  obtain ⟨hs, hs0, h0_min, hmin, hw_pos, hinj, hdpos, hf_cont⟩ :=
+    bleistein_changeOfVariables_setup hU hsU hα h0 hg hanti hmono hd2 hreg hq himg
+  rw [← integrableOn_bleistein_iff hs.measurableSet hs0 h0_min hmin hw_pos hinj hdpos, himg]
   exact integrableOn_bleistein_model_of_bound hlam hx
     (hf_cont.aestronglyMeasurable measurableSet_Ioi) hf
 
-/-- **Uniform Bleistein expansion with explicit remainder** (DLMF 2.3.32, `κ = ∞`), on an open
-integration domain `s ⊆ (0, ∞)` mapped onto `(0, ∞)` by `bleisteinCoord g α`. -/
-theorem norm_exp_mul_integral_bleistein_sub_le {E : Type*}
+/-- **Uniform Bleistein expansion with explicit remainder** (DLMF 2.3.32, `κ = ∞`), on a domain
+`s ⊆ U` mapped onto `(0, ∞)` by `bleisteinCoord g α`. -/
+theorem norm_exp_smul_integral_bleistein_sub_le {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {lam C x : ℝ} {N : ℕ} {g : ℝ → ℝ} {q : ℝ → E} {phi : ℕ → E} {U s : Set ℝ} {α : ℝ}
     (hlam : 0 < lam) (hx : 0 < x)
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U) (hs0 : s ⊆ Ioi 0)
-    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hsU : s ⊆ U)
+    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ s, t ≠ α → deriv g t ≠ 0)
     (hq : ContinuousOn q s) (himg : bleisteinCoord g α '' s = Ioi 0)
     (hf : ∀ w > 0, ‖bleisteinAmplitude lam g q s α w -
@@ -678,9 +710,9 @@ theorem norm_exp_mul_integral_bleistein_sub_le {E : Type*}
           (bleisteinF lam n (bleisteinCenter g α * Real.sqrt x) * x ^ (-(n : ℝ) / 2)) • phi n‖ ≤
       C * x ^ (-((N : ℝ) + lam) / 2) *
         bleisteinG lam N (bleisteinCenter g α * Real.sqrt x) := by
-  obtain ⟨h0_min, hmin, hw_pos, hinj, hderiv, hdpos, hf_cont⟩ :=
-    bleistein_changeOfVariables_setup hU hs hsU hs0 hα h0 hg hanti hmono hd1 hd2 hreg hq himg
-  rw [exp_mul_integral_bleistein_eq hs.measurableSet hs0 h0_min hmin hw_pos hinj hderiv hdpos, himg]
+  obtain ⟨hs, hs0, h0_min, hmin, hw_pos, hinj, hdpos, hf_cont⟩ :=
+    bleistein_changeOfVariables_setup hU hsU hα h0 hg hanti hmono hd2 hreg hq himg
+  rw [exp_smul_integral_bleistein_eq hs.measurableSet hs0 h0_min hmin hw_pos hinj hdpos, himg]
   exact norm_bleistein_remainder_le hlam hx (hf_cont.aestronglyMeasurable measurableSet_Ioi) hf
 
 /-- Convergence (Bochner integrability) of the Bleistein integral on `(0, k)` when
@@ -689,28 +721,29 @@ theorem integrableOn_bleistein_Ioo_of_taylor_bound {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
     {lam C x k : ℝ} {N : ℕ} {g : ℝ → ℝ} {q : ℝ → E} {phi : ℕ → E} {U : Set ℝ} {α : ℝ}
     (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x)
-    (hU : IsOpen U) (hI : Ico 0 k ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hI : Ico 0 k ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ Ioo 0 k, t ≠ α → deriv g t ≠ 0)
     (htop : Tendsto g (𝓝[<] k) atTop) (hq : ContinuousOn q (Ioo 0 k))
     (hf : ∀ w > 0, ‖bleisteinAmplitude lam g q (Ioo 0 k) α w -
         ∑ n ∈ Finset.range N, (w - bleisteinCenter g α) ^ n • phi n‖ ≤
       C * |w - bleisteinCenter g α| ^ N) :
     IntegrableOn (fun t ↦ (Real.exp (-x * g t) * t ^ (lam - 1)) • q t) (Ioo 0 k) :=
-  integrableOn_bleistein_of_taylor_bound hlam hx hU isOpen_Ioo
-    (Ioo_subset_Ico_self.trans hI) (fun _ h ↦ h.1) hα (hI (left_mem_Ico.mpr hk))
-    hg hanti hmono hd1 hd2 hreg hq
-    (image_bleisteinCoord_Ioo_of_tendsto_atTop hk hα hI hg.continuousOn hanti hmono htop) hf
+  integrableOn_bleistein_of_taylor_bound hlam hx hU
+    (Ioo_subset_Ico_self.trans hI) hα (hI (left_mem_Ico.mpr hk))
+    hg hanti hmono hd2 hreg hq
+    (image_bleisteinCoord_Ioo_of_tendsto_atTop hk hα hI (hg.continuousOn.mono hI) hanti hmono htop)
+    hf
 
 /-- **Uniform Bleistein expansion on `(0, k)`** (DLMF 2.3.32) when `g(t) → ∞` as `t → k⁻`. -/
-theorem norm_exp_mul_integral_bleistein_Ioo_sub_le {E : Type*}
+theorem norm_exp_smul_integral_bleistein_Ioo_sub_le {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {lam C x k : ℝ} {N : ℕ} {g : ℝ → ℝ} {q : ℝ → E} {phi : ℕ → E} {U : Set ℝ} {α : ℝ}
     (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x)
-    (hU : IsOpen U) (hI : Ico 0 k ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hI : Ico 0 k ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ Ioo 0 k, t ≠ α → deriv g t ≠ 0)
     (htop : Tendsto g (𝓝[<] k) atTop) (hq : ContinuousOn q (Ioo 0 k))
     (hf : ∀ w > 0, ‖bleisteinAmplitude lam g q (Ioo 0 k) α w -
@@ -721,10 +754,11 @@ theorem norm_exp_mul_integral_bleistein_Ioo_sub_le {E : Type*}
           (bleisteinF lam n (bleisteinCenter g α * Real.sqrt x) * x ^ (-(n : ℝ) / 2)) • phi n‖ ≤
       C * x ^ (-((N : ℝ) + lam) / 2) *
         bleisteinG lam N (bleisteinCenter g α * Real.sqrt x) :=
-  norm_exp_mul_integral_bleistein_sub_le hlam hx hU isOpen_Ioo
-    (Ioo_subset_Ico_self.trans hI) (fun _ h ↦ h.1) hα (hI (left_mem_Ico.mpr hk))
-    hg hanti hmono hd1 hd2 hreg hq
-    (image_bleisteinCoord_Ioo_of_tendsto_atTop hk hα hI hg.continuousOn hanti hmono htop) hf
+  norm_exp_smul_integral_bleistein_sub_le hlam hx hU
+    (Ioo_subset_Ico_self.trans hI) hα (hI (left_mem_Ico.mpr hk))
+    hg hanti hmono hd2 hreg hq
+    (image_bleisteinCoord_Ioo_of_tendsto_atTop hk hα hI (hg.continuousOn.mono hI) hanti hmono htop)
+    hf
 
 /-- Convergence (Bochner integrability) of the Bleistein integral on `(0, ∞)` when
 `g(t) → ∞` as `t → ∞`. -/
@@ -732,28 +766,28 @@ theorem integrableOn_bleistein_Ioi_of_taylor_bound {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
     {lam C x : ℝ} {N : ℕ} {g : ℝ → ℝ} {q : ℝ → E} {phi : ℕ → E} {U : Set ℝ} {α : ℝ}
     (hlam : 0 < lam) (hx : 0 < x)
-    (hU : IsOpen U) (hI : Ici 0 ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hI : Ici 0 ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ Ioi 0, t ≠ α → deriv g t ≠ 0)
     (htop : Tendsto g atTop atTop) (hq : ContinuousOn q (Ioi 0))
     (hf : ∀ w > 0, ‖bleisteinAmplitude lam g q (Ioi 0) α w -
         ∑ n ∈ Finset.range N, (w - bleisteinCenter g α) ^ n • phi n‖ ≤
       C * |w - bleisteinCenter g α| ^ N) :
     IntegrableOn (fun t ↦ (Real.exp (-x * g t) * t ^ (lam - 1)) • q t) (Ioi 0) :=
-  integrableOn_bleistein_of_taylor_bound hlam hx hU isOpen_Ioi
-    (Ioi_subset_Ici_self.trans hI) Subset.rfl hα (hI self_mem_Ici)
-    hg hanti hmono hd1 hd2 hreg hq
-    (image_bleisteinCoord_Ioi_of_tendsto_atTop hα hI hg.continuousOn hanti hmono htop) hf
+  integrableOn_bleistein_of_taylor_bound hlam hx hU
+    (Ioi_subset_Ici_self.trans hI) hα (hI self_mem_Ici)
+    hg hanti hmono hd2 hreg hq
+    (image_bleisteinCoord_Ioi_of_tendsto_atTop hα hI (hg.continuousOn.mono hI) hanti hmono htop) hf
 
 /-- **Uniform Bleistein expansion on `(0, ∞)`** (DLMF 2.3.32) when `g(t) → ∞` as `t → ∞`. -/
-theorem norm_exp_mul_integral_bleistein_Ioi_sub_le {E : Type*}
+theorem norm_exp_smul_integral_bleistein_Ioi_sub_le {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {lam C x : ℝ} {N : ℕ} {g : ℝ → ℝ} {q : ℝ → E} {phi : ℕ → E} {U : Set ℝ} {α : ℝ}
     (hlam : 0 < lam) (hx : 0 < x)
-    (hU : IsOpen U) (hI : Ici 0 ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hU : IsOpen U) (hI : Ici 0 ⊆ U) (hα : α ∈ U) (hg : ContDiffOn ℝ 1 g U)
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
-    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hd2 : 0 < deriv (deriv g) α)
     (hreg : ∀ t ∈ Ioi 0, t ≠ α → deriv g t ≠ 0)
     (htop : Tendsto g atTop atTop) (hq : ContinuousOn q (Ioi 0))
     (hf : ∀ w > 0, ‖bleisteinAmplitude lam g q (Ioi 0) α w -
@@ -764,9 +798,9 @@ theorem norm_exp_mul_integral_bleistein_Ioi_sub_le {E : Type*}
           (bleisteinF lam n (bleisteinCenter g α * Real.sqrt x) * x ^ (-(n : ℝ) / 2)) • phi n‖ ≤
       C * x ^ (-((N : ℝ) + lam) / 2) *
         bleisteinG lam N (bleisteinCenter g α * Real.sqrt x) :=
-  norm_exp_mul_integral_bleistein_sub_le hlam hx hU isOpen_Ioi
-    (Ioi_subset_Ici_self.trans hI) Subset.rfl hα (hI self_mem_Ici)
-    hg hanti hmono hd1 hd2 hreg hq
-    (image_bleisteinCoord_Ioi_of_tendsto_atTop hα hI hg.continuousOn hanti hmono htop) hf
+  norm_exp_smul_integral_bleistein_sub_le hlam hx hU
+    (Ioi_subset_Ici_self.trans hI) hα (hI self_mem_Ici)
+    hg hanti hmono hd2 hreg hq
+    (image_bleisteinCoord_Ioi_of_tendsto_atTop hα hI (hg.continuousOn.mono hI) hanti hmono htop) hf
 
 end TauCeti
