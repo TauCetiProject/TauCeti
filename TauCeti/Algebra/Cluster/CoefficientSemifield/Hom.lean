@@ -26,6 +26,8 @@ over `Q`.
   indexed products.
 * The `Unique` instance for homomorphisms into the one-element coefficient semifield, which is
   therefore terminal.
+* `RingEquiv.toCoefficientSemifieldHom`: a bijection preserving multiplication and auxiliary
+  addition, as a homomorphism.
 
 ## References
 
@@ -219,3 +221,20 @@ instance : Unique (CoefficientSemifieldHom P PUnit.{u + 1}) where
 end CoefficientSemifieldHom
 
 end TauCeti
+
+namespace RingEquiv
+
+open TauCeti
+
+variable {P Q : Type*} [CoefficientSemifield P] [CoefficientSemifield Q]
+
+/-- A bijection preserving multiplication and the auxiliary addition, as a homomorphism of
+coefficient semifields. -/
+def toCoefficientSemifieldHom (e : P ≃+* Q) : CoefficientSemifieldHom P Q :=
+  { e.toMulEquiv.toMonoidHom with map_add' := map_add e }
+
+@[simp]
+theorem coe_toCoefficientSemifieldHom (e : P ≃+* Q) : ⇑e.toCoefficientSemifieldHom = e :=
+  (rfl)
+
+end RingEquiv
