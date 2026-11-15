@@ -43,6 +43,8 @@ sectionwise composition and sheafification then preserve the required finite lim
   finite colimits;
 * `TauCeti.SheafOfModules.shortExact_map_toSheaf`: a short exact sequence of sheaves of modules
   stays short exact after forgetting the module structures.
+* `CategoryTheory.Sheaf.mem_ker_sheafCompose_forget₂_map_iff`: a section of a sheaf of
+  `R`-modules restricts to zero exactly when it does in the underlying abelian sheaf;
 * `CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget₂_moduleCat` and
   `CategoryTheory.Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat`: the same statement for
   sheaves with values in `ModuleCat R` over a fixed ring `R`, whose underlying abelian sheaf is
@@ -127,6 +129,22 @@ end TauCeti
 end SheafOfModules
 
 namespace CategoryTheory.Sheaf
+
+section
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {R : Type v} [Ring R]
+  [J.HasSheafCompose (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})]
+
+/-- A section of a sheaf of `R`-modules lies in the kernel of a restriction map exactly when it
+lies in the kernel of the corresponding restriction map of the underlying abelian sheaf. -/
+lemma mem_ker_sheafCompose_forget₂_map_iff {U V : C} (i : U ⟶ V)
+    (F : Sheaf J (ModuleCat.{v} R)) (s : F.obj.obj (Opposite.op V)) :
+    s ∈ (((sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).obj F).obj.map
+        i.op).hom.ker ↔ s ∈ LinearMap.ker (F.obj.map i.op).hom :=
+  -- both say that `s` restricts to zero along `i`
+  AddMonoidHom.mem_ker.trans (LinearMap.mem_ker (f := (F.obj.map i.op).hom)).symm
+
+end
 
 variable {C : Type v} [Category.{v} C] {J : GrothendieckTopology C} {R : Type v} [Ring R]
 
