@@ -38,7 +38,9 @@ Hamiltonian flow `φ` of `G`, with `Ks = 0` and `Kt = G_t`, the linearization is
 `ξ ↦ ∇_s ξ + J(∇_t ξ - ∇_ξ X_{G_t})` on fields along `u` over `ℝ²`: the `∇J` term multiplies
 `u_t - X_{G_t}(u)`, which vanishes along a trajectory. This operator is invariant under
 translation in `s` when `J` is independent of `s`, and descends to the cylinder `ℝ × S¹` when `J`
-and `G` are `1`-periodic in `t`; neither is assumed here. The covariant variational equation
+and `G` are `1`-periodic in `t` and the trajectory is a `1`-periodic orbit, that is, `x` is a
+fixed point of the time-one map `φ_{s₀, s₀ + 1}` lying in its flow domain; none of this is assumed
+here. The covariant variational equation
 `∇_t (dφ_{s₀, t} v) = ∇_{dφ_{s₀, t} v} X_{G_t}` of the flow
 (`CovariantDerivative.alongCurve_mfderiv_timeDependentFlowOf`) therefore says that the
 `s`-independent field `ξ(s, t) = dφ_{s₀, t} v` lies in its kernel, for every `v ∈ T_x M`, every
