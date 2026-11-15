@@ -309,7 +309,7 @@ private theorem bijective_backward_prod {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα
   rw [euclideanBackwardParabolicOperatorL_def,
     bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := t₁)
       (ha := (sub_self t₁).symm) (hb := coe_slabDuration ht),
-    parabolicOperatorL_compLipschitzL_euclidean hα₁.le ht a b c]
+    initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le ht a b c]
   exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
     fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
 
