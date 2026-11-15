@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
+import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -415,15 +416,6 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
         mul_le_mul_of_nonneg_left (hCS.trans (Real.sqrt_le_sqrt hint)) hC
     _ = _ := by
         rw [Real.sqrt_mul (by positivity), mul_assoc]
-
-/-- By Fubini, the slice integrals `r ↦ ∫_T e(r, t) dt` of a function integrable on a rectangle
-`S × T` are integrable on `S`. -/
-private theorem integrableOn_setIntegral_of_integrableOn_prod {e : ℝ × ℝ → ℝ} {S T : Set ℝ}
-    (h : IntegrableOn e (S ×ˢ T)) : IntegrableOn (fun r ↦ ∫ t in T, e (r, t)) S := by
-  have h' : Integrable e ((volume.restrict S).prod (volume.restrict T)) := by
-    rw [Measure.prod_restrict]
-    rwa [Measure.volume_eq_prod] at h
-  exact h'.integral_prod_left
 
 /-- **Integrating a lower bound on the slice energy.** Let `H` be a `C¹` Hamiltonian and let `u`
 be `C²` on an open set `U` containing the rectangle `[s, s + K] × [0, 1]`, `K > 0`, with

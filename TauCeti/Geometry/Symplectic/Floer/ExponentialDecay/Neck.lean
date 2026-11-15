@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
 # Floer cylinders in a neck near a nondegenerate orbit
@@ -168,21 +169,6 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_two_mul_exp_mul
     exact mul_nonneg (by positivity) (setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc)
       fun z hz ↦ he0 z hz)
 
-/-- A nonnegative function on the strip `ℝ × T` whose integral vanishes over every finite part
-`[-n, n] × T` has vanishing integral over the whole strip. -/
-private theorem setLIntegral_univ_prod_eq_zero {f : ℝ × ℝ → ENNReal} {T : Set ℝ}
-    (h : ∀ n : ℕ, ∫⁻ z in Icc (-n : ℝ) n ×ˢ T, f z = 0) :
-    ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z = 0 := by
-  refine le_antisymm ?_ zero_le
-  have hcover : (univ : Set ℝ) ×ˢ T ⊆ ⋃ n : ℕ, Icc (-n : ℝ) n ×ˢ T := by
-    rintro ⟨s, t⟩ ⟨-, ht⟩
-    obtain ⟨n, hn⟩ := exists_nat_ge |s|
-    exact mem_iUnion.2 ⟨n, ⟨abs_le.1 hn, ht⟩⟩
-  calc ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ≤ ∫⁻ z in ⋃ n : ℕ, Icc (-n : ℝ) n ×ˢ T, f z :=
-        lintegral_mono_set hcover
-    _ ≤ ∑' n : ℕ, ∫⁻ z in Icc (-n : ℝ) n ×ˢ T, f z := lintegral_iUnion_le _ _
-    _ = 0 := tsum_eq_zero_iff.2 h
-
 /-- Where a solution of the Floer equation is stationary in `s`, its loop solves Hamilton's
 equation: since `∂_s u = 0` there, the Floer equation kills the defect `∂_t u - X_{H_t}(u)`. -/
 private theorem fderiv_apply_sub_hamiltonianVectorField_eq_zero_of_forall_eq {u : ℝ × ℝ → V}
@@ -266,8 +252,9 @@ theorem exists_pos_forall_eq_of_forall_norm_sub_le
       simpa using (h.const_mul 2).mul_const E.toReal
     exact ge_of_tendsto htend ((eventually_ge_atTop 0).mono hbound)
   -- Hence the total energy vanishes and `u` is stationary.
-  have hE0 : E = 0 := setLIntegral_univ_prod_eq_zero fun n ↦ by
-    rw [← hlint, hR0, ENNReal.ofReal_zero]
+  have hE0 : E = 0 := tendsto_nhds_unique
+    (tendsto_setLIntegral_Icc_neg_prod volume (Icc (0 : ℝ) 1) fun z ↦ ENNReal.ofReal (e z))
+    (tendsto_const_nhds.congr fun n ↦ by rw [← hlint, hR0, ENNReal.ofReal_zero])
   have hstat := (ω.lintegral_floerEnergyDensity_eq_zero_iff hH1 isOpen_univ
     (hu.of_le one_le_two).contDiffOn (subset_univ _) hJ hfloer).1 hE0
   -- The loop `u(0, ·)` is an orbit: since `∂_s u = 0`, the Floer equation kills the defect.
