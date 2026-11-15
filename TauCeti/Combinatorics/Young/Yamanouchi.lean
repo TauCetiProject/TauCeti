@@ -101,7 +101,7 @@ theorem contentFromCol_zero (T : SemistandardYoungTableau μ) (k : ℕ) :
 /-- Past the first row there are no columns left. -/
 theorem contentFromCol_eq_zero_of_rowLen_le (T : SemistandardYoungTableau μ) {j : ℕ}
     (hj : μ.rowLen 0 ≤ j) (k : ℕ) : T.contentFromCol j k = 0 := by
-  refine card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c hc ⟨hjc, _⟩ => ?_)
+  refine card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c hc ⟨_, _⟩ => ?_)
   have hc' := YoungDiagram.mem_iff_lt_rowLen.mp ((YoungDiagram.mem_cells c).mp hc)
   have := μ.rowLen_anti 0 c.1 (Nat.zero_le _)
   omega
@@ -310,7 +310,6 @@ private def leftBK (T : SemistandardYoungTableau μ) (j k : ℕ)
     (hT : ∀ r, (r, j) ∈ μ → T r j ≠ k) : SemistandardYoungTableau μ where
   entry r c := if c < j then (shiftFrom T j (k + 2)).benderKnuth k r c else T r c
   row_weak' {r c₁ c₂} hc hmem := by
-    have hmem₁ : (r, c₁) ∈ μ := μ.up_left_mem le_rfl hc.le hmem
     by_cases h₂ : c₂ < j
     · rw [ite_eq_left (hc.trans h₂), ite_eq_left h₂]
       exact SemistandardYoungTableau.row_weak _ hc hmem
@@ -518,7 +517,7 @@ private theorem badCol_leftBK (h : ¬ T.IsYamanouchi lam) {hT} :
   have hj : badCol lam (leftBK T (badCol lam T) (badRow lam T) hT) = badCol lam T := by
     rw [badCol, Nat.findGreatest_eq_iff]
     refine ⟨Nat.findGreatest_le _, fun _ => (hcol le_rfl).mpr (isBadCol_badCol h),
-      fun j' hj' hj'n hbad => not_isBadCol_of_badCol_lt hj' ((hcol hj'.le).mp hbad)⟩
+      fun j' hj' _ hbad => not_isBadCol_of_badCol_lt hj' ((hcol hj'.le).mp hbad)⟩
   refine ⟨hj, ?_⟩
   rw [badRow_def (T := leftBK T (badCol lam T) (badRow lam T) hT), hj]
   exact congrArg (firstBadRow lam) (funext fun x => contentFromCol_leftBK le_rfl x)

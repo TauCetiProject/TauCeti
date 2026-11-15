@@ -65,7 +65,7 @@ theorem IsFiniteEtaleSplit.of_forall_finitePresentation {R : Type u} [CommRing R
     IsFiniteEtaleSplit R where
   isTotallySplit T _ _ _ _ := by
     -- Index the possible factorizations by split rings and their maps to `R`.
-    let I := Σ (A : Type w) (_ : CommRing A), {ψ : A →+* R // IsFiniteEtaleSplit A}
+    let I := Σ (A : Type w) (_ : CommRing A), {_ψ : A →+* R // IsFiniteEtaleSplit A}
     let A (i : I) := i.1
     let (i : I) : CommRing (A i) := i.2.1
     let ψ (i : I) : A i →+* R := i.2.2.1

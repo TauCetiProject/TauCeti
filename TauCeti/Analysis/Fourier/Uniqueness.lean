@@ -22,7 +22,9 @@ Fourier coefficients all vanish is zero almost everywhere. Integration against `
 linear functional on `C(AddCircle T, ℂ)` of norm at most `‖f‖₁`; it vanishes on the monomials by
 hypothesis, hence on the uniformly dense span of trigonometric polynomials and on every continuous
 function. An integrable function orthogonal to all bounded continuous functions vanishes almost
-everywhere (`MeasureTheory.Integrable.ae_eq_zero_of_forall_integral_smul_eq_zero`).
+everywhere (`MeasureTheory.Integrable.ae_eq_zero_of_forall_integral_smul_eq_zero`). Lifting a
+function from a period interval to the circle gives the same statement for Mathlib's Fourier
+coefficients `fourierCoeffOn` on an interval `[a, b]`.
 
 *Products.* If `f` and `g` are square integrable, then `f * g` is integrable (Mathlib's
 `MeasureTheory.MemLp.integrable_mul`) and its Fourier coefficients are the convolution of those of
@@ -44,6 +46,8 @@ adjoint is injective.
   the circle with vanishing Fourier coefficients is zero almost everywhere;
 * `MeasureTheory.Integrable.ae_eq_of_forall_fourierCoeff_eq`: integrable functions with the same
   Fourier coefficients agree almost everywhere;
+* `MeasureTheory.IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero`: a function integrable
+  on `(a, b]` with vanishing Fourier coefficients on `[a, b]` is zero almost everywhere there;
 * `MeasureTheory.MemLp.hasSum_fourierCoeff_mul`: for square-integrable `f` and `g`,
   `(f g)^(n) = ∑ₘ f̂(m) ĝ(n - m)`;
 * `MeasureTheory.MemLp.fourierCoeff_mul_eq_zero_of_lt_add` and
@@ -123,6 +127,30 @@ theorem Integrable.ae_eq_of_forall_fourierCoeff_eq (hf : Integrable f haarAddCir
     rw [integral_sub (hf.fourier_smul _) (hg.fourier_smul _), hn, sub_self]
   filter_upwards [hfg] with t ht
   simpa [sub_eq_zero] using ht
+
+/-- **Uniqueness of Fourier coefficients on an interval.** A function integrable on `(a, b]` whose
+Fourier coefficients on `[a, b]` all vanish is zero almost everywhere on `(a, b]`. -/
+theorem IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero {a b : ℝ} (hab : a < b)
+    {f : ℝ → E} (hf : IntegrableOn f (Ioc a b)) (h : ∀ n : ℤ, fourierCoeffOn hab f n = 0) :
+    f =ᵐ[volume.restrict (Ioc a b)] 0 := by
+  have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
+  have hIoc : Ioc a (a + (b - a)) = Ioc a b := by rw [add_sub_cancel]
+  have hc : ENNReal.ofReal (b - a) ≠ 0 := by simpa using hab
+  -- Transport `f` to the circle of length `b - a`. By definition, `fourierCoeffOn` is the
+  -- Fourier coefficient of this lift.
+  have hlift : (fun x : ℝ ↦ liftIoc (b - a) a f x) =ᵐ[volume.restrict (Ioc a b)] f := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
+    exact liftIoc_coe_apply (hIoc ▸ hx)
+  have hint : Integrable (liftIoc (b - a) a f) haarAddCircle := by
+    rw [← integrable_smul_measure hc ENNReal.ofReal_ne_top, ← volume_eq_smul_haarAddCircle]
+    exact ((measurePreserving_subtype_coe measurableSet_Ioc).comp
+      (measurePreserving_equivIoc _)).integrable_comp_of_integrable (hIoc ▸ hf)
+  have hzero := hint.ae_eq_zero_of_forall_fourierCoeff_eq_zero fun n ↦ by
+    simpa only [fourierCoeffOn] using h n
+  rw [Filter.EventuallyEq, ← Measure.ae_ennreal_smul_measure_eq hc,
+    ← volume_eq_smul_haarAddCircle] at hzero
+  exact hlift.symm.trans
+    ((hIoc ▸ AddCircle.measurePreserving_mk (b - a) a).quasiMeasurePreserving.ae_eq_comp hzero)
 
 end Uniqueness
 

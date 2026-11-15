@@ -31,6 +31,11 @@ difference of `y ↦ y ^ m` with any step `h` at any point `x` as `k!` times an 
 combination of the monomials `x ^ (m - l) h ^ l`, `k ≤ l ≤ m`. This explicit divisibility by `k!`
 is what bounds forward differences of power series over ultrametric rings.
 
+The `d`-th forward difference of a polynomial of degree `d` is the constant `d!` times its leading
+coefficient, and at `0` it is an integral combination of the values at `0, 1, …, d`. So over a
+commutative ring without additive torsion, for example a `ℚ`-algebra, a polynomial vanishing at
+these natural numbers is zero.
+
 ## Main declarations
 
 * `TauCeti.neg_one_pow_smul_fwdDiff_iter_succ`: a negative forward difference advances the
@@ -45,6 +50,8 @@ is what bounds forward differences of power series over ultrametric rings.
 * `TauCeti.fwdDiff_iter_pow_apply_zero`: `Δᵏ (t ↦ t ^ m) (0) = k! S(m, k)`.
 * `TauCeti.fwdDiff_iter_pow_eq_sum`: the `k`-th difference of `y ↦ y ^ m` with step `h` at `x`
   as `∑ₗ C(m, l) x ^ (m - l) h ^ l k! S(l, k)`.
+* `Polynomial.eq_zero_of_eval_natCast_eq_zero`: over a commutative ring without additive
+  torsion, a polynomial vanishing at `0, 1, …, natDegree p` is zero.
 -/
 
 public section
@@ -198,3 +205,25 @@ theorem fwdDiff_iter_pow_eq_sum [CommRing R] (h x : R) (k m : ℕ) :
 end Pow
 
 end TauCeti
+
+namespace Polynomial
+
+open scoped Polynomial
+
+/-- **A polynomial vanishing at `0, 1, …, natDegree p` is zero**, over any commutative ring
+without additive torsion, for example any `ℚ`-algebra (`HasUniqueDiv.of_module_rat`). The
+`natDegree p`-th forward difference of `p` is the constant `p.leadingCoeff * (natDegree p)!`,
+and at `0` it is an integral combination of the values `p.eval m` with `m ≤ natDegree p`. -/
+theorem eq_zero_of_eval_natCast_eq_zero {R : Type*} [CommRing R] [HasUniqueDiv R] (p : R[X])
+    (h : ∀ m ≤ p.natDegree, p.eval (m : R) = 0) : p = 0 := by
+  have hd := congrFun p.fwdDiff_iter_degree_eq_factorial 0
+  have hsum : Δ_[1]^[p.natDegree] p.eval 0 = 0 := by
+    rw [fwdDiff_iter_eq_sum_shift]
+    exact Finset.sum_eq_zero fun k hk ↦ by
+      simp [h k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
+  rw [hsum] at hd
+  simp only [Pi.smul_apply, Pi.natCast_apply, smul_eq_mul, ← nsmul_eq_mul'] at hd
+  exact leadingCoeff_eq_zero.mp
+    ((nsmul_eq_zero_iff_right (Nat.factorial_ne_zero _)).mp hd.symm)
+
+end Polynomial

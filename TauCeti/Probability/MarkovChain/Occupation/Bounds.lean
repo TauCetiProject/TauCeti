@@ -58,7 +58,7 @@ theorem sum_range_pow_apply_singleton_le (x y : α) (k : ℕ) :
         rw [lintegral_finsetSum _ (fun i _ => (κ ^ i).measurable_coe
           (measurableSet_singleton y))]
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         simpa [Nat.add_comm] using
           κ.pow_add_apply_eq_lintegral 1 i x (measurableSet_singleton y)
       _ ≤ ∫⁻ _, ∑ i ∈ Finset.range k, (κ ^ i) y {y} ∂κ x :=
@@ -80,7 +80,7 @@ theorem sum_range_pow_comp_apply_singleton_le (ν : Measure α) (y : α) (n k : 
       rw [lintegral_finsetSum _ (fun i _ => (κ ^ i).measurable_coe
         (measurableSet_singleton y))]
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       rw [← Measure.bind_apply (measurableSet_singleton y) (κ ^ i).aemeasurable,
         Measure.comp_assoc]
       simp [← Kernel.pow_add, Nat.add_comm]

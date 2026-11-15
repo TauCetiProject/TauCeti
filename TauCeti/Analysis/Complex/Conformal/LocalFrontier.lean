@@ -412,7 +412,7 @@ theorem injOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (h
   have hζeq : (f (-w₁⁻¹) - c) / b = (f (-w₂⁻¹) - c) / b :=
     injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1.1 hw₁.1.2 hw₁.2) (hζ w₂ hw₂.1.1 hw₂.1.2 hw₂.2)
       (by simpa using h)
-  rw [div_left_inj' hb, sub_left_inj] at hζeq
+  rw [div_left_inj₀ hb, sub_left_inj] at hζeq
   simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) hζeq
 
 end TauCeti

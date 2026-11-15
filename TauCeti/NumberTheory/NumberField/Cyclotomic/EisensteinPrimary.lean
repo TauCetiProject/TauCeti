@@ -354,7 +354,7 @@ is the integer itself. -/
 theorem isEisensteinPrimary_toInteger_pow_mul_iff_eq_zero (hp2 : p ≠ 2)
     {α : 𝓞 K} (hα : IsEisensteinPrimary hζ.toInteger α) {i : ℕ} (hi : i < p) :
     IsEisensteinPrimary hζ.toInteger (hζ.toInteger ^ i * α) ↔ i = 0 := by
-  obtain ⟨c, hc, hu⟩ := hζ.existsUnique_isEisensteinPrimary_toInteger_pow_mul hp2
+  obtain ⟨c, _, hu⟩ := hζ.existsUnique_isEisensteinPrimary_toInteger_pow_mul hp2
     (hζ.isCoprime_toInteger_sub_one_iff.mp hα.1)
   constructor
   · intro h

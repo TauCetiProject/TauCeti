@@ -82,7 +82,7 @@ theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommS
       (A * q + B * p).coeff (i + g.natDegree) = 0) :
     A * q + B * p = 0 := by
   have hg0 : g ≠ 0 := ne_zero_of_dvd_ne_zero hp hgp
-  set d := g.natDegree with hd
+  set d := g.natDegree
   have hdm : d ≤ m := (natDegree_le_of_dvd hgp hp).trans hm
   have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
     rcases eq_or_ne q 0 with rfl | hq0

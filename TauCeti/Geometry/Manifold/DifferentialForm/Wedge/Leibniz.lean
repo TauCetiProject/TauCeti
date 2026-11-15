@@ -251,6 +251,18 @@ theorem mextDerivₗ_wedge [IsManifold I 2 M] (φ : SmoothForm I M ℝ k)
   simpa only [SmoothForm.wedge_def] using
     mextDerivₗ_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) φ ψ
 
+/-- The Leibniz rule `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form `φ`,
+evaluated on tangent vectors. The degree `0 + 1 + k` of `df ∧ φ` is identified with `k + 1` by
+`Fin.cast`. -/
+theorem mextDerivₗ_funSMulₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯)
+    (φ : SmoothForm I M ℝ k) (x : M) (v : Fin (k + 1) → TangentSpace I x) :
+    (mextDerivₗ I k (funSMulₗ f φ)).1 x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge φ.1 x
+          (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) +
+        f x * (mextDerivₗ I k φ).1 x v := by
+  simp only [mextDerivₗ_apply, coe_funSMulₗ]
+  exact mextDeriv_fun_smul (f.contMDiff.mdifferentiableAt (by simp)) (φ.mdifferentiableAt x) v
+
 end SmoothForm
 
 end TauCeti

@@ -230,7 +230,7 @@ private theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)
       ∫⁻ t, G t ≤ (k + 1) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtype_coe
-  have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_enorm.comp
+  have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_eNorm.comp
     ((hu.continuous_fderiv (by simp)).comp continuous_subtype_val)).measurable
   have hg' (m : ℕ) :=
     Real.smoothTransition.measurable_ofReal_mul_deriv_mul_sub_mul hum hdu ((m : ℝ) + 1)

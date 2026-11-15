@@ -29,6 +29,8 @@ density theorem is used here.
 
 public section
 
+open scoped Pointwise
+
 namespace VonNeumannAlgebra
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]

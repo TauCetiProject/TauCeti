@@ -183,7 +183,7 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
     exact absurd hy (not_lt.mpr hpim)
   obtain ⟨C, hC, hev⟩ := exists_norm_schwarzChristoffelIntegrand_le a e (a j)
   set T : ℝ := ∑ i with a i = a j, e i
-  set u : ℝ := min T 0 with hudef
+  set u : ℝ := min T 0
   have hu : -1 < u := lt_min he (by norm_num)
   have hu0 : u ≤ 0 := min_le_right _ _
   have hu1 : (0 : ℝ) < u + 1 := by linarith

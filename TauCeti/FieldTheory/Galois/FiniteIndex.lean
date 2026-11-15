@@ -113,7 +113,8 @@ private theorem exists_monic_map_eq_prod_orbit (hx : (orbit U x).Finite) :
   have hlifts : ∏ y ∈ s, (X - C y) ∈ lifts (algebraMap (fixedField U) M) := by
     refine (lifts_iff_coeff_lifts _).mpr fun n ↦
       ⟨⟨(∏ y ∈ s, (X - C y)).coeff n, (mem_fixedField_iff _ _).mpr fun u hu ↦ ?_⟩, rfl⟩
-    simpa [coeff_smul] using congrArg (fun p : M[X] ↦ p.coeff n) (hinv ⟨u, hu⟩)
+    simpa [AddMonoidAlgebra.coeff_smul_apply] using
+      congrArg (fun p : M[X] ↦ p.coeff n) (hinv ⟨u, hu⟩)
   obtain ⟨q, hq, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic hlifts
     (monic_prod_of_monic _ _ fun y _ ↦ monic_X_sub_C y)
   exact ⟨q, hq, hmonic⟩
@@ -147,7 +148,7 @@ theorem map_minpoly_fixedField_eq_prod_orbit (hx : (orbit U x).Finite) :
     (minpoly (fixedField U) x).map (algebraMap (fixedField U) M) =
       ∏ y ∈ hx.toFinset, (X - C y) := by
   classical
-  obtain ⟨q, hq, hqmonic⟩ := exists_monic_map_eq_prod_orbit hx
+  obtain ⟨q, hq, _⟩ := exists_monic_map_eq_prod_orbit hx
   have hint := isIntegral_fixedField_of_finite_orbit hx
   have hmonic : ((minpoly (fixedField U) x).map (algebraMap (fixedField U) M)).Monic :=
     (minpoly.monic hint).map _

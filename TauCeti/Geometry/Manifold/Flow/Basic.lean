@@ -33,7 +33,10 @@ compact set.
 * `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
+* `TauCeti.isOpen_setOf_mem_flowDomain`: the parameters of a continuous family of times and
+  points at which the flow is defined form an open set.
 * `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `(t, s) ↦ φₜ(f s)`.
+* `TauCeti.mfderiv_flowOf_comp_prodMk_apply`: the differential of `y ↦ φ_{τ y}(f y)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
 * `TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero`: the derivative of flowing for a time that
@@ -250,6 +253,39 @@ theorem mfderiv_flowOf_comp_apply [IsManifold I 1 M] {v : (x : M) → TangentSpa
   -- The trajectory through `f s` has velocity `v` at time `t`.
   rw [mfderiv_flowOf_trajectory_apply hv hp]
   exact congrArg₂ (· + ·) rfl (DFunLike.congr_fun hcomp w.2)
+
+/-- On a complete normed model space, the set of parameters `y` at which the flow of a continuous
+family of initial points `f y` for a continuous family of times `τ y` is defined is open. -/
+theorem isOpen_setOf_mem_flowDomain [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {N : Type*} [TopologicalSpace N]
+    {τ : N → ℝ} {f : N → M} (hτ : Continuous τ) (hf : Continuous f) :
+    IsOpen {y | (τ y, f y) ∈ flowDomain v} :=
+  (isOpen_flowDomain hv).preimage (hτ.prodMk hf)
+
+/-- **The differential of flowing a family of points for a family of times.** On a complete normed
+model space, at a point `z` where `φ_{τ z}(f z)` is defined, the differential of
+`y ↦ φ_{τ y}(f y)` sends a tangent vector `w` to `dτ(w) v + dφ_{τ z}(df w)`. This is
+`TauCeti.mfderiv_flowOf_comp_apply` composed with the differential of `y ↦ (τ y, f y)`. -/
+theorem mfderiv_flowOf_comp_prodMk_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {τ : N → ℝ}
+    {f : N → M} {z : N} (hτ : MDifferentiableAt J 𝓘(ℝ) τ z) (hf : MDifferentiableAt J I f z)
+    (hz : (τ z, f z) ∈ flowDomain v) (w : TangentSpace J z) :
+    mfderiv J I (fun y ↦ flowOf v (τ y) (f y)) z w =
+      mvfderiv J τ z w • v (flowOf v (τ z) (f z)) +
+        mfderiv I I (flowOf v (τ z)) (f z) (mfderiv J I f z w) := by
+  have hΦ : MDifferentiableAt (𝓘(ℝ).prod I) I (fun q : ℝ × M ↦ flowOf v q.1 q.2) (τ z, f z) :=
+    (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_fst contMDiffAt_snd hz).mdifferentiableAt
+      one_ne_zero
+  rw [show (fun y ↦ flowOf v (τ y) (f y)) =
+      (fun q : ℝ × M ↦ flowOf v q.1 q.2) ∘ fun y ↦ (τ y, f y) from rfl,
+    mfderiv_comp z hΦ (hτ.prodMk hf), ContinuousLinearMap.comp_apply, mfderiv_prodMk hτ hf]
+  -- Apply the differential of `(t, x) ↦ φₜ(x)` to the vector `(dτ w, df w)`.
+  have h := mfderiv_flowOf_comp_apply (f := id) (p := (τ z, f z)) hv contMDiffAt_id hz
+    ((mfderiv J 𝓘(ℝ) τ z).prod (mfderiv J I f z) w)
+  rw [mfderiv_id, ContinuousLinearMap.id_apply] at h
+  exact h
 
 omit [CompleteSpace E] in
 /-- **Derivative along a flow line.** The derivative in time of a function `g` along the

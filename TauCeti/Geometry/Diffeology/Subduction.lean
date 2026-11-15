@@ -79,7 +79,7 @@ theorem LocallyLifts.comp_contDiffOn {n m : ℕ} {q : X → Q} {u : Set (𝔼ⁿ
     (hp : LocallyLifts q u p) (hv : IsOpen v) (hf : ContDiffOn ℝ ∞ f v)
     (hfu : MapsTo f v u) : LocallyLifts q v (p ∘ f) := by
   intro z hz
-  obtain ⟨w, hw, hfw, hwu, lift, hlift, hq⟩ := hp (f z) (hfu hz)
+  obtain ⟨w, hw, hfw, _, lift, hlift, hq⟩ := hp (f z) (hfu hz)
   have hfcont : ContinuousAt f z :=
     (hf z hz).continuousWithinAt.continuousAt (hv.mem_nhds hz)
   have hpre : f ⁻¹' w ∈ 𝓝 z := hfcont.preimage_mem_nhds (hw.mem_nhds hfw)
@@ -99,7 +99,7 @@ theorem locallyLifts_of_locally {n : ℕ} {q : X → Q} {u : Set (𝔼ⁿ)} {p :
     LocallyLifts q u p := by
   intro z hz
   obtain ⟨v, _, hzv, hpv⟩ := hp z hz
-  obtain ⟨w, hw, hzw, hwv, lift, hlift, hq⟩ := hpv z hzv
+  obtain ⟨w, hw, hzw, _, lift, hlift, hq⟩ := hpv z hzv
   exact ⟨w ∩ u, hw.inter hu, ⟨hzw, hz⟩, inter_subset_right, lift,
     hlift.mono inter_subset_left, hq.mono inter_subset_left⟩
 

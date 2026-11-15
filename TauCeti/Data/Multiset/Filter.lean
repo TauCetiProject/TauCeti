@@ -24,6 +24,10 @@ projecting to the first recovers the multiplicities of the pairs
 (`Multiset.count_map_fst_filter_snd_eq`). In particular, tagging the elements of a family of
 multisets `μ j` with an injective label `g j` and adding them up, the part with label `g i`
 recovers `μ i` (`Multiset.map_fst_filter_sum_map_prodMk`).
+
+Summing the multiplicities of the distinct elements satisfying `p` counts the elements satisfying
+`p` (`Multiset.sum_filter_count_eq_countP`), the multiset form of Mathlib's
+`Finset.sum_filter_count_eq_countP` for lists.
 -/
 
 public section
@@ -31,6 +35,13 @@ public section
 namespace Multiset
 
 variable {α ι : Type*} (p : α → Prop) [DecidablePred p]
+
+/-- Summing the multiplicities of the distinct elements satisfying `p` counts, with multiplicity,
+the elements satisfying `p`. -/
+theorem sum_filter_count_eq_countP [DecidableEq α] (s : Multiset α) :
+    ∑ x ∈ s.toFinset with p x, s.count x = s.countP p := by
+  induction s using Quot.induction_on
+  simpa using Finset.sum_filter_count_eq_countP p _
 
 /-- Filtering distributes over a finite sum of multisets. -/
 @[simp]

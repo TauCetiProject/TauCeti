@@ -49,7 +49,7 @@ theorem exists_extending_of_finrank_eq_add_one {N N' : Submodule R M} (hle : N �
     (hrank : finrank R N' = finrank R N + 1) :
     ∃ y ∈ N', ∀ y' : M, y' - y ∈ N →
       (∀ c : R, ∀ x ∈ N, c • y' + x = 0 → c = 0) ∧ ∀ z ∈ N', ∃ c : R, z + c • y' ∈ N := by
-  set P : Submodule R N' := N.comap N'.subtype with hP
+  set P : Submodule R N' := N.comap N'.subtype
   have hmemP : ∀ z : N', z ∈ P ↔ (z : M) ∈ N := fun _ ↦ Iff.rfl
   have hQrank : finrank R (N' ⧸ P) = 1 := by
     have h := P.finrank_quotient_add_finrank

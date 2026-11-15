@@ -122,7 +122,7 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     simpa [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul α
   set C₂ := 2 ^ ((1 / 2 + ε) * d) * (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * d) *
     (48 * b * max 1 (house α)) ^ (d * (1 + 1 / ε))
-  have hC₂ : 0 < C₂ := by positivity
+  have _ : 0 < C₂ := by positivity
   -- The exponents `a = (1 / 2 + 2 ε) d` and `B = κ - 2 ε d (κ - 1) - a = (κ - d / 2 + 1) / 2`.
   set a := (1 / 2 + ε) * d + ε * d with ha_def
   have ha : 0 < a := by positivity

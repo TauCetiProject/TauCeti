@@ -43,14 +43,14 @@ universe u
 noncomputable section
 
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
-variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-variable {R : Sheaf J CommRingCat.{u}}
 
 namespace SheafOfModules
 
 section LocallyFree
 
+variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+variable {R : Sheaf J CommRingCat.{u}}
 variable [∀ X, (J.over X).HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
   [∀ X, HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
@@ -94,10 +94,13 @@ instance GeneratingSections.finite_exteriorPower_I : Finite (σ.exteriorPower n)
   rw [GeneratingSections.exteriorPower_I]
   infer_instance
 
-variable [Limits.HasPullbacks C]
-variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+end LocallyFree
 
-variable (M) in
+section FiniteLocallyFree
+
+variable [Limits.HasPullbacks C] {R : Sheaf J CommRingCat.{u}}
+  (M : SheafOfModules.{u} (ringCatSheaf R)) (n : ℕ)
+
 /-- The exterior powers of a finite locally free sheaf of modules are finite locally free. -/
 theorem isFiniteLocallyFree_exteriorPower (hM : isFiniteLocallyFree (ringCatSheaf R) M) :
     isFiniteLocallyFree (ringCatSheaf R) ((SheafOfModules.exteriorPower R n).obj M) := by
@@ -106,12 +109,13 @@ theorem isFiniteLocallyFree_exteriorPower (hM : isFiniteLocallyFree (ringCatShea
   have (i : q.I) : Finite (q.generators i).I := (hq'.isFiniteType i).finite
   let _ (i : q.I) : LinearOrder (q.generators i).I := linearOrderOfSTO WellOrderingRel
   -- On each chart of `q`, the basis of `M` induces a finite basis of `⋀ⁿ M`.
-  exact (isFiniteLocallyFree_iff_exists_isLocallyFreeData_isFiniteType _).2
-    ⟨{ I := q.I, X := q.X, coversTop := q.coversTop
-       generators i := (q.generators i).exteriorPower n }, ⟨fun i ↦ inferInstance⟩,
-      ⟨fun i ↦ ⟨inferInstance⟩⟩⟩
+  exact (isFiniteLocallyFree_iff_exists_isLocallyFreeData_isFiniteType
+    ((SheafOfModules.exteriorPower R n).obj M)).2
+      ⟨{ I := q.I, X := q.X, coversTop := q.coversTop
+         generators i := (q.generators i).exteriorPower n },
+        { isIso i := inferInstance }, { isFiniteType i := { finite := inferInstance } }⟩
 
-end LocallyFree
+end FiniteLocallyFree
 
 end SheafOfModules
 

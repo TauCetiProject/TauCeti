@@ -41,7 +41,7 @@ private theorem extDeriv_manifoldOneForm_inChartAt {P Q : ℂ → ℝ} {z : ℂ}
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 2 M]
+  [IsManifold I 1 M]
 
 /-- The actual exterior derivative of a pulled-back planar circulation form is the coordinate
 curl times the actual pulled-back area form, including at boundary and corner points. -/

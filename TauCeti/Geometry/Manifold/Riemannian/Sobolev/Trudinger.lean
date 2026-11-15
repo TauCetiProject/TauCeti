@@ -80,7 +80,7 @@ private theorem exists_lintegral_exp_normalized_sq_le (hE : Module.finrank ℝ E
     rw [inv_mul_le_iff₀ (by positivity)]
     linarith [norm_nonneg (ofSmooth u)]
   have hval : eLpNorm v 2 (riemannianVolume I M) ≤ ENNReal.ofReal ‖ofSmooth v‖ := by
-    rw [← eLpNorm_congr_ae (toLp_ofSmooth_ae_eq v), ← Lp.enorm_def, ← ofReal_norm]
+    rw [← eLpNorm_congr_ae (toLp_ofSmooth_ae_eq v), ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_toLp_le _)
   have hgrad : eLpNorm (fun x ↦ ‖mgradient I v x‖) 2 (riemannianVolume I M) ≤
       ENNReal.ofReal ‖ofSmooth v‖ := by
@@ -88,7 +88,7 @@ private theorem exists_lintegral_exp_normalized_sq_le (hE : Module.finrank ℝ E
     have heq := eLpNorm_congr_ae (p := 2) (ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ)
       (riemannianVolume I M) G)
     simp only [G, ContinuousMap.coe_mk] at heq
-    rw [← heq, ← Lp.enorm_def, ← ofReal_norm]
+    rw [← heq, ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_toLp_norm_mgradient_le v)
   have hnorm : eLpNorm (fun x ↦ ‖mgradient I v x‖) 2 (riemannianVolume I M) +
       eLpNorm v 2 (riemannianVolume I M) ≤ 1 := by
@@ -214,7 +214,7 @@ theorem continuous_integral_exp_mul (hE : Module.finrank ℝ E = 2) (t : ℝ) :
       (Filter.Eventually.of_forall fun x ↦ (Real.exp_pos _).le)] at h
     have h' := ENNReal.toReal_mono (by finiteness) h
     simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal,
-      (Real.exp_pos _).le, integral_nonneg (fun x ↦ (Real.exp_pos _).le)] at h'
+      (Real.exp_pos _).le, integral_nonneg (fun _ ↦ (Real.exp_pos _).le)] at h'
     refine h'.trans ?_
     gcongr
   have hc := (convexOn_integral_exp_mul (I := I) (M := M) hE t).continuousOn_tfae

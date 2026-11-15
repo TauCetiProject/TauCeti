@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.LinearAlgebra.Prod
 
@@ -19,7 +21,9 @@ height zero. Its inverse adds `γ(y)` to the normal coordinate.
 
 At points where `γ` is differentiable, the derivative is the linear shear
 `(s, z) ↦ (s - Dγ(y) z, z)`. Its determinant is one and its operator norm is at
-most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. For a `K`-Lipschitz `γ`,
+most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. The shear differs from the
+identity by the height alone, so its iterated derivatives of order at least two are bounded by
+those of `γ`, and so are those of its inverse. For a `K`-Lipschitz `γ`,
 both the shear and its inverse are `(1 + K)`-Lipschitz. These are the chart estimates used to
 transfer Sobolev trace and extension operators from a half-space to a domain with a graph
 boundary.
@@ -270,6 +274,52 @@ theorem norm_fderiv_graphFlattening_symm_le {γ : E → ℝ} (hγ : Continuous �
     ‖fderiv ℝ (graphFlattening γ hγ).symm x‖ ≤ 1 + ‖fderiv ℝ γ x.snd‖ := by
   rw [graphFlattening_symm]
   simpa [fderiv_neg] using norm_fderiv_graphFlattening_le hγ.neg hx.neg
+
+/-- The iterated derivatives of graph flattening of order at least two are bounded by those of the
+height: the shear is the identity minus the height placed in the normal coordinate. -/
+theorem norm_iteratedFDeriv_graphFlattening_le {n : WithTop ℕ∞} {γ : E → ℝ}
+    (hγ : ContDiff ℝ n γ) {i : ℕ} (hi : 2 ≤ i) (hin : (i : WithTop ℕ∞) ≤ n)
+    (x : WithLp 2 (ℝ × E)) :
+    ‖iteratedFDeriv ℝ i (graphFlattening γ hγ.continuous) x‖ ≤
+      ‖iteratedFDeriv ℝ i γ x.snd‖ := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hi
+  -- The normal line `s ↦ (s, 0)` and the tangential projection, both of norm at most one.
+  set N : ℝ →L[ℝ] WithLp 2 (ℝ × E) :=
+    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.inl ℝ ℝ E)
+  set P : WithLp 2 (ℝ × E) →L[ℝ] E := WithLp.sndL 2 ℝ ℝ E
+  have hN : ‖N‖ ≤ 1 :=
+    N.opNorm_le_bound zero_le_one fun s ↦ by simp [N, WithLp.norm_toLp_fst]
+  have hP : ‖P‖ ≤ 1 :=
+    P.opNorm_le_bound zero_le_one fun y ↦ by simpa [P] using WithLp.norm_snd_le (x := y)
+  have heq : ⇑(graphFlattening γ hγ.continuous) =
+      ⇑(ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))) - N ∘ (γ ∘ P) := by
+    funext y
+    apply (WithLp.ext_iff 2).2
+    apply Prod.ext <;> simp [N, P]
+  have hg : ContDiff ℝ n (γ ∘ P) := hγ.comp P.contDiff
+  rw [heq, iteratedFDeriv_sub_apply (ContinuousLinearMap.id ℝ _).contDiff.contDiffAt
+    ((N.contDiff.comp hg).contDiffAt.of_le hin), ContinuousLinearMap.iteratedFDeriv_add_two,
+    zero_sub, norm_neg]
+  calc ‖iteratedFDeriv ℝ (j + 2) (N ∘ (γ ∘ P)) x‖
+      ≤ ‖N‖ * ‖iteratedFDeriv ℝ (j + 2) (γ ∘ P) x‖ :=
+        N.norm_iteratedFDeriv_comp_left hg.contDiffAt hin
+    _ ≤ 1 * (‖iteratedFDeriv ℝ (j + 2) γ (P x)‖ * 1) := by
+        gcongr
+        exact (P.norm_iteratedFDeriv_comp_right_le hγ x hin).trans
+          (mul_le_mul_of_nonneg_left (pow_le_one₀ (norm_nonneg _) hP) (norm_nonneg _))
+    _ = ‖iteratedFDeriv ℝ (j + 2) γ x.snd‖ := by simp [P]
+
+/-- The iterated derivatives of inverse graph flattening of order at least two are bounded by
+those of the height. -/
+theorem norm_iteratedFDeriv_graphFlattening_symm_le {n : WithTop ℕ∞} {γ : E → ℝ}
+    (hγ : ContDiff ℝ n γ) {i : ℕ} (hi : 2 ≤ i) (hin : (i : WithTop ℕ∞) ≤ n)
+    (x : WithLp 2 (ℝ × E)) :
+    ‖iteratedFDeriv ℝ i (graphFlattening γ hγ.continuous).symm x‖ ≤
+      ‖iteratedFDeriv ℝ i γ x.snd‖ := by
+  rw [graphFlattening_symm]
+  simpa [iteratedFDeriv_neg] using
+    norm_iteratedFDeriv_graphFlattening_le (γ := -γ) hγ.neg hi hin x
 
 variable [FiniteDimensional ℝ E]
 

@@ -192,8 +192,7 @@ theorem variance_intCast_discreteLaplaceMeasure (m : ℤ) {q : ℝ} (hq0 : 0 ≤
   have hq : 1 - (p : ℝ) = q := by simp [p]
   have hG : MemLp id 2 ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
     rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
-    exact memLp_id_map_cast_negativeBinomialMeasure zero_le_one
-      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 2
+    exact memLp_id_map_cast_negativeBinomialMeasure 2
   have hmap := map_intCast_discreteLaplaceMeasure m hp
   rw [hq] at hmap
   rw [← variance_id_map (by fun_prop), hmap, variance_map (by fun_prop) (by fun_prop)]

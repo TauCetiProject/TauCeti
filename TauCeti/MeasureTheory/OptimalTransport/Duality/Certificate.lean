@@ -18,8 +18,8 @@ A pair of integrable potentials `φ`, `ψ` satisfying the Kantorovich dual const
 `φ x + ψ y ≤ c (x, y)` bounds the cost of every transport plan from below. When a plan is
 concentrated on the *contact set* where that constraint is an equality, the two bounds meet:
 the plan is optimal, the pair is a dual optimizer, and there is no duality gap. This is
-complementary slackness, and the resulting data is the standard optimality certificate that the
-Monge and barycentre layers verify instead of re-solving a transport problem.
+complementary slackness, and the resulting data is the standard optimality certificate: checking
+it proves a plan optimal without re-solving a transport problem.
 
 This file builds that certificate for the raw extended-nonnegative interface — an arbitrary cost
 `c : X × Y → ℝ≥0∞` on arbitrary measurable spaces — and shows that it is exact: in the
@@ -73,8 +73,7 @@ concentrated certify optimality even when they are not integrable.
   the map as a minimizer among transport maps;
 * `TauCeti.DualFeasible.isCyclicallyMonotone_dualContactSet` and
   `TauCeti.IsDualCertificate.exists_isCyclicallyMonotone` — contact sets are `c`-cyclically
-  monotone, and a certified plan whose cost and potentials are measurable is concentrated on a
-  measurable such set.
+  monotone, and a certified plan is concentrated on a measurable such set.
 
 ## Implementation notes
 
@@ -105,8 +104,6 @@ above, with both spaces a point, is such a pair.
 * W. Schachermayer and J. Teichmann, *Characterization of optimal transport plans for the
   Monge--Kantorovich problem*, Proc. Amer. Math. Soc. 137 (2009), 519--529, for optimality of
   strongly `c`-monotone plans.
-
-This is Layer 2, items 7 and 8 of the optimal-transport roadmap.
 -/
 
 public section
@@ -469,8 +466,7 @@ section Monge
 variable [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y} {T : X → Y}
 
 /-- A transport map whose graph lies almost everywhere in the contact set of an integrable dual
-feasible pair is certified: its graph plan is an optimality certificate. This is the form in
-which the Brenier and polar-factorisation layers verify optimality of a map. -/
+feasible pair is certified: its graph plan is an optimality certificate. -/
 theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
     (hT : HasLaw T ν μ) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hφ : Integrable φ μ)
     (hψ : Integrable ψ ν) (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
@@ -502,13 +498,22 @@ theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
 `TauCeti.transportCost_le_lintegral_of_hasLaw`, this exhibits the map as a minimizer among
 transport maps. -/
 theorem transportCost_eq_lintegral_of_ae_mem_dualContactSet
-    (hc : AEMeasurable c (graphPlan T μ)) (hT : HasLaw T ν μ)
+    (hT : HasLaw T ν μ)
     (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
     (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
     transportCost c μ ν = ∫⁻ x, c (x, T x) ∂μ := by
-  exact (isOptimalCoupling_graphPlan_iff hT hc).1
-    (isDualCertificate_graphPlan hc hT hfeas hφ hψ hae).isOptimalCoupling
+  have hψT : Integrable (fun x ↦ ψ (T x)) μ := hT.integrable_comp hψ
+  have hint' : Integrable (fun x ↦ φ x + ψ (T x)) μ := hφ.add hψT
+  have hV : kantorovichDualValue μ ν φ ψ = ∫ x, (φ x + ψ (T x)) ∂μ := by
+    rw [kantorovichDualValue_def, integral_add hφ hψT]
+    exact congrArg _ (hT.integral_comp hψ.aestronglyMeasurable).symm
+  have hup : ∫⁻ x, c (x, T x) ∂μ = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
+    rw [hV, ofReal_integral_eq_lintegral_ofReal hint'
+      (hae.mono fun x hx ↦ add_nonneg_of_mem_dualContactSet hx)]
+    exact lintegral_congr_ae (hae.mono fun x hx ↦ (ofReal_eq_of_mem_dualContactSet hx).symm)
+  refine le_antisymm ?_ (hup ▸ hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ)
+  exact transportCost_le_lintegral_of_hasLaw hT c
 
 end Monge
 
@@ -539,18 +544,18 @@ theorem DualFeasible.isCyclicallyMonotone_dualContactSet
     _ ≤ ∑ i, c (x i, y (σ i)) :=
       Finset.sum_le_sum fun i _ ↦ h.ofReal_add_le (x i) (y (σ i))
 
-/-- **A certified plan with measurable cost and potentials is concentrated on a measurable
-`c`-cyclically monotone set.** The converse implication, that concentration on a
+/-- **A certified plan is concentrated on a measurable `c`-cyclically monotone set.** The
+contact set need not be measurable, but it has full measure, so it contains a measurable set of
+full measure. The converse implication, that concentration on a
 `c`-cyclically monotone set forces optimality, is the Schachermayer--Teichmann theorem
 `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`; it needs a finite cost and
 Polish spaces. -/
 theorem IsDualCertificate.exists_isCyclicallyMonotone [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
-    (h : IsDualCertificate c π μ ν φ ψ) (hc : Measurable c) (hφm : Measurable φ)
-    (hψm : Measurable ψ) :
-    ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 :=
-  ⟨dualContactSet c φ ψ, measurableSet_dualContactSet hc hφm hψm,
-    h.dualFeasible.isCyclicallyMonotone_dualContactSet, ae_iff.1 h.ae_mem_dualContactSet⟩
+    (h : IsDualCertificate c π μ ν φ ψ) :
+    ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 := by
+  obtain ⟨S, hS, hm, hsub⟩ := h.ae_mem_dualContactSet.exists_measurable_mem
+  exact ⟨S, hm, h.dualFeasible.isCyclicallyMonotone_dualContactSet.mono hsub, ae_iff.1 hS⟩
 
 end CyclicallyMonotone
 

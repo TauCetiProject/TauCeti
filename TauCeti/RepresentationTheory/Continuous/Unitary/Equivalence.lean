@@ -43,7 +43,7 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G]
 
 private local instance instCompleteSpaceUnitaryEquivalence {E : Type*} [NormedAddCommGroup E]
     [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] : CompleteSpace E :=
-  FiniteDimensional.complete 𝕜 E
+  FiniteDimensional.completeSpace 𝕜 E
 
 /-- An equivalence between unitary continuous representations, with finite-dimensional irreducible
 source, scales norms by a positive constant, by Schur's lemma applied to `T† ∘ T`. -/

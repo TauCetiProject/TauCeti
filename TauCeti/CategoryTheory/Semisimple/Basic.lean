@@ -160,7 +160,7 @@ monomorphism. -/
 theorem isSplitMono_of_nonzero_from_simple {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {S Z : C} [Simple S] {f : S ⟶ Z} (hf : f ≠ 0) :
     IsSplitMono f := by
-  obtain ⟨ι, hι, g, hg, hbg, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Z
+  obtain ⟨ι, _, g, hg, hbg, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Z
   -- Some component of `f` in a decomposition of `Z` into simple objects is nonzero, hence an
   -- isomorphism by Schur's lemma.
   obtain ⟨i, hi⟩ : ∃ i, f ≫ e.hom ≫ biproduct.π g i ≠ 0 := by
@@ -175,7 +175,7 @@ epimorphism. -/
 theorem isSplitEpi_of_nonzero_to_simple {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {S Y : C} [Simple S] {g : Y ⟶ S} (hg : g ≠ 0) :
     IsSplitEpi g := by
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  obtain ⟨ι, _, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
   -- Some summand in a decomposition of `Y` into simple objects maps nontrivially to `S`, hence
   -- isomorphically by Schur's lemma.
   obtain ⟨i, hi⟩ : ∃ i, biproduct.ι a i ≫ e.inv ≫ g ≠ 0 := by
@@ -211,7 +211,7 @@ object: the inclusion of a summand of a decomposition into simple objects. -/
 theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {Y : C} (hY : ¬IsZero Y) :
     ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  obtain ⟨ι, _, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
   obtain ⟨i⟩ : Nonempty ι := by
     by_contra h
     have : IsEmpty ι := not_nonempty_iff.mp h
@@ -224,7 +224,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C
 
 /-- Every object of a finite semisimple category is injective. -/
 instance injective (X : C) : Injective X := by
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
+  obtain ⟨ι, _, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
   -- A monomorphism out of a simple object is nonzero, hence split.
   have (i : ι) : Injective (f i) := by
     have := hf i

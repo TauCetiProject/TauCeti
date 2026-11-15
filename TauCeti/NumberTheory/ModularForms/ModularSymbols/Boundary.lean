@@ -169,7 +169,7 @@ theorem evalCusp_mapGL_smul_infty (hw : Even w) (g : SL(2, ℤ))
         (-1 : R) • fun i ↦ ((g : Matrix (Fin 2) (Fin 2) ℤ) i 0 : R) := by
       ext i
       simp [h]
-    rw [hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul, hw.neg_one_pow, one_smul]
+    rw [hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul, hw.neg_one_pow, one_mul]
 
 /-- **`SL(2, ℤ)`-invariance of the values at the cusps.** For even `w` and `g ∈ SL(2, ℤ)`,
 `(P ∣ g⁻¹)(v_{gα}) = P(v_α)`. -/

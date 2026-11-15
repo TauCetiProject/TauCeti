@@ -23,8 +23,15 @@ provide the resulting `SeminormedRing`, `NormedRing`, and `NormedAlgebra` instan
 * `TwoSidedIdeal.Quotient.nonUnitalSeminormedRing` and
   `TwoSidedIdeal.Quotient.nonUnitalNormedRing`: quotient seminormed and normed ring structures on
   `A ⧸ I` for `I : TwoSidedIdeal A`.
+* `TwoSidedIdeal.Quotient.nonUnitalSeminormedCommRing`,
+  `TwoSidedIdeal.Quotient.nonUnitalNormedCommRing`, `TwoSidedIdeal.Quotient.seminormedCommRing` and
+  `TwoSidedIdeal.Quotient.normedCommRing`: the commutative variants of these structures.
+* `TwoSidedIdeal.Quotient.norm_mk_le`, `TwoSidedIdeal.Quotient.exists_norm_mk_lt`,
+  `TwoSidedIdeal.Quotient.norm_mk_eq` and `TwoSidedIdeal.Quotient.continuous_mk`: the basic
+  properties of the quotient norm and of the projection `mk I`.
 * `TwoSidedIdeal.Quotient.seminormedRing`, `TwoSidedIdeal.Quotient.normedRing`, and
-  `TwoSidedIdeal.Quotient.normedAlgebra`: unital and algebra counterparts on `R ⧸ I`.
+  `TwoSidedIdeal.Quotient.normedAlgebra` (with its `NormedSpace` instance
+  `TwoSidedIdeal.Quotient.normedSpace`): unital and algebra counterparts on `R ⧸ I`.
 -/
 
 public section
@@ -69,12 +76,9 @@ theorem norm_mk_eq (a : A) : ‖mk I a‖ = sInf ((‖a + ·‖) '' (I : Set A))
 
 /-- The quotient projection `mk I` is continuous. -/
 @[fun_prop]
-theorem continuous_mk : Continuous (mk I) := by
-  have hmk : (mk I : A → A ⧸ I) = (QuotientAddGroup.mk : A → A ⧸ I.toAddSubgroup) := by
-    ext a
-    exact (quotientAddGroupMk_eq_mk I a).symm
-  rw [hmk]
-  exact QuotientAddGroup.continuous_mk
+theorem continuous_mk : Continuous (mk I) :=
+  (QuotientAddGroup.continuous_mk (N := I.toAddSubgroup)).congr fun a =>
+    quotientAddGroupMk_eq_mk I a
 
 noncomputable instance nonUnitalSeminormedRing : NonUnitalSeminormedRing (A ⧸ I) where
   dist_eq := dist_eq_norm_neg_add
@@ -128,8 +132,32 @@ noncomputable instance normedCommRing {R : Type*} [SeminormedCommRing R]
   mul_comm := _root_.mul_comm
 
 noncomputable instance normedAlgebra {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 R] :
-    NormedAlgebra 𝕜 (R ⧸ I) :=
-  { Submodule.Quotient.normedSpace I.asIdeal 𝕜, algebra I with }
+    NormedAlgebra 𝕜 (R ⧸ I) where
+  norm_smul_le := (Submodule.Quotient.normedSpace I.asIdeal 𝕜).norm_smul_le
+
+/-- The `NormedSpace` structure underlying `normedAlgebra`, as an instance of its own. Without it
+the only route to `NormedSpace 𝕜 (R ⧸ I)` is `NormedAlgebra.toNormedSpace`, which instance search
+does not complete when `R` is a `NormedRing`; `norm_smul` and the normed scalar classes such as
+`NormSMulClass 𝕜 (R ⧸ I)` need it. Quotients by an `Ideal` get this instance directly from
+`Submodule.Quotient.normedSpace`. -/
+noncomputable instance normedSpace {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 R] :
+    NormedSpace 𝕜 (R ⧸ I) :=
+  NormedAlgebra.toNormedSpace _
+
+-- Verify that the algebra and module structures of `normedAlgebra` and `normedSpace` agree with
+-- `algebra I` at instance transparency.
+example {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 R] :
+    (normedAlgebra I (𝕜 := 𝕜)).toAlgebra = algebra I := by
+  with_reducible_and_instances rfl
+
+example {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 R] :
+    (normedSpace I (𝕜 := 𝕜)).toModule = (algebra I).toModule := by
+  with_reducible_and_instances rfl
+
+-- Verify that instance search finds the normed scalar classes when the ring is a `NormedRing`.
+example {𝕜 A : Type*} [NormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] (J : TwoSidedIdeal A) :
+    NormSMulClass 𝕜 (A ⧸ J) :=
+  inferInstance
 
 end Unital
 

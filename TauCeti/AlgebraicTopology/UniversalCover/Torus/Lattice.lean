@@ -62,7 +62,7 @@ cover, the deck group, and the fundamental group of a complex torus.
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 1, Section 1.1.
 
 The fundamental-group comparison is Mathlib's `IsAddQuotientCoveringMap.fundamentalGroupEquiv`
-(Junyan Xu), and the deck-group comparison is `TauCeti.Deck.IsQuotientCoveringMap.deckMulEquiv`.
+(Junyan Xu), and the deck-group comparison is `IsQuotientCoveringMap.deckMulEquiv`.
 -/
 
 public section
@@ -80,14 +80,13 @@ variable {E : Type*} [AddGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
 group of the orbit projection `E → E / L`. -/
 noncomputable def orbitRelQuotientDeckMulEquiv [PreconnectedSpace E] :
     Multiplicative L ≃* deck (_root_.Quotient.mk (AddAction.orbitRel L E)) :=
-  TauCeti.Deck.IsQuotientCoveringMap.deckMulEquiv
-    (L.isAddQuotientCoveringMap_quotientMk.toMultiplicative _)
+  (L.isAddQuotientCoveringMap_quotientMk.toMultiplicative _).deckMulEquiv
 
 /-- The deck transformation attached to `l` is translation by `l`. -/
 @[simp]
 theorem orbitRelQuotientDeckMulEquiv_apply [PreconnectedSpace E] (l : Multiplicative L) (v : E) :
     (L.orbitRelQuotientDeckMulEquiv l).1 v = (l.toAdd : E) + v :=
-  TauCeti.Deck.IsQuotientCoveringMap.deckMulEquiv_apply _ l v
+  (L.isAddQuotientCoveringMap_quotientMk.toMultiplicative _).deckMulEquiv_apply l v
 
 end AddGroup
 

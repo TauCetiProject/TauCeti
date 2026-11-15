@@ -85,7 +85,7 @@ theorem existsUnique_integral_iff_norm_le_one (ν : D(ℤ_[p], ℚ_[p])) :
     (∃! μ : D(ℤ_[p], ℤ_[p]), ∀ f : C(ℤ_[p], ℤ_[p]),
       ν ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
         (μ f : ℚ_[p])) ↔ ‖toCLMEquiv ν‖ ≤ 1 :=
-  -- The roadmap's test map `fun x ↦ (x : ℚ_[p])` is `PadicInt.Coe.ringHom` by definition.
+  -- The test map `fun x ↦ (x : ℚ_[p])` in the statement is `PadicInt.Coe.ringHom` by definition.
   existsUnique_apply_comp_eq_iff_norm_le_one PadicInt.norm_coe_ringHom_le_one
     PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom ν
 

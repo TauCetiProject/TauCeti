@@ -272,7 +272,7 @@ private theorem norm_iteratedFDeriv_kernelIntegrand_le {a : E × E → V →L[�
         ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
       ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
         (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
-        gcongr with j hj
+        gcongr with j _
         · exact he_le j
         · exact hg_le (i - j) (Nat.sub_le i j)
     _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by

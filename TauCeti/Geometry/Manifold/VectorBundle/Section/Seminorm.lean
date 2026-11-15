@@ -28,7 +28,7 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace Bundle
+open Set TopologicalSpace Bundle Filter Topology
 open scoped Manifold ContDiff
 
 namespace Bundle.Trivialization
@@ -139,6 +139,26 @@ theorem chartDerivativeSeminorm_mono (x : U) {K L : Compacts (extChartAt I x).ta
 theorem chartDerivativeSeminorm_bot (x : U) (m : ℕ) (hm : m ≤ n) :
     chartDerivativeSeminorm (I := I) e hU x ⊥ m hm = 0 := by
   rw [chartDerivativeSeminorm, ContMDiffMap.chartDerivativeSeminorm_bot, Seminorm.zero_comp]
+
+/-- **Locality.** A frame derivative seminorm vanishes on a section which is zero near the points
+of the base represented by the compact coordinate set. -/
+theorem chartDerivativeSeminorm_eq_zero_of_eventuallyEq_zero (x : U)
+    (K : Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n) {s : Cₛ^n⟮I; F, V⟯}
+    (hs : ∀ᶠ y in 𝓝ˢ (Subtype.val '' ((extChartAt I x).symm ''
+      (Subtype.val '' (K : Set (extChartAt I x).target)))), s y = 0) :
+    chartDerivativeSeminorm e hU x K m hm s = 0 := by
+  have hCk : ContMDiffMap.chartCkSeminorm x K m hm (frameCoordinates e hU s) = 0 := by
+    refine ContMDiffMap.chartCkSeminorm_eq_zero_of_eventuallyEq_zero x K m hm fun z hz ↦ ?_
+    have hz' : (((extChartAt I x).symm z : U) : M) ∈ Subtype.val '' ((extChartAt I x).symm ''
+        (Subtype.val '' (K : Set (extChartAt I x).target))) :=
+      ⟨_, ⟨z, ⟨z, hz, rfl⟩, rfl⟩, rfl⟩
+    have hnhds := (continuous_subtype_val.continuousAt
+      (x := (extChartAt I x).symm z)).eventually (hs.filter_mono (nhds_le_nhdsSet hz'))
+    filter_upwards [hnhds] with y hy
+    exact (frameCoordinates_eq_iff e hU s 0 y).mpr (by simpa using hy) |>.trans (by simp)
+  refine le_antisymm ?_ (apply_nonneg _ _)
+  refine (chartDerivativeSeminorm_le_iff e hU x K m hm s le_rfl).mpr fun z hz ↦ ?_
+  exact (ContMDiffMap.chartCkSeminorm_le_iff x K m hm _ le_rfl).mp hCk.le m le_rfl z hz
 
 /-- The compact chart/frame `C^k` seminorm of a section, including order zero. -/
 def chartCkSeminorm (x : U) (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
