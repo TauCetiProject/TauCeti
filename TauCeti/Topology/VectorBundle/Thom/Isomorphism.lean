@@ -24,6 +24,9 @@ relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients 
 Thom class of a real vector bundle of rank `n` this is the Thom isomorphism: Milnor and Stasheff
 (Theorem 10.4) and Hatcher (Theorem 4D.10) prove that it is bijective in every degree, first for a
 product bundle over a trivializing open set and then by Mayer–Vietoris over unions of such sets.
+The Mayer–Vietoris step holds for `TopPair.pullbackCup` of any pair and map
+(`TopCat.bijective_pullbackCupRestrict_union`); for the Thom pair, the pair over an open set `W` of
+the base is the Thom pair `(E|_W, E₀|_W)` of the restriction of the bundle.
 
 This file sets up the map and the properties that argument uses. It is linear in `u` and in `a`
 (`TauCeti.thomMap`), and sends the unit `1 ∈ H⁰(B; K)` to `u` (`TauCeti.thomMap_one`). It is
@@ -78,6 +81,13 @@ def thomMap (n p m : ℕ) (h : p + n = m) :
         (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
   (thomPair F E).pullbackCup M (thomPairProj F E) n p m h
 
+/-- The Thom map of a vector bundle is `TopPair.pullbackCup` of its Thom pair and its projection,
+so the results stated for the latter, such as the Mayer–Vietoris step
+`TopCat.bijective_pullbackCupRestrict_union`, apply to it. -/
+theorem thomMap_def (n p m : ℕ) (h : p + n = m) :
+    thomMap F E M n p m h = (thomPair F E).pullbackCup M (thomPairProj F E) n p m h :=
+  (rfl)
+
 variable {M}
 
 /-- The Thom map is the cup product of the pull-back to the total space with `u`. -/
@@ -96,14 +106,8 @@ theorem thomMap_one {n : ℕ} (h : 0 + n = n)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     thomMap F E (ModuleCat.of K K) n 0 n h u
         (((TopCat.of B).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ 0
-          ((TopCat.of B).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u := by
-  rw [thomMap_apply]
-  refine (congrArg (fun x ↦ (thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
-    (ρ_ (ModuleCat.of K K)).hom 0 n n h x u)
-    (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle (thomPairProj F E) K
-      (𝟙 (ModuleCat.of K K)))).trans ?_
-  exact TopPair.singularCup_constSingularCocycle_left K (thomPair F E) (η := 𝟙 _)
-    (by monoidal) (by monoidal) h u
+          ((TopCat.of B).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u :=
+  TopPair.pullbackCup_one _ _ h u
 
 /-- **Naturality of the Thom map.** A map of Thom pairs `φ : (E', E'₀) ⟶ (E, E₀)` covering a map
 of bases `g : B' ⟶ B` intertwines the Thom map of `u` with that of its pull-back `φ^*u`:

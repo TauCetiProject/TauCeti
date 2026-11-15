@@ -34,13 +34,15 @@ Over a principal ideal domain every module has such a presentation, by a free mo
 kernel, which is again free; applied to the tensor product, this computes `Tor₁` in the Künneth
 and universal coefficient theorems.
 
-The file also records three general facts. The natural transformation `LₙF ⟶ LₙG` induced by
+The file also records four general facts. The natural transformation `LₙF ⟶ LₙG` induced by
 `α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), so that a derived
 functor depending on a parameter through a natural transformation, such as `Tor` in its underived
-variable, is an additive functor of that parameter. An exact additive functor has no positive left
-derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). If an additive functor sends
-projective objects into a class closed under subobjects and quotients, for instance a Serre class,
-all its left derived functors take values in that class
+variable, is an additive functor of that parameter. In degree zero it is compatible with the
+comparison maps `L₀F ⟶ F` and `L₀G ⟶ G`
+(`CategoryTheory.NatTrans.leftDerived_zero_comp_fromLeftDerivedZero`). An exact additive functor
+has no positive left derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). If an
+additive functor sends projective objects into a class closed under subobjects and quotients, for
+instance a Serre class, all its left derived functors take values in that class
 (`CategoryTheory.ObjectProperty.prop_leftDerived_obj`). Applied to tensoring with a fixed object,
 this turns closure of such a class under tensor products into closure under Tor.
 
@@ -271,6 +273,26 @@ theorem NatTrans.leftDerived_add {F G : C ⥤ D} [F.Additive] [G.Additive] (α �
     simp
   simp only [NatTrans.app_add, (projectiveResolution X).leftDerived_app_eq, h, Functor.map_add,
     Preadditive.add_comp, Preadditive.comp_add]
+
+/-- The comparison `L₀F ⟶ F` is natural in the additive functor `F`: it intertwines the
+natural transformation `L₀F ⟶ L₀G` induced by `α : F ⟶ G` with `α`. -/
+@[reassoc]
+theorem NatTrans.leftDerived_zero_comp_fromLeftDerivedZero {F G : C ⥤ D} [F.Additive]
+    [G.Additive] (α : F ⟶ G) :
+    NatTrans.leftDerived α 0 ≫ G.fromLeftDerivedZero = F.fromLeftDerivedZero ≫ α := by
+  ext X
+  let P := projectiveResolution X
+  -- On opcycles in degree zero, both sides are induced by `α` on `F(P₀) ⟶ G(P₀) ⟶ G(X)`.
+  have h : HomologicalComplex.opcyclesMap ((NatTrans.mapHomologicalComplex α _).app P.complex) 0 ≫
+      P.fromLeftDerivedZero' G = P.fromLeftDerivedZero' F ≫ α.app X := by
+    rw [← cancel_epi (HomologicalComplex.pOpcycles _ 0), HomologicalComplex.p_opcyclesMap_assoc]
+    simpa using (α.naturality (P.π.f 0)).symm
+  simp only [NatTrans.comp_app, P.leftDerived_app_eq, P.fromLeftDerivedZero_eq, Category.assoc,
+    Iso.inv_hom_id_assoc]
+  -- `erw`: the homology of `F(P)` appears both as `homologyFunctor.obj` and as `homology 0`.
+  erw [HomologicalComplex.homologyι_naturality_assoc, h,
+    Category.assoc (ChainComplex.isoHomologyι₀ _).hom]
+  rfl
 
 /-- An exact additive functor has no positive left derived functors. -/
 theorem Functor.isZero_leftDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]

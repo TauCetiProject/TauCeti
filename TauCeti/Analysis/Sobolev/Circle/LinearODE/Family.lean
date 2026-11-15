@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Circle.LinearODE
+public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import TauCeti.Analysis.Normed.Operator.CompactFamily
 
 /-!

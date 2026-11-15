@@ -11,7 +11,7 @@ module
 -- simplicity of a tensor product; `TauCeti.Algebra.Central.BaseChange` supplies the centrality
 -- instance that makes `L ⊗[K] A` central simple over `L` visible to instance search from this
 -- import alone; `TauCeti.Algebra.TensorProduct.BaseChange` supplies the compatibility of the scalar
--- extension with `⊗` and with `ᵐᵒᵖ`; `Module.FaithfullyFlat` is the hypothesis of
+-- extension with `⊗`, with `ᵐᵒᵖ` and with towers; `Module.FaithfullyFlat` is the hypothesis of
 -- `IsSimpleRing.of_baseChange`, and the free-module instance that supplies it over a field
 -- is what proves `TauCeti.isSimpleRing_baseChange_iff`.
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
@@ -55,12 +55,14 @@ a central simple `L`-algebra with no glue at all.
   this makes central simplicity of `A` over `K` equivalent to central simplicity of `L ⊗[K] A`
   over a field extension `L`.
 
-Together with the centrality of `TauCeti/Algebra/Central/BaseChange.lean` and the two compatibility
-equivalences of `TauCeti/Algebra/TensorProduct/BaseChange.lean`, both re-exported here, this is what
-lets base change descend to the homomorphism of Brauer groups `TauCeti.BrauerGroup.baseChange` in
-`TauCeti/Algebra/BrauerGroup/BaseChange.lean`: the centrality and the simplicity say the class of
-`L ⊗[K] A` is defined, and the two equivalences say the assignment respects the multiplication and
-the inversion of classes.
+The centrality and the simplicity are what let `TauCeti/Algebra/BrauerGroup/BaseChange.lean` bundle
+`L ⊗[K] A` as the central simple `L`-algebra `TauCeti.CSA.baseChange`. That file's homomorphism of
+Brauer groups `TauCeti.BrauerGroup.baseChange` is multiplicative by
+`TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`, and `TauCeti.BrauerGroup.baseChange_comp`
+composes it along a tower by `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`, both
+re-exported here from `TauCeti/Algebra/TensorProduct/BaseChange.lean`. Its well-definedness on
+Brauer classes comes instead from `TauCeti.Algebra.matrixCoeffBaseChangeAlgEquiv` in
+`TauCeti/Algebra/Matrix/BaseChange.lean`, and its unitality from `Algebra.TensorProduct.rid`.
 
 ## Implementation notes
 
