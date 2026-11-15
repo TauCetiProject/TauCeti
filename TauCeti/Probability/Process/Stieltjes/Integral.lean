@@ -80,13 +80,13 @@ theorem isStronglyPredictable_setIntegral_stieltjesFunction
 /-- Under almost-sure continuity after `a` and pathwise local integrability, an accumulated
 Stieltjes integral admits a predictable, almost-surely continuous indistinguishable representative.
 No completeness, right continuity, or moment hypothesis is imposed on the raw basis. -/
-theorem exists_isStronglyPredictable_setIntegral_stieltjesFunction
+theorem exists_isStronglyPredictable_indist_setIntegral_stieltjesFunction
     (hH : IsStronglyProgressive ℱ H) (hf : Adapted ℱ (fun t ω ↦ f ω t))
     (a : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (f ω) (Ioi a))
     (hi : ∀ᵐ ω ∂P, ∀ T, IntegrableOn (H · ω) (Ioc a T) (f ω).measure) :
     ∃ I : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ I ∧
       (∀ᵐ ω ∂P, Continuous (I · ω)) ∧
-      ∀ᵐ ω ∂P, ∀ t, I t ω = ∫ u in Ioc a t, H u ω ∂(f ω).measure := by
+      I ≡ᵐ[P] (fun t ω ↦ ∫ u in Ioc a t, H u ω ∂(f ω).measure) := by
   by_cases hE : CompleteSpace E
   · let := hE
     have hcont : ∀ᵐ ω ∂P,
