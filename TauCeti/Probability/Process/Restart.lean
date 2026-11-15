@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.StoppingApproximation
-import TauCeti.Probability.Process.StoppedValue
+public import TauCeti.Probability.Process.StoppedValue
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import Mathlib.MeasureTheory.Integral.Indicator
 
 /-!
@@ -17,7 +18,9 @@ law independently of a filtration through `s`. The same event identity holds at 
 stopping times in any partially ordered index type. For nonnegative real time and discrete-valued
 `U` almost surely right-continuous at the stopping time, it holds on the event of finiteness,
 by upward dyadic approximation. No usual-conditions
-assumption on the filtration is needed.
+assumption on the filtration is needed. In pseudo-metrizable Borel spaces, the same
+approximation also gives almost-everywhere measurability of the stopped value, without
+adaptation or a finite-measure assumption.
 
 The process `U` need not be adapted: for example, `U s` can be the increment over a fixed
 duration after `s`. The deterministic conditional-law identity is an explicit hypothesis,
@@ -45,16 +48,16 @@ variable {ι : Type*} [PartialOrder ι] [Nonempty ι] {ℱ : Filtration ι mΩ}
   {τ : Ω → WithTop ι} {U : ι → Ω → β}
 
 /-- A deterministic fixed conditional law passes to a countable-range stopping time.
-Restrict to an event of the stopped sigma-algebra on which the time is finite, so no value
-at infinity is used. -/
+Intersect an arbitrary event of the stopped sigma-algebra with the finite-time event, so no
+value at infinity is used. -/
 theorem measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
     (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable)
     (hm : ∀ s, Measurable (U s)) {B : Set β} (hB : MeasurableSet B) {c : ℝ≥0∞}
     (hdet : ∀ (s : ι) (C : Set Ω), MeasurableSet[ℱ s] C →
       P (C ∩ U s ⁻¹' B) = P C * c)
-    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A)
-    (hfin : ∀ ω ∈ A, τ ω ≠ ⊤) :
-    P (A ∩ stoppedValue U τ ⁻¹' B) = P A * c := by
+    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) :
+    P ((A ∩ {ω | τ ω ≠ ⊤}) ∩ stoppedValue U τ ⁻¹' B) =
+      P (A ∩ {ω | τ ω ≠ ⊤}) * c := by
   classical
   let R : Set ι := {s | (s : WithTop ι) ∈ range τ}
   have hR : R.Countable := hc.preimage WithTop.coe_injective
@@ -62,25 +65,26 @@ theorem measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
   let E (s : R) : Set Ω := A ∩ {ω | τ ω = s.val}
   have hmE (s : R) : MeasurableSet[ℱ s.val] (E s) :=
     (hτ.measurableSet_inter_eq_iff A s.val).mp
-      (hA.inter (by
-        simpa only [univ_inter] using (hτ.measurableSet_inter_eq_iff univ s.val).mpr
-          (by simpa using hτ.measurableSet_eq_of_countable_range hc s.val)))
+      (hA.inter (hτ.measurableSet_stopping_eq_of_countable_range hc s.val))
   have hdisj : Pairwise (Disjoint on E) := by
     intro s u hsu
     exact disjoint_left.mpr fun ω hs hu => hsu (Subtype.ext
       (WithTop.coe_injective (hs.2.symm.trans hu.2)))
   have hevent (D : Set β) :
-      A ∩ stoppedValue U τ ⁻¹' D = ⋃ s : R, E s ∩ U s.val ⁻¹' D := by
+      (A ∩ {ω | τ ω ≠ ⊤}) ∩ stoppedValue U τ ⁻¹' D =
+        ⋃ s : R, E s ∩ U s.val ⁻¹' D := by
     ext ω
     simp only [mem_iUnion, mem_inter_iff, mem_preimage]
     constructor
-    · rintro ⟨hω, hD⟩
-      obtain ⟨s, hs⟩ := WithTop.ne_top_iff_exists.mp (hfin ω hω)
+    · rintro ⟨⟨hω, hfin⟩, hD⟩
+      obtain ⟨s, hs⟩ := WithTop.ne_top_iff_exists.mp hfin
       exact ⟨⟨s, ω, hs.symm⟩, ⟨hω, hs.symm⟩,
         by rwa [stoppedValue_of_eq hs.symm] at hD⟩
     · rintro ⟨s, hs, hD⟩
-      exact ⟨hs.1, by rwa [stoppedValue_of_eq hs.2]⟩
-  have hcover : (⋃ s : R, E s) = A := by simpa using (hevent univ).symm
+      exact ⟨⟨hs.1, fun htop => WithTop.coe_ne_top (hs.2.symm.trans htop)⟩,
+        by rwa [stoppedValue_of_eq hs.2]⟩
+  have hcover : (⋃ s : R, E s) = A ∩ {ω | τ ω ≠ ⊤} := by
+    simpa using (hevent univ).symm
   have hmI (s : R) : MeasurableSet (E s ∩ U s.val ⁻¹' B) :=
     (ℱ.le _ _ (hmE s)).inter (hm _ hB)
   rw [hevent B]
@@ -91,6 +95,26 @@ theorem measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
 end CountableRange
 
 variable {ℱ : Filtration ℝ≥0 mΩ} {τ : Ω → WithTop ℝ≥0} {U : ℝ≥0 → Ω → β}
+
+/-- A process with measurable coordinates evaluated at a stopping time is almost everywhere
+measurable if its paths are almost surely right-continuous at the finite stopped time.
+No adaptation, finiteness of the stopping time, or usual conditions on the filtration are needed. -/
+theorem aemeasurable_stoppedValue [TopologicalSpace β] [TopologicalSpace.PseudoMetrizableSpace β]
+    [BorelSpace β]
+    (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (U s))
+    (hrc : ∀ᵐ ω ∂P, τ ω ≠ ⊤ →
+      ContinuousWithinAt (fun u => U u ω) (Ici (τ ω).untopA) (τ ω).untopA) :
+    AEMeasurable (stoppedValue U τ) P := by
+  apply aemeasurable_of_tendsto_metrizable_ae'
+    (f := fun n => stoppedValue U (fun ω => TauCeti.dyadicCeilTime n (τ ω)))
+    (fun n => ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm).aemeasurable)
+  filter_upwards [hrc] with ω hω
+  by_cases hfin : τ ω = ⊤
+  · simpa only [stoppedValue, hfin, TauCeti.dyadicCeilTime_top] using
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => U (⊤ : WithTop ℝ≥0).untopA ω)
+        atTop (𝓝 (U (⊤ : WithTop ℝ≥0).untopA ω)))
+  · exact TauCeti.tendsto_stoppedValue_dyadicCeilTime U τ ω hfin (hω hfin)
 
 /-- For discrete-valued, almost surely right-continuous variables, a deterministic fixed
 conditional law passes to any stopping time, on its finite-time event. Neither adaptation of
@@ -122,10 +146,10 @@ theorem measure_inter_stoppedValue_preimage_eq_mul [TopologicalSpace β] [Discre
     (hτ.measurableSpace_le C hC).inter
       ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
         (TauCeti.countable_range_dyadicCeilTime τ n) hm hB)
-  have hEn (n : ℕ) : P (E n) = P C * c :=
-    (hτ.dyadicCeilTime n).measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
-      (TauCeti.countable_range_dyadicCeilTime τ n) hm hB hdet (hCn n)
-      (fun ω hω => (TauCeti.dyadicCeilTime_eq_top_iff n _).not.mpr hω.2)
+  have hEn (n : ℕ) : P (E n) = P C * c := by
+    simpa only [E, σ, C, ne_eq, TauCeti.dyadicCeilTime_eq_top_iff, inter_assoc, inter_self] using
+      (hτ.dyadicCeilTime n).measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
+        (TauCeti.countable_range_dyadicCeilTime τ n) hm hB hdet (hCn n)
   have hlim : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ E n ↔ ω ∈ F := by
     filter_upwards [hrc] with ω hω
     by_cases hmem : ω ∈ C

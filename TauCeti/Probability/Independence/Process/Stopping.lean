@@ -37,19 +37,21 @@ namespace MeasureTheory.IsStoppingTime
 
 open ProbabilityTheory
 
-/-- A count increment with a fixed law independent of each deterministic history has that law
-at a stopping time, independently of the stopped history on the finite-time event. The
-filtration is arbitrary; right continuity of count paths is required only almost surely. -/
+/-- A discrete-valued increment with a fixed law independent of each deterministic history has
+that law at a stopping time, independently of the stopped history on the finite-time event.
+The filtration is arbitrary; right continuity of paths is required only almost surely. -/
 theorem measure_inter_stoppedValue_sub_preimage_eq_mul
-    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
-    {N : ℝ≥0 → Ω → ℕ} {ℱ : Filtration ℝ≥0 mΩ} {τ : Ω → WithTop ℝ≥0}
+    {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+    [MeasurableSpace E] [TopologicalSpace E] [DiscreteTopology E] [Sub E] [MeasurableSub₂ E]
+    {N : ℝ≥0 → Ω → E} {ℱ : Filtration ℝ≥0 mΩ} {τ : Ω → WithTop ℝ≥0}
     (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (N s))
     (hrc : ∀ᵐ ω ∂P, ∀ s, ContinuousWithinAt (fun u => N u ω) (Ici s) s)
-    (t : ℝ≥0) {μ : Measure ℕ}
+    (t : ℝ≥0) {μ : Measure E}
     (hindep : ∀ s, Indep
       (MeasurableSpace.comap (fun ω => N (s + t) ω - N s ω) inferInstance) (ℱ s) P)
     (hlaw : ∀ s, HasLaw (fun ω => N (s + t) ω - N s ω) μ P)
-    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) (B : Set ℕ) :
+    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) {B : Set E}
+    (hB : MeasurableSet B) :
     P ((A ∩ {ω | τ ω ≠ ⊤}) ∩
       stoppedValue (fun s ω => N (s + t) ω - N s ω) τ ⁻¹' B) =
         P (A ∩ {ω | τ ω ≠ ⊤}) * μ B := by
@@ -60,7 +62,6 @@ theorem measure_inter_stoppedValue_sub_preimage_eq_mul
     exact ((hω ((τ ω).untopA + t)).comp (f := fun u : ℝ≥0 => u + t)
       (s := Ici (τ ω).untopA) hadd.continuousWithinAt
       (fun u hu => add_le_add hu (le_refl t))).sub (hω _)
-  have hB : MeasurableSet B := .of_discrete
   refine hτ.measure_inter_stoppedValue_preimage_eq_mul
     (U := fun s ω => N (s + t) ω - N s ω)
     (fun s => (hm _).sub (hm _)) hright hB (fun s C hC => ?_) hA
@@ -102,7 +103,8 @@ theorem HasIndepIncrements.measure_inter_stoppedValue_sub_preimage_eq_mul
     simpa only [Function.comp_def, id_eq] using (IndepFun_iff_Indep _ _ _).mp hi
   have hlaw (s : ℝ≥0) : HasLaw (fun ω => N (s + t) ω - N s ω) (P.map (N t)) P :=
     ⟨(hstat s).aemeasurable_fst, (hstat s).map_eq⟩
-  have h := hτ.measure_inter_stoppedValue_sub_preimage_eq_mul hm hrc t hind hlaw hA B
+  have h := hτ.measure_inter_stoppedValue_sub_preimage_eq_mul hm hrc t hind hlaw hA
+    (.of_discrete (s := B))
   simpa only [Measure.map_apply (hm t) .of_discrete] using h
 
 end ProbabilityTheory

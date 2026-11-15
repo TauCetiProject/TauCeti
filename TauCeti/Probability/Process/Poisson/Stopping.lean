@@ -16,8 +16,6 @@ A nondecreasing, right-continuous count process starting at zero with independen
 increments has fresh Poisson increments after any stopping time for its natural filtration.
 The event identity retains the finite-time event explicitly and allows rate zero. It is the
 conditional count identity used to obtain exponential waiting times after successive arrivals.
-A filtration-relative version also applies when deterministic increment independence is given
-explicitly, without a zero-start or monotonicity assumption.
 
 ## References
 
@@ -29,32 +27,6 @@ public section
 
 open MeasureTheory Filter Set
 open scoped NNReal Topology
-
-namespace MeasureTheory.IsStoppingTime
-
-open ProbabilityTheory
-
-/-- Poisson increments independent of a filtration's deterministic histories retain their
-Poisson law at a stopping time, independently of the stopped history on the finite-time
-event. No zero-start or monotonicity assumption is needed when independence is supplied. -/
-theorem measure_inter_stoppedValue_sub_preimage_eq_mul_of_hasLaw_poissonMeasure
-    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
-    {N : ℝ≥0 → Ω → ℕ} {ℱ : Filtration ℝ≥0 mΩ} {τ : Ω → WithTop ℝ≥0}
-    (hτ : IsStoppingTime ℱ τ) (hm : ∀ s, Measurable (N s))
-    (hrc : ∀ᵐ ω ∂P, ∀ s, ContinuousWithinAt (fun u => N u ω) (Ici s) s)
-    (r t : ℝ≥0)
-    (hindep : ∀ s, Indep
-      (MeasurableSpace.comap (fun ω => N (s + t) ω - N s ω) inferInstance) (ℱ s) P)
-    (hlaw : ∀ s u, s ≤ u → HasLaw (fun ω => N u ω - N s ω)
-      (poissonMeasure (r * (u - s))) P)
-    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) (B : Set ℕ) :
-    P ((A ∩ {ω | τ ω ≠ ⊤}) ∩
-      stoppedValue (fun s ω => N (s + t) ω - N s ω) τ ⁻¹' B) =
-        P (A ∩ {ω | τ ω ≠ ⊤}) * poissonMeasure (r * t) B := by
-  exact hτ.measure_inter_stoppedValue_sub_preimage_eq_mul hm hrc t hindep
-    (fun s => by simpa only [add_tsub_cancel_left] using hlaw s (s + t) le_self_add) hA B
-
-end MeasureTheory.IsStoppingTime
 
 namespace ProbabilityTheory
 

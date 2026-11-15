@@ -80,18 +80,20 @@ theorem measurable_stoppedValue_of_countable [Countable ι] [MeasurableSpace (Wi
   · exact (hτ (measurableSet_singleton _)).inter (hu i ht)
   · exact (hτ (measurableSet_singleton _)).inter (hu _ ht)
 
-/-- A measurable process evaluated at a countable-range stopping time is measurable in the
-ambient sigma-algebra. Neither adaptation nor finiteness of the time is required; at infinity
-the stopped value uses the coordinate at `(⊤ : WithTop ι).untopA`. -/
-theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder ι]
+omit [Nonempty ι] in
+/-- Every level set of a countable-range stopping time, including its infinite-time event,
+is measurable for the stopped sigma-algebra, even in a partially ordered time type. -/
+theorem IsStoppingTime.measurableSet_stopping_eq_of_countable_range [PartialOrder ι]
     {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
-    (hu : ∀ i, Measurable (u i)) : Measurable (stoppedValue u τ) := by
-  classical
-  let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
-  have hR : R.Countable := hc.preimage WithTop.coe_injective
-  have heq (i : ι) : MeasurableSet {ω | τ ω = i} :=
-    ℱ.le _ _ (hτ.measurableSet_eq_of_countable_range hc i)
-  have htop : MeasurableSet {ω | τ ω = ⊤} := by
+    (v : WithTop ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = v} := by
+  have heq (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
+    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
+    exact hτ.measurableSet_eq_of_countable_range hc i
+  cases v with
+  | coe i => exact heq i
+  | top =>
+    let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
+    have hR : R.Countable := hc.preimage WithTop.coe_injective
     have : {ω | τ ω = ⊤} = (⋃ i ∈ R, {ω | τ ω = i})ᶜ := by
       ext ω
       cases h : τ ω with
@@ -100,19 +102,30 @@ theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder 
         simpa [h, R] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
     rw [this]
     exact (MeasurableSet.biUnion hR fun i _ => heq i).compl
-  intro B hB
-  have hevent : stoppedValue u τ ⁻¹' B =
-      (⋃ i ∈ R, {ω | τ ω = i} ∩ u i ⁻¹' B) ∪
-        ({ω | τ ω = ⊤} ∩ u (⊤ : WithTop ι).untopA ⁻¹' B) := by
-    rw [stoppedValue_preimage_eq]
-    congr 1
-    ext ω
-    simp only [Set.mem_iUnion, Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_preimage]
-    exact ⟨fun ⟨i, hi, hB⟩ => ⟨i, ⟨ω, hi⟩, hi, hB⟩,
-      fun ⟨i, _, hi, hB⟩ => ⟨i, hi, hB⟩⟩
-  rw [hevent]
-  exact .union (MeasurableSet.biUnion hR fun i _ => (heq i).inter (hu i hB))
-    (htop.inter (hu _ hB))
+
+/-- A measurable process evaluated at a countable-range stopping time is measurable in the
+ambient sigma-algebra. Neither adaptation nor finiteness of the time is required; at infinity
+the stopped value uses the coordinate at `(⊤ : WithTop ι).untopA`. -/
+theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder ι]
+    {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
+    (hu : ∀ i, Measurable (u i)) : Measurable (stoppedValue u τ) := by
+  classical
+  have := hc.to_subtype
+  let s : Set.range τ → Set Ω := fun v => {ω | τ ω = v.val}
+  let hs : IndexedPartition s :=
+    { eq_of_mem := fun hv hw => Subtype.ext (hv.symm.trans hw)
+      some := fun v => v.property.choose
+      some_mem := fun v => v.property.choose_spec
+      index := fun ω => ⟨τ ω, ω, rfl⟩
+      mem_index := fun _ => rfl }
+  convert hs.measurable_piecewise
+    (fun v => hτ.measurableSpace_le _
+      (hτ.measurableSet_stopping_eq_of_countable_range hc v.val))
+    (fun v => hu v.val.untopA) using 1
+  ext ω
+  rw [IndexedPartition.piecewise_apply]
+  simp only [stoppedValue]
+  rw [(hs.mem_index ω : τ ω = _)]
 
 section CountableTime
 
@@ -168,27 +181,13 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
   -- the gluing below uses indicator functions; any value of the process serves as their zero
   let : Zero E := ⟨X (Classical.arbitrary ι) ω₀⟩
   have := hc.to_subtype
-  -- each level set of `τ` is measurable for the stopping sigma algebra, by transport of the slice
-  have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
-    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
-    exact hτ.measurableSet_eq_of_countable_range hc i
-  let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
-  have hR : R.Countable := hc.preimage WithTop.coe_injective
   let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
   have hs : IndexedPartition s := IndexedPartition.mk' s
     (fun v w hvw ↦ Set.disjoint_left.2 fun ω hv hw ↦
       hvw (Subtype.ext (hv.symm.trans hw)))
     (fun v ↦ by obtain ⟨ω, hω⟩ := v.property; exact ⟨ω, hω⟩)
     (fun ω ↦ ⟨⟨τ ω, ⟨ω, rfl⟩⟩, rfl⟩)
-  have htop : MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} := by
-    have : {ω | τ ω = ⊤} = (⋃ i ∈ R, {ω | τ ω = i})ᶜ := by
-      ext ω
-      cases h : τ ω with
-      | top => simp [h]
-      | coe i =>
-        simpa [h, R] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
-    rw [this]
-    exact (MeasurableSet.biUnion hR fun i _ ↦ hmeas i).compl
+  have htop := hτ.measurableSet_stopping_eq_of_countable_range hc ⊤
   have hind (v : Set.range τ) :
       StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
     obtain ⟨v, hv⟩ := v
@@ -211,11 +210,8 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
         (fun t ht ↦ ?_) ((hX i).indicator hslice) (fun ω hω ↦ Set.indicator_of_notMem hω _)
       rw [Set.inter_comm, hτ.measurableSet_inter_eq_iff, Set.inter_comm]
       exact ht
-  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) := by
-    obtain ⟨v, hv⟩ := v
-    induction v using WithTop.recTopCoe with
-    | top => exact htop
-    | coe i => exact hmeas i
+  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) :=
+    hτ.measurableSet_stopping_eq_of_countable_range hc v.val
   let : MeasurableSpace Ω := hτ.measurableSpace
   convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
