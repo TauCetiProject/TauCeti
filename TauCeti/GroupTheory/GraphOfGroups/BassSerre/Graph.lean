@@ -35,10 +35,9 @@ of the vertex and edge groups, are consequences of the normal form theorem.
 
 ## Main definitions
 
-* `TauCeti.GraphOfGroups.BassSerreVertex`, `TauCeti.GraphOfGroups.BassSerreDart`: the vertices
-  and darts of the Bass–Serre graph, with constructors `mk` and eliminators `lift` and
-  `induction_on`.
 * `TauCeti.GraphOfGroups.bassSerreGraph`: the Bass–Serre graph `X(𝔸, v₀)`.
+* `TauCeti.GraphOfGroups.BassSerreVertex`, `TauCeti.GraphOfGroups.BassSerreDart`: the vertices
+  and darts of `X(𝔸, v₀)`, with constructors `mk` and eliminators `lift` and `induction_on`.
 * `TauCeti.GraphOfGroups.bassSerreAction`: the action of `π₁(𝔸, v₀)` as a homomorphism to the
   automorphism group of `X(𝔸, v₀)`.
 * `TauCeti.GraphOfGroups.bassSerreProj`: the projection `X(𝔸, v₀) → Γ`.
@@ -48,9 +47,9 @@ of the vertex and edge groups, are consequences of the normal form theorem.
 * `TauCeti.GraphOfGroups.BassSerreVertex.mk_eq_mk_iff`,
   `TauCeti.GraphOfGroups.BassSerreDart.mk_eq_mk_iff`: when two paths give the same vertex or dart.
 * `TauCeti.GraphOfGroups.BassSerreDart.smul_ne_rev`: the action has no inversions.
-* `TauCeti.GraphOfGroups.BassSerreVertex.mem_orbit_iff`,
-  `TauCeti.GraphOfGroups.BassSerreDart.mem_orbit_iff`: two vertices or darts lie in the same
-  orbit exactly when they have the same image in `Γ`.
+* `TauCeti.GraphOfGroups.BassSerreVertex.mem_orbit_iff_proj_eq`,
+  `TauCeti.GraphOfGroups.BassSerreDart.mem_orbit_iff_proj_eq`: two vertices or darts lie in the
+  same orbit exactly when they have the same image in `Γ`.
 * `TauCeti.GraphOfGroups.BassSerreVertex.stabilizer_mk`,
   `TauCeti.GraphOfGroups.BassSerreDart.stabilizer_mk`: the vertex and dart stabilizers.
 * Over a graph without edges the Bass–Serre graph has exactly one vertex and no darts.
@@ -158,19 +157,85 @@ private theorem stabilizer_quot_mk {i : ι} (p : 𝔸.Path ⟨v₀⟩ ⟨t i⟩)
   exact exists_congr fun _ ↦ and_congr_right fun _ ↦
     Path.homotopic_comp_reverse_iff.symm.trans ⟨.symm, .symm⟩
 
-variable (𝔸) in
-/-- The vertices of the Bass–Serre graph of `𝔸` at `v₀`: the classes `p A_a` of `𝔸`-paths `p`
-from `v₀` to a vertex `a`, where two paths `p` and `p'` ending at `a` give the same vertex when
-`p ∼ p' g` for some `g ∈ A_a`. -/
-def BassSerreVertex (v₀ : Γ.V) : Type (max u v w) :=
-  Quot (CosetRel 𝔸 (fun a ↦ a) (fun _ ↦ ⊤) v₀)
+/-! ### The Bass–Serre graph -/
+
+-- The source `p A_{src e}` of the dart over `e` given by `p`.
+private def dartSrc : Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀) →
+    Quot (CosetRel 𝔸 (fun a ↦ a) (fun _ ↦ ⊤) v₀) :=
+  Quot.lift (fun y ↦ Quot.mk _ ⟨Γ.src y.1, y.2⟩) fun _ _ ⟨_, _, h, _, hpq⟩ ↦
+    quot_mk_eq_quot_mk_iff.2 ⟨h, Subgroup.mem_top h, hpq⟩
+
+-- The reverse of the dart over `e` given by `p`: the dart over `rev e` given by `p e`.
+private def dartRev : Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀) →
+    Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀) :=
+  Quot.lift (fun y ↦ Quot.mk _ ⟨Γ.rev y.1, y.2.cons (Letter.dart (Γ.dart y.1))⟩) fun _ _ h ↦ by
+    obtain ⟨p, q, _, ⟨c, rfl⟩, h⟩ := h
+    -- `p e ∼ q α_e(c) e ∼ q e ω_e(c)`, and `ω_e(c) = α_{rev e}(c)`.
+    refine quot_mk_eq_quot_mk_iff.2 ⟨_, ⟨(MulEquiv.cast (Γ.toGeomEdge_rev _)).symm c, rfl⟩, ?_⟩
+    rw [α_rev_apply, MulEquiv.apply_symm_apply]
+    exact (h.cons _).trans (Path.Homotopic.dart_ω _ c q).symm
+
+-- The reverse of a dart lies over the reverse of the dart of `Γ` below it.
+private theorem cosetIndex_dartRev (d : Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀)) :
+    cosetIndex (dartRev d) = Γ.rev (cosetIndex d) := by
+  induction d using Quot.ind with | mk y => rfl
+
+-- Appending two darts with the same underlying dart of `Γ` gives the same path, up to the
+-- identification of their endpoints.
+private theorem heq_cons_dart {y : 𝔸.LetterVertex} {a b b' : Γ.V} (q : 𝔸.Path y ⟨a⟩) (f : a ⟶ b)
+    (f' : a ⟶ b') (h : f.1 = f'.1) : q.cons (Letter.dart f) ≍ q.cons (Letter.dart f') := by
+  revert h
+  obtain ⟨e, rfl, rfl⟩ := f
+  obtain ⟨e', -, rfl⟩ := f'
+  intro h
+  obtain rfl : e = e' := h
+  rfl
+
+-- Reversal of darts is an involution.
+private theorem dartRev_dartRev (d : Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀)) :
+    dartRev (dartRev d) = d := by
+  induction d using Quot.ind with | mk y => ?_
+  obtain ⟨e, p⟩ := y
+  -- The dart `rev (rev e)` is only propositionally equal to `e`: transport the representative.
+  have hσ : (⟨Γ.rev (Γ.rev e), (p.cons (Letter.dart (Γ.dart e))).cons
+        (Letter.dart (Γ.dart (Γ.rev e)))⟩ : Σ e : Γ.E, 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) =
+      ⟨e, (p.cons (Letter.dart (Γ.dart e))).cons (Letter.dart (Quiver.reverse (Γ.dart e)))⟩ :=
+    Sigma.ext (Γ.rev_rev e) (heq_cons_dart _ _ _ (by simp))
+  exact (congrArg (Quot.mk _) hσ).trans
+    (quot_mk_eq_quot_mk_of_homotopic (Path.Homotopic.dart_reverse p (Γ.dart e)))
+
+-- No dart is its own reverse.
+private theorem dartRev_ne (d : Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀)) :
+    dartRev d ≠ d := fun h ↦
+  Γ.rev_ne (cosetIndex d) (by rw [← cosetIndex_dartRev, h])
+
+variable (𝔸 v₀) in
+/-- The Bass–Serre graph `X(𝔸, v₀)` of a graph of groups `𝔸` at a base vertex `v₀`. Its vertices
+are the classes `p A_a` of `𝔸`-paths `p` from `v₀` to a vertex `a`, where two paths `p` and `p'`
+ending at `a` give the same vertex when `p ∼ p' g` for some `g ∈ A_a`. Its darts over a dart `e`
+of `Γ` are the classes `p α_e(A_e)` of `𝔸`-paths `p` from `v₀` to the source of `e`, where `p`
+and `p'` give the same dart when `p ∼ p' α_e(c)` for some `c ∈ A_e`. The dart over `e` given by
+`p` runs from `p A_{src e}` to `p e A_{tgt e}`, and its reverse is the dart over `rev e` given by
+`p e`. -/
+def bassSerreGraph : SerreGraph.{max u v w, max u v w} where
+  V := Quot (CosetRel 𝔸 (fun a ↦ a) (fun _ ↦ ⊤) v₀)
+  E := Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀)
+  src := dartSrc
+  rev := dartRev
+  rev_rev := dartRev_dartRev
+  rev_ne := dartRev_ne
 
 variable (𝔸) in
-/-- The darts of the Bass–Serre graph of `𝔸` at `v₀`: for each dart `e` of `Γ`, the classes
-`p α_e(A_e)` of `𝔸`-paths `p` from `v₀` to the source of `e`, where two such paths `p` and `p'`
-give the same dart when `p ∼ p' α_e(c)` for some `c ∈ A_e`. -/
-def BassSerreDart (v₀ : Γ.V) : Type (max u v w) :=
-  Quot (CosetRel 𝔸 Γ.src (fun e ↦ (𝔸.α e).range) v₀)
+/-- The vertices of the Bass–Serre graph `X(𝔸, v₀)`: the classes `p A_a` of `𝔸`-paths `p` from
+`v₀` to a vertex `a`. -/
+abbrev BassSerreVertex (v₀ : Γ.V) : Type (max u v w) :=
+  (𝔸.bassSerreGraph v₀).V
+
+variable (𝔸) in
+/-- The darts of the Bass–Serre graph `X(𝔸, v₀)`: for each dart `e` of `Γ`, the classes
+`p α_e(A_e)` of `𝔸`-paths `p` from `v₀` to the source of `e`. -/
+abbrev BassSerreDart (v₀ : Γ.V) : Type (max u v w) :=
+  (𝔸.bassSerreGraph v₀).E
 
 /-! ### Vertices -/
 
@@ -257,7 +322,8 @@ left, `q · p A_a = q p A_a`. -/
 
 /-- Two vertices of the Bass–Serre graph lie in the same `π₁(𝔸, v₀)`-orbit exactly when they lie
 over the same vertex of `Γ`. -/
-theorem mem_orbit_iff {y z : 𝔸.BassSerreVertex v₀} : z ∈ orbit (π₁ 𝔸 v₀) y ↔ z.proj = y.proj :=
+theorem mem_orbit_iff_proj_eq {y z : 𝔸.BassSerreVertex v₀} :
+    z ∈ orbit (π₁ 𝔸 v₀) y ↔ z.proj = y.proj :=
   mem_orbit_iff_cosetIndex
 
 /-- The stabilizer of the vertex `p A_a` is `p A_a p⁻¹`, the image of `π₁.vertexHom p`. -/
@@ -291,6 +357,12 @@ theorem mk_eq_mk_of_homotopic {p q : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩} (h : p
 @[simp] theorem mk_cons_α (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
     mk e (p.cons (Letter.vertex (𝔸.α e c))) = mk e p :=
   mk_eq_mk_iff.2 ⟨c, .refl _⟩
+
+/-- The path given by an element `α_e(c)` of the vertex group at the source of `e` represents the
+dart over `e` given by the empty path, `α_e(c) α_e(A_e) = α_e(A_e)`. -/
+@[simp] theorem mk_ofVertex_α (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
+    mk e (Path.ofVertex (𝔸.α e c)) = mk e (Quiver.Path.nil : 𝔸.Path ⟨Γ.src e⟩ ⟨Γ.src e⟩) := by
+  rw [Path.ofVertex_eq_nil_cons, mk_cons_α]
 
 /-- Going along a dart and back does not change the dart over `e` given by a path. -/
 @[simp] theorem mk_cons_dart_cons_dart_reverse {b : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩)
@@ -329,121 +401,45 @@ def proj : 𝔸.BassSerreDart v₀ → Γ.E :=
 @[simp] theorem proj_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : (mk e p).proj = e :=
   (rfl)
 
-/-- The source of a dart of the Bass–Serre graph: the dart over `e` given by `p` starts at the
-vertex `p A_{src e}`. -/
-def src : 𝔸.BassSerreDart v₀ → 𝔸.BassSerreVertex v₀ :=
-  lift (fun _ p ↦ BassSerreVertex.mk p) fun _ _ _ _ h ↦ BassSerreVertex.mk_eq_mk_iff.2 ⟨_, h⟩
-
 /-- The dart over `e` given by `p` starts at the vertex `p A_{src e}`. -/
-@[simp] theorem src_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : (mk e p).src = BassSerreVertex.mk p :=
+@[simp] theorem src_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
+    (𝔸.bassSerreGraph v₀).src (mk e p) = BassSerreVertex.mk p :=
   (rfl)
 
 /-- The source of a dart lies over the source of the dart of `Γ` below it. -/
-@[simp] theorem proj_src (d : 𝔸.BassSerreDart v₀) : d.src.proj = Γ.src d.proj :=
+@[simp] theorem proj_src (d : 𝔸.BassSerreDart v₀) :
+    BassSerreVertex.proj ((𝔸.bassSerreGraph v₀).src d) = Γ.src d.proj :=
   induction_on d fun _ _ ↦ rfl
-
-/-- The reverse of a dart of the Bass–Serre graph: the reverse of the dart over `e` given by `p` is
-the dart over `rev e` given by `p e`. -/
-def rev : 𝔸.BassSerreDart v₀ → 𝔸.BassSerreDart v₀ :=
-  lift (fun e p ↦ mk (Γ.rev e) (p.cons (Letter.dart (Γ.dart e)))) fun e p q c h ↦ by
-    -- `p e ∼ q α_e(c) e ∼ q e ω_e(c)`, and `ω_e(c) = α_{rev e}(c)`.
-    refine mk_eq_mk_iff.2 ⟨(MulEquiv.cast (Γ.toGeomEdge_rev e)).symm c, ?_⟩
-    rw [α_rev_apply, MulEquiv.apply_symm_apply]
-    exact (h.cons _).trans (Path.Homotopic.dart_ω e c q).symm
 
 /-- The reverse of the dart over `e` given by `p` is the dart over `rev e` given by `p e`. -/
 @[simp] theorem rev_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
-    (mk e p).rev = mk (Γ.rev e) (p.cons (Letter.dart (Γ.dart e))) :=
+    (𝔸.bassSerreGraph v₀).rev (mk e p) = mk (Γ.rev e) (p.cons (Letter.dart (Γ.dart e))) :=
   (rfl)
 
 /-- The reverse of a dart lies over the reverse of the dart of `Γ` below it. -/
-@[simp] theorem proj_rev (d : 𝔸.BassSerreDart v₀) : d.rev.proj = Γ.rev d.proj :=
+@[simp] theorem proj_rev (d : 𝔸.BassSerreDart v₀) :
+    proj ((𝔸.bassSerreGraph v₀).rev d) = Γ.rev d.proj :=
   induction_on d fun _ _ ↦ rfl
 
--- Equal representatives, as dependent pairs of a dart of `Γ` and a path, give equal darts.
-private theorem mk_eq_mk_of_sigma_eq {e' : Γ.E} {p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩}
-    {p' : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e'⟩} (h : (⟨e, p⟩ : Σ e : Γ.E, 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) = ⟨e', p'⟩) :
-    mk e p = mk e' p' :=
-  congrArg (Quot.mk _) h
-
--- Appending two darts with the same underlying dart of `Γ` gives the same path, up to the
--- identification of their endpoints.
-private theorem heq_cons_dart {y : 𝔸.LetterVertex} {a b b' : Γ.V} (q : 𝔸.Path y ⟨a⟩) (f : a ⟶ b)
-    (f' : a ⟶ b') (h : f.1 = f'.1) : q.cons (Letter.dart f) ≍ q.cons (Letter.dart f') := by
-  revert h
-  obtain ⟨e, rfl, rfl⟩ := f
-  obtain ⟨e', -, rfl⟩ := f'
-  intro h
-  obtain rfl : e = e' := h
-  rfl
-
-/-- Reversal of darts of the Bass–Serre graph is an involution. -/
-@[simp] theorem rev_rev (d : 𝔸.BassSerreDart v₀) : d.rev.rev = d := by
-  induction d using induction_on with | h e p => ?_
-  rw [rev_mk, rev_mk]
-  -- The dart `rev (rev e)` is only propositionally equal to `e`: transport the representative.
-  have hσ : (⟨Γ.rev (Γ.rev e), (p.cons (Letter.dart (Γ.dart e))).cons
-        (Letter.dart (Γ.dart (Γ.rev e)))⟩ : Σ e : Γ.E, 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) =
-      ⟨e, (p.cons (Letter.dart (Γ.dart e))).cons (Letter.dart (Quiver.reverse (Γ.dart e)))⟩ :=
-    Sigma.ext (Γ.rev_rev e) (heq_cons_dart _ _ _ (by simp))
-  exact (mk_eq_mk_of_sigma_eq hσ).trans
-    (mk_eq_mk_of_homotopic (Path.Homotopic.dart_reverse p (Γ.dart e)))
-
 -- The path `p e` is typed as ending at `src (rev e)`, as in `rev_mk`, so that the left-hand side
--- is the result of rewriting `(mk e p).rev.rev` with `rev_mk`.
+-- is the result of rewriting the reverse of the reverse of `mk e p` with `rev_mk`.
 /-- Reversing twice the dart over `e` given by `p` gives it back, `p e (rev e) ∼ p`. -/
 @[simp] theorem mk_rev_rev (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : mk (Γ.rev (Γ.rev e))
     ((p.cons (Letter.dart (Γ.dart e)) : 𝔸.Path ⟨v₀⟩ ⟨Γ.src (Γ.rev e)⟩).cons
       (Letter.dart (Γ.dart (Γ.rev e)))) = mk e p :=
-  rev_rev (mk e p)
+  (𝔸.bassSerreGraph v₀).rev_rev (mk e p)
 
-/-- No dart of the Bass–Serre graph is its own reverse. -/
-theorem rev_ne (d : 𝔸.BassSerreDart v₀) : d.rev ≠ d := fun h ↦
-  Γ.rev_ne d.proj (by rw [← proj_rev, h])
-
-end BassSerreDart
-
-/-! ### The Bass–Serre graph -/
-
-variable (𝔸 v₀) in
-/-- The Bass–Serre graph `X(𝔸, v₀)` of a graph of groups `𝔸` at a base vertex `v₀`. Its vertices
-are the classes `p A_a` of `𝔸`-paths from `v₀`; the dart over a dart `e` of `Γ` given by a path
-`p` runs from `p A_{src e}` to `p e A_{tgt e}`. The vertex and dart types reduce to
-`BassSerreVertex 𝔸 v₀` and `BassSerreDart 𝔸 v₀`, so their constructions apply to `X(𝔸, v₀)`. -/
-abbrev bassSerreGraph : SerreGraph.{max u v w, max u v w} where
-  V := 𝔸.BassSerreVertex v₀
-  E := 𝔸.BassSerreDart v₀
-  src := BassSerreDart.src
-  rev := BassSerreDart.rev
-  rev_rev := BassSerreDart.rev_rev
-  rev_ne := BassSerreDart.rev_ne
-
-namespace BassSerreDart
-
-variable {e : Γ.E}
-
+-- The path `p e` is typed as ending at `src (rev e)`, as in `rev_mk`, so that the right-hand
+-- side is also the source of the reverse of `mk e p` as computed by `rev_mk` and `src_mk`.
 /-- The dart over `e` given by `p` ends at the vertex `p e A_{tgt e}`. -/
 @[simp] theorem tgt_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : (𝔸.bassSerreGraph v₀).tgt (mk e p) =
-    BassSerreVertex.mk (p.cons (Letter.dart (Γ.dart e))) :=
+    BassSerreVertex.mk (p.cons (Letter.dart (Γ.dart e)) : 𝔸.Path ⟨v₀⟩ ⟨Γ.src (Γ.rev e)⟩) :=
   (rfl)
 
 /-- The target of a dart lies over the target of the dart of `Γ` below it. -/
 @[simp] theorem proj_tgt (d : 𝔸.BassSerreDart v₀) :
-    ((𝔸.bassSerreGraph v₀).tgt d).proj = Γ.tgt d.proj :=
+    BassSerreVertex.proj ((𝔸.bassSerreGraph v₀).tgt d) = Γ.tgt d.proj :=
   induction_on d fun _ _ ↦ rfl
-
-/-- The reverse of a dart starts at the target of the dart. -/
-@[simp] theorem src_rev (d : 𝔸.BassSerreDart v₀) : d.rev.src = (𝔸.bassSerreGraph v₀).tgt d :=
-  (rfl)
-
-/-- The reverse of a dart ends at the source of the dart. -/
-@[simp] theorem tgt_rev (d : 𝔸.BassSerreDart v₀) : (𝔸.bassSerreGraph v₀).tgt d.rev = d.src :=
-  congrArg src (rev_rev d)
-
-/-- A dart and its reverse lie on the same geometric edge. -/
-@[simp] theorem toGeomEdge_rev (d : 𝔸.BassSerreDart v₀) :
-    (𝔸.bassSerreGraph v₀).toGeomEdge d.rev = (𝔸.bassSerreGraph v₀).toGeomEdge d :=
-  (𝔸.bassSerreGraph v₀).toGeomEdge_rev d
 
 /-- The action of `π₁(𝔸, v₀)` on the darts of the Bass–Serre graph by concatenation on the
 left. -/
@@ -460,11 +456,13 @@ left. -/
   cosetIndex_smul g d
 
 /-- The action of `π₁(𝔸, v₀)` commutes with taking sources. -/
-@[simp] theorem src_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : (g • d).src = g • d.src :=
+@[simp] theorem src_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) :
+    (𝔸.bassSerreGraph v₀).src (g • d) = g • (𝔸.bassSerreGraph v₀).src d :=
   π₁.induction_on g fun _ ↦ induction_on d fun _ _ ↦ by simp
 
 /-- The action of `π₁(𝔸, v₀)` commutes with reversal. -/
-@[simp] theorem rev_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : (g • d).rev = g • d.rev :=
+@[simp] theorem rev_smul (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) :
+    (𝔸.bassSerreGraph v₀).rev (g • d) = g • (𝔸.bassSerreGraph v₀).rev d :=
   π₁.induction_on g fun _ ↦ induction_on d fun _ _ ↦ by simp
 
 /-- The action of `π₁(𝔸, v₀)` commutes with taking targets. -/
@@ -474,12 +472,14 @@ left. -/
 
 /-- The action of `π₁(𝔸, v₀)` on the Bass–Serre graph has no inversions: no element maps a dart
 to its reverse. -/
-theorem smul_ne_rev (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) : g • d ≠ d.rev := fun h ↦
+theorem smul_ne_rev (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) :
+    g • d ≠ (𝔸.bassSerreGraph v₀).rev d := fun h ↦
   Γ.rev_ne d.proj (by rw [← proj_rev, ← h, proj_smul])
 
 /-- Two darts of the Bass–Serre graph lie in the same `π₁(𝔸, v₀)`-orbit exactly when they lie
 over the same dart of `Γ`. -/
-theorem mem_orbit_iff {d d' : 𝔸.BassSerreDart v₀} : d' ∈ orbit (π₁ 𝔸 v₀) d ↔ d'.proj = d.proj :=
+theorem mem_orbit_iff_proj_eq {d d' : 𝔸.BassSerreDart v₀} :
+    d' ∈ orbit (π₁ 𝔸 v₀) d ↔ d'.proj = d.proj :=
   mem_orbit_iff_cosetIndex
 
 /-- The stabilizer of the dart over `e` given by `p` is `p α_e(A_e) p⁻¹`. -/
@@ -489,22 +489,24 @@ theorem stabilizer_mk (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) :
 
 /-- A dart and its reverse have the same stabilizer. -/
 @[simp] theorem stabilizer_rev (d : 𝔸.BassSerreDart v₀) :
-    stabilizer (π₁ 𝔸 v₀) d.rev = stabilizer (π₁ 𝔸 v₀) d := by
+    stabilizer (π₁ 𝔸 v₀) ((𝔸.bassSerreGraph v₀).rev d) = stabilizer (π₁ 𝔸 v₀) d := by
   ext g
   rw [mem_stabilizer_iff, mem_stabilizer_iff, ← rev_smul,
-    (Function.Involutive.injective rev_rev).eq_iff]
+    (𝔸.bassSerreGraph v₀).rev_injective.eq_iff]
 
 end BassSerreDart
 
--- The path `p e` is typed as ending at `src (rev e)`, as in `BassSerreDart.rev_mk`, so that the
--- left-hand side is the target of `(BassSerreDart.mk e p).rev` as computed by `tgt_mk`.
+-- The paths `p e` and `p e (rev e)` are typed as ending at `src (rev e)` and `src (rev (rev e))`,
+-- as in `BassSerreDart.rev_mk` and `BassSerreDart.tgt_mk`, so that the left-hand side is the
+-- target of the reverse of `BassSerreDart.mk e p` as computed by these two lemmas.
 /-- Going along the dart `e` of `Γ` and back along `rev e` does not change the vertex,
 `p e (rev e) A_{src e} = p A_{src e}`. -/
 @[simp] theorem BassSerreVertex.mk_cons_dart_cons_dart_rev {e : Γ.E}
     (p : 𝔸.Path ⟨v₀⟩ ⟨Γ.src e⟩) : BassSerreVertex.mk
-      ((p.cons (Letter.dart (Γ.dart e)) : 𝔸.Path ⟨v₀⟩ ⟨Γ.src (Γ.rev e)⟩).cons
-        (Letter.dart (Γ.dart (Γ.rev e)))) = BassSerreVertex.mk p :=
-  congrArg BassSerreDart.src (BassSerreDart.mk_rev_rev p)
+      (((p.cons (Letter.dart (Γ.dart e)) : 𝔸.Path ⟨v₀⟩ ⟨Γ.src (Γ.rev e)⟩).cons
+        (Letter.dart (Γ.dart (Γ.rev e)))) : 𝔸.Path ⟨v₀⟩ ⟨Γ.src (Γ.rev (Γ.rev e))⟩) =
+      BassSerreVertex.mk p :=
+  congrArg (𝔸.bassSerreGraph v₀).src (BassSerreDart.mk_rev_rev p)
 
 variable (𝔸 v₀) in
 /-- The action of `π₁(𝔸, v₀)` on its Bass–Serre graph by concatenation on the left, as a
@@ -530,17 +532,6 @@ def bassSerreAction : π₁ 𝔸 v₀ →* (𝔸.bassSerreGraph v₀).Aut where
     (𝔸.bassSerreAction v₀ g).equivE = MulAction.toPerm g :=
   (rfl)
 
--- The vertex and dart types of `bassSerreGraph 𝔸 v₀` reduce to `BassSerreVertex 𝔸 v₀` and
--- `BassSerreDart 𝔸 v₀` during instance search, where the actions of `SerreGraph.Aut` on `Γ.V`
--- and `Γ.E` are not found; these two instances are those actions, at the reduced types.
-/-- Automorphisms of the Bass–Serre graph act on its vertices. -/
-instance : MulAction (𝔸.bassSerreGraph v₀).Aut (𝔸.BassSerreVertex v₀) :=
-  SerreGraph.Aut.instMulActionV (Γ := 𝔸.bassSerreGraph v₀)
-
-/-- Automorphisms of the Bass–Serre graph act on its darts. -/
-instance : MulAction (𝔸.bassSerreGraph v₀).Aut (𝔸.BassSerreDart v₀) :=
-  SerreGraph.Aut.instMulActionE (Γ := 𝔸.bassSerreGraph v₀)
-
 /-- The automorphism given by `g` acts on the vertices as `g` does. -/
 @[simp] theorem bassSerreAction_smul_vertex (g : π₁ 𝔸 v₀) (y : 𝔸.BassSerreVertex v₀) :
     𝔸.bassSerreAction v₀ g • y = g • y :=
@@ -553,7 +544,7 @@ instance : MulAction (𝔸.bassSerreGraph v₀).Aut (𝔸.BassSerreDart v₀) :=
 
 /-- The action of `π₁(𝔸, v₀)` on its Bass–Serre graph by automorphisms has no inversions. -/
 theorem bassSerreAction_smul_ne_rev (g : π₁ 𝔸 v₀) (d : 𝔸.BassSerreDart v₀) :
-    𝔸.bassSerreAction v₀ g • d ≠ d.rev :=
+    𝔸.bassSerreAction v₀ g • d ≠ (𝔸.bassSerreGraph v₀).rev d :=
   BassSerreDart.smul_ne_rev g d
 
 variable (𝔸 v₀) in
