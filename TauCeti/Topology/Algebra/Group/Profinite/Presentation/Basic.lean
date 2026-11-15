@@ -968,7 +968,6 @@ theorem presentedProPGen_of_lt {i : ℕ} (h : i < n) :
     presentedProPGen p n rels i = presentedProP.of p rels ⟨i, h⟩ := by
   rw [← presentedProP.mk_freeProPGen, freeProPGen_of_lt p h, presentedProP.mk_of]
 
-variable {n} in
 /-- Out of range, `presentedProPGen p n rels i` is `1`. -/
 @[simp]
 theorem presentedProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : presentedProPGen p n rels i = 1 := by
@@ -980,6 +979,7 @@ theorem presentedProPGen_val (i : Fin n) :
     presentedProPGen p n rels i = presentedProP.of p rels i := by
   rw [← presentedProP.mk_freeProPGen, freeProPGen_val, presentedProP.mk_of]
 
+variable {p n rels} in
 /-- The value of a homomorphism on the `ℕ`-indexed generators of a presented group. -/
 theorem map_presentedProPGen {K F : Type*} [MulOneClass K]
     [FunLike F (presentedProP p (Fin n) rels) K]
@@ -988,7 +988,7 @@ theorem map_presentedProPGen {K F : Type*} [MulOneClass K]
       if h : i < n then φ (presentedProP.of p rels ⟨i, h⟩) else 1 := by
   split_ifs with h
   · rw [presentedProPGen_of_lt p rels h]
-  · rw [presentedProPGen_eq_one_of_le p rels (not_lt.mp h), map_one]
+  · rw [presentedProPGen_eq_one_of_le p n rels (not_lt.mp h), map_one]
 
 /-- The quotient map carries the tuple `freeProPGen` to the tuple `presentedProPGen`: the
 function-level form of `TauCeti.presentedProP.mk_freeProPGen`, which lets a word read on
