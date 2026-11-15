@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -65,6 +66,12 @@ namespace TauCeti
 
 variable {n : ℕ}
 
+/-- A linear isomorphism `Q` shrinks norms by at most the factor `‖Q⁻¹‖`. -/
+private theorem norm_le_norm_symm_mul (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    (ξ : CoordinateSpace n) :
+    ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ := by
+  simpa using (Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm (Q ξ)
+
 namespace Symbol
 
 variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
@@ -97,9 +104,8 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
     · calc ‖Q ξ‖ ≤ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖ξ‖ :=
             (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ
         _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
-    · calc ‖ξ‖ = ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) (Q ξ)‖ := by simp
-        _ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-            ContinuousLinearMap.le_opNorm _ _
+    · calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
+            norm_le_norm_symm_mul Q ξ
         _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
   have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
       ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
@@ -121,9 +127,8 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
     _ = _ := by ring
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear
-isomorphism `Q` of frequencies, `(x, ξ) ↦ a(P x, Q ξ)` is again a symbol of order `m`: by the chain
-rule its mixed derivatives are combinations of those of `a` at `(P x, Q ξ)`, and the weights
-`⟨Q ξ⟩` and `⟨ξ⟩` are comparable. -/
+isomorphism `Q` of frequencies, the symbol `(x, ξ) ↦ a(P x, Q ξ)` of order `m`, as a `ℂ`-linear map
+on `Symbol n V W m`. -/
 def compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
   toFun a :=
@@ -200,30 +205,6 @@ theorem HasCompactSpatialSupport.compProdMap {a : Symbol n V W m}
 
 end Symbol
 
-namespace HomogeneousSymbol
-
-variable {X X' E E' : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup X']
-  [NormedSpace ℝ X'] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
-
-/-- A linear change of variables `(x, ξ) ↦ a(P x, Q ξ)` in a homogeneous symbol of degree `m`, for
-a linear map `P` of positions and a linear isomorphism `Q` of frequencies. -/
-def compProdMap (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E) (a : HomogeneousSymbol X E V W m) :
-    HomogeneousSymbol X' E' V W m where
-  coefficient := a.coefficient ∘ P.prodMap (Q : E' →L[ℝ] E)
-  zero_covector x := by simp
-  contDiffOn_coefficient := a.contDiffOn_coefficient.comp
-    (P.prodMap (Q : E' →L[ℝ] E)).contDiff.contDiffOn fun p hp => by simpa using hp
-  homogeneous x ξ t ht := by simpa using a.homogeneous (P x) (Q ξ) t ht
-
-@[simp]
-theorem coefficient_compProdMap (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E)
-    (a : HomogeneousSymbol X E V W m) (p : X' × E') :
-    (a.compProdMap P Q).coefficient p = a.coefficient (P p.1, Q p.2) := (rfl)
-
-end HomogeneousSymbol
-
 namespace ClassicalSymbol
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
@@ -242,52 +223,68 @@ private theorem isSmoothing_compProdMap_cutoffSymbol_sub
   refine Symbol.isSmoothing_of_coefficient_eq_zero (2 * c) fun x ξ hξ => ?_
   have hQ : 2 ≤ ‖Q ξ‖ := by
     have h1 : ‖ξ‖ ≤ c * ‖Q ξ‖ :=
-      calc ‖ξ‖ = ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) (Q ξ)‖ := by simp
-        _ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-            ContinuousLinearMap.le_opNorm _ _
+      calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
+            norm_le_norm_symm_mul Q ξ
         _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_right _ _
     nlinarith
   simp [χ.apply_eq_one_of_two_le_norm hQ,
     χ.apply_eq_one_of_two_le_norm (show 2 ≤ ‖ξ‖ by nlinarith)]
 
 /-- **Linear change of variables in a classical symbol.** For a linear map `P` of positions and a
-linear isomorphism `Q` of frequencies, `(x, ξ) ↦ a(P x, Q ξ)` is again a classical symbol of
-order `m`, whose homogeneous terms are those of `a` transformed in the same way. -/
+linear isomorphism `Q` of frequencies, the classical symbol `(x, ξ) ↦ a(P x, Q ξ)` of order `m`,
+whose homogeneous terms are those of `a` transformed in the same way, as a `ℂ`-linear map on
+`ClassicalSymbol n V W m`. -/
 def compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
-    ClassicalSymbol n V W m where
-  toSymbol := Symbol.compProdMap P Q a.toSymbol
-  term j := (a.term j).compProdMap P Q
-  exists_remainder' := by
-    obtain ⟨χ, -⟩ := a.exists_remainder'
-    refine ⟨χ, fun N => ?_⟩
-    obtain ⟨r, hr⟩ := a.exists_remainder χ N
-    choose s hs using fun j => Symbol.isSmoothing_iff.1
-      (isSmoothing_compProdMap_cutoffSymbol_sub P Q χ (a.term j)) (m - N)
-    refine ⟨Symbol.compProdMap P Q r + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
-    simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum, Finset.sum_apply, hs,
-      Symbol.coefficient_compProdMap, hr, Symbol.coefficient_sub, Pi.sub_apply,
-      HomogeneousSymbol.coefficient_cutoffSymbol, HomogeneousSymbol.coefficient_compProdMap,
-      Finset.sum_sub_distrib]
-    abel
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymbol n V W m where
+  toFun a :=
+    { toSymbol := Symbol.compProdMap P Q a.toSymbol
+      term j := (a.term j).compProdMap P Q
+      exists_remainder' := by
+        obtain ⟨χ, -⟩ := a.exists_remainder'
+        refine ⟨χ, fun N => ?_⟩
+        obtain ⟨r, hr⟩ := a.exists_remainder χ N
+        choose s hs using fun j => Symbol.isSmoothing_iff.1
+          (isSmoothing_compProdMap_cutoffSymbol_sub P Q χ (a.term j)) (m - N)
+        refine ⟨Symbol.compProdMap P Q r + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
+        simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum,
+          Finset.sum_apply, hs, Symbol.coefficient_compProdMap, hr, Symbol.coefficient_sub,
+          Pi.sub_apply, HomogeneousSymbol.coefficient_cutoffSymbol,
+          HomogeneousSymbol.coefficient_compProdMap, Finset.sum_sub_distrib]
+        abel }
+  map_add' a b := ext (map_add (Symbol.compProdMap P Q) a.toSymbol b.toSymbol)
+  map_smul' c a := ext (map_smul (Symbol.compProdMap P Q) c a.toSymbol)
 
 @[simp]
 theorem toSymbol_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
-    (a.compProdMap P Q).toSymbol = Symbol.compProdMap P Q a.toSymbol := (rfl)
+    (compProdMap P Q a).toSymbol = Symbol.compProdMap P Q a.toSymbol := (rfl)
 
 @[simp]
 theorem term_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) (j : ℕ) :
-    (a.compProdMap P Q).term j = (a.term j).compProdMap P Q := (rfl)
+    (compProdMap P Q a).term j = (a.term j).compProdMap P Q := (rfl)
 
-/-- **The principal symbol transforms as a function on the cotangent bundle.** Under the linear
-change of variables `(x, ξ) ↦ (P x, Q ξ)`, the principal symbol of the transformed classical symbol
-is the transformed principal symbol. -/
+/-- The identity change of variables leaves a classical symbol unchanged. -/
+@[simp]
+theorem compProdMap_id (a : ClassicalSymbol n V W m) :
+    compProdMap (.id ℝ (CoordinateSpace n)) (.refl ℝ (CoordinateSpace n)) a = a :=
+  ext (by simp)
+
+/-- Two successive linear changes of variables compose: first `(P, Q)`, then `(P', Q')`. -/
+@[simp]
+theorem compProdMap_compProdMap (P P' : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q Q' : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
+    compProdMap P' Q' (compProdMap P Q a) = compProdMap (P.comp P') (Q'.trans Q) a :=
+  ext (by simp)
+
+/-- **The principal symbol commutes with linear changes of variables.** Under the linear change of
+variables `(x, ξ) ↦ (P x, Q ξ)`, the principal symbol of the transformed classical symbol is the
+transformed principal symbol. -/
 @[simp]
 theorem principal_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
-    (a.compProdMap P Q).principal = a.principal.compProdMap P Q :=
+    (compProdMap P Q a).principal = a.principal.compProdMap P Q :=
   HomogeneousSymbol.ext (funext fun p => by simp)
 
 end ClassicalSymbol
@@ -321,8 +318,9 @@ theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (a : E × E → V �
       rw [ContinuousLinearMap.adjoint_toLinearMap]
       ext ζ
       simp [B]
-    rw [hB, LinearMap.det_adjoint, star_trivial, ← LinearEquiv.det_coe_symm]
-    rfl
+    rw [hB, LinearMap.det_adjoint, star_trivial,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+      ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm]
   have hfun : (fun ζ => a (x, (2 * π) • ζ)
       (𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) ζ)) =
       |(A.toLinearEquiv : E →ₗ[ℝ] E).det|⁻¹ • (h ∘ B) := by
@@ -338,11 +336,8 @@ theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (a : E × E → V �
       simp [B]
     rw [this, ContinuousLinearMap.adjoint_adjoint]
   have hdet : (A.toLinearEquiv : E →ₗ[ℝ] E).det ≠ 0 := A.toLinearEquiv.isUnit_det'.ne_zero
-  have hsmul (c : ℝ) (k : E → W) (y : E) : 𝓕⁻ (c • k) y = c • 𝓕⁻ k y := by
-    simp only [Real.fourierInv_eq, Pi.smul_apply, ← integral_smul]
-    congr 1 with v
-    rw [smul_comm]
-  rw [hfun, hsmul, B.fourierInv_comp, hBA, hdetB]
+  rw [hfun, ← Complex.coe_smul, Real.fourierInv_const_smul, Pi.smul_apply, Complex.coe_smul,
+    B.fourierInv_comp, hBA, hdetB]
   simp only [ContinuousLinearEquiv.symm_apply_apply, h, smul_smul, abs_inv, inv_inv]
   rw [inv_mul_cancel₀ (abs_ne_zero.2 hdet), one_smul, ContinuousLinearEquiv.coe_coe]
 

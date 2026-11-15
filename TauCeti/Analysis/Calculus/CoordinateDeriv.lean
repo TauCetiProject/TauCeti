@@ -654,45 +654,28 @@ theorem norm_iteratedFDeriv_append_le {a : CoordinateSpace n × CoordinateSpace 
       (∏ i, ‖u i‖) * (∏ i, ‖w i‖) * ∑ r : Fin (k₁ + k₂) → Fin n,
         ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd k₂ i))
           (List.ofFn fun i => r (Fin.natAdd k₁ i)) a x ξ‖ := by
-  classical
-  set M := iteratedFDeriv ℝ (k₁ + k₂) a (x, ξ)
-  -- Expand each direction in the standard basis of its own factor.
-  set c : Fin (k₁ + k₂) → Fin n → ℝ := Fin.append (fun i l => u i l) fun i l => w i l with hc
-  set g : Fin (k₁ + k₂) → Fin n → CoordinateSpace n × CoordinateSpace n :=
-    Fin.append (fun _ l => (EuclideanSpace.single l 1, 0)) fun _ l =>
-      (0, EuclideanSpace.single l 1) with hg
-  have hsum (v : CoordinateSpace n) : ∑ l, v l • EuclideanSpace.single l (1 : ℝ) = v := by
-    simpa [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] using
-      (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v
+  -- Precompose the derivative with the inclusions of the position and frequency factors.
+  set ι : Fin (k₁ + k₂) → CoordinateSpace n →L[ℝ] CoordinateSpace n × CoordinateSpace n :=
+    Fin.append (fun _ => .inl ℝ _ _) fun _ => .inr ℝ _ _ with hι
+  set N := (iteratedFDeriv ℝ (k₁ + k₂) a (x, ξ)).compContinuousLinearMap ι
   have hv : (Fin.append (fun i => (u i, 0)) fun i => (0, w i) :
-      Fin (k₁ + k₂) → CoordinateSpace n × CoordinateSpace n) = fun j => ∑ l, c j l • g j l := by
+      Fin (k₁ + k₂) → CoordinateSpace n × CoordinateSpace n) = fun j => ι j (Fin.append u w j) := by
     funext j
-    refine Fin.addCases (fun i => ?_) (fun i => ?_) j
-    · simp only [Fin.append_left, hc, hg]
-      ext1
-      · simp [Prod.fst_sum, hsum]
-      · simp [Prod.snd_sum]
-    · simp only [Fin.append_right, hc, hg]
-      ext1
-      · simp [Prod.fst_sum]
-      · simp [Prod.snd_sum, hsum]
-  have hcoef (r : Fin (k₁ + k₂) → Fin n) :
-      ∏ j, ‖c j (r j)‖ ≤ (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
-    rw [Fin.prod_univ_add]
-    gcongr with i _ i _
-    · simpa [hc] using PiLp.norm_apply_le (u i) _
-    · simpa [hc] using PiLp.norm_apply_le (w i) _
-  have hterm (r : Fin (k₁ + k₂) → Fin n) : M (fun j => g j (r j)) =
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) j <;> simp [hι]
+  have hterm (r : Fin (k₁ + k₂) → Fin n) : N (fun j => EuclideanSpace.single (r j) 1) =
       mixedDeriv (List.ofFn fun i => r (Fin.castAdd k₂ i))
         (List.ofFn fun i => r (Fin.natAdd k₁ i)) a x ξ := by
-    rw [mixedDeriv_ofFn_eq_iteratedFDeriv_append _ _ ha]
+    rw [ContinuousMultilinearMap.compContinuousLinearMap_apply,
+      mixedDeriv_ofFn_eq_iteratedFDeriv_append _ _ ha]
     congr 1
     funext j
-    refine Fin.addCases (fun i => ?_) (fun i => ?_) j <;> simp [hg]
-  rw [hv, M.map_sum, Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
-  rw [M.map_smul_univ, norm_smul, norm_prod, hterm]
-  exact mul_le_mul_of_nonneg_right (hcoef r) (norm_nonneg _)
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) j <;> simp [hι]
+  rw [hv, ← ContinuousMultilinearMap.compContinuousLinearMap_apply, mul_comm]
+  refine (N.le_opNorm _).trans ?_
+  rw [Fin.prod_univ_add]
+  simp only [Fin.append_left, Fin.append_right]
+  gcongr
+  exact N.norm_le_sum_single.trans_eq (by simp only [hterm])
 
 /-- **Chain rule for mixed derivatives.** For linear maps `P` and `Q` and a `C^(|α| + |β|)`
 function `a`, the mixed derivative `∂_x^α ∂_ξ^β` of `a ∘ (P × Q)` is the Fréchet derivative of `a`
