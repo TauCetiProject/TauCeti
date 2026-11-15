@@ -11,6 +11,13 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Topology.Circle.Degree
+import Mathlib.Analysis.CStarAlgebra.Matrix
+import Mathlib.Analysis.CStarAlgebra.Spectrum
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The Maslov index of a path of Lagrangian frames
@@ -65,15 +72,39 @@ frames by a fixed real orthogonal matrix does not change it
 (`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). The localization axiom for nondiagonal `A` is
 deduced from the diagonal case in `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`.
 For paths of graphs, the comparison with the definition of the index by crossing forms is in
-`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`. The zero axiom of Robbin and Salamon, that
-the index vanishes on a path along which the dimension of `U t ℝⁿ ∩ ℝⁿ` is constant, is not proved
-here.
+`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`.
+
+**The zero axiom.** Robbin and Salamon's zero axiom says that the index vanishes on a path along
+which the dimension of `U t ℝⁿ ∩ ℝⁿ` is constant, that is, along which nothing crosses `ℝⁿ`. In
+the spectral picture, the crossings are the passages of eigenvalues of `W t` through `1`. We prove
+the axiom in this form: if the eigenvalue `1` of the Souriau maps `W t` keeps its algebraic
+multiplicity `k` along the path, the index vanishes
+(`Matrix.UnitaryGroup.maslovIndex_eq_zero_of_forall_count_eq`). Two facts combine.
+
+* The eigenvalues of `W t` move continuously, matched with multiplicity. Those near the eigenvalue
+  `1` of `W t₀` are equal to `1` by the constancy of `k`, and the others stay away from `1`, where
+  `arg (-λ)` is continuous, so `t ↦ s(W t)` is continuous (`Matrix.continuousAt_spectralAngleSum`).
+* For a unitary `W` of size `n`, `det W = (-1) ^ (n - k) e^{2πi s(W)}`
+  (`Matrix.UnitaryGroup.det_eq_neg_one_pow_mul_exp_spectralAngleSum`), because an eigenvalue
+  `λ ≠ 1` on the unit circle has `e^{i arg (-λ)} = -λ`.
+
+So `2π s(W t) + π (n - k)` is a continuous angle of `det (W t)`, and the angle it sweeps is
+`2π (s(W 1) - s(W 0))`, which the spectral terms of the index cancel. The identification of the
+algebraic multiplicity of the eigenvalue `1` of `W` with the dimension of `U ℝⁿ ∩ ℝⁿ` is not
+proved here.
 
 ## Main declarations
 
 * `Matrix.spectralAngleSum`: the sum of `arg (-λ) / (2π)` over the eigenvalues `λ ≠ 1`.
+* `Matrix.continuousAt_spectralAngleSum`: it is continuous along families of matrices in which no
+  eigenvalue reaches `1` or leaves it.
 * `Matrix.UnitaryGroup.souriau`: the Souriau map `U ↦ U Uᵀ`.
 * `Matrix.UnitaryGroup.maslovIndex`: the Maslov index of a path of Lagrangian frames.
+* `Matrix.UnitaryGroup.norm_eq_one_of_mem_roots_charpoly`: the eigenvalues of a unitary matrix lie
+  on the unit circle.
+* `Matrix.UnitaryGroup.det_eq_neg_one_pow_mul_exp_spectralAngleSum`: the determinant of a unitary
+  matrix through its spectral angle sum.
+* `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_forall_count_eq`: the zero axiom.
 
 ## References
 
@@ -134,6 +165,93 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   have h := charpoly_units_conj (⟨P, Q, hPQ, hQP⟩ : (Matrix n n ℂ)ˣ) W
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
+
+/-- Away from `1`, the offset `arg (-z) / (2π)` is continuous at every `z` with `-z` in the slit
+plane, for instance at every point of the unit circle other than `1`. -/
+private theorem continuousAt_angleOffset {z : ℂ} (hz : z ≠ 1) (hz' : -z ∈ slitPlane) :
+    ContinuousAt angleOffset z := by
+  have h : (fun w : ℂ => arg (-w) / (2 * Real.pi)) =ᶠ[nhds z] angleOffset := by
+    filter_upwards [eventually_ne_nhds hz] with w hw
+    simp [angleOffset, hw]
+  exact (((continuousAt_arg hz').comp continuous_neg.continuousAt).div_const _).congr h
+
+/-- If `b` takes the value `c` as often as `a` does, and `b i = c` forces `a i = c`, then `a` and
+`b` take the value `c` at the same indices. -/
+private theorem eq_of_count_map_eq {ι α : Type*} [Fintype ι] [DecidableEq α] {a b : ι → α} {c : α}
+    (hcount : ((Finset.univ : Finset ι).val.map b).count c =
+      ((Finset.univ : Finset ι).val.map a).count c)
+    (hba : ∀ i, b i = c → a i = c) (i : ι) (hai : a i = c) : b i = c := by
+  classical
+  have hcard : (Finset.univ.filter fun i => a i = c) = Finset.univ.filter fun i => b i = c := by
+    refine (Finset.eq_of_subset_of_card_le (fun i => by simpa using hba i) ?_).symm
+    rw [Multiset.count_map, Multiset.count_map] at hcount
+    simp only [eq_comm (a := c)] at hcount
+    exact hcount.ge
+  have : i ∈ Finset.univ.filter fun i => b i = c := hcard ▸ by simpa using hai
+  simpa using this
+
+/-- **Continuity of the spectral angle sum.** Let `A x` be square complex matrices depending
+continuously on `x` at `x₀`, such that no eigenvalue `λ ≠ 1` of `A x₀` is a nonnegative real number,
+and such that near `x₀` the algebraic multiplicity of the eigenvalue `1` of `A x` is that of `A x₀`.
+Then the spectral angle sum of `A x` is continuous at `x₀`.
+
+The eigenvalues of `A x` stay close to those of `A x₀`, matched with multiplicity. Those near the
+eigenvalue `1` of `A x₀` are all equal to `1`, by the constancy of its multiplicity, and contribute
+nothing, while the others stay away from `[0, ∞)`, where `arg (-λ)` is continuous. -/
+theorem continuousAt_spectralAngleSum {X : Type*} [TopologicalSpace X] {A : X → Matrix n n ℂ}
+    {x₀ : X} (hA : ContinuousAt A x₀)
+    (hroots : ∀ z ∈ (A x₀).charpoly.roots, z ≠ 1 → -z ∈ slitPlane)
+    (hcount : ∀ᶠ x in nhds x₀,
+      (A x).charpoly.roots.count 1 = (A x₀).charpoly.roots.count 1) :
+    ContinuousAt (fun x => spectralAngleSum (A x)) x₀ := by
+  classical
+  rw [Metric.continuousAt_iff']
+  intro ε hε
+  set d := Fintype.card n
+  have hε' : 0 < ε / (d + 1) := by positivity
+  -- A radius `δ` within which the eigenvalues `≠ 1` of `A x₀` keep their offsets
+  -- `ε / (d + 1)`-close and do not move to `1`.
+  have hgood : ∀ z ∈ (A x₀).charpoly.roots.toFinset, ∀ᶠ δ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+      z ≠ 1 → ∀ w, dist w z < δ → w ≠ 1 ∧ dist (angleOffset w) (angleOffset z) < ε / (d + 1) := by
+    intro z hz
+    by_cases h1 : z = 1
+    · exact Filter.Eventually.of_forall fun _ h => absurd h1 h
+    obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 ((eventually_ne_nhds h1).and
+      (Metric.continuousAt_iff'.1
+        (continuousAt_angleOffset h1 (hroots z (Multiset.mem_toFinset.1 hz) h1)) _ hε'))
+    filter_upwards [Ioo_mem_nhdsGT hr] with δ hδ _ w hw
+    exact hball (hw.trans hδ.2)
+  obtain ⟨δ, hδ, hδpos⟩ :=
+    ((Filter.eventually_all_finset _).2 hgood |>.and self_mem_nhdsWithin).exists
+  have hF : ∀ i ≤ d, ContinuousAt (fun x => (A x).charpoly.coeff i) x₀ := fun i _ =>
+    (continuous_charpoly_coeff i).continuousAt.comp hA
+  have hdeg : ∀ᶠ x in nhds x₀, (A x).charpoly.degree = d :=
+    Filter.Eventually.of_forall fun x => charpoly_degree_eq_dim (A x)
+  filter_upwards [Polynomial.eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt hF hdeg
+    (Set.mem_Ioi.1 hδpos), hcount] with x ⟨a, b, ha, hb, hab⟩ hx
+  have hra : (A x₀).charpoly.roots = (Finset.univ : Finset (Fin d)).val.map a :=
+    Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C (charpoly_monic _).ne_zero ha
+  have hrb : (A x).charpoly.roots = (Finset.univ : Finset (Fin d)).val.map b :=
+    Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C (charpoly_monic _).ne_zero hb
+  -- An index with `b i = 1` has `a i = 1`; as both values occur equally often, conversely.
+  have hba : ∀ i, b i = 1 → a i = 1 := fun i hbi => by
+    by_contra hai
+    exact (hδ (a i) (by simp [hra]) hai (b i) (by rw [dist_eq_norm, norm_sub_rev]; exact hab i)).1
+      hbi
+  have hab' := eq_of_count_map_eq (by rwa [← hra, ← hrb]) hba
+  rw [spectralAngleSum, spectralAngleSum, hra, hrb, Multiset.map_map, Multiset.map_map,
+    ← Finset.sum_eq_multiset_sum, ← Finset.sum_eq_multiset_sum]
+  calc dist (∑ i, (angleOffset ∘ b) i) (∑ i, (angleOffset ∘ a) i)
+      ≤ ∑ i : Fin d, dist ((angleOffset ∘ b) i) ((angleOffset ∘ a) i) := dist_sum_sum_le _ _ _
+    _ ≤ ∑ _i : Fin d, ε / (d + 1) := Finset.sum_le_sum fun i _ => by
+        by_cases hai : a i = 1
+        · simp [Function.comp_apply, hai, hab' i hai, hε'.le]
+        · exact (hδ (a i) (by simp [hra]) hai (b i)
+            (by rw [dist_eq_norm, norm_sub_rev]; exact hab i)).2.le
+    _ < ε := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_div_assoc',
+          div_lt_iff₀ (by positivity)]
+        nlinarith
 
 namespace UnitaryGroup
 
@@ -307,6 +425,133 @@ theorem maslovIndex_eq_two_mul_degree {U : unitaryGroup n ℂ} (γ : Path U U) :
       ((γ.map continuous_detCircle).map (continuous_pow 2)) fun t => by simp [detCircle_souriau],
     Circle.degree_map_pow]
   push_cast
+  ring
+
+/-! ### The zero axiom -/
+
+/-- The eigenvalues of a unitary matrix, with multiplicity, are the diagonal entries of a diagonal
+unitary matrix conjugate to it. -/
+private theorem exists_roots_charpoly_eq_map (W : unitaryGroup n ℂ) :
+    ∃ z : n → Circle, (W : Matrix n n ℂ).charpoly.roots =
+      (Finset.univ : Finset n).val.map fun i => (z i : ℂ) := by
+  obtain ⟨z, hz⟩ := TauCeti.exists_isConj_unitaryTorusHom W
+  obtain ⟨c, hc⟩ := isConj_iff.1 hz
+  refine ⟨z, ?_⟩
+  have hcc : (c : Matrix n n ℂ) * (c⁻¹ : unitaryGroup n ℂ) = 1 :=
+    congrArg Subtype.val (mul_inv_cancel c)
+  have hcc' : ((c⁻¹ : unitaryGroup n ℂ) : Matrix n n ℂ) * c = 1 :=
+    congrArg Subtype.val (inv_mul_cancel c)
+  have h := charpoly_units_conj (⟨c, (c⁻¹ : unitaryGroup n ℂ), hcc, hcc'⟩ : (Matrix n n ℂ)ˣ) W
+  rw [Units.val_mk, inv_eq_left_inv hcc'] at h
+  have hD : (c : Matrix n n ℂ) * W * ((c⁻¹ : unitaryGroup n ℂ) : Matrix n n ℂ) =
+      diagonal fun i => (z i : ℂ) := by
+    rw [← TauCeti.coe_unitaryTorusHom, ← hc]
+    rfl
+  rw [← h, hD, charpoly_diagonal]
+  exact Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C
+    (Polynomial.monic_prod_of_monic _ _ fun i _ => Polynomial.monic_X_sub_C _).ne_zero
+    (by rw [(Polynomial.monic_prod_of_monic _ _ fun i _ => Polynomial.monic_X_sub_C _).leadingCoeff,
+      Polynomial.C_1, one_mul])
+
+open scoped Matrix.Norms.L2Operator in
+/-- The eigenvalues of a unitary matrix lie on the unit circle: this is
+`Unitary.spectrum_subset_circle` for the `C⋆`-algebra of matrices with the `ℓ²` operator norm. -/
+theorem norm_eq_one_of_mem_roots_charpoly (W : unitaryGroup n ℂ) {z : ℂ}
+    (hz : z ∈ (W : Matrix n n ℂ).charpoly.roots) : ‖z‖ = 1 :=
+  mem_sphere_zero_iff_norm.1 <| Unitary.spectrum_subset_circle W <|
+    mem_spectrum_iff_isRoot_charpoly.2 (Polynomial.isRoot_of_mem_roots hz)
+
+/-- A point `z ≠ 1` of the unit circle is not a nonnegative real number, so `-z` lies in the slit
+plane. -/
+private theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (h1 : z ≠ 1) :
+    -z ∈ slitPlane := by
+  rw [mem_slitPlane_iff, neg_re, neg_im, neg_pos, ne_eq, neg_eq_zero]
+  by_contra! h
+  refine h1 (Complex.ext ?_ (by simpa using h.2))
+  have hre : ‖z‖ = |z.re| := by rw [← Complex.re_add_im z, h.2]; simp
+  rw [hz, abs_of_nonneg h.1] at hre
+  simpa using hre.symm
+
+/-- **The determinant through the spectral angle sum.** A unitary matrix `W` of size `n` whose
+eigenvalue `1` has algebraic multiplicity `k` satisfies `det W = (-1) ^ (n - k) e^{2πi s(W)}`:
+each eigenvalue `λ ≠ 1` contributes `e^{i arg (-λ)} = -λ` to the exponential, and the eigenvalue
+`1` contributes `1` to both sides. So for an angle `θ` of `det W`, the class of `θ / (2π) - s(W)`
+modulo one only depends on `n - k`. -/
+theorem det_eq_neg_one_pow_mul_exp_spectralAngleSum (W : unitaryGroup n ℂ) :
+    (W : Matrix n n ℂ).det =
+      (-1) ^ (Fintype.card n - (W : Matrix n n ℂ).charpoly.roots.count 1) *
+        Complex.exp (↑(2 * Real.pi * spectralAngleSum (W : Matrix n n ℂ)) * Complex.I) := by
+  classical
+  obtain ⟨z, hz⟩ := exists_roots_charpoly_eq_map W
+  have hcount : (W : Matrix n n ℂ).charpoly.roots.count 1 =
+      (Finset.univ.filter fun i => (z i : ℂ) = 1).card := by
+    rw [hz, Multiset.count_map]
+    simp only [eq_comm (a := (1 : ℂ))]
+    rfl
+  have hterm (i : n) : Complex.exp (↑(2 * Real.pi * angleOffset (z i)) * Complex.I) =
+      if (z i : ℂ) = 1 then 1 else -(z i : ℂ) := by
+    split_ifs with h
+    · simp [angleOffset, h]
+    · have he := norm_mul_exp_arg_mul_I (-(z i : ℂ))
+      have hn : ‖-(z i : ℂ)‖ = 1 := by simp
+      rw [hn, Complex.ofReal_one, one_mul] at he
+      rw [← he]
+      simp only [angleOffset, h, ↓reduceIte]
+      congr 2
+      push_cast
+      field_simp
+  have hexp : Complex.exp (↑(2 * Real.pi * spectralAngleSum (W : Matrix n n ℂ)) * Complex.I) =
+      ∏ i ∈ Finset.univ.filter fun i => (z i : ℂ) ≠ 1, -(z i : ℂ) := by
+    rw [spectralAngleSum, hz, Multiset.map_map, ← Finset.sum_eq_multiset_sum, Finset.mul_sum,
+      Complex.ofReal_sum, Finset.sum_mul, Complex.exp_sum]
+    simp only [Function.comp_apply, hterm, Finset.prod_ite, Finset.prod_const_one, one_mul]
+  have hdet : (W : Matrix n n ℂ).det =
+      ∏ i ∈ Finset.univ.filter fun i => (z i : ℂ) ≠ 1, (z i : ℂ) := by
+    rw [det_eq_prod_roots_charpoly, hz, ← Finset.prod_eq_multiset_prod,
+      ← Finset.prod_filter_mul_prod_filter_not Finset.univ fun i => (z i : ℂ) = 1,
+      Finset.prod_congr rfl fun i hi => (Finset.mem_filter.1 hi).2, Finset.prod_const_one, one_mul]
+  have hcard : Fintype.card n - (Finset.univ.filter fun i => (z i : ℂ) = 1).card =
+      (Finset.univ.filter fun i => (z i : ℂ) ≠ 1).card := by
+    rw [← Finset.card_univ, ← Finset.card_filter_add_card_filter_not
+      (s := Finset.univ) fun i => (z i : ℂ) = 1, Nat.add_sub_cancel_left]
+  rw [hexp, hdet, hcount, hcard, Finset.prod_neg, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
+    neg_one_sq, one_pow, one_mul]
+
+/-- **The zero axiom of Robbin and Salamon.** A path of frames along which the eigenvalue `1` of the
+Souriau maps `γ t γ tᵀ` keeps its algebraic multiplicity has Maslov index zero: no eigenvalue of
+`γ t γ tᵀ` crosses `1`, so the path of Lagrangians `γ t ℝⁿ` has no crossing with `ℝⁿ`. -/
+theorem maslovIndex_eq_zero_of_forall_count_eq {U V : unitaryGroup n ℂ} (γ : Path U V)
+    (h : ∀ t, (souriau (γ t) : Matrix n n ℂ).charpoly.roots.count 1 =
+      (souriau U : Matrix n n ℂ).charpoly.roots.count 1) :
+    maslovIndex γ = 0 := by
+  set k := (souriau U : Matrix n n ℂ).charpoly.roots.count 1
+  set s : I → ℝ := fun t => spectralAngleSum (souriau (γ t) : Matrix n n ℂ) with hs_def
+  have hW : Continuous fun t => (souriau (γ t) : Matrix n n ℂ) :=
+    continuous_subtype_val.comp (continuous_souriau.comp γ.continuous)
+  have hs : Continuous s := continuous_iff_continuousAt.2 fun t₀ =>
+    continuousAt_spectralAngleSum hW.continuousAt
+      (fun _ hz h1 => neg_mem_slitPlane_of_norm_eq_one
+        (norm_eq_one_of_mem_roots_charpoly _ hz) h1)
+      (Filter.Eventually.of_forall fun t => (h t).trans (h t₀).symm)
+  -- `θ t = 2π s(γ t γ tᵀ) + π (n - k)` is a continuous angle of the Maslov phase.
+  have hlift (t : I) : Circle.exp (2 * Real.pi * s t + Real.pi * (Fintype.card n - k : ℕ)) =
+      detSouriauPath γ t := by
+    refine Circle.ext ?_
+    rw [detSouriauPath_apply, coe_detCircle, det_eq_neg_one_pow_mul_exp_spectralAngleSum, h t,
+      Circle.coe_exp]
+    have he : (↑(2 * Real.pi * s t + Real.pi * ((Fintype.card n - k : ℕ) : ℝ)) * Complex.I : ℂ) =
+        ((Fintype.card n - k : ℕ) : ℂ) * (Real.pi * Complex.I) +
+          ↑(2 * Real.pi * s t) * Complex.I := by
+      push_cast
+      ring
+    rw [he, Complex.exp_add, Complex.exp_nat_mul, Complex.exp_pi_mul_I]
+  rw [maslovIndex, Circle.angleChange_eq_sub
+    (θ := fun t => 2 * Real.pi * s t + Real.pi * ((Fintype.card n - k : ℕ) : ℝ)) _
+    ((continuous_const.mul hs).add continuous_const) hlift]
+  have h0 : s 0 = spectralAngleSum (souriau U : Matrix n n ℂ) := by simp [hs_def]
+  have h1 : s 1 = spectralAngleSum (souriau V : Matrix n n ℂ) := by simp [hs_def]
+  rw [h0, h1]
+  field_simp
   ring
 
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
