@@ -22,7 +22,7 @@ restriction to a subgroup can be degenerate.
 
 ## References
 
-* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.2.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
 
 ## Main definitions
