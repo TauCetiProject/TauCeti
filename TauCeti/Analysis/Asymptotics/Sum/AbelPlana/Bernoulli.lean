@@ -223,7 +223,8 @@ private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ
   rw [uIoo_of_lt hy] at hξ_mem
   refine ⟨ξ / y, ⟨div_pos hξ_mem.1 hy, (div_lt_one hy).mpr hξ_mem.2⟩, ?_⟩
   have hθy : ξ / y * y = ξ := div_mul_cancel₀ ξ hy.ne'
-  -- Rewrite the Taylor polynomial at `x₀ = 0` using `iteratedDeriv_im_add_mul_I`.
+  have hIeven : ∀ k : ℕ, I ^ (2 * k) = (((-1 : ℝ) ^ k : ℝ) : ℂ) := fun k => by
+    rw [pow_mul, I_sq]; push_cast; rfl
   have htaylor : taylorWithinEval ψ (2 * m - 1) (uIcc 0 y) 0 y =
       ∑ s ∈ Finset.Icc 1 m,
         (-1 : ℝ) ^ (s - 1) * (iteratedDerivWithin (2 * s - 1) f S c).re *
@@ -235,48 +236,29 @@ private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ
           (I ^ k * iteratedDerivWithin k f S c).im * y ^ k / (k ! : ℝ) := by
       refine Finset.sum_congr rfl fun k hk => ?_
       have hk_le : k ≤ 2 * m := (Finset.mem_range.mp hk).le
-      have hderiv0 : iteratedDerivWithin k ψ (uIcc 0 y) 0 =
-          (I ^ k * iteratedDerivWithin k f S c).im := by
-        rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hy.ne)
-          (hψ.contDiffAt.of_le (by exact_mod_cast hk_le)) left_mem_uIcc]
-        simpa using iteratedDeriv_im_add_mul_I hab hc hf k hk_le 0
-      rw [hderiv0, sub_zero, smul_eq_mul]
+      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hy.ne)
+        (hψ.contDiffAt.of_le (by exact_mod_cast hk_le)) left_mem_uIcc,
+        show iteratedDeriv k ψ 0 = (I ^ k * iteratedDerivWithin k f S c).im by
+          simpa [ψ] using iteratedDeriv_im_add_mul_I hab hc hf k hk_le 0,
+        sub_zero, smul_eq_mul]
       ring
     rw [hcongr, sum_range_two_mul_of_even_eq_zero]
     · refine Finset.sum_congr rfl fun s hs => ?_
-      have hs1 : 1 ≤ s := (Finset.mem_Icc.mp hs).1
-      have hsm : s ≤ m := (Finset.mem_Icc.mp hs).2
-      have him0 : (iteratedDerivWithin (2 * s - 1) f S c).im = 0 :=
-        iteratedDerivWithin_strip_im_eq_zero hab hf hreal (2 * s - 1) (by omega) c hc.1 hc.2
       have hIodd : I ^ (2 * s - 1) = (((-1 : ℝ) ^ (s - 1) : ℝ) : ℂ) * I := by
-        rw [show 2 * s - 1 = 2 * (s - 1) + 1 by omega, pow_succ, pow_mul, I_sq]
-        push_cast
-        rfl
-      have him_val : (I ^ (2 * s - 1) * iteratedDerivWithin (2 * s - 1) f S c).im =
-          (-1 : ℝ) ^ (s - 1) * (iteratedDerivWithin (2 * s - 1) f S c).re := by
-        rw [hIodd, mul_assoc, mul_im, ofReal_re, ofReal_im, I_mul_im, I_mul_re, him0]
-        ring
-      rw [him_val]
-    · intro s hs
-      have him0 : (iteratedDerivWithin (2 * s) f S c).im = 0 :=
-        iteratedDerivWithin_strip_im_eq_zero hab hf hreal (2 * s) (by omega) c hc.1 hc.2
-      have hIeven : I ^ (2 * s) = (((-1 : ℝ) ^ s : ℝ) : ℂ) := by
-        rw [pow_mul, I_sq]
-        push_cast
-        rfl
-      rw [hIeven, mul_im, ofReal_re, ofReal_im, him0]
+        have hs1 := (Finset.mem_Icc.mp hs).1
+        rw [show 2 * s - 1 = 2 * (s - 1) + 1 by omega, pow_succ, hIeven (s - 1)]
+      rw [hIodd, mul_assoc, mul_im, ofReal_re, ofReal_im, I_mul_im, I_mul_re]
       ring
-  -- Rewrite the Lagrange remainder term of order `2 * m`.
+    · intro s hs
+      have him0 := iteratedDerivWithin_strip_im_eq_zero hab hf hreal (2 * s) (by omega) c
+        hc.1 hc.2
+      rw [hIeven s, mul_im, ofReal_re, ofReal_im, him0]; ring
   have hrem : iteratedDeriv ((2 * m - 1) + 1) ψ ξ * (y - 0) ^ ((2 * m - 1) + 1) /
         ((2 * m - 1) + 1)! =
       (-1 : ℝ) ^ m * (iteratedDerivWithin (2 * m) f S (c + ((ξ / y * y : ℝ) : ℂ) * I)).im *
         y ^ (2 * m) / (2 * m)! := by
-    rw [h2m, iteratedDeriv_im_add_mul_I hab hc hf (2 * m) le_rfl ξ, hθy, sub_zero]
-    have hI2m : I ^ (2 * m) = (((-1 : ℝ) ^ m : ℝ) : ℂ) := by
-      rw [pow_mul, I_sq]
-      push_cast
-      rfl
-    rw [hI2m, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
+    rw [h2m, iteratedDeriv_im_add_mul_I hab hc hf (2 * m) le_rfl ξ, hθy, sub_zero,
+      hIeven m, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
   linarith [hξ_eq, htaylor, hrem]
 
 /-! ### Main theorems -/
@@ -378,49 +360,28 @@ theorem exists_two_mul_integral_im_div_exp_two_pi_sub_one_eq {f : ℂ → ℂ} {
   have hfac_ne : ((2 * m)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
   have hsign_sq : (-1 : ℝ) ^ m * (-1 : ℝ) ^ m = 1 := by
     rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  have hdecomp : EqOn
+      (fun y : ℝ => (f (c + y * I)).im / (Real.exp (2 * π * y) - 1))
+      (fun y : ℝ => (∑ s ∈ Finset.Icc 1 m, term s y) +
+        ((-1 : ℝ) ^ m / (2 * m)!) * remIntegrand y) (Ioi 0) := fun y (hy : 0 < y) => by
+    dsimp only [term, remIntegrand]
+    rw [hϑ_eq y hy, add_div, Finset.sum_div]
+    exact congrArg₂ (· + ·) (Finset.sum_congr rfl fun _ _ => by ring) (by ring)
   have hrem_eqOn : EqOn remIntegrand
       (fun y => ((-1 : ℝ) ^ m * (2 * m)!) *
         ((f (c + y * I)).im / (Real.exp (2 * π * y) - 1) -
-          ∑ s ∈ Finset.Icc 1 m, term s y)) (Ioi 0) := by
-    intro y (hy : 0 < y)
-    dsimp only [remIntegrand, term]
-    rw [hϑ_eq y hy, add_div, Finset.sum_div]
-    have hsum_eq :
-        (∑ x ∈ Finset.Icc 1 m,
-          (-1 : ℝ) ^ (x - 1) * (iteratedDerivWithin (2 * x - 1) f S c).re *
-            y ^ (2 * x - 1) / (2 * x - 1)! / (Real.exp (2 * π * y) - 1)) =
-        ∑ x ∈ Finset.Icc 1 m,
-          (-1 : ℝ) ^ (x - 1) * (iteratedDerivWithin (2 * x - 1) f S c).re / (2 * x - 1)! *
-            (y ^ (2 * x - 1) / (Real.exp (2 * π * y) - 1)) :=
-      Finset.sum_congr rfl fun _ _ => by ring
-    rw [hsum_eq, add_sub_cancel_left]
-    calc
-      (iteratedDerivWithin (2 * m) f S (c + ((ϑ y * y : ℝ) : ℂ) * I)).im *
-          y ^ (2 * m) / (Real.exp (2 * π * y) - 1)
-        = ((-1 : ℝ) ^ m * (-1 : ℝ) ^ m) * (((2 * m)! : ℝ) / ((2 * m)! : ℝ)) *
-            ((iteratedDerivWithin (2 * m) f S (c + ((ϑ y * y : ℝ) : ℂ) * I)).im *
-              y ^ (2 * m) / (Real.exp (2 * π * y) - 1)) := by
-          rw [hsign_sq, div_self hfac_ne, one_mul, one_mul]
-      _ = ((-1 : ℝ) ^ m * (2 * m)!) *
-            ((-1 : ℝ) ^ m *
-              (iteratedDerivWithin (2 * m) f S (c + ((ϑ y * y : ℝ) : ℂ) * I)).im *
-              y ^ (2 * m) / (2 * m)! / (Real.exp (2 * π * y) - 1)) := by
-          ring
+          ∑ s ∈ Finset.Icc 1 m, term s y)) (Ioi 0) := fun y hy => by
+    have hd := hdecomp hy
+    dsimp only at hd ⊢
+    rw [hd, add_sub_cancel_left]
+    symm
+    calc ((-1 : ℝ) ^ m * (2 * m)!) * (((-1 : ℝ) ^ m / (2 * m)!) * remIntegrand y)
+      _ = ((-1 : ℝ) ^ m * (-1 : ℝ) ^ m) * (((2 * m)! : ℝ) / (2 * m)!) * remIntegrand y := by ring
+      _ = remIntegrand y := by rw [hsign_sq, div_self hfac_ne, one_mul, one_mul]
   have hrem_int : IntegrableOn remIntegrand (Ioi 0) :=
     IntegrableOn.congr_fun ((hint.sub hsum_int).const_mul ((-1 : ℝ) ^ m * (2 * m)!))
       hrem_eqOn.symm measurableSet_Ioi
   refine ⟨ϑ, hϑ_mem, hrem_int, ?_⟩
-  -- Integrate the decomposition over `Ioi 0` and evaluate each Bose–Einstein moment.
-  have hdecomp : EqOn
-      (fun y : ℝ => (f (c + y * I)).im / (Real.exp (2 * π * y) - 1))
-      (fun y : ℝ => (∑ s ∈ Finset.Icc 1 m, term s y) +
-        ((-1 : ℝ) ^ m / (2 * m)!) * remIntegrand y) (Ioi 0) := by
-    intro y (hy : 0 < y)
-    dsimp only [term, remIntegrand]
-    rw [hϑ_eq y hy, add_div, Finset.sum_div]
-    congr 1
-    · exact Finset.sum_congr rfl fun _ _ => by ring
-    · ring
   rw [setIntegral_congr_fun measurableSet_Ioi hdecomp,
     integral_add hsum_int (hrem_int.const_mul ((-1 : ℝ) ^ m / (2 * m)!)),
     integral_finsetSum _ hterm_int, integral_const_mul, mul_add, Finset.mul_sum]
@@ -492,13 +453,12 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
       ∑ s ∈ Finset.Icc 1 m,
         ((bernoulli (2 * s) : ℂ) / (2 * s)!) * iteratedDerivWithin (2 * s - 1) f S n := by
     refine Finset.sum_congr rfl fun s hs => ?_
-    have hsm : s ≤ m := (Finset.mem_Icc.mp hs).2
     have him0 : (iteratedDerivWithin (2 * s - 1) f S ((n : ℝ) : ℂ)).im = 0 :=
-      iteratedDerivWithin_strip_im_eq_zero han' hf hreal (2 * s - 1) (by omega) n han'.le le_rfl
-    have him0' : (iteratedDerivWithin (2 * s - 1) f S n).im = 0 := by simpa using him0
+      iteratedDerivWithin_strip_im_eq_zero han' hf hreal (2 * s - 1)
+        (by have := (Finset.mem_Icc.mp hs).2; omega) n han'.le le_rfl
     have hre_eq : (((iteratedDerivWithin (2 * s - 1) f S n).re : ℝ) : ℂ) =
         iteratedDerivWithin (2 * s - 1) f S n :=
-      Complex.ext rfl him0'.symm
+      Complex.ext rfl (by simpa using him0.symm)
     rw [ofReal_mul, ofReal_div, ofReal_ratCast, ofReal_natCast, hre_eq]
   rw [hsum_cast] at hcast
   linear_combination hcast
@@ -554,14 +514,28 @@ section Examples
 open scoped Nat Real Topology
 open Complex Filter MeasureTheory Set TauCeti
 
+private lemma tendsto_pow_strip_growth (a n : ℤ) (k : ℕ) :
+    Tendsto (fun z : ℂ => z ^ k * Real.exp (-(2 * π * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0) := by
+  let M : ℝ := max |(a : ℝ)| |(n : ℝ)|
+  refine tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le (C := (M + 1) ^ k) (p := k) (c := 0)
+    (by positivity) fun z hza hzb => ?_
+  have hre_abs : |z.re| ≤ M := abs_le.mpr
+    ⟨by linarith [le_max_left |(a : ℝ)| |(n : ℝ)|, neg_abs_le (a : ℝ), hza],
+      by linarith [le_max_right |(a : ℝ)| |(n : ℝ)|, le_abs_self (n : ℝ), hzb]⟩
+  have hM0 : 0 ≤ M := (abs_nonneg _).trans (le_max_left _ _)
+  have hz : ‖z‖ ≤ (M + 1) * (1 + |z.im|) :=
+    (norm_le_abs_re_add_abs_im z).trans (by nlinarith [abs_nonneg z.im])
+  rw [norm_pow, zero_mul, Real.exp_zero, mul_one, Real.rpow_natCast, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg z) hz k
+
 -- Constant function `f(z) = 1`: both half-line integrals vanish and the formula reads
 -- `∑_{j=a}^n 1 = (n - a) + 1/2 + 1/2`.
 example {a n : ℤ} (han : a ≤ n) :
     ∑ _j ∈ Finset.Icc a n, (1 : ℂ) = ((n : ℂ) - a) + 1 := by
   have hgrowth : Tendsto (fun z : ℂ => (1 : ℂ) * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0) :=
-    tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le (C := 1) (p := 0) (c := 0) (by positivity)
-      fun _ _ _ => by simp
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0) := by
+    simpa using tendsto_pow_strip_growth a n 0
   have h := sum_Icc_eq_abelPlana (f := fun _ => (1 : ℂ)) han (differentiableOn_const 1)
     continuousOn_const hgrowth (fun _ _ _ => one_im) (by simp) (by simp)
   rw [h]
@@ -574,60 +548,32 @@ example {a n : ℤ} (han : a ≤ n) :
 example {a n : ℤ} (han : a ≤ n) :
     ∑ j ∈ Finset.Icc a n, (j : ℂ) ^ 2 =
       ((n : ℂ) ^ 3 - a ^ 3) / 3 + ((a : ℂ) ^ 2 + n ^ 2) / 2 + ((n : ℂ) - a) / 6 := by
-  let M : ℝ := max |(a : ℝ)| |(n : ℝ)|
-  have hM_nonneg : 0 ≤ M := le_trans (abs_nonneg _) (le_max_left _ _)
-  have hgrowth : Tendsto (fun z : ℂ => z ^ 2 * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0) := by
-    refine tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le (C := M ^ 2 + 1) (p := 2) (c := 0)
-      (by positivity) ?_
-    intro z hza hzb
-    have hre_abs : |z.re| ≤ M := by
-      rw [abs_le]
-      exact ⟨by linarith [le_max_left |(a : ℝ)| |(n : ℝ)|, neg_abs_le (a : ℝ), hza],
-        by linarith [le_max_right |(a : ℝ)| |(n : ℝ)|, le_abs_self (n : ℝ), hzb]⟩
-    have hre_sq : z.re ^ 2 ≤ M ^ 2 := sq_le_sq.mpr (by rwa [abs_of_nonneg hM_nonneg])
-    have hnorm : ‖z ^ 2‖ = z.re ^ 2 + |z.im| ^ 2 := by
-      rw [norm_pow, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, sq_abs]
-      ring
-    rw [hnorm, zero_mul, Real.exp_zero, mul_one,
-      Real.rpow_two (1 + |z.im|)]
-    nlinarith [abs_nonneg z.im, sq_nonneg M]
-  have him_sq : ∀ (k : ℤ) (y : ℝ), (((k : ℂ) + y * I) ^ 2).im = 2 * (k : ℝ) * y := by
-    intro k y
-    simp [sq]
-    ring
+  have him_sq : ∀ (k : ℤ) (y : ℝ), (((k : ℂ) + y * I) ^ 2).im = 2 * (k : ℝ) * y := fun k y => by
+    simp [sq]; ring
   have hint_k : ∀ k : ℤ,
       IntegrableOn (fun y : ℝ => (((k : ℂ) + y * I) ^ 2).im / (Real.exp (2 * π * y) - 1))
-        (Ioi 0) := by
-    intro k
-    have h1 : IntegrableOn
-        (fun y : ℝ => (2 * (k : ℝ)) * (y ^ (2 * 1 - 1) / (Real.exp (2 * π * y) - 1))) (Ioi 0) :=
-      (integrableOn_pow_div_exp_mul_sub_one (k := 1) (c := 2 * π) le_rfl (by positivity)).const_mul
-        (2 * (k : ℝ))
-    refine h1.congr_fun (fun y _ => ?_) measurableSet_Ioi
-    rw [him_sq]
-    simp [mul_div_assoc]
+        (Ioi 0) := fun k =>
+    IntegrableOn.congr_fun
+      ((integrableOn_pow_div_exp_mul_sub_one (k := 1) (c := 2 * π) le_rfl
+        (by positivity)).const_mul (2 * (k : ℝ)))
+      (fun y _ => by rw [him_sq]; ring) measurableSet_Ioi
   have hint_val : ∀ k : ℤ,
       ∫ y in Ioi (0 : ℝ), (((k : ℂ) + y * I) ^ 2).im / (Real.exp (2 * π * y) - 1) =
-        (k : ℝ) / 12 := by
-    intro k
-    have hcongr : (∫ y in Ioi (0 : ℝ), (((k : ℂ) + y * I) ^ 2).im / (Real.exp (2 * π * y) - 1)) =
-        ∫ y in Ioi (0 : ℝ), (2 * (k : ℝ)) * (y / (Real.exp (2 * π * y) - 1)) :=
-      setIntegral_congr_fun measurableSet_Ioi fun y _ => by rw [him_sq]; ring
-    rw [hcongr, integral_const_mul, integral_Ioi_div_exp_two_pi_mul_sub_one]
+        (k : ℝ) / 12 := fun k => by
+    rw [setIntegral_congr_fun measurableSet_Ioi
+      (fun y _ => by rw [him_sq]; ring : EqOn _
+        (fun y => (2 * (k : ℝ)) * (y / (Real.exp (2 * π * y) - 1))) (Ioi 0)),
+      integral_const_mul, integral_Ioi_div_exp_two_pi_mul_sub_one]
     ring
   have hmain := sum_Icc_eq_abelPlana (f := fun z : ℂ => z ^ 2) han
-    (differentiable_id.pow 2).differentiableOn (continuous_id.pow 2).continuousOn hgrowth
-    (fun x _ _ => by norm_cast) (hint_k a) (hint_k n)
+    (differentiable_id.pow 2).differentiableOn (continuous_id.pow 2).continuousOn
+    (tendsto_pow_strip_growth a n 2) (fun _ _ _ => by norm_cast) (hint_k a) (hint_k n)
   have hint_ab : ∫ x in (a : ℝ)..n, (x : ℂ) ^ 2 = ((n : ℂ) ^ 3 - a ^ 3) / 3 := by
-    have hfn : (fun x : ℝ => (x : ℂ) ^ 2) = fun x : ℝ => ((x ^ 2 : ℝ) : ℂ) :=
-      funext fun x => by norm_cast
-    rw [hfn, intervalIntegral.integral_ofReal, integral_pow]
-    push_cast
-    ring
+    rw [show (fun x : ℝ => (x : ℂ) ^ 2) = fun x : ℝ => ((x ^ 2 : ℝ) : ℂ) from
+      funext fun _ => by norm_cast, intervalIntegral.integral_ofReal, integral_pow]
+    push_cast; ring
   rw [hmain, hint_ab, hint_val a, hint_val n]
-  push_cast
-  ring
+  push_cast; ring
 
 -- Linear function `f(z) = z` (`a < n`, `m = 1`): exercises both
 -- `exists_sum_Icc_eq_abelPlana_bernoulli` (where `(B_2 / 2!) f'(n) = 1 / 12` cancels
@@ -639,23 +585,13 @@ example {a n : ℤ} (han : a < n) :
   let S : Set ℂ := {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}
   have han' : (a : ℝ) < n := by exact_mod_cast han
   have huniq : UniqueDiffOn ℂ S := uniqueDiffOn_strip han'
-  let M : ℝ := max |(a : ℝ)| |(n : ℝ)|
   have hgrowth : Tendsto (fun z : ℂ => z * Real.exp (-(2 * π * |z.im|)))
       (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 S) (𝓝 0) := by
-    refine tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le (C := M + 1) (p := 1) (c := 0)
-      (by positivity) ?_
-    intro z hza hzb
-    have hre_abs : |z.re| ≤ M := by
-      rw [abs_le]
-      exact ⟨by linarith [le_max_left |(a : ℝ)| |(n : ℝ)|, neg_abs_le (a : ℝ), hza],
-        by linarith [le_max_right |(a : ℝ)| |(n : ℝ)|, le_abs_self (n : ℝ), hzb]⟩
-    have hnorm : ‖z‖ ≤ |z.re| + |z.im| := norm_le_abs_re_add_abs_im z
-    rw [zero_mul, Real.exp_zero, mul_one, Real.rpow_one]
-    nlinarith [abs_nonneg z.re, abs_nonneg z.im]
+    simpa using tendsto_pow_strip_growth a n 1
   have hint_k : ∀ k : ℤ,
-      IntegrableOn (fun y : ℝ => ((k : ℂ) + y * I).im / (Real.exp (2 * π * y) - 1)) (Ioi 0) := by
-    intro k
-    simpa using integrableOn_pow_div_exp_mul_sub_one (k := 1) (c := 2 * π) le_rfl (by positivity)
+      IntegrableOn (fun y : ℝ => ((k : ℂ) + y * I).im / (Real.exp (2 * π * y) - 1)) (Ioi 0) :=
+    fun _ => by
+      simpa using integrableOn_pow_div_exp_mul_sub_one (k := 1) (c := 2 * π) le_rfl (by positivity)
   obtain ⟨ϑ, hϑ_mem, _, hmain⟩ :=
     exists_sum_Icc_eq_abelPlana_bernoulli (f := fun z : ℂ => z) (m := 1) han le_rfl
       contDiff_id.contDiffOn hgrowth (fun _ _ _ => ofReal_im _) (hint_k a) (hint_k n)
@@ -667,44 +603,31 @@ example {a n : ℤ} (han : a < n) :
     exact ((hasDerivWithinAt_const w S (1 : ℂ)).congr hd1 (hd1 hw)).derivWithin (huniq w hw)
   let g : ℂ → ℂ := iteratedDerivWithin 2 (fun z : ℂ => z) S
   have hg_im : ∀ y t : ℝ, (g (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I)).im = 0 := fun y t => by
-    have hmem : ((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I ∈ S := ⟨by simp [han'.le], by simp⟩
-    simpa [g] using congrArg Complex.im (hd2 hmem)
+    simpa [g] using congrArg Complex.im (hd2 ⟨by simp [han'.le], by simp⟩)
   have hsup0 : ∀ y : ℝ,
-      sSup ((fun t : ℝ => |(g (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I)).im|) '' Icc 0 1) = 0 := by
-    intro y
-    simp only [hg_im, abs_zero, (nonempty_Icc.mpr zero_le_one).image_const, csSup_singleton]
+      sSup ((fun t : ℝ => |(g (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I)).im|) '' Icc 0 1) = 0 :=
+    fun _ => by
+      simp only [hg_im, abs_zero, (nonempty_Icc.mpr zero_le_one).image_const, csSup_singleton]
   have hrem_bound := abs_two_mul_pow_div_factorial_integral_im_le (g := g) (c := n) (m := 1)
     (ϑ := ϑ) (fun y hy => Ioo_subset_Icc_self (hϑ_mem y hy))
-    (fun y _ => by simp only [hg_im]; exact continuousOn_const)
+    (fun _ _ => by simp only [hg_im]; exact continuousOn_const)
     (by simp only [hsup0, zero_mul, zero_div]; exact integrableOn_zero)
   simp only [hsup0, zero_mul, zero_div, integral_zero, mul_zero] at hrem_bound
   have hrem0 : ∫ y in Ioi (0 : ℝ),
       (iteratedDerivWithin 2 (fun z : ℂ => z) S ((n : ℂ) + ((ϑ y * y : ℝ) : ℂ) * I)).im *
         y ^ 2 / (Real.exp (2 * π * y) - 1) = 0 := by
-    have h0 : 2 * (-1 : ℝ) ^ 1 / (2 * 1)! *
-        ∫ y in Ioi (0 : ℝ),
-          (g (((n : ℝ) : ℂ) + ((ϑ y * y : ℝ) : ℂ) * I)).im *
-            y ^ (2 * 1) / (Real.exp (2 * π * y) - 1) = 0 :=
-      abs_nonpos_iff.mp hrem_bound
-    have hcoeff_ne : (2 * (-1 : ℝ) ^ 1 / (2 * 1)! : ℝ) ≠ 0 := by
-      norm_num [Nat.factorial]
-    simpa [g] using (mul_eq_zero.mp h0).resolve_left hcoeff_ne
+    have h0 := abs_nonpos_iff.mp hrem_bound
+    simpa [g] using (mul_eq_zero.mp h0).resolve_left (by norm_num [Nat.factorial])
   have hint_a :
       ∫ y in Ioi (0 : ℝ), ((a : ℂ) + y * I).im / (Real.exp (2 * π * y) - 1) = 1 / 24 := by
     simpa using integral_Ioi_div_exp_two_pi_mul_sub_one
   have hint_ab : ∫ x in (a : ℝ)..n, (x : ℂ) = ((n : ℂ) ^ 2 - a ^ 2) / 2 := by
-    rw [intervalIntegral.integral_ofReal, integral_id]
-    push_cast
-    ring
-  have hn_S : (n : ℂ) ∈ S := ⟨by simp [han'.le], by simp⟩
+    rw [intervalIntegral.integral_ofReal, integral_id]; push_cast; ring
   have hb2 : (bernoulli 2 : ℂ) = 1 / 6 := by
-    rw [bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two]
-    norm_num
+    rw [bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two]; norm_num
   rw [hmain]
   simp only [Nat.mul_one, Finset.Icc_self, Finset.sum_singleton, Nat.reduceSub]
-  rw [hint_ab, hint_a, hd1 hn_S, hb2, hrem0]
-  push_cast
-  norm_num [Nat.factorial]
-  ring
+  rw [hint_ab, hint_a, hd1 ⟨by simp [han'.le], by simp⟩, hb2, hrem0]
+  push_cast; norm_num [Nat.factorial]; ring
 
 end Examples
