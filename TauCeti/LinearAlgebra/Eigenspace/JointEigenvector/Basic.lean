@@ -46,12 +46,19 @@ components of `M_k(Γ₁(N))`.
   group representation, as a monoid homomorphism `G →* Kˣ`.
 * `AlgHom.eigenvalueHomOfJointEigenvector`: the eigenvalue function of a nonzero joint
   eigenvector of an algebra representation, as an algebra homomorphism `A →ₐ[R] K`.
+* `LinearMap.dualOfJointEigenvector`: the eigenvalue function of a nonzero joint eigenvector of a
+  linear family of endomorphisms `H →ₗ[K] Module.End K V`, as a linear form `Module.Dual K H`.
 * `iSupIndep_iInf_eigenspace`,
   `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
   `iSup_inf_iInf_eigenspace_of_invariant`: joint eigenspaces of a commuting family are
   independent (with no further hypotheses), exhaust the space when semisimple, and
   decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
   for group representations.
+* `Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo`,
+  `Submodule.iSup_inf_iInf_eigenspace_eq_of_le`: over any field, the intersection of an invariant
+  submodule with the sum of the joint eigenspaces of any family of endomorphisms is the supremum
+  of its intersections with them, with no commutation, semisimplicity, finite-dimensionality or
+  algebraic-closedness hypothesis.
 * `iInf_eigenspace_eq_of_iSup_eq_top`, `iInf_eigenspace_eq_bot_of_iSup_eq_top`: if spanning
   summands carry pairwise distinct joint scalars of any family of endomorphisms, every summand is
   a joint eigenspace, and every other joint eigenspace is zero.
@@ -222,6 +229,52 @@ private lemma iSup_unitHom_eq_iSup {ρ : G →* Module.End K V}
 
 end Group
 
+section LinearMap
+
+variable {H : Type*} [AddCommMonoid H] [Module K H]
+
+/-- Given a joint eigenvector `v ≠ 0` for a linear family of endomorphisms
+`ρ : H →ₗ[K] Module.End K V`, the eigenvalue function `χ : H → K` is a `K`-linear form. -/
+def _root_.LinearMap.dualOfJointEigenvector (ρ : H →ₗ[K] Module.End K V) (χ : H → K) (v : V)
+    (hv : v ≠ 0) (hv_mem : ∀ x, v ∈ (ρ x).eigenspace (χ x)) : Module.Dual K H where
+  toFun := χ
+  map_add' x y := (smul_left_inj hv).mp <| by
+    rw [← Module.End.mem_eigenspace_iff.mp (hv_mem (x + y)), add_smul,
+      ← Module.End.mem_eigenspace_iff.mp (hv_mem x),
+      ← Module.End.mem_eigenspace_iff.mp (hv_mem y), map_add, LinearMap.add_apply]
+  map_smul' c x := (smul_left_inj hv).mp <| by
+    rw [← Module.End.mem_eigenspace_iff.mp (hv_mem (c • x)), RingHom.id_apply, smul_eq_mul,
+      mul_smul, ← Module.End.mem_eigenspace_iff.mp (hv_mem x), map_smul, LinearMap.smul_apply]
+
+@[simp]
+lemma _root_.LinearMap.dualOfJointEigenvector_apply (ρ : H →ₗ[K] Module.End K V) (χ : H → K)
+    (v : V) (hv : v ≠ 0) (hv_mem : ∀ x, v ∈ (ρ x).eigenspace (χ x)) (x : H) :
+    ρ.dualOfJointEigenvector χ v hv hv_mem x = χ x := (rfl)
+
+/-- If the joint eigenspace of an eigenvalue function `χ` of a linear family
+`ρ : H →ₗ[K] Module.End K V` is nonzero, then `χ` is (the underlying function of) a linear form
+`Module.Dual K H`. -/
+lemma exists_dual_of_iInf_eigenspace_ne_bot {ρ : H →ₗ[K] Module.End K V}
+    {χ : H → K} (hχ : ⨅ x, (ρ x).eigenspace (χ x) ≠ ⊥) :
+    ∃ μ : Module.Dual K H, ⇑μ = χ := by
+  obtain ⟨v, hv_mem, hv_ne⟩ := (Submodule.ne_bot_iff _).mp hχ
+  exact ⟨ρ.dualOfJointEigenvector χ v hv_ne ((Submodule.mem_iInf _).mp hv_mem), rfl⟩
+
+/-- A family of submodules lying in the joint eigenspaces of a linear family
+`ρ : H →ₗ[K] Module.End K V` has the same supremum over `Module.Dual K H` as over all
+eigenvalue functions `H → K`. -/
+lemma iSup_dual_eq_iSup {ρ : H →ₗ[K] Module.End K V}
+    (F : (H → K) → Submodule K V) (hF : ∀ χ, F χ ≤ ⨅ x, (ρ x).eigenspace (χ x)) :
+    (⨆ μ : Module.Dual K H, F ⇑μ) = ⨆ χ, F χ := by
+  refine le_antisymm (iSup_le fun μ ↦ le_iSup F _) (iSup_le fun χ ↦ ?_)
+  by_cases hχ : F χ = ⊥
+  · simp [hχ]
+  · obtain ⟨μ, rfl⟩ := exists_dual_of_iInf_eigenspace_ne_bot (ρ := ρ)
+      fun h ↦ hχ (eq_bot_iff.mpr (h ▸ hF χ))
+    exact le_iSup (fun ψ : Module.Dual K H ↦ F ⇑ψ) μ
+
+end LinearMap
+
 end CancelScalars
 
 /-! ### Independence of joint eigenspaces
@@ -290,6 +343,88 @@ theorem _root_.MonoidHom.natCard_nonzeroJointWeights_le_finrank [Module.Finite K
   exact iSupIndep_iInf_eigenspace_unitHom.subtype_ne_bot_le_finrank
 
 end DomainScalars
+
+/-! ### Invariant submodules of a sum of joint eigenspaces
+
+Over any field, with no commutation, semisimplicity, finite-dimensionality or algebraic-closedness
+hypothesis: subtracting `χ₀ i • v` from `f i v` clears one joint-eigenvalue component while scaling
+every differing one by a nonzero field element.
+-/
+
+section InvariantSubmodule
+
+variable [Field K] [Module K V]
+
+/-- **Joint-eigenvector components of an invariant subspace.** Over any field, if a finite sum of
+joint eigenvectors for pairwise distinct eigenvalue functions (indexed by a finset `s`) lies in an
+`f`-invariant submodule `p`, then every summand lies in `p`. -/
+theorem mem_of_sum_mem_of_forall_mem_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V)
+    {p : Submodule K V} (hp : ∀ i, Set.MapsTo (f i) p p) {s : Finset (ι → K)} {u : (ι → K) → V}
+    (hu : ∀ χ ∈ s, u χ ∈ ⨅ i, (f i).eigenspace (χ i)) (hsum : ∑ χ ∈ s, u χ ∈ p)
+    {χ : ι → K} (hχ : χ ∈ s) : u χ ∈ p := by
+  classical
+  induction hn : s.card using Nat.strong_induction_on generalizing s u χ with
+  | _ n ih =>
+    subst hn
+    rcases le_or_gt s.card 1 with hcard | hcard
+    · obtain ⟨a, rfl⟩ := Finset.card_eq_one.mp
+        (le_antisymm hcard (Finset.card_pos.mpr ⟨χ, hχ⟩))
+      obtain rfl := Finset.mem_singleton.mp hχ
+      simpa using hsum
+    · obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp hcard
+      obtain ⟨i, hi⟩ := Function.ne_iff.mp hab
+      have hcard_a : (s.erase a).card < s.card := Finset.card_erase_lt_of_mem ha
+      have hshift : ∑ ψ ∈ s.erase a, (ψ i - a i) • u ψ ∈ p := by
+        have hmem : f i (∑ ψ ∈ s, u ψ) - a i • ∑ ψ ∈ s, u ψ ∈ p :=
+          p.sub_mem (hp i hsum) (p.smul_mem (a i) hsum)
+        have hterm (ψ : ι → K) (hψ : ψ ∈ s) :
+            f i (u ψ) - a i • u ψ = (ψ i - a i) • u ψ := by
+          rw [Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp (hu ψ hψ) i), sub_smul]
+        rw [map_sum, Finset.smul_sum, ← Finset.sum_sub_distrib,
+          ← Finset.add_sum_erase _ _ ha, hterm a ha, sub_self, zero_smul, zero_add] at hmem
+        exact (Finset.sum_congr rfl fun ψ hψ ↦
+          (hterm ψ (Finset.mem_of_mem_erase hψ)).symm) ▸ hmem
+      have hb_mem : b ∈ s.erase a := Finset.mem_erase.mpr ⟨hab.symm, hb⟩
+      have hub_smul : (b i - a i) • u b ∈ p :=
+        ih _ hcard_a (fun ψ hψ ↦ Submodule.smul_mem _ _ (hu ψ (Finset.mem_of_mem_erase hψ)))
+          hshift hb_mem rfl
+      have hub : u b ∈ p := by
+        simpa [inv_smul_smul₀ (sub_ne_zero.mpr hi.symm)] using p.smul_mem (b i - a i)⁻¹ hub_smul
+      rcases eq_or_ne χ b with rfl | hχb
+      · exact hub
+      · have hcard_b : (s.erase b).card < s.card := Finset.card_erase_lt_of_mem hb
+        have hsum_b : ∑ ψ ∈ s.erase b, u ψ ∈ p := by
+          have := p.sub_mem hsum hub
+          rwa [← Finset.add_sum_erase _ _ hb, add_sub_cancel_left] at this
+        exact ih _ hcard_b (fun ψ hψ ↦ hu ψ (Finset.mem_of_mem_erase hψ)) hsum_b
+          (Finset.mem_erase.mpr ⟨hχb, hχ⟩) rfl
+
+/-- **Intersecting an invariant submodule with a sum of joint eigenspaces.** Over any field, the
+part of an `f`-invariant submodule `p` lying in the sum of the joint eigenspaces of `f` is spanned
+by its intersections with those joint eigenspaces. -/
+theorem _root_.Submodule.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo {ι : Type*}
+    {f : ι → Module.End K V} (p : Submodule K V) (hp : ∀ i, Set.MapsTo (f i) p p) :
+    p ⊓ (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) =
+      ⨆ χ : ι → K, p ⊓ ⨅ i, (f i).eigenspace (χ i) := by
+  classical
+  refine le_antisymm ?_
+    (iSup_le fun χ ↦ inf_le_inf_left p (le_iSup (fun ψ : ι → K ↦ ⨅ i, (f i).eigenspace (ψ i)) χ))
+  rintro x ⟨hxp, hxs⟩
+  obtain ⟨u, hu, rfl⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ x).mp hxs
+  rw [Finsupp.sum]
+  exact Submodule.sum_mem _ fun χ hχ ↦ Submodule.mem_iSup_of_mem χ
+    ⟨mem_of_sum_mem_of_forall_mem_iInf_eigenspace f hp (fun ψ _ ↦ hu ψ) hxp hχ, hu χ⟩
+
+/-- **Decomposing an invariant submodule contained in the sum of joint eigenspaces.** Over any
+field, an `f`-invariant submodule contained in the sum of the joint eigenspaces of `f` is the
+supremum of its intersections with them. -/
+theorem _root_.Submodule.iSup_inf_iInf_eigenspace_eq_of_le {ι : Type*}
+    {f : ι → Module.End K V} (p : Submodule K V) (hp : ∀ i, Set.MapsTo (f i) p p)
+    (hle : p ≤ ⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) :
+    (⨆ χ : ι → K, p ⊓ ⨅ i, (f i).eigenspace (χ i)) = p :=
+  (p.inf_iSup_iInf_eigenspace_eq_of_forall_mapsTo hp).symm.trans (inf_eq_left.mpr hle)
+
+end InvariantSubmodule
 
 /-! ### Simultaneous diagonalization
 
