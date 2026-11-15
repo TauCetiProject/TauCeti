@@ -9,9 +9,12 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Logic.Equiv.Fin.Basic
-import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
+import Mathlib.Data.List.OfFn
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Sums and products over `Fin n`
@@ -34,6 +37,22 @@ A product over the pairs `Fin 2 → α` is the double product over their two ent
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
 `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
+
+A strictly increasing list `a` on `Fin (n + 1)` in an additive group with a preorder (no
+compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_sub`): `a k` is
+`a 0` plus the gaps below `a k`, and a finset sum of values in the list is the cardinality times
+`a 0` plus, for each gap, the number of elements above its lower threshold times the gap
+(`StrictMono.sum_eq_card_nsmul_add_sum_card_filter_nsmul_sub`).
+
+Mathlib's `finSigmaFinEquiv` places the pair `⟨i, k⟩`, `k < m i`, at `∑_{i' < i} m i' + k`
+(`val_finSigmaFinEquiv_eq_sum_filter`), so pairs with an earlier first entry come earlier
+(`finSigmaFinEquiv_lt_of_fst_lt`). Read as the positions of `r` consecutive blocks of lengths
+`m i`, the cyclic successor `finRotate` moves inside a block to the next position of that block
+(`Fin.finRotate_finSigmaFinEquiv_of_lt`), and from the last position of a block to the first
+position of the cyclically next block, when that block is nonempty
+(`Fin.finRotate_finSigmaFinEquiv_of_eq`). The list of values of a function on `Fin (∑ i, m i)`
+is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`), as `List.ofFn_mul`
+says for blocks of equal length.
 -/
 
 public section
@@ -66,7 +85,7 @@ at any `k` distinct positions. -/
 theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {d : Fin n → M}
     (hd : ∀ ⦃i j : Fin n⦄, i ≤ j → d i ∣ d j) {k : ℕ} (hk : k ≤ n) {f : Fin k → Fin n}
     (hf : Function.Injective f) :
-    ∏ j : Fin k, d (Fin.castLE hk j) ∣ ∏ j : Fin k, d (f j) := by
+    ∏ j : Fin k, d (castLE hk j) ∣ ∏ j : Fin k, d (f j) := by
   induction k with
   | zero => simp
   | succ k ih =>
@@ -78,11 +97,11 @@ theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {
       push Not at hlt
       have := Fintype.card_le_of_injective
         (fun j : Fin (k + 1) ↦ (⟨f j, (hmax j (Finset.mem_univ _)).trans_lt hlt⟩ : Fin k))
-        (fun j₁ j₂ heq ↦ hf (Fin.ext (Fin.mk.inj heq)))
+        (fun j₁ j₂ heq ↦ hf (Fin.ext (mk.inj heq)))
       simp at this
-    rw [Fin.prod_univ_castSucc, Fin.prod_univ_succAbove _ j₀, mul_comm (d (f j₀))]
-    exact mul_dvd_mul (ih (by omega) (hf.comp Fin.succAbove_right_injective))
-      (hd (Fin.le_def.mpr hge))
+    rw [prod_univ_castSucc, prod_univ_succAbove _ j₀, mul_comm (d (f j₀))]
+    exact mul_dvd_mul (ih (by omega) (hf.comp succAbove_right_injective))
+      (hd (le_def.mpr hge))
 
 /-- **A tuple is determined by its leading partial sums.** If the sums of the first `k` entries
 of `a` and `b` agree for every `k ≤ n`, then `a = b`: entry `i` is what the sum of the first
@@ -172,7 +191,7 @@ theorem sum_filter_and_snd_eq {α β M : Type*} [Fintype α] [Fintype β] [Decid
     [AddCommMonoid M] (h : α × β → M) (P : α → Prop) [DecidablePred P] (b : β) :
     ∑ x ∈ Finset.univ.filter (fun x : α × β ↦ P x.1 ∧ x.2 = b), h x =
       ∑ a ∈ Finset.univ.filter P, h (a, b) := by
-  rw [Finset.sum_filter, Finset.sum_filter, Fintype.sum_prod_type]
+  rw [Finset.sum_filter, Finset.sum_filter, sum_prod_type]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   by_cases hP : P a <;> simp [hP]
 
@@ -181,10 +200,104 @@ theorem sum_filter_and_snd_eq {α β M : Type*} [Fintype α] [Fintype β] [Decid
 entries. -/]
 theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 → α) → M) :
     ∏ w, f w = ∏ p, ∏ q, f ![p, q] := by
-  rw [← (finTwoArrowEquiv α).symm.prod_comp, Fintype.prod_prod_type]
+  rw [← (finTwoArrowEquiv α).symm.prod_comp, prod_prod_type]
   rfl
 
 end Fintype
+
+/-- The position of the pair `⟨i, k⟩` in the lexicographic order is `∑_{i' < i} m i' + k`. -/
+theorem val_finSigmaFinEquiv_eq_sum_filter {r : ℕ} {m : Fin r → ℕ}
+    (x : (i : Fin r) × Fin (m i)) :
+    (finSigmaFinEquiv x : ℕ) = ∑ i ∈ Finset.univ.filter (· < x.1), m i + x.2 := by
+  rw [finSigmaFinEquiv_apply]
+  congr 1
+  refine (Finset.sum_map Finset.univ (Fin.castLEEmb x.1.2.le) m).symm.trans
+    (congrArg (fun s : Finset (Fin r) => s.sum m) ?_)
+  ext t
+  simp only [Finset.mem_map, Finset.mem_univ, true_and, Fin.coe_castLEEmb, Finset.mem_filter]
+  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.2, fun h => ⟨⟨t, h⟩, rfl⟩⟩
+
+/-- A pair with an earlier first entry comes earlier in the lexicographic order. -/
+theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : Fin r) × Fin (m i)}
+    (h : x.1 < y.1) : finSigmaFinEquiv x < finSigmaFinEquiv y := by
+  rw [Fin.lt_def, val_finSigmaFinEquiv_eq_sum_filter, val_finSigmaFinEquiv_eq_sum_filter]
+  have hsub : insert x.1 (Finset.univ.filter (· < x.1)) ⊆ Finset.univ.filter (· < y.1) := by
+    intro t ht
+    simp only [Finset.mem_insert, Finset.mem_filter, Finset.mem_univ, true_and] at ht ⊢
+    rcases ht with rfl | ht
+    · exact h
+    · exact ht.trans h
+  have := Finset.sum_le_sum_of_subset (f := m) hsub
+  rw [Finset.sum_insert (by simp)] at this
+  have := x.2.2
+  omega
+
+namespace Fin
+
+open TauCeti
+
+variable {r : ℕ} {m : Fin r → ℕ}
+
+/-- The position of `⟨i, j⟩` in the concatenation is the total length of the blocks before `i`,
+plus `j`. -/
+private theorem coe_finSigmaFinEquiv (i : Fin r) (j : Fin (m i)) :
+    (finSigmaFinEquiv ⟨i, j⟩ : ℕ) = prefixSum i m + j := by
+  rw [finSigmaFinEquiv_apply, prefixSum_eq_sum_castLE i.2.le]
+
+/-- Inside a block, the cyclic successor of a position is the next position of that block. -/
+theorem finRotate_finSigmaFinEquiv_of_lt (i : Fin r) (j : Fin (m i)) (h : (j : ℕ) + 1 < m i) :
+    finRotate _ (finSigmaFinEquiv ⟨i, j⟩) = finSigmaFinEquiv ⟨i, ⟨j + 1, h⟩⟩ := by
+  apply Fin.ext
+  have hlt := (finSigmaFinEquiv ⟨i, ⟨j + 1, h⟩⟩).is_lt
+  rw [Fin.coe_finRotate_eq_ite, coe_finSigmaFinEquiv, coe_finSigmaFinEquiv]
+  rw [coe_finSigmaFinEquiv] at hlt
+  simp only at hlt ⊢
+  split_ifs <;> omega
+
+/-- The cyclic successor of the last position of a block is the first position `j'` of the
+cyclically next block; the existence of `j'` says that this block is nonempty. -/
+theorem finRotate_finSigmaFinEquiv_of_eq (i : Fin r) (j : Fin (m i)) (h : (j : ℕ) + 1 = m i)
+    (j' : Fin (m (finRotate r i))) (hj' : (j' : ℕ) = 0) :
+    finRotate _ (finSigmaFinEquiv ⟨i, j⟩) = finSigmaFinEquiv ⟨finRotate r i, j'⟩ := by
+  apply Fin.ext
+  have hlt := (finSigmaFinEquiv ⟨finRotate r i, j'⟩).is_lt
+  have hstep : prefixSum (i + 1) m = prefixSum i m + m i := prefixSum_succ i.2 m
+  rw [Fin.coe_finRotate_eq_ite, coe_finSigmaFinEquiv, coe_finSigmaFinEquiv]
+  rw [coe_finSigmaFinEquiv] at hlt
+  rw [Fin.coe_finRotate_eq_ite i] at hlt ⊢
+  by_cases hi : (i : ℕ) + 1 = r
+  · rw [hi, prefixSum_of_le le_rfl] at hstep
+    simp only [hi, ite_true, prefixSum_zero]
+    split_ifs <;> omega
+  · simp only [hi, ite_false] at hlt ⊢
+    split_ifs <;> omega
+
+end Fin
+
+namespace List
+
+/-- The list of values of a function on the concatenation of blocks of lengths `m i` is the
+concatenation of the lists of its values on the blocks. -/
+theorem ofFn_sum {α : Type*} {r : ℕ} {m : Fin r → ℕ} (f : Fin (∑ i, m i) → α) :
+    ofFn f = (ofFn fun i => ofFn fun j => f (finSigmaFinEquiv ⟨i, j⟩)).flatten := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [ofFn_congr (Fin.sum_univ_castSucc m), ofFn_add, ofFn_succ', concat_eq_append,
+      flatten_append, flatten_singleton, ih]
+    congr 3 <;> funext i
+    · congr 1
+      funext j
+      congr 1
+      ext
+      simp [finSigmaFinEquiv_apply]
+    · congr 1
+      ext
+      simp [finSigmaFinEquiv_apply]
+      -- The two sums agree term by term: `Fin.castSucc` and `Fin.castLE` keep the value.
+      rfl
+
+end List
 
 namespace TauCeti
 
@@ -196,3 +309,49 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
 
 end TauCeti
+
+namespace StrictMono
+
+/-- Telescoping a strictly increasing list `a` in an additive group with a preorder expresses
+`a k` as `a 0` plus the successive gaps below `a k`. -/
+theorem eq_add_sum_ite_sub {R : Type*} [AddCommGroup R] [Preorder R] [DecidableLT R] {n : ℕ}
+    {a : Fin (n + 1) → R} (ha : StrictMono a)
+    (k : Fin (n + 1)) : a k = a 0 +
+      ∑ j : Fin n, if a j.castSucc < a k then a j.succ - a j.castSucc else 0 := by
+  simp_rw [ha.lt_iff_lt]
+  refine Fin.cases ?_ (fun k ↦ ?_) k
+  · simp
+  · simp only [Fin.castSucc_lt_succ_iff]
+    rw [← Finset.sum_filter]
+    have heq : Finset.univ.filter (fun j : Fin n ↦ j ≤ k) = Finset.Iic k := by
+      ext j; simp
+    rw [heq, Fin.sum_Iic_sub]
+    rw [add_sub_cancel]
+
+/-- When a finite strictly increasing list in an additive group with a preorder contains the
+values of `c` on a finset `b`, the sum of `c` over `b` is its cardinality times `a 0` plus, for
+each successive gap, the number of elements above its lower threshold times the gap. -/
+theorem sum_eq_card_nsmul_add_sum_card_filter_nsmul_sub {R : Type*} [AddCommGroup R] [Preorder R]
+    [DecidableLT R]
+    {n : ℕ} {a : Fin (n + 1) → R}
+    (ha : StrictMono a) {ι : Type*} {c : ι → R}
+    (b : Finset ι) (hc : ∀ i ∈ b, c i ∈ Set.range a) :
+    (∑ i ∈ b, c i) = b.card • a 0 +
+      ∑ j : Fin n, (b.filter fun i ↦ a j.castSucc < c i).card • (a j.succ - a j.castSucc) := by
+  classical
+  have hci (i : ι) (hi : i ∈ b) : c i = a 0 +
+      ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0 := by
+    obtain ⟨k, hk⟩ := hc i hi
+    simpa only [hk] using ha.eq_add_sum_ite_sub k
+  calc
+    (∑ i ∈ b, c i) = ∑ i ∈ b, (a 0 +
+        ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0) :=
+      Finset.sum_congr rfl hci
+    _ = _ := by
+      rw [Finset.sum_add_distrib, Finset.sum_comm]
+      congr 1
+      · simp
+      · refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [← Finset.sum_filter, Finset.sum_const]
+
+end StrictMono

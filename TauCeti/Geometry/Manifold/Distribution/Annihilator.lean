@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 
 /-!
 # Annihilating covectors of distributions and the involutivity criterion
@@ -121,77 +122,56 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
   have ha'A : a' ∘L A x = 0 := by
     ext c
     exact haA (LinearMap.mem_range_self _ c)
-  -- The compressed frame is the identity at x, hence invertible on a neighborhood.
-  let Q : M → (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜 := fun y ↦ P ∘L A y
-  have hQ : ContMDiffOn I 𝓘(𝕜, (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜) n Q
-      (V ∩ e.baseSet) := contMDiffOn_const.clm_comp hA
-  have hQx : Q x = 1 := ContinuousLinearMap.ext hP
+  have ha' : a' ≠ 0 := fun hz ↦ ha (by simpa [a'] using congr($hz (e ⟨x, u⟩).2))
   -- Project the covector `a` at x to the annihilators of the nearby frame images.
-  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a' - a' ∘L A y ∘L (Q y).inverse ∘L P
+  obtain ⟨U, hU, hxU, hUS, hc, hUc⟩ :=
+    hA.exists_isOpen_contMDiffOn_sub_comp_inverse_comp (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP
+      ha' ha'A
+  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a' - a' ∘L A y ∘L (P ∘L A y).inverse ∘L P
   have hcx : c x = a' := by
     dsimp only [c]
     rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, ha'A]
     simp
-  have hcn : c x ≠ 0 := by
-    rw [hcx]
-    exact fun hz ↦ ha (by simpa [a'] using congr($hz (e ⟨x, u⟩).2))
-  have hQunit : ∀ᶠ y in 𝓝 x, (Q y).IsInvertible := by
-    have hi : (Q x).IsInvertible := by
-      rw [hQx]
-      exact ⟨ContinuousLinearEquiv.refl 𝕜 _, rfl⟩
-    exact (hQ.continuousOn.continuousAt
-      ((hV.inter e.open_baseSet).mem_nhds ⟨hxV, hxe⟩)).tendsto.eventually hi.eventually_nhds
-  obtain ⟨W, hWQ, hW, hxW⟩ := eventually_nhds_iff.mp hQunit
-  have hc : ContMDiffOn I 𝓘(𝕜, E →L[𝕜] 𝕜) n c (V ∩ e.baseSet ∩ W) := by
-    apply contMDiffOn_const.sub
-    exact ((contMDiffOn_const.clm_comp (hA.mono inter_subset_left)).clm_comp
-      (fun y hy ↦ (hWQ y hy.2).contDiffAt_map_inverse.comp_contMDiffWithinAt
-        ((hQ y hy.1).mono inter_subset_left))).clm_comp contMDiffOn_const
-  have hcn' : ∀ᶠ y in 𝓝 x, c y ≠ 0 :=
-    (hc.continuousOn.continuousAt
-      (((hV.inter e.open_baseSet).inter hW).mem_nhds ⟨⟨hxV, hxe⟩, hxW⟩)).eventually_ne hcn
-  obtain ⟨Z, hZc, hZ, hxZ⟩ := eventually_nhds_iff.mp hcn'
-  let U := V ∩ e.baseSet ∩ W ∩ Z
   let α : Π y : M, TangentSpace I y →L[𝕜] 𝕜 :=
     fun y ↦ c y ∘L e.continuousLinearMapAt 𝕜 y
-  refine ⟨U, α, ((hV.inter e.open_baseSet).inter hW).inter hZ,
-    ⟨⟨⟨hxV, hxe⟩, hxW⟩, hxZ⟩, ?_, ?_, ?_⟩
+  refine ⟨U, α, hU, hxU, ?_, ?_, ?_⟩
   -- The cotangent-bundle coordinates of α are exactly the smooth covectors c.
   · exact CotangentBundle.contMDiffOn_mk_comp_continuousLinearMapAt x
-      (U := U) (c := c) (fun _ hy ↦ hy.1.1.2)
-      (hc.mono inter_subset_left)
+      (U := U) (c := c) (fun _ hy ↦ (hUS hy).2) hc
   · have heval : α x u = c x (e ⟨x, u⟩).2 :=
       congrArg (c x) (e.continuousLinearMapAt_apply_of_mem 𝕜 hxe u)
     rw [heval, hcx]
     simpa [a'] using ha
   · intro y hy
-    have hcy : c y ≠ 0 := hZc y hy.2
+    have hcy : c y ≠ 0 := (hUc y hy).2
     have hαy : α y ≠ 0 := by
       intro hz
       apply hcy
       ext v
       have := congrArg (fun f : TangentSpace I y →L[𝕜] 𝕜 ↦ f (e.symmL 𝕜 y v)) hz
-      simpa [α, e.continuousLinearMapAt_symmL hy.1.1.2] using this
+      simpa [α, e.continuousLinearMapAt_symmL (hUS hy).2] using this
     refine ⟨hαy, ?_⟩
     -- The frame spans `D y` and is annihilated by `α y`.
-    rw [← hX.span_eq hy.1.1.1]
+    rw [← hX.span_eq (hUS hy).1]
     apply Submodule.span_le.mpr
     rintro _ ⟨i, rfl⟩
     have hzero : c y ∘L A y = 0 :=
-      a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hWQ y hy.1.2)
-    have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) hy.1.1.2
+      a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hUc y hy).1
+    have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) (hUS hy).2
       (Pi.single i (1 : 𝕜))
     have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=
-      congrArg (c y) (e.continuousLinearMapAt_apply_of_mem 𝕜 hy.1.1.2 (X i y))
+      congrArg (c y) (e.continuousLinearMapAt_apply_of_mem 𝕜 (hUS hy).2 (X i y))
     have hzeroi : α y (X i y) = 0 := by
       rw [heval]
       simpa [A, hAi, e] using
         congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
     exact hzeroi
 
+omit [FiniteDimensional 𝕜 E] in
 /-- A `C^n` hyperplane distribution is locally the kernel of a nowhere-zero `C^n` covector
 field. The covector is a section of the usual hom bundle; its regularity and nonvanishing
-are asserted only on the open neighborhood, not outside it. -/
+are asserted only on the open neighborhood, not outside it.
+Finite-dimensionality of `E` follows from the rank condition `k + 1 = finrank 𝕜 E`. -/
 theorem IsContMDiffDistribution.exists_local_annihilator
     (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank 𝕜 E) (x : M) :
     ∃ (U : Set M) (α : Π y : M, TangentSpace I y →L[𝕜] 𝕜),
@@ -199,6 +179,7 @@ theorem IsContMDiffDistribution.exists_local_annihilator
       ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
         (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ LinearMap.ker (α y).toLinearMap = D y := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
   -- A hyperplane is a proper subspace, so some tangent vector lies outside it.
   obtain ⟨u, -, hu⟩ := IsConcreteLE.exists_of_lt
     (Submodule.lt_top_of_finrank_lt_finrank (s := D x)
@@ -244,6 +225,7 @@ theorem IsContMDiffDistribution.exists_roughForm_apply_ne_zero
   · rw [RoughForm.mem_ker, hαa]
     exact (haD y hy).2 hv
 
+omit [FiniteDimensional ℝ E] in
 /-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
 `D` of rank `k` with `k + 1 = dim E` has an open neighbourhood `U` on which `D` is the kernel of a
 one-form `α` of class `C^n` on `U` which vanishes nowhere on `U`. No coorientation is assumed: the
@@ -254,6 +236,7 @@ theorem IsContMDiffDistribution.exists_roughForm_ker_eq
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   obtain ⟨u, -, hu⟩ := IsConcreteLE.exists_of_lt
     (Submodule.lt_top_of_finrank_lt_finrank (s := D x)
       (by rw [hD.finrank_eq x, finrank_tangentSpace]; omega))

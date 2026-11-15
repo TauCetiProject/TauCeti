@@ -218,13 +218,14 @@ algebra. -/
 noncomputable def rep :
     _root_.UniversalEnvelopingAlgebra ℚ (sp (Fin (n + 1)) ℚ) →ₐ[ℚ]
       Module.End ℚ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
-  LieSubalgebra.matrixRepresentation (sp (Fin (n + 1)) ℚ)
+  TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
+    ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
 
 theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply x v
+  TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
 /-- A Cartan generator acts diagonally on every standard-module vector with the recorded
 coordinate weight. -/

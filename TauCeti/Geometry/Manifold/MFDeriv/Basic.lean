@@ -22,6 +22,9 @@ manifold-derivative API.
 * `HasMFDerivAt.iterate`: the chain rule for iterates at a fixed point, `d(f^[n])_x = (df_x) ^ n`.
 * `TauCeti.mfderiv_injective_of_leftInverse`: a map with a left inverse differentiable along its
   image has injective derivative.
+* `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
+  `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
+  differentiability hypothesis.
 -/
 
 public section
@@ -71,5 +74,38 @@ theorem mfderiv_injective_of_leftInverse {f : M → N} {g : N → M}
   rw [hgf.comp_eq_id, mfderiv_id] at h
   exact Function.LeftInverse.injective (g := mfderiv J I g (f x)) fun v ↦
     (DFunLike.congr_fun h v).symm
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- **The derivative of an affine reparametrization.** For a map `u` from a normed space, the
+derivative of `w ↦ u (c + ε • w)` at `w` is `ε` times the derivative of `u` at `c + ε • w`. No
+differentiability is needed: for `ε ≠ 0` the reparametrization is invertible, so both maps are
+differentiable or neither is, and for `ε = 0` the reparametrized map is constant. This is the
+manifold version of `fderiv_comp_smul` and `fderiv_comp_add_left`. -/
+theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v : F) :
+    mfderiv 𝓘(𝕜, F) I (fun w ↦ u (c + ε • w)) w v =
+      ε • mfderiv 𝓘(𝕜, F) I u (c + ε • w) v := by
+  rcases eq_or_ne ε 0 with rfl | hε
+  · have h : (fun w ↦ u (c + (0 : 𝕜) • w)) = fun _ ↦ u c := by simp
+    rw [h, mfderiv_const]
+    exact (zero_smul 𝕜 (mfderiv 𝓘(𝕜, F) I u (c + (0 : 𝕜) • w) v)).symm
+  have hφ : HasMFDerivAt 𝓘(𝕜, F) 𝓘(𝕜, F) (fun w ↦ c + ε • w) w
+      (ε • ContinuousLinearMap.id 𝕜 F) :=
+    (((hasFDerivAt_id w).const_smul ε).const_add c).hasMFDerivAt
+  by_cases hu : MDifferentiableAt 𝓘(𝕜, F) I u (c + ε • w)
+  · have h := (hu.hasMFDerivAt.comp w hφ).mfderiv
+    rw [Function.comp_def] at h
+    rw [h]
+    exact map_smul (mfderiv 𝓘(𝕜, F) I u (c + ε • w)) ε v
+  -- Otherwise neither map is differentiable: `u` is the reparametrized map composed with the
+  -- inverse affine map `y ↦ ε⁻¹ • (y - c)`.
+  have hu' : ¬MDifferentiableAt 𝓘(𝕜, F) I (fun w ↦ u (c + ε • w)) w := fun h ↦ by
+    have hψ : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F) (fun y ↦ ε⁻¹ • (y - c)) (c + ε • w) :=
+      ((differentiableAt_id.sub_const c).const_smul ε⁻¹).mdifferentiableAt
+    have h' : MDifferentiableAt 𝓘(𝕜, F) I (fun w ↦ u (c + ε • w))
+        (ε⁻¹ • ((c + ε • w) - c)) := by
+      simpa [smul_smul, hε] using h
+    exact hu (by simpa [Function.comp_def, smul_smul, hε] using h'.comp (c + ε • w) hψ)
+  rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
+  exact (smul_zero ε).symm
 
 end TauCeti

@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.Height.MahlerMeasure
 public import TauCeti.NumberTheory.Height.NumberField
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
-import TauCeti.NumberTheory.Height.FiniteOrder
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Roots
 import TauCeti.RingTheory.Polynomial.GaussNorm
 
@@ -127,7 +126,11 @@ private theorem prod_aroots_mulHeight₁_eq_mahlerMeasure_pow {x : F} (hx : IsAl
         simp_rw [Finset.prod_pow]
     _ = (∏ v : InfinitePlace L, P ^ v.mult) * ∏ᶠ w : FinitePlace L, (w (a : L))⁻¹ := by
         congr 1
-        · exact Finset.prod_congr rfl fun v _ ↦ by rw [ht, v.prod_aroots_max_one_eq hs]
+        · refine Finset.prod_congr rfl fun v _ ↦ ?_
+          rw [ht]
+          congr 1
+          simpa [s, P, Multiset.map_map, Function.comp_def, max_comm] using
+            congr(($(v.map_aroots_eq_map_norm_aroots hs).map (max · 1)).prod)
         · exact finprod_congr fun w ↦ by
             rw [ht, eq_inv_of_mul_eq_one_right (mul_prod_aroots_max_finitePlace hx hs w)]
     _ = mahlerMeasure x ^ finrank ℚ L := by

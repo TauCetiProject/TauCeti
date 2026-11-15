@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Determinant.Prod
@@ -41,6 +42,17 @@ maps valued in an arbitrary module.
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `LinearMap.BilinForm.restrict_eq_compl₁₂`: restriction is pullback along inclusion.
+* `LinearMap.BilinForm.anisotropic_toQuadraticMap_iff`: anisotropy is diagonal vanishing
+  only at zero.
+* `LinearMap.BilinForm.nondegenerate_of_anisotropic`: an anisotropic diagonal implies
+  nondegeneracy without symmetry.
+* `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
+  anisotropy of the diagonal.
+* `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
+  by a regular element `a` is `a` times a form.
+* `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
+* `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
   multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
@@ -49,6 +61,8 @@ maps valued in an arbitrary module.
   torsion-free values sees each argument only modulo elements of finite additive order.
 * `LinearMap.BilinForm.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub`: `x · x = 2ac` for
   `x = a v + c t` modulo torsion, where `v, t` is a hyperbolic pair of a `ℤ`-valued form.
+* `LinearMap.IsRefl.apply_eq_zero_of_mem_ker`: a vector in the kernel of a reflexive form is
+  orthogonal to every vector on either side.
 * `LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`: a `ℤ`-valued form spanned modulo
   torsion by a hyperbolic pair is even.
 * `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
@@ -98,6 +112,34 @@ end LinearMap.IsAlt
 
 namespace LinearMap.BilinForm
 
+/-- Restriction to a submodule is pullback along its inclusion in both arguments. -/
+theorem restrict_eq_compl₁₂ {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (B : LinearMap.BilinForm R M) (W : Submodule R M) :
+    B.restrict W = B.compl₁₂ W.subtype W.subtype := by
+  rfl
+
+/-- The diagonal of a bilinear form is anisotropic exactly when it vanishes only at zero. -/
+theorem anisotropic_toQuadraticMap_iff {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M) :
+    B.toQuadraticMap.Anisotropic ↔ ∀ x, B x x = 0 → x = 0 := by
+  simp only [QuadraticMap.Anisotropic, LinearMap.BilinMap.toQuadraticMap_apply]
+
+/-- A bilinear form with anisotropic diagonal is nondegenerate, without symmetry. -/
+theorem nondegenerate_of_anisotropic {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
+    (hB : B.toQuadraticMap.Anisotropic) : B.Nondegenerate :=
+  ⟨LinearMap.BilinForm.separatingLeft_of_anisotropic hB,
+    fun x hx ↦ (B.anisotropic_toQuadraticMap_iff.mp hB) x (hx x)⟩
+
+/-- An injective pullback preserves anisotropy of the diagonal of a bilinear form. -/
+theorem anisotropic_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (B : LinearMap.BilinForm R M) (hB : B.toQuadraticMap.Anisotropic)
+    (f : N →ₗ[R] M) (hf : Function.Injective f) :
+    (LinearMap.BilinMap.toQuadraticMap (B.compl₁₂ f f)).Anisotropic := by
+  rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
+  exact hB.comp f hf
+
 /-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
 @[simp]
 theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -106,9 +148,42 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
   ext x y
   simp
 
+/-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
+form. -/
+theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a)
+    (h : ∀ x y, a ∣ B x y) : ∃ C : LinearMap.BilinForm R M, a • C = B := by
+  -- `B` factors through multiplication by `a`, an injective endomorphism of `R` whose range
+  -- contains every value of `B`.
+  have hi : Function.Injective (DistribSMul.toLinearMap R R a) :=
+    fun r s hrs ↦ ha (by simpa using hrs)
+  refine ⟨B.codRestrict₂ _ hi fun x y ↦ ?_, LinearMap.ext₂ fun x y ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := h x y
+    exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
+  · simpa using B.codRestrict₂_apply _ hi _ x y
+
 end LinearMap.BilinForm
 
+namespace LinearMap.BilinForm.IsRefl
+
+/-- Pullback along a linear map preserves reflexivity of a bilinear form. -/
+theorem compl₁₂ {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) (f : N →ₗ[R] M) : (B.compl₁₂ f f).IsRefl := by
+  intro x y h
+  simp only [LinearMap.compl₁₂_apply] at h ⊢
+  exact hB _ _ h
+
+end LinearMap.BilinForm.IsRefl
+
 namespace LinearMap.BilinForm.IsSymm
+
+/-- Pullback along a linear map preserves symmetry of a bilinear form. -/
+theorem compl₁₂ {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] {B : LinearMap.BilinForm R M}
+    (hB : LinearMap.BilinForm.IsSymm B) (f : N →ₗ[R] M) :
+    LinearMap.BilinForm.IsSymm (B.compl₁₂ f f) :=
+  ⟨fun x y ↦ hB.eq (f x) (f y)⟩
 
 /-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
 theorem of_smul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
@@ -146,6 +221,14 @@ theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommMonoid M] [Module R 
     B x y = B x y' := by
   have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
   simpa [sub_eq_zero] using this
+
+/-- A vector in the kernel of a reflexive sesquilinear form is orthogonal to every vector on
+either side; in particular `B y x = 0`. -/
+theorem IsRefl.apply_eq_zero_of_mem_ker {R₁ M₁ : Type*} [CommSemiring R₁] [AddCommMonoid M₁]
+    [Module R₁ M₁] [AddCommMonoid M] [Module R M] {I₁ I₂ : R₁ →+* R}
+    {B : M₁ →ₛₗ[I₁] M₁ →ₛₗ[I₂] M} (hB : B.IsRefl) (y : M₁) {x : M₁} (hx : x ∈ ker B) :
+    B y x = 0 :=
+  hB x y <| LinearMap.congr_fun (mem_ker.1 hx) y
 
 end LinearMap
 

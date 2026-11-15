@@ -271,6 +271,7 @@ variable (M : Type) [Field M] [ValuativeRel M] [TopologicalSpace M]
   [FiniteDimensional K M] [IsGalois K M] [IsUnramified K M]
   [Algebra L M] [IsScalarTower K L M] [ValuativeExtension L M]
 
+omit [ValuativeExtension L M] in
 /-- **Inflation of unramified classes.** For unramified layers `K ⊆ L ⊆ M`, inflation
 `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` sends the class of `a ∈ Kˣ` to the class of `a ^ [M : L]`. -/
 @[simp]
@@ -278,10 +279,13 @@ theorem map_unramifiedClass (a : Kˣ) :
     groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2
         (unramifiedClass K L (Additive.ofMul a)) =
       unramifiedClass K M (Additive.ofMul (a ^ Module.finrank L M)) := by
+  -- The valuative relation of `M` extends that of `K`, so it also extends that of `L`.
+  have : ValuativeExtension L M := .of_isScalarTower (K := K)
   -- Restriction `Gal(M/K) → Gal(L/K)` sends arithmetic Frobenius to arithmetic Frobenius.
   exact map_cyclicClass (mem_zpowers_frobeniusAlgEquiv K L) (mem_zpowers_frobeniusAlgEquiv K M)
     frobeniusAlgEquiv_restrictNormal a
 
+omit [ValuativeExtension L M] in
 /-- **The unramified invariant is compatible with inflation.** For unramified layers
 `K ⊆ L ⊆ M`, inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` preserves the local invariant. -/
 @[simp]
@@ -380,6 +384,7 @@ end BaseChange
 
 /-! ### Cocycles with unit values -/
 
+omit [FiniteDimensional K L] in
 /-- **A unit-valued cocycle of an unramified layer is a coboundary.** If a `2`-cocycle of
 `Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
 class in `H²(Gal(L/K), Lˣ)` vanishes. -/
@@ -387,6 +392,7 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     (c : cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
     (hc : ∀ g h, (Rep.toAdditive (c (g, h))).toMul ∈ unitFiltration L 0) :
     H2π _ c = 0 := by
+  have := TauCeti.finite_of_valuativeExtension K L
   set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
   -- The cocycle `c`, read in `U(L,0)`.
   let c' : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) → A := fun p ↦ Additive.ofMul ⟨_, hc p.1 p.2⟩

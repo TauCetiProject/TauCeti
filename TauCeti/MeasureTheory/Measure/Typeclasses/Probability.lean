@@ -70,6 +70,30 @@ theorem one_sub_measure_compl_le {Ω : Type*} [MeasurableSpace Ω] (μ : Measure
     calc (1 : ℝ≥0∞) = μ (s ∪ sᶜ) := by rw [Set.union_compl_self, measure_univ]
       _ ≤ μ s + μ sᶜ := measure_union_le _ _
 
+/-- A probability measure on a space with measurable singletons is determined by its values on
+singletons when those have total mass one, even if the space is uncountable. -/
+theorem ext_of_singleton_of_tsum_eq_one {β : Type*} [MeasurableSpace β]
+    [MeasurableSingletonClass β] {w : β → ℝ≥0∞} (hw : ∑' b, w b = 1)
+    {μ ν : Measure β} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hμ : ∀ b, μ {b} = w b) (hν : ∀ b, ν {b} = w b) : μ = ν := by
+  have hS : (Function.support w).Countable :=
+    Summable.countable_support_ennreal (by rw [hw]; exact ENNReal.one_ne_top)
+  have key : ∀ (m : Measure β) [IsProbabilityMeasure m], (∀ b, m {b} = w b) →
+      ∀ t : Set β, MeasurableSet t → m t = ∑' b : ↥(t ∩ Function.support w), w b := by
+    intro m _ hm t _
+    have hsum {s : Set β} (hs : s.Countable) : m s = ∑' b : s, w b := by
+      simpa [hm] using (tsum_measure_preimage_singleton (μ := m) hs (f := id)
+        fun _ _ ↦ measurableSet_singleton _).symm
+    have hSm : m (Function.support w) = 1 := by
+      rw [hsum hS, tsum_subtype_eq_of_support_subset subset_rfl, hw]
+    have hts : m t = m (t ∩ Function.support w) := by
+      rw [← measure_inter_add_sdiff t hS.measurableSet,
+        measure_mono_null (fun x (hx : x ∈ t \ Function.support w) => hx.2)
+          ((prob_compl_eq_zero_iff hS.measurableSet).2 hSm), add_zero]
+    rw [hts, hsum (hS.mono Set.inter_subset_right)]
+  refine Measure.ext fun t ht => ?_
+  rw [key μ hμ t ht, key ν hν t ht]
+
 end MeasureTheory.Measure
 
 open MeasureTheory in

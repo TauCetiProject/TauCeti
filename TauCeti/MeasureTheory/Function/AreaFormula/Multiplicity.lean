@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.AreaFormula.Integral
 import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
+import TauCeti.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # The area formula with multiplicity
@@ -24,6 +25,34 @@ The target measure is normalized Euclidean Hausdorff measure.
 We sum the injective area formula over measurable bi-Lipschitz pieces of the regular
 locus. The remaining points have null image, by Rademacher's theorem and the null-image
 result for zero Jacobians.
+
+For a self-map `f : E → E` of a finite-dimensional inner product space, the area formula on a
+measurable set `s` of points with invertible derivative says that `f` pushes `|det Df(x)| dx` on
+`s` forward to the fibre-counting density `y ↦ #(s ∩ f⁻¹(y))`
+(`TauCeti.map_withDensity_abs_det_fderiv_eq_withDensity_encard`), giving a Bochner area formula
+and an integrability transfer when almost every fibre meets `s` in a finite set. Splitting the
+measurable sets where the Jacobian is positive and negative gives the signed area formula
+(`TauCeti.integral_det_fderiv_smul_comp_eq_integral_ncard_sub_ncard_smul`): for a differentiable
+map with almost every fibre finite, a strongly measurable `g`, and `det Df • g ∘ f` integrable,
+
+`∫ det Df(x) • g (f x) dx = ∫ (N⁺(y) - N⁻(y)) • g(y) dy`,
+
+where `N^±(y)` is the number of preimages of `y` at which `det Df` is positive, respectively
+negative.
+
+## Main results
+
+* `TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv`: the weighted
+  area formula with multiplicity on a measurable set of points with injective derivative.
+* `TauCeti.measurable_encard_inter_preimage_singleton`: fibre counts over a set of regular points
+  are measurable.
+* `TauCeti.map_withDensity_abs_det_fderiv_eq_withDensity_encard`: on a set of regular points,
+  `f` pushes `|det Df| dx` forward to the fibre-counting density.
+* `TauCeti.setIntegral_abs_det_fderiv_smul_comp_eq_integral_ncard_smul`,
+  `TauCeti.integrable_ncard_smul_of_integrableOn_abs_det_fderiv_smul`: the corresponding area
+  formula and integrability transfer for Bochner integrals.
+* `TauCeti.integral_det_fderiv_smul_comp_eq_integral_ncard_sub_ncard_smul`: the signed area
+  formula.
 
 ## References
 
@@ -125,6 +154,7 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
   intro i _ j _ hij
   exact (hpd hij).mono inter_subset_left inter_subset_left
 
+omit [MeasurableSpace U] [BorelSpace U] in
 /-- Restricting the parameters of a Lipschitz map to its differentiability points with
 nonzero Jacobian preserves weighted fiber sums almost everywhere for normalized Hausdorff
 measure. Neither the parameter set nor the weight needs to be measurable. -/
@@ -133,6 +163,8 @@ theorem tsum_fiber_inter_setOf_regular_ae_eq (s : Set U) (g : U → ℝ≥0∞)
     (fun y ↦ ∑' x : ↥((s ∩ {x | DifferentiableAt ℝ f x ∧
       (fderiv ℝ f x).normDet ≠ 0}) ∩ f ⁻¹' {y}), g x) =ᵐ[μHE[finrank ℝ U]]
       fun y ↦ ∑' x : ↥(s ∩ f ⁻¹' {y}), g x := by
+  let _ : MeasurableSpace U := borel U
+  have : BorelSpace U := ⟨rfl⟩
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp
     hf.euclideanHausdorffMeasure_image_compl_setOf_regular] with y hy
   apply tsum_congr_set_coe g
@@ -232,3 +264,153 @@ theorem lintegral_normDet_fderiv_eq_lintegral_encard (hf : LipschitzWith K f)
     hf.lintegral_normDet_fderiv_mul_eq_lintegral_tsum hs (g := fun _ ↦ 1) measurable_const
 
 end LipschitzWith
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → E}
+  {s : Set E}
+
+/-- The number of points of a fibre of `f` lying in a measurable set `s` of points where `f` is
+differentiable with invertible derivative is a measurable function of the base point, with values
+in `ℕ∞`. -/
+theorem measurable_encard_inter_preimage_singleton (hs : MeasurableSet s)
+    (hd : ∀ x ∈ s, DifferentiableAt ℝ f x) (hdet : ∀ x ∈ s, (fderiv ℝ f x).det ≠ 0) :
+    Measurable fun y ↦ ((s ∩ f ⁻¹' {y}).encard : ℝ≥0∞) := by
+  simpa only [ENNReal.tsum_set_one] using measurable_tsum_fiber_of_injective_fderiv hs hd
+    (fun x hx ↦ ((fderiv ℝ f x).toContinuousLinearEquivOfDetNeZero (hdet x hx)).injective)
+    (g := fun _ ↦ (1 : ℝ≥0∞)) measurable_const
+
+/-- **The pushforward of the Jacobian measure counts preimages.** On a measurable set `s` of
+points where `f` is differentiable with invertible derivative, `f` pushes the measure
+`|det Df(x)| dx` on `s` forward to the measure with density `y ↦ #(s ∩ f⁻¹(y))`, an extended
+natural number. This is the non-injective form of
+`MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar`. -/
+theorem map_withDensity_abs_det_fderiv_eq_withDensity_encard (hs : MeasurableSet s)
+    (hf : Measurable f) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hdet : ∀ x ∈ s, (fderiv ℝ f x).det ≠ 0) :
+    ((volume.restrict s).withDensity fun x ↦ ENNReal.ofReal |(fderiv ℝ f x).det|).map f =
+      volume.withDensity fun y ↦ ((s ∩ f ⁻¹' {y}).encard : ℝ≥0∞) := by
+  ext B hB
+  have h := lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv hs hd
+    (fun x hx ↦ ((fderiv ℝ f x).toContinuousLinearEquivOfDetNeZero (hdet x hx)).injective)
+    ((measurable_one.indicator hB).comp hf)
+  rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] at h
+  rw [map_apply hf hB, withDensity_apply _ (hf hB), withDensity_apply _ hB,
+    ← lintegral_indicator (hf hB), ← lintegral_indicator hB]
+  calc
+    _ = ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).normDet * (B.indicator 1 ∘ f) x := by
+      refine lintegral_congr fun x ↦ ?_
+      by_cases hx : f x ∈ B <;>
+        simp [hx, LinearMap.normDet_eq_abs_det, indicator_of_mem, indicator_of_notMem]
+    _ = _ := h
+    _ = _ := by
+      refine lintegral_congr fun y ↦ ?_
+      have e : ∀ x : ↥(s ∩ f ⁻¹' {y}), (B.indicator (1 : E → ℝ≥0∞) ∘ f) x = B.indicator 1 y :=
+        fun x ↦ by rw [comp_apply, x.2.2]
+      simp_rw [e, ENNReal.tsum_set_const]
+      by_cases hy : y ∈ B <;> simp [hy]
+
+/-- **The area formula with multiplicity on a set of regular points.** If `f` is differentiable
+with invertible derivative on a measurable set `s`, and almost every fibre of `f` meets `s` in a
+finite set, then `∫_s |det Df(x)| • g (f x) dx = ∫ #(s ∩ f⁻¹(y)) • g(y) dy`. -/
+theorem setIntegral_abs_det_fderiv_smul_comp_eq_integral_ncard_smul (hs : MeasurableSet s)
+    (hf : Measurable f) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hdet : ∀ x ∈ s, (fderiv ℝ f x).det ≠ 0) (hfin : ∀ᵐ y, (s ∩ f ⁻¹' {y}).Finite)
+    {g : E → F} (hg : StronglyMeasurable g) :
+    ∫ x in s, |(fderiv ℝ f x).det| • g (f x) = ∫ y, ((s ∩ f ⁻¹' {y}).ncard : ℝ) • g y := by
+  have hJ : Measurable fun x ↦ ENNReal.ofReal |(fderiv ℝ f x).det| :=
+    ENNReal.measurable_ofReal.comp (continuous_abs.measurable.comp (measurable_det_fderiv ℝ f))
+  calc
+    _ = ∫ x, g (f x) ∂(volume.restrict s).withDensity
+          fun x ↦ ENNReal.ofReal |(fderiv ℝ f x).det| := by
+      rw [integral_withDensity_eq_integral_toReal_smul hJ
+        (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+      simp only [ENNReal.toReal_ofReal (abs_nonneg _)]
+    _ = ∫ y, g y ∂volume.withDensity fun y ↦ ((s ∩ f ⁻¹' {y}).encard : ℝ≥0∞) := by
+      rw [← map_withDensity_abs_det_fderiv_eq_withDensity_encard hs hf hd hdet,
+        integral_map hf.aemeasurable hg.aestronglyMeasurable]
+    _ = _ := by
+      rw [integral_withDensity_eq_integral_toReal_smul
+        (measurable_encard_inter_preimage_singleton hs hd hdet)
+        (hfin.mono fun y hy ↦ by simpa using hy.encard_lt_top)]
+      refine integral_congr_ae (hfin.mono fun y hy ↦ ?_)
+      simp [← hy.cast_ncard_eq]
+
+/-- Under the hypotheses of `TauCeti.setIntegral_abs_det_fderiv_smul_comp_eq_integral_ncard_smul`,
+if `|det Df(x)| • g (f x)` is integrable on `s`, then `y ↦ #(s ∩ f⁻¹(y)) • g(y)` is integrable. -/
+theorem integrable_ncard_smul_of_integrableOn_abs_det_fderiv_smul (hs : MeasurableSet s)
+    (hf : Measurable f) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hdet : ∀ x ∈ s, (fderiv ℝ f x).det ≠ 0) (hfin : ∀ᵐ y, (s ∩ f ⁻¹' {y}).Finite)
+    {g : E → F} (hg : StronglyMeasurable g)
+    (hint : IntegrableOn (fun x ↦ |(fderiv ℝ f x).det| • g (f x)) s) :
+    Integrable fun y ↦ ((s ∩ f ⁻¹' {y}).ncard : ℝ) • g y := by
+  have hJ : Measurable fun x ↦ ENNReal.ofReal |(fderiv ℝ f x).det| :=
+    ENNReal.measurable_ofReal.comp (continuous_abs.measurable.comp (measurable_det_fderiv ℝ f))
+  have hlt : ∀ᵐ y, ((s ∩ f ⁻¹' {y}).encard : ℝ≥0∞) < ∞ :=
+    hfin.mono fun y hy ↦ by simpa using hy.encard_lt_top
+  have h : Integrable g (volume.withDensity fun y ↦ ((s ∩ f ⁻¹' {y}).encard : ℝ≥0∞)) := by
+    rw [← map_withDensity_abs_det_fderiv_eq_withDensity_encard hs hf hd hdet,
+      integrable_map_measure hg.aestronglyMeasurable hf.aemeasurable,
+      integrable_withDensity_iff_integrable_smul' hJ
+        (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+    simp only [ENNReal.toReal_ofReal (abs_nonneg _), comp_apply]
+    exact hint
+  rw [integrable_withDensity_iff_integrable_smul'
+    (measurable_encard_inter_preimage_singleton hs hd hdet) hlt] at h
+  refine h.congr (hfin.mono fun y hy ↦ ?_)
+  simp [← hy.cast_ncard_eq]
+
+/-- **The signed area formula.** Let `f : E → E` be differentiable with almost every fibre finite,
+and let `det Df(x) • g (f x)` be integrable. Then its integral is the integral of `g` weighted by
+the number of preimages at which `det Df` is positive minus the number at which it is negative.
+Points with `det Df(x) = 0` contribute to neither side. -/
+theorem integral_det_fderiv_smul_comp_eq_integral_ncard_sub_ncard_smul (hf : Differentiable ℝ f)
+    (hfin : ∀ᵐ y, (f ⁻¹' {y}).Finite) {g : E → F} (hg : StronglyMeasurable g)
+    (hint : Integrable fun x ↦ (fderiv ℝ f x).det • g (f x)) :
+    ∫ x, (fderiv ℝ f x).det • g (f x) =
+      ∫ y, ((({x | 0 < (fderiv ℝ f x).det} ∩ f ⁻¹' {y}).ncard : ℝ) -
+        ({x | (fderiv ℝ f x).det < 0} ∩ f ⁻¹' {y}).ncard) • g y := by
+  have hJ := measurable_det_fderiv ℝ f
+  have hP : MeasurableSet {x | 0 < (fderiv ℝ f x).det} := measurableSet_lt measurable_const hJ
+  have hN : MeasurableSet {x | (fderiv ℝ f x).det < 0} := measurableSet_lt hJ measurable_const
+  have hfm : Measurable f := hf.continuous.measurable
+  have hfinP : ∀ᵐ y, ({x | 0 < (fderiv ℝ f x).det} ∩ f ⁻¹' {y}).Finite :=
+    hfin.mono fun y hy ↦ hy.subset inter_subset_right
+  have hfinN : ∀ᵐ y, ({x | (fderiv ℝ f x).det < 0} ∩ f ⁻¹' {y}).Finite :=
+    hfin.mono fun y hy ↦ hy.subset inter_subset_right
+  -- On the positive and negative parts, the integrand is `±|det Df| • g ∘ f`.
+  have hintP : IntegrableOn (fun x ↦ |(fderiv ℝ f x).det| • g (f x))
+      {x | 0 < (fderiv ℝ f x).det} :=
+    hint.integrableOn.congr_fun (fun x hx ↦ by simp [abs_of_pos hx.out]) hP
+  have hintN : IntegrableOn (fun x ↦ |(fderiv ℝ f x).det| • g (f x))
+      {x | (fderiv ℝ f x).det < 0} :=
+    hint.integrableOn.neg.congr_fun (fun x hx ↦ by simp [abs_of_neg hx.out]) hN
+  calc
+    _ = ∫ x in {x | 0 < (fderiv ℝ f x).det} ∪ {x | (fderiv ℝ f x).det < 0},
+          (fderiv ℝ f x).det • g (f x) := by
+      refine (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ ?_).symm
+      simp only [mem_union, mem_ofPred_eq, not_or, not_lt] at hx
+      simp [le_antisymm hx.1 hx.2]
+    _ = (∫ x in {x | 0 < (fderiv ℝ f x).det}, |(fderiv ℝ f x).det| • g (f x)) -
+          ∫ x in {x | (fderiv ℝ f x).det < 0}, |(fderiv ℝ f x).det| • g (f x) := by
+      rw [setIntegral_union (disjoint_left.2 fun x hxP hxN ↦ lt_asymm hxP.out hxN.out) hN
+        hint.integrableOn hint.integrableOn, sub_eq_add_neg, ← integral_neg]
+      congr 1
+      · exact setIntegral_congr_fun hP fun x hx ↦ by simp [abs_of_pos hx.out]
+      · exact setIntegral_congr_fun hN fun x hx ↦ by simp [abs_of_neg hx.out]
+    _ = (∫ y, (({x | 0 < (fderiv ℝ f x).det} ∩ f ⁻¹' {y}).ncard : ℝ) • g y) -
+          ∫ y, (({x | (fderiv ℝ f x).det < 0} ∩ f ⁻¹' {y}).ncard : ℝ) • g y := by
+      rw [setIntegral_abs_det_fderiv_smul_comp_eq_integral_ncard_smul hP hfm (fun x _ ↦ hf x)
+          (fun x hx ↦ ne_of_gt hx.out) hfinP hg,
+        setIntegral_abs_det_fderiv_smul_comp_eq_integral_ncard_smul hN hfm (fun x _ ↦ hf x)
+          (fun x hx ↦ ne_of_lt hx.out) hfinN hg]
+    _ = _ := by
+      simp_rw [sub_smul]
+      exact (integral_sub
+        (integrable_ncard_smul_of_integrableOn_abs_det_fderiv_smul hP hfm (fun x _ ↦ hf x)
+          (fun x hx ↦ ne_of_gt hx.out) hfinP hg hintP)
+        (integrable_ncard_smul_of_integrableOn_abs_det_fderiv_smul hN hfm (fun x _ ↦ hf x)
+          (fun x hx ↦ ne_of_lt hx.out) hfinN hg hintN)).symm
+
+end TauCeti

@@ -195,7 +195,7 @@ theorem not_integrable_exp_mul_id_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n
     {t : ℝ} (ht : 0 < t) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (fisherSnedecorMeasure m n) := by
   let _ := isProbabilityMeasure_fisherSnedecorMeasure hm hn
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈n⌉₊ measurable_id.aemeasurable
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈n⌉₊
     ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ hx.le) (fun hpow ↦ ?_) ht
   exact not_lt_of_ge (by nlinarith [Nat.le_ceil n])
     ((integrable_pow_fisherSnedecorMeasure_iff hm hn ⌈n⌉₊).1 hpow)

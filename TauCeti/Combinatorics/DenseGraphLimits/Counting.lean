@@ -24,8 +24,8 @@ Two graphons on *different* carriers are compared through a coupling `π` of the
 reads both as graphons on `(Ω₁ × Ω₂, π)`; their difference there is the overlaid difference
 `overlayDiff U W π`. Since the coordinate projections out of a coupling are measure preserving,
 `homDensity_comap` says the two densities are unchanged by that reading, so the same-carrier
-statement transfers verbatim: `counting_lemma_coupling`. This is the cross-carrier engine of the
-separation layer, and the form in which the counting lemma meets the coupling-primary `cutDist`.
+statement transfers verbatim: `counting_lemma_coupling`. This is the cross-carrier engine of
+graphon separation, and the form in which the counting lemma meets the coupling-primary `cutDist`.
 
 Since that bound holds along *every* coupling, taking the infimum over couplings replaces the
 overlaid cut norm by the cut distance itself:
@@ -69,9 +69,6 @@ no loss of constant. The outer integral is over a probability measure, so the bo
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Lemma 10.23.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 7.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the counting lemma and its
-  coupling and cut-distance forms. The signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section

@@ -120,6 +120,12 @@ is the adjoint action, since `LieAlgebra.ad R L` is `LieModule.toEnd R L L`. -/
 noncomputable def representation : U →ₐ[R] Module.End R M :=
   _root_.UniversalEnvelopingAlgebra.lift R (LieModule.toEnd R L M)
 
+/-- The representation of `U(L)` on a Lie module is the lift of `LieModule.toEnd`. -/
+theorem representation_def :
+    representation R L M = _root_.UniversalEnvelopingAlgebra.lift R (LieModule.toEnd R L M) := by
+  unfold representation
+  rfl
+
 -- Neither this lemma nor its pointwise form below is a `simp` lemma: `simp` unfolds `ι` through
 -- Mathlib's `UniversalEnvelopingAlgebra.ι_apply`, so a left-hand side mentioning `ι` is not in
 -- simp-normal form. This is why Mathlib's own `lift_ι_apply` is not a `simp` lemma either;
@@ -134,6 +140,14 @@ action. -/
 theorem representation_ι_ad (x : L) :
     representation R L L (_root_.UniversalEnvelopingAlgebra.ι R x) = LieAlgebra.ad R L x :=
   representation_ι R L L x
+
+/-- The representation of `U(L)` on a faithful Lie module is injective on the canonical Lie
+generators. -/
+theorem representation_ι_injective [LieModule.IsFaithful R L M] :
+    Function.Injective fun x : L =>
+      representation R L M (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+  simpa only [representation_ι] using
+    LieModule.IsFaithful.injective_toEnd (R := R) (L := L) (M := M)
 
 /-- The `simp`-normal form of `TauCeti.UniversalEnvelopingAlgebra.representation_ι`, stated for
 the canonical generators as `simp` writes them. -/

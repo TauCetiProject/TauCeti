@@ -310,6 +310,20 @@ theorem isPath_liftToGraph_iff (p : G.toSimpleGraph.Walk x y) :
   rw [Graph.Walk.isPath_def, SimpleGraph.Walk.isPath_def, support_liftToGraph,
     List.nodup_map_iff Subtype.val_injective]
 
+/-- Lifting is injective: a walk in a simple graph is determined by its vertex sequence, which
+the lift preserves. Distinct simplified walks therefore lift to distinct multigraph walks, even
+though the lift chooses arbitrarily among parallel edges. -/
+theorem liftToGraph_injective :
+    Function.Injective (liftToGraph : G.toSimpleGraph.Walk x y → G.Walk x y) := fun p q h ↦
+  ext_support <| List.map_injective_iff.2 Subtype.val_injective <| by
+    simpa only [support_liftToGraph] using congrArg Graph.Walk.support h
+
+/-- Two simplified walks have the same lift exactly when they are equal. -/
+@[simp]
+theorem liftToGraph_inj {p q : G.toSimpleGraph.Walk x y} :
+    p.liftToGraph = q.liftToGraph ↔ p = q :=
+  liftToGraph_injective.eq_iff
+
 end SimpleGraph.Walk
 
 namespace Graph

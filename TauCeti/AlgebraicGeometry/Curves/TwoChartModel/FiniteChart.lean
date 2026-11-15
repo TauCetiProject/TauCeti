@@ -28,7 +28,7 @@ map from the two-chart model to the projective line.
 * `twoChartModel.isFinite_specMap_polynomialChartMap`: the induced morphism of affine schemes
   is finite.
 
-The finiteness input is `TauCeti.IsIntegralClosure.finite_adjoin_of_transcendental`,
+The finiteness input is `TauCeti.IsIntegralClosure.finite_adjoin`,
 transported across `Polynomial.algEquivOfTranscendental`.
 
 The two affine normalizations are the charts of the projective model in Stichtenoth,
@@ -96,7 +96,7 @@ theorem polynomialChartMap_finite (hF : IsFunctionField k F) {x : F}
       -- For this algebraMap, `RingHom.Finite` unfolds to `Module.Finite` for the
       -- algebra-induced module structure on `C`, which is the structure used by the theorem.
       change Module.Finite (Algebra.adjoin k {x}) C
-      exact IsIntegralClosure.finite_adjoin_of_transcendental k hx F C
+      exact IsIntegralClosure.finite_adjoin k x F C
     let e : C ≃+* A := (Subalgebra.equivOfEq _ _
       (restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x)).toRingEquiv
     have he : ι.toRingHom = e.toRingHom.comp (algebraMap _ C) := by

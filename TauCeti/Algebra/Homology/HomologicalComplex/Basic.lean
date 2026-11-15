@@ -237,12 +237,12 @@ lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
     K.toCycles_cyclesIsoSc'_hom]
   exact h.epi_toCycles
 
-/-- A morphism of complexes which is an epimorphism in degree `i` induces an epimorphism on the
-cycles in degree `j`, for a relation `i → j`, when its target is exact at `j`. -/
+/-- A morphism of complexes which is an epimorphism in degree `i = c.prev j` induces an
+epimorphism on the cycles in degree `j` when its target is exact at `j`. -/
 lemma epi_cyclesMap_of_exactAt {L : HomologicalComplex C c} (φ : K ⟶ L) {i j : ι}
-    [K.HasHomology j] [L.HasHomology j] (hij : c.Rel i j) [Epi (φ.f i)] (hL : L.ExactAt j) :
+    [K.HasHomology j] [L.HasHomology j] (hij : c.prev j = i) [Epi (φ.f i)] (hL : L.ExactAt j) :
     Epi (cyclesMap φ j) := by
-  have := epi_toCycles_of_exactAt hL (c.prev_eq' hij)
+  have := epi_toCycles_of_exactAt hL hij
   refine epi_of_epi_fac (f := K.toCycles i j) (h := φ.f i ≫ L.toCycles i j) ?_
   simp [← cancel_mono (L.iCycles j)]
 

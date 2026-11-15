@@ -34,7 +34,7 @@ It also records Euler's *second* beta integral, the half-line form
 statement, and specialises it to the Cauchy-type kernel `(1 + x ^ 2) ^ (-s)` on the whole line.
 
 These are the analytic prerequisites of
-`TauCeti/Analysis/SpecialFunctions/IncompleteBeta.lean`;
+`TauCeti/Analysis/SpecialFunctions/IncompleteBeta/Basic.lean`;
 `TauCeti/Probability/Distributions/Beta/Basic.lean` uses the beta integral for its moment formula,
 and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its density with the
 `(1 + x ^ 2) ^ (-s)` form of the second integral.
@@ -425,11 +425,10 @@ section SecondIntegral
 variable {s : ℝ}
 
 /-- Under the chart `u ↦ u / (1 - u)` the integrand of Euler's second beta integral becomes the
-integrand of Euler's first one. -/
-lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u ∈ Ioo (0 : ℝ) 1) :
+integrand of Euler's first one, for every `u < 1`. -/
+lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
       u ^ (a - 1) * (1 - u) ^ (b - 1) := by
-  obtain ⟨hu0, hu1⟩ := hu
   have h1u : (0 : ℝ) < 1 - u := by linarith
   have hbase : (1 : ℝ) + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
   have e1 : ((1 - u) ^ (2 : ℕ))⁻¹ = (1 - u) ^ (-2 : ℝ) := by
@@ -442,8 +441,8 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u ∈ Ioo (0 : ℝ
     rw [← Real.rpow_neg h1u.le, ← Real.rpow_add h1u, ← Real.rpow_add h1u]
     congr 1
     ring
-  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow hu0.le h1u.le, e1, e2,
-    div_eq_mul_inv]
+  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
+    e1, e2, div_eq_mul_inv]
   calc (1 - u) ^ (-2 : ℝ) * (u ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))
       = u ^ (a - 1) *
         ((1 - u) ^ (-2 : ℝ) * (((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))) := by ring
@@ -465,7 +464,7 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
       (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
-  exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu).symm) measurableSet_Ioo
+  exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu.2).symm) measurableSet_Ioo
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
     ∀ᶠ x in atTop,
@@ -568,7 +567,7 @@ theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
       (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
-    setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu),
+    setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu.2),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exact setIntegral_congr_set Ioo_ae_eq_Ioc
@@ -773,9 +772,6 @@ private theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt (hs
   have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
     rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
       Real.sin_sub_pi_div_two]
-  have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
-    (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
-      (by nlinarith [Real.pi_pos])).ne
   calc
     _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
           t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
@@ -979,7 +975,6 @@ theorem integral_mul_inv_add_sub_inv_add_div_one_add_sq {a : ℝ} (ha : 0 < a) :
     rw [hf, Real.norm_eq_abs, abs_mul, abs_of_pos (by positivity : 0 < a / (1 + x ^ 2))]
     have hle : |(a * x - 1) / (x + a)| ≤ a + a⁻¹ := by
       rw [abs_div, abs_of_pos (by positivity : 0 < x + a), div_le_iff₀ (by positivity)]
-      have hi : 0 ≤ a⁻¹ * x := by positivity
       rw [abs_le]
       constructor <;> field_simp <;> nlinarith [sq_nonneg a, mul_nonneg ha.le hx.le]
     calc
@@ -1074,12 +1069,10 @@ variable {a b : ℝ}
 theorem beta_comm (a b : ℝ) : beta a b = beta b a := by
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, mul_comm (Real.Gamma a), add_comm a b]
 
+variable (a) in
 /-- Legendre's duplication formula expressed through the symmetric beta integral. -/
-theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
+theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
     beta (1 / 2) a = (2 : ℝ) ^ (2 * a - 1) * beta a a := by
-  have hΓ₂ : Real.Gamma (2 * a) ≠ 0 := (Real.Gamma_pos_of_pos (by positivity)).ne'
-  have hΓh : Real.Gamma (a + 1 / 2) ≠ 0 :=
-    (Real.Gamma_pos_of_pos (by positivity)).ne'
   have hpow : (2 : ℝ) ^ (2 * a - 1) * (2 : ℝ) ^ (1 - 2 * a) = 1 := by
     rw [← Real.rpow_add (by norm_num)]
     ring_nf
@@ -1091,9 +1084,23 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
       _ = ((2 : ℝ) ^ (2 * a - 1) * (2 : ℝ) ^ (1 - 2 * a)) *
           (√Real.pi * Real.Gamma (2 * a)) := by rw [hpow, one_mul]
       _ = _ := by rw [hdup]; ring
-  rw [beta, beta, Real.Gamma_one_half_eq, add_comm (1 / 2) a, ← two_mul a]
-  rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
-  linear_combination Real.Gamma a * hdup'
+  have hsqrt : √Real.pi ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
+  have h2 : (2 : ℝ) ^ (2 * a - 1) ≠ 0 := (Real.rpow_pos_of_pos two_pos _).ne'
+  by_cases hΓa : Real.Gamma a = 0
+  · simp [beta, hΓa]
+  by_cases hΓh : Real.Gamma (a + 1 / 2) = 0
+  · have hΓ₂ : Real.Gamma (2 * a) = 0 := by
+      have h := hdup'
+      rw [hΓh, mul_zero, mul_zero] at h
+      exact (mul_eq_zero.1 h).resolve_left hsqrt
+    rw [beta, beta, add_comm (1 / 2) a, ← two_mul a, hΓh, hΓ₂]
+    simp
+  · have hΓ₂ : Real.Gamma (2 * a) ≠ 0 := fun h ↦ by
+      rw [h, mul_zero] at hdup'
+      exact mul_ne_zero h2 (mul_ne_zero hΓa hΓh) hdup'.symm
+    rw [beta, beta, Real.Gamma_one_half_eq, add_comm (1 / 2) a, ← two_mul a]
+    rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
+    linear_combination Real.Gamma a * hdup'
 
 /-- Euler's beta function at second parameter `1`. -/
 @[simp]

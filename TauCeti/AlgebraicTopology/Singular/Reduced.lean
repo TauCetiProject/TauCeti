@@ -38,7 +38,12 @@ coefficient object indexed by the path components other than that of the point
 An identification of the path components with a type `ι` reindexes this coproduct by the elements
 of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoOfEquiv`).
 A morphism out of zeroth homology is determined by its values on the classes of points
-(`TauCeti.singularHomology₀_hom_ext`).
+(`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
+constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
+`TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
+class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
+point does not depend on the point, and with coefficients in a ring it spans zeroth homology
+(`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
@@ -97,6 +102,22 @@ lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathCon
   rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
     IsIso.hom_inv_id]
 
+/-- On a path-connected space the class of a point does not depend on the point. -/
+lemma singularHomology₀Section_eq_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
+    (x y : X) : singularHomology₀Section R x = singularHomology₀Section R y := by
+  rw [← cancel_mono (X.singularHomology₀ε R), singularHomology₀Section_singularHomology₀ε,
+    singularHomology₀Section_singularHomology₀ε]
+
+/-- With coefficients in a ring `k`, the zeroth homology of a path-connected space is spanned by
+the class of any point: every `z ∈ H₀(X; k)` is `ε(z) • [x₀]`. -/
+theorem singularHomology₀_eq_smul_singularHomology₀Section {k : Type w} [Ring k] {X : TopCat.{w}}
+    [PathConnectedSpace X] (x₀ : X)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).obj X) :
+    z = X.singularHomology₀ε (ModuleCat.of k k) z •
+      singularHomology₀Section (ModuleCat.of k k) x₀ (1 : k) := by
+  rw [← map_smul, smul_eq_mul, mul_one]
+  exact (ConcreteCategory.congr_hom (singularHomology₀ε_singularHomology₀Section _ x₀) z).symm
+
 /-- On a path-connected space every self-map induces the identity on zeroth homology. -/
 lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
     (c : X ⟶ X) : ((singularHomologyFunctor C 0).obj R).map c = 𝟙 _ := by
@@ -136,6 +157,29 @@ lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
     have hx := h (TopCat.toSSetObj₀Equiv x)
     rw [singularHomology₀Section_def, Equiv.symm_apply_apply] at hx
     exact hx
+
+/-- Points joined by a path have the same class in zeroth singular homology. -/
+lemma singularHomology₀Section_eq_of_joined {X : TopCat.{w}} {x y : X} (h : Joined x y) :
+    singularHomology₀Section R x = singularHomology₀Section R y := by
+  rw [← cancel_mono (X.singularHomology₀Iso R).hom,
+    singularHomology₀Section_singularHomology₀Iso_hom,
+    singularHomology₀Section_singularHomology₀Iso_hom, ZerothHomotopy.sound h.somePath]
+
+/-- The morphism out of zeroth singular homology with prescribed values `v x` on the classes of
+the points `x`, for values that are constant along paths. It is unique by
+`TauCeti.singularHomology₀_hom_ext`. -/
+def singularHomology₀Desc {X : TopCat.{w}} {Y : C} (v : X → (R ⟶ Y))
+    (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) :
+    ((singularHomologyFunctor C 0).obj R).obj X ⟶ Y :=
+  (X.singularHomology₀Iso R).hom ≫ Sigma.desc (ZerothHomotopy.lift v hv)
+
+/-- The morphism `TauCeti.singularHomology₀Desc R v hv` takes the value `v x` on the class of the
+point `x`. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C} (v : X → (R ⟶ Y))
+    (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) (x : X) :
+    singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
+  simp [singularHomology₀Desc]
 
 variable [HasKernels C]
 

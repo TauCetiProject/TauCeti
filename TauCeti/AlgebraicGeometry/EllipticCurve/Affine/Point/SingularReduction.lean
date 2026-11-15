@@ -208,7 +208,7 @@ theorem exists_associated_sq_Δ_of_isSingular (W : WeierstrassCurve R) {x y : R}
   set W' := VariableChange.mk 1 x 0 y • W
   have hX := hs.evalEval_polynomialX_mem_maximalIdeal
   have hY := hs.evalEval_polynomialY_mem_maximalIdeal
-  have h₆ : W'.a₆ = 0 := variableChange_translate_a₆_of_equation W h
+  have h₆ : W'.a₆ = 0 := (variableChange_translate_a₆ W x y).trans (neg_eq_zero.mpr h)
   have h₃ : W'.a₃ ∈ maximalIdeal R := variableChange_translate_a₃ W x y ▸ hY
   have h₄ : W'.a₄ ∈ maximalIdeal R :=
     variableChange_translate_a₄ W x y ▸ (maximalIdeal R).neg_mem hX

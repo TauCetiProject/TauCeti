@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.CommAlgCat.PolynomialPresentation
-public import TauCeti.CategoryTheory.Monad.SimplicialResolution
+public import TauCeti.CategoryTheory.Monad.SimplicialResolution.Basic
 
 /-!
 # The standard simplicial polynomial algebra

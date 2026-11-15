@@ -121,7 +121,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
     calc _ = D * c₀ := by rw [Real.one_rpow, mul_one]; ring
       _ ≤ |D| * c₀ := mul_le_mul_of_nonneg_right (le_abs_self D) c₀.coe_nonneg
       _ ≤ lam := by nlinarith [c₀.coe_nonneg]
-  obtain ⟨C₁, hC₁⟩ := hball (L := c₀) (M := Lam.toNNReal) hlam one_pos hc₀ (ρ := 1 / 2)
+  obtain ⟨C₁, hC₁⟩ := hball (L := c₀) (M := Lam.toNNReal) hlam hc₀ (ρ := 1 / 2)
     (by norm_num)
   refine ⟨c₀, by rw [← NNReal.coe_pos]; exact div_pos hlam (by positivity), C₁, ?_⟩
   intro a x₀ δ Ka hδ hKa hlo hup hhol hent u N₀ N₁ N₂ K V hu hN₀ hN₁ hN₂ hV hK
@@ -133,7 +133,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
     ContinuousLinearMap.opNorm_le_bound _ δ.coe_nonneg fun y => by
       rw [ContinuousLinearEquiv.coe_coe, he, norm_smul, Real.norm_of_nonneg δ.coe_nonneg]
   have hnorms : ‖(e.symm : E →L[ℝ] E)‖₊ ≤ δ⁻¹ := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_inv]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y => ?_
     rw [ContinuousLinearEquiv.coe_coe, show e.symm y = (δ : ℝ)⁻¹ • y by
       rw [e.symm_apply_eq, he, smul_inv_smul₀ hδ'.ne'], norm_smul,
@@ -218,7 +218,6 @@ private theorem covering_step_le {C₁ K Mu H δ κ α : ℝ} (hC₁ : 0 ≤ C�
         δ ^ 2 * (2 * Mu / (κ * δ) ^ 2 + 3 * H * (κ * δ) ^ α))) * δ⁻¹ ^ 2 * δ⁻¹ ^ α +
       2 * (2 * Mu / (κ * δ) ^ 2 + 3 * H * (κ * δ) ^ α) * (δ / 2) ^ (-α) ≤
     C₁ * K + (4 * C₁ + 8) * κ⁻¹ ^ 2 * δ ^ (-(2 + α)) * Mu + (4 * C₁ + 12) * κ ^ α * H := by
-  have hq0 : 0 < δ ^ α := Real.rpow_pos_of_pos hδ α
   have hk0 : 0 ≤ κ ^ α := (Real.rpow_pos_of_pos hκ α).le
   have h2α : (2 : ℝ) ^ α ≤ 2 := by
     simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2) hα1
@@ -350,7 +349,7 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
       rw [hN₂]
       linarith
   have hcov := HolderOnWith.of_dist_lt_of_dist_le (half_pos hδ0)
-    (fun x hx y hy hxy => (hloc x hx).dist_le (mem_closedBall_self (by positivity))
+    (fun x hx y _ hxy => (hloc x hx).dist_le (mem_closedBall_self (by positivity))
       (by rw [mem_closedBall, dist_comm]; exact_mod_cast hxy.le)) hfar
   have hΦs := NNReal.coe_le_coe.2 hcov.holderWith.nnholderNorm_le
   push_cast at hΦs
@@ -361,7 +360,6 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
   have hδp : (δ : ℝ) ^ (-(2 + (α : ℝ))) = 2 ^ (2 + (α : ℝ)) * (t - s) ^ (-(2 + (α : ℝ))) := by
     rw [hδ, Real.div_rpow (by linarith) (by norm_num), Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2),
       div_inv_eq_mul, mul_comm]
-  have hH0 : (0 : ℝ) ≤ H := H.coe_nonneg
   calc _ ≤ C₁ * K + (4 * C₁ + 8) * κ⁻¹ ^ 2 * δ ^ (-(2 + (α : ℝ))) * Mu +
         (4 * C₁ + 12) * κ ^ (α : ℝ) * H := hΦs.trans harith
     _ ≤ C₁ * K + (4 * C₁ + 8) * κ⁻¹ ^ 2 * δ ^ (-(2 + (α : ℝ))) * Mu + 1 / 2 * H := by
@@ -411,7 +409,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   set A₀ : ℝ := (4 * C₁ + 8) * κ⁻¹ ^ 2 * 2 ^ (2 + (α : ℝ))
   have hθ : 0 < θ := by positivity
   have hκ : 0 < κ := by positivity
-  have hA₀ : 0 ≤ A₀ := by positivity
   refine ⟨C₃ * (A₀ * (2 * θ) ^ (-(2 + (α : ℝ))) + C₁), by positivity, ?_⟩
   intro a x₀ r Ka Mu K u hr hA hKa hKaM hu hMu hV hK
   set r₁ := r + 2 * θ * r
@@ -455,8 +452,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   rw [hr₁r, Real.mul_rpow (by positivity) hr.le] at hΦr
   refine (hΦhol r (by linarith)).mono_const ?_
   rw [Real.le_toNNReal_iff_coe_le (by positivity)]
-  have hp : 0 ≤ (2 * θ) ^ (-(2 + (α : ℝ))) := by positivity
-  have hrp : 0 ≤ r ^ (-(2 + (α : ℝ))) := by positivity
   refine hΦr.trans ?_
   simp only [A]
   have h1 : 0 ≤ (C₃ : ℝ) * (A₀ * (2 * θ) ^ (-(2 + (α : ℝ))) * K) := by positivity

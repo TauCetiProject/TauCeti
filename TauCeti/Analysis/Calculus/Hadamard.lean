@@ -63,7 +63,7 @@ theorem ContDiff.contDiff_segmentAverage_param
     continuous_subtype_val isOpen_univ
     ((hg.comp (by fun_prop :
       ContDiff ℝ n (fun p : (P × E) × ℝ ↦ (p.1.1, x + p.2 • p.1.2)))).contDiffOn)
-    isOpen_univ (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_
+    (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_
   rw [segmentAverage, TauCeti.intervalIntegral_eq_integral_unitInterval]
   rfl
 

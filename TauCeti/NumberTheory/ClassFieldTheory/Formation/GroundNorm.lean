@@ -55,9 +55,6 @@ The ground-level norm of a restriction is its instance `W = U`, `W' = U'`.
 * J. S. Milne, *Class Field Theory*, Chapter II, 1.29–1.30 (the norm along a subgroup).
 -/
 
--- The signature of `groundNorm` follows the blueprint `Suggested.lean` of the Tau Ceti
--- `ClassFieldTheory` roadmap (`namespace LayerRestriction`).
-
 public noncomputable section
 
 namespace TauCeti.ClassFieldTheory

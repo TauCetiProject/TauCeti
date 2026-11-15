@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
+public import TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
@@ -53,13 +54,18 @@ The operator is written in the convention `D_A u = u' + A u` of
 `TauCeti.WeakDerivStep.trajectoryOperator`, with the coefficient `A(s) = -a_R(s) • id` acting on
 a real Banach (for the kernel and the inverse bound) or finite-dimensional inner product (for the
 cokernel) space `E`. The scalar example is `E = ℝ`; `E = ℂ` is its complexification, the zero
-Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`.
+Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`. The other Fourier modes
+`d/ds - (a_R + 2πk)`, `k ≠ 0`, are invertible with inverse of norm at most `1` for every `R ≥ 0`
+(`TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode`, which applies because `|a_R| ≤ 1` and
+`|a_R'| ≤ 1`), so on the cylinder the cancellation and the growth of the inverse are carried by the
+zero mode alone.
 
 ## Main declarations
 
 * `TauCeti.neckCoeff`: the coefficient `a_R(s) = 1 - tanh (s + R) + tanh (s - R)`, with the closed
-  form `TauCeti.neckCoeff_eq`, the bounds `-1 < a_R ≤ 1` for `R ≥ 0`, the limits `1` at both
-  ends, and the exponential comparisons with `-tanh` and `tanh` after translation by `∓R`.
+  form `TauCeti.neckCoeff_eq`, the bounds `-1 < a_R ≤ 1` for `R ≥ 0` and `|a_R'| ≤ 1`, the limits
+  `1` at both ends, and the exponential comparisons with `-tanh` and `tanh` after translation by
+  `∓R`.
 * `TauCeti.neckSolution`: the positive solution `F_R` of `v' = a_R v`, with its asymptotics.
 * `TauCeti.squareIntegrableSolutions_neg_neckCoeff_smul_id` and
   `TauCeti.squareIntegrableSolutions_neckCoeff_smul_id`: neither `v' = a_R v` nor `v' = -a_R v`
@@ -71,6 +77,11 @@ Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`.
   `sech (s + R)` has `‖D_R u‖ ≤ 2 exp (-2 R) ‖u‖`.
 * `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`:
   hence every bound `‖u‖ ≤ C ‖D_R u‖` has `C ≥ exp (2 R) / 2`.
+* `TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`,
+  `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id` and
+  `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`: for
+  `R ≥ 0` and `k ≠ 0`, the `k`-th Fourier mode `d/ds - (a_R + 2πk)` of the cylinder operator has
+  zero kernel, is onto, and satisfies `‖u‖ ≤ ‖D u‖`.
 
 ## References
 
@@ -168,6 +179,27 @@ theorem hasDerivAt_neckCoeff (R s : ℝ) :
     rw [neckCoeff_eq, div_eq_mul_inv, Pi.inv_apply]
   · field_simp
     ring
+
+/-- The derivative of the neck coefficient as a difference of two squared hyperbolic secants,
+`a_R'(s) = sech² (s - R) - sech² (s + R)`, from differentiating `1 - tanh (s + R) + tanh (s - R)`
+term by term. -/
+theorem hasDerivAt_neckCoeff_one_div_cosh_sq (R s : ℝ) :
+    HasDerivAt (neckCoeff R) (1 / cosh (s - R) ^ 2 - 1 / cosh (s + R) ^ 2) s := by
+  have h₁ := (hasDerivAt_tanh (s + R)).comp s ((hasDerivAt_id' s).add_const R)
+  have h₂ := (hasDerivAt_tanh (s - R)).comp s ((hasDerivAt_id' s).sub_const R)
+  convert (h₁.const_sub 1).add h₂ using 1
+  · funext x
+    simp [neckCoeff_def]
+  · ring
+
+/-- The derivative of the neck coefficient, `a_R'(s) = sech² (s - R) - sech² (s + R)`, is a
+difference of two numbers in `(0, 1]`, so `|a_R'| ≤ 1`. -/
+theorem abs_deriv_neckCoeff_le_one (R s : ℝ) : |deriv (neckCoeff R) s| ≤ 1 := by
+  have hb (x : ℝ) : 0 ≤ 1 / cosh x ^ 2 ∧ 1 / cosh x ^ 2 ≤ 1 := by
+    have hx := one_le_cosh x
+    exact ⟨by positivity, div_le_one_of_le₀ (by nlinarith) (by positivity)⟩
+  rw [(hasDerivAt_neckCoeff_one_div_cosh_sq R s).deriv, abs_le]
+  constructor <;> linarith [hb (s + R), hb (s - R)]
 
 /-- The derivative of the neck coefficient is bounded by `4 |sinh (2 R)| / D`. -/
 private theorem norm_deriv_neckCoeff_le (R s : ℝ) :
@@ -360,7 +392,6 @@ private theorem memLp_neckTestPath (R : ℝ) (e : F) : MemLp (neckTestPath R e) 
 private theorem norm_neckTestImage_le (R : ℝ) (e : F) (s : ℝ) :
     ‖neckTestImage R e s‖ ≤ 2 * exp (-(2 * R)) * ‖neckTestPath R e (-s)‖ := by
   have h₁ := cosh_pos (s - R)
-  have h₂ := cosh_pos (s + R)
   have key : exp (s - R) ≤ 2 * exp (-(2 * R)) * cosh (s + R) := by
     rw [cosh_eq]
     have h : exp (-(2 * R)) * exp (s + R) = exp (s - R) := by rw [← exp_add]; ring_nf
@@ -525,6 +556,49 @@ theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
     rw [orthogonal_range_trajectoryOperator_eq_map_ker hALadj, hker, Submodule.map_bot]
   rw [← hclosed.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff]
   exact horth
+
+/-! ### The nonzero Fourier modes of the glued cylinder operator -/
+
+/-- **The nonzero Fourier modes of the glued cylinder operator have uniformly bounded inverses.**
+For `R ≥ 0` and `k ≠ 0`, the `k`-th Fourier mode `D u = u' - (a_R + 2πk) u` of the cylinder
+operator `∂ₛ + i ∂ₜ - a_R(s)` satisfies `‖u‖ ≤ ‖D u‖` on `W^{1,2}(ℝ, E)`, uniformly in `R` and
+`k`. For the zero mode `k = 0` every such bound has constant at least `exp (2 R) / 2`
+(`TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`).
+-/
+theorem norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ}
+    (hR : 0 ≤ R) {k : ℤ} (hk : k ≠ 0)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖u‖ ≤ ‖trajectoryOperator AL u‖ :=
+  norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL u
+
+/-- **The nonzero Fourier modes of the glued cylinder operator have no kernel.** For `R ≥ 0` and
+`k ≠ 0`, the `k`-th Fourier mode `u' - (a_R + 2πk) u` of the cylinder operator
+`∂ₛ + i ∂ₜ - a_R(s)` has zero kernel on `W^{1,2}(ℝ, E)`. -/
+theorem ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ} (hR : 0 ≤ R)
+    {k : ℤ} (hk : k ≠ 0) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).ker = ⊥ :=
+  ker_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL
+
+/-- **The nonzero Fourier modes of the glued cylinder operator are onto.** For `R ≥ 0` and
+`k ≠ 0`, the `k`-th Fourier mode `u' - (a_R + 2πk) u` of the cylinder operator
+`∂ₛ + i ∂ₜ - a_R(s)` maps `W^{1,2}(ℝ, E)` onto `L²(ℝ, E)`; with
+`TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`, it
+is invertible with inverse of norm at most `1`. -/
+theorem range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ} (hR : 0 ≤ R)
+    {k : ℤ} (hk : k ≠ 0) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).range = ⊤ :=
+  range_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL
 
 end InnerProduct
 

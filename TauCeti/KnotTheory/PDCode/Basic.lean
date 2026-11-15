@@ -614,6 +614,29 @@ theorem relabel_relabel {r : ℕ} (half₂ : Fin (4 * m) ≃ Fin (4 * r)) (cross
 theorem mirror_relabel : (D.relabel half cross).mirror = D.mirror.relabel half cross := by
   ext <;> simp
 
+/-- Relabelling a code along the inverse of its half-edge labelling labels each half-edge by its
+position. -/
+theorem relabel_halfEdge_symm_halfEdge :
+    (D.relabel D.halfEdge.symm (Equiv.refl _)).halfEdge = 1 := by
+  ext x
+  simp [crossingBlockEquiv_refl]
+
+/-- A matching of the positions of the half-edges of `D` is the relabelled matching of `D` once
+it joins the positions of every arc of `D`. -/
+theorem eq_relabel_edgePair_of_crossing {M : PerfectMatching (Fin (4 * n))}
+    (hM : ∀ i j k l, D.edgePair.val (D.crossing i k) = D.crossing j l →
+      M.val (crossingSlotEquiv n (i, k)) = crossingSlotEquiv n (j, l)) :
+    M = (D.relabel D.halfEdge.symm (Equiv.refl _)).edgePair := by
+  apply Subtype.ext
+  ext p : 1
+  obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective p
+  obtain ⟨⟨j, l⟩, hjl⟩ := (crossingSlotEquiv n).surjective
+    (D.halfEdge.symm (D.edgePair.val (D.crossing i k)))
+  have hij : D.edgePair.val (D.crossing i k) = D.crossing j l := by
+    rw [crossing_apply D j, hjl, Equiv.apply_symm_apply]
+  rw [hM i j k l hij, relabel_edgePair, PerfectMatching.congr_val_apply, Equiv.symm_symm,
+    ← crossing_apply, hij, crossing_apply, Equiv.symm_apply_apply]
+
 end Relabel
 
 /-- The one-crossing knot diagram: a single kink. Its single crossing has the slot pair `1`-`3`

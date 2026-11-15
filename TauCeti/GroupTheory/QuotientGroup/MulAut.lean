@@ -31,13 +31,13 @@ see `TauCeti/GroupTheory/Frattini.lean`.
 
 public section
 
-namespace TauCeti
+namespace MulAut
 
 variable {G : Type*} [Group G] (N : Subgroup G) [N.Characteristic]
 
 /-- The automorphism of the quotient `G ⧸ N` by a characteristic subgroup `N` induced by an
 automorphism of `G`. -/
-def _root_.MulAut.mapQuotient : MulAut G →* MulAut (G ⧸ N) where
+def mapQuotient : MulAut G →* MulAut (G ⧸ N) where
   toFun φ := QuotientGroup.congr N N φ
     (φ.toMonoidHom_eq_coe ▸ Subgroup.characteristic_iff_map_eq.mp inferInstance φ)
   map_one' := by simp [MulAut.one_def]
@@ -48,14 +48,14 @@ def _root_.MulAut.mapQuotient : MulAut G →* MulAut (G ⧸ N) where
 
 /-- The automorphism induced on `G ⧸ N` sends the class of `x` to the class of `φ x`. -/
 @[simp]
-theorem _root_.MulAut.mapQuotient_mk (φ : MulAut G) (x : G) :
+theorem mapQuotient_mk (φ : MulAut G) (x : G) :
     MulAut.mapQuotient N φ (x : G ⧸ N) = (φ x : G ⧸ N) := by
   simp [MulAut.mapQuotient]
 
 /-- An automorphism of `G` induces the identity on `G ⧸ N` exactly when it fixes every class
 modulo `N`. -/
-theorem _root_.MulAut.mem_ker_mapQuotient_iff {φ : MulAut G} :
+theorem mem_ker_mapQuotient_iff {φ : MulAut G} :
     φ ∈ (MulAut.mapQuotient N).ker ↔ ∀ x : G, (φ x : G ⧸ N) = x := by
   simp [MulEquiv.ext_iff, QuotientGroup.forall_mk]
 
-end TauCeti
+end MulAut

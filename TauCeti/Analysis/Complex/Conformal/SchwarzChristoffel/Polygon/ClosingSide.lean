@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdg
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 import TauCeti.Analysis.Complex.PlaneSeparation.Segment
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.TurningChain
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -63,8 +64,7 @@ theorem schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero
     (hsum : ∑ k, e k = -2) :
     schwarzChristoffelVertex a e z₀ (Fin.last n) < schwarzChristoffelVertexAtInfinity a e z₀ ∧
       schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelVertex a e z₀ 0 := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he k
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective he
   have hr := schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀ (hfinite (Fin.last n))
     (fun l _ ↦ ha.monotone l.le_last) (by rw [hsum]; norm_num)
   have hl := schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
@@ -128,8 +128,7 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
     (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2)
     {k : Fin (n + 1)} (hk₀ : k ≠ 0) (hkn : k ≠ Fin.last n) :
     (schwarzChristoffelVertex a e z₀ 0).im < (schwarzChristoffelVertex a e z₀ k).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective fun k ↦ (he k).1
   set θ : Fin (n + 1) → ℝ := fun l ↦ schwarzChristoffelEdgeAngle a e (a l)
   have hθmono : StrictMono θ :=
     schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun l ↦ (he l).2
@@ -267,8 +266,7 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
     (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :
     (schwarzChristoffelBoundary a e z₀ (a 0)).im <
       (schwarzChristoffelBoundary a e z₀ x).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective fun k ↦ (he k).1
   have hn : 2 ≤ n := by
     by_contra! hn
     interval_cases n
@@ -312,5 +310,75 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
         (Fin.succ_ne_zero i) hiend
       rw [← heq] at hlt
       exact hle.not_gt hlt
+
+/-- The bounded open arc lies strictly above the line through the vertex at infinity. -/
+theorem im_schwarzChristoffelVertexAtInfinity_lt_im_boundary
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) {x : ℝ}
+    (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :
+    (schwarzChristoffelVertexAtInfinity a e z₀).im < (schwarzChristoffelBoundary a e z₀ x).im := by
+  rw [(Complex.lt_def.mp (schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+    (he 0).1 hsum le_rfl)).2]
+  exact im_schwarzChristoffelBoundary_first_lt a e z₀ ha he hsum hx
+
+/-- The boundary never meets the vertex at infinity at a finite parameter. -/
+theorem schwarzChristoffelBoundary_ne_vertexAtInfinity
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) (x : ℝ) :
+    schwarzChristoffelBoundary a e z₀ x ≠ schwarzChristoffelVertexAtInfinity a e z₀ := by
+  by_cases hx₀ : x ≤ a 0
+  · exact (schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+      (he 0).1 hsum hx₀).ne'
+  by_cases hxn : a (Fin.last n) ≤ x
+  · exact (schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le a e z₀ ha
+      (he (Fin.last n)).1 (by rw [hsum]; norm_num) hxn).ne
+  · intro h
+    have hi := im_schwarzChristoffelVertexAtInfinity_lt_im_boundary a e z₀ ha he hsum
+      ⟨lt_of_not_ge hx₀, lt_of_not_ge hxn⟩
+    rw [h] at hi
+    exact hi.false
+
+/-- Under the closing-side hypotheses, the unbounded piece of the boundary leaving the last bounded
+vertex points along the positive real axis. -/
+lemma schwarzChristoffelVertexAtInfinity_sub_vertex_last_eq_norm
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, -1 < e k)
+    (hsum : ∑ k, e k = -2) :
+    schwarzChristoffelVertexAtInfinity a e z₀ - schwarzChristoffelVertex a e z₀ (Fin.last n) =
+      (‖schwarzChristoffelVertexAtInfinity a e z₀ -
+        schwarzChristoffelVertex a e z₀ (Fin.last n)‖ : ℂ) :=
+  Complex.eq_coe_norm_of_nonneg <| sub_nonneg.mpr
+    (schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha he hsum).1.le
+
+/-- Under the closing-side hypotheses, the unbounded piece of the boundary arriving at the first
+bounded vertex points along the positive real axis. -/
+lemma schwarzChristoffelVertex_zero_sub_vertexAtInfinity_eq_norm
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, -1 < e k)
+    (hsum : ∑ k, e k = -2) :
+    schwarzChristoffelVertex a e z₀ 0 - schwarzChristoffelVertexAtInfinity a e z₀ =
+      (‖schwarzChristoffelVertex a e z₀ 0 - schwarzChristoffelVertexAtInfinity a e z₀‖ : ℂ) :=
+  Complex.eq_coe_norm_of_nonneg <| sub_nonneg.mpr
+    (schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha he hsum).2.le
+
+/-- Both pieces incident to infinity point along the positive real axis when the total exponent
+is `-2`, so their sum, rotated by `-θ` with `θ ∈ (-π, 0)`, has strictly positive height. -/
+lemma im_exp_neg_mul_schwarzChristoffelVertex_zero_sub_last_pos
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a) (he : ∀ k, -1 < e k)
+    (hsum : ∑ k, e k = -2) (θ : ℝ) (hθ₀ : θ < 0) (hθπ : -Real.pi < θ) :
+    0 < (Complex.exp (-θ * Complex.I) *
+      (schwarzChristoffelVertex a e z₀ 0 - schwarzChristoffelVertex a e z₀ (Fin.last n))).im := by
+  have hlt := schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero a e z₀ ha he hsum
+  rw [← sub_add_sub_cancel (schwarzChristoffelVertex a e z₀ 0)
+    (schwarzChristoffelVertexAtInfinity a e z₀) (schwarzChristoffelVertex a e z₀ (Fin.last n)),
+    schwarzChristoffelVertex_zero_sub_vertexAtInfinity_eq_norm a e z₀ ha he hsum,
+    schwarzChristoffelVertexAtInfinity_sub_vertex_last_eq_norm a e z₀ ha he hsum, mul_add,
+    Complex.add_im,
+    ← Complex.ofReal_neg θ]
+  simp only [Complex.mul_im, Complex.exp_ofReal_mul_I_im, Complex.exp_ofReal_mul_I_re,
+    Complex.ofReal_re, Complex.ofReal_im, mul_zero, zero_add]
+  rw [← mul_add, mul_comm]
+  exact mul_pos
+    (add_pos (norm_pos_iff.mpr (sub_ne_zero.mpr hlt.2.ne'))
+      (norm_pos_iff.mpr (sub_ne_zero.mpr hlt.1.ne')))
+    (Real.sin_pos_of_pos_of_lt_pi (neg_pos.mpr hθ₀) (by linarith))
 
 end TauCeti

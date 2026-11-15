@@ -64,6 +64,8 @@ sign appears: that is the dual Pieri rule.
 * `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
+* `TauCeti.psum_mul_alternant_eq_sum_filter`: for `r > 0`, only the exponent moves onto a free
+  position contribute to `p_r · a_α`.
 * `TauCeti.hsymm_mul_alternant`: the complete-homogeneous multiplication rule
   `h_r · a_α = ∑_{|γ| = r} a_{α + γ}`.
 * `TauCeti.sum_monomial_mul_alternant`: the multiplication rule for a symmetric polynomial
@@ -223,6 +225,24 @@ theorem psum_mul_alternant (r : ℕ) (α : σ → ℕ) :
     · simp [hA, Matrix.updateRow_ne hk, Function.update_of_ne hk]
   rw [sum_congr rfl fun j _ => hcol j, Matrix.sum_det_updateRow_mul_row, Matrix.det_transpose,
     psum, alternant_def]
+
+/-- Multiplying an alternant by `p_r`, `r > 0`, only needs the exponent moves onto a free position:
+a move onto an occupied position repeats an exponent, and its alternant vanishes. -/
+theorem psum_mul_alternant_eq_sum_filter {r : ℕ} (hr : 0 < r) (α : σ → ℕ)
+    [DecidablePred fun j => ∀ i, α i ≠ α j + r] :
+    psum σ R r * alternant σ R α =
+      ∑ j ∈ univ.filter fun j => ∀ i, α i ≠ α j + r,
+        alternant σ R (Function.update α j (α j + r)) := by
+  rw [psum_mul_alternant]
+  refine (sum_filter_of_ne fun j _ hj => ?_).symm
+  by_contra hcol
+  simp only [not_forall, not_not] at hcol
+  obtain ⟨i, hi⟩ := hcol
+  have hij : i ≠ j := by
+    rintro rfl
+    omega
+  refine hj (alternant_eq_zero_of_not_injective fun hinj => hij (hinj ?_))
+  rw [Function.update_of_ne hij, Function.update_self, hi]
 
 /-- **The complete-homogeneous multiplication rule for alternants**: multiplying `a_α` by the
 complete homogeneous symmetric polynomial `h_r` gives the sum of the alternants obtained from `α` by

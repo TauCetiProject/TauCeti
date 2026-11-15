@@ -189,7 +189,7 @@ theorem edist_deGiorgiInterpolant_le (hτ : 0 < τ) {n : ℕ}
     have hrτ' : (t - n * τ).toNNReal < τ := by
       rwa [← NNReal.coe_lt_coe, Real.coe_toNNReal _ hr.1.le]
     have hy := hV _ hr
-    refine edist_le_edist_of_mem_moreauYosidaResolvent hr₀ hrτ' hy hU
+    refine edist_le_edist_of_mem_moreauYosidaResolvent hrτ' hy hU
       (ne_bot_of_le_ne_bot hn' (apply_le_apply_of_mem_moreauYosidaResolvent hr₀ hrτ' hy hU))
       (ne_top_of_le_ne_top hn (moreauYosida_le_self φ _ _))
   · rw [hrτ, hVU]

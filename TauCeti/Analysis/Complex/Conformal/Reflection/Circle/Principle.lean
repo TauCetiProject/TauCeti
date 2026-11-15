@@ -158,7 +158,7 @@ theorem differentiableOn_circleSchwarzReflection_of_symmetric
     (hboundary : MapsTo f (Ω ∩ sphere c r) (sphere d s))
     (havoid : ∀ z ∈ Ω ∩ ball c r, z ≠ c → f z ≠ d) :
     DifferentiableOn ℂ (circleSchwarzReflection c r d s f) Ω := by
-  refine differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere (c := c) hr hΩ
+  refine differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere (c := c) (r := r) hΩ
     (continuousOn_circleSchwarzReflection_of_symmetric hr hs hsymm hcont hboundary havoid) ?_
   let E := Ω ∩ {z : ℂ | r < dist z c}
   have hEinv : MapsTo (inversion c r) E (Ω ∩ ball c r) := by

@@ -218,7 +218,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso :
       generatorCoordinateAlgebra n K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
         (G := SplitTorus.characterGroup (Fin n)))
 
 /-- Each generator coordinate map over `K` is the scalar extension of the map over `k`. -/

@@ -64,8 +64,7 @@ theorem regulatorLowerBound_le_regulator (K : Type*) [Field K] [NumberField K] :
         ∑ w, |logEmbedding K (Additive.ofMul (u i)) w| := by
     have hut : u i ∉ torsion K := fun h ↦ hu.ne_zero i
       (dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr h)
-    exact (unitHeightLowerBound_le_logHeight₁ hut).trans
-      (le_of_mul_le_mul_left (two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (u i)) two_pos)
+    exact (unitHeightLowerBound_le_logHeight₁ hut).trans (logHeight₁_le_sum_abs_logEmbedding (u i))
   rw [regulatorLowerBound, div_le_iff₀ (by positivity)]
   calc unitHeightLowerBound (finrank ℚ K) ^ rank K
       = ∏ _ : Fin (rank K), unitHeightLowerBound (finrank ℚ K) := by simp

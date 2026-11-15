@@ -51,8 +51,6 @@ nor its integral needs to be finite or measurable.
 * C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
   §1.1.1, for the Kantorovich dual constraint and weak duality.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 5.
-
-This is Layer 2, item 1 of the optimal-transport roadmap.
 -/
 
 public section

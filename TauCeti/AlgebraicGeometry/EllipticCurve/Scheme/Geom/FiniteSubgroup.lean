@@ -126,8 +126,8 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
   · simpa [i, I, map_one, one_left] using E.pointsDivisor_le_ker φ 1
   · -- Cover the product by pairs of the disjoint sections.
     have := quasiCompact_left_of_quasiCompact_hom ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap])
-    apply Scheme.Hom.le_ker_of_openCover _ _
-      (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom)
+    refine (Scheme.Hom.le_ker_iff_of_openCover _ _
+      (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom)).2 ?_
     rintro ⟨a, b⟩
     have h : (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom).f (a, b) ≫
         ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left =
@@ -138,7 +138,7 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
     rw [h]
     exact (E.pointsDivisor_le_ker φ (a * b)).trans (Scheme.Hom.le_ker_comp _ _)
   · have := quasiCompact_left_of_quasiCompact_hom (i ≫ ι[Over.mk E.structureMap])
-    apply Scheme.Hom.le_ker_of_openCover _ _ 𝒰
+    refine (Scheme.Hom.le_ker_iff_of_openCover _ _ 𝒰).2 ?_
     intro a
     have h : 𝒰.f a ≫ (i ≫ ι[Over.mk E.structureMap]).left = (φ a⁻¹).left := by
       dsimp only [𝒰]

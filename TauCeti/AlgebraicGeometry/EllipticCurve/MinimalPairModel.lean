@@ -377,7 +377,7 @@ theorem minimalPairModel_unique (E : WeierstrassCurve ℚ) [E.IsElliptic]
     rw [hD]
     infer_instance
   have h₄ := variableChange_a₄_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
-    (isRegular_iff_ne_zero.mpr two_ne_zero) (isRegular_iff_ne_zero.mpr three_ne_zero)
+    (isRegular_iff_ne_zero.mpr two_ne_zero)
   have h₆ := variableChange_a₆_of_isShortNF (M.model.baseChange ℚ) (CN⁻¹ * CM)
     (isRegular_iff_ne_zero.mpr two_ne_zero) (isRegular_iff_ne_zero.mpr three_ne_zero)
   rw [hD] at h₄ h₆

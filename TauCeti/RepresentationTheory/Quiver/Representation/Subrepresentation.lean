@@ -62,12 +62,6 @@ before rewriting. The same device restates a goal about `LinearMap.restrict` or 
 composition in `CategoryTheory.Paths Q` as the plain statement about `M` that the functoriality
 lemmas `CategoryTheory.Functor.map_id` and `CategoryTheory.Functor.map_comp` are phrased in; each
 such `change` carries a comment saying which reduction it performs.
-
-## References
-
-This supports Layer 1 of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`,
-where the category of representations is described as abelian with the pointwise structure and its
-subobjects are the subrepresentations.
 -/
 
 public section

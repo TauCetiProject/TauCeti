@@ -40,8 +40,6 @@ read through the extended chart at `y`.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Finite-endpoint extension criterion".
 * [Lee, J. M. (2012). _Introduction to Smooth Manifolds_. Springer New York.][lee2012], Chapter 9.
 -/
 

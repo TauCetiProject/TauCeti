@@ -35,6 +35,9 @@ vectors, without conjugation.
 * `ZeroAtInftyContinuousMap.dualEquiv`: the isometric equivalence `ℓ¹ ≃ₗᵢ C₀(ι, 𝕜)*`.
 * `ZeroAtInftyContinuousMap.norm_eq_tsum_norm_apply_single_one`: the norm of a functional on
   `C₀(ι, 𝕜)` is the sum of the norms of its coordinate values.
+* `ZeroAtInftyContinuousMap.exists_forall_re_apply_eq_of_bddAbove`: a real functional on
+  `C₀(ι, ℝ)`, read along a bounded family of points of a Banach space, is the real part of
+  evaluation at a single point.
 
 ## References
 
@@ -193,5 +196,34 @@ theorem norm_eq_tsum_norm_apply_single_one (Λ : StrongDual 𝕜 C₀(ι, 𝕜))
   simp
 
 end RCLike
+
+section Representation
+
+variable [RCLike 𝕜] {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+
+/-- A continuous linear functional `Λ` on `C₀(ι, ℝ)`, read along a bounded family `v` of points of
+a Banach space `E`, is the real part of evaluation at a single point `x` of `E`: for every
+`f : StrongDual 𝕜 E`, `re (f x) = Λ g` whenever `g` is the family of the real parts of `f` along
+`v`. The point is `∑' i, Λ (single i 1) • v i`. -/
+theorem exists_forall_re_apply_eq_of_bddAbove {v : ι → E}
+    (hv : BddAbove (Set.range fun i ↦ ‖v i‖)) (Λ : StrongDual ℝ C₀(ι, ℝ)) :
+    ∃ x : E, ∀ (f : StrongDual 𝕜 E) (g : C₀(ι, ℝ)), (∀ i, g i = RCLike.re (f (v i))) →
+      RCLike.re (f x) = Λ g := by
+  classical
+  -- The coefficients of `Λ` are absolutely summable and `v` is bounded, so they define a point
+  -- `∑' i, a i • v i` of `E`.
+  set a := fun i ↦ Λ (single i 1)
+  obtain ⟨M, hM⟩ := hv
+  have hsum : Summable fun i ↦ (a i : 𝕜) • v i :=
+    .of_norm_bounded ((summable_norm_apply_single_one Λ).mul_right M) fun i ↦ by
+      rw [norm_smul, RCLike.norm_ofReal, ← Real.norm_eq_abs]
+      exact mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) (norm_nonneg _)
+  refine ⟨∑' i, (a i : 𝕜) • v i, fun f g hg ↦ ?_⟩
+  have h₁ := (hsum.hasSum.mapL f).mapL RCLike.reCLM
+  have h₂ := hasSum_apply_single_one_mul Λ g
+  simp only [hg, RCLike.reCLM_apply, map_smul, smul_eq_mul, RCLike.re_ofReal_mul] at h₁ h₂
+  exact h₁.unique h₂
+
+end Representation
 
 end ZeroAtInftyContinuousMap

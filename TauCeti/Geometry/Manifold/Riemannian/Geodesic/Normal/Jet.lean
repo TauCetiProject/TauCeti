@@ -287,7 +287,7 @@ private theorem deriv_deriv_inner_radialField (h : IsNormalDomain I M p U)
       HasDerivWithinAt (fun r ↦ inner ℝ (Y r) (Z r))
         (inner ℝ (D Y t) (Z t) + inner ℝ (Y t) (D Z t)) s t :=
     (isMetricCompatible_leviCivitaConnection I).hasDerivWithinAt_inner_alongCurveWithin
-      (hs.uniqueDiffOn t ht) (hγ t ht)
+      (hγ t ht)
       (differentiableWithinAt_sectionCoord γ Y ((hY t ht).mdifferentiableWithinAt (by simp))
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
       (differentiableWithinAt_sectionCoord γ Z ((hZ t ht).mdifferentiableWithinAt (by simp))

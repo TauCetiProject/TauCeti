@@ -183,12 +183,12 @@ enveloping algebra. -/
 noncomputable def rep :
     _root_.UniversalEnvelopingAlgebra ℚ (sl (Fin (r + 1)) ℚ) →ₐ[ℚ]
       Module.End ℚ (Fin (r + 1) → ℚ) :=
-  LieSubalgebra.matrixRepresentation (sl (Fin (r + 1)) ℚ)
+  TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sl (Fin (r + 1)) ℚ) (Fin (r + 1) → ℚ)
 
 theorem rep_ι_apply (x : sl (Fin (r + 1)) ℚ) (v : Fin (r + 1) → ℚ) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply x v
+  TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
 /-- A numbered root generator reads off one coordinate and writes it into another. -/
 theorem rep_rootGenerator_apply (k : Fin r ⊕ Fin r) (v : Fin (r + 1) → ℚ) :

@@ -25,8 +25,10 @@ Mathlib records the same transport only as a representation,
 which is not usable where a bare `DistribMulAction M (Additive A)` instance is what typeclass
 search must find. Multiplicative coefficient modules — the units of a field, the roots of unity —
 reach the additive world of cohomology through exactly this instance, and their equivariant
-homomorphisms through `MulDistribMulActionHom.toAdditive`, which reads an `M`-equivariant monoid
-homomorphism `A →*[M] B` as an `M`-equivariant additive homomorphism `Additive A →+[M] Additive B`.
+homomorphisms through `MulDistribMulActionHom.toAdditive`, which reads a monoid homomorphism
+`A →ₑ*[φ] B` equivariant along `φ : M →* N` as an additive homomorphism
+`Additive A →ₑ+[φ] Additive B` equivariant along the same `φ` (in particular `A →*[M] B` as
+`Additive A →+[M] Additive B`).
 
 The inverse transport `Multiplicative.mulDistribMulAction` reads a distributive action on an
 additive monoid `A` as an action by monoid endomorphisms on `Multiplicative A`. It is what lets an
@@ -90,26 +92,26 @@ end Multiplicative
 
 namespace MulDistribMulActionHom
 
-variable {M A B : Type*} [Monoid M] [Monoid A] [Monoid B] [MulDistribMulAction M A]
-  [MulDistribMulAction M B]
+variable {M N A B : Type*} [Monoid M] [Monoid N] {φ : M →* N} [Monoid A] [Monoid B]
+  [MulDistribMulAction M A] [MulDistribMulAction N B]
 
-/-- An `M`-equivariant monoid homomorphism, read on the additive type tags as an `M`-equivariant
-additive homomorphism for the distributive actions `Additive.distribMulAction`. -/
-def toAdditive (f : A →*[M] B) : Additive A →+[M] Additive B where
+/-- A monoid homomorphism equivariant along `φ`, read on the additive type tags as an additive
+homomorphism equivariant along `φ` for the distributive actions `Additive.distribMulAction`. -/
+def toAdditive (f : A →ₑ*[φ] B) : Additive A →ₑ+[φ] Additive B where
   toFun x := Additive.ofMul (f x.toMul)
-  map_smul' g x := congrArg Additive.ofMul (f.map_smul g x.toMul)
+  map_smul' g x := congrArg Additive.ofMul (map_smulₛₗ f g x.toMul)
   map_zero' := congrArg Additive.ofMul (map_one f)
   map_add' x y := congrArg Additive.ofMul (map_mul f x.toMul y.toMul)
 
 @[simp]
-theorem toAdditive_apply (f : A →*[M] B) (x : Additive A) :
+theorem toAdditive_apply (f : A →ₑ*[φ] B) (x : Additive A) :
     f.toAdditive x = Additive.ofMul (f x.toMul) :=
   (rfl)
 
 /-- Reading equivariant monoid homomorphisms additively commutes with composition. -/
 @[simp]
-theorem toAdditive_comp {C : Type*} [Monoid C] [MulDistribMulAction M C]
-    (g : B →*[M] C) (f : A →*[M] B) :
+theorem toAdditive_comp {P C : Type*} [Monoid P] [Monoid C] [MulDistribMulAction P C]
+    {ψ : N →* P} {χ : M →* P} [MonoidHom.CompTriple φ ψ χ] (g : B →ₑ*[ψ] C) (f : A →ₑ*[φ] B) :
     (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive := by
   ext x
   simp

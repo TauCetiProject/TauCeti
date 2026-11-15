@@ -42,6 +42,8 @@ describes them in the terms that subdivision needs.
   `s`. For closed `s`, its intrinsic frontier therefore consists of the lower graph, the upper graph
   and the closed band over the intrinsic frontier of `s`
   (`TauCeti.intrinsicFrontier_closedRegionBetween`).
+* `TauCeti.closedRegionBetween_convexHull_subset_of_le`: the closed band over the convex hull of a
+  subset `t ⊆ s` lies in a band over the convex hull of `s` whose bounds lie beyond it on `t`.
 
 ## References
 
@@ -312,5 +314,22 @@ theorem intrinsicFrontier_closedRegionBetween (hs : IsClosed s) (hab : ∀ x ∈
   grind
 
 end Band
+
+section BandInclusion
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {s t : Set E} {a b c d : E →ᵃ[ℝ] ℝ}
+
+/-- The closed band between two affine functions over the convex hull of `t ⊆ s` lies in the
+closed band between two affine functions over the convex hull of `s` that bound them on `t`. -/
+theorem closedRegionBetween_convexHull_subset_of_le (hts : t ⊆ s) (hac : ∀ v ∈ t, a v ≤ c v)
+    (hdb : ∀ v ∈ t, d v ≤ b v) :
+    closedRegionBetween c d (convexHull ℝ t) ⊆ closedRegionBetween a b (convexHull ℝ s) := by
+  rintro ⟨p, q⟩ hpq
+  obtain ⟨hp, hcq, hqd⟩ := mem_closedRegionBetween.1 hpq
+  exact mem_closedRegionBetween.2 ⟨convexHull_mono hts hp,
+    (le_of_forall_le_of_mem_convexHull hac hp).trans hcq,
+    hqd.trans (le_of_forall_le_of_mem_convexHull hdb hp)⟩
+
+end BandInclusion
 
 end TauCeti

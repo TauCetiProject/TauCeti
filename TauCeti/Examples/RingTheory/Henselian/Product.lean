@@ -41,7 +41,7 @@ example : HenselianRing (ℕ → ZMod 4)
 
 -- The empty product is the zero ring and is henselian at its unique ideal.
 example : HenselianRing (PEmpty → ℤ) (Ideal.pi fun _ ↦ ⊤) := by
-  have : ∀ i : PEmpty, HenselianRing ℤ (⊤ : Ideal ℤ) := fun i ↦ nomatch i
+  have : ∀ _ : PEmpty, HenselianRing ℤ (⊤ : Ideal ℤ) := fun i ↦ nomatch i
   exact (Ideal.henselianRing_pi_iff _).2 this
 
 -- In the infinite product, the simple root 0 of X²-X-2 modulo the product ideal

@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
+import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Normal domains and the Riemannian logarithm
@@ -34,6 +36,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.riemannianLog`: the Riemannian logarithm relative to a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.toPartialDiffeomorph`: the exponential map and logarithm as a
   partial diffeomorphism between a normal domain and its normal neighbourhood.
+* `TauCeti.Manifold.IsNormalDomain.exists_partialDiffeomorph_riemannianExp_comp`: the
+  exponential map precomposed with a linear isomorphism carrying an open set into a normal domain
+  is a partial diffeomorphism with that open set as source.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
 * `TauCeti.Manifold.IsNormalDomain.ball`: a tangent ball contained in a normal domain is
   itself a normal domain.
@@ -44,14 +49,23 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.exists_isNormalDomain_ball_with_isCompact_riemannianExp_image_closedBall`:
   a smaller closed tangent ball inside a larger normal ball has compact exponential image.
 * `TauCeti.Manifold.IsNormalDomain.isOpen_image`: a normal neighbourhood is open.
+* `TauCeti.Manifold.IsNormalDomain.injective_mfderiv_riemannianExp`: the differential of the
+  exponential map is injective on a normal domain.
+* `TauCeti.Manifold.IsNormalDomain.contDiffOn_norm_angular_riemannianExp`: the length of the
+  differential of the exponential map along a fixed vector is smooth on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
+* `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
+  the normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
 * `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`: the logarithm is smooth on the
   normal neighbourhood.
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianExp_comp_mfderiv_riemannianLog`: the
   differentials of the logarithm and the exponential map are mutually inverse.
+* `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply` and
+  `TauCeti.Manifold.IsNormalDomain.mvfderiv_riemannianLog_self`: the differential of the logarithm
+  at the base point is the identity.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
   normal domain is defined at least up to time one.
 
@@ -125,7 +139,12 @@ theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 <
 /-- A normal neighbourhood is open. -/
 theorem isOpen_image (h : IsNormalDomain I M p U) :
     IsOpen (riemannianExp I M p '' U) :=
-  h.isLocalDiffeomorphOn.isOpen_image h.isOpen
+  h.isLocalDiffeomorphOn.isLocalHomeomorphOn.isOpen_image h.isOpen
+
+/-- The differential of the exponential map is injective at every vector of a normal domain. -/
+theorem injective_mfderiv_riemannianExp (h : IsNormalDomain I M p U) (hv : v ∈ U) :
+    Injective (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v) :=
+  ((h.isLocalDiffeomorphOn ⟨v, hv⟩).isInvertible_mfderiv (by simp)).injective
 
 /-- A vector of a normal domain can be shrunk towards the origin inside the normal domain. -/
 theorem smul_mem (h : IsNormalDomain I M p U) (hv : v ∈ U) (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
@@ -151,6 +170,23 @@ theorem self_mem_image (h : IsNormalDomain I M p U) : p ∈ riemannianExp I M p 
 theorem image_mem_nhds (h : IsNormalDomain I M p U) :
     riemannianExp I M p '' U ∈ 𝓝 p :=
   h.isOpen_image.mem_nhds h.self_mem_image
+
+/-- The Riemannian length of the differential of the exponential map, applied to a fixed tangent
+vector `w`, is smooth on any normal domain, where that differential is injective. -/
+theorem contDiffOn_norm_angular_riemannianExp {w : TangentSpace I p}
+    (h : IsNormalDomain I M p U) :
+    ContDiffOn ℝ ∞ (fun z : TangentSpace I p ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w‖) U := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · exact (contDiffOn_const (c := (0 : ℝ))).congr fun z _ ↦
+      (congrArg norm (map_zero _)).trans norm_zero
+  have hinner := (contDiffOn_inner_angular_riemannianExp (I := I) p w).mono
+    h.subset_expDomain
+  have hsqrt := hinner.sqrt fun z hz ↦ by
+    rw [real_inner_self_eq_norm_sq]
+    exact pow_ne_zero 2 (norm_ne_zero_iff.mpr (fun hzero ↦ hw
+      (h.injective_mfderiv_riemannianExp hz (hzero.trans (map_zero _).symm))))
+  simpa only [real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)] using hsqrt
 
 end IsNormalDomain
 
@@ -260,6 +296,14 @@ variable {p : M} {U : Set (TangentSpace I p)} {v : TangentSpace I p} {q : M}
   rw [riemannianLog_def]
   exact h.injOn.leftInvOn_invFunOn hv
 
+/-- The logarithm does not depend on the normal domain: on the normal neighbourhood of a smaller
+set `U ⊆ V`, the logarithms relative to `U` and to the normal domain `V` agree. -/
+theorem riemannianLog_eq_of_subset {V : Set (TangentSpace I p)} (h : IsNormalDomain I M p V)
+    (hUV : U ⊆ V) (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianLog I M p U q = riemannianLog I M p V q := by
+  conv_rhs => rw [← riemannianExp_riemannianLog hq]
+  exact (h.riemannianLog_riemannianExp (hUV (riemannianLog_mem hq))).symm
+
 /-- **The Riemannian logarithm is smooth** on the normal neighbourhood it inverts. -/
 theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
     ContMDiffOn I 𝓘(ℝ, TangentSpace I p) ∞ (riemannianLog I M p U)
@@ -305,6 +349,24 @@ def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
 @[simp] theorem toPartialDiffeomorph_symm_apply (h : IsNormalDomain I M p U) (q : M) :
     h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := by
   simp [toPartialDiffeomorph, riemannianLog_def]
+
+/-- The exponential map precomposed with a linear isomorphism that maps an open set into a normal
+domain is a partial diffeomorphism with that open set as source. -/
+theorem exists_partialDiffeomorph_riemannianExp_comp {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (h : IsNormalDomain I M p U) (A : F ≃L[ℝ] TangentSpace I p)
+    {s : Set F} (hs : IsOpen s) (hmap : MapsTo A s U) :
+    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M ∞,
+      Φ.source = s ∧ ⇑Φ = riemannianExp I M p ∘ A := by
+  have hlocal : IsLocalDiffeomorphOn 𝓘(ℝ, F) I ∞ (riemannianExp I M p ∘ A) s := by
+    intro x
+    have hA := A.toDiffeomorph.isLocalDiffeomorph x.val
+    rw [ContinuousLinearEquiv.coe_toDiffeomorph] at hA
+    exact IsLocalDiffeomorphAt.comp I M hA (h.isLocalDiffeomorphOn ⟨A x, hmap x.property⟩)
+  have hinj : InjOn (riemannianExp I M p ∘ A) s := fun x hx y hy hxy ↦
+    A.injective (h.injOn (hmap hx) (hmap hy) hxy)
+  exact ⟨hlocal.partialDiffeomorphOfInjOn hs hinj,
+    hlocal.partialDiffeomorphOfInjOn_source hs hinj,
+    hlocal.coe_partialDiffeomorphOfInjOn hs hinj⟩
 
 variable [I.Boundaryless] [T2Space M]
 
@@ -363,6 +425,26 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
     riemannianLog I M p U p = 0 := by
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
+
+/-- The differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U)
+    (v : TangentSpace I p) :
+    mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) p v = v := by
+  have hcomp := DFunLike.congr_fun
+    (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp h.zero_mem) v
+  -- The composite runs through `TangentSpace I (riemannianExp I M p 0)`, which is only
+  -- definitionally `TangentSpace I p`, so `ContinuousLinearMap.comp_apply` and `id_apply` do not
+  -- match syntactically under `rw` or `simp`; unfold the application by defeq instead.
+  change mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) (riemannianExp I M p 0)
+    (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v) = v at hcomp
+  rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at hcomp
+
+/-- The vector-valued differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mvfderiv_riemannianLog_self (h : IsNormalDomain I M p U) :
+    mvfderiv I (riemannianLog I M p U) p = ContinuousLinearMap.id ℝ (TangentSpace I p) := by
+  ext v
+  simp only [mvfderiv_apply_eq_mfderiv_apply, h.mfderiv_riemannianLog_self_apply,
+    ContinuousLinearMap.id_apply]
 
 end IsNormalDomain
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 import TauCeti.MeasureTheory.Integral.RieszThorin
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The kernel of the Schrödinger propagator and the dispersive estimate
@@ -57,6 +58,11 @@ dominated convergence.
   dispersive estimate.
 * `TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`: the dispersive estimate from `Lᵖ` to `L^q`,
   `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents with `2 ≤ q ≤ ∞`.
+* `TauCeti.norm_fourierInv_phaseSymbol_laplacianSymbol_smul_fourier_le`: for a Schwartz
+  function `f`, the dispersive estimate holds at every point for the Schwartz representative
+  `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)` of `S(t) f`.
+* `SchwartzMap.norm_integral_cexp_quadratic_smul_le`: the same estimate as a bound for the
+  oscillatory integral `∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ` of a Schwartz function `ψ`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
@@ -180,6 +186,59 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
+/-- The regularized Gaussian Fourier multipliers `exp(-b_k ‖ξ‖²)` converge strongly to the
+Schrödinger propagator `S(t)` when `b_k → 4π² t i` with `0 < Re b_k`. -/
+private theorem tendsto_fourierMultiplierCLM_gaussian_schrodingerPropagator {t : ℝ}
+    {b : ℕ → ℂ} (hbre : ∀ k, 0 < (b k).re)
+    (hb : Tendsto b atTop (𝓝 (((4 * π ^ 2 * t : ℝ) : ℂ) * I)))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun k ↦ Lp.fourierMultiplierCLM F
+      ((SchwartzMap.gaussian (hbre k) : 𝓢(E, ℂ)).toLp ∞) f) atTop
+      (𝓝 (schrodingerPropagator F t f)) := by
+  set b₀ : ℂ := ((4 * π ^ 2 * t : ℝ) : ℂ) * I
+  rw [schrodingerPropagator_def, phasePropagator_def]
+  refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
+    SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
+      fun ξ ↦ ?_)) ?_ f
+  · simp only [pow_zero, norm_iteratedFDeriv_zero, one_mul, SchwartzMap.gaussian_apply]
+    rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
+    exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
+  · filter_upwards [ae_all_iff.2 fun k ↦
+        (SchwartzMap.gaussian (hbre k) : 𝓢(E, ℂ)).coeFn_toLp ∞ volume,
+      (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp] with ξ h₁ h₂
+    simp only [h₁, h₂, SchwartzMap.gaussian_apply]
+    have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = phaseSymbol laplacianSymbol t ξ := by
+      rw [phaseSymbol_apply, laplacianSymbol_apply]
+      congr 1
+      simp only [b₀]
+      push_cast
+      ring
+    rw [← hval]
+    exact ((Complex.continuous_exp.comp (continuous_neg.mul continuous_const)).tendsto
+      b₀).comp hb
+
+/-- For integrable `f`, the regularized convolution integrals `∫ G_{b_k}(x - y) f(y) dy` converge
+at every point `x` to `∫ K_t(x - y) f(y) dy`. -/
+private theorem tendsto_integral_gaussianKernel_smul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] {t : ℝ} (ht : t ≠ 0)
+    {b : ℕ → ℂ} (hbre : ∀ k, 0 ≤ (b k).re) (hbim : ∀ k, (b k).im = 4 * π ^ 2 * t)
+    (hb : Tendsto b atTop (𝓝 (((4 * π ^ 2 * t : ℝ) : ℂ) * I)))
+    (f : E → G) (hf : Integrable f) (x : E) :
+    Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
+      (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := by
+  refine tendsto_integral_of_dominated_convergence
+    (fun y ↦ (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ‖f y‖) (fun k ↦ ?_)
+    (hf.norm.const_mul _) (fun k ↦ Eventually.of_forall fun y ↦ ?_)
+    (Eventually.of_forall fun y ↦ ?_)
+  · have hc : Continuous fun y ↦ gaussianKernel (b k) (x - y) := by
+      unfold gaussianKernel
+      fun_prop
+    exact hc.aestronglyMeasurable.smul hf.aestronglyMeasurable
+  · rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right
+      (norm_gaussianKernel_le ht (hbre k) (hbim k) (x - y)) (norm_nonneg _)
+  · exact ((tendsto_gaussianKernel ht (x - y)).comp hb).smul_const _
+
 /-- **The kernel of the Schrödinger propagator.** For `t ≠ 0` and `f ∈ L²` integrable,
 `S(t) f(x) = ∫ K_t(x - y) f(y) dy` for almost every `x`. -/
 theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
@@ -196,48 +255,15 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
     have h := (continuous_ofReal.tendsto 0).comp tendsto_one_div_add_atTop_nhds_zero_nat
     simpa [b] using h.add_const b₀
   set σ : ℕ → 𝓢(E, ℂ) := fun k ↦ SchwartzMap.gaussian (hbre k)
-  -- The regularized multipliers converge strongly to `S(t)`.
   have hL2 : Tendsto (fun k ↦ Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f) atTop
-      (𝓝 (schrodingerPropagator F t f)) := by
-    rw [schrodingerPropagator_def, phasePropagator_def]
-    refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
-      SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
-        fun ξ ↦ ?_)) ?_ f
-    · simp only [pow_zero, norm_iteratedFDeriv_zero, one_mul, σ, SchwartzMap.gaussian_apply]
-      rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
-      exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
-    · filter_upwards [ae_all_iff.2 fun k ↦ (σ k).coeFn_toLp ∞ volume,
-        (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp] with ξ h₁ h₂
-      simp only [h₁, h₂, σ, SchwartzMap.gaussian_apply]
-      have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = phaseSymbol laplacianSymbol t ξ := by
-        rw [phaseSymbol_apply, laplacianSymbol_apply]
-        congr 1
-        simp only [b₀]
-        push_cast
-        ring
-      rw [← hval]
-      exact ((Complex.continuous_exp.comp (continuous_neg.mul continuous_const)).tendsto
-        b₀).comp hb
+      (𝓝 (schrodingerPropagator F t f)) :=
+    tendsto_fourierMultiplierCLM_gaussian_schrodingerPropagator hbre hb f
   -- The regularized multipliers are convolutions with the regularized kernels.
   have hconv : ∀ k, Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f =ᵐ[volume]
       fun x ↦ ∫ y, gaussianKernel (b k) (x - y) • f y := fun k ↦ by
     filter_upwards [SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ k) f] with x hx
     simp only [hx, σ, SchwartzMap.fourierInv_gaussian, gaussianKernel]
-  -- For integrable `f`, the convolution integrals converge at every point.
-  have hlim : ∀ x, Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
-      (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := fun x ↦ by
-    refine tendsto_integral_of_dominated_convergence
-      (fun y ↦ (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ‖f y‖) (fun k ↦ ?_)
-      (hf.norm.const_mul _) (fun k ↦ Eventually.of_forall fun y ↦ ?_)
-      (Eventually.of_forall fun y ↦ ?_)
-    · have hc : Continuous fun y ↦ gaussianKernel (b k) (x - y) := by
-        unfold gaussianKernel
-        fun_prop
-      exact hc.aestronglyMeasurable.smul (Lp.aestronglyMeasurable f)
-    · rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right
-        (norm_gaussianKernel_le ht (hbre k).le (hbim k) (x - y)) (norm_nonneg _)
-    · exact ((tendsto_gaussianKernel ht (x - y)).comp hb).smul_const _
+  have hlim := tendsto_integral_gaussianKernel_smul ht (fun k ↦ (hbre k).le) hbim hb f hf
   obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hL2).exists_seq_tendsto_ae
   filter_upwards [hae, ae_all_iff.2 hconv] with x hx hxc
   refine tendsto_nhds_unique hx ?_
@@ -261,8 +287,8 @@ theorem eLpNorm_schrodingerPropagator_le {t : ℝ} (ht : t ≠ 0)
     (f : Lp F 2 (volume : Measure E)) (hf : Integrable f) :
     eLpNorm (schrodingerPropagator F t f) ∞ volume ≤
       ENNReal.ofReal ((4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2)) * eLpNorm f 1 volume := by
-  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_enorm,
-    ← ofReal_integral_norm_eq_lintegral_enorm hf, ← ENNReal.ofReal_mul (by positivity)]
+  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_eNorm,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hf, ← ENNReal.ofReal_mul (by positivity)]
   · exact eLpNormEssSup_le_of_ae_bound (norm_schrodingerPropagator_apply_le ht f hf)
   all_goals exact Lp.aestronglyMeasurable _
 
@@ -288,6 +314,66 @@ theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q 
   rw [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg (by positivity),
     ENNReal.ofNNReal_toNNReal, hc, ← Real.rpow_mul (by positivity)]
   congr 3
+  ring
+
+/-! ### The dispersive estimate at every point -/
+
+/-- **The dispersive estimate for Schwartz functions, at every point.** For `t ≠ 0` and a Schwartz
+function `f`, the Schwartz function `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)`, which represents `S(t) f`,
+satisfies `|S(t) f (x)| ≤ (4π|t|)^(-n/2) ‖f‖₁` at every point `x`, not only almost everywhere. -/
+theorem norm_fourierInv_phaseSymbol_laplacianSymbol_smul_fourier_le {t : ℝ} (ht : t ≠ 0)
+    (f : 𝓢(E, F)) (x : E) :
+    ‖𝓕⁻ (fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ) x‖ ≤
+      (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖f y‖ := by
+  set c : ℝ := (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖f y‖
+  have hg := hasTemperateGrowth_phaseSymbol_laplacianSymbol (E := E) t
+  set G : 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F (phaseSymbol laplacianSymbol t) f
+  have hG : ∀ y, G y = 𝓕⁻ (fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ) y :=
+    fun y ↦ by
+      have h : ⇑(SchwartzMap.smulLeftCLM F (phaseSymbol laplacianSymbol t) (𝓕 f)) =
+          fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ := by
+        funext ξ
+        rw [SchwartzMap.smulLeftCLM_apply_apply hg, SchwartzMap.fourier_coe]
+      simp only [G, SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.fourierInv_coe, h]
+  have hL2 := SchwartzMap.toLp_fourierMultiplierCLM_eq hg (memLp_phaseSymbol laplacianSymbol t) f
+  have hae := norm_schrodingerPropagator_apply_le ht (f.toLp 2)
+    (f.integrable.congr (f.coeFn_toLp 2).symm)
+  rw [schrodingerPropagator_def, phasePropagator_def, hL2] at hae
+  have hint : ∫ y, ‖(f.toLp 2 : E → F) y‖ = ∫ y, ‖f y‖ :=
+    integral_congr_ae (by filter_upwards [f.coeFn_toLp 2] with y hy; rw [hy])
+  rw [hint] at hae
+  have hae' : ∀ᵐ y ∂volume, ‖G y‖ ≤ c := by
+    filter_upwards [hae, G.coeFn_toLp 2] with y h₁ h₂
+    rwa [h₂] at h₁
+  -- `G` is continuous, so the almost-everywhere bound holds everywhere.
+  rw [← hG]
+  exact (Continuous.ae_le_iff_le volume (f := fun y ↦ ‖G y‖) G.continuous.norm
+    continuous_const).1 hae' x
+
+open scoped RealInnerProductSpace in
+/-- **The dispersive estimate as an oscillatory integral bound.** For a Schwartz function `ψ` and
+`s ≠ 0`, `‖∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ‖ ≤ (2|s|)^(-n/2) ‖𝓕⁻ ψ‖₁` at every point `x`. -/
+theorem _root_.SchwartzMap.norm_integral_cexp_quadratic_smul_le (ψ : 𝓢(E, F)) {s : ℝ}
+    (hs : s ≠ 0) (x : E) :
+    ‖∫ ξ, cexp (((2 * π * (⟪ξ, x⟫ + s * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) • ψ ξ‖ ≤
+      (2 * |s|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖𝓕⁻ (ψ : E → F) y‖ := by
+  have hτ : -s / (2 * π) ≠ 0 := div_ne_zero (neg_ne_zero.2 hs) (by positivity)
+  have h := norm_fourierInv_phaseSymbol_laplacianSymbol_smul_fourier_le hτ (𝓕⁻ ψ) x
+  have hψ : 𝓕 (⇑(𝓕⁻ ψ : 𝓢(E, F)) : E → F) = ψ := by
+    rw [← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq]
+  have h4 : 4 * π * |-s / (2 * π)| = 2 * |s| := by
+    rw [abs_div, abs_neg, abs_of_pos (by positivity : (0 : ℝ) < 2 * π)]
+    field_simp
+    ring
+  rw [hψ, h4, SchwartzMap.fourierInv_coe] at h
+  refine le_of_eq_of_le ?_ h
+  rw [fourierInv_eq']
+  congr 2
+  ext ξ
+  rw [phaseSymbol_apply, laplacianSymbol_apply, smul_smul, ← Complex.exp_add]
+  congr 2
+  push_cast
+  field_simp
   ring
 
 /-! ### The evolution of a Gaussian -/
@@ -329,7 +415,6 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
   filter_upwards [(𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))).coeFn_toLp 2] with x hx
   have h1 : (1 + 4 * π * t * I : ℂ).arg ≠ π :=
     (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp)))).1
-  have h0 : (1 + 4 * π * t * I : ℂ) ≠ 0 := fun h ↦ by simpa using congrArg re h
   -- The coefficient `π / b` of the inverse-Fourier Gaussian is `(1 + 4πit)⁻¹`.
   have hcoeff : (π : ℂ) / b = (1 + 4 * π * t * I)⁻¹ := by
     simp only [b]

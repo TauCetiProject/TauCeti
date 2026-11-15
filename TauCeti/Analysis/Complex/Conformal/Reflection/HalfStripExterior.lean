@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Logic.Function.Update
 import TauCeti.Topology.MetricSpace.CoboundedImage
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -492,26 +493,17 @@ private theorem injOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {r : ℝ
     (hφ0 : ∀ s ∈ ball (0 : ℂ) r, 0 ≤ s.im → s ≠ 0 → invFunOn f A (c + b * model (-s⁻¹)) ≠ 0) :
     InjOn (update (fun s : ℂ => -(invFunOn f A (c + b * model (-s⁻¹)))⁻¹) 0 0)
       (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) := by
-  intro s₁ hs₁ s₂ hs₂ h
-  have hne : ∀ s ∈ ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}, s ≠ 0 →
-      update (fun s : ℂ => -(invFunOn f A (c + b * model (-s⁻¹)))⁻¹) 0 0 s ≠ 0 :=
-    fun s hs hs0 => by
-      rw [update_of_ne hs0]
-      exact neg_ne_zero.mpr (inv_ne_zero (hφ0 s hs.1 hs.2 hs0))
-  by_cases h₁ : s₁ = 0 <;> by_cases h₂ : s₂ = 0
-  · rw [h₁, h₂]
-  · rw [h₁, update_self] at h
-    exact absurd h.symm (hne s₂ hs₂ h₂)
-  · rw [h₂, update_self] at h
-    exact absurd h (hne s₁ hs₁ h₁)
-  · rw [update_of_ne h₁, update_of_ne h₂, neg_inj, inv_inj] at h
-    have hq : c + b * model (-s₁⁻¹) = c + b * model (-s₂⁻¹) := by
-      rw [← invFunOn_eq (hfAq s₁ hs₁.1 hs₁.2 h₁), h, invFunOn_eq (hfAq s₂ hs₂.1 hs₂.2 h₂)]
-    have hmem : ∀ s ∈ ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}, s ≠ 0 →
-        -s⁻¹ ∈ {ζ : ℂ | 0 ≤ ζ.im ∧ 8 ≤ ‖ζ‖} :=
-      fun s hs hs0 => ⟨im_neg_inv_nonneg.mpr hs.2, hfar s hs.1 hs0⟩
-    simpa using injOn_model (hmem s₁ hs₁ h₁) (hmem s₂ hs₂ h₂)
-      (mul_left_cancel₀ hb (add_left_cancel hq))
+  refine Set.injOn_update_of_injOn_diff (fun s₁ hs₁ s₂ hs₂ h => ?_) fun s hs hs0 =>
+    neg_ne_zero.mpr (inv_ne_zero (hφ0 s hs.1 hs.2 hs0))
+  rw [neg_inj, inv_inj] at h
+  have hq : c + b * model (-s₁⁻¹) = c + b * model (-s₂⁻¹) := by
+    rw [← invFunOn_eq (hfAq s₁ hs₁.1.1 hs₁.1.2 hs₁.2), h,
+      invFunOn_eq (hfAq s₂ hs₂.1.1 hs₂.1.2 hs₂.2)]
+  have hmem : ∀ s ∈ ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}, s ≠ 0 →
+      -s⁻¹ ∈ {ζ : ℂ | 0 ≤ ζ.im ∧ 8 ≤ ‖ζ‖} :=
+    fun s hs hs0 => ⟨im_neg_inv_nonneg.mpr hs.2, hfar s hs.1 hs0⟩
+  simpa using injOn_model (hmem s₁ hs₁.1 hs₁.2) (hmem s₂ hs₂.1 hs₂.2)
+    (mul_left_cancel₀ hb (add_left_cancel hq))
 
 /-- **The comparison map.**  Let `f` be holomorphic on the part of the upper half-plane outside
 the closed disc of radius `R ≥ 0`, continuous and injective on the closure of that part, and tend
@@ -592,11 +584,6 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
     rw [update_of_ne (hH s hs.2)]
     exact im_neg_inv_pos.mpr (hφU _ (hUp s hs.1 hs.2)).1.1
 
-private theorem differentiableOn_const_add_mul_model (c b : ℂ) :
-    DifferentiableOn ℂ (fun ζ => c + b * model ζ) upperHalfPlaneSet := fun _ hζ =>
-  (((hasDerivAt_model (mem_slitPlane_iff.mpr (Or.inr (ne_of_gt hζ)))).const_mul b).const_add
-    c).differentiableAt.differentiableWithinAt
-
 /-- The model's derivative `b * (ζ - ζ⁻¹)` does not vanish on the upper half-plane. -/
 private theorem deriv_const_add_mul_model_ne_zero {c b : ℂ} (hb : b ≠ 0) {ζ : ℂ}
     (hζ : ζ ∈ upperHalfPlaneSet) : deriv (fun ζ => c + b * model ζ) ζ ≠ 0 := by
@@ -632,9 +619,9 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior {ρ : 
   obtain ⟨r, hr, g, hgq, hg0, hcont, hholo, hreal, hupper, hinj⟩ :=
     exists_comparison_of_halfStripExterior le_rfl hb (by rwa [hT]) (by rwa [hA]) (by rwa [hA])
       (by rwa [hA]) (fun z hz => by rw [hT, hfU]; exact hU z hz)
-  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr hf
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr
     (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
-    (differentiableOn_const_add_mul_model c b) (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
+    (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb) hgq hg0 hcont hholo hreal hupper hinj
 
 /-- The coordinate change `ζ ↦ x - ζ⁻¹` carries the far part of the closed upper half-plane into
@@ -722,8 +709,7 @@ theorem tendsto_sub_mul_logDeriv_deriv_nhdsWithin_of_halfStripExterior {x r ρ :
       (fun w hw => by rw [← image_image, hmT]; exact hU w hw)
   -- Since `m (-(g s)⁻¹) = x + g s`, the translate `w ↦ f (x + w)` is compared with the model.
   have hlim := tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp (F := fun w => f (x + w))
-    hr₀ (differentiableOn_const_add_mul_model c b)
-    (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
+    hr₀ (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb)
     (fun s hs => by simpa [m, sub_eq_add_neg] using hgq hs) hg0 hcont hholo hreal hupper hinj
   have hshift : Tendsto (fun z : ℂ => z - x) (𝓝[upperHalfPlaneSet] (x : ℂ))

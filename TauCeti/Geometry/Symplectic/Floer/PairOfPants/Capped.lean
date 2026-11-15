@@ -45,7 +45,8 @@ is the single-neck model of the same deformation.
   (`TauCeti.Floer.contMDiff_cappedPerturbation`), and so are its components in the real
   coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
   `TauCeti.Floer.contDiff_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
-  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`).
+  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and on a vector space so are its
+  components (`TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
   `a H_q(t) dt` on the neck `2 ≤ σ ≤ L + 2`, and `a` times the pair-of-pants datum
@@ -241,7 +242,7 @@ support: it vanishes outside the truncation `S_{L + 3}`. -/
 theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ → M) (v : ℂ) :
     HasCompactSupport fun z ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) (u z) v :=
   HasCompactSupport.of_support_subset_isCompact
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation (L + 3)))
+    (isCompact_preimage_truncation (L + 3))
     fun z hz ↦ by_contra fun h ↦ hz <| by
       have h' : Complex.equivRealProdCLM.symm z ∉ truncation (L + 3) := h
       dsimp only
@@ -251,12 +252,8 @@ theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ �
 /-- **The datum vanishes near the poles `0` and `1`.** -/
 theorem eventually_cappedPerturbation_eq_zero_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedPerturbation a L H w x = 0 := by
-  have hT : c ∉ truncation (L + 3) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds hT] with w hw x
+  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds
+    (notMem_truncation_of_eq_zero_or_eq_one hc _)] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
 
 /-- **The datum vanishes near the pole `∞`.** -/
@@ -519,6 +516,31 @@ theorem contMDiff_cappedComparisonPerturbation {n : ℕ∞} (hH : ∀ q, Functio
 
 end Smooth
 
+section SmoothNormed
+
+variable [NormedAddCommGroup M] [NormedSpace ℝ M]
+
+/-- The components of the comparison family are `C^n` jointly in the family parameter `R`, the real
+coordinates of `ℂ` and the target point, for `C^n` Hamiltonians on a vector space. -/
+theorem contDiff_cappedComparisonPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (v : ℂ) :
+    ContDiff ℝ n (fun p : ℝ × ((ℝ × ℝ) × M) ↦
+      cappedComparisonPerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) := by
+  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, M)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := by
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  have h : ContDiff ℝ n
+      (fun p : ℂ × (ℝ × M) ↦ cappedComparisonPerturbation H p.2.1 p.1 p.2.2) := by
+    rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
+      modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact contMDiff_cappedComparisonPerturbation hH hHs'
+  exact (h.comp ((Complex.equivRealProdCLM.symm.contDiff.comp
+    (contDiff_fst.comp contDiff_snd)).prodMk
+      (contDiff_fst.prodMk (contDiff_snd.comp contDiff_snd)))).clm_apply contDiff_const
+
+end SmoothNormed
+
 end TauCeti.Floer
 
 /-! ### The integrated curvature -/
@@ -557,8 +579,8 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le
       ENNReal.ofReal (2 * |a|) := by
     calc _ ≤ ∫⁻ s, ENNReal.ofReal |a| * (f₁ s + f₂ s) := by
           refine lintegral_mono fun s ↦ ?_
-          rw [deriv_const_mul_field', enorm_mul, Real.enorm_eq_ofReal_abs a, hf₁, hf₂,
-            ← ENNReal.ofReal_add (hψ _) (hψ _), Real.enorm_eq_ofReal_abs]
+          rw [deriv_const_mul_field', eNorm_mul, Real.eNorm_eq_ofReal_abs a, hf₁, hf₂,
+            ← ENNReal.ofReal_add (hψ _) (hψ _), Real.eNorm_eq_ofReal_abs]
           gcongr
           exact abs_deriv_cappedEndProfile_le _ _
       _ = ENNReal.ofReal |a| * 2 := by
@@ -632,9 +654,9 @@ theorem abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le
   have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
   rw [← ENNReal.ofReal_le_ofReal_iff
       (mul_nonneg zero_le_two (Finset.sum_nonneg fun q _ ↦ hB₀ q)),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
+    ← Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
     ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le ω hH hHs hB hR u))
 
 end TauCeti.SmoothTwoForm

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -173,20 +174,13 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
       continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α) =
         twistedDifferential mQ ℳ dM (homotopyMap h ℳ (Pi.single x α)) +
           homotopyMap h ℳ (twistedDifferential mP ℳ dM (Pi.single x α)) by
-    rw [← Finset.univ_sum_single f]
-    simp only [map_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb =>
-      simp only [Pi.single_add, map_add] at ha hb ⊢
-      rw [add_sub_add_comm, ha, hb]
-      abel
+    have hlin : continuationMap R M ν₁ - continuationMap R M ν₀ =
+        twistedDifferential mQ ℳ dM ∘ₗ homotopyMap h ℳ +
+          homotopyMap h ℳ ∘ₗ twistedDifferential mP ℳ dM :=
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ by simpa using key x hα
+    simpa using LinearMap.congr_fun hlin f
   intro x q α hα
   funext w
-  have hdα : dM α ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hα
   have hγ : ∀ y, q.negOnePow • (op (h x y) • α) ∈ ℳ (q + (indQ y - ind x - 1)) := fun y ↦
     Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded (hh x y) hα)
   have hδ : ∀ z, q.negOnePow • (op (mP x z) • α) ∈ ℳ (q + (ind z - ind x + 1)) := fun z ↦
@@ -209,28 +203,20 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
         ∑ z, (q + (ind z - ind x + 1)).negOnePow •
           (op (h z w) • (q.negOnePow • (op (mP x z) • α))) := by
     rw [twistedDifferential_single mP dM x hα, map_add, map_sum, Pi.add_apply, Finset.sum_apply,
-      homotopyMap_single_apply h x hdα w]
+      homotopyMap_single_apply h x (hM.isHomogeneous.map_mem hα) w]
     simp only [fun z ↦ homotopyMap_single_apply h z (hδ z) w]
   set SQ := ∑ y, (ind x - indQ y).negOnePow • (op (h x y * mQ y w) • α) with hSQ_def
   set SP := ∑ z, (ind x - ind z).negOnePow • (op (mP x z * h z w) • α) with hSP_def
   have hSQ : ∑ y, (q + (indQ y - ind x - 1)).negOnePow •
       (op (mQ y w) • (q.negOnePow • (op (h x y) • α))) = -SQ := by
     rw [hSQ_def, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun y _ ↦ ?_
-    have hsign : (q + (indQ y - ind x - 1)).negOnePow * q.negOnePow =
-        -(ind x - indQ y).negOnePow := by
-      rw [← Int.negOnePow_succ]
-      exact negOnePow_mul_negOnePow_of_even ⟨indQ y - ind x - 1 + q, by ring⟩
-    rw [smul_comm (op (mQ y w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+    exact Finset.sum_congr rfl fun y _ ↦
+      negOnePow_smul_op_smul_negOnePow_smul_op_smul ⟨-1, by ring⟩ _ _ α
   have hSP : ∑ z, (q + (ind z - ind x + 1)).negOnePow •
       (op (h z w) • (q.negOnePow • (op (mP x z) • α))) = -SP := by
     rw [hSP_def, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun z _ ↦ ?_
-    have hsign : (q + (ind z - ind x + 1)).negOnePow * q.negOnePow =
-        -(ind x - ind z).negOnePow := by
-      rw [← Int.negOnePow_succ]
-      exact negOnePow_mul_negOnePow_of_even ⟨ind z - ind x + q, by ring⟩
-    rw [smul_comm (op (h z w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+    exact Finset.sum_congr rfl fun z _ ↦
+      negOnePow_smul_op_smul_negOnePow_smul_op_smul ⟨0, by ring⟩ _ _ α
   have hd : dM (q.negOnePow • (op (h x w) • α)) =
       q.negOnePow • (op (h x w) • dM α) + op (d (h x w)) • α := by
     rw [LinearMap.map_smul_of_tower, hM.leibniz hα (h x w), smul_add, smul_smul, Int.units_mul_self,

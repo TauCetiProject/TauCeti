@@ -24,9 +24,8 @@ for a finite abelian group they have the same cardinality (see
 `card_elementaryTwoQuotient_eq_card_twoTorsion`); we keep them distinct in names and statements.
 
 The construction itself is the general `TauCeti.ElementaryTwoQuotient` of a commutative group,
-specialized here to `G = ClassGroup R` under the genus-theory names Layer 2 of the multiquadratic
-roadmap targets (`TauCetiRoadmap/Multiquadratic/README.md`). The same general construction is the
-square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup.Basic` for `G = Kˣ`.
+specialized here to `G = ClassGroup R` under genus-theory names. The same general construction is
+the square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup.Basic` for `G = Kˣ`.
 
 ## Main definitions and results
 
@@ -211,9 +210,8 @@ theorem card_elementaryTwoQuotient_dvd_card :
   TauCeti.card_elementaryTwoQuotient_dvd_card (ClassGroup R)
 
 /-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card`:
-`2 ^ TauCeti.ClassGroup.twoRank R` divides the cardinality of `Cl(R)` when `Cl(R)/Cl(R)²`
-is finite-dimensional. -/
-theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
+`2 ^ TauCeti.ClassGroup.twoRank R` divides the cardinality of `Cl(R)`. -/
+theorem two_pow_twoRank_dvd_card :
     2 ^ twoRank R ∣ Nat.card (ClassGroup R) :=
   TauCeti.two_pow_twoRank_dvd_card (ClassGroup R)
 

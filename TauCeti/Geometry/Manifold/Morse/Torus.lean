@@ -27,7 +27,8 @@ torus. Its critical points are the `2ᵐ` points all of whose coordinates are `0
 `0`, where the cosine of that factor attains its maximum. Hence the cosine function has exactly
 `(m choose j)` critical points of index `j`, and `2ᵐ` critical points in all. These binomial
 coefficients are the Betti numbers of `Tᵐ`, which makes the cosine function the standard test case
-for the Morse inequalities; the homology of the torus is not computed here.
+for the Morse inequalities. Comparing them with the homology of the torus shows that the cosine
+function is a perfect Morse function (`TauCeti.isPerfectMorse_torusCos`).
 
 In the preferred chart at any point, whose coordinates are local real lifts of the coordinates of
 the point, the cosine function is the separated sum `y ↦ ∑ i, cos (2π yᵢ / pᵢ)`

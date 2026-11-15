@@ -18,6 +18,8 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Convex.Caratheodory
 import TauCeti.Analysis.InnerProductSpace.Contraction
+import TauCeti.Analysis.InnerProductSpace.Frame
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 
 /-!
 # Maximal-volume ellipsoids
@@ -67,10 +69,15 @@ is at Banach–Mazur distance at most `√n` from the Euclidean space of the sam
   decomposition `∑ cᵢ • rankOne uᵢ uᵢ = 1` of the identity over contact points `uᵢ` with positive
   weights `cᵢ` summing to the dimension.
 * `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.norm_symm_le_sqrt_finrank`: `‖T⁻¹‖ ≤ √n`.
+* `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.norm_innerSL_comp_symm_le_one`: at a contact point
+  `u`, the functional `y ↦ ⟪u, T⁻¹ y⟫` on `F` has norm at most one.
 * `TauCeti.banachMazurDist_le_sqrt_finrank` and
   `TauCeti.banachMazurDist_euclideanSpace_le_sqrt_finrank`: an `n`-dimensional normed space is at
   Banach–Mazur distance at most `√n` from an `n`-dimensional inner product space, in particular
   from `EuclideanSpace 𝕜 (Fin n)`.
+* `TauCeti.exists_sum_smul_eq_of_finiteDimensional`: John's theorem applied to the dual of an
+  `n`-dimensional normed space `F`, giving a decomposition `∑ cᵢ φᵢ(z) wᵢ = z` of the identity of
+  `F` with `‖wᵢ‖ ≤ 1` and `‖∑ cᵢ bᵢ φᵢ(z)‖ ≤ √n (maxᵢ ‖bᵢ‖) ‖z‖`.
 
 At a contact point `u` of John's position, the inequalities
 `ContinuousLinearMap.re_inner_le_norm_mul_norm_apply` and
@@ -446,6 +453,15 @@ theorem norm_symm_le_sqrt_finrank (hT : T.IsMaxVolumeEllipsoid) :
   ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) fun y ↦ by
     simpa using hT.norm_le_sqrt_finrank_mul_norm_apply (T.symm y)
 
+/-- At a contact point `u` of a maximal-volume ellipsoid `T`, the *contact functional*
+`y ↦ ⟪u, T⁻¹ y⟫` on `F` has norm at most one, since `‖⟪u, x⟫‖ ≤ ‖T x‖`. -/
+theorem norm_innerSL_comp_symm_le_one (hT : T.IsMaxVolumeEllipsoid) {u : E} (hu : ‖u‖ = 1)
+    (hTu : ‖T u‖ = 1) : ‖(innerSL 𝕜 u).comp (T.symm : F →L[𝕜] E)‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y ↦ ?_
+  have := (T : E →L[𝕜] F).norm_inner_le_norm_mul_norm_apply hT.norm_le_one (u := u)
+    (by simp [hu, hTu]) (T.symm y)
+  simpa [hu] using this
+
 end ContinuousLinearEquiv.IsMaxVolumeEllipsoid
 
 namespace TauCeti
@@ -471,5 +487,57 @@ theorem banachMazurDist_euclideanSpace_le_sqrt_finrank :
   rw [banachMazurDist_comm]
   simpa using banachMazurDist_le_sqrt_finrank (𝕜 := 𝕜)
     (E := EuclideanSpace 𝕜 (Fin (finrank 𝕜 F))) (F := F) (by simp)
+
+open scoped InnerProductSpace
+
+/-- **John's theorem on the dual**, read back in an `n`-dimensional normed space `F`: there are
+functionals `φᵢ`, vectors `wᵢ` of norm at most one and weights `cᵢ` with `∑ cᵢ φᵢ(z) wᵢ = z`, such
+that `‖∑ cᵢ bᵢ φᵢ(z)‖ ≤ √n B ‖z‖` whenever all `‖bᵢ‖ ≤ B`. The `φᵢ` are the images of the contact
+points of a maximal-volume ellipsoid `S : ℓ²ₙ → F*`, and the `wᵢ` represent the contact functionals
+on `F*`, which are evaluations because `F` is reflexive. -/
+theorem exists_sum_smul_eq_of_finiteDimensional :
+    ∃ (k : ℕ) (c : Fin k → ℝ) (φ : Fin k → StrongDual 𝕜 F) (w : Fin k → F),
+      (∀ i, ‖w i‖ ≤ 1) ∧ (∀ z, ∑ i, ((c i : 𝕜) * φ i z) • w i = z) ∧
+      ∀ (z : F) (b : Fin k → 𝕜) {B : ℝ}, (∀ i, ‖b i‖ ≤ B) →
+        ‖∑ i, (c i : 𝕜) * b i * φ i z‖ ≤ √(finrank 𝕜 F) * B * ‖z‖ := by
+  set m := finrank 𝕜 F
+  have hD : finrank 𝕜 (StrongDual 𝕜 F) = m := by
+    rw [← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
+  obtain ⟨S, hS⟩ := exists_isMaxVolumeEllipsoid (𝕜 := 𝕜) (E := EuclideanSpace 𝕜 (Fin m))
+    (F := StrongDual 𝕜 F) (by simp [hD])
+  obtain ⟨k, u, c, hu, hc, hcsum, hid⟩ := hS.exists_sum_rankOne_eq_id
+  have hdec (x : EuclideanSpace 𝕜 (Fin m)) : ∑ i, (c i : 𝕜) • ⟪u i, x⟫_𝕜 • u i = x := by
+    simpa using congr($hid x)
+  -- The contact functionals on `F*` are evaluations at vectors `wᵢ` of norm at most one.
+  choose w hw using fun i ↦ surjective_inclusionInDoubleDual_of_finiteDimensional
+    ((innerSL 𝕜 (u i)).comp (S.symm : StrongDual 𝕜 F →L[𝕜] EuclideanSpace 𝕜 (Fin m)))
+  have hwf (i : Fin k) (f : StrongDual 𝕜 F) : f (w i) = ⟪u i, S.symm f⟫_𝕜 := by
+    simpa using congr($(hw i) f)
+  refine ⟨k, c, fun i ↦ S (u i), w, fun i ↦ ?_, fun z ↦ ?_, fun z b B hb ↦ ?_⟩
+  · rw [← (NormedSpace.inclusionInDoubleDualLi 𝕜 (E := F)).norm_map]
+    exact (congrArg norm (hw i)).trans_le (hS.norm_innerSL_comp_symm_le_one (hu i).1 (hu i).2)
+  · refine (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun f ↦ ?_
+    calc f (∑ i, ((c i : 𝕜) * S (u i) z) • w i)
+        = S (∑ i, (c i : 𝕜) • ⟪u i, S.symm f⟫_𝕜 • u i) z := by
+          simp only [map_sum, map_smul, _root_.sum_apply, _root_.smul_apply, smul_eq_mul, hwf]
+          exact Finset.sum_congr rfl fun i _ ↦ by ring
+      _ = f z := by rw [hdec, ContinuousLinearEquiv.apply_symm_apply]
+  · -- The sum is `h (∑ cᵢ bᵢ uᵢ)` for the functional `h x = S x z` of norm at most `‖z‖`.
+    let h : StrongDual 𝕜 (EuclideanSpace 𝕜 (Fin m)) :=
+      (ContinuousLinearMap.apply 𝕜 𝕜 z).comp (S : EuclideanSpace 𝕜 (Fin m) →L[𝕜] StrongDual 𝕜 F)
+    have hh : ‖h‖ ≤ ‖z‖ := by
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg z) fun x ↦ ?_
+      have hSx : ‖S x‖ ≤ ‖x‖ := by
+        simpa using (S : EuclideanSpace 𝕜 (Fin m) →L[𝕜] StrongDual 𝕜 F).le_of_opNorm_le
+          hS.norm_le_one x
+      calc ‖S x z‖ ≤ ‖S x‖ * ‖z‖ := (S x).le_opNorm z
+        _ ≤ ‖z‖ * ‖x‖ := by rw [mul_comm]; gcongr
+    have hsum := norm_sum_mul_smul_le_sqrt_mul (fun i ↦ (hc i).le) hdec hb
+    rw [hcsum, finrank_euclideanSpace_fin] at hsum
+    calc ‖∑ i, (c i : 𝕜) * b i * S (u i) z‖ = ‖h (∑ i, ((c i : 𝕜) * b i) • u i)‖ := by
+          simp [h, map_sum]
+      _ ≤ ‖z‖ * (√m * B) := (h.le_opNorm _).trans (mul_le_mul hh hsum (norm_nonneg _)
+          (norm_nonneg _))
+      _ = √m * B * ‖z‖ := mul_comm _ _
 
 end TauCeti

@@ -98,11 +98,17 @@ private lemma studentT_chart_scalar_part (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz 
 
 /-- Under the chart `z ↦ z ^ 2 / ν`, the weighted Student t density becomes the normalized
 beta kernel on the positive half-line. -/
-lemma abs_deriv_smul_studentTPDFReal (hν : 0 < ν) (q : ℝ) {z : ℝ} (hz : 0 < z) :
+lemma abs_deriv_smul_studentTPDFReal (q : ℝ) {z : ℝ} (hz : 0 < z) :
     |2 * z / ν| •
         (Real.Gamma ((ν + 1) / 2) / (Real.sqrt (ν * Real.pi) * Real.Gamma (ν / 2)) *
           ν ^ ((q + 1) / 2) / 2 * studentTBetaKernel ν q (z ^ 2 / ν)) =
       studentTPDFReal ν z * z ^ q := by
+  by_cases hν : 0 < ν
+  swap
+  · have hν' : ν ≤ 0 := not_lt.1 hν
+    rw [studentTPDFReal_of_nonpos hν', Real.sqrt_eq_zero_of_nonpos
+      (mul_nonpos_of_nonpos_of_nonneg hν' Real.pi_pos.le)]
+    simp
   set C := Real.Gamma ((ν + 1) / 2) / (Real.sqrt (ν * Real.pi) * Real.Gamma (ν / 2))
   rw [studentTPDFReal_of_pos hν, studentTBetaKernel, abs_of_pos (by positivity), smul_eq_mul,
     sq_div_const_rpow_studentTBetaExponent hν q hz]

@@ -10,9 +10,6 @@ public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.Algebra.Algebra.Tower
 public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
--- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
--- function field nonempty, hence its ramification index positive.
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.RingTheory.Valuation.RamificationGroup
@@ -67,9 +64,10 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
   `TauCeti.Place.relativeDegree_eq_of_restrict_eq`: `e` and `f` are constant on a fibre, whence
   `TauCeti.Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank`, the product form
   `r · e · f = [F' : F]` of the fundamental identity (Stichtenoth, Corollary 3.7.2).
-* `TauCeti.Place.ramificationIdxIn`: the common ramification index of the places over a place of
-  `F`, zero exactly on an empty fibre (`TauCeti.Place.ramificationIdxIn_eq_zero_iff`) and positive
-  for an extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`), with
+* `TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`: for a finite Galois extension the places
+  over a place `P` of `F` all share one ramification index, which is
+  `TauCeti.Place.ramificationIdxIn` (defined for any algebraic extension in
+  `TauCeti.FieldTheory.FunctionField.Place.Extension.Basic`), with
   `TauCeti.Place.ramificationIdxIn_mul_sum_fibre_eq` summing `e - 1` over a fibre:
   `∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`, cleared of the division.
 * `TauCeti.Place.stabilizer_eq_decompositionSubgroup`: the stabilizer of a place is the
@@ -206,25 +204,31 @@ section Transport
 
 variable (F) (g : P.integers.decompositionSubgroup F)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
 @[simp]
 theorem valuation_decompositionSubgroup_apply (x : F') :
     P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
-  have h : (g : F' ≃ₐ[F] F') • P = P := by
-    have hg : (g : F' ≃ₐ[F] F') ∈ MulAction.stabilizer (F' ≃ₐ[F] F') P := by
-      rw [stabilizer_eq_decompositionSubgroup]
-      exact g.2
-    exact hg
-  calc P.valuation ((g : F' ≃ₐ[F] F') x)
-      = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
-    _ = P.valuation x := valuation_smul_apply _ _ _
+  -- the valuation `v_P ∘ σ` has the same valuation ring as `v_P`, and is normalized as `σ` is onto
+  have hint (y : F') : P.valuation ((g : F' ≃ₐ[F] F') y) ≤ 1 ↔ P.valuation y ≤ 1 := by
+    simpa only [mem_integers_iff] using
+      ValuationSubring.decompositionSubgroup_apply_mem_iff P.integers g (x := y)
+  have hsurj : Function.Surjective
+      (P.valuation.comap (((g : F' ≃ₐ[F] F') : F' →+* F'))) := by
+    intro w
+    obtain ⟨y, rfl⟩ := P.valuation_surjective w
+    exact ⟨(g : F' ≃ₐ[F] F').symm y, by simp⟩
+  exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective hsurj P.valuation_surjective
+    (Valuation.isEquiv_iff_val_le_one.mpr fun {y} ↦ hint y)) x
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` leaves the order at `P` unchanged. -/
 @[simp]
 theorem ord_decompositionSubgroup_apply (x : F') :
     P.ord ((g : F' ≃ₐ[F] F') x) = P.ord x := by
   rw [ord_def, ord_def, valuation_decompositionSubgroup_apply]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
 theorem mem_integers_decompositionSubgroup_apply {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
@@ -264,11 +268,13 @@ variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
 theorem restrict_smul : (σ • P).restrict k F = P.restrict k F :=
   restrict_map_restrictScalars P σ
 
+omit [Algebra.IsIntegral F F'] in
 /-- The ramification index is invariant under the action. -/
 @[simp]
 theorem ramificationIdx_smul : ramificationIdx F (σ • P) = ramificationIdx F P := by
-  refine ramificationIdx_eq_of_forall_ord_eq k F (σ • P) fun f ↦ ?_
-  rw [restrict_smul, ord_smul, AlgEquiv.commutes, ord_algebraMap_restrict k F P f]
+  rw [ramificationIdx_def, ramificationIdx_def]
+  congr 1
+  exact Valuation.ext fun f ↦ by simp [valuation_smul, AlgEquiv.commutes]
 
 /-- The relative degree is invariant under the action: `σ⁻¹` induces an isomorphism of the
 residue field of `σ • P` with the residue field of `P` over the residue field of the place
@@ -376,13 +382,33 @@ theorem setOf_restrict_eq_eq_orbit (P : Place k F') :
   rintro ⟨σ, rfl⟩
   exact restrict_smul σ P
 
+omit [FiniteDimensional F F'] in
 /-- **Orbit--stabilizer for the places over a place**: the number of places of `F' / k` lying
-over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. -/
+over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. For an infinite
+Galois extension both sides are `0` by convention: the fibre is infinite, or it is finite and the
+stabilizer has finite index in an infinite group, hence is infinite. -/
 theorem ncard_mul_card_stabilizer_eq_finrank (P : Place k F') :
     {Q : Place k F' | Q.restrict k F = P.restrict k F}.ncard *
       Nat.card (MulAction.stabilizer (F' ≃ₐ[F] F') P) = Module.finrank F F' := by
-  rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
-    Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
+  by_cases hfd : FiniteDimensional F F'
+  · rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
+      Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
+  · have hinf : Infinite (F' ≃ₐ[F] F') :=
+      not_finite_iff_infinite.mp fun h ↦ hfd (IsGalois.finiteDimensional_of_finite F F')
+    rw [Module.finrank_of_not_finite hfd]
+    by_cases hfib : {Q : Place k F' | Q.restrict k F = P.restrict k F}.Finite
+    swap
+    · rw [Set.Infinite.ncard hfib, zero_mul]
+    have horb : Finite (MulAction.orbit (F' ≃ₐ[F] F') P) :=
+      (hfib.subset (by rintro _ ⟨σ, rfl⟩; exact restrict_smul σ P)).to_subtype
+    rw [mul_eq_zero]
+    refine Or.inr ?_
+    by_contra hstab
+    have hs : Finite (MulAction.stabilizer (F' ≃ₐ[F] F') P) :=
+      Nat.finite_of_card_ne_zero hstab
+    have : Finite (F' ≃ₐ[F] F') :=
+      Finite.of_equiv _ (MulAction.orbitProdStabilizerEquivGroup _ P)
+    exact not_finite (F' ≃ₐ[F] F')
 
 /-- **The ramification index is constant on a fibre** (Stichtenoth, Corollary 3.7.2). -/
 theorem ramificationIdx_eq_of_restrict_eq {P Q : Place k F'}
@@ -414,43 +440,13 @@ theorem ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank (P : Place k F')
       ← relativeDegree_eq_of_restrict_eq (hfin.mem_toFinset.mp hQ)]
 
 
-open scoped Classical in
-/-- **The ramification index of a place of the base in a Galois extension**: all the places of `F'`
-over `P` share one ramification index (`TauCeti.Place.ramificationIdx_eq_of_restrict_eq`), and this
-is it.  It is `0` when no place of `F'` lies over `P`, which does not happen for an extension of
-function fields (`TauCeti.Place.restrict_surjective_of_finiteDimensional`).  This is the analogue
-for places of Mathlib's `Ideal.ramificationIdxIn`. -/
-noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
-    [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] : ℕ :=
-  if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
-
 /-- The ramification index of a place of the base is the ramification index of any place above
 it. -/
 theorem ramificationIdxIn_eq_ramificationIdx {P : Place k F} {P' : Place k F'}
     (hP' : P'.restrict k F = P) : P.ramificationIdxIn F' = ramificationIdx F P' := by
   have hex : ∃ Q : Place k F', Q.restrict k F = P := ⟨P', hP'⟩
-  rw [ramificationIdxIn, dite_eq_left hex]
+  rw [ramificationIdxIn_of_exists hex]
   exact ramificationIdx_eq_of_restrict_eq (by rw [hex.choose_spec, hP'])
-
-/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
-@[simp]
-theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
-    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
-  constructor
-  · intro h P' hP'
-    rw [ramificationIdxIn_eq_ramificationIdx hP'] at h
-    exact absurd h (ramificationIdx_pos F P').ne'
-  · intro h
-    rw [ramificationIdxIn, dite_eq_right]
-    exact fun ⟨P', hP'⟩ ↦ h P' hP'
-
-/-- **The ramification index of a place of the base is positive** for an extension of function
-fields: some place of `F'` lies above it. -/
-theorem ramificationIdxIn_pos (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
-    {P : Place k F} : 0 < P.ramificationIdxIn F' := by
-  obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hF hF' P
-  rw [ramificationIdxIn_eq_ramificationIdx hP']
-  exact ramificationIdx_pos F P'
 
 /-- **The branch contribution of a Galois fibre**: the places over a place `P` of `F` share one
 ramification index `e` and one relative degree `f`, and there are `[F' : F] / (e f)` of them, so

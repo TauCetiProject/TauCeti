@@ -9,7 +9,7 @@ public import TauCeti.Topology.VectorBundle.Density
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.Algebra.SMul
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -47,6 +47,7 @@ namespace Bundle.Trivialization
 variable (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e]
   [MemTrivializationAtlas e']
 
+omit [FiniteDimensional ℝ F] in
 /-- Density transitions have the regularity of the vector-bundle transitions, since their
 absolute determinants are evaluated only at invertible maps. -/
 theorem contMDiffOn_densityCoordChange :
@@ -69,7 +70,7 @@ theorem contMDiffOn_densityCoordChange :
         (f := fun y : B ↦ ((e'.coordChangeL ℝ e y : F →L[ℝ] F) : F →ₗ[ℝ] F).det)
         (hd x hx)
   refine (ha.smul (contMDiffOn_const (c := ContinuousLinearMap.id ℝ ℝ))).congr ?_
-  intro x hx
+  intro x _
   apply ContinuousLinearMap.ext
   intro c
   exact e.densityCoordChange_apply e' x c
@@ -105,7 +106,7 @@ theorem contMDiffAt_section_iff {s : ∀ x, Density (V x) (Module.finrank ℝ F)
       ContMDiffAt I 𝓘(ℝ) n
         (fun x ↦ s x (fun i ↦
           (trivializationAt F V x₀).symm x (Module.finBasis ℝ F i))) x₀ := by
-  rw [Bundle.contMDiffAt_section x₀, trivializationAt_eq]
+  rw [Bundle.contMDiffAt_section_iff x₀, trivializationAt_eq]
   simp only [Trivialization.density_apply]
 
 omit [ContMDiffVectorBundle n F V I] in

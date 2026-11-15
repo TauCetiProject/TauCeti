@@ -38,6 +38,9 @@ coordinate taking a nontorsion class to its positive divisibility.
   is one.
 * `TauCeti.IsPrimitive.exists_eq_nsmul_iff_dvd`: the natural multipliers of `d • p`, for
   primitive `p`, are exactly the divisors of `d`.
+* `TauCeti.IsPrimitive.zsmul_left_injective`, `TauCeti.IsPrimitive.eq_of_pos_zsmul_eq`: integer
+  multiples of a primitive vector have distinct multipliers, and primitive vectors with equal
+  positive multiples coincide in a module with unique division.
 * `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
 * `Units.isPrimitive_units_mul_iff`, `Units.isPrimitive_mul_units_iff`: in a ring, primitivity is
   invariant under multiplication by a unit.
@@ -97,6 +100,30 @@ theorem IsPrimitive.exists_eq_nsmul_iff_dvd {p : M} (hp : IsPrimitive p) (d n : 
     exact Int.natCast_dvd_natCast.1 (Dvd.intro (g x) heq.symm)
   · rintro ⟨m, hm⟩
     exact ⟨m • p, by rw [smul_smul, ← hm]⟩
+
+-- The following two theorems are adapted from `Mei/Algebra/Module/Primitive.lean` in
+-- [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+-- `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
+
+/-- Integer multiples of a primitive vector have distinct multipliers, even when the ambient module
+has torsion. -/
+theorem IsPrimitive.zsmul_left_injective {v : M} (hv : IsPrimitive v) :
+    Function.Injective (fun a : ℤ => a • v) := by
+  obtain ⟨f, hf⟩ := hv
+  intro a b h
+  simpa only [map_zsmul, hf, zsmul_eq_mul, mul_one, Int.cast_id] using congrArg f h
+
+/-- Primitive vectors with equal positive integer multiples are equal. -/
+theorem IsPrimitive.eq_of_pos_zsmul_eq [HasUniqueDiv M] {v w : M} (hv : IsPrimitive v)
+    (hw : IsPrimitive w) {a b : ℤ} (ha : 0 < a) (hb : 0 < b) (h : a • v = b • w) : v = w := by
+  obtain ⟨f, hf⟩ := hv
+  obtain ⟨g, hg⟩ := hw
+  have hf' := congrArg f h
+  have hg' := congrArg g h
+  simp only [map_zsmul, hf, hg, zsmul_eq_mul, mul_one] at hf' hg'
+  have hab : a = b := le_antisymm
+    (Int.le_of_dvd hb ⟨g v, hg'.symm⟩) (Int.le_of_dvd ha ⟨f w, hf'⟩)
+  exact zsmul_right_injective ha.ne' (hab ▸ h)
 
 /-- The zero vector is not primitive. -/
 @[simp]

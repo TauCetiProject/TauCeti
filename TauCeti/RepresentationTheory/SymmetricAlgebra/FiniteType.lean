@@ -117,7 +117,7 @@ private theorem symmetricAlgebraInvariants_eq_adjoin_orbitSums {ι : Type*} (x :
   have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
   have hN := TauCeti.FixedPoints.subalgebra_eq_adjoin_sum_smul_prod_pow
     (R := R) (G := G) (SymmetricAlgebra.ι R M ∘ x)
-    (adjoin_range_ι_comp_eq_top_of_span_eq_top x hx)
+    (SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top x hx)
   rw [← ρ.symmetricAlgebraInvariants_eq_fixedPoints] at hN
   refine le_antisymm (hN.le.trans (Algebra.adjoin_le ?_)) (Algebra.adjoin_le ?_)
   · rintro _ ⟨d, hd, rfl⟩

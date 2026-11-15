@@ -98,7 +98,7 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
     (hf : Continuous f) (x : F) (t₀ : ℝ) :
     ∃! c : ℝ → F, c t₀ = x ∧ ContDiff ℝ 1 c ∧ ∀ t v,
       ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + A (e (c t)) (e v) = f t (e v) := by
-  have := FiniteDimensional.complete ℝ F
+  have := FiniteDimensional.completeSpace ℝ F
   -- The Gram map into the coordinate dual is invertible, independently of the energy form.
   let j := ι.comp e
   obtain ⟨Q, hQ⟩ := ContinuousLinearMap.isInvertible_of_injective
@@ -169,7 +169,7 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
     ∃ u : ℝ → V, ContinuousOn u (Icc a b) ∧ u a = u₀ ∧
       HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t)))
         (fun t ↦ f t - A t (u t)) 1 := by
-  have := FiniteDimensional.complete ℝ V
+  have := FiniteDimensional.completeSpace ℝ V
   -- The Gram operator `G = ι.gelfandDual ∘ ι` is an isomorphism `V ≃L[ℝ] V*`.
   obtain ⟨G, hG⟩ := ContinuousLinearMap.isInvertible_of_injective
     (ι.gelfandDual_comp_injective_iff.2 hι)

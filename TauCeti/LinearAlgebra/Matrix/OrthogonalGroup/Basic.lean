@@ -100,12 +100,12 @@ end TauCeti
 
 namespace Matrix
 
-/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitaryGroup` for the
+/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitary` for the
 trivial star operation `starRingOfComm`, which defines `Matrix.orthogonalGroup`. -/
 theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (R : Type*)
     [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
   letI := starRingOfComm (R := R)
-  permMatrix_mem_unitaryGroup σ
+  permMatrix_mem_unitary σ
 
 /-- A square matrix is orthogonal exactly when it preserves the dot product. -/
 theorem mem_orthogonalGroup_iff_dotProduct_mulVec {n R : Type*} [Fintype n] [DecidableEq n]

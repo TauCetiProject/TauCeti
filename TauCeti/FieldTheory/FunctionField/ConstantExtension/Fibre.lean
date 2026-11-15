@@ -281,7 +281,7 @@ theorem finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top
   have hdeg := Divisor.degree_poles hF' (Units.mk0 _ hz) (by simpa using hzk')
   rw [hpoles', Divisor.degree_zsmul, AlgebraicGeometry.WeilDivisor.ofFinset_eq_sum, map_sum,
     Units.val_mk0, finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top hex h z,
-    finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF hn0 hn hQ] at hdeg
+    finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF hn hQ] at hdeg
   simp only [Divisor.degree_ofPoint] at hdeg
   rw [finsum_mem_eq_finite_toFinset_sum _ hfin]
   push_cast at hdeg

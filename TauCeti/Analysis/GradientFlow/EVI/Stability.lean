@@ -48,7 +48,7 @@ private theorem TendstoGamma.apply_le_of_isEVISolution
     {F : ℕ → X → EReal} {U : ℕ → ℝ → X} (hΓ : TendstoGamma F φ)
     (hF : ∀ n, LowerSemicontinuous (F n)) (hU : ∀ n, IsEVISolution lam (F n) (U n))
     (hlim : ∀ t ≥ 0, Tendsto (fun n ↦ U n t) atTop (𝓝 (u t)))
-    {y : X} (hy : φ y ≠ ⊤) {s t : ℝ} (hs : 0 ≤ s) (hst : s < t) :
+    {y : X} {s t : ℝ} (hs : 0 ≤ s) (hst : s < t) :
     φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
       (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal) := by
   obtain ⟨v, hv, hrec⟩ := hΓ.exists_tendsto_limsup_le y
@@ -61,13 +61,9 @@ private theorem TendstoGamma.apply_le_of_isEVISolution
     dsimp [C]
     exact (((hlim s hs).dist hv).pow 2 |>.sub
       (tendsto_const_nhds.mul (((hlim t (hs.trans hst.le)).dist hv).pow 2))).div_const _
-  have hfinite : ∀ᶠ n in atTop, F n (v n) ≠ ⊤ :=
-    (eventually_lt_of_limsup_lt (hrec.trans_lt (lt_top_iff_ne_top.2 hy))).mono
-      fun _ hn ↦ hn.ne
   have hreg : ∀ᶠ n in atTop, F n (U n t) ≤ F n (v n) +
       ((C (U n s) (U n t) (v n) : ℝ) : EReal) := by
-    filter_upwards [hfinite] with n hn
-    exact (hU n).apply_le_of_nonneg (hF n) hn hs hst
+    exact Eventually.of_forall fun n ↦ (hU n).apply_le_of_nonneg (hF n) hs hst
   calc φ (u t)
       ≤ liminf (fun n ↦ F n (U n t)) atTop := hΓ.le_liminf (hlim t (hs.trans hst.le))
     _ ≤ limsup (fun n ↦ F n (v n) + ((C (U n s) (U n t) (v n) : ℝ) : EReal)) atTop :=
@@ -91,8 +87,8 @@ theorem TendstoGamma.isEVISolution_of_tendsto
     (hlim : ∀ t ≥ 0, Tendsto (fun n ↦ U n t) atTop (𝓝 (u t)))
     (hu : ContinuousOn u (Ici 0)) (hdom : ∃ y, φ y ≠ ⊤)
     (hbot : ∀ t > 0, φ (u t) ≠ ⊥) : IsEVISolution lam φ u := by
-  have hreg := fun y hy s t hs hst ↦ hΓ.apply_le_of_isEVISolution hF hU hlim
-    (y := y) hy (s := s) (t := t) hs hst
+  have hreg := fun y (_ : φ y ≠ ⊤) s t hs hst ↦ hΓ.apply_le_of_isEVISolution hF hU hlim
+    (y := y) (s := s) (t := t) hs hst
   have htop : ∀ t > 0, φ (u t) ≠ ⊤ := by
     obtain ⟨y, hy⟩ := hdom
     intro t ht

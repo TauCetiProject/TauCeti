@@ -57,6 +57,9 @@ combination of the simple coroots.
   weight.
 * `TauCeti.IsHighestWeightVector.map` and `TauCeti.IsHighestWeightVector.congr`: morphisms with
   nonzero image, and in particular equivalences, preserve highest weight vectors and their weights.
+* `TauCeti.IsHighestWeightVector.exists_isHighestWeightVector_apply_eq`: highest weight vectors
+  lift along a surjection out of a completely reducible module, so a quotient of such a module has
+  no highest weights beyond those of the module itself.
 * `TauCeti.isHighestWeightVector_coe_iff`: a vector of a Lie submodule is a highest weight vector
   there exactly when it is one in the ambient module.
 * `TauCeti.IsHighestWeightVector.mem_genWeightSpace` and
@@ -70,8 +73,8 @@ combination of the simple coroots.
 
 ## Implementation notes
 
-`TauCeti.IsHighestWeightVector` is stated as the conjunction pinned by the roadmap rather than as a
-structure, and `TauCeti.isHighestWeightVector_iff` together with the three projections
+`TauCeti.IsHighestWeightVector` is stated as a conjunction rather than as a structure, and
+`TauCeti.isHighestWeightVector_iff` together with the three projections
 `TauCeti.IsHighestWeightVector.ne_zero`, `TauCeti.IsHighestWeightVector.lie_eq_smul` and
 `TauCeti.IsHighestWeightVector.lie_eq_zero_of_mem_positiveNilradical` is its elimination API; no
 consumer needs to take the conjunction apart by hand.
@@ -82,15 +85,10 @@ is the additive closure of those root spaces; it needs no compatibility between 
 of `K` on `L` and on `M`.
 
 Finite-dimensionality of `M` is a hypothesis of the dominance theorem alone: the definitions and
-the elimination API are stated for an arbitrary `L`-module, since the Verma modules that Layer 3 of
-the roadmap builds next are infinite-dimensional and carry highest weight vectors all the same.
+the elimination API are stated for an arbitrary `L`-module, since Verma modules are
+infinite-dimensional and carry highest weight vectors all the same.
 
 ## References
-
-This file supplies the "highest weight vectors" item of Layer 3 and the `IsDominantIntegral`
-definition of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signatures
-`IsHighestWeightVector` and `IsDominantIntegral` are pinned in the accompanying `Suggested.lean`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.2.
 -/
@@ -163,6 +161,29 @@ theorem congr (hv : IsHighestWeightVector b lam v) (e : M ≃ₗ⁅K,L⁆ N) :
     IsHighestWeightVector b lam (e v) :=
   hv.map (e : M →ₗ⁅K,L⁆ N) fun h =>
     hv.ne_zero (e.injective (h.trans (map_zero e).symm))
+
+/-- **Highest weight vectors lift along a surjection out of a completely reducible module.** If
+the Lie submodules of `M` form a complemented lattice, every highest weight vector of `N` is the
+image, under a surjective morphism `f : M → N`, of a highest weight vector of `M` of the same
+weight. -/
+theorem exists_isHighestWeightVector_apply_eq
+    [ComplementedLattice (LieSubmodule K L M)] {w : N} (hw : IsHighestWeightVector b lam w)
+    {f : M →ₗ⁅K,L⁆ N} (hf : Function.Surjective f) :
+    ∃ u : M, IsHighestWeightVector b lam u ∧ f u = w := by
+  obtain ⟨C, hC⟩ := exists_isCompl f.ker
+  obtain ⟨m, rfl⟩ := hf w
+  have hm : m ∈ f.ker ⊔ C := by rw [hC.sup_eq_top]; exact LieSubmodule.mem_top m
+  obtain ⟨k, hk, u, hu, rfl⟩ := (LieSubmodule.mem_sup f.ker C m).mp hm
+  rw [map_add, LieModuleHom.mem_ker.mp hk, zero_add] at hw ⊢
+  -- `f` is injective on the complement `C` of its kernel
+  have hinj : ∀ y ∈ C, f y = 0 → y = 0 := fun y hy hfy ↦ (LieSubmodule.mem_bot y).mp
+    (hC.disjoint.le_bot ((LieSubmodule.mem_inf _ _ y).mpr ⟨LieModuleHom.mem_ker.mpr hfy, hy⟩))
+  refine ⟨u, isHighestWeightVector_iff.mpr
+    ⟨fun h ↦ hw.ne_zero (by rw [h, map_zero]), fun x ↦ ?_, fun x hx ↦ ?_⟩, rfl⟩
+  · refine sub_eq_zero.mp (hinj _ (sub_mem (C.lie_mem hu) (C.smul_mem _ hu)) ?_)
+    rw [map_sub, LieModuleHom.map_lie, map_smul, hw.lie_eq_smul x, sub_self]
+  · exact hinj _ (C.lie_mem hu)
+      (by rw [LieModuleHom.map_lie, hw.lie_eq_zero_of_mem_positiveNilradical hx])
 
 /-- Every positive root space annihilates a highest weight vector. -/
 theorem lie_eq_zero_of_mem_rootSpace (hv : IsHighestWeightVector b lam v) {α : H.root}

@@ -116,7 +116,7 @@ theorem nakagamiMeasure_eq_generalizedGammaMeasure (m Ω : ℝ) :
   · have hs : √(Ω / m) = 0 :=
       sqrt_eq_zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (not_lt.mp hΩ) hm.le)
     simp [nakagamiMeasure_of_not_pos (by tauto : ¬ (0 < m ∧ 0 < Ω)), hs]
-  rw [nakagamiMeasure_eq_chiMeasure hm hΩ,
+  rw [nakagamiMeasure_eq_chiMeasure,
     chiMeasure_eq_generalizedGammaMeasure (by positivity)]
   congr 1
   · ring

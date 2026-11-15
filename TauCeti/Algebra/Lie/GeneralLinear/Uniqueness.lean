@@ -11,7 +11,9 @@ public import TauCeti.Algebra.Lie.Prod
 public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 import TauCeti.Algebra.Lie.Submodule.Atom
+import TauCeti.Algebra.Lie.Submodule.Torsion
 
 /-!
 # The highest weight of a `gl n`-module determines it
@@ -24,7 +26,8 @@ irreducible `gl n R`-modules carrying highest weight vectors of the same weight 
 (`TauCeti.nonempty_lieModuleEquiv_of_isGlHighestWeightVector`), and that an irreducible one has the
 smallest rank among the finitely generated modules carrying such a vector
 (`TauCeti.finrank_le_of_isGlHighestWeightVector`). The scalars form a commutative domain of
-characteristic zero acting without torsion on the modules; no field is needed.
+characteristic zero acting without torsion on the modules; no field is needed. The rank bound
+needs no torsion-freeness at all.
 
 The Killing form of `gl n R` is degenerate as soon as the index type is nonempty, the scalar
 matrices being central, so none of Mathlib's `LieAlgebra.IsKilling` machinery applies to it and the
@@ -628,14 +631,29 @@ theorem nonempty_lieModuleEquiv_of_isGlHighestWeightVector
     Nonempty (M ≃ₗ⁅R, Matrix n n R⁆ M') :=
   ⟨lieModuleEquivOfIsGlHighestWeightVector hv hv'⟩
 
+omit [Module.IsTorsionFree R M] [Module.IsTorsionFree R M'] in
 /-- **An irreducible highest weight module is the smallest one of its weight.** If `M` is an
 irreducible `gl n R`-module with a highest weight vector of weight `μ`, then every finitely
 generated module carrying a highest weight vector of weight `μ` has at least the rank of `M`.
 Cyclicity of the second vector is not needed: the submodule it generates already has rank at
-least that of `M`, and has finite rank even though it need not be finitely generated. -/
+least that of `M`, and has finite rank even though it need not be finitely generated.
+Torsion-freeness of neither module is needed: an irreducible torsion module has rank zero, and
+when `M` is irreducible and torsion-free every nonzero scalar is a unit (the line through `v` is
+the whole top weight space of the module `r • v` generates), so `M'` is torsion-free as well. -/
 theorem finrank_le_of_isGlHighestWeightVector [LieModule.IsIrreducible R (Matrix n n R) M]
     [Module.Finite R M'] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') : finrank R M ≤ finrank R M' := by
+  rcases isTorsion_or_isTorsionFree_of_isIrreducible R (Matrix n n R) M with htors | hM
+  · rw [Module.IsTorsion.finrank_eq_zero htors]
+    exact Nat.zero_le _
+  have hunit (r : R) (hr : r ≠ 0) : IsUnit r := by
+    obtain ⟨c, hc⟩ := exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan (hv.smul hr)
+      (by simp [lieSpan_singleton_eq_top_of_ne_zero (hv.smul hr).ne_zero])
+      hv.lie_single_self_eq_smul
+    rw [smul_smul] at hc
+    exact .of_mul_eq_one_right c
+      (smul_left_injective R hv.ne_zero (hc.symm.trans (one_smul R v).symm))
+  have : Module.IsTorsionFree R M' := ⟨fun r hr ↦ (hunit r hr.ne_zero).isSMulRegular M'⟩
   let D := LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}
   have hinj : Function.Injective D.prodSnd := injective_prodSnd hv hv'
   have hsurj : Function.Surjective D.prodFst :=

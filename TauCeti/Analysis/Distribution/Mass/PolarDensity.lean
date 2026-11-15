@@ -15,7 +15,7 @@ import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.OrderZero
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
-import TauCeti.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
 
 /-!
 # The polar decomposition of a current of locally finite mass
@@ -149,12 +149,12 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     refine TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le hgint
       (Measure.measurable_rnDeriv _ _)
       (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
-      fun U hU φ hφU hφ => ?_
+      fun U _ φ hφU hφ => ?_
     rw [Measure.setLIntegral_rnDeriv hlam, ← hrep, massMeasure_preimage_coe hT U.isOpen]
     exact enorm_le_localMass hφU hφ
   -- Normalize `g` by `k`.
-  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   refine integral_congr_ae ?_
   filter_upwards [hσg] with x hx
@@ -176,7 +176,7 @@ private theorem ae_norm_eq_one_of_le_one (hT : HasLocallyFiniteMass T) {τ : Ω 
     rw [← hUV, massMeasure_preimage_coe hT hU, localMass_le_iff]
     intro φ hφU hφ
     rw [hτ φ, hUV, ← lintegral_indicator hV.measurableSet]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     by_cases hx : x ∈ V
     · rw [indicator_of_mem hx]
       refine ((τ x).le_opENorm (φ x)).trans ?_
@@ -288,7 +288,7 @@ theorem ae_eq_polarDensity (hT : HasLocallyFiniteMass T) {τ : Ω → StrongDual
         ← apply_eq_integral_polarDensity hT]
       simp
   filter_upwards [h0] with x hx
-  rwa [Pi.zero_apply, nonpos_iff_eq_zero, enorm_eq_nnnorm, ENNReal.coe_eq_zero, nnnorm_eq_zero,
+  rwa [Pi.zero_apply, nonpos_iff_eq_zero, eNorm_eq_nnNorm, ENNReal.coe_eq_zero, nnNorm_eq_zero,
     Pi.sub_apply, sub_eq_zero] at hx
 
 end Distribution

@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.UnitInterval
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Continuous argument lift for a point-avoiding curve
@@ -37,7 +38,9 @@ API does not expose.
 * `TauCeti.Contour.exists_continuousOn_arg_lift_with_partition` — a real argument lift, continuous
   on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
-  assemble the index integral downstream.
+  assemble the index integral downstream; `TauCeti.Contour.sum_im_log_segRatio_eq_zero_of_le` and
+  `TauCeti.Contour.sum_im_log_segRatio_eq_sum_of_le` evaluate the lift's segment sum before and
+  after the partition.
 * `TauCeti.Contour.exp_mul_I_congr_angle` — equal real angles have equal unit complex
   exponentials.
 * `ContinuousOn.exists_continuousOn_circleMap_comp_eqOn` — a curve in a circle `sphere c r` is
@@ -49,7 +52,7 @@ API does not expose.
 
 Adapted from `WindingInteger.lean` in the AINTLIB `LeanModularForms` development. Prerequisite for
 the integer-valuedness and local constancy of the generalized winding number, hence for the homology
-Cauchy theorem (roadmap `homologyCauchyTheorem`) and the generalized residue theorem.
+Cauchy theorem (`homologyCauchyTheorem`) and the generalized residue theorem.
 -/
 
 public section
@@ -148,6 +151,26 @@ theorem segRatio_eq_endpoint_div_of_le {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t
     (h : s_j ≤ s_jp1) (ht : s_jp1 ≤ t) :
     segRatio γ w s_j s_jp1 t = (γ s_jp1 - w) / (γ s_j - w) := by
   rw [segRatio, segClamp_eq_right h ht]
+
+/-- Before a monotone partition starts (`t ≤ s 0`), every segment ratio is `1`, so the segment sum
+of arguments in the lift of `exists_continuousOn_arg_lift_with_partition` vanishes. -/
+theorem sum_im_log_segRatio_eq_zero_of_le {γ : ℝ → ℂ} {w : ℂ} {N : ℕ} {s : ℕ → ℝ} {t : ℝ}
+    (hs : Monotone s) (h_ne : ∀ j < N, γ (s j) - w ≠ 0) (ht : t ≤ s 0) :
+    ∑ j ∈ Finset.range N, (Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im = 0 := by
+  refine Finset.sum_eq_zero fun j hj ↦ ?_
+  rw [segRatio_eq_one_of_le (ht.trans (hs (Nat.zero_le j))) (h_ne j (Finset.mem_range.mp hj)),
+    Complex.log_one, Complex.zero_im]
+
+/-- After a monotone partition ends (`s N ≤ t`), every segment ratio is its full endpoint ratio,
+so the segment sum of arguments in the lift of `exists_continuousOn_arg_lift_with_partition` is the
+sum of the arguments of the endpoint ratios. -/
+theorem sum_im_log_segRatio_eq_sum_of_le {γ : ℝ → ℂ} {w : ℂ} {N : ℕ} {s : ℕ → ℝ} {t : ℝ}
+    (hs : Monotone s) (ht : s N ≤ t) :
+    ∑ j ∈ Finset.range N, (Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im =
+      ∑ j ∈ Finset.range N, (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im := by
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  rw [segRatio_eq_endpoint_div_of_le (hs (Nat.le_succ j))
+    ((hs (Nat.succ_le_of_lt (Finset.mem_range.mp hj))).trans ht)]
 
 /-- For partition with mesh < δ' and segments [s_j, s_{j+1}] of length ≤ mesh,
 on the j-th segment, `γ(clamp t) - γ s_j` is small, so `segRatio j t ∈ ball(1, 1/2)`. -/
@@ -510,32 +533,9 @@ theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ �
       · simp [h, periodic_circleMap c r (θ t)])
     subst hta
     rcases h with h | h <;> linarith [Real.pi_pos]
-  -- The angles at the endpoints differ: otherwise the angle at the midpoint would be taken
-  -- twice by the intermediate value theorem.
-  have hne : θ a ≠ θ b := by
-    intro hab'
-    set m := (a + b) / 2 with hm_def
-    have hm : m ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    have hθm : θ m ≠ θ a := fun h ↦ hm.1.ne' (hθinj ⟨hm.1.le, hm.2⟩ ha h)
-    set v := (θ a + θ m) / 2 with hv_def
-    have hva : v ≠ θ a := fun h ↦ hθm (by linarith)
-    have hvm : v ≠ θ m := fun h ↦ hθm (by linarith)
-    have hv : v ∈ [[θ a, θ m]] := mem_uIcc.2 (by
-      rcases le_total (θ a) (θ m) with h | h <;> [left; right] <;> constructor <;> linarith)
-    obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
-      (hθ.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
-    obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
-      (hθ.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
-      (show v ∈ [[θ m, θ b]] by rwa [← hab', uIcc_comm])
-    rw [uIcc_of_le hm.1.le] at hs
-    rw [uIcc_of_le hm.2.le] at ht
-    have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
-    have hst : s = t := hθinj ⟨hs.1, hs.2.trans_lt hm.2⟩ ⟨hm.1.le.trans ht.1, ht.2.lt_of_ne htb⟩
-      (hsv.trans htv.symm)
-    have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
-    exact hvm (hsv.symm.trans (congrArg θ hsm))
+  have hne : θ a ≠ θ b := hθ.apply_ne_apply_of_injOn_Ico hab hθinj
   have hθinj' : InjOn θ (Icc a b) := by
-    rw [← Ico_insert_right hab.le, injOn_insert fun h : b ∈ Ico a b ↦ h.2.false]
+    rw [← insert_right_Ico hab.le, injOn_insert fun h : b ∈ Ico a b ↦ h.2.false]
     refine ⟨hθinj, ?_⟩
     rintro ⟨t, ht, htb⟩
     exact hne ((congrArg θ (hinj ht ha (by simp [htb, hclosed]))).symm.trans htb)

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.ClosedRootSubgroup
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Basic
-import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
 # The positive subgroup of the type-B spin carrier
@@ -314,28 +313,6 @@ private theorem mapIso_closedSubgroup :
   exact Subobject.mk_eq_mk_of_comm _ _
     (eqToIso (groupScheme_eq_kostantTorusSubsystemGroupScheme n)) (by simp [inclusion_def])
 
-/-- A generic Kostant map factors uniquely through a transported closed subgroup exactly when its
-transport to the full carrier factors uniquely through the original closed subgroup. -/
-private theorem existsUnique_mapIso_iff
-    (P : ClosedSubgroupScheme (TypeBSpinCarrier.groupScheme n))
-    {Y : Grp (Over (Spec (CommRingCat.of ℤ)))}
-    (g : Y ⟶ kostantToralGroupScheme
-      (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-      (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-      (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
-      (latticeBasis n) (basisWeight n)) :
-    (∃! f : Y ⟶ (((ClosedSubgroupScheme.mapIso (eqToIso
-        (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n)) P).1 :
-          Grp (Over (Spec (CommRingCat.of ℤ))))),
-        f ≫ (ClosedSubgroupScheme.mapIso (eqToIso
-          (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n)) P).1.arrow = g) ↔
-      ∃! f : Y ⟶ (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-        f ≫ P.1.arrow = g ≫ eqToHom
-          (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n).symm := by
-  rw [← Subobject.factors_iff_existsUnique, ← Subobject.factors_iff_existsUnique,
-    ClosedSubgroupScheme.coe_mapIso, ← Subobject.mapIsoToOrderIso_apply,
-    Subobject.factors_mapIsoToOrderIso_iff, eqToIso.inv]
-
 /-- **Universal property of the positive subgroup.** It is the smallest closed subgroup of the
 full spin carrier through which every positive simple-root map and the weight-torus map factor. -/
 theorem closedSubgroup_le_iff
@@ -351,8 +328,9 @@ theorem closedSubgroup_le_iff
   rw [← (ClosedSubgroupScheme.mapIso
       (eqToIso (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n))).le_iff_le,
     mapIso_closedSubgroup, kostantTorusSubsystemClosedSubgroup_le_iff]
-  simp only [existsUnique_mapIso_iff, ← TypeBSpinCarrier.rootSubgroup_def,
-    ← TypeBSpinCarrier.weightTorus_def, Set.mem_range, forall_exists_index,
+  simp only [ClosedSubgroupScheme.existsUnique_comp_arrow_mapIso_iff, eqToIso.inv,
+    ← TypeBSpinCarrier.rootSubgroup_def, ← TypeBSpinCarrier.weightTorus_def,
+    Set.mem_range, forall_exists_index,
     forall_apply_eq_imp_iff]
 
 /-- A morphism from the positive subgroup is determined by its restrictions to the positive

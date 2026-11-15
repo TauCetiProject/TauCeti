@@ -113,6 +113,14 @@ private theorem orbitCount_mul_adjoinKink_edgePair (D : PDCode n) (b : Bool)
   rw [adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul,
     orbitCount_permCongr, orbitCount_sumCongr]
 
+/-- Component traversal separates into the old traversal and the two directed traversals of
+the isolated kink. -/
+theorem componentPerm_adjoinKink (D : PDCode n) (b : Bool) :
+    (D.adjoinKink b).componentPerm = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr D.componentPerm (oppositeCrossingSlot * slotSmoothing true)) := by
+  rw [componentPerm_def, crossingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
+    adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul, componentPerm_def]
+
 /-- Adjoining an isolated kink adds one crossing-bearing component. -/
 @[simp] theorem crossingComponentCount_adjoinKink (D : PDCode n) (b : Bool) :
     (D.adjoinKink b).crossingComponentCount = D.crossingComponentCount + 1 := by

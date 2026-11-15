@@ -47,6 +47,8 @@ compatible with: the total-degree grading of the underlying tensor product of gr
   the Koszul sign is available.
 * `TauCeti.gradedTensorAlgHom_ext`: graded algebra maps out of the tensor product are determined by
   their restrictions to the two factors.
+* `TauCeti.gradedTensor_tmul_one_mul_one_tmul_comm`: the images of homogeneous elements of the two
+  factors supercommute.
 
 The grading of the underlying module is `TauCeti.InternalGrading.tensorProduct` and the Koszul
 multiplication is Mathlib's `GradedTensorProduct`; only their compatibility is proved here.
@@ -276,6 +278,18 @@ noncomputable def gradedTensorIncludeRight : ℬ →ₐᵍ[R] gradedTensorGradin
 @[simp]
 theorem gradedTensorIncludeRight_apply (b : B) :
     gradedTensorIncludeRight 𝒜 ℬ b = (1 : A) ᵍ⊗ₜ[R] b := (rfl)
+
+variable {𝒜 ℬ} in
+/-- The images `a ᵍ⊗ₜ 1` and `1 ᵍ⊗ₜ b` of homogeneous elements of the two factors supercommute,
+with the Koszul sign of their degrees. -/
+theorem gradedTensor_tmul_one_mul_one_tmul_comm {p q : ℤ} {a : A} {b : B}
+    (ha : a ∈ 𝒜 p) (hb : b ∈ ℬ q) :
+    (a ᵍ⊗ₜ[R] (1 : B) * (1 : A) ᵍ⊗ₜ[R] b : 𝒜 ᵍ⊗[R] ℬ) =
+      ((p * q).negOnePow : ℤ) • ((1 : A) ᵍ⊗ₜ[R] b * a ᵍ⊗ₜ[R] (1 : B)) := by
+  rw [GradedTensorProduct.tmul_one_mul_one_tmul,
+    GradedTensorProduct.tmul_coe_mul_coe_tmul 𝒜 ℬ (1 : A) ⟨b, hb⟩ ⟨a, ha⟩ (1 : B),
+    one_mul, mul_one, ← Units.smul_def, smul_smul, mul_comm q p, ← Int.negOnePow_def,
+    Int.units_mul_self, one_smul]
 
 /-! ### The tensor product of two homomorphisms into degree zero -/
 

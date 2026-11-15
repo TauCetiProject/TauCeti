@@ -24,15 +24,15 @@ in the integrand.
 
 public section
 
-open MeasureTheory
+open MeasureTheory TauCeti
 
-namespace TauCeti
+namespace Continuous
 
 variable {X Y : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] [PseudoEMetricSpace Y]
 
 /-- The local Lipschitz constant of a continuous map into an extended pseudometric space is a Borel
 function. -/
-theorem _root_.Continuous.measurable_localLipschitzConstant [OpensMeasurableSpace X] {f : X → Y}
+theorem measurable_localLipschitzConstant [OpensMeasurableSpace X] {f : X → Y}
     (hf : Continuous f) : Measurable (localLipschitzConstant f) := by
   have h : localLipschitzConstant f = _ := funext fun x ↦
     localLipschitzConstant_eq_iInf_iSup (x := x) fun y hy ↦
@@ -40,4 +40,4 @@ theorem _root_.Continuous.measurable_localLipschitzConstant [OpensMeasurableSpac
   rw [h]
   exact Measurable.iInf fun n ↦ (hf.lowerSemicontinuous_iSup_edist_div _).measurable
 
-end TauCeti
+end Continuous

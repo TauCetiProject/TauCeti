@@ -189,7 +189,7 @@ oriented intervals, so the corners `a` and `b` may come in either order.
 
 The proof applies Stokes' formula on the rectangle to the cylinder homotopy `h ψ`, whose exterior
 derivative is the difference of the top and bottom slices of the closed form `ψ`. -/
-theorem integral2_slice_sub_eq_sides [CompleteSpace F]
+theorem integral2_slice_sub_eq_sides
     {ψ : (ℝ × ℝ) × ℝ → ((ℝ × ℝ) × ℝ) [⋀^Fin 2]→L[ℝ] F} (hψ : ContDiff ℝ 1 ψ)
     (hdψ : extDeriv ψ = 0) (a b : ℝ × ℝ) :
     ((∫ s in a.1..b.1, ∫ t in a.2..b.2, ψ ((s, t), 1) ![((1, 0), 0), ((0, 1), 0)]) -
@@ -198,6 +198,10 @@ theorem integral2_slice_sub_eq_sides [CompleteSpace F]
           ∫ t in a.2..b.2, ∫ c in (0 : ℝ)..1, ψ ((b.1, t), c) ![((0, 1), 0), (0, 1)]) -
         ((∫ s in a.1..b.1, ∫ c in (0 : ℝ)..1, ψ ((s, a.2), c) ![((1, 0), 0), (0, 1)]) -
           ∫ s in a.1..b.1, ∫ c in (0 : ℝ)..1, ψ ((s, b.2), c) ![((1, 0), 0), (0, 1)]) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · -- Without completeness every Bochner integral is `0`.
+    simp [intervalIntegral, MeasureTheory.integral_of_not_completeSpace hF]
   -- The cylinder homotopy `β = h ψ` is a primitive of `ι₁^* ψ - ι₀^* ψ`.
   let β := cylinderHomotopy ψ
   have hβ : ContDiff ℝ 1 β := contDiff_cylinderHomotopy hψ

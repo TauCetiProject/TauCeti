@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Prod
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -19,9 +20,6 @@ of its velocity in that direction at `p₀`. This is the mixed-partial identity 
 derivative of a parametric-family pullback with a Lie bracket. Over `ℝ` or `ℂ`, the required
 smoothness is `C²`;
 over a general nontrivially normed field, it is analyticity.
-
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -44,7 +42,7 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   parameter curves are the parameter-velocity field.
 * `ContDiffAt.differentiableAt_timeFDeriv`: the parameter-velocity field of a jointly `C²` map is
   differentiable, and `ContDiffAt.differentiableAt_deriv_snd` is the same statement for the
-  partial derivative in the second of two scalar variables.
+  partial derivative in a scalar second variable, differentiated in a normed first variable.
 * `TauCeti.hasFDerivAt_fderivWithin_slice`: mixed derivatives for a normed parameter space, with
   spatial derivatives within a set accumulated by its interior, such as the range of a model with
   corners.
@@ -59,14 +57,13 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   agree.
 * `TauCeti.contDiffAt_deriv_slice_left`: the partial derivative in the first variable of a
   `C^(n+1)` map is `C^n`.
+* `TauCeti.contDiffWithinAt_deriv_slice_left`: the same within a set.
 * `TauCeti.deriv_deriv_slice_left`: **symmetry of the mixed partial derivatives**, the derivative
   in the second variable of the partial derivative in the first variable is the mixed second
   derivative in the directions `(1, 0)` and `(0, 1)`.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 * Sébastien Gouëzel, `Mathlib/Analysis/Calculus/FDeriv/Symmetric.lean`, theorem
   `ContDiffAt.isSymmSndFDerivAt`.
 -/
@@ -372,15 +369,14 @@ theorem differentiableAt_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (differentiableAt_const t |>.prodMk differentiableAt_id) |>.clm_apply
       (differentiableAt_const (1, 0))
 
-/-- For a map of two scalar variables which is `C²` at `(t, x)`, the partial derivative in the
+/-- For a `C²` map at `(t, x)` with a scalar second factor, the partial derivative in the
 second variable at `x` is differentiable in the first variable at `t`. -/
-theorem differentiableAt_deriv_snd {g : 𝕜 × 𝕜 → F'} {t x : 𝕜} (hg : ContDiffAt 𝕜 2 g (t, x)) :
-    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t := by
-  -- Exchange the variables, so that the partial derivative is a parameter-velocity field.
-  have hswap : ContDiffAt 𝕜 2 (fun z : 𝕜 × 𝕜 ↦ g (z.2, z.1)) (x, t) :=
-    hg.comp (x, t) (contDiff_snd.prodMk contDiff_fst).contDiffAt
-  exact hswap.differentiableAt_timeFDeriv.congr_of_eventuallyEq
-    (hswap.of_le (by norm_num)).deriv_parameterCurve_eventuallyEq_timeFDeriv
+theorem differentiableAt_deriv_snd {g : E × 𝕜 → F'} {t : E} {x : 𝕜}
+    (hg : ContDiffAt 𝕜 2 g (t, x)) :
+    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t :=
+  ((hg.contDiffAt_deriv_snd (m := 1) le_rfl).differentiableAt one_ne_zero).comp
+    (f := fun s ↦ (s, x)) t
+    (differentiableAt_id.prodMk (differentiableAt_const x))
 
 end ContDiffAt
 
@@ -403,6 +399,20 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hnear] with s hs
     exact (fderiv_timeSlice hs).symm)
   simpa only [flip_apply, hTime.fderiv] using hSpatial
+
+/-- If `W` is the parameter velocity of a jointly smooth family `G` at time `t` near `x`, then the
+parameter derivative of the spatial Jacobian of `G` at `x` is the derivative of `W` at `x`. -/
+theorem ContDiffAt.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt {G : 𝕜 × E → F'}
+    {W : E → F'} {t : 𝕜} {x : E} (hG : ContDiffAt 𝕜 (minSmoothness 𝕜 2) G (t, x))
+    (hvel : ∀ᶠ z in 𝓝 x, HasDerivAt (fun u ↦ G (u, z)) (W z) t) :
+    HasDerivAt (fun u ↦ fderiv 𝕜 (fun z ↦ G (u, z)) x) (fderiv 𝕜 W x) t := by
+  have h := TauCeti.hasDerivAt_fderivWithin_slice (F := G) (s := Set.univ) (t := t) (x := x)
+    (by rwa [Set.univ_prod_univ, contDiffWithinAt_univ]) uniqueDiffOn_univ (by simp)
+    (Set.mem_univ x)
+  simp only [fderivWithin_univ] at h
+  have hW : (fun y ↦ _root_.deriv (fun r ↦ G (r, y)) t) =ᶠ[𝓝 x] W :=
+    hvel.mono fun z hz ↦ hz.deriv
+  rwa [hW.fderiv_eq] at h
 
 /-- For a sufficiently smooth parametric map, the parameter derivative of its spatial Jacobian,
 applied to `w`, is the spatial derivative of its parameter-velocity field applied to `w`. -/
@@ -446,6 +456,21 @@ theorem contDiffAt_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × E → F'} {a : �
   rw [timeFDeriv_eq]
   exact ((hu.fderiv_right le_rfl).comp b (contDiff_prodMk_right a).contDiffAt).clm_apply
     contDiffAt_const
+
+/-- **The parameter derivative loses one derivative, within a set.** If `G` is `C^n` on `ℝ × s` at
+`(t, u₀)`, then the parameter derivative `u ↦ ∂ᵣ G (r, u)` at `r = t` is `C^m` within `s` at `u₀`,
+for `m + 1 ≤ n`. -/
+theorem contDiffWithinAt_deriv_slice_left {m n : ℕ∞ω} {G : 𝕜 × E → F'} {s : Set E} {t : 𝕜}
+    {u₀ : E} (hG : ContDiffWithinAt 𝕜 n G (Set.univ ×ˢ s) (t, u₀)) (hu₀ : u₀ ∈ s)
+    (hmn : m + 1 ≤ n) :
+    ContDiffWithinAt 𝕜 m (fun u ↦ _root_.deriv (fun r ↦ G (r, u)) t) s u₀ := by
+  have h := ContDiffWithinAt.fderivWithin_apply (f := fun u r ↦ G (r, u)) (g := fun _ ↦ t)
+    (k := fun _ ↦ (1 : 𝕜)) (t := Set.univ)
+    (hG.comp (u₀, t) (contDiffWithinAt_snd.prodMk contDiffWithinAt_fst)
+      fun z hz ↦ Set.mk_mem_prod (Set.mem_univ z.2) hz.1)
+    contDiffWithinAt_const contDiffWithinAt_const uniqueDiffOn_univ hmn hu₀
+    fun _ _ ↦ Set.mem_univ _
+  simpa only [fderivWithin_univ, fderiv_apply_one_eq_deriv] using h
 
 /-- **Symmetry of the mixed partial derivatives.** Near a point where `u` is `C²` (`C^ω` over a
 field other than `ℝ` or `ℂ`), the derivative in the second variable of the partial derivative of

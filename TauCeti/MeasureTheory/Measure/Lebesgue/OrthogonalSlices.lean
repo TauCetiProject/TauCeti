@@ -309,6 +309,19 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
   congr 1 with t
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
+`‖y‖ ^ 2 + t ^ 2` on the section of `u`. -/
+theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (y : (ℝ ∙ e)ᗮ)
+    (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
+    ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) =
+      ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
+  rw [← lintegral_indicator₀ hu]
+  refine lintegral_congr fun t ↦ ?_
+  classical
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, norm_add_smul_sq e he]
+
 end TauCeti
 
 namespace Submodule

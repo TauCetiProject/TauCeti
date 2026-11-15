@@ -97,9 +97,6 @@ theorem ae_ne_zero (hx : x ≠ 0) :
     (fun n ↦ x.diskFunction (ρ n * AddCircle.toCircle t)) atTop
       (𝓝 ((x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) t))})ᶜ
   set W := {t | (x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) t = 0} ∩ C
-  have hWm : MeasurableSet W :=
-    ((Lp.stronglyMeasurable _).measurable (measurableSet_singleton 0)).inter
-      (measurableSet_toMeasurable _ _).compl
   rw [ae_iff]
   by_contra hZ
   have hW : AddCircle.haarAddCircle W ≠ 0 := by
@@ -110,7 +107,7 @@ theorem ae_ne_zero (hx : x ≠ 0) :
   have hE : volume E ≠ 0 := by
     rw [Real.volume_preimage_mul_left (by positivity), inv_inv]
     refine mul_ne_zero (by simpa using pi_pos) fun h ↦ hW ?_
-    rwa [AddCircle.volume_preimage_coe_eq_zero_iff hWm.nullMeasurableSet,
+    rwa [AddCircle.volume_preimage_coe_eq_zero_iff,
       AddCircle.volume_eq_smul_haarAddCircle, ENNReal.ofReal_one, one_smul] at h
   refine hx ((eqOn_diskFunction_zero_iff x).1 <|
     eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le x.differentiableOn_diskFunction

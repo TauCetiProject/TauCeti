@@ -28,8 +28,8 @@ part.
 
 ## Main statements
 
-* `TauCeti.jacobiSym_eq_sign_mul_of_dvd_add`: `J(a | b') = sign a * J(a | b)` when `b`, `b'` are
-  odd and `4 |a| ∣ b + b'`.
+* `TauCeti.jacobiSym_eq_sign_mul_of_dvd_add`: `J(a | b') = sign a * J(a | b)` when `b` is odd and
+  `4 |a| ∣ b + b'`.
 * `TauCeti.jacobiSym_eq_sign_mul_of_emod_four_eq_zero`,
   `TauCeti.jacobiSym_mod_natAbs_of_emod_four_eq_zero`: for `a ≡ 0 (mod 4)` the modulus `4 |a|` in
   both statements can be lowered to `|a|`.
@@ -51,8 +51,10 @@ namespace TauCeti
 
 /-- The reflection law for a natural numerator: the sign `sign a` is `1` here. The proof is
 adapted from the proof of Mathlib's `jacobiSym.mod_right'`. -/
-private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd b) (hb' : Odd b')
+private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd b)
     (h : 4 * a ∣ b + b') : jacobiSym a b' = jacobiSym a b := by
+  have h4 : 4 ∣ b + b' := (dvd_mul_right 4 _).trans h
+  have hb' : Odd b' := Nat.odd_iff.2 (by have := Nat.odd_iff.1 hb; omega)
   rcases eq_or_ne a 0 with rfl | ha₀
   · rw [mul_zero, zero_dvd_iff] at h
     exact absurd (Nat.eq_zero_of_add_eq_zero_right h) hb.pos.ne'
@@ -82,16 +84,18 @@ private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd
     exact hdvd.neg_right
   rw [h₈, hqr, hJ, mul_mul_mul_comm (χ₄ a' : ℤ), χ₄_natCast_mul_self ha₁, one_mul]
 
-/-- **Reflection of the denominator of the Jacobi symbol.** If `b` and `b'` are odd and `4 |a|`
+/-- **Reflection of the denominator of the Jacobi symbol.** If `b` is odd and `4 |a|`
 divides `b + b'`, so that `b' ≡ -b (mod 4 |a|)`, then `J(a | b') = sign a * J(a | b)`. Together
 with `jacobiSym.mod_right`, this says that `J(a | ·)` is an odd or even function on the odd
 residues modulo `4 |a|` according to the sign of `a`. -/
-theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b) (hb' : Odd b')
+theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b)
     (h : 4 * a.natAbs ∣ b + b') : jacobiSym a b' = a.sign * jacobiSym a b := by
+  have h4 : 4 ∣ b + b' := (dvd_mul_right 4 _).trans h
+  have hb' : Odd b' := Nat.odd_iff.2 (by have := Nat.odd_iff.1 hb; omega)
   rcases lt_trichotomy a 0 with ha | rfl | ha
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, a = -n := ⟨a.natAbs, by omega⟩
     rw [Int.natAbs_neg, Int.natAbs_natCast] at h
-    rw [jacobiSym.neg _ hb, jacobiSym.neg _ hb', jacobiSym_natCast_eq_of_dvd_add n hb hb' h,
+    rw [jacobiSym.neg _ hb, jacobiSym.neg _ hb', jacobiSym_natCast_eq_of_dvd_add n hb h,
       χ₄_natCast_eq_neg_of_dvd_add (dvd_trans (dvd_mul_right 4 _) h),
       Int.sign_eq_neg_one_of_neg ha]
     ring
@@ -99,7 +103,7 @@ theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b) (hb
     exact absurd (Nat.eq_zero_of_add_eq_zero_right h) hb.pos.ne'
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, a = n := ⟨a.natAbs, by omega⟩
     rw [Int.natAbs_natCast] at h
-    rw [jacobiSym_natCast_eq_of_dvd_add n hb hb' h, Int.sign_eq_one_of_pos ha, one_mul]
+    rw [jacobiSym_natCast_eq_of_dvd_add n hb h, Int.sign_eq_one_of_pos ha, one_mul]
 
 /-- **Quadratic reciprocity for a numerator `a ≡ 1 (mod 4)`**, of either sign: for odd `b`,
 `J(a | b) = J(b | |a|)`. For `a > 0` this is `jacobiSym.quadratic_reciprocity_one_mod_four`; for
@@ -133,13 +137,18 @@ theorem jacobiSym_mod_natAbs_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b 
 /-- The reflection law `jacobiSym_eq_sign_mul_of_dvd_add` for `a ≡ 0 (mod 4)`, where it needs only
 `|a| ∣ b + b'`. -/
 theorem jacobiSym_eq_sign_mul_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b b' : ℕ}
-    (hb : Odd b) (hb' : Odd b') (h : a.natAbs ∣ b + b') :
+    (hb : Odd b) (h : a.natAbs ∣ b + b') :
     jacobiSym a b' = a.sign * jacobiSym a b := by
   obtain ⟨c, rfl⟩ := Int.dvd_of_emod_eq_zero ha
+  have h4 : 4 ∣ b + b' := by
+    refine dvd_trans ?_ h
+    rw [Int.natAbs_mul]
+    exact dvd_mul_right 4 _
+  have hb' : Odd b' := Nat.odd_iff.2 (by have := Nat.odd_iff.1 hb; omega)
   rw [← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb),
     ← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb'), Int.mul_ediv_cancel_left _ four_ne_zero,
     Int.sign_mul, Int.sign_eq_one_of_pos four_pos, one_mul]
-  exact jacobiSym_eq_sign_mul_of_dvd_add c hb hb' (by rwa [Int.natAbs_mul] at h)
+  exact jacobiSym_eq_sign_mul_of_dvd_add c hb (by rwa [Int.natAbs_mul] at h)
 
 /-- A square factor prime to the denominator does not change the Jacobi symbol:
 `J(x² y | b) = J(y | b)` when `x` is prime to `b`. -/

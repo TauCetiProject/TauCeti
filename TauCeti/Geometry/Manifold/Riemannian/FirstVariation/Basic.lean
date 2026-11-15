@@ -27,7 +27,8 @@ energy of the curves `F s`:
 `d/ds E(F s) |₀ = ⟪V(b), γ'(b)⟫ - ⟪V(a), γ'(a)⟫ - ∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`,
 
 where `D_t γ'` is the covariant acceleration of `γ` for the Levi-Civita connection.  When the
-curves near `s = 0` share the endpoints of `γ`, the boundary terms vanish.
+curves near `s = 0` share the endpoints of `γ`, the boundary terms vanish.  The same formula holds
+at every parameter `u` of the family, with `γ = F u` and `V(t) = ∂F/∂s (u, t)`.
 
 The formula holds for a family which is `C²` at the points of `{0} × [a, b]`, for the tangent
 bundle of a `C²` manifold carrying a `C¹` Riemannian metric; its integrand is then continuous on
@@ -43,6 +44,10 @@ this derivative vanishes for every `C^n` variation with fixed endpoints
   boundary terms.
 * `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy`: the first variation formula for a
   `C²` variation with fixed endpoints.
+* `TauCeti.Manifold.hasDerivAt_energy_curveVelocity_fst`: the first variation formula at any
+  parameter `u` of the family, and `TauCeti.Manifold.eventually_differentiableAt_energy`: the
+  energy of `F s` is differentiable for `s` near any parameter `u` at which `F` is `C²` along
+  `{u} × [a, b]`.
 * `TauCeti.Manifold.continuousAt_inner_variationField_acceleration`: the integrand
   `⟪V(t), D_t γ'(t)⟫` of the first variation formula is continuous where the family is `C²`.
 * `TauCeti.Manifold.IsEnergyCritical`: critical points of the energy among `C^n` variations with
@@ -98,7 +103,6 @@ private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t :
   rw [variationField_eq_mfderiv hf, curveVelocity_eq_mfderiv_snd hf]
 
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The integrand of the first variation.** At a parameter `t` where the family is `C²`, half
@@ -294,6 +298,54 @@ theorem IsFixedEndpointVariation.hasDerivAt_energy {a b : ℝ}
   rw [hF.variationField_left_eq_zero, hF.variationField_right_eq_zero, inner_zero_left,
     inner_zero_left]
   ring
+
+/-- **The first variation of energy at any parameter of the family.** Let `F` be a two-parameter
+family which is `C²` at every point of `{u} × [a, b]`, and let `γ = F u`. Then the energy of
+`F s` between `a` and `b` is differentiable at `s = u`, with derivative
+
+`⟪W(b), γ'(b)⟫ - ⟪W(a), γ'(a)⟫ - ∫_a^b ⟪W(t), D_t γ'(t)⟫ dt`,
+
+where `W(t) = ∂F/∂s (u, t)` is the velocity at `u` of the transverse curve `q ↦ F q t`. For
+`u = 0`, `W` is the variation field and this is `TauCeti.Manifold.hasDerivAt_energy`. -/
+theorem hasDerivAt_energy_curveVelocity_fst {a b u : ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t)) :
+    HasDerivAt (fun s ↦ energy I (F s) a b)
+      (inner ℝ (curveVelocity I (fun q ↦ F q b) u) (curveVelocity I (F u) b) -
+        inner ℝ (curveVelocity I (fun q ↦ F q a) u) (curveVelocity I (F u) a) -
+        ∫ t in a..b, inner ℝ (curveVelocity I (fun q ↦ F q t) u)
+          (acceleration (leviCivitaConnection I M) (F u) t)) u := by
+  have hG (t : ℝ) (ht : t ∈ uIcc a b) :
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F (u + z.1) z.2) (0, t) :=
+    (hF t ht).comp_of_eq
+      ((contDiff_const.add contDiff_fst).prodMk contDiff_snd).contMDiff.contMDiffAt (by simp)
+  have hW (t : ℝ) (ht : t ∈ uIcc a b) :
+      variationField I (fun r ↦ F (u + r)) t = curveVelocity I (fun q ↦ F q t) (u + 0) := by
+    have hd : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) (u + 0) := by
+      rw [add_zero]
+      exact ((hF t ht).comp u (contDiff_prodMk_left t).contMDiff.contMDiffAt).mdifferentiableAt
+        two_ne_zero
+    rw [variationField_apply]
+    exact (curveVelocity_comp ((hasDerivAt_id' (0 : ℝ)).const_add u) hd).trans (one_smul ℝ _)
+  have h := hasDerivAt_energy (F := fun r ↦ F (u + r)) hG
+  beta_reduce at h
+  rw [hW b right_mem_uIcc, hW a left_mem_uIcc,
+    intervalIntegral.integral_congr fun t ht ↦ congrArg (fun v ↦ inner ℝ v
+      (acceleration (leviCivitaConnection I M) (F (u + 0)) t)) (hW t ht), add_zero] at h
+  convert h.comp_of_eq u ((hasDerivAt_id u).sub_const u) (sub_self u).symm using 1
+  · funext s
+    simp only [Function.comp_apply, id_eq, add_sub_cancel]
+  · rw [mul_one]
+
+/-- If a two-parameter family is `C²` at every point of `{u} × [a, b]`, then the energy of `F s`
+between `a` and `b` is differentiable at every `s` near `u`. -/
+theorem eventually_differentiableAt_energy {a b u : ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t)) :
+    ∀ᶠ s in 𝓝 u, DifferentiableAt ℝ (fun s ↦ energy I (F s) a b) s := by
+  obtain ⟨U, V, hUo, hVo, huU, hV, hFUV⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
+  filter_upwards [hUo.mem_nhds huU] with s hs
+  exact (hasDerivAt_energy_curveVelocity_fst fun t ht ↦
+    hFUV.contMDiffAt ((hUo.prod hVo).mem_nhds ⟨hs, hV ht⟩)).differentiableAt
 
 /-! ### Critical points of the energy -/
 

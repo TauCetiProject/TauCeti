@@ -321,13 +321,12 @@ theorem Divisor.dim_nsmul_poles_of_constantCompositum_eq_top
 
 omit [Algebra.IsSeparable k k'] in
 /-- **Under linear disjointness `ℓ(n (z)_∞)` can only grow**: if the image of `k'` in `F'` and `F`
-are linearly disjoint over `k` and both `k' / k` and `F' / F` are integral, then `n (z)_∞` has
+are linearly disjoint over `k` and `F' / F` is integral, then `n (z)_∞` has
 dimension in `F' / k'` at least its dimension in `F / k`, because a `k`-basis of `L(n (z)_∞)` stays
 linearly independent over `k'` inside `L(n (z)_∞)` of `F'`.  This is the inequality counterpart of
 `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`, with neither separability nor
 exactness assumed. -/
-theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral k k']
-    [Algebra.IsIntegral F F']
+theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) (n : ℕ) (z : Fˣ) :
     (n • Divisor.poles hF z).dim ≤

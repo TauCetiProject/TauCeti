@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.HasLaw
+public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Atom
@@ -34,6 +35,7 @@ is the topological reason why optimal transport maps onto disconnected targets a
 
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
 measure. Completing the source measure preserves every random variable's law.
+Nonnegative random variables whose real coercions have a common law are identically distributed.
 
 ## Main results
 
@@ -67,6 +69,7 @@ here are about a Dirac *source*, which is what `dirac_source` records in their n
 public section
 
 open MeasureTheory ProbabilityTheory
+open scoped NNReal
 
 namespace TauCeti
 
@@ -86,6 +89,16 @@ theorem _root_.ProbabilityTheory.HasLaw.cond (hT : HasLaw T ν μ) {s : Set Y}
     ← Measure.restrict_map_of_aemeasurable hT.aemeasurable hs,
     ← Measure.map_apply_of_aemeasurable hT.aemeasurable hs, hT.map_eq,
     ProbabilityTheory.cond]
+
+/-- Nonnegative random variables whose real coercions have the same law are identically
+distributed, even when defined on different measure spaces. -/
+theorem _root_.ProbabilityTheory.HasLaw.identDistrib_nnreal
+    {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
+    {P : Measure Ω} {Q : Measure Ω'} {X : Ω → ℝ≥0} {Y : Ω' → ℝ≥0} {μ : Measure ℝ}
+    (hX : HasLaw (fun ω ↦ (X ω : ℝ)) μ P)
+    (hY : HasLaw (fun ω ↦ (Y ω : ℝ)) μ Q) : IdentDistrib X Y P Q := by
+  simpa only [Function.comp_def, Real.toNNReal_coe] using
+    (hX.identDistrib hY).comp measurable_real_toNNReal
 
 /-- Completing the source measure does not change a random variable's law. -/
 theorem _root_.ProbabilityTheory.HasLaw.completion (hT : HasLaw T ν μ) :

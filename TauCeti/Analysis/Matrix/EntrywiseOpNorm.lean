@@ -30,15 +30,13 @@ Adapted from `ForTauCeti/Analysis/Matrix/EntrywiseOpNorm.lean` in the
 
 public section
 
-namespace TauCeti
-
-open Matrix
+namespace Matrix
 
 open scoped BigOperators
 
 /-- If every entry in row `i` of a finite matrix is bounded by `ε ≥ 0`, the `i`-th coordinate of
 its Euclidean action has norm at most `ε * (√(card κ) * ‖x‖)`. -/
-theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+theorem norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     [Fintype κ] [DecidableEq κ]
     {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (i : ι) (hentry : ∀ j, ‖A i j‖ ≤ ε)
     (x : EuclideanSpace 𝕜 κ) :
@@ -61,7 +59,7 @@ theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Typ
 
 /-- Squared form of the entrywise bound on the Euclidean action of a finite matrix with entries
 bounded by `ε ≥ 0`. -/
-private theorem _root_.Matrix.norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+private theorem norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     [Fintype ι] [Fintype κ] [DecidableEq κ]
     {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (hentry : ∀ i j, ‖A i j‖ ≤ ε)
     (x : EuclideanSpace 𝕜 κ) :
@@ -81,7 +79,7 @@ private theorem _root_.Matrix.norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ 
 action has norm at most `√(card ι) * ε * √(card κ)` times the input norm.
 
 Both index types may be empty; in that case the action is zero, even if `ε` is negative. -/
-theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+theorem norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     [Fintype ι] [Fintype κ] [DecidableEq κ]
     {A : Matrix ι κ 𝕜} {ε : ℝ} (hentry : ∀ i j, ‖A i j‖ ≤ ε)
     (x : EuclideanSpace 𝕜 κ) :
@@ -120,7 +118,7 @@ theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [R
 
 /-- The square finite-index form of the entrywise-to-Euclidean operator bound:
 `‖A x‖ ≤ card ι * ε * ‖x‖` when `‖A i j‖ ≤ ε`. -/
-theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le_square {𝕜 ι : Type*} [RCLike 𝕜]
+theorem norm_toEuclideanLin_le_of_entry_le_square {𝕜 ι : Type*} [RCLike 𝕜]
     [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜} {ε : ℝ}
     (hentry : ∀ i j, ‖A i j‖ ≤ ε)
     (x : EuclideanSpace 𝕜 ι) :
@@ -134,4 +132,4 @@ theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le_square {𝕜 ι : Type*
     _ = Real.sqrt (Fintype.card ι) ^ 2 * ε * ‖x‖ := by ring
     _ = (Fintype.card ι : ℝ) * ε * ‖x‖ := by rw [hs]
 
-end TauCeti
+end Matrix

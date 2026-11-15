@@ -76,7 +76,7 @@ theorem wrappedCauchyAngleMeasure_eq_withDensity (hγ : 0 < γ) :
     wrappedCauchyAngleMeasure m γ = (volume.restrict (Ico (-π) π)).withDensity
       (fun t : ℝ ↦ ENNReal.ofReal (wrappedCauchyPDFReal m γ t / (2 * π))) := by
   rw [wrappedCauchyAngleMeasure_def, wrappedCauchyMeasure_eq_withDensity m hγ,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π) (measurable_wrappedCauchyPDF m γ)]
+    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
   congr 1

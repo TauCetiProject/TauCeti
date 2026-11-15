@@ -151,7 +151,7 @@ theorem decompose_mem_augmentationIdeal (ε : 𝒜.Augmentation) (x : ε.augment
 /-- The internal grading on the reduced augmentation ideal obtained by intersecting it with each
 homogeneous piece of the original algebra. -/
 noncomputable def reducedGrading (ε : 𝒜.Augmentation) :
-    InternalGrading R ε.augmentationIdeal :=
+    InternalGrading R ε.augmentationIdeal ℤ :=
   𝒜.grading.submodule ε.augmentationIdeal fun p x hx ↦
     ε.decompose_mem_augmentationIdeal ⟨x, hx⟩ p
 
@@ -182,7 +182,7 @@ theorem m_mem_augmentationIdeal (ε : 𝒜.Augmentation) (n : ℕ)
 
 /-- The arity-`n` operation restricted to the reduced augmentation ideal. -/
 noncomputable def reducedOperation (ε : 𝒜.Augmentation) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ ε.augmentationIdeal) ε.augmentationIdeal :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ ε.augmentationIdeal) ε.augmentationIdeal :=
   ((𝒜.m n).compLinearMap fun _ ↦ ε.augmentationIdeal.subtype).codRestrict
     ε.augmentationIdeal (ε.m_mem_augmentationIdeal n)
 
@@ -304,13 +304,13 @@ private theorem reducedTaylor_isSuspension (ε : 𝒜.Augmentation) :
   exact congrArg Subtype.val (ε.reducedPart_coe
     (MultilinearMap.evalNat (MultilinearMap.suspend d (ε.reducedOperation n)) x))
 
-private theorem stasheff_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ) (hn : 0 < n)
+private theorem stasheff_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
     (d : ℕ → ℤ) (x : ℕ → ε.augmentationIdeal)
     (hx : ∀ i < n, x i ∈ ε.reducedGrading.piece (d i)) :
     AInfinity.stasheffSum ε.reducedOperation d x n = 0 := by
   apply Subtype.ext
   rw [ε.coe_stasheffSum_reducedOperation, Submodule.coe_zero]
-  apply 𝒜.stasheff n hn d (fun i ↦ (x i : A))
+  apply 𝒜.stasheff n d (fun i ↦ (x i : A))
   intro i hi
   -- Expose the subtype inclusion used in the definition of the reduced grading.
   change ε.augmentationIdeal.subtype (x i) ∈ 𝒜.grading.piece (d i)
@@ -321,7 +321,7 @@ noncomputable def reducedAlgebra (ε : 𝒜.Augmentation) :
     AInfinityAlgebra R ε.augmentationIdeal :=
   AInfinityAlgebra.ofStasheff ε.reducedGrading ε.reducedOperation ε.reducedOperation_zero
     ε.isHomogeneous_reducedOperation ε.reducedTaylor ε.reducedTaylor_isSuspension
-    ε.stasheff_reducedOperation
+    fun n _ ↦ ε.stasheff_reducedOperation n
 
 /-- The grading of the reduced `A∞` algebra is the inherited grading. -/
 @[simp]

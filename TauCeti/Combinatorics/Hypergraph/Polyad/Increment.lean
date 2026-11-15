@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy
+public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Basic
 
 /-!
 # Energy gain from resolved polyad witnesses

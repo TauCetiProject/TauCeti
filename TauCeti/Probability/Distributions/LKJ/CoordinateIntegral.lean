@@ -81,6 +81,15 @@ theorem lkjPartialCorrelationShape_def (p : ℕ) (η : ℝ) (ij : strictLowerTri
       η + (((p - 1 - ij.1.2.val : ℕ) : ℝ) - 1) / 2 := by
   rfl
 
+/-- The shape of a partial-correlation coordinate in zero-based column `j` is
+`η + (p - j - 2) / 2`, with the dimension and column cast to the reals before subtraction. -/
+theorem lkjPartialCorrelationShape_eq (p : ℕ) (η : ℝ) (ij : strictLowerTriangle p) :
+    lkjPartialCorrelationShape p η ij = η + ((p : ℝ) - ij.1.2.val - 2) / 2 := by
+  have hcol : ij.1.2.val + 1 < p := by omega
+  rw [lkjPartialCorrelationShape_def, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
+  push_cast
+  ring
+
 /-- The product of the unnormalized symmetric-beta kernels in partial-correlation coordinates.
 
 The intended domain is the open cube on which every coordinate lies in `(-1, 1)`.  The formula is

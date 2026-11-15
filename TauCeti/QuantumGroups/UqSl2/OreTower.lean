@@ -82,7 +82,6 @@ theorem sigmaF_T (n : ℤ) : sigmaF q (T n) = C (q ^ (2 * n)) * T n := by
   simp
 
 /-- `sigmaF` fixes the constants. -/
-@[simp]
 theorem sigmaF_C (a : ℂ) : sigmaF q (C a) = C a :=
   rescale_C _ a
 
@@ -258,7 +257,6 @@ private def fromTower : OreTower q →ₐ[ℂ] UqSl2 q :=
 
 private theorem fromTower_comp_toTower : (fromTower q).comp (toTower q) = AlgHom.id ℂ _ :=
   hom_ext (by simp [fromTower, toTower, towerTuple])
-    (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
     (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
     (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
 

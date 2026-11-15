@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
+import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
@@ -127,6 +128,53 @@ private theorem weight_eq_zero_of_notMem_truncation (hw : w ∉ truncation (L + 
       smoothTransition (L + 3 - q.endSign * (q.endCoord w).re) = 0 :=
   by_contra fun h => hw (mem_truncation_of_weight_ne_zero h)
 
+/-- The weight `β(r) β(σ_q - 1) β(L + 3 - σ_q)` of the end `q` in the Cayley transform of the
+capped structure at `w ∈ ℂ`, where `σ_q = ±s_q(w)` is the signed longitudinal coordinate of the
+end `q` and `β` is the smooth transition function. -/
+def cappedWeight (r L : ℝ) (q : Puncture) (w : ℂ) : ℝ :=
+  smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
+    smoothTransition (L + 3 - q.endSign * (q.endCoord w).re))
+
+theorem cappedWeight_def (r L : ℝ) (q : Puncture) (w : ℂ) :
+    cappedWeight r L q w = smoothTransition r *
+      (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
+        smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) :=
+  (rfl)
+
+/-- The weights lie in `[0, 1]`. -/
+theorem cappedWeight_mem_Icc (r L : ℝ) (q : Puncture) (w : ℂ) : cappedWeight r L q w ∈ Icc 0 1 :=
+  unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩ weight_mem_Icc
+
+/-- The weight of the end `q` vanishes off the part `σ_q > 0` of that end. -/
+theorem endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero {r : ℝ}
+    (h : cappedWeight r L q w ≠ 0) : 0 < q.endSign * (q.endCoord w).re :=
+  zero_lt_one.trans (one_lt_and_lt_of_weight_ne_zero (right_ne_zero_of_mul h)).1
+
+/-- **The weights vanish near the poles `0` and `1`**, locally uniformly in the neck length. -/
+theorem eventually_cappedWeight_eq_zero {c : ℂ} (hc : c = 0 ∨ c = 1) (L₀ : ℝ) :
+    ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), ∀ r q, cappedWeight r p.2 q p.1 = 0 := by
+  have hT : Tendsto (fun p : ℂ × ℝ => (p.1, p.2 + 3)) (𝓝 (c, L₀)) (𝓝 (c, L₀ + 3)) :=
+    (continuous_fst.prodMk (continuous_snd.add continuous_const)).tendsto _
+  filter_upwards [hT.eventually (eventually_notMem_truncation hc _)] with p hp r q
+  rw [cappedWeight_def, weight_eq_zero_of_notMem_truncation hp, mul_zero]
+
+/-- The weight of the end `q` is `C^n` along a `C^n` family that stays away from the center of
+the end. -/
+theorem contMDiffAt_cappedWeight {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    {n : WithTop ℕ∞} [ENat.LEInfty n] {r L : N → ℝ} {f : N → ℂ} {y₀ : N}
+    (hr : ContMDiffAt I' 𝓘(ℝ) n r y₀) (hL : ContMDiffAt I' 𝓘(ℝ) n L y₀)
+    (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (q : Puncture) (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n (fun y => cappedWeight (r y) (L y) q (f y)) y₀ := by
+  have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
+    ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
+  have hσ : ContMDiffAt I' 𝓘(ℝ) n (fun y => q.endSign * (q.endCoord (f y)).re) y₀ :=
+    (contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).contMDiffAt.comp y₀ hf
+  -- Products of real functions are scalar products.
+  simp only [cappedWeight_def]
+  exact (hβ.contMDiffAt.comp y₀ hr).smul ((contMDiffAt_smoothTransition_endCoord_comp q 1 hf
+    hq).smul (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
+
 end Weight
 
 /-! ### The capped structure -/
@@ -147,13 +195,8 @@ coordinates of the end `q`, `σ_q = ±s_q(w)` and `β` is the smooth transition 
 def cappedAlmostComplex (h₀ : ω.Compatible J₀)
     (J : Puncture → ℝ → M → AlmostComplexStructure V) (hJ : ∀ q t x, ω.Tames (J q t x))
     (r L : ℝ) (w : ℂ) (x : M) : AlmostComplexStructure V :=
-  endWeightedAlmostComplex h₀ J hJ
-    (fun q w => smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
-      smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)))
-    (fun _ _ => unitInterval.mul_mem ⟨smoothTransition.nonneg r, smoothTransition.le_one r⟩
-      weight_mem_Icc)
-    (fun _ _ hq => zero_lt_one.trans (one_lt_and_lt_of_weight_ne_zero (right_ne_zero_of_mul hq)).1)
-    w x
+  endWeightedAlmostComplex h₀ J hJ (cappedWeight r L) (cappedWeight_mem_Icc r L)
+    (fun _ _ => endSign_mul_re_endCoord_pos_of_cappedWeight_ne_zero) w x
 
 variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
   {r L : ℝ}
@@ -172,7 +215,8 @@ theorem cayley_cappedAlmostComplex (h₀ : ω.Compatible J₀) (r L : ℝ) (w : 
       smoothTransition r • ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
         smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
         J₀.cayley (J q (q.endCoord w).im x) := by
-  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, Finset.smul_sum, smul_smul]
+  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, cappedWeight_def,
+    Finset.smul_sum, smul_smul]
 
 /-- The capped structure is `ω`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (h₀ : ω.Compatible J₀)
@@ -209,12 +253,8 @@ theorem cappedAlmostComplex_eq_base_of_notMem_truncation (h₀ : ω.Compatible J
 theorem eventually_cappedAlmostComplex_eq_base_of_eq_zero_or_eq_one (h₀ : ω.Compatible J₀)
     (r : ℝ) {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedAlmostComplex h₀ J hJ r L w x = J₀ := by
-  have hT : c ∉ truncation (L + 3) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds hT] with w hw x
+  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds
+    (notMem_truncation_of_eq_zero_or_eq_one hc _)] with w hw x
   exact cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r hw x
 
 /-- **The structure is `J₀` near the pole `∞`.** -/
@@ -234,7 +274,7 @@ theorem cayley_cappedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatib
       (smoothTransition r * (smoothTransition (q.endSign * z.re - 1) *
         smoothTransition (L + 3 - q.endSign * z.re))) • J₀.cayley (J q z.im x) := by
   rw [cappedAlmostComplex,
-    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz,
+    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, cappedWeight_def,
     re_endCoord_cylindricalEndLift]
 
 /-- **The neck.** If `J q` has period one in `t` and `r ≥ 1`, then on the part
@@ -298,44 +338,18 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-/-- Near the center of the end `q`, the weight of the end `q` vanishes, locally uniformly in the
-neck length. -/
-private theorem eventually_weight_eq_zero (q : Puncture) (L₀ : ℝ) :
-    ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀),
-      smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
-        smoothTransition (p.2 + 3 - q.endSign * (q.endCoord p.1).re) = 0 := by
-  have hc : q.endCenter ∉ truncation (|L₀| + 4) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases q.endCenter_eq_zero_or_eq_one with h | h
-    exacts [h₀ h, h₁ h]
-  have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), p.2 < |L₀| + 1 :=
-    continuous_snd.continuousAt.eventually (gt_mem_nhds (by linarith [le_abs_self L₀]))
-  have hw : ∀ᶠ p : ℂ × ℝ in 𝓝 (q.endCenter, L₀), p.1 ∉ truncation (|L₀| + 4) :=
-    continuous_fst.continuousAt.eventually
-      ((isCompact_truncation _).isClosed.isOpen_compl.mem_nhds hc)
-  filter_upwards [hL, hw] with p hpL hpw
-  exact weight_eq_zero_of_notMem_truncation fun h =>
-    hpw (truncation_mono (by linarith) h)
-
 /-- The term of the end `q` in the Cayley coordinate of the capped structure is smooth jointly in
-the neck length `L`, the point `w ∈ ℂ` and the parameter `x`, also at the center of the end, where
-it vanishes nearby. -/
-private theorem contMDiffAt_weight_smul_cayley (h₀ : ω.Compatible J₀)
+the cutoff parameter `r`, the neck length `L`, the point `w ∈ ℂ` and the parameter `x`, also at
+the center of the end, where it vanishes nearby. -/
+private theorem contMDiffAt_cappedWeight_smul_cayley (h₀ : ω.Compatible J₀)
     (hJ : ∀ q t x, ω.Tames (J q t x)) {n : ℕ∞} (hJp : ∀ q, Function.Periodic (J q) 1)
     (hJs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
       (fun p : ℝ × M => (J q p.1 p.2).toLinearMap.toContinuousLinearMap))
     (q : Puncture) (w : ℂ) (r L : ℝ) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, V →L[ℝ] V) n
-      (fun p : ℂ × ((ℝ × ℝ) × M) =>
-        (smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
-          smoothTransition (p.2.1.2 + 3 - q.endSign * (q.endCoord p.1).re)) •
+      (fun p : ℂ × ((ℝ × ℝ) × M) => cappedWeight p.2.1.1 p.2.1.2 q p.1 •
         LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord p.1).im p.2.2)))
       (w, (r, L), x) := by
-  -- The parameters `r` and `L` as functions on the total space.
-  have hpar : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ × ℝ) n
-      (fun p : ℂ × ((ℝ × ℝ) × M) => p.2.1) (w, (r, L), x) :=
-    contMDiffAt_fst.comp _ contMDiffAt_snd
   by_cases hw : w = q.endCenter
   · -- Near the center of the end, its weight vanishes identically.
     subst hw
@@ -344,30 +358,14 @@ private theorem contMDiffAt_weight_smul_cayley (h₀ : ω.Compatible J₀)
         (𝓝 (q.endCenter, (r, L), x)) (𝓝 (q.endCenter, L)) :=
       (continuous_fst.prodMk
         (continuous_snd.comp (continuous_fst.comp continuous_snd))).tendsto _
-    filter_upwards [hproj.eventually (eventually_weight_eq_zero q L)] with p hp
+    filter_upwards [hproj.eventually
+      (eventually_cappedWeight_eq_zero q.endCenter_eq_zero_or_eq_one L)] with p hp
     simp [hp]
   -- Away from the center, the weight and the Cayley transform of the end structure, read at
   -- the angular coordinate, are smooth.
-  have hσ : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n
-      (fun p : ℂ × ((ℝ × ℝ) × M) => q.endSign * (q.endCoord p.1).re) (w, (r, L), x) :=
-    ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := fun w => q.endSign * (q.endCoord w).re) _
-      (contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).contMDiffAt contMDiffAt_fst
-  have hF : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ × ℝ)) 𝓘(ℝ, ℝ) n
-      (fun p : ℝ × (ℝ × ℝ) =>
-        smoothTransition (p.1 - 1) * smoothTransition (p.2.2 + 3 - p.1)) := by
-    have h : ContMDiff 𝓘(ℝ, ℝ × (ℝ × ℝ)) 𝓘(ℝ, ℝ) n
-        (fun p : ℝ × (ℝ × ℝ) =>
-          smoothTransition (p.1 - 1) * smoothTransition (p.2.2 + 3 - p.1)) :=
-      ((smoothTransition.contDiff.comp (contDiff_fst.sub contDiff_const)).mul
-        (smoothTransition.contDiff.comp
-          (((contDiff_snd.comp contDiff_snd).add contDiff_const).sub contDiff_fst))).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have hP : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n
-      (fun p : ℂ × ((ℝ × ℝ) × M) =>
-        smoothTransition (q.endSign * (q.endCoord p.1).re - 1) *
-          smoothTransition (p.2.1.2 + 3 - q.endSign * (q.endCoord p.1).re)) (w, (r, L), x) :=
-    hF.contMDiffAt.comp _ (hσ.prodMk hpar)
+  have hpar : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ × ℝ) n
+      (fun p : ℂ × ((ℝ × ℝ) × M) => p.2.1) (w, (r, L), x) :=
+    contMDiffAt_fst.comp _ contMDiffAt_snd
   have hFp : Function.Periodic
       (fun t (p : (ℝ × ℝ) × M) => LinearMap.toContinuousLinearMap (J₀.cayley (J q t p.2))) 1 :=
     fun t => by simp only [hJp q t]
@@ -379,7 +377,8 @@ private theorem contMDiffAt_weight_smul_cayley (h₀ : ω.Compatible J₀)
       ((h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2)
         (fun p => hJ q p.1 p.2) (hJs q)).comp
         (contMDiff_fst.prodMk (contMDiff_snd.comp contMDiff_snd))) hw ((r, L), x)
-  exact hP.smul hK
+  exact (contMDiffAt_cappedWeight (contDiff_fst.contMDiff.contMDiffAt.comp _ hpar)
+    (contDiff_snd.contMDiff.contMDiffAt.comp _ hpar) contMDiffAt_fst q hw).smul hK
 
 /-- **The structure is smooth.** For families `J q t x` of `ω`-tame structures which have period
 one in `t` and are `C^n` on `ℝ × M`, the capped structure is `C^n` jointly in the cutoff
@@ -393,16 +392,9 @@ theorem contMDiff_cappedAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
       (fun p : ℂ × ((ℝ × ℝ) × M) => LinearMap.toContinuousLinearMap
         (cappedAlmostComplex h₀ J hJ p.2.1.1 p.2.1.2 p.1 p.2.2).toLinearMap) := by
   rintro ⟨w, ⟨r, L⟩, x⟩
-  refine contMDiffAt_endWeightedAlmostComplex h₀ (w := Prod.fst)
-    (x := fun p : ℂ × ((ℝ × ℝ) × M) => p.2.2) ?_
-  -- Each term of the Cayley transform is `β(r)` times the smooth term of its end.
-  have hr : ContMDiffAt (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n
-      (fun p : ℂ × ((ℝ × ℝ) × M) => smoothTransition p.2.1.1) (w, (r, L), x) :=
-    (smoothTransition.contDiff.comp contDiff_fst).contMDiff.contMDiffAt.comp _
-      (contMDiffAt_fst.comp _ contMDiffAt_snd)
-  refine contMDiffAt_finsetSum fun q _ => ?_
-  exact (hr.smul (contMDiffAt_weight_smul_cayley h₀ hJ hJp hJs q w r L x)).congr_of_eventuallyEq
-    (.of_forall fun _ => mul_smul _ _ _)
+  exact contMDiffAt_endWeightedAlmostComplex h₀ (w := Prod.fst)
+    (x := fun p : ℂ × ((ℝ × ℝ) × M) => p.2.2) (contMDiffAt_finsetSum fun q _ =>
+      contMDiffAt_cappedWeight_smul_cayley h₀ hJ hJp hJs q w r L x)
 
 end Smooth
 

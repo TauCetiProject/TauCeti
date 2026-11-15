@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Length
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 
 /-!
 # The special length-exchanging map of the pinned type `F₄` root datum
@@ -33,10 +33,11 @@ computed here as well.
 These equations are the explicit `F₄` input for the root-datum special-isogeny construction, the
 last of the three beside the type `B₂` case of
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/SpecialMap.lean` and the same-shape
-`G₂` implementation proposed in
+`G₂` implementation of
+`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/G2/SpecialMap.lean` from
 [Tau Ceti PR #4116](https://github.com/TauCetiProject/TauCeti/pull/4116).
-They do not yet construct a group-scheme morphism; Layer 9 of the reductive-groups roadmap requires
-that later lift, together with its action on root subgroups, before the Suzuki--Ree lane can use it.
+They do not construct a group-scheme morphism: that is a lift of these data, together with its
+action on root subgroups.
 
 ## Main definitions
 
@@ -367,8 +368,7 @@ theorem f4_root_add_iff_specialIsogenyIndexEquiv_root_add_of_long
 
 /-- A short root direction transports a second-order source edge to a target root edge. -/
 theorem f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
-    (α β γ : Fin 48) (hα : f4Length α = 1)
-    (hβ : f4Length β = 2) (hγ : f4Length γ = 2) :
+    (α β γ : Fin 48) (hα : f4Length α = 1) (hγ : f4Length γ = 2) :
     f4SimplyConnectedRootDatum.root γ =
         f4SimplyConnectedRootDatum.root β + (2 : ℤ) •
           f4SimplyConnectedRootDatum.root α ↔
@@ -376,7 +376,20 @@ theorem f4_root_add_two_iff_specialIsogenyIndexEquiv_root_add_of_short
         f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
           f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α) := by
   have hα' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff α).2 hα
-  simpa only [hα'] using
-    f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add α β γ hβ hγ
+  rcases f4Length_eq_one_or_eq_two β with hβ | hβ
+  · -- a short `β` makes both sides false, by the quadratic length identity
+    have hβ' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff β).2 hβ
+    have hγ' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ
+    constructor
+    · intro h
+      have hlen := f4Length_of_root_eq_add_zsmul α β γ 2 h
+      rw [hα, hβ, hγ] at hlen
+      omega
+    · intro h
+      have := f4Length_eq_two_of_root_eq_add_of_long_long (f4SpecialIsogenyIndexEquiv α)
+        (f4SpecialIsogenyIndexEquiv β) (f4SpecialIsogenyIndexEquiv γ) hα' hβ' h
+      omega
+  · simpa only [hα'] using
+      f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add α β γ hβ hγ
 
 end TauCeti.DynkinType

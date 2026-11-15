@@ -276,8 +276,9 @@ noncomputable def classOf [Countable M] (hM : φ.Realize M) : CountableModelClas
 
 /-- The class of an infinite countable model is that of its transport to `ℕ` along any
 bijection. -/
-theorem classOf_eq_inl [Countable M] [Infinite M] (hM : φ.Realize M) (e : M ≃ ℕ) :
+theorem classOf_eq_inl [Countable M] (hM : φ.Realize M) (e : M ≃ ℕ) :
     classOf φ hM = .inl ⟦⟨e.encodeVia, mem_modelsOf.2 <| (e.realize_encodeVia φ).2 hM⟩⟧ := by
+  have : Infinite M := Infinite.of_injective e.symm e.symm.injective
   unfold classOf
   split_ifs with h
   · exact (not_finite M).elim

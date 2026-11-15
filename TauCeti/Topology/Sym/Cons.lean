@@ -27,10 +27,10 @@ elementary symmetric chart it meets, as shown by
 
 ## Main declarations
 
-* `TauCeti.Sym.continuous_cons`: adjoining a point is continuous.
-* `TauCeti.Sym.isClosedMap_cons` and `TauCeti.Sym.isClosedEmbedding_cons`: in a `T₁` space it is
+* `Sym.continuous_cons`: adjoining a point is continuous.
+* `Sym.isClosedMap_cons` and `Sym.isClosedEmbedding_cons`: in a `T₁` space it is
   a closed map, hence a closed embedding.
-* `TauCeti.Sym.isClosed_basepointDivisor`: in a `T₁` space the unordered tuples through a point
+* `Sym.isClosed_basepointDivisor`: in a `T₁` space the unordered tuples through a point
   form a closed set.
 
 ## References
@@ -44,8 +44,6 @@ public section
 
 open Topology
 
-namespace TauCeti
-
 namespace Sym
 
 variable {α : Type*} [TopologicalSpace α] {n : ℕ}
@@ -53,8 +51,8 @@ variable {α : Type*} [TopologicalSpace α] {n : ℕ}
 /-- Adjoining a point to an unordered tuple is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_cons (a : α) : Continuous (Sym.cons a : Sym α n → Sym α (n + 1)) := by
-  have h : (Sym.cons a : Sym α n → Sym α (n + 1)) ∘ Sym.ofFn = Sym.ofFn ∘ Fin.cons a :=
-    funext fun f => (Sym.ofFn_cons a f).symm
+  have h : (Sym.cons a : Sym α n → Sym α (n + 1)) ∘ ofFn = ofFn ∘ Fin.cons a :=
+    funext fun f => (ofFn_cons a f).symm
   rw [continuous_iff_comp_ofFn, h]
   exact continuous_ofFn.comp (continuous_const.finCons continuous_id)
 
@@ -65,15 +63,15 @@ theorem isClosedMap_cons [T1Space α] (a : α) :
   -- on ordered tuples, the image is the set of tuples starting with `a` whose tail presents a
   -- point of `C`, which is closed; its image under the closed map `Sym.ofFn` is the image of `C`
   have himage : Sym.cons a '' C =
-      Sym.ofFn '' ({f : Fin (n + 1) → α | f 0 = a} ∩ Fin.tail ⁻¹' (Sym.ofFn ⁻¹' C)) := by
+      ofFn '' ({f : Fin (n + 1) → α | f 0 = a} ∩ Fin.tail ⁻¹' (ofFn ⁻¹' C)) := by
     ext s
     constructor
     · rintro ⟨t, ht, rfl⟩
-      obtain ⟨g, rfl⟩ := Sym.ofFn_surjective t
-      exact ⟨Fin.cons a g, ⟨by simp, by simpa using ht⟩, Sym.ofFn_cons a g⟩
+      obtain ⟨g, rfl⟩ := ofFn_surjective t
+      exact ⟨Fin.cons a g, ⟨by simp, by simpa using ht⟩, ofFn_cons a g⟩
     · rintro ⟨f, ⟨hf0, hft⟩, rfl⟩
-      refine ⟨Sym.ofFn (Fin.tail f), hft, ?_⟩
-      rw [← Sym.ofFn_cons, ← hf0, Fin.cons_self_tail]
+      refine ⟨ofFn (Fin.tail f), hft, ?_⟩
+      rw [← ofFn_cons, ← hf0, Fin.cons_self_tail]
   rw [himage]
   refine isClosedMap_ofFn _ ((isClosed_singleton.preimage (continuous_apply 0)).inter ?_)
   exact (hC.preimage continuous_ofFn).preimage (continuous_pi fun i => continuous_apply i.succ)
@@ -88,15 +86,13 @@ theorem isClosedEmbedding_cons [T1Space α] (a : α) :
 /-- In a space whose points are closed, the unordered tuples through a given point form a closed
 subset of the symmetric power. -/
 theorem isClosed_basepointDivisor [T1Space α] (a : α) :
-    IsClosed (Sym.basepointDivisor a : Set (Sym α n)) := by
+    IsClosed (basepointDivisor a : Set (Sym α n)) := by
   cases n with
   | zero =>
-    rw [Sym.basepointDivisor_zero]
+    rw [basepointDivisor_zero]
     exact isClosed_empty
   | succ n =>
-    rw [← Sym.range_cons a]
+    rw [← range_cons a]
     exact (isClosedEmbedding_cons a).isClosed_range
 
 end Sym
-
-end TauCeti

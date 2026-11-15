@@ -60,13 +60,11 @@ theorem coe_herbrand_eq (u : RamificationIndexDomain) :
       if (u : ℝ) ≤ 1 then (u : ℝ) else if (u : ℝ) ≤ 3 then ((u : ℝ) + 1) / 2
         else ((u : ℝ) + 5) / 4 := by
   split_ifs with h1 h3
-  · by_cases h0 : (u : ℝ) ≤ 0
-    · rw [herbrand_of_coe_le_zero ℚ_[2] DyadicCyclotomicEight h0]
-    · exact congrArg Subtype.val <|
-        herbrand_eq_self_of_forall_eq ℚ_[2] DyadicCyclotomicEight (le_of_not_ge h0) <|
-          fun t _ ht ↦ by
-            rw [lowerRamificationGroupReal_eq, ite_eq_left (ht.trans h1)]
-            simp
+  · exact congrArg Subtype.val <|
+      herbrand_eq_self_of_forall_eq ℚ_[2] DyadicCyclotomicEight <|
+        fun t _ ht ↦ by
+          rw [lowerRamificationGroupReal_eq, ite_eq_left (ht.trans h1)]
+          simp
   · have h := coe_herbrand_sub_coe_herbrand_of_forall_eq ℚ_[2] DyadicCyclotomicEight
       (a := ⟨1, by norm_num⟩) (b := u) (by exact le_of_lt (lt_of_not_ge h1))
       (fun t ht htu ↦ by

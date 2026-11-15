@@ -218,7 +218,7 @@ private lemma detects_biUnion [ChartedSpace E M] (hn : finrank ℝ E = n) (t : F
   classical
   induction t using Finset.induction_on with
   | empty => simpa using detects_empty N n
-  | insert b t hb ih =>
+  | insert b t _ ih =>
     have hDt : IsCompact (⋃ a ∈ t, D a) :=
       t.finite_toSet.isCompact_biUnion fun a ha ↦ hD a (Finset.mem_insert_of_mem ha)
     have hb' := t.mem_insert_self b
@@ -312,7 +312,7 @@ theorem exists_localHomologyRestriction_eq_of_isCompact (hn : finrank ℝ E = n)
       ∀ x (hx : x ∈ A), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ = α x := by
   have := ChartedSpace.locallyCompactSpace E M
   -- Induct over `A`: the part of `A` in `t` lies in a compact `K ⊆ A` along which the family glues.
-  obtain ⟨K, hKc, hAK, hKA, hglue⟩ : ∃ K, IsCompact K ∧ A ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K := by
+  obtain ⟨K, _, hAK, hKA, hglue⟩ : ∃ K, IsCompact K ∧ A ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K := by
     refine hA.induction_on (p := fun t ↦ ∃ K, IsCompact K ∧ t ∩ A ⊆ K ∧ K ⊆ A ∧ Glues N α K)
       ⟨∅, isCompact_empty, by simp, empty_subset _, 0, fun x hx ↦ hx.elim⟩
       (fun s t hst ⟨K, hKc, htK, hKA, hK⟩ ↦

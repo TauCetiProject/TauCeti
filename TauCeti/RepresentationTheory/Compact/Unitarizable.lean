@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.RepresentationTheory.Continuous.Transport
+import TauCeti.RepresentationTheory.Compact.BilinearForm
 
 /-!
 # Weyl's unitarian trick
@@ -238,6 +238,7 @@ theorem adjoint_comp_gramOperator_comp (g : G) :
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_right,
     inner_gramOperator_map_map]
 
+omit [MeasurableSpace G] [BorelSpace G] in
 /-- **Weyl's unitarian trick.** Every continuous representation of a compact group on a Hilbert
 space carries a `G`-invariant positive-definite Hermitian form, represented by a positive-definite
 self-adjoint operator `S` with `(π g)† ∘ S ∘ (π g) = S`.
@@ -248,8 +249,9 @@ does not itself produce an `IsUnitary` representation;
 `ContRepresentation.exists_isUnitary_congr` does, for a finite-dimensional carrier. -/
 theorem isUnitarizable :
     ∃ S : V →L[𝕜] V, IsSelfAdjoint S ∧ (∀ v : V, v ≠ 0 → 0 < re ⟪S v, v⟫_𝕜) ∧
-      ∀ g : G, (ContinuousLinearMap.adjoint (π g)).comp (S.comp (π g)) = S :=
-  ⟨gramOperator π hπ, isSelfAdjoint_gramOperator π hπ,
+      ∀ g : G, (ContinuousLinearMap.adjoint (π g)).comp (S.comp (π g)) = S := by
+  borelize G
+  exact ⟨gramOperator π hπ, isSelfAdjoint_gramOperator π hπ,
     fun _ hv ↦ re_inner_gramOperator_self_pos π hπ hv, adjoint_comp_gramOperator_comp π hπ⟩
 
 /-- Averaging a form that is already invariant changes nothing: the Gram operator of a unitary
@@ -274,20 +276,26 @@ theorem exists_isSymm_bilinForm_invariant {G V : Type*} [Group G] [TopologicalSp
     ∃ B : LinearMap.BilinForm ℝ V, B.IsSymm ∧ (∀ v, v ≠ 0 → 0 < B v v) ∧
       Representation.IsInvariantForm π.toRepresentation B := by
   borelize G
-  -- Average the inner product transported from Euclidean space along a linear equivalence.
   let e := toEuclidean (E := V)
-  have hρ := e.continuous_congr hπ
-  let S := gramOperator (e.congr π) hρ
-  refine ⟨.mk₂ ℝ (fun v w ↦ ⟪e v, S (e w)⟫_ℝ) (fun _ _ _ ↦ by simp [inner_add_left])
-    (fun _ _ _ ↦ by simp [inner_smul_left]) (fun _ _ _ ↦ by simp [inner_add_right])
-    (fun _ _ _ ↦ by simp [inner_smul_right]), ⟨fun v w ↦ ?_⟩, fun v hv ↦ ?_,
-      Representation.isInvariantForm_iff.mpr fun g v w ↦ ?_⟩
-  · simpa [real_inner_comm] using (isSymmetric_gramOperator (e.congr π) hρ (e v) (e w)).symm
-  · have h := re_inner_gramOperator_self_pos (e.congr π) hρ (e.map_ne_zero_iff.mpr hv)
-    simpa [real_inner_comm] using h
-  · have h : ⟪e (π g v), S (e (π g w))⟫_ℝ = ⟪e v, S (e w)⟫_ℝ := by
-      simpa [ContinuousLinearEquiv.congr_apply] using
-        inner_gramOperator_map_map (e.congr π) hρ g (e v) (e w)
-    exact h
+  let B₀ : V →L[ℝ] V →L[ℝ] ℝ :=
+    (innerSL ℝ).bilinearComp e.toContinuousLinearMap e.toContinuousLinearMap
+  have hsymm : B₀.toBilinForm.IsSymm := by
+    constructor
+    intro v w
+    simp only [B₀, ContinuousLinearMap.toBilinForm_apply,
+      ContinuousLinearMap.bilinearComp_apply, innerSL_apply_apply]
+    exact real_inner_comm _ _
+  have hpos : B₀.toBilinForm.toQuadraticMap.PosDef := by
+    intro v hv
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply,
+      ContinuousLinearMap.toBilinForm_apply, B₀, ContinuousLinearMap.bilinearComp_apply,
+      innerSL_apply_apply]
+    exact real_inner_self_pos.mpr (e.map_ne_zero_iff.mpr hv)
+  refine ⟨(π.averageBilinearForm hπ B₀).toBilinForm,
+    π.isSymm_averageBilinearForm hπ B₀ hsymm, ?_,
+    π.isInvariantForm_averageBilinearForm hπ B₀⟩
+  intro v hv
+  simpa only [LinearMap.BilinMap.toQuadraticMap_apply] using
+    π.posDef_averageBilinearForm hπ B₀ hpos v hv
 
 end ContRepresentation

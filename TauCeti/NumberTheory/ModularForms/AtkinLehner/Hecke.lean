@@ -209,7 +209,7 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
           ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) ((Gamma0Map N).toHomUnits ⟨A, hA⟩) = 1 ∧
           ∃ B ∈ Gamma1 N, φ (natDiagGL 2 ![1, n]) * atkinLehnerGL h.pos hM =
             atkinLehnerGL h.pos hM * mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) := by
-  set m := N / Q with hm
+  set m := N / Q
   have hNm : N = Q * m := (Nat.mul_div_cancel' h.dvd).symm
   have hN : (N : ℤ) = Q * m := by exact_mod_cast hNm
   set a : ℤ := Nat.gcdA Q m

@@ -75,12 +75,12 @@ symbols, whose integrand `f(z) P(z, 1)` and convergence are treated in
 
 public section
 
-open Complex MeasureTheory Set Matrix Matrix.GeneralLinearGroup Matrix.SpecialLinearGroup
+open Complex MeasureTheory Set Matrix Matrix.SpecialLinearGroup
 open ModularGroup OnePoint
 open UpperHalfPlane hiding I
 open scoped MatrixGroups ModularForm
 
-namespace TauCeti
+namespace Matrix.GeneralLinearGroup
 
 /-- The integral `∫_{g • 0}^{g • ∞} F(z) dz` of the one-form `F(z) dz` along the hyperbolic
 geodesic from the cusp `g • 0` to the cusp `g • ∞`, for `g ∈ GL(2, ℚ)` of positive determinant:
@@ -93,12 +93,12 @@ The definition is total in `g`, like the slash action: for `det g < 0` it is the
 which is then a junk value and not the integral along the geodesic from `g • 0` to `g • ∞` (the
 slash of a negative-determinant matrix involves complex conjugation). Every result reading it as a
 geodesic integral assumes `0 < det g`. -/
-noncomputable def _root_.Matrix.GeneralLinearGroup.geodesicIntegral (g : GL (Fin 2) ℚ)
+noncomputable def geodesicIntegral (g : GL (Fin 2) ℚ)
     (F : ℍ → ℂ) : ℂ :=
   I * ∫ t in Ioi (0 : ℝ), resToImagAxis (F ∣[(2 : ℤ)] g) t
 
 /-- Definition of the geodesic integral. -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_def (g : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
+theorem geodesicIntegral_def (g : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
     geodesicIntegral g F = I * ∫ t in Ioi (0 : ℝ), resToImagAxis (F ∣[(2 : ℤ)] g) t := by
   rw [geodesicIntegral]
 
@@ -106,19 +106,19 @@ theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_def (g : GL (Fin 2) �
 integral of the pulled-back one-form `(F ∣[2] g)(z) dz` from `h • 0` to `h • ∞`. The identity is
 an algebraic consequence of the slash action and holds for every `g` and `h`; its reading as a
 substitution in a geodesic integral requires `g` and `h` to have positive determinant. -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_mul (g h : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
+theorem geodesicIntegral_mul (g h : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
     geodesicIntegral (g * h) F = geodesicIntegral h (F ∣[(2 : ℤ)] g) := by
   rw [geodesicIntegral, geodesicIntegral, SlashAction.slash_mul]
 
 /-- The geodesic integral of the zero one-form vanishes. -/
 @[simp]
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_zero (g : GL (Fin 2) ℚ) :
+theorem geodesicIntegral_zero (g : GL (Fin 2) ℚ) :
     geodesicIntegral g 0 = 0 := by
   simp [geodesicIntegral]
 
 /-- The geodesic integral is additive in the integrand, for integrable integrands (for every
 `g`, since the slash action is additive). -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_add (g : GL (Fin 2) ℚ) {F G : ℍ → ℂ}
+theorem geodesicIntegral_add (g : GL (Fin 2) ℚ) {F G : ℍ → ℂ}
     (hF : IntegrableOn (resToImagAxis (F ∣[(2 : ℤ)] g)) (Ioi 0))
     (hG : IntegrableOn (resToImagAxis (G ∣[(2 : ℤ)] g)) (Ioi 0)) :
     geodesicIntegral g (F + G) = geodesicIntegral g F + geodesicIntegral g G := by
@@ -127,7 +127,7 @@ theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_add (g : GL (Fin 2) �
 
 /-- The geodesic integral is `ℂ`-linear in the integrand, for `g` of positive determinant (for
 negative determinant the slash conjugates the scalar). -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_smul {g : GL (Fin 2) ℚ}
+theorem geodesicIntegral_smul {g : GL (Fin 2) ℚ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) (c : ℂ) (F : ℍ → ℂ) :
     geodesicIntegral g (c • F) = c * geodesicIntegral g F := by
   simp only [geodesicIntegral, ModularForm.rat_smul_slash_of_det_pos _ hg, resToImagAxis_smul,
@@ -140,7 +140,7 @@ theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_smul {g : GL (Fin 2) �
 /-- **Reparametrising the geodesic.** A diagonal matrix `d` of positive determinant fixes the
 cusps `0` and `∞` and rescales the imaginary axis, so it does not change the geodesic integral
 from `g • 0` to `g • ∞`. -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_mul_of_diagonal (g : GL (Fin 2) ℚ)
+theorem geodesicIntegral_mul_of_diagonal (g : GL (Fin 2) ℚ)
     {d : GL (Fin 2) ℚ} (h₁₀ : d 1 0 = 0) (h₀₁ : d 0 1 = 0)
     (hd : 0 < (d : Matrix (Fin 2) (Fin 2) ℚ).det) (F : ℍ → ℂ) :
     geodesicIntegral (g * d) F = geodesicIntegral g F := by
@@ -157,7 +157,7 @@ theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_mul_of_diagonal (g : G
 
 /-- **The geodesic integral only depends on the endpoints.** Two matrices of positive
 determinant sending `(0, ∞)` to the same pair of cusps give the same integral. -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_eq_of_smul_eq {g g' : GL (Fin 2) ℚ}
+theorem geodesicIntegral_eq_of_smul_eq {g g' : GL (Fin 2) ℚ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det) (hg' : 0 < (g' : Matrix (Fin 2) (Fin 2) ℚ).det)
     (h₀ : g • ((0 : ℚ) : OnePoint ℚ) = g' • ((0 : ℚ) : OnePoint ℚ))
     (hinf : g • (∞ : OnePoint ℚ) = g' • ∞) (F : ℍ → ℂ) :
@@ -193,7 +193,7 @@ theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_eq_of_smul_eq {g g' : 
 the integral from `g • ∞` to `g • 0` is the negative of the integral from `g • 0` to `g • ∞`. The
 identity is the substitution `t ↦ 1 / t` on the imaginary axis and holds for every `g`; its
 reading as an orientation reversal of a geodesic integral requires `0 < det g`. -/
-theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_mul_S (g : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
+theorem geodesicIntegral_mul_S (g : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
     geodesicIntegral (g * mapGL ℚ S) F = -geodesicIntegral g F := by
   rw [geodesicIntegral_mul, geodesicIntegral, geodesicIntegral, ModularForm.rat_slash_mapGL,
     ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash]
@@ -209,12 +209,12 @@ theorem _root_.Matrix.GeneralLinearGroup.geodesicIntegral_mul_S (g : GL (Fin 2) 
     -- the Jacobian `|p| t ^ (p - 1)` of `t ↦ t ^ p` at `p = -1` is `t⁻²`
     have hexp : (-1 : ℝ) - 1 = -2 := by norm_num
     simp only
-    rw [resToImagAxis_slash_two_S G ht, Real.rpow_neg_one, hexp, Real.rpow_neg ht.le,
+    rw [resToImagAxis_slash_two_S G t, Real.rpow_neg_one, hexp, Real.rpow_neg ht.le,
       Real.rpow_two, abs_neg, abs_one, one_mul]
     push_cast
     ring
   rw [(setIntegral_congr_fun measurableSet_Ioi key).trans hsub, integral_neg, mul_neg]
 
-end TauCeti
+end Matrix.GeneralLinearGroup
 
 end

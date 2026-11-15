@@ -62,15 +62,9 @@ simple.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate I.
 
-This advances the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, the second of which asks for "the equations pinning
-them against the pinning" and adds that downstream work states its conventions against those
-equations, so that they are part of the interface. Nothing below is the separate "isomorphism
-theorem for pinned groups", which asserts a uniqueness this file does not prove.
-Its consumer is milestone `L0` of `TauCetiRoadmap/CFSGStatement/README.md`, which
-requires each carrier to be traceable to `DynkinType.simplyConnectedRootDatum` reached through
-`ValidLieTypeIndex.dynkinType`, and milestone `L1`, whose graph-twisted branches take `γ` to be the
-automorphism attached to the numbered diagram permutation.
+The pinning equations proved here are part of the carrier's interface: conventions about the
+carrier are stated against them. Nothing below is an isomorphism theorem for pinned groups, which
+would assert a uniqueness this file does not prove.
 -/
 
 public section
@@ -106,7 +100,7 @@ theorem rootGeneratorWeight_inr_eq_neg_root_typeASimpleIndex (i : Fin r) :
   rw [rootGeneratorWeight_inr, Pi.neg_apply, root_typeASimpleIndex]
 
 /-- **The `i`-th numbered raising subgroup sits at the `i`-th simple root of the pinned datum of
-its Dynkin type.** This is the form in which the milestone that builds ambient groups from a Dynkin
+its Dynkin type.** This is the form in which a construction of ambient groups from a Dynkin
 type reads the pinning; `TauCeti.SlStd.rootGeneratorWeight_inl_eq_root_typeASimpleIndex` is the
 same statement with the datum named directly, and needs no validity hypothesis. -/
 theorem rootGeneratorWeight_inl_eq_root_simpleIndex (ht : (A r).Valid) (i : Fin r) :

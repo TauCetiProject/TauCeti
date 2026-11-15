@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Place
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 import TauCeti.GroupTheory.Coset.Fiber
 
@@ -43,7 +44,7 @@ namespace TauCeti.Isogeny
 open WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
-  {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+  {W₁ W₂ : WeierstrassCurve.Affine F} [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
 /-- Every fibre of a separable isogeny's class-group point map has cardinality equal to its
@@ -51,6 +52,7 @@ degree over a separably closed field. -/
 @[simp]
 theorem ncard_fiber_toPointHom_eq_degree (Q : W₂.Point) :
     {P : W₁.Point | φ.toPointHom P = Q}.ncard = φ.degree := by
+  have := φ.isElliptic
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl

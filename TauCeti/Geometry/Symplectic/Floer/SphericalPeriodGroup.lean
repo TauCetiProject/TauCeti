@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 
@@ -34,7 +35,9 @@ group, as `TauCeti.Floer.SphericalPeriodGroup ω c`, and describes it in terms o
   (`SphericalPeriodGroup.ofHomotopyGroup_surjective`).
 * `Γ` is trivial exactly when `ω` and `c` vanish on the Hurewicz classes of all spheres
   (`SphericalPeriodGroup.subsingleton_iff`), that is, for symplectically aspherical targets with
-  vanishing first Chern class on spheres.
+  vanishing first Chern class on spheres. In particular it is trivial when every sphere is
+  null-homotopic (`SphericalPeriodGroup.subsingleton_of_forall_subsingleton`), as on every
+  aspherical space, such as a torus (`SphericalPeriodGroup.subsingleton_of_isAspherical`).
 * A continuous map `f : X → Y` along which `ω` and `c` pull back on spherical classes induces a
   homomorphism of period groups (`SphericalPeriodGroup.map`), compatible with the classes of spheres
   (`SphericalPeriodGroup.map_ofHomotopyGroup`).
@@ -132,6 +135,22 @@ theorem subsingleton_iff :
   have hle : sphericalClasses X 1 ≤ (ω.prod c).ker :=
     sphericalClasses_le_iff.2 fun x a ↦ by simpa using h x a
   simpa using hle s.2
+
+/-- **If every sphere is null-homotopic, the period group is trivial**, whatever `ω` and `c`
+are. -/
+theorem subsingleton_of_forall_subsingleton
+    (h : ∀ y : X, Subsingleton (HomotopyGroup (Fin 2) X y)) :
+    Subsingleton (SphericalPeriodGroup ω c) :=
+  subsingleton_iff.2 fun y a => by
+    have := h y
+    rw [Subsingleton.elim a 0, map_zero, map_zero, map_zero]
+    exact ⟨rfl, rfl⟩
+
+/-- **On an aspherical space the period group is trivial**, whatever `ω` and `c` are. This covers
+tori (`AddCircle.isAspherical_pi`). -/
+theorem subsingleton_of_isAspherical {x : X} (h : IsAspherical X x) :
+    Subsingleton (SphericalPeriodGroup ω c) :=
+  subsingleton_of_forall_subsingleton fun y => (h.of_basepoint y).subsingleton_homotopyGroup 0
 
 section Map
 

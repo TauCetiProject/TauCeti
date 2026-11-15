@@ -58,11 +58,12 @@ Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apa
 
 Changes from the source. It is stated there only for `L = AlgebraicClosure K`; here `L` is an
 arbitrary commutative domain over `K`, since nothing in the argument uses algebraic closedness or
-inverses. The source
-builds the root-set transport by hand, through a separability argument and a finset count; here
-that is Mathlib's `Splits.image_rootSet` applied to `FiniteField.isSplittingField_sub`. And the
-source's other public theorem is stated in terms of its own `private` finsets, so it cannot be
-applied from outside; it is not reproduced. Nine declarations become one.
+inverses. The source builds the root-set transport by hand, through a separability argument and a
+finset count; here it is Mathlib's `Polynomial.Splits.mem_range_of_isRoot` (a root in `L` of a
+nonzero polynomial that splits over `K` comes from `K`), applied to `X ^ q - X`, which splits
+over `K` by `FiniteField.isSplittingField_sub`. And the source's other public theorem is stated
+in terms of its own `private` finsets, so it cannot be applied from outside; it is not
+reproduced. Nine declarations become one.
 -/
 
 public section
@@ -79,22 +80,19 @@ comes from the base field**, where `q` is the cardinality of the base. -/
 theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Fintype K]
     [CommRing L] [IsDomain L] [Algebra K L] (a : L) :
     a ^ Fintype.card K = a ↔ a ∈ Set.range (algebraMap K L) := by
-  classical
-  -- `X ^ q - X` splits over `K` with every element a root, and `Splits.image_rootSet`
-  -- transports that root set along `K → L`
-  have hne : (X ^ Fintype.card K - X : K[X]) ≠ 0 :=
-    Polynomial.X_pow_sub_X_ne_zero Fintype.one_lt_card
-  have hsplits : ((X ^ Fintype.card K - X : K[X]).map (algebraMap K K)).Splits :=
-    IsSplittingField.splits (L := K) (X ^ Fintype.card K - X)
-  have himg := hsplits.image_rootSet (Algebra.ofId K L)
-  have hK : (X ^ Fintype.card K - X : K[X]).rootSet K = Set.univ := by
-    simp [Polynomial.rootSet_def, Polynomial.aroots_def, Algebra.algebraMap_self,
-      _root_.FiniteField.roots_X_pow_card_sub_X K]
-  rw [Set.ext_iff] at himg
-  have := himg a
-  simp only [hK, Set.image_univ, Algebra.ofId_apply, mem_rootSet_of_ne hne, aeval_def,
-    eval₂_sub, eval₂_X_pow, eval₂_X, sub_eq_zero] at this
-  exact this.symm
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- `a` is a root of `X ^ q - X`, which splits over `K`, so `a` comes from `K`
+    -- (`Splits.mem_range_of_isRoot`)
+    have hsplits : (X ^ Fintype.card K - X : K[X]).Splits := by
+      -- `K` is a splitting field of `X ^ q - X` over itself
+      have := IsSplittingField.splits (L := K) (X ^ Fintype.card K - X : K[X])
+      rwa [Algebra.algebraMap_self, Polynomial.map_id] at this
+    have hroot : ((X ^ Fintype.card K - X : K[X]).map (algebraMap K L)).IsRoot a := by
+      simp [h]
+    rw [← RingHom.coe_range]
+    exact hsplits.mem_range_of_isRoot (X_pow_sub_X_ne_zero Fintype.one_lt_card) hroot
+  · rintro ⟨c, rfl⟩
+    rw [← map_pow, _root_.FiniteField.pow_card]
 
 section Finite
 
@@ -122,18 +120,23 @@ theorem pow_natCard_notMem_range_algebraMap {a : L}
   intro hmem
   have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
   have : Fintype K := Fintype.ofFinite K
-  obtain ⟨p, hp⟩ := CharP.exists K
-  obtain ⟨n, hp', hn⟩ := FiniteField.card K p
-  have : Fact p.Prime := ⟨hp'⟩
-  have : CharP L p := (RingHom.charP_iff (algebraMap K L) (algebraMap K L).injective p).mp hp
+  obtain ⟨p, _, n, hp, hn⟩ := _root_.FiniteField.card' K
+  have : Fact p.Prime := ⟨hp⟩
+  have : CharP L p := charP_of_injective_algebraMap' K p
   have hinj : Function.Injective (fun x : L ↦ x ^ Nat.card K) := by
     rw [Nat.card_eq_fintype_card, hn]
     exact iterateFrobenius_inj L p n
   exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp (hinj h1))
 
-/-- **An element outside the base field is not fixed by the `q`-power map.** -/
-theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
-  fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+omit [Finite K] in
+/-- **An element outside the base field is not fixed by the `q`-power map.** (For an infinite base
+field `Nat.card K = 0`, and `a ^ 0 = 1` lies in the base field.) -/
+theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a := by
+  by_cases hK : Finite K
+  · exact fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+  · rw [not_finite_iff_infinite] at hK
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact fun h => ha ⟨1, by rw [map_one, h]⟩
 
 omit [IsDomain L] in
 /-- **A unit of the base field is fixed by the `q`-power map**, as an equality in `Lˣ`. -/
@@ -222,14 +225,14 @@ theorem pow_card_eq_neg_sub_of_not_exists_root {K L : Type*} [Field K] [Fintype 
     refine hno ⟨t, (algebraMap K L).injective ?_⟩
     simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, _root_.map_zero]
     exact hα
-  -- `α ^ q` is again a root, being the image of `α` under the `q`-power ring endomorphism
+  -- `α ^ q` is again a root, being the image of `α` under the `q`-power `K`-algebra
+  -- endomorphism, which fixes the coefficients (`AlgHom.commutes`)
   have hroot : (α ^ Fintype.card K) ^ 2 + algebraMap K L b * α ^ Fintype.card K +
       algebraMap K L c = 0 := by
-    have hfix (t : K) : (algebraMap K L t) ^ Fintype.card K = algebraMap K L t := by
-      rw [← map_pow, _root_.FiniteField.pow_card]
     have := congrArg (_root_.FiniteField.frobeniusAlgHom K L) hα
-    rw [_root_.map_add, _root_.map_add, _root_.map_pow, _root_.map_mul, _root_.map_zero] at this
-    simpa only [_root_.FiniteField.frobeniusAlgHom_apply, hfix] using this
+    simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, AlgHom.commutes,
+      _root_.map_zero] at this
+    simpa only [_root_.FiniteField.frobeniusAlgHom_apply] using this
   have hne : α ^ Fintype.card K - α ≠ 0 := sub_ne_zero.2 fun h' ↦
     hαK ((pow_card_eq_self_iff_mem_range_algebraMap α).1 h')
   have : (α ^ Fintype.card K - α) * (α ^ Fintype.card K - (-algebraMap K L b - α)) = 0 := by

@@ -13,7 +13,8 @@ public import Mathlib.SetTheory.Cardinal.Finite
 # The locally constant degree of a covering
 
 The cardinality of the fibres of a covering map is locally constant, including over a
-disconnected base and at points with empty fibres. For finite fibres this is the number of
+disconnected base and at points with empty fibres. This holds for the cardinal `Cardinal.mk` of
+the fibre, and hence for `Nat.card`. For finite fibres the latter is the number of
 sheets. This supplies the variable degree in the transfer formula for singular homology.
 For infinite fibres, `Nat.card` has its usual value zero; no finite-sheet interpretation is
 asserted in that case.
@@ -28,16 +29,21 @@ namespace IsCoveringMap
 
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
-/-- Fibre cardinality is locally constant for a covering, without connectedness or
-surjectivity assumptions. Infinite fibres have `Nat.card` equal to zero. -/
-theorem isLocallyConstant_natCard_fiber (hp : IsCoveringMap p) :
-    IsLocallyConstant (fun b ↦ Nat.card (p ⁻¹' {b})) := by
+/-- The cardinal of the fibres of a covering is locally constant, without connectedness or
+surjectivity assumptions. Unlike `Nat.card`, this distinguishes the infinite fibres. -/
+theorem isLocallyConstant_cardinalMk_fiber (hp : IsCoveringMap p) :
+    IsLocallyConstant (fun b ↦ Cardinal.mk (p ⁻¹' {b})) := by
   refine (IsLocallyConstant.iff_exists_open _).2 fun b ↦ ?_
   obtain ⟨hdisc, U, hb, hU, hpU, H, hH⟩ := hp b
   refine ⟨U, hU, hb, fun b' hb' ↦ ?_⟩
-  have h (y : B) (hy : y ∈ U) : IsEvenlyCovered p y (p ⁻¹' {b}) :=
-    ⟨hdisc, U, hy, hU, hpU, H, hH⟩
-  exact (Nat.card_congr (h b' hb').fiberHomeomorph.toEquiv).symm
+  have h : IsEvenlyCovered p b' (p ⁻¹' {b}) := ⟨hdisc, U, hb', hU, hpU, H, hH⟩
+  exact (Cardinal.mk_congr h.fiberHomeomorph.toEquiv).symm
+
+/-- Fibre cardinality is locally constant for a covering, without connectedness or
+surjectivity assumptions. Infinite fibres have `Nat.card` equal to zero. -/
+theorem isLocallyConstant_natCard_fiber (hp : IsCoveringMap p) :
+    IsLocallyConstant (fun b ↦ Nat.card (p ⁻¹' {b})) :=
+  hp.isLocallyConstant_cardinalMk_fiber.comp Cardinal.toNat
 
 /-- The locally constant fibre cardinality of a covering. For a finite covering this is its
 number of sheets on each connected component of the base. -/

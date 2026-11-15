@@ -11,7 +11,7 @@ public import Mathlib.Data.Set.Card.Arithmetic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
-public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
+public import TauCeti.Topology.MetricSpace.Lipschitz.Parametrizable
 
 /-!
 # Counting points of a discrete subgroup near a dilated Lipschitz-parametrizable set

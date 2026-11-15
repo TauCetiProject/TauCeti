@@ -130,10 +130,11 @@ open scoped Classical in
 /-- **`E[N] ≃+ (ℤ/N)²`** over a separably closed field in which `N` is invertible.
 
 The equivalence is noncanonical, so the result asserts its existence. -/
-theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ) [NeZero N]
+theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ)
     (hN : (N : K) ≠ 0) :
     Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
   classical
+  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   let q : ℕ → ℕ := fun p ↦ p ^ N.factorization p
   have hN0 : N ≠ 0 := NeZero.ne N
   let primary := primaryDecompositionEquiv W N hN
@@ -149,7 +150,6 @@ trace. The basis is noncanonical, so the result asserts its existence. -/
 theorem nonempty_basis_torsionBy [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ)
     (hN : (N : K) ≠ 0) :
     Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))) := by
-  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   -- `torsion_addEquiv_prod` is stated for the classical decidable-equality instance
   obtain ⟨e⟩ : Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
     convert W.torsion_addEquiv_prod N hN

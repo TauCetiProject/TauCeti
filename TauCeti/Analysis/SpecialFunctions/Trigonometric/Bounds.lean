@@ -12,8 +12,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-!
 # Trigonometric bounds and nonvanishing criteria
 
-The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
-`x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
+The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
+The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
+Schwarz–Christoffel turns. The sine is
 nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
@@ -126,6 +127,12 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=
   sin_pos_of_pos_of_lt_pi (div_pos pi_pos (by linarith)) (div_lt_self pi_pos hx)
+
+/-- For a real denominator greater than two, the cosine of `π / x` is positive. -/
+theorem cos_pi_div_pos {x : ℝ} (hx : 2 < x) : 0 < cos (π / x) := by
+  have hx₀ : 0 < x := by linarith
+  refine cos_pos_of_mem_Ioo ⟨by linarith [div_pos pi_pos hx₀, pi_pos], ?_⟩
+  rwa [div_lt_div_iff_of_pos_left pi_pos hx₀ two_pos]
 
 /-- If `α, β > 0`, `γ ≥ 0` and `α + β + γ < π`, then `(cos α cos β + cos γ) / (sin α sin β) > 1`.
 Indeed `cos α cos β - sin α sin β = -cos (π - α - β)`, and `cos (π - α - β) < cos γ` because

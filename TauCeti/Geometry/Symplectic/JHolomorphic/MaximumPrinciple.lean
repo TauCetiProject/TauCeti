@@ -26,7 +26,9 @@ structure of contact type satisfies
 `dρ ∘ J = -α`.
 
 A map `u : ℂ → V`, with `s + i t` the coordinate on `ℂ`, is `J`-holomorphic when it solves the
-Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`. For such a curve the function `ρ ∘ u` has derivatives
+Cauchy--Riemann equation `∂ₜu = J_z(u) ∂ₛu`. Here `J_z` may depend on the point `z` of the domain,
+as the almost complex structures of continuation strips and of parametrized families of Floer
+strips do. For such a curve the function `ρ ∘ u` has derivatives
 `∂ₛ(ρ ∘ u) = α(∂ₜu)` and `∂ₜ(ρ ∘ u) = -α(∂ₛu)`, and therefore
 
 `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu) = dα(∂ₛu, J ∂ₛu)`,
@@ -34,11 +36,17 @@ Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`. For such a curve the function
 where `dα(v, w) = Dα(v)(w) - Dα(w)(v)` is the exterior derivative of `α`
 (`TauCeti.JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg`). When `dα` tames `J`, that is
 `dα(v, J v) ≥ 0`, the function `ρ ∘ u` is subharmonic
-(`TauCeti.JHolomorphic.laplacian_comp_nonneg_of_fderiv_comp_eq_neg`).
+(`TauCeti.JHolomorphic.laplacian_comp_nonneg_of_fderiv_comp_eq_neg`). The derivative of `J_z` in
+`z` does not enter: the Cauchy--Riemann equation is used only to rewrite the first derivatives of
+`ρ ∘ u`, so no regularity of `J_z` in `z` is needed.
 
 The weak maximum principle then confines `J`-holomorphic curves: if the conditions above hold on
-the region `{ρ > R}`, a curve on a compact domain whose boundary is mapped into `{ρ ≤ R}` lies
-entirely in `{ρ ≤ R}` (`TauCeti.JHolomorphic.comp_le_of_comp_le_frontier`). Applied to large
+the region `{ρ > R}` for every `J_z`, a curve on a compact domain whose boundary is mapped into
+`{ρ ≤ R}` lies entirely in `{ρ ≤ R}` (`TauCeti.JHolomorphic.comp_le_of_comp_le_frontier`). The
+curve need only be `C²` and solve the Cauchy--Riemann equation at the points which it maps into
+`{ρ > R}`. So the statements apply to Floer strips `∂ₜu = J_z(u) ∂ₛu + X_z(u)` whose Hamiltonian
+vector fields `X_z` vanish on `{ρ > R}`, as for continuation strips between Hamiltonians which
+are constant outside a compact set contained in `{ρ ≤ R}`. Applied to large
 rectangles, the same holds for a strip `ℝ × [0, 1]` which maps its two boundary lines and its two
 ends `|ℜ z| ≥ T` into `{ρ ≤ R}`
 (`TauCeti.JHolomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`).
@@ -58,12 +66,10 @@ boundary line is mapped into a set on whose tangent cones `α` vanishes outside 
 only asked to be differentiable within the closed strip, as a solution smooth up to the boundary
 is.
 
-The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`, and cover
-only unperturbed `J`-holomorphic curves: `J` depends on the point of `V` but not on the point of
-the domain, and the equation carries no Hamiltonian term. Floer strips with a domain-dependent
-`J` or a Hamiltonian perturbation are not treated here. The statements for a compact set and for a
-strip with boundary lines in `{ρ ≤ R}`, for curves in an almost complex manifold, are in
-`TauCeti/Geometry/Symplectic/Manifold/MaximumPrinciple.lean`.
+The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`. A
+Hamiltonian term which does not vanish on `{ρ > R}` is not treated here. The statements for a
+compact set and for a strip with boundary lines in `{ρ ≤ R}`, for curves in an almost complex
+manifold, are in `TauCeti/Geometry/Symplectic/Manifold/MaximumPrinciple.lean`.
 
 The results live in the organisational namespace `TauCeti.JHolomorphic`: their names describe
 conclusions about `ρ ∘ u`, which only hold for curves solving the Cauchy--Riemann equation.
@@ -98,21 +104,22 @@ namespace TauCeti.JHolomorphic
 open InnerProductSpace Laplacian Filter Topology Complex Set
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {u : ℂ → V} {J : V → V →L[ℝ] V} {α : V → V →L[ℝ] ℝ} {ρ : V → ℝ} {z : ℂ}
+  {u : ℂ → V} {J : ℂ → V → V →L[ℝ] V} {α : V → V →L[ℝ] ℝ} {ρ : V → ℝ} {z : ℂ}
 
 /-- **The Laplacian of the radial coordinate along a `J`-holomorphic curve.** Let `u : ℂ → V` be
-`C²` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` near `z`. Suppose that near
-`u z` the maps `J` square to `-1` and `dρ ∘ J = -α`, where `ρ` is `C²` and `α` is differentiable
-at `u z`. Then
+`C²` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J_y(u) ∂ₛu` near `z`, for a family of
+almost complex structures `J_y` depending on the point `y` of the domain. Suppose that near `z`
+the maps `J_y (u y)` square to `-1` and `dρ ∘ J_y = -α` at `u y`, where `ρ` is `C²` and `α` is
+differentiable at `u z`. Then
 
 `Δ(ρ ∘ u)(z) = Dα(∂ₛu)(∂ₜu) - Dα(∂ₜu)(∂ₛu)`,
 
-the exterior derivative `dα` evaluated on `(∂ₛu, ∂ₜu)`. -/
+the exterior derivative `dα` evaluated on `(∂ₛu, ∂ₜu)`. No regularity of `J` in `y` is needed. -/
 theorem laplacian_comp_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
-    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
+    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J y (u y) (fderiv ℝ u y 1))
     (hρ : ContDiffAt ℝ 2 ρ (u z)) (hα : DifferentiableAt ℝ α (u z))
-    (hJsq : ∀ᶠ x in 𝓝 (u z), ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ᶠ x in 𝓝 (u z), (fderiv ℝ ρ x).comp (J x) = -α x) :
+    (hJsq : ∀ᶠ y in 𝓝 z, ∀ v, J y (u y) (J y (u y) v) = -v)
+    (hρJ : ∀ᶠ y in 𝓝 z, (fderiv ℝ ρ (u y)).comp (J y (u y)) = -α (u y)) :
     Δ (ρ ∘ u) z = fderiv ℝ α (u z) (fderiv ℝ u z 1) (fderiv ℝ u z I) -
       fderiv ℝ α (u z) (fderiv ℝ u z I) (fderiv ℝ u z 1) := by
   have hcont : ContinuousAt u z := hu.continuousAt
@@ -123,16 +130,16 @@ theorem laplacian_comp_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
     (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   -- Near `z`, the first derivatives of `ρ ∘ u` are `α(∂ₜu)` and `-α(∂ₛu)`.
   have hnear : ∀ᶠ y in 𝓝 z, DifferentiableAt ℝ u y ∧ DifferentiableAt ℝ ρ (u y) ∧
-      fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1) ∧ (∀ v, J (u y) (J (u y) v) = -v) ∧
-      (fderiv ℝ ρ (u y)).comp (J (u y)) = -α (u y) := by
+      fderiv ℝ u y I = J y (u y) (fderiv ℝ u y 1) ∧ (∀ v, J y (u y) (J y (u y) v) = -v) ∧
+      (fderiv ℝ ρ (u y)).comp (J y (u y)) = -α (u y) := by
     filter_upwards [(hu.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by norm_num),
       hcont.eventually ((hρ.eventually (by simp)).mono fun x hx ↦ hx.differentiableAt
-        (by norm_num)), hCR, hcont.eventually hJsq, hcont.eventually hρJ] with y h₁ h₂ h₃ h₄ h₅
+        (by norm_num)), hCR, hJsq, hρJ] with y h₁ h₂ h₃ h₄ h₅
     exact ⟨h₁, h₂, h₃, h₄, h₅⟩
   have hs : (fun y ↦ fderiv ℝ (ρ ∘ u) y 1) =ᶠ[𝓝 z] fun y ↦ α (u y) (fderiv ℝ u y I) := by
     filter_upwards [hnear] with y h
     obtain ⟨hu', hρ', hCR', hJsq', hρJ'⟩ := h
-    have hs' : fderiv ℝ u y 1 = -J (u y) (fderiv ℝ u y I) := by rw [hCR', hJsq', neg_neg]
+    have hs' : fderiv ℝ u y 1 = -J y (u y) (fderiv ℝ u y I) := by rw [hCR', hJsq', neg_neg]
     have := congr($hρJ' (fderiv ℝ u y I))
     simp only [ContinuousLinearMap.comp_apply, neg_apply] at this
     rw [fderiv_comp y hρ' hu', ContinuousLinearMap.comp_apply, hs', map_neg, this, neg_neg]
@@ -163,108 +170,123 @@ theorem laplacian_comp_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
 
 /-- **The radial coordinate is subharmonic along a `J`-holomorphic curve.** Under the hypotheses
 of `TauCeti.JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg`, if the exterior derivative
-`dα` tames `J` at `u z`, that is `dα(v, J v) ≥ 0` for every `v`, then `Δ(ρ ∘ u)(z) ≥ 0`. -/
+`dα` tames `J_z` at `u z`, that is `dα(v, J_z v) ≥ 0` for every `v`, then `Δ(ρ ∘ u)(z) ≥ 0`. -/
 theorem laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
-    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
+    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J y (u y) (fderiv ℝ u y 1))
     (hρ : ContDiffAt ℝ 2 ρ (u z)) (hα : DifferentiableAt ℝ α (u z))
-    (hJsq : ∀ᶠ x in 𝓝 (u z), ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ᶠ x in 𝓝 (u z), (fderiv ℝ ρ x).comp (J x) = -α x)
-    (htame : ∀ v, 0 ≤ fderiv ℝ α (u z) v (J (u z) v) - fderiv ℝ α (u z) (J (u z) v) v) :
+    (hJsq : ∀ᶠ y in 𝓝 z, ∀ v, J y (u y) (J y (u y) v) = -v)
+    (hρJ : ∀ᶠ y in 𝓝 z, (fderiv ℝ ρ (u y)).comp (J y (u y)) = -α (u y))
+    (htame : ∀ v, 0 ≤ fderiv ℝ α (u z) v (J z (u z) v) - fderiv ℝ α (u z) (J z (u z) v) v) :
     0 ≤ Δ (ρ ∘ u) z := by
   rw [laplacian_comp_eq_of_fderiv_comp_eq_neg hu hCR hρ hα hJsq hρJ, hCR.self_of_nhds]
   exact htame _
 
-/-- The radial coordinate is subharmonic along a `J`-holomorphic curve at a point mapped into
-the region `{ρ > R}` on which the contact-type hypotheses hold. -/
-private theorem laplacian_comp_nonneg_of_lt {R : ℝ} (hu : ContDiffAt ℝ 2 u z)
-    (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
+/-- `ρ ∘ u` is `C²` and subharmonic at a point of an open set `U` at which it exceeds `R`, provided
+`u` is `C²` and `J`-holomorphic at the points of `U` which it maps into `{ρ > R}`, and the
+contact-type hypotheses of the maximum principle hold on `{ρ > R}` for every `J_w`. -/
+private theorem contDiffAt_and_laplacian_nonneg {R : ℝ} {U : Set ℂ} (hU : IsOpen U) (hz : z ∈ U)
+    (hu : ∀ z ∈ U, R < ρ (u z) → ContDiffAt ℝ 2 u z)
+    (hCR : ∀ z ∈ U, R < ρ (u z) → fderiv ℝ u z I = J z (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
     (hα : ∀ x, R < ρ x → DifferentiableAt ℝ α x)
-    (hJsq : ∀ x, R < ρ x → ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ x, R < ρ x → (fderiv ℝ ρ x).comp (J x) = -α x)
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J x v) - fderiv ℝ α x (J x v) v)
-    (hRz : R < ρ (u z)) : 0 ≤ Δ (ρ ∘ u) z := by
-  have hnhds : ∀ᶠ x in 𝓝 (u z), R < ρ x := (hρ _ hRz).continuousAt.eventually (lt_mem_nhds hRz)
-  exact laplacian_comp_nonneg_of_fderiv_comp_eq_neg hu hCR (hρ _ hRz) (hα _ hRz)
-    (hnhds.mono hJsq) (hnhds.mono hρJ) (htame _ hRz)
+    (hJsq : ∀ w x, R < ρ x → ∀ v, J w x (J w x v) = -v)
+    (hρJ : ∀ w x, R < ρ x → (fderiv ℝ ρ x).comp (J w x) = -α x)
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J w x v) - fderiv ℝ α x (J w x v) v)
+    (hRz : R < ρ (u z)) : ContDiffAt ℝ 2 (ρ ∘ u) z ∧ 0 ≤ Δ (ρ ∘ u) z := by
+  have hf : ContDiffAt ℝ 2 (ρ ∘ u) z := (hρ _ hRz).comp z (hu z hz hRz)
+  -- Near `z` the curve stays in `U` and in `{ρ > R}`, where it solves the equation.
+  have hnear : ∀ᶠ y in 𝓝 z, y ∈ U ∧ R < ρ (u y) :=
+    Filter.Eventually.and (hU.mem_nhds hz) (hf.continuousAt.eventually (lt_mem_nhds hRz))
+  exact ⟨hf, laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu z hz hRz)
+    (hnear.mono fun y hy ↦ hCR y hy.1 hy.2) (hρ _ hRz) (hα _ hRz)
+    (hnear.mono fun y hy ↦ hJsq y (u y) hy.2) (hnear.mono fun y hy ↦ hρJ y (u y) hy.2)
+    (htame z (u z) hRz)⟩
 
-/-- **The maximum principle for `J`-holomorphic curves in a cylindrical end.** Suppose that on
-the region `{ρ > R}` the function `ρ` is `C²`, the one-form `α` is differentiable, the maps `J`
-square to `-1`, `dρ ∘ J = -α`, and `dα` tames `J`. Let `K ⊆ ℂ` be compact and `u` be `C²` and
-`J`-holomorphic on the interior of `K`, with `ρ ∘ u` continuous on `K`. If `u` maps the frontier
-of `K` into `{ρ ≤ R}`, then it maps all of `K` into `{ρ ≤ R}`. -/
+/-- **The maximum principle for `J`-holomorphic curves in a cylindrical end.** Let `J_w` be a
+family of almost complex structures depending on the point `w` of the domain. Suppose that on the
+region `{ρ > R}` the function `ρ` is `C²`, the one-form `α` is differentiable, and for every `w`
+the maps `J_w` square to `-1`, `dρ ∘ J_w = -α`, and `dα` tames `J_w`. Let `K ⊆ ℂ` be compact,
+with `ρ ∘ u` continuous on `K`, and let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w`
+of the interior of `K` which it maps into `{ρ > R}`. If `u` maps the frontier of `K` into
+`{ρ ≤ R}`, then it maps all of `K` into `{ρ ≤ R}`. -/
 theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
-    (hf : ContinuousOn (ρ ∘ u) K) (hu : ∀ z ∈ interior K, ContDiffAt ℝ 2 u z)
-    (hCR : ∀ z ∈ interior K, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hf : ContinuousOn (ρ ∘ u) K) (hu : ∀ z ∈ interior K, R < ρ (u z) → ContDiffAt ℝ 2 u z)
+    (hCR : ∀ z ∈ interior K, R < ρ (u z) → fderiv ℝ u z I = J z (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
     (hα : ∀ x, R < ρ x → DifferentiableAt ℝ α x)
-    (hJsq : ∀ x, R < ρ x → ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ x, R < ρ x → (fderiv ℝ ρ x).comp (J x) = -α x)
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J x v) - fderiv ℝ α x (J x v) v)
-    (hbdry : ∀ z ∈ frontier K, ρ (u z) ≤ R) (hz : z ∈ K) : ρ (u z) ≤ R := by
+    (hJsq : ∀ w x, R < ρ x → ∀ v, J w x (J w x v) = -v)
+    (hρJ : ∀ w x, R < ρ x → (fderiv ℝ ρ x).comp (J w x) = -α x)
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J w x v) - fderiv ℝ α x (J w x v) v)
+    (hbdry : ∀ z ∈ frontier K, ρ (u z) ≤ R) (hz : z ∈ K) : ρ (u z) ≤ R :=
   -- `ρ ∘ u` is subharmonic wherever it exceeds `R`, so the weak maximum principle above the level
   -- `R` applies.
-  refine le_of_laplacian_nonneg_of_lt_le_frontier hK hf (fun w hw hRw ↦ ?_) (fun w hw hRw ↦ ?_)
+  le_of_laplacian_nonneg_of_lt_le_frontier hK hf
+    (fun _ hw hRw ↦ (contDiffAt_and_laplacian_nonneg isOpen_interior hw hu hCR hρ hα hJsq hρJ
+      htame hRw).1)
+    (fun _ hw hRw ↦ (contDiffAt_and_laplacian_nonneg isOpen_interior hw hu hCR hρ hα hJsq hρJ
+      htame hRw).2)
     (fun w hw ↦ hbdry w hw) hz
-  · exact (hρ _ hRw).comp w (hu w hw)
-  · exact laplacian_comp_nonneg_of_lt (hu w hw)
-      (eventually_of_mem (isOpen_interior.mem_nhds hw) hCR) hρ hα hJsq hρJ htame hRw
 
-/-- **No escape for strips with Neumann boundary conditions.** Suppose that on the region
-`{ρ > R}` the function `ρ` is `C²`, the one-form `α` is differentiable, the maps `J` square to
-`-1`, `dρ ∘ J = -α`, and `dα` tames `J`. Let `u` be `C²` and `J`-holomorphic on the open strip
-`ℝ × (0, 1)`, with `ρ ∘ u` continuous on the closed strip `ℝ × [0, 1]`, and suppose that `u` maps
-the two ends `|ℜ z| ≥ T` of the strip into `{ρ ≤ R}`. Suppose that at every point `z` of a
-boundary line `ℑ z = 0` or `ℑ z = 1` which `u` maps into `{ρ > R}`, the map `u` has a derivative
-`Du z` within the closed strip satisfying the Cauchy--Riemann equation
-`Du z I = J (u z) (Du z 1)`, and `α` vanishes on its boundary direction `Du z 1`. Then `u` maps
-the whole strip into `{ρ ≤ R}`. -/
+/-- **No escape for strips with Neumann boundary conditions.** Let `J_w` be a family of almost
+complex structures depending on the point `w` of the strip. Suppose that on the region `{ρ > R}`
+the function `ρ` is `C²`, the one-form `α` is differentiable, and for every `w` the maps `J_w`
+square to `-1`, `dρ ∘ J_w = -α`, and `dα` tames `J_w`. Let `ρ ∘ u` be continuous on the closed
+strip `ℝ × [0, 1]`, let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open
+strip `ℝ × (0, 1)` which it maps into `{ρ > R}`, and suppose that `u` maps the two ends
+`|ℜ z| ≥ T` of the strip into `{ρ ≤ R}`. Suppose that at every point `z` of a boundary line
+`ℑ z = 0` or `ℑ z = 1` which `u` maps into `{ρ > R}`, the map `u` has a derivative `Du z` within
+the closed strip satisfying the Cauchy--Riemann equation `Du z I = J z (u z) (Du z 1)`, and `α`
+vanishes on its boundary direction `Du z 1`. Then `u` maps the whole strip into `{ρ ≤ R}`. -/
 theorem comp_le_of_neumann_of_comp_le_strip_ends {R T : ℝ} {Du : ℂ → ℂ →L[ℝ] V}
     (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
-    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContDiffAt ℝ 2 u z)
-    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContDiffAt ℝ 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      fderiv ℝ u z I = J z (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
     (hα : ∀ x, R < ρ x → DifferentiableAt ℝ α x)
-    (hJsq : ∀ x, R < ρ x → ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ x, R < ρ x → (fderiv ℝ ρ x).comp (J x) = -α x)
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J x v) - fderiv ℝ α x (J x v) v)
+    (hJsq : ∀ w x, R < ρ x → ∀ v, J w x (J w x v) = -v)
+    (hρJ : ∀ w x, R < ρ x → (fderiv ℝ ρ x).comp (J w x) = -α x)
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J w x v) - fderiv ℝ α x (J w x v) v)
     (hDu : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) →
       HasFDerivWithinAt u (Du z) (univ ×ℂ Icc 0 1) z)
-    (hCRbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) → Du z I = J (u z) (Du z 1))
+    (hCRbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) → Du z I = J z (u z) (Du z 1))
     (hαbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) → α (u z) (Du z 1) = 0)
     (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
     (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
+  have hU : IsOpen {w : ℂ | 0 < w.im ∧ w.im < 1} :=
+    (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
+  have hint (w : ℂ) (h₀ : 0 < w.im) (h₁ : w.im < 1) (hRw : R < ρ (u w)) :=
+    contDiffAt_and_laplacian_nonneg hU (z := w) ⟨h₀, h₁⟩ (fun y hy ↦ hu y hy.1 hy.2)
+      (fun y hy ↦ hCR y hy.1 hy.2) hρ hα hJsq hρJ htame hRw
   -- Along a boundary line outside `{ρ ≤ R}`, `∂ₜ(ρ ∘ u) = dρ(J ∂ₛu) = -α(∂ₛu) = 0`.
   refine le_of_laplacian_nonneg_of_neumann_of_le_ends
     (f' := fun w ↦ (fderiv ℝ ρ (u w)).comp (Du w)) hf
-    (fun w h₀ h₁ hRw ↦ (hρ _ hRw).comp w (hu w h₀ h₁)) (fun w h₀ h₁ hRw ↦ ?_)
+    (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).1) (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).2)
     (fun w hw hRw ↦ ?_) (fun w hw hRw ↦ ?_) hends hz₀ hz₁
-  · have hopen : IsOpen {y : ℂ | 0 < y.im ∧ y.im < 1} :=
-      (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
-    exact laplacian_comp_nonneg_of_lt (hu w h₀ h₁)
-      (eventually_of_mem (hopen.mem_nhds ⟨h₀, h₁⟩) fun y hy ↦ hCR y hy.1 hy.2) hρ hα hJsq hρJ
-      htame hRw
   · exact ((hρ _ hRw).differentiableAt (by norm_num)).hasFDerivAt.comp_hasFDerivWithinAt w
       (hDu w hw hRw)
-  · have := congr($(hρJ _ hRw) (Du w 1))
+  · have := congr($(hρJ w _ hRw) (Du w 1))
     simp only [ContinuousLinearMap.comp_apply, neg_apply] at this
     simp only [ContinuousLinearMap.comp_apply, hCRbdry w hw hRw, this, hαbdry w hw hRw, neg_zero]
 
-/-- **No escape for strips.** Suppose that on the region `{ρ > R}` the function `ρ` is `C²`, the
-one-form `α` is differentiable, the maps `J` square to `-1`, `dρ ∘ J = -α`, and `dα` tames `J`.
-Let `u` be `C²` and `J`-holomorphic on the open strip `ℝ × (0, 1)`, with `ρ ∘ u` continuous on
-the closed strip `ℝ × [0, 1]`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into
-`{ρ ≤ R}`, and also the two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole
-strip into `{ρ ≤ R}`. -/
+/-- **No escape for strips.** Let `J_w` be a family of almost complex structures depending on the
+point `w` of the strip. Suppose that on the region `{ρ > R}` the function `ρ` is `C²`, the
+one-form `α` is differentiable, and for every `w` the maps `J_w` square to `-1`,
+`dρ ∘ J_w = -α`, and `dα` tames `J_w`. Let `ρ ∘ u` be continuous on the closed strip
+`ℝ × [0, 1]`, and let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open strip
+`ℝ × (0, 1)` which it maps into `{ρ > R}`. If `u` maps both boundary lines `ℑ z = 0` and
+`ℑ z = 1` into `{ρ ≤ R}`, and also the two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u`
+maps the whole strip into `{ρ ≤ R}`. -/
 theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
-    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContDiffAt ℝ 2 u z)
-    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContDiffAt ℝ 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      fderiv ℝ u z I = J z (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
     (hα : ∀ x, R < ρ x → DifferentiableAt ℝ α x)
-    (hJsq : ∀ x, R < ρ x → ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ x, R < ρ x → (fderiv ℝ ρ x).comp (J x) = -α x)
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J x v) - fderiv ℝ α x (J x v) v)
+    (hJsq : ∀ w x, R < ρ x → ∀ v, J w x (J w x v) = -v)
+    (hρJ : ∀ w x, R < ρ x → (fderiv ℝ ρ x).comp (J w x) = -α x)
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J w x v) - fderiv ℝ α x (J w x v) v)
     (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)
     (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
     (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
@@ -275,29 +297,32 @@ theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (fun w hw hRw ↦ (hbdry w hw hRw).elim) (fun w hw hRw ↦ (hbdry w hw hRw).elim)
     (fun w hw hRw ↦ (hbdry w hw hRw).elim) hends hz₀ hz₁
 
-/-- **No escape for strips with boundary on exact cylindrical Lagrangians.** Suppose that on the
-region `{ρ > R}` the function `ρ` is `C²`, the one-form `α` is differentiable, the maps `J`
-square to `-1`, `dρ ∘ J = -α`, and `dα` tames `J`. Let `u` be `C²` and `J`-holomorphic on the
-open strip `ℝ × (0, 1)`, with `ρ ∘ u` continuous on the closed strip `ℝ × [0, 1]`, and suppose
-that `u` maps the two ends `|ℜ z| ≥ T` of the strip into `{ρ ≤ R}`. Let `u` map the boundary line
-`ℑ z = 0` into `L₀` and the line `ℑ z = 1` into `L₁`, where at every point `x` of `Lᵢ` with
-`R < ρ x` the form `α x` vanishes on the tangent cone of `Lᵢ` at `x`, as the Liouville primitive
-does on an exact Lagrangian which is cylindrical at infinity. Suppose that at every point `z` of
-a boundary line which `u` maps into `{ρ > R}`, the map `u` has a derivative `Du z` within the
-closed strip satisfying the Cauchy--Riemann equation `Du z I = J (u z) (Du z 1)`. Then `u` maps
-the whole strip into `{ρ ≤ R}`. -/
+/-- **No escape for strips with boundary on exact cylindrical Lagrangians.** Let `J_w` be a family
+of almost complex structures depending on the point `w` of the strip. Suppose that on the region
+`{ρ > R}` the function `ρ` is `C²`, the one-form `α` is differentiable, and for every `w` the maps
+`J_w` square to `-1`, `dρ ∘ J_w = -α`, and `dα` tames `J_w`. Let `ρ ∘ u` be continuous on the
+closed strip `ℝ × [0, 1]`, let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w` of the
+open strip `ℝ × (0, 1)` which it maps into `{ρ > R}`, and suppose that `u` maps the two ends
+`|ℜ z| ≥ T` of the strip into `{ρ ≤ R}`. Let `u` map the boundary line `ℑ z = 0` into `L₀` and the
+line `ℑ z = 1` into `L₁`, where at every point `x` of `Lᵢ` with `R < ρ x` the form `α x` vanishes
+on the tangent cone of `Lᵢ` at `x`, as the Liouville primitive does on an exact Lagrangian which
+is cylindrical at infinity. Suppose that at every point `z` of a boundary line which `u` maps into
+`{ρ > R}`, the map `u` has a derivative `Du z` within the closed strip satisfying the
+Cauchy--Riemann equation `Du z I = J z (u z) (Du z 1)`. Then `u` maps the whole strip into
+`{ρ ≤ R}`. -/
 theorem comp_le_of_mapsTo_of_comp_le_strip_ends {R T : ℝ} {L₀ L₁ : Set V}
     {Du : ℂ → ℂ →L[ℝ] V} (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
-    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContDiffAt ℝ 2 u z)
-    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContDiffAt ℝ 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      fderiv ℝ u z I = J z (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
     (hα : ∀ x, R < ρ x → DifferentiableAt ℝ α x)
-    (hJsq : ∀ x, R < ρ x → ∀ v, J x (J x v) = -v)
-    (hρJ : ∀ x, R < ρ x → (fderiv ℝ ρ x).comp (J x) = -α x)
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J x v) - fderiv ℝ α x (J x v) v)
+    (hJsq : ∀ w x, R < ρ x → ∀ v, J w x (J w x v) = -v)
+    (hρJ : ∀ w x, R < ρ x → (fderiv ℝ ρ x).comp (J w x) = -α x)
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J w x v) - fderiv ℝ α x (J w x v) v)
     (hDu : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) →
       HasFDerivWithinAt u (Du z) (univ ×ℂ Icc 0 1) z)
-    (hCRbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) → Du z I = J (u z) (Du z 1))
+    (hCRbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) → Du z I = J z (u z) (Du z 1))
     (hL₀ : MapsTo u {z : ℂ | z.im = 0} L₀) (hL₁ : MapsTo u {z : ℂ | z.im = 1} L₁)
     (hαL₀ : ∀ x ∈ L₀, R < ρ x → ∀ v ∈ tangentConeAt ℝ L₀ x, α x v = 0)
     (hαL₁ : ∀ x ∈ L₁, R < ρ x → ∀ v ∈ tangentConeAt ℝ L₁ x, α x v = 0)

@@ -208,10 +208,7 @@ theorem max_abs_le_of_eval_homogenize_eq_mul
   have hμA (i : Fin 3) : logHeight₁ (μ i : K) ≤ A := hA _ (hμ i).1
   have hA0 : 0 ≤ A := (zero_le_logHeight₁ _).trans (hμA 0)
   have hB0 : 0 ≤ B := (zero_le_logHeight₁ _).trans hX
-  have hθ0 := zero_le_logHeight₁ (θ 0 : K)
-  have hθ2 := zero_le_logHeight₁ (θ 2 : K)
-  have hlog2 := Real.log_pos one_lt_two
-  rcases eq_or_ne y 0 with rfl | hy
+  rcases eq_or_ne y 0 with rfl | _
   · -- Coprimality forces `x = ±1`.
     obtain hx | hx := Int.isUnit_iff.mp (isCoprime_zero_right.mp hcop) <;>
     · subst hx
@@ -225,7 +222,7 @@ theorem max_abs_le_of_eval_homogenize_eq_mul
     simp only [t, Units.val_div_eq_div_val]
     field_simp [Units.ne_zero (γ 2)]
   have hK := logHeight₁_div_le_of_mul_sub_mul_eq
-    (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) (Int.cast_ne_zero.mpr hy) ht
+    (fun h ↦ hθ₀₂ (RingOfIntegers.coe_injective h)) ht
   rw [totalWeight_eq_finrank] at hK
   have hth : logHeight₁ t ≤ 2 * A + B := by
     linarith [logHeight₁_mul_le ((μ 0 : K) / μ 2) ((γ 0 / γ 2 : Kˣ) : K),

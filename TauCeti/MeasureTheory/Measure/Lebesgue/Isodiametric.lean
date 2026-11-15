@@ -89,9 +89,8 @@ theorem addHaar_le_addHaar_closedBall_diam_div_two {s : Set E} (hs : Bornology.I
   have hK : NullMeasurableSet (closure s) volume :=
     isClosed_closure.measurableSet.nullMeasurableSet
   have hp : 0 < (Module.finrank ℝ E : ℝ)⁻¹ := by positivity
-  have hBM := volume_rpow_add_volume_rpow_le hn hne.closure.smul_set
-    (Measure.NullMeasurableSet.const_smul hK (1 / 2 : ℝ)) hne.closure.smul_set
-    (Measure.NullMeasurableSet.const_smul hK (-(1 / 2) : ℝ))
+  have hBM := volume_rpow_add_volume_rpow_le hn (hne.closure.smul_set (a := (1 / 2 : ℝ)))
+    hne.closure.smul_set (Measure.NullMeasurableSet.const_smul hK (-(1 / 2) : ℝ))
   have hhalf : |(1 / 2 : ℝ)| + |-(1 / 2 : ℝ)| = 1 := by norm_num
   rw [volume_smul_rpow hn, volume_smul_rpow hn, ← add_mul,
     ← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _), hhalf, ENNReal.ofReal_one,

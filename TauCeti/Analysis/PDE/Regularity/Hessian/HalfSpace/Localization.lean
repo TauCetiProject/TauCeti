@@ -119,7 +119,7 @@ private theorem exists_norm_iteratedGradient_le_of_inter_eq_normalHalfSpace_inte
     hK.isClosed hHK 2 w hwK
   have hWD := Wkp.iteratedGradient_ae_eq_indicator_of_isClosed hK.isClosed hHK 1 hwK hW
   have hW0 : Wkp.firstOrder 1 W ∈ w1p0Submodule volume (normalHalfSpace a) p := by
-    refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hp_top hΩU hK hKU hw0 ?_ ?_
+    refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hΩU hK hKU hw0 ?_ ?_
     · simpa only [Wkp.value_firstOrder] using hwK
     · simpa only [Wkp.value_firstOrder] using hW
   have hWK := Wkp.value_ae_eq_zero_of_value_ae_eq_indicator hwK hW
@@ -218,7 +218,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
   -- The product `w = ζ u ∈ W^{2,p}(Ω)`, with weak Hessian `ζ D²u + T`.
   obtain ⟨w, hwv⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport 2 hζ hcpt u
   obtain ⟨T, hD, hTK, hTnorm, hζD⟩ :=
-    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hcpt hM₁ hM₂ hwv
+    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hM₁ hM₂ hwv
   -- The equation `tr (A ∘ D²(ζ u)) = ζ f + tr (A ∘ T)` on `Ω`.
   obtain ⟨g, hg, hgnorm⟩ := exists_lp_traceCLM_comp_le hA_meas hAΛ T hTK
   have hζf : MemLp (fun x => zeta x * f x) p (volume.restrict Omega) :=
@@ -249,7 +249,6 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
     exact hfo ▸ v.2
   -- The half-space estimate for `ζ u`, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ a hlam hA₀ hΩU hcpt.isCompact hζU hε hA w FL hw0 hwK hweq
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   rw [hζD]
   calc ‖Wkp.iteratedGradient 1 w - T‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖T‖ := norm_sub_le _ _

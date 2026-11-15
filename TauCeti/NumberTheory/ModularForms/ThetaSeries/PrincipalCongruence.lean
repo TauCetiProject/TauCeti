@@ -33,6 +33,8 @@ Holomorphy and boundedness at every rational cusp then supply the analytic condi
 * `ZLattice.IsEven.thetaCoset_slash_of_mem_Gamma`: invariance for every matrix of `Γ(N)`.
 * `ZLattice.thetaCosetForm`: the modular form associated to a discriminant class.
 * `ZLattice.qExpansion_thetaCosetForm_coeff`: its coefficients count vectors in the coset.
+* `ZLattice.not_isCuspForm_thetaCosetForm_zero`: the form of the zero class, `Θ_L` itself, is
+  not a cusp form.
 
 ## References
 
@@ -115,6 +117,15 @@ noncomputable def thetaCosetForm (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
 theorem coe_thetaCosetForm (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (δ : DiscriminantGroup L) : ⇑(thetaCosetForm hL hk δ) = thetaCosetClass L δ :=
   (rfl)
+
+/-- The coset theta form of the zero class, the theta series `Θ_L` as a modular form on `Γ(N)`,
+is not a cusp form: its value at `∞` is `1`. -/
+@[simp]
+theorem not_isCuspForm_thetaCosetForm_zero (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
+    ¬ ModularForm.IsCuspForm (thetaCosetForm hL hk 0) := by
+  -- a positive level makes `Γ(N)` of finite index, so that `∞` is one of its cusps
+  have : NeZero (level L) := ⟨hL.isIntegral.level_pos.ne'⟩
+  exact not_isCuspForm_of_coe_eq_thetaSeries L (by rw [coe_thetaCosetForm, thetaCosetClass_zero])
 
 /-- The coefficients of a coset theta form in `q_N = exp (2 π i τ / N)` count the vectors in
 that coset of squared norm `2m / N`, where `N` is the lattice's level. -/

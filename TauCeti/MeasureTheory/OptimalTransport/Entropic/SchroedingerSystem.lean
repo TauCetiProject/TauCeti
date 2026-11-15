@@ -167,9 +167,6 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
   set A₂ := ∫ b, Real.exp (h (a, b) + ψ₂ b) ∂ν
   set B₁ := ∫ b, Real.exp (h (a', b) + ψ₁ b) ∂ν
   set B₂ := ∫ b, Real.exp (h (a', b) + ψ₂ b) ∂ν
-  have hA₁ : 0 < A₁ := integral_exp_pos (hi a hψ₁ hC₁)
-  have hA₂ : 0 < A₂ := integral_exp_pos (hi a hψ₂ hC₂)
-  have hB₁ : 0 < B₁ := integral_exp_pos (hi a' hψ₁ hC₁)
   have hB₂ : 0 < B₂ := integral_exp_pos (hi a' hψ₂ hC₂)
   -- `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`.
   have hA₁lo : Real.exp m * A₂ ≤ A₁ := by
@@ -206,7 +203,7 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
       (sub_nonneg.2 (Real.exp_le_exp.2 (hm b)))
     linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hM (a', b))).1]
   unfold logIntegralExp
-  exact log_sub_sub_le_of_bounds hM0 hA₁ hA₂ hB₁ hB₂ hA₁lo hA₁hi hB₂A₂ hBA
+  exact log_sub_sub_le_of_bounds hM0 hB₂ hA₁lo hA₁hi hB₂A₂ hBA
 
 /-- **The half-step contracts oscillations.** If the difference of two potentials on `B` has
 oscillation at most `ω`, then the difference of their log-partition functions on `A` has
@@ -436,15 +433,16 @@ section Existence
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
   {g : X × Y → ℝ} {M : ℝ}
 
-/-- **The Schrödinger system for a bounded kernel.** Let `μ` and `ν` be finite measures of equal
-mass and `g` a bounded measurable function on `X × Y`. Then there are bounded measurable
+/-- **The Schrödinger system for a bounded kernel.** Let `μ` be a finite measure, `ν` a measure of
+the same mass, and `g` a bounded measurable function on `X × Y`. Then there are bounded measurable
 potentials `φ` and `ψ` such that `exp (φ(x) + ψ(y) + g(x, y))` is the density, against
 `μ.prod ν`, of a coupling of `μ` and `ν`. -/
-theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ]
     (hμν : μ univ = ν univ) (hg : Measurable g) (hgM : ∀ z, |g z| ≤ M) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧
       (∀ y, |ψ y| ≤ C) ∧ IsCoupling ((μ.prod ν).withDensity fun z ↦
         ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z))) μ ν := by
+  have : IsFiniteMeasure ν := ⟨hμν ▸ measure_lt_top μ univ⟩
   by_cases hμ : μ = 0
   · have hν : ν = 0 := by rw [← Measure.measure_univ_eq_zero, ← hμν, hμ, FunLike.coe_zero,
       Pi.zero_apply]
@@ -487,13 +485,13 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
     fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _), ?_⟩
   exact hcoupling
 
-/-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` and
-`ν` be finite measures of equal mass, and let the reference measure `R` have density `exp g`
-against `μ.prod ν`, for a bounded measurable `g`. Then there are bounded measurable potentials `φ`
-and `ψ` such that `exp (φ(x) + ψ(y))` is the density, against `R`, of a coupling of `μ` and
-`ν`. -/
+/-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` be a
+finite measure, `ν` a measure of the same mass, and let the reference measure `R` have density
+`exp g` against `μ.prod ν`, for a bounded measurable `g`. Then there are bounded measurable
+potentials `φ` and `ψ` such that `exp (φ(x) + ψ(y))` is the density, against `R`, of a coupling of
+`μ` and `ν`. -/
 theorem exists_isCoupling_withDensity_exp_add_of_eq_withDensity [IsFiniteMeasure μ]
-    [IsFiniteMeasure ν] {R : Measure (X × Y)} (hμν : μ univ = ν univ) (hg : Measurable g)
+    {R : Measure (X × Y)} (hμν : μ univ = ν univ) (hg : Measurable g)
     (hgM : ∀ z, |g z| ≤ M)
     (hR : R = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (Real.exp (g z))) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ) (C : ℝ), Measurable φ ∧ Measurable ψ ∧ (∀ x, |φ x| ≤ C) ∧

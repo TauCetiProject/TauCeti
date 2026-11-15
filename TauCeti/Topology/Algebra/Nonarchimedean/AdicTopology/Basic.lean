@@ -1,15 +1,19 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.RingTheory.Ideal.Maps
+
+import TauCeti.RingTheory.Ideal.Quotient.Defs
+import TauCeti.Topology.Discrete
 
 /-!
 # Powers of the ideal defining an adic topology
@@ -46,6 +50,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
 * `IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
   topology to the adic topology of the extended ideal, without finite generation or completeness.
+* `IsAdic.isOpenQuotientMap_of_surjective` : conversely, a surjection onto a ring with the adic
+  topology of the extended ideal is an open quotient map.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
 * `IsAdic.continuous_iff_map_le_radical` and
@@ -62,6 +68,9 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   of an ideal of definition into any open ideal of its target.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
+* `Ideal.adicTopology_eq_iInf_induced`, `Ideal.adicTopology_eq_iInf_induced_pow`, and
+  `IsAdic.eq_iInf_induced` : `I.adicTopology` (and any `I`-adic topology) is the initial topology
+  induced by the quotient maps `R → R ⧸ I ^ (n + 1)` (or `R → R ⧸ I ^ n`) into discrete rings.
 
 ## Provenance
 
@@ -74,7 +83,9 @@ which is the reading taken here.
 
 The ideal-of-definition criterion and the results about radicals additionally follow
 A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.1.4–7.1.7.
-The open-quotient transport theorem follows Ch. 0, (7.3.5).
+The open-quotient transport theorem follows Ch. 0, (7.3.5), and the initial-topology
+characterization via discrete quotients follows N. Bourbaki, *Commutative Algebra*, Ch. III, §2,
+no. 6.
 -/
 
 public section
@@ -327,6 +338,25 @@ theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
     rw [hmap]
     exact Set.image_subset_iff.mpr hn
 
+/-- Conversely, a surjective ring homomorphism out of an `I`-adic ring is an open quotient map
+when its target carries the adic topology of the extended ideal. Neither finite generation nor
+completeness of the defining ideal is required. -/
+theorem isOpenQuotientMap_of_surjective {R S : Type*} [CommRing R] [CommRing S]
+    [TopologicalSpace R] [TopologicalSpace S] {I : Ideal R} (hI : IsAdic I) {f : R →+* S}
+    (hf : Function.Surjective f) (hS : IsAdic (I.map f)) : IsOpenQuotientMap f := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := hS ▸ (I.map f).nonarchimedean.toIsTopologicalRing
+  -- `f` carries each power of `I` onto the corresponding power of `I.map f`
+  have hmap (n : ℕ) : f '' ((I ^ n : Ideal R) : Set R) = (((I.map f) ^ n : Ideal S) : Set S) := by
+    rw [← Ideal.map_pow, Ideal.map_eq_image_of_surjective f hf]
+  refine ⟨hf, continuous_of_continuousAt_zero f ?_, ?_⟩
+  · rw [ContinuousAt, map_zero]
+    exact (hI.hasBasis_nhds_zero.tendsto_iff hS.hasBasis_nhds_zero).mpr fun n _ ↦
+      ⟨n, trivial, fun x hx ↦ hmap n ▸ Set.mem_image_of_mem f hx⟩
+  · refine (IsTopologicalAddGroup.isOpenMap_iff_nhds_zero (f := f)).mpr ?_
+    exact (hS.hasBasis_nhds_zero.le_basis_iff (hI.hasBasis_nhds_zero.map f)).mpr fun n _ ↦
+      ⟨n, trivial, (hmap n).ge⟩
+
 end IsAdic
 
 /-- Finitely generated ideals with the same radical define the same adic topology. -/
@@ -336,3 +366,57 @@ theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Idea
   letI := I.adicTopology
   -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
   IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h
+
+section InitialTopology
+
+open Filter Topology
+
+namespace Ideal
+
+variable {R : Type*} [CommRing R]
+
+/-- The `I`-adic topology on a commutative ring `R` is the initial topology induced by the quotient
+maps `R → R ⧸ I ^ (n + 1)` into the discrete rings `R ⧸ I ^ (n + 1)`. -/
+theorem adicTopology_eq_iInf_induced (I : Ideal R) :
+    I.adicTopology =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ (n + 1))) ⊥ := by
+  refine TopologicalSpace.ext_nhds fun x ↦ ?_
+  rw [nhds_iInf]
+  simp only [TauCeti.nhds_induced_bot, Ideal.Quotient.preimage_mk_singleton]
+  refine le_antisymm ?_ ?_
+  · exact le_iInf fun n ↦ le_principal_iff.mpr
+      ((I.hasBasis_nhds_adic x).mem_of_mem (i := n + 1) trivial)
+  · exact (I.hasBasis_nhds_adic x).ge_iff.mpr fun n _ ↦
+      mem_iInf_of_mem n (mem_principal.mpr (Set.image_mono (Ideal.pow_le_pow_right n.le_succ)))
+
+/-- The `I`-adic topology on a commutative ring `R` is the initial topology induced by the quotient
+maps `R → R ⧸ I ^ n` into the discrete rings `R ⧸ I ^ n`. -/
+theorem adicTopology_eq_iInf_induced_pow (I : Ideal R) :
+    I.adicTopology =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ n)) ⊥ := by
+  rw [adicTopology_eq_iInf_induced]
+  refine le_antisymm (le_iInf fun n ↦ ?_) (le_iInf fun n ↦ iInf_le _ (n + 1))
+  cases n with
+  | zero =>
+    have : Subsingleton (R ⧸ I ^ 0) :=
+      ⟨fun a b ↦ Quotient.inductionOn₂' a b fun _ _ ↦ Ideal.Quotient.eq.mpr (by simp [pow_zero])⟩
+    rw [Subsingleton.elim (⊥ : TopologicalSpace (R ⧸ I ^ 0)) ⊤, induced_top]
+    exact le_top
+  | succ n => exact iInf_le _ n
+
+end Ideal
+
+namespace IsAdic
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
+
+/-- If an ideal `I` defines the topology of `R`, then the topology of `R` is the initial topology
+induced by the quotient maps `R → R ⧸ I ^ (n + 1)` into discrete rings. -/
+theorem eq_iInf_induced (hI : IsAdic I) :
+    ‹TopologicalSpace R› =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ (n + 1))) ⊥ :=
+  hI.trans (Ideal.adicTopology_eq_iInf_induced I)
+
+end IsAdic
+
+end InitialTopology

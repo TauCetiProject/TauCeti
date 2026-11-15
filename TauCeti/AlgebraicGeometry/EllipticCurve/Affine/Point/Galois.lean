@@ -34,6 +34,8 @@ used in the Hasse-bound argument.
 
 ## Main results
 
+* `WeierstrassCurve.exists_finset_pointGaloisAction_eq_self`: a point is fixed by every
+  automorphism fixing finitely many elements of `K`.
 * `WeierstrassCurve.Affine.Point.algEquiv_eq_one_of_adjoin_coords_eq_top`: an automorphism fixing
   every point of a set whose coordinates generate `K` over `F` is the identity.
 * `WeierstrassCurve.Affine.Point.map_map_val_eq_map_val_map_restrictNormal`: an automorphism acts
@@ -101,6 +103,18 @@ theorem torsionGaloisAction_apply_coe (N : ℤ) (e : K ≃ₐ[F] K)
       AddSubgroup.torsionBy (W⁄K).toAffine.Point N) : (W⁄K).toAffine.Point) =
       Multiplicative.toAdd (W.pointGaloisAction e) P := by
   simp [torsionGaloisAction]
+
+omit [W.IsElliptic] in
+/-- **A point is fixed by every automorphism fixing finitely many elements of `K`**, namely its
+coordinates. -/
+theorem exists_finset_pointGaloisAction_eq_self (P : (W⁄K).toAffine.Point) :
+    ∃ s : Finset K, ∀ e : K ≃ₐ[F] K, (∀ x ∈ s, e x = x) →
+      Multiplicative.toAdd (W.pointGaloisAction e) P = P := by
+  rcases P with _ | ⟨x, y, h⟩
+  · exact ⟨∅, fun e _ ↦ by rw [← Affine.Point.zero_def, map_zero]⟩
+  · refine ⟨{x, y}, fun e he ↦ ?_⟩
+    rw [pointGaloisAction_apply, Affine.Point.map_some, Affine.Point.some.injEq]
+    exact ⟨he x (by simp), he y (by simp)⟩
 
 omit [W.IsElliptic] in
 variable {W} in

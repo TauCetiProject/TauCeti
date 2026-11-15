@@ -223,11 +223,15 @@ theorem generalizedParetoMeasure_of_nonpos {s : ℝ} (hs : s ≤ 0) (ξ : ℝ) :
     generalizedParetoMeasure s ξ = 0 := by
   simp [generalizedParetoMeasure, not_lt.mpr hs]
 
-/-- The zero-shape generalized Pareto law with positive scale is the exponential law with rate
-`s⁻¹`. -/
+/-- The zero-shape generalized Pareto law is the exponential law with rate `s⁻¹`. At nonpositive
+scale both sides are the zero measure. -/
 @[simp]
-theorem generalizedParetoMeasure_zero {s : ℝ} (hs : 0 < s) :
+theorem generalizedParetoMeasure_zero {s : ℝ} :
     generalizedParetoMeasure s 0 = expMeasure s⁻¹ := by
+  by_cases hs : 0 < s
+  swap
+  · rw [generalizedParetoMeasure_of_nonpos (not_lt.1 hs), expMeasure_of_nonpos]
+    exact inv_nonpos.2 (not_lt.1 hs)
   calc
     generalizedParetoMeasure s 0 = (expMeasure 1).map (s * ·) := by
       rw [generalizedParetoMeasure_of_pos hs]
@@ -286,17 +290,6 @@ theorem hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure
       (generalizedParetoMeasure s ξ) P := by
   rw [generalizedParetoMeasure_of_pos hs]
   exact (hasLaw_map (measurable_generalizedParetoMap_right s ξ).aemeasurable).comp hE
-
-/-- If `E` has the rate-one exponential law, then its nonzero-shape exponential transformation
-has the corresponding generalized Pareto law. -/
-theorem hasLaw_generalizedParetoMeasure_of_hasLaw_expMeasure_of_shape_ne_zero
-    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {E : Ω → ℝ}
-    {s ξ : ℝ} (hs : 0 < s) (hξ : ξ ≠ 0) (hE : HasLaw E (expMeasure 1) P) :
-    HasLaw (fun ω => s * (Real.exp (ξ * E ω) - 1) / ξ)
-      (generalizedParetoMeasure s ξ) P := by
-  rw [generalizedParetoMeasure_of_shape_ne_zero hs hξ]
-  exact (hasLaw_map (by fun_prop : Measurable fun e : ℝ =>
-    s * (Real.exp (ξ * e) - 1) / ξ).aemeasurable).comp hE
 
 /-- Multiplication by a positive constant rescales a generalized Pareto law and leaves its shape
 fixed. The equality also respects the nonpositive-scale zero branch. -/

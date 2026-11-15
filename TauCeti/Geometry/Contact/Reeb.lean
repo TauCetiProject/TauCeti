@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
@@ -42,6 +43,8 @@ All statements here are pointwise linear algebra at each point, applying
 * `TauCeti.SmoothForm.reebVectorField`: the Reeb vector field of a one-form.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField`,
   `TauCeti.SmoothForm.IsContactForm.mextDeriv_reebVectorField_left`: the Reeb equations.
+* `TauCeti.SmoothForm.IsContactForm.interior_mextDeriv_reebVectorField`: the second Reeb
+  equation `ι_(R_α) dα = 0` as an identity of one-forms.
 * `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness.
 * `TauCeti.SmoothForm.IsContactForm.isCompl_kerDistribution_span_reebVectorField`: the splitting
   `T_x M = ξ_x ⊕ ℝ R_α(x)`.
@@ -108,6 +111,14 @@ theorem IsContactForm.mextDeriv_reebVectorField_right (hα : α.IsContactForm) (
   have := (isContactForm_def.1 hα x).apply_reebVector_right (isAlt_bilinFormAt _ x) w
   rwa [← mextDeriv_eq_bilinFormAt] at this
 
+/-- The second Reeb equation as an identity of one-forms: `ι_(R_α) dα = 0`. -/
+theorem IsContactForm.interior_mextDeriv_reebVectorField (hα : α.IsContactForm) :
+    (mextDeriv α.1).interior α.reebVectorField = 0 := by
+  funext x
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  simpa using hα.mextDeriv_reebVectorField_left x w
+
 /-- **Characterization of the Reeb vector field**: `R_α(x)` is the unique tangent vector `v` with
 `α(v) = 1` and `ι_v dα = 0`. -/
 theorem IsContactForm.eq_reebVectorField_iff (hα : α.IsContactForm) {x : M}
@@ -140,12 +151,13 @@ theorem IsContactForm.isCompl_kerDistribution_span_reebVectorField (hα : α.IsC
   exact (isContactForm_def.1 hα x).isCompl_ker_span_reebVector
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
-function `f`, `C¹` and nonzero at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in
+function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in
 `ξ_x = ker α_x` and `dα(y, w) = df(w) / f(x)²` for all `w ∈ ξ_x`. In particular
-`R_β(x) - R_α(x) / f(x)` is the unique such vector. -/
+`R_β(x) - R_α(x) / f(x)` is the unique such vector. For `f(x) = 0` both sides say `y = 0`, by the
+junk values `0⁻¹ = 0` and `df(w) / 0 = 0`. -/
 theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactForm)
     {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
-    (hf₀ : f x ≠ 0) (hβ : ∀ y, β.1 y = f y • α.1 y) (y : TangentSpace I x) :
+    (hβ : ∀ y, β.1 y = f y • α.1 y) (y : TangentSpace I x) :
     β.reebVectorField x = (f x)⁻¹ • α.reebVectorField x + y ↔
       α.1 x ![y] = 0 ∧ ∀ w : TangentSpace I x, α.1 x ![w] = 0 →
         mextDeriv α.1 x ![y, w] = mvfderiv I f x w / f x ^ 2 := by
@@ -167,10 +179,11 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
       ContinuousLinearMap.coe_coe]
     ring
   rw [reebVectorField, reebVectorField, hb,
-    (isContactForm_def.1 hα x).reebVector_smul_eq_inv_smul_add_iff hf₀ hdβ y]
+    (isContactForm_def.1 hα x).reebVector_smul_eq_inv_smul_add_iff hdβ y]
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
   simp only [ContinuousLinearMap.coe_coe]
 
+omit [FiniteDimensional ℝ E] in
 /-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/
 theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (hc : c ≠ 0)
     (x : M) : (c • α).reebVectorField x = c⁻¹ • α.reebVectorField x := by
@@ -186,6 +199,7 @@ theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (h
   rw [reebVectorField, reebVectorField, ha, hB, Module.Dual.reebVector_smul_bilinForm hc,
     (isContactForm_def.1 hα x).reebVector_smul hc]
 
+omit [FiniteDimensional ℝ E] in
 /-- The Reeb vector field of `-α` is `-R_α`. -/
 theorem IsContactForm.reebVectorField_neg (hα : α.IsContactForm) (x : M) :
     (-α).reebVectorField x = -α.reebVectorField x := by

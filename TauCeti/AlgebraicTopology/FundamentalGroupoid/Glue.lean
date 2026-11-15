@@ -121,59 +121,43 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
   · obtain rfl : k = 0 := by omega
     simp [pt_zero]
   have _ : (0 : ℝ) < N := by exact_mod_cast hN
-  refine Path.trans_apply_of_le γ δ ?_ _ ?_
-  · rw [coe_pt (by omega : k ≤ N + N), div_le_iff₀ (by push_cast; positivity)]
-    push_cast
-    have hk' : (k : ℝ) ≤ N := by exact_mod_cast hk
-    linarith
-  · rw [coe_pt hk, coe_pt (by omega : k ≤ N + N)]
-    push_cast
-    field_simp
-    ring
+  refine Path.trans_apply_of_eq_two_mul γ δ _ ?_
+  rw [coe_pt hk, coe_pt (by omega : k ≤ N + N)]
+  push_cast
+  field_simp
+  ring
 
 private lemma trans_pt_right {x y z : X} (γ : Path x y) (δ : Path y z) {N : ℕ} (hN : N ≠ 0)
     (k : ℕ) : γ.trans δ (pt (N + N) (N + k)) = δ (pt N k) := by
   rcases le_or_gt k N with hk | hk
   · have _ : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
-    refine Path.trans_apply_of_ge γ δ ?_ _ ?_
-    · rw [coe_pt (by omega : N + k ≤ N + N), le_div_iff₀ (by push_cast; positivity)]
-      push_cast
-      have _ : (0 : ℝ) ≤ k := by positivity
-      linarith
-    · rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
-      push_cast
-      field_simp
-      ring
+    refine Path.trans_apply_of_eq_two_mul_sub_one γ δ _ ?_
+    rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
+    push_cast
+    field_simp
+    ring
   · rw [pt_eq_one (by omega) (by omega), pt_eq_one hN hk.le, Path.target, Path.target]
 
 private lemma trans_subpath_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : ℕ} (hk : k < N)
     (t : I) : (γ.trans δ).subpath (pt (N + N) k) (pt (N + N) (k + 1)) t =
       γ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine Path.trans_apply_of_le γ δ ?_ _ ?_
-  · rw [coe_convexComb_pt (by omega : k < N + N), div_le_iff₀ (by push_cast; positivity)]
-    push_cast
-    have hk' : (k : ℝ) + 1 ≤ N := by exact_mod_cast hk
-    linarith [t.2.2]
-  · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : k < N + N)]
-    push_cast
-    field_simp
-    ring
+  refine Path.trans_apply_of_eq_two_mul γ δ _ ?_
+  rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : k < N + N)]
+  push_cast
+  field_simp
+  ring
 
 private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N k : ℕ}
     (hk : k < N) (t : I) :
     (γ.trans δ).subpath (pt (N + N) (N + k)) (pt (N + N) (N + k + 1)) t =
       δ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine Path.trans_apply_of_ge γ δ ?_ _ ?_
-  · rw [coe_convexComb_pt (by omega : N + k < N + N), le_div_iff₀ (by push_cast; positivity)]
-    push_cast
-    have _ : (0 : ℝ) ≤ k := by positivity
-    linarith [t.2.1]
-  · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
-    push_cast
-    field_simp
-    ring
+  refine Path.trans_apply_of_eq_two_mul_sub_one γ δ _ ?_
+  rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
+  push_cast
+  field_simp
+  ring
 
 /-- A path traced by a homotopy of paths: the `k`-th partition point, while the homotopy
 parameter runs through the `l`-th piece of the uniform partition into `N` pieces. -/

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -32,6 +32,13 @@ In the language of distributions the second formula says that the vector field `
 has divergence `d μ(ball 0 1) δ₀`; it is the flux computation behind the fundamental solution of
 the Laplacian.
 
+Measurable sets with null positive-ray slices are Haar-null; radial graphs are a special case.
+Haar almost-everywhere predicates also transfer to sphere directions and positive radii.
+
+Public formalization references:
+[lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
+[PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
+
 ## Main declarations
 
 * `TauCeti.integral_volumeIoiPow`: integration against Mathlib's radial measure
@@ -50,6 +57,8 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
+* `TauCeti.integrableOn_fun_norm_sub_addHaar`: a function of the distance to a point `c` is
+  integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
 -/
@@ -57,6 +66,20 @@ the Laplacian.
 public section
 
 noncomputable section
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Reconstruct a nonzero vector from its unit direction and positive radius. -/
+theorem homeomorphUnitSphereProd_snd_smul_fst (x : ({0}ᶜ : Set E)) :
+    ((homeomorphUnitSphereProd E x).2 : ℝ) •
+      ((homeomorphUnitSphereProd E x).1 : E) = (x : E) := by
+  simpa only [homeomorphUnitSphereProd_symm_apply_coe] using
+    congrArg (fun y : ({0}ᶜ : Set E) ↦ (y : E))
+      ((homeomorphUnitSphereProd E).symm_apply_apply x)
+
+end TauCeti
 
 namespace TauCeti
 
@@ -88,6 +111,29 @@ theorem lintegral_volumeIoiPow (k : ℕ) (h : ℝ → ℝ≥0∞) :
     ← lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) * h r)]
   simp only [Pi.mul_apply]
 
+/-- Radial-weight almost everywhere agrees with Lebesgue almost everywhere on positive radii. -/
+theorem ae_volumeIoiPow_iff (k : ℕ) (P : ℝ → Prop) :
+    (∀ᵐ t : Ioi (0 : ℝ) ∂Measure.volumeIoiPow k, P t) ↔
+      ∀ᵐ t : ℝ, 0 < t → P t := by
+  rw [Measure.volumeIoiPow, ae_withDensity_iff (by fun_prop)]
+  have hpos (t : Ioi (0 : ℝ)) : ENNReal.ofReal ((t : ℝ) ^ k) ≠ 0 :=
+    (ENNReal.ofReal_pos.mpr (pow_pos t.property _)).ne'
+  have hsub :
+      (∀ᵐ t : Ioi (0 : ℝ) ∂Measure.comap Subtype.val volume, P t) ↔
+        ∀ᵐ t : ℝ, 0 < t → P t :=
+    (ae_restrict_iff_subtype measurableSet_Ioi).symm.trans
+      (ae_restrict_iff' measurableSet_Ioi)
+  constructor
+  · intro h
+    apply hsub.mp
+    filter_upwards [h] with t ht
+    exact ht (hpos t)
+  · intro h
+    have hp := hsub.mpr h
+    filter_upwards [hp] with t ht
+    intro _
+    exact ht
+
 /-- **Integration in polar coordinates**, for nonnegative functions. A measurable function
 `f : E → ℝ≥0∞` on a finite-dimensional real normed space is integrated by first integrating along
 each ray `r ↦ r • u`, against the radial Jacobian `r ^ (d - 1)`, and then over the unit sphere
@@ -102,8 +148,7 @@ theorem lintegral_eq_lintegral_toSphere_lintegral_Ioi {f : E → ℝ≥0∞} (hf
         rw [← μ.measurePreserving_homeomorphUnitSphereProd.lintegral_comp_emb
           (homeomorphUnitSphereProd E).measurableEmbedding]
         refine lintegral_congr fun x ↦ ?_
-        have hx : ‖(x : E)‖ ≠ 0 := norm_ne_zero_iff.mpr x.2
-        simp [smul_smul, hx]
+        exact (congrArg f (homeomorphUnitSphereProd_snd_smul_fst x)).symm
     _ = _ := by
         have hm : Measurable fun p : sphere (0 : E) 1 × Ioi (0 : ℝ) ↦ (p.2 : ℝ) • (p.1 : E) := by
           fun_prop
@@ -122,11 +167,10 @@ theorem integrable_and_integral_eq_integral_prod_toSphere (f : E → F)
   set k := Module.finrank ℝ E - 1
   have hmp := μ.measurePreserving_homeomorphUnitSphereProd
   have hemb := (homeomorphUnitSphereProd E).measurableEmbedding
-  set g : sphere (0 : E) 1 × Ioi (0 : ℝ) → F := fun p ↦ f ((p.2 : ℝ) • (p.1 : E)) with hg_def
+  set g : sphere (0 : E) 1 × Ioi (0 : ℝ) → F := fun p ↦ f ((p.2 : ℝ) • (p.1 : E))
   have hg : g ∘ homeomorphUnitSphereProd E = f ∘ Subtype.val := by
     funext x
-    have hx : ‖(x : E)‖ ≠ 0 := norm_ne_zero_iff.mpr x.2
-    simp [hg_def, smul_smul, hx]
+    exact congrArg f (homeomorphUnitSphereProd_snd_smul_fst x)
   refine ⟨?_, ?_⟩
   · rw [← hmp.integrable_comp_emb hemb, hg,
       ← integrableOn_iff_comap_subtypeVal (measurableSet_singleton _).compl]
@@ -219,6 +263,23 @@ theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
     (integrableOn_const measure_ball_lt_top.ne)
   simp only [integral_const, smul_eq_mul, mul_one, measureReal_restrict_apply_univ] at h
   rw [h, ← integral_mul_const]
+
+/-- **Integrability of a radial function about a point.** A function `x ↦ f ‖x - c‖` of the
+distance to `c` is integrable on `ball c r` if and only if `y ↦ y ^ (d - 1) • f y` is integrable
+on `(0, r)`. This translates Mathlib's `MeasureTheory.integrableOn_fun_norm_addHaar` from the
+origin to an arbitrary center. -/
+theorem integrableOn_fun_norm_sub_addHaar {f : ℝ → F} {c : E} {r : ℝ} :
+    IntegrableOn (fun x ↦ f ‖x - c‖) (ball c r) μ ↔
+      IntegrableOn (fun y ↦ y ^ (Module.finrank ℝ E - 1) • f y) (Ioo 0 r) := by
+  rw [← integrableOn_fun_norm_addHaar μ, ← integrable_indicator_iff measurableSet_ball,
+    ← integrable_indicator_iff measurableSet_ball]
+  have h : (ball c r).indicator (fun x ↦ f ‖x - c‖) =
+      fun x ↦ (ball (0 : E) r).indicator (fun x ↦ f ‖x‖) (x - c) := funext fun x ↦ by
+    simp only [indicator, mem_ball, dist_eq_norm, sub_zero]
+  rw [h]
+  refine ⟨fun hf ↦ (hf.comp_add_right c).congr (ae_of_all _ fun x ↦ ?_),
+    fun hf ↦ hf.comp_sub_right c⟩
+  simp
 
 omit [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
 /-- Along the ray through a point `u` of the unit sphere, the radially weighted integrand of the
@@ -324,3 +385,89 @@ theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
 end Isometry
 
 end LinearIsometryEquiv
+
+namespace TauCeti
+
+open MeasureTheory Measure Metric Set Module Filter
+open scoped ENNReal NNReal Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- A set meets each positive unit ray in at most one point. This imposes no condition at the
+origin. -/
+def IsRadialGraph (A : Set E) : Prop :=
+  ∀ u ∈ sphere (0 : E) 1, ∀ r₁ r₂ : ℝ, 0 < r₁ → 0 < r₂ →
+    r₁ • u ∈ A → r₂ • u ∈ A → r₁ = r₂
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Characterize radial graphs by uniqueness of positive ray parameters. -/
+theorem isRadialGraph_iff {A : Set E} : IsRadialGraph A ↔
+    ∀ u ∈ sphere (0 : E) 1, ∀ r₁ r₂ : ℝ, 0 < r₁ → 0 < r₂ →
+      r₁ • u ∈ A → r₂ • u ∈ A → r₁ = r₂ := Iff.rfl
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A subset of a radial graph is a radial graph. -/
+theorem IsRadialGraph.mono {A B : Set E} (hA : IsRadialGraph A) (h : B ⊆ A) :
+    IsRadialGraph B := by
+  intro u hu r₁ r₂ h₁ h₂ hr₁ hr₂
+  exact hA u hu r₁ r₂ h₁ h₂ (h hr₁) (h hr₂)
+
+/-- In a nontrivial space, a measurable set with almost-everywhere volume-null positive-ray
+slices is Haar-null. -/
+theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_ae_ray_notMem
+    [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {A : Set E} (hAmeas : MeasurableSet A)
+    (hslice : ∀ᵐ ω : sphere (0 : E) 1 ∂μ.toSphere,
+      volume {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A} = 0) :
+    μ A = 0 := by
+  classical
+  rw [← lintegral_indicator_one hAmeas]
+  rw [lintegral_eq_lintegral_toSphere_lintegral_Ioi (μ := μ)
+    (f := A.indicator 1) (measurable_one.indicator hAmeas)]
+  apply lintegral_eq_zero_of_ae_eq_zero
+  filter_upwards [hslice] with ω hω
+  apply lintegral_eq_zero_of_ae_eq_zero
+  filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.mp hω),
+    ae_restrict_mem measurableSet_Ioi] with t ht htpos
+  have hnot : t • (ω : E) ∉ A := fun h ↦ ht ⟨htpos, h⟩
+  simp only [indicator_of_notMem hnot, mul_zero, Pi.zero_apply]
+
+/-- In a nontrivial space, a measurable radial graph has zero additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_isRadialGraph
+    [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {A : Set E} (hAmeas : MeasurableSet A) (hray : IsRadialGraph A) :
+    μ A = 0 := by
+  apply μ.addHaar_eq_zero_of_ae_ray_notMem hAmeas
+  apply Eventually.of_forall
+  intro ω
+  have hslice : {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A}.Subsingleton :=
+    fun s hs t ht ↦ hray ω ω.2 s t hs.1 ht.1 hs.2 ht.2
+  exact hslice.countable.measure_zero volume
+
+/-- An arbitrary Haar almost-everywhere predicate transports to the polar product measure; no
+measurability of its truth set is required. -/
+theorem _root_.MeasureTheory.Measure.ae_toSphere_prod_volumeIoiPow_of_ae
+    (μ : Measure E) [μ.IsAddHaarMeasure]
+    {P : E → Prop} (hP : ∀ᵐ x ∂μ, P x) :
+    ∀ᵐ p : Metric.sphere (0 : E) 1 × Ioi (0 : ℝ)
+      ∂μ.toSphere.prod (Measure.volumeIoiPow (Module.finrank ℝ E - 1)),
+      P ((p.2 : ℝ) • (p.1 : E)) := by
+  rw [← μ.measurePreserving_homeomorphUnitSphereProd.map_eq,
+    (Homeomorph.measurableEmbedding _).ae_map_iff]
+  simpa only [homeomorphUnitSphereProd_snd_smul_fst] using
+    (ae_restrict_iff_subtype (measurableSet_singleton (0 : E)).compl).mp
+      (ae_restrict_of_ae hP)
+
+/-- Almost every unit direction and almost every positive radius inherit an arbitrary Haar
+almost-everywhere predicate. -/
+theorem _root_.MeasureTheory.Measure.ae_toSphere_ae_Ioi_of_ae (μ : Measure E) [μ.IsAddHaarMeasure]
+    {P : E → Prop} (hP : ∀ᵐ x ∂μ, P x) :
+    ∀ᵐ θ : Metric.sphere (0 : E) 1 ∂μ.toSphere,
+      ∀ᵐ t : ℝ, 0 < t → P (t • (θ : E)) := by
+  have hp := Measure.ae_ae_of_ae_prod (μ.ae_toSphere_prod_volumeIoiPow_of_ae hP)
+  filter_upwards [hp] with θ hθ
+  exact (ae_volumeIoiPow_iff _ (fun t ↦ P (t • (θ : E)))).mp hθ
+
+
+end TauCeti

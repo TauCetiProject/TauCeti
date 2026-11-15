@@ -355,7 +355,7 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
     (fun _ : Unit ↦ (1 : freeProP p X)) (fun _ ↦ 1) (1 : freeProP p X →ₜ* freeProP p X) 1
     (fun _ _ _ ↦ by simp) (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
   -- The tail elements, recovered from the compatible sequence of their classes.
-  obtain ⟨t, htH, hts⟩ := hP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries hp hH
+  obtain ⟨t, htH, hts⟩ := exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries hH
     (fun k i ↦ (s k).1.2 i) (fun k i ↦ congrArg (fun x ↦ x.1.2 i) (hs k)) fun k i ↦ (s k).2.2.1 i
   refine ⟨e, t, fun i ↦ (Subgroup.mem_inf.mp (htH i)).1, fun i ↦ (Subgroup.mem_inf.mp (htH i)).2,
     eq_of_forall_mk_eq_of_iInf_eq_bot (hP.iInf_pLowerCentralSeries_eq_bot hp) fun k ↦ ?_⟩
