@@ -17,47 +17,31 @@ For a finite-dimensional complex normed space `E` and `S : C(AddCircle T, E →L
 space `WeakDerivStep volume ⊤ 2 (ι.compLpL 2 (volume.restrict (⊤ : Opens ℝ)))`, i.e.
 `L²(ℝ, H¹(AddCircle T, E)) ∩ W^{1,2}(ℝ, H⁰(AddCircle T, E))`. Combining `ι` with
 `I • CircleSobolev.loopOperator T S` via `TauCeti.WeakDerivStep.domainTrajectoryOperator` realizes
-the stationary cylinder operator `∂s ∘ ι + I • L_S` as `TauCeti.CircleSobolev.cylinderOperator T S`.
+`∂s ∘ ι + I • L_S` as `TauCeti.CircleSobolev.cylinderOperator T S` (`cylinderOperator_sub`,
+`cylinderOperator_sub_smul_const_I`). When `F` is a finite-dimensional complex inner product space
+and `S` is infinitesimally symplectic (`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S`
+is `ι`-symmetric and Fredholm of index zero (`real_inner_I_smul_loopOperator_comm`,
+`isFredholm_I_smul_loopOperator`, `index_I_smul_loopOperator`), so `CommonDomain.lean` yields:
 
-When `F` is a finite-dimensional complex inner product space and `S` is infinitesimally symplectic
-for `ω₀(v, w) = Im ⟪v, w⟫`, `I • loopOperator T S` is `ι`-symmetric
-(`real_inner_I_smul_loopOperator_comm`) and Fredholm of index zero
-(`isFredholm_I_smul_loopOperator`, `index_I_smul_loopOperator`). Specializing `CommonDomain.lean`
-yields:
-
-* **Injectivity and equivalences.** `cylinderOperator T S` is injective for every infinitesimally
-  symplectic `S`, and invertibility, Fredholmness, and closed range of `cylinderOperator T S` are
-  each equivalent to invertibility of `loopOperator T S` and absence of nonzero `T`-periodic
-  solutions of `ζ' = S ζ`.
-* **Pythagorean identity and inverse bound.** `‖cylinderOperator T S u‖² = ‖(ι ∘ u)'‖² +
-  ‖(I • L_S) ∘ u‖²`, and `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖²)`.
-* **Weight shifts and compact families.** Subtracting `δ • const (I • id)` from `S` subtracts
-  `δ • (ι ∘ prev)` from `cylinderOperator T S`. Over a compact `K` where both `S` and `J` are
-  continuous and each `S p` is nondegenerate, `cylinderOperator T (S p - δ • J p)` is invertible
-  with uniformly bounded inverse for small `|δ|` (adapting
-  `TauCeti.CircleSobolev.exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le` in
-  `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean` via
-  `IsCompact.exists_pos_isInvertible_map_sub_smul_norm_inverse_le`).
-* **Eigenmode splitting.** Solutions of `I • loopOperator T S a = λ • ι a` intertwine
-  `cylinderOperator T S` with `w' + λ w`.
-
-## Main declarations
-
-* `TauCeti.CircleSobolev.cylinderOperator`, `TauCeti.CircleSobolev.cylinderOperator_def`,
-  `TauCeti.CircleSobolev.cylinderOperator_sub`,
-  `TauCeti.CircleSobolev.cylinderOperator_sub_smul_const_I`.
-* `TauCeti.CircleSobolev.norm_cylinderOperator_sq`,
-  `TauCeti.CircleSobolev.injective_cylinderOperator`.
-* `TauCeti.CircleSobolev.isClosed_range_cylinderOperator_iff_isInvertible_loopOperator`,
-  `TauCeti.CircleSobolev.isFredholm_cylinderOperator_iff_isInvertible_loopOperator`,
-  `TauCeti.CircleSobolev.isInvertible_cylinderOperator_iff_isInvertible_loopOperator`,
-  `TauCeti.CircleSobolev.isInvertible_cylinderOperator_iff`.
-* `TauCeti.CircleSobolev.norm_inverse_cylinderOperator_le`,
-  `TauCeti.CircleSobolev.norm_compLpL_inclusion_le_inv_mul_norm_cylinderOperator`.
-* `TauCeti.CircleSobolev.exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le`,
-  `exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isInvertible_loopOperator`.
-* `TauCeti.CircleSobolev.cylinderOperator_smulRightBaseW1pL_ae_of_I_smul_loopOperator_eq_smul`,
-  `TauCeti.CircleSobolev.compLpL_innerSL_cylinderOperator_ae_of_I_smul_loopOperator_eq_smul`.
+* **Injectivity and equivalences.** `cylinderOperator T S` is injective
+  (`injective_cylinderOperator`), and its closed range, Fredholmness, and invertibility are each
+  equivalent to invertibility of `loopOperator T S` and absence of nonzero `T`-periodic solutions
+  of `ζ' = S ζ` (`isClosed_range_cylinderOperator_iff_isInvertible_loopOperator`,
+  `isFredholm_cylinderOperator_iff_isInvertible_loopOperator`,
+  `isInvertible_cylinderOperator_iff_isInvertible_loopOperator`,
+  `isInvertible_cylinderOperator_iff`).
+* **Pythagorean identity and bounds.** `‖cylinderOperator T S u‖² = ‖(ι ∘ u)'‖² + ‖(I • L_S) ∘ u‖²`
+  (`norm_cylinderOperator_sq`), `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S)⁻¹‖²)`
+  (`norm_inverse_cylinderOperator_le`), and spectral-gap bounds
+  (`norm_compLpL_inclusion_le_inv_mul_norm_cylinderOperator`).
+* **Compact families and eigenmodes.** Over compact `K` with continuous `S, J` and nondegenerate
+  `S p`, `cylinderOperator T (S p - δ • J p)` has uniformly bounded inverse for small `|δ|`
+  (`exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le`,
+  `exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isInvertible_loopOperator`,
+  adapting `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmodes
+  `I • L_S a = λ • ι a` intertwine `cylinderOperator T S` with `w' + λ w`
+  (`cylinderOperator_smulRightBaseW1pL_ae_of_I_smul_loopOperator_eq_smul`,
+  `compLpL_innerSL_cylinderOperator_ae_of_I_smul_loopOperator_eq_smul`).
 
 ## References
 
@@ -132,7 +116,7 @@ theorem cylinderOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
   rw [← cylinderOperator_def, ← cylinderOperator_def, hdiff] at hsub
   exact sub_eq_iff_eq_add'.mp hsub
 
-/-- **Weighted cylinder shift.** Replacing `S` by `S - δ • const (I • id)` subtracts
+/-- **Weighted cylinder shift:** replacing `S` by `S - δ • const (I • id)` subtracts
 `δ • (ι ∘ prev)` from `cylinderOperator T S`. -/
 theorem cylinderOperator_sub_smul_const_I (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
     cylinderOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
@@ -156,9 +140,9 @@ theorem cylinderOperator_sub_smul_const_I (S : C(AddCircle T, E →L[ℝ] E)) (�
     (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) (-δ)
     ((inclusion (E := E) zero_le_one).restrictScalars ℝ))).trans (by rw [smul_apply, neg_smul])
 
-/-- **Uniform weighted cylinder inverses over a compact family.** If both `S` and `J` are continuous
-on compact `K` and `cylinderOperator T (S p)` is invertible on `K`, then `cylinderOperator T (S p -
-δ • J p)` is invertible with inverse norm at most `C` for all `p ∈ K` and `|δ| ≤ ε`. -/
+/-- **Uniform weighted cylinder inverses over a compact family.** If `S` and `J` are continuous on
+compact `K` and each `cylinderOperator T (S p)` is invertible, `cylinderOperator T (S p - δ • J p)`
+has inverse norm at most `C` for `p ∈ K` and `|δ| ≤ ε`. -/
 theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le
     {P : Type*} [TopologicalSpace P] {K : Set P} (hK : IsCompact K)
     (S J : P → C(AddCircle T, E →L[ℝ] E)) (hS : ContinuousOn S K) (hJ : ContinuousOn J K)

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.Density
 public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import TauCeti.MeasureTheory.Function.Lp.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Smooth compactly supported fields are dense in vector-valued `W^{1,p}(ℝⁿ)`
@@ -27,11 +28,13 @@ test function `ψ` gives the smooth compactly supported field `x ↦ ψ x • b�
 
 ## Main declarations
 
-* `TauCeti.WeakDerivStep.smulRightW1pL`, `TauCeti.WeakDerivStep.smulRightBaseW1pL`: the bounded
-  linear maps `u ↦ (x ↦ u x • b)` from scalar Sobolev functions into the identity-based and
-  `ι`-based weak-derivative graphs.
-* `TauCeti.WeakDerivStep.prev_smulRightW1pL_ofTestFunctionₗ_ae_eq`: for a test function `ψ`, this
-  field is represented by `x ↦ ψ x • b`.
+* `TauCeti.WeakDerivStep.smulRightBaseW1pL`, `TauCeti.WeakDerivStep.smulRightW1pL`: the bounded
+  linear maps `u ↦ (x ↦ u x • b)` from scalar Sobolev functions into the `ι`-based and
+  identity-based weak-derivative graphs.
+* `TauCeti.WeakDerivStep.prev_smulRightBaseW1pL_ofTestFunctionₗ_ae_eq`,
+  `TauCeti.WeakDerivStep.prev_smulRightW1pL_ofTestFunctionₗ_ae_eq`,
+  `TauCeti.WeakDerivStep.norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq`: test-function
+  representative and squared `L²` norm formulas for scalar-mode fields.
 * `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
 * `TauCeti.WeakDerivStep.dense_setOf_exists_contDiff_hasCompactSupport`: the fields with a smooth
   compactly supported representative are dense.
@@ -94,42 +97,6 @@ theorem hasWeakFDerivOn_smulRight (b : F) (u : W1p mu Omega p) :
   ext v
   simp [real_inner_comm]
 
-/-- The bounded linear map sending a scalar Sobolev function `u` to the `F`-valued Sobolev field
-`x ↦ u x • b`. -/
-def smulRightW1pL (b : F) :
-    W1p mu Omega p →L[ℝ]
-      WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) :=
-  ContinuousLinearMap.codRestrict
-    ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
-      ((((ContinuousLinearMap.toSpanSingleton ℝ b).compLpL p (mu.restrict Omega)).comp
-          W1p.valueL).prod
-        (((smulRightGradientL b).compLpL p (mu.restrict Omega)).comp W1p.gradientL)))
-    _ fun u ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr (by
-      simpa using hasWeakFDerivOn_smulRight b u)
-
-/-- The value of `smulRightW1pL b u` is the class of `x ↦ u x • b`. -/
-@[simp]
-theorem prev_smulRightW1pL (b : F) (u : W1p mu Omega p) :
-    prev _ (smulRightW1pL b u) =
-      (ContinuousLinearMap.toSpanSingleton ℝ b).compLpL p (mu.restrict Omega) (W1p.value u) := by
-  simp [prev_coe, smulRightW1pL]
-
-/-- The weak derivative of `smulRightW1pL b u` is the class of `x ↦ (v ↦ ⟪∇u x, v⟫ • b)`. -/
-@[simp]
-theorem weakFDeriv_smulRightW1pL (b : F) (u : W1p mu Omega p) :
-    weakFDeriv _ (smulRightW1pL b u) =
-      (smulRightGradientL b).compLpL p (mu.restrict Omega) (W1p.gradient u) := by
-  simp [weakFDeriv_coe, smulRightW1pL]
-
-/-- The field `smulRightW1pL b φ` of a test function `φ` is represented by `x ↦ φ x • b`. -/
-theorem prev_smulRightW1pL_ofTestFunctionₗ_ae_eq (b : F) (φ : 𝓓(Omega, ℝ)) :
-    ⇑(prev _ (smulRightW1pL b (W1p.ofTestFunctionₗ mu Omega p φ)))
-      =ᵐ[mu.restrict Omega] fun x ↦ φ x • b := by
-  rw [prev_smulRightW1pL, W1p.value_ofTestFunctionₗ]
-  filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ b).coeFn_compLpL
-    (testFunctionLp (mu := mu) p φ), testFunctionLp_apply_ae (mu := mu) p φ] with x hx hφ
-  rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hφ]
-
 /-- The bounded linear map sending a scalar Sobolev function `w` to `x ↦ w x • a` in the
 weak-derivative graph over `ι.compLpL p (mu.restrict Omega)`. -/
 def smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
@@ -142,14 +109,11 @@ def smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
         (((smulRightGradientL (ι a)).compLpL p (mu.restrict Omega)).comp W1p.gradientL)))
     _ fun w ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr <| by
       have hcomp : ι.comp (ContinuousLinearMap.toSpanSingleton ℝ a) =
-          ContinuousLinearMap.toSpanSingleton ℝ (ι a) := by
-        ext
-        simp
+          ContinuousLinearMap.toSpanSingleton ℝ (ι a) := by ext; simp
       have hae : ι.compLpL p (mu.restrict Omega)
           ((ContinuousLinearMap.toSpanSingleton ℝ a).compLpL p (mu.restrict Omega) (W1p.value w)) =
             (ContinuousLinearMap.toSpanSingleton ℝ (ι a)).compLpL p (mu.restrict Omega)
-              (W1p.value w) := by
-        rw [ContinuousLinearMap.compLpL_compLpL, hcomp]
+              (W1p.value w) := by rw [ContinuousLinearMap.compLpL_compLpL, hcomp]
       simpa [hae] using hasWeakFDerivOn_smulRight (ι a) w
 
 /-- The value of `smulRightBaseW1pL ι a w` is the class of `x ↦ w x • a`. -/
@@ -168,6 +132,60 @@ theorem weakFDeriv_smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedS
     weakFDeriv _ (smulRightBaseW1pL ι a w) =
       (smulRightGradientL (ι a)).compLpL p (mu.restrict Omega) (W1p.gradient w) := by
   simp [weakFDeriv_coe, smulRightBaseW1pL]
+
+/-- The field `smulRightBaseW1pL ι a φ` of a test function `φ` is represented by `x ↦ φ x • a`. -/
+theorem prev_smulRightBaseW1pL_ofTestFunctionₗ_ae_eq {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] (ι : D →L[ℝ] F) (a : D) (φ : 𝓓(Omega, ℝ)) :
+    ⇑(prev _ (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ mu Omega p φ)))
+      =ᵐ[mu.restrict Omega] fun x ↦ φ x • a := by
+  rw [prev_smulRightBaseW1pL, W1p.value_ofTestFunctionₗ]
+  filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ a).coeFn_compLpL
+    (testFunctionLp (mu := mu) p φ), testFunctionLp_apply_ae (mu := mu) p φ] with x hx hφ
+  rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hφ]
+
+omit [Fact (1 ≤ p)] in
+/-- The squared `L²` norm of the value of `smulRightBaseW1pL ι a` on a test function `φ` is
+`(∫ x, φ x ^ 2 ∂mu) * ‖a‖ ^ 2`. -/
+theorem norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] (ι : D →L[ℝ] F) (a : D) (φ : 𝓓(Omega, ℝ)) :
+    ‖prev _ (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ mu Omega 2 φ))‖ ^ 2 =
+      (∫ x, (φ : E → ℝ) x ^ 2 ∂mu) * ‖a‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq,
+    integral_congr_ae (g := fun x ↦ (φ : E → ℝ) x ^ 2 * ‖a‖ ^ 2)
+      ((prev_smulRightBaseW1pL_ofTestFunctionₗ_ae_eq (p := 2) ι a φ).mono fun x hx ↦ by
+        rw [hx, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]),
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+      simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)],
+    MeasureTheory.integral_mul_const]
+
+/-- The bounded linear map sending a scalar Sobolev function `u` to the `F`-valued Sobolev field
+`x ↦ u x • b`. -/
+def smulRightW1pL (b : F) :
+    W1p mu Omega p →L[ℝ]
+      WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) :=
+  (toIdL ((ContinuousLinearMap.id ℝ F).compLpL p (mu.restrict Omega))).comp
+    (smulRightBaseW1pL (ContinuousLinearMap.id ℝ F) b)
+
+/-- The value of `smulRightW1pL b u` is the class of `x ↦ u x • b`. -/
+@[simp]
+theorem prev_smulRightW1pL (b : F) (u : W1p mu Omega p) :
+    prev _ (smulRightW1pL b u) =
+      (ContinuousLinearMap.toSpanSingleton ℝ b).compLpL p (mu.restrict Omega) (W1p.value u) := by
+  simp [smulRightW1pL, ContinuousLinearMap.id_compLpL]
+
+/-- The weak derivative of `smulRightW1pL b u` is the class of `x ↦ (v ↦ ⟪∇u x, v⟫ • b)`. -/
+@[simp]
+theorem weakFDeriv_smulRightW1pL (b : F) (u : W1p mu Omega p) :
+    weakFDeriv _ (smulRightW1pL b u) =
+      (smulRightGradientL b).compLpL p (mu.restrict Omega) (W1p.gradient u) := by
+  simp [smulRightW1pL]
+
+/-- The field `smulRightW1pL b φ` of a test function `φ` is represented by `x ↦ φ x • b`. -/
+theorem prev_smulRightW1pL_ofTestFunctionₗ_ae_eq (b : F) (φ : 𝓓(Omega, ℝ)) :
+    ⇑(prev _ (smulRightW1pL b (W1p.ofTestFunctionₗ mu Omega p φ)))
+      =ᵐ[mu.restrict Omega] fun x ↦ φ x • b := by
+  simpa only [prev_smulRightW1pL, ← prev_smulRightBaseW1pL (ContinuousLinearMap.id ℝ F) b] using
+    prev_smulRightBaseW1pL_ofTestFunctionₗ_ae_eq (ContinuousLinearMap.id ℝ F) b φ
 
 end CompleteSpace
 
