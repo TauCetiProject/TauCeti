@@ -129,21 +129,8 @@ theorem hasDerivAt_deriv_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
     simp only [Fin.succ_castSucc, Fin.succ_last, Fin.castSucc_zero]
     ring
   refine (hd.congr_of_eventuallyEq hdeq).congr_deriv ?_
-  have hsplit : ∑ x : Fin (n + 1),
-      (indexForm I (G x 0) (variationField I (G x)) (variationField I (G x))
-          (τ x.castSucc) (τ x.succ) + A x (τ x.succ) - A x (τ x.castSucc) -
-        ∫ t in τ x.castSucc..τ x.succ,
-          inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ G x s t) 0)
-            (acceleration (leviCivitaConnection I M) (G x 0) t)) =
-      (∑ x : Fin (n + 1), indexForm I (G x 0) (variationField I (G x))
-          (variationField I (G x)) (τ x.castSucc) (τ x.succ)) +
-        (∑ x : Fin (n + 1), (A x (τ x.succ) - A x (τ x.castSucc))) -
-        ∑ x : Fin (n + 1), ∫ t in τ x.castSucc..τ x.succ,
-          inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ G x s t) 0)
-            (acceleration (leviCivitaConnection I M) (G x 0) t) := by
-    simp only [add_sub_assoc, Finset.sum_sub_distrib, Finset.sum_add_distrib]
-  dsimp only [A] at hboundary hsplit ⊢
-  rw [hsplit, hboundary]
+  dsimp only [A] at hboundary ⊢
+  simp only [add_sub_assoc, Finset.sum_sub_distrib, Finset.sum_add_distrib, hboundary]
   ring
 
 /-- **Second variation of energy for a piecewise `C³` family with fixed outer endpoints.**
@@ -212,16 +199,8 @@ theorem hasDerivAt_deriv_energy_piecewise_of_isGeodesicCurveOn {n : ℕ} (τ : F
         ∑ j : Fin n, (A j.castSucc (τ j.succ.castSucc) - A j.succ (τ j.succ.castSucc))) 0 := by
   intro A
   refine (hasDerivAt_deriv_energy_piecewise_of_fixed_endpoints τ hτ hG hFG ha hb).congr_deriv ?_
-  have hbulk : ∑ i : Fin (n + 1), ∫ t in τ i.castSucc..τ i.succ,
-      inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ G i s t) 0)
-        (acceleration (leviCivitaConnection I M) (G i 0) t) = 0 := by
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))] at ht
-    rw [← accelerationWithin_of_mem_nhds _ (G i 0) (isOpen_Ioo.mem_nhds ht),
-      (hγ i).accelerationWithin_eq_zero t ht, inner_zero_right]
-  rw [hbulk, sub_zero]
+  rw [Finset.sum_eq_zero fun i _ ↦ (hγ i).integral_inner_acceleration_eq_zero isOpen_Ioo
+    (by rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))]) _, sub_zero]
 
 /-! ### Exponential variations along continuous piecewise smooth fields -/
 
@@ -270,18 +249,8 @@ theorem hasDerivAt_energy_exponentialVariation_piecewise {n : ℕ} (τ : Fin (n 
     simp only [Fin.succ_castSucc, Fin.succ_last, Fin.castSucc_zero]
     ring
   refine (hd.congr_of_eventuallyEq heq).congr_deriv ?_
-  have hsum : ∑ i : Fin (n + 1),
-      (inner ℝ (W i (τ i.succ)) (curveVelocity I γ (τ i.succ)) -
-        inner ℝ (W i (τ i.castSucc)) (curveVelocity I γ (τ i.castSucc)) -
-        ∫ t in τ i.castSucc..τ i.succ,
-          inner ℝ (W i t) (acceleration (leviCivitaConnection I M) γ t)) =
-      (∑ i : Fin (n + 1), (B (τ i.succ) - B (τ i.castSucc))) -
-        ∑ i : Fin (n + 1), ∫ t in τ i.castSucc..τ i.succ,
-          inner ℝ (W i t) (acceleration (leviCivitaConnection I M) γ t) := by
-    rw [← Finset.sum_sub_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hright i, hleft i]
-  rw [hsum, htele]
+  dsimp only [B] at htele
+  simp only [hright, hleft, Finset.sum_sub_distrib, htele]
 
 /-- **Second variation of energy along a piecewise `C³` exponential variation.** Let `V` be a
 continuous piecewise `C³` tangent field along `γ` on a monotone partition `τ`, witnessed by fields
@@ -314,10 +283,7 @@ theorem hasDerivAt_deriv_energy_exponentialVariation_piecewise {n : ℕ} (τ : F
           (variationField I (exponentialVariation I γ (W i))) (τ i.castSucc) (τ i.succ) =
         indexForm I γ V V (τ i.castSucc) (τ i.succ) := by
     refine indexForm_congr (fun t _ ↦ congrFun (exponentialVariation_zero γ (W i)) t)
-      (fun t ht ↦ ?_) (fun t ht ↦ ?_)
-    · rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))] at ht
-      exact (heq_of_eq (variationField_exponentialVariation γ (W i) t)).trans
-        (heq_of_eq (hVW i t (Ioo_subset_Icc_self ht)).symm)
+      (fun t ht ↦ ?_) (fun t ht ↦ ?_) <;>
     · rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))] at ht
       exact (heq_of_eq (variationField_exponentialVariation γ (W i) t)).trans
         (heq_of_eq (hVW i t (Ioo_subset_Icc_self ht)).symm)
@@ -377,15 +343,12 @@ theorem eventually_energy_exponentialVariation_lt_of_piecewise_indexForm_neg {n 
   have hd₁ := hasDerivAt_energy_exponentialVariation_piecewise τ hτ
     (fun i t ht ↦ (hW i t ht).of_le (by norm_num)) hVW
   have hbulk : ∑ i : Fin (n + 1), ∫ t in τ i.castSucc..τ i.succ,
-      inner ℝ (W i t) (acceleration (leviCivitaConnection I M) γ t) = 0 := by
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))] at ht
-    have ht' : t ∈ Ioo (τ 0) (τ (Fin.last (n + 1))) :=
-      ⟨lt_of_le_of_lt (hτ (Fin.zero_le _)) ht.1, lt_of_lt_of_le ht.2 (hτ (Fin.le_last _))⟩
-    rw [← accelerationWithin_of_mem_nhds _ γ (isOpen_Ioo.mem_nhds ht'),
-      hγ.accelerationWithin_eq_zero t ht', inner_zero_right]
+      inner ℝ (W i t) (acceleration (leviCivitaConnection I M) γ t) = 0 :=
+    Finset.sum_eq_zero fun i _ ↦ hγ.integral_inner_acceleration_eq_zero isOpen_Ioo
+      (fun t ht ↦ by
+        rw [uIoo_of_le (hτ (Fin.castSucc_le_succ i))] at ht
+        exact ⟨(hτ (Fin.zero_le _)).trans_lt ht.1, ht.2.trans_le (hτ (Fin.le_last _))⟩)
+      (W i)
   have hd₁_zero :
       deriv (fun s ↦ energy I (exponentialVariation I γ V s) (τ 0) (τ (Fin.last (n + 1)))) 0 =
         0 := by

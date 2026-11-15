@@ -159,15 +159,13 @@ private theorem contMDiffAt_alongCurve_fst {f : ℝ → ℝ → M}
   have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun e.baseSet :=
     contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov e.open_baseSet
   have hm1_le : (m : ℕ∞ω) + 1 ≤ ∞ := by
-    rw [← WithTop.coe_one, ← WithTop.coe_add]
-    exact WithTop.coe_le_coe.mpr le_top
-  have hm2_le : (m : ℕ∞ω) + 1 + 1 ≤ ∞ := by
-    rw [← WithTop.coe_one, ← WithTop.coe_add, ← WithTop.coe_add]
-    exact WithTop.coe_le_coe.mpr le_top
+    rw [← WithTop.coe_one, ← WithTop.coe_add]; exact WithTop.coe_le_coe.mpr le_top
   have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold I m M := IsManifold.of_le (le_self_add.trans hm1_le)
   have : IsManifold I ((m : ℕ∞ω) + 1) M := IsManifold.of_le hm1_le
-  have : IsManifold I ((m : ℕ∞ω) + 1 + 1) M := IsManifold.of_le hm2_le
+  have : IsManifold I ((m : ℕ∞ω) + 1 + 1) M := IsManifold.of_le (n := ∞) <| by
+    rw [← WithTop.coe_one, ← WithTop.coe_add, ← WithTop.coe_add]
+    exact WithTop.coe_le_coe.mpr le_top
   have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
   have : ContMDiffVectorBundle m E (TangentSpace I : M → Type _) I :=
@@ -492,6 +490,18 @@ theorem hasDerivAt_deriv_energy {a b : ℝ}
   rw [intervalIntegral.integral_add hintI hintDA, ← indexForm_def, eq_sub_of_add_eq hFTC]
   ring
 
+omit [T2Space M] in
+/-- Along a curve which is a geodesic on an open set containing `uIoo a b`, any pairing against its
+covariant acceleration integrates to zero over `a..b`. -/
+theorem IsGeodesicCurveOn.integral_inner_acceleration_eq_zero {γ : ℝ → M} {s : Set ℝ} {a b : ℝ}
+    (hγ : IsGeodesicCurveOn I γ s) (hs : IsOpen s) (hab : uIoo a b ⊆ s)
+    (W : ∀ t, TangentSpace I (γ t)) :
+    ∫ t in a..b, inner ℝ (W t) (acceleration (leviCivitaConnection I M) γ t) = 0 := by
+  refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
+    intervalIntegral.integral_zero
+  rw [← accelerationWithin_of_mem_nhds _ γ (hs.mem_nhds (hab ht)),
+    hγ.accelerationWithin_eq_zero t (hab ht), inner_zero_right]
+
 /-- **The second variation of energy of a geodesic.** If `F` is `C³` along `{0} × [a, b]` and its
 central curve `γ = F 0` is a geodesic on the open segment `uIoo a b`, then
 
@@ -508,15 +518,7 @@ theorem hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a b : ℝ}
         inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0)
           (curveVelocity I (F 0) a)) 0 := by
   refine (hasDerivAt_deriv_energy hF).congr_deriv ?_
-  have hzero : ∫ t in a..b, inner ℝ
-      (acceleration (leviCivitaConnection I M) (fun s ↦ F s t) 0)
-      (acceleration (leviCivitaConnection I M) (F 0) t) = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    have hmem : uIoo a b ∈ 𝓝 t := isOpen_Ioo.mem_nhds ht
-    rw [← accelerationWithin_of_mem_nhds _ (F 0) hmem,
-      hγ.accelerationWithin_eq_zero t ht, inner_zero_right]
-  rw [hzero, sub_zero]
+  rw [hγ.integral_inner_acceleration_eq_zero isOpen_Ioo Subset.rfl, sub_zero]
 
 /-! ### Fixed-endpoint, periodic, and exponential variations -/
 
@@ -546,16 +548,8 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a
     (hF : IsFixedEndpointVariation I 3 F a b) (hγ : IsGeodesicCurveOn I (F 0) (uIoo a b)) :
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
       (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
-  have ha : acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) hF.eventually_apply_left).trans
-      (acceleration_const (leviCivitaConnection I M) (F 0 a) 0)
-  have hb : acceleration (leviCivitaConnection I M) (fun s ↦ F s b) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) hF.eventually_apply_right).trans
-      (acceleration_const (leviCivitaConnection I M) (F 0 b) 0)
-  refine (TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn
-    hF.contMDiffAt hγ).congr_deriv ?_
-  rw [ha, hb, inner_zero_left, inner_zero_left]
-  ring
+  refine hF.hasDerivAt_deriv_energy.congr_deriv ?_
+  rw [hγ.integral_inner_acceleration_eq_zero isOpen_Ioo Subset.rfl, sub_zero]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
@@ -566,9 +560,7 @@ private theorem inner_eq_of_totalSpaceMk_eq {x y : M} {u v : TangentSpace I x}
     (hu : TotalSpace.mk' E x u = TotalSpace.mk' E y u')
     (hv : TotalSpace.mk' E x v = TotalSpace.mk' E y v') :
     inner ℝ u v = inner ℝ u' v' := by
-  cases hu
-  cases hv
-  rfl
+  cases hu; cases hv; rfl
 
 /-- **Second variation of energy of a smoothly closed geodesic.** If `F` is `C³` along
 `{0} × [a, b]`, its nearby curves are closed (`F s a = F s b` for `s` near `0`), and its central
@@ -583,8 +575,7 @@ theorem hasDerivAt_deriv_energy_of_periodic {a b : ℝ}
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
       (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
   refine (hasDerivAt_deriv_energy_of_isGeodesicCurveOn hF hγ).congr_deriv ?_
-  have hA := Filter.EventuallyEq.totalSpaceMk_acceleration_eq
-    (leviCivitaConnection I M) hper
+  have hA := Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper
   rw [curveVelocityLift_apply, curveVelocityLift_apply] at hvel
   rw [inner_eq_of_totalSpaceMk_eq hA hvel]
   ring
@@ -629,28 +620,13 @@ theorem hasDerivAt_energy_exponentialVariation {a b : ℝ}
   have hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ exponentialVariation I γ V z.1 z.2) (0, t) :=
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ V (hV t ht)
-  have hVlift (t : ℝ) :
-      TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (variationField I (exponentialVariation I γ V) t) =
-      TotalSpace.mk' E (γ t) (V t) :=
-    TotalSpace.ext (congrFun (exponentialVariation_zero γ V) t)
-      (heq_of_eq (variationField_exponentialVariation γ V t))
-  have hvel (t : ℝ) :
-      TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (curveVelocity I (exponentialVariation I γ V 0) t) =
-      TotalSpace.mk' E (γ t) (curveVelocity I γ t) := by
-    simpa only [curveVelocityLift_apply] using
-      congrArg (fun c ↦ curveVelocityLift I c t) (exponentialVariation_zero γ V)
-  have hacc (t : ℝ) :
-      TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (acceleration (leviCivitaConnection I M) (exponentialVariation I γ V 0) t) =
-      TotalSpace.mk' E (γ t) (acceleration (leviCivitaConnection I M) γ t) :=
-    Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M)
-      (Eventually.of_forall (congrFun (exponentialVariation_zero γ V)))
-  refine (hasDerivAt_energy hF).congr_deriv ?_
-  rw [inner_eq_of_totalSpaceMk_eq (hVlift b) (hvel b),
-    inner_eq_of_totalSpaceMk_eq (hVlift a) (hvel a),
-    intervalIntegral.integral_congr fun t _ ↦ inner_eq_of_totalSpaceMk_eq (hVlift t) (hacc t)]
+  have h0 : exponentialVariation I γ V 0 = γ := exponentialVariation_zero γ V
+  have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ V) t) (V t) :=
+    fun t ↦ heq_of_eq (variationField_exponentialVariation γ V t)
+  clear hV
+  generalize exponentialVariation I γ V = G at hF h0 hVF ⊢
+  subst h0
+  simpa only [funext fun t ↦ eq_of_heq (hVF t)] using hasDerivAt_energy hF
 
 /-- **Second variation of energy along an exponential variation.** Let `V` be a tangent field along
 an arbitrary curve `γ` whose lift to the tangent bundle is `C³` at every point of `[a, b]`. Because
@@ -665,27 +641,15 @@ theorem hasDerivAt_deriv_energy_exponentialVariation {a b : ℝ}
   have hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3
       (fun z : ℝ × ℝ ↦ exponentialVariation I γ V z.1 z.2) (0, t) :=
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ V (hV t ht)
-  have hd := hasDerivAt_deriv_energy hF
-  -- Rewrite the central curve `exponentialVariation I γ V 0` to `γ` and `variationField` to `V`.
-  have hVheq (t : ℝ) : HEq (variationField I (exponentialVariation I γ V) t) (V t) :=
-    heq_of_eq (variationField_exponentialVariation γ V t)
-  have hI : indexForm I (exponentialVariation I γ V 0)
-        (variationField I (exponentialVariation I γ V))
-        (variationField I (exponentialVariation I γ V)) a b =
-      indexForm I γ V V a b :=
-    indexForm_congr (fun t _ ↦ congrFun (exponentialVariation_zero γ V) t)
-      (fun t _ ↦ hVheq t) (fun t _ ↦ hVheq t)
-  refine hd.congr_deriv ?_
-  rw [hI, acceleration_exponentialVariation_zero, acceleration_exponentialVariation_zero,
-    inner_zero_left, inner_zero_left]
-  have hzero : ∫ t in a..b, inner ℝ
-      (acceleration (leviCivitaConnection I M)
-        (fun s ↦ exponentialVariation I γ V s t) 0)
-      (acceleration (leviCivitaConnection I M)
-        (exponentialVariation I γ V 0) t) = 0 := by
-    simp [acceleration_exponentialVariation_zero]
-  rw [hzero]
-  ring
+  have h0 : exponentialVariation I γ V 0 = γ := exponentialVariation_zero γ V
+  have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ V) t) (V t) :=
+    fun t ↦ heq_of_eq (variationField_exponentialVariation γ V t)
+  have hA := acceleration_exponentialVariation_zero γ V
+  clear hV
+  generalize exponentialVariation I γ V = G at hF h0 hVF hA ⊢
+  subst h0
+  simpa only [funext fun t ↦ eq_of_heq (hVF t), hA, inner_zero_left,
+    intervalIntegral.integral_zero, add_zero, sub_zero] using hasDerivAt_deriv_energy hF
 
 end ExponentialVariation
 
@@ -734,14 +698,9 @@ theorem eventually_energy_exponentialVariation_lt_of_indexForm_neg {a b : ℝ}
     (hneg : indexForm I γ V V a b < 0) :
     ∀ᶠ s in 𝓝[≠] (0 : ℝ), energy I (exponentialVariation I γ V s) a b < energy I γ a b := by
   have hd₁ := hasDerivAt_energy_exponentialVariation fun t ht ↦ (hV t ht).of_le (by norm_num)
-  have hbulk : ∫ t in a..b, inner ℝ (V t) (acceleration (leviCivitaConnection I M) γ t) = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    have hmem : uIoo a b ∈ 𝓝 t := isOpen_Ioo.mem_nhds ht
-    rw [← accelerationWithin_of_mem_nhds _ γ hmem,
-      hγ.accelerationWithin_eq_zero t ht, inner_zero_right]
   have hd₁_zero : deriv (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 = 0 := by
-    rw [hd₁.deriv, hbulk, hbdry, sub_self, sub_zero]
+    rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero isOpen_Ioo Subset.rfl, hbdry,
+      sub_self, sub_zero]
   have hd₂ := hasDerivAt_deriv_energy_exponentialVariation hV
   simpa only [exponentialVariation_zero] using
     TauCeti.eventually_gt_of_deriv_deriv_neg (hd₂.deriv.symm ▸ hneg) hd₁_zero hd₁.continuousAt

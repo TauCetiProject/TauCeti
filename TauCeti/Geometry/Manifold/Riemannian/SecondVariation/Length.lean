@@ -540,19 +540,10 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn {a b : ℝ} (ha
         curveVelocity I (F 0) t⟫_ℝ ^ 2 / ‖curveVelocity I (F 0) t‖ ^ 2 =
       ∫ t in a..b,
         ⟪alongCurve (leviCivitaConnection I M) (F 0) (variationField I F) t,
-          curveVelocity I (F 0) t⟫_ℝ ^ 2 / C ^ 2 := by
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [uIcc_of_le hab] at ht
-    rw [hspeed t ht]
-  have hbulk : ∫ t in a..b,
-      ⟪acceleration (leviCivitaConnection I M) (fun s ↦ F s t) 0,
-        acceleration (leviCivitaConnection I M) (F 0) t⟫_ℝ = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    have hmem : uIoo a b ∈ 𝓝 t := isOpen_Ioo.mem_nhds ht
-    rw [← accelerationWithin_of_mem_nhds _ (F 0) hmem,
-      hγu.accelerationWithin_eq_zero t ht, inner_zero_right]
-  rw [hγu.indexForm_sub_starProjection_singleton hVF, hnorm_int, hbulk, sub_zero]
+          curveVelocity I (F 0) t⟫_ℝ ^ 2 / C ^ 2 :=
+    intervalIntegral.integral_congr fun t ht ↦ by rw [uIcc_of_le hab] at ht; rw [hspeed t ht]
+  rw [hγu.indexForm_sub_starProjection_singleton hVF, hnorm_int,
+    hγu.integral_inner_acceleration_eq_zero isOpen_Ioo Subset.rfl, sub_zero]
 
 /-- **Second variation of length of a unit-speed geodesic.** Let `F` be `C³` along `{0} × [a, b]`
 with `a ≤ b`, whose central curve `γ = F 0` is a unit-speed geodesic on `(a, b)`. Then
@@ -657,36 +648,14 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
   have hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ exponentialVariation I γ V z.1 z.2) (0, t) :=
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ V (hV t ht)
-  have hspeed0 : ∀ t ∈ Icc a b, ‖curveVelocity I (exponentialVariation I γ V 0) t‖ = C := by
-    rwa [exponentialVariation_zero]
-  have hd := hasDerivAt_toReal_pathELength hab hF hC hspeed0
-  have heq_inner {x y : M} {u v : TangentSpace I x} {u' v' : TangentSpace I y}
-      (hu : TotalSpace.mk' E x u = TotalSpace.mk' E y u')
-      (hv : TotalSpace.mk' E x v = TotalSpace.mk' E y v') : ⟪u, v⟫_ℝ = ⟪u', v'⟫_ℝ := by
-    cases hu
-    cases hv
-    rfl
-  have hVlift (t : ℝ) :
-      TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (variationField I (exponentialVariation I γ V) t) =
-      TotalSpace.mk' E (γ t) (V t) :=
-    TotalSpace.ext (congrFun (exponentialVariation_zero γ V) t)
-      (heq_of_eq (variationField_exponentialVariation γ V t))
-  have hvel (t : ℝ) :
-      TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (curveVelocity I (exponentialVariation I γ V 0) t) =
-      TotalSpace.mk' E (γ t) (curveVelocity I γ t) := by
-    simpa only [curveVelocityLift_apply] using
-      congrArg (fun c ↦ curveVelocityLift I c t) (exponentialVariation_zero γ V)
-  have hacc (t : ℝ) :
-      TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (acceleration (leviCivitaConnection I M) (exponentialVariation I γ V 0) t) =
-      TotalSpace.mk' E (γ t) (acceleration (leviCivitaConnection I M) γ t) :=
-    Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M)
-      (Eventually.of_forall (congrFun (exponentialVariation_zero γ V)))
-  refine hd.congr_deriv ?_
-  rw [heq_inner (hVlift b) (hvel b), heq_inner (hVlift a) (hvel a),
-    intervalIntegral.integral_congr fun t _ ↦ heq_inner (hVlift t) (hacc t)]
+  have h0 : exponentialVariation I γ V 0 = γ := exponentialVariation_zero γ V
+  have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ V) t) (V t) :=
+    fun t ↦ heq_of_eq (variationField_exponentialVariation γ V t)
+  clear hV
+  generalize exponentialVariation I γ V = G at hF h0 hVF ⊢
+  subst h0
+  simpa only [funext fun t ↦ eq_of_heq (hVF t)] using
+    hasDerivAt_toReal_pathELength hab hF hC hspeed
 
 /-- **Second variation of length along an exponential variation of a constant-speed geodesic.** For
 a geodesic `γ` on `(a, b)` of constant speed `C > 0` on `[a, b]` and any `C³` field `V` along `γ`
@@ -703,37 +672,15 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation {a b : ℝ} (ha
   have hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3
       (fun z : ℝ × ℝ ↦ exponentialVariation I γ V z.1 z.2) (0, t) :=
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ V (hV t ht)
-  have hγ0 : IsGeodesicCurveOn I (exponentialVariation I γ V 0) (Ioo a b) := by
-    rwa [exponentialVariation_zero]
-  have hspeed0 : ∀ t ∈ Icc a b, ‖curveVelocity I (exponentialVariation I γ V 0) t‖ = C := by
-    rwa [exponentialVariation_zero]
-  refine (hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab hF hγ0 hC
-    hspeed0).congr_deriv ?_
-  rw [acceleration_exponentialVariation_zero, acceleration_exponentialVariation_zero,
-    inner_zero_left, inner_zero_left, add_zero, sub_zero]
-  congr 1
-  have hfield (t : ℝ) :
-      HEq (variationField I (exponentialVariation I γ V) t -
-          (ℝ ∙ curveVelocity I (exponentialVariation I γ V 0) t).starProjection
-            (variationField I (exponentialVariation I γ V) t))
-        (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t)) := by
-    have hVlift : TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (variationField I (exponentialVariation I γ V) t) = TotalSpace.mk' E (γ t) (V t) :=
-      TotalSpace.ext (congrFun (exponentialVariation_zero γ V) t)
-        (heq_of_eq (variationField_exponentialVariation γ V t))
-    have hvel : TotalSpace.mk' E (exponentialVariation I γ V 0 t)
-        (curveVelocity I (exponentialVariation I γ V 0) t) =
-        TotalSpace.mk' E (γ t) (curveVelocity I γ t) := by
-      simpa only [curveVelocityLift_apply] using
-        congrArg (fun c ↦ curveVelocityLift I c t) (exponentialVariation_zero γ V)
-    have key {x y : M} {v w : TangentSpace I x} {v' w' : TangentSpace I y}
-        (hv : TotalSpace.mk' E x v = TotalSpace.mk' E y v')
-        (hw : TotalSpace.mk' E x w = TotalSpace.mk' E y w') :
-        HEq (v - (ℝ ∙ w).starProjection v) (v' - (ℝ ∙ w').starProjection v') := by
-      cases hv; cases hw; rfl
-    exact key hVlift hvel
-  exact indexForm_congr (fun t _ ↦ congrFun (exponentialVariation_zero γ V) t)
-    (fun t _ ↦ hfield t) (fun t _ ↦ hfield t)
+  have h0 : exponentialVariation I γ V 0 = γ := exponentialVariation_zero γ V
+  have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ V) t) (V t) :=
+    fun t ↦ heq_of_eq (variationField_exponentialVariation γ V t)
+  have hA := acceleration_exponentialVariation_zero γ V
+  clear hV
+  generalize exponentialVariation I γ V = G at hF h0 hVF hA ⊢
+  subst h0
+  simpa only [funext fun t ↦ eq_of_heq (hVF t), hA, inner_zero_left, add_zero, sub_zero] using
+    hasDerivAt_deriv_toReal_pathELength_of_isGeodesicCurveOn hab hF hγ hC hspeed
 
 /-- **Second variation of length along an exponential variation of a unit-speed geodesic.** For a
 unit-speed geodesic `γ` on `(a, b)` (`a ≤ b`) and any `C³` field `V` along `γ` (with free or fixed
@@ -845,15 +792,10 @@ theorem eventually_pathELength_exponentialVariation_lt_of_indexForm_neg {a b : �
         Manifold.pathELength I γ a b := by
   have hd₁ := hasDerivAt_toReal_pathELength_exponentialVariation hab
     (fun t ht ↦ (hV t ht).of_le (by norm_num)) hC hspeed
-  have hbulk : ∫ t in a..b, ⟪V t, acceleration (leviCivitaConnection I M) γ t⟫_ℝ = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [uIoo_of_le hab] at ht
-    rw [← accelerationWithin_of_mem_nhds _ γ (isOpen_Ioo.mem_nhds ht),
-      hγ.accelerationWithin_eq_zero t ht, inner_zero_right]
   have hd₁_zero :
       deriv (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) 0 = 0 := by
-    rw [hd₁.deriv, hbulk, hbdry, sub_self, sub_zero, zero_div]
+    rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero isOpen_Ioo (by rw [uIoo_of_le hab]),
+      hbdry, sub_self, sub_zero, zero_div]
   have hd₂ := hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV hγ hC hspeed
   have hltR : ∀ᶠ s in 𝓝[≠] (0 : ℝ),
       (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal <
