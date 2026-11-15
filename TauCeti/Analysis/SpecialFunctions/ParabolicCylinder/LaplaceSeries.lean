@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.RingTheory.Polynomial.Tower
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Series
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.MellinLaplace
@@ -34,8 +36,10 @@ for `Re b > 0` and real `r` with `|r| < 1` (or `|r| ≤ 1` and `Re z > 0`). Sett
 `(b)_m / Γ(b + m) = 1 / Γ(b)` supplies the Gamma-normalized Laplace kernel of Weber's parabolic
 cylinder function `U(b - 1 / 2, ·)` (DLMF 12.5.1 and 12.13.5).
 
-Two analytic ingredients make this valid up to the boundary `|r| = 1` (`|t| = π / 4`) and across
-all complex parameter half-planes `0 < Re b + M`:
+The closed-form `HasSum` and Abel-limit identities in this file require `0 < Re b` (with `HasSum`
+at the boundary `|r| = 1` requiring `0 < Re z`), while on every shifted half-plane `0 < Re b + M`
+this file establishes norm-summability and `M`-shifted tail `b`-holomorphy for downstream analytic
+continuation via two analytic ingredients:
 
 1. Combining the Gaussian moment bound `|He_m(y)| / m! ≤ exp(y² / 2) 2^{-m / 2} / Γ(m / 2 + 1)`
    with the polynomial-free half-Gamma series majorant `< 2 exp(x²)` (DLMF 7.6.3) bounds every
@@ -47,15 +51,19 @@ all complex parameter half-planes `0 < Re b + M`:
 2. For `Re b > 0` and *arbitrary* `z : ℂ` (including `Re z ≤ 0`, where the boundary series at
    `r = 1` need not converge), continuity of the closed-form right-hand side in `r` yields the
    endpoint evaluation as an Abel limit as `r → 1⁻`. Meanwhile, on any half-plane `0 < Re b + M`,
-   the `M`-shifted tail is locally uniformly summable on balls and hence holomorphic in `b`.
+   for `‖r‖ < 1` (or `‖r‖ ≤ 1` and `0 < Re z`), the `M`-shifted tail is locally uniformly summable
+   on balls and hence holomorphic in `b`.
 
 ## Main results
 
 * `TauCeti.summable_hermite_mul_integral_rpow_exp_Ioi`,
-  `TauCeti.summable_norm_hermite_mul_integral_cpow_cexp_Ioi`,
-  `TauCeti.summable_norm_ascPochhammer_hermite_mul_inv_Gamma_integral_cpow_cexp_Ioi`:
-  absolute convergence of the Hermite–Laplace series for `‖r‖ < 1`, at the boundary `‖r‖ ≤ 1` when
-  `0 < Re z` or `0 ≤ Re z ∧ Re b < 0`, and unconditionally at terminating parameters `b = -n`.
+  `TauCeti.summable_norm_hermite_mul_integral_cpow_cexp_Ioi`:
+  absolute convergence of the real and complex Hermite–Laplace series for `‖r‖ < 1`, and at the
+  boundary `‖r‖ ≤ 1` when `0 < Re z` or `0 ≤ Re z ∧ Re b < 0`.
+* `TauCeti.summable_norm_ascPochhammer_hermite_mul_inv_Gamma_integral_cpow_cexp_Ioi`:
+  absolute convergence of the Pochhammer–Gamma–normalized Hermite–Laplace series under the same
+  interior/boundary conditions, and unconditionally at `b = -n` (`n : ℕ`), where every term of
+  this Laplace-integral series vanishes via `(b)_m (Γ(b + m))⁻¹ = (Γ(-n))⁻¹ = 0`.
 * `TauCeti.hasSum_hermite_mul_integral_cpow_cexp_Ioi_complex`,
   `TauCeti.hasSum_hermite_mul_integral_cpow_cexp_Ioi`,
   `TauCeti.hasSum_ascPochhammer_hermite_mul_inv_Gamma_integral_cpow_cexp_Ioi`,
@@ -91,11 +99,8 @@ namespace TauCeti
 private theorem norm_neg_pow_div_factorial_mul_aeval_hermite (r : ℂ) (y : ℝ) (m : ℕ) :
     ‖(-r) ^ m / m.factorial * Polynomial.aeval (y : ℂ) (Polynomial.hermite m)‖ =
       |Polynomial.aeval y (Polynomial.hermite m)| * ‖r‖ ^ m / m.factorial := by
-  have heval : Polynomial.aeval (y : ℂ) (Polynomial.hermite m) =
-      ((Polynomial.aeval y (Polynomial.hermite m) : ℝ) : ℂ) :=
-    Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom ℤ ℝ ℂ) y _
-  rw [norm_mul, norm_div, norm_pow, norm_neg, Complex.norm_natCast, heval,
-    Complex.norm_real, Real.norm_eq_abs]
+  rw [norm_mul, norm_div, norm_pow, norm_neg, Complex.norm_natCast, ← Complex.coe_algebraMap,
+    Polynomial.aeval_algebraMap_apply, Complex.coe_algebraMap, Complex.norm_real, Real.norm_eq_abs]
   ring
 
 private theorem ascPochhammer_hermite_mul_inv_Gamma_eq (b r : ℂ) (y : ℝ) (m : ℕ) (I : ℂ) :
@@ -130,17 +135,7 @@ private theorem hermite_rpow_exp_le_majorant (y : ℝ) {ρ : ℝ} (hρ : 0 ≤ �
     rw [← Real.rpow_natCast u m, ← Real.rpow_add hu]
     congr 1
     ring
-  have hcoef : |Polynomial.aeval y (Polynomial.hermite m)| * (ρ * u) ^ m / m.factorial ≤
-      Real.exp (y ^ 2 / 2) * ((ρ * u / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by
-    have hb := norm_aeval_hermite_mul_pow_div_factorial_le m y ((ρ * u : ℝ) : ℂ)
-    have hw : ‖((ρ * u : ℝ) : ℂ)‖ = ρ * u := by
-      rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-    have hlhs : ‖Polynomial.aeval (y : ℂ) (Polynomial.hermite m) * ((ρ * u : ℝ) : ℂ) ^ m /
-        m.factorial‖ = |Polynomial.aeval y (Polynomial.hermite m)| * (ρ * u) ^ m / m.factorial := by
-      have h := norm_neg_pow_div_factorial_mul_aeval_hermite (-((ρ * u : ℝ) : ℂ)) y m
-      rw [neg_neg, norm_neg, hw] at h
-      simpa only [mul_comm, div_mul_eq_mul_div] using h
-    rwa [hlhs, hw] at hb
+  have hcoef := abs_aeval_hermite_mul_pow_div_factorial_le m y (mul_nonneg hρ hu.le)
   calc (|Polynomial.aeval y (Polynomial.hermite m)| * ρ ^ m / m.factorial) *
           (u ^ (σ + m - 1) * Real.exp (-u ^ 2 / 2 - c * u))
       = (|Polynomial.aeval y (Polynomial.hermite m)| * (ρ * u) ^ m / m.factorial) *
@@ -361,7 +356,9 @@ theorem summable_norm_hermite_mul_integral_cpow_cexp_Ioi {b z r : ℂ} (y : ℝ)
 
 /-- Norm-summability of the Pochhammer–Gamma–normalized Hermite–Laplace series, covering the
 interior disk `‖r‖ < 1`, the boundary conditions `0 < z.re` and `0 ≤ z.re ∧ b.re < 0` on `‖r‖ ≤ 1`,
-and terminating parameters `b = -n` (`n : ℕ`) for arbitrary `z r : ℂ`. -/
+and `b = -n` (`n : ℕ`) for arbitrary `z r : ℂ` (at `b = -n`, `(b)_m (Γ(b + m))⁻¹ = (Γ(-n))⁻¹ = 0`
+kills `m ≤ n` via `(Γ(-n + m))⁻¹ = 0` as well as `m > n` via `(-n)_m = 0`, so every term of the
+series is zero). -/
 theorem summable_norm_ascPochhammer_hermite_mul_inv_Gamma_integral_cpow_cexp_Ioi {b z r : ℂ}
     (y : ℝ)
     (hr : (∃ n : ℕ, b = -n) ∨ ‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ (0 < z.re ∨ (0 ≤ z.re ∧ b.re < 0)))) :
@@ -463,11 +460,9 @@ theorem hasSum_hermite_mul_integral_cpow_cexp_Ioi {b z : ℂ} (hb : 0 < b.re) (y
   have hscale := integral_cpow_mul_cexp_neg_mul_sq_div_two_sub_mul_Ioi_eq_cpow_neg_mul_integral
     hc b (z + r * y)
   have hcpow : (√(1 + r ^ 2) : ℂ) ^ (-b) = ((1 + r ^ 2 : ℝ) : ℂ) ^ (-b / 2) := by
-    rw [Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hc.ne'),
-      Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr h1r.ne'),
-      ← Complex.ofReal_log hc.le, ← Complex.ofReal_log h1r.le, Real.log_sqrt h1r.le]
-    push_cast
+    rw [Real.sqrt_eq_rpow, ← Complex.cpow_mul_ofReal_nonneg h1r.le]
     congr 1
+    push_cast
     ring
   have hint_eq :
       (∫ u in Ioi (0 : ℝ),
@@ -539,22 +534,15 @@ theorem hasSum_ascPochhammer_hermite_tan_mul_inv_Gamma_integral_cpow_cexp_Ioi {b
           by simpa using Real.strictMonoOn_tan.monotoneOn ht_Ioo hpi4_Ioo h2⟩, hz⟩
   have hmain := hasSum_ascPochhammer_hermite_mul_inv_Gamma_integral_cpow_cexp_Ioi hb y htan_cond
   -- Simplify `1 + tan² t = sec² t` in both the prefactor and the rotated argument.
-  have h1t : 0 < 1 + Real.tan t ^ 2 := by positivity
+  have hinv : (√(1 + Real.tan t ^ 2))⁻¹ = Real.cos t := Real.inv_sqrt_one_add_tan_sq hcos
   have hcpow : ((1 + Real.tan t ^ 2 : ℝ) : ℂ) ^ (-b / 2) = (Real.cos t : ℂ) ^ b := by
-    have hsec : 1 + Real.tan t ^ 2 = (Real.cos t ^ 2)⁻¹ := by
-      rw [← inv_inv (1 + Real.tan t ^ 2), Real.inv_one_add_tan_sq hcos.ne']
-    have hlog : Real.log (1 + Real.tan t ^ 2) = -2 * Real.log (Real.cos t) := by
-      rw [hsec, Real.log_inv, Real.log_pow]
-      ring
-    rw [Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr h1t.ne'),
-      Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hcos.ne'),
-      ← Complex.ofReal_log h1t.le, ← Complex.ofReal_log hcos.le, hlog]
-    push_cast
+    rw [← hinv, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (Real.sqrt_nonneg _),
+      ← Complex.cpow_neg, Real.sqrt_eq_rpow, ← Complex.cpow_mul_ofReal_nonneg (by positivity)]
     congr 1
+    push_cast
     ring
   have harg : (z + (Real.tan t : ℂ) * y) / √(1 + Real.tan t ^ 2) =
       z * Real.cos t + y * Real.sin t := by
-    have hinv : (√(1 + Real.tan t ^ 2))⁻¹ = Real.cos t := Real.inv_sqrt_one_add_tan_sq hcos
     have hsin : Real.tan t / √(1 + Real.tan t ^ 2) = Real.sin t :=
       Real.tan_div_sqrt_one_add_tan_sq hcos
     calc (z + (Real.tan t : ℂ) * y) / √(1 + Real.tan t ^ 2)
@@ -632,13 +620,6 @@ theorem tendsto_tsum_ascPochhammer_hermite_mul_inv_Gamma_integral_cpow_cexp_Ioi_
 
 /-! ### Holomorphy in `b` of `M`-shifted tails on `{b : ℂ | 0 < b.re + M}` -/
 
-private theorem re_mem_Ioo_of_mem_ball {b b₀ : ℂ} {δ : ℝ} (hb : b ∈ Metric.ball b₀ δ) :
-    b₀.re - δ < b.re ∧ b.re < b₀.re + δ := by
-  rw [Metric.mem_ball, dist_eq_norm] at hb
-  have hre := abs_lt.mp (lt_of_le_of_lt (Complex.abs_re_le_norm (b - b₀)) hb)
-  rw [Complex.sub_re] at hre
-  exact ⟨by linarith [hre.1], by linarith [hre.2]⟩
-
 /-- For every shift `M : ℕ`, `z r : ℂ`, and `y : ℝ` with `‖r‖ < 1 ∨ (‖r‖ ≤ 1 ∧ 0 < z.re)`, the
 `M`-shifted Hermite–Mellin–Gaussian–Laplace tail is holomorphic in `b` on the half-plane
 `{b : ℂ | 0 < b.re + M}`. -/
@@ -670,8 +651,9 @@ theorem differentiableOn_tsum_hermite_add_mul_integral_cpow_cexp_Ioi (M : ℕ) {
     have hshift : DifferentiableOn ℂ (fun b : ℂ => b + ↑(k + M)) (Metric.ball b₀ δ) := by fun_prop
     have hmaps : MapsTo (fun b : ℂ => b + ↑(k + M)) (Metric.ball b₀ δ) {w : ℂ | 0 < w.re} := by
       intro b hb
+      have hb_lo : b₀.re - δ < b.re := (RCLike.re_mem_Ioo_of_mem_ball hb).1
       simp only [Set.mem_ofPred_eq, Complex.add_re, Complex.natCast_re, Nat.cast_add]
-      linarith [hδ_def, (re_mem_Ioo_of_mem_ball hb).1]
+      linarith [hδ_def]
     exact ((differentiableOn_integral_cpow_mul_cexp_neg_sq_div_two_sub_mul_Ioi_left z).comp
       hshift hmaps).const_mul _
   have hF_bound : ∀ (k : ℕ) (b : ℂ), b ∈ Metric.ball b₀ δ →
@@ -681,7 +663,7 @@ theorem differentiableOn_tsum_hermite_add_mul_integral_cpow_cexp_Ioi (M : ℕ) {
         (|Polynomial.aeval y (Polynomial.hermite (k + M))| * ‖r‖ ^ (k + M) / (k + M).factorial *
           ∫ u in Ioi (0 : ℝ), u ^ (σ₂ + ↑(k + M) - 1) * Real.exp (-u ^ 2 / 2 - z.re * u)) := by
     intro k b hb
-    obtain ⟨hb_lo, hb_hi⟩ := re_mem_Ioo_of_mem_ball hb
+    obtain ⟨hb_lo, hb_hi⟩ : b₀.re - δ < b.re ∧ b.re < b₀.re + δ := RCLike.re_mem_Ioo_of_mem_ball hb
     dsimp only [F]
     rw [norm_mul, norm_neg_pow_div_factorial_mul_aeval_hermite, ← mul_add]
     refine mul_le_mul_of_nonneg_left ?_ (by positivity)

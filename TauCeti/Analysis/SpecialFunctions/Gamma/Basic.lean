@@ -272,8 +272,7 @@ theorem inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℂ) (n :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [ih, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + n), ascPochhammer_succ_right,
-      Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_natCast,
+    rw [ih, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + n), ascPochhammer_succ_eval,
       Nat.cast_succ, ← add_assoc, mul_assoc]
 
 end Complex
@@ -297,13 +296,10 @@ theorem inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℝ) (n :
     (Gamma s)⁻¹ = (ascPochhammer ℝ n).eval s * (Gamma (s + n))⁻¹ := by
   have h := Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℂ) n
   have hcast : (s : ℂ) + n = ((s + n : ℝ) : ℂ) := by push_cast; ring
-  have hp : ∀ m : ℕ, (ascPochhammer ℂ m).eval (s : ℂ) =
-      (((ascPochhammer ℝ m).eval s : ℝ) : ℂ) := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih => simp [ascPochhammer_succ_right, ih]
-  rw [hcast, hp n, Complex.Gamma_ofReal, Complex.Gamma_ofReal] at h
+  have hp : (ascPochhammer ℂ n).eval (s : ℂ) = (((ascPochhammer ℝ n).eval s : ℝ) : ℂ) :=
+    (ascPochhammer_eval₂ Complex.ofRealHom n (s : ℂ)).trans
+      (Polynomial.eval₂_at_apply Complex.ofRealHom s)
+  rw [hcast, hp, Complex.Gamma_ofReal, Complex.Gamma_ofReal] at h
   exact_mod_cast h
 
 end Real

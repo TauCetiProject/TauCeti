@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+import Mathlib.RingTheory.Polynomial.Tower
 import TauCeti.Analysis.SpecialFunctions.Erf.Series
 import TauCeti.Analysis.SpecialFunctions.Hermite.FourierIntegral
 import TauCeti.Probability.Distributions.Gaussian.Moments
@@ -30,10 +31,10 @@ majorants for `M`-shifted tails of the Hermite exponential generating series (DL
 
 * `TauCeti.abs_aeval_hermite_mul_exp_div_factorial_le`: Gaussian-weighted factorial bound
   `|He_n(y)| exp(-y² / 2) / n! ≤ 2 ^ (-n / 2) / Γ(n / 2 + 1)`.
-* `TauCeti.norm_aeval_hermite_mul_pow_div_factorial_le`: generating-series termwise norm bound
-  `‖He_m(y) w^m / m!‖ ≤ exp(y² / 2) (‖w‖ / √2)^m / Γ(m / 2 + 1)` for `y : ℝ` and `w : ℂ`.
-* `TauCeti.summable_norm_aeval_hermite_mul_pow_div_factorial`: absolute summability of the
-  Hermite exponential generating series for all `y w : ℂ`.
+* `TauCeti.abs_aeval_hermite_mul_pow_div_factorial_le`,
+  `TauCeti.norm_aeval_hermite_mul_pow_div_factorial_le`: generating-series termwise bounds
+  `|He_m(y)| r^m / m! ≤ exp(y² / 2) (r / √2)^m / Γ(m / 2 + 1)` (`0 ≤ r`) and
+  `‖He_m(y) w^m / m!‖ ≤ exp(y² / 2) (‖w‖ / √2)^m / Γ(m / 2 + 1)` (`y : ℝ`, `w : ℂ`).
 * `TauCeti.tsum_norm_aeval_hermite_mul_pow_div_factorial_add_lt`,
   `TauCeti.tsum_norm_aeval_hermite_mul_pow_div_factorial_add_le`: polynomial-free
   (`< 2 exp(y² / 2 + ‖w‖² / 2)`) and vanishing-order
@@ -52,16 +53,13 @@ open MeasureTheory ProbabilityTheory
 
 namespace TauCeti
 
-private lemma aeval_ofReal_hermite (n : ℕ) (y : ℝ) :
-    Polynomial.aeval (y : ℂ) (Polynomial.hermite n) =
-      (Polynomial.aeval y (Polynomial.hermite n) : ℝ) :=
-  Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom ℤ ℝ ℂ) y _
-
 private lemma fourier_moment_bound (n : ℕ) (y : ℝ) :
     Real.sqrt (2 * Real.pi) *
         (|Polynomial.aeval y (Polynomial.hermite n)| * Real.exp (-(y ^ 2) / 2)) ≤
       ∫ x : ℝ, |x| ^ n * Real.exp (-(x ^ 2) / 2) := by
-  have heval := aeval_ofReal_hermite n y
+  have heval : Polynomial.aeval (y : ℂ) (Polynomial.hermite n) =
+      (Polynomial.aeval y (Polynomial.hermite n) : ℝ) :=
+    Polynomial.aeval_algebraMap_apply ℂ y (Polynomial.hermite n)
   have hn := norm_integral_le_integral_norm (μ := volume)
     (fun s : ℝ => (s : ℂ) ^ n * Complex.exp (-(s : ℂ) ^ 2 / 2 - Complex.I * y * s))
   rw [integral_pow_mul_cexp_neg_sq_div_two_sub_I_mul] at hn
@@ -133,47 +131,48 @@ theorem abs_aeval_hermite_mul_exp_div_factorial_le (n : ℕ) (y : ℝ) :
   rw [← hmoment]
   exact fourier_moment_bound n y
 
-/-- Each term of the probabilists' Hermite exponential generating series at real `y` and complex
-`w` is bounded in norm by `exp(y² / 2) (‖w‖ / √2)^m / Γ(m / 2 + 1)`. -/
-theorem norm_aeval_hermite_mul_pow_div_factorial_le (m : ℕ) (y : ℝ) (w : ℂ) :
-    ‖Polynomial.aeval (y : ℂ) (Polynomial.hermite m) * w ^ m / m.factorial‖ ≤
-      Real.exp (y ^ 2 / 2) * ((‖w‖ / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by
+/-- Each term of the probabilists' Hermite exponential generating series at real `y` and
+nonnegative real `r` satisfies `|He_m(y)| r^m / m! ≤ exp(y² / 2) (r / √2)^m / Γ(m / 2 + 1)`. -/
+theorem abs_aeval_hermite_mul_pow_div_factorial_le (m : ℕ) (y : ℝ) {r : ℝ} (hr : 0 ≤ r) :
+    |Polynomial.aeval y (Polynomial.hermite m)| * r ^ m / m.factorial ≤
+      Real.exp (y ^ 2 / 2) * ((r / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by
   have hb := abs_aeval_hermite_mul_exp_div_factorial_le m y
   have hsqrt : (2 : ℝ) ^ (-(m : ℝ) / 2) * √2 ^ m = 1 := by
     rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two,
       ← Real.rpow_add zero_lt_two]
     have hexp : -(m : ℝ) / 2 + 1 / 2 * (m : ℝ) = 0 := by ring
     rw [hexp, Real.rpow_zero]
-  have hpow : (2 : ℝ) ^ (-(m : ℝ) / 2) * ‖w‖ ^ m = (‖w‖ / √2) ^ m := by
+  have hpow : (2 : ℝ) ^ (-(m : ℝ) / 2) * r ^ m = (r / √2) ^ m := by
     rw [div_pow, eq_div_iff (by positivity)]
-    calc (2 : ℝ) ^ (-(m : ℝ) / 2) * ‖w‖ ^ m * √2 ^ m
-        = ((2 : ℝ) ^ (-(m : ℝ) / 2) * √2 ^ m) * ‖w‖ ^ m := by ring
-      _ = ‖w‖ ^ m := by rw [hsqrt, one_mul]
+    calc (2 : ℝ) ^ (-(m : ℝ) / 2) * r ^ m * √2 ^ m
+        = ((2 : ℝ) ^ (-(m : ℝ) / 2) * √2 ^ m) * r ^ m := by ring
+      _ = r ^ m := by rw [hsqrt, one_mul]
   have hexp_cancel : Real.exp (-(y ^ 2) / 2) * Real.exp (y ^ 2 / 2) = 1 := by
     rw [← Real.exp_add]
     have h0 : -(y ^ 2) / 2 + y ^ 2 / 2 = 0 := by ring
     rw [h0, Real.exp_zero]
-  rw [norm_div, norm_mul, norm_pow, aeval_ofReal_hermite, Complex.norm_real, Real.norm_eq_abs,
-    Complex.norm_natCast]
   have hmul := mul_le_mul_of_nonneg_right hb
-    (by positivity : 0 ≤ Real.exp (y ^ 2 / 2) * ‖w‖ ^ m)
-  calc |Polynomial.aeval y (Polynomial.hermite m)| * ‖w‖ ^ m / (m.factorial : ℝ)
+    (by positivity : 0 ≤ Real.exp (y ^ 2 / 2) * r ^ m)
+  calc |Polynomial.aeval y (Polynomial.hermite m)| * r ^ m / (m.factorial : ℝ)
       = |Polynomial.aeval y (Polynomial.hermite m)| *
-          (Real.exp (-(y ^ 2) / 2) * Real.exp (y ^ 2 / 2)) * ‖w‖ ^ m /
+          (Real.exp (-(y ^ 2) / 2) * Real.exp (y ^ 2 / 2)) * r ^ m /
             (m.factorial : ℝ) := by rw [hexp_cancel, mul_one]
     _ = (|Polynomial.aeval y (Polynomial.hermite m)| * Real.exp (-(y ^ 2) / 2) /
-          (m.factorial : ℝ)) * (Real.exp (y ^ 2 / 2) * ‖w‖ ^ m) := by ring
+          (m.factorial : ℝ)) * (Real.exp (y ^ 2 / 2) * r ^ m) := by ring
     _ ≤ ((2 : ℝ) ^ (-(m : ℝ) / 2) / Real.Gamma ((m : ℝ) / 2 + 1)) *
-          (Real.exp (y ^ 2 / 2) * ‖w‖ ^ m) := hmul
+          (Real.exp (y ^ 2 / 2) * r ^ m) := hmul
     _ = Real.exp (y ^ 2 / 2) *
-          (((2 : ℝ) ^ (-(m : ℝ) / 2) * ‖w‖ ^ m) / Real.Gamma ((m : ℝ) / 2 + 1)) := by ring
-    _ = Real.exp (y ^ 2 / 2) * ((‖w‖ / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by rw [hpow]
+          (((2 : ℝ) ^ (-(m : ℝ) / 2) * r ^ m) / Real.Gamma ((m : ℝ) / 2 + 1)) := by ring
+    _ = Real.exp (y ^ 2 / 2) * ((r / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by rw [hpow]
 
-/-- The Hermite exponential generating series is absolutely summable for all `y w : ℂ`. -/
-theorem summable_norm_aeval_hermite_mul_pow_div_factorial (y w : ℂ) :
-    Summable fun m : ℕ =>
-      ‖Polynomial.aeval y (Polynomial.hermite m) * w ^ m / m.factorial‖ :=
-  (Polynomial.hasSum_hermite_generating_function y w).summable.norm
+/-- Each term of the probabilists' Hermite exponential generating series at real `y` and complex
+`w` is bounded in norm by `exp(y² / 2) (‖w‖ / √2)^m / Γ(m / 2 + 1)`. -/
+theorem norm_aeval_hermite_mul_pow_div_factorial_le (m : ℕ) (y : ℝ) (w : ℂ) :
+    ‖Polynomial.aeval (y : ℂ) (Polynomial.hermite m) * w ^ m / m.factorial‖ ≤
+      Real.exp (y ^ 2 / 2) * ((‖w‖ / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1)) := by
+  rw [norm_div, norm_mul, norm_pow, ← Complex.coe_algebraMap, Polynomial.aeval_algebraMap_apply,
+    Complex.coe_algebraMap, Complex.norm_real, Real.norm_eq_abs, Complex.norm_natCast]
+  exact abs_aeval_hermite_mul_pow_div_factorial_le m y (norm_nonneg w)
 
 private theorem tsum_norm_aeval_hermite_mul_pow_div_factorial_add_le_mul_tsum
     (y : ℝ) (w : ℂ) (M : ℕ) :
