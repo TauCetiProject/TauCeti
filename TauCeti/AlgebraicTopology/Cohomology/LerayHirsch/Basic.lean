@@ -18,8 +18,9 @@ of classes with coefficients in a commutative ring `K`, indexed by a type `ι p`
 
 (`TopPair.lerayHirsch`), for any `K`-module of coefficients `M`; each summand is the map
 `a ↦ g^*a ⌣ c p i` of `TopPair.pullbackCup`. When `g` is the projection of a fibre bundle, `A` is
-empty and the classes restrict on every fibre to a basis of its cohomology, the Leray–Hirsch
-theorem asserts that this map is bijective. For the Thom pair of a vector bundle and a single Thom
+empty, the cohomology of the fibre is free and finitely generated in each degree and the classes
+restrict on every fibre to a basis of it, the Leray–Hirsch theorem asserts that this map is
+bijective. For the Thom pair of a vector bundle and a single Thom
 class it is the Thom map `TauCeti.thomMap`. The trivial-bundle case with absolute classes is
 `TopCat.lerayHirschProdOfClasses_bijective`.
 

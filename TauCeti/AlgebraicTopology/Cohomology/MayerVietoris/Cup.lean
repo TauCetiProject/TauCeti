@@ -52,6 +52,12 @@ uses.
   `TopCat.rightToUnionMap`: the other inclusions of pairs among `(U ∩ V, A ∩ B)`, `(U, A)`,
   `(V, B)` and `(U ∪ V, A ∪ B)`, and how they compose to `TopCat.interToUnionMap`
   (`TopCat.interToLeftMap_comp_leftToUnionMap`, `TopCat.interToRightMap_comp_rightToUnionMap`).
+* `TopCat.singularCohomologyMap_interToLeftMap_leftToUnionMap`: restricting a relative class
+  from `(U ∪ V, A ∪ B)` to `(U ∩ V, A ∩ B)` through `(U, A)` or through `(V, B)` agrees.
+* `TopCat.eq_zero_of_singularCohomologyMap_leftToUnionMap_eq_zero`,
+  `TopCat.exists_singularCohomologyPairMayerVietorisδ_eq` and
+  `TopCat.exists_sub_eq_of_singularCohomologyPairMayerVietorisδ_eq_zero`: exactness of the
+  Mayer–Vietoris sequence of two pairs in module coefficients, stated for elements.
 
 ## References
 
@@ -570,4 +576,87 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     TopPair.singularCup_homologyπ k (unionPair hAU hBV) u μ
       (p + 1) q (p + q + 1) h', moduleCat_homologyMap_homologyπ]
   exact pairMayerVietorisδ_cup_eq k hAU hBV u μ h' x₂ α ζ β hd hg
+
+end TopCat
+
+namespace TopCat
+
+/-! ### Exactness of the sequence of two pairs for elements -/
+
+variable {K : Type w} [CommRing K] {M : ModuleCat.{w} K} {X : TopCat.{w}} {A B C D : Set X}
+  (hCA : C ⊆ A) (hDB : D ⊆ B)
+  (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B))) (hB : IsOpen ((↑) ⁻¹' B : Set ↥(A ∪ B)))
+  (hC : IsOpen ((↑) ⁻¹' C : Set ↥(C ∪ D))) (hD : IsOpen ((↑) ⁻¹' D : Set ↥(C ∪ D)))
+
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
+  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+
+/-- Restricting from the union pair to the intersection pair through either pair agrees. -/
+theorem singularCohomologyMap_interToLeftMap_leftToUnionMap {m : ℕ}
+    (y : (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularCohomology
+      (ModuleCat.of K K) K M m) :
+    TopPair.singularCohomologyMap (interToLeftMap hCA hDB) m
+        (TopPair.singularCohomologyMap (leftToUnionMap hCA hDB) m y) =
+      TopPair.singularCohomologyMap (interToRightMap hCA hDB) m
+        (TopPair.singularCohomologyMap (rightToUnionMap hCA hDB) m y) := by
+  rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
+    interToLeftMap_comp_leftToUnionMap, interToRightMap_comp_rightToUnionMap]
+
+include hA hB hC hD in
+/-- A relative class of degree `0` restricting to `0` on both pairs is `0`. -/
+theorem eq_zero_of_singularCohomologyMap_leftToUnionMap_eq_zero
+    (y : (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularCohomology
+      (ModuleCat.of K K) K M 0)
+    (hyA : TopPair.singularCohomologyMap (leftToUnionMap hCA hDB) 0 y = 0)
+    (hyB : TopPair.singularCohomologyMap (rightToUnionMap hCA hDB) 0 y = 0) : y = 0 := by
+  refine (ModuleCat.mono_iff_injective _).1
+    (mono_singularCohomologyPairMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hCA hDB hA hB hC
+      hD) ?_
+  rw [map_zero, ← ModuleCat.biprod_inl_fst_add_inr_snd_apply
+    (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hCA hDB 0 y)]
+  simp [← ConcreteCategory.comp_apply, hyA, hyB]
+
+/-- A relative class restricting to `0` on both pairs is in the image of the connecting
+morphism. -/
+theorem exists_singularCohomologyPairMayerVietorisδ_eq {m : ℕ}
+    (y : (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularCohomology
+      (ModuleCat.of K K) K M (m + 1))
+    (hyA : TopPair.singularCohomologyMap (leftToUnionMap hCA hDB) (m + 1) y = 0)
+    (hyB : TopPair.singularCohomologyMap (rightToUnionMap hCA hDB) (m + 1) y = 0) :
+    ∃ t, singularCohomologyPairMayerVietorisδ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m (m + 1)
+      rfl t = y := by
+  refine ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (singularCohomologyPairMayerVietoris_exact₁ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m
+      (m + 1) rfl) y).1 ?_
+  rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply
+    (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hCA hDB (m + 1) y)]
+  simp [← ConcreteCategory.comp_apply, hyA, hyB]
+
+/-- A relative class over the intersection pair killed by the connecting morphism is a difference
+of restrictions from the two pairs. -/
+theorem exists_sub_eq_of_singularCohomologyPairMayerVietorisδ_eq_zero {m : ℕ}
+    (t : (TopPair.ofInclusion (Set.inter_subset_inter hCA hDB)).singularCohomology
+      (ModuleCat.of K K) K M m)
+    (ht : singularCohomologyPairMayerVietorisδ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m (m + 1)
+      rfl t = 0) :
+    ∃ x y, TopPair.singularCohomologyMap (interToLeftMap hCA hDB) m x -
+      TopPair.singularCohomologyMap (interToRightMap hCA hDB) m y = t := by
+  obtain ⟨z, rfl⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (singularCohomologyPairMayerVietoris_exact₃ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m
+      (m + 1) rfl) t).1 ht
+  refine ⟨(biprod.fst : _ ⊞ (TopPair.ofInclusion hDB).singularCohomology (ModuleCat.of K K) K M m
+    ⟶ _) z, (biprod.snd : (TopPair.ofInclusion hCA).singularCohomology (ModuleCat.of K K) K M m ⊞
+      _ ⟶ _) z, ?_⟩
+  have h₁ := ConcreteCategory.congr_hom
+    (inl_singularCohomologyPairMayerVietorisFromBiprod (ModuleCat.of K K) K M hCA hDB m)
+    ((biprod.fst : _ ⊞ (TopPair.ofInclusion hDB).singularCohomology (ModuleCat.of K K) K M m ⟶ _) z)
+  have h₂ := ConcreteCategory.congr_hom
+    (inr_singularCohomologyPairMayerVietorisFromBiprod (ModuleCat.of K K) K M hCA hDB m)
+    ((biprod.snd : (TopPair.ofInclusion hCA).singularCohomology (ModuleCat.of K K) K M m ⊞ _ ⟶ _)
+      z)
+  rw [ConcreteCategory.comp_apply] at h₁ h₂
+  conv_rhs => rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply z]
+  rw [map_add, h₁, h₂]
+  simp [sub_eq_add_neg]
+
 end TopCat

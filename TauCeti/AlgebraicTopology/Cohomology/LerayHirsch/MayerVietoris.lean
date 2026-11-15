@@ -16,8 +16,9 @@ For a pair `P = (X, A)`, a map `g : X ⟶ Y` and a family of classes `c p : ι p
 Leray–Hirsch map `⨁_{p + q = n} ⨁_{i : ι p} H^q(Y; M) ⟶ Hⁿ(X, A; M)`,
 `(a_{p,i}) ↦ ∑ g^*a_{p,i} ⌣ c p i`, is `TopPair.lerayHirsch`, defined in
 `TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Basic`. When `g` is the projection of a fibre
-bundle, `A` is empty and the classes restrict on every fibre to a basis of its cohomology, the
-Leray–Hirsch theorem asserts that it is bijective.
+bundle, `A` is empty, the cohomology of the fibre is free and finitely generated in each degree
+and the classes restrict on every fibre to a basis of it, the Leray–Hirsch theorem asserts that it
+is bijective.
 
 This file proves that bijectivity of the Leray–Hirsch map is local on the base, as in the proof of
 the theorem by Mayer–Vietoris over trivializing open sets. For a map `π : X ⟶ Y`, a subset
@@ -73,176 +74,6 @@ open scoped DirectSum
 
 universe w
 
-namespace TopCat
-
-/-! ### Elementwise Mayer–Vietoris exactness -/
-
-section Exactness
-
-variable {K : Type w} [CommRing K] {M : ModuleCat.{w} K} {X : TopCat.{w}}
-
-section Absolute
-
-variable {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = univ)
-
-include hU hV hUV in
-/-- A class of degree `0` restricting to `0` on `U` and on `V` is `0`. -/
-private lemma eq_zero_of_restrict_eq_zero
-    (a : X.singularCohomology (ModuleCat.of K K) K M 0)
-    (haU : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal U)) 0 a = 0)
-    (haV : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal V)) 0 a = 0) : a = 0 := by
-  refine (ModuleCat.mono_iff_injective _).1
-    (mono_singularCohomologyMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hU hV hUV) ?_
-  rw [map_zero, ← ModuleCat.biprod_inl_fst_add_inr_snd_apply
-    (singularCohomologyMayerVietorisToBiprod (ModuleCat.of K K) K M U V 0 a)]
-  simp [← ConcreteCategory.comp_apply, haU, haV]
-
-/-- A class restricting to `0` on `U` and on `V` is in the image of the connecting morphism. -/
-private lemma exists_singularCohomologyMayerVietorisδ_eq {q : ℕ}
-    (a : X.singularCohomology (ModuleCat.of K K) K M (q + 1))
-    (haU : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal U)) (q + 1) a = 0)
-    (haV : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal V)) (q + 1) a = 0) :
-    ∃ b, singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl b = a := by
-  refine ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    (singularCohomologyMayerVietoris_exact₁ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl) a).1 ?_
-  rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply
-    (singularCohomologyMayerVietorisToBiprod (ModuleCat.of K K) K M U V (q + 1) a)]
-  simp [← ConcreteCategory.comp_apply, haU, haV]
-
-/-- The connecting morphism vanishes on restrictions from `U`. -/
-private lemma singularCohomologyMayerVietorisδ_restrict_left {q : ℕ}
-    (x : (of U).singularCohomology (ModuleCat.of K K) K M q) :
-    singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl
-      (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion inter_subset_left)) q x) =
-      0 := by
-  have h := ConcreteCategory.congr_hom
-    (inl_singularCohomologyMayerVietorisFromBiprod (ModuleCat.of K K) K M U V q) x
-  have h₀ := ConcreteCategory.congr_hom (singularCohomologyMayerVietorisFromBiprod_δ
-    (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl)
-    ((biprod.inl : _ ⟶ _ ⊞ (of V).singularCohomology (ModuleCat.of K K) K M q) x)
-  rw [ConcreteCategory.comp_apply] at h h₀
-  rw [h] at h₀
-  simpa using h₀
-
-/-- The connecting morphism vanishes on restrictions from `V`. -/
-private lemma singularCohomologyMayerVietorisδ_restrict_right {q : ℕ}
-    (y : (of V).singularCohomology (ModuleCat.of K K) K M q) :
-    singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl
-      (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion inter_subset_right)) q y) =
-      0 := by
-  have h := ConcreteCategory.congr_hom
-    (inr_singularCohomologyMayerVietorisFromBiprod (ModuleCat.of K K) K M U V q) y
-  have h₀ := ConcreteCategory.congr_hom (singularCohomologyMayerVietorisFromBiprod_δ
-    (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl)
-    ((biprod.inr : _ ⟶ (of U).singularCohomology (ModuleCat.of K K) K M q ⊞ _) y)
-  rw [ConcreteCategory.comp_apply] at h h₀
-  rw [h] at h₀
-  simpa using h₀
-
-include hU hV hUV in
-/-- Classes over `U` and `V` with the same restriction to `U ∩ V` glue to a class over `X`. -/
-private lemma exists_restrict_eq {q : ℕ} (x : (of U).singularCohomology (ModuleCat.of K K) K M q)
-    (y : (of V).singularCohomology (ModuleCat.of K K) K M q)
-    (hxy : TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion inter_subset_left)) q x =
-      TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion inter_subset_right)) q y) :
-    ∃ z, TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal U)) q z = x ∧
-      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal V)) q z = y := by
-  obtain ⟨z, hz⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    (singularCohomologyMayerVietoris_exact₂ (ModuleCat.of K K) K M hU hV hUV q)
-      ((biprod.inl : _ ⟶ _ ⊞ (of V).singularCohomology (ModuleCat.of K K) K M q) x +
-        (biprod.inr : _ ⟶ (of U).singularCohomology (ModuleCat.of K K) K M q ⊞ _) y)).1
-    (by simp [← ConcreteCategory.comp_apply, hxy])
-  refine ⟨z, ?_, ?_⟩
-  · simpa [← ConcreteCategory.comp_apply] using congrArg (biprod.fst : _ ⊞
-      (of V).singularCohomology (ModuleCat.of K K) K M q ⟶ _) hz
-  · simpa [← ConcreteCategory.comp_apply] using congrArg (biprod.snd :
-      (of U).singularCohomology (ModuleCat.of K K) K M q ⊞ _ ⟶ _) hz
-
-end Absolute
-
-section Pair
-
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
-
-variable {A B C D : Set X} (hCA : C ⊆ A) (hDB : D ⊆ B)
-  (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B))) (hB : IsOpen ((↑) ⁻¹' B : Set ↥(A ∪ B)))
-  (hC : IsOpen ((↑) ⁻¹' C : Set ↥(C ∪ D))) (hD : IsOpen ((↑) ⁻¹' D : Set ↥(C ∪ D)))
-
-include hA hB hC hD in
-/-- A relative class of degree `0` restricting to `0` on both pairs is `0`. -/
-private lemma pair_eq_zero_of_restrict_eq_zero
-    (y : (TopPair.ofInclusion (union_subset_union hCA hDB)).singularCohomology
-      (ModuleCat.of K K) K M 0)
-    (hyA : TopPair.singularCohomologyMap (leftToUnionMap hCA hDB) 0 y = 0)
-    (hyB : TopPair.singularCohomologyMap (rightToUnionMap hCA hDB) 0 y = 0) : y = 0 := by
-  refine (ModuleCat.mono_iff_injective _).1
-    (mono_singularCohomologyPairMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hCA hDB hA hB hC
-      hD) ?_
-  rw [map_zero, ← ModuleCat.biprod_inl_fst_add_inr_snd_apply
-    (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hCA hDB 0 y)]
-  simp [← ConcreteCategory.comp_apply, hyA, hyB]
-
-/-- A relative class restricting to `0` on both pairs is in the image of the connecting
-morphism. -/
-private lemma exists_singularCohomologyPairMayerVietorisδ_eq {m : ℕ}
-    (y : (TopPair.ofInclusion (union_subset_union hCA hDB)).singularCohomology
-      (ModuleCat.of K K) K M (m + 1))
-    (hyA : TopPair.singularCohomologyMap (leftToUnionMap hCA hDB) (m + 1) y = 0)
-    (hyB : TopPair.singularCohomologyMap (rightToUnionMap hCA hDB) (m + 1) y = 0) :
-    ∃ t, singularCohomologyPairMayerVietorisδ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m (m + 1)
-      rfl t = y := by
-  refine ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    (singularCohomologyPairMayerVietoris_exact₁ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m
-      (m + 1) rfl) y).1 ?_
-  rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply
-    (singularCohomologyPairMayerVietorisToBiprod (ModuleCat.of K K) K M hCA hDB (m + 1) y)]
-  simp [← ConcreteCategory.comp_apply, hyA, hyB]
-
-/-- A relative class over the intersection killed by the connecting morphism is a difference of
-restrictions from the two pairs. -/
-private lemma exists_sub_eq_of_singularCohomologyPairMayerVietorisδ_eq_zero {m : ℕ}
-    (t : (TopPair.ofInclusion (inter_subset_inter hCA hDB)).singularCohomology
-      (ModuleCat.of K K) K M m)
-    (ht : singularCohomologyPairMayerVietorisδ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m (m + 1)
-      rfl t = 0) :
-    ∃ x y, TopPair.singularCohomologyMap (interToLeftMap hCA hDB) m x -
-      TopPair.singularCohomologyMap (interToRightMap hCA hDB) m y = t := by
-  obtain ⟨z, rfl⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    (singularCohomologyPairMayerVietoris_exact₃ (ModuleCat.of K K) K M hCA hDB hA hB hC hD m
-      (m + 1) rfl) t).1 ht
-  refine ⟨(biprod.fst : _ ⊞ (TopPair.ofInclusion hDB).singularCohomology (ModuleCat.of K K) K M m
-    ⟶ _) z, (biprod.snd : (TopPair.ofInclusion hCA).singularCohomology (ModuleCat.of K K) K M m ⊞
-      _ ⟶ _) z, ?_⟩
-  have h₁ := ConcreteCategory.congr_hom
-    (inl_singularCohomologyPairMayerVietorisFromBiprod (ModuleCat.of K K) K M hCA hDB m)
-    ((biprod.fst : _ ⊞ (TopPair.ofInclusion hDB).singularCohomology (ModuleCat.of K K) K M m ⟶ _) z)
-  have h₂ := ConcreteCategory.congr_hom
-    (inr_singularCohomologyPairMayerVietorisFromBiprod (ModuleCat.of K K) K M hCA hDB m)
-    ((biprod.snd : (TopPair.ofInclusion hCA).singularCohomology (ModuleCat.of K K) K M m ⊞ _ ⟶ _)
-      z)
-  rw [ConcreteCategory.comp_apply] at h₁ h₂
-  conv_rhs => rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply z]
-  rw [map_add, h₁, h₂]
-  simp [sub_eq_add_neg]
-
-/-- Restricting from the union pair to the intersection pair through either pair agrees. -/
-private lemma singularCohomologyMap_interToLeftMap_leftToUnionMap {m : ℕ}
-    (y : (TopPair.ofInclusion (union_subset_union hCA hDB)).singularCohomology
-      (ModuleCat.of K K) K M m) :
-    TopPair.singularCohomologyMap (interToLeftMap hCA hDB) m
-        (TopPair.singularCohomologyMap (leftToUnionMap hCA hDB) m y) =
-      TopPair.singularCohomologyMap (interToRightMap hCA hDB) m
-        (TopPair.singularCohomologyMap (rightToUnionMap hCA hDB) m y) := by
-  rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
-    interToLeftMap_comp_leftToUnionMap, interToRightMap_comp_rightToUnionMap]
-
-end Pair
-
-end Exactness
-
-end TopCat
-
 namespace TopPair
 
 /-! ### The Mayer–Vietoris step -/
@@ -293,7 +124,7 @@ private lemma sourceδ_restrict_left {n : ℕ} (x : (TopCat.of U).LerayHirschSou
   | of j x =>
     obtain ⟨⟨⟨p, q⟩, h⟩, i⟩ := j
     rw [← DirectSum.lof_eq_of K, lerayHirschSourceMap_lof, sourceδ_lof,
-      singularCohomologyMayerVietorisδ_restrict_left, map_zero]
+      singularCohomologyMayerVietorisδ_singularCohomologyMap_inclusion_left, map_zero]
   | add x y hx hy => simp only [map_add, hx, hy, add_zero]
 
 /-- The connecting morphism vanishes on restrictions from `V`. -/
@@ -306,7 +137,7 @@ private lemma sourceδ_restrict_right {n : ℕ} (y : (TopCat.of V).LerayHirschSo
   | of j y =>
     obtain ⟨⟨⟨p, q⟩, h⟩, i⟩ := j
     rw [← DirectSum.lof_eq_of K, lerayHirschSourceMap_lof, sourceδ_lof,
-      singularCohomologyMayerVietorisδ_restrict_right, map_zero]
+      singularCohomologyMayerVietorisδ_singularCohomologyMap_inclusion_right, map_zero]
   | add x y hx hy => simp only [map_add, hx, hy, add_zero]
 
 /-- A source element over `Y` whose restrictions to `U` and `V` vanish is in the image of the
@@ -325,7 +156,7 @@ private lemma exists_sourceδ_eq {n : ℕ} (a : Y.LerayHirschSource M ι (n + 1)
   rw [lerayHirschSourceMap_apply, DirectSum.zero_apply] at hjU hjV
   cases q with
   | zero =>
-    rw [eq_zero_of_restrict_eq_zero hU hV hUV _ hjU hjV, map_zero]
+    rw [eq_zero_of_singularCohomologyMap_subtypeVal_eq_zero hU hV hUV _ hjU hjV, map_zero]
     exact zero_mem _
   | succ q =>
     obtain ⟨b, hb⟩ := exists_singularCohomologyMayerVietorisδ_eq hU hV hUV _ hjU hjV
@@ -345,7 +176,7 @@ private lemma source_eq_zero_of_restrict_eq_zero (a : Y.LerayHirschSource M ι 0
   have hjU := DFunLike.congr_fun haU ⟨⟨(p, 0), h⟩, i⟩
   have hjV := DFunLike.congr_fun haV ⟨⟨(p, 0), h⟩, i⟩
   rw [lerayHirschSourceMap_apply, DirectSum.zero_apply] at hjU hjV
-  exact eq_zero_of_restrict_eq_zero hU hV hUV _ hjU hjV
+  exact eq_zero_of_singularCohomologyMap_subtypeVal_eq_zero hU hV hUV _ hjU hjV
 
 omit [∀ p, DecidableEq (ι p)] in
 include hU hV hUV in
@@ -359,7 +190,7 @@ private lemma exists_source_restrict_eq {n : ℕ} (x : (TopCat.of U).LerayHirsch
       lerayHirschSourceMap (TopCat.ofHom (ContinuousMap.subtypeVal V)) n z = y := by
   let : ∀ p, DecidableEq (ι p) := fun _ ↦ Classical.decEq _
   classical
-  have hz := fun j ↦ exists_restrict_eq hU hV hUV (x j) (y j) (by
+  have hz := fun j ↦ exists_singularCohomologyMap_subtypeVal_eq hU hV hUV (x j) (y j) (by
     have := DFunLike.congr_fun hxy j
     rwa [lerayHirschSourceMap_apply, lerayHirschSourceMap_apply] at this)
   choose z hzU hzV using hz
@@ -387,23 +218,6 @@ variable {X Y : TopCat.{w}} (π : X ⟶ Y) {U' V' : Set X} {A B : Set X} (hAU : 
   (hBV : B ⊆ V') {U V : Set Y} (hπU : MapsTo π U' U) (hπV : MapsTo π V' V)
   (c : ∀ p, ι p → (TopPair.ofInclusion (union_subset_union hAU hBV)).singularCohomology
     (ModuleCat.of K K) K (ModuleCat.of K K) p)
-
-/-- The restriction `U' ⟶ U` of `π`. -/
-private abbrev restrictLeft : (TopPair.ofInclusion hAU).fst ⟶ TopCat.of U :=
-  TopCat.ofHom ⟨hπU.restrict, π.hom.continuous.restrict hπU⟩
-
-/-- The restriction `V' ⟶ V` of `π`. -/
-private abbrev restrictRight : (TopPair.ofInclusion hBV).fst ⟶ TopCat.of V :=
-  TopCat.ofHom ⟨hπV.restrict, π.hom.continuous.restrict hπV⟩
-
-/-- The restriction `U' ∩ V' ⟶ U ∩ V` of `π`. -/
-private abbrev restrictInter :
-    (TopPair.ofInclusion (inter_subset_inter hAU hBV)).fst ⟶ TopCat.of ↥(U ∩ V) :=
-  TopCat.ofHom ⟨(hπU.inter_inter hπV).restrict, π.hom.continuous.restrict (hπU.inter_inter hπV)⟩
-
-/-- The restriction `U' ∪ V' ⟶ Y` of `π`. -/
-private abbrev restrictUnion : (TopPair.ofInclusion (union_subset_union hAU hBV)).fst ⟶ Y :=
-  TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V')) ≫ π
 
 /-- The Leray–Hirsch map over `Y`. -/
 private abbrev ΦY (n : ℕ) :=
@@ -554,8 +368,8 @@ private lemma surjective_ΦY {n : ℕ} (hΦU : Function.Surjective (ΦU π hAU h
     rw [map_sub, ← ΦV_restrict π hAU hBV hπV c, haV, hsV, sub_self]
   cases n with
   | zero =>
-    exact ⟨a, (sub_eq_zero.1
-      (pair_eq_zero_of_restrict_eq_zero hAU hBV hU'' hV'' hA hB _ hyU hyV)).symm⟩
+    exact ⟨a, (sub_eq_zero.1 (eq_zero_of_singularCohomologyMap_leftToUnionMap_eq_zero hAU hBV
+      hU'' hV'' hA hB _ hyU hyV)).symm⟩
   | succ m =>
     -- So `y - ΦY a` is the image of the connecting morphism of some `ΦI b`, which is `ΦY (δ b)`.
     obtain ⟨t, ht⟩ :=
@@ -650,25 +464,6 @@ section Cover
 
 variable {M} {U V : Set Y}
 
-/-- Restricting a class of `(X, Z)` to the union of the pairs over `U` and `V` and then along a
-map of pairs `φ` is restricting it to the pair over `S` and then along `ψ`, when `φ` and `ψ` agree
-on the points of `X`: a map of pairs into `(X, Z)` is determined by its map of ambient spaces. -/
-private lemma singularCohomologyMap_restrictPreimagePairUnionIso {P : TopPair.{w}} {S : Set Y}
-    (φ : P ⟶ TopPair.ofInclusion (union_subset_union
-      (inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U) (inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V)))
-    (ψ : P ⟶ TopPair.ofInclusion (inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S))
-    (hφψ : ∀ x, (TopPair.Hom.fst φ x).1 = (TopPair.Hom.fst ψ x).1) (p : ℕ)
-    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K M p) :
-    TopPair.singularCohomologyMap φ p (TopPair.singularCohomologyMap
-        ((restrictPreimagePairUnionIso π Z U V).hom ≫ restrictPreimagePairMap π Z (U ∪ V)) p u) =
-      TopPair.singularCohomologyMap ψ p
-        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) p u) := by
-  rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
-  exact congrArg (fun f ↦ TopPair.singularCohomologyMap f p u) (TopPair.hom_ext_of_fst _
-    (TopCat.ext fun x ↦ ((restrictPreimagePairMap_fst_apply π Z (U ∪ V) _).trans
-      (restrictPreimagePairUnionIso_hom_fst_apply π Z U V _)).trans
-      ((hφψ x).trans (restrictPreimagePairMap_fst_apply π Z S _).symm)))
-
 /-- **The Mayer–Vietoris step for the Leray–Hirsch map of the pair `(X, Z)` and an open cover of
 the base.** Let `π : X ⟶ Y` be a map, `Z ⊆ X`, `c p : ι p → Hᵖ(X, Z; K)` a family of classes, and
 let `U` and `V` be open sets covering `Y`. If the Leray–Hirsch maps over `U`, `V` and `U ∩ V` are
@@ -700,20 +495,24 @@ theorem bijective_lerayHirsch_of_union_eq_univ (hU : IsOpen U) (hV : IsOpen V)
     (hU.preimage π.hom.continuous) (hV.preimage π.hom.continuous) hUV''
     (hZ' hU) (hZ' hV) hU hV hUV ?_ ?_ ?_
   · intro q hq
-    simp only [singularCohomologyMap_restrictPreimagePairUnionIso π Z (leftToUnionMap _ _) (𝟙 _)
-      fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x),
-      TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
+    simp only [← TopPair.singularCohomologyMap_comp_apply,
+      comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairMap π Z (leftToUnionMap _ _)
+        (𝟙 _) fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x),
+      Category.id_comp]
     exact hU' q hq
   · intro q hq
-    simp only [singularCohomologyMap_restrictPreimagePairUnionIso π Z (rightToUnionMap _ _) (𝟙 _)
-      fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x),
-      TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
+    simp only [← TopPair.singularCohomologyMap_comp_apply,
+      comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairMap π Z (rightToUnionMap _ _)
+        (𝟙 _) fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x),
+      Category.id_comp]
     exact hV' q hq
   · intro q hq
-    simp only [singularCohomologyMap_restrictPreimagePairUnionIso π Z (interToUnionMap _ _)
-      (restrictPreimagePairInterIso π Z U V).hom
-      fun x ↦ (congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)).trans
-        (restrictPreimagePairInterIso_hom_fst_apply π Z U V x).symm]
+    simp only [← TopPair.singularCohomologyMap_comp_apply,
+      comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairMap π Z (interToUnionMap _ _)
+        (restrictPreimagePairInterIso π Z U V).hom
+        fun x ↦ (congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)).trans
+          (restrictPreimagePairInterIso_hom_fst_apply π Z U V x).symm]
+    simp only [TopPair.singularCohomologyMap_comp_apply]
     exact (TopPair.bijective_lerayHirsch_iff_of_isIso (restrictPreimagePairInterIso π Z U V).hom
       (𝟙 (of ↥(U ∩ V))) (g' := ofHom (π.hom.restrictPreimage (U ∩ V)))
       (by
@@ -726,41 +525,22 @@ section Union
 
 variable {M} {W S : Set Y}
 
-variable (W) in
-/-- The restrictions of the classes `c` to the pair formed by `π⁻¹ W` and its points lying in
-`Z`. -/
-private abbrev restrictClasses
-    (c : ∀ p, ι p → (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K
-      (ModuleCat.of K K) p) (p : ℕ) (i : ι p) :
-    (TopPair.ofSubset (X := of ↥(π ⁻¹' W))
-      (((↑) : ↥(π ⁻¹' W) → X) ⁻¹' (π ⁻¹' W ∩ Z))).singularCohomology
-        (ModuleCat.of K K) K (ModuleCat.of K K) p :=
-  TopPair.singularCohomologyMap (TopPair.ofSubsetPreimageValIso
-      (inter_subset_left : π ⁻¹' W ∩ Z ⊆ π ⁻¹' W)).hom p
-    (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z W) p (c p i))
-
 /-- For `S ⊆ W`, the Leray–Hirsch map over `S` agrees with the map over the preimage of `S` in `W`
 of the restriction of `π` over `W`, up to homeomorphisms; so the two are bijective together. -/
 private theorem bijective_lerayHirschRestrict_restrict_iff (hSW : S ⊆ W)
     (c : ∀ p, ι p → (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K
       (ModuleCat.of K K) p) (n : ℕ) :
     Function.Bijective (lerayHirschRestrict (ofHom (π.hom.restrictPreimage W))
-      (((↑) : ↥(π ⁻¹' W) → X) ⁻¹' (π ⁻¹' W ∩ Z)) M ((↑) ⁻¹' S) (restrictClasses π Z W c) n) ↔
+      (((↑) : ↥(π ⁻¹' W) → X) ⁻¹' (π ⁻¹' W ∩ Z)) M ((↑) ⁻¹' S)
+        (fun p i ↦ restrictClass π Z W (c p i)) n) ↔
       Function.Bijective (lerayHirschRestrict π Z M S c n) := by
   have hc : (fun p i ↦ TopPair.singularCohomologyMap (restrictPreimagePairMap
       (ofHom (π.hom.restrictPreimage W)) (((↑) : ↥(π ⁻¹' W) → X) ⁻¹' (π ⁻¹' W ∩ Z))
-      ((↑) ⁻¹' S)) p
-        (restrictClasses π Z W c p i)) =
+      ((↑) ⁻¹' S)) p (restrictClass π Z W (c p i))) =
       fun p i ↦ TopPair.singularCohomologyMap (restrictPreimagePairRestrictPreimageIso π Z hSW).hom
-        p (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) p (c p i)) := by
-    funext p i
-    rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
-      ← TopPair.singularCohomologyMap_comp_apply]
-    exact congrArg (fun f ↦ TopPair.singularCohomologyMap f p (c p i))
-      (TopPair.hom_ext_of_fst _ (by
-        simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst,
-          restrictPreimagePairRestrictPreimageIso_hom_fst, restrictPreimagePairMap_fst]
-        exact TopCat.ext fun _ ↦ rfl))
+        p (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) p (c p i)) :=
+    funext fun p ↦ funext fun i ↦
+      singularCohomologyMap_restrictPreimagePairMap_restrictClass π Z hSW (c p i)
   rw [lerayHirschRestrict_def, lerayHirschRestrict_def π Z M S, hc]
   have hS : S ⊆ range ((↑) : W → Y) := by rwa [Subtype.range_coe]
   let g := isoOfHomeo (X := of ↥((↑) ⁻¹' S : Set ↥W)) (Y := of ↥S)
@@ -790,7 +570,7 @@ theorem bijective_lerayHirschRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : 
     (((↑) : ↥(π ⁻¹' (U ∪ V)) → X) ⁻¹' (π ⁻¹' (U ∪ V) ∩ Z)) (M := M)
     (U := ((↑) : ↥(U ∪ V) → Y) ⁻¹' U) (V := ((↑) : ↥(U ∪ V) → Y) ⁻¹' V)
     (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
-    (eq_univ_of_forall fun x ↦ x.2) (restrictClasses π Z (U ∪ V) c) (n := n)
+    (eq_univ_of_forall fun x ↦ x.2) (fun p i ↦ restrictClass π Z (U ∪ V) (c p i)) (n := n)
     (fun q hq ↦ (bijective_lerayHirschRestrict_restrict_iff π Z subset_union_left c q).2
       (hU' q hq))
     (fun q hq ↦ (bijective_lerayHirschRestrict_restrict_iff π Z subset_union_right c q).2

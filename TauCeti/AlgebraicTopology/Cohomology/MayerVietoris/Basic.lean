@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
@@ -65,6 +66,12 @@ subcomplex with the singular cohomology of `X` (`TauCeti.smallSingularCohomology
 * `TopCat.mono_singularCohomologyMayerVietorisToBiprod_zero`: injectivity at the degree-zero
   endpoint.
 * `TopCat.singularCohomologyMayerVietorisδ_naturality`: naturality of the connecting morphism.
+* `TopCat.eq_zero_of_singularCohomologyMap_subtypeVal_eq_zero`,
+  `TopCat.exists_singularCohomologyMayerVietorisδ_eq`,
+  `TopCat.singularCohomologyMayerVietorisδ_singularCohomologyMap_inclusion_left`,
+  `TopCat.singularCohomologyMayerVietorisδ_singularCohomologyMap_inclusion_right` and
+  `TopCat.exists_singularCohomologyMap_subtypeVal_eq`: exactness in module coefficients, stated
+  for elements.
 
 ## References
 
@@ -568,5 +575,93 @@ lemma singularCohomologyMayerVietorisδ_naturality (n m : ℕ) (h : n + 1 = m :=
     ← Category.assoc, hnat, Category.assoc]
 
 end Sequence
+
+end TopCat
+
+namespace TopCat
+
+/-! ### Exactness for elements -/
+
+section Elements
+
+variable {K : Type w} [CommRing K] {M : ModuleCat.{w} K} {X : TopCat.{w}}
+  {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = Set.univ)
+
+include hU hV hUV in
+/-- A class of degree `0` restricting to `0` on `U` and on `V` is `0`. -/
+lemma eq_zero_of_singularCohomologyMap_subtypeVal_eq_zero
+    (a : X.singularCohomology (ModuleCat.of K K) K M 0)
+    (haU : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal U)) 0 a = 0)
+    (haV : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal V)) 0 a = 0) : a = 0 := by
+  refine (ModuleCat.mono_iff_injective _).1
+    (mono_singularCohomologyMayerVietorisToBiprod_zero (ModuleCat.of K K) K M hU hV hUV) ?_
+  rw [map_zero, ← ModuleCat.biprod_inl_fst_add_inr_snd_apply
+    (singularCohomologyMayerVietorisToBiprod (ModuleCat.of K K) K M U V 0 a)]
+  simp [← ConcreteCategory.comp_apply, haU, haV]
+
+/-- A class restricting to `0` on `U` and on `V` is in the image of the connecting morphism. -/
+lemma exists_singularCohomologyMayerVietorisδ_eq {q : ℕ}
+    (a : X.singularCohomology (ModuleCat.of K K) K M (q + 1))
+    (haU : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal U)) (q + 1) a = 0)
+    (haV : TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal V)) (q + 1) a = 0) :
+    ∃ b, singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl b = a := by
+  refine ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (singularCohomologyMayerVietoris_exact₁ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl) a).1 ?_
+  rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply
+    (singularCohomologyMayerVietorisToBiprod (ModuleCat.of K K) K M U V (q + 1) a)]
+  simp [← ConcreteCategory.comp_apply, haU, haV]
+
+/-- The connecting morphism vanishes on restrictions from `U`. -/
+lemma singularCohomologyMayerVietorisδ_singularCohomologyMap_inclusion_left {q : ℕ}
+    (x : (of U).singularCohomology (ModuleCat.of K K) K M q) :
+    singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl
+      (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_left)) q x) =
+      0 := by
+  have h := ConcreteCategory.congr_hom
+    (inl_singularCohomologyMayerVietorisFromBiprod (ModuleCat.of K K) K M U V q) x
+  have h₀ := ConcreteCategory.congr_hom (singularCohomologyMayerVietorisFromBiprod_δ
+    (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl)
+    ((biprod.inl : _ ⟶ _ ⊞ (of V).singularCohomology (ModuleCat.of K K) K M q) x)
+  rw [ConcreteCategory.comp_apply] at h h₀
+  rw [h] at h₀
+  simpa using h₀
+
+/-- The connecting morphism vanishes on restrictions from `V`. -/
+lemma singularCohomologyMayerVietorisδ_singularCohomologyMap_inclusion_right {q : ℕ}
+    (y : (of V).singularCohomology (ModuleCat.of K K) K M q) :
+    singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl
+      (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_right)) q y) =
+      0 := by
+  have h := ConcreteCategory.congr_hom
+    (inr_singularCohomologyMayerVietorisFromBiprod (ModuleCat.of K K) K M U V q) y
+  have h₀ := ConcreteCategory.congr_hom (singularCohomologyMayerVietorisFromBiprod_δ
+    (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl)
+    ((biprod.inr : _ ⟶ (of U).singularCohomology (ModuleCat.of K K) K M q ⊞ _) y)
+  rw [ConcreteCategory.comp_apply] at h h₀
+  rw [h] at h₀
+  simpa using h₀
+
+include hU hV hUV in
+/-- Classes over `U` and `V` with the same restriction to `U ∩ V` glue to a class over `X`. -/
+lemma exists_singularCohomologyMap_subtypeVal_eq {q : ℕ}
+    (x : (of U).singularCohomology (ModuleCat.of K K) K M q)
+    (y : (of V).singularCohomology (ModuleCat.of K K) K M q)
+    (hxy :
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_left)) q x =
+        TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion Set.inter_subset_right)) q y) :
+    ∃ z, TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal U)) q z = x ∧
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal V)) q z = y := by
+  obtain ⟨z, hz⟩ := ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    (singularCohomologyMayerVietoris_exact₂ (ModuleCat.of K K) K M hU hV hUV q)
+      ((biprod.inl : _ ⟶ _ ⊞ (of V).singularCohomology (ModuleCat.of K K) K M q) x +
+        (biprod.inr : _ ⟶ (of U).singularCohomology (ModuleCat.of K K) K M q ⊞ _) y)).1
+    (by simp [← ConcreteCategory.comp_apply, hxy])
+  refine ⟨z, ?_, ?_⟩
+  · simpa [← ConcreteCategory.comp_apply] using congrArg (biprod.fst : _ ⊞
+      (of V).singularCohomology (ModuleCat.of K K) K M q ⟶ _) hz
+  · simpa [← ConcreteCategory.comp_apply] using congrArg (biprod.snd :
+      (of U).singularCohomology (ModuleCat.of K K) K M q ⊞ _ ⟶ _) hz
+
+end Elements
 
 end TopCat

@@ -46,8 +46,11 @@ lemma (`LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective
 degree `0` the sequence of `Y` starts with an injective map, and the vanishing of
 `Hⁿ⁻¹(U' ∩ V', A ∩ B; M)` replaces the missing terms.
 
-## Main results
+## Main definitions and results
 
+* `TopPair.restrictLeft`, `TopPair.restrictRight`, `TopPair.restrictInter`,
+  `TopPair.restrictUnion`: the restrictions `U' ⟶ U`, `V' ⟶ V`, `U' ∩ V' ⟶ U ∩ V` and
+  `U' ∪ V' ⟶ Y` of `π`.
 * `TopPair.singularCohomologyPairMayerVietorisδ_pullbackCup`: `a ↦ π^*a ⌣ u` commutes with the
   connecting morphisms of the two Mayer–Vietoris sequences.
 * `TopPair.bijective_pullbackCup_union`: the Mayer–Vietoris step.
@@ -55,6 +58,12 @@ degree `0` the sequence of `Y` starts with an injective map, and the vanishing o
   cover of the base by two sets.
 * `TopCat.bijective_pullbackCupRestrict_union`: the step over the union of two open sets of the
   base.
+* `TopCat.comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairMap`: maps of pairs
+  into the union of the pairs over `U` and `V` and into the pair over `S`, followed by the
+  inclusions into `(X, Z)`, agree when they agree on points.
+* `TopCat.restrictClass`, `TopCat.singularCohomologyMap_restrictPreimagePairMap_restrictClass`:
+  the restriction of a class of `(X, Z)` to the pair over `W ⊆ Y`, viewed as a class for the
+  restriction of `π` over `W`, and its further restriction over `S ⊆ W`.
 
 ## References
 
@@ -86,20 +95,20 @@ variable {X Y : TopCat.{w}} (π : X ⟶ Y) {U' V' : Set X} {A B : Set X} (hAU : 
   (hBV : B ⊆ V') {U V : Set Y} (hπU : MapsTo π U' U) (hπV : MapsTo π V' V)
 
 /-- The restriction `U' ⟶ U` of `π`. -/
-private abbrev restrictLeft : (TopPair.ofInclusion hAU).fst ⟶ TopCat.of U :=
+abbrev restrictLeft : (TopPair.ofInclusion hAU).fst ⟶ TopCat.of U :=
   TopCat.ofHom ⟨hπU.restrict, π.hom.continuous.restrict hπU⟩
 
 /-- The restriction `V' ⟶ V` of `π`. -/
-private abbrev restrictRight : (TopPair.ofInclusion hBV).fst ⟶ TopCat.of V :=
+abbrev restrictRight : (TopPair.ofInclusion hBV).fst ⟶ TopCat.of V :=
   TopCat.ofHom ⟨hπV.restrict, π.hom.continuous.restrict hπV⟩
 
 /-- The restriction `U' ∩ V' ⟶ U ∩ V` of `π`. -/
-private abbrev restrictInter :
+abbrev restrictInter :
     (TopPair.ofInclusion (inter_subset_inter hAU hBV)).fst ⟶ TopCat.of ↥(U ∩ V) :=
   TopCat.ofHom ⟨(hπU.inter_inter hπV).restrict, π.hom.continuous.restrict (hπU.inter_inter hπV)⟩
 
 /-- The restriction `U' ∪ V' ⟶ Y` of `π`. -/
-private abbrev restrictUnion : (TopPair.ofInclusion (union_subset_union hAU hBV)).fst ⟶ Y :=
+abbrev restrictUnion : (TopPair.ofInclusion (union_subset_union hAU hBV)).fst ⟶ Y :=
   TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V')) ≫ π
 
 variable {n : ℕ}
@@ -387,7 +396,7 @@ private theorem ofHom_restrict_mapsTo_preimage (S : Set Y) :
 /-- A map of pairs `φ` into the union of the pairs over `U` and `V`, followed by the inclusion of
 that union into `(X, Z)`, is a map of pairs `ψ` into the pair over `S` followed by the inclusion
 of the pair over `S`, when `φ` and `ψ` agree on the points of `X`. -/
-private theorem comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairMap
+theorem comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairMap
     {P : TopPair.{w}} {S : Set Y}
     (φ : P ⟶ TopPair.ofInclusion (union_subset_union
       (inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
@@ -471,13 +480,31 @@ variable {W S : Set Y}
 variable (W) in
 /-- The restriction of `u` to the pair over `W`, as a class of the pair formed by `π⁻¹ W` and its
 points lying in `Z`. -/
-private abbrev restrictClass {n : ℕ}
+abbrev restrictClass {n : ℕ}
     (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     (TopPair.ofSubset (X := of ↥(π ⁻¹' W)) ((↑) ⁻¹' (π ⁻¹' W ∩ Z))).singularCohomology
       (ModuleCat.of K K) K (ModuleCat.of K K) n :=
   TopPair.singularCohomologyMap (TopPair.ofSubsetPreimageValIso
       (inter_subset_left : π ⁻¹' W ∩ Z ⊆ π ⁻¹' W)).hom n
     (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z W) n u)
+
+/-- For `S ⊆ W`, restricting the restriction of `u` to the pair over `W` further to the pair over
+the preimage of `S` in `π⁻¹ W` is restricting `u` to the pair over `S`, up to the homeomorphism of
+pairs `TopCat.restrictPreimagePairRestrictPreimageIso`. -/
+theorem singularCohomologyMap_restrictPreimagePairMap_restrictClass (hSW : S ⊆ W) {n : ℕ}
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    TopPair.singularCohomologyMap (restrictPreimagePairMap
+      (ofHom (π.hom.restrictPreimage W)) ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) ((↑) ⁻¹' S)) n
+      (restrictClass π Z W u) =
+      TopPair.singularCohomologyMap (restrictPreimagePairRestrictPreimageIso π Z hSW).hom n
+        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) := by
+  rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
+    ← TopPair.singularCohomologyMap_comp_apply]
+  exact congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
+    (TopPair.hom_ext_of_fst _ (by
+      simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst,
+        restrictPreimagePairRestrictPreimageIso_hom_fst, restrictPreimagePairMap_fst]
+      exact TopCat.ext fun _ ↦ rfl))
 
 variable (M : ModuleCat.{w} K)
 
@@ -489,19 +516,8 @@ private theorem bijective_pullbackCupRestrict_restrict_iff (hSW : S ⊆ W) {n p 
     Function.Bijective (pullbackCupRestrict (ofHom (π.hom.restrictPreimage W))
       ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) M ((↑) ⁻¹' S) n p m h (restrictClass π Z W u)) ↔
       Function.Bijective (pullbackCupRestrict π Z M S n p m h u) := by
-  have hu : TopPair.singularCohomologyMap (restrictPreimagePairMap
-      (ofHom (π.hom.restrictPreimage W)) ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) ((↑) ⁻¹' S)) n
-      (restrictClass π Z W u) =
-      TopPair.singularCohomologyMap (restrictPreimagePairRestrictPreimageIso π Z hSW).hom n
-        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) := by
-    rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
-      ← TopPair.singularCohomologyMap_comp_apply]
-    exact congrArg (fun f ↦ TopPair.singularCohomologyMap f n u)
-      (TopPair.hom_ext_of_fst _ (by
-        simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst,
-          restrictPreimagePairRestrictPreimageIso_hom_fst, restrictPreimagePairMap_fst]
-        exact TopCat.ext fun _ ↦ rfl))
-  rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply π Z M S h u, hu]
+  rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply π Z M S h u,
+    singularCohomologyMap_restrictPreimagePairMap_restrictClass π Z hSW u]
   have hS : S ⊆ range ((↑) : W → Y) := by rwa [Subtype.range_coe]
   let g := isoOfHomeo (X := of ↥((↑) ⁻¹' S : Set ↥W)) (Y := of ↥S)
     (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hS)
