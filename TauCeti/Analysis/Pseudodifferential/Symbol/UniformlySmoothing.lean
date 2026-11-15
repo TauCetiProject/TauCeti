@@ -17,7 +17,8 @@ symbol is smoothing and uniform. Uniformly smoothing symbols are closed under th
 inclusions and derivatives, and they form a two-sided ideal under composition with uniform symbols
 (`TauCeti.Symbol.IsUniformlySmoothing.comp_right`, `TauCeti.Symbol.IsUniformlySmoothing.comp_left`).
 A uniform symbol vanishing at all large frequencies is uniformly smoothing
-(`TauCeti.Symbol.IsUniform.isUniformlySmoothing_of_coefficient_eq_zero`).
+(`TauCeti.Symbol.IsUniform.isUniformlySmoothing_of_coefficient_eq_zero`), as is a smoothing symbol
+with compact spatial support (`TauCeti.Symbol.IsSmoothing.isUniformlySmoothing`).
 -/
 
 public section
@@ -70,6 +71,11 @@ theorem IsUniformlySmoothing.isUniform {a : Symbol n V W m} (ha : a.IsUniformlyS
   obtain ⟨b, hb, hba⟩ := ha m
   rw [isUniform_iff, ← hba]
   exact isUniform_iff.1 hb
+
+/-- A smoothing symbol with compact spatial support is uniformly smoothing. -/
+theorem IsSmoothing.isUniformlySmoothing {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (hsupp : a.HasCompactSpatialSupport) : a.IsUniformlySmoothing := fun m' =>
+  (isSmoothing_iff.1 ha m').imp fun _ hba => ⟨(hsupp.of_coefficient_eq hba).isUniform, hba⟩
 
 @[simp]
 theorem isUniformlySmoothing_zero : (0 : Symbol n V W m).IsUniformlySmoothing :=

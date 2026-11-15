@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Quantization
-import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
+public import Mathlib.Analysis.Fourier.FourierTransform
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
 import TauCeti.Analysis.Fourier.Decay
@@ -15,17 +16,16 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
-# The frequency resolvent `1 - Δ_ξ` and weighted position slices of uniform symbols
+# The shifted frequency Laplacian `1 - Δ_ξ` and weighted position slices of uniform symbols
 
 For a uniform symbol `b` (`TauCeti.Symbol.IsUniform`) without compact spatial support, the
 unweighted position slices `y ↦ b(y, ξ)` need not be integrable. Integrating by parts `2(n + 1)`
 times in frequency trades `(1 + ‖y - x‖²) ^ (n + 1)` against `(1 - Δ_ξ) ^ (n + 1)`. This file
-builds both ingredients:
+builds the symbol-side ingredients:
 
-* `TauCeti.Symbol.oneSubFrequencyLaplacian` and
-  `TauCeti.Symbol.quantizeSchwartzValue_eq_iterate_oneSubFrequencyLaplacian`: the operator `1 - Δ_ξ`
-  on `Symbol n V W m`, commuting with derivatives and rewriting `Op(a) u (x)` via
-  `y ↦ (1 + ‖x - y‖²) ^ (-N) u(y)`.
+* `TauCeti.Symbol.oneSubFrequencyLaplacian`: the shifted frequency Laplacian `1 - Δ_ξ` on
+  `Symbol n V W m`, preserving uniform estimates and compact spatial support and commuting with
+  spatial and frequency derivatives.
 * `TauCeti.Symbol.weightedSlice`: the slice `z ↦ (1 + ‖z‖²) ^ (-(n + 1)) • b(x + z, ξ)`, whose
   Fourier transform decays rapidly in `η` uniformly in `x`
   (`TauCeti.Symbol.IsUniform.exists_norm_fourier_weightedSlice_le`), is jointly continuous, and
@@ -42,7 +42,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform
-open scoped ContDiff RealInnerProductSpace SchwartzMap Topology
+open scoped ContDiff RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -51,18 +51,12 @@ namespace Symbol
 variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W]
 
-theorem IsUniform.neg {a : Symbol n V W m} (ha : a.IsUniform) : (-a).IsUniform := by
-  simpa using ha.smul (-1 : ℂ)
+/-! ### The shifted frequency Laplacian `1 - Δ_ξ` on symbols -/
 
-theorem IsUniform.sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
-    (a - b).IsUniform := by rw [sub_eq_add_neg]; exact ha.add hb.neg
+section ShiftedFrequencyLaplacian
 
-/-! ### The operator `1 - Δ_ξ` on symbols -/
-
-section FrequencyResolvent
-
-/-- The operator `1 - Δ_ξ` on symbols of order `m`. In the quantization integral at `x`, replacing
-`a` by `(1 - Δ_ξ) a` compensates dividing the input by `1 + ‖x - y‖²`. -/
+/-- The shifted frequency Laplacian `1 - Δ_ξ` on symbols of order `m`. In the quantization integral
+at `x`, replacing `a` by `(1 - Δ_ξ) a` compensates dividing the input by `1 + ‖x - y‖²`. -/
 def oneSubFrequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W m :=
   LinearMap.id - inclusion (by linarith) ∘ₗ frequencyLaplacian (m := m)
 
@@ -87,14 +81,11 @@ theorem IsUniform.iterate_oneSubFrequencyLaplacian {a : Symbol n V W m} (ha : a.
 theorem HasCompactSpatialSupport.oneSubFrequencyLaplacian {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) :
     (Symbol.oneSubFrequencyLaplacian a).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  refine hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ ?_⟩
-  have hfl0 : (frequencyLaplacian a).coefficient (x, ξ) = 0 := by
-    rw [coefficient_frequencyLaplacian]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    rw [show (fun ζ ↦ a.coefficient (x, ζ)) = 0 from funext (hKa x hx)]
-    simp only [coordinateDeriv_zero]; rfl
-  rw [coefficient_oneSubFrequencyLaplacian, hKa x hx ξ, hfl0, sub_zero]
+  refine ha.sub (HasCompactSpatialSupport.inclusion ?_ (by linarith))
+  rw [frequencyLaplacian_eq_sum]
+  exact Finset.sum_induction _ HasCompactSpatialSupport
+    (fun _ _ ↦ HasCompactSpatialSupport.add) hasCompactSpatialSupport_zero fun j _ ↦
+      ((ha.frequencyDeriv j).frequencyDeriv j).inclusion (by linarith)
 
 theorem HasCompactSpatialSupport.iterate_oneSubFrequencyLaplacian {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (N : ℕ) :
@@ -140,8 +131,9 @@ theorem frequencyDeriv_iterate_oneSubFrequencyLaplacian (N : ℕ) (j : Fin n) (a
     rw [Function.iterate_succ_apply', frequencyDeriv_oneSubFrequencyLaplacian, ih,
       Function.iterate_succ_apply']
 
-/-- `(1 - Δ_ξ) ^ N a` depends only on the coefficient of `a`, not on its symbol order. -/
-theorem iterate_oneSubFrequencyLaplacian_congr {m₁ m₂ : ℝ} {a₁ : Symbol n V W m₁}
+/-- The coefficient of `(1 - Δ_ξ) ^ N a` depends only on the coefficient of `a`, not on its symbol
+order. -/
+theorem coefficient_iterate_oneSubFrequencyLaplacian_congr {m₁ m₂ : ℝ} {a₁ : Symbol n V W m₁}
     {a₂ : Symbol n V W m₂} (h : a₁.coefficient = a₂.coefficient) (N : ℕ) :
     ((oneSubFrequencyLaplacian (m := m₁))^[N] a₁).coefficient =
       ((oneSubFrequencyLaplacian (m := m₂))^[N] a₂).coefficient := by
@@ -153,75 +145,7 @@ theorem iterate_oneSubFrequencyLaplacian_congr {m₁ m₂ : ℝ} {a₁ : Symbol 
       coefficient_oneSubFrequencyLaplacian, coefficient_oneSubFrequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacian, ih]
 
-private lemma hasTemperateGrowth_one_add_norm_sub_sq_rpow (x : CoordinateSpace n) (r : ℝ) :
-    (fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ r).HasTemperateGrowth :=
-  (Function.hasTemperateGrowth_one_add_norm_sq_rpow (CoordinateSpace n) r).comp
-    (by fun_prop : (x - ·).HasTemperateGrowth)
-
-/-- Multiplying the input by `1 + ‖x - y‖²` and evaluating `Op(a)` at `x` replaces `a` by
-`(1 - Δ_ξ) a`. -/
-theorem quantizeSchwartzValue_smulLeftCLM_one_add_norm_sub_sq (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient
-        (SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2) u) x =
-      quantizeSchwartzValue (oneSubFrequencyLaplacian a).coefficient u x := by
-  have h12 : (fun y : CoordinateSpace n ↦ 1 + ‖x - y‖ ^ 2).HasTemperateGrowth := by
-    simpa using hasTemperateGrowth_one_add_norm_sub_sq_rpow x 1
-  have h2 : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ 2).HasTemperateGrowth := by
-    have hsq : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ 2) =
-        fun y ↦ ∑ j, ((fun y : CoordinateSpace n ↦ (x - y) j) * fun y ↦ (x - y) j) y := by
-      funext y; rw [EuclideanSpace.real_norm_sq_eq]; simp [sq]
-    have htg (j : Fin n) : (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth :=
-      (EuclideanSpace.proj j).hasTemperateGrowth.comp (by fun_prop : (x - ·).HasTemperateGrowth)
-    simpa [hsq] using Function.HasTemperateGrowth.sum fun j _ ↦ (htg j).mul (htg j)
-  have hu : SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2) u =
-      u + SchwartzMap.smulLeftCLM V (fun y ↦ ‖x - y‖ ^ 2) u := by
-    ext y; simp [SchwartzMap.smulLeftCLM_apply_apply h12, SchwartzMap.smulLeftCLM_apply_apply h2,
-      add_smul]
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-  obtain ⟨C', -, hC'⟩ := (frequencyLaplacian a).exists_bound_coefficient_slice x
-  rw [hu, quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable
-    hC, quantizeSchwartzValue_smulLeftCLM_norm_sub_sq]
-  have hsub : (oneSubFrequencyLaplacian a).coefficient =
-      a.coefficient + (-frequencyLaplacian a).coefficient := funext fun _ ↦ by simp [sub_eq_add_neg]
-  rw [hsub, quantizeSchwartzValue_add_left (a.continuous_coefficient_slice x).aestronglyMeasurable
-    hC ((-frequencyLaplacian a).continuous_coefficient_slice x).aestronglyMeasurable
-    (fun ξ ↦ by simpa using hC' ξ), coefficient_neg,
-    ← neg_one_smul ℂ (frequencyLaplacian a).coefficient, quantizeSchwartzValue_smul_left,
-    neg_one_smul]
-
-/-- **Trading `(1 - Δ_ξ) ^ N` against `(1 + ‖x - y‖²) ^ (-N)`.** At `x`, `Op(a) u (x)` equals
-`Op((1 - Δ_ξ) ^ N a)` applied to `y ↦ (1 + ‖x - y‖²) ^ (-N) u(y)`. -/
-theorem quantizeSchwartzValue_eq_iterate_oneSubFrequencyLaplacian (N : ℕ) (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient u x =
-      quantizeSchwartzValue ((oneSubFrequencyLaplacian (m := m))^[N] a).coefficient
-        (SchwartzMap.smulLeftCLM V (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))) u) x := by
-  induction N generalizing u with
-  | zero =>
-    have h0 : SchwartzMap.smulLeftCLM V
-        (fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ (-(0 : ℕ) : ℝ)) u = u := by ext y; simp
-    rw [h0, Function.iterate_zero_apply]
-  | succ N ih =>
-    have h12 : (fun y : CoordinateSpace n ↦ 1 + ‖x - y‖ ^ 2).HasTemperateGrowth := by
-      simpa using hasTemperateGrowth_one_add_norm_sub_sq_rpow x 1
-    have hmul : SchwartzMap.smulLeftCLM V (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))) u =
-        SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2)
-          (SchwartzMap.smulLeftCLM V (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((N + 1 : ℕ) : ℝ))) u) := by
-      ext y
-      rw [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_one_add_norm_sub_sq_rpow x _),
-        SchwartzMap.smulLeftCLM_apply_apply h12,
-        SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_one_add_norm_sub_sq_rpow x _),
-        smul_smul]
-      congr 1
-      calc (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))
-          = (1 + ‖x - y‖ ^ 2) ^ ((1 : ℝ) + -((N + 1 : ℕ) : ℝ)) := by push_cast; ring_nf
-        _ = (1 + ‖x - y‖ ^ 2) * (1 + ‖x - y‖ ^ 2) ^ (-((N + 1 : ℕ) : ℝ)) := by
-            rw [Real.rpow_add (by positivity), Real.rpow_one]
-    rw [ih u, hmul, quantizeSchwartzValue_smulLeftCLM_one_add_norm_sub_sq,
-      Function.iterate_succ_apply']
-
-end FrequencyResolvent
+end ShiftedFrequencyLaplacian
 
 /-! ### Weighted position slices of a uniform symbol -/
 
@@ -378,7 +302,7 @@ theorem IsUniform.exists_norm_fourier_weightedSlice_le {b : Symbol n V W m}
   have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
     (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖η‖])
       (by linarith [Nat.le_ceil r])).trans (one_add_norm_sq_rpow_le_one_add_norm_pow η ⌈r⌉₊)
-  rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
+  rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
     le_div_iff₀ (by positivity)]
   calc ‖𝓕 (weightedSlice b x ξ) η‖ * (1 + ‖η‖ ^ 2) ^ (r / 2)
       ≤ ‖𝓕 (weightedSlice b x ξ) η‖ * (1 + ‖η‖) ^ ⌈r⌉₊ := by gcongr
@@ -390,10 +314,7 @@ theorem IsUniform.continuous_fourier_weightedSlice {b : Symbol n V W m} (hb : b.
       𝓕 (weightedSlice b q.1.1 q.1.2) q.2 := by
   refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
   obtain ⟨C, _, hC⟩ := hb.exists_norm_iteratedFDeriv_weightedSlice_le 0
-  have hw : Continuous fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
-    (continuous_const.add (continuous_norm.pow 2)).rpow_const fun ξ ↦
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  obtain ⟨M, hM⟩ := (isCompact_closedBall q₀.1.2 1).exists_bound_of_continuousOn hw.continuousOn
+  set M := (2 : ℝ) ^ |m| * (1 + ‖q₀.1.2‖ ^ 2) ^ (m / 2)
   have heq (q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n) :
       𝓕 (weightedSlice b q.1.1 q.1.2) q.2 =
         ∫ z, (𝐞 (-⟪z, q.2⟫) : ℂ) • weightedSlice b q.1.1 q.1.2 z := by
@@ -420,7 +341,9 @@ theorem IsUniform.continuous_fourier_weightedSlice {b : Symbol n V W m} (hb : b.
   refine .of_forall fun z ↦ ?_
   rw [norm_smul, Circle.norm_coe, one_mul, ← norm_iteratedFDeriv_zero (𝕜 := ℝ)]
   have hMq : (1 + ‖q.1.2‖ ^ 2) ^ (m / 2) ≤ M :=
-    (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans (hM q.1.2 hq))
+    one_add_norm_sq_rpow_le_of_norm_sub_le_one
+      (by simpa only [Set.mem_preimage, Function.comp_apply, Metric.mem_closedBall,
+        dist_eq_norm] using hq) m
   exact (hC q.1.1 q.1.2 z).trans (by gcongr)
 
 private lemma differentiableAt_fourierChar_smul_weightedSlice (b : Symbol n V W m)
@@ -462,19 +385,15 @@ private lemma IsUniform.exists_sum_norm_deriv_weightedSlice_ball_le {b : Symbol 
     (hb.spatialDeriv j).exists_norm_iteratedFDeriv_weightedSlice_le 0
   choose C₂ hC₂0 hC₂ using fun j : Fin n ↦
     (hb.frequencyDeriv j).exists_norm_iteratedFDeriv_weightedSlice_le 0
-  have hw (r : ℝ) : Continuous fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-    (continuous_const.add (continuous_norm.pow 2)).rpow_const fun ξ ↦
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  obtain ⟨M₁, hM₁⟩ := (isCompact_closedBall p₀.2 1).exists_bound_of_continuousOn (hw m).continuousOn
-  obtain ⟨M₂, hM₂⟩ :=
-    (isCompact_closedBall p₀.2 1).exists_bound_of_continuousOn (hw (m - 1)).continuousOn
+  set M₁ := (2 : ℝ) ^ |m| * (1 + ‖p₀.2‖ ^ 2) ^ (m / 2)
+  set M₂ := (2 : ℝ) ^ |m - 1| * (1 + ‖p₀.2‖ ^ 2) ^ ((m - 1) / 2)
   refine ⟨(∑ j, C₁ j * M₁) + ∑ j, C₂ j * M₂, fun z p hp ↦ ?_⟩
-  have hp₂ : p.2 ∈ Metric.closedBall p₀.2 1 := Metric.mem_closedBall.2
-    (((le_max_right _ _).trans Prod.dist_eq.ge).trans (Metric.mem_ball.1 hp).le)
-  have hMp₁ : (1 + ‖p.2‖ ^ 2) ^ (m / 2) ≤ M₁ :=
-    (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans (hM₁ p.2 hp₂))
+  have hp₂ : ‖p.2 - p₀.2‖ ≤ 1 := by
+    rw [← dist_eq_norm]
+    exact (((le_max_right _ _).trans Prod.dist_eq.ge).trans (Metric.mem_ball.1 hp).le)
+  have hMp₁ : (1 + ‖p.2‖ ^ 2) ^ (m / 2) ≤ M₁ := one_add_norm_sq_rpow_le_of_norm_sub_le_one hp₂ m
   have hMp₂ : (1 + ‖p.2‖ ^ 2) ^ ((m - 1) / 2) ≤ M₂ :=
-    (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans (hM₂ p.2 hp₂))
+    one_add_norm_sq_rpow_le_of_norm_sub_le_one hp₂ (m - 1)
   rw [add_mul, Finset.sum_mul, Finset.sum_mul]
   gcongr with j _ j _
   · have := hC₁0 j

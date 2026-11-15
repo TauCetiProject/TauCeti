@@ -66,7 +66,9 @@ The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
 `TauCeti.Symbol.HasCompactSpatialSupport` asks that the symbol vanish for `x` outside a fixed
 compact set. Symbols with compact spatial support are uniform
-(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). The symbol of multiplication by `f` is
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), though a nonzero constant in positive
+dimension does not have compact spatial support
+(`TauCeti.Symbol.not_hasCompactSpatialSupport_const`). The symbol of multiplication by `f` is
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
@@ -905,6 +907,19 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   rcases eq_or_ne α [] with rfl | hα
   · simp
   · simp [coordinateDeriv_const T hα]
+
+/-- In positive dimension, a nonzero constant symbol does not have compact spatial support. -/
+theorem not_hasCompactSpatialSupport_const [Nonempty (Fin n)] {T : V →L[ℂ] W} (hT : T ≠ 0) :
+    ¬ (const T : Symbol n V W 0).HasCompactSpatialSupport := by
+  intro h
+  obtain ⟨K, hK, hKT⟩ := hasCompactSpatialSupport_iff.mp h
+  obtain ⟨j⟩ := ‹Nonempty (Fin n)›
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+  set x : CoordinateSpace n := (max R 0 + 1) • EuclideanSpace.single j (1 : ℝ)
+  have hx : x ∈ K := by_contra fun hx ↦ hT (by simpa using hKT x hx 0)
+  have hnorm : ‖x‖ = max R 0 + 1 := by
+    simp [x, norm_smul, abs_of_pos (by positivity : 0 < max R 0 + 1)]
+  linarith [mem_closedBall_zero_iff.mp (hR hx), le_max_left R 0]
 
 end Spatial
 

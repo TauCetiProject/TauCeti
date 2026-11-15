@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
+import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import Mathlib.MeasureTheory.Group.Measure
 
 /-!
 # The bounded extension of uniform symbols of order zero to `L²`
@@ -31,6 +34,12 @@ estimate on Schwartz functions.
   with `TauCeti.Symbol.toDistr_quantizeUniformOrderZero_toBesselPotentialSpaceCLM_apply`
   identifying its values on Schwartz functions, its norm bound
   `TauCeti.Symbol.norm_quantizeUniformOrderZero_le` and its linearity in the symbol.
+* `TauCeti.Symbol.quantizeUniformOrderZero_const`,
+  `TauCeti.Symbol.quantizeUniformOrderZero_const_id`,
+  `TauCeti.Symbol.norm_quantizeUniformOrderZero_const_id`: explicit action and operator norm of
+  constant symbols on `H^0 = L²`.
+* `TauCeti.Symbol.not_exists_eLpNorm_quantizeSchwartzValue_ofSpatial_smul_le`: failure of `L²`
+  boundedness for the non-uniform order-zero symbol `x ↦ x_j • T`.
 -/
 
 public section
@@ -38,7 +47,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal SchwartzMap BesselPotentialSpace
+open scoped ENNReal SchwartzMap BesselPotentialSpace ContDiff
 
 namespace TauCeti
 
@@ -227,6 +236,128 @@ theorem quantizeUniformOrderZero_smul (ha : a.IsUniform)
   rw [smul_apply, quantizeUniformOrderZero_toBesselPotentialSpaceCLM_of_norm_le (ha.smul c) hCc,
     quantizeUniformOrderZero_toBesselPotentialSpaceCLM_of_norm_le ha ⟨C, hC⟩,
     quantizeUniformCLM_smul ha c, smul_apply, map_smul]
+
+/-- A constant symbol `T : V →L[ℂ] W` quantizes on `H^0 = L²` to `BesselPotentialSpace.postcomp`. -/
+theorem quantizeUniformOrderZero_const (T : V →L[ℂ] W) :
+    (const T : Symbol n V W 0).quantizeUniformOrderZero (isUniform_const T) =
+      BesselPotentialSpace.postcomp (CoordinateSpace n) 0 2 T := by
+  have hC : ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(CoordinateSpace n, V),
+      eLpNorm (quantizeSchwartzValue (const T : Symbol n V W 0).coefficient u) 2 volume ≤
+        ENNReal.ofReal C * eLpNorm u 2 volume := by
+    refine ⟨‖T‖, norm_nonneg T, fun u ↦ ?_⟩
+    rw [← coe_quantizeUniformCLM _ (isUniform_const T), quantizeUniformCLM_const]
+    refine (eLpNorm_mono (g := ‖T‖ • (u : CoordinateSpace n → V))
+      (u.postcompCLM T).continuous.aestronglyMeasurable fun x ↦ ?_).trans_eq ?_
+    · simpa [norm_smul, abs_of_nonneg (norm_nonneg T)] using T.le_opNorm (u x)
+    · rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal (norm_nonneg T)]
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦ ?_
+  rw [quantizeUniformOrderZero_toBesselPotentialSpaceCLM (isUniform_const T) hC,
+    quantizeUniformCLM_const, SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM]
+
+/-- The constant identity symbol quantizes on `H^0 = L²` to the identity operator. -/
+@[simp]
+theorem quantizeUniformOrderZero_const_id :
+    (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).quantizeUniformOrderZero
+        (isUniform_const _) =
+      ContinuousLinearMap.id ℂ H^{0}(CoordinateSpace n, V) := by
+  rw [quantizeUniformOrderZero_const]
+  exact BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun _ ↦
+    by ext φ; simp
+
+/-- On a nontrivial fibre `V`, the `H^0` quantization of the constant identity symbol has operator
+norm `1`. -/
+theorem norm_quantizeUniformOrderZero_const_id [Nontrivial V] :
+    ‖(const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).quantizeUniformOrderZero
+        (isUniform_const _)‖ = 1 := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  let s₀ : Set (CoordinateSpace n) := Metric.ball 0 1
+  have hpos : 0 < (volume : Measure (CoordinateSpace n)).real s₀ :=
+    ENNReal.toReal_pos (Metric.measure_ball_pos volume 0 zero_lt_one).ne' measure_ball_lt_top.ne
+  let w := (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V 0 2).symm
+    (indicatorConstLp 2 (s := s₀) measurableSet_ball measure_ball_lt_top.ne v)
+  have hw : ‖w‖ ≠ 0 := by
+    rw [LinearIsometryEquiv.norm_map, norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top]
+    exact mul_ne_zero (norm_ne_zero_iff.mpr hv) (by positivity)
+  rw [quantizeUniformOrderZero_const_id]
+  refine le_antisymm ContinuousLinearMap.norm_id_le ?_
+  simpa [hw] using (ContinuousLinearMap.id ℂ H^{0}(CoordinateSpace n, V)).ratio_le_opNorm w
+
+omit [CompleteSpace V] [CompleteSpace W] in
+private lemma exists_schwartz_unit_ball_pos_eLpNorm_postcomp {T : V →L[ℂ] W} (hT : T ≠ 0) :
+    ∃ u₀ : 𝓢(CoordinateSpace n, V), (∀ y, u₀ y ≠ 0 → ‖y‖ ≤ 1) ∧
+      0 < (eLpNorm (u₀.postcompCLM T) 2 volume).toReal := by
+  obtain ⟨v, hv⟩ : ∃ v : V, T v ≠ 0 := by by_contra! h; exact hT (ContinuousLinearMap.ext h)
+  let b : ContDiffBump (0 : CoordinateSpace n) := ⟨1 / 2, 1, by norm_num, by norm_num⟩
+  have hcs : HasCompactSupport (fun x ↦ b x • v) := b.hasCompactSupport.smul_right
+  have hs : ContDiff ℝ ∞ (fun x ↦ b x • v) := b.contDiff.smul contDiff_const
+  let u₀ : 𝓢(CoordinateSpace n, V) := hcs.toSchwartzMap hs
+  have hu₀ (x : CoordinateSpace n) : u₀ x = b x • v :=
+    HasCompactSupport.toSchwartzMap_toFun hcs hs x
+  refine ⟨u₀, fun y hy ↦ by
+      simpa [b.tsupport_eq] using subset_tsupport b fun hb0 ↦ hy (by simp [hu₀, hb0]),
+    ENNReal.toReal_pos (fun h0 ↦ ?_) ((u₀.postcompCLM T).memLp 2).eLpNorm_ne_top⟩
+  have hae := (eLpNorm_eq_zero_iff two_ne_zero).mp h0
+  have h0' := congrFun (Measure.eq_of_ae_eq hae (u₀.postcompCLM T).continuous continuous_zero) 0
+  have hb0 : b 0 = 1 := b.one_of_mem_closedBall (Metric.mem_closedBall_self (by norm_num))
+  simp only [SchwartzMap.postcompCLM_apply, hu₀, hb0, one_smul, Pi.zero_apply] at h0'
+  exact hv h0'
+
+private theorem le_norm_quantizeSchwartzValue_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ fun x : CoordinateSpace n ↦ x j • T) {u₀ : 𝓢(CoordinateSpace n, V)}
+    (hu₀_supp : ∀ y, u₀ y ≠ 0 → ‖y‖ ≤ 1) {t : ℝ} (ht1 : 1 ≤ t) (x : CoordinateSpace n) :
+    ‖(t - 1) • ((u₀.postcompCLM T).compSubConstCLM ℂ (t • EuclideanSpace.single j (1 : ℝ))) x‖ ≤
+      ‖quantizeSchwartzValue (ofSpatial _ hf).coefficient
+        (u₀.compSubConstCLM ℂ (t • EuclideanSpace.single j (1 : ℝ))) x‖ := by
+  set eⱼ := EuclideanSpace.single j (1 : ℝ)
+  set ut := u₀.compSubConstCLM ℂ (t • eⱼ)
+  have hq : quantizeSchwartzValue (ofSpatial _ hf).coefficient ut x = x j • T (ut x) := by
+    rw [funext (coefficient_ofSpatial _ hf),
+      quantizeSchwartzValue_comp_fst (fun y : CoordinateSpace n ↦ y j • T) ut x, smul_apply]
+  rw [hq, SchwartzMap.compSubConstCLM_apply, SchwartzMap.postcompCLM_apply,
+    SchwartzMap.compSubConstCLM_apply, norm_smul, norm_smul, Real.norm_eq_abs,
+    Real.norm_eq_abs, abs_of_nonneg (by linarith)]
+  by_cases hbx : T (u₀ (x - t • eⱼ)) = 0
+  · simp [hbx]
+  · have hu : u₀ (x - t • eⱼ) ≠ 0 := fun h0 ↦ hbx (by simp [h0])
+    have hxj : |x j - t| ≤ 1 := by
+      simpa [eⱼ] using (PiLp.norm_apply_le (x - t • eⱼ) j).trans (hu₀_supp _ hu)
+    exact mul_le_mul_of_nonneg_right (by linarith [abs_le.mp hxj, le_abs_self (x j)])
+      (norm_nonneg _)
+
+/-- **Necessity of spatial uniformity for `L²` boundedness.** For `j : Fin n` and `T ≠ 0`, the
+non-uniform order-zero symbol `x ↦ x_j • T` has no `L² → L²` bound over Schwartz functions. -/
+theorem not_exists_eLpNorm_quantizeSchwartzValue_ofSpatial_smul_le (j : Fin n) {T : V →L[ℂ] W}
+    (hT : T ≠ 0) (hf : ContDiff ℝ ∞ fun x : CoordinateSpace n ↦ x j • T) :
+    ¬ ∃ C, ∀ u : 𝓢(CoordinateSpace n, V),
+      eLpNorm (quantizeSchwartzValue (ofSpatial _ hf).coefficient u) 2 volume ≤
+        ENNReal.ofReal C * eLpNorm u 2 volume := by
+  rintro ⟨C, hC⟩
+  obtain ⟨u₀, hu₀_supp, hB0⟩ := exists_schwartz_unit_ball_pos_eLpNorm_postcomp (n := n) hT
+  set A := (eLpNorm u₀ 2 volume).toReal
+  set B := (eLpNorm (u₀.postcompCLM T) 2 volume).toReal
+  set t : ℝ := max 2 (max C 0 * A / B + 2)
+  set eⱼ := EuclideanSpace.single j (1 : ℝ)
+  have hmp := measurePreserving_sub_right (volume : Measure (CoordinateSpace n)) (t • eⱼ)
+  have ht1 : 1 ≤ t := by linarith [le_max_left 2 (max C 0 * A / B + 2)]
+  have hpt := le_norm_quantizeSchwartzValue_ofSpatial_smul j hf hu₀_supp ht1
+  set w : 𝓢(CoordinateSpace n, W) := (u₀.postcompCLM T).compSubConstCLM ℂ (t • eⱼ)
+  have hlow : ENNReal.ofReal (t - 1) * eLpNorm (u₀.postcompCLM T) 2 volume ≤
+      ENNReal.ofReal C * eLpNorm u₀ 2 volume := by
+    have hw_eq : (w : CoordinateSpace n → W) = (u₀.postcompCLM T) ∘ fun x ↦ x - t • eⱼ :=
+      funext (SchwartzMap.compSubConstCLM_apply _ _)
+    rw [← eLpNorm_comp_measurePreserving (u₀.postcompCLM T).continuous.aestronglyMeasurable hmp,
+      ← hw_eq, ← eLpNorm_comp_measurePreserving u₀.continuous.aestronglyMeasurable hmp]
+    refine (le_of_eq ?_).trans
+      ((eLpNorm_mono (w.continuous.const_smul (t - 1)).aestronglyMeasurable hpt).trans (hC _))
+    rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal (by linarith)]
+  have hreal := ENNReal.toReal_mono
+    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (u₀.memLp 2).eLpNorm_ne_top) hlow
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by linarith),
+    ENNReal.toReal_ofReal'] at hreal
+  have hmul : (max C 0 * A / B + 1) * B ≤ (t - 1) * B :=
+    mul_le_mul_of_nonneg_right (by linarith [le_max_right 2 (max C 0 * A / B + 2)]) hB0.le
+  rw [add_mul, div_mul_cancel₀ _ hB0.ne', one_mul] at hmul
+  linarith [hreal]
 
 end Symbol
 
