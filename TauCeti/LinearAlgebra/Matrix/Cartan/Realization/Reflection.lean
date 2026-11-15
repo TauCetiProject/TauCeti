@@ -12,48 +12,15 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.RootLattice
 /-!
 # Simple reflections and coreflections of a Cartan realization
 
-Let `R : TauCeti.CartanRealization A H` be a realization of a matrix `A` over a field `K` whose
-diagonal entries equal `2` (`hA : ∀ i, A i i = 2`). At each index `i : I`, Mathlib's
-`Module.reflection` supplies two involutive linear automorphisms:
+For a realization `R : TauCeti.CartanRealization A H` over a field `K` with `hA : ∀ i, A i i = 2`,
+Mathlib's `Module.reflection` defines two involutive automorphisms at each `i : I`:
+* `simpleCoreflection` (`sᵢ^∨ : H ≃ₗ[K] H`), `h ↦ h - αᵢ(h) • hᵢ`;
+* `simpleReflection` (`sᵢ : Dual K H ≃ₗ[K] Dual K H`), `λ ↦ λ - λ(hᵢ) • αᵢ`.
 
-* the **simple coreflection** `sᵢ^∨ : H ≃ₗ[K] H`, `h ↦ h - αᵢ(h) • hᵢ`;
-* the **simple reflection** `sᵢ : Dual K H ≃ₗ[K] Dual K H`, `λ ↦ λ - λ(hᵢ) • αᵢ`.
-
-The simple reflection is the contragredient transpose `(sᵢ^∨).dualMap` of the simple coreflection,
-so the evaluation pairing is invariant (`(sᵢ λ)(sᵢ^∨ h) = λ(h)`). Both automorphisms fix the
-Cartan center `R.cartanCenter` (`sᵢ^∨` pointwise, `sᵢ` on restriction to `R.cartanCenter`), preserve
-the coroot span `R.corootSpan`, commute with `CartanRealization.map`, `CartanRealization.restrict`,
-and `CartanRealization.baseChange`, and—when `A` is integral—stabilize the root lattice `Q`, every
-coweight lattice `Y`, and its dual weight lattice `P`.
-
-## Main definitions
-
-* `TauCeti.CartanRealization.simpleCoreflection`: the simple coreflection `h ↦ h - αᵢ(h) • hᵢ` on
-  `H`.
-* `TauCeti.CartanRealization.simpleReflection`: the simple reflection `λ ↦ λ - λ(hᵢ) • αᵢ` on
-  `Module.Dual K H`.
-* `TauCeti.CartanRealization.rootLatticeSimpleReflection`: restriction of `simpleReflection` to a
-  `ℤ`-linear automorphism of `R.rootLattice` (`Q`) for an integral matrix.
-* `TauCeti.CartanRealization.CoweightLattice.coreflection` and
-  `TauCeti.CartanRealization.CoweightLattice.reflection`: the induced `ℤ`-linear automorphisms of
-  a coweight lattice `Y` and its weight lattice `P`.
-
-## Main results
-
-* `TauCeti.CartanRealization.simpleReflection_eq_dualMap` and
-  `TauCeti.CartanRealization.simpleReflection_apply_simpleCoreflection`: contragredient duality and
-  invariance of the evaluation pairing.
-* `TauCeti.CartanRealization.simpleCoreflection_mem_corootSpan`,
-  `TauCeti.CartanRealization.simpleCoreflection_eq_self_of_mem_cartanCenter`,
-  `TauCeti.CartanRealization.simpleReflection_mem_rootLattice`: subspace and root-lattice
-  stability.
-* `TauCeti.CartanRealization.CoweightLattice.simpleCoreflection_mem_lattice` and
-  `TauCeti.CartanRealization.CoweightLattice.simpleReflection_mem_weightLattice`: stability of `Y`
-  and `P`.
-* `TauCeti.CartanRealization.map_simpleReflection`,
-  `TauCeti.CartanRealization.restrict_simpleReflection_comp_subtype`,
-  `TauCeti.CartanRealization.baseChange_simpleReflection_baseChange`: functoriality under transport,
-  sub-realization restriction, and scalar extension.
+We prove contragredient duality (`sᵢ = (sᵢ^∨).dualMap`) and pairing invariance, stability of
+`R.cartanCenter` and `R.corootSpan`, compatibility with `map`, `restrict`, and `baseChange`, and
+induced `ℤ`-linear reflections on `R.rootLattice`, any coweight lattice `Y`, and its dual weight
+lattice `P`.
 
 ## References
 
@@ -83,26 +50,19 @@ noncomputable def simpleCoreflection (i : I) : H ≃ₗ[K] H :=
 noncomputable def simpleReflection (i : I) : Dual K H ≃ₗ[K] Dual K H :=
   Module.reflection (x := R.root i) (f := Dual.eval K H (R.coroot i)) (by simpa using hA i)
 
-/-- `simpleCoreflection` is Mathlib's `Module.reflection` for `R.coroot i` and `R.root i`. -/
 theorem simpleCoreflection_eq_reflection (i : I) :
-    R.simpleCoreflection hA i =
-      Module.reflection ((R.root_coroot i i).trans (hA i)) :=
-  (rfl)
+    R.simpleCoreflection hA i = Module.reflection ((R.root_coroot i i).trans (hA i)) := (rfl)
 
-/-- `simpleReflection` is Mathlib's `Module.reflection` for `R.root i` and evaluation at
-`R.coroot i`. -/
 theorem simpleReflection_eq_reflection (i : I) :
     R.simpleReflection hA i =
       Module.reflection (x := R.root i) (f := Dual.eval K H (R.coroot i)) (by simpa using hA i) :=
   (rfl)
 
 theorem simpleCoreflection_apply (i : I) (h : H) :
-    R.simpleCoreflection hA i h = h - R.root i h • R.coroot i :=
-  Module.reflection_apply h _
+    R.simpleCoreflection hA i h = h - R.root i h • R.coroot i := Module.reflection_apply h _
 
 theorem simpleReflection_apply (i : I) (φ : Dual K H) :
-    R.simpleReflection hA i φ = φ - φ (R.coroot i) • R.root i :=
-  Module.reflection_apply φ _
+    R.simpleReflection hA i φ = φ - φ (R.coroot i) • R.root i := Module.reflection_apply φ _
 
 theorem simpleCoreflection_coroot (i j : I) :
     R.simpleCoreflection hA i (R.coroot j) = R.coroot j - A j i • R.coroot i := by
@@ -112,79 +72,53 @@ theorem simpleReflection_root (i j : I) :
     R.simpleReflection hA i (R.root j) = R.root j - A i j • R.root i := by
   rw [simpleReflection_apply, R.root_coroot]
 
-@[simp]
-theorem simpleCoreflection_coroot_self (i : I) :
-    R.simpleCoreflection hA i (R.coroot i) = -R.coroot i :=
-  Module.reflection_apply_self _
+@[simp] theorem simpleCoreflection_coroot_self (i : I) :
+    R.simpleCoreflection hA i (R.coroot i) = -R.coroot i := Module.reflection_apply_self _
 
-@[simp]
-theorem simpleReflection_root_self (i : I) :
-    R.simpleReflection hA i (R.root i) = -R.root i :=
-  Module.reflection_apply_self _
+@[simp] theorem simpleReflection_root_self (i : I) :
+    R.simpleReflection hA i (R.root i) = -R.root i := Module.reflection_apply_self _
 
-@[simp]
-theorem simpleCoreflection_simpleCoreflection (i : I) (h : H) :
-    R.simpleCoreflection hA i (R.simpleCoreflection hA i h) = h :=
-  Module.involutive_reflection _ h
+@[simp] theorem simpleCoreflection_simpleCoreflection (i : I) (h : H) :
+    R.simpleCoreflection hA i (R.simpleCoreflection hA i h) = h := Module.involutive_reflection _ h
 
-@[simp]
-theorem simpleReflection_simpleReflection (i : I) (φ : Dual K H) :
-    R.simpleReflection hA i (R.simpleReflection hA i φ) = φ :=
-  Module.involutive_reflection _ φ
+@[simp] theorem simpleReflection_simpleReflection (i : I) (φ : Dual K H) :
+    R.simpleReflection hA i (R.simpleReflection hA i φ) = φ := Module.involutive_reflection _ φ
 
-theorem involutive_simpleCoreflection (i : I) :
-    Function.Involutive (R.simpleCoreflection hA i) :=
+theorem involutive_simpleCoreflection (i : I) : Function.Involutive (R.simpleCoreflection hA i) :=
   Module.involutive_reflection _
 
-theorem involutive_simpleReflection (i : I) :
-    Function.Involutive (R.simpleReflection hA i) :=
+theorem involutive_simpleReflection (i : I) : Function.Involutive (R.simpleReflection hA i) :=
   Module.involutive_reflection _
 
-@[simp]
-theorem simpleCoreflection_symm (i : I) :
-    (R.simpleCoreflection hA i).symm = R.simpleCoreflection hA i :=
-  Module.reflection_symm _
+@[simp] theorem simpleCoreflection_symm (i : I) :
+    (R.simpleCoreflection hA i).symm = R.simpleCoreflection hA i := Module.reflection_symm _
 
-@[simp]
-theorem simpleReflection_symm (i : I) :
-    (R.simpleReflection hA i).symm = R.simpleReflection hA i :=
-  Module.reflection_symm _
+@[simp] theorem simpleReflection_symm (i : I) :
+    (R.simpleReflection hA i).symm = R.simpleReflection hA i := Module.reflection_symm _
 
-@[simp]
-theorem simpleCoreflection_inv (i : I) :
-    (R.simpleCoreflection hA i)⁻¹ = R.simpleCoreflection hA i :=
-  Module.reflection_inv _
+@[simp] theorem simpleCoreflection_inv (i : I) :
+    (R.simpleCoreflection hA i)⁻¹ = R.simpleCoreflection hA i := Module.reflection_inv _
 
-@[simp]
-theorem simpleReflection_inv (i : I) :
-    (R.simpleReflection hA i)⁻¹ = R.simpleReflection hA i :=
-  Module.reflection_inv _
+@[simp] theorem simpleReflection_inv (i : I) :
+    (R.simpleReflection hA i)⁻¹ = R.simpleReflection hA i := Module.reflection_inv _
 
-@[simp]
-theorem simpleCoreflection_mul_self (i : I) :
-    R.simpleCoreflection hA i * R.simpleCoreflection hA i = 1 := by
-  ext h
-  exact R.simpleCoreflection_simpleCoreflection hA i h
+@[simp] theorem simpleCoreflection_mul_self (i : I) :
+    R.simpleCoreflection hA i * R.simpleCoreflection hA i = 1 :=
+  LinearEquiv.ext (R.simpleCoreflection_simpleCoreflection hA i)
 
-@[simp]
-theorem simpleReflection_mul_self (i : I) :
+@[simp] theorem simpleReflection_mul_self (i : I) :
     R.simpleReflection hA i * R.simpleReflection hA i = 1 :=
   LinearEquiv.ext (R.simpleReflection_simpleReflection hA i)
 
-@[simp]
-theorem simpleCoreflection_sq (i : I) : R.simpleCoreflection hA i ^ 2 = 1 := by
+@[simp] theorem simpleCoreflection_sq (i : I) : R.simpleCoreflection hA i ^ 2 = 1 := by
   rw [sq, simpleCoreflection_mul_self]
 
-@[simp]
-theorem simpleReflection_sq (i : I) : R.simpleReflection hA i ^ 2 = 1 := by
+@[simp] theorem simpleReflection_sq (i : I) : R.simpleReflection hA i ^ 2 = 1 := by
   rw [sq, simpleReflection_mul_self]
 
-/-- A vector annihilated by `αᵢ` is fixed by `sᵢ^∨`. -/
 theorem simpleCoreflection_eq_self_of_apply_eq_zero {i : I} {h : H} (hh : R.root i h = 0) :
-    R.simpleCoreflection hA i h = h := by
-  rw [simpleCoreflection_apply, hh, zero_smul, sub_zero]
+    R.simpleCoreflection hA i h = h := by rw [simpleCoreflection_apply, hh, zero_smul, sub_zero]
 
-/-- A functional vanishing on `hᵢ` is fixed by `sᵢ`. -/
 theorem simpleReflection_eq_self_of_apply_eq_zero {i : I} {φ : Dual K H}
     (hφ : φ (R.coroot i) = 0) : R.simpleReflection hA i φ = φ := by
   rw [simpleReflection_apply, hφ, zero_smul, sub_zero]
@@ -192,22 +126,14 @@ theorem simpleReflection_eq_self_of_apply_eq_zero {i : I} {φ : Dual K H}
 /-- `sᵢ^∨` fixes `h` if and only if `αᵢ(h) = 0`. -/
 theorem simpleCoreflection_eq_self_iff {i : I} {h : H} :
     R.simpleCoreflection hA i h = h ↔ R.root i h = 0 := by
-  refine ⟨fun heq ↦ ?_, R.simpleCoreflection_eq_self_of_apply_eq_zero hA⟩
-  have h0 : R.root i h • R.coroot i = 0 := by
-    have := congrArg (h - ·) heq
-    simpa [simpleCoreflection_apply] using this
-  have hne : R.coroot i ≠ 0 := R.coroot_linearIndependent.ne_zero i
-  exact (smul_eq_zero.mp h0).resolve_right hne
+  rw [simpleCoreflection_apply, sub_eq_self, smul_eq_zero]
+  exact or_iff_left (R.coroot_linearIndependent.ne_zero i)
 
 /-- `sᵢ` fixes `φ` if and only if `φ(hᵢ) = 0`. -/
 theorem simpleReflection_eq_self_iff {i : I} {φ : Dual K H} :
     R.simpleReflection hA i φ = φ ↔ φ (R.coroot i) = 0 := by
-  refine ⟨fun heq ↦ ?_, R.simpleReflection_eq_self_of_apply_eq_zero hA⟩
-  have h0 : φ (R.coroot i) • R.root i = 0 := by
-    have := congrArg (φ - ·) heq
-    simpa [simpleReflection_apply] using this
-  have hne : R.root i ≠ 0 := R.root_linearIndependent.ne_zero i
-  exact (smul_eq_zero.mp h0).resolve_right hne
+  rw [simpleReflection_apply, sub_eq_self, smul_eq_zero]
+  exact or_iff_left (R.root_linearIndependent.ne_zero i)
 
 /-! ### Contragredient duality and pairing invariance -/
 
@@ -220,25 +146,21 @@ theorem simpleReflection_eq_dualMap (i : I) :
     LinearEquiv.dualMap_apply, simpleCoreflection_apply, map_sub, map_smul]
   ring
 
-/-- Evaluating `sᵢ φ` at `h` equals evaluating `φ` at `sᵢ^∨ h`. -/
 theorem simpleReflection_apply_eq_apply_simpleCoreflection (i : I) (φ : Dual K H) (h : H) :
     R.simpleReflection hA i φ h = φ (R.simpleCoreflection hA i h) := by
   rw [simpleReflection_eq_dualMap, LinearEquiv.dualMap_apply]
 
 /-- Simple reflections and coreflections preserve the evaluation pairing:
 `(sᵢ φ)(sᵢ^∨ h) = φ(h)`. -/
-@[simp]
-theorem simpleReflection_apply_simpleCoreflection (i : I) (φ : Dual K H) (h : H) :
+@[simp] theorem simpleReflection_apply_simpleCoreflection (i : I) (φ : Dual K H) (h : H) :
     R.simpleReflection hA i φ (R.simpleCoreflection hA i h) = φ h := by
   rw [simpleReflection_apply_eq_apply_simpleCoreflection, simpleCoreflection_simpleCoreflection]
 
-@[simp]
-theorem simpleReflection_apply_coroot_self (i : I) (φ : Dual K H) :
+@[simp] theorem simpleReflection_apply_coroot_self (i : I) (φ : Dual K H) :
     R.simpleReflection hA i φ (R.coroot i) = -φ (R.coroot i) := by
   rw [simpleReflection_apply_eq_apply_simpleCoreflection, simpleCoreflection_coroot_self, map_neg]
 
-@[simp]
-theorem root_simpleCoreflection_self (i : I) (h : H) :
+@[simp] theorem root_simpleCoreflection_self (i : I) (h : H) :
     R.root i (R.simpleCoreflection hA i h) = -R.root i h := by
   rw [← simpleReflection_apply_eq_apply_simpleCoreflection R hA, simpleReflection_root_self,
     LinearMap.neg_apply]
@@ -250,15 +172,12 @@ theorem simpleCoreflection_eq_self_of_mem_cartanCenter (i : I) {h : H}
     (hh : h ∈ R.cartanCenter) : R.simpleCoreflection hA i h = h :=
   R.simpleCoreflection_eq_self_of_apply_eq_zero hA ((R.mem_cartanCenter_iff h).mp hh i)
 
-/-- Every simple coreflection preserves the Cartan center. -/
 theorem simpleCoreflection_mem_cartanCenter_iff (i : I) (h : H) :
     R.simpleCoreflection hA i h ∈ R.cartanCenter ↔ h ∈ R.cartanCenter :=
   ⟨fun hh ↦ R.simpleCoreflection_simpleCoreflection hA i h ▸
       (R.simpleCoreflection_eq_self_of_mem_cartanCenter hA i hh).symm ▸ hh,
     fun hh ↦ (R.simpleCoreflection_eq_self_of_mem_cartanCenter hA i hh).symm ▸ hh⟩
 
-/-- Every simple reflection leaves the restriction of a functional to the Cartan center unchanged.
--/
 theorem simpleReflection_apply_of_mem_cartanCenter (i : I) (φ : Dual K H) {h : H}
     (hh : h ∈ R.cartanCenter) : R.simpleReflection hA i φ h = φ h := by
   rw [simpleReflection_apply_eq_apply_simpleCoreflection,
@@ -266,12 +185,11 @@ theorem simpleReflection_apply_of_mem_cartanCenter (i : I) (φ : Dual K H) {h : 
 
 /-- Every simple coreflection preserves the coroot span. -/
 theorem simpleCoreflection_mem_corootSpan (i : I) {h : H} (hh : h ∈ R.corootSpan) :
-    R.simpleCoreflection hA i h ∈ R.corootSpan := by
-  rw [simpleCoreflection_apply]
-  exact sub_mem hh (Submodule.smul_mem _ _ (R.coroot_mem_corootSpan i))
+    R.simpleCoreflection hA i h ∈ R.corootSpan :=
+  (R.simpleCoreflection_apply hA i h).symm ▸
+    sub_mem hh (Submodule.smul_mem _ _ (R.coroot_mem_corootSpan i))
 
-@[simp]
-theorem simpleCoreflection_mem_corootSpan_iff (i : I) (h : H) :
+@[simp] theorem simpleCoreflection_mem_corootSpan_iff (i : I) (h : H) :
     R.simpleCoreflection hA i h ∈ R.corootSpan ↔ h ∈ R.corootSpan :=
   ⟨fun hh ↦ R.simpleCoreflection_simpleCoreflection hA i h ▸
       R.simpleCoreflection_mem_corootSpan hA i hh,
@@ -279,23 +197,17 @@ theorem simpleCoreflection_mem_corootSpan_iff (i : I) (h : H) :
 
 /-! ### Functoriality under transport, sub-realization restriction, and scalar extension -/
 
-/-- Transporting a realization along `e : H ≃ₗ[K] H'` conjugates its simple coreflections by `e`.
--/
 theorem map_simpleCoreflection {H' : Type*} [AddCommGroup H'] [Module K H']
     (e : H ≃ₗ[K] H') (i : I) :
     (R.map e).simpleCoreflection hA i = e.symm.trans ((R.simpleCoreflection hA i).trans e) := by
   ext h
   simp [simpleCoreflection_apply]
 
-@[simp]
-theorem map_simpleCoreflection_apply {H' : Type*} [AddCommGroup H'] [Module K H']
+@[simp] theorem map_simpleCoreflection_apply {H' : Type*} [AddCommGroup H'] [Module K H']
     (e : H ≃ₗ[K] H') (i : I) (h : H) :
     (R.map e).simpleCoreflection hA i (e h) = e (R.simpleCoreflection hA i h) := by
-  rw [map_simpleCoreflection]
-  simp
+  simp [map_simpleCoreflection]
 
-/-- Transporting a realization along `e : H ≃ₗ[K] H'` conjugates its simple reflections by
-`e.symm.dualMap`. -/
 theorem map_simpleReflection {H' : Type*} [AddCommGroup H'] [Module K H']
     (e : H ≃ₗ[K] H') (i : I) :
     (R.map e).simpleReflection hA i =
@@ -303,34 +215,25 @@ theorem map_simpleReflection {H' : Type*} [AddCommGroup H'] [Module K H']
   ext φ h
   simp [simpleReflection_apply]
 
-@[simp]
-theorem map_simpleReflection_apply {H' : Type*} [AddCommGroup H'] [Module K H']
+@[simp] theorem map_simpleReflection_apply {H' : Type*} [AddCommGroup H'] [Module K H']
     (e : H ≃ₗ[K] H') (i : I) (φ : Dual K H) :
     (R.map e).simpleReflection hA i (e.symm.dualMap φ) =
       e.symm.dualMap (R.simpleReflection hA i φ) := by
-  have he : e.dualMap (e.symm.dualMap φ) = φ := by ext; simp
-  simp [map_simpleReflection, he]
+  ext h
+  simp [simpleReflection_apply]
 
-/-- Restricting a realization to a subspace containing `R.corootSpan` restricts the simple
-coreflections to that subspace. -/
-@[simp]
-theorem coe_restrict_simpleCoreflection (M : Submodule K H) (hc : R.corootSpan ≤ M)
+@[simp] theorem coe_restrict_simpleCoreflection (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) (i : I) (m : M) :
     ((R.restrict M hc hs).simpleCoreflection hA i m : H) = R.simpleCoreflection hA i m := by
   simp [simpleCoreflection_apply]
 
-/-- Restriction of functionals to `M` intertwines the simple reflections of `R` and of
-`R.restrict M hc hs`. -/
-@[simp]
-theorem restrict_simpleReflection_comp_subtype (M : Submodule K H) (hc : R.corootSpan ≤ M)
+@[simp] theorem restrict_simpleReflection_comp_subtype (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) (i : I) (φ : Dual K H) :
     (R.restrict M hc hs).simpleReflection hA i (φ.comp M.subtype) =
       (R.simpleReflection hA i φ).comp M.subtype := by
   ext m
   simp [simpleReflection_apply]
 
-/-- Extending scalars to a field extension `L / K` extends the simple coreflections by
-`LinearEquiv.baseChange`. -/
 theorem baseChange_simpleCoreflection [FiniteDimensional K H] (L : Type*) [Field L] [Algebra K L]
     (i : I) :
     (R.baseChange L).simpleCoreflection (fun j ↦ by simp [hA j, map_ofNat]) i =
@@ -339,17 +242,12 @@ theorem baseChange_simpleCoreflection [FiniteDimensional K H] (L : Type*) [Field
   ext h
   simp [simpleCoreflection_apply, TensorProduct.tmul_sub, Algebra.smul_def]
 
-/-- Scalar extension of functionals intertwines `simpleReflection` before and after base change. -/
-@[simp]
-theorem baseChange_simpleReflection_baseChange [FiniteDimensional K H] (L : Type*) [Field L]
-    [Algebra K L] (i : I) (φ : Dual K H) :
+@[simp] theorem baseChange_simpleReflection_baseChange [FiniteDimensional K H] (L : Type*)
+    [Field L] [Algebra K L] (i : I) (φ : Dual K H) :
     (R.baseChange L).simpleReflection (fun j ↦ by simp [hA j, map_ofNat]) i (φ.baseChange L) =
       (R.simpleReflection hA i φ).baseChange L := by
-  apply LinearMap.ext
-  intro z
-  induction z using TensorProduct.inductionOn with
-  | tmul l h => simp [simpleReflection_apply, Module.Dual.baseChange_apply_tmul, Algebra.smul_def]
-  | add x y hx hy => simp [map_add, hx, hy]
+  ext h
+  simp [simpleReflection_apply, Module.Dual.baseChange_apply_tmul, Algebra.smul_def]
 
 end Field
 
@@ -357,26 +255,21 @@ end Field
 
 /-- A scalar multiple `c • αᵢ` of a simple root lies in the root lattice `Q` if and only if `c`
 lies in the image of `ℤ` in `K`. -/
-@[simp]
-theorem smul_root_mem_rootLattice_iff {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
-    {A : Matrix I I K} (R : CartanRealization A H) (c : K) (i : I) :
+@[simp] theorem smul_root_mem_rootLattice_iff {I K H : Type*} [Field K] [AddCommGroup H]
+    [Module K H] {A : Matrix I I K} (R : CartanRealization A H) (c : K) (i : I) :
     c • R.root i ∈ R.rootLattice ↔ c ∈ (1 : Submodule ℤ K) := by
   refine ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
-  · rw [R.rootLattice_def, Finsupp.mem_span_range_iff_exists_finsupp] at hc
-    obtain ⟨f, hf⟩ := hc
+  · obtain ⟨f, hf⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp (R.rootLattice_def ▸ hc)
     refine Submodule.mem_one.mpr ⟨f i, ?_⟩
     have hlin : Finsupp.linearCombination K R.root
         (f.mapRange (Int.cast : ℤ → K) Int.cast_zero - Finsupp.single i c) = 0 := by
       rw [map_sub, Finsupp.linearCombination_single, Finsupp.linearCombination_apply,
         Finsupp.sum_mapRange_index (fun j ↦ zero_smul K (R.root j))]
-      simp only [Int.cast_smul_eq_zsmul]
-      exact sub_eq_zero.mpr hf
-    have hcoeff := Finsupp.ext_iff.mp
-      (linearIndependent_iff.mp R.root_linearIndependent _ hlin) i
-    simpa [sub_eq_zero] using hcoeff
+      simpa only [Int.cast_smul_eq_zsmul] using sub_eq_zero.mpr hf
+    simpa [sub_eq_zero] using
+      Finsupp.ext_iff.mp (linearIndependent_iff.mp R.root_linearIndependent _ hlin) i
   · obtain ⟨n, rfl⟩ := Submodule.mem_one.mp hc
-    rw [algebraMap_smul]
-    exact R.rootLattice.smul_mem n (R.root_mem_rootLattice i)
+    simpa only [algebraMap_smul] using R.rootLattice.smul_mem n (R.root_mem_rootLattice i)
 
 section RootLattice
 
@@ -388,27 +281,21 @@ theorem apply_coroot_mem_one_of_mem_rootLattice {φ : Dual K H} (hφ : φ ∈ R.
     φ (R.coroot i) ∈ (1 : Submodule ℤ K) := by
   rw [R.rootLattice_def] at hφ
   induction hφ using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨j, rfl⟩ := hx
-    exact Submodule.mem_one.mpr ⟨A i j, by simp⟩
+  | mem _ hx => obtain ⟨j, rfl⟩ := hx; exact Submodule.mem_one.mpr ⟨A i j, by simp⟩
   | zero => simp
-  | add x y _ _ hx hy => simpa only [LinearMap.add_apply] using add_mem hx hy
-  | smul n x _ hx => simpa only [LinearMap.smul_apply] using Submodule.smul_mem _ n hx
+  | add _ _ _ _ hx hy => simpa only [LinearMap.add_apply] using add_mem hx hy
+  | smul n _ _ hx => simpa only [LinearMap.smul_apply] using Submodule.smul_mem _ n hx
 
 /-- Simple reflections preserve the root lattice `Q`. -/
 theorem simpleReflection_mem_rootLattice (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2) (i : I)
-    {φ : Dual K H} (hφ : φ ∈ R.rootLattice) :
-    R.simpleReflection hA i φ ∈ R.rootLattice := by
+    {φ : Dual K H} (hφ : φ ∈ R.rootLattice) : R.simpleReflection hA i φ ∈ R.rootLattice := by
   obtain ⟨n, hn⟩ := Submodule.mem_one.mp (R.apply_coroot_mem_one_of_mem_rootLattice hφ i)
   rw [simpleReflection_apply, ← hn, algebraMap_smul]
   exact sub_mem hφ (Submodule.smul_mem _ n (R.root_mem_rootLattice i))
 
-@[simp]
-theorem simpleReflection_mem_rootLattice_iff (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2) (i : I)
-    (φ : Dual K H) :
-    R.simpleReflection hA i φ ∈ R.rootLattice ↔ φ ∈ R.rootLattice :=
-  ⟨fun hφ ↦ R.simpleReflection_simpleReflection hA i φ ▸
-      R.simpleReflection_mem_rootLattice hA i hφ,
+@[simp] theorem simpleReflection_mem_rootLattice_iff (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2)
+    (i : I) (φ : Dual K H) : R.simpleReflection hA i φ ∈ R.rootLattice ↔ φ ∈ R.rootLattice :=
+  ⟨fun hφ ↦ R.simpleReflection_simpleReflection hA i φ ▸ R.simpleReflection_mem_rootLattice hA i hφ,
     R.simpleReflection_mem_rootLattice hA i⟩
 
 /-- The `ℤ`-linear automorphism of the root lattice `Q` induced by the `i`-th simple reflection. -/
@@ -419,18 +306,13 @@ noncomputable def rootLatticeSimpleReflection (hA : ∀ i, A.map (Int.cast : ℤ
       fun _ ↦ R.simpleReflection_mem_rootLattice hA i)
     fun x ↦ Subtype.ext (R.simpleReflection_simpleReflection hA i x)
 
-@[simp]
-theorem coe_rootLatticeSimpleReflection_apply (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2) (i : I)
-    (x : R.rootLattice) :
-    (R.rootLatticeSimpleReflection hA i x : Dual K H) = R.simpleReflection hA i x :=
-  (rfl)
+@[simp] theorem coe_rootLatticeSimpleReflection_apply (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2)
+    (i : I) (x : R.rootLattice) :
+    (R.rootLatticeSimpleReflection hA i x : Dual K H) = R.simpleReflection hA i x := (rfl)
 
-@[simp]
-theorem rootLatticeSimpleReflection_symm (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2) (i : I) :
-    (R.rootLatticeSimpleReflection hA i).symm = R.rootLatticeSimpleReflection hA i := by
-  ext x : 1
-  exact (R.rootLatticeSimpleReflection hA i).symm_apply_eq.mpr
-    (Subtype.ext (R.simpleReflection_simpleReflection hA i x)).symm
+@[simp] theorem rootLatticeSimpleReflection_symm (hA : ∀ i, A.map (Int.cast : ℤ → K) i i = 2)
+    (i : I) : (R.rootLatticeSimpleReflection hA i).symm = R.rootLatticeSimpleReflection hA i :=
+  (rfl)
 
 end RootLattice
 
@@ -443,34 +325,28 @@ variable {I H : Type*} [AddCommGroup H] [Module ℚ H] {A : Matrix I I ℤ}
 
 /-- Simple coreflections preserve every coweight lattice `Y`. -/
 theorem simpleCoreflection_mem_lattice (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
-    {y : H} (hy : y ∈ L.lattice) :
-    R.simpleCoreflection hA i y ∈ L.lattice := by
+    {y : H} (hy : y ∈ L.lattice) : R.simpleCoreflection hA i y ∈ L.lattice := by
   obtain ⟨n, hn⟩ := Submodule.mem_one.mp
     ((Submodule.mem_dualLattice L.lattice (R.root i)).mp (L.root_mem_dualLattice i) y hy)
   rw [simpleCoreflection_apply, ← hn, algebraMap_smul]
   exact sub_mem hy (Submodule.smul_mem _ n (L.coroot_mem i))
 
-@[simp]
-theorem simpleCoreflection_mem_lattice_iff (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
-    (y : H) :
-    R.simpleCoreflection hA i y ∈ L.lattice ↔ y ∈ L.lattice :=
+@[simp] theorem simpleCoreflection_mem_lattice_iff (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2)
+    (i : I) (y : H) : R.simpleCoreflection hA i y ∈ L.lattice ↔ y ∈ L.lattice :=
   ⟨fun hy ↦ R.simpleCoreflection_simpleCoreflection hA i y ▸
       L.simpleCoreflection_mem_lattice hA i hy,
     L.simpleCoreflection_mem_lattice hA i⟩
 
 /-- Simple reflections preserve the dual weight lattice `P`. -/
 theorem simpleReflection_mem_weightLattice (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
-    {φ : Dual ℚ H} (hφ : φ ∈ L.weightLattice) :
-    R.simpleReflection hA i φ ∈ L.weightLattice := by
+    {φ : Dual ℚ H} (hφ : φ ∈ L.weightLattice) : R.simpleReflection hA i φ ∈ L.weightLattice := by
   rw [L.weightLattice_def] at hφ ⊢
   rw [R.simpleReflection_eq_dualMap hA i]
   exact Submodule.dualMap_mem_dualLattice L.lattice L.lattice
     (R.simpleCoreflection hA i).toLinearMap (fun _ ↦ L.simpleCoreflection_mem_lattice hA i) hφ
 
-@[simp]
-theorem simpleReflection_mem_weightLattice_iff (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2)
-    (i : I) (φ : Dual ℚ H) :
-    R.simpleReflection hA i φ ∈ L.weightLattice ↔ φ ∈ L.weightLattice :=
+@[simp] theorem simpleReflection_mem_weightLattice_iff (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2)
+    (i : I) (φ : Dual ℚ H) : R.simpleReflection hA i φ ∈ L.weightLattice ↔ φ ∈ L.weightLattice :=
   ⟨fun hφ ↦ R.simpleReflection_simpleReflection hA i φ ▸
       L.simpleReflection_mem_weightLattice hA i hφ,
     L.simpleReflection_mem_weightLattice hA i⟩
@@ -491,35 +367,20 @@ noncomputable def reflection (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2
       fun _ ↦ L.simpleReflection_mem_weightLattice hA i)
     fun φ ↦ Subtype.ext (R.simpleReflection_simpleReflection hA i φ)
 
-@[simp]
-theorem coe_coreflection_apply (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
-    (y : L.lattice) :
-    (L.coreflection hA i y : H) = R.simpleCoreflection hA i y :=
-  (rfl)
+@[simp] theorem coe_coreflection_apply (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
+    (y : L.lattice) : (L.coreflection hA i y : H) = R.simpleCoreflection hA i y := (rfl)
 
-@[simp]
-theorem coe_reflection_apply (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
-    (φ : L.weightLattice) :
-    (L.reflection hA i φ : Dual ℚ H) = R.simpleReflection hA i φ :=
-  (rfl)
+@[simp] theorem coe_reflection_apply (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
+    (φ : L.weightLattice) : (L.reflection hA i φ : Dual ℚ H) = R.simpleReflection hA i φ := (rfl)
 
-@[simp]
-theorem coreflection_symm (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I) :
-    (L.coreflection hA i).symm = L.coreflection hA i := by
-  ext y : 1
-  exact (L.coreflection hA i).symm_apply_eq.mpr
-    (Subtype.ext (R.simpleCoreflection_simpleCoreflection hA i y)).symm
+@[simp] theorem coreflection_symm (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I) :
+    (L.coreflection hA i).symm = L.coreflection hA i := (rfl)
 
-@[simp]
-theorem reflection_symm (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I) :
-    (L.reflection hA i).symm = L.reflection hA i := by
-  ext φ : 1
-  exact (L.reflection hA i).symm_apply_eq.mpr
-    (Subtype.ext (R.simpleReflection_simpleReflection hA i φ)).symm
+@[simp] theorem reflection_symm (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I) :
+    (L.reflection hA i).symm = L.reflection hA i := (rfl)
 
 /-- The lattice reflections preserve the integral weight–coweight pairing `P × Y → ℤ`. -/
-@[simp]
-theorem pairing_reflection_coreflection (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
+@[simp] theorem pairing_reflection_coreflection (hA : ∀ i, A.map (Int.cast : ℤ → ℚ) i i = 2) (i : I)
     (φ : L.weightLattice) (y : L.lattice) :
     L.pairing (L.reflection hA i φ) (L.coreflection hA i y) = L.pairing φ y := by
   apply Int.cast_injective (α := ℚ)
