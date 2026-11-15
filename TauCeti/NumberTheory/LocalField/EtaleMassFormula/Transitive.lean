@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.Relabelling
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.SplittingSymbol
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.SubfieldCount
+import Mathlib.Tactic.FieldSimp
+import TauCeti.Algebra.BigOperators.Group.Finset.Defs
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.FieldTheory.Galois.FixedField
 
@@ -45,96 +47,12 @@ public section
 noncomputable section
 
 open ValuativeRel _root_.MulAction
-open scoped ENNReal Nat
+open scoped ENNReal NNReal Nat
 
 namespace TauCeti
 
-section FinrankOrbit
-
-variable (K : Type*) [Field K] {X : Type*} [MulAction Gal(SeparableClosure K/K) X]
-
-/-- Translating a point does not change the degree of its stabilizer's fixed field. -/
-@[simp]
-theorem finrank_fixedField_stabilizer_smul
-    (σ : Gal(SeparableClosure K/K)) (x : X) :
-    Module.finrank K (IntermediateField.fixedField
-      (stabilizer Gal(SeparableClosure K/K) (σ • x))) =
-        Module.finrank K (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)) := by
-  rw [stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-    Subgroup.fixedField_map_conj]
-  exact ((IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) x)).equivMap
-    σ.toAlgHom).toLinearEquiv.finrank_eq.symm
-
-/-- The degree of an orbit's representative fixed field can be computed at any point of the
-orbit. -/
-theorem finrank_fixedField_stabilizer_out
-    {ω : orbitRel.Quotient Gal(SeparableClosure K/K) X} {x : X}
-    (hx : (Quotient.mk'' x : orbitRel.Quotient Gal(SeparableClosure K/K) X) = ω) :
-    Module.finrank K (IntermediateField.fixedField
-      (stabilizer Gal(SeparableClosure K/K) ω.out)) =
-        Module.finrank K (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)) := by
-  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
-  exact (finrank_fixedField_stabilizer_smul K σ ω.out).symm
-
-end FinrankOrbit
-
-section FieldGaloisSet
-
-variable {K : Type*} [Field K] {n : ℕ}
-
-/-- The cardinality of an orbit equals the degree of its stabilizer's fixed field. -/
-theorem GaloisSet.finrank_fixedField_stabilizer_eq_card_fiber (ρ : GaloisSet K n)
-    (ω : let := ρ.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) :
-    let := ρ.mulAction
-    Module.finrank K (IntermediateField.fixedField
-      (stabilizer Gal(SeparableClosure K/K) (Quotient.out ω : Fin n))) =
-        Nat.card {i : Fin n // (Quotient.mk'' i :
-          orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) = ω} := by
-  let := ρ.mulAction
-  dsimp only
-  rw [ρ.finrank_fixedField_stabilizer ω.out]
-  refine Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ ?_).symm
-  conv_lhs => rw [← Quotient.out_eq' ω]
-  rw [Quotient.eq'', MulAction.orbitRel_apply]
-
-end FieldGaloisSet
-
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {n : ℕ}
-
-section InertiaOrbit
-
-variable (K) {X : Type*} [MulAction Gal(SeparableClosure K/K) X]
-
-/-- Translating a point does not change the residue degree of its stabilizer's fixed field. -/
-@[simp]
-theorem inertiaDegree_fixedField_stabilizer_smul
-    (σ : Gal(SeparableClosure K/K)) (x : X) :
-    (IntermediateField.fixedField
-      (stabilizer Gal(SeparableClosure K/K) (σ • x))).inertiaDegree =
-        (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree := by
-  rw [stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-    Subgroup.fixedField_map_conj]
-  exact (IntermediateField.inertiaDegree_eq_of_algEquiv
-    ((IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) x)).equivMap
-      σ.toAlgHom)).symm
-
-/-- The residue degree of an orbit's representative fixed field can be computed at any point of the
-orbit. -/
-theorem inertiaDegree_fixedField_stabilizer_out
-    {ω : orbitRel.Quotient Gal(SeparableClosure K/K) X} {x : X}
-    (hx : (Quotient.mk'' x : orbitRel.Quotient Gal(SeparableClosure K/K) X) = ω) :
-    (IntermediateField.fixedField
-      (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree =
-        (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree := by
-  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
-  exact (inertiaDegree_fixedField_stabilizer_smul K σ ω.out).symm
-
-end InertiaOrbit
 
 namespace GaloisSet
 
@@ -361,18 +279,10 @@ theorem discriminantExponent_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
     (sigma b ρ).discriminantExponent = ∑ i, (ρ i).discriminantExponent := by
   let : ∀ i, MulAction Gal(SeparableClosure K/K) (Fin (d i)) := fun i ↦ (ρ i).mulAction
   let := (sigma b ρ).mulAction
-  have he (σ : Gal(SeparableClosure K/K)) (j : Fin n) : b (σ • j) = σ • b j := by
-    rw [GaloisSet.smul_def, GaloisSet.sigma_val_apply, b.apply_symm_apply]
-    rfl
-  rw [discriminantExponent_def, orbitDiscriminantExponent_eq_of_equiv K b he,
+  rw [discriminantExponent_def,
+    orbitDiscriminantExponent_eq_of_equiv K b (sigma_smul_apply b ρ),
     orbitDiscriminantExponent_sigma K]
   exact Finset.sum_congr rfl fun i _ ↦ (ρ i).discriminantExponent_def.symm
-
-private theorem map_val_eq_sum_singleton {α β : Type*} (s : Finset α) (g : α → β) :
-    s.val.map g = ∑ a ∈ s, ({g a} : Multiset β) := by
-  rw [Finset.sum_eq_multiset_sum]
-  exact (Multiset.sum_map_singleton (s.val.map g)).symm.trans
-    (by rw [Multiset.map_map]; rfl)
 
 /-- The splitting symbol of a disjoint union of Galois sets is the sum of their splitting
 symbols. -/
@@ -381,16 +291,17 @@ theorem splittingSymbol_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
     (b : Fin n ≃ Σ i, Fin (d i)) (ρ : ∀ i, GaloisSet K (d i)) :
     (sigma b ρ).splittingSymbol = ∑ i, (ρ i).splittingSymbol := by
   classical
+  -- Identify the orbits of `sigma b ρ` with `Σ i, orbitRel.Quotient _ (Fin (d i))` along `b`,
+  -- choose `b.symm ⟨i, O.out⟩` on each orbit, and transport stabilizers via
+  -- `stabilizer_sigma_symm_apply`.
   let : ∀ i, MulAction Gal(SeparableClosure K/K) (Fin (d i)) := fun i ↦ (ρ i).mulAction
   let := (sigma b ρ).mulAction
   let : ∀ i, Fintype (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin (d i))) :=
     fun i ↦ Fintype.ofFinite _
   let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
-  have he (σ : Gal(SeparableClosure K/K)) (j : Fin n) : b (σ • j) = σ • b j := by
-    rw [GaloisSet.smul_def, GaloisSet.sigma_val_apply, b.apply_symm_apply]
-    rfl
   have he' (g : Gal(SeparableClosure K/K)) (j : Fin n) :
-      b (g • j) = (MulEquiv.refl Gal(SeparableClosure K/K)) g • b j := he g j
+      b (g • j) = (MulEquiv.refl Gal(SeparableClosure K/K)) g • b j :=
+    sigma_smul_apply b ρ g j
   let E : orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n) ≃
       Σ i : ι, orbitRel.Quotient Gal(SeparableClosure K/K) (Fin (d i)) :=
     (MulAction.orbitRelQuotientCongr (MulEquiv.refl _) b he').trans
@@ -400,14 +311,8 @@ theorem splittingSymbol_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
         orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) = E.symm p := by
     rintro ⟨i, O⟩
     apply E.injective
-    rw [E.apply_symm_apply]
-    calc MulAction.orbitRelQuotientSigmaEquiv
-          (MulAction.orbitRelQuotientCongr (MulEquiv.refl _) b he'
-            (Quotient.mk'' (b.symm ⟨i, O.out⟩)))
-        = MulAction.orbitRelQuotientSigmaEquiv (Quotient.mk'' (b (b.symm ⟨i, O.out⟩))) := by
-            rw [MulAction.orbitRelQuotientCongr_mk]
-      _ = ⟨i, O⟩ := by
-            rw [b.apply_symm_apply, MulAction.orbitRelQuotientSigmaEquiv_mk, Quotient.out_eq']
+    rw [E.apply_symm_apply, Equiv.trans_apply, MulAction.orbitRelQuotientCongr_mk,
+      b.apply_symm_apply, MulAction.orbitRelQuotientSigmaEquiv_mk, Quotient.out_eq']
   have hterm : ∀ p : Σ i : ι, orbitRel.Quotient Gal(SeparableClosure K/K) (Fin (d i)),
       (fun F : IntermediateField K (SeparableClosure K) =>
         (F.inertiaDegree, Module.finrank K F / F.inertiaDegree))
@@ -420,12 +325,9 @@ theorem splittingSymbol_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
     rintro ⟨i, O⟩
     dsimp only
     rw [inertiaDegree_fixedField_stabilizer_out K (hs ⟨i, O⟩),
-      finrank_fixedField_stabilizer_out K (hs ⟨i, O⟩)]
-    have hstab : stabilizer Gal(SeparableClosure K/K) (b.symm ⟨i, O.out⟩) =
-        stabilizer Gal(SeparableClosure K/K) O.out :=
-      (MulAction.stabilizer_eq_of_injective b b.injective he _).symm.trans (by simp)
-    rw [hstab]
-  rw [splittingSymbol_def, map_val_eq_sum_singleton]
+      finrank_fixedField_stabilizer_out K (hs ⟨i, O⟩),
+      stabilizer_sigma_symm_apply b ρ i O.out]
+  rw [splittingSymbol_def, ← Finset.sum_multiset_map_singleton]
   have hrhs : ∑ i : ι, (ρ i).splittingSymbol =
       ∑ p : Σ i : ι, orbitRel.Quotient Gal(SeparableClosure K/K) (Fin (d i)),
         ({(fun F : IntermediateField K (SeparableClosure K) =>
@@ -434,12 +336,94 @@ theorem splittingSymbol_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
               (stabilizer Gal(SeparableClosure K/K) p.2.out))} : Multiset (ℕ × ℕ)) := by
     rw [Fintype.sum_sigma]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [splittingSymbol_def, map_val_eq_sum_singleton]
+    rw [splittingSymbol_def, ← Finset.sum_multiset_map_singleton]
   rw [hrhs]
   exact (Fintype.sum_equiv E.symm _ _ fun p ↦
     congrArg (fun x ↦ ({x} : Multiset (ℕ × ℕ))) (hterm p).symm).symm
 
 end GaloisSet
+
+/-- Via label `0` and `GaloisSet.tsum_isTransitive`, summing over Galois sets of size `f * e` with
+splitting symbol `{(f, e)}` reduces to `(f * e - 1)!` times an inertia-degree-`f` sum over
+degree-`f * e` subextensions. -/
+private theorem tsum_splittingSymbol_singleton_eq_tsum_finrank {f e : ℕ}
+    (hf : 0 < f) (he : 0 < e) :
+    ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+      ((f * e - 1)! : ℝ≥0∞) *
+        ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
+          (if L.1.inertiaDegree = f then
+            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) := by
+  let i₀ : Fin (f * e) := ⟨0, Nat.mul_pos hf he⟩
+  let g : IntermediateField K (SeparableClosure K) → ℝ≥0∞ := fun L ↦
+    if L.inertiaDegree = f then 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent else 0
+  let S : Set {ρ : GaloisSet K (f * e) // ρ.IsTransitive} :=
+    {ρ | let := ρ.1.mulAction
+      (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀)).inertiaDegree = f}
+  let E₁ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}} ≃ S :=
+    (Equiv.subtypeEquivRight fun ρ ↦ GaloisSet.splittingSymbol_eq_singleton_iff hf he ρ).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
+  have hind :
+      (fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
+        let := ρ.1.mulAction
+        g (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀))) =
+      S.indicator (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent) := by
+    ext ρ
+    let := ρ.1.mulAction
+    dsimp [g, S, Set.indicator]
+    split_ifs with h
+    · exact (congrArg (fun d ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ d)
+        (ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀)).symm
+    · rfl
+  refine (E₁.tsum_eq fun ρ ↦
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.1.discriminantExponent).trans ?_
+  refine ((tsum_subtype S fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent).trans ?_).trans
+    (GaloisSet.tsum_isTransitive i₀ g)
+  exact congrArg tsum hind.symm
+
+/-- Summing the inertia-degree-`f` discriminant weight over degree-`f * e` subextensions evaluates
+via `tsum_inertiaDegree_eq`. -/
+private theorem tsum_finrank_inertiaDegree_indicator {f e : ℕ} (hf : 0 < f) :
+    ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
+        (if L.1.inertiaDegree = f then
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
+      (e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
+  let E₂ : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e ∧
+      L.inertiaDegree = f} ≃
+      {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} //
+        L.1.inertiaDegree = f} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
+  have hind :
+      (fun L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} ↦
+        if L.1.inertiaDegree = f then
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
+      Set.indicator
+        {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} |
+          L.1.inertiaDegree = f}
+        (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent) := by
+    ext L
+    dsimp [Set.indicator]
+    split_ifs <;> rfl
+  rw [hind, ← tsum_subtype _ fun L : {L : IntermediateField K (SeparableClosure K) //
+      Module.finrank K L = f * e} ↦
+    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent]
+  exact (E₂.tsum_eq fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent).symm.trans
+    (tsum_inertiaDegree_eq (K := K) hf.ne' e)
+
+private theorem ennreal_factorial_mul_cancel {f e : ℕ} (hf : 0 < f) (he : 0 < e) :
+    ((f * e)! : ℝ≥0∞)⁻¹ * (((f * e - 1)! : ℝ≥0∞) * (e : ℝ≥0∞)) = (f : ℝ≥0∞)⁻¹ := by
+  have hfe : (f * e)! = f * e * (f * e - 1)! :=
+    (Nat.mul_factorial_pred (Nat.mul_pos hf he).ne').symm
+  have hnn : (((f * e)! : ℝ≥0)⁻¹ * (((f * e - 1)! : ℝ≥0) * (e : ℝ≥0))) = (f : ℝ≥0)⁻¹ := by
+    rw [hfe]
+    push_cast
+    have : (f : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.2 hf.ne'
+    have : (e : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.2 he.ne'
+    have : ((f * e - 1)! : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)
+    field_simp
+  simpa [ENNReal.coe_inv (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)),
+    ENNReal.coe_inv (Nat.cast_ne_zero.2 hf.ne')] using congrArg (↑· : ℝ≥0 → ℝ≥0∞) hnn
 
 /-- **The transitive mass by residue degree** ([Bhargava 2007, §2]): for `0 < f` and `0 < e`, the
 Galois sets of size `f * e` with splitting symbol `{(f, e)}` have mass
@@ -449,104 +433,14 @@ theorem etaleMass_isTransitive_splittingSymbol (f e : ℕ) (hf : 0 < f) (he : 0 
         ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
           1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
       1 / ((f : ℝ≥0∞) * (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1))) := by
-  let i₀ : Fin (f * e) := ⟨0, Nat.mul_pos hf he⟩
-  let g : IntermediateField K (SeparableClosure K) → ℝ≥0∞ := fun L ↦
-    if L.inertiaDegree = f then 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent else 0
-  have hbridge := GaloisSet.tsum_isTransitive (K := K) i₀ g
-  let E₁ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}} ≃
-      {ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} //
-        (let := ρ.1.mulAction
-        (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀)).inertiaDegree =
-          f)} :=
-    (Equiv.subtypeEquivRight fun ρ ↦ GaloisSet.splittingSymbol_eq_singleton_iff hf he ρ).trans
-      (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
-  have hlhs :
-      ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
-        ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive},
-          (let := ρ.1.mulAction
-          g (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀))) := by
-    have h₁ :
-        (fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-          let := ρ.1.mulAction
-          g (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀))) =
-        Set.indicator
-          {ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} |
-            let := ρ.1.mulAction
-            (IntermediateField.fixedField
-              (stabilizer Gal(SeparableClosure K/K) i₀)).inertiaDegree = f}
-          (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent) := by
-      ext ρ
-      let := ρ.1.mulAction
-      dsimp [g, Set.indicator]
-      split_ifs with h
-      · rw [ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀]
-      · rfl
-    rw [h₁, ← tsum_subtype _ fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent]
-    exact E₁.tsum_eq fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.1.discriminantExponent
-  let E₂ : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e ∧
-      L.inertiaDegree = f} ≃
-      {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} //
-        L.1.inertiaDegree = f} :=
-    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
-  have hrhs :
-      ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
-          g L.1 =
-        (e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
-    have h₂ :
-        (fun L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} ↦
-          g L.1) =
-        Set.indicator
-          {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} |
-            L.1.inertiaDegree = f}
-          (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent) := by
-      ext L
-      dsimp [g, Set.indicator]
-      split_ifs <;> rfl
-    rw [h₂, ← tsum_subtype _ fun L : {L : IntermediateField K (SeparableClosure K) //
-        Module.finrank K L = f * e} ↦
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent]
-    calc
-      (∑' L : {L : {L : IntermediateField K (SeparableClosure K) //
-          Module.finrank K L = f * e} | L.1.inertiaDegree = f},
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent)
-        = ∑' L : {L : IntermediateField K (SeparableClosure K) //
-            Module.finrank K L = f * e ∧ L.inertiaDegree = f},
-            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent :=
-          (E₂.tsum_eq
-            fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent).symm
-      _ = (e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) :=
-          tsum_inertiaDegree_eq (K := K) hf.ne' e
-  rw [hlhs, hbridge, hrhs]
-  have hfe : (f * e)! = (f * e) * (f * e - 1)! :=
-    (Nat.mul_factorial_pred (Nat.mul_pos hf he).ne').symm
-  have hfac_ne_zero : (((f * e - 1)! : ℕ) : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast (Nat.factorial_pos _).ne'
-  have hfac_ne_top : (((f * e - 1)! : ℕ) : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
-  have hf_ne_zero : (f : ℝ≥0∞) ≠ 0 := by exact_mod_cast hf.ne'
-  have he_ne_zero : (e : ℝ≥0∞) ≠ 0 := by exact_mod_cast he.ne'
-  have hf_ne_top : (f : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
-  have he_ne_top : (e : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
-  rw [hfe, Nat.cast_mul, ENNReal.mul_inv (Or.inl (by simp [hf.ne', he.ne']))
-    (Or.inl (ENNReal.natCast_ne_top (f * e)))]
-  calc
-    (((f * e : ℕ) : ℝ≥0∞)⁻¹ * ((f * e - 1)! : ℝ≥0∞)⁻¹) *
-        (((f * e - 1)! : ℝ≥0∞) *
-          ((e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1))))
-      = ((f * e : ℕ) : ℝ≥0∞)⁻¹ *
-          ((((f * e - 1)! : ℝ≥0∞)⁻¹ * ((f * e - 1)! : ℝ≥0∞)) *
-            ((e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)))) := by ring
-    _ = ((f : ℝ≥0∞) * (e : ℝ≥0∞))⁻¹ *
-          ((e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1))) := by
-        rw [ENNReal.inv_mul_cancel hfac_ne_zero hfac_ne_top, one_mul, Nat.cast_mul]
-    _ = ((f : ℝ≥0∞)⁻¹ * ((e : ℝ≥0∞)⁻¹ * (e : ℝ≥0∞))) /
-          (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
-        rw [ENNReal.mul_inv (Or.inl hf_ne_zero) (Or.inl hf_ne_top)]
-        simp only [div_eq_mul_inv]
-        ring
-    _ = 1 / ((f : ℝ≥0∞) * (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1))) := by
-        rw [ENNReal.inv_mul_cancel he_ne_zero he_ne_top, mul_one, div_eq_mul_inv, div_eq_mul_inv,
-          one_mul, ENNReal.mul_inv (Or.inl hf_ne_zero) (Or.inl hf_ne_top)]
+  -- Double-count via label `0`: each degree-`f * e` subextension of residue degree `f` arises from
+  -- `(f * e - 1)!` transitive Galois sets (`tsum_splittingSymbol_singleton_eq_tsum_finrank`), and
+  -- Serre's formula (`tsum_finrank_inertiaDegree_indicator`) sums their weights to
+  -- `e / q ^ (f * (e - 1))`.
+  rw [tsum_splittingSymbol_singleton_eq_tsum_finrank hf he,
+    tsum_finrank_inertiaDegree_indicator hf,
+    div_eq_mul_inv, ← mul_assoc ((f * e - 1)! : ℝ≥0∞), ← mul_assoc,
+    ennreal_factorial_mul_cancel hf he, one_div,
+    ENNReal.mul_inv (Or.inl (Nat.cast_ne_zero.2 hf.ne')) (Or.inl (ENNReal.natCast_ne_top f))]
 
 end TauCeti

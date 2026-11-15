@@ -23,15 +23,15 @@ Every `y : ℝ≥0∞` is bounded by the dyadic series `1 + ∑ₖ 2^(k+1) 1{2^k
 a nonnegative function and integrated, this bounds its integral by a weighted sum of the measures
 of its dyadic level sets.
 
-An infinite sum over a finite dependent product of a product of terms in `ℝ≥0∞` factors as the
-product of the infinite sums (`ENNReal.tsum_prod_pi`).
+A finite product of infinite sums in `ℝ≥0∞` expands as the infinite sum over the dependent
+product type of the products of terms (`ENNReal.prod_tsum`).
 
 ## Main declarations
 
 * `HasSum.toReal`: a series in `ℝ≥0∞` with finite sum has the termwise `toReal` sum.
 * `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
 * `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^(k+1) 1{2^k < y}`.
-* `ENNReal.tsum_prod_pi`: `∑' x : ∀ i, κ i, ∏ i, f i (x i) = ∏ i, ∑' y, f i y`.
+* `ENNReal.prod_tsum`: `∏ i, ∑' y, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)`.
 -/
 
 public section
@@ -71,9 +71,9 @@ theorem ENNReal.le_one_add_tsum_pow_indicator (y : ℝ≥0∞) :
     exact_mod_cast (Nat.lt_two_pow_self).trans (Nat.pow_lt_pow_right (by norm_num) (by omega))
   exact (hn.trans (this.trans_le h2)).false
 
-private theorem ENNReal.tsum_prod_pi_fin :
+private theorem ENNReal.prod_tsum_fin :
     ∀ {m : ℕ} {κ : Fin m → Type*} (f : ∀ i, κ i → ℝ≥0∞),
-      ∑' x : ∀ i, κ i, ∏ i, f i (x i) = ∏ i, ∑' y : κ i, f i y
+      ∏ i, ∑' y : κ i, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)
   | 0, _, f => by simp
   | m + 1, κ, f => by
     rw [← (Fin.consEquiv κ).tsum_eq]
@@ -81,13 +81,13 @@ private theorem ENNReal.tsum_prod_pi_fin :
     rw [tsum_prod' (f := fun p : κ 0 × (∀ i : Fin m, κ i.succ) ↦
       f 0 p.1 * ∏ i : Fin m, f i.succ (p.2 i))]
     simp_rw [ENNReal.tsum_mul_left]
-    rw [ENNReal.tsum_mul_right, ENNReal.tsum_prod_pi_fin fun i ↦ f i.succ]
+    rw [ENNReal.tsum_mul_right, ← ENNReal.prod_tsum_fin fun i ↦ f i.succ]
 
-/-- An infinite sum in `ℝ≥0∞` of a finite product factors as the product of the infinite
-sums. -/
-theorem ENNReal.tsum_prod_pi {ι : Type*} [Fintype ι] {κ : ι → Type*}
+/-- A finite product of infinite sums in `ℝ≥0∞` equals the infinite sum over the dependent
+product type of the products of terms. -/
+theorem ENNReal.prod_tsum {ι : Type*} [Fintype ι] {κ : ι → Type*}
     (f : ∀ i, κ i → ℝ≥0∞) :
-    ∑' x : ∀ i, κ i, ∏ i, f i (x i) = ∏ i, ∑' y : κ i, f i y := by
+    ∏ i, ∑' y : κ i, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i) := by
   let e := (Fintype.equivFin ι).symm
   rw [← (Equiv.piCongrLeft κ e).tsum_eq]
   have hprod (x : ∀ j : Fin (Fintype.card ι), κ (e j)) :
@@ -97,6 +97,6 @@ theorem ENNReal.tsum_prod_pi {ι : Type*} [Fintype ι] {κ : ι → Type*}
       (fun i ↦ f i (Equiv.piCongrLeft κ e x i)) fun j ↦ by
         simp [Equiv.piCongrLeft_apply_apply (P := κ) (e := e) x j]).symm
   simp_rw [hprod]
-  rw [ENNReal.tsum_prod_pi_fin,
-    Fintype.prod_equiv e (fun j ↦ ∑' y : κ (e j), f (e j) y) (fun i ↦ ∑' y : κ i, f i y)
-      fun _ ↦ rfl]
+  rw [← ENNReal.prod_tsum_fin]
+  exact (Fintype.prod_equiv e (fun j ↦ ∑' y : κ (e j), f (e j) y) (fun i ↦ ∑' y : κ i, f i y)
+    fun _ ↦ rfl).symm

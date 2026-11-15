@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.GroupTheory.GroupAction.Transitive
@@ -154,6 +155,24 @@ theorem finrank_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
   rw [IntermediateField.finrank_eq_fixingSubgroup_index,
     ρ.fixingSubgroup_fixedField_stabilizer, MulAction.index_stabilizer, Nat.card_coe_set_eq]
 
+/-- The cardinality of an orbit equals the degree of its stabilizer's fixed field. -/
+theorem finrank_fixedField_stabilizer_eq_card_fiber (ρ : GaloisSet K n)
+    (ω : let := ρ.mulAction; MulAction.orbitRel.Quotient
+      (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n)) :
+    let := ρ.mulAction
+    Module.finrank K (IntermediateField.fixedField
+      (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K)
+        (Quotient.out ω : Fin n))) =
+      Nat.card {i : Fin n // (Quotient.mk'' i :
+        MulAction.orbitRel.Quotient
+          (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n)) = ω} := by
+  let := ρ.mulAction
+  dsimp only
+  rw [ρ.finrank_fixedField_stabilizer ω.out]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ ?_).symm
+  conv_lhs => rw [← Quotient.out_eq' ω]
+  rw [Quotient.eq'', MulAction.orbitRel_apply]
+
 /-- Transitivity of a labelled Galois set means pretransitivity of its associated action.
 As with `MulAction.IsPretransitive`, this holds vacuously for the empty set. -/
 def IsTransitive (ρ : GaloisSet K n) : Prop :=
@@ -251,6 +270,38 @@ theorem sigma_val_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n �
     (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n) :
     (sigma b ρ).val σ j = b.symm ⟨(b j).1, (ρ (b j).1).val σ (b j).2⟩ :=
   (rfl)
+
+/-- Labelling a disjoint union of Galois sets along `b` is equivariant with respect to the sigma
+action on the blocks. -/
+theorem sigma_smul_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+    (ρ : ∀ i, GaloisSet K (d i))
+    (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n) :
+    letI : ∀ i, MulAction (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin (d i)) :=
+      fun i ↦ (ρ i).mulAction
+    letI := (sigma b ρ).mulAction
+    b (σ • j) = σ • b j := by
+  let : ∀ i, MulAction (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin (d i)) :=
+    fun i ↦ (ρ i).mulAction
+  let := (sigma b ρ).mulAction
+  rw [smul_def, sigma_val_apply, b.apply_symm_apply, ← (ρ (b j).1).smul_def,
+    ← Sigma.smul_mk, Sigma.eta]
+
+/-- In a disjoint union of Galois sets, the stabilizer of `b.symm ⟨i, x⟩` is the stabilizer of `x`
+in the `i`-th block. -/
+@[simp]
+theorem stabilizer_sigma_symm_apply {ι : Type*} [Fintype ι] {d : ι → ℕ}
+    (b : Fin n ≃ Σ i, Fin (d i)) (ρ : ∀ i, GaloisSet K (d i)) (i : ι) (x : Fin (d i)) :
+    (letI := (sigma b ρ).mulAction
+    MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) (b.symm ⟨i, x⟩)) =
+      (letI := (ρ i).mulAction
+      MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) x) := by
+  let : ∀ j, MulAction (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin (d j)) :=
+    fun j ↦ (ρ j).mulAction
+  let := (sigma b ρ).mulAction
+  ext σ
+  simp only [MulAction.mem_stabilizer_iff]
+  rw [← b.apply_eq_iff_eq, sigma_smul_apply, b.apply_symm_apply, Sigma.smul_mk,
+    Sigma.mk.inj_iff, heq_eq_eq, and_iff_right rfl]
 
 /-! ### Transitive Galois sets from open subgroups -/
 
