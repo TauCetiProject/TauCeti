@@ -89,8 +89,7 @@ private theorem hasSum_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : ‖z‖ < 1
     have hj1 : (1 : ℝ) ≤ j + 1 := by linarith [Nat.cast_nonneg (α := ℝ) j]
     have hcast : ‖(j + 1 : ℂ)‖ = (j + 1 : ℝ) := by
       exact_mod_cast Complex.norm_natCast (j + 1)
-    dsimp only [F, bound]
-    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_pow, abs_pow,
+    simp only [F, bound, norm_mul, Complex.norm_real, Real.norm_eq_abs,
       abs_of_pos ht.1, abs_neg, norm_div, norm_pow, hcast]
     calc t ^ j * |Real.log t| ^ k * (‖z‖ ^ (j + 1) / (j + 1 : ℝ))
         ≤ 1 * |Real.log t| ^ k * (‖z‖ ^ (j + 1) / 1) := by gcongr
@@ -122,51 +121,48 @@ private theorem hasSum_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : ‖z‖ < 1
   simpa only [F, inv_factorial_mul_integral_radialTerm k] using
     hint.mul_left (Nat.factorial k : ℂ)⁻¹
 
-private theorem hasDerivAt_tsum_neg_nat_and_summable (r : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
-    HasDerivAt (fun w : ℂ ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1 : ℂ) ^ (-(r : ℤ)))
-      (∑' k : ℕ, (k + 1 : ℂ) ^ (r + 1) * z ^ k) z ∧
-      Summable (fun k : ℕ ↦ (k + 1 : ℂ) ^ (r + 1) * z ^ k) := by
+private theorem hasDerivAt_tsum_div_zpow_and_summable (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasDerivAt (fun w : ℂ ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1 : ℂ) ^ n)
+      (∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ (n - 1)) z ∧
+      Summable (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ (n - 1)) := by
   set R : ℝ := (‖z‖ + 1) / 2 with hR_def
   have hR0 : 0 < R := by rw [hR_def]; linarith [norm_nonneg z]
   have hzR : ‖z‖ < R := by rw [hR_def]; linarith
   have hR1 : R < 1 := by rw [hR_def]; linarith
-  let g : ℕ → ℂ → ℂ := fun k w ↦ w ^ (k + 1) / (k + 1 : ℂ) ^ (-(r : ℤ))
-  let g' : ℕ → ℂ → ℂ := fun k w ↦ (k + 1 : ℂ) ^ (r + 1) * w ^ k
-  let u : ℕ → ℝ := fun k ↦ R⁻¹ * ((k + 1 : ℝ) ^ (r + 1) * R ^ (k + 1))
+  let g : ℕ → ℂ → ℂ := fun k w ↦ w ^ (k + 1) / (k + 1 : ℂ) ^ n
+  let g' : ℕ → ℂ → ℂ := fun k w ↦ w ^ k / (k + 1 : ℂ) ^ (n - 1)
+  let u : ℕ → ℝ := fun k ↦ R⁻¹ * ((k + 1 : ℝ) ^ (1 - n).toNat * R ^ (k + 1))
   have hu : Summable u := by
-    have hgeom : Summable (fun n : ℕ ↦ (n : ℝ) ^ (r + 1) * R ^ n) :=
-      summable_pow_mul_geometric_of_norm_lt_one (r + 1)
+    have hgeom : Summable (fun m : ℕ ↦ (m : ℝ) ^ (1 - n).toNat * R ^ m) :=
+      summable_pow_mul_geometric_of_norm_lt_one (1 - n).toNat
         (by rw [Real.norm_of_nonneg hR0.le]; exact hR1)
     refine (((summable_nat_add_iff 1).mpr hgeom).congr fun k ↦ ?_).mul_left R⁻¹
     push_cast
-    rfl
-  have hderiv_term (k : ℕ) (w : ℂ) (_hw : w ∈ ball (0 : ℂ) R) :
-      HasDerivAt (g k) (g' k w) w := by
-    have hg_eq : g k = fun y : ℂ ↦ (k + 1 : ℂ) ^ r * y ^ (k + 1) := by
-      ext y
-      simp only [g, zpow_neg, zpow_natCast, div_inv_eq_mul, mul_comm]
-    rw [hg_eq]
-    convert (hasDerivAt_pow (k + 1) w).const_mul ((k + 1 : ℂ) ^ r) using 1
-    simp only [g', Nat.add_sub_cancel]
-    push_cast
     ring
+  have hderiv_term (k : ℕ) (w : ℂ) : HasDerivAt (g k) (g' k w) w := by
+    have hk0 : (k + 1 : ℂ) ≠ 0 := Nat.cast_add_one_ne_zero k
+    convert (hasDerivAt_pow (k + 1) w).div_const ((k + 1 : ℂ) ^ n) using 1
+    simp only [g', Nat.add_sub_cancel, zpow_sub₀ hk0, zpow_one]
+    push_cast
+    field_simp [hk0]
   have hbound_term (k : ℕ) (w : ℂ) (hw : w ∈ ball (0 : ℂ) R) : ‖g' k w‖ ≤ u k := by
     have hwR : ‖w‖ ≤ R := (mem_ball_zero_iff.mp hw).le
-    have hcast : ‖(k + 1 : ℂ)‖ = (k + 1 : ℝ) := by
-      exact_mod_cast Complex.norm_natCast (k + 1)
-    simp only [g', u, norm_mul, norm_pow, hcast]
-    calc (k + 1 : ℝ) ^ (r + 1) * ‖w‖ ^ k
-        ≤ (k + 1 : ℝ) ^ (r + 1) * R ^ k := by gcongr
-      _ = R⁻¹ * R * ((k + 1 : ℝ) ^ (r + 1) * R ^ k) := by
-        rw [inv_mul_cancel₀ hR0.ne', one_mul]
-      _ = R⁻¹ * ((k + 1 : ℝ) ^ (r + 1) * R ^ (k + 1)) := by
-        rw [pow_succ' R k]
-        ring
+    have hk1 : (1 : ℝ) ≤ k + 1 := by linarith [Nat.cast_nonneg (α := ℝ) k]
+    have hcast : ‖(k + 1 : ℂ)‖ = (k + 1 : ℝ) := by exact_mod_cast Complex.norm_natCast (k + 1)
+    have hk_pow : ((k + 1 : ℝ) ^ (n - 1))⁻¹ ≤ (k + 1 : ℝ) ^ (1 - n).toNat := by
+      rw [← zpow_neg, neg_sub, ← zpow_natCast]
+      exact zpow_le_zpow_right₀ hk1 (Int.self_le_toNat (1 - n))
+    simp only [g', u, div_eq_inv_mul, norm_mul, norm_inv, norm_zpow, norm_pow, hcast]
+    calc ((k + 1 : ℝ) ^ (n - 1))⁻¹ * ‖w‖ ^ k
+        ≤ (k + 1 : ℝ) ^ (1 - n).toNat * R ^ k := by gcongr
+      _ = R⁻¹ * ((k + 1 : ℝ) ^ (1 - n).toNat * R ^ (k + 1)) := by
+          rw [pow_succ']
+          field_simp [hR0.ne']
   have hg0 : Summable (fun k ↦ g k 0) := by
     simp only [g, zero_pow (Nat.succ_ne_zero _), zero_div]
     exact summable_zero
   exact ⟨hasDerivAt_tsum_of_isPreconnected hu isOpen_ball (convex_ball 0 R).isPreconnected
-      hderiv_term hbound_term (mem_ball_self hR0) hg0 (mem_ball_zero_iff.mpr hzR),
+      (fun k w _ ↦ hderiv_term k w) hbound_term (mem_ball_self hR0) hg0 (mem_ball_zero_iff.mpr hzR),
     Summable.of_norm_bounded hu fun k ↦ hbound_term k z (mem_ball_zero_iff.mpr hzR)⟩
 
 private theorem hasSum_polylog_neg_nat (r : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -177,18 +173,19 @@ private theorem hasSum_polylog_neg_nat (r : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     rw [div_eq_mul_inv]
     simpa only [pow_succ'] using (hasSum_geometric_of_norm_lt_one hz).mul_left z
   | succ r ih =>
-    obtain ⟨htsum_deriv, hg'_sum⟩ := hasDerivAt_tsum_neg_nat_and_summable r hz
+    obtain ⟨htsum_deriv, hg'_sum⟩ := hasDerivAt_tsum_div_zpow_and_summable (-(r : ℤ)) hz
     have hloc : (fun w : ℂ ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1 : ℂ) ^ (-(r : ℤ))) =ᶠ[𝓝 z]
         polylog (-(r : ℤ)) := by
       filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.mpr hz)] with w hw
       exact (ih (mem_ball_zero_iff.mp hw)).tsum_eq
-    have hpoly_deriv : deriv (polylog (-(r : ℤ))) z = ∑' k : ℕ, (k + 1 : ℂ) ^ (r + 1) * z ^ k :=
+    have hpoly_deriv :
+        deriv (polylog (-(r : ℤ))) z = ∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ (-(r : ℤ) - 1) :=
       (htsum_deriv.congr_of_eventuallyEq hloc.symm).deriv
     rw [polylog_neg_nat_succ, hpoly_deriv]
     convert hg'_sum.hasSum.mul_left z using 1
     ext k
-    simp only [zpow_neg, zpow_natCast, div_inv_eq_mul, pow_succ']
-    ring
+    push_cast
+    rw [neg_add', ← mul_div_assoc, ← pow_succ']
 
 /-- **Disc-series expansion of integer-weight polylogarithms.** For every integer weight `n : ℤ`
 and every `z` in the open unit disc `‖z‖ < 1`, the series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n`
@@ -216,17 +213,12 @@ theorem hasSum_norm_polylog (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ ↦ ‖z ^ (k + 1) / (k + 1 : ℂ) ^ n‖) (polylog n ‖z‖).re := by
   have hz' : ‖(‖z‖ : ℂ)‖ < 1 := by
     simpa only [Complex.norm_real, Real.norm_eq_abs, abs_norm] using hz
-  have hre := Complex.reCLM.hasSum (hasSum_polylog n hz')
-  refine hre.congr_fun fun k ↦ ?_
-  have hcast : (k + 1 : ℂ) = ((k + 1 : ℝ) : ℂ) := by norm_cast
+  refine (Complex.reCLM.hasSum (hasSum_polylog n hz')).congr_fun fun k ↦ ?_
+  have hreal : ((‖z‖ ^ (k + 1) / (k + 1 : ℝ) ^ n : ℝ) : ℂ) =
+      (‖z‖ : ℂ) ^ (k + 1) / (k + 1 : ℂ) ^ n := by simp
   have hnorm_k : ‖(k + 1 : ℂ)‖ = (k + 1 : ℝ) := by exact_mod_cast Complex.norm_natCast (k + 1)
-  exact (calc
-    Complex.reCLM ((‖z‖ : ℂ) ^ (k + 1) / (k + 1 : ℂ) ^ n)
-        = ‖z‖ ^ (k + 1) / (k + 1 : ℝ) ^ n := by
-          rw [Complex.reCLM_apply, hcast, ← Complex.ofReal_pow, ← Complex.ofReal_zpow,
-            ← Complex.ofReal_div, Complex.ofReal_re]
-      _ = ‖z ^ (k + 1) / (k + 1 : ℂ) ^ n‖ := by
-          rw [norm_div, norm_pow, norm_zpow, hnorm_k]).symm
+  rw [Complex.reCLM_apply, ← hreal, Complex.ofReal_re]
+  simp [norm_zpow, hnorm_k]
 
 /-- On every closed subdisc `Metric.closedBall 0 r` with `r < 1`, the partial sums of the
 polylogarithm power series converge uniformly to `polylog n`. -/
@@ -291,38 +283,10 @@ theorem hasFPowerSeriesOnBall_polylog (n : ℤ) :
 by the differentiated power series `∑_{k ≥ 0} z ^ k / (k + 1) ^ (n - 1)`. -/
 theorem hasDerivAt_polylog_tsum_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasDerivAt (polylog n) (∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ (n - 1)) z := by
-  set R : ℝ := (‖z‖ + 1) / 2 with hR_def
-  have hR0 : 0 < R := by rw [hR_def]; linarith [norm_nonneg z]
-  have hzR : ‖z‖ < R := by rw [hR_def]; linarith
-  have hR1 : R < 1 := by rw [hR_def]; linarith
-  have hR' : ‖(R : ℂ)‖ < 1 := by rwa [Complex.norm_real, Real.norm_of_nonneg hR0.le]
-  let g : ℕ → ℂ → ℂ := fun k w ↦ w ^ (k + 1) / (k + 1 : ℂ) ^ n
-  let g' : ℕ → ℂ → ℂ := fun k w ↦ w ^ k / (k + 1 : ℂ) ^ (n - 1)
-  let u : ℕ → ℝ := fun k ↦ R⁻¹ * ‖(R : ℂ) ^ (k + 1) / (k + 1 : ℂ) ^ (n - 1)‖
-  have hu : Summable u := (hasSum_norm_polylog (n - 1) hR').summable.mul_left R⁻¹
-  have hderiv_term (k : ℕ) (w : ℂ) (_hw : w ∈ ball (0 : ℂ) R) :
-      HasDerivAt (g k) (g' k w) w := by
-    have hk0 : (k + 1 : ℂ) ≠ 0 := Nat.cast_add_one_ne_zero k
-    convert (hasDerivAt_pow (k + 1) w).div_const ((k + 1 : ℂ) ^ n) using 1
-    simp only [g', Nat.add_sub_cancel, zpow_sub₀ hk0, zpow_one]
-    push_cast
-    field_simp [hk0]
-  have hbound_term (k : ℕ) (w : ℂ) (hw : w ∈ ball (0 : ℂ) R) : ‖g' k w‖ ≤ u k := by
-    have hwR : ‖w‖ ≤ R := (mem_ball_zero_iff.mp hw).le
-    simp only [g', u, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg hR0.le]
-    calc ‖w‖ ^ k / ‖(k + 1 : ℂ) ^ (n - 1)‖
-        ≤ R ^ k / ‖(k + 1 : ℂ) ^ (n - 1)‖ := by gcongr
-      _ = R⁻¹ * (R ^ (k + 1) / ‖(k + 1 : ℂ) ^ (n - 1)‖) := by
-          rw [pow_succ', ← mul_div_assoc, inv_mul_cancel_left₀ hR0.ne']
-  have hg0 : Summable (fun k ↦ g k 0) := by
-    simp only [g, zero_pow (Nat.succ_ne_zero _), zero_div]
-    exact summable_zero
-  have htsum := hasDerivAt_tsum_of_isPreconnected hu isOpen_ball (convex_ball 0 R).isPreconnected
-    hderiv_term hbound_term (mem_ball_self hR0) hg0 (mem_ball_zero_iff.mpr hzR)
-  have hloc : (fun w ↦ ∑' k, g k w) =ᶠ[𝓝 z] polylog n := by
-    filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.mpr hzR)] with w hw
-    exact (polylog_eq_tsum n ((mem_ball_zero_iff.mp hw).trans hR1)).symm
-  exact htsum.congr_of_eventuallyEq hloc.symm
+  have hloc : (fun w : ℂ ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1 : ℂ) ^ n) =ᶠ[𝓝 z] polylog n := by
+    filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.mpr hz)] with w hw
+    exact (polylog_eq_tsum n (mem_ball_zero_iff.mp hw)).symm
+  exact (hasDerivAt_tsum_div_zpow_and_summable n hz).1.congr_of_eventuallyEq hloc.symm
 
 /-- Every integer-weight polylogarithm has complex derivative `1` at `0`. -/
 theorem hasDerivAt_polylog_zero (n : ℤ) : HasDerivAt (polylog n) 1 0 := by
@@ -349,8 +313,9 @@ theorem norm_polylog_two_half_sub_half_le :
     simp only [Finset.sum_range_one, zero_add, pow_one, Nat.cast_zero, one_zpow, div_one] at h
     convert h using 1
     ext k
+    simp only [Nat.add_assoc, zpow_two]
     push_cast
-    ring_nf
+    ring
   have hgeom : HasSum (fun k : ℕ ↦ (1 / 16 : ℝ) * (1 / 2 : ℝ) ^ k) (1 / 8 : ℝ) := by
     convert (hasSum_geometric_of_lt_one (by norm_num : (0 : ℝ) ≤ 1 / 2)
       (by norm_num : (1 / 2 : ℝ) < 1)).mul_left (1 / 16 : ℝ) using 1

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.Analysis.SpecialFunctions.Exp.Image
 
 /-!
 # Logarithmic moment integrals on the unit interval
@@ -13,7 +14,7 @@ public import Mathlib.MeasureTheory.Integral.Gamma
 For real exponents `r > -1` and `q > -1`, the substitution `t = exp (-u)` carries the unit-interval
 integral `∫₀¹ t ^ r * (-log t) ^ q dt` onto the Gamma integral
 `∫_{u > 0} u ^ q * exp (-(r + 1) * u) du = Γ(q + 1) / (r + 1) ^ (q + 1)`.
-When `q = k` is a natural number, `Γ(k + 1) = k!` yields the rational-exponent evaluation
+When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent evaluation
 `∫₀¹ t ^ r * (-log t) ^ k dt = k! / (r + 1) ^ (k + 1)` and its natural-moment specialization
 `∫₀¹ t ^ j * (-log t) ^ k dt = k! / (j + 1) ^ (k + 1)`.
 
@@ -39,21 +40,19 @@ open MeasureTheory Real Set
 private theorem exp_neg_pullback {r q u : ℝ} :
     |exp (-u) * -1| • ((exp (-u)) ^ r * (-log (exp (-u))) ^ q) =
       u ^ q * exp (-(r + 1) * u) := by
-  rw [mul_neg_one, abs_neg, abs_of_pos (exp_pos (-u)), smul_eq_mul, ← exp_mul, log_exp, neg_neg,
-    mul_comm (exp _) (u ^ q), mul_left_comm, ← exp_add]
+  simp only [mul_neg_one, abs_neg, abs_exp, smul_eq_mul, ← exp_mul, log_exp, neg_neg]
+  rw [← mul_assoc, ← exp_add, mul_comm]
   congr 2
   ring
-
-private theorem image_exp_neg_Ioi : (fun u : ℝ ↦ exp (-u)) '' Ioi 0 = Ioo 0 1 := by
-  rw [← Function.comp_def exp Neg.neg, image_comp, image_neg_eq_neg, neg_Ioi, neg_zero,
-    image_exp_Iio, exp_zero]
 
 /-- For `r > -1` and `q > -1`, the logarithmic weight `t ^ r * (-log t) ^ q` is integrable on
 `(0, 1)`. -/
 theorem integrableOn_Ioo_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
     IntegrableOn (fun t : ℝ ↦ t ^ r * (-log t) ^ q) (Ioo 0 1) := by
   have hb : 0 < r + 1 := by linarith
-  rw [← image_exp_neg_Ioi, integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi
+  suffices IntegrableOn (fun t : ℝ ↦ t ^ r * (-log t) ^ q) ((fun u : ℝ ↦ exp (-u)) '' Ioi 0) by
+    simpa using this
+  rw [integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi
     (fun u _ ↦ ((hasDerivAt_neg u).exp).hasDerivWithinAt) (exp_injective.comp neg_injective).injOn]
   have hgamma : IntegrableOn (fun x : ℝ ↦ exp (-x) * x ^ q) (Ioi 0) := by
     simpa [add_sub_cancel_right] using Real.GammaIntegral_convergent (s := q + 1) (by linarith)
@@ -65,8 +64,7 @@ theorem integrableOn_Ioo_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -
   rw [exp_neg_pullback, mul_rpow hb.le hu.le, neg_mul]
   calc (r + 1) ^ (-q) * (exp (-((r + 1) * u)) * ((r + 1) ^ q * u ^ q))
       = ((r + 1) ^ (-q) * (r + 1) ^ q) * (u ^ q * exp (-((r + 1) * u))) := by ring
-    _ = u ^ q * exp (-((r + 1) * u)) := by
-      rw [← rpow_add hb, neg_add_cancel, rpow_zero, one_mul]
+    _ = u ^ q * exp (-((r + 1) * u)) := by simp [← rpow_add hb]
 
 /-- For `r > -1` and `q > -1`, `t ↦ t ^ r * (-log t) ^ q` is interval integrable on `[0, 1]`. -/
 theorem intervalIntegrable_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
@@ -80,16 +78,18 @@ theorem intervalIntegrable_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq :
 theorem integral_rpow_mul_neg_log_rpow {r q : ℝ} (hr : -1 < r) (hq : -1 < q) :
     ∫ t in (0 : ℝ)..1, t ^ r * (-log t) ^ q = Gamma (q + 1) / (r + 1) ^ (q + 1) := by
   have hb : 0 < r + 1 := by linarith
-  rw [intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo,
-    ← image_exp_neg_Ioi, integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi
+  have hIoo : ∫ t in Ioo (0 : ℝ) 1, t ^ r * (-log t) ^ q =
+      ∫ t in (fun u : ℝ ↦ exp (-u)) '' Ioi 0, t ^ r * (-log t) ^ q := by simp
+  rw [intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo, hIoo,
+    integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi
       (fun u _ ↦ ((hasDerivAt_neg u).exp).hasDerivWithinAt)
       (exp_injective.comp neg_injective).injOn]
   have hcongr :
       ∫ u in Ioi (0 : ℝ), |exp (-u) * -1| • ((exp (-u)) ^ r * (-log (exp (-u))) ^ q) =
         ∫ u in Ioi (0 : ℝ), u ^ q * exp (-(r + 1) * u ^ (1 : ℝ)) :=
     setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ by rw [exp_neg_pullback, rpow_one]
-  rw [hcongr, integral_rpow_mul_exp_neg_mul_rpow zero_lt_one hq hb, div_one, div_one, div_one,
-    mul_one, rpow_neg hb.le, inv_mul_eq_div]
+  rw [hcongr, integral_rpow_mul_exp_neg_mul_rpow zero_lt_one hq hb]
+  simp [-neg_add_rev, rpow_neg hb.le, inv_mul_eq_div]
 
 /-- For `r > -1` and `k : ℕ`, `t ↦ t ^ r * (-log t) ^ k` is interval integrable on `[0, 1]`. -/
 theorem intervalIntegrable_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
@@ -108,12 +108,12 @@ theorem integral_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
 /-- For `r > -1` and `k : ℕ`, `∫₀¹ t ^ r * (log t) ^ k dt = (-1) ^ k * k! / (r + 1) ^ (k + 1)`. -/
 theorem integral_rpow_mul_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
     ∫ t in (0 : ℝ)..1, t ^ r * log t ^ k = (-1) ^ k * (k.factorial : ℝ) / (r + 1) ^ (k + 1) := by
+  have hsign : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by simp [← mul_pow]
   have hrewrite :
       (fun t : ℝ ↦ t ^ r * log t ^ k) = fun t : ℝ ↦ (-1) ^ k * (t ^ r * (-log t) ^ k) := by
     ext t
-    rw [neg_pow (log t) k]
-    calc t ^ r * log t ^ k = ((-1 : ℝ) * (-1)) ^ k * (t ^ r * log t ^ k) := by simp
-      _ = (-1) ^ k * (t ^ r * ((-1) ^ k * log t ^ k)) := by rw [mul_pow]; ring
+    rw [neg_pow]
+    linear_combination -t ^ r * log t ^ k * hsign
   rw [hrewrite, intervalIntegral.integral_const_mul, integral_rpow_mul_neg_log_pow hr k,
     mul_div_assoc]
 
