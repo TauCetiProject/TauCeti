@@ -30,9 +30,9 @@ are its simple-root coefficients, listed in chain order.
 * `TauCeti.DynkinType.pairing_simpleIndex_eChainEquiv`: the Cartan integers of the pinned datum at
   the chain-ordered simple roots are the entries of `CartanMatrix.eChain`.
 * `TauCeti.DynkinType.root_simpleIndex_eChainEquiv_comp`: in chain-order coordinates the simple
-  roots are the rows of `CartanMatrix.eChain`. The simple coroots are the coordinate vectors in
-  chain-order coordinates, by `TauCeti.DynkinType.coroot_simpleIndex_equiv_comp` applied to
-  `CartanMatrix.eChainEquiv`, which holds for any relabelling.
+  roots are the rows of `CartanMatrix.eChain`.
+* `TauCeti.DynkinType.coroot_simpleIndex_eChainEquiv_comp`: in chain-order coordinates the simple
+  coroots are the coordinate vectors.
 * `TauCeti.DynkinType.iUnion_orbit_single_eq_range_simpleRootCoefficients_comp_eChainEquiv`: the
   chain-order root columns are the orbits of the coordinate columns.
 
@@ -82,15 +82,24 @@ theorem root_simpleIndex_eChainEquiv_comp (i : Fin t.rank) :
       eChain t.rank i :=
   t.root_simpleIndex_equiv_comp ht _ (eChain_apply_eq_cartanMatrix hE) i
 
+omit hE in
+/-- **The simple coroots of the pinned data in chain order**: read in the chain-ordered
+simple-coroot coordinates, the simple coroot at chain node `i` is the coordinate vector at `i`. -/
+theorem coroot_simpleIndex_eChainEquiv_comp (i : Fin t.rank) :
+    (t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht (eChainEquiv t.rank i)) ∘
+        eChainEquiv t.rank =
+      Pi.single i 1 :=
+  t.coroot_simpleIndex_equiv_comp ht _ i
+
 /-- **The root columns of the pinned `E₆`, `E₇` and `E₈` data in chain order are the orbits of the
 coordinate columns** under the reflections of `CartanMatrix.eChain`, including the columns of
 negative roots. -/
 theorem iUnion_orbit_single_eq_range_simpleRootCoefficients_comp_eChainEquiv :
     ⋃ i : Fin t.rank,
-        MulAction.orbit ((eChain t.rank).columnReflectionGroup (eChain_apply_same t.rank))
+        MulAction.orbit ((eChain t.rank).columnReflectionGroup (eChain_diag t.rank))
           (Pi.single i 1 : Fin t.rank → ℤ) =
       range fun k ↦ t.simpleRootCoefficients ht k ∘ eChainEquiv t.rank :=
   t.iUnion_orbit_single_eq_range_simpleRootCoefficients_comp ht _
-    (eChain_apply_eq_cartanMatrix hE) _
+    (eChain_apply_eq_cartanMatrix hE)
 
 end TauCeti.DynkinType

@@ -37,12 +37,16 @@ coordinates of the character lattice of the datum.
   orbits of the coordinate columns.
 * `TauCeti.DynkinType.iUnion_orbit_single_inter_Ici_eq_image_isPos`: the nonnegative ones are the
   columns of the positive roots.
-* `TauCeti.DynkinType.pairing_simpleIndex_equiv`, `TauCeti.DynkinType.root_simpleIndex_equiv_comp`,
-  `TauCeti.DynkinType.coroot_simpleIndex_equiv_comp`,
-  `TauCeti.DynkinType.simpleRootCoefficients_comp_eq_iff` and
-  `TauCeti.DynkinType.iUnion_orbit_single_eq_range_simpleRootCoefficients_comp`: the same
-  statements for any other numbering of the nodes, given by a relabelling under which a matrix `A`
-  is the Cartan matrix.
+* `TauCeti.DynkinType.pairing_simpleIndex_equiv`, `TauCeti.DynkinType.root_simpleIndex_equiv_comp`
+  and `TauCeti.DynkinType.coroot_simpleIndex_equiv_comp`: the simple-pairing, simple-root and
+  simple-coroot equations of `TauCeti.DynkinType.pairing_simpleIndex`,
+  `TauCeti.DynkinType.root_simpleIndex` and `TauCeti.DynkinType.coroot_simpleIndex`, read in any
+  other numbering of the nodes, given by a relabelling under which a matrix `A` is the Cartan
+  matrix (the coroot equation needs no matrix).
+* `TauCeti.DynkinType.simpleRootCoefficients_comp_eq_iff` and
+  `TauCeti.DynkinType.iUnion_orbit_single_eq_range_simpleRootCoefficients_comp`: the
+  characterization of the root columns and the orbit description of all root columns, read in
+  such a relabelled numbering.
 -/
 
 public noncomputable section
@@ -191,10 +195,13 @@ theorem iUnion_orbit_single_inter_Ici_eq_image_isPos :
 
 /-! ### Relabelled numberings
 
-Any other numbering of the nodes by a type `κ`, given by a relabelling `σ : κ ≃ Fin t.rank` under
-which a matrix `A` is the Bourbaki-numbered Cartan matrix, carries the statements above over to
-`A`. The simple roots, simple coroots and columns are read through `σ`, so the comparison retains
-the actual root indices of the pinned datum. -/
+Any other numbering of the nodes by a type `κ` is given by a relabelling `σ : κ ≃ Fin t.rank`
+under which a matrix `A` is the Bourbaki-numbered Cartan matrix. In such a numbering this section
+reads the simple-pairing, simple-root and simple-coroot equations of
+`TauCeti.DynkinType.pairing_simpleIndex`, `TauCeti.DynkinType.root_simpleIndex` and
+`TauCeti.DynkinType.coroot_simpleIndex`, the characterization of the root columns, and the orbit
+description of all root columns. The simple roots, simple coroots and columns are read through
+`σ`, so the comparison retains the actual root indices of the pinned datum. -/
 
 section Relabel
 
@@ -228,24 +235,18 @@ the relabelled fundamental-weight coordinates. -/
 theorem simpleRootCoefficients_comp_eq_iff [Fintype κ] {k : Fin t.numRoots} {c : κ → ℤ} :
     t.simpleRootCoefficients ht k ∘ σ = c ↔
       c ᵥ* A = (t.simplyConnectedRootDatum ht).root k ∘ σ := by
-  have hsub : A = t.cartanMatrix.submatrix σ σ := by
-    ext i j
-    exact hA i j
-  rw [← Equiv.eq_comp_symm, simpleRootCoefficients_eq_iff, hsub, submatrix_vecMul_equiv,
-    ← Equiv.eq_comp_symm, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
-
-/-- The product of the relabelled column of a root with `A` is the root, read in the relabelled
-fundamental-weight coordinates. -/
-theorem vecMul_simpleRootCoefficients_comp [Fintype κ] (k : Fin t.numRoots) :
-    (t.simpleRootCoefficients ht k ∘ σ) ᵥ* A = (t.simplyConnectedRootDatum ht).root k ∘ σ :=
-  (t.simpleRootCoefficients_comp_eq_iff ht σ hA).mp rfl
+  obtain rfl : A = t.cartanMatrix.submatrix σ σ := Matrix.ext hA
+  simpa only [submatrix_vecMul_equiv, σ.surjective.injective_comp_right.eq_iff,
+    Equiv.eq_comp_symm] using t.simpleRootCoefficients_eq_iff ht (c := c ∘ σ.symm)
 
 /-- **The union of the orbits of the coordinate columns under the reflections of `A` is the set of
 relabelled root columns**, including those of negative roots. -/
-theorem iUnion_orbit_single_eq_range_simpleRootCoefficients_comp [Fintype κ] [DecidableEq κ]
-    (hA₂ : ∀ i, A i i = 2) :
-    ⋃ i : κ, MulAction.orbit (A.columnReflectionGroup hA₂) (Pi.single i 1 : κ → ℤ) =
+theorem iUnion_orbit_single_eq_range_simpleRootCoefficients_comp [Fintype κ] [DecidableEq κ] :
+    ⋃ i : κ, MulAction.orbit
+        (A.columnReflectionGroup fun i ↦ (hA i i).trans (t.cartanMatrix_apply_same (σ i)))
+        (Pi.single i 1 : κ → ℤ) =
       range fun k ↦ t.simpleRootCoefficients ht k ∘ σ := by
+  have hA₂ (i : κ) : A i i = 2 := (hA i i).trans (t.cartanMatrix_apply_same (σ i))
   have hA' (i j : Fin t.rank) : t.cartanMatrix i j = A (σ.symm i) (σ.symm j) := by
     rw [hA, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
   refine subset_antisymm (iUnion_subset fun i x hx ↦ ?_) ?_
