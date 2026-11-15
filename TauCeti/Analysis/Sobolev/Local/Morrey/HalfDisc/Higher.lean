@@ -74,35 +74,6 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {Ω : Opens ℂ}
   {k : ℕ} {u g : ℂ → F}
 
-/-- The order-`k` higher reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` is in `MemWkpLoc p V k`
-on an open set `V` between `Ω ∩ {0 ≤ im}` and `Ω`: the union of the open upper part of `Ω` and of
-discs in `Ω` centred on the real axis. -/
-private theorem exists_opens_memWkpLoc_planarReflection_aux [CompleteSpace F] (hp : 1 ≤ p)
-    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
-    ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
-      MemWkpLoc p V k (TauCeti.planarReflection (higherReflectionCoeff k) u) := by
-  choose r hr0 hrΩ using fun x : {x : ℝ // (x : ℂ) ∈ Ω} => Metric.isOpen_iff.1 Ω.isOpen _ x.2
-  let O : Option {x : ℝ // (x : ℂ) ∈ Ω} → Opens ℂ := fun i =>
-    i.elim Ω.upperHalf fun x => ⟨ball (x : ℂ) (r x), isOpen_ball⟩
-  refine ⟨⨆ i, O i, fun z hz => ?_, ?_, (memWkpLoc_iSup_iff O).2 ?_⟩
-  · rw [Opens.coe_iSup, mem_iUnion]
-    rcases (show 0 ≤ z.im from hz.2).lt_or_eq with h | h
-    · exact ⟨none, Opens.mem_upperHalf.2 ⟨hz.1, h⟩⟩
-    · have hz' : ((z.re : ℝ) : ℂ) = z := Complex.ext rfl (by simpa using h)
-      exact ⟨some ⟨z.re, hz' ▸ hz.1⟩, mem_ball.2 ((dist_eq_zero.2 hz'.symm).trans_lt (hr0 _))⟩
-  · rw [Opens.coe_iSup]
-    refine iUnion_subset fun i => ?_
-    cases i with
-    | none => exact fun z hz => (Opens.mem_upperHalf.1 hz).1
-    | some x => exact hrΩ x
-  · rintro (_ | x)
-    · refine (hu.mono fun z hz => ⟨(Opens.mem_upperHalf.1 hz).1,
-        (Opens.mem_upperHalf.1 hz).2.le⟩).congr_ae ?_
-      exact ae_restrict_of_forall_mem Ω.upperHalf.isOpen.measurableSet fun z hz =>
-        (planarReflection_of_nonneg _ _ (Opens.mem_upperHalf.1 hz).2.le).symm
-    · exact (hu.mono (inter_subset_inter_left _ (hrΩ x)))
-        |>.planarReflection_higherReflectionCoeff_ball hp x (r x)
-
 /-- The higher reflection agrees with `u` on `Ω ∩ {0 ≤ im}`, so a representative of the
 reflection on a larger set is a representative of `u` there. -/
 private theorem ae_eq_of_planarReflection_ae_eq {V : Set ℂ}
@@ -174,8 +145,7 @@ theorem MemWkpLoc.exists_opens_contDiffOn_ae_eq_inter_setOf_im_nonneg (hp : 2 < 
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) :
     ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
       ∃ g : ℂ → F, ContDiffOn ℝ k g V ∧ u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
-  obtain ⟨V, hSV, hVΩ, hV⟩ := exists_opens_memWkpLoc_planarReflection_aux
-    (one_le_two.trans hp.le) hu
+  obtain ⟨V, hSV, hVΩ, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection (one_le_two.trans hp.le)
   obtain ⟨g, hg, hrg⟩ := hV.exists_contDiffOn_ae_eq hp
   exact ⟨V, hSV, hVΩ, g, hg, ae_eq_of_planarReflection_ae_eq hSV hrg⟩
 
@@ -189,8 +159,7 @@ theorem MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact_inter_setOf_im
     (hg : ContDiffOn ℝ k g V) (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g)
     {K : Set ℂ} (hK : IsCompact K) (hKS : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (hKV : K ⊆ V) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal (iteratedFDeriv ℝ k g) K := by
-  obtain ⟨W, hSW, -, hW⟩ := exists_opens_memWkpLoc_planarReflection_aux
-    (one_le_two.trans hp.le) hu
+  obtain ⟨W, hSW, -, hW⟩ := hu.exists_opens_memWkpLoc_planarReflection (one_le_two.trans hp.le)
   obtain ⟨h, hh, hrh⟩ := hW.exists_contDiffOn_ae_eq hp
   obtain ⟨C, hC⟩ := hW.exists_holderOnWith_iteratedFDeriv_of_isCompact hp hh hrh hK
     (hKS.trans hSW)
@@ -215,7 +184,7 @@ theorem MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul_inter_setOf_im_nonneg 
     (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
     ∃ g : ℂ → F, ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ∧
       u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
-  obtain ⟨V, hSV, -, hV⟩ := exists_opens_memWkpLoc_planarReflection_aux hp hu
+  obtain ⟨V, hSV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection hp
   obtain ⟨g, hg, hrg⟩ := hV.exists_continuousOn_ae_eq_of_two_lt_mul hp hkp
   exact ⟨g, hg.mono hSV, ae_eq_of_planarReflection_ae_eq hSV hrg⟩
 
