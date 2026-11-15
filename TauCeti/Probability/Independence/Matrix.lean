@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Independence.Basic
+public import Mathlib.Probability.Independence.Process.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 import Mathlib.LinearAlgebra.Matrix.RowCol
 
@@ -31,9 +31,6 @@ theorem indepFun_updateCol_zero {Ω p n R : Type*}
     (hind : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hX : AEMeasurable X P) (k : n) :
     IndepFun (fun ω ↦ (X ω).updateCol k 0) (fun ω i ↦ X ω i k) P := by
-  let Y := hX.mk X
-  have hY : iIndepFun (fun ij : p × n ↦ fun ω ↦ Y ω ij.1 ij.2) P :=
-    hind.congr fun ij ↦ hX.ae_eq_mk.mono fun ω hω ↦ congrFun (congrFun hω ij.1) ij.2
   let S : Set (p × n) := {ij | ij.2 ≠ k}
   let T : Set (p × n) := {ij | ij.2 = k}
   let f (g : S → R) : Matrix p n R := fun i j ↦ if h : j = k then 0 else g ⟨(i, j), h⟩
@@ -45,16 +42,13 @@ theorem indepFun_updateCol_zero {Ω p n R : Type*}
     · simpa only [f, h, ↓reduceDIte] using (measurable_const (a := (0 : R)))
     · simpa only [f, h, ↓reduceDIte] using (measurable_pi_apply (⟨(i, j), h⟩ : S))
   have hg : Measurable g := measurable_pi_iff.2 fun i ↦ measurable_pi_apply _
-  have h := (hY.indepFun_set S T (by simp [Set.disjoint_left, S, T])
-    (fun ij ↦ hX.measurable_mk.eval_matrix)).comp hf hg
+  have h := (hind.indepFun_set₀ (I := S) (J := T)
+    (by simp [Set.disjoint_left, S, T])
+    (fun ij ↦ (Matrix.measurable_apply (i := ij.1) (j := ij.2)).comp_aemeasurable hX)).comp hf hg
   have hleft (ω : Ω) :
-      f (fun i : S ↦ Y ω i.1.1 i.1.2) = (Y ω).updateCol k 0 := by
+      f (fun i : S ↦ X ω i.1.1 i.1.2) = (X ω).updateCol k 0 := by
     ext i j
     by_cases h : j = k <;> simp [f, h]
-  refine h.congr ?_ ?_
-  · filter_upwards [hX.ae_eq_mk] with ω hω
-    exact (hleft ω).trans (congrArg (fun M : Matrix p n R ↦ M.updateCol k 0) hω.symm)
-  · filter_upwards [hX.ae_eq_mk] with ω hω
-    exact congrArg (fun M : Matrix p n R ↦ fun i ↦ M i k) hω.symm
+  simpa only [Function.comp_def, hleft, g] using h
 
 end ProbabilityTheory.iIndepFun
