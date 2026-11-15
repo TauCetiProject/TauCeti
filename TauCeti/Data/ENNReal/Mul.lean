@@ -19,6 +19,8 @@ This is the shape of estimates such as `‖B(f, g)‖ ≤ C ‖B‖ ‖f‖ ‖g
 * `ENNReal.le_mul_of_ne_top_imp_le`: the reduction of `L ≤ a * b` to finite `a` and `b`.
 * `ENNReal.le_mul_mul_of_ne_top_imp_le`: the reduction of `L ≤ c * a * b` to finite `c`, `a`
   and `b`.
+* `ENNReal.add_sq_le`: the Cauchy--Schwarz / AM--GM square bound `(a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2)`
+  in `ℝ≥0∞`.
 -/
 
 public section
@@ -53,5 +55,14 @@ theorem le_mul_mul_of_ne_top_imp_le {L c a b : ℝ≥0∞} (hc : c = 0 → L = 0
   by_cases hc0 : c = 0
   · exact (hc hc0).le.trans zero_le
   exact hfin (fun h => hca (by rw [h, top_mul ha0])) (fun h => hca (by rw [h, mul_top hc0])) hbt
+
+/-- The square of a sum in `ℝ≥0∞` is at most twice the sum of the squares. -/
+theorem add_sq_le (a b : ℝ≥0∞) : (a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
+  cases a with
+  | top => simp
+  | coe x =>
+    cases b with
+    | top => simp
+    | coe y => exact mod_cast (_root_.add_sq_le : (x + y) ^ 2 ≤ 2 * (x ^ 2 + y ^ 2))
 
 end ENNReal

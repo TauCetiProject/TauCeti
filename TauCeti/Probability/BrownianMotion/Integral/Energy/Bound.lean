@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
-public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+public import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import TauCeti.Probability.Moments.Chebyshev
@@ -24,7 +25,9 @@ integrands converge in probability in square energy.
 The proof discards an interval as soon as including it would exceed the energy budget.
 That decision is known at its left endpoint. The retained energy is bounded by `δ`,
 and the sum is unchanged whenever the original total energy is at most `δ`.
-The terminal estimate only needs filtered pre-Brownian laws. With almost surely continuous
+The terminal estimate only needs filtered pre-Brownian laws (including its lower-integral form
+`IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_zero_of_lintegral` on `timeMeasure t`).
+With almost surely continuous
 paths, the same bound controls the supremum over all observation times, and convergence
 to zero in probability of the energies implies uniform convergence to zero in outer probability
 of the elementary integral processes. The process-level estimate reuses `Finance.simpleGains`
@@ -41,9 +44,9 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open Filter MeasureTheory ProbabilityTheory Set
 open Finset hiding Iic mem_Iic
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
@@ -433,5 +436,69 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_abs_simpleGains_gt_of_e
       ε < |Finance.simpleGains (grid k) (N k) (height k) W t ω|}) l (nhds 0) := by
   exact tendsto_measure_of_energy_tail_bound hε henergy fun δ hδ k ↦
     hW.measure_exists_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) hε hδ.le
+
+private theorem ofReal_elementaryEnergy_clip_eq
+    (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0) (ω : Ω) :
+    ENNReal.ofReal (elementaryEnergy (fun i ↦ min (τ i) t)
+      (fun i ↦ if τ i ≤ t then a i else 0) n ω) =
+      ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure t := by
+  rw [elementaryEnergy_def, Finance.lintegral_enorm_sq_simpleHolding_timeMeasure hτ,
+    ENNReal.ofReal_sum_of_nonneg]
+  · refine sum_congr rfl fun i _ ↦ ?_
+    by_cases hle : τ i ≤ t
+    · simp only [hle, ↓reduceIte, min_eq_left hle,
+        ENNReal.ofReal_mul (sq_nonneg _), Real.enorm_sq_eq_ofReal_sq]
+    · have hgt : (min (τ (i + 1)) t : ℝ) - τ i ≤ 0 :=
+        sub_nonpos.mpr (NNReal.coe_le_coe.mpr ((min_le_right _ _).trans (le_of_not_ge hle)))
+      simp [hle, ENNReal.ofReal_eq_zero.mpr hgt]
+  · intro i hi
+    have hi' := mem_range.mp hi
+    exact mul_nonneg (sq_nonneg _)
+      (sub_nonneg.mpr (NNReal.coe_le_coe.mpr (min_le_min_right t (hτ hi'.le hi' (Nat.le_succ i)))))
+
+/-- If the pathwise lower square-energy integrals of left-measurable simple holdings on `(0, t]`
+converge to `0` in `P`-measure along a filter `l`, then the corresponding elementary Brownian gains
+at time `t` converge to `0` in `P`-measure. No path continuity of `W` or moment assumption on the
+heights is required. -/
+theorem IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_zero_of_lintegral
+    (hW : IsFilteredPreBrownianReal ℱ W P) {ι : Type*} {l : Filter ι} {t : ℝ≥0}
+    {N : ι → ℕ} {grid : ι → ℕ → ℝ≥0} {height : ι → ℕ → Ω → ℝ}
+    (hgrid : ∀ k, MonotoneOn (grid k) (Iic (N k)))
+    (hheight : ∀ k i, i < N k → StronglyMeasurable[ℱ (grid k i)] (height k i))
+    (henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (grid k) (N k) (height k) s ω‖ₑ ^ 2
+        ∂timeMeasure t}) l (𝓝 0)) :
+    TendstoInMeasure P (fun k ↦ Finance.simpleGains (grid k) (N k) (height k) W t) l 0 := by
+  let τ' (k : ι) (i : ℕ) : ℝ≥0 := min (grid k i) t
+  let a' (k : ι) (i : ℕ) : Ω → ℝ := if grid k i ≤ t then height k i else 0
+  have hτ' (k : ι) : MonotoneOn (τ' k) (Iic (N k)) :=
+    fun _ hi _ hj hij ↦ min_le_min_right t (hgrid k hi hj hij)
+  have ha' (k : ι) (i : ℕ) (hi : i < N k) : StronglyMeasurable[ℱ (τ' k i)] (a' k i) := by
+    dsimp only [τ', a']
+    split_ifs with hle
+    · exact (hheight k i hi).mono (ℱ.mono (le_min le_rfl hle))
+    · exact stronglyMeasurable_zero
+  have he : TendstoInMeasure P (fun k ↦ elementaryEnergy (τ' k) (a' k) (N k)) l (fun _ ↦ 0) := by
+    refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
+    refine (henergy (ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)).congr fun k ↦ ?_
+    congr 1
+    ext ω
+    have hnn := elementaryEnergy_nonneg (a := a' k) (hτ' k) ω
+    simp only [Set.mem_ofPred_eq, sub_zero, Real.norm_eq_abs, abs_of_nonneg hnn]
+    rw [← ofReal_elementaryEnergy_clip_eq (hgrid k) t ω]
+    exact ENNReal.ofReal_le_ofReal_iff hnn
+  have hsum_eq (k : ι) (ω : Ω) :
+      (∑ i ∈ range (N k), a' k i ω * (W (τ' k (i + 1)) ω - W (τ' k i) ω)) =
+        Finance.simpleGains (grid k) (N k) (height k) W t ω := by
+    rw [Finance.simpleGains_def]
+    refine sum_congr rfl fun i hi ↦ ?_
+    have hi' := mem_range.mp hi
+    by_cases hle : grid k i ≤ t
+    · simp [τ', a', hle]
+    · have hgt : t ≤ grid k i := le_of_not_ge hle
+      simp [τ', a', hle, min_eq_right hgt,
+        min_eq_right (hgt.trans (hgrid k hi'.le hi' (Nat.le_succ i)))]
+  exact (hW.tendstoInMeasure_sum_mul_sub_of_energy hτ' ha' he).congr_left
+    fun k ↦ .of_forall (hsum_eq k)
 
 end TauCeti.Probability

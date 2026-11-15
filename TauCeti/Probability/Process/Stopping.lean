@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Probability.Process.Stopping
+public import Mathlib.Topology.Order.WithTop
 
 /-!
 # Stopping times and stopped paths
@@ -21,8 +23,10 @@ their stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
-Pathwise set membership up to the random time also passes to the stopped process. Neither
-fact requires a stopping-time or measurability assumption.
+Pathwise set membership up to the random time also passes to the stopped process, and almost-sure
+stage agreements along random times diverging to `⊤` converge in measure to the unstopped slice
+(`MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq`). None of these facts requires a
+stopping-time hypothesis.
 -/
 
 public section
@@ -139,5 +143,26 @@ theorem ae_nonneg_stoppedProcess_indicator
     exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
   · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
     exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
+
+/-- If random times `τ k` diverge almost surely to `⊤` and each stopped slice
+`stoppedProcess X (τ k) t` agrees almost everywhere with an `AEStronglyMeasurable` variable `U k`,
+then `U k` converges to `X t` in `P`-measure on a finite measure space. No measurability or
+stopping-time assumption on `X` or `τ k` is needed. -/
+theorem tendstoInMeasure_of_stoppedProcess_ae_eq {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [PseudoEMetricSpace E]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+    {X : ι → Ω → E} {τ : ℕ → Ω → WithTop ι} {U : ℕ → Ω → E} {t : ι}
+    (hτ_top : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
+    (hUm : ∀ k, AEStronglyMeasurable (U k) P)
+    (hX_stop : ∀ k, stoppedProcess X (τ k) t =ᵐ[P] U k) :
+    TendstoInMeasure P U atTop (X t) := by
+  have hsm (k : ℕ) : AEStronglyMeasurable (stoppedProcess X (τ k) t) P :=
+    (hUm k).congr (hX_stop k).symm
+  have hs_ae : ∀ᵐ ω ∂P, Tendsto (fun k ↦ stoppedProcess X (τ k) t ω) atTop (𝓝 (X t ω)) := by
+    filter_upwards [hτ_top] with ω hω
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [(WithTop.tendsto_nhds_top_iff _).mp hω t] with k hk
+    exact (stoppedProcess_eq_of_le (τ := τ k) hk.le).symm
+  exact (tendstoInMeasure_of_tendsto_ae hsm hs_ae).congr_left hX_stop
 
 end MeasureTheory
