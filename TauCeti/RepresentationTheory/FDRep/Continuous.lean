@@ -245,10 +245,9 @@ noncomputable def ContFDRep.ofContRepresentationIso {π : ContRepresentation �
 theorem ContFDRep.isZero_ofContRepresentation [Subsingleton V] (π : ContRepresentation 𝕜 G V)
     (hπ : Continuous π) : IsZero (ContFDRep.ofContRepresentation π hπ) := by
   refine IsZero.of_full_of_faithful_of_isZero (FDRep.isContinuous 𝕜 G).ι _ ?_
-  have : Subsingleton
-      ((FDRep.isContinuous 𝕜 G).ι.obj (ContFDRep.ofContRepresentation π hπ)).V.obj :=
+  rw [ObjectProperty.ι_obj, ContFDRep.ofContRepresentation_obj, IsZero.iff_id_eq_zero]
+  have : Subsingleton (FDRep.ofShrink π.toRepresentation) :=
     (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv.toEquiv.subsingleton
-  rw [IsZero.iff_id_eq_zero]
   ext x
   rw [Subsingleton.elim x 0]
   simp

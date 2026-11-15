@@ -160,6 +160,20 @@ variable {𝕜 G E F F' : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace �
   [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F} {σ : ContRepresentation 𝕜 G F'}
 
+/-- Intertwining maps out of the same representation with equal kernels have equal kernel
+classes: the kernel representations are both the restriction of the source representation. -/
+private theorem of_kerRepresentation_eq_of_ker_eq (S : π →ⁱL ρ) (T : π →ⁱL σ)
+    [FiniteDimensional 𝕜 S.toContinuousLinearMap.ker]
+    [FiniteDimensional 𝕜 T.toContinuousLinearMap.ker]
+    (h : S.toContinuousLinearMap.ker = T.toContinuousLinearMap.ker)
+    (hS : Continuous S.kerRepresentation) (hT : Continuous T.kerRepresentation) :
+    (SplitK0.of (ContFDRep.ofContRepresentation S.kerRepresentation hS) : contRepRing 𝕜 G) =
+      SplitK0.of (ContFDRep.ofContRepresentation T.kerRepresentation hT) := by
+  refine SplitK0.of_congr (ContFDRep.ofContRepresentationIso
+    (LinearEquiv.ofEq _ _ h) (fun g v ↦ ?_) _ _)
+  ext
+  simp only [LinearEquiv.coe_ofEq_apply, coe_kerRepresentation_apply]
+
 /-- **Composing on the right with an equivalence does not change the equivariant index.** For an
 equivalence `e : π ≃ ρ` and an equivariant Fredholm `T : ρ →ⁱL σ`, the composite `T ∘ e` has the
 same equivariant index as `T`: `e` maps the kernel of `T ∘ e` equivariantly onto the kernel of `T`,
@@ -174,6 +188,9 @@ theorem equivariantIndex_comp_equiv (T : ρ →ⁱL σ) (e : π.Equiv ρ)
   have := hT.finite_ker
   have := hT.isClosed_range
   have := hT.finite_coker
+  -- The Fredholm proof in the statement has the type of a `∘SL` composite, which matches the
+  -- intertwining-map composite only after unfolding, so `rw [equivariantIndex_def]` would see an
+  -- ill-typed goal. Restate it with that composite's type before rewriting.
   have hTe : (T.comp e.toContIntertwiningMap).toContinuousLinearMap.IsFredholm :=
     hT.comp_equiv e.toContinuousLinearEquiv
   change (T.comp e.toContIntertwiningMap).equivariantIndex hTe hπ hσ = _
@@ -215,6 +232,8 @@ theorem equivariantIndex_equiv_comp (T : π →ⁱL ρ) (e : ρ.Equiv σ)
   have := hT.finite_ker
   have := hT.isClosed_range
   have := hT.finite_coker
+  -- As in `equivariantIndex_comp_equiv`, restate the Fredholm proof in the statement with the
+  -- intertwining-map composite's type so that `rw [equivariantIndex_def]` sees a well-typed goal.
   have heT : (e.toContIntertwiningMap.comp T).toContinuousLinearMap.IsFredholm :=
     hT.equiv_comp e.toContinuousLinearEquiv
   change (e.toContIntertwiningMap.comp T).equivariantIndex heT hπ hσ = _
@@ -229,10 +248,7 @@ theorem equivariantIndex_equiv_comp (T : π →ⁱL ρ) (e : ρ.Equiv σ)
     (LinearMap.range_comp _ _).symm
   rw [equivariantIndex_def, equivariantIndex_def]
   congr 1
-  · refine SplitK0.of_congr (ContFDRep.ofContRepresentationIso
-      (LinearEquiv.ofEq _ _ hker) (fun g v ↦ ?_) _ _)
-    ext
-    simp only [LinearEquiv.coe_ofEq_apply, coe_kerRepresentation_apply]
+  · exact of_kerRepresentation_eq_of_ker_eq _ _ hker _ _
   · refine SplitK0.of_congr (ContFDRep.ofContRepresentationIso
       (Submodule.Quotient.equiv _ _ e.toLinearEquiv hrange).symm (fun g x ↦ ?_) _ _)
     induction x using Submodule.Quotient.induction_on with
@@ -293,10 +309,7 @@ theorem equivariantIndex_adjoint :
   rw [T.equivariantIndex_eq_sub_ker_adjoint hT hπ hρ hπu hρu,
     (T.adjoint hπu hρu).equivariantIndex_eq_sub_ker_adjoint hT' hρ hπ hρu hπu, neg_sub]
   congr 1
-  refine SplitK0.of_congr (ContFDRep.ofContRepresentationIso
-    (LinearEquiv.ofEq _ _ (by rw [adjoint_adjoint])) (fun g v ↦ ?_) _ _)
-  ext
-  simp only [LinearEquiv.coe_ofEq_apply, coe_kerRepresentation_apply]
+  exact of_kerRepresentation_eq_of_ker_eq _ _ (by rw [adjoint_adjoint]) _ _
 
 end Adjoint
 
