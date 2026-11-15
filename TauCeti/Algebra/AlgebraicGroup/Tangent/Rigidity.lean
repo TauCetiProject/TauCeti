@@ -104,8 +104,7 @@ variable {k : Type u} [Field k] [CharZero k]
 variable {H : _root_.CommHopfAlgCat.{u} k} {K : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- Over any field of characteristic zero, two homomorphisms from a geometrically connected
-finite-type affine group agree if their differentials at the identity agree. Neither algebraic
-closure of `k` nor finite generation of the target coordinate Hopf algebra `H` is needed. -/
+finite-type affine group agree if their differentials at the identity agree. -/
 theorem _root_.CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq_of_geometricallyConnected
     (hK : geometricallyConnectedCommHopfAlgProperty k K.obj) (f g : H ⟶ K.obj)
     (hfg : derivationCompLieHom (B := k) f.hom = derivationCompLieHom (B := k) g.hom) :
@@ -119,8 +118,7 @@ theorem _root_.CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq_of_geometrically
   obtain ⟨z, rfl⟩ := (Derivation.tangentScalarExtensionEquiv (R := k) (A := K) (B := F)).trans
     (tangentBaseChangeLieEquiv (R := k) (K := F) (H := K)).toLinearEquiv |>.surjective d
   induction z using TensorProduct.inductionOn with
-  | add z₁ z₂ hz₁ hz₂ =>
-      simpa only [map_add, add_apply] using congrArg₂ (· + ·) hz₁ hz₂
+  | add z₁ z₂ hz₁ hz₂ => simpa only [map_add, add_apply] using congrArg₂ (· + ·) hz₁ hz₂
   | tmul a w =>
       induction y using TensorProduct.inductionOn with
       | add y₁ y₂ hy₁ hy₂ => simpa only [map_add] using congrArg₂ (· + ·) hy₁ hy₂
@@ -144,9 +142,7 @@ theorem _root_.CommHopfAlgCat.Hom.eq_of_derivationCompLieHom_eq_of_geometrically
           rw [eval_map f, eval_map g, hfg]
 
 /-- Over any field of characteristic zero, a closed subgroup scheme of a geometrically connected
-finite-type affine group whose Lie algebra is the full ambient Lie algebra is the whole group
-(`I = ⊥`). Cartier's theorem supplies smoothness over the algebraic closure, and faithful flatness
-descends equality of Hopf ideals. -/
+finite-type affine group with the full ambient Lie algebra is the whole group (`I = ⊥`). -/
 theorem _root_.TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected
     (hK : geometricallyConnectedCommHopfAlgProperty k K.obj) (I : HopfIdeal k K)
     (hI : I.lieSubalgebra (B := k) = ⊤) : I = ⊥ := by
@@ -159,19 +155,15 @@ theorem _root_.TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometrically
       (_root_.CommHopfAlgCat.of F (G ⧸ IF.toIdeal)))
   have hIF : IF = ⊥ := by
     apply HopfIdeal.eq_bot_of_lieSubalgebra_eq_top (H := G) IF
-    rw [eq_top_iff]
-    rintro d -
-    have hspan : IF.toIdeal =
-        Ideal.span ((Algebra.TensorProduct.includeRight : K →ₐ[k] F ⊗[k] K) ''
-          (I.toIdeal : Set K)) := by
+    rw [eq_top_iff]; rintro d -
+    have hspan : IF.toIdeal = Ideal.span
+        ((Algebra.TensorProduct.includeRight : K →ₐ[k] F ⊗[k] K) '' (I.toIdeal : Set K)) := by
       rw [baseChangeHopfIdeal_toIdeal, Ideal.map]
-    rw [HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span IF hspan]
-    rintro _ ⟨x, hx, rfl⟩
+    rw [HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span IF hspan]; rintro _ ⟨x, hx, rfl⟩
     obtain ⟨z, rfl⟩ := (Derivation.tangentScalarExtensionEquiv (R := k) (A := K) (B := F)).trans
       (tangentBaseChangeLieEquiv (R := k) (K := F) (H := K)).toLinearEquiv |>.surjective d
     induction z using TensorProduct.inductionOn with
-    | add z₁ z₂ hz₁ hz₂ =>
-        simpa only [map_add, add_apply, add_zero] using congrArg₂ (· + ·) hz₁ hz₂
+    | add z₁ z₂ hz₁ hz₂ => simpa only [map_add, add_apply, add_zero] using congrArg₂ (· + ·) hz₁ hz₂
     | tmul a w =>
         apply (Bialgebra.CounitAlgebra.algEquivSelf F (F ⊗[k] K) F).injective
         simp only [LinearEquiv.trans_apply, LieEquiv.coe_toLinearEquiv, map_zero,
@@ -181,21 +173,16 @@ theorem _root_.TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometrically
           ← Derivation.algEquivSelf_cotangentLinearEquiv_apply]
         have hw : Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k) w ∈
             I.lieSubalgebra (B := k) := hI ▸ LieSubalgebra.mem_top _
-        have hwx : Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k) w x = 0 :=
-          (HopfIdeal.mem_lieSubalgebra_iff _ _).mp hw x hx
-        rw [hwx, map_zero, map_zero, mul_zero]
+        rw [(HopfIdeal.mem_lieSubalgebra_iff _ _).mp hw x hx, map_zero, map_zero, mul_zero]
   apply baseChangeHopfIdeal_injective (K := F) (H := K.obj)
   refine hIF.trans (HopfIdeal.ext fun y ↦ ?_).symm
   rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal, baseChangeHopfIdeal_toIdeal,
     HopfIdeal.bot_toIdeal, HopfIdeal.bot_toIdeal, Ideal.map_bot]
 
-/-- **Factorization of a homomorphism into a closed subgroup via Lie algebras (Borel §7.1).** Over
-any field of characteristic zero, let `q : A →ₐc[k] B` be a surjective bialgebra morphism between
-commutative Hopf algebras (a closed immersion `Spec B ↪ Spec A`) and let `ρ : A →ₐc[k] K.obj` be a
-homomorphism from a geometrically connected finite-type affine group `Spec K` into `Spec A`. If
-`derivationCompLieHom ρ` factors through `derivationCompLieHom q` via a Lie algebra morphism `L`,
-then `ρ` factors through `q` via a unique group morphism `φ : B ⟶ K.obj`, and `φ` has differential
-`L`. -/
+/-- **Factorization of a homomorphism into a closed subgroup via Lie algebras (Borel §7.1).** If
+`q : A →ₐc[k] B` is surjective and `derivationCompLieHom ρ` factors through `derivationCompLieHom q`
+via `L`, then `ρ : A →ₐc[k] K.obj` from a geometrically connected finite-type group factors uniquely
+through `q` via `φ : B ⟶ K.obj` with differential `L`. -/
 theorem existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
     {A B : Type u} [CommRing A] [HopfAlgebra k A] [CommRing B] [HopfAlgebra k B]
     (hK : geometricallyConnectedCommHopfAlgProperty k K.obj)
@@ -208,32 +195,27 @@ theorem existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
   let I := HopfIdeal.kerOfSurjective q hq
   have hImap : I.map ρ = ⊥ := by
     apply HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected hK
-    rw [eq_top_iff]
-    rintro d -
+    rw [eq_top_iff]; rintro d -
     rw [HopfIdeal.lieSubalgebra_map, LieSubalgebra.mem_comap, ← hdiff, LieHom.comp_apply,
       derivationCompLieHom_apply, HopfIdeal.mem_lieSubalgebra_iff]
     intro x hx
-    have hqx : q x = 0 := (HopfIdeal.mem_kerOfSurjective q hq).mp (HopfIdeal.mem_toIdeal.mp hx)
     apply (Bialgebra.CounitAlgebra.algEquivSelf k A k).injective
-    rw [algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom, hqx, map_zero, map_zero,
+    rw [algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom,
+      (HopfIdeal.mem_kerOfSurjective q hq).mp (HopfIdeal.mem_toIdeal.mp hx), map_zero, map_zero,
       map_zero]
   have hker : I.toIdeal ≤ RingHom.ker ρ.toAlgHom.toRingHom := fun x hx ↦
     RingHom.mem_ker.mpr ((HopfIdeal.map_eq_bot_iff I ρ).mp hImap hx)
-  let φ₀ : B →ₐc[k] K.obj :=
-    (Bialgebra.Quotient.liftBialgHom I.toIdeal ρ hker).comp
-      ((HopfIdeal.kerLiftBialgEquiv q hq).symm : B →ₐc[k] _)
-  have hφ₀q : φ₀.comp q = ρ := by
-    ext x
-    have hsymm : (HopfIdeal.kerLiftBialgEquiv q hq).symm (q x) =
-        Ideal.Quotient.mk I.toIdeal x := by
-      apply EquivLike.injective (HopfIdeal.kerLiftBialgEquiv q hq)
-      rw [(HopfIdeal.kerLiftBialgEquiv q hq).apply_symm_apply,
-        HopfIdeal.kerLiftBialgEquiv_apply, HopfIdeal.kerLiftBialgHom_mk]
+  let φ₀ : B →ₐc[k] K.obj := (Bialgebra.Quotient.liftBialgHom I.toIdeal ρ hker).comp
+    ((HopfIdeal.kerLiftBialgEquiv q hq).symm : B →ₐc[k] _)
+  have hφ₀q : φ₀.comp q = ρ := BialgHom.ext fun x ↦ by
+    have hsymm : (HopfIdeal.kerLiftBialgEquiv q hq).symm (q x) = Ideal.Quotient.mk I.toIdeal x :=
+      EquivLike.injective (HopfIdeal.kerLiftBialgEquiv q hq) <| by
+        rw [(HopfIdeal.kerLiftBialgEquiv q hq).apply_symm_apply,
+          HopfIdeal.kerLiftBialgEquiv_apply, HopfIdeal.kerLiftBialgHom_mk]
     rw [BialgHom.comp_apply, BialgHom.comp_apply, BialgEquiv.coe_toBialgHom, hsymm,
       Bialgebra.Quotient.liftBialgHom_mk]
   have hφ₀diff : derivationCompLieHom (B := k) (_root_.CommHopfAlgCat.ofHom φ₀).hom = L := by
-    ext d : 1
-    apply derivationCompLieHom_injective_of_surjective (B := k) q hq
+    ext d : 1; apply derivationCompLieHom_injective_of_surjective (B := k) q hq
     rw [← LieHom.comp_apply, ← derivationCompLieHom_comp, _root_.CommHopfAlgCat.hom_ofHom, hφ₀q,
       ← hdiff, LieHom.comp_apply]
   exact ⟨_root_.CommHopfAlgCat.ofHom φ₀, hφ₀diff, fun φ hφ ↦

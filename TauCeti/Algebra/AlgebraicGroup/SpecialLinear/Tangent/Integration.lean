@@ -19,40 +19,17 @@ import TauCeti.Algebra.Lie.Sl2.Decomposition
 /-!
 # Integrating finite-dimensional `sl₂`-modules to rational `SL₂`-representations
 
-Every finite-dimensional representation of `sl (Fin 2) k` over a field `k` of characteristic zero
-integrates to a unique rational representation (`Comodule`) of `SL₂`, without assuming that `k` is
-algebraically closed or that `M` lives in the universe of `k`.
-
-* **Existence** decomposes `M` as an internal direct sum of irreducible `sl (Fin 2) k`-submodules
-  `Nᵢ ≃ V(nᵢ)` (`TauCeti.Sl2Std.exists_isInternal_lieModuleEquiv`), realizes each `V(nᵢ)` as the
-  rational `SL₂`-comodule `TauCeti.SpecialLinear.binaryForms k (nᵢ)` via
-  `TauCeti.SpecialLinear.binaryFormsEquivSl2Std`, forms the finite product comodule, and transports
-  across the direct-sum equivalence.
-* **Uniqueness** and **functoriality** follow from representation rigidity
-  (`TauCeti.Comodule.ext_of_differential_eq_of_geometricallyConnected` and
-  `LinearMap.map_coact_iff_map_differential_of_geometricallyConnected`) together with geometric
-  connectedness of `SL₂`
-  (`TauCeti.SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra`), with
-  no finite-dimensionality hypothesis needed on the uniqueness side.
-
-## Main declarations
-
-* `TauCeti.SpecialLinear.existsUnique_comodule_of_lieModule`: every finite-dimensional
-  `sl (Fin 2) k`-module over a characteristic-zero field carries a unique `O(SL₂)`-comodule
-  structure whose differentiated action agrees with the given Lie-module action across
-  `tangentLieEquivSl 2`.
-* `TauCeti.SpecialLinear.comoduleOfLieModule`: that canonical `O(SL₂)`-comodule structure,
-  characterized by `differential_comoduleOfLieModule` and `eq_comoduleOfLieModule_iff`.
-* `TauCeti.SpecialLinear.comoduleHomOfLieModuleHom`: every `sl (Fin 2) k`-module homomorphism
-  between integrated modules is a morphism of `O(SL₂)`-comodules.
-* `TauCeti.SpecialLinear.exists_subcomodule_comoduleOfLieModule_iff`: a `k`-submodule underlies an
-  `O(SL₂)`-subcomodule if and only if it is `sl (Fin 2) k`-stable.
+Every finite-dimensional representation of `sl (Fin 2) k` over a characteristic-zero field `k`
+integrates to a unique rational representation (`comoduleOfLieModule`,
+`existsUnique_comodule_of_lieModule`) of `SL₂`, without assuming algebraic closure of `k` or
+restricting the module universe. Existence decomposes `M` into standard summands via
+`Sl2Std.exists_isInternal_lieModuleEquiv` and `binaryFormsEquivSl2Std`; uniqueness, functoriality
+(`comoduleHomOfLieModuleHom`), and stability (`exists_subcomodule_comoduleOfLieModule_iff`) follow
+from representation rigidity on geometrically connected `SL₂`.
 
 ## References
 
-* A. Borel, *Linear Algebraic Groups*, 2nd ed., §7.
-* J. E. Humphreys, *Linear Algebraic Groups*, §13.2.
-* J. S. Milne, *Algebraic Groups* (2017), §12 and §22.
+* A. Borel, *Linear Algebraic Groups*, 2nd ed., §7; J. S. Milne, *Algebraic Groups*, §12, §22.
 -/
 
 public section
@@ -67,31 +44,24 @@ universe u w w'
 section Aux
 
 private def finZeroEquivPUnit (R : Type*) [CommSemiring R] (B : Fin 0 → Type*)
-    [∀ i, AddCommMonoid (B i)] [∀ i, Module R (B i)] :
-    PUnit.{1} ≃ₗ[R] (∀ i : Fin 0, B i) where
-  toFun _ i := Fin.elim0 i
-  invFun _ := PUnit.unit
-  left_inv _ := rfl
-  right_inv _ := funext fun i ↦ Fin.elim0 i
-  map_add' _ _ := funext fun i ↦ Fin.elim0 i
-  map_smul' _ _ := funext fun i ↦ Fin.elim0 i
+    [∀ i, AddCommMonoid (B i)] [∀ i, Module R (B i)] : PUnit.{1} ≃ₗ[R] (∀ i : Fin 0, B i) :=
+  { toFun := fun _ i ↦ i.elim0, invFun := fun _ ↦ PUnit.unit, left_inv := fun _ ↦ rfl
+    right_inv := fun _ ↦ funext fun i ↦ i.elim0, map_add' := fun _ _ ↦ funext fun i ↦ i.elim0
+    map_smul' := fun _ _ ↦ funext fun i ↦ i.elim0 }
 
 private def finSuccEquivProd (R : Type*) [CommSemiring R] {r : ℕ} (B : Fin (r + 1) → Type*)
     [∀ i, AddCommMonoid (B i)] [∀ i, Module R (B i)] :
-    (B 0 × (∀ i : Fin r, B i.succ)) ≃ₗ[R] (∀ i : Fin (r + 1), B i) where
-  toFun p := Fin.cases p.1 p.2
-  invFun f := (f 0, fun i ↦ f i.succ)
-  left_inv _ := by simp
-  right_inv _ := funext fun i ↦ Fin.cases rfl (fun _ ↦ rfl) i
-  map_add' _ _ := funext fun i ↦ Fin.cases rfl (fun _ ↦ rfl) i
-  map_smul' _ _ := funext fun i ↦ Fin.cases rfl (fun _ ↦ rfl) i
+    (B 0 × (∀ i : Fin r, B i.succ)) ≃ₗ[R] (∀ i : Fin (r + 1), B i) :=
+  { toFun := fun p ↦ Fin.cases p.1 p.2, invFun := fun f ↦ (f 0, fun i ↦ f i.succ)
+    left_inv := fun _ ↦ by simp, right_inv := fun _ ↦ funext (Fin.cases rfl fun _ ↦ rfl)
+    map_add' := fun _ _ ↦ funext (Fin.cases rfl fun _ ↦ rfl)
+    map_smul' := fun _ _ ↦ funext (Fin.cases rfl fun _ ↦ rfl) }
 
 @[implicit_reducible]
 private noncomputable def finPiComodule {R H : Type*} [CommRing R] [CommRing H] [Bialgebra R H] :
     ∀ (r : ℕ) (B : Fin r → Type*) [∀ i, AddCommGroup (B i)] [∀ i, Module R (B i)]
       (_ : ∀ i, Comodule R H (B i)), Comodule R H (∀ i, B i)
-  | 0, B, _, _, _ =>
-    Comodule.Transport (R := R) (C := H) (finZeroEquivPUnit R B)
+  | 0, B, _, _, _ => Comodule.Transport (R := R) (C := H) (finZeroEquivPUnit R B)
   | r + 1, B, _, _, c =>
     letI : Comodule R H (B 0) := c 0
     letI : Comodule R H (∀ i : Fin r, B i.succ) :=
@@ -114,12 +84,10 @@ private theorem differential_finPiComodule {R H : Type*} [CommRing R] [CommRing 
     let _ : Comodule R H (B 0 × (∀ j : Fin r, B j.succ)) := Comodule.Prod
     rw [finPiComodule, Comodule.differential_transport (finSuccEquivProd R B),
       Comodule.differential_prod]
-    refine Fin.cases ?_ (fun j ↦ ?_) i
-    · simp [finSuccEquivProd]
-    · simp only [finSuccEquivProd, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
-        LinearEquiv.coe_symm_mk, Fin.cases_succ]
-      exact differential_finPiComodule r (fun j ↦ B j.succ) (fun j ↦ c j.succ) d
-        (fun j ↦ f j.succ) j
+    refine Fin.cases (by simp [finSuccEquivProd]) (fun j ↦ ?_) i
+    simp only [finSuccEquivProd, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
+      LinearEquiv.coe_symm_mk, Fin.cases_succ]
+    exact differential_finPiComodule r _ (fun j ↦ c j.succ) d (fun j ↦ f j.succ) j
 
 @[reducible]
 private noncomputable def finiteTypeSL2 (k : Type u) [Field k] : FiniteTypeCommHopfAlgCat k :=
@@ -134,9 +102,8 @@ section Integration
 attribute [local instance] polynomialComodule
 
 /-- **Existence and uniqueness of rational `SL₂`-integration.** Every finite-dimensional
-`sl (Fin 2) k`-module over a field `k` of characteristic zero carries a unique `O(SL₂)`-comodule
-structure whose differentiated action agrees with the Lie-module action across
-`tangentLieEquivSl 2`. -/
+`sl (Fin 2) k`-module over a characteristic-zero field carries a unique `O(SL₂)`-comodule structure
+whose differential agrees with the Lie-module action across `tangentLieEquivSl 2`. -/
 theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k]
     (M : Type w) [AddCommGroup M] [Module k M] [Module.Finite k M]
     [LieRingModule (SpecialLinear.sl (Fin 2) k) M]
@@ -157,8 +124,7 @@ theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k]
     conv_lhs => rw [← Finset.univ_sum_single g]
     simp only [eSum, map_sum, LinearEquiv.trans_apply,
       DirectSum.linearEquivFunOnFintype_symm_single]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    exact DirectSum.coeLinearMap_of (fun j ↦ (N j).toSubmodule) i (g i)
+    exact Finset.sum_congr rfl fun i _ ↦ DirectSum.coeLinearMap_of (fun j ↦ (N j).toSubmodule) i _
   let E : (∀ i : Fin r, binaryForms k (n i)) ≃ₗ[k] M :=
     (LinearEquiv.piCongrRight eSummand).trans eSum
   let _ : Comodule k (coordinateHopfAlgebra k 2) (∀ i : Fin r, binaryForms k (n i)) :=
@@ -170,22 +136,18 @@ theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k]
       @Comodule.differential k (coordinateHopfAlgebra k 2) M _ _ _ _ _ cM d m =
         ⁅tangentLieEquivSl (R := k) (B := k) 2 d, m⁆ := by
     rw [Comodule.differential_transport E]
-    set g := E.symm m
-    have hm : m = E g := (E.apply_symm_apply m).symm
-    conv_rhs => rw [hm]
+    conv_rhs => rw [← E.apply_symm_apply m]
     simp only [E, LinearEquiv.trans_apply, heSum, LinearEquiv.piCongrRight_apply, lie_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     simp only [eSummand, LinearEquiv.trans_apply, LieModuleEquiv.coe_toLinearEquiv]
     rw [differential_finPiComodule, binaryFormsEquivSl2Std_differential]
     exact congrArg Subtype.val ((φ i).symm.toLieModuleHom.map_lie _ _)
-  refine ⟨cM, hcM, fun c' hc' ↦ ?_⟩
-  exact Comodule.ext_of_differential_eq_of_geometricallyConnected
-    (H := finiteTypeSL2 k)
-    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
-    fun d m ↦ (hc' d m).trans (hcM d m).symm
+  exact ⟨cM, hcM, fun c' hc' ↦ Comodule.ext_of_differential_eq_of_geometricallyConnected
+    (H := finiteTypeSL2 k) (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
+    fun d m ↦ (hc' d m).trans (hcM d m).symm⟩
 
 /-- **The canonical `O(SL₂)`-comodule integrating a finite-dimensional `sl (Fin 2) k`-module**
-over a field `k` of characteristic zero. -/
+over a characteristic-zero field. -/
 @[implicit_reducible]
 noncomputable def comoduleOfLieModule (k : Type u) [Field k] [CharZero k]
     (M : Type w) [AddCommGroup M] [Module k M] [Module.Finite k M]
@@ -198,13 +160,11 @@ section API
 
 variable {k : Type u} [Field k] [CharZero k]
 variable {M : Type w} [AddCommGroup M] [Module k M] [Module.Finite k M]
-  [LieRingModule (SpecialLinear.sl (Fin 2) k) M]
-  [LieModule k (SpecialLinear.sl (Fin 2) k) M]
+  [LieRingModule (SpecialLinear.sl (Fin 2) k) M] [LieModule k (SpecialLinear.sl (Fin 2) k) M]
 variable {N : Type w'} [AddCommGroup N] [Module k N] [Module.Finite k N]
-  [LieRingModule (SpecialLinear.sl (Fin 2) k) N]
-  [LieModule k (SpecialLinear.sl (Fin 2) k) N]
+  [LieRingModule (SpecialLinear.sl (Fin 2) k) N] [LieModule k (SpecialLinear.sl (Fin 2) k) N]
 
-/-- The differentiated action of `comoduleOfLieModule` is the given `sl (Fin 2) k`-action across
+/-- The differentiated action of `comoduleOfLieModule` agrees with the `sl (Fin 2) k`-action across
 `tangentLieEquivSl 2`. -/
 theorem differential_comoduleOfLieModule
     (d : Derivation k (coordinateHopfAlgebra k 2)
@@ -216,8 +176,7 @@ theorem differential_comoduleOfLieModule
 
 /-- Evaluating `Comodule.differential` for `comoduleOfLieModule` at `(tangentLieEquivSl 2).symm A`
 recovers `⁅A, m⁆`. -/
-theorem differential_comoduleOfLieModule_symm
-    (A : SpecialLinear.sl (Fin 2) k) (m : M) :
+theorem differential_comoduleOfLieModule_symm (A : SpecialLinear.sl (Fin 2) k) (m : M) :
     letI := comoduleOfLieModule k M
     Comodule.differential (R := k) (H := coordinateHopfAlgebra k 2)
         ((tangentLieEquivSl (R := k) (B := k) 2).symm A) m = ⁅A, m⁆ := by
@@ -236,36 +195,27 @@ theorem eq_comoduleOfLieModule_iff (c : Comodule k (coordinateHopfAlgebra k 2) M
     (existsUnique_comodule_of_lieModule k M).choose_spec.2 c⟩
 
 /-- **Functoriality of `SL₂`-integration.** Every `sl (Fin 2) k`-module homomorphism between
-finite-dimensional `sl (Fin 2) k`-modules is a morphism of `O(SL₂)`-comodules for
-`comoduleOfLieModule`. -/
-noncomputable def comoduleHomOfLieModuleHom
-    (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) :
-    letI := comoduleOfLieModule k M
-    letI := comoduleOfLieModule k N
+finite-dimensional `sl (Fin 2) k`-modules is a morphism of `O(SL₂)`-comodules. -/
+noncomputable def comoduleHomOfLieModuleHom (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) :
+    letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
     Comodule.Hom k (coordinateHopfAlgebra k 2) M N :=
-  letI := comoduleOfLieModule k M
-  letI := comoduleOfLieModule k N
+  letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
   { toLinearMap := f.toLinearMap
-    map_coact :=
-      (f.toLinearMap.map_coact_iff_map_differential_of_geometricallyConnected
-        (H := finiteTypeSL2 k)
-        (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr fun d m ↦ by
-          rw [differential_comoduleOfLieModule, differential_comoduleOfLieModule]
-          exact f.map_lie (tangentLieEquivSl (R := k) (B := k) 2 d) m }
+    map_coact := (f.toLinearMap.map_coact_iff_map_differential_of_geometricallyConnected
+      (H := finiteTypeSL2 k)
+      (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr fun d m ↦ by
+        rw [differential_comoduleOfLieModule, differential_comoduleOfLieModule]
+        exact f.map_lie (tangentLieEquivSl (R := k) (B := k) 2 d) m }
 
 @[simp]
-theorem comoduleHomOfLieModuleHom_toLinearMap
-    (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) :
-    letI := comoduleOfLieModule k M
-    letI := comoduleOfLieModule k N
+theorem comoduleHomOfLieModuleHom_toLinearMap (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) :
+    letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
     (comoduleHomOfLieModuleHom f).toLinearMap = f.toLinearMap :=
   (rfl)
 
 @[simp]
-theorem comoduleHomOfLieModuleHom_apply
-    (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) (m : M) :
-    letI := comoduleOfLieModule k M
-    letI := comoduleOfLieModule k N
+theorem comoduleHomOfLieModuleHom_apply (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) (m : M) :
+    letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
     comoduleHomOfLieModuleHom f m = f m :=
   (rfl)
 
@@ -277,15 +227,11 @@ theorem exists_subcomodule_comoduleOfLieModule_iff (S : Submodule k M) :
       ∀ (A : SpecialLinear.sl (Fin 2) k), ∀ m ∈ S, ⁅A, m⁆ ∈ S := by
   let _ := comoduleOfLieModule k M
   rw [S.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected
-    (H := finiteTypeSL2 k)
-    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)]
-  constructor
-  · intro h A m hm
-    have h' := h ((tangentLieEquivSl (R := k) (B := k) 2).symm A) m hm
+    (H := finiteTypeSL2 k) (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)]
+  refine ⟨fun h A m hm ↦ ?_, fun h d m hm ↦ ?_⟩
+  · have h' := h ((tangentLieEquivSl (R := k) (B := k) 2).symm A) m hm
     rwa [differential_comoduleOfLieModule_symm] at h'
-  · intro h d m hm
-    rw [differential_comoduleOfLieModule]
-    exact h (tangentLieEquivSl (R := k) (B := k) 2 d) m hm
+  · rw [differential_comoduleOfLieModule]; exact h _ m hm
 
 end API
 
