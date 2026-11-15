@@ -9,10 +9,13 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -59,6 +62,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
   isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
 * `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
+* `Orthonormal.ιMulti_eq_ιMulti_iff`: two orthonormal frames have the same wedge exactly when they
+  differ by a special orthogonal change of frame.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -222,6 +227,80 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
     ‖ιMulti ℝ n v‖ = 1 := by
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
     Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
+
+/-- `Orthonormal.ιMulti_eq_ιMulti_iff` in a finite-dimensional space, where the wedges carry an
+inner product. -/
+private theorem ιMulti_eq_ιMulti_iff_of_finiteDimensional {e v : Fin n → E} (he : Orthonormal ℝ e)
+    (hv : Orthonormal ℝ v) :
+    ιMulti ℝ n v = ιMulti ℝ n e ↔
+      ∃ A ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ, v = fun j ↦ ∑ i, A j i • e i := by
+  classical
+  refine ⟨fun h ↦ ?_, ?_⟩
+  swap
+  · rintro ⟨A, hA, rfl⟩
+    rw [ιMulti_sum_smul, (Matrix.mem_specialOrthogonalGroup_iff.1 hA).2, one_smul]
+  set U := Submodule.span ℝ (Set.range e)
+  have hle (j : Fin n) : ‖U.starProjection (v j)‖ ≤ 1 :=
+    (U.norm_starProjection_apply_le (v j)).trans (hv.1 j).le
+  -- Projecting `v` onto the span of `e` does not change its pairing with `e₁ ∧ ⋯ ∧ eₙ`, which is
+  -- `1`; Hadamard's inequality bounds that pairing by the product of the norms `‖P vⱼ‖ ≤ 1`.
+  have hprod : 1 ≤ ∏ j, ‖U.starProjection (v j)‖ := by
+    have hpair : ⟪ιMulti ℝ n e, ιMulti ℝ n fun j ↦ U.starProjection (v j)⟫ = 1 := by
+      have hself : ⟪ιMulti ℝ n e, ιMulti ℝ n v⟫ = 1 := by
+        rw [h, real_inner_self_eq_norm_sq, he.norm_ιMulti, one_pow]
+      rw [← hself, inner_ιMulti_ιMulti, inner_ιMulti_ιMulti]
+      congr 2
+      ext j i
+      rw [← U.inner_starProjection_left_eq_right,
+        U.starProjection_eq_self_iff.2 (Submodule.subset_span ⟨i, rfl⟩)]
+    calc 1 = _ := hpair.symm
+      _ ≤ ‖ιMulti ℝ n e‖ * ‖ιMulti ℝ n fun j ↦ U.starProjection (v j)‖ := real_inner_le_norm _ _
+      _ ≤ ∏ j, ‖U.starProjection (v j)‖ := by
+        rw [he.norm_ιMulti, one_mul]
+        exact norm_ιMulti_le_prod_norm _
+  -- Hence every `‖P vⱼ‖ = 1 = ‖vⱼ‖`, so every `vⱼ` lies in the span of `e`.
+  have hmem (j : Fin n) : v j ∈ U := by
+    refine (U.mem_iff_norm_starProjection (v j)).2 (le_antisymm (hle j) ?_ |>.trans (hv.1 j).symm)
+    rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ j)] at hprod
+    exact hprod.trans (mul_le_of_le_one_right (norm_nonneg _)
+      (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hle i))
+  let A : Matrix (Fin n) (Fin n) ℝ := Matrix.of fun j i ↦ ⟪e i, v j⟫
+  have hvA : v = fun j ↦ ∑ i, A j i • e i := by
+    ext j
+    rw [← U.starProjection_eq_self_iff.2 (hmem j), he.starProjection_apply_eq_sum rfl]
+    simp [A]
+  have hAO : A ∈ Matrix.orthogonalGroup (Fin n) ℝ := by
+    have := (he.orthonormal_sum_smul_iff A).1 (hvA ▸ hv)
+    rwa [Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.mem_orthogonalGroup_iff] at this
+  refine ⟨A, Matrix.mem_specialOrthogonalGroup_iff.2 ⟨hAO, ?_⟩, hvA⟩
+  have hne : ιMulti ℝ n e ≠ 0 := fun h0 ↦ by simpa [h0] using he.norm_ιMulti
+  refine smul_left_injective ℝ hne ?_
+  simp only [← ιMulti_sum_smul, ← hvA, h, one_smul]
+
+omit [FiniteDimensional ℝ E] in
+/-- Two orthonormal frames have the same wedge exactly when one is obtained from the other by a
+special orthogonal change of frame, `vⱼ = ∑ i, A j i • eᵢ` with `A ∈ SO(n)`: they span the same
+subspace and induce the same orientation on it. -/
+theorem _root_.Orthonormal.ιMulti_eq_ιMulti_iff {e v : Fin n → E} (he : Orthonormal ℝ e)
+    (hv : Orthonormal ℝ v) :
+    ιMulti ℝ n v = ιMulti ℝ n e ↔
+      ∃ A ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ, v = fun j ↦ ∑ i, A j i • e i := by
+  -- Both sides can be read in the finite-dimensional span `U` of the two frames, since the
+  -- inclusion of `U` induces an injective map of exterior powers.
+  let U := Submodule.span ℝ (Set.range e ∪ Set.range v)
+  have : FiniteDimensional ℝ U :=
+    FiniteDimensional.span_of_finite ℝ ((Set.finite_range e).union (Set.finite_range v))
+  let e' : Fin n → U := fun i ↦ ⟨e i, Submodule.subset_span (.inl ⟨i, rfl⟩)⟩
+  let v' : Fin n → U := fun i ↦ ⟨v i, Submodule.subset_span (.inr ⟨i, rfl⟩)⟩
+  have hιMulti : ιMulti ℝ n v = ιMulti ℝ n e ↔ ιMulti ℝ n v' = ιMulti ℝ n e' := by
+    rw [← (map_injective_field (n := n) U.injective_subtype).eq_iff, map_apply_ιMulti,
+      map_apply_ιMulti]
+    -- `U.subtype ∘ v'` and `U.subtype ∘ e'` are `v` and `e` by definition.
+    rfl
+  rw [hιMulti, ιMulti_eq_ιMulti_iff_of_finiteDimensional
+    ((U.subtypeₗᵢ.orthonormal_comp_iff (v := e')).1 he)
+    ((U.subtypeₗᵢ.orthonormal_comp_iff (v := v')).1 hv)]
+  simp only [funext_iff, Subtype.ext_iff, Submodule.coe_sum, Submodule.coe_smul, e', v']
 
 end exteriorPower
 
