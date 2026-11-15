@@ -9,7 +9,7 @@ public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 
 /-!
-# Strict positivity of positive invariant integrals
+# Strict positivity of positive invariant integrals and algebraic Haar functionals
 
 Let `A` be a complex Hopf algebra with a star structure and let `h : A → ℂ` be a nonzero
 one-sided invariant integral which is positive in the algebraic sense,
@@ -25,23 +25,33 @@ and the comultiplication need not be a star map. Strict positivity is what makes
 Haar-averaged inner products of finite-dimensional comodules definite, and the Haar GNS
 construction faithful.
 
-## Main results
+This file also bundles normalized positive two-sided invariant integrals on a complex star
+bialgebra as `TauCeti.AlgebraicHaar`. Normalization forces the underlying linear functional to be
+nonzero, so on a complex Hopf star algebra every `AlgebraicHaar` functional is strictly positive
+on nonzero squares and has nondegenerate multiplication pairings on both sides.
+
+## Main declarations
 
 * `LinearMap.IsRightInvariantIntegral.map_star_mul_self_eq_zero_iff` and
   `LinearMap.IsLeftInvariantIntegral.map_star_mul_self_eq_zero_iff`: `h (star a * a) = 0` only
   for `a = 0`.
 * `LinearMap.IsRightInvariantIntegral.map_star_mul_self_pos` and
   `LinearMap.IsLeftInvariantIntegral.map_star_mul_self_pos`: `0 < h (star a * a)` for `a ≠ 0`.
+* `TauCeti.AlgebraicHaar`: a positive normalized two-sided invariant integral on a complex star
+  bialgebra, with `FunLike`, `LinearMapClass`, `OneHomClass`, extensionality, and strict
+  positivity over a Hopf algebra.
 
 ## References
 
-* T. Timmermann, *An Invitation to Quantum Groups and Duality*, EMS, 2008, Proposition 2.2.4 and
-  Remark 2.2.2.
+* T. Timmermann, *An Invitation to Quantum Groups and Duality*, EMS, 2008, Proposition 2.2.4,
+  Remark 2.2.2, and Section 3.2.
+* S. Neshveyev and L. Tuset, *Compact Quantum Groups and Their Representation Categories*,
+  SMF, 2013, Theorem 1.6.6, Step 1, p. 18.
 -/
 
 public section
 
-open ComplexOrder
+open scoped ComplexOrder
 
 namespace LinearMap
 
@@ -83,3 +93,144 @@ theorem IsLeftInvariantIntegral.map_star_mul_self_pos
   (hpos a).lt_of_ne' ((hh.map_star_mul_self_eq_zero_iff h0 hpos).not.mpr ha)
 
 end LinearMap
+
+namespace TauCeti
+
+/-- A positive normalized two-sided invariant integral on a complex star bialgebra `A`:
+a `ℂ`-linear functional `h : A → ℂ` with `h 1 = 1`, left invariance `(id ⊗ h) Δ(a) = h(a) 1`,
+right invariance `(h ⊗ id) Δ(a) = h(a) 1`, and algebraic positivity `0 ≤ h (star a * a)` for
+every `a : A`. -/
+structure AlgebraicHaar (A : Type*) [Semiring A] [StarRing A] [Bialgebra ℂ A]
+    extends A →ₗ[ℂ] ℂ where
+  /-- Normalization on the unit element. -/
+  map_one' : toLinearMap 1 = 1
+  /-- Left Haar slice invariance `(id ⊗ h) Δ(a) = h(a) 1`. -/
+  left_invariant' : toLinearMap.IsLeftInvariantIntegral
+  /-- Right Haar slice invariance `(h ⊗ id) Δ(a) = h(a) 1`. -/
+  right_invariant' : toLinearMap.IsRightInvariantIntegral
+  /-- Nonnegativity on every algebraic square `star a * a`. -/
+  square_nonneg' : ∀ a, 0 ≤ toLinearMap (star a * a)
+
+namespace AlgebraicHaar
+
+section Bialgebra
+
+variable {A : Type*} [Semiring A] [StarRing A] [Bialgebra ℂ A]
+
+instance : FunLike (AlgebraicHaar A) A ℂ where
+  coe h := h.toLinearMap
+  coe_injective h₁ h₂ H := by
+    cases h₁
+    cases h₂
+    congr
+    exact DFunLike.coe_injective H
+
+instance : LinearMapClass (AlgebraicHaar A) ℂ A ℂ where
+  map_add h := h.toLinearMap.map_add
+  map_smulₛₗ h := h.toLinearMap.map_smul
+
+instance : OneHomClass (AlgebraicHaar A) A ℂ where
+  map_one h := h.map_one'
+
+/-- Two `AlgebraicHaar` functionals are equal as soon as they agree pointwise. -/
+@[ext]
+theorem ext {h₁ h₂ : AlgebraicHaar A} (H : ∀ a, h₁ a = h₂ a) : h₁ = h₂ :=
+  DFunLike.ext h₁ h₂ H
+
+@[simp]
+theorem toLinearMap_apply (h : AlgebraicHaar A) (a : A) : h.toLinearMap a = h a :=
+  (rfl)
+
+@[simp]
+theorem coe_toLinearMap (h : AlgebraicHaar A) : (h : A →ₗ[ℂ] ℂ) = h.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem mk_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1) (hl : f.IsLeftInvariantIntegral)
+    (hr : f.IsRightInvariantIntegral) (hp : ∀ a, 0 ≤ f (star a * a)) (a : A) :
+    (AlgebraicHaar.mk f h1 hl hr hp) a = f a :=
+  (rfl)
+
+/-- The underlying linear functional of an `AlgebraicHaar` integral is left invariant. -/
+theorem isLeftInvariantIntegral (h : AlgebraicHaar A) :
+    h.toLinearMap.IsLeftInvariantIntegral :=
+  h.left_invariant'
+
+/-- The underlying linear functional of an `AlgebraicHaar` integral is right invariant. -/
+theorem isRightInvariantIntegral (h : AlgebraicHaar A) :
+    h.toLinearMap.IsRightInvariantIntegral :=
+  h.right_invariant'
+
+/-- An `AlgebraicHaar` integral is nonnegative on every square `star a * a`. -/
+theorem apply_star_mul_self_nonneg (h : AlgebraicHaar A) (a : A) :
+    0 ≤ h (star a * a) :=
+  h.square_nonneg' a
+
+/-- Normalization `h 1 = 1` prevents the underlying linear functional from vanishing. -/
+theorem toLinearMap_ne_zero (h : AlgebraicHaar A) : h.toLinearMap ≠ 0 := fun h0 ↦
+  one_ne_zero (h.map_one'.symm.trans (by simp [h0]))
+
+end Bialgebra
+
+section Ring
+
+variable {A : Type*} [Ring A] [StarRing A] [Bialgebra ℂ A]
+
+/-- Forget invariance and normalization to view an `AlgebraicHaar` integral as a
+`StarPositiveFunctional`. -/
+def toStarPositiveFunctional (h : AlgebraicHaar A) : StarPositiveFunctional A where
+  toLinearMap := h.toLinearMap
+  square_nonneg := h.square_nonneg'
+
+@[simp]
+theorem coe_toStarPositiveFunctional (h : AlgebraicHaar A) :
+    ⇑h.toStarPositiveFunctional = h :=
+  (rfl)
+
+@[simp]
+theorem toStarPositiveFunctional_toLinearMap (h : AlgebraicHaar A) :
+    h.toStarPositiveFunctional.toLinearMap = h.toLinearMap :=
+  (rfl)
+
+/-- An `AlgebraicHaar` integral on a complex star algebra commutes with `star`. -/
+theorem map_star [StarModule ℂ A] (h : AlgebraicHaar A) (a : A) :
+    h (star a) = star (h a) :=
+  h.toStarPositiveFunctional.map_star a
+
+end Ring
+
+section HopfAlgebra
+
+variable {A : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A]
+
+/-- Right Haar faithfulness: an element killing all right translates under `h` is zero. -/
+theorem eq_zero_of_forall_mul_right_eq_zero (h : AlgebraicHaar A) {a : A}
+    (ha : ∀ b, h (a * b) = 0) : a = 0 :=
+  h.isRightInvariantIntegral.eq_zero_of_forall_mul_eq_zero h.toLinearMap_ne_zero ha
+
+/-- Left Haar faithfulness: an element killing all left translates under `h` is zero. -/
+theorem eq_zero_of_forall_mul_left_eq_zero (h : AlgebraicHaar A) {a : A}
+    (ha : ∀ b, h (b * a) = 0) : a = 0 :=
+  h.isLeftInvariantIntegral.eq_zero_of_forall_mul_eq_zero h.toLinearMap_ne_zero ha
+
+variable [StarModule ℂ A]
+
+/-- An `AlgebraicHaar` integral on a complex Hopf star algebra vanishes on `star a * a` only at
+`a = 0`. -/
+@[simp]
+theorem map_star_mul_self_eq_zero_iff (h : AlgebraicHaar A) {a : A} :
+    h (star a * a) = 0 ↔ a = 0 :=
+  h.isRightInvariantIntegral.map_star_mul_self_eq_zero_iff
+    h.toLinearMap_ne_zero h.apply_star_mul_self_nonneg
+
+/-- Strict positivity: `0 < h (star a * a)` for every nonzero element `a`. -/
+theorem map_star_mul_self_pos (h : AlgebraicHaar A) {a : A} (ha : a ≠ 0) :
+    0 < h (star a * a) :=
+  h.isRightInvariantIntegral.map_star_mul_self_pos
+    h.toLinearMap_ne_zero h.apply_star_mul_self_nonneg ha
+
+end HopfAlgebra
+
+end AlgebraicHaar
+
+end TauCeti

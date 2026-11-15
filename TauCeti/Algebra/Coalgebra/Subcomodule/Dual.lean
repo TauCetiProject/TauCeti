@@ -25,14 +25,19 @@ simple subcomodule of `M` contained in every nonzero subcomodule corresponds to 
 subcomodule of `M*` containing every proper subcomodule.
 
 Both directions compare matrix coefficients of `M` and `M*` through the equation
-`c(ev_m, φ) = S(c(φ, m))` (`TauCeti.Comodule.matrixCoefficient_dual_eval`). For the common
-kernel the antipode `S` has to be cancelled, which uses that it is an involution of the
-commutative Hopf algebra `H`.
+`c(ev_m, φ) = S(c(φ, m))` (`TauCeti.Comodule.matrixCoefficient_dual_eval`). Cancelling `S` on the
+common kernel needs only injectivity of the antipode, so `dualAnnihilator` is surjective and
+transports simplicity between `M` and `M*` over any Hopf algebra with injective antipode (in
+particular over every Hopf star algebra). When `H` is commutative, `S` is an involution and this
+common kernel is packaged without extra hypotheses.
 
 ## Main declarations
 
 * `TauCeti.Subcomodule.dualAnnihilator`: the annihilator of a subcomodule, as a subcomodule of
   the dual.
+* `TauCeti.Subcomodule.dualAnnihilator_surjective` and `TauCeti.Subcomodule.isSimpleOrder_dual_iff`:
+  over any Hopf algebra with injective antipode, `dualAnnihilator` is surjective and `M*` is
+  simple precisely when `M` is simple.
 * `TauCeti.Subcomodule.dualCoannihilator`: the common kernel of a subcomodule of the dual.
 * `TauCeti.Subcomodule.dualCoannihilator_dualAnnihilator` and
   `TauCeti.Subcomodule.dualAnnihilator_dualCoannihilator`: the two constructions are inverse.
@@ -111,6 +116,53 @@ theorem dualAnnihilator_eq_top_iff {N : Subcomodule k H M} : N.dualAnnihilator =
 @[simp]
 theorem dualAnnihilator_eq_bot_iff {N : Subcomodule k H M} : N.dualAnnihilator = ⊥ ↔ N = ⊤ := by
   rw [← dualAnnihilator_top, dualAnnihilator_injective.eq_iff]
+
+/-- When the antipode is injective, every subcomodule of the dual `M*` is the annihilator of its
+common kernel in `M`. -/
+theorem dualAnnihilator_surjective
+    (hS : Function.Injective (HopfAlgebra.antipode k : H → H)) :
+    Function.Surjective (dualAnnihilator (k := k) (H := H) (M := M)) := fun W ↦ by
+  -- The common kernel `W°` is a subcomodule because `S` cancels on vanishing dual coefficients.
+  let N : Subcomodule k H M := ofSubmodule W.toSubmodule.dualCoannihilator fun m hm ↦ by
+    refine (Submodule.coact_mem_range_iff_forall_matrixCoefficient_eq_zero _ m).mpr fun ψ ↦ ?_
+    have hψ := W.toSubmodule.dualCoannihilator.comp_mkQ_mem_dualAnnihilator ψ
+    rw [Subspace.dualCoannihilator_dualAnnihilator_eq, mem_toSubmodule] at hψ
+    have hm' : Module.Dual.eval k M m ∈ W.toSubmodule.dualAnnihilator :=
+      (Submodule.mem_dualAnnihilator _).mpr fun φ hφ ↦ by
+        simpa using (Submodule.mem_dualCoannihilator m).mp hm φ hφ
+    refine hS ?_
+    rw [← Comodule.matrixCoefficient_dual_eval,
+      W.toSubmodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W.coact_mem hψ) hm',
+      map_zero]
+  have hN : N.toSubmodule = W.toSubmodule.dualCoannihilator := rfl
+  refine ⟨N, ext fun φ ↦ ?_⟩
+  rw [← mem_toSubmodule, dualAnnihilator_toSubmodule, hN,
+    Subspace.dualCoannihilator_dualAnnihilator_eq, mem_toSubmodule]
+
+/-- Over a field, when the antipode is injective, the dual of a finite-dimensional comodule is
+simple if and only if the comodule itself is simple. -/
+theorem isSimpleOrder_dual_iff
+    (hS : Function.Injective (HopfAlgebra.antipode k : H → H)) :
+    IsSimpleOrder (Subcomodule k H (Module.Dual k M)) ↔ IsSimpleOrder (Subcomodule k H M) := by
+  constructor
+  · intro _
+    refine
+      { exists_pair_ne := ⟨⊥, ⊤, fun hbt ↦ (bot_ne_top (α := Subcomodule k H (Module.Dual k M))) ?_⟩
+        eq_bot_or_eq_top := fun N ↦ ?_ }
+    · rw [← dualAnnihilator_top (k := k) (H := H) (M := M), ← hbt, dualAnnihilator_bot]
+    · rcases eq_bot_or_eq_top N.dualAnnihilator with hN | hN
+      · exact Or.inr (dualAnnihilator_eq_bot_iff.mp hN)
+      · exact Or.inl (dualAnnihilator_eq_top_iff.mp hN)
+  · intro _
+    refine
+      { exists_pair_ne := ⟨⊥, ⊤, fun hbt ↦ (bot_ne_top (α := Subcomodule k H M)) ?_⟩
+        eq_bot_or_eq_top := fun W ↦ ?_ }
+    · rw [← dualAnnihilator_top (k := k) (H := H) (M := M), ← dualAnnihilator_bot] at hbt
+      exact (dualAnnihilator_injective hbt).symm
+    · obtain ⟨N, rfl⟩ := dualAnnihilator_surjective hS W
+      rcases eq_bot_or_eq_top N with rfl | rfl
+      · exact Or.inr dualAnnihilator_bot
+      · exact Or.inl dualAnnihilator_top
 
 end Ring
 
