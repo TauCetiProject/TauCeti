@@ -15,13 +15,16 @@ public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 
 This file records the basic behavior of the action of `k[X]` on an internally `ℤ`-graded module on
 which `X` lowers degree by a fixed `d`, and equips `k[X]` itself with the internal grading that
-places `X ^ n` in degree `-n`. It also constructs polynomial-linear homogeneous parts of maps
+places `X ^ n` in degree `-n`, or, as a graded algebra, with the standard grading placing `X ^ n` in
+degree `n`. It also constructs polynomial-linear homogeneous parts of maps
 when `X` shifts both gradings by the same integer, without a sign condition on that shift.
 
 ## Main definitions
 
 * `TauCeti.InternalGrading.homogeneousPartPolynomial`: polynomial-linear components of maps.
 * `TauCeti.Polynomial.negDegreeGrading`: the grading of `k[X]` placing `X ^ n` in degree `-n`.
+* `TauCeti.Polynomial.degreeGrade`: the grading of `k[X]` placing `X ^ n` in degree `n`, for
+  which `k[X]` is a graded algebra.
 
 ## Main results
 
@@ -44,6 +47,11 @@ when `X` shifts both gradings by the same integer, without a sign condition on t
 * `TauCeti.Polynomial.X_smul_mem_negDegreeGrading_piece`: multiplication by `X` lowers degree by
   one.
 * `TauCeti.Polynomial.X_pow_mem_negDegreeGrading_piece`: `X ^ n` has degree `-n`.
+* `TauCeti.Polynomial.mem_degreeGrade_iff`: membership in a piece of `degreeGrade` is characterized
+  coefficientwise.
+* `TauCeti.Polynomial.degreeGrade_eq_bot_of_neg` and
+  `TauCeti.Polynomial.degreeGrade_zero_eq_span_one`: the standard grading is nonnegative, and its
+  degree-zero piece is the line of constants.
 -/
 
 public section
@@ -420,6 +428,73 @@ theorem X_pow_mem_negDegreeGrading_piece (n : ℕ) :
   split_ifs at hm with h
   · rw [h]
   · exact absurd rfl hm
+
+/-! ### The standard grading -/
+
+variable (k) in
+/-- The standard grading of the polynomial ring `k[X]` by integer degrees: the degree-`p` piece
+consists of the polynomials all of whose monomials `X ^ n` have `n = p`, so pieces of negative
+degree vanish. It is the grading by `AddMonoidAlgebra.gradeBy` along `ℕ → ℤ`. -/
+noncomputable def degreeGrade : ℤ → Submodule k k[X] :=
+  AddMonoidAlgebra.gradeBy k ⇑(Nat.castAddMonoidHom ℤ)
+
+variable (k) in
+/-- Multiplication adds degrees in the standard grading of `k[X]`. -/
+theorem degreeGrade_gradedMonoid : SetLike.GradedMonoid (degreeGrade k) := by
+  rw [degreeGrade]
+  infer_instance
+
+variable (k) in
+/-- The polynomial ring is the internal direct sum of the pieces of its standard grading. -/
+theorem isInternal_degreeGrade : DirectSum.IsInternal (degreeGrade k) := by
+  rw [degreeGrade]
+  exact AddMonoidAlgebra.gradeBy.isInternal _
+
+/-- The polynomial ring is a graded algebra for its standard grading. -/
+noncomputable instance : GradedAlgebra (degreeGrade k) :=
+  letI := degreeGrade_gradedMonoid k
+  DirectSum.IsInternal.gradedAlgebra (isInternal_degreeGrade k)
+
+/-- A polynomial has degree `p` in `degreeGrade` exactly when each of its monomials `X ^ n` has
+`n = p`. -/
+theorem mem_degreeGrade_iff {p : ℤ} {x : k[X]} :
+    x ∈ degreeGrade k p ↔ ∀ n, x.coeff n ≠ 0 → (n : ℤ) = p := by
+  rw [degreeGrade]
+  simp
+
+/-- The monomial `X ^ n` has degree `n` in `degreeGrade`. -/
+theorem X_pow_mem_degreeGrade (n : ℕ) : (X ^ n : k[X]) ∈ degreeGrade k n := by
+  rw [mem_degreeGrade_iff]
+  intro m hm
+  rw [coeff_X_pow] at hm
+  split_ifs at hm with h
+  · rw [h]
+  · exact absurd rfl hm
+
+/-- The standard grading of `k[X]` vanishes in negative degrees. -/
+theorem degreeGrade_eq_bot_of_neg {p : ℤ} (hp : p < 0) : degreeGrade k p = ⊥ := by
+  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_
+  by_contra h
+  have := mem_degreeGrade_iff.1 hx n h
+  omega
+
+/-- **The degree-zero piece of the standard grading is the line of constants.** -/
+theorem degreeGrade_zero_eq_span_one : degreeGrade k 0 = k ∙ (1 : k[X]) := by
+  ext x
+  rw [mem_degreeGrade_iff, Submodule.mem_span_singleton]
+  constructor
+  · intro hx
+    refine ⟨x.coeff 0, AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_⟩
+    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_one, smul_eq_mul]
+    rcases n with _ | n
+    · simp
+    · by_contra h
+      have := hx (n + 1) (Ne.symm (by simpa using h))
+      omega
+  · rintro ⟨a, rfl⟩ n hn
+    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_one] at hn
+    by_contra h
+    exact hn (by simp [show n ≠ 0 by omega])
 
 end Polynomial
 
