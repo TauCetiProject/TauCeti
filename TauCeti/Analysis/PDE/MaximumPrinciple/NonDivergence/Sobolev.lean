@@ -12,7 +12,7 @@ import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 
 /-!
-# Approximation of strong supersolutions by classical ones
+# Approximation of strong supersolutions and subsolutions by classical ones
 
 Equations in non-divergence form with measurable coefficients have, in general, only strong
 solutions: functions `u ∈ W^{2,p}`, with a continuous representative `ū`, satisfying
@@ -25,7 +25,9 @@ Hessians close to `D²u` in `Lᵖ(K)`
 coefficients, `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≤ f + N ‖D²v - D²u‖` almost everywhere, where `N` depends only on the
 dimension and a bound for the entries of the coefficients. So `v` is a classical supersolution
 with a right-hand side whose positive part is at most `‖f⁺‖_{Lᵖ} + η` in `Lᵖ`. No regularity or
-measurability of the coefficients is needed.
+measurability of the coefficients is needed. Applied to `-u`, this approximates a strong
+subsolution, `f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` almost everywhere, by classical subsolutions whose right-hand
+sides have negative part at most `‖f⁻‖_{Lᵖ} + η` in `Lᵖ`.
 
 Shifting `v` up by `ζ` and dividing by `1 + 3 ζ` absorbs the error `η` in the right-hand side: the
 result `w` lies between `ū / (1 + 3 ζ)` and `(ū + 2 ζ) / (1 + 3 ζ)` on `K`, and its right-hand side
@@ -37,6 +39,8 @@ the form in which the Krylov–Safonov estimates consume supersolutions.
 * `TauCeti.PDE.exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: a strong
   supersolution is uniformly approximated by smooth classical supersolutions whose right-hand
   sides have nearly the same `Lᵖ` norm of the positive part.
+* `TauCeti.PDE.exists_contDiff_abs_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp`: the same for
+  strong subsolutions, with the negative part of the right-hand side.
 * `TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: the rescaled
   approximations, classical supersolutions whose right-hand sides obey a given `Lᵖ` bound for
   `f⁺`.
@@ -142,6 +146,52 @@ theorem exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ�
     _ = eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) + ENNReal.ofReal η := by
         rw [← ENNReal.ofReal_mul hN.le, mul_div_cancel₀ _ hN.ne']
 
+/-- **Approximation of a strong subsolution by classical ones.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`,
+have a representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
+`f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` almost everywhere on `S` for the weak Hessian, with coefficient entries
+bounded by `Λ` almost everywhere on `S`. For every `η > 0` there are a smooth function `v` with
+`|v - ū| ≤ η` on `K` and a function `g` with `g ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv` at every point of `S` and
+`‖g⁻‖_{Lᵖ(S)} ≤ ‖f⁻‖_{Lᵖ(S)} + η`. The coefficients need not be measurable. -/
+theorem exists_contDiff_abs_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ ι)} (u : Wkp volume Ω p 2)
+    {ū : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn ū Ω)
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū)
+    {K S : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hSK : S ⊆ K)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Λ : ℝ}
+    (ha : ∀ᵐ x ∂volume.restrict S, ∀ i j, |a x i j| ≤ Λ)
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : ∀ᵐ x ∂volume.restrict S,
+      f x ≤ ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ v g : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ (⊤ : ℕ∞) v ∧ (∀ y ∈ K, |v y - ū y| ≤ η) ∧
+      (∀ x ∈ S, g x ≤ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) ∧
+      eLpNorm (fun x ↦ (g x)⁻) p (volume.restrict S) ≤
+        eLpNorm (fun x ↦ (f x)⁻) p (volume.restrict S) + ENNReal.ofReal η := by
+  -- `-u` is a strong supersolution with right-hand side `-f`; approximate it and negate back.
+  have hneg : (Wkp.value 2 (-u) : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] -ū := by
+    rw [← Wkp.valueL_apply, map_neg, Wkp.valueL_apply]
+    filter_upwards [Lp.coeFn_neg (Wkp.value 2 u), hū] with x hx hx'
+    rw [hx, Pi.neg_apply, Pi.neg_apply, hx']
+  have hsuper : ∀ᵐ x ∂volume.restrict S,
+      ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 (-u) x (EuclideanSpace.single j 1) i ≤ -f x := by
+    have hD : (Wkp.iteratedGradient 1 (-u) : EuclideanSpace ℝ ι → _) =ᵐ[volume.restrict S]
+        -(Wkp.iteratedGradient 1 u : EuclideanSpace ℝ ι → _) := by
+      rw [← Wkp.iteratedGradientL_apply, map_neg, Wkp.iteratedGradientL_apply]
+      exact ae_restrict_of_ae_restrict_of_subset (hSK.trans hKΩ) (Lp.coeFn_neg _)
+    filter_upwards [hf, hD] with x hfx hDx
+    simpa [hDx, Finset.sum_neg_distrib] using hfx
+  obtain ⟨v, g, hv, hvū, hvg, hg⟩ :=
+    exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp hp (-u) hcont.neg hneg hK hKΩ
+      hSK ha hsuper hη
+  refine ⟨fun y ↦ -1 * v y, fun x ↦ -g x, contDiff_const.mul hv, fun y hy ↦ ?_, fun x hx ↦ ?_, ?_⟩
+  · rw [← abs_neg]
+    convert hvū y hy using 2
+    simp only [Pi.neg_apply]
+    ring
+  · rw [sum_mul_fderiv_fderiv_const_mul]
+    linarith [hvg x hx]
+  · simpa only [negPart_neg, Pi.neg_apply, posPart_neg] using hg
 
 /-- **Rescaled approximation of a strong supersolution.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`, have a
 representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
