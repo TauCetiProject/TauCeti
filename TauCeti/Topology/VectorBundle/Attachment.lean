@@ -186,7 +186,7 @@ private lemma discCollar_of_mem_gaugeSphereBundle (t : I) {v : gaugeDiscBundle �
     (hv : (v : TotalSpace F E) ∈ gaugeSphereBundle ρ) : discCollar hρ (t, v) = v := by
   apply Subtype.ext
   rw [coe_discCollar, mem_gaugeSphereBundle.1 hv,
-    radialPushScale_of_norm_eq_one (by norm_num) (by norm_num), one_smul]
+    radialPushScale_one_right (by norm_num) (by norm_num), one_smul]
 
 /-- At time zero the collar deformation is the identity. -/
 private lemma discCollar_zero (v : gaugeDiscBundle ρ) : discCollar hρ (0, v) = v := by

@@ -32,8 +32,8 @@ cell by cell, that the skeleta of a CW complex form good pairs.
 * `TauCeti.radialPush_eq_smul`: it rescales each vector along its ray, by the factor
   `TauCeti.radialPushScale` depending only on the time and the norm.
 * `TauCeti.radialPushScale_def`, `TauCeti.radialPushScale_zero`, `TauCeti.radialPushScale_one`
-  and `TauCeti.radialPushScale_of_norm_eq_one`: its formula, its values at the two ends, and its
-  value on the unit sphere.
+  and `TauCeti.radialPushScale_one_right`: its formula, its values at times zero and one, and its
+  value at norm one.
 * `TauCeti.radialPushScale_nonneg`, `TauCeti.radialPushScale_pos` and `TauCeti.radialPushScale_le`:
   bounds on this factor, and `TauCeti.continuousAt_radialPushScale`: its continuity off norm zero.
 * `TauCeti.norm_radialPush`: its norm is the linear interpolation of the endpoint norms.
@@ -138,8 +138,9 @@ theorem continuousAt_radialPushScale (r : ℝ) {p : I × ℝ} (hp : p.2 ≠ 0) :
   exact (continuousAt_const.sub ht).add (ht.mul (continuousAt_const.mul
     (continuousAt_const.min (continuousAt_const.div continuousAt_snd hp))))
 
-/-- For `0 < r ≤ 1` the radial push does not rescale vectors of norm one. -/
-theorem radialPushScale_of_norm_eq_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) :
+/-- For `0 < r ≤ 1` the radial push does not rescale vectors of norm one: the factor is `1` when
+its norm argument is `1`. -/
+theorem radialPushScale_one_right (hr : 0 < r) (hr1 : r ≤ 1) (t : I) :
     radialPushScale r t 1 = 1 := by
   simp [radialPushScale, min_eq_right hr1, hr.ne']
 
