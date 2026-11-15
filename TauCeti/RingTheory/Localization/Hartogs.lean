@@ -27,6 +27,8 @@ height one.
 
 ## Main results
 
+* `Module.SatisfiesSerreS.two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one`: under
+  `(S_2)`, any prime of height `≠ 1` containing a non-zero-divisor has local depth at least `2`.
 * `TauCeti.mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal` and
   `TauCeti.mem_range_algebraMap_of_two_le_depth_of_le_radical_denIdeal`: denominator-ideal criteria
   for an element of a total ring of fractions to lie in the base ring.
@@ -48,6 +50,28 @@ public section
 open IsLocalRing RingTheory.Sequence
 
 open scoped nonZeroDivisors
+
+namespace Module.SatisfiesSerreS
+
+/-- Under Serre's condition `(S_2)`, any prime ideal `p` of height not equal to `1` that contains a
+non-zero-divisor has local depth at least `2`. -/
+theorem two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one {A : Type*} [CommRing A]
+    (hS₂ : Module.SatisfiesSerreS 2 A A) {p : Ideal A} [p.IsPrime] {b : A} (hb : b ∈ A⁰)
+    (hbp : b ∈ p) (hp1 : p.height ≠ 1) :
+    2 ≤ depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) := by
+  have h1 : 1 ≤ p.height :=
+    (Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors hb).trans
+      (Ideal.height_mono ((Ideal.span_singleton_le_iff_mem p).mpr hbp))
+  have hp2 : 2 ≤ p.height :=
+    (ENat.add_one_le_iff ENat.one_ne_top).mpr (lt_of_le_of_ne h1 hp1.symm)
+  have hdim : 2 ≤ ringKrullDim (Localization.AtPrime p) := by
+    rw [IsLocalization.AtPrime.ringKrullDim_eq_height p (Localization.AtPrime p)]
+    exact WithBot.coe_le_coe.mpr hp2
+  have hSp := (Module.satisfiesSerreS_self_iff.mp hS₂) p
+  rw [min_eq_left (by exact_mod_cast hdim), ← WithBot.coe_natCast, WithBot.coe_le_coe] at hSp
+  exact_mod_cast hSp
+
+end Module.SatisfiesSerreS
 
 namespace TauCeti
 
@@ -143,21 +167,11 @@ theorem iInf_ofField_powers_eq_bot_of_satisfiesSerreS_two [IsNoetherianRing A]
     obtain ⟨u, hu⟩ := hb
     exact ⟨↑u⁻¹ * c, by
       rw [map_mul, ← hcb, ← hu, mul_left_comm, ← map_mul, Units.inv_mul, map_one, mul_one]⟩
-  · refine iInf_ofField_powers_eq_bot_of_two_le_depth a ha fun p hp hall ↦ ?_
-    have hp1 : 1 ≤ p.height :=
-      (Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors (ha i₀ ⟨1, pow_one _⟩)).trans
-        (Ideal.height_mono ((Ideal.span_singleton_le_iff_mem p).mpr (hall i₀)))
-    have hne1 : p.height ≠ 1 := fun h1 ↦ by
-      obtain ⟨i, hi⟩ := hcover p hp h1
-      exact hi (hall i)
-    have hp2 : 2 ≤ p.height :=
-      (ENat.add_one_le_iff ENat.one_ne_top).mpr (lt_of_le_of_ne hp1 hne1.symm)
-    have hdim : 2 ≤ ringKrullDim (Localization.AtPrime p) := by
-      rw [IsLocalization.AtPrime.ringKrullDim_eq_height p (Localization.AtPrime p)]
-      exact WithBot.coe_le_coe.mpr hp2
-    have hSp := (Module.satisfiesSerreS_self_iff.mp hS₂) p
-    rw [min_eq_left (by exact_mod_cast hdim), ← WithBot.coe_natCast, WithBot.coe_le_coe] at hSp
-    exact_mod_cast hSp
+  · refine iInf_ofField_powers_eq_bot_of_two_le_depth a ha fun p hp hall ↦
+      hS₂.two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one
+        (ha i₀ ⟨1, pow_one _⟩) (hall i₀) fun h1 ↦ ?_
+    obtain ⟨i, hi⟩ := hcover p hp h1
+    exact hi (hall i)
 
 /-- Over a Noetherian integrally closed domain `A`, if no height-one prime contains every `a_i`,
 then the principal localizations `A[1 / a_i]` intersect in `A` inside `K`. -/

@@ -57,7 +57,7 @@ lemma Algebra.denIdeal_def (x : K) :
 
 /-- The identity element lies in the denominator ideal of `x` precisely when `x` lies in the image
 of `R`. -/
-lemma Algebra.one_mem_denIdeal_iff {x : K} :
+@[simp high] lemma Algebra.one_mem_denIdeal_iff {x : K} :
     (1 : R) ∈ Algebra.denIdeal K x ↔ x ∈ Set.range (algebraMap R K) := by
   simp [eq_comm]
 
