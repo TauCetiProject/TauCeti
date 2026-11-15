@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
-public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.CategoryTheory.Sites.Point.Category
-public import TauCeti.FieldTheory.IsSepClosed
+import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
 # The category of geometric points of a scheme
@@ -33,7 +32,7 @@ change under extension of the separably closed field; in particular algebraicall
 have the same stalks as separably closed ones. This rests on the fact that the residue field
 extensions of an étale morphism are finite separable, so their embeddings into an extension of a
 separably closed field `Ω₂` all land in `Ω₂`
-(`TauCeti.AlgebraicGeometry.Scheme.bijective_comp_of_formallyUnramified`).
+(`AlgebraicGeometry.Scheme.Hom.bijective_comp_of_formallyUnramified`).
 
 For a point `x` of `S`, `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.ofPoint x` is the
 geometric point `Spec κ(x)ˢᵉᵖ ⟶ S` through the separable closure of the residue field. These are
@@ -60,8 +59,6 @@ through the stalk map of `Spec σ` is a left action of the Galois group.
   automorphisms of `s` on the stalks at `s`, naturally in the sheaf.
 * `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.galoisStalkAction x`: the left action of
   `Gal(κ(x)ˢᵉᵖ/κ(x))` on the stalks at `ofPoint x`.
-* `TauCeti.AlgebraicGeometry.Scheme.bijective_comp_of_formallyUnramified`: lifts of a separably
-  closed point along an unramified morphism do not change under extension of the field.
 
 ## References
 
@@ -69,75 +66,13 @@ through the stalk map of `Spec σ` is a left action of the Galois group.
 * A. Grothendieck, M. Artin, J.-L. Verdier, *SGA 4*, Exposé VIII, §3.
 -/
 
-@[expose] public section
+public section
 
 universe u
 
 open CategoryTheory Limits Opposite AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry.Scheme
-
-/-- A morphism from the spectrum of a nonzero ring to the spectrum of a field is an epimorphism of
-schemes: it is faithfully flat, surjective and quasi-compact, hence an effective epimorphism. -/
-instance epi_of_spec_field {K : Type u} [Field K] {R : CommRingCat.{u}} [Nontrivial R]
-    (φ : Spec R ⟶ Spec (.of K)) : Epi φ := by
-  rw [← Spec.map_preimage φ]
-  have : Surjective (Spec.map (Spec.preimage φ)) :=
-    ⟨fun _ ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ _⟩⟩
-  have : Flat (Spec.map (Spec.preimage φ)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @Flat)]
-    exact .of_isField (Field.toIsField _) _
-  infer_instance
-
-/-- **Lifts of a separably closed point along an unramified morphism do not change under
-extension of the field.** Let `f : X ⟶ Y` be formally unramified and locally of finite type (for
-instance étale), `s : Spec Ω ⟶ Y` with `Ω` separably closed and `φ : Spec Ω' ⟶ Spec Ω` for a field
-`Ω'`. Then `u ↦ φ ≫ u` is a bijection from the lifts of `s` to `X` onto the lifts of `φ ≫ s`. -/
-theorem bijective_comp_of_formallyUnramified {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [FormallyUnramified f] [LocallyOfFiniteType f] {Ω Ω' : Type u} [Field Ω] [IsSepClosed Ω]
-    [Field Ω'] (φ : Spec (.of Ω') ⟶ Spec (.of Ω)) (s : Spec (.of Ω) ⟶ Y) :
-    Function.Bijective fun u : {u : Spec (.of Ω) ⟶ X // u ≫ f = s} ↦
-      (⟨φ ≫ u.1, by simp [u.2]⟩ : {v : Spec (.of Ω') ⟶ X // v ≫ f = φ ≫ s}) := by
-  refine ⟨fun u v h ↦ Subtype.ext ((cancel_epi φ).mp congr(($h).1)), ?_⟩
-  rintro ⟨v, hv⟩
-  -- Write `s` and `v` through residue fields, and `φ` as `Spec g`.
-  obtain ⟨⟨t, b⟩, rfl⟩ := (Scheme.SpecToEquivOfField Ω Y).symm.surjective s
-  obtain ⟨⟨x, a⟩, rfl⟩ := (Scheme.SpecToEquivOfField Ω' X).symm.surjective v
-  obtain ⟨g, rfl⟩ : ∃ g, Spec.map g = φ := ⟨_, Spec.map_preimage φ⟩
-  have h : (⟨f x, f.residueFieldMap x ≫ a⟩ : Σ y, Y.residueField y ⟶ .of Ω') = ⟨t, b ≫ g⟩ := by
-    apply (Scheme.SpecToEquivOfField Ω' Y).symm.injective
-    rw [Scheme.SpecToEquivOfField_symm_apply] at hv
-    rw [Scheme.SpecToEquivOfField_symm_apply, Scheme.SpecToEquivOfField_symm_apply,
-      Spec.map_comp, Spec.map_comp, Category.assoc, Category.assoc,
-      Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField]
-    exact hv
-  obtain ⟨e, hab⟩ := Scheme.SpecToEquivOfField_eq_iff.mp h
-  dsimp only at e hab
-  subst e
-  simp only [Scheme.residueFieldCongr_refl, Iso.refl_hom, Category.id_comp] at hab
-  -- `a` is an embedding of `κ(x)` over `κ(f x)`, which lands in `Ω` since `κ(x)` is separable.
-  let := (f.residueFieldMap x).hom.toAlgebra
-  let := b.hom.toAlgebra
-  let := (b ≫ g).hom.toAlgebra
-  let := g.hom.toAlgebra
-  have : IsScalarTower (Y.residueField (f x)) Ω Ω' := .of_algebraMap_eq' rfl
-  let a' : X.residueField x →ₐ[Y.residueField (f x)] Ω' :=
-    { a.hom with commutes' r := congr($hab r) }
-  obtain ⟨a₂, ha₂⟩ := (IsSepClosed.bijective_comp_algHom _ _ Ω Ω').2 a'
-  have ha₂' : CommRingCat.ofHom (a₂ : X.residueField x →+* Ω) ≫ g = a := by
-    ext r; exact congr($ha₂ r)
-  have hb : f.residueFieldMap x ≫ CommRingCat.ofHom (a₂ : X.residueField x →+* Ω) = b := by
-    ext r; exact a₂.commutes r
-  refine ⟨⟨(Scheme.SpecToEquivOfField Ω X).symm
-    ⟨x, CommRingCat.ofHom (a₂ : X.residueField x →+* Ω)⟩, ?_⟩, ?_⟩
-  · rw [Scheme.SpecToEquivOfField_symm_apply, Scheme.SpecToEquivOfField_symm_apply,
-      Category.assoc, ← Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField,
-      ← Spec.map_comp_assoc, hb]
-  · ext1
-    dsimp only
-    rw [Scheme.SpecToEquivOfField_symm_apply, Scheme.SpecToEquivOfField_symm_apply,
-      ← Spec.map_comp_assoc]
-    exact congr(Spec.map $ha₂' ≫ _)
 
 /-- A geometric point of a scheme `S`: a separably closed field `Ω` with a morphism
 `Spec Ω ⟶ S`. -/
@@ -182,7 +117,7 @@ lemma comp_hom {s₁ s₂ s₃ : GeometricPoint S} (f : s₁ ⟶ s₂) (g : s₂
     (f ≫ g).hom = f.hom ≫ g.hom := rfl
 
 /-- The morphism of geometric points given by a morphism of spectra over `S`. -/
-@[simps]
+@[expose, simps]
 def homMk {s₁ s₂ : GeometricPoint S} (φ : Spec (.of s₁.Ω) ⟶ Spec (.of s₂.Ω))
     (w : φ ≫ s₂.hom = s₁.hom := by cat_disch) : s₁ ⟶ s₂ :=
   ⟨φ, w⟩
@@ -191,7 +126,7 @@ variable (S) in
 /-- The functor from geometric points of `S` to points of the small étale site of `S`, sending
 `s` to `AlgebraicGeometry.Scheme.pointSmallEtale s.hom`. A morphism `φ : s₁ ⟶ s₂` sends a lift
 `u` of `s₂` to an étale `S`-scheme to the lift `φ ≫ u` of `s₁`. -/
-@[simps obj]
+@[expose, simps obj]
 noncomputable def toPointFunctor : GeometricPoint S ⥤ (Scheme.smallEtaleTopology S).Point where
   obj s := Scheme.pointSmallEtale s.hom
   map φ := ⟨Functor.whiskerLeft (Scheme.Etale.forget S)
@@ -222,7 +157,7 @@ instance isIso_toPointFunctor_map {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ 
       left_inv _ := by cat_disch
       right_inv _ := rfl }
   exact (e s₁ _ φ.w.symm).symm.bijective.comp
-    ((bijective_comp_of_formallyUnramified U.hom φ.hom s₂.hom).comp (e s₂ _ rfl).bijective)
+    ((U.hom.bijective_comp_of_formallyUnramified φ.hom s₂.hom).comp (e s₂ _ rfl).bijective)
 
 /-- The geometric point `Spec κ(x)ˢᵉᵖ ⟶ S` over a point `x` of `S`, through the separable closure
 of the residue field at `x`. -/
@@ -274,7 +209,7 @@ lemma ofPointIsoOfAlgEquiv_hom_hom (x : S)
       SeparableClosure (S.residueField x)) :
     (ofPointIsoOfAlgEquiv x σ).hom.hom =
       Spec.map (CommRingCat.ofHom (σ : (ofPoint x).Ω →+* (ofPoint x).Ω)) :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma ofPointIsoOfAlgEquiv_inv_hom (x : S)
@@ -282,7 +217,20 @@ lemma ofPointIsoOfAlgEquiv_inv_hom (x : S)
       SeparableClosure (S.residueField x)) :
     (ofPointIsoOfAlgEquiv x σ).inv.hom =
       Spec.map (CommRingCat.ofHom (σ.symm : (ofPoint x).Ω →+* (ofPoint x).Ω)) :=
-  rfl
+  (rfl)
+
+/-- An isomorphism `φ` of geometric points is the spectrum of a ring isomorphism: the ring maps
+`Spec.preimage φ.inv.hom` and `Spec.preimage φ.hom.hom` are mutually inverse. -/
+lemma preimage_inv_comp_preimage_hom {s₁ s₂ : GeometricPoint S} (φ : s₁ ≅ s₂) :
+    Spec.preimage φ.inv.hom ≫ Spec.preimage φ.hom.hom = 𝟙 _ := by
+  rw [← Spec.preimage_comp, ← comp_hom, φ.hom_inv_id, id_hom, Spec.preimage_id]
+
+/-- The ring endomorphism of `κ(x)ˢᵉᵖ` underlying an endomorphism of the geometric point
+`ofPoint x` fixes `κ(x)`. -/
+lemma algebraMap_comp_preimage_hom (x : S) (f : ofPoint x ⟶ ofPoint x) :
+    CommRingCat.ofHom (algebraMap (S.residueField x) (SeparableClosure _)) ≫ Spec.preimage f.hom =
+      CommRingCat.ofHom (algebraMap (S.residueField x) (SeparableClosure _)) := by
+  rw [← SpecMap_comp_ofPoint_hom_eq_iff, Spec.map_preimage, Hom.w]
 
 /-- The element of the absolute Galois group of `κ(x)` underlying an automorphism of the geometric
 point `ofPoint x`: the ring automorphism of `κ(x)ˢᵉᵖ` whose spectrum it is. -/
@@ -290,26 +238,19 @@ noncomputable def ofPointAutToAlgEquiv (x : S) (φ : Aut (ofPoint x)) :
     SeparableClosure (S.residueField x) ≃ₐ[S.residueField x] SeparableClosure (S.residueField x) :=
   AlgEquiv.ofRingEquiv (f := RingEquiv.ofRingHom
     (Spec.preimage φ.asIso.hom.hom).hom (Spec.preimage φ.asIso.inv.hom).hom
-    (congrArg CommRingCat.Hom.hom (Spec.map_injective (by
-      rw [Spec.map_comp, Spec.map_preimage, Spec.map_preimage, ← comp_hom,
-        φ.asIso.hom_inv_id, id_hom, Spec.map_id]) :
-      Spec.preimage φ.asIso.inv.hom ≫ Spec.preimage φ.asIso.hom.hom = 𝟙 _))
-    (congrArg CommRingCat.Hom.hom (Spec.map_injective (by
-      rw [Spec.map_comp, Spec.map_preimage, Spec.map_preimage, ← comp_hom,
-        φ.asIso.inv_hom_id, id_hom, Spec.map_id]) :
-      Spec.preimage φ.asIso.hom.hom ≫ Spec.preimage φ.asIso.inv.hom = 𝟙 _)))
-    fun r ↦ congr($((SpecMap_comp_ofPoint_hom_eq_iff x _).mp
-      ((Spec.map_preimage φ.asIso.hom.hom).symm ▸ φ.asIso.hom.w : Spec.map _ ≫ _ = _)).hom r)
+    congr(($(preimage_inv_comp_preimage_hom φ.asIso)).hom)
+    congr(($(preimage_inv_comp_preimage_hom φ.asIso.symm)).hom))
+    fun r ↦ congr(($(algebraMap_comp_preimage_hom x φ.asIso.hom)).hom r)
 
 @[simp]
 lemma ofPointAutToAlgEquiv_apply (x : S) (φ : Aut (ofPoint x)) (r : SeparableClosure _) :
     ofPointAutToAlgEquiv x φ r = (Spec.preimage φ.asIso.hom.hom).hom r :=
-  rfl
+  (rfl)
 
 lemma ofHom_ofPointAutToAlgEquiv (x : S) (φ : Aut (ofPoint x)) :
     CommRingCat.ofHom (ofPointAutToAlgEquiv x φ : (ofPoint x).Ω →+* (ofPoint x).Ω) =
       Spec.preimage φ.asIso.hom.hom :=
-  rfl
+  (rfl)
 
 /-- **The automorphisms of `ofPoint x` are the Galois automorphisms.** Every automorphism of the
 geometric point `Spec κ(x)ˢᵉᵖ ⟶ S` is `Spec σ` for a unique `σ ∈ Gal(κ(x)ˢᵉᵖ/κ(x))`. Since
@@ -337,19 +278,19 @@ noncomputable def ofPointAutMulEquiv (x : S) :
     apply hom_ext
     simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Aut.mul_asIso, Iso.trans_hom, comp_hom,
       ofPointIsoOfAlgEquiv_hom_hom, ← Spec.map_comp]
-    rfl
+    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext (AlgEquiv.mul_apply σ τ)))
 
 @[simp]
 lemma ofPointAutMulEquiv_apply (x : S)
     (σ : SeparableClosure (S.residueField x) ≃ₐ[S.residueField x]
       SeparableClosure (S.residueField x)) :
     (ofPointAutMulEquiv x σ).unop.asIso = ofPointIsoOfAlgEquiv x σ :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma ofPointAutMulEquiv_symm_apply (x : S) (φ : (Aut (ofPoint x))ᵐᵒᵖ) :
     (ofPointAutMulEquiv x).symm φ = ofPointAutToAlgEquiv x φ.unop :=
-  rfl
+  (rfl)
 
 section Stalk
 
@@ -374,7 +315,7 @@ noncomputable def stalkAction (s : GeometricPoint S) :
 @[simp]
 lemma stalkAction_apply (s : GeometricPoint S) (φ : (Aut s)ᵐᵒᵖ) :
     (stalkAction A s φ).asIso.hom = ((toPointFunctor S).map φ.unop.asIso.hom).sheafFiber :=
-  rfl
+  (rfl)
 
 /-- **The Galois action on stalks at `ofPoint x`.** An element `σ` of `Gal(κ(x)ˢᵉᵖ/κ(x))` acts on
 the stalks at `ofPoint x`, naturally in the sheaf, through the stalk map of `Spec σ`. Since `Spec`
@@ -391,7 +332,7 @@ lemma galoisStalkAction_apply (x : S)
       SeparableClosure (S.residueField x)) :
     (galoisStalkAction A x σ).asIso.hom =
       ((toPointFunctor S).map (ofPointIsoOfAlgEquiv x σ).hom).sheafFiber :=
-  rfl
+  (rfl)
 
 end Stalk
 

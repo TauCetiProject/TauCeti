@@ -38,7 +38,9 @@ This gluing step follows the proof of Mathlib's
 `AlgebraicGeometry.isRegularEpi_of_flat_of_surjective_of_isAffine`.
 
 The flat criterion itself applies to the spectrum of a homomorphism of fields, which is flat and
-surjective, so it is an epimorphism of schemes (`RingHom.epi_SpecMap_ofHom`).
+surjective, so it is an epimorphism of schemes (`RingHom.epi_SpecMap_ofHom`). The same holds for
+any morphism from the spectrum of a nonzero ring to the spectrum of a field
+(`AlgebraicGeometry.Scheme.Hom.epi_of_codomain_Spec_field`).
 
 ## Main results
 
@@ -54,6 +56,8 @@ surjective, so it is an epimorphism of schemes (`RingHom.epi_SpecMap_ofHom`).
   open immersion is an epimorphism, local factorizations through `π` over an open cover glue.
 * `RingHom.epi_SpecMap_ofHom`: the spectrum of a homomorphism of fields is an epimorphism of
   schemes.
+* `AlgebraicGeometry.Scheme.Hom.epi_of_codomain_Spec_field`: more generally, every morphism from
+  the spectrum of a nonzero ring to the spectrum of a field is an epimorphism of schemes.
 
 ## References
 
@@ -163,3 +167,21 @@ instance epi_SpecMap_ofHom (ι : F →+* L) : Epi (Spec.map (CommRingCat.ofHom �
   exact Flat.epi_of_flat_of_surjective _
 
 end RingHom
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- A morphism from the spectrum of a nonzero ring to the spectrum of a field is an epimorphism of
+schemes: it is flat and surjective. -/
+instance epi_of_codomain_Spec_field {K : Type u} [Field K] {R : CommRingCat.{u}} [Nontrivial R]
+    (φ : Spec R ⟶ Spec (.of K)) : Epi φ := by
+  rw [← Spec.map_preimage φ]
+  have : Surjective (Spec.map (Spec.preimage φ)) :=
+    ⟨fun _ ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ _⟩⟩
+  have : Flat (Spec.map (Spec.preimage φ)) := by
+    rw [HasRingHomProperty.Spec_iff (P := @Flat)]
+    exact .of_isField (Field.toIsField _) _
+  exact Flat.epi_of_flat_of_surjective _
+
+end AlgebraicGeometry.Scheme.Hom
