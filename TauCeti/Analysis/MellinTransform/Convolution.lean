@@ -26,13 +26,12 @@ formula come from `MeasureTheory.Integrable.integrable_convolution` and
 `∫₀^∞ f(t) h(xt) dt` to that convolution.
 
 The raw logarithmic-coordinate identity is stated for continuous real-bilinear maps before
-imposing convergence. It supports the existing complex Mellin product formula and weak
-real- or complex-valued multiplicative convolution identities.
+imposing convergence. It underlies the complex Mellin product formula in this file.
 
 ## Main results
 
-* `TauCeti.integral_inv_smul_bilinear_eq_convolution`: the raw multiplicative integral in
-  logarithmic coordinates, without measurability, convergence or completeness hypotheses.
+* `ContinuousLinearMap.integral_inv_smul_bilinear_eq_convolution`: the raw multiplicative integral
+  in logarithmic coordinates, without measurability, convergence or completeness hypotheses.
 
 * `TauCeti.hasMellin_integral_mul_div`: the Mellin transform of `∫₀^∞ f(y) g(x/y) dy/y` is
   `𝓜f(s) 𝓜g(s)`, with absolute convergence.
@@ -54,11 +53,9 @@ files `DLMFMathlib/Analysis/MellinConvolution.lean` and
 open MeasureTheory Complex Set Filter
 open scoped Topology
 
-namespace TauCeti
-
 /-- Logarithmic coordinates turn the raw multiplicative convolution into ordinary
 convolution. No convergence or measurability assumption is needed. -/
-theorem integral_inv_smul_bilinear_eq_convolution
+theorem ContinuousLinearMap.integral_inv_smul_bilinear_eq_convolution
     {E F G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
     [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G]
     (L : E →L[ℝ] F →L[ℝ] G) (f : ℝ → E) (g : ℝ → F) (u : ℝ) :
@@ -68,9 +65,15 @@ theorem integral_inv_smul_bilinear_eq_convolution
   rw [← integral_comp_exp]
   simp only [smul_smul, mul_inv_cancel₀ (Real.exp_ne_zero _), one_smul]
   rw [← integral_neg_eq_self]
+  unfold convolution
   apply integral_congr_ae (Eventually.of_forall fun v => ?_)
-  rw [show Real.exp (-u) / Real.exp (-v) = Real.exp (-(u - v)) by
-    rw [← Real.exp_sub]; congr 1; ring]
+  have harg : Real.exp (-u) / Real.exp (-v) = Real.exp (-(u - v)) := by
+    rw [← Real.exp_sub]
+    congr 1
+    ring
+  rw [harg]
+
+namespace TauCeti
 
 /-- In logarithmic coordinates the multiplicative convolution becomes an ordinary
 convolution. -/
@@ -79,7 +82,7 @@ private lemma integral_mul_div_eq_convolution (f g : ℝ → ℂ) (s : ℂ) (u :
       convolution (fun v : ℝ => cexp (-s * v) * f (Real.exp (-v)))
         (fun v : ℝ => cexp (-s * v) * g (Real.exp (-v)))
         (ContinuousLinearMap.mul ℂ ℂ) volume u := by
-  have hchart := integral_inv_smul_bilinear_eq_convolution
+  have hchart := ContinuousLinearMap.integral_inv_smul_bilinear_eq_convolution
     (ContinuousLinearMap.mul ℝ ℂ) f g u
   have hraw : (∫ y in Ioi 0, f y * g (Real.exp (-u) / y) / y) =
       convolution (fun v : ℝ => f (Real.exp (-v)))
