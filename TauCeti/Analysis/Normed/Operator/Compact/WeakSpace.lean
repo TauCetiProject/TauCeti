@@ -171,7 +171,7 @@ theorem isCompact_toWeakSpace_inter_preimage [ProperSpace 𝕜]
     (hC : IsClosed C) :
     IsCompact (toWeakSpace 𝕜 V '' (S ∩ J ⁻¹' C)) := by
   have hclosed := hJ.isClosed_toWeakSpace_inter_preimage hS_bdd hS_closed hC
-  have hcpt := TauCeti.isCompact_closure_toWeakSpace hV
+  have hcpt := TauCeti.isCompact_closure_toWeakSpace_of_isBounded hV
     (hS_bdd.subset (inter_subset_left (t := J ⁻¹' C)))
   rwa [hclosed.closure_eq] at hcpt
 

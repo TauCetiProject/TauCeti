@@ -298,7 +298,7 @@ theorem isCompact_toWeakSpace_sublevel_inter_preimage
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S ∩ J ⁻¹' C | E u ≤ b}) := by
   have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
   have hclosed := hJ.isClosed_toWeakSpace_sublevel_inter_preimage hS hC hE b hb
-  simpa only [hclosed.closure_eq] using TauCeti.isCompact_closure_toWeakSpace hV hb
+  simpa only [hclosed.closure_eq] using TauCeti.isCompact_closure_toWeakSpace_of_isBounded hV hb
 
 /-- **Single-sublevel direct method under a compact constraint.** A single nonempty norm-bounded
 sublevel `{u ∈ S ∩ J ⁻¹' C | E u ≤ b}` suffices for `E` to attain its minimum on `S ∩ J ⁻¹' C`,

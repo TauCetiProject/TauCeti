@@ -101,8 +101,6 @@ theorem existsUnique_contMDiff_bundleMap_iff (hm : m ≤ n) :
     intro ψ hψ
     exact MulAction.eq_orbitRelQuotientRec_iff.2 hψ.2
 
-variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-
 /-- The descended linear family underlies a `C^m` diffeomorphism of total spaces exactly when
 its pulled-back Hom section is `C^m` and all its fibre maps upstairs are bijective. Smoothness of
 the inverse downstairs follows automatically. -/
