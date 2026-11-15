@@ -111,6 +111,18 @@ variable [FiniteDimensional ℝ V]
 
 /-! ### Orbits and actions in positive end charts -/
 
+omit [FiniteDimensional ℝ V] in
+/-- At the time `±t` of the end, the Hamiltonian vector field of the positive end Hamiltonian
+`H'_q` is `±` that of `H_q` at the time `t`: `X_{H'_q(±t)} = ±X_{H_q(t)}`. -/
+theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ) :
+    ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
+      q.endSign • ω.hamiltonianVectorField (H q t) := by
+  funext y
+  rw [Pi.smul_apply, ← hamiltonianVectorField_const_mul]
+  congr 1
+  funext x
+  rw [positiveEndHamiltonian_apply, endSign_mul_endSign_mul]
+
 /-- Reading an orbit of the positive end Hamiltonian `H'_q` with the time `±t` of the end gives
 an orbit of `H_q`. -/
 theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
@@ -119,13 +131,8 @@ theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
     HasDerivAt (fun t ↦ x (q.endSign * t))
       (ω.hamiltonianVectorField (H q t) (x (q.endSign * t))) t := by
   have h := (hx (q.endSign * t)).scomp t ((hasDerivAt_id' t).const_mul q.endSign)
-  have hX : ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
-      fun y ↦ q.endSign • ω.hamiltonianVectorField (H q t) y := by
-    funext y
-    rw [show positiveEndHamiltonian H q (q.endSign * t) = fun y ↦ q.endSign * H q t y by
-      funext y; rw [positiveEndHamiltonian_apply, ← mul_assoc, endSign_mul_self, one_mul],
-      hamiltonianVectorField_const_mul]
-  rw [hX, mul_one, smul_smul, endSign_mul_self, one_smul] at h
+  rw [hamiltonianVectorField_positiveEndHamiltonian_endSign_mul, mul_one, Pi.smul_apply,
+    smul_smul, endSign_mul_self, one_smul] at h
   exact h
 
 /-- Reading an orbit of `H_q` with the time `±t` of the end gives an orbit of the positive end

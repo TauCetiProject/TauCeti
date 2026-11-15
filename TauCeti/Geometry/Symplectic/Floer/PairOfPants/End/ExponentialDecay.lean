@@ -106,15 +106,8 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
     exact congrArg _ (periodic_comp_endSign_mul hyper t)
   -- The linearization in the positive end chart is `S'_{±t} = ±S_t`.
   have hS' (t : ℝ) : S' (q.endSign * t) = q.endSign • S t := by
-    have hX : ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
-        q.endSign • ω.hamiltonianVectorField (H q t) := by
-      funext z
-      rw [Pi.smul_apply, ← hamiltonianVectorField_const_mul]
-      congr 1
-      funext w
-      rw [positiveEndHamiltonian_apply, ← mul_assoc, endSign_mul_self, one_mul]
-    simp only [S', S, hX, fderiv_const_smul_field, Pi.smul_apply, ← mul_assoc, endSign_mul_self,
-      one_mul]
+    simp only [S', S, hamiltonianVectorField_positiveEndHamiltonian_endSign_mul,
+      fderiv_const_smul_field, Pi.smul_apply, endSign_mul_endSign_mul]
   -- The periodic solution `ζ' t = Ψ'(t) v` of `ζ' = S'_t ζ`, read with the time `±t`, is a periodic
   -- solution of `ζ' = S_t ζ` starting at `v`.
   set ζ : ℝ → V := fun t ↦ dysonSeriesLeft S' (q.endSign * t) v
@@ -205,7 +198,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_floer
   -- The end loop at the height `±s` is the loop of `u ∘ φ'_q` at the height `s`, read with the
   -- time `±t` of the end.
   have h := hs (q.endSign * t)
-  rwa [comp_apply, ← mul_assoc, endSign_mul_self, one_mul, ← endChart_eq_positiveEndChart] at h
+  rwa [comp_apply, endSign_mul_endSign_mul, ← endChart_eq_positiveEndChart] at h
 
 end NormedSpace
 
@@ -251,21 +244,9 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical
     ∃ y : ℝ → V, Periodic y 1 ∧ (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) ∧
       ∃ κ > 0, ∃ A, ∀ᶠ s in atTop, ∀ t,
         ‖u (endChart q (q.endSign * s, t)) - y t‖ ≤ A * Real.exp (-(κ * s)) := by
-  set b := max T₀ 0 + 1
-  obtain ⟨C, hC⟩ := exists_forall_norm_fderiv_comp_positiveEndChart_le hKH hH hHs hu hB huB
-    hfloer hE q hW hJq hJqper hBW hJqt hJ (lt_add_one _)
-  -- The end structures `J_q` have uniform taming constants on `ℝ × B`.
-  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hB
-    (hJq.continuousOn.mono hBW) hJqper hJqt
-  have hJb (z : ℝ × ℝ) (hz : b < z.1) :
-      J (positiveEndChart q z) = Jq (q.endSign * z.2) (u (positiveEndChart q z)) ∧
-        u (positiveEndChart q z) ∈ B := by
-    have hz₀ : max T₀ 0 < z.1 := (lt_add_one _).trans hz
-    refine ⟨?_, huB _ (positiveEndChart_mem_thricePuncturedSphereReal
-      ((le_max_right _ _).trans_lt hz₀))⟩
-    obtain ⟨s, t⟩ := z
-    simp only [positiveEndChart_mk]
-    exact hJ s _ ((le_max_left _ _).trans hz₀.le)
+  obtain ⟨b, C, c, hc, M, hC, hJc, hJM⟩ :=
+    exists_forall_norm_fderiv_comp_positiveEndChart_le_and_tame hKH hH hHs hu hB huB hfloer hE q
+      hW hJq hJqper hBW hJqt hJ
   obtain ⟨y, hyper, hy, hconv⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer_of_cylindrical hKH hH hHs
       hu hB huB hfloer hE q hW hJq hJqper hBW hJqt hJ hL hnd
@@ -279,9 +260,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical
     (fun q ↦ (hHs q).of_le (by norm_num)) (hu.of_le (by norm_num)) hfloer hE q hL hyper hy
     (hnd y hyper hy hyB) hconv
     (fun z hz ↦ ((fderiv ℝ (u ∘ positiveEndChart q) z).le_opNorm _).trans <| by
-      simpa using hC z hz.le) hc
-    (fun z hz v ↦ by rw [(hJb z hz).1]; exact (hcM _ _ (hJb z hz).2 v).1)
-    fun z hz v ↦ by rw [(hJb z hz).1]; exact (hcM _ _ (hJb z hz).2 v).2⟩
+      simpa using hC z hz) hc hJc hJM⟩
 
 /-- **One exponential rate for all three ends.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on
 each end `q`, for `1`-periodic `C³` Hamiltonians `H_q` whose suspended Hamiltonian vector fields

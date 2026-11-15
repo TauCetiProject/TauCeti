@@ -584,7 +584,7 @@ theorem positiveEndHamiltonian_apply {X : Type*} (H : Puncture → ℝ → X →
 theorem positiveEndHamiltonian_positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ)
     (q : Puncture) : positiveEndHamiltonian (positiveEndHamiltonian H) q = H q := by
   funext t x
-  simp only [positiveEndHamiltonian_apply, ← mul_assoc, endSign_mul_self, one_mul]
+  simp only [positiveEndHamiltonian_apply, endSign_mul_endSign_mul]
 
 theorem periodic_positiveEndHamiltonian {X : Type*} {H : Puncture → ℝ → X → ℝ} {q : Puncture}
     (hH : Periodic (H q) 1) : Periodic (positiveEndHamiltonian H q) 1 := by
