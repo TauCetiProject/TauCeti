@@ -123,21 +123,14 @@ principal ray class of `β`. -/
 theorem exists_idealClass_eq_principalRayClass {𝔪 : Modulus K} {J : integralIdealsPrimeTo 𝔪}
     {β : 𝓞 K} (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) :
     ∃ x : primeToSubgroup 𝔪, ((x : Kˣ) : K) = β ∧ idealClass 𝔪 J = principalRayClass 𝔪 x := by
-  have hβ : (β : K) ≠ 0 := by
-    simpa using ne_zero_of_coe_eq_span_singleton hJ
-  have hI : toPrincipalIdeal (𝓞 K) K (Units.mk0 _ hβ) =
-      (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support J :
-        (FractionalIdeal (𝓞 K)⁰ K)ˣ) := by
-    refine Units.ext ?_
-    rw [coe_toPrincipalIdeal, NumberFieldArithmetic.coe_integralIdealsAwayHom, hJ,
-      FractionalIdeal.coeIdeal_span_singleton, Units.val_mk0]
-  have hx : Units.mk0 _ hβ ∈ primeToSubgroup 𝔪 :=
-    NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mp
-      (hI ▸ (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support J).2)
-  refine ⟨⟨_, hx⟩, rfl, ?_⟩
+  obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp
+    (hJ ▸ Modulus.mem_integralIdealsPrimeTo.mp J.2)
+  refine ⟨x, hx, ?_⟩
   rw [idealClass_apply, principalRayClass_apply]
-  exact congrArg _
-    (Subtype.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway]; exact hI.symm))
+  refine congrArg _ (Subtype.ext (Units.ext ?_))
+  rw [NumberFieldArithmetic.coe_principalIdealAway, coe_toPrincipalIdeal,
+    NumberFieldArithmetic.coe_integralIdealsAwayHom, hJ, FractionalIdeal.coeIdeal_span_singleton,
+    hx]
 
 /-- The map from a ray class to its underlying ordinary ideal class. -/
 noncomputable def rayClassToClassGroup (m : Modulus K) :

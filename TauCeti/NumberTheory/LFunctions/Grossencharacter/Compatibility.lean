@@ -115,22 +115,16 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
   have hspan : ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) =
       ((toPrincipalIdeal (𝓞 K) K x : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) := by
     rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]
-  have hne : Ideal.span {a} ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]
-    rintro rfl
-    exact x.ne_zero (by rw [← ha, map_zero])
-  have hmem {𝔫 : Modulus K} (h𝔫 : IsCongrOne 𝔫 x) :
-      Ideal.span {a} ∈ NumberFieldArithmetic.integralIdealsAway 𝔫.support :=
-    NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero.mpr ⟨hne, fun v hv ↦ by
-      rw [hspan]
-      exact NumberFieldArithmetic.mem_idealsAway_iff.mp h𝔫.toPrincipalIdeal_mem_idealsPrimeTo v hv⟩
+  have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 :=
+    Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_span_singleton_iff.mpr
+      ⟨⟨x, congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx)⟩, ha.symm⟩)
   have hideal : NumberFieldArithmetic.integralIdealsAwayHom K 𝔣.support
-        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem hx⟩) =
+        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem⟩) =
       ⟨toPrincipalIdeal (𝓞 K) K x, hx𝔣.toPrincipalIdeal_mem_idealsPrimeTo⟩ :=
     Subtype.ext (Units.ext (by
       rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
         hspan]))
-  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ ⟨_, hmem hx⟩
+  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ ⟨_, hmem⟩
   -- The ideal character of `(x)` is the inverse of the archimedean monomial: at a real place
   -- where the parities differ, the place divides `𝔪`, where `x` is positive.
   have hpos (w : {w : InfinitePlace K // w.IsReal})

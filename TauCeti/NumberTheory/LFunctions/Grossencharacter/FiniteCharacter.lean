@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # The finite character of a presentation
@@ -17,10 +18,13 @@ Let `χ` be a presentation at the modulus `𝔪` of an algebraic Hecke character
 Gauss sums of `χ` do not evaluate the ideal values `χ_u((a)) N(a) ^ σ` directly: they evaluate the
 **finite character** `χ_f`, the ideal value corrected by the whole archimedean character,
 
-`χ_f(a) = χ_u((a)) * N(a) ^ σ * χ_∞(a)`  (Neukirch VII (6.1)).
+`χ_f(a) = χ_u((a)) * N(a) ^ σ * χ_∞(a)`.
 
 Here `χ_∞(a)` is the **archimedean value** `Grossencharacter.archimedeanValue`: the product of the
-components of the presented Hecke character at the infinite places, evaluated at `a`. It is the
+components of the presented Hecke character at the infinite places, evaluated at `a`. This is the
+idelic archimedean component, which by Neukirch VII (6.13) is the inverse of the classical infinity
+character in `χ((a)) = χ_f(a) χ_∞(a)` of VII (6.1) (see `Grossencharacter.compatibility`), so
+Neukirch's `χ_f(a) = χ((a)) χ_∞(a)⁻¹` becomes multiplication by the archimedean value. It is the
 monomial `∏_τ τ(a) ^ (n τ)` of the infinity type when `a` is positive at the real places of `𝔪`
 (`Grossencharacter.archimedeanValue_eq_embeddingCharacter`), and differs from it by a sign at a
 real place of `𝔪` where the parity of the Hecke character differs from that of `n`. With the
@@ -64,6 +68,8 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
   finite character is a function of the residue modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_zero_iff`: it vanishes exactly at the
   integers not prime to `𝔪`.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacter_unit`: on a unit it is the archimedean
+  value.
 
 ## References
 
@@ -178,15 +184,8 @@ theorem coe_finiteCharacterK_of_algebraMap_eq (χ : Grossencharacter K 𝔪)
         FractionalIdeal (𝓞 K)⁰ K) := by
     rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]
   -- The ideal `(a)` is prime to `𝔪`, since `x` is a unit at the primes dividing `𝔪`.
-  have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 := by
-    refine (NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero (K := K)).mpr
-      ⟨?_, fun v hv ↦ ?_⟩
-    · rw [Ne, Ideal.span_singleton_eq_bot]
-      rintro rfl
-      exact (x : Kˣ).ne_zero (by rw [← ha, map_zero])
-    · rw [hspan]
-      exact NumberFieldArithmetic.mem_idealsAway_iff.mp
-        (NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr x.2) v hv
+  have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 :=
+    Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_span_singleton_iff.mpr ⟨x, ha.symm⟩)
   have hideal : NumberFieldArithmetic.integralIdealsAwayHom K _
         (integralIdealsPrimeToInclusion χ.mk_finiteConductor_dvd ⟨_, hmem⟩) =
       NumberFieldArithmetic.idealsAwayInclusion K
@@ -218,87 +217,71 @@ theorem residueCharacter_residue (χ : Grossencharacter K 𝔪) (x : primeToSubg
 
 /-! ### The finite character on algebraic integers -/
 
-/-- The image in `Kˣ` of a nonzero algebraic integer. -/
-private def unitOfNeZero {a : 𝓞 K} (ha : a ≠ 0) : Kˣ :=
-  Units.mk0 (algebraMap (𝓞 K) K a)
-    ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective (𝓞 K) K)).mpr ha)
-
-open scoped Classical in
 /-- **Hecke's finite character** of a presentation on the algebraic integers:
-`χ_f(a) = χ_u((a)) N(a) ^ σ χ_∞(a)` at `a ≠ 0`, and `0` at `a = 0`. It is the coefficient of the
-twisted theta series: it vanishes exactly at the integers not prime to `𝔪`
-(`finiteCharacter_eq_zero_iff`), and at a nonzero integer it is the residue character at its
-class modulo `𝔪₀` (`finiteCharacter_eq_residueCharacter`). -/
-def finiteCharacter (χ : Grossencharacter K 𝔪) : 𝓞 K →*₀ ℂ where
-  toFun a := if ha : a = 0 then 0 else
-    χ.unitaryWeight.1 (Ideal.span {a}) *
-      ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
-        (χ.archimedeanValue (unitOfNeZero ha) : ℂ)
-  map_zero' := by simp
-  map_one' := by
-    have h1 : unitOfNeZero (one_ne_zero (α := 𝓞 K)) = 1 := Units.ext (map_one _)
-    simp [h1]
-  map_mul' a b := by
-    by_cases ha : a = 0
-    · simp [ha]
-    by_cases hb : b = 0
-    · simp [hb]
-    have hab : unitOfNeZero (mul_ne_zero ha hb) = unitOfNeZero ha * unitOfNeZero hb :=
-      Units.ext (map_mul _ _ _)
-    simp only [ha, hb, mul_ne_zero ha hb, ↓reduceDIte, hab, map_mul, Units.val_mul,
-      ← Ideal.span_singleton_mul_span_singleton, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
-    ring
+`χ_f(a) = χ_u((a)) N(a) ^ σ χ_∞(a)` at `a ≠ 0`, and `0` at `a = 0`. It is the product of the norm
+twist of the unitary weight at `(a)` and the archimedean value, extended by `0` to a character of
+`K`, at `a`. It is the coefficient of the twisted theta series: it vanishes exactly at the integers
+not prime to `𝔪` (`finiteCharacter_eq_zero_iff`), and at a nonzero integer it is the residue
+character at its class modulo `𝔪₀` (`finiteCharacter_eq_residueCharacter`). -/
+def finiteCharacter (χ : Grossencharacter K 𝔪) : 𝓞 K →*₀ ℂ :=
+  (MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ))
+      χ.unitaryWeight.1).toMonoidWithZeroHom.comp (Submodule.spanSingleton (𝓞 K)) *
+    (MulChar.ofUnitHom χ.archimedeanValue).toMonoidWithZeroHom.comp
+      (algebraMap (𝓞 K) K : 𝓞 K →*₀ K)
 
-/-- The defining formula of the finite character at a nonzero algebraic integer. -/
-theorem finiteCharacter_apply_of_ne_zero (χ : Grossencharacter K 𝔪) {a : 𝓞 K} (ha : a ≠ 0)
-    {x : Kˣ} (hx : (x : K) = algebraMap (𝓞 K) K a) :
+/-- The finite character as the norm twist of the unitary weight at `(a)` times the archimedean
+value, extended by `0`, at `a`. -/
+private theorem finiteCharacter_apply (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
+    χ.finiteCharacter a =
+      MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ)) χ.unitaryWeight.1
+          (Ideal.span {a}) *
+        MulChar.ofUnitHom χ.archimedeanValue (algebraMap (𝓞 K) K a) :=
+  (rfl)
+
+/-- The defining formula of the finite character at an algebraic integer `a` whose image in `K`
+is the unit `x`; such an `a` is nonzero. -/
+theorem finiteCharacter_apply_of_algebraMap_eq (χ : Grossencharacter K 𝔪) {a : 𝓞 K} {x : Kˣ}
+    (hx : algebraMap (𝓞 K) K a = x) :
     χ.finiteCharacter a = χ.unitaryWeight.1 (Ideal.span {a}) *
       ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
         (χ.archimedeanValue x : ℂ) := by
-  have : x = unitOfNeZero ha := Units.ext hx
-  subst this
-  simp [finiteCharacter, ha]
+  simp [finiteCharacter_apply, hx]
 
 /-- **The finite character vanishes at the integers not prime to `𝔪`**, `0` included. -/
 theorem finiteCharacter_eq_zero_of_not_isCoprimeTo (χ : Grossencharacter K 𝔪) {a : 𝓞 K}
     (ha : ¬ 𝔪.IsCoprimeTo (Ideal.span {a})) : χ.finiteCharacter a = 0 := by
-  by_cases ha₀ : a = 0
-  · rw [ha₀, map_zero]
-  · rw [χ.finiteCharacter_apply_of_ne_zero ha₀ (x := unitOfNeZero ha₀) rfl,
-      χ.unitaryWeight_eq_zero _ ha, zero_mul, zero_mul]
+  simp [finiteCharacter_apply, χ.unitaryWeight_eq_zero _ ha]
 
 /-- **At an integer prime to `𝔪`, the finite character is `finiteCharacterK`.** -/
 theorem finiteCharacter_eq_finiteCharacterK (χ : Grossencharacter K 𝔪) {a : 𝓞 K}
     (x : primeToSubgroup 𝔪) (ha : algebraMap (𝓞 K) K a = ((x : Kˣ) : K)) :
     χ.finiteCharacter a = χ.finiteCharacterK x := by
-  have ha₀ : a ≠ 0 := by
-    rintro rfl
-    exact (x : Kˣ).ne_zero (by rw [← ha, map_zero])
-  rw [χ.coe_finiteCharacterK_of_algebraMap_eq x ha, χ.finiteCharacter_apply_of_ne_zero ha₀ ha.symm]
+  rw [χ.coe_finiteCharacterK_of_algebraMap_eq x ha, χ.finiteCharacter_apply_of_algebraMap_eq ha]
 
-/-- An integer `a` prime to `𝔪` is a unit at the primes dividing `𝔪`. -/
-private theorem exists_primeToSubgroup_of_isCoprimeTo {a : 𝓞 K}
-    (ha : 𝔪.IsCoprimeTo (Ideal.span {a})) :
-    ∃ x : primeToSubgroup 𝔪, ((x : Kˣ) : K) = algebraMap (𝓞 K) K a := by
-  have ha₀ : a ≠ 0 := by
-    rintro rfl
-    exact (Modulus.isCoprimeTo_iff.mp ha).1 (Ideal.span_singleton_eq_bot.mpr rfl)
-  refine ⟨⟨unitOfNeZero ha₀, ?_⟩, rfl⟩
-  rw [← NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff,
-    NumberFieldArithmetic.mem_idealsAway_iff]
-  intro v hv
-  have hspan : ((toPrincipalIdeal (𝓞 K) K (unitOfNeZero ha₀) : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-      FractionalIdeal (𝓞 K)⁰ K) = ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, unitOfNeZero, Units.val_mk0]
-  rw [hspan]
-  exact (NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero (K := K)).mp
-    (Modulus.mem_integralIdealsPrimeTo.mpr ha) |>.2 v hv
+/-- **On a unit the finite character is the archimedean value**, since `(u) = 𝓞 K` and
+`N(u) = 1`. -/
+theorem finiteCharacter_unit (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) :
+    χ.finiteCharacter (u : 𝓞 K) =
+      χ.archimedeanValue (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := by
+  rw [χ.finiteCharacter_apply_of_algebraMap_eq
+      (x := Units.map (algebraMap (𝓞 K) K).toMonoidHom u) rfl,
+    Ideal.span_singleton_eq_top.mpr u.isUnit,
+    ← Ideal.one_eq_top, map_one, map_one, Nat.cast_one, Complex.one_cpow, one_mul,
+    one_mul]
+
+/-- **On a unit the finite character on the fractions prime to `𝔪` is the archimedean value.** -/
+@[simp]
+theorem finiteCharacterK_unitsToPrimeToSubgroup (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) :
+    χ.finiteCharacterK (unitsToPrimeToSubgroup 𝔪 u) =
+      χ.archimedeanValue (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := by
+  refine Units.ext ?_
+  rw [← χ.finiteCharacter_eq_finiteCharacterK (a := u) _ (by simp), finiteCharacter_unit]
 
 /-- **The finite character vanishes exactly at the integers not prime to `𝔪`.** -/
 theorem finiteCharacter_eq_zero_iff (χ : Grossencharacter K 𝔪) {a : 𝓞 K} :
     χ.finiteCharacter a = 0 ↔ ¬ 𝔪.IsCoprimeTo (Ideal.span {a}) := by
   refine ⟨fun h ha ↦ ?_, χ.finiteCharacter_eq_zero_of_not_isCoprimeTo⟩
-  obtain ⟨x, hx⟩ := exists_primeToSubgroup_of_isCoprimeTo ha
+  obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp ha
   rw [χ.finiteCharacter_eq_finiteCharacterK x hx.symm] at h
   exact (χ.finiteCharacterK x).ne_zero h
 
@@ -308,17 +291,12 @@ excluded: when `𝔪₀ = 𝓞 K` its class is the unit of the zero ring. -/
 theorem finiteCharacter_eq_residueCharacter (χ : Grossencharacter K 𝔪) {a : 𝓞 K} (ha : a ≠ 0) :
     χ.finiteCharacter a = χ.residueCharacter (Ideal.Quotient.mk 𝔪.finitePart a) := by
   by_cases hcop : 𝔪.IsCoprimeTo (Ideal.span {a})
-  · obtain ⟨x, hx⟩ := exists_primeToSubgroup_of_isCoprimeTo hcop
+  · obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp hcop
     rw [χ.finiteCharacter_eq_finiteCharacterK x hx.symm, ← residueCharacter_residue,
       residue_eq x (a := a) (b := 1) (by simp) (by rw [map_one, one_mul, hx])]
   · rw [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo hcop, MulChar.map_nonunit]
-    -- A unit modulo `𝔪₀` stays a unit modulo every prime `v` dividing `𝔪₀`, so `a ∉ v`.
-    intro hu
-    refine hcop (Modulus.isCoprimeTo_iff.mpr ⟨by simpa using ha, fun v hv hva ↦ ?_⟩)
-    have hv := (hu.map (Ideal.Quotient.factor
-      (Ideal.le_of_dvd ((𝔪.mem_support_iff v).mp hv)))).ne_zero
-    rw [Ideal.Quotient.factor_mk, Ne, Ideal.Quotient.eq_zero_iff_mem] at hv
-    exact hv (Ideal.dvd_span_singleton.mp hva)
+    exact fun hu ↦ hcop (Modulus.isCoprimeTo_iff_sup_eq_top.mpr
+      ⟨Ideal.span_singleton_eq_bot.not.mpr ha, Ideal.Quotient.isUnit_mk_iff.mp hu⟩)
 
 /-- **The finite character only sees residues modulo `𝔪₀`**: nonzero integers congruent modulo
 the finite part of `𝔪` have the same finite character. -/
