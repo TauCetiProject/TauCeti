@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
-import Mathlib.Analysis.Fourier.AddCircleMulti
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
