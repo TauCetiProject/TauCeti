@@ -213,8 +213,8 @@ theorem proj_kummerTateCharacter (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p})
   PrimeToPTateModule.proj_lift _ _ m σ
 
 /-- **Surjectivity of the Tate-module-valued Kummer character.** If the base is connected and the
-Kummer covers of all nonzero orders prime to `p` are connected, the Kummer character maps the
-profinite group `π₁(Spec R, x)` onto the prime-to-`p` Tate module of `Ω`. -/
+Kummer covers of all nonzero orders prime to `p` are connected, the Tate-module-valued Kummer
+character maps the profinite group `π₁(Spec R, x)` onto the prime-to-`p` Tate module of `Ω`. -/
 theorem kummerTateCharacter_surjective [ConnectedSpace (Spec R)]
     [∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, IsConnected (kummerCover t m (hn m))] :
     Function.Surjective (kummerTateCharacter t p hn hμ) :=
