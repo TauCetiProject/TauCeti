@@ -64,10 +64,10 @@ topologies when `R` is a topological ring and `O` carries the `R`-module topolog
 * `TauCeti.completedGroupAlgebra.mapAddMonoidHom_injective`,
   `TauCeti.completedGroupAlgebra.mapRingHom_injective`: injectivity from injectivity on
   coefficients.
-* `TauCeti.completedGroupAlgebra.scalarTensorEquiv_tmul`,
-  `TauCeti.completedGroupAlgebra.scalarTensorEquiv_tmul_of`,
+* `TauCeti.completedGroupAlgebra.scalarTensorAlgHom_tmul`,
+  `TauCeti.completedGroupAlgebra.scalarTensorAlgHom_self`,
   `TauCeti.completedGroupAlgebra.scalarTensorEquiv_self`: explicit formulas and normalization of
-  finite projective base change.
+  base change.
 
 ## References
 
@@ -284,10 +284,6 @@ theorem mapRingEquiv_trans (e₁ : R ≃+* S) (e₂ : S ≃+* T) :
     mapRingEquiv Γ (e₁.trans e₂) = (mapRingEquiv Γ e₁).trans (mapRingEquiv Γ e₂) :=
   RingEquiv.ext fun x ↦ by simp
 
-theorem mapRingEquiv_of (e : R ≃+* S) (γ : Γ) :
-    mapRingEquiv Γ e (of R Γ γ) = of S Γ γ :=
-  mapRingHom_of (e : R →+* S) γ
-
 end RingHom
 
 section BaseChange
@@ -319,8 +315,12 @@ theorem scalarTensorAlgHom_tmul (a : O) (x : completedGroupAlgebra R Γ) :
   AlgHom.liftEquiv_tmul
     { mapRingHom Γ (algebraMap R O) with commutes' := mapRingHom_algebraMap (algebraMap R O) } a x
 
-theorem scalarTensorAlgHom_tmul_of (a : O) (γ : Γ) :
-    scalarTensorAlgHom R O Γ (a ⊗ₜ[R] of R Γ γ) = a • of O Γ γ := by
+/-- Self-base-change on the completed group algebra recovers `Algebra.TensorProduct.lid`. -/
+@[simp]
+theorem scalarTensorAlgHom_self :
+    scalarTensorAlgHom R R Γ =
+      (Algebra.TensorProduct.lid R (completedGroupAlgebra R Γ)).toAlgHom := by
+  ext x
   simp
 
 @[simp]
@@ -406,23 +406,6 @@ theorem toAlgHom_scalarTensorEquiv :
   (rfl)
 
 @[simp]
-theorem scalarTensorEquiv_tmul (a : O) (x : completedGroupAlgebra R Γ) :
-    scalarTensorEquiv R O Γ (a ⊗ₜ[R] x) = a • mapRingHom Γ (algebraMap R O) x :=
-  scalarTensorAlgHom_tmul a x
-
-theorem scalarTensorEquiv_tmul_of (a : O) (γ : Γ) :
-    scalarTensorEquiv R O Γ (a ⊗ₜ[R] of R Γ γ) = a • of O Γ γ :=
-  scalarTensorAlgHom_tmul_of a γ
-
-theorem proj_scalarTensorEquiv (U : OpenNormalSubgroup Γ)
-    (z : O ⊗[R] completedGroupAlgebra R Γ) :
-    proj O Γ U (scalarTensorEquiv R O Γ z) =
-      LinearMap.liftBaseChange O
-        (MonoidAlgebra.mapAlgHom (Γ ⧸ U.toSubgroup) (Algebra.ofId R O)).toLinearMap
-        (LinearMap.lTensor O (proj R Γ U).toLinearMap z) :=
-  proj_scalarTensorAlgHom U z
-
-@[simp]
 theorem scalarTensorEquiv_symm_mapRingHom (x : completedGroupAlgebra R Γ) :
     (scalarTensorEquiv R O Γ).symm (mapRingHom Γ (algebraMap R O) x) = 1 ⊗ₜ[R] x := by
   apply (scalarTensorEquiv R O Γ).injective
@@ -436,10 +419,8 @@ theorem scalarTensorEquiv_symm_of (γ : Γ) :
 /-- Base change from `R` to `R` itself recovers `Algebra.TensorProduct.lid`. -/
 @[simp]
 theorem scalarTensorEquiv_self :
-    scalarTensorEquiv R R Γ = Algebra.TensorProduct.lid R (completedGroupAlgebra R Γ) := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  ext x
-  simp
+    scalarTensorEquiv R R Γ = Algebra.TensorProduct.lid R (completedGroupAlgebra R Γ) :=
+  AlgEquiv.coe_toAlgHom_injective (by simp)
 
 end Projective
 

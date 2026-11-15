@@ -500,27 +500,22 @@ theorem coe_extendScalarsRingHom :
     ⇑(extendScalarsRingHom R O (G := G)) = extendScalars R O :=
   (rfl)
 
-theorem extendScalarsRingHom_algebraMap (r : R) :
-    extendScalarsRingHom R O (algebraMap R D(G, R) r) =
-      algebraMap O D(G, O) (algebraMap R O r) :=
-  extendScalars_algebraMap r
+/-- Extending scalars from `R` to `R` itself is the identity ring homomorphism. -/
+@[simp]
+theorem extendScalarsRingHom_self :
+    extendScalarsRingHom R R (G := G) = RingHom.id D(G, R) :=
+  RingHom.ext fun _ ↦ by simp
 
 variable (R O) in
 /-- **Convolution-algebra base change of abstract measures.** On a locally compact topological
 monoid `G`, when `O` carries the `R`-module topology and is finitely generated and projective over
 `R`, `baseChangeAlgEquiv R O` identifies `O ⊗[R] D(G, R)` with `D(G, O)` as an `O`-algebra. -/
 def baseChangeAlgEquiv : O ⊗[R] D(G, R) ≃ₐ[O] D(G, O) :=
-  letI : Algebra R D(G, O) := Algebra.restrictScalars R O D(G, O)
-  letI : IsScalarTower R O D(G, O) := IsScalarTower.restrictScalars R O D(G, O)
-  let φ : O ⊗[R] D(G, R) →ₐ[O] D(G, O) :=
-    AlgHom.liftEquiv R O D(G, R) D(G, O)
-      { extendScalarsRingHom R O with commutes' := extendScalarsRingHom_algebraMap }
-  have hφ : ⇑(baseChange R O (X := G)) = ⇑φ :=
-    DFunLike.coe_injective.eq_iff.mpr <|
-      TensorProduct.AlgebraTensorModule.ext fun a μ ↦ by simp
-  AlgEquiv.ofLinearEquiv (baseChange R O)
-    (by rw [hφ]; exact φ.map_one)
-    (fun x y ↦ by simp only [hφ, map_mul])
+  Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct (baseChange R O)
+    (fun a₁ a₂ μ₁ μ₂ ↦ by
+      rw [baseChange_tmul, baseChange_tmul, baseChange_tmul, extendScalars_mul,
+        Algebra.smul_mul_assoc, Algebra.mul_smul_comm, smul_smul])
+    (by simp)
 
 @[simp]
 theorem toLinearEquiv_baseChangeAlgEquiv :
@@ -537,21 +532,9 @@ theorem coe_baseChangeAlgEquiv_symm :
     ⇑(baseChangeAlgEquiv R O (G := G)).symm = (baseChange R O).symm := by
   rw [← AlgEquiv.coe_symm_toLinearEquiv, toLinearEquiv_baseChangeAlgEquiv]
 
-theorem baseChangeAlgEquiv_tmul (a : O) (μ : D(G, R)) :
-    baseChangeAlgEquiv R O (a ⊗ₜ[R] μ) = a • extendScalars R O μ :=
-  baseChange_tmul a μ
-
 theorem baseChangeAlgEquiv_tmul_dirac (a : O) (x : G) :
     baseChangeAlgEquiv R O (a ⊗ₜ[R] dirac R x) = a • dirac O x :=
   baseChange_tmul_dirac a x
-
-theorem baseChangeAlgEquiv_symm_extendScalars (μ : D(G, R)) :
-    (baseChangeAlgEquiv R O).symm (extendScalars R O μ) = 1 ⊗ₜ[R] μ :=
-  baseChange_symm_extendScalars μ
-
-theorem baseChangeAlgEquiv_symm_dirac (x : G) :
-    (baseChangeAlgEquiv R O).symm (dirac O x) = 1 ⊗ₜ[R] dirac R x :=
-  baseChange_symm_dirac x
 
 /-- Convolution-algebra base change from `R` to `R` itself recovers `Algebra.TensorProduct.lid`. -/
 @[simp]
@@ -678,13 +661,6 @@ theorem toAlgHom_completedGroupAlgebraEquivOfBijective
     (hb : Function.Bijective
       (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ)) :
     (completedGroupAlgebraEquivOfBijective O hb).toAlgHom = toCompletedGroupAlgebra :=
-  (rfl)
-
-theorem completedGroupAlgebraEquivOfBijective_apply
-    (hb : Function.Bijective
-      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
-    (μ : D(Γ, O)) :
-    completedGroupAlgebraEquivOfBijective O hb μ = toCompletedGroupAlgebra μ :=
   (rfl)
 
 @[simp]
