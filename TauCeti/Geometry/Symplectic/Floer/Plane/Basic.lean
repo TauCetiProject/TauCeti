@@ -110,6 +110,10 @@ def endSign : PSSPlane → ℝ
 @[simp] theorem endSign_mul_endSign (p : PSSPlane) : p.endSign * p.endSign = 1 := by
   cases p <;> norm_num
 
+@[simp] theorem endSign_mul_endSign_mul (p : PSSPlane) (x : ℝ) :
+    p.endSign * (p.endSign * x) = x := by
+  rw [← mul_assoc, endSign_mul_endSign, one_mul]
+
 @[simp] theorem abs_endSign (p : PSSPlane) : |p.endSign| = 1 := by
   cases p <;> norm_num
 
