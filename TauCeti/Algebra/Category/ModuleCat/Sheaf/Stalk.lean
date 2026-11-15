@@ -28,6 +28,12 @@ If finitely many sections generate the restriction of a sheaf of modules to a ne
 `x`, their germs span the stalk at `x` over the ring stalk
 (`SheafOfModules.GeneratingSections.span_germ_eq_top`). Thus a linear map out of the stalk of a
 sheaf of finite type is determined by its values on the germs of local generators.
+
+Finally, `SheafOfModules.stalkMap` packages the linear map on stalks induced by a morphism of
+sheaves of modules over a sheaf of commutative rings, and
+`SheafOfModules.isIso_iff_stalkFunctor_map_isIso` and `SheafOfModules.isIso_iff_stalkMap_bijective`
+show that a morphism of sheaves of modules on a topological space is an isomorphism if and only if
+it induces isomorphisms on all stalks.
 -/
 
 public section
@@ -42,6 +48,23 @@ namespace SheafOfModules
 
 variable {X : TopCat.{u}}
 
+section RingCat
+
+variable {S : Sheaf (Opens.grothendieckTopology X) RingCat.{u}}
+
+/-- A morphism of sheaves of modules on a topological space is an isomorphism if and only if the
+induced map on stalks is an isomorphism in `AddCommGrpCat` at every point. -/
+theorem isIso_iff_stalkFunctor_map_isIso {M N : SheafOfModules.{u} S} (f : M ⟶ N) :
+    IsIso f ↔ ∀ x : X, IsIso ((TopCat.Presheaf.stalkFunctor AddCommGrpCat.{u} x).map
+      ((PresheafOfModules.toPresheaf S.obj).map f.val)) :=
+  ⟨fun _ ↦ (TopCat.Presheaf.isIso_iff_stalkFunctor_map_iso ((toSheaf S).map f)).mp inferInstance,
+    fun hf ↦ by
+      have : IsIso ((toSheaf S).map f) :=
+        (TopCat.Presheaf.isIso_iff_stalkFunctor_map_iso ((toSheaf S).map f)).mpr hf
+      exact isIso_of_reflects_iso f (toSheaf S)⟩
+
+end RingCat
+
 variable {R : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}}
 
 /-- The stalk of a sheaf of modules carries Mathlib's module structure over the stalk of
@@ -52,6 +75,88 @@ instance stalkModule (P : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatShea
   let Q : PresheafOfModules.{u} (R.obj ⋙ forget₂ CommRingCat RingCat.{u}) := P.val
   inferInstanceAs (Module ↑(TopCat.Presheaf.stalk R.obj x)
     ↑(TopCat.Presheaf.stalk Q.presheaf x))
+
+/-- The linear map on stalks induced by a morphism of sheaves of modules over a sheaf of
+commutative rings. -/
+def stalkMap {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (f : M ⟶ N) (x : X) :
+    ↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+      ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
+  PresheafOfModules.stalkMapCommRing (S := R.obj) x f.val
+
+/-- `SheafOfModules.stalkMap` sends the germ of a section to the germ of its image. -/
+@[simp]
+theorem stalkMap_germ {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (f : M ⟶ N) (x : X) (U : Opens X) (hx : x ∈ U) (m : M.val.obj (op U)) :
+    dsimp% only [PresheafOfModules.presheaf_obj_coe]
+    (stalkMap f x (TopCat.Presheaf.germ M.val.presheaf U x hx m) =
+      TopCat.Presheaf.germ N.val.presheaf U x hx (f.val.app (op U) m)) :=
+  PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x f.val U hx m
+
+/-- As a function between stalks, `SheafOfModules.stalkMap` agrees with the additive stalk functor
+applied to the underlying presheaf morphism. -/
+theorem coe_stalkMap {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (f : M ⟶ N) (x : X) :
+    (stalkMap f x : ↑(TopCat.Presheaf.stalk M.val.presheaf x) →
+        ↑(TopCat.Presheaf.stalk N.val.presheaf x)) =
+      (TopCat.Presheaf.stalkFunctor AddCommGrpCat.{u} x).map
+        ((PresheafOfModules.toPresheaf _).map f.val) := by
+  funext m
+  obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq M.val.presheaf m
+  erw [stalkMap_germ, TopCat.Presheaf.stalkFunctor_map_germ_apply]
+  rfl
+
+@[simp]
+theorem stalkMap_id (M : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)) (x : X) :
+    stalkMap (𝟙 M) x = LinearMap.id := by
+  ext m
+  obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq M.val.presheaf m
+  exact stalkMap_germ (𝟙 M) x U hx m
+
+@[simp]
+theorem stalkMap_comp {L M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (f : L ⟶ M) (g : M ⟶ N) (x : X) :
+    stalkMap (f ≫ g) x = (stalkMap g x).comp (stalkMap f x) := by
+  ext m
+  obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq L.val.presheaf m
+  exact (stalkMap_germ (f ≫ g) x U hx m).trans
+    ((stalkMap_germ g x U hx (f.val.app (op U) m)).symm.trans
+      (congrArg (stalkMap g x) (stalkMap_germ f x U hx m).symm))
+
+/-- An isomorphism of sheaves of modules induces a linear equivalence on stalks. -/
+def stalkLinearEquivOfIso {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (e : M ≅ N) (x : X) :
+    ↑(TopCat.Presheaf.stalk M.val.presheaf x) ≃ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+      ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
+  LinearEquiv.ofLinearMap (stalkMap e.hom x) (stalkMap e.inv x)
+    ((stalkMap_comp e.inv e.hom x).symm.trans
+      ((congrArg (stalkMap · x) e.inv_hom_id).trans (stalkMap_id N x)))
+    ((stalkMap_comp e.hom e.inv x).symm.trans
+      ((congrArg (stalkMap · x) e.hom_inv_id).trans (stalkMap_id M x)))
+
+@[simp]
+theorem stalkLinearEquivOfIso_apply
+    {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (e : M ≅ N) (x : X) (m : ↑(TopCat.Presheaf.stalk M.val.presheaf x)) :
+    stalkLinearEquivOfIso e x m = stalkMap e.hom x m :=
+  (rfl)
+
+@[simp]
+theorem stalkLinearEquivOfIso_symm
+    {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+    (e : M ≅ N) (x : X) :
+    (stalkLinearEquivOfIso e x).symm = stalkLinearEquivOfIso e.symm x :=
+  (rfl)
+
+/-- A morphism of sheaves of modules over a sheaf of commutative rings on a topological space is an
+isomorphism if and only if the induced linear map on stalks is bijective at every point. -/
+theorem isIso_iff_stalkMap_bijective
+    {M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)} (f : M ⟶ N) :
+    IsIso f ↔ ∀ x : X, Function.Bijective (stalkMap f x) := by
+  rw [isIso_iff_stalkFunctor_map_isIso]
+  refine forall_congr' fun x ↦ ?_
+  rw [coe_stalkMap, ConcreteCategory.isIso_iff_bijective]
+  exact Iff.rfl
 
 end SheafOfModules
 
