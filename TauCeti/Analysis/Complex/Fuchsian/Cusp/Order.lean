@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 /-!
 # Cusp orders from Laurent q-expansions
 
-For a cusp-invariant function whose twisted q-extension is analytic at zero, the meromorphic
+For a function whose twisted q-extension is analytic at zero, the meromorphic
 order of its q-extension is exactly the order of its Laurent q-expansion. Controlled exponential
 growth of a function holomorphic sufficiently high ensures this analyticity. Both orders
 are infinite for the zero germ. Thus vanishing of the coefficients below an integer characterizes
@@ -41,7 +41,6 @@ coefficient, with value `⊤` when all coefficients vanish, provided the twisted
 analytic at zero. It is independent of the valid integer twist used to construct the series. -/
 theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
     (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 = (laurentQExpansion D k f).orderTop := by
   have hord : (twistedQExpansion D k f).order =
@@ -49,7 +48,7 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
     rw [twistedQExpansion_def, twistedExtension_def, cuspExtension_def]
     rw [twistedExtension_def, cuspExtension_def] at han
     exact TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction han
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add_analyticOrderAt_twistedExtension D k f hf han,
+  rw [meromorphicOrderAt_cuspExtension_eq_neg_add_analyticOrderAt_twistedExtension D k f han,
     laurentQExpansion_def, HahnSeries.orderTop_mul, HahnSeries.orderTop_single one_ne_zero,
     ← hord]
   congr 1
@@ -76,22 +75,20 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
 /-- A meromorphic cusp order is at least `m` exactly when every Laurent coefficient of exponent
 less than `m` vanishes. The bound may be positive, zero, or negative. -/
 theorem le_meromorphicOrderAt_cuspExtension_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) (m : ℤ) :
     (m : WithTop ℤ) ≤ meromorphicOrderAt (cuspExtension D f) 0 ↔
       ∀ j < m, (laurentQExpansion D k f).coeff j = 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han,
+  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f han,
     HahnSeries.le_orderTop_iff_forall]
   simp only [WithTop.coe_lt_coe]
 
 /-- The first nonzero Laurent coefficient gives the exact meromorphic cusp order. -/
 theorem meromorphicOrderAt_cuspExtension_eq_int_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) (m : ℤ) :
     meromorphicOrderAt (cuspExtension D f) 0 = (m : WithTop ℤ) ↔
       (laurentQExpansion D k f).coeff m ≠ 0 ∧
         ∀ j < m, (laurentQExpansion D k f).coeff j = 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han]
+  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f han]
   refine ⟨fun h ↦ ⟨HahnSeries.coeff_orderTop_ne h, ?_⟩, fun ⟨hm, hbelow⟩ ↦ ?_⟩
   · intro j hj
     exact HahnSeries.coeff_eq_zero_of_lt_orderTop (h ▸ WithTop.coe_lt_coe.mpr hj)
@@ -100,10 +97,9 @@ theorem meromorphicOrderAt_cuspExtension_eq_int_iff (D : Γ.CuspDatum) (k : ℤ)
 
 /-- The Laurent q-expansion vanishes exactly when its meromorphic cusp germ has infinite order. -/
 theorem meromorphicOrderAt_cuspExtension_eq_top_iff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 = ⊤ ↔ laurentQExpansion D k f = 0 := by
-  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han,
+  rw [meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f han,
     HahnSeries.orderTop_eq_top]
 
 end TauCeti.Subgroup.CuspDatum

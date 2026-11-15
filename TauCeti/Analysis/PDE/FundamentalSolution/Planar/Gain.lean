@@ -13,6 +13,7 @@ import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
+import TauCeti.Analysis.Sobolev.WeakDeriv.Convolution
 
 /-!
 # The planar Newtonian potential of a continuous source gains one derivative
@@ -73,38 +74,13 @@ of `g` with the locally integrable derivative of the kernel, on every open set. 
 theorem hasWeakFDerivOn_planarNewtonianKernel_convolution (hg : Continuous g)
     (hgc : HasCompactSupport g) (Ω : Opens ℂ) :
     HasWeakFDerivOn volume Ω (planarNewtonianKernel ⋆ g)
-      (fderiv ℝ planarNewtonianKernel ⋆[(lsmul ℝ ℝ).flip] g) := by
-  refine hasWeakFDerivOn_of_forall_integral_fderiv_smul
-    (hgc.continuous_convolution_right _ locallyIntegrable_planarNewtonianKernel
-      hg).locallyIntegrable
-    (hgc.continuous_convolution_right _ locallyIntegrable_fderiv_planarNewtonianKernel
-      hg).locallyIntegrable (fun φ hφ hφc v ↦ ?_) Ω
-  -- The component of `(∂G) ⋆ g` in the direction `v` is the convolution of `g` with `∂ᵥG`.
-  have hD (x : ℂ) : (fderiv ℝ planarNewtonianKernel ⋆[(lsmul ℝ ℝ).flip] g) x v =
-      ((fun z ↦ fderiv ℝ planarNewtonianKernel z v) ⋆ g) x := by
-    have hi : Integrable fun t ↦ g (x - t) • fderiv ℝ planarNewtonianKernel t :=
-      locallyIntegrable_fderiv_planarNewtonianKernel.integrable_smul_left_of_hasCompactSupport
-        (hg.comp (continuous_const.sub continuous_id) : Continuous fun t ↦ g (x - t))
-        (hgc.comp_homeomorph (Homeomorph.subLeft x))
-    rw [convolution_def]
-    simp only [flip_apply, lsmul_apply]
-    rw [ContinuousLinearMap.integral_apply hi, convolution_lsmul]
-    simp only [smul_apply, smul_eq_mul, mul_comm]
-  have hKv : LocallyIntegrable fun z ↦ fderiv ℝ planarNewtonianKernel z v := by
-    rw [← locallyIntegrableOn_univ]
-    simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp
-      (locallyIntegrable_fderiv_planarNewtonianKernel.locallyIntegrableOn univ)
-  simp only [smul_eq_mul, hD]
-  have hgi : Integrable g := hg.integrable_of_hasCompactSupport hgc
-  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub
-      ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hφc.fderiv_apply (𝕜 := ℝ) v)
-      locallyIntegrable_planarNewtonianKernel hgi hgc,
-    integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous hφc hKv hgi hgc,
-    ← integral_neg]
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  simp only [mul_comm (fderiv ℝ φ _ v), mul_comm (φ _),
-    integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul hφ hφc v t]
-  ring
+      (fderiv ℝ planarNewtonianKernel ⋆[(lsmul ℝ ℝ).flip] g) :=
+  hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub
+    locallyIntegrable_planarNewtonianKernel locallyIntegrable_fderiv_planarNewtonianKernel
+    (fun φ hφ hφc v t ↦ by
+      simpa only [mul_comm] using
+        integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul hφ hφc v t)
+    (hg.integrable_of_hasCompactSupport hgc) hgc Ω
 
 /-- **The Newtonian potential gains one derivative.** For `g` of class `C^k` with compact support
 on `ℂ`, the potential `G ⋆ g` is of class `C^(k+1)`. For `k = 0`: the Newtonian potential of a

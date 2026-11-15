@@ -74,22 +74,30 @@ theorem generalizedExtremeValueMap_le_iff_of_shape_neg (hs : 0 < s) (hξ : ξ < 
     rw [← sub_nonpos, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne] at h
     exact sub_nonneg.mp (nonneg_of_mul_nonpos_right h (div_neg_of_neg_of_pos hξ hs))
 
-/-- At or above the finite upper endpoint for negative shape, every positive source input maps
-below the comparison point. -/
+/-- At or above the finite upper endpoint for negative shape, every source input maps below the
+comparison point. -/
 theorem generalizedExtremeValueMap_le_of_shape_neg_of_nonpos (hs : 0 < s) (hξ : ξ < 0)
-    (he : 0 < e) (hx : ¬0 < 1 + ξ * ((x - m) / s)) :
-    generalizedExtremeValueMap m s ξ e ≤ x :=
-  (generalizedExtremeValueMap_le_iff_of_shape_neg hs hξ he).2
-    ((le_of_not_gt hx).trans (rpow_pos_of_pos he _).le)
+    (hx : ¬0 < 1 + ξ * ((x - m) / s)) :
+    generalizedExtremeValueMap m s ξ e ≤ x := by
+  rw [generalizedExtremeValueMap_of_shape_ne_zero hξ.ne]
+  have h := generalizedExtremeValue_support_sub_eq (x := x) (m := m) hs.ne' hξ.ne
+    (Real.exp (-ξ * Real.log e))
+  by_contra hlt
+  have hD : x - (m + s * (Real.exp (-ξ * Real.log e) - 1) / ξ) ≤ 0 := by linarith [not_le.mp hlt]
+  have hmul := mul_nonneg_of_nonpos_of_nonpos (div_neg_of_neg_of_pos hξ hs).le hD
+  linarith [Real.exp_pos (-ξ * Real.log e), not_lt.mp hx]
 
-/-- Below the finite lower endpoint for positive shape, no positive source input maps below the
+/-- Below the finite lower endpoint for positive shape, no source input maps below the
 comparison point. -/
 theorem not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos (hs : 0 < s) (hξ : 0 < ξ)
-    (he : 0 < e) (hx : ¬0 < 1 + ξ * ((x - m) / s)) :
-    ¬generalizedExtremeValueMap m s ξ e ≤ x := fun hle ↦
-  (not_le_of_gt (rpow_pos_of_pos he _))
-    ((generalizedExtremeValueMap_le_iff_of_shape_pos hs hξ he).1 hle |>.trans
-      (le_of_not_gt hx))
+    (hx : ¬0 < 1 + ξ * ((x - m) / s)) :
+    ¬generalizedExtremeValueMap m s ξ e ≤ x := fun hle ↦ by
+  rw [generalizedExtremeValueMap_of_shape_ne_zero hξ.ne'] at hle
+  have h := generalizedExtremeValue_support_sub_eq (x := x) (m := m) hs.ne' hξ.ne'
+    (Real.exp (-ξ * Real.log e))
+  have hD : 0 ≤ x - (m + s * (Real.exp (-ξ * Real.log e) - 1) / ξ) := by linarith
+  have hmul := mul_nonneg (div_pos hξ hs).le hD
+  linarith [Real.exp_pos (-ξ * Real.log e), not_lt.mp hx]
 
 /-- On the interior of its support, the generalized extreme-value transformation is at most `x`
 exactly when the source exponential variable exceeds the inverse threshold. -/
@@ -135,17 +143,14 @@ theorem cdf_generalizedExtremeValueMeasure_eq (hs : 0 < s) (hξ : ξ ≠ 0) (m x
   · rw [ite_eq_right hx]
     rcases lt_or_gt_of_ne hξ with hξ | hξ
     · rw [ite_eq_right (not_lt.mpr hξ.le)]
-      have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] univ := by
-        filter_upwards [ae_pos_expMeasure 1] with e he
-        simp only [mem_preimage, mem_Iic, mem_univ, iff_true]
-        exact generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ he hx
-      rw [measure_congr hpre, measure_univ, ENNReal.toReal_one]
+      have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x = univ :=
+        eq_univ_of_forall fun _ ↦ generalizedExtremeValueMap_le_of_shape_neg_of_nonpos hs hξ hx
+      rw [hpre, measure_univ, ENNReal.toReal_one]
     · rw [ite_eq_left hξ]
-      have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x =ᵐ[expMeasure 1] ∅ := by
-        filter_upwards [ae_pos_expMeasure 1] with e he
-        simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false]
-        exact not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ he hx
-      rw [measure_congr hpre, measure_empty, ENNReal.toReal_zero]
+      have hpre : generalizedExtremeValueMap m s ξ ⁻¹' Iic x = ∅ :=
+        eq_empty_of_forall_notMem fun _ ↦
+          not_generalizedExtremeValueMap_le_of_shape_pos_of_nonpos hs hξ hx
+      rw [hpre, measure_empty, ENNReal.toReal_zero]
 
 /-- At shape zero, the generalized extreme-value cdf is the Gumbel cdf. -/
 theorem cdf_generalizedExtremeValueMeasure_zero (hs : 0 < s) (m x : ℝ) :
@@ -153,25 +158,40 @@ theorem cdf_generalizedExtremeValueMeasure_zero (hs : 0 < s) (m x : ℝ) :
       exp (-exp (-((x - m) / s))) := by
   rw [generalizedExtremeValueMeasure_zero, cdf_gumbelMeasure_eq hs]
 
-/-- The cdf of a nonzero-shape generalized extreme-value law is strictly increasing on the
-interior of its support. -/
-theorem strictMonoOn_cdf_generalizedExtremeValueMeasure (hs : 0 < s) (hξ : ξ ≠ 0) (m : ℝ) :
+/-- The cdf of a generalized extreme-value law is strictly increasing on its closed support. At
+shape zero the support is the whole line. -/
+theorem strictMonoOn_cdf_generalizedExtremeValueMeasure (hs : 0 < s) (m ξ : ℝ) :
     StrictMonoOn (cdf (generalizedExtremeValueMeasure m s ξ))
-      {x | 0 < 1 + ξ * ((x - m) / s)} := by
+      {x | 0 ≤ 1 + ξ * ((x - m) / s)} := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · rw [generalizedExtremeValueMeasure_zero]
+    exact (strictMono_cdf_gumbelMeasure hs m).strictMonoOn _
   intro x hx y hy hxy
-  have hx' : 0 < 1 + ξ * ((x - m) / s) := hx
-  have hy' : 0 < 1 + ξ * ((y - m) / s) := hy
-  rw [cdf_generalizedExtremeValueMeasure_eq hs hξ m x, ite_eq_left hx',
-    cdf_generalizedExtremeValueMeasure_eq hs hξ m y, ite_eq_left hy', exp_lt_exp]
-  apply neg_lt_neg
+  have hx0 : 0 ≤ 1 + ξ * ((x - m) / s) := hx
+  have hy0 : 0 ≤ 1 + ξ * ((y - m) / s) := hy
   have hq : (x - m) / s < (y - m) / s :=
     div_lt_div_of_pos_right (sub_lt_sub_right hxy m) hs
+  rw [cdf_generalizedExtremeValueMeasure_eq hs hξ m x,
+    cdf_generalizedExtremeValueMeasure_eq hs hξ m y]
   rcases lt_or_gt_of_ne hξ with hξ | hξ
-  · apply Real.rpow_lt_rpow hy.le
-      (by linarith [mul_lt_mul_of_neg_left hq hξ])
-      (div_pos_of_neg_of_neg (by norm_num) hξ)
-  · exact Real.rpow_lt_rpow_of_neg hx
-      (by linarith [mul_lt_mul_of_pos_left hq hξ])
-      (div_neg_of_neg_of_pos (by norm_num) hξ)
+  · have hx' : 0 < 1 + ξ * ((x - m) / s) := by linarith [mul_lt_mul_of_neg_left hq hξ]
+    rw [ite_eq_left hx']
+    by_cases hy' : 0 < 1 + ξ * ((y - m) / s)
+    · rw [ite_eq_left hy', exp_lt_exp]
+      apply neg_lt_neg
+      exact Real.rpow_lt_rpow hy'.le (by linarith [mul_lt_mul_of_neg_left hq hξ])
+        (div_pos_of_neg_of_neg (by norm_num) hξ)
+    · rw [ite_eq_right hy', ite_eq_right (not_lt.mpr hξ.le)]
+      exact exp_lt_one_iff.2 (neg_neg_of_pos (rpow_pos_of_pos hx' _))
+  · have hy' : 0 < 1 + ξ * ((y - m) / s) := by linarith [mul_lt_mul_of_pos_left hq hξ]
+    rw [ite_eq_left hy']
+    by_cases hx' : 0 < 1 + ξ * ((x - m) / s)
+    · rw [ite_eq_left hx', exp_lt_exp]
+      apply neg_lt_neg
+      exact Real.rpow_lt_rpow_of_neg hx'
+        (by linarith [mul_lt_mul_of_pos_left hq hξ])
+        (div_neg_of_neg_of_pos (by norm_num) hξ)
+    · rw [ite_eq_right hx', ite_eq_left hξ]
+      exact exp_pos _
 
 end TauCeti.Probability

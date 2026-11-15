@@ -192,6 +192,6 @@ theorem typeAGraphAutomorphism_comp_map_comp_self (σ : A →+* A) :
   refine MonoidHom.ext fun g ↦ ?_
   simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, map_typeAGraphAutomorphism,
     typeAGraphAutomorphism_typeAGraphAutomorphism]
-  rw [← MonoidHom.comp_apply (map σ), map_comp]
+  rw [← MonoidHom.comp_apply (map σ), map_comp_map]
 
 end Matrix.SpecialLinearGroup

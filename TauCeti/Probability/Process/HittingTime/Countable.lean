@@ -46,8 +46,7 @@ theorem hittingAfter_eq_iInf {ι Ω E : Type*} [ConditionallyCompleteLinearOrder
   classical
   simp only [hittingAfter_def]
   split_ifs with h
-  · rw [WithTop.coe_sInf (s := {t | a ≤ t ∧ X t ω ∈ s})
-      ⟨h.choose, h.choose_spec⟩ ⟨a, fun t ht ↦ ht.1⟩]
+  · rw [WithTop.coe_sInf (s := {t | a ≤ t ∧ X t ω ∈ s}) ⟨h.choose, h.choose_spec⟩]
     simp only [mem_ofPred_eq]
   · symm
     exact iInf_eq_top.2 fun t ↦ iInf_eq_top.2 fun ht ↦ (h ⟨t, ht⟩).elim

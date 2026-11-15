@@ -58,7 +58,7 @@ section Powers
 
 variable {k M : Type*} [Semiring k]
   [AddCommMonoid M] [Module k M] [MulAction k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- If `X` lowers degree by `d`, then `X ^ n` lowers degree by `n * d`. -/
 theorem X_pow_smul_mem_piece
@@ -76,7 +76,7 @@ end Powers
 
 variable {k M : Type*} [CommSemiring k]
   [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- A finitely generated graded `k[X]`-module on which `X` lowers degree has no nonzero homogeneous
 elements above some degree: every element is a `k[X]`-combination of the finitely many homogeneous
@@ -199,7 +199,7 @@ section HomogeneousParts
 variable {k M N : Type*} [CommSemiring k] [AddCommMonoid M] [AddCommMonoid N]
   [Module k M] [Module k N] [Module k[X] M] [Module k[X] N]
   [IsScalarTower k k[X] M] [IsScalarTower k k[X] N]
-  (G : InternalGrading k M) (H : InternalGrading k N) {δ : ℤ}
+  (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ) {δ : ℤ}
   (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + δ))
   (hY : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → (X : k[X]) • y ∈ H.piece (p + δ))
 
@@ -298,7 +298,7 @@ end InternalGrading
 namespace InternalGrading
 
 variable {k M : Type*} [Semiring k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- **Graded Nakayama for an action lowering degree.** Let the degrees of `M` be bounded above,
 and let `L` be a homogeneous `k[X]`-submodule. Suppose each homogeneous element of `L` of
@@ -345,7 +345,7 @@ namespace InternalGrading
 
 variable {k M : Type*} [CommSemiring k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- A polynomial acts injectively on a graded module if its constant coefficient does and `X`
 strictly lowers degree. The coefficients may have zero divisors, and the module may have torsion. -/
@@ -384,7 +384,7 @@ variable (k : Type*) [CommSemiring k]
 
 /-- The grading of the polynomial ring `k[X]` placing the monomial `X ^ n` in degree `-n`, so that
 multiplication by `X` lowers degree by one. -/
-noncomputable def negDegreeGrading : InternalGrading k k[X] :=
+noncomputable def negDegreeGrading : InternalGrading k k[X] ℤ :=
   ⟨AddMonoidAlgebra.gradeBy k ⇑(-Nat.castAddMonoidHom ℤ), AddMonoidAlgebra.gradeBy.isInternal _⟩
 
 variable {k}
