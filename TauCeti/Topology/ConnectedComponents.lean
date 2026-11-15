@@ -45,9 +45,17 @@ space by them.
 * `IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdiff`: a component of `U \ S`
   that is not all of a preconnected `U` has closure meeting `S ∩ U`.
 * `IsClosed.connectedComponentIn`: a connected component of a closed set is closed.
+* `TauCeti.exists_isClopen_between_connectedComponent`: in a compact Hausdorff space, a clopen set
+  sits between the connected component of a point and any open set containing it.
 * `IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier`: in a locally compact Hausdorff
   space, a compact connected component of a closed set `F` has an open neighbourhood with compact
   closure whose frontier misses `F`.
+* `Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleton`: in a locally compact
+  Hausdorff space, a compact connected component of a level of a continuous map has an open
+  neighbourhood meeting every level in a compact set.
+* `Topology.IsInducing.image_connectedComponentIn_preimage`: a connected component of `F`
+  contained in the range of an inducing map `f` is the image of the connected component of the
+  preimage of `F`, for instance in a subspace containing it.
 * `TauCeti.isClopen_connectedComponentIn_compl`: a component of `X \ K` that starts outside a
   neighbourhood `L` of `K` and misses its frontier is clopen.
 * `TauCeti.connectedComponentIn_compl_inter_frontier_nonempty`: in a preconnected, locally
@@ -177,9 +185,8 @@ namespace Homeomorph
 @[simp]
 theorem image_connectedComponent {Y : Type*} [TopologicalSpace Y]
     (e : X ≃ₜ Y) (x : X) :
-    e '' connectedComponent x = connectedComponent (e x) := by
-  simpa only [connectedComponentIn_univ, _root_.Set.image_univ_of_surjective e.surjective] using
-    e.image_connectedComponentIn (s := _root_.Set.univ) (x := x) (_root_.Set.mem_univ x)
+    e '' connectedComponent x = connectedComponent (e x) :=
+  e.isQuotientMap.image_connectedComponent (fun y => by simpa using isConnected_singleton) x
 
 end Homeomorph
 
@@ -276,6 +283,20 @@ protected theorem _root_.IsClosed.connectedComponentIn {F : Set X} {x : X} (hF :
   · rw [connectedComponentIn_eq_empty hx, closure_empty] at hy
     exact hy.elim
 
+/-- In a compact Hausdorff space, a clopen set sits between the connected component of a point and
+any open set containing that component. -/
+theorem exists_isClopen_between_connectedComponent [T2Space X] [CompactSpace X] (x : X)
+    {U : Set X} (hU : IsOpen U) (h : connectedComponent x ⊆ U) :
+    ∃ s : Set X, IsClopen s ∧ connectedComponent x ⊆ s ∧ s ⊆ U := by
+  obtain ⟨u, hu⟩ := hU.isClosed_compl.isCompact
+    |>.elim_finite_subfamily_closed (fun s : {s : Set X // IsClopen s ∧ x ∈ s} => s.1)
+      (fun s => s.2.1.1) (by
+        rw [← connectedComponent_eq_iInter_isClopen, disjoint_compl_left_iff_subset]
+        exact h)
+  have hs : IsClopen (⋂ i ∈ u, i.1) := isClopen_biInter_finset fun i _ => i.2.1
+  exact ⟨_, hs, hs.connectedComponent_subset (mem_iInter₂.mpr fun i _ => i.2.2),
+    disjoint_compl_left_iff_subset.mp hu⟩
+
 /-- **A compact component of a closed set is cut out by an open set.** In a locally compact
 Hausdorff space, if the connected component of `x` in a closed set `F` is compact, then it has an
 open neighbourhood `V` with compact closure whose frontier misses `F`. -/
@@ -301,15 +322,10 @@ theorem _root_.IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier [T2Spa
   set y : Y := ⟨x, hxY⟩
   have himage : ((↑) : Y → X) '' connectedComponent y = connectedComponentIn F x := by
     rw [← connectedComponentIn_eq_image hxY, hQY]
-  -- finitely many clopen subsets of `Y` around `y` already cut the component down into `W`
-  obtain ⟨u, hu⟩ := (hWo.preimage continuous_subtype_val).isClosed_compl.isCompact
-    |>.elim_finite_subfamily_closed (fun s : {s : Set Y // IsClopen s ∧ y ∈ s} => s.1)
-      (fun s => s.2.1.1) (by
-        rw [← connectedComponent_eq_iInter_isClopen, disjoint_compl_left_iff_subset]
-        exact fun z hz => hQW (himage ▸ mem_image_of_mem _ hz))
-  set s : Set Y := ⋂ i ∈ u, i.1
-  have hs : IsClopen s := isClopen_biInter_finset fun i _ => i.2.1
-  have hsW : s ⊆ (↑) ⁻¹' W := disjoint_compl_left_iff_subset.mp hu
+  -- a clopen subset `s` of `Y` around `y` already cuts the component down into `W`
+  obtain ⟨s, hs, hys, hsW⟩ := exists_isClopen_between_connectedComponent y
+    (hWo.preimage continuous_subtype_val)
+    fun z hz => hQW (himage ▸ mem_image_of_mem _ hz)
   obtain ⟨O, hOo, hOs⟩ := isOpen_induced_iff.mp hs.isOpen
   -- a neighbourhood `V` of the image of `s` whose closure stays in `W ∩ O`
   obtain ⟨V, hVo, hsV, hVWO, hVc⟩ := exists_open_between_and_isCompact_closure
@@ -317,14 +333,72 @@ theorem _root_.IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier [T2Spa
     (image_subset_iff.mpr fun z hz => ⟨hsW hz, by rw [← hOs] at hz; exact hz⟩)
   refine ⟨V, hVo, ?_, hVc, disjoint_left.mpr fun z hz hzF => ?_⟩
   · rw [← himage]
-    exact (image_mono (hs.connectedComponent_subset
-      (mem_iInter₂.mpr fun i _ => i.2.2))).trans hsV
+    exact (image_mono hys).trans hsV
   · -- a frontier point of `V` in `F` lies in `Y ∩ O`, hence in the image of `s ⊆ V`
     have hzWO := hVWO hz.1
     have hzs : (⟨z, hzF, subset_closure hzWO.1⟩ : Y) ∈ s := by
       rw [← hOs]
       exact hzWO.2
     exact hz.2 (by rw [hVo.interior_eq]; exact hsV ⟨_, hzs, rfl⟩)
+
+/-- **A compact component of a level set has a neighbourhood with compact levels.** In a locally
+compact Hausdorff space, if the connected component of `x` in the level `f⁻¹(f x)` of a continuous
+map `f` to a Hausdorff space is compact, then it has an open neighbourhood `W` which meets every
+level `f⁻¹(c)` of `f` in a compact set. -/
+theorem _root_.Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleton [T2Space X]
+    [LocallyCompactSpace X] {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : X → Y}
+    (hf : Continuous f) {x : X} (hx : IsCompact (connectedComponentIn (f ⁻¹' {f x}) x)) :
+    ∃ W, IsOpen W ∧ connectedComponentIn (f ⁻¹' {f x}) x ⊆ W ∧
+      ∀ c, IsCompact (W ∩ f ⁻¹' {c}) := by
+  obtain ⟨V, hVo, hLV, hVc, hVF⟩ :=
+    (isClosed_singleton.preimage hf).exists_isOpen_isCompact_closure_disjoint_frontier hx
+  -- the values of `f` on the frontier of `V` form a compact set that misses `f x`; removing its
+  -- preimage from `V` leaves an open set whose levels are closed in the compact `closure V`
+  have hK : IsCompact (f '' frontier V) :=
+    (hVc.of_isClosed_subset isClosed_frontier frontier_subset_closure).image hf
+  refine ⟨V ∩ f ⁻¹' (f '' frontier V)ᶜ, hVo.inter (hK.isClosed.isOpen_compl.preimage hf),
+    fun y hy ↦ ⟨hLV hy, ?_⟩, fun c ↦ ?_⟩
+  · rintro ⟨z, hz, hzy⟩
+    exact disjoint_left.mp hVF hz (hzy.trans (connectedComponentIn_subset _ _ hy))
+  by_cases hc : c ∈ f '' frontier V
+  · convert isCompact_empty
+    exact eq_empty_of_forall_notMem fun y h ↦ h.1.2 (by rwa [mem_singleton_iff.1 h.2])
+  · -- a point of `closure V` in the level `c` is not on the frontier, so it lies in `V`
+    have heq : V ∩ f ⁻¹' (f '' frontier V)ᶜ ∩ f ⁻¹' {c} = closure V ∩ f ⁻¹' {c} := by
+      ext y
+      refine ⟨fun h ↦ ⟨subset_closure h.1.1, h.2⟩, fun ⟨hyV, hyc⟩ ↦ ?_⟩
+      have hyc' : f y = c := hyc
+      have hyV' : y ∈ V := by
+        by_contra h
+        exact hc ⟨y, by rw [hVo.frontier_eq]; exact ⟨hyV, h⟩, hyc'⟩
+      exact ⟨⟨hyV', fun ⟨z, hz, hzy⟩ ↦ hc ⟨z, hz, hzy.trans hyc'⟩⟩, hyc⟩
+    rw [heq]
+    exact hVc.inter_right (isClosed_singleton.preimage hf)
+
+/-- **Connected components seen from a subspace containing them.** If the connected component of
+`f y` in `F` lies in the range of an inducing map `f`, then it is the image of the connected
+component of `y` in the preimage of `F`. For the inclusion of a subspace `s`, this is the connected
+component of the preimage of `F` in `s`. -/
+theorem _root_.Topology.IsInducing.image_connectedComponentIn_preimage {Y : Type*}
+    [TopologicalSpace Y] {f : Y → X} (hf : IsInducing f) {F : Set X} {y : Y}
+    (hs : connectedComponentIn F (f y) ⊆ range f) :
+    f '' connectedComponentIn (f ⁻¹' F) y = connectedComponentIn F (f y) := by
+  by_cases hyF : f y ∈ F
+  · refine ((hf.continuous.continuousOn.image_connectedComponentIn_subset
+      (mem_preimage.2 hyF)).trans
+        (connectedComponentIn_mono _ (image_preimage_subset _ _))).antisymm ?_
+    -- the component in `F` is preconnected in `Y`, so it lies in the component of the preimage
+    have hpre : IsPreconnected (f ⁻¹' connectedComponentIn F (f y)) :=
+      hf.isPreconnected_image.mp (by
+        rw [image_preimage_eq_of_subset hs]
+        exact isPreconnected_connectedComponentIn)
+    calc connectedComponentIn F (f y)
+        = f '' (f ⁻¹' connectedComponentIn F (f y)) := (image_preimage_eq_of_subset hs).symm
+      _ ⊆ _ := image_mono (hpre.subset_connectedComponentIn (mem_connectedComponentIn hyF)
+          (preimage_mono (connectedComponentIn_subset F _)))
+  · rw [connectedComponentIn_eq_empty hyF,
+      connectedComponentIn_eq_empty (mt mem_preimage.1 hyF),
+      image_empty]
 
 /-- **A complementary component missing the frontier of a neighbourhood is clopen.** Let `K` be a
 closed set lying in the interior of a set `L`. If the component of a point `y ∉ L` in `X \ K`
@@ -447,6 +521,35 @@ theorem connectedComponentIn_compl_Icc_eq_Iio {α : Type*} [ConditionallyComplet
     (mem_connectedComponentIn fun h => not_lt.2 h.1 hx) hy ⟨hx.le, (hab.trans_lt hyb).le⟩)
     ⟨le_rfl, hab⟩
 
+/-- In a preconnected space, let `t` and `t'` be closed sets covering the complement of a set `U`
+whose frontier is nonempty, and disjoint on `Uᶜ`. If `t'` misses the frontier of `U`, then it
+misses `Uᶜ`. -/
+private theorem compl_inter_eq_empty_of_frontier_inter_eq_empty [PreconnectedSpace X] {U : Set X}
+    {p : X} (hp : p ∈ frontier U) {t t' : Set X} (ht : IsClosed t) (ht' : IsClosed t')
+    (hcov : Uᶜ ⊆ t ∪ t') (hdisj : Uᶜ ∩ (t ∩ t') = ∅) (hft' : frontier U ∩ t' = ∅) :
+    Uᶜ ∩ t' = ∅ := by
+  -- a point of `t'` in the closure of `U` lies in its interior, as `t'` misses the frontier
+  have hint {x : X} (hxt' : x ∈ t') (hxc : x ∈ closure U) : x ∈ interior U :=
+    of_not_not fun hxi ↦ (eq_empty_iff_forall_notMem.1 hft') x
+      ⟨(⟨hxc, hxi⟩ : x ∈ closure U \ interior U), hxt'⟩
+  have hcl : Uᶜ ∩ t' = (interior U)ᶜ ∩ t' := by
+    ext x
+    exact ⟨fun hx ↦ ⟨fun hxi ↦ hx.1 (interior_subset hxi), hx.2⟩,
+      fun hx ↦ ⟨fun hxU ↦ hx.1 (hint hx.2 (subset_closure hxU)), hx.2⟩⟩
+  have hop : Uᶜ ∩ t' = (closure U)ᶜ ∩ tᶜ := by
+    ext x
+    refine ⟨fun hx ↦ ⟨fun hxc ↦ hx.1 (interior_subset (hint hx.2 hxc)), fun hxt ↦ ?_⟩,
+      fun hx ↦ ?_⟩
+    · exact (eq_empty_iff_forall_notMem.1 hdisj) x ⟨hx.1, hxt, hx.2⟩
+    · have hxU : x ∉ U := fun hxU ↦ hx.1 (subset_closure hxU)
+      exact ⟨hxU, (hcov hxU).resolve_left hx.2⟩
+  have hclo : IsClopen (Uᶜ ∩ t') :=
+    ⟨hcl ▸ isOpen_interior.isClosed_compl.inter ht',
+      hop ▸ isClosed_closure.isOpen_compl.inter ht.isOpen_compl⟩
+  by_contra hne
+  have huniv := hclo.eq_univ (nonempty_iff_ne_empty.2 hne)
+  exact (eq_empty_iff_forall_notMem.1 hft') p ⟨hp, (huniv ▸ mem_univ p : p ∈ Uᶜ ∩ t').2⟩
+
 /-- **An open set with preconnected frontier has preconnected complement**, in a preconnected
 space.
 
@@ -458,24 +561,6 @@ theorem isPreconnected_compl_of_isPreconnected_frontier [PreconnectedSpace X] {U
     · simpa using isPreconnected_univ
     · simpa using isPreconnected_empty
   have hfU : frontier U ⊆ Uᶜ := fun x hx ↦ by rw [hU.frontier_eq] at hx; exact hx.2
-  -- In a closed splitting of `Uᶜ` into two pieces, the piece missing the frontier is clopen in
-  -- `X`: it avoids `closure U`, so it lies in the open exterior, where it is the complement of
-  -- the other piece. As `X` is preconnected, that piece is empty or everything.
-  have key : ∀ t t' : Set X, IsClosed t → IsClosed t' → Uᶜ ⊆ t ∪ t' → Uᶜ ∩ (t ∩ t') = ∅ →
-      frontier U ∩ t' = ∅ → Uᶜ ∩ t' = ∅ := by
-    intro t t' ht ht' hcov hdisj hft'
-    have hext : Uᶜ ∩ t' = (closure U)ᶜ ∩ tᶜ := by
-      ext x
-      refine ⟨fun hx ↦ ⟨fun hxc ↦ ?_, fun hxt ↦ ?_⟩, fun hx ↦ ?_⟩
-      · exact (eq_empty_iff_forall_notMem.1 hft') x ⟨hU.frontier_eq ▸ ⟨hxc, hx.1⟩, hx.2⟩
-      · exact (eq_empty_iff_forall_notMem.1 hdisj) x ⟨hx.1, hxt, hx.2⟩
-      · have hxU : x ∉ U := fun hxU ↦ hx.1 (subset_closure hxU)
-        exact ⟨hxU, (hcov hxU).resolve_left hx.2⟩
-    have hclo : IsClopen (Uᶜ ∩ t') :=
-      ⟨hU.isClosed_compl.inter ht', hext ▸ isClosed_closure.isOpen_compl.inter ht.isOpen_compl⟩
-    by_contra hne
-    have huniv := hclo.eq_univ (nonempty_iff_ne_empty.2 hne)
-    exact (eq_empty_iff_forall_notMem.1 hft') p ⟨hp, (huniv ▸ mem_univ p : p ∈ Uᶜ ∩ t').2⟩
   rw [isPreconnected_closed_iff]
   intro t t' ht ht' hcov ⟨a, haU, hat⟩ ⟨b, hbU, hbt'⟩
   by_contra hne
@@ -485,10 +570,24 @@ theorem isPreconnected_compl_of_isPreconnected_frontier [PreconnectedSpace X] {U
     exact (eq_empty_iff_forall_notMem.1 hdisj) x ⟨hfU hx.1, hx.2⟩
   by_cases hft' : (frontier U ∩ t').Nonempty
   · have hft : frontier U ∩ t = ∅ := not_nonempty_iff_eq_empty.1 fun h ↦ hboth ⟨h, hft'⟩
-    exact (eq_empty_iff_forall_notMem.1 (key t' t ht' ht (by rwa [union_comm])
-      (by rwa [inter_comm t' t]) hft)) a ⟨haU, hat⟩
-  · exact (eq_empty_iff_forall_notMem.1 (key t t' ht ht' hcov hdisj
-      (not_nonempty_iff_eq_empty.1 hft'))) b ⟨hbU, hbt'⟩
+    exact (eq_empty_iff_forall_notMem.1 (compl_inter_eq_empty_of_frontier_inter_eq_empty hp
+      ht' ht (by rwa [union_comm]) (by rwa [inter_comm t' t]) hft)) a ⟨haU, hat⟩
+  · exact (eq_empty_iff_forall_notMem.1 (compl_inter_eq_empty_of_frontier_inter_eq_empty hp
+      ht ht' hcov hdisj (not_nonempty_iff_eq_empty.1 hft'))) b ⟨hbU, hbt'⟩
+
+/-- Let `s` be a closed set and, for each `x ∈ s`, let `V x` be a neighbourhood of `x` whose
+punctured version `V x \ {x}` avoids `s`. Removing `s` from an open set `w` and adjoining the
+points `x ∈ s` with `V x \ {x} ⊆ w` gives an open set. -/
+private theorem isOpen_sdiff_union_setOf {s : Set X} (hs : IsClosed s) {V : X → Set X}
+    (hVn : ∀ x ∈ s, V x ∈ 𝓝 x) (hVs : ∀ x ∈ s, V x \ {x} ⊆ sᶜ) {w : Set X} (hw : IsOpen w) :
+    IsOpen (w \ s ∪ {x | x ∈ s ∧ V x \ {x} ⊆ w}) := by
+  refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
+  rcases hy with hy | ⟨hys, hyw⟩
+  · exact Filter.mem_of_superset ((hw.inter hs.isOpen_compl).mem_nhds hy) subset_union_left
+  · refine Filter.mem_of_superset (hVn y hys) fun z hz ↦ ?_
+    rcases eq_or_ne z y with rfl | hzy
+    · exact Or.inr ⟨hys, hyw⟩
+    · exact Or.inl ⟨hyw ⟨hz, hzy⟩, hVs y hys ⟨hz, hzy⟩⟩
 
 /-- **Removing a closed discrete set keeps a space preconnected**, provided each removed point
 has arbitrarily small neighbourhoods whose punctured versions are connected.
@@ -513,20 +612,14 @@ theorem isPreconnected_compl_of_isDiscrete [PreconnectedSpace X] {s : Set X} (hs
   have hside (x : X) (hx : x ∈ s) : V x \ {x} ⊆ u ∨ V x \ {x} ⊆ v :=
     isPreconnected_iff_subset_of_disjoint.1 (hVc x hx).isPreconnected u v hu hv
       ((hVs x hx).trans hcov) (subset_empty_iff.1 <| hdisj ▸ inter_subset_inter_left _ (hVs x hx))
-  -- Extending each side by the removed points whose punctured neighbourhood it contains
-  -- separates the whole space.
-  have hext (w : Set X) (hw : IsOpen w) : IsOpen (w \ s ∪ {x | x ∈ s ∧ V x \ {x} ⊆ w}) := by
-    refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
-    rcases hy with hy | ⟨hys, hyw⟩
-    · exact Filter.mem_of_superset ((hw.inter hs.isOpen_compl).mem_nhds hy) subset_union_left
-    · refine Filter.mem_of_superset (hVn y hys) fun z hz ↦ ?_
-      rcases eq_or_ne z y with rfl | hzy
-      · exact Or.inr ⟨hys, hyw⟩
-      · exact Or.inl ⟨hyw ⟨hz, hzy⟩, hVs y hys ⟨hz, hzy⟩⟩
   have hnot (x : X) (hx : x ∈ s) (hxu : V x \ {x} ⊆ u) (hxv : V x \ {x} ⊆ v) : False := by
     obtain ⟨z, hz⟩ := (hVc x hx).nonempty
     exact (eq_empty_iff_forall_notMem.1 hdisj) z ⟨hVs x hx hz, hxu hz, hxv hz⟩
-  rcases isPreconnected_iff_subset_of_disjoint.1 isPreconnected_univ _ _ (hext u hu) (hext v hv)
+  -- Extending each side by the removed points whose punctured neighbourhood it contains
+  -- separates the whole space.
+  rcases isPreconnected_iff_subset_of_disjoint.1 isPreconnected_univ _ _
+    (isOpen_sdiff_union_setOf hs hVn hVs hu)
+    (isOpen_sdiff_union_setOf hs hVn hVs hv)
     (fun y _ ↦ by
       by_cases hys : y ∈ s
       · exact (hside y hys).imp (fun h ↦ Or.inr ⟨hys, h⟩) fun h ↦ Or.inr ⟨hys, h⟩

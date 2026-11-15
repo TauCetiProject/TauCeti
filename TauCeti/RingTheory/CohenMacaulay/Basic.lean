@@ -30,12 +30,12 @@ The zero module is Cohen–Macaulay by convention: its depth is `⊤` while its 
 * `Module.isCohenMacaulay_iff_supportDim_le_depth`: a finite nonzero module over a Noetherian local
   ring is Cohen–Macaulay if and only if the dimension of its support is at most its depth.
 * `RingEquiv.isCohenMacaulay_self_iff`: being Cohen–Macaulay over itself is invariant under
-  isomorphisms of Noetherian local rings.
+  isomorphisms of local rings.
 * `Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective`: along a surjective homomorphism of
   local rings `R → T`, a finite `T`-module is Cohen–Macaulay over `R` exactly when it is over `T`.
   For instance, a quotient `R ⧸ I` that is Cohen–Macaulay as an `R`-module is a Cohen–Macaulay
   ring.
-* `IsLocalization.AtPrime.isCohenMacaulay_self_iff`: a localization of a Noetherian ring at a
+* `IsLocalization.AtPrime.isCohenMacaulay_self_iff`: a localization of a ring at a
   prime is Cohen–Macaulay over itself exactly when `Localization.AtPrime p` is.
 * `Module.isCohenMacaulay_quotSMulTop_iff`: for an `M`-regular element `x` of the maximal ideal,
   `M ⧸ x M` is Cohen–Macaulay if and only if `M` is (Stacks, Lemma 10.103.5 (0C6G)), and
@@ -117,9 +117,8 @@ end LinearEquiv
 namespace RingEquiv
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
-  [IsNoetherianRing R]
 
-/-- A Noetherian local ring is Cohen–Macaulay over itself exactly when an isomorphic ring is. -/
+/-- A local ring is Cohen–Macaulay over itself exactly when an isomorphic ring is. -/
 theorem isCohenMacaulay_self_iff (e : R ≃+* S) :
     Module.IsCohenMacaulay R R ↔ Module.IsCohenMacaulay S S := by
   rw [Module.isCohenMacaulay_iff_depth_eq, Module.isCohenMacaulay_iff_depth_eq,
@@ -140,37 +139,23 @@ theorem isCohenMacaulay_iff_isCohenMacaulay_of_surjective {M : Type w} [AddCommG
     [Module R M] [Module T M] [IsScalarTower R T M] [Module.Finite T M] [Small.{w} R]
     [Small.{w} T] (hsurj : Function.Surjective (algebraMap R T)) :
     IsCohenMacaulay R M ↔ IsCohenMacaulay T M := by
-  have : Module.Finite R T := .of_surjective (Algebra.linearMap R T) hsurj
-  have : Module.Finite R M := .trans T M
-  have : IsNoetherianRing T := isNoetherianRing_of_surjective R T (algebraMap R T) hsurj
-  -- `R ⧸ Ann_R M ≅ T ⧸ Ann_T M`, since `Ann_R M` is the preimage of `Ann_T M`.
-  let f : R →+* T ⧸ annihilator T M := (Ideal.Quotient.mk _).comp (algebraMap R T)
-  have hf : Function.Surjective f := Ideal.Quotient.mk_surjective.comp hsurj
-  have hker : RingHom.ker f = annihilator R M := by
-    ext r
-    rw [RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem, mem_annihilator,
-      mem_annihilator]
-    simp only [algebraMap_smul]
   rw [isCohenMacaulay_iff, isCohenMacaulay_iff, depth_eq_depth_of_surjective hsurj,
-    supportDim_eq_ringKrullDim_quotient_annihilator R M,
-    supportDim_eq_ringKrullDim_quotient_annihilator T M, ← hker,
-    ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hf)]
+    supportDim_eq_of_surjective hsurj]
 
 end Module
 
 namespace IsLocalization.AtPrime
 
-variable {A : Type u} [CommRing A] [IsNoetherianRing A] (p : Ideal A) [p.IsPrime]
+variable {A : Type u} [CommRing A] (p : Ideal A) [p.IsPrime]
   (B : Type v) [CommRing B] [IsLocalRing B] [Algebra A B] [IsLocalization.AtPrime B p]
 
-/-- A localization `B` of a Noetherian ring `A` at a prime `p` is Cohen–Macaulay over itself
+/-- A localization `B` of a ring `A` at a prime `p` is Cohen–Macaulay over itself
 exactly when `Localization.AtPrime p` is. The local-ring instance on `B` is taken as an argument
 so that it can be the one already present, as on the stalks of a scheme; it always holds, by
 `IsLocalization.AtPrime.isLocalRing`. -/
 theorem isCohenMacaulay_self_iff :
     Module.IsCohenMacaulay B B ↔
       Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) :=
-  have := IsLocalization.isNoetherianRing p.primeCompl B inferInstance
   (IsLocalization.algEquiv p.primeCompl B (Localization.AtPrime p)).toRingEquiv
     |>.isCohenMacaulay_self_iff
 
