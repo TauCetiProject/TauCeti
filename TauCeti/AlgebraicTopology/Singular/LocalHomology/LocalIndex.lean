@@ -251,6 +251,51 @@ theorem localIndex_neg_right (f : C(M, N)) (x : M) :
     rw [o.localIndex_of_frequently_eq (-o') f h', o.localIndex_of_frequently_eq o' f h', neg_zero]
 
 include hF in
+/-- **The local index in the whole source.** If `x` is the only point of `M` sent to `y = f x`,
+the local index of `f` at `x` is the integer `c` such that `f` carries the local orientation `o x`
+to `c • o' y`, with no isolating neighbourhood to choose. -/
+theorem localIndex_eq_iff_of_preimage_subset (f : C(M, N)) {x : M} {y : N} (hxy : f x = y)
+    (h : f ⁻¹' {y} ⊆ {x}) {c : ℤ} :
+    o.localIndex o' f x = c ↔
+      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f h n (o x).val = c • (o' y).val := by
+  have hincl : (⟨Subtype.val, continuous_subtype_val⟩ : C((univ : Set M), M)) ⁻¹' {x} ⊆
+      {⟨x, mem_univ x⟩} := fun z hz ↦ Subtype.ext hz
+  rw [o.localIndex_eq_iff o' hF f hxy isOpen_univ (mem_univ x) fun z _ hz ↦ h hz,
+    ← isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
+      ⟨x, mem_univ x⟩ (o x) hincl, ← ConcreteCategory.comp_apply, localHomologyMap_comp]
+  rfl
+
+include hF in
+/-- **The local index only depends on the orientations at the point and its image**: if `o` and
+`p` agree at `x`, and `o'` and `p'` agree at `f x`, the two local indices of `f` at `x` agree. -/
+theorem localIndex_eq_localIndex_of_apply_eq {p : HomologicalOrientation M E n}
+    {p' : HomologicalOrientation N F n} (f : C(M, N)) {x : M} (hx : o x = p x)
+    (hy : o' (f x) = p' (f x)) : o.localIndex o' f x = p.localIndex p' f x := by
+  by_cases h : ∀ᶠ z in 𝓝[≠] x, f z ≠ f x
+  · obtain ⟨U, hUo, hxU, hU⟩ := exists_isOpen_of_eventually_ne h
+    rw [eq_comm, p.localIndex_eq_iff p' hF f rfl hUo hxU hU, ← hx, ← hy]
+    exact o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl hUo hxU hU
+  · have h' : ∃ᶠ z in 𝓝[≠] x, f z = f x := by simpa using not_eventually.1 h
+    rw [o.localIndex_of_frequently_eq o' f h', p.localIndex_of_frequently_eq p' f h']
+
+include hE hF in
+/-- **A nonzero local index detects the local orientation of the source.** If `f` has the same
+nonzero local index at `x` for the source orientations `p` and `o`, then `p` and `o` agree at `x`:
+otherwise `p x = -o x`, and the two local indices would be negatives of each other. -/
+theorem apply_eq_of_localIndex_eq {p : HomologicalOrientation M E n} (f : C(M, N)) {x : M}
+    (h : p.localIndex o' f x = o.localIndex o' f x) (h0 : o.localIndex o' f x ≠ 0) :
+    p x = o x := by
+  subst hE
+  rcases IsLocalOrientation.eq_or_eq_neg
+      (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+      (o x).property (p x).property with h' | h'
+  · exact Subtype.ext h'
+  · have hneg : p.localIndex o' f x = -o.localIndex o' f x := by
+      rw [p.localIndex_eq_localIndex_of_apply_eq o' hF (p := -o) (p' := o') f
+        (Subtype.ext (h'.trans (LocalOrientation.coe_neg _).symm)) rfl, localIndex_neg_left o o' hF]
+    omega
+
+include hF in
 /-- **The local index is natural under open embeddings.** Let `j : M → M'` and `k : N → N'` be
 open embeddings, and let `f : M → N` and `g : M' → N'` satisfy `g ∘ j = k ∘ f` near `x`. Then the
 local index of `f` at `x`, for the orientations pulled back along `j` and `k`, is the local index
