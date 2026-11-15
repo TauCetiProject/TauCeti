@@ -29,6 +29,10 @@ For a real function `g` integrable on `(x, ∞)`, with tail integral
 The tail integral of a function nonnegative on `(a, ∞)` is antitone there
 (`MeasureTheory.antitoneOn_integral_Ioi`).
 
+The substitution `t = exp (-u)` turns an integral over `[0, 1]` into one over `(0, ∞)`
+(`TauCeti.integral_comp_exp_neg_Ioi`), the decreasing companion of Mathlib's
+`integral_comp_exp_Ioi`; it turns integrals with weights `(-log t) ^ k / t` into Laplace integrals.
+
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
 
@@ -233,6 +237,28 @@ end MeasureTheory.AECover
 namespace TauCeti
 
 open MeasureTheory
+
+/-- **Substitution `t = exp (-u)`.** The integral of `exp (-u) • g (exp (-u))` over `(0, ∞)` is the
+integral of `g` over `[0, 1]`. This is the companion of Mathlib's `integral_comp_exp_Ioi` for the
+decreasing exponential, which maps `(0, ∞)` onto `(0, 1)`. No integrability is assumed: both sides
+vanish together when `g` is not integrable on `(0, 1)`. -/
+theorem integral_comp_exp_neg_Ioi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (g : ℝ → E) :
+    ∫ u in Ioi (0 : ℝ), Real.exp (-u) • g (Real.exp (-u)) = ∫ t in (0 : ℝ)..1, g t := by
+  have himage : Real.exp ∘ Neg.neg '' Ioi (0 : ℝ) = Ioo 0 1 := by
+    ext t
+    constructor
+    · rintro ⟨u, hu, rfl⟩
+      exact ⟨Real.exp_pos _, Real.exp_lt_one_iff.2 (neg_neg_iff_pos.2 hu)⟩
+    · rintro ⟨ht0, ht1⟩
+      exact ⟨-Real.log t, neg_pos.2 (Real.log_neg ht0 ht1), by simp [Real.exp_log ht0]⟩
+  have h := integral_image_eq_integral_abs_deriv_smul (measurableSet_Ioi (a := (0 : ℝ)))
+    (fun u _ ↦ ((Real.hasDerivAt_exp (-u)).comp u (hasDerivAt_neg u)).hasDerivWithinAt)
+    (Real.exp_injective.comp neg_injective).injOn g
+  rw [himage] at h
+  rw [intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo, h]
+  refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
+  simp [abs_of_pos (Real.exp_pos _)]
 
 /-- **Integral bounds over a strip from its truncations.** Let `T ⊆ ℝ` be measurable, and let `f`
 and `g` be nonnegative on the strip `ℝ × T`, with `g` integrable there and `f` integrable on each
