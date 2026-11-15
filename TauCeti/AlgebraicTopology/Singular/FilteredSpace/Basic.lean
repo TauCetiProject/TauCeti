@@ -216,6 +216,11 @@ lemma singularChainFiltrationι_def (q : ℤ) :
   rw [singularChainFiltrationι, chainFiltrationι_def]
   rfl
 
+/-- The singular chains of `X q` form a subcomplex of those of `Y`, also after reindexing. -/
+instance (q : ℤ) : Mono (singularChainFiltrationι R X q) :=
+  inferInstanceAs (Mono (chainFiltrationι
+    ((AlgebraicTopology.singularChainComplexFunctor A).obj R) X q))
+
 /-- The filtration of the singular chains of `Y` by the singular chains of the subsets `X q`,
 with the chain complexes reindexed as cochain complexes in nonpositive degrees along `n ↦ -n`:
 the case of `TauCeti.chainFiltration` for singular chains. -/
@@ -239,15 +244,6 @@ lemma singularChainFiltrationIso_hom_comp_singularChainFiltrationι (q : ℤ) :
   chainFiltrationIso_hom_comp_chainFiltrationι _ X q
 
 variable {X}
-
-/-- For `X a ⊆ X b`, the inclusion of the singular chains of `X a` into those of `Y` factors
-through the inclusion of the pair `(X b, X a)`. -/
-@[simp, reassoc]
-lemma extendMap_comp_singularChainFiltrationι {a b : ℤ} (hab : X a ⊆ X b) :
-    extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofInclusion hab).map) R)
-        ComplexShape.embeddingDownNat ≫ singularChainFiltrationι R X b =
-      singularChainFiltrationι R X a :=
-  extendMap_comp_chainFiltrationι ((AlgebraicTopology.singularChainComplexFunctor A).obj R) hab
 
 /-- The filtration of singular chains is monotone in the subsets. -/
 lemma singularChainFiltration_mono {a b : ℤ} (hab : X a ⊆ X b) :
@@ -578,7 +574,8 @@ include hg in
 private lemma factors_singularChainFiltration (q : ℤ) :
     (singularChainFiltration R X' q).Factors ((singularChainFiltration R X q).arrow ≫
       extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) ComplexShape.embeddingDownNat) :=
-  (Subobject.mk_factors_iff _ _).2 ⟨(singularChainFiltrationIso R X q).hom ≫ extendMap
+  (Subobject.mk_factors_iff (singularChainFiltrationι R X' q) _).2
+    ⟨(singularChainFiltrationIso R X q).hom ≫ extendMap
       (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q)))) R)
         ComplexShape.embeddingDownNat,
     (Category.assoc _ _ _).trans <|

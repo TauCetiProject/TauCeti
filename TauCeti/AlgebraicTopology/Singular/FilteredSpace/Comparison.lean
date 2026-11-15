@@ -119,9 +119,6 @@ instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (τ.app Z)] (a : EInt)
         (CochainComplex.isZero_filtrationFunctor_obj_bot _ _).isoZero
     infer_instance
   | coe q =>
-    have : QuasiIso (extendMap (τ.app (TopPair.ofSubset (X q)).snd)
-        ComplexShape.embeddingDownNat) :=
-      (quasiIso_extendMap_iff _ _).2 inferInstance
     exact (quasiIso_iff_of_arrow_mk_iso _
       (extendMap (τ.app (TopPair.ofSubset (X q)).snd) ComplexShape.embeddingDownNat)
       (Arrow.isoMk (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι Φ X)
@@ -129,8 +126,6 @@ instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (τ.app Z)] (a : EInt)
           (chainFiltrationι Ψ X) (chainFiltration_def Ψ X) q)
         (chainFiltrationMap_app_coe_comp τ hX q).symm)).2 inferInstance
   | top =>
-    have : QuasiIso (extendMap (τ.app Y) ComplexShape.embeddingDownNat) :=
-      (quasiIso_extendMap_iff _ _).2 inferInstance
     have : IsIso (CochainComplex.filtrationEInt (chainFiltration Φ X) ⊤).arrow :=
       (Subobject.isIso_arrow_iff_eq_top _).2 (CochainComplex.filtrationEInt_top _)
     have : IsIso (CochainComplex.filtrationEInt (chainFiltration Ψ X) ⊤).arrow :=
@@ -147,7 +142,6 @@ def chainFiltrationSpectralObjectIso [∀ Z, QuasiIso (τ.app Z)] :
         (CochainComplex.filtrationFunctor _ (monotone_chainFiltration Φ hX)) ≅
       CochainComplex.spectralObject
         (CochainComplex.filtrationFunctor _ (monotone_chainFiltration Ψ hX)) :=
-  have := CochainComplex.isIso_spectralObjectMap (chainFiltrationMap τ hX)
   asIso (CochainComplex.spectralObjectMap (chainFiltrationMap τ hX))
 
 /-- The isomorphism `TauCeti.chainFiltrationSpectralObjectIso τ hX` is the morphism of spectral

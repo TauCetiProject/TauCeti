@@ -503,7 +503,7 @@ namespace mappingCone
 
 /-- The map of mapping cones induced by a commutative square of quasi-isomorphisms is a
 quasi-isomorphism. -/
-lemma quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
+instance quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
     (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a] [QuasiIso b] :
     QuasiIso (map φ₁ φ₂ a b comm) := by
   have hc : ∀ j : ℤ, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
@@ -511,11 +511,10 @@ lemma quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ �
       HomologicalComplex.homotopyCofiber.mapArrowHom φ₁ φ₂ hc (Arrow.homMk a b comm.symm) := by
     ext n
     refine ext_from _ (n + 1) n rfl ?_ ?_
-    · simp only [Int.reduceNeg, mappingCone.map, mappingCone.inl_v_desc_f,
-        HomComplex.Cochain.zero_cochain_comp_v, HomComplex.Cochain.ofHom_v]
+    · rw [inl_v_map_f]
       exact (HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f
         φ₁ φ₂ hc (Arrow.homMk a b comm.symm) (n + 1) n rfl).symm
-    · simp only [mappingCone.map, mappingCone.inr_f_desc_f]
+    · rw [inr_f_map_f]
       exact (HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f
         φ₁ φ₂ hc (Arrow.homMk a b comm.symm) n).symm
   have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).left := ‹QuasiIso a›

@@ -88,10 +88,9 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
 /-- **A quasi-isomorphism of functors to cochain complexes induces an isomorphism of spectral
 objects.** If every component of `α : F ⟶ G` is a quasi-isomorphism, then `spectralObjectMap α`
 is an isomorphism. -/
-lemma isIso_spectralObjectMap (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
+instance isIso_spectralObjectMap (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
     IsIso (spectralObjectMap α) := by
   refine Abelian.SpectralObject.isIso_of_isIso_hom_app _ fun n i j f ↦ ?_
-  have := mappingCone.quasiIso_map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
   have h := spectralObjectMap_hom_app_hIso α f n
   rw [← Iso.eq_comp_inv] at h
   rw [h]
