@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Products, powers and idempotents of block matrices
@@ -103,11 +104,10 @@ is a star projection. -/
 public theorem IsStarProjection.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*} [Fintype m] [Fintype n]
     [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α} {q : Matrix n n α}
     (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    IsStarProjection (Matrix.fromBlocks p 0 0 q) := by
-  refine ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq.isIdempotentElem, ?_⟩
-  rw [IsSelfAdjoint, Matrix.star_eq_conjTranspose, Matrix.fromBlocks_conjTranspose,
-    ← Matrix.star_eq_conjTranspose, ← Matrix.star_eq_conjTranspose, hp.isSelfAdjoint.star_eq,
-    hq.isSelfAdjoint.star_eq, Matrix.conjTranspose_zero, Matrix.conjTranspose_zero]
+    IsStarProjection (Matrix.fromBlocks p 0 0 q) :=
+  ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq.isIdempotentElem,
+    (hp.isSelfAdjoint.isHermitian.fromBlocks Matrix.conjTranspose_zero
+      hq.isSelfAdjoint.isHermitian).isSelfAdjoint⟩
 
 section MurrayVonNeumann
 

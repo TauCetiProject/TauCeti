@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Data.Matrix.Block
+public import TauCeti.LinearAlgebra.Matrix.StarProjection
 
 /-!
 # Murray–von Neumann equivalence of matrix projections
@@ -55,15 +55,16 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   isometry (`Matrix.IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq`), so for
   square matrices the implementing elements are Tau Ceti's partial isometries
   (`Matrix.isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry`).
-* `Matrix.mul_conjTranspose_mul_self_eq_of_isStarProjection`: over a star-ordered proper star
-  ring, a matrix `v` with `vᴴ * v` a projection is a partial isometry.
+* `Matrix.isMurrayVonNeumannEquivalent_of_isStarProjection`: over a star-ordered proper star
+  ring, a matrix `v` with `vᴴ * v` a projection implements `vᴴ * v ∼ v * vᴴ`.
 * `Matrix.isMurrayVonNeumannEquivalent_iff_exists_mem_unitary_mul_fromBlocks_mul_star`: projections
   are equivalent exactly when `p ⊕ 0` and `0 ⊕ q` are unitarily conjugate, and
   `Matrix.IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star`
   supplies the conjugating self-adjoint unitary `!![1 - p, vᴴ; v, 1 - q]`.
 * `Matrix.isMurrayVonNeumannEquivalent_single_one` and
   `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes are
-  equivalent, and over a commutative star ring equivalent projections have equal rank.
+  equivalent, and over a commutative star ring with the strong rank condition equivalent
+  projections have equal rank.
 
 ## References
 
@@ -80,15 +81,6 @@ open TauCeti
 namespace Matrix
 
 variable {m n o R : Type*} [Fintype m] [Fintype n] [Fintype o]
-
-/-- The entrywise image of a matrix projection under a star ring homomorphism is a matrix
-projection. -/
-theorem _root_.IsStarProjection.matrix_map {S F : Type*} [NonUnitalNonAssocSemiring R] [Star R]
-    [NonUnitalNonAssocSemiring S] [Star S] [FunLike F R S] [NonUnitalRingHomClass F R S]
-    [StarHomClass F R S] {p : Matrix m m R} (hp : IsStarProjection p) (f : F) :
-    IsStarProjection (p.map f) :=
-  ⟨by rw [IsIdempotentElem, ← Matrix.map_mul, hp.isIdempotentElem.eq],
-    (IsHermitian.map hp.isSelfAdjoint f fun _ ↦ map_star f _).isSelfAdjoint⟩
 
 section NonUnitalSemiring
 
@@ -373,18 +365,6 @@ section StarOrderedRing
 variable [NonUnitalRing R] [StarRing R] [PartialOrder R] [StarOrderedRing R] [IsProperStar R]
 
 /-- Over a star-ordered proper star ring, a rectangular matrix `v` whose initial element `vᴴ * v` is
-a projection is a partial isometry. -/
-theorem mul_conjTranspose_mul_self_eq_of_isStarProjection {v : Matrix n m R}
-    (h : IsStarProjection (vᴴ * v)) : v * vᴴ * v = v := by
-  have hp : vᴴ * (v * (vᴴ * v)) = vᴴ * v := by
-    rw [← Matrix.mul_assoc, h.isIdempotentElem.eq]
-  have hx : (v * (vᴴ * v) - v)ᴴ * (v * (vᴴ * v) - v) = 0 := by
-    simp only [conjTranspose_sub, conjTranspose_mul, conjTranspose_conjTranspose, Matrix.sub_mul,
-      Matrix.mul_sub, Matrix.mul_assoc, hp, sub_self]
-  rw [conjTranspose_mul_self_eq_zero, sub_eq_zero] at hx
-  rwa [Matrix.mul_assoc]
-
-/-- Over a star-ordered proper star ring, a rectangular matrix `v` whose initial element `vᴴ * v` is
 a projection implements the equivalence of `vᴴ * v` with `v * vᴴ`. -/
 theorem isMurrayVonNeumannEquivalent_of_isStarProjection {v : Matrix n m R}
     (h : IsStarProjection (vᴴ * v)) : IsMurrayVonNeumannEquivalent (vᴴ * v) (v * vᴴ) :=
@@ -411,11 +391,10 @@ theorem IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBl
   have hea : p * vᴴ = vᴴ := by
     simpa [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
       congr_arg conjTranspose hbe
-  have hw : IsSelfAdjoint (Matrix.fromBlocks (1 - p) vᴴ v (1 - q)) := by
-    rw [IsSelfAdjoint, star_eq_conjTranspose, fromBlocks_conjTranspose, conjTranspose_sub,
-      conjTranspose_sub, conjTranspose_one, conjTranspose_one, conjTranspose_conjTranspose,
-      ← star_eq_conjTranspose, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq,
-      hq.isSelfAdjoint.star_eq]
+  have hw : IsSelfAdjoint (Matrix.fromBlocks (1 - p) vᴴ v (1 - q)) :=
+    (IsHermitian.fromBlocks (isHermitian_one.sub hp.isSelfAdjoint.isHermitian)
+      (conjTranspose_conjTranspose v)
+      (isHermitian_one.sub hq.isSelfAdjoint.isHermitian)).isSelfAdjoint
   have hww := fromBlocks_one_sub_mul_self_of_mul_eq hvp hvq hea hbe
   refine ⟨_, hw, ⟨?_, ?_⟩, ?_⟩
   · rwa [hw.star_eq]
