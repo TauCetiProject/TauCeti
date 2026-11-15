@@ -17,10 +17,11 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 # Local integral manifolds from Frobenius coordinates
 
 An involutive distribution of constant rank has an integral manifold through every point of a
-boundaryless finite-dimensional real manifold. The source is an open subset of a subspace of the
-model space, with its own manifold structure. Its parametrization is a topological embedding
-whose tangent image is exactly the distribution. The ambient chart identifies its image with
-the corresponding affine slice relative to the chart target.
+finite-dimensional real manifold with boundaryless model. The source is an open subset of a
+subspace of the model space, or of Euclidean space of the distribution rank, with its own manifold
+structure. Its parametrization is a topological embedding whose tangent image is exactly the
+distribution. The ambient chart identifies its image with the corresponding affine slice relative
+to the chart target.
 
 The slice equation identifies each plaque inside an ambient chart, while its embedding gives
 the parametrizing domain the subspace topology of that local image. These local plaques supply
@@ -31,6 +32,8 @@ coordinate neighborhoods for integral manifolds.
 * `PartialDiffeomorph.exists_isIntegralManifold`: integral slices of flat coordinates.
 * `TauCeti.IsInvolutiveDistribution.exists_isIntegralManifold`: local existence for involutive
   distributions of regularity at least one.
+* `TauCeti.IsInvolutiveDistribution.exists_isIntegralManifold_euclidean`: Euclidean-modelled local
+  integral plaques for involutive distributions of regularity at least one.
 
 ## References
 
@@ -168,4 +171,63 @@ theorem IsInvolutiveDistribution.exists_isIntegralManifold {m : ℕ∞} (hm : 1 
   obtain ⟨U, u, f, hfu, hsrc, hemb, hslice, hf⟩ :=
     Φ.exists_isIntegralManifold (I := I) (by exact_mod_cast hm) W D hΦflat x hxΦ
   exact ⟨W, Φ, U, u, f, hW, hxΦ, hΦflat, hfu, hsrc, hemb, hslice, hf⟩
+
+/-- Every point of a finite-dimensional real `C^r` manifold with boundaryless model lies on a
+Euclidean-modelled local integral manifold of an involutive `C^m` distribution of constant rank
+`k`, for `1 ≤ m` and `m + 1 ≤ r`. The source is an open subset of `EuclideanSpace ℝ (Fin k)`, its
+parametrization is a topological embedding, and a flat chart identifies its image with an affine
+slice. -/
+theorem IsInvolutiveDistribution.exists_isIntegralManifold_euclidean {m : ℕ∞} (hm : 1 ≤ m)
+    {r : ℕ∞ω} (hmr : (m : ℕ∞ω) + 1 ≤ r)
+    [IsManifold I 1 M] [IsManifold I r M] {k : ℕ}
+    {D : ∀ x : M, Submodule ℝ (TangentSpace I x)}
+    (hinv : IsInvolutiveDistribution I D) (hD : IsContMDiffDistribution I m k D) (x : M) :
+    ∃ (W : Submodule ℝ E) (Φ : PartialDiffeomorph I 𝓘(ℝ, E) M E m)
+      (V : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin k))) (v : V) (g : V → M),
+      Module.finrank ℝ W = k ∧ x ∈ Φ.source ∧
+        (∀ y ∈ Φ.source, (D y).map (mfderiv I 𝓘(ℝ, E) Φ y).toLinearMap = W) ∧
+        g v = x ∧ range g ⊆ Φ.source ∧ Topology.IsEmbedding g ∧
+        IsSliceChart Φ.toOpenPartialHomeomorph (range fun w : W ↦ Φ x + (w : E)) (range g) ∧
+        IsIntegralManifold (𝓡 k) m D g := by
+  let _ : IsManifold I m M := .of_le (le_self_add.trans hmr)
+  have hm1 : (1 : ℕ∞ω) ≤ m := by exact_mod_cast hm
+  have hm0 : (m : ℕ∞ω) ≠ 0 := ne_of_gt (zero_lt_one.trans_le hm1)
+  obtain ⟨W, Φ, U, u, f, hW, hxΦ, hΦflat, hfu, hsrc, hemb, hslice, hf⟩ :=
+    hinv.exists_isIntegralManifold hm hmr hD x
+  let A : EuclideanSpace ℝ (Fin k) ≃L[ℝ] W :=
+    (LinearEquiv.ofFinrankEq (EuclideanSpace ℝ (Fin k)) W
+      (finrank_euclideanSpace_fin.trans hW.symm)).toContinuousLinearEquiv
+  let d₀ : EuclideanSpace ℝ (Fin k) ≃ₘ^m⟮𝓡 k, 𝓘(ℝ, W)⟯ W :=
+    { toEquiv := A.toEquiv
+      contMDiff_toFun := A.contDiff.contMDiff
+      contMDiff_invFun := A.symm.contDiff.contMDiff }
+  let V : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin k)) :=
+    ⟨A ⁻¹' U, U.isOpen.preimage A.continuous⟩
+  let d : V ≃ₘ^m⟮𝓡 k, 𝓘(ℝ, W)⟯ U := Diffeomorph.subtype d₀ fun _ ↦ Iff.rfl
+  let v : V := d.symm u
+  let g : V → M := f ∘ d
+  have hrange : range g = range f := by
+    rw [range_comp, (EquivLike.surjective d).range_eq, image_univ]
+  have hder (z : V) : mfderiv (𝓡 k) I g z =
+      (mfderiv 𝓘(ℝ, W) I f (d z)).comp
+        (d.mfderivToContinuousLinearEquiv hm0 z).toContinuousLinearMap := by
+    rw [mfderiv_comp z (hf.contMDiff.mdifferentiableAt hm0) (d.contMDiff.mdifferentiableAt hm0),
+      ← d.mfderivToContinuousLinearEquiv_coe hm0]
+  refine ⟨W, Φ, V, v, g, hW, hxΦ, hΦflat, ?_, hrange ▸ hsrc,
+    hemb.comp d.toHomeomorph.isEmbedding, hrange ▸ hslice, ?_⟩
+  · simp only [g, v, Function.comp_apply, d.apply_symm_apply, hfu]
+  · rw [isIntegralManifold_iff]
+    refine ⟨⟨v⟩, (hf.contMDiff.comp d.contMDiff).isImmersion_of_injective_mfderiv hm1 fun z ↦ ?_,
+      fun z ↦ ?_⟩
+    · rw [hder z]
+      exact (hf.isImmersion.mfderiv_injective hm0 (d z)).comp
+        (d.mfderivToContinuousLinearEquiv hm0 z).injective
+    · ext w
+      rw [hder z, LinearMap.mem_range]
+      simp only [g, Function.comp_apply, ContinuousLinearMap.coe_coe,
+        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        ← hf.range_mfderiv (d z), LinearMap.mem_range]
+      exact ⟨fun ⟨y, hy⟩ ↦ ⟨_, hy⟩, fun ⟨y, hy⟩ ↦
+        ⟨(d.mfderivToContinuousLinearEquiv hm0 z).symm y, by simp [hy]⟩⟩
+
 end TauCeti
