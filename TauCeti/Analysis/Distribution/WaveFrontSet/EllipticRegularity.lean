@@ -61,6 +61,8 @@ induction starts from the polynomial growth of the localized Fourier transform, 
 
 ## Main results
 
+* `TauCeti.eventually_forall_constCoeffPrincipalSymbol_ne_zero`: for coefficients depending
+  continuously on a point, ellipticity at a point holds at all nearby points.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(ξ) ≠ 0`, then `T` is microlocally smooth there.
 * `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`:
@@ -186,6 +188,31 @@ theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset �
     rw [constCoeffPrincipalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg ht.le, norm_smul, Real.norm_of_nonneg ht.le, mul_pow, mul_left_comm]
     exact mul_lt_mul_of_pos_left hη (pow_pos ht M)
+
+/-- **Ellipticity is an open condition.** For coefficients `c x` depending continuously on a
+parameter `x`, if the principal symbol with coefficients `c x₀` vanishes at no `ξ ≠ 0`, then
+the same holds for all `x` near `x₀`. -/
+theorem eventually_forall_constCoeffPrincipalSymbol_ne_zero [FiniteDimensional ℝ E]
+    {X : Type*} [TopologicalSpace X] {ι : Type*} {s : Finset ι} {c : X → ι → ℂ}
+    (hc : ∀ i ∈ s, Continuous fun x ↦ c x i) {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
+    {x₀ : X} (h : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s (c x₀) m M ξ ≠ 0) :
+    ∀ᶠ x in 𝓝 x₀, ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s (c x) m M ξ ≠ 0 := by
+  have hcont : Continuous fun p : X × E ↦ constCoeffPrincipalSymbol s (c p.1) m M p.2 := by
+    simp only [constCoeffPrincipalSymbol_def]
+    refine continuous_finsetSum _ fun i hi ↦ ?_
+    exact ((hc i (Finset.mem_filter.1 hi).1).comp continuous_fst).mul (by fun_prop)
+  -- On the compact unit sphere the principal symbol stays nonzero near `x₀`.
+  have hS := (isCompact_sphere (0 : E) 1).eventually_forall_of_forall_eventually
+    (P := fun x ξ ↦ constCoeffPrincipalSymbol s (c x) m M ξ ≠ 0) fun ξ hξ ↦
+      hcont.continuousAt.eventually_ne (h ξ (ne_zero_of_mem_unit_sphere ⟨ξ, hξ⟩))
+  filter_upwards [hS] with x hx ξ hξ
+  -- Homogeneity reduces a nonzero `ξ` to the unit sphere.
+  have hn : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 hξ
+  have hu : ‖ξ‖⁻¹ • ξ ∈ Metric.sphere (0 : E) 1 := by
+    simp [norm_smul, hn]
+  have hξ' : ξ = ‖ξ‖ • (‖ξ‖⁻¹ • ξ) := by rw [smul_smul, mul_inv_cancel₀ hn, one_smul]
+  rw [hξ', constCoeffPrincipalSymbol_smul]
+  exact mul_ne_zero (pow_ne_zero _ (ofReal_ne_zero.2 hn)) (hx _ hu)
 
 end TauCeti
 
