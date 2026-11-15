@@ -401,13 +401,23 @@ private theorem paraproduct_inner_radius_pos {N : ℕ} (hN : φ.rOut < 2 ^ N * �
 
 variable {φ}
 
-/-- For `α ≤ 0` and `m ≤ j`, `2^{α j} 2^{-α m} = 2^{α (j - m)} ≤ 1`. -/
-private theorem two_rpow_mul_two_rpow_neg_le_one {α : ℝ} (hα : α ≤ 0) {m j : ℕ} (hmj : m ≤ j) :
-    (2 : ℝ) ^ (α * j) * 2 ^ (-α * m) ≤ 1 := by
-  rw [← Real.rpow_add two_pos]
-  refine Real.rpow_le_one_of_one_le_of_nonpos one_le_two ?_
-  have h : (m : ℝ) ≤ j := by exact_mod_cast hmj
-  nlinarith
+/-- For `s < 0`, the low-frequency cut-off at `j - N` satisfies
+`2^{js} ‖S_{j-N} u‖_p ≤ ‖u‖ / (2^{-s} - 1)`: by `TauCeti.BesovSpace.norm_lowPass_le_of_neg`,
+`‖S_{j-N} u‖_p ≤ 2^{-s (j - N)} ‖u‖ / (2^{-s} - 1)`, and `2^{js} 2^{-s (j - N)} ≤ 1`. -/
+private theorem rpow_mul_norm_lowPass_sub_le_of_neg [Fact (1 ≤ q)] (hs : s < 0)
+    (u : BesovSpace F φ s p q) (N j : ℕ) :
+    2 ^ (s * j) * ‖u.lowPass (j - N)‖ ≤ ‖u‖ / (2 ^ (-s) - 1) := by
+  have hD : (0 : ℝ) < 2 ^ (-s) - 1 := sub_pos.2 (Real.one_lt_rpow one_lt_two (neg_pos.2 hs))
+  calc 2 ^ (s * j) * ‖u.lowPass (j - N)‖
+      ≤ 2 ^ (s * j) * (2 ^ (-s * (j - N : ℕ)) / (2 ^ (-s) - 1) * ‖u‖) := by
+        gcongr
+        exact norm_lowPass_le_of_neg hs u _
+    _ = 2 ^ (s * j) * 2 ^ (-s * (j - N : ℕ)) * (‖u‖ / (2 ^ (-s) - 1)) := by ring
+    _ ≤ 1 * (‖u‖ / (2 ^ (-s) - 1)) := by
+        gcongr
+        exact Real.rpow_mul_mul_rpow_neg_mul_le_one one_le_two hs.le
+          (by exact_mod_cast Nat.sub_le j N)
+    _ = _ := one_mul _
 
 variable (φ) in
 /-- **Series of annular pieces dominated by the blocks of a Besov element.** There is `C ≥ 0`,
@@ -491,22 +501,14 @@ theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_neg {α : ℝ} (hα : α
   obtain ⟨w, hw, hwn⟩ := hCw (fun j ↦ (u.lowPass (j - N) • v.block j :
     Lp F r (volume : Measure E))) v (K := ‖u‖ / (2 ^ (-α) - 1)) (by positivity)
     (fun j ↦ isVanishingOn_fourier_lowPass_smul_block N j u v) fun j ↦ by
-      -- `‖S_{j-N} u‖ ≤ 2^{-α (j - N)} ‖u‖ / (2^{-α} - 1)`, and `2^{α j} 2^{-α (j - N)} ≤ 1`.
       calc 2 ^ ((α + β) * j) * ‖u.lowPass (j - N) • v.block j‖
-          ≤ 2 ^ (α * j) * 2 ^ (β * j) * (‖u.lowPass (j - N)‖ * ‖v.block j‖) := by
-            rw [add_mul, Real.rpow_add two_pos]
+          ≤ 2 ^ (α * j) * ‖u.lowPass (j - N)‖ * (2 ^ (β * j) * ‖v.block j‖) := by
+            rw [add_mul, Real.rpow_add two_pos, mul_mul_mul_comm]
             gcongr
             exact Lp.norm_smul_le _ _
-        _ ≤ 2 ^ (α * j) * 2 ^ (β * j) *
-              (2 ^ (-α * (j - N : ℕ)) / (2 ^ (-α) - 1) * ‖u‖ * ‖v.block j‖) := by
+        _ ≤ _ := by
             gcongr
-            exact norm_lowPass_le_of_neg hα u _
-        _ = 2 ^ (α * j) * 2 ^ (-α * (j - N : ℕ)) * (‖u‖ / (2 ^ (-α) - 1) *
-              (2 ^ (β * j) * ‖v.block j‖)) := by ring
-        _ ≤ 1 * (‖u‖ / (2 ^ (-α) - 1) * (2 ^ (β * j) * ‖v.block j‖)) := by
-            gcongr
-            exact two_rpow_mul_two_rpow_neg_le_one hα.le (Nat.sub_le j N)
-        _ = _ := one_mul _
+            exact rpow_mul_norm_lowPass_sub_le_of_neg hα u N j
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
 variable (φ) in
@@ -564,22 +566,15 @@ theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (α : ℝ) {β : ℝ
   obtain ⟨w, hw, hwn⟩ := hCw (fun j ↦ (u.block j • v.lowPass (j - N) :
     Lp F r (volume : Measure E))) u (K := ‖v‖ / (2 ^ (-β) - 1)) (by positivity)
     (fun j ↦ isVanishingOn_fourier_block_smul_lowPass N j u v) fun j ↦ by
-      -- `‖S_{j-N} v‖ ≤ 2^{-β (j - N)} ‖v‖ / (2^{-β} - 1)`, and `2^{β j} 2^{-β (j - N)} ≤ 1`.
       calc 2 ^ ((α + β) * j) * ‖u.block j • v.lowPass (j - N)‖
-          ≤ 2 ^ (α * j) * 2 ^ (β * j) * (‖u.block j‖ * ‖v.lowPass (j - N)‖) := by
-            rw [add_mul, Real.rpow_add two_pos]
+          ≤ 2 ^ (α * j) * ‖u.block j‖ * (2 ^ (β * j) * ‖v.lowPass (j - N)‖) := by
+            rw [add_mul, Real.rpow_add two_pos, mul_mul_mul_comm]
             gcongr
             exact Lp.norm_smul_le _ _
-        _ ≤ 2 ^ (α * j) * 2 ^ (β * j) *
-              (‖u.block j‖ * (2 ^ (-β * (j - N : ℕ)) / (2 ^ (-β) - 1) * ‖v‖)) := by
+        _ ≤ 2 ^ (α * j) * ‖u.block j‖ * (‖v‖ / (2 ^ (-β) - 1)) := by
             gcongr
-            exact norm_lowPass_le_of_neg hβ v _
-        _ = 2 ^ (β * j) * 2 ^ (-β * (j - N : ℕ)) * (‖v‖ / (2 ^ (-β) - 1) *
-              (2 ^ (α * j) * ‖u.block j‖)) := by ring
-        _ ≤ 1 * (‖v‖ / (2 ^ (-β) - 1) * (2 ^ (α * j) * ‖u.block j‖)) := by
-            gcongr
-            exact two_rpow_mul_two_rpow_neg_le_one hβ.le (Nat.sub_le j N)
-        _ = _ := one_mul _
+            exact rpow_mul_norm_lowPass_sub_le_of_neg hβ v N j
+        _ = _ := mul_comm _ _
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
 /-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}` and `v ∈ B^β_{p₂,q}`, the `j`-th term
