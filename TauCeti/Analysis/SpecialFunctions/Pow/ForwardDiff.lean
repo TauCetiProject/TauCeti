@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # First- and second-order forward differences of real powers
@@ -54,22 +56,6 @@ open Asymptotics Filter Set
 
 namespace TauCeti
 
-/-- On `[x, 2 * x]` with `0 < x`, a real power `y ^ β` of either sign is bounded above by
-`max 1 (2 ^ β) * x ^ β`. -/
-private theorem add_rpow_le_max_two_rpow_mul (β : ℝ) {x t : ℝ} (hx : 0 < x) (ht₀ : 0 ≤ t)
-    (htx : t ≤ x) :
-    (x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β := by
-  have hxt : 0 < x + t := by linarith
-  rcases le_total 0 β with hβ | hβ
-  · calc (x + t) ^ β ≤ (2 * x) ^ β := Real.rpow_le_rpow hxt.le (by linarith) hβ
-      _ = 2 ^ β * x ^ β := Real.mul_rpow zero_le_two hx.le
-      _ ≤ max 1 (2 ^ β) * x ^ β :=
-        mul_le_mul_of_nonneg_right (le_max_right _ _) (Real.rpow_nonneg hx.le β)
-  · calc (x + t) ^ β ≤ x ^ β := Real.rpow_le_rpow_of_nonpos hx (by linarith) hβ
-      _ = 1 * x ^ β := (one_mul _).symm
-      _ ≤ max 1 (2 ^ β) * x ^ β :=
-        mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.rpow_nonneg hx.le β)
-
 /-- **First-order forward difference of a real power.** For every real `α` and `0 ≤ h ≤ x`,
 `|(x + h) ^ α - x ^ α| ≤ max 1 (2 ^ (α - 1)) * |α| * x ^ (α - 1) * h`. -/
 theorem abs_add_rpow_sub_rpow_le (α : ℝ) {x h : ℝ} (hh₀ : 0 ≤ h) (hhx : h ≤ x) :
@@ -89,7 +75,7 @@ theorem abs_add_rpow_sub_rpow_le (α : ℝ) {x h : ℝ} (hh₀ : 0 ≤ h) (hhx :
     intro t ht
     have hxt : 0 < x + t := add_pos_of_pos_of_nonneg hx ht.1
     rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.rpow_pos_of_pos hxt _), mul_comm |α|]
-    have hle := add_rpow_le_max_two_rpow_mul (α - 1) hx ht.1 (ht.2.trans hhx)
+    have hle := Real.add_rpow_le_max_two_rpow_mul (α - 1) ht.1 (ht.2.trans hhx)
     calc (x + t) ^ (α - 1) * |α| ≤ (max 1 (2 ^ (α - 1)) * x ^ (α - 1)) * |α| :=
           mul_le_mul_of_nonneg_right hle (abs_nonneg α)
       _ = C := by ring
@@ -107,47 +93,43 @@ theorem abs_add_rpow_sub_rpow_sub_mul_le (α : ℝ) {x h : ℝ} (hh₀ : 0 ≤ h
   · simp
   have hx : 0 < x := hh.trans_le hhx
   let M : ℝ := max 1 (2 ^ (α - 2)) * |α * (α - 1)| * x ^ (α - 2)
-  let g : ℝ → ℝ := fun t ↦ (x + t) ^ α - α * x ^ (α - 1) * t
-  have hgderiv : ∀ t ∈ Icc 0 h,
-      HasDerivAt g (α * ((x + t) ^ (α - 1) - x ^ (α - 1))) t := by
-    intro t ht
-    have hxt : 0 < x + t := add_pos_of_pos_of_nonneg hx ht.1
-    have hd₁ : HasDerivAt (fun s : ℝ ↦ (x + s) ^ α) (α * (x + t) ^ (α - 1) * 1) t :=
-      (Real.hasDerivAt_rpow_const (x := x + t) (p := α) (Or.inl hxt.ne')).comp t
-        ((hasDerivAt_id t).const_add x)
-    have hd₂ : HasDerivAt (fun s : ℝ ↦ α * x ^ (α - 1) * s) (α * x ^ (α - 1) * 1) t :=
-      (hasDerivAt_id t).const_mul (α * x ^ (α - 1))
-    exact (hd₁.sub hd₂).congr_deriv (by ring)
-  have hgbound : ∀ t ∈ Icc 0 h, |α * ((x + t) ^ (α - 1) - x ^ (α - 1))| ≤ M * t := by
-    intro t ht
-    have hstep := abs_add_rpow_sub_rpow_le (α - 1) ht.1 (ht.2.trans hhx)
-    have hexp : α - 1 - 1 = α - 2 := by ring
-    rw [hexp] at hstep
-    calc |α * ((x + t) ^ (α - 1) - x ^ (α - 1))|
-        = |α| * |(x + t) ^ (α - 1) - x ^ (α - 1)| := abs_mul _ _
-      _ ≤ |α| * (max 1 (2 ^ (α - 2)) * |α - 1| * x ^ (α - 2) * t) :=
-          mul_le_mul_of_nonneg_left hstep (abs_nonneg α)
-      _ = M * t := by simp only [M, abs_mul]; ring
-  have hsign (σ : ℝ) (hσ : |σ| = 1) : σ * (g h - g 0) ≤ 2⁻¹ * M * h ^ 2 := by
-    have hq : ∀ t, HasDerivAt (fun s : ℝ ↦ 2⁻¹ * M * (s * s)) (M * t) t := fun t ↦
-      (((hasDerivAt_id t).mul (hasDerivAt_id t)).const_mul (2⁻¹ * M)).congr_deriv
-        (by simp only [id_eq]; ring)
-    have hanti := antitoneOn_of_hasDerivWithinAt_nonpos (convex_Icc 0 h)
-      (f := fun s ↦ σ * g s - 2⁻¹ * M * (s * s))
-      (f' := fun t ↦ σ * (α * ((x + t) ^ (α - 1) - x ^ (α - 1))) - M * t)
-      (fun t ht ↦ (((hgderiv t ht).const_mul σ).sub (hq t)).continuousAt.continuousWithinAt)
-      (fun t ht ↦ (((hgderiv t (interior_subset ht)).const_mul σ).sub (hq t)).hasDerivWithinAt)
-      (fun t ht ↦ by
-        have hle := le_abs_self (σ * (α * ((x + t) ^ (α - 1) - x ^ (α - 1))))
-        rw [abs_mul, hσ, one_mul] at hle
-        linarith [hgbound t (interior_subset ht)])
-      (left_mem_Icc.mpr hh₀) (right_mem_Icc.mpr hh₀) hh₀
-    nlinarith [sq h]
-  have hdiff : ((x + h) ^ α - x ^ α) - α * h * x ^ (α - 1) = g h - g 0 := by
-    simp only [g, add_zero, mul_zero, sub_zero]
+  have htaylor := abs_sub_taylorWithinEval_le (f := fun s : ℝ ↦ s ^ α) (n := 1) (M := M)
+    (x₀ := x) (x := x + h)
+    (by
+      rw [uIcc_of_le (by linarith)]
+      exact fun t ht ↦ Real.contDiffAt_rpow_const_of_ne (hx.trans_le ht.1).ne')
+    (by
+      rw [uIoo_of_le (by linarith)]
+      intro t ht
+      have ht₀ : 0 < t := hx.trans ht.1
+      rw [iteratedDeriv_succ, iteratedDeriv_one, Real.deriv_rpow_const', deriv_const_mul_field,
+        Real.deriv_rpow_const]
+      have hexp : α - 1 - 1 = α - 2 := by ring
+      rw [hexp, ← mul_assoc, abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht₀ _)]
+      have ht_eq : t = x + (t - x) := (add_sub_cancel x t).symm
+      have hle : t ^ (α - 2) ≤ max 1 (2 ^ (α - 2)) * x ^ (α - 2) := by
+        rw [ht_eq]
+        exact Real.add_rpow_le_max_two_rpow_mul (α - 2) (by linarith [ht.1]) (by linarith [ht.2])
+      calc |α * (α - 1)| * t ^ (α - 2)
+          ≤ |α * (α - 1)| * (max 1 (2 ^ (α - 2)) * x ^ (α - 2)) :=
+            mul_le_mul_of_nonneg_left hle (abs_nonneg _)
+        _ = M := by simp only [M]; ring)
+  have hpoly : taylorWithinEval (fun s : ℝ ↦ s ^ α) 1 univ x (x + h) =
+      x ^ α + α * h * x ^ (α - 1) := by
+    simp only [taylorWithinEval_succ, taylor_within_zero_eval, iteratedDerivWithin_univ,
+      iteratedDeriv_one, Real.deriv_rpow_const, Nat.factorial_zero, Nat.cast_one, zero_add,
+      pow_one, smul_eq_mul]
     ring
-  rw [hdiff, abs_le]
-  exact ⟨by linarith [hsign (-1) (by norm_num)], by linarith [hsign 1 (by norm_num)]⟩
+  have hlhs : ((x + h) ^ α - x ^ α) - α * h * x ^ (α - 1) =
+      (x + h) ^ α - taylorWithinEval (fun s : ℝ ↦ s ^ α) 1 univ x (x + h) := by
+    rw [hpoly]
+    ring
+  have hrhs : M * |(x + h) - x| ^ (1 + 1) / (Nat.factorial (1 + 1) : ℝ) =
+      2⁻¹ * max 1 (2 ^ (α - 2)) * |α * (α - 1)| * x ^ (α - 2) * h ^ 2 := by
+    rw [add_sub_cancel_left, abs_of_nonneg hh₀, Nat.factorial_two, Nat.cast_ofNat]
+    simp only [M]
+    ring
+  rwa [← hlhs, hrhs] at htaylor
 
 /-- For every real `α` and `1 ≤ x`,
 `|x ^ α - (x + 1) ^ α| ≤ max 1 (2 ^ (α - 1)) * |α| * x ^ (α - 1)`. -/

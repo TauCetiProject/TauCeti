@@ -24,7 +24,7 @@ partial sums.
 
 ## Main results
 
-* `TauCeti.sum_Ico_smul_geom_eq`: for `z ≠ 1` and `m ≤ n`,
+* `TauCeti.sum_Ico_smul_pow_eq`: for `z ≠ 1` and `m ≤ n`,
   `∑ j ∈ Ico m n, f j • z ^ j = f n • (z ^ n / (z - 1)) - f m • (z ^ m / (z - 1))
     + ∑ j ∈ Ico m n, (f j - f (j + 1)) • (z ^ (j + 1) / (z - 1))`.
 
@@ -42,9 +42,9 @@ namespace TauCeti
 
 /-- **Exact summation by parts against a geometric sequence.** For a module action of a ring `R`
 on a division ring `𝕜`, `z ≠ 1`, and `m ≤ n`,
-`∑_{j=m}^{n-1} f(j) • z^j = f(n) • z^n / (z - 1) - f(m) • z^m / (z - 1)
-  + ∑_{j=m}^{n-1} (f(j) - f(j + 1)) • z^{j+1} / (z - 1)`. -/
-theorem sum_Ico_smul_geom_eq {R 𝕜 : Type*} [Ring R] [DivisionRing 𝕜] [Module R 𝕜]
+`∑_{j=m}^{n-1} f(j) • z^j = f(n) • (z^n / (z - 1)) - f(m) • (z^m / (z - 1))
+  + ∑_{j=m}^{n-1} (f(j) - f(j + 1)) • (z^{j+1} / (z - 1))`. -/
+theorem sum_Ico_smul_pow_eq {R 𝕜 : Type*} [Ring R] [DivisionRing 𝕜] [Module R 𝕜]
     (f : ℕ → R) {z : 𝕜} (hz : z ≠ 1) {m n : ℕ} (hmn : m ≤ n) :
     ∑ j ∈ Ico m n, f j • z ^ j =
       f n • (z ^ n / (z - 1)) - f m • (z ^ m / (z - 1)) +
