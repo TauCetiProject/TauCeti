@@ -40,6 +40,10 @@ section through the local trivializations of the two charts
 (`VectorBundleCore.inChartCoordinates_eq_localTriv_comp` in
 `TauCeti.Topology.VectorBundle.Coordinates`).
 
+In the trivializations at a point, the coordinate expression of a bilinear fibre map evaluated on
+the coordinates of two fibre vectors is the coordinate of its value on them
+(`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂`).
+
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
 For the classical finite-rank bundle-isomorphism criterion see Hatcher,
@@ -569,3 +573,41 @@ theorem continuous_hom_bundle_of_inCoordinates_eq_const
 end ConstantCoordinates
 
 end TauCeti
+
+section TwoVariables
+
+variable {𝕜 B F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  {E₃ : B → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+  [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul 𝕜 (E₃ x)]
+
+/-- Over the base sets of the source trivializations at `x₀`, the coordinate expression of a
+bilinear fibre map, evaluated on the coordinates of two fibre vectors, is the coordinate of the
+value of the fibre map on them. Outside the base set of the target trivialization both sides
+vanish. -/
+theorem ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂ {x₀ x : B}
+    (h₁ : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (h₂ : x ∈ (trivializationAt F₂ E₂ x₀).baseSet)
+    (ϕ : E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (v : E₁ x) (w : E₂ x) :
+    inCoordinates F₁ E₁ (F₂ →L[𝕜] F₃) (fun x ↦ E₂ x →L[𝕜] E₃ x) x₀ x x₀ x ϕ
+        ((trivializationAt F₁ E₁ x₀).continuousLinearMapAt 𝕜 x v)
+        ((trivializationAt F₂ E₂ x₀).continuousLinearMapAt 𝕜 x w) =
+      (trivializationAt F₃ E₃ x₀).continuousLinearMapAt 𝕜 x (ϕ v w) := by
+  by_cases h₃ : x ∈ (trivializationAt F₃ E₃ x₀).baseSet
+  · rw [inCoordinates_apply_eq₂ h₁ h₂ h₃]
+    simp [Trivialization.symm_linearMapAt _ h₁, Trivialization.symm_linearMapAt _ h₂]
+  · have hhom : x ∉ (trivializationAt (F₂ →L[𝕜] F₃) (fun x ↦ E₂ x →L[𝕜] E₃ x) x₀).baseSet := by
+      simp [hom_trivializationAt_baseSet, h₃]
+    simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
+      Trivialization.linearMapAt_def_of_notMem _ hhom,
+      Trivialization.linearMapAt_def_of_notMem _ h₃]
+
+end TwoVariables
