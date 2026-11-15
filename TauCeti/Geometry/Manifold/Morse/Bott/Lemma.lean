@@ -59,6 +59,9 @@ other critical points.
 
 ## Main declarations
 
+* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.sliceChart_criticalZeroSection`:
+  in a slice chart, the coordinate expression of `f` has a critical zero section whose Hessian
+  kernel consists of base directions.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_morseBott_chart`: the
   Morse–Bott lemma in a slice chart of a Morse–Bott critical submanifold.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_normalized_morseBott_chart`:
@@ -173,7 +176,7 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
 `a = h.domChart.extend J s` and `g = f ∘ (h.codChart.extend I).symm ∘ h.equiv`. Then `i s` lies in
 the chart of `M` and corresponds to `(a, 0)`, `g` is `C²` at `(a, 0)`, the zero section is critical
 for `g` near `a`, and the kernel of the Hessian of `g` at `(a, 0)` consists of base directions. -/
-private theorem sliceChart_criticalZeroSection (hi : i.IsNondegenerateCriticalSubmanifold f)
+theorem sliceChart_criticalZeroSection (hi : i.IsNondegenerateCriticalSubmanifold f)
     (h : IsImmersionAtOfComplement F J I n i s) (hn : 2 ≤ n) :
     i s ∈ h.codChart.source ∧
       h.codChart.extend I (i s) = h.equiv (h.domChart.extend J s, 0) ∧

@@ -52,12 +52,15 @@ slices `h '' s ∩ L ⁻¹' {y}` onto the fibres `s ∩ f ⁻¹' {y}`
 
 A map `Φ` on a product `E × F` which vanishes on the zero section near `(a, 0)` and has, at
 `(a, 0)`, a strict derivative injective on the fibre directions `{0} × F`, with `F`
-finite-dimensional, has no other zeros near `(a, 0)`
-(`HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero`): near `(a, 0)` the map
-approximates its derivative, and the derivative is bounded below on the fibre directions.
-Applied to the derivative of a function, this says that a critical zero section with
-nondegenerate normal Hessian is isolated among critical points, as for a Morse–Bott critical
-submanifold.
+finite-dimensional, grows at least linearly off the zero section: near `(a, 0)`,
+`c * ‖z.2‖ ≤ ‖Φ z‖` for some `c > 0`
+(`HasStrictFDerivAt.exists_mul_norm_snd_le_norm_apply`), because near `(a, 0)` the map
+approximates its derivative, and the derivative is bounded below on the fibre directions. In
+particular `Φ` has no other zeros near `(a, 0)`
+(`HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero`). Applied to the derivative of a
+function, this says that a critical zero section with nondegenerate normal Hessian is isolated
+among critical points, as for a Morse–Bott critical submanifold, and that the differential grows
+linearly with the distance to it.
 -/
 
 public section
@@ -292,6 +295,45 @@ theorem Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le {𝕜 E F : Type*}
     ApproximatesLinearOn f L s c :=
   fun _ hx _ hy ↦ hs.norm_image_sub_le_of_norm_fderiv_le' hd (fun z hz ↦ hb z hz) hy hx
 
+/-- **A map vanishing on the zero section grows linearly off it.** Let `Φ` be strictly
+differentiable at `(a, 0)` with derivative `D`, and let `Φ (b, 0) = 0` for every `b` near `a`. If
+`F` is finite-dimensional and `v ↦ D (0, v)` is injective, then near `(a, 0)` the norm of `Φ z` is
+at least a fixed positive multiple of the norm `‖z.2‖` of its fibre coordinate. -/
+theorem HasStrictFDerivAt.exists_mul_norm_snd_le_norm_apply {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E F G : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {Φ : E × F → G} {D : E × F →L[𝕜] G} {a : E}
+    (hΦ : HasStrictFDerivAt Φ D (a, 0)) (hzero : ∀ᶠ b in 𝓝 a, Φ (b, 0) = 0)
+    (hD : Function.Injective (D ∘L ContinuousLinearMap.inr 𝕜 E F)) :
+    ∃ c > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), c * ‖z.2‖ ≤ ‖Φ z‖ := by
+  -- `D` is bounded below on the fibre directions, by `K⁻¹`.
+  obtain ⟨K, hK, hKD⟩ :=
+    (D ∘L ContinuousLinearMap.inr 𝕜 E F).toLinearMap.injective_iff_antilipschitz.1 hD
+  obtain ⟨s, hs, hΦs⟩ := hΦ.approximates_deriv_on_nhds (c := (2 * K)⁻¹) (.inr (by positivity))
+  -- The projection `z ↦ (z.1, 0)` onto the zero section fixes `(a, 0)`.
+  have hπ : Tendsto (fun z : E × F ↦ (z.1, (0 : F))) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
+  have : (0 : ℝ) < K := hK
+  refine ⟨(2 * K : ℝ)⁻¹, by positivity, ?_⟩
+  filter_upwards [hs, hπ.eventually hs, (continuous_fst.tendsto' _ _ rfl).eventually hzero]
+    with z hzs hzs' hz0
+  -- Compare `z` with its projection `(z.1, 0)`, which differs from it by `(0, z.2)`: `Φ z` is
+  -- within `‖z.2‖ / (2 K)` of `D (0, z.2)`, whose norm is at least `‖z.2‖ / K`.
+  have happ := hΦs z hzs (z.1, 0) hzs'
+  have hsub : z - (z.1, 0) = ContinuousLinearMap.inr 𝕜 E F z.2 := by ext <;> simp
+  have hnorm : ‖ContinuousLinearMap.inr 𝕜 E F z.2‖ = ‖z.2‖ := by simp
+  rw [hz0, sub_zero, hsub, hnorm] at happ
+  have hbound := ContinuousLinearMap.bound_of_antilipschitz _ hKD z.2
+  rw [ContinuousLinearMap.comp_apply] at hbound
+  have htri := norm_sub_norm_le (D (ContinuousLinearMap.inr 𝕜 E F z.2)) (Φ z)
+  rw [norm_sub_rev] at htri
+  push_cast at happ ⊢
+  rw [inv_mul_le_iff₀ (by positivity)]
+  have h2 : 2 * (K : ℝ) * (‖D (ContinuousLinearMap.inr 𝕜 E F z.2)‖ - ‖Φ z‖) ≤ ‖z.2‖ :=
+    calc _ ≤ 2 * (K : ℝ) * ((2 * (K : ℝ))⁻¹ * ‖z.2‖) := by gcongr; exact htri.trans happ
+      _ = ‖z.2‖ := by field_simp
+  linarith
+
 /-- **The zeros of a map vanishing on the zero section, near the zero section.** Let `Φ` be
 strictly differentiable at `(a, 0)` with derivative `D`, and let `Φ (b, 0) = 0` for every `b` near
 `a`. If `F` is finite-dimensional and `v ↦ D (0, v)` is injective, then near `(a, 0)` the zeros of
@@ -303,28 +345,11 @@ theorem HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero {𝕜 : Type*
     (hΦ : HasStrictFDerivAt Φ D (a, 0)) (hzero : ∀ᶠ b in 𝓝 a, Φ (b, 0) = 0)
     (hD : Function.Injective (D ∘L ContinuousLinearMap.inr 𝕜 E F)) :
     ∀ᶠ z in 𝓝 (a, (0 : F)), Φ z = 0 ↔ z.2 = 0 := by
-  -- `D` is bounded below on the fibre directions, by `K⁻¹`.
-  obtain ⟨K, hK, hKD⟩ :=
-    (D ∘L ContinuousLinearMap.inr 𝕜 E F).toLinearMap.injective_iff_antilipschitz.1 hD
-  obtain ⟨s, hs, hΦs⟩ := hΦ.approximates_deriv_on_nhds (c := (2 * K)⁻¹) (.inr (by positivity))
-  -- The projection `z ↦ (z.1, 0)` onto the zero section fixes `(a, 0)`.
-  have hπ : Tendsto (fun z : E × F ↦ (z.1, (0 : F))) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
-  filter_upwards [hs, hπ.eventually hs, (continuous_fst.tendsto' _ _ rfl).eventually hzero]
-    with z hzs hzs' hz0
-  refine ⟨fun hz ↦ ?_, fun hz ↦ by rwa [← Prod.mk.eta (p := z), hz]⟩
-  -- Compare `z` with its projection `(z.1, 0)`, which differs from it by `(0, z.2)`.
-  have happ := hΦs z hzs (z.1, 0) hzs'
-  have hsub : z - (z.1, 0) = ContinuousLinearMap.inr 𝕜 E F z.2 := by ext <;> simp
-  have hnorm : ‖ContinuousLinearMap.inr 𝕜 E F z.2‖ = ‖z.2‖ := by simp
-  rw [hz, hz0, sub_zero, zero_sub, norm_neg, hsub, hnorm] at happ
-  have hbound := ContinuousLinearMap.bound_of_antilipschitz _ hKD z.2
-  have hhalf : (K : ℝ) * ((2 * K : ℝ≥0)⁻¹ * ‖z.2‖) = ‖z.2‖ / 2 := by
-    push_cast
-    field_simp
-  have hle := hbound.trans (mul_le_mul_of_nonneg_left happ K.coe_nonneg)
-  rw [hhalf] at hle
-  exact norm_le_zero_iff.1 (by linarith)
+  obtain ⟨c, hc, hlow⟩ := hΦ.exists_mul_norm_snd_le_norm_apply hzero hD
+  filter_upwards [hlow, (continuous_fst.tendsto' _ _ rfl).eventually hzero] with z hz hz0
+  refine ⟨fun h ↦ ?_, fun h ↦ by rwa [← Prod.mk.eta (p := z), h]⟩
+  rw [h, norm_zero] at hz
+  exact norm_le_zero_iff.1 (le_of_mul_le_mul_left (by simpa using hz) hc)
 
 namespace TauCeti
 

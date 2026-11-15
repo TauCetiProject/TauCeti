@@ -92,6 +92,8 @@ the notion be read off in any chart.
   `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: near a
   nondegenerate critical point the differential is bounded below by a multiple of the distance,
   and the Morse form of Łojasiewicz's inequality holds.
+* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_comp`: the Łojasiewicz inequality with
+  exponent `1 / 2` is invariant under `C¹` changes of coordinates.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
@@ -479,6 +481,38 @@ theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
         mul_le_mul_of_nonneg_left hy2 (by positivity)
     _ = (c * ‖y - x‖) ^ 2 := by field_simp
     _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
+
+/-- **Łojasiewicz's inequality is invariant under `C¹` changes of coordinates.** Let `τ` be `C¹` at
+`z₀`, and let `σ` be continuous at `τ z₀`, with `σ (τ z₀) = z₀` and `τ (σ x) = x` near `τ z₀`, so
+that `σ` is a local inverse of `τ`. If `g` is differentiable near `τ z₀` and its pullback `g ∘ τ`
+satisfies `lam * |g (τ z) - g (τ z₀)| ≤ ‖D(g ∘ τ) z‖ ^ 2` near `z₀`, then `g` satisfies the
+Łojasiewicz inequality with exponent `1 / 2` near `τ z₀`: the differential of `g ∘ τ` at `σ x` is
+that of `g` at `x` composed with the locally bounded derivative of `τ`. -/
+theorem exists_mul_abs_sub_le_norm_fderiv_sq_of_comp {E₁ : Type*} [NormedAddCommGroup E₁]
+    [NormedSpace ℝ E₁] {g : E → ℝ} {τ : E₁ → E} {σ : E → E₁} {z₀ : E₁} {lam : ℝ}
+    (hlam : 0 < lam) (hτ : ContDiffAt ℝ 1 τ z₀) (hσ : ContinuousAt σ (τ z₀))
+    (hστ : σ (τ z₀) = z₀) (hτσ : ∀ᶠ x in 𝓝 (τ z₀), τ (σ x) = x)
+    (hg : ∀ᶠ x in 𝓝 (τ z₀), DifferentiableAt ℝ g x)
+    (hloj : ∀ᶠ z in 𝓝 z₀, lam * |g (τ z) - g (τ z₀)| ≤ ‖fderiv ℝ (g ∘ τ) z‖ ^ 2) :
+    ∃ lam' > 0, ∀ᶠ x in 𝓝 (τ z₀), lam' * |g x - g (τ z₀)| ≤ ‖fderiv ℝ g x‖ ^ 2 := by
+  set C := ‖fderiv ℝ τ z₀‖ + 1
+  have hC : 0 < C := by positivity
+  -- Near `z₀` the map `τ` is differentiable, with derivative of norm at most `C`.
+  have hbd : ∀ᶠ z in 𝓝 z₀, DifferentiableAt ℝ τ z ∧ ‖fderiv ℝ τ z‖ ≤ C :=
+    ((hτ.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt one_ne_zero).and <|
+      (((hτ.continuousAt_fderiv one_ne_zero).norm.eventually (gt_mem_nhds (lt_add_one _))).mono
+        fun _ hz ↦ hz.le)
+  have hσ' : Tendsto σ (𝓝 (τ z₀)) (𝓝 z₀) := by simpa only [ContinuousAt, hστ] using hσ
+  refine ⟨lam / C ^ 2, by positivity, ?_⟩
+  filter_upwards [hσ'.eventually (hloj.and hbd), hτσ, hg] with x ⟨hl, hdτ, hτC⟩ hx hgx
+  rw [hx] at hl
+  -- By the chain rule, `‖D(g ∘ τ) (σ x)‖ ≤ ‖Dg x‖ * C`.
+  have hchain : ‖fderiv ℝ (g ∘ τ) (σ x)‖ ≤ ‖fderiv ℝ g x‖ * C := by
+    rw [fderiv_comp (σ x) (hx.symm ▸ hgx) hdτ, hx]
+    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
+  calc lam / C ^ 2 * |g x - g (τ z₀)| = lam * |g x - g (τ z₀)| / C ^ 2 := by ring
+    _ ≤ (‖fderiv ℝ g x‖ * C) ^ 2 / C ^ 2 := by gcongr; exact hl.trans (by gcongr)
+    _ = ‖fderiv ℝ g x‖ ^ 2 := by field_simp
 
 end NormedSpace
 
