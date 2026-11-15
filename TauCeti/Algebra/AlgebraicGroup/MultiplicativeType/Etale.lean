@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Kernel
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Isogeny
 public import TauCeti.Algebra.MonoidAlgebra.Etale
 import Mathlib.RingTheory.Etale.Descent
-import Mathlib.RingTheory.Unramified.Finite
 
 /-!
 # Étale kernels of multiplicative-type groups
@@ -61,9 +60,6 @@ theorem etale_kernelCoordinate_iff_isUnit_card :
   constructor
   · intro h
     let _ := h
-    let _ : Module.Finite k Q := Algebra.FormallyUnramified.finite_of_free k Q
-    let _ : Finite C :=
-      (moduleFinite_kernelCoordinate_iff_finite_quotient hH hK f).mp inferInstance
     let _ : Algebra.Etale L (MonoidAlgebra L C) := Algebra.Etale.of_equiv e
     have hu := (MonoidAlgebra.etale_iff_isUnit_card C L).mp inferInstance
     rw [isUnit_iff_ne_zero] at hu ⊢
@@ -71,9 +67,6 @@ theorem etale_kernelCoordinate_iff_isUnit_card :
     apply hu
     simpa only [map_natCast, map_zero] using congrArg (algebraMap k L) hz
   · intro h
-    let _ : Finite C := Nat.finite_of_card_ne_zero (by
-      intro hz
-      simp [hz] at h)
     let _ : Algebra.Etale L (MonoidAlgebra L C) :=
       MonoidAlgebra.etale_of_isUnit_card L C (by
         simpa only [map_natCast] using h.map (algebraMap k L))
