@@ -8,11 +8,15 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Module.Defs
-import Mathlib.Algebra.MvPolynomial.Funext
+public import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
-# Polynomial maps with vector coefficients
+# Polynomial nonvanishing and polynomial maps with vector coefficients
+
+Over an infinite integral domain `R`, a nonzero multivariate polynomial takes a nonzero value at
+some assignment of the variables (`MvPolynomial.exists_eval_ne_zero`), the contrapositive of
+Mathlib's `MvPolynomial.funext`.
 
 A polynomial map `z ↦ ∑ α ∈ s, (∏ i, z i ^ α i) • c α` from `ι → K` to a `K`-vector space `V`,
 over an infinite field `K`, determines its coefficients: if it vanishes everywhere, every
@@ -22,6 +26,17 @@ the algebraic half of the identity theorem for power series in several variables
 -/
 
 public section
+
+namespace MvPolynomial
+
+/-- Over an infinite integral domain, a nonzero multivariate polynomial takes a nonzero value at
+some assignment of the variables. -/
+theorem exists_eval_ne_zero {σ R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+    {p : MvPolynomial σ R} (hp : p ≠ 0) : ∃ x : σ → R, eval x p ≠ 0 := by
+  contrapose! hp
+  exact funext fun x ↦ by simp [hp x]
+
+end MvPolynomial
 
 namespace TauCeti
 

@@ -6,7 +6,7 @@ Authors: Chris Birkbeck, Claude
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Triangular
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 
 import Mathlib.Tactic.LinearCombination
 

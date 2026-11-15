@@ -300,22 +300,22 @@ section Monoidal
 variable (f : X ⟶ Y)
 
 /-- Pushforward of modules along a morphism of schemes is lax monoidal
-(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
+(`SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
 is induced by `m ⊗ n ↦ m ⊗ n` on sections, and its unit map `𝒪_Y ⟶ f_* 𝒪_X` is given by `f` on
 sections (`pushforward_ε`). -/
 instance pushforwardLaxMonoidal : (pushforward f).LaxMonoidal :=
-  TauCeti.SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
+  SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
 
 /-- Pushforward of modules along a scheme morphism respects the symmetry of tensor products. -/
 instance pushforwardLaxBraided : (pushforward f).LaxBraided :=
-  TauCeti.SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
+  SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
 
 /-- The unit map `𝒪_Y ⟶ f_* 𝒪_X` of the pushforward of modules is given by `f` on sections. -/
 @[simp]
 lemma pushforward_ε :
     Functor.LaxMonoidal.ε (pushforward f) =
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
-  TauCeti.SheafOfModules.pushforward_ε f.toRingCatSheafHom
+  SheafOfModules.pushforward_ε f.toRingCatSheafHom
 
 /-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
 lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
@@ -367,9 +367,9 @@ instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
 variable {Z : Scheme.{u}} (g : Y ⟶ Z)
 
 /-- The identification `pushforward f ⋙ pushforward g ≅ pushforward (f ≫ g)` is an isomorphism of
-lax monoidal functors (`TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
+lax monoidal functors (`SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
 instance isMonoidal_pushforwardComp_hom : NatTrans.IsMonoidal (pushforwardComp f g).hom :=
-  TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
+  SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The identification `pushforward f ≅ pushforward f'` for equal morphisms `f = f'` is an
 isomorphism of lax monoidal functors. -/
@@ -393,7 +393,7 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
-  TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
+  SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
 agrees with the successive tensor comparisons followed by the composition isomorphisms on

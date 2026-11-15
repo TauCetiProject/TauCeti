@@ -17,7 +17,7 @@ carrying one is joined to every other index by at most a single edge
 (`TauCeti.IsFiniteType.apply_mul_apply_le_one_of_two_le`), and a triple edge is isolated outright
 (`TauCeti.IsFiniteType.apply_eq_zero_of_apply_mul_apply_eq_three`). Neither statement forbids two
 double edges lying at a distance from one another, and that is what this file rules out along a
-chain: if the first edge of a chain of `m + 3` vertices is double, the last one is single.
+chain: if the first edge of a chain of `m + 3` vertices is double, the last one is not multiple.
 
 The diagram to exclude is a chain whose two extreme edges are double, and there are two of them,
 because a Cartan matrix orients its multiple edges: writing the entry `-2` of a double edge as an
@@ -38,11 +38,11 @@ so end in an arithmetic inequality, no member of this family is of finite type, 
 of the chain. That is what makes the conclusion available in the form the classification wants,
 `TauCeti.IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le`: a statement about an arbitrary
 finite-type matrix rather than about the model diagram. Its hypotheses are the data of a chain of
-indices carrying a multiple edge at one end - distinct indices, non-consecutive ones not joined,
-the interior edges, those joining the vertices `s` and `s + 1` for `0 < s < m + 1`, single, and the
-first edge multiple - and its conclusion is that the last edge is then single. That is exactly what
-a path in the diagram of the matrix supplies, and the extraction of such a path from a diagram
-carrying two double edges is the step left outside this file.
+indices carrying a multiple edge at one end - distinct indices, non-consecutive ones not joined, the
+interior edges, those joining the vertices `s` and `s + 1` for `0 < s < m + 1`, single, and the
+first edge multiple - and its conclusion is that the last edge is then not multiple (single or
+absent). That is exactly what a path in the diagram of the matrix supplies, and the extraction of
+such a path from a diagram carrying two double edges is the step left outside this file.
 
 Note that the ends of the chain need not be the ends of the diagram: the hypotheses say nothing
 about indices outside the chain, since finite type passes to principal submatrices
@@ -393,7 +393,8 @@ private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
 be distinct indices of a finite-type matrix, non-consecutive ones not joined at all and the
 interior edges of the chain - those joining `v s` to `v (s + 1)` for `0 < s < m + 1` - single. If
 the first edge, the one joining `v 0` to `v 1`, is multiple, then the last one, joining `v (m + 1)`
-to `v (m + 2)`, is single; nothing is assumed about that last edge beforehand.
+to `v (m + 2)`, is not multiple (its product of entries is at most `1`); nothing is assumed about
+that last edge beforehand.
 
 Nothing is assumed about the indices outside the chain: finite type passes to principal
 submatrices, so the chain may sit anywhere inside a larger diagram. The hypotheses are what a path
