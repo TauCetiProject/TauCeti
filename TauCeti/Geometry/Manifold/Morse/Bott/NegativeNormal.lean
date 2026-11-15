@@ -232,7 +232,8 @@ negative one and to `G s` on the positive one. Since these subspaces are complem
 orthogonal for both `G s` and `N s`, this reads `N s (Ψ s w) (Ψ s w) = G s (w⁺, w⁺) - G s (w⁻, w⁻)`
 for `w = w⁻ + w⁺`: in the coordinates `w = (Ψ s)⁻¹ u` the normal Hessian is the
 positive-minus-negative fibre quadratic form. These properties determine each `Ψ s`: any operator
-on `P` with them, even only positive semidefinite for `G s`, is `Ψ s`. -/
+`L` on `P` with them, even without self-adjointness for `G s` and with positive definiteness
+weakened to `0 ≤ G s (L u) u`, is `Ψ s`. -/
 theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifold I (k + 2) M]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -259,7 +260,7 @@ theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifol
           Ψ s u ∈ (G s).toBilinForm.relativeSpectralSubspace
             ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0) ∧
           h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s (Ψ s u)) = G s u u) ∧
-        ∀ L : P →L[ℝ] P, (∀ u v, G s (L u) v = G s u (L v)) → (∀ u, 0 ≤ G s (L u) u) →
+        ∀ L : P →L[ℝ] P, (∀ u, 0 ≤ G s (L u) u) →
           (∀ u v, h.normalHessian hn s (e.symm s (L u)) (e.symm s v) =
             h.normalHessian hn s (e.symm s u) (e.symm s (L v))) →
           (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
@@ -284,7 +285,7 @@ theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifol
   obtain ⟨hunit, hGS, hGpos', hQS, hneg, hpos, huniq⟩ :=
     hΨp (Q s) (G s) hsymm hinj (hGsymm s hs.1) (hGpos s hs.1)
   refine ⟨hunit, hGS, hGpos', fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_,
-    fun L hGL hposL hNL hnegL hposL' ↦ huniq L hGL hposL (fun u v ↦ ?_) (fun u hu ↦ ?_)
+    fun L hposL hNL hnegL hposL' ↦ huniq L hposL (fun u v ↦ ?_) (fun u hu ↦ ?_)
       (fun u hu ↦ ?_)⟩
   · rw [hN, hN]
     exact hQS u v

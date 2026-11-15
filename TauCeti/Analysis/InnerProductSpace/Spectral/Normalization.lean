@@ -36,9 +36,9 @@ if `A` is the Riesz operator of the pulled-back form `q (T ·) (T ·)`, then
 of the positive and negative orthogonal spectral projections of `A`
 (`ContinuousLinearMap.mul_self_rpow_mul_mul_mul_self_rpow`).
 
-No choice enters: `N` is the unique operator that is self-adjoint and positive semidefinite for
-`h`, self-adjoint for `q`, and normalizes `q` as above
-(`ContinuousLinearMap.eq_normalizingTransport_iff`).
+No choice enters: `N` is the unique operator `S` with `0 ≤ h (S u) u` for all `u` that is
+self-adjoint for `q` and normalizes `q` as above
+(`ContinuousLinearMap.eq_normalizingTransport_iff`); self-adjointness for `h` follows.
 Consequently it does not depend on the inner product of `E`, and it is natural under linear
 equivalences (`ContinuousLinearMap.normalizingTransport_bilinearComp`): normalizations computed in
 two local trivializations of a vector bundle agree under the transition. It also depends smoothly,
@@ -347,23 +347,21 @@ theorem apply_normalizingTransport_left_eq_right (hh : IsStrictlyPositive h♯) 
 
 /-- **Characterization of the normalizing transport.** For a symmetric nondegenerate form `q` and
 a positive definite `h`, an operator `S` is the normalizing transport of `q` relative to `h` exactly
-when it is self-adjoint and positive semidefinite for `h`, self-adjoint for `q`, and satisfies the
-normalization identity `q (S u) (S v) = h u v - 2 * h (P u) (P v)` for the negative spectral
-projection `P`. In particular the normalizing transport does not depend on the inner product of
-`E`. -/
+when `0 ≤ h (S u) u` for all `u`, `S` is self-adjoint for `q`, and it satisfies the normalization
+identity `q (S u) (S v) = h u v - 2 * h (P u) (P v)` for the negative spectral projection `P`.
+Self-adjointness for `h` is not assumed; it follows. In particular the normalizing transport does
+not depend on the inner product of `E`. -/
 theorem eq_normalizingTransport_iff (hh : IsStrictlyPositive h♯) (hq : ∀ u v, q u v = q v u)
     (hq' : Function.Injective q) {S : E →L[ℝ] E} :
     S = q.normalizingTransport h ↔
-      (∀ u v, h (S u) v = h u (S v)) ∧ (∀ u, 0 ≤ h (S u) u) ∧
-        (∀ u v, q (S u) v = q u (S v)) ∧
+      (∀ u, 0 ≤ h (S u) u) ∧ (∀ u v, q (S u) v = q u (S v)) ∧
         ∀ u v, q (S u) (S v) =
           h u v - 2 * h (q.negativeSpectralProjection h u) (q.negativeSpectralProjection h v) := by
-  refine ⟨fun hS ↦ hS ▸ ⟨metric_apply_normalizingTransport_left_eq_right hh,
-    fun u ↦ (eq_or_ne u 0).elim (fun hu ↦ by simp [hu])
+  refine ⟨fun hS ↦ hS ▸ ⟨fun u ↦ (eq_or_ne u 0).elim (fun hu ↦ by simp [hu])
       fun hu ↦ (metric_apply_normalizingTransport_self_pos hh hq hq' hu).le,
     apply_normalizingTransport_left_eq_right hh,
     apply_normalizingTransport_normalizingTransport hh hq hq'⟩, ?_⟩
-  rintro ⟨hhS, hpos, hqS, hnorm⟩
+  rintro ⟨hpos, hqS, hnorm⟩
   set T := h.metricChangeTransport
   set A := (q.bilinearComp T T)♯
   have hunit : IsUnit A :=
@@ -375,45 +373,39 @@ theorem eq_normalizingTransport_iff (hh : IsStrictlyPositive h♯) (hq : ∀ u v
   have hTR (x : E) : T (CFC.sqrt h♯ x) = x := metricChangeTransport_apply_sqrt_apply hh x
   have hTB (x : E) : T (B x) = q.normalizingTransport h (T x) :=
     (normalizingTransport_apply_metricChangeTransport hh x).symm
+  have hA (x y : E) : ⟪A x, y⟫_ℝ = q (T x) (T y) := by
+    rw [continuousLinearMapOfBilin_apply, bilinearComp_apply]
   -- Read `S` through the transport `T`, an isometry from the inner product of `E` to `h`.
   set S' : E →L[ℝ] E := CFC.sqrt h♯ * S * T
   have hTS' (x : E) : T (S' x) = S (T x) := by simp [S', hTR]
   clear_value S'
-  have hsym (x y : E) : ⟪S' x, y⟫_ℝ = ⟪x, S' y⟫_ℝ := by
-    rw [← apply_metricChangeTransport_metricChangeTransport hh,
-      ← apply_metricChangeTransport_metricChangeTransport hh, hTS', hTS', hhS]
-  -- `S'` is positive, commutes with `A`, and conjugates `A` as `B` does.
-  have hS' : 0 ≤ S' := by
-    refine nonneg_iff_isPositive.mpr ((isPositive_iff _).mpr ⟨hsym, fun x ↦ ?_⟩)
+  -- Both `S` and the normalizing transport satisfy the normalization identity, and `S` is
+  -- self-adjoint for `q`, so `A * (S' * S') = B * A * B = A * (B * B)`.
+  have hsq : A * (S' * S') = A * (B * B) := by
+    refine ContinuousLinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ ?_
+    have hL : ⟪A (S' (S' x)), y⟫_ℝ = q (S (T x)) (S (T y)) := by
+      rw [hA, hTS', hqS, ← hTS', hTS', hTS']
+    have hR : ⟪A (B (B x)), y⟫_ℝ = q (S (T x)) (S (T y)) := by
+      rw [← mul_apply_eq_comp A B, ← hBA.eq, mul_apply_eq_comp, ← coe_coe B, hB, coe_coe, hA,
+        hTB, hTB, hnorm, apply_normalizingTransport_normalizingTransport hh hq hq']
+    simp only [mul_apply_eq_comp, hL, hR]
+  -- `S'` has nonnegative quadratic form, so it is the positive square root `B` of `B * B`.
+  have hS'B : S' = B := by
+    refine eq_of_mul_self_eq_mul_self_of_inner_nonneg CFC.rpow_nonneg (fun x ↦ ?_)
+      (hunit.mul_right_inj.mp hsq)
     rw [← apply_metricChangeTransport_metricChangeTransport hh, hTS']
     exact hpos _
-  have hcomm : A * S' = S' * A := by
-    refine ContinuousLinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ ?_
-    rw [mul_apply_eq_comp, mul_apply_eq_comp, hsym, continuousLinearMapOfBilin_apply,
-      continuousLinearMapOfBilin_apply, bilinearComp_apply, bilinearComp_apply, hTS', hTS', hqS]
-  -- Both `S` and the normalizing transport satisfy the normalization identity.
-  have hconj : S' * A * S' = B * A * B := by
-    refine ContinuousLinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ ?_
-    rw [mul_apply_eq_comp, mul_apply_eq_comp, hsym, mul_apply_eq_comp, mul_apply_eq_comp,
-      ← coe_coe B, hB, coe_coe, continuousLinearMapOfBilin_apply,
-      continuousLinearMapOfBilin_apply, bilinearComp_apply, bilinearComp_apply, hTS', hTS', hnorm,
-      hTB, hTB, apply_normalizingTransport_normalizingTransport hh hq hq']
-  -- Both `S'` and `B` commute with `A`, so `S' * S' * A = B * B * A`, and `A` is invertible.
-  have hS'B : S' = B := (CFC.mul_self_eq_mul_self_iff S' B hS' CFC.rpow_nonneg).mp <|
-    hunit.mul_left_inj.mp <| by
-      rw [mul_assoc, ← hcomm, ← mul_assoc, hconj, mul_assoc, ← hBA.eq, ← mul_assoc]
   ext u
   rw [← hTR u, ← hTB, ← hTS', hS'B]
 
 /-- **Uniqueness of the normalizing transport, through the relative spectral subspaces.** For a
-symmetric nondegenerate form `q` and a positive definite `h`, an operator `S` which is self-adjoint
-and positive semidefinite for `h`, self-adjoint for `q`, maps the negative and the positive
+symmetric nondegenerate form `q` and a positive definite `h`, an operator `S` with `0 ≤ h (S u) u`
+for all `u` which is self-adjoint for `q`, maps the negative and the positive
 relative spectral subspaces into themselves, and carries `q` to `-h` on the first and to `h` on
 the second, is the normalizing transport of `q` relative to `h`. -/
 theorem eq_normalizingTransport_of_mem_relativeSpectralSubspace (hh : IsStrictlyPositive h♯)
     (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) {S : E →L[ℝ] E}
-    (hhS : ∀ u v, h (S u) v = h u (S v)) (hpos : ∀ u, 0 ≤ h (S u) u)
-    (hqS : ∀ u v, q (S u) v = q u (S v))
+    (hpos : ∀ u, 0 ≤ h (S u) u) (hqS : ∀ u v, q (S u) v = q u (S v))
     (hneg : ∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0),
       S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) ∧
         q (S u) (S u) = -h u u)
@@ -421,7 +413,7 @@ theorem eq_normalizingTransport_of_mem_relativeSpectralSubspace (hh : IsStrictly
       S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) ∧
         q (S u) (S u) = h u u) :
     S = q.normalizingTransport h := by
-  refine (eq_normalizingTransport_iff hh hq hq').mpr ⟨hhS, hpos, hqS, fun u v ↦ ?_⟩
+  refine (eq_normalizingTransport_iff hh hq hq').mpr ⟨hpos, hqS, fun u v ↦ ?_⟩
   set P := q.negativeSpectralProjection h
   have hsymm := (isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hh).1
   have hP (w : E) : P (P w) = P w := by
@@ -467,15 +459,14 @@ theorem normalizingTransport_bilinearComp {F : Type*} [NormedAddCommGroup F]
     (q.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)).normalizingTransport
         (h.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)) =
       (e.symm : E →L[ℝ] F) ∘L q.normalizingTransport h ∘L (e : F →L[ℝ] E) := by
-  obtain ⟨hhN, hposN, hqN, hnormN⟩ := (eq_normalizingTransport_iff hh hq hq').mp rfl
+  obtain ⟨hposN, hqN, hnormN⟩ := (eq_normalizingTransport_iff hh hq hq').mp rfl
   refine ((eq_normalizingTransport_iff
     (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv h e hh)
     (fun u v ↦ hq _ _) (injective_bilinearComp hq' e.bijective)).mpr
-    ⟨fun u v ↦ ?_, fun u ↦ ?_, fun u v ↦ ?_, fun u v ↦ ?_⟩).symm <;>
+    ⟨fun u ↦ ?_, fun u v ↦ ?_, fun u v ↦ ?_⟩).symm <;>
   simp only [negativeSpectralProjection_bilinearComp e hh hq hq', coe_comp,
     ContinuousLinearEquiv.coe_coe, Function.comp_apply, bilinearComp_apply,
     ContinuousLinearEquiv.apply_symm_apply]
-  · exact hhN _ _
   · exact hposN _
   · exact hqN _ _
   · exact hnormN _ _
@@ -534,8 +525,7 @@ private theorem eq_comp_normalizingTransport_comp {W : Type*} [NormedAddCommGrou
     (hqi : Function.Injective (q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)))
     (hhp : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ)
       (h.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P))))
-    {S : P →L[ℝ] P} (hhS : ∀ u v, h (S u) v = h u (S v)) (hpos : ∀ u, 0 ≤ h (S u) u)
-    (hqS : ∀ u v, q (S u) v = q u (S v))
+    {S : P →L[ℝ] P} (hpos : ∀ u, 0 ≤ h (S u) u) (hqS : ∀ u v, q (S u) v = q u (S v))
     (hneg : ∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0),
       S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) ∧
         q (S u) (S u) = -h u u)
@@ -547,7 +537,7 @@ private theorem eq_comp_normalizingTransport_comp {W : Type*} [NormedAddCommGrou
         (h.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)) ∘L (T : P →L[ℝ] W) := by
   have hS := ContinuousLinearMap.eq_normalizingTransport_of_mem_relativeSpectralSubspace
     (S := (T : P →L[ℝ] W) ∘L S ∘L (T.symm : W →L[ℝ] P)) hhp hqs hqi
-    (fun x y ↦ by simpa using hhS (T.symm x) (T.symm y)) (fun x ↦ by simpa using hpos (T.symm x))
+    (fun x ↦ by simpa using hpos (T.symm x))
     (fun x y ↦ by simpa using hqS (T.symm x) (T.symm y))
     (fun x hx ↦ by simpa using hneg _ (by simpa using hx))
     (fun x hx ↦ by simpa using hposS _ (by simpa using hx))
@@ -563,9 +553,9 @@ real analytically on the pair, is self-adjoint and positive definite for `h` and
 themselves, and carries `q` to `-h` on the negative one and to `h` on the positive one. As these
 subspaces are complementary and orthogonal for both `q` and `h`, `Ψ` carries `q` to
 `h (u⁺, u⁺) - h (u⁻, u⁻)` for `u = u⁻ + u⁺`. These properties determine `Ψ (q, h)` uniquely, even
-with positive definiteness weakened to positive semidefiniteness: any operator with them is
-`Ψ (q, h)`. So `Ψ (q, h)` is the normalizing transport `ContinuousLinearMap.normalizingTransport`
-for any inner product on `P`
+without self-adjointness for `h` and with positive definiteness weakened to `0 ≤ h (S u) u`: any
+operator `S` with them is `Ψ (q, h)`. So `Ψ (q, h)` is the normalizing transport
+`ContinuousLinearMap.normalizingTransport` for any inner product on `P`
 (`ContinuousLinearMap.eq_normalizingTransport_of_mem_relativeSpectralSubspace`), but no inner
 product on `P` is needed. -/
 theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
@@ -584,8 +574,7 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
         (∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0),
           Ψ (q, h) u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) ∧
             q (Ψ (q, h) u) (Ψ (q, h) u) = h u u) ∧
-        ∀ S : P →L[ℝ] P, (∀ u v, h (S u) v = h u (S v)) → (∀ u, 0 ≤ h (S u) u) →
-          (∀ u v, q (S u) v = q u (S v)) →
+        ∀ S : P →L[ℝ] P, (∀ u, 0 ≤ h (S u) u) → (∀ u v, q (S u) v = q u (S v)) →
           (∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0),
             S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) ∧
               q (S u) (S u) = -h u u) →
@@ -616,7 +605,7 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   dsimp only
   simp only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply]
   refine ⟨?_, fun u v ↦ ?_, fun u hu ↦ ?_, fun u v ↦ ?_, fun u hu ↦ ⟨?_, ?_⟩, fun u hu ↦ ⟨?_, ?_⟩,
-    fun S hhS hpos hqS hneg hposS ↦ ?_⟩
+    fun S hpos hqS hneg hposS ↦ ?_⟩
   · refine ContinuousLinearMap.isUnit_iff_bijective.mpr ?_
     rw [ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
     exact T.symm.bijective.comp ((ContinuousLinearMap.isUnit_iff_bijective.mp
@@ -639,6 +628,6 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   · simpa [hTsT] using
       apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Ioi
         hhp hqs hqi (u := T u) (hmem.mpr (by rwa [hTsT]))
-  · exact eq_comp_normalizingTransport_comp T hqs hqi hhp hhS hpos hqS hneg hposS
+  · exact eq_comp_normalizingTransport_comp T hqs hqi hhp hpos hqS hneg hposS
 
 end TauCeti

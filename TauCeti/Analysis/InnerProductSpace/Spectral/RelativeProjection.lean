@@ -456,6 +456,7 @@ theorem ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
 
 /-- A vector is fixed by the negative spectral projection exactly when it lies in the negative
 relative spectral subspace. -/
+@[simp]
 theorem negativeSpectralProjection_apply_eq_self_iff (hh : IsStrictlyPositive h♯)
     (hq : ∀ u v, q u v = q v u) {u : E} :
     q.negativeSpectralProjection h u = u ↔
@@ -466,6 +467,7 @@ theorem negativeSpectralProjection_apply_eq_self_iff (hh : IsStrictlyPositive h�
 
 /-- A vector is killed by the negative spectral projection of a nondegenerate form exactly when it
 lies in the positive relative spectral subspace. -/
+@[simp]
 theorem negativeSpectralProjection_apply_eq_zero_iff (hh : IsStrictlyPositive h♯)
     (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) {u : E} :
     q.negativeSpectralProjection h u = 0 ↔
