@@ -35,8 +35,9 @@ and `κ(y)` is a finite extension of `K` because étale morphisms are locally qu
 `σ` fixing the image of `κ(y)` fixes `t`, and the elements of `Gal(Ω/K)` fixing a finite
 extension of `K` in `Ω` form an open subgroup.
 
-This is the functor from étale sheaves on `Spec K` to discrete continuous `Gal(Ω/K)`-sets in the
-classification of étale sheaves on a field (SGA 4, Exposé VIII, §2).
+The functor `galoisStalk` lands in `Action A Gal(Ω/K)`; together with
+`isOpen_stabilizer_galoisStalk` it supplies the forward data of the classification of étale
+sheaves on a field by discrete continuous `Gal(Ω/K)`-sets (SGA 4, Exposé VIII, §2).
 
 ## Main definitions
 
@@ -45,8 +46,9 @@ classification of étale sheaves on a field (SGA 4, Exposé VIII, §2).
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.isOpen_stabilizer_galoisStalk`: for an étale sheaf of sets or
-  modules, the stabilizer in `Gal(Ω/K)` of every element of the stalk is open.
+* `AlgebraicGeometry.Scheme.isOpen_stabilizer_galoisStalk`: for an étale sheaf with values in a
+  concrete category whose forgetful functor preserves filtered colimits (such as sets or modules),
+  the stabilizer in `Gal(Ω/K)` of every element of the stalk is open.
 
 ## References
 
@@ -178,15 +180,15 @@ variable {A : Type (v + 1)} [LargeCategory A] {FA : A → A → Type*} {CA : A �
   [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA] [HasColimitsOfSize.{u, u} A]
   [PreservesFilteredColimitsOfSize.{u, u} (CategoryTheory.forget A)]
 
-/-- **Stalks of étale sheaves on `Spec K` are discrete continuous `Gal(Ω/K)`-sets**: for a
-concrete coefficient category whose forgetful functor preserves filtered colimits, such as sets or
-modules, every element of the stalk at `Spec Ω ⟶ Spec K` has an open stabilizer in `Gal(Ω/K)`. An
-element of the stalk is the germ of a section over an étale `K`-scheme `X` at a lift `t` of the
-geometric point, and an open subgroup of `Gal(Ω/K)` fixes `t`
-(`exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq`). -/
+/-- **Point stabilizers of the Galois action on stalks are open**: for an étale sheaf `F` on
+`Spec K` with values in a concrete category whose forgetful functor preserves filtered colimits,
+such as sets or modules, the stabilizer in `Gal(Ω/K)` of every element of
+`(galoisStalk K Ω A).obj F` is open in the Krull topology. -/
 theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
     (p : ToType ((galoisStalk K Ω A).obj F)) :
     IsOpen (MulAction.stabilizer Gal(Ω/K) p : Set Gal(Ω/K)) := by
+  -- `p` is the germ of a section `z` over an étale `K`-scheme `X` at a lift `t` of the geometric
+  -- point, and `t` is fixed by the fixing subgroup of a finite extension `L` of `K`, which is open.
   obtain ⟨X, t, z, hp⟩ := (pointSmallEtale _).toPresheafFiber_jointly_surjective (P := F.obj) p
   have : Etale X.hom := X.prop
   obtain ⟨L, _, hL⟩ :=
