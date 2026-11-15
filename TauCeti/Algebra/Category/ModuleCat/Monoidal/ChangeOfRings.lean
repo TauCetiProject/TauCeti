@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
+public import TauCeti.CategoryTheory.Monoidal.Braided.Adjunction
 
 /-!
 # Change of rings and tensor products of modules
 
-Restriction of scalars along a morphism of commutative rings is compatible with the symmetric
-braiding on module categories.
+Extension and restriction of scalars along a morphism of commutative rings are compatible with the
+symmetric braiding on module categories.
 
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
@@ -35,6 +36,10 @@ variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
 /-- Restriction of scalars between module categories preserves the symmetric braiding. -/
 instance restrictScalarsLaxBraided : (_root_.ModuleCat.restrictScalars f).LaxBraided where
   braided _ _ := _root_.ModuleCat.MonoidalCategory.tensor_ext fun _ _ ↦ rfl
+
+/-- Extension of scalars between module categories preserves the symmetric braiding. -/
+instance extendScalarsBraided : (_root_.ModuleCat.extendScalars f).Braided :=
+  (_root_.ModuleCat.extendRestrictScalarsAdj f).leftAdjointBraided
 
 end
 
