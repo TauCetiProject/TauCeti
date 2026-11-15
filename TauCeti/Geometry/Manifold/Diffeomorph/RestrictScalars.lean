@@ -12,10 +12,10 @@ public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 # Restricting the scalars of diffeomorphisms
 
 Let `𝕜'` be a normed algebra over `𝕜`, and let the model spaces be normed spaces over both fields,
-compatibly. A `C^n` diffeomorphism for the trivial models over `𝕜'` is, with the same underlying
-equivalence, a `C^n` diffeomorphism for the trivial models over `𝕜`, since a `C^n` map over `𝕜'` is
-`C^n` over `𝕜` (`ContMDiff.restrictScalars`). This file bundles that diffeomorphism and records its
-compatibility with the identity, inverses, and composition.
+compatibly. A `C^n` diffeomorphism for boundaryless models over `𝕜'` is, with the same underlying
+equivalence, a `C^n` diffeomorphism for their scalar restrictions over `𝕜`, since a `C^n` map over
+`𝕜'` is `C^n` over `𝕜` (`ContMDiff.restrictScalars`). This file bundles that diffeomorphism and
+records its compatibility with the identity, inverses, and composition.
 
 The main example is a biholomorphism between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`, which is a diffeomorphism between the underlying real manifolds modelled on
@@ -42,23 +42,28 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
   [NormedAlgebra 𝕜 𝕜'] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
   [IsScalarTower 𝕜 𝕜' E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [NormedSpace 𝕜' E'] [IsScalarTower 𝕜 𝕜' E'] {F : Type*} [NormedAddCommGroup F]
-  [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {M : Type*} [TopologicalSpace M]
-  [ChartedSpace E M] {N : Type*} [TopologicalSpace N] [ChartedSpace E' N] {P : Type*}
-  [TopologicalSpace P] [ChartedSpace F P] {n : WithTop ℕ∞}
+  [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+  {H H' H'' : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace H'']
+  {I : ModelWithCorners 𝕜' E H} {I' : ModelWithCorners 𝕜' E' H'}
+  {J : ModelWithCorners 𝕜' F H''} [I.Boundaryless] [I'.Boundaryless] [J.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {n : WithTop ℕ∞}
 
 namespace Diffeomorph
 
 variable (𝕜)
 
-/-- A `C^n` diffeomorphism for the trivial models over `𝕜'` is a `C^n` diffeomorphism for the
-trivial models over the smaller field `𝕜`, with the same underlying equivalence. For instance, a
+/-- A `C^n` diffeomorphism for boundaryless models over `𝕜'` is a `C^n` diffeomorphism for
+their scalar restrictions to `𝕜`, with the same underlying equivalence. For instance, a
 biholomorphism between complex manifolds is a diffeomorphism of the underlying real manifolds. -/
-def restrictScalars (Φ : M ≃ₘ^n⟮𝓘(𝕜', E), 𝓘(𝕜', E')⟯ N) : M ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E')⟯ N where
+def restrictScalars (Φ : M ≃ₘ^n⟮I, I'⟯ N) :
+    M ≃ₘ^n⟮I.restrictScalars 𝕜, I'.restrictScalars 𝕜⟯ N where
   toEquiv := Φ.toEquiv
   contMDiff_toFun := Φ.contMDiff.restrictScalars 𝕜
   contMDiff_invFun := Φ.symm.contMDiff.restrictScalars 𝕜
 
-variable (Φ : M ≃ₘ^n⟮𝓘(𝕜', E), 𝓘(𝕜', E')⟯ N)
+variable (Φ : M ≃ₘ^n⟮I, I'⟯ N)
 
 /-- Restricting the scalars of a diffeomorphism does not change its underlying equivalence. -/
 @[simp]
@@ -78,13 +83,13 @@ theorem restrictScalars_toHomeomorph :
 
 /-- Restricting the scalars of diffeomorphisms is injective. -/
 theorem restrictScalars_injective :
-    Injective (restrictScalars 𝕜 : (M ≃ₘ^n⟮𝓘(𝕜', E), 𝓘(𝕜', E')⟯ N) → _) :=
+    Injective (restrictScalars 𝕜 : (M ≃ₘ^n⟮I, I'⟯ N) → _) :=
   fun _ _ h ↦ ext fun x ↦ DFunLike.congr_fun h x
 
 /-- Restricting the scalars of the identity diffeomorphism gives the identity diffeomorphism. -/
 @[simp]
 theorem restrictScalars_refl :
-    (Diffeomorph.refl 𝓘(𝕜', E) M n).restrictScalars 𝕜 = Diffeomorph.refl 𝓘(𝕜, E) M n :=
+    (Diffeomorph.refl I M n).restrictScalars 𝕜 = Diffeomorph.refl (I.restrictScalars 𝕜) M n :=
   (rfl)
 
 /-- Restricting scalars commutes with taking the inverse diffeomorphism. -/
@@ -94,7 +99,7 @@ theorem restrictScalars_symm : (Φ.restrictScalars 𝕜).symm = Φ.symm.restrict
 
 /-- Restricting scalars commutes with the composition of diffeomorphisms. -/
 @[simp]
-theorem restrictScalars_trans (Ψ : N ≃ₘ^n⟮𝓘(𝕜', E'), 𝓘(𝕜', F)⟯ P) :
+theorem restrictScalars_trans (Ψ : N ≃ₘ^n⟮I', J⟯ P) :
     (Φ.trans Ψ).restrictScalars 𝕜 = (Φ.restrictScalars 𝕜).trans (Ψ.restrictScalars 𝕜) :=
   (rfl)
 

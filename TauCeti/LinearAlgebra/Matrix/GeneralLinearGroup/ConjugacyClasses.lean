@@ -82,10 +82,6 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)": class representatives and the count
-  `q² - 1 = Nat.card (ConjClasses (GL (Fin 2) F))`, matching the number of irreducibles. The final
-  theorem carries the name `card_conjClasses_GL2` the roadmap gives it there.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §5.2.
 -/
@@ -113,13 +109,10 @@ theorem trace_val_eq_of_isConj {g h : GL n R} (hgh : IsConj g h) :
 central. -/
 theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
     (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n)) (hgh : IsConj g h) : g = h := by
-  obtain ⟨c, hc⟩ := isConj_iff.1 hgh
+  refine hgh.eq_of_left_mem_center (Subgroup.mem_center_iff.2 fun c ↦ Units.ext ?_)
   obtain ⟨a, ha⟩ := hg
-  have hcomm : c * g = g * c := by
-    refine Units.ext ?_
-    rw [Units.val_mul, Units.val_mul, ← ha]
-    exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
-  rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
+  rw [Units.val_mul, Units.val_mul, ← ha]
+  exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
 
 /-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
 scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore a
@@ -358,8 +351,7 @@ ones, indexed by their trace and their determinant. This is the number of irredu
 representations of `GL₂(𝔽_q)`, whose four families have dimensions `1`, `q`, `q + 1` and
 `q - 1`.
 
-The name is the roadmap's; the statement is the roadmap's with `[Fintype F]` weakened to
-`[Finite F]`, nothing in the argument deciding equality. -/
+The field is assumed only `Finite`, not `Fintype`: nothing in the argument decides equality. -/
 theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
     Nat.card (ConjClasses (GL (Fin 2) F)) = Nat.card F ^ 2 - 1 := by
   rw [← Nat.card_congr (conjClassesGLFinTwoEquiv (F := F)), Nat.card_sum, Nat.card_prod,

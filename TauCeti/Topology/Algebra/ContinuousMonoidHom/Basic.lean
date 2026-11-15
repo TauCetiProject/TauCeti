@@ -29,8 +29,9 @@ Named compatibility proofs describe subgroup inclusions and composition of scala
 for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 `Subgroup.fixedPoints_subtype_quotientMk_smul` records compatibility of the quotient map with the
 inclusion of additive fixed points, without a continuity assumption on the action.
-A homomorphism from a topological group with open kernel is also continuous, for every topology
-on the target. The projections of a product of topological monoids onto its factors are
+A homomorphism from a group with continuous left translations and open kernel is continuous for
+every topology on the target; for a discrete target, continuity is equivalent to openness of the
+kernel. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
 `ContinuousMonoidHom.snd`. Integer powers of continuous homomorphisms into a commutative
 topological group are computed pointwise, and the multiplicative isomorphism underlying a
@@ -96,19 +97,28 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
   rw [hset]
   exact (isOpen_discrete _).preimage (χ.continuous.subtype_mk hmem)
 
-/-- A homomorphism with open kernel out of a group with continuous translations is continuous for
-every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
-theorem _root_.MonoidHom.continuous_of_isOpen_ker [SeparatelyContinuousMul G] {F : Type*}
+/-- A homomorphism with open kernel out of a group with continuous left translations is continuous
+for every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
+theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousConstSMul G G] {F : Type*}
     [MulOneClass F] [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) :
     Continuous f := by
   refine continuous_iff_continuousAt.mpr fun x ↦ tendsto_const_nhds.congr' ?_
   have hcoset : ∀ᶠ y in nhds x, x⁻¹ * y ∈ f.ker := by
     have hmul : Filter.Tendsto (fun y ↦ x⁻¹ * y) (nhds x) (nhds 1) := by
-      simpa using (continuous_const_mul x⁻¹).tendsto x
+      simpa only [smul_eq_mul, inv_mul_cancel] using (continuous_const_smul x⁻¹).tendsto x
     exact hmul.eventually (Filter.eventually_mem_set.mpr (hf.mem_nhds (one_mem f.ker)))
   filter_upwards [hcoset] with y hy
   calc f x = f x * f (x⁻¹ * y) := by rw [MonoidHom.mem_ker.mp hy, mul_one]
     _ = f y := by rw [← map_mul, mul_inv_cancel_left]
+
+/-- A homomorphism from a group with continuous left translations into a monoid carrying the
+discrete topology is continuous exactly when its kernel is open. -/
+theorem _root_.MonoidHom.continuous_iff_isOpen_ker [ContinuousConstSMul G G] {F : Type*}
+    [MulOneClass F] [TopologicalSpace F] [DiscreteTopology F] (f : G →* F) :
+    Continuous f ↔ IsOpen (f.ker : Set G) := by
+  refine ⟨fun hf ↦ ?_, f.continuous_of_isOpen_ker⟩
+  rw [MonoidHom.coe_ker]
+  exact (isOpen_discrete _).preimage hf
 
 /-- The kernel of a continuous homomorphism into a `T1` monoid is closed: it is the preimage of
 the closed point `1`. -/

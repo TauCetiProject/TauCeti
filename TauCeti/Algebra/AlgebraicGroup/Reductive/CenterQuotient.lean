@@ -67,7 +67,6 @@ scheme-theoretic center. It consists of the functions invariant under the center
 noncomputable def centerQuotient (hH : reductiveCommHopfAlgProperty k H) :
     FiniteTypeCommHopfAlgCat.{u, u} k := by
   letI : Algebra.Smooth k H := hH.smooth
-  letI : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   let hnormal := (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
   exact ⟨CommHopfAlgCat.coinvariants hnormal, hnormal.finiteType_coinvariants⟩
 
@@ -76,7 +75,6 @@ projection from a reductive affine group to its represented center quotient. -/
 noncomputable def centerQuotientι (hH : reductiveCommHopfAlgProperty k H) :
     (hH.centerQuotient).obj ⟶ H.obj := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.coinvariantsι
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
 
@@ -84,7 +82,6 @@ noncomputable def centerQuotientι (hH : reductiveCommHopfAlgProperty k H) :
 theorem faithfullyFlat_centerQuotientι (hH : reductiveCommHopfAlgProperty k H) :
     hH.centerQuotientι.hom.toAlgHom.toRingHom.FaithfullyFlat := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.faithfullyFlat_coinvariantsι
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
 
@@ -95,7 +92,6 @@ theorem kernelHopfIdeal_centerQuotientι_eq (hH : reductiveCommHopfAlgProperty k
     CommHopfAlgCat.kernelHopfIdeal hH.centerQuotientι =
       CommHopfAlgCat.centerDefiningIdeal H.obj := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
 
@@ -106,7 +102,6 @@ theorem isCentralIsogeny_centerQuotientι_of_moduleFinite
     (hfin : Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj)) :
     CommHopfAlgCat.IsCentralIsogeny hH.centerQuotientι := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.isCentralIsogeny_coinvariantsι
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj) hfin
 
@@ -117,7 +112,6 @@ noncomputable def liftCenterQuotient (hH : reductiveCommHopfAlgProperty k H)
     (hf : CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj) :
     K ⟶ hH.centerQuotient.obj := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.liftCoinvariants
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf
 
@@ -129,7 +123,6 @@ theorem liftCenterQuotient_comp_centerQuotientι (hH : reductiveCommHopfAlgPrope
     (hf : CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj) :
     hH.liftCenterQuotient f hf ≫ hH.centerQuotientι = f := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.liftCoinvariants_comp_coinvariantsι
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf
 
@@ -140,7 +133,6 @@ theorem liftCenterQuotient_unique (hH : reductiveCommHopfAlgProperty k H)
     (g : K ⟶ hH.centerQuotient.obj) (hg : g ≫ hH.centerQuotientι = f) :
     g = hH.liftCenterQuotient f hf := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.liftCoinvariants_unique
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf g hg
 
@@ -151,7 +143,6 @@ theorem exists_comp_centerQuotientι_iff (hH : reductiveCommHopfAlgProperty k H)
     (∃ g : K ⟶ hH.centerQuotient.obj, g ≫ hH.centerQuotientι = f) ↔
       CommHopfAlgCat.kernelHopfIdeal f ≤ CommHopfAlgCat.centerDefiningIdeal H.obj := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.exists_comp_coinvariantsι_iff
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f
 
@@ -164,7 +155,6 @@ theorem isIso_liftCenterQuotient_of_faithfullyFlat
     (hker : CommHopfAlgCat.kernelHopfIdeal f = CommHopfAlgCat.centerDefiningIdeal H.obj) :
     IsIso (hH.liftCenterQuotient f hker.le) := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   have hbij := CommHopfAlgCat.bijective_liftCoinvariants_of_faithfullyFlat
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal f hf hker
   exact (CommHopfAlgCat.isIsogeny_of_bijective _ hbij).isIso_iff_surjective.mpr hbij.2
@@ -175,7 +165,6 @@ noncomputable def centerQuotientFppfIso (hH : reductiveCommHopfAlgProperty k H) 
     CommHopfAlgCat.centerQuotientFppfSheaf H.obj ≅
       CommHopfAlgCat.pointsFppfGroupObject hH.centerQuotient.obj := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact CommHopfAlgCat.coinvariantsFppfQuotientIso
     (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
 
@@ -187,7 +176,6 @@ theorem centerQuotientFppfProjection_comp_centerQuotientFppfIso_hom
     CommHopfAlgCat.centerQuotientFppfProjection H.obj ≫ (hH.centerQuotientFppfIso).hom =
       CommHopfAlgCat.pointsFppfGroupObjectMap hH.centerQuotientι := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   simpa only [CommHopfAlgCat.centerQuotientFppfProjection_def, centerQuotientFppfIso,
     centerQuotientι, centerQuotient] using
       (CommHopfAlgCat.fppfQuotientProjection_comp_coinvariantsFppfQuotientIso_hom

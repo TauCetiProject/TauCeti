@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.TautologicalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
 /-!
@@ -494,5 +495,54 @@ theorem existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom
     · simp [hQ2, VariableChange.toMatrix_def]
 
 end Existence
+
+section Gluing
+
+open AlgebraicGeometry Opposite
+
+universe v
+
+variable {S : Scheme.{v}}
+
+/-- Changes of variables over `Γ(S, ⊤)` are determined by their images under restriction to the
+affine opens of `S`. -/
+theorem VariableChange.eq_of_forall_affineOpens_map_eq (C₁ C₂ : VariableChange Γ(S, ⊤))
+    (h : ∀ U : S.affineOpens, C₁.map (S.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom =
+      C₂.map (S.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom) : C₁ = C₂ := by
+  ext
+  · exact S.eq_of_forall_affineOpens_map_eq fun U ↦
+      congrArg (fun C ↦ (C.u : Γ(S, U.1))) (h U)
+  · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg VariableChange.r (h U)
+  · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg VariableChange.s (h U)
+  · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg VariableChange.t (h U)
+
+/-- **Changes of variables glue along the affine opens.** Changes of variables `C U` over
+`Γ(S, U)`, one for each affine open `U`, compatible with restriction from an affine open to a
+smaller one, are the images of a change of variables over `Γ(S, ⊤)`. -/
+theorem VariableChange.exists_forall_affineOpens_map_eq
+    (C : ∀ U : S.affineOpens, VariableChange Γ(S, U.1))
+    (compat : ∀ (U V : S.affineOpens) (hVU : V.1 ≤ U.1),
+      (C U).map (S.presheaf.map (homOfLE hVU).op).hom = C V) :
+    ∃ C₀ : VariableChange Γ(S, ⊤),
+      ∀ U : S.affineOpens, C₀.map (S.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom = C U := by
+  -- glue the four coefficients of the local changes of variables, and the inverse of `u`
+  obtain ⟨u, hu⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ ((C U).u : Γ(S, U.1)))
+    fun U V hVU ↦ congrArg (fun C ↦ (C.u : Γ(S, V.1))) (compat U V hVU)).exists
+  obtain ⟨v, hv⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (↑(C U).u⁻¹ : Γ(S, U.1)))
+    fun U V hVU ↦ by
+      simpa [VariableChange.map] using
+        congrArg (fun C : VariableChange Γ(S, V.1) ↦ ((C.u⁻¹ : Γ(S, V.1)ˣ) : Γ(S, V.1)))
+          (compat U V hVU)).exists
+  obtain ⟨r, hr⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (C U).r) fun U V hVU ↦
+    congrArg VariableChange.r (compat U V hVU)).exists
+  obtain ⟨s, hs⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (C U).s) fun U V hVU ↦
+    congrArg VariableChange.s (compat U V hVU)).exists
+  obtain ⟨t, ht⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (C U).t) fun U V hVU ↦
+    congrArg VariableChange.t (compat U V hVU)).exists
+  exact ⟨⟨⟨u, v, S.eq_of_forall_affineOpens_map_eq fun U ↦ by simp [hu, hv],
+    S.eq_of_forall_affineOpens_map_eq fun U ↦ by simp [hu, hv]⟩, r, s, t⟩, fun U ↦
+    VariableChange.ext (Units.ext (hu U)) (hr U) (hs U) (ht U)⟩
+
+end Gluing
 
 end WeierstrassCurve

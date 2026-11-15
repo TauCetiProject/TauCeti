@@ -38,6 +38,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.nonsingular_coords` and
   `WeierstrassCurve.Affine.Point.some_coords`: a nonzero point is `.some` of its accessors.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
+* `WeierstrassCurve.Affine.Point.eq_or_eq_neg_of_xCoord_eq`: nonzero points with equal
+  `x`-coordinates are equal or opposite.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
 * `WeierstrassCurve.Affine.Point.map_eq_self_iff`: a field endomorphism fixes a point exactly
@@ -47,6 +49,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.cast_zero` and `WeierstrassCurve.Affine.Point.cast_some`:
   transport along an equality of curves, as in `AddEquiv.cast` and `Equiv.cast`, fixes the
   point at infinity and keeps the coordinates of a point.
+* `WeierstrassCurve.Affine.Point.xCoord_cast` and `WeierstrassCurve.Affine.Point.yCoord_cast`:
+  the coordinate accessors are unchanged by that transport.
 
 The coordinate accessors let regular functions be evaluated at translates of the generic point.
 These evaluations define the pullback of translation on the curve's function field.
@@ -131,6 +135,12 @@ theorem yCoord_neg {P : W.Point} (hP : P ≠ 0) :
   | zero => exact absurd rfl hP
   | some x y h => rfl
 
+/-- **Two nonzero points with the same `x`-coordinate are equal or opposite**, over a field. -/
+theorem eq_or_eq_neg_of_xCoord_eq {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F}
+    {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0) (h : xCoord P = xCoord Q) : P = Q ∨ P = -Q := by
+  rw [← some_coords hP, ← some_coords hQ]
+  exact X_eq_iff.mp h
+
 variable {S F K : Type*} [CommRing S] [Field F] [Field K] [Algebra R S] [Algebra R F]
   [Algebra S F] [IsScalarTower R S F] [Algebra R K] [Algebra S K] [IsScalarTower R S K]
   [DecidableEq F] [DecidableEq K]
@@ -197,6 +207,20 @@ lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
     (hns : V.toAffine.Nonsingular x y) :
     cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (some x y hns)
       = some x y (h ▸ hns) := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the `x`-coordinate,
+the point at infinity included. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this
+`cast`. -/
+lemma xCoord_cast {V V' : WeierstrassCurve R} (h : V = V') (P : V.toAffine.Point) :
+    xCoord (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) P) = xCoord P := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the `y`-coordinate,
+the point at infinity included. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this
+`cast`. -/
+lemma yCoord_cast {V V' : WeierstrassCurve R} (h : V = V') (P : V.toAffine.Point) :
+    yCoord (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) P) = yCoord P := by
   subst h; rfl
 
 end Cast

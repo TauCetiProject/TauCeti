@@ -37,18 +37,14 @@ namespace TauCeti.Huber.NoetherianCech
 
 variable {B : Type*} [CommRing B] {ι : Type*} (f : ι → B)
 
-private noncomputable def eraseRingHom [DecidableEq ι] (S : Finset ι) (a : S) :
-    Localization.Away (∏ i ∈ S.erase a.1, f i) →+* Localization.Away (∏ i ∈ S, f i) :=
-  IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
-    ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
-
 variable [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition B)
   (hf : Ideal.span (Set.range f) = ⊤)
 
 private theorem continuous_eraseRingHom [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
     @Continuous _ _ (faceTopology f P hf p (S.erase a.1)) (faceTopology f P hf (p + 1) S)
-      (eraseRingHom f S a) := by
-  rw [faceTopology_eq_locTopology, faceTopology_eq_locTopology, eraseRingHom]
+      (cechLocalizationEraseRingHom f S a) := by
+  rw [faceTopology_eq_locTopology, faceTopology_eq_locTopology,
+    cechLocalizationEraseRingHom_eq_awayLift]
   exact P.continuous_awayLift_locTopology _ _ _ (hasDenominatorPower f P hf p (S.erase a.1))
     _ _ _ (hasDenominatorPower f P hf (p + 1) S) (f a.1) ((Finset.prod_erase_mul S f a.2).symm)
     fun _ ht ↦ mul_mem_numerators f ht a.1
@@ -73,14 +69,9 @@ theorem continuous_cechLocalizationRestriction_erase [DecidableEq ι] (p : ℕ) 
   have := isModuleTopology_faceModuleTopology f P M hf (p + 1) S
   have := IsModuleTopology.isTopologicalAddGroup T N
   have := IsModuleTopology.toContinuousSMul T N
-  let φ : R →+* T := eraseRingHom f S a
+  let φ : R →+* T := cechLocalizationEraseRingHom f S a
   let _ : Module R N := Module.compHom N φ
-  have : IsScalarTower B R N :=
-      IsScalarTower.of_algebraMap_smul (R := B) (A := R) (M := N) fun b x ↦ by
-    -- The restricted action is defined by the localization homomorphism.
-    change φ (algebraMap B R b) • x = b • x
-    simp only [φ, eraseRingHom, IsLocalization.Away.lift_eq]
-    exact IsScalarTower.algebraMap_smul T b x
+  have : IsScalarTower B R N := isScalarTower_compHom_cechLocalizationEraseRingHom M f S a
   have : ContinuousSMul R N := ⟨((continuous_eraseRingHom f P hf p S a).comp
     continuous_fst).smul continuous_snd⟩
   exact IsModuleTopology.continuous_of_linearMap

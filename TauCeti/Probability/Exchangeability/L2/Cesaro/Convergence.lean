@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.L2.BlockAverages
-import TauCeti.MeasureTheory.Function.L2ToL1Convergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Probability.Exchangeability.Map
-import TauCeti.MeasureTheory.Function.BoundedMemLp
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
@@ -318,8 +317,7 @@ theorem weighted_sums_converge_L1_of_memLp {μ : Measure Ω} [IsFiniteMeasure μ
     rw [← Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ hW_L2 a ha_L2]
     simpa only [ha_toLp] using hW₂_tendsto
   simpa only [Pi.sub_apply, Real.norm_eq_abs] using
-    TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm_two
-      (fun m ↦ ((hW_L2 m).sub ha_L2).aestronglyMeasurable) hL2
+    TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm one_le_two hL2
 
 /-- **Bounded-observable form.** A uniform bound on `f` gives square-integrability of the composite
 on a finite measure space, so this is the direct entry point for bounded observables. -/
@@ -333,7 +331,8 @@ theorem weighted_sums_converge_L1 {μ : Measure Ω} [IsFiniteMeasure μ]
           atTop (𝓝 0) :=
   let ⟨C, hC⟩ := hf_bdd
   weighted_sums_converge_L1_of_memLp hX hX_ae hf
-    (memLp_comp_of_bound hf (hX_ae 0) C (Filter.Eventually.of_forall fun ω ↦ hC (X 0 ω)) 2)
+    (MemLp.of_bound (hf.comp_aemeasurable (hX_ae 0)).aestronglyMeasurable C
+      (Filter.Eventually.of_forall fun ω ↦ hC (X 0 ω)))
 
 end Probability
 

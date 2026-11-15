@@ -53,6 +53,7 @@ with injective resolutions.
 * `TauCeti.injective_coinduction_obj`: coinduction preserves injective objects.
 * `TauCeti.enoughInjectives_smoothModules`: smooth modules have enough injectives.
 * `TauCeti.hasExt_smoothModules`: smooth modules have `Ext` groups in the universe of morphisms.
+* `TauCeti.hasExt_discreteModules`: discrete modules likewise have native `Ext` groups.
 
 ## References
 
@@ -104,7 +105,7 @@ theorem mem_smoothPart_coextendScalars_iff [Nonempty ι] (hJ : Directed (· ≥ 
 `R`-linear map `g : A → V` lies in the smooth part of the coextension of scalars exactly when it is
 continuous for the discrete topology on `V`. -/
 theorem mem_smoothPart_coextendScalars_iff_continuous [TopologicalSpace A]
-    [SeparatelyContinuousAdd A] [SeparatelyContinuousMul A] [Nonempty ι]
+    [SeparatelyContinuousAdd A] [SeparatelyContinuousMul A]
     (hJ : (𝓝 (0 : A)).HasBasis (fun _ => True) fun i => (J i : Set A))
     {g : (ModuleCat.coextendScalars f).obj V} :
     g ∈ smoothPart J ((ModuleCat.coextendScalars f).obj V) ↔
@@ -228,14 +229,16 @@ end Coinduction
 
 section EnoughInjectives
 
-variable [Nonempty ι]
-
 /-- For a directed family `J` of left ideals of `A : Type u`, the smooth `A`-modules in universe
 `max u w` have enough injectives: every smooth module embeds, through the unit of the coinduction
 adjunction along `ℤ →+* A`, into the coinduction of an injective abelian group. -/
 theorem enoughInjectives_smoothModules (hJ : Directed (· ≥ ·) J) :
-    EnoughInjectives (smoothModules.{max u w} J).FullSubcategory :=
-  EnoughInjectives.of_adjunction (coinductionAdjunction (Int.castRingHom A) hJ)
+    EnoughInjectives (smoothModules.{max u w} J).FullSubcategory where
+  presentation X :=
+    have := nonempty_of_smoothModules X.property
+    have : EnoughInjectives (smoothModules.{max u w} J).FullSubcategory :=
+      EnoughInjectives.of_adjunction (coinductionAdjunction (Int.castRingHom A) hJ)
+    EnoughInjectives.presentation X
 
 /-- For a directed family `J` of left ideals of `A : Type u`, the abelian category of smooth
 `A`-modules in universe `max u w` has `Ext` groups in the universe `max u w` of its morphisms.
@@ -248,5 +251,22 @@ theorem hasExt_smoothModules (hJ : Directed (· ≥ ·) J)
   hasExt_of_enoughInjectives.{max u w} _
 
 end EnoughInjectives
+
+/-- Discrete modules over a topological ring with separately continuous addition have native
+`Ext` groups in the universe of their morphisms. They are the smooth modules for all open left
+ideals, a nonempty family directed by intersection. -/
+noncomputable instance hasExt_discreteModules [TopologicalSpace A] [SeparatelyContinuousAdd A] :
+    HasExt.{max u w} (discreteModules.{max u w} A).FullSubcategory := by
+  -- Quantify over the abelian structure before substituting the object property, so the
+  -- result retains the inherited abelian structure of discrete modules.
+  suffices ∀ (P : ObjectProperty (ModuleCat.{max u w} A)) [Abelian P.FullSubcategory],
+      P = smoothModules
+        (Subtype.val : {I : Submodule A A // IsOpen (I : Set A)} → Submodule A A) →
+      HasExt.{max u w} P.FullSubcategory from
+    this _ discreteModules_eq_smoothModules
+  intro P _ hP
+  subst P
+  exact hasExt_smoothModules (fun I K =>
+    ⟨⟨I.1 ⊓ K.1, I.2.inter K.2⟩, inf_le_left, inf_le_right⟩)
 
 end TauCeti

@@ -21,6 +21,8 @@ unitary-group file does not import the diagonal-normalizer theory where `permuta
 
 * `TauCeti.toUnits_permutationUnitary`: as an invertible matrix, `Matrix.permutationUnitary σ`
   is `TauCeti.permutationGL σ`.
+* `TauCeti.permutationGL_mem_unitarySubgroup`: permutation matrices lie in the unitary subgroup
+  of the general linear group.
 -/
 
 public section
@@ -36,5 +38,13 @@ theorem toUnits_permutationUnitary {R : Type*} [CommRing R] [StarRing R] {ι : T
     [DecidableEq ι] (σ : Equiv.Perm ι) :
     Unitary.toUnits (permutationUnitary (R := R) σ) = permutationGL σ :=
   Units.ext <| by rw [Unitary.val_toUnits_apply, permutationGL_coe, coe_permutationUnitary]
+
+/-- A permutation matrix lies in the unitary subgroup of the general linear group; over a ring
+with trivial star, such as `ℝ`, this is the orthogonal group. -/
+theorem permutationGL_mem_unitarySubgroup {R : Type*} [Semiring R] [StarRing R] {ι : Type*}
+    [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
+    permutationGL σ ∈ unitarySubgroup (GL ι R) := by
+  simp [mem_unitarySubgroup_iff, Units.unitary_eq, Unitary.mem_iff, star_eq_conjTranspose,
+    conjTranspose_permMatrix, ← permMatrix_mul]
 
 end TauCeti

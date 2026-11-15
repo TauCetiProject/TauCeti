@@ -37,23 +37,14 @@ variable {V : Type u₁} [Category.{v₁} V] [MonoidalCategory V] [BraidedCatego
 
 /-- The opposite of an enriched functor, with the same map on each Hom object after reversing
 its source and target. -/
+@[simps]
 def op (F : EnrichedFunctor V C D) : EnrichedFunctor V Cᵒᵖ Dᵒᵖ where
   obj X := Opposite.op (F.obj X.unop)
   map X Y := F.map Y.unop X.unop
   map_id X := F.map_id X.unop
   map_comp X Y Z := by
-    rw [eComp_op_eq, Category.assoc, F.map_comp, tensorHom_eComp_op_eq]
-    rfl
-
-/-- The opposite functor acts on objects by applying the original functor. -/
-@[simp]
-theorem op_obj (F : EnrichedFunctor V C D) (X : Cᵒᵖ) :
-    F.op.obj X = Opposite.op (F.obj X.unop) := rfl
-
-/-- The opposite functor uses the original map on the reversed Hom object. -/
-@[simp]
-theorem op_map (F : EnrichedFunctor V C D) (X Y : Cᵒᵖ) :
-    F.op.map X Y = F.map Y.unop X.unop := rfl
+    rw [eComp_op_eq_assoc, F.map_comp]
+    exact (tensorHom_eComp_op_eq ..).symm
 
 /-- Taking opposites sends the identity enriched functor to the identity. -/
 @[simp]

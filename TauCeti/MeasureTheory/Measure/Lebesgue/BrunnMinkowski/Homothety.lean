@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+-- Proof-only: height quantiles and their integrals, for the equality case of Brunn–Minkowski.
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
 -- Proof-only: a convex set has positive volume exactly when its interior is nonempty, and
 -- containment in an open convex set from directional images.
 import TauCeti.Analysis.Convex.Measure
 import TauCeti.Analysis.Convex.Separation
+-- Proof-only: rescaling a set to volume one.
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Equality in Brunn–Minkowski for convex bodies: homothety
@@ -38,7 +43,7 @@ The hypothesis of positive volume is equivalent to nonempty interior
 
 ## Main results
 
-* `Convex.exists_interior_eq_vadd_interior_of_volume_le`: for bounded Borel convex sets of positive
+* `Convex.exists_interior_eq_vadd_interior_of_volume_le`: for bounded convex sets of positive
   volume, multiplicative equality forces the interiors to be translates.
 * `Convex.volume_smul_add_smul_eq_iff`: for compact convex sets of positive volume, multiplicative
   equality holds exactly for translates.
@@ -55,26 +60,47 @@ The hypothesis of positive volume is equivalent to nonempty interior
 
 public section
 
-open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set
+open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set TauCeti
 open scoped ENNReal Pointwise RealInnerProductSpace
 
-namespace TauCeti
+/-- In a space with at most one point, any two nonempty sets are homothetic: both are the whole
+space. -/
+private theorem exists_eq_vadd_smul_of_subsingleton {E : Type*} [AddMonoid E] [MulAction ℝ E]
+    [Subsingleton E] {A B : Set E} (hA : A.Nonempty) (hB : B.Nonempty) :
+    ∃ v : E, ∃ r : ℝ, 0 < r ∧ B = v +ᵥ r • A :=
+  ⟨0, 1, one_pos, by rw [hA.eq_univ, hB.eq_univ, one_smul, zero_vadd]⟩
+
+namespace Convex
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 variable {K L : Set E}
 
-/-- **Translated interiors under Brunn–Minkowski equality.** Let `K` and `L` be bounded Borel convex
-sets of positive volume and `0 < θ < 1`. If the volume of `(1 - θ) • K + θ • L` is at most
+/-- **Translated interiors under Brunn–Minkowski equality.** Let `K` and `L` be bounded convex sets
+of positive volume and `0 < θ < 1`. If the volume of `(1 - θ) • K + θ • L` is at most
 `volume K ^ (1 - θ) * volume L ^ θ`, that is, if the multiplicative Brunn–Minkowski inequality is
 an equality, then the interior of `L` is a translate of the interior of `K`. -/
-theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex ℝ K)
-    (hKb : Bornology.IsBounded K) (hKm : MeasurableSet K) (hK0 : volume K ≠ 0)
-    (hL : Convex ℝ L) (hLb : Bornology.IsBounded L) (hLm : MeasurableSet L)
-    (hL0 : volume L ≠ 0) {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
+theorem exists_interior_eq_vadd_interior_of_volume_le (hK : Convex ℝ K)
+    (hKb : Bornology.IsBounded K) (hK0 : volume K ≠ 0) (hL : Convex ℝ L)
+    (hLb : Bornology.IsBounded L) (hL0 : volume L ≠ 0) {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
     (hvol : volume ((1 - θ) • K + θ • L) ≤ volume K ^ (1 - θ) * volume L ^ θ) :
     ∃ v : E, interior L = v +ᵥ interior K := by
+  -- The interiors are open, hence measurable, and have the same volumes, since the frontier of a
+  -- convex set is null; so it suffices to treat measurable `K` and `L`.
+  wlog hm : MeasurableSet K ∧ MeasurableSet L generalizing K L
+  · have hKi : volume (interior K) = volume K :=
+      measure_interior_of_null_frontier (hK.addHaar_frontier volume)
+    have hLi : volume (interior L) = volume L :=
+      measure_interior_of_null_frontier (hL.addHaar_frontier volume)
+    obtain ⟨v, hv⟩ := this hK.interior (hKb.subset interior_subset) (hKi ▸ hK0) hL.interior
+      (hLb.subset interior_subset) (hLi ▸ hL0) (by
+        rw [hKi, hLi]
+        exact (measure_mono (add_subset_add (smul_set_mono interior_subset)
+          (smul_set_mono interior_subset))).trans hvol)
+      ⟨isOpen_interior.measurableSet, isOpen_interior.measurableSet⟩
+    exact ⟨v, by simpa only [interior_interior] using hv⟩
+  obtain ⟨hKm, hLm⟩ := hm
   set v := ∫ x, x ∂(volume[|L]) - ∫ x, x ∂(volume[|K])
   have hKi := (hK.addHaar_pos_iff_interior_nonempty (μ := volume)).1 (pos_iff_ne_zero.2 hK0)
   have hLi := (hL.addHaar_pos_iff_interior_nonempty (μ := volume)).1 (pos_iff_ne_zero.2 hL0)
@@ -86,9 +112,9 @@ theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex
       hLm hL0 hu hθ₀ hθ₁ hvol
     have hcv : c = ⟪u, v⟫ := by
       have h := setIntegral_congr_fun (μ := volume) measurableSet_Ioo hc
-      rw [integral_add (integrableOn_quantile_map_inner_cond u hKb hKm hK0)
-        (integrable_const c), setIntegral_const, setIntegral_quantile_map_inner_cond u hLb hLm hL0,
-        setIntegral_quantile_map_inner_cond u hKb hKm hK0] at h
+      rw [integral_add (integrableOn_quantile_map_inner_cond u hKb hK0)
+        (integrable_const c), setIntegral_const, setIntegral_quantile_map_inner_cond u hLb hL0,
+        setIntegral_quantile_map_inner_cond u hKb hK0] at h
       simp only [measureReal_def, Real.volume_Ioo, sub_zero, ENNReal.ofReal_one,
         ENNReal.toReal_one, one_smul] at h
       rw [inner_sub_right]
@@ -105,13 +131,13 @@ theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex
 convex sets of positive volume and `0 < θ < 1`. If the multiplicative Brunn–Minkowski inequality
 `volume K ^ (1 - θ) * volume L ^ θ ≤ volume ((1 - θ) • K + θ • L)` is an equality, then `L` is a
 translate of `K`. -/
-theorem _root_.Convex.exists_eq_vadd_of_volume_le (hK : Convex ℝ K) (hKc : IsCompact K)
+theorem exists_eq_vadd_of_volume_le (hK : Convex ℝ K) (hKc : IsCompact K)
     (hK0 : volume K ≠ 0) (hL : Convex ℝ L) (hLc : IsCompact L) (hL0 : volume L ≠ 0) {θ : ℝ}
     (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
     (hvol : volume ((1 - θ) • K + θ • L) ≤ volume K ^ (1 - θ) * volume L ^ θ) :
     ∃ v : E, L = v +ᵥ K := by
-  obtain ⟨v, hv⟩ := hK.exists_interior_eq_vadd_interior_of_volume_le hKc.isBounded
-    hKc.measurableSet hK0 hL hLc.isBounded hLc.measurableSet hL0 hθ₀ hθ₁ hvol
+  obtain ⟨v, hv⟩ := hK.exists_interior_eq_vadd_interior_of_volume_le hKc.isBounded hK0 hL
+    hLc.isBounded hL0 hθ₀ hθ₁ hvol
   have hKi := (hK.addHaar_pos_iff_interior_nonempty (μ := volume)).1 (pos_iff_ne_zero.2 hK0)
   have hLi := (hL.addHaar_pos_iff_interior_nonempty (μ := volume)).1 (pos_iff_ne_zero.2 hL0)
   refine ⟨v, ?_⟩
@@ -123,7 +149,7 @@ theorem _root_.Convex.exists_eq_vadd_of_volume_le (hK : Convex ℝ K) (hKc : IsC
 compact convex sets of positive volume and `0 < θ < 1`. Then
 `volume ((1 - θ) • K + θ • L) = volume K ^ (1 - θ) * volume L ^ θ` exactly when `L` is a translate
 of `K`. -/
-theorem _root_.Convex.volume_smul_add_smul_eq_iff (hK : Convex ℝ K) (hKc : IsCompact K)
+theorem volume_smul_add_smul_eq_iff (hK : Convex ℝ K) (hKc : IsCompact K)
     (hK0 : volume K ≠ 0) (hL : Convex ℝ L) (hLc : IsCompact L) (hL0 : volume L ≠ 0) {θ : ℝ}
     (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
     volume ((1 - θ) • K + θ • L) = volume K ^ (1 - θ) * volume L ^ θ ↔ ∃ v : E, L = v +ᵥ K := by
@@ -136,18 +162,22 @@ theorem _root_.Convex.volume_smul_add_smul_eq_iff (hK : Convex ℝ K) (hKc : IsC
     ENNReal.rpow_one]
 
 /-- **Brunn–Minkowski equality for convex bodies, additive form.** Let `A` and `B` be compact convex
-sets of positive volume in a space of positive dimension `n`, and let `c, d > 0`. If the
-Brunn–Minkowski inequality
-`c * volume A ^ (1 / n) + d * volume B ^ (1 / n) ≤ volume (c • A + d • B) ^ (1 / n)` is an
-equality, then `B` is homothetic to `A`: `B = v +ᵥ r • A` for some vector `v` and some `r > 0`. -/
-theorem _root_.Convex.exists_eq_vadd_smul_of_volume_real_rpow_le
-    (hn : Module.finrank ℝ E ≠ 0) {A B : Set E} (hA : Convex ℝ A) (hAc : IsCompact A)
-    (hA0 : volume A ≠ 0) (hB : Convex ℝ B) (hBc : IsCompact B) (hB0 : volume B ≠ 0) {c d : ℝ}
-    (hc : 0 < c) (hd : 0 < d)
+sets of positive volume in a space of dimension `n`, and let `c, d > 0`. If the reverse bound
+`volume (c • A + d • B) ^ (1 / n) ≤ c * volume A ^ (1 / n) + d * volume B ^ (1 / n)` holds,
+then `B` is homothetic to `A`: `B = v +ᵥ r • A` for some vector `v` and some `r > 0`.
+In positive dimension, the bound gives equality in the Brunn–Minkowski inequality;
+in dimension zero, homothety follows from nonempty `A` and `B` alone. -/
+theorem exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (hA : Convex ℝ A)
+    (hAc : IsCompact A) (hA0 : volume A ≠ 0) (hB : Convex ℝ B) (hBc : IsCompact B)
+    (hB0 : volume B ≠ 0) {c d : ℝ} (hc : 0 < c) (hd : 0 < d)
     (h : volume.real (c • A + d • B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
       c * volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
         d * volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹)) :
     ∃ v : E, ∃ r : ℝ, 0 < r ∧ B = v +ᵥ r • A := by
+  by_cases hn : Module.finrank ℝ E = 0
+  · have : Subsingleton E := Module.finrank_zero_iff.mp hn
+    exact exists_eq_vadd_smul_of_subsingleton (nonempty_of_measure_ne_zero hA0)
+      (nonempty_of_measure_ne_zero hB0)
   set n := Module.finrank ℝ E
   have hVA : 0 < volume.real A := ENNReal.toReal_pos hA0 hAc.measure_lt_top.ne
   have hVB : 0 < volume.real B := ENNReal.toReal_pos hB0 hBc.measure_lt_top.ne
@@ -164,13 +194,8 @@ theorem _root_.Convex.exists_eq_vadd_smul_of_volume_real_rpow_le
     rw [eq_div_iff hS.ne', sub_mul, one_mul, div_mul_cancel₀ _ hS.ne']
     ring
   -- Rescale `A` and `B` to unit volume.
-  have hunit {s : Set E} (hsc : IsCompact s) (hVs : 0 < volume.real s) :
-      volume ((volume.real s ^ (n : ℝ)⁻¹)⁻¹ • s) = 1 := by
-    rw [addHaar_smul_of_nonneg _ (inv_nonneg.2 (Real.rpow_nonneg hVs.le _)),
-      ← ofReal_measureReal hsc.measure_lt_top.ne, ← ENNReal.ofReal_mul (by positivity), inv_pow,
-      Real.rpow_inv_natCast_pow hVs.le hn, inv_mul_cancel₀ hVs.ne', ENNReal.ofReal_one]
-  have hA1 : volume (a⁻¹ • A) = 1 := hunit hAc hVA
-  have hB1 : volume (b⁻¹ • B) = 1 := hunit hBc hVB
+  have hA1 : volume (a⁻¹ • A) = 1 := addHaar_inv_measureReal_rpow_smul_eq_one hn hVA
+  have hB1 : volume (b⁻¹ • B) = 1 := addHaar_inv_measureReal_rpow_smul_eq_one hn hVB
   have hset : (1 - θ) • a⁻¹ • A + θ • b⁻¹ • B = S⁻¹ • (c • A + d • B) := by
     rw [smul_add, smul_smul, smul_smul, smul_smul, smul_smul, h1θ]
     congr 2
@@ -200,7 +225,7 @@ theorem _root_.Convex.exists_eq_vadd_smul_of_volume_real_rpow_le
 of positive volume in a space of positive dimension `n`, and let `c, d > 0`. Then
 `volume (c • A + d • B) ^ (1 / n) = c * volume A ^ (1 / n) + d * volume B ^ (1 / n)` exactly when
 `B` is homothetic to `A`, that is, `B = v +ᵥ r • A` for some vector `v` and some `r > 0`. -/
-theorem _root_.Convex.volume_real_smul_add_smul_rpow_eq_iff
+theorem volume_real_smul_add_smul_rpow_eq_iff
     (hn : Module.finrank ℝ E ≠ 0) {A B : Set E} (hA : Convex ℝ A) (hAc : IsCompact A)
     (hA0 : volume A ≠ 0) (hB : Convex ℝ B) (hBc : IsCompact B) (hB0 : volume B ≠ 0) {c d : ℝ}
     (hc : 0 < c) (hd : 0 < d) :
@@ -208,8 +233,7 @@ theorem _root_.Convex.volume_real_smul_add_smul_rpow_eq_iff
         c * volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
           d * volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ↔
       ∃ v : E, ∃ r : ℝ, 0 < r ∧ B = v +ᵥ r • A := by
-  refine ⟨fun h ↦ hA.exists_eq_vadd_smul_of_volume_real_rpow_le hn hAc hA0 hB hBc hB0 hc hd h.le,
-    ?_⟩
+  refine ⟨fun h ↦ hA.exists_eq_vadd_smul_of_volume_real_rpow_le hAc hA0 hB hBc hB0 hc hd h.le, ?_⟩
   rintro ⟨v, r, hr, rfl⟩
   have hscale {k : ℝ} (hk : 0 ≤ k) : volume.real (k • A) ^ ((Module.finrank ℝ E : ℝ)⁻¹) =
       k * volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
@@ -225,4 +249,4 @@ theorem _root_.Convex.volume_real_smul_add_smul_rpow_eq_iff
   rw [hset, hvadd, hvadd, hscale (by positivity), hscale hr.le]
   ring
 
-end TauCeti
+end Convex

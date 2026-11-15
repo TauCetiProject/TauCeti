@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Integral
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
 # The action functional of two exact graphs and the energy of holomorphic strips
@@ -330,36 +331,16 @@ theorem stdComplexLineEnergy_eq_of_tendsto_cotangentAction
     strongDualCotangentSymplecticForm.stdComplexLineEnergy J
         (fun z ↦ (fderiv ℝ u z).toLinearMap) (volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1)) =
       ENNReal.ofReal (A₁ - A₂) := by
-  -- exhaust the strip by the rectangles `[-n, n] × [0, 1]`
-  set R : ℕ → Set (ℝ × ℝ) := fun n ↦ Icc (-(n : ℝ)) n ×ˢ Icc 0 1
-  have hRsub : ∀ n, R n ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 := fun n ↦ prod_mono (subset_univ _) le_rfl
-  have hmono : Monotone R := fun m n hmn ↦ prod_mono
-    (Icc_subset_Icc (neg_le_neg (Nat.cast_le.mpr hmn)) (Nat.cast_le.mpr hmn)) le_rfl
-  have hunion : ⋃ n, R n = (univ : Set ℝ) ×ˢ Icc 0 1 := by
-    refine (iUnion_subset hRsub).antisymm fun z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge |z.1|
-    exact mem_iUnion.mpr ⟨n, ⟨abs_le.mp hn, hz.2⟩⟩
-  have hE : ∀ n, strongDualCotangentSymplecticForm.stdComplexLineEnergy J
-      (fun z ↦ (fderiv ℝ u z).toLinearMap) (volume.restrict (R n)) =
-      ENNReal.ofReal (cotangentAction h₀ h₁ (fun t ↦ u (-(n : ℝ), t)) -
-        cotangentAction h₀ h₁ (fun t ↦ u (n, t))) := fun n ↦
-    stdComplexLineEnergy_eq_cotangentAction_sub hω (neg_le_self n.cast_nonneg)
-      (fun z hz ↦ hu z (hRsub n hz)) (fun z hz ↦ hJ z (hRsub n hz)) (fun s _ ↦ hh₀ s)
-      (fun s _ ↦ hh₁ s) (fun s _ ↦ hu₀ s) (fun s _ ↦ hu₁ s)
-  -- the energies of the rectangles increase to the energy of the strip
-  have hlim : Tendsto (fun n ↦ strongDualCotangentSymplecticForm.stdComplexLineEnergy J
-      (fun z ↦ (fderiv ℝ u z).toLinearMap) (volume.restrict (R n))) atTop
-      (𝓝 (strongDualCotangentSymplecticForm.stdComplexLineEnergy J
-        (fun z ↦ (fderiv ℝ u z).toLinearMap) (volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1)))) := by
-    simp only [SymplecticForm.stdComplexLineEnergy_def, ← hunion]
-    rw [setLIntegral_iUnion_of_directed _ hmono.directed_le]
-    exact tendsto_atTop_iSup fun m n hmn ↦ lintegral_mono' (Measure.restrict_mono (hmono hmn)
-      le_rfl) le_rfl
-  refine tendsto_nhds_unique hlim ?_
-  simp only [hE]
-  exact (ENNReal.continuous_ofReal.tendsto _).comp
-    ((hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)).sub
-      (htop.comp tendsto_natCast_atTop_atTop))
+  -- exhaust the strip by the rectangles `[-n, n] × [0, 1]`, on which `-A` increases by the energy
+  have hRsub (n : ℕ) : Icc (-(n : ℝ)) n ×ˢ Icc (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
+    prod_mono (subset_univ _) le_rfl
+  rw [SymplecticForm.stdComplexLineEnergy_def, ← neg_sub_neg]
+  refine setLIntegral_univ_prod_eq_ofReal_of_tendsto (F := fun s ↦
+    -cotangentAction h₀ h₁ (fun t ↦ u (s, t))) (fun n ↦ ?_) hbot.neg htop.neg
+  rw [neg_sub_neg, ← SymplecticForm.stdComplexLineEnergy_def]
+  exact stdComplexLineEnergy_eq_cotangentAction_sub hω (neg_le_self n.cast_nonneg)
+    (fun z hz ↦ hu z (hRsub n hz)) (fun z hz ↦ hJ z (hRsub n hz)) (fun s _ ↦ hh₀ s)
+    (fun s _ ↦ hh₁ s) (fun s _ ↦ hu₀ s) (fun s _ ↦ hu₁ s)
 
 /-- **The energy of a holomorphic strip is the difference of its endpoint action values.**
 Suppose a holomorphic strip with boundary on the exact graphs of `dh₀` and `dh₁` converges in the

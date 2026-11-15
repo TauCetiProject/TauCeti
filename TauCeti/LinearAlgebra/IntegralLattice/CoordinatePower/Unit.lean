@@ -29,13 +29,13 @@ theorem coordinatePower_a1_eq_smul_unitLattice (ι : Type*) [Fintype ι] :
     a1.coordinatePower ι = (2 : ℤ) • unitLattice ι := by
   apply IntegralLattice.ext
   · ext x
-    simp only [mem_coordinatePower_carrier_iff, smul_carrier,
+    simp only [mem_pi_carrier_iff, smul_carrier,
       mem_unitLattice_carrier_iff, mem_a1_carrier_iff]
   · apply LinearMap.ext
     intro x
     apply LinearMap.ext
     intro y
-    simp only [coordinatePower_form, coordinatePowerForm_apply, a1_form_apply,
+    simp only [pi_form, piForm_apply, a1_form_apply,
       smul_form, LinearMap.smul_apply, unitLattice_form_apply,
       smul_eq_mul, mul_assoc, Finset.mul_sum]
     norm_num

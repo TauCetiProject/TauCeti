@@ -44,7 +44,7 @@ theorem existsUnique_geometricCharacterExtension
     (hf : ∀ (σ : Field.absoluteGaloisGroup k) x, f (σ • x) = σ • f x) :
     ∃! F : AlgebraicClosure k ⊗[k] H.obj →ₐc[AlgebraicClosure k]
         AlgebraicClosure k ⊗[k] K,
-      GroupLike.map F = f ∧
+      F.mapGroupLike = f ∧
         ∀ (σ : Field.absoluteGaloisGroup k) x, F (σ • x) = σ • F x := by
   have hspan := (Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top
     (R := AlgebraicClosure k)
@@ -54,17 +54,17 @@ theorem existsUnique_geometricCharacterExtension
   have hlinear := linearIndep_groupLikeVal
     (R := AlgebraicClosure k) (A := AlgebraicClosure k ⊗[k] H.obj)
   refine ⟨f.liftBialgHom hlinear hspan, ⟨?_, ?_⟩, ?_⟩
-  · exact f.groupLikeMap_liftBialgHom hlinear hspan
+  · exact f.mapGroupLike_liftBialgHom hlinear hspan
   · intro σ x
     -- The absolute-Galois wrapper uses the scalar action of its underlying algebra automorphism.
     apply ((f.liftBialgHom hlinear hspan).map_smul_iff_groupLike hspan
       (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ)).2 _ x
-    simp only [MonoidHom.groupLikeMap_liftBialgHom]
+    simp only [MonoidHom.mapGroupLike_liftBialgHom]
     exact hf σ
   · intro F hF
     apply f.liftBialgHom_unique hlinear hspan F
     intro x
-    exact (GroupLike.val_map F x).symm.trans
+    exact (BialgHom.val_mapGroupLike F x).symm.trans
       (congrArg (fun g ↦ (g x).val) hF.1)
 
 end TauCeti.multiplicativeTypeCommHopfAlgProperty

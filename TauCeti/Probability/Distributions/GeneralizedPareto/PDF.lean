@@ -232,7 +232,7 @@ theorem generalizedParetoMeasure_eq_withDensity (s ξ : ℝ) :
     have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
       (s := Ioi (0 : ℝ)) (φ := generalizedParetoMap s ξ)
       (φ' := fun e ↦ s * Real.exp (ξ * e)) (f := generalizedParetoPDF s ξ)
-      measurableSet_Ioi (measurable_generalizedParetoMap_right s ξ)
+      measurableSet_Ioi
       (fun e _ ↦ (hasDerivAt_generalizedParetoMap s ξ e).hasDerivWithinAt)
       (strictMono_generalizedParetoMap hs ξ).injective.injOn
     have hw : (fun e ↦ ENNReal.ofReal |s * Real.exp (ξ * e)| *

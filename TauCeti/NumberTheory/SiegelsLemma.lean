@@ -122,16 +122,16 @@ theorem ker_mulVecLin_geomRecurrence [CommRing R] (b : R) (m : ℕ) :
 
 /-- The sup norm of the matrix of `b xᵢ = xᵢ₊₁` is `max ‖b‖ 1`, as soon as there is an
 equation. -/
-theorem norm_geomRecurrence [NormedRing R] [NormOneClass R] (b : R) {m : ℕ} (hm : 0 < m) :
+theorem norm_geomRecurrence [SeminormedRing R] [NormOneClass R] (b : R) {m : ℕ} (hm : 0 < m) :
     ‖geomRecurrence b m‖ = max ‖b‖ 1 := by
   refine le_antisymm ((_root_.Matrix.norm_le_iff (by positivity)).2 fun i j ↦ ?_) ?_
   · rw [geomRecurrence_apply]
     by_cases hc : j = i.castSucc
     · simp [hc, Fin.castSucc_lt_succ.ne]
     · by_cases hs : j = i.succ <;> simp [hc, hs, Fin.castSucc_lt_succ.ne']
-  · have hb := _root_.Matrix.norm_entry_le_entrywise_sup_norm (geomRecurrence b m)
+  · have hb := _root_.Matrix.norm_apply_le_norm (geomRecurrence b m)
       (i := ⟨0, hm⟩) (j := Fin.castSucc ⟨0, hm⟩)
-    have h₁ := _root_.Matrix.norm_entry_le_entrywise_sup_norm (geomRecurrence b m)
+    have h₁ := _root_.Matrix.norm_apply_le_norm (geomRecurrence b m)
       (i := ⟨0, hm⟩) (j := Fin.succ ⟨0, hm⟩)
     simp only [geomRecurrence_apply, Fin.castSucc_lt_succ.ne, Fin.castSucc_lt_succ.ne',
       ↓reduceIte, sub_zero, zero_sub, norm_neg, norm_one] at hb h₁

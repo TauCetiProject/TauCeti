@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Plus
+public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Acyclic
 
 /-!
@@ -19,6 +20,7 @@ complexes with respect to the quasi-isomorphisms
 (`TauCeti.HomotopyCategory.Bounded.quasiIso`), through the functor
 `TauCeti.DerivedCategory.Bounded.Qh`. Hence functors out of `K^b(C)` inverting
 quasi-isomorphisms descend to `D^b(C)`, together with their shift and triangulated structure.
+The functor `Qh` is compatible with the single functors (`singleFunctorCompQhIso`).
 
 The proof reduces to Mathlib's corresponding statement for bounded below complexes
 (`DerivedCategory.Plus.Qh`). Inside the bounded below homotopy category, the bounded complexes
@@ -114,6 +116,18 @@ instance : (Qh C).EssSurj where
         ((_root_.DerivedCategory.quotientCompQhIso C).app _ ≪≫ e.symm)⟩⟩
     rw [HomotopyCategory.bounded_quotient_obj_iff, CochainComplex.bounded_iff]
     exact ⟨a, b, inferInstance, inferInstance⟩
+
+variable (C) in
+/-- The functor `Qh C : K^b(C) ⥤ D^b(C)` sends an object placed in degree `n` to that object
+placed in degree `n`. -/
+noncomputable def singleFunctorCompQhIso (n : ℤ) :
+    HomotopyCategory.Bounded.singleFunctor C n ⋙ Qh C ≅ singleFunctor C n :=
+  (t.bounded.fullyFaithfulι.whiskeringRight C).preimageIso
+    (Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft _ (QhCompιIsoιCompQh C) ≪≫
+      (Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight (HomotopyCategory.Bounded.singleFunctorCompιIso C n) _ ≪≫
+      (_root_.DerivedCategory.singleFunctorIsoCompQh C n).symm ≪≫
+      (t.bounded.liftCompιIso _ _).symm)
 
 section Localization
 

@@ -100,6 +100,19 @@ together with one label for each crossing-free circle of the code. -/
 abbrev ResolvedCircle (D : PDCode n) (s : Fin n → Bool) : Type :=
   D.CrossingCircle s ⊕ Fin D.crossinglessComponentCount
 
+/-- Two correspondences of resolved circles that send the circle of every half-edge to its circle
+and retain every crossing-free label are equal. -/
+theorem resolvedCircle_funext (D : PDCode n) {s t : Fin n → Bool}
+    {φ ψ : D.ResolvedCircle s → D.ResolvedCircle t}
+    (hφ : ∀ x : Fin (4 * n), φ (.inl ⟦x⟧) = .inl ⟦x⟧)
+    (hψ : ∀ x : Fin (4 * n), ψ (.inl ⟦x⟧) = .inl ⟦x⟧)
+    (hφ' : ∀ i, φ (.inr i) = .inr i) (hψ' : ∀ i, ψ (.inr i) = .inr i) : φ = ψ := by
+  funext C
+  rcases C with C | i
+  · induction C using Quotient.ind
+    rw [hφ, hψ]
+  · rw [hφ', hψ']
+
 /-- Two half-edges lie on one circle of a smoothed diagram exactly when the second lies on the
 directed traversal orbit of the first, or on that of the other end of the first's arc. -/
 theorem eqvGen_circleStep_iff (D : PDCode n) (s : Fin n → Bool) {x y : Fin (4 * n)} :
@@ -233,6 +246,11 @@ theorem card_resolvedCircle (D : PDCode n) (s : Fin n → Bool) :
   have h := D.two_mul_card_crossingCircle s
   rw [Fintype.card_sum, Fintype.card_fin, stateLoopCount_def]
   omega
+
+/-- Every smoothing of a crossing-free diagram has one circle for each of its components. -/
+theorem card_resolvedCircle_eq_crossinglessComponentCount (D : PDCode 0) (s : Fin 0 → Bool) :
+    Fintype.card (D.ResolvedCircle s) = D.crossinglessComponentCount := by
+  rw [card_resolvedCircle, stateLoopCount_eq_crossinglessComponentCount]
 
 /-- Every smoothing of a diagram with a component has a circle. -/
 theorem one_le_card_resolvedCircle_of_componentCount_pos (D : PDCode n)

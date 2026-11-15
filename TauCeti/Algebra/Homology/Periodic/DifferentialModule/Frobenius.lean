@@ -138,14 +138,14 @@ theorem isConflationExact_ofOnePeriodicComplex_differentialModule :
     ((homologicalComplex_conflation_iff _ _ _).1 hS 0)⟩
 
 /-- The functor of `onePeriodicComplexEquivalence` preserves conflations. -/
-private theorem isConflationExact_functor :
+theorem isConflationExact_onePeriodicComplexEquivalence_functor :
     E.differentialModule.IsConflationExact (E.homologicalComplex (ComplexShape.up (ZMod 1)))
       (onePeriodicComplexEquivalence C).functor :=
   E.isConflationExact_toOnePeriodicComplex_differentialModule.of_iso
     (eqToIso onePeriodicComplexEquivalence_functor.symm)
 
 /-- The inverse of `onePeriodicComplexEquivalence` preserves conflations. -/
-private theorem isConflationExact_inverse :
+theorem isConflationExact_onePeriodicComplexEquivalence_inverse :
     (E.homologicalComplex (ComplexShape.up (ZMod 1))).IsConflationExact E.differentialModule
       (onePeriodicComplexEquivalence C).inverse :=
   E.isConflationExact_ofOnePeriodicComplex_differentialModule.of_iso
@@ -158,7 +158,8 @@ theorem differentialModule_isProjective_iff (M : DifferentialModule C) :
       (E.homologicalComplex (ComplexShape.up (ZMod 1))).isProjective
         ((toOnePeriodicComplex C).obj M) := by
   rw [← E.differentialModule.isProjective_map_equivalence_iff _ (onePeriodicComplexEquivalence C)
-    E.isConflationExact_functor E.isConflationExact_inverse M,
+    E.isConflationExact_onePeriodicComplexEquivalence_functor
+    E.isConflationExact_onePeriodicComplexEquivalence_inverse M,
     onePeriodicComplexEquivalence_functor]
 
 /-- Relative injectivity of a differential module is relative injectivity of its one-periodic
@@ -168,7 +169,8 @@ theorem differentialModule_isInjective_iff (M : DifferentialModule C) :
       (E.homologicalComplex (ComplexShape.up (ZMod 1))).isInjective
         ((toOnePeriodicComplex C).obj M) := by
   rw [← E.differentialModule.isInjective_map_equivalence_iff _ (onePeriodicComplexEquivalence C)
-    E.isConflationExact_functor E.isConflationExact_inverse M,
+    E.isConflationExact_onePeriodicComplexEquivalence_functor
+    E.isConflationExact_onePeriodicComplexEquivalence_inverse M,
     onePeriodicComplexEquivalence_functor]
 
 /-- The differential module of a relatively projective one-periodic complex is relatively
@@ -178,8 +180,9 @@ private theorem isProjective_ofOnePeriodicComplex_obj
     (hQ : (E.homologicalComplex (ComplexShape.up (ZMod 1))).isProjective Q) :
     E.differentialModule.isProjective ((ofOnePeriodicComplex C).obj Q) := by
   have h := (E.homologicalComplex _).isProjective_map_equivalence_iff E.differentialModule
-    (onePeriodicComplexEquivalence C).symm E.isConflationExact_inverse
-    E.isConflationExact_functor Q
+    (onePeriodicComplexEquivalence C).symm
+    E.isConflationExact_onePeriodicComplexEquivalence_inverse
+    E.isConflationExact_onePeriodicComplexEquivalence_functor Q
   rw [Equivalence.symm_functor, onePeriodicComplexEquivalence_inverse] at h
   exact h.2 hQ
 
@@ -219,8 +222,9 @@ contractible differential modules (`differentialModule_split_isProjective_iff`).
 theorem differentialModule_split_isFrobenius : (split C).differentialModule.IsFrobenius :=
   (homologicalComplex_split_isFrobenius (fun j ↦ ⟨j, Subsingleton.elim _ _⟩)
     (fun i ↦ ⟨i, Subsingleton.elim _ _⟩)).of_equivalence
-    (onePeriodicComplexEquivalence C).symm (split C).isConflationExact_inverse
-    (split C).isConflationExact_functor
+    (onePeriodicComplexEquivalence C).symm
+    (split C).isConflationExact_onePeriodicComplexEquivalence_inverse
+    (split C).isConflationExact_onePeriodicComplexEquivalence_functor
 
 /-- For the componentwise split exact structure, a morphism `φ : M ⟶ N` of differential modules
 factors through a relatively projective differential module exactly when it is null-homotopic:

@@ -316,6 +316,11 @@ def onePeriodicComplexEquivalence :
     (onePeriodicComplexEquivalence C).inverse = ofOnePeriodicComplex C := by
   simp [onePeriodicComplexEquivalence]
 
+/-- Differential modules have a zero object when the underlying category does: it is the image of
+the zero one-periodic complex. -/
+instance [HasZeroObject C] : HasZeroObject (DifferentialModule C) :=
+  ⟨⟨_, (onePeriodicComplexEquivalence C).inverse.map_isZero (isZero_zero _)⟩⟩
+
 end OnePeriodic
 
 section OnePeriodicPreadditive
@@ -333,11 +338,6 @@ instance : (ofOnePeriodicComplex C).Linear R where
 instance : (onePeriodicComplexEquivalence C).functor.Additive := by
   rw [onePeriodicComplexEquivalence_functor]
   infer_instance
-
-/-- Differential modules have a zero object when the underlying category does: it is the image of
-the zero one-periodic complex. -/
-instance [HasZeroObject C] : HasZeroObject (DifferentialModule C) :=
-  Functor.hasZeroObject_of_additive (ofOnePeriodicComplex C)
 
 /-- Differential modules have binary biproducts when the underlying category does, since they
 are equivalent to one-periodic complexes. -/

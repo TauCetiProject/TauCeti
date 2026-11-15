@@ -159,7 +159,7 @@ theorem center_suzukiGroup_eq_bot : Subgroup.center ↥(suzukiGroup n) = ⊥ := 
     (by simpa only [coe_unipotent] using hcomm _ (unipotent_mem_suzukiGroup (n := n) 0 1))
     (by simpa only [coe_weyl] using hcomm _ (weyl_mem_suzukiGroup (n := n)))
   -- The scalar is a fourth root of unity, so it is one.
-  have hdet := det_eq_one_of_mem_suzukiGroup n hg
+  have hdet := det_eq_one_of_mem_suzukiGroup hg
   rw [hscalar, Matrix.det_smul, Matrix.det_one, mul_one, Fintype.card_fin] at hdet
   have hone : (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))) 0 0 = 1 := by
     have h4 : ((g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))) 0 0 - 1) ^ 2 ^ 2 = 0 := by

@@ -11,44 +11,38 @@ public import Mathlib.LinearAlgebra.RootSystem.Defs
 /-!
 # Reflection-invariant submodules of a root pairing
 
-A submodule of the root space invariant under the reflection at `v` absorbs, from any root it
-already contains, every root whose pairing with `v` is nonzero. Reflecting `u` in `v` stays inside
-the submodule, and subtracting leaves a multiple of the root at `v` whose coefficient is exactly
-that pairing.
+A submodule of the root space invariant under the reflection at `v` that contains the root at
+`u`, where the pairing of `u` with `v` is a unit, also contains the root at `v`. Reflecting `u` in
+`v` stays inside the submodule, and subtracting leaves a multiple of the root at `v` whose
+coefficient is exactly that pairing.
 
-This is stated for a bare `RootPairing`: no base, no crystallographic structure, no finiteness and
-no assumption on the characteristic. Consumers that propagate membership along a Dynkin edge supply
-the nonvanishing of the pairing from adjacency at the call site.
+This is stated for a bare `RootPairing` over a commutative ring: no base, no crystallographic
+structure and no finiteness. Over a field the unit hypothesis is just nonvanishing of the pairing,
+which is how consumers propagating membership along a Dynkin edge use it.
 
 ## Main results
 
-* `RootPairing.root_mem_of_pairing_ne_zero`: membership of a root in a reflection-invariant
-  submodule propagates along a nonzero pairing.
+* `RootPairing.root_mem_of_isUnit_pairing`: membership of a root in a reflection-invariant
+  submodule propagates along a pairing that is a unit.
 -/
 
 public section
 
-namespace TauCeti
+namespace RootPairing
 
-section
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
 
-variable {K M N ι : Type*} [Field K] [AddCommGroup M] [Module K M]
-  [AddCommGroup N] [Module K N] {P : RootPairing ι K M N}
-
-/-- **Membership of a root in a reflection-invariant submodule propagates along a nonzero
-pairing.** If `q` is invariant under the reflection at `v`, the pairing of `u` with `v` is nonzero,
-and the root at `u` lies in `q`, then so does the root at `v`. -/
-theorem _root_.RootPairing.root_mem_of_pairing_ne_zero {q : Submodule K M} {u v : ι}
+/-- **Membership of a root in a reflection-invariant submodule propagates along a unit pairing.**
+If `q` is invariant under the reflection at `v`, the pairing of `u` with `v` is a unit, and the
+root at `u` lies in `q`, then so does the root at `v`. Over a field, the unit hypothesis is
+`P.pairing u v ≠ 0`. -/
+theorem root_mem_of_isUnit_pairing {q : Submodule R M} {u v : ι}
     (hinvv : q ∈ Module.End.invtSubmodule (P.reflection v))
-    (hpair : P.pairing u v ≠ 0) (hu : P.root u ∈ q) : P.root v ∈ q := by
-  -- Reflecting `u` in `v` keeps us inside `q`; subtracting leaves a multiple of `root v`, and the
-  -- multiplier is invertible by hypothesis.
-  have hrefl : P.reflection v (P.root u) ∈ q :=
-    (Module.End.mem_invtSubmodule _).mp hinvv hu
-  have hsmul : P.pairing u v • P.root v ∈ q := by
-    simpa only [P.reflection_apply_root, sub_sub_cancel] using q.sub_mem hu hrefl
-  exact (q.smul_mem_iff hpair).mp hsmul
+    (hpair : IsUnit (P.pairing u v)) (hu : P.root u ∈ q) : P.root v ∈ q := by
+  -- `root u - reflection v (root u) = pairing u v • root v` lies in `q`.
+  have h : P.root u - P.reflection v (P.root u) ∈ q :=
+    q.sub_mem hu ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mp hinvv _ hu)
+  rwa [reflection_apply_root, sub_sub_cancel, q.smul_mem_iff_of_isUnit hpair] at h
 
-end
-
-end TauCeti
+end RootPairing

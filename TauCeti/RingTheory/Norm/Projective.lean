@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Over
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.RingTheory.TensorProduct.Maps
+-- `baseChangeTowerAlgEquiv` is used only in the proof of `Algebra.projectiveNorm_rTensor`.
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # The norm of a finite locally free algebra
@@ -37,8 +42,12 @@ sections, required after every base change (Katz–Mazur, *Arithmetic Moduli of 
   `Algebra.norm`.
 * `Algebra.projectiveNorm_baseChange_tmul`: the norm commutes with base change along any ring
   homomorphism.
+* `Algebra.projectiveNorm_rTensor`: the norm commutes with the base change map
+  `A ⊗[R] S → A' ⊗[R] S` of an `R`-algebra map `A →ₐ[R] A'`.
 * `Algebra.projectiveNorm_eq_of_algEquiv`: the norm is invariant under isomorphisms of algebras.
 * `Algebra.isUnit_projectiveNorm_iff`: an element is a unit if and only if its norm is.
+* `Algebra.projectiveNorm_mem_iff`: for a commutative algebra, the norm of `x` lies in a prime `p`
+  if and only if `x` lies in some prime over `p`.
 * `LinearMap.projectiveDet_restrictScalars` and `Algebra.norm_projectiveNorm`: transitivity of the
   determinant and of the norm in a tower `R → S → C` with `S` finite free over `R` and `C` finite
   projective over `S`, extending Mathlib's `LinearMap.det_restrictScalars` and
@@ -100,12 +109,76 @@ theorem isUnit_projectiveNorm_iff {x : S} : IsUnit (projectiveNorm R x) ↔ IsUn
 
 end Projective
 
-/-- For an algebra which is free of finite rank, `projectiveNorm` is the norm `Algebra.norm`. -/
-@[simp]
+/-- For an algebra which is free of finite rank, `projectiveNorm` is the norm `Algebra.norm`.
+
+Use this comparison explicitly: automatic rewriting to `norm` would hide the unit-detection
+and base-change simplification rules for `projectiveNorm`. -/
 theorem projectiveNorm_eq_norm [Module.Free R S] (x : S) : projectiveNorm R x = norm R x := by
   rw [projectiveNorm_apply, LinearMap.projectiveDet_eq_det, norm_apply]
 
 end Algebra
+
+section BaseChange
+
+variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] [Module.Finite R S]
+  [Module.Projective R S]
+
+/-- The norm of a finite projective algebra commutes with base change along an `R`-algebra map
+`φ : A →ₐ[R] A'`: the norm over `A'` of the image of `x ∈ A ⊗[R] S` in `A' ⊗[R] S` is the image
+under `φ` of the norm of `x` over `A`. -/
+theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A] [CommRing A']
+    [Algebra R A'] (φ : A →ₐ[R] A') (x : A ⊗[R] S) :
+    projectiveNorm A' (Algebra.TensorProduct.rTensor S φ x) = φ (projectiveNorm A x) := by
+  let := φ.toRingHom.toAlgebra
+  have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
+  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
+  let e := (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm
+  have hx : e (Algebra.TensorProduct.rTensor S φ x) = (1 : A') ⊗ₜ[A] x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a b =>
+      have : φ a = a • (1 : A') := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+      simp [e, this, TensorProduct.smul_tmul, TensorProduct.smul_tmul']
+    | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
+  rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul,
+    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+end BaseChange
+
+section Primes
+
+open TensorProduct Algebra.TensorProduct
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Finite R S]
+  [Module.Projective R S]
+
+/-- The norm of `x` lies in a prime `p` of `R` if and only if `x` lies in some prime of `S` over
+`p`: geometrically, the zero locus of `Norm_{S/R}(x)` on `Spec R` is the image of the zero locus of
+`x` on `Spec S`. -/
+theorem Algebra.projectiveNorm_mem_iff {p : Ideal R} [p.IsPrime] {x : S} :
+    projectiveNorm R x ∈ p ↔ ∃ P ∈ p.primesOver S, x ∈ P := by
+  -- both sides say that `1 ⊗ x` is not a unit in the fibre `κ(p) ⊗[R] S` over `p`
+  rw [← Ideal.algebraMap_residueField_eq_zero, ← projectiveNorm_baseChange_tmul, ← not_ne_iff,
+    ← isUnit_iff_ne_zero, isUnit_projectiveNorm_iff]
+  constructor
+  · -- a maximal ideal of the fibre containing `1 ⊗ x` comes from a prime of `S` over `p`
+    intro hx
+    obtain ⟨m, hm, hxm⟩ := exists_max_ideal_of_mem_nonunits hx
+    refine ⟨m.comap (includeRight : S →ₐ[R] p.ResidueField ⊗[R] S), ⟨inferInstance, ⟨?_⟩⟩, hxm⟩
+    have hbot : m.comap (includeLeftRingHom : p.ResidueField →+* _) = ⊥ :=
+      Ideal.eq_bot_of_prime _
+    ext r
+    rw [Ideal.under, Ideal.mem_comap, Ideal.mem_comap, AlgHom.commutes,
+      Algebra.TensorProduct.algebraMap_apply, ← includeLeftRingHom_apply, ← Ideal.mem_comap, hbot,
+      Ideal.mem_bot, Ideal.algebraMap_residueField_eq_zero]
+  · -- a prime `P` over `p` containing `x` gives a point of the fibre at which `1 ⊗ x` vanishes
+    rintro ⟨P, ⟨hP, hPp⟩, hxP⟩ hx
+    let φ : p.ResidueField ⊗[R] S →+* P.ResidueField :=
+      liftRingHom (Ideal.ResidueField.map p P (algebraMap R S) hPp.over) (algebraMap S _)
+        (by ext r; simp [← IsScalarTower.algebraMap_apply])
+    have := hx.map φ
+    simp [φ, Ideal.algebraMap_residueField_eq_zero.mpr hxP] at this
+
+end Primes
 
 section Transitivity
 

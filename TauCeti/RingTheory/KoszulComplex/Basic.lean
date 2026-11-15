@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Linear
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -36,7 +37,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
   differentials out of and into `⋀ᵏ⁺¹ M` are exact.
 * `TauCeti.koszulComplex.map`: the chain map `K(φ) → K(ψ)` induced by a linear map `g` with
-  `ψ ∘ g = φ`, functorial in `g`.
+  `ψ ∘ g = φ`, functorial in `g`, and `TauCeti.koszulComplex.mapIso`, the isomorphism induced by a
+  linear equivalence.
 * `TauCeti.koszulComplex.smulHomotopy`: for `m : M`, exterior multiplication by `m` is a
   null-homotopy of multiplication by `φ(m)`, so that `φ(m)` annihilates the Koszul homology
   (`TauCeti.koszulComplex.smul_homology_eq_zero`).
@@ -122,6 +124,23 @@ theorem zeroEquiv_koszulDifferential_zero (x : ⋀[R]^1 M) :
     exteriorPower.zeroEquiv R M (koszulDifferential φ 0 x) = φ (exteriorPower.oneEquiv R M x) :=
   LinearMap.congr_fun (zeroEquiv_comp_koszulDifferential_zero φ) x
 
+/-- The first Koszul differential sends a vector, viewed in `⋀¹ M`, to its value under `φ`,
+viewed in `⋀⁰ M`. -/
+@[simp]
+theorem koszulDifferential_zero_oneEquiv_symm (m : M) :
+    koszulDifferential φ 0 ((exteriorPower.oneEquiv R M).symm m) =
+      φ m • (exteriorPower.zeroEquiv R M).symm 1 := by
+  apply (exteriorPower.zeroEquiv R M).injective
+  simp
+
+/-- In degree two, the Koszul differential sends `u ∧ v` to `φ(u) v - φ(v) u`. -/
+@[simp]
+theorem oneEquiv_koszulDifferential_one (v : Fin 2 → M) :
+    exteriorPower.oneEquiv R M (koszulDifferential φ 1 (exteriorPower.ιMulti R 2 v)) =
+      φ (v 0) • v 1 - φ (v 1) • v 0 := by
+  simp [koszulDifferential_ιMulti, Fin.sum_univ_two, Fin.removeNth_apply,
+    Fin.tail, sub_eq_add_neg]
+
 /-- The image of the first Koszul differential, transported along `⋀⁰ M ≅ R`, is the image
 of `φ`. -/
 theorem map_zeroEquiv_range_koszulDifferential_zero :
@@ -147,8 +166,11 @@ theorem koszulDifferential_map {N : Type*} [AddCommGroup N] [Module R N]
       exteriorPower.map n g (koszulDifferential (ψ ∘ₗ g) n x) :=
   LinearMap.congr_fun (koszulDifferential_comp_map _ rfl n) x
 
-/-- The `⋀ M`-component of the Koszul differential of `K(φ, x)`: writing `z = a + e ∧ b`, it is
-`d a + x b`. -/
+/-- The `⋀ M`-component of the Koszul differential of the functional `(m, r) ↦ φ m + r x` on
+`M × R` (the Koszul complex `K(φ, x)` of `φ` with `x` adjoined). Write `e = (0, 1)` and
+`z = a + e ∧ b` with `a ∈ ⋀ᵏ⁺¹ M` and `b ∈ ⋀ᵏ M` embedded along `inl`; then `⋀ fst z = a` and
+`⋀ fst (d_snd z) = b`, where `d_snd` is the Koszul differential of `snd`. Applying `⋀ fst` to the
+differential of `z` gives `d a + x b`, which is the right-hand side below. -/
 theorem map_fst_koszulDifferential_coprod (x : R) (k : ℕ) (z : ⋀[R]^(k + 1) (M × R)) :
     exteriorPower.map k (LinearMap.fst R M R)
         (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) k z) =
@@ -213,10 +235,15 @@ theorem koszulComplex_X (n : ℕ) : (koszulComplex φ).X n = ModuleCat.of R (⋀
   (rfl)
 
 /-- The differential of the Koszul complex is the Koszul differential. -/
-@[simp]
 theorem koszulComplex_d (n : ℕ) :
     (koszulComplex φ).d (n + 1) n = ModuleCat.ofHom (koszulDifferential φ n) := by
   simp [koszulComplex]
+
+/-- The differential of the Koszul complex is the Koszul differential, elementwise. -/
+@[simp]
+theorem koszulComplex_d_apply (n : ℕ) (x : ⋀[R]^(n + 1) M) :
+    ((koszulComplex φ).d (n + 1) n).hom x = koszulDifferential φ n x :=
+  congr($(koszulComplex_d φ n).hom x)
 
 end
 
@@ -270,6 +297,34 @@ theorem map_comp (g : M →ₗ[R] N) (h : ψ ∘ₗ g = φ) (g' : N →ₗ[R] P)
   rw [map_f, HomologicalComplex.comp_f, map_f, map_f, exteriorPower.map_comp]
   exact ModuleCat.ofHom_comp _ _
 
+/-- The isomorphism `K(φ) ≅ K(ψ)` induced by a linear equivalence `e : M ≃ N` with `ψ ∘ e = φ`;
+in degree `n` it is `⋀ⁿ e`. -/
+def mapIso (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    koszulComplex φ ≅ koszulComplex ψ where
+  hom := map e.toLinearMap h
+  inv := map e.symm.toLinearMap (by rw [← h, LinearMap.comp_assoc, e.comp_symm, LinearMap.comp_id])
+  hom_inv_id := by
+    rw [← map_comp, ← map_id]
+    congr 1
+    exact e.symm_comp
+  inv_hom_id := by
+    rw [← map_comp, ← map_id]
+    congr 1
+    exact e.comp_symm
+
+/-- The isomorphism induced by a linear equivalence `e` is the chain map induced by `e`. -/
+@[simp]
+theorem mapIso_hom (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    (mapIso e h).hom = map e.toLinearMap h :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by `e` is the chain map induced by `e.symm`. -/
+@[simp]
+theorem mapIso_inv (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    (mapIso e h).inv =
+      map e.symm.toLinearMap (by rw [← h, LinearMap.comp_assoc, e.comp_symm, LinearMap.comp_id]) :=
+  (rfl)
+
 end Map
 
 section Homotopy
@@ -298,6 +353,18 @@ theorem smul_homology_eq_zero (m : M) (n : ℕ) (z : (koszulComplex φ).homology
   rw [HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id,
     HomologicalComplex.homologyMap_zero] at h
   simpa using congr(($h).hom z)
+
+/-- The image ideal of the functional annihilates Koszul homology. -/
+theorem range_le_annihilator_homology (n : ℕ) :
+    LinearMap.range φ ≤ Module.annihilator R ((koszulComplex φ).homology n) := by
+  rintro _ ⟨m, rfl⟩
+  exact Module.mem_annihilator.mpr (smul_homology_eq_zero φ m n)
+
+/-- Koszul homology is power torsion for the image ideal of the functional. -/
+@[simp]
+theorem primaryComponent_homology_eq_top (n : ℕ) :
+    Ideal.primaryComponent ((koszulComplex φ).homology n) (LinearMap.range φ) = ⊤ :=
+  Ideal.primaryComponent_eq_top_of_le_annihilator _ (range_le_annihilator_homology φ n)
 
 end Homotopy
 

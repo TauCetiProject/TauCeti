@@ -8,10 +8,13 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Basis.Fin
+import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.LinearAlgebra.Transvection.Basic
 import Mathlib.Data.Int.Interval
+import TauCeti.LinearAlgebra.Basis.Fin
+import TauCeti.LinearAlgebra.BilinearForm.Condensation
 import TauCeti.LinearAlgebra.BilinearForm.Hermite
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
-import TauCeti.LinearAlgebra.Matrix.Condensation
 
 /-!
 # Finitely many classes of positive definite integral forms
@@ -26,7 +29,7 @@ The proof is Hermite's reduction, by induction on the rank. Let `v` be a vector 
 complement of `ℤ v` the condensed form
 
 ```text
-S(y, z) = μ · B(y, z) - B(v, y) · B(v, z)
+S(y, z) = μ · B(y, z) - B(y, v) · B(v, z)
 ```
 
 is positive definite of rank `n - 1`, its determinant is bounded by Chiò's identity, and it does
@@ -70,159 +73,126 @@ private def ClassBound (n : ℕ) : Prop :=
     B.IsSymm → (∀ x, x ≠ 0 → 0 < B x x) → (toMatrix (Pi.basisFun ℤ (Fin n)) B).det ≤ D →
       ∃ c : Basis (Fin n) ℤ (Fin n → ℤ), toMatrix c B ∈ S
 
+/-- Hermite's normalization of the first row of a Gram matrix. Adding to the vectors
+`d 1, …, d n` of a basis suitable multiples of `v = d 0` brings the values `B(v, d j)` into
+`[0, μ)`, where `μ = B(v, v) > 0`, and does not change the condensation of the Gram matrix at its
+corner (`LinearMap.BilinForm.mul_apply_add_smul_add_smul`). The Gram matrix of the new basis is
+then `extendGram μ r H`, with `r` the new first row and `H` the condensation. -/
+private theorem exists_basis_toMatrix_eq_extendGram {M : Type*} [AddCommGroup M] {n : ℕ}
+    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) (d : Basis (Fin (n + 1)) ℤ M)
+    (hμ : 0 < B (d 0) (d 0)) :
+    ∃ (e : Basis (Fin (n + 1)) ℤ M) (r : Fin n → ℤ), (∀ j, r j ∈ Finset.Ico 0 (B (d 0) (d 0))) ∧
+      toMatrix e B = extendGram (B (d 0) (d 0)) r (Matrix.of fun i j ↦
+        B (d 0) (d 0) * B (d i.succ) (d j.succ) - B (d i.succ) (d 0) * B (d 0) (d j.succ)) := by
+  set μ := B (d 0) (d 0) with hμ_def
+  set q : Fin n → ℤ := fun j ↦ B (d 0) (d j.succ) / μ
+  -- The transvection `x ↦ x + g x • d 0` adds `-q j • d 0` to `d (j + 1)` and fixes `d 0`.
+  let g : M →ₗ[ℤ] ℤ := ∑ j, (-q j) • d.coord j.succ
+  have hg : g (d 0) = 0 := by simp [g, Fin.succ_ne_zero]
+  let e := d.map (LinearEquiv.transvection hg)
+  have he0 : e 0 = d 0 := by simp [e, LinearMap.transvection.apply, hg]
+  have he (j : Fin n) : e j.succ = d j.succ + (-q j) • d 0 := by
+    simp [e, LinearMap.transvection.apply, g, Finsupp.single_apply]
+  have hr (j : Fin n) : B (d 0) (e j.succ) = B (d 0) (d j.succ) % μ := by
+    rw [he, map_add, map_smul, smul_eq_mul, Int.emod_def]
+    ring
+  refine ⟨e, fun j ↦ B (d 0) (d j.succ) % μ, fun j ↦ Finset.mem_Ico.mpr
+    ⟨Int.emod_nonneg _ hμ.ne', Int.emod_lt_of_pos _ hμ⟩, ?_⟩
+  ext i j
+  induction i using Fin.cases <;> induction j using Fin.cases <;>
+    simp only [extendGram, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_succ,
+      toMatrix_apply, he0, hr, ← hμ_def]
+  · rw [hB.eq, hr]
+  · rename_i i j
+    have h := B.mul_apply_add_smul_add_smul (d 0) (d i.succ) (d j.succ) (-q i) (-q j)
+    rw [← he, ← he, hB.eq (e i.succ) (d 0), ← hμ_def] at h
+    rw [← hr, ← hr, add_comm (μ * _ - _), ← h, Int.mul_ediv_cancel_left _ hμ.ne']
+
+/-- The condensation step of Hermite's reduction. Let `v` be a primitive vector of a symmetric
+positive definite form `B` on `ℤⁿ⁺¹`, with `μ = B(v, v)`, and suppose that every symmetric positive
+definite form on `ℤⁿ` of determinant at most `D'` has a Gram matrix in `T`. If
+`μⁿ · det B ≤ D'`, some basis `d` starting with `v` has the condensation of its Gram matrix at the
+corner in `T`. Indeed, on the kernel `K ≃ ℤⁿ` of a functional taking the value `1` on `v`, the
+condensed form along `v` is symmetric and positive definite, and its determinant is at most
+`μⁿ · det B` by Chiò's identity; `v` followed by a basis of `K` in which its Gram matrix lies in `T`
+is the basis `d`. -/
+private theorem exists_basis_condensation_mem {n : ℕ} {T : Finset (Matrix (Fin n) (Fin n) ℤ)}
+    {D' : ℤ} (hT : ∀ S : LinearMap.BilinForm ℤ (Fin n → ℤ), S.IsSymm →
+      (∀ y, y ≠ 0 → 0 < S y y) → (toMatrix (Pi.basisFun ℤ (Fin n)) S).det ≤ D' →
+        ∃ c : Basis (Fin n) ℤ (Fin n → ℤ), toMatrix c S ∈ T)
+    {B : LinearMap.BilinForm ℤ (Fin (n + 1) → ℤ)} (hB : B.IsSymm)
+    (hpos : ∀ x, x ≠ 0 → 0 < B x x) {v : Fin (n + 1) → ℤ} (hv : TauCeti.IsPrimitive v)
+    (hD : B v v ^ n * (toMatrix (Pi.basisFun ℤ (Fin (n + 1))) B).det ≤ D') :
+    ∃ d : Basis (Fin (n + 1)) ℤ (Fin (n + 1) → ℤ), d 0 = v ∧ (Matrix.of fun i j : Fin n ↦
+      B v v * B (d i.succ) (d j.succ) - B (d i.succ) v * B v (d j.succ)) ∈ T := by
+  set μ := B v v with hμ_def
+  have hμ : 0 < μ := hpos v hv.ne_zero
+  -- Split `ℤⁿ⁺¹ = ℤ v ⊕ K` along `f`, and identify `K` with `ℤⁿ` through `φ`.
+  obtain ⟨f, hf⟩ := TauCeti.isPrimitive_def.mp hv
+  set K := LinearMap.ker f
+  obtain ⟨m, ⟨bK⟩⟩ := Submodule.nonempty_basis_of_pid (Pi.basisFun ℤ (Fin (n + 1))) K
+  obtain ⟨c₀, hc₀0, hc₀⟩ := bK.exists_basis_finCons_of_apply_eq_one hf
+  obtain rfl : n = m := by simpa using Fintype.card_congr ((Pi.basisFun ℤ _).indexEquiv c₀)
+  let φ := K.subtype ∘ₗ bK.equivFun.symm.toLinearMap
+  -- The condensed form `S(y, z) = μ B(φ y, φ z) - B(φ y, v) B(v, φ z)` on `ℤⁿ`.
+  obtain ⟨S, hSsymm, hS⟩ := hB.exists_isSymm_forall_apply_eq v φ
+  have hSpos (y) (hy : y ≠ 0) : 0 < S y y := hS y y ▸ sub_pos.mpr
+    (apply_mul_apply_lt_of_mem_ker hpos (by simp [hf]) (bK.equivFun.symm y).2
+      (by simpa [φ, -Basis.equivFun_symm_apply] using hy))
+  -- Chiò's identity bounds the determinant of `S`.
+  have hdetS : (toMatrix (Pi.basisFun ℤ (Fin n)) S).det ≤ D' := by
+    have h := mul_det_toMatrix_eq_pow_mul_det_toMatrix B c₀ (S := S) (Pi.basisFun ℤ (Fin n))
+      fun i j ↦ by simp [φ, hc₀0, hc₀, hS]
+    rw [hc₀0, ← toMatrixAux_eq c₀ B] at h
+    rw [← toMatrixAux_eq (Pi.basisFun ℤ _) B] at hD
+    simp only [toMatrixAux] at h hD
+    rw [LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B (Pi.basisFun ℤ _) c₀] at h
+    have hSdet := ((posDef_toQuadraticMap_iff_matrix (Pi.basisFun ℤ _) S hSsymm).mp fun y hy ↦ by
+      simpa using hSpos y hy).det_pos
+    exact (le_mul_of_one_le_left hSdet.le hμ).trans (h.trans_le hD)
+  -- A basis `c` of `ℤⁿ` in which the Gram matrix of `S` lies in `T`, carried to `K`.
+  obtain ⟨c, hc⟩ := hT S hSsymm hSpos hdetS
+  obtain ⟨d, hd0, hd⟩ := (c.map bK.equivFun.symm).exists_basis_finCons_of_apply_eq_one hf
+  refine ⟨d, hd0, ?_⟩
+  convert hc using 1
+  ext i j
+  simp [hd, φ, hS, hμ_def]
+
 /-- The inductive step: finiteness in rank `n` implies finiteness in rank `n + 1`. -/
 private theorem classBound_succ (n : ℕ) (ih : ClassBound n) : ClassBound (n + 1) := by
   classical
   -- The finite set collects `extendGram μ r H` over `1 ≤ μ ≤ 4 ^ (n + 1 choose 2) · D`,
   -- `r ∈ [0, μ)ⁿ` and `H` in the rank-`n` set for the bound `μ ^ n · D`. Given `B`, we take a
-  -- vector `v` of least norm `μ`, bound `μ` by Hermite's inequality, apply the inductive
-  -- hypothesis to the condensed form `S` on a complement `φ` of `ℤ v`, and finally shift the
-  -- resulting basis of the complement by multiples of `v` to normalize the first row.
+  -- vector `v` of least norm `μ`, bound `μ` by Hermite's inequality, find a basis `d` starting
+  -- with `v` whose condensed Gram matrix lies in the rank-`n` set, and normalize its first row.
   intro D
   choose T hT using ih
   refine ⟨(Finset.Icc 1 (4 ^ (n + 1).choose 2 * D)).biUnion fun μ ↦
       ((Fintype.piFinset fun _ ↦ Finset.Ico 0 μ) ×ˢ T (μ ^ n * D)).image
         fun p ↦ extendGram μ p.1 p.2, ?_⟩
   intro B hB hpos hD
-  have hsymm : ∀ x y, B x y = B y x := isSymm_def.mp hB
-  -- A primitive vector `v` of least norm `μ`, and a basis `c` starting with it.
-  obtain ⟨v, hprim, hmin⟩ := exists_isPrimitive_forall_apply_self_le B
-    (fun x hx ↦ by simpa using hpos x hx)
-  set μ := B v v with hμ_def
+  have hpos' : B.toQuadraticMap.PosDef := fun x hx ↦ by simpa using hpos x hx
+  obtain ⟨v, hprim, hmin⟩ := exists_isPrimitive_forall_apply_self_le B hpos'
+  set μ := B v v
   have hμ : 0 < μ := hpos v hprim.ne_zero
-  obtain ⟨m, c₀, k, hk⟩ := hprim.exists_basis
-  obtain rfl : m = n + 1 := by
-    simpa using (finrank_eq_card_basis c₀).symm.trans
-      (finrank_eq_card_basis (Pi.basisFun ℤ (Fin (n + 1))))
-  let c := c₀.reindex (Equiv.swap k 0)
-  have hc0 : c 0 = v := by
-    rw [Basis.reindex_apply, Equiv.symm_swap, Equiv.swap_apply_right, hk]
-  -- Hermite's inequality bounds `μ` and shows that the determinant is positive.
-  have hdetA : (toMatrix c B).det = (toMatrix (Pi.basisFun ℤ (Fin (n + 1))) B).det := by
-    rw [← toMatrixAux_eq c B, ← toMatrixAux_eq (Pi.basisFun ℤ (Fin (n + 1))) B]
-    exact LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B _ _
-  set A := toMatrix c B
-  obtain ⟨x, hx, hxb⟩ := exists_ne_zero_three_pow_mul_pow_le_four_pow_mul_det B hB
-    (fun x hx ↦ by simpa using hpos x hx) (Pi.basisFun ℤ (Fin (n + 1)))
-  rw [Fintype.card_fin, ← hdetA] at hxb
-  have hμx : μ ≤ B x x := hmin x hx
-  have hdetA_pos : 0 < A.det := by
-    have : 0 < 3 ^ (n + 1).choose 2 * B x x ^ (n + 1) :=
-      mul_pos (by positivity) (pow_pos (hpos x hx) _)
-    exact pos_of_mul_pos_right (this.trans_le hxb) (by positivity)
+  have hμD' : μ ^ n * (toMatrix (Pi.basisFun ℤ (Fin (n + 1))) B).det ≤ μ ^ n * D :=
+    mul_le_mul_of_nonneg_left hD (pow_pos hμ n).le
+  -- Hermite's inequality bounds `μ`.
+  obtain ⟨x, hx, hxb⟩ := exists_ne_zero_three_pow_mul_pow_le_four_pow_mul_det B hB hpos'
+    (Pi.basisFun ℤ (Fin (n + 1)))
+  rw [Fintype.card_fin] at hxb
   have hμD : μ ≤ 4 ^ (n + 1).choose 2 * D :=
     calc μ ≤ μ ^ (n + 1) := le_self_pow₀ hμ (by omega)
-      _ ≤ B x x ^ (n + 1) := pow_le_pow_left₀ hμ.le hμx _
+      _ ≤ B x x ^ (n + 1) := pow_le_pow_left₀ hμ.le (hmin x hx) _
       _ ≤ 3 ^ (n + 1).choose 2 * B x x ^ (n + 1) :=
           le_mul_of_one_le_left (pow_pos (hpos x hx) _).le (one_le_pow₀ (by norm_num))
-      _ ≤ 4 ^ (n + 1).choose 2 * A.det := hxb
-      _ ≤ 4 ^ (n + 1).choose 2 * D := by
-          rw [hdetA]
-          exact mul_le_mul_of_nonneg_left hD (by positivity)
-  -- The coordinates `ℤ × (Fin n → ℤ) ≃ M` of `c`, and the complement `φ` of `ℤ v`.
-  let E : (ℤ × (Fin n → ℤ)) ≃ₗ[ℤ] (Fin (n + 1) → ℤ) :=
-    (Fin.consLinearEquiv ℤ fun _ ↦ ℤ).trans c.equivFun.symm
-  have hE (a : ℤ) (y : Fin n → ℤ) : E (a, y) = a • v + E (0, y) := by
-    have : ((a, y) : ℤ × (Fin n → ℤ)) = a • (1, 0) + (0, y) := by simp
-    rw [this, map_add, map_smul]
-    congr 2
-    rw [← hc0]
-    simp only [E, LinearEquiv.trans_apply, Basis.equivFun_symm_apply, Fin.sum_univ_succ]
-    simp
-  let φ : (Fin n → ℤ) →ₗ[ℤ] (Fin (n + 1) → ℤ) := E.toLinearMap ∘ₗ LinearMap.inr ℤ ℤ _
-  have hφE (y : Fin n → ℤ) : φ y = E (0, y) := rfl
-  have hφ (i : Fin n) : φ (Pi.single i 1) = c i.succ := by
-    simp only [φ, E, LinearMap.comp_apply, LinearMap.inr_apply, LinearEquiv.coe_coe,
-      LinearEquiv.trans_apply, Basis.equivFun_symm_apply, Fin.sum_univ_succ]
-    simp [Pi.single_apply]
-  -- The condensed form `S(y, z) = μ B(φ y, φ z) - B(v, φ y) B(v, φ z)`.
-  let ℓ : (Fin n → ℤ) →ₗ[ℤ] ℤ := B v ∘ₗ φ
-  let S : LinearMap.BilinForm ℤ (Fin n → ℤ) :=
-    μ • B.compl₁₂ φ φ - (LinearMap.mul ℤ ℤ).compl₁₂ ℓ ℓ
-  have hS (y z : Fin n → ℤ) : S y z = μ * B (φ y) (φ z) - B v (φ y) * B v (φ z) := by
-    simp [S, ℓ]
-  have hSsymm : S.IsSymm := isSymm_def.mpr fun y z ↦ by
-    rw [hS, hS, hsymm (φ y)]
-    ring
-  have hSpos (y : Fin n → ℤ) (hy : y ≠ 0) : 0 < S y y := by
-    have hEw : E (-B v (φ y), μ • y) = (-B v (φ y)) • v + μ • φ y := by
-      rw [hE, hφE, ← map_smul, Prod.smul_mk, smul_zero]
-    have hw : (-B v (φ y)) • v + μ • φ y ≠ 0 := by
-      rw [← hEw, E.map_ne_zero_iff]
-      intro h
-      exact hy ((smul_eq_zero.mp (congrArg Prod.snd h)).resolve_left hμ.ne')
-    have h := mul_pos hμ (hpos _ hw)
-    have hexp : B ((-B v (φ y)) • v + μ • φ y) ((-B v (φ y)) • v + μ • φ y) = μ * S y y := by
-      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hS,
-        hsymm (φ y) v, ← hμ_def]
-      ring
-    rw [hexp] at h
-    exact pos_of_mul_pos_right (pos_of_mul_pos_right h hμ.le) hμ.le
-  -- Chiò's identity bounds the determinant of `S`.
-  have hcond : toMatrix (Pi.basisFun ℤ (Fin n)) S =
-      Matrix.of fun i j : Fin n ↦ A 0 0 * A i.succ j.succ - A i.succ 0 * A 0 j.succ := by
-    ext i j
-    simp [A, hS, hφ, hc0, hsymm (c i.succ) v, ← hμ_def]
-  have hdetS : (toMatrix (Pi.basisFun ℤ (Fin n)) S).det ≤ μ ^ n * D := by
-    have hchio := Matrix.mul_det_condensation_eq_pow_mul_det A
-    have hA00 : A 0 0 = μ := by simp [A, hc0, hμ_def]
-    rw [← hcond, hA00] at hchio
-    have hpos' : 0 < μ * (toMatrix (Pi.basisFun ℤ (Fin n)) S).det := by
-      rw [hchio]
-      positivity
-    have hSdet := pos_of_mul_pos_right hpos' hμ.le
-    calc (toMatrix (Pi.basisFun ℤ (Fin n)) S).det
-        ≤ μ * (toMatrix (Pi.basisFun ℤ (Fin n)) S).det := le_mul_of_one_le_left hSdet.le hμ
-      _ = μ ^ n * A.det := hchio
-      _ ≤ μ ^ n * D := by
-          rw [hdetA]
-          exact mul_le_mul_of_nonneg_left hD (by positivity)
-  obtain ⟨c', hc'⟩ := hT (μ ^ n * D) S hSsymm hSpos hdetS
-  -- Shift the complement by multiples of `v` so that `B(v, ·)` takes values in `[0, μ)`.
-  let τ : (Fin n → ℤ) →ₗ[ℤ] ℤ := c'.constr ℤ fun j ↦ -(ℓ (c' j) / μ)
-  let ψ : (Fin n → ℤ) →ₗ[ℤ] (Fin (n + 1) → ℤ) := E.toLinearMap ∘ₗ τ.prod LinearMap.id
-  have hψ (y : Fin n → ℤ) : ψ y = τ y • v + φ y := hE _ _
-  have hψinj : Function.Injective ψ := fun y z h ↦ by
-    simpa using congrArg Prod.snd (E.injective h)
-  have hli (a : ℤ) (w : Fin (n + 1) → ℤ) (hw : w ∈ LinearMap.range ψ) (h : a • v + w = 0) :
-      a = 0 := by
-    obtain ⟨y, rfl⟩ := hw
-    have h' : E (a + τ y, y) = 0 := by
-      rw [← h, hψ, hφE, hE (a + τ y) y, add_smul, add_assoc]
-    simp only [map_eq_zero_iff E E.injective, Prod.mk_eq_zero] at h'
-    simpa [h'.2] using h'.1
-  have hsp (w : Fin (n + 1) → ℤ) : ∃ a : ℤ, w + a • v ∈ LinearMap.range ψ := by
-    obtain ⟨⟨a, y⟩, rfl⟩ := E.surjective w
-    refine ⟨τ y - a, y, ?_⟩
-    rw [hψ, hφE, hE a y, sub_smul]
-    abel
-  let e : Basis (Fin (n + 1)) ℤ (Fin (n + 1) → ℤ) :=
-    Basis.mkFinCons v (c'.map (LinearEquiv.ofInjective ψ hψinj)) hli hsp
-  have he0 : e 0 = v := by simp [e]
-  have he (j : Fin n) : e j.succ = ψ (c' j) := by simp [e]
-  -- The values `r j = B(v, ψ (c' j))` lie in `[0, μ)`.
-  have hr (j : Fin n) : B v (ψ (c' j)) = ℓ (c' j) % μ := by
-    rw [hψ, map_add, map_smul, Basis.constr_basis, Int.emod_def]
-    simp only [smul_eq_mul, ← hμ_def]
-    simp [ℓ]
-    ring
-  -- `S` does not change when multiples of `v` are added.
-  have hψS (y z : Fin n → ℤ) :
-      μ * B (ψ y) (ψ z) = S y z + B v (ψ y) * B v (ψ z) := by
-    simp only [hψ, hS, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-      hsymm (φ y) v, ← hμ_def]
-    ring
-  refine ⟨e, Finset.mem_biUnion.mpr ?_⟩
-  refine ⟨μ, Finset.mem_Icc.mpr ⟨hμ, hμD⟩, Finset.mem_image.mpr
-    ⟨(fun j ↦ ℓ (c' j) % μ, toMatrix c' S), Finset.mem_product.mpr ⟨Fintype.mem_piFinset.mpr
-      fun j ↦ Finset.mem_Ico.mpr ⟨Int.emod_nonneg _ hμ.ne', Int.emod_lt_of_pos _ hμ⟩, hc'⟩, ?_⟩⟩
-  ext i j
-  induction i using Fin.cases <;> induction j using Fin.cases <;>
-    simp only [extendGram, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_succ,
-      toMatrix_apply, he0, he, hr, ← hμ_def]
-  · rw [hsymm, hr]
-  · rename_i i j
-    rw [← hr, ← hr, ← hψS, Int.mul_ediv_cancel_left _ hμ.ne']
+      _ ≤ 4 ^ (n + 1).choose 2 * D := hxb.trans (mul_le_mul_of_nonneg_left hD (by positivity))
+  -- A basis `d` starting with `v` whose condensed Gram matrix lies in the rank-`n` set, with
+  -- its first row normalized.
+  obtain ⟨d, rfl, hd⟩ := exists_basis_condensation_mem (hT (μ ^ n * D)) hB hpos hprim hμD'
+  obtain ⟨e, r, hr, he⟩ := exists_basis_toMatrix_eq_extendGram hB d hμ
+  exact ⟨e, Finset.mem_biUnion.mpr ⟨μ, Finset.mem_Icc.mpr ⟨hμ, hμD⟩, Finset.mem_image.mpr
+    ⟨(r, _), Finset.mem_product.mpr ⟨Fintype.mem_piFinset.mpr hr, hd⟩, he.symm⟩⟩⟩
 
 /-- The finiteness statement on coordinate modules, for every rank. -/
 private theorem classBound (n : ℕ) : ClassBound n := by

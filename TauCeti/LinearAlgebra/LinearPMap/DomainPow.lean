@@ -26,19 +26,15 @@ differentiable, and where the density of every `D(Aⁿ)` is the standard regular
 
 ## Main declarations
 
-* `TauCeti.domainPow`: the submodule `D(Aⁿ)`.
-* `TauCeti.mem_domainPow_succ`: the recursive membership criterion defining it.
-* `TauCeti.domainPow_antitone`: `D(Aⁿ)` decreases with `n`.
-* `TauCeti.apply_mem_domainPow`: `A` maps `D(Aⁿ⁺¹)` into `D(Aⁿ)`.
-
-Tau Ceti puts every declaration under `namespace TauCeti`, so a name in the `LinearPMap`
-namespace could not be reached by generalized field notation anyway; these therefore live in the
-root `TauCeti` namespace and are written out as `domainPow A n`.
+* `LinearPMap.domainPow`: the submodule `D(Aⁿ)`, written `A.domainPow n`.
+* `LinearPMap.mem_domainPow_succ`: the recursive membership criterion defining it.
+* `LinearPMap.domainPow_antitone`: `D(Aⁿ)` decreases with `n`.
+* `LinearPMap.apply_mem_domainPow`: `A` maps `D(Aⁿ⁺¹)` into `D(Aⁿ)`.
 -/
 
 public section
 
-namespace TauCeti
+namespace LinearPMap
 
 variable {R E : Type*} [Ring R] [AddCommGroup E] [Module R E]
 
@@ -92,6 +88,6 @@ theorem apply_mem_domainPow {A : E →ₗ.[R] E} {n : ℕ} {x : E} (hx : x ∈ d
     A ⟨x, domainPow_succ_le_domain A n hx⟩ ∈ domainPow A n :=
   (mem_domainPow_succ.mp hx).choose_spec
 
-end TauCeti
+end LinearPMap
 
 end

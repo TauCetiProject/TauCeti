@@ -5,7 +5,7 @@ Authors: Jon Crall, GPT-6
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
+public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 
 /-!
 # Measurable reindexing of projection-valued measures
@@ -14,7 +14,10 @@ A measurable map `f : X → Y` transports a projection-valued measure on `X` to 
 the projection of a measurable set `B` is the original projection of its preimage under `f`.
 The diagonal scalar measures are the corresponding pushforward measures.
 
-Identity and composition of measurable maps are respected by this construction.
+Identity and composition of measurable maps are respected by this construction. Integration
+against the transported measure is the change of variables `∫ f d(P.map κ) = ∫ (f ∘ κ) dP` for
+bounded Borel symbols `f` (`integral_map`); this is how a spectral integral over one parameter
+space is rewritten as one over another, for instance from a compact spectrum to the real line.
 
 The underlying projection-valued measure and its diagonal-measure representation come from
 `TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic`, adapted from the Kitware DKPS
@@ -24,6 +27,7 @@ formalization and the Spectra formalization; see that module for source referenc
 public section
 
 open MeasureTheory
+open scoped CStarAlgebra
 
 namespace TauCeti.ProjValMeasure
 
@@ -76,5 +80,22 @@ theorem map_map (P : ProjValMeasure X H) (f : X → Y) (g : Y → Z)
   apply ProjValMeasure.ext
   intro B hB
   simp only [map_proj, Set.preimage_comp]
+
+/-- **Change of variables** for the integral against a projection-valued measure: integrating a
+bounded Borel symbol `f` on `Y` against the transported measure `P.map κ hκ` is integrating its
+pullback `f ∘ κ` against `P`. -/
+theorem integral_map (P : ProjValMeasure X H) (κ : X → Y) (hκ : Measurable κ)
+    (f : BoundedBorelFunction Y) :
+    (P.map κ hκ).integral f = P.integral (BoundedBorelFunction.compStarAlgHom' κ hκ f) := by
+  -- Both sides are continuous in `f`, so it suffices to compare them on simple symbols, which
+  -- are sums of multiples of indicators of measurable sets.
+  refine (congrFun ((P.map κ hκ).eq_integral_of_continuous
+    (P.continuous_integral.comp (map_continuous _)) fun s => ?_) f).symm
+  rw [Function.comp_apply]
+  induction s using SimpleFunc.induction with
+  | @const c B hB =>
+    simp [BoundedBorelFunction.ofSimpleFunc_piecewise_const_zero,
+      BoundedBorelFunction.compStarAlgHom'_indicator]
+  | add _ hs₁ hs₂ => simp only [map_add, hs₁, hs₂]
 
 end TauCeti.ProjValMeasure

@@ -8,9 +8,12 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 
 /-!
-# Basic facts about normed algebras
+# Rational scalars on real normed algebras
 
-This file provides small pieces of generic normed-algebra infrastructure used across Tau Ceti.
+Much of Mathlib's API for `NormedSpace.exp` (for example `NormedSpace.exp_continuous`) assumes a
+normed `ℚ`-algebra. This file names the restriction of scalars that makes every real normed
+algebra a normed `ℚ`-algebra, so that files working with real Banach algebras can enable it
+locally.
 -/
 
 public section
@@ -19,8 +22,14 @@ namespace TauCeti
 
 variable {R : Type*} [SeminormedRing R] [NormedAlgebra ℝ R]
 
-/-- A real normed algebra regarded as a rational normed algebra. -/
-noncomputable local instance normedAlgebraRatOfReal : NormedAlgebra ℚ R :=
+/-- A real normed algebra regarded as a rational normed algebra, by restricting scalars along
+`ℚ → ℝ`.
+
+This is not a global instance: algebras such as `ℂ` already carry a `ℚ`-algebra structure
+(for example through Mathlib's `normedAlgebraRat`) that is not reducibly defeq to this one, so
+a global instance would create a diamond. Enable it where needed with
+`attribute [local instance] TauCeti.normedAlgebraRatOfReal`. -/
+noncomputable abbrev normedAlgebraRatOfReal : NormedAlgebra ℚ R :=
   .restrictScalars ℚ ℝ R
 
 end TauCeti

@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterKernel
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
@@ -29,8 +28,7 @@ this radical trivial, so the unipotent part of every rational point of `G` is th
 point is semisimple. The diagonalization criterion
 `TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint` then identifies `G` as a split torus.
 
-Consequently such a group is linearly reductive, and the common kernel of characters of its
-geometric fibre is trivial.
+Consequently such a group is linearly reductive.
 
 ## Main declarations
 
@@ -38,9 +36,6 @@ geometric fibre is trivial.
   group is a torus.
 * `TauCeti.reductiveCommHopfAlgProperty.linearlyReductive_of_geometricallySolvable`: a solvable
   reductive group is linearly reductive.
-* `TauCeti.reductiveCommHopfAlgProperty.characterKernelIdeal_baseChange_eq_augmentation`: the
-  characters of the geometric fibre of a solvable reductive group separate its points
-  scheme-theoretically.
 
 ## References
 
@@ -75,7 +70,6 @@ private theorem isSemisimplePoint_geometricFiber_of_geometricallySolvable
   let _ : Algebra.Smooth K G := hG.smooth
   let _ : IsReduced G := isReduced_of_smooth K G
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
-  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   rw [HopfAlgebra.isSemisimplePoint_iff_unipotentPart_eq_one]
   let v := HopfAlgebra.Point.unipotentPart K G K g
   have hv : HopfAlgebra.IsUnipotentPoint v := by
@@ -101,7 +95,6 @@ theorem torus_of_geometricallySolvable
   let _ : ConnectedSpace (PrimeSpectrum G) :=
     hH.geometricallyConnected.connectedSpace_algebraicClosureBaseChange
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
-  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   have hT : torusCommHopfAlgProperty K G :=
     torusCommHopfAlgProperty_of_isSemisimplePoint G
       (hH.isSemisimplePoint_geometricFiber_of_geometricallySolvable hsolv)
@@ -115,25 +108,5 @@ theorem linearlyReductive_of_geometricallySolvable
     (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
     linearlyReductiveCommHopfAlgProperty k H.obj :=
   (hH.torus_of_geometricallySolvable hsolv).linearlyReductive
-
-/-- The common kernel of characters of the geometric fibre of a solvable reductive group is the
-identity subgroup, scheme-theoretically and in every characteristic. -/
-theorem characterKernelIdeal_baseChange_eq_augmentation
-    (hH : reductiveCommHopfAlgProperty k H)
-    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
-    let G := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H
-    _root_.CommHopfAlgCat.characterKernelIdeal G.obj =
-      HopfIdeal.augmentation (AlgebraicClosure k) G := by
-  intro G
-  let K := AlgebraicClosure k
-  have hsplit : splitTorusCommHopfAlgProperty K G :=
-    (splitTorusCommHopfAlgProperty_iff K G).mpr
-      ((torusCommHopfAlgProperty_iff k H).mp (hH.torus_of_geometricallySolvable hsolv))
-  -- The split fibre is spanned by its characters, so evaluation of characters is surjective.
-  have hspan := (DiagonalizableGroup.groupLikeSpannedProperty_iff K G).mp
-    (hsplit.groupLikeSpanned K G)
-  rw [_root_.CommHopfAlgCat.characterKernelIdeal_def]
-  exact CommHopfAlgCat.kernelHopfIdeal_eq_augmentation_of_surjective _
-    ((GroupLike.liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top K G).mpr hspan)
 
 end TauCeti.reductiveCommHopfAlgProperty

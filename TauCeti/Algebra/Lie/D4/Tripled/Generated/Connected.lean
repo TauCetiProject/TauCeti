@@ -42,7 +42,7 @@ open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.D4Tripled
 
-universe u
+universe u v
 
 section Construction
 
@@ -150,6 +150,61 @@ noncomputable abbrev generatedFiniteTypeCoordinateHopfAlgebra : FiniteTypeCommHo
   FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra k)
 
 end Construction
+
+namespace Generated
+
+variable (R : Type u) [CommRing R]
+
+/-- Restriction of integral-carrier coordinates to the generated subgroup, over any ring. -/
+noncomputable def carrierRestriction :
+    coordinateHopfAlgebra R ⟶ generatedCoordinateHopfAlgebra R :=
+  CommHopfAlgCat.liftQuotient (baseChangeDefiningIdeal R) (generatedCoordinateMap R) (by
+    intro x hx
+    have hmem : x ∈ (generatedDefiningIdeal R).toIdeal :=
+      baseChangeDefiningIdeal_le_generatedDefiningIdeal R hx
+    rw [← generatedCoordinateMap_ker] at hmem
+    exact hmem)
+
+/-- Restricting carrier coordinates recovers the generated subgroup's ambient coordinate map. -/
+@[reassoc (attr := simp)]
+theorem coordinateMap_comp_carrierRestriction :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R 24)
+        (baseChangeDefiningIdeal R) ≫ carrierRestriction R = generatedCoordinateMap R := by
+  unfold carrierRestriction
+  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
+
+/-- Inclusion of generated-carrier points into integral-carrier points over any value algebra. -/
+noncomputable def carrierPointsHom (A : CommAlgCat.{v} R) :
+    HopfAlgebra.points (R := R) (H := generatedCoordinateHopfAlgebra R) A →* points A :=
+  (baseChangePointsMulEquiv R A).toMonoidHom.comp
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction R)).app A).hom
+
+/-- The carrier inclusion preserves the ambient `GL₂₄` matrix of a generated-carrier point. -/
+@[simp↓]
+theorem coe_carrierPointsHom (A : CommAlgCat.{v} R)
+    (g : HopfAlgebra.points (R := R) (H := generatedCoordinateHopfAlgebra R) A) :
+    (carrierPointsHom R A g : Matrix.GeneralLinearGroup (Fin 24) A) =
+      GeneralLinear.pointsMulEquiv 24
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap R)).app A g) := by
+  -- The point functor uses categorical wrappers, whereas the equivalence uses explicit
+  -- convolution points; `erw` reconciles these presentations.
+  erw [carrierPointsHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    coe_baseChangePointsMulEquiv_apply]
+  exact congrArg (GeneralLinear.pointsMulEquiv 24)
+    (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+      (baseChangeDefiningIdeal R) (carrierRestriction R) (generatedCoordinateMap R)
+      (coordinateMap_comp_carrierRestriction R) A g).symm
+
+/-- The inclusion of generated-carrier points is injective over every value algebra. -/
+theorem carrierPointsHom_injective (A : CommAlgCat.{v} R) :
+    Function.Injective (carrierPointsHom R A) := by
+  intro g h heq
+  apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
+    (generatedCoordinateMap R) (generatedCoordinateMap_surjective R) A
+  apply (GeneralLinear.pointsMulEquiv 24).injective
+  rw [← coe_carrierPointsHom, ← coe_carrierPointsHom, heq]
+
+end Generated
 
 variable (k : Type u) [Field k]
 

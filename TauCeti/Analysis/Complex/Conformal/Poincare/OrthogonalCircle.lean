@@ -98,22 +98,11 @@ diameters, which the radial geodesics already trace, this closes the description
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ`
-for layers L0--L6, everything is stated for the complex unit disc. The plane-geometry lemmas of
-the first section ask nothing of `a` beyond `‖a‖ < 1` and nothing of `u` beyond `‖u‖ = 1` — and
-several of them ask less: the discriminant identity is homogeneous in `u` and needs no hypothesis
-at all, and the degenerate case needs only `‖a‖ ≠ 1`. They are stated for bare complex numbers so
-that they can be reused off the `PoincareDisc` synonym.
-
-## Coordination with upstream Mathlib
-
-This is L2 material, "the hyperbolic / Poincaré metric on `𝔻`" of
-`TauCetiRoadmap/ConformalMapping/README.md`, and as such falls under that roadmap's coordination
-clause for the in-progress human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505): it should be
-refactored onto upstream API if that work lands a Poincaré-disc geometry. The pinned Mathlib has
-the hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`) but no
-Poincaré metric on the disc and no description of its geodesics; nothing is vendored here.
+Everything is stated for the complex unit disc. The plane-geometry lemmas of the first section ask
+nothing of `a` beyond `‖a‖ < 1` and nothing of `u` beyond `‖u‖ = 1` — and several of them ask less:
+the discriminant identity is homogeneous in `u` and needs no hypothesis at all, and the degenerate
+case needs only `‖a‖ ≠ 1`. They are stated for bare complex numbers so that they can be reused off
+the `PoincareDisc` synonym.
 
 ## References
 
@@ -300,8 +289,7 @@ theorem setOf_im_eq_ball_inter_sphere {u a : ℂ} (hu : ‖u‖ = 1) (ha : ‖a�
     have hsq : ‖z - orthogonalCircleCenter u a‖ ^ 2 = orthogonalCircleRadius u a ^ 2 := by
       rw [← Complex.normSq_eq_norm_sq]
       linarith
-    have := congrArg Real.sqrt hsq
-    rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq hRpos.le] at this
+    exact (pow_left_inj₀ (norm_nonneg _) hRpos.le two_ne_zero).mp hsq
   · intro hdist
     have hsq : normSq (z - orthogonalCircleCenter u a) = orthogonalCircleRadius u a ^ 2 := by
       rw [Complex.normSq_eq_norm_sq, hdist]

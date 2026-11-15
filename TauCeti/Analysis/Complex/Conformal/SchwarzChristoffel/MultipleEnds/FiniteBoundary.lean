@@ -96,7 +96,7 @@ theorem schwarzChristoffelFiniteBoundary_eq_preimage_range (a e : ι → ℝ)
       · simp [hsum] at hx
     | coe p =>
       have hp : -1 ≤ ∑ i with a i = p, e i :=
-        le_sum_filter_eq_of_forall_apply (by norm_num) hfinite p
+        forall_sum_filter_eq_of_forall_apply (by norm_num) hfinite p
       rcases hp.eq_or_lt with hp | hp
       · simp [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_eq_neg_one
           a e z₀ p hp.symm] at hx

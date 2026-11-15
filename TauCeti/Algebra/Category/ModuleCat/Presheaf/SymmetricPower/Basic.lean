@@ -207,7 +207,7 @@ def symmetricPowerOneIso : symmetricPower (R := R) 1 ≅ 𝟭 _ :=
       (fun X ↦ ModuleCat.symmetricPower.iso₁ (M.obj X))
       (fun X Y f ↦ by
         ext x
-        apply TauCeti.SymmetricAlgebra.ι_injective (R.obj Y) (M.obj Y)
+        apply SymmetricAlgebra.ι_injective (R.obj Y) (M.obj Y)
         -- both sides are the generator of the restricted element in the symmetric algebra
         exact (ModuleCat.symmetricPower.ι_iso₁_hom_apply _ _).trans
           ((coe_symmetricPowerObjMap_apply M 1 f x).trans

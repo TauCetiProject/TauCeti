@@ -8,7 +8,11 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
-import Mathlib.Geometry.Euclidean.Volume.Measure
+public import Mathlib.Geometry.Euclidean.Volume.Measure
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
+public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Orthogonal line coordinates and Lebesgue sections
@@ -23,14 +27,24 @@ The length of a line section is independent of its base point along the line, in
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
-of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume,
-and hyperplane sections through interior points have positive volume. The heights of interior
-points form an open set, and a set has positive volume at any open set of heights containing the
-height of an interior point.
+of the corresponding part of the set. These section volumes are an a.e. measurable function of
+the height. When almost all of them are finite, the real volume (`volume.real`) of the part of the
+set below a height is the interval integral of their real values from any lower bound of the
+heights of its points; both sides vanish if that part has infinite volume. Hyperplane sections of
+bounded sets have finite volume, and hyperplane sections through interior points have positive
+volume. The heights of interior points form an open set, and a set has positive volume at any
+open set of heights containing the height of an interior point.
+
+Pairing the line integrals `y ↦ ∫ f (y + t • e) dt` with a bounded transverse weight `ψ` is an
+integral of `ψ (y) f (y + t • e)` over product coordinates
+(`TauCeti.integral_mul_integral_line_eq`), so this pairing is continuous for `L¹` convergence on the
+whole space (`TauCeti.tendsto_integral_mul_integral_line`).
 
 More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
 the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
-via Mathlib's `Submodule.measurePreserving_measurableEquivProd`.
+via Mathlib's `Submodule.measurePreserving_measurableEquivProd`. In these coordinates based at a
+point `p`, a product of sets has the product volume, every point `x` is recovered as the sum of
+its two coordinates and `p`, and each coordinate moves no farther than `x` does.
 
 The coordinate construction uses Mathlib's `Submodule.orthogonalDecomposition` and
 `LinearIsometryEquiv.toSpanUnitSingleton`; its normalization follows Mathlib's volume
@@ -62,6 +76,77 @@ theorem measurePreserving_orthogonalLineEquiv (e : E) (he : ‖e‖ = 1) :
   rw [orthogonalLineEquiv_def]
   exact (orthogonalLineIsometry e he).measurePreserving.comp
     (WithLp.volume_preserving_toLp (ℝ ∙ e)ᗮ ℝ)
+
+private theorem aemeasurable_comp_orthogonalLineEquiv (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    AEMeasurable (g ∘ orthogonalLineEquiv e he) (volume.prod volume) := by
+  exact hg.comp_quasiMeasurePreserving
+    (measurePreserving_orthogonalLineEquiv e he).quasiMeasurePreserving
+
+/-- Integrating an a.e. measurable nonnegative function along parallel lines gives an
+a.e. measurable function of the transverse coordinate. -/
+theorem aemeasurable_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦ ∫⁻ t : ℝ, g ((y : E) + t • e)) volume := by
+  simpa only [Function.comp_apply, orthogonalLineEquiv_apply] using
+    (aemeasurable_comp_orthogonalLineEquiv e he hg).lintegral_prod_right'
+
+/-- Tonelli's theorem in orthogonal line coordinates. -/
+theorem lintegral_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    ∫⁻ x, g x = ∫⁻ y : (ℝ ∙ e)ᗮ, ∫⁻ t : ℝ, g ((y : E) + t • e) := by
+  rw [← (measurePreserving_orthogonalLineEquiv e he).lintegral_comp' hg,
+    lintegral_prod (fun p ↦ g (orthogonalLineEquiv e he p))
+      (aemeasurable_comp_orthogonalLineEquiv e he hg)]
+  simp only [orthogonalLineEquiv_apply]
+
+open Filter Topology in
+/-- If `∫⁻ g n → 0`, then along a subsequence the integrals of `g` along almost every line
+parallel to `e` tend to `0`. Applied to `g n = ‖f n - u‖ₑ`, `L¹` convergence of `f n` to `u`
+gives `L¹` convergence of their restrictions on almost every line, along a subsequence. -/
+theorem exists_strictMono_ae_tendsto_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : ℕ → E → ℝ≥0∞} (hg : ∀ n, AEMeasurable (g n) volume)
+    (h : Tendsto (fun n ↦ ∫⁻ x, g n x) atTop (𝓝 0)) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ᵐ y : (ℝ ∙ e)ᗮ,
+      Tendsto (fun j ↦ ∫⁻ t : ℝ, g (φ j) ((y : E) + t • e)) atTop (𝓝 0) :=
+  exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun n ↦ aemeasurable_lintegral_line e he (hg n))
+    (by simpa only [lintegral_eq_lintegral_lintegral_line e he (hg _)] using h)
+
+/-- The pairing of the line integrals of `f` with a bounded transverse weight `ψ` is an
+integral in orthogonal line coordinates. -/
+theorem integral_mul_integral_line_eq {f : E → ℝ} (hf : Integrable f) (e : E)
+    (he : ‖e‖ = 1) {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : AEStronglyMeasurable ψ) {C : ℝ}
+    (hC : ∀ y, ‖ψ y‖ ≤ C) :
+    ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, f ((y : E) + t • e) =
+      ∫ p : (ℝ ∙ e)ᗮ × ℝ, ψ p.1 * f (orthogonalLineEquiv e he p) ∂(volume.prod volume) := by
+  have hint : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ ↦ ψ p.1 * f (orthogonalLineEquiv e he p))
+      (volume.prod volume) :=
+    ((measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hf).bdd_mul
+      hψ.comp_fst (.of_forall fun p ↦ hC p.1)
+  rw [integral_prod _ hint]
+  simp only [orthogonalLineEquiv_apply, integral_const_mul]
+
+open Filter Topology in
+/-- Pairing line integrals with a bounded transverse weight is continuous for `L¹` convergence on
+the whole space. -/
+theorem tendsto_integral_mul_integral_line {ι : Type*} {l : Filter ι} {w : ι → E → ℝ}
+    {u : E → ℝ} (hw : ∀ n, Integrable (w n)) (hu : Integrable u)
+    (hlim : Tendsto (fun n ↦ ∫⁻ x, ‖w n x - u x‖ₑ) l (𝓝 0)) (e : E) (he : ‖e‖ = 1)
+    {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : AEStronglyMeasurable ψ) {C : ℝ} (hC : ∀ y, ‖ψ y‖ ≤ C) :
+    Tendsto (fun n ↦ ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, w n ((y : E) + t • e)) l
+      (𝓝 (∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, u ((y : E) + t • e))) := by
+  have hL := measurePreserving_orthogonalLineEquiv e he
+  simp_rw [integral_mul_integral_line_eq (hw _) e he hψ hC,
+    integral_mul_integral_line_eq hu e he hψ hC]
+  refine MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (s := univ)
+    (.of_forall fun p ↦ hC p.1) (.of_forall fun _ h ↦ absurd (mem_univ _) h)
+    (.of_forall fun n ↦ (hL.integrable_comp_of_integrable (hw n)).bdd_mul hψ.comp_fst
+      (.of_forall fun p ↦ hC p.1))
+    (hψ.comp_fst.mul (hu.aestronglyMeasurable.comp_measurePreserving hL)) ?_
+  simpa only [Measure.restrict_univ, Function.comp_apply] using
+    hlim.congr fun n ↦ (hL.lintegral_comp_emb
+      (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding _).symm
 
 /-- Volume-a.e. equal sets have a.e. equal parallel sections for almost every transverse point.
 The exceptional transverse null set is allowed to depend on the direction. -/
@@ -228,6 +313,74 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
   congr 1 with t
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
 
+/-- The hyperplane sections of a Lebesgue-measurable set orthogonal to a vector `e` have a.e.
+measurable volume as a function of the height. -/
+theorem aemeasurable_volume_hyperplaneSection (e : E) {s : Set E}
+    (hs : NullMeasurableSet s volume) :
+    AEMeasurable (fun t : ℝ ↦ volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s}) volume := by
+  -- For a unit vector `u`, almost every hyperplane section of `s` agrees a.e. with that of
+  -- `toMeasurable s`, by Fubini in product coordinates with the height first.
+  have unit (u : E) (hu : ‖u‖ = 1) :
+      AEMeasurable (fun t : ℝ ↦ volume {y : (ℝ ∙ u)ᗮ | (y : E) + t • u ∈ s}) volume := by
+    have hp := ((measurePreserving_orthogonalLineEquiv u hu).comp
+      Measure.measurePreserving_swap).quasiMeasurePreserving.preimage_ae_eq hs.toMeasurable_ae_eq
+    refine (measurable_volume_hyperplaneSection u hu
+      (measurableSet_toMeasurable volume s)).aemeasurable.congr ?_
+    filter_upwards [Measure.ae_ae_of_ae_prod hp] with t ht
+    refine measure_congr ?_
+    filter_upwards [ht] with y hy
+    simpa only [mem_preimage, Function.comp_apply, Prod.swap_prod_mk, orthogonalLineEquiv_apply,
+      mem_ofPred_eq] using hy
+  rcases eq_or_ne e 0 with rfl | he
+  · simp only [smul_zero, add_zero]
+    exact aemeasurable_const
+  -- Otherwise `e = r • u` for a unit vector `u` spanning the same line, and the heights rescale.
+  obtain ⟨r, hr, u, hu, rfl⟩ : ∃ r : ℝ, r ≠ 0 ∧ ∃ u : E, ‖u‖ = 1 ∧ e = r • u :=
+    ⟨‖e‖, norm_ne_zero_iff.2 he, ‖e‖⁻¹ • e, norm_smul_inv_norm he,
+      (smul_inv_smul₀ (norm_ne_zero_iff.2 he) e).symm⟩
+  rw [Submodule.span_singleton_smul_eq hr.isUnit]
+  simpa only [Function.comp_def, smul_eq_mul, mul_comm r, mul_smul] using
+    (unit u hu).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul volume hr)
+
+/-- **The volume below a hyperplane as an interval integral** (Cavalieri). Let `s` be a
+Lebesgue-measurable set whose heights `⟪e, x⟫` along a unit vector `e` are all at least `a`, and
+let `c` be a height such that almost every hyperplane section at a height in `(a, c]` has finite
+volume. Then the real volume (`volume.real`) of the part of `s` below `c` is the integral of the
+real volumes of the sections from `a` to `c`. Both sides vanish when `c ≤ a`, and also, by the
+conventions for `volume.real` and the Bochner integral, when `{x ∈ s | ⟪e, x⟫ ≤ c}` has infinite
+volume (equivalently, when the section volumes are not integrable on `(a, c]`). -/
+theorem volume_real_sep_inner_le_eq_intervalIntegral (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : NullMeasurableSet s volume) {a : ℝ} (ha : ∀ x ∈ s, a ≤ ⟪e, x⟫) (c : ℝ)
+    (hfin : ∀ᵐ t ∂volume.restrict (Ioc a c), volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} < ∞) :
+    volume.real {x ∈ s | ⟪e, x⟫ ≤ c} =
+      ∫ t in a..c, volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  have hsep : {x ∈ s | ⟪e, x⟫ ≤ c} = {x ∈ s | ⟪e, x⟫ ∈ Icc a c} := by
+    ext x
+    exact and_congr_right fun hx ↦ ⟨fun h ↦ ⟨ha x hx, h⟩, And.right⟩
+  -- At heights `t < a` the sections are empty.
+  have h0 (t : ℝ) (ht : t ∈ Ioo c a) : volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} = 0 := by
+    have hempty : {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} = ∅ := eq_empty_of_forall_notMem
+      fun y hy ↦ (ha _ hy).not_gt ((inner_add_smul e he y t).trans_lt ht.2)
+    rw [hempty, measureReal_empty]
+  rw [intervalIntegral, ← restrict_Ioo_eq_restrict_Ioc (a := c) (b := a),
+    setIntegral_eq_zero_of_forall_eq_zero h0, sub_zero, measureReal_def, hsep,
+    volume_sep_inner_mem_eq_setLIntegral e he hs measurableSet_Icc, ← restrict_Ioc_eq_restrict_Icc,
+    ← integral_toReal (aemeasurable_volume_hyperplaneSection e hs).restrict hfin]
+  rfl
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
+`‖y‖ ^ 2 + t ^ 2` on the section of `u`. -/
+theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (y : (ℝ ∙ e)ᗮ)
+    (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
+    ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) =
+      ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
+  rw [← lintegral_indicator₀ hu]
+  refine lintegral_congr fun t ↦ ?_
+  classical
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, norm_add_smul_sq e he]
+
 end TauCeti
 
 namespace Submodule
@@ -247,5 +400,36 @@ theorem lintegral_eq_lintegral_lintegral_add (K : Submodule ℝ E)
     lintegral_prod_symm (fun q ↦ g (e.symm q))
       (hg.comp_quasiMeasurePreserving he.symm.quasiMeasurePreserving)]
   simp [e, add_comm]
+
+/-- In orthogonal coordinates along a subspace, a product of sets has the product volume. -/
+theorem volume_preimage_measurableEquivProd_prod (V : Submodule ℝ E) (p : E) (S : Set V)
+    (T : Set Vᗮ) : volume (V.measurableEquivProd p ⁻¹' S ×ˢ T) = volume S * volume T := by
+  have hΦ : MeasurePreserving (V.measurableEquivProd p) volume volume := by
+    simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+      V.measurePreserving_measurableEquivProd p
+  rw [hΦ.measure_preimage_equiv, Measure.volume_eq_prod, Measure.prod_prod]
+
+/-- A point is recovered from its orthogonal coordinates along a subspace based at `p`. -/
+theorem measurableEquivProd_fst_add_add_snd (V : Submodule ℝ E) (p x : E) :
+    ((V.measurableEquivProd p x).1 : E) + p + (V.measurableEquivProd p x).2 = x := by
+  conv_rhs => rw [← (V.measurableEquivProd p).symm_apply_apply x]
+  rw [measurableEquivProd_symm_apply, vadd_eq_add]
+  abel
+
+/-- If `k - p ∈ V`, both orthogonal coordinates of `x` along `V` based at `p` are at most as far
+from those of `k` as `x` is from `k`. -/
+theorem norm_measurableEquivProd_le (V : Submodule ℝ E) {p k : E} (hkp : k - p ∈ V) (x : E) :
+    ‖((V.measurableEquivProd p x).1 : E) + p - k‖ ≤ ‖x - k‖ ∧
+      ‖((V.measurableEquivProd p x).2 : E)‖ ≤ ‖x - k‖ := by
+  -- Both coordinates are orthogonal projections of `x - k`, since `k - p ∈ V`.
+  have hx : x -ᵥ p = (x - k) + (k - p) := by rw [vsub_eq_sub]; abel
+  rw [measurableEquivProd_apply, hx]
+  simp only [map_add, V.orthogonalProjectionOnto_mem_subspace_eq_self ⟨_, hkp⟩,
+    V.orthogonalProjectionOnto_orthogonal_apply_eq_zero hkp, add_zero, coe_add]
+  refine ⟨Eq.trans_le ?_ (V.norm_orthogonalProjectionOnto_apply_le _),
+    Vᗮ.norm_orthogonalProjectionOnto_apply_le _⟩
+  rw [← norm_coe]
+  congr 1
+  abel
 
 end Submodule

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
+import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -41,6 +41,9 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
 
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le`: the energy estimate
   `λ ‖∇(u - w)‖ ≤ ‖G‖` for the replacement relative to a general elliptic `a`.
+* `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le_add`: the energy estimate
+  `λ ‖∇(u - w)‖ ≤ ‖G‖ + L` when `a(u, v) = ⟪G, ∇v⟫ + ℓ v` with `|ℓ v| ≤ L ‖∇v‖`, as for an
+  equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` with a scalar datum `f`.
 * `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero`: a function of `H¹(Ω)`
   that solves `Δw = 0` weakly agrees almost everywhere with a harmonic function.
 * `TauCeti.PDE.W1p.exists_harmonicOnNhd_ae_eq_gradient`: so does its weak gradient, since the
@@ -70,9 +73,56 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
 
+/-- **The energy estimate for the replacement, with a further datum.** Let `a` be measurable and
+uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `u, w ∈ H¹(Ω)` have the same boundary
+values, `u - w ∈ H¹₀(Ω)`, with `w` a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) = 0`, that is `a(w, v) = 0`
+for every `v ∈ H¹₀(Ω)`. If `a(u, v) = ⟪G, ∇v⟫_{L²} + ℓ v` for every `v ∈ H¹₀(Ω)`, where
+`G ∈ L²(Ω; ℝⁿ)` and `|ℓ v| ≤ L ‖∇v‖_{L²}` on `H¹₀(Ω)`, then `λ ‖∇(u - w)‖_{L²} ≤ ‖G‖_{L²} + L`.
+
+For `u` solving `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`, the functional is `ℓ v = ⟪f, v⟫_{L²}`, and a Poincaré
+inequality `‖v‖_{L²} ≤ P ‖∇v‖_{L²}` on `H¹₀(Ω)` gives `L = P ‖f‖_{L²}`. -/
+theorem UniformlyEllipticOn.mul_norm_gradient_sub_le_add [DecidableEq ι]
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u w : W1p mu Omega 2}
+    (huw : u - w ∈ w1p0Submodule mu Omega 2)
+    (hw : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 w (v : W1p mu Omega 2) = 0)
+    {G : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega)} {ℓ : W1p0 mu Omega 2 → ℝ} {L : ℝ}
+    (hL : 0 ≤ L)
+    (hℓ : ∀ v : W1p0 mu Omega 2, |ℓ v| ≤ L * ‖W1p.gradient (v : W1p mu Omega 2)‖)
+    (hG : ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ⟪G, W1p.gradient (v : W1p mu Omega 2)⟫_ℝ + ℓ v) :
+    lam * ‖W1p.gradient (u - w)‖ ≤ ‖G‖ + L := by
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
+    h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have hd : u - w ∈ W1p0 mu Omega 2 := (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw
+  -- Test the equation for `u - w` against `u - w` itself.
+  have henergy : energyFormH1 a 0 0 (u - w) (u - w) =
+      ⟪G, W1p.gradient (u - w)⟫_ℝ + ℓ ⟨u - w, hd⟩ := by
+    rw [energyFormH1_sub_left hcoeff]
+    have hu := hG ⟨u - w, hd⟩
+    have hw := hw ⟨u - w, hd⟩
+    simp only at hu hw
+    rw [hu, hw, sub_zero]
+  -- Ellipticity bounds the left side below by `λ ‖∇(u - w)‖²`, Cauchy–Schwarz and the bound on
+  -- `ℓ` the right side above by `(‖G‖ + L) ‖∇(u - w)‖`.
+  have hlower := mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (b := 0) (c := 0)
+    (gamma := 0) h ha aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
+    (fun _ _ => le_rfl) (u - w)
+  rw [henergy] at hlower
+  have hCS := (real_inner_le_norm G (W1p.gradient (u - w))).trans_eq (mul_comm _ _)
+  have hℓd := (le_abs_self _).trans (hℓ ⟨u - w, hd⟩)
+  simp only at hℓd
+  rcases (norm_nonneg (W1p.gradient (u - w))).eq_or_lt with hzero | hpos
+  · rw [← hzero, mul_zero]
+    positivity
+  · exact le_of_mul_le_mul_right (by nlinarith) hpos
+
 /-- **The energy estimate for the replacement.** Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u, w ∈ H¹(Ω)` have the same boundary values,
-`u - w ∈ H¹₀(Ω)`, with `w` a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) = 0`, that is `a(w, v) = 0` for
+`u - w ∈ H¹₀(Ω)`, with `w` a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) = 0`, that is `a(w, v) = 0` for
 every `v ∈ H¹₀(Ω)`. If the functional `v ↦ a(u, v)` on `H¹₀(Ω)` is represented by a field
 `G ∈ L²(Ω; ℝⁿ)` as `a(u, v) = ⟪G, ∇v⟫_{L²}`, then `λ ‖∇(u - w)‖_{L²} ≤ ‖G‖_{L²}`. -/
 theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
@@ -85,29 +135,8 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
     (hG : ∀ v : W1p0 mu Omega 2,
       energyFormH1 a 0 0 u (v : W1p mu Omega 2) = ⟪G, W1p.gradient (v : W1p mu Omega 2)⟫_ℝ) :
     lam * ‖W1p.gradient (u - w)‖ ≤ ‖G‖ := by
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  have hd : u - w ∈ W1p0 mu Omega 2 := (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw
-  -- Test the equation for `u - w` against `u - w` itself.
-  have henergy : energyFormH1 a 0 0 (u - w) (u - w) =
-      ⟪G, W1p.gradient (u - w)⟫_ℝ := by
-    rw [energyFormH1_sub_left hcoeff]
-    have hu := hG ⟨u - w, hd⟩
-    have hw := hw ⟨u - w, hd⟩
-    simp only at hu hw
-    rw [hu, hw, sub_zero]
-  -- Ellipticity bounds the left side below by `λ ‖∇(u - w)‖²`, Cauchy–Schwarz the right side
-  -- above by `‖G‖ ‖∇(u - w)‖`.
-  have hlower := mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (b := 0) (c := 0)
-    (gamma := 0) h ha aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
-    (fun _ _ => le_rfl) (u - w)
-  rw [henergy] at hlower
-  have hCS := (real_inner_le_norm G (W1p.gradient (u - w))).trans_eq (mul_comm _ _)
-  rcases (norm_nonneg (W1p.gradient (u - w))).eq_or_lt with hzero | hpos
-  · rw [← hzero, mul_zero]
-    exact norm_nonneg G
-  · exact le_of_mul_le_mul_right (by nlinarith) hpos
+  simpa using h.mul_norm_gradient_sub_le_add ha huw hw le_rfl (ℓ := 0)
+    (fun _ => by simp) fun v => by simpa using hG v
 
 /-- **Weakly harmonic Sobolev functions are harmonic.** If `w ∈ H¹(Ω)` solves `Δw = 0` weakly,
 in the sense that `∫_Ω ⟨∇w, ∇φ⟩ = 0` for every test function `φ` on `Ω`, then `w` agrees almost
@@ -117,17 +146,11 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero [DecidableEq �
     {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
       energyFormH1 (fun _ => 1) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 φ) = 0) :
     ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
-      (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h := by
-  refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
-    ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩)
-  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
-    ← hw φ, energyFormH1_zero_zero_eq_setIntegral]
-  simp_rw [real_inner_comm (W1p.gradient w _)]
-  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
-  refine integral_congr_ae ?_
-  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-  rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-  exact EuclideanSpace.inner_eq_star_dotProduct _ _
+      (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h :=
+  WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
+    ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ =>
+      neg_eq_zero.1 ((energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul
+        .rfl φ).symm.trans (hw φ))⟩)
 
 /-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
 `w ∈ W^{1,p}(Ω)` is weakly harmonic on `Ω`, then the weak gradient of `w` agrees almost
@@ -136,21 +159,18 @@ theorem W1p.exists_harmonicOnNhd_ae_eq_gradient {p : ENNReal} [Fact (1 ≤ p)]
     {w : W1p mu Omega p} (hw : WeaklyHarmonicOn mu Omega (W1p.value w)) :
     ∃ H : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι, HarmonicOnNhd H Omega ∧
       (W1p.gradient w : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu.restrict Omega] H := by
-  classical
-  set b := EuclideanSpace.basisFun ι ℝ
-  -- Each coordinate `⟪bᵢ, ∇w⟫` is a weak derivative of the weakly harmonic `w`, so it is weakly
-  -- harmonic, and Weyl's lemma gives it a harmonic representative.
-  have hi : ∀ i, ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
-      (fun x => ⟪b i, W1p.gradient w x⟫_ℝ) =ᵐ[mu.restrict Omega] h := fun i => by
-    have hd := (hasWeakFDerivOn_iff.1 (W1p.hasWeakFDerivOn w)) (b i)
-    simp only [innerSL_apply_apply, real_inner_comm (b i)] at hd
-    exact (hd.weaklyHarmonicOn hw).exists_harmonicOnNhd_ae_eq
-  choose h hh hae using hi
-  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum _ fun i _ =>
-    (hh i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)), ?_⟩
-  filter_upwards [ae_all_iff.2 hae] with x hx
-  conv_lhs => rw [← b.sum_repr' (W1p.gradient w x)]
-  exact Finset.sum_congr rfl fun i _ => by rw [hx i]
+  obtain ⟨H, hH, hgrad⟩ :=
+    ((W1p.hasWeakFDerivOn w).weaklyHarmonicOn hw).exists_harmonicOnNhd_ae_eq
+  let e := InnerProductSpace.toDual ℝ (EuclideanSpace ℝ ι)
+  refine ⟨fun x => e.symm (H x), hH.comp_CLM e.symm.toContinuousLinearMap, ?_⟩
+  filter_upwards [hgrad] with x hx
+  apply e.injective
+  rw [e.apply_symm_apply]
+  have hRiesz : e (W1p.gradient w x) = innerSL ℝ (W1p.gradient w x) := by
+    ext v
+    simp only [e, InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
+  rw [hRiesz]
+  exact hx
 
 /-- **Harmonic replacement.** Let `Ω ⊆ ℝ^{n+1}` be an open set contained in a ball, and let
 `u ∈ H¹(Ω)`. There is `w ∈ H¹(Ω)` with the same boundary values, `u - w ∈ H¹₀(Ω)`, solving
@@ -182,12 +202,11 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (b := 0) (c := 0) h1 aestronglyMeasurable_const aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl
-      (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp) (fun _ _ => le_rfl)
-      (le_max_right R 0) (hball.trans (ball_subset_ball (le_max_left R 0))) (by simp) 0 u
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 u
   have hw0 : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+    rw [hw v, zero_apply]
   have hsub : u - w ∈ w1p0Submodule volume Omega 2 := by
     have hwu :=
       (ClosedSubmodule.mem_toSubmodule_iff (w - u) (w1p0Submodule volume Omega 2)).2 huw

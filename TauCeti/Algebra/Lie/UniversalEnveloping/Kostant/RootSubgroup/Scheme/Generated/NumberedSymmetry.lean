@@ -201,7 +201,7 @@ theorem kostantRootSubgroupToGenerated_comp_numberedSymmetryIso_pow_hom (m : ℕ
         ((kostantGeneratedNumberedSymmetryIso
           e h ρ M hM hnil b σ θ hθM hθe hσ) ^ m).asIso.hom =
       kostantRootSubgroupToGenerated e h ρ M hM hnil b ((σ^[m]) i) := by
-  exact TauCeti.CategoryTheory.comp_aut_pow_hom_of_comp
+  exact Aut.comp_pow_hom_of_comp
     (kostantGeneratedNumberedSymmetryIso
       e h ρ M hM hnil b σ θ hθM hθe hσ)
     (kostantRootSubgroupToGenerated e h ρ M hM hnil b) σ

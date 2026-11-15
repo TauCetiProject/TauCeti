@@ -100,12 +100,10 @@ For a commutative group `G`, this specializes to the standard statement that rep
 diagonalizable group are diagonalizable; see Waterhouse, *Introduction to Affine Group Schemes*,
 §3.2, and Milne, *Algebraic Groups* (2017), Theorem 12.12.
 
-It supplies a prerequisite for the Tau Ceti reductive-groups roadmap, `ReductiveGroups/README.md`
-in TauCetiRoadmap: Layer 6 asks for the linear reductivity of tori ("over an algebraically closed
-field of characteristic `p`, a connected group is linearly reductive iff it is a torus"), of which
-this is the substantive direction for a split torus, and Layer 7's root datum of a split pair
-`(G, T)` is read off the weight decomposition of `Lie G` under `T` that this file provides. The
-diagonalizable group `D(G) = Spec R[G]` itself is in
+The weight projections are the main input to `TauCeti.Coalgebra.isLinearlyReductive_monoidAlgebra`,
+which shows that a monoid algebra over a field is linearly reductive; for a commutative group `G`
+this is the linear reductivity of the diagonalizable group `D(G)`, in particular of a split torus.
+The diagonalizable group `D(G) = Spec R[G]` itself is in
 `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic`.
 -/
 
@@ -701,14 +699,14 @@ theorem exists_basis_mem_weightSpace [FiniteDimensional k V] :
 
 /-- **Weight multiplicities count weight basis vectors.** In a basis of weight vectors, the
 dimension of the `g`-weight space is the number of basis vectors of weight `g`. -/
-theorem _root_.Module.Basis.finrank_comoduleWeightSpace_eq_card {ι : Type*} [Finite ι]
+theorem _root_.Module.Basis.finrank_comoduleWeightSpace_eq_card {ι : Type*}
     (b : Basis ι k V) (wt : ι → G) (hb : ∀ i, b i ∈ weightSpace k G V (wt i)) (g : G) :
     finrank k (weightSpace k G V g) = Nat.card {i // wt i = g} := by
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite {i // wt i = g}
-  rw [b.comoduleWeightSpace_eq_span wt hb g, ← Subtype.range_coe_subtype, ← Set.range_comp,
-    finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
-    Nat.card_eq_fintype_card]
+  have hli : LinearIndepOn k id (b '' {i | wt i = g}) :=
+    b.linearIndependent.linearIndepOn_id.mono (Set.image_subset_range _ _)
+  rw [b.comoduleWeightSpace_eq_span wt hb g, finrank_span_set_eq_ncard hli,
+    Set.ncard_image_of_injective _ b.injective, ← Nat.card_coe_set_eq]
+  rfl
 
 end WeightBasis
 

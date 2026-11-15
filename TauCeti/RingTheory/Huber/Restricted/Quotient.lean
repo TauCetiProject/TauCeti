@@ -93,14 +93,15 @@ theorem mem_map_weightedC_iff {J : Ideal A} (hJ : J.FG) (hJc : IsClosed (J : Set
     exact hg
   -- The presentation `Aⁿ → J` is open, by the open mapping theorem.
   have hopen := LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp <|
-    IsTateRing.isStrictMap_of_isClosed_range u (LinearMap.continuous_on_pi u).continuousAt
+    u.isStrictMap_of_isClosed_range_of_isTateRing (LinearMap.continuous_on_pi u).continuousAt
       (hu ▸ hJc)
   have hf₀ : Tendsto (fun ν ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A))
       cofinite (𝓝 0) :=
     isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.2)
   obtain ⟨a, ha, hlim⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds u.rangeRestrict
-    u.surjective_rangeRestrict (map_zero u.rangeRestrict ▸ hopen.isOpenMap.nhds_le 0)
-    (fun ν ↦ (⟨_, hu ▸ hf ν⟩ : LinearMap.range u)) (tendsto_subtype_rng.mpr hf₀)
+    (map_zero u.rangeRestrict ▸ hopen.isOpenMap.nhds_le 0)
+    (fun ν ↦ (⟨_, hu ▸ hf ν⟩ : LinearMap.range u)) (fun _ ↦ u.surjective_rangeRestrict _)
+    (tendsto_subtype_rng.mpr hf₀)
   -- The components of the lift are restricted series.
   let F (i : Fin n) : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight :=

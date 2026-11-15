@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Comma
 
@@ -21,6 +22,10 @@ opposite category of quasi-coherent algebras to affine schemes over the base. Th
 functor provides the geometric side of the correspondence between quasi-coherent
 commutative algebras and affine schemes over the base, and is an input to the natural
 universal property of relative Spec.
+
+The file also defines the forgetful functor
+`TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.forget` from quasi-coherent algebras to
+quasicoherent sheaves.
 
 ## References
 
@@ -160,6 +165,42 @@ abbrev QuasicoherentAlgebra (X : Scheme.{u}) :=
   (show ObjectProperty (CommMon X.Modules) from fun A ↦ A.X.IsQuasicoherent).FullSubcategory
 
 instance (A : QuasicoherentAlgebra X) : A.obj.X.IsQuasicoherent := A.property
+
+variable (X) in
+/-- The forgetful functor from quasicoherent commutative `𝒪_X`-algebras to quasicoherent
+sheaves, sending an algebra to its underlying module. -/
+def QuasicoherentAlgebra.forget : QuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=
+  ObjectProperty.lift _ (ObjectProperty.ι _ ⋙ CommMon.forget X.Modules) fun A ↦ A.property
+
+/-- The underlying module of `(QuasicoherentAlgebra.forget X).obj A` is that of `A`. -/
+@[simp]
+theorem QuasicoherentAlgebra.forget_obj_obj (A : QuasicoherentAlgebra X) :
+    ((QuasicoherentAlgebra.forget X).obj A).obj = A.obj.X :=
+  (rfl)
+
+/-- The underlying module of `(QuasicoherentAlgebra.forget X).obj A` is that of `A`, as an
+isomorphism. -/
+def QuasicoherentAlgebra.forgetObjIso (A : QuasicoherentAlgebra X) :
+    ((QuasicoherentAlgebra.forget X).obj A).obj ≅ A.obj.X :=
+  eqToIso (forget_obj_obj A)
+
+@[simp]
+theorem QuasicoherentAlgebra.forgetObjIso_hom (A : QuasicoherentAlgebra X) :
+    (forgetObjIso A).hom = eqToHom (forget_obj_obj A) :=
+  (rfl)
+
+@[simp]
+theorem QuasicoherentAlgebra.forgetObjIso_inv (A : QuasicoherentAlgebra X) :
+    (forgetObjIso A).inv = eqToHom (forget_obj_obj A).symm :=
+  (rfl)
+
+/-- Under the identifications `QuasicoherentAlgebra.forgetObjIso`, the forgetful functor sends an
+algebra morphism to its underlying module morphism. -/
+@[simp]
+theorem QuasicoherentAlgebra.forget_map_hom {A A' : QuasicoherentAlgebra X} (f : A ⟶ A') :
+    ((QuasicoherentAlgebra.forget X).map f).hom =
+      (forgetObjIso A).hom ≫ f.hom.hom.hom ≫ (forgetObjIso A').inv :=
+  (Category.id_comp _).symm.trans (Category.comp_id _).symm
 
 /-- Affine schemes over `X`: the structure morphism, not necessarily the scheme, is affine.
 Morphisms are arbitrary scheme morphisms over `X`. -/

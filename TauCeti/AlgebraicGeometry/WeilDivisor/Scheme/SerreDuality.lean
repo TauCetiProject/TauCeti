@@ -42,6 +42,10 @@ Combined with the function-field duality `L(W - D) ≃ Ω(D)`, `x ↦ x · ω`, 
 nonzero Weil differential `ω`, this is Serre duality. The pairing is explicit: a section `f` of
 `𝒪_X(K - D)` pairs with the class of a repartition `a` to `ω(f · a)`.
 
+For `D ≤ E`, the duality is natural: the dual of the map on `H¹` induced by
+`𝒪_X(D) ⟶ 𝒪_X(E)` corresponds to the map on `H⁰` induced by
+`𝒪_X(K - E) ⟶ 𝒪_X(K - D)`.
+
 Under the same constant-field hypothesis, taking `D = 0` computes the genus:
 `dim_k H¹(X, 𝒪_X)` is the genus of the function field, and a canonical divisor has degree
 `2g - 2`.
@@ -51,6 +55,8 @@ Under the same constant-field hypothesis, taking `D = 0` computes the genus:
 * `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero`: **Serre duality**,
   `H¹(X, 𝒪_X(D))^∨ ≃ H⁰(X, 𝒪_X(K - D))`, with the pairing
   `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne`;
+* `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero_naturality`: compatibility with
+  the sheaf-cohomology maps induced by inclusions of divisors;
 * `SchemeWeilDivisor.finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub`:
   `dim_k H¹(X, 𝒪_X(D)) = dim_k H⁰(X, 𝒪_X(K - D))` for every canonical divisor `K`;
 * `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_zero_eq_one` and
@@ -102,7 +108,7 @@ section Duality
 variable [IsNoetherian X] (hF : IsFunctionField k X.functionField)
 
 variable (hk : IsIntegrallyClosedIn k X.functionField)
-  {ω : Module.Dual k (repartitionSpace k X.functionField)} (hω : ω ≠ 0) {K : SchemeWeilDivisor X}
+  {ω : Module.Dual k (repartitionSpace k X.functionField)} {K : SchemeWeilDivisor X}
   (hK : IsGreatest {E : Divisor k X.functionField | ω ∈ weilDifferentialFiltration E}
     (equivFunctionFieldDivisor hex hdim K))
 
@@ -117,7 +123,7 @@ def cohomologyOneDualEquivCohomologyZero (D : SchemeWeilDivisor X) :
     Module.Dual k (Scheme.Modules.Cohomology (sheaf D) 1) ≃ₗ[k]
       Scheme.Modules.Cohomology (sheaf (K - D)) 0 :=
   (cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF D).trans <|
-    (riemannRochSpaceEquivWeilDifferentialFiltration hF hk hω hK _).symm.trans <|
+    (riemannRochSpaceEquivWeilDifferentialFiltration hF hk hK _).symm.trans <|
       (LinearEquiv.ofEq _ _ (by rw [map_sub])).trans <|
         (globalSectionsEquivRiemannRochSpace hex hdim (K - D)).symm.trans
           (Scheme.Modules.cohomologyZeroBaseLinearEquiv k X (sheaf (K - D))).symm
@@ -131,12 +137,52 @@ repartition on the left-hand side, so this rule would not be in simp-normal form
 lemma cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne
     (D : SchemeWeilDivisor X) (s : Scheme.Modules.Cohomology (sheaf (K - D)) 0)
     (a : repartitionSpace k X.functionField) :
-    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D).symm s
+    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D).symm s
         (repartitionToCohomologyOne hex hdim D a) =
       ω (repartitionMul hF (Scheme.rationalFunctionsEquiv ⊤
         ((sheafι (K - D)).app ⊤ (Scheme.Modules.cohomologyZeroEquiv _ s))) a) := by
   rw [← cohomologyOneDualEquivWeilDifferentialFiltration_apply_apply hex hdim hF]
   simp [cohomologyOneDualEquivCohomologyZero, repartitionDualMul_apply_apply]
+
+/-- The Serre pairing is natural under `D ≤ E`: the cohomology map induced by
+`𝒪(D) ⟶ 𝒪(E)` is adjoint to that induced by `𝒪(K - E) ⟶ 𝒪(K - D)`. -/
+theorem cohomologyOneDualEquivCohomologyZero_symm_naturality
+    {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    (s : Scheme.Modules.Cohomology (sheaf (K - E)) 0)
+    (x : Scheme.Modules.Cohomology (sheaf D) 1) :
+    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D).symm
+        (Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE (sub_le_sub_left h K)) 0 s) x =
+      (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK E).symm s
+        (Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1 x) := by
+  obtain ⟨a, rfl⟩ := repartitionToCohomologyOne_surjective hex hdim D x
+  rw [repartitionToCohomologyOne_naturality,
+    cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne,
+    cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne]
+  congr 3
+  rw [← Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply k X,
+    Scheme.Modules.cohomologyZeroBaseLinearEquiv_naturality]
+  apply congrArg (Scheme.rationalFunctionsEquiv ⊤)
+  rw [Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply]
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun f ↦ Scheme.Modules.Hom.app f ⊤)
+        (sheafHomOfLE_ι (sub_le_sub_left h K)))
+      (Scheme.Modules.cohomologyZeroEquiv _ s)
+
+/-- Serre duality intertwines the dual of the map on `H¹` induced by `D ≤ E` with the
+opposite map on `H⁰` induced by `K - E ≤ K - D`. -/
+theorem cohomologyOneDualEquivCohomologyZero_naturality
+    {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    (φ : Module.Dual k (Scheme.Modules.Cohomology (sheaf E) 1)) :
+    cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D
+        ((Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1).dualMap φ) =
+      Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE (sub_le_sub_left h K)) 0
+        (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK E φ) := by
+  apply (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D).symm.injective
+  rw [LinearEquiv.symm_apply_apply]
+  ext x
+  rw [cohomologyOneDualEquivCohomologyZero_symm_naturality, LinearEquiv.symm_apply_apply]
+  rfl
 
 end Duality
 
@@ -158,10 +204,10 @@ theorem finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub
     (D : SchemeWeilDivisor X) :
     finrank k (Scheme.Modules.Cohomology (sheaf D) 1) =
       finrank k (Scheme.Modules.Cohomology (sheaf (K - D)) 0) := by
-  obtain ⟨ω, -, hω, hW⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
+  obtain ⟨ω, -, -, hW⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
   have := finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF D
   rw [← Subspace.dual_finrank_eq]
-  exact (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hW D).finrank_eq
+  exact (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hW D).finrank_eq
 
 include hex hdim hF hk in
 /-- When `k` is integrally closed in `k(X)`, the first cohomology of `𝒪_X(0)` has dimension the

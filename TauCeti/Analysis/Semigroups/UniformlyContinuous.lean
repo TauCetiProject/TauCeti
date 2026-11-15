@@ -165,7 +165,7 @@ theorem domain_eq_top_of_continuousAt_zero (S : StronglyContinuousSemigroup X)
       ∫ s in Set.Ioc 0 t, S.realOperator s x := by
     rw [ContinuousLinearMap.intervalIntegral_apply hint, intervalIntegral.integral_of_le ht.le]
   rw [smul_apply, horbit]
-  exact S.domain.smul_mem t⁻¹ (S.integral_orbit_mem_domain x ht)
+  exact S.domain.smul_mem t⁻¹ (S.integral_orbit_mem_domain x t)
 
 /-- If a strongly continuous semigroup is continuous in operator norm, then every vector lies in
 the domain of its generator. -/

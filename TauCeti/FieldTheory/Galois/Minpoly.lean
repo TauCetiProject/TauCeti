@@ -61,7 +61,7 @@ theorem minpoly_map_eq_prod_X_sub_C_of_adjoin_eq_top {x : L} (hx : K⟮x⟯ = �
     ext y
     simp [ConjRootClass.mem_carrier, isConjRoot_iff_exists_algEquiv]
   rw [← ConjRootClass.minpoly_mk, ConjRootClass.minpoly.map_eq_prod, hcarrier,
-    Finset.prod_image fun σ _ τ _ h ↦ hinj h]
+    Finset.prod_image hinj.injOn]
 
 /-- The derivative of the minimal polynomial of a primitive element `x` of a finite Galois
 extension, evaluated at `x`, is `∏_{σ ≠ 1} (x - σ x)`. -/
@@ -69,22 +69,13 @@ theorem aeval_derivative_minpoly_eq_prod_of_adjoin_eq_top [DecidableEq (L ≃ₐ
     (hx : K⟮x⟯ = ⊤) :
     aeval x (derivative (minpoly K x)) =
       ∏ σ ∈ Finset.univ.erase (1 : L ≃ₐ[K] L), (x - σ x) := by
-  classical
-  -- `x` is the root of the linear factor indexed by the identity automorphism.
-  have hmem : x ∈ Multiset.map (fun σ : L ≃ₐ[K] L ↦ σ x) Finset.univ.val :=
-    Multiset.mem_map.2 ⟨1, Finset.mem_univ _, AlgEquiv.one_apply x⟩
-  -- Erasing that root from the multiset of conjugates erases the identity from the index set.
-  have herase : (Multiset.map (fun σ : L ≃ₐ[K] L ↦ σ x) Finset.univ.val).erase x =
-      Multiset.map (fun σ : L ≃ₐ[K] L ↦ σ x) (Finset.univ.erase (1 : L ≃ₐ[K] L)).val := by
-    rw [Finset.erase_val, Multiset.map_erase_of_mem _ _ (Finset.mem_univ 1), AlgEquiv.one_apply]
-  -- The product over the Galois group is the product of `X - C a` over the multiset of conjugates.
-  have hprod : ∏ σ : L ≃ₐ[K] L, (X - C (σ x)) =
-      (Multiset.map (fun a : L ↦ X - C a)
-        (Multiset.map (fun σ : L ≃ₐ[K] L ↦ σ x) Finset.univ.val)).prod := by
-    rw [Multiset.map_map]; rfl
-  rw [aeval_def, eval₂_eq_eval_map, ← derivative_map,
-    minpoly_map_eq_prod_X_sub_C_of_adjoin_eq_top hx, hprod,
-    eval_multiset_prod_X_sub_C_derivative hmem, herase, Multiset.map_map]
-  rfl
+  rw [← eval_map_algebraMap, ← derivative_map,
+    minpoly_map_eq_prod_X_sub_C_of_adjoin_eq_top hx, derivative_prod_finset, eval_finsetSum,
+    Fintype.sum_eq_single 1]
+  · simp [eval_prod]
+  · -- For `σ ≠ 1`, the summand still contains the factor `X - C x`, which vanishes at `x`.
+    intro σ hσ
+    simp only [derivative_X_sub_C, mul_one, eval_prod, eval_sub, eval_X, eval_C]
+    exact Finset.prod_eq_zero (Finset.mem_erase.2 ⟨Ne.symm hσ, Finset.mem_univ 1⟩) (by simp)
 
 end TauCeti

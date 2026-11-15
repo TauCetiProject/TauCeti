@@ -62,11 +62,9 @@ open _root_.ContinuousCohomology
 
 universe u
 
-/-! ### The first class -/
-
-section FirstClass
-
 variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-! ### The first class -/
 
 /-- **`w₁⟨⟨a⟩⟩ = (-a)`**: the first Stiefel–Whitney class of the one-fold Pfister form
 `⟨1, -a⟩`. -/
@@ -82,13 +80,7 @@ theorem sw1Class_pfisterFormClass {n : ℕ} (a : Fin n → Kˣ) (hn : 2 ≤ n) :
     sw1Class (pfisterFormClass a) = 0 := by
   rw [sw1Class_eq_kummerSquareClassEquiv_discr, discr_pfisterFormClass a hn, map_zero]
 
-end FirstClass
-
 /-! ### The second class -/
-
-section SecondClass
-
-variable {K : Type} [Field K] [Invertible (2 : K)]
 
 /-- **`w₂⟨⟨a⟩⟩ = 0`**: the one-fold Pfister form `⟨1, -a⟩` has trivial second class. -/
 theorem sw2Class_pfisterFormClass_one (a : Fin 1 → Kˣ) : sw2Class (pfisterFormClass a) = 0 := by
@@ -138,7 +130,5 @@ theorem sw2Class_pfisterFormClass_of_three_le {n : ℕ} (a : Fin n → Kˣ) (hn 
   rw [← Fin.cons_self_tail a, pfisterFormClass_cons, add_mul, one_mul, sw2Class_add,
     sw2Class_mk_rankOne_mul_pfisterFormClass _ _ hm, sw1Class_pfisterFormClass _ hm, map_zero,
     LinearMap.zero_apply, add_zero, ZModModule.add_self]
-
-end SecondClass
 
 end TauCeti

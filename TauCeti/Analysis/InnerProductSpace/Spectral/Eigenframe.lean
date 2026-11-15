@@ -231,7 +231,7 @@ theorem CorrespondingEigenblocks.finrank_left [Fintype ι] {hT : T.IsSymmetric} 
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     finrank 𝕜 U = Fintype.card ι := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, hw, _, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact hw.finrank_span
 
 /-- The second corresponding block has dimension equal to the cardinality of its indices. -/
@@ -239,21 +239,21 @@ theorem CorrespondingEigenblocks.finrank_right [Fintype ι] {hT : T.IsSymmetric}
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     finrank 𝕜 V = Fintype.card ι := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, _, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact hu.finrank_span
 
 /-- The first corresponding block is invariant under the first operator. -/
 theorem CorrespondingEigenblocks.map_left_le {hT : T.IsSymmetric} {hS : S.IsSymmetric}
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) : Submodule.map T U ≤ U := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, hw, _, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hw).map_span_le
 
 /-- The second corresponding block is invariant under the second operator. -/
 theorem CorrespondingEigenblocks.map_right_le {hT : T.IsSymmetric} {hS : S.IsSymmetric}
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) : Submodule.map S V ≤ V := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, _, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hu).map_span_le
 
 /-- Applying the first operator to a vector in its corresponding block stays in that block. -/
@@ -277,7 +277,7 @@ theorem CorrespondingEigenblocks.restrictedPointSpectrum_left_eq
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     Module.End.restrictedPointSpectrum T U =
       Set.range (fun i : ι => hT.eigenvalues hn (e i)) := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, hw, _, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hw).restrictedPointSpectrum_span_eq
 
 /-- The second block's restricted point spectrum is exactly its selected eigenvalues. -/
@@ -287,7 +287,7 @@ theorem CorrespondingEigenblocks.restrictedPointSpectrum_right_eq
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     Module.End.restrictedPointSpectrum S V =
       Set.range (fun i : ι => hS.eigenvalues hn (e i)) := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, _, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hu).restrictedPointSpectrum_span_eq
 
 /-! ### Canonical eigenframe constructors -/
@@ -311,5 +311,42 @@ theorem correspondingEigenblocks_eigenvectorBasis (hT : T.IsSymmetric)
       isOrderedEigenframe_eigenvectorBasis hS hn e, ?_, ?_⟩
   · exact (span_range_eigenvectorBasis_apply_eq_eigenvectorSpan hT hn e).symm
   · exact (span_range_eigenvectorBasis_apply_eq_eigenvectorSpan hS hn e).symm
+
+/-- A gap-separated ordered eigenframe spans the canonical coordinate block.
+The frame may vary inside repeated eigenspaces, but the separating gap forces
+all indices for any selected eigenvalue to remain within the selected block.
+
+Adapted from `ForTauCeti/Analysis/InnerProductSpace/Spectral/EigenFrame.lean`
+in the Kitware DKPS formalization (Jon Crall, Claude Opus 5, GPT-6; Apache-2.0). -/
+theorem IsOrderedEigenframe.span_eq_spanIndices {hT : T.IsSymmetric}
+    {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {w : ι → E}
+    (hw : IsOrderedEigenframe hT hn e w) {Δ : ℝ} (hΔ : 0 < Δ)
+    (hgap : ∀ (i : ι) (k : Fin n), k ∉ Set.range e →
+      Δ ≤ |hT.eigenvalues hn (e i) - hT.eigenvalues hn k|) :
+    Submodule.span 𝕜 (Set.range w) = (hT.eigenvectorBasis hn).spanIndices (Set.range e) := by
+  classical
+  let : Fintype ι := Fintype.ofInjective e e.injective
+  have hf := isOrderedEigenframe_iff.mp hw
+  have hle : Submodule.span 𝕜 (Set.range w) ≤
+      (hT.eigenvectorBasis hn).spanIndices (Set.range e) := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨i, rfl⟩
+    apply (OrthonormalBasis.mem_spanIndices_iff (hT.eigenvectorBasis hn)).mpr
+    intro k hk
+    rw [OrthonormalBasis.repr_apply_apply]
+    have hne : (hT.eigenvalues hn k : 𝕜) ≠ (hT.eigenvalues hn (e i) : 𝕜) := by
+      intro heq
+      have heq' : hT.eigenvalues hn k = hT.eigenvalues hn (e i) := by exact_mod_cast heq
+      have hg := hgap i k hk
+      rw [heq', sub_self, abs_zero] at hg
+      exact hΔ.not_ge hg
+    exact hT.orthogonalFamily_eigenspaces hne
+      ⟨hT.eigenvectorBasis hn k, (hT.hasEigenvector_eigenvectorBasis hn k).1⟩
+      ⟨w i, hf.mem_eigenspace i⟩
+  apply Submodule.eq_of_le_of_finrank_eq hle
+  rw [hw.finrank_span]
+  have hrange : Set.range e = ↑(Finset.univ.map e) := by ext k; simp
+  rw [hrange, OrthonormalBasis.finrank_spanIndices]
+  simp
 
 end LinearMap.IsSymmetric

@@ -119,8 +119,8 @@ private theorem exists_ne_of_not_dvd_characterDegree [Invertible (Nat.card G : �
     exact Representation.isIntegral_char _ (isOfFinOrder_of_finite g).orderOf_pos.ne'
       (pow_orderOf_eq_one g)
   -- `p · (-z) = 1` with `-z` an algebraic integer makes `p` divide `1`
-  exact hp.ne_one (Nat.dvd_one.1 (dvd_of_isIntegral_of_natCast_mul_eq (m := 1) hzint.neg
-    (by push_cast; linear_combination -hone) hp.pos.ne'))
+  exact hp.ne_one (Nat.dvd_one.1 (hzint.neg.dvd_of_natCast_mul_eq (m := 1)
+    (by push_cast; linear_combination -hone)))
 
 /-- **A conjugacy class of prime-power size larger than one forces a proper normal subgroup.** If
 some element of a finite group has a conjugacy class of size `p ^ k` with `p` prime and `k ≠ 0`,
@@ -133,7 +133,8 @@ theorem not_isSimpleGroup_of_card_carrier_eq_prime_pow {g : G} {p k : ℕ} (hp :
   intro hsimple
   let : Invertible (Nat.card G : ℂ) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   have hgcenter : g ∉ Subgroup.center G := fun hg => (Nat.one_lt_pow hk hp.one_lt).ne' <| by
-    rw [← hcard, Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center hg]
+    rw [← hcard, Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
+      (Submonoid.mem_center_iff.mpr (Subgroup.mem_center_iff.mp hg))]
   -- some nontrivial irreducible character survives at `g` with degree prime to `p`
   obtain ⟨i₀, hi₀⟩ := exists_irreducibleCharacter_eq_one ℂ G
   obtain ⟨i, hne, hchi, hpdvd⟩ := exists_ne_of_not_dvd_characterDegree

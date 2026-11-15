@@ -65,9 +65,9 @@ private theorem fst_globalSolution_timeDependentSuspension (v : ℝ → E → E)
     have hγ := ODE.hasDerivAt_globalSolution (timeDependentSuspension v) hv (s, x) u
     have hfst : HasDerivAt (fun q ↦ (γ q).1) 1 u := by
       convert (hγ.hasFDerivAt.fst).hasDerivAt using 1
-      all_goals simp [timeDependentSuspension]
+      simp [timeDependentSuspension]
     convert hfst.sub (hasDerivAt_id' u) using 1
-    all_goals simp
+    simp
   have hconst := is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
     (fun u ↦ (hderiv u).deriv) r 0
   simpa [γ, add_comm, sub_eq_iff_eq_add] using hconst
@@ -106,10 +106,10 @@ theorem hasDerivAt_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
   have hsnd : HasDerivAt (fun q ↦ (Γ q).2) (v t (timeDependentFlow v hv s t x))
       (t - s) := by
     convert (hΓ.hasFDerivAt.snd).hasDerivAt using 1
-    all_goals simp [globalSolution_timeDependentSuspension, timeDependentSuspension]
+    simp [globalSolution_timeDependentSuspension, timeDependentSuspension]
   have hcomp := hsnd.comp_sub_const t s
   convert hcomp using 1
-  all_goals simp only [Γ, timeDependentFlow]
+  simp only [Γ, timeDependentFlow]
 
 /-- Time-dependent evolution through an intermediate time is the same as direct evolution. -/
 @[simp]

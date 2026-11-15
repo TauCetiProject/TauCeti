@@ -20,9 +20,9 @@ of `TauCeti.CoveringSpace X` and has no nontrivial subobject there. This file pr
 agree.
 
 The bridge is the classification of covers by `π₁(X, x₀)`-sets. Categorical connectedness is
-invariant under an equivalence of categories (`TauCeti.isConnected_map_iff`), so it can be read off
-on the other side of `TauCeti.CoveringSpace.fiberActionEquivalence`, where it says exactly that the
-monodromy action on the fibre over `x₀` is transitive and nonempty
+invariant under an equivalence of categories (`CategoryTheory.Functor.isConnected_obj_iff`), so it
+can be read off on the other side of `TauCeti.CoveringSpace.fiberActionEquivalence`, where it says
+exactly that the monodromy action on the fibre over `x₀` is transitive and nonempty
 (`TauCeti.isConnected_action_iff_isTransitiveAction`). That in turn is the condition already known
 to characterise connected covers: transitivity of monodromy is
 `TauCeti.ConnectedCoveringSpace.isTransitiveAction_fiberAction`, and conversely a cover with
@@ -106,7 +106,7 @@ total space is a connected space.** -/
 theorem isConnected_iff_connectedSpace (p : CoveringSpace X) :
     PreGaloisCategory.IsConnected p ↔ ConnectedSpace (p : TopCat) := by
   obtain ⟨x₀⟩ := PathConnectedSpace.nonempty (X := (X : Type u))
-  exact ((isConnected_map_iff (fiberActionFunctor x₀) p).symm.trans
+  exact (((fiberActionFunctor x₀).isConnected_obj_iff p).symm.trans
       (isConnected_action_iff_isTransitiveAction _)).trans
     (isTransitiveAction_fiberAction_iff_connectedSpace x₀ p)
 

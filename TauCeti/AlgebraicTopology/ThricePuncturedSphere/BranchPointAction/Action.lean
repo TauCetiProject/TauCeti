@@ -51,7 +51,7 @@ private theorem isoClass_pullbackSelf_mob1Inf
       MulOpposite.op (Equiv.swap (1 : Fin 3) 2) • C.isoClass := by
   rw [pullbackSelf_eq_basepointChange_pullback C mob1Inf (mob1Inf_mob1Inf basePt),
     isoClass_basepointChange_pullback_mob1Inf]
-  all_goals simp [PreconnectedSpace.connectedComponent_eq_univ]
+  simp [PreconnectedSpace.connectedComponent_eq_univ]
 
 /-- The monodromy classification intertwines anharmonic pullback with branch-point
 reindexing, for all six permutations. The puncture permutation of `anharmonic ρ` is `ρ`,

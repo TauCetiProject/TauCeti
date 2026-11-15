@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Translate
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
@@ -21,13 +21,16 @@ needed. For the definition, the norm bound and the covariance identity the measu
 finite on compact sets; left invariance enters only for multiplicativity under twisted convolution.
 
 Covariance moves a coefficient on the right of an integrated operator inside its integral with
-the action twist. For scalar multiples of a fixed coefficient, the construction agrees with
-`ContRepresentation.integratedOperatorL1`, after pulling the group representation back along
-`MulEquiv.multiplicativeAdditive`.
+the action twist, while a coefficient on the left comes from the pointwise left multiplier,
+`(π ⋊ U)(a • f) = π(a) (π ⋊ U)(f)`. For scalar multiples of a fixed coefficient, the
+construction agrees with `ContRepresentation.integratedOperatorL1`, after pulling the group
+representation back along `MulEquiv.multiplicativeAdditive`.
 
 For a left-invariant measure the integrated form is multiplicative for twisted convolution,
-`(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`. The order of integration is exchanged by Fubini's
-theorem for compactly supported continuous functions, so σ-finiteness is still not needed.
+`(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`, and turns the twisted left translation
+`CStarAction.translate` into the group representation, `(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. The
+order of integration is exchanged by Fubini's theorem for compactly supported continuous
+functions, so σ-finiteness is still not needed.
 Extension to coefficient-valued L¹ and the involution identity require additional arguments.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
@@ -128,6 +131,16 @@ theorem integratedOperator_coefficient_apply (f : C_c(G, A)) (a : A) (v : H) :
   rw [integratedOperator_apply]
   simp_rw [P.covariance, map_mul, mul_apply_eq_comp]
 
+/-- The integrated form turns left multiplication by a coefficient into the coefficient
+representation: `(π ⋊ U)(a • f) = π(a) (π ⋊ U)(f)`. -/
+@[simp]
+theorem integratedOperator_smul (a : A) (f : C_c(G, A)) :
+    P.integratedOperator μ (a • f) = P.coefficient a * P.integratedOperator μ f := by
+  ext v
+  simp only [integratedOperator_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
+    map_mul, mul_apply_eq_comp]
+  exact (P.coefficient a).integral_comp_comm (P.integrable_integrand μ f v)
+
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- Vector evaluation of the coefficient representation commutes with Bochner integration. -/
 theorem integral_coefficient_apply {X : Type*} [MeasurableSpace X] {ν : Measure X} {F : X → A}
@@ -163,9 +176,7 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
       = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
         rw [integratedOperator_apply]
         congr 1 with s
-        have hint : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
-          (Continuous.integrable_of_hasCompactSupport (by fun_prop) f.hasCompactSupport.mul_right)
-        rw [convolution_apply, ← P.integral_coefficient_apply hint]
+        rw [convolution_apply, ← P.integral_coefficient_apply (α.integrable_integrand f g μ s)]
     _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
     _ = ∫ r, (P.coefficient (f r) * P.group r) (P.integratedOperator μ g v) ∂μ := by
         congr 1 with r
@@ -176,6 +187,19 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
         simp [Ψ, map_mul, P.covariance]
     _ = (P.integratedOperator μ f * P.integratedOperator μ g) v := by
         simp [integratedOperator_apply]
+
+/-- The integrated form turns the twisted left translation into the group representation:
+`(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. -/
+@[simp]
+theorem integratedOperator_translate (r : G) (f : C_c(G, A)) :
+    P.integratedOperator μ (α.translate r f) = P.group r * P.integratedOperator μ f := by
+  ext v
+  rw [mul_apply_eq_comp, integratedOperator_apply, integratedOperator_apply,
+    ← ContinuousLinearMap.integral_comp_comm _ (P.integrable_integrand μ f v),
+    ← integral_mul_left_eq_self _ r]
+  -- After substituting `s ↦ r * s`, the integrands agree by covariance.
+  congr 1 with s
+  simp [P.covariance, map_mul]
 
 end Convolution
 

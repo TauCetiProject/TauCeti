@@ -19,13 +19,15 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
 
 * `sl2zToPSL2R : SL(2, ℤ) →* PSL(2, ℝ)` — cast entries to `ℝ`, then project; its kernel is
   the center of `SL(2, ℤ)` (`sl2zToPSL2R_ker`), since an integer matrix casts to a real
-  scalar matrix iff it is itself scalar.
+  scalar matrix iff it is itself scalar. In particular it identifies `g` and `-g`
+  (`sl2zToPSL2R_neg`).
 * `psl2zToPSL2R : PSL(2, ℤ) →* PSL(2, ℝ)` — the injective descent
   (`psl2zToPSL2R_injective`); both maps have the same range
   (`TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R`), so the image of every subgroup of
   `SL(2, ℤ)` lies in that range (`Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R`).
 * The image of `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the level-one group
-  (`Subgroup.relIndex_map_sl2zToPSL2R`).
+  (`Subgroup.relIndex_map_sl2zToPSL2R`). When `H` is normal, its image is normalized by the image
+  of `SL(2, ℤ)` (`Subgroup.conjAct_sl2zToPSL2R_smul_map`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
@@ -47,7 +49,7 @@ public section
 
 noncomputable section
 
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 open Matrix.SpecialLinearGroup
 
@@ -127,6 +129,13 @@ theorem sl2zToPSL2R_ker : sl2zToPSL2R.ker = Subgroup.center SL(2, ℤ) := by
   simp only [MonoidHom.mem_ker, sl2zToPSL2R_apply, QuotientGroup.eq_one_iff]
   exact ⟨g_mem_center_of_map_intCast_mem_center g, map_intCast_mem_center_of_g_mem_center g⟩
 
+/-- Negating a matrix of `SL(2, ℤ)` does not change its image in `PSL(2, ℝ)`, since `-1` lies in
+the kernel `sl2zToPSL2R_ker`. -/
+theorem sl2zToPSL2R_neg (g : SL(2, ℤ)) : sl2zToPSL2R (-g) = sl2zToPSL2R g := by
+  have h : sl2zToPSL2R (-1) = 1 := MonoidHom.mem_ker.mp
+    (sl2zToPSL2R_ker ▸ Subgroup.mem_center_iff.mpr fun h ↦ by rw [neg_one_mul, mul_neg_one])
+  rw [← neg_one_mul, map_mul, h, one_mul]
+
 /-- The descended hom `PSL(2, ℤ) →* PSL(2, ℝ)`. `sl2zToPSL2R` factors through
 `PSL(2, ℤ) = SL(2, ℤ) ⧸ center SL(2, ℤ)` since integer scalar matrices map into
 `center SL(2, ℝ)`. -/
@@ -175,6 +184,13 @@ theorem relIndex_map_sl2zToPSL2R :
     (H.map sl2zToPSL2R).relIndex psl2zToPSL2R.range = H.withCenter.index := by
   rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R, ← index_comap, comap_map_eq,
     sl2zToPSL2R_ker, withCenter_def]
+
+/-- The image in `PSL(2, ℝ)` of every element of `SL(2, ℤ)` normalizes the image of a normal
+subgroup of `SL(2, ℤ)`. -/
+theorem conjAct_sl2zToPSL2R_smul_map [H.Normal] (γ : SL(2, ℤ)) :
+    ConjAct.toConjAct (sl2zToPSL2R γ) • H.map sl2zToPSL2R = H.map sl2zToPSL2R :=
+  conjAct_pointwise_smul_eq_self (le_normalizer_map sl2zToPSL2R
+    (mem_map_of_mem _ (by rw [normalizer_eq_top]; trivial)))
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
 instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :

@@ -128,6 +128,13 @@ theorem mono (h : IsMixedSeparator X F s t) (hX : X ⊆ X') (hF : F ⊆ F') (hs 
 
 end IsMixedSeparator
 
+/-- A mixed separator without arrows is a vertex set avoiding the terminals whose deletion leaves
+`t` unreachable from `s`. -/
+theorem isMixedSeparator_empty_iff {X : Finset V} {s t : V} :
+    IsMixedSeparator X (∅ : Finset (Σ v w, Q v w)) s t ↔
+      s ∉ X ∧ t ∉ X ∧ ¬ReachableAvoiding Q (X : Set V) s t := by
+  simp [isMixedSeparator_iff, reachableAvoiding_def]
+
 /-! ### Cuts of the split network and mixed separators -/
 
 section Cut

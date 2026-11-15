@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Beta.Measurability
 import TauCeti.Probability.Distributions.Gamma.Beta
 
@@ -147,12 +148,17 @@ def noncentralBetaMeasure (a b : ℝ) (l : ℝ≥0) : Measure ℝ :=
       (fun z ↦ z.1 / (z.1 + z.2))
   else 0
 
-/-- For valid shapes, the noncentral Beta law is the defining ratio pushforward. -/
-theorem noncentralBetaMeasure_eq_map (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) :
+/-- For a positive second shape, the noncentral Beta law is the defining ratio pushforward. For a
+negative first shape both sides are zero. -/
+theorem noncentralBetaMeasure_eq_map (hb : 0 < b) (l : ℝ≥0) :
     noncentralBetaMeasure a b l =
       ((noncentralChiSquaredMeasure (2 * a) l).prod (chiSquaredMeasure (2 * b))).map
         (fun z ↦ z.1 / (z.1 + z.2)) := by
-  rw [noncentralBetaMeasure, ite_eq_left ⟨ha, hb⟩]
+  by_cases ha : 0 ≤ a
+  · rw [noncentralBetaMeasure, ite_eq_left ⟨ha, hb⟩]
+  · rw [noncentralBetaMeasure, ite_eq_right (fun h => ha h.1),
+      noncentralChiSquaredMeasure_of_neg (by linarith [not_le.mp ha]), Measure.zero_prod,
+      Measure.map_zero]
 
 /-- For invalid shapes, the noncentral Beta measure is zero. -/
 @[simp]
@@ -165,7 +171,7 @@ theorem isProbabilityMeasure_noncentralBetaMeasure (ha : 0 ≤ a) (hb : 0 < b) (
     IsProbabilityMeasure (noncentralBetaMeasure a b l) := by
   let _ := isProbabilityMeasure_noncentralChiSquaredMeasure (mul_nonneg zero_le_two ha) l
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
-  rw [noncentralBetaMeasure_eq_map ha hb]
+  rw [noncentralBetaMeasure_eq_map hb]
   infer_instance
 
 /-- The noncentral Beta measure is a probability measure exactly when its shapes are valid. -/
@@ -175,7 +181,7 @@ theorem isProbabilityMeasure_noncentralBetaMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_noncentralBetaMeasure h.1 h.2 l⟩
   by_contra hab
   rw [noncentralBetaMeasure_of_not hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The noncentral Beta law is a finite measure for every choice of parameters. -/
 instance isFiniteMeasure_noncentralBetaMeasure (a b : ℝ) (l : ℝ≥0) :
@@ -194,7 +200,7 @@ theorem noncentralBetaMeasure_eq_sum (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) :
     noncentralBetaMeasure a b l = Measure.sum fun j : ℕ ↦
       poissonMeasure (l / 2) {j} • noncentralBetaComponent (a + j) b := by
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
-  rw [noncentralBetaMeasure_eq_map ha hb,
+  rw [noncentralBetaMeasure_eq_map hb,
     noncentralChiSquaredMeasure_eq_sum (mul_nonneg zero_le_two ha), Measure.prod_sum_left,
     Measure.map_sum (by fun_prop)]
   congr 1
@@ -210,14 +216,14 @@ theorem noncentralBetaMeasure_eq_bind (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) 
   ext s hs
   rw [noncentralBetaMeasure_eq_sum ha hb, Measure.sum_apply _ hs,
     Measure.bind_apply hs (.of_discrete), lintegral_countable']
-  simp only [Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [_root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Set evaluation as an extended-real Poisson series; the formula holds for every set. -/
 theorem noncentralBetaMeasure_apply (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) (s : Set ℝ) :
     noncentralBetaMeasure a b l s =
       ∑' j : ℕ, poissonMeasure (l / 2) {j} * noncentralBetaComponent (a + j) b s := by
   rw [noncentralBetaMeasure_eq_sum ha hb, Measure.sum_apply_of_countable]
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
 
 /-- Nonnegative integration against the noncentral Beta law can be performed component by
 component, without measurability, finiteness or integrability assumptions on the observable. -/
@@ -234,7 +240,7 @@ theorem noncentralBetaMeasure_zero_noncentrality (a : ℝ) (hb : 0 < b) :
     noncentralBetaMeasure a b 0 = noncentralBetaComponent a b := by
   rcases lt_or_ge a 0 with ha | ha
   · simp [ha]
-  ext s hs
+  ext s _
   rw [noncentralBetaMeasure_apply ha hb, tsum_eq_single 0]
   · simp [poissonMeasure_singleton]
   · intro j hj
@@ -247,9 +253,9 @@ theorem noncentralBetaMeasure_zero_shape (hb : 0 < b) (l : ℝ≥0) :
       ENNReal.ofReal (exp (-(l : ℝ) / 2)) • Measure.dirac 0 +
         Measure.sum (fun j : ℕ ↦ poissonMeasure (l / 2) {j + 1} • betaMeasure (j + 1) b) := by
   ext s hs
-  rw [noncentralBetaMeasure_apply le_rfl hb, Measure.add_apply, Measure.sum_apply _ hs,
-    tsum_eq_zero_add' ENNReal.summable]
-  simp only [Measure.smul_apply, smul_eq_mul, CharP.cast_eq_zero, add_zero,
+  rw [noncentralBetaMeasure_apply le_rfl hb, _root_.add_apply, Measure.sum_apply _ hs,
+    tsum_eq_zero_add' CompleteLattice.summable]
+  simp only [_root_.smul_apply, smul_eq_mul, CharP.cast_eq_zero, add_zero,
     noncentralBetaComponent_zero, zero_add, Nat.cast_add, Nat.cast_one]
   congr 1
   · simp [poissonMeasure_singleton, NNReal.coe_div, neg_div]
@@ -260,12 +266,12 @@ theorem noncentralBetaMeasure_zero_shape (hb : 0 < b) (l : ℝ≥0) :
 @[simp]
 theorem noncentralBetaMeasure_zero_shape_singleton (hb : 0 < b) (l : ℝ≥0) :
     noncentralBetaMeasure 0 b l {0} = ENNReal.ofReal (exp (-(l : ℝ) / 2)) := by
-  rw [noncentralBetaMeasure_zero_shape hb, Measure.add_apply,
+  rw [noncentralBetaMeasure_zero_shape hb, _root_.add_apply,
     Measure.sum_apply _ (measurableSet_singleton 0)]
   have hzero (j : ℕ) : betaMeasure ((j : ℝ) + 1) b {0} = 0 :=
     (betaMeasure_eq_withDensity_ofReal _ b ▸ withDensity_absolutelyContinuous _ _)
       (measure_singleton 0)
-  simp [Measure.smul_apply, hzero]
+  simp [_root_.smul_apply, hzero]
 
 /-! ### Support and absolute continuity -/
 
@@ -306,6 +312,19 @@ theorem absolutelyContinuous_noncentralBetaMeasure (ha : 0 < a) (b : ℝ) (l : �
 theorem nullSingletonClass_noncentralBetaMeasure (ha : 0 < a) (b : ℝ) (l : ℝ≥0) :
     NullSingletonClass (noncentralBetaMeasure a b l) :=
   ⟨fun x ↦ absolutelyContinuous_noncentralBetaMeasure ha b l (measure_singleton x)⟩
+
+/-- Every noncentral Beta law gives zero mass to each nonzero point; only first shape zero has an
+atom, and it sits at zero. -/
+theorem noncentralBetaMeasure_singleton_of_ne_zero {x : ℝ} (hx : x ≠ 0) (a b : ℝ) (l : ℝ≥0) :
+    noncentralBetaMeasure a b l {x} = 0 := by
+  by_cases h : 0 ≤ a ∧ 0 < b
+  · rw [noncentralBetaMeasure_apply h.1 h.2, tsum_eq_zero_iff]
+    intro j
+    rcases (add_nonneg h.1 j.cast_nonneg).eq_or_lt' with hj | hj
+    · simp [hj, hx.symm]
+    · rw [noncentralBetaComponent_of_pos hj, betaMeasure_eq_withDensity_ofReal]
+      simp [withDensity_absolutelyContinuous _ _ (measure_singleton x)]
+  · simp [noncentralBetaMeasure_of_not h]
 
 /-- Every valid law other than the Dirac law at `a = l = 0` dominates a positive-weight Beta
 component with positive first shape. -/
@@ -351,7 +370,7 @@ theorem measurable_noncentralBetaMeasure :
       poissonMeasure (p.2.2 / 2) {j} • noncentralBetaComponent (p.1 + j) p.2.1 := by
     apply Measure.measurable_measure.2
     intro s hs
-    simp only [Measure.sum_apply _ hs, Measure.smul_apply, smul_eq_mul]
+    simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul]
     exact Measurable.tsum fun j ↦
       ((Measure.measurable_coe (measurableSet_singleton j)).comp
         (measurable_poissonMeasure.comp (measurable_snd.snd.div_const 2))).mul
@@ -377,16 +396,23 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : Ω → 
 /-- If `X` is noncentral chi-squared with degree `2 * a` and noncentrality `l`, and `Y` is an
 independent central chi-squared variable with degree `2 * b`, then `X / (X + Y)` has the
 noncentral Beta law. -/
-theorem hasLaw_noncentralBeta_of_noncentralChiSquared (ha : 0 ≤ a) (hb : 0 < b)
+theorem hasLaw_noncentralBeta_of_noncentralChiSquared (hb : 0 < b)
     (hXY : IndepFun X Y P) (hX : HasLaw X (noncentralChiSquaredMeasure (2 * a) l) P)
     (hY : HasLaw Y (chiSquaredMeasure (2 * b)) P) :
     HasLaw (fun ω ↦ X ω / (X ω + Y ω)) (noncentralBetaMeasure a b l) P := by
+  rcases lt_or_ge a 0 with ha | ha
+  · have hP : P = 0 := by
+      rw [← Measure.map_eq_zero_iff hX.aemeasurable, hX.map_eq,
+        noncentralChiSquaredMeasure_of_neg (by linarith)]
+    subst hP
+    rw [noncentralBetaMeasure_of_not (fun h => ha.not_ge h.1)]
+    exact ⟨aemeasurable_zero_measure, Measure.map_zero _⟩
   let _ := isProbabilityMeasure_noncentralChiSquaredMeasure (mul_nonneg zero_le_two ha) l
   let _ := isProbabilityMeasure_chiSquaredMeasure (mul_pos two_pos hb).le
   let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hratio : HasLaw (fun z : ℝ × ℝ ↦ z.1 / (z.1 + z.2)) (noncentralBetaMeasure a b l)
       ((noncentralChiSquaredMeasure (2 * a) l).prod (chiSquaredMeasure (2 * b))) :=
-    ⟨by fun_prop, (noncentralBetaMeasure_eq_map ha hb l).symm⟩
+    ⟨by fun_prop, (noncentralBetaMeasure_eq_map hb l).symm⟩
   exact hratio.fun_comp (hXY.hasLaw_prod hX hY)
 
 /-- A variable with a noncentral Beta law of positive first shape has a probability density

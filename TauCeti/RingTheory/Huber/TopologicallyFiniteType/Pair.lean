@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.QuotientMapping
 
+import TauCeti.RingTheory.Huber.WeightedEval.OpenMapping
+
 /-!
 # Morphisms of Huber pairs topologically of finite type
 
@@ -52,6 +54,10 @@ variables, and hence so is every quotient mapping out of such a pair.
 * `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_id` and
   `TauCeti.Huber.Pair.Hom.IsQuotientMapping.isTopologicallyFiniteType`: over a complete Hausdorff
   Huber pair, the identity and every quotient mapping are topologically of finite type.
+* `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_of_span_eq_top`: over a Tate ring, a morphism
+  into a complete Hausdorff pair is topologically of finite type when finitely many elements of the
+  target plus ring span the target over the source and the target plus ring is integral over the
+  image of the source plus ring.
 
 ## References
 
@@ -269,5 +275,61 @@ theorem Hom.IsQuotientMapping.isTopologicallyFiniteType {S : Pair A} {U : Pair B
   simpa using (Hom.isTopologicallyFiniteType_id S).comp_isQuotientMapping hf
 
 end Complete
+
+/-! ### Spanning families over a Tate ring -/
+
+section Span
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [IsHuberRing B] [CompleteSpace B] [T0Space B] {S : Pair A} {U : Pair B}
+
+/-- **Over a Tate ring, a morphism into a complete Hausdorff pair is topologically of finite type
+when finitely many elements of the target plus ring span the target and the target plus ring is
+integral over the image of the source plus ring.** Evaluation at elements `b₁, …, bₙ` of `B⁺`
+spanning `B` over `A` presents `φ` as a quotient mapping out of `(A⟨X₁, …, Xₙ⟩, A⟨X⟩⁺)`. -/
+theorem Hom.isTopologicallyFiniteType_of_span_eq_top [Algebra A B] {φ : Hom S U}
+    (hφA : algebraMap A B = φ.toRingHom) {n : ℕ} {b : Fin n → B} (hbU : ∀ j, b j ∈ U.plus)
+    (hspan : Submodule.span A (Set.range b) = ⊤)
+    (hplus : ∀ b ∈ U.plus, IsIntegral (S.plus.map φ.toRingHom) b) :
+    φ.IsTopologicallyFiniteType := by
+  -- evaluation at `b`, which is power-bounded since it lies in `B⁺`
+  set T : Fin n → Set A := fun _ ↦ {1}
+  have hT : IsWeightFamily T := isWeightFamily_one_weight
+  have hcont : Continuous (algebraMap A B) := hφA ▸ φ.continuous_toRingHom
+  have hb : IsWeightBounded (algebraMap A B) T b :=
+    (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun j ↦
+      U.isRingOfIntegralElements.isPowerBounded_of_mem (hbU j)
+  let ψ := weightedEvalHomCompletion hT hcont.continuousAt hb
+  have hψ : IsOpenQuotientMap ψ := isOpenQuotientMap_weightedEvalHomCompletion hcont hT hb hspan
+  have hψC (a : A) : ψ ((weightedC T hT a : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT)) = φ.toRingHom a := by
+    rw [weightedEvalHomCompletion_coe, weightedEvalHom_weightedC, hφA]
+  -- `ψ` carries the plus ring of `A⟨X⟩` into `B⁺`: the constants and variables go into `B⁺`
+  let ψ' : Hom (S.weighted hT).completion U :=
+    { toRingHom := ψ
+      continuous_toRingHom := hψ.continuous
+      map_mem_plus := S.weighted_completion_plus_le_comap hT U hψ.continuous
+        (fun a ha ↦ by rw [hψC]; exact φ.map_mem_plus a ha)
+        (fun j t ht ↦ by
+          rw [Set.mem_singleton_iff.mp ht, Completion.coe_mul, map_mul, hψC, map_one, one_mul,
+            weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
+          exact hbU j) }
+  -- the image of `A⁺` lies in the image of the plus ring of `A⟨X⟩`
+  have hle : S.plus.map φ.toRingHom ≤ (S.weighted hT).completion.plus.map ψ := by
+    rintro _ ⟨a, ha, rfl⟩
+    exact ⟨_, S.weightedC_mem_weighted_completion_plus hT ha, hψC a⟩
+  have hquot : ψ'.IsQuotientMapping :=
+    (isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral ψ').mpr
+      ⟨hψ, fun c hc ↦
+        (hplus c hc).map_of_comp_eq (Subring.inclusion hle) (RingHom.id B) (by ext; rfl)⟩
+  refine isTopologicallyFiniteType_iff.mpr ⟨n, T, fun _ ↦ Set.finite_singleton 1, hT, ψ', hquot,
+    Hom.ext ?_⟩
+  ext a
+  rw [toRingHom_comp, toRingHom_weightedCompletionHom, RingHom.comp_apply,
+    algebraMap_completion_weightedRestrictedSubring_apply]
+  exact hψC a
+
+end Span
 
 end TauCeti.Huber.Pair

@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ContMDiff.Curve
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.PiecewisePath
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Integration of one-forms along curves
@@ -29,20 +32,34 @@ Line integrals are the basic tool for detecting de Rham cohomology classes in de
 integral of the differential of a `C¹` function is its endpoint difference
 (`TauCeti.pathIntegral_mextDeriv_ofFunction`, `TauCeti.pathIntegral_mextDeriv`), so exact forms
 integrate to zero around closed curves (`TauCeti.pathIntegral_eq_zero_of_mem_exactForms`). The
-integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), natural under
-pullback (`TauCeti.pathIntegral_mpullback`), and only depends on the values of the form along the
-curve (`TauCeti.pathIntegral_congr`).
+integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), changes sign
+when the curve is reversed (`TauCeti.pathIntegral_comp_sub_left`), is additive under
+concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under pullback
+(`TauCeti.pathIntegral_mpullback`), and only depends on the values of the form along the curve
+(`TauCeti.pathIntegral_congr`) and on the curve away from the endpoints
+(`TauCeti.pathIntegral_congr_of_eqOn_uIoo`).
 
 ## Main declarations
 
 * `TauCeti.pathIntegral φ γ a b`: the integral of the `1`-form `φ` along `γ` from `a` to `b`.
-* `TauCeti.IsSmoothForm.continuous_apply_curveVelocity`: the integrand of a continuous form
-  along a `C¹` curve is continuous.
+* `TauCeti.continuousAt_apply_curveVelocity` and
+  `TauCeti.IsSmoothForm.continuous_apply_curveVelocity`: the integrand is continuous at every
+  parameter where the curve is `C¹` and the form is continuous at the point of the curve, so for
+  a continuous form along a `C¹` curve it is continuous.
 * `TauCeti.pathIntegral_mextDeriv_ofFunction` and `TauCeti.pathIntegral_mextDeriv`: the
   fundamental theorem of calculus for line integrals.
 * `TauCeti.pathIntegral_eq_zero_of_mem_exactForms`: exact `1`-forms integrate to zero around
   closed `C¹` curves.
+* `TauCeti.pathIntegral_eq_sum_of_eqOn`: decomposition into integrable pieces, with
+  `TauCeti.intervalIntegrable_apply_curveVelocity_of_contMDiffOn` providing integrability from
+  regularity within each closed piece and continuity of the form along it.
+* `TauCeti.Manifold.IsPiecewiseContMDiffOn.intervalIntegrable_apply_curveVelocity`: integrability
+  along piecewise `C¹` curves.
+* `Function.Periodic.pathIntegral_add_eq`: the integral over a period is independent of its origin.
 * `TauCeti.pathIntegral_comp`: invariance under `C¹` reparametrization.
+* `TauCeti.pathIntegral_curveConcat`: additivity under concatenation of curves.
+* `TauCeti.exists_contMDiff_loop_pathIntegral_eq_sub`: two smooth curves with common endpoints
+  form a smooth loop whose line integral is the difference of theirs.
 * `TauCeti.pathIntegral_mpullback`: naturality under pullback.
 
 ## References
@@ -55,8 +72,8 @@ public section
 
 noncomputable section
 
-open Set MeasureTheory
-open scoped Manifold ContDiff
+open Set MeasureTheory Filter
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -90,6 +107,31 @@ theorem pathIntegral_congr {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : �
   simp only [pathIntegral_def]
   exact intervalIntegral.integral_congr fun t ht ↦ by simp only [h t ht]
 
+/-- A form evaluated on curve velocities agrees wherever the curves agree locally. -/
+theorem _root_.Filter.EventuallyEq.apply_curveVelocity_eq
+    {φ : RoughForm I M F 1} {γ γ' : ℝ → M} {t : ℝ} (h : γ =ᶠ[𝓝 t] γ') :
+    (φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) =
+      φ (γ' t) fun _ ↦ Manifold.curveVelocity I γ' t := by
+  simp only [Manifold.curveVelocity_apply, h.mfderiv_eq]
+  exact RoughForm.apply_tangentSpaceCast h.eq_of_nhds.symm _
+
+/-- Line integrals along two curves agree when the curves agree on the open interval between the
+endpoints: the velocities then agree there, and the endpoints are a null set. -/
+theorem pathIntegral_congr_of_eqOn_uIoo {φ : RoughForm I M F 1} {γ γ' : ℝ → M} {a b : ℝ}
+    (h : EqOn γ γ' (uIoo a b)) : pathIntegral φ γ a b = pathIntegral φ γ' a b := by
+  simp only [pathIntegral_def]
+  exact intervalIntegral.integral_congr_uIoo fun _ ht ↦
+    (h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht)).apply_curveVelocity_eq
+
+/-- Interval integrability of a form on curve velocities is unchanged when the curves agree on
+the open interval between the endpoints. -/
+theorem intervalIntegrable_apply_curveVelocity_congr_of_eqOn_uIoo
+    {φ : RoughForm I M F 1} {γ γ' : ℝ → M} {a b : ℝ} (h : EqOn γ γ' (uIoo a b)) :
+    IntervalIntegrable (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) volume a b ↔
+      IntervalIntegrable (fun s ↦ φ (γ' s) fun _ ↦ Manifold.curveVelocity I γ' s) volume a b :=
+  intervalIntegrable_congr_uIoo fun _ hs ↦
+    (h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds hs)).apply_curveVelocity_eq
+
 /-! ### The interval of integration -/
 
 /-- The line integral over a degenerate interval vanishes. -/
@@ -111,6 +153,50 @@ theorem pathIntegral_add_adjacent {φ : RoughForm I M F 1} {γ : ℝ → M} {a b
     (hbc : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume b c) :
     pathIntegral φ γ a b + pathIntegral φ γ b c = pathIntegral φ γ a c :=
   intervalIntegral.integral_add_adjacent_intervals hab hbc
+
+/-- Line integrals over finitely many adjacent intervals sum to the integral over the whole
+interval, provided the integrand is integrable on each piece. -/
+theorem sum_pathIntegral_adjacent_intervals {φ : RoughForm I M F 1} {γ : ℝ → M}
+    {t : ℕ → ℝ} {n : ℕ}
+    (h : ∀ i < n, IntervalIntegrable
+      (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) volume (t i) (t (i + 1))) :
+    ∑ i ∈ Finset.range n, pathIntegral φ γ (t i) (t (i + 1)) =
+      pathIntegral φ γ (t 0) (t n) := by
+  simpa only [pathIntegral_def] using intervalIntegral.sum_integral_adjacent_intervals h
+
+/-- Integrability along curves that agree with integrable pieces on consecutive open intervals
+implies integrability over the whole interval. -/
+theorem intervalIntegrable_apply_curveVelocity_of_eqOn {φ : RoughForm I M F 1} {γ : ℝ → M}
+    {f : ℕ → ℝ → M} {t : ℕ → ℝ} {n : ℕ}
+    (hf : ∀ i < n, IntervalIntegrable
+      (fun s ↦ φ (f i s) fun _ ↦ Manifold.curveVelocity I (f i) s) volume (t i) (t (i + 1)))
+    (hγ : ∀ i < n, EqOn γ (f i) (uIoo (t i) (t (i + 1)))) :
+    IntervalIntegrable (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) volume
+      (t 0) (t n) :=
+  IntervalIntegrable.trans_iterate fun i hi ↦
+    (intervalIntegrable_apply_curveVelocity_congr_of_eqOn_uIoo (hγ i hi)).mpr (hf i hi)
+
+/-- The line integral along a curve given by integrable pieces is the sum of the line integrals
+along the pieces. Agreement on the open subintervals suffices. -/
+theorem pathIntegral_eq_sum_of_eqOn {φ : RoughForm I M F 1} {γ : ℝ → M}
+    {f : ℕ → ℝ → M} {t : ℕ → ℝ} {n : ℕ}
+    (hf : ∀ i < n, IntervalIntegrable
+      (fun s ↦ φ (f i s) fun _ ↦ Manifold.curveVelocity I (f i) s) volume (t i) (t (i + 1)))
+    (hγ : ∀ i < n, EqOn γ (f i) (uIoo (t i) (t (i + 1)))) :
+    pathIntegral φ γ (t 0) (t n) =
+      ∑ i ∈ Finset.range n, pathIntegral φ (f i) (t i) (t (i + 1)) := by
+  rw [← sum_pathIntegral_adjacent_intervals fun i hi ↦
+    (intervalIntegrable_apply_curveVelocity_congr_of_eqOn_uIoo (hγ i hi)).mpr (hf i hi)]
+  exact Finset.sum_congr rfl fun i hi ↦
+    pathIntegral_congr_of_eqOn_uIoo (hγ i (Finset.mem_range.mp hi))
+
+/-- The line integral along a constant curve vanishes. -/
+@[simp]
+theorem pathIntegral_const_curve (φ : RoughForm I M F 1) (x : M) (a b : ℝ) :
+    pathIntegral φ (fun _ ↦ x) a b = 0 := by
+  simp only [pathIntegral_def, Manifold.curveVelocity_const]
+  exact (intervalIntegral.integral_congr fun _ _ ↦ (φ x).map_zero).trans
+    intervalIntegral.integral_zero
 
 /-! ### Linearity in the form -/
 
@@ -152,27 +238,118 @@ theorem pathIntegral_sub {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : ℝ
   simp only [pathIntegral_def, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
   exact intervalIntegral.integral_sub hφ hψ
 
+/-! ### Periodic curves -/
+
+/-- A `1`-form evaluated on the velocity of a `T`-periodic curve is `T`-periodic. -/
+theorem _root_.Function.Periodic.apply_curveVelocity {γ : ℝ → M} {T : ℝ}
+    (hγ : Function.Periodic γ T) (φ : RoughForm I M F 1) :
+    Function.Periodic (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) T := fun s ↦ by
+  dsimp only
+  rw [← Manifold.curveVelocity_comp_add_right]
+  exact congrArg (fun δ : ℝ → M ↦ φ (δ s) fun _ ↦ Manifold.curveVelocity I δ s) hγ.funext
+
+/-- The line integral of a `1`-form along a `T`-periodic curve over an interval of length `T`
+does not depend on the interval. -/
+theorem _root_.Function.Periodic.pathIntegral_add_eq {γ : ℝ → M} {T : ℝ}
+    (hγ : Function.Periodic γ T) (φ : RoughForm I M F 1) (a b : ℝ) :
+    pathIntegral φ γ a (a + T) = pathIntegral φ γ b (b + T) := by
+  simpa only [pathIntegral_def] using (hγ.apply_curveVelocity φ).intervalIntegral_add_eq a b
+
+/-- A `1`-form evaluated on the velocity of a `T`-periodic curve, integrable over one period, is
+integrable over every interval. -/
+theorem _root_.Function.Periodic.intervalIntegrable_apply_curveVelocity
+    {φ : RoughForm I M F 1} {γ : ℝ → M} {T : ℝ} (hγ : Function.Periodic γ T)
+    (hT : T ≠ 0) {a : ℝ}
+    (h : IntervalIntegrable (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) volume a
+      (a + T)) (b c : ℝ) :
+    IntervalIntegrable (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) volume b c :=
+  (hγ.apply_curveVelocity φ).intervalIntegrable hT h b c
+
 section Continuous
 
 variable [IsManifold I 1 M]
+
+/-- A `1`-form evaluated on the velocity of a curve is continuous, as a function of the
+parameter, at every parameter where the curve is `C¹` and the form is continuous at the point of
+the curve. -/
+theorem continuousAt_apply_curveVelocity {φ : RoughForm I M F 1} {γ : ℝ → M} {t : ℝ}
+    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) 0
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) (γ t))
+    (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t) :
+    ContinuousAt (fun u ↦ φ (γ u) fun _ ↦ Manifold.curveVelocity I γ u) t := by
+  have h := RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (s := univ)
+    (hφ.mpullback_form hγ (by norm_num)).contMDiffWithinAt
+  refine ((h.contDiffAt univ_mem).continuousAt.eval_const fun _ ↦ (1 : ℝ)).congr
+    (.of_forall fun u ↦ ?_)
+  simp only [Manifold.curveVelocity_apply]
+  -- the unit tangent vector of the parameter line is the real number `1`
+  exact mpullback_apply γ φ u _
 
 /-- Along a `C¹` curve, a continuous `1`-form evaluated on the velocity is a continuous function
 of the parameter. -/
 theorem IsSmoothForm.continuous_apply_curveVelocity {φ : RoughForm I M F 1}
     (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) :
-    Continuous fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t := by
-  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hγ))
-  refine ((ContinuousAlternatingMap.apply ℝ ℝ F fun _ ↦ (1 : ℝ)).continuous.comp
-    h.continuous).congr fun t ↦ ?_
-  rw [Manifold.curveVelocity_apply]
-  -- the unit tangent vector of the parameter line is the real number `1`
-  exact mpullback_apply γ φ t _
+    Continuous fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t :=
+  continuous_iff_continuousAt.2 fun t ↦ continuousAt_apply_curveVelocity (hφ.contMDiff _) (hγ t)
 
 /-- A continuous `1`-form is interval integrable along a `C¹` curve. -/
 theorem IsSmoothForm.intervalIntegrable_apply_curveVelocity {φ : RoughForm I M F 1}
     (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b : ℝ) :
     IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b :=
   (hφ.continuous_apply_curveVelocity hγ).intervalIntegrable a b
+
+/-- A form continuous at the points of a `C¹` arc is interval integrable along the arc.
+The curve only needs to be `C¹` within the closed interval, including at its endpoints. -/
+theorem intervalIntegrable_apply_curveVelocity_of_contMDiffOn {φ : RoughForm I M F 1}
+    {γ : ℝ → M} {a b : ℝ}
+    (hφ : ∀ t ∈ uIcc a b, ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) 0
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) (γ t))
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (uIcc a b)) :
+    IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b := by
+  obtain rfl | hab := eq_or_ne a b
+  · exact IntervalIntegrable.refl
+  have hc : ContinuousOn
+      (fun t ↦ mpullbackWithin 𝓘(ℝ, ℝ) I γ (uIcc a b) φ t fun _ ↦ (1 : ℝ)) (uIcc a b) := by
+    intro t ht
+    have h := (hφ t ht).contMDiffWithinAt.mpullbackWithin_form (hγ t ht) (by norm_num)
+      (mapsTo_univ γ _) ht (uniqueDiffOn_uIcc hab).uniqueMDiffOn
+    exact (RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace h).continuousWithinAt
+      |>.eval_const (fun _ ↦ (1 : ℝ))
+  exact hc.intervalIntegrable.congr_uIoo fun t ht ↦ by
+    -- Evaluate explicitly on the scalar unit tangent to avoid matching across `TangentSpace`.
+    have hm := mpullbackWithin_apply (I := 𝓘(ℝ, ℝ)) γ (uIcc a b) φ t (fun _ ↦ (1 : ℝ))
+    have hn : uIcc a b ∈ 𝓝 t :=
+      mem_of_superset (isOpen_Ioo.mem_nhds ht) Ioo_subset_Icc_self
+    rw [mfderivWithin_of_mem_nhds (I := 𝓘(ℝ, ℝ)) (I' := I) (f := γ) hn] at hm
+    simpa only [Manifold.curveVelocity_apply] using hm
+
+/-- A continuous `1`-form evaluated on the velocity of a curve agreeing with `C¹` pieces on
+consecutive open intervals is integrable over the whole interval. Each piece only needs to be
+`C¹` within its closed parameter interval. -/
+theorem IsSmoothForm.intervalIntegrable_apply_curveVelocity_of_eqOn {φ : RoughForm I M F 1}
+    (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} {f : ℕ → ℝ → M} {t : ℕ → ℝ} {n : ℕ}
+    (hf : ∀ i < n, ContMDiffOn 𝓘(ℝ, ℝ) I 1 (f i) (uIcc (t i) (t (i + 1))))
+    (hγ : ∀ i < n, EqOn γ (f i) (uIoo (t i) (t (i + 1)))) :
+    IntervalIntegrable (fun s ↦ φ (γ s) fun _ ↦ Manifold.curveVelocity I γ s) volume
+      (t 0) (t n) :=
+  TauCeti.intervalIntegrable_apply_curveVelocity_of_eqOn (fun i hi ↦
+    intervalIntegrable_apply_curveVelocity_of_contMDiffOn (fun _ _ ↦ hφ.contMDiff _) (hf i hi)) hγ
+
+/-- A form continuous at the points of a piecewise `C¹` curve is interval integrable along it. -/
+theorem Manifold.IsPiecewiseContMDiffOn.intervalIntegrable_apply_curveVelocity
+    {φ : RoughForm I M F 1} {γ : ℝ → M} {a b : ℝ}
+    (hγ : Manifold.IsPiecewiseContMDiffOn I 1 γ a b)
+    (hφ : ∀ t ∈ Icc a b, ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) 0
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) (γ t)) :
+    IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b := by
+  revert hφ
+  refine hγ.induction_on ?_ ?_
+  · intro u v huv hγ hφ
+    exact intervalIntegrable_apply_curveVelocity_of_contMDiffOn
+      (by simpa only [uIcc_of_le huv.le] using hφ) (by simpa only [uIcc_of_le huv.le] using hγ)
+  · intro u v w huv hvw h₁ h₂ hφ
+    exact (h₁ fun t ht ↦ hφ t ⟨ht.1, ht.2.trans hvw.le⟩).trans
+      (h₂ fun t ht ↦ hφ t ⟨huv.le.trans ht.1, ht.2⟩)
 
 /-- **Reparametrization invariance.** The line integral of a continuous form along `γ ∘ σ`, for
 a `C¹` change of parameter `σ`, is the line integral along `γ` between the image endpoints. The
@@ -187,6 +364,72 @@ theorem pathIntegral_comp {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ) {
   rw [Function.comp_apply, Manifold.curveVelocity_comp (hσ t ht)
     ((hγ (σ t)).mdifferentiableAt one_ne_zero)]
   simpa using (φ (γ (σ t))).map_smul_univ (fun _ ↦ σ' t) fun _ ↦ Manifold.curveVelocity I γ (σ t)
+
+/-- The line integral along an affine reparametrization `t ↦ γ (c * t + d)` is the line integral
+along `γ` between the image endpoints. -/
+theorem pathIntegral_comp_mul_add {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (c d a b : ℝ) :
+    pathIntegral φ (fun t ↦ γ (c * t + d)) a b = pathIntegral φ γ (c * a + d) (c * b + d) :=
+  pathIntegral_comp hφ hγ (σ := fun t ↦ c * t + d) (σ' := fun _ ↦ c)
+    (fun t _ ↦ by simpa using ((hasDerivAt_id t).const_mul c).add_const d) continuousOn_const
+
+/-- The line integral along the reversed curve `t ↦ γ (d - t)` is the negative of the line integral
+along `γ` between the image endpoints. -/
+theorem pathIntegral_comp_sub_left {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (d a b : ℝ) :
+    pathIntegral φ (fun t ↦ γ (d - t)) a b = -pathIntegral φ γ (d - b) (d - a) := by
+  have h := pathIntegral_comp_mul_add hφ hγ (-1) d a b
+  simp only [neg_one_mul, neg_add_eq_sub] at h
+  rw [h, pathIntegral_symm]
+
+/-- The line integral along a concatenation of two `C¹` curves, constant near the junction point,
+is the sum of the line integrals. -/
+theorem pathIntegral_curveConcat {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ₁ γ₂ : ℝ → M} {y : M} (hγ₁ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ₁)
+    (hγ₂ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ₂) (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : ∀ t ≤ 0, γ₂ t = y) :
+    pathIntegral φ (curveConcat γ₁ γ₂) 0 1 = pathIntegral φ γ₁ 0 1 + pathIntegral φ γ₂ 0 1 := by
+  have hi := hφ.intervalIntegrable_apply_curveVelocity
+    (ContMDiff.curveConcat (n := 1) hγ₁ hγ₂ h₁ h₂)
+  rw [← pathIntegral_add_adjacent (hi 0 (1 / 3)) (hi (1 / 3) 1),
+    ← pathIntegral_add_adjacent (hi (1 / 3) (2 / 3)) (hi (2 / 3) 1)]
+  -- The concatenation runs through `γ₁` on `[0, 1/3]`, rests on `[1/3, 2/3]`, and runs through
+  -- `γ₂` on `[2/3, 1]`.
+  have hl : pathIntegral φ (curveConcat γ₁ γ₂) 0 (1 / 3) = pathIntegral φ γ₁ 0 1 := by
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := fun t ↦ γ₁ (3 * t + 0)) fun t ht ↦ by
+        rw [uIoo_of_le (by norm_num)] at ht
+        simpa using eqOn_curveConcat_left h₁ h₂ (lt_trans ht.2 (by norm_num)),
+      pathIntegral_comp_mul_add hφ hγ₁]
+    norm_num
+  have hm : pathIntegral φ (curveConcat γ₁ γ₂) (1 / 3) (2 / 3) = 0 := by
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := fun _ ↦ y) fun t ht ↦
+        curveConcat_eq_of_mem_Icc h₁ h₂ (by
+          rw [uIoo_of_le (by norm_num)] at ht; exact Ioo_subset_Icc_self ht),
+      pathIntegral_const_curve]
+  have hr : pathIntegral φ (curveConcat γ₁ γ₂) (2 / 3) 1 = pathIntegral φ γ₂ 0 1 := by
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := fun t ↦ γ₂ (3 * t + -2)) fun t ht ↦ by
+        rw [uIoo_of_le (by norm_num)] at ht
+        simpa [sub_eq_add_neg] using eqOn_curveConcat_right h₁ h₂ (lt_trans (by norm_num) ht.1),
+      pathIntegral_comp_mul_add hφ hγ₂]
+    norm_num
+  rw [hl, hm, hr, zero_add]
+
+/-- Two smooth curves from `x₀` to `y`, constant on `(-∞, 0]` and on `[1, ∞)`, form a smooth loop
+at `x₀`, the first followed by the reversed second. The line integral of a continuous form along
+this loop is the difference of the line integrals along the two curves. -/
+theorem exists_contMDiff_loop_pathIntegral_eq_sub {φ : RoughForm I M F 1}
+    (hφ : IsSmoothForm I 0 φ) {x₀ y : M} {γ γ' : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ)
+    (hγ₀ : ∀ t ≤ 0, γ t = x₀) (hγ₁ : ∀ t, 1 ≤ t → γ t = y) (hγ' : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ')
+    (hγ'₀ : ∀ t ≤ 0, γ' t = x₀) (hγ'₁ : ∀ t, 1 ≤ t → γ' t = y) :
+    ∃ ℓ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I ∞ ℓ ∧ ℓ 0 = x₀ ∧ ℓ 1 = x₀ ∧
+      pathIntegral φ ℓ 0 1 = pathIntegral φ γ 0 1 - pathIntegral φ γ' 0 1 := by
+  have hrev : ContMDiff 𝓘(ℝ, ℝ) I ∞ fun t ↦ γ' (1 - t) :=
+    hγ'.comp (by fun_prop : ContDiff ℝ ∞ fun t : ℝ ↦ 1 - t).contMDiff
+  have h₂ : ∀ t ≤ 0, γ' (1 - t) = y := fun t ht ↦ hγ'₁ _ (by linarith)
+  refine ⟨_, hγ.curveConcat hrev hγ₁ h₂,
+    by rw [curveConcat_of_le (by norm_num), hγ₀ _ (by norm_num)],
+    by rw [curveConcat_of_lt (by norm_num)]; exact hγ'₀ _ (by norm_num), ?_⟩
+  rw [pathIntegral_curveConcat hφ (hγ.of_le (by simp)) (hrev.of_le (by simp)) hγ₁ h₂,
+    pathIntegral_comp_sub_left hφ (hγ'.of_le (by simp)), sub_self, sub_zero, sub_eq_add_neg]
 
 end Continuous
 
@@ -212,6 +455,38 @@ theorem pathIntegral_mpullback {f : M → M'} (φ : RoughForm I' M' F 1) {γ : �
       Manifold.curveVelocityWithin_map (s := univ) (hf t ht) uniqueDiffWithinAt_univ
         (hγ t ht).mdifferentiableWithinAt
   simp only [Function.comp_apply, hv]
+
+/-- The line integral of a one-form along the curve `t ↦ u (x, t)` is the integral of the pullback
+of the form along `u` on the second coordinate vector. -/
+theorem pathIntegral_apply_snd {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (x a b : ℝ) :
+    pathIntegral α (fun t ↦ u (x, t)) a b =
+      ∫ t in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (x, t) fun _ ↦ (0, 1) := by
+  rw [pathIntegral_eq_integral_mpullback]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  have hL : HasFDerivAt (fun t : ℝ ↦ (x, t)) ((0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ))
+      t := (hasFDerivAt_const x t).prodMk (hasFDerivAt_id t)
+  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
+  simp only [Function.comp_def] at this
+  rw [this]
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
+  congr 1
+
+/-- The line integral of a one-form along the curve `s ↦ u (s, y)` is the integral of the pullback
+of the form along `u` on the first coordinate vector. -/
+theorem pathIntegral_apply_fst {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (y a b : ℝ) :
+    pathIntegral α (fun s ↦ u (s, y)) a b =
+      ∫ s in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (s, y) fun _ ↦ (1, 0) := by
+  rw [pathIntegral_eq_integral_mpullback]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  have hL : HasFDerivAt (fun s : ℝ ↦ (s, y)) ((ContinuousLinearMap.id ℝ ℝ).prod (0 : ℝ →L[ℝ] ℝ))
+      s := (hasFDerivAt_id s).prodMk (hasFDerivAt_const y s)
+  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
+  simp only [Function.comp_def] at this
+  rw [this]
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
+  congr 1
 
 end Pullback
 
@@ -249,6 +524,21 @@ theorem pathIntegral_mextDeriv [IsManifold I 1 M] {ψ : RoughForm I M F 0}
   rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ
   have h := pathIntegral_mextDeriv_ofFunction hψ hγ a b
   rwa [← RoughForm.eq_ofFunction] at h
+
+/-- **The fundamental theorem of calculus along a map with an exact pullback.** If a
+differentiable map `i : N → M` pulls the one-form `φ` back to the differential of a `C¹` function
+`f` on `N`, then the line integral of `φ` along `i ∘ c`, for a `C¹` curve `c` in `N`, is the
+difference of the values of `f` at the endpoints of `c`. For instance, `i` may be an exact
+Lagrangian map and `f` its primitive. -/
+theorem pathIntegral_comp_eq_sub_of_mpullback_eq {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {φ : RoughForm I M F 1} {i : N → M} {f : N → F}
+    (hi : MDifferentiable J I i) (hf : ContMDiff J 𝓘(ℝ, F) 1 f)
+    (hφ : mpullback J I i φ = mextDeriv (RoughForm.ofFunction J f)) {c : ℝ → N}
+    (hc : ContMDiff 𝓘(ℝ, ℝ) J 1 c) (a b : ℝ) :
+    pathIntegral φ (i ∘ c) a b = f (c b) - f (c a) := by
+  rw [← pathIntegral_mpullback φ (fun t _ ↦ hi (c t))
+    (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero), hφ, pathIntegral_mextDeriv_ofFunction hf hc]
 
 end FTC
 

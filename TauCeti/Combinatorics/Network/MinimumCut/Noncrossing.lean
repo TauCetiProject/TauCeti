@@ -158,7 +158,7 @@ private theorem IsMinimum.exists_uncross (hf : IsSymmSubmodular f) {s t a b : V}
     · have h := not_crosses_union ⟨w, mem_inter.mpr ⟨mem_compl.mpr hwX, hwZ⟩⟩
         (crosses_compl_left.not.mpr hXY) hZY
       have hcompl : Xᶜ ∪ Z = (X \ Z)ᶜ := by
-        simp [Finset.sdiff_eq_inter_compl, Finset.compl_inter]
+        simp [Finset.sdiff_eq_inter_compl]
       rwa [hcompl, crosses_compl_left] at h
 
 /-- **Multi-cut non-crossing lemma.** Let `𝒞` be a pairwise non-crossing family of cuts, each a

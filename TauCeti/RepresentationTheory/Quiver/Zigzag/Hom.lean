@@ -195,8 +195,7 @@ noncomputable def zigzagProjectiveHomEquivCorner (i j : V) :
     (zigzagProjective k G i →ₗ[nonisolatedZigzagQuotient k G] zigzagProjective k G j) ≃ₗ[k]
       zigzagCorner k G i j :=
   (zigzagProjectiveHomEquivSpanSingletonHom k G i j).trans
-    ((spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)
-        (zigzagMk_vertexIdempotent_mul_self k G j)).trans
+    ((spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)).trans
       (zigzagCornerEquivCornerSubmodule k G i j).symm)
 
 @[simp]
@@ -209,20 +208,17 @@ theorem coe_zigzagProjectiveHomEquivCorner_apply {i j : V}
     -- Expose the composite equivalence; every step below is then an explicit coercion lemma.
     change ((zigzagCornerEquivCornerSubmodule k G i j).symm
       (spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)
-        (zigzagMk_vertexIdempotent_mul_self k G j)
         (zigzagProjectiveHomEquivSpanSingletonHom k G i j φ)) :
           nonisolatedZigzagQuotient k G) = _
     calc
       _ = (spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)
-          (zigzagMk_vertexIdempotent_mul_self k G j)
           (zigzagProjectiveHomEquivSpanSingletonHom k G i j φ) :
             nonisolatedZigzagQuotient k G) :=
         coe_zigzagCornerEquivCornerSubmodule_symm_apply k G i j _
       _ = ((zigzagProjectiveHomEquivSpanSingletonHom k G i j φ)
           (spanSingletonGenerator (zigzagVertexIdempotent k G i)) :
             nonisolatedZigzagQuotient k G) :=
-        coe_spanSingletonHomEquivCorner_apply (zigzagMk_vertexIdempotent_mul_self k G i)
-          (zigzagMk_vertexIdempotent_mul_self k G j) _
+        coe_spanSingletonHomEquivCorner_apply (zigzagMk_vertexIdempotent_mul_self k G i) _
       _ = _ := coe_zigzagProjectiveHomEquivSpanSingletonHom_apply k G φ
 
 @[simp]
@@ -233,13 +229,11 @@ theorem coe_zigzagProjectiveHomEquivCorner_symm_apply {i j : V} (x : zigzagCorne
   by
     -- Expose the composite inverse; its factors are handled by their application lemmas.
     change (((zigzagProjectiveHomEquivSpanSingletonHom k G i j).symm
-      ((spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)
-        (zigzagMk_vertexIdempotent_mul_self k G j)).symm
+      ((spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)).symm
           (zigzagCornerEquivCornerSubmodule k G i j x))) y :
             nonisolatedZigzagQuotient k G) = _
     calc
-      _ = (((spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)
-          (zigzagMk_vertexIdempotent_mul_self k G j)).symm
+      _ = (((spanSingletonHomEquivCorner (zigzagMk_vertexIdempotent_mul_self k G i)).symm
             (zigzagCornerEquivCornerSubmodule k G i j x))
               (zigzagProjectiveEquivSpanSingleton k G i y) :
                 nonisolatedZigzagQuotient k G) :=
@@ -249,8 +243,7 @@ theorem coe_zigzagProjectiveHomEquivCorner_symm_apply {i j : V} (x : zigzagCorne
           (zigzagCornerEquivCornerSubmodule k G i j x :
             nonisolatedZigzagQuotient k G) :=
         coe_spanSingletonHomEquivCorner_symm_apply
-          (zigzagMk_vertexIdempotent_mul_self k G i)
-          (zigzagMk_vertexIdempotent_mul_self k G j) _ _
+          (zigzagMk_vertexIdempotent_mul_self k G i) _ _
       _ = _ := by
         rw [coe_zigzagProjectiveEquivSpanSingleton_apply,
           coe_zigzagCornerEquivCornerSubmodule_apply]

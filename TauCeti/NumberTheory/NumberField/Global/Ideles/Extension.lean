@@ -31,7 +31,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped NumberField.LiesOver AdicCompletionExtension
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -87,7 +88,7 @@ place below under the completion map. -/
 @[simp]
 theorem ideleInfiniteCoord_ideleExtension (w : InfinitePlace L) (x : IdeleGroup (𝓞 K) K) :
     w.ideleInfiniteCoord (ideleExtension K L x) =
-      Units.map (LiesOver.completionMap (w.comap (algebraMap K L)) w).toMonoidHom
+      Units.map (AbsoluteValue.Completion.map (w.comap (algebraMap K L)).1 w.1).toMonoidHom
         ((w.comap (algebraMap K L)).ideleInfiniteCoord x) := by
   apply Units.ext
   simp only [InfinitePlace.coe_ideleInfiniteCoord, coe_ideleExtension,
@@ -108,6 +109,16 @@ theorem ideleFiniteCoord_ideleExtension (w : HeightOneSpectrum (𝓞 L))
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 variable {K L}
+
+/-- Taking the finite component commutes with extension of ideles. -/
+@[simp]
+theorem toFiniteIdele_ideleExtension (x : IdeleGroup (𝓞 K) K) :
+    IdeleGroup.toFiniteIdele (𝓞 L) L (ideleExtension K L x) =
+      Units.map (finiteAdeleExtension (𝓞 K) K (𝓞 L) L).toMonoidHom
+        (IdeleGroup.toFiniteIdele (𝓞 K) K x) := by
+  apply Units.ext
+  ext w
+  simp [IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord]
 
 private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
     (∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord (ideleExtension K L x))) =

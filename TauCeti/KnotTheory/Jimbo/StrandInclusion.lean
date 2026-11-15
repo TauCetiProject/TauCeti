@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Jimbo.Trace
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Adding an uncrossed strand in the Jimbo representation
@@ -48,18 +49,10 @@ theorem jimboGenerator_comp_lmapDomain_snoc (q : Rˣ) (j k : Fin n) (a : ι) :
         (jimboGenerator q j k) := by
   classical
   ext w : 2
-  have hswap : Fin.snoc w a ∘ Equiv.swap j.castSucc k.castSucc =
-      Fin.snoc (w ∘ Equiv.swap j k) a := by
-    funext i
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i
-    · simp [Equiv.swap_apply_of_ne_of_ne, (Fin.castSucc_lt_last j).ne.symm,
-        (Fin.castSucc_lt_last k).ne.symm]
-    · rw [comp_apply, ← (Fin.castSucc_injective n).map_swap j k i]
-      simp
   simp only [LinearMap.comp_apply, lsingle_apply]
   rw [lmapDomain_apply, mapDomain_single, jimboGenerator_single_one,
     jimboGenerator_single_one]
-  simp only [Fin.snoc_castSucc, hswap]
+  simp only [Fin.snoc_castSucc, Fin.snoc_comp_swap_castSucc]
   split_ifs <;> simp only [map_add, map_smul, lmapDomain_apply, mapDomain_single]
 
 /-- The action of a braid after adding an uncrossed strand is its original action with
@@ -81,7 +74,7 @@ theorem jimbo_strandIncl_lmapDomain_snoc (q : Rˣ) (b : BraidGroup (n + 1)) (a :
     exact DFunLike.congr_fun (jimboGenerator_comp_lmapDomain_snoc q _ _ a) v
   | one => simp
   | mul b c hb hc =>
-    simp only [map_mul, Units.val_mul, Module.End.mul_apply, hc, hb]
+    simp only [map_mul, Units.val_mul, mul_apply_eq_comp, hc, hb]
   | inv b hb =>
     have h := congrArg
       (fun x ↦ (((jimbo ι q (BraidGroup.strandIncl b))⁻¹ :
@@ -89,8 +82,8 @@ theorem jimbo_strandIncl_lmapDomain_snoc (q : Rˣ) (b : BraidGroup (n + 1)) (a :
           Module.End R ((Fin (n + 2) → ι) →₀ R)) x)
       (hb ((((jimbo ι q b)⁻¹ : (Module.End R ((Fin (n + 1) → ι) →₀ R))ˣ) :
         Module.End R ((Fin (n + 1) → ι) →₀ R)) v))
-    simpa only [map_inv, ← Module.End.mul_apply, ← Units.val_mul, inv_mul_cancel,
-      mul_inv_cancel, Units.val_one, Module.End.one_apply] using h.symm
+    simpa only [map_inv, ← mul_apply_eq_comp, ← Units.val_mul, inv_mul_cancel,
+      mul_inv_cancel, Units.val_one, one_apply_eq_self] using h.symm
 
 /-- Basis-vector form of compatibility with adding an uncrossed strand. -/
 @[simp]

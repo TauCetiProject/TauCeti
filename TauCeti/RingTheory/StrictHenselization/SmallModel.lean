@@ -40,7 +40,6 @@ private def toPointedFiniteType : Neighbourhood R Ω ⥤
       (ObjectProperty.ι (fun algebra : CommAlgCat R ↦ Algebra.FiniteType R algebra))
       (CommAlgCat.of R (ULift.{u} Ω)) where
   obj point := by
-    let : Algebra.Etale R point.obj.left := (isPointedNeighbourhood_iff R Ω _).mp point.property
     let algebra : FGAlgCat.{max u v} R := ⟨point.obj.left, inferInstance⟩
     exact CostructuredArrow.mk (Y := algebra) point.obj.hom
   map morphism := CostructuredArrow.homMk (ObjectProperty.homMk morphism.hom.left) morphism.hom.w
@@ -48,9 +47,7 @@ private def toPointedFiniteType : Neighbourhood R Ω ⥤
 /-- Distinct pointed-neighbourhood morphisms remain distinct after forgetting étaleness. -/
 private instance : (toPointedFiniteType R Ω).Faithful where
   map_injective equality := by
-    apply ObjectProperty.hom_ext
-    apply Over.OverMorphism.ext
-    exact congrArg (fun morphism ↦ morphism.left.hom) equality
+    exact Neighbourhood.hom_ext (congrArg (fun morphism ↦ morphism.left.hom.hom) equality)
 
 /-- Every pointed finite-type morphism between étale objects is a neighbourhood morphism. -/
 private instance : (toPointedFiniteType R Ω).Full where

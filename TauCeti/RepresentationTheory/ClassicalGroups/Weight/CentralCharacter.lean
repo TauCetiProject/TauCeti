@@ -46,7 +46,7 @@ theorem apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot [ρ.IsIrreducible]
   have hf : ∀ g x, f (ρ g x) = ρ g (f x) := by
     intro g x
     have hc := congrArg (fun g' ↦ ρ g' x) (GeneralLinearGroup.scalar_commute z g)
-    simpa [f, map_mul, Module.End.mul_apply] using hc
+    simpa [f, map_mul, mul_apply_eq_comp] using hc
   let F := f.intertwiningMap_of_isIntertwiningMap ρ ρ hf
   have hwf : F w = 0 := by
     have he := apply_scalar_of_mem_weightSpace hw z

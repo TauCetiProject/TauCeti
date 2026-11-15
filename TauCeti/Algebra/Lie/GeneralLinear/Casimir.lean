@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Matrix.Single
 
 /-!
 # The trace-form Casimir element of `gl n`
@@ -90,7 +90,7 @@ private theorem ι_lie_single_single (a b i j : n) :
     ι K ⁅Matrix.single a b (1 : K), Matrix.single i j (1 : K)⁆ =
       (if b = i then ι K (Matrix.single a j (1 : K)) else 0) -
         if j = a then ι K (Matrix.single i b (1 : K)) else 0 := by
-  rw [lie_single_single a b i j 1 1]
+  rw [Matrix.lie_single_single a b i j 1 1]
   by_cases hbi : b = i <;> by_cases hja : j = a <;> simp [hbi, hja]
 
 private theorem ι_single_mul_glCasimir (a b : n) :
@@ -161,7 +161,7 @@ theorem representation_glCasimir_apply (m : M) :
   rw [map_sum, LinearMap.sum_apply]
   apply Finset.sum_congr rfl
   intro j _
-  rw [map_mul, Module.End.mul_apply,
+  rw [map_mul, mul_apply_eq_comp,
     TauCeti.UniversalEnvelopingAlgebra.representation_ι_apply,
     TauCeti.UniversalEnvelopingAlgebra.representation_ι_apply]
 
@@ -179,7 +179,7 @@ private theorem lie_single_lie_single_of_isGlHighestWeightVector
       if i < j then (mu i - mu j) • v else if i = j then (mu i * mu i) • v else 0 := by
   rcases lt_trichotomy i j with hij | rfl | hji
   · rw [leibniz_lie]
-    simp only [lie_single_single_eq_sub, sub_lie, hv.lie_single_self_eq_smul,
+    simp only [Matrix.lie_single_single_eq_sub, sub_lie, hv.lie_single_self_eq_smul,
       hv.lie_single_eq_zero hij, lie_zero, add_zero, sub_smul]
     simp [hij]
   · rw [hv.lie_single_self_eq_smul, lie_smul, hv.lie_single_self_eq_smul, smul_smul]
@@ -291,6 +291,33 @@ theorem glCasimir_eigenvalue_glHalfStaircase
       field_simp [h4]
       ring
 
+/-- Lowering the `t`-th entry of the half-shifted staircase changes the Casimir sum by
+`-3 N + 2 * (1 / 2) + 2 + 4 t`. The constant `2 * (1 / 2) + 2` equals `3` when `2` is invertible;
+it is written this way so that no invertibility of `2` is needed. -/
+private theorem glCasimir_sum_glHalfStaircase_sub_single
+    {F : Type*} [Field F] (N : ℕ) (t : Fin N) :
+    (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) =
+      (∑ i : Fin N, glHalfStaircase F N i *
+        (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F))) +
+        (-3 * (N : F) + 2 * (1 / 2 : F) + 2 + 4 * (t : F)) := by
+  have hterm (i : Fin N) :
+      (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+          ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+            (N : F) - 1 - 2 * (i : F)) =
+        glHalfStaircase F N i *
+            (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F)) +
+          if i = t then -3 * (N : F) + 2 * (1 / 2 : F) + 2 + 4 * (t : F) else 0 := by
+    by_cases hit : i = t
+    · subst i
+      simp only [Pi.sub_apply, Pi.single_eq_same, glHalfStaircase_apply, ite_true]
+      ring
+    · simp [hit]
+  simp_rw [hterm, Finset.sum_add_distrib]
+  rw [Finset.sum_ite_eq' Finset.univ t]
+  simp only [Finset.mem_univ, ite_true]
+
 /-- Lowering the `t`-th entry of the half-shifted staircase changes the Casimir scalar by
 `-3 N + 3 + 4 t`. -/
 theorem glCasimir_eigenvalue_glHalfStaircase_sub_single
@@ -299,28 +326,14 @@ theorem glCasimir_eigenvalue_glHalfStaircase_sub_single
       ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
         (N : F) - 1 - 2 * (i : F))) =
         (N : F) * (2 * (N : F) ^ 2 - 1) / 4 - 3 * (N : F) + 3 + 4 * (t : F) := by
-  have hterm (i : Fin N) :
-      (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
-          ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
-            (N : F) - 1 - 2 * (i : F)) =
-        glHalfStaircase F N i *
-            (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F)) +
-          if i = t then -3 * (N : F) + 3 + 4 * (t : F) else 0 := by
-    by_cases hit : i = t
-    · subst i
-      simp [glHalfStaircase_apply]
-      have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
-      field_simp [h2]
-      ring
-    · simp [hit]
-  simp_rw [hterm, Finset.sum_add_distrib]
-  rw [Finset.sum_ite_eq' Finset.univ t]
-  simp only [Finset.mem_univ, ite_true, glCasimir_eigenvalue_glHalfStaircase]
+  have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
+  rw [glCasimir_sum_glHalfStaircase_sub_single, glCasimir_eigenvalue_glHalfStaircase]
+  field_simp [h2]
   ring
 
 /-- The difference of the lowered half-shifted staircase Casimir scalars is `4 (t - s)`. -/
 theorem glCasimir_eigenvalue_glHalfStaircase_sub_single_diff
-    {F : Type*} [Field F] [Invertible (2 : F)] (N : ℕ) (s t : Fin N) :
+    {F : Type*} [Field F] (N : ℕ) (s t : Fin N) :
     (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
       ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
         (N : F) - 1 - 2 * (i : F))) -
@@ -328,10 +341,7 @@ theorem glCasimir_eigenvalue_glHalfStaircase_sub_single_diff
       ((glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i +
         (N : F) - 1 - 2 * (i : F))) =
       4 * ((t : F) - (s : F)) := by
-  rw [glCasimir_eigenvalue_glHalfStaircase_sub_single N t,
-    glCasimir_eigenvalue_glHalfStaircase_sub_single N s]
-  have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
-  field_simp [h2]
+  rw [glCasimir_sum_glHalfStaircase_sub_single N t, glCasimir_sum_glHalfStaircase_sub_single N s]
   ring
 
 /-- The lowered half-shifted staircase Casimir scalars are distinct at distinct indices. -/
@@ -343,7 +353,6 @@ theorem glCasimir_eigenvalue_glHalfStaircase_sub_single_ne
       (∑ i : Fin N, (glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i *
       ((glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i +
         (N : F) - 1 - 2 * (i : F))) := by
-  let _ : Invertible (2 : F) := invertibleOfNonzero (by norm_num)
   intro hEq
   have hzero : (4 : F) * ((t : F) - (s : F)) = 0 := by
     rw [← glCasimir_eigenvalue_glHalfStaircase_sub_single_diff N s t]

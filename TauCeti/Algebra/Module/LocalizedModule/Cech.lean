@@ -175,6 +175,35 @@ end Signs
 
 variable (M : Type*) [AddCommGroup M] [Module R M] {ι : Type*} (f : ι → R)
 
+/-- The localization homomorphism from a face with one vertex deleted to the full face. -/
+noncomputable def cechLocalizationEraseRingHom [DecidableEq ι] (S : Finset ι) (a : S) :
+    Localization.Away (∏ i ∈ S.erase a.1, f i) →+* Localization.Away (∏ i ∈ S, f i) :=
+  IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
+    ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
+
+/-- The deleted-face homomorphism is the canonical lift between the two localizations. -/
+theorem cechLocalizationEraseRingHom_eq_awayLift [DecidableEq ι] (S : Finset ι) (a : S) :
+    cechLocalizationEraseRingHom f S a =
+      IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
+        ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩) :=
+  (rfl)
+
+/-- Restricting the localized module action along `cechLocalizationEraseRingHom` respects the
+original coefficient-ring action. -/
+theorem isScalarTower_compHom_cechLocalizationEraseRingHom [DecidableEq ι]
+    (S : Finset ι) (a : S) :
+    letI := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
+      (cechLocalizationEraseRingHom f S a)
+    IsScalarTower R (Localization.Away (∏ i ∈ S.erase a.1, f i))
+      (LocalizedModule (.powers (∏ i ∈ S, f i)) M) := by
+  let _ := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
+    (cechLocalizationEraseRingHom f S a)
+  refine IsScalarTower.of_algebraMap_smul fun b x ↦ ?_
+  -- The restricted action is defined by the canonical localization homomorphism.
+  change cechLocalizationEraseRingHom f S a (algebraMap R _ b) • x = b • x
+  simp only [cechLocalizationEraseRingHom, IsLocalization.Away.lift_eq]
+  exact IsScalarTower.algebraMap_smul (Localization.Away (∏ i ∈ S, f i)) b x
+
 /-! ### The complex -/
 
 /-- The degree `p` term of the Čech complex of localizations: the product of the localizations
@@ -625,12 +654,21 @@ theorem cechLocalizationDifferential_comp_differential (p : ℕ) :
     cechLocalizationDifferential M f (p + 1) ∘ₗ cechLocalizationDifferential M f p = 0 :=
   LinearMap.ext (D_D M f (p + 1))
 
+omit [LinearOrder ι] in
 /-- If the `f i` generate the unit ideal, the augmentation of the Čech complex is injective. -/
-theorem injective_cechLocalizationAugmentation [Finite ι]
+theorem injective_cechLocalizationAugmentation
     (hf : Ideal.span (Set.range f) = ⊤) :
     Function.Injective (cechLocalizationAugmentation M f) := by
-  rw [augmentation_eq, LinearMap.coe_comp]
-  exact (injective_D_zero_of_span M f hf).comp (incl_injective M f)
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro m hm
+  refine Module.eq_zero_of_isLocalized_span (Set.range f) hf
+    (fun r ↦ LocalizedModule (.powers r.1) M) (fun r ↦ mkLinearMap (.powers r.1) M) m ?_
+  rintro ⟨_, a, rfl⟩
+  have h : mk m (1 : Submonoid.powers (∏ i ∈ ({a} : Finset ι), f i)) = 0 :=
+    (cechLocalizationAugmentation_apply M f m ⟨{a}, Finset.card_singleton a⟩).symm.trans
+      (congrFun hm ⟨{a}, Finset.card_singleton a⟩)
+  rw [Finset.prod_singleton] at h
+  exact h
 
 /-- If the `f i` generate the unit ideal, the Čech complex is exact at its degree `0` term. -/
 theorem exact_cechLocalizationAugmentation_differential [Finite ι]

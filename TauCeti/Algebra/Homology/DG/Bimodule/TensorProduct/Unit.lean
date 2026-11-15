@@ -162,12 +162,62 @@ theorem tensorUnit_differential_one :
   rw [tensorUnit_differential_apply, tensorUnitEquiv_apply, hA.map_one_eq_zero]
   rfl
 
+/-- Lowering commutes with the left action of the algebra. -/
+theorem tensorUnitEquiv_symm_smul (a : A) (x : tensorUnit.{v} hA) :
+    (tensorUnitEquiv.{v} hA).symm (a • x) = a • (tensorUnitEquiv.{v} hA).symm x := by
+  simp only [tensorUnitEquiv_symm_apply, tensorUnit_smul_down, smul_eq_mul]
+
+/-- Lowering commutes with the right action of the algebra. -/
+theorem tensorUnitEquiv_symm_op_smul (a : A) (x : tensorUnit.{v} hA) :
+    (tensorUnitEquiv.{v} hA).symm (op a • x) = op a • (tensorUnitEquiv.{v} hA).symm x := by
+  simp only [tensorUnitEquiv_symm_apply, tensorUnit_op_smul_down, MulOpposite.smul_eq_mul_unop,
+    unop_op]
+
+/-- Lowering is homogeneous of degree zero from the regular grading to the algebra grading. -/
+theorem isHomogeneous_tensorUnitEquiv_symm :
+    LinearMap.IsHomogeneous (tensorUnitEquiv.{v} hA).symm.toLinearMap (tensorUnit.{v} hA).grading
+      𝒜 0 :=
+  LinearMap.isHomogeneous_def.2 fun q x hx ↦ by
+    simpa only [LinearEquiv.coe_coe, tensorUnitEquiv_symm_apply, add_zero] using
+      (mem_tensorUnit_grading_iff hA q x).1 hx
+
+/-- Lowering intertwines the regular differential with the algebra differential. -/
+theorem differential_comp_tensorUnitEquiv_symm :
+    dA ∘ₗ (tensorUnitEquiv.{v} hA).symm.toLinearMap =
+      (tensorUnitEquiv.{v} hA).symm.toLinearMap ∘ₗ (tensorUnit.{v} hA).differential := by
+  ext x
+  calc
+    dA x.down = ((tensorUnit.{v} hA).differential x).down := by
+      rw [tensorUnit_differential_apply]
+    _ = (tensorUnitEquiv.{v} hA).symm ((tensorUnit.{v} hA).differential x) :=
+      (tensorUnitEquiv_symm_apply hA _).symm
+
 open BalancedTensorProduct
 
 attribute [local instance 100] leftModule rightModule leftIsScalarTower rightIsScalarTower
   outerSMulCommClass
 
 attribute [local instance] tensorGradedOuterLeft tensorGradedOuterRight
+
+section Refl
+
+universe w
+
+variable {B : Type uB} [Ring B] [Algebra R B]
+  {ℬ : ℤ → Submodule R B} [GradedAlgebra ℬ] {dB : B →ₗ[R] B}
+  (hB : IsDGAlgebra ℬ dB)
+  (M : DGBimoduleCat.{uR, uA, uB, w} hA hB)
+
+private theorem refl_isHomogeneous :
+    LinearMap.IsHomogeneous (LinearEquiv.refl R M).toLinearMap M.grading M.grading 0 := by
+  simpa only [LinearEquiv.refl_toLinearMap] using LinearMap.isHomogeneous_id M.grading
+
+private theorem differential_comp_refl :
+    M.differential ∘ₗ (LinearEquiv.refl R M).toLinearMap =
+      (LinearEquiv.refl R M).toLinearMap ∘ₗ M.differential := by
+  rw [LinearEquiv.refl_toLinearMap, LinearMap.comp_id, LinearMap.id_comp]
+
+end Refl
 
 section LeftUnitor
 
@@ -193,116 +243,122 @@ local instance tensorLeftUnitorGradedSMulAlgebraRight : SetLike.GradedSMul
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
+-- Named rather than written inline as `fun _ _ ↦ rfl`: an inline proof is abstracted with the
+-- syntactically different type `refl (a • m) = refl (a • m)`, which blocks the rewrites below.
+private theorem refl_smul (a : A) (m : M) :
+    LinearEquiv.refl R M (a • m) = a • LinearEquiv.refl R M m := rfl
+
+/-- The left unitor as an `R`-linear equivalence: lower the regular factor and act. -/
+def tensorLeftUnitorLinearEquiv : tensorObj (tensorUnit.{v} hA) M ≃ₗ[R] M :=
+  (BalancedTensorProduct.congr (tensorUnitEquiv.{v} hA).symm (LinearEquiv.refl R M)
+    (tensorUnitEquiv_symm_op_smul hA) (refl_smul hA hB M)).trans (lid R A M)
+
+private theorem tensorLeftUnitorLinearEquiv_apply (z : tensorObj (tensorUnit.{v} hA) M) :
+    tensorLeftUnitorLinearEquiv.{v} hA hB M z =
+      lid R A M (BalancedTensorProduct.map (tensorUnitEquiv.{v} hA).symm.toLinearMap
+        (LinearEquiv.refl R M).toLinearMap (tensorUnitEquiv_symm_op_smul hA) (refl_smul hA hB M)
+        z) := by
+  rw [tensorLeftUnitorLinearEquiv, LinearEquiv.trans_apply, congr_apply]
+
+/-- The left unitor equivalence evaluates a pure tensor by the left action. -/
+@[simp]
+theorem tensorLeftUnitorLinearEquiv_tmul (x : tensorUnit.{v} hA) (m : M) :
+    tensorLeftUnitorLinearEquiv.{v} hA hB M (tmul R A x m) = x.down • m := by
+  rw [tensorLeftUnitorLinearEquiv, LinearEquiv.trans_apply]
+  refine (congrArg (lid R A M) (congr_tmul _ _ _ _ x m)).trans ?_
+  rw [lid_tmul, LinearEquiv.refl_apply, tensorUnitEquiv_symm_apply]
+
+/-- The inverse of the left unitor equivalence inserts the algebra unit. -/
+@[simp]
+theorem tensorLeftUnitorLinearEquiv_symm_apply (m : M) :
+    (tensorLeftUnitorLinearEquiv.{v} hA hB M).symm m = tmul R A (tensorUnitEquiv.{v} hA 1) m := by
+  rw [tensorLeftUnitorLinearEquiv, LinearEquiv.symm_trans_apply, lid_symm_apply, congr_symm_tmul,
+    LinearEquiv.refl_symm, LinearEquiv.refl_apply, LinearEquiv.symm_symm]
+
+private theorem tensorLeftUnitorLinearEquiv_smul_right (b : Bᵐᵒᵖ)
+    (z : tensorObj (tensorUnit.{v} hA) M) :
+    tensorLeftUnitorLinearEquiv.{v} hA hB M (b • z) =
+      b • tensorLeftUnitorLinearEquiv.{v} hA hB M z := by
+  rw [tensorLeftUnitorLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    congr_smul_right Bᵐᵒᵖ _ _ _ _ (fun _ _ ↦ rfl), lid_smul_right]
+
+private theorem tensorLeftUnitorLinearEquiv_smul_left (a : A)
+    (z : tensorObj (tensorUnit.{v} hA) M) :
+    tensorLeftUnitorLinearEquiv.{v} hA hB M (a • z) =
+      a • tensorLeftUnitorLinearEquiv.{v} hA hB M z := by
+  rw [tensorLeftUnitorLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    congr_smul_left A _ _ _ _ (tensorUnitEquiv_symm_smul hA), lid_smul_left]
+
+private theorem tensorLeftUnitorLinearEquiv_mem_grading {p : ℤ}
+    {z : tensorObj (tensorUnit.{v} hA) M} (hz : z ∈ (tensorObj (tensorUnit.{v} hA) M).grading p) :
+    tensorLeftUnitorLinearEquiv.{v} hA hB M z ∈ M.grading p := by
+  have hf₀ : LinearMap.IsHomogeneous (tensorUnitEquiv.{v} hA).symm.toLinearMap
+      (InternalGrading.ofDecomposition (tensorUnit.{v} hA).grading).piece
+      (InternalGrading.ofDecomposition 𝒜).piece 0 := by
+    simpa only [InternalGrading.ofDecomposition_piece] using isHomogeneous_tensorUnitEquiv_symm hA
+  have hg₀ : LinearMap.IsHomogeneous (LinearEquiv.refl R M).toLinearMap
+      (InternalGrading.ofDecomposition M.grading).piece
+      (InternalGrading.ofDecomposition M.grading).piece 0 := by
+    simpa only [InternalGrading.ofDecomposition_piece] using refl_isHomogeneous hA hB M
+  have hc := (isHomogeneous_map
+    (InternalGrading.ofDecomposition (tensorUnit.{v} hA).grading)
+    (InternalGrading.ofDecomposition M.grading)
+    (InternalGrading.ofDecomposition 𝒜)
+    (InternalGrading.ofDecomposition M.grading)
+    (tensorUnitEquiv.{v} hA).symm.toLinearMap (LinearEquiv.refl R M).toLinearMap
+    (tensorUnitEquiv_symm_op_smul hA) (refl_smul hA hB M) hf₀ hg₀).map_mem hz
+  have hl := Submodule.mem_map_of_mem (f := (lid R A M).toLinearMap) (by
+    simpa only [add_zero] using hc)
+  rw [map_lid_grading_piece (𝒜 := 𝒜) (InternalGrading.ofDecomposition M.grading) p,
+    InternalGrading.ofDecomposition_piece] at hl
+  rw [tensorLeftUnitorLinearEquiv_apply]
+  exact hl
+
+private theorem tensorLeftUnitorLinearEquiv_differential (z : tensorObj (tensorUnit.{v} hA) M) :
+    M.differential (tensorLeftUnitorLinearEquiv.{v} hA hB M z) =
+      tensorLeftUnitorLinearEquiv.{v} hA hB M
+        ((tensorObj (tensorUnit.{v} hA) M).differential z) := by
+  have hc := LinearMap.congr_fun
+    (differential_naturality (tensorUnit.{v} hA).isDGRightModule M.isDGLeftModule
+      hA.isDGRightModule M.isDGLeftModule (tensorUnitEquiv.{v} hA).symm.toLinearMap
+      (LinearEquiv.refl R M).toLinearMap (tensorUnitEquiv_symm_op_smul hA) (refl_smul hA hB M)
+      (isHomogeneous_tensorUnitEquiv_symm hA) (differential_comp_tensorUnitEquiv_symm hA)
+      (differential_comp_refl hA hB M)) z
+  have hl := LinearMap.congr_fun (lid_comp_differential hA M.isDGLeftModule)
+    (BalancedTensorProduct.map (tensorUnitEquiv.{v} hA).symm.toLinearMap
+      (LinearEquiv.refl R M).toLinearMap (tensorUnitEquiv_symm_op_smul hA) (refl_smul hA hB M) z)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hc hl
+  rw [tensorLeftUnitorLinearEquiv_apply, tensorLeftUnitorLinearEquiv_apply, ← hc, hl]
+
 /-- Evaluate the regular left tensor factor by its action on the second factor. -/
-def tensorLeftUnitorHom : tensorObj (tensorUnit.{v} hA) M ⟶ M := by
-  let f := (tensorUnitEquiv.{v} hA).symm
-  let g := LinearEquiv.refl R M
-  have hf : ∀ (a : A) x, f (op a • x) = op a • f x := by
-    intro a x
-    simp only [f, tensorUnitEquiv_symm_apply, tensorUnit_op_smul_down,
-      MulOpposite.smul_eq_mul_unop, unop_op]
-  have hg : ∀ (a : A) m, g (a • m) = a • g m := fun _ _ ↦ rfl
-  let c := BalancedTensorProduct.congr f g hf hg
-  let e := c.trans (lid R A M)
-  have he (z) :
-      e z = (lid R A M) (BalancedTensorProduct.map f.toLinearMap g.toLinearMap hf hg z) := by
-    rw [LinearEquiv.trans_apply, congr_apply]
-  have hf₀ : LinearMap.IsHomogeneous f.toLinearMap (tensorUnit.{v} hA).grading 𝒜 0 :=
-    LinearMap.isHomogeneous_def.2 fun q x hx ↦ by
-      simpa only [f, LinearEquiv.coe_coe, tensorUnitEquiv_symm_apply, add_zero] using
-        (mem_tensorUnit_grading_iff hA q x).1 hx
-  let T : tensorObj (tensorUnit.{v} hA) M →ₗ[Bᵐᵒᵖ] M :=
-    { toFun := e
-      map_add' := map_add e
-      map_smul' := fun b z ↦ by
-        dsimp only [e, LinearEquiv.trans_apply]
-        rw [RingHom.id_apply, congr_smul_right Bᵐᵒᵖ f g hf hg (fun _ _ ↦ rfl),
-          lid_smul_right] }
-  have hT (z) : T z = e z := rfl
-  refine ⟨⟨T, ?_, ?_⟩, ?_⟩
-  · intro p z hz
-    have hf₀' : LinearMap.IsHomogeneous f.toLinearMap
-        (InternalGrading.ofDecomposition (tensorUnit.{v} hA).grading).piece
-        (InternalGrading.ofDecomposition 𝒜).piece 0 := by
-      simpa only [InternalGrading.ofDecomposition_piece] using hf₀
-    have hg₀ : LinearMap.IsHomogeneous g.toLinearMap
-        (InternalGrading.ofDecomposition M.grading).piece
-        (InternalGrading.ofDecomposition M.grading).piece 0 := by
-      simpa only [g, LinearEquiv.refl_toLinearMap] using
-        LinearMap.isHomogeneous_id (InternalGrading.ofDecomposition M.grading).piece
-    have hc := (isHomogeneous_map
-      (InternalGrading.ofDecomposition (tensorUnit.{v} hA).grading)
-      (InternalGrading.ofDecomposition M.grading)
-      (InternalGrading.ofDecomposition 𝒜)
-      (InternalGrading.ofDecomposition M.grading)
-      f.toLinearMap g.toLinearMap hf hg hf₀' hg₀).map_mem hz
-    have hl := Submodule.mem_map_of_mem (f := (lid R A M).toLinearMap) (by
-      simpa only [add_zero] using hc)
-    rw [map_lid_grading_piece (𝒜 := 𝒜)
-      (InternalGrading.ofDecomposition M.grading) p,
-      InternalGrading.ofDecomposition_piece] at hl
-    rw [hT, he]
-    exact hl
-  · intro z
-    have hfd : dA ∘ₗ f.toLinearMap =
-        f.toLinearMap ∘ₗ (tensorUnit.{v} hA).differential := by
-      ext x
-      calc
-        dA x.down = ((tensorUnit.{v} hA).differential x).down := by
-          rw [tensorUnit_differential_apply]
-        _ = (tensorUnitEquiv.{v} hA).symm
-            ((tensorUnit.{v} hA).differential x) :=
-          (tensorUnitEquiv_symm_apply hA _).symm
-    have hgd : M.differential ∘ₗ g.toLinearMap = g.toLinearMap ∘ₗ M.differential := by
-      ext m
-      simp only [LinearMap.comp_apply, g, LinearEquiv.coe_toLinearMap,
-        LinearEquiv.refl_apply]
-    have hc := LinearMap.congr_fun
-      (differential_naturality (tensorUnit.{v} hA).isDGRightModule M.isDGLeftModule
-        hA.isDGRightModule M.isDGLeftModule f.toLinearMap g.toLinearMap hf hg hf₀ hfd hgd) z
-    have hl := LinearMap.congr_fun (lid_comp_differential hA M.isDGLeftModule)
-      (BalancedTensorProduct.map f.toLinearMap g.toLinearMap hf hg z)
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hc hl
-    rw [hT, hT, he, he, ← hc, hl]
-  · rw [mem_dgBimoduleHomSubmodule]
-    intro a z
-    rw [DGRightModuleHom.coe_mk, hT, hT]
-    dsimp only [e, LinearEquiv.trans_apply]
-    rw [congr_smul_left A f g hf hg (fun a x ↦ by
-      simp only [f, tensorUnitEquiv_symm_apply, tensorUnit_smul_down, smul_eq_mul]),
-      lid_smul_left]
+def tensorLeftUnitorHom : tensorObj (tensorUnit.{v} hA) M ⟶ M :=
+  ⟨⟨{ toFun := tensorLeftUnitorLinearEquiv.{v} hA hB M
+      map_add' := map_add _
+      map_smul' := tensorLeftUnitorLinearEquiv_smul_right hA hB M },
+    fun hz ↦ tensorLeftUnitorLinearEquiv_mem_grading hA hB M hz,
+    tensorLeftUnitorLinearEquiv_differential hA hB M⟩,
+    (mem_dgBimoduleHomSubmodule _ _ _).2 (tensorLeftUnitorLinearEquiv_smul_left hA hB M)⟩
+
+/-- The left unitor morphism is the left unitor equivalence on carriers. -/
+theorem tensorLeftUnitorHom_apply (z : tensorObj (tensorUnit.{v} hA) M) :
+    tensorLeftUnitorHom.{v} hA hB M z = tensorLeftUnitorLinearEquiv.{v} hA hB M z := (rfl)
 
 /-- The left unitor evaluates a pure tensor by the left action. -/
 @[simp]
 theorem tensorLeftUnitorHom_tmul (x : tensorUnit.{v} hA) (m : M) :
     tensorLeftUnitorHom.{v} hA hB M (tmul R A x m) = x.down • m := by
-  rw [← DGBimoduleHom.coe_val]
-  dsimp only [tensorLeftUnitorHom, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [LinearEquiv.trans_apply]
-  refine (congrArg (lid R A M) (congr_tmul _ _ _ _ x m)).trans ?_
-  rw [lid_tmul, LinearEquiv.refl_apply, tensorUnitEquiv_symm_apply]
+  rw [tensorLeftUnitorHom_apply, tensorLeftUnitorLinearEquiv_tmul]
 
 /-- Insert `1` in the regular left tensor factor. -/
 def tensorLeftUnitorInv : M ⟶ tensorObj (tensorUnit.{v} hA) M := by
-  let f := (tensorUnitEquiv.{v} hA).symm
-  let g := LinearEquiv.refl R M
-  have hf : ∀ (a : A) x, f (op a • x) = op a • f x := by
-    intro a x
-    simp only [f, tensorUnitEquiv_symm_apply, tensorUnit_op_smul_down,
-      MulOpposite.smul_eq_mul_unop, unop_op]
-  have hg : ∀ (a : A) m, g (a • m) = a • g m := fun _ _ ↦ rfl
-  let c := BalancedTensorProduct.congr f g hf hg
-  let e := c.trans (lid R A M)
-  have he_apply (m : M) : e.symm m = tmul R A (tensorUnitEquiv.{v} hA 1) m := by
-    dsimp only [e, c, LinearEquiv.symm_trans_apply]
-    rw [lid_symm_apply, congr_symm_tmul, LinearEquiv.refl_symm,
-      LinearEquiv.refl_apply, LinearEquiv.symm_symm, tensorUnitEquiv_apply]
   let T : M →ₗ[Bᵐᵒᵖ] tensorObj (tensorUnit.{v} hA) M :=
-    { toFun := e.symm
-      map_add' := map_add e.symm
+    { toFun := (tensorLeftUnitorLinearEquiv.{v} hA hB M).symm
+      map_add' := map_add _
       map_smul' := fun b m ↦ by
-        rw [he_apply, he_apply, RingHom.id_apply, smul_tmul_right] }
-  have hT (m) : T m = tmul R A (tensorUnitEquiv.{v} hA 1) m := he_apply m
+        rw [tensorLeftUnitorLinearEquiv_symm_apply, tensorLeftUnitorLinearEquiv_symm_apply,
+          RingHom.id_apply, smul_tmul_right] }
+  have hT (m) : T m = tmul R A (tensorUnitEquiv.{v} hA 1) m :=
+    tensorLeftUnitorLinearEquiv_symm_apply hA hB M m
   refine ⟨⟨T, ?_, ?_⟩, ?_⟩
   · intro p m hm
     rw [hT]
@@ -329,12 +385,8 @@ def tensorLeftUnitorInv : M ⟶ tensorObj (tensorUnit.{v} hA) M := by
 @[simp]
 theorem tensorLeftUnitorInv_apply (m : M) :
     tensorLeftUnitorInv.{v} hA hB M m =
-      tmul R A (tensorUnitEquiv.{v} hA 1) m := by
-  rw [← DGBimoduleHom.coe_val]
-  dsimp only [tensorLeftUnitorInv, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [LinearEquiv.symm_trans_apply, lid_symm_apply]
-  refine (congr_symm_tmul _ _ _ _ (1 : A) m).trans ?_
-  rw [LinearEquiv.symm_symm, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+      tmul R A (tensorUnitEquiv.{v} hA 1) m :=
+  tensorLeftUnitorLinearEquiv_symm_apply hA hB M m
 
 /-- The regular DG bimodule is a left unit for tensor composition. -/
 def tensorLeftUnitor : tensorObj (tensorUnit.{v} hA) M ≅ M where
@@ -403,114 +455,122 @@ local instance tensorRightUnitorGradedSMulAlgebraLeft : SetLike.GradedSMul ℬ
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
+-- Named for the same reason as `refl_smul`.
+private theorem refl_op_smul (b : B) (m : M) :
+    LinearEquiv.refl R M (op b • m) = op b • LinearEquiv.refl R M m := rfl
+
+/-- The right unitor as an `R`-linear equivalence: lower the regular factor and act. -/
+def tensorRightUnitorLinearEquiv : tensorObj M (tensorUnit.{v} hB) ≃ₗ[R] M :=
+  (BalancedTensorProduct.congr (LinearEquiv.refl R M) (tensorUnitEquiv.{v} hB).symm
+    (refl_op_smul hA hB M) (tensorUnitEquiv_symm_smul hB)).trans (rid R B M)
+
+private theorem tensorRightUnitorLinearEquiv_apply (z : tensorObj M (tensorUnit.{v} hB)) :
+    tensorRightUnitorLinearEquiv.{v} hA hB M z =
+      rid R B M (BalancedTensorProduct.map (LinearEquiv.refl R M).toLinearMap
+        (tensorUnitEquiv.{v} hB).symm.toLinearMap (refl_op_smul hA hB M)
+        (tensorUnitEquiv_symm_smul hB) z) := by
+  rw [tensorRightUnitorLinearEquiv, LinearEquiv.trans_apply, congr_apply]
+
+/-- The right unitor equivalence evaluates a pure tensor by the right action. -/
+@[simp]
+theorem tensorRightUnitorLinearEquiv_tmul (m : M) (x : tensorUnit.{v} hB) :
+    tensorRightUnitorLinearEquiv.{v} hA hB M (tmul R B m x) = op x.down • m := by
+  rw [tensorRightUnitorLinearEquiv, LinearEquiv.trans_apply]
+  refine (congrArg (rid R B M) (congr_tmul _ _ _ _ m x)).trans ?_
+  rw [rid_tmul, LinearEquiv.refl_apply, tensorUnitEquiv_symm_apply]
+
+/-- The inverse of the right unitor equivalence inserts the algebra unit. -/
+@[simp]
+theorem tensorRightUnitorLinearEquiv_symm_apply (m : M) :
+    (tensorRightUnitorLinearEquiv.{v} hA hB M).symm m = tmul R B m (tensorUnitEquiv.{v} hB 1) := by
+  rw [tensorRightUnitorLinearEquiv, LinearEquiv.symm_trans_apply, rid_symm_apply, congr_symm_tmul,
+    LinearEquiv.refl_symm, LinearEquiv.refl_apply, LinearEquiv.symm_symm]
+
+private theorem tensorRightUnitorLinearEquiv_smul_right (b : Bᵐᵒᵖ)
+    (z : tensorObj M (tensorUnit.{v} hB)) :
+    tensorRightUnitorLinearEquiv.{v} hA hB M (b • z) =
+      b • tensorRightUnitorLinearEquiv.{v} hA hB M z := by
+  rw [tensorRightUnitorLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    congr_smul_right Bᵐᵒᵖ _ _ _ _ (fun b x ↦ by
+      rw [← op_unop b]
+      exact tensorUnitEquiv_symm_op_smul hB _ x), rid_smul_right]
+
+private theorem tensorRightUnitorLinearEquiv_smul_left (a : A)
+    (z : tensorObj M (tensorUnit.{v} hB)) :
+    tensorRightUnitorLinearEquiv.{v} hA hB M (a • z) =
+      a • tensorRightUnitorLinearEquiv.{v} hA hB M z := by
+  rw [tensorRightUnitorLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    congr_smul_left A _ _ _ _ (fun _ _ ↦ rfl), rid_smul_left]
+
+private theorem tensorRightUnitorLinearEquiv_mem_grading {p : ℤ}
+    {z : tensorObj M (tensorUnit.{v} hB)} (hz : z ∈ (tensorObj M (tensorUnit.{v} hB)).grading p) :
+    tensorRightUnitorLinearEquiv.{v} hA hB M z ∈ M.grading p := by
+  have hf₀ : LinearMap.IsHomogeneous (LinearEquiv.refl R M).toLinearMap
+      (InternalGrading.ofDecomposition M.grading).piece
+      (InternalGrading.ofDecomposition M.grading).piece 0 := by
+    simpa only [InternalGrading.ofDecomposition_piece] using refl_isHomogeneous hA hB M
+  have hg₀ : LinearMap.IsHomogeneous (tensorUnitEquiv.{v} hB).symm.toLinearMap
+      (InternalGrading.ofDecomposition (tensorUnit.{v} hB).grading).piece
+      (InternalGrading.ofDecomposition ℬ).piece 0 := by
+    simpa only [InternalGrading.ofDecomposition_piece] using isHomogeneous_tensorUnitEquiv_symm hB
+  have hc := (isHomogeneous_map
+    (InternalGrading.ofDecomposition M.grading)
+    (InternalGrading.ofDecomposition (tensorUnit.{v} hB).grading)
+    (InternalGrading.ofDecomposition M.grading)
+    (InternalGrading.ofDecomposition ℬ)
+    (LinearEquiv.refl R M).toLinearMap (tensorUnitEquiv.{v} hB).symm.toLinearMap
+    (refl_op_smul hA hB M) (tensorUnitEquiv_symm_smul hB) hf₀ hg₀).map_mem hz
+  have hr := Submodule.mem_map_of_mem (f := (rid R B M).toLinearMap) (by
+    simpa only [add_zero] using hc)
+  rw [map_rid_grading_piece (𝒜 := ℬ) (InternalGrading.ofDecomposition M.grading) p,
+    InternalGrading.ofDecomposition_piece] at hr
+  rw [tensorRightUnitorLinearEquiv_apply]
+  exact hr
+
+private theorem tensorRightUnitorLinearEquiv_differential (z : tensorObj M (tensorUnit.{v} hB)) :
+    M.differential (tensorRightUnitorLinearEquiv.{v} hA hB M z) =
+      tensorRightUnitorLinearEquiv.{v} hA hB M
+        ((tensorObj M (tensorUnit.{v} hB)).differential z) := by
+  have hc := LinearMap.congr_fun
+    (differential_naturality M.isDGRightModule (tensorUnit.{v} hB).isDGLeftModule
+      M.isDGRightModule hB.isDGLeftModule (LinearEquiv.refl R M).toLinearMap
+      (tensorUnitEquiv.{v} hB).symm.toLinearMap (refl_op_smul hA hB M)
+      (tensorUnitEquiv_symm_smul hB) (refl_isHomogeneous hA hB M) (differential_comp_refl hA hB M)
+      (differential_comp_tensorUnitEquiv_symm hB)) z
+  have hr := LinearMap.congr_fun (rid_comp_differential hB M.isDGRightModule)
+    (BalancedTensorProduct.map (LinearEquiv.refl R M).toLinearMap
+      (tensorUnitEquiv.{v} hB).symm.toLinearMap (refl_op_smul hA hB M)
+      (tensorUnitEquiv_symm_smul hB) z)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hc hr
+  rw [tensorRightUnitorLinearEquiv_apply, tensorRightUnitorLinearEquiv_apply, ← hc, hr]
+
 /-- Evaluate the regular right tensor factor by its action on the first factor. -/
-def tensorRightUnitorHom : tensorObj M (tensorUnit.{v} hB) ⟶ M := by
-  let f := LinearEquiv.refl R M
-  let g := (tensorUnitEquiv.{v} hB).symm
-  have hf : ∀ (b : B) m, f (op b • m) = op b • f m := fun _ _ ↦ rfl
-  have hg : ∀ (b : B) x, g (b • x) = b • g x := by
-    intro b x
-    simp only [g, tensorUnitEquiv_symm_apply, tensorUnit_smul_down, smul_eq_mul]
-  let c := BalancedTensorProduct.congr f g hf hg
-  let e := c.trans (rid R B M)
-  have he (z) :
-      e z = (rid R B M) (BalancedTensorProduct.map f.toLinearMap g.toLinearMap hf hg z) := by
-    rw [LinearEquiv.trans_apply, congr_apply]
-  have hf₀ : LinearMap.IsHomogeneous f.toLinearMap M.grading M.grading 0 := by
-    simpa only [f, LinearEquiv.refl_toLinearMap] using LinearMap.isHomogeneous_id M.grading
-  have hg₀ : LinearMap.IsHomogeneous g.toLinearMap (tensorUnit.{v} hB).grading ℬ 0 :=
-    LinearMap.isHomogeneous_def.2 fun q x hx ↦ by
-      simpa only [g, LinearEquiv.coe_coe, tensorUnitEquiv_symm_apply, add_zero] using
-        (mem_tensorUnit_grading_iff hB q x).1 hx
-  let T : tensorObj M (tensorUnit.{v} hB) →ₗ[Bᵐᵒᵖ] M :=
-    { toFun := e
-      map_add' := map_add e
-      map_smul' := fun b z ↦ by
-        dsimp only [e, LinearEquiv.trans_apply]
-        rw [RingHom.id_apply, congr_smul_right Bᵐᵒᵖ f g hf hg (fun b x ↦ by
-          simp only [g, tensorUnitEquiv_symm_apply, MulOpposite.smul_eq_mul_unop]
-          rw [← op_unop b, tensorUnit_op_smul_down]
-          simp only [unop_op]), rid_smul_right] }
-  have hT (z) : T z = e z := rfl
-  refine ⟨⟨T, ?_, ?_⟩, ?_⟩
-  · intro p z hz
-    have hf₀' : LinearMap.IsHomogeneous f.toLinearMap
-        (InternalGrading.ofDecomposition M.grading).piece
-        (InternalGrading.ofDecomposition M.grading).piece 0 := by
-      simpa only [InternalGrading.ofDecomposition_piece] using hf₀
-    have hg₀' : LinearMap.IsHomogeneous g.toLinearMap
-        (InternalGrading.ofDecomposition (tensorUnit.{v} hB).grading).piece
-        (InternalGrading.ofDecomposition ℬ).piece 0 := by
-      simpa only [InternalGrading.ofDecomposition_piece] using hg₀
-    have hc := (isHomogeneous_map
-      (InternalGrading.ofDecomposition M.grading)
-      (InternalGrading.ofDecomposition (tensorUnit.{v} hB).grading)
-      (InternalGrading.ofDecomposition M.grading)
-      (InternalGrading.ofDecomposition ℬ)
-      f.toLinearMap g.toLinearMap hf hg hf₀' hg₀').map_mem hz
-    have hr := Submodule.mem_map_of_mem (f := (rid R B M).toLinearMap) (by
-      simpa only [add_zero] using hc)
-    rw [map_rid_grading_piece (𝒜 := ℬ)
-      (InternalGrading.ofDecomposition M.grading) p,
-      InternalGrading.ofDecomposition_piece] at hr
-    rw [hT, he]
-    exact hr
-  · intro z
-    have hfd : M.differential ∘ₗ f.toLinearMap = f.toLinearMap ∘ₗ M.differential := by
-      ext m
-      simp only [LinearMap.comp_apply, f, LinearEquiv.coe_toLinearMap,
-        LinearEquiv.refl_apply]
-    have hgd : dB ∘ₗ g.toLinearMap =
-        g.toLinearMap ∘ₗ (tensorUnit.{v} hB).differential := by
-      ext x
-      calc
-        dB x.down = ((tensorUnit.{v} hB).differential x).down := by
-          rw [tensorUnit_differential_apply]
-        _ = (tensorUnitEquiv.{v} hB).symm
-            ((tensorUnit.{v} hB).differential x) :=
-          (tensorUnitEquiv_symm_apply hB _).symm
-    have hc := LinearMap.congr_fun
-      (differential_naturality M.isDGRightModule (tensorUnit.{v} hB).isDGLeftModule
-        M.isDGRightModule hB.isDGLeftModule f.toLinearMap g.toLinearMap hf hg hf₀ hfd hgd) z
-    have hr := LinearMap.congr_fun (rid_comp_differential hB M.isDGRightModule)
-      (BalancedTensorProduct.map f.toLinearMap g.toLinearMap hf hg z)
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hc hr
-    rw [hT, hT, he, he, ← hc, hr]
-  · rw [mem_dgBimoduleHomSubmodule]
-    intro a z
-    rw [DGRightModuleHom.coe_mk, hT, hT]
-    dsimp only [e, LinearEquiv.trans_apply]
-    rw [congr_smul_left A f g hf hg (fun _ _ ↦ rfl), rid_smul_left]
+def tensorRightUnitorHom : tensorObj M (tensorUnit.{v} hB) ⟶ M :=
+  ⟨⟨{ toFun := tensorRightUnitorLinearEquiv.{v} hA hB M
+      map_add' := map_add _
+      map_smul' := tensorRightUnitorLinearEquiv_smul_right hA hB M },
+    fun hz ↦ tensorRightUnitorLinearEquiv_mem_grading hA hB M hz,
+    tensorRightUnitorLinearEquiv_differential hA hB M⟩,
+    (mem_dgBimoduleHomSubmodule _ _ _).2 (tensorRightUnitorLinearEquiv_smul_left hA hB M)⟩
+
+/-- The right unitor morphism is the right unitor equivalence on carriers. -/
+theorem tensorRightUnitorHom_apply (z : tensorObj M (tensorUnit.{v} hB)) :
+    tensorRightUnitorHom.{v} hA hB M z = tensorRightUnitorLinearEquiv.{v} hA hB M z := (rfl)
 
 /-- The right unitor evaluates a pure tensor by the right action. -/
 @[simp]
 theorem tensorRightUnitorHom_tmul (m : M) (x : tensorUnit.{v} hB) :
     tensorRightUnitorHom.{v} hA hB M (tmul R B m x) = op x.down • m := by
-  rw [← DGBimoduleHom.coe_val]
-  dsimp only [tensorRightUnitorHom, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [LinearEquiv.trans_apply]
-  refine (congrArg (rid R B M) (congr_tmul _ _ _ _ m x)).trans ?_
-  rw [rid_tmul, LinearEquiv.refl_apply, tensorUnitEquiv_symm_apply]
+  rw [tensorRightUnitorHom_apply, tensorRightUnitorLinearEquiv_tmul]
 
 /-- Insert `1` in the regular right tensor factor. -/
 def tensorRightUnitorInv : M ⟶ tensorObj M (tensorUnit.{v} hB) := by
-  let f := LinearEquiv.refl R M
-  let g := (tensorUnitEquiv.{v} hB).symm
-  have hf : ∀ (b : B) m, f (op b • m) = op b • f m := fun _ _ ↦ rfl
-  have hg : ∀ (b : B) x, g (b • x) = b • g x := by
-    intro b x
-    simp only [g, tensorUnitEquiv_symm_apply, tensorUnit_smul_down, smul_eq_mul]
-  let c := BalancedTensorProduct.congr f g hf hg
-  let e := c.trans (rid R B M)
-  have he_apply (m : M) : e.symm m = tmul R B m (tensorUnitEquiv.{v} hB 1) := by
-    dsimp only [e, c, LinearEquiv.symm_trans_apply]
-    rw [rid_symm_apply, congr_symm_tmul, LinearEquiv.refl_symm,
-      LinearEquiv.refl_apply, LinearEquiv.symm_symm]
   let T : M →ₗ[Bᵐᵒᵖ] tensorObj M (tensorUnit.{v} hB) :=
-    { toFun := e.symm
-      map_add' := map_add e.symm
+    { toFun := (tensorRightUnitorLinearEquiv.{v} hA hB M).symm
+      map_add' := map_add _
       map_smul' := fun b m ↦ by
-        rw [he_apply, he_apply, RingHom.id_apply, smul_tmul_right]
+        rw [tensorRightUnitorLinearEquiv_symm_apply, tensorRightUnitorLinearEquiv_symm_apply,
+          RingHom.id_apply, smul_tmul_right]
         have h := balance R B (unop b) m (tensorUnitEquiv.{v} hB 1)
         have heq : unop b • tensorUnitEquiv.{v} hB 1 =
             b • tensorUnitEquiv.{v} hB 1 := by
@@ -520,7 +580,8 @@ def tensorRightUnitorInv : M ⟶ tensorObj M (tensorUnit.{v} hB) := by
           simp only [mul_one, one_mul, unop_op]
         rw [heq] at h
         exact h }
-  have hT (m) : T m = tmul R B m (tensorUnitEquiv.{v} hB 1) := he_apply m
+  have hT (m) : T m = tmul R B m (tensorUnitEquiv.{v} hB 1) :=
+    tensorRightUnitorLinearEquiv_symm_apply hA hB M m
   refine ⟨⟨T, ?_, ?_⟩, ?_⟩
   · intro p m hm
     rw [hT]
@@ -544,12 +605,8 @@ def tensorRightUnitorInv : M ⟶ tensorObj M (tensorUnit.{v} hB) := by
 @[simp]
 theorem tensorRightUnitorInv_apply (m : M) :
     tensorRightUnitorInv.{v} hA hB M m =
-      tmul R B m (tensorUnitEquiv.{v} hB 1) := by
-  rw [← DGBimoduleHom.coe_val]
-  dsimp only [tensorRightUnitorInv, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-  rw [LinearEquiv.symm_trans_apply, rid_symm_apply]
-  refine (congr_symm_tmul _ _ _ _ m (1 : B)).trans ?_
-  rw [LinearEquiv.symm_symm, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+      tmul R B m (tensorUnitEquiv.{v} hB 1) :=
+  tensorRightUnitorLinearEquiv_symm_apply hA hB M m
 
 /-- The regular DG bimodule is a right unit for tensor composition. -/
 def tensorRightUnitor : tensorObj M (tensorUnit.{v} hB) ≅ M where

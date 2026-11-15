@@ -28,7 +28,7 @@ the exact hypothesis the higher-order antiderivative asymptotics
 ## Provenance
 
 New to the raw-curve development: the AINTLIB `LeanModularForms` flatness structure
-(`IsFlatOfOrder`) is indexed by the tangent, so no forcing step was needed there; the roadmap's
+(`IsFlatOfOrder`) is indexed by the tangent, so no forcing step was needed there; Tau Ceti's
 `Contour.FlatOfOrder` quantifies its witness directions existentially, and this file supplies
 the bridge. The forcing argument is the standard one: the curve leaves `t₀` tangent to `L`, so a
 line it hugs to first order can only be `ℝ • L`. See N. Hungerbühler, M. Wasem, *Non-integer
@@ -186,11 +186,11 @@ private theorem tangentDeviation_isLittleO_of_im_mul_conj_eq_zero {γ : ℝ → 
       fun t => ‖γ t - γ t₀‖ ^ n) :
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[l]
       fun t => ‖γ t - γ t₀‖ ^ n := by
-  obtain ⟨cc, hcc⟩ := exists_real_smul_of_im_mul_conj_eq_zero hv h_im
+  obtain ⟨cc, hcc⟩ := (im_mul_conj_eq_zero_iff_exists_real_smul hv).1 h_im
   have hcc_ne : cc ≠ 0 := fun h0 => hL (by rw [hcc, h0, zero_smul])
   have hkey : ∀ t, ‖tangentDeviation (γ t - γ t₀) L‖ =
       |((γ t - γ t₀) * star v).im| / ‖v‖ := fun t => by
-    rw [hcc, norm_tangentDeviation_smul_real hcc_ne hv, norm_tangentDeviation hv,
+    rw [hcc, tangentDeviation_real_smul_right hcc_ne, norm_tangentDeviation hv,
       Complex.star_def]
   exact h_dev.congr' (Filter.Eventually.of_forall fun t => (hkey t).symm) Filter.EventuallyEq.rfl
 

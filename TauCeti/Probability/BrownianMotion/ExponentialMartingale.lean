@@ -36,6 +36,9 @@ Brownian motion relative to a filtration is
 
 * `TauCeti.Probability.exponentialMartingale`: the process `exp (θ W_t - θ² t / 2)`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_exponentialMartingale`: `E[Z_t] = 1`.
+* `ProbabilityTheory.IsPreBrownianReal.memLp_exponentialMartingale`: `Z_t` has finite moments of
+  every finite order, since each real power of `Z_t` is a multiple of another exponential
+  martingale (`TauCeti.Probability.rpow_exponentialMartingale`).
 * `TauCeti.Probability.IsFilteredPreBrownianReal.martingale_exponentialMartingale`: `Z` is a
   martingale.
 * `ProbabilityTheory.IsPreBrownianReal.tilted_mul_eval_eq_withDensity`: tilting by `θ W_T` is
@@ -97,6 +100,14 @@ theorem exponentialMartingale_eq_mul (θ : ℝ) (W : ℝ≥0 → Ω → ℝ) (s 
   rw [exponentialMartingale_def, exponentialMartingale_def, ← exp_add]
   ring_nf
 
+/-- A real power of the exponential martingale is a deterministic multiple of the exponential
+martingale with the scaled parameter: `Z^θ_t ^ q = exp (q (q - 1) θ² t / 2) * Z^{qθ}_t`. -/
+theorem rpow_exponentialMartingale (θ q : ℝ) (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
+    exponentialMartingale θ W t ω ^ q =
+      exp (q * (q - 1) * θ ^ 2 * t / 2) * exponentialMartingale (q * θ) W t ω := by
+  rw [exponentialMartingale_def, exponentialMartingale_def, ← exp_mul, ← exp_add]
+  ring_nf
+
 end TauCeti.Probability
 
 namespace MeasureTheory.Adapted
@@ -143,6 +154,17 @@ theorem integral_exponentialMartingale (hB : IsPreBrownianReal B P) (θ : ℝ) (
     mgf_gaussianReal (hB.hasLaw_eval t), ← exp_add]
   ring_nf
   exact exp_zero
+
+/-- The exponential martingale has finite moments of every finite order. -/
+theorem memLp_exponentialMartingale (hB : IsPreBrownianReal B P) (θ : ℝ) (t : ℝ≥0) {p : ℝ≥0∞}
+    (hp : p ≠ ∞) : MemLp (exponentialMartingale θ B t) p P := by
+  have hm := (hB.integrable_exponentialMartingale θ t).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  refine (integrable_norm_rpow_iff hm hp0 hp).1 ?_
+  simp_rw [Real.norm_eq_abs, abs_of_pos (exponentialMartingale_pos θ B t _),
+    rpow_exponentialMartingale]
+  exact (hB.integrable_exponentialMartingale _ t).const_mul _
 
 /-- Tilting `P` by `θ B_T` is the change of measure with density `exp (θ B_T - θ² T / 2)`. -/
 theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (T : ℝ≥0) :

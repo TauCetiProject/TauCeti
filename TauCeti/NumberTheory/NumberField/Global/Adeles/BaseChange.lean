@@ -97,7 +97,7 @@ theorem adeleBaseChangeHom_fst (t : AdeleRing (𝓞 K) K ⊗[K] L) :
   induction t using TensorProduct.inductionOn with
   | tmul a x =>
     rw [adeleBaseChangeHom_tmul, AdeleRing.fst_mul, adeleExtension_fst,
-      AdeleRing.algebraMap_fst]
+      AdeleRing.algebraMap_fst_def]
     exact (infiniteAdeleBaseChangeHom_tmul K L a.1 x).symm
   | add t u ht hu =>
     -- Type the distribution map on adeles: rewriting cannot unfold their type synonym
@@ -125,7 +125,7 @@ theorem adeleBaseChangeHom_snd (t : AdeleRing (𝓞 K) K ⊗[K] L) :
     -- The adele type synonym hides the product-ring second projection from rewriting.
     change (adeleExtension (𝓞 K) K (𝓞 L) L a).2 *
       (algebraMap L (AdeleRing (𝓞 L) L) x).2 = _
-    rw [adeleExtension_snd, AdeleRing.algebraMap_snd]
+    rw [adeleExtension_snd, AdeleRing.algebraMap_snd_def]
     exact (finiteAdeleBaseChangeHom_tmul K L a.2 x).symm
   | add t u ht hu =>
     -- Type the distribution map on adeles: rewriting cannot unfold their type synonym
@@ -213,7 +213,7 @@ def adeleBaseChangeEquiv :
   -- The tensor product is σ-compact, as a finite free module over a σ-compact ring. The
   -- additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (AdeleRing (𝓞 K) K) (AdeleRing (𝓞 K) K ⊗[K] L)
-  have : Countable (𝓞 K) := Finsupp.Countable.of_moduleFinite (R := ℤ)
+  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   letI := TauCeti.ModuleTopology.sigmaCompactSpace
     ((Module.finBasis K L).baseChange (AdeleRing (𝓞 K) K))
   have ho : IsOpenMap e := e.toAddMonoidHom.isOpenMap_of_sigmaCompact e.surjective hc

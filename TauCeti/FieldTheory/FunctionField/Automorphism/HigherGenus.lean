@@ -29,8 +29,8 @@ the automorphism group `Aut(F / k)` is finite. The proof splits into two cases.
   `1` and `3` are distinct in `k`.
 
 The genus hypothesis cannot be dropped: `Aut(k(x) / k) ≅ PGL₂(k)` is infinite
-(`RatFunc.pglEquivAlgEquiv`), and so is the automorphism group of an elliptic function field over
-an algebraically closed field.
+(`RatFunc.pglEquivAlgEquiv`), and so is the automorphism group of a function field of genus one over
+an algebraically closed field (`TauCeti.infinite_algEquiv_of_genus_eq_one`).
 
 ## Main results
 
@@ -103,8 +103,8 @@ private theorem two_ne_zero_of_isHyperellipticFunctionField (hF : IsFunctionFiel
   obtain ⟨P, hP⟩ := Set.nonempty_of_ncard_ne_zero
     (s := {P : Place k F | P.weierstrassWeight ≠ 0}) (by omega)
   have hP₁ := P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF
-  have hgapsP := P.weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hex hP₁
-    ((P.weierstrassWeight_eq_genus_choose_two_iff hF hex hP₁).mp
+  have hgapsP := P.weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hP₁
+    ((P.weierstrassWeight_eq_genus_choose_two_iff hF hP₁).mp
       (weierstrassWeight_eq_genus_choose_two_of_isHyperellipticFunctionField hF hex hhyp hP₁ hP))
   -- `1` and `3` are gaps at `P`, so their images in `k` differ.
   have h1 : 1 ∈ P.weierstrassGaps := hgapsP ▸ Finset.mem_image.mpr

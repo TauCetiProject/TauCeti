@@ -23,7 +23,7 @@ The forward and inverse application lemmas characterize these equivalences as
 `HomotopyGroup.map` for `e` and `e.symm`, respectively.
 
 Transporting a homotopy-group computation across a homeomorphism is the dimension-`N` analogue of
-`TauCeti.FundamentalGroup.homeomorphMulEquiv`.
+`FundamentalGroup.homeomorphMulEquiv`.
 
 ## Main declarations
 
@@ -72,6 +72,14 @@ theorem homeomorphEquivOfEq_symm_apply (e : X ≃ₜ Y) (h : e x = y) (b : Homot
     (homeomorphEquivOfEq e h).symm b =
       map ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm) b :=
   rfl
+
+/-- The equivalence induced by a homeomorphism sends the class of the constant generalized loop
+to the class of the constant generalized loop. This also covers dimension zero. -/
+@[simp]
+theorem homeomorphEquivOfEq_mk_const (e : X ≃ₜ Y) (h : e x = y) :
+    homeomorphEquivOfEq e h (⟦(_root_.GenLoop.const : Ω^ N X x)⟧ : HomotopyGroup N X x) =
+      (⟦(_root_.GenLoop.const : Ω^ N Y y)⟧ : HomotopyGroup N Y y) :=
+  congrArg _ (GenLoop.map_const _ _)
 
 /-- A homeomorphism `e : X ≃ₜ Y` induces an equivalence of homotopy groups
 `π_N(X, x) ≃ π_N(Y, e x)`, in every dimension `N`. -/

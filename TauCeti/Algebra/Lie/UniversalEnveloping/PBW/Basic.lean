@@ -110,6 +110,11 @@ theorem pbwFiltrationPrevious_succ (k : ℕ) :
     pbwFiltrationPrevious R L (k + 1) = pbwFiltration R L k :=
   TauCeti.Algebra.wordFiltrationPrevious_succ _ k
 
+/-- The preceding PBW filtration step is contained in the current step. -/
+theorem pbwFiltrationPrevious_le (k : ℕ) :
+    pbwFiltrationPrevious R L k ≤ pbwFiltration R L k :=
+  TauCeti.Algebra.wordFiltrationPrevious_le _ k
+
 /-- A word of at most `k` canonical Lie generators lies in PBW filtration degree `k`. -/
 theorem prod_map_ι_mem_pbwFiltration {k : ℕ} {l : List L} (hl : l.length ≤ k) :
     (l.map ⇑(_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈ pbwFiltration R L k := by
@@ -149,6 +154,22 @@ theorem ι_mem_pbwFiltration_one (x : L) :
   rw [← LieHom.coe_toLinearMap]
   exact TauCeti.Algebra.apply_mem_wordFiltration_one _ x
 
+/-- Taking powers multiplies PBW filtration degrees. -/
+theorem pow_mem_pbwFiltration {i : ℕ} {a : U} (ha : a ∈ pbwFiltration R L i) (n : ℕ) :
+    a ^ n ∈ pbwFiltration R L (n * i) := by
+  rw [pbwFiltration_def] at ha ⊢
+  simpa only [smul_eq_mul] using SetLike.pow_mem_graded n ha
+
+/-- The `n`-th power of an element in PBW degree one has PBW degree at most `n`. -/
+theorem pow_mem_pbwFiltration_of_mem_one {a : U} (ha : a ∈ pbwFiltration R L 1) (n : ℕ) :
+    a ^ n ∈ pbwFiltration R L n := by
+  simpa only [mul_one] using pow_mem_pbwFiltration R L ha n
+
+/-- The `n`-th power of a canonical Lie generator has PBW degree at most `n`. -/
+theorem ι_pow_mem_pbwFiltration (x : L) (n : ℕ) :
+    (_root_.UniversalEnvelopingAlgebra.ι R x) ^ n ∈ pbwFiltration R L n :=
+  pow_mem_pbwFiltration_of_mem_one R L (ι_mem_pbwFiltration_one R L x) n
+
 /-- The range of the canonical Lie map lies in the first PBW filtration step. -/
 theorem ι_range_le_pbwFiltration_one :
     LinearMap.range (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap ≤ pbwFiltration R L 1 :=
@@ -175,6 +196,21 @@ theorem mul_mem_pbwFiltrationPrevious_right {i j : ℕ} {x y : U}
     (hx : x ∈ pbwFiltration R L i) (hy : y ∈ pbwFiltrationPrevious R L j) :
     x * y ∈ pbwFiltrationPrevious R L (i + j) :=
   TauCeti.Algebra.mul_mem_wordFiltrationPrevious_right _ hx hy
+
+/-- An ordered product of filtered factors has degree at most the sum of their degrees. -/
+theorem prod_map_mem_pbwFiltration {α : Type*} (l : List α) {f : α → U} {n : α → ℕ}
+    (hf : ∀ p ∈ l, f p ∈ pbwFiltration R L (n p)) :
+    (l.map f).prod ∈ pbwFiltration R L (l.map n).sum :=
+  TauCeti.Algebra.prod_map_mem_wordFiltration' _ l hf
+
+/-- Replacing filtered factors by factors with the same leading terms changes their ordered
+product only in strictly smaller total PBW degree. -/
+theorem prod_map_sub_prod_map_mem_pbwFiltrationPrevious {α : Type*} (l : List α)
+    {f g : α → U} {n : α → ℕ}
+    (hf : ∀ p ∈ l, f p ∈ pbwFiltration R L (n p))
+    (hfg : ∀ p ∈ l, f p - g p ∈ pbwFiltrationPrevious R L (n p)) :
+    (l.map f).prod - (l.map g).prod ∈ pbwFiltrationPrevious R L (l.map n).sum :=
+  TauCeti.Algebra.prod_map_sub_prod_map_mem_wordFiltrationPrevious _ l hf hfg
 
 /-- Iterating `pbwFiltration_mul`: the `n`-th submodule power of the `i`-th step is the `i * n`-th
 step. -/

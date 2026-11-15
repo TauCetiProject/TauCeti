@@ -42,6 +42,7 @@ subgroup into congruence conditions on the bottom row of `γ`.
 * `TauCeti.ModularGroup.isFundamentalDomain_fdo_psl2zToPSL2RRange`: the standard open modular
   domain is a fundamental domain for the projective image in `PSL(2, ℝ)`.
 * `TauCeti.ModularGroup.isCofinite_psl2zToPSL2RRange`: that image is a cofinite Fuchsian group.
+* `TauCeti.ModularGroup.covolume_psl2zToPSL2RRange`: its covolume is `π / 3`.
 * `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_I` and
   `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_ρ`: the elliptic orders `2` and `3`.
 * `TauCeti.ModularGroup.quotientMk_psl2zToPSL2RRange_eq_iff_quotientMk_sl_eq`: the orbits of the
@@ -92,6 +93,13 @@ theorem isCofinite_psl2zToPSL2RRange : psl2zToPSL2R.range.IsCofinite := by
   exact ne_of_lt <| by
     rw [← measure_congr _root_.ModularGroup.fd_ae_eq_fdo]
     exact _root_.ModularGroup.volume_fd_lt_top
+
+/-- **The covolume of the modular group.** The quotient of `ℍ` by the effective level-one group
+has hyperbolic area `π / 3`, the invariant measure of the standard fundamental domain. -/
+theorem covolume_psl2zToPSL2RRange :
+    covolume psl2zToPSL2R.range ℍ = ENNReal.ofReal (Real.pi / 3) := by
+  rw [isFundamentalDomain_fdo_psl2zToPSL2RRange.covolume_eq_volume,
+    ← measure_congr _root_.ModularGroup.fd_ae_eq_fdo, _root_.ModularGroup.volume_fd]
 
 /-! ### Elliptic points -/
 

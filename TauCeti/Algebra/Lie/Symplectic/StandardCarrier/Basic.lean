@@ -13,7 +13,6 @@ public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
@@ -219,22 +218,14 @@ algebra. -/
 noncomputable def rep :
     _root_.UniversalEnvelopingAlgebra ℚ (sp (Fin (n + 1)) ℚ) →ₐ[ℚ]
       Module.End ℚ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
-  LieSubalgebra.matrixRepresentation (sp (Fin (n + 1)) ℚ)
+  TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
+    ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
 
 theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply _ x v
-
-/-- A Cartan generator acts diagonally on every standard-module vector with the recorded
-coordinate weight. -/
-theorem rep_cartanGenerator_apply_apply (i : Fin (n + 1))
-    (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
-    (a : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator n i)) v a =
-      (weight n a i : ℚ) * v a := by
-  rw [rep_ι_apply, val_cartanGenerator, cartanGeneratorMatrix, mulVec_diagonal]
+  TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
 /-- The source coordinate of a numbered root generator: the coordinate on whose basis vector the
 generator is nonzero with coefficient one. -/
@@ -359,15 +350,15 @@ private theorem lie_positiveRootMatrix_negativeRootMatrix_self (i : Fin (n + 1))
     ⁅positiveRootMatrix n i, negativeRootMatrix n i⁆ = cartanGeneratorMatrix n i := by
   by_cases hi : i = Fin.last n
   · subst i
-    rw [positiveRootMatrix_last, negativeRootMatrix_last, lie_single_single]
+    rw [positiveRootMatrix_last, negativeRootMatrix_last, Matrix.lie_single_single]
     ext a b
     cases a <;> cases b <;>
       simp [cartanGeneratorMatrix, DynkinType.TypeC.weight_apply, diagonal_apply,
         single_apply] <;>
       split_ifs <;> simp_all [Fin.ext_iff, Fin.val_last] <;> omega
   · rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_of_ne_last n i hi,
-      sub_lie, lie_sub, lie_sub, lie_single_single, lie_single_single, lie_single_single,
-      lie_single_single]
+      sub_lie, lie_sub, lie_sub, Matrix.lie_single_single, Matrix.lie_single_single,
+      Matrix.lie_single_single, Matrix.lie_single_single]
     obtain ⟨k, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
     ext a b
     cases a <;> cases b <;>
@@ -382,18 +373,18 @@ private theorem lie_positiveRootMatrix_negativeRootMatrix_of_ne
   · subst i
     have hj : j ≠ Fin.last n := Ne.symm hij
     rw [positiveRootMatrix_last, negativeRootMatrix_of_ne_last n j hj, lie_sub,
-      lie_single_single, lie_single_single]
+      Matrix.lie_single_single, Matrix.lie_single_single]
     ext a b
     cases a <;> cases b <;> simp [hj, Ne.symm hj]
   · by_cases hj : j = Fin.last n
     · subst j
       rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_last, sub_lie,
-        lie_single_single, lie_single_single]
+        Matrix.lie_single_single, Matrix.lie_single_single]
       ext a b
       cases a <;> cases b <;> simp [hi, Ne.symm hi]
     · rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_of_ne_last n j hj,
-        sub_lie, lie_sub, lie_sub, lie_single_single, lie_single_single, lie_single_single,
-        lie_single_single]
+        sub_lie, lie_sub, lie_sub, Matrix.lie_single_single, Matrix.lie_single_single,
+        Matrix.lie_single_single, Matrix.lie_single_single]
       have hsucc : Order.succ i ≠ Order.succ j :=
         (Order.succ_eq_succ_iff_of_not_isMax (not_isMax_iff_ne_top.2 hi)
           (not_isMax_iff_ne_top.2 hj)).not.2 hij
@@ -644,7 +635,7 @@ theorem rep_rootGenerator_rep_rootGenerator_eq_zero
 theorem pow_two_rep_rootGenerator_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) ^ 2 = 0 := by
   refine LinearMap.ext fun v => ?_
-  rw [pow_two, Module.End.mul_apply, rep_rootGenerator_rep_rootGenerator_eq_zero,
+  rw [pow_two, mul_apply_eq_comp, rep_rootGenerator_rep_rootGenerator_eq_zero,
     LinearMap.zero_apply]
 
 /-- Every numbered root generator acts nilpotently on the standard module. -/

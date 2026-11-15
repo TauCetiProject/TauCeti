@@ -81,12 +81,6 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     let p : WithConv (H →ₐ[ℤ] H) := toConv (AlgHom.id ℤ H)
     have hmap := GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app wt
       (CommAlgCat.of ℤ H) p
-    have hweight (y : Fin n) :
-        (DiagonalizableGroup.charOfPoint p.ofConv
-          (SplitTorus.weightCharacter (wt y)) : H) =
-          MonoidAlgebra.single (SplitTorus.weightCharacter (wt y)) 1 := by
-      have hp : p.ofConv = AlgHom.id ℤ H := WithConv.ofConv_toConv _
-      rw [DiagonalizableGroup.charOfPoint_apply_coe, hp, AlgHom.id_apply]
     have hleft := congrArg (fun q =>
         ((GeneralLinear.pointsMulEquiv n q : Matrix.GeneralLinearGroup (Fin n) H) :
           Matrix (Fin n) (Fin n) H) i j) hmap
@@ -108,17 +102,7 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     rw [DiagonalizableGroup.diagonalCoordinateMap_X]
     rcases eq_or_ne i j with rfl | hij
     · simp only [diagGL_apply, ↓reduceIte] at hleft
-      have hcoord :
-          (GeneralLinear.diagonalTorusCoordinates
-              (SplitTorus.pointsMulEquiv
-                (DiagonalizableGroup.pointsMap (GeneralLinear.weightCharacterMap wt) p)) i : H) =
-            MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
-        have hcoordUnits :=
-          GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
-            (CommAlgCat.of ℤ H) p i
-        rw [← SplitTorus.charOfPoint_weightCharacter] at hcoordUnits
-        exact (congrArg Units.val hcoordUnits).trans (hweight i)
-      rw [hcoord] at hleft
+      rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap_id wt i] at hleft
       simpa using hleft
     · simp only [diagGL_apply, hij, ↓reduceIte] at hleft
       simpa [Matrix.diagonal_apply_ne _ hij] using hleft

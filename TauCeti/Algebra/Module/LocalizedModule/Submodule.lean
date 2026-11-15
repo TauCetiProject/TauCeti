@@ -8,16 +8,24 @@ module
 public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
 public import Mathlib.RingTheory.Localization.Basic
+public import Mathlib.RingTheory.Localization.Finiteness
 
 /-!
 # Submodules over a localization
 
-This file proves two facts about submodules and localized modules:
+This file proves the following facts about submodules and localized modules:
 
 * `IsLocalizedModule.mk'_mem_iff`: a fraction `f x / s` lies in a submodule over the localization
   exactly when `f x` does.
 * `Submodule.localized'_one`: the localization of the image of `A` in an algebra `B` is the image
   of the localized base ring `A'` in the localized algebra `B'`.
+* `LinearMap.localizedMap_injective_iff_subsingleton_localized_ker`: a localized linear map is
+  injective exactly when the localization of its kernel vanishes, the companion of Mathlib's
+  `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`.
+* `Submodule.FG.exists_smul_mem_of_le_span`: clearing denominators uniformly. When `F` is the
+  localization of `R` at `S`, every finitely generated `R`-submodule of the `F`-span of an
+  `R`-submodule `M` is carried into `M` by a single element of `S`. This is the uniform version of
+  Mathlib's `multiple_mem_span_of_mem_localization_span`.
 -/
 
 public section
@@ -54,4 +62,47 @@ theorem localized'_one :
   · rw [one_eq_span, span_le, Set.singleton_subset_iff]
     exact subset_span ⟨1, mem_one.mpr ⟨1, map_one _⟩, by simp⟩
 
+section ClearDenominators
+
+variable {R F E : Type*} [CommSemiring R] [CommSemiring F] [AddCommMonoid E] [Algebra R F]
+  (S : Submonoid R) [IsLocalization S F] [Module F E] [Module R E] [IsScalarTower R F E]
+  {M : Submodule R E}
+
+/-- **Clearing denominators uniformly.** If `F` is the localization of `R` at `S`, a finitely
+generated `R`-submodule `N` contained in the `F`-span of an `R`-submodule `M` is carried into `M` by
+multiplication by a single element of `S`. -/
+theorem FG.exists_smul_mem_of_le_span {N : Submodule R E} (hN : N.FG)
+    (hle : (N : Set E) ⊆ span F (M : Set E)) : ∃ r ∈ S, ∀ v ∈ N, r • v ∈ M := by
+  induction N, hN using fg_induction with
+  | singleton x =>
+    obtain ⟨⟨r, hr⟩, hrx⟩ := multiple_mem_span_of_mem_localization_span S F (M : Set E) x
+      (hle (mem_span_singleton_self x))
+    rw [Submonoid.mk_smul, span_eq] at hrx
+    refine ⟨r, hr, fun v hv => ?_⟩
+    obtain ⟨c, rfl⟩ := mem_span_singleton.1 hv
+    rw [smul_comm]
+    exact smul_mem _ c hrx
+  | sup N₁ N₂ _ _ h₁ h₂ =>
+    obtain ⟨r₁, hr₁, h₁⟩ := h₁ fun v hv => hle (mem_sup_left hv)
+    obtain ⟨r₂, hr₂, h₂⟩ := h₂ fun v hv => hle (mem_sup_right hv)
+    refine ⟨r₂ * r₁, mul_mem hr₂ hr₁, fun v hv => ?_⟩
+    obtain ⟨v₁, hv₁, v₂, hv₂, rfl⟩ := mem_sup.1 hv
+    rw [smul_add, mul_smul, mul_comm, mul_smul]
+    exact add_mem (smul_mem _ r₂ (h₁ v₁ hv₁)) (smul_mem _ r₁ (h₂ v₂ hv₂))
+
+end ClearDenominators
+
 end Submodule
+
+/-- A localized linear map is injective iff the localization of its kernel vanishes. This is the
+kernel counterpart of `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`. -/
+theorem LinearMap.localizedMap_injective_iff_subsingleton_localized_ker {R M N : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (S : Submonoid R)
+    (φ : M →ₗ[R] N) :
+    Function.Injective (LocalizedModule.map S φ) ↔
+      Subsingleton (LocalizedModule S (LinearMap.ker φ)) := by
+  have := LinearMap.toKerLocalized_isLocalizedModule (Localization S) S
+    (LocalizedModule.mkLinearMap S M) (LocalizedModule.mkLinearMap S N) φ
+  rw [(IsLocalizedModule.iso S (LinearMap.toKerIsLocalized S (LocalizedModule.mkLinearMap S M)
+      (LocalizedModule.mkLinearMap S N) φ)).subsingleton_congr, Submodule.subsingleton_iff_eq_bot,
+    LinearMap.ker_eq_bot, IsLocalizedModule.map_injective_iff_localizedModuleMap_injective]

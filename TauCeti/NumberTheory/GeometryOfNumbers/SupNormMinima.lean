@@ -84,16 +84,7 @@ theorem prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset (L : Su
     [DiscreteTopology L] [IsZLattice ℝ L] {K : ConvexBody W}
     (hK : {x : W | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1} ⊆ K) (hKs : ∀ x ∈ K, -x ∈ K) :
     ∏ i, successiveMin L K i ≤ covolume L := by
-  -- The open box `W ∩ (-1, 1)^ι` is a neighbourhood of `0` inside the cube slice.
-  have hopen : IsOpen {x : W | ∀ i, |(x : EuclideanSpace ℝ ι) i| < 1} := by
-    simp only [Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun i ↦ isOpen_lt
-      (continuous_abs.comp ((PiLp.continuous_apply 2 _ i).comp continuous_subtype_val))
-      continuous_const
-  have h0 : (0 : W) ∈ interior (K : Set W) :=
-    mem_interior_iff_mem_nhds.2 <| Filter.mem_of_superset (hopen.mem_nhds (by simp))
-      fun _ hx ↦ hK fun i ↦ (hx i).le
-  exact prod_successiveMin_le_covolume_of_two_pow_finrank_le L volume h0 hKs
+  exact prod_successiveMin_le_covolume_of_two_pow_finrank_le L volume hKs
     ((W.two_pow_finrank_le_volume_setOf_forall_abs_le_one).trans (measure_mono hK))
 
 /-- **Independent lattice vectors of small sup norm** (Bombieri–Vaaler). A full lattice `L` in a

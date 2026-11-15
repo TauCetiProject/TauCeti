@@ -8,8 +8,10 @@ module
 public import TauCeti.Algebra.Polynomial.CriticalValues
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Data.Rat.AbcTriple
+import TauCeti.FieldTheory.Minpoly.BelyiReduction
 
 /-!
 # Belyi polynomials and the three-point step of Belyi's theorem
@@ -29,13 +31,21 @@ points into `{0, 1}` without creating critical values outside `{0, 1}`. Inductin
 the set gives polynomial Belyification over `ℚ`: every finite set of rational numbers is carried
 into `{0, 1}` by a nonconstant polynomial with rational coefficients whose critical values, in
 every field of characteristic zero, lie in `{0, 1}`. Being a polynomial, it also fixes `∞`.
-This is the step of Belyi's theorem that follows the reduction of algebraic branch values to
-rational ones.
+
+Preceding it by Belyi's degree reduction (`TauCeti.exists_polynomial_aeval_mem_range`), which
+carries a finite set of algebraic numbers into `ℚ` by a polynomial over `ℚ` with rational
+critical values, gives polynomial Belyification of algebraic numbers: every finite set of
+elements algebraic over `ℚ`, such as a finite subset of `AlgebraicClosure ℚ`, is carried into
+`{0, 1}` by a nonconstant polynomial over `ℚ` with all its critical values in `{0, 1}`. In terms
+of the projective line, every finite `S ⊆ ℙ¹(AlgebraicClosure ℚ)` containing `∞` is sent into
+`{0, 1, ∞}` by a polynomial `q ∈ ℚ[X]`, with `q⁻¹(∞) = {∞}` and every branch value of `q` in
+`{0, 1, ∞}`.
 
 ## Main declarations
 
 * `TauCeti.belyiPolynomial`: the Belyi polynomial `B_{m,n}` over a field; `B_{1,1}` is
-  `4 X (1 - X)` (`TauCeti.belyiPolynomial_one_one`).
+  `4 X (1 - X)` (`TauCeti.belyiPolynomial_one_one`), and in characteristic zero `B_{m,0}` is
+  `X ^ m` (`TauCeti.belyiPolynomial_zero_right`).
 * `TauCeti.X_mul_one_sub_X_mul_derivative_belyiPolynomial`: the derivative of `B_{m,n}`,
   multiplied by `X (1 - X)`.
 * `TauCeti.rootSet_derivative_belyiPolynomial_subset`: the critical points of `B_{m,n}` lie in
@@ -44,13 +54,15 @@ rational ones.
   `{0, 1}`.
 * `TauCeti.exists_polynomial_eval_mem_criticalValues_subset`: polynomial Belyification of a
   finite set of rational numbers.
+* `TauCeti.exists_polynomial_aeval_mem_criticalValues_subset`: polynomial Belyification of a
+  finite set of algebraic numbers.
 
 ## References
 
 * G. V. Belyi, *On Galois extensions of a maximal cyclotomic field*, Izv. Akad. Nauk SSSR
   Ser. Mat. 43 (1979), 267–276.
 * Bernhard Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004),
-  253–265, Lemma 3.6.
+  253–265, Lemmas 3.5 and 3.6.
 * Ernesto Girondo and Gabino González-Diez, *Introduction to Compact Riemann Surfaces and
   Dessins d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University
   Press, 2012, §3.1.
@@ -86,6 +98,10 @@ theorem map_belyiPolynomial {L : Type*} [Field L] (f : K →+* L) (m n : ℕ) :
 theorem belyiPolynomial_one_one : belyiPolynomial K 1 1 = C 4 * X * (1 - X) := by
   norm_num [belyiPolynomial]
 
+/-- In characteristic zero, the Belyi polynomial `B_{m,0}` is the power map `X ^ m`. -/
+theorem belyiPolynomial_zero_right [CharZero K] (m : ℕ) : belyiPolynomial K m 0 = X ^ m := by
+  rcases eq_or_ne m 0 with rfl | hm <;> simp [belyiPolynomial, *]
+
 /-- The value of the Belyi polynomial at a point `x`. -/
 theorem eval_belyiPolynomial (m n : ℕ) (x : K) :
     (belyiPolynomial K m n).eval x =
@@ -115,6 +131,35 @@ theorem X_mul_one_sub_X_mul_derivative_belyiPolynomial (m n : ℕ) :
   rcases m with _ | m <;> rcases n with _ | n <;>
     simp only [derivative_mul, derivative_pow, derivative_C, derivative_sub, derivative_one,
       derivative_X, Nat.add_sub_cancel, map_add, map_natCast] <;> ring
+
+/-- The critical points of the Belyi polynomial lie in `{0, 1, m / (m + n)}`. The containment is
+strict when `m = 1` or `n = 1`. -/
+theorem rootSet_derivative_belyiPolynomial_subset (L : Type*) [Field L] [Algebra K L]
+    (m n : ℕ) :
+    (derivative (belyiPolynomial K m n)).rootSet L ⊆ {0, 1, (m : L) / (m + n)} := by
+  intro x hx
+  rw [← rootSet_map L (T := L), ← derivative_map, map_belyiPolynomial, mem_rootSet] at hx
+  obtain ⟨hne, hx⟩ := hx
+  rw [coe_aeval_eq_eval] at hx
+  -- Evaluate `X (1 - X) B′ = B (m - (m + n) X)` at the critical point `x`.
+  have key := congr_arg (eval x) (X_mul_one_sub_X_mul_derivative_belyiPolynomial (K := L) m n)
+  simp only [eval_mul, eval_sub, eval_X, eval_one, eval_C, hx, mul_zero] at key
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  by_contra! h
+  obtain ⟨h0, h1, hr⟩ := h
+  -- The normalizing constant is nonzero, as otherwise the Belyi polynomial and its derivative
+  -- vanish.
+  have hc : ((m : L) + n) ^ (m + n) / ((m : L) ^ m * (n : L) ^ n) ≠ 0 := fun hc ↦
+    hne (by simp [belyiPolynomial, hc])
+  rcases mul_eq_zero.mp key.symm with h | h
+  · rw [eval_belyiPolynomial] at h
+    exact mul_ne_zero (mul_ne_zero hc (pow_ne_zero _ h0))
+      (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm h1))) h
+  rcases eq_or_ne (m + n) 0 with hmn | hmn
+  · obtain ⟨rfl, rfl⟩ : m = 0 ∧ n = 0 := Nat.add_eq_zero_iff.mp hmn
+    simp [belyiPolynomial] at hne
+  have hmn' : (m : L) + n ≠ 0 := fun h0 ↦ hc (by rw [h0, zero_pow hmn, zero_div])
+  exact hr (by field_simp; linear_combination -h)
 
 variable [CharZero K]
 
@@ -150,31 +195,6 @@ theorem natDegree_belyiPolynomial (m n : ℕ) : (belyiPolynomial K m n).natDegre
     rw [← neg_sub, natDegree_neg, ← C_1, natDegree_X_sub_C]
   rw [belyiPolynomial, mul_assoc, natDegree_C_mul hc, natDegree_mul (pow_ne_zero _ X_ne_zero)
     (pow_ne_zero _ (fun h ↦ by simp [h] at h1)), natDegree_X_pow, natDegree_pow, h1, mul_one]
-
-/-- The critical points of the Belyi polynomial lie in `{0, 1, m / (m + n)}`. The containment is
-strict when `m = 1` or `n = 1`. -/
-theorem rootSet_derivative_belyiPolynomial_subset (L : Type*) [Field L] [Algebra K L]
-    (m n : ℕ) :
-    (derivative (belyiPolynomial K m n)).rootSet L ⊆ {0, 1, (m : L) / (m + n)} := by
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
-  intro x hx
-  rw [← rootSet_map L (T := L), ← derivative_map, map_belyiPolynomial, mem_rootSet] at hx
-  obtain ⟨hne, hx⟩ := hx
-  rw [coe_aeval_eq_eval] at hx
-  -- Evaluate `X (1 - X) B′ = B (m - (m + n) X)` at the critical point `x`.
-  have key := congr_arg (eval x) (X_mul_one_sub_X_mul_derivative_belyiPolynomial (K := L) m n)
-  simp only [eval_mul, eval_sub, eval_X, eval_one, eval_C, hx, mul_zero] at key
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  by_contra! h
-  obtain ⟨h0, h1, hr⟩ := h
-  rcases mul_eq_zero.mp key.symm with h | h
-  · rw [eval_belyiPolynomial] at h
-    exact mul_ne_zero (mul_ne_zero (belyiConstant_ne_zero m n) (pow_ne_zero _ h0))
-      (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm h1))) h
-  rcases eq_or_ne ((m : L) + n) 0 with hmn | hmn
-  · obtain ⟨rfl, rfl⟩ : m = 0 ∧ n = 0 := Nat.add_eq_zero_iff.mp (by exact_mod_cast hmn)
-    simp [belyiPolynomial] at hne
-  exact hr (by field_simp; linear_combination -h)
 
 /-- The critical values of the Belyi polynomial lie in `{0, 1}`. -/
 theorem criticalValues_belyiPolynomial_subset (L : Type*) [Field L] [Algebra K L] (m n : ℕ) :
@@ -295,6 +315,46 @@ theorem exists_polynomial_eval_mem_criticalValues_subset (S : Finset ℚ) :
     exact Nat.mul_pos hq hf
   · rw [eval_comp]
     exact hqT _ (Finset.mem_image_of_mem _ hs)
+
+/-- **Polynomial Belyification of algebraic numbers.** Every finite set `S` of elements algebraic
+over `ℚ` in a field `K`, such as a finite subset of `AlgebraicClosure ℚ`, is carried into
+`{0, 1}` by a nonconstant polynomial `q` with rational coefficients whose critical values, in
+every field of characteristic zero, lie in `{0, 1}`. -/
+theorem exists_polynomial_aeval_mem_criticalValues_subset {K : Type*} [Field K] [Algebra ℚ K]
+    {S : Finset K} (hS : ∀ s ∈ S, IsIntegral ℚ s) :
+    ∃ q : ℚ[X], 0 < q.natDegree ∧ (∀ s ∈ S, aeval s q ∈ ({0, 1} : Set K)) ∧
+      ∀ (L : Type u) [Field L] [Algebra ℚ L], q.criticalValues L ⊆ {0, 1} := by
+  -- Belyi's degree reduction carries `S` and the critical values of `p` into `ℚ`.
+  obtain ⟨p, hp', hpS, hpcrit⟩ := exists_polynomial_aeval_mem_range.{u} hS
+  -- The rational values of `p` on `S` and the rational critical values of `p` form a finite
+  -- set `T`, since the latter are among the critical values of `p` in `AlgebraicClosure ℚ`.
+  have hT₁ : (algebraMap ℚ K ⁻¹' ((fun s ↦ aeval s p) '' S)).Finite :=
+    (S.finite_toSet.image _).preimage (algebraMap ℚ K).injective.injOn
+  have hT₂ :
+      (algebraMap ℚ (AlgebraicClosure ℚ) ⁻¹' p.criticalValues (AlgebraicClosure ℚ)).Finite :=
+    (criticalValues_finite p).preimage (algebraMap ℚ _).injective.injOn
+  -- Polynomial Belyification over `ℚ` carries `T` into `{0, 1}`.
+  obtain ⟨q, hq, hqT, hqcrit⟩ :=
+    exists_polynomial_eval_mem_criticalValues_subset.{u} (hT₁.toFinset ∪ hT₂.toFinset)
+  refine ⟨q.comp p, ?_, fun s hs ↦ ?_, fun L _ _ ↦ ?_⟩
+  · rw [natDegree_comp]
+    exact Nat.mul_pos hq (Nat.pos_of_ne_zero (derivative_ne_zero.mp hp'))
+  · obtain ⟨c, hc⟩ := hpS s hs
+    rw [aeval_comp, ← hc, aeval_algebraMap_apply_eq_algebraMap_eval]
+    obtain h | h : q.eval c = 0 ∨ q.eval c = 1 :=
+      hqT c (Finset.mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨s, hs, hc.symm⟩))
+    all_goals simp [h]
+  refine (criticalValues_comp_subset q p).trans (Set.union_subset ?_ (hqcrit L))
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨x, hx, rfl⟩ := mem_criticalValues.mp hy
+  obtain ⟨c, hc⟩ := hpcrit L x (aeval_eq_zero_of_mem_rootSet hx)
+  -- A critical value `c ∈ ℚ` of `p` in `L` is one in `AlgebraicClosure ℚ`, so lies in `T`.
+  have hcT : c ∈ hT₁.toFinset ∪ hT₂.toFinset := Finset.mem_union_right _
+    ((Set.Finite.mem_toFinset _).2 (algebraMap_mem_criticalValues_of_isAlgClosed
+      (hc ▸ aeval_mem_criticalValues hx)))
+  simp only [← hc, aeval_algebraMap_apply_eq_algebraMap_eval]
+  obtain h | h : q.eval c = 0 ∨ q.eval c = 1 := hqT c hcT
+  all_goals simp [h]
 
 end Rat
 

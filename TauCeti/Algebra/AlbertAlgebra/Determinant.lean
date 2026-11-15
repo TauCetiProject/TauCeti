@@ -61,7 +61,13 @@ to be invertible as well.
   homogeneous of degree three and the spur homogeneous of degree two.
 * `TauCeti.AlbertAlgebra.two_mul_spur` and `TauCeti.AlbertAlgebra.spur_eq_invOf_two_mul`: the
   spur is `(T(A)² - T(A ∘ A)) / 2`.
+* `TauCeti.AlbertAlgebra.spur_add` and `TauCeti.AlbertAlgebra.spur_sub`: the polarization of the
+  spur, `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`.
+* `TauCeti.AlbertAlgebra.det_add_sub_det_sub`: the gradient of the determinant, in polarized
+  form.
 * `TauCeti.AlbertAlgebra.mul_mul_self`: **the cubic equation** satisfied by every element.
+* `TauCeti.AlbertAlgebra.mul_mul_self_add_two_smul_mul_mul`: the linearized cubic equation, the
+  polarization of the cubic equation.
 * `TauCeti.AlbertAlgebra.six_mul_det` and
   `TauCeti.AlbertAlgebra.det_eq_invOf_two_mul_invOf_three_mul`: **Newton's formula** for the
   determinant in terms of the traces of the powers.
@@ -198,6 +204,44 @@ theorem spur_eq_invOf_two_mul (A : AlbertAlgebra R) :
     spur A = ⅟2 * (trace A ^ 2 - trace (A * A)) := by
   rw [← two_mul_spur, invOf_mul_cancel_left]
 
+/-- **The polarization of the spur**: `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`. -/
+theorem spur_add (A B : AlbertAlgebra R) :
+    spur (A + B) = spur A + spur B + (trace A * trace B - trace (A * B)) := by
+  apply (isUnit_of_invertible (2 : R)).mul_left_cancel
+  have h := two_mul_spur (A + B)
+  simp only [add_mul, mul_add, map_add, mul_comm B A] at h
+  linear_combination h - two_mul_spur A - two_mul_spur B
+
+/-- The polarization of the spur at a difference:
+`S(A - B) = S(A) + S(B) - (T(A) T(B) - T(A ∘ B))`. -/
+theorem spur_sub (A B : AlbertAlgebra R) :
+    spur (A - B) = spur A + spur B - (trace A * trace B - trace (A * B)) := by
+  rw [sub_eq_add_neg, spur_add, spur_neg, map_neg, mul_neg, mul_neg, map_neg]
+  ring
+
+/-- **The gradient of the determinant**, in polarized form: the part of `det (A + B)` linear in
+`B` is `T(A^# ∘ B) = T(A² ∘ B) - T(A) T(A ∘ B) + S(A) T(B)`. -/
+theorem det_add_sub_det_sub (A B : AlbertAlgebra R) :
+    det (A + B) - det (A - B) - 2 * det B =
+      2 * (trace (A * A * B) - trace A * trace (A * B) + spur A * trace B) := by
+  have hadd (x y : Octonion R) : Octonion.norm (x + y) = Octonion.norm x + Octonion.norm y
+      + QuadraticMap.polar (Octonion.normQuadraticForm R) x y := by
+    simpa only [Octonion.normQuadraticForm_apply] using
+      QuadraticMap.map_add (Octonion.normQuadraticForm R) x y
+  have hsub (x y : Octonion R) : Octonion.norm (x - y) = Octonion.norm x + Octonion.norm y
+      - QuadraticMap.polar (Octonion.normQuadraticForm R) x y := by
+    rw [sub_eq_add_neg, hadd, Octonion.norm_neg, QuadraticMap.polar_neg_right, sub_eq_add_neg]
+  -- In coordinates, after rotating every octonion triple product to begin with an entry in
+  -- slot `0`, both sides are the same polynomial.
+  rw [trace_mul, trace_mul]
+  simp only [det_def, spur_def, trace_apply, mul_self_diag, mul_self_offDiag, add_diag, sub_diag,
+    add_offDiag, sub_offDiag, Pi.add_apply, Pi.sub_apply, hadd, hsub, Fin.sum_univ_three,
+    Fin.reduceAdd, QuadraticMap.polar_add_left, QuadraticMap.polar_smul_left, smul_eq_mul,
+    Octonion.polar_normQuadraticForm_conj_left, add_mul, mul_add, sub_mul, mul_sub, map_add,
+    map_sub, ← Octonion.trace_mul_assoc, Octonion.trace_mul_cycle _ _ (A.offDiag 0),
+    fun x y => (Octonion.trace_mul_cycle (A.offDiag 0) y x).symm]
+  ring
+
 /-- **The cubic equation of the split Albert algebra.** Every Hermitian octonion matrix is a root
 of its generic minimal polynomial `t³ - T(A) t² + S(A) t - det A`, with powers taken in the Jordan
 product: `A ∘ (A ∘ A) = T(A) • (A ∘ A) - S(A) • A + det A • 1`. -/
@@ -241,6 +285,25 @@ theorem mul_mul_self (A : AlbertAlgebra R) :
         + Octonion.norm (A.offDiag (i + 2))) • h2 • A.offDiag i
       + (A.diag i + A.diag (i + 1) + A.diag (i + 2)) • h2 •
         Octonion.conj (A.offDiag (i + 1) * A.offDiag (i + 2))
+
+/-- **The linearized cubic equation** of the split Albert algebra: the part linear in `B` of the
+cubic equation `TauCeti.AlbertAlgebra.mul_mul_self` at `A + B`,
+`B ∘ A² + 2 A ∘ (A ∘ B) = T(B) A² + 2 T(A) A ∘ B - (T(A) T(B) - T(A ∘ B)) A - S(A) B
+  + T(A^# ∘ B) 1`, with `T(A^# ∘ B) = T(A² ∘ B) - T(A) T(A ∘ B) + S(A) T(B)`. -/
+theorem mul_mul_self_add_two_smul_mul_mul (A B : AlbertAlgebra R) :
+    B * (A * A) + (2 : R) • (A * (A * B)) =
+      trace B • (A * A) + (2 * trace A) • (A * B) - (trace A * trace B - trace (A * B)) • A
+        - spur A • B + (trace (A * A * B) - trace A * trace (A * B) + spur A * trace B) • 1 := by
+  -- The cubic equation at `A + B`, minus the one at `A - B`, minus twice the one at `B`, is twice
+  -- the claimed identity.
+  have h₁ := mul_mul_self (A + B)
+  have h₂ := mul_mul_self (A - B)
+  rw [spur_add] at h₁
+  rw [spur_sub] at h₂
+  simp only [add_mul, mul_add, sub_mul, mul_sub, mul_comm B A, map_add, map_sub] at h₁ h₂
+  apply (isUnit_of_invertible (2 : R)).smul_left_cancel.mp
+  linear_combination (norm := module)
+    h₁ - h₂ - (2 : R) • mul_mul_self B + det_add_sub_det_sub A B • (1 : AlbertAlgebra R)
 
 /-- **Newton's formula for the determinant**, without division:
 `6 det A = T(A)³ - 3 T(A) T(A ∘ A) + 2 T(A ∘ (A ∘ A))`. -/

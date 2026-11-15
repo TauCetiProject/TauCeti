@@ -292,7 +292,7 @@ private theorem setIntegral_inter_univ_pi_spanningSets_eq_zero {h : Lp 𝕜 2 (M
       (fun i => (ht i (Set.mem_univ i)).inter (measurableSet_spanningSets (μ i) n))
       (fun i => (lt_of_le_of_lt (measure_mono Set.inter_subset_right)
         (measure_spanningSets_lt_top (μ i) n)).ne)
-  have hdyn := setIntegral_eq_zero_of_isPiSystem generateFrom_pi.symm isPiSystem_pi
+  have hdyn := setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_pi.symm isPiSystem_pi
     (integrableOn_Lp_of_measure_ne_top h one_le_two hboxfin.ne) huniv hS u hu
   rwa [Measure.restrict_restrict hu] at hdyn
 

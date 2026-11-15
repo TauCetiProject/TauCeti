@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Bas
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 -- Identify the open-subset tangent map with the cast used by the metric API.
-import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import all TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 -- The coordinate derivative uses the inherited model-space atlas of SL2Tilde.
 import all TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Basic
 -- Identify the inclusion with the open-subset inclusion in its differential.

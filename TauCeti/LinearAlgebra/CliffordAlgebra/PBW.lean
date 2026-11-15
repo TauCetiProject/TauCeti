@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.CliffordAlgebra.FiltrationGradedEquiv
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
@@ -61,58 +62,20 @@ theorem prod_map_ι_ofFn_ne_zero {K : Type u} [Field K] [Module K M]
   induction n with
   | zero => simpa using hone
   | succ k ih =>
-      let w : Fin k → M := fun i => v i.succ
-      have hw : LinearIndependent K w := hv.comp Fin.succ (Fin.succ_injective k)
-      have hv0 : v 0 ∉ Submodule.span K (Set.range w) := by
-        have h := hv.notMem_span_image (s := Set.range (Fin.succ : Fin k → Fin (k + 1)))
-          (x := 0) (by simp)
-        have hrange : v '' Set.range (Fin.succ : Fin k → Fin (k + 1)) = Set.range w := by
-          ext x
-          constructor
-          · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-            exact ⟨i, rfl⟩
-          · rintro ⟨i, rfl⟩
-            exact ⟨i.succ, ⟨i, rfl⟩, rfl⟩
-        rw [hrange] at h
-        exact h
-      obtain ⟨d, hd, hd_zero⟩ :=
-        LinearMap.exists_extend_of_notMem
-          (0 : Submodule.span K (Set.range w) →ₗ[K] K) hv0 1
-      have hd_succ (i : Fin k) : d (w i) = 0 := by
-        have h := LinearMap.congr_fun hd
-          (⟨w i, Submodule.subset_span (Set.mem_range_self i)⟩ :
-            Submodule.span K (Set.range w))
-        rw [LinearMap.comp_apply, LinearMap.zero_apply] at h
-        -- Remove the span-subtype coercion from the extension equation.
-        change d (w i) = 0 at h
-        exact h
-      have hcontract (l : List M) (hl : ∀ x ∈ l, d x = 0) :
-          contractLeft d (l.map (ι Q)).prod = 0 := by
-        induction l with
-        | nil => simp
-        | cons x l ih =>
-            rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, hl x List.mem_cons_self,
-              zero_smul, zero_sub]
-            simp only [ih (fun y hy => hl y (List.mem_cons_of_mem x hy)), mul_zero, neg_zero]
+      obtain ⟨d, hd⟩ := hv.exists_dual_forall_apply_eq_ite (K := K)
       intro hzero
       rw [List.ofFn_succ, List.prod_cons] at hzero
       simp only [Function.comp_apply] at hzero
-      have hzero' := congrArg (contractLeft d) hzero
-      rw [map_zero, contractLeft_ι_mul, hd_zero, one_smul] at hzero'
-      have htail : contractLeft d (List.ofFn ((ι Q) ∘ w)).prod = 0 := by
-        rw [← List.map_ofFn]
-        apply hcontract
-        intro x hx
-        rw [List.mem_ofFn] at hx
-        obtain ⟨i, rfl⟩ := hx
-        exact hd_succ i
-      -- Normalize the local tail abbreviation to the `List.ofFn` shape produced above.
-      change contractLeft d (List.ofFn fun i => ι Q (v i.succ)).prod = 0 at htail
-      rw [htail, mul_zero, sub_zero] at hzero'
-      apply ih w hw
-      -- Normalize the induction hypothesis's composed family to the same tail expression.
-      change (List.ofFn fun i => ι Q (v i.succ)).prod = 0
-      exact hzero'
+      have hzero' := congrArg (contractLeft (d 0)) hzero
+      have htail : contractLeft (d 0) (List.ofFn fun i : Fin k => ι Q (v i.succ)).prod = 0 := by
+        have := contractLeft_prod_map_ι_eq_zero (Q := Q) (d 0)
+          (l := List.ofFn fun i : Fin k => v i.succ) fun x hx => by
+          obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hx
+          simp [hd, (Fin.succ_ne_zero i).symm]
+        rwa [List.map_ofFn] at this
+      simp only [map_zero, contractLeft_ι_mul, hd, ↓reduceIte, one_smul, htail, mul_zero,
+        sub_zero] at hzero'
+      exact ih (fun i => v i.succ) (hv.comp Fin.succ (Fin.succ_injective k)) hzero'
 
 private noncomputable def scalarEquivFiltrationZero :
     R ≃ₗ[R] filtration Q 0 :=

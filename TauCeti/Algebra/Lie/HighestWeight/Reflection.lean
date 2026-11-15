@@ -14,8 +14,8 @@ import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 /-!
 # The weights of an irreducible highest weight module are stable under the Weyl group
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
 its root system, and let `M` be an irreducible `L`-module carrying a highest weight vector of
 dominant integral weight `lam`. This file records that the weights of `M` are stable under the
 reflection in each simple root, hence under the whole Weyl group, and that they are integral on the
@@ -56,9 +56,9 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {b : (IsKilling.rootSystem H).Base} {lam : Dual K H} {v : M}
 

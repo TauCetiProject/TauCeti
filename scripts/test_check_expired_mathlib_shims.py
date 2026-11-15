@@ -49,9 +49,9 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         self.assertFalse(group.speculative or group.landing_sentinel)
         self.assertLessEqual({
             "DoubleCoset.doubleCoset_eq_iUnion_leftCosets",
-            "DoubleCoset.conjAct_smul_mul_right_of_mem_normalizer",
-            "DoubleCoset.subgroupOf_conjAct_smul_mul_right_of_mem_normalizer",
-            "DoubleCoset.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer",
+            "DoubleCoset.mul_mem_doubleCoset_iff",
+            "DoubleCoset.inv_mul_mem_doubleCoset_iff_of_mem",
+            "DoubleCoset.mem_doubleCoset_of_quotient_eq",
         }, check.source_declarations(root / source))
 
     def test_new_self_declaration_requires_registry_entry(self):

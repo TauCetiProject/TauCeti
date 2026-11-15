@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.CartanMap
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Idempotents
--- Idempotent.Projective imports this privately; the brick criterion is needed below.
+-- Idempotent.Projective.Basic imports this privately; the brick criterion is needed below.
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
@@ -44,11 +44,15 @@ open CategoryTheory LaurentPolynomial
 open scoped Pointwise
 
 universe u w
-variable (k : Type w) [Field k] {V : Type u} [Finite V] (G : SimpleGraph V)
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
 
 local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
 local notation "A" => zigzagAlgebraIntegerGrade k G
 local notation "P" => zigzagAlgebraGradedProjective k G
+
+section Finite
+
+variable [Finite V]
 
 open scoped Classical in
 /-- Degree-preserving maps between vertex projectives are scalar endomorphisms at the same
@@ -104,7 +108,6 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_zigzagAlgebraGradedProj
   let _ := Fintype.ofFinite V
   exact isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
     (completeOrthogonalIdempotents_zigzagAlgebraBasis_inl k G)
-    (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G)
     (isHomogeneous_span_zigzagAlgebraBasis_inl k G)
     (indecomposable_zigzagAlgebraGradedProjective k G)
 
@@ -273,6 +276,8 @@ theorem zigzagAlgebraGradedSimpleClassBasis_repr_gradedCartanMap (i j : V) :
       if i = j then 1 + T 2 else if G.Adj i j then T 1 else 0 := by
   rw [zigzagAlgebraGradedSimpleClassBasis_repr_apply,
     gradedIdempotentCoordinate_gradedCartanMap_zigzagAlgebraGradedProjectiveClass]
+
+end Finite
 
 /-- The categorical graded Cartan map of the public algebra has matrix `(1 + q²) I + q A_G`
 in the vertex-projective and vertex-head class bases, including isolated vertices. -/

@@ -227,10 +227,8 @@ private theorem rightLeftSelfRecut_terminal_overlap
     E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn
   rw [← E.rightLeftSelfRecut_toRectangleDecomposition hcommon hone hfirst hsecond hturn]
     at hfirstRight hsecondRight
-  have hback := (E.isRecut_rightLeftSelfRecut hcommon hone hfirst hsecond hturn).symm
-    hone hfirst hsecond
+  have hback := (E.isRecut_rightLeftSelfRecut hcommon hone hfirst hsecond hturn).symm hfirst hsecond
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   refine ⟨by simpa only [toRectangleDecomposition_second_right, ← D.pentagon.right_eq] using
     hsecondRight, ?_⟩
   rcases hback.orientation with h | h | h | h
@@ -273,7 +271,7 @@ theorem mem_pentagonTerminalSelfPairs_of_right_eq_left
     (by simpa using hcommon.symm) (by simpa using hother.symm)
   set D := E.rightLeftSelfRecut hcommon hone hfirst hsecond hturn
   have hrecut := E.isRecut_rightLeftSelfRecut hcommon hone hfirst hsecond hturn
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hDpentagon := D.isEmpty_pentagon_of_isRecut hrecut
   have hDrectangle := D.isEmpty_rectangle_of_isRecut hrecut
   obtain ⟨hDcommon, hDcol⟩ :=
@@ -316,7 +314,7 @@ theorem mem_pentagonTerminalSelfPairs_iff_sides
       D.recutTerminal_geometry hcommon hcol hpentagon hrectangle
     rw [hself] at hmiddle hPleft hPbottom hrleft hrright
     have hne := Grid.ne_left_of_mem_cIoo hcol
-    have hne' := Grid.ne_right_of_mem_cIoo hcol
+    have _ := Grid.ne_right_of_mem_cIoo hcol
     -- The rectangle of `E` starts in the row of the pentagon of `D` on its initial side.
     have hrbottom : E.rectangle.bottom = D.pentagon.bottom := by
       rw [GridRectangleBetween.bottom_def, hrleft, hmiddle, GridState.swapColumns_apply,

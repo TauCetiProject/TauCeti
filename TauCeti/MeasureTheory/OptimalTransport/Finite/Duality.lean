@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.Convex.StdSimplex
 public import Mathlib.Probability.ProbabilityMassFunction.Integrals
+public import Mathlib.Topology.Sion
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
-public import TauCeti.Topology.Sion
+import TauCeti.Analysis.Convex.AffineOn
 
 /-!
 # Kantorovich duality on finite spaces
@@ -74,8 +75,6 @@ codomain: the inner supremum is `⊤` at a plan whose marginals are wrong.
   §1.1.2, for the finite duality and complementary slackness.
 * M. Sion, *On general minimax theorems*, Pacific J. Math. 8 (1958), 171--176.
 * `Mathlib.Topology.Sion`, formalized by Antoine Chambert-Loir and Anatole Dedecker.
-
-This is Layer 2, item 3 of the optimal-transport roadmap.
 -/
 
 public section
@@ -344,21 +343,15 @@ private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
   -- Package feasibility and the two uniform bounds, then compare the dual values.
   refine ⟨φ₂, ψ₃, fun i j ↦ by linarith [hψ₃le i j], fun i ↦ ?_, fun j ↦ ?_, ?_⟩
   · exact abs_le.2 ⟨hφ₂lb i, hφ₂ub i⟩
-  · refine abs_le.2 ⟨?_, ?_⟩
-    · obtain ⟨i₁, hi₁⟩ := exists_eq_ciInf_of_finite (f := fun i ↦ c (i, j) - φ₂ i)
-      have := hlb (i₁, j)
-      have := hφ₂ub i₁
-      rw [hψ₃ j, ← hi₁]; linarith
-    · have := hψ₃le i₀ j
-      rw [hφ₂i₀, sub_zero] at this
-      linarith [hub (i₀, j), this]
-  · refine (finiteDualValue_mono hmonoφ hmonoψ).trans ?_
-    have hshift : finiteDualValue μ ν φ₂ ψ₂ = finiteDualValue μ ν φ₁ ψ₁ := by
-      have : (fun i ↦ φ₁ i + -φ₁ i₀) = φ₂ := funext fun i ↦ (hφ₂ i).symm
-      have h' : (fun j ↦ ψ₁ j - -φ₁ i₀) = ψ₂ := funext fun j ↦ (hψ₂ j).symm
-      rw [← this, ← h', finiteDualValue_add_const_sub_const]
-    rw [← hshift]
-    exact finiteDualValue_mono (fun i ↦ le_rfl) hmonoψ₃
+  · rw [hψ₃ j]
+    refine abs_le.2 ⟨le_ciInf fun i ↦ by linarith [hlb (i, j), hφ₂ub i],
+      (ciInf_le (Finite.bddBelow_range _) i₀).trans ?_⟩
+    rw [hφ₂i₀, sub_zero]
+    linarith [hub (i₀, j), hM0]
+  · refine (finiteDualValue_mono (φ' := fun i ↦ φ₂ i + φ₁ i₀) (ψ' := fun j ↦ ψ₃ j - φ₁ i₀)
+      (fun i ↦ ?_) (fun j ↦ ?_)).trans_eq (finiteDualValue_add_const_sub_const μ ν φ₂ ψ₃ (φ₁ i₀))
+    · linarith [hmonoφ i, hφ₂ i]
+    · linarith [hmonoψ j, hψ₂ j, hmonoψ₃ j]
 
 /-- **Dual attainment**: on finite spaces the dual problem has a maximiser. -/
 theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ) :
@@ -436,8 +429,8 @@ private theorem lagrangian_eq (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ)
 private theorem lagrangian_affine_left (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ)
     (f f' : ι × κ → ℝ) (p : (ι → ℝ) × (κ → ℝ)) (a b : ℝ) (hab : a + b = 1) :
     lagrangian c μ ν (a • f + b • f') p
-      = a * lagrangian c μ ν f p + b * lagrangian c μ ν f' p := by
-  simp only [lagrangian]
+      = a • lagrangian c μ ν f p + b • lagrangian c μ ν f' p := by
+  simp only [lagrangian, smul_eq_mul]
   have hterm : ∀ q,
       (c q - p.1 q.1 - p.2 q.2) * ((a • f + b • f') q)
         = a * ((c q - p.1 q.1 - p.2 q.2) * f q)
@@ -453,7 +446,7 @@ private theorem lagrangian_affine_left (c : ι × κ → ℝ) (μ : PMF ι) (ν 
 private theorem lagrangian_affine_right (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ) (f : ι × κ → ℝ)
     (p p' : (ι → ℝ) × (κ → ℝ)) (a b : ℝ) (hab : a + b = 1) :
     lagrangian c μ ν f (a • p + b • p')
-      = a * lagrangian c μ ν f p + b * lagrangian c μ ν f p' := by
+      = a • lagrangian c μ ν f p + b • lagrangian c μ ν f p' := by
   rw [lagrangian_eq, lagrangian_eq, lagrangian_eq]
   simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, Pi.add_apply,
     Pi.smul_apply, smul_eq_mul]
@@ -580,16 +573,16 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
       (hfx := fun f _ ↦ ?_) (hfx' := fun f _ ↦ ?_)
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_left c μ ν p)).lowerSemicontinuous.lowerSemicontinuousOn _
-    · exact ConvexOn.quasiconvexOn_ereal_coe
-        (Convex.convexOn_and_concaveOn_of_affine
-          (g := fun f ↦ lagrangian c μ ν f p) convex_stdSimplexSet
-          (fun x _ y _ a b _ _ hab ↦ lagrangian_affine_left c μ ν x y p a b hab)).1
+    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun f ↦ lagrangian c μ ν f p)
+        convex_stdSimplexSet).2 fun x _ y _ a b _ _ hab ↦
+          lagrangian_affine_left c μ ν x y p a b hab).1.quasiconvexOn.monotone_comp
+        (g := Real.toEReal) EReal.coe_strictMono.monotone
     · exact (continuous_coe_real_ereal.comp
         (continuous_lagrangian_right c μ ν f)).upperSemicontinuous.upperSemicontinuousOn _
-    · exact ConcaveOn.quasiconcaveOn_ereal_coe
-        (Convex.convexOn_and_concaveOn_of_affine
-          (g := fun p ↦ lagrangian c μ ν f p) convex_univ
-          (fun x _ y _ a b _ _ hab ↦ lagrangian_affine_right c μ ν f x y a b hab)).2
+    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun p ↦ lagrangian c μ ν f p)
+        convex_univ).2 fun x _ y _ a b _ _ hab ↦
+          lagrangian_affine_right c μ ν f x y a b hab).2.quasiconcaveOn.monotone_comp
+        (g := Real.toEReal) EReal.coe_strictMono.monotone
   simp only [iSup_univ] at key
   have h1 : ((A.cost c : ℝ) : EReal) ≤ ⨅ f ∈ stdSimplexSet,
       ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal) := by

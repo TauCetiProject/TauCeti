@@ -182,7 +182,6 @@ section FiniteDimensional
 
 variable {k A A' : Type*} [Field k] [CommRing A] [Bialgebra k A]
   [CommRing A'] [Bialgebra k A']
-  [Module.Finite k (Derivation k A (Bialgebra.CounitAlgebra k A k))]
   [Module.Finite k (Derivation k A' (Bialgebra.CounitAlgebra k A' k))]
 
 /-- A surjective bialgebra morphism between equal-dimensional tangent Lie algebras induces a
@@ -194,6 +193,9 @@ theorem derivationCompLieHom_bijective_of_surjective_of_finrank_eq
         Module.finrank k (Derivation k A' (Bialgebra.CounitAlgebra k A' k))) :
     Function.Bijective (derivationCompLieHom (B := k) φ) := by
   have hinjective := derivationCompLieHom_injective_of_surjective (B := k) φ hφ
+  -- The source embeds into the finite-dimensional target, so it is finite-dimensional too.
+  have : Module.Finite k (Derivation k A (Bialgebra.CounitAlgebra k A k)) :=
+    Module.Finite.of_injective (derivationCompLieHom (B := k) φ).toLinearMap hinjective
   refine ⟨hinjective, ?_⟩
   simpa only [LieHom.coe_toLinearMap] using
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank

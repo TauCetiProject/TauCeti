@@ -15,7 +15,7 @@ Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `
 `c` be measurable and bounded on `Ω`, with `‖b‖ ≤ β` and `c ≥ 0`, and let `u ∈ H¹(Ω)` be a weak
 subsolution of the full divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` in `Ω`,
 
 meaning `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the energy form with
 drift `b` and mass coefficient `c`. This file proves De Giorgi's local boundedness theorem for
@@ -46,7 +46,7 @@ serves to make the energy form integrable. The condition `k ≥ 0` is what makes
 * `TauCeti.PDE.UniformlyEllipticOn.caccioppoliAbove_lowerOrder`: under `c ≥ 0`, weak
   subsolutions belong to De Giorgi's class above every level `k ≥ 0`.
 * `TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: local
-  boundedness of weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
+  boundedness of weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
 * `TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: the
   two-sided bound `|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions.
 
@@ -71,7 +71,7 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- Under `c ≥ 0`, weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` belong to De Giorgi's
+/-- Under `c ≥ 0`, weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` belong to De Giorgi's
 class above every level `k ≥ 0`, with `A = 2 (2Λ/λ)²` and `B = (2β/λ)²`. -/
 theorem UniformlyEllipticOn.caccioppoliAbove_lowerOrder
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -98,7 +98,7 @@ dimension `n ≥ 1` there is `D > 0`, depending on `λ`, `Λ`, the dimension and
 the additive Haar measure `mu`, such that the following holds. Let `a` be measurable and
 uniformly elliptic on `Ω` with constants `λ, Λ`, and let `b` and `c` be measurable with
 `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on `Ω`. Let `u ∈ H¹(Ω)` be a weak subsolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`,
 where `a(·, ·)` is the energy form with drift `b` and mass coefficient `c`. Then for every level
 `k ≥ 0` and every ball `B(x₀, R) ⊆ Ω`,
 
@@ -122,7 +122,7 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) →
-      0 ≤ k → 0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      0 ≤ k → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
         W1p.value u x ≤ k + D * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι *
           R ^ (-(Fintype.card ι : ℝ) / 2) *
@@ -130,7 +130,9 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
   obtain ⟨D, hD, hmain⟩ :=
     exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_caccioppoli (mu := mu)
   refine ⟨D * (4 * (1 + 2 * (2 * Lam / lam) ^ 2)) ^ Fintype.card ι, by positivity, ?_⟩
-  intro Omega a b c beta gamma u k x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hk hR hball
+  intro Omega a b c beta gamma u k x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hk hball
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   have hU : (⟨Metric.ball x₀ R, Metric.isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ≤ Omega :=
     hball
   have hmono : mu.restrict (Metric.ball x₀ R) ≤ mu.restrict Omega :=
@@ -162,7 +164,7 @@ theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
 additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `b` and `c` be measurable with `‖b‖ ≤ β`,
 `‖c‖ ≤ γ` and `c ≥ 0` on `Ω`. Let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`. Then for every
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`. Then for every
 ball `B(x₀, R) ⊆ Ω`,
 
 `|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
@@ -183,7 +185,7 @@ theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
       (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
       (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = 0) →
-      0 < R → Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
         |W1p.value u x| ≤ D * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι *
           R ^ (-(Fintype.card ι : ℝ) / 2) *
@@ -192,14 +194,16 @@ theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder 
     exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
       (lam := lam) (Lam := Lam)
   refine ⟨D, hD, ?_⟩
-  intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hR hball
+  intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hc_nonneg hu hball
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (-u) (v : W1p mu Omega 2) = 0 := fun v => by
     rw [energyFormH1_neg_left, hu v, neg_zero]
   exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le (by positivity) hball
     (by simpa only [zero_add, sub_zero] using
-      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu v).le) le_rfl hR hball)
+      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu v).le) le_rfl hball)
     (by simpa only [zero_add, sub_zero] using
-      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu' v).le) le_rfl hR hball)
+      hbound h ha hb hc hb_bound hc_bound hc_nonneg (fun v _ => (hu' v).le) le_rfl hball)
 
 end PDE
 

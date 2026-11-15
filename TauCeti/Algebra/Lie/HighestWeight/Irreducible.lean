@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.HighestWeight.Module
 public import TauCeti.Algebra.Lie.Prod
+-- Non-public: this supplies an input of the proofs, never the vocabulary of a statement.
+import TauCeti.Algebra.Lie.Submodule.Atom
 
 /-!
 # Irreducible highest weight modules are classified by their weight
@@ -59,6 +61,11 @@ their images are nonzero submodules of irreducible modules. So `M ≃ D ≃ N`.
   isomorphism of irreducible highest weight modules is exactly equality of their weights.
 * `TauCeti.IsHighestWeightVector.unique_of_isIrreducible`: an irreducible module carries highest
   weight vectors of at most one weight.
+* `TauCeti.twistedEquivOfIsHighestWeightVector`: **the twisted form of the classification.** For a
+  surjective endomorphism `φ` of `L`, a vector `w` of an irreducible module `N` on which `φ x`
+  acts as `x` acts on a highest weight vector `v : M` gives a linear equivalence `M ≃ N` carrying
+  `v` to `w` and the action of `x` to that of `φ x`; it is unique
+  (`TauCeti.eq_twistedEquivOfIsHighestWeightVector`).
 
 ## References
 
@@ -94,65 +101,66 @@ private theorem mem_diagonalComapInr {n : N} :
     n ∈ diagonalComapInr K L v w ↔ ((0, n) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
   by simp only [diagonalComapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
 
-variable (K L v w) in
-/-- The first projection of the product, restricted to the diagonal submodule. -/
-private def diagonalFst :
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}) →ₗ⁅K,L⁆ M :=
-  (LieModuleHom.fst K L M N).comp (LieSubmodule.lieSpan K L {((v, w) : M × N)}).incl
-
-@[simp]
-private theorem diagonalFst_apply
-    (p : LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    diagonalFst K L v w p = (p : M × N).1 := by
-  simp only [diagonalFst, LieModuleHom.comp_apply, LieSubmodule.incl_apply,
-    LieModuleHom.fst_apply]
-
-variable (K L v w) in
-/-- The second projection of the product, restricted to the diagonal submodule. -/
-private def diagonalSnd :
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}) →ₗ⁅K,L⁆ N :=
-  (LieModuleHom.snd K L M N).comp (LieSubmodule.lieSpan K L {((v, w) : M × N)}).incl
-
-@[simp]
-private theorem diagonalSnd_apply
-    (p : LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    diagonalSnd K L v w p = (p : M × N).2 := by
-  simp only [diagonalSnd, LieModuleHom.comp_apply, LieSubmodule.incl_apply,
-    LieModuleHom.snd_apply]
-
-variable (K L v w) in
-/-- Swapping the factors identifies the two diagonal submodules. -/
-private def diagonalProdComm :
-    LieSubmodule.lieSpan K L {((v, w) : M × N)} →ₗ⁅K,L⁆
-    LieSubmodule.lieSpan K L {((w, v) : N × M)} :=
-  (((LieModuleEquiv.prodComm (R := K) (L := L) : (M × N) ≃ₗ⁅K,L⁆ (N × M)) :
-      M × N →ₗ⁅K,L⁆ N × M).comp
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}).incl).codRestrict _ fun p => by
-      simpa only [LieModuleHom.comp_apply, LieSubmodule.incl_apply,
-        LieModuleEquiv.coe_prodComm_apply] using prodComm_mem_lieSpan_diagonal p.2
-
-@[simp]
-private theorem diagonalProdComm_apply
-    (p : LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    ((diagonalProdComm K L v w p :
-      LieSubmodule.lieSpan K L {((w, v) : N × M)}) : N × M) = (p : M × N).swap := by
-  simp only [diagonalProdComm, LieModuleHom.codRestrict_apply, LieModuleHom.comp_apply,
-    LieSubmodule.incl_apply, LieModuleEquiv.coe_prodComm_apply]
-
-private theorem bijective_diagonalProdComm : Function.Bijective (diagonalProdComm K L v w) := by
-  constructor
-  · intro p q hpq
-    apply Subtype.ext
-    have hval := congrArg Subtype.val hpq
-    simpa using congrArg Prod.swap hval
-  · intro q
-    have hmem : (q : N × M).swap ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} := by
-      simpa using prodComm_mem_lieSpan_diagonal (M := N) (N := M) q.2
-    refine ⟨⟨(q : N × M).swap, hmem⟩, ?_⟩
-    apply Subtype.ext
-    simp
-
 end Diagonal
+
+/-! ### The twist of a module by a surjective endomorphism
+
+For a surjective Lie algebra endomorphism `φ` of `L`, the *twist* of `N` by `φ` is the same vector
+space with `x` acting as `φ x`. It is irreducible when `N` is. It only serves to apply the
+classification below to linear maps carrying the action of `x` to that of `φ x`. -/
+
+section Twist
+
+variable {K : Type u} {L : Type v} [CommRing K] [LieRing L] [LieAlgebra K L]
+  {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N]
+
+/-- The twist of `P` by `φ`: `P`, with `x : L` acting as `φ x`. -/
+private def Twist (_φ : L →ₗ⁅K⁆ L) (P : Type w₁) : Type w₁ := P
+
+namespace Twist
+
+variable (φ : L →ₗ⁅K⁆ L)
+
+private instance : AddCommGroup (Twist φ N) := inferInstanceAs (AddCommGroup N)
+
+private instance : Module K (Twist φ N) := inferInstanceAs (Module K N)
+
+private instance : LieRingModule L (Twist φ N) := LieRingModule.compLieHom N φ
+
+/-- The identity of `N`, read as a map into the twist. -/
+private def equiv : N ≃ₗ[K] Twist φ N := LinearEquiv.refl K N
+
+/-- The defining equation of the twisted action. -/
+private theorem lie_equiv (x : L) (n : N) : ⁅x, equiv φ n⁆ = equiv φ ⁅φ x, n⁆ :=
+  (rfl)
+
+private instance [LieModule K L N] : LieModule K L (Twist φ N) := LieModule.compLieHom N φ
+
+private theorem isIrreducible (hφ : Function.Surjective φ) [LieModule.IsIrreducible K L N] :
+    LieModule.IsIrreducible K L (Twist φ N) := by
+  have := LieModule.nontrivial_of_isIrreducible K L N
+  have : Nontrivial (Twist φ N) := (equiv φ).injective.nontrivial
+  refine LieModule.IsIrreducible.mk fun P hP => ?_
+  -- `P` is stable under every `φ x`, hence under all of `L` as `φ` is onto: a Lie submodule of `N`.
+  let Q : LieSubmodule K L N :=
+    { (P : Submodule K (Twist φ N)).comap (equiv φ).toLinearMap with
+      lie_mem := fun {y n} hn => by
+        obtain ⟨x, rfl⟩ := hφ y
+        simp only [Submodule.mem_carrier, SetLike.mem_coe, Submodule.mem_comap,
+          LinearEquiv.coe_coe] at hn ⊢
+        rw [← lie_equiv]
+        exact P.lie_mem hn }
+  have hmem (m : Twist φ N) : m ∈ P ↔ (equiv φ).symm m ∈ Q := by
+    simp [Q, ← LieSubmodule.mem_toSubmodule]
+  rcases IsSimpleOrder.eq_bot_or_eq_top Q with hQ | hQ
+  · refine absurd ((LieSubmodule.eq_bot_iff P).mpr fun m hm => ?_) hP
+    rw [hmem, hQ, LieSubmodule.mem_bot] at hm
+    simpa using congr(equiv φ $hm)
+  · exact eq_top_iff.mpr fun m _ => (hmem m).mpr (hQ ▸ LieSubmodule.mem_top _)
+
+end Twist
+
+end Twist
 
 /-! ### The diagonal highest weight vector -/
 
@@ -215,7 +223,8 @@ private theorem diagonalComapInr_eq_bot [LieModule.IsIrreducible K L M]
 
 private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)
-    (hw : IsHighestWeightVector b lam w) : Function.Bijective (diagonalFst K L v w) := by
+    (hw : IsHighestWeightVector b lam w) :
+    Function.Bijective (LieSubmodule.lieSpan K L {(v, w)}).prodFst := by
   constructor
   · intro p q hpq
     have hfst : (p : M × N).1 = (q : M × N).1 := by
@@ -230,22 +239,22 @@ private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
     rw [diagonalComapInr_eq_bot hv hw] at hmem
     have h2 : ((p : M × N) - q).2 = 0 := by simpa using hmem
     exact Subtype.ext (sub_eq_zero.mp (Prod.ext_iff.mpr ⟨h1, h2⟩))
-  · refine (LieModuleHom.range_eq_top _).mp ?_
-    refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hv.ne_zero ?_
-    have hmem : v ∈ LieModuleHom.range (diagonalFst K L v w) :=
-      ⟨⟨(v, w), LieSubmodule.subset_lieSpan rfl⟩, by simp⟩
-    rw [hbot] at hmem
-    simpa using hmem
+  · exact (LieSubmodule.lieSpan K L {(v, w)}).prodFst_surjective_of_mem_of_ne_zero
+      (LieSubmodule.subset_lieSpan rfl) hv.ne_zero
 
 private theorem bijective_diagonalSnd [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)
-    (hw : IsHighestWeightVector b lam w) : Function.Bijective (diagonalSnd K L v w) := by
-  have hcomp : diagonalSnd K L v w =
-      (diagonalFst K L w v).comp (diagonalProdComm K L v w) := by
-    ext p
-    simp
-  rw [hcomp]
-  exact (bijective_diagonalFst (M := N) (N := M) hw hv).comp bijective_diagonalProdComm
+    (hw : IsHighestWeightVector b lam w) :
+    Function.Bijective (LieSubmodule.lieSpan K L {(v, w)}).prodSnd := by
+  refine ⟨?_, (LieSubmodule.lieSpan K L {(v, w)}).prodSnd_surjective_of_mem_of_ne_zero
+    (LieSubmodule.subset_lieSpan rfl) hw.ne_zero⟩
+  intro p q hpq
+  have hp := prodComm_mem_lieSpan_diagonal p.2
+  have hq := prodComm_mem_lieSpan_diagonal q.2
+  have hswap : (⟨(p : M × N).swap, hp⟩ : LieSubmodule.lieSpan K L {(w, v)}) =
+      ⟨(q : M × N).swap, hq⟩ :=
+    (bijective_diagonalFst hw hv).1 (by simpa using hpq)
+  exact Subtype.ext (Prod.swap_injective (congrArg Subtype.val hswap))
 
 /-! ### The classification -/
 
@@ -263,8 +272,8 @@ theorem lieModuleEquivOfIsHighestWeightVector_apply [LieModule.IsIrreducible K L
     (hw : IsHighestWeightVector b lam w) : lieModuleEquivOfIsHighestWeightVector hv hw v = w := by
   let p : LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
     ⟨(v, w), LieSubmodule.subset_lieSpan rfl⟩
-  let eF := LieModuleEquiv.ofBijective (diagonalFst K L v w) (bijective_diagonalFst hv hw)
-  let eS := LieModuleEquiv.ofBijective (diagonalSnd K L v w) (bijective_diagonalSnd hv hw)
+  let eF := LieModuleEquiv.ofBijective _ (bijective_diagonalFst hv hw)
+  let eS := LieModuleEquiv.ofBijective _ (bijective_diagonalSnd hv hw)
   have hp : eF p = v := by simp [eF, p]
   have hinv : eF.symm v = p := eF.symm_apply_eq.mpr hp.symm
   have hresult : eS (eF.symm v) = w := by
@@ -291,5 +300,70 @@ theorem nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector [LieModule.IsIrr
   · exact (hv.congr e).unique_of_isIrreducible hw
   · subst h
     exact nonempty_lieModuleEquiv_of_isHighestWeightVector hv hw
+
+/-! ### Twisted equivalences -/
+
+section TwistedEquiv
+
+variable (φ : L →ₗ⁅K⁆ L)
+
+omit [LieModule K L N] in
+/-- A nonzero vector of `N` on which `L`, acting through `φ`, acts as on a highest weight vector of
+weight `lam` is a highest weight vector of weight `lam` of the twist of `N` by `φ`. -/
+private theorem isHighestWeightVector_twist_equiv (hw0 : w ≠ 0)
+    (hwH : ∀ x : H, ⁅φ x, w⁆ = lam x • w) (hwn : ∀ x ∈ positiveNilradical H b, ⁅φ x, w⁆ = 0) :
+    IsHighestWeightVector b lam (Twist.equiv φ w) :=
+  isHighestWeightVector_iff.mpr ⟨(map_ne_zero_iff _ (Twist.equiv φ).injective).mpr hw0,
+    fun x => by rw [Twist.lie_equiv, hwH, map_smul],
+    fun x hx => by rw [Twist.lie_equiv, hwn x hx, map_zero]⟩
+
+/-- **The twisted equivalence between irreducible highest weight modules.** Let `φ` be a
+surjective endomorphism of `L`, let `v : M` be a highest weight vector of weight `lam`, and let
+`w : N` be a nonzero vector on which `φ` makes `L` act as on a highest weight vector of weight
+`lam`: `φ x` acts on `w` by the scalar `lam x` for `x ∈ H`, and by zero for `x ∈ n⁺`. If `M` and
+`N` are irreducible, this is the linear equivalence `M ≃ N` carrying `v` to `w`
+(`TauCeti.twistedEquivOfIsHighestWeightVector_apply_self`) and the action of each `x` on `M` to
+the action of `φ x` on `N` (`TauCeti.twistedEquivOfIsHighestWeightVector_lie`). It is the unique
+such linear map (`TauCeti.eq_twistedEquivOfIsHighestWeightVector`).
+
+For `φ` the identity this is `TauCeti.lieModuleEquivOfIsHighestWeightVector`. -/
+noncomputable def twistedEquivOfIsHighestWeightVector (hφ : Function.Surjective φ)
+    [LieModule.IsIrreducible K L M] [LieModule.IsIrreducible K L N]
+    (hv : IsHighestWeightVector b lam v) (hw0 : w ≠ 0) (hwH : ∀ x : H, ⁅φ x, w⁆ = lam x • w)
+    (hwn : ∀ x ∈ positiveNilradical H b, ⁅φ x, w⁆ = 0) : M ≃ₗ[K] N :=
+  haveI := Twist.isIrreducible φ hφ (N := N)
+  (lieModuleEquivOfIsHighestWeightVector hv
+    (isHighestWeightVector_twist_equiv φ hw0 hwH hwn)).toLinearEquiv.trans (Twist.equiv φ).symm
+
+variable {φ} (hφ : Function.Surjective φ) [LieModule.IsIrreducible K L M]
+  [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v) (hw0 : w ≠ 0)
+  (hwH : ∀ x : H, ⁅φ x, w⁆ = lam x • w) (hwn : ∀ x ∈ positiveNilradical H b, ⁅φ x, w⁆ = 0)
+
+/-- The twisted equivalence carries the highest weight vector `v` to `w`. -/
+@[simp]
+theorem twistedEquivOfIsHighestWeightVector_apply_self :
+    twistedEquivOfIsHighestWeightVector φ hφ hv hw0 hwH hwn v = w := by
+  have := Twist.isIrreducible φ hφ (N := N)
+  rw [twistedEquivOfIsHighestWeightVector, LinearEquiv.trans_apply,
+    LieModuleEquiv.coe_toLinearEquiv, lieModuleEquivOfIsHighestWeightVector_apply,
+    LinearEquiv.symm_apply_apply]
+
+/-- **The twisted equivalence carries the action of `x` to the action of `φ x`.** -/
+theorem twistedEquivOfIsHighestWeightVector_lie (x : L) (m : M) :
+    twistedEquivOfIsHighestWeightVector φ hφ hv hw0 hwH hwn ⁅x, m⁆ =
+      ⁅φ x, twistedEquivOfIsHighestWeightVector φ hφ hv hw0 hwH hwn m⁆ := by
+  rw [twistedEquivOfIsHighestWeightVector, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LieModuleEquiv.coe_toLinearEquiv, ← LieModuleEquiv.coe_coe, LieModuleHom.map_lie,
+    LinearEquiv.symm_apply_eq, ← Twist.lie_equiv, LinearEquiv.apply_symm_apply]
+
+/-- **Uniqueness of the twisted equivalence**: a linear map `M → N` carrying `v` to `w` and the
+action of each `x` to the action of `φ x` is the twisted equivalence. -/
+theorem eq_twistedEquivOfIsHighestWeightVector {f : M →ₗ[K] N}
+    (hf : ∀ (x : L) (m : M), f ⁅x, m⁆ = ⁅φ x, f m⁆) (hfv : f v = w) :
+    f = twistedEquivOfIsHighestWeightVector φ hφ hv hw0 hwH hwn :=
+  LinearMap.ext_on_of_lieSpan_eq_top (lieSpan_singleton_eq_top_of_ne_zero hv.ne_zero) φ hf
+    (twistedEquivOfIsHighestWeightVector_lie hφ hv hw0 hwH hwn) (by simp [hfv])
+
+end TwistedEquiv
 
 end TauCeti

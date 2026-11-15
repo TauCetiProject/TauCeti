@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Presentation
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.HomotopyEquiv
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 
 /-!
@@ -37,9 +39,16 @@ isomorphism `e : PresentedGroup R ≃* G`,
 from the cellular to the simplicial model, inducing `e` under the identifications
 `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv` and
 `TauCeti.classifyingSpaceFundamentalGroupMulEquiv` of both fundamental groups. Every group has a
-presentation, for instance the tautological one used in
-`TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`, so this applies to every
-group.
+presentation, for instance the tautological one, so this applies to every group.
+
+Semilocal simple connectivity is a homotopy invariant
+(`ContinuousMap.HomotopyEquiv.semilocallySimplyConnectedSpace`), and Milnor's classifying space has
+it, so the cellular classifying space is semilocally simply connected as well
+(`TauCeti.instSemilocallySimplyConnectedSpaceCellularClassifyingSpace`). Being a Hausdorff CW
+complex, it is also locally path-connected. So the existence theorem for the cellular model,
+`TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`, carries the standing
+hypotheses of covering-space theory exactly as the existence theorem for Milnor's model,
+`TauCeti.exists_isEilenbergMacLaneSpaceOne`, does.
 
 ## Main definitions
 
@@ -62,6 +71,11 @@ group.
   under the identifications of both fundamental groups with `G`.
 * `TauCeti.homotopicRel_cellularHomotopyEquivClassifyingSpace_toFun`: the comparison of the two
   models is determined by `e` up to homotopy relative to the base point.
+* `TauCeti.instSemilocallySimplyConnectedSpaceCellularClassifyingSpace`: the cellular classifying
+  space is semilocally simply connected.
+* `TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`: every group `G` has a
+  presentation whose cellular classifying space is a `K(G, 1)`, locally path-connected and
+  semilocally simply connected.
 
 ## References
 
@@ -255,6 +269,30 @@ theorem exists_path_map_cellularHomotopyEquivClassifyingSpace_invFun :
     rw [hγ, MulEquiv.symm_trans_apply, MulEquiv.apply_symm_apply, MulEquiv.symm_trans_apply,
       MulEquiv.symm_symm]⟩
 
+/-- **The cellular classifying space is semilocally simply connected.** It is homotopy equivalent
+to Milnor's classifying space of its fundamental group, which is semilocally simply connected, and
+semilocal simple connectivity is a homotopy invariant. -/
+instance instSemilocallySimplyConnectedSpaceCellularClassifyingSpace :
+    SemilocallySimplyConnectedSpace (cellularClassifyingSpace R) :=
+  (cellularHomotopyEquivClassifyingSpace R (MulEquiv.refl _)).semilocallySimplyConnectedSpace
+
 end ClassifyingSpace
+
+/-- **Every group has a cellular classifying space**, satisfying the standing hypotheses of
+covering-space theory: for every group `G` there is a set `R` of relators on the generators `G`
+such that the cellular classifying space of `⟨G | R⟩` is a locally path-connected, semilocally
+simply connected `K(G, 1)`. Take the tautological presentation, whose relators are the kernel of
+the evaluation map `FreeGroup G →* G`. No hypothesis on the group is needed. This is the cellular
+counterpart of `TauCeti.exists_isEilenbergMacLaneSpaceOne`. -/
+theorem exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (G : Type u) [Group G] :
+    ∃ R : Set (FreeGroup G), LocallyPathConnectedSpace (cellularClassifyingSpace R) ∧
+      SemilocallySimplyConnectedSpace (cellularClassifyingSpace R) ∧
+      IsEilenbergMacLaneSpaceOne G (cellularClassifyingSpace R)
+        (cellularClassifyingSpaceBasepoint R) := by
+  let φ : FreeGroup G →* G := FreeGroup.lift id
+  have hφ : Function.Surjective φ := fun g ↦ ⟨FreeGroup.of g, FreeGroup.lift_apply_of⟩
+  let P := Group.Presentation.ofFreeGroupHom φ hφ φ.ker (Subgroup.normalClosure_eq_self _).symm
+  exact ⟨P.rel, inferInstance, inferInstance,
+    (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace P.rel).of_mulEquiv P.presentedGroupEquiv⟩
 
 end TauCeti

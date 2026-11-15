@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TopologicalMonoid
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The universal covering group of a topological group
@@ -29,13 +30,15 @@ instead: the map `(a, b) ↦ proj a * proj b` on the simply connected, locally p
 lifting identifies that lift with the pointwise product. The same argument handles the inverse.
 
 The endpoint projection is then a continuous homomorphism `UniversalCover.projHom` which is a
-covering map, and its kernel, a discrete normal subgroup of a connected group, is central. This is
-the topological half of the simply connected covering group of a connected Lie group.
+covering map, and its kernel is discrete. This is the topological half of the simply connected
+covering group of a connected Lie group.
 
 The kernel is the fundamental group `π₁(G, 1)`, for every topological group `G`. Its points are
 the homotopy classes of loops at `1`, and on them the group law of the universal cover is
 pointwise multiplication of loops, which in a topological group agrees with concatenation by
-the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
+the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`). The kernel is also central
+for every topological group `G`: conjugating a loop `γ` by a path `α` from `1` gives the path
+`t ↦ α t * γ t * (α t)⁻¹`, which shrinking `α` deforms back to `γ` rel endpoints.
 
 ## Main definitions
 
@@ -45,6 +48,9 @@ the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
   `UniversalCover (1 : G) →ₜ* G`.
 * `TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`: the kernel of `projHom` is
   isomorphic to the fundamental group `π₁(G, 1)`.
+* `IsCoveringMap.kerMulEquivFundamentalGroup`: the kernel of a simply connected covering group is
+  the fundamental group of its base, an element of the kernel corresponding to the projection of
+  a path from `1` to it.
 
 ## Main statements
 
@@ -53,7 +59,8 @@ the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
 * `TauCeti.UniversalCover.instIsTopologicalGroup`: for a locally path-connected, semilocally simply
   connected `G`, the universal cover is a topological group.
 * `TauCeti.UniversalCover.isCoveringMap_projHom`: the projection is a covering homomorphism.
-* `TauCeti.UniversalCover.ker_projHom_le_center`: its kernel is central.
+* `TauCeti.UniversalCover.ker_projHom_le_center`: its kernel is central, for every topological
+  group `G`.
 * `TauCeti.UniversalCover.discreteTopology_ker_projHom`: its kernel is discrete.
 * `IsCoveringMap.continuousMulEquivUniversalCover`: a simply connected covering group is
   continuously isomorphic to the universal covering group over the base.
@@ -105,6 +112,16 @@ private theorem induction_on {motive : UniversalCover (1 : G) → Prop} (a : Uni
 private theorem mk_eq_mk {x y : G} {p : Path 1 x} {q : Path 1 y} (h : ∀ t, p t = q t) :
     mk x (.mk p) = mk y (.mk q) :=
   UniversalCover.ext (by simpa using h 1) (Path.Homotopic.hpath_hext h)
+
+/-- The classes of two paths from `1` are equal when a continuous square joins them while keeping
+its edges `t = 0` and `t = 1` at `1` and at the common endpoint. -/
+private theorem mk_eq_mk_of_homotopy {x y : G} (hxy : x = y) {p : Path 1 x} {q : Path 1 y}
+    (F : I × I → G) (hF : Continuous F) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
+    (hs₀ : ∀ s, F (s, 0) = 1) (hs₁ : ∀ s, F (s, 1) = x) :
+    mk x (.mk p) = mk y (.mk q) := by
+  subst hxy
+  exact congrArg (mk x)
+    (Path.Homotopic.Quotient.eq.2 (Path.homotopic_of_continuous_square F hF h₀ h₁ hs₀ hs₁))
 
 variable [IsTopologicalGroup G]
 
@@ -221,6 +238,31 @@ theorem kerProjHomEquivFundamentalGroup_apply
     (kerProjHomEquivFundamentalGroup z).toPath = z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm :=
   (rfl)
 
+/-- A point of the universal cover lying over the identity is central. No local connectivity of
+`G` is needed. -/
+theorem mem_center_of_proj_eq_one {z : UniversalCover (1 : G)} (hz : z.proj = 1) :
+    z ∈ Subgroup.center (UniversalCover (1 : G)) := by
+  refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
+  rw [← mul_inv_eq_iff_eq_mul]
+  -- Conjugating `[γ]` by `[α]` gives the class of `t ↦ α t * γ t * (α t)⁻¹`, which is homotopic
+  -- rel endpoints to `γ` through the paths `t ↦ α ((1 - s) * t) * γ t * (α ((1 - s) * t))⁻¹`.
+  induction g using induction_on with | h y α =>
+  induction z using induction_on with | h x γ =>
+  obtain rfl : x = 1 := hz
+  rw [inv_mk, mk_mul_mk, mk_mul_mk]
+  refine mk_eq_mk_of_homotopy (by simp) (fun p ↦ α (σ p.1 * p.2) * γ p.2 * (α (σ p.1 * p.2))⁻¹)
+    (by fun_prop) (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_) (fun s ↦ ?_)
+  · simp
+  · simp
+  · simp
+  · simp
+
+/-- The kernel of the covering homomorphism is central. -/
+theorem ker_projHom_le_center :
+    (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≤
+      Subgroup.center (UniversalCover (1 : G)) :=
+  fun _ hz ↦ mem_center_of_proj_eq_one (mem_ker_projHom.1 hz)
+
 /-! ### The topological group structure -/
 
 variable [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
@@ -276,22 +318,6 @@ instance instIsTopologicalGroup : IsTopologicalGroup (UniversalCover (1 : G)) wh
 /-- The endpoint projection is a covering homomorphism. -/
 theorem isCoveringMap_projHom : IsCoveringMap (projHom : UniversalCover (1 : G) →ₜ* G) :=
   isCoveringMap 1
-
-/-- A point of the universal cover lying over the identity is central: conjugating it by a
-variable element gives a continuous map into the discrete fibre over `1` from a connected space. -/
-theorem mem_center_of_proj_eq_one {z : UniversalCover (1 : G)} (hz : z.proj = 1) :
-    z ∈ Subgroup.center (UniversalCover (1 : G)) := by
-  refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
-  have h := (isCoveringMap (1 : G)).const_of_comp (g := fun g ↦ g * z * g⁻¹) (by fun_prop)
-    (fun a a' ↦ by simp [hz]) g 1
-  rw [← mul_inv_eq_iff_eq_mul, h]
-  simp
-
-/-- The kernel of the covering homomorphism is central. -/
-theorem ker_projHom_le_center :
-    (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≤
-      Subgroup.center (UniversalCover (1 : G)) :=
-  fun _ hz ↦ mem_center_of_proj_eq_one (mem_ker_projHom.1 hz)
 
 /-- The kernel of the covering homomorphism is discrete: it is the fibre of the covering map over
 the identity. -/
@@ -409,5 +435,56 @@ theorem continuousMulEquivUniversalCover_unique (hp : IsCoveringMap p)
   exact congrFun (UniversalCover.isCoveringMap_projHom.eq_of_comp_eq
     f.continuous hp.continuousMulEquivUniversalCover.continuous
     hcomp 1 (by simp)) e
+
+/-- The comparison with the universal cover carries the kernel of the covering homomorphism onto
+the kernel of the universal-cover projection. -/
+theorem map_ker_continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
+    (p : E →* G).ker.map (hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)) =
+      (UniversalCover.projHom (G := G) : UniversalCover (1 : G) →* G).ker := by
+  ext y
+  simp only [Subgroup.mem_map, MonoidHom.mem_ker, MonoidHom.coe_ofClass,
+    ContinuousMulEquiv.coe_toMulEquiv]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    simpa using hx
+  · intro hy
+    exact ⟨hp.continuousMulEquivUniversalCover.symm y, by simpa using hy, by simp⟩
+
+/-- **The kernel of a simply connected covering group is the fundamental group of its base.**
+For a covering homomorphism `p : E →ₜ* G` from a simply connected, locally path-connected
+topological group, `ker p ≃* π₁(G, 1)`. An element `x` of the kernel corresponds to the loop
+obtained by projecting any path from `1` to `x` in `E`
+(`IsCoveringMap.kerMulEquivFundamentalGroup_apply`). -/
+noncomputable def kerMulEquivFundamentalGroup (hp : IsCoveringMap p) :
+    (p : E →* G).ker ≃* FundamentalGroup G 1 :=
+  ((hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)).subgroupMap _).trans
+    ((MulEquiv.subgroupCongr hp.map_ker_continuousMulEquivUniversalCover).trans
+      UniversalCover.kerProjHomEquivFundamentalGroup)
+
+/-- An element `x` of the kernel of a simply connected covering group corresponds to the class of
+the loop `p ∘ γ` at `1`, for any path `γ` from `1` to `x`. -/
+theorem kerMulEquivFundamentalGroup_apply (hp : IsCoveringMap p) (x : (p : E →* G).ker)
+    (γ : Path 1 (x : E)) :
+    hp.kerMulEquivFundamentalGroup x = FundamentalGroup.fromPath
+      (.mk ((γ.map p.continuous).cast (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm)) := by
+  apply UniversalCover.kerProjHomEquivFundamentalGroup.symm.injective
+  -- The comparison sends `x` to the endpoint of the lift of `p ∘ γ` starting at `1`.
+  have hlift : hp.continuousMulEquivUniversalCover x =
+      UniversalCover.ofBasedPath 1 (.ofPath ((γ.map p.continuous).cast (map_one p).symm rfl)) := by
+    have h := UniversalCover.apply_one_eq_ofBasedPath
+      (g := fun t ↦ hp.continuousMulEquivUniversalCover (γ t)) (by fun_prop)
+      (.ofPath ((γ.map p.continuous).cast (map_one p).symm rfl))
+      (fun t ↦ hp.continuousMulEquivUniversalCover_apply_proj (γ t))
+      (by simp [← UniversalCover.one_eq_ofBasedPath_refl])
+    simpa using h
+  refine Subtype.ext ?_
+  simp only [kerMulEquivFundamentalGroup, MulEquiv.trans_apply, MulEquiv.symm_apply_apply,
+    MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply,
+    UniversalCover.coe_kerProjHomEquivFundamentalGroup_symm_apply,
+    ContinuousMulEquiv.coe_toMulEquiv]
+  rw [hlift, UniversalCover.ofBasedPath_ofPath]
+  exact UniversalCover.ext (by simpa using MonoidHom.mem_ker.mp x.2)
+    ((Path.Homotopic.Quotient.cast_heq (map_one p).symm rfl (γ := .mk (γ.map p.continuous))).trans
+      (Path.Homotopic.Quotient.cast_heq (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm).symm)
 
 end IsCoveringMap

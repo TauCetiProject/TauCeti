@@ -59,7 +59,7 @@ theorem measurable_inverseWishartMeasure :
         (measurable_matrix_inv.comp ((Matrix.measurable_of (Fin p) (Fin p) ℝ).comp measurable_snd)))
   have hsource : Measurable fun q : ℝ × (Fin p → Fin p → ℝ) =>
       nonsingularWishartMeasure q.1 (Matrix.of q.2)⁻¹ := by
-    simpa [Function.comp_def] using measurable_nonsingularWishartMeasure.comp hcoords
+    exact measurable_nonsingularWishartMeasure.comp hcoords
   simp only [inverseWishartMeasure_def]
   exact (Measure.measurable_map _ measurable_symmetricInv).comp hsource
 

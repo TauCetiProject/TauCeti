@@ -40,11 +40,11 @@ namespace RingEquiv
 /-- **Uniqueness of every block in a product of matrix rings over division rings.** Two such
 presentations differ only by a permutation of the blocks: corresponding matrix sizes agree and
 their coefficient division rings are isomorphic. The block index sets are arbitrary; each matrix
-index type is finite and nonempty.
+index type is finite and nonempty. The common source only needs addition and multiplication.
 
 The nonemptiness hypotheses are essential. A zero-size matrix ring is trivial and can be inserted
 with arbitrary coefficients without changing the product. -/
-theorem wedderburn_blocks_unique {R : Type*} [Ring R]
+theorem wedderburn_blocks_unique {R : Type*} [Mul R] [Add R]
     {ι κ : Type*} {D : ι → Type*} {E : κ → Type*}
     [∀ i, DivisionRing (D i)] [∀ j, DivisionRing (E j)]
     {m : ι → Type*} {n : κ → Type*} [∀ i, Fintype (m i)] [∀ j, Fintype (n j)]

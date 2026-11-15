@@ -14,18 +14,31 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Order.SuccPred.Int
 
 /-!
-# Split maps between coproducts, and cokernels of maps between coproducts
+# Split maps between (co)products, and cokernels of maps between coproducts
+
+## Products of split epimorphisms are split
+
+A product `Limits.Pi.map p : ∏ᶜ f ⟶ ∏ᶜ g` of split epimorphisms `p b : f b ⟶ g b`, indexed by a
+type of any size, is a split epimorphism, with section the product of the sections
+(`TauCeti.isSplitEpi_piMap`). Unlike `CategoryTheory.Limits.Pi.map_epi`, this needs no finiteness
+and no biproducts; it is how products of skyscraper presheaves are shown to be flasque.
 
 ## Reindexing a coproduct along an injection is split
 
-Let `X : I → C` be a family of objects of a category with zero morphisms and coproducts, and let
-`f : J → I` be injective.  Reindexing along `f` gives a map `∐ (X ∘ f) ⟶ ∐ X`, and this file
-shows that it is a split monomorphism: the retraction sends the summand indexed by `f j` back to
-the one indexed by `j`, and kills the summands indexed outside the range of `f`.
+Let `X : I → C` be a family of objects of a category with zero morphisms, and let `f : J → I` be
+injective.  When both coproducts exist, reindexing along `f` gives a map
+`∐ (fun j ↦ X (f j)) ⟶ ∐ X`, and this file shows that it is a split monomorphism
+(`TauCeti.isSplitMono_sigmaMap'`): the retraction sends the summand indexed by `f j` back to the
+one indexed by `j`, and kills the summands indexed outside the range of `f`.  The index types may
+live in any universes, and no other coproducts are needed.
 
 Mathlib's `CategoryTheory.Limits.MonoCoprod.mono_map'_of_injective` proves the same map is a
 monomorphism in a category satisfying `MonoCoprod`; the splitting below needs zero morphisms
 instead, and is the stronger statement in the situations where both apply.
+
+Dually, reindexing a product `∏ X ⟶ ∏ (fun j ↦ X (f j))` along an injective `f` is a split
+epimorphism (`TauCeti.isSplitEpi_piMap'`): the section extends by zero on the factors indexed
+outside the range of `f`.
 
 Chain complexes built as coproducts over a set of simplices, singular or simplicial, get their
 degreewise splittings this way: for a pair of spaces the singular simplices of the subspace form a
@@ -34,7 +47,7 @@ each degree, and therefore stays exact after applying a contravariant `Hom(-, M)
 
 ## The kernel of the codiagonal
 
-Let `R` be an object of a preadditive category with a zero object, and let `ι` be a type with a
+Let `R` be an object of a preadditive category, and let `ι` be a type with a
 distinguished element `i₀`.  The codiagonal `Sigma.desc (fun _ ↦ 𝟙 R) : ∐ (fun _ : ι ↦ R) ⟶ R`,
 the identity on every summand, is a split epimorphism with section the inclusion of the summand
 `i₀`, and its kernel is the coproduct of the summands indexed by `i ≠ i₀`, embedded through the
@@ -71,43 +84,79 @@ arbitrary type has a coproduct as soon as only finitely many of its objects are 
 (`TauCeti.hasCoproduct_of_finite_setOf_not_isZero`): the coproduct of the nonzero objects is a
 coproduct of the whole family. This is how a bounded complex has coproducts over the infinitely
 many degrees in a residue class, as used by its periodic compression.
+
+## Coproducts with a single non-initial summand
+
+If every summand of a coproduct other than the one indexed by `i` is an initial object, the
+inclusion of the summand `i` is an isomorphism (`Cofan.IsColimit.isIso_inj_of_isInitial`). This
+computes a Day convolution of symmetric sequences with a symmetric sequence concentrated in level
+zero, whose wedge decomposition has a single summand that is not the point.
 -/
 
 public section
 
 open CategoryTheory Limits
 
-universe w
-
 namespace TauCeti
+
+section PiMap
+
+variable {C : Type*} [Category* C] {β : Type*} {f g : β → C} [HasProduct f] [HasProduct g]
+
+/-- A product of split epimorphisms is a split epimorphism, with section the product of the
+sections. -/
+instance isSplitEpi_piMap (p : ∀ b, f b ⟶ g b) [∀ b, IsSplitEpi (p b)] :
+    IsSplitEpi (Limits.Pi.map p) :=
+  IsSplitEpi.mk' { section_ := Limits.Pi.map fun b ↦ section_ (p b), id := by ext; simp }
+
+end PiMap
 
 section Reindex
 
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasCoproducts.{w} C]
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {I J : Type*}
 
 open scoped Classical in
 /-- Reindexing a coproduct along an injective map of index types is a split monomorphism. -/
-instance isSplitMono_sigmaMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono f] :
-    IsSplitMono (Sigma.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
+theorem isSplitMono_sigmaMap' (X : I → C) (f : J → I) (hf : Function.Injective f)
+    [HasCoproduct X] [HasCoproduct fun j ↦ X (f j)] :
+    IsSplitMono (Sigma.map' f fun j ↦ 𝟙 (X (f j))) :=
   IsSplitMono.mk'
     { retraction := Sigma.desc fun i ↦
         if h : i ∈ Set.range f then
-          eqToHom (congrArg X h.choose_spec).symm ≫ Sigma.ι (X ∘ f) h.choose
+          eqToHom (congrArg X h.choose_spec).symm ≫ Sigma.ι (fun j ↦ X (f j)) h.choose
         else 0
       id := by
         refine Sigma.hom_ext _ _ fun j ↦ ?_
         have h : f j ∈ Set.range f := ⟨j, rfl⟩
-        have hj : h.choose = j := (mono_iff_injective f).1 ‹_› h.choose_spec
+        have hj : h.choose = j := hf h.choose_spec
         rw [← Category.assoc, Sigma.ι_comp_map', Category.id_comp, Sigma.ι_comp_desc,
           dite_eq_left h, Category.comp_id]
-        exact Sigma.eqToHom_comp_ι (X ∘ f) hj }
+        exact Sigma.eqToHom_comp_ι (fun j ↦ X (f j)) hj }
+
+open scoped Classical in
+/-- Reindexing a product along an injective map of index types is a split epimorphism. -/
+theorem isSplitEpi_piMap' (X : I → C) (f : J → I) (hf : Function.Injective f)
+    [HasProduct X] [HasProduct fun j ↦ X (f j)] :
+    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 (X (f j))) :=
+  IsSplitEpi.mk'
+    { section_ := Pi.lift fun i ↦
+        if h : i ∈ Set.range f then
+          Pi.π (fun j ↦ X (f j)) h.choose ≫ eqToHom (congrArg X h.choose_spec)
+        else 0
+      id := by
+        refine Pi.hom_ext _ _ fun j ↦ ?_
+        have h : f j ∈ Set.range f := ⟨j, rfl⟩
+        have hj : h.choose = j := hf h.choose_spec
+        simp only [Category.assoc, Pi.map'_comp_π, Category.comp_id,
+          Pi.lift_comp_π, dite_eq_left h, Category.id_comp]
+        exact Pi.π_comp_eqToHom (fun j ↦ X (f j)) hj }
 
 end Reindex
 
 noncomputable section Codiagonal
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{w} C] (R : C) {ι : Type w}
-  (i₀ : ι)
+variable {C : Type*} [Category* C] [Preadditive C] (R : C) {ι : Type*} (i₀ : ι)
+  [HasCoproduct fun _ : ι ↦ R] [HasCoproduct fun _ : {i // i ≠ i₀} ↦ R]
 
 /-- The morphism `∐_{i ≠ i₀} R ⟶ ∐_ι R` whose component at `i` is the difference `ι_i - ι_{i₀}`
 of coproduct inclusions.  It is a kernel of the codiagonal `∐_ι R ⟶ R`
@@ -165,12 +214,18 @@ def sigmaDescIdSplitting : (sigmaDescIdShortComplex R i₀).Splitting where
       simp
     · simp [Preadditive.comp_add, h]
 
-variable [HasZeroObject C]
-
-/-- The differences of coproduct inclusions form a kernel of the codiagonal. -/
+/-- The differences of coproduct inclusions form a kernel of the codiagonal: a morphism killed by
+the codiagonal lifts through the retraction `TauCeti.sigmaιSubιRetraction`.  Unlike
+`CategoryTheory.ShortComplex.Splitting.fIsKernel`, this needs no zero object. -/
 def isKernelSigmaιSubι :
     IsLimit (KernelFork.ofι (sigmaιSubι R i₀) (sigmaιSubι_desc_id R i₀)) :=
-  (sigmaDescIdSplitting R i₀).fIsKernel
+  KernelFork.IsLimit.ofι _ _ (fun x _ ↦ x ≫ (sigmaDescIdSplitting R i₀).r)
+    (fun x hx ↦ by
+      -- `r ≫ f + g ≫ s = 𝟙`, and `x ≫ g = 0` kills the second summand.
+      simpa [Preadditive.comp_add, reassoc_of% hx] using x ≫= (sigmaDescIdSplitting R i₀).id)
+    (fun x _ m hm ↦ by
+      -- `f ≫ r = 𝟙`, so `m = m ≫ f ≫ r = x ≫ r`.
+      simpa [← hm] using m ≫= (sigmaDescIdSplitting R i₀).f_r.symm)
 
 /-- The kernel of the codiagonal `∐_ι R ⟶ R` is the coproduct of the copies of `R` indexed by
 `i ≠ i₀`. -/
@@ -304,3 +359,19 @@ theorem hasCoproduct_of_finite_setOf_not_isZero {J : Type*} (f : J → C)
 end FiniteSupport
 
 end TauCeti
+
+namespace CategoryTheory.Limits.Cofan.IsColimit
+
+/-- If every summand of a coproduct other than the one indexed by `i` is initial, then the
+inclusion of the summand `i` is an isomorphism. -/
+lemma isIso_inj_of_isInitial {C : Type*} [Category* C] {ι : Type*} {X : ι → C} {c : Cofan X}
+    (hc : IsColimit c) (i : ι) (h : ∀ j, j ≠ i → IsInitial (X j)) : IsIso (c.inj i) := by
+  classical
+  refine ⟨desc hc fun j ↦ if hj : j = i then eqToHom (by rw [hj]) else (h j hj).to _,
+    by simp [fac], hom_ext hc _ _ fun j ↦ ?_⟩
+  by_cases hj : j = i
+  · subst hj
+    simp [fac_assoc]
+  · exact (h j hj).hom_ext _ _
+
+end CategoryTheory.Limits.Cofan.IsColimit

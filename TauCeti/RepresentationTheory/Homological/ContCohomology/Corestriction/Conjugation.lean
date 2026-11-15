@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.TrivialF2
+public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Corestriction is invariant under conjugation
@@ -32,6 +34,14 @@ On the Shapiro side, the two ways of passing from `Hⁿ(G, Coind_U^G M)` to `H�
 compatible pair of the inner automorphism `x ↦ g⁻¹ x g` of `G` and the action of `g`, which acts
 trivially on cohomology (`TauCeti.ContinuousCohomology.map_eq_id_of_inner`).
 
+In degree one the same statement holds in the explicit inhomogeneous model over an arbitrary
+topological group, with no compactness of `G` and no discreteness of `M`
+(`TauCeti.ContCohomology.explicitCor1_explicitMap1_of_conj`). There it is an identity of
+cochains: right multiplication by `g⁻¹` is a bijection `G ⧸ U → G ⧸ V`, a transversal `t` of `U`
+gives the transversal `t' (xg⁻¹V) = t (xU) g⁻¹` of `V`, the transversal words are conjugate,
+`ℓ^{t'}_{xg⁻¹V}(γ) = g ℓᵗ_{xU}(γ) g⁻¹`, and so the corestriction cochain of the conjugated cocycle
+`v ↦ g • c (g⁻¹ v g)` for `t'` is the corestriction cochain of `c` for `t`.
+
 For a normal subgroup `V`, conjugation `v ↦ g⁻¹ v g` of `V` and the action of `g` form a
 compatible pair, which induces the endomorphism `(g)_*` of `Hⁿ(V, M)`
 (`TauCeti.ContinuousCohomology.conjNormalMap`), the conjugation through which NSW (3.3.11)
@@ -51,6 +61,9 @@ of the conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_V^G M`.
   after conjugation `(g)_*` is corestriction from `U`, in every degree.
 * `TauCeti.trivialF2Map_comp_trivialF2CorMap_of_conj`: the same statement with trivial `𝔽₂`
   coefficients, where `(g)_*` is pullback along `κ`.
+* `TauCeti.ContCohomology.explicitCor1_explicitMap1_of_conj`: the same statement in degree one
+  for the explicit inhomogeneous model, over any topological group, with the transversal
+  corestriction `explicitCor1`.
 * `TauCeti.ContCohomology.explicitCor2_explicitMap2_of_conj`: the same statement in degree two
   for the explicit inhomogeneous model, with the transversal corestriction `explicitCor2`.
 * `TauCeti.ContinuousCohomology.shapiroMap_comp_conjNormalMap`: for a normal subgroup, Shapiro's
@@ -79,7 +92,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-! ### Corestriction and conjugation -/
 
@@ -95,37 +108,24 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (f : TopRep.res (κ : V →* U) (ofDiscreteModule ℤ U M) ⟶ ofDiscreteModule ℤ V M)
   (hf : ∀ m : M, f.hom m = g • m)
 
-omit [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
+omit [CompactSpace G] [TotallyDisconnectedSpace G] [ContinuousSMul G M] in
 include hκ hf in
 /-- **The Shapiro map intertwines conjugation**: Shapiro's map for `U` followed by the conjugation
 `(g)_*` is the coefficient map of the conjugation `Coind_U^G M → Coind_V^G M` followed by Shapiro's
 map for `V`. Both are compatible-pair maps from `Hⁿ(G, Coind_U^G M)` to `Hⁿ(V, M)`; they differ by
 the pair of the inner automorphism `x ↦ g⁻¹ x g` of `G` and the action of `g`, which induces the
-identity. Compactness ensures that the right-translation action on the discrete coinduced module is
-continuous. -/
-theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
+identity (`exists_map_eq_id_conj_smul`, the step that uses local compactness of `G`). -/
+theorem shapiroMap_comp_map_of_conj [LocallyCompactSpace G] (n : ℕ) :
     shapiroMap U M n ≫ _root_.ContinuousCohomology.map κ f n =
       coeffMap (ofDiscreteModuleMap
-          (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
-          fun h F => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h F) n ≫
+          (DiscreteCoind.conj U V M g
+            (V.le_map_conj_of_forall_coe_eq U g κ hκ)).toAddMonoidHom.toIntLinearMap
+          fun h F => _root_.map_smul (DiscreteCoind.conj U V M g
+            (V.le_map_conj_of_forall_coe_eq U g κ hκ)) h F) n ≫
         shapiroMap V M n := by
+  have hVU := V.le_map_conj_of_forall_coe_eq U g κ hκ
   let X := ofDiscreteModule ℤ G (DiscreteCoind G U M)
-  -- The inner compatible pair `(x ↦ g⁻¹ x g, F ↦ g • F)` on `Hⁿ(G, Coind_U^G M)`.
-  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
-  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
-  have hcM (x : G) : (c : G →* G) x = g⁻¹ * x * g := hc x
-  let B : TopRep.res (c : G →* G) X ⟶ X := ofDiscreteModulePair (c : G →* G)
-    (DistribSMul.toAddMonoidHom (DiscreteCoind G U M) g).toIntLinearMap
-    fun x F => by
-      simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply,
-        hcM, smul_smul]
-      congr 1
-      group
-  have hB : _root_.ContinuousCohomology.map c B n = 𝟙 _ :=
-    map_eq_id_of_inner g c hc B
-      (fun (Φ : DiscreteCoind G U M) => (ofDiscreteModulePair_hom_apply (c : G →* G) _ _ Φ).trans
-        (ofDiscreteModule_ρ_apply_apply g Φ).symm)
-      (ofDiscreteModule_isSmoothDiscrete ℤ G (DiscreteCoind G U M)) n
+  obtain ⟨c, B, hc, hBΦ, hB⟩ := exists_map_eq_id_conj_smul (DiscreteCoind G U M) g n
   -- Both sides are the compatible pair of `v ↦ g⁻¹ v g` and `Φ ↦ g • Φ 1`; on the left this needs
   -- the inner pair, which induces the identity.
   let F : DiscreteCoind G U M →ₗ[ℤ] M :=
@@ -163,24 +163,18 @@ theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidH
   · intro Φ
     let BV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map B
     let ΨV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map Ψ
-    have h₁ : BV.hom Φ = g • Φ := ofDiscreteModulePair_hom_apply (c : G →* G) _ _ Φ
-    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
-      ofDiscreteModuleMap_hom_apply (G := G)
-        (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
-        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
-    have h₃ : evV.hom (DiscreteCoind.conj U V M g hVU (g • Φ)) =
-        DiscreteCoind.conj U V M g hVU (g • Φ) 1 :=
-      (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
-        (DiscreteCoind.eval G V M).toIntLinearMap
-        (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans
-        (DiscreteCoind.eval_apply (A := M) _)
     refine (TopRep.comp_apply BV (ΨV ≫ evV) Φ).trans ((TopRep.comp_apply ΨV evV _).trans ?_)
-    refine (congrArg evV.hom ((congrArg ΨV.hom h₁).trans h₂)).trans (h₃.trans ?_)
+    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
+      ofDiscreteModuleMap_hom_apply (G := G) _
+        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
+    refine (congrArg evV.hom ((congrArg ΨV.hom (hBΦ Φ)).trans h₂)).trans ?_
+    refine (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
+      (DiscreteCoind.eval G V M).toIntLinearMap
+      (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans
+      ((DiscreteCoind.eval_apply (A := M) _).trans ?_)
     rw [hFΦ, DiscreteCoind.conj_apply, DiscreteCoind.coe_smul, mul_one, inv_mul_cancel]
   · intro Φ
-    refine (TopRep.comp_apply ((TopRep.resFunctor (κ : V →* U)).map (ofDiscreteModulePair
-      (ContinuousMonoidHom.subgroupSubtype U : U →* G) (DiscreteCoind.eval G U M).toIntLinearMap
-      fun u Φ => eval_subgroupSubtype_smul G U M u Φ)) f Φ).trans ((hf _).trans ?_)
+    refine (TopRep.comp_apply _ _ _).trans ((hf _).trans ?_)
     exact (congrArg (fun m : M => g • m) ((ofDiscreteModulePair_hom_apply _ _ _ Φ).trans
       (DiscreteCoind.eval_apply Φ))).trans (hFΦ Φ).symm
 
@@ -197,7 +191,7 @@ theorem map_comp_corestriction_of_conj (hVU : V = U.map (MulAut.conj g).toMonoid
     _root_.ContinuousCohomology.map κ f n ≫ corestriction V M hV n = corestriction U M hU n := by
   have := isIso_shapiroMap U (U.isClosed_of_isOpen hU) M n
   rw [← cancel_epi (shapiroMap U M n), shapiroMap_comp_corestriction,
-    reassoc_of% (shapiroMap_comp_map_of_conj U V M g κ hκ f hf hVU.le n),
+    reassoc_of% (shapiroMap_comp_map_of_conj U V M g κ hκ f hf n),
     shapiroMap_comp_corestriction, ← coeffMap_comp]
   -- It remains that the conjugation map of coinduced modules commutes with the traces.
   congr 1
@@ -310,7 +304,7 @@ theorem conjNormalMap_comp (g h : G) (n : ℕ) :
 /-- **Shapiro's map intertwines conjugation**: for a normal subgroup `V`, Shapiro's map followed by
 `(g)_*` is the coefficient map of the conjugation of `Coind_V^G M` by `g`, followed by Shapiro's
 map. -/
-theorem shapiroMap_comp_conjNormalMap [CompactSpace G] (g : G) (n : ℕ) :
+theorem shapiroMap_comp_conjNormalMap [LocallyCompactSpace G] (g : G) (n : ℕ) :
     shapiroMap V M n ≫ conjNormalMap V M g n =
       coeffMap (ofDiscreteModuleMap
           (DiscreteCoind.conj V V M g (show V.map (MulAut.conj g).toMonoidHom = V from
@@ -320,8 +314,7 @@ theorem shapiroMap_comp_conjNormalMap [CompactSpace G] (g : G) (n : ℕ) :
               Subgroup.Normal.map_conj_eq V g).ge) h F) n ≫
         shapiroMap V M n :=
   shapiroMap_comp_map_of_conj V V M g _ (fun v => by simp)
-    (conjNormalPair V M g) (conjNormalPair_hom_apply V M g)
-    (show V.map (MulAut.conj g).toMonoidHom = V from Subgroup.Normal.map_conj_eq V g).ge n
+    (conjNormalPair V M g) (conjNormalPair_hom_apply V M g) n
 
 /-- **Conjugation is natural in the coefficients**: for a `G`-equivariant map `f : M → N`, the
 coefficient map of `f` on `Hⁿ(V, -)` commutes with `(g)_*`. -/
@@ -416,9 +409,86 @@ theorem eqToHom_conjNormalMap_eqToHom (U : Subgroup G) [U.Normal] (g : G) (n : �
 
 end TrivialF2
 
-/-! ### Degree two in the explicit model -/
-
 namespace ContCohomology
+
+/-! ### Degree one in the explicit model -/
+
+section DegreeOne
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U V : Subgroup G) (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+omit [TopologicalSpace G] [SeparatelyContinuousMul G] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- The cochain identity behind `explicitCor1_explicitMap1_of_conj`: if `E : G ⧸ U ≃ G ⧸ V` is
+right multiplication by `g⁻¹` and the transversal `t'` of `V` is `t' (E p) = t p * g⁻¹`, then the
+transversal words are conjugate, `ℓ^{t'}_{E p}(γ) = g * ℓᵗ_p(γ) * g⁻¹`, and the corestriction
+cochain of the conjugated cochain `v ↦ g • c (g⁻¹ v g)` is the corestriction cochain of `c`. -/
+private theorem cochainsCor1_conj [U.FiniteIndex] [V.FiniteIndex] (g : G) (κ : V →* U)
+    (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) (E : G ⧸ U ≃ G ⧸ V)
+    (hE : ∀ x : G, E (x : G ⧸ U) = ((x * g⁻¹ : G) : G ⧸ V))
+    (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (t' : G ⧸ V → G) (ht' : ∀ u : G ⧸ V, (QuotientGroup.mk (t' u) : G ⧸ V) = u)
+    (htt' : ∀ p : G ⧸ U, t' (E p) = t p * g⁻¹) (c : U → M) :
+    cochainsCor1 G M V t' ht' (fun v => g • c (κ v)) = cochainsCor1 G M U t ht c := by
+  funext γ
+  rw [cochainsCor1_apply, cochainsCor1_apply, ← E.sum_comp]
+  refine Finset.sum_congr rfl fun p _ => ?_
+  have hsmul : γ⁻¹ • E p = E (γ⁻¹ • p) := by
+    induction p using QuotientGroup.induction_on with
+    | H x => rw [hE, MulAction.Quotient.smul_mk, MulAction.Quotient.smul_mk, hE, smul_eq_mul,
+        smul_eq_mul, mul_assoc]
+  have hword : (κ ⟨lWord V t' (E p) γ, lWord_mem V t' ht' _ γ⟩ : G) = lWord U t p γ := by
+    rw [hκ]
+    dsimp only
+    rw [lWord_def, lWord_def, hsmul, htt', htt']
+    group
+  have hc : c (κ ⟨lWord V t' (E p) γ, lWord_mem V t' ht' _ γ⟩) =
+      c ⟨lWord U t p γ, lWord_mem U t ht _ γ⟩ := congrArg c (Subtype.ext hword)
+  rw [hc, htt', smul_smul, inv_mul_cancel_right]
+
+/-- **Degree-one corestriction is invariant under conjugation**, in the explicit inhomogeneous
+model and over any topological group: for `g : G`, an open subgroup `U` of finite index and
+`V = gUg⁻¹`, the explicit corestriction from `V` after the conjugation `(g)_* : H¹(U, M) → H¹(V, M)`
+is the explicit corestriction from `U`. Here `(g)_*` is the map of the compatible pair of
+`κ : V → U`, `v ↦ g⁻¹ v g`, and the action `f` of `g` on `M`, both given through their values, as
+in the degree-two statement `TauCeti.ContCohomology.explicitCor2_explicitMap2_of_conj`; unlike
+that statement, it assumes neither compactness of `G` nor discreteness of `M`. -/
+theorem explicitCor1_explicitMap1_of_conj (g : G) (κ : V →ₜ* U)
+    (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) (f : M →+ M) (hf : ∀ m : M, f m = g • m)
+    (hVU : V = U.map (MulAut.conj g).toMonoidHom) (hU : IsOpen (U : Set G)) [U.FiniteIndex]
+    (hV : IsOpen (V : Set G)) [V.FiniteIndex] (x : H1 U M) :
+    explicitCor1 G M V hV (explicitMap1 U M V M κ f
+      (continuous_of_eq_smul g hf) (inverseConjugation_smul_of_eq G M U V g κ hκ f hf) x) =
+      explicitCor1 G M U hU x := by
+  have hmem (y : G) : y ∈ V ↔ g⁻¹ * y * g ∈ U := by
+    rw [hVU, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+  -- Right multiplication by `g⁻¹` carries the cosets of `U` to those of `V`.
+  let E : G ⧸ U ≃ G ⧸ V := Quotient.congr (Equiv.mulRight g⁻¹) fun a b => by
+    simp only [QuotientGroup.leftRel_apply, Equiv.coe_mulRight, hmem]
+    rw [show g⁻¹ * ((a * g⁻¹)⁻¹ * (b * g⁻¹)) * g = a⁻¹ * b by group]
+  have hE (x : G) : E (x : G ⧸ U) = ((x * g⁻¹ : G) : G ⧸ V) := rfl
+  -- Compute the corestriction from `V` with the transversal transported from `Quotient.out`.
+  let t' : G ⧸ V → G := fun q => (E.symm q).out * g⁻¹
+  have ht' (q : G ⧸ V) : (QuotientGroup.mk (t' q) : G ⧸ V) = q := by
+    rw [← hE, QuotientGroup.out_eq', Equiv.apply_symm_apply]
+  rw [explicitCor1_eq_transversal G M V t' ht' hV]
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitMap1_mk, explicitCor1Transversal_mk, explicitCor1_mk]
+    refine congrArg (fun z : Z1 G M => (z : H1 G M)) (Subtype.ext ?_)
+    rw [coe_cocyclesCor1, coe_cocyclesCor1]
+    refine (congrArg (cochainsCor1 G M V t' ht') (funext fun v => ?_)).trans
+      (cochainsCor1_conj U V M g κ hκ E hE Quotient.out Quotient.out_eq t' ht'
+        (fun p => by simp only [t', Equiv.symm_apply_apply]) c)
+    exact (cocyclesMap1_apply _ _ _ _ _ _ _ _ c v).trans (hf _)
+
+end DegreeOne
+
+/-! ### Degree two in the explicit model -/
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]

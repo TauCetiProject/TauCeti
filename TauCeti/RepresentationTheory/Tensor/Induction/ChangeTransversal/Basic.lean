@@ -16,7 +16,8 @@ isomorphic. The isomorphism acts on the tensor power by the base-group element c
 monomial embeddings. On a pure tensor, it applies the difference of the two chosen
 representatives at each coset to the corresponding factor. These comparisons are the identity
 for an unchanged transversal, compose through an intermediate transversal, and are natural in
-the representation being tensor-induced.
+the representation being tensor-induced. When the action preserves a grading of the module, they
+preserve and detect the total degree of the tensor power.
 
 The construction is algebraic and needs neither finite index nor topology. Its factorwise
 formula supplies the comparison of continuous tensor-induced actions for open subgroups.
@@ -51,12 +52,12 @@ noncomputable def tensorInducedChangeTransversalLinearEquiv :
     constructor
     · intro x y h
       have h' := congrArg (W c⁻¹) h
-      simpa only [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one,
-        Module.End.one_apply] using h'
+      simpa only [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
+        one_apply_eq_self] using h'
     · intro y
       refine ⟨W c⁻¹ y, ?_⟩
-      simp only [← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one,
-        Module.End.one_apply]
+      simp only [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
+        one_apply_eq_self]
   exact LinearEquiv.ofBijective (W c) hbij
 
 /-- The change-of-transversal linear equivalence acts by the wreath tensor representation of
@@ -98,7 +99,7 @@ theorem tensorInducedChangeTransversalLinearEquiv_trans (v : U.LeftTransversal) 
   simp only [LinearEquiv.trans_apply]
   rw [tensorInducedChangeTransversalLinearEquiv_apply,
     tensorInducedChangeTransversalLinearEquiv_apply,
-    tensorInducedChangeTransversalLinearEquiv_apply, ← Module.End.mul_apply, ← map_mul,
+    tensorInducedChangeTransversalLinearEquiv_apply, ← mul_apply_eq_comp, ← map_mul,
     monomialChangeTransversal_mul]
 
 /-- Reversing the two transversals gives the inverse linear equivalence. -/
@@ -113,6 +114,25 @@ theorem tensorInducedChangeTransversalLinearEquiv_trans (v : U.LeftTransversal) 
     (tensorInducedChangeTransversalLinearEquiv_trans U s t ρ s) z
   simpa using h.symm
 
+/-- If the action of `U` preserves the degrees of a grading of `M`, then changing the transversal
+preserves and detects the total degree of the tensor power. -/
+theorem tensorInducedChangeTransversalLinearEquiv_mem_totalDegreePiece_iff [Fintype (G ⧸ U)]
+    {A : Type*} [AddCommMonoid A] {ℳ : A → Submodule R M}
+    (hρ : ∀ u, TauCeti.LinearMap.IsHomogeneous (ρ u) ℳ ℳ 0) (n : A) (z : ⨂[R] _ : G ⧸ U, M) :
+    tensorInducedChangeTransversalLinearEquiv U s t ρ z ∈
+        TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n ↔
+      z ∈ TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n := by
+  have key (s t : U.LeftTransversal) (z : ⨂[R] _ : G ⧸ U, M)
+      (hz : z ∈ TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n) :
+      tensorInducedChangeTransversalLinearEquiv U s t ρ z ∈
+        TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n := by
+    rw [tensorInducedChangeTransversalLinearEquiv_apply]
+    simpa only [add_zero] using
+      (ρ.isHomogeneous_wreathTensor hρ (monomialChangeTransversal U s t)).map_mem hz
+  refine ⟨fun hz ↦ ?_, key s t z⟩
+  have h := key t s _ hz
+  rwa [← tensorInducedChangeTransversalLinearEquiv_symm, LinearEquiv.symm_apply_apply] at h
+
 /-- Changing the transversal yields an equivalence of tensor-induced representations. -/
 noncomputable def tensorInducedChangeTransversal :
     (U.tensorInducedRepresentation t ρ).Equiv
@@ -124,7 +144,7 @@ noncomputable def tensorInducedChangeTransversal :
     simp only [LinearEquiv.coe_coe]
     rw [tensorInducedChangeTransversalLinearEquiv_apply,
       tensorInducedChangeTransversalLinearEquiv_apply]
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul,
+    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul,
       monomialChangeTransversal_mul_monomialHom])
 
 /-- The underlying linear equivalence of the representation comparison is the named

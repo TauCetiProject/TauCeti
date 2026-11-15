@@ -36,12 +36,16 @@ characters.
 ## Main results
 
 * `ZMod.mulCastHom_injective`: multiplication by `k ≠ 0` is injective.
+* `ZMod.val_natCast_mul_val`: the residue `k x` modulo `m * k` of a residue `x` modulo `m` has
+  value `k * x.val`.
 * `ZMod.exact_mulCastHom_castHom`: exactness of `ZMod m → ZMod n → ZMod k`.
 * `ZMod.mulCastHom_mulCastHom`: two successive multiplications compose to one.
 * `ZMod.castHom_mulCastHom_eq_mulCastHom_castHom`: the reductions commute with the
   multiplications.
 * `ZMod.natCard_ker_castHom`: for `k ≠ 0` the kernel of the reduction `ZMod n → ZMod k` has
   `Nat.card` equal to `m`; for `m ≠ 0` it has `m` elements.
+* `ZMod.natCast_mul_eq_zero_iff`: for `m ≠ 0` that kernel is the annihilator of `m`, so that
+  multiplying by `m` and reducing modulo `k` detect the same classes.
 * `ZMod.ker_castHom_sq_eq_bot`: for `m ∣ k` that kernel is a square-zero ideal, so that
   `ZMod n → ZMod k` is a square-zero extension; for `pʳ⁺¹ → pʳ` with `r ≥ 1` this is the step
   in which Hensel-type lifting arguments over `ℤ/pʳ` take place.
@@ -79,6 +83,18 @@ theorem mulCastHom_injective (hk : k ≠ 0) : Function.Injective (mulCastHom k h
   rw [intCast_zmod_eq_zero_iff_dvd, ← h, Nat.cast_mul,
     mul_dvd_mul_iff_right (by exact_mod_cast hk)] at ha'
   exact (intCast_zmod_eq_zero_iff_dvd a m).2 ha'
+
+/-- The residue `k x` modulo `n = m * k` of a residue `x` modulo `m` has value `k * x.val`. -/
+theorem val_natCast_mul_val {k : ℕ} (hn : n = m * k) (x : ZMod m) :
+    ((k * x.val : ℕ) : ZMod n).val = k * x.val := by
+  rcases n.eq_zero_or_pos with rfl | hpos
+  · simp [ZMod.val_natCast]
+  · have hm : 0 < m := Nat.pos_of_mul_pos_right (hn ▸ hpos)
+    have hk : 0 < k := Nat.pos_of_mul_pos_left (hn ▸ hpos)
+    have : NeZero m := ⟨hm.ne'⟩
+    exact ZMod.val_natCast_of_lt (by
+      rw [hn, mul_comm m]
+      exact Nat.mul_lt_mul_of_pos_left x.val_lt hk)
 
 /-- Multiplication by `1` is the identity. -/
 @[simp]
@@ -159,6 +175,15 @@ theorem natCard_ker_castHom (hk : k ≠ 0) :
     (Equiv.subtypeEquivRight fun y => ?_))).symm.trans (Nat.card_zmod m)
   rw [RingHom.mem_ker]
   exact ((exact_mulCastHom_castHom k h) y).symm
+
+/-- **The kernel of the reduction `ZMod n → ZMod k` is the annihilator of `m`** for `n = m * k`
+and `m ≠ 0`: `m * z` vanishes modulo `m * k` exactly when `z` vanishes modulo `k`. -/
+theorem natCast_mul_eq_zero_iff (hm : m ≠ 0) (z : ZMod n) :
+    (m : ZMod n) * z = 0 ↔ castHom (Dvd.intro_left m h) (ZMod k) z = 0 := by
+  obtain ⟨a, rfl⟩ := intCast_surjective z
+  rw [map_intCast, ← Int.cast_natCast, ← Int.cast_mul, intCast_zmod_eq_zero_iff_dvd,
+    intCast_zmod_eq_zero_iff_dvd, ← h, Nat.cast_mul,
+    mul_dvd_mul_iff_left (Int.natCast_ne_zero.mpr hm)]
 
 /-- **The kernel of the reduction `ZMod n → ZMod k` squares to zero** for `n = m * k` with
 `m ∣ k`: the product of two multiples of `k` is a multiple of `k * k`, which `n` divides. -/

@@ -34,6 +34,6 @@ theorem valuativeExtension [ValuativeRel Ω] [ValuativeExtension K Ω]
     (E : IntermediateField K Ω) [Algebra.IsAlgebraic K E] [ValuativeRel E]
     [ValuativeExtension K E] : ValuativeExtension E Ω := by
   have h := E.val.valuativeExtension
-  exact ⟨fun a b ↦ h.vle_iff_vle a b⟩
+  exact ⟨fun {a b} ↦ h.vle_iff_vle (a := a) (b := b)⟩
 
 end IntermediateField

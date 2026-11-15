@@ -83,7 +83,7 @@ instance _root_.SheafOfModules.isIso_evaluation_dual_of_isInvertible
     (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) [IsInvertible M] :
     IsIso ((ihom.ev M).app (unit (ringCatSheaf R))) := by
   let t := LocalTrivializations.ofIsInvertible M
-  refine isIso_of_coversTop t.coversTop _ fun i ↦ ?_
+  refine isIso_of_coversTop t.coversTop fun i ↦ ?_
   let F := overFunctor (ringCatSheaf R) (t.X i)
   have heval : IsIso ((ihom.ev (M.over (t.X i))).app
       (unit ((ringCatSheaf R).over (t.X i)))) :=

@@ -28,8 +28,8 @@ time, through the short exact sequence
 `0 → B ⧸ P --· a--> B ⧸ P ^ (n + 1) → B ⧸ P ^ n → 0`,
 
 where `a` is any element of `P ^ n` not in `P ^ (n + 1)`; injectivity of multiplication by `a`
-(`Ideal.mapQ_mulLeft_pow_succ_injective`) and exactness in the middle
-(`Ideal.exact_mapQ_mulLeft_pow_succ`) are proved in
+(`Ideal.mapQ_mulLeft_pow_succ_injective_iff`) and exactness in the middle
+(`Ideal.exact_mapQ_mulLeft_pow_succ_iff`) are proved in
 `TauCeti.RingTheory.DedekindDomain.Ideal.QuotientPow`, and the trace identity is
 `LinearMap.trace_eq_add_of_exact`.
 
@@ -81,9 +81,9 @@ private theorem trace_quotient_pow_succ_mk [Module.Finite A B] (hP : P ≠ ⊥) 
     rw [LinearMap.extendScalarsOfSurjective_apply, LinearMap.restrictScalars_apply]
   simp only [Algebra.trace_apply]
   refine LinearMap.trace_eq_add_of_exact (i := i) (π := pi) ?_ ?_ ?_ ?_ ?_
-  · rw [hi]; exact Ideal.mapQ_mulLeft_pow_succ_injective ha ha'
+  · rw [hi]; exact (Ideal.mapQ_mulLeft_pow_succ_injective_iff ha).2 ha'
   · rw [hpi]; exact Submodule.factor_surjective _
-  · rw [hi, hpi]; exact Ideal.exact_mapQ_mulLeft_pow_succ hP ha ha'
+  · rw [hi, hpi]; exact (Ideal.exact_mapQ_mulLeft_pow_succ_iff hP ha).2 ha'
   -- multiplication by the residue of `z` is the action of `z ∈ B`, which `B`-linear maps respect
   all_goals simp only [LinearMap.ext_iff, LinearMap.comp_apply, Algebra.coe_lmul_eq_mul,
     LinearMap.mul_apply', hi, hpi, ← Ideal.Quotient.algebraMap_eq, ← Algebra.smul_def, map_smul,

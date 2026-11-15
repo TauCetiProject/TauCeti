@@ -116,7 +116,7 @@ private def liftPMap (A : X →ₗ.[ℝ] X) :
         apply (equiv S hb).injective
         simp only [equiv_apply, val_add]
         convert A.map_add ⟨x.val.val, x.property⟩ ⟨y.val.val, y.property⟩ using 1
-        all_goals rfl
+        rfl
       map_smul' c x := by
         apply (equiv S hb).injective
         simp only [equiv_apply]

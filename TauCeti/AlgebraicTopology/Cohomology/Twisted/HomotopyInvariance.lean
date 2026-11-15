@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 
 /-!
 # Homotopy invariance of singular cohomology with local coefficients

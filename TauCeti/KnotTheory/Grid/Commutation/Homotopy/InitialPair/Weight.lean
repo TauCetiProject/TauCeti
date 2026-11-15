@@ -39,18 +39,6 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
-private theorem initial_pair_rows {x y z : GridState n}
-    (P : GridInitialPentagonBetween a C.turnRow x y)
-    (Q : GridInitialPentagonBetween a C.oppositeTurnRow y z)
-    (hright : P.right ≠ Q.right) (hp : P.IsEmpty) (hq : Q.IsEmpty) :
-    P.top ∈ Grid.cIoo P.bottom Q.top ∧ Q.bottom = P.top := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  have hcommon : D.first.left = D.second.left := P.left_eq.trans Q.left_eq.symm
-  exact ⟨(D.cyclicOrder_of_isEmpty_of_left_eq_left hcommon
-    hright hp hq).2,
-    D.second_bottom_eq_first_top_of_left_eq_left hcommon⟩
-
 private theorem initial_pair_markings {x y z : GridState n}
     (P : GridInitialPentagonBetween a C.turnRow x y)
     (Q : GridInitialPentagonBetween a C.oppositeTurnRow y z)
@@ -157,8 +145,8 @@ theorem hexagonRectangleWeight_recutHexagonRectangle
   classical
   let T := P.recutHexagonRectangle Q hcol hp hq
   have hrecut := P.isRecut_recutHexagonRectangle Q hcol hp hq
-  obtain ⟨hrow, hbottom⟩ := G.initial_pair_rows C P Q
-    (Grid.ne_right_of_mem_cIoo hcol).symm hp hq
+  obtain ⟨hrow, hbottom⟩ := P.top_mem_cIoo_and_bottom_eq_of_left_eq_left Q.toGridRectangleBetween
+    (P.left_eq.trans Q.left_eq.symm) (Grid.ne_right_of_mem_cIoo hcol).symm hp hq
   have hfilters := G.initial_pair_marking_filters C P Q hrow hbottom G.O
     C.O_column_below C.O_next_above
   rw [← G.OSet_def] at hfilters
@@ -235,8 +223,8 @@ theorem rectangleHexagonWeight_recutRectangleHexagon
   classical
   let T := P.recutRectangleHexagon Q hcol hp hq
   have hrecut := P.isRecut_recutRectangleHexagon Q hcol hp hq
-  obtain ⟨hrow, hbottom⟩ := G.initial_pair_rows C P Q
-    (Grid.ne_right_of_mem_cIoo hcol) hp hq
+  obtain ⟨hrow, hbottom⟩ := P.top_mem_cIoo_and_bottom_eq_of_left_eq_left Q.toGridRectangleBetween
+    (P.left_eq.trans Q.left_eq.symm) (Grid.ne_right_of_mem_cIoo hcol) hp hq
   have hfilters := G.initial_pair_marking_filters C P Q hrow hbottom G.O
     C.O_column_below C.O_next_above
   rw [← G.OSet_def] at hfilters
@@ -290,7 +278,8 @@ private theorem
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inr Q⟩ := by
   -- Express the reverse weight in the original variables before identifying its dependent
   -- polygon indices. Its marking constraints remain available in hQ.
   simp only [G.pentagonPairWeight_def, G.commutationPentagonWeight_inr,
@@ -338,7 +327,8 @@ private theorem
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inr Q⟩ := by
   simp only [G.pentagonPairWeight_def, G.commutationPentagonWeight_inr,
     (G.swapColumns a b).commutationPentagonWeight_inr, G.initialPentagonWeight_reverse]
   generalize hCr : C.reverse = Cr at *
@@ -387,7 +377,8 @@ theorem existsUnique_unpairedHexagonComposite_of_initialPentagonPair
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+            G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inr Q⟩ := by
   obtain ⟨hp, -⟩ := (G.mem_initialPentagons P).mp hP
   obtain ⟨hq, -⟩ := ((G.swapColumns a b).mem_initialPentagons Q).mp hQ
   let D : GridRectangleDecomposition x z :=

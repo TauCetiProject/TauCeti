@@ -168,21 +168,18 @@ noncomputable def resChainMap (f : H →* G) :
 @[simp]
 theorem resChainMap_f (f : H →* G) (n : ℕ) : (resChainMap (k := k) f).f n = resHom f n := (rfl)
 
-/-- **The bar resolution along a group homomorphism lies over the identity of `k`**: when
-restriction along `f : H →* G` preserves projectives, this is a morphism from the bar resolution
-of `H` to the restriction of the bar resolution of `G`, both viewed as projective resolutions of
-the trivial representation of `H`. -/
-theorem resChainMap_f_zero_comp_π (f : H →* G)
-    [(resFunctor (k := k) f).PreservesProjectiveObjects] : (resChainMap (k := k) f).f 0 ≫
-    ((resFunctor f).mapProjectiveResolution (barResolution k G)).π.f 0 =
+/-- **The bar resolution along a group homomorphism lies over the identity of `k`.**
+This augmentation identity holds for every homomorphism, even when restriction does not
+preserve projective representations. -/
+@[reassoc]
+theorem resChainMap_f_zero_comp_π (f : H →* G) : (resChainMap (k := k) f).f 0 ≫
+    (resFunctor f).map ((barResolution k G).π.f 0) =
       (barResolution k H).π.f 0 := by
   refine free_ext _ _ _ _ _ fun x => ?_
   have h₁ : ((resChainMap (k := k) f).f 0).hom (single x (MonoidAlgebra.single 1 1)) =
       single (f ∘ x) (MonoidAlgebra.single 1 1) := by
     simpa only [resChainMap_f, map_one] using (resHom_single (k := k) f 0 x 1 1)
-  -- The augmentation of the restricted resolution is that of `G` followed by the canonical
-  -- identifications of the single complex, which are the identity on underlying modules.
-  have h₂ : (((resFunctor f).mapProjectiveResolution (barResolution k G)).π.f 0).hom
+  have h₂ : ((resFunctor f).map ((barResolution k G).π.f 0)).hom
       (single (f ∘ x) (MonoidAlgebra.single 1 1)) = (1 : k) :=
     barResolution_π_f_zero_single (k := k) (f ∘ x) (1 : G) 1
   exact (congrArg _ h₁).trans (h₂.trans

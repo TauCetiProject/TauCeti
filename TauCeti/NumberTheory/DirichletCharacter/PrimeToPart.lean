@@ -17,7 +17,8 @@ primitive character of `χ` to the second factor defines `primeToPart p χ`. In 
 this uses the conductor, not the possibly larger level of `χ`.
 
 The value of this character at `p` is nonzero. It is the factor denoted by `χ⁽ᵖ⁾(p)` in
-the bad-prime Hecke eigenvalue formulas for newforms.
+the bad-prime Hecke eigenvalue formulas for newforms. When `p` does not divide the conductor,
+it is the value of the primitive character at `p`.
 
 ## References
 
@@ -105,5 +106,21 @@ theorem primeToPart_apply_prime [NeZero N] (hp : p.Prime) (χ : DirichletCharact
           ZMod χ.conductor) := by
   simpa using primeToPart_apply_unit p χ
     (ZMod.unitOfCoprime p (Nat.coprime_ordCompl hp χ.conductor_ne_zero))
+
+/-- When `p` does not divide the conductor, `χ⁽ᵖ⁾(p)` is the value of the primitive character
+of `χ` at `p`. -/
+theorem primeToPart_apply_prime_of_not_dvd [NeZero N] (hp : p.Prime) (χ : DirichletCharacter R N)
+    (hc : ¬ p ∣ χ.conductor) :
+    primeToPart p χ (p : ZMod (ordCompl[p] χ.conductor)) =
+      χ.primitiveCharacter (p : ZMod χ.conductor) := by
+  have hcop : p.Coprime χ.conductor := hp.coprime_iff_not_dvd.mpr hc
+  -- the `p`-primary CRT factor is `ZMod 1`, so `p` is the CRT lift of `(1, p)`
+  have hsub : Subsingleton (ZMod (p ^ χ.conductor.factorization p)) :=
+    ZMod.subsingleton_iff.mpr (by simp [Nat.factorization_eq_zero_of_not_dvd hc])
+  rw [primeToPart_apply_prime hp, ← ZMod.coe_unitOfCoprime p hcop]
+  congr 2
+  rw [MulEquiv.symm_apply_eq]
+  refine Prod.ext (Units.ext (Subsingleton.elim _ _)) (Units.ext ?_)
+  simp [ZMod.unitsMap_val, ZMod.cast_natCast (Nat.ordCompl_dvd χ.conductor p)]
 
 end TauCeti

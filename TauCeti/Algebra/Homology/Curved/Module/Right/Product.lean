@@ -6,7 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Homotopy
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Products
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 

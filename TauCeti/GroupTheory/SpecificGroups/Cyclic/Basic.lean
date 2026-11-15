@@ -13,7 +13,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 For `n ≠ 0`, this file gives the standard computable enumeration of
 `Multiplicative (ZMod n)`, transported from the additive group `ZMod n`.
 It also records that an element corresponding to `1` under an equivalence with
-`Multiplicative ℤ` generates its group.
+`Multiplicative ℤ` generates its group, and reindexes finite sums by the powers of a generator.
 
 ## Main definitions
 
@@ -24,6 +24,7 @@ It also records that an element corresponding to `1` under an equivalence with
 * `TauCeti.mem_cyclicElements`: the enumeration exhausts the group when `n ≠ 0`.
 * `MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one`: an element sent to `1` by an equivalence with
   `Multiplicative ℤ` generates its group.
+* `TauCeti.sum_range_orderOf_eq_sum`: summing over powers of a generator enumerates a finite group.
 
 ## References
 
@@ -33,6 +34,16 @@ The construction follows the enumeration pattern of `TauCeti.dihedralElements`.
 public section
 
 namespace TauCeti
+
+/-- Summing a function over the powers `1, g, …, gⁿ⁻¹` of a generator of a finite cyclic group
+is the sum over the whole group, where `n = orderOf g`. -/
+theorem sum_range_orderOf_eq_sum {G M : Type*} [Group G] [Fintype G] [AddCommMonoid M]
+    (g : G) (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (f : G → M) :
+    ∑ i ∈ Finset.range (orderOf g), f (g ^ i) = ∑ x : G, f x := by
+  rw [← Fin.sum_univ_eq_sum_range]
+  simpa only [Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply, finEquivZPowers_apply] using
+    (((finEquivZPowers (isOfFinOrder_of_finite g)).trans
+      (Equiv.subtypeUnivEquiv hg)).sum_comp f)
 
 /-- For `n ≠ 0`, the standard computable enumeration of the finite cyclic group
 `Multiplicative (ZMod n)`. For `n = 0`, this list is empty. -/

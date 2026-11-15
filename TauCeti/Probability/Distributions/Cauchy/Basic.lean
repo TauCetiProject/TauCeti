@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High
 -/
 module
 
@@ -67,6 +67,9 @@ a common location and scale has exactly the parent law.
 * `TauCeti.Probability.integrableExpSet_id_cauchyMeasure_zero_scale`,
   `TauCeti.Probability.mgf_id_cauchyMeasure_zero_scale`, and
   `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — the zero-scale exponential moments;
+* `TauCeti.Probability.cauchyPDFReal_zero_loc_isBigO_rpow_neg_two` — centred Cauchy density
+  has quadratic decay at infinity;
+* `TauCeti.Probability.contDiff_cauchyPDFReal` — the Cauchy density is smooth;
 * `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
   `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
   transform;
@@ -82,14 +85,62 @@ a common location and scale has exactly the parent law.
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley, 1994.
+
+## Provenance
+
+The centred-density quadratic decay estimate is adapted from the Cauchy-lattice
+Poisson development in the [AIQ-Kitware DKPS formalization]
+(https://github.com/AIQ-Kitware/aiq-dkps-formalization), Apache-2.0;
+Jon Crall and GPT 5.6 High.
 -/
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Set
+open Filter MeasureTheory ProbabilityTheory Set Asymptotics
 open scoped ENNReal NNReal ProbabilityTheory
 
 namespace TauCeti.Probability
+
+/-- The centred Cauchy density is `O(|x|⁻²)` at infinity, including zero scale. -/
+theorem cauchyPDFReal_zero_loc_isBigO_rpow_neg_two (γ : ℝ≥0) :
+    (fun x : ℝ => cauchyPDFReal 0 γ x)
+      =O[cocompact ℝ] (fun x : ℝ => |x| ^ (-2 : ℝ)) := by
+  refine IsBigO.of_bound ((γ : ℝ) / Real.pi) ?_
+  filter_upwards [isCompact_Icc.compl_mem_cocompact] with x hx
+  have hxabs : 1 ≤ |x| := by
+    have hnle : ¬ |x| ≤ 1 := by
+      simpa only [mem_compl_iff, mem_Icc, abs_le] using hx
+    exact (lt_of_not_ge hnle).le
+  have hx0 : x ≠ 0 := by
+    intro h
+    subst x
+    norm_num at hxabs
+  have hpdf_nonneg : 0 ≤ cauchyPDFReal 0 γ x := by
+    rw [cauchyPDFReal_def]
+    positivity
+  simp only [Real.norm_eq_abs, abs_of_nonneg hpdf_nonneg,
+    Real.rpow_neg (abs_nonneg x), Real.rpow_two, sq_abs]
+  rw [abs_of_nonneg (inv_nonneg.mpr (sq_nonneg x)), cauchyPDFReal_def]
+  simp only [sub_zero]
+  calc
+    Real.pi⁻¹ * (γ : ℝ) * (x ^ 2 + (γ : ℝ) ^ 2)⁻¹ =
+        ((γ : ℝ) / Real.pi) / (x ^ 2 + (γ : ℝ) ^ 2) := by ring
+    _ ≤ ((γ : ℝ) / Real.pi) / x ^ 2 := by
+      exact div_le_div_of_nonneg_left (by positivity) (sq_pos_of_ne_zero hx0)
+        (by nlinarith [sq_nonneg (γ : ℝ)])
+    _ = ((γ : ℝ) / Real.pi) * (x ^ 2)⁻¹ := div_eq_mul_inv _ _
+
+/-- The Cauchy density is smooth, including at zero scale, where it vanishes identically. -/
+theorem contDiff_cauchyPDFReal (x₀ : ℝ) (γ : ℝ≥0) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (cauchyPDFReal x₀ γ) := by
+  rcases eq_or_ne γ 0 with rfl | hγ
+  · rw [cauchyPDFReal_scale_zero]
+    exact contDiff_const
+  · have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
+      funext (cauchyPDFReal_def x₀ γ)
+    rw [h]
+    exact contDiff_const.mul ((((contDiff_id.sub contDiff_const).pow 2).add contDiff_const).inv
+      fun x ↦ by positivity)
 
 /-- The scaled arctangent has the Cauchy density as its derivative. -/
 theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :
@@ -135,7 +186,7 @@ theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
   rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
   rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
-    measurableSet_Iic (integrable_cauchyPDFReal x₀).integrableOn]
+    measurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family

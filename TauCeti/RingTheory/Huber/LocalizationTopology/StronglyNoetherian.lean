@@ -102,7 +102,7 @@ hypothesis on the numerators is the rational-subset condition, which holds by de
 This is the form Wedhorn's §8.2 needs in order to iterate: it makes strong noetherianity stable
 under passing to a rational localisation, so the argument may be repeated inside `A⟨T/s⟩`. -/
 theorem isStronglyNoetherian_completion [IsTateRing A]
-    [IsStronglyNoetherian A] [(nhds (0 : A)).IsCountablyGenerated]
+    [IsStronglyNoetherian A]
     (P : PairOfDefinition A) (T : Finset A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)

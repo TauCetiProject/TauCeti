@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.Analysis.Normed.Group.Rounding
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Multiplicative pseudo-uniformisers of seminormed rings
@@ -36,17 +37,27 @@ ultrametric Tate commutative ring is a Tate ring in the topological sense. A
 seminormed algebra with `‖1‖ = 1` over a normed field has a multiplicative pseudo-uniformiser
 given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially normed fields are Tate.
 
+In an ultrametric commutative ring with `‖1‖ = 1`, the powers of the ideal `ϖ R°` of the closed
+unit ball `R°` are the closed balls of radius `‖ϖ‖ ^ n`. So the norm topology of `R°` is its
+`ϖ`-adic topology, and `R°` is `ϖ`-adically complete when `R` is complete. This is how
+`ϖ`-adic completeness of the unit ball of a Banach algebra, such as the ring of restricted series
+with integral coefficients, follows from metric completeness.
+
 ## Main definitions
 
 * `TauCeti.NormedRing.PseudoUniformizer R`: a chosen multiplicative pseudo-uniformiser.
 * `TauCeti.NormedRing.IsTate R`: the given norm on `R` admits a multiplicative
   pseudo-uniformiser.
+* `TauCeti.NormedRing.PseudoUniformizer.toUnitClosedBall`: `ϖ` as an element of the closed unit
+  ball `R°`.
 
 ## Main results
 
 * `TauCeti.NormedRing.norm_units_inv_of_norm_mul` and
   `TauCeti.NormedRing.norm_units_zpow_smul_of_norm_mul`: the inverse norm formula and exact
   scaling `‖u ^ n • m‖ = ‖u‖ ^ n * ‖m‖` for a unit `u` scaling the norm exactly.
+* `TauCeti.NormedRing.norm_smul_of_isUnit_of_norm_eq_one`: a unit of norm one of a ring with
+  multiplicative norm acts isometrically.
 * `TauCeti.NormedRing.PseudoUniformizer.norm_zpow_smul`: exact scaling
   `‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * ‖m‖` on modules with contractive action.
 * `TauCeti.NormedRing.PseudoUniformizer.existsUnique_norm_zpow_smul_mem_Ioc`: the shell
@@ -58,6 +69,11 @@ given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially norme
   `TauCeti.NormedRing.IsTate.isTateRing`: comparison with the topological notions.
 * `TauCeti.NormedRing.PseudoUniformizer.ofAlgebraMap`: small nonzero scalars of a normed field
   are multiplicative pseudo-uniformisers of norm-one algebras.
+* `TauCeti.NormedRing.PseudoUniformizer.mem_span_toUnitClosedBall_pow_iff`: `(ϖ R°) ^ n` is the
+  closed ball of radius `‖ϖ‖ ^ n` in `R°`.
+* `TauCeti.NormedRing.PseudoUniformizer.isAdic_span_toUnitClosedBall` and
+  `TauCeti.NormedRing.PseudoUniformizer.isAdicComplete_span_toUnitClosedBall`: `R°` is `ϖ`-adic,
+  and `ϖ`-adically complete when `R` is complete.
 
 ## References
 
@@ -83,10 +99,14 @@ section Module
 
 variable {M : Type*} [SeminormedAddGroup M] [MulActionWithZero R M] [IsBoundedSMul R M]
 
-/-- **Exact scaling on modules**: a unit of positive norm by which left multiplication scales
-the norm exactly scales the norm of every vector exactly under a contractive scalar action. -/
+omit hu0 in
+/-- **Exact scaling on modules**: a unit by which left multiplication scales the norm exactly
+scales the norm of every vector exactly under a contractive scalar action. -/
 theorem norm_units_smul_of_norm_mul (m : M) : ‖(u : R) • m‖ = ‖(u : R)‖ * ‖m‖ := by
   refine le_antisymm (norm_smul_le _ _) ?_
+  rcases (norm_nonneg (u : R)).eq_or_lt with h0 | hu0
+  · rw [← h0, zero_mul]
+    exact norm_nonneg _
   calc ‖(u : R)‖ * ‖m‖ = ‖(u : R)‖ * ‖((u⁻¹ : Rˣ) : R) • (u : R) • m‖ := by simp [smul_smul]
     _ ≤ ‖(u : R)‖ * (‖((u⁻¹ : Rˣ) : R)‖ * ‖(u : R) • m‖) := by gcongr; exact norm_smul_le _ _
     _ = ‖(u : R) • m‖ := by
@@ -97,7 +117,7 @@ theorem norm_units_smul_of_norm_mul (m : M) : ‖(u : R) • m‖ = ‖(u : R)�
 scales the norm of every vector by `‖u‖⁻¹` under a contractive scalar action. -/
 theorem norm_units_inv_smul_of_norm_mul (m : M) :
     ‖((u⁻¹ : Rˣ) : R) • m‖ = ‖(u : R)‖⁻¹ * ‖m‖ := by
-  rw [eq_inv_mul_iff_mul_eq₀ hu0.ne', ← norm_units_smul_of_norm_mul hu0 hu]
+  rw [eq_inv_mul_iff_mul_eq₀ hu0.ne', ← norm_units_smul_of_norm_mul hu]
   simp [smul_smul]
 
 /-- **Exact scaling by integer powers**: `‖u ^ n • m‖ = ‖u‖ ^ n * ‖m‖` for every integer `n`,
@@ -108,7 +128,7 @@ theorem norm_units_zpow_smul_of_norm_mul (n : ℤ) (m : M) :
   induction n generalizing m with
   | zero => simp
   | succ n ih =>
-    simp only [zpow_add_one, Units.val_mul, mul_smul, ih, norm_units_smul_of_norm_mul hu0 hu,
+    simp only [zpow_add_one, Units.val_mul, mul_smul, ih, norm_units_smul_of_norm_mul hu,
       zpow_add_one₀ hu0.ne']
     ring
   | pred n ih =>
@@ -129,6 +149,20 @@ theorem norm_units_pow_of_norm_mul (n : ℕ) : ‖(u : R) ^ n‖ = ‖(u : R)‖
   simpa using norm_units_zpow_of_norm_mul hu0 hu n
 
 end Units
+
+section NormOne
+
+variable {R M : Type*} [SeminormedRing R] [NormMulClass R] [SeminormedAddGroup M]
+  [MulActionWithZero R M] [IsBoundedSMul R M]
+
+/-- A unit of norm one of a ring with multiplicative norm acts isometrically under a contractive
+scalar action. -/
+theorem norm_smul_of_isUnit_of_norm_eq_one {u : R} (hu : IsUnit u) (h1 : ‖u‖ = 1) (m : M) :
+    ‖u • m‖ = ‖m‖ := by
+  obtain ⟨v, rfl⟩ := hu
+  rw [norm_units_smul_of_norm_mul (fun x ↦ norm_mul _ _), h1, one_mul]
+
+end NormOne
 
 /-- A **multiplicative pseudo-uniformiser** of a seminormed ring `R`: a unit `ϖ` with
 `0 < ‖ϖ‖ < 1` by which left multiplication scales the norm exactly, `‖ϖ * x‖ = ‖ϖ‖ * ‖x‖`.
@@ -182,7 +216,7 @@ variable {M : Type*} [SeminormedAddGroup M] [MulActionWithZero R M] [IsBoundedSM
 vector exactly under a contractive scalar action. -/
 @[simp]
 theorem norm_smul (m : M) : ‖(ϖ.unit : R) • m‖ = ‖(ϖ.unit : R)‖ * ‖m‖ :=
-  norm_units_smul_of_norm_mul ϖ.norm_pos ϖ.norm_mul m
+  norm_units_smul_of_norm_mul ϖ.norm_mul m
 
 /-- The inverse of a multiplicative pseudo-uniformiser scales the norm of every vector by
 `‖ϖ‖⁻¹` under a contractive scalar action. -/
@@ -202,18 +236,14 @@ theorem norm_zpow_smul (n : ℤ) (m : M) :
 with `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1`. -/
 theorem existsUnique_norm_zpow_smul_mem_Ioc {m : M} (hm : ‖m‖ ≠ 0) :
     ∃! n : ℤ, ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ ∈ Ioc ‖(ϖ.unit : R)‖ 1 := by
-  -- Package `‖ϖ‖` and `‖m‖` as units of `ℝ≥0`; the shell is then a fundamental domain for
-  -- multiplication by the powers of `‖ϖ‖⁻¹`.
-  let q : ℝ≥0ˣ := Units.mk0 ‖(ϖ.unit : R)‖₊ (by simpa [← NNReal.coe_ne_zero] using ϖ.norm_pos.ne')
-  let u : ℝ≥0ˣ := Units.mk0 ‖m‖₊ (by simpa [← NNReal.coe_ne_zero] using hm)
-  have hq : 1 < q⁻¹ := one_lt_inv'.mpr <| by
-    simpa [← Units.val_lt_val, q, ← NNReal.coe_lt_coe] using ϖ.norm_lt_one
-  convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
-  simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
-    mul_comm]
+  simpa only [ϖ.norm_zpow_smul] using
+    existsUnique_zpow_mul_mem_Ioc ϖ.norm_pos ϖ.norm_lt_one
+      (lt_of_le_of_ne (norm_nonneg m) (Ne.symm hm))
 
-/-- Rescale a vector of nonzero norm into a prescribed ball, controlling the inverse scaling
-factor by a constant times the original norm. This is the common shell estimate for global
+omit [MulActionWithZero R M] [IsBoundedSMul R M] in
+/-- For a vector `m` of nonzero norm and `δ > ‖ϖ‖ ^ k`, there is an integer `n` with
+`‖ϖ‖ ^ n * ‖m‖ < δ` whose inverse factor satisfies
+`(‖ϖ‖ ^ n)⁻¹ ≤ (‖ϖ‖ ^ (k + 1))⁻¹ * ‖m‖`. This is the common shell estimate for global
 operator bounds and quantitative preimage bounds. -/
 theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ)
     (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) :
@@ -221,8 +251,9 @@ theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ
       (‖(ϖ.unit : R)‖ ^ n)⁻¹ ≤ (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖m‖ := by
   set r := ‖(ϖ.unit : R)‖
   have hr0 : 0 < r := ϖ.norm_pos
-  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hm
-  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
+  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ :=
+    existsUnique_zpow_mul_mem_Ioc ϖ.norm_pos ϖ.norm_lt_one
+      (lt_of_le_of_ne (norm_nonneg m) (Ne.symm hm))
   have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
   refine ⟨n + k, ?_, ?_⟩
   · calc r ^ (n + k) * ‖m‖ = r ^ k * (r ^ n * ‖m‖) := by rw [hpow]; ring
@@ -242,7 +273,7 @@ theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ
 theorem zpowCeil_norm_zpow_smul (n : ℤ) (m : M) :
     zpowCeil ‖(ϖ.unit : R)‖ ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ =
       ‖(ϖ.unit : R)‖ ^ n * zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ := by
-  rw [ϖ.norm_zpow_smul, zpowCeil_zpow_mul ϖ.norm_pos ϖ.norm_lt_one]
+  rw [ϖ.norm_zpow_smul, zpowCeil_zpow_mul ϖ.norm_pos]
 
 end Module
 
@@ -291,6 +322,58 @@ noncomputable def ofAlgebraMap {K A : Type*} [NormedField K] [SeminormedRing A]
 theorem coe_unit_ofAlgebraMap {K A : Type*} [NormedField K] [SeminormedRing A]
     [NormedAlgebra K A] [NormOneClass A] {c : K} (hc : c ≠ 0) (hc1 : ‖c‖ < 1) :
     (((ofAlgebraMap hc hc1 : PseudoUniformizer A).unit : Aˣ) : A) = algebraMap K A c := (rfl)
+
+section UnitClosedBall
+
+/-! ### The closed unit ball is `ϖ`-adic -/
+
+variable {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+  (ϖ : PseudoUniformizer R)
+
+/-- A multiplicative pseudo-uniformiser as an element of the closed unit ball `R°`. -/
+def toUnitClosedBall : Subring.unitClosedBall R :=
+  ⟨ϖ.unit, Subring.mem_unitClosedBall.2 ϖ.norm_lt_one.le⟩
+
+@[simp]
+theorem coe_toUnitClosedBall : (ϖ.toUnitClosedBall : R) = ϖ.unit := (rfl)
+
+/-- **The powers of `ϖ R°` are closed balls**: an element of the closed unit ball `R°` lies in
+`(ϖ R°) ^ n` exactly when its norm is at most `‖ϖ‖ ^ n`. -/
+theorem mem_span_toUnitClosedBall_pow_iff (n : ℕ) {x : Subring.unitClosedBall R} :
+    x ∈ Ideal.span {ϖ.toUnitClosedBall} ^ n ↔ ‖(x : R)‖ ≤ ‖(ϖ.unit : R)‖ ^ n := by
+  have hpow (k : ℤ) (y : R) : ‖((ϖ.unit ^ k : Rˣ) : R) * y‖ = ‖(ϖ.unit : R)‖ ^ k * ‖y‖ :=
+    ϖ.norm_zpow_smul k y
+  rw [← SetLike.mem_coe, toUnitClosedBall, SubsemiringClass.coe_span_singleton_pow,
+    Set.mem_preimage, Set.mem_smul_set]
+  constructor
+  · rintro ⟨y, hy, hxy⟩
+    have h := hpow n y
+    rw [zpow_natCast, Units.val_pow_eq_pow_val, ← smul_eq_mul, hxy] at h
+    rw [h]
+    exact mul_le_of_le_one_right (by positivity) (Subring.mem_unitClosedBall.1 hy)
+  · intro hx
+    -- `ϖ⁻ⁿ x` lies in the unit ball and `ϖⁿ (ϖ⁻ⁿ x) = x`.
+    refine ⟨(((ϖ.unit ^ n)⁻¹ : Rˣ) : R) * x, Subring.mem_unitClosedBall.2 ?_, ?_⟩
+    · rw [← zpow_natCast, ← zpow_neg, hpow, zpow_neg, zpow_natCast]
+      exact inv_mul_le_one_of_le₀ hx (by positivity)
+    · rw [smul_eq_mul, ← Units.val_pow_eq_pow_val, Units.mul_inv_cancel_left]
+
+/-- **The closed unit ball is `ϖ`-adic**: its norm topology is the `ϖ R°`-adic topology. -/
+theorem isAdic_span_toUnitClosedBall : IsAdic (Ideal.span {ϖ.toUnitClosedBall}) :=
+  (Subring.unitClosedBall R).isAdic_span_singleton_of_isOpen_of_isBounded
+    (Subring.isOpen_unitClosedBall R)
+    (Subring.coe_unitClosedBall R ▸ Huber.isBounded_closedBall_zero 1) ϖ.isPseudoUniformizer _
+
+/-- **The closed unit ball of a complete ring is `ϖ`-adically complete.** -/
+theorem isAdicComplete_span_toUnitClosedBall {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+    [NormOneClass R] [CompleteSpace R] (ϖ : PseudoUniformizer R) :
+    IsAdicComplete (Ideal.span {ϖ.toUnitClosedBall}) (Subring.unitClosedBall R) := by
+  have hc : IsClosed (Subring.unitClosedBall R : Set R) :=
+    Subring.coe_unitClosedBall R ▸ Metric.isClosed_closedBall
+  have : CompleteSpace (Subring.unitClosedBall R) := hc.completeSpace_coe
+  exact ϖ.isAdic_span_toUnitClosedBall.isAdicComplete_iff.2 ⟨inferInstance, inferInstance⟩
+
+end UnitClosedBall
 
 end PseudoUniformizer
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.NumberTheory.Cyclotomic.Adjoin
 public import TauCeti.RingTheory.RootsOfUnity.Action
 public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -18,14 +19,18 @@ only that `M` contains a primitive `m`-th root of unity — although when `M / K
 subgroup is `Gal(M/K(μ_m))`, which is the reading the crossing argument uses.
 
 Without a primitive root, the same subgroup is the kernel of the action of `Aut(M/K)` on the
-group `μ_m(M)`. For `m ≠ 0` this group is cyclic, so the index divides the order `φ(#μ_m(M))` of
-the automorphism group of `μ_m(M)`. For a prime `p` this index is prime to `p`: adjoining the
+group `μ_m(M)`. The index divides `φ(#μ_m(M))` for every `m`: if `μ_m(M)` is finite it is cyclic,
+and `φ(#μ_m(M))` is the order of its automorphism group; otherwise `#μ_m(M) = 0` and `φ 0 = 0`. For
+a prime `p` this index is prime to `p`: adjoining the
 `p`-th roots of unity is a step of degree prime to `p`, the reduction step in the Kummer-theoretic
 proofs of class field theory.
 
 ## Main results
 
 * `IsPrimitiveRoot.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow`
+* `IsPrimitiveRoot.isOpen_ker_autToPow`, `IsPrimitiveRoot.isOpen_ker_comp_autToPow`: the kernel of
+  the cyclotomic character, and of every additive character read on it, is open in the Krull
+  topology.
 * `IntermediateField.fixingSubgroup_adjoin_nth_roots_eq_ker`: the fixers of `K(μ_m)` are the
   automorphisms acting trivially on `μ_m(M)`.
 * `IntermediateField.index_fixingSubgroup_adjoin_nth_roots_dvd_totient`: their index divides
@@ -60,6 +65,30 @@ theorem IsPrimitiveRoot.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow
   rw [IntermediateField.forall_mem_adjoin_smul_eq_self_iff]
   simp [AlgEquiv.smul_def]
 
+/-- **The kernel of the cyclotomic character is open** in the Krull topology: it fixes the finite
+extension `K(μ_m) = K(ζ)`. -/
+theorem IsPrimitiveRoot.isOpen_ker_autToPow {K M : Type*} [Field K] [Field M] [Algebra K M]
+    {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m) :
+    IsOpen ((hζ.autToPow K).ker : Set Gal(M/K)) := by
+  have : FiniteDimensional K K⟮ζ⟯ :=
+    adjoin.finiteDimensional ((hζ.isIntegral (NeZero.pos m)).tower_top (A := K))
+  rw [← hζ.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow,
+    ← hζ.adjoin_singleton_eq_adjoin_nth_roots]
+  exact K⟮ζ⟯.fixingSubgroup_isOpen
+
+/-- **A character of `(ℤ / m)ˣ` read on the cyclotomic character has open kernel**: its kernel
+contains the open kernel of the cyclotomic character (`IsPrimitiveRoot.isOpen_ker_autToPow`). Use
+it to feed such a character to constructions that require a continuous character of `Gal(M/K)`. -/
+theorem IsPrimitiveRoot.isOpen_ker_comp_autToPow {K M A : Type*} [Field K] [Field M]
+    [Algebra K M] [AddZeroClass A] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (ψ : Additive (ZMod m)ˣ →+ A) :
+    IsOpen ((ψ.comp (hζ.autToPow K).toAdditive).ker : Set (Additive Gal(M/K))) := by
+  refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup (hζ.autToPow K).ker)
+    (fun g hg ↦ ?_) (hζ.isOpen_ker_autToPow.preimage continuous_toMul)
+  have hu : hζ.autToPow K g.toMul = 1 := hg
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, hu,
+    ofMul_one, map_zero]
+
 namespace IntermediateField
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
@@ -84,14 +113,19 @@ theorem fixingSubgroup_adjoin_nth_roots_eq_ker (m : ℕ) :
         h
       simpa [AlgEquiv.smul_units_def] using congrArg Units.val this
 
-/-- **The index of `Aut(M/K(μ_m))` divides `φ(#μ_m(M))`**, the order of the automorphism group of
-the cyclic group `μ_m(M)`, through whose action it is the kernel. -/
-theorem index_fixingSubgroup_adjoin_nth_roots_dvd_totient (m : ℕ) [NeZero m] :
+/-- **The index of `Aut(M/K(μ_m))` divides `φ(#μ_m(M))`.** When `μ_m(M)` is finite it is cyclic,
+and `φ(#μ_m(M))` is the order of its automorphism group, through whose action `Aut(M/K(μ_m))` is
+the kernel; otherwise `#μ_m(M) = 0` and `φ 0 = 0`, so the statement holds trivially. -/
+theorem index_fixingSubgroup_adjoin_nth_roots_dvd_totient (m : ℕ) :
     (adjoin K {b : M | b ^ m = 1}).fixingSubgroup.index ∣
       (Nat.card (rootsOfUnity m M)).totient := by
-  rw [fixingSubgroup_adjoin_nth_roots_eq_ker, Subgroup.index_ker,
-    ← IsCyclic.card_mulAut]
-  exact Subgroup.card_subgroup_dvd_card _
+  rcases finite_or_infinite (rootsOfUnity m M) with hfin | hinf
+  · -- a finite group of roots of unity in a field is cyclic, also for `m = 0`
+    have : IsCyclic (rootsOfUnity m M) := isCyclic_subgroup_units _
+    rw [fixingSubgroup_adjoin_nth_roots_eq_ker, Subgroup.index_ker, ← IsCyclic.card_mulAut]
+    exact Subgroup.card_subgroup_dvd_card _
+  · rw [Nat.card_eq_zero_of_infinite, Nat.totient_zero]
+    exact dvd_zero _
 
 /-- **Adjoining the `p`-th roots of unity is a step of degree prime to `p`**: for a prime `p`, the
 index of `Aut(M/K(μ_p))` in `Aut(M/K)` is prime to `p`. It divides `φ(#μ_p(M))`, and

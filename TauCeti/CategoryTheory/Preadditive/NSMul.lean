@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Preadditive.Basic
 
 /-!
-# Invertible multiplication by a natural number
+# Multiplication by an integer in a preadditive category
 
-In a preadditive category, multiplication by a natural number `d` on an object `X` is the
-morphism `d • 𝟙 X`. This file records two facts about it when it is invertible:
+In a preadditive category, multiplication by an integer `n` on an object `X` is the
+morphism `n • 𝟙 X`, which is also the image of `n` in the endomorphism ring `End X`
+(`CategoryTheory.End.intCast_asHom`, `CategoryTheory.End.natCast_asHom`). It commutes with every
+morphism (`CategoryTheory.End.intCast_asHom_comp`, `CategoryTheory.End.natCast_asHom_comp`).
 
-* `CategoryTheory.Preadditive.comp_inv_nsmul_id`: the inverse of multiplication by `d` commutes
-  with every morphism.
-* `CategoryTheory.Functor.isIso_nsmul_id_obj`: an additive functor keeps multiplication by `d`
-  invertible.
+The inverse of a scalar multiple `r • 𝟙` and its preservation by linear functors are in
+`TauCeti.CategoryTheory.Linear.Endomorphism`.
 -/
 
 public section
@@ -25,25 +25,30 @@ namespace CategoryTheory
 
 variable {C : Type*} [Category C] [Preadditive C]
 
-namespace Preadditive
+namespace End
 
-/-- The inverse of multiplication by a natural number commutes with every morphism. -/
-lemma comp_inv_nsmul_id {X Y : C} (f : X ⟶ Y) (d : ℕ) [IsIso (d • 𝟙 X)] [IsIso (d • 𝟙 Y)] :
-    f ≫ inv (d • 𝟙 Y) = inv (d • 𝟙 X) ≫ f := by
-  rw [IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq]
-  simp [Preadditive.nsmul_comp, Preadditive.comp_nsmul]
+/-- The integer `n` in the endomorphism ring of `X` is multiplication by `n`, the morphism
+`n • 𝟙 X`. -/
+theorem intCast_asHom (X : C) (n : ℤ) : (n : End X).asHom = n • 𝟙 X := by
+  rw [← zsmul_one, zsmul_asHom, one_asHom]
 
-end Preadditive
+/-- The natural number `n` in the endomorphism ring of `X` is multiplication by `n`, the morphism
+`n • 𝟙 X`. -/
+theorem natCast_asHom (X : C) (n : ℕ) : (n : End X).asHom = n • 𝟙 X := by
+  rw [← nsmul_one, nsmul_asHom, one_asHom]
 
-namespace Functor
+/-- Multiplication by an integer `n` commutes with every morphism. -/
+@[reassoc]
+theorem intCast_asHom_comp {X Y : C} (f : X ⟶ Y) (n : ℤ) :
+    (n : End X).asHom ≫ f = f ≫ (n : End Y).asHom := by
+  simp [intCast_asHom, Preadditive.zsmul_comp, Preadditive.comp_zsmul]
 
-/-- If multiplication by a natural number `d` is invertible on `X`, then it is invertible on the
-image of `X` under any additive functor. -/
-lemma isIso_nsmul_id_obj {D : Type*} [Category D] [Preadditive D] (F : C ⥤ D) [F.Additive]
-    (d : ℕ) (X : C) [IsIso (d • 𝟙 X)] : IsIso (d • 𝟙 (F.obj X)) := by
-  rw [← F.map_id, ← F.map_nsmul]
-  infer_instance
+/-- Multiplication by a natural number `n` commutes with every morphism. -/
+@[reassoc]
+theorem natCast_asHom_comp {X Y : C} (f : X ⟶ Y) (n : ℕ) :
+    (n : End X).asHom ≫ f = f ≫ (n : End Y).asHom := by
+  simpa using intCast_asHom_comp f n
 
-end Functor
+end End
 
 end CategoryTheory

@@ -62,7 +62,7 @@ theorem exists_measurePreserving_of_atomic_assignment
     simp [ρ, Measure.sum_apply]
   have hdiffmass : diffusePart μ univ = (ν - ρ) univ := by
     have hsplit := congrArg (fun m : Measure X ↦ m univ) (atomicPart_add_diffusePart μ)
-    simp only [Measure.add_apply] at hsplit
+    simp only [_root_.add_apply] at hsplit
     rw [Measure.sub_apply MeasurableSet.univ hρ, ← hmass, hsplit.symm, ← hρmass]
     exact (ENNReal.add_sub_cancel_left (measure_ne_top ρ univ)).symm
   obtain ⟨g, hg⟩ := exists_measurePreserving_of_nullSingleton_of_measure_univ_eq

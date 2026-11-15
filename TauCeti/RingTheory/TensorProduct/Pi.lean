@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TensorProduct.Pi
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Tensor products of algebras and products
@@ -16,6 +17,8 @@ right factor. This file gives the algebra equivalence for a product in the left 
 `TensorProduct.prodLeft`. It also evaluates the inverse of Mathlib's
 `Algebra.TensorProduct.piScalarRight : A ⊗[R] (ι → R) ≃ₐ[S] (ι → A)` on `Pi.single i x`, so that
 `simp` computes the matrix entries of a base change of an algebra map between function algebras.
+Base-changing a section factoring through a coordinate projection commutes with the same
+product decomposition (`AlgHom.sectionBaseChange_comp_evalAlgHom`).
 
 ## Main declarations
 
@@ -69,3 +72,20 @@ theorem piScalarRight_symm_single (R S A : Type*) {ι : Type*} [CommSemiring R] 
   simp [Pi.single_apply]
 
 end TauCeti.Algebra.TensorProduct
+
+namespace AlgHom
+
+/-- Base change of a section factoring through one coordinate of a product agrees with the
+base-changed section on that coordinate of the base-changed product. -/
+@[simp]
+theorem sectionBaseChange_comp_evalAlgHom {A : Type*} [CommSemiring A]
+    {κ : Type*} [Fintype κ] [DecidableEq κ] {B : κ → Type*}
+    [∀ k, Semiring (B k)] [∀ k, Algebra A (B k)] {k : κ} (s : B k →ₐ[A] A)
+    (T : Type*) [CommSemiring T] [Algebra A T] (x : T ⊗[A] (∀ k, B k)) :
+    (s.comp (Pi.evalAlgHom A B k)).sectionBaseChange T x =
+      s.sectionBaseChange T (Algebra.TensorProduct.piRight A T T B x k) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul t b => simp
+  | add x y hx hy => simp only [map_add, Pi.add_apply, hx, hy]
+
+end AlgHom

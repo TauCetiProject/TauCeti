@@ -53,8 +53,8 @@ theorem exists_mem_sup_apply_sub_mem_of_isIdempotentElem {R M : Type*} [Ring R] 
   obtain ⟨p₂, hp₂, q₂, hq₂, h₂⟩ := Submodule.mem_sup.1 hfξ
   -- the correction is `ι = p₁ + q₂`: as `e ξ = e (e ξ)` and `f ξ = f (f ξ)`, we get
   -- `e (ξ - ι) = e (q₁ - q₂)` and `f (ξ - ι) = f (p₂ - p₁)`
-  have he' : e (p₁ + q₁) = e ξ := by rw [h₁, ← End.mul_apply, he.eq]
-  have hf' : f (p₂ + q₂) = f ξ := by rw [h₂, ← End.mul_apply, hf.eq]
+  have he' : e (p₁ + q₁) = e ξ := by rw [h₁, ← _root_.mul_apply_eq_comp, he.eq]
+  have hf' : f (p₂ + q₂) = f ξ := by rw [h₂, ← _root_.mul_apply_eq_comp, hf.eq]
   refine ⟨p₁ + q₂, Submodule.add_mem_sup hp₁ hq₂, ?_, ?_⟩
   · simpa [← he'] using hQ (sub_mem hq₁ hq₂)
   · simpa [← hf'] using hP (sub_mem hp₂ hp₁)

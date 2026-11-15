@@ -205,7 +205,7 @@ theorem extend_le_tsum (a : ℕ → ℝ≥0∞) : Φ.extend a ≤ ∑' n, a n :=
   calc (Φ b : ℝ≥0∞) ≤ ∑ n ∈ b.support, (b n : ℝ≥0∞) := by
         exact_mod_cast Φ.apply_le_sum b
     _ ≤ ∑ n ∈ b.support, a n := Finset.sum_le_sum fun n _ => hb n
-    _ ≤ ∑' n, a n := ENNReal.sum_le_tsum _
+    _ ≤ ∑' n, a n := sum_le_tsum _
 
 @[simp]
 theorem extend_zero : Φ.extend 0 = 0 :=
@@ -342,7 +342,7 @@ noncomputable def finSeminorm (n : ℕ) : Seminorm ℝ (Fin n → ℝ) where
     refine (Φ.mono fun k => ?_).trans (Φ.map_add_le _ _)
     simp only [Finsupp.indicator_apply, Finsupp.coe_add, Pi.add_apply]
     split_ifs
-    · exact nnnorm_add_le _ _
+    · exact nnNorm_add_le _ _
     · simp
   neg' x := by simp
   smul' c x := by
@@ -351,7 +351,7 @@ noncomputable def finSeminorm (n : ℕ) : Seminorm ℝ (Fin n → ℝ) where
       ext k
       simp only [Finsupp.indicator_apply, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul]
       split_ifs <;> simp
-    rw [this, map_smul, NNReal.coe_mul, coe_nnnorm]
+    rw [this, map_smul, NNReal.coe_mul, coe_nnNorm]
 
 @[simp]
 theorem finSeminorm_apply (n : ℕ) (x : Fin n → ℝ) :
@@ -393,7 +393,7 @@ theorem apply_le_apply_of_forall_sum_le {a b : ℕ →₀ ℝ≥0} (ha : Antiton
   -- Both sequences are read off from their first `N` terms.
   have hrestrict (c : ℕ →₀ ℝ≥0) (hc : c.support ⊆ range N) :
       Φ.finSeminorm N (fun i => c i) = Φ c := by
-    simp only [finSeminorm_apply, NNReal.nnnorm_eq]
+    simp only [finSeminorm_apply, NNReal.nnNorm_eq]
     rw [← (Finsupp.eq_indicator_self_iff _).mpr hc]
   have hle := (Φ.isSymmetricGauge_finSeminorm N).apply_le_of_prefixSum_le
     (y := fun i => b i) (z := fun i => a i)

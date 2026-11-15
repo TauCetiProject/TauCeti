@@ -40,8 +40,8 @@ In the basis of fundamental weights `ωᵢ`, dual to its simple coroots, the wei
 is exactly the dual basis vector `ωₗ` at the terminal short node, the abstract last fundamental
 weight of the basis. These are the hypotheses of the Lie-basis characterization
 `LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` of highest-weight vectors. In characteristic
-zero, `TauCeti.isKilling_typeB` supplies the required nondegenerate Killing form whenever the
-standard module is triangularizable, in particular over an algebraically closed field.
+zero, `TauCeti.isKilling_typeB` supplies the required nondegenerate Killing form over any
+base field.
 
 The annihilation is read off the two ways a simple-root generator acts on the exterior basis. The
 terminal short generator creates the last coordinate (after the grade involution, and scaled by
@@ -290,7 +290,6 @@ variable {K : Type u} [Field K] [CharZero K]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
   (z : P.line) (hz : Q (z : V) = 1) [Invertible (2 : K)]
-  [LieAlgebra.IsKilling K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)]
 
 /-- **The all-coordinate spinor is a highest-weight vector of last fundamental weight.**
 The base and Borel are those of `typeBLieBasis`; its Cartan basis consists of the simple

@@ -129,29 +129,14 @@ noncomputable abbrev coordinateMap :
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)
 
-/-- The special-linear coordinate morphism sends an ambient coordinate to its quotient class. -/
-theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
-    (coordinateMap R n).hom h =
-      Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal h :=
-  CommHopfAlgCat.mkQuotient_apply
-    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) h
-
 /-- The localized generic determinant is one in the special-linear coordinate Hopf algebra. -/
 @[simp↓]
 theorem coordinateMap_determinantGroupLike :
     (coordinateMap R n).hom (GeneralLinear.determinantGroupLike R n) = 1 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_eq_one_iff_sub_mem,
+  rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
+    Ideal.Quotient.mk_eq_one_iff_sub_mem,
     definingHopfIdeal_toIdeal]
   exact Ideal.mem_span_singleton_self _
-
-/-- The kernel of the special-linear coordinate morphism is the principal determinant-one
-ideal. -/
-theorem coordinateMap_ker :
-    RingHom.ker (coordinateMap R n).hom.toAlgHom.toRingHom =
-      Ideal.span
-        {(GeneralLinear.determinantGroupLike R n :
-            GeneralLinear.coordinateHopfAlgebra R n) - 1} := by
-  rw [CommHopfAlgCat.mkQuotient_ker, definingHopfIdeal_toIdeal]
 
 /-- The generic matrix of `SLₙ`, the image in `O(SLₙ)` of the generic matrix of `GLₙ`, has
 determinant one. -/
@@ -295,7 +280,7 @@ theorem ofConv_pointsMulEquiv_symm_genericMatrix (M : Matrix.SpecialLinearGroup 
   rw [MulEquiv.apply_symm_apply] at h
   have hij := congrArg (fun g : Matrix.GeneralLinearGroup (Fin n) A ↦ (g : Matrix _ _ A) i j) h
   simp only [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at hij
-  rw [Matrix.map_apply, coordinateMap_apply, GeneralLinear.genericMatrix_apply,
+  rw [Matrix.map_apply, CommHopfAlgCat.mkQuotient_apply, GeneralLinear.genericMatrix_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply_apply, hij,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
@@ -325,6 +310,16 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
   rw [← pointsMulEquiv_toGL, ← CommHopfAlgCat.mapValue_quotientPointsHom]
   rw [GeneralLinear.pointsMulEquiv_mapValue, pointsMulEquiv_toGL,
     Matrix.SpecialLinearGroup.toGL_map, AlgHom.toRingHom_eq_coe]
+
+/-- Specializing the universal `SLₙ` point at the coordinate homomorphism of a matrix
+recovers that matrix. The universal point corresponds to the identity coordinate map. -/
+theorem map_pointsMulEquiv_id (g : Matrix.SpecialLinearGroup (Fin n) A) :
+    Matrix.SpecialLinearGroup.map
+        (((pointsMulEquiv (R := R) (A := A) n).symm g).ofConv.toRingHom)
+        (pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R n) n
+          (toConv (AlgHom.id R (coordinateHopfAlgebra R n)))) = g := by
+  rw [← pointsMulEquiv_mapValue, AlgHom.mapValue_apply, ofConv_toConv,
+    AlgHom.comp_id, toConv_ofConv, MulEquiv.apply_symm_apply]
 
 /-- Naturality of the inverse special-linear point equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)

@@ -25,15 +25,20 @@ satisfies the triangle inequality, so approximations compose with their errors a
 vertex count is `Nat.card V`, so no finiteness hypothesis is needed: on an infinite vertex type
 the denominator vanishes and every discrepancy is `0`.
 
+The finite set `H.editedOn H' supp` records the edited injective triples on a given support,
+counting each supported ordering separately. Its cardinality is additive over disjoint supports.
+
 ## Main definitions
 
 * `TauCeti.Colored3Graph.editDiscrepancy3`: the normalized number of disagreeing triples.
 * `TauCeti.Colored3Graph.Approximates3`: approximation within a given edit discrepancy.
+* `TauCeti.Colored3Graph.editedOn`: the supported injective triples whose colors differ.
 
 ## Main results
 
 * `TauCeti.Colored3Graph.editDiscrepancy3_triangle`: the triangle inequality.
 * `TauCeti.Colored3Graph.Approximates3.trans`: approximations compose, adding their errors.
+* `TauCeti.Colored3Graph.card_editedOn_biUnion`: edit counts add over disjoint supports.
 -/
 
 public section
@@ -44,6 +49,82 @@ namespace Colored3Graph
 
 variable {κ V : Type*}
 
+section EditedOn
+
+open Finset
+
+variable [DecidableEq κ]
+
+/-- The supported injective triples whose underlying unordered triple has different colors
+in `H` and `H'`. Each supported ordering is counted separately. -/
+def editedOn (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    Finset {x : Fin 3 → V // Function.Injective x} :=
+  supp.filter fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
+    H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
+
+/-- Edited triples are obtained by filtering the support for unequal colors. -/
+theorem editedOn_def (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    H.editedOn H' supp = supp.filter fun x ↦
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) :=
+  (rfl)
+
+/-- Membership means being supported and having different colors. -/
+@[simp]
+theorem mem_editedOn (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x})
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    x ∈ H.editedOn H' supp ↔ x ∈ supp ∧
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) := by
+  simp [editedOn_def]
+
+/-- Every edited triple belongs to the given support. -/
+theorem editedOn_subset (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    H.editedOn H' supp ⊆ supp := by
+  rw [editedOn_def]
+  exact filter_subset _ _
+
+/-- Enlarging the support can only enlarge the set of edited triples. -/
+theorem editedOn_mono (H H' : Colored3Graph κ V)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} (h : A ⊆ B) :
+    H.editedOn H' A ⊆ H.editedOn H' B := by
+  simp only [editedOn_def]
+  exact filter_subset_filter _ h
+
+/-- The edited support is independent of the direction of recoloring. -/
+theorem editedOn_comm (H H' : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    H.editedOn H' supp = H'.editedOn H supp := by
+  simp only [editedOn_def, ne_comm]
+
+/-- A coloring has no edits relative to itself. -/
+@[simp]
+theorem editedOn_self (H : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) : H.editedOn H supp = ∅ := by
+  simp [editedOn_def]
+
+/-- There are no edited triples on the empty support. -/
+@[simp]
+theorem editedOn_empty (H H' : Colored3Graph κ V) : H.editedOn H' ∅ = ∅ := by
+  simp [editedOn_def]
+
+/-- The edit count is additive over a finite family of pairwise disjoint supports. -/
+theorem card_editedOn_biUnion {ι : Type*} [DecidableEq V]
+    (H H' : Colored3Graph κ V) (s : Finset ι)
+    (supp : ι → Finset {x : Fin 3 → V // Function.Injective x})
+    (h : (s : Set ι).PairwiseDisjoint supp) :
+    #(H.editedOn H' (s.biUnion supp)) = ∑ i ∈ s, #(H.editedOn H' (supp i)) := by
+  classical
+  simp only [editedOn_def, filter_biUnion]
+  exact card_biUnion fun i hi j hj hij ↦ (h hi hj hij).mono
+    (filter_subset _ _) (filter_subset _ _)
+
+end EditedOn
+
 /-- Six times the number of unordered triples on which `H` and `H'` disagree, normalized by
 `|V|³`. -/
 noncomputable def editDiscrepancy3 (H H' : Colored3Graph κ V) : ℚ :=
@@ -53,6 +134,21 @@ noncomputable def editDiscrepancy3 (H H' : Colored3Graph κ V) : ℚ :=
 theorem editDiscrepancy3_def (H H' : Colored3Graph κ V) :
     H.editDiscrepancy3 H' = 6 * {s | H.color s ≠ H'.color s}.ncard / (Nat.card V : ℚ) ^ 3 :=
   (rfl)
+
+/-- Multiplying edit discrepancy by the host-size cube recovers six times the edit count.
+The finite-host hypothesis is necessary because `Nat.card` vanishes on infinite types. -/
+theorem editDiscrepancy3_mul_card_pow [Finite V] (H H' : Colored3Graph κ V) :
+    H.editDiscrepancy3 H' * (Nat.card V : ℚ) ^ 3 =
+      6 * {s | H.color s ≠ H'.color s}.ncard := by
+  by_cases hn : Nat.card V = 0
+  · have he : {s | H.color s ≠ H'.color s}.ncard = 0 := by
+      apply Nat.eq_zero_of_le_zero
+      calc
+        _ ≤ Nat.card (Set.powersetCard V 3) := Set.ncard_le_card _
+        _ = 0 := by simp [hn]
+    simp [hn, he]
+  · rw [editDiscrepancy3_def, div_mul_cancel₀]
+    exact pow_ne_zero 3 (Nat.cast_ne_zero.mpr hn)
 
 /-- The edit discrepancy is nonnegative. -/
 theorem editDiscrepancy3_nonneg (H H' : Colored3Graph κ V) : 0 ≤ H.editDiscrepancy3 H' := by

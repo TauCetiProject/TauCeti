@@ -68,6 +68,16 @@ theorem homInclusion_mem_cycles {X Y : C} {f : homModule (R := R) X Y}
   rw [𝒞.toAInfinityAlgebra.cycles_def, LinearMap.mem_ker,
     ← 𝒞.homInclusion_homDifferential, hf, map_zero]
 
+/-- A morphism is a boundary exactly when its inclusion is a boundary of the total morphism
+algebra. -/
+theorem homInclusion_mem_boundaries_iff {X Y : C} {f : homModule (R := R) X Y} :
+    homInclusion X Y f ∈ 𝒞.toAInfinityAlgebra.boundaries ↔
+      f ∈ LinearMap.range (𝒞.homDifferential X Y) := by
+  rw [𝒞.toAInfinityAlgebra.boundaries_def]
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨homProjection X Y y, ?_⟩, fun ⟨h, hh⟩ ↦ ⟨homInclusion X Y h, ?_⟩⟩
+  · rw [← 𝒞.homProjection_differential, hy, homProjection_homInclusion]
+  · rw [← 𝒞.homInclusion_homDifferential, hh]
+
 /-- The linear map sending a closed degree-zero morphism to its total cohomology class. -/
 noncomputable def homClassLinearMap (X Y : C) :
     𝒞.homCyclesZero X Y →ₗ[R] 𝒞.toAInfinityAlgebra.Cohomology :=
@@ -229,6 +239,35 @@ theorem comp_mem_homCyclesZero {X Y Z : C} {g : homModule (R := R) Y Z}
   · simpa using 𝒞.comp_mem_piece hg.1 hf.1
   · rw [𝒞.homDifferential_comp hg.1, hg.2, hf.2]
     simp
+
+/-- The composite of two closed morphisms is closed.  Neither morphism needs to be homogeneous. -/
+theorem homDifferential_comp_eq_zero {X Y Z : C} {g : homModule (R := R) Y Z}
+    {f : homModule (R := R) X Y} (hg : 𝒞.homDifferential Y Z g = 0)
+    (hf : 𝒞.homDifferential X Y f = 0) :
+    𝒞.homDifferential X Z (𝒞.comp X Y Z g f) = 0 := by
+  apply homInclusion_injective X Z
+  rw [homInclusion_homDifferential, homInclusion_comp, map_zero, ← LinearMap.mem_ker,
+    ← 𝒞.toAInfinityAlgebra.cycles_def]
+  exact 𝒞.toAInfinityAlgebra.m_two_mem_cycles (𝒞.homInclusion_mem_cycles hg)
+    (𝒞.homInclusion_mem_cycles hf)
+
+/-- If `g` is a boundary and `f` is closed, then `g ∘ f` is a boundary. -/
+theorem comp_mem_range_homDifferential_of_left {X Y Z : C} {g : homModule (R := R) Y Z}
+    {f : homModule (R := R) X Y} (hg : g ∈ LinearMap.range (𝒞.homDifferential Y Z))
+    (hf : 𝒞.homDifferential X Y f = 0) :
+    𝒞.comp X Y Z g f ∈ LinearMap.range (𝒞.homDifferential X Z) := by
+  rw [← homInclusion_mem_boundaries_iff, homInclusion_comp]
+  exact 𝒞.toAInfinityAlgebra.m_two_mem_boundaries_of_left
+    (𝒞.homInclusion_mem_boundaries_iff.mpr hg) (𝒞.homInclusion_mem_cycles hf)
+
+/-- If `g` is closed and `f` is a boundary, then `g ∘ f` is a boundary. -/
+theorem comp_mem_range_homDifferential_of_right {X Y Z : C} {g : homModule (R := R) Y Z}
+    {f : homModule (R := R) X Y} (hg : 𝒞.homDifferential Y Z g = 0)
+    (hf : f ∈ LinearMap.range (𝒞.homDifferential X Y)) :
+    𝒞.comp X Y Z g f ∈ LinearMap.range (𝒞.homDifferential X Z) := by
+  rw [← homInclusion_mem_boundaries_iff, homInclusion_comp]
+  exact 𝒞.toAInfinityAlgebra.m_two_mem_boundaries_of_right (𝒞.homInclusion_mem_cycles hg)
+    (𝒞.homInclusion_mem_boundaries_iff.mpr hf)
 
 /-- Multiplication in total cohomology computes the class of a composite in Keller order. -/
 theorem cohomologyMul_homClass {X Y Z : C} (g : homModule (R := R) Y Z)

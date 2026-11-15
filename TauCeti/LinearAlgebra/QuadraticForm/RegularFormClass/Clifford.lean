@@ -7,12 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.BaseChange
+import TauCeti.Algebra.Subalgebra.Center
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
 import TauCeti.Data.Nat.Choose.Lucas
 import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Center
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
@@ -33,7 +35,7 @@ presentation. It does not depend on the presentation, because an isometry of qua
 induces an isomorphism of Clifford algebras and of their even subalgebras. Its value on the class
 of an arbitrary regular form is the Brauer class of any central simple algebra isomorphic to the
 Clifford algebra, or the even Clifford algebra, of that form
-(`TauCeti.RegularFormClass.cliffordInvariant_formClass_of_even` and
+(`TauCeti.RegularFormClass.cliffordInvariant_formClass_eq_mk` and
 `TauCeti.RegularFormClass.cliffordInvariant_formClass_of_odd`).
 
 Every Clifford invariant is `2`-torsion, because the reversion of a Clifford algebra identifies it
@@ -72,7 +74,7 @@ invariant, so it depends only on the Witt class.
 
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_of_even`,
   `TauCeti.RegularFormClass.cliffordInvariant_mk_of_odd`: its value on a diagonal presentation.
-* `TauCeti.RegularFormClass.cliffordInvariant_formClass_of_even`,
+* `TauCeti.RegularFormClass.cliffordInvariant_formClass_eq_mk`,
   `TauCeti.RegularFormClass.cliffordInvariant_formClass_of_odd`: its value on the class of a
   regular form on any finite-dimensional space.
 * `TauCeti.BrauerGroup.inv_mk_eq_mk_of_algEquiv_cliffordAlgebra`: a central simple algebra
@@ -97,12 +99,16 @@ invariant, so it depends only on the Witt class.
   Clifford and Hasse invariants in every rank.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
   form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
-* `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero`: on such a
-  class the Clifford invariant is unchanged by scaling.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_odd`: in odd rank the Clifford
+  invariant is unchanged by scaling.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero`: on a class
+  with trivial signed discriminant the Clifford invariant is unchanged by scaling.
 * `TauCeti.RegularFormClass.cliffordInvariant_add_of_signedDiscr_eq_zero`: `c(x ⊥ y) = c(x) · c(y)`
   when `x` has even rank and trivial signed discriminant.
 * `TauCeti.RegularFormClass.cliffordInvariant_nsmul_hyperbolicClass_add`: adding hyperbolic planes
   does not change the Clifford invariant.
+* `TauCeti.RegularFormClass.cliffordInvariant_baseChange`: the Clifford invariant of a scalar
+  extension is the scalar extension of the Clifford invariant.
 
 ## References
 
@@ -192,11 +198,17 @@ section formClass
 
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
-/-- **The Clifford invariant of a regular form of even dimension** is the Brauer class of any
-central simple algebra isomorphic to its Clifford algebra. -/
-theorem cliffordInvariant_formClass_of_even (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
-    (h : Even (finrank K V)) (A : CSA.{u, u} K) (e : CliffordAlgebra Q ≃ₐ[K] A) :
+/-- **The Clifford invariant of a regular form** is the Brauer class of any central simple algebra
+isomorphic to its Clifford algebra. Such an algebra exists only in even dimension, because the
+Clifford algebra is not central in odd dimension. -/
+theorem cliffordInvariant_formClass_eq_mk (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (A : CSA.{u, u} K) (e : CliffordAlgebra Q ≃ₐ[K] A) :
     cliffordInvariant (formClass Q hQ) = BrauerGroup.mk A := by
+  have h : Even (finrank K V) := by
+    by_contra hodd
+    have _ : NeZero (2 : K) := ⟨Invertible.ne_zero _⟩
+    exact CliffordAlgebra.not_isCentral_of_odd_finrank (Q := Q)
+      (Nat.not_even_iff_odd.mp hodd) (Algebra.IsCentral.of_algEquiv' K e.symm)
   obtain ⟨p, ⟨f⟩⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p ⟨f⟩]
   have hp : finrank K V = p.1 := by simpa using f.toLinearEquiv.finrank_eq
@@ -615,12 +627,38 @@ theorem cliffordInvariant_hyperbolicClass : cliffordInvariant (hyperbolicClass K
 
 /-! ### Additivity on the square of the fundamental ideal -/
 
-/-- **On the square of the fundamental ideal the Clifford invariant is a similarity invariant**:
-for a class `x` of even rank with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. -/
-theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
-    {x : RegularFormClass K} (hx : Even x.rank) (hd : signedDiscr x = 0) :
+/-- In odd rank the Clifford invariant is a similarity invariant: scaling a form by a unit
+preserves its even Clifford algebra. -/
+theorem cliffordInvariant_mk_rankOne_mul_of_odd (t : Kˣ) {x : RegularFormClass K}
+    (hx : Odd x.rank) :
     cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) =
       cliffordInvariant x := by
+  induction x using Quotient.inductionOn with
+  | _ p =>
+    rw [rank_mk] at hx
+    have hodd : ¬Even p.1 := Nat.not_even_iff_odd.mpr hx
+    rw [RegularFormClass.mk_mul_mk, RegularFormPresentation.rankOne_tmul]
+    have hform : presentedForm (⟨p.1, fun i => t * p.2 i⟩ : RegularFormPresentation K) =
+        (t : K) • presentedForm p := by
+      ext y
+      simp [presentedForm_apply, Finset.mul_sum, mul_assoc]
+    rw [cliffordInvariant_mk_of_odd p hx (evenCliffordCSA p hodd) AlgEquiv.refl]
+    refine cliffordInvariant_mk_of_odd
+      (⟨p.1, fun i => t * p.2 i⟩ : RegularFormPresentation K) hx _ ?_
+    rw [hform]
+    exact (CliffordAlgebra.evenEquivEvenSMul (presentedForm p) t).symm
+
+/-- **Scaling preserves the Clifford invariant of a class with trivial signed discriminant**:
+for a class `x` with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. In even rank this says
+that the Witt class lies in the square of the fundamental ideal; in odd rank it is
+`cliffordInvariant_mk_rankOne_mul_of_odd`. -/
+theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
+    {x : RegularFormClass K} (hd : signedDiscr x = 0) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) =
+      cliffordInvariant x := by
+  rcases Nat.even_or_odd x.rank with hx | hx
+  swap
+  · exact cliffordInvariant_mk_rankOne_mul_of_odd t hx
   obtain ⟨m, hm⟩ := hx
   have hm2 : x.rank = 2 * m := by omega
   have htx : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) = 2 * m := by
@@ -665,7 +703,7 @@ theorem cliffordInvariant_add_of_signedDiscr_eq_zero {x : RegularFormClass K} (h
     have hxt : Even (rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x)) := by
       rwa [rank_mul, rank_mk, one_mul]
     rw [ih _ hz hxt ((signedDiscr_mk_rankOne_mul_of_even t hx).trans hd) z rfl,
-      cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero t hx hd]
+      cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero t hd]
   rcases Nat.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
   · rcases Nat.eq_zero_or_pos k with rfl | hk0
     · obtain rfl : y = 0 := rank_eq_zero_iff.mp (by omega)
@@ -693,6 +731,22 @@ theorem cliffordInvariant_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormCl
     rw [succ_nsmul', add_assoc, cliffordInvariant_add_of_signedDiscr_eq_zero
       (by rw [rank_hyperbolicClass]; exact even_two) signedDiscr_hyperbolicClass,
       cliffordInvariant_hyperbolicClass, one_mul, ih]
+
+/-! ### Scalar extension -/
+
+section BaseChange
+
+variable {L : Type u} [Field L] [Algebra K L] [Invertible (2 : L)]
+
+/-- **The Clifford invariant commutes with scalar extension**: the Clifford invariant of the
+extension of a class to `L` is the image of its Clifford invariant in the Brauer group of `L`. -/
+@[simp]
+theorem cliffordInvariant_baseChange (x : RegularFormClass K) :
+    cliffordInvariant (baseChange L x) = BrauerGroup.baseChange K L (cliffordInvariant x) := by
+  rw [cliffordInvariant_eq_hasseInvariant_mul, cliffordInvariant_eq_hasseInvariant_mul]
+  simp [RingHom.squareClassMap_apply]
+
+end BaseChange
 
 end RegularFormClass
 

@@ -220,8 +220,8 @@ theorem _root_.LocallyLipschitz.isStrongUpperGradient_descendingSlope {f : X →
           ENNReal.ofReal_le_ofReal (le_abs_self _)
       _ = ‖∫ r in Ι b a, deriv (fun r ↦ f (γ r)) r‖ₑ := by
           rw [← hfγ.symm.integral_deriv_eq_sub, intervalIntegral.abs_integral_eq_abs_integral_uIoc,
-            Real.enorm_eq_ofReal_abs]
-      _ ≤ ∫⁻ r in Ι b a, ‖deriv (fun r ↦ f (γ r)) r‖ₑ := enorm_integral_le_lintegral_enorm _
+            Real.eNorm_eq_ofReal_abs]
+      _ ≤ ∫⁻ r in Ι b a, ‖deriv (fun r ↦ f (γ r)) r‖ₑ := eNorm_integral_le_lintegral_eNorm _
       _ ≤ I := by
           rw [uIoc_comm]
           exact lintegral_mono_ae hderiv

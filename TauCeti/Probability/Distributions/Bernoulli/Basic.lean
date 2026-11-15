@@ -30,10 +30,6 @@ This file computes the elementary moments and transforms of the real-valued Bern
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
 * `charFun_bernoulliMeasure` computes the characteristic function.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, “Bernoulli and binomial”.
 -/
 
 public section
@@ -47,6 +43,15 @@ open scoped ProbabilityTheory unitInterval
 namespace TauCeti
 
 namespace Probability
+
+/-- A Bernoulli law with a nonzero success value and positive success probability has mass
+strictly less than one at zero. -/
+theorem bernoulliMeasure_singleton_zero_lt_one {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [Zero α] {a : α} {p : unitInterval}
+    (ha : a ≠ 0) (hp : 0 < (p : ℝ)) : bernoulliMeasure a 0 p {0} < 1 := by
+  rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton 0)
+    (by simpa using ha) rfl]
+  exact_mod_cast sub_lt_self (1 : ℝ) hp
 
 /-- The probability-generating function of a Bernoulli distribution. -/
 @[simp]

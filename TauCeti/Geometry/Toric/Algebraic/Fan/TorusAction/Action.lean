@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.TorusAction.Basic
 public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Internal
-public import TauCeti.CategoryTheory.Monoidal.Mod
+public import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 
 /-!
 # The internal torus action on a fan scheme

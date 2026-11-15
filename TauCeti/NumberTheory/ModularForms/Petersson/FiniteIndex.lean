@@ -143,12 +143,13 @@ theorem exists_slash_eq_smul_of_mem_withCenter {γ : SL(2, ℤ)} (hγ : γ ∈ �
   · exact ⟨1, by simp, fun f ↦ by rw [SlashInvariantFormClass.SL_slash_eq f _ hγ', one_smul]⟩
   · refine ⟨(-1 : ℂ) ^ k, ?_, fun f ↦ ?_⟩
     · have hreal : conj ((-1 : ℂ) ^ k) = (-1 : ℂ) ^ k := by simp
-      rw [hreal, ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+      rw [hreal, ← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, _root_.zpow_mul]
       norm_num
     · -- the `SL(2, ℤ)` slash action goes through `mapGL ℝ`, which sends `-I` to `-I`
       have hcoe : ((-1 : SL(2, ℤ)) : GL (Fin 2) ℝ) = -1 := mapGL_neg_one
       rw [← mul_neg_one γ', SlashAction.slash_mul, ModularForm.SL_slash (γ := (-1 : SL(2, ℤ))),
         hcoe, ModularForm.slash_neg_one, SlashInvariantFormClass.SL_slash_eq f _ hγ']
+      rfl
 
 omit [Γ.FiniteIndex] in
 /-- **Slashing both arguments by an element of `Γ·{±I}` is invisible to the level-one-domain

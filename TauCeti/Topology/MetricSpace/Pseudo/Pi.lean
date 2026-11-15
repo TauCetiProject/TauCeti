@@ -13,8 +13,9 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Pi
 For a product of pseudometric spaces over a one-point index type, the sup distance is the
 distance of the only coordinates (`Pi.dist_unique`), so balls, closed balls and spheres are
 detected on that coordinate (`Pi.mem_ball_unique`, `Pi.mem_closedBall_unique` and
-`Pi.mem_sphere_unique`). This is the pointwise form of `IsometryEquiv.funUnique`, stated for
-dependent families.
+`Pi.mem_sphere_unique`), and balls and closed balls are preimages under evaluation at that
+coordinate (`Pi.ball_unique` and `Pi.closedBall_unique`). This is the pointwise form of
+`IsometryEquiv.funUnique`, stated for dependent families.
 -/
 
 public section
@@ -37,6 +38,18 @@ lemma Pi.mem_ball_unique {f g : ∀ i, X i} {r : ℝ} :
 lemma Pi.mem_closedBall_unique {f g : ∀ i, X i} {r : ℝ} :
     f ∈ closedBall g r ↔ f default ∈ closedBall (g default) r := by
   rw [mem_closedBall, mem_closedBall, Pi.dist_unique]
+
+/-- Over a one-point index type, a ball is the preimage under evaluation of the ball around the
+only coordinate. -/
+lemma Pi.ball_unique (g : ∀ i, X i) (r : ℝ) :
+    ball g r = Function.eval default ⁻¹' ball (g default) r :=
+  Set.ext fun _ ↦ Pi.mem_ball_unique
+
+/-- Over a one-point index type, a closed ball is the preimage under evaluation of the closed ball
+around the only coordinate. -/
+lemma Pi.closedBall_unique (g : ∀ i, X i) (r : ℝ) :
+    closedBall g r = Function.eval default ⁻¹' closedBall (g default) r :=
+  Set.ext fun _ ↦ Pi.mem_closedBall_unique
 
 /-- Over a one-point index type, a sphere is the sphere around the only coordinate. -/
 lemma Pi.mem_sphere_unique {f g : ∀ i, X i} {r : ℝ} :

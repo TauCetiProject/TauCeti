@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Unitriangular
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.RootRelations.TripleBond
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.DiagonalFactor
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
@@ -73,30 +73,11 @@ with an independently pinned group scheme is asserted here.
 public section
 
 open Matrix
+open scoped commutatorElement
 
 namespace TauCeti.G2ShortRoot.PrimeField
 
 variable {A : Type*} [CommRing A] [Algebra (ZMod 3) A]
-
-/-- The positive short simple-root point `x_{α₁}(t)` is the normal form with parameters
-`(t, 0, 0, 0, 0, 0)`. -/
-theorem coe_rootSubgroupPoints_inl_zero_eq_crossUnipotentMatrix (t : A) :
-    ((rootSubgroupPoints (.inl 0) A (Multiplicative.ofAdd t) : GL (Fin 7) A) :
-      Matrix (Fin 7) (Fin 7) A) = crossUnipotentMatrix t 0 0 0 0 0 := by
-  rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints_inl_zero,
-    crossUnipotentMatrix_def]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
-/-- The positive long simple-root point `x_{α₂}(t)` is the normal form with parameters
-`(0, t, 0, 0, 0, 0)`. -/
-theorem coe_rootSubgroupPoints_inl_one_eq_crossUnipotentMatrix (t : A) :
-    ((rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd t) : GL (Fin 7) A) :
-      Matrix (Fin 7) (Fin 7) A) = crossUnipotentMatrix 0 t 0 0 0 0 := by
-  rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints_inl_one,
-    crossUnipotentMatrix_def]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
 
 /-! ## Normal forms realized by positive root words -/
 
@@ -147,9 +128,17 @@ private theorem three_eq_zero : (3 : A) = 0 := by
 
 /-- The commutator `[x_{α₁}(t), x_{α₂}(u)]`, in normal form. -/
 private theorem isPositiveWord_commutator (t u : A) :
-    IsPositiveWord 0 0 (t * u) (-t ^ 2 * u) (t ^ 3 * u) (-t ^ 3 * u ^ 2) :=
-  ((((isPositiveWord_short t).mul (isPositiveWord_long u)).mul (isPositiveWord_short (-t))).mul
-    (isPositiveWord_long (-u))).of_eq (by ring) (by ring) (by ring) (by ring) (by ring) (by ring)
+    IsPositiveWord 0 0 (t * u) (-t ^ 2 * u) (t ^ 3 * u) (-t ^ 3 * u ^ 2) := by
+  let x := rootSubgroupPoints (.inl 0) A (Multiplicative.ofAdd t)
+  let y := rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd u)
+  have hx : x ∈ Subgroup.closure (⋃ i : Fin 2, Set.range (rootSubgroupPoints (.inl i) A)) :=
+    Subgroup.subset_closure (Set.mem_iUnion.2 ⟨0, Set.mem_range_self _⟩)
+  have hy : y ∈ Subgroup.closure (⋃ i : Fin 2, Set.range (rootSubgroupPoints (.inl i) A)) :=
+    Subgroup.subset_closure (Set.mem_iUnion.2 ⟨1, Set.mem_range_self _⟩)
+  refine ⟨⁅x, y⁆, ?_,
+    coe_commutatorElement_rootSubgroupPoints_inl_zero_inl_one A t u⟩
+  simpa only [commutatorElement_def] using
+    mul_mem (mul_mem (mul_mem hx hy) (inv_mem hx)) (inv_mem hy)
 
 /-- The root element of `2α₁ + α₂`: conjugating `[x_{α₁}(1), x_{α₂}(1)]` by `x_{α₁}(s)` moves
 it by `x_{2α₁+α₂}(s)` in characteristic three. -/

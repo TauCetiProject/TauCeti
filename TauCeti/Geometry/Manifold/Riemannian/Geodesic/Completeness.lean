@@ -26,6 +26,9 @@ distance from the base point: `dist p (exp_p v) ≤ ‖v‖`.
 * `TauCeti.Manifold.lipschitzOnWith_maximalGeodesic`: consequently it is `‖v‖`-Lipschitz there.
 * `TauCeti.Manifold.edist_riemannianExp_le` and `TauCeti.Manifold.dist_riemannianExp_le`: the
   distance from `p` to `exp_p v` is at most `‖v‖`.
+* `TauCeti.Manifold.closedBall_subset_expDomain_of_isCompact_closedBall`: if the closed ball of
+  radius `R` about `p` is compact, the exponential map at `p` is defined on the closed tangent ball
+  of radius `R`.
 * `TauCeti.Manifold.isGeodesicallyCompleteAt_of_completeSpace`: a complete Riemannian manifold is
   geodesically complete at every point, with
   `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic_univ` the resulting all-time geodesic
@@ -80,7 +83,7 @@ theorem lipschitzOnWith_maximalGeodesic :
       _ = ‖v‖ₑ * ENNReal.ofReal (t - s) := pathELength_maximalGeodesic hs ht
       _ = ‖v‖₊ * edist s t := by
         rw [edist_dist, Real.dist_eq, abs_sub_comm,
-          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), enorm_eq_nnnorm]
+          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), eNorm_eq_nnNorm]
   intro s hs t ht
   rcases le_total s t with h | h
   · exact key s hs t ht h
@@ -98,7 +101,7 @@ theorem edist_riemannianExp_le (p : M) (v : TangentSpace I p) :
       zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
     rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at h
     have h01 : edist (0 : ℝ) 1 = 1 := by simp [edist_dist, Real.dist_eq]
-    simpa [riemannianExp_def, enorm_eq_nnnorm, h01] using h
+    simpa [riemannianExp_def, eNorm_eq_nnNorm, h01] using h
   · simp [hv]
 
 section Metric
@@ -113,6 +116,34 @@ theorem dist_riemannianExp_le (p : M) (v : TangentSpace I p) :
     dist p (riemannianExp I M p v) ≤ ‖v‖ := by
   have h := edist_riemannianExp_le (I := I) (M := M) p v
   rwa [← ofReal_norm, edist_le_ofReal (norm_nonneg v)] at h
+
+/-- **Compact continuation of radial geodesics.** If the closed ball of radius `R` about `p` is
+compact, the exponential map at `p` is defined on the closed tangent ball of radius `R`. A maximal
+geodesic of speed `‖v‖ ≤ R` stays in that closed ball up to time `1`, so by the escape lemma it
+cannot stop before. No completeness of `M` is assumed. -/
+theorem closedBall_subset_expDomain_of_isCompact_closedBall {p : M} {R : ℝ}
+    (hR : IsCompact (Metric.closedBall p R)) :
+    Metric.closedBall (0 : TangentSpace I p) R ⊆ expDomain I M p := by
+  intro v hv
+  rw [Metric.mem_closedBall, dist_zero_right] at hv
+  by_contra hvdom
+  have h0 : (0 : ℝ) ∈ geodesicInterval I M p v := zero_mem_geodesicInterval
+  have hupper : ∀ t ∈ geodesicInterval I M p v, t ≤ 1 := fun t ht ↦ by
+    by_contra! hlt
+    exact hvdom (mem_expDomain_iff.mpr
+      (ordConnected_geodesicInterval.out h0 ht ⟨zero_le_one, hlt.le⟩))
+  have hlub := isLUB_csSup ⟨0, h0⟩ ⟨1, hupper⟩
+  have hb1 : sSup (geodesicInterval I M p v) ≤ 1 := csSup_le ⟨0, h0⟩ hupper
+  obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isLUB hlub
+  obtain ⟨t, hnot, ht⟩ := ((eventually_notMem_nhdsLT_maximalGeodesic hlub hR).and
+    (Ioo_mem_nhdsLT hb0)).exists
+  have hd := (lipschitzOnWith_maximalGeodesic (I := I) (M := M) (p := p) (v := v)).dist_le_mul
+    0 h0 t (hsub ⟨ha.trans ht.1, ht.2⟩)
+  rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at hd
+  simp only [coe_nnNorm, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg ht.1.le] at hd
+  refine hnot (Metric.mem_closedBall'.mpr (hd.trans ?_))
+  calc ‖v‖ * t ≤ ‖v‖ * 1 := mul_le_mul_of_nonneg_left (ht.2.le.trans hb1) (norm_nonneg _)
+    _ ≤ R := by rwa [mul_one]
 
 end Metric
 
@@ -162,7 +193,7 @@ theorem isGeodesicallyCompleteAt_of_completeSpace [CompleteSpace M] (p : M) :
     exact ht1 (subset_closure (mem_image_of_mem _ ht2))
   have hinterval : geodesicInterval I M p v = univ := by
     rw [← maximalIntegralCurveInterval_geodesicSpray] at h0 hup hlow ⊢
-    exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 hup hlow
+    exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
   rw [hinterval]
   exact mem_univ 1
 

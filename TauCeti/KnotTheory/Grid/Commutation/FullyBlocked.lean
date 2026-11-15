@@ -18,8 +18,10 @@ in the unblocked map disappears under constant coefficients.
 `GridDiagram.fullyBlockedCommutationMap_mapRange_constantCoeff` expresses this specialization on
 arbitrary chains. Over `ZMod 2`,
 `GridDiagram.fullyBlockedCommutationMap_comp_fullyBlockedDifferential` proves that it is a chain map
-between the fully blocked complexes. These statements specify the
-map; invertibility on homology additionally needs the hexagon homotopy identities.
+between the fully blocked complexes, and
+`GridDiagram.fullyBlockedCommutationMap_reverse_comp_fullyBlockedDifferential` does the same for the
+reverse commutation. The hexagon homotopies relating the two maps are in
+`TauCeti.KnotTheory.Grid.Commutation.Homotopy.FullyBlocked`.
 
 ## References
 
@@ -122,5 +124,17 @@ theorem fullyBlockedCommutationMap_comp_fullyBlockedDifferential :
     simp only [LinearMap.comp_apply, fullyBlockedCommutationMap_mapRange_constantCoeff,
       fullyBlockedDifferential_mapRange_constantCoeff]
   · exact G.commutationMap_comp_unblockedDifferential C (ZMod 2)
+
+/-- The fully blocked pentagon map of the reverse commutation intertwines the fully blocked
+differentials of the commuted diagram and of `G`. -/
+theorem fullyBlockedCommutationMap_reverse_comp_fullyBlockedDifferential :
+    (G.swapColumns C.column (finRotate n C.column)).fullyBlockedCommutationMap (ZMod 2)
+        C.reverse ∘ₗ (G.swapColumns C.column (finRotate n C.column)).fullyBlockedDifferential =
+      G.fullyBlockedDifferential ∘ₗ
+        (G.swapColumns C.column (finRotate n C.column)).fullyBlockedCommutationMap (ZMod 2)
+          C.reverse := by
+  have h := fullyBlockedCommutationMap_comp_fullyBlockedDifferential
+    (G.swapColumns C.column (finRotate n C.column)) C.reverse
+  simpa only [ColumnCommutationData.reverse_column, swapColumns_swapColumns] using h
 
 end TauCeti.GridDiagram

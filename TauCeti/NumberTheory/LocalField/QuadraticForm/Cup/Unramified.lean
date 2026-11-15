@@ -30,16 +30,18 @@ ramification index, this cup is nonzero exactly when that index is odd.
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology
 
-variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
 
 /-- Over a finite extension of `ℚ₂`, the class `(2) ∪ (Δ)` of the unramified class `Δ` is nonzero
 exactly when the absolute ramification index is odd. -/
-theorem cup_kummerClass_two_unramified_ne_zero_iff [Fact (Nat.Prime 2)]
+theorem cup_kummerClass_two_unramified_ne_zero_iff
     [FinitePadicExtension K 2] {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd) :

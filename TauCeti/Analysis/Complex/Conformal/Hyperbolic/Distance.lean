@@ -20,11 +20,11 @@ pseudo-hyperbolic expression `‖(z - w) / (1 - conj w * z)‖`.  The inverse hy
 pseudo-hyperbolic expression by which the two record the same geometry additively.
 
 The normalisation matches the infinitesimal Poincaré metric `|dz| / (1 - |z| ^ 2)` already
-formalized in this area (`SchwarzPickDerivative.lean`): the geodesic distance from the origin
+formalized in this area (`SchwarzPick/Derivative.lean`): the geodesic distance from the origin
 to a point at radius `r` under that metric is `∫₀ʳ dt / (1 - t ^ 2) = artanh r`, which is
 exactly `hyperbolicDist z 0` for `‖z‖ = r`.
 
-The main API mirrors the pseudo-hyperbolic layer:
+The main API mirrors the pseudo-hyperbolic API:
 
 * `hyperbolicDist_comm`, `hyperbolicDist_self`, `hyperbolicDist_nonneg`,
   `hyperbolicDist_eq_zero_iff_of_mem_ball` — the basic pseudo-metric properties;
@@ -36,19 +36,13 @@ The main API mirrors the pseudo-hyperbolic layer:
   hyperbolic distance is invariant under the disc Moebius factors and the standard
   automorphisms, i.e. these are hyperbolic isometries.
 
-The full metric-space structure (the triangle inequality, hence a `MetricSpace` instance on
-`Complex.UnitDisc`) is deferred; it rests on the strengthened pseudo-hyperbolic triangle
-inequality and is future work of the L2 layer.
+The triangle inequality, which rests on the strengthened pseudo-hyperbolic triangle inequality,
+is proved in `Hyperbolic/Triangle.lean`, and the resulting `MetricSpace` instance lives on the
+type synonym `PoincareDisc` in `Poincare/MetricSpace.lean`.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`).  It reuses Tau Ceti's pseudo-hyperbolic and
-Schwarz--Pick API.  As with the rest of the L0--L3 conformal-mapping material, it is
-coordinated with the upstream Mathlib RMT effort leanprover-community/mathlib4#33505.  Mathlib
-already contains the preceding human-curated work in `Analysis/Complex/RiemannMapping.lean` and
-`Analysis/Complex/BranchLogRoot.lean`; none of it is duplicated here, and should that work land
-a human-curated Poincaré metric this file should be refactored onto it.  Mathlib has the
-hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no
-hyperbolic distance on the disc.
+This file reuses Tau Ceti's pseudo-hyperbolic and Schwarz--Pick API.  Mathlib has the hyperbolic
+metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no hyperbolic distance on
+the disc.
 -/
 
 public section

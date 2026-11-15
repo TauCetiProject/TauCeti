@@ -24,7 +24,10 @@ Over an ordered field the construction also produces a *nonzero* invariant symme
 nontrivial finite-dimensional representation: sum the coordinate dot product read in a basis.
 Positivity is what makes the sum nonzero -- the sum of the nonnegative numbers
 `B₀ (σ g x) (σ g x)` is at least its term at `g = 1`, which is positive -- so it is the ordering of
-the field, not a division by `|G|`, that does the work.
+the field, not a division by `|G|`, that does the work.  For an irreducible complex representation
+of a finite group with a real form, this form on the real form, transported to the complex space,
+is the nonzero invariant symmetric form that gives Frobenius-Schur indicator `+1`
+(`Representation.IsRealForm.frobeniusSchurIndicator_eq_one`).
 
 ## Main definitions
 
@@ -46,9 +49,6 @@ the field, not a division by `|G|`, that does the work.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7: the invariant symmetric form that the value `+1` of the Frobenius-Schur indicator is
-  characterized by, here for a representation realizable over `ℝ`.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 -/
 
@@ -105,7 +105,7 @@ theorem le_sumOfConjugatesForm_apply_self {σ : Representation k G W} {B : Bilin
   rw [sumOfConjugatesForm_apply]
   have h := Finset.single_le_sum (f := fun g : G => B (σ g x) (σ g x)) (fun g _ => hB _)
     (Finset.mem_univ 1)
-  rwa [map_one, Module.End.one_apply] at h
+  rwa [map_one, one_apply_eq_self] at h
 
 /-- The sum over the conjugates of a positive-definite form is positive definite. -/
 theorem posDef_toQuadraticMap_sumOfConjugatesForm {σ : Representation k G W} {B : BilinForm k W}

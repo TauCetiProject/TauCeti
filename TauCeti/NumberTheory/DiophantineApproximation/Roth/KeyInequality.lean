@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.DerivativeSelection
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.ValueBounds
 public import TauCeti.NumberTheory.Height.Rat
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # The key inequality in the proof of Roth's theorem
@@ -74,7 +75,7 @@ theorem roth_key_inequality_of_eval_ne_zero {Q : MvPolynomial σ ℤ} {r : σ �
     rw [hcast]
     exact_mod_cast hQ
   have hdeg' (i : σ) : (Q.map (Int.castRingHom ℝ)).degreeOf i ≤ r i :=
-    degreeOf_le_iff.2 fun μ hμ ↦ degreeOf_le_iff.1 (hdeg i) μ (support_map_subset _ _ hμ)
+    (degreeOf_map_le _ Q i).trans (hdeg i)
   have hlow := neg_sum_mul_log_den_le_log_abs_eval hdeg β hQ'
   have hup := log_abs_eval_le_of_le_weightedIndex hdeg' (fun μ ↦ by simpa [coeff_map] using hB μ)
     ht hκ hD hβ hr hQ'

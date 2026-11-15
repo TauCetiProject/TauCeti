@@ -37,7 +37,7 @@ for any topology on the coefficient ring.
 public section
 
 open Filter Topology
-open scoped MatrixGroups Pointwise
+open scoped MatrixGroups
 
 open Matrix.SpecialLinearGroup
 

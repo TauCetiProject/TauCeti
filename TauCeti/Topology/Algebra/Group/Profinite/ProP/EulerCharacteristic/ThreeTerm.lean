@@ -97,13 +97,29 @@ variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace 
 
 namespace IsProP
 
+/-- The arithmetic of the induction step of `natCard_H0_mul_natCard_H2_mul_pow`: the nine-term
+identity `a₀ * p ^ d * q₁ * a₂ = p * q₀ * a₁ * t * q₂` for `0 → N → M → M ⧸ N → 0` with `|N| = p`,
+together with the identity for `M ⧸ N` of order `p ^ k`, gives the identity for `M` of order
+`p ^ (k + 1)`, since `p ^ d * q₁` is nonzero. -/
+private theorem eq_of_mul_pow_succ {p k d a₀ a₁ a₂ q₀ q₁ q₂ t : ℕ} (hp : 0 < p) (hq₁ : 0 < q₁)
+    (hex : a₀ * p ^ d * q₁ * a₂ = p * q₀ * a₁ * t * q₂)
+    (hQ : q₀ * q₂ * p ^ (k * d) = q₁ * p ^ k * t ^ k) :
+    a₀ * a₂ * p ^ ((k + 1) * d) = a₁ * p ^ (k + 1) * t ^ (k + 1) := by
+  refine Nat.eq_of_mul_eq_mul_left (Nat.mul_pos (pow_pos hp d) hq₁) ?_
+  calc p ^ d * q₁ * (a₀ * a₂ * p ^ ((k + 1) * d))
+      = a₀ * p ^ d * q₁ * a₂ * p ^ ((k + 1) * d) := by ring
+    _ = p * q₀ * a₁ * t * q₂ * p ^ ((k + 1) * d) := by rw [hex]
+    _ = p * a₁ * t * p ^ d * (q₀ * q₂ * p ^ (k * d)) := by ring
+    _ = p * a₁ * t * p ^ d * (q₁ * p ^ k * t ^ k) := by rw [hQ]
+    _ = p ^ d * q₁ * (a₁ * p ^ (k + 1) * t ^ (k + 1)) := by ring
+
+
 variable (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G)
-  (htriv : ∀ (g : G) (x : ZMod p), g • x = x)
   (h3 : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A] [ContinuousSMul G A] [Finite A], Nat.card A = p →
     (∀ (g : G) (a : A), g • a = a) →
     Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A)))
-include hG hfg htriv h3
+include hG hfg h3
 
 /-- **The three-term Euler characteristic of a finite `p`-primary module is multiplicative in its
 order.** Let `G` be a topologically finitely generated profinite pro-`p` group whose canonical `H³`
@@ -123,6 +139,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     (hk : Nat.card M = p ^ k) :
     Nat.card (H0 G M) * Nat.card (H2 G M) * p ^ (k * topologicalGeneratorRankNat G hfg) =
       Nat.card (H1 G M) * p ^ k * Nat.card (H2 G (ZMod p)) ^ k := by
+  have htriv : ∀ (g : G) (x : ZMod p), g • x = x := hG.smul_zmod_eq_self
   induction k generalizing M with
   | zero =>
     have : Subsingleton M := (Nat.card_eq_one_iff_unique.1 (by simpa using hk)).1
@@ -131,14 +148,11 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     simp
   | succ k ih =>
     have : Finite M := Nat.finite_of_card_ne_zero (hk ▸ pow_ne_zero _ hp.out.ne_zero)
-    have : Nontrivial M := by
-      rcases subsingleton_or_nontrivial M with hM | hM
-      · exact absurd (hk ▸ Nat.card_of_subsingleton (0 : M))
-          (Nat.one_lt_pow k.succ_ne_zero hp.out.one_lt).ne'
-      · exact hM
+    have : Nontrivial M :=
+      Finite.one_lt_card_iff_nontrivial.1 (hk ▸ Nat.one_lt_pow k.succ_ne_zero hp.out.one_lt)
     -- a `G`-stable subgroup `N` of order `p` with trivial action
     obtain ⟨N, hNcard, hNfix⟩ := exists_addSubgroup_natCard_eq_invariant_of_isProP hG
-      (isPPrimaryTorsion_iff.1 (isPPrimaryTorsion_of_natCard_eq_pow hk))
+      (IsAddPGroup.of_card hk)
     have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ (hNfix g x hx).symm ▸ hx
     let := N.restrictDistribMulAction hN
     let := N.quotientDistribMulAction hN
@@ -180,20 +194,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     have : Finite (H1 G (M ⧸ N)) := hfg.finite_H1
     -- assemble, cancelling the nonzero factor `p ^ d(G) * |H¹(G, M ⧸ N)|`
     generalize topologicalGeneratorRankNat G hfg = d at hex hQ ⊢
-    refine Nat.eq_of_mul_eq_mul_left
-      (Nat.mul_pos (pow_pos hp.out.pos d) (Nat.card_pos (α := H1 G (M ⧸ N)))) ?_
-    calc p ^ d * Nat.card (H1 G (M ⧸ N)) *
-          (Nat.card (H0 G M) * Nat.card (H2 G M) * p ^ ((k + 1) * d))
-        = Nat.card (H0 G M) * p ^ d * Nat.card (H1 G (M ⧸ N)) * Nat.card (H2 G M) *
-            p ^ ((k + 1) * d) := by ring
-      _ = p * Nat.card (H0 G (M ⧸ N)) * Nat.card (H1 G M) * Nat.card (H2 G (ZMod p)) *
-            Nat.card (H2 G (M ⧸ N)) * p ^ ((k + 1) * d) := by rw [hex]
-      _ = p * Nat.card (H1 G M) * Nat.card (H2 G (ZMod p)) * p ^ d *
-            (Nat.card (H0 G (M ⧸ N)) * Nat.card (H2 G (M ⧸ N)) * p ^ (k * d)) := by ring
-      _ = p * Nat.card (H1 G M) * Nat.card (H2 G (ZMod p)) * p ^ d *
-            (Nat.card (H1 G (M ⧸ N)) * p ^ k * Nat.card (H2 G (ZMod p)) ^ k) := by rw [hQ]
-      _ = p ^ d * Nat.card (H1 G (M ⧸ N)) *
-            (Nat.card (H1 G M) * p ^ (k + 1) * Nat.card (H2 G (ZMod p)) ^ (k + 1)) := by ring
+    exact eq_of_mul_pow_succ hp.out.pos (Nat.card_pos (α := H1 G (M ⧸ N))) hex.symm hQ
 
 section OpenSubgroup
 
@@ -215,6 +216,7 @@ theorem natCard_H2_openSubgroup_mul_pow :
         p ^ (U.toSubgroup.index * topologicalGeneratorRankNat G hfg) =
       p ^ topologicalGeneratorRankNat U.toSubgroup (hfg.of_openSubgroup U) *
         p ^ U.toSubgroup.index * Nat.card (H2 G (ZMod p)) ^ U.toSubgroup.index := by
+  have htriv : ∀ (g : G) (x : ZMod p), g • x = x := hG.smul_zmod_eq_self
   -- `U` is a topologically finitely generated profinite pro-`p` group acting trivially on `𝔽_p`
   have hUc : IsClosed (U.toSubgroup : Set G) := U.isClosed
   have : CompactSpace U.toSubgroup := isCompact_iff_compactSpace.mp hUc.isCompact
@@ -222,7 +224,7 @@ theorem natCard_H2_openSubgroup_mul_pow :
   have hUfg := hfg.of_openSubgroup U
   have htrivU : ∀ (u : U.toSubgroup) (m : ZMod p), u • m = m := fun u m ↦ htriv u m
   -- the Euler identity for `Coind_U^G 𝔽_p`, read through Shapiro's lemma in degrees `0`, `1`, `2`
-  have key := hG.natCard_H0_mul_natCard_H2_mul_pow hfg htriv h3
+  have key := hG.natCard_H0_mul_natCard_H2_mul_pow hfg h3
     (DiscreteCoind G U.toSubgroup (ZMod p)) (k := U.toSubgroup.index)
     (by rw [DiscreteCoind.natCard_of_isOpen U.isOpen htrivU, Nat.card_zmod])
   rwa [Nat.card_congr (explicitShapiro2 G U.toSubgroup (ZMod p) hUc).toEquiv,
@@ -250,6 +252,7 @@ theorem one_sub_topologicalGeneratorRankNat_add_finrank_H2 :
         Module.finrank (ZMod p) (H2 U.toSubgroup (ZMod p)) =
       U.toSubgroup.index * (1 - topologicalGeneratorRankNat G hfg +
         Module.finrank (ZMod p) (H2 G (ZMod p))) := by
+  have htriv : ∀ (g : G) (x : ZMod p), g • x = x := hG.smul_zmod_eq_self
   -- `H²(U, 𝔽_p)` is finite because `H²(G, 𝔽_p)` is, by the finiteness dévissage
   have : Finite (cohomFp p G 2) := Finite.of_equiv _ (cohomFpAddEquivH2 p G htriv).symm.toEquiv
   have := hG.finite_cohomFp_openSubgroup (n := 2) U
@@ -258,7 +261,7 @@ theorem one_sub_topologicalGeneratorRankNat_add_finrank_H2 :
     Finite.of_equiv _ (cohomFpAddEquivH2 p U.toSubgroup fun u m ↦ htriv u m).toEquiv
   have : Module.Finite (ZMod p) (H2 G (ZMod p)) := Module.Finite.of_finite
   have : Module.Finite (ZMod p) (H2 U.toSubgroup (ZMod p)) := Module.Finite.of_finite
-  have key := hG.natCard_H2_openSubgroup_mul_pow hfg htriv h3 U
+  have key := hG.natCard_H2_openSubgroup_mul_pow hfg h3 U
   rw [Module.natCard_eq_pow_finrank (K := ZMod p) (V := H2 U.toSubgroup (ZMod p)),
     Module.natCard_eq_pow_finrank (K := ZMod p) (V := H2 G (ZMod p)), Nat.card_zmod] at key
   -- compare exponents of `p`
@@ -278,7 +281,7 @@ end IsProP
 namespace CohomologicalDimensionLE
 
 variable (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G)
-  (htriv : ∀ (g : G) (x : ZMod p), g • x = x) (hcd : CohomologicalDimensionLE.{u} p G 2)
+  (hcd : CohomologicalDimensionLE.{u} p G 2)
 include hcd
 
 omit hp [CompactSpace G] [TotallyDisconnectedSpace G] [DistribMulAction G (ZMod p)]
@@ -289,9 +292,9 @@ private theorem subsingleton_continuousCohomology_three (A : Type u) [AddCommGro
     (hA : Nat.card A = p) :
     Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A)) :=
   cohomologicalDimensionLE_iff.mp hcd A
-    (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm)) 3 (by norm_num)
+    (IsAddPGroup.of_card (hA.trans (pow_one p).symm)) 3 (by norm_num)
 
-include hG hfg htriv
+include hG hfg
 
 /-- **The three-term Euler identity under `cd_p G ≤ 2`.** For a topologically finitely generated
 profinite pro-`p` group `G` with `cd_p G ≤ 2`, the trivial action on `𝔽_p`, and a finite discrete
@@ -302,7 +305,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     (hk : Nat.card M = p ^ k) :
     Nat.card (H0 G M) * Nat.card (H2 G M) * p ^ (k * topologicalGeneratorRankNat G hfg) =
       Nat.card (H1 G M) * p ^ k * Nat.card (H2 G (ZMod p)) ^ k :=
-  hG.natCard_H0_mul_natCard_H2_mul_pow hfg htriv
+  hG.natCard_H0_mul_natCard_H2_mul_pow hfg
     (fun A _ _ _ _ _ _ hA _ ↦ subsingleton_continuousCohomology_three hcd A hA) M hk
 
 variable (U : OpenSubgroup G)
@@ -316,7 +319,7 @@ theorem natCard_H2_openSubgroup_mul_pow :
         p ^ (U.toSubgroup.index * topologicalGeneratorRankNat G hfg) =
       p ^ topologicalGeneratorRankNat U.toSubgroup (hfg.of_openSubgroup U) *
         p ^ U.toSubgroup.index * Nat.card (H2 G (ZMod p)) ^ U.toSubgroup.index :=
-  hG.natCard_H2_openSubgroup_mul_pow hfg htriv
+  hG.natCard_H2_openSubgroup_mul_pow hfg
     (fun A _ _ _ _ _ _ hA _ ↦ subsingleton_continuousCohomology_three hcd A hA) U
 
 variable [Finite (H2 G (ZMod p))]
@@ -329,7 +332,7 @@ theorem one_sub_topologicalGeneratorRankNat_add_finrank_H2 :
         Module.finrank (ZMod p) (H2 U.toSubgroup (ZMod p)) =
       U.toSubgroup.index * (1 - topologicalGeneratorRankNat G hfg +
         Module.finrank (ZMod p) (H2 G (ZMod p))) :=
-  hG.one_sub_topologicalGeneratorRankNat_add_finrank_H2 hfg htriv
+  hG.one_sub_topologicalGeneratorRankNat_add_finrank_H2 hfg
     (fun A _ _ _ _ _ _ hA _ ↦ subsingleton_continuousCohomology_three hcd A hA) U
 
 end CohomologicalDimensionLE

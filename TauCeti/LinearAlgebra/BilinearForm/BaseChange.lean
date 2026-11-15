@@ -49,6 +49,8 @@ compared with its real extension.
 * `IsBaseChange.bilinForm`: extension to an abstract base change, characterized by its values
   on the original module.
 * `IsBaseChange.bilinForm_tmul`: extension commutes with tensor products of bilinear forms.
+* `LinearMap.BilinForm.baseChange_rTensor_rTensor`: the canonical base change is natural along
+  algebra maps of the scalars.
 * `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
 * `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
   nondegeneracy, without a finite-dimensionality assumption.
@@ -98,6 +100,21 @@ theorem baseChange_flip (B : LinearMap.BilinForm R M) :
     B.flip.baseChange A = (B.baseChange A).flip := by
   ext x y
   simp
+
+/-- **Scalar extension of a bilinear form is natural in the scalars.** Along an `R`-algebra map
+`f : A → A'`, the base change of `B` to `A'`, evaluated on the images of `x y : A ⊗[R] M`, is the
+image under `f` of its base change to `A`, evaluated on `x` and `y`. -/
+@[simp]
+theorem baseChange_rTensor_rTensor {A' : Type*} [CommSemiring A'] [Algebra R A'] (f : A →ₐ[R] A')
+    (B : LinearMap.BilinForm R M) (x y : A ⊗[R] M) :
+    B.baseChange A' (f.toLinearMap.rTensor M x) (f.toLinearMap.rTensor M y) =
+      f (B.baseChange A x y) := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ hx₁ hx₂ => simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
+  | tmul a m =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂]
+    | tmul a' m' => simp [map_mul]
 
 variable (A) in
 /-- A free scalar extension preserves left separation of a bilinear form, with no finiteness

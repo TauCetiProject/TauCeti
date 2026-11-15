@@ -61,11 +61,10 @@ lemma integrable_prod_tailConditionalMeasure_real [StandardBorelSpace α] [Nonem
     {μ : Measure Ω} [IsFiniteMeasure μ] {ν : Measure Ω} [IsFiniteMeasure ν] {X : ℕ → Ω → α}
     (hTail : tailProcess X ≤ mΩ) {r : ℕ} {B : Fin r → Set α}
     (hB : ∀ i, MeasurableSet (B i)) :
-    Integrable (fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i)) ν :=
-  by
+    Integrable (fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i)) ν := by
   simpa only [measureReal_def] using
     TauCeti.MeasureTheory.integrable_prod_toReal
-      (f := fun i ω => tailConditionalMeasure μ X ω (B i))
+      (f := fun i ω => tailConditionalMeasure μ X ω (B i)) ENNReal.one_ne_top
       (fun i _ => (measurable_tailConditionalMeasure_coe hTail (hB i)).aemeasurable)
       fun _ _ => ae_of_all _ fun _ => prob_le_one
 
@@ -78,8 +77,7 @@ lemma ofReal_integral_eq_lintegral_prod_tailConditionalMeasure [StandardBorelSpa
     {B : Fin r → Set α}
     (hg_int : Integrable (fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i)) ν) :
     ENNReal.ofReal (∫ ω, ∏ i, (tailConditionalMeasure μ X ω).real (B i) ∂ν)
-      = ∫⁻ ω, ∏ i, tailConditionalMeasure μ X ω (B i) ∂ν :=
-  by
+      = ∫⁻ ω, ∏ i, tailConditionalMeasure μ X ω (B i) ∂ν := by
   simpa only [measureReal_def] using
     TauCeti.MeasureTheory.ofReal_integral_prod_toReal_eq_lintegral_prod
       (f := fun i ω => tailConditionalMeasure μ X ω (B i))

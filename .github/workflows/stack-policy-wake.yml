@@ -6,7 +6,7 @@ name: Stack Policy Wake
 on:
   pull_request:
     branches-ignore: [main]
-    types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft]
+    types: [opened, reopened, edited, synchronize]
 
 permissions: {}
 

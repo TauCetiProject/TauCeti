@@ -137,22 +137,14 @@ end FiniteSums
 
 /-! ### Relative corestriction -/
 
-private def h0SubgroupOf : H0 V M →+ H0 (V.subgroupOf U) M where
-  toFun m := ⟨m, (FixedPoints.mem_addSubgroup (V.subgroupOf U) M m).2 fun x =>
-    (FixedPoints.mem_addSubgroup V M m).1 m.2 (Subgroup.subgroupOfEquivOfLe hVU x)⟩
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-@[simp]
-private theorem coe_h0SubgroupOf (m : H0 V M) :
-    (h0SubgroupOf G M U V hVU m : M) = m :=
-  rfl
-
 /-- **Relative degree-zero corestriction** for `V ≤ U`: identify `V` with its copy inside `U`,
 then apply degree-zero corestriction there. -/
 noncomputable def explicitCor0Le [(V.subgroupOf U).FiniteIndex] : H0 V M →+ H0 U M :=
   (explicitCor0 U M (V.subgroupOf U)).comp
-    (h0SubgroupOf G M U V hVU)
+    (explicitMap0 V M (Subgroup.subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)
+      (AddMonoidHom.id M) (fun h m =>
+        Subgroup.subgroupOf_smul_eq U V M h (Subgroup.subgroupOfEquivOfLe hVU h) m
+          (Subgroup.subgroupOfEquivOfLe_apply_coe hVU h).symm))
 
 /-- The underlying coefficient of relative degree-zero corestriction is the norm over the cosets
 of `V` in `U`, taken along the canonical transversal. -/
@@ -160,7 +152,8 @@ of `V` in `U`, taken along the canonical transversal. -/
 theorem coe_explicitCor0Le [(V.subgroupOf U).FiniteIndex] (m : H0 V M) :
     (explicitCor0Le G M U V hVU m : M) =
       ∑ b : U ⧸ V.subgroupOf U, (Quotient.out b : U) • (m : M) := by
-  rw [explicitCor0Le, AddMonoidHom.comp_apply, coe_explicitCor0, coe_h0SubgroupOf]
+  rw [explicitCor0Le, AddMonoidHom.comp_apply, coe_explicitCor0, coe_explicitMap0 V M,
+    AddMonoidHom.id_apply]
 
 section Topological
 
@@ -297,7 +290,7 @@ theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
   rw [explicitCor0_eq_transversal G M V r hr]
   ext m
   simp only [AddMonoidHom.comp_apply, explicitCor0Le, coe_explicitCor0Transversal,
-    coe_explicitCor0, coe_h0SubgroupOf]
+    coe_explicitCor0, coe_explicitMap0 V M, AddMonoidHom.id_apply]
   -- Forget the fixed-point membership proofs and expose the single and iterated norm sums.
   change (∑ q : G ⧸ V, r q • (m : M)) =
     ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • (m : M)
@@ -398,7 +391,7 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
     explicitCor1_mk]
   apply congrArg (fun z : Z1 G M => (z : H1 G M))
   apply Subtype.ext
-  simp only [coe_cocyclesCor1, cocyclesMap1_coe]
+  simp only [coe_cocyclesCor1, coe_cocyclesMap1]
   have hpull :
       cochainsMap1 ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
             V.subgroupOf U →* V) (AddMonoidHom.id M) f =
@@ -432,7 +425,7 @@ theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
     explicitCor2_mk]
   apply congrArg (fun z : Z2 G M => (z : H2 G M))
   apply Subtype.ext
-  simp only [coe_cocyclesCor2, cocyclesMap2_coe]
+  simp only [coe_cocyclesCor2, coe_cocyclesMap2]
   have hpull :
       cochainsMap2 ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
             V.subgroupOf U →* V) (AddMonoidHom.id M) f =

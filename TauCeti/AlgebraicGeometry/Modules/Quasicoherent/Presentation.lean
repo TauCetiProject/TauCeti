@@ -14,6 +14,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 A quasicoherent module on an affine scheme admits a global presentation by free sheaves,
 with arbitrary sets of generators and relations. This permits colimit arguments with
 quasicoherent modules on an affine scheme, even when no finite generation is assumed.
+Finite presentations on an open subscheme also transport to its slice site via Mathlib's
+`Scheme.Modules.overEquiv`.
 
 ## References
 
@@ -24,15 +26,33 @@ public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Modules
 
 universe u
 
 noncomputable section
 
+/-- A finite presentation on an open subscheme gives a finite presentation on its slice site. -/
+theorem exists_isFinite_presentation_over_of_restrict
+    {X : Scheme.{u}} (M : X.Modules) (U : X.Opens)
+    (P : (M.restrict U.ι).Presentation) [P.IsFinite] :
+    ∃ Q : (M.over U).Presentation, Q.IsFinite := by
+  -- Use the sheaf-category instance so presentation transport finds colimit preservation
+  -- and the isomorphism instance without crossing the scheme-module category wrapper.
+  let G : SheafOfModules U.toScheme.ringCatSheaf ⥤
+      SheafOfModules (X.ringCatSheaf.over U) := (Scheme.Modules.overEquiv U).inverse
+  have : PreservesColimitsOfSize.{u, u} G :=
+    (Scheme.Modules.overEquiv U).symm.toAdjunction.leftAdjoint_preservesColimits
+  let e : G.obj (M.restrict U.ι) ≅ M.over U :=
+    (Scheme.Modules.overEquiv U).inverse.mapIso ((Scheme.Modules.overFunctorEquiv U).app M).symm ≪≫
+      (Scheme.Modules.overEquiv U).unitIso.symm.app (M.over U)
+  let Q := P.map G (U.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf).symm
+  have : Q.IsFinite := SheafOfModules.Presentation.isFinite_map _ _ _
+  exact ⟨Q.ofIsIso e.hom, inferInstance⟩
+
 /-- A presentation on the canonical spectrum of an affine scheme transports back to a
 presentation on the affine scheme. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.presentationOfIsoSpec
+def presentationOfIsoSpec
     {X : Scheme.{u}} [IsAffine X] (M : X.Modules)
     (P : ((Scheme.Modules.pullback X.isoSpec.inv).obj M).Presentation) : M.Presentation := by
   let F : SheafOfModules (Spec Γ(X, ⊤)).ringCatSheaf ⥤
@@ -48,7 +68,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.presentationOfIsoSpec
 
 /-- Transporting a presentation from the canonical spectrum preserves finite generators and
 finite relations. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinite_presentationOfIsoSpec
+instance isFinite_presentationOfIsoSpec
     {X : Scheme.{u}} [IsAffine X] (M : X.Modules)
     (P : ((Scheme.Modules.pullback X.isoSpec.inv).obj M).Presentation) [P.IsFinite] :
     (M.presentationOfIsoSpec P).IsFinite := by
@@ -62,7 +82,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinite_presentationOfIsoSpec
 
 /-- A quasicoherent module on an affine scheme admits a global presentation by free sheaves.
 The generating and relation families need not be finite. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffine
+theorem nonempty_presentation_of_isAffine
     {X : Scheme.{u}} [IsAffine X] (M : X.Modules) [M.IsQuasicoherent] :
     Nonempty M.Presentation := by
   let e := X.isoSpec
@@ -79,4 +99,4 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffin
 
 end
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Modules

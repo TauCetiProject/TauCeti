@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
-public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
+public import TauCeti.Algebra.Module.Equiv.AutCongr
 
 /-!
 # The topology of finite-dimensional linear automorphisms

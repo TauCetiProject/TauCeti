@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.RingTheory.NormTrace.BaseChange
 public import TauCeti.RingTheory.NormTrace.Pi
-public import TauCeti.RingTheory.NormTrace.Prod
 public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -49,9 +48,15 @@ full set of sections of a finite locally free subgroup scheme.
 
 * `TauCeti.isFullSetOfSections_comp_algEquiv_iff`: being a full set of sections is invariant under
   isomorphisms of `B`.
+* `TauCeti.isFullSetOfSections_sectionBaseChange_iff_of_isPushout` and
+  `TauCeti.isFullSetOfSections_iff_of_isPushout`: full sets of sections and base change along a
+  pushout square.
 * `TauCeti.IsFullSetOfSections.of_localizationSpan`: being a full set of sections is Zariski-local
   on `Spec A`: it can be checked after localizing at a family of elements generating the unit
-  ideal.
+  ideal. `TauCeti.IsFullSetOfSections.of_localization_maximal` permits checking at all maximal
+  ideals instead.
+* `TauCeti.isFullSetOfSections_iff_charpoly`: for finite `B`, the characteristic-polynomial
+  formulation (Katz–Mazur 1.8.2), tested on free base changes in the universe of `A`.
 
 In the following results, `B` is finite and flat over `A`; this includes the case that
 `Spec B → Spec A` is finite locally free. Together with Zariski locality, they let full sets of
@@ -59,26 +64,39 @@ sections be checked locally on `Spec A` and transported along changes of base.
 
 * `TauCeti.IsFullSetOfSections.norm_eq`: the defining identity holds on every base change
   `T ⊗[A] B` which is free over `T`, for test algebras `T` in every universe.
+* `TauCeti.IsFullSetOfSections.charpoly_eq`: the characteristic-polynomial identity holds on
+  free base changes for test algebras in every universe.
 * `TauCeti.IsFullSetOfSections.baseChange`, `TauCeti.IsFullSetOfSections.of_baseChange` and
   `TauCeti.isFullSetOfSections_baseChange_iff`: full sets of sections are stable under arbitrary
   base change and descend along injective ring maps, in particular along faithfully flat ones.
+* `TauCeti.isFullSetOfSections_pi_iff` in `TauCeti/RingTheory/Norm/FullSetOfSections/Pi.lean`:
+  fullness on a finite disjoint union is equivalent to fullness on each component
+  (Katz–Mazur 1.8.4).
 
-In the remaining results, `B` is free of finite rank over `A`.
+In the next results, `B` is free of finite rank over `A`.
 
 * `TauCeti.IsFullSetOfSections.norm_eq_prod`: the norm of a function on `Spec B` is the product
   of its values at a full set of sections.
+* `TauCeti.IsFullSetOfSections.charpoly_eq_prod`: without base change, the characteristic
+  polynomial of multiplication by `b : B` is `∏ i, (X - sᵢ(b))`.
 * `TauCeti.isFullSetOfSections_iff_norm_eq_prod`: the reduction to the universal case
   (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B` indexed by `κ`, `s` is a full set of
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
-* `TauCeti.isFullSetOfSections_iff_charpoly`: the characteristic-polynomial formulation
-  (Katz–Mazur 1.8.2).
+* `TauCeti.IsFullSetOfSections.trace_eq_sum`: the trace is the sum of the values at the sections.
+
+The next two results assume only that `B` is free over `A`; the second also assumes that `A` is
+nontrivial.
+
+* `TauCeti.IsFullSetOfSections.finite_of_nonempty`: a free algebra with a nonempty full set of
+  sections is finitely generated as a module.
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
+
+In the remaining results, `B` is free of finite rank over `A`.
+
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
   of the constant scheme `⨆_{i ∈ ι} Spec A`, form a full set of sections.
-* `TauCeti.IsFullSetOfSections.prod`: full sets of sections of `B₁` and `B₂` together form one of
-  `B₁ × B₂` (Katz–Mazur 1.8.4).
 * `TauCeti.IsFullSetOfSections.tensorProduct`: full sets of sections `s₁` of `B₁` and `s₂` of
   `B₂` give the full set of sections `x ⊗ y ↦ s₁ᵢ(x) s₂ⱼ(y)` of `B₁ ⊗[A] B₂`, the coordinate ring
   of the fibre product `Spec B₁ ×_{Spec A} Spec B₂`.
@@ -146,10 +164,19 @@ theorem isFullSetOfSections_comp_algEquiv_iff {B' : Type*} [CommRing B'] [Algebr
     (IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) ↔ IsFullSetOfSections s :=
   ⟨.of_comp_algEquiv e, fun h ↦ .of_comp_algEquiv e.symm (by simpa [AlgHom.comp_assoc] using h)⟩
 
+/-- The base change of a family of sections along the identity `A → A` is a full set of sections
+if and only if the family itself is. -/
+theorem isFullSetOfSections_sectionBaseChange_self_iff :
+    (IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A) ↔ IsFullSetOfSections s := by
+  rw [← isFullSetOfSections_comp_algEquiv_iff (Algebra.TensorProduct.lid A B).symm]
+  refine Iff.of_eq (congrArg _ (funext fun i ↦ AlgHom.ext fun b ↦ ?_))
+  simp
+
 section Free
 
 variable [Module.Free A B] [Module.Finite A B]
 
+omit [Module.Finite A B] in
 /-- If the norm form of `B` in a basis `b` factors as `∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ`, then the norm on
 every base change `T ⊗[A] B` is the product of the values at the sections: write
 `f = ∑ j, cⱼ ⊗ bⱼ` and specialize `Xⱼ ↦ cⱼ`. -/
@@ -176,6 +203,20 @@ private theorem IsFullSetOfSections.norm_eq_of_free (h : IsFullSetOfSections s) 
   norm_eq_prod_of_generic ((Module.Free.chooseBasis A B).reindex (Fintype.equivFin _))
     ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _)) T f
 
+/-- Without base change, the characteristic polynomial of multiplication by `b` on `B` is
+`∏ i, (X - sᵢ(b))` for a full set of sections `s`. -/
+theorem IsFullSetOfSections.charpoly_eq_prod (h : IsFullSetOfSections s) (b : B) :
+    (Algebra.lmul A B b).charpoly = ∏ i, (Polynomial.X - Polynomial.C (s i b)) := by
+  -- Conjugate by `lid` to present multiplication on `B` as multiplication on `A ⊗[A] B`,
+  -- where `charpoly_lmul_eq_norm` and the full-set norm formula apply.
+  let e := Algebra.TensorProduct.lid A B
+  have he : e.toLinearEquiv.conj (Algebra.lmul A _ (e.symm b)) = Algebra.lmul A B b := by
+    ext x
+    simp [LinearEquiv.conj_apply]
+  rw [← he, LinearEquiv.charpoly_conj, Algebra.charpoly_lmul_eq_norm, h.norm_eq_of_free]
+  simp [e, Polynomial.algebraMap_eq]
+
+omit [Module.Free A B] [Module.Finite A B] in
 /-- **Reduction to the universal case** (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B`
 indexed by `κ`, a family of sections `s` is a full set of sections if and only if the norm of the
 generic element `∑ j, Xⱼ ⊗ bⱼ` of `MvPolynomial κ A ⊗[A] B` is the product of the linear forms
@@ -184,6 +225,8 @@ theorem isFullSetOfSections_iff_norm_eq_prod {κ : Type*} [Fintype κ] (b : Modu
     IsFullSetOfSections s ↔
       Algebra.norm (MvPolynomial κ A) (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) =
         ∏ i, ∑ j, s i (b j) • (X j : MvPolynomial κ A) :=
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
   ⟨fun h ↦ (h.norm_eq_of_free _ _).trans
       (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _),
     fun h T _ _ _ f ↦ norm_eq_prod_of_generic b h T f⟩
@@ -204,12 +247,14 @@ end Free
 
 /-! ### Finite flat algebras
 
-For `B` finite over `A`, being a full set of sections is local on `Spec A`: it can be checked on
-the localizations at a family of elements generating the unit ideal
-(`IsFullSetOfSections.of_localizationSpan`). When `B` is moreover flat over `A`, as it is when
-`Spec B → Spec A` is finite locally free, full sets of sections are stable under arbitrary base
-change and descend along injective ring maps, so that full sets of sections can be checked
-locally and transported to any base. -/
+Being a full set of sections is local on `Spec A`, with no finiteness hypothesis on `B`: it can be
+checked on the localizations at a family of elements generating the unit ideal
+(`IsFullSetOfSections.of_localizationSpan`) or at every maximal ideal
+(`IsFullSetOfSections.of_localization_maximal`). The characteristic-polynomial criterion requires
+`B` finite over `A` when test algebras stay in the universe of `A`. If `B` is also flat over
+`A`, as it is when `Spec B → Spec A` is finite locally free, full sets of sections are stable
+under arbitrary base change and descend along injective ring maps, so that full sets of sections
+can be checked locally and transported to any base. -/
 
 section FiniteFlat
 
@@ -238,7 +283,7 @@ private theorem IsFullSetOfSections.baseChange_of_univ (h : IsFullSetOfSections 
 
 -- The image in `T'` of the norm identity for `f ∈ T ⊗[A] B`, when `T'` is an algebra over both
 -- `T` and `A'` and the norm identity holds on `T' ⊗[A'] (A' ⊗[A] B)` for the base change of `s`.
-private theorem algebraMap_norm_eq_algebraMap_prod [Module.Finite A B] {A' T T' : Type*}
+private theorem algebraMap_norm_eq_algebraMap_prod {A' T T' : Type*}
     [CommRing A'] [Algebra A A'] [CommRing T] [Algebra A T] [Module.Free T (T ⊗[A] B)]
     [CommRing T'] [Algebra T T'] [Algebra A' T'] [Algebra A T'] [IsScalarTower A A' T']
     [IsScalarTower A T T'] (f : T ⊗[A] B)
@@ -249,9 +294,23 @@ private theorem algebraMap_norm_eq_algebraMap_prod [Module.Finite A B] {A' T T' 
     ((forall_norm_eq_prod_cancelBaseChange_iff (A' := A')).1 H), map_prod]
   simp
 
+-- When `T'` is in the universe of `A'`, fullness supplies the norm identity after transporting
+-- freeness through the two base changes.
+private theorem IsFullSetOfSections.algebraMap_norm_eq_prod
+    {A' T' : Type u} [CommRing A'] [Algebra A A'] {T : Type*} [CommRing T] [Algebra A T]
+    [Module.Free T (T ⊗[A] B)] [CommRing T'] [Algebra T T'] [Algebra A' T'] [Algebra A T']
+    [IsScalarTower A A' T'] [IsScalarTower A T T']
+    (h : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A') (f : T ⊗[A] B) :
+    algebraMap T T' (Algebra.norm T f) = algebraMap T T' (∏ i, (s i).sectionBaseChange T f) := by
+  have : Module.Free T' (T' ⊗[A] B) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T T' T' B).toLinearEquiv
+  have : Module.Free T' (T' ⊗[A'] (A' ⊗[A] B)) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A A' T' T' B).symm.toLinearEquiv
+  exact algebraMap_norm_eq_algebraMap_prod f (h T')
+
 /-- **Zariski locality.** If `t` generates the unit ideal of `A` and the base changes of `s` to the
 localizations `A[1/r]`, `r ∈ t`, are full sets of sections, then `s` is a full set of sections. -/
-theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
+theorem IsFullSetOfSections.of_localizationSpan (t : Set A)
     (ht : Ideal.span t = ⊤)
     (h : ∀ r : t, IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.Away r.1)) :
     IsFullSetOfSections s := by
@@ -260,12 +319,41 @@ theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
   refine Module.eq_of_isLocalized_span t ht (Mₚ := T')
     (f := fun r ↦ (IsScalarTower.toAlgHom A T (T' r)).toLinearMap) _ _ fun r ↦ ?_
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  have : Module.Free (T' r) (T' r ⊗[A] B) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T (T' r) (T' r) B).toLinearEquiv
-  have : Module.Free (T' r) (T' r ⊗[Localization.Away r.1] (Localization.Away r.1 ⊗[A] B)) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.Away r.1) (T' r) (T' r)
-      B).symm.toLinearEquiv
-  exact algebraMap_norm_eq_algebraMap_prod f (h r (T' r))
+  exact (h r).algebraMap_norm_eq_prod f
+
+/-- A family of sections is full if it is full after localization at every maximal ideal of the
+base. -/
+theorem IsFullSetOfSections.of_localization_maximal
+    (h : ∀ (P : Ideal A) [P.IsMaximal],
+      IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.AtPrime P)) :
+    IsFullSetOfSections s := by
+  intro T _ _ _ f
+  let T' (P : Ideal A) [P.IsMaximal] :=
+    Localization (Algebra.algebraMapSubmonoid T P.primeCompl)
+  refine Module.eq_of_localization_maximal T'
+    (fun P ↦ (IsScalarTower.toAlgHom A T (T' P)).toLinearMap) _ _ fun P _ ↦ ?_
+  rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
+  exact (h P).algebraMap_norm_eq_prod f
+
+/-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
+full set of sections of a finite algebra if and only if, after every base change `A → T`
+with `T` in the universe of `A` and for which `T ⊗[A] B` is free over `T`, the characteristic
+polynomial of multiplication by every `f ∈ T ⊗[A] B` is `∏ i, (X - sᵢ(f))`. -/
+theorem isFullSetOfSections_iff_charpoly [Module.Finite A B] :
+    IsFullSetOfSections s ↔ ∀ (T : Type u) [CommRing T] [Algebra A T]
+      [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B),
+      (Algebra.lmul T (T ⊗[A] B) f).charpoly =
+        ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
+  refine ⟨fun h T _ _ _ f ↦ (h.baseChange_of_univ T).charpoly_eq_prod f, fun h ↦ ?_⟩
+  intro T _ _ _ f
+  rcases subsingleton_or_nontrivial T with _ | _
+  · exact Subsingleton.elim _ _
+  have hdeg := congrArg Polynomial.natDegree (h T f)
+  rw [LinearMap.charpoly_natDegree, Polynomial.natDegree_finsetProd_X_sub_C_eq_card,
+    Finset.card_univ] at hdeg
+  rw [Algebra.norm_apply, LinearMap.det_eq_sign_charpoly_coeff, h T f,
+    Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod, hdeg]
+  simp [Finset.prod_neg, ← mul_assoc, ← pow_add]
 
 variable [Module.Finite A B] [Module.Flat A B]
 
@@ -294,17 +382,21 @@ theorem IsFullSetOfSections.baseChange (h : IsFullSetOfSections s) (T : Type w) 
     .of_equiv (Algebra.TensorProduct.cancelBaseChange A T T' T' B).toLinearEquiv
   exact (forall_norm_eq_prod_cancelBaseChange_iff (A' := T)).2 (h.norm_eq T') g
 
+/-- The characteristic polynomial of multiplication by `f` on a base change of `B` by a full set
+of sections of a finite flat algebra is `∏ i, (X - sᵢ(f))`, whenever the base change is free
+over the test algebra, in any universe. -/
+theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w) [CommRing T]
+    [Algebra A T] [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B) :
+    (Algebra.lmul T (T ⊗[A] B) f).charpoly =
+      ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) :=
+  (h.baseChange T).charpoly_eq_prod f
+
 /-- Being a full set of sections of a finite flat algebra descends along an injective ring
 map `A → T`, in particular along a faithfully flat one. -/
 theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T]
     (hT : Function.Injective (algebraMap A T))
     (h : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T) : IsFullSetOfSections s := by
-  intro T₀ _ _ _ f
-  let T₀' (P : Ideal A) [P.IsMaximal] := Localization (Algebra.algebraMapSubmonoid T₀ P.primeCompl)
-  refine Module.eq_of_localization_maximal T₀'
-    (fun P ↦ (IsScalarTower.toAlgHom A T₀ (T₀' P)).toLinearMap) _ _ fun P _ ↦ ?_
-  rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  refine algebraMap_norm_eq_algebraMap_prod (A' := Localization.AtPrime P) f ?_
+  refine of_localization_maximal fun P _ ↦ ?_
   -- Over the local ring `A_P` the algebra `B` is free, and `A_P → T_P` is injective, so it is
   -- enough that the base change of `s` to `T_P` through `A_P` is a full set of sections. Through
   -- `T` instead, it is the base change of the full set of sections `h`.
@@ -318,7 +410,7 @@ theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T
     convert (isFullSetOfSections_comp_algEquiv_iff e).2 (h.baseChange T') using 2 with i
     ext x
     simp [e, ← IsScalarTower.algebraMap_apply]
-  exact (hP.of_baseChange_of_free (localizationAlgebra_injective _ _ hT)).norm_eq_of_free _
+  exact hP.of_baseChange_of_free (localizationAlgebra_injective _ _ hT)
 
 /-- Over a base change which is injective, being a full set of sections of a finite flat
 algebra can be checked after the base change. -/
@@ -329,52 +421,97 @@ theorem isFullSetOfSections_baseChange_iff {T : Type w} [CommRing T] [Algebra A 
 
 end FiniteFlat
 
+section IsPushout
+
+/-- Base change of sections along a pushout square: if `B'` is the base change of `B` along
+`A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then the base
+changes of `s` and of `s'` to any `A'`-algebra `T` are full sets of sections together. -/
+theorem isFullSetOfSections_sectionBaseChange_iff_of_isPushout {A' B' : Type*}
+    [CommRing A'] [CommRing B'] [Algebra A A'] [Algebra A B'] [Algebra A' B'] [Algebra B B']
+    [IsScalarTower A A' B'] [IsScalarTower A B B'] [Algebra.IsPushout A A' B B']
+    {s' : ι → B' →ₐ[A'] A'}
+    (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) (T : Type w) [CommRing T]
+    [Algebra A' T] [Algebra A T] [IsScalarTower A A' T] :
+    (IsFullSetOfSections fun i ↦ (s' i).sectionBaseChange T) ↔
+      IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T := by
+  let e : T ⊗[A] B ≃ₐ[T] T ⊗[A'] B' :=
+    (Algebra.TensorProduct.cancelBaseChange A A' T T B).symm.trans
+      (Algebra.TensorProduct.congr AlgEquiv.refl (Algebra.IsPushout.equiv A A' B B'))
+  rw [← isFullSetOfSections_comp_algEquiv_iff e]
+  refine Iff.of_eq (congrArg _ (funext fun i ↦ ?_))
+  refine Algebra.TensorProduct.ext' fun t b ↦ ?_
+  simp [e, Algebra.IsPushout.equiv_tmul, hs, ← IsScalarTower.algebraMap_apply]
+
+/-- **Full sets of sections along a pushout square.** If `B'` is the base change of `B` along
+`A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then `s'` is a
+full set of sections exactly when the base change of `s` to `A'` is. -/
+theorem isFullSetOfSections_iff_of_isPushout {A' B' : Type*} [CommRing A'] [CommRing B']
+    [Algebra A A'] [Algebra A B'] [Algebra A' B'] [Algebra B B'] [IsScalarTower A A' B']
+    [IsScalarTower A B B'] [Algebra.IsPushout A A' B B'] {s' : ι → B' →ₐ[A'] A'}
+    (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) :
+    IsFullSetOfSections s' ↔ IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A' :=
+  isFullSetOfSections_sectionBaseChange_self_iff.symm.trans
+    (isFullSetOfSections_sectionBaseChange_iff_of_isPushout hs A')
+
+end IsPushout
+
 section Free
 
 variable [Module.Free A B] [Module.Finite A B]
 
+omit [Module.Finite A B] in
 /-- Without base change, the norm of a function on `Spec B` is the product of its values at a full
 set of sections. -/
 theorem IsFullSetOfSections.norm_eq_prod (h : IsFullSetOfSections s) (b : B) :
     Algebra.norm A b = ∏ i, s i b := by
-  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid A B).symm, h.norm_eq]
+  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid A B).symm, h A]
   simp
 
-/-- Over a nontrivial ring, a full set of sections has as many members as the rank of `B`. -/
-theorem IsFullSetOfSections.card_eq_finrank [Nontrivial A] (h : IsFullSetOfSections s) :
-    Fintype.card ι = Module.finrank A B := by
-  have := h.norm_eq (Polynomial A) (algebraMap (Polynomial A) _ Polynomial.X)
-  rw [Algebra.norm_algebraMap, Module.finrank_baseChange] at this
-  simpa using congrArg Polynomial.natDegree this.symm
-
-/-- The characteristic polynomial of multiplication by `f` on a base change of `B` by a full set
-of sections is `∏ i, (X - sᵢ(f))`, for test algebras in any universe. -/
-theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w) [CommRing T]
-    [Algebra A T] (f : T ⊗[A] B) :
-    (Algebra.lmul T (T ⊗[A] B) f).charpoly =
-      ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
-  rw [Algebra.charpoly_lmul_eq_norm, h.norm_eq]
-  simp [Polynomial.algebraMap_eq]
-
-/-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
-full set of sections if and only if after every base change `A → T` the characteristic polynomial
-of multiplication by every `f ∈ T ⊗[A] B` is `∏ i, (X - sᵢ(f))`. -/
-theorem isFullSetOfSections_iff_charpoly :
-    IsFullSetOfSections s ↔ ∀ (T : Type u) [CommRing T] [Algebra A T] (f : T ⊗[A] B),
-      (Algebra.lmul T (T ⊗[A] B) f).charpoly =
-        ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
-  refine ⟨fun h T _ _ f ↦ h.charpoly_eq T f, fun h ↦ ?_⟩
-  intro T _ _ _ f
-  rcases subsingleton_or_nontrivial T with _ | _
-  · exact Subsingleton.elim _ _
-  have hdeg := congrArg Polynomial.natDegree (h T f)
-  rw [LinearMap.charpoly_natDegree, Polynomial.natDegree_finsetProd_X_sub_C_eq_card,
-    Finset.card_univ] at hdeg
-  rw [Algebra.norm_apply, LinearMap.det_eq_sign_charpoly_coeff, h T f,
-    Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod, hdeg]
-  simp [Finset.prod_neg, ← mul_assoc, ← pow_add]
+/-- The trace of a function is the sum of its values at a full set of sections. -/
+theorem IsFullSetOfSections.trace_eq_sum (h : IsFullSetOfSections s) (b : B) :
+    Algebra.trace A B b = ∑ i, s i b := by
+  classical
+  let e := Module.Free.chooseBasis A B
+  rw [Algebra.trace_eq_matrix_trace e, Matrix.trace_eq_neg_charpoly_nextCoeff]
+  have hc : (Algebra.leftMulMatrix e b).charpoly = (Algebra.lmul A B b).charpoly :=
+    LinearMap.charpoly_toMatrix _ e
+  rw [hc, h.charpoly_eq_prod, Polynomial.Monic.nextCoeff_prod _ _
+    (fun i _ ↦ Polynomial.monic_X_sub_C _)]
+  simp
 
 end Free
+
+section NonFinite
+
+variable [Module.Free A B] [Nontrivial A]
+
+omit [Nontrivial A] in
+/-- A free algebra with a nonempty full set of sections is finitely generated as a module. -/
+theorem IsFullSetOfSections.finite_of_nonempty [Nonempty ι] (h : IsFullSetOfSections s) :
+    Module.Finite A B := by
+  -- Over the zero ring every module is trivial. Over a nontrivial ring, if `B` is not finite then
+  -- the norm is `1`, which contradicts the vanishing of the norm of `0` at a section.
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · have := Module.subsingleton A B
+    exact Module.Finite.of_finite
+  by_contra hfin
+  have h0 := h.norm_eq_prod (0 : B)
+  simp only [Algebra.norm_eq_one_of_not_module_finite hfin, map_zero] at h0
+  exact one_ne_zero
+    (h0.trans (Finset.prod_eq_zero (Finset.mem_univ (Classical.arbitrary ι)) rfl))
+
+/-- Over a nontrivial ring, a full set of sections of a free algebra has as many members as the
+rank of `B`. -/
+theorem IsFullSetOfSections.card_eq_finrank (h : IsFullSetOfSections s) :
+    Fintype.card ι = Module.finrank A B := by
+  by_cases hfin : Module.Finite A B
+  · have := h.norm_eq (Polynomial A) (algebraMap (Polynomial A) _ Polynomial.X)
+    rw [Algebra.norm_algebraMap, Module.finrank_baseChange] at this
+    simpa using congrArg Polynomial.natDegree this.symm
+  · have : IsEmpty ι := not_nonempty_iff.1 fun hne => hfin (h.finite_of_nonempty)
+    simp [Module.finrank_of_not_finite hfin]
+
+end NonFinite
 
 /-- The coordinate projections `ι → A`, the sections of the constant finite scheme
 `⨆_{i ∈ ι} Spec A`, form a full set of sections. -/
@@ -390,22 +527,16 @@ theorem isFullSetOfSections_evalAlgHom :
   | tmul t y => simp [Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [map_add, Pi.add_apply, hx, hy]
 
-/-- **Disjoint unions** (Katz–Mazur 1.8.4). If `s₁` and `s₂` are full sets of sections of `B₁`
-and `B₂`, then their composites with the two projections together form a full set of sections of
-`B₁ × B₂`. -/
-theorem IsFullSetOfSections.prod {B₁ B₂ : Type*} [CommRing B₁] [Algebra A B₁] [CommRing B₂]
-    [Algebra A B₂] [Module.Free A B₁] [Module.Finite A B₁] [Module.Free A B₂]
-    [Module.Finite A B₂] {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] {s₁ : ι₁ → B₁ →ₐ[A] A}
-    {s₂ : ι₂ → B₂ →ₐ[A] A} (h₁ : IsFullSetOfSections s₁) (h₂ : IsFullSetOfSections s₂) :
-    IsFullSetOfSections (Sum.elim (fun i ↦ (s₁ i).comp (AlgHom.fst A B₁ B₂))
-      fun i ↦ (s₂ i).comp (AlgHom.snd A B₁ B₂)) := by
-  intro T _ _ _ f
-  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.prodRight A T T B₁ B₂),
-    Algebra.norm_prod, h₁.norm_eq, h₂.norm_eq, Fintype.prod_sum_type]
-  congr 1 <;> refine Finset.prod_congr rfl fun i _ ↦ ?_ <;>
-  induction f using TensorProduct.inductionOn with
-  | tmul t y => simp
-  | add x y hx hy => simp only [map_add, Prod.fst_add, Prod.snd_add, hx, hy]
+/-- An evaluation isomorphism makes its coordinate sections a full set. This direction
+requires no finiteness or étaleness hypothesis on the algebra. -/
+theorem isFullSetOfSections_of_bijective_pi (h : Function.Bijective (AlgHom.pi s)) :
+    IsFullSetOfSections s := by
+  let e := AlgEquiv.ofBijective (AlgHom.pi s) h
+  have he (i : ι) : (Pi.evalAlgHom A (fun _ : ι ↦ A) i).comp e.toAlgHom = s i := by
+    ext b
+    rfl
+  simpa only [he] using (isFullSetOfSections_comp_algEquiv_iff e).mpr
+    (isFullSetOfSections_evalAlgHom (A := A) (ι := ι))
 
 section TensorProduct
 
@@ -415,6 +546,7 @@ variable {B₁ B₂ : Type*} [CommRing B₁] [Algebra A B₁] [CommRing B₂] [A
 
 -- The norm identity for `B₁ ⊗[A] B₂` over `A` itself, by transitivity of the norm through `B₁`:
 -- over `B₁`, the algebra `B₁ ⊗[A] B₂` is the base change of `B₂`, whose norm is computed by `s₂`.
+omit [Module.Finite A B₁] in
 private theorem norm_eq_prod_productMap (h₁ : IsFullSetOfSections s₁)
     (h₂ : IsFullSetOfSections s₂) (f : B₁ ⊗[A] B₂) :
     Algebra.norm A f =
@@ -482,6 +614,7 @@ theorem map_fullSetPolynomial {κ : Type*} [Fintype κ] (b : Module.Basis κ A B
 
 variable [Module.Free A B] [Module.Finite A B]
 
+omit [Module.Free A B] [Module.Finite A B] in
 /-- **The full-set equations.** A family `u : ι → B →ₐ[A] T` gives sections of
 `T ⊗[A] B` over `T`, and these form a full set of sections exactly when the norm-identity
 polynomial of `u` in a basis of `B` vanishes. -/
@@ -489,6 +622,7 @@ theorem isFullSetOfSections_liftEquiv_iff {κ : Type*} [Fintype κ] (b : Module.
     {T : Type w} [CommRing T] [Algebra A T] (u : ι → B →ₐ[A] T) :
     IsFullSetOfSections (fun i ↦ AlgHom.liftEquiv A T B T (u i)) ↔
       fullSetPolynomial b u = 0 := by
+  have := Module.Finite.of_basis b
   rw [isFullSetOfSections_iff_norm_eq_prod (Algebra.TensorProduct.basis T b),
     Algebra.norm_sum_X_tmul_tensorProductBasis, fullSetPolynomial, sub_eq_zero]
   simp
@@ -501,6 +635,7 @@ coefficients of the norm-identity polynomial of `u` in a basis of `B`, and the c
 noncomputable def fullSetIdeal (u : ι → B →ₐ[A] C) : Ideal C :=
   Ideal.span (Set.range fun m ↦ (fullSetPolynomial (Module.Free.chooseBasis A B) u).coeff m)
 
+omit [Module.Free A B] [Module.Finite A B] in
 /-- The ideal generated by the coefficients of the norm-identity polynomial in a basis `b` lies in
 the kernel of `φ` if and only if `φ ∘ u` is a full set of sections. -/
 private theorem span_coeff_fullSetPolynomial_le_ker_iff {κ : Type*} [Fintype κ]

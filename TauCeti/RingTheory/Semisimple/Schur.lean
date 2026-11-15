@@ -53,6 +53,8 @@ computation to an arbitrary equivalent target.
   `LinearEquiv.finrank_linearMap_eq_one`: the two forms of Schur's lemma in
   dimensions. More generally, `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` shows that
   maps from any finite-dimensional module into a simple module form a finite-dimensional space.
+  In particular `TauCeti.finrank_end_pos`: the endomorphism ring of a finite-dimensional simple
+  module has positive dimension.
 
 ## References
 
@@ -195,7 +197,7 @@ section Vanishing
 
 section Semiring
 
-variable {k A S N : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
+variable {k A S N : Type*} [CommSemiring k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module A S] [IsSimpleModule A S]
 variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N] [IsSimpleModule A N]
 
@@ -204,12 +206,14 @@ hom space is trivial, hence of dimension zero.
 
 Schur's lemma is normally read with a field of scalars, but this half of it does not need one.
 The conclusion is a statement about the zero module, whose `Module.finrank` vanishes over any
-nontrivial commutative semiring, and that is all `k` is asked to be here. So the result is
-available wherever the simple modules live over an algebra, without first arranging a field to
-measure the hom space in. -/
+nontrivial commutative semiring, and `k` is nontrivial because it acts on the nontrivial simple
+module `N`. So the result is available wherever the simple modules live over an algebra, without
+first arranging a field to measure the hom space in. -/
 theorem finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (h : IsEmpty (S ≃ₗ[A] N)) :
     Module.finrank k (S →ₗ[A] N) = 0 := by
   have : Subsingleton (S →ₗ[A] N) := subsingleton_linearMap_of_isEmpty_linearEquiv h
+  have : Nontrivial N := IsSimpleModule.nontrivial A N
+  have : Nontrivial k := Module.nontrivial k N
   exact Module.finrank_zero_of_subsingleton
 
 end Semiring
@@ -246,11 +250,18 @@ theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S �
   · have : Subsingleton (S →ₗ[A] N) := ⟨fun f g ↦ by simp_all⟩
     infer_instance
 
+/-- The division algebra `End_A(S)` of a simple module that is finite-dimensional over `k` has
+positive dimension over `k`. -/
+theorem finrank_end_pos [IsSimpleModule A S] : 0 < Module.finrank k (Module.End A S) := by
+  have : FiniteDimensional k (Module.End A S) := finiteDimensional_linearMap_of_isSimpleModule
+  have : Nontrivial S := IsSimpleModule.nontrivial A S
+  exact Module.finrank_pos
+
 end SimpleTarget
 
 section SimpleSymmetry
 
-variable {k A : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
+variable {k A : Type*} [CommSemiring k] [Ring A] [Algebra k A]
 
 /-- Hom-space finrank is symmetric between simple modules over an algebra. -/
 theorem finrank_linearMap_comm_of_isSimpleModule

@@ -82,27 +82,29 @@ section Superposition
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- In a separable Banach space `E`, a curve `μ` in `P_p(E)`, absolutely continuous on `[a, b]` with
-finite `p`-action, is the curve of time marginals of a probability measure on `C([a, b], E)`
-concentrated on absolutely continuous paths, whose expected `p`-action is the `p`-action of `μ`.
-The metric version `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq` follows by an
-isometric embedding, and also adds the averaged-speed identity. -/
-private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace (hp1 : 1 < p)
+/-- The limit step of the superposition principle in a separable Banach space: a curve `μ`
+in `P_p(E)`, absolutely continuous on `[a, b]` with finite `p`-action, has a probability measure
+`ηlim` on `C([a, b], E)`, concentrated on absolutely continuous paths, of expected `p`-action at
+most that of `μ`, whose time marginals are those of `μ` on a dense set of times (the dyadic times
+of `[a, b]`, where the polygonal approximations are exact). -/
+private theorem exists_dense_eqOn_map_eval_lintegral_curveAction_le (hp1 : 1 < p)
     (hp : p ≠ ∞)
     {μ : ℝ → WassersteinSpace p E} {a b : ℝ} (hab : a < b)
     (hμ : AbsolutelyContinuousOnInterval μ a b) (hA : curveAction p.toReal μ a b ≠ ∞) :
-    ∃ η : Measure C(Icc a b, E), IsProbabilityMeasure η ∧
-      (∀ᵐ γ : C(Icc a b, E) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b) ∧
-      (∀ t ∈ Icc a b, η.map (fun γ : C(Icc a b, E) ↦ IccExtend hab.le γ t) =
-        ((μ t : ProbabilityMeasure E) : Measure E)) ∧
-      ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂η = curveAction p.toReal μ a b := by
+    ∃ D : Set (Icc a b), Dense D ∧ ∃ ηlim : ProbabilityMeasure C(Icc a b, E),
+      (∀ᵐ γ : C(Icc a b, E) ∂(ηlim : Measure C(Icc a b, E)),
+        AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b) ∧
+      ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂(ηlim : Measure C(Icc a b, E)) ≤
+        curveAction p.toReal μ a b ∧
+      EqOn (fun t : Icc a b ↦ ηlim.map fun γ : C(Icc a b, E) ↦ γ t)
+        (fun t ↦ (μ t : ProbabilityMeasure E)) D := by
   have hr : 1 < p.toReal := by simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp).2 hp1
   -- The polygonal laws on the dyadic grids of `[a, b]`.
   choose η hηP hηAC hηgrid hηA using fun n : ℕ ↦
     exists_map_IccExtend_eq_lintegral_curveAction_le hp hab hμ (N := 2 ^ n) (by positivity)
   set ηs : ℕ → ProbabilityMeasure C(Icc a b, E) := fun n ↦ ⟨η n, hηP n⟩
   set D := {t : Icc a b | ∃ n k : ℕ, k ≤ 2 ^ n ∧ (t : ℝ) = a + k * ((b - a) / 2 ^ n)}
-  have hDd : Dense D := dense_setOfPred_eq_add_mul_div_two_pow hab
+  have hDd : Dense D := dense_setOfPred_eq_add_mul_div_two_pow hab.le
   -- At a dyadic time, the time marginals of the polygonal laws are eventually the value of `μ`.
   have hD (t : Icc a b) (ht : t ∈ D) : ∃ m, ∀ n ≥ m,
       (η n).map (fun γ : C(Icc a b, E) ↦ γ t) = ((μ t : ProbabilityMeasure E) : Measure E) := by
@@ -120,16 +122,9 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
         hab.le hr hDd (fun t ht ↦ ?_) hA (by rintro _ ⟨n, rfl⟩; exact hηAC n)
         (by rintro _ ⟨n, rfl⟩; exact hηA n)
     obtain ⟨m, hm⟩ := hD t ht
-    refine (isTightMeasureSet_of_finite (((finite_Iio m).image fun n ↦
-      (η n).map fun γ : C(Icc a b, E) ↦ γ t).insert ((μ t : ProbabilityMeasure E) : Measure E))
-      ?_).subset ?_
-    · rintro ν (rfl | ⟨n, -, rfl⟩) <;> infer_instance
-    · rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
-      dsimp only
-      rcases lt_or_ge n m with hn | hn
-      · exact mem_insert_of_mem _ ⟨n, hn, rfl⟩
-      · rw [hm n hn]
-        exact mem_insert _ _
+    rw [← range_comp']
+    exact isTightMeasureSet_range_of_eventually_eq <|
+      Nat.cofinite_eq_atTop ▸ eventually_atTop.2 ⟨m, hm⟩
   -- By Prokhorov's theorem, a subsequence converges to a law `ηlim`.
   have hcpt : IsCompact (closure (range ηs)) := by
     refine isCompact_closure_of_isTightMeasureSet ?_
@@ -158,10 +153,28 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
     refine ProbabilityMeasure.toMeasure_injective ?_
     simp only [Function.comp_apply, ProbabilityMeasure.toMeasure_map]
     exact (hm (φ n) (hn.trans (hφ.id_le n))).symm
+  exact ⟨D, hDd, ηlim, hAClim, hlelim, hmargD⟩
+
+/-- In a separable Banach space `E`, a curve `μ` in `P_p(E)`, absolutely continuous on `[a, b]` with
+finite `p`-action, is the curve of time marginals of a probability measure on `C([a, b], E)`
+concentrated on absolutely continuous paths, whose expected `p`-action is the `p`-action of `μ`.
+The metric version `TauCeti.exists_map_IccExtend_eq_lintegral_curveAction_eq` follows by an
+isometric embedding, and also adds the averaged-speed identity. -/
+private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace (hp1 : 1 < p)
+    (hp : p ≠ ∞)
+    {μ : ℝ → WassersteinSpace p E} {a b : ℝ} (hab : a < b)
+    (hμ : AbsolutelyContinuousOnInterval μ a b) (hA : curveAction p.toReal μ a b ≠ ∞) :
+    ∃ η : Measure C(Icc a b, E), IsProbabilityMeasure η ∧
+      (∀ᵐ γ : C(Icc a b, E) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b) ∧
+      (∀ t ∈ Icc a b, η.map (fun γ : C(Icc a b, E) ↦ IccExtend hab.le γ t) =
+        ((μ t : ProbabilityMeasure E) : Measure E)) ∧
+      ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂η = curveAction p.toReal μ a b := by
+  obtain ⟨D, hDd, ηlim, hAClim, hlelim, hmargD⟩ :=
+    exists_dense_eqOn_map_eval_lintegral_curveAction_le hp1 hp hab hμ hA
   -- Both curves of time marginals are continuous, so they agree on `[a, b]`.
   have hcont_η : Continuous fun t : Icc a b ↦ ηlim.map fun γ : C(Icc a b, E) ↦ γ t :=
-    ηlim.continuous_map_of_forall_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
-      fun γ ↦ γ.continuous
+    ηlim.continuous_map_of_ae_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
+      (ae_of_all _ fun γ ↦ γ.continuous)
   have hcont_μ : Continuous fun t : Icc a b ↦ (μ t : ProbabilityMeasure E) :=
     WassersteinSpace.continuous_toProbabilityMeasure.comp
       (hμ.continuousOn'.comp_continuous continuous_subtype_val fun t ↦ by
@@ -228,14 +241,16 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_eq (hp1 : 1 < p) (hp : p �
     rwa [IccExtend_val] at hγ
   obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Icc a b)
   -- The pullback of `η` along postcomposition with `ι` to the paths in `X` represents `μ`.
-  obtain ⟨hprob, hηX⟩ := isProbabilityMeasure_comap_postcomp ι hι.isClosedEmbedding η hηP
-    hDc hDd fun t _ ↦ hD t
-  set Φ : C(Icc a b, X) → C(Icc a b, E) := (⟨ι, hι.continuous⟩ : C(X, E)).comp
-  have hΦ : MeasurableEmbedding Φ := (ContinuousMap.continuous_postcomp _).measurableEmbedding
-    (ContinuousMap.postcomp_injective _ hι.injective)
+  let g : C(X, E) := ⟨ι, hι.continuous⟩
+  have hg : IsClosedEmbedding g := hι.isClosedEmbedding
+  have hprob := isProbabilityMeasure_comap_postcomp_of_dense hg η hDc hDd fun t _ ↦ hD t
+  have hηX := map_comap_postcomp_of_dense hg η hDc hDd fun t _ ↦ hD t
+  set Φ : C(Icc a b, X) → C(Icc a b, E) := g.comp
+  have hΦ : MeasurableEmbedding Φ :=
+    (ContinuousMap.isClosedEmbedding_postcomp g hg).measurableEmbedding
   have hΦIcc (γ : C(Icc a b, X)) : IccExtend hab.le (Φ γ) = ι ∘ IccExtend hab.le γ := by
     ext t
-    simp [Φ, IccExtend_apply]
+    simp [Φ, g, IccExtend_apply]
   set ηX := η.comap Φ
   have hAC : ∀ᵐ γ : C(Icc a b, X) ∂ηX,
       AbsolutelyContinuousOnInterval (IccExtend hab.le γ) a b := by

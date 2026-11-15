@@ -46,10 +46,8 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.2, "grading-change formulas across a rectangle", and Lane G.3, "The complexes and
-`∂² = 0`". The column-transposition picture of a rectangle move follows Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Chapter 4.
+The column-transposition picture of a rectangle move follows
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.
 -/
 
 public section

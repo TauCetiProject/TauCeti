@@ -15,7 +15,8 @@ For an `R`-algebra `S`, possibly noncommutative, with a finite basis `b` and an 
 the norm of `1 - t w` is the reversed characteristic polynomial `det (1 - X M)` evaluated at `t`,
 where `M` is the matrix of left multiplication by `w`. This turns the norm restricted to the line
 `t ↦ 1 - t w` into a polynomial in `t` whose low-degree coefficients are known: its constant term
-is `1` and its linear coefficient is `-tr M`.
+is `1` (`Matrix.eval_charpolyRev`) and its linear coefficient is `-tr M`
+(`Matrix.coeff_charpolyRev_eq_neg_trace`).
 
 ## Main results
 

@@ -221,8 +221,17 @@ and `G` acts on simplices by translation (`TauCeti.TopCat.mulActionToSSetObj`). 
 def singularChainsEquivOfMulAction (n : ℕ) :
     (singularChainsRepresentation k E G n).Equiv
       (Representation.ofMulAction k G ((TopCat.toSSet.obj E) _⦋n⦌)) :=
-  .mk ((singularChainsLinearEquivFinsupp k E n).trans (MonoidAlgebra.coeffLinearEquiv k).symm)
-    fun g ↦ singularChains_linearMap_ext fun σ ↦ by simp
+  -- `(singularChains k).obj E` is `(TopCat.toSSet.obj E).chainComplex (ModuleCat.of k k)` only
+  -- after unfolding the singular chain complex functor: `id` states the equivalence on the former,
+  -- and `erw` evaluates it on simplices.
+  .mk ((id ((TopCat.toSSet.obj E).chainsLinearEquivFinsupp k n) :
+      ((singularChains k).obj E).X n ≃ₗ[k] _).trans (MonoidAlgebra.coeffLinearEquiv k).symm)
+    fun g ↦ singularChains_linearMap_ext fun σ ↦ by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+        singularChainsRepresentation_simplexChain]
+      erw [SSet.chainsLinearEquivFinsupp_ιChainComplex,
+        SSet.chainsLinearEquivFinsupp_ιChainComplex]
+      simp
 
 end Equivariant
 

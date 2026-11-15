@@ -13,23 +13,23 @@ import Mathlib.LinearAlgebra.Contraction
 /-!
 # Modules over an algebra acting on `S` as all of `End S`
 
-Let `k` be a commutative ring, `S` a finite projective `k`-module, and `A` a `k`-algebra acting on
-`S` so that the action map `Algebra.lsmul k k S : A →ₐ[k] Module.End k S` is bijective: `A` *is*
-the endomorphism algebra of `S`. This is the situation of an irreducible module over a central
-simple algebra that is split, for instance of the spinor module `S` of an even-dimensional
-complex Clifford algebra `Cℓ(V) ≃ End(S)`.
+Let `k` be a commutative semiring, `S` a finite projective `k`-module, and `A` a `k`-algebra
+acting on `S` so that the action map `Algebra.lsmul k k S : A →ₐ[k] Module.End k S` is bijective:
+`A` *is* the endomorphism algebra of `S`. This is the situation of an irreducible module over a
+central simple algebra that is split, for instance of the spinor module `S` of an
+even-dimensional complex Clifford algebra `Cℓ(V) ≃ End(S)`.
 
 Then every `A`-module `M` is `S` tensored with its **multiplicity space** `S →ₗ[A] M`: evaluation
 
 `TauCeti.isotypicEval k : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`,  `s ⊗ T ↦ T s`,
 
 is an isomorphism of `A`-modules (`TauCeti.isotypicTensorEquivOfBijective`). Nothing is assumed
-of `M`: it need not be finite, free or semisimple, and `k` need not be a field. Nor is `S` asked
-to be nonzero: for `S = 0` the algebra `A` is zero and so is every `A`-module. This is one half
-of the Morita correspondence for `S`: the counit `S ⊗[k] (S →ₗ[A] M) → M` is an isomorphism; the
-unit `X → S →ₗ[A] (S ⊗[k] X)` is not treated here. When `S` is also a generator (for instance
-nonzero over a field), the two functors `X ↦ S ⊗[k] X` and `M ↦ S →ₗ[A] M` give a Morita
-equivalence between `k` and `End_k S`.
+of `M`: it need not be finite, free or semisimple, and `k` need not be a field or even a ring.
+Nor is `S` asked to be nonzero: for `S = 0` the algebra `A` is zero and so is every `A`-module.
+This is one half of the Morita correspondence for `S`: the counit `S ⊗[k] (S →ₗ[A] M) → M` is an
+isomorphism; the unit `X → S →ₗ[A] (S ⊗[k] X)` is not treated here. When `S` is also a generator
+(for instance nonzero over a field), the two functors `X ↦ S ⊗[k] X` and `M ↦ S →ₗ[A] M` give a
+Morita equivalence between `k` and `End_k S`.
 
 The inverse is explicit. A linear form `φ` on `S` and a vector `x : M` give the `A`-linear map
 `TauCeti.homOfDual h φ x : S →ₗ[A] M` sending `s` to `a • x`, where `a ∈ A` acts on `S` as the
@@ -77,12 +77,12 @@ namespace TauCeti
 
 open Module TensorProduct
 
-section CommRing
+section CommSemiring
 
-variable {k A S M N : Type*} [CommRing k] [Ring A] [Algebra k A]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+variable {k A S M N : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
 variable (h : Function.Bijective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
 
 /-! ### The matrix units attached to linear forms -/
@@ -176,6 +176,15 @@ theorem isotypicEval_bijective_of_bijective_lsmul [Module.Finite k S] [Module.Pr
   exact ⟨Function.LeftInverse.injective (isotypicEvalInv_isotypicEval h s _ _ hs),
     Function.RightInverse.surjective (isotypicEval_isotypicEvalInv h s _ _ hs)⟩
 
+/-- A finite basis of `S` reconstructs every vector of an `A`-module from its
+multiplicity components `homOfDual h (b.coord i) x`. -/
+theorem sum_homOfDual_coord_apply {ι : Type*} [Fintype ι] (b : Basis ι k S) (x : M) :
+    ∑ i, homOfDual h (b.coord i) x (b i) = x := by
+  have hsum := isotypicEval_isotypicEvalInv h Finset.univ b.coord b
+    (fun t ↦ by simp [Basis.coord_apply]) x
+  simpa only [isotypicEvalInv, LinearMap.sum_apply, LinearMap.comp_apply,
+    TensorProduct.mk_apply, map_sum, isotypicEval_tmul] using hsum
+
 variable [Module.Finite k S] [Module.Projective k S]
 
 /-- **Every module over `A ≅ End_k S` is `S` tensored with its multiplicity space.** Evaluation
@@ -215,11 +224,11 @@ theorem isotypicTensorEquivOfBijective_symm_apply_map (g : M →ₗ[A] N) (y : M
   rw [LinearEquiv.apply_symm_apply, isotypicTensorEquivOfBijective_apply, isotypicEval_map_apply,
     ← isotypicTensorEquivOfBijective_apply h, LinearEquiv.apply_symm_apply]
 
-end CommRing
+end CommSemiring
 
 section Field
 
-variable {k A S M : Type*} [Field k] [Ring A] [Algebra k A]
+variable {k A S M : Type*} [Field k] [Semiring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [FiniteDimensional k S]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 

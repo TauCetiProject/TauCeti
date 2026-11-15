@@ -26,28 +26,27 @@ universe u
 
 namespace TopCat
 
-variable {X : TopCat.{u}}
+variable {α : Type u} [TopologicalSpace α]
 
 /-- The inclusion of a subspace is a monomorphism of topological spaces. -/
-instance mono_ofHom_subtypeVal (S : Set X) : Mono (ofHom (ContinuousMap.subtypeVal S)) :=
+instance mono_ofHom_subtypeVal (S : Set α) : Mono (ofHom (ContinuousMap.subtypeVal S)) :=
   (TopCat.mono_iff_injective _).mpr Subtype.val_injective
 
 /-- The inclusion of one subspace in another is a monomorphism of topological spaces. -/
-instance mono_ofHom_inclusion {S T : Set X} (h : S ⊆ T) :
+instance mono_ofHom_inclusion {S T : Set α} (h : S ⊆ T) :
     Mono (ofHom (ContinuousMap.inclusion h)) :=
   (TopCat.mono_iff_injective _).mpr (Set.inclusion_injective h)
 
 /-- Composing the inclusions `r ⊆ s` and `s ⊆ t` gives the inclusion `r ⊆ t`. -/
 @[reassoc (attr := simp)]
-lemma ofHom_inclusion_comp_ofHom_inclusion {α : Type u} [TopologicalSpace α] {r s t : Set α}
-    (hrs : r ⊆ s) (hst : s ⊆ t) :
+lemma ofHom_inclusion_comp_ofHom_inclusion {r s t : Set α} (hrs : r ⊆ s) (hst : s ⊆ t) :
     ofHom (ContinuousMap.inclusion hrs) ≫ ofHom (ContinuousMap.inclusion hst) =
       ofHom (ContinuousMap.inclusion (hrs.trans hst)) := by
   rw [← ofHom_comp, ContinuousMap.inclusion_comp_inclusion]
 
 section Restrict
 
-variable {Y : TopCat.{u}} (f : X ⟶ Y)
+variable {X Y : TopCat.{u}} (f : X ⟶ Y)
 
 /-- Restricting `f` to a map `A ⟶ B` of subspaces commutes with the inclusions of `A` and `B`. -/
 @[reassoc]
@@ -66,9 +65,9 @@ lemma ofHom_inclusion_comp {A A' : Set X} {B B' : Set Y} (hA : A ⊆ A') (hB : B
 
 end Restrict
 
-variable (U V : Set X)
+variable (U V : Set α)
 
-/-- The square of inclusions of `U ∩ V`, `U` and `V` into `X` commutes. -/
+/-- The square of inclusions of `U ∩ V`, `U` and `V` into `α` commutes. -/
 lemma commSq_ofHom_inter :
     CommSq (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V))))
       (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U))))

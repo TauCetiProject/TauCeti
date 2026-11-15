@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- These equalities compare canonical versions chosen from the same joint measure.
+import all Mathlib.Probability.Kernel.CondDistrib
+
 public import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.Context
 public import TauCeti.GroupTheory.Perm.Basic
 

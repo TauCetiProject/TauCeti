@@ -50,6 +50,8 @@ identity.
 
 * `TauCeti.barCoboundary_cycleForm`: the bar coboundary of `TauCeti.cycleForm`.
 * `TauCeti.cycleCharacter_mem_cyclicCochains`: the character of a cycle is a cyclic cochain.
+* `TauCeti.hochschildCoboundary_cycleCharacter_apply`: the Hochschild coboundary of the
+  character measures the failure of `τ` to commute with zero-forms.
 * `TauCeti.hochschildCoboundary_cycleCharacter`: the character of a cycle is a Hochschild
   cocycle.
 * `TauCeti.cycleCharacter_comp`: the character of the cycle pulled back along a homomorphism is
@@ -103,7 +105,7 @@ section Form
 variable (d : Ω →ₗ[R] Ω) (ρ : A →ₙₐ[R] Ω)
 
 /-- The `Ω`-valued `n`-cochain `(a₀, …, aₙ) ↦ ρ(a₀) dρ(a₁) ⋯ dρ(aₙ)` of a cycle. -/
-def cycleForm (n : ℕ) : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) Ω :=
+def cycleForm (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) Ω :=
   (MultilinearMap.mkPiAlgebraFin R (n + 1) Ω).compLinearMap
     (Fin.cons (ρ : A →ₗ[R] Ω) fun _ ↦ d ∘ₗ (ρ : A →ₗ[R] Ω))
 
@@ -188,7 +190,7 @@ section Character
 variable (d : Ω →ₗ[R] Ω) (τ : Ω →ₗ[R] M) (ρ : A →ₙₐ[R] Ω)
 
 /-- The **character** of a cycle: the `n`-cochain `(a₀, …, aₙ) ↦ τ (ρ(a₀) dρ(a₁) ⋯ dρ(aₙ))`. -/
-def cycleCharacter (n : ℕ) : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+def cycleCharacter (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   τ.compMultilinearMap (cycleForm d ρ n)
 
 variable {d τ ρ} {n : ℕ}
@@ -246,11 +248,13 @@ theorem cycleCharacter_mem_cyclicCochains (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a
 
 variable [IsScalarTower R A A] [SMulCommClass R A A]
 
-/-- The character of a cycle is a Hochschild cocycle. -/
-theorem hochschildCoboundary_cycleCharacter (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
-    (hτ : IsClosedGradedTrace 𝒜 d n τ) :
-    hochschildCoboundary R A M n (cycleCharacter d τ ρ n) = 0 := by
-  ext a
+/-- The Hochschild coboundary of the character of a cycle, for an arbitrary functional `τ`:
+`(bτ)(a₀, …, aₙ₊₁) = (-1)ⁿ (τ(X ρ(aₙ₊₁)) - τ(ρ(aₙ₊₁) X))` with `X = ρ(a₀) dρ(a₁) ⋯ dρ(aₙ)`. -/
+theorem hochschildCoboundary_cycleCharacter_apply (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
+    (a : Fin (n + 2) → A) :
+    hochschildCoboundary R A M n (cycleCharacter d τ ρ n) a =
+      (-1 : ℤ) ^ n • (τ (cycleForm d ρ n (Fin.init a) * ρ (a (Fin.last (n + 1)))) -
+        τ (ρ (a (Fin.last (n + 1))) * cycleForm d ρ n (Fin.init a))) := by
   have hbar : barCoboundary R A M n (cycleCharacter d τ ρ n) a =
       τ (barCoboundary R A Ω n (cycleForm d ρ n) a) := by
     simp only [barCoboundary_apply, cycleCharacter_apply, map_sum, map_zsmul]
@@ -260,9 +264,16 @@ theorem hochschildCoboundary_cycleCharacter (hd : IsDGAlgebra 𝒜 d) (hρ : ∀
     simp only [hochschildFace_last, cycleForm_apply, Fin.cons_zero, Fin.cons_succ, map_mul,
       mul_assoc, Fin.init, Fin.succ_castSucc, Fin.castSucc_zero]
   rw [hochschildCoboundary_eq_barCoboundary_add, add_apply, smul_apply, hochschildCoface_apply,
-    hbar, barCoboundary_cycleForm hd hρ, cycleCharacter_apply, hlast,
-    hτ.map_mul_comm_of_mem_zero (hρ _) (cycleForm_mem hd hρ _), map_zsmul]
-  simp [pow_succ]
+    hbar, barCoboundary_cycleForm hd hρ, cycleCharacter_apply, hlast, map_zsmul]
+  simp [pow_succ, sub_eq_add_neg]
+
+/-- The character of a cycle is a Hochschild cocycle. -/
+theorem hochschildCoboundary_cycleCharacter (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
+    (hτ : IsClosedGradedTrace 𝒜 d n τ) :
+    hochschildCoboundary R A M n (cycleCharacter d τ ρ n) = 0 := by
+  ext a
+  rw [hochschildCoboundary_cycleCharacter_apply hd hρ,
+    hτ.map_mul_comm_of_mem_zero (hρ _) (cycleForm_mem hd hρ _), sub_self, smul_zero, zero_apply]
 
 /-- The character of a cycle, as a cyclic cocycle. -/
 def cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
@@ -275,7 +286,7 @@ def cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
 theorem coe_cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
     (hτ : IsClosedGradedTrace 𝒜 d n τ) :
     ((cycleCocycle hd hρ hτ : cyclicCochains R A M n) :
-      MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) = cycleCharacter d τ ρ n :=
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) = cycleCharacter d τ ρ n :=
   (rfl)
 
 /-- The cyclic cocycle of the cycle pulled back along a homomorphism `f` is the pullback of the

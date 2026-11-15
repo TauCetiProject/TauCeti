@@ -7,6 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Elementary interval integrals
@@ -16,14 +21,44 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
-* `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
-  for `a, b ∈ (-1, 1)`.
+* `TauCeti.intervalIntegrable_sub_const_rpow`: the weight `(x - c)^r` is interval integrable on
+  every interval, for `r > -1`;
+* `TauCeti.integral_sub_const_rpow`: `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for
+  `r > -1`;
+* `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
+  `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
+* `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
+  for `r < -1`.
+* `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
+  `c ≥ 0` and `δ ≥ 0`.
+* `TauCeti.integral_add_rpow_le_of_lt_neg_one`: `∫ s in 0..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1)`
+  for `0 < r`, `0 ≤ β` and `S < -1`.
+* `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
+  function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
+* `TauCeti.integrable_one_div_sqrt_one_sub_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`:
+  `1 / √(1 - x²)` is integrable and `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`.
+* `TauCeti.integral_pow_add_two_mul_sqrt_one_sub_sq`: the moments
+  `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
+* `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
+  `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
+* `TauCeti.integral_inv_mul_one_add_mul`:
+  `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
+  `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
+* `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
+  `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
+* `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
+* `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
+  over an interval is a difference of arctangents.
+* `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
+  `b ≥ 0`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
+* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
+  from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
 
 public section
@@ -32,18 +67,197 @@ open scoped Nat
 
 namespace TauCeti
 
-/-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points of `(-1, 1)`. -/
-theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
-    (hb : b ∈ Set.Ioo (-1) 1) :
+/-- The weight `(x - c)^r`, singular at `x = c`, is interval integrable between `a` and `b` for
+`r > -1`, wherever `c` lies. -/
+theorem intervalIntegrable_sub_const_rpow {r : ℝ} (hr : -1 < r) (c a b : ℝ) :
+    IntervalIntegrable (fun x => (x - c) ^ r) MeasureTheory.volume a b := by
+  simpa using
+    (intervalIntegral.intervalIntegrable_rpow' hr (a := a - c) (b := b - c)).comp_sub_right c
+
+/-- `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
+theorem integral_sub_const_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    ∫ x in a..b, (x - a) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
+  rw [intervalIntegral.integral_comp_sub_right (fun x => x ^ r), sub_self,
+    integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
+
+/-- The weight `(b - x)^r`, singular at `x = b`, is interval integrable between `a` and `b` for
+`r > -1`. -/
+theorem intervalIntegrable_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    IntervalIntegrable (fun x => (b - x) ^ r) MeasureTheory.volume a b := by
+  simpa using (intervalIntegral.intervalIntegrable_rpow' hr (a := b - a) (b := 0)).comp_sub_left b
+
+/-- `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
+theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    ∫ x in a..b, (b - x) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
+  rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
+    integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
+
+open MeasureTheory Set in
+/-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
+`c^(r + 1) / -(r + 1)` over `[a, b - c]`, uniformly in `a`. (If `a ≥ b`, the pole `x = b` lies in
+the interval of integration, the integrand is not integrable and the integral is `0`.) -/
+theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0 < c) :
+    ∫ x in a..b - c, (b - x) ^ r ≤ c ^ (r + 1) / -(r + 1) := by
+  have hr₁ : 0 < -(r + 1) := by linarith
+  rcases lt_or_ge 0 (b - a) with hba | hba
+  · have hval : ∫ x in a..b - c, (b - x) ^ r = (c ^ (r + 1) - (b - a) ^ (r + 1)) / -(r + 1) := by
+      rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_sub_cancel,
+        integral_rpow (Or.inr ⟨by linarith, Set.notMem_uIcc_of_lt hc hba⟩),
+        div_neg, ← neg_div, neg_sub]
+    rw [hval]
+    gcongr
+    exact sub_le_self _ (Real.rpow_nonneg hba.le _)
+  · -- the pole `x = b` lies in the interval of integration, so the integral is the junk value `0`
+    have hnot : ¬ IntervalIntegrable (fun x => (b - x) ^ r) volume a (b - c) := by
+      intro h
+      have h1 := (h.comp_sub_left b)
+      simp only [sub_sub_cancel] at h1
+      have h2 : IntervalIntegrable (fun x : ℝ => x ^ r) volume 0 c :=
+        h1.mono_set (by
+          rw [uIcc_of_le hc.le, uIcc_of_le (hba.trans hc.le)]
+          exact Icc_subset_Icc hba le_rfl)
+      rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hc.le,
+        intervalIntegral.integrableOn_Ioo_rpow_iff hc] at h2
+      linarith
+    rw [intervalIntegral.integral_undef hnot]
+    positivity
+
+/-- For `-1 < T`, a nonnegative constant `c` and `0 ≤ δ`, the integral of `c * t ^ T` over
+`[δ, 1]` is at most `c / (T + 1)`. -/
+theorem integral_const_mul_rpow_le {T c δ : ℝ} (hT : -1 < T) (hc : 0 ≤ c) (hδ : 0 ≤ δ) :
+    (∫ t in δ..1, c * t ^ T) ≤ c / (T + 1) := by
+  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hT), Real.one_rpow]
+  have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ _
+  have hT1 : 0 < T + 1 := by linarith
+  calc
+    c * ((1 - δ ^ (T + 1)) / (T + 1)) ≤ c * (1 / (T + 1)) := by gcongr; linarith
+    _ = c / (T + 1) := by rw [mul_one_div]
+
+open MeasureTheory Real Set in
+open scoped Interval in
+/-- For `α < 2`, a function bounded by `A h (t' - s)^((α - 4)/2)` on `(0, t' - h]` has integral
+over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. This is the time integration, away from
+the singular endpoint, behind temporal Hölder estimates with time step `h`. -/
+theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
+    (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
+    ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
+  have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
+    fun s hs => by
+      rw [uIcc_of_le (by linarith)] at hs
+      have hst : s < t' := by linarith [hs.2]
+      exact ((continuousAt_const.sub continuousAt_id).rpow_const
+        (Or.inl (sub_pos.2 hst).ne')).continuousWithinAt
+  refine (intervalIntegral.norm_integral_le_of_norm_le (by linarith) hg
+    (hcont.intervalIntegrable.const_mul (A * h))).trans ?_
+  rw [intervalIntegral.integral_const_mul]
+  have hpow : h * h ^ ((α - 4) / 2 + 1) = h ^ (α / 2) := by
+    rw [mul_comm, ← rpow_add_one hh.ne']
+    congr 1
+    ring
+  calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
+      ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
+        gcongr
+        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh
+    _ = 2 / (2 - α) * A * h ^ (α / 2) := by
+        rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
+        field_simp
+
+open MeasureTheory Set in
+/-- The function `1 / √(1 - x²)`, extended by `0` outside `(-1, 1)` as usual, is integrable on `ℝ`:
+it is the derivative of the monotone function `arcsin` on `(-1, 1)`. -/
+theorem integrable_one_div_sqrt_one_sub_sq :
+    Integrable (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) := by
+  have hint : IntegrableOn (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) (Ioc (-1) 1) := by
+    simpa [one_div] using (intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num)).1
+      Polynomial.Chebyshev.intervalIntegrable_sqrt_one_sub_sq_inv
+  refine hint.integrable_of_forall_notMem_eq_zero fun x hx => ?_
+  have hx' : 1 - x ^ 2 ≤ 0 := by
+    by_contra h
+    push Not at h
+    exact hx ⟨by nlinarith, by nlinarith⟩
+  rw [Real.sqrt_eq_zero_of_nonpos hx']
+  simp
+
+open MeasureTheory Set intervalIntegral in
+/-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points (outside `(-1, 1)` the
+integrand is `0` and `arcsin` is constant). -/
+theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} :
     ∫ x in a..b, 1 / Real.sqrt (1 - x ^ 2) = Real.arcsin b - Real.arcsin a := by
-  have hIcc : Set.uIcc a b ⊆ Set.Ioo (-1) 1 := Set.ordConnected_Ioo.uIcc_subset ha hb
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x hx ↦ ?_) ?_
-  · exact Real.hasDerivAt_arcsin (hIcc hx).1.ne' (hIcc hx).2.ne
-  · refine ContinuousOn.intervalIntegrable (ContinuousOn.div continuousOn_const ?_ ?_)
-    · exact (Real.continuous_sqrt.comp (by fun_prop)).continuousOn
-    · intro x hx
-      have hx' := hIcc hx
-      exact (Real.sqrt_pos.2 (by nlinarith [hx'.1, hx'.2])).ne'
+  refine integral_eq_of_hasDerivAt_off_countable _ _ (s := {-1, 1}) (by simp)
+    Real.continuous_arcsin.continuousOn (fun x hx => ?_)
+    integrable_one_div_sqrt_one_sub_sq.intervalIntegrable
+  have h1 : x ≠ -1 := fun h => hx.2 (by simp [h])
+  have h2 : x ≠ 1 := fun h => hx.2 (by simp [h])
+  simpa [one_div] using Real.hasDerivAt_arcsin h1 h2
+
+open MeasureTheory Real Set intervalIntegral in
+/-- Integration by parts against `(1 - x ^ 2) ^ (3 / 2)`: the moments
+`Jₙ = ∫ x in -1..1, x ^ n * √(1 - x ^ 2)` of the semicircle height satisfy
+`(n + 4) Jₙ₊₂ = (n + 1) Jₙ`. -/
+theorem integral_pow_add_two_mul_sqrt_one_sub_sq (n : ℕ) :
+    (n + 4 : ℝ) * ∫ x in -1..1, x ^ (n + 2) * √(1 - x ^ 2) =
+      (n + 1) * ∫ x in -1..1, x ^ n * √(1 - x ^ 2) := by
+  have hu (x : ℝ) (_ : x ∈ uIcc (-1 : ℝ) 1) :
+      HasDerivAt (fun y : ℝ ↦ y ^ (n + 1)) ((n + 1 : ℝ) * x ^ n) x := by
+    simpa using hasDerivAt_pow (n + 1) x
+  have hv (x : ℝ) (_ : x ∈ uIcc (-1 : ℝ) 1) :
+      HasDerivAt (fun y : ℝ ↦ (1 - y ^ 2) ^ (3 / 2 : ℝ)) (-3 * x * √(1 - x ^ 2)) x := by
+    convert ((hasDerivAt_pow 2 x).const_sub 1).rpow_const (p := 3 / 2)
+      (Or.inr (by norm_num)) using 1
+    have hexp : (3 / 2 : ℝ) - 1 = 1 / 2 := by norm_num
+    rw [sqrt_eq_rpow, hexp]
+    simp only [Nat.cast_ofNat, Nat.reduceSub, pow_one]
+    ring
+  have hibp := integral_mul_deriv_eq_deriv_mul hu hv
+    ((by fun_prop : Continuous fun x : ℝ ↦ (n + 1 : ℝ) * x ^ n).intervalIntegrable _ _)
+    ((by fun_prop : Continuous fun x : ℝ ↦ -3 * x * √(1 - x ^ 2)).intervalIntegrable _ _)
+  have hlhs : ∫ x in -1..1, x ^ (n + 1) * (-3 * x * √(1 - x ^ 2)) =
+      -3 * ∫ x in -1..1, x ^ (n + 2) * √(1 - x ^ 2) := by
+    rw [← intervalIntegral.integral_const_mul]
+    exact intervalIntegral.integral_congr fun x _ ↦ by ring
+  have hrhs : ∫ x in -1..1, (n + 1 : ℝ) * x ^ n * (1 - x ^ 2) ^ (3 / 2 : ℝ) =
+      (n + 1) * ((∫ x in -1..1, x ^ n * √(1 - x ^ 2)) -
+        ∫ x in -1..1, x ^ (n + 2) * √(1 - x ^ 2)) := by
+    have hint (k : ℕ) : IntervalIntegrable (fun x : ℝ ↦ x ^ k * √(1 - x ^ 2)) volume (-1) 1 :=
+      (by fun_prop : Continuous fun x : ℝ ↦ x ^ k * √(1 - x ^ 2)).intervalIntegrable _ _
+    rw [← intervalIntegral.integral_sub (hint n) (hint (n + 2)),
+      ← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun x hx ↦ ?_
+    have h0 : 0 ≤ 1 - x ^ 2 := by
+      rw [uIcc_of_le (by norm_num), mem_Icc] at hx
+      nlinarith [hx.1, hx.2]
+    have hexp : (3 / 2 : ℝ) = 1 + 1 / 2 := by norm_num
+    rw [hexp, rpow_add' h0 (by norm_num), rpow_one, ← sqrt_eq_rpow]
+    ring
+  -- The boundary terms vanish because `(1 - x ^ 2) ^ (3 / 2)` is zero at `x = ±1`.
+  rw [hlhs, hrhs] at hibp
+  norm_num at hibp
+  linarith
+
+/-- The integral of `x ↦ exp (c x)` for a nonzero real `c`: an antiderivative is
+`x ↦ exp (c x) / c`. The real counterpart of `integral_exp_mul_complex`. -/
+theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
+    ∫ x in a..b, Real.exp (c * x) = (Real.exp (c * b) - Real.exp (c * a)) / c := by
+  rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
+    inv_mul_eq_div]
+
+/-- The integral of `σ ↦ 1 / (σ (1 + C σ))` between positive limits, for `C ≥ 0`: an
+antiderivative is `σ ↦ log (σ / (1 + C σ))`. -/
+theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC : 0 ≤ C) :
+    ∫ σ in s..t, (σ * (1 + C * σ))⁻¹ =
+      Real.log (t / (1 + C * t)) - Real.log (s / (1 + C * s)) := by
+  have hpos (σ : ℝ) (hσ : σ ∈ Set.uIcc s t) : 0 < σ := (lt_min hs ht).trans_le hσ.1
+  apply intervalIntegral.integral_eq_sub_of_hasDerivAt
+  · intro σ hσ
+    have h1 := hpos σ hσ
+    have h2 : 0 < 1 + C * σ := by positivity
+    have := ((hasDerivAt_id' σ).div (((hasDerivAt_id' σ).const_mul C).const_add 1) h2.ne').log
+      (div_ne_zero h1.ne' h2.ne')
+    exact this.congr_deriv (by simp only [Pi.div_apply]; field_simp; ring)
+  · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
+    have := hpos σ hσ
+    positivity
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
@@ -102,9 +316,154 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
   refine Finset.sum_congr rfl fun m _ => ?_
   rw [intervalIntegral.integral_const_mul, integral_cexp_intCast_mul_mul_I]
 
+/-- The Wallis integral over a quarter period: `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, where
+`(1/2)ₙ = (1/2)(3/2)⋯(n - 1/2)` is the rising factorial. This is the form in which it enters
+hypergeometric series. -/
+theorem integral_sin_pow_even_eq_ascPochhammer (n : ℕ) :
+    ∫ x in (0 : ℝ)..Real.pi / 2, Real.sin x ^ (2 * n) =
+      Real.pi / 2 * ((ascPochhammer ℝ n).eval (1 / 2) / n !) := by
+  have hprod : ∏ i ∈ Finset.range n, (2 * (i : ℝ) + 1) / (2 * i + 2) =
+      (ascPochhammer ℝ n).eval (1 / 2) / n ! := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [Finset.prod_range_succ, ih, ascPochhammer_succ_eval, Nat.factorial_succ]
+      push_cast
+      field_simp
+      ring
+  -- the substitution `x ↦ π - x` shows that both halves of `[0, π]` contribute equally
+  have hsymm : ∫ x in Real.pi / 2..Real.pi, Real.sin x ^ (2 * n) =
+      ∫ x in (0 : ℝ)..Real.pi / 2, Real.sin x ^ (2 * n) := by
+    have := intervalIntegral.integral_comp_sub_left (fun x => Real.sin x ^ (2 * n)) Real.pi
+      (a := 0) (b := Real.pi / 2)
+    simp only [Real.sin_pi_sub, sub_zero] at this
+    rw [this]
+    ring_nf
+  have hint (u v : ℝ) :
+      IntervalIntegrable (fun x => Real.sin x ^ (2 * n)) MeasureTheory.volume u v :=
+    (Real.continuous_sin.pow _).intervalIntegrable u v
+  have hadd := intervalIntegral.integral_add_adjacent_intervals (hint 0 (Real.pi / 2))
+    (hint (Real.pi / 2) Real.pi)
+  rw [hsymm, integral_sin_pow_even, hprod] at hadd
+  linarith
+
+/-- The integral of `x ^ n` against the linear weight `x - p` vanishing at `p`, over `[p, r]`, as
+a binomial sum. -/
+theorem integral_pow_mul_sub (p r : ℝ) (n : ℕ) :
+    ∫ x in p..r, x ^ n * (x - p) =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) / (k + 2) * p ^ (n - k) * (r - p) ^ (k + 2) := by
+  have hexp (x : ℝ) : x ^ n * (x - p) =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * p ^ (n - k) * (x - p) ^ (k + 1) := by
+    conv_lhs => rw [show x = (x - p) + p by ring, add_pow, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    ring
+  simp_rw [hexp]
+  rw [intervalIntegral.integral_finsetSum fun k _ ↦
+    Continuous.intervalIntegrable (by fun_prop) _ _]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_comp_sub_right (fun x ↦ x ^ (k + 1)), integral_pow, sub_self,
+    zero_pow (Nat.succ_ne_zero _)]
+  push_cast
+  field_simp
+  ring
+
+/-! ### Integrands depending only on `sin² θ`
+
+A function of the form `θ ↦ G (sin θ ^ 2)` is even and `π`-periodic, which gives oddness and
+quasi-periodicity of its integral from `0`. -/
+
+/-- The integral from `0` of an integrand depending only on `sin² θ` is odd in its upper limit. -/
+theorem integral_comp_sin_sq_neg (G : ℝ → ℝ) (x : ℝ) :
+    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) := by
+  have h := intervalIntegral.integral_comp_neg (a := 0) (b := x) fun θ ↦ G (Real.sin θ ^ 2)
+  simp only [Real.sin_neg, neg_sq, neg_zero] at h
+  rw [h, intervalIntegral.integral_symm]
+
+/-- The integral of a continuous integrand depending only on `sin² θ` over a half-period
+`[-π/2, π/2]` is twice its integral over `[0, π/2]`. -/
+theorem integral_comp_sin_sq_neg_pi_div_two (G : ℝ → ℝ)
+    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) :
+    ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) =
+      2 * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hG.intervalIntegrable _ _)
+    (hG.intervalIntegrable _ _), intervalIntegral.integral_symm 0 (-(Real.pi / 2)),
+    integral_comp_sin_sq_neg G, neg_neg]
+  ring
+
+/-- **Quasi-periodicity** of the integral from `0` of a continuous integrand depending only on
+`sin² θ`: adding `n` half-turns to the upper limit adds `2 n` times the integral over
+`[0, π/2]`. -/
+theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
+    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) (x : ℝ) (n : ℤ) :
+    ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2) =
+      (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+        2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
+    simp only [Real.sin_add_pi, neg_sq]
+  have hint : ∀ a b : ℝ, IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) MeasureTheory.volume a b :=
+    fun a b ↦ hG.intervalIntegrable a b
+  -- Split off `[x, x + n π]`, which consists of `n` periods; each period integral equals the
+  -- one over the half-period `[-π/2, π/2]`, which is twice the integral over `[0, π/2]`.
+  calc ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2)
+      = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          ∫ θ in x..x + n * Real.pi, G (Real.sin θ ^ 2) :=
+        (intervalIntegral.integral_add_adjacent_intervals (hint 0 x) (hint x _)).symm
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          n * ∫ θ in x..x + Real.pi, G (Real.sin θ ^ 2) := by
+        simpa only [zsmul_eq_mul] using
+          congrArg (_ + ·) (hper.intervalIntegral_add_zsmul_eq n x hint)
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          n * ∫ θ in -(Real.pi / 2)..-(Real.pi / 2) + Real.pi, G (Real.sin θ ^ 2) := by
+        rw [hper.intervalIntegral_add_eq x (-(Real.pi / 2))]
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          n * ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+        ring_nf
+    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
+          2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+        rw [integral_comp_sin_sq_neg_pi_div_two G hG]
+        ring
+
+/-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
+uniformly in `β`. -/
+theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S < -1) :
+    ∫ s in (0 : ℝ)..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1) := by
+  have h := integral_sub_rpow_le_of_lt_neg_one (a := 0) (b := r + β) (c := r) hS hr
+  rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
+  rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
+  convert h using 2 <;> ring
+
 end TauCeti
 
 namespace Real
+
+/-- The integral of the Poisson kernel `η / ((t - x)² + η²)` over `[a, b]` is a difference of
+arctangents: a translate of Mathlib's `integral_div_sq_add_sq`. For `η = 0` both sides vanish. -/
+theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
+    ∫ x in a..b, η / ((t - x) ^ 2 + η ^ 2) = arctan ((b - t) / η) - arctan ((a - t) / η) := by
+  simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
+  rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
+    integral_div_sq_add_sq]
+
+open Set intervalIntegral in
+/-- The reciprocal-square kernel has an elementary integral on each nonnegative interval:
+`∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and `b ≥ 0`. -/
+theorem integral_one_div_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b) :
+    ∫ t : ℝ in 0..b, 1 / (a + t) ^ 2 = a⁻¹ - (a + b)⁻¹ := by
+  have hd (t : ℝ) (ht : t ∈ uIcc 0 b) :
+      HasDerivAt (fun u : ℝ ↦ -(a + u)⁻¹) (1 / (a + t) ^ 2) t := by
+    rw [uIcc_of_le hb] at ht
+    have h := (((hasDerivAt_id t).const_add a).inv
+      (by linarith [ht.1] : a + t ≠ 0)).neg
+    convert h using 1
+    · ext u
+      rfl
+    · simp [neg_div]
+  have hc : ContinuousOn (fun t : ℝ ↦ 1 / (a + t) ^ 2) (Icc 0 b) :=
+    continuousOn_const.div ((continuousOn_const.add continuousOn_id).pow 2)
+      (fun t ht ↦ pow_ne_zero _ (by linarith [ht.1] : a + t ≠ 0))
+  simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
+    (hc.intervalIntegrable_of_Icc hb)
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/

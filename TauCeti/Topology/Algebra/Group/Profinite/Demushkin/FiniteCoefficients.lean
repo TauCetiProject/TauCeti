@@ -56,14 +56,14 @@ include hG
 carrier. -/
 theorem finite_continuousCohomology_two (M : Type u) [AddCommGroup M] [TopologicalSpace M]
     [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsPPrimaryTorsion p M) : Finite (continuousCohomology 2 (ofDiscreteModule ℤ G M)) :=
+    (hM : IsAddPGroup p M) : Finite (continuousCohomology 2 (ofDiscreteModule ℤ G M)) :=
   have := hG.finite_cohomFp_two
   hG.isProP.finite_continuousCohomology_of_finite_cohomFp (n := 2) M hM
 
 /-- **`H²(G, M)` of a Demushkin group is finite for every finite `p`-primary `M`**, on the explicit
 cocycle model. -/
 theorem finite_H2 (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     Finite (H2 G M) :=
   have := hG.finite_cohomFp_two
   hG.isProP.finite_H2 M hM

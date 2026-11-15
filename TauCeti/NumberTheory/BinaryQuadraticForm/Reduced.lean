@@ -29,6 +29,9 @@ decidable. Weighted, it counts the Hurwitz class number `TauCeti.hurwitzClassNum
 
 * `TauCeti.mem_reducedForms`: for `D ≠ 0`, `f ∈ reducedForms D` exactly when `f.discrim = -D` and
   `f` is reduced, so the box the definition searches is no restriction.
+* `TauCeti.a_pos_of_mem_reducedForms`, `TauCeti.mk_neg_mem_reducedForms`: a reduced form of
+  discriminant `-D` has `0 < a`, and `⟨a, -b, c⟩` is reduced along with `⟨a, b, c⟩` when
+  `|b| < a < c`.
 * `TauCeti.reducedForms_eq_empty_of_mod_four_eq_one_or_two`: there are no reduced forms of
   discriminant `-D` when `D ≡ 1, 2 (mod 4)`, since a discriminant `b² - 4 a c` is `0` or `1`
   modulo `4` (`Int.discrim_emod_four`).
@@ -67,6 +70,14 @@ theorem isReducedForm_iff {f : BinaryQuadraticForm ℤ} :
     IsReducedForm f ↔ |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b) :=
   Iff.rfl
 
+/-- Scaling by a positive integer preserves and reflects reducedness: `r • f` is reduced exactly
+when `f` is. -/
+@[simp] theorem isReducedForm_smul_iff {r : ℤ} (hr : 0 < r) {f : BinaryQuadraticForm ℤ} :
+    IsReducedForm (r • f) ↔ IsReducedForm f := by
+  simp only [isReducedForm_iff, BinaryQuadraticForm.smul_a', BinaryQuadraticForm.smul_b',
+    BinaryQuadraticForm.smul_c', smul_eq_mul, abs_mul, abs_of_pos hr, mul_le_mul_iff_right₀ hr,
+    mul_right_inj' hr.ne', mul_nonneg_iff_of_pos_left hr]
+
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`.
 
 The definition searches the box `1 ≤ a ≤ √(D / 3)`, `|b| ≤ √(D / 3)`, `1 ≤ c ≤ D / 3` (with
@@ -98,6 +109,29 @@ def reducedForms (D : ℕ) : Finset (BinaryQuadraticForm ℤ) :=
 
 /-- The search box of `reducedForms 0` is empty. -/
 @[simp] theorem reducedForms_zero : reducedForms 0 = ∅ := rfl
+
+/-- A reduced form of discriminant `-D` has positive first coefficient. -/
+theorem a_pos_of_mem_reducedForms {D : ℕ} {f : BinaryQuadraticForm ℤ} (hf : f ∈ reducedForms D) :
+    0 < f.a := by
+  rcases eq_or_ne D 0 with rfl | hD
+  · simp at hf
+  obtain ⟨hd, hr⟩ := (mem_reducedForms hD).mp hf
+  refine pos_of_nonneg_of_discrim_lt_zero (b := f.b) (c := f.c) ((abs_nonneg _).trans hr.1) ?_
+  rw [← BinaryQuadraticForm.discrim_def, hd]
+  lia
+
+/-- Changing the sign of the middle coefficient of a reduced form `⟨a, b, c⟩` with `|b| < a < c`
+gives a reduced form `⟨a, -b, c⟩` of the same discriminant. -/
+theorem mk_neg_mem_reducedForms {D : ℕ} {f : BinaryQuadraticForm ℤ} (hf : f ∈ reducedForms D)
+    (hba : |f.b| < f.a) (hac : f.a < f.c) : ⟨f.a, -f.b, f.c⟩ ∈ reducedForms D := by
+  rcases eq_or_ne D 0 with rfl | hD
+  · simp at hf
+  obtain ⟨hd, -⟩ := (mem_reducedForms hD).mp hf
+  refine (mem_reducedForms hD).mpr ⟨?_, ?_⟩
+  · rw [← hd]
+    simp [BinaryQuadraticForm.discrim_def, discrim]
+  · simp only [isReducedForm_iff, abs_neg]
+    exact ⟨hba.le, hac.le, fun h ↦ by lia⟩
 
 /-- There are no reduced forms of discriminant `-D` when `D ≡ 1, 2 (mod 4)`: a discriminant
 `b² - 4 a c` is `0` or `1` modulo `4` (`Int.discrim_emod_four`). -/

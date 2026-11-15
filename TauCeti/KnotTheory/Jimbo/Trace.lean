@@ -63,7 +63,7 @@ theorem jimboWeightedTrace_eq_sum (q : Rˣ) (b : BraidGroup n) :
   classical
   rw [jimboWeightedTrace_def, LinearMap.trace_eq_matrix_trace R Finsupp.basisSingleOne]
   simp only [Matrix.trace, Matrix.diag_apply, LinearMap.toMatrix_apply,
-    Module.End.mul_apply, Finsupp.coe_basisSingleOne, jimboEnhancement_single_one, map_smul]
+    mul_apply_eq_comp, Finsupp.coe_basisSingleOne, jimboEnhancement_single_one, map_smul]
   simp [mul_comm]
 
 /-- The trace of the identity braid, whose closure is the `n`-component unlink. -/
@@ -73,7 +73,7 @@ theorem jimboWeightedTrace_one (q : Rˣ) :
       (∑ a : Fin N, jimboWeight q a) ^ n := by
   classical
   rw [jimboWeightedTrace_eq_sum]
-  simp only [map_one, Units.val_one, Module.End.one_apply, single_eq_same, one_mul]
+  simp only [map_one, Units.val_one, one_apply_eq_self, single_eq_same, one_mul]
   rw [← Fintype.prod_sum]
   simp
 

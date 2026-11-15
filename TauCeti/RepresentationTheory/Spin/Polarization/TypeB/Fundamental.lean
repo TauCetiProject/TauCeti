@@ -51,7 +51,6 @@ variable {K : Type u} [Field K] [CharZero K]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
   (z : P.line) (hz : Q (z : V) = 1) [Invertible (2 : K)]
-  [LieAlgebra.IsKilling K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)]
 
 /-- **The type-`B` spin module is the irreducible highest-weight module `L(ωₗ)`.** Here `ωₗ`
 is the dual Cartan basis vector at the terminal short node of `typeBLieBasis`, so the equivalence

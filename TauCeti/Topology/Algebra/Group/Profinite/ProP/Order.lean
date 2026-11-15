@@ -60,7 +60,7 @@ theorem isProP_iff_profiniteOrder_apply_eq_zero :
     rw [hn]
     let _ : Fact q.val.Prime := ⟨q.prop⟩
     have hval : padicValNat q.val (p ^ n) = 0 :=
-      padicValNat_prime_prime_pow n hqp
+      by simpa only [Nat.padicValNat_def] using multiplicity_prime_prime_pow n hqp
     rw [hval]
     rfl
   · intro hG U
@@ -82,7 +82,8 @@ theorem isProP_iff_profiniteOrder_apply_eq_zero :
     have hval : padicValNat q c = 0 := by
       apply ENat.natCast_inj.mp
       exact le_antisymm hle bot_le
-    exact (dvd_iff_padicValNat_ne_zero (p := q) (Nat.card_pos.ne' : c ≠ 0)).mp hdvd hval
+    simp only [Nat.padicValNat_def] at hval
+    exact (dvd_iff_multiplicity_ne_zero (p := q) (Nat.card_pos.ne' : c ≠ 0)).mp hdvd hval
 
 /-- A profinite group is pro-`p` exactly when its supernatural order divides the infinite
 `p`-power. -/
@@ -125,7 +126,8 @@ theorem proPKernel_eq_top_of_profiniteOrder_apply_eq_zero
     (Supernatural.ofNat_apply _ ⟨p, Fact.out⟩).symm.trans_le
       (Supernatural.le_iff.mp (ofNat_card_quotient_le_profiniteOrder G U) _)
   rw [h, nonpos_iff_eq_zero, Nat.cast_eq_zero] at hle
-  exact (dvd_iff_padicValNat_ne_zero Nat.card_pos.ne').mp hp hle
+  simp only [Nat.padicValNat_def] at hle
+  exact (dvd_iff_multiplicity_ne_zero Nat.card_pos.ne').mp hp hle
 
 /-- **The maximal pro-`p` quotient is trivial when `p` is absent from the supernatural order.** -/
 theorem maximalProPQuotient.subsingleton_of_profiniteOrder_apply_eq_zero

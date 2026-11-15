@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.PowerBias
 public import TauCeti.Probability.Distributions.Beta.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Power-biased beta laws

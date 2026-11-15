@@ -63,36 +63,13 @@ theorem exists_form_discr_eq_equivalent_at_places
   | succ n =>
     let (v : S) : Invertible (2 : v.1.adicCompletion K) :=
       (Invertible.map (algebraMap K (v.1.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
-    -- Diagonalize the prescribed local forms.
-    have hdiagU (v : S) : ∃ a : Fin (n + 1) → (v.1.adicCompletion K)ˣ,
-        (U v).Equivalent (weightedSumSquares (v.1.adicCompletion K) a) := by
-      have h := (U v).equivalent_weightedSumSquares_units_of_nondegenerate'
-        (QuadraticMap.nondegenerate_associated_iff.mpr (hU v)).1
-      rw [Module.finrank_fin_fun] at h
-      exact h
-    have hdiagR (w : T) : ∃ b : Fin (n + 1) → ℝˣ,
-        (R w).Equivalent (weightedSumSquares ℝ b) := by
-      have h := (R w).equivalent_weightedSumSquares_units_of_nondegenerate'
-        (QuadraticMap.nondegenerate_associated_iff.mpr (hR w)).1
-      rw [Module.finrank_fin_fun] at h
-      exact h
-    choose a ha using hdiagU
-    choose b hb using hdiagR
-    -- Discriminant compatibility gives the square class of each local coefficient product.
-    have hprodU (v : S) : IsSquare
-        (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom d / ∏ i, a v i) := by
-      have hd := discr_formClass (U v) (hU v) ⟨n + 1, a v⟩
-        (by simpa only [presentedForm_eq_weightedSumSquares] using ha v)
-      rw [hUd v, RingHom.squareClassMap_apply] at hd
-      have hs := (squareClass_eq_iff_isSquare_mul _ _).mp hd
-      simpa only [pow_two, mul_div_mul_right_eq_div] using hs.div (IsSquare.sq (∏ i, a v i))
-    have hprodR (w : T) : IsSquare
-        (Units.map (embedding_of_isReal w.1.2).toMonoidHom d / ∏ i, b w i) := by
-      have hd := discr_formClass (R w) (hR w) ⟨n + 1, b w⟩
-        (by simpa only [presentedForm_eq_weightedSumSquares] using hb w)
-      rw [hRd w, RingHom.squareClassMap_apply] at hd
-      have hs := (squareClass_eq_iff_isSquare_mul _ _).mp hd
-      simpa only [pow_two, mul_div_mul_right_eq_div] using hs.div (IsSquare.sq (∏ i, b w i))
+    -- Diagonalize the prescribed local forms, tracking the square class of the coefficient product.
+    choose a ha hprodU using fun v : S =>
+      (algebraMap K (v.1.adicCompletion K)).exists_equivalent_weightedSumSquares_isSquare_div_prod
+      d (U v) (hU v) (hUd v)
+    choose b hb hprodR using fun w : T =>
+      (embedding_of_isReal w.1.2).exists_equivalent_weightedSumSquares_isSquare_div_prod
+      d (R w) (hR w) (hRd w)
     -- Approximate the coefficients, with the last one fixed by their global product.
     obtain ⟨c, hc, hcv, hcw⟩ :=
       GlobalNumberFields.exists_coefficients_prod_eq_isSquare_div_at_places S T d a b hprodU hprodR

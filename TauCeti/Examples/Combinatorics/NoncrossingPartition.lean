@@ -7,6 +7,7 @@ module
 
 import TauCeti.Combinatorics.NoncrossingPartition.Basic
 import TauCeti.Combinatorics.NoncrossingPartition.Catalan
+import TauCeti.Combinatorics.NoncrossingPartition.Narayana
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Tactic.FinCases
 
@@ -22,8 +23,9 @@ function:
 * those two noncrossing partitions have the crossing partition `{{0, 2}, {1, 3}}` as a common
   coarsening, but their join among noncrossing partitions is the partition with one part.
 
-Final examples check that `NC(0)`, on the positions of `Fin 0`, has a single element, and that
-`NC(3)` has `catalan 3 = 5` elements.
+Final examples check that `NC(0)`, on the positions of `Fin 0`, has a single element, that
+`NC(3)` has `catalan 3 = 5` elements, and that `NC(4)` has `6` partitions with two parts, the
+Narayana number `N(4, 2)`.
 -/
 
 open Finset Finpartition TauCeti
@@ -74,3 +76,9 @@ example : Unique (NoncrossingPartition (univ : Finset (Fin 0))) := inferInstance
 -- `NC(3)` has `catalan 3 = 5` elements.
 example : Fintype.card (NoncrossingPartition (univ : Finset (Fin 3))) = 5 := by
   rw [NoncrossingPartition.card_fin_eq_catalan, catalan_three]
+
+-- `NC(4)` has `6` partitions with two parts, the Narayana number `N(4, 2)`.
+example : #{P : NoncrossingPartition (univ : Finset (Fin 4)) | #P.1.parts = 2} = 6 := by
+  have h := NoncrossingPartition.card_fin_mul_card_parts_eq 4 1
+  norm_num [Nat.choose] at h
+  omega

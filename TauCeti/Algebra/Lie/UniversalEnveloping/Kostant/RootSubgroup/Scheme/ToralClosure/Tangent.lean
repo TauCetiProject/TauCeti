@@ -24,7 +24,8 @@ The differential of `xᵢ` sends an additive tangent vector `c` to `c` times the
 the represented root generator, over every commutative coefficient ring. Its value at the additive
 unit tangent vector is the normalized root vector
 `TauCeti.UniversalEnvelopingAlgebra.kostantToralRootVector`, which is stable under coefficient
-change. When the factored coordinate map is surjective, the differential is injective, so its image
+change.
+When the factored coordinate map is surjective, the differential is injective, so its image
 is the line spanned by that nonzero vector. When the basis consists of Cartan weight vectors and
 the root generator has weight `α`, the integral root matrix is supported on the basis pairs whose
 weight difference is `α`.
@@ -58,6 +59,7 @@ the toral-closure quotient.
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -78,7 +80,7 @@ variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
 
 section Support
 
-variable {η : Type*} [Finite η] (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
+variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 
 /-- **An integral root matrix has no entries outside its weight difference.** If the lattice
 basis consists of Cartan weight vectors and the root generator `eᵢ` has weight `α`, the `(r, s)`
@@ -88,10 +90,8 @@ theorem kostantRootGeneratorIntMatrix_eq_zero_of_weight_ne (i : I) {α : κ → 
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) {r s : η}
     (hrs : wt r - wt s ≠ α) :
     kostantRootGeneratorIntMatrix e h ρ M hM i b r s = 0 := by
-  classical
-  have := Fintype.ofFinite η
-  rw [kostantRootGeneratorIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
-  exact repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt
+  rw [kostantRootGeneratorIntMatrix_apply]
+  exact repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
     (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i hα (hwt s))
     fun hr ↦ hrs (sub_eq_iff_eq_add'.mpr hr)
 

@@ -31,9 +31,9 @@ homology commute with the integer-indexed colimit.
 * `TauCeti.PlumbingGraph.latticeWeightSublevelHomologyCoconeIsColimit`: full lattice homology is
   the colimit of the sublevel homologies.
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology from lattice points and weight functions and for computations of
-concrete negative-definite plumbings. The weight-sublevel presentation follows A. Némethi,
+## References
+
+The weight-sublevel presentation follows A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 

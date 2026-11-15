@@ -51,7 +51,7 @@ theorem map_div_sum_prod_gammaMeasure (ha : 0 < a) (hb : 0 < b) (hr : 0 < r) :
     ← Measure.map_prod_map _ _ (measurable_fisherSnedecorMap 2 2) measurable_id,
     Measure.map_id, ← betaPrimeMeasure_eq_map ha hb] at h
   refine (Measure.map_congr ?_).trans h
-  filter_upwards [ae_mem_prod_Ioi_gammaMeasure ha hb hr hr] with z hz
+  filter_upwards [ae_mem_prod_Ioi_gammaMeasure] with z hz
   have htotal : z.1 + z.2 ≠ 0 := (add_pos hz.1 hz.2).ne'
   simp only [Function.comp_apply, Prod.map_apply, id_eq,
     fisherSnedecorMap_div_add htotal, div_div_div_cancel_right₀ (by norm_num : (2 : ℝ) ≠ 0)]

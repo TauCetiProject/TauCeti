@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 import Mathlib.Combinatorics.Quiver.Cast
@@ -341,6 +341,33 @@ theorem signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk (o : Orientati
     orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
 
+/-- The bipartite comparison preserves the vertex idempotents under the identification of graph
+vertices with vertices of the symmetrified orientation. -/
+theorem signlessPreprojectiveAlgebraEquiv_vertexIdempotent (o : Orientation G) (i : V) :
+    C.signlessPreprojectiveAlgebraEquiv k o
+        (signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G i))) =
+      preprojectiveMk k (OrientedQuiver G o)
+        (vertexIdempotent k (Symmetrify.of.obj (OrientedQuiver.vertex G o i))) := by
+  have hobj : (unsymmetrifyMap G o).obj (vertex G i) =
+      Symmetrify.of.obj (OrientedQuiver.vertex G o i) := unsymmetrifyMap_obj G o i
+  simp only [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+    orientationPathAlgebraEquiv_apply, mapAlgHom_vertexIdempotent,
+    hobj, rescale_vertexIdempotent]
+
+/-- The bipartite comparison preserves every path-length graded piece: restoring an orientation
+and rescaling arrows both preserve degree. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade (o : Orientation G)
+    {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n) :
+    C.signlessPreprojectiveAlgebraEquiv k o x ∈ preprojectiveGrade k (OrientedQuiver G o) n := by
+  obtain ⟨p, hp, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).1 hx
+  rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+  apply preprojectiveMk_mem_preprojectiveGrade
+  apply rescale_mem_grade
+  rw [orientationPathAlgebraEquiv_apply]
+  rw [← gradeBy_const_one] at hp ⊢
+  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hp
+
 /-- The inverse bipartite comparison for an arbitrary orientation rescales by the head-colour sign
 and applies the inverse orientation path-algebra identification. -/
 @[simp]
@@ -470,7 +497,7 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
   classical
   -- `SimpleGraph.IsBipartite` is an abbreviation for `SimpleGraph.Colorable 2`.
   have hwalk : ¬ ∀ u, ∀ w : G.Walk u u, Even w.length := fun h =>
-    hG (SimpleGraph.two_colorable_iff_forall_loop_even.mpr h)
+    hG (SimpleGraph.isBipartite_iff_forall_walk_even_length.mpr h)
   push Not at hwalk
   obtain ⟨v, p, hp⟩ := hwalk
   have hpodd : Odd p.length := Nat.not_even_iff_odd.mp hp

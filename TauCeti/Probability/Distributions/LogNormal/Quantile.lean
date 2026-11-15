@@ -96,7 +96,7 @@ theorem tendsto_quantile_logNormalMeasure_nhdsLT_one (m : ℝ) (v : ℝ≥0) :
       · have hc : ContinuousAt (fun u : ℝ ↦ 2 * u - 1) 1 := by fun_prop
         convert hc.tendsto.mono_left
           (nhdsWithin_le_nhds : nhdsWithin (1 : ℝ) (Iio (1 : ℝ)) ≤ nhds (1 : ℝ)) using 1
-        all_goals norm_num
+        norm_num
       · filter_upwards [self_mem_nhdsWithin] with u hu
         simp only [mem_Iio] at hu ⊢
         linarith

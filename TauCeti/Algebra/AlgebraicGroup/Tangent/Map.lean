@@ -96,21 +96,11 @@ lemma tangentKerMap_apply_val_ofConv (φ : A' →ₐc[R] A) (ψ : tangentKer R A
 @[simp]
 lemma tangentKerMap_id :
     tangentKerMap (B := B) (BialgHom.id R A) = MonoidHom.id (tangentKer R A B) := by
-  refine MonoidHom.ext fun ψ => Subtype.ext ?_
-  rw [tangentKerMap_apply_val, MonoidHom.id_apply,
-    BialgHom.mapDomain_id (A := DualNumber (Bialgebra.CounitAlgebra R A B)),
-    MonoidHom.id_apply]
-
-/-- `mapDomain` at the two counit coefficient indexings agrees: precomposition does not
-touch the coefficients, and the two indexings share the carrier `B` with the same
-`inferInstanceAs` instances. Recorded once as an explicit transport lemma, analogous to
-`fst_transport`. -/
-private lemma mapDomain_transport {A'' : Type*}
-    (φ : A' →ₐc[R] A)
-    (ψ : WithConv (A →ₐ[R] DualNumber (Bialgebra.CounitAlgebra R A B))) :
-    BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A'' B)) φ ψ =
-      BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R A' B)) φ ψ :=
-  rfl
+  refine MonoidHom.ext fun ψ => Subtype.ext (WithConv.ofConv_injective ?_)
+  apply AlgHom.ext
+  intro a
+  simp only [MonoidHom.id_apply, tangentKerMap_apply_val_ofConv,
+    BialgHom.id_toAlgHom, AlgHom.id_apply]
 
 /-- The differential of a composite is the composite of the differentials. -/
 @[simp]
@@ -118,18 +108,13 @@ lemma tangentKerMap_comp {A'' : Type*} [CommSemiring A''] [HopfAlgebra R A'']
     (φ : A' →ₐc[R] A) (χ : A'' →ₐc[R] A') :
     tangentKerMap (B := B) (φ.comp χ) =
       (tangentKerMap (B := B) χ).comp (tangentKerMap (B := B) φ) := by
-  refine MonoidHom.ext fun ψ => Subtype.ext ?_
-  rw [MonoidHom.comp_apply, tangentKerMap_apply_val, tangentKerMap_apply_val,
-    tangentKerMap_apply_val,
-    BialgHom.mapDomain_comp (A := DualNumber (Bialgebra.CounitAlgebra R A'' B)) φ χ,
-    ← mapDomain_transport (A'' := A'') φ ψ.val]
-  exact MonoidHom.comp_apply _ _ _
-
-section Naturality
-
-variable {R A A' B : Type*} [CommSemiring R]
-  [CommSemiring A] [HopfAlgebra R A] [CommSemiring A'] [HopfAlgebra R A']
-  [CommSemiring B] [Algebra R B]
+  refine MonoidHom.ext fun ψ => Subtype.ext (WithConv.ofConv_injective ?_)
+  apply AlgHom.ext
+  intro a
+  simp only [MonoidHom.comp_apply, tangentKerMap_apply_val_ofConv,
+    BialgHom.comp_toAlgHom, AlgHom.comp_apply]
+  -- The coefficient indexings share the same carrier and inherited instances.
+  rfl
 
 /-- The differential intertwines the tangent dictionaries: the image of the dual-number
 point of a derivation `d` under `tangentKerMap φ` is the point of the precomposed
@@ -149,8 +134,6 @@ theorem tangentKerMap_derivationMulEquivTangentKer (φ : A' →ₐc[R] A)
   · rw [tangentKerMap_apply_val_ofConv, derivationMulEquivTangentKer_apply_snd,
       toAdd_ofAdd, derivationComp_apply]
     exact derivationMulEquivTangentKer_apply_snd d ((φ : A' →ₐ[R] A) a)
-
-end Naturality
 
 end Differential
 

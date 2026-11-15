@@ -63,7 +63,7 @@ theorem orthogonalSpinorNorm_comp_orthogonalGroupBaseChange (Q : QuadraticForm K
       (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     (orthogonalSpinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)).comp
         (QuadraticMap.orthogonalGroupBaseChange Q) =
-      (AddMonoidHom.toMultiplicative (algebraMap K L).squareClassMap.toAddMonoidHom).comp
+      (algebraMap K L).multiplicativeSquareClassMap.comp
         (orthogonalSpinorNorm Q hQ) := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
@@ -71,9 +71,8 @@ theorem orthogonalSpinorNorm_comp_orthogonalGroupBaseChange (Q : QuadraticForm K
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
     QuadraticMap.orthogonalGroupBaseChange_reflectionOrthogonal,
     orthogonalSpinorNorm_reflectionOrthogonal, orthogonalSpinorNorm_reflectionOrthogonal]
-  simp only [squareClassHom_apply, AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd,
-    LinearMap.toAddMonoidHom_coe, RingHom.squareClassMap_apply]
-  exact congrArg (Multiplicative.ofAdd ∘ squareClass) (Units.ext (Q.baseChange_one_tmul v))
+  simp only [squareClassHom_apply, RingHom.multiplicativeSquareClassMap_mk]
+  exact congrArg QuotientGroup.mk (Units.ext (Q.baseChange_one_tmul v))
 
 /-- The spinor norm of an orthogonal automorphism after extending scalars from `K` to `L` is the
 image of its spinor norm under the pushforward of square classes. -/
@@ -84,8 +83,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupBaseChange (Q : QuadraticForm K V)
       (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     orthogonalSpinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)
         (QuadraticMap.orthogonalGroupBaseChange Q g) =
-      Multiplicative.ofAdd
-        ((algebraMap K L).squareClassMap (orthogonalSpinorNorm Q hQ g).toAdd) :=
+      (algebraMap K L).multiplicativeSquareClassMap (orthogonalSpinorNorm Q hQ g) :=
   DFunLike.congr_fun (orthogonalSpinorNorm_comp_orthogonalGroupBaseChange Q hQ) g
 
 /-- The spinor norm of a special orthogonal automorphism after extending scalars from `K` to `L`
@@ -97,7 +95,7 @@ theorem spinorNorm_specialOrthogonalGroupBaseChange (Q : QuadraticForm K V)
       (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     spinorNorm (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)
         (QuadraticMap.specialOrthogonalGroupBaseChange Q g) =
-      Multiplicative.ofAdd ((algebraMap K L).squareClassMap (spinorNorm Q hQ g).toAdd) := by
+      (algebraMap K L).multiplicativeSquareClassMap (spinorNorm Q hQ g) := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [spinorNorm_apply, spinorNorm_apply, ← orthogonalSpinorNorm_orthogonalGroupBaseChange]

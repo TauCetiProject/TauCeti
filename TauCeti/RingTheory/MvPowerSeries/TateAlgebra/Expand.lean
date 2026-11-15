@@ -22,12 +22,14 @@ an isometric algebra map
 R{X/r^p} → R{X/r},   f(X) ↦ f(X^p).
 ```
 
-For any set of variables and any exponent `ν`, the component `f_ν` of a restricted series `f` at
-`r`, with coefficients `coeff μ f_ν = coeff (p • μ + ν) f`, is restricted at `r ^ p` and
-satisfies `‖f_ν‖ r^ν ≤ ‖f‖`, with equality for some `ν` with `ν i < p` for all `i`. In finitely
-many variables, every restricted series at `r` is uniquely a sum `∑ X^ν f_ν(X^p)` over the
-finitely many exponents `ν` with `ν i < p`, so the expansion is a finite injective map and the
-algebra at `r` is free over the algebra at `r ^ p` on these monomials.
+The coefficient components and their norm estimates work over any ultrametric normed ring. For
+any set of variables and any exponent `ν`, the component `f_ν` of a restricted series `f` at `r`,
+with coefficients `coeff μ f_ν = coeff (p • μ + ν) f`, is restricted at `r ^ p` and satisfies
+`‖f_ν‖ r^ν ≤ ‖f‖`, with equality for some `ν` with `ν i < p` for all `i`. With commutative
+coefficients and finitely many variables, every restricted series at `r` is uniquely a sum
+`∑ X^ν f_ν(X^p)` over the finitely many exponents `ν` with `ν i < p`, so the expansion is a
+finite injective map and the algebra at `r` is free over the algebra at `r ^ p` on these
+monomials.
 
 Combined with the rescaling `X i ↦ u i * X i` by multiplicative units, this gives the classical
 presentation of Tate algebras at radii in the divisible hull of `|K×|`: if `‖u i‖ * r i ^ p = 1`,
@@ -53,6 +55,8 @@ positive power in `|K×|`.
   and uniqueness of the decomposition `f = ∑ X^ν f_ν(X^p)` in finitely many variables.
 * `TauCeti.MvPowerSeries.exists_norm_restrictedExpandComponent_mul_prod_eq`: the Gauss norm of `f`
   is the largest of the weighted norms `‖f_ν‖ r^ν`.
+* `TauCeti.MvPowerSeries.restrictedExpandComponent_restrictedExpand_mul`: multiplying by an
+  expanded series `g(X^p)` commutes with extracting the `ν`-th component when `ν i < p`.
 * `TauCeti.MvPowerSeries.restrictedExpand_finite` and
   `TauCeti.MvPowerSeries.restrictedRescaleExpand_finite`: in finitely many variables, both maps
   are finite.
@@ -69,14 +73,14 @@ public section
 
 namespace TauCeti.MvPowerSeries
 
-open Filter _root_.MvPowerSeries
-open scoped Topology
+open _root_.MvPowerSeries
 
-variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {r t : σ → ℝ}
+variable {σ R : Type*} {r t : σ → ℝ}
 
 section Expand
 
-variable (p : ℕ) (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i)
+variable [NormedCommRing R] [IsUltrametricDist R] (p : ℕ) (hp : p ≠ 0)
+  (ht : ∀ i, r i ^ p = t i)
 
 /-- **Expansion of restricted series.** Substituting `X i ↦ X i ^ p` is an algebra map
 `R{X/r^p} → R{X/r}`. -/
@@ -116,8 +120,8 @@ variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < t i)]
 @[simp]
 theorem norm_restrictedExpand (f : IsRestricted.subring (R := R) t) :
     ‖restrictedExpand p hp ht f‖ = ‖f‖ := by
-  refine le_antisymm ((norm_le_iff (norm_nonneg f)).2 fun α ↦ ?_)
-    ((norm_le_iff (norm_nonneg _)).2 fun μ ↦ ?_)
+  refine le_antisymm (norm_le_iff.2 fun α ↦ ?_)
+    (norm_le_iff.2 fun μ ↦ ?_)
   · rw [coe_restrictedExpand]
     by_cases hα0 : coeff α (expand p hp (f : MvPowerSeries σ R)) = 0
     · simp [hα0]
@@ -134,29 +138,15 @@ end Expand
 
 section Component
 
-variable {p : ℕ} (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
-
-include hp ht in
-/-- The coefficient family `μ ↦ coeff (p • μ + ν) f` of a restricted series `f` at the polyradii
-`r` is restricted at the polyradii `r ^ p`. -/
-private theorem isRestricted_component (ν : σ →₀ ℕ) (f : IsRestricted.subring (R := R) r) :
-    IsRestricted t (fun μ ↦ coeff (p • μ + ν) (f : MvPowerSeries σ R) : MvPowerSeries σ R) := by
-  have hi : Function.Injective fun μ : σ →₀ ℕ ↦ p • μ + ν :=
-    (add_left_injective ν).comp (nsmul_right_injective hp)
-  have h := (f.2.comp hi.tendsto_cofinite).const_mul (ν.prod (r · ^ ·))⁻¹
-  rw [mul_zero] at h
-  refine h.congr fun μ ↦ ?_
-  have hc : coeff μ (fun μ ↦ coeff (p • μ + ν) (f : MvPowerSeries σ R) : MvPowerSeries σ R) =
-      coeff (p • μ + ν) (f : MvPowerSeries σ R) := coeff_apply _ μ
-  rw [hc, Function.comp_apply, prod_pow_add, prod_pow_nsmul p ht]
-  field_simp [(prod_pow_pos (c := r) ν).ne']
+variable [NormedRing R] [IsUltrametricDist R] {p : ℕ} (hp : p ≠ 0)
+  (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
 
 /-- The component `f_ν` in the decomposition `f = ∑ X^ν f_ν(X^p)` of a restricted series at the
 polyradii `r`: the restricted series at the polyradii `r ^ p` whose coefficient at `μ` is the
 coefficient of `f` at `p • μ + ν`. -/
 noncomputable def restrictedExpandComponent (ν : σ →₀ ℕ) (f : IsRestricted.subring (R := R) r) :
     IsRestricted.subring (R := R) t :=
-  ⟨fun μ ↦ coeff (p • μ + ν) (f : MvPowerSeries σ R), isRestricted_component hp ht ν f⟩
+  ⟨fun μ ↦ coeff (p • μ + ν) (f : MvPowerSeries σ R), f.2.coeff_nsmul_add hp ht ν⟩
 
 /-- The coefficients of the component `f_ν`. -/
 @[simp]
@@ -165,6 +155,30 @@ theorem coeff_restrictedExpandComponent (ν μ : σ →₀ ℕ) (f : IsRestricte
       coeff (p • μ + ν) (f : MvPowerSeries σ R) :=
   coeff_apply _ μ
 
+/-- Extracting a component sends `0` to `0`. -/
+@[simp]
+theorem restrictedExpandComponent_zero (ν : σ →₀ ℕ) :
+    restrictedExpandComponent hp ht ν (0 : IsRestricted.subring (R := R) r) = 0 := by
+  ext μ : 2
+  simp
+
+/-- Extracting a component commutes with addition. -/
+@[simp]
+theorem restrictedExpandComponent_add (ν : σ →₀ ℕ)
+    (f g : IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (f + g) =
+      restrictedExpandComponent hp ht ν f + restrictedExpandComponent hp ht ν g := by
+  ext μ : 2
+  simp
+
+/-- Extracting a component commutes with finite sums. -/
+theorem restrictedExpandComponent_sum {ι : Type*} (ν : σ →₀ ℕ) (s : Finset ι)
+    (f : ι → IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (∑ i ∈ s, f i) =
+      ∑ i ∈ s, restrictedExpandComponent hp ht ν (f i) := by
+  ext μ : 2
+  simp
+
 variable [∀ i, Fact (0 < t i)]
 
 /-- **Norm estimate for the components.** The weighted norm `‖f_ν‖ r^ν` of each component is at
@@ -172,8 +186,7 @@ most the Gauss norm of `f`. -/
 theorem norm_restrictedExpandComponent_mul_prod_le (ν : σ →₀ ℕ)
     (f : IsRestricted.subring (R := R) r) :
     ‖restrictedExpandComponent hp ht ν f‖ * ν.prod (r · ^ ·) ≤ ‖f‖ := by
-  rw [← le_div_iff₀ (prod_pow_pos ν), norm_le_iff (div_nonneg (norm_nonneg f)
-    (prod_pow_pos ν).le)]
+  rw [← le_div_iff₀ (prod_pow_pos ν), norm_le_iff]
   intro μ
   rw [le_div_iff₀ (prod_pow_pos ν), coeff_restrictedExpandComponent, mul_assoc,
     ← prod_pow_nsmul p ht, ← prod_pow_add]
@@ -186,7 +199,7 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
     (f : IsRestricted.subring (R := R) r) :
     ∃ ν : σ →₀ ℕ, (∀ i, ν i < p) ∧
       ‖restrictedExpandComponent hp ht ν f‖ * ν.prod (r · ^ ·) = ‖f‖ := by
-  obtain ⟨α, hα⟩ := exists_achievesGaussNorm f
+  obtain ⟨α, hα⟩ := f.2.exists_achievesGaussNorm
   set ν := α.mapRange (· % p) (Nat.zero_mod p)
   set μ := α.mapRange (· / p) (Nat.zero_div p)
   refine ⟨ν, fun i ↦ Nat.mod_lt _ (Nat.pos_of_ne_zero hp),
@@ -202,10 +215,76 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
 
 end Component
 
+/-- If `p • μ₁ = pq.1` and `pq.1 + pq.2 = p • μ + ν` with `ν i < p` for all `i`, then `μ₁ ≤ μ`
+and `p • (μ - μ₁) + ν = pq.2`. -/
+private theorem le_and_nsmul_tsub_add_eq_snd {p : ℕ} {μ ν μ₁ : σ →₀ ℕ}
+    {pq : (σ →₀ ℕ) × (σ →₀ ℕ)} (hν : ∀ i, ν i < p) (hμ₁ : p • μ₁ = pq.1)
+    (hpq : pq.1 + pq.2 = p • μ + ν) :
+    μ₁ ≤ μ ∧ p • (μ - μ₁) + ν = pq.2 := by
+  have hcoord (i : σ) : p * μ₁ i + pq.2 i = p * μ i + ν i := by
+    have hi := congrArg (· i) hpq
+    have hμ₁_i := congrArg (· i) hμ₁
+    simp only [Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul] at hi hμ₁_i
+    omega
+  have hle : μ₁ ≤ μ := fun i ↦ by
+    have := hcoord i
+    have := hν i
+    have hlt : p * μ₁ i < p * (μ i + 1) := by rw [mul_add, mul_one]; omega
+    exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left hlt)
+  refine ⟨hle, Finsupp.ext fun i ↦ ?_⟩
+  have := hcoord i
+  have := Nat.mul_le_mul_left p (hle i)
+  simp only [Finsupp.coe_add, Finsupp.coe_smul, Finsupp.coe_tsub, Pi.add_apply, Pi.smul_apply,
+    Pi.sub_apply, smul_eq_mul, Nat.mul_sub_left_distrib]
+  omega
+
+/-- Multiplying on the left by an expanded series `g(X^p)` commutes with extracting the `ν`-th
+component whenever `ν i < p` for all `i`. -/
+theorem restrictedExpandComponent_restrictedExpand_mul [NormedCommRing R] [IsUltrametricDist R]
+    {p : ℕ} (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
+    {ν : σ →₀ ℕ} (hν : ∀ i, ν i < p)
+    (g : IsRestricted.subring (R := R) t) (f : IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (restrictedExpand p hp ht g * f) =
+      g * restrictedExpandComponent hp ht ν f := by
+  classical
+  apply Subtype.ext
+  ext μ
+  rw [coeff_restrictedExpandComponent, Subring.coe_mul, coe_restrictedExpand, coeff_mul,
+    Subring.coe_mul, coeff_mul]
+  -- Reindex `Finset.antidiagonal μ` into `Finset.antidiagonal (p • μ + ν)` along `emb`.
+  let emb : (σ →₀ ℕ) × (σ →₀ ℕ) → (σ →₀ ℕ) × (σ →₀ ℕ) := fun ab ↦ (p • ab.1, p • ab.2 + ν)
+  have hemb_inj : Function.Injective emb := by
+    rintro ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ h
+    simp only [emb, Prod.mk.injEq, add_left_inj] at h
+    exact Prod.ext (nsmul_right_injective hp h.1) (nsmul_right_injective hp h.2)
+  have hsub : (Finset.antidiagonal μ).image emb ⊆ Finset.antidiagonal (p • μ + ν) := by
+    rintro _ hpq
+    obtain ⟨⟨a, b⟩, hab, rfl⟩ := Finset.mem_image.mp hpq
+    rw [Finset.mem_antidiagonal] at hab ⊢
+    dsimp only [emb]
+    rw [← add_assoc, ← smul_add, hab]
+  rw [← Finset.sum_subset hsub]
+  · rw [Finset.sum_image hemb_inj.injOn]
+    refine Finset.sum_congr rfl fun ab _ ↦ ?_
+    dsimp only [emb]
+    rw [coeff_expand_smul, coeff_restrictedExpandComponent]
+  -- Extra antidiagonal terms vanish since `expand p` is supported on multiples of `p`.
+  · intro pq hpq hnot
+    by_cases h0 : coeff pq.1 (expand p hp (g : MvPowerSeries σ R)) = 0
+    · rw [h0, zero_mul]
+    · exfalso
+      obtain ⟨μ₁, -, hμ₁⟩ := support_expand_subset p hp _ (a := pq.1) h0
+      obtain ⟨hle, hpq2⟩ :=
+        le_and_nsmul_tsub_add_eq_snd hν hμ₁ (Finset.mem_antidiagonal.mp hpq)
+      exact hnot (Finset.mem_image.mpr
+        ⟨(μ₁, μ - μ₁), Finset.mem_antidiagonal.mpr (add_tsub_cancel_of_le hle),
+          Prod.ext hμ₁ hpq2⟩)
+
 section Decomposition
 
-variable [Fintype σ] [DecidableEq σ] {p : ℕ} (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i)
-  [∀ i, Fact (0 < r i)]
+variable [NormedCommRing R] [IsUltrametricDist R] [Fintype σ] [DecidableEq σ] {p : ℕ}
+  (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
 
 /-- **Existence of the decomposition.** Every restricted series at the polyradii `r` in finitely
 many variables is the sum `∑ X^ν f_ν(X^p)` over the exponents `ν` with `ν i < p`, where `f_ν`
@@ -247,7 +326,8 @@ end Decomposition
 
 section Finite
 
-variable {p : ℕ} (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
+variable [NormedCommRing R] [IsUltrametricDist R] {p : ℕ} (hp : p ≠ 0)
+  (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
 
 /-- **The expansion is finite.** In finitely many variables, the algebra of restricted series at
 the polyradii `r` is generated as a module over the algebra at the polyradii `r ^ p` by the
@@ -271,11 +351,8 @@ end Finite
 
 section Rescale
 
-variable (p : ℕ) (hp : p ≠ 0) [∀ i, Fact (0 < r i)] (u : σ → Rˣ)
+variable [NormedCommRing R] [IsUltrametricDist R] (p : ℕ) (hp : p ≠ 0) (u : σ → Rˣ)
   (hu : ∀ i, IsNormMulUnit (u i : R)) (hr : ∀ i, ‖(u i : R)‖ * r i ^ p = 1)
-
-/-- The polyradii `r ^ p` are positive. -/
-private theorem fact_pow_pos (i : σ) : Fact (0 < r i ^ p) := ⟨pow_pos Fact.out p⟩
 
 /-- If the multiplicative units `u i` satisfy `‖u i‖ * r i ^ p = 1`, substituting
 `Y i ↦ u i * X i ^ p` is an algebra map from the unit-radius algebra `R⟨Y⟩` to the restricted
@@ -283,7 +360,6 @@ series `R{X/r}`: the rescaling by `u` from the unit radii to the radii `r ^ p`, 
 expansion. In finitely many variables it is finite (`restrictedRescaleExpand_finite`). -/
 noncomputable def restrictedRescaleExpand :
     IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) →ₐ[R] IsRestricted.subring (R := R) r :=
-  letI := fact_pow_pos (r := r) p
   (restrictedExpand p hp fun _ ↦ rfl).comp (restrictedRescaleEquiv u hu hr).toAlgHom
 
 /-- The underlying formal series of `restrictedRescaleExpand u f` is `f(u X^p)`. -/
@@ -291,7 +367,6 @@ noncomputable def restrictedRescaleExpand :
 theorem coe_restrictedRescaleExpand (f : IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) :
     (restrictedRescaleExpand p hp u hu hr f : MvPowerSeries σ R) =
       expand p hp (MvPowerSeries.rescale (fun i ↦ (u i : R)) f) := by
-  let _ := fact_pow_pos (r := r) p
   simp [restrictedRescaleExpand]
 
 /-- The map `restrictedRescaleExpand` sends `Y i` to `u i * X i ^ p`. -/
@@ -301,15 +376,23 @@ theorem restrictedRescaleExpand_X (i : σ) :
         (⟨X i, isRestricted_X _ i⟩ : IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) =
       algebraMap R (IsRestricted.subring (R := R) r) (u i : R) *
         (⟨X i, isRestricted_X r i⟩ : IsRestricted.subring (R := R) r) ^ p := by
-  let _ := fact_pow_pos (r := r) p
   simp [restrictedRescaleExpand]
+
+/-- The map `restrictedRescaleExpand` is injective. -/
+theorem restrictedRescaleExpand_injective :
+    Function.Injective (restrictedRescaleExpand (R := R) p hp u hu hr) := by
+  simpa only [restrictedRescaleExpand, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom] using
+    (restrictedExpand_injective (r := r) p hp fun _ ↦ rfl).comp
+      (restrictedRescaleEquiv u hu hr).injective
+
+variable [∀ i, Fact (0 < r i)]
 
 /-- The map `restrictedRescaleExpand` preserves the Gauss norms. -/
 @[simp]
 theorem norm_restrictedRescaleExpand
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) :
     ‖restrictedRescaleExpand p hp u hu hr f‖ = ‖f‖ := by
-  let _ := fact_pow_pos (r := r) p
+  let (i : σ) : Fact (0 < r i ^ p) := ⟨pow_pos Fact.out p⟩
   simp [restrictedRescaleExpand]
 
 /-- The map `restrictedRescaleExpand` is an isometry for the Gauss norms. -/
@@ -317,16 +400,10 @@ theorem isometry_restrictedRescaleExpand :
     Isometry (restrictedRescaleExpand (R := R) p hp u hu hr) :=
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedRescaleExpand p hp u hu hr)
 
-/-- The map `restrictedRescaleExpand` is injective. -/
-theorem restrictedRescaleExpand_injective :
-    Function.Injective (restrictedRescaleExpand (R := R) p hp u hu hr) :=
-  (isometry_restrictedRescaleExpand p hp u hu hr).injective
-
 /-- **The restricted series at `r` are finite over the unit Tate algebra** through
 `Y i ↦ u i * X i ^ p`, in finitely many variables. -/
 theorem restrictedRescaleExpand_finite [Finite σ] :
     (restrictedRescaleExpand (R := R) p hp u hu hr).Finite := by
-  let _ := fact_pow_pos (r := r) p
   exact (restrictedExpand_finite hp fun _ ↦ rfl).comp
     (AlgHom.Finite.of_surjective _ (restrictedRescaleEquiv u hu hr).surjective)
 

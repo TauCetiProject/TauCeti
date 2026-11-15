@@ -40,16 +40,9 @@ theorem isJacobsonRing_of_quotient_span_singleton {R : Type*} [CommRing R]
   rcases eq_or_ne P ⊥ with rfl | hP0
   · exact hR
   obtain ⟨x, hxP, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP0
-  have := h x hx0
+  have hxP' : span {x} ≤ P := (span_singleton_le_iff_mem P).mpr hxP
   -- `P` is the preimage of its image in `R ⧸ (x)`, which is prime there.
-  have hP' :
-      comap (Ideal.Quotient.mk (span {x})) (P.map (Ideal.Quotient.mk (span {x}))) = P := by
-    rwa [comap_map_of_surjective' _ Ideal.Quotient.mk_surjective, mk_ker, sup_eq_left,
-      span_singleton_le_iff_mem]
-  have hPq : (P.map (Ideal.Quotient.mk (span {x}))).IsPrime :=
-    map_isPrime_of_surjective Ideal.Quotient.mk_surjective
-      (by rwa [mk_ker, span_singleton_le_iff_mem])
-  rw [← hP', ← comap_jacobson_of_surjective Ideal.Quotient.mk_surjective,
-    isJacobsonRing_iff_prime_eq.mp this _ hPq]
+  rw [← comap_map_mk hxP', ← comap_jacobson_of_surjective Ideal.Quotient.mk_surjective,
+    isJacobsonRing_iff_prime_eq.mp (h x hx0) _ (isPrime_map_quotientMk_of_isPrime hxP')]
 
 end TauCeti

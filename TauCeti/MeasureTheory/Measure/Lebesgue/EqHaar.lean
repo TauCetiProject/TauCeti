@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Haar measure under dilations and affine maps
@@ -19,17 +20,35 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`.
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation `y ↦ x + r • y`,
+`r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
+(`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
+inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`), in
+particular the measure of the part of a set in a ball or closed ball
+(`MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`,
+`MeasureTheory.Measure.addHaar_preimage_add_smul_inter_closedBall`).
 
 A linear map into a finite-dimensional real normed space that is not surjective has almost every
 fibre empty for every additive Haar measure on the codomain
 (`LinearMap.ae_preimage_singleton_eq_empty`), since its range is a strict subspace.
+
+For an invertible real square matrix `A` and nonnegative bounds `a i`, the region
+`{x | ∀ i, |(A *ᵥ x) i| ≤ a i}` cut out by the linear forms of `A` has volume
+`2 ^ n * (∏ i, a i) / |det A|`, where `n` is the size of `A`
+(`Matrix.volume_setOf_forall_abs_mulVec_le`). It is the preimage of a coordinate box under `A`;
+this is the volume computation behind Minkowski's linear forms theorem.
 
 We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
 the elementary estimate converting coverings by sets of small diameter into measure bounds.
 Combined with the diameter bound for Lipschitz images, it bounds the measure of the closure of
 the image of a set under a Lipschitz map.
+
+An element of finite order acting linearly on a finite-dimensional real space preserves every
+additive Haar measure, because its determinant has finite order and so absolute value one
+(`MeasureTheory.Measure.addHaar_preimage_smul_of_isOfFinOrder`). Hence a finite group acting
+linearly preserves every additive Haar measure
+(`MeasureTheory.Measure.smulInvariantMeasure_addHaar`).
 -/
 
 public section
@@ -75,6 +94,42 @@ theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
 
+/-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
+Haar measure, so preimages under it of null-measurable sets are null-measurable. -/
+theorem quasiMeasurePreserving_add_smul (x : F) {r : ℝ} (hr : r ≠ 0) :
+    QuasiMeasurePreserving (fun y ↦ x + r • y) μ μ :=
+  (measurePreserving_add_left μ x).quasiMeasurePreserving.comp (quasiMeasurePreserving_smul μ hr)
+
+/-- **The volume of a blow-up.** For `r ≠ 0`, the preimage of `s` under the affine dilation
+`y ↦ x + r • y` has measure `|r| ^ (-n) μ s`, where `n = dim F`. -/
+theorem addHaar_preimage_add_smul (x : F) {r : ℝ} (hr : r ≠ 0) (s : Set F) :
+    μ ((fun y ↦ x + r • y) ⁻¹' s) = ENNReal.ofReal |(r ^ Module.finrank ℝ F)⁻¹| * μ s := by
+  have h : (fun y ↦ x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((fun y ↦ x + y) ⁻¹' s) := rfl
+  rw [h, addHaar_preimage_smul μ hr, measure_preimage_add]
+
+/-- **The volume of a blow-up in a ball.** For `r ≠ 0`, the preimage of `s` under the affine
+dilation `y ↦ x + r • y` satisfies `μ(s_{x,r} ∩ ball 0 ρ) = |r| ^ (-n) μ(s ∩ ball x (|r| * ρ))`,
+where `n = dim F`. -/
+theorem addHaar_preimage_add_smul_inter_ball (x : F) {r : ℝ} (hr : r ≠ 0) (s : Set F) (ρ : ℝ) :
+    μ ((fun y ↦ x + r • y) ⁻¹' s ∩ Metric.ball 0 ρ) =
+      ENNReal.ofReal |(r ^ Module.finrank ℝ F)⁻¹| * μ (s ∩ Metric.ball x (|r| * ρ)) := by
+  have hball : (fun y ↦ x + r • y) ⁻¹' Metric.ball x (|r| * ρ) = Metric.ball 0 ρ := by
+    simpa [vadd_eq_add, add_comm, Real.norm_eq_abs] using
+      TauCeti.preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr) ρ
+  rw [← hball, ← preimage_inter, addHaar_preimage_add_smul μ x hr]
+
+/-- **The volume of a blow-up in a closed ball.** For `r ≠ 0`, the preimage of `s` under the
+affine dilation `y ↦ x + r • y` satisfies
+`μ(s_{x,r} ∩ closedBall 0 ρ) = |r| ^ (-n) μ(s ∩ closedBall x (|r| * ρ))`, where `n = dim F`. -/
+theorem addHaar_preimage_add_smul_inter_closedBall (x : F) {r : ℝ} (hr : r ≠ 0) (s : Set F)
+    (ρ : ℝ) :
+    μ ((fun y ↦ x + r • y) ⁻¹' s ∩ Metric.closedBall 0 ρ) =
+      ENNReal.ofReal |(r ^ Module.finrank ℝ F)⁻¹| * μ (s ∩ Metric.closedBall x (|r| * ρ)) := by
+  have hball : (fun y ↦ x + r • y) ⁻¹' Metric.closedBall x (|r| * ρ) = Metric.closedBall 0 ρ := by
+    simpa [vadd_eq_add, add_comm, Real.norm_eq_abs] using
+      TauCeti.preimage_smul_vadd_closedBall x (c := r) (norm_pos_iff.2 hr) ρ
+  rw [← hball, ← preimage_inter, addHaar_preimage_add_smul μ x hr]
+
 end Affine
 
 section Diameter
@@ -108,6 +163,34 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
 
 end Diameter
 
+section FiniteOrder
+
+variable {G E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- An element of finite order acting linearly on a finite-dimensional real space preserves
+every additive Haar measure. Its determinant has finite order in `ℝ`, hence absolute value
+one. -/
+theorem addHaar_preimage_smul_of_isOfFinOrder [Monoid G] [DistribMulAction G E]
+    [SMulCommClass G ℝ E] {g : G} (hg : IsOfFinOrder g) (s : Set E) :
+    μ ((g • ·) ⁻¹' s) = μ s := by
+  set L := DistribMulAction.toModuleEnd ℝ E g
+  have habs : |LinearMap.det L| = 1 :=
+    ((((absHom (α := ℝ)).toMonoidHom).comp
+      (LinearMap.det.comp (DistribMulAction.toModuleEnd ℝ E))).isOfFinOrder hg).eq_one
+      (abs_nonneg _)
+  have hdet : LinearMap.det L ≠ 0 := fun h => by simp [h] at habs
+  have h := addHaar_preimage_linearMap μ hdet s
+  rwa [abs_inv, habs, inv_one, ENNReal.ofReal_one, one_mul] at h
+
+/-- A finite group acting linearly on a finite-dimensional real space preserves every additive
+Haar measure. -/
+theorem smulInvariantMeasure_addHaar [Group G] [Finite G] [DistribMulAction G E]
+    [SMulCommClass G ℝ E] : SMulInvariantMeasure G E μ :=
+  ⟨fun g s _ => addHaar_preimage_smul_of_isOfFinOrder μ (isOfFinOrder_of_finite g) s⟩
+
+end FiniteOrder
+
 end MeasureTheory.Measure
 
 namespace LinearMap
@@ -125,6 +208,30 @@ theorem ae_preimage_singleton_eq_empty (μ : Measure F) [μ.IsAddHaarMeasure] (L
   exact eq_empty_of_forall_notMem fun x hx ↦ hy ⟨x, hx⟩
 
 end LinearMap
+
+namespace Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The region cut out by the linear forms of an invertible real square matrix `A`: for
+nonnegative bounds `a i`, the set of `x : ι → ℝ` with `|(A *ᵥ x) i| ≤ a i` for every `i` has
+volume `2 ^ n * (∏ i, a i) / |det A|`, where `n` is the cardinality of `ι`. This includes the case
+of an empty `ι`, where both sides are `1`. -/
+theorem volume_setOf_forall_abs_mulVec_le (A : Matrix ι ι ℝ) (hA : A.det ≠ 0) {a : ι → ℝ}
+    (ha : 0 ≤ a) :
+    volume {x : ι → ℝ | ∀ i, |(A *ᵥ x) i| ≤ a i} =
+      ENNReal.ofReal (2 ^ Fintype.card ι * (∏ i, a i) / |A.det|) := by
+  have hS : {x : ι → ℝ | ∀ i, |(A *ᵥ x) i| ≤ a i} = toLin' A ⁻¹' Icc (-a) a := by
+    ext x
+    simp [abs_le, Pi.le_def, forall_and]
+  rw [hS, Measure.addHaar_preimage_linearMap _ (by rwa [LinearMap.det_toLin']),
+    LinearMap.det_toLin', Real.volume_Icc_pi]
+  simp_rw [Pi.neg_apply, sub_neg_eq_add, ← two_mul]
+  rw [← ENNReal.ofReal_prod_of_nonneg fun i _ ↦ mul_nonneg zero_le_two (ha i),
+    ← ENNReal.ofReal_mul (abs_nonneg _), abs_inv, Finset.prod_mul_distrib, Finset.prod_const,
+    Finset.card_univ, inv_mul_eq_div]
+
+end Matrix
 
 namespace LipschitzOnWith
 

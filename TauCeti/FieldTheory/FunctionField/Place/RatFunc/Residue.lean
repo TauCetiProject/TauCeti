@@ -90,7 +90,7 @@ the residue field at infinity being `k`. -/
 theorem coe_normResidueOrOne_infty {f : (RatFunc k)ˣ} (hf : (f : RatFunc k).intDegree = 0) :
     ((infty k).normResidueOrOne f : k) = (f : RatFunc k).num.leadingCoeff := by
   have hord : (infty k).ord (f : RatFunc k) = 0 := by rw [ord_infty, hf, neg_zero]
-  have hlt := valuation_infty_sub_leadingCoeff_div_lt_one f.ne_zero hf
+  have hlt := valuation_infty_sub_leadingCoeff_div_lt_one hf
   rw [(RatFunc.monic_denom _).leadingCoeff, div_one] at hlt
   have hres : IsLocalRing.residue (infty k).integers
       ⟨f, (infty k).mem_integers_iff_ord_nonneg.2 hord.ge⟩ =

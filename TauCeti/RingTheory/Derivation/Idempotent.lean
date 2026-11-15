@@ -30,12 +30,7 @@ variable [AddCancelCommMonoid M] [Module A M] [Module R M]
 @[simp]
 theorem apply_eq_zero_of_isIdempotentElem (D : Derivation R A M) {e : A}
     (he : IsIdempotentElem e) : D e = 0 := by
-  have hD : D e = e • D e + e • D e := by
-    simpa only [he.eq] using D.leibniz e e
-  have hsmul : e • D e = 0 := by
-    have h := congrArg (e • ·) hD
-    simp only [smul_add, smul_smul, he.eq] at h
-    exact left_eq_add.mp h
-  simpa only [hsmul, add_zero] using hD
+  have := D.leibniz e e
+  grind [smul_add, smul_smul, he.eq]
 
 end Derivation

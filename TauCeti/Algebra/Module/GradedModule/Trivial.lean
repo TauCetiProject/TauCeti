@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.DirectSum.Decomposition
 
@@ -14,8 +15,9 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 Every module has an integer grading concentrated in degree zero: the whole module in degree `0`
 and the zero submodule in every other degree.  This file packages that family of submodules,
 records its membership API, and proves that it is an internal direct-sum decomposition, computing
-its projections.  For an algebra, `TauCeti.RingTheory.GradedAlgebra.Trivial` makes it a
-`GradedAlgebra`.
+its projections.  Scalar multiplication by a trivially graded base ring preserves every
+homogeneous piece of any family closed under scalar multiplication.  For an algebra,
+`TauCeti.RingTheory.GradedAlgebra.Trivial` makes it a `GradedAlgebra`.
 
 ## Main definitions
 
@@ -26,6 +28,8 @@ its projections.  For an algebra, `TauCeti.RingTheory.GradedAlgebra.Trivial` mak
 
 * `TauCeti.mem_trivialGrading_iff`: an element has degree `p` exactly when `p = 0` or it is zero.
 * `TauCeti.instDecompositionTrivialGrading`: the trivial grading is an internal grading.
+* `TauCeti.instGradedSMulTrivialGrading`: the trivially graded base ring acts compatibly with any
+  family of scalar-stable sets containing zero.
 * `TauCeti.proj_trivialGrading`: its degree projection is the identity in degree zero and zero in
   every other degree.
 -/
@@ -101,5 +105,16 @@ theorem proj_trivialGrading (p : ℤ) (a : A) :
     exact DirectSum.decompose_of_mem_same (trivialGrading R A) ha
   · rw [DirectSum.decompose_of_mem_ne _ ha (Ne.symm hp)]
     simp [hp]
+
+/-- Scalar multiplication by the trivially graded base ring preserves every piece of any family
+closed under scalar multiplication and containing zero. -/
+instance instGradedSMulTrivialGrading {M σ : Type*} [Zero M] [SMulWithZero R M]
+    [SetLike σ M] [ZeroMemClass σ M] [SMulMemClass σ R M]
+    (ℳ : ℤ → σ) : SetLike.GradedSMul (trivialGrading R R) ℳ where
+  smul_mem := by
+    intro p q r m hr hm
+    rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
+    · simpa using SMulMemClass.smul_mem r hm
+    · simp
 
 end TauCeti

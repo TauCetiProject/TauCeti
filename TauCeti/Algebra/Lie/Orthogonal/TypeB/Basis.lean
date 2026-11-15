@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.Basis.Cartan
 public import TauCeti.Algebra.Lie.Basis.Root
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.CartanBasis
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Generation
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SerreRelations
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Serre.Relations
 import TauCeti.LinearAlgebra.Matrix.Cartan.Classical
 
 /-!
@@ -67,6 +67,7 @@ noncomputable def typeBLieBasis (n : ℕ) :
     letI := invertibleOfNonzero (NeZero.ne (2 : K))
     typeBDiagonalCartan_eq_lieSpan_typeBSimpleCorootGenerator
   span_ef :=
+    letI := invertibleOfNonzero (NeZero.ne (2 : K))
     lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRootGenerator_eq_top n
   linInd :=
     letI := invertibleOfNonzero (NeZero.ne (2 : K))

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 
 /-!
 # An induced representation from a trivially meeting conjugate is never irreducible
