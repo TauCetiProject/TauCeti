@@ -39,7 +39,8 @@ dense subsets are dense.
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`).
+(`lp.tendsto_apply_of_tendsto_apply_single`); for iterated `ℓᵖ` spaces (`1 ≤ p < ∞`), the `p`-th
+powers of the doubly indexed coordinate norms are summable (`lp.summable_norm_rpow_prod`).
 -/
 
 public section
@@ -247,6 +248,16 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
   exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
 
 end Density
+
+/-- For an element `ζ` of an iterated `ℓᵖ` space (`1 ≤ p` and `0 < p.toReal`), the `p`-th powers of
+the coordinate norms `‖ζ x.1 x.2‖ ^ p.toReal` are summable over `ι₁ × ι₂`. -/
+theorem summable_norm_rpow_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → Type*}
+    [∀ i j, NormedAddCommGroup (G i j)] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 0 < p.toReal)
+    (ζ : lp (fun i ↦ lp (G i) p) p) :
+    Summable fun x : ι₁ × ι₂ ↦ ‖ζ x.1 x.2‖ ^ p.toReal :=
+  (summable_prod_of_nonneg fun _ ↦ by positivity).2
+    ⟨fun i ↦ (lp.memℓp (ζ i)).summable hp, ((lp.memℓp ζ).summable hp).congr fun i ↦ by
+      simpa using (lp.hasSum_norm hp (ζ i)).tsum_eq.symm⟩
 
 end lp
 

@@ -9,17 +9,30 @@ public import Mathlib.Algebra.Group.Center
 public import Mathlib.Algebra.Group.Units.Defs
 
 /-!
-# Centralizers and conjugation by units
+# Centralizers, multiplicative equivalences, and conjugation by units
 
-If conjugation by the inverse of a unit `u` maps a set `S` of a monoid into itself, then
-conjugation by `u` maps the centralizer of `S` into itself. Applying this twice shows that a
-double commutant is preserved by every unit whose conjugations preserve the original set in both
-directions, which is how spatially implemented automorphisms extend to von Neumann algebras.
+Multiplicative equivalences commute with taking centralizers (`Set.image_centralizer`). If
+conjugation by the inverse of a unit `u` maps a set `S` of a monoid into itself, then conjugation
+by `u` maps the centralizer of `S` into itself (`Set.conj_mem_centralizer`). Applying this twice
+shows that a double commutant is preserved by every unit whose conjugations preserve the original
+set in both directions, which is how spatially implemented automorphisms extend to von Neumann
+algebras.
 -/
 
 public section
 
 namespace Set
+
+/-- A multiplicative equivalence maps the centralizer of a set onto the centralizer of its
+image. -/
+@[to_additive image_addCentralizer]
+theorem image_centralizer {A B F : Type*} [Mul A] [Mul B] [EquivLike F A B]
+    [MulEquivClass F A B] (e : F) (s : Set A) : (e '' s).centralizer = e '' s.centralizer := by
+  ext b; refine ⟨fun hb ↦ ?_, ?_⟩
+  · obtain ⟨c, rfl⟩ := EquivLike.surjective e b
+    exact ⟨c, fun a ha ↦ EquivLike.injective e <| by
+      rw [map_mul, map_mul]; exact hb (e a) ⟨a, ha, rfl⟩, rfl⟩
+  · rintro ⟨a, ha, rfl⟩ _ ⟨x, hx, rfl⟩; rw [← map_mul, ← map_mul, ha x hx]
 
 variable {M : Type*} [Monoid M] {S : Set M}
 
