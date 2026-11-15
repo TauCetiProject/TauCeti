@@ -11,6 +11,7 @@ import all TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables.Higher
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
 
 /-!
 # Chart calculus for local Sobolev maps of every order
@@ -89,7 +90,10 @@ theorem MemWkpLoc.comp_chart_transition [Fact (1 ≤ p)] (hp' : p ≠ ⊤)
     (hW : W ⊆ φ'.target ∩ φ'.symm ⁻¹' φ.source) (hmaps : MapsTo (φ ∘ φ'.symm) W U) :
     MemWkpLoc p W k (g ∘ φ ∘ φ'.symm) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact memWkpLoc_comp_chart_transition hφ hφ' zero_le_one hg hW hmaps
+  · exact (hg.comp_symm_trans_of_mem_maximalAtlas zero_le_one
+      (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero hφ')
+      (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero hφ)).mono
+        fun z hz ↦ ⟨hW hz, hmaps hz⟩
   have hφR := IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero k one_ne_zero hφ
   have hφ'R := IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero k one_ne_zero hφ'
   have hW' : W ⊆ (φ'.symm.trans φ).source := by

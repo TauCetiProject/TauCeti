@@ -14,6 +14,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -187,16 +188,6 @@ theorem MemWkpLocMapOnGroupoid.continuousOn (hu : MemWkpLocMapOnGroupoid G J I p
 /-- A local Sobolev map is continuous. -/
 theorem MemWkpLocMapGroupoid.continuous (hu : MemWkpLocMapGroupoid G J I p k u) : Continuous u :=
   hu.1
-
-omit [ChartedSpace H' X] [ChartedSpace H M] in
-/-- The coordinate expression of a map continuous on `s` is continuous on its domain. -/
-theorem _root_.ContinuousOn.extend_comp_extend_symm (hu : ContinuousOn u s)
-    (φ : OpenPartialHomeomorph X H') (ψ : OpenPartialHomeomorph M H) :
-    ContinuousOn (ψ.extend I ∘ u ∘ (φ.extend J).symm)
-      ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
-  refine ψ.continuousOn_extend.comp (hu.comp (φ.continuousOn_extend_symm.mono inter_subset_left)
-    fun _ hz ↦ hz.2.1) fun _ hz ↦ ?_
-  simpa using hz.2.2
 
 /-- At order zero, the local Sobolev maps on `s` are the maps continuous on `s`. -/
 @[simp]
