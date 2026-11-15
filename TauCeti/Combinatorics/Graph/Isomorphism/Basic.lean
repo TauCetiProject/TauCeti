@@ -191,7 +191,7 @@ theorem mapEdgeSet_subset_edgeSet (f : Iso G H) (F : Set β) :
 
 /-- Membership of an actual target vertex in a transported set is membership of its inverse
 image in the original set. -/
-@[simp]
+@[simp, grind =]
 theorem mem_mapVertexSet_iff (f : Iso G H) (S : Set α) (y : H.vertexSet) :
     (y : α') ∈ f.mapVertexSet S ↔ (f.vertexEquiv.symm y : α) ∈ S := by
   constructor
@@ -202,7 +202,7 @@ theorem mem_mapVertexSet_iff (f : Iso G H) (S : Set α) (y : H.vertexSet) :
 
 /-- Membership of an actual target edge in a transported set is membership of its inverse image
 in the original set. -/
-@[simp]
+@[simp, grind =]
 theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
     (e : β') ∈ f.mapEdgeSet F ↔ (f.edgeEquiv.symm e : β) ∈ F := by
   constructor
@@ -212,13 +212,13 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
     exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
 
 /-- Transport of the empty vertex set is empty. -/
-@[simp]
+@[simp, grind =]
 theorem mapVertexSet_empty (f : Iso G H) : f.mapVertexSet ∅ = ∅ := by
   ext x
   simp [mapVertexSet]
 
 /-- Vertex-set transport preserves intersections. -/
-@[simp]
+@[simp, grind =]
 theorem mapVertexSet_inter (f : Iso G H) (X Y : Set α) :
     f.mapVertexSet (X ∩ Y) = f.mapVertexSet X ∩ f.mapVertexSet Y := by
   ext x
@@ -230,53 +230,53 @@ theorem mapVertexSet_inter (f : Iso G H) (X Y : Set α) :
     exact ⟨hx, hX, hY⟩
 
 /-- All actual vertices are transported onto all actual target vertices. -/
-@[simp]
+@[simp, grind =]
 theorem mapVertexSet_vertexSet (f : Iso G H) : f.mapVertexSet V(G) = V(H) := by
   ext x
   simp [mapVertexSet]
 
 /-- All actual edges are transported onto all actual target edges. -/
-@[simp]
+@[simp, grind =]
 theorem mapEdgeSet_edgeSet (f : Iso G H) : f.mapEdgeSet E(G) = E(H) := by
   ext e
   simp [mapEdgeSet]
 
 /-- Vertex-set transport preserves unions. -/
-@[simp]
+@[simp, grind =]
 theorem mapVertexSet_union (f : Iso G H) (X Y : Set α) :
     f.mapVertexSet (X ∪ Y) = f.mapVertexSet X ∪ f.mapVertexSet Y := by
   ext x
   simp [mapVertexSet, exists_or]
 
 /-- Edge-set transport preserves unions. -/
-@[simp]
+@[simp, grind =]
 theorem mapEdgeSet_union (f : Iso G H) (F F' : Set β) :
     f.mapEdgeSet (F ∪ F') = f.mapEdgeSet F ∪ f.mapEdgeSet F' := by
   ext e
   simp [mapEdgeSet, exists_or]
 
 /-- Vertex-set transport preserves set differences. -/
-@[simp]
+@[simp, grind =]
 theorem mapVertexSet_sdiff (f : Iso G H) (X Y : Set α) :
     f.mapVertexSet (X \ Y) = f.mapVertexSet X \ f.mapVertexSet Y := by
   ext x
   by_cases hx : x ∈ V(H) <;> simp [mapVertexSet, hx]
 
 /-- Edge-set transport preserves set differences. -/
-@[simp]
+@[simp, grind =]
 theorem mapEdgeSet_sdiff (f : Iso G H) (F F' : Set β) :
     f.mapEdgeSet (F \ F') = f.mapEdgeSet F \ f.mapEdgeSet F' := by
   ext e
   by_cases he : e ∈ E(H) <;> simp [mapEdgeSet, he]
 
 /-- Transport of the empty edge set is empty. -/
-@[simp]
+@[simp, grind =]
 theorem mapEdgeSet_empty (f : Iso G H) : f.mapEdgeSet ∅ = ∅ := by
   ext e
   simp [mapEdgeSet]
 
 /-- Edge-set transport preserves intersections. -/
-@[simp]
+@[simp, grind =]
 theorem mapEdgeSet_inter (f : Iso G H) (F F' : Set β) :
     f.mapEdgeSet (F ∩ F') = f.mapEdgeSet F ∩ f.mapEdgeSet F' := by
   ext e
