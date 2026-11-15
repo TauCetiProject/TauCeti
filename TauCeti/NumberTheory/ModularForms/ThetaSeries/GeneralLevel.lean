@@ -212,7 +212,7 @@ theorem mcast_thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finran
     (hL.thetaCharacter_intCast _ haL).trans (hχ _ haN).symm
   simpa only [ModularForm.coe_mcast, coe_thetaFormOfLevel, MulChar.coe_equivToUnitHom,
     MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← hval] using
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← hval] using
     hL.thetaSeries_slash_of_mem_Gamma0 hk hA
 
 /-! ### Trivial theta character: descent to `Γ₀(level L)` -/
