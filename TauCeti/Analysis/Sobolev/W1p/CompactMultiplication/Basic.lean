@@ -132,9 +132,8 @@ theorem W1p0.exists_isCompactOperator_value_smul {G : Type*} [NormedAddCommGroup
         IsCompactOperator M := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On a trivial space `α` is constant, hence bounded.
-    have hα : MemLp (α : E → G) ∞ (μ.restrict Ω) := by
-      rw [show (α : E → G) = fun _ => α 0 from funext fun x => congrArg _ (Subsingleton.elim x 0)]
-      exact memLp_top_const _
+    have hα : MemLp (α : E → G) ∞ (μ.restrict Ω) :=
+      (memLp_top_const _).ae_eq (ae_of_all _ fun x => congrArg (⇑α) (Subsingleton.elim 0 x))
     exact W1p0.exists_isCompactOperator_value_smul_of_memLp_top hΩ hα
   -- Extension by zero preserves values on `Ω`.
   let T : W1p0 μ Ω q →L[ℝ] W1p μ ⊤ q :=
