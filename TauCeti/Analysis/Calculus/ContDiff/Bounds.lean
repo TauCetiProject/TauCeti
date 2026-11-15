@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -354,26 +355,9 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Typ
     ∃ A, 0 ≤ A ∧ ∀ p ∈ C, ∀ x ∈ K, ContDiffAt 𝕜 n (f p) x ∧
       ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i (f p) x‖ ≤ A := by
   obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_bound_iteratedFDeriv_of_isOpen hW (hC.prod hK) hCKW
-  refine ⟨n.factorial * A, by positivity, fun p hp x hx ↦ ?_⟩
+  refine ⟨A, hA0, fun p hp x hx ↦ ?_⟩
   have hpx : (p, x) ∈ C ×ˢ K := ⟨hp, hx⟩
   have hfpx : ContDiffAt 𝕜 n (Function.uncurry f) (p, x) :=
     hf.contDiffAt (hW.mem_nhds (hCKW hpx))
-  -- `f p` is the composite of `uncurry f` with the affine map `y ↦ (p, y)`, whose derivative is
-  -- `inr`, of norm at most one, and whose higher derivatives vanish.
-  have hg : ContDiffAt 𝕜 n (fun y : E ↦ (p, y)) x := contDiffAt_const.prodMk contDiffAt_id
-  have hDg : fderiv 𝕜 (fun y : E ↦ (p, y)) = fun _ ↦ ContinuousLinearMap.inr 𝕜 P E := by
-    funext y
-    exact ((hasFDerivAt_const p y).prodMk (hasFDerivAt_id y)).fderiv
-  have hD : ∀ j, 1 ≤ j → ‖iteratedFDeriv 𝕜 j (fun y : E ↦ (p, y)) x‖ ≤ 1 ^ j
-    | 1, _ => by
-      rw [norm_iteratedFDeriv_one, hDg, one_pow]
-      exact ContinuousLinearMap.norm_inr_le_one 𝕜 P E
-    | j + 2, _ => by
-      rw [iteratedFDeriv_succ_eq_comp_right, hDg, iteratedFDeriv_const_of_ne (by omega)]
-      simp [LinearIsometryEquiv.map_zero]
-  refine ⟨hfpx.comp x hg, fun i hi ↦ ?_⟩
-  have h := TauCeti.norm_iteratedFDeriv_comp_le_of_contDiffAt (n := i)
-    (hfpx.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))
-    (fun j hj ↦ hA j (hj.trans hi) _ hpx) fun j hj1 _ ↦ hD j hj1
-  rw [one_pow, mul_one] at h
-  exact h.trans (by gcongr)
+  exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
+    (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩
