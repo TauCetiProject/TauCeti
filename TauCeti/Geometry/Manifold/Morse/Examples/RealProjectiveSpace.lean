@@ -193,7 +193,7 @@ private theorem singularHomologyδ_lowerTriple_eq_zero :
   have : ContractibleSpace (TopTriple.outerPair.obj (lowerTriple N)).snd :=
     contractibleSpace_filt_one N
   rw [(lowerTriple N).singularHomologyδ_eq_comp_singularHomologyπ R 1 0 rfl,
-    (TopTriple.outerPair.obj (lowerTriple N)).singularHomologyδ_eq_zero_of_contractibleSpace R 1 0]
+    (TopTriple.outerPair.obj (lowerTriple N)).singularHomologyδ_eq_zero_of_contractibleSpace R 0]
   exact zero_comp
 
 /-- The object of the minimum on the first page is `H₀({f ≤ 1/2}, {f ≤ -1/2})`. -/

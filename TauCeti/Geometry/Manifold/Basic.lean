@@ -26,8 +26,6 @@ open scoped Manifold
 
 namespace TauCeti
 
-variable {S M : Type*} [TopologicalSpace S] [TopologicalSpace M]
-
 /-- A compact, connected `n`-manifold, allowing a nonempty boundary, in the standard Euclidean
 half-space model. -/
 def IsCompactConnectedManifold (n : ℕ) [NeZero n] (X : Type*) [TopologicalSpace X]
@@ -91,7 +89,7 @@ def IsCompactConnectedThreeManifold (M : Type*) [TopologicalSpace M]
 
 /-- The defining conditions for a compact connected surface. -/
 @[simp]
-theorem isCompactConnectedSurface_iff
+theorem isCompactConnectedSurface_iff {S : Type*} [TopologicalSpace S]
     [ChartedSpace (EuclideanHalfSpace 2) S] :
     IsCompactConnectedSurface S ↔
       T2Space S ∧ SecondCountableTopology S ∧ CompactSpace S ∧ ConnectedSpace S :=
@@ -99,7 +97,7 @@ theorem isCompactConnectedSurface_iff
 
 /-- The defining conditions for a compact connected 3-manifold. -/
 @[simp]
-theorem isCompactConnectedThreeManifold_iff
+theorem isCompactConnectedThreeManifold_iff {M : Type*} [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] :
     IsCompactConnectedThreeManifold M ↔
       T2Space M ∧ SecondCountableTopology M ∧ CompactSpace M ∧ ConnectedSpace M :=
@@ -136,7 +134,7 @@ def IsClosedConnectedThreeManifold (M : Type*) [TopologicalSpace M]
 /-- The defining separation, countability, compactness, and connectedness conditions for a closed
 connected surface. -/
 @[simp]
-theorem isClosedConnectedSurface_iff
+theorem isClosedConnectedSurface_iff {S : Type*} [TopologicalSpace S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] :
     IsClosedConnectedSurface S ↔
       T2Space S ∧ SecondCountableTopology S ∧ CompactSpace S ∧ ConnectedSpace S :=
@@ -145,7 +143,7 @@ theorem isClosedConnectedSurface_iff
 /-- The defining separation, countability, compactness, and connectedness conditions for a closed
 connected 3-manifold. -/
 @[simp]
-theorem isClosedConnectedThreeManifold_iff
+theorem isClosedConnectedThreeManifold_iff {M : Type*} [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] :
     IsClosedConnectedThreeManifold M ↔
       T2Space M ∧ SecondCountableTopology M ∧ CompactSpace M ∧ ConnectedSpace M :=
