@@ -318,7 +318,7 @@ private theorem IsKillingField.inner_alongCurveWithin_alongCurveWithin_eq
       (((hlift hY) t ht).mdifferentiableWithinAt (by norm_num))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hWcoord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t :=
-    differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs (hlift hX) ht
+    differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs (hlift hX t ht) ht
   have hγ'coord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ γ' (γ t)) s t :=
     differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))

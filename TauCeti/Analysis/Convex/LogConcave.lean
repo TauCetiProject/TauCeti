@@ -25,7 +25,7 @@ Taking values in `ℝ≥0∞` is what makes the notion stable under integration:
 `x ↦ ∫⁻ y, f (x, y) ∂ν` of a log-concave function is log-concave whenever `ν` satisfies the
 Prékopa–Leindler inequality, with no finiteness hypothesis on the integrals
 (`TauCeti.LogConcave.lintegral_prod_right`, in
-`TauCeti.MeasureTheory.Integral.PrekopaLeindler`). Marginals of this kind are the measures of
+`TauCeti.MeasureTheory.Integral.PrekopaLeindler.Basic`). Marginals of this kind are the measures of
 the slices of a convex body, and are the objects of Vaaler's cube-slicing theorem.
 
 ## Main definitions

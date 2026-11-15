@@ -564,27 +564,11 @@ private theorem continuousOn_linearProjection_flatten :
     ContinuousOn (fun p : I × ℙ ℝ (Fin 3 → ℝ) ↦ linearProjection (flatten p.1) p.2)
       (univ ×ˢ linearProjectionDomain dropLast) := by
   rintro ⟨t, y⟩ ⟨-, hy⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  have hq : IsOpenQuotientMap
-      (Prod.map id (mk' ℝ) : I × {v : Fin 3 → ℝ // v ≠ 0} → I × ℙ ℝ (Fin 3 → ℝ)) :=
-    IsOpenQuotientMap.id.prodMap isOpenQuotientMap_mk'
-  obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective y
-  -- The point `(t, [v])` is the image of `(t, v)` under the quotient map.
-  rw [show (t, mk' ℝ v) = Prod.map id (mk' ℝ) (t, v) from rfl, ← hq.continuousAt_comp_iff]
-  let U := {x : I × {v : Fin 3 → ℝ // v ≠ 0} | dropLast x.2.1 ≠ 0}
-  have hU : IsOpen U := isOpen_ne_fun
-    (dropLast.continuous_of_finiteDimensional.comp (continuous_subtype_val.comp continuous_snd))
-    continuous_const
-  have hx : (t, v) ∈ U := by
-    simpa [U, mk'_eq_mk, mk_mem_linearProjectionDomain_iff] using hy
-  refine ContinuousOn.continuousAt ?_ (hU.mem_nhds hx)
-  rw [continuousOn_iff_continuous_domRestrict]
-  have hne (x : U) : flatten x.1.1 x.1.2.1 ≠ 0 := flatten_ne_zero x.2 _
-  refine (continuous_mk (K := ℝ) (f := fun x : U ↦ flatten x.1.1 x.1.2.1) ?_ hne).congr
-    fun x ↦ ?_
-  · exact continuous_flatten.comp ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd) |>.comp continuous_subtype_val)
-  · simp [mk'_eq_mk, linearProjection_mk _ _ (hne x)]
+  refine (continuousAt_linearProjection (G := fun t : I ↦ flatten t)
+    (continuous_flatten.comp (continuous_subtype_val.prodMap continuous_id)) ?_).continuousWithinAt
+  induction y using ind with | h v hv =>
+  rw [mk_mem_linearProjectionDomain_iff] at hy ⊢
+  exact flatten_ne_zero hy t
 
 variable {c : ℝ}
 

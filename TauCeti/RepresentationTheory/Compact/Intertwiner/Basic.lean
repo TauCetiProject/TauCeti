@@ -321,10 +321,11 @@ variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [FiniteDimensional 𝕜 V]
 
 /-- Completeness of `V` is not an extra hypothesis on the trace results below: a finite-dimensional
-normed space over an `RCLike` field is already complete. Mathlib keeps `FiniteDimensional.complete`
+normed space over an `RCLike` field is already complete. Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance instead. -/
 local instance completeSpace_of_finiteDimensional : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **Averaging preserves the trace.** In finite dimensions each conjugate `π g⁻¹ ∘ T ∘ π g` has the
 trace of `T`, and averaging a constant returns that constant. This is what fixes the normalizing

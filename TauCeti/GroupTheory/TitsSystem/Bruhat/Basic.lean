@@ -39,6 +39,8 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
   representative from `N`.
 * `TauCeti.TitsSystem.subgroupB_mul_bruhatCell` and `TauCeti.TitsSystem.bruhatCell_mul_subgroupB`:
   the identity cell `B` is absorbed by every cell.
+* `TauCeti.TitsSystem.subgroupB_le_of_bruhatCell_subset`: a subgroup containing a Bruhat cell
+  contains `B`.
 * `TauCeti.TitsSystem.bruhatCells_eq_univ`: the Bruhat cells cover the ambient group.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_or_eq_union_of_mem_simple`: multiplication on the left by
   a simple Bruhat cell gives either the adjacent cell or its union with the original cell.
@@ -164,6 +166,16 @@ theorem bruhatCell_mul_subgroupB (w : T.WeylGroup) :
   obtain ⟨n, rfl⟩ := QuotientGroup.mk'_surjective T.intersection w
   simp only [QuotientGroup.mk'_apply, bruhatCell_mk, DoubleCoset.doubleCoset]
   rw [mul_assoc, coe_mul_coe]
+
+/-- A subgroup containing a Bruhat cell contains `B`. -/
+theorem subgroupB_le_of_bruhatCell_subset {P : Subgroup G} {w : T.WeylGroup}
+    (hw : T.bruhatCell w ⊆ P) : T.subgroupB ≤ P := by
+  obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
+  intro b hb
+  have hnb : (n : G) * b ∈ T.bruhatCell w := by
+    rw [← T.bruhatCell_mul_subgroupB w]
+    exact Set.mul_mem_mul hn hb
+  simpa using P.mul_mem (P.inv_mem (hw hn)) (hw hnb)
 
 /-- The union over `N` defining `bruhatCells` can equivalently be indexed canonically by the Weyl
 group. -/

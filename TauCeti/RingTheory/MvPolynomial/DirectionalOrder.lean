@@ -175,7 +175,7 @@ over a finite field with `q` elements, `X ^ q - X` vanishes everywhere without b
 homogeneous. -/
 theorem isHomogeneous_iff_forall_eval_smul {p : MvPolynomial σ R} {n : ℕ} :
     p.IsHomogeneous n ↔ ∀ (a : R) (x : σ → R), eval (a • x) p = a ^ n • eval x p := by
-  refine ⟨fun hp a x => hp.eval_smul x a, fun h => ?_⟩
+  refine ⟨fun hp a x => (hp.eval_smul a x).trans (smul_eq_mul _ _).symm, fun h => ?_⟩
   -- The restriction of `p` to the line through `x` is the monomial `eval x p • t ^ n`, so its
   -- coefficient of degree `m ≠ n`, the degree-`m` component evaluated at `x`, vanishes.
   have hcomp : ∀ m ≠ n, homogeneousComponent m p = 0 := by

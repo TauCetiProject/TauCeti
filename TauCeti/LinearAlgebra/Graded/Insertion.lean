@@ -63,16 +63,16 @@ variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- Evaluate an arity-`k` operation on the first `k` entries of a family indexed by the naturals. -/
 def evalNat {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin k ↦ M) N) (x : ℕ → M) : N :=
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) : N :=
   f fun i ↦ x i.1
 
 theorem evalNat_def {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
     evalNat f x = f (fun i ↦ x i.1) := (rfl)
 
 /-- `evalNat` only reads the entries whose indices are below the operation's arity. -/
 theorem evalNat_congr {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin k ↦ M) N) {x y : ℕ → M}
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) {x y : ℕ → M}
     (h : ∀ i < k, x i = y i) : evalNat f x = evalNat f y := by
   rw [evalNat_def, evalNat_def]
   congr 1
@@ -82,31 +82,31 @@ theorem evalNat_congr {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
 @[simp]
 theorem evalNat_smul {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
     [SMulCommClass R R N]
-    (c : R) (f : MultilinearMap R (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
+    (c : R) (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
     evalNat (c • f) x = c • evalNat f x := by
   simp [evalNat]
 
 @[simp]
 theorem evalNat_one {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin 1 ↦ M) N) (x : ℕ → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ M) N) (x : ℕ → M) :
     evalNat f x = f ![x 0] := by
   exact congrArg f (FinVec.etaExpand_eq _).symm
 
 @[simp]
 theorem evalNat_two {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin 2 ↦ M) N) (x : ℕ → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin 2 ↦ M) N) (x : ℕ → M) :
     evalNat f x = f ![x 0, x 1] := by
   exact congrArg f (FinVec.etaExpand_eq _).symm
 
 @[simp]
 theorem evalNat_three {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin 3 ↦ M) N) (x : ℕ → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin 3 ↦ M) N) (x : ℕ → M) :
     evalNat f x = f ![x 0, x 1, x 2] := by
   exact congrArg f (FinVec.etaExpand_eq _).symm
 
 @[simp]
 theorem evalNat_four {N : Type uN} [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin 4 ↦ M) N) (x : ℕ → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin 4 ↦ M) N) (x : ℕ → M) :
     evalNat f x = f ![x 0, x 1, x 2, x 3] := by
   exact congrArg f (FinVec.etaExpand_eq _).symm
 
@@ -138,14 +138,14 @@ private def oneSlotIndexEquiv (α : Type uα) (β : Type uβ) (γ : Type uγ) :
     | ⟨.inr (.inr _), ⟨()⟩⟩ => rfl
   right_inv x := by rcases x with i | (j | i) <;> rfl
 
-private def unaryId : MultilinearMap R (fun _ : ULift.{uβ} Unit ↦ M) M where
+private def unaryId : MultilinearMap (RingHom.id R) (fun _ : ULift.{uβ} Unit ↦ M) M where
   toFun x := x ⟨()⟩
   map_update_add' _ i := by rcases i with ⟨i⟩; rcases i with ⟨⟩; simp
   map_update_smul' _ i := by rcases i with ⟨i⟩; rcases i with ⟨⟩; simp
 
 private def oneSlotMaps {α : Type uα} {β : Type uβ} {γ : Type uγ}
-    (g : MultilinearMap R (fun _ : β ↦ M) M) :
-    (i : α ⊕ (Unit ⊕ γ)) → MultilinearMap R (fun _ : OneSlotArity β i ↦ M) M
+    (g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M) :
+    (i : α ⊕ (Unit ⊕ γ)) → MultilinearMap (RingHom.id R) (fun _ : OneSlotArity β i ↦ M) M
   | .inl _ => unaryId
   | .inr (.inl _) => g
   | .inr (.inr _) => unaryId
@@ -155,17 +155,17 @@ private def oneSlotMaps {α : Type uα} {β : Type uβ} {γ : Type uγ}
 The domain is divided into prefix inputs `α`, the inputs `β` consumed by `g`, and suffix
 inputs `γ`.  Correspondingly, `f` has prefix inputs, one middle input, and suffix inputs. -/
 def oneSlot {α : Type uα} {β : Type uβ} {γ : Type uγ}
-    (f : MultilinearMap R (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
-    (g : MultilinearMap R (fun _ : β ↦ M) M) :
-    MultilinearMap R (fun _ : α ⊕ (β ⊕ γ) ↦ M) N :=
+    (f : MultilinearMap (RingHom.id R) (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
+    (g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M) :
+    MultilinearMap (RingHom.id R) (fun _ : α ⊕ (β ⊕ γ) ↦ M) N :=
   (f.compMultilinearMap (oneSlotMaps g)).domDomCongr (oneSlotIndexEquiv α β γ)
 
 /-- Evaluating `oneSlot f g` substitutes the value of `g` on the middle block between the
 unchanged prefix and suffix inputs of `f`. -/
 @[simp]
 theorem oneSlot_apply {α : Type uα} {β : Type uβ} {γ : Type uγ}
-    (f : MultilinearMap R (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
-    (g : MultilinearMap R (fun _ : β ↦ M) M) (x : α ⊕ (β ⊕ γ) → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
+    (g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M) (x : α ⊕ (β ⊕ γ) → M) :
     oneSlot f g x = f (Sum.elim (fun i ↦ x (.inl i)) <|
       Sum.elim (fun _ ↦ g fun j ↦ x (.inr (.inl j))) (fun i ↦ x (.inr (.inr i)))) :=
   by
@@ -304,7 +304,7 @@ replaced entry sits in a single slot, in which the operation is linear. -/
 theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
     {R : Type uR} {A : Type uA} [Semiring R] [AddCommMonoid A] [Module R A]
     [AddCommMonoid N] [Module R N]
-    (f : MultilinearMap R (fun _ : Fin u ↦ A) N)
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin u ↦ A) N)
     (x : ℕ → A) {p : ℕ} (s : ℕ) (hp : p < u) (c : R) (v : A) :
     evalNat f (replaceBlock x p s (c • v)) = c • evalNat f (replaceBlock x p s v) := by
   have hupd (w : A) : (fun i : Fin u ↦ replaceBlock x p s w i.1) =
@@ -315,7 +315,8 @@ theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
       simp
     · have h : (i : ℕ) ≠ p := by simpa [Fin.ext_iff] using hi
       simp [replaceBlock, Function.update_of_ne hi, h]
-  rw [evalNat_def, evalNat_def, hupd (c • v), MultilinearMap.map_update_smul, ← hupd v]
+  rw [evalNat_def, evalNat_def, hupd (c • v), MultilinearMap.map_update_smul, ← hupd v,
+    RingHom.id_apply]
 
 end MultilinearMap
 
@@ -379,8 +380,8 @@ variable {R : Type uR} {M : Type uM} {N : Type uN} {ι : Type*}
 @[grind →]
 theorem IsHomogeneous.oneSlot {α : Type uα} {β : Type uβ} {γ : Type uγ}
     [Fintype α] [Fintype β] [Fintype γ]
-    {f : MultilinearMap R (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N}
-    {g : MultilinearMap R (fun _ : β ↦ M) M}
+    {f : MultilinearMap (RingHom.id R) (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N}
+    {g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M}
     {A : α → ι → σM} {B : β → ι → σM} {C : γ → ι → σM}
     {D : ι → σM} {E : ι → σN} {p q : ι}
     (hf : IsHomogeneous f (Sum.elim A (Sum.elim (fun _ ↦ D) C)) E p)
@@ -447,9 +448,9 @@ the sign is constant, so scalar multiplication preserves multilinearity. -/
 def signedOneSlot {M : Type uM} {N : Type uN} [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] {α : Type uα} [Fintype α] {β : Type uβ} {γ : Type uγ}
     (q : ℤ) (d : α → ℤ)
-    (f : MultilinearMap R (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
-    (g : MultilinearMap R (fun _ : β ↦ M) M) :
-    MultilinearMap R (fun _ : α ⊕ (β ⊕ γ) ↦ M) N :=
+    (f : MultilinearMap (RingHom.id R) (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
+    (g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M) :
+    MultilinearMap (RingHom.id R) (fun _ : α ⊕ (β ⊕ γ) ↦ M) N :=
   koszulSign (R := R) q d • f.oneSlot g
 
 /-- Evaluating `signedOneSlot q d f g` gives the one-slot substitution formula multiplied by the
@@ -458,8 +459,8 @@ Koszul sign determined by `q` and the supplied prefix degrees `d`. -/
 theorem signedOneSlot_apply {M : Type uM} {N : Type uN} [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] {α : Type uα} [Fintype α] {β : Type uβ} {γ : Type uγ}
     (q : ℤ) (d : α → ℤ)
-    (f : MultilinearMap R (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
-    (g : MultilinearMap R (fun _ : β ↦ M) M) (x : α ⊕ (β ⊕ γ) → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N)
+    (g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M) (x : α ⊕ (β ⊕ γ) → M) :
     signedOneSlot q d f g x = koszulSign (R := R) q d • f (Sum.elim (fun i ↦ x (.inl i)) <|
       Sum.elim (fun _ ↦ g fun j ↦ x (.inr (.inl j))) (fun i ↦ x (.inr (.inr i)))) :=
   by rw [signedOneSlot, smul_apply, oneSlot_apply]
@@ -481,8 +482,8 @@ variable {R : Type uR} {M : Type uM} {N : Type uN}
 /-- Signed one-slot substitution has the sum of the degrees of its two operations. -/
 theorem IsHomogeneous.signedOneSlot {α : Type uα} {β : Type uβ} {γ : Type uγ}
     [Fintype α] [Fintype β] [Fintype γ]
-    {f : MultilinearMap R (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N}
-    {g : MultilinearMap R (fun _ : β ↦ M) M}
+    {f : MultilinearMap (RingHom.id R) (fun _ : α ⊕ (Unit ⊕ γ) ↦ M) N}
+    {g : MultilinearMap (RingHom.id R) (fun _ : β ↦ M) M}
     {A : α → ℤ → σM} {B : β → ℤ → σM} {C : γ → ℤ → σM}
     {D : ℤ → σM} {E : ℤ → σN} {p q : ℤ} (d : α → ℤ)
     (hf : IsHomogeneous f (Sum.elim A (Sum.elim (fun _ ↦ D) C)) E p)

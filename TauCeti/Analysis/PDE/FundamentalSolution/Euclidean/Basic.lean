@@ -79,6 +79,12 @@ theorem newtonianKernel_zero (n : ℕ) :
       exact sub_ne_zero.mpr (by exact_mod_cast hn.symm)
     simp [newtonianKernel, Real.zero_rpow hexp]
 
+/-- In dimension two the normalizing constant of the Newtonian kernel is `0⁻¹ = 0`, so the totalized
+kernel `TauCeti.newtonianKernel 2` is the zero function. -/
+@[simp]
+theorem newtonianKernel_two : newtonianKernel 2 = 0 :=
+  funext fun y ↦ by simp [newtonianKernel_def]
+
 /-- The Newtonian kernel is radial, hence invariant under orthogonal transformations. -/
 @[simp]
 theorem newtonianKernel_map_linearIsometryEquiv (n : ℕ)
@@ -106,6 +112,15 @@ theorem volume_real_unitBall_pos (n : ℕ) :
   exact ENNReal.toReal_pos
     (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
     measure_ball_ne_top
+
+/-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
+theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
+    newtonianKernel n x ≠ 0 := by
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by rintro rfl; exact hx (Subsingleton.elim _ _))
+  have hn2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  have hvol := (volume_real_unitBall_pos n).ne'
+  rw [newtonianKernel_def]
+  positivity
 
 /-- Away from the pole, the normalized Newtonian kernel is strictly positive. -/
 theorem newtonianKernel_pos (n : ℕ) (hn : 3 ≤ n)
@@ -248,6 +263,15 @@ theorem fderiv_newtonianKernel_apply (n : ℕ) (hn : n ≠ 2)
   rw [fderiv_newtonianKernel n hn x]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
   ring
+
+/-- The gradient of the Newtonian kernel at its pole is zero, by the junk-value conventions: in
+dimension two the kernel is `0`, and otherwise the gradient formula holds at `0` with value `0`. -/
+@[simp]
+theorem fderiv_newtonianKernel_zero (n : ℕ) : fderiv ℝ (newtonianKernel n) 0 = 0 := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp
+  · ext v
+    simp [fderiv_newtonianKernel_apply n hn 0 v]
 
 /-- The operator norm of the derivative of the Newtonian kernel decays like `‖x‖ ^ (1 - n)`. -/
 @[simp]

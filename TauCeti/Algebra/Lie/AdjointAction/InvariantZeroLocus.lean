@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.Killing.AdNilpotent
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.TracePowerPolynomial
 
 /-!
@@ -17,9 +18,9 @@ Let `L` be a Lie algebra over a field `K` of characteristic zero. The polynomial
 are the symmetric algebra `S(L*)` of the dual, a point `x : L` evaluating `p` through
 `SymmetricAlgebra.lift (Module.Dual.eval K L x)`, and `L` acts on them through the coadjoint
 action by derivations. Its invariants `S(L*)^L` (`TauCeti.SymmetricAlgebra.lieInvariants`) are
-the invariant polynomial functions. This file proves that when `L` is finite-dimensional with
-nondegenerate Killing form, an element `x` has nilpotent `ad x` exactly when every invariant
-polynomial function with zero constant term vanishes at `x`
+the invariant polynomial functions. This file proves that when `L` has a nondegenerate Killing form
+(which forces `L` to be finite-dimensional), an element `x` has nilpotent `ad x` exactly when every
+invariant polynomial function with zero constant term vanishes at `x`
 (`TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`). That is, the ad-nilpotent elements form
 the common zero locus of the invariants of positive degree.
 
@@ -48,7 +49,7 @@ this describes the points of its zero fibre wherever its invariant algebra is `S
 
 ## Main results
 
-* `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a finite-dimensional Lie algebra with
+* `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a Lie algebra with
   nondegenerate Killing form, `ad x` is nilpotent exactly when every invariant polynomial function
   with zero constant term vanishes at `x`.
 
@@ -71,13 +72,14 @@ open SymmetricAlgebra
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
 /-- **The ad-nilpotent elements are the common zeros of the invariants of positive degree.** In a
-finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic zero,
+Lie algebra with nondegenerate Killing form (hence finite-dimensional) over a field of
+characteristic zero,
 `ad x` is nilpotent exactly when every invariant polynomial function on `L` with zero constant term
 vanishes at `x`. -/
-theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [FiniteDimensional K L] [IsKilling K L]
-    {x : L} :
+theorem isNilpotent_ad_iff_forall_lift_eval_eq_zero [IsKilling K L] {x : L} :
     IsNilpotent (ad K L x) ↔
       ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0 := by
+  have : FiniteDimensional K L := finite_of_isKilling (R := K) (L := L)
   refine ⟨fun hx p hp hp₀ ↦ ?_, isNilpotent_toEnd_of_forall_lift_eval_eq_zero L⟩
   obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
   exact lift_eval_eq_zero_of_mem_lieInvariants hp hp₀ (y := t) (a := -1)

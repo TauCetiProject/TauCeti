@@ -311,7 +311,7 @@ theorem Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative {P : R⟦X⟧[X]} 
     exact hG.eq_X_add_C (by rw [← hG.natDegree_map PowerSeries.constantCoeff, hGa,
       natDegree_X_sub_C])
   refine ⟨-G.coeff 0, H, ?_, hH, hHq, hGα ▸ hGH⟩
-  have h₀ := congrArg (coeff · 0) hGa
+  have h₀ := congrArg (fun p : R[X] ↦ p.coeff 0) hGa
   simp only [coeff_map, coeff_sub, coeff_X_zero, coeff_C_zero, zero_sub] at h₀
   rw [map_neg, h₀, neg_neg]
 

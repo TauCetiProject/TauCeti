@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 
@@ -30,7 +30,7 @@ for `H'_q` beyond `T₀`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`), and its
 energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u`
 over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`). So
-the results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder` about finite-energy Floer
+the results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` about finite-energy Floer
 half-cylinders apply at each end of the pair of pants.
 
 **Orbits at the ends.** Reversing the time of an orbit of `H'_∞` gives an orbit of `H_∞`, and
@@ -222,7 +222,7 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
   -- The closed band differs from the open one by a null set.
   have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc.symm
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc.symm
   -- On the open band the energy density is the Jacobian times the energy density of `u`.
   have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
       (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =

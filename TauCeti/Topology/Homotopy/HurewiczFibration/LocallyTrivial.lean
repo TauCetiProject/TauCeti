@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Numerable
 
 /-!
@@ -141,9 +141,8 @@ theorem isHurewiczFibration_of_exists_trivialization
     [NormalSpace B] [ParacompactSpace B]
     (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) :
     IsHurewiczFibration.{w} p := by
+  have hp := continuous_of_forall_exists_trivialization h
   choose e he using h
-  have hp : Continuous p := continuous_iff_continuousAt.2 fun x ↦
-    (e (p x)).continuousAt_proj ((e (p x)).mem_source.2 (he (p x)))
   exact isHurewiczFibration_of_isOpenCover hp
     (fun b ↦ (e b).open_baseSet) (fun b ↦ ⟨b, he b⟩)
     fun b ↦ (e b).isHurewiczFibration_restrict
@@ -165,7 +164,7 @@ theorem hasHomotopyLiftingProperty_proj [NormalSpace B] [ParacompactSpace B]
     (A : Type w) [TopologicalSpace A] :
     TauCeti.HasHomotopyLiftingProperty (TotalSpace.proj : TotalSpace F E → B) A :=
   TauCeti.hasHomotopyLiftingProperty_of_exists_trivialization
-    (fun b ↦ ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩) A
+    (exists_trivialization_mem_baseSet F E) A
 
 variable (F E) in
 /-- Over a normal paracompact base (including every paracompact Hausdorff base), the projection of
@@ -173,6 +172,6 @@ a fibre bundle is a Hurewicz fibration. -/
 theorem isHurewiczFibration_proj [NormalSpace B] [ParacompactSpace B] :
     TauCeti.IsHurewiczFibration.{w} (TotalSpace.proj : TotalSpace F E → B) :=
   TauCeti.isHurewiczFibration_of_exists_trivialization
-    fun b ↦ ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
+    (exists_trivialization_mem_baseSet F E)
 
 end FiberBundle

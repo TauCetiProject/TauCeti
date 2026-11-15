@@ -95,7 +95,7 @@ theorem IsPIndependentPair.eq_zero_of_sum_pow_mul_C_eq_zero [ExpChar k p]
     (h : ∑ i ∈ range p, ∑ j ∈ range p, P i j ^ p * C (a ^ i * b ^ j) = 0) {i j : ℕ} (hi : i < p)
     (hj : j < p) : P i j = 0 := by
   ext n
-  have hn := congrArg (coeff · (p * n)) h
+  have hn := congrArg (fun q : k[X] ↦ q.coeff (p * n)) h
   simp only [finsetSum_coeff, coeff_mul_C, coeff_pow_char_mul, coeff_zero] at hn
   exact hab.eq_zero (c := fun i j ↦ (P i j).coeff n) (by simpa only [mul_assoc] using hn) hi hj
 

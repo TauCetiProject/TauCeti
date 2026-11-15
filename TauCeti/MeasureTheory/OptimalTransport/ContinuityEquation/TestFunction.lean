@@ -154,7 +154,7 @@ theorem integral_integral_fderiv_eq_zero_of_hasCompactSupport (h : IsContinuityE
   · -- Mollification does not increase the bound on the derivative.
     have hw : ‖((1 : ℝ), w)‖ ≤ 1 + ‖w‖ := norm_prod_le_iff.2 ⟨by simp, by simp⟩
     have hLip : LipschitzWith ⟨C, hC0⟩ φ :=
-      lipschitzWith_of_nnnorm_fderiv_le (hφ.differentiable one_ne_zero) fun p ↦
+      lipschitzWith_of_nnNorm_fderiv_le (hφ.differentiable one_ne_zero) fun p ↦
         NNReal.coe_le_coe.1 (hC p)
     exact (hLip.norm_fderiv_normed_convolution_apply_le (β n) q (1, w)).trans
       (mul_le_mul_of_nonneg_left hw hC0)

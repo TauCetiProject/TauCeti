@@ -101,7 +101,7 @@ theorem fractionalIdeal_mk_mul_fractionalIdeal_mk
     have hβ := hτf ▸ idealGenerator_mem_fractionalIdeal f D hf
     have hβ' := hτg ▸ idealGenerator_mem_fractionalIdeal g D hg
     have hmul := fun {x y : QuadraticAlgebra ℚ (D : ℚ) 0} (hx : x ∈ f.fractionalIdeal D hf)
-        (hy : y ∈ g.fractionalIdeal D hg) ↦ mem_coe.mpr (mul_mem_mul hx hy)
+        (hy : y ∈ g.fractionalIdeal D hg) ↦ mem_coeToSubmodule.mpr (mul_mem_mul hx hy)
     have key : h.idealGenerator D =
         u • ((a : QuadraticAlgebra ℚ (D : ℚ) 0) * h.idealGenerator D) +
           (v * C) • (h.idealGenerator D * a') -
@@ -109,7 +109,7 @@ theorem fractionalIdeal_mk_mul_fractionalIdeal_mk
             C • ((a : QuadraticAlgebra ℚ (D : ℚ) 0) * a')) := by
       simp only [zsmul_eq_mul, Int.cast_mul]
       linear_combination -h.idealGenerator D * h1 + (w : QuadraticAlgebra ℚ (D : ℚ) 0) * hτ
-    rw [fractionalIdeal_le_iff, ← mem_coe, ← mem_coe, key]
+    rw [fractionalIdeal_le_iff, ← mem_coeToSubmodule, ← mem_coeToSubmodule, key]
     refine ⟨by simpa [f, g, h] using hmul hα hα', sub_mem
       (add_mem (zsmul_mem (hmul hα hβ') _) (zsmul_mem (hmul hβ hα') _))
       (zsmul_mem (add_mem (hmul hβ hβ') (zsmul_mem (hmul hα hα') _)) _)⟩

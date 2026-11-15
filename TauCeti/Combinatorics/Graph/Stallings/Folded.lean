@@ -15,7 +15,8 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 A labelled graph is folded when the label and initial vertex determine a dart. This makes
 the word and endpoints determine a path and ensures that a reduced path has a freely reduced
 label. Consequently a freely reduced word is accepted at a vertex exactly when it labels a
-closed path there (`StallingsGraph.mem_subgroup_iff_folded`).
+closed path there (`StallingsGraph.mem_subgroup_iff_folded`). Over a finite alphabet, a folded
+graph with finitely many vertices has finitely many darts.
 
 ## References
 
@@ -59,6 +60,12 @@ theorem IsFolded.labels_not_inverse (hS : S.IsFolded) {e f : S.graph.E}
   have hfr : f = S.graph.rev e := hS f (S.graph.rev e)
     (hsrc.trans (S.graph.src_rev e).symm) (by simpa only [S.label_rev] using h)
   exact hne hfr
+
+/-- Over a finite alphabet, a folded graph with finitely many vertices has finitely many
+darts. -/
+theorem IsFolded.finite_E [Finite α] [Finite S.graph.V] (hS : S.IsFolded) : Finite S.graph.E :=
+  Finite.of_injective (fun e => (S.graph.src e, S.label e)) fun e f h =>
+    hS e f (congrArg Prod.fst h) (congrArg Prod.snd h)
 
 /-- A reduced path in a folded graph reads a freely reduced word. -/
 theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}

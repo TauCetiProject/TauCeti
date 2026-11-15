@@ -443,15 +443,15 @@ factor, by `A`-algebra endomorphisms: `g • (a ⊗ x) = a ⊗ (g • x)`.
 This is not a global instance: when `G` also acts on `A`, Mathlib's action through the left factor
 would make the action of `G` on `A ⊗[K] L` ambiguous. -/
 noncomputable abbrev rightMulSemiringAction : MulSemiringAction G (A ⊗[K] L) where
-  smul g := Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
-  one_smul := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+  smul g := map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
+  one_smul := DFunLike.congr_fun (f := map (AlgHom.id A A)
     (MulSemiringAction.toAlgHom K L (1 : G))) (g := AlgHom.id A _)
-    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp)
-  mul_smul g h := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (ext' fun _ _ ↦ by simp)
+  mul_smul g h := DFunLike.congr_fun (f := map (AlgHom.id A A)
     (MulSemiringAction.toAlgHom K L (g * h)))
-    (g := (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).comp
-      (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h)))
-    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [mul_smul])
+    (g := (map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).comp
+      (map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h)))
+    (ext' fun _ _ ↦ by simp [mul_smul])
   smul_zero _ := map_zero _
   smul_add _ := map_add _
   smul_one _ := map_one _
@@ -463,7 +463,7 @@ variable {A L G}
 
 /-- The right-factor action of `g` is the `A`-algebra map `id ⊗ g`. -/
 theorem rightMulSemiringAction_smul_def (g : G) (z : A ⊗[K] L) :
-    g • z = Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g) z :=
+    g • z = map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g) z :=
   rfl
 
 /-- The right-factor action on a pure tensor. -/

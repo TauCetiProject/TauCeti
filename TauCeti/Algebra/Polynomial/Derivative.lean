@@ -15,8 +15,8 @@ import Mathlib.Algebra.Polynomial.FieldDivision
 # Polynomial derivatives
 
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
-iterated derivatives after a linear change of variables, and controlling degrees of derivatives
-under coefficient maps.
+iterated derivatives and their values after a linear change of variables, and controlling degrees
+of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
@@ -102,6 +102,21 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
     (k : ℕ) :
     derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
   simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
+
+/-- The `k`-th derivative of `p (a X + b)` at `x` is `a ^ k` times the `k`-th derivative of `p`
+at `a x + b`. -/
+theorem _root_.Polynomial.eval_iterate_derivative_comp_C_mul_X_add_C [CommSemiring R]
+    (p : R[X]) (a b x : R) (k : ℕ) :
+    (derivative^[k] (p.comp (C a * X + C b))).eval x =
+      a ^ k * (derivative^[k] p).eval (a * x + b) := by
+  simp only [iterate_derivative_comp_C_mul_X_add_C, eval_mul, eval_C, eval_comp, eval_add, eval_X]
+
+/-- The `k`-th derivative of `p (a X)` at `x` is `a ^ k` times the `k`-th derivative of `p` at
+`a x`. -/
+theorem _root_.Polynomial.eval_iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X])
+    (a x : R) (k : ℕ) :
+    (derivative^[k] (p.comp (C a * X))).eval x = a ^ k * (derivative^[k] p).eval (a * x) := by
+  simpa using p.eval_iterate_derivative_comp_C_mul_X_add_C a 0 x k
 
 /-- The derivative of the cubic `a (X - e₁)(X - e₂)(X - e₃)` at its root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`. -/
