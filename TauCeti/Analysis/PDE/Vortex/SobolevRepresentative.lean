@@ -97,14 +97,6 @@ private theorem contDiffAt_logModulus (hx : ContDiff ℝ ∞ x) {z : ℂ}
   have hs : ContDiff ℝ ∞ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by fun_prop
   exact (hs.contDiffAt.log (mul_ne_zero four_ne_zero hz)).div_const 2
 
-/-- The section takes the value `c` exactly when its real coordinates are `c.re / 2` and
-`c.im / 2`. -/
-private theorem sectionValue_eq_iff {z c : ℂ} :
-    sectionValue x z = c ↔ x z 2 = c.re / 2 ∧ x z 3 = c.im / 2 := by
-  rw [sectionValue_apply, Complex.ext_iff]
-  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
-  constructor <;> rintro ⟨h2, h3⟩ <;> constructor <;> linarith
-
 /-- In the trivialization untwisting the winding phase, a section `|α|` times the winding phase
 is the positive real function `|α| = exp ψ`, with coordinates `(exp ψ / 2, 0)`. -/
 private theorem gaugeTransform_inv_windingPhase_apply {w : ℂ}
@@ -112,7 +104,7 @@ private theorem gaugeTransform_inv_windingPhase_apply {w : ℂ}
     (hw' : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0) :
     gaugeTransform (windingPhase m)⁻¹ x w 2 = Real.exp (logModulus x w) / 2 ∧
       gaugeTransform (windingPhase m)⁻¹ x w 3 = 0 := by
-  have hs := sectionValue_gaugeTransform_inv_windingPhase hw
+  have hs := sectionValue_gaugeTransform_inv_eq hw
   rw [← exp_logModulus hw', sectionValue_eq_iff, ofReal_re, ofReal_im, zero_div] at hs
   exact hs
 
