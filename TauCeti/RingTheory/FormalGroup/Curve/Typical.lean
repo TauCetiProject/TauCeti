@@ -465,15 +465,6 @@ end Projector
 
 section AdditiveProjector
 
-private theorem coeff_toPowerSeries_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0)
-    (hunit : IsUnit (n : R)) (k : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
-    PowerSeries.coeff k ((𝔾ₐ (R := R)).cartierProjectorCurve n hn hunit γ).toPowerSeries =
-      if n ∣ k then 0 else PowerSeries.coeff k γ.toPowerSeries := by
-  rw [toPowerSeries_cartierProjectorCurve_𝔾ₐ, map_sub, PowerSeries.coeff_expand]
-  split_ifs with hdvd
-  · rw [PowerSeries.coeff_cartier, Nat.add_zero, Nat.mul_div_cancel' hdvd, sub_self]
-  · rw [sub_zero]
-
 private theorem coeff_toPowerSeries_pTypicalProjectorStage_𝔾ₐ_eq_zero (p : ℕ)
     (hunit : ∀ ⦃q : ℕ⦄, q.Prime → q ≠ p → IsUnit (q : R)) {N k q : ℕ} (hqN : q < N)
     (hq : q.Prime) (hqp : q ≠ p) (hqk : q ∣ k) (γ : (𝔾ₐ (R := R)).Curve) :
