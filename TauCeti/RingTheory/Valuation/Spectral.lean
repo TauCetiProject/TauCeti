@@ -7,14 +7,16 @@ module
 
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
+public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
+public import TauCeti.RingTheory.Valuation.NormNormalization
 
 import Mathlib.RingTheory.Polynomial.Subring
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# The spectral valuation of an algebraic extension
+# The spectral valuation and additive spectral valuation of an algebraic extension
 
 Let `K` be a complete nontrivially normed field with an ultrametric norm and `L` an algebraic
 field extension of `K`. Mathlib's spectral norm `spectralNorm K L` is then the unique
@@ -23,7 +25,15 @@ and it is multiplicative and nonarchimedean. So it is a rank-one valuation on `L
 *spectral valuation* `TauCeti.spectralValuation K L`: Mathlib's `NormedField.valuation` for the
 normed field structure `spectralNorm.normedField K L`.
 
-That normed field structure is not installed as an instance, because `L` often carries a
+More generally, over any complete ultrametric normed field `K` (including trivially normed fields)
+and any base `b > 1`, `TauCeti.spectralAddValuation K L b hb` is the canonical real additive
+valuation `-Real.logb b (spectralNorm K L x)` on `L` sending `0` to `⊤`. It recovers the spectral
+norm through `spectralNorm K L x = b ^ (-v x)` for `x ≠ 0`, restricts on `K` to
+`AddValuation.ofNorm b hb` (and hence to any real additive valuation recovering the norm of `K` at
+base `b`), is invariant under `K`-algebra homomorphisms and towers, and agrees with
+`AddValuation.ofNorm b hb` whenever `L` already carries a normed `K`-algebra structure.
+
+The spectral normed field structure is not installed as an instance, because `L` often carries a
 topology of its own. The typical case is a residue field `A ⧸ 𝔪` of a topological `K`-algebra,
 with the quotient topology. When `L` is finite over `K` and that topology makes it a Hausdorff
 topological `K`-vector space, the spectral valuation is continuous for it
@@ -41,6 +51,8 @@ support.
 
 * `TauCeti.spectralValuation`: the spectral norm of an algebraic extension, as a valuation with
   values in `ℝ≥0`.
+* `TauCeti.spectralAddValuation`: the real additive valuation `-Real.logb b (spectralNorm K L x)`
+  on an algebraic extension `L` of a complete ultrametric field `K`, with values in `WithTop ℝ`.
 
 ## Main results
 
@@ -51,6 +63,13 @@ support.
   valuation exactly when it compares elements of `K` by their norms.
 * `TauCeti.isContinuous_spectralValuation`: on a finite extension it is continuous for every
   Hausdorff topological `K`-vector space structure.
+* `TauCeti.spectralAddValuation_eq_coe_iff`,
+  `TauCeti.spectralNorm_eq_rpow_neg_spectralAddValuation`, and
+  `AddValuation.eq_spectralAddValuation_of_spectralNorm_eq_rpow`: spectral norm recovery and
+  uniqueness at a fixed base `b > 1`.
+* `TauCeti.spectralAddValuation_algebraMap`, `TauCeti.spectralAddValuation_algebraMap_eq`,
+  `AlgHom.spectralAddValuation_apply`, and `TauCeti.spectralAddValuation_eq_ofNorm`: compatibility
+  with scalars, `K`-algebra maps, towers, and normed `K`-algebra extensions.
 -/
 
 public section
@@ -163,5 +182,165 @@ theorem isContinuous_spectralValuation [FiniteDimensional K L] [TopologicalSpace
     (spectralAlgNorm K L).toSeminorm.continuous_of_finiteDimensional
   refine Valuation.isContinuous_of_forall_isOpen_lt fun γ ↦ ?_
   simpa [← NNReal.coe_lt_coe] using isOpen_lt hcont continuous_const
+
+end TauCeti
+
+namespace TauCeti
+
+section SpectralAddValuation
+
+variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
+
+variable (K L) in
+/-- **The additive spectral valuation** on an algebraic extension `L` of a complete ultrametric
+field `K` at base `b > 1`: it sends `0` to `⊤` and a nonzero `x` to
+`-Real.logb b (spectralNorm K L x) = -Real.log (spectralNorm K L x) / Real.log b`. -/
+def spectralAddValuation (b : ℝ) (hb : 1 < b) : AddValuation L (WithTop ℝ) :=
+  letI := spectralNormedField K L
+  haveI := isUltrametricDist_spectralNormedField K L
+  AddValuation.ofNorm b hb
+
+/-- Explicit `if`-expression for `TauCeti.spectralAddValuation`. -/
+theorem spectralAddValuation_apply {b : ℝ} (hb : 1 < b) (x : L) [Decidable (x = 0)] :
+    spectralAddValuation K L b hb x =
+      if x = 0 then ⊤ else ((-Real.logb b (spectralNorm K L x) : ℝ) : WithTop ℝ) := by
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · simp [hx, spectralAddValuation, AddValuation.ofNorm_of_ne_zero hb hx]
+
+/-- On a nonzero element, `TauCeti.spectralAddValuation` equals
+`-Real.logb b (spectralNorm K L x)`. -/
+theorem spectralAddValuation_of_ne_zero {b : ℝ} (hb : 1 < b) {x : L} (hx : x ≠ 0) :
+    spectralAddValuation K L b hb x = ((-Real.logb b (spectralNorm K L x) : ℝ) : WithTop ℝ) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.ofNorm_of_ne_zero hb hx
+
+/-- `WithTop.untop₀` of `TauCeti.spectralAddValuation` is `-Real.logb b (spectralNorm K L x)` for
+every `x`, including `0`. -/
+@[simp]
+theorem untop₀_spectralAddValuation {b : ℝ} (hb : 1 < b) (x : L) :
+    (spectralAddValuation K L b hb x).untop₀ = -Real.logb b (spectralNorm K L x) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.untop₀_ofNorm hb x
+
+/-- **Spectral norm recovery**: `spectralAddValuation K L b hb x = t` if and only if
+`spectralNorm K L x = b ^ (-t)`. -/
+theorem spectralAddValuation_eq_coe_iff {b : ℝ} (hb : 1 < b) {x : L} {t : ℝ} :
+    spectralAddValuation K L b hb x = t ↔ spectralNorm K L x = b ^ (-t) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.ofNorm_eq_coe_iff hb
+
+/-- Every nonzero element `x` of `L` satisfies
+`spectralNorm K L x = b ^ (-(spectralAddValuation K L b hb x).untop₀)`. -/
+theorem spectralNorm_eq_rpow_neg_spectralAddValuation {b : ℝ} (hb : 1 < b) {x : L} (hx : x ≠ 0) :
+    spectralNorm K L x = b ^ (-(spectralAddValuation K L b hb x).untop₀) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.norm_eq_rpow_neg_ofNorm_of_ne_zero hb hx
+
+/-- `TauCeti.spectralAddValuation` reverses the order of `spectralNorm K L`. -/
+theorem spectralAddValuation_le_iff {b : ℝ} (hb : 1 < b) {x y : L} :
+    spectralAddValuation K L b hb x ≤ spectralAddValuation K L b hb y ↔
+      spectralNorm K L y ≤ spectralNorm K L x :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.ofNorm_le_ofNorm_iff hb
+
+/-- `spectralAddValuation K L b hb x` is at least `t` if and only if
+`spectralNorm K L x ≤ b ^ (-t)`. -/
+theorem coe_le_spectralAddValuation_iff {b : ℝ} (hb : 1 < b) {x : L} {t : ℝ} :
+    (t : WithTop ℝ) ≤ spectralAddValuation K L b hb x ↔ spectralNorm K L x ≤ b ^ (-t) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.coe_le_ofNorm_iff hb
+
+/-- `spectralAddValuation K L b hb x` exceeds `t` if and only if
+`spectralNorm K L x < b ^ (-t)`. -/
+theorem coe_lt_spectralAddValuation_iff {b : ℝ} (hb : 1 < b) {x : L} {t : ℝ} :
+    (t : WithTop ℝ) < spectralAddValuation K L b hb x ↔ spectralNorm K L x < b ^ (-t) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.coe_lt_ofNorm_iff hb
+
+/-- On `K`, `TauCeti.spectralAddValuation` restricts to `AddValuation.ofNorm`. -/
+@[simp]
+theorem spectralAddValuation_algebraMap {b : ℝ} (hb : 1 < b) (c : K) :
+    spectralAddValuation K L b hb (algebraMap K L c) = AddValuation.ofNorm b hb c :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.ofNorm_eq_of_norm_eq hb (spectralNorm_extends c)
+
+/-- Pulling `TauCeti.spectralAddValuation` back to `K` gives `AddValuation.ofNorm`. -/
+@[simp]
+theorem comap_spectralAddValuation {b : ℝ} (hb : 1 < b) :
+    (spectralAddValuation K L b hb).comap (algebraMap K L) = AddValuation.ofNorm b hb :=
+  AddValuation.ext fun c ↦ spectralAddValuation_algebraMap hb c
+
+/-- On `K`, `TauCeti.spectralAddValuation` restricts to any real additive valuation `v` recovering
+the norm of `K` at base `b`. -/
+theorem spectralAddValuation_algebraMap_eq (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (c : K) :
+    spectralAddValuation K L b hb (algebraMap K L c) = v c := by
+  rw [spectralAddValuation_algebraMap, ← v.eq_ofNorm_of_norm_eq_rpow hb hv]
+
+/-- `K`-algebra homomorphisms of algebraic extensions preserve `TauCeti.spectralAddValuation`. -/
+theorem _root_.AlgHom.spectralAddValuation_apply {E : Type*} [Field E] [Algebra K E]
+    [Algebra.IsAlgebraic K E] (ψ : E →ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : E) :
+    spectralAddValuation K L b hb (ψ x) = spectralAddValuation K E b hb x := by
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  let := spectralNormedField K E
+  have := isUltrametricDist_spectralNormedField K E
+  exact AddValuation.ofNorm_eq_of_norm_eq hb (ψ.spectralNorm_map x)
+
+/-- `K`-algebra automorphisms of `L` preserve `TauCeti.spectralAddValuation`. -/
+@[simp]
+theorem _root_.AlgEquiv.spectralAddValuation_apply (σ : L ≃ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : L) :
+    spectralAddValuation K L b hb (σ x) = spectralAddValuation K L b hb x :=
+  (σ : L →ₐ[K] L).spectralAddValuation_apply hb x
+
+/-- In a tower `K → E → L` of algebraic extensions, `TauCeti.spectralAddValuation` on `L`
+restricts to `TauCeti.spectralAddValuation` on `E`. -/
+theorem spectralAddValuation_eq_of_tower {E : Type*} [Field E] [Algebra K E]
+    [Algebra.IsAlgebraic K E] [Algebra E L] [IsScalarTower K E L] {b : ℝ} (hb : 1 < b) (x : E) :
+    spectralAddValuation K L b hb (algebraMap E L x) = spectralAddValuation K E b hb x :=
+  (IsScalarTower.toAlgHom K E L).spectralAddValuation_apply hb x
+
+/-- **Uniqueness**: a real additive valuation on `L` recovering `spectralNorm K L` at base `b > 1`
+equals `TauCeti.spectralAddValuation K L b hb`. -/
+theorem _root_.AddValuation.eq_spectralAddValuation_of_spectralNorm_eq_rpow
+    (w : AddValuation L (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hw : ∀ x ≠ 0, spectralNorm K L x = b ^ (-(w x).untop₀)) :
+    w = spectralAddValuation K L b hb :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  w.eq_ofNorm_of_norm_eq_rpow hb hw
+
+/-- Changing the base from `b` to `b'` scales `TauCeti.spectralAddValuation` by
+`Real.log b / Real.log b'`. -/
+theorem spectralAddValuation_eq_map_spectralAddValuation {b b' : ℝ} (hb : 1 < b) (hb' : 1 < b')
+    (x : L) :
+    spectralAddValuation K L b' hb' x =
+      WithTop.map (fun t ↦ (Real.log b / Real.log b') * t) (spectralAddValuation K L b hb x) :=
+  let := spectralNormedField K L
+  have := isUltrametricDist_spectralNormedField K L
+  AddValuation.ofNorm_eq_map_ofNorm hb hb' x
+
+end SpectralAddValuation
+
+/-- When `L` already carries a normed `K`-algebra structure, `TauCeti.spectralAddValuation` agrees
+with `AddValuation.ofNorm` on `L`. -/
+theorem spectralAddValuation_eq_ofNorm {K L : Type*} [NormedField K] [IsUltrametricDist K]
+    [CompleteSpace K] [NormedField L] [IsUltrametricDist L] [NormedAlgebra K L]
+    [Algebra.IsAlgebraic K L] {b : ℝ} (hb : 1 < b) :
+    spectralAddValuation K L b hb = AddValuation.ofNorm b hb :=
+  AddValuation.eq_ofNorm_of_norm_eq_rpow _ hb fun x hx ↦
+    (norm_eq_spectralNorm K x).trans (spectralNorm_eq_rpow_neg_spectralAddValuation hb hx)
 
 end TauCeti

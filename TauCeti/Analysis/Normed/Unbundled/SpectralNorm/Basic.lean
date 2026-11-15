@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+import Mathlib.Analysis.Normed.Algebra.Ultra
 
 /-!
 # Basic properties of polynomial spectral values and spectral norms
@@ -15,9 +16,13 @@ This file collects elementary vanishing, invariance, scaling, and tower-descent 
 `spectralValue` and `spectralNorm` that do not depend on separability, trace, or completeness
 assumptions.
 
-In addition, in an algebraic normed field extension of a complete ultrametric field the norm is
-the spectral norm, so an element `x` whose minimal polynomial has degree `d` and constant
-coefficient `a₀` satisfies `‖x‖ ^ d = ‖a₀‖`.
+In addition, over any complete ultrametric field `K` (including trivially normed fields), the
+spectral norm on an algebraic extension `L` is multiplicative (`TauCeti.spectralNorm_mul_eq`) and
+defines an unbundled ultrametric normed `K`-algebra structure (`TauCeti.spectralNormedField`,
+`TauCeti.isUltrametricDist_spectralNormedField`, `TauCeti.spectralNormedAlgebra`). In any algebraic
+normed field extension of `K` the norm coincides with the spectral norm
+(`TauCeti.norm_eq_spectralNorm`), so an element `x` whose minimal polynomial has degree `d` and
+constant coefficient `a₀` satisfies `‖x‖ ^ d = ‖a₀‖`.
 
 ## Main results
 
@@ -39,6 +44,10 @@ coefficient `a₀` satisfies `‖x‖ ^ d = ‖a₀‖`.
   `TauCeti.spectralNorm_eq_norm_rpow_of_pow_eq_algebraMap`: if a positive power `x ^ n` lies in the
   base field `K`, then `spectralNorm K M x ^ n` equals the base norm of `x ^ n` without requiring
   the ambient field extension `M / K` to be algebraic.
+* `TauCeti.spectralNorm_eq_one_of_forall_norm_le_one`, `TauCeti.spectralNorm_mul_eq`,
+  `TauCeti.spectralNormedField`, `TauCeti.spectralNormedAlgebra`, and
+  `TauCeti.norm_eq_spectralNorm`: multiplicativity, unbundled normed field structure, and
+  uniqueness of the norm on algebraic extensions of any complete ultrametric field.
 * `NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero`: `‖x‖ ^ d = ‖a₀‖` for `x` with
   minimal polynomial of degree `d` and constant coefficient `a₀`.
 -/
@@ -259,6 +268,112 @@ theorem spectralNorm_eq_zero_of_not_isAlgebraic {K L : Type*} [NormedField K] [F
     funext fun n ↦ spectralValueTerms_of_natDegree_le _ (by simp)
   rw [spectralNorm, minpoly.eq_zero fun h ↦ hy h.isAlgebraic, spectralValue, h0]
   exact ciSup_const
+
+/-- Over a trivially normed field (`∀ c : K, ‖c‖ ≤ 1`), every nonzero element integral over `K`
+has spectral norm `1`. -/
+theorem spectralNorm_eq_one_of_forall_norm_le_one {K L : Type*} [NormedField K] [Field L]
+    [Algebra K L] (hK : ∀ c : K, ‖c‖ ≤ 1) {y : L} (hy : IsIntegral K y) (hy0 : y ≠ 0) :
+    spectralNorm K L y = 1 := by
+  refine le_antisymm
+    ((spectralValue_le_one_iff (minpoly.monic hy)).2 fun n ↦ hK _) ?_
+  have hc0 : (minpoly K y).coeff 0 ≠ 0 := minpoly.coeff_zero_ne_zero hy hy0
+  have hnorm0 : ‖(minpoly K y).coeff 0‖ = 1 :=
+    le_antisymm (hK _)
+      ((inv_le_one₀ (norm_pos_iff.2 hc0)).1 (norm_inv ((minpoly K y).coeff 0) ▸ hK _))
+  have hterm : spectralValueTerms (minpoly K y) 0 = 1 := by
+    rw [spectralValueTerms_of_lt_natDegree _ (minpoly.natDegree_pos hy), hnorm0, Real.one_rpow]
+  exact hterm ▸ le_ciSup (spectralValueTerms_bddAbove (minpoly K y)) 0
+
+section CompleteSpace
+
+variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
+
+/-- Over any complete ultrametric field `K`, the spectral norm on an algebraic extension `L` is
+multiplicative, without requiring the norm on `K` to be nontrivial. -/
+theorem spectralNorm_mul_eq (x y : L) :
+    spectralNorm K L (x * y) = spectralNorm K L x * spectralNorm K L y := by
+  by_cases h : ∃ c : K, 1 < ‖c‖
+  · let : NontriviallyNormedField K := { non_trivial := h }
+    exact spectralAlgNorm_mul x y
+  · push Not at h
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp [spectralNorm_zero]
+    rcases eq_or_ne y 0 with rfl | hy
+    · simp [spectralNorm_zero]
+    rw [spectralNorm_eq_one_of_forall_norm_le_one h (Algebra.IsIntegral.isIntegral (x * y))
+        (mul_ne_zero hx hy),
+      spectralNorm_eq_one_of_forall_norm_le_one h (Algebra.IsIntegral.isIntegral x) hx,
+      spectralNorm_eq_one_of_forall_norm_le_one h (Algebra.IsIntegral.isIntegral y) hy, mul_one]
+
+variable (K L) in
+/-- An algebraic field extension `L` of any complete ultrametric field `K`, equipped with the
+spectral norm as a `NormedField`. Not registered as an instance because `L` may carry its own
+topology or norm. -/
+@[expose, instance_reducible]
+noncomputable def spectralNormedField : NormedField L :=
+  { (inferInstance : Field L) with
+    norm x := spectralNorm K L x
+    dist x y := spectralNorm K L (x - y)
+    dist_self x := by simp [sub_self, spectralNorm_zero]
+    dist_comm x y := by rw [← neg_sub, spectralNorm_neg (Algebra.IsAlgebraic.isAlgebraic _)]
+    dist_triangle x y z :=
+      sub_add_sub_cancel x y z ▸ isNonarchimedean_spectralNorm.add_le spectralNorm_nonneg
+    eq_of_dist_eq_zero hxy :=
+      sub_eq_zero.1 (eq_zero_of_map_spectralNorm_eq_zero hxy (Algebra.IsAlgebraic.isAlgebraic _))
+    dist_eq x y := by
+      rw [← spectralNorm_neg (Algebra.IsAlgebraic.isAlgebraic (x - y)),
+        sub_eq_add_neg, neg_add, neg_neg]
+    norm_mul := spectralNorm_mul_eq
+    edist_dist x y := by rw [ENNReal.ofReal_eq_coe_nnreal] }
+
+/-- The norm of `TauCeti.spectralNormedField K L` is `spectralNorm K L`. -/
+@[simp]
+theorem norm_spectralNormedField (x : L) :
+    @Norm.norm L (spectralNormedField K L).toNorm x = spectralNorm K L x :=
+  (rfl)
+
+/-- The spectral norm on `L` defines an ultrametric distance. -/
+theorem isUltrametricDist_spectralNormedField (K L : Type*) [NormedField K] [IsUltrametricDist K]
+    [CompleteSpace K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] :
+    @IsUltrametricDist L (spectralNormedField K L).toDist :=
+  let := spectralNormedField K L
+  IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm isNonarchimedean_spectralNorm
+
+/-- `L` equipped with `TauCeti.spectralNormedField K L` is a `NormedAlgebra` over `K`. -/
+@[expose, instance_reducible]
+noncomputable def spectralNormedAlgebra (K L : Type*) [NormedField K] [IsUltrametricDist K]
+    [CompleteSpace K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] :
+    @NormedAlgebra K L _ (spectralNormedField K L).toNormedCommRing.toNormedRing.toSeminormedRing :=
+  letI := spectralNormedField K L
+  { (inferInstance : Algebra K L) with
+    norm_smul_le r x := (spectralNorm_smul r (Algebra.IsAlgebraic.isAlgebraic x)).le }
+
+end CompleteSpace
+
+/-- In an algebraic normed field extension `L` of any complete ultrametric field `K`, the norm on
+`L` coincides with `spectralNorm K L`. -/
+theorem norm_eq_spectralNorm (K : Type*) {L : Type*} [NormedField K] [IsUltrametricDist K]
+    [CompleteSpace K] [NormedField L] [NormedAlgebra K L] [Algebra.IsAlgebraic K L] (x : L) :
+    ‖x‖ = spectralNorm K L x := by
+  by_cases h : ∃ c : K, 1 < ‖c‖
+  · let : NontriviallyNormedField K := { non_trivial := h }
+    exact NormedAlgebra.norm_eq_spectralNorm K x
+  · push Not at h
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp [spectralNorm_zero]
+    have : IsUltrametricDist L := .of_normedAlgebra K
+    have hle : ∀ y : L, ‖y‖ ≤ spectralNorm K L y := fun y ↦
+      norm_le_spectralNorm (f := (NormedAlgebra.toMulAlgebraNorm K L).toAlgebraNorm)
+        (MulRingNorm.isPowMul (NormedAlgebra.toMulAlgebraNorm K L).toMulRingNorm)
+        IsUltrametricDist.norm_add_le_max (Algebra.IsAlgebraic.isAlgebraic y)
+    have hspec : spectralNorm K L x = 1 :=
+      spectralNorm_eq_one_of_forall_norm_le_one h (Algebra.IsIntegral.isIntegral x) hx
+    have hinv : ‖x⁻¹‖ ≤ 1 := (hle x⁻¹).trans_eq <|
+      spectralNorm_eq_one_of_forall_norm_le_one h (Algebra.IsIntegral.isIntegral x⁻¹)
+        (inv_ne_zero hx)
+    exact (le_antisymm ((hle x).trans_eq hspec)
+      ((inv_le_one₀ (norm_pos_iff.2 hx)).1 (norm_inv x ▸ hinv))).trans hspec.symm
 
 end TauCeti
 
