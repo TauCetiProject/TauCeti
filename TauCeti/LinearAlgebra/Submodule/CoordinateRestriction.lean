@@ -8,15 +8,17 @@ module
 public import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 public import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Complex.Module
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # Restricting subspaces to base-field coordinates
 
-For an algebra `S` over `R`, the vectors over `R` whose coordinatewise images belong to an
-`S`-submodule `W` form `(W.restrictScalars R).comap (Pi.algebraMap ι R S)`. A proper `W` gives
-a proper submodule over `R`: containing every base-ring vector would force `W` to contain the
-standard basis over `S`. Over fields, restriction cannot increase dimension, although it can
-strictly decrease it.
+Let `ι` be a finite index type. For an algebra `S` over `R`, the vectors in `ι → R` whose
+coordinatewise images belong to an `S`-submodule `W` form
+`(W.restrictScalars R).comap (Pi.algebraMap ι R S)`. A proper `W` gives a proper submodule over `R`:
+containing every base-ring vector would force `W` to contain the standard basis over `S`.
+For a faithful algebra of commutative rings with `S` a domain,
+restriction cannot increase `Module.finrank`, although it can strictly decrease it.
 
 Finite covers by proper subspaces therefore pull back to finite covers by proper subspaces,
 without increasing the number of subspaces. This is the linear-algebra step in descent of
@@ -33,8 +35,9 @@ namespace Submodule
 
 variable {ι R S : Type*} [Finite ι] [CommSemiring R] [Semiring S] [Algebra R S]
 
-/-- An `S`-submodule containing all vectors with coordinates in the base ring is the whole
-coordinate module. In particular, restriction to base-ring coordinates preserves properness. -/
+/-- For a finite index type `ι`, the restriction of an `S`-submodule of `ι → S` to
+base-ring coordinates is the whole coordinate module if and only if the original submodule is.
+In particular, restriction to base-ring coordinates preserves properness. -/
 @[simp]
 theorem comap_piAlgebraMap_eq_top_iff (W : Submodule S (ι → S)) :
     (W.restrictScalars R).comap (Pi.algebraMap ι R S) = ⊤ ↔ W = ⊤ := by
@@ -43,8 +46,9 @@ theorem comap_piAlgebraMap_eq_top_iff (W : Submodule S (ι → S)) :
   · intro h
     rw [eq_top_iff_forall_basis_mem (Pi.basisFun S ι)]
     intro i
-    have hi : Pi.algebraMap ι R S (Pi.basisFun R ι i) ∈ W :=
-      (eq_top_iff'.mp h) (Pi.basisFun R ι i)
+    have hi : Pi.algebraMap ι R S (Pi.basisFun R ι i) ∈ W := by
+      simpa only [mem_comap, restrictScalars_mem] using
+        (eq_top_iff'.mp h) (Pi.basisFun R ι i)
     have he : Pi.algebraMap ι R S (Pi.basisFun R ι i) = Pi.basisFun S ι i := by
       ext j
       by_cases hj : j = i <;> simp [Pi.algebraMap, Pi.basisFun_apply, hj]
@@ -56,33 +60,41 @@ end Submodule
 
 namespace Submodule
 
-variable {ι K L : Type*} [Finite ι] [Field K] [Field L] [Algebra K L]
+variable (R : Type*) {ι S : Type*} [Finite ι] [CommRing R] [CommRing S]
+  [Algebra R S] [FaithfulSMul R S] [IsDomain S]
 
-/-- The dimension of the base-field vectors in a subspace is at most the dimension of that
-subspace over the larger field. No finiteness assumption on the field extension is needed. -/
-theorem finrank_comap_piAlgebraMap_le (W : Submodule L (ι → L)) :
-    Module.finrank K ((W.restrictScalars K).comap (Pi.algebraMap ι K L)) ≤
-      Module.finrank L W := by
+/-- For a finite index type `ι` and a faithful algebra of commutative rings with `S` a domain,
+the `R`-finrank of the restriction of `W : Submodule S (ι → S)` to `ι → R` is at most the
+`S`-finrank of `W`. In particular, over fields no finiteness assumption on the extension is
+needed. -/
+theorem finrank_comap_piAlgebraMap_le (W : Submodule S (ι → S)) :
+    Module.finrank R ((W.restrictScalars R).comap (Pi.algebraMap ι R S)) ≤
+      Module.finrank S W := by
   classical
-  let U := (W.restrictScalars K).comap (Pi.algebraMap ι K L)
-  let b := Module.finBasis K U
-  have hb := b.linearIndependent.map' U.subtype U.ker_subtype
-  have hL := (linearIndependent_algebraMap_comp_iff (S := L)).mpr hb
-  let v (i : Fin (Module.finrank K U)) : W :=
-    ⟨Pi.algebraMap ι K L (b i), (b i).property⟩
-  have hv : LinearIndependent L v := hL.of_comp W.subtype
-  simpa using hv.fintype_card_le_finrank
+  let U := (W.restrictScalars R).comap (Pi.algebraMap ι R S)
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_finrank (R := R) (M := U) le_rfl
+  have hR := hv.map' U.subtype U.ker_subtype
+  have hmap (x : ι → R) : Pi.algebraMap ι R S x = algebraMap R S ∘ x := rfl
+  have hS : LinearIndependent S (fun i ↦ Pi.algebraMap ι R S (v i)) := by
+    simpa only [hmap, Submodule.coe_subtype, Function.comp_apply] using
+      (linearIndependent_algebraMap_comp_iff (S := S)).mpr hR
+  have hmem (i) : Pi.algebraMap ι R S (v i) ∈ W := by
+    simpa only [U, mem_comap, restrictScalars_mem] using (v i).property
+  have hW : LinearIndependent S (fun i ↦ (⟨Pi.algebraMap ι R S (v i), hmem i⟩ : W)) :=
+    hS.codRestrict W hmem
+  simpa only [Cardinal.mk_fin, Cardinal.lift_natCast, ← W.finrank_eq_rank,
+    Nat.cast_le] using hW.cardinal_lift_le_rank
 
 end Submodule
 
 namespace Finset
 
-variable {ι R S : Type*} [Finite ι] [CommSemiring R] [Semiring S] [Algebra R S]
+variable (R : Type*) {ι S : Type*} [Finite ι] [CommSemiring R] [Semiring S] [Algebra R S]
 
-/-- A finite family of proper submodules over an algebra restricts to a family of proper
-submodules over the base ring, with the same covered base-ring vectors and no larger cardinality.
-Distinct submodules are allowed to have the same restriction. -/
-theorem exists_submodule_cover_of_piAlgebraMap (T : Finset (Submodule S (ι → S)))
+/-- For a finite index type `ι`, a finite family of proper `S`-submodules of `ι → S` restricts
+to a family of proper `R`-submodules of `ι → R`, with the same covered base-ring vectors and no
+larger cardinality. Distinct submodules are allowed to have the same restriction. -/
+theorem exists_finset_submodule_card_le_and_piAlgebraMap_mem_iff (T : Finset (Submodule S (ι → S)))
     (hT : ∀ W ∈ T, W ≠ ⊤) :
     ∃ T₀ : Finset (Submodule R (ι → R)), T₀.card ≤ T.card ∧
       (∀ U ∈ T₀, U ≠ ⊤) ∧ ∀ x : ι → R,
@@ -104,7 +116,9 @@ example :
       (Pi.algebraMap (Fin 2) ℝ ℂ) = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro x hx
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
+  rw [Submodule.mem_comap, Submodule.restrictScalars_mem,
+    Submodule.mem_span_singleton] at hx
+  obtain ⟨c, hc⟩ := hx
   have h₀ := congrArg (fun y : Fin 2 → ℂ ↦ (y 0).im) hc
   have h₁ := congrArg (fun y : Fin 2 → ℂ ↦ (y 1).im) hc
   have hc₀ : c = 0 := by
