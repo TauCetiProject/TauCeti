@@ -10,8 +10,9 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm (including bounds
+on powers, finite products, and commutators), and an estimate for `‖w - 1‖` with `‖w‖ = 1` when the
+norm is multiplicative.
 -/
 
 public section
@@ -124,6 +125,13 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- In a seminormed ring, the commutator `a * b - b * a` has norm at most `2 * ‖a‖ * ‖b‖`. -/
+theorem norm_commutator_le {A : Type*} [NonUnitalSeminormedRing A] (a b : A) :
+    ‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖ :=
+  calc ‖a * b - b * a‖ ≤ ‖a * b‖ + ‖b * a‖ := norm_sub_le _ _
+    _ ≤ ‖a‖ * ‖b‖ + ‖b‖ * ‖a‖ := add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
+    _ = 2 * ‖a‖ * ‖b‖ := by ring
 
 end TauCeti
 
