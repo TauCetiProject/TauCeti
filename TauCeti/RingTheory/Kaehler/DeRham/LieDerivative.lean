@@ -30,9 +30,11 @@ Whenever `δ` satisfies the Kähler lift condition `∀ r : R, D R S (δ (algebr
   `TauCeti.KaehlerDeRham.grading R S p`;
 * `δ.deRhamLieDeriv hδ` commutes with `TauCeti.KaehlerDeRham.extDeriv R S`
   (`Derivation.extDeriv_deRhamLieDeriv`) and is uniquely determined as a `k`-linear derivation of
-  `ExteriorAlgebra S Ω[S⁄R]` by these properties (`Derivation.deRhamLieDeriv_unique`);
-* `deRhamLieDeriv` preserves commutators (`Derivation.deRhamLieDeriv_commutator`), so commuting
-  derivations of `S` lift to commuting derivations of `ExteriorAlgebra S Ω[S⁄R]`
+  `ExteriorAlgebra S Ω[S⁄R]` by its action on `S` and commutation with `extDeriv R S` on `S`
+  (`Derivation.deRhamLieDeriv_unique`);
+* `deRhamLieDeriv` respects linearity in the derivation, naturality along `R`-algebra homomorphisms
+  (`Derivation.map_deRhamLieDeriv`), and commutators (`Derivation.deRhamLieDeriv_commutator`), so
+  commuting derivations of `S` lift to commuting derivations of `ExteriorAlgebra S Ω[S⁄R]`
   (`Derivation.commute_deRhamLieDeriv_of_bracket_eq_zero`).
 
 ## Main definitions
@@ -46,7 +48,12 @@ Whenever `δ` satisfies the Kähler lift condition `∀ r : R, D R S (δ (algebr
   `S`-scalar Leibniz rule.
 * `Derivation.extDeriv_deRhamLieDeriv`: `extDeriv R S` commutes with `δ.deRhamLieDeriv hδ`.
 * `Derivation.deRhamLieDeriv_unique`: uniqueness of `δ.deRhamLieDeriv hδ` as a `k`-derivation of
-  `ExteriorAlgebra S Ω[S⁄R]` extending `δ` on `S` and commuting with `extDeriv R S`.
+  `ExteriorAlgebra S Ω[S⁄R]` extending `δ` on `S` and commuting with `extDeriv R S` on `S`.
+* `Derivation.deRhamLieDeriv_congr`, `Derivation.deRhamLieDeriv_zero`,
+  `Derivation.deRhamLieDeriv_add`, `Derivation.deRhamLieDeriv_neg`,
+  `Derivation.deRhamLieDeriv_sub`, `Derivation.smul_deRhamLieDeriv`: congruence and linearity in
+  the derivation.
+* `Derivation.map_deRhamLieDeriv`: naturality with `TauCeti.KaehlerDeRham.map`.
 * `Derivation.deRhamLieDeriv_commutator`: `(⁅δ₁, δ₂⁆).deRhamLieDeriv` is the commutator of
   `δ₁.deRhamLieDeriv` and `δ₂.deRhamLieDeriv`.
 * `Derivation.commute_deRhamLieDeriv_of_bracket_eq_zero`: commuting derivations of `S` lift to
@@ -58,7 +65,7 @@ Whenever `δ` satisfies the Kähler lift condition `∀ r : R, D R S (δ (algebr
 `[CommRing R]` and `[Algebra R S]`), without requiring `[Algebra k R]` or `[IsScalarTower k R S]`:
 `Ω[S⁄R]` and `ExteriorAlgebra S Ω[S⁄R]` inherit `Module k` and `[IsScalarTower k S _]` directly
 from `[Algebra k S]`. The extension from `(δ, δ.kaehlerLieDeriv hδ)` to `ExteriorAlgebra S Ω[S⁄R]`
-is obtained from `TauCeti.ExteriorAlgebra.liftTwistedDerivation` with untwisted endomorphism
+is obtained from `ExteriorAlgebra.liftTwistedDerivation` with untwisted endomorphism
 `σ = AlgHom.id S _`.
 
 ## References
@@ -84,13 +91,13 @@ degree one. -/
 noncomputable def deRhamLieDeriv (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) :
     Module.End k (ExteriorAlgebra S Ω[S⁄R]) :=
-  TauCeti.ExteriorAlgebra.liftTwistedDerivation
+  ExteriorAlgebra.liftTwistedDerivation
     (AlgHom.id S (ExteriorAlgebra S Ω[S⁄R]))
     ((Algebra.linearMap S (ExteriorAlgebra S Ω[S⁄R])).compDer δ)
-    (fun s x ↦ by simpa using Algebra.commutes (δ s) x)
+    (fun s ω ↦ by simpa using Algebra.commutes (δ s) (ExteriorAlgebra.ι S ω))
     (((ExteriorAlgebra.ι S).restrictScalars k).comp (δ.kaehlerLieDeriv hδ))
     (fun s ω ↦ by simp [Algebra.smul_def])
-    (fun ω ↦ ExteriorAlgebra.ι_add_mul_swap (δ.kaehlerLieDeriv hδ ω) ω)
+    (fun ω ↦ by simp)
 
 /-- On degree-zero elements `algebraMap S _ s`, `δ.deRhamLieDeriv hδ` acts by `δ`. -/
 @[simp]
@@ -98,27 +105,14 @@ theorem deRhamLieDeriv_algebraMap (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) (s : S) :
     δ.deRhamLieDeriv hδ (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) =
       algebraMap S (ExteriorAlgebra S Ω[S⁄R]) (δ s) := by
-  simpa [deRhamLieDeriv] using
-    TauCeti.ExteriorAlgebra.liftTwistedDerivation_algebraMap
-      (AlgHom.id S (ExteriorAlgebra S Ω[S⁄R]))
-      ((Algebra.linearMap S (ExteriorAlgebra S Ω[S⁄R])).compDer δ)
-      (fun s x ↦ by simpa using Algebra.commutes (δ s) x)
-      (((ExteriorAlgebra.ι S).restrictScalars k).comp (δ.kaehlerLieDeriv hδ))
-      (fun s ω ↦ by simp [Algebra.smul_def])
-      (fun ω ↦ ExteriorAlgebra.ι_add_mul_swap (δ.kaehlerLieDeriv hδ ω) ω) s
+  simp [deRhamLieDeriv]
 
 /-- `δ.deRhamLieDeriv hδ` annihilates `1`. -/
 @[simp]
 theorem deRhamLieDeriv_one (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) :
-    δ.deRhamLieDeriv hδ 1 = 0 :=
-  TauCeti.ExteriorAlgebra.liftTwistedDerivation_one
-    (AlgHom.id S (ExteriorAlgebra S Ω[S⁄R]))
-    ((Algebra.linearMap S (ExteriorAlgebra S Ω[S⁄R])).compDer δ)
-    (fun s x ↦ by simpa using Algebra.commutes (δ s) x)
-    (((ExteriorAlgebra.ι S).restrictScalars k).comp (δ.kaehlerLieDeriv hδ))
-    (fun s ω ↦ by simp [Algebra.smul_def])
-    (fun ω ↦ ExteriorAlgebra.ι_add_mul_swap (δ.kaehlerLieDeriv hδ ω) ω)
+    δ.deRhamLieDeriv hδ 1 = 0 := by
+  simp [deRhamLieDeriv]
 
 /-- On `1`-forms `ι ω`, `δ.deRhamLieDeriv hδ` acts through `δ.kaehlerLieDeriv hδ`. -/
 @[simp]
@@ -126,21 +120,7 @@ theorem deRhamLieDeriv_ι (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) (ω : Ω[S⁄R]) :
     δ.deRhamLieDeriv hδ (ExteriorAlgebra.ι S ω) =
       ExteriorAlgebra.ι S (δ.kaehlerLieDeriv hδ ω) := by
-  simpa [deRhamLieDeriv] using
-    TauCeti.ExteriorAlgebra.liftTwistedDerivation_ι
-      (AlgHom.id S (ExteriorAlgebra S Ω[S⁄R]))
-      ((Algebra.linearMap S (ExteriorAlgebra S Ω[S⁄R])).compDer δ)
-      (fun s x ↦ by simpa using Algebra.commutes (δ s) x)
-      (((ExteriorAlgebra.ι S).restrictScalars k).comp (δ.kaehlerLieDeriv hδ))
-      (fun s ω ↦ by simp [Algebra.smul_def])
-      (fun ω ↦ ExteriorAlgebra.ι_add_mul_swap (δ.kaehlerLieDeriv hδ ω) ω) ω
-
-/-- On exact `1`-forms `ι (D R S s)`, `δ.deRhamLieDeriv hδ` sends `ι (D s)` to `ι (D (δ s))`. -/
-theorem deRhamLieDeriv_ι_D (δ : Derivation k S S)
-    (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) (s : S) :
-    δ.deRhamLieDeriv hδ (ExteriorAlgebra.ι S (KaehlerDifferential.D R S s)) =
-      ExteriorAlgebra.ι S (KaehlerDifferential.D R S (δ s)) := by
-  simp
+  simp [deRhamLieDeriv]
 
 /-- **Even Leibniz rule** for `δ.deRhamLieDeriv hδ` on exterior products. -/
 @[simp]
@@ -148,15 +128,8 @@ theorem deRhamLieDeriv_mul (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0)
     (x y : ExteriorAlgebra S Ω[S⁄R]) :
     δ.deRhamLieDeriv hδ (x * y) =
-      δ.deRhamLieDeriv hδ x * y + x * δ.deRhamLieDeriv hδ y := by
-  simpa [deRhamLieDeriv] using
-    TauCeti.ExteriorAlgebra.liftTwistedDerivation_mul
-      (AlgHom.id S (ExteriorAlgebra S Ω[S⁄R]))
-      ((Algebra.linearMap S (ExteriorAlgebra S Ω[S⁄R])).compDer δ)
-      (fun s x ↦ by simpa using Algebra.commutes (δ s) x)
-      (((ExteriorAlgebra.ι S).restrictScalars k).comp (δ.kaehlerLieDeriv hδ))
-      (fun s ω ↦ by simp [Algebra.smul_def])
-      (fun ω ↦ ExteriorAlgebra.ι_add_mul_swap (δ.kaehlerLieDeriv hδ ω) ω) x y
+      δ.deRhamLieDeriv hδ x * y + x * δ.deRhamLieDeriv hδ y :=
+  ExteriorAlgebra.liftTwistedDerivation_mul _ _ _ _ _ _ x y
 
 /-- `δ.deRhamLieDeriv hδ` belongs to the Lie algebra of `k`-derivations of
 `ExteriorAlgebra S Ω[S⁄R]`. -/
@@ -171,40 +144,33 @@ theorem deRhamLieDeriv_smul (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0)
     (s : S) (x : ExteriorAlgebra S Ω[S⁄R]) :
     δ.deRhamLieDeriv hδ (s • x) = δ s • x + s • δ.deRhamLieDeriv hδ x := by
-  rw [Algebra.smul_def, deRhamLieDeriv_mul, deRhamLieDeriv_algebraMap, ← Algebra.smul_def,
-    ← Algebra.smul_def]
+  simp [deRhamLieDeriv, ← Algebra.smul_def]
 
 /-- `δ.deRhamLieDeriv hδ` preserves each exterior power `⋀[S]^n Ω[S⁄R]`. -/
 theorem deRhamLieDeriv_mem_exteriorPower (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0)
     {n : ℕ} {x : ExteriorAlgebra S Ω[S⁄R]} (hx : x ∈ ⋀[S]^n Ω[S⁄R]) :
-    δ.deRhamLieDeriv hδ x ∈ ⋀[S]^n Ω[S⁄R] := by
-  induction hx using Submodule.pow_induction_on_left' with
-  | algebraMap s =>
-    rw [deRhamLieDeriv_algebraMap, _root_.ExteriorAlgebra.exteriorPower, pow_zero]
-    exact Submodule.algebraMap_mem (δ s)
-  | add x y i _ _ ihx ihy =>
-    rw [map_add]
-    exact add_mem ihx ihy
-  | mem_mul m hm i x hx ih =>
-    obtain ⟨ω, rfl⟩ := hm
-    rw [deRhamLieDeriv_mul, deRhamLieDeriv_ι, Nat.succ_eq_one_add]
-    exact add_mem
-      (SetLike.mul_mem_graded (TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one _) hx)
-      (SetLike.mul_mem_graded (TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one _) ih)
+    δ.deRhamLieDeriv hδ x ∈ ⋀[S]^n Ω[S⁄R] :=
+  ExteriorAlgebra.liftTwistedDerivation_mem_exteriorPower _ _ _ _ _ _ (r := 0)
+    (fun ω ↦ by simp)
+    (fun s ↦ by
+      rw [_root_.ExteriorAlgebra.exteriorPower, pow_zero]
+      exact Submodule.algebraMap_mem (δ s))
+    (fun ω ↦ by simp)
+    hx
 
 /-- `δ.deRhamLieDeriv hδ` preserves each homogeneous piece `grading R S p`. -/
 theorem deRhamLieDeriv_mem_grading (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0)
     {p : ℤ} {x : ExteriorAlgebra S Ω[S⁄R]} (hx : x ∈ grading R S p) :
     δ.deRhamLieDeriv hδ x ∈ grading R S p := by
-  rcases lt_or_ge p 0 with hp | hp
-  · rw [grading_of_neg hp, Submodule.mem_bot] at hx
-    rw [hx, map_zero]
-    exact zero_mem _
-  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
-    rw [mem_grading_natCast] at hx ⊢
-    exact δ.deRhamLieDeriv_mem_exteriorPower hδ hx
+  simpa [deRhamLieDeriv] using mem_grading_iff.mpr <|
+    ExteriorAlgebra.liftTwistedDerivation_mem_integerGrading _ _ _ _ _ _ (r := 0)
+      (fun ω ↦ by simpa using TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one ω)
+      (fun s ↦ by simpa using mem_grading_iff.mp (algebraMap_mem_grading_zero (R := R) (δ s)))
+      (fun ω ↦ by
+        simpa using TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one (δ.kaehlerLieDeriv hδ ω))
+      (mem_grading_iff.mp hx)
 
 /-- `δ.deRhamLieDeriv hδ` commutes with the grade involution on `ExteriorAlgebra S Ω[S⁄R]`. -/
 theorem deRhamLieDeriv_involute (δ : Derivation k S S)
@@ -212,13 +178,9 @@ theorem deRhamLieDeriv_involute (δ : Derivation k S S)
     (x : ExteriorAlgebra S Ω[S⁄R]) :
     δ.deRhamLieDeriv hδ (involute (Q := (0 : QuadraticForm S Ω[S⁄R])) x) =
       involute (Q := (0 : QuadraticForm S Ω[S⁄R])) (δ.deRhamLieDeriv hδ x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap s => rw [AlgHom.commutes, deRhamLieDeriv_algebraMap, AlgHom.commutes]
-  | ι ω => rw [involute_ι, map_neg, deRhamLieDeriv_ι, involute_ι]
-  | mul x y ihx ihy =>
-    rw [map_mul, deRhamLieDeriv_mul, ihx, ihy, deRhamLieDeriv_mul, map_add, map_mul, map_mul]
-  | add x y ihx ihy =>
-    rw [map_add, map_add, ihx, ihy, ← map_add involute, ← map_add (δ.deRhamLieDeriv hδ)]
+  simpa using ExteriorAlgebra.map_involute_of_map_mem_integerGrading (δ.deRhamLieDeriv hδ)
+    0 (fun hx ↦ by
+      simpa using mem_grading_iff.mp (δ.deRhamLieDeriv_mem_grading hδ (mem_grading_iff.mpr hx))) x
 
 /-- **The exterior derivative commutes with the Lie derivative** on `ExteriorAlgebra S Ω[S⁄R]`. -/
 theorem extDeriv_deRhamLieDeriv (δ : Derivation k S S)
@@ -235,7 +197,7 @@ theorem extDeriv_deRhamLieDeriv (δ : Derivation k S S)
 
 /-- **Uniqueness of the Lie derivative on the algebraic de Rham complex**: `δ.deRhamLieDeriv hδ`
 is the unique `k`-linear algebra derivation of `ExteriorAlgebra S Ω[S⁄R]` that extends `δ` on `S`
-and commutes with `extDeriv R S`. -/
+and commutes with `extDeriv R S` on `S`. -/
 theorem deRhamLieDeriv_unique (δ : Derivation k S S)
     (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0)
     {L : Module.End k (ExteriorAlgebra S Ω[S⁄R])}
@@ -243,40 +205,102 @@ theorem deRhamLieDeriv_unique (δ : Derivation k S S)
     (halg : ∀ s : S,
       L (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) =
         algebraMap S (ExteriorAlgebra S Ω[S⁄R]) (δ s))
-    (hcomm : ∀ x : ExteriorAlgebra S Ω[S⁄R], extDeriv R S (L x) = L (extDeriv R S x)) :
+    (hcomm : ∀ s : S,
+      extDeriv R S (L (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s)) =
+        L (extDeriv R S (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s))) :
     L = δ.deRhamLieDeriv hδ := by
   have hleib := TauCeti.mem_derivationLieAlgebra.mp hder
   refine LinearMap.ext fun x ↦ ?_
   induction x using TauCeti.KaehlerDeRham.inductionOn with
   | algebraMap s => rw [halg, deRhamLieDeriv_algebraMap]
   | ι_D s =>
-    rw [← extDeriv_algebraMap, ← hcomm, halg, extDeriv_algebraMap, extDeriv_algebraMap,
-      deRhamLieDeriv_ι_D]
+    rw [← extDeriv_algebraMap, ← hcomm, halg]
+    simp
   | mul x y ihx ihy => rw [hleib, deRhamLieDeriv_mul, ihx, ihy]
   | add x y ihx ihy => rw [map_add, map_add, ihx, ihy]
+
+/-- `deRhamLieDeriv` depends only on the derivation, not on the lift-condition proof. -/
+theorem deRhamLieDeriv_congr {δ₁ δ₂ : Derivation k S S}
+    (h₁ : ∀ r : R, KaehlerDifferential.D R S (δ₁ (algebraMap R S r)) = 0)
+    (h₂ : ∀ r : R, KaehlerDifferential.D R S (δ₂ (algebraMap R S r)) = 0)
+    (h : δ₁ = δ₂) :
+    δ₁.deRhamLieDeriv h₁ = δ₂.deRhamLieDeriv h₂ := by
+  subst h
+  rfl
+
+/-- `deRhamLieDeriv` maps the zero derivation to zero. -/
+@[simp]
+theorem deRhamLieDeriv_zero
+    (h₀ : ∀ r : R, KaehlerDifferential.D R S ((0 : Derivation k S S) (algebraMap R S r)) = 0) :
+    (0 : Derivation k S S).deRhamLieDeriv h₀ = 0 :=
+  ((0 : Derivation k S S).deRhamLieDeriv_unique h₀ (Submodule.zero_mem _)
+    (fun _ ↦ by simp) (fun _ ↦ by simp)).symm
 
 /-- `deRhamLieDeriv` is additive in the derivation `δ`. -/
 theorem deRhamLieDeriv_add {δ₁ δ₂ : Derivation k S S}
     (h₁ : ∀ r : R, KaehlerDifferential.D R S (δ₁ (algebraMap R S r)) = 0)
     (h₂ : ∀ r : R, KaehlerDifferential.D R S (δ₂ (algebraMap R S r)) = 0) :
-    (δ₁ + δ₂).deRhamLieDeriv (fun r ↦ by simp [h₁ r, h₂ r]) =
+    (δ₁ + δ₂).deRhamLieDeriv (D_add_algebraMap_eq_zero h₁ h₂) =
       δ₁.deRhamLieDeriv h₁ + δ₂.deRhamLieDeriv h₂ := by
   symm
   refine deRhamLieDeriv_unique (δ₁ + δ₂) _
     (Submodule.add_mem _ (δ₁.deRhamLieDeriv_mem_derivationLieAlgebra h₁)
       (δ₂.deRhamLieDeriv_mem_derivationLieAlgebra h₂))
     (fun s ↦ by simp)
-    fun x ↦ ?_
-  rw [LinearMap.add_apply, map_add, extDeriv_deRhamLieDeriv, extDeriv_deRhamLieDeriv,
-    LinearMap.add_apply]
+    fun s ↦ by simp
 
-/-- `deRhamLieDeriv` maps the zero derivation to zero. -/
-@[simp]
-theorem deRhamLieDeriv_zero :
-    (0 : Derivation k S S).deRhamLieDeriv (fun _ : R ↦ by simp) = 0 := by
+/-- `deRhamLieDeriv` respects negation of the derivation `δ`. -/
+theorem deRhamLieDeriv_neg {δ : Derivation k S S}
+    (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) :
+    (-δ).deRhamLieDeriv (D_neg_algebraMap_eq_zero hδ) = -δ.deRhamLieDeriv hδ := by
   symm
-  exact deRhamLieDeriv_unique 0 (fun _ : R ↦ by simp) (Submodule.zero_mem _)
-    (fun _ ↦ by simp) (fun _ ↦ by simp)
+  refine deRhamLieDeriv_unique (-δ) _
+    (Submodule.neg_mem _ (δ.deRhamLieDeriv_mem_derivationLieAlgebra hδ))
+    (fun s ↦ by simp)
+    fun s ↦ by simp
+
+/-- `deRhamLieDeriv` respects subtraction of derivations. -/
+theorem deRhamLieDeriv_sub {δ₁ δ₂ : Derivation k S S}
+    (h₁ : ∀ r : R, KaehlerDifferential.D R S (δ₁ (algebraMap R S r)) = 0)
+    (h₂ : ∀ r : R, KaehlerDifferential.D R S (δ₂ (algebraMap R S r)) = 0) :
+    (δ₁ - δ₂).deRhamLieDeriv (D_sub_algebraMap_eq_zero h₁ h₂) =
+      δ₁.deRhamLieDeriv h₁ - δ₂.deRhamLieDeriv h₂ := by
+  rw [deRhamLieDeriv_congr _ (D_add_algebraMap_eq_zero h₁ (D_neg_algebraMap_eq_zero h₂))
+    (sub_eq_add_neg δ₁ δ₂), deRhamLieDeriv_add h₁ (D_neg_algebraMap_eq_zero h₂),
+    deRhamLieDeriv_neg h₂, ← sub_eq_add_neg]
+
+/-- In a scalar tower `k → R → S`, `deRhamLieDeriv` is `k`-linear in the derivation `δ`. -/
+theorem smul_deRhamLieDeriv [Algebra k R] [IsScalarTower k R S] (c : k) {δ : Derivation k S S}
+    (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) :
+    (c • δ).deRhamLieDeriv (D_smul_algebraMap_eq_zero c hδ) = c • δ.deRhamLieDeriv hδ := by
+  symm
+  refine deRhamLieDeriv_unique (c • δ) _
+    (Submodule.smul_mem _ c (δ.deRhamLieDeriv_mem_derivationLieAlgebra hδ))
+    (fun s ↦ ?_) fun s ↦ ?_
+  · rw [LinearMap.smul_apply, deRhamLieDeriv_algebraMap, _root_.smul_apply,
+      Algebra.algebraMap_eq_smul_one, ← smul_assoc, ← Algebra.algebraMap_eq_smul_one]
+  · simp only [LinearMap.smul_apply]
+    rw [← IsScalarTower.algebraMap_smul R c, LinearMap.map_smul, extDeriv_deRhamLieDeriv,
+      IsScalarTower.algebraMap_smul]
+
+/-- **Naturality of `deRhamLieDeriv` along an `R`-algebra homomorphism**: if `f : A →ₐ[R] B`
+intertwines derivations `δA` and `δB`, then `TauCeti.KaehlerDeRham.map f` intertwines their
+de Rham Lie derivatives. -/
+theorem map_deRhamLieDeriv {kA kB R A B : Type*}
+    [CommRing kA] [CommRing kB] [CommRing R] [CommRing A] [CommRing B]
+    [Algebra kA A] [Algebra kB B] [Algebra R A] [Algebra R B]
+    (f : A →ₐ[R] B) {δA : Derivation kA A A} {δB : Derivation kB B B}
+    (hA : ∀ r : R, KaehlerDifferential.D R A (δA (algebraMap R A r)) = 0)
+    (hB : ∀ r : R, KaehlerDifferential.D R B (δB (algebraMap R B r)) = 0)
+    (hf : ∀ a : A, f (δA a) = δB (f a)) (x : ExteriorAlgebra A Ω[A⁄R]) :
+    TauCeti.KaehlerDeRham.map f (δA.deRhamLieDeriv hA x) =
+      δB.deRhamLieDeriv hB (TauCeti.KaehlerDeRham.map f x) := by
+  induction x using TauCeti.KaehlerDeRham.inductionOn with
+  | algebraMap a => simp [hf]
+  | ι_D a =>
+    simp only [deRhamLieDeriv_ι, kaehlerLieDeriv_D, map_ι, KaehlerDifferential.mapSemilinear_D, hf]
+  | mul x y ihx ihy => simp [ihx, ihy]
+  | add x y ihx ihy => simp [ihx, ihy]
 
 /-- **Lie bracket preservation (`L_{⁅δ₁, δ₂⁆} = [L_{δ₁}, L_{δ₂}]`)**: the Lie derivative of a
 commutator of `k`-derivations of `S` is the commutator of their Lie derivatives on
@@ -298,9 +322,9 @@ theorem deRhamLieDeriv_commutator {δ₁ δ₂ : Derivation k S S}
       simp [LieSubalgebra.coe_bracket, Ring.lie_def, _root_.mul_apply_eq_comp, L₁, L₂]
   rw [← hbr]
   symm
-  refine deRhamLieDeriv_unique ⁅δ₁, δ₂⁆ _ ⁅L₁, L₂⁆.2 (fun s ↦ ?_) (fun x ↦ ?_)
+  refine deRhamLieDeriv_unique ⁅δ₁, δ₂⁆ _ ⁅L₁, L₂⁆.2 (fun s ↦ ?_) (fun s ↦ ?_)
   · simp [hbr, Derivation.commutator_apply]
-  · simp [hbr, extDeriv_deRhamLieDeriv]
+  · simp [hbr]
 
 /-- **Commuting derivations lift to commuting Lie derivatives** on the algebraic de Rham complex. -/
 theorem commute_deRhamLieDeriv_of_bracket_eq_zero {δ₁ δ₂ : Derivation k S S}
@@ -310,12 +334,8 @@ theorem commute_deRhamLieDeriv_of_bracket_eq_zero {δ₁ δ₂ : Derivation k S 
     Function.Commute (δ₁.deRhamLieDeriv h₁) (δ₂.deRhamLieDeriv h₂) := by
   intro x
   have h := congrFun (congrArg DFunLike.coe (deRhamLieDeriv_commutator h₁ h₂)) x
-  have h0 : (⁅δ₁, δ₂⁆).deRhamLieDeriv (D_commutator_algebraMap_eq_zero h₁ h₂) = 0 := by
-    symm
-    exact deRhamLieDeriv_unique ⁅δ₁, δ₂⁆ _ (Submodule.zero_mem _)
-      (fun s ↦ by simp [hcomm]) (fun _ ↦ by simp)
-  rw [h0, LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-    LinearMap.comp_apply] at h
+  rw [deRhamLieDeriv_congr _ (fun _ ↦ by simp) hcomm, deRhamLieDeriv_zero,
+    LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply] at h
   exact sub_eq_zero.mp h.symm
 
 end Derivation

@@ -84,24 +84,32 @@ theorem liftOfKerTotal_linearCombination (f : (S →₀ S) →ₗ[k] M)
     LinearEquiv.coe_toLinearMap, hw, Submodule.Quotient.restrictScalarsEquiv_symm_mk]
   exact Submodule.liftQ_apply _ _ w
 
+/-- Evaluating `liftOfKerTotal` on `c • D R S s` gives `f (Finsupp.single s c)`. -/
+@[simp]
+theorem liftOfKerTotal_smul_D (f : (S →₀ S) →ₗ[k] M)
+    (hf : ∀ v ∈ _root_.KaehlerDifferential.kerTotal R S, f v = 0) (c s : S) :
+    liftOfKerTotal R f hf (c • _root_.KaehlerDifferential.D R S s) = f (Finsupp.single s c) := by
+  rw [← Finsupp.linearCombination_single, liftOfKerTotal_linearCombination]
+
 /-- Evaluating `liftOfKerTotal` on `D R S s` gives `f (Finsupp.single s 1)`. -/
 @[simp]
 theorem liftOfKerTotal_D (f : (S →₀ S) →ₗ[k] M)
     (hf : ∀ v ∈ _root_.KaehlerDifferential.kerTotal R S, f v = 0) (s : S) :
     liftOfKerTotal R f hf (_root_.KaehlerDifferential.D R S s) = f (Finsupp.single s 1) := by
-  rw [← one_smul S (_root_.KaehlerDifferential.D R S s), ← Finsupp.linearCombination_single,
-    liftOfKerTotal_linearCombination]
+  rw [← one_smul S (_root_.KaehlerDifferential.D R S s), liftOfKerTotal_smul_D]
 
-/-- `liftOfKerTotal R f hf` is uniquely determined by its values on
-`Finsupp.linearCombination S (D R S) w`. -/
+/-- `liftOfKerTotal R f hf` is uniquely determined by its values on additive generators
+`c • D R S s`. -/
 theorem liftOfKerTotal_unique (f : (S →₀ S) →ₗ[k] M)
     (hf : ∀ v ∈ _root_.KaehlerDifferential.kerTotal R S, f v = 0)
     {g : Ω[S⁄R] →ₗ[k] M}
-    (hg : ∀ w : S →₀ S,
-      g (Finsupp.linearCombination S (_root_.KaehlerDifferential.D R S) w) = f w) :
+    (hg : ∀ c s : S, g (c • _root_.KaehlerDifferential.D R S s) = f (Finsupp.single s c)) :
     g = liftOfKerTotal R f hf := by
   refine LinearMap.ext fun ω ↦ ?_
   obtain ⟨w, rfl⟩ := _root_.KaehlerDifferential.linearCombination_surjective R S ω
-  rw [hg, liftOfKerTotal_linearCombination]
+  induction w using Finsupp.induction_linear with
+  | zero => simp
+  | add w₁ w₂ ih₁ ih₂ => simp [ih₁, ih₂]
+  | single s c => rw [Finsupp.linearCombination_single, hg, liftOfKerTotal_smul_D]
 
 end TauCeti.KaehlerDifferential

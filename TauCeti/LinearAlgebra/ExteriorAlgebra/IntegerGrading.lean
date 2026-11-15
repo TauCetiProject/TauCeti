@@ -29,6 +29,8 @@ contraction lowers the degree by one, and left multiplication by a generator rai
 
 * `TauCeti.ExteriorAlgebra.involute_of_mem_integerGrading`: the grade involution is `p.negOnePow`
   on the piece of degree `p`.
+* `ExteriorAlgebra.map_involute_of_map_mem_integerGrading`: any additive map shifting the
+  integer grading by `r` intertwines the grade involution by `r.negOnePow`.
 * `TauCeti.ExteriorAlgebra.contractLeft_mem_integerGrading`: contraction has degree `-1`.
 * `TauCeti.ExteriorAlgebra.ι_mul_mem_integerGrading`: left multiplication by a generator has
   degree one.
@@ -116,3 +118,31 @@ theorem ι_mul_mem_integerGrading (m : M) {p : ℤ} {x : ExteriorAlgebra R M}
   exact SetLike.mul_mem_graded (ι_mem_integerGrading_one m) hx
 
 end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+open TauCeti.ExteriorAlgebra
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- **Any additive map shifting the integer grading by `r` intertwines the grade involution by
+`r.negOnePow`**: if `f` maps `integerGrading R M p` into `integerGrading R M (p + r)` for all
+`p : ℤ`, then `f (involute x) = r.negOnePow • involute (f x)` for all `x`. -/
+theorem map_involute_of_map_mem_integerGrading {F : Type*}
+    [FunLike F (ExteriorAlgebra R M) (ExteriorAlgebra R M)]
+    [AddMonoidHomClass F (ExteriorAlgebra R M) (ExteriorAlgebra R M)]
+    (f : F) (r : ℤ)
+    (hf : ∀ {p : ℤ} {x : ExteriorAlgebra R M},
+      x ∈ integerGrading R M p → f x ∈ integerGrading R M (p + r))
+    (x : ExteriorAlgebra R M) :
+    f (involute (Q := (0 : QuadraticForm R M)) x) =
+      r.negOnePow • involute (Q := (0 : QuadraticForm R M)) (f x) := by
+  induction x using DirectSum.Decomposition.inductionOn (integerGrading R M) with
+  | zero => simp
+  | homogeneous x =>
+    rw [involute_of_mem_integerGrading x.property, Units.smul_def, map_zsmul,
+      involute_of_mem_integerGrading (hf x.property), ← mul_smul, add_comm _ r, Int.negOnePow_add,
+      ← mul_assoc, Int.units_mul_self, one_mul, Units.smul_def]
+  | add x y ihx ihy => simp [ihx, ihy]
+
+end ExteriorAlgebra
