@@ -49,8 +49,7 @@ variable {n : ℕ} [NeZero n] {K : Type*} [Field K] [NumberField K] [IsCyclotomi
 
 /-- **Galois action via the cyclotomic character.** In an `n`-th cyclotomic field over `ℚ` with
 `n ≥ 2`, raising `(α / 𝔞)_n` to the representative `c(σ) ∈ [1, n)` of `σ ∈ Gal(K/ℚ)` in
-`(ZMod n)ˣ` gives `(σ α / σ 𝔞)_n`: on units `σ` raises every `n`-th root of unity to `c(σ)`, and
-on nonunits `c(σ) ≠ 0` so both sides vanish. -/
+`(ZMod n)ˣ` gives `(σ α / σ 𝔞)_n`, for every ideal `𝔞` of `𝓞 K` and every `α : 𝓞 K`. -/
 theorem powerResidueSymbolIdeal_pow_val_galEquivZMod (𝔞 : Ideal (𝓞 K)) (hn : 2 ≤ n)
     (σ : Gal(K/ℚ)) (α : 𝓞 K) :
     powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 α) ^ (galEquivZMod n K σ : ZMod n).val =

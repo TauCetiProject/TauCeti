@@ -173,9 +173,7 @@ theorem eisenstein_reciprocity (hp2 : p ≠ 2) {α : 𝓞 K}
 
 /-- **Shifted Eisenstein reciprocity for `ζ ^ c * α`.** For an odd prime `p`, a primary integer
 `α ∈ 𝓞 K`, `c : ℕ`, and `a : ℤ` with `¬ (p : ℤ) ∣ a`,
-`(ζ ^ c α / a)_p = ζ ^ (c * ((|a| ^ (p - 1) - 1) / p)) * (a / ζ ^ c α)_p`: multiplying `α` by
-`ζ ^ c` leaves the ideal `(ζ ^ c * α) = (α)` unchanged while multiplying the symbol at `a 𝓞 K` by
-`(ζ / a)_p ^ c`. -/
+`(ζ ^ c α / a)_p = ζ ^ (c * ((|a| ^ (p - 1) - 1) / p)) * (a / ζ ^ c α)_p`. -/
 theorem eisenstein_reciprocity_toInteger_pow_mul (hp2 : p ≠ 2) {α : 𝓞 K}
     (hα : TauCeti.IsEisensteinPrimary hζ.toInteger α) (c : ℕ) {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) :
     powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p (Ideal.Quotient.mk _ (hζ.toInteger ^ c * α)) =
