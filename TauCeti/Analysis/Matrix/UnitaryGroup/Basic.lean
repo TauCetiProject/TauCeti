@@ -38,6 +38,9 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
   group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
   (`Matrix.UnitaryGroup.detCircle_sum`).
+* `Matrix.UnitaryGroup.circleScalar`: the scalar unitary matrices `z • 1`, as a continuous group
+  morphism `Circle →* U(n)`. For `1 × 1` matrices it is inverse to `detCircle`
+  (`Matrix.UnitaryGroup.detCircle_circleScalar`, `Matrix.UnitaryGroup.circleScalar_detCircle`).
 -/
 
 public section
@@ -164,6 +167,39 @@ theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matr
 /-- The determinant of a unitary matrix depends continuously on the matrix. -/
 theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
   Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+
+/-- The scalar unitary matrices `z • 1`, for `z` on the unit circle, as a group morphism
+`Circle →* U(n)`. -/
+noncomputable def circleScalar : Circle →* unitaryGroup n ℂ where
+  toFun z := ⟨(z : ℂ) • 1, Unitary.smul_mem_of_mem z.coe_mem_unitary (one_mem _)⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' z w := Subtype.ext (by simp [smul_smul, mul_comm])
+
+/-- The scalar unitary matrix of a point `z` of the circle is `z • 1`. -/
+@[simp]
+theorem coe_circleScalar (z : Circle) :
+    ((circleScalar (n := n) z : unitaryGroup n ℂ) : Matrix n n ℂ) = (z : ℂ) • 1 :=
+  (rfl)
+
+/-- The scalar unitary matrix depends continuously on the point of the circle. -/
+theorem continuous_circleScalar : Continuous (circleScalar : Circle → unitaryGroup n ℂ) :=
+  continuous_induced_rng.2 <| by
+    simp only [Function.comp_def, coe_circleScalar]
+    fun_prop
+
+/-- On `1 × 1` unitary matrices, the determinant recovers the scalar. -/
+@[simp]
+theorem detCircle_circleScalar [Unique n] (z : Circle) :
+    detCircle (circleScalar (n := n) z) = z :=
+  Circle.ext (by simp)
+
+/-- A `1 × 1` unitary matrix is the scalar matrix of its determinant. -/
+@[simp]
+theorem circleScalar_detCircle [Unique n] (U : unitaryGroup n ℂ) :
+    circleScalar (detCircle U) = U := by
+  ext i j
+  rw [Subsingleton.elim i default, Subsingleton.elim j default]
+  simp [det_unique]
 
 section Sum
 

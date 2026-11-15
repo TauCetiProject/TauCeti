@@ -226,6 +226,13 @@ theorem coe_ofUnitary (U : unitaryGroup n ℂ) :
   rw [ofUnitary_apply, Subgroup.coe_inclusion, unitaryGroupEquivSymplecticInfOrthogonal_apply]
   simp
 
+/-- The realification of a unitary matrix is orthogonal, as a matrix. -/
+theorem coe_ofUnitary_mem_unitary (U : unitaryGroup n ℂ) :
+    ((ofUnitary U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
+      unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
+  rw [coe_ofUnitary]
+  exact realify_mem_orthogonalGroup_iff.2 U.2
+
 /-- Realification of unitary matrices is continuous. -/
 theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GLSymplectic n ℝ) := by
   refine continuous_induced_rng.2 ((continuous_subtype_val.comp

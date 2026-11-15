@@ -64,6 +64,7 @@ either `ℝ`, where the realification is block diagonal, or isomorphic to `ℂ` 
 * `Matrix.realify_injective` and `Matrix.realifyAlgHom`: realification is injective, and on square
   matrices it is a homomorphism of `ℝ`-algebras.
 * `Matrix.commute_J_realify`: realifications commute with `Matrix.J`.
+* `Matrix.realify_smul_one`: the scalar matrix `z • 1` realifies to `re z • 1 + im z • J`.
 * `Matrix.realify_mem_orthogonalGroup_iff` and `Matrix.realify_mem_symplecticGroup_iff`: a matrix
   is unitary exactly when its realification is orthogonal, and exactly when it is symplectic.
 
@@ -333,7 +334,12 @@ theorem commute_J_realify [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι 𝕜) : Commute (J ι ℝ) A.realify := by
   simp [Commute, SemiconjBy, J, realify, fromBlocks_multiply]
 
-/-- A square matrix is unitary exactly when its realification is orthogonal. -/
+/-- The realification of a scalar matrix `z • 1` is `re z • 1 + im z • J`: for `𝕜 = ℂ`,
+multiplication by `z` rotates each pair of real coordinates by the argument of `z`. -/
+theorem realify_smul_one [DecidableEq ι] (z : 𝕜) :
+    (z • 1 : Matrix ι ι 𝕜).realify = RCLike.re z • 1 + RCLike.im z • J ι ℝ := by
+  ext (i | i) (j | j) <;> by_cases h : i = j <;> simp [J, h]
+
 @[simp]
 theorem realify_mem_orthogonalGroup_iff [Fintype ι] [DecidableEq ι]
     {A : Matrix ι ι 𝕜} : A.realify ∈ orthogonalGroup (ι ⊕ ι) ℝ ↔ A ∈ unitaryGroup ι 𝕜 := by
