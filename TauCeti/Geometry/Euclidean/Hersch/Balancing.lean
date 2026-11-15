@@ -1,0 +1,134 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Euclidean.Hersch.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
+
+/-!
+# Hersch's conformal balancing lemma
+
+Let `(X, μ)` be a finite measure space with `μ ≠ 0` and `Φ : X → E` a measurable map into the unit
+sphere of a finite-dimensional real inner product space whose fibres over the points of the
+sphere are null. Then some conformal map `T_a` of Hersch (`TauCeti.herschMap`), `‖a‖ < 1`,
+balances `Φ`: `∫ T_a ∘ Φ dμ = 0`.
+
+The proof follows Hersch. The barycentre `G(a) = ∫ T_a ∘ Φ dμ` is continuous on the closed unit
+ball by dominated convergence: `‖T_a‖ ≤ 1` there, and `a ↦ T_a(Φ q)` is continuous at `a₀`
+unless `⟪a₀, Φ q⟫ = -1`, which happens only for `‖a₀‖ = 1` and `Φ q = -a₀`, on a null set. On
+the unit sphere `T_v(x) = v` for almost every `x = Φ q`, so `G(v) = μ(X) v`. If `G` had no zero
+in the open ball, `-G / ‖G‖` would be a continuous self-map of the closed ball with values on the
+sphere. Its fixed point `a`, given by Brouwer's theorem, lies on the sphere, where
+`-G(a) / ‖G(a)‖ = -a`, which is impossible.
+
+For a nonconstant holomorphic map of a compact Riemann surface to the sphere the fibres are
+finite, so the hypothesis holds for its area measure.
+
+## Main result
+
+* `TauCeti.exists_integral_herschMap_eq_zero`: Hersch's balancing lemma.
+
+## References
+
+* J. Hersch, *Quatre propriétés isopérimétriques de membranes sphériques homogènes*,
+  C. R. Acad. Sci. Paris Sér. A-B 270 (1970), A1645–A1648.
+* P. C. Yang and S.-T. Yau, *Eigenvalues of the Laplacian of compact Riemann surfaces and
+  minimal submanifolds*, Ann. Scuola Norm. Sup. Pisa Cl. Sci. (4) 7 (1980), 55–63, p. 59.
+* O. Chodosh, *Lecture notes on minimal surfaces*, proof of Theorem 34.5.
+-/
+
+public section
+
+open Filter Metric MeasureTheory Set Topology RealInnerProductSpace
+
+namespace TauCeti
+
+variable {E X : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace X] {μ : Measure X} {Φ : X → E}
+
+/-- Off a null set, `⟪a, Φ q⟫ ≠ -1` for every `a` of the closed unit ball. -/
+private theorem ae_inner_ne_neg_one (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
+    (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) {a : E} (ha : ‖a‖ ≤ 1) :
+    ∀ᵐ q ∂μ, ⟪a, Φ q⟫ ≠ -1 := by
+  rcases ha.lt_or_eq with ha | ha
+  · exact Eventually.of_forall fun q ↦ inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 (hΦ q))
+  · refine measure_mono_null (fun q hq ↦ ?_) (hfib (-a) (by simp [ha]))
+    exact eq_neg_of_inner_eq_neg_one ha.le (mem_sphere_zero_iff_norm.1 (hΦ q)) (not_not.1 hq)
+
+/-- On the unit sphere, `∫ T_v ∘ Φ dμ = μ(X) v`. -/
+private theorem integral_herschMap_of_norm_eq_one [CompleteSpace E]
+    (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
+    (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) {v : E} (hv : ‖v‖ = 1) :
+    ∫ q, herschMap v (Φ q) ∂μ = μ.real univ • v := by
+  rw [← integral_const]
+  refine integral_congr_ae ?_
+  filter_upwards [ae_inner_ne_neg_one hΦ hfib hv.le] with q hq
+  exact herschMap_of_norm_eq_one hv hq
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- The barycentre `a ↦ ∫ T_a ∘ Φ dμ` is continuous on the closed unit ball. -/
+private theorem continuousOn_integral_herschMap [IsFiniteMeasure μ] (hΦm : AEMeasurable Φ μ)
+    (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1) (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) :
+    ContinuousOn (fun a ↦ ∫ q, herschMap a (Φ q) ∂μ) (closedBall (0 : E) 1) := by
+  intro a ha
+  rw [mem_closedBall_zero_iff] at ha
+  refine continuousWithinAt_of_dominated (bound := fun _ ↦ 1)
+    (Eventually.of_forall fun b ↦
+      ((measurable_herschMap b).comp_aemeasurable hΦm).aestronglyMeasurable)
+    (eventually_nhdsWithin_of_forall fun b hb ↦ Eventually.of_forall fun q ↦
+      norm_herschMap_le_one (mem_closedBall_zero_iff.1 hb) (mem_sphere_zero_iff_norm.1 (hΦ q)))
+    (integrable_const 1) ?_
+  filter_upwards [ae_inner_ne_neg_one hΦ hfib ha] with q hq
+  exact (continuousAt_herschMap_left hq).continuousWithinAt
+
+/-- **Hersch's balancing lemma.** Let `μ` be a nonzero finite measure and `Φ` a measurable map
+into the unit sphere of a finite-dimensional real inner product space, whose fibres over the
+points of the sphere are null. Then there is `a` with `‖a‖ < 1` such that the composition of `Φ`
+with Hersch's conformal map `T_a` has barycentre zero: `∫ T_a ∘ Φ dμ = 0`. -/
+theorem exists_integral_herschMap_eq_zero [IsFiniteMeasure μ]
+    (hΦm : AEMeasurable Φ μ) (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
+    (hfib : ∀ v ∈ sphere (0 : E) 1, μ (Φ ⁻¹' {v}) = 0) :
+    ∃ a ∈ ball (0 : E) 1, ∫ q, herschMap a (Φ q) ∂μ = 0 := by
+  by_cases hμ : μ = 0
+  · subst μ
+    exact ⟨0, by simp, by simp⟩
+  set G : E → E := fun a ↦ ∫ q, herschMap a (Φ q) ∂μ with hG
+  have hc : 0 < μ.real univ := by
+    rw [measureReal_def, ENNReal.toReal_pos_iff]
+    exact ⟨Measure.measure_univ_pos.2 hμ, measure_lt_top μ univ⟩
+  by_contra! hne
+  have hG0 : ∀ a ∈ closedBall (0 : E) 1, G a ≠ 0 := by
+    intro a ha
+    rw [mem_closedBall_zero_iff] at ha
+    rcases ha.lt_or_eq with ha | ha
+    · exact hne a (mem_ball_zero_iff.2 ha)
+    · simp only [hG]
+      rw [integral_herschMap_of_norm_eq_one hΦ hfib ha]
+      exact smul_ne_zero hc.ne' (by rintro rfl; simp at ha)
+  have hGc := continuousOn_integral_herschMap hΦm hΦ hfib
+  have hgc : ContinuousOn (fun a ↦ -(‖G a‖⁻¹ • G a)) (closedBall (0 : E) 1) :=
+    ((hGc.norm.inv₀ fun a ha ↦ norm_ne_zero_iff.2 (hG0 a ha)).smul hGc).neg
+  have hgmaps : MapsTo (fun a ↦ -(‖G a‖⁻¹ • G a)) (closedBall (0 : E) 1)
+      (closedBall (0 : E) 1) := by
+    intro a ha
+    rw [mem_closedBall_zero_iff, norm_neg, norm_smul, norm_inv, norm_norm,
+      inv_mul_cancel₀ (norm_ne_zero_iff.2 (hG0 a ha))]
+  obtain ⟨a, ha, hfix⟩ := brouwerFixedPoint_compactConvex_continuousOn
+    (isCompact_closedBall 0 1) (convex_closedBall 0 1) (nonempty_closedBall.2 zero_le_one)
+    hgc hgmaps
+  have hfix' : -(‖G a‖⁻¹ • G a) = a := hfix
+  have hnorm : ‖a‖ = 1 := by
+    rw [← hfix', norm_neg, norm_smul, norm_inv, norm_norm,
+      inv_mul_cancel₀ (norm_ne_zero_iff.2 (hG0 a ha))]
+  have hGa : G a = μ.real univ • a := integral_herschMap_of_norm_eq_one hΦ hfib hnorm
+  rw [hGa, norm_smul, Real.norm_of_nonneg hc.le, hnorm, mul_one, smul_smul,
+    inv_mul_cancel₀ hc.ne', one_smul, neg_eq_iff_add_eq_zero, ← two_smul ℝ] at hfix'
+  have : a = 0 := (smul_eq_zero.1 hfix').resolve_left two_ne_zero
+  simp [this] at hnorm
+
+end TauCeti
