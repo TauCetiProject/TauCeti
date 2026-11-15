@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # The Kaplansky function
@@ -97,11 +98,6 @@ theorem kaplanskyFun_kaplanskyFunInv {s : ℝ} (hs : |s| ≤ 1) :
   rw [kaplanskyFun_def, kaplanskyFunInv_def]
   field_simp
   linear_combination (-s) * hr
-
-/-- `t / (1 + t ^ 2)` takes values in `[-1 / 2, 1 / 2]`. -/
-theorem abs_div_one_add_sq_le (t : ℝ) : |t / (1 + t ^ 2)| ≤ 1 / 2 := by
-  rw [abs_div, abs_of_pos (one_add_sq_pos t), div_le_iff₀ (one_add_sq_pos t)]
-  nlinarith [sq_nonneg (|t| - 1), sq_abs t]
 
 /-! ### The functional calculus -/
 

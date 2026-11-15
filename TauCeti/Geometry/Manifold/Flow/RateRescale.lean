@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Order.Hom.Basic
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -109,9 +110,8 @@ theorem mvfderiv_rateRescale_nonpos_iff :
 /-- **`f` changes at rate at most `1 / 2` along the rescaled field**, since `2 |a| ≤ 1 + a²`. -/
 theorem abs_mvfderiv_rateRescale_le (x : M) :
     |mvfderiv I f x (rateRescale I f v x)| ≤ 1 / 2 := by
-  rw [mvfderiv_rateRescale, abs_div, abs_of_pos (by positivity : (0 : ℝ) < 1 + _),
-    div_le_iff₀ (by positivity), ← sq_abs (mvfderiv I f x (v x))]
-  nlinarith [sq_nonneg (|mvfderiv I f x (v x)| - 1)]
+  rw [mvfderiv_rateRescale]
+  exact abs_div_one_add_sq_le _
 
 /-- **The rescaled field is as regular as `v`** when `f` has one more derivative. -/
 theorem contMDiff_rateRescale [IsManifold I 1 M] {n : WithTop ℕ∞}
