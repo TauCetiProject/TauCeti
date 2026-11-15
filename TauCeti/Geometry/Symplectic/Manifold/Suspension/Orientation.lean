@@ -12,8 +12,8 @@ import TauCeti.Geometry.Manifold.Degree.Integral
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.RegularValue.Fibre
 import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
+import TauCeti.Topology.SeparatedMap
 
 /-!
 # Orientation, covering multiplicity and area of a horizontal curve over an orbit torus
@@ -60,7 +60,9 @@ says that `u` integrates every two-form `β` on `X_φ` whose pullback `τ^* β` 
 copies of the embedded orbit torus, `∫_C u^* β = k ∫ τ^* β`
 (`TauCeti.SmoothMappingTorus.integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`). As a
 current, an immersed curve of zero vertical area is therefore its image `(ℝ / ℤ) × γ` with
-multiplicity `k`, and its `Ω`-area is `k d`, a positive multiple of the least period
+multiplicity `k`, and its `Ω`-area is `k d`
+(`integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq`),
+a positive multiple of the least period
 (`TauCeti.SmoothMappingTorus.exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul`).
 
 ## Main results
@@ -82,6 +84,9 @@ multiplicity `k`, and its `Ω`-area is `k d`, a positive multiple of the least p
 * `integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`: a curve factoring through the
   orbit torus by an orientation-preserving local diffeomorphism with `k` sheets integrates every
   two-form with integrable pullback to the orbit torus as `k` times the orbit torus.
+* `integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq`: a curve factoring
+  through the orbit torus by an orientation-preserving local diffeomorphism with `k` sheets has
+  `Ω`-area `k d`.
 * `exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul`: an immersed curve of zero
   vertical area has `Ω`-area `k d`, where `k ≥ 1` is the number of sheets with which it covers its
   image and `d` the least period of its closed orbit.
@@ -222,10 +227,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
 /-- **A horizontal curve is a multiple of its orbit torus.** Let `u = τ ∘ v` for the orbit torus
 `τ` of a point of period `d` and a local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)` from a compact
 Hausdorff boundaryless surface that preserves orientation at every point, for the product of the
-positive orientations of the two circles. Then `v` covers the torus with a constant number `k` of
-sheets, and `u` integrates every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `k`
-times the orbit torus does:
-`∫_C u^* β = k ∫ τ^* β`, where `k = |v⁻¹(p)|` for any point `p` of the torus. -/
+positive orientations of the two circles. Then for every point `p` of the torus, `u` integrates
+every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `|v⁻¹(p)|` times the orbit
+torus does: `∫_C u^* β = |v⁻¹(p)| ∫ τ^* β`. Here `|v⁻¹(p)|` is the degree of `v`, so it does not
+depend on `p`. -/
 theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpace C]
     [T2Space C] [BoundarylessManifold I' C] (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
     (hτv : orbitTorus φ h ∘ v = u)
@@ -241,6 +246,30 @@ theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpa
   rw [← hτv, mpullback_comp (hv.contMDiff.mdifferentiable (by simp))
     ((contMDiff_orbitTorus h).mdifferentiable (by simp)),
     hv.integralTopForm_mpullback_eq_ncard_mul o _ (by simp) hor p hβ]
+
+/-- **The `Ω`-area of a horizontal curve covering its orbit torus.** Let `u = τ ∘ v` for the orbit
+torus `τ` of a point of period `d` and a local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)` from a
+compact Hausdorff boundaryless surface that preserves orientation at every point, for the product of
+the positive orientations of the two circles. Then for every point `p` of the torus the suspension
+form `Ω = ds ∧ dt + σ_v` integrates to `|v⁻¹(p)| d` over `C`. -/
+theorem integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq
+    [CompactSpace C] [T2Space C] [BoundarylessManifold I' C]
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
+    (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v) (hτv : orbitTorus φ h ∘ v = u)
+    (hor : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
+      ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c)
+    (p : UnitAddCircle × AddCircle (d : ℝ)) :
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
+      (v ⁻¹' {p}).ncard * d := by
+  -- The orbit torus pulls `Ω` back to the area form `ds ∧ dt_d`, of total area `d`.
+  have hβ : IntegrableTopForm (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I))
+      (orbitTorus φ h) (suspensionForm φ σ hσ).1) := by
+    rw [← SmoothForm.coe_mpullback _ (contMDiff_orbitTorus h)]
+    exact (SmoothForm.isSmoothForm _).integrableTopForm (isClosed_tsupport _).isCompact
+      (Module.Basis.finTwoProd ℝ)
+  rw [SmoothForm.coe_mpullback, integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq h
+    hv hτv hor hβ p, ← SmoothForm.coe_mpullback _ (contMDiff_orbitTorus h),
+    mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [I'.Boundaryless] [CompactSpace C]
   [ConnectedSpace C]
@@ -351,7 +380,9 @@ theorem integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero
 `exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero`, with `C` moreover
 Hausdorff, let `(s, [t, x])` be a value of `u`, where `x` has least period `d`. Then `u = τ ∘ v` for
 the orbit torus `τ` of the primitive closed orbit through `x` and a surjective local diffeomorphism
-`v : C → (ℝ / ℤ) × (ℝ / dℤ)`, and for every point `p` of the torus the `Ω`-area of `u` is `k d`,
+`v : C → (ℝ / ℤ) × (ℝ / dℤ)` that preserves orientation at every point, for the product of the
+positive orientations of the two circles, and for every point `p` of the torus the `Ω`-area of `u`
+is `k d`,
 where `k = |v⁻¹(p)| ≥ 1` is the number of sheets with which `u` covers its image `(ℝ / ℤ) × γ`. -/
 theorem exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul [T2Space C]
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
@@ -371,28 +402,22 @@ theorem exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul [T2Space C]
     {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d) :
     ∃ v : C → UnitAddCircle × AddCircle (d : ℝ),
       IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v ∧ Surjective v ∧ orbitTorus φ h ∘ v = u ∧
+        (∀ c, Manifold.Orientation.IsOrientationPreservingAt o
+          ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c) ∧
         ∀ p, 0 < (v ⁻¹' {p}).ncard ∧
           integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
             (v ⁻¹' {p}).ncard * d := by
   obtain ⟨v, hloc, hsurj, hτv, hor⟩ :=
     exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero h hu ho hhol hS hV
       htame h0 hinj hc hd
-  refine ⟨v, hloc, hsurj, hτv, fun p ↦ ⟨?_, ?_⟩⟩
-  · -- The fibre is finite, as a fibre of a local diffeomorphism from a compact surface, and
-    -- nonempty since `v` is onto.
-    refine (ncard_pos (hloc.finite_preimage (by simp) p)).2 ?_
-    obtain ⟨c', hc'⟩ := hsurj p
-    exact ⟨c', hc'⟩
-  · -- The orbit torus pulls `Ω` back to the area form `ds ∧ dt_d`, of total area `d`.
-    have hτΩ := mpullback_orbitTorus_suspensionForm (σ := σ) (hσ := hσ) h
-    have hβ : IntegrableTopForm (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I))
-        (orbitTorus φ h) (suspensionForm φ σ hσ).1) := by
-      rw [← SmoothForm.coe_mpullback _ (contMDiff_orbitTorus h)]
-      exact (SmoothForm.isSmoothForm _).integrableTopForm (isClosed_tsupport _).isCompact
-        (Module.Basis.finTwoProd ℝ)
-    rw [SmoothForm.coe_mpullback, integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq h
-      hloc hτv hor hβ p, ← SmoothForm.coe_mpullback _ (contMDiff_orbitTorus h), hτΩ,
-      AddCircle.integralTopForm_wedge_timeForm, one_mul]
+  refine ⟨v, hloc, hsurj, hτv, hor, fun p ↦ ⟨?_,
+    integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq h hu hloc hτv hor
+      p⟩⟩
+  -- The fibre is finite, as a fibre of a local diffeomorphism from a compact surface, and
+  -- nonempty since `v` is onto.
+  refine (ncard_pos (hloc.isLocalHomeomorph.isLocallyInjective.finite_preimage_singleton p)).2 ?_
+  obtain ⟨c', hc'⟩ := hsurj p
+  exact ⟨c', hc'⟩
 
 end SmoothMappingTorus
 

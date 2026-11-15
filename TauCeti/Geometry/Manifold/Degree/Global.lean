@@ -42,7 +42,9 @@ maps induce the same map on top compactly supported cohomology of the compact ma
 multiplicative, `deg (g ∘ f) = deg g · deg f`, for maps between compact connected manifolds
 (`TauCeti.degree_comp`).
 
-As in the local computation, `M` and `N` are modelled on the same vector space `E`.
+Unlike the local computation in `TauCeti.Geometry.Manifold.Degree.Integral`, which allows
+different model spaces of the same dimension, here `M` and `N` are modelled on the same vector
+space `E`.
 
 The proof is Lee's. Near `y` the formula holds by the stack-of-records computation
 `TauCeti.exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul`; choose a closed

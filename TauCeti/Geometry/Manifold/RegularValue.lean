@@ -50,7 +50,8 @@ to manifolds, including manifolds with boundary or corners.
   regularity is injectivity of the manifold derivative.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
-* `IsLocalDiffeomorph.isRegularValue`: every value of a local diffeomorphism is regular.
+* `IsLocalDiffeomorphAt.isRegularPoint`, `IsLocalDiffeomorph.isRegularValue`: a local
+  diffeomorphism is regular at every point, so every value of a local diffeomorphism is regular.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
@@ -206,11 +207,17 @@ theorem isRegularPoint_iff_isInvertible_mfderiv [CompleteSpace 𝕜] [FiniteDime
     ⟨(isRegularPoint_iff_injective_mfderiv hdim).1 h, h⟩).toContinuousLinearEquiv,
     ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
+/-- A map that is a `C¹` local diffeomorphism at a point is regular there: its manifold derivative
+is invertible. -/
+theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : WithTop ℕ∞}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
+  isRegularPoint_iff.2 (hf.isInvertible_mfderiv hn).surjective
+
 /-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
 at every point. -/
 theorem _root_.IsLocalDiffeomorph.isRegularValue {n : WithTop ℕ∞}
     (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
-  isRegularValue_iff.2 fun x _ ↦ isRegularPoint_iff.2 (hf.isInvertible_mfderiv hn x).surjective
+  isRegularValue_iff.2 fun x _ ↦ (hf x).isRegularPoint hn
 
 /-- A regular point of a map into a normed space is a point of differentiability. Without
 differentiability the derivative is `0`, so the target is the zero space and the map is constant. -/
@@ -275,8 +282,7 @@ end Composition
 /-- Every point of an open subset is a regular point of its inclusion. -/
 theorem isRegularPoint_subtype_val {U : TopologicalSpace.Opens M} (x : U) :
     IsRegularPoint I I (Subtype.val : U → M) x :=
-  isRegularPoint_iff.2
-    ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).surjective
+  (isLocalDiffeomorph_subtype_val (n := 1) x).isRegularPoint one_ne_zero
 
 /-- Restricting the source to an open subset preserves regular values. -/
 theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y) (U : TopologicalSpace.Opens M) :
