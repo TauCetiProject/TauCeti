@@ -13,13 +13,36 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.WarpedProd
 
 A standard cap profile `f` gives a smooth positive definite metric
 `dr² + f(r)² g_(Sⁿ)` on `(0, ∞) × Sⁿ`. We construct this metric using the native
-warped-product construction and compute its scalar curvature from the native
-Levi-Civita connection. It is nonnegative, and on the cylindrical end equals
-`n(n-1)/2`, hence equals one when `n = 2`.
+warped-product construction and compute both its sectional curvature and its scalar
+curvature from the native Levi-Civita connection. Mixed planes have sectional
+curvature `-f''/f`, vertical planes have sectional curvature `(1 - f'²)/f²`, and
+every tangent two-plane (including tilted planes) has nonnegative sectional
+curvature, with constant sectional curvature `1/4` near the missing tip. Scalar
+curvature is nonnegative, equals `n(n+1)/4` near the tip, and on the cylindrical
+end equals `n(n-1)/2`, hence equals one when `n = 2`.
 
 This is the punctured cap: the origin has not been added, and no completeness
-assertion is made. The same formula will identify the restriction of a smooth
-cap metric in polar coordinates.
+assertion is made. Polar coordinates identify it isometrically with the punctured
+cap metric on `V ∖ {0}`.
+
+## Main definitions
+
+* `TauCeti.standardCapRadialDomain`: the open radial half-line `(0, ∞)` as an `Opens ℝ`.
+* `TauCeti.IsStandardCapProfile.puncturedMetric`: the smooth warped-product metric
+  `dr² + f(r)² g_(Sⁿ)` on `(0, ∞) × Sⁿ`.
+
+## Main results
+
+* `TauCeti.IsStandardCapProfile.sectionalCurvature_puncturedMetric_mixed`,
+  `TauCeti.IsStandardCapProfile.sectionalCurvature_puncturedMetric_vertical`,
+  `TauCeti.IsStandardCapProfile.sectionalCurvature_puncturedMetric_nonneg`,
+  `TauCeti.IsStandardCapProfile.exists_hasSectionalCurvatureAt_puncturedMetric_round`: sectional
+  curvatures of mixed, vertical, and general tangent two-planes on the punctured cap.
+* `TauCeti.IsStandardCapProfile.scalarCurvature_puncturedMetric`,
+  `TauCeti.IsStandardCapProfile.scalarCurvature_puncturedMetric_nonneg`,
+  `TauCeti.IsStandardCapProfile.exists_scalarCurvature_puncturedMetric_eq_round`,
+  `TauCeti.IsStandardCapProfile.exists_scalarCurvature_puncturedMetric_eq_cylinder`: scalar
+  curvature formula, nonnegativity, and round-tip / cylindrical-end values.
 
 ## References
 
@@ -31,7 +54,7 @@ cap metric in polar coordinates.
 
 public noncomputable section
 
-open Bundle Set Real TopologicalSpace
+open Bundle CovariantDerivative Set Real TopologicalSpace
 open TauCeti.Manifold
 open scoped ContDiff Manifold InnerProductSpace Topology
 
@@ -71,6 +94,121 @@ theorem puncturedMetric_inner
       f p.1 ^ 2 * ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top).inner p.2
         (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
   rw [puncturedMetric, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
+
+/-- Mixed radial-spherical tangent planes of the punctured standard cap have sectional
+curvature `-f''(r) / f(r)`. Both spanning vectors must be nonzero. -/
+theorem sectionalCurvature_puncturedMetric_mixed
+    (p : standardCapRadialDomain × Metric.sphere (0 : V) 1)
+    (u : TangentSpace 𝓘(ℝ) p.1) (v : TangentSpace (𝓡 n) p.2) (hu : u ≠ 0) (hv : v ≠ 0) :
+    letI : RiemannianBundle
+      (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+        TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+      ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+    (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
+        (standardCapRadialDomain × Metric.sphere (0 : V) 1)).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p
+      ((tangentSpaceProdEquiv p).symm (u, 0))
+      ((tangentSpaceProdEquiv p).symm (0, v)) =
+      -deriv (deriv f) p.1 / f p.1 := by
+  let : RiemannianBundle
+    (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+      TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+    ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+  rw [puncturedMetric]
+  exact sectionalCurvature_warpedProdTangentSpace_real_sphere_mixed standardCapRadialDomain
+    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (fun r ↦ (hf.apply_pos r.property).ne') p u v hu hv
+
+/-- Vertical spherical tangent planes of the punctured standard cap have sectional
+curvature `(1 - f'(r)²) / f(r)²`. -/
+theorem sectionalCurvature_puncturedMetric_vertical
+    (p : standardCapRadialDomain × Metric.sphere (0 : V) 1)
+    (v w : TangentSpace (𝓡 n) p.2) (hvw : LinearIndependent ℝ ![v, w]) :
+    letI : RiemannianBundle
+      (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+        TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+      ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+    (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
+        (standardCapRadialDomain × Metric.sphere (0 : V) 1)).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p
+      ((tangentSpaceProdEquiv p).symm (0, v))
+      ((tangentSpaceProdEquiv p).symm (0, w)) =
+      (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 := by
+  let : RiemannianBundle
+    (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+      TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+    ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+  rw [puncturedMetric]
+  exact sectionalCurvature_warpedProdTangentSpace_real_sphere_vertical standardCapRadialDomain
+    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (fun r ↦ (hf.apply_pos r.property).ne') p v w hvw
+
+/-- Every tangent two-plane of the punctured standard cap (including tilted planes) has
+nonnegative sectional curvature; dependent pairs also evaluate to `0 ≥ 0`. -/
+theorem sectionalCurvature_puncturedMetric_nonneg
+    (p : standardCapRadialDomain × Metric.sphere (0 : V) 1)
+    (X Y : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
+    letI : RiemannianBundle
+      (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+        TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+      ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+    0 ≤ (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
+        (standardCapRadialDomain × Metric.sphere (0 : V) 1)).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p X Y := by
+  let : RiemannianBundle
+    (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+      TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+    ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+  rw [puncturedMetric]
+  have h₀ := hf.deriv_nonneg p.1.property.le
+  have h₁ := hf.deriv_le_one p.1.property.le
+  have h₂ := hf.deriv_deriv_nonpos p.1.property.le
+  have hpos := hf.apply_pos p.1.property
+  exact sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg standardCapRadialDomain
+    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (fun r ↦ (hf.apply_pos r.property).ne') p
+    (div_nonneg (neg_nonneg.2 h₂) hpos.le)
+    (div_nonneg (by nlinarith) (sq_nonneg _)) X Y
+
+/-- Near its missing tip, the punctured standard cap has constant sectional curvature `1 / 4`,
+the sectional curvature of the round sphere of radius `2`. -/
+theorem exists_hasSectionalCurvatureAt_puncturedMetric_round :
+    letI : RiemannianBundle
+      (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+        TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+      ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+    ∃ r₀ > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
+      (p.1 : ℝ) < r₀ →
+      (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
+          (standardCapRadialDomain × Metric.sphere (0 : V) 1)).HasSectionalCurvatureAt
+        (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p (1 / 4) := by
+  let : RiemannianBundle
+    (fun q : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
+      TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+    ⟨(hf.puncturedMetric (n := n) V).toRiemannianMetric⟩
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
+  refine ⟨r₀, hr₀, fun p hp ↦ ?_⟩
+  have heq : f =ᶠ[𝓝 (p.1 : ℝ)] fun s ↦ 2 * sin (s / 2) := by
+    filter_upwards [Ioo_mem_nhds p.1.property hp] with s hs using h s ⟨hs.1.le, hs.2⟩
+  have hd : deriv f =ᶠ[𝓝 (p.1 : ℝ)] fun s ↦ cos (s / 2) := by
+    filter_upwards [heq.deriv] with s hs
+    rw [hs, (((hasDerivAt_id' s).div_const 2).sin.const_mul 2).deriv]
+    ring
+  have hdd : deriv (deriv f) (p.1 : ℝ) = -sin ((p.1 : ℝ) / 2) / 2 := by
+    rw [hd.deriv_eq, (((hasDerivAt_id' (p.1 : ℝ)).div_const 2).cos).deriv]
+    ring
+  have hsin : sin ((p.1 : ℝ) / 2) ≠ 0 := by
+    have := hf.apply_pos p.1.property
+    rw [heq.eq_of_nhds] at this
+    exact ne_of_gt (by linarith)
+  have htrig : 1 - cos ((p.1 : ℝ) / 2) ^ 2 = sin ((p.1 : ℝ) / 2) ^ 2 := by
+    nlinarith [sin_sq_add_cos_sq ((p.1 : ℝ) / 2)]
+  rw [puncturedMetric]
+  apply hasSectionalCurvatureAt_warpedProdTangentSpace_real_sphere standardCapRadialDomain
+    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (fun r ↦ (hf.apply_pos r.property).ne') p
+  · rw [heq.eq_of_nhds, hdd]; field_simp; ring
+  · rw [heq.eq_of_nhds, hd.eq_of_nhds, htrig]; field_simp; ring
 
 /-- Scalar curvature of the punctured standard cap, using ordinary radial derivatives.
 For a two-dimensional sphere fibre the two terms are
