@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Applying a continuous linear map to the values of Besov distributions
@@ -43,6 +44,14 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
   [NormedAddCommGroup G] [NormedSpace ℂ G] [NormedAddCommGroup H] [NormedSpace ℂ H]
 
+omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem two_rpow_mul_norm_compLp_le {μ : Measure E} {p : ℝ≥0∞} (s : ℝ) (j : ℕ)
+    (L : F →L[ℂ] G) (f : Lp F p μ) :
+    (2 : ℝ) ^ (s * j) * ‖L.compLp f‖ ≤ ‖L‖ * (2 ^ (s * j) * ‖f‖) :=
+  calc (2 : ℝ) ^ (s * j) * ‖L.compLp f‖
+      ≤ 2 ^ (s * j) * (‖L‖ * ‖f‖) := by gcongr; exact L.norm_compLp_le f
+    _ = ‖L‖ * (2 ^ (s * j) * ‖f‖) := by ring
+
 namespace TemperedDistribution
 
 /-- Littlewood–Paley blocks commute with post-composition by a continuous linear map on the fiber:
@@ -51,13 +60,22 @@ theorem littlewoodPaleyBlock_postcomp (φ : ContDiffBump (0 : E)) (j : ℕ)
     (L : F →L[ℂ] G) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u) =
       PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L (littlewoodPaleyBlock F φ j u) := by
-  have happ (v : 𝓢'(E, F)) (χ : 𝓢(E, ℂ)) :
-      (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L v : 𝓢'(E, G)) χ = L (v χ) := rfl
   ext ψ
-  rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
-    happ, happ, fourierMultiplierCLM_apply_apply]
+  simp only [littlewoodPaleyBlock_apply, PointwiseConvergenceCLM.postcomp_apply_apply,
+    fourierMultiplierCLM_apply_apply]
 
 variable [CompleteSpace F] [CompleteSpace G]
+
+/-- If the `j`-th Littlewood–Paley block of `u` is the `Lᵖ` function `f`, then the `j`-th block of
+`L ∘ u` is `L.compLp f`. -/
+theorem littlewoodPaleyBlock_postcomp_eq_compLp {φ : ContDiffBump (0 : E)} {j : ℕ}
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (L : F →L[ℂ] G) {u : 𝓢'(E, F)}
+    {f : Lp F p (volume : Measure E)} (hf : littlewoodPaleyBlock F φ j u = f) :
+    littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u) =
+      (L.compLp f : 𝓢'(E, G)) := by
+  rw [littlewoodPaleyBlock_postcomp, hf]
+  ext ψ
+  rw [PointwiseConvergenceCLM.postcomp_apply_apply, Lp.toTemperedDistribution_compLp_apply]
 
 /-- Applying a continuous linear map `L : F →L[ℂ] G` to the values of a tempered distribution in
 `B^s_{p,q}(E, F)` produces a tempered distribution in `B^s_{p,q}(E, G)`. -/
@@ -65,15 +83,11 @@ theorem MemBesov.postcomp {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0�
     {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (L : F →L[ℂ] G) :
     MemBesov φ s p q (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u : 𝓢'(E, G)) := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  refine memBesov_iff.2 ⟨fun j ↦ L.compLp (f j), fun j ↦ ?_,
+  refine memBesov_iff.2 ⟨fun j ↦ L.compLp (f j),
+    fun j ↦ littlewoodPaleyBlock_postcomp_eq_compLp L (hf j),
     (hmem.const_mul ‖L‖).mono fun j ↦ ?_⟩
-  · rw [littlewoodPaleyBlock_postcomp, hf j]
-    ext ψ
-    exact (Lp.toTemperedDistribution_compLp_apply L (f j) ψ).symm
-  · rw [Real.norm_of_nonneg (by positivity)]
-    calc (2 : ℝ) ^ (s * j) * ‖L.compLp (f j)‖
-        ≤ 2 ^ (s * j) * (‖L‖ * ‖f j‖) := by gcongr; exact L.norm_compLp_le (f j)
-      _ = ‖L‖ * (2 ^ (s * j) * ‖f j‖) := by ring
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact two_rpow_mul_norm_compLp_le s j L (f j)
 
 end TemperedDistribution
 
@@ -91,14 +105,8 @@ private theorem norm_postcomp_le_aux (L : F →L[ℂ] G) (u : BesovSpace F φ s 
     (F' := G) (φ' := φ) (p' := p) (s' := s) (norm_nonneg L) u
     (w := (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u.toDistr : 𝓢'(E, G)))
     (fun j ↦ L.compLp (u.block j))
-    (fun j ↦ by
-      rw [littlewoodPaleyBlock_postcomp, ← coe_block]
-      ext ψ
-      exact (Lp.toTemperedDistribution_compLp_apply L (u.block j) ψ).symm)
-    fun j ↦ by
-      calc (2 : ℝ) ^ (s * j) * ‖L.compLp (u.block j)‖
-          ≤ 2 ^ (s * j) * (‖L‖ * ‖u.block j‖) := by gcongr; exact L.norm_compLp_le (u.block j)
-        _ = ‖L‖ * (2 ^ (s * j) * ‖u.block j‖) := by ring
+    (fun j ↦ littlewoodPaleyBlock_postcomp_eq_compLp L (coe_block u j).symm)
+    (fun j ↦ two_rpow_mul_norm_compLp_le s j L (u.block j))
   rwa [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
 
 variable (φ s p q) in
@@ -122,17 +130,15 @@ theorem toDistr_postcomp (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
 
 theorem toDistr_postcomp_apply (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) (ψ : 𝓢(E, ℂ)) :
     (postcomp φ s p q L u).toDistr ψ = L (u.toDistr ψ) := by
-  rw [toDistr_postcomp]
-  rfl
+  rw [toDistr_postcomp, PointwiseConvergenceCLM.postcomp_apply_apply]
 
 @[simp]
 theorem block_postcomp (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) (j : ℕ) :
-    (postcomp φ s p q L u).block j = L.compLp (u.block j) := by
-  refine Lp.toTemperedDistribution_injective ?_
-  dsimp only
-  rw [coe_block, toDistr_postcomp, littlewoodPaleyBlock_postcomp, ← coe_block]
-  ext ψ
-  exact (Lp.toTemperedDistribution_compLp_apply L (u.block j) ψ).symm
+    (postcomp φ s p q L u).block j = L.compLp (u.block j) :=
+  Lp.toTemperedDistribution_injective <|
+    (coe_block (postcomp φ s p q L u) j).trans <| by
+      rw [toDistr_postcomp]
+      exact littlewoodPaleyBlock_postcomp_eq_compLp L (coe_block u j).symm
 
 theorem norm_postcomp_apply_le (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
     ‖postcomp φ s p q L u‖ ≤ ‖L‖ * ‖u‖ :=

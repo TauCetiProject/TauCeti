@@ -9,6 +9,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.FourierMultiplier
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Schwartz
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Delta
 
@@ -215,6 +216,13 @@ theorem mem_littleBesov_iff {u : BesovSpace F φ s p ∞} :
     u ∈ littleBesov F φ s p ↔ u.toDistr.MemLittleBesov φ s p :=
   Iff.rfl
 
+/-- A tempered distribution `u ∈ B^s_{p,∞}` bundled into `BesovSpace` lies in `littleBesov` if and
+only if `u` satisfies `MemLittleBesov`. -/
+theorem _root_.TemperedDistribution.MemBesov.toBesovSpace_mem_littleBesov_iff {u : 𝓢'(E, F)}
+    (hu : u.MemBesov φ s p ∞) :
+    hu.toBesovSpace ∈ littleBesov F φ s p ↔ u.MemLittleBesov φ s p := by
+  rw [mem_littleBesov_iff, hu.toDistr_toBesovSpace]
+
 /-- `u ∈ b^s_{p,∞}` if and only if `2^{js} ‖Δⱼ u‖_p → 0` as `j → ∞`. -/
 theorem mem_littleBesov_iff_tendsto {u : BesovSpace F φ s p ∞} :
     u ∈ littleBesov F φ s p ↔ Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) :=
@@ -327,36 +335,6 @@ private theorem map_mem_littleBesov_of_inclusionOfLT
   rw [hw]
   exact inclusionOfLT_mem_littleBesov hr' w
 
-/-- Restricting a continuous linear equivalence between ambient `B^s_{p,∞}` spaces that preserves
-`littleBesov` in both directions produces a continuous linear equivalence between the little Besov
-subspaces. -/
-private def restrictLittleBesovEquiv {φ' : ContDiffBump (0 : E)} {s' : ℝ} {p' : ℝ≥0∞}
-    [Fact (1 ≤ p')] (e : BesovSpace F φ s p ∞ ≃L[ℂ] BesovSpace G φ' s' p' ∞)
-    (he : ∀ u : BesovSpace F φ s p ∞, e u ∈ littleBesov G φ' s' p' ↔ u ∈ littleBesov F φ s p) :
-    littleBesov F φ s p ≃L[ℂ] littleBesov G φ' s' p' :=
-  ContinuousLinearEquiv.equivOfInverse
-    (((e : _ →L[ℂ] _).domRestrict _).codRestrict _ fun u ↦ by simpa using (he u.1).2 u.2)
-    (((e.symm : _ →L[ℂ] _).domRestrict _).codRestrict _ fun v ↦ by
-      simpa using (he (e.symm v.1)).1 (by simp [e.apply_symm_apply]))
-    (fun u ↦ Subtype.ext (by simp))
-    (fun v ↦ Subtype.ext (by simp))
-
-@[simp]
-private theorem coe_restrictLittleBesovEquiv_apply {φ' : ContDiffBump (0 : E)} {s' : ℝ} {p' : ℝ≥0∞}
-    [Fact (1 ≤ p')] (e : BesovSpace F φ s p ∞ ≃L[ℂ] BesovSpace G φ' s' p' ∞)
-    (he : ∀ u : BesovSpace F φ s p ∞, e u ∈ littleBesov G φ' s' p' ↔ u ∈ littleBesov F φ s p)
-    (u : littleBesov F φ s p) :
-    (restrictLittleBesovEquiv e he u : BesovSpace G φ' s' p' ∞) = e u :=
-  (rfl)
-
-@[simp]
-private theorem coe_restrictLittleBesovEquiv_symm_apply {φ' : ContDiffBump (0 : E)} {s' : ℝ}
-    {p' : ℝ≥0∞} [Fact (1 ≤ p')] (e : BesovSpace F φ s p ∞ ≃L[ℂ] BesovSpace G φ' s' p' ∞)
-    (he : ∀ u : BesovSpace F φ s p ∞, e u ∈ littleBesov G φ' s' p' ↔ u ∈ littleBesov F φ s p)
-    (v : littleBesov G φ' s' p') :
-    ((restrictLittleBesovEquiv e he).symm v : BesovSpace F φ s p ∞) = e.symm v :=
-  (rfl)
-
 /-- `bumpEquiv` maps `b^s_{p,∞}` into `b^s_{p,∞}` for any other bump `φ'`. -/
 theorem bumpEquiv_mem_littleBesov (φ' : ContDiffBump (0 : E)) {u : BesovSpace F φ s p ∞}
     (hu : u ∈ littleBesov F φ s p) :
@@ -375,20 +353,25 @@ function `φ'`. -/
 theorem _root_.TemperedDistribution.MemLittleBesov.of_bump {u : 𝓢'(E, F)}
     (hu : u.MemLittleBesov φ s p) (φ' : ContDiffBump (0 : E)) :
     u.MemLittleBesov φ' s p := by
-  have h := bumpEquiv_mem_littleBesov φ' (u := hu.memBesov.toBesovSpace) (by simpa)
-  simpa using h
+  have h := bumpEquiv_mem_littleBesov φ' (hu.memBesov.toBesovSpace_mem_littleBesov_iff.2 hu)
+  rwa [mem_littleBesov_iff, toDistr_bumpEquiv, hu.memBesov.toDistr_toBesovSpace] at h
 
 variable (F) in
 /-- **Equivalence of little Besov norms across Littlewood–Paley partitions.** Two smooth bump
 functions `φ` and `φ'` define canonically isomorphic Banach spaces `b^s_{p,∞}`. -/
 def littleBesovBumpEquiv (φ φ' : ContDiffBump (0 : E)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     littleBesov F φ s p ≃L[ℂ] littleBesov F φ' s p :=
-  restrictLittleBesovEquiv (bumpEquiv F φ φ' s p ∞) fun _ ↦ bumpEquiv_mem_littleBesov_iff φ'
+  (bumpEquiv F φ φ' s p ∞).ofSubmodules _ _ <| by
+    ext v
+    simp only [Submodule.mem_map, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+    exact ⟨fun ⟨u, hu, huv⟩ ↦ huv ▸ bumpEquiv_mem_littleBesov φ' hu,
+      fun hv ↦ ⟨_, bumpEquiv_mem_littleBesov φ hv, by
+        rw [← bumpEquiv_symm, ContinuousLinearEquiv.symm_apply_apply]⟩⟩
 
 @[simp]
 theorem coe_littleBesovBumpEquiv_apply (φ' : ContDiffBump (0 : E)) (u : littleBesov F φ s p) :
     (littleBesovBumpEquiv F φ φ' s p u : BesovSpace F φ' s p ∞) = bumpEquiv F φ φ' s p ∞ u :=
-  (rfl)
+  ContinuousLinearEquiv.ofSubmodules_apply _ _ u
 
 @[simp]
 theorem littleBesovBumpEquiv_symm (φ' : ContDiffBump (0 : E)) :
@@ -410,8 +393,9 @@ theorem inclusionOfExponentLE_mem_littleBesov {r : ℝ≥0∞} [Fact (1 ≤ r)] 
 theorem _root_.TemperedDistribution.MemLittleBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞}
     [Fact (1 ≤ r)] (hu : u.MemLittleBesov φ s p) (hpr : p ≤ r) :
     u.MemLittleBesov φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r := by
-  have h := inclusionOfExponentLE_mem_littleBesov hpr (u := hu.memBesov.toBesovSpace) (by simpa)
-  simpa using h
+  have h := inclusionOfExponentLE_mem_littleBesov hpr
+    (hu.memBesov.toBesovSpace_mem_littleBesov_iff.2 hu)
+  rwa [mem_littleBesov_iff, toDistr_inclusionOfExponentLE, hu.memBesov.toDistr_toBesovSpace] at h
 
 /-- `BesovSpace.postcomp` maps `b^s_{p,∞}(E, F)` into `b^s_{p,∞}(E, G)`. -/
 theorem postcomp_mem_littleBesov (L : F →L[ℂ] G) {u : BesovSpace F φ s p ∞}
@@ -425,22 +409,25 @@ theorem postcomp_mem_littleBesov (L : F →L[ℂ] G) {u : BesovSpace F φ s p �
 theorem _root_.TemperedDistribution.MemLittleBesov.postcomp {u : 𝓢'(E, F)}
     (hu : u.MemLittleBesov φ s p) (L : F →L[ℂ] G) :
     MemLittleBesov φ s p (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u : 𝓢'(E, G)) := by
-  have h := postcomp_mem_littleBesov L (u := hu.memBesov.toBesovSpace) (by simpa)
-  simpa using h
+  have h := postcomp_mem_littleBesov L (hu.memBesov.toBesovSpace_mem_littleBesov_iff.2 hu)
+  rwa [mem_littleBesov_iff, toDistr_postcomp, hu.memBesov.toDistr_toBesovSpace] at h
 
 variable (φ s p) in
 /-- A continuous linear equivalence `e : F ≃L[ℂ] G` on the fiber induces an isomorphism of little
 Besov spaces `b^s_{p,∞}(E, F) ≃L[ℂ] b^s_{p,∞}(E, G)`. -/
 def littleBesovPostcompEquiv (e : F ≃L[ℂ] G) :
     littleBesov F φ s p ≃L[ℂ] littleBesov G φ s p :=
-  restrictLittleBesovEquiv (postcompEquiv φ s p ∞ e) fun _ ↦
-    ⟨fun h ↦ by simpa [postcomp_comp_apply] using postcomp_mem_littleBesov (e.symm : G →L[ℂ] F) h,
-      fun h ↦ by rw [postcompEquiv_apply]; exact postcomp_mem_littleBesov (e : F →L[ℂ] G) h⟩
+  (postcompEquiv φ s p ∞ e).ofSubmodules _ _ <| by
+    ext v
+    simp only [Submodule.mem_map, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+      postcompEquiv_apply]
+    exact ⟨fun ⟨u, hu, huv⟩ ↦ huv ▸ postcomp_mem_littleBesov (e : F →L[ℂ] G) hu,
+      fun hv ↦ ⟨_, postcomp_mem_littleBesov (e.symm : G →L[ℂ] F) hv, by simp⟩⟩
 
 @[simp]
 theorem coe_littleBesovPostcompEquiv_apply (e : F ≃L[ℂ] G) (u : littleBesov F φ s p) :
     (littleBesovPostcompEquiv φ s p e u : BesovSpace G φ s p ∞) = postcompEquiv φ s p ∞ e u :=
-  (rfl)
+  ContinuousLinearEquiv.ofSubmodules_apply _ _ u
 
 @[simp]
 theorem littleBesovPostcompEquiv_symm (e : F ≃L[ℂ] G) :
@@ -467,8 +454,8 @@ theorem _root_.TemperedDistribution.MemLittleBesov.fourierMultiplierCLM {g : E �
     {u : 𝓢'(E, F)} (hu : u.MemLittleBesov φ s p) :
     (TemperedDistribution.fourierMultiplierCLM F g u).MemLittleBesov φ (s - m) p := by
   have h := fourierMultiplierCLM_mem_littleBesov hg hgm rfl
-    (u := hu.memBesov.toBesovSpace) (by simpa)
-  simpa using h
+    (hu.memBesov.toBesovSpace_mem_littleBesov_iff.2 hu)
+  rwa [mem_littleBesov_iff, toDistr_fourierMultiplierCLM, hu.memBesov.toDistr_toBesovSpace] at h
 
 /-- `besselPotentialEquiv` maps `b^s_{p,∞}` into `b^{s - t}_{p,∞}`. -/
 theorem besselPotentialEquiv_mem_littleBesov (t : ℝ) {s' : ℝ} (hs : s' = s - t)
@@ -484,8 +471,8 @@ theorem _root_.TemperedDistribution.MemLittleBesov.besselPotential {u : 𝓢'(E,
     (hu : u.MemLittleBesov φ s p) (t : ℝ) :
     (besselPotential E F t u).MemLittleBesov φ (s - t) p := by
   have h := besselPotentialEquiv_mem_littleBesov t rfl
-    (u := hu.memBesov.toBesovSpace) (by simpa)
-  simpa using h
+    (hu.memBesov.toBesovSpace_mem_littleBesov_iff.2 hu)
+  rwa [mem_littleBesov_iff, toDistr_besselPotentialEquiv, hu.memBesov.toDistr_toBesovSpace] at h
 
 /-- **The lifting property of little Besov spaces.** `J^t u ∈ b^s_{p,∞}` if and only if
 `u ∈ b^{t + s}_{p,∞}`. -/
@@ -506,15 +493,20 @@ variable (F φ p) in
 restricts to a continuous linear equivalence `b^s_{p,∞}(E, F) ≃L[ℂ] b^{s'}_{p,∞}(E, F)`. -/
 def littleBesovBesselPotentialEquiv (t : ℝ) {s s' : ℝ} (hs : s' = s - t) :
     littleBesov F φ s p ≃L[ℂ] littleBesov F φ s' p :=
-  restrictLittleBesovEquiv (besselPotentialEquiv F φ p ∞ t hs)
-    fun _ ↦ besselPotentialEquiv_mem_littleBesov_iff t hs
+  (besselPotentialEquiv F φ p ∞ t hs).ofSubmodules _ _ <| by
+    ext v
+    simp only [Submodule.mem_map, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+    exact ⟨fun ⟨u, hu, huv⟩ ↦ huv ▸ besselPotentialEquiv_mem_littleBesov t hs hu,
+      fun hv ↦ ⟨_, besselPotentialEquiv_mem_littleBesov (-t)
+        (by rw [hs, sub_neg_eq_add, sub_add_cancel]) hv, by
+        rw [← besselPotentialEquiv_symm t hs, ContinuousLinearEquiv.apply_symm_apply]⟩⟩
 
 @[simp]
 theorem coe_littleBesovBesselPotentialEquiv_apply (t : ℝ) {s' : ℝ} (hs : s' = s - t)
     (u : littleBesov F φ s p) :
     (littleBesovBesselPotentialEquiv F φ p t hs u : BesovSpace F φ s' p ∞) =
       besselPotentialEquiv F φ p ∞ t hs u :=
-  (rfl)
+  ContinuousLinearEquiv.ofSubmodules_apply _ _ u
 
 @[simp]
 theorem littleBesovBesselPotentialEquiv_symm (t : ℝ) {s' : ℝ} (hs : s' = s - t) :
@@ -523,14 +515,15 @@ theorem littleBesovBesselPotentialEquiv_symm (t : ℝ) {s' : ℝ} (hs : s' = s -
   ContinuousLinearEquiv.ext <| funext fun _ ↦
     Subtype.ext <| by simp [littleBesovBesselPotentialEquiv]
 
-/-- **Smooth multipliers of little Besov spaces.** Under the exact derivative bounds of
-`TauCeti.BesovSpace.smulLeftCLM` (bounded derivatives up to order `⌊|s|⌋₊ + 1`), multiplication by
-`g` preserves `b^s_{p,∞}(E, F)`: since `|s| < ⌊|s|⌋₊ + 1` is strict, there is `r > s` with
-`⌊|r|⌋₊ ≤ ⌊|s|⌋₊` on which `g` already acts boundedly on `B^r_{p,∞}`. -/
+/-- **Smooth multipliers of little Besov spaces.** Multiplication by a function `g : E → ℂ` of
+temperate growth with bounded derivatives up to order `⌊|s|⌋₊ + 1` maps `b^s_{p,∞}(E, F)` into
+itself. -/
 theorem smulLeftCLM_mem_littleBesov {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
     {u : BesovSpace F φ s p ∞} (hu : u ∈ littleBesov F φ s p) :
     smulLeftCLM F φ s p ∞ g hg hbd u ∈ littleBesov F φ s p := by
+  -- Since `|s| < ⌊|s|⌋₊ + 1` is strict, choose `r > s` with `⌊|r|⌋₊ ≤ ⌊|s|⌋₊` so `g` already acts
+  -- boundedly on `B^r_{p,∞}`.
   have hlt : |s| < (⌊|s|⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one |s|
   set r : ℝ := s + ((⌊|s|⌋₊ : ℝ) + 1 - |s|) / 2
   have hsr : s < r := by dsimp only [r]; linarith
@@ -552,8 +545,9 @@ theorem _root_.TemperedDistribution.MemLittleBesov.smulLeftCLM {u : 𝓢'(E, F)}
     (hu : u.MemLittleBesov φ s p) {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
     (TemperedDistribution.smulLeftCLM F g u).MemLittleBesov φ s p := by
-  have h := smulLeftCLM_mem_littleBesov hg hbd (u := hu.memBesov.toBesovSpace) (by simpa)
-  simpa using h
+  have h := smulLeftCLM_mem_littleBesov hg hbd
+    (hu.memBesov.toBesovSpace_mem_littleBesov_iff.2 hu)
+  rwa [mem_littleBesov_iff, toDistr_smulLeftCLM, hu.memBesov.toDistr_toBesovSpace] at h
 
 end Invariance
 
@@ -666,25 +660,18 @@ theorem TemperedDistribution.not_memLittleBesov_delta_zero [Nontrivial E]
     fun j ↦ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p
   have hf (j : ℕ) : littlewoodPaleyBlock ℂ φ j (delta 0) = f j := by
     rw [Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_delta_zero]
-  have hfae (j : ℕ) : f j =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-    filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).coeFn_toLp p] with x hx
+  have hfae1 : f 1 =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ) := by
+    filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).coeFn_toLp p] with x hx
     rw [hx, SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
   have hc : 0 < ‖f 1‖ := by
     refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
-    rw [eLpNorm_congr_ae (hfae 1)]
+    rw [eLpNorm_congr_ae hfae1]
     exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
       (zero_lt_one.trans_le Fact.out).ne'
   have hconst (j : ℕ) : (2 : ℝ) ^ (-m * (j + 1 : ℕ)) * ‖f (j + 1)‖ = 2 ^ (-m) * ‖f 1‖ := by
-    have hnorm : ‖f (j + 1)‖ = (2 : ℝ) ^ (m * j) * ‖f 1‖ := by
-      rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (hfae _), eLpNorm_congr_ae (hfae 1),
-        φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
-      congr 2
-      rw [div_eq_mul_inv]
-      ring
-    rw [hnorm, ← mul_assoc, ← Real.rpow_add two_pos]
-    congr 1
-    congr 1
+    rw [φ.norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ, ← mul_assoc,
+      ← Real.rpow_add two_pos]
+    congr 2
     push_cast
     ring
   intro hu
@@ -708,18 +695,18 @@ theorem TemperedDistribution.memLittleBesov_delta_zero_iff [Nontrivial E]
 
 namespace TauCeti.BesovSpace
 
-/-- **The little Besov space is a proper closed subspace of `B^s_{p,∞}(E, F)`** whenever `E` and `F`
-are nontrivial, for *every* smoothness order `s : ℝ` and *every* `1 ≤ p ≤ ∞`: Bessel-potential
-lifting shifts the Dirac mass from the critical order `-n (1 - 1/p)` to order `s` in fiber `ℂ`, and
-Hahn–Banach embeds `ℂ` as a complemented summand of `F`. -/
+/-- **The little Besov space is a proper subspace of `B^s_{p,∞}(E, F)`** for every smoothness order
+`s : ℝ` and every `1 ≤ p ≤ ∞` whenever `E` and `F` are nontrivial. -/
 theorem littleBesov_ne_top [Nontrivial E] [Nontrivial F] (φ : ContDiffBump (0 : E)) (s : ℝ)
     (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     littleBesov F φ s p ≠ ⊤ := by
+  -- Shift `δ₀` from `-n (1 - 1/p)` to order `s` via `besselPotentialEquiv`, then embed `ℂ` as a
+  -- complemented summand of `F` via Hahn–Banach.
   set s₀ : ℝ := -(finrank ℝ E * (1 - p.toReal⁻¹))
   let u₀ : BesovSpace ℂ φ s₀ p ∞ := (memBesov_delta_zero φ p).toBesovSpace
-  have hu₀ : u₀ ∉ littleBesov ℂ φ s₀ p := by
-    rw [mem_littleBesov_iff, MemBesov.toDistr_toBesovSpace]
-    exact not_memLittleBesov_delta_zero φ p
+  have hu₀ : u₀ ∉ littleBesov ℂ φ s₀ p :=
+    (memBesov_delta_zero φ p).toBesovSpace_mem_littleBesov_iff.not.2
+      (not_memLittleBesov_delta_zero φ p)
   let u₁ : BesovSpace ℂ φ s p ∞ := besselPotentialEquiv ℂ φ p ∞ (s₀ - s) (by ring) u₀
   have hu₁ : u₁ ∉ littleBesov ℂ φ s p := by
     rwa [besselPotentialEquiv_mem_littleBesov_iff]

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
@@ -22,7 +23,8 @@ inclusion `SchwartzMap.toBesovSpaceCLM` for all `s ∈ ℝ` and `1 ≤ p, q ≤ 
 
 Conversely, for any `u ∈ B^s_{p,q}(E, F)` the dyadic partial sums
 `S_N u = ∑_{j < N} Δⱼ u` define uniformly bounded operators `TauCeti.BesovSpace.partialSumCLM` on
-`B^s_{p,q}(E, F)` whose spectrum is supported in the ball `‖ξ‖ ≤ 2^N φ.rOut`. Because the blocks
+`B^s_{p,q}(E, F)`; the Fourier transform of each `S_N u` is supported in
+`Metric.closedBall 0 (2 ^ N * φ.rOut)`. Because the blocks
 `Δₖ` and `Δⱼ` interact only at bounded distance `|k - j| < L`, the block `Δₖ (u - S_N u)` is a
 bounded window sum of the blocks `Δⱼ u` with `j ≥ N`. Thus `‖u - S_N u‖_{B^s_{p,q}}` is controlled
 by the `ℓ^q` norm of the tail `(2^{js} ‖Δⱼ u‖_p)_{j ≥ N}`:
@@ -211,16 +213,6 @@ private theorem exists_littlewoodPaleyBlock_sub_sum_range_eq (φ : ContDiffBump 
   · simp [hj, not_le.2 hj]
   · simp [hj, not_lt.2 hj]
 
-/-- Evaluating the tail `v - ∑_{i < N} single i (v i)` at index `j`. -/
-private theorem sub_sum_single_apply {α : ℕ → Type*} [∀ i, NormedAddCommGroup (α i)] {q : ℝ≥0∞}
-    (v : lp α q) (N j : ℕ) :
-    (v - ∑ i ∈ Finset.range N, lp.single q i (v i)) j = if N ≤ j then v j else 0 := by
-  simp only [lp.coeFn_sub, lp.coeFn_sum, lp.coeFn_single, Pi.sub_apply, Finset.sum_apply,
-    Finset.sum_pi_single, Finset.mem_range]
-  rcases lt_or_ge j N with hj | hj
-  · simp [hj, not_le.2 hj]
-  · simp [hj, not_lt.2 hj]
-
 /-- **Tail bound for dyadic partial sums.** There is `C ≥ 0`, depending only on `φ` and `s`, such
 that for every `1 ≤ p, q ≤ ∞`, `N : ℕ` and `u ∈ B^s_{p,q}`, the remainder
 `u - ∑_{j < N} Δⱼ u` lies in `B^s_{p,q}` with norm at most `C` times the `ℓ^q` norm of the tail of
@@ -265,11 +257,11 @@ private theorem exists_remainder_toDistr_eq_and_norm_le (φ : ContDiffBump (0 : 
     refine (two_rpow_mul_norm_sum_Ico_le s hgx k L).trans_eq ?_
     congr 1
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [sub_sum_single_apply]
+    rw [lp.sub_sum_single_apply]
     dsimp only [x]
-    split_ifs
-    · exact (norm_weightedBlocks_apply u j).symm
-    · simp
+    rcases lt_or_ge j N with hj | hj
+    · simp [hj, not_le.2 hj]
+    · simp [hj, not_lt.2 hj, norm_weightedBlocks_apply]
   obtain ⟨r, hr, hrn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq G (K • W) hG hle
   refine ⟨r, hr, hrn.trans ?_⟩
   calc ‖K • W‖ = K * ‖W‖ := by rw [norm_smul, Real.norm_of_nonneg (by positivity)]
@@ -327,11 +319,9 @@ def partialSumCLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact
       have hur : (memBesov_sum_littlewoodPaleyBlock s q N u).toBesovSpace = u - r := ext <| by
         rw [MemBesov.toDistr_toBesovSpace, toDistr_sub, hr, sub_sub_cancel]
       have htail : ‖u.weightedBlocks -
-          ∑ i ∈ Finset.range N, lp.single q i (u.weightedBlocks i)‖ ≤ ‖u‖ := by
-        rw [← norm_weightedBlocks]
-        refine lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
-        rw [sub_sum_single_apply]
-        split_ifs <;> simp
+          ∑ i ∈ Finset.range N, lp.single q i (u.weightedBlocks i)‖ ≤ ‖u‖ :=
+        (lp.norm_sub_sum_single_le (zero_lt_one.trans_le Fact.out).ne' _ _).trans_eq
+          (norm_weightedBlocks u)
       calc ‖(memBesov_sum_littlewoodPaleyBlock s q N u).toBesovSpace‖
           = ‖u - r‖ := congrArg norm hur
         _ ≤ ‖u‖ + ‖r‖ := norm_sub_le _ _
@@ -370,20 +360,11 @@ such that `‖partialSumCLM F φ s p q N‖ ≤ C` for all `N : ℕ` and all `1 
 theorem exists_norm_partialSumCLM_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (N : ℕ),
       ‖partialSumCLM F φ s p q N‖ ≤ C := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_sub_partialSumCLM_le (F := F) φ s
-  refine ⟨1 + C, by positivity, fun {p q} _ _ N ↦ ?_⟩
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  have htail : ‖u.weightedBlocks -
-      ∑ i ∈ Finset.range N, lp.single q i (u.weightedBlocks i)‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    refine lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
-    rw [sub_sum_single_apply]
-    split_ifs <;> simp
-  calc ‖partialSumCLM F φ s p q N u‖
-      ≤ ‖u‖ + ‖u - partialSumCLM F φ s p q N u‖ := by
-        simpa [sub_sub_cancel] using norm_sub_le u (u - partialSumCLM F φ s p q N u)
-    _ ≤ ‖u‖ + C * ‖u‖ := add_le_add_right ((hC N u).trans (mul_le_mul_of_nonneg_left htail hC0)) _
-    _ = (1 + C) * ‖u‖ := by ring
+  let C := (exists_remainder_toDistr_eq_and_norm_le (F := F) φ s).choose
+  have hC0 : 0 ≤ C := (exists_remainder_toDistr_eq_and_norm_le (F := F) φ s).choose_spec.1
+  refine ⟨1 + C, by positivity, fun N ↦ ?_⟩
+  rw [partialSumCLM]
+  exact LinearMap.mkContinuous_norm_le _ (by positivity) _
 
 /-- **Smoothing property of dyadic partial sums.** Because the Fourier transform of `S_N u` is
 supported in `closedBall 0 (2^N φ.rOut)`, `S_N u` has only finitely many nonzero Littlewood–Paley
@@ -429,13 +410,13 @@ theorem tendsto_partialSumCLM_top_of_tendsto {u : BesovSpace F φ s p ∞}
     refine ⟨N₀, fun N hN ↦ ?_⟩
     rw [Real.dist_0_eq_abs, abs_of_nonneg (norm_nonneg _)]
     refine (lp.norm_le_of_forall_le (half_pos hε).le fun j ↦ ?_).trans_lt (half_lt_self hε)
-    rw [sub_sum_single_apply]
+    rw [lp.sub_sum_single_apply]
     split_ifs with hj
+    · simp [(half_pos hε).le]
     · rw [norm_weightedBlocks_apply]
-      have hj' := hN₀ j (hN.trans hj)
+      have hj' := hN₀ j (hN.trans (not_lt.1 (mt Finset.mem_range.2 hj)))
       rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hj'
       exact hj'.le
-    · simp [(half_pos hε).le]
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) (by simpa using htail.const_mul C)
   rw [norm_sub_rev]

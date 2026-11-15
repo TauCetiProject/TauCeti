@@ -111,9 +111,11 @@ blocks `Δⱼ u`.
   no other block.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm, and
-  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
-  `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`:
-  each kernel `𝓕⁻ ψⱼ` is nonzero in every `Lʳ`.
+  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ` /
+  `ContDiffBump.norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ`: their `Lʳ` norms
+  grow like `2^{j n (1 - 1/r)}`;
+  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`: each kernel `𝓕⁻ ψⱼ` is
+  nonzero in every `Lʳ`.
 * `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
   `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
@@ -205,6 +207,31 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) (r : ENNR
   simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
   exact TauCeti.eLpNorm_fourierInv_comp_inv_smul
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (pow_pos two_pos j) r
+
+open MeasureTheory in
+/-- **The `Lʳ` norms of the Schwartz dyadic kernels.** In dimension `n`, the `Lʳ` norm of
+`𝓕⁻ ψ_{j+1}` is `2^{n (1 - 1/r) j}` times that of `𝓕⁻ ψ₁`, where `1/∞ = 0`. -/
+theorem norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ (j : ℕ) (r : ENNReal) :
+    ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).toLp r (volume : Measure E)‖ =
+      (2 : ℝ) ^ ((Module.finrank ℝ E * (1 - r.toReal⁻¹)) * j) *
+        ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp r (volume : Measure E)‖ := by
+  have hae (k : ℕ) :
+      (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz k)).toLp r (volume : Measure E) =ᵐ[volume]
+        𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ) := by
+    filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz k)).coeFn_toLp r] with x hx
+    rw [hx, SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  have heLp :
+      eLpNorm ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).toLp r volume) r volume =
+        ENNReal.ofReal
+            ((2 ^ j : ℝ) ^ ((Module.finrank ℝ E : ℝ) - Module.finrank ℝ E / r.toReal)) *
+          eLpNorm ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp r volume) r volume := by
+    rw [eLpNorm_congr_ae (hae (j + 1)), eLpNorm_congr_ae (hae 1),
+      φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ]
+  simp only [Lp.norm_def, heLp, ENNReal.toReal_mul]
+  rw [ENNReal.toReal_ofReal (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
+  congr 2
+  rw [div_eq_mul_inv]
+  ring
 
 open MeasureTheory in
 /-- **The kernels are nonzero.** On a nontrivial space, each `𝓕⁻ ψⱼ` has nonzero `Lʳ` norm for
