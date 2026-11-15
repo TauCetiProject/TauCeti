@@ -344,6 +344,18 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
   simpa [barycentricLinear, rhombusSlack, affine_apply] using
     rhombusSlack_barycentricLinear (n := n) (0 : R) 0 β γ hr
 
+/-- The normalized affine hive with zero slopes is the zero hive. -/
+@[simp] theorem affine_zero (n : ℕ) : affine n (0 : R) 0 = 0 := by
+  ext p
+  simp
+
+/-- Slope parameters of normalized affine hives add homomorphically. -/
+@[simp] theorem affine_add (n : ℕ) (β₁ γ₁ β₂ γ₂ : R) :
+    affine n (β₁ + β₂) (γ₁ + γ₂) = affine n β₁ γ₁ + affine n β₂ γ₂ := by
+  ext p
+  simp only [affine_apply, add_apply, nsmul_add]
+  abel
+
 /-- Restrict a hive on `Δ_{m + k}` to the subtriangle of side `k` translated by `p : Δ_m`,
 normalizing at `p.add (cornerA k)`. -/
 def subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) : Hive k R :=

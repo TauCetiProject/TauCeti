@@ -91,8 +91,9 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
-* `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
-  product, read on the underlying linear maps.
+* `FDRep.tensorUnit_ρ`, `FDRep.tensor_ρ`, and `FDRep.tprodEquiv`: the actions on the tensor unit
+  and on a tensor product, read on the underlying linear maps and as a `Representation.Equiv` with
+  `Representation.tprod`.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
@@ -313,6 +314,38 @@ maps: this is `CategoryTheory.Action.tensor_ρ` stated for `FDRep.ρ` rather tha
 the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
 theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
     (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
+
+open MonoidalCategory in
+/-- **Unbundled tensor-product identification for `FDRep.ρ` on `X ⊗ Y`**: the representation
+carried by `X ⊗ Y` in `FDRep R G` is equivalent via `LinearEquiv.refl` to
+`Representation.tprod X.ρ Y.ρ`. -/
+noncomputable def tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) : Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
+  .mk (LinearEquiv.refl R ↥(X ⊗ Y)) fun g => LinearMap.ext fun _ => by
+    rw [tensor_ρ]
+    rfl
+
+open MonoidalCategory in
+/-- The linear equivalence underlying `FDRep.tprodEquiv` is the identity. -/
+@[simp]
+theorem toLinearEquiv_tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) :
+    (tprodEquiv X Y).toLinearEquiv = LinearEquiv.refl R ↥(X ⊗ Y) :=
+  (rfl)
+
+open MonoidalCategory in
+/-- Applying `FDRep.tprodEquiv` is the identity on underlying tensors. -/
+theorem tprodEquiv_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : ↥(X ⊗ Y)) :
+    tprodEquiv X Y z = z :=
+  (rfl)
+
+open MonoidalCategory in
+/-- Applying `(FDRep.tprodEquiv X Y).symm` is the identity on underlying tensors. -/
+theorem tprodEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : ↥(X ⊗ Y)) :
+    (tprodEquiv X Y).symm z = z :=
+  (rfl)
 
 section Shrink
 

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.DirectSum.TensorProduct
 public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
-# Finite direct sums of representations
+# Direct sums of representations
 
 An intertwining map into a finite direct sum is determined by its components
 (`Representation.IntertwiningMap.directSumLinearEquiv`, for carriers in arbitrary universes), and
@@ -19,11 +20,15 @@ categorical biproduct.
 
 The natural identification with a dependent product conjugates the direct-sum action to the
 componentwise action, so finite direct sums can also be studied through product linear maps.
+For arbitrary index types with decidable equality, `Representation.tprodDirectSumLeftEquiv`
+lifts `TensorProduct.directSumLeft` to an equivalence of representations distributing
+`Representation.tprod` over `Representation.directSum` on the left.
 -/
 
 public section
 
 open CategoryTheory Representation DirectSum
+open scoped TensorProduct
 
 namespace Representation
 
@@ -42,6 +47,42 @@ theorem conj_directSum_linearEquivFunOnFintype
   simp only [LinearEquiv.conj_apply_apply, LinearMap.coe_piMap, Pi.map_apply,
     DirectSum.linearEquivFunOnFintype_apply, directSum_apply, DirectSum.lmap_apply]
   rw [← DirectSum.linearEquivFunOnFintype_apply k ι V, LinearEquiv.apply_symm_apply]
+
+section TensorProduct
+
+variable {k G ι : Type*} [CommSemiring k] [Monoid G] [DecidableEq ι]
+  {W : ι → Type*} [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
+  {U : Type*} [AddCommMonoid U] [Module k U]
+  (τ : ∀ i, Representation k G (W i)) (σ : Representation k G U)
+
+/-- **Tensor products of representations distribute over a direct sum on the left**, lifting
+`TensorProduct.directSumLeft` to an equivalence of representations. -/
+noncomputable def tprodDirectSumLeftEquiv :
+    ((directSum τ).tprod σ).Equiv (directSum fun i ↦ (τ i).tprod σ) :=
+  .mk (TensorProduct.directSumLeft k k W U) fun g ↦
+    TensorProduct.ext' fun x y ↦ DFinsupp.ext fun i ↦ by simp [directSum_apply]
+
+/-- The linear equivalence underlying `tprodDirectSumLeftEquiv` is `TensorProduct.directSumLeft`. -/
+@[simp]
+theorem tprodDirectSumLeftEquiv_toLinearEquiv :
+    (tprodDirectSumLeftEquiv τ σ).toLinearEquiv = TensorProduct.directSumLeft k k W U :=
+  (rfl)
+
+/-- Evaluating `tprodDirectSumLeftEquiv` on a pure tensor projects the left factor onto summand
+`i`. -/
+@[simp]
+theorem tprodDirectSumLeftEquiv_tmul (x : ⨁ i, W i) (y : U) (i : ι) :
+    tprodDirectSumLeftEquiv τ σ (x ⊗ₜ[k] y) i = x i ⊗ₜ[k] y :=
+  TensorProduct.directSumLeft_tmul k k x y i
+
+/-- The inverse of `tprodDirectSumLeftEquiv` sends `x ⊗ₜ y` in summand `i` to `lof i x ⊗ₜ y`. -/
+@[simp]
+theorem tprodDirectSumLeftEquiv_symm_lof_tmul (i : ι) (x : W i) (y : U) :
+    (tprodDirectSumLeftEquiv τ σ).symm (DirectSum.lof k ι (fun j ↦ W j ⊗[k] U) i (x ⊗ₜ[k] y)) =
+      DirectSum.lof k ι W i x ⊗ₜ[k] y :=
+  TensorProduct.directSumLeft_symm_lof_tmul k k i x y
+
+end TensorProduct
 
 end Representation
 

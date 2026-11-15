@@ -9,10 +9,9 @@ public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.LinearAlgebra.DirectSum.TensorProduct
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
-import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
+import TauCeti.RepresentationTheory.FDRep.DirectSum
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
 
 /-!
@@ -130,47 +129,6 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
 
 /-! ### Hom-space multiplicities and invariants on rational Weyl modules -/
 
-/-- Direct-sum decomposition of Hom-space dimensions in `FDRep ℂ (GL (Fin n) ℂ)` from an unbundled
-`Representation.Equiv` with a finite direct sum. -/
-private theorem finrank_hom_of_equiv_directSum {n : ℕ} {ι : Type*} [Fintype ι]
-    (X Y : FDRep ℂ (GL (Fin n) ℂ)) (Z : ι → FDRep ℂ (GL (Fin n) ℂ))
-    (e : Representation.Equiv Y.ρ (Representation.directSum fun p => (Z p).ρ)) :
-    Module.finrank ℂ (X ⟶ Y) = ∑ p : ι, Module.finrank ℂ (X ⟶ Z p) := by
-  let homEquiv (A B : FDRep ℂ (GL (Fin n) ℂ)) :
-      (A ⟶ B) ≃ₗ[ℂ] Representation.IntertwiningMap A.ρ B.ρ :=
-    (FDRep.forget₂HomLinearEquiv A B).symm ≪≫ₗ Rep.homLinearEquiv _ _
-  let totalEquiv : (X ⟶ Y) ≃ₗ[ℂ] ∀ p : ι, (X ⟶ Z p) :=
-    homEquiv X Y ≪≫ₗ
-      Representation.Equiv.intertwiningMapCongr (.refl X.ρ) e ≪≫ₗ
-      Representation.IntertwiningMap.directSumLinearEquiv X.ρ (fun p => (Z p).ρ) ≪≫ₗ
-      LinearEquiv.piCongrRight fun p => (homEquiv X (Z p)).symm
-  rw [totalEquiv.finrank_eq, Module.finrank_pi_fintype]
-
-/-- Distributivity of `Representation.tprod` over `Representation.directSum` on the left. -/
-private noncomputable def tprodDirectSumLeftEquiv {k G ι : Type*} [CommRing k] [Monoid G]
-    [DecidableEq ι] {W : ι → Type*} [∀ i, AddCommMonoid (W i)] [∀ i, Module k (W i)]
-    {U : Type*} [AddCommMonoid U] [Module k U]
-    (τ : ∀ i, Representation k G (W i)) (σ : Representation k G U) :
-    Representation.Equiv ((Representation.directSum τ).tprod σ)
-      (Representation.directSum fun i => (τ i).tprod σ) :=
-  .mk (TensorProduct.directSumLeft k k W U) fun g =>
-    TensorProduct.ext' fun x y => DFinsupp.ext fun i => by simp [Representation.directSum_apply]
-
-/-- For a diagram `ν` with at most `n` rows, bounded `λ`-Yamanouchi tableaux of content `ν - λ`
-have the same cardinality as `LRTableau λ ν μ`. -/
-private theorem card_boundedYamanouchi_eq_natCard_lrTableau {n : ℕ} {lam μ ν : YoungDiagram}
-    (hν : ν.colLen 0 ≤ n) [Fintype {T : BoundedSSYT n μ //
-      T.1.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.1.content i = ν.rowLen i}] :
-    Fintype.card {T : BoundedSSYT n μ //
-      T.1.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.1.content i = ν.rowLen i} =
-      Nat.card (LRTableau lam ν μ) := by
-  rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Nat.card_eq_fintype_card]
-  exact Nat.card_congr <| Equiv.subtypeSubtypeEquivSubtype
-    (q := fun T : SemistandardYoungTableau μ =>
-      T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.content i = ν.rowLen i)
-    fun hT i c hc =>
-      (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
-
 /-- Schur's lemma combined with highest-weight injectivity on `rationalWeylFDRep ℂ n`. -/
 private theorem finrank_hom_rationalWeylFDRep {n : ℕ} (γ σ : DominantWeight n) :
     Module.finrank ℂ (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n σ) =
@@ -251,8 +209,8 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
       (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ
       (Representation.directSum fun p : Σ ν : Sub, Fib ν =>
         (rationalWeylFDRep ℂ n (w p.1)).ρ) :=
-    (Representation.Equiv.mk (LinearEquiv.refl ℂ _) fun _ => LinearMap.ext fun _ => rfl).trans e
-  rw [finrank_hom_of_equiv_directSum _ _ _ he, Fintype.sum_sigma,
+    (FDRep.tprodEquiv _ _).trans e
+  rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he, Fintype.sum_sigma,
     ← sum_natCard_lrTableau_shift_eq_hiveCount lam μ γ]
   refine Finset.sum_congr rfl fun ν _ => ?_
   simp only [finrank_hom_rationalWeylFDRep, Finset.sum_const, Finset.card_univ, smul_eq_mul,
@@ -297,13 +255,6 @@ private theorem nonempty_iso_tensorUnit_rationalWeylFDRep_zero (n : ℕ) :
   rw [hunit]
   exact LinearMap.ext_iff.mp (e.toIntertwiningMap.isIntertwining' g) x
 
-/-- Unbundled tensor-product identification for `FDRep.ρ` on `X ⊗ Y`. -/
-private noncomputable def fdrepTensorEquiv {n : ℕ} (X Y : FDRep ℂ (GL (Fin n) ℂ)) :
-    Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
-  .mk (LinearEquiv.refl ℂ ↥(X ⊗ Y)) fun g => LinearMap.ext fun _ => by
-    rw [FDRep.tensor_ρ]
-    rfl
-
 /-- **The invariant form of the hive model for `GL n ℂ`**: for all dominant weights `λ, μ, ν` of
 `GL n ℂ`, the complex dimension of the space of `GL n ℂ`-invariants
 `𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ⟶ V_λ ⊗ V_μ ⊗ V_ν` equals the number of integer hives with cyclic
@@ -324,8 +275,8 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
   let w (p : Σ κ : Sub, Fib κ) : DominantWeight n :=
     (weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift)
   obtain ⟨e₁₂⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
-  let eTensor₁₂ := fdrepTensorEquiv (rationalWeylFDRep ℂ n lam) (rationalWeylFDRep ℂ n μ)
-  let eTensor₃ := fdrepTensorEquiv
+  let eTensor₁₂ := FDRep.tprodEquiv (rationalWeylFDRep ℂ n lam) (rationalWeylFDRep ℂ n μ)
+  let eTensor₃ := FDRep.tprodEquiv
     (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) (rationalWeylFDRep ℂ n ν)
   let eSumTensor : Representation.Equiv
       (Representation.directSum fun p =>
@@ -343,7 +294,7 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
       (Representation.directSum fun p =>
         (rationalWeylFDRep ℂ n (w p) ⊗ rationalWeylFDRep ℂ n ν).ρ) :=
     eTensor₃.trans <| ((eTensor₁₂.trans e₁₂).tprod (.refl _)).trans <|
-      (tprodDirectSumLeftEquiv _ _).trans eSumTensor
+      (Representation.tprodDirectSumLeftEquiv _ _).trans eSumTensor
   have hrot (σ : DominantWeight n) :
       hiveCount (productBoundary σ ν 0) = if ν.dual = σ then 1 else 0 := by
     have hb : productBoundary σ ν 0 = fun s => productBoundary 0 σ ν.dual (s + 1) := by
@@ -351,9 +302,9 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
     rw [hb, hiveCount_rotate, hiveCount_productBoundary_zero_left]
   have hdual : productBoundary lam μ ν.dual = ![lam.1, μ.1, ν.1] := by
     ext s i; fin_cases s <;> simp
-  rw [finrank_hom_of_equiv_directSum _ _ _ he₃]
+  rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he₃]
   simp only [finrank_hom_eq_hiveCount, hrot, ← finrank_hom_rationalWeylFDRep]
-  rw [← finrank_hom_of_equiv_directSum _ _ (fun p => rationalWeylFDRep ℂ n (w p))
+  rw [← FDRep.finrank_hom_of_equiv_directSum _ _ (fun p => rationalWeylFDRep ℂ n (w p))
       (eTensor₁₂.trans e₁₂), finrank_hom_eq_hiveCount, hdual]
 
 /-! ### Concrete representation-theoretic and finite-alphabet checks -/
@@ -391,9 +342,7 @@ theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
   rcases eq_or_ne γ sym₂ with rfl | hne₂
   · dsimp only [sym₂]
     simp only [true_or, ↓reduceIte]
-    rw [← card_fixedIntegerHive]
-    exact Fintype.card_eq_one_iff.mpr ⟨⟨exampleTwo, boundary_exampleTwo⟩,
-      fun h => Subtype.ext (boundary_injective_two (h.2.trans boundary_exampleTwo.symm))⟩
+    exact hiveCount_two_std_std_sym
   · rcases eq_or_ne γ det₂ with rfl | hne₁
     · dsimp only [det₂]
       simp only [or_true, ↓reduceIte]
@@ -405,8 +354,7 @@ theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
       have h0 : 0 ≤ γ.1 1 := (DominantWeight.isPolynomial_def γ).mp hpol 1
       have hanti : γ.1 1 ≤ γ.1 0 := γ.antitone (by decide)
       have hsum := sum_eq_of_productBoundary hb
-      simp only [Fin.sum_univ_two] at hsum
-      change (1 : ℤ) + 0 + (1 + 0) = γ.1 0 + γ.1 1 at hsum
+      simp only [Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] at hsum
       rcases (by omega : (γ.1 0 = 2 ∧ γ.1 1 = 0) ∨ (γ.1 0 = 1 ∧ γ.1 1 = 1)) with
         ⟨ha, hb'⟩ | ⟨ha, hb'⟩
       · exact hne₂ (Subtype.ext (funext fun i => by fin_cases i <;> assumption))

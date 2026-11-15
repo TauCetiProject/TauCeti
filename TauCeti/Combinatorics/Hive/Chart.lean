@@ -67,20 +67,6 @@ section Shift
 
 variable {n : ℕ}
 
-/-- The normalized affine hive with zero slopes is the zero hive. -/
-@[simp] theorem affine_zero {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
-    (n : ℕ) : affine n (0 : R) 0 = 0 := by
-  ext p
-  simp
-
-/-- Slope parameters of normalized affine hives add homomorphically. -/
-@[simp] theorem affine_add {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
-    (n : ℕ) (β₁ γ₁ β₂ γ₂ : R) :
-    affine n (β₁ + β₂) (γ₁ + γ₂) = affine n β₁ γ₁ + affine n β₂ γ₂ := by
-  ext p
-  simp only [affine_apply, add_apply, nsmul_add]
-  abel
-
 /-- Shifting `λ` by `a`, `μ` by `b`, and `γ` by `a + b` adds the boundary of
 `affine n a (a + b)` to `productBoundary lam μ γ`. -/
 theorem productBoundary_shift (lam μ γ : DominantWeight n) (a b : ℤ) :

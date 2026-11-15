@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # The bijection between fixed-boundary integer hives and Littlewood–Richardson tableaux
@@ -50,6 +51,11 @@ vertical-strip concavity gives the Yamanouchi lattice-word condition.
 
 ## Main results
 
+* `TauCeti.Hive.lrChart_zero_left`, `TauCeti.Hive.lrChart_zero_right`,
+  `TauCeti.Hive.lrChart_right`, `TauCeti.Hive.lrChart_diag`, `TauCeti.Hive.lrChart_step_left`,
+  `TauCeti.Hive.lrChart_step_right`: boundary evaluations and unit-step differences of `lrChart`.
+* `TauCeti.Hive.natCast_hiveRowCount`, `TauCeti.Hive.natCast_hiveRowCount_of_productBoundary`:
+  casting `hiveRowCount` to `ℤ` recovers `hiveRowCountInt` when `μ` is polynomial.
 * `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`,
   `TauCeti.Hive.hiveCount_productBoundary_of_isPolynomial`,
   `TauCeti.Hive.hiveCount_productBoundary_eq_ite_shift`,
@@ -103,15 +109,16 @@ def lrChart (lam : DominantWeight n) {γ μ : YoungDiagram}
 private theorem sum_fin_lt_eq_sum_range (f : Fin n → ℤ) (g : ℕ → ℤ) {k : ℕ} (hk : k ≤ n)
     (hfg : ∀ r (hr : r < n), f ⟨r, hr⟩ = g r) :
     (∑ r : Fin n with r.val < k, f r) = ∑ r ∈ Finset.range k, g r := by
-  rw [show ({r : Fin n | r.val < k} : Finset (Fin n)) =
-      Finset.univ.map (Fin.castLEEmb hk) by
-    ext r
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map, Fin.castLEEmb_apply]
-    exact ⟨fun hr => ⟨⟨r.val, hr⟩, Fin.ext rfl⟩, fun ⟨s, hs⟩ => hs ▸ s.isLt⟩,
-    Finset.sum_map, ← Fin.sum_univ_eq_sum_range g k]
-  exact Finset.sum_congr rfl fun r _ => hfg r.val (r.isLt.trans_le hk)
+  rw [← prefixSum_def, prefixSum_congr (y := fun r : Fin n => g r.val) fun r _ => hfg r.val r.isLt,
+    prefixSum_eq_sum_range, min_eq_left hk]
 
-private theorem lrChart_right {lam μ γ : DominantWeight n} (hμ : μ.IsPolynomial)
+private theorem sum_fin_lt_succ (f : Fin n → ℤ) {k : ℕ} (hk : k < n) :
+    (∑ r : Fin n with r.val < k + 1, f r) = (∑ r : Fin n with r.val < k, f r) + f ⟨k, hk⟩ := by
+  simpa only [prefixSum_def] using prefixSum_succ hk f
+
+/-- Along the right chart edge `j = n`, `lrChart lam T i n` adds the first `i` entries of `μ` to
+the total weight of `lam`. -/
+@[simp] theorem lrChart_right {lam μ γ : DominantWeight n} (hμ : μ.IsPolynomial)
     (T : LRTableau lam.shape γ.shape μ.shape) (i : ℕ) (hi : i ≤ n) :
     lrChart lam T i n = (∑ r : Fin n, lam.1 r) + ∑ l : Fin n with l.val < i, μ.1 l := by
   rw [lrChart, show ({r : Fin n | r.val < n} : Finset (Fin n)) = Finset.univ by ext r; simp]
@@ -122,8 +129,11 @@ private theorem lrChart_right {lam μ γ : DominantWeight n} (hμ : μ.IsPolynom
   rw [← Nat.cast_sum, T.1.sum_range_rowCount_eq_content l γ.colLen_zero_shape_le,
     congrFun T.2.1 l]
 
-private theorem lrChart_diag {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial)
-    (hγ : γ.IsPolynomial) (T : LRTableau lam.shape γ.shape μ.shape) (j : ℕ) (hj : j ≤ n) :
+/-- Along the chart diagonal `i = j ≤ n`, `lrChart lam T j j` is the partial sum of the first `j`
+entries of `γ`. -/
+@[simp] theorem lrChart_diag {lam γ : DominantWeight n} {μ : YoungDiagram}
+    (hlam : lam.IsPolynomial) (hγ : γ.IsPolynomial)
+    (T : LRTableau lam.shape γ.shape μ) (j : ℕ) (hj : j ≤ n) :
     lrChart lam T j j = ∑ r : Fin n with r.val < j, γ.1 r := by
   rw [lrChart,
     sum_fin_lt_eq_sum_range lam.1 (fun r => (lam.shape.rowLen r : ℤ)) hj
@@ -140,16 +150,21 @@ private theorem lrChart_diag {lam μ γ : DominantWeight n} (hlam : lam.IsPolyno
   rw [← Nat.cast_sum, hrow]
   omega
 
-private theorem lrChart_step_right (lam : DominantWeight n) {γ μ : YoungDiagram}
+/-- Advancing `i` by `1` in `lrChart lam T i j` adds the letter-`i` multiplicities across rows
+`r < j`. -/
+theorem lrChart_step_left (lam : DominantWeight n) {γ μ : YoungDiagram}
+    (T : LRTableau lam.shape γ μ) (i j : ℕ) :
+    lrChart lam T (i + 1) j - lrChart lam T i j =
+      ∑ r ∈ Finset.range j, (T.1.rowCount r i : ℤ) := by
+  simp [lrChart, Finset.sum_range_succ]
+
+/-- Advancing `j` by `1` (for `j < n`) in `lrChart lam T i j` adds `lam_j` together with the
+row-`j` letter multiplicities for letters `l < i`. -/
+theorem lrChart_step_right (lam : DominantWeight n) {γ μ : YoungDiagram}
     (T : LRTableau lam.shape γ μ) (i j : ℕ) (hj : j < n) :
     lrChart lam T i (j + 1) - lrChart lam T i j =
       lam.1 ⟨j, hj⟩ + ∑ l ∈ Finset.range i, (T.1.rowCount j l : ℤ) := by
-  have hsplit : ({r : Fin n | r.val < j + 1} : Finset (Fin n)) =
-      insert ⟨j, hj⟩ ({r : Fin n | r.val < j} : Finset (Fin n)) := by
-    ext r; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-      Fin.ext_iff]; omega
-  have hnm : (⟨j, hj⟩ : Fin n) ∉ ({r : Fin n | r.val < j} : Finset (Fin n)) := by simp
-  simp only [lrChart, hsplit, Finset.sum_insert hnm, Finset.sum_range_succ, Finset.sum_add_distrib]
+  simp only [lrChart, sum_fin_lt_succ lam.1 hj, Finset.sum_range_succ, Finset.sum_add_distrib]
   abel
 
 private theorem isRhombusConcave_lrChart {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial)
@@ -171,18 +186,13 @@ private theorem isRhombusConcave_lrChart {lam μ γ : DominantWeight n} (hlam : 
       lam.natCast_rowLen_shape hlam ⟨j, by omega⟩] at hcol
     linarith
   · simp only [hval]
-    have h0 : lrChart lam T (i + 1) j - lrChart lam T i j =
-        ∑ r ∈ Finset.range j, (T.1.rowCount r i : ℤ) := by simp [lrChart, Finset.sum_range_succ]
-    have h1 : lrChart lam T (i + 1) (j + 1) - lrChart lam T i (j + 1) =
-        (∑ r ∈ Finset.range j, (T.1.rowCount r i : ℤ)) + (T.1.rowCount j i : ℤ) := by
-      simp [lrChart, Finset.sum_range_succ]
+    have h0 := lrChart_step_left lam T i j
+    have h1 := lrChart_step_left lam T i (j + 1)
+    rw [Finset.sum_range_succ] at h1
     linarith [Int.natCast_nonneg (T.1.rowCount j i)]
   · simp only [hval]
-    have h0 : lrChart lam T (i + 1) j - lrChart lam T i j =
-        ∑ r ∈ Finset.range j, (T.1.rowCount r i : ℤ) := by simp [lrChart, Finset.sum_range_succ]
-    have h1 : lrChart lam T (i + 2) (j + 1) - lrChart lam T (i + 1) (j + 1) =
-        ∑ r ∈ Finset.range (j + 1), (T.1.rowCount r (i + 1) : ℤ) := by
-      simp [lrChart, Finset.sum_range_succ]
+    have h0 := lrChart_step_left lam T i j
+    have h1 := lrChart_step_left lam T (i + 1) (j + 1)
     have hlat : (∑ r ∈ Finset.range (j + 1), (T.1.rowCount r (i + 1) : ℤ)) ≤
         ∑ r ∈ Finset.range j, (T.1.rowCount r i : ℤ) := by
       exact_mod_cast (T.1.isLatticeWord_readingWord_iff.mp T.2.2) i j
@@ -212,32 +222,23 @@ def hiveOfLRTableau {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial)
         Vertex.edgePoint_zero_x, Fin.val_succ, Fin.val_castSucc,
         Nat.sub_sub_self (by omega : k.val + 1 ≤ n), Nat.sub_sub_self (by omega : k.val ≤ n),
         lrChart_zero_left, productBoundary_zero]
-      have hsplit : ({r : Fin n | r.val < k.val + 1} : Finset (Fin n)) =
-          insert k ({r : Fin n | r.val < k.val} : Finset (Fin n)) := by
-        ext r; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-          Fin.ext_iff]; omega
-      rw [hsplit, Finset.sum_insert (by simp)]; abel
+      rw [sum_fin_lt_succ lam.1 hk]
+      abel
     · simp only [boundary_apply, hiveOfLRTableauAux_apply, Vertex.edgePoint_one_z,
         Vertex.edgePoint_one_x, Nat.sub_zero, Fin.val_succ, Fin.val_castSucc,
         productBoundary_one]
-      rw [lrChart_right hμ T (k.val + 1) (by omega), lrChart_right hμ T k.val (by omega)]
-      have hsplit : ({l : Fin n | l.val < k.val + 1} : Finset (Fin n)) =
-          insert k ({l : Fin n | l.val < k.val} : Finset (Fin n)) := by
-        ext l; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-          Fin.ext_iff]; omega
-      rw [hsplit, Finset.sum_insert (by simp)]; abel
+      rw [lrChart_right hμ T (k.val + 1) (by omega), lrChart_right hμ T k.val (by omega),
+        sum_fin_lt_succ μ.1 hk]
+      abel
     · simp only [boundary_apply, hiveOfLRTableauAux_apply, Vertex.edgePoint_two_z,
         Vertex.edgePoint_two_x, Fin.val_succ, Fin.val_castSucc,
         productBoundary_two, DominantWeight.dual_apply]
       rw [lrChart_diag hlam hγ T (n - (k.val + 1)) (by omega),
         lrChart_diag hlam hγ T (n - k.val) (by omega)]
-      have hsplit : ({r : Fin n | r.val < n - k.val} : Finset (Fin n)) =
-          insert k.rev ({r : Fin n | r.val < n - (k.val + 1)} : Finset (Fin n)) := by
-        ext r; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-          Fin.ext_iff, Fin.val_rev]; omega
-      have hnm : k.rev ∉ ({r : Fin n | r.val < n - (k.val + 1)} : Finset (Fin n)) := by
-        simp [Fin.val_rev]
-      rw [hsplit, Finset.sum_insert hnm]; abel⟩
+      have hnk : n - k.val = n - (k.val + 1) + 1 := by omega
+      have hrev : (⟨n - (k.val + 1), by omega⟩ : Fin n) = k.rev := by ext; simp [Fin.val_rev]
+      rw [hnk, sum_fin_lt_succ γ.1 (by omega), hrev]
+      abel⟩
 
 /-- Evaluating `hiveOfLRTableau` at `Vertex.ofChart n i j` recovers `lrChart lam T i j`. -/
 @[simp] theorem hiveOfLRTableau_apply_ofChart {lam μ γ : DominantWeight n}
@@ -384,11 +385,7 @@ private theorem diag_step_ge_of_productBoundary {lam μ γ : DominantWeight n}
         Vertex.ofChart n (l + 1) n (by omega) le_rfl := Vertex.ofChart_eq_iff.mpr ⟨rfl, hln⟩
     have hch0 : Vertex.ofChart n l (l + 1) (by omega) (by omega) =
         Vertex.ofChart n l n (by omega) le_rfl := Vertex.ofChart_eq_iff.mpr ⟨rfl, hln⟩
-    have hsplit : ({k : Fin n | k.val < l + 1} : Finset (Fin n)) =
-        insert ⟨l, by omega⟩ ({k : Fin n | k.val < l} : Finset (Fin n)) := by
-      ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Fin.ext_iff]; omega
-    rw [congrArg h hch1, congrArg h hch0, he1, he0, hsplit, Finset.sum_insert (by simp)]
+    rw [congrArg h hch1, congrArg h hch0, he1, he0, sum_fin_lt_succ μ.1 (by omega)]
     have heql : (⟨n - 1, by omega⟩ : Fin n) = ⟨l, by omega⟩ := Fin.ext (by simp; omega)
     rw [heql]
     linarith
@@ -412,10 +409,19 @@ theorem hiveRowCountInt_nonneg {lam μ γ : DominantWeight n} {h : IntegerHive n
       (diag_step_ge_of_productBoundary hb (n - 1 - l) l (by omega))
   · exact le_rfl
 
-private theorem natCast_hiveRowCount {lam μ γ : DominantWeight n} {h : IntegerHive n}
+/-- For an integer hive `h` with boundary `productBoundary lam μ γ` and polynomial `μ`, casting
+`hiveRowCount h r l` to `ℤ` recovers `hiveRowCountInt h r l`. -/
+theorem natCast_hiveRowCount_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (hμ : μ.IsPolynomial) (r l : ℕ) :
     (hiveRowCount h r l : ℤ) = hiveRowCountInt h r l :=
   Int.toNat_of_nonneg (hiveRowCountInt_nonneg hb hμ r l)
+
+/-- For a fixed-boundary integer hive `h : FixedIntegerHive (productBoundary lam μ γ)` with
+polynomial `μ`, casting `hiveRowCount h.1 r l` to `ℤ` recovers `hiveRowCountInt h.1 r l`. -/
+@[simp] theorem natCast_hiveRowCount {lam μ γ : DominantWeight n}
+    (h : FixedIntegerHive (productBoundary lam μ γ)) (hμ : μ.IsPolynomial) (r l : ℕ) :
+    (hiveRowCount h.1 r l : ℤ) = hiveRowCountInt h.1 r l :=
+  natCast_hiveRowCount_of_productBoundary h.2 hμ r l
 
 private theorem shape_le_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) :
@@ -428,12 +434,7 @@ private theorem shape_le_of_productBoundary {lam μ γ : DominantWeight n} {h : 
     have hd0 := apply_ofChart_diag hb r hr.le
     have hl1 := apply_ofChart_zero_left hb (r + 1) hr
     have hl0 := apply_ofChart_zero_left hb r hr.le
-    have hsplit : ({k : Fin n | k.val < r + 1} : Finset (Fin n)) =
-        insert ⟨r, hr⟩ ({k : Fin n | k.val < r} : Finset (Fin n)) := by
-      ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Fin.ext_iff]; omega
-    rw [hd1, hd0, hl1, hl0, hsplit, Finset.sum_insert (by simp), Finset.sum_insert (by simp)]
-      at hsum
+    rw [hd1, hd0, hl1, hl0, sum_fin_lt_succ γ.1 hr, sum_fin_lt_succ lam.1 hr] at hsum
     have hnn : 0 ≤ ∑ l ∈ Finset.range (r + 1), hiveRowCountInt h r l :=
       Finset.sum_nonneg fun l _ => hiveRowCountInt_nonneg hb hμ r l
     have hle : lam.1 ⟨r, hr⟩ ≤ γ.1 ⟨r, hr⟩ := by linarith
@@ -451,16 +452,12 @@ private theorem sum_hiveRowCount_eq_rowLen_sub {lam μ γ : DominantWeight n} {h
       YoungDiagram.rowLen_le_of_le (shape_le_of_productBoundary hb hlam hμ) r
     refine Int.ofNat_inj.mp ?_
     rw [Nat.cast_sum, Nat.cast_sub hle,
-      Finset.sum_congr rfl fun l _ => natCast_hiveRowCount hb hμ r l,
+      Finset.sum_congr rfl fun l _ => natCast_hiveRowCount_of_productBoundary hb hμ r l,
       sum_range_hiveRowCountInt_right_ge h hr hr,
       apply_ofChart_diag hb (r + 1) hr, apply_ofChart_diag hb r hr.le,
       apply_ofChart_zero_left hb (r + 1) hr, apply_ofChart_zero_left hb r hr.le,
-      γ.natCast_rowLen_shape hγ ⟨r, hr⟩, lam.natCast_rowLen_shape hlam ⟨r, hr⟩]
-    have hsplit : ({k : Fin n | k.val < r + 1} : Finset (Fin n)) =
-        insert ⟨r, hr⟩ ({k : Fin n | k.val < r} : Finset (Fin n)) := by
-      ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Fin.ext_iff]; omega
-    rw [hsplit, Finset.sum_insert (by simp), Finset.sum_insert (by simp)]
+      γ.natCast_rowLen_shape hγ ⟨r, hr⟩, lam.natCast_rowLen_shape hlam ⟨r, hr⟩,
+      sum_fin_lt_succ γ.1 hr, sum_fin_lt_succ lam.1 hr]
     abel
   · rw [γ.rowLen_shape_eq_zero_of_le (not_lt.mp hr), lam.rowLen_shape_eq_zero_of_le (not_lt.mp hr)]
     simp [hiveRowCount_eq_zero_of_le h (not_lt.mp hr)]
@@ -473,30 +470,26 @@ private theorem col_strict_hiveRowCount {lam μ γ : DominantWeight n} {h : Inte
   by_cases hr1 : r + 2 ≤ n
   · refine Int.ofNat_le.mp ?_
     push_cast
-    simp only [natCast_hiveRowCount hb hμ]
+    simp only [natCast_hiveRowCount_of_productBoundary hb hμ]
     rw [lam.natCast_rowLen_shape hlam ⟨r + 1, by omega⟩,
       lam.natCast_rowLen_shape hlam ⟨r, by omega⟩]
-    have hsplit (m : ℕ) (hm : m < n) : ({k : Fin n | k.val < m + 1} : Finset (Fin n)) =
-        insert ⟨m, hm⟩ ({k : Fin n | k.val < m} : Finset (Fin n)) := by
-      ext k; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Fin.ext_iff]; omega
     rcases le_or_gt x r with hxr | hrx
     · have hs0 := sum_range_hiveRowCountInt_right_le h hxr (by omega)
       have hs1 := sum_range_hiveRowCountInt_right_le h (Nat.add_le_add_right hxr 1) (by omega)
       rw [apply_ofChart_zero_left hb (r + 1) (by omega), apply_ofChart_zero_left hb r (by omega),
-        hsplit r (by omega), Finset.sum_insert (by simp)] at hs0
+        sum_fin_lt_succ lam.1 (by omega)] at hs0
       rw [apply_ofChart_zero_left hb (r + 2) hr1, apply_ofChart_zero_left hb (r + 1) (by omega),
-        hsplit (r + 1) (by omega), Finset.sum_insert (by simp)] at hs1
+        sum_fin_lt_succ lam.1 (by omega)] at hs1
       have hrh := h.le_of_isRhombus (isRhombus_ofChart_horiz hxr hr1)
       linarith
     · have hs0 := sum_range_hiveRowCountInt_right_ge h hrx (by omega)
       have hs1 := sum_range_hiveRowCountInt_right_ge h (by omega : r + 2 ≤ x + 1) (by omega)
       rw [apply_ofChart_diag hb (r + 1) (by omega), apply_ofChart_diag hb r (by omega),
         apply_ofChart_zero_left hb (r + 1) (by omega), apply_ofChart_zero_left hb r (by omega),
-        hsplit r (by omega), Finset.sum_insert (by simp), Finset.sum_insert (by simp)] at hs0
+        sum_fin_lt_succ γ.1 (by omega), sum_fin_lt_succ lam.1 (by omega)] at hs0
       rw [apply_ofChart_diag hb (r + 2) hr1, apply_ofChart_diag hb (r + 1) (by omega),
         apply_ofChart_zero_left hb (r + 2) hr1, apply_ofChart_zero_left hb (r + 1) (by omega),
-        hsplit (r + 1) (by omega), Finset.sum_insert (by simp), Finset.sum_insert (by simp)] at hs1
+        sum_fin_lt_succ γ.1 (by omega), sum_fin_lt_succ lam.1 (by omega)] at hs1
       have hanti : γ.1 ⟨r + 1, by omega⟩ ≤ γ.1 ⟨r, by omega⟩ :=
         γ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ r))
       linarith
@@ -515,7 +508,7 @@ private theorem lattice_hiveRowCount {lam μ γ : DominantWeight n} {h : Integer
     exact Nat.zero_le _
   · refine Int.ofNat_le.mp ?_
     push_cast
-    simp only [natCast_hiveRowCount hb hμ]
+    simp only [natCast_hiveRowCount_of_productBoundary hb hμ]
     rcases lt_or_ge x n with hxn | hnx
     · rw [sum_range_hiveRowCountInt_left h (Nat.add_lt_add_right hkx 1) hxn,
         sum_range_hiveRowCountInt_left h hkx hxn.le]
@@ -531,13 +524,8 @@ private theorem lattice_hiveRowCount {lam μ γ : DominantWeight n} {h : Integer
           sum_range_hiveRowCountInt_left h hk1 le_rfl,
           sum_range_hiveRowCountInt_left h (by omega : k < n) le_rfl,
           apply_ofChart_right hb (k + 2) hk1, apply_ofChart_right hb (k + 1) hk1.le,
-          apply_ofChart_right hb k (by omega)]
-        have hsplit (m : ℕ) (hm : m < n) : ({l : Fin n | l.val < m + 1} : Finset (Fin n)) =
-            insert ⟨m, hm⟩ ({l : Fin n | l.val < m} : Finset (Fin n)) := by
-          ext l; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-            Fin.ext_iff]; omega
-        rw [hsplit (k + 1) hk1, Finset.sum_insert (by simp),
-          hsplit k (by omega), Finset.sum_insert (by simp)]
+          apply_ofChart_right hb k (by omega),
+          sum_fin_lt_succ μ.1 hk1, sum_fin_lt_succ μ.1 (by omega)]
         have hanti : μ.1 ⟨k + 1, hk1⟩ ≤ μ.1 ⟨k, by omega⟩ :=
           μ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ k))
         linarith
@@ -565,15 +553,10 @@ def lrTableauOfHive {lam μ γ : DominantWeight n} (hlam : lam.IsPolynomial) (h�
     simp only [S, SkewSemistandardYoungTableau.rowCount_ofRowCount hle hsum hcol hzero]
     by_cases hk : k < n
     · refine Int.ofNat_inj.mp ?_
-      rw [Nat.cast_sum, Finset.sum_congr rfl fun r _ => natCast_hiveRowCount h.2 hμ r k,
+      rw [Nat.cast_sum, Finset.sum_congr rfl fun r _ => natCast_hiveRowCount h hμ r k,
         sum_range_hiveRowCountInt_left h.1 hk le_rfl,
         apply_ofChart_right h.2 (k + 1) hk, apply_ofChart_right h.2 k hk.le,
-        μ.natCast_rowLen_shape hμ ⟨k, hk⟩]
-      have hsplit : ({l : Fin n | l.val < k + 1} : Finset (Fin n)) =
-          insert ⟨k, hk⟩ ({l : Fin n | l.val < k} : Finset (Fin n)) := by
-        ext l; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-          Fin.ext_iff]; omega
-      rw [hsplit, Finset.sum_insert (by simp)]
+        μ.natCast_rowLen_shape hμ ⟨k, hk⟩, sum_fin_lt_succ μ.1 hk]
       abel
     · rw [μ.rowLen_shape_eq_zero_of_le (not_lt.mp hk)]
       exact Finset.sum_eq_zero fun r _ => hzero r k (not_lt.mp hk)
@@ -604,14 +587,14 @@ def fixedIntegerHiveEquivLRTableau {lam μ γ : DominantWeight n}
   left_inv h := Subtype.ext <| ext fun p => by
     have hp := p.sum_eq
     rw [← Vertex.ofChart_z_sub_x p, hiveOfLRTableau_apply_ofChart]
-    simp only [lrChart, rowCount_lrTableauOfHive, natCast_hiveRowCount h.2 hμ]
+    simp only [lrChart, rowCount_lrTableauOfHive, natCast_hiveRowCount h hμ]
     rw [sum_hiveRowCountInt_eq_sub h.1 (by omega) (Nat.sub_le n p.x),
       apply_ofChart_zero_left h.2 (n - p.x) (Nat.sub_le n p.x)]
     abel
   right_inv T := Subtype.ext <| SkewSemistandardYoungTableau.eq_of_rowCount_eq fun r l => by
     rw [rowCount_lrTableauOfHive]
     refine Int.ofNat_inj.mp ?_
-    rw [natCast_hiveRowCount (hiveOfLRTableau hlam hμ hγ T).2 hμ]
+    rw [natCast_hiveRowCount (hiveOfLRTableau hlam hμ hγ T) hμ]
     have hzero_lt : ∀ i k, i < k → T.1.rowCount i k = 0 := fun i k hik => by
       rw [SkewSemistandardYoungTableau.rowCount_def, Finset.card_eq_zero,
         Finset.filter_eq_empty_iff]
@@ -789,9 +772,8 @@ theorem hiveCount_one_productBoundary (a b g : DominantWeight 1) :
   refine if_congr ⟨fun h => ?_, fun h => ?_⟩ rfl rfl
   · ext i; fin_cases i
     have h0 := congrArg (fun w : DominantWeight 1 => w.1 0) h
-    simp only [DominantWeight.shift_apply, DominantWeight.zero_apply, DominantWeight.add_apply]
-      at h0 ⊢
-    change g.1 0 = a.1 0 + b.1 0
+    simp only [DominantWeight.shift_apply, DominantWeight.zero_apply, DominantWeight.add_apply,
+      Fin.zero_eta] at h0 ⊢
     omega
   · subst h; ext i; fin_cases i; simp
 
@@ -931,13 +913,16 @@ theorem hiveCount_three_checks :
   · rw [← card_fixedIntegerHive]
     refine Fintype.card_eq_one_iff.mpr ⟨h₁, fun k => fixedIntegerHive_three_ext k h₁ ?_⟩
     have hb := apply_center_bounds_three k
-    change (1 : ℤ) + 0 + 1 ≤ k.1 ⟨1, 1, 1, rfl⟩ ∧ k.1 ⟨1, 1, 1, rfl⟩ ≤ 1 + 0 + 1 at hb
-    exact le_antisymm hb.2 hb.1
+    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+      Matrix.head_cons, Matrix.tail_cons] at hb
+    have hc₁ : h₁.1 ⟨1, 1, 1, rfl⟩ = 2 := rfl
+    omega
   · have huniv : (Finset.univ : Finset (FixedIntegerHive B₂)) = {h₂₄, h₂₅} := by
       ext k
       simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
       have hb := apply_center_bounds_three k
-      change (2 : ℤ) + 0 + 2 ≤ k.1 ⟨1, 1, 1, rfl⟩ ∧ k.1 ⟨1, 1, 1, rfl⟩ ≤ 2 + 1 + 2 at hb
+      simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+        Matrix.head_cons, Matrix.tail_cons] at hb
       rcases (by omega : k.1 ⟨1, 1, 1, rfl⟩ = 4 ∨ k.1 ⟨1, 1, 1, rfl⟩ = 5) with h4 | h5
       · exact Or.inl (fixedIntegerHive_three_ext k h₂₄ h4)
       · exact Or.inr (fixedIntegerHive_three_ext k h₂₅ h5)
