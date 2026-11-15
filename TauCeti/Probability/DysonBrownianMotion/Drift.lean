@@ -107,9 +107,9 @@ theorem sum_dysonDrift_sub_mul_sub {x y : Fin n → ℝ} (hx : Function.Injectiv
     simp only [dysonDrift_eq_sum, ← mul_sub, ← sum_sub_distrib, mul_sum, sum_mul, f, mul_assoc]
   have hswap : 2 * ∑ i, ∑ j, f i j =
       -∑ i, ∑ j, ((x i - x j) - (y i - y j)) ^ 2 / ((x i - x j) * (y i - y j)) := by
-    rw [two_mul]
-    nth_rewrite 2 [sum_comm]
-    simp only [← sum_add_distrib, hpair, sum_neg_distrib]
+    have hc : ∑ i, ∑ j, f i j = ∑ i, ∑ j, f j i := sum_comm
+    calc 2 * ∑ i, ∑ j, f i j = ∑ i, ∑ j, f i j + ∑ i, ∑ j, f j i := by rw [two_mul, ← hc]
+      _ = _ := by simp only [← sum_add_distrib, hpair, sum_neg_distrib]
   rw [hsum]
   linear_combination (n : ℝ)⁻¹ * (1 / 2 : ℝ) * hswap
 

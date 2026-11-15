@@ -24,12 +24,13 @@ open chamber `{x₁ > ⋯ > xₙ}` at positive times with integrable drift, as
 `TauCeti.Probability.IsDysonPath`, and its almost sure version for a random driving process as
 `TauCeti.Probability.IsDysonSolution`.
 
-Solutions are pathwise unique: two solutions driven by the same path agree. For two solutions
-`X` and `Y`, the difference `D = X - Y` is the integral of `F(X) - F(Y)`, which is continuous at
-positive times, so `|D|²` is differentiable there with derivative `2 ⟨D, F(X) - F(Y)⟩ ≤ 0` by
-the monotonicity of the drift; as `D(0) = 0`, it follows that `D = 0`. This needs neither
-adaptedness nor any property of the driving path, and it covers starts with coincident
-coordinates. In size `1` the system is `dλ = √(2/β) dB`, solved by `x + √(2/β) b`.
+Solutions are pathwise unique: two solutions driven by the same path from the same start agree.
+For two solutions `X` and `Y`, the difference `D = X - Y` is the integral of `F(X) - F(Y)`, which
+is continuous at positive times, so `|D|²` is differentiable there with derivative
+`2 ⟨D, F(X) - F(Y)⟩ ≤ 0` by the monotonicity of the drift; as `D(0) = 0`, it follows that
+`D = 0`. This needs neither adaptedness nor any property of the driving path, and it covers
+starts with coincident coordinates. In size `1` the system is `dλ = √(2/β) dB`, solved by
+`x + √(2/β) b`.
 
 ## Main declarations
 
@@ -110,9 +111,9 @@ private theorem hasDerivAt_sub (hX : IsDysonPath β n x b X) (hY : IsDysonPath �
   filter_upwards [isOpen_Ioi.mem_nhds hs] with u hu
   rw [sub_eq_integral hX hY, Real.coe_toNNReal _ (le_of_lt hu)]
 
-/-- **Pathwise uniqueness for the Dyson system** (AGZ Lemma 4.3.3 and Proposition 4.3.5). Two
-solutions driven by the same path from the same start agree, whether or not the start has
-coincident coordinates. -/
+/-- **Pathwise uniqueness for the Dyson system** (the uniqueness part of AGZ Lemma 4.3.3 and
+Proposition 4.3.5). Two solutions driven by the same path from the same start agree, whether or
+not the start has coincident coordinates. -/
 theorem unique (hX : IsDysonPath β n x b X) (hY : IsDysonPath β n x b Y) : X = Y := by
   set φ : ℝ → ℝ := fun u ↦ ∑ i, (X u.toNNReal i - Y u.toNNReal i) ^ 2
   have hφc : Continuous φ := by
@@ -124,20 +125,20 @@ theorem unique (hX : IsDysonPath β n x b X) (hY : IsDysonPath β n x b Y) : X =
   -- `2 ⟨X - Y, F(X) - F(Y)⟩ ≤ 0`.
   have hφ : AntitoneOn φ (Ici 0) := by
     refine antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici 0) hφc.continuousOn
-      (f' := fun s ↦ ∑ i, ((2 : ℕ) : ℝ) * (X s.toNNReal i - Y s.toNNReal i) ^ (2 - 1) *
-        (dysonDrift n (X s.toNNReal) i - dysonDrift n (Y s.toNNReal) i))
+      (f' := fun s ↦ 2 * ∑ i, (dysonDrift n (X s.toNNReal) i - dysonDrift n (Y s.toNNReal) i) *
+        (X s.toNNReal i - Y s.toNNReal i))
       (fun s hs ↦ ?_) (fun s hs ↦ ?_)
     · rw [interior_Ici] at hs
-      exact (HasDerivAt.fun_sum fun i _ ↦ (hasDerivAt_sub hX hY i hs).pow 2).hasDerivWithinAt
+      refine ((HasDerivAt.fun_sum fun i _ ↦
+        (hasDerivAt_sub hX hY i hs).fun_pow 2).congr_deriv ?_).hasDerivWithinAt
+      rw [mul_sum]
+      exact sum_congr rfl fun i _ ↦ by push_cast; ring
     · rw [interior_Ici] at hs
       have hs' : 0 < s.toNNReal := Real.toNNReal_pos.2 hs
-      have hle := sum_dysonDrift_sub_mul_sub_nonpos (hX.strictAnti _ hs').injective
-        (hY.strictAnti _ hs').injective
-        ((hX.strictAnti _ hs').antitone.monovary (hY.strictAnti _ hs').antitone)
-      calc _ = 2 * ∑ i, (dysonDrift n (X s.toNNReal) i - dysonDrift n (Y s.toNNReal) i) *
-            (X s.toNNReal i - Y s.toNNReal i) := by
-              rw [mul_sum]; refine sum_congr rfl fun i _ ↦ ?_; push_cast; ring
-        _ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos zero_le_two hle
+      exact mul_nonpos_of_nonneg_of_nonpos zero_le_two <|
+        sum_dysonDrift_sub_mul_sub_nonpos (hX.strictAnti _ hs').injective
+          (hY.strictAnti _ hs').injective
+          ((hX.strictAnti _ hs').antitone.monovary (hY.strictAnti _ hs').antitone)
   have hφ0 : φ 0 = 0 := by
     simp [φ, sub_eq_integral hX hY 0]
   funext t i
