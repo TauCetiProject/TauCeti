@@ -27,8 +27,8 @@ negative root element `x_{w γ}(1)` inside `D.borelSubgroup k`, contradicting
 Second, if `u ∈ D.positivePoints k ⊓ D.weylSubgroup k`, base change to `AlgebraicClosure k` makes
 `u` commute with the represented weight torus over an infinite field, forcing all off-block entries
 between distinct Cartan weights to vanish, while weight-block unitriangularity
-(`D.coe_apply_eq_one_of_mem_positivePoints_of_weight_eq`) forces `u` to act as the identity on each
-weight space regardless of weight multiplicity. The semidirect decomposition
+(`D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq`) forces `u` to act as the identity on
+each weight space regardless of weight multiplicity. The semidirect decomposition
 `D.borelSubgroup k = D.positivePoints k ⊔ (D.torusPoints k).range` then yields
 `D.borelSubgroup k ⊓ D.weylSubgroup k = (D.torusPoints k).range`.
 
@@ -138,7 +138,7 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
   have huK_one : (uK : Matrix.GeneralLinearGroup (Fin D.dim) K) = 1 := by
     refine Matrix.GeneralLinearGroup.ext fun r c => ?_
     by_cases hrc : D.weight r = D.weight c
-    · exact D.coe_apply_eq_one_of_mem_positivePoints_of_weight_eq K huKP hrc
+    · exact D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq K huKP hrc
     · have hne_char : weightChar K (D.weight r) ≠ weightChar K (D.weight c) :=
         fun h => hrc (weightChar_injective (K := K) h)
       obtain ⟨s, hs⟩ : ∃ s : Fin t.rank → Kˣ,
