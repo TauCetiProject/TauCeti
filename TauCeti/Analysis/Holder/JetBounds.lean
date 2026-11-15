@@ -12,13 +12,15 @@ public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Hölder bounds for local derivative fields
 
 On an open convex set, bounds for a derivative field and its next derivative give a Hölder
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
-hypothesis only at their top derivative. Currying preserves these bounds exactly.
+hypothesis only at their top derivative. Currying preserves these bounds exactly, and Hölder
+bounds on the derivatives of two maps of the same order add up to one for their sum.
 -/
 
 public section
@@ -62,5 +64,15 @@ theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt {k j : ℕ} {s : Set
       hnext x hx
   have hlip := Convex.lipschitzOnWith_of_nnNorm_fderiv_le hdiff hder hconv
   exact hlip.holderOnWith_of_norm_le hb hα
+
+/-- If `f` and `g` are `C^n` at every point of `s` and their `n`-th derivatives are `r`-Hölder on
+`s`, then so is the `n`-th derivative of `f + g`, with the sum of the constants. -/
+theorem _root_.HolderOnWith.iteratedFDeriv_add {𝕜 G H : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H] {n : ℕ}
+    {r C C' : ℝ≥0} {f g : G → H} {s : Set G} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 n f) s)
+    (hg : HolderOnWith C' r (iteratedFDeriv 𝕜 n g) s) (hfs : ∀ x ∈ s, ContDiffAt 𝕜 n f x)
+    (hgs : ∀ x ∈ s, ContDiffAt 𝕜 n g x) :
+    HolderOnWith (C + C') r (iteratedFDeriv 𝕜 n (f + g)) s :=
+  (hf.add hg).congr fun x hx => (iteratedFDeriv_add_apply (hfs x hx) (hgs x hx)).symm
 
 end TauCeti

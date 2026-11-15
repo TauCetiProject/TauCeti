@@ -15,7 +15,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
-import TauCeti.Analysis.Holder.Iterated
+import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Analysis.Normed.Module.Exhaustion
 import TauCeti.Topology.MetricSpace.Holder
 
