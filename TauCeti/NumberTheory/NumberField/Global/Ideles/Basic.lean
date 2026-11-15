@@ -26,10 +26,12 @@ finite-idele theory of fractional ideals: on a principal idele the finite compon
 principal finite idele of the same element.
 
 The coordinate maps `IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord` and
-`NumberField.InfinitePlace.ideleInfiniteCoord` read the local units of an idele.
-`NumberField.IdeleGroup.ext` determines an idele by equality of all these coordinates. The
-constructor `TauCeti.GlobalNumberFields.ideleOfUnits` assembles local units that are integral units
-at almost every finite place; `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits` and
+`NumberField.InfinitePlace.ideleInfiniteCoord` read the local units of an idele, and
+`NumberField.InfinitePlace.continuous_ideleInfiniteCoord` records continuity of the infinite
+coordinate maps. `NumberField.IdeleGroup.ext` determines an idele by equality of all these
+coordinates. The constructor `TauCeti.GlobalNumberFields.ideleOfUnits` assembles local units that
+are integral units at almost every finite place;
+`TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits` and
 `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits` recover those units.
 
 The embeddings of the units of the completions, at the infinite and at the finite places, into
@@ -209,6 +211,12 @@ theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
     (w : InfinitePlace K) (x : IdeleGroup R K) :
     (w.ideleInfiniteCoord x : w.Completion) = (x : AdeleRing R K).1 w :=
   (rfl)
+
+/-- The coordinate of an idele at an infinite place `w` is continuous on the idele group. -/
+@[continuity, fun_prop]
+theorem NumberField.InfinitePlace.continuous_ideleInfiniteCoord (w : InfinitePlace K) :
+    Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) :=
+  ((continuous_apply w).comp continuous_fst).units_map _
 
 /-- **Ideles are determined by their coordinates**: two ideles with the same coordinate at every
 infinite and finite place are equal. -/

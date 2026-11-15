@@ -79,7 +79,8 @@ private theorem im_three_add_four_I_div_five_zpow_ne_zero {m : ℤ} (hm : m ≠ 
     ((((3 : ℂ) + 4 * Complex.I) / 5) ^ m).im ≠ 0 := by
   have hnat {n : ℕ} (hn : n ≠ 0) : ((((3 : ℂ) + 4 * Complex.I) / 5) ^ n).im ≠ 0 := by
     obtain ⟨a, b, hpow, -, hb⟩ := exists_int_pow_three_add_four_I hn
-    have hb0 : (b : ℝ) ≠ 0 := by exact_mod_cast (show b ≠ 0 by omega)
+    have hb_ne : b ≠ 0 := by omega
+    have hb0 : (b : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hb_ne
     have h5 : (5 : ℝ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
     have hrew : (((3 : ℂ) + 4 * Complex.I) / 5) ^ n =
         ((a : ℝ) / (5 : ℝ) ^ n : ℝ) + (((b : ℝ) / (5 : ℝ) ^ n : ℝ) : ℂ) * Complex.I := by
@@ -151,20 +152,20 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger {F : Type*} [Fie
   rcases hτI with hI | hnegI
   · left
     have hτα : τ (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 + Complex.I := by
-      change τ (algebraMap (𝓞 F) F ((2 : 𝓞 F) + hζ.toInteger)) = 2 + Complex.I
-      rw [map_add, map_ofNat, map_add, map_ofNat, ← RingOfIntegers.coe_eq_algebraMap, hI]
+      rw [RingOfIntegers.coe_eq_algebraMap, map_add, map_ofNat, map_add, map_ofNat,
+        ← RingOfIntegers.coe_eq_algebraMap, hI]
     have hconj : starRingEnd ℂ (2 + Complex.I) = 2 - Complex.I := by
       rw [map_add, map_ofNat, Complex.conj_I, sub_eq_add_neg]
     rw [hτα, hconj, h2I]
   · right
     have hτα : τ (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 - Complex.I := by
-      change τ (algebraMap (𝓞 F) F ((2 : 𝓞 F) + hζ.toInteger)) = 2 - Complex.I
-      rw [map_add, map_ofNat, map_add, map_ofNat, ← RingOfIntegers.coe_eq_algebraMap, hnegI,
-        sub_eq_add_neg]
+      rw [RingOfIntegers.coe_eq_algebraMap, map_add, map_ofNat, map_add, map_ofNat,
+        ← RingOfIntegers.coe_eq_algebraMap, hnegI, sub_eq_add_neg]
     have hconj : starRingEnd ℂ (2 - Complex.I) = 2 + Complex.I := by
       rw [map_sub, map_ofNat, Complex.conj_I, sub_neg_eq_add]
-    rw [hτα, hconj, show (2 - Complex.I) / (2 + Complex.I) = (((3 : ℂ) + 4 * Complex.I) / 5)⁻¹ by
-      rw [← h2I, inv_div], inv_zpow, ← zpow_neg]
+    have h2I_inv : (2 - Complex.I) / (2 + Complex.I) = (((3 : ℂ) + 4 * Complex.I) / 5)⁻¹ := by
+      rw [← h2I, inv_div]
+    rw [hτα, hconj, h2I_inv, inv_zpow, ← zpow_neg]
 
 /-- **Nonreal value at `(2 + i)`**: for `k ≠ 0`, `angularGrossencharacter F k` takes a nonreal
 value at `(2 + hζ.toInteger)`. -/
@@ -192,8 +193,7 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F :
   have hcompat := (angularGrossencharacter F k).compatibility_inv x (isCongrOne_one x) α rfl
   have hz : algebraMap (𝓞 F) F hζ.toInteger = ζ := hζ.coe_toInteger
   have hxval : (x : F) = 2 + ζ := by
-    change algebraMap (𝓞 F) F ((2 : 𝓞 F) + hζ.toInteger) = 2 + ζ
-    rw [map_add, map_ofNat, hz]
+    simp only [x, Units.val_mk0, α, map_add, map_ofNat, hz]
   simpa [idealShift_angularGrossencharacter, hxval] using hcompat
 
 /-- **Sign check at `2 + i` (negative half)**: for `k ≠ 0`, the ideal value of
