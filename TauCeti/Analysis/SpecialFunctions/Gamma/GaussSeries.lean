@@ -25,9 +25,17 @@ and its explicit logarithmic asymptotic. Local uniform convergence extends the i
 through the right half-plane by the identity theorem. Recurrences for the sum and digamma
 then extend it to every regular complex point.
 
+Subtracting Gauss' series at two regular arguments cancels Euler's constant and expresses
+`digamma s - digamma w` as the absolutely convergent series
+`∑' n, (s - w) / ((w + n) * (s + n))`. On the positive real axis this gives strict
+monotonicity of `Real.digamma`, antitonicity of `t ↦ ψ(t + b) - ψ(t + a)` when `a ≤ b`, and
+uniform bounds on the shifted differences `ψ(k + 1) - ψ(k + a)`.
+
 ## References
 
 * [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6).
+* F. Calegari, V. Dimitrov and Y. Tang, *The unbounded denominators conjecture*,
+  J. Amer. Math. Soc. 38 (2025), Lemma 5.2.9, p. 676.
 * T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
   for the Gauss series theorem statements.
 -/
@@ -275,4 +283,149 @@ theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
       ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) := by
   simpa only [gaussSeries, gaussTerm] using digamma_eq_gaussSeries_regular hs
 
+/-- The termwise difference `(s - w) / ((w + n) * (s + n))` of two Gauss digamma series is
+summable for all complex `s` and `w`. -/
+theorem summable_sub_div_add_mul_add (s w : ℂ) :
+    Summable fun n : ℕ ↦ (s - w) / ((w + n) * (s + n)) := by
+  refine ((summable_gaussSeries s).sub (summable_gaussSeries w)).congr_cofinite ?_
+  rw [Nat.cofinite_eq_atTop]
+  filter_upwards [eventually_ge_atTop (⌈‖s‖⌉₊ + ⌈‖w‖⌉₊ + 1)] with n hn
+  have hnR : (⌈‖s‖⌉₊ : ℝ) + ⌈‖w‖⌉₊ + 1 ≤ n := by exact_mod_cast hn
+  have hns : ‖s‖ < (n : ℝ) := by linarith [Nat.le_ceil ‖s‖, Nat.cast_nonneg (α := ℝ) ⌈‖w‖⌉₊]
+  have hnw : ‖w‖ < (n : ℝ) := by linarith [Nat.le_ceil ‖w‖, Nat.cast_nonneg (α := ℝ) ⌈‖s‖⌉₊]
+  have hs0 : s + n ≠ 0 := fun h ↦ hns.ne' (by simp [add_eq_zero_iff_eq_neg.mp h])
+  have hw0 : w + n ≠ 0 := fun h ↦ hnw.ne' (by simp [add_eq_zero_iff_eq_neg.mp h])
+  rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
+  ring
+
+/-- Away from the nonpositive integers, `digamma s - digamma w` equals the reciprocal-product
+series `∑' n, (s - w) / ((w + n) * (s + n))`. -/
+theorem digamma_sub_digamma_eq_tsum {s w : ℂ}
+    (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (hw : ∀ m : ℕ, w ≠ -(m : ℂ)) :
+    digamma s - digamma w = ∑' n : ℕ, (s - w) / ((w + n) * (s + n)) := by
+  rw [digamma_eq_gaussSeries hs, digamma_eq_gaussSeries hw,
+    add_sub_add_left_eq_sub, ← (summable_gaussSeries s).tsum_sub (summable_gaussSeries w)]
+  refine tsum_congr fun n ↦ ?_
+  have hs0 : s + n ≠ 0 := fun h ↦ hs n (add_eq_zero_iff_eq_neg.mp h)
+  have hw0 : w + n ≠ 0 := fun h ↦ hw n (add_eq_zero_iff_eq_neg.mp h)
+  rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
+  ring
+
 end Complex
+
+namespace Real
+
+/-- The paired summands in Gauss' real digamma series are summable at every real `x`. -/
+theorem summable_gaussSeries (x : ℝ) :
+    Summable fun n : ℕ ↦ 1 / ((n : ℝ) + 1) - 1 / (x + n) := by
+  have h := Complex.reCLM.summable (Complex.summable_gaussSeries (x : ℂ))
+  refine h.congr fun n ↦ ?_
+  have hcast : ((1 / ((n : ℝ) + 1) - 1 / (x + n) : ℝ) : ℂ) =
+      1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n) := by push_cast; rfl
+  rw [← hcast, Complex.reCLM_apply, Complex.ofReal_re]
+
+/-- Gauss' paired reciprocal series equals real digamma away from the nonpositive integers. -/
+theorem digamma_eq_gaussSeries {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    digamma x = -eulerMascheroniConstant +
+      ∑' n : ℕ, (1 / ((n : ℝ) + 1) - 1 / (x + n)) := by
+  have hxc : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := fun m hm ↦ hx m (by exact_mod_cast hm)
+  have h := congrArg Complex.re (Complex.digamma_eq_gaussSeries hxc)
+  rw [Complex.digamma_ofReal, Complex.ofReal_re, Complex.add_re, Complex.neg_re,
+    Complex.ofReal_re] at h
+  rw [h, ← Complex.reCLM_apply, Complex.reCLM.map_tsum (Complex.summable_gaussSeries (x : ℂ))]
+  refine congrArg (-eulerMascheroniConstant + ·) (tsum_congr fun n ↦ ?_)
+  have hcast : ((1 / ((n : ℝ) + 1) - 1 / (x + n) : ℝ) : ℂ) =
+      1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n) := by push_cast; rfl
+  rw [← hcast, Complex.reCLM_apply, Complex.ofReal_re]
+
+/-- The real reciprocal-product series `(x - y) / ((y + n) * (x + n))` is summable for all
+real `x` and `y`. -/
+theorem summable_sub_div_add_mul_add (x y : ℝ) :
+    Summable fun n : ℕ ↦ (x - y) / ((y + n) * (x + n)) := by
+  have h := Complex.reCLM.summable (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))
+  refine h.congr fun n ↦ ?_
+  have hcast : (((x - y) / ((y + n) * (x + n)) : ℝ) : ℂ) =
+      ((x : ℂ) - y) / (((y : ℂ) + n) * ((x : ℂ) + n)) := by push_cast; rfl
+  rw [← hcast, Complex.reCLM_apply, Complex.ofReal_re]
+
+/-- Away from the nonpositive integers, `Real.digamma x - Real.digamma y` equals
+`∑' n, (x - y) / ((y + n) * (x + n))`. -/
+theorem digamma_sub_digamma_eq_tsum {x y : ℝ}
+    (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (hy : ∀ m : ℕ, y ≠ -(m : ℝ)) :
+    digamma x - digamma y = ∑' n : ℕ, (x - y) / ((y + n) * (x + n)) := by
+  have hxc : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := fun m hm ↦ hx m (by exact_mod_cast hm)
+  have hyc : ∀ m : ℕ, (y : ℂ) ≠ -(m : ℂ) := fun m hm ↦ hy m (by exact_mod_cast hm)
+  have h := congrArg Complex.re (Complex.digamma_sub_digamma_eq_tsum hxc hyc)
+  rw [Complex.digamma_ofReal, Complex.digamma_ofReal, ← Complex.ofReal_sub,
+    Complex.ofReal_re, ← Complex.reCLM_apply,
+    Complex.reCLM.map_tsum (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))] at h
+  refine h.trans (tsum_congr fun n ↦ ?_)
+  have hcast : (((x - y) / ((y + n) * (x + n)) : ℝ) : ℂ) =
+      ((x : ℂ) - y) / (((y : ℂ) + n) * ((x : ℂ) + n)) := by push_cast; rfl
+  rw [← hcast, Complex.reCLM_apply, Complex.ofReal_re]
+
+/-- Real digamma is strictly monotone on the positive real axis. -/
+theorem strictMonoOn_digamma : StrictMonoOn digamma (Ioi 0) := by
+  intro x hx y hy hxy
+  have hx' : ∀ m : ℕ, x ≠ -(m : ℝ) := fun m ↦ by linarith [mem_Ioi.mp hx, m.cast_nonneg (α := ℝ)]
+  have hy' : ∀ m : ℕ, y ≠ -(m : ℝ) := fun m ↦ by linarith [mem_Ioi.mp hy, m.cast_nonneg (α := ℝ)]
+  rw [← sub_pos, digamma_sub_digamma_eq_tsum hy' hx']
+  refine (summable_sub_div_add_mul_add y x).tsum_pos (fun n ↦ ?_) 0 ?_
+  · have hxn : 0 < x + n := by linarith [mem_Ioi.mp hx, n.cast_nonneg (α := ℝ)]
+    have hyn : 0 < y + n := by linarith [mem_Ioi.mp hy, n.cast_nonneg (α := ℝ)]
+    exact div_nonneg (sub_nonneg.mpr hxy.le) (mul_pos hxn hyn).le
+  · simpa using div_pos (sub_pos.mpr hxy) (mul_pos (mem_Ioi.mp hx) (mem_Ioi.mp hy))
+
+/-- When `a ≤ b`, the shifted digamma difference `t ↦ ψ(t + b) - ψ(t + a)` is antitone on
+`(-a, ∞)`. -/
+theorem antitoneOn_digamma_add_sub_digamma_add {a b : ℝ} (hab : a ≤ b) :
+    AntitoneOn (fun t : ℝ ↦ digamma (t + b) - digamma (t + a)) (Ioi (-a)) := by
+  intro t₁ ht₁ t₂ _ ht
+  have h1a : 0 < t₁ + a := by linarith [mem_Ioi.mp ht₁]
+  have h1b : 0 < t₁ + b := by linarith
+  have h2a : 0 < t₂ + a := by linarith
+  have h2b : 0 < t₂ + b := by linarith
+  have hreg {u : ℝ} (hu : 0 < u) : ∀ m : ℕ, u ≠ -(m : ℝ) :=
+    fun m ↦ by linarith [m.cast_nonneg (α := ℝ)]
+  dsimp only
+  rw [digamma_sub_digamma_eq_tsum (hreg h2b) (hreg h2a),
+    digamma_sub_digamma_eq_tsum (hreg h1b) (hreg h1a)]
+  refine (summable_sub_div_add_mul_add (t₂ + b) (t₂ + a)).tsum_le_tsum (fun n ↦ ?_)
+    (summable_sub_div_add_mul_add (t₁ + b) (t₁ + a))
+  have hnum : t₂ + b - (t₂ + a) = b - a := by ring
+  have hnum' : t₁ + b - (t₁ + a) = b - a := by ring
+  rw [hnum, hnum']
+  exact div_le_div_of_nonneg_left (sub_nonneg.mpr hab)
+    (mul_pos (by linarith [n.cast_nonneg (α := ℝ)]) (by linarith [n.cast_nonneg (α := ℝ)]))
+    (mul_le_mul (by linarith [n.cast_nonneg (α := ℝ)]) (by linarith [n.cast_nonneg (α := ℝ)])
+      (by linarith [n.cast_nonneg (α := ℝ)]) (by linarith [n.cast_nonneg (α := ℝ)]))
+
+/-- For `0 < a ≤ 1`, the sequence `k ↦ ψ(k + 1) - ψ(k + a)` is antitone on `ℕ`. -/
+theorem antitone_digamma_nat_add_one_sub_digamma_nat_add {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) :
+    Antitone fun k : ℕ ↦ digamma (k + 1) - digamma (k + a) := by
+  intro k₁ k₂ hk
+  exact antitoneOn_digamma_add_sub_digamma_add ha1
+    (mem_Ioi.mpr (by linarith [k₁.cast_nonneg (α := ℝ)]))
+    (mem_Ioi.mpr (by linarith [k₂.cast_nonneg (α := ℝ)]))
+    (Nat.cast_le.mpr hk)
+
+/-- Uniform bounds on the shifted digamma coefficients `ψ(k + 1) - ψ(k + a)` for `1 ≤ k` and
+`-1 < c ≤ a ≤ 1`: they are nonnegative and at most `ψ(2) - ψ(1 + c)` (generalizing CDT Lemma 5.2.9,
+which takes `c = 1 / 4`). -/
+theorem digamma_nat_add_one_sub_digamma_nat_add_bounds {k : ℕ} (hk : 1 ≤ k)
+    {c a : ℝ} (hc : -1 < c) (hca : c ≤ a) (ha : a ≤ 1) :
+    0 ≤ digamma (k + 1) - digamma (k + a) ∧
+      digamma (k + 1) - digamma (k + a) ≤ digamma 2 - digamma (1 + c) := by
+  have hk1 : (1 : ℝ) ≤ k := Nat.one_le_cast.mpr hk
+  constructor
+  · exact sub_nonneg.mpr <| monotoneOn_digamma
+      (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) (by linarith)
+  · have hle_a : digamma (k + 1) - digamma (k + a) ≤
+        digamma (k + 1) - digamma (k + c) :=
+      sub_le_sub_left (monotoneOn_digamma
+        (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) (by linarith)) _
+    have hle_k := antitoneOn_digamma_add_sub_digamma_add (hca.trans ha)
+      (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) hk1
+    exact hle_a.trans (hle_k.trans_eq (by norm_num))
+
+end Real
