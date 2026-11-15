@@ -292,7 +292,7 @@ theorem toRectangleDecomposition_second_toGridRectangle
 
 /-- The two underlying rectangles share their terminal side when the rectangle and the pentagon
 do. -/
-theorem first_right_eq_second_right_of_right_eq_right
+theorem toRectangleDecomposition_first_right_eq_second_right_of_right_eq_right
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.right) :
     D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right := by
