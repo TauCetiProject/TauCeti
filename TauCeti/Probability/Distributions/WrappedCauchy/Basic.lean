@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.Probability.Distributions.Cauchy.Affine
+import TauCeti.MeasureTheory.Measure.CharacteristicFunction.AddCircle
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
@@ -160,7 +160,8 @@ theorem tendsto_wrappedCauchyMeasure_nhds_zero_dirac (m : AddCircle (2 * π)) :
 theorem integral_fourier_wrappedCauchyMeasure (m : AddCircle (2 * π)) (γ : ℝ≥0) (n : ℤ) :
     ∫ θ, fourier n θ ∂wrappedCauchyMeasure m γ =
       fourier n m * (Real.exp (-((γ : ℝ) * |(n : ℝ)|)) : ℂ) := by
-  rw [wrappedCauchyMeasure_def, integral_fourier_map_add_coe, charFun_cauchyMeasure]
+  rw [wrappedCauchyMeasure_def, integral_fourier_map_add_coe,
+    mul_div_cancel_left₀ _ two_pi_pos.ne', charFun_cauchyMeasure]
   push_cast
   ring_nf
 

@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import TauCeti.MeasureTheory.Measure.CharacteristicFunction.AddCircle
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
@@ -136,7 +136,8 @@ function at integer frequencies, multiplied by the location character. -/
 theorem integral_fourier_wrappedNormalMeasure (m : AddCircle (2 * π)) (v : ℝ≥0) (n : ℤ) :
     ∫ θ, fourier n θ ∂wrappedNormalMeasure m v =
       fourier n m * (Real.exp (-(v : ℝ) * (n : ℝ) ^ 2 / 2) : ℂ) := by
-  rw [wrappedNormalMeasure_def, integral_fourier_map_add_coe, charFun_gaussianReal]
+  rw [wrappedNormalMeasure_def, integral_fourier_map_add_coe,
+    mul_div_cancel_left₀ _ two_pi_pos.ne', charFun_gaussianReal]
   push_cast
   ring_nf
 
