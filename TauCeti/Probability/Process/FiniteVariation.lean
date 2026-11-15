@@ -128,14 +128,17 @@ theorem stronglyMeasurable_vectorMeasureIcc_apply (hX : StronglyAdapted ℱ X)
   exact BoundedVariationOn.stronglyMeasurable_vectorMeasureIcc_apply hab
     (fun _ ht => hX.stronglyMeasurable_le ht.2) hv s
 
-/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of a strongly
-adapted process with BV paths on that horizon is measurable at the horizon.
-No moments or path regularity outside the horizon are required. -/
-theorem measurable_vectorMeasureIcc_apply [MeasurableSpace E] [BorelSpace E]
-    (hX : StronglyAdapted ℱ X) (hab : a ≤ b)
+/-- Every fixed-set evaluation of the finite-horizon Stieltjes vector measure of an
+adapted process in a second-countable Borel space with BV paths on that horizon is measurable
+at the horizon. No moments or path regularity outside the horizon are required. -/
+theorem _root_.MeasureTheory.Adapted.measurable_vectorMeasureIcc_apply
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (hX : Adapted ℱ X) (hab : a ≤ b)
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set R) :
-    Measurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) :=
-  (hX.stronglyMeasurable_vectorMeasureIcc_apply hab hv s).measurable
+    Measurable[ℱ b] (fun ω => (hv ω).vectorMeasureIcc hab s) := by
+  let : MeasurableSpace Ω := ℱ b
+  exact BoundedVariationOn.measurable_vectorMeasureIcc_apply hab
+    (fun _ ht => hX.measurable_le ht.2) hv s
 
 end VectorMeasure
 

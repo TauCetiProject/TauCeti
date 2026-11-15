@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.VectorMeasure.BoundedVariation
+public import TauCeti.MeasureTheory.VectorMeasure.Measurability
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
 public import TauCeti.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Topology.Order.ProjIcc
@@ -264,58 +264,12 @@ theorem stronglyMeasurable_vectorMeasureIcc_apply {Ω : Type*} [MeasurableSpace 
     (hX : ∀ t ∈ Icc a b, StronglyMeasurable (X t))
     (hv : ∀ ω, BoundedVariationOn (fun t => X t ω) (Icc a b)) (s : Set α) :
     StronglyMeasurable (fun ω => (hv ω).vectorMeasureIcc hab s) := by
-  -- First obtain measurable right limits, using constant extension at the terminal endpoint.
-  have hlim (z : α) (hz : z ∈ Icc a b) :
-      StronglyMeasurable (fun ω => (Set.IccExtend hab ((X · ω) ∘ Subtype.val)).rightLim z) := by
-    by_cases hzb : z = b
-    · subst z
-      have heq (ω) : (Set.IccExtend hab ((X · ω) ∘ Subtype.val)).rightLim b = X b ω := by
-        rw [(TauCeti.continuousWithinAt_IccExtend_Ici hab (by simp)).rightLim_eq,
-          IccExtend_of_mem hab _ hz]
-        rfl
-      simpa only [heq] using hX b hz
-    · obtain ⟨u, -, hu, hut⟩ := exists_seq_strictAnti_tendsto' (lt_of_le_of_ne hz.2 hzb)
-      apply stronglyMeasurable_of_tendsto atTop
-        (fun n => hX (u n) ⟨hz.1.trans (hu n).1.le, (hu n).2.le⟩)
-      apply tendsto_pi_nhds.mpr
-      intro ω
-      convert (((hv ω).IccExtend hab).tendsto_rightLim z).comp
-        (tendsto_nhdsWithin_iff.mpr ⟨hut, Eventually.of_forall fun n => (hu n).1⟩) using 1
-      funext n
-      exact (IccExtend_of_mem hab ((X · ω) ∘ Subtype.val)
-        ⟨hz.1.trans (hu n).1.le, (hu n).2.le⟩).symm
-  -- Interval evaluations are differences of these limits; extend to Borel sets by induction.
-  have huniv : StronglyMeasurable (fun ω => (hv ω).vectorMeasureIcc hab univ) := by
-    simpa only [vectorMeasureIcc_def, VectorMeasure.restrict_apply_univ,
-      vectorMeasure_Ioc _ hab] using
-      (hlim b (right_mem_Icc.mpr hab)).fun_sub (hlim a (left_mem_Icc.mpr hab))
   by_cases hs : MeasurableSet s
-  · induction s, hs using MeasurableSpace.induction_on_inter
-      (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic with
-    | empty => simpa only [VectorMeasure.empty] using (stronglyMeasurable_const (b := (0 : E)))
-    | basic s hs =>
-      obtain ⟨x, rfl⟩ := hs
-      have heval (ω) : (hv ω).vectorMeasureIcc hab (Iic x) =
-          (hv ω).vectorMeasureIcc hab (Ioc a (min b x)) := by
-        rw [← vectorMeasureIcc_restrict _ hab,
-          VectorMeasure.restrict_apply _ measurableSet_Ioc measurableSet_Iic,
-          inter_comm (Iic x), Ioc_inter_Iic, vectorMeasureIcc_restrict]
-      simp_rw [heval]
-      by_cases hax : a ≤ min b x
-      · simp_rw [vectorMeasureIcc_def,
-          VectorMeasure.restrict_eq_self _ measurableSet_Ioc measurableSet_Ioc
-            (Ioc_subset_Ioc le_rfl (min_le_left b x)), vectorMeasure_Ioc _ hax]
-        exact (hlim _ ⟨hax, min_le_left _ _⟩).fun_sub (hlim a (left_mem_Icc.mpr hab))
-      · simp only [Ioc_eq_empty (not_lt.mpr (le_of_not_ge hax)), VectorMeasure.empty]
-        exact stronglyMeasurable_const
-    | compl s hs ih =>
-      simp_rw [VectorMeasure.of_compl hs]
-      exact huniv.fun_sub ih
-    | iUnion f hfd hfm ih =>
-      exact stronglyMeasurable_of_tendsto atTop
-        (fun n => (Finset.stronglyMeasurable_fun_sum _ fun i _ => ih i))
-        (tendsto_pi_nhds.mpr fun ω =>
-          ((hv ω).vectorMeasureIcc hab |>.hasSum_of_disjoint_iUnion hfm hfd).tendsto_sum_nat)
+  · simp only [vectorMeasureIcc_def,
+      VectorMeasure.restrict_apply _ measurableSet_Ioc hs]
+    exact stronglyMeasurable_vectorMeasure_apply
+      (fun t => hX (projIcc a b hab t) (projIcc a b hab t).2)
+      (fun ω => (hv ω).IccExtend hab) (s ∩ Ioc a b)
   · simp only [VectorMeasure.not_measurable _ hs]
     exact stronglyMeasurable_const
 
