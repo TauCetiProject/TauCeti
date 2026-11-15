@@ -152,7 +152,7 @@ theorem mem_conjF_iff (p : ℤ) (x : Vℂ) : x ∈ mhs.conjF p ↔ latticeConj h
 
 /-- Conjugating a Hodge filtration step twice recovers it. -/
 @[simp]
-theorem conjF_conjF (p : ℤ) : (mhs.conjF p).map (latticeConj hℂ) = mhs.F p := by
+theorem map_conjF (p : ℤ) : (mhs.conjF p).map (latticeConj hℂ) = mhs.F p := by
   rw [← latticeConjugation_toLinearMap]
   exact (latticeConjugation hℂ).map_conjFiltration mhs.F p
 
