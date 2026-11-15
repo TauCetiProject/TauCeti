@@ -11,12 +11,13 @@ import Mathlib.Probability.Moments.MGFAnalytic
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.Probability.Concentration.SubgaussianTail
+import TauCeti.Probability.Moments.SubGaussian.Basic
 
 /-!
 # Herbst's argument: Lipschitz concentration under a logarithmic Sobolev inequality
 
 Let `μ` be a probability measure on a finite-dimensional real normed space satisfying the
-logarithmic Sobolev inequality `Ent_μ(f²) ≤ 2 C ∫ ‖∇f‖² dμ`
+logarithmic Sobolev inequality `Ent_μ(f²) ≤ 2 C ∫ ‖∇f‖² dμ` with `0 ≤ C`
 (`MeasureTheory.Measure.LogSobolevInequality`). Then every `K`-Lipschitz function `f` is
 sub-Gaussian about its mean with variance proxy `C K²`:
 `∫ exp (t (f - ∫ f dμ)) dμ ≤ exp (C K² t² / 2)` for every real `t`. In particular `f` has
@@ -31,6 +32,10 @@ concentration of Lipschitz statistics.
   function is sub-Gaussian about its mean with variance proxy `C K²`.
 * `MeasureTheory.Measure.LogSobolevInequality.measureReal_abs_sub_integral_ge_le_of_lipschitzWith`:
   the two-sided tail bound `2 exp (-t² / (2 C K²))`.
+* `MeasureTheory.Measure.LogSobolevInequality.integrable_exp_mul_of_lipschitzWith`,
+  `MeasureTheory.Measure.LogSobolevInequality.integrable_of_lipschitzWith`, and
+  `MeasureTheory.Measure.LogSobolevInequality.memLp_of_lipschitzWith`: exponential moments,
+  integrability, and finite moments of the uncentered function.
 
 ## Implementation notes
 
@@ -213,10 +218,12 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂μ) (C.toNNReal * K ^ 2) μ := by
   lift C to ℝ≥0 using hC
   simp only [Real.toNNReal_coe]
-  obtain ⟨g, hgs, hgn, hgK, hgf, hlim⟩ := hf.exists_seq_contDiff_tendsto
+  obtain ⟨g, hgs, hgn, hglip, hgf, hlim⟩ := hf.exists_seq_contDiff_lipschitzWith_tendsto
+  have hgK (n : ℕ) (x : E) : ‖fderiv ℝ (g n) x‖ ≤ K :=
+    norm_fderiv_le_of_lipschitz ℝ (hglip n)
   have hsub (n : ℕ) := h.hasSubgaussianMGF_of_contDiff (hgs n) (hgn n) (hgK n)
-  obtain ⟨B, hB⟩ := hf.continuous.measurable.exists_forall_abs_integral_le_of_hasSubgaussianMGF
-    hgf hsub
+  obtain ⟨B, hB⟩ := TauCeti.Probability.exists_forall_abs_integral_le_of_hasSubgaussianMGF
+    (fun n ↦ .of_forall (hgf n)) hsub
   -- Fatou's lemma gives every exponential moment of `f`.
   have hexp (t : ℝ) : Integrable (fun x ↦ exp (t * f x)) μ := by
     refine TauCeti.integrable_of_tendsto_of_integral_le
@@ -248,6 +255,31 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
     fun t ↦ TauCeti.integral_le_of_tendsto_of_integral_le
       (.of_forall fun n ↦ (hsub n).integrable_exp_mul t) (.of_forall (hpos t)) (hcent t)
       (.of_forall fun n ↦ (hsub n).mgf_le t)⟩
+
+/-- Under a logarithmic Sobolev inequality with nonnegative constant, every real exponential
+moment of a Lipschitz function is integrable. -/
+theorem LogSobolevInequality.integrable_exp_mul_of_lipschitzWith
+    (h : LogSobolevInequality μ C) (hC : 0 ≤ C) (hf : LipschitzWith K f) (t : ℝ) :
+    Integrable (fun x ↦ exp (t * f x)) μ := by
+  have hi := (h.hasSubgaussianMGF_of_lipschitzWith hC hf).integrable_exp_mul t
+  refine (hi.mul_const (exp (t * ∫ y, f y ∂μ))).congr (.of_forall fun x ↦ ?_)
+  simp only [← exp_add, mul_sub, sub_add_cancel]
+
+/-- Under a logarithmic Sobolev inequality with nonnegative constant, every Lipschitz function
+is integrable. -/
+theorem LogSobolevInequality.integrable_of_lipschitzWith (h : LogSobolevInequality μ C)
+    (hC : 0 ≤ C) (hf : LipschitzWith K f) : Integrable f μ :=
+  ((h.hasSubgaussianMGF_of_lipschitzWith hC hf).integrable.add
+    (integrable_const (∫ y, f y ∂μ))).congr
+      (.of_forall fun x ↦ sub_add_cancel (f x) (∫ y, f y ∂μ))
+
+/-- Under a logarithmic Sobolev inequality with nonnegative constant, every Lipschitz function
+belongs to `Lᵖ` for every finite nonnegative exponent `p`. -/
+theorem LogSobolevInequality.memLp_of_lipschitzWith (h : LogSobolevInequality μ C)
+    (hC : 0 ≤ C) (hf : LipschitzWith K f) (p : ℝ≥0) : MemLp f p μ := by
+  exact MemLp.ae_eq (.of_forall fun x ↦ sub_add_cancel (f x) (∫ y, f y ∂μ)) <|
+    ((h.hasSubgaussianMGF_of_lipschitzWith hC hf).memLp p).add
+      (memLp_const (∫ y, f y ∂μ))
 
 /-- **Gaussian concentration of Lipschitz functions** under a logarithmic Sobolev inequality with
 nonnegative constant `C`: a `K`-Lipschitz function `f` deviates from its mean by at least `t ≥ 0`

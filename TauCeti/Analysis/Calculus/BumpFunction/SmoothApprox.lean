@@ -18,8 +18,8 @@ approximations with the same Lipschitz constant, including for Banach-valued fun
 For real data given only on a subset and valued in a fixed closed interval, the approximant
 is defined on the entire space and stays in that interval. Thus both the derivative bound
 and boundedness survive the local extension and smoothing used in manifold approximation.
-`LipschitzWith.exists_seq_contDiff_tendsto` gives a pointwise approximation sequence of bounded
-smooth real functions with the same gradient bound and a common pointwise bound `|f| + 1`.
+`LipschitzWith.exists_seq_contDiff_lipschitzWith_tendsto` gives a pointwise approximation sequence
+of bounded smooth real functions with the same Lipschitz constant and a common bound `|f| + 1`.
 
 The construction combines Mathlib's McShane extension and normalized smooth bumps with
 `LipschitzWith.normed_convolution`. Derivative bounds follow directly from Mathlib's
@@ -89,10 +89,11 @@ theorem LipschitzOnWith.exists_contDiff_lipschitzWith_mem_Icc_dist_lt {f : E →
     exact mul_le_mul_of_nonneg_left (mem_ball.1 hy).le K.coe_nonneg
 
 /-- A `K`-Lipschitz function is the pointwise limit of smooth functions `g n` with values in
-`[-n, n]`, gradient bounded by `K`, and `|g n| ≤ |f| + 1`. -/
-theorem LipschitzWith.exists_seq_contDiff_tendsto {f : E → ℝ} (hf : LipschitzWith K f) :
+`[-n, n]`, Lipschitz constant `K`, and `|g n| ≤ |f| + 1`. -/
+theorem LipschitzWith.exists_seq_contDiff_lipschitzWith_tendsto {f : E → ℝ}
+    (hf : LipschitzWith K f) :
     ∃ g : ℕ → E → ℝ, (∀ n, ContDiff ℝ ∞ (g n)) ∧ (∀ n x, |g n x| ≤ n) ∧
-      (∀ n x, ‖fderiv ℝ (g n) x‖ ≤ K) ∧ (∀ n x, |g n x| ≤ |f x| + 1) ∧
+      (∀ n, LipschitzWith K (g n)) ∧ (∀ n x, |g n x| ≤ |f x| + 1) ∧
       ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (f x)) := by
   have H (n : ℕ) := (hf.lipschitzOnWith (s := {x | f x ∈ Icc (-(n : ℝ)) n}))
     |>.exists_contDiff_lipschitzWith_mem_Icc_dist_lt (neg_le_self n.cast_nonneg) (fun _ hx ↦ hx)
@@ -100,7 +101,7 @@ theorem LipschitzWith.exists_seq_contDiff_tendsto {f : E → ℝ} (hf : Lipschit
   choose g hgs hgK hgI hgf using H
   have hclose {n : ℕ} {x : E} (hx : |f x| ≤ n) : |g n x - f x| ≤ 1 / ((n : ℝ) + 1) := by
     rw [← Real.dist_eq]; exact (hgf n x (abs_le.1 hx)).le
-  refine ⟨g, hgs, fun n x ↦ abs_le.2 (hgI n x), fun n x ↦ norm_fderiv_le_of_lipschitz ℝ (hgK n),
+  refine ⟨g, hgs, fun n x ↦ abs_le.2 (hgI n x), hgK,
     fun n x ↦ ?_, fun x ↦ ?_⟩
   · by_cases hx : |f x| ≤ n
     · have h1 : 1 / ((n : ℝ) + 1) ≤ 1 := (div_le_one (by positivity)).2 (by simp)
