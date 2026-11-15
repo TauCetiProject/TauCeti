@@ -19,11 +19,12 @@ Five elementary lemmas useful for block-operator perturbation estimates and plan
   so an operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every coefficient `⟪u, H v⟫`;
 * `TauCeti.norm_smul_add_smul_sq`: the Pythagorean norm formula for a two-vector
   real-linear combination when the real part of the mixed inner product vanishes;
-* `TauCeti.norm_smul_add_smul_eq_one_of_sq_add_sq`: its unit-circle case, `‖γ y + σ z‖ = 1` for
-  orthonormal `y, z` and `γ² + σ² = 1`.
+* `TauCeti.norm_smul_add_smul_eq_one_iff`: its unit-circle case: for unit vectors `y, z` with
+  `re ⟪y, z⟫ = 0`, `‖γ y + σ z‖ = 1` exactly when `γ² + σ² = 1`.
 
 No finite-dimensionality, spectral-gap, or eigenvector assumptions are needed. The results
-are used by the per-eigenvector double-angle estimates in `DoubleAngle.Vector`.
+are used by the per-eigenvector double-angle estimates in `DoubleAngle.Vector` and by the
+circular motions of the central-force radial reduction.
 
 Adapted from the Apache-2.0 DKPS formalization (Kitware, Inc.).
 -/
@@ -48,7 +49,7 @@ end LinearMap.IsSymmetric
 namespace LinearMap
 
 /-- Quadratic form of an operator at a real linear combination of two vectors,
-expanded into the four scalar entries.  Pure sesquilinear algebra. -/
+expanded into the four scalar entries. -/
 theorem re_inner_smul_add_smul_map (H : E →ₗ[𝕜] E) (y z : E) (γ σ : ℝ) :
     RCLike.re ⟪(γ : 𝕜) • y + (σ : 𝕜) • z, H ((γ : 𝕜) • y + (σ : 𝕜) • z)⟫_𝕜
       = γ ^ 2 * RCLike.re ⟪y, H y⟫_𝕜 + σ ^ 2 * RCLike.re ⟪z, H z⟫_𝕜
@@ -78,13 +79,12 @@ theorem norm_smul_add_smul_sq {y z : E} (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) (�
   simp [inner_smul_left, inner_smul_right, hyz, norm_smul, mul_pow, sq_abs]
 
 /-- For unit vectors `y, z` orthogonal with respect to the real part of the inner product, the
-real linear combination `γ y + σ z` with `γ² + σ² = 1` is a unit vector; this is
+real linear combination `γ y + σ z` is a unit vector exactly when `γ² + σ² = 1`; this is
 `norm_smul_add_smul_sq` read on the unit circle. -/
-theorem norm_smul_add_smul_eq_one_of_sq_add_sq {y z : E} (hy : ‖y‖ = 1) (hz : ‖z‖ = 1)
-    (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) {γ σ : ℝ} (hγσ : γ ^ 2 + σ ^ 2 = 1) :
-    ‖(γ : 𝕜) • y + (σ : 𝕜) • z‖ = 1 := by
-  have h := norm_smul_add_smul_sq hyz γ σ
-  rw [hy, hz, one_pow, mul_one, mul_one, hγσ] at h
-  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
+theorem norm_smul_add_smul_eq_one_iff {y z : E} (hy : ‖y‖ = 1) (hz : ‖z‖ = 1)
+    (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) {γ σ : ℝ} :
+    ‖(γ : 𝕜) • y + (σ : 𝕜) • z‖ = 1 ↔ γ ^ 2 + σ ^ 2 = 1 := by
+  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_smul_add_smul_sq hyz, hy, hz]
+  simp only [one_pow, mul_one]
 
 end TauCeti

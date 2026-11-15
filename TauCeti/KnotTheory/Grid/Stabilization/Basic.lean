@@ -59,10 +59,9 @@ types, and `GridDiagram.IsDestabilization` reverses the relation.
 
 ## References
 
-This supplies the stabilization half of the standing convention in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md` that a link is initially a grid diagram
-modulo grid moves. The local three-marking construction and its eight types follow
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+Stabilization is one of the grid moves modulo which a grid diagram presents a link. The local
+three-marking construction and its eight types follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 3.
 -/
 
 public section

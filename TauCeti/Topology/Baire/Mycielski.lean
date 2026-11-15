@@ -11,6 +11,7 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.SetTheory.Descriptive.Antichain
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Topology.Baire.BaireMeasurable
+import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.CantorScheme
 import TauCeti.Topology.Constructions.Pi
 import TauCeti.Topology.MetricSpace.Perfect
@@ -219,10 +220,20 @@ end Mycielski
 end TauCeti
 
 /-- **A meagre equivalence relation has a Cantor antichain.** If the graph of an equivalence
-relation `E` on a nonempty perfect completely metrizable space is meagre in `X × X`, there is a
+relation `E` on a nonempty completely metrizable space is meagre in `X × X`, there is a
 continuous map of Cantor space into `X` whose distinct points have `E`-inequivalent images. -/
 theorem Setoid.hasCantorAntichainOn_univ_of_isMeagre {X : Type*} [TopologicalSpace X]
-    [TopologicalSpace.IsCompletelyMetrizableSpace X] [PerfectSpace X] [Nonempty X]
+    [TopologicalSpace.IsCompletelyMetrizableSpace X] [Nonempty X]
     (E : Setoid X) (hE : IsMeagre {p : X × X | E p.1 p.2}) : E.HasCantorAntichainOn univ := by
+  -- a meagre reflexive relation leaves no isolated point, as `X × X` is a Baire space
+  have : PerfectSpace X := by
+    refine perfectSpace_iff_forall_not_isolated.2 fun x => ?_
+    by_contra h
+    rw [not_neBot, ← isOpen_singleton_iff_punctured_nhds] at h
+    refine not_isMeagre_of_isOpen (h.prod h) ⟨(x, x), rfl, rfl⟩ (hE.mono ?_)
+    rintro ⟨a, b⟩ ⟨ha, hb⟩
+    simp only [Set.mem_singleton_iff] at ha hb
+    subst ha hb
+    exact E.refl _
   obtain ⟨f, hf, -, hfE⟩ := TauCeti.mycielski_prod hE
   exact Setoid.hasCantorAntichainOn_iff.2 ⟨f, hf, fun _ => mem_univ _, hfE⟩

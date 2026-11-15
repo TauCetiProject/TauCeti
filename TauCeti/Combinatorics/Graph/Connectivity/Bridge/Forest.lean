@@ -135,7 +135,7 @@ def bridgeForest (G : Graph α β) : Graph G.BridgeComponent β where
   IsLink e C D := G.IsBridge e ∧ ∃ x ∈ V(C.1), ∃ y ∈ V(D.1), G.IsLink e x y
   isLink_symm _ _ := ⟨fun _ _ ⟨he, x, hx, y, hy, h⟩ ↦ ⟨he, y, hy, x, hx, h.symm⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
-    rintro e C D C' D' ⟨-, x, hx, y, hy, h⟩ ⟨-, x', hx', y', hy', h'⟩
+    rintro e C D C' D' ⟨-, x, hx, y, _, h⟩ ⟨-, x', hx', y', hy', h'⟩
     obtain rfl | rfl := h.left_eq_or_eq h'
     · exact .inl (ConnectedComponent.eq_of_mem_of_mem hx hx')
     · exact .inr (ConnectedComponent.eq_of_mem_of_mem hx hy')
@@ -175,7 +175,7 @@ noncomputable def Walk.toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y
   classical
   induction p with
   | nil => exact .nil
-  | @cons x y z e h p ih =>
+  | @cons x y z e h _ ih =>
       by_cases he : G.IsBridge e
       · exact .cons e (he.isLink_bridgeForest h) (ih h.right_mem hy)
       · exact (ih h.right_mem hy).copy

@@ -124,7 +124,7 @@ pairings made ambient. Stating it with the type `Y' ⟶ X'` keeps the duals `X'`
 to rewriting: as a term `@rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f`, its source and target are the
 projections `HasRightDual.rightDual ⟨Y'⟩` and `HasRightDual.rightDual ⟨X'⟩`, and Mathlib's lemmas
 about it do not rewrite against the evaluation `ε_ X X'` of the given pairing. -/
-def rightMate {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y') (f : X ⟶ Y) :
+def rightMate {X X' Y Y' : C} (_ : ExactPairing X X') (_ : ExactPairing Y Y') (f : X ⟶ Y) :
     Y' ⟶ X' :=
   @rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 
@@ -322,7 +322,7 @@ theorem leftDualHom_ext {X Y A : C} [ExactPairing X Y] {f g : A ⟶ X}
 pairings `(X', X)` and `(Y', Y)`: Mathlib's `CategoryTheory.leftAdjointMate` with the given
 pairings made ambient. As for `CategoryTheory.ExactPairing.rightMate`, the type `Y' ⟶ X'` keeps
 the left duals `X'` and `Y'` visible to rewriting. -/
-def leftMate {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y) (f : X ⟶ Y) :
+def leftMate {X X' Y Y' : C} (_ : ExactPairing X' X) (_ : ExactPairing Y' Y) (f : X ⟶ Y) :
     Y' ⟶ X' :=
   @leftAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 

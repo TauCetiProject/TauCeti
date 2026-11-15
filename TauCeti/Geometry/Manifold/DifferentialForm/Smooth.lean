@@ -346,6 +346,16 @@ theorem eval₂_neg_right (φ : SmoothBundleForm I F V 2) (x : M) (v w : Tangent
     ContinuousAlternatingMap.coe_toAlternatingMap] using
     (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
 
+/-- Ordered-pair evaluation is subtractive in its first tangent argument. -/
+theorem eval₂_sub_left (φ : SmoothBundleForm I F V 2) (x : M) (v v' w : TangentSpace I x) :
+    φ.eval₂ x (v - v') w = φ.eval₂ x v w - φ.eval₂ x v' w := by
+  rw [sub_eq_add_neg, eval₂_add_left, eval₂_neg_left, ← sub_eq_add_neg]
+
+/-- Ordered-pair evaluation is subtractive in its second tangent argument. -/
+theorem eval₂_sub_right (φ : SmoothBundleForm I F V 2) (x : M) (v w w' : TangentSpace I x) :
+    φ.eval₂ x v (w - w') = φ.eval₂ x v w - φ.eval₂ x v w' := by
+  rw [sub_eq_add_neg, eval₂_add_right, eval₂_neg_right, ← sub_eq_add_neg]
+
 /-- Two smooth bundle-valued two-forms have the same value at a point when their ordered-pair
 evaluations there agree. -/
 theorem apply_eq_of_eval₂_eq {φ ψ : SmoothBundleForm I F V 2} {x : M}
@@ -384,7 +394,7 @@ theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
   have hb : ContMDiff I' I n b := fun y ↦ by
     have hy := hU y
     rw [← contMDiffWithinAt_univ] at hy ⊢
-    exact (contMDiffWithinAt_totalSpace.mp hy).1
+    exact (contMDiffWithinAt_totalSpace_iff.mp hy).1
   have hφ := (φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
   have hφ' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
@@ -490,7 +500,8 @@ theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [IsManifold I
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
   refine forall_congr' fun x ↦ ?_
-  simp only [contMDiffAt_section, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+  simp only [contMDiffAt_section_iff,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     contMDiffAt_continuousAlternatingMap_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
@@ -768,7 +779,7 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
   have h := SmoothBundleForm.contMDiff_eval₂ form hV hW
   intro y₀
   have hy := h y₀
-  have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
+  have hy' := (Bundle.contMDiffAt_totalSpace_iff (IM := I') (IB := I) (n := n)).mp hy
   simpa [Bundle.Trivial.eq_trivialization, SmoothBundleForm.eval₂] using hy'.2
 
 end Evaluation

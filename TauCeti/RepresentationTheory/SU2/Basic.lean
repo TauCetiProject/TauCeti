@@ -18,9 +18,8 @@ public import TauCeti.Topology.Algebra.UnitaryGroup
 /-!
 # `SU(2)` and its maximal torus
 
-`SU(2)` is `Matrix.specialUnitaryGroup (Fin 2) ℂ`, the compact group that grounds the compact-group
-representation theory of the [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
-Its compactness and topological group structure come from
+`SU(2)` is `Matrix.specialUnitaryGroup (Fin 2) ℂ`, the basic example of a compact non-abelian
+group. Its compactness and topological group structure come from
 `TauCeti/Topology/Algebra/UnitaryGroup.lean`, where they are proved for every special unitary
 matrix group; Hausdorffness is inherited from the ambient matrix topology, `SU(2)` carrying the
 subtype topology.

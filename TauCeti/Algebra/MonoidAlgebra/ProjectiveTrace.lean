@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
-import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 import TauCeti.Algebra.MonoidAlgebra.LocalRing
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
@@ -76,9 +75,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   let q := pPart p g
   have hmul : s * q = g := pFreePart_mul_pPart p g
   have hsq : Commute s q := commute_pFreePart_pPart p g
-  have hq1 : q ≠ 1 := pPart_ne_one_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
-  have hQ : IsPGroup p (Subgroup.zpowers q) :=
-    isPGroup_zpowers_pPart Fact.out (orderOf_pos g).ne'
+  have hq1 : q ≠ 1 := by simp [q, hg, Fact.out, (orderOf_pos g).ne']
+  have hQ : IsPGroup p (Subgroup.zpowers q) := isPGroup_zpowers_pPart p g
   have hpm : ¬p ∣ orderOf s := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
   rw [← hmul]
   -- Restrict `X` to the local group algebra `A[Q]` of `Q = ⟨q⟩`.
@@ -88,17 +86,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   let φ : MonoidAlgebra A Q →ₐ[A] MonoidAlgebra A G := mapDomainAlgHom A A Q.subtype
   let _ : Module (MonoidAlgebra A Q) (MonoidAlgebra A G) := (mapDomainRingHom A Q.subtype).toModule
   let _ : Module (MonoidAlgebra A Q) X := .compHom X (mapDomainRingHom A Q.subtype)
-  have : IsScalarTower (MonoidAlgebra A Q) (MonoidAlgebra A G) X :=
-    ⟨fun r y x ↦ mul_smul (φ r) y x⟩
-  have : IsScalarTower (MonoidAlgebra A Q) (MonoidAlgebra A G) (MonoidAlgebra A G) :=
-    ⟨fun r y z ↦ mul_assoc (φ r) y z⟩
-  have : IsScalarTower A (MonoidAlgebra A Q) X :=
-    ⟨fun a r x ↦ (congrArg (· • x) (map_smul φ a r)).trans (smul_assoc a (φ r) x)⟩
-  let b := TauCeti.MonoidAlgebra.basisCosets A Q.subtype Q.subtype_injective
-  have : Module.Free (MonoidAlgebra A Q) (MonoidAlgebra A G) := .of_basis b
-  have : Module.Finite (MonoidAlgebra A Q) (MonoidAlgebra A G) := .of_basis b
-  have : Module.Finite (MonoidAlgebra A Q) X := .trans (MonoidAlgebra A G) X
-  have : Module.Projective (MonoidAlgebra A Q) X := .trans (MonoidAlgebra A G) X
+  obtain ⟨_, _, _, _, _⟩ := Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := A) Q
+    (fun _ _ ↦ rfl) X fun _ _ ↦ rfl
   have : IsLocalRing (MonoidAlgebra A Q) := TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup hp hQ
   have : IsLocalHom (MonoidAlgebra.lift A A Q 1) :=
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ

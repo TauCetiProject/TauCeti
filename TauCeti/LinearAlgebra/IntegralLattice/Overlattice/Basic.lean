@@ -52,8 +52,6 @@ restrictions of the correspondence they cut out live in
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean` (`intermediateOrderIsoSubgroup`).
 -/
 
 public section

@@ -64,25 +64,25 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 /-- The degree-`p` piece of the input-degree grading of `TensorAlgebra R M` induced by an
 internal grading `G` of `M`. It is spanned by the products `ι x₁ * ⋯ * ι xₙ` of homogeneous
 generators whose degrees add up to `p` (`tensorAlgebraPiece_eq_span`). -/
-noncomputable def tensorAlgebraPiece (G : InternalGrading R M) (p : ℤ) :
+noncomputable def tensorAlgebraPiece (G : InternalGrading R M ℤ) (p : ℤ) :
     Submodule R (TensorAlgebra R M) :=
   ((TensorWords.grading G).map TensorAlgebra.equivDirectSum.symm.toLinearEquiv).piece p
 
 /-- The input-degree pieces of the tensor algebra form an internal direct sum. -/
-theorem isInternal_tensorAlgebraPiece (G : InternalGrading R M) :
+theorem isInternal_tensorAlgebraPiece (G : InternalGrading R M ℤ) :
     DirectSum.IsInternal (tensorAlgebraPiece G) :=
   ((TensorWords.grading G).map TensorAlgebra.equivDirectSum.symm.toLinearEquiv).isInternal
 
 /-- An element of the tensor algebra has input degree `p` exactly when its image in the direct sum
 of tensor powers has total letter degree `p`. -/
-theorem mem_tensorAlgebraPiece_iff {G : InternalGrading R M} {p : ℤ} {x : TensorAlgebra R M} :
+theorem mem_tensorAlgebraPiece_iff {G : InternalGrading R M ℤ} {p : ℤ} {x : TensorAlgebra R M} :
     x ∈ tensorAlgebraPiece G p ↔ TensorAlgebra.toDirectSum x ∈ TensorWords.gradedPiece G p := by
   simp only [tensorAlgebraPiece, InternalGrading.mem_map_piece_iff, TensorWords.grading_piece,
     AlgEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm, AlgEquiv.toLinearEquiv_apply,
     TensorAlgebra.equivDirectSum_apply]
 
 /-- A product of homogeneous generators lies in the piece of the sum of their degrees. -/
-theorem tprod_mem_tensorAlgebraPiece (G : InternalGrading R M) {n : ℕ} (d : Fin n → ℤ)
+theorem tprod_mem_tensorAlgebraPiece (G : InternalGrading R M ℤ) {n : ℕ} (d : Fin n → ℤ)
     (x : Fin n → M) (hx : ∀ i, x i ∈ G.piece (d i)) :
     TensorAlgebra.tprod R M n x ∈ tensorAlgebraPiece G (∑ i, d i) := by
   rw [mem_tensorAlgebraPiece_iff, TensorAlgebra.toDirectSum_tensorPower_tprod,
@@ -90,7 +90,7 @@ theorem tprod_mem_tensorAlgebraPiece (G : InternalGrading R M) {n : ℕ} (d : Fi
   exact TensorWords.mem_gradedPiece_of_tprod G x d hx
 
 /-- A generator of degree `p` lies in the degree-`p` piece of the tensor algebra. -/
-theorem ι_mem_tensorAlgebraPiece (G : InternalGrading R M) {p : ℤ} {x : M}
+theorem ι_mem_tensorAlgebraPiece (G : InternalGrading R M ℤ) {p : ℤ} {x : M}
     (hx : x ∈ G.piece p) : TensorAlgebra.ι R x ∈ tensorAlgebraPiece G p := by
   rw [mem_tensorAlgebraPiece_iff, TensorAlgebra.toDirectSum_ι, ← DirectSum.lof_eq_of R,
     ← TensorWords.of_def]
@@ -99,7 +99,7 @@ theorem ι_mem_tensorAlgebraPiece (G : InternalGrading R M) {p : ℤ} {x : M}
 
 /-- The degree-`p` piece of the tensor algebra is spanned by the products of homogeneous
 generators whose degrees add up to `p`. -/
-theorem tensorAlgebraPiece_eq_span (G : InternalGrading R M) (p : ℤ) :
+theorem tensorAlgebraPiece_eq_span (G : InternalGrading R M ℤ) (p : ℤ) :
     tensorAlgebraPiece G p = Submodule.span R {z | ∃ (n : ℕ) (d : Fin n → ℤ) (x : Fin n → M),
       (∀ i, x i ∈ G.piece (d i)) ∧ ∑ i, d i = p ∧ z = TensorAlgebra.tprod R M n x} := by
   refine le_antisymm (fun z hz ↦ ?_) (Submodule.span_le.2 ?_)
@@ -117,7 +117,7 @@ theorem tensorAlgebraPiece_eq_span (G : InternalGrading R M) (p : ℤ) :
 
 /-- A submodule containing every product of homogeneous generators of total degree `p` contains
 the degree-`p` piece of the tensor algebra. -/
-theorem tensorAlgebraPiece_le {G : InternalGrading R M} {p : ℤ}
+theorem tensorAlgebraPiece_le {G : InternalGrading R M ℤ} {p : ℤ}
     {C : Submodule R (TensorAlgebra R M)}
     (h : ∀ (n : ℕ) (d : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (d i)) →
       ∑ i, d i = p → TensorAlgebra.tprod R M n x ∈ C) :
@@ -127,7 +127,7 @@ theorem tensorAlgebraPiece_le {G : InternalGrading R M} {p : ℤ}
   exact h n d x hx hd
 
 /-- Multiplication in the tensor algebra adds input degrees. -/
-instance (G : InternalGrading R M) : SetLike.GradedMonoid (tensorAlgebraPiece G) where
+instance (G : InternalGrading R M ℤ) : SetLike.GradedMonoid (tensorAlgebraPiece G) where
   one_mem := by
     rw [mem_tensorAlgebraPiece_iff, map_one]
     exact TensorWords.one_mem_gradedPiece G
@@ -137,18 +137,18 @@ instance (G : InternalGrading R M) : SetLike.GradedMonoid (tensorAlgebraPiece G)
     exact TensorWords.mul_mem_gradedPiece G ha hb
 
 /-- The tensor algebra is a `ℤ`-graded algebra for the input-degree grading. -/
-noncomputable instance (G : InternalGrading R M) : GradedAlgebra (tensorAlgebraPiece G) :=
+noncomputable instance (G : InternalGrading R M ℤ) : GradedAlgebra (tensorAlgebraPiece G) :=
   (isInternal_tensorAlgebraPiece G).gradedAlgebra
 
 /-- The inclusion of generators preserves degrees. -/
-theorem isHomogeneous_tensorAlgebra_ι (G : InternalGrading R M) :
+theorem isHomogeneous_tensorAlgebra_ι (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (TensorAlgebra.ι R) G.piece (tensorAlgebraPiece G) 0 :=
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
     simpa only [add_zero] using ι_mem_tensorAlgebraPiece G hx
 
 /-- The degree-`p` component of a generator is the generator of the degree-`p` component. -/
 @[simp]
-theorem decompose_tensorAlgebra_ι (G : InternalGrading R M) (x : M) (p : ℤ) :
+theorem decompose_tensorAlgebra_ι (G : InternalGrading R M ℤ) (x : M) (p : ℤ) :
     (DirectSum.decompose (tensorAlgebraPiece G) (TensorAlgebra.ι R x) p : TensorAlgebra R M) =
       TensorAlgebra.ι R (DirectSum.decompose G.piece x p : M) := by
   have h := (isHomogeneous_tensorAlgebra_ι G).map_decompose p x
@@ -159,7 +159,7 @@ theorem decompose_tensorAlgebra_ι (G : InternalGrading R M) (x : M) (p : ℤ) :
 Koszul twist of the grading of the generators.  This is the value on generators of the Koszul
 automorphism `koszulTwistAlgEquiv (tensorAlgebraPiece G) n`. -/
 @[simp]
-theorem koszulTwist_tensorAlgebraPiece_ι (G : InternalGrading R M) (n : ℤ) (x : M) :
+theorem koszulTwist_tensorAlgebraPiece_ι (G : InternalGrading R M ℤ) (n : ℤ) (x : M) :
     (InternalGrading.ofDecomposition (tensorAlgebraPiece G)).koszulTwist n (TensorAlgebra.ι R x) =
       TensorAlgebra.ι R (G.koszulTwist n x) := by
   have h : (InternalGrading.ofDecomposition (tensorAlgebraPiece G)).koszulTwist n ∘ₗ
@@ -176,7 +176,7 @@ variable {A : Type uA} [Semiring A] [Algebra R A]
 
 /-- The algebra map out of the tensor algebra induced by a degree-preserving linear map into a
 graded algebra preserves input degree. -/
-theorem isHomogeneous_tensorAlgebraLift (G : InternalGrading R M) (𝒜 : ℤ → Submodule R A)
+theorem isHomogeneous_tensorAlgebraLift (G : InternalGrading R M ℤ) (𝒜 : ℤ → Submodule R A)
     [SetLike.GradedMonoid 𝒜] {f : M →ₗ[R] A} (hf : LinearMap.IsHomogeneous f G.piece 𝒜 0) :
     LinearMap.IsHomogeneous (TensorAlgebra.lift R f).toLinearMap (tensorAlgebraPiece G) 𝒜 0 := by
   refine LinearMap.isHomogeneous_def.2 fun p z hz ↦ ?_
@@ -188,7 +188,7 @@ theorem isHomogeneous_tensorAlgebraLift (G : InternalGrading R M) (𝒜 : ℤ �
   refine SetLike.list_prod_ofFn_mem_graded d _ fun i ↦ ?_
   simpa only [Function.comp_apply, TensorAlgebra.lift_ι_apply, add_zero] using hf.map_mem (hx i)
 
-variable (G : InternalGrading R M) (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
+variable (G : InternalGrading R M ℤ) (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
 
 /-- The graded algebra map out of the tensor algebra induced by a degree-preserving linear map into
 a graded algebra. Its underlying algebra map is `TensorAlgebra.lift R f`. -/

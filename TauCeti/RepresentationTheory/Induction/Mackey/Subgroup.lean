@@ -53,8 +53,8 @@ a canonical representative-independent summand; that would need coherent conjuga
 of the representations themselves.
 
 Everything in this file is a statement about subgroups of `G`, with no coefficients and no
-representations; it is placed with the induction files because `mackeySubgroup` is the
-roadmap-specific subgroup the induction and restriction of that layer run along.
+representations; it is placed with the induction files because `mackeySubgroup` is the subgroup
+along which the restriction and induction in each summand of the Mackey decomposition run.
 
 ## Main definitions
 
@@ -86,12 +86,6 @@ roadmap-specific subgroup the induction and restriction of that layer run along.
   of prime order therefore has a conjugate meeting it trivially.
 
 ## References
-
-Layer 3 of `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks to
-"name the subgroup `mackeySubgroup s H K := K ⊓ (MulAut.conj s • H)`" carrying the two
-homomorphisms `mackeyToK` and `mackeyToConjH`, and Layer 4, which asks for the invariance of the
-Mackey data "under replacing `s` by `h₁ s h₂`" as its own lemma.  `mackeySubgroup` is pinned in the
-accompanying `Suggested.lean`.
 
 * [J.-P. Serre, *Linear Representations of Finite Groups*][serre1977], Section 7.3.
 -/

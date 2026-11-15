@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Units
 public import TauCeti.Algebra.Ring.Idempotent.Units
+public import TauCeti.Data.ZMod.Divisibility
 public import TauCeti.Data.Nat.ExactDivisor
 public import Mathlib.Algebra.Group.Prod
 
@@ -50,6 +51,12 @@ moves the nebentypus of a modular form of level `N`. At `Q = N` it is inversion,
   its restrictions to the two Chinese remainder factors.
 * `TauCeti.Nat.IsExactDivisor.eq_of_castHom_eq`: an element of `ZMod N` is determined by its
   residues modulo `Q` and modulo `N / Q`.
+* `TauCeti.Nat.IsExactDivisor.unitsMap_unitsEquivProd_symm_of_dvd`,
+  `TauCeti.Nat.IsExactDivisor.unitsMap_unitsEquivProd_symm_of_dvd_div`: the reductions of a
+  Chinese remainder lift modulo divisors of the two factors.
+* `TauCeti.Nat.prod_unitsEquivProd_symm_primePow`: a unit modulo `N ≠ 0` is the product of its
+  prime-power components, the units that agree with it modulo one `p ^ v_p(N)` and are `1` modulo
+  the complementary divisor.
 * `TauCeti.Nat.IsExactDivisor.eq_exactDivisorIdempotent_iff`: `e_Q` is the residue that is `1`
   modulo `Q` and `0` modulo `N / Q`; it is idempotent
   (`TauCeti.Nat.IsExactDivisor.isIdempotentElem_exactDivisorIdempotent`).
@@ -147,6 +154,25 @@ theorem eq_of_castHom_eq (h : Q ∥ N) {x y : ZMod N}
     (hR : ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) (ZMod (N / Q)) x =
       ZMod.castHom (Nat.div_dvd_of_dvd h.dvd) (ZMod (N / Q)) y) : x = y :=
   h.ringEquivProd.injective <| by rw [ringEquivProd_apply, ringEquivProd_apply, hQ, hR]
+
+/-- **Reducing a Chinese remainder lift modulo a divisor of `Q`.** For `Q ∥ N` and `d ∣ Q`, the
+unit modulo `N` with residues `a` modulo `Q` and `b` modulo `N / Q` reduces modulo `d` to the
+reduction of `a`. -/
+theorem unitsMap_unitsEquivProd_symm_of_dvd {d : ℕ} (h : Q ∥ N) (hd : d ∣ Q)
+    (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
+    ZMod.unitsMap (hd.trans h.dvd) (h.unitsEquivProd.symm (a, b)) = ZMod.unitsMap hd a := by
+  rw [← ZMod.unitsMap_comp hd h.dvd, MonoidHom.comp_apply, ← h.unitsEquivProd_apply_fst,
+    MulEquiv.apply_symm_apply]
+
+/-- **Reducing a Chinese remainder lift modulo a divisor of `N / Q`.** For `Q ∥ N` and
+`d ∣ N / Q`, the unit modulo `N` with residues `a` modulo `Q` and `b` modulo `N / Q` reduces modulo
+`d` to the reduction of `b`. -/
+theorem unitsMap_unitsEquivProd_symm_of_dvd_div {d : ℕ} (h : Q ∥ N) (hd : d ∣ N / Q)
+    (a : (ZMod Q)ˣ) (b : (ZMod (N / Q))ˣ) :
+    ZMod.unitsMap (hd.trans (Nat.div_dvd_of_dvd h.dvd)) (h.unitsEquivProd.symm (a, b)) =
+      ZMod.unitsMap hd b := by
+  rw [← ZMod.unitsMap_comp hd (Nat.div_dvd_of_dvd h.dvd), MonoidHom.comp_apply,
+    ← h.unitsEquivProd_apply_snd, MulEquiv.apply_symm_apply]
 
 /-- `e_Q` is `1` modulo `Q`. -/
 theorem castHom_exactDivisorIdempotent_left (h : Q ∥ N) :
@@ -262,5 +288,25 @@ theorem unitsInvPart_one (h : 1 ∥ N) : h.unitsInvPart = MulEquiv.refl (ZMod N)
   · simp [ZMod.unitsMap_def]
 
 end Nat.IsExactDivisor
+
+/-! ### Splitting a unit into its prime-power components -/
+
+/-- **A unit is the product of its prime-power components.** For `N ≠ 0` and a unit `u` modulo
+`N`, let `u_p` be the unit modulo `N` that is `u` modulo `p ^ v_p(N)` and `1` modulo the
+complementary divisor. Then `u` is the product of the `u_p` over the primes `p` dividing `N`. -/
+theorem Nat.prod_unitsEquivProd_symm_primePow {N : ℕ} (hN : N ≠ 0) (u : (ZMod N)ˣ) :
+    ∏ p ∈ N.primeFactors, (isExactDivisor_primePow (N := N) (p := p)).unitsEquivProd.symm
+      (ZMod.unitsMap (Nat.ordProj_dvd N p) u, 1) = u := by
+  -- compare both sides modulo each `q ^ v_q(N)`, where only the factor at `q` survives
+  refine (ZMod.unitsEquivPi hN).injective (funext fun q ↦ ?_)
+  have hq := q.2
+  rw [ZMod.unitsEquivPi_apply, ZMod.unitsEquivPi_apply, map_prod, Finset.prod_eq_single q.1]
+  · rw [isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd dvd_rfl, ZMod.unitsMap_self,
+      MonoidHom.id_apply]
+  · intro p hp hpq
+    exact isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div
+      (ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hp) hpq.symm) _ _ |>.trans
+        (map_one _)
+  · exact fun h ↦ (h hq).elim
 
 end TauCeti

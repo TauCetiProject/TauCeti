@@ -68,9 +68,8 @@ private theorem green_ac_winding_sum_of_hasCompactSupport {ι : Type*} {s : Fins
       ((hγ i hi).tendsto_integral_circulationFun (fun n ↦ hAC n i hi) (hab i hi).le
         hP.continuous hQ.continuous hcP hcQ
         (hu i hi) (hd i hi)))
-  have haconv := tendsto_integral_mul_of_integral_abs_sub hWn hW
-    (ContDiff.continuous_curl hP hQ).aestronglyMeasurable
-    (by simpa only [Real.norm_eq_abs] using Eventually.of_forall hC) hwconv
+  have haconv := tendsto_integral_mul_of_integral_norm_sub (.of_forall hWn) hW
+    (ContDiff.continuous_curl hP hQ).aestronglyMeasurable (.of_forall hC) hwconv
   have hzero (z) (hz : z ∉ U) : W z * curl P Q z = 0 := by
     simp only [W, sum_windingWeight_eq_zero_of_notMem (w := fun i ↦ (w i : ℝ))
       (fun i hi ht ↦ hz (htrace i hi ht))

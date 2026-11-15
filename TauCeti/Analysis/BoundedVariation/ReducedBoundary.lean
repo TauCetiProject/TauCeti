@@ -49,8 +49,12 @@ proves their basic properties.
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
   (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`). Hence `s` has nonzero perimeter and
   positive measure in every small ball around it (`TauCeti.perimeter_ball_ne_zero`,
-  `TauCeti.measure_inter_ball_pos`), and, when `μ` is an additive Haar measure, the point lies in
-  the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
+  `TauCeti.measure_inter_ball_pos`). Its perimeter in a small ball `ball x r` is at most the
+  perimeter measure of `closedBall x r`, as for any point of `Ω` when `s` has locally finite
+  perimeter (`TauCeti.eventually_perimeter_ball_le_variationMeasure_closedBall`,
+  `TauCeti.eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary`), and,
+  when `μ` is an additive Haar measure, the point lies in the topological frontier of `s`
+  (`TauCeti.reducedBoundary_subset_frontier`).
 * The outer normal concentrates at `ν_s x` in mean at every point `x` of the reduced boundary:
   `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
   (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
@@ -207,6 +211,40 @@ theorem perimeter_ball_ne_zero (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (h
   rw [Opens.coe_mk, ← perimeter_def, hP'] at hU
   exact variationMeasure_preimage_closedBall_ne_zero hx (half_pos hρ)
     (measure_mono_null (preimage_mono (closedBall_subset_ball (half_lt_self hρ))) hU)
+
+/-- For a set of locally finite perimeter in `Ω`, the perimeter of `s` in a ball `ball x r ⊆ Ω`
+is at most the perimeter measure of `closedBall x r`. -/
+theorem perimeter_ball_le_variationMeasure_closedBall
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) {r : ℝ}
+    (hr : ball x r ⊆ Ω) :
+    perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩) hr]
+  exact measure_mono (preimage_mono ball_subset_closedBall)
+
+/-- For a set of locally finite perimeter in `Ω` and a point `x ∈ Ω`, for every small `r > 0`, the
+perimeter of `s` in `ball x r` is at most the perimeter measure of `closedBall x r`. -/
+theorem eventually_perimeter_ball_le_variationMeasure_closedBall
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
+    (hx : x ∈ Ω) :
+    ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds hx)
+  filter_upwards [Ioc_mem_nhdsGT hε] with r hr
+  exact perimeter_ball_le_variationMeasure_closedBall hu hfin ((ball_subset_ball hr.2).trans hεΩ)
+
+/-- At a point of the reduced boundary, for every small `r > 0`, the perimeter of `s` in
+`ball x r` is at most the perimeter measure of `closedBall x r`. -/
+theorem eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary
+    (hx : x ∈ reducedBoundary μ Ω s) :
+    ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) :=
+  have h := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  eventually_perimeter_ball_le_variationMeasure_closedBall h.1 h.2 (reducedBoundary_subset hx)
 
 /-- At a point of the reduced boundary, `s` charges every ball around the point. -/
 theorem measure_inter_ball_pos (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r) :
@@ -378,7 +416,7 @@ theorem tendsto_setLIntegral_enorm_outerNormal_sub_div (hx : x ∈ reducedBounda
   refine ENNReal.div_le_of_le_mul ?_
   have hi : IntegrableOn (fun y : Ω => outerNormal μ Ω s y - outerNormal μ Ω s x) S lam :=
     (integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)
-  rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm hi]
   calc ENNReal.ofReal (∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ ∂lam)
       ≤ ENNReal.ofReal (2 * (δ.toReal / 2) * lam.real S) := ENNReal.ofReal_le_ofReal hr
     _ = δ * lam S := by
@@ -411,7 +449,7 @@ theorem reducedBoundary_congr_ae (h : s =ᵐ[μ.restrict Ω] t) :
 theorem reducedBoundary_inter_opens : reducedBoundary μ Ω (s ∩ Ω) = reducedBoundary μ Ω s := by
   refine reducedBoundary_congr_ae ?_
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
-  exact propext ⟨fun h => h.1, fun h => ⟨h, hy⟩⟩
+  exact ⟨fun h => h.1, fun h => ⟨h, hy⟩⟩
 
 /-- **Locality of the outer normal.** If `s = t` almost everywhere on `Ω`, they have the same
 outer normal. -/

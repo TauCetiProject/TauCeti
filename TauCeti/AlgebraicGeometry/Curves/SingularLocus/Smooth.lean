@@ -42,7 +42,7 @@ the singular subscheme exactly when it is outside the smooth locus. -/
 @[simp]
 theorem mem_support_singularLocus_iff_notMem_smoothLocus (x : X) :
     x ∈ (X.singularLocus R).support ↔ x ∉ (X ↘ Spec (.of R)).smoothLocus := by
-  obtain ⟨U, hx, e, hU⟩ :=
+  obtain ⟨U, hx, _, hU⟩ :=
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top
       1 (X ↘ Spec (.of R)) x
   let φ := ((X.baseRingToStructurePresheaf R).app (op U.1)).hom

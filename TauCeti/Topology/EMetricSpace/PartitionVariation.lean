@@ -74,8 +74,8 @@ theorem exists_nested_partitions_tendsto_eVariationOn
   refine ⟨p, hp, hps, fun n ↦ ⟨hqp n (ha n), hqp n (hb n)⟩, ?_, hlim⟩
   intro n x hx y hy hxy hadj
   have hm : (x + y) / 2 ∈ Icc a b := by
-    obtain ⟨hax, hxb⟩ := hps n hx
-    obtain ⟨hay, hyb⟩ := hps n hy
+    obtain ⟨hax, _⟩ := hps n hx
+    obtain ⟨_, hyb⟩ := hps n hy
     constructor <;> linarith
   obtain ⟨z, hz, hdist⟩ := hnet n _ hm
   rw [Real.dist_eq] at hdist
@@ -125,7 +125,7 @@ theorem exists_nested_grids_tendsto_sum_edist
     have hzimage : z ∈ u n '' Iic (k n) := by
       rw [himage]
       exact hz
-    obtain ⟨j, hj, rfl⟩ := hzimage
+    obtain ⟨j, _, rfl⟩ := hzimage
     rcases le_or_gt j i with hji | hij
     · exact Or.inl (hum n hji)
     · exact Or.inr (hum n hij)

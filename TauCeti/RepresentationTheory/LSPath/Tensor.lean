@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Highest
 public import TauCeti.RepresentationTheory.LSPath.Height
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Highest concatenations and translated chambers
@@ -35,7 +36,7 @@ namespace TauCeti.LSPath
 open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced]
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
   {lam mu : M} {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
 
@@ -51,6 +52,7 @@ theorem forall_raise_mul_eq_none_iff
       (π.toPLPath 𝕜 f * ρ.toPLPath 𝕜 f) = none) ↔
       π = straight lam ∧ ∀ i : b.support, -(P.coroot' i lam : 𝕜) ≤
         (ρ.toPLPath 𝕜 f).minHeight (F i) := by
+  have := P.flip_isReduced
   have first : (∀ i, PLPath.raise (F i) (f (P.root i))
       (π.toPLPath 𝕜 f * ρ.toPLPath 𝕜 f) = none) → π = straight lam := by
     intro h

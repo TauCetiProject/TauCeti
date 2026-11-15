@@ -51,7 +51,7 @@ def IsLagrangianMap.normalCotangentEquiv (h : hσ.IsLagrangianMap J f) (x : N)
   letI : FiniteDimensional ℝ (TangentSpace J x) :=
     FiniteDimensional.of_injective (mfderiv J I f x).toLinearMap hinj
   letI : IsClosed (LinearMap.range (mfderiv J I f x).toLinearMap :
-      Set (TangentSpace I (f x))) := Submodule.closed_of_finiteDimensional _
+      Set (TangentSpace I (f x))) := Submodule.isClosed_of_finiteDimensional _
   (((isLagrangianMap_iff_forall.mp h x).normalEquivDual.trans
     (LinearEquiv.ofInjective (mfderiv J I f x).toLinearMap hinj).dualMap).trans
       LinearMap.toContinuousLinearMap).toContinuousLinearEquiv

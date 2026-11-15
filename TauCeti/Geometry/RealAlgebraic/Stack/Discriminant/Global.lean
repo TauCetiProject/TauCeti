@@ -232,12 +232,12 @@ theorem exists_analytic_delineation_of_orderAt_discr_eq
       (by rwa [Fintype.prod_unique])⟩
   simp only [Fintype.prod_unique] at hD
   -- Polynomial coefficients are intrinsically analytic, so the glued real roots are too.
-  have hcoeff (k : Unit) (j : ℕ) : AnalyticOnSubmanifold d
+  have hcoeff (j : ℕ) : AnalyticOnSubmanifold d
       (fun x ↦ (p.map (MvPolynomial.eval x)).coeff j) S :=
     hS.analyticOnSubmanifold_coeff_map_eval p j
   refine ⟨D, fun i ↦ ?_, hD⟩
   let r := Function.extend Subtype.val (D.root i) (fun _ ↦ 0)
   have hr (x : S) : r x = D.root i x := Subtype.val_injective.extend_apply _ _ x
-  exact ⟨r, D.analyticOnSubmanifold_root hS hcoeff i hr, hr⟩
+  exact ⟨r, D.analyticOnSubmanifold_root hS (fun _ ↦ hcoeff) i hr, hr⟩
 
 end TauCeti

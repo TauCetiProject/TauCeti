@@ -137,7 +137,7 @@ private theorem symbol_one_add_inert (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
       Nat.mul_div_cancel_left _ (by decide : 0 < 4)]
   -- Raise the Frobenius identity to `(q + 1) / 4`, then uniquely lift the residue.
   rw [powerResidueSymbolIdeal_of_isMaximal]
-  refine (powerResidueSymbol_eq_iff ?_ (by simpa only [map_add, map_one] using hn)
+  refine (powerResidueSymbol_eq_iff ?_
     (by
       have hneg : (-hζ.toInteger) ^ 4 = 1 := by
         linear_combination hζ.toInteger_isPrimitiveRoot.pow_eq_one

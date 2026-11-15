@@ -65,9 +65,6 @@ same order. The reverse convention is common in the literature and in databases 
 
 open Equiv
 
--- The signatures and proof outlines below follow the formal prototype `Suggested.lean` of the
--- Tau Ceti `BelyiMaps` roadmap.
-
 public section
 
 namespace TauCeti

@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 import TauCeti.Analysis.Convex.StdSimplex
 import TauCeti.Analysis.Convex.Lipschitz
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Lipschitz
 
 /-!
 # Lipschitz control of secant errors on edgewise faces
@@ -27,6 +29,12 @@ along chords of each face. This supplies the facewise bounds needed to glue a Li
 estimate across a finite closed simplex cover; simplexwise immersion alone does not give
 such an estimate.
 
+A map which is `C¹` on every closed simplex of a complex on a finite vertex type is Lipschitz in
+barycentric coordinates, by `TauCeti.exists_norm_sub_le_mul_norm_sub_of_contDiffOn`. For a cut-off
+function `φ` this bounds the product `φ • (s - f ∘ π)`, so interpolating between `f` and its
+secant map `s` by `φ`, to make `f` rectilinear on one part of the complex while keeping it on
+another, is again a perturbation with arbitrarily small Lipschitz error.
+
 ## Main results
 
 * `ContDiffOn.eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision`: the
@@ -37,6 +45,10 @@ such an estimate.
   closed simplex of the subdivision, in the original coordinates.
 * `TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision`: the same difference is
   `ε`-Lipschitz on the whole subdivision, also between points of different simplices.
+* `TauCeti.eventually_norm_lineMap_secantMap_sub_sub_le_edgewiseSubdivision`: interpolating
+  between a map which is `C¹` on every closed simplex and its secant map by a cut-off function
+  which is `C¹` on every closed simplex changes the map by an `ε`-Lipschitz error on all fine
+  edgewise subdivisions.
 
 ## Implementation notes
 
@@ -311,5 +323,72 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
       _ = ε / (N + 1) * 1 := by field_simp; ring
       _ ≤ ε / (N + 1) * ((N + 1) * ‖c x - c y‖) := by gcongr
       _ = ε * ‖c x - c y‖ := by field_simp
+
+/-- On every sufficiently fine edgewise subdivision, interpolating between `f` and its secant
+map by a cut-off function `φ` changes `f` by a map which is `ε`-Lipschitz in the original
+coordinates. Here `f` is `C¹` on every closed simplex and `φ` is real-valued and `C¹` on every
+closed simplex; the interpolation is `AffineMap.lineMap (f (π x)) (s x) (φ (π x))`, where `s` is
+the secant map of `f` on the subdivision and `π` is the canonical map onto `|K|`. It agrees with
+`s` where `φ = 1` and with `f ∘ π` where `φ = 0`. -/
+theorem eventually_norm_lineMap_secantMap_sub_sub_le_edgewiseSubdivision {φ : Realization K → ℝ}
+    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hφ : ∀ σ : Face K, ∃ Φ : (σ.1 → ℝ) → ℝ,
+      (∀ x : StandardSimplex σ.1, Φ (fun a => x.1 a) = φ (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 Φ (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
+      ‖(AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k x))
+              ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x)
+              (φ (edgewiseSubdivisionRealizationMap K k x)) -
+            f (edgewiseSubdivisionRealizationMap K k x)) -
+          (AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k y))
+              ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y)
+              (φ (edgewiseSubdivisionRealizationMap K k y)) -
+            f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
+        ε * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).1‖ := by
+  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
+    obtain ⟨F, hFg, hF⟩ := hf σ
+    exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
+  have hφc : Continuous φ := continuous_iff_faceInclusion.2 fun σ => by
+    obtain ⟨Φ, hΦg, hΦ⟩ := hφ σ
+    exact Finset.continuous_of_continuousOn_coordinates hΦg hΦ.continuousOn
+  -- The cut-off function is bounded by `B` and `L`-Lipschitz in barycentric coordinates.
+  obtain ⟨B, hB⟩ := (isCompact_range hφc).isBounded.exists_norm_le
+  obtain ⟨L, hL⟩ := exists_norm_sub_le_mul_norm_sub_of_contDiffOn hφ
+  have : 0 < |B| + 1 := by positivity
+  have : 0 < |L| + 1 := by positivity
+  filter_upwards [eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision hf
+      (ε := ε / (2 * (|B| + 1))) (by positivity),
+    hfc.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (Set.toFinite K.faces)
+      (ε := ε / (2 * (|L| + 1))) (by positivity)] with k hlip hclose x y
+  set π := edgewiseSubdivisionRealizationMap K k
+  set e := fun x => (K.edgewiseSubdivision k).secantMap (f ∘ π) x - f (π x)
+  set d := ‖((π x).1 : ι → ℝ) - (π y).1‖
+  -- The change is `φ • e`, where `e` is the secant error.
+  have hlm (x) : AffineMap.lineMap (f (π x)) ((K.edgewiseSubdivision k).secantMap (f ∘ π) x)
+      (φ (π x)) - f (π x) = φ (π x) • e x := by
+    rw [AffineMap.lineMap_apply_module']
+    abel
+  rw [hlm, hlm]
+  have hφx : ‖φ (π x)‖ ≤ |B| + 1 := (hB _ (mem_range_self _)).trans (by linarith [le_abs_self B])
+  have hφxy : ‖φ (π x) - φ (π y)‖ ≤ (|L| + 1) * d :=
+    (hL _ _).trans (mul_le_mul_of_nonneg_right (by linarith [le_abs_self L]) (norm_nonneg _))
+  have : 0 ≤ d := norm_nonneg _
+  calc ‖φ (π x) • e x - φ (π y) • e y‖ = ‖φ (π x) • (e x - e y) + (φ (π x) - φ (π y)) • e y‖ := by
+        congr 1
+        module
+    _ ≤ ‖φ (π x)‖ * ‖e x - e y‖ + ‖φ (π x) - φ (π y)‖ * ‖e y‖ := by
+        rw [← norm_smul, ← norm_smul]
+        exact norm_add_le _ _
+    _ ≤ (|B| + 1) * (ε / (2 * (|B| + 1)) * d) + (|L| + 1) * d * (ε / (2 * (|L| + 1))) := by
+        gcongr
+        · exact hlip x y
+        · exact (hclose y).le
+    _ = ε * d := by
+        field_simp
+        ring
 
 end TauCeti

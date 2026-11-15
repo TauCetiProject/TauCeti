@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Topology.Algebra.Group.LimUnder
 import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Contour.Curve.Distance
 
@@ -774,6 +775,16 @@ theorem cauchyPVAt_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ :
     (h : CauchyPVExistsAt γ a b f z₀) :
     cauchyPVAt γ b a f z₀ = -cauchyPVAt γ a b f z₀ :=
   h.hasCauchyPVAt_cauchyPVAt.symm.cauchyPVAt_eq
+
+/-- Vanishing of the principal value is invariant under reversing the interval orientation, with
+no existence hypothesis: if the limit does not exist for either orientation, both values are the
+junk value of `limUnder`. -/
+theorem cauchyPVAt_eq_zero_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : cauchyPVAt γ a b f z₀ = 0) : cauchyPVAt γ b a f z₀ = 0 := by
+  unfold cauchyPVAt at h ⊢
+  simpa only [intervalIntegral.integral_symm a b] using
+    Filter.limUnder_neg_eq_zero (f := 𝓝[>] (0 : ℝ)) (G := fun ε ↦ ∫ t in a..b,
+      if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) h
 
 /-- Existence form of `HasCauchyPVAt.concat`. -/
 theorem CauchyPVExistsAt.concat {γ : ℝ → ℂ} {a b c : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}

@@ -109,7 +109,7 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
     rw [sum_singleton]
     exact Nat.lt_succ_of_le ((card_le_card hsub).trans
       ((Multiset.toFinset_card_le _).trans (card_roots' _)))
-  | cons a t hat ht ih =>
+  | cons a t hat _ ih =>
     simp only [Finset.mem_cons, forall_eq_or_imp] at hp
     have hγ' : Set.InjOn γ t := hγ.mono (by simp)
     -- Shift the exponents by `-γ a` and differentiate `N = deg p_a + 1` times.

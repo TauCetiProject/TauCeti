@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
@@ -154,20 +155,35 @@ theorem conformalConnectionTensor_rpow {u : M → ℝ} {x : M} (hu : MDiffAt u x
 
 /-- The conformal connection tensor of an exponential factor `e^(2φ)` is the classical tensor
 `A(v, w) = dφ(w) v + dφ(v) w - ⟪v, w⟫ grad φ` of the conformal change `e^(2φ) g`. -/
-theorem conformalConnectionTensor_exp_two_mul_apply {φ : M → ℝ} {x : M} (hφ : MDiffAt φ x)
+theorem conformalConnectionTensor_exp_two_mul_apply {φ : M → ℝ} {x : M}
     (v w : TangentSpace I x) :
     conformalConnectionTensor I (fun y ↦ Real.exp (2 * φ y)) x v w =
       mvfderiv I φ x w • v + mvfderiv I φ x v • w - inner ℝ v w • mgradient I φ x := by
-  have hgrad : mgradient I (fun y ↦ Real.exp (2 * φ y)) x =
-      (Real.exp (2 * φ x) * 2) • mgradient I φ x :=
-    mgradient_comp_hasDerivAt (f := φ) (g := fun t ↦ Real.exp (2 * t))
-      (by simpa using ((hasDerivAt_id (φ x)).const_mul 2).exp) hφ
-  have hd : ∀ v, mvfderiv I (fun y ↦ Real.exp (2 * φ y)) x v =
-      Real.exp (2 * φ x) * 2 * mvfderiv I φ x v := by
-    intro v
-    rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
-  simp only [conformalConnectionTensor_apply, hd, hgrad]
-  match_scalars <;> field_simp
+  by_cases hφ : MDiffAt φ x
+  · have hgrad : mgradient I (fun y ↦ Real.exp (2 * φ y)) x =
+        (Real.exp (2 * φ x) * 2) • mgradient I φ x :=
+      mgradient_comp_hasDerivAt (f := φ) (g := fun t ↦ Real.exp (2 * t))
+        (by simpa using ((hasDerivAt_id (φ x)).const_mul 2).exp) hφ
+    have hd : ∀ v, mvfderiv I (fun y ↦ Real.exp (2 * φ y)) x v =
+        Real.exp (2 * φ x) * 2 * mvfderiv I φ x v := by
+      intro v
+      rw [← inner_mgradient, hgrad, real_inner_smul_left, inner_mgradient]
+    simp only [conformalConnectionTensor_apply, hd, hgrad]
+    match_scalars <;> field_simp
+  · -- Where `φ` is not differentiable neither is `e^(2φ)`, so both sides vanish.
+    have hexp : ¬ MDiffAt (fun y ↦ Real.exp (2 * φ y)) x := fun hd ↦ hφ (by
+      have h := (Real.hasDerivAt_log (Real.exp_pos (2 * φ x)).ne').differentiableAt
+        |>.comp_mdifferentiableAt (f := fun y ↦ Real.exp (2 * φ y)) hd
+      have heq : φ = fun y ↦ 2⁻¹ * (Real.log ∘ fun y ↦ Real.exp (2 * φ y)) y := by
+        funext y
+        simp
+      rw [heq]
+      exact mdifferentiableAt_const.mul h)
+    have h1 : mvfderiv I φ x = 0 := by simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hφ]
+    have h2 : mvfderiv I (fun y ↦ Real.exp (2 * φ y)) x = 0 := by
+      simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hexp]
+    simp [conformalConnectionTensor_apply, h1, h2, mgradient_eq_zero_iff.2 h1,
+      mgradient_eq_zero_iff.2 h2]
 
 end TauCeti.Manifold
 

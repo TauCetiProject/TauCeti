@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 /-!
 # Relative Maslov index of paths of totally real subspaces
 
-In a finite-dimensional complex normed space, for two paths `Λ`, `Γ` of maximal totally real
+In a complex normed space, for two paths `Λ`, `Γ` of maximal totally real
 subspaces with the same endpoints, the Maslov phases `t ↦ ρ(Γ t, Λ t)` form a loop in the circle
 based at `1`. Its degree is the **relative Maslov index** `μ(Λ, Γ)`, an integer measuring the
 relative homotopy class detected by the Maslov phases; the crossing-form index for a single path
@@ -42,8 +42,9 @@ one maximal totally real subspace; reversal (`TauCeti.TotallyRealPath.symm`), ca
 (`TauCeti.TotallyRealPath.trans`), restriction to a segment of times
 (`TauCeti.TotallyRealPath.subpath`) and the pointwise image under a path of automorphisms
 (`TauCeti.TotallyRealPath.map`) are constructed on such frames. These basic path constructions
-are defined for complex seminormed spaces; the Maslov phase and index theory below uses
-finite-dimensional complex normed spaces.
+are defined for complex seminormed spaces; the Maslov phase and index theory below is for complex
+normed spaces. In an infinite-dimensional space every Maslov phase is `1` and every Maslov index
+vanishes (`TauCeti.TotallyRealPath.relativeMaslovIndex_of_not_finite`).
 
 The Maslov phase and its loop degree follow McDuff--Salamon, *J-holomorphic Curves and Symplectic
 Topology*, 2nd ed., Appendix C.3. The relative path viewpoint and the naturality, catenation,
@@ -135,7 +136,7 @@ noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyR
     else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩
   exists_frame := by
     obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
-    obtain ⟨L₁, hL₁, B, hBc, hB⟩ := Γ.exists_frame
+    obtain ⟨L₁, _, B, hBc, hB⟩ := Γ.exists_frame
     -- After `Λ`, follow the frame `C s = B s ∘ (B 0)⁻¹ ∘ A 1`, which starts at `A 1` and carries
     -- `L₀` along `Γ`.
     let C (s : I) : E ≃L[ℂ] E := (A 1).trans ((B 0).symm.trans (B s))
@@ -239,7 +240,7 @@ end
 
 namespace TotallyRealPath
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The Maslov phase along a path, relative to a fixed maximal totally real subspace, is
 continuous. -/
@@ -325,6 +326,13 @@ theorem relativeMaslovIndex_self (Λ : TotallyRealPath E) :
     relativeMaslovIndex Λ Λ rfl rfl = 0 := by
   rw [relativeMaslovIndex_eq_degree Λ Λ rfl rfl (Path.refl 1) fun t => by simp]
   exact Circle.degree_refl _
+
+/-- In an infinite-dimensional space every relative Maslov index is `0`. -/
+@[simp]
+theorem relativeMaslovIndex_of_not_finite (h : ¬ Module.Finite ℂ E) (Λ Γ : TotallyRealPath E)
+    (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) : relativeMaslovIndex Λ Γ h₀ h₁ = 0 :=
+  (relativeMaslovIndex_eq_degree Λ Γ h₀ h₁ (Path.refl 1)
+    fun t ↦ by simp [h]).trans (Circle.degree_refl _)
 
 /-- **Antisymmetry of the relative Maslov index:** `μ(Γ, Λ) = -μ(Λ, Γ)`. -/
 theorem relativeMaslovIndex_swap (Λ Γ : TotallyRealPath E)
@@ -519,7 +527,7 @@ end TotallyRealPath
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- For two loops of maximal totally real subspaces with the same base subspace, the relative
 Maslov index is the difference of their Maslov indices: `μ(Λ, Γ) = μ(Λ) - μ(Γ)`. -/

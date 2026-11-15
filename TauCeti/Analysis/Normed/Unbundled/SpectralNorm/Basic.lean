@@ -15,6 +15,10 @@ This file collects elementary vanishing, invariance, scaling, and tower-descent 
 `spectralValue` and `spectralNorm` that do not depend on separability, trace, or completeness
 assumptions.
 
+In addition, in an algebraic normed field extension of a complete ultrametric field the norm is
+the spectral norm, so an element `x` whose minimal polynomial has degree `d` and constant
+coefficient `a₀` satisfies `‖x‖ ^ d = ‖a₀‖`.
+
 ## Main results
 
 * `TauCeti.spectralNorm_eq_zero_of_not_isAlgebraic`: the spectral norm over `K` of an element that
@@ -35,6 +39,8 @@ assumptions.
   `TauCeti.spectralNorm_eq_norm_rpow_of_pow_eq_algebraMap`: if a positive power `x ^ n` lies in the
   base field `K`, then `spectralNorm K M x ^ n` equals the base norm of `x ^ n` without requiring
   the ambient field extension `M / K` to be algebraic.
+* `NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero`: `‖x‖ ^ d = ‖a₀‖` for `x` with
+  minimal polynomial of degree `d` and constant coefficient `a₀`.
 -/
 
 public section
@@ -255,3 +261,15 @@ theorem spectralNorm_eq_zero_of_not_isAlgebraic {K L : Type*} [NormedField K] [F
   exact ciSup_const
 
 end TauCeti
+
+/-- In an algebraic normed field extension `L` of a complete ultrametric field `K`, the norm of an
+element `x` raised to the degree of its minimal polynomial is the norm of the constant coefficient
+of that polynomial. -/
+theorem NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero (K : Type*) {L : Type*}
+    [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K] [NormedField L]
+    [NormedAlgebra K L] [Algebra.IsAlgebraic K L] (x : L) :
+    ‖x‖ ^ (minpoly K x).natDegree = ‖(minpoly K x).coeff 0‖ := by
+  have hd : ((minpoly K x).natDegree : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral x)).ne'
+  rw [NormedAlgebra.norm_eq_spectralNorm K, spectralNorm.spectralNorm_eq_norm_coeff_zero_rpow,
+    ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), one_div_mul_cancel hd, Real.rpow_one]

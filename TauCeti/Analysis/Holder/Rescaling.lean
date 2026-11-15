@@ -191,7 +191,7 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
   obtain ⟨N, hN0, hN⟩ := hχc.exists_bound_iteratedFDeriv_of_contDiff (n := ℓ + 1)
     (by exact_mod_cast hχ)
   lift N to ℝ≥0 using hN0
-  obtain ⟨R, hR0, hR⟩ := hχc.isCompact.isBounded.subset_ball_lt 0 0
+  obtain ⟨R, _, hR⟩ := hχc.isCompact.isBounded.subset_ball_lt 0 0
   -- The derivatives of `μ` through order `ℓ` are bounded on a smaller ball.
   obtain ⟨r', hr'0, A, hA⟩ := (hμ.contDiffAt (ball_mem_nhds 0 hρ)).exists_ball_bound_iteratedFDeriv
   have hρ'0 : 0 < min r' ρ := lt_min hr'0 hρ

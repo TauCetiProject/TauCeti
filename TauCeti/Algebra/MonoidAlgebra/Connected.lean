@@ -103,7 +103,7 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup :
   let φ := MonoidAlgebra.mapRingHom G (ZMod.castHom (dvd_refl p) R)
   have hφ : Function.Injective φ :=
     MonoidAlgebra.map_injective _ (ZMod.castHom_injective R)
-  have hidem := (isIdempotentElem_groupAlgebraSubgroupAverage (ZMod p) P hnz).map φ
+  have hidem := (isIdempotentElem_groupAlgebraSubgroupAverage (ZMod p) P).map φ
   rcases hidem.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
   · exact groupAlgebraSubgroupAverage_ne_zero (ZMod p) P hnz
       (hφ (hzero.trans (map_zero φ).symm))

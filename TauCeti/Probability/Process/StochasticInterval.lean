@@ -63,7 +63,7 @@ theorem IsStoppingTime.measurableSet_predictable_lt_inter (hσ : IsStoppingTime 
       obtain ⟨s, hs⟩ := WithTop.ne_top_iff_exists.mp (ne_top_of_lt hp)
       obtain ⟨q, hqS, hsq, hqt⟩ := hS s p.1 (WithTop.coe_lt_coe.mp (hs ▸ hp))
       exact ⟨q, hqS, hqt, hA, hs ▸ WithTop.coe_le_coe.mpr hsq⟩
-    · rintro ⟨q, hqD, hqt, hA, hsq⟩
+    · rintro ⟨q, _, hqt, hA, hsq⟩
       exact ⟨hsq.trans_lt (WithTop.coe_lt_coe.mpr hqt), hA⟩
   rw [he]
   exact MeasurableSet.biUnion hSc fun q _ ↦

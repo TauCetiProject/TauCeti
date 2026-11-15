@@ -13,15 +13,16 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 
 Let `A` be a square matrix over a nontrivial ring `R`, indexed by a finite type `ι`, and let
 `M = (1 + X²) I - X A` in the ring of matrices of formal power series over `R`. This file proves
-that `M` has no right inverse whose entries are polynomials unless `ι` is empty
-(`Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`). Indeed the coefficient matrices of
-a right inverse `N` satisfy `N_{n+2} = A N_{n+1} - N_n`, so if they vanish from some degree on, then
-they vanish in every degree by descending induction, against `N_0 = I`.
+that no column of a right inverse of `M` has polynomial entries
+(`Matrix.exists_coeff_ne_zero_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`); in particular `M` has
+no polynomial right inverse unless `ι` is empty. Indeed the coefficient matrices of a right inverse
+`N` satisfy `N_{n+2} = A N_{n+1} - N_n`, so if a column of them vanishes from some degree on, then
+it vanishes in every degree by descending induction, against `N_0 = I`.
 
 ## Main results
 
-* `Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`: no polynomial matrix is a right
-  inverse of `(1 + X²) I - X A` over a nonempty index type.
+* `Matrix.exists_coeff_ne_zero_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`: every column of a
+  right inverse of `(1 + X²) I - X A` has nonzero coefficients in arbitrarily high degree.
 
 ## References
 
@@ -36,48 +37,37 @@ namespace Matrix
 
 open PowerSeries
 
-/-- **No polynomial matrix is a right inverse of `(1 + X²) I - X A`** over a nonempty index type. If
-`((1 + X²) I - X A) N = I` for a matrix `A` over a nontrivial ring `R`, and the coefficients of
-every entry of `N` vanish from degree `d` on, then the index type is empty. -/
-theorem isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one {R ι : Type*} [Ring R] [Nontrivial R]
-    [Fintype ι] [DecidableEq ι] (A : Matrix ι ι R) {N : Matrix ι ι R⟦X⟧}
+/-- **No column of a right inverse of `(1 + X²) I - X A` is polynomial.** If
+`((1 + X²) I - X A) N = I` for a matrix `A` over a nontrivial ring `R`, then for every column `j`
+and every degree `d`, some entry of the `j`-th column of `N` has a nonzero coefficient in a degree
+`n ≥ d`. -/
+theorem exists_coeff_ne_zero_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one {R ι : Type*} [Ring R]
+    [Nontrivial R] [Fintype ι] [DecidableEq ι] (A : Matrix ι ι R) {N : Matrix ι ι R⟦X⟧}
     (hN : (((1 : R⟦X⟧) + X ^ 2) • (1 : Matrix ι ι R⟦X⟧) - (X : R⟦X⟧) • A.map C) * N = 1)
-    {d : ℕ} (hd : ∀ n, d ≤ n → ∀ i j, coeff n (N i j) = 0) : IsEmpty ι := by
-  have happly (i j : ι) :
+    (j : ι) (d : ℕ) : ∃ n ≥ d, ∃ i, coeff n (N i j) ≠ 0 := by
+  have happly (i : ι) :
       ((((1 : R⟦X⟧) + X ^ 2) • (1 : Matrix ι ι R⟦X⟧) - (X : R⟦X⟧) • A.map C) * N) i j =
         ((1 : R⟦X⟧) + X ^ 2) * N i j - X * ∑ l, C (A i l) * N l j := by
     rw [sub_mul]
     simp only [Matrix.smul_mul, Matrix.one_mul, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul,
       Matrix.mul_apply, Matrix.map_apply]
-  -- The coefficients of `N` satisfy `N_{n+2} = A N_{n+1} - N_n`.
-  have hrec (n : ℕ) (i j : ι) : coeff (n + 2) (N i j) + coeff n (N i j) =
+  -- The coefficients of the `j`-th column of `N` satisfy `N_{n+2} = A N_{n+1} - N_n`.
+  have hrec (n : ℕ) (i : ι) : coeff (n + 2) (N i j) + coeff n (N i j) =
       ∑ l, A i l * coeff (n + 1) (N l j) := by
     have h := congrArg (fun P => coeff (n + 2) (P i j)) hN
-    simp only [happly, Matrix.one_apply] at h
-    have h0 : coeff (n + 2) (if i = j then (1 : R⟦X⟧) else 0) = 0 := by
-      split_ifs <;> simp [coeff_one]
-    rw [h0, map_sub, add_mul, one_mul, map_add, coeff_X_pow_mul',
-      ite_eq_left (by omega : 2 ≤ n + 2), Nat.add_sub_cancel, coeff_succ_X_mul, map_sum,
-      sub_eq_zero] at h
-    simpa only [coeff_C_mul] using h
-  -- Descending induction from degree `d` kills every coefficient.
-  have hzero : ∀ t n, d ≤ n + t → ∀ i j, coeff n (N i j) = 0 := by
-    intro t
+    simp only [happly, Matrix.one_apply, apply_ite (coeff (n + 2)), coeff_one, map_zero] at h
+    simpa [add_mul, coeff_X_pow_mul', coeff_C_mul, sub_eq_zero] using h
+  -- Descending induction from degree `d` kills every coefficient of the `j`-th column.
+  by_contra! hd
+  have hzero (t : ℕ) : ∀ n, d ≤ n + t → ∀ i, coeff n (N i j) = 0 := by
     induction t with
-    | zero => exact fun n hn => hd n hn
+    | zero => simpa using hd
     | succ t ih =>
-      intro n hn i j
-      have h1 := ih (n + 1) (by omega)
-      have h2 := ih (n + 2) (by omega)
-      have h := hrec n i j
-      simp only [h1, h2, mul_zero, Finset.sum_const_zero, zero_add] at h
-      exact h
+      intro n hn i
+      simpa [ih (n + 1) (by omega), ih (n + 2) (by omega)] using hrec n i
   -- But the constant term of `N` is the identity matrix.
-  refine ⟨fun i => ?_⟩
-  have h := congrArg (fun P => constantCoeff (P i i)) hN
-  simp only [happly, Matrix.one_apply_eq, map_sub, map_mul, map_add, map_one, map_pow,
-    constantCoeff_X, zero_pow two_ne_zero, add_zero, one_mul, zero_mul, sub_zero] at h
-  rw [← coeff_zero_eq_constantCoeff_apply, hzero d 0 (by omega)] at h
-  exact zero_ne_one h
+  have h0 := hzero d 0 (by omega) j
+  rw [coeff_zero_eq_constantCoeff_apply] at h0
+  simpa [happly, h0] using congrArg (fun P => constantCoeff (P j j)) hN
 
 end Matrix
