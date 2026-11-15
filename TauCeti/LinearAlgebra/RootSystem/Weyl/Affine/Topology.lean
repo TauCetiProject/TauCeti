@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.LocallyFinite
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.FundamentalDomain
+public import TauCeti.LinearAlgebra.RootSystem.Alcove
 import Mathlib.Data.Int.Interval
 import Mathlib.Topology.Order.DenselyOrdered
 
@@ -24,19 +24,18 @@ In the first half of the file, continuity of the root functionals (`∀ i, Conti
 taken as an explicit hypothesis so that the theorems apply over any ordered topological ring or
 field (including `ℚ` or number fields embedded in `ℝ`, as well as arbitrary modules carrying the
 module topology):
-* `A` is open, `Ā` and every closed face `b.closedAlcoveFace J` are closed;
-* over a linearly ordered topological field, `Ā` is the topological closure of `A` (by shrinking
-  segments toward an interior point `x₀ ∈ A`), and `A` is the topological interior of `Ā` (by
-  moving across any wall `aₖ(x) = 0` in the direction `-αₖ^∨`);
-* over an archimedean linearly ordered topological ring, the family of affine root hyperplanes
-  `H_{αⱼ,k}` is locally finite, so their union is closed and the complement — the set of alcove
-  interior points — is open.
+* under `[OrderClosedTopology R]`, `A` is open, and `Ā` and every closed face
+  `b.closedAlcoveFace J` are closed;
+* over any linearly ordered ring with `[OrderClosedTopology R]`, the family of affine root
+  hyperplanes `H_{αⱼ,k}` is locally finite, so their union is closed and the complement — the set
+  of alcove interior points — is open;
+* over a linearly ordered topological field with `[OrderTopology R]`, `Ā` is the topological
+  closure of `A` (by shrinking segments toward an interior point `x₀ ∈ A`), and `A` is the
+  topological interior of `Ā` (by moving across any wall `aₖ(x) = 0` in the direction `-αₖ^∨`).
 
 In the second half of the file, all of these results are specialized to a finite-dimensional
 Hausdorff real topological vector space `N`, where `LinearMap.continuous_of_finiteDimensional`
-discharges continuity of every root functional automatically; for a root system
-(`[P.IsRootSystem]`), `RootPairing.moduleFinite_coweight_of_isRootSystem` also supplies
-finite-dimensionality of `N`.
+discharges continuity of every root functional automatically.
 
 ## Main results
 
@@ -51,10 +50,10 @@ finite-dimensionality of `N`.
 * `RootPairing.interior_closedFundamentalAlcove_of_continuous` and
   `RootPairing.interior_closedFundamentalAlcove`: **the open fundamental alcove is the topological
   interior of the closed fundamental alcove.**
-* `RootPairing.locallyFinite_affineRootHyperplane_of_continuous` and
-  `RootPairing.locallyFinite_affineRootHyperplane`: **the family of affine root hyperplanes
+* `RootPairing.locallyFinite_setOf_root'_eq_intCast_of_continuous` and
+  `RootPairing.locallyFinite_setOf_root'_eq_intCast`: **the family of affine root hyperplanes
   `{x | αⱼ(x) = k}` indexed by `ι × ℤ` is locally finite.**
-* `RootPairing.isClosed_iUnion_affineRootHyperplane` and
+* `RootPairing.isClosed_iUnion_setOf_root'_eq_intCast` and
   `RootPairing.isOpen_setOf_forall_root'_ne_intCast`: the union of the affine root hyperplanes is
   closed, and the set of regular coweights avoiding all affine root hyperplanes is open.
 
@@ -94,7 +93,7 @@ theorem Base.continuous_affineSimpleRoot_of_continuous [ContinuousAdd R]
 
 section Order
 
-variable [LinearOrder R] [OrderTopology R]
+variable [LinearOrder R] [OrderClosedTopology R]
 
 /-- The open fundamental alcove is open when every root functional is continuous. -/
 theorem isOpen_fundamentalAlcove_of_continuous
@@ -138,39 +137,50 @@ end Base
 
 section Hyperplanes
 
-variable [LinearOrder R] [IsStrictOrderedRing R] [OrderTopology R] [Archimedean R] [Finite ι]
+variable [LinearOrder R] [IsStrictOrderedRing R] [OrderClosedTopology R] [Finite ι]
   (P : RootPairing ι R M N)
 
-/-- **Local finiteness of the affine root hyperplanes**: over an archimedean linearly ordered
-topological ring, when `ι` is finite and each root functional `P.root' i` is continuous, every
+/-- **Local finiteness of the affine root hyperplanes**: over a linearly ordered ring with an
+order-closed topology, when `ι` is finite and each root functional `P.root' i` is continuous, every
 point of `N` has a neighborhood meeting only finitely many affine root hyperplanes
 `{x | αⱼ(x) = k}` (`(j, k) : ι × ℤ`). -/
-theorem locallyFinite_affineRootHyperplane_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
+theorem locallyFinite_setOf_root'_eq_intCast_of_continuous
+    (hcont : ∀ i, Continuous (P.root' i)) :
     LocallyFinite fun p : ι × ℤ ↦ {x : N | P.root' p.1 x = p.2} := by
   let _ := Fintype.ofFinite ι
   intro x
-  choose a ha using fun j : ι ↦ exists_int_lt (P.root' j x)
-  choose c hc using fun j : ι ↦ exists_int_gt (P.root' j x)
-  refine ⟨⋂ j : ι, P.root' j ⁻¹' Ioo (a j : R) (c j : R),
-    iInter_mem.mpr fun j ↦ (isOpen_Ioo.preimage (hcont j)).mem_nhds ⟨ha j, hc j⟩, ?_⟩
-  refine (Set.finite_iUnion fun j : ι ↦
-    (Set.finite_singleton j).prod (Set.finite_Icc (a j) (c j))).subset ?_
-  rintro ⟨j, k⟩ ⟨y, hyk, hyU⟩
+  let U : Set N := ⋂ j : ι, P.root' j ⁻¹' Ioo (P.root' j x - 1) (P.root' j x + 1)
+  have hU : U ∈ 𝓝 x := iInter_mem.mpr fun j ↦
+    (isOpen_Ioo.preimage (hcont j)).mem_nhds ⟨sub_lt_self _ one_pos, lt_add_one _⟩
+  refine ⟨U, hU, ?_⟩
+  -- In each root direction `j`, any two integers in `(αⱼ(x) - 1, αⱼ(x) + 1)` differ by `< 2`.
+  have hfin (j : ι) : {k : ℤ | (k : R) ∈ Ioo (P.root' j x - 1) (P.root' j x + 1)}.Finite := by
+    by_cases hne : {k : ℤ | (k : R) ∈ Ioo (P.root' j x - 1) (P.root' j x + 1)}.Nonempty
+    · obtain ⟨k₀, hk₀₁, hk₀₂⟩ := hne
+      refine (Set.finite_Icc (k₀ - 1) (k₀ + 1)).subset fun k ⟨hk₁, hk₂⟩ ↦ ⟨?_, ?_⟩
+      · have hlt : ((-2 : ℤ) : R) < ((k - k₀ : ℤ) : R) := by push_cast; linarith
+        have := Int.cast_lt.mp hlt
+        omega
+      · have hlt : ((k - k₀ : ℤ) : R) < ((2 : ℤ) : R) := by push_cast; linarith
+        have := Int.cast_lt.mp hlt
+        omega
+    · rw [Set.not_nonempty_iff_eq_empty.mp hne]
+      exact Set.finite_empty
+  refine (Set.finite_iUnion fun j : ι ↦ (Set.finite_singleton j).prod (hfin j)).subset ?_
+  rintro ⟨j, k⟩ ⟨y, hyk : P.root' j y = k, hyU⟩
   have hyj := mem_iInter.mp hyU j
-  simp only [mem_preimage, mem_Ioo] at hyj
-  rw [mem_ofPred.mp hyk] at hyj
-  exact mem_iUnion.mpr ⟨j, mem_prod.mpr ⟨rfl, (Int.cast_lt.mp hyj.1).le,
-    (Int.cast_lt.mp hyj.2).le⟩⟩
+  simp only [mem_preimage, hyk] at hyj
+  exact mem_iUnion.mpr ⟨j, mem_prod.mpr ⟨rfl, hyj⟩⟩
 
-/-- The union of all affine root hyperplanes is closed when `R` is archimedean and the root
-functionals are continuous. -/
-theorem isClosed_iUnion_affineRootHyperplane_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
+/-- The union of all affine root hyperplanes is closed when the root functionals are continuous. -/
+theorem isClosed_iUnion_setOf_root'_eq_intCast_of_continuous
+    (hcont : ∀ i, Continuous (P.root' i)) :
     IsClosed (⋃ p : ι × ℤ, {x : N | P.root' p.1 x = p.2}) :=
-  (P.locallyFinite_affineRootHyperplane_of_continuous hcont).isClosed_iUnion fun p ↦
+  (P.locallyFinite_setOf_root'_eq_intCast_of_continuous hcont).isClosed_iUnion fun p ↦
     isClosed_singleton.preimage (hcont p.1)
 
-/-- The set of regular coweights — points avoiding every affine root hyperplane — is open when `R`
-is archimedean and the root functionals are continuous. -/
+/-- The set of regular coweights — points avoiding every affine root hyperplane — is open when the
+root functionals are continuous. -/
 theorem isOpen_setOf_forall_root'_ne_intCast_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
     IsOpen {x : N | ∀ (j : ι) (k : ℤ), P.root' j x ≠ k} := by
   have h : {x : N | ∀ (j : ι) (k : ℤ), P.root' j x ≠ k} =
@@ -178,7 +188,7 @@ theorem isOpen_setOf_forall_root'_ne_intCast_of_continuous (hcont : ∀ i, Conti
     ext x
     simp [Prod.forall]
   rw [h]
-  exact (P.isClosed_iUnion_affineRootHyperplane_of_continuous hcont).isOpen_compl
+  exact (P.isClosed_iUnion_setOf_root'_eq_intCast_of_continuous hcont).isOpen_compl
 
 end Hyperplanes
 
@@ -193,7 +203,7 @@ variable {ι R M N : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Every point of the closed fundamental alcove is a limit of points on an open segment in the
 fundamental alcove; no continuity of the root functionals is required for this inclusion. -/
-theorem subset_closure_fundamentalAlcove :
+theorem closedFundamentalAlcove_subset_closure_fundamentalAlcove :
     closedFundamentalAlcove P b ⊆ closure (fundamentalAlcove P b) := by
   intro x hx
   obtain ⟨x₀, hx₀⟩ := fundamentalAlcove_nonempty b
@@ -207,7 +217,7 @@ theorem subset_closure_fundamentalAlcove :
     exact ⟨le_rfl, zero_le_one⟩
   have hxφ : x ∈ φ '' closure (Ioo (0 : R) 1) := ⟨0, h0, by simp [φ]⟩
   exact closure_mono
-    (by rintro _ ⟨t, ht, rfl⟩; exact lineMap_mem_fundamentalAlcove b hx hx₀ ht.1 ht.2)
+    (by rintro _ ⟨t, ht, rfl⟩; exact lineMap_mem_fundamentalAlcove hx hx₀ ht.1 ht.2)
     (image_closure_subset_closure_image hφ hxφ)
 
 /-- **The closed fundamental alcove is the topological closure of the open fundamental alcove.** -/
@@ -216,7 +226,7 @@ theorem closure_fundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.ro
   Subset.antisymm
     (closure_minimal (fundamentalAlcove_subset_closedFundamentalAlcove P b)
       (isClosed_closedFundamentalAlcove_of_continuous b hcont))
-    (subset_closure_fundamentalAlcove b)
+    (closedFundamentalAlcove_subset_closure_fundamentalAlcove b)
 
 /-- **The open fundamental alcove is the topological interior of the closed fundamental alcove.** -/
 theorem interior_closedFundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
@@ -240,22 +250,15 @@ theorem interior_closedFundamentalAlcove_of_continuous (hcont : ∀ i, Continuou
   have hge : 0 ≤ b.affineSimpleRoot k (ψ t) :=
     (mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mp htbar k
   have hval : b.affineSimpleRoot k (ψ t) = -2 * t := by
-    rw [b.affineSimpleRoot_eq_root'_add, map_add, map_smul, map_neg, root'_coroot_eq_pairing,
-      pairing_same, smul_eq_mul, add_assoc, ← b.affineSimpleRoot_eq_root'_add k x, hk0]
-    ring
+    have hx0 := (b.affineSimpleRoot_eq_root'_add k x).symm.trans hk0
+    rw [b.affineSimpleRoot_eq_root'_add k (ψ t)]
+    simp [ψ]
+    linear_combination hx0
   linarith
 
 end OrderedField
 
-/-! ### Finite generation of coweights for root systems and specialization over `ℝ` -/
-
-/-- For a finite root system over a commutative ring, the coweight module `N` is finitely generated
-(in particular `FiniteDimensional R N` when `R` is a field), since it is spanned by the finitely
-many coroots. -/
-theorem moduleFinite_coweight_of_isRootSystem {ι R M N : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [Finite ι]
-    [P.IsRootSystem] : Module.Finite R N :=
-  Module.Finite.equiv (LinearEquiv.ofTop (P.corootSpan R) IsRootSystem.span_coroot_eq_top)
+/-! ### Specialization over `ℝ` -/
 
 section Real
 
@@ -304,15 +307,15 @@ end Base
 
 /-- **Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, the family of affine
 root hyperplanes `{x | αⱼ(x) = k}` (`(j, k) : ι × ℤ`) is locally finite.** -/
-theorem locallyFinite_affineRootHyperplane [Finite ι] (P : RootPairing ι ℝ M N) :
+theorem locallyFinite_setOf_root'_eq_intCast [Finite ι] (P : RootPairing ι ℝ M N) :
     LocallyFinite fun p : ι × ℤ ↦ {x : N | P.root' p.1 x = p.2} :=
-  P.locallyFinite_affineRootHyperplane_of_continuous
+  P.locallyFinite_setOf_root'_eq_intCast_of_continuous
     fun i ↦ (P.root' i).continuous_of_finiteDimensional
 
 /-- Over `ℝ`, the union of all affine root hyperplanes is closed. -/
-theorem isClosed_iUnion_affineRootHyperplane [Finite ι] (P : RootPairing ι ℝ M N) :
+theorem isClosed_iUnion_setOf_root'_eq_intCast [Finite ι] (P : RootPairing ι ℝ M N) :
     IsClosed (⋃ p : ι × ℤ, {x : N | P.root' p.1 x = p.2}) :=
-  P.isClosed_iUnion_affineRootHyperplane_of_continuous
+  P.isClosed_iUnion_setOf_root'_eq_intCast_of_continuous
     fun i ↦ (P.root' i).continuous_of_finiteDimensional
 
 /-- Over `ℝ`, the set of regular coweights avoiding all affine root hyperplanes is open. -/

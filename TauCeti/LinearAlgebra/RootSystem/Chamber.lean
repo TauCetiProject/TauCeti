@@ -59,9 +59,10 @@ Weyl-invariant.
 * `RootPairing.mem_dominantChamber_iff_forall_mem_posRoots` and
   `RootPairing.mem_openDominantChamber_iff_forall_mem_posRoots`: both chambers are cut out by
   all of the positive coroot functionals, not just the simple ones.
-* `RootPairing.root'_pos_of_isPos` and `RootPairing.root'_neg_of_not_isPos`: on the coweight
-  space, where the simple roots are positive, so are the positive roots, and the negative roots
-  are negative.
+* `RootPairing.root'_nonneg_of_isPos`, `RootPairing.root'_pos_of_isPos`, and
+  `RootPairing.root'_neg_of_not_isPos`: on the coweight space, where the simple roots are
+  nonnegative (respectively positive), so are the positive roots, and where the simple roots are
+  positive, the negative roots are negative.
 * `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
   prescribed values at some point of the coweight space.
 
@@ -425,7 +426,17 @@ end PosRoots
 
 section RootValues
 
-variable [CharZero R] [PartialOrder R] [IsOrderedAddMonoid R] {P b} {x : N}
+variable [CharZero R] {P b} {x : N}
+
+/-- **A positive root is nonnegative wherever the simple roots are.** This is the root-side
+counterpart of `RootPairing.coroot'_nonneg_of_mem_posRoots`. -/
+theorem root'_nonneg_of_isPos [Preorder R] [IsOrderedAddMonoid R]
+    (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) {j : ι} (hj : b.IsPos j) :
+    0 ≤ P.root' j x :=
+  toLinearMap_apply_nonneg_of_mem_posRootCone hx
+    (root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b j).mpr hj))
+
+variable [PartialOrder R] [IsOrderedAddMonoid R]
 
 /-- **A positive root is positive wherever the simple roots are.** This is the root-side
 counterpart of `RootPairing.coroot'_pos_of_mem_posRoots`; it needs no reducedness, as a positive
