@@ -58,6 +58,12 @@ structure IsTwistingCochain (τ : C →ₗ[R] A) : Prop where
   equation (c : C) : dA (τ c) + τ (dC c) +
     LinearMap.mul' R A (TensorProduct.map (τ ∘ₗ G.koszulTwist 1) τ (Δ c)) = 0
 
+/-- The zero linear map from a graded coalgebra to a graded algebra is a twisting cochain. -/
+@[simp]
+theorem isTwistingCochain_zero : IsTwistingCochain G Δ dC 𝒜 dA 0 where
+  isHomogeneous := LinearMap.isHomogeneous_zero G.piece 𝒜 1
+  equation _ := by simp
+
 variable {G Δ dC 𝒜 dA}
 
 private theorem map_cobar_quadratic {F : Type*} [FunLike F (TensorAlgebra R C) A]

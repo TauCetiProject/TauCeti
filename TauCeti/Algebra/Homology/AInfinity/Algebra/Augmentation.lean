@@ -367,6 +367,37 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · rw [coe_reducedPart]
     simp [hx]
 
+/-- The projection onto the reduced augmentation ideal annihilates the strict unit. -/
+@[simp]
+theorem reducedPart_unit (ε : 𝒜.Augmentation) : ε.reducedPart ε.unit = 0 := by
+  apply Subtype.ext
+  rw [coe_reducedPart, ε.map_unit, one_smul, sub_self, Submodule.coe_zero]
+
+/-- The projection `ε.reducedPart` followed by the inclusion of `ker ε` fixes `ker ε`. -/
+@[simp]
+theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
+  LinearMap.ext ε.reducedPart_coe
+
+/-- The projection onto the reduced augmentation ideal preserves internal degrees. -/
+theorem isHomogeneous_reducedPart (ε : 𝒜.Augmentation) :
+    LinearMap.IsHomogeneous ε.reducedPart 𝒜.grading.piece ε.reducedGrading.piece 0 := by
+  refine LinearMap.isHomogeneous_def.mpr fun p x hx ↦ ?_
+  rw [add_zero, reducedGrading_piece, Submodule.mem_comap, Submodule.subtype_apply,
+    coe_reducedPart]
+  by_cases hp : p = 0
+  · subst hp
+    exact sub_mem hx (Submodule.smul_mem _ _ ε.isStrictUnit.degree_zero)
+  · rw [ε.map_of_mem_ne_zero p x hx hp, zero_smul, sub_zero]
+    exact hx
+
+/-- On suspended degrees, `ε.reducedPart` is homogeneous of degree zero. -/
+theorem isHomogeneous_reducedPart_shift_one (ε : 𝒜.Augmentation) :
+    LinearMap.IsHomogeneous ε.reducedPart
+      (𝒜.grading.shift 1).piece (ε.reducedAlgebra.grading.shift 1).piece 0 := by
+  rw [ε.reducedAlgebra_grading, LinearMap.isHomogeneous_shift_piece_iff]
+  exact ε.isHomogeneous_reducedPart
+
 end Augmentation
 
 end AInfinityAlgebra
