@@ -29,7 +29,10 @@ in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`).
 For a manifold modelled on a vector space `E` with charts in `E`, a chart of the maximal atlas that
 flattens `s` onto a closed linear subspace `L` near `y` makes the span of the tangent cone the
 tangent space of `s` at `y`: it has the dimension of `L`
-(`TauCeti.IsSliceChart.finrank_span_mtangentConeAt`). Two such sets `s₁` and `s₂` meet
+(`TauCeti.IsSliceChart.finrank_span_mtangentConeAt`). On any topological space, two charts with
+values in normed spaces that flatten `s` onto closed subspaces near a common point, with transition
+maps differentiable in both directions there, flatten it onto subspaces of the same dimension
+(`TauCeti.IsSliceChart.finrank_eq`). Two such sets `s₁` and `s₂` meet
 **transversally** at a common point `y` when their tangent spaces at `y` span `E`. If `E` is a real
 or complex Banach space, the model subspaces are complemented, and the intersection of the tangent
 spaces is complemented, then near `y` a chart of the maximal atlas flattens `s₁ ∩ s₂` onto that
@@ -65,6 +68,8 @@ at `y`.
   preimage of the model subspace under the differential of the slice chart.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
   dimension of the model subspace.
+* `TauCeti.IsSliceChart.finrank_eq`: two slice charts of a set at a common point have model
+  subspaces of the same dimension.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
   of flattened sets is flattened onto the intersection of their tangent spaces.
 * `TauCeti.mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top` and its span form
@@ -217,6 +222,29 @@ theorem tangentConeAt_preimage_symm_eq (hs : IsSliceChart q (L : Set E) s)
     rw [mem_preimage, isSliceChart_iff.1 hs _ (q.map_target hw), q.right_inv hw, SetLike.mem_coe]
   rw [← tangentConeAt_inter_nhds ht, hset, tangentConeAt_inter_nhds ht,
     L.tangentConeAt_eq hL ((isSliceChart_iff.1 hs y hy).1 hys)]
+
+omit [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M] in
+/-- **The dimension of a slice does not depend on the chart.** If two charts `q` and `p`, with
+values in possibly different normed spaces, flatten `s` onto closed subspaces `L` and `L'` near a
+common point `y` of `s`, and both transition maps between them are differentiable at the images of
+`y`, then `L` and `L'` have the same dimension: both are the tangent space of `s` at `y`, read in
+the two charts. -/
+theorem IsSliceChart.finrank_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {p : OpenPartialHomeomorph M F} {L' : Submodule 𝕜 F}
+    (hq : IsSliceChart q (L : Set E) s) (hp : IsSliceChart p (L' : Set F) s)
+    (hL : IsClosed (L : Set E)) (hL' : IsClosed (L' : Set F)) (hyq : y ∈ q.source)
+    (hyp : y ∈ p.source) (hys : y ∈ s) (hqp : DifferentiableAt 𝕜 (p ∘ q.symm) (q y))
+    (hpq : DifferentiableAt 𝕜 (q ∘ p.symm) (p y)) :
+    Module.finrank 𝕜 L = Module.finrank 𝕜 L' := by
+  -- Read in `q`, the transition map to `p` flattens the image of `s` onto `L'`.
+  have hslice := hp.comp q.symm
+  have hz : q y ∈ (q.symm.trans p).source := by simp [hyq, hyp]
+  obtain ⟨A, hA⟩ := (q.symm.trans p).exists_hasFDerivAt_of_chart hz hqp
+    (by simpa [q.left_inv hyq] using hpq)
+  have ht : q.target ∈ 𝓝 (q y) := q.open_target.mem_nhds (q.map_source hyq)
+  rw [← hslice.finrank_span_tangentConeAt hL' hz ⟨q.map_source hyq, by simpa [q.left_inv hyq]⟩ hA,
+    OpenPartialHomeomorph.symm_source, inter_comm, tangentConeAt_inter_nhds ht,
+    tangentConeAt_preimage_symm_eq hq hL hyq hys, Submodule.span_eq]
 
 omit [IsManifold 𝓘(𝕜, E) n M] in
 /-- If `P ∘ q` vanishes on `s` near a point `y` of `s`, then `P` kills the tangent cone of `s`

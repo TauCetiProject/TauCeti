@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Symplectic.Invariants
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic.Basic
 
 /-!
 # Invariant tangent vectors of groups of symplectomorphisms
@@ -38,10 +40,14 @@ isometries, `M^G` is near each of its points the image of this subspace under th
 exponential map, and the Riemannian logarithm is a smooth slice chart flattening `M^G` onto it
 (`TauCeti.Manifold.IsNormalDomain.isSliceChart_fixedPoints`,
 `TauCeti.exists_isSliceChart_fixedPoints`), and the results here show that this subspace is
-symplectic for `σ_x`; its dimension may vary from one fixed point to another. Wherever `M^G` is a
-submanifold whose tangent space is the space of invariant vectors, this shows that `σ` restricts
-to a nondegenerate two-form on it; when `σ` is moreover closed, so is its restriction, and `M^G`
-is a symplectic submanifold.
+symplectic for `σ_x`; its dimension may vary from one fixed point to another. The dimension is
+locally constant on `M^G`, and the fixed points where it equals `d` form a smoothly embedded
+submanifold of dimension `d` whose tangent spaces are the invariant vectors
+(`TauCeti.exists_isSmoothEmbedding_fixedPointsFinrank`). So for a group of symplectic isometries
+each of these pieces, and with it each connected component of `M^G`, is a symplectic submanifold
+(`IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsFinrank`): `σ` restricts to
+a nondegenerate two-form on it, symplectic when `σ` is closed
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsSymplecticSubmanifoldEmbedding.isSymplectic_mpullback`).
 
 ## Main results
 
@@ -54,6 +60,9 @@ is a symplectic submanifold.
   instance for a group of isometries, its invariant tangent vectors form a symplectic subspace.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_invariants_tangentRepresentation`: the same
   for a compact group acting smoothly.
+* `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsFinrank`: the fixed points
+  of a group of symplectic isometries whose fixed tangent subspace has a given dimension form a
+  symplectic submanifold.
 
 ## References
 
@@ -128,6 +137,42 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
 
 end ConstSMul
+
+section FixedPoints
+
+variable [ContMDiffConstSMul I ∞ G M] [FiniteDimensional ℝ E]
+  [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y)] [I.Boundaryless] [T2Space M]
+
+/-- **The fixed set of a group of symplectic isometries is a union of symplectic submanifolds.**
+Let a group act on a Riemannian manifold `M` by isometries preserving a nondegenerate two-form `σ`.
+For a subspace `L` of the model, the fixed points whose fixed tangent subspace has the dimension of
+`L` form a smooth manifold modelled on `L` whose inclusion into `M` is a symplectic submanifold
+embedding. Each connected component of the fixed set lies in one of these pieces
+(`TauCeti.connectedComponentIn_fixedPoints_subset_fixedPointsFinrank`), and the pullback of `σ`
+to each piece is nondegenerate, and symplectic when `σ` is
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsSymplecticSubmanifoldEmbedding.isSymplectic_mpullback`).
+No topology on the group, completeness of the metric or compactness of `M` is needed. -/
+theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsFinrank
+    (hσ : σ.IsNondegenerate)
+    (hK : ∀ (g : G) (x : M) (u w : TangentSpace I x),
+      inner ℝ (mfderiv I I (g • ·) x u) (mfderiv I I (g • ·) x w) = inner ℝ u w)
+    (hσG : ∀ g : G, SmoothForm.mpullback (fun y : M ↦ g • y) (contMDiff_const_smul g) σ = σ)
+    (L : Submodule ℝ E) :
+    ∃ C : ChartedSpace L (fixedPointsFinrank I G M (Module.finrank ℝ L)), letI := C
+      IsManifold 𝓘(ℝ, L) ∞ (fixedPointsFinrank I G M (Module.finrank ℝ L)) ∧
+      hσ.IsSymplecticSubmanifoldEmbedding 𝓘(ℝ, L)
+        (Subtype.val : fixedPointsFinrank I G M (Module.finrank ℝ L) → M) := by
+  obtain ⟨C, hman, hemb, hrange⟩ := exists_isSmoothEmbedding_fixedPointsFinrank hK L
+  refine ⟨C, hman, (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hemb).2
+    (hasSymplecticTangentImages_iff_forall.2 fun y ↦ ?_)⟩
+  have hd : ∀ g ∈ stabilizer G (y : M), MDifferentiableAt I I (fun z : M ↦ g • z) y :=
+    fun g _ ↦ (contMDiff_const_smul (I := I) (n := ∞) g).mdifferentiableAt (by simp)
+  rw [hrange y, fixedTangentSubspace_eq_invariants hd]
+  exact hσ.isSymplectic_invariants_tangentRepresentation_of_inner (fun g _ ↦ hK g y)
+    (fun g _ ↦ hσG g) hd
+
+end FixedPoints
 
 variable {F HG : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace HG]
   {IG : ModelWithCorners ℝ F HG} [TopologicalSpace G] [ChartedSpace HG G]

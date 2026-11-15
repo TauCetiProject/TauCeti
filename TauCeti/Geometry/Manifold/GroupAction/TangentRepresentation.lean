@@ -44,6 +44,10 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
   derivatives at `x`.
 * `TauCeti.tangentAut`: the tangent representation as a homomorphism to the linear automorphisms
   of `T_x M`.
+* `TauCeti.fixedTangentSubspace`: the invariant vectors of the tangent representation, for an
+  action by smooth maps.
+* `TauCeti.fixedPointsFinrank`: the common fixed points whose fixed tangent subspace has a given
+  dimension.
 
 ## Main results
 
@@ -177,6 +181,61 @@ theorem mfderiv_smul_comp_tangentRepresentation {h : G}
   exact hl.symm
 
 end Defs
+
+section FixedTangentSubspace
+
+open scoped ContDiff
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {G : Type*} [Group G] {M : Type*}
+  [TopologicalSpace M] [ChartedSpace H M] [MulAction G M] [ContMDiffConstSMul I ∞ G M] {x : M}
+
+variable (I G) in
+/-- The **fixed tangent subspace** at `x` of an action by smooth maps: the invariants of the
+tangent representation, that is, the tangent vectors at `x` fixed by the differential at `x` of
+every element of the stabilizer of `x`. At a common fixed point of the group these are the tangent
+vectors fixed by the differential of every group element (`TauCeti.mem_fixedTangentSubspace_iff`);
+for a group of isometries they form the tangent space of the fixed set there. -/
+noncomputable def fixedTangentSubspace (x : M) : Submodule 𝕜 (TangentSpace I x) :=
+  (tangentRepresentation (I := I) fun g (_ : g ∈ stabilizer G x) ↦
+    (contMDiff_const_smul (I := I) (n := ∞) g).mdifferentiableAt (by simp)
+    ).toRepresentation.invariants
+
+/-- The fixed tangent subspace is the space of invariants of the tangent representation, for any
+proof that the stabilizer acts by maps differentiable at `x`. -/
+theorem fixedTangentSubspace_eq_invariants
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    fixedTangentSubspace I G x = (tangentRepresentation hd).toRepresentation.invariants :=
+  (rfl)
+
+/-- At a common fixed point, the fixed tangent subspace consists of the tangent vectors fixed by
+the differential of every group element. -/
+theorem mem_fixedTangentSubspace_iff (hx : x ∈ fixedPoints G M) {v : TangentSpace I x} :
+    v ∈ fixedTangentSubspace I G x ↔ ∀ g : G, mfderiv I I (fun y : M ↦ g • y) x v = v :=
+  mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints _ hx
+
+/-- At a common fixed point, the fixed tangent subspace is the set of tangent vectors fixed by the
+differential of every group element. -/
+theorem coe_fixedTangentSubspace (hx : x ∈ fixedPoints G M) :
+    (fixedTangentSubspace I G x : Set (TangentSpace I x)) =
+      {v | ∀ g : G, mfderiv I I (fun y : M ↦ g • y) x v = v} :=
+  Set.ext fun _ ↦ mem_fixedTangentSubspace_iff hx
+
+variable (I G M) in
+/-- The common fixed points of `G` whose fixed tangent subspace has dimension `d`. For a group of
+isometries the dimension is locally constant on the fixed set, so the fixed set is the disjoint
+union of these pieces, each a union of connected components of the fixed set. -/
+def fixedPointsFinrank (d : ℕ) : Set M :=
+  {x | x ∈ fixedPoints G M ∧ Module.finrank 𝕜 (fixedTangentSubspace I G x) = d}
+
+/-- Membership in the piece of the fixed set where the fixed tangent subspace has dimension `d`. -/
+@[simp]
+theorem mem_fixedPointsFinrank_iff {d : ℕ} :
+    x ∈ fixedPointsFinrank I G M d ↔
+      x ∈ fixedPoints G M ∧ Module.finrank 𝕜 (fixedTangentSubspace I G x) = d :=
+  Iff.rfl
+
+end FixedTangentSubspace
 
 section Continuity
 

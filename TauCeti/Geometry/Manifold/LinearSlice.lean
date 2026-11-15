@@ -9,9 +9,11 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import Mathlib.Geometry.Manifold.Immersion
 
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Topology.Algebra.Module.SubspaceExchange
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Manifold structures from linear slice charts
@@ -30,6 +32,11 @@ in `TauCeti.Geometry.Lie.Subgroup.Manifold`, without its group translations. The
 point to point and only its dimension is fixed, assumes a finite-dimensional model over a complete
 field: there linear isomorphisms are continuous and every subspace has a closed complement.
 
+On a boundaryless ambient manifold with a finite-dimensional model over `ℝ` or `ℂ`, possibly
+different from a vector space, the inclusion with the induced atlas of `C^n` charts, `1 ≤ n`, is an
+immersion (`TauCeti.isImmersion_subtypeVal_linearSliceChartedSpace`): near each point it has the
+left inverse that reads the tangential coordinate of the ambient chart.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Chapter 5.
@@ -37,10 +44,10 @@ field: there linear isomorphisms are continuous and every subspace has a closed 
 
 public section
 
-namespace TauCeti
-
 open Set Topology
 open scoped ContDiff Manifold
+
+namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -247,5 +254,56 @@ theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteD
     exact (hqs _ hz').comp z Φ.symm.contDiff.contMDiff.contMDiffAt
   · rw [OpenPartialHomeomorph.transHomeomorph_source] at hz
     simpa [hΦ] using hmem z hz
+
+end TauCeti
+
+namespace TauCeti
+
+section Immersion
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω} [IsManifold I n M]
+  {s : Set M}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  (e : s → OpenPartialHomeomorph M (F × G))
+  (he : ∀ x, IsSliceChart (e x) ((univ : Set F) ×ˢ ({0} : Set G)) s)
+
+/-- On a boundaryless manifold with a finite-dimensional model, the inclusion of a subset equipped
+with the atlas of `C^n` linear-slice charts, `1 ≤ n`, is a `C^n` immersion. Near each point the
+inclusion has the left inverse that reads the tangential coordinate of the ambient chart and
+applies the inverse of the induced chart. Unlike
+`TauCeti.isImmersionOfComplement_subtypeVal_linearSliceChartedSpace`, the ambient manifold may be
+modelled on any boundaryless model with corners. -/
+theorem isImmersion_subtypeVal_linearSliceChartedSpace
+    (hsmooth : ∀ x, ∀ z ∈ (e x).source, ContMDiffAt I 𝓘(𝕜, F × G) n (e x) z)
+    (hinv : ∀ x, ∀ z ∈ (e x).target, ContMDiffAt 𝓘(𝕜, F × G) I n (e x).symm z)
+    (hcover : ∀ x : s, (x : M) ∈ (e x).source) (hn : 1 ≤ n) :
+    letI := linearSliceChartedSpace e he hcover
+    Manifold.IsImmersion 𝓘(𝕜, F) I n (Subtype.val : s → M) := by
+  let := linearSliceChartedSpace e he hcover
+  have := isManifold_linearSliceChartedSpace e he hsmooth hinv hcover
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hval := contMDiff_subtypeVal_linearSliceChartedSpace e he hinv hcover
+  refine isImmersion_iff_forall_isImmersionAt.2 fun x ↦
+    hval.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id (g := (linearSliceChart e he x).symm ∘
+      fun z ↦ (e x z).1) isOpen_univ (mem_univ x) hn ?_ ?_
+  · have hsymm : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F) (linearSliceChart e he x).symm (e x x).1 := by
+      rw [← linearSliceChart_apply e he x x, ← linearSliceChartedSpace_chartAt e he hcover x]
+      exact ((contMDiffOn_chart_symm (I := 𝓘(𝕜, F)) (n := n) (x := x)).contMDiffAt
+        ((chartAt F x).open_target.mem_nhds ((chartAt F x).map_source (mem_chart_source F x)))
+        ).mdifferentiableAt hn0
+    exact hsymm.comp (x : M)
+      ((contDiff_fst.contMDiff.contMDiffAt.comp _ (hsmooth x x (hcover x))).mdifferentiableAt hn0)
+  · have hxs : x ∈ (linearSliceChart e he x).source := by
+      rw [linearSliceChart_source]; exact hcover x
+    filter_upwards [(linearSliceChart e he x).open_source.mem_nhds hxs] with y hy
+    simp only [Function.comp_apply, id_eq, ← linearSliceChart_apply e he x y]
+    exact (linearSliceChart e he x).left_inv hy
+
+end Immersion
 
 end TauCeti
