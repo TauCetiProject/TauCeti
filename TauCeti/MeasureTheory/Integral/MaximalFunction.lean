@@ -26,6 +26,13 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 -- inequality, and the constant identity `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul` inside
 -- the proofs of the strong-type inequalities.
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+-- `TauCeti.MeasureTheory.Integral.Average` is imported privately: its change of variables for
+-- averages, `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`, is used only inside the proofs of
+-- the translation and dilation invariance of the maximal function.
+import TauCeti.MeasureTheory.Integral.Average
+-- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
+-- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The Hardy–Littlewood maximal function
@@ -57,9 +64,12 @@ the pieces of a square function, which is the form Littlewood–Paley theory use
 The maximal inequality drives Calderón–Zygmund theory and, through it, the `Lᵖ` regularity
 theory for elliptic equations.
 It is also where the classical *asymmetric* pair of endpoints originates: `M` is bounded on `L^∞`
-(`TauCeti.maximalFunction_le_eLpNormEssSup`) but, in positive dimension, not on `L¹` — a failure
-not formalised here — so the correct `L¹` statement is the weak-type bound, and the strong `(p, p)`
-bounds are obtained from those two ends by Marcinkiewicz interpolation. The qualification matters:
+(`TauCeti.maximalFunction_le_eLpNormEssSup`) but, in positive dimension, not on `L¹`: the maximal
+function of the indicator of an interval decays like `1 / |x|` and is not integrable
+(`TauCeti.lintegral_maximalFunction_indicator_Icc_eq_top`, in
+`TauCeti.MeasureTheory.Integral.MaximalFunction.Indicator`). So the correct `L¹` statement is the
+weak-type bound, and the strong `(p, p)` bounds are obtained from those two ends by Marcinkiewicz
+interpolation. The qualification matters:
 the `L¹` failure is a positive-dimensional phenomenon, since in dimension `0` every ball is the
 whole space and the averages defining `M f` collapse to `‖f‖ₑ`.
 
@@ -120,6 +130,9 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   `TauCeti.maximalFunction_const_smul`: `M` is sublinear. Subadditivity and the endpoint bounds
   feed directly into `TauCeti.lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup`.
 * `TauCeti.maximalFunction_le_eLpNormEssSup`: the `L^∞` endpoint.
+* `TauCeti.maximalFunction_comp_add_right`, `TauCeti.maximalFunction_comp_smul`: `M` commutes with
+  translations and, for an additive Haar measure, with dilations, so the constants of the maximal
+  inequalities cannot depend on position or scale.
 * `TauCeti.ae_enorm_eq_zero_of_maximalFunction_eq_zero`: `M f` vanishes nowhere unless `f = 0`
   almost everywhere.
 * `TauCeti.lowerSemicontinuous_maximalFunction`, `TauCeti.measurable_maximalFunction`: the
@@ -299,6 +312,54 @@ theorem maximalFunction_add_le (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) (x
 end Sublinear
 
 end PseudoMetricSpace
+
+/-! ### Translation and dilation invariance -/
+
+section Invariance
+
+variable {X Y F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [PseudoMetricSpace Y]
+  [MeasurableSpace Y] [ENorm F] {μ : Measure X} {ν : Measure Y} {a : ℝ≥0∞}
+
+/-- The maximal function commutes with a measurable equivalence `e` that pushes `μ` forward to a
+positive finite multiple of `ν` and maps each ball `B(x, r)` onto the ball `B(e x, k r)`, for a
+fixed `k > 0`. -/
+private theorem maximalFunction_comp_of_map_eq_smul {e : X ≃ᵐ Y} (he : μ.map e = a • ν)
+    (ha : a ≠ 0) (ha' : a ≠ ∞) {k : ℝ} (hk : 0 < k)
+    (hball : ∀ x r, e ⁻¹' ball (e x) (k * r) = ball x r) (f : Y → F) (x : X) :
+    maximalFunction μ (fun y => f (e y)) x = maximalFunction ν f (e x) := by
+  refine le_antisymm (maximalFunction_le fun r hr => ?_) (maximalFunction_le fun r hr => ?_)
+  · rw [← hball x r, setLAverage_comp_preimage_of_map_eq_smul he ha ha' (fun y => ‖f y‖ₑ)]
+    exact setLAverage_le_maximalFunction ν f (e x) (mul_pos hk hr)
+  · have h := setLAverage_le_maximalFunction μ (fun y => f (e y)) x (div_pos hr hk)
+    rwa [← hball x (r / k), mul_div_cancel₀ r hk.ne',
+      setLAverage_comp_preimage_of_map_eq_smul he ha ha' (fun y => ‖f y‖ₑ)] at h
+
+/-- **The maximal function commutes with translations** for a right-invariant measure:
+`M (f (· + b)) x = M f (x + b)`. -/
+@[simp]
+theorem maximalFunction_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G]
+    [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] (f : G → F) (b x : G) :
+    maximalFunction μ (fun y => f (y + b)) x = maximalFunction μ f (x + b) :=
+  maximalFunction_comp_of_map_eq_smul (e := MeasurableEquiv.addRight b) (a := 1)
+    (by simpa using map_add_right_eq_self μ b) one_ne_zero ENNReal.one_ne_top one_pos
+    (fun x r => by simp [preimage_add_right_ball]) f x
+
+/-- **The maximal function commutes with dilations** for an additive Haar measure on a
+finite-dimensional real normed space: `M (f (t • ·)) x = M f (t • x)` for `t ≠ 0`. The averages
+over `B(x, r)` and `B(t • x, |t| r)` agree, because the dilation scales every measure by the same
+factor `|t|ⁿ`. -/
+@[simp]
+theorem maximalFunction_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] (f : E → F) {t : ℝ} (ht : t ≠ 0) (x : E) :
+    maximalFunction μ (fun y => f (t • y)) x = maximalFunction μ f (t • x) :=
+  maximalFunction_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
+    (Measure.map_addHaar_smul μ ht) (by simp [ht]) ENNReal.ofReal_ne_top (norm_pos_iff.2 ht)
+    (fun x r => by
+      rw [MeasurableEquiv.coe_smul₀]; exact preimage_smul_ball_smul_norm x (norm_pos_iff.2 ht) r)
+    f x
+
+end Invariance
 
 section Haar
 
