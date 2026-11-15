@@ -51,7 +51,6 @@ Robbin–Salamon index is only invariant under homotopies fixing the endpoints
 
 * `Matrix.UnitaryGroup.souriau_eq_souriau_iff_realImage_eq`: `U Uᵀ = V Vᵀ` exactly when
   `U ℝⁿ = V ℝⁿ`.
-* `Matrix.UnitaryGroup.maslovPhase_eq_det_sq`: the Maslov phase of `U ℝⁿ` relative to `ℝⁿ`.
 * `Matrix.UnitaryGroup.lagrangianLoop`: the loop `t ↦ γ t ℝⁿ` of a path of unitary frames whose
   Lagrangians close up.
 * `Matrix.UnitaryGroup.intCast_maslovIndex_lagrangianLoop`: its phase-degree index is the
@@ -137,31 +136,6 @@ theorem lagrangianLoop_apply {U V : unitaryGroup n ℂ} (γ : Path U V)
     (h : souriau U = souriau V) (t : I) :
     lagrangianLoop γ h t = (γ t : Matrix n n ℂ).realImage :=
   TotallyRealLoop.ofRealImage_apply _ _ _ t
-
-/-- The Maslov phase of the Lagrangian `U ℝⁿ` relative to `ℝⁿ`, for a unitary matrix `U`, is
-`det U / conj (det U) = det U ^ 2`. The subspace is given as any `L = U ℝⁿ`, so that the lemma
-applies whatever proof of maximal total reality the phase carries. -/
-theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (EuclideanSpace ℂ n)}
-    (hL : IsMaximalTotallyReal
-      ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ) L)
-    (hLU : L = (U : Matrix n n ℂ).realImage) :
-    isMaximalTotallyReal_realSubspace.maslovPhase hL = (U : Matrix n n ℂ).det ^ 2 := by
-  have hdet : (U : Matrix n n ℂ).det ≠ 0 := GeneralLinearGroup.det_ne_zero (Unitary.toUnits U)
-  -- `det_toEuclideanCLE` is stated over a general `RCLike` field, so its instances on
-  -- `EuclideanSpace ℂ n` agree with the ones in the phase only up to unfolding and `rw` cannot
-  -- match it; restate it for the `toLinearEquiv` coercion produced by `maslovPhase_map`.
-  have hdetU : LinearMap.det (((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv :
-      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n) = (U : Matrix n n ℂ).det :=
-    det_toEuclideanCLE _ hdet
-  rw [IsMaximalTotallyReal.maslovPhase_congr _ _
-      (isMaximalTotallyReal_realSubspace.map_linearEquiv
-        ((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv)
-      (hLU.trans (realImage_eq_map_toEuclideanCLE hdet)),
-    IsMaximalTotallyReal.maslovPhase_map, hdetU, div_eq_iff ((map_ne_zero _).2 hdet)]
-  -- `conj (det U) * det U = 1` since `det U` is unitary.
-  have hconj : conj (U : Matrix n n ℂ).det * (U : Matrix n n ℂ).det = 1 :=
-    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2)
-  linear_combination -(U : Matrix n n ℂ).det * hconj
 
 /-- **Loop comparison.** Let `γ` be a path of unitary frames whose path of Lagrangians `t ↦ γ t ℝⁿ`
 closes up. The phase-degree Maslov index (`TauCeti.TotallyRealLoop.maslovIndex`) of this loop of

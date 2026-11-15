@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 A continuous path `M` of invertible complex matrices whose images of the real subspace `ℝⁿ ⊆ ℂⁿ`
 close up frames the loop `t ↦ M t ℝⁿ` (`Matrix.realImage`) of maximal totally real subspaces of
 `ℂⁿ`. A continuous two-parameter family of such paths is a homotopy of these loops, along which
-the Maslov index is constant.
+the Maslov index is constant. For a unitary matrix `U`, the Maslov phase of `U ℝⁿ` relative to
+`ℝⁿ` is `det U ^ 2`.
 
 ## Main declarations
 
@@ -22,6 +23,7 @@ the Maslov index is constant.
   invertible matrices whose images of `ℝⁿ` close up.
 * `TauCeti.TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy`: homotopy invariance of the
   Maslov index along a continuous family of such paths.
+* `Matrix.UnitaryGroup.maslovPhase_eq_det_sq`: the Maslov phase of `U ℝⁿ` relative to `ℝⁿ`.
 -/
 
 public section
@@ -29,7 +31,7 @@ public section
 noncomputable section
 
 open Matrix
-open scoped unitInterval
+open scoped ComplexConjugate unitInterval
 
 namespace TauCeti
 
@@ -72,3 +74,36 @@ theorem TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy
     exact h01 s
 
 end TauCeti
+
+namespace Matrix.UnitaryGroup
+
+open TauCeti
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The Maslov phase of the Lagrangian `U ℝⁿ` relative to `ℝⁿ`, for a unitary matrix `U`, is
+`det U / conj (det U) = det U ^ 2`. The subspace is given as any `L = U ℝⁿ`, so that the lemma
+applies whatever proof of maximal total reality the phase carries. -/
+theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (EuclideanSpace ℂ n)}
+    (hL : IsMaximalTotallyReal
+      ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ) L)
+    (hLU : L = (U : Matrix n n ℂ).realImage) :
+    isMaximalTotallyReal_realSubspace.maslovPhase hL = (U : Matrix n n ℂ).det ^ 2 := by
+  have hdet : (U : Matrix n n ℂ).det ≠ 0 := GeneralLinearGroup.det_ne_zero (Unitary.toUnits U)
+  -- `det_toEuclideanCLE` is stated over a general `RCLike` field, so its instances on
+  -- `EuclideanSpace ℂ n` agree with the ones in the phase only up to unfolding and `rw` cannot
+  -- match it; restate it for the `toLinearEquiv` coercion produced by `maslovPhase_map`.
+  have hdetU : LinearMap.det (((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv :
+      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n) = (U : Matrix n n ℂ).det :=
+    det_toEuclideanCLE _ hdet
+  rw [IsMaximalTotallyReal.maslovPhase_congr _ _
+      (isMaximalTotallyReal_realSubspace.map_linearEquiv
+        ((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv)
+      (hLU.trans (realImage_eq_map_toEuclideanCLE hdet)),
+    IsMaximalTotallyReal.maslovPhase_map, hdetU, div_eq_iff ((map_ne_zero _).2 hdet)]
+  -- `conj (det U) * det U = 1` since `det U` is unitary.
+  have hconj : conj (U : Matrix n n ℂ).det * (U : Matrix n n ℂ).det = 1 :=
+    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2)
+  linear_combination -(U : Matrix n n ℂ).det * hconj
+
+end Matrix.UnitaryGroup
