@@ -116,7 +116,8 @@ variable {R : Type u} {S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Algeb
 étale `Perm ι`-torsor over `R`. -/
 theorem isFiniteEtaleTorsor (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     IsFiniteEtaleTorsor (Equiv.Perm ι) R (FrameAlgebra R S ι) := by
-  obtain ⟨T, _, _, _, _, _, ⟨e⟩⟩ := exists_algEquiv_pi_of_etale h
+  obtain ⟨T, _, _, _, _, _, ⟨e⟩⟩ :=
+    exists_algEquiv_pi_of_etale (Nat.card_eq_fintype_card (α := ι) ▸ h)
   exact isFiniteEtaleTorsor_of_algEquiv_pi T e
 
 /-- **The universal frame of a constant-rank finite étale algebra is bijective.** For a finite
@@ -124,7 +125,8 @@ theorem isFiniteEtaleTorsor (h : Module.rankAtStalk (R := R) S = Fintype.card ι
 `FrameAlgebra R S ι ⊗[R] S →ₐ[FrameAlgebra R S ι] (ι → FrameAlgebra R S ι)` is bijective. -/
 theorem bijective_tensorToPi (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
     Function.Bijective (tensorToPi R S ι) := by
-  obtain ⟨T, _, _, _, _, _, ⟨e⟩⟩ := exists_algEquiv_pi_of_etale h
+  obtain ⟨T, _, _, _, _, _, ⟨e⟩⟩ :=
+    exists_algEquiv_pi_of_etale (Nat.card_eq_fintype_card (α := ι) ▸ h)
   exact bijective_tensorToPi_of_algEquiv_pi T e
 
 /-- **The universal frame isomorphism.** For a finite étale `R`-algebra `S` of constant rank

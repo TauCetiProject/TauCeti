@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.RingTheory.Etale.Field
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import TauCeti.RingTheory.Etale.Field
 import TauCeti.RingTheory.Etale.Idempotent
 import TauCeti.RingTheory.Etale.Torsor.Frame
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
@@ -33,7 +33,7 @@ universe u
 
 namespace TauCeti.Algebra
 
-attribute [local instance] Algebra.FormallyUnramified.of_isSeparable in
+attribute [local instance] Algebra.Etale.of_isSeparable in
 /-- *test_separable_field_extension*: for a finite separable field extension `L / K` of degree
 `n = Module.finrank K L`, its frame algebra `P = FrameAlgebra K L (Fin n)` is a finite étale
 `Perm (Fin n)`-torsor over `K` on which `Perm (Fin n)` acts as a Galois group, of `K`-dimension
@@ -47,9 +47,6 @@ example (K : Type u) (L : Type*) [Field K] [Field L] [Algebra K L] [Module.Finit
       Module.finrank K P = n.factorial ∧
       Nonempty (P ⊗[K] L ≃ₐ[P] (Fin n → P)) := by
   intro n P
-  have : Algebra.FormallyEtale K L := .of_isSeparable K L
-  have : Algebra.Etale K L :=
-    ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
   have hrank : Module.rankAtStalk (R := K) L = Fintype.card (Fin n) := by
     rw [Module.rankAtStalk_eq_finrank_of_free (R := K), Fintype.card_fin]
   have : IsFiniteEtaleTorsor (Equiv.Perm (Fin n)) K P :=
@@ -85,13 +82,7 @@ example (K : Type*) [Field K] :
   have heq := congrFun (Module.rankAtStalk_eq_of_equiv
     (FrameAlgebra.piEquiv K (Fin 1) (Fin 2)).toLinearEquiv) p
   rw [heq, Module.rankAtStalk_eq_finrank_of_free (R := K)] at hcard
-  simp at hcard
-  let e₀ : Fin 1 ↪ Fin 2 := ⟨fun _ ↦ 0, Function.injective_of_subsingleton _⟩
-  let e₁ : Fin 1 ↪ Fin 2 := ⟨fun _ ↦ 1, Function.injective_of_subsingleton _⟩
-  have : Nontrivial (Fin 1 ↪ Fin 2) :=
-    ⟨e₀, e₁, fun h01 ↦ Fin.zero_ne_one (DFunLike.congr_fun h01 0)⟩
-  have : 1 < Fintype.card (Fin 1 ↪ Fin 2) := Fintype.one_lt_card
-  omega
+  simp [Fintype.card_congr Equiv.embeddingUnique] at hcard
 
 /-- *test_nonconstant_rank_split_by_torsor*: over `K × K`, the quotient `S` by `1 - (1, 0)` is
 finite étale of rank `1` on one factor and `0` on the other; it becomes `IsTotallySplit` over a
@@ -111,25 +102,22 @@ example (K : Type u) [Field K] :
     exists_isFiniteEtaleTorsor_isTotallySplit (K × K) S
   refine ⟨G, _, _, P, _, _, _, _, hP, hsplit, fun hfs ↦ ?_⟩
   have := hP.faithfullyFlat
+  have : Algebra.IsFiniteSplit P (P ⊗[K × K] S) := hfs
+  -- `Ideal.Quotient`'s `AddCommMonoid` diamond blocks direct `synthInstance` on `P ⊗[K × K] S`.
+  have : Module.Free P (P ⊗[K × K] S) :=
+    (fun (A : Type u) [CommRing A] [Algebra P A] [Algebra.IsFiniteSplit P A] ↦
+      (inferInstance : Module.Free P A)) (P ⊗[K × K] S)
   let p₁ : PrimeSpectrum (K × K) := (⊥ : PrimeSpectrum K).comap (RingHom.fst K K)
   let p₂ : PrimeSpectrum (K × K) := (⊥ : PrimeSpectrum K).comap (RingHom.snd K K)
   obtain ⟨q₁, hq₁⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := K × K) (B := P) p₁
   obtain ⟨q₂, hq₂⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := K × K) (B := P) p₂
-  have : Nontrivial P := PrimeSpectrum.nonempty_iff_nontrivial.mp ⟨q₁⟩
-  obtain ⟨m, ⟨φ⟩⟩ := hfs.nonempty_algEquiv_fun
-  let ψ : P ⊗[K × K] S ≃ₗ[P] (Fin m → P) := φ.toLinearEquiv
-  have hm (q : PrimeSpectrum P) : Module.rankAtStalk (R := P) (P ⊗[K × K] S) q = m := by
-    rw [congrFun (Module.rankAtStalk_eq_of_equiv ψ) q,
-      Module.rankAtStalk_eq_finrank_of_free (R := P)]
-    simp
   have h1 : Module.rankAtStalk (R := P) (P ⊗[K × K] S) q₁ = 1 := by
     rw [Module.rankAtStalk_baseChange, hq₁, Module.rankAtStalk_quotient_span_one_sub he]
     simp [p₁, e]
   have h2 : Module.rankAtStalk (R := P) (P ⊗[K × K] S) q₂ = 0 := by
     rw [Module.rankAtStalk_baseChange, hq₂, Module.rankAtStalk_quotient_span_one_sub he]
     simp [p₂, e]
-  have hm1 := hm q₁
-  have hm2 := hm q₂
+  simp at h1 h2
   omega
 
 /-- *test_zero_ring*: over a subsingleton base ring, every finite étale algebra is split by a

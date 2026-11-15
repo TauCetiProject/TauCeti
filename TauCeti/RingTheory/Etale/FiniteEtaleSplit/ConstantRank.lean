@@ -33,7 +33,7 @@ may vary), after base change to some faithfully flat finite étale `R`-algebra.
 ## Main results
 
 * `TauCeti.Algebra.exists_algEquiv_pi_of_etale`: a finite étale algebra of constant rank
-  `Fintype.card ι` becomes isomorphic to `ι → T` after a faithfully flat finite étale extension
+  `Nat.card ι` becomes isomorphic to `ι → T` after a faithfully flat finite étale extension
   `R → T` in the universe of `R`.
 * `TauCeti.Algebra.exists_etale_rankAtStalk_prod_pi_quotient_eq`: a finite étale algebra is a
   direct factor of a finite étale algebra of constant rank.
@@ -55,13 +55,15 @@ universe u
 namespace TauCeti.Algebra
 
 /-- **Lenstra's splitting cover for a prescribed finite index type.** For a finite étale
-`R`-algebra `S` (in any universe) of constant rank `Fintype.card ι`, there is a faithfully flat
+`R`-algebra `S` (in any universe) of constant rank `Nat.card ι`, there is a faithfully flat
 finite étale `R`-algebra `T` in the universe of `R` such that `T ⊗[R] S ≃ₐ[T] (ι → T)`. -/
 theorem exists_algEquiv_pi_of_etale {R : Type u} {S : Type*} [CommRing R] [CommRing S]
-    [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι]
-    (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
+    [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Finite ι]
+    (h : Module.rankAtStalk (R := R) S = Nat.card ι) :
     ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T)
       (_ : Module.Finite R T) (_ : Algebra.Etale R T), Nonempty (T ⊗[R] S ≃ₐ[T] (ι → T)) := by
+  cases nonempty_fintype ι
+  rw [Nat.card_eq_fintype_card] at h
   cases subsingleton_or_nontrivial R
   · have : Subsingleton (R ⊗[R] S) := Module.subsingleton R _
     exact ⟨R, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ⟨default⟩⟩
@@ -112,18 +114,15 @@ the split algebra `T ⊗[R] S` then has varying rank too. -/
 theorem exists_faithfullyFlat_etale_isTotallySplit_tensorProduct :
     ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T)
       (_ : Module.Finite R T) (_ : Algebra.Etale R T), IsTotallySplit T (T ⊗[R] S) := by
-  have : Small.{u} S := Module.Finite.small R S
-  let e₀ : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
-  have : Algebra.Etale R (Shrink.{u} S) := .of_equiv e₀.symm
-  have : Module.Finite R (Shrink.{u} S) := .equiv e₀.symm.toLinearEquiv
-  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq R (Shrink.{u} S)
+  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq R S
   -- Split the padded algebra of constant rank `n`, and keep its factor `T ⊗[R] S`.
-  obtain ⟨T, _, _, hT, hfin, het, _⟩ :=
-    Algebra.IsFiniteSplit.exists_tensorProduct_of_etale hrank
-  have h : IsTotallySplit T (T ⊗[R] (Shrink.{u} S × Π j, R ⧸ Ideal.span {1 - e j})) :=
+  obtain ⟨T, _, _, hT, hfin, het, ⟨φ⟩⟩ :=
+    exists_algEquiv_pi_of_etale (ι := Fin n) (by rw [Nat.card_fin]; exact hrank)
+  have : Algebra.IsFiniteSplit T (T ⊗[R] (S × Π j, R ⧸ Ideal.span {1 - e j})) :=
+    .of_algEquiv φ.symm
+  have h : IsTotallySplit T (T ⊗[R] (S × Π j, R ⧸ Ideal.span {1 - e j})) :=
     .of_isFiniteSplit
   exact ⟨T, _, _, hT, hfin, het,
-    ((h.of_algEquiv (Algebra.TensorProduct.prodRight R T T _ _)).of_prod_fst).of_algEquiv
-      (Algebra.TensorProduct.congr AlgEquiv.refl e₀)⟩
+    (h.of_algEquiv (Algebra.TensorProduct.prodRight R T T _ _)).of_prod_fst⟩
 
 end TauCeti.Algebra

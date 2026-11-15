@@ -51,8 +51,8 @@ compatibly with the permutation actions and `tensorToPi`
 `TauCeti.Algebra.FrameAlgebra.tensorToPi_baseChange`). Both are also functorial in isomorphisms of
 `S` (`TauCeti.Algebra.FrameAlgebra.congr`, `TauCeti.Algebra.FrameAlgebra.tensorToPi_congr`).
 Consequently, if `S` splits as `ι → T` after a faithfully flat extension `R → T`, then the
-universal frame map over `FrameAlgebra R S ι` is an isomorphism
-(`TauCeti.Algebra.FrameAlgebra.tensorProductEquivPiOfAlgEquivPi`).
+universal frame map over `FrameAlgebra R S ι` is bijective
+(`TauCeti.Algebra.FrameAlgebra.bijective_tensorToPi_of_algEquiv_pi`).
 
 ## Main definitions
 
@@ -60,14 +60,14 @@ universal frame map over `FrameAlgebra R S ι` is an isomorphism
 * `TauCeti.Algebra.distinctIdempotent R S ι`: the idempotent `ε = ∏_{i ≠ j} (1 - δᵢⱼ)`.
 * `TauCeti.Algebra.FrameAlgebra R S ι`: the frame algebra, with its action of `Equiv.Perm ι`.
 * `TauCeti.Algebra.FrameAlgebra.singleAlgHom R S i`: the `i`-th slot map into the frame algebra.
+* `TauCeti.Algebra.FrameAlgebra.productMap`: the algebra map out of the frame algebra induced by
+  slot maps into a commutative algebra separating every two distinct slots.
 * `TauCeti.Algebra.FrameAlgebra.tensorToPi R S ι`: the universal frame map
   `FrameAlgebra R S ι ⊗[R] S →ₐ[FrameAlgebra R S ι] (ι → FrameAlgebra R S ι)`.
 * `TauCeti.Algebra.FrameAlgebra.piEquiv`, `TauCeti.Algebra.FrameAlgebra.permEquiv`: the frame
   algebra of a split algebra.
 * `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv`: base change of the frame algebra.
 * `TauCeti.Algebra.FrameAlgebra.congr`: the frame algebras of isomorphic algebras are isomorphic.
-* `TauCeti.Algebra.FrameAlgebra.tensorProductEquivPiOfAlgEquivPi`: the universal frame isomorphism
-  for an algebra split by a faithfully flat extension.
 
 ## Main results
 
@@ -88,7 +88,8 @@ universal frame map over `FrameAlgebra R S ι` is an isomorphism
   `TauCeti.Algebra.map_distinctIdempotent_of_span_range_eq_top`: transport of `δᵢⱼ` and `ε`.
 * `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_map_permAlgEquiv`,
   `TauCeti.Algebra.FrameAlgebra.congr_smul`,
-  `TauCeti.Algebra.FrameAlgebra.bijective_tensorToPi_baseChange_iff`: equivariance of base change
+  `TauCeti.Algebra.FrameAlgebra.bijective_tensorToPi_baseChange_iff`,
+  `TauCeti.Algebra.FrameAlgebra.bijective_tensorToPi_of_algEquiv_pi`: equivariance of base change
   and of `congr`, and faithfully flat descent of universal frame bijectivity.
 
 ## References
@@ -319,6 +320,7 @@ theorem singleAlgHom_apply (i : ι) (s : S) :
 
 /-- The restriction of the quotient map to slot `i` is
 `TauCeti.Algebra.FrameAlgebra.singleAlgHom`. -/
+@[simp]
 theorem mkₐ_comp_singleAlgHom (i : ι) :
     (Ideal.Quotient.mkₐ R (Ideal.span {1 - distinctIdempotent R S ι})).comp
       (PiTensorProduct.singleAlgHom (R := R) (A := fun _ : ι ↦ S) i) = singleAlgHom R S i := (rfl)
@@ -339,14 +341,60 @@ theorem lift_singleAlgHom {T : Type*} [Semiring T] [Algebra R T]
     (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) (i : ι) (s : S) :
     lift φ hφ (singleAlgHom R S i s) = φ (PiTensorProduct.singleAlgHom i s) := (rfl)
 
+/-- `TauCeti.Algebra.FrameAlgebra.lift φ hφ` restricts on slot `i` to `φ` restricted to factor
+`i`. -/
+@[simp]
+theorem lift_comp_singleAlgHom {T : Type*} [Semiring T] [Algebra R T]
+    (φ : (⨂[R] _ : ι, S) →ₐ[R] T)
+    (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) (i : ι) :
+    (lift φ hφ).comp (singleAlgHom R S i) = φ.comp (PiTensorProduct.singleAlgHom i) :=
+  AlgHom.ext (lift_singleAlgHom φ hφ i)
+
 /-- Distinct slot maps into the frame algebra annihilate the diagonal idempotent: on spectra, the
 universal `ι`-tuple of points has pairwise distinct coordinates. -/
+@[simp]
 theorem productMap_singleAlgHom_elem {i j : ι} (hij : i ≠ j) :
     Algebra.TensorProduct.productMap (singleAlgHom R S i) (singleAlgHom R S j)
       (Algebra.FormallyUnramified.elem R S) = 0 := by
   rw [← mkₐ_comp_singleAlgHom, ← mkₐ_comp_singleAlgHom, ← Algebra.TensorProduct.comp_productMap,
     AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
   exact mk_tensorPowDiagonal hij
+
+section ProductMap
+
+variable {T : Type*} [CommSemiring T] [Algebra R T]
+
+/-- The slot-indexed universal property of the frame algebra: a family of `R`-algebra maps
+`f i : S →ₐ[R] T` into a commutative algebra separating every two distinct slots (annihilating
+`Algebra.FormallyUnramified.elem R S` for `i ≠ j`) induces an `R`-algebra map
+`FrameAlgebra R S ι →ₐ[R] T` (`TauCeti.Algebra.FrameAlgebra.productMap_singleAlgHom`, uniqueness
+by `TauCeti.Algebra.FrameAlgebra.algHom_ext`). -/
+noncomputable def productMap (f : ι → S →ₐ[R] T)
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0) :
+    FrameAlgebra R S ι →ₐ[R] T :=
+  lift (PiTensorProduct.productMap f) fun i j hij ↦ by
+    simp [map_tensorPowDiagonal, hf i j hij]
+
+/-- `TauCeti.Algebra.FrameAlgebra.productMap f hf` restricts to `f i` on slot `i`. -/
+@[simp]
+theorem productMap_singleAlgHom (f : ι → S →ₐ[R] T)
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0)
+    (i : ι) (s : S) :
+    productMap f hf (singleAlgHom R S i s) = f i s := by
+  simp [productMap]
+
+/-- `TauCeti.Algebra.FrameAlgebra.productMap f hf` restricts to `f i` along the `i`-th slot map. -/
+@[simp]
+theorem productMap_comp_singleAlgHom (f : ι → S →ₐ[R] T)
+    (hf : ∀ i j, i ≠ j →
+      Algebra.TensorProduct.productMap (f i) (f j) (Algebra.FormallyUnramified.elem R S) = 0)
+    (i : ι) :
+    (productMap f hf).comp (singleAlgHom R S i) = f i :=
+  AlgHom.ext (productMap_singleAlgHom f hf i)
+
+end ProductMap
 
 variable (R S ι) in
 /-- The permutations of `ι` act on the frame algebra by permuting the tensor factors. -/
@@ -540,7 +588,7 @@ theorem FrameAlgebra.baseChangeEquiv_map_permAlgEquiv (σ : Equiv.Perm ι)
 
 /-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` carries `t ⊗ (p * singleAlgHom R S i s)` to
 `baseChangeEquiv (t ⊗ p) * singleAlgHom T (T ⊗[R] S) i (1 ⊗ s)`. -/
-theorem FrameAlgebra.baseChangeEquiv_tmul_mul_singleAlgHom (t : T) (p : FrameAlgebra R S ι)
+private theorem FrameAlgebra.baseChangeEquiv_tmul_mul_singleAlgHom (t : T) (p : FrameAlgebra R S ι)
     (i : ι) (s : S) :
     FrameAlgebra.baseChangeEquiv R S T ι (t ⊗ₜ (p * FrameAlgebra.singleAlgHom R S i s)) =
       FrameAlgebra.baseChangeEquiv R S T ι (t ⊗ₜ p) *
@@ -858,31 +906,6 @@ theorem FrameAlgebra.bijective_tensorToPi_of_algEquiv_pi (T : Type*) [CommRing T
     Function.Bijective (FrameAlgebra.tensorToPi R S ι) :=
   (FrameAlgebra.bijective_tensorToPi_baseChange_iff T).mp
     ((FrameAlgebra.bijective_tensorToPi_congr_iff e).mp (FrameAlgebra.bijective_tensorToPi_pi T ι))
-
-/-- If `S` becomes isomorphic to the split algebra `ι → T` after a faithfully flat extension
-`R → T`, then the universal frame map is an isomorphism of `FrameAlgebra R S ι`-algebras
-`FrameAlgebra R S ι ⊗[R] S ≃ₐ[FrameAlgebra R S ι] (ι → FrameAlgebra R S ι)`. -/
-noncomputable def FrameAlgebra.tensorProductEquivPiOfAlgEquivPi (T : Type*) [CommRing T]
-    [Algebra R T] [Module.FaithfullyFlat R T] (e : T ⊗[R] S ≃ₐ[T] (ι → T)) :
-    FrameAlgebra R S ι ⊗[R] S ≃ₐ[FrameAlgebra R S ι] (ι → FrameAlgebra R S ι) :=
-  AlgEquiv.ofBijective (FrameAlgebra.tensorToPi R S ι)
-    (FrameAlgebra.bijective_tensorToPi_of_algEquiv_pi T e)
-
-/-- The underlying map of `TauCeti.Algebra.FrameAlgebra.tensorProductEquivPiOfAlgEquivPi` is
-`TauCeti.Algebra.FrameAlgebra.tensorToPi`. -/
-theorem FrameAlgebra.coe_tensorProductEquivPiOfAlgEquivPi (T : Type*) [CommRing T] [Algebra R T]
-    [Module.FaithfullyFlat R T] (e : T ⊗[R] S ≃ₐ[T] (ι → T)) :
-    ⇑(FrameAlgebra.tensorProductEquivPiOfAlgEquivPi T e) = FrameAlgebra.tensorToPi R S ι := (rfl)
-
-/-- `TauCeti.Algebra.FrameAlgebra.tensorProductEquivPiOfAlgEquivPi` sends `p ⊗ s` to
-`i ↦ p * singleAlgHom R S i s`. -/
-@[simp]
-theorem FrameAlgebra.tensorProductEquivPiOfAlgEquivPi_tmul (T : Type*) [CommRing T] [Algebra R T]
-    [Module.FaithfullyFlat R T] (e : T ⊗[R] S ≃ₐ[T] (ι → T)) (p : FrameAlgebra R S ι) (s : S)
-    (i : ι) :
-    FrameAlgebra.tensorProductEquivPiOfAlgEquivPi T e (p ⊗ₜ s) i =
-      p * FrameAlgebra.singleAlgHom R S i s := by
-  simp [coe_tensorProductEquivPiOfAlgEquivPi]
 
 end LocallySplit
 
