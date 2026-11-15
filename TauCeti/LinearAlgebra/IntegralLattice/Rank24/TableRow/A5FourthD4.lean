@@ -88,8 +88,8 @@ private theorem ofFn_a5FourthD4 {α : Type*} (f : Fin a5FourthD4.components.leng
         f ⟨4, by decide⟩] := by
   refine (List.map_ofFn (f := id) (g := f)).symm.trans ?_
   rw [show List.ofFn (id : Fin a5FourthD4.components.length → _) = [⟨0, by decide⟩,
-      ⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩, ⟨4, by decide⟩] by decide,
-    List.map_cons, List.map_cons, List.map_cons, List.map_cons, List.map_cons, List.map_nil]
+      ⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩, ⟨4, by decide⟩] by decide]
+  simp only [List.map_cons, List.map_nil]
 
 /-- **The values of the block rotation**: reading a function `f` on the component positions along
 the block rotation lists its values in the positions `0, 2, 3, 1, 4`. -/
@@ -98,10 +98,12 @@ theorem ofFn_comp_a5FourthD4BlockRotation {α : Type*}
     List.ofFn (fun k ↦ f (a5FourthD4BlockRotation k)) =
       [f ⟨0, by decide⟩, f ⟨2, by decide⟩, f ⟨3, by decide⟩, f ⟨1, by decide⟩,
         f ⟨4, by decide⟩] := by
-  refine (List.map_ofFn (g := f)).symm.trans ?_
-  rw [show List.ofFn a5FourthD4BlockRotation = [⟨0, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩,
-      ⟨1, by decide⟩, ⟨4, by decide⟩] by decide,
-    List.map_cons, List.map_cons, List.map_cons, List.map_cons, List.map_cons, List.map_nil]
+  rw [ofFn_a5FourthD4 (fun k ↦ f (a5FourthD4BlockRotation k)),
+    show a5FourthD4BlockRotation ⟨0, by decide⟩ = ⟨0, by decide⟩ by decide,
+    show a5FourthD4BlockRotation ⟨1, by decide⟩ = ⟨2, by decide⟩ by decide,
+    show a5FourthD4BlockRotation ⟨2, by decide⟩ = ⟨3, by decide⟩ by decide,
+    show a5FourthD4BlockRotation ⟨3, by decide⟩ = ⟨1, by decide⟩ by decide,
+    show a5FourthD4BlockRotation ⟨4, by decide⟩ = ⟨4, by decide⟩ by decide]
 
 /-- **The values of the inverse block rotation**: reading a function `f` on the component positions
 along the inverse block rotation lists its values in the positions `0, 3, 1, 2, 4`. -/
@@ -110,12 +112,15 @@ theorem ofFn_comp_a5FourthD4BlockRotation_symm {α : Type*}
     List.ofFn (fun k ↦ f (a5FourthD4BlockRotation.symm k)) =
       [f ⟨0, by decide⟩, f ⟨3, by decide⟩, f ⟨1, by decide⟩, f ⟨2, by decide⟩,
         f ⟨4, by decide⟩] := by
-  refine (List.map_ofFn (g := f)).symm.trans ?_
-  rw [show List.ofFn a5FourthD4BlockRotation.symm = [⟨0, by decide⟩, ⟨3, by decide⟩,
-      ⟨1, by decide⟩, ⟨2, by decide⟩, ⟨4, by decide⟩] by decide,
-    List.map_cons, List.map_cons, List.map_cons, List.map_cons, List.map_cons, List.map_nil]
+  rw [ofFn_a5FourthD4 (fun k ↦ f (a5FourthD4BlockRotation.symm k)),
+    show a5FourthD4BlockRotation.symm ⟨0, by decide⟩ = ⟨0, by decide⟩ by decide,
+    show a5FourthD4BlockRotation.symm ⟨1, by decide⟩ = ⟨3, by decide⟩ by decide,
+    show a5FourthD4BlockRotation.symm ⟨2, by decide⟩ = ⟨1, by decide⟩ by decide,
+    show a5FourthD4BlockRotation.symm ⟨3, by decide⟩ = ⟨2, by decide⟩ by decide,
+    show a5FourthD4BlockRotation.symm ⟨4, by decide⟩ = ⟨4, by decide⟩ by decide]
 
 /-- **The block rotation has order three.** -/
+@[simp]
 theorem a5FourthD4BlockRotation_pow_three : a5FourthD4BlockRotation ^ 3 = 1 := by
   decide
 
@@ -265,8 +270,7 @@ private theorem glueAlphabetIsometry_componentTrialityLabel
         ((a5FourthD4.componentType i).glueAlphabetIsometry (a5FourthD4.valid_componentType i)
           (a5FourthD4.isSimplyLaced_componentType i) x) := by
   rw [componentTrialityLabel, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.apply_symm_apply]
-  rfl
+    QuadraticMap.IsometryEquiv.apply_symm_apply, QuadraticMap.IsometryEquiv.trans_apply]
 
 private theorem componentTrialityLabel_of_ne {i : Fin a5FourthD4.components.length}
     (hi : i ≠ a5FourthD4D4Index)
@@ -277,7 +281,8 @@ private theorem componentTrialityLabel_of_ne {i : Fin a5FourthD4.components.leng
     QuadraticMap.IsometryEquiv.symm_apply_eq]
   refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
   rw [componentTriality_of_ne hi, Isometry.one_def, Isometry.discriminantGroupEquiv_refl]
-  rfl
+  exact LinearEquiv.refl_apply (M := ((a5FourthD4.componentType i).rootLattice
+    (a5FourthD4.isSimplyLaced_componentType i)).DiscriminantGroup) _
 
 private theorem val_glueLabelEquiv_symm_componentTrialityLabel_d4Index
     (x : (a5FourthD4.componentType a5FourthD4D4Index).glueAlphabet
@@ -436,6 +441,7 @@ private theorem a5FourthD4TrialityIsometry_apply
     gluedLatticeIsometryOfEq_apply, gluedLatticePiIsometry_apply]
 
 /-- The block rotation fixes the position of the `D₄` component. -/
+@[simp]
 theorem a5FourthD4BlockRotation_symm_d4Index :
     a5FourthD4BlockRotation.symm a5FourthD4D4Index = a5FourthD4D4Index := by
   decide
@@ -450,8 +456,8 @@ private theorem a5FourthD4BlockRotation_symm_ne_d4Index {i : Fin a5FourthD4.comp
 private theorem a5FourthD4BlockRotation_symm_symm_symm (k : Fin a5FourthD4.components.length) :
     a5FourthD4BlockRotation.symm (a5FourthD4BlockRotation.symm (a5FourthD4BlockRotation.symm k)) =
       k := by
-  rw [← Equiv.Perm.inv_def, ← Equiv.Perm.mul_apply, ← Equiv.Perm.mul_apply, ← pow_three', inv_pow,
-    a5FourthD4BlockRotation_pow_three, inv_one, Equiv.Perm.one_apply]
+  revert k
+  decide
 
 /-- **On the `D₄` component, `a5FourthD4TrialityIsometry` is triality.** -/
 @[simp]
@@ -463,7 +469,10 @@ theorem a5FourthD4TrialityIsometry_apply_d4Index
   rw [a5FourthD4TrialityIsometry_apply]
   refine (Fin.apply_cast_eq_apply_cast (fun i ↦ componentTriality i (x i))
     a5FourthD4BlockRotation_symm_d4Index _ rfl j).trans ?_
-  rw [componentTriality_d4Index]
+  rw [componentTriality_d4Index, Fin.cast_eq_self]
+  -- The two sides differ only in the type of `x a5FourthD4D4Index`, written once with
+  -- `a5FourthD4.componentType a5FourthD4D4Index` and once with `D 4`; these agree by definition
+  -- (`componentType_a5FourthD4D4Index`).
   rfl
 
 /-- **On an `A₅` component, `a5FourthD4TrialityIsometry` reads the coordinates in position `k`
