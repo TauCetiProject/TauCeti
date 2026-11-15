@@ -49,6 +49,10 @@ then produces the solution, and a cutoff makes it globally smooth.
 
 ## Main results
 
+* `TauCeti.Manifold.exists_contMDiff_hessian_eq_family_model_space`: on a normed space with a
+  smooth Riemannian metric whose Weyl and Cotton tensors vanish near `x₀`, nearby initial data
+  `(c, ξ)` around `(c₀, ξ₀)` admit a jointly smooth family of solutions of the conformal flattening
+  equation on a common open neighbourhood of `x₀`, vanishing outside a compact subset of `E`.
 * `TauCeti.Manifold.exists_eventually_hessian_eq_model_space`: on a normed space with a smooth
   Riemannian metric whose Weyl and Cotton tensors vanish near `x₀`, the conformal flattening
   equation has a smooth solution near `x₀` with any prescribed value and gradient at `x₀`.
@@ -275,27 +279,114 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
   simp only [neg_apply, neg_inj]
   exact sub_eq_zero.1 h
 
-/-- **A smooth solution of the flattening system through a prescribed jet.** Where the Weyl and
-Cotton tensors vanish near `x₀`, the coordinate conformal flattening system has, for every initial
-value `q₀`, a solution `σ` which is smooth on an open neighbourhood `V` of `x₀` and takes the value
-`q₀` at `x₀`. -/
-private theorem exists_contDiffOn_hasFDerivAt_flatteningField {x₀ : E}
+/-- **Smooth family of local solutions of the conformal flattening equation.** Let `g` be a smooth
+Riemannian metric on a finite-dimensional real normed space `E` whose Weyl and Cotton tensors
+vanish near `x₀`. Around any initial data `(c₀, ξ₀) : ℝ × TangentSpace 𝓘(ℝ, E) x₀`, there exist a
+jointly smooth function `φ : E × (ℝ × TangentSpace 𝓘(ℝ, E) x₀) → ℝ`, open neighbourhoods `V` of
+`x₀` and `Q` of `(c₀, ξ₀)`, and a compact set `K ⊆ E` outside which `φ` vanishes, such that for
+every `(c, ξ) ∈ Q` the slice `x ↦ φ (x, (c, ξ))` satisfies `φ (x₀, (c, ξ)) = c`,
+`grad (φ (·, (c, ξ))) x₀ = ξ`, and solves the conformal flattening equation on all of `V`. -/
+theorem exists_contMDiff_hessian_eq_family_model_space {x₀ : E}
     (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
-    (q₀ : ℝ × (E →L[ℝ] ℝ)) :
-    ∃ (σ : E → ℝ × (E →L[ℝ] ℝ)) (V : Set E), IsOpen V ∧ x₀ ∈ V ∧ ContDiffOn ℝ ∞ σ V ∧
-      σ x₀ = q₀ ∧ ∀ x ∈ V, HasFDerivAt σ (flatteningField E (x, σ x)) x := by
-  -- The Frobenius condition holds near `(x₀, q₀)`, so the system has a smooth solution family.
-  have hint : ∀ᶠ p in 𝓝 (x₀, q₀), IsFrobeniusIntegrableAt (flatteningField E) p :=
-    ((continuous_fst.tendsto (x₀, q₀)).eventually (hW.and hC)).mono fun p hp ↦
-      isFrobeniusIntegrableAt_flatteningField hp.1 hp.2 p.2
-  obtain ⟨s, U, hU, hx₀U, hs, hs₀, -, hsol⟩ :=
+    (c₀ : ℝ) (ξ₀ : TangentSpace 𝓘(ℝ, E) x₀) :
+    ∃ (φ : E × (ℝ × TangentSpace 𝓘(ℝ, E) x₀) → ℝ)
+      (V : Set E) (Q : Set (ℝ × TangentSpace 𝓘(ℝ, E) x₀)) (K : Set E),
+      IsOpen V ∧ IsOpen Q ∧ IsCompact K ∧ x₀ ∈ V ∧ (c₀, ξ₀) ∈ Q ∧
+      ContMDiff (𝓘(ℝ, E).prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace 𝓘(ℝ, E) x₀))) 𝓘(ℝ) ∞ φ ∧
+      (∀ x ∉ K, ∀ p, φ (x, p) = 0) ∧
+      ∀ p ∈ Q, φ (x₀, p) = p.1 ∧
+        mgradient 𝓘(ℝ, E) (fun x ↦ φ (x, p)) x₀ = p.2 ∧
+        ∀ y ∈ V, ∀ u v : TangentSpace 𝓘(ℝ, E) y,
+          hessian 𝓘(ℝ, E) (fun x ↦ φ (x, p)) y u v =
+            (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) (fun x ↦ φ (x, p)) y) u v := by
+  have : FiniteDimensional ℝ (TangentSpace 𝓘(ℝ, E) x₀) := inferInstanceAs (FiniteDimensional ℝ E)
+  let G := ℝ × TangentSpace 𝓘(ℝ, E) x₀
+  let L : TangentSpace 𝓘(ℝ, E) x₀ →L[ℝ] E →L[ℝ] ℝ :=
+    (metricCoeff E x₀).comp (tangentSpaceCastModel 𝓘(ℝ, E) x₀).toContinuousLinearMap
+  let ι : G →L[ℝ] ℝ × (E →L[ℝ] ℝ) := ContinuousLinearMap.prodMap (ContinuousLinearMap.id ℝ ℝ) L
+  let κ : E × G →L[ℝ] E × (ℝ × (E →L[ℝ] ℝ)) :=
+    ContinuousLinearMap.prodMap (ContinuousLinearMap.id ℝ E) ι
+  set p₀ : G := (c₀, ξ₀)
+  set q₀ : ℝ × (E →L[ℝ] ℝ) := ι p₀
+  -- The Frobenius condition holds near `(x₀, q₀)`, giving a smooth local solution family `s`.
+  have hint : ∀ᶠ r in 𝓝 (x₀, q₀), IsFrobeniusIntegrableAt (flatteningField E) r :=
+    ((continuous_fst.tendsto (x₀, q₀)).eventually (hW.and hC)).mono fun r hr ↦
+      isFrobeniusIntegrableAt_flatteningField hr.1 hr.2 r.2
+  obtain ⟨s, U, hU, hx₀q₀U, hs, -, hs_init, hsol⟩ :=
     exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt (n := ⊤)
       (contDiff_flatteningField.contDiffOn (s := univ) |>.of_le (by simp)) univ_mem hint
-  -- The slice through `q₀` is smooth on the open set `V` and solves the system there.
-  exact ⟨fun x ↦ s (x, q₀), (fun x ↦ (x, q₀)) ⁻¹' U,
-    hU.preimage (continuous_id.prodMk continuous_const), hx₀U,
-    (hs.comp (contDiffOn_id.prodMk contDiffOn_const) fun _ hx ↦ hx).of_le (by simp), hs₀,
-    fun x hx ↦ hsol (x, q₀) hx⟩
+  obtain ⟨V₀, Q₀, hV₀, hQ₀, hx₀V₀, hp₀Q₀, hVQ⟩ :=
+    isOpen_prod_iff.1 (hU.preimage κ.continuous) x₀ p₀ hx₀q₀U
+  -- Cut off smoothly in both base point and initial data so the family is globally smooth on
+  -- `E × G` and vanishes outside the compact set `tsupport χ ⊆ E`.
+  obtain ⟨χ, hχ, -, hx₀χ, hχ_cpt, hχV₀⟩ :=
+    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff hV₀ (singleton_subset_iff.2 hx₀V₀)
+  obtain ⟨η, hη, -, hp₀η, -, hηQ₀⟩ :=
+    (isCompact_singleton (x := p₀)).exists_contDiff_cutoff hQ₀ (singleton_subset_iff.2 hp₀Q₀)
+  set ψ : E × G → ℝ := fun r ↦ χ r.1 * η r.2
+  set φ₀ : E × G → ℝ := fun r ↦ (s (κ r)).1
+  set φ : E × G → ℝ := fun r ↦ ψ r • φ₀ r
+  have htsupp : tsupport ψ ⊆ V₀ ×ˢ Q₀ := by
+    refine (closure_minimal (t := tsupport χ ×ˢ tsupport η) ?_
+      ((isClosed_tsupport χ).prod (isClosed_tsupport η))).trans (prod_mono hχV₀ hηQ₀)
+    exact fun r hr ↦ ⟨subset_tsupport χ (left_ne_zero_of_mul hr),
+      subset_tsupport η (right_ne_zero_of_mul hr)⟩
+  have hφ₀ : ContDiffOn ℝ ∞ φ₀ (V₀ ×ˢ Q₀) :=
+    contDiffOn_fst.comp ((hs.of_le (by simp)).comp κ.contDiff.contDiffOn hVQ) (mapsTo_univ _ _)
+  have hφ_diff : ContDiff ℝ ∞ φ :=
+    hφ₀.contDiff_smul_of_tsupport_subset (hV₀.prod hQ₀)
+      ((hχ.comp contDiff_fst).mul (hη.comp contDiff_snd)).contDiffOn htsupp
+  have hφ : ContMDiff (𝓘(ℝ, E).prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace 𝓘(ℝ, E) x₀))) 𝓘(ℝ) ∞ φ :=
+    hφ_diff.comp_contMDiff (contMDiff_fst.prodMk_space
+      ((contMDiff_fst.comp contMDiff_snd).prodMk_space (contMDiff_snd.comp contMDiff_snd)))
+  set V : Set E := interior (χ ⁻¹' {1}) ∩ V₀
+  set Q : Set G := interior (η ⁻¹' {1}) ∩ Q₀
+  have hV : IsOpen V := isOpen_interior.inter hV₀
+  have hQ : IsOpen Q := isOpen_interior.inter hQ₀
+  have hx₀V : x₀ ∈ V := ⟨hx₀χ rfl, hx₀V₀⟩
+  have hp₀Q : p₀ ∈ Q := ⟨hp₀η rfl, hp₀Q₀⟩
+  refine ⟨φ, V, Q, tsupport χ, hV, hQ, hχ_cpt, hx₀V, hp₀Q, hφ, fun x hx p ↦ ?_, fun p hp ↦ ?_⟩
+  · simp [φ, ψ, image_eq_zero_of_notMem_tsupport hx]
+  · set σ : E → ℝ × (E →L[ℝ] ℝ) := fun z ↦ s (z, ι p)
+    set φp : E → ℝ := fun z ↦ φ (z, p)
+    have hηp : η p = 1 := interior_subset hp.1
+    have hσU (z : E) (hz : z ∈ V₀) : (z, ι p) ∈ U := by simpa [κ] using hVQ (mk_mem_prod hz hp.2)
+    have hσsol (z : E) (hz : z ∈ V₀) : HasFDerivAt σ (flatteningField E (z, σ z)) z :=
+      hsol (z, ι p) (hσU z hz)
+    have hDσ₁ (z : E) (hz : z ∈ V₀) : fderiv ℝ (fun w ↦ (σ w).1) z = (σ z).2 := by
+      have heq : (ContinuousLinearMap.fst ℝ ℝ (E →L[ℝ] ℝ)).comp (flatteningField E (z, σ z)) =
+          (σ z).2 :=
+        ContinuousLinearMap.ext fun u ↦ flatteningField_apply_fst (z, σ z) u
+      have h := (hσsol z hz).fst
+      rw [heq] at h
+      exact h.fderiv
+    have hD2σ₁ (z : E) (hz : z ∈ V₀) (u v : E) :
+        fderiv ℝ (fderiv ℝ fun w ↦ (σ w).1) z u v = (flatteningField E (z, σ z) u).2 v := by
+      have hEq : (fderiv ℝ fun w ↦ (σ w).1) =ᶠ[𝓝 z] fun w ↦ (σ w).2 :=
+        eventually_of_mem (hV₀.mem_nhds hz) hDσ₁
+      rw [hEq.fderiv_eq, (hσsol z hz).snd.fderiv]
+      simp
+    have hφp_eq {y : E} (hy : y ∈ V) : φp =ᶠ[𝓝 y] fun z ↦ (σ z).1 := by
+      filter_upwards [hV.mem_nhds hy] with z hz
+      have hχz : χ z = 1 := interior_subset hz.1
+      simp [φp, φ, ψ, φ₀, σ, κ, hχz, hηp]
+    have hσx₀ : σ x₀ = ι p := hs_init (ι p) (hσU x₀ hx₀V₀)
+    have hφp_diff : ContDiff ℝ ∞ φp := hφ_diff.comp (contDiff_id.prodMk contDiff_const)
+    refine ⟨?_, ?_, fun y hy u v ↦ ?_⟩
+    · change φp x₀ = p.1
+      rw [(hφp_eq hx₀V).eq_of_nhds, hσx₀]
+      rfl
+    · refine (eq_mgradient_iff.2 fun v ↦ ?_).symm
+      rw [mvfderiv_eq_fderiv, (hφp_eq hx₀V).fderiv_eq, hDσ₁ x₀ hx₀V₀, hσx₀, inner_eq_metricCoeff]
+      rfl
+    · have hyEq := hφp_eq hy
+      have h := hessian_sub_conformalFlatteningForm_model_space
+        (hφp_diff.contDiffAt.of_le (by simp) : ContDiffAt ℝ 2 φp y)
+        (tangentSpaceCastModel 𝓘(ℝ, E) y u) (tangentSpaceCastModel 𝓘(ℝ, E) y v)
+      have hjet : (y, φp y, fderiv ℝ φp y) = (y, σ y) := by
+        rw [hyEq.eq_of_nhds, hyEq.fderiv_eq, hDσ₁ y hy.2]
+      rw [hyEq.fderiv.fderiv_eq, hD2σ₁ y hy.2, hjet, sub_self] at h
+      simpa only [ContinuousLinearEquiv.symm_apply_apply, sub_eq_zero] using h
 
 /-- **Local solutions of the conformal flattening equation.** Let `g` be a smooth Riemannian
 metric on a finite-dimensional real normed space `E` whose Weyl and Cotton tensors vanish near
@@ -310,52 +401,12 @@ theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     ∃ φ : E → ℝ, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient 𝓘(ℝ, E) φ x₀ = ξ ∧
       ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace 𝓘(ℝ, E) y, hessian 𝓘(ℝ, E) φ y u v =
         (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) φ y) u v := by
-  set q₀ : ℝ × (E →L[ℝ] ℝ) := (c, metricCoeff E x₀ (tangentSpaceCastModel 𝓘(ℝ, E) x₀ ξ))
-  obtain ⟨σ, V, hV, hx₀V, hσ, hσ₀, hσsol⟩ :=
-    exists_contDiffOn_hasFDerivAt_flatteningField hW hC q₀
-  -- Its first component `φ₀` has differential the second component and second derivative `f`.
-  set φ₀ : E → ℝ := fun x ↦ (σ x).1
-  have hDφ₀ (x : E) (hx : x ∈ V) : fderiv ℝ φ₀ x = (σ x).2 := by
-    have heq : (ContinuousLinearMap.fst ℝ ℝ (E →L[ℝ] ℝ)).comp (flatteningField E (x, σ x)) =
-        (σ x).2 :=
-      ContinuousLinearMap.ext fun u ↦ flatteningField_apply_fst (x, σ x) u
-    have h := (hσsol x hx).fst
-    rw [heq] at h
-    exact h.fderiv
-  have hD2φ₀ (x : E) (hx : x ∈ V) (u v : E) :
-      fderiv ℝ (fderiv ℝ φ₀) x u v = (flatteningField E (x, σ x) u).2 v := by
-    have hEq : fderiv ℝ φ₀ =ᶠ[𝓝 x] fun x ↦ (σ x).2 :=
-      eventually_of_mem (hV.mem_nhds hx) hDφ₀
-    rw [hEq.fderiv_eq, (hσsol x hx).snd.fderiv]
-    simp
-  -- Cut `φ₀` off to a globally smooth function, equal to it near `x₀`.
-  obtain ⟨χ, hχ, -, hχ₁, -, hχV⟩ :=
-    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff_eventuallyEq_one hV
-      (singleton_subset_iff.2 hx₀V)
-  set φ : E → ℝ := fun x ↦ χ x • φ₀ x
-  have hφ : ContDiff ℝ ∞ φ :=
-    (contDiffOn_fst.comp hσ (mapsTo_univ _ _)).contDiff_smul_of_tsupport_subset hV
-      hχ.contDiffOn hχV
-  have hφφ₀ : ∀ᶠ y in 𝓝 x₀, φ =ᶠ[𝓝 y] φ₀ := by
-    filter_upwards [(hχ₁ x₀ rfl).eventually_nhds] with y hy
-    filter_upwards [hy] with z hz
-    simp [φ, hz]
-  have hVx₀ : ∀ᶠ y in 𝓝 x₀, y ∈ V := hV.mem_nhds hx₀V
-  have hDφx₀ : fderiv ℝ φ x₀ = (σ x₀).2 := by
-    rw [hφφ₀.self_of_nhds.fderiv_eq, hDφ₀ x₀ hx₀V]
-  refine ⟨φ, contMDiff_iff_contDiff.2 hφ, ?_, ?_, ?_⟩
-  · rw [hφφ₀.self_of_nhds.eq_of_nhds]
-    simp [φ₀, hσ₀, q₀]
-  · refine (eq_mgradient_iff.2 fun v ↦ ?_).symm
-    rw [mvfderiv_eq_fderiv, hDφx₀]
-    simp [hσ₀, q₀, inner_eq_metricCoeff, NormedSpace.fromTangentSpace]
-  · filter_upwards [hφφ₀, hVx₀] with y hy hyV u v
-    have h := hessian_sub_conformalFlatteningForm_model_space (hφ.contDiffAt.of_le (by simp) :
-      ContDiffAt ℝ 2 φ y) (tangentSpaceCastModel 𝓘(ℝ, E) y u) (tangentSpaceCastModel 𝓘(ℝ, E) y v)
-    have hjet : (y, φ y, fderiv ℝ φ y) = (y, σ y) := by
-      rw [hy.eq_of_nhds, hy.fderiv_eq, hDφ₀ y hyV]
-    rw [hy.fderiv.fderiv_eq, hD2φ₀ y hyV, hjet, sub_self] at h
-    simpa only [ContinuousLinearEquiv.symm_apply_apply, sub_eq_zero] using h
+  obtain ⟨φ, V, Q, -, hV, -, -, hx₀V, hcξQ, hφ, -, hsol⟩ :=
+    exists_contMDiff_hessian_eq_family_model_space hW hC c ξ
+  obtain ⟨hval, hgrad, hhess⟩ := hsol (c, ξ) hcξQ
+  exact ⟨fun x ↦ φ (x, (c, ξ)),
+    hφ.comp (contMDiff_id.prodMk (contMDiff_const.prodMk contMDiff_const)),
+    hval, hgrad, eventually_of_mem (hV.mem_nhds hx₀V) hhess⟩
 
 end ModelSpace
 
