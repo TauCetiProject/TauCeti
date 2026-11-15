@@ -133,14 +133,8 @@ theorem hessianQuadraticForm_comp_snd (ψ : F → ℝ) (z : E × F) :
   -- Precomposition with the second projection, and its left inverse, restriction to `F`.
   let P : (F →L[ℝ] ℝ) →L[ℝ] E × F →L[ℝ] ℝ := (compL ℝ (E × F) F ℝ).flip (snd ℝ E F)
   let R : (E × F →L[ℝ] ℝ) →L[ℝ] F →L[ℝ] ℝ := (compL ℝ F (E × F) ℝ).flip (inr ℝ E F)
-  have hRP : R ∘ (P ∘ fderiv ℝ ψ) = fderiv ℝ ψ := funext fun y ↦ by ext; simp [R, P]
-  have hP : fderiv ℝ (P ∘ fderiv ℝ ψ) z.2 = P.comp (fderiv ℝ (fderiv ℝ ψ) z.2) := by
-    by_cases hd : DifferentiableAt ℝ (fderiv ℝ ψ) z.2
-    · exact (P.hasFDerivAt.comp z.2 hd.hasFDerivAt).fderiv
-    · have hd' : ¬DifferentiableAt ℝ (P ∘ fderiv ℝ ψ) z.2 := fun h ↦
-        hd (hRP ▸ R.differentiableAt.comp z.2 h)
-      rw [fderiv_zero_of_not_differentiableAt hd, fderiv_zero_of_not_differentiableAt hd',
-        ContinuousLinearMap.comp_zero]
+  have hP : fderiv ℝ (P ∘ fderiv ℝ ψ) z.2 = P.comp (fderiv ℝ (fderiv ℝ ψ) z.2) :=
+    P.fderiv_comp_left_of_leftInverse R (fun L ↦ by ext; simp [R, P]) (fderiv ℝ ψ) z.2
   have h1 : fderiv ℝ (ψ ∘ Prod.snd) = (P ∘ fderiv ℝ ψ) ∘ Prod.snd :=
     funext fun w ↦ fderiv_comp_snd ψ w
   ext v

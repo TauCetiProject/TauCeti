@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.TangentCone.Prod
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Derivative lemmas on products
@@ -167,12 +168,9 @@ theorem differentiableAt_comp_snd_iff {f : F → G} {z : E × F} :
 /-- The derivative of a function of the second variable alone is the derivative of the function
 read on the second component. No differentiability is needed: otherwise both sides are zero. -/
 theorem fderiv_comp_snd (f : F → G) (z : E × F) :
-    fderiv 𝕜 (f ∘ Prod.snd) z = (fderiv 𝕜 f z.2).comp (ContinuousLinearMap.snd 𝕜 E F) := by
-  by_cases hf : DifferentiableAt 𝕜 f z.2
-  · exact (hf.hasFDerivAt.comp z hasFDerivAt_snd).fderiv
-  · rw [fderiv_zero_of_not_differentiableAt hf,
-      fderiv_zero_of_not_differentiableAt (mt differentiableAt_comp_snd_iff.1 hf),
-      ContinuousLinearMap.zero_comp]
+    fderiv 𝕜 (f ∘ Prod.snd) z = (fderiv 𝕜 f z.2).comp (ContinuousLinearMap.snd 𝕜 E F) :=
+  (ContinuousLinearMap.snd 𝕜 E F).fderiv_comp_right_of_rightInverse
+    (ContinuousLinearMap.inr 𝕜 E F) (fun _ ↦ by simp) f z
 
 /-- A function of the second variable alone has zero derivative along the first factor. No
 differentiability is needed: otherwise the derivative is zero. -/
