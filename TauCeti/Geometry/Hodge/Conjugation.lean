@@ -267,7 +267,7 @@ theorem mem_conjFiltration_iff (ω : Conjugation W) (F : ℤ → Submodule ℂ W
 
 /-- Applying conjugation to a conjugate filtration step recovers the original step. -/
 @[simp]
-theorem conjFiltration_conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
+theorem map_conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
     (ω.conjFiltration F p).map ω.toEquiv.toLinearMap = F p :=
   ω.map_map_eq_self (F p)
 
@@ -399,6 +399,11 @@ abbrev Complexification (V : Type u) [AddCommGroup V] :=
 def complexificationMap : V →ₗ[ℤ] Complexification V :=
   (TensorProduct.mk ℤ ℂ V) 1
 
+/-- The canonical map from an integral module to its complexification sends `v` to `1 ⊗ₜ v`. -/
+theorem complexificationMap_apply (v : V) : complexificationMap v = (1 : ℂ) ⊗ₜ[ℤ] v := by
+  unfold complexificationMap
+  rfl
+
 /-- The tensor-product complexification satisfies the abstract base-change interface. -/
 theorem isBaseChange_complexificationMap :
     IsBaseChange ℂ (complexificationMap (V := V)) :=
@@ -442,7 +447,7 @@ theorem concreteLatticeConj_complexificationMap (v : V) :
     concreteLatticeConj (complexificationMap v) = complexificationMap v := by
   -- `Complexification V` has both the tensor-product and canonical integer-module instances;
   -- restating the goal as a pure tensor avoids exposing that harmless instance diamond.
-  change concreteLatticeConj (1 ⊗ₜ[ℤ] v) = 1 ⊗ₜ[ℤ] v
+  rw [complexificationMap_apply]
   simpa only [map_one] using concreteLatticeConj_tmul (V := V) 1 v
 
 private theorem concreteLatticeConjIntLinear_comp :

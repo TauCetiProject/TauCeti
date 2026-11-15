@@ -35,7 +35,8 @@ intertwines `InternalGrading.koszulTwistAlgEquiv (signedSymPiece G) 1` with
 
 * `TauCeti.ParitySignedSym.mul_eq_uzpow_smul_mul`: parity supercommutativity for arbitrary
   homogeneous elements.
-* `TauCeti.ParitySignedSym.mul_comm_of_mem_zero_left` and
+* `TauCeti.ParitySignedSym.commute_of_mem_zero`,
+  `TauCeti.ParitySignedSym.mul_comm_of_mem_zero_left`, and
   `TauCeti.ParitySignedSym.mem_center_of_mem_zero`: even elements are central.
 * `TauCeti.ParitySignedSym.mul_anticomm_of_mem_one`, `TauCeti.ParitySignedSym.sq_eq_neg`, and
   `TauCeti.ParitySignedSym.sq_eq_zero`: anticommutativity and nilpotence of odd elements.
@@ -112,13 +113,15 @@ theorem mul_eq_uzpow_smul_mul {i j : ZMod 2} {a b : ParitySignedSym G}
         (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
           congrArg MulOpposite.op ha))
 
+/-- Every even element commutes with all of `ParitySignedSym G`. -/
+theorem commute_of_mem_zero {a : ParitySignedSym G} (ha : a ∈ paritySignedSymPiece G 0)
+    (b : ParitySignedSym G) : Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero (mul_eq_uzpow_smul_mul G) ha b
+
 /-- An even element commutes on the left with every element of `ParitySignedSym G`. -/
 theorem mul_comm_of_mem_zero_left {a : ParitySignedSym G} (ha : a ∈ paritySignedSymPiece G 0)
-    (b : ParitySignedSym G) : a * b = b * a := by
-  induction b using DirectSum.Decomposition.inductionOn (paritySignedSymPiece G) with
-  | zero => simp
-  | homogeneous b => simpa using mul_eq_uzpow_smul_mul G ha b.2
-  | add b c hb hc => rw [mul_add, add_mul, hb, hc]
+    (b : ParitySignedSym G) : a * b = b * a :=
+  (commute_of_mem_zero G ha b).eq
 
 /-- An even element commutes on the right with every element of `ParitySignedSym G`. -/
 theorem mul_comm_of_mem_zero_right {b : ParitySignedSym G} (hb : b ∈ paritySignedSymPiece G 0)
