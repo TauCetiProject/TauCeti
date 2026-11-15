@@ -110,9 +110,18 @@ theorem IsGeodesicCurveOn.exists_isJacobiFieldOn
     fun _ ht ↦ hγ.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
   have hcurve : EqOn γ (fun t ↦ maximalGeodesic I M p v (t - a)) s :=
     fun _ ht ↦ (hγ.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
-  obtain ⟨hXa, hDXa⟩ := Prod.mk.inj
-    (hV₀.prodMk_alongCurveWithin_comp_sub_const_eq_of_eqOn_of_heq
-      hγ.uniqueDiffOn hmaps hcurve ha (heq_of_eq hu₀) (heq_of_eq hw₀))
+  have h0 : γ a = maximalGeodesic I M p v 0 := by simpa only [sub_self] using hcurve ha
+  have hXa : tangentSpaceCast I (maximalGeodesic I M p v (a - a)) (γ a) (V₀ (a - a)) = u := by
+    rw [congrArg (fun x ↦ tangentSpaceCast I (maximalGeodesic I M p v x) (γ a) (V₀ x)) (sub_self a)]
+    exact eq_of_heq ((TauCeti.heq_tangentSpaceCast h0.symm _).trans (heq_of_eq hu₀))
+  have hDXa : alongCurveWithin (leviCivitaConnection I M) γ
+      (fun t ↦ tangentSpaceCast I (maximalGeodesic I M p v (t - a)) (γ t) (V₀ (t - a))) s a =
+        w := by
+    rw [hV₀.alongCurveWithin_comp_sub_const_of_eqOn a (hγ.uniqueDiffOn a ha) hmaps hcurve ha,
+      congrArg (fun x ↦ tangentSpaceCast I (maximalGeodesic I M p v x) (γ a)
+        (alongCurveWithin (leviCivitaConnection I M) (maximalGeodesic I M p v) V₀
+          (geodesicInterval I M p v) x)) (sub_self a)]
+    exact eq_of_heq ((TauCeti.heq_tangentSpaceCast h0.symm _).trans (heq_of_eq hw₀))
   exact ⟨fun t ↦ tangentSpaceCast I (maximalGeodesic I M p v (t - a)) (γ t) (V₀ (t - a)),
     hV₀.comp_sub_const_of_eqOn a hγ.uniqueDiffOn hmaps hcurve, hXa, hDXa⟩
 

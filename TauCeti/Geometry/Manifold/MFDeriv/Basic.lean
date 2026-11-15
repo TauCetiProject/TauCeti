@@ -25,8 +25,6 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
-* `TauCeti.heq_mfderiv_apply`: heterogeneous congruence of `mfderiv` across propositionally equal
-  base points.
 -/
 
 public section
@@ -109,16 +107,5 @@ theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v
     exact hu (by simpa [Function.comp_def, smul_smul, hε] using h'.comp (c + ε • w) hψ)
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   exact (smul_zero ε).symm
-
-variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
-  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
-/-- Over equal base points and heterogeneously equal tangent vectors, `mfderiv` takes
-heterogeneously equal values. -/
-theorem heq_mfderiv_apply (f : M → N) {x₁ x₂ : M} (hx : x₁ = x₂)
-    {v₁ : TangentSpace I x₁} {v₂ : TangentSpace I x₂} (hv : HEq v₁ v₂) :
-    HEq (mfderiv I J f x₁ v₁) (mfderiv I J f x₂ v₂) := by
-  subst hx
-  cases hv
-  rfl
 
 end TauCeti

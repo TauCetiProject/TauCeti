@@ -5,24 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
-# Smoothness of finite-dimensional linear families of bundle sections
+# Joint regularity of finite-dimensional linear families of bundle sections
 
-Let `V` be a `𝕜`-vector bundle over `B`, let `D` be a finite-dimensional normed vector space over a
-complete nontrivially normed field `𝕜`, and let `W d` be a family of sections of `V` along
-`b : X → B` that depends `𝕜`-linearly on `d : D` at every point of `s : Set X`. If each individual
-section `W d` has `C^n` total-space lift on `s`, then expanding in `Module.finBasis 𝕜 D` and
-combining `ContMDiffOn.smul_totalSpace` with `ContMDiffOn.sum_sectionAlong` shows that
-`y ↦ ⟨b (g y), W (f y) (g y)⟩` is jointly `C^n` along any `C^n` maps `f : Y → D` and `g : Y → X`
-carrying `u` into `s`. Smoothness of `b` on `s` is not assumed separately, since it follows by
-projecting `W 0` via `Bundle.contMDiff_proj`.
+A family of sections of a `𝕜`-vector bundle `V` along a map `b : X → B` that depends `𝕜`-linearly
+on a finite-dimensional parameter space `D` at every point of `s : Set X` is jointly `C^n` in the
+parameter and base variable as soon as each individual section has `C^n` total-space lift on `s`.
+This establishes joint regularity in initial data and parameter for finite-dimensional linear
+solution spaces of geometric equations along curves — in particular Jacobi fields and their
+covariant derivatives in `TauCeti.Geometry.Manifold.Riemannian.Jacobi.Existence`. `C^n` regularity
+of `b` on `s` need not be assumed separately, as it follows from the `0`-parameter section.
 
 ## Main results
 
@@ -52,8 +50,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- If a family `W : D → ∀ x, V (b x)` of sections of `V` along `b : X → B` depends linearly on a
 finite-dimensional parameter space `D` at every point of `s` and has `C^n` total-space lift on `s`
 for each fixed `d : D`, then composing with `C^n` maps `f : Y → D` and `g : Y → X` taking `u` into
-`s` gives a `C^n` map into the total space on `u`. Smoothness of `b` on `s` follows automatically
-from `W 0`. -/
+`s` gives a `C^n` map into the total space on `u`. `C^n` regularity of `b` on `s` follows
+automatically from `W 0`. -/
 theorem contMDiffOn_totalSpaceMk_comp_of_linear
     {EX HX X EY HY Y : Type*}
     [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
@@ -94,7 +92,7 @@ theorem contMDiffOn_totalSpaceMk_comp_of_linear
 /-- If a family `W : D → ∀ x, V (b x)` of sections of `V` along `b : EX → B` depends linearly on a
 finite-dimensional parameter space `D` at every point of `s` and has `C^n` total-space lift on `s`
 for each fixed `d : D`, then `(d, x) ↦ ⟨b x, W d x⟩` is jointly `C^n` on `univ ×ˢ s`. In
-particular, for `EX = 𝕜` (or `ℝ`), this applies to families of sections along any smooth curve. -/
+particular, for `EX = 𝕜` (or `ℝ`), this applies to families of sections along any `C^n` curve. -/
 theorem contMDiffOn_totalSpaceMk_of_linear
     {EX : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX]
     {b : EX → B} {s : Set EX}

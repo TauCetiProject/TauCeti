@@ -166,61 +166,29 @@ theorem alongCurveWithin_geodesicJacobiPropagator_zero
       (geodesicInterval I M (σ 0).proj (σ 0).2) 0 =
         CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
           (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) 0 := by
-  let cov := CovariantDerivative.leviCivitaConnection I M
-  -- Every `TangentSpace I.tangent z` reduces to the model product `E × E`; `split` records that
-  -- identification explicitly so projections stay well-typed under `rw`.
-  let split (z : TangentBundle I M) (ξ : TangentSpace I.tangent z) : E × E := ξ
-  have halong {τ : ℝ → TangentBundle I M} (hτ : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent τ 0) :
-      cov.alongCurve (fun q ↦ (τ q).proj) (fun q ↦ (τ q).2) 0 =
-        (trivializationAt E (TangentSpace I) (τ 0).proj).symmL ℝ (τ 0).proj
-          ((split (τ 0) (curveVelocity I.tangent τ 0)).2 +
-            christoffelMap (Module.finBasis ℝ E)
-              (cov.isCovariantDerivativeOn
-                (s := (trivializationAt E (TangentSpace I) (τ 0).proj).baseSet))
-              (τ 0).proj
-              (trivializationAt E (TangentSpace I) (τ 0).proj (τ 0)).2
-              (split (τ 0) (curveVelocity I.tangent τ 0)).1) := by
-    let x₀ := (τ 0).proj
-    let e := trivializationAt E (TangentSpace I) x₀
-    let ξ := split (τ 0) (curveVelocity I.tangent τ 0)
-    obtain ⟨hcont, hbase, hfib⟩ := (hasMFDerivAt_totalSpace_curve_iff
-      (z := τ) (t := 0) (a := ξ.1) (b := ξ.2)).mp (hasMFDerivAt_curveVelocity hτ)
-    have hmem : ∀ᶠ r in 𝓝 (0 : ℝ), (τ r).proj ∈ e.baseSet :=
-      ((FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp hcont).preimage_mem_nhds
-        (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x₀))
-    have hsec : sectionCoord (F := E) (fun q ↦ (τ q).proj) (fun q ↦ (τ q).2) x₀ =ᶠ[𝓝 0]
-        fun r ↦ (e (τ r)).2 := by
-      filter_upwards [hmem] with r hr
-      rw [sectionCoord_apply]
-      exact e.continuousLinearMapAt_apply_of_mem ℝ hr (τ r).2
-    have hsec0 : sectionCoord (F := E) (fun q ↦ (τ q).proj) (fun q ↦ (τ q).2) x₀ 0 =
-        (e (τ 0)).2 := by
-      rw [sectionCoord_apply]
-      exact e.continuousLinearMapAt_apply_of_mem ℝ
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x₀) (τ 0).2
-    rw [CovariantDerivative.alongCurve_apply, CovariantDerivative.alongCurveInChartWithin_apply,
-      derivWithin_univ, derivWithin_univ, Function.comp_def,
-      (hfib.congr_of_eventuallyEq hsec).deriv, hbase.deriv, hsec0]
-  have hprop (z : TangentBundle I M) (ξ : TangentSpace I.tangent z) :
-      cov.alongCurveWithin (maximalGeodesic I M z.proj z.2)
-        (fun t ↦ geodesicJacobiPropagator z t ξ) (geodesicInterval I M z.proj z.2) 0 =
-          (trivializationAt E (TangentSpace I) z.proj).symmL ℝ z.proj
-            ((split z ξ).2 +
-              christoffelMap (Module.finBasis ℝ E)
-                (cov.isCovariantDerivativeOn
-                  (s := (trivializationAt E (TangentSpace I) z.proj).baseSet))
-                z.proj (trivializationAt E (TangentSpace I) z.proj z).2 (split z ξ).1) := by
-    obtain ⟨τ, rfl, hτ, rfl⟩ :=
-      exists_contMDiffAt_curveVelocity_eq (I := I.tangent) (n := 2) (by norm_num) z ξ 0
-    rw [← halong (hτ.mdifferentiableAt (by norm_num)),
-      ← alongCurveWithin_variationField_maximalGeodesic_zero hτ]
+  obtain ⟨τ, hτ0, hτ, hvel⟩ := exists_contMDiffAt_curveVelocity_eq (I := I.tangent)
+    (n := 2) (by norm_num) (σ 0) (curveVelocity I.tangent σ 0) 0
+  have hτd : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent τ 0 := hτ.mdifferentiableAt (by norm_num)
+  have hcongr :
+      CovariantDerivative.alongCurveWithin (CovariantDerivative.leviCivitaConnection I M)
+          (maximalGeodesic I M (τ 0).proj (τ 0).2)
+          (fun t ↦ geodesicJacobiPropagator (τ 0) t (curveVelocity I.tangent τ 0))
+          (geodesicInterval I M (τ 0).proj (τ 0).2) 0 =
+        CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
+          (fun q ↦ (τ q).proj) (fun q ↦ (τ q).2) 0 := by
+    rw [← alongCurveWithin_variationField_maximalGeodesic_zero hτ]
     apply CovariantDerivative.alongCurveWithin_congr
     · filter_upwards [self_mem_nhdsWithin] with t ht
-      exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator
-        (hτ.mdifferentiableAt (by norm_num)) ht).symm
+      exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator hτd ht).symm
     · exact (variationField_maximalGeodesic_eq_geodesicJacobiPropagator
-        (hτ.mdifferentiableAt (by norm_num)) zero_mem_geodesicInterval).symm
-  exact (hprop (σ 0) (curveVelocity I.tangent σ 0)).trans (halong hσ).symm
+        hτd zero_mem_geodesicInterval).symm
+  -- Every `TangentSpace I _` reduces to `E`, so rewriting along `hτ0` and `hvel` preserves typing.
+  rw [hvel, hτ0] at hcongr
+  have hlift : curveVelocityLift I.tangent τ 0 = curveVelocityLift I.tangent σ 0 := by
+    rw [curveVelocityLift_apply, curveVelocityLift_apply]
+    exact TotalSpace.ext hτ0 (heq_of_eq hvel)
+  exact hcongr.trans (eq_of_heq (CovariantDerivative.alongCurve_heq_of_curveVelocityLift_eq
+    (CovariantDerivative.leviCivitaConnection I M) hτd hσ hlift))
 
 /-- A compact portion of a maximal geodesic has a common open time domain for all nearby
 initial states, on which Jacobi propagation is smooth for every infinitesimal initial state.

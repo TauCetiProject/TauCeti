@@ -187,15 +187,25 @@ theorem IsJacobiFieldOn.exists_geodesicVariation_of_isCompact_of_subset
     -- to the same model space `E` as `TangentSpace I (maximalGeodesic I M p v (φ t))`.
     let X : ∀ t, TangentSpace I (γ t) := fun t ↦
       tangentSpaceCast I (maximalGeodesic I M p v (φ t)) (γ t) (variationField I F₀ (φ t))
-    obtain ⟨hXa, hDXa⟩ := Prod.mk.inj
-      (hW₀.prodMk_alongCurveWithin_comp_sub_const_eq_of_eqOn_of_heq
-        hJ.uniqueDiffOn hmaps hcurve_max ha (heq_of_eq hW₀_0) (heq_of_eq hDW₀_0))
+    have h0 : γ a = maximalGeodesic I M p v 0 := by
+      simpa only [φ, sub_self] using hcurve_max ha
+    have hXa : X a = J a := by
+      simp only [X, φ]
+      rw [congrArg (fun x ↦ tangentSpaceCast I (maximalGeodesic I M p v x) (γ a)
+        (variationField I F₀ x)) (sub_self a)]
+      exact eq_of_heq ((TauCeti.heq_tangentSpaceCast h0.symm _).trans (heq_of_eq hW₀_0))
+    have hDXa : alongCurveWithin cov γ X s a = alongCurveWithin cov γ J s a := by
+      rw [hW₀.alongCurveWithin_comp_sub_const_of_eqOn a (hJ.uniqueDiffOn a ha) hmaps hcurve_max ha,
+        congrArg (fun x ↦ tangentSpaceCast I (maximalGeodesic I M p v x) (γ a)
+          (alongCurveWithin cov (maximalGeodesic I M p v) (variationField I F₀)
+            (geodesicInterval I M p v) x)) (sub_self a)]
+      exact eq_of_heq ((TauCeti.heq_tangentSpaceCast h0.symm _).trans (heq_of_eq hDW₀_0))
     have hXJ : ∀ t ∈ s, X t = J t := fun _ ht ↦
       (hW₀.comp_sub_const_of_eqOn a hJ.uniqueDiffOn hmaps
         hcurve_max).eq_of_eq_of_alongCurveWithin_eq hJ hs ha hXa hDXa ht
     refine ⟨F, U, V, hU, hV, h0U, hKV, hF_smooth, hF_geod, hF0_eq, fun t ht ↦ ?_⟩
     have hvar : variationField I F t = variationField I F₀ (φ t) := by
-      rw [variationField_def, variationField_def]
+      simp only [variationField_def, F, φ]
     rw [← hXJ t ht]
     exact TotalSpace.ext (hF0_eq ht)
       ((heq_of_eq hvar).trans (TauCeti.heq_tangentSpaceCast (hcurve_max ht).symm _).symm)

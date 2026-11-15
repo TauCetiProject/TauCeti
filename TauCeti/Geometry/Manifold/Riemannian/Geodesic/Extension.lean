@@ -30,16 +30,18 @@ interval containing `[a, b]`. This gives, for instance, the endpoint velocities 
 is only known to be a geodesic in the interior of its parameter interval, such as a
 length-minimizing curve whose endpoints lie on the boundary of a domain.
 
-For a smooth metric, applying this two-sided extension to the closed subinterval between any two
-parameters identifies every geodesic on a preconnected parameter set — open, closed, half-open, or
-unbounded — with a time-translated restriction of the maximal geodesic determined by its value and
-velocity at any chosen parameter. In particular every geodesic on a preconnected parameter set
-agrees there with a geodesic defined on an open preconnected superset, and near any closed subset
-of an open preconnected geodesic domain it also agrees with a curve smooth on the whole line.
+Applying this two-sided extension to the closed subinterval between any two parameters identifies
+every geodesic on a preconnected parameter set — open, closed, half-open, or unbounded — with a
+time-translated restriction of the maximal integral curve of the geodesic spray (and, for a smooth
+metric, of the maximal geodesic) determined by its value and velocity at any chosen parameter. In
+particular, already for a `C²` metric on a `C³` Hausdorff manifold without boundary, every geodesic
+on a preconnected parameter set agrees there with a geodesic defined on an open preconnected
+superset. For a smooth metric, near any closed subset of an open preconnected geodesic domain it
+also agrees with a curve smooth on the whole line.
 
-The finite-endpoint geodesic extensions need a `C²` metric on a `C³` manifold without boundary.
-The maximal-geodesic identifications and globally smooth curve extensions require a smooth metric
-and manifold without boundary. No completeness assumption is needed.
+The finite-endpoint and open-superset geodesic extensions need a `C²` metric on a `C³` Hausdorff
+manifold without boundary. The maximal-geodesic identifications and globally smooth curve extensions
+require a smooth metric and manifold without boundary. No completeness assumption is needed.
 
 ## Main results
 
@@ -260,22 +262,18 @@ theorem exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc (hγ : IsGeodesicCurveO
     · exact hδ₁a
     · exact heq₁ ⟨hat, htb⟩
 
-end IsGeodesicCurveOn
-
-section Maximal
-
-variable [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
 /-- Extending the closed subinterval between any two parameters of a preconnected geodesic
-identifies it with the maximal geodesic started at the first parameter. -/
-private theorem IsGeodesicCurveOn.sub_mem_and_maximalGeodesic_sub_eq_of_isPreconnected
+identifies it with the base projection of the maximal integral curve of the geodesic spray started
+at the velocity lift at the first parameter. -/
+private theorem sub_mem_and_maximalIntegralCurve_sub_eq_of_isPreconnected
     {s : Set ℝ} {τ t : ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
     (hτ : τ ∈ s) (ht : t ∈ s) :
-    t - τ ∈ geodesicInterval I M (γ τ) (curveVelocityWithin I γ s τ) ∧
-      maximalGeodesic I M (γ τ) (curveVelocityWithin I γ s τ) (t - τ) = γ t := by
+    t - τ ∈ maximalIntegralCurveInterval (geodesicSpray I M) (curveVelocityLiftWithin I γ s τ) ∧
+      (maximalIntegralCurve (geodesicSpray I M) (curveVelocityLiftWithin I γ s τ) (t - τ)).proj =
+        γ t := by
   rcases eq_or_ne t τ with rfl | hne
-  · simp
+  · rw [sub_self, maximalIntegralCurve_zero, curveVelocityLiftWithin_proj]
+    exact ⟨zero_mem_maximalIntegralCurveInterval contMDiff_one_geodesicSpray.contMDiffAt, rfl⟩
   have hlr : min τ t < max τ t := min_lt_max.2 hne.symm
   have hmin : min τ t ∈ s := min_rec' (· ∈ s) hτ ht
   have hmax : max τ t ∈ s := max_rec' (· ∈ s) hτ ht
@@ -305,12 +303,74 @@ private theorem IsGeodesicCurveOn.sub_mem_and_maximalGeodesic_sub_eq_of_isPrecon
       rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply,
         curveVelocityWithin_subset hsub (uniqueDiffOn_Icc hlr τ hτ_Icc) (hγ.mdifferentiableOn τ hτ)]
     exact h1.trans (h2.trans h3)
-  rw [curveVelocityLift_apply, curveVelocityLiftWithin_apply] at hlift
-  have hdom := congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.2) hlift
-  have hval := congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.2 (t - τ)) hlift
-  dsimp only at hdom hval
-  exact ⟨hdom ▸ hδ.sub_mem_geodesicInterval hτ_Ioo ht_Ioo,
-    hval.symm.trans ((hδ.maximalGeodesic_sub_eq hτ_Ioo ht_Ioo).trans (heq ht_Icc))⟩
+  have hshift := hδ.isGeodesicCurveOnFrom_comp_add_const hτ_Ioo
+  let z := curveVelocityLiftWithin I (δ ∘ fun u : ℝ ↦ u + τ) (Ioo (c - τ) (d - τ))
+  have hz : IsMIntegralCurveOn z (geodesicSpray I M) (Ioo (c - τ) (d - τ)) :=
+    (isMIntegralCurveOn_curveVelocityLiftWithin_iff isOpen_Ioo.uniqueDiffOn
+      hshift.isGeodesicCurveOn.contMDiffOn).2 hshift.isGeodesicCurveOn
+  have hz0 : z 0 = curveVelocityLiftWithin I γ s τ :=
+    ((curveVelocityLiftWithin_apply _ _ 0).trans
+      (hshift.initial_eq.trans (curveVelocityLift_apply δ τ).symm)).trans hlift
+  have ht_shift : t - τ ∈ Ioo (c - τ) (d - τ) :=
+    ⟨sub_lt_sub_right ht_Ioo.1 τ, sub_lt_sub_right ht_Ioo.2 τ⟩
+  refine ⟨hz.subset_maximalIntegralCurveInterval hshift.zero_mem hz0 ht_shift, ?_⟩
+  have heq_int := hz.eqOn_maximalIntegralCurve contMDiff_one_geodesicSpray hshift.zero_mem hz0
+    ht_shift
+  have hproj : (z (t - τ)).proj = γ t := by
+    rw [curveVelocityLiftWithin_proj, Function.comp_apply, sub_add_cancel]
+    exact heq ht_Icc
+  exact (congrArg TotalSpace.proj heq_int).trans hproj
+
+/-- **Extension of a geodesic from any preconnected parameter set to an open interval.** Every
+geodesic on a preconnected parameter set agrees on that set with a geodesic defined on an open
+preconnected superset. -/
+theorem exists_isOpen_isPreconnected_superset
+    {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) :
+    ∃ U : Set ℝ, IsOpen U ∧ IsPreconnected U ∧ s ⊆ U ∧
+      ∃ δ : ℝ → M, IsGeodesicCurveOn I δ U ∧ EqOn δ γ s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨τ, hτ⟩
+  · exact ⟨∅, isOpen_empty, isPreconnected_empty, Subset.rfl, γ, hγ, eqOn_refl γ ∅⟩
+  let z₀ := curveVelocityLiftWithin I γ s τ
+  let I₀ := maximalIntegralCurveInterval (geodesicSpray I M) z₀
+  let U : Set ℝ := (fun t : ℝ ↦ 1 * t + (-τ)) ⁻¹' I₀
+  have hU_open : IsOpen U := isOpen_maximalIntegralCurveInterval.preimage (by fun_prop)
+  have hU_conn : IsPreconnected U := by
+    have himg : U = (fun r : ℝ ↦ r + τ) '' I₀ := by
+      ext t
+      simp [U]
+    rw [himg]
+    exact isPreconnected_maximalIntegralCurveInterval.image _ (by fun_prop)
+  have hgeo₀ : IsGeodesicCurveOn I
+      (fun r ↦ (maximalIntegralCurve (geodesicSpray I M) z₀ r).proj) I₀ :=
+    isGeodesicCurveOn_proj_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
+      (isMIntegralCurveOn_maximalIntegralCurve contMDiff_one_geodesicSpray)
+  refine ⟨U, hU_open, hU_conn, fun t ht ↦ ?_,
+    fun t ↦ (maximalIntegralCurve (geodesicSpray I M) z₀ (1 * t + (-τ))).proj,
+    hgeo₀.comp_affine 1 (-τ) hU_open.uniqueDiffOn (fun _ hr ↦ hr),
+    fun t ht ↦ ?_⟩
+  · simpa only [U, mem_preimage, one_mul, ← sub_eq_add_neg] using
+      (hγ.sub_mem_and_maximalIntegralCurve_sub_eq_of_isPreconnected hs hτ ht).1
+  · simpa only [one_mul, ← sub_eq_add_neg] using
+      (hγ.sub_mem_and_maximalIntegralCurve_sub_eq_of_isPreconnected hs hτ ht).2
+
+end IsGeodesicCurveOn
+
+section Maximal
+
+variable [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- Extending the closed subinterval between any two parameters of a preconnected geodesic
+identifies it with the maximal geodesic started at the first parameter. -/
+private theorem IsGeodesicCurveOn.sub_mem_and_maximalGeodesic_sub_eq_of_isPreconnected
+    {s : Set ℝ} {τ t : ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    (hτ : τ ∈ s) (ht : t ∈ s) :
+    t - τ ∈ geodesicInterval I M (γ τ) (curveVelocityWithin I γ s τ) ∧
+      maximalGeodesic I M (γ τ) (curveVelocityWithin I γ s τ) (t - τ) = γ t := by
+  have h := hγ.sub_mem_and_maximalIntegralCurve_sub_eq_of_isPreconnected hs hτ ht
+  rw [curveVelocityLiftWithin_apply, maximalIntegralCurveInterval_geodesicSpray,
+    ← maximalGeodesic_def] at h
+  exact h
 
 /-- For a geodesic `γ` on any preconnected parameter set `s` and `τ, t ∈ s`, the shifted time
 `t - τ` lies in the maximal geodesic interval for the initial data `(γ τ, γ'(τ))`. -/
@@ -375,34 +435,6 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic_of_isPreconnected
   refine hval.symm.trans ?_
   simpa only [sub_zero] using
     hγ.isGeodesicCurveOn.maximalGeodesic_sub_eq_of_isPreconnected hs hγ.zero_mem ht
-
-/-- **Extension of a geodesic from any preconnected parameter set to an open interval.** Every
-geodesic on a preconnected parameter set agrees on that set with a geodesic defined on an open
-preconnected superset. -/
-theorem IsGeodesicCurveOn.exists_isOpen_isPreconnected_superset
-    {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) :
-    ∃ U : Set ℝ, IsOpen U ∧ IsPreconnected U ∧ s ⊆ U ∧
-      ∃ δ : ℝ → M, IsGeodesicCurveOn I δ U ∧ EqOn δ γ s := by
-  rcases s.eq_empty_or_nonempty with rfl | ⟨τ, hτ⟩
-  · exact ⟨∅, isOpen_empty, isPreconnected_empty, Subset.rfl, γ, hγ, eqOn_refl γ ∅⟩
-  let I₀ := geodesicInterval I M (γ τ) (curveVelocityWithin I γ s τ)
-  let U : Set ℝ := (fun t : ℝ ↦ 1 * t + (-τ)) ⁻¹' I₀
-  have hU_open : IsOpen U := isOpen_geodesicInterval.preimage (by fun_prop)
-  have hU_conn : IsPreconnected U := by
-    have himg : U = (fun r : ℝ ↦ r + τ) '' I₀ := by
-      ext t
-      simp [U]
-    rw [himg]
-    exact isPreconnected_geodesicInterval.image _ (by fun_prop)
-  refine ⟨U, hU_open, hU_conn, fun t ht ↦ ?_,
-    fun t ↦ maximalGeodesic I M (γ τ) (curveVelocityWithin I γ s τ) (1 * t + (-τ)),
-    (isGeodesicCurveOnFrom_maximalGeodesic _ _).isGeodesicCurveOn.comp_affine 1 (-τ)
-      hU_open.uniqueDiffOn (fun _ hr ↦ hr),
-    fun t ht ↦ ?_⟩
-  · simpa only [U, mem_preimage, one_mul, ← sub_eq_add_neg] using
-      hγ.sub_mem_geodesicInterval_of_isPreconnected hs hτ ht
-  · simpa only [one_mul, ← sub_eq_add_neg] using
-      hγ.maximalGeodesic_sub_eq_of_isPreconnected hs hτ ht
 
 end Maximal
 

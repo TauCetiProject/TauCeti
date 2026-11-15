@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.IsLocalHomeomorph
 import TauCeti.Topology.VectorBundle.Riemannian.Basic
@@ -33,12 +34,18 @@ the ball, the map is an injective local diffeomorphism, and for open `W` its ima
 
 ## Main results
 
-* `TauCeti.Manifold.contMDiffOn_prodMk_proj_riemannianExp`: the map `(x, v) ↦ (x, exp_x v)` is
-  smooth where the exponential map is defined.
+* `TauCeti.Manifold.contMDiffAt_riemannianExp_tangentBundle` and
+  `TauCeti.Manifold.contMDiffOn_prodMk_proj_riemannianExp`: `(x, v) ↦ exp_x v` and
+  `(x, v) ↦ (x, exp_x v)` are smooth where the exponential map is defined.
 * `TauCeti.Manifold.mfderiv_prodMk_proj_riemannianExp_zeroSection_apply`,
   `TauCeti.Manifold.mfderiv_riemannianExp_tangentBundle_zeroSection_apply`: the differentials of
   `(x, v) ↦ (x, exp_x v)` and `(x, v) ↦ exp_x v` at a zero vector are `(u, v) ↦ (u, u + v)` and
   `(u, v) ↦ u + v`.
+* `TauCeti.Manifold.mfderiv_riemannianExp_tangentBundle_zeroSection_curveVelocity`,
+  `TauCeti.Manifold.mfderiv_riemannianExp_tangentBundle_curveVelocity_zero`, and
+  `TauCeti.Manifold.variationField_riemannianExp_smul`: evaluating the differential of
+  `(x, v) ↦ exp_x v` along ray-rescaled tangent-bundle curves `q ↦ ⟨(σ q).proj, t • (σ q).2⟩`
+  (including at `t = 0` and along curves through a zero vector).
 * `TauCeti.Manifold.isLocalDiffeomorphAt_prodMk_proj_riemannianExp_zeroSection`: the
   variable-base inverse function theorem, `(x, v) ↦ (x, exp_x v)` is a local diffeomorphism at
   every zero vector.
@@ -77,6 +84,15 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The bundle exponential map `(x, v) ↦ exp_x v` is smooth at every tangent vector in its natural
+domain. -/
+theorem contMDiffAt_riemannianExp_tangentBundle {z : TangentBundle I M}
+    (hz : z.2 ∈ expDomain I M z.proj) :
+    ContMDiffAt I.tangent I ∞
+      (fun w : TangentBundle I M ↦ riemannianExp I M w.proj w.2) z :=
+  (contMDiffOn_riemannianExp_tangentBundle z hz).contMDiffAt
+    (isOpen_setOfPred_mem_expDomain.mem_nhds hz)
 
 /-- The map `(x, v) ↦ (x, exp_x v)` is smooth on the open subset of the tangent bundle where the
 exponential map is naturally defined. -/
@@ -144,8 +160,142 @@ theorem mfderiv_riemannianExp_tangentBundle_zeroSection_apply
       (by simp)
   have hcomp := mfderiv_comp_apply (zeroSection E (TangentSpace I) p)
     mdifferentiableAt_snd hFd ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) p).symm (u, w))
+  -- `TangentSpace I (riemannianExp I M p 0)` and `TangentSpace I p` both reduce to `E`.
   rw [mfderiv_prodMk_proj_riemannianExp_zeroSection_apply, mfderiv_snd] at hcomp
   exact hcomp
+
+/-- **Variable-base exponential formula along a curve through a zero vector.** For any curve
+`σ : ℝ → TM` differentiable at `0` through `0_p`, differentiating `(x, v) ↦ exp_x v` along the
+ray-rescaled path `q ↦ ⟨(σ q).proj, t • (σ q).2⟩` gives the affine combination
+`∂_q (σ q).proj (0) + t • D_q (σ q).2 (0)` for all `t : ℝ`. -/
+theorem mfderiv_riemannianExp_tangentBundle_zeroSection_curveVelocity
+    {p : M} {σ : ℝ → TangentBundle I M}
+    (hσ : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ 0)
+    (hσ0 : σ 0 = TotalSpace.mk' E p 0) (t : ℝ) :
+    mfderiv I.tangent I (fun w : TangentBundle I M ↦ riemannianExp I M w.proj w.2)
+        (zeroSection E (TangentSpace I) p)
+        (curveVelocity I.tangent
+          (fun q ↦ TotalSpace.mk' E (σ q).proj (t • (σ q).2)) 0) =
+      curveVelocity I (fun q ↦ (σ q).proj) 0 +
+         t • CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
+           (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) 0 := by
+  obtain ⟨hp, hv⟩ := TotalSpace.ext_iff.mp hσ0.symm
+  subst hp
+  let σ_t : ℝ → TangentBundle I M := fun q ↦ TotalSpace.mk' E (σ q).proj (t • (σ q).2)
+  have hσ_t : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ_t 0 :=
+    (((contMDiffAt_const (c := t)).smul_totalSpace contMDiffAt_id).mdifferentiableAt
+      (n := 1) one_ne_zero).comp 0 hσ
+  -- Both `TangentSpace I.tangent (σ_t 0)` and `TangentSpace I.tangent (zeroSection E _ _)` reduce
+  -- to `E × E`; split the velocity through `zeroSectionTangentEquiv` to apply the zero-section
+  -- differential formula.
+  let e := TauCeti.Bundle.zeroSectionTangentEquiv (I := I) (F := E) (V := TangentSpace I) (σ 0).proj
+  let ξ : TangentSpace I.tangent (zeroSection E (TangentSpace I) (σ 0).proj) :=
+    curveVelocity I.tangent σ_t 0
+  have hdiff : mfderiv I.tangent I (fun w : TangentBundle I M ↦ riemannianExp I M w.proj w.2)
+      (zeroSection E (TangentSpace I) (σ 0).proj) ξ = (e ξ).1 + (e ξ).2 := by
+    simpa only [e, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply] using
+      mfderiv_riemannianExp_tangentBundle_zeroSection_apply (σ 0).proj (e ξ).1 (e ξ).2
+  have hfst : (e ξ).1 = curveVelocity I (fun q ↦ (σ q).proj) 0 := by
+    have hcomp := mfderiv_comp_apply 0
+      ((Bundle.contMDiff_proj (TangentSpace I) (σ_t 0)).mdifferentiableAt one_ne_zero) hσ_t (1 : ℝ)
+    rw [Bundle.mfderiv_proj] at hcomp
+    dsimp only [e]
+    rw [TauCeti.Bundle.zeroSectionTangentEquiv_apply, curveVelocity_apply]
+    dsimp only [ξ]
+    rw [curveVelocity_apply]
+    exact hcomp.symm
+  have hsnd : (e ξ).2 =
+      t • CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
+        (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) 0 := by
+    have hD := CovariantDerivative.alongCurve_eq_symmL_curveVelocity
+      (CovariantDerivative.leviCivitaConnection I M) hσ_t
+    have hD' : CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
+        (fun q ↦ (σ_t q).proj) (fun q ↦ (σ_t q).2) 0 =
+        (trivializationAt E (TangentSpace I) (σ 0).proj).symmL ℝ (σ 0).proj ξ.2 := by
+      refine hD.trans (congrArg
+        ((trivializationAt E (TangentSpace I) (σ 0).proj).symmL ℝ (σ 0).proj) ?_)
+      have hfib0 : ((σ_t 0).2 : E) = (0 : E) :=
+        (congrArg (t • ·) (eq_of_heq hv).symm).trans (smul_zero t)
+      have hzero : christoffelMap (Module.finBasis ℝ E)
+          ((CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOn
+            (s := (trivializationAt E (TangentSpace I) (σ_t 0).proj).baseSet))
+          (σ_t 0).proj (σ_t 0).2 = 0 :=
+        (congrArg _ hfib0).trans (map_zero _)
+      exact (congrArg (ξ.2 + ·)
+        ((DFunLike.congr_fun hzero _).trans (zero_apply _))).trans (add_zero _)
+    rw [← CovariantDerivative.alongCurve_const_smul, hD']
+    exact congrArg Prod.snd (TauCeti.Bundle.zeroSectionTangentEquiv_apply (σ 0).proj ξ)
+  exact hdiff.trans (congrArg₂ (· + ·) hfst hsnd)
+
+/-- At `t = 0`, the variable-base differential of `exp` along a ray-rescaled curve evaluates to the
+base-point velocity of `σ`, without any differentiability assumption on `σ`. -/
+theorem mfderiv_riemannianExp_tangentBundle_curveVelocity_zero
+    (σ : ℝ → TangentBundle I M) :
+    mfderiv I.tangent I (fun w : TangentBundle I M ↦ riemannianExp I M w.proj w.2)
+        (TotalSpace.mk' E (σ 0).proj ((0 : ℝ) • (σ 0).2))
+        (curveVelocity I.tangent
+          (fun q ↦ TotalSpace.mk' E (σ q).proj ((0 : ℝ) • (σ q).2)) 0) =
+      curveVelocity I (fun q ↦ (σ q).proj) 0 := by
+  set c : ℝ → M := fun q ↦ (σ q).proj
+  set σ₀ : ℝ → TangentBundle I M := fun q ↦ TotalSpace.mk' E (σ q).proj ((0 : ℝ) • (σ q).2)
+  set expTM : TangentBundle I M → M := fun w ↦ riemannianExp I M w.proj w.2
+  have hζ : σ₀ = zeroSection E (TangentSpace I) ∘ c := by
+    funext q
+    simp [σ₀, c, zeroSection]
+  by_cases hc : MDifferentiableAt 𝓘(ℝ, ℝ) I c 0
+  · have hσ₀ : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ₀ 0 :=
+      hζ ▸ (((contMDiff_zeroSection ℝ (TangentSpace I) :
+        ContMDiff I I.tangent ∞ _).contMDiffAt).mdifferentiableAt (by simp)).comp 0 hc
+    have hexp : MDifferentiableAt I.tangent I expTM (σ₀ 0) :=
+      (contMDiffAt_riemannianExp_tangentBundle
+        (by simpa only [σ₀, zero_smul] using zero_mem_expDomain (σ 0).proj)).mdifferentiableAt
+        (by simp)
+    have h1 : mfderiv I.tangent I expTM (σ₀ 0) (curveVelocity I.tangent σ₀ 0) =
+        curveVelocity I (expTM ∘ σ₀) 0 := by
+      rw [curveVelocity_apply, curveVelocity_apply]
+      exact (mfderiv_comp_apply 0 hexp hσ₀ (1 : ℝ)).symm
+    have h0 : expTM ∘ σ₀ = c := by
+      funext q
+      simp [expTM, σ₀, c, zero_smul]
+    -- `TangentSpace I (expTM (σ₀ 0))` and `TangentSpace I (c 0)` both reduce to `E`.
+    exact h1.trans (Filter.EventuallyEq.of_eq h0).curveVelocity_eq
+  · have hσ₀ : ¬ MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ₀ 0 := fun h ↦ by
+      have hc_eq : c = TotalSpace.proj ∘ σ₀ := rfl
+      exact hc (hc_eq ▸ (((Bundle.contMDiff_proj (TangentSpace I) :
+        ContMDiff I.tangent I ∞ _).contMDiffAt).mdifferentiableAt (by simp)).comp 0 h)
+    have hv₀ : curveVelocity I.tangent σ₀ 0 = 0 := by
+      rw [curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hσ₀]
+      exact zero_apply _
+    have hvc : curveVelocity I c 0 = 0 := by
+      rw [curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hc]
+      exact zero_apply _
+    -- Both velocities vanish; `TangentSpace I (expTM (σ₀ 0))` and `TangentSpace I (c 0)` both
+    -- reduce to the model space `E` with the same `Zero` instance.
+    rw [hv₀]
+    exact (map_zero _).trans hvc.symm
+
+/-- **Variation field of a variable-base exponential family.** Along a curve `σ : ℝ → TM`
+differentiable at `0`, the variation field of `(q, t) ↦ exp_{(σ q).proj} (t • (σ q).2)` at a time
+`t` in the maximal geodesic interval equals the differential of `(x, v) ↦ exp_x v` applied to the
+velocity of the ray-rescaled path `q ↦ ⟨(σ q).proj, t • (σ q).2⟩`. -/
+theorem variationField_riemannianExp_smul
+    {σ : ℝ → TangentBundle I M} (hσ : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ 0)
+    {t : ℝ} (ht : t ∈ geodesicInterval I M (σ 0).proj (σ 0).2) :
+    variationField I (fun q r ↦ riemannianExp I M (σ q).proj (r • (σ q).2)) t =
+      mfderiv I.tangent I (fun w : TangentBundle I M ↦ riemannianExp I M w.proj w.2)
+        (TotalSpace.mk' E (σ 0).proj (t • (σ 0).2))
+        (curveVelocity I.tangent
+          (fun q ↦ TotalSpace.mk' E (σ q).proj (t • (σ q).2)) 0) := by
+  let σ_t : ℝ → TangentBundle I M := fun q ↦ TotalSpace.mk' E (σ q).proj (t • (σ q).2)
+  have hσ_t : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ_t 0 :=
+    (((contMDiffAt_const (c := t)).smul_totalSpace contMDiffAt_id).mdifferentiableAt
+      (n := 1) one_ne_zero).comp 0 hσ
+  have hexp : MDifferentiableAt I.tangent I
+      (fun w : TangentBundle I M ↦ riemannianExp I M w.proj w.2) (σ_t 0) :=
+    (contMDiffAt_riemannianExp_tangentBundle
+      (mem_geodesicInterval_iff_smul_mem_expDomain.mp ht)).mdifferentiableAt (by simp)
+  rw [variationField_apply, curveVelocity_apply, curveVelocity_apply]
+  exact mfderiv_comp_apply 0 hexp hσ_t (1 : ℝ)
 
 /-- **The variable-base inverse function theorem.** The map `(x, v) ↦ (x, exp_x v)` from the
 tangent bundle to `M × M` is a local diffeomorphism at every zero vector. -/
