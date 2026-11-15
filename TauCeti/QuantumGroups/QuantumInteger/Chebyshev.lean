@@ -137,10 +137,12 @@ theorem qInt_neg (δ : R) (n : ℕ) : qInt R (-δ) n = (-1) ^ (n + 1) * qInt R �
     ring
 
 /-- Vanishing of a quantum integer is invariant under negating the loop parameter. -/
+@[simp]
 theorem qInt_neg_eq_zero_iff {δ : R} {n : ℕ} : qInt R (-δ) n = 0 ↔ qInt R δ n = 0 := by
   rw [qInt_neg, (isUnit_one.neg.pow (n + 1)).mul_right_eq_zero]
 
 /-- Invertibility of a quantum integer is invariant under negating the loop parameter. -/
+@[simp]
 theorem isUnit_qInt_neg_iff {δ : R} {n : ℕ} : IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
   rw [qInt_neg, IsUnit.mul_iff, and_iff_right (isUnit_one.neg.pow (n + 1))]
 

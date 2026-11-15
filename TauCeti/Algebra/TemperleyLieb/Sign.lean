@@ -144,8 +144,8 @@ theorem eq_neg_self_of_map_e_two {δ : R}
   exact h
 
 /-- Any `R`-algebra homomorphism `TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2` fixing the
-two-strand generator forces `2 * δ = 0`. In particular, when `2 * δ ≠ 0`, negating the generators
-is necessary to map `TemperleyLieb R δ n` to `TemperleyLieb R (-δ) n`. -/
+two-strand generator forces `2 * δ = 0`. In particular, when `2 * δ ≠ 0`, no `R`-algebra
+homomorphism `TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2` fixes the two-strand generator. -/
 theorem two_mul_eq_zero_of_algHom_e_two {δ : R}
     (F : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R (-δ) 2)
     (i : Fin (2 - 1)) (he : F (e δ i) = e (-δ) i) : 2 * δ = 0 := by
@@ -328,7 +328,8 @@ theorem map_signEquiv {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     (x : TemperleyLieb R δ n) :
     tr' n (signEquiv δ n x) = (-1) ^ n * tr n x := by
   have heq := LinearMap.congr_fun (congrFun (htr'.unique htr.signPushforward) n) (signEquiv δ n x)
-  simpa using heq
+  simpa only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+    AlgEquiv.symm_apply_apply, smul_eq_mul] using heq
 
 /-- **Sign transformation of Markov traces** along the inverse sign isomorphism. -/
 theorem map_signEquiv_symm {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
@@ -338,7 +339,8 @@ theorem map_signEquiv_symm {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     tr n ((signEquiv δ n).symm x) = (-1) ^ n * tr' n x := by
   have heq := LinearMap.congr_fun (congrFun (htr.unique htr'.signPullback) n)
     ((signEquiv δ n).symm x)
-  simpa using heq
+  simpa only [LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+    AlgEquiv.apply_symm_apply, smul_eq_mul] using heq
 
 /-- **Invariance of the normalized Markov trace** under the sign isomorphism: scaling the
 unnormalized trace on `n` strands by `Ring.inverse (δ ^ n)` cancels the `(-1) ^ n` sign factor,
