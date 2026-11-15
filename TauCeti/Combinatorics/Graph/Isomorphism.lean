@@ -15,8 +15,9 @@ An isomorphism between Mathlib multigraphs consists of equivalences between thei
 and edge types which preserve the link relation. Edge identities are part of the data, so this
 notion distinguishes parallel edges and retains loops.
 
-This file supplies identity, inverse, composition, the groupoid laws, and transport of ambient
-vertex and edge sets for multigraph isomorphisms.
+This file supplies identity, inverse, composition, the groupoid laws, transport of ambient
+vertex and edge sets, and preservation of incidence, loops and adjacency for multigraph
+isomorphisms.
 
 ## Main definitions
 
@@ -223,6 +224,21 @@ theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
       left_inv := fun e ↦ by simp
       right_inv := fun e ↦ by simp }
 
+/-- Transport preserves the cardinality of a set of actual edges. -/
+@[simp]
+theorem ncard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
+    (f.mapEdgeSet F).ncard = F.ncard := by
+  rw [Set.ncard_def, Set.ncard_def, f.encard_mapEdgeSet hF]
+
+/-- Edge-set transport commutes with set difference. -/
+@[simp]
+theorem mapEdgeSet_diff (f : Iso G H) (F F' : Set β) :
+    f.mapEdgeSet (F \ F') = f.mapEdgeSet F \ f.mapEdgeSet F' := by
+  ext e
+  simp only [mapEdgeSet, mem_sdiff, mem_ofPred_eq]
+  exact ⟨fun ⟨he, h, h'⟩ ↦ ⟨⟨he, h⟩, fun ⟨_, h''⟩ ↦ h' h''⟩,
+    fun ⟨⟨he, h⟩, h'⟩ ↦ ⟨he, h, fun h'' ↦ h' ⟨he, h''⟩⟩⟩
+
 /-- Transporting a vertex set along the identity isomorphism intersects it with the actual
 vertex set. -/
 @[simp]
@@ -360,6 +376,20 @@ theorem map_inc_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x (f.vertexEquiv.symm ⟨y, hy.right_mem⟩)).1 ?_⟩,
     fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x ⟨y, hy.right_mem⟩).2 hy⟩⟩
   simpa using hy
+
+/-- A graph isomorphism preserves and reflects loops at actual vertices. -/
+@[simp]
+theorem map_isLoopAt_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
+    H.IsLoopAt (f.edgeEquiv e) (f.vertexEquiv x) ↔ G.IsLoopAt e x :=
+  f.map_isLink_iff e x x
+
+/-- A graph isomorphism preserves and reflects adjacency between actual vertices. -/
+@[simp]
+theorem map_adj_iff (f : Iso G H) (x y : G.vertexSet) :
+    H.Adj (f.vertexEquiv x) (f.vertexEquiv y) ↔ G.Adj x y := by
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨_, (f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) x y).1 ?_⟩,
+    fun ⟨e, he⟩ ↦ ⟨_, f.map_isLink he⟩⟩
+  simpa using he
 
 end Iso
 
