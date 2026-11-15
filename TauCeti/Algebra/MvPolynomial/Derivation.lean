@@ -59,10 +59,9 @@ def mvMapCoeffs : Derivation R (MvPolynomial σ A) (MvPolynomial σ A) where
     rw [coeff_addMonoidAlgebraMap, coeff_smul, coeff_smul, coeff_addMonoidAlgebraMap]
     exact d.map_smul r _
   map_one_eq_zero' := by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk]
-    rw [← C_1, C_apply, ← single_eq_monomial, AddMonoidAlgebra.map_single,
-      LinearMap.toAddMonoidHom_coe, Derivation.coeFn_coe, map_one_eq_zero, single_eq_monomial,
-      monomial_zero]
+    classical
+    ext m
+    simp [coeff_one, apply_ite]
   leibniz' p q := by
     simp only [LinearMap.coe_mk, AddHom.coe_mk]
     -- Both sides are biadditive in `p` and `q`, so it suffices to compare monomials.
