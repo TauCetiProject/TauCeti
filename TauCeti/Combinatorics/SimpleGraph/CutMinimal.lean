@@ -33,8 +33,25 @@ vertices, every cut-minimal graph therefore has maximum degree at most `1`, at m
 `3`-clique, and `(Fintype.card V - 2) * #G.edgeFinset` odd-edge ordered triples.
 
 The cut-minimality convention follows D. N. Kozlov, *The first Cheeger constant of a
-simplex*, arXiv:1610.07136v2, Section 2. The characterization here isolates the finite
-edge-count identity, independently of any cochain or coefficient group.
+simplex*, arXiv:1610.07136v2, Section 2. The characterizations here isolate isomorphism
+invariance and the finite edge-count and vertex-count criteria, independently of any cochain
+or coefficient group.
+
+## Main definitions and results
+
+* `SimpleGraph.IsCutMinimal`: every cut `(S, Sᶜ)` contains at most as many edges as non-edges.
+* `SimpleGraph.Iso.isCutMinimal_iff`: cut-minimality is invariant under graph isomorphism.
+* `SimpleGraph.isCutMinimal_iff_two_mul_card_between_le`,
+  `SimpleGraph.isCutMinimal_iff_two_mul_sum_card_le`: finite cut-minimality in terms of vertex
+  and degree counts across cuts.
+* `SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff`,
+  `SimpleGraph.exists_finset_isCutMinimal_symmDiff_top_between`: switching any cut does not
+  decrease the edge count, and minimizing switched edge count produces a cut-minimal switching.
+* `SimpleGraph.isCutMinimal_top_between_iff`, `SimpleGraph.isCutMinimal_edge_iff`: cut-minimality
+  of complete-graph cuts and single-edge graphs.
+* `SimpleGraph.IsCutMinimal.two_mul_degree_le`,
+  `SimpleGraph.IsCutMinimal.card_filter_lt_triple_xor_of_card_le_four`: singleton-cut degree bound
+  and four-vertex cut-minimal odd-edge triple count.
 -/
 
 public section
@@ -57,6 +74,28 @@ def IsCutMinimal (G : SimpleGraph V) : Prop :=
 theorem isCutMinimal_def (G : SimpleGraph V) :
     G.IsCutMinimal ↔ ∀ S : Set V, (G.between S Sᶜ).edgeSet.encard ≤
       ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeSet.encard := (Iff.rfl)
+
+private theorem isCutMinimal_of_iso {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    (f : G ≃g H) (hG : G.IsCutMinimal) : H.IsCutMinimal := fun T ↦ by
+  let S : Set V := f ⁻¹' T
+  have hpre : Sᶜ = f ⁻¹' Tᶜ := rfl
+  let iso₁ : G.between S Sᶜ ≃g H.between T Tᶜ :=
+    { f.toEquiv with
+      map_rel_iff' := fun {x y} ↦ by
+        simp only [S, hpre, between_adj, Set.mem_preimage, RelIso.coe_fn_toEquiv, f.map_adj_iff] }
+  let iso₂ : (⊤ : SimpleGraph V).between S Sᶜ \ G ≃g
+      (⊤ : SimpleGraph W).between T Tᶜ \ H :=
+    { f.toEquiv with
+      map_rel_iff' := fun {x y} ↦ by
+        simp only [S, hpre, sdiff_adj, between_adj, top_adj, Set.mem_preimage, ne_eq,
+          RelIso.coe_fn_toEquiv, f.apply_eq_iff_eq, f.map_adj_iff] }
+  rw [← Set.encard_congr iso₁.mapEdgeSet, ← Set.encard_congr iso₂.mapEdgeSet]
+  exact hG S
+
+/-- Cut-minimality is invariant under graph isomorphism. -/
+theorem Iso.isCutMinimal_iff {W : Type*} {G : SimpleGraph V} {H : SimpleGraph W} (f : G ≃g H) :
+    G.IsCutMinimal ↔ H.IsCutMinimal :=
+  ⟨isCutMinimal_of_iso f, isCutMinimal_of_iso f.symm⟩
 
 variable [Fintype V] [DecidableEq V]
 
@@ -90,15 +129,22 @@ theorem isCutMinimal_iff_two_mul_card_inter_le (G : SimpleGraph V) [DecidableRel
   intro S
   apply forall_congr'
   intro _
-  -- Lift the graph equality to finsets since the adjacency instances depend on the graph.
-  have hfin : (G.between S Sᶜ).edgeFinset =
-      (G ⊓ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset :=
-    edgeFinset_inj.mpr (between_eq_inf_top_between G S Sᶜ)
-  rw [hfin, edgeFinset_inf, edgeFinset_sdiff]
+  rw [edgeFinset_between, edgeFinset_sdiff]
   have h := Finset.card_sdiff_add_card_inter
     ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset G.edgeFinset
   rw [Finset.inter_comm] at h
   omega
+
+omit [DecidableEq V] in
+/-- Cut-minimality in terms of vertex counts: twice the number of edges of `G` across `(S, Sᶜ)` is
+at most `S.toFinset.card * Sᶜ.toFinset.card`. -/
+theorem isCutMinimal_iff_two_mul_card_between_le (G : SimpleGraph V) [DecidableRel G.Adj] :
+    G.IsCutMinimal ↔ ∀ (S : Set V) [DecidablePred (· ∈ S)],
+      2 * (G.between S Sᶜ).edgeFinset.card ≤ S.toFinset.card * Sᶜ.toFinset.card := by
+  classical
+  rw [isCutMinimal_iff_two_mul_card_inter_le]
+  refine forall_congr' fun S ↦ forall_congr' fun _ ↦ ?_
+  rw [← edgeFinset_between, card_edgeFinset_top_between disjoint_compl_right]
 
 /-- A graph is cut-minimal exactly when switching any cut does not reduce its edge count.
 This is the cardinality criterion used to identify minimal binary cochains. -/
@@ -113,6 +159,31 @@ theorem isCutMinimal_iff_card_le_card_symmDiff (G : SimpleGraph V) [DecidableRel
   have h := Finset.card_symmDiff_add_two_mul_card_inter
     G.edgeFinset ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset
   omega
+
+/-- Cut-minimality counted from one side of each cut: for every finite set `s`, twice the number
+of edges from `s` to its complement is at most the number `#s * #sᶜ` of pairs across the cut. -/
+theorem isCutMinimal_iff_two_mul_sum_card_le (G : SimpleGraph V) [DecidableRel G.Adj] :
+    G.IsCutMinimal ↔ ∀ s : Finset V, 2 * ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} ≤ #s * #sᶜ := by
+  have key (s : Finset V) [DecidablePred (· ∈ (s : Set V))] :
+      2 * #(G.edgeFinset ∩ ((⊤ : SimpleGraph V).between ↑s (↑s)ᶜ).edgeFinset) ≤
+          #((⊤ : SimpleGraph V).between ↑s (↑s)ᶜ).edgeFinset ↔
+        2 * ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} ≤ #s * #sᶜ := by
+    have hfin : (G.between ↑s (↑s)ᶜ).edgeFinset =
+        (G ⊓ (⊤ : SimpleGraph V).between ↑s (↑s)ᶜ).edgeFinset :=
+      edgeFinset_inj.mpr (between_eq_inf_top_between G _ _)
+    have htop : ∑ v ∈ s, #{w ∈ sᶜ | (⊤ : SimpleGraph V).Adj v w} = #s * #sᶜ := by
+      rw [Finset.sum_congr rfl fun v hv ↦ congrArg Finset.card <| Finset.filter_true_of_mem
+        fun w hw ↦ (top_adj _ _).mpr (ne_of_mem_of_not_mem hv (Finset.mem_compl.mp hw))]
+      simp
+    rw [← edgeFinset_inf, ← hfin, card_edgeFinset_between_compl,
+      card_edgeFinset_between_compl, htop]
+  rw [isCutMinimal_iff_two_mul_card_inter_le]
+  constructor
+  · intro h s
+    exact (key s).mp (h s)
+  · intro h S _
+    obtain ⟨s, rfl⟩ : ∃ s : Finset V, (s : Set V) = S := ⟨S.toFinset, by simp⟩
+    exact (key s).mpr (h s)
 
 end Finite
 
