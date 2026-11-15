@@ -29,10 +29,10 @@ morphisms are isomorphic.
 
 This is the representation-theoretic core of Sunada's construction of isospectral manifolds.
 What this file proves is purely algebraic:
-`Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq` says that for a linear operator
-commuting with the action, the `H`-fixed and `K`-fixed vectors in each eigenspace have the same
-dimension. Only the dimensions agree: the two spaces of invariants are in general different
-subspaces of the representation.
+`Subgroup.AlmostConjugate.nonempty_linearEquiv_invariants_inf_eigenspace` says that for a linear
+operator commuting with the action, the `H`-fixed and `K`-fixed vectors in each eigenspace are
+linearly equivalent, so have the same dimension. Only abstract linear equivalence holds: the two
+spaces of invariants are in general different subspaces of the representation.
 
 The geometric application needs analytic input that is not formalised here. Let `G` act freely by
 isometries on a closed Riemannian manifold `X`. Then `X ⧸ H` and `X ⧸ K` are closed Riemannian
@@ -50,11 +50,13 @@ constructions behind `TauCeti.quotientHomEquivInvariants` (`Rep.indResHomEquiv` 
 * `Subgroup.AlmostConjugate.nonempty_linearEquiv_invariants`: almost-conjugate subgroups have
   linearly equivalent invariants in every representation.
 * `Subgroup.AlmostConjugate.finrank_invariants_eq`: the invariants have the same dimension.
-* `Subgroup.AlmostConjugate.finrank_invariants_inf_eq`: the same holds for the invariants lying
+* `Subgroup.AlmostConjugate.nonempty_linearEquiv_invariants_inf`,
+  `Subgroup.AlmostConjugate.finrank_invariants_inf_eq`: the same holds for the invariants lying
   in any `G`-stable subspace.
-* `Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq`: for an operator commuting with
-  the action, the spaces of `H`-fixed and `K`-fixed vectors in each eigenspace have the same
-  dimension.
+* `Subgroup.AlmostConjugate.nonempty_linearEquiv_invariants_inf_eigenspace`,
+  `Subgroup.AlmostConjugate.finrank_invariants_inf_eigenspace_eq`: for an operator commuting with
+  the action, the spaces of `H`-fixed and `K`-fixed vectors in each eigenspace are linearly
+  equivalent, and so have the same dimension.
 
 ## References
 
@@ -93,20 +95,41 @@ theorem finrank_invariants_eq (h : H.AlmostConjugate K) (ρ : Representation k G
   let ⟨e⟩ := h.nonempty_linearEquiv_invariants ρ
   e.finrank_eq
 
+/-- Almost-conjugate subgroups have linearly equivalent invariant vectors in every `G`-stable
+subspace `W` of a representation. -/
+theorem nonempty_linearEquiv_invariants_inf (h : H.AlmostConjugate K) (ρ : Representation k G V)
+    (W : Submodule k V) (hW : ∀ g, W ≤ W.comap (ρ g)) :
+    Nonempty (↥(Representation.invariants (ρ.comp H.subtype) ⊓ W) ≃ₗ[k]
+      ↥(Representation.invariants (ρ.comp K.subtype) ⊓ W)) := by
+  -- The `L`-invariant vectors in `W` are the image of the invariants of the subrepresentation
+  -- of `ρ.comp L.subtype` on `W`.
+  let e (L : Subgroup G) :
+      (Representation.subrepresentation (ρ.comp L.subtype) W fun g ↦ hW g).invariants ≃ₗ[k]
+        ↥(Representation.invariants (ρ.comp L.subtype) ⊓ W) :=
+    Submodule.equivMapOfInjective W.subtype W.subtype_injective _ ≪≫ₗ LinearEquiv.ofEq _ _
+      (Representation.map_subtype_invariants_subrepresentation (ρ.comp L.subtype) fun g ↦ hW g)
+  -- Restricting to `W` and then to `L` is restricting to `L` and then to `W`.
+  obtain ⟨e'⟩ := h.nonempty_linearEquiv_invariants (ρ.subrepresentation W hW)
+  exact ⟨(e H).symm ≪≫ₗ e' ≪≫ₗ e K⟩
+
 /-- Almost-conjugate subgroups have the same number of independent invariant vectors in every
 `G`-stable subspace `W` of a representation. -/
 theorem finrank_invariants_inf_eq (h : H.AlmostConjugate K) (ρ : Representation k G V)
     (W : Submodule k V) (hW : ∀ g, W ≤ W.comap (ρ g)) :
     finrank k ↥(Representation.invariants (ρ.comp H.subtype) ⊓ W) =
-      finrank k ↥(Representation.invariants (ρ.comp K.subtype) ⊓ W) := by
-  rw [← Representation.map_subtype_invariants_subrepresentation (ρ.comp H.subtype) fun g ↦ hW g,
-    ← Representation.map_subtype_invariants_subrepresentation (ρ.comp K.subtype) fun g ↦ hW g,
-    Submodule.finrank_map_subtype_eq, Submodule.finrank_map_subtype_eq]
-  -- Restricting to `W` and then to a subgroup `L` is restricting to `L` and then to `W`.
-  have hres (L : Subgroup G) : (ρ.subrepresentation W hW).comp L.subtype =
-      Representation.subrepresentation (ρ.comp L.subtype) W (fun g ↦ hW g) := _root_.rfl
-  rw [← hres H, ← hres K]
-  exact h.finrank_invariants_eq (ρ.subrepresentation W hW)
+      finrank k ↥(Representation.invariants (ρ.comp K.subtype) ⊓ W) :=
+  let ⟨e⟩ := h.nonempty_linearEquiv_invariants_inf ρ W hW
+  e.finrank_eq
+
+/-- If a linear operator `T` commutes with the action of `G` and `H`, `K` are almost conjugate,
+then the `H`-fixed vectors and the `K`-fixed vectors in each eigenspace of `T` are linearly
+equivalent. -/
+theorem nonempty_linearEquiv_invariants_inf_eigenspace (h : H.AlmostConjugate K)
+    (ρ : Representation k G V) {T : End k V} (hT : ∀ g, Commute T (ρ g)) (μ : k) :
+    Nonempty (↥(Representation.invariants (ρ.comp H.subtype) ⊓ T.eigenspace μ) ≃ₗ[k]
+      ↥(Representation.invariants (ρ.comp K.subtype) ⊓ T.eigenspace μ)) :=
+  h.nonempty_linearEquiv_invariants_inf ρ _ fun g _ hv ↦
+    End.mapsTo_genEigenspace_of_comm (hT g) μ 1 hv
 
 /-- **Equal multiplicities for almost-conjugate subgroups.** If a linear operator `T` commutes with
 the action of `G` and `H`, `K` are almost conjugate, then the `H`-fixed vectors and the `K`-fixed
@@ -115,6 +138,7 @@ theorem finrank_invariants_inf_eigenspace_eq (h : H.AlmostConjugate K) (ρ : Rep
     {T : End k V} (hT : ∀ g, Commute T (ρ g)) (μ : k) :
     finrank k ↥(Representation.invariants (ρ.comp H.subtype) ⊓ T.eigenspace μ) =
       finrank k ↥(Representation.invariants (ρ.comp K.subtype) ⊓ T.eigenspace μ) :=
-  h.finrank_invariants_inf_eq ρ _ fun g _ hv ↦ End.mapsTo_genEigenspace_of_comm (hT g) μ 1 hv
+  let ⟨e⟩ := h.nonempty_linearEquiv_invariants_inf_eigenspace ρ hT μ
+  e.finrank_eq
 
 end Subgroup.AlmostConjugate

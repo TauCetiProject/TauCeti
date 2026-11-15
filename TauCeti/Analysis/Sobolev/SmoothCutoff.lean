@@ -57,24 +57,28 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Expanding cutoffs approximate the `k`-th classical derivative of a `Cᵏ` function in `Lᵖ`.
-Only the derivatives up to the requested order need to be integrable; the measure need not
-be translation invariant. -/
+The scale `r` may tend to infinity along any filter. Only the derivatives up to the requested
+order need to be integrable; the measure need not be translation invariant. -/
 theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     [MeasurableSpace E] [OpensMeasurableSpace E] [SecondCountableTopology E]
     {μ : Measure E} {p : ENNReal} (hp : p ≠ ⊤)
+    {ι : Type*} {l : Filter ι} {r : ι → ℝ} (hr : Tendsto r l atTop)
     {χ : E → ℝ} {f : E → F} {k : ℕ} (hχ : ContDiff ℝ k χ)
     (hχ1 : χ =ᶠ[𝓝 0] 1) {B : ℕ → ℝ}
     (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i)
     (hf : ContDiff ℝ k f) (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p μ) :
-    Tendsto (fun n : ℕ ↦ eLpNorm
-      (iteratedFDeriv ℝ k (fun x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x) -
-        iteratedFDeriv ℝ k f) p μ) atTop (𝓝 0) := by
-  let error (n : ℕ) : E → F := fun x ↦ (χ (((n : ℝ) + 1)⁻¹ • x) - 1) • f x
-  have hsmooth (n : ℕ) : ContDiff ℝ k (error n) :=
+    Tendsto (fun n ↦ eLpNorm
+      (iteratedFDeriv ℝ k (fun x ↦ χ ((r n)⁻¹ • x) • f x) -
+        iteratedFDeriv ℝ k f) p μ) l (𝓝 0) := by
+  suffices h : Tendsto (fun R : ℝ ↦ eLpNorm
+      (iteratedFDeriv ℝ k (fun x ↦ χ (R⁻¹ • x) • f x) -
+        iteratedFDeriv ℝ k f) p μ) atTop (𝓝 0) from h.comp hr
+  let error (n : ℝ) : E → F := fun x ↦ (χ (n⁻¹ • x) - 1) • f x
+  have hsmooth (n : ℝ) : ContDiff ℝ k (error n) :=
     ((hχ.comp (contDiff_const_smul _)).sub contDiff_const).smul hf
-  have herr (n : ℕ) :
+  have herr (n : ℝ) :
       iteratedFDeriv ℝ k (error n) =
-        iteratedFDeriv ℝ k (fun x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x) -
+        iteratedFDeriv ℝ k (fun x ↦ χ (n⁻¹ • x) • f x) -
           iteratedFDeriv ℝ k f := by
     funext x
     simp only [error, sub_smul, one_smul]
@@ -88,24 +92,24 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     intro i _
     exact (hmem (k - i) (Nat.sub_le _ _)).norm.const_smul
       ((k.choose i : ℝ) * (1 + B i))
-  have hb (n : ℕ) (x : E) : ‖iteratedFDeriv ℝ k (error n) x‖ ≤ ‖bound x‖ := by
+  have hb (n : ℝ) (hn : 1 ≤ n) (x : E) : ‖iteratedFDeriv ℝ k (error n) x‖ ≤ ‖bound x‖ := by
     refine (norm_iteratedFDeriv_smul_le
       ((hχ.comp (contDiff_const_smul _)).sub contDiff_const) hf x le_rfl).trans ?_
     refine (Finset.sum_le_sum fun i hi ↦ ?_).trans (le_abs_self _)
     have hi' : i ≤ k := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
     have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm (hB i hi')
-      (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1) 1 x
+      hn 1 x
     exact mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left (by simpa [add_comm] using hd)
         (Nat.cast_nonneg _)) (norm_nonneg _)
   -- The expanding region where the cutoff is one gives eventual local agreement.
-  have hlim (x : E) : ∀ᶠ n : ℕ in atTop, iteratedFDeriv ℝ k (error n) x = 0 := by
-    have ht : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • x) atTop (𝓝 0) := by
-      simpa only [one_div, zero_smul] using
-        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const x
+  have hlim (x : E) : ∀ᶠ n in atTop, iteratedFDeriv ℝ k (error n) x = 0 := by
+    have ht : Tendsto (fun n : ℝ ↦ n⁻¹ • x) atTop (𝓝 0) := by
+      have hinv : Tendsto (fun n : ℝ ↦ n⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_zero
+      simpa only [zero_smul] using hinv.smul_const x
     filter_upwards [ht.eventually (eventually_eventually_nhds.2 hχ1)] with n hn
     have heq : error n =ᶠ[𝓝 x] 0 := by
-      have hnear := (continuous_const_smul ((n : ℝ) + 1)⁻¹).continuousAt.eventually hn
+      have hnear := (continuous_const_smul n⁻¹).continuousAt.eventually hn
       filter_upwards [hnear] with y hy
       simp only [error, hy, Pi.one_apply, sub_self, zero_smul, Pi.zero_apply]
     simpa only [iteratedFDeriv_zero, Pi.zero_apply] using
@@ -115,9 +119,11 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     (Eventually.of_forall fun n ↦ (hsmooth n).continuous_iteratedFDeriv le_rfl
       |>.aestronglyMeasurable)
     hbmem
-    (Eventually.of_forall fun n ↦ Eventually.of_forall fun x ↦ by
-      simpa only [ofReal_norm, Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul] using
-        ENNReal.ofReal_le_ofReal (hb n x))
+    (by
+      filter_upwards [eventually_ge_atTop (1 : ℝ)] with n hn
+      exact Eventually.of_forall fun x ↦ by
+        simpa only [ofReal_norm, Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul] using
+          ENNReal.ofReal_le_ofReal (hb n hn x))
     (Eventually.of_forall fun x ↦ (tendsto_congr' (hlim x)).mpr tendsto_const_nhds)
   simpa only [sub_zero, herr] using ht
 
@@ -183,6 +189,8 @@ theorem exists_contDiff_hasCompactSupport_approximation
       (fun j hj ↦ hmem j (hj.trans hi))
   · intro i hi
     exact tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp
+      (r := fun n : ℕ ↦ (n : ℝ) + 1)
+      (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)
       (χ.contDiff.of_le (mod_cast le_top)) χ.eventuallyEq_one
       (fun j _ x ↦ hB j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))

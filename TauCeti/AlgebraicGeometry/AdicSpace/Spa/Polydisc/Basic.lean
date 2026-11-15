@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 
+import TauCeti.RingTheory.Huber.WeightedEval.Perturbation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
@@ -318,26 +319,16 @@ section Translation
 variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
   [NonarchimedeanRing A] [CompleteSpace A] [T3Space A]
 
-omit [IsUniformAddGroup A] [CompleteSpace A] [T3Space A] in
-/-- The shifted variables `Tᵢ + aᵢ` are power-bounded in `A⟨T₁, …, Tₖ⟩` when the `aᵢ` are
-power-bounded in `A`. -/
-private theorem isPowerBounded_weightedX_add_weightedC (a : Fin k → A)
-    (ha : ∀ i, IsPowerBounded (a i)) (i : Fin k) :
-    IsPowerBounded (weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i +
-      weightedC _ isWeightFamily_one_weight (a i)) :=
-  (isPowerBounded_weightedX_one_weight i).add (isPowerBounded_weightedC _ (ha i))
-
 /-- **Translation by `a ∈ (A°)ᵏ`**: the substitution `Tᵢ ↦ Tᵢ + aᵢ`, as a ring endomorphism of
 `A⟨T₁, …, Tₖ⟩`. It is Wedhorn's evaluation of restricted power series along the constant
-embedding `A → A⟨T⟩`, at the power-bounded tuple `(Tᵢ + aᵢ)ᵢ`. This is the restricted power
-series analogue of Mathlib's `Polynomial.taylor`. -/
+embedding `A → A⟨T⟩`, at the power-bounded tuple `(Tᵢ + aᵢ)ᵢ`, so it is the perturbation
+`TauCeti.Huber.perturbX` by the constants `aᵢ`. This is the restricted power series analogue of
+Mathlib's `Polynomial.taylor`. -/
 noncomputable def taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=
-  weightedEvalHom isWeightFamily_one_weight
-    (continuous_weightedC isWeightFamily_one_weight).continuousAt
-    ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr
-      (isPowerBounded_weightedX_add_weightedC a ha))
+  (perturbX (fun i ↦ weightedC _ isWeightFamily_one_weight (a i))
+    fun i ↦ isPowerBounded_weightedC _ (ha i)).toRingHom
 
 /-- **The translate of `f` is the sum of its translated monomials**: `f(T + a)` is the sum of the
 terms `fν (T + a)ν`, where `fν` is the coefficient of `Tν` in `f`. -/
@@ -348,18 +339,13 @@ theorem hasSum_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
             (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
           ∏ i, (weightedX _ isWeightFamily_one_weight i +
             weightedC _ isWeightFamily_one_weight (a i)) ^ ν i)
-      (taylorHom a ha f) := by
-  rw [taylorHom, coe_weightedEvalHom]
-  convert hasSum_weightedEval_of_forall_isPowerBounded
-    (continuous_weightedC isWeightFamily_one_weight).continuousAt
-    (isPowerBounded_weightedX_add_weightedC a ha) (mem_weightedRestrictedSubring.mp f.2) using 1
-  exact funext fun ν ↦ (weightedEvalTerm_def _ _ _ ν).symm
+      (taylorHom a ha f) :=
+  hasSum_perturbX _ _ f
 
 /-- Translation is continuous. -/
 theorem continuous_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
-    Continuous (taylorHom a ha) := by
-  rw [taylorHom]
-  exact continuous_weightedEvalHom _ _ _
+    Continuous (taylorHom a ha) :=
+  continuous_perturbX _ _
 
 /-- **A continuous valuation bounded on monomials is bounded on translates.** Let `v` be a
 continuous valuation on `A⟨T₁, …, Tₖ⟩` with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` for every `i`. If every
@@ -395,15 +381,15 @@ theorem valuation_taylorHom_le {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
 @[simp]
 theorem taylorHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
     taylorHom a ha (weightedC _ isWeightFamily_one_weight c) =
-      weightedC _ isWeightFamily_one_weight c := by
-  rw [taylorHom, weightedEvalHom_weightedC]
+      weightedC _ isWeightFamily_one_weight c :=
+  perturbX_weightedC _ _ c
 
 /-- Translation by `a` sends the variable `Tᵢ` to `Tᵢ + aᵢ`. -/
 @[simp]
 theorem taylorHom_weightedX (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (i : Fin k) :
     taylorHom a ha (weightedX _ isWeightFamily_one_weight i) =
-      weightedX _ isWeightFamily_one_weight i + weightedC _ isWeightFamily_one_weight (a i) := by
-  rw [taylorHom, weightedEvalHom_weightedX]
+      weightedX _ isWeightFamily_one_weight i + weightedC _ isWeightFamily_one_weight (a i) :=
+  perturbX_weightedX _ _ i
 
 /-- Translation by zero is the identity. -/
 @[simp]

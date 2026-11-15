@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
-public import TauCeti.Analysis.Normed.Module.RelativeApproximation
+import TauCeti.Analysis.Normed.Module.RelativeApproximation
 
 /-!
 # Injective pieces of a differentiable map

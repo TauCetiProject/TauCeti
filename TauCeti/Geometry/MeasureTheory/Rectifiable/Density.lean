@@ -11,10 +11,10 @@ public import Mathlib.Order.LiminfLimsup
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Polar.Isometry
+import TauCeti.Analysis.Normed.Module.RelativeApproximation
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
-import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 
 /-!
 # The density theorem for rectifiable sets

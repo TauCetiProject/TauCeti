@@ -21,6 +21,11 @@ A base at least `2` raised to a negative exponent of size at least `1` is at mos
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
 denominator `1 - y ^ (-s)` stays bounded below.
 
+A negative power reverses a comparison up to a constant: if `0 < x ≤ a y` with `a ≥ 0` (so that
+`a` and `y` are positive), then `y ^ (-q) ≤ a ^ q x ^ (-q)` for `q ≥ 0`. This dominates a
+power `y ^ (-q)` by a shifted power such as `(T + |s|) ^ (-q)` when `T + |s|` is at most a
+multiple of `y`, as in splitting an integral of a decaying integrand.
+
 For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^ β`. This is how a
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
 
@@ -90,6 +95,8 @@ function that does not need a derivative.
 
 * `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
+* `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
+  `q ≥ 0`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
   `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`: the tangent-line inequalities for `u ↦ u ^ p`.
@@ -148,6 +155,19 @@ theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) �
   calc y ^ (-s) ≤ (2 : ℝ) ^ (-s) := rpow_le_rpow_of_nonpos two_pos hy (by linarith)
     _ ≤ (2 : ℝ) ^ (-(1 : ℝ)) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
     _ = 1 / 2 := by norm_num
+
+/-- A negative power reverses a comparison up to a constant: if `0 < x ≤ a y` with `a ≥ 0` and
+`q ≥ 0`, then `y ^ (-q) ≤ a ^ q x ^ (-q)`. The hypotheses force `a > 0` and `y > 0`. -/
+theorem rpow_neg_le_mul_rpow_neg {x y a q : ℝ} (hx : 0 < x) (ha : 0 ≤ a) (hq : 0 ≤ q)
+    (hxy : x ≤ a * y) : y ^ (-q) ≤ a ^ q * x ^ (-q) := by
+  have hay : 0 < a * y := hx.trans_le hxy
+  have hy : 0 < y := pos_of_mul_pos_right hay ha
+  replace ha : 0 < a := pos_of_mul_pos_left hay hy.le
+  have h1 : (a * y) ^ (-q) ≤ x ^ (-q) := rpow_le_rpow_of_nonpos hx hxy (by linarith)
+  rw [mul_rpow ha.le hy.le, rpow_neg ha.le] at h1
+  calc y ^ (-q) = a ^ q * ((a ^ q)⁻¹ * y ^ (-q)) :=
+        (mul_inv_cancel_left₀ (rpow_pos_of_pos ha q).ne' _).symm
+    _ ≤ a ^ q * x ^ (-q) := by gcongr
 
 /-- For `θ < 1` and any exponent `β`, some ratio `τ ∈ (0, 1)` has `θ < τ ^ β`. -/
 theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :

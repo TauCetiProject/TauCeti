@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.CategoryTheory.Localization.Monoidal.Braided
 public import Mathlib.CategoryTheory.Monoidal.Linear
+public import TauCeti.CategoryTheory.Monoidal.Braided.Adjunction
 public import TauCeti.RingTheory.Almost.Elements
 
 /-!
@@ -48,6 +49,7 @@ oplax monoidal structure is not strong unless the setup is classical.
   comparison maps described by `TauCeti.Almost.Module.elements_ε_hom_apply_one` and
   `TauCeti.Almost.Module.elements_μ_hom_tmul`; they are almost isomorphisms
   (`TauCeti.Almost.Module.isAlmostIso_elements_ε`, `TauCeti.Almost.Module.isAlmostIso_elements_μ`).
+* `TauCeti.Almost.Module.elementsLaxBraided`: almost elements form a lax braided functor.
 * `TauCeti.Almost.Module.tensorIsoElements`: `M ⊗ N ≅ (M_* ⊗[V] N_*)^a`.
 * `TauCeti.Almost.Module.shriekOplaxMonoidal` and `TauCeti.Almost.Module.shriekTensorIso`: the
   functor `M ↦ M_!` is oplax monoidal, and `(M ⊗ N)_! ≅ M_! ⊗[V] N_!`.
@@ -174,6 +176,13 @@ open Functor.LaxMonoidal Functor.OplaxMonoidal
 isomorphisms (`isAlmostIso_elements_ε`, `isAlmostIso_elements_μ`). -/
 noncomputable instance elementsLaxMonoidal : (elements S).LaxMonoidal :=
   (adjElements S).rightAdjointLaxMonoidal
+
+/-- **Almost elements form a lax braided functor**: as the right adjoint of the braided functor
+`M ↦ M^a`, the comparison `M_* ⊗[V] N_* → (M ⊗ N)_*` is compatible with the symmetries. Hence
+almost elements send commutative monoid objects to commutative monoid objects, that is, almost
+algebras to commutative `V`-algebras. -/
+noncomputable instance elementsLaxBraided : (elements S).LaxBraided :=
+  (adjElements S).rightAdjointLaxBraided
 
 /-- The unit comparison `V → (𝟙_)_*` of almost elements sends `1` to the almost element
 `V^a → 𝟙_` given by the monoidal structure of `M ↦ M^a`. -/
