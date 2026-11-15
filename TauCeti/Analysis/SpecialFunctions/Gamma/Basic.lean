@@ -10,7 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Measurability, reciprocal bounds, and ratio asymptotics of the Gamma function
@@ -52,6 +54,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
 * `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
+* `Complex.isConnected_setOf_forall_ne_neg_natCast` — the complement `{w : ℂ | ∀ n : ℕ, w ≠ -n}`
+  of the nonpositive integers is connected.
+* `Complex.norm_ascPochhammer_eval_le_factorial` — `‖(w)ₙ‖ ≤ (M + n)!` whenever `‖w‖ ≤ M`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -260,6 +265,28 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
         ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
+
+/-- The complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers (the domain of
+holomorphy of `Complex.Gamma`) is connected. -/
+theorem isConnected_setOf_forall_ne_neg_natCast :
+    IsConnected {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
+  have heq : {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} = (Set.range fun n : ℕ => -(n : ℂ))ᶜ := by
+    ext w; simp [eq_comm]
+  rw [heq]
+  exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
+    (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
+
+/-- The ascending Pochhammer evaluation `(w)ₙ` satisfies `‖(w)ₙ‖ ≤ (M + n)!` whenever `‖w‖ ≤ M`. -/
+theorem norm_ascPochhammer_eval_le_factorial {w : ℂ} {M : ℕ} (hw : ‖w‖ ≤ M) (n : ℕ) :
+    ‖(ascPochhammer ℂ n).eval w‖ ≤ ((M + n)! : ℝ) := by
+  induction n with
+  | zero => simp [Nat.one_le_iff_ne_zero, Nat.factorial_ne_zero]
+  | succ n ih =>
+    have hwn : ‖w + n‖ ≤ (M + n + 1 : ℝ) :=
+      (norm_add_le w n).trans (by rw [Complex.norm_natCast]; linarith)
+    rw [ascPochhammer_succ_eval, norm_mul]
+    refine (mul_le_mul ih hwn (norm_nonneg _) (by positivity)).trans_eq ?_
+    rw [← add_assoc, Nat.factorial_succ]; push_cast; ring
 
 end Complex
 

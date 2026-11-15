@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Complex.UniformLimit
 
 /-!
 # Series and parameter regularity of regularized hypergeometric functions
@@ -242,35 +244,7 @@ theorem summable_norm_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z�
     (regularizedGaussHGFunSeries a b c).summable_norm_apply
       (by simpa [edist_zero_right, ofReal_norm] using hm)
 
-private theorem norm_ascPochhammer_eval_le_factorial {w : ℂ} {M : ℕ} (hw : ‖w‖ ≤ M) (n : ℕ) :
-    ‖(ascPochhammer ℂ n).eval w‖ ≤ ((M + n)! : ℝ) := by
-  induction n with
-  | zero => simp [Nat.one_le_iff_ne_zero, Nat.factorial_ne_zero]
-  | succ n ih =>
-    have hwn : ‖w + n‖ ≤ (M + n + 1 : ℝ) :=
-      (norm_add_le w n).trans (by rw [Complex.norm_natCast]; linarith)
-    rw [ascPochhammer_succ_eval, norm_mul]
-    refine (mul_le_mul ih hwn (norm_nonneg _) (by positivity)).trans_eq ?_
-    rw [← add_assoc, Nat.factorial_succ]; push_cast; ring
-
-private theorem norm_inv_Gamma_add_nat_le {c : ℂ} {N₀ : ℕ} {C : ℝ}
-    (hc : 1 ≤ (c + N₀).re) (hcC : ‖(Gamma (c + N₀))⁻¹‖ ≤ C) (m : ℕ) :
-    ‖(Gamma (c + ((N₀ + m : ℕ) : ℂ)))⁻¹‖ ≤ C / (m ! : ℝ) := by
-  have _hC : 0 ≤ C := (norm_nonneg _).trans hcC
-  induction m with
-  | zero => simpa using hcC
-  | succ m ih =>
-    set s : ℂ := c + ((N₀ + m : ℕ) : ℂ)
-    have hs_re : (m + 1 : ℝ) ≤ s.re := by
-      simp only [s, add_re, natCast_re] at hc ⊢; push_cast; linarith
-    have hs_ne : s ≠ 0 := fun h => by simp [h] at hs_re; linarith [m.cast_nonneg (α := ℝ)]
-    have hstep : c + ((N₀ + (m + 1) : ℕ) : ℂ) = s + 1 := by simp only [s]; push_cast; ring
-    rw [hstep, Gamma_add_one s hs_ne, mul_inv, norm_mul, norm_inv]
-    refine (mul_le_mul (inv_anti₀ (by positivity) (hs_re.trans (re_le_norm s))) ih
-      (norm_nonneg _) (by positivity)).trans_eq ?_
-    rw [Nat.factorial_succ]; push_cast; field_simp
-
-private theorem norm_regularizedGaussTerm_shift_le {M N₀ : ℕ} {C r : ℝ} (hC : 0 ≤ C) (_hr : 0 ≤ r)
+private theorem norm_regularizedGaussTerm_shift_le {M N₀ : ℕ} {C r : ℝ}
     {a b c z : ℂ} (ha : ‖a‖ ≤ M) (hb : ‖b‖ ≤ M) (hc : 1 ≤ (c + N₀).re)
     (hcC : ‖(Gamma (c + N₀))⁻¹‖ ≤ C) (hz : ‖z‖ ≤ r) (m : ℕ) :
     ‖((ascPochhammer ℂ (N₀ + m)).eval a * (ascPochhammer ℂ (N₀ + m)).eval b /
@@ -288,19 +262,21 @@ private theorem norm_regularizedGaussTerm_shift_le {M N₀ : ℕ} {C r : ℝ} (h
   have hNm : (m ! : ℝ) ≤ ((N₀ + m)! : ℝ) :=
     (Nat.cast_le (α := ℝ)).2 (Nat.factorial_le (Nat.le_add_left m N₀))
   have hm_pos : (0 : ℝ) < m ! := Nat.cast_pos.2 m.factorial_pos
-  rw [div_eq_mul_inv, mul_inv, norm_mul, norm_mul, norm_mul, norm_mul, norm_inv,
-    Complex.norm_natCast, norm_pow]
-  refine (mul_le_mul (mul_le_mul (mul_le_mul (hab ha) (hab hb) (norm_nonneg _) (by positivity))
-    (mul_le_mul (inv_anti₀ hm_pos hNm) (norm_inv_Gamma_add_nat_le hc hcC m) (norm_nonneg _)
-      (by positivity)) (by positivity) (by positivity))
-    (pow_le_pow_left₀ (norm_nonneg _) hz _) (pow_nonneg (norm_nonneg _) _)
-    (by positivity)).trans_eq ?_
-  have hpow : ((K + m : ℕ) : ℝ) ^ K * ((K + m : ℕ) : ℝ) ^ K = ((K + m : ℕ) : ℝ) ^ (2 * K) := by
-    rw [two_mul, pow_add]
-  have hcancel : (m ! : ℝ) * (m ! : ℝ) * ((m ! : ℝ)⁻¹ * (C / (m ! : ℝ))) = C := by
-    field_simp [hm_pos.ne']
-  linear_combination ((m ! : ℝ) * (m ! : ℝ) * ((m ! : ℝ)⁻¹ * (C / (m ! : ℝ))) * r ^ (N₀ + m)) *
-    hpow + (((K + m : ℕ) : ℝ) ^ (2 * K) * r ^ (N₀ + m)) * hcancel
+  have hC : 0 ≤ C := (norm_nonneg _).trans hcC
+  have hΓ : ‖Gamma (c + ((N₀ + m : ℕ) : ℂ))‖⁻¹ ≤ C / (m ! : ℝ) := by
+    rw [← norm_inv]
+    refine le_trans ?_ (div_le_div_of_nonneg_right hcC (by positivity))
+    simpa only [Nat.cast_add, add_assoc] using norm_inv_Gamma_add_natCast_le hc m
+  have hNm_inv : (((N₀ + m)! : ℝ))⁻¹ ≤ (m ! : ℝ)⁻¹ := inv_anti₀ hm_pos hNm
+  have ha' := hab ha
+  have hb' := hab hb
+  simp only [div_eq_mul_inv, mul_inv, norm_mul, norm_inv, Complex.norm_natCast, norm_pow]
+  calc ‖(ascPochhammer ℂ (N₀ + m)).eval a‖ * ‖(ascPochhammer ℂ (N₀ + m)).eval b‖ *
+        ((((N₀ + m)! : ℝ))⁻¹ * ‖Gamma (c + ((N₀ + m : ℕ) : ℂ))‖⁻¹) * ‖z‖ ^ (N₀ + m)
+      ≤ ((m ! : ℝ) * ((K + m : ℕ) : ℝ) ^ K) * ((m ! : ℝ) * ((K + m : ℕ) : ℝ) ^ K) *
+        ((m ! : ℝ)⁻¹ * (C / (m ! : ℝ))) * r ^ (N₀ + m) := by gcongr
+    _ = C * (((K + m : ℕ) : ℝ) ^ (2 * K) * r ^ (N₀ + m)) := by
+        rw [two_mul, pow_add]; field_simp [hm_pos.ne']; ring
 
 private theorem summable_gauss_majorant (C : ℝ) (K N₀ : ℕ) {r : ℝ} (hr0 : 0 < r) (hr1 : r < 1) :
     Summable fun m : ℕ => C * (((K + m : ℕ) : ℝ) ^ (2 * K) * r ^ (N₀ + m)) := by
@@ -312,102 +288,43 @@ private theorem summable_gauss_majorant (C : ℝ) (K N₀ : ℕ) {r : ℝ} (hr0 
   rw [add_comm m K, pow_add (a := r) K m, pow_add (a := r) N₀ m]
   field_simp [pow_ne_zero K hr0.ne']
 
-private theorem differentiable_eval_ascPochhammer (n : ℕ) :
-    Differentiable ℂ fun z : ℂ => (ascPochhammer ℂ n).eval z := by
-  induction n with
-  | zero => simp
-  | succ n ih => simp_rw [ascPochhammer_succ_eval]; exact ih.mul (differentiable_id.add_const _)
-
-private def regularizedGaussTerm (n : ℕ) (v : Fin 4 → ℂ) : ℂ :=
-  ((ascPochhammer ℂ n).eval (v 0) * (ascPochhammer ℂ n).eval (v 1) /
-    (n ! * Gamma (v 2 + n))) * v 3 ^ n
+private def regularizedGaussTerm (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) : ℂ :=
+  ((ascPochhammer ℂ n).eval p.1 * (ascPochhammer ℂ n).eval p.2.1 /
+    (n ! * Gamma (p.2.2.1 + n))) * p.2.2.2 ^ n
 
 private theorem differentiable_regularizedGaussTerm (n : ℕ) :
     Differentiable ℂ (regularizedGaussTerm n) := by
-  have h2 : Differentiable ℂ (fun v : Fin 4 → ℂ => (Gamma (v 2 + n))⁻¹) := fun v =>
-    DifferentiableAt.comp (g := fun s => (Gamma s)⁻¹) v (differentiable_one_div_Gamma _)
-      ((differentiableAt_apply 2 v).add_const (n : ℂ))
-  have heq : regularizedGaussTerm n = fun v => (ascPochhammer ℂ n).eval (v 0) *
-      (ascPochhammer ℂ n).eval (v 1) * ((n ! : ℂ)⁻¹ * (Gamma (v 2 + n))⁻¹) * v 3 ^ n := by
-    ext v; simp only [regularizedGaussTerm, div_eq_mul_inv, mul_inv]
+  have h2 : Differentiable ℂ (fun p : ℂ × ℂ × ℂ × ℂ => (Gamma (p.2.2.1 + n))⁻¹) := fun p =>
+    DifferentiableAt.comp (g := fun s => (Gamma s)⁻¹) p (differentiable_one_div_Gamma _)
+      ((by fun_prop : Differentiable ℂ fun q : ℂ × ℂ × ℂ × ℂ => q.2.2.1 + n) p)
+  have heq : regularizedGaussTerm n = fun p => (ascPochhammer ℂ n).eval p.1 *
+      (ascPochhammer ℂ n).eval p.2.1 * ((n ! : ℂ)⁻¹ * (Gamma (p.2.2.1 + n))⁻¹) * p.2.2.2 ^ n := by
+    ext p; simp only [regularizedGaussTerm, div_eq_mul_inv, mul_inv]
   rw [heq]
-  exact ((((differentiable_eval_ascPochhammer n).comp (differentiable_apply 0)).mul
-    ((differentiable_eval_ascPochhammer n).comp (differentiable_apply 1))).mul
-    (h2.const_mul _)).mul ((differentiable_apply 3).pow n)
+  exact (((((ascPochhammer ℂ n).differentiable.comp differentiable_fst).mul
+    ((ascPochhammer ℂ n).differentiable.comp (differentiable_fst.comp differentiable_snd))).mul
+    (h2.const_mul _)).mul
+    ((differentiable_snd.comp (differentiable_snd.comp differentiable_snd)).pow n))
 
-private theorem norm_regularizedGaussTerm_shift_le_on_box {v₀ v : Fin 4 → ℂ} {M N₀ : ℕ} {C r : ℝ}
-    (hM0 : ⌈‖v₀ 0‖ + 1⌉₊ ≤ M) (hM1 : ⌈‖v₀ 1‖ + 1⌉₊ ≤ M) (hN₀ : ⌈-(v₀ 2).re⌉₊ + 2 ≤ N₀)
-    (hC : 0 ≤ C) (hr : 0 ≤ r) (hv0 : v 0 ∈ Metric.ball (v₀ 0) 1) (hv1 : v 1 ∈ Metric.ball (v₀ 1) 1)
-    (hv2 : v 2 ∈ Metric.ball (v₀ 2) 1) (hv3 : v 3 ∈ Metric.ball 0 r)
-    (hcC : ‖(Gamma (v 2 + N₀))⁻¹‖ ≤ C) (m : ℕ) :
-    ‖regularizedGaussTerm (N₀ + m) v‖ ≤
+private theorem norm_regularizedGaussTerm_shift_le_on_box {p₀ p : ℂ × ℂ × ℂ × ℂ} {M N₀ : ℕ}
+    {C r : ℝ} (hM0 : ⌈‖p₀.1‖ + 1⌉₊ ≤ M) (hM1 : ⌈‖p₀.2.1‖ + 1⌉₊ ≤ M)
+    (hN₀ : ⌈-p₀.2.2.1.re⌉₊ + 2 ≤ N₀) (hp0 : p.1 ∈ Metric.ball p₀.1 1)
+    (hp1 : p.2.1 ∈ Metric.ball p₀.2.1 1) (hp2 : p.2.2.1 ∈ Metric.ball p₀.2.2.1 1)
+    (hp3 : p.2.2.2 ∈ Metric.ball 0 r) (hcC : ‖(Gamma (p.2.2.1 + N₀))⁻¹‖ ≤ C) (m : ℕ) :
+    ‖regularizedGaussTerm (N₀ + m) p‖ ≤
       C * (((M + N₀ + m : ℕ) : ℝ) ^ (2 * (M + N₀)) * r ^ (N₀ + m)) := by
-  have hnorm_le (i : Fin 4) (hvi : v i ∈ Metric.ball (v₀ i) 1) (hMi : ⌈‖v₀ i‖ + 1⌉₊ ≤ M) :
-      ‖v i‖ ≤ M := by
-    have hlt : ‖v i‖ < ‖v₀ i‖ + 1 := by
-      linarith [norm_le_norm_sub_add (v i) (v₀ i), mem_ball_iff_norm.1 hvi]
-    exact hlt.le.trans ((Nat.le_ceil _).trans (by exact_mod_cast hMi))
-  have hc : 1 ≤ (v 2 + N₀).re := by
-    have h := (abs_re_le_norm (v 2 - v₀ 2)).trans (mem_ball_iff_norm.1 hv2).le
-    have hN' : (⌈-(v₀ 2).re⌉₊ : ℝ) + 2 ≤ N₀ := by exact_mod_cast hN₀
+  have hnorm_le {w₀ w : ℂ} (hw : w ∈ Metric.ball w₀ 1) (hMw : ⌈‖w₀‖ + 1⌉₊ ≤ M) :
+      ‖w‖ ≤ M := by
+    have hlt : ‖w‖ < ‖w₀‖ + 1 := by
+      linarith [norm_le_norm_sub_add w w₀, mem_ball_iff_norm.1 hw]
+    exact hlt.le.trans ((Nat.le_ceil _).trans (by exact_mod_cast hMw))
+  have hc : 1 ≤ (p.2.2.1 + N₀).re := by
+    have h := (abs_re_le_norm (p.2.2.1 - p₀.2.2.1)).trans (mem_ball_iff_norm.1 hp2).le
+    have hN' : (⌈-p₀.2.2.1.re⌉₊ : ℝ) + 2 ≤ N₀ := by exact_mod_cast hN₀
     simp only [add_re, natCast_re]
-    linarith [(abs_le.1 h).1, sub_re (v 2) (v₀ 2), Nat.le_ceil (-(v₀ 2).re)]
-  exact norm_regularizedGaussTerm_shift_le hC hr (hnorm_le 0 hv0 hM0) (hnorm_le 1 hv1 hM1) hc hcC
-    (by simpa [mem_ball_zero_iff] using (mem_ball_zero_iff.1 hv3).le) m
-
-private theorem analyticAt_tsum_regularizedGaussTerm_shift {v₀ : Fin 4 → ℂ} {U : Set (Fin 4 → ℂ)}
-    {N₀ : ℕ} {u : ℕ → ℝ} (hU_open : IsOpen U) (hv₀U : v₀ ∈ U) (hu : Summable u)
-    (hbound : ∀ m : ℕ, ∀ v ∈ U, ‖regularizedGaussTerm (N₀ + m) v‖ ≤ u m) :
-    AnalyticAt ℂ (fun v => ∑' m : ℕ, regularizedGaussTerm (N₀ + m) v) v₀ := by
-  refine (continuousOn_tsum
-    (fun m => (differentiable_regularizedGaussTerm (N₀ + m)).continuous.continuousOn)
-    hu hbound).analyticAt_of_differentiableAt_update (hU_open.mem_nhds hv₀U) fun y hy i => ?_
-  let V : Set ℂ := (fun x => Function.update y i x) ⁻¹' U
-  have hV_open : IsOpen V := hU_open.preimage (Continuous.update continuous_const i continuous_id)
-  have hupd : Differentiable ℂ (fun x : ℂ => Function.update y i x) :=
-    differentiable_pi.2 fun j => by by_cases hj : j = i <;> simp [Function.update, hj]
-  exact (differentiableOn_tsum_of_summable_norm hu
-    (fun m => ((differentiable_regularizedGaussTerm (N₀ + m)).comp hupd).differentiableOn)
-    hV_open (fun m _ hw => hbound m _ hw)).differentiableAt (hV_open.mem_nhds (by simpa [V]))
-
-private theorem analyticAt_regularizedGaussHGFun_pi {v₀ : Fin 4 → ℂ} (hv₀ : ‖v₀ 3‖ < 1) :
-    AnalyticAt ℂ (fun v : Fin 4 → ℂ => regularizedGaussHGFun (v 0) (v 1) (v 2) (v 3)) v₀ := by
-  let M : ℕ := max ⌈‖v₀ 0‖ + 1⌉₊ ⌈‖v₀ 1‖ + 1⌉₊
-  let N₀ : ℕ := ⌈-(v₀ 2).re⌉₊ + 2
-  let r : ℝ := (‖v₀ 3‖ + 1) / 2
-  have hr0 : 0 < r := by positivity
-  have hr1 : r < 1 := by dsimp [r]; linarith
-  obtain ⟨C₀, hC₀⟩ := (isCompact_closedBall (v₀ 2) 1).exists_bound_of_continuousOn
-    (f := fun c : ℂ => (Gamma (c + N₀))⁻¹)
-    ((differentiable_one_div_Gamma.comp
-      (differentiable_id.add_const (N₀ : ℂ))).continuous.continuousOn)
-  let C : ℝ := max C₀ 0
-  let U : Set (Fin 4 → ℂ) :=
-    ((· 0) ⁻¹' Metric.ball (v₀ 0) 1 ∩ (· 1) ⁻¹' Metric.ball (v₀ 1) 1) ∩
-    ((· 2) ⁻¹' Metric.ball (v₀ 2) 1 ∩ (· 3) ⁻¹' Metric.ball 0 r)
-  have hU_open : IsOpen U :=
-    ((Metric.isOpen_ball.preimage (continuous_apply 0)).inter
-      (Metric.isOpen_ball.preimage (continuous_apply 1))).inter
-      ((Metric.isOpen_ball.preimage (continuous_apply 2)).inter
-        (Metric.isOpen_ball.preimage (continuous_apply 3)))
-  have hv₀U : v₀ ∈ U := ⟨⟨Metric.mem_ball_self zero_lt_one, Metric.mem_ball_self zero_lt_one⟩,
-    ⟨Metric.mem_ball_self zero_lt_one, by simp [Metric.mem_ball, r]; linarith⟩⟩
-  have htail_an := analyticAt_tsum_regularizedGaussTerm_shift hU_open hv₀U
-    (summable_gauss_majorant C (M + N₀) N₀ hr0 hr1) fun m v hv =>
-      norm_regularizedGaussTerm_shift_le_on_box (le_max_left _ _) (le_max_right _ _) le_rfl
-        (le_max_right _ _) hr0.le hv.1.1 hv.1.2 hv.2.1 hv.2.2
-        ((hC₀ (v 2) (Metric.ball_subset_closedBall hv.2.1)).trans (le_max_left _ _)) m
-  have hpre_an : AnalyticAt ℂ (fun v => ∑ n ∈ Finset.range N₀, regularizedGaussTerm n v) v₀ :=
-    (Differentiable.fun_sum fun n _ =>
-      differentiable_regularizedGaussTerm n).differentiableOn.analyticAt_of_finiteDimensional
-      univ_mem
-  refine (hpre_an.add htail_an).congr ?_
-  filter_upwards [hU_open.mem_nhds hv₀U] with v hv
-  have hsum : HasSum (fun n => regularizedGaussTerm n v)
-      (regularizedGaussHGFun (v 0) (v 1) (v 2) (v 3)) :=
-    hasSum_regularizedGaussHGFun (v 0) (v 1) (v 2) ((mem_ball_zero_iff.1 hv.2.2).trans hr1)
-  rw [Pi.add_apply, ← hsum.tsum_eq, ← hsum.summable.sum_add_tsum_nat_add N₀]
-  exact congrArg (_ + ·) (tsum_congr fun m => by rw [add_comm _ m])
+    linarith [(abs_le.1 h).1, sub_re p.2.2.1 p₀.2.2.1, Nat.le_ceil (-p₀.2.2.1.re)]
+  exact norm_regularizedGaussTerm_shift_le (hnorm_le hp0 hM0) (hnorm_le hp1 hM1) hc hcC
+    (mem_ball_zero_iff.1 hp3).le m
 
 /-- **Joint holomorphy of the regularized Gauss hypergeometric function.** On `{p | ‖z‖ < 1}`,
 `regularizedGaussHGFun a b c z` is jointly analytic in all four complex variables `(a, b, c, z)`,
@@ -415,13 +332,44 @@ with no pole-avoidance restriction on `c`. -/
 theorem analyticOnNhd_regularizedGaussHGFun :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ × ℂ => regularizedGaussHGFun p.1 p.2.1 p.2.2.1 p.2.2.2)
       {p | ‖p.2.2.2‖ < 1} := by
-  intro p hp
-  let emb : ℂ × ℂ × ℂ × ℂ → Fin 4 → ℂ :=
-    fun q => fun | 0 => q.1 | 1 => q.2.1 | 2 => q.2.2.1 | 3 => q.2.2.2
-  have hemb : AnalyticAt ℂ emb p := (differentiable_pi.2 fun i => by
-    fin_cases i <;> dsimp [emb] <;> fun_prop).differentiableOn.analyticAt_of_finiteDimensional
-    univ_mem
-  exact ((analyticAt_regularizedGaussHGFun_pi (v₀ := emb p)
-    (by simpa [emb] using hp)).comp hemb).congr (Eventually.of_forall fun _ => rfl)
+  intro p₀ hp₀
+  simp only [mem_ofPred_eq] at hp₀
+  let M : ℕ := max ⌈‖p₀.1‖ + 1⌉₊ ⌈‖p₀.2.1‖ + 1⌉₊
+  let N₀ : ℕ := ⌈-p₀.2.2.1.re⌉₊ + 2
+  let r : ℝ := (‖p₀.2.2.2‖ + 1) / 2
+  have hr0 : 0 < r := by positivity
+  have hr1 : r < 1 := by dsimp [r]; linarith
+  obtain ⟨C₀, hC₀⟩ := (isCompact_closedBall p₀.2.2.1 1).exists_bound_of_continuousOn
+    (f := fun c : ℂ => (Gamma (c + N₀))⁻¹)
+    ((differentiable_one_div_Gamma.comp
+      (differentiable_id.add_const (N₀ : ℂ))).continuous.continuousOn)
+  let C : ℝ := max C₀ 0
+  let U : Set (ℂ × ℂ × ℂ × ℂ) :=
+    Metric.ball p₀.1 1 ×ˢ (Metric.ball p₀.2.1 1 ×ˢ (Metric.ball p₀.2.2.1 1 ×ˢ Metric.ball 0 r))
+  have hU_open : IsOpen U :=
+    Metric.isOpen_ball.prod (Metric.isOpen_ball.prod (Metric.isOpen_ball.prod Metric.isOpen_ball))
+  have hp₀U : p₀ ∈ U := ⟨Metric.mem_ball_self zero_lt_one, Metric.mem_ball_self zero_lt_one,
+    Metric.mem_ball_self zero_lt_one, by simp [Metric.mem_ball, r]; linarith⟩
+  have htail_an : AnalyticAt ℂ (fun p => ∑' m : ℕ, regularizedGaussTerm (N₀ + m) p) p₀ :=
+    ((tendstoUniformlyOn_tsum (s := U)
+        (summable_gauss_majorant C (M + N₀) N₀ hr0 hr1) fun m p hp =>
+        norm_regularizedGaussTerm_shift_le_on_box (le_max_left _ _) (le_max_right _ _) le_rfl
+          hp.1 hp.2.1 hp.2.2.1 hp.2.2.2
+          ((hC₀ p.2.2.1 (Metric.ball_subset_closedBall hp.2.2.1)).trans (le_max_left _ _)) m
+      ).differentiableOn
+      (Eventually.of_forall fun s => DifferentiableOn.fun_sum fun m _ =>
+        (differentiable_regularizedGaussTerm (N₀ + m)).differentiableOn) hU_open
+    ).analyticAt_of_finiteDimensional (hU_open.mem_nhds hp₀U)
+  have hpre_an : AnalyticAt ℂ (fun p => ∑ n ∈ Finset.range N₀, regularizedGaussTerm n p) p₀ :=
+    (Differentiable.fun_sum fun n _ =>
+      differentiable_regularizedGaussTerm n).differentiableOn.analyticAt_of_finiteDimensional
+      univ_mem
+  refine (hpre_an.add htail_an).congr ?_
+  filter_upwards [hU_open.mem_nhds hp₀U] with p hp
+  have hsum : HasSum (fun n => regularizedGaussTerm n p)
+      (regularizedGaussHGFun p.1 p.2.1 p.2.2.1 p.2.2.2) :=
+    hasSum_regularizedGaussHGFun p.1 p.2.1 p.2.2.1 ((mem_ball_zero_iff.1 hp.2.2.2).trans hr1)
+  rw [Pi.add_apply, ← hsum.tsum_eq, ← hsum.summable.sum_add_tsum_nat_add N₀]
+  exact congrArg (_ + ·) (tsum_congr fun m => by rw [add_comm _ m])
 
 end Complex

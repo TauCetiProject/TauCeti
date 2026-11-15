@@ -32,7 +32,8 @@ The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
-Two integers whose images in `ℂ` are at distance less than `1` are equal.
+Two integers whose images in `ℂ` are at distance less than `1` are equal, and the natural numbers
+embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`).
 -/
 
 public section
@@ -151,5 +152,20 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
       rw [← map_sub, norm_conj]
       exact add_le_add le_rfl htail
     _ ≤ _ := by linarith
+
+/-- The natural numbers embedded in `ℂ` form a closed set, complementing Mathlib's
+`Complex.isClosed_range_intCast`. -/
+theorem isClosed_range_natCast : IsClosed (Set.range ((↑) : ℕ → ℂ)) := by
+  have h : Set.range ((↑) : ℕ → ℂ) = Set.range ((↑) : ℤ → ℂ) ∩ {z : ℂ | 0 ≤ z.re} := by
+    ext z
+    constructor
+    · rintro ⟨n, rfl⟩
+      exact ⟨⟨n, by simp⟩, by simp⟩
+    · rintro ⟨⟨k, rfl⟩, hk⟩
+      have hk' : 0 ≤ k := by simpa using hk
+      lift k to ℕ using hk'
+      exact ⟨k, by simp⟩
+  rw [h]
+  exact isClosed_range_intCast.inter (isClosed_le continuous_const continuous_re)
 
 end Complex

@@ -7,9 +7,14 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
@@ -22,9 +27,11 @@ Beta integral; the remaining power is continuous on the closed integration inter
 For fixed `b`, `c` in that range the integral is jointly holomorphic in `(a, z)` on
 this cut plane, by the compact-parameter theorem `TauCeti.analyticAt_integral_smul`.
 
-The integral is defined at all parameters, but no representation of the Gauss
-function is asserted outside the convergence region. In particular, its normalized
-value can vanish when a Gamma factor has a pole.
+On the open unit disk `‖z‖ < 1`, expanding `(1 - z t) ^ (-a)` in its binomial series and
+integrating termwise against the Beta kernel identifies `Complex.eulerIntegral a b c z` with
+`Complex.regularizedGaussHGFun a b c z` (`Complex.eulerIntegral_eq_regularizedGaussHGFun`).
+Outside `0 < re b < re c`, `eulerIntegral` is only the totalized integral, not an analytic
+continuation; in particular, its normalized value can vanish when a Gamma factor has a pole.
 
 ## References
 
@@ -131,5 +138,73 @@ theorem eulerIntegral_zero_left {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) 
 theorem eulerIntegral_zero (a : ℂ) {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) :
     eulerIntegral a b c 0 = (Gamma c)⁻¹ := by
   simpa [eulerIntegral_def] using eulerIntegral_zero_left hb hcb 0
+
+private theorem integral_beta_mul_multichoose_term (a : ℂ) {b c : ℂ} (hb : 0 < b.re)
+    (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :
+    (Gamma b * Gamma (c - b))⁻¹ *
+        (∫ t : ℝ in 0..1, ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) *
+          (Ring.multichoose a n * (z * (t : ℂ)) ^ n)) =
+      ((ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b /
+        (n.factorial * Gamma (c + n))) * z ^ n := by
+  have hint : (∫ t : ℝ in 0..1, ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) *
+        (Ring.multichoose a n * (z * (t : ℂ)) ^ n)) =
+      Ring.multichoose a n * z ^ n * (Gamma (b + n) * Gamma (c - b) / Gamma (c + n)) := by
+    rw [intervalIntegral.integral_of_le zero_le_one, ← setIntegral_congr_set Ioo_ae_eq_Ioc,
+      setIntegral_congr_fun measurableSet_Ioo (g := fun t : ℝ => (Ring.multichoose a n * z ^ n) *
+        ((t : ℂ) ^ (b + n - 1) * (1 - (t : ℂ)) ^ (c - b - 1))) (fun t ht => by
+          dsimp only; rw [mul_pow, ← cpow_natCast (t : ℂ) n,
+            show b + (n : ℂ) - 1 = (b - 1) + (n : ℂ) by ring,
+            cpow_add _ _ (ofReal_ne_zero.2 ht.1.ne')]; ring),
+      integral_const_mul, setIntegral_congr_set Ioo_ae_eq_Ioc,
+      ← intervalIntegral.integral_of_le zero_le_one, ← betaIntegral,
+      betaIntegral_eq_Gamma_mul_div (b + n) (c - b)
+        (by simp; linarith [n.cast_nonneg (α := ℝ)]) (by simpa using sub_pos.2 hbc),
+      show b + (n : ℂ) + (c - b) = c + n by ring]
+  have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
+  have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos (by simpa using sub_pos.2 hbc)
+  have hpoch := (div_eq_iff hGb).1
+    (Gamma_add_nat_div_Gamma_eq (n := n) b (ne_neg_natCast_of_re_pos hb))
+  rw [hint, TauCeti.Ring.multichoose_eq_ascPochhammer_eval_div_factorial, hpoch]
+  field_simp [hGb, hGcb, Nat.cast_ne_zero.2 n.factorial_ne_zero]
+
+/-- **Euler's integral representation of the regularized Gauss series on the open unit disk**
+(DLMF 15.6.1). For `0 < Re b < Re c`, arbitrary `a : ℂ`, and `‖z‖ < 1`, the normalized Euler
+integral equals `regularizedGaussHGFun a b c z`. -/
+theorem eulerIntegral_eq_regularizedGaussHGFun (a : ℂ) {b c z : ℂ}
+    (hb : 0 < b.re) (hbc : b.re < c.re) (hz : ‖z‖ < 1) :
+    eulerIntegral a b c z = regularizedGaussHGFun a b c z := by
+  have hcb' : 0 < (c - b).re := by simpa using sub_pos.2 hbc
+  let F : ℕ → ℝ → ℂ := fun n t =>
+    ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) * (Ring.multichoose a n * (z * (t : ℂ)) ^ n)
+  let bound : ℕ → ℝ → ℝ := fun n t =>
+    ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖ * ‖Ring.multichoose a n * z ^ n‖
+  have hF_meas (n : ℕ) : AEStronglyMeasurable (F n) (volume.restrict (uIoc (0 : ℝ) 1)) :=
+    (intervalIntegrable_iff.1 ((betaIntegral_convergent hb hcb').mul_continuousOn
+      (g := fun t : ℝ => Ring.multichoose a n * (z * (t : ℂ)) ^ n)
+      (by fun_prop))).aestronglyMeasurable
+  have h_bound (n : ℕ) : ∀ᵐ t ∂volume, t ∈ uIoc (0 : ℝ) 1 → ‖F n t‖ ≤ bound n t := by
+    refine Eventually.of_forall fun t ht => ?_
+    rw [uIoc_of_le zero_le_one] at ht
+    simp only [F, bound, norm_mul, norm_pow]
+    gcongr
+    exact mul_le_of_le_one_right (norm_nonneg z)
+      (by simpa [Real.norm_eq_abs, abs_of_pos ht.1] using ht.2)
+  have h_lim : ∀ᵐ t ∂volume, t ∈ uIoc (0 : ℝ) 1 → HasSum (fun n => F n t)
+      ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * (t : ℂ)) ^ (-a)) := by
+    refine Eventually.of_forall fun t ht => ?_
+    rw [uIoc_of_le zero_le_one] at ht
+    have hzt : ‖z * (t : ℂ)‖ < 1 := by
+      rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos ht.1]
+      exact (mul_le_of_le_one_right (norm_nonneg z) ht.2).trans_lt hz
+    simpa [F, one_div, ← cpow_neg] using
+      (TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hzt).mul_left _
+  have hint_sum := intervalIntegral.hasSum_integral_of_dominated_convergence bound hF_meas h_bound
+    (Eventually.of_forall fun _ _ => (TauCeti.summable_norm_multichoose_mul_pow hz).mul_left _)
+    (by simpa only [bound, tsum_mul_left] using (betaIntegral_convergent hb hcb').norm.mul_const _)
+    h_lim
+  rw [eulerIntegral_def]
+  exact ((hint_sum.mul_left (Gamma b * Gamma (c - b))⁻¹).congr_fun
+    fun n => (integral_beta_mul_multichoose_term a hb hbc z n).symm).unique
+    (hasSum_regularizedGaussHGFun a b c hz)
 
 end Complex
