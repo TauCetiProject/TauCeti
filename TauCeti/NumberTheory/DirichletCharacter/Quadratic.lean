@@ -39,6 +39,8 @@ have absolute value one.
   quadratic.
 * `DirichletCharacter.isQuadratic_mul_iff_right`: for quadratic `χ` of nonzero level, `χ.mul ψ` is
   quadratic if and only if `ψ` is quadratic.
+* `MulChar.IsQuadratic.primitiveCharacter`: at a nonzero level, the primitive character of a
+  quadratic character is quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
   characters are the principal one and the Legendre character.
 * `DirichletCharacter.conductor_changeLevel_quadraticChar`: for odd `p`, with values in a
@@ -105,6 +107,14 @@ theorem isQuadratic_mul_iff_right {R : Type*} [CommRing R] {M N : ℕ} [NeZero M
   · simpa [← changeLevel_trans] using hlift.changeLevel (dvd_zero (M.lcm 0))
   · have : NeZero (M.lcm N) := ⟨Nat.lcm_ne_zero (NeZero.ne M) hN⟩
     exact (isQuadratic_changeLevel_iff (Nat.dvd_lcm_right M N)).mp hlift
+
+/-- The primitive character of a quadratic Dirichlet character at a nonzero level is quadratic:
+its values at units are values of `χ` at units lifting them. -/
+theorem _root_.MulChar.IsQuadratic.primitiveCharacter {R : Type*} [CommRing R] {N : ℕ}
+    [NeZero N] {χ : DirichletCharacter R N} (hχ : χ.IsQuadratic) :
+    χ.primitiveCharacter.IsQuadratic := by
+  rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, changeLevel_primitiveCharacter]
+  exact hχ
 
 section Prime
 
