@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
 
 /-!
 # Asymptotic orbits at the ends of a finite-energy Floer pair of pants
@@ -61,7 +62,11 @@ compactness.
 Without nondegeneracy the orbit `y_q` is obtained along a sequence `s_n`, while the convergence of
 the actions holds along the whole end. Convergence of the whole end to a single orbit, which needs
 nondegenerate orbits and a bound on the derivative, is proved in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence`.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence`. The orbits at the ends of a
+pair of pants with values in a manifold are obtained in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, of which the energy bound
+`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le` is the case of
+a constant form.
 
 ## References
 
@@ -230,37 +235,10 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
-  set s : Set (ℝ × ℝ) := Ioi a ×ˢ Ioo 0 1
-  have hs : MeasurableSet s := measurableSet_Ioi.prod measurableSet_Ioo
-  -- The closed band differs from the open one by a null set.
-  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
-    rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc.symm
-  -- On the open band the energy density is the Jacobian times the energy density of `u`.
-  have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =
-        |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
-    intro ζ hζ
-    have hζ₀ : 0 < ζ.1 := ha₀.trans_lt hζ.1
-    have hζT : T₀ ≤ ζ.1 := haT.trans hζ.1.le
-    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ₀
-    rw [floerEnergyDensity_def, perturbedFDeriv_comp_positiveEndChart_eq hKH hH hζT,
-      ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
-    exact ω.floerEnergyDensity_perturbationPullback
-      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
-      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
-      ((hu _ hS).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS))
-      (differentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
-      (differentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
-  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
-    ((injOn_positiveEndChart q).mono (prod_mono (subset_univ _) le_rfl))
-    (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
-  refine lintegral_mono_set ?_
-  rintro _ ⟨ζ, hζ, rfl⟩
-  exact positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ.1)
+  -- This is the manifold statement for the constant form.
+  simpa only [floerEnergyDensity_constSmooth] using
+    SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le (ω := ω.constSmooth)
+      hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q ha₀ haT
 
 /-! ### Asymptotic orbits at the ends -/
 
