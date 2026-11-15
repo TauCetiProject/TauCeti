@@ -62,7 +62,8 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent`,
-  `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart` and
+  `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`,
+  `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd_mk_finitePart` and
   `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd`: the finite conductor of the
   presented character divides the finite part of the modulus.
 * `TauCeti.LFunctions.Grossencharacter.toHeckeCharacter_primeIdele`: the value at a prime idele.
@@ -194,11 +195,19 @@ theorem finiteConductor_dvd_finitePart (χ : Grossencharacter K 𝔪) :
     (Ideal.pow_le_pow_right (χ.conductorExponent_le_exponent v))
 
 /-- **The finite conductor of a presentation, as a modulus without real places, divides the
+finite part of its modulus**, also taken without real places. -/
+theorem mk_finiteConductor_dvd_mk_finitePart (χ : Grossencharacter K 𝔪) :
+    (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
+      Modulus K) ∣ ⟨𝔪.finitePart, 𝔪.finitePart_ne_bot, ∅⟩ :=
+  Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.Subset.refl _⟩
+
+/-- **The finite conductor of a presentation, as a modulus without real places, divides the
 modulus of the presentation.** -/
 theorem mk_finiteConductor_dvd (χ : Grossencharacter K 𝔪) :
     (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
       Modulus K) ∣ 𝔪 :=
-  Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩
+  Modulus.dvd_trans χ.mk_finiteConductor_dvd_mk_finitePart
+    (Modulus.dvd_iff.mpr ⟨dvd_rfl, Finset.empty_subset _⟩)
 
 /-! ### The shift -/
 

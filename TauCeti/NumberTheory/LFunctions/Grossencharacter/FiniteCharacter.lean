@@ -156,8 +156,7 @@ theorem finiteCharacterK_eq_one_of_residueHom_eq_one (χ : Grossencharacter K �
       ⟨hx, by simp [𝔪₀]⟩
   have hx𝔣 : IsCongrOne
       ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ (x : Kˣ) :=
-    IsCongrOne.mono (𝔫 := 𝔪₀)
-      (Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩) hx₀
+    hx₀.mono χ.mk_finiteConductor_dvd_mk_finitePart
   -- There the ideal character of `(x)` is the inverse of the archimedean value.
   have harg : NumberFieldArithmetic.idealsAwayInclusion K
         (Modulus.support_mono χ.mk_finiteConductor_dvd)
@@ -179,10 +178,6 @@ theorem coe_finiteCharacterK_of_algebraMap_eq (χ : Grossencharacter K 𝔪)
       χ.unitaryWeight.1 (Ideal.span {a}) *
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
           (χ.archimedeanValue x : ℂ) := by
-  have hspan : ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) =
-      ((toPrincipalIdeal (𝓞 K) K (x : Kˣ) : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-        FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]
   -- The ideal `(a)` is prime to `𝔪`, since `x` is a unit at the primes dividing `𝔪`.
   have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 :=
     Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_span_singleton_iff.mpr ⟨x, ha.symm⟩)
@@ -194,7 +189,9 @@ theorem coe_finiteCharacterK_of_algebraMap_eq (χ : Grossencharacter K 𝔪)
     Subtype.ext (Units.ext (by
       rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
         NumberFieldArithmetic.coe_idealsAwayInclusion,
-        NumberFieldArithmetic.coe_principalIdealAway, hspan]))
+        ← NumberFieldArithmetic.integralIdealsAwayHom_eq_principalIdealAway
+          (J := ⟨_, hmem⟩) rfl ha,
+        NumberFieldArithmetic.coe_integralIdealsAwayHom]))
   rw [finiteCharacterK_apply, Units.val_mul, ← hideal,
     χ.coe_idealCharacter_integralIdealsAwayHom ⟨_, hmem⟩]
 
@@ -265,9 +262,8 @@ theorem finiteCharacter_unit (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) :
       χ.archimedeanValue (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) := by
   rw [χ.finiteCharacter_apply_of_algebraMap_eq
       (x := Units.map (algebraMap (𝓞 K) K).toMonoidHom u) rfl,
-    Ideal.span_singleton_eq_top.mpr u.isUnit,
-    ← Ideal.one_eq_top, map_one, map_one, Nat.cast_one, Complex.one_cpow, one_mul,
-    one_mul]
+    Ideal.span_singleton_eq_top.mpr u.isUnit]
+  simp
 
 /-- **On a unit the finite character on the fractions prime to `𝔪` is the archimedean value.** -/
 @[simp]

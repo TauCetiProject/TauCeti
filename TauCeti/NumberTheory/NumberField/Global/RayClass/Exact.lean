@@ -126,11 +126,8 @@ theorem exists_idealClass_eq_principalRayClass {𝔪 : Modulus K} {J : integralI
   obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp
     (hJ ▸ Modulus.mem_integralIdealsPrimeTo.mp J.2)
   refine ⟨x, hx, ?_⟩
-  rw [idealClass_apply, principalRayClass_apply]
-  refine congrArg _ (Subtype.ext (Units.ext ?_))
-  rw [NumberFieldArithmetic.coe_principalIdealAway, coe_toPrincipalIdeal,
-    NumberFieldArithmetic.coe_integralIdealsAwayHom, hJ, FractionalIdeal.coeIdeal_span_singleton,
-    hx]
+  rw [idealClass_apply, principalRayClass_apply,
+    NumberFieldArithmetic.integralIdealsAwayHom_eq_principalIdealAway hJ hx.symm]
 
 /-- The map from a ray class to its underlying ordinary ideal class. -/
 noncomputable def rayClassToClassGroup (m : Modulus K) :
