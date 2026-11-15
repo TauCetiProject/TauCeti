@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
+import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
 
 /-!
 # Adjacent root strings and Heisenberg subgroups from a minuscule weight table
@@ -118,23 +119,20 @@ variable {B ι : Type*} (T : MinusculeWeightTable B ι) [Fintype ι] [DecidableE
 
 /-! ## Adjacent raising strings -/
 
+attribute [local instance 100] LieRing.ofAssociativeRing in
 /-- An alternating triple of raising operators at nodes joined by a Cartan entry `-1` vanishes:
-raising strings through such a pair have length at most two. -/
+raising strings through such a pair have length at most two. Over `ℤ` this follows from
+`Eᵢ * Eᵢ = 0` and the Serre relation `⁅Eᵢ, ⁅Eᵢ, Eⱼ⁆⁆ = 0`, and it casts into `R`. -/
 theorem raisingMatrix_mul_raisingMatrix_mul_raisingMatrix_of_cartanMatrix_eq_neg_one (i j : B)
     (hij : T.cartanMatrix i j = -1) :
     (T.raisingMatrix i).map (Int.cast : ℤ → R) *
         (T.raisingMatrix j).map (Int.cast : ℤ → R) *
           (T.raisingMatrix i).map (Int.cast : ℤ → R) = 0 := by
-  ext a b
-  rw [T.mul_raisingMatrix_map_apply, T.mul_raisingMatrix_map_apply]
-  by_cases hi : T.weight b i = -1
-  · by_cases hj : T.weight (T.reflection i b) j = -1
-    · have hlast : T.weight (T.reflection j (T.reflection i b)) i ≠ -1 := by
-        rw [T.weight_reflection, T.weight_reflection_self, hi, hj, hij]
-        norm_num
-      simp [hi, hj, hlast]
-    · simp [hi, hj]
-  · simp [hi]
+  have h := congrArg (RingHom.mapMatrix (Int.castRingHom R))
+    (Matrix.mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero _ _
+      (by simpa only [pow_two] using T.raisingMatrix_pow_two i)
+      (T.isSerreSystem.lie_E_lie_E_E_of_eq_neg_one hij))
+  simpa only [map_mul, map_zero, RingHom.mapMatrix_apply, Int.coe_castRingHom] using h
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- A weight with coordinate `-1` at one end of an edge with Cartan entries `-1` supplies a

@@ -401,7 +401,7 @@ theorem reflection_apply_apply (i : B) (a : ι) : T.reflection i (T.reflection i
   ring
 
 /-- A negative weight at a node gives a negative weight there in either signed table. -/
-theorem signed_exists_weight_eq_neg_one (positive : Bool) (i : B)
+theorem exists_signed_weight_eq_neg_one (positive : Bool) (i : B)
     (h : ∃ a, T.weight a i = -1) : ∃ a, (T.signed positive).weight a i = -1 := by
   obtain ⟨a, ha⟩ := h
   cases positive with

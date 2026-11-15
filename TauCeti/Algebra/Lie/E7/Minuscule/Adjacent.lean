@@ -76,7 +76,7 @@ variable (positive : Bool) (i j : Fin 7) (R : Type*) [CommRing R]
 
 private theorem signedWeightTable_exists_neg_one :
     ∃ a, (weightTable.signed positive).weight a i = -1 :=
-  weightTable.signed_exists_weight_eq_neg_one positive i
+  weightTable.exists_signed_weight_eq_neg_one positive i
     (by simpa only [weightTable_weight] using exists_e7MinusculeWeight_apply_eq_neg_one i)
 
 private theorem signedWeightTable_cartanMatrix_adjacent (hij : CartanMatrix.E 7 i j = -1) :
