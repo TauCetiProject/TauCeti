@@ -115,10 +115,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
   refine ⟨δ, hδ, fun Ω u a A hΩ hΩD hu hfl ha hA huK ↦ ?_⟩
   set Ks : ℝ × ℝ → V → ℝ := fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1
   set Kt : ℝ × ℝ → V → ℝ := fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x I
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
   have hHs1 : ContDiff ℝ 1 (uncurry H) := hHs.of_le (by norm_num)
-  have hf0 (k : ℕ) (z : ℝ × ℝ) : 0 ≤ ω.floerEnergyDensity Ks Kt (u k) z :=
-    ω.floerEnergyDensity_nonneg (hJt z _) (hfl k z)
   -- The action bound `-B ≤ ε a` makes the energy bound nonnegative.
   have hE0 : 0 ≤ A + B := by
     have h := neg_le_endSign_mul_of_tendsto_hamiltonianAction_pssPlanePerturbation
@@ -132,15 +129,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
       (lintegral_floerEnergyDensity_pssPlanePerturbation_le (J := fun z ↦ J z (u k z)) ω hH hHs1
         hB ((hu k).of_le (by norm_num)) (fun z ↦ hJt z _) (hfl k) (ha k)).trans
         (ENNReal.ofReal_le_ofReal (by linarith [hA k]))
-  have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_univ ((hu k).of_le (by norm_num)).contDiffOn
-      ((hK' 1).of_le (by norm_num)).contDiffOn ((hK' I).of_le (by norm_num)).contDiffOn).mono
-        (subset_univ Ω)).aestronglyMeasurable hΩm,
-      (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩm fun z _ ↦ hf0 k z)).2
-        ((hlin k).trans_lt ENNReal.ofReal_lt_top)⟩
-  exact hconv hΩ hΩD (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hΩm fun z _ ↦ hf0 k z)
-      (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal hE0 (hlin k)
+  have hE (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le_of_setLIntegral_le
+    isOpen_univ hΩ.measurableSet (subset_univ Ω) ((hu k).of_le (by norm_num)).contDiffOn
+    ((hK' 1).of_le (by norm_num)).contDiffOn ((hK' I).of_le (by norm_num)).contDiffOn
+    (fun z _ ↦ hJt z _) (fun z _ ↦ hfl k z) hE0 (hlin k)
+  exact hconv hΩ hΩD (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK (fun k ↦ (hE k).1)
+    fun k ↦ (hE k).2
 
 end TauCeti.SymplecticForm

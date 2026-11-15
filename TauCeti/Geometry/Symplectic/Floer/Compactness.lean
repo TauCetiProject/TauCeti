@@ -613,6 +613,31 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
       (mul_le_mul_of_nonneg_right (hM' n _ (by simpa using hy)) (norm_nonneg _))
   · simpa only [hu_symm] using hlim'.comp e.symm hsymm e.symm.continuous.continuousOn
 
+/-- **A lower-integral bound on the Floer energy bounds its integral.** Let `u` be a `C¹` solution
+of the Floer equation `(du - X_K)^{0,1} = 0` for `ω`-tame `J(z, u)` on a measurable subset `Ω` of
+an open set `U ⊆ ℝ × ℝ`, with `K = K_s ds + K_t dt` of class `C¹` on `U × V`. If
+`∫⁻_Ω ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) ≤ E` with `0 ≤ E`, then the Floer energy density is
+integrable on `Ω` and its integral over `Ω` is at most `E`. These are the energy hypotheses of
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`. -/
+theorem integrableOn_floerEnergyDensity_and_setIntegral_le_of_setLIntegral_le
+    (ω : SymplecticForm V) {U Ω : Set (ℝ × ℝ)} {u : ℝ × ℝ → V} {E : ℝ} (hU : IsOpen U)
+    (hΩ : MeasurableSet Ω) (hΩU : Ω ⊆ U) (hu : ContDiffOn ℝ 1 u U)
+    (hKs : ContDiffOn ℝ 1 (Function.uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (Function.uncurry Kt) (U ×ˢ univ))
+    (hJt : ∀ z ∈ Ω, ω.Tames (J z (u z)))
+    (hfl : ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : 0 ≤ E)
+    (hlin : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
+  have hf0 : 0 ≤ᵐ[volume.restrict Ω] ω.floerEnergyDensity Ks Kt u :=
+    ae_restrict_of_forall_mem hΩ fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt z hz) (hfl z hz)
+  have hm := ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hΩU).aestronglyMeasurable hΩ
+  refine ⟨⟨hm, (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0 hm]
+  exact ENNReal.toReal_le_of_le_ofReal hE hlin
+
 /-- **Floer solutions of bounded energy converge off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing
 `D × K` for compact `D ⊆ ℝ × ℝ` and `K ⊆ V`, with `J(z, x)` tamed by `ω` on `D × K`. There is a
