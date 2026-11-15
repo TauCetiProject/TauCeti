@@ -10,11 +10,11 @@ public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Variati
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Family
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.KoszulVariation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Parametric
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
@@ -74,7 +74,6 @@ parameter manifold along a parameter curve:
   the tensor of the first variation formula.
 * `deriv_difference_eq_zero_of_derivBilinearTensor_eq_zero`: `Γ'` vanishes where the first
   variation of the metric is parallel.
-* `deriv_difference_apply_eq_deriv_covariantDerivative_apply`: `Γ'(Z, v) = ∂ₛ ∇ˢ_v Z`.
 * `contMDiff_deriv_difference_of_isLeviCivitaConnection`: `Γ'` is a smooth tensor field. Its
   pairings with the metric on a chart-local frame are smooth by the first variation formula and
   the Koszul expression of `h`, and the sharp of the metric recovers `Γ'` from them.
@@ -409,19 +408,6 @@ theorem deriv_difference_eq_zero_of_derivBilinearTensor_eq_zero
   simp only [hh, zero_apply, sub_zero, add_zero, mul_eq_zero, two_ne_zero, false_or] at h
   simpa [metric_apply] using h
 
-/-- **The variation of a Levi-Civita connection is the derivative of its covariant
-derivatives.** Let `g` be a smooth family of nondegenerate metrics parametrized by `P`, let `c` be
-a parameter curve which is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for
-every `s`. For a vector field `Z` differentiable at `y` and `v ∈ T_y M`, the derivative `Γ'` at `t`
-of the difference tensors `∇ˢ - ∇ᵗ` satisfies `Γ'_y(Z y, v) = ∂ₛ (∇ˢ_v Z)` at `s = t`. -/
-theorem deriv_difference_apply_eq_deriv_covariantDerivative_apply
-    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
-    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s))
-    {Z : Π y : M, TangentSpace I y} {y : M} (hZ : MDiffAt (T% Z) y) (v : TangentSpace I y) :
-    deriv (fun s ↦ (cov s).difference (cov t) y) t (Z y) v = deriv (fun s ↦ cov s Z y v) t :=
-  TauCeti.Manifold.deriv_difference_apply_eq_deriv_covariantDerivative_apply
-    (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y) hZ v
-
 /-- The pairing `g_{c t}(Γ'(X, Y), Z)` of the variation of a family of Levi-Civita connections with
 smooth vector fields is smooth on an open set: by the first variation formula and the Koszul
 expression of `h = δ_{c'(t)} g`, it is `K_h(Y, X, Z) / 2 - h(∇ᵗ_Y X, Z)`. -/
@@ -437,21 +423,13 @@ private theorem contMDiffOn_apply_deriv_difference [IsManifold IP 1 P]
       s := by
   set h := g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)
   have hh := g.contMDiff_variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)
-  have hpair {U V : Π y : M, TangentSpace I y}
-      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) ∞ (fun y ↦ TotalSpace.mk' E y (U y)) s)
-      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) ∞ (fun y ↦ TotalSpace.mk' E y (V y)) s) :
-      ContMDiffOn I 𝓘(ℝ) ∞ (fun y ↦ h y (U y) (V y)) s := by
-    intro y hy
-    have h₂ := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ)
-      (hh y).contMDiffWithinAt (hU y hy) (hV y hy)
-    simpa using (contMDiffWithinAt_totalSpace_iff.mp h₂).2
   have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have hcovX := ((hcov t).contMDiffOn le_rfl hs (by simpa using hX)).clm_bundle_apply hY
   have hK := (contMDiffOn_const (c := (2 : ℝ)⁻¹)).mul
     (contMDiffOn_koszulBilinear (n := ∞) (m := ∞) (b := h) hs (by simp)
       (by simpa using hh.contMDiffOn) (by simpa using hY) (by simpa using hX)
       (by simpa using hZ))
-  refine (hK.sub (hpair hcovX hZ)).congr fun y hy ↦ ?_
+  refine (hK.sub (contMDiffOn_apply_apply hh.contMDiffOn hcovX hZ)).congr fun y hy ↦ ?_
   have hd {U : Π y : M, TangentSpace I y}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) ∞ (fun y ↦ TotalSpace.mk' E y (U y)) s) :
       MDiffAt (T% U) y :=

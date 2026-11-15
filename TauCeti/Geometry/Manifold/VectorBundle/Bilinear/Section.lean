@@ -10,7 +10,10 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.Projection
 
 /-!
-# Symmetrization of `C^n` bilinear fields
+# `C^n` bilinear fields
+
+Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function
+(`TauCeti.Manifold.contMDiffWithinAt_apply_apply` and its variant on a set).
 
 The transpose of a `C^n` bilinear field is `C^n`. When two is nonzero in the scalar field,
 averaging a field with its transpose defines a linear projection onto the symmetric `C^n`
@@ -91,6 +94,34 @@ theorem contMDiff_flip_section
   fun x ↦ contMDiffAt_flip_section (hb x)
 
 end Flip
+
+section Pairing
+
+variable {s : Set B} {x : B}
+
+/-- Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function, within a set
+at a point. -/
+theorem contMDiffWithinAt_apply_apply {β : ∀ x : B, V x →L[𝕜] V x →L[𝕜] G} {U W : ∀ x : B, V x}
+    (hβ : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) y (β y))
+      s x)
+    (hU : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (U y)) s x)
+    (hW : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (W y)) s x) :
+    ContMDiffWithinAt IB 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s x :=
+  (contMDiffWithinAt_totalSpace_iff.mp (ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G)
+    (E₃ := Bundle.Trivial B G) (b := id) hβ hU hW)).2
+
+/-- Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function on a set. -/
+theorem contMDiffOn_apply_apply {β : ∀ x : B, V x →L[𝕜] V x →L[𝕜] G} {U W : ∀ x : B, V x}
+    (hβ : ContMDiffOn IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) y (β y))
+      s)
+    (hU : ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (U y)) s)
+    (hW : ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (W y)) s) :
+    ContMDiffOn IB 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s :=
+  fun y hy ↦ contMDiffWithinAt_apply_apply (hβ y hy) (hU y hy) (hW y hy)
+
+end Pairing
 
 /-- Transposition as a linear involution on `C^n` bilinear fields. -/
 def transposeBilinearSection :
