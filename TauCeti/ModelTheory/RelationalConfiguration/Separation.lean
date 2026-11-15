@@ -58,8 +58,9 @@ Two consequences follow directly from uniform separation:
 
 * `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation`: an analytic set of non-isomorphic
   pairs on a countable carrier is uniformly separated at a single countable back-and-forth level.
-* `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: every sentence with
-  countable branching is constant on all sufficiently high countable back-and-forth levels.
+* `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: on a countable carrier in
+  a vocabulary with countably many relation symbols of each arity, every sentence with countable
+  branching is constant on all sufficiently high countable back-and-forth levels.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_of_analyticSet`,
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`, and
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`: asymptotic saturation
@@ -415,9 +416,9 @@ theorem exists_bfLevel_mem_iff_of_measurableSet [Countable V] [∀ n, Countable 
   exists_bfLevel_mem_iff_of_analyticSet (hC.inter_measurableSet hB)
     (@Set.sdiff_eq _ C B ▸ hC.inter_measurableSet hB.compl) hinv
 
-/-- Every infinitary sentence is constant on back-and-forth classes from some countable level
-onward. The carrier is countable, and the sentence has countable branching; no bound on its
-syntactic quantifier rank is required. -/
+/-- On a countable carrier in a vocabulary with countably many relation symbols of each arity,
+every infinitary sentence with countable branching is constant on back-and-forth classes from
+some countable level onward. No bound on its syntactic quantifier rank is required. -/
 theorem exists_bfLevel_saturated_modelsOf [Countable V] [∀ n, Countable (L.Relations n)]
     {ι : Type*} [Countable ι] (θ : L.SentenceInf ι) :
     ∃ α : Ordinal.{o}, α < ω₁ ∧ ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,

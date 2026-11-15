@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Counting.Minimal.Basic
-public import TauCeti.ModelTheory.Counting.Scattered.Vaught
-import Mathlib.Data.List.OfFn
+public import TauCeti.ModelTheory.Counting.Vaught
 
 /-!
 # Minimally uncountable strengthenings of scattered sentences
@@ -133,18 +132,6 @@ private theorem LargeNode.exists_children [Countable (Σ n, L.Relations n)] {Θ 
     · exact hc₁.1
   · exact fun h => hc₁.2 ((hsame c₀ c₁ h).mp hc₀.2)
 
-/-- The node on a binary branch after reading its first `n` bits. -/
-private def branchNode {Θ : L.Sentenceω} (a : List Bool → LargeNode Θ)
-    (z : ℕ → Bool) (n : ℕ) : LargeNode Θ :=
-  a (List.ofFn fun i : Fin n => z i)
-
-private theorem branchNode_succ {Θ : L.Sentenceω} (a : List Bool → LargeNode Θ)
-    (z : ℕ → Bool) (n : ℕ) :
-    branchNode a z (n + 1) = a ((List.ofFn fun i : Fin n => z i) ++ [z n]) := by
-  dsimp only [branchNode]
-  rw [List.ofFn_succ']
-  simp only [Fin.val_castSucc, Fin.val_last, List.concat_eq_append]
-
 private theorem LargeNode.exists_branch_limit {Θ : L.Sentenceω} (p : ℕ → LargeNode Θ)
     (hgrow : ∀ n, (p n).level + ω ≤ (p (n + 1)).level)
     (hlink : ∀ n, bfEquivSetoid L ℕ (p n).level (p n).centre (p (n + 1)).centre) :
@@ -160,18 +147,18 @@ private theorem LargeNode.exists_branch_limit {Θ : L.Sentenceω} (p : ℕ → L
   exact ⟨d, (p 0).subset_models ((bfEquivSetoid L ℕ (p 0).level).symm (hmatch 0)), hmatch⟩
 
 private theorem branches_separated {Θ : L.Sentenceω} (a : List Bool → LargeNode Θ)
-    (hsame : ∀ s, (a (s ++ [false])).level = (a (s ++ [true])).level)
-    (hsplit : ∀ s, ¬ bfEquivSetoid L ℕ (a (s ++ [false])).level
-      (a (s ++ [false])).centre (a (s ++ [true])).centre)
+    (hsame : ∀ s, (a (false :: s)).level = (a (true :: s)).level)
+    (hsplit : ∀ s, ¬ bfEquivSetoid L ℕ (a (false :: s)).level
+      (a (false :: s)).centre (a (true :: s)).centre)
     {β : Ordinal.{0}} (hbound : ∀ s, (a s).level ≤ β)
     (f : (ℕ → Bool) → RelationalConfiguration L ℕ)
-    (hf : ∀ z n, bfEquivSetoid L ℕ (branchNode a z n).level (f z) (branchNode a z n).centre)
+    (hf : ∀ z n, bfEquivSetoid L ℕ (a (PiNat.res z n)).level (f z) (a (PiNat.res z n)).centre)
     {z w : ℕ → Bool} (hne : z ≠ w) : ¬ bfEquivSetoid L ℕ β (f z) (f w) := by
   classical
   have hsiblings (s : List Bool) (b c : Bool) (hne : b ≠ c) :
-      (a (s ++ [b])).level = (a (s ++ [c])).level ∧
-        ¬ bfEquivSetoid L ℕ (a (s ++ [b])).level
-          (a (s ++ [b])).centre (a (s ++ [c])).centre := by
+      (a (b :: s)).level = (a (c :: s)).level ∧
+        ¬ bfEquivSetoid L ℕ (a (b :: s)).level
+          (a (b :: s)).centre (a (c :: s)).centre := by
     cases b <;> cases c
     · exact (hne rfl).elim
     · exact ⟨hsame s, hsplit s⟩
@@ -182,15 +169,13 @@ private theorem branches_separated {Θ : L.Sentenceω} (a : List Bool → LargeN
   -- At the first differing bit the branches choose separated siblings of the same node.
   let n := PiNat.firstDiff z w
   have hn : z n ≠ w n := PiNat.apply_firstDiff_ne hne
-  have heq : (List.ofFn fun i : Fin n => z i) = List.ofFn (fun i : Fin n => w i) := by
-    apply congrArg List.ofFn
-    funext i
-    exact PiNat.apply_eq_of_lt_firstDiff i.2
+  have heq : PiNat.res z n = PiNat.res w n :=
+    PiNat.res_eq_res.2 fun _ hm => PiNat.apply_eq_of_lt_firstDiff hm
   obtain ⟨hzw, hnsep⟩ :
-      (branchNode a z (n + 1)).level = (branchNode a w (n + 1)).level ∧
-        ¬ bfEquivSetoid L ℕ (branchNode a z (n + 1)).level
-          (branchNode a z (n + 1)).centre (branchNode a w (n + 1)).centre := by
-    rw [branchNode_succ a z n, branchNode_succ a w n, ← heq]
+      (a (PiNat.res z (n + 1))).level = (a (PiNat.res w (n + 1))).level ∧
+        ¬ bfEquivSetoid L ℕ (a (PiNat.res z (n + 1))).level
+          (a (PiNat.res z (n + 1))).centre (a (PiNat.res w (n + 1))).centre := by
+    rw [PiNat.res_succ, PiNat.res_succ, ← heq]
     exact hsiblings _ (z n) (w n) hn
   intro h
   have hw := hf w (n + 1)
@@ -202,24 +187,24 @@ private theorem branches_separated {Θ : L.Sentenceω} (a : List Bool → LargeN
 /-- A splitting tree of large whole classes contradicts scatteredness. -/
 private theorem not_bfScattered_of_splittingTree {Θ : L.Sentenceω}
     (a : List Bool → LargeNode Θ)
-    (hgrow : ∀ s b, (a s).level + ω ≤ (a (s ++ [b])).level)
-    (hparent : ∀ s b, bfEquivSetoid L ℕ (a s).level (a s).centre (a (s ++ [b])).centre)
-    (hsame : ∀ s, (a (s ++ [false])).level = (a (s ++ [true])).level)
-    (hsplit : ∀ s, ¬ bfEquivSetoid L ℕ (a (s ++ [false])).level
-      (a (s ++ [false])).centre (a (s ++ [true])).centre) :
+    (hgrow : ∀ s b, (a s).level + ω ≤ (a (b :: s)).level)
+    (hparent : ∀ s b, bfEquivSetoid L ℕ (a s).level (a s).centre (a (b :: s)).centre)
+    (hsame : ∀ s, (a (false :: s)).level = (a (true :: s)).level)
+    (hsplit : ∀ s, ¬ bfEquivSetoid L ℕ (a (false :: s)).level
+      (a (false :: s)).centre (a (true :: s)).centre) :
     ¬ BFScattered (modelsOf (V := ℕ) Θ) := by
   classical
   -- All node levels, including those on different branches, have one countable bound.
   let β : Ordinal.{0} := ⨆ s : List Bool, (a s).level
   have hβ : β < ω₁ := iSup_lt_omega_one fun s => (a s).countable_level
   have hgrow' (z : ℕ → Bool) (n : ℕ) :
-      (branchNode a z n).level + ω ≤ (branchNode a z (n + 1)).level := by
-    rw [branchNode_succ]; exact hgrow _ _
-  have hparent' (z : ℕ → Bool) (n : ℕ) : bfEquivSetoid L ℕ (branchNode a z n).level
-      (branchNode a z n).centre (branchNode a z (n + 1)).centre := by
-    rw [branchNode_succ]; exact hparent _ _
+      (a (PiNat.res z n)).level + ω ≤ (a (PiNat.res z (n + 1))).level := by
+    rw [PiNat.res_succ]; exact hgrow _ _
+  have hparent' (z : ℕ → Bool) (n : ℕ) : bfEquivSetoid L ℕ (a (PiNat.res z n)).level
+      (a (PiNat.res z n)).centre (a (PiNat.res z (n + 1))).centre := by
+    rw [PiNat.res_succ]; exact hparent _ _
   choose f hmodel hf using fun z =>
-    LargeNode.exists_branch_limit (branchNode a z) (hgrow' z) (hparent' z)
+    LargeNode.exists_branch_limit (fun n => a (PiNat.res z n)) (hgrow' z) (hparent' z)
   intro hscat
   have := hscat.countable_quotient hβ
   have hinj : Function.Injective (fun z : ℕ → Bool =>
@@ -249,9 +234,8 @@ theorem exists_minimallyUncountableOn_inf_of_bfScattered [Countable (Σ n, L.Rel
     simpa only [isoSetoidOn, Setoid.countable_quotient_comap_val_iff] using hlarge
   obtain ⟨root⟩ := exists_largeNode hΘ hlarge'
   choose child hgrow hparent hsame hsplit using LargeNode.exists_children hΘ hnomin
-  let a (s : List Bool) : LargeNode Θ := s.foldl (fun p b => child p b) root
-  have ha (s : List Bool) (b : Bool) : a (s ++ [b]) = child (a s) b := by
-    simp [a, List.foldl_append]
+  let a (s : List Bool) : LargeNode Θ := s.foldr (fun b p => child p b) root
+  have ha (s : List Bool) (b : Bool) : a (b :: s) = child (a s) b := rfl
   apply not_bfScattered_of_splittingTree a _ _ _ _ hΘ
   · intro s b; rw [ha]; exact hgrow _ b
   · intro s b; rw [ha]; exact hparent _ b

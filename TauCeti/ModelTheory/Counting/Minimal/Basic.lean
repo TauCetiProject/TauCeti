@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
+public import TauCeti.ModelTheory.Counting.Classes
 public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
+public import TauCeti.ModelTheory.RelationalConfiguration.Separation
 
 /-!
 # Minimally uncountable classes of countable structures
@@ -16,8 +17,9 @@ cut by an infinitary sentence has a side meeting only countably many. The cuts a
 not by arbitrary invariant sets. This is the minimality notion used in the reduction of Vaught
 counterexamples to minimally uncountable sentences.
 
-A concentrated analytic class is minimally uncountable exactly when it meets uncountably many
-isomorphism classes. Conversely, a scattered minimally uncountable class is concentrated.
+In a vocabulary with countably many relation symbols of each arity, a concentrated class is
+minimally uncountable exactly when it meets uncountably many isomorphism classes. Conversely,
+a scattered minimally uncountable class is concentrated.
 
 ## References
 
@@ -31,7 +33,7 @@ public section
 
 universe u v
 
-open FirstOrder FirstOrder.Language Set MeasureTheory
+open FirstOrder FirstOrder.Language Set
 
 namespace TauCeti
 
@@ -85,13 +87,16 @@ theorem MinimallyUncountableOn.concentratedAtBFLevels [Countable (Σ n, L.Relati
     (h : MinimallyUncountableOn K) (hK : BFScattered K) : ConcentratedAtBFLevels K :=
   concentratedAtBFLevels_of_bfScattered_of_sentence_splits hK h.splits
 
-/-- For an analytic concentrated class, minimal uncountability is equivalent to uncountability
-of its isomorphism classes. -/
+/-- In a vocabulary with countably many relation symbols of each arity, a concentrated class
+is minimally uncountable exactly when its isomorphism classes are uncountable. -/
 theorem ConcentratedAtBFLevels.minimallyUncountableOn_iff [∀ n, Countable (L.Relations n)]
-    (hK : ConcentratedAtBFLevels K) (han : AnalyticSet K) :
+    (hK : ConcentratedAtBFLevels K) :
     MinimallyUncountableOn K ↔ ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable := by
   refine ⟨MinimallyUncountableOn.not_countable_isoClasses, fun h => ⟨h, fun θ => ?_⟩⟩
-  simpa only [Setoid.countable_quotient_comap_val_iff] using
-    hK.countable_isoClasses_inter_modelsOf_or_sdiff han θ
+  obtain ⟨α, hα, hsat⟩ := exists_bfLevel_saturated_modelsOf (V := ℕ) θ
+  have hcut := hK.countable_isoClasses_or_of_saturated
+    (B := K ∩ modelsOf θ) inter_subset_left hα
+    (fun b hb c hc hbc => ⟨hc, (hsat α le_rfl b c hbc).mp hb.2⟩)
+  simpa only [Setoid.countable_quotient_comap_val_iff, sdiff_self_inter] using hcut
 
 end TauCeti
