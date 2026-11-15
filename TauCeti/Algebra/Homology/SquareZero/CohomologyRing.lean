@@ -269,8 +269,8 @@ theorem cohomologyGRing_of_mul_of_comm
   let := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
   induction x using Submodule.Quotient.induction_on with | H a => ?_
   induction y using Submodule.Quotient.induction_on with | H b => ?_
-  rw [of_mul_of, of_mul_of, ← of_smul, cohomologyGRing_gMul, cohomologyGRing_gMul,
-    cohomologyMul_mk, cohomologyMul_mk, ← Submodule.Quotient.mk_smul]
+  simp only [of_mul_of, ← of_smul, cohomologyGRing_gMul, cohomologyMul_mk,
+    ← Submodule.Quotient.mk_smul]
   refine of_eq_of_gradedMonoid_eq (gradedMonoid_mk_cohomology_mk_eq (add_comm i j) ?_)
   simpa only [add_comm i j, SetLike.mk_smul_mk] using hcomm a.2 b.2
 
@@ -318,8 +318,7 @@ def cohomologyAlgHom :
   letI := cohomologyGAlgebra ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc
   toAlgebra R _ (fun i ↦ (lof R ℤ (fun i ↦ E.cohomology H i) i).comp (cohomologyMap f hfdeg hfD i))
     (by
-      rw [comp_apply, cohomologyGRing_gOne, cohomologyMap_mk, one_def, cohomologyGRing_gOne,
-        lof_eq_of]
+      simp only [comp_apply, one_def, cohomologyGRing_gOne, cohomologyMap_mk, lof_eq_of]
       exact congrArg _ (cohomology_mk_eq_mk_iff.2 hfone))
     (fun {i j} x y ↦ by
       simp only [comp_apply, lof_eq_of, of_mul_of, cohomologyGRing_gMul,
@@ -339,6 +338,18 @@ theorem cohomologyAlgHom_of {i : ℤ} (x : D.cohomology G i) :
   rw [cohomologyAlgHom, toAlgebra_apply]
   exact (toSemiring_of _ _ _ i x).trans (lof_eq_of R _ _ i _)
 
+/-- As a linear map, the algebra homomorphism of cohomology rings is the direct sum of the maps
+induced by `f` in each degree. -/
+theorem cohomologyAlgHom_toLinearMap :
+    letI := cohomologyGRing μ hμdeg hμL e he hμone_mul hμmul_one hμassoc
+    letI := cohomologyGAlgebra μ hμdeg hμL e he hμone_mul hμmul_one hμassoc
+    letI := cohomologyGRing ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc
+    letI := cohomologyGAlgebra ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc
+    (cohomologyAlgHom μ hμdeg hμL e he hμone_mul hμmul_one hμassoc ν hνdeg hνL e' he' hνone_mul
+        hνmul_one hνassoc f hfdeg hfD hfmul hfone).toLinearMap =
+      lmap fun i ↦ cohomologyMap (G₁ := G) (G₀ := H) f hfdeg hfD i :=
+  linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by simp [lof_eq_of]
+
 /-- **The algebra isomorphism of cohomology rings induced by a multiplicative map.** If, in
 addition to the hypotheses of `LinearMap.cohomologyAlgHom`, the map induced by `f` on cohomology is
 bijective in every degree, then the induced algebra homomorphism of cohomology rings is an
@@ -357,15 +368,7 @@ def cohomologyAlgEquiv
   AlgEquiv.ofBijective (cohomologyAlgHom μ hμdeg hμL e he hμone_mul hμmul_one hμassoc ν hνdeg hνL
     e' he' hνone_mul hνmul_one hνassoc f hfdeg hfD hfmul hfone) <| by
     -- The homomorphism is the direct sum of the degreewise maps, which are bijective.
-    have h : ⇑(cohomologyAlgHom μ hμdeg hμL e he hμone_mul hμmul_one hμassoc ν hνdeg hνL e' he'
-        hνone_mul hνmul_one hνassoc f hfdeg hfD hfmul hfone) =
-        lmap fun i ↦ cohomologyMap (G₁ := G) (G₀ := H) f hfdeg hfD i := by
-      refine congrArg DFunLike.coe (linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ ?_ :
-        (cohomologyAlgHom μ hμdeg hμL e he hμone_mul hμmul_one hμassoc ν hνdeg hνL e' he'
-          hνone_mul hνmul_one hνassoc f hfdeg hfD hfmul hfone).toLinearMap =
-          lmap fun i ↦ cohomologyMap (G₁ := G) (G₀ := H) f hfdeg hfD i)
-      simp [lof_eq_of]
-    rw [h]
+    rw [← AlgHom.coe_toLinearMap, cohomologyAlgHom_toLinearMap]
     exact ⟨lmap_injective _ |>.2 fun i ↦ (hbij i).1, lmap_surjective _ |>.2 fun i ↦ (hbij i).2⟩
 
 /-- The algebra isomorphism of cohomology rings acts in each degree as the map induced by `f`. -/
