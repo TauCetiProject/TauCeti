@@ -41,12 +41,6 @@ namespace TauCeti
 
 variable {f : ℝ → ℂ} {M T : ℝ}
 
-/-- Multiplying by the exponential kernel `cexp (-z t)` does not change interval integrability. -/
-theorem intervalIntegrable_mul_cexp_neg_mul_iff {a b : ℝ} (z : ℂ) :
-    IntervalIntegrable (fun t : ℝ ↦ f t * cexp (-z * t)) volume a b ↔
-      IntervalIntegrable f volume a b := by
-  simpa only [smul_eq_mul, mul_comm] using intervalIntegrable_cexp_neg_mul_smul_iff (g := f) z
-
 /-- Multiplying by the exponential kernel `cexp (-z t)` does not change almost-everywhere strong
 measurability. -/
 theorem aestronglyMeasurable_mul_cexp_neg_mul_iff {μ : Measure ℝ} (z : ℂ) :
@@ -65,7 +59,8 @@ theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ} :
   swap
   · have : (fun z : ℂ ↦ ∫ t in a..b, f t * cexp (-z * t)) = fun _ ↦ 0 :=
       funext fun z ↦ intervalIntegral.integral_undef
-        ((intervalIntegrable_mul_cexp_neg_mul_iff z).not.mpr hf)
+        (by simpa only [smul_eq_mul, mul_comm] using
+          (intervalIntegrable_cexp_neg_mul_smul_iff (g := f) z).not.mpr hf)
     rw [this]
     exact differentiable_const _
   intro z₀
