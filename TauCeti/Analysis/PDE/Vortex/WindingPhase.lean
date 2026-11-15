@@ -374,7 +374,7 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
   refine ⟨u, hu, fun c hc ↦ ?_⟩
   have huc := ((mem_framedGaugeGroup _).1 u.property).1
-  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform huc hx
+  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform (by simpa using huc) hx
   have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) := contDiff_euclidean.1 hy i
   have hsol' (z : ℂ) : equation (u • x) z = 0 :=
     (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
-import TauCeti.Algebra.BigOperators.Finset.RangeGap
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.Normed.Group.Pointwise
@@ -175,9 +175,12 @@ distribution of `u` is an `Lᵖ` function `f`, then `‖S_m u‖_p ≤ ‖𝓕�
 theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
     {f : Lp F p (volume : Measure E)} (hf : u.toDistr = f) (m : ℕ) :
     ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
-  obtain ⟨g, hg, hgf⟩ := exists_littlewoodPaleyLowPass_eq_and_norm_le φ m f
-  rwa [Lp.toTemperedDistribution_injective (by rw [coe_lowPass, hf, hg] :
-    (u.lowPass m : 𝓢'(E, F)) = g)]
+  rcases m with _ | m
+  · simpa using mul_nonneg (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
+  obtain ⟨g, hg, hgf⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ m f
+  rwa [Lp.toTemperedDistribution_injective (by
+    rw [coe_lowPass, hf, littlewoodPaleyLowPass_def, _root_.sum_apply, hg] :
+    (u.lowPass (m + 1) : 𝓢'(E, F)) = g)]
 
 /-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
 `‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`, since the blocks satisfy `‖Δₖ u‖_p ≤ 2^{-s k} ‖u‖` and
