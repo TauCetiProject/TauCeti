@@ -240,6 +240,28 @@ theorem isCellular_universalGSpaceCellularMap (φ : G →* H) :
   convert (φ.universalGSpaceSimplicialMap).isCellular_realizationMap using 1
   exact φ.universalGSpaceSimplicialMap_restrictPreimage.symm
 
+/-- The identity homomorphism induces the identity cellular map on the universal subset of
+Milnor's join. -/
+@[simp]
+theorem universalGSpaceCellularMap_id :
+    (MonoidHom.id G).universalGSpaceCellularMap = 𝟙 _ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact congrArg (fun f : C(universalGSpace G, universalGSpace G) ↦ f x.1)
+    universalGSpaceMap_id
+
+/-- Universal-subset cellular maps of Milnor joins respect composition of homomorphisms. -/
+@[simp]
+theorem universalGSpaceCellularMap_comp {K : Type u} [MulOne K] (ψ : H →* K) (φ : G →* H) :
+    (ψ.comp φ).universalGSpaceCellularMap =
+      φ.universalGSpaceCellularMap ≫ ψ.universalGSpaceCellularMap := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact congrArg (fun f : C(universalGSpace G, universalGSpace K) ↦ f x.1)
+    (universalGSpaceMap_comp ψ φ)
+
 end Cellular
 
 end MonoidHom
