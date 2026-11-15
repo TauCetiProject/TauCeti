@@ -5,422 +5,368 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Mul
-public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.KrullDimension.FiniteType
-import Mathlib.Algebra.MvPolynomial.Funext
-import Mathlib.RingTheory.TensorProduct.Finite
-import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+import Mathlib.LinearAlgebra.Matrix.Invertible
+import Mathlib.LinearAlgebra.Matrix.Module
+import TauCeti.LinearAlgebra.Matrix.BlockSucc
+import TauCeti.LinearAlgebra.Matrix.LastRowTransvection
+import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
+import TauCeti.RingTheory.MvPolynomial.GenericShear
 import TauCeti.RingTheory.MvPolynomial.LineRestriction
+import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
-# Linear Noether normalization in prescribed generators
+# Linear Noether normalization
 
-Mathlib's `exists_finite_inj_algHom_of_fg` constructs a Noether normalization of a finitely
-generated algebra `A` over an arbitrary field `k` by Nagata's nonlinear substitutions
-`Xᵢ ↦ Xᵢ + X₀ ^ rᵢ`. When `k` is infinite and `A` comes with a prescribed finite generating tuple
-`x = (x₀, …, xₙ₋₁)`, the normalizing parameters can instead be chosen to be `k`-linear combinations
-`yᵢ = ∑ j, C i j • x j` of the given generators. Geometrically, for a closed subscheme
-`X = Spec A ⊆ 𝔸ⁿ_k`, a suitable linear projection `𝔸ⁿ_k → 𝔸ᵈ_k` restricts to a finite surjective
-morphism `X → 𝔸ᵈ_k`.
+Over an arbitrary field, Mathlib's `exists_finite_inj_algHom_of_fg` proves Noether normalization via
+Nagata's nonlinear exponential shears `Xⱼ ↦ Xⱼ + X₀ ^ (r ^ j)`. Over an *infinite* field `k`, the
+normalizing parameters can be chosen to be `k`-linear combinations of any prescribed finite tuple
+of generators `x₀, …, xₙ₋₁` of a nontrivial `k`-algebra `A` (`TauCeti.exists_linear_normalization`),
+and in fact as the first `d` entries of an invertible linear change of coordinates `M *ᵥ x`
+(`TauCeti.exists_linear_normalization_units`), where `d` is the Krull dimension of `A`.
 
-The elimination step turns a nonzero algebraic relation `f(x₀, …, xᵣ) = 0` of total degree `D` into
-a monic integral equation in a chosen coordinate `xᵢ` over the shifted generators
-`zⱼ = x_{i.succAbove j} - aⱼ • xᵢ`. Under `MvPolynomial.shearToPolynomial i a`, the polynomial `f`
-becomes a univariate polynomial in `Xᵢ` of degree at most `D` whose `D`-th coefficient is the
-constant `f_D(i.insertNth 1 a)`, where `f_D = homogeneousComponent D f` is the top homogeneous
-component. Over an infinite integral domain `R`, dehomogenizing `f_D` at `Xᵢ = 1` via
-`TauCeti.dehomogenize i` produces a nonzero `r`-variable polynomial by `TauCeti.dehomogenize_injOn`,
-so `MvPolynomial.funext_iff` supplies a direction `a : Fin r → R` where `f_D(i.insertNth 1 a) ≠ 0`
-(and simultaneously so for any finite family of polynomials). Over an infinite field `k`, rescaling
-by the inverse of this nonzero constant makes `xᵢ` integral over `B = k[z₀, …, z_{r-1}]`; induction
-on `n` on the nontrivial `k`-algebra `B` and matrix multiplication assemble the `d × n` matrix `C`.
+The inductive elimination step holds over any commutative ring `R`: if `p(x₀, …, xᵣ) = 0` for a
+polynomial `p` whose top homogeneous part evaluates at `i.insertNth 1 a` to a unit of `R`, then
+after setting `zⱼ = x_{i.succAbove j} - aⱼ • xᵢ`, the eliminated element `xᵢ` and hence all `xₖ`
+are integral over the image of `R[Z₀, …, Zᵣ₋₁]` (`TauCeti.isIntegralElem_aeval_shear_self`,
+`TauCeti.isIntegralElem_aeval_shear`), and integrality and module-finiteness descend from
+`MvPolynomial.aeval x` to `MvPolynomial.aeval z` (`TauCeti.isIntegral_aeval_shear`,
+`TauCeti.finite_aeval_shear`). Over an infinite field `k`,
+`TauCeti.exists_eval_insertNth_homogeneousComponent_ne_zero` supplies such a shear direction `a` for
+any nonzero polynomial relation among the `xⱼ`.
 
-Because `R`-linear combinations commute with scalar extension `x j ↦ 1 ⊗ₜ[R] x j`, any linear
-normalization `(d, C)` of `(A, x)` over `R` base-changes along a flat `R`-algebra `K` to a linear
-normalization `(d, C.map (algebraMap R K))` of `(K ⊗[R] A, 1 ⊗ₜ x)` over `K`; in particular, over a
-field `k`, flatness holds for every commutative `k`-algebra `K`.
+Because the normalizing parameters `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` are `k`-linear combinations of the `xⱼ`,
+their matrix `C` automatically has `k`-linearly independent rows
+(`AlgebraicIndependent.linearIndependent_row`), and the `yᵢ` remain inside any `k`-submodule
+containing the `xⱼ` (such as a fixed homogeneous component of a graded algebra). Moreover, a single
+normalizing matrix `C` remains valid after extending scalars along any flat algebra map to a field
+`K` (in particular, any field extension `K / k`;
+`TauCeti.linear_normalization_tensorProduct_field`).
 
 ## Main results
 
-* `TauCeti.exists_forall_eval_insertNth_homogeneousComponent_ne_zero`: over an infinite integral
-  domain `R`, any finite family `p : ι → MvPolynomial (Fin (n + 1)) R` admits `a : Fin n → R` on
-  which every nonzero member's top homogeneous component is nonzero at `i.insertNth 1 a`.
-* `MvPolynomial.exists_eval_insertNth_homogeneousComponent_ne_zero`: single-polynomial form for a
-  nonzero `p : MvPolynomial (Fin (n + 1)) R`.
-* `TauCeti.exists_isIntegral_of_aeval_eq_zero`: over an infinite field `k`, a nonzero polynomial
-  relation `aeval x f = 0` makes `x i` integral over `k[x_{i.succAbove j} - aⱼ • xᵢ]` for some
-  shear vector `a : Fin r → k`.
-* `TauCeti.exists_linear_normalization`: over an infinite field `k`, every nontrivial `k`-algebra
-  `A` generated by `x : Fin n → A` admits `d ≤ n` and `C : Matrix (Fin d) (Fin n) k` such that
-  `y i = ∑ j, C i j • x j` is algebraically independent over `k`, `A` is module-finite over `k[y]`,
-  and `ringKrullDim A = d`.
-* `TauCeti.exists_linear_normalization_of_fintype`: the version for a generating tuple indexed by an
-  arbitrary `Fintype`.
-* `AlgebraicIndependent.linearIndependent_row_of_sum_smul` and
-  `AlgebraicIndependent.card_le_of_sum_smul`: algebraic independence of `y i = ∑ j, C i j • x j`
-  forces the rows of `C` to be linearly independent and bounds the row count by the column count.
-* `AlgebraicIndependent.one_tmul`, `AlgHom.Finite.aeval_one_tmul`,
-  `AlgebraicIndependent.sum_map_algebraMap_smul_tmul`, and
-  `AlgHom.Finite.aeval_sum_map_algebraMap_smul_tmul`: stability of linear Noether normalizations
-  under scalar extension to `K ⊗[R] A`.
+* `TauCeti.isIntegralElem_aeval_shear_self`, `TauCeti.isIntegralElem_aeval_shear`,
+  `TauCeti.isIntegral_aeval_shear`, `TauCeti.finite_aeval_shear`: shear elimination and descent of
+  integrality and module-finiteness over a commutative ring.
+* `TauCeti.exists_linear_normalization_units_of_finite`,
+  `TauCeti.exists_linear_normalization_units`: invertible linear change of coordinates whose first
+  `d` entries normalize `A`.
+* `TauCeti.exists_linear_normalization_of_finite`: linear Noether normalization for a nontrivial
+  `k`-algebra finite over `k[x₀, …, xₙ₋₁]`.
+* `TauCeti.exists_linear_normalization`: linear Noether normalization in prescribed algebra
+  generators `x : Fin n → A` over an infinite field `k`.
+* `TauCeti.exists_linear_normalization_fintype_of_finite`,
+  `TauCeti.exists_linear_normalization_fintype`: linear Noether normalization for a coordinate
+  family `x : ι → A` indexed by an arbitrary `Fintype`.
+* `TauCeti.linear_normalization_tensorProduct_field`: persistence of the normalizing matrix `C`
+  under flat base change to a field.
 
 ## References
 
+* J. S. Milne, *Algebraic Geometry*, Lemma 2.43, Theorem 2.44, Theorem 2.45, Lemma 2.46, and
+  Remark 2.47.
+* J. S. Milne, *A Primer of Commutative Algebra*, Theorem 8.3 and Remark 8.4.
 * [Stacks Project, Tag 00OW](https://stacks.math.columbia.edu/tag/00OW)
-* J. S. Milne, *Algebraic Geometry*, v6.10, Proposition 2.42–Remark 2.47
-* J. S. Milne, *A Primer of Commutative Algebra*, v4.03, Theorem 8.1 and Remark 8.4
+* [Stacks Project, Tag 00OY](https://stacks.math.columbia.edu/tag/00OY)
 -/
 
 public section
 
-open scoped TensorProduct Polynomial
-open MvPolynomial
+open scoped TensorProduct
+open MvPolynomial Matrix
 
 namespace TauCeti
 
-/-- Over an infinite integral domain `R`, any finite family `p : ι → MvPolynomial (Fin (n + 1)) R`
-admits a simultaneous shear direction `a : Fin n → R` on which every nonzero member's top
-homogeneous component evaluates to a nonzero element at `i.insertNth 1 a`. -/
-theorem exists_forall_eval_insertNth_homogeneousComponent_ne_zero
-    {ι R : Type*} [Finite ι] [CommRing R] [IsDomain R] [Infinite R] {n : ℕ}
-    (p : ι → MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) :
-    ∃ a : Fin n → R, ∀ k, p k ≠ 0 →
-      eval (i.insertNth 1 a) (homogeneousComponent (p k).totalDegree (p k)) ≠ 0 := by
-  classical
-  cases nonempty_fintype ι
-  let H (k : ι) : MvPolynomial (Fin n) R :=
-    if p k = 0 then 1 else dehomogenize i (homogeneousComponent (p k).totalDegree (p k))
-  have hH (k : ι) : H k ≠ 0 := by
-    by_cases hk : p k = 0
-    · simp [H, hk]
-    · simp only [H, hk, ite_false]
-      intro hzero
-      apply (p k).homogeneousComponent_totalDegree_ne_zero hk
-      exact dehomogenize_injOn i (p k).totalDegree
-        (homogeneousComponent_isHomogeneous _ _) (isHomogeneous_zero _ _ _)
-        (by simpa using hzero)
-  have hprod : (∏ k, H k) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun k _ ↦ hH k
-  obtain ⟨a, ha⟩ : ∃ a : Fin n → R, eval a (∏ k, H k) ≠ 0 := by
-    contrapose! hprod
-    exact MvPolynomial.funext_iff.mpr fun a ↦ by simpa using hprod a
-  refine ⟨a, fun k hk ↦ ?_⟩
-  rw [map_prod, Finset.prod_ne_zero_iff] at ha
-  simpa [H, hk, eval_dehomogenize] using ha k (Finset.mem_univ k)
+section Shear
 
-end TauCeti
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {r : ℕ}
 
-namespace MvPolynomial
+/-- **Shear integrality over a commutative ring.** If `p(x) = 0` for `x : Fin (r + 1) → A` and the
+top homogeneous component of `p` evaluates at `i.insertNth 1 a` to a unit of `R`, then `x i` is
+integral over `R[Z₀, …, Zᵣ₋₁]` acting via `Zⱼ ↦ x (i.succAbove j) - a j • x i`. -/
+theorem isIntegralElem_aeval_shear_self {x : Fin (r + 1) → A} {p : MvPolynomial (Fin (r + 1)) R}
+    {i : Fin (r + 1)} {a : Fin r → R} (hp : aeval x p = 0)
+    (hu : IsUnit (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p))) :
+    (aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).toRingHom.IsIntegralElem (x i) := by
+  let u : Rˣ := hu.unit
+  let q : Polynomial (MvPolynomial (Fin r) R) :=
+    Polynomial.C (C (↑u⁻¹ : R)) * shearToPolynomial i a p
+  have hmonic : q.Monic := by
+    refine Polynomial.monic_of_natDegree_le_of_coeff_eq_one p.totalDegree
+      ((Polynomial.natDegree_C_mul_le _ _).trans (p.natDegree_shearToPolynomial_le i a)) ?_
+    rw [Polynomial.coeff_C_mul, p.coeff_shearToPolynomial_totalDegree i a, ← hu.unit_spec,
+      ← map_mul, Units.inv_mul, map_one]
+  refine ⟨q, hmonic, ?_⟩
+  dsimp only [q]
+  rw [Polynomial.eval₂_mul, AlgHom.toRingHom_eq_coe, p.eval₂_aeval_shearToPolynomial i a _ (x i)]
+  have hpt : (i.insertNth (x i) fun j ↦ x (i.succAbove j) - a j • x i + a j • x i) = x := by
+    funext k
+    refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k <;> simp
+  rw [hpt, hp, mul_zero]
 
-/-- Over an infinite integral domain `R`, every nonzero polynomial
-`p : MvPolynomial (Fin (n + 1)) R` admits for each coordinate `i` a shear vector `a : Fin n → R`
-at which its top homogeneous component evaluates to a nonzero element at `i.insertNth 1 a`. -/
-theorem exists_eval_insertNth_homogeneousComponent_ne_zero
-    {R : Type*} [CommRing R] [IsDomain R] [Infinite R] {n : ℕ}
-    (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (hp : p ≠ 0) :
-    ∃ a : Fin n → R, eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p) ≠ 0 := by
-  obtain ⟨a, ha⟩ :=
-    TauCeti.exists_forall_eval_insertNth_homogeneousComponent_ne_zero (fun _ : Unit ↦ p) i
-  exact ⟨a, ha () hp⟩
+/-- Under the hypotheses of `isIntegralElem_aeval_shear_self`, every coordinate `x k` is integral
+over `R[Z₀, …, Zᵣ₋₁]` acting via `Zⱼ ↦ x (i.succAbove j) - a j • x i`. -/
+theorem isIntegralElem_aeval_shear {x : Fin (r + 1) → A} {p : MvPolynomial (Fin (r + 1)) R}
+    {i : Fin (r + 1)} {a : Fin r → R} (hp : aeval x p = 0)
+    (hu : IsUnit (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p)))
+    (k : Fin (r + 1)) :
+    (aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).toRingHom.IsIntegralElem (x k) := by
+  set f := (aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).toRingHom
+  refine Fin.succAboveCases i (isIntegralElem_aeval_shear_self hp hu) (fun j ↦ ?_) k
+  have hz : f.IsIntegralElem (x (i.succAbove j) - a j • x i) := by
+    simpa [f] using RingHom.isIntegralElem_map f (x := X j)
+  have ha : f.IsIntegralElem (a j • x i) := by
+    have hc : f.IsIntegralElem (algebraMap R A (a j)) := by
+      simpa [f] using RingHom.isIntegralElem_map f (x := C (a j))
+    simpa [Algebra.smul_def] using
+      RingHom.IsIntegralElem.mul f hc (isIntegralElem_aeval_shear_self hp hu)
+  simpa using RingHom.IsIntegralElem.add f hz ha
 
-/-- Under `MvPolynomial.algebraTensorAlgEquiv`, evaluating `p : MvPolynomial ι K` at
-`1 ⊗ₜ[R] y i` in `K ⊗[R] A` applies `Algebra.TensorProduct.map (AlgHom.id R K) (aeval y)`. -/
-theorem aeval_one_tmul_apply {R K A ι : Type*} [CommSemiring R] [CommSemiring K]
-    [Algebra R K] [CommSemiring A] [Algebra R A] (y : ι → A) (p : MvPolynomial ι K) :
-    aeval (fun i ↦ (1 ⊗ₜ[R] y i : K ⊗[R] A)) p =
-      Algebra.TensorProduct.map (AlgHom.id R K) (aeval y)
-        ((MvPolynomial.algebraTensorAlgEquiv R K).symm p) := by
-  induction p using MvPolynomial.induction_on with
-  | C c =>
-    have hc : (C c : MvPolynomial ι K) = c • 1 := by simp [Algebra.smul_def]
-    rw [hc, map_smul, map_one, map_smul, map_one, Algebra.TensorProduct.one_def,
-      Algebra.TensorProduct.one_def, TensorProduct.smul_tmul', TensorProduct.smul_tmul',
-      smul_eq_mul, mul_one, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq, map_one]
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => simp [hp]
+/-- **Descent of integrality along a good shear.** If `A` is integral over `R[x₀, …, xᵣ]` and `x`
+satisfies a relation `p(x) = 0` whose top homogeneous part is a unit in direction `i.insertNth 1 a`,
+then `A` is integral over `R[x (i.succAbove 0) - a 0 • x i, …]`. -/
+theorem isIntegral_aeval_shear {x : Fin (r + 1) → A} {p : MvPolynomial (Fin (r + 1)) R}
+    {i : Fin (r + 1)} {a : Fin r → R} (hp : aeval x p = 0)
+    (hu : IsUnit (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p)))
+    (hx : (aeval (R := R) x).toRingHom.IsIntegral) :
+    (aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).toRingHom.IsIntegral := by
+  algebraize [(aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).toRingHom,
+    (aeval (R := R) x).toRingHom]
+  have hrange : ∀ q : MvPolynomial (Fin (r + 1)) R,
+      IsIntegral (MvPolynomial (Fin r) R) (algebraMap (MvPolynomial (Fin (r + 1)) R) A q) := by
+    intro q
+    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+    induction q using MvPolynomial.induction_on with
+    | C c =>
+      have hc : aeval x (C c) = algebraMap (MvPolynomial (Fin r) R) A (C c) := by
+        simp [RingHom.algebraMap_toAlgebra]
+      rw [hc]
+      exact isIntegral_algebraMap
+    | add q₁ q₂ h₁ h₂ =>
+      rw [map_add]
+      exact h₁.add h₂
+    | mul_X q₁ k h₁ =>
+      rw [map_mul, aeval_X]
+      exact h₁.mul (isIntegralElem_aeval_shear hp hu k)
+  exact fun t ↦ isIntegral_trans_common hrange (hx t)
 
-/-- Ring-homomorphism form of `MvPolynomial.aeval_one_tmul_apply`: `aeval` at `1 ⊗ₜ[R] y i` factors
-through `Algebra.TensorProduct.map (AlgHom.id R K) (aeval y)` and
-`(MvPolynomial.algebraTensorAlgEquiv R K).symm`. -/
-theorem toRingHom_aeval_one_tmul {R K A ι : Type*} [CommSemiring R] [CommSemiring K]
-    [Algebra R K] [CommSemiring A] [Algebra R A] (y : ι → A) :
-    (aeval (fun i ↦ (1 ⊗ₜ[R] y i : K ⊗[R] A)) : MvPolynomial ι K →ₐ[K] K ⊗[R] A).toRingHom =
-      (Algebra.TensorProduct.map (AlgHom.id R K) (aeval y)).toRingHom.comp
-        (MvPolynomial.algebraTensorAlgEquiv R K).symm.toRingEquiv.toRingHom :=
-  RingHom.ext (aeval_one_tmul_apply y)
+/-- **Descent of module-finiteness along a good shear.** Under the hypotheses of
+`isIntegral_aeval_shear`, if `MvPolynomial.aeval x` is module-finite, then so is the sheared map
+`MvPolynomial.aeval (fun j ↦ x (i.succAbove j) - a j • x i)`. -/
+theorem finite_aeval_shear {x : Fin (r + 1) → A} {p : MvPolynomial (Fin (r + 1)) R}
+    {i : Fin (r + 1)} {a : Fin r → R} (hp : aeval x p = 0)
+    (hu : IsUnit (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p)))
+    (hx : (aeval (R := R) x).Finite) :
+    (aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).Finite := by
+  have hint := isIntegral_aeval_shear hp hu hx.to_isIntegral
+  have hftA : (algebraMap R A).FiniteType := by
+    rw [← (aeval (R := R) x).comp_algebraMap]
+    exact hx.to_finiteType.comp (RingHom.finiteType_algebraMap.mpr
+      (inferInstance : Algebra.FiniteType R (MvPolynomial (Fin (r + 1)) R)))
+  rw [← (aeval (R := R) fun j ↦ x (i.succAbove j) - a j • x i).comp_algebraMap] at hftA
+  exact hint.to_finite (RingHom.FiniteType.of_comp_finiteType hftA)
 
-end MvPolynomial
+end Shear
 
-namespace Matrix
+section InfiniteField
 
-/-- `R`-linear combinations of generators commute with scalar extension `x j ↦ 1 ⊗ₜ[R] x j` into
-`K ⊗[R] A`. -/
-theorem sum_map_algebraMap_smul_tmul {R K A m n : Type*} [CommSemiring R] [CommSemiring K]
-    [Algebra R K] [CommSemiring A] [Algebra R A] [Fintype n]
-    (C : Matrix m n R) (x : n → A) (i : m) :
-    ∑ j, C.map (algebraMap R K) i j • (1 ⊗ₜ[R] x j : K ⊗[R] A) =
-      1 ⊗ₜ[R] ∑ j, C i j • x j := by
-  rw [TensorProduct.tmul_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Matrix.map_apply, TensorProduct.smul_tmul', algebraMap_smul, TensorProduct.smul_tmul]
+variable {k A : Type*} [Field k] [Infinite k] [CommRing A] [Algebra k A]
 
-end Matrix
-
-namespace AlgebraicIndependent
-
-/-- If the linear combinations `y i = ∑ j, C i j • x j` are algebraically independent over `R`,
-then the rows of the coefficient matrix `C` are `R`-linearly independent. -/
-theorem linearIndependent_row_of_sum_smul {R A m n : Type*} [CommRing R]
-    [CommRing A] [Algebra R A] [Fintype n] {C : Matrix m n R} {x : n → A}
-    (hind : AlgebraicIndependent R (fun i ↦ ∑ j, C i j • x j)) :
-    LinearIndependent R C.row := by
-  classical
-  rw [linearIndependent_iff']
-  intro s c hc i₀ hi₀
-  have hrow : ∀ j, ∑ i ∈ s, c i * C i j = 0 := fun j ↦ by
-    simpa [Finset.sum_apply, Pi.smul_apply, Matrix.row_apply] using congr_fun hc j
-  have hp : aeval (fun i ↦ ∑ j, C i j • x j) (∑ i ∈ s, MvPolynomial.C (c i) * X i) = 0 := by
-    simp only [map_sum, map_mul, aeval_C, aeval_X, ← Algebra.smul_def, Finset.smul_sum]
-    rw [Finset.sum_comm]
-    simp_rw [smul_smul, ← Finset.sum_smul, hrow, zero_smul, Finset.sum_const_zero]
-  have h0 := hind.eq_zero_of_aeval_eq_zero _ hp
-  have hcoeff := congr_arg (fun p ↦ p.coeff (Finsupp.single i₀ 1)) h0
-  simpa [coeff_sum, coeff_C_mul, coeff_X, Finsupp.single_eq_single_iff, hi₀] using hcoeff
-
-/-- Over a commutative ring satisfying `StrongRankCondition` (for instance any field or nonzero
-commutative ring), if `y i = ∑ j, C i j • x j` is algebraically independent over `R`, then the
-number of rows of `C` is at most the number of columns. -/
-theorem card_le_of_sum_smul {R A m n : Type*} [CommRing R]
-    [StrongRankCondition R] [CommRing A] [Algebra R A] [Fintype m] [Fintype n]
-    {C : Matrix m n R} {x : n → A}
-    (hind : AlgebraicIndependent R (fun i ↦ ∑ j, C i j • x j)) :
-    Fintype.card m ≤ Fintype.card n := by
-  simpa [Module.finrank_fintype_fun_eq_card] using
-    hind.linearIndependent_row_of_sum_smul.fintype_card_le_finrank
-
-/-- Algebraic independence of `y : ι → A` over `R` is preserved under base change to `K ⊗[R] A`
-along any flat commutative `R`-algebra `K` (in particular, along any algebra over a field). -/
-theorem one_tmul {R K A ι : Type*} [CommRing R] [CommRing K] [Algebra R K] [Module.Flat R K]
-    [CommRing A] [Algebra R A] {y : ι → A} (hind : AlgebraicIndependent R y) :
-    AlgebraicIndependent K (fun i ↦ (1 ⊗ₜ[R] y i : K ⊗[R] A)) := by
-  intro p q hpq
-  simp only [MvPolynomial.aeval_one_tmul_apply] at hpq
-  exact (MvPolynomial.algebraTensorAlgEquiv R K).symm.injective
-    (Module.Flat.lTensor_preserves_injective_linearMap (M := K) (aeval y).toLinearMap hind hpq)
-
-/-- If `y i = ∑ j, C i j • x j` is algebraically independent over `R`, then for any flat
-commutative `R`-algebra `K`, the base-changed linear combinations
-`∑ j, C.map (algebraMap R K) i j • (1 ⊗ₜ[R] x j)` in `K ⊗[R] A` are algebraically independent over
-`K`. -/
-theorem sum_map_algebraMap_smul_tmul {R K A m n : Type*} [CommRing R]
-    [CommRing K] [Algebra R K] [Module.Flat R K] [CommRing A] [Algebra R A] [Fintype n]
-    {C : Matrix m n R} {x : n → A}
-    (hind : AlgebraicIndependent R (fun i ↦ ∑ j, C i j • x j)) :
-    AlgebraicIndependent K
-      (fun i ↦ ∑ j, C.map (algebraMap R K) i j • (1 ⊗ₜ[R] x j : K ⊗[R] A)) := by
-  simpa only [Matrix.sum_map_algebraMap_smul_tmul] using hind.one_tmul (K := K)
-
-end AlgebraicIndependent
-
-namespace AlgHom.Finite
-
-/-- Module-finiteness of `A` over `R[y]` is preserved under base change to `K ⊗[R] A` over
-`K[1 ⊗ₜ y]` along any commutative `R`-algebra `K`. -/
-theorem aeval_one_tmul {R K A ι : Type*} [CommRing R] [CommRing K] [Algebra R K]
-    [CommRing A] [Algebra R A] {y : ι → A}
-    (hfin : (aeval y : MvPolynomial ι R →ₐ[R] A).Finite) :
-    (aeval (fun i ↦ (1 ⊗ₜ[R] y i : K ⊗[R] A)) : MvPolynomial ι K →ₐ[K] K ⊗[R] A).Finite := by
-  rw [AlgHom.Finite, MvPolynomial.toRingHom_aeval_one_tmul]
-  exact RingHom.Finite.comp
-    (RingHom.Finite.tensorProductMap (AlgHom.Finite.id R K) hfin)
-    (MvPolynomial.algebraTensorAlgEquiv R K).symm.toRingEquiv.finite
-
-/-- If `A` is module-finite over `R[y]` for `y i = ∑ j, C i j • x j`, then `K ⊗[R] A` is
-module-finite over `K` adjoined with the base-changed linear combinations
-`∑ j, C.map (algebraMap R K) i j • (1 ⊗ₜ[R] x j)`. -/
-theorem aeval_sum_map_algebraMap_smul_tmul {R K A m n : Type*} [CommRing R]
-    [CommRing K] [Algebra R K] [CommRing A] [Algebra R A] [Fintype n]
-    {C : Matrix m n R} {x : n → A}
-    (hfin : (aeval (fun i ↦ ∑ j, C i j • x j) : MvPolynomial m R →ₐ[R] A).Finite) :
-    (aeval (fun i ↦ ∑ j, C.map (algebraMap R K) i j • (1 ⊗ₜ[R] x j : K ⊗[R] A)) :
-      MvPolynomial m K →ₐ[K] K ⊗[R] A).Finite := by
-  simpa only [Matrix.sum_map_algebraMap_smul_tmul] using hfin.aeval_one_tmul (K := K)
-
-end AlgHom.Finite
-
-namespace TauCeti
-
-section Elimination
-
-/-- Given a nonzero polynomial relation `aeval x f = 0` on `x : Fin (r + 1) → A` over an infinite
-field `k` in a `k`-algebra `A` and any coordinate `i : Fin (r + 1)`, there is a shear vector
-`a : Fin r → k` such that `x i` is integral over
-`Algebra.adjoin k (Set.range fun j ↦ x (i.succAbove j) - a j • x i)`. -/
-theorem exists_isIntegral_of_aeval_eq_zero {k A : Type*} [Field k] [Infinite k]
-    [CommRing A] [Algebra k A] {r : ℕ} (x : Fin (r + 1) → A) (i : Fin (r + 1))
-    {f : MvPolynomial (Fin (r + 1)) k} (hf0 : f ≠ 0) (hfx : aeval x f = 0) :
-    ∃ a : Fin r → k,
-      IsIntegral (Algebra.adjoin k (Set.range fun j ↦ x (i.succAbove j) - a j • x i)) (x i) := by
-  obtain ⟨a, ha⟩ := f.exists_eval_insertNth_homogeneousComponent_ne_zero i hf0
-  refine ⟨a, ?_⟩
-  set z : Fin r → A := fun j ↦ x (i.succAbove j) - a j • x i
-  set B : Subalgebra k A := Algebra.adjoin k (Set.range z)
-  let zB : Fin r → B := fun j ↦ ⟨z j, Algebra.subset_adjoin ⟨j, rfl⟩⟩
-  set c := eval (i.insertNth 1 a) (homogeneousComponent f.totalDegree f)
-  set P : Polynomial (MvPolynomial (Fin r) k) := shearToPolynomial i a f
-  have hmonic : (Polynomial.C (C c⁻¹) * P).Monic := by
-    rw [Polynomial.Monic, Polynomial.leadingCoeff_mul, Polynomial.leadingCoeff_C,
-      f.leadingCoeff_shearToPolynomial_of_eval_ne_zero i a ha, ← map_mul, inv_mul_cancel₀ ha,
-      map_one]
-  refine ⟨Polynomial.map (RingHomClass.toRingHom (aeval (R := k) zB))
-    (Polynomial.C (C c⁻¹) * P), hmonic.map _, ?_⟩
-  have hval : (algebraMap B A).comp (RingHomClass.toRingHom (aeval (R := k) zB)) =
-      RingHomClass.toRingHom (aeval (R := k) z) := by
-    ext j <;> simp [zB]
-  have hx_eq : (i.insertNth (x i) fun j ↦ z j + a j • x i) = x := by
-    funext l
-    refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l <;> simp [z]
-  rw [Polynomial.eval₂_map, hval, Polynomial.eval₂_mul,
-    f.eval₂_aeval_shearToPolynomial i a z (x i), hx_eq, hfx, mul_zero]
-
-/-- Single-variable linear elimination step: if a `k`-algebra `A` over an infinite field `k` is
-generated by `x : Fin (r + 1) → A` and `x` is not algebraically independent over `k`, then there is
-an `r × (r + 1)` matrix `M` over `k` such that `A` is module-finite over the `k`-subalgebra
-generated by `z i = ∑ j, M i j • x j`. -/
-theorem exists_matrix_subalgebra_finite_step {k A : Type*} [Field k] [Infinite k]
-    [CommRing A] [Algebra k A] {r : ℕ} (x : Fin (r + 1) → A)
-    (hx : Algebra.adjoin k (Set.range x) = ⊤) (hdep : ¬ AlgebraicIndependent k x) :
-    ∃ M : Matrix (Fin r) (Fin (r + 1)) k,
-      (Algebra.adjoin k (Set.range fun i ↦ ∑ j, M i j • x j)).val.toRingHom.Finite := by
-  rw [algebraicIndependent_iff] at hdep
-  push Not at hdep
-  obtain ⟨f, hfx, hf0⟩ := hdep
-  obtain ⟨a, hint0⟩ := exists_isIntegral_of_aeval_eq_zero x 0 hf0 hfx
-  let M : Matrix (Fin r) (Fin (r + 1)) k := fun i ↦ Fin.cons (-a i) (Pi.single i 1)
-  refine ⟨M, ?_⟩
-  have hz : (fun i ↦ ∑ j, M i j • x j) = fun i ↦ x i.succ - a i • x 0 := by
-    funext i
-    simp [M, Fin.sum_univ_succ, sub_eq_add_neg, add_comm]
-  rw [hz]
-  set z : Fin r → A := fun i ↦ x i.succ - a i • x 0
-  set B : Subalgebra k A := Algebra.adjoin k (Set.range z)
-  have hft_kA : Algebra.FiniteType k A := .of_surjective (aeval (R := k) x) <| by
-    rwa [← AlgHom.range_eq_top, aeval_range]
-  have hft_BA : Algebra.FiniteType B A := .of_restrictScalars_finiteType k B A
-  have htop : (⊤ : Subalgebra k A) ≤ (integralClosure B A).restrictScalars k := by
-    rw [← hx, Algebra.adjoin_le_iff, Set.range_subset_iff]
-    intro j
-    cases j using Fin.cases with
-    | zero => exact hint0
-    | succ i =>
-      have hzi : z i ∈ B := Algebra.subset_adjoin ⟨i, rfl⟩
-      have hsub : z i + a i • x 0 = x i.succ := by simp [z]
-      rw [← hsub]
-      exact (isIntegral_algebraMap (x := (⟨z i, hzi⟩ : B))).add
-        (Algebra.smul_def (a i) (x 0) ▸
-          (isIntegral_algebraMap (x := algebraMap k B (a i))).mul hint0)
-  have : Algebra.IsIntegral B A := ⟨fun _ ↦ htop trivial⟩
-  exact RingHom.finite_algebraMap.mpr (Algebra.IsIntegral.finite (R := B) (A := A))
-
-end Elimination
-
-section MainTheorem
-
-private lemma linear_normalization_of_algebraicIndependent {k A : Type*} [Field k]
-    [CommRing A] [Algebra k A] {n : ℕ} (x : Fin n → A)
-    (hx : Algebra.adjoin k (Set.range x) = ⊤) (hind : AlgebraicIndependent k x) :
-    ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (Fin d) (Fin n) k),
-      let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
-      AlgebraicIndependent k y ∧
-        (MvPolynomial.aeval y : MvPolynomial (Fin d) k →ₐ[k] A).Finite ∧
-        ringKrullDim A = (d : WithBot ℕ∞) := by
-  refine ⟨n, le_rfl, 1, ?_⟩
-  have hy : (fun i : Fin n ↦ ∑ j, (1 : Matrix (Fin n) (Fin n) k) i j • x j) = x := by
-    funext i
-    simp [Matrix.one_apply]
-  dsimp only
-  rw [hy]
-  have hsurj : Function.Surjective (aeval (R := k) x) := by
-    rwa [← AlgHom.range_eq_top, aeval_range]
-  have hfin : (aeval (R := k) x).Finite := RingHom.Finite.of_surjective _ hsurj
-  exact ⟨hind, hfin, by
-    simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
-      (aeval (R := k) x).toRingHom hind hfin.to_isIntegral⟩
-
-/-- **Linear Noether normalization in prescribed generators.** Let `A` be a nontrivial commutative
-algebra over an infinite field `k`, generated as a `k`-algebra by a tuple `x : Fin n → A`. Then
-there exist `d ≤ n` and a matrix `C : Matrix (Fin d) (Fin n) k` such that the `k`-linear
-combinations `y i = ∑ j, C i j • x j` are algebraically independent over `k`, `A` is module-finite
-over `k[y₀, …, y_{d-1}]` via `MvPolynomial.aeval y`, and `ringKrullDim A = d`. -/
-@[stacks 00OW]
-theorem exists_linear_normalization {k A : Type*} [Field k] [Infinite k]
-    [CommRing A] [Nontrivial A] [Algebra k A]
-    {n : ℕ} (x : Fin n → A) (hx : Algebra.adjoin k (Set.range x) = ⊤) :
-    ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (Fin d) (Fin n) k),
-      let y : Fin d → A := fun i => ∑ j, C i j • x j
-      AlgebraicIndependent k y ∧
-        (MvPolynomial.aeval y : MvPolynomial (Fin d) k →ₐ[k] A).Finite ∧
-        ringKrullDim A = (d : WithBot ℕ∞) := by
-  induction n generalizing A with
-  | zero => exact linear_normalization_of_algebraicIndependent x hx algebraicIndependent_empty_type
+/-- **Invertible-coordinate linear Noether normalization (module-finite form).** Let `k` be an
+infinite field and `A` be a nontrivial `k`-algebra that is module-finite over `k[x₀, …, xₙ₋₁]`.
+Then there exist `d ≤ n` and an invertible matrix `M : (Matrix (Fin n) (Fin n) k)ˣ` such that the
+first `d` entries of `M *ᵥ x` are algebraically independent over `k`, make `A` a finite module over
+`k[X₀, …, X_{d-1}]`, and witness `ringKrullDim A = d`. -/
+theorem exists_linear_normalization_units_of_finite [Nontrivial A] {n : ℕ} (x : Fin n → A)
+    (hx : (aeval (R := k) x).Finite) :
+    ∃ (d : ℕ) (hd : d ≤ n) (M : (Matrix (Fin n) (Fin n) k)ˣ),
+      let y : Fin d → A := fun i ↦ ∑ j, (M : Matrix (Fin n) (Fin n) k) (Fin.castLE hd i) j • x j
+      AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  -- When `w` is already algebraically independent, `M = 1` witnesses normalization with `d = m`.
+  have hid {m : ℕ} (w : Fin m → A) (hw : (aeval (R := k) w).Finite)
+      (hind : AlgebraicIndependent k w) :
+      ∃ (d : ℕ) (hd : d ≤ m) (M : (Matrix (Fin m) (Fin m) k)ˣ),
+        let y : Fin d → A := fun i ↦ ∑ j, (M : Matrix (Fin m) (Fin m) k) (Fin.castLE hd i) j • w j
+        AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+    refine ⟨m, le_rfl, 1, ?_⟩
+    have hy : (fun i : Fin m ↦ ∑ j : Fin m,
+        ((1 : (Matrix (Fin m) (Fin m) k)ˣ) : Matrix (Fin m) (Fin m) k)
+          (Fin.castLE le_rfl i) j • w j) = w := by
+      open scoped Matrix.Module in
+      simpa only [Fin.castLE_rfl, id_eq, Units.val_one, ← Matrix.Module.smul_def] using
+        one_smul (Matrix (Fin m) (Fin m) k) w
+    rw [hy]
+    exact ⟨hind, hw, by
+      simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
+        (aeval (R := k) w).toRingHom (algebraicIndependent_iff_injective_aeval.mp hind)
+        hw.to_isIntegral⟩
+  induction n with
+  | zero =>
+    exact hid x hx (algebraicIndependent_empty_type_iff.mpr (algebraMap k A).injective)
   | succ r ih =>
     by_cases hind : AlgebraicIndependent k x
-    · exact linear_normalization_of_algebraicIndependent x hx hind
-    · obtain ⟨M, hMfin⟩ := exists_matrix_subalgebra_finite_step x hx hind
-      set z : Fin r → A := fun i ↦ ∑ j, M i j • x j
-      set B : Subalgebra k A := Algebra.adjoin k (Set.range z)
-      have : Nontrivial B := ⟨⟨0, 1, fun h ↦ zero_ne_one (congr_arg Subtype.val h)⟩⟩
-      let zB : Fin r → B := fun i ↦ ⟨z i, Algebra.subset_adjoin ⟨i, rfl⟩⟩
-      have hzB : Algebra.adjoin k (Set.range zB) = ⊤ := by
-        apply Subalgebra.map_injective (f := B.val) Subtype.val_injective
-        rw [Algebra.map_top, AlgHom.map_adjoin, ← Set.range_comp]
-        exact (Subalgebra.range_val B).symm
-      obtain ⟨d, hd, C', hind', hfin', _⟩ := ih zB hzB
-      refine ⟨d, hd.trans (Nat.le_succ r), C' * M, ?_⟩
-      set yB : Fin d → B := fun i ↦ ∑ l, C' i l • zB l
-      set y : Fin d → A := fun i ↦ ∑ j, (C' * M) i j • x j
-      have hy : ∀ i, y i = B.val (yB i) := fun i ↦ by
-        simp only [y, yB, map_sum, map_smul, zB, Subalgebra.coe_val, z, Matrix.mul_apply,
-          Finset.sum_smul, Finset.smul_sum, mul_smul]
-        rw [Finset.sum_comm]
-      have haeval : aeval (R := k) y = B.val.comp (aeval (R := k) yB) := by
-        ext i
-        simp [hy]
-      have hinj : AlgebraicIndependent k y := by
-        rw [AlgebraicIndependent, haeval, AlgHom.coe_comp]
-        exact Subtype.val_injective.comp hind'
-      have hfin : (aeval (R := k) y).Finite := by
-        rw [haeval]
-        exact RingHom.Finite.comp hMfin hfin'
-      exact ⟨hinj, hfin, by
-        simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
-          (aeval (R := k) y).toRingHom hinj hfin.to_isIntegral⟩
+    · exact hid x hx hind
+    · -- Eliminate `x (Fin.last r)` by a generic shear `zⱼ = xⱼ - aⱼ • xᵣ` and lift `M'` by block
+      -- extension times the transpose last-row transvection.
+      rw [_root_.algebraicIndependent_iff] at hind
+      push Not at hind
+      obtain ⟨p, hp0, hp⟩ := hind
+      obtain ⟨a, ha⟩ := exists_eval_insertNth_homogeneousComponent_ne_zero hp (Fin.last r)
+      let z : Fin r → A := fun j ↦ x j.castSucc - a j • x (Fin.last r)
+      have hz : (aeval (R := k) z).Finite := by
+        simpa only [z, Fin.succAbove_last] using finite_aeval_shear hp0 ha.isUnit hx
+      obtain ⟨d, hd, M', hy_ind, hy_fin, hdim⟩ := ih z hz
+      let S : (Matrix (Fin (r + 1)) (Fin (r + 1)) k)ˣ :=
+        ((lastRowTransvection r (-a)).isUnit_transpose.mpr (isUnit_lastRowTransvection (-a))).unit
+      let U : (Matrix (Fin (r + 1)) (Fin (r + 1)) k)ˣ :=
+        Units.map (Matrix.blockSuccMonoidHom k r) M' * S
+      refine ⟨d, Nat.le_succ_of_le hd, U, ?_⟩
+      have hy_eq : (fun i : Fin d ↦ ∑ m : Fin (r + 1),
+          (U : Matrix (Fin (r + 1)) (Fin (r + 1)) k)
+            (Fin.castLE (Nat.le_succ_of_le hd) i) m • x m) =
+          fun i : Fin d ↦
+            ∑ l : Fin r, (M' : Matrix (Fin r) (Fin r) k) (Fin.castLE hd i) l • z l := by
+        funext i
+        have hcast : Fin.castLE (Nat.le_succ_of_le hd) i = (Fin.castLE hd i).castSucc := by
+          ext; simp
+        have hU_val : (U : Matrix (Fin (r + 1)) (Fin (r + 1)) k) =
+            Matrix.blockSucc M'.val * (lastRowTransvection r (-a))ᵀ := by
+          simp [U, S]
+        rw [hcast, hU_val, sum_mul_transpose_lastRowTransvection_smul]
+        simp only [Matrix.blockSucc_castSucc_castSucc, Matrix.blockSucc_castSucc_last,
+          Pi.neg_apply, neg_smul, zero_smul, add_zero, z, sub_eq_add_neg]
+      rw [hy_eq]
+      exact ⟨hy_ind, hy_fin, hdim⟩
 
-/-- Linear Noether normalization for a generating tuple indexed by an arbitrary `Fintype`. -/
+/-- **Invertible-coordinate linear Noether normalization.** Over an infinite field `k`, for any
+nontrivial `k`-algebra `A` generated by `x : Fin n → A`, there exist `d ≤ n` and an invertible
+matrix `M : (Matrix (Fin n) (Fin n) k)ˣ` whose first `d` transformed coordinates normalize `A`,
+while the full transformed tuple `M *ᵥ x` generates `A`. -/
+theorem exists_linear_normalization_units [Nontrivial A] {n : ℕ} (x : Fin n → A)
+    (hx : Algebra.adjoin k (Set.range x) = ⊤) :
+    ∃ (d : ℕ) (hd : d ≤ n) (M : (Matrix (Fin n) (Fin n) k)ˣ),
+      let z : Fin n → A := fun i ↦ ∑ j, (M : Matrix (Fin n) (Fin n) k) i j • x j
+      let y : Fin d → A := fun i ↦ z (Fin.castLE hd i)
+      Algebra.adjoin k (Set.range z) = ⊤ ∧
+        AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  have hsurj : Function.Surjective (aeval (R := k) x) := by
+    rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval, hx]
+  obtain ⟨d, hd, M, hy_ind, hy_fin, hdim⟩ :=
+    exists_linear_normalization_units_of_finite x (RingHom.Finite.of_surjective _ hsurj)
+  refine ⟨d, hd, M, ?_, hy_ind, hy_fin, hdim⟩
+  rw [eq_top_iff, ← hx]
+  refine Algebra.adjoin_le ?_
+  rintro _ ⟨l, rfl⟩
+  have hinv : x l = ∑ i : Fin n, M⁻¹.val l i • (∑ j : Fin n, M.val i j • x j) := by
+    open scoped Matrix.Module in
+    simpa only [Units.smul_def, Matrix.Module.smul_apply] using
+      congr_fun (inv_smul_smul M x).symm l
+  rw [hinv]
+  refine Subalgebra.sum_mem _ fun i _ ↦ Subalgebra.smul_mem _ ?_ (M⁻¹.val l i)
+  exact Algebra.subset_adjoin ⟨i, rfl⟩
+
+/-- **Linear Noether normalization (module-finite form).** Let `k` be an infinite field and
+`A` be a nontrivial `k`-algebra that is module-finite over `k[x₀, …, xₙ₋₁]`. Then there exist
+`d ≤ n` and `C : Matrix (Fin d) (Fin n) k` such that `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` is algebraically
+independent over `k`, makes `A` module-finite over `k[X₀, …, X_{d-1}]`, and satisfies
+`ringKrullDim A = d`. -/
+theorem exists_linear_normalization_of_finite [Nontrivial A] {n : ℕ} (x : Fin n → A)
+    (hx : (aeval (R := k) x).Finite) :
+    ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (Fin d) (Fin n) k),
+      let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
+      AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  obtain ⟨d, hd, M, hy_ind, hy_fin, hdim⟩ := exists_linear_normalization_units_of_finite x hx
+  exact ⟨d, hd, (M : Matrix (Fin n) (Fin n) k).submatrix (Fin.castLE hd) id, hy_ind, hy_fin, hdim⟩
+
+/-- **Linear Noether normalization in prescribed generators.** Let `k` be an infinite field and `A`
+be a nontrivial `k`-algebra generated by `x : Fin n → A`. Then there exist `d ≤ n` and a matrix
+`C : Matrix (Fin d) (Fin n) k` such that the `k`-linear combinations `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` are
+algebraically independent over `k`, make `A` a finite `k[X₀, …, X_{d-1}]`-module via `Xᵢ ↦ yᵢ`,
+and satisfy `ringKrullDim A = d`. -/
+theorem exists_linear_normalization [Nontrivial A] {n : ℕ} (x : Fin n → A)
+    (hx : Algebra.adjoin k (Set.range x) = ⊤) :
+    ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (Fin d) (Fin n) k),
+      let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
+      AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  have hsurj : Function.Surjective (aeval (R := k) x) := by
+    rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval, hx]
+  exact exists_linear_normalization_of_finite x (RingHom.Finite.of_surjective _ hsurj)
+
+/-- **Linear Noether normalization for a `Fintype`-indexed family (module-finite form).** Let `k`
+be an infinite field and `A` be a nontrivial `k`-algebra that is module-finite over
+`MvPolynomial ι k` via `x : ι → A` for a finite index type `ι`. Then there exist
+`d ≤ Fintype.card ι` and a matrix `C : Matrix (Fin d) ι k` such that `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` is
+algebraically independent over `k`, makes `A` module-finite over `k[X₀, …, X_{d-1}]`, and satisfies
+`ringKrullDim A = d`. -/
 @[stacks 00OW]
-theorem exists_linear_normalization_of_fintype {k A ι : Type*} [Field k] [Infinite k]
-    [CommRing A] [Nontrivial A] [Algebra k A] [Fintype ι]
-    (x : ι → A) (hx : Algebra.adjoin k (Set.range x) = ⊤) :
+theorem exists_linear_normalization_fintype_of_finite [Nontrivial A] {ι : Type*} [Fintype ι]
+    (x : ι → A) (hx : (aeval (R := k) x).Finite) :
     ∃ (d : ℕ) (_ : d ≤ Fintype.card ι) (C : Matrix (Fin d) ι k),
-      let y : Fin d → A := fun i => ∑ j, C i j • x j
-      AlgebraicIndependent k y ∧
-        (MvPolynomial.aeval y : MvPolynomial (Fin d) k →ₐ[k] A).Finite ∧
-        ringKrullDim A = (d : WithBot ℕ∞) := by
-  let e := Fintype.equivFin ι
-  have hx' : Algebra.adjoin k (Set.range (x ∘ e.symm)) = ⊤ := by
-    rwa [Set.range_comp, Equiv.range_eq_univ, Set.image_univ]
-  obtain ⟨d, hd, C₀, hind, hfin, hdim⟩ := exists_linear_normalization (x ∘ e.symm) hx'
-  refine ⟨d, hd, C₀.submatrix id e, ?_⟩
-  have hy : (fun i ↦ ∑ j : ι, C₀.submatrix id e i j • x j) =
-      fun i ↦ ∑ j : Fin (Fintype.card ι), C₀ i j • (x ∘ e.symm) j := by
+      let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
+      AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  have hx' : (aeval (R := k) (x ∘ e)).Finite := by
+    rw [← aeval_comp_rename]
+    exact AlgHom.Finite.comp hx
+      (AlgHom.Finite.of_surjective _ (rename_surjective _ e.surjective))
+  obtain ⟨d, hd, C₀, hy_ind, hy_fin, hdim⟩ := exists_linear_normalization_of_finite (x ∘ e) hx'
+  refine ⟨d, hd, C₀.submatrix id e.symm, ?_⟩
+  have hy : (fun i : Fin d ↦ ∑ j : ι, C₀.submatrix id e.symm i j • x j) =
+      fun i : Fin d ↦ ∑ j : Fin (Fintype.card ι), C₀ i j • x (e j) := by
     funext i
-    simpa [Function.comp_apply] using e.sum_comp fun j ↦ C₀ i j • x (e.symm j)
+    simpa [Function.comp_apply] using (e.symm.sum_comp fun j ↦ C₀ i j • x (e j))
   dsimp only
   rw [hy]
-  exact ⟨hind, hfin, hdim⟩
+  exact ⟨hy_ind, hy_fin, hdim⟩
 
-end MainTheorem
+/-- **Linear Noether normalization for a `Fintype`-indexed generating family.** Let `k` be an
+infinite field and `A` be a nontrivial `k`-algebra generated by a finite family `x : ι → A`. Then
+there exist `d ≤ Fintype.card ι` and a matrix `C : Matrix (Fin d) ι k` such that the `k`-linear
+combinations `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` are algebraically independent over `k`, make `A` module-finite
+over `k[X₀, …, X_{d-1}]`, and satisfy `ringKrullDim A = d`. -/
+@[stacks 00OW]
+theorem exists_linear_normalization_fintype [Nontrivial A] {ι : Type*} [Fintype ι]
+    (x : ι → A) (hx : Algebra.adjoin k (Set.range x) = ⊤) :
+    ∃ (d : ℕ) (_ : d ≤ Fintype.card ι) (C : Matrix (Fin d) ι k),
+      let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
+      AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
+  have hsurj : Function.Surjective (aeval (R := k) x) := by
+    rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval, hx]
+  exact exists_linear_normalization_fintype_of_finite x (RingHom.Finite.of_surjective _ hsurj)
+
+end InfiniteField
+
+section BaseChange
+
+/-- **Flat-field base-change stability of linear Noether normalization.** Over any commutative ring
+`k` and any flat `k`-algebra `K` that is a field (in particular, any field extension `K / k`), a
+matrix `C : Matrix ι κ k` whose linear combinations normalize a `k`-algebra `A` continues to
+normalize `K ⊗[k] A` with Krull dimension `Nat.card ι`. -/
+theorem linear_normalization_tensorProduct_field {ι κ k A : Type*} [Finite ι] [Fintype κ]
+    (K : Type*) [CommRing k] [Field K] [Algebra k K] [Module.Flat k K] [CommRing A] [Algebra k A]
+    {C : Matrix ι κ k} {x : κ → A}
+    (hy_ind : AlgebraicIndependent k fun i ↦ ∑ j, C i j • x j)
+    (hy_fin : (aeval (R := k) fun i ↦ ∑ j, C i j • x j).Finite) :
+    let yK : ι → K ⊗[k] A := fun i ↦ ∑ j, C i j • ((1 : K) ⊗ₜ[k] x j)
+    AlgebraicIndependent K yK ∧ (aeval (R := K) yK).Finite ∧
+      ringKrullDim (K ⊗[k] A) = Nat.card ι := by
+  have heq : (fun i ↦ ∑ j, C i j • ((1 : K) ⊗ₜ[k] x j)) =
+      fun i ↦ (1 : K) ⊗ₜ[k] (∑ j, C i j • x j) := by
+    funext i
+    simp [TensorProduct.tmul_sum, TensorProduct.tmul_smul]
+  have hindK : AlgebraicIndependent K (fun i ↦ ∑ j, C i j • ((1 : K) ⊗ₜ[k] x j)) := by
+    rw [heq]
+    exact hy_ind.one_tmul K
+  have hfinK : (aeval (R := K) fun i ↦ ∑ j, C i j • ((1 : K) ⊗ₜ[k] x j)).Finite := by
+    rw [heq]
+    exact finite_aeval_one_tmul K hy_fin
+  exact ⟨hindK, hfinK, ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
+    (aeval (R := K) fun i ↦ ∑ j, C i j • ((1 : K) ⊗ₜ[k] x j)).toRingHom
+    (algebraicIndependent_iff_injective_aeval.mp hindK) hfinK.to_isIntegral⟩
+
+end BaseChange
 
 end TauCeti
