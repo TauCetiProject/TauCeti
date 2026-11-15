@@ -6,24 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Setoid.Basic
+public import TauCeti.ModelTheory.Infinitary.QuantifierRank
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.ModelTheory.Scott.Formula
+import TauCeti.ModelTheory.BackAndForth.Karp
 
 /-!
-# Back-and-forth levels are model classes
+# Back-and-forth levels and model classes
 
-For a configuration `c` on a countable carrier `V`, in a relational language with countably many
-relation symbols, and a countable ordinal `α`, the sentence `c.scottSentenceAtLevel α` is the
-canonical Scott formula `scottFormula` of the empty tuple of the structure decoded from `c`, read
-as a sentence. A structure satisfies it exactly when its empty tuple is back-and-forth equivalent
-to that of `c` at depth `α`. Hence the `α`-class `{d | bfEquivSetoid L V α c d}` of `c` is the
-model class of `c.scottSentenceAtLevel α`, and the model class depends only on that class.
+Model classes of infinitary sentences and countable back-and-forth levels determine one another:
+every sentence with countable branching is invariant from some countable back-and-forth level on,
+and below `ω₁` every back-and-forth class on a countable carrier in a countable relational language
+is itself the model class of a single `L_{ω₁ω}` sentence.
 
-So below `ω₁` every back-and-forth class of configurations is cut out by a single sentence of
-`L_{ω₁ω}`. Sentence cuts of a model class therefore include its cuts by level classes, which is
-what lets counting arguments split a class of countable models along a back-and-forth level using
-only sentences, as in the analysis of minimal counterexamples to Vaught's conjecture.
+In one direction, configurations equivalent at back-and-forth depth `β` agree on every sentence of
+quantifier rank at most `β`. Since an infinitary sentence with countable branching has countable
+quantifier rank, its model class on any carrier is saturated at all levels from some countable
+ordinal `β₀` onward (`exists_bfLevel_saturated_modelsOf`), with no countability assumption on the
+language or carrier.
+
+In the converse direction, for a configuration `c` on a countable carrier `V`, in a relational
+language with countably many relation symbols, and a countable ordinal `α`, the sentence
+`c.scottSentenceAtLevel α` is the canonical Scott formula `scottFormula` of the empty tuple of the
+structure decoded from `c`, read as a sentence. A structure satisfies it exactly when its empty
+tuple is back-and-forth equivalent to that of `c` at depth `α`. Hence the `α`-class
+`{d | bfEquivSetoid L V α c d}` of `c` is the model class of `c.scottSentenceAtLevel α`, and the
+model class depends only on that class. Sentence cuts of a model class therefore include its cuts
+by level classes, while every sentence cut is saturated from some countable level on, as used in
+the analysis of minimal counterexamples to Vaught's conjecture.
 
 ## Main definitions
 
@@ -32,6 +43,11 @@ only sentences, as in the analysis of minimal counterexamples to Vaught's conjec
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.mem_modelsOf_iff_of_qrank_le`: configurations equivalent at
+  back-and-forth depth `β` agree on every sentence of quantifier rank at most `β`.
+* `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: the model class of any
+  sentence with countable branching is saturated at all back-and-forth levels from some countable
+  ordinal onward.
 * `TauCeti.RelationalConfiguration.realize_scottSentenceAtLevel`: below `ω₁`, a structure of any
   cardinality, in any universe, satisfies `c.scottSentenceAtLevel α` exactly when its empty tuple
   is back-and-forth equivalent at depth `α` to that of `c`.
@@ -43,21 +59,64 @@ only sentences, as in the analysis of minimal counterexamples to Vaught's conjec
 ## References
 
 * Antonio Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Part 2, Lemma XII.5
-  (level classes are defined by sentences), here in the one-element back-and-forth convention of
-  `TauCeti.BFEquiv`.
-* The statement follows `modelsOf_scottSentenceAt` in Cameron Freer's
+  (level classes are defined by sentences) and §XII.2 (saturation of sentences by quantifier rank),
+  here in the one-element back-and-forth convention of `TauCeti.BFEquiv`.
+* `modelsOf_scottSentenceAtLevel` follows `modelsOf_scottSentenceAt` in Cameron Freer's
   `cameronfreer/infinitary-logic` at checkpoint `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
   `InfinitaryLogic/Descriptive/MinimallyUncountable.lean` (Apache-2.0).
 -/
 
 public section
 
-universe u v w w' o
+universe u v w w' uι o
 
 open FirstOrder FirstOrder.Language
 open scoped Ordinal
 
 namespace TauCeti.RelationalConfiguration
+
+section Saturation
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
+
+/-- Relational structures whose empty tuples are back-and-forth equivalent at depth `β` agree on
+every infinitary sentence of quantifier rank at most `β`. -/
+private theorem realize_sentenceInf_iff_of_qrank_le {M : Type w} {N : Type w'}
+    [L.Structure M] [L.Structure N] {θ : L.SentenceInf ι} {β : Ordinal.{o}}
+    (hrank : Ordinal.lift.{o} θ.qrank ≤ Ordinal.lift.{uι} β)
+    (h : BFEquiv (L := L) β 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N)) :
+    θ.Realize M ↔ θ.Realize N := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def,
+    Subsingleton.elim (default : Fin 0 → M) Fin.elim0,
+    Subsingleton.elim (default : Fin 0 → N) Fin.elim0]
+  exact h.realize_iff_of_qrank_le θ hrank Empty.elim Empty.elim
+
+/-- Configurations that are back-and-forth equivalent at depth `β` agree on every infinitary
+sentence of quantifier rank at most `β`. Neither the language, the carrier, nor the branching index
+need be countable. -/
+theorem mem_modelsOf_iff_of_qrank_le {θ : L.SentenceInf ι} {β : Ordinal.{o}}
+    (hrank : Ordinal.lift.{o} θ.qrank ≤ Ordinal.lift.{uι} β)
+    {c d : RelationalConfiguration L V} (hcd : bfEquivSetoid L V β c d) :
+    c ∈ modelsOf θ ↔ d ∈ modelsOf θ := by
+  rw [mem_modelsOf, mem_modelsOf]
+  exact @realize_sentenceInf_iff_of_qrank_le L _ ι V V c.toStructure d.toStructure θ β hrank
+    (bfEquivSetoid_apply.mp hcd)
+
+/-- **Saturation of a sentence at countable back-and-forth levels.** The model class of any
+infinitary sentence with countable branching is a union of back-and-forth classes from some
+countable level `β₀ < ω₁` onward. Neither the language nor the carrier need be countable. -/
+theorem exists_bfLevel_saturated_modelsOf [Countable ι] (θ : L.SentenceInf ι) :
+    ∃ β₀ : Ordinal.{o}, β₀ < ω₁ ∧ ∀ β ≥ β₀, ∀ c d : RelationalConfiguration L V,
+      bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) := by
+  have hlt : Ordinal.lift.{o} θ.qrank < Ordinal.lift.{uι} (ω₁ : Ordinal.{o}) := by
+    simpa only [Ordinal.lift_omega, Ordinal.lift_one] using
+      Ordinal.lift_lt.mpr (BoundedFormulaInf.qrank_lt_omega_one θ)
+  obtain ⟨β₀, hβ₀⟩ := Ordinal.mem_range_lift_of_le hlt.le
+  rw [← hβ₀, Ordinal.lift_lt] at hlt
+  exact ⟨β₀, hlt, fun β hβ c d hcd =>
+    mem_modelsOf_iff_of_qrank_le (hβ₀.symm.le.trans (Ordinal.lift_le.mpr hβ)) hcd⟩
+
+end Saturation
 
 variable {L : Language.{u, v}} [L.IsRelational] [Countable (Σ k, L.Relations k)]
 variable {V : Type w} [Countable V]
