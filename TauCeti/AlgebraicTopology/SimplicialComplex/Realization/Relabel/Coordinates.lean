@@ -49,13 +49,12 @@ theorem relabelingHomeomorph_coe_eq_extendByZero
 
 /-- Inverse relabeling of polyhedra restricts the ambient coordinate vector along the
 vertex embedding. -/
-theorem relabelingHomeomorph_symm_coe_eq_restriction
+theorem relabelingHomeomorph_symm_coe_eq_compRightL
     (y : {y : Realization L // y.1.support ∈ P.map e}) :
     (((P.relabelingHomeomorph e hK hL).symm y).1.1 : α → ℝ) =
-      Function.ExtendByZero.restriction ℝ e (y.1.1 : β → ℝ) := by
+      Pi.compRightL ℝ (fun _ : β ↦ ℝ) e (y.1.1 : β → ℝ) := by
   ext i
-  simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply,
-    Function.ExtendByZero.restriction_apply, Function.comp_apply]
+  simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply, Pi.compRightL_apply]
 
 include hK hL in
 /-- The coordinate range of a relabeled polyhedron is the extension by zero of the
