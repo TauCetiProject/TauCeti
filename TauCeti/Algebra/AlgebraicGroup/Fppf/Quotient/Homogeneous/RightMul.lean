@@ -320,11 +320,11 @@ theorem isIso_fppfHomogeneousQuotientRightMul_iff
     IsIso (fppfHomogeneousQuotientRightMul H g h) ↔ J.conjugate g = I := by
   constructor
   · intro hiso
-    -- The inverse descends `x ↦ xg⁻¹P`, so `gPg⁻¹ ⊆ Q`.
+    -- The inverse `xQ ↦ xg⁻¹P` descends `x ↦ xg⁻¹P`, so `gQg⁻¹ ⊆ P`.
     have h' : I.conjugate g⁻¹ ≤ J :=
       (exists_fppfHomogeneousQuotientProjection_comp_eq_pointsRightMul_comp_iff H g⁻¹).mp
         ⟨inv (fppfHomogeneousQuotientRightMul H g h), by
-          rw [ObjectProperty.FullSubcategory.hom_inv, IsIso.comp_inv_eq, Category.assoc,
+          rw [ObjectProperty.hom_inv, IsIso.comp_inv_eq, Category.assoc,
             fppfHomogeneousQuotientProjection_comp_rightMul,
             pointsRightMul_comp_pointsRightMul_assoc, inv_mul_cancel, pointsRightMul_one,
             Category.id_comp]⟩
