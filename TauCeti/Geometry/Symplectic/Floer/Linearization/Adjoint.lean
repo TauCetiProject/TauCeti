@@ -33,16 +33,15 @@ The **formal adjoint** of `D_u` acts on covector fields by
   data are regular, a `C¹` covector field annihilates `D_u ξ` for every smooth section `ξ`
   compactly supported in `U` exactly when `D_u^* η = 0` on `U`
   (`forall_integral_apply_floerLinearization_eq_zero_iff`).
-* **The adjoint equation is of Cauchy–Riemann type.** By the product rule,
+* **Expanded form of the adjoint.** By the product rule,
   `D_u^* η = -(∂s η + Aᵀ ∂t η + (∂t A - S)ᵀ η)`, where `Bᵀ θ = θ ∘ B` is the transpose
-  (`floerLinearizationAdjoint_eq_neg`). When `A` is a complex structure, `A² = -1`, so is
-  `Aᵀ`, and up to sign `D_u^*` is again an operator `∂s + Aᵀ ∂t + C` on covector fields with a
-  complex structure as leading coefficient and a continuous zeroth-order term. So cokernel
-  elements are governed by the same local theory as kernel elements, such as unique
-  continuation. This is the step by which a cokernel element that vanishes on an open set, as
-  the localized variations of the Hamiltonian perturbation force
+  (`floerLinearizationAdjoint_eq_neg`). So up to sign `D_u^*` is an operator `∂s + Aᵀ ∂t + C`
+  on covector fields, and `Aᵀ` squares to `-1` whenever `A` does. This file does not prove
+  elliptic regularity or unique continuation for such operators. The intended later use is to
+  show that a cokernel element vanishing on an open set, as the localized variations of the
+  Hamiltonian perturbation force
   (`TauCeti.SymplecticForm.eqOn_zero_of_forall_integral_apply_floerOperator_add_sub_eq_zero`),
-  is shown to vanish on the whole connected domain.
+  vanishes on the whole connected domain.
 
 No Sobolev completion is used: test sections are classical, and the adjoint is applied to `C¹`
 covector fields.
@@ -84,7 +83,7 @@ theorem floerLinearizationAdjoint_def :
         (η z).comp (ω.floerLinearizationCoeff J Ks Kt u z) :=
   (rfl)
 
-/-- **The adjoint operator is of Cauchy–Riemann type.** With `A = J(·, u ·)` and `S` the
+/-- **Expanded form of the formal adjoint.** With `A = J(·, u ·)` and `S` the
 zeroth-order part of the linearized operator,
 `D_u^* η = -(∂s η + (∂t η) ∘ A + η ∘ (∂t A - S))`. -/
 theorem floerLinearizationAdjoint_eq_neg (hη : DifferentiableAt ℝ η z)
@@ -131,22 +130,30 @@ theorem floerLinearizationAdjoint_sub (hη : DifferentiableAt ℝ η z)
   simp only [sub_apply, Pi.sub_apply, sub_comp]
   abel
 
-/-- The formal adjoint commutes with real scaling of covector fields differentiable at the domain
-point, when `J(·, u ·)` is differentiable there. -/
+/-- The formal adjoint commutes with real scaling of covector fields. -/
 @[simp]
-theorem floerLinearizationAdjoint_smul (c : ℝ) (hη : DifferentiableAt ℝ η z)
-    (hA : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+theorem floerLinearizationAdjoint_smul (c : ℝ) :
     ω.floerLinearizationAdjoint J Ks Kt u (c • η) z =
       c • ω.floerLinearizationAdjoint J Ks Kt u η z := by
-  rw [floerLinearizationAdjoint_eq_neg (hη.const_smul c) hA,
-    floerLinearizationAdjoint_eq_neg hη hA, fderiv_const_smul hη c]
-  simp only [smul_apply, Pi.smul_apply, smul_comp, smul_add, smul_neg]
+  have h : (fun w ↦ ((c • η) w).comp (J w (u w))) = c • fun w ↦ (η w).comp (J w (u w)) :=
+    funext fun w ↦ by simp
+  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, h,
+    fderiv_const_smul_field (f := η),
+    fderiv_const_smul_field (f := fun w ↦ (η w).comp (J w (u w)))]
+  simp only [smul_apply, Pi.smul_apply, smul_comp, smul_add, smul_sub, smul_neg]
 
 /-- The formal adjoint sends the zero covector field to zero. -/
 @[simp]
 theorem floerLinearizationAdjoint_zero :
     ω.floerLinearizationAdjoint J Ks Kt u 0 z = 0 := by
   simp [floerLinearizationAdjoint_def]
+
+omit [FiniteDimensional ℝ V] in
+/-- The leading coefficient `A = J(·, u ·)` is `C¹` at `z` when `J` is `C¹` at `(z, u z)` and `u`
+is `C¹` at `z`. -/
+private theorem contDiffAt_comp_graph (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hu : ContDiffAt ℝ 1 u z) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
+  ContDiffAt.comp (f := fun w ↦ (w, u w)) z hJ (contDiffAt_id.prodMk hu)
 
 /-- **Continuity of the formal adjoint.** If `J` is `C¹` and the Hamiltonians are `C²` at
 `(z, u z)`, and `u` and the covector field `η` are `C¹` at `z`, then `D_u^* η` is continuous at
@@ -157,7 +164,7 @@ theorem continuousAt_floerLinearizationAdjoint
     (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiffAt ℝ 1 u z)
     (hη : ContDiffAt ℝ 1 η z) :
     ContinuousAt (ω.floerLinearizationAdjoint J Ks Kt u η) z := by
-  have hA : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z := (hJ.comp z (contDiffAt_id.prodMk hu) :)
+  have hA := contDiffAt_comp_graph hJ hu
   have hdη (v : ℝ × ℝ) : ContinuousAt (fun w ↦ fderiv ℝ η w v) z :=
     (hη.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const
   have hdηA : ContinuousAt (fun w ↦ fderiv ℝ (fun w ↦ (η w).comp (J w (u w))) w
@@ -195,24 +202,21 @@ theorem integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_
   set ηA : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ (η w).comp (J w (u w))
   set S := ω.floerLinearizationCoeff J Ks Kt u
   have hηA (z : ℝ × ℝ) (hz : z ∈ tsupport ξ) : ContDiffAt ℝ 1 ηA z :=
-    (hη z hz).clm_comp ((hJ z hz).comp z (contDiffAt_id.prodMk (hu z hz)) :)
+    (hη z hz).clm_comp (contDiffAt_comp_graph (hJ z hz) (hu z hz))
   -- Every integrand below is continuous on the compact support of `ξ` and vanishes off it.
   have hξ0 (z : ℝ × ℝ) (hz : z ∉ tsupport ξ) : ξ z = 0 := image_eq_zero_of_notMem_tsupport hz
-  have hint (F : ℝ × ℝ → ℝ) (hF : ∀ z ∈ tsupport ξ, ContinuousAt F z)
-      (h0 : ∀ z ∉ tsupport ξ, F z = 0) : Integrable F μ :=
-    (ContinuousOn.integrableOn_compact hξc fun z hz ↦
-      (hF z hz).continuousWithinAt).integrable_of_forall_notMem_eq_zero h0
   have hdF (F : ℝ × ℝ → V →L[ℝ] ℝ) (hF : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 F z) (v : ℝ × ℝ) :
       Integrable (fun w ↦ fderiv ℝ F w v (ξ w)) μ :=
-    hint _ (fun z hz ↦ (((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply
-      continuousAt_const).clm_apply hξ.continuous.continuousAt) fun z hz ↦ by simp [hξ0 z hz]
+    hξc.integrable_of_continuousAt_of_notMem_eq_zero
+      (fun z hz ↦ (((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply
+        continuousAt_const).clm_apply hξ.continuous.continuousAt) fun z hz ↦ by simp [hξ0 z hz]
   have hFdξ (F : ℝ × ℝ → V →L[ℝ] ℝ) (hF : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 F z) (v : ℝ × ℝ) :
       Integrable (fun w ↦ F w (fderiv ℝ ξ w v)) μ :=
-    hint _ (fun z hz ↦ (hF z hz).continuousAt.clm_apply
+    hξc.integrable_of_continuousAt_of_notMem_eq_zero (fun z hz ↦ (hF z hz).continuousAt.clm_apply
       (((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousAt))
       fun z hz ↦ by simp [fderiv_of_notMem_tsupport ℝ hz]
   have hSξ : Integrable (fun w ↦ η w (S w (ξ w))) μ :=
-    hint _ (fun z hz ↦ (hη z hz).continuousAt.clm_apply
+    hξc.integrable_of_continuousAt_of_notMem_eq_zero (fun z hz ↦ (hη z hz).continuousAt.clm_apply
       ((ω.continuousAt_floerLinearizationCoeff (hJ z hz) (hKs z hz) (hKt z hz)
         (hu z hz)).clm_apply hξ.continuous.continuousAt)) fun z hz ↦ by simp [hξ0 z hz]
   -- Integrate the two derivative terms by parts, against `η` and against `η ∘ A`.
