@@ -60,7 +60,11 @@ open scoped ComplexStarModule
 namespace TauCeti
 
 variable (A : Type*) [NonUnitalNonAssocSemiring A] [Module ℂ A] [Star A]
-variable (H : Type*) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable (H : Type*) [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+
+section CompleteSpace
+
+variable [CompleteSpace H]
 
 /-- An odd **Fredholm module** over the complex `*`-algebra `A` on the Hilbert space `H`: a
 `*`-representation `rep` of `A` by bounded operators, which need not be unital, and a
@@ -89,13 +93,17 @@ structure EvenFredholmModule extends FredholmModule A H where
   commute_grading_rep (a : A) : Commute grading (rep a)
   grading_mul_operator : grading * operator = -(operator * grading)
 
+end CompleteSpace
+
 variable {A H}
 
 /-! ### Odd Fredholm modules -/
 
 namespace FredholmModule
 
-variable (M : FredholmModule A H)
+section CompleteSpace
+
+variable [CompleteSpace H] (M : FredholmModule A H)
 
 /-- The operator of a Fredholm module equals its adjoint. -/
 @[simp]
@@ -224,9 +232,15 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
 
 end Conj
 
+end CompleteSpace
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℂ H]
+
 /-- On a finite-dimensional Hilbert space every operator is compact, so every
 `*`-representation together with every self-adjoint operator is a Fredholm module. -/
-def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
+def ofFiniteDimensional (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
     (hF : IsSelfAdjoint F) : FredholmModule A H where
   rep := π
   operator := F
@@ -235,14 +249,16 @@ def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H �
   isCompactOperator_mul_self_sub_one_mul _ := isCompactOperator_of_locallyCompactSpace_dom _
 
 @[simp]
-theorem ofFiniteDimensional_rep [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
+theorem ofFiniteDimensional_rep (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
     (F : H →L[ℂ] H) (hF) : (ofFiniteDimensional π F hF).rep = π :=
   (rfl)
 
 @[simp]
-theorem ofFiniteDimensional_operator [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
+theorem ofFiniteDimensional_operator (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
     (F : H →L[ℂ] H) (hF) : (ofFiniteDimensional π F hF).operator = F :=
   (rfl)
+
+end FiniteDimensional
 
 end FredholmModule
 
@@ -250,7 +266,9 @@ end FredholmModule
 
 namespace EvenFredholmModule
 
-variable (M : EvenFredholmModule A H)
+section CompleteSpace
+
+variable [CompleteSpace H] (M : EvenFredholmModule A H)
 
 /-- The grading of an even Fredholm module equals its adjoint. -/
 @[simp]
@@ -363,10 +381,16 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
 
 end Conj
 
+end CompleteSpace
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℂ H]
+
 /-- On a finite-dimensional Hilbert space, every `*`-representation, self-adjoint operator `F` and
 grading `γ` commuting with the representation and anticommuting with `F` form an even Fredholm
 module. -/
-def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
+def ofFiniteDimensional (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
     (hF : IsSelfAdjoint F) (γ : H →L[ℂ] H) (hγ : IsSelfAdjoint γ) (hγγ : γ * γ = 1)
     (hγπ : ∀ a, Commute γ (π a)) (hγF : γ * F = -(F * γ)) : EvenFredholmModule A H where
   toFredholmModule := FredholmModule.ofFiniteDimensional π F hF
@@ -377,17 +401,19 @@ def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H �
   grading_mul_operator := hγF
 
 @[simp]
-theorem ofFiniteDimensional_toFredholmModule [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
+theorem ofFiniteDimensional_toFredholmModule (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
     (F : H →L[ℂ] H) (hF) (γ : H →L[ℂ] H) (hγ hγγ hγπ hγF) :
     (ofFiniteDimensional π F hF γ hγ hγγ hγπ hγF).toFredholmModule =
       FredholmModule.ofFiniteDimensional π F hF :=
   (rfl)
 
 @[simp]
-theorem ofFiniteDimensional_grading [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
+theorem ofFiniteDimensional_grading (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
     (F : H →L[ℂ] H) (hF) (γ : H →L[ℂ] H) (hγ hγγ hγπ hγF) :
     (ofFiniteDimensional π F hF γ hγ hγγ hγπ hγF).grading = γ :=
   (rfl)
+
+end FiniteDimensional
 
 end EvenFredholmModule
 

@@ -52,40 +52,49 @@ namespace SmoothTwoForm
 
 namespace IsEquivariantMomentMap
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   [IsLieAbelian (GroupLieAlgebra I G)]
-  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
-  [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
-  (hσ : σ.IsNondegenerate)
-
-include hσ
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-omit [FiniteDimensional ℝ E'] in
+section OrbitTangent
+
+variable [FiniteDimensional ℝ E] [CompleteSpace E']
+
 /-- **Torus orbits are isotropic.** For a group-level moment map of a Lie group with abelian Lie
 algebra, such as a torus, every orbit tangent space is isotropic. -/
-theorem isIsotropic_orbitTangent (h : σ.IsEquivariantMomentMap μ) (x : M) :
+theorem isIsotropic_orbitTangent (hσ : σ.IsNondegenerate) (h : σ.IsEquivariantMomentMap μ)
+    (x : M) :
     (hσ.symplecticFormAt x).IsIsotropic
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) :=
   h.toIsMomentMap.isIsotropic_orbitTangent hσ (h.momentCocycle_eq_zero x)
 
-omit hσ in
+end OrbitTangent
+
+section FiniteDimensional
+
+variable [CompleteSpace E] [FiniteDimensional ℝ E']
+
 /-- **The dimension bound for torus actions.** If a Lie group with abelian Lie algebra, such as a
 torus, has a group-level moment map and acts locally freely at a point where the form is
 nondegenerate, then it has at most half the dimension of `M`. -/
 theorem two_mul_finrank_le (h : σ.IsEquivariantMomentMap μ) {x : M}
     (hσx : (σ.bilinFormAt x).Nondegenerate)
     (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
-    2 * finrank ℝ (GroupLieAlgebra I G) ≤ finrank ℝ E' :=
-  h.toIsMomentMap.two_mul_finrank_le hσx (h.momentCocycle_eq_zero x) hfree
+    2 * finrank ℝ (GroupLieAlgebra I G) ≤ finrank ℝ E' := by
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_injective _
+    (((InfinitesimalAction.fundamental I G I' M).isotropy_eq_bot_iff x).1 hfree)
+  exact h.toIsMomentMap.two_mul_finrank_le hσx (h.momentCocycle_eq_zero x) hfree
 
-variable {F H'' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'']
+variable (hσ : σ.IsNondegenerate)
+  {F H'' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'']
   {J : ModelWithCorners ℝ F H''} {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
   {g : N → M} {c : Module.Dual ℝ (GroupLieAlgebra I G)}
 
@@ -97,9 +106,13 @@ theorem isCoisotropicMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hfree : ∀ p, (InfinitesimalAction.fundamental I G I' M).isotropy (g p) = ⊥)
     (hinj : ∀ p, Function.Injective (mfderiv J I' g p))
     (hdim : finrank ℝ F + finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') :
-    hσ.IsCoisotropicMap J g :=
-  h.toIsMomentMap.isCoisotropicMap_of_forall_eq hσ hg hfree (fun _ ↦ h.momentCocycle_eq_zero _)
-    (lieAnnihilator_eq_top ℝ _ c) hinj hdim
+    hσ.IsCoisotropicMap J g := by
+  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
+  · exact hσ.isCoisotropicMap_iff.2 fun p ↦ isEmptyElim p
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_injective _
+    (((InfinitesimalAction.fundamental I G I' M).isotropy_eq_bot_iff (g p₀)).1 (hfree p₀))
+  exact h.toIsMomentMap.isCoisotropicMap_of_forall_eq hσ hg hfree
+    (fun _ ↦ h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdim
 
 /-- **Regular levels of toric moment maps are Lagrangian.** For a group-level moment map of a Lie
 group with abelian Lie algebra and half the dimension of `M`, such as the torus of a symplectic
@@ -110,9 +123,15 @@ theorem isLagrangianMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hfree : ∀ p, (InfinitesimalAction.fundamental I G I' M).isotropy (g p) = ⊥)
     (hinj : ∀ p, Function.Injective (mfderiv J I' g p))
     (hdimN : finrank ℝ F = finrank ℝ (GroupLieAlgebra I G))
-    (hdim : 2 * finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') : hσ.IsLagrangianMap J g :=
-  h.toIsMomentMap.isLagrangianMap_of_forall_eq hσ hg hfree (fun _ ↦ h.momentCocycle_eq_zero _)
-    (lieAnnihilator_eq_top ℝ _ c) hinj hdimN hdim
+    (hdim : 2 * finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') : hσ.IsLagrangianMap J g := by
+  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
+  · exact hσ.isLagrangianMap_iff_forall.2 fun p ↦ isEmptyElim p
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_injective _
+    (((InfinitesimalAction.fundamental I G I' M).isotropy_eq_bot_iff (g p₀)).1 (hfree p₀))
+  exact h.toIsMomentMap.isLagrangianMap_of_forall_eq hσ hg hfree
+    (fun _ ↦ h.momentCocycle_eq_zero _) (lieAnnihilator_eq_top ℝ _ c) hinj hdimN hdim
+
+end FiniteDimensional
 
 end IsEquivariantMomentMap
 
