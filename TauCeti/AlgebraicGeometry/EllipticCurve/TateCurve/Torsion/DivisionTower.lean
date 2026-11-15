@@ -13,13 +13,14 @@ public import TauCeti.RingTheory.Perfection
 # Compatible division points of a Tate curve
 
 A compatible family `uₖ` of `ℓ^k`-th roots of the Tate parameter determines a point of the
-Tate module whose exponent is one at every level. Such a point exists over an algebraically
-closed complete ultrametric extension. Choosing roots independently at each level would not
-suffice: the compatibility `uₖ₊₁ ^ ℓ = uₖ` is essential.
+Tate module whose exponent is one at every level. For `ℓ ≠ 0`, such a point exists over an
+algebraically closed complete ultrametric extension. Choosing roots independently at each level
+would not suffice: the compatibility `uₖ₊₁ ^ ℓ = uₖ` is essential.
 
-The Galois action on this Tate-module point detects exactly the action on the entire root
-family. In particular, the root-of-unity displacement formulas at finite level detect genuine
-nontrivial action on the Tate module, not only on an isolated torsion group. This is the
+The action of a continuous `K`-automorphism `σ` on this Tate-module point detects exactly its
+action on the entire root family. In particular, the root-of-unity displacement formulas at
+finite level detect genuine nontrivial action on the Tate module, not only on an isolated
+torsion group. This is the
 Kummer direction complementary to the cyclotomic direction in Tate-curve monodromy.
 
 ## References
@@ -85,8 +86,8 @@ theorem proj_tateDivisionTower (k : ℕ) :
       tateDivisionPoint q hq (ℓ ^ k) (u k) (hu k) := by
   rw [tateDivisionTower, TateModule.proj_mk]
 
-/-- The compatible division point is primitive: it is not an `ℓ`-multiple in the Tate
-module. Thus it supplies an integral, not merely rational, Kummer direction. -/
+/-- When `ℓ ≠ 1`, the compatible division point is primitive: it is not an `ℓ`-multiple in the
+Tate module. Thus it supplies an integral, not merely rational, Kummer direction. -/
 theorem tateDivisionTower_ne_nsmul (hℓ : ℓ ≠ 1)
     (y : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) :
     tateDivisionTower q hq ℓ u hu hcompat ≠ ℓ • y := by
@@ -109,8 +110,9 @@ private theorem proj_tateModuleGaloisRepresentation_tateDivisionTower (k : ℕ) 
 
 include hσ
 
-/-- At every level the displacement of the compatible division point is represented by
-`σ(uₖ)/uₖ`. The equation specifying the root of unity avoids any choice of its generator. -/
+/-- For a continuous `K`-automorphism `σ`, at every level the displacement of the compatible
+division point is represented by `σ(uₖ)/uₖ`. The equation specifying the root of unity avoids
+any choice of its generator. -/
 theorem proj_tateModuleGaloisRepresentation_tateDivisionTower_sub (k : ℕ)
     (ζ : rootsOfUnity (ℓ ^ k) L)
     (hζ : Units.map (σ : L →* L) (u k) = (ζ : Lˣ) * u k) :
@@ -121,8 +123,9 @@ theorem proj_tateModuleGaloisRepresentation_tateDivisionTower_sub (k : ℕ)
   rw [map_sub, proj_tateModuleGaloisRepresentation_tateDivisionTower, proj_tateDivisionTower]
   exact torsionByMap_tateDivisionPoint_sub q hq (ℓ ^ k) σ.toAlgHom hσ _ _ ζ hζ
 
-/-- An automorphism fixes the compatible division point exactly when it fixes every root
-in the chosen tower. Thus a nontrivial Kummer action cannot disappear in the inverse limit. -/
+/-- A continuous `K`-automorphism fixes the compatible division point exactly when it fixes
+every root in the chosen tower. Thus a nontrivial Kummer action cannot disappear in the inverse
+limit. -/
 theorem tateModuleGaloisRepresentation_tateDivisionTower_eq_self_iff :
     ((tateCurveAt q hq).tateModuleGaloisRepresentation ℓ σ)
         (tateDivisionTower q hq ℓ u hu hcompat) = tateDivisionTower q hq ℓ u hu hcompat ↔
@@ -142,9 +145,9 @@ end Galois
 
 variable (L)
 
-/-- Over an algebraically closed complete ultrametric extension there is a single Tate-module
-point whose exponent is one at every level. In particular, the levelwise surjectivity of the
-exponent maps is realized by compatible preimages of one. -/
+/-- For `ℓ ≠ 0`, over an algebraically closed complete ultrametric extension there is a
+Tate-module point whose exponent is one at every level. In particular, the levelwise
+surjectivity of the exponent maps is realized by compatible preimages of one. -/
 theorem exists_forall_tateTorsionExponent_proj_eq_one [IsAlgClosed L] [NeZero ℓ] :
     ∃ x : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point), ∀ k,
       tateTorsionExponent L q hq (ℓ ^ k) (TateModule.proj k x) =
