@@ -9,6 +9,8 @@ public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 -- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
 -- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Functions of bounded and of vanishing mean oscillation
@@ -58,6 +60,8 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_eq_iSup_sharpMaximalFunction`: the seminorm is the supremum of `f^#`.
 * `TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top` and `MeasureTheory.MemLp.memBMO`: `L^∞ ⊆ BMO`.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
+* `LipschitzWith.bmoSeminorm_comp_le`, `TauCeti.MemBMO.comp_lipschitzWith`: composing with a
+  `K`-Lipschitz map multiplies the seminorm by at most `2 K`.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
   dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
   modulus.
@@ -244,6 +248,73 @@ theorem _root_.MeasureTheory.MemLp.memBMO [IsLocallyFiniteMeasure μ] (hf : MemL
     MemBMO f μ :=
   ⟨hf.locallyIntegrable le_top, (bmoSeminorm_le_two_mul_eLpNorm_top f μ).trans_lt
     (ENNReal.mul_lt_top (by simp) hf.eLpNorm_lt_top)⟩
+
+/-! ### Composition with Lipschitz maps -/
+
+section Lipschitz
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {φ : F → G}
+  {K : ℝ≥0}
+
+/-- **Composition with a Lipschitz map.** If `φ` is `K`-Lipschitz, then
+`‖φ ∘ f‖_{BMO} ≤ 2 K ‖f‖_{BMO}` for every a.e. strongly measurable `f`. -/
+theorem _root_.LipschitzWith.bmoSeminorm_comp_le (hφ : LipschitzWith K φ)
+    (hf : AEStronglyMeasurable f μ) :
+    bmoSeminorm (fun x => φ (f x)) μ ≤ 2 * K * bmoSeminorm f μ := by
+  refine bmoSeminorm_le fun c r => ?_
+  set a := ⨍ z in ball c r, f z ∂μ
+  rcases eq_or_ne (μ (ball c r)) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  by_cases hint : IntegrableOn f (ball c r) μ
+  swap
+  · -- If `f` is not integrable on the ball, its mean oscillation there is infinite.
+    have h0 : μ (ball c r) ≠ 0 := fun h0 => hint (by
+      rw [IntegrableOn, Measure.restrict_eq_zero.2 h0]
+      exact integrable_zero_measure)
+    have hosc : ⨍⁻ y in ball c r, ‖f y - a‖ₑ ∂μ = ∞ := by
+      have hlint : ∫⁻ y in ball c r, ‖f y‖ₑ ∂μ = ∞ := by
+        by_contra hne
+        exact hint ⟨hf.restrict, lt_top_iff_ne_top.2 hne⟩
+      simp [a, setAverage_eq, integral_undef hint, setLAverage_eq, hlint,
+        ENNReal.top_div_of_ne_top htop]
+    rcases eq_or_ne K 0 with rfl | hK
+    · -- A `0`-Lipschitz map is constant, so `φ ∘ f` has no oscillation.
+      have hconst : ∀ y, φ (f y) = φ 0 := fun y => by
+        simpa [dist_eq_zero] using hφ.dist_le_mul (f y) 0
+      simp [hconst, setAverage_const h0 htop]
+    · have hbmo : bmoSeminorm f μ = ∞ :=
+        top_le_iff.1 (hosc ▸ setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r)
+      rw [hbmo, ENNReal.mul_top (mul_ne_zero two_ne_zero (ENNReal.coe_ne_zero.2 hK))]
+      exact le_top
+  have : IsFiniteMeasure (μ.restrict (ball c r)) := ⟨by simpa using htop.lt_top⟩
+  -- `φ ∘ f` is integrable on the ball, being dominated by `K ‖f‖ + ‖φ 0‖`.
+  have hint' : IntegrableOn (fun x => φ (f x)) (ball c r) μ :=
+    ((hint.norm.const_mul (K : ℝ)).add (integrable_const ‖φ 0‖)).mono'
+      (hφ.continuous.comp_aestronglyMeasurable hf.restrict) (.of_forall fun y => by
+        calc ‖φ (f y)‖ ≤ ‖φ (f y) - φ 0‖ + ‖φ 0‖ := norm_le_norm_sub_add _ _
+          _ ≤ K * ‖f y‖ + ‖φ 0‖ := by gcongr; simpa using hφ.norm_sub_le (f y) 0)
+  -- Compare `φ ∘ f` with the constant `φ (f_B)`, where `‖φ (f y) - φ (f_B)‖ ≤ K ‖f y - f_B‖`.
+  calc ⨍⁻ y in ball c r, ‖φ (f y) - ⨍ z in ball c r, φ (f z) ∂μ‖ₑ ∂μ
+      ≤ 2 * ⨍⁻ y in ball c r, ‖φ (f y) - φ a‖ₑ ∂μ := setLAverage_enorm_sub_setAverage_le hint' _
+    _ ≤ 2 * ⨍⁻ y in ball c r, K * ‖f y - a‖ₑ ∂μ := by
+        gcongr 2 * ?_
+        refine setLAverage_mono_ae _ (.of_forall fun y => ?_)
+        simpa only [eDist_eq_eNorm_sub] using hφ (f y) a
+    _ = 2 * K * ⨍⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := by
+        rw [laverage_const_mul ENNReal.coe_ne_top, mul_assoc]
+    _ ≤ 2 * K * bmoSeminorm f μ := by
+        gcongr
+        exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r
+
+/-- Composing a function of bounded mean oscillation with a Lipschitz map gives a function of
+bounded mean oscillation. -/
+theorem MemBMO.comp_lipschitzWith [SecondCountableTopology X] [IsLocallyFiniteMeasure μ]
+    (hf : MemBMO f μ) (hφ : LipschitzWith K φ) : MemBMO (fun x => φ (f x)) μ :=
+  ⟨locallyIntegrableOn_univ.1 ((hf.1.locallyIntegrableOn univ).comp_lipschitz hφ),
+    (hφ.bmoSeminorm_comp_le hf.1.aestronglyMeasurable).trans_lt
+      (by finiteness [hf.bmoSeminorm_ne_top])⟩
+
+end Lipschitz
 
 /-! ### Functions with vanishing BMO seminorm -/
 
