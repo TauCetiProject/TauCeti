@@ -62,6 +62,9 @@ All in the namespace `TauCeti.Vortex`:
   `u₀ + w` and `P` is a smooth framed degree-`m` vortex.
 * `exists_contDiff_memLp_laplacian_eq_reduced`: for a polynomial of positive degree, the reduced
   vortex equation has a smooth square-integrable solution tending to zero at infinity.
+* `exists_contDiff_equation_amplitudeField_prod_sub_eq_zero`: for every `D ∈ Sym ℂ m` the field
+  reconstructed from a smooth amplitude `u` and `∏_{a ∈ D} (w - a)` is a smooth framed degree-`m`
+  vortex, with section `exp (u w) ∏_{a ∈ D} (w - a)`.
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
 * `framedVortexSubMulAction`: the smooth framed degree-`m` vortices, preserved by smooth framed
@@ -185,14 +188,18 @@ theorem exists_contDiff_memLp_laplacian_eq_reduced {P : ℂ[X]} (hm : 0 < P.natD
 
 /-! ### Vortices with prescribed zeros -/
 
-/-- **Existence of framed plane vortices with prescribed zeros** (Taubes). For every effective
-divisor `D ∈ Sym ℂ m`, repeated points allowed, there is a smooth solution `x` of the vortex
-equations on `ℂ` whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` and
-vanishes exactly at the points of `D`, to the order of their multiplicities. -/
-theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym ℂ m) :
-    ∃ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x ∧ (∀ z, equation x z = 0) ∧
-      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) ∧
-      IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
+/-- **Framed plane vortices with prescribed zeros, in reconstructed form.** For every effective
+divisor `D ∈ Sym ℂ m` there is a smooth amplitude `u` such that the field reconstructed from `u`
+and the polynomial `w ↦ ∏_{a ∈ D} (w - a)` (`TauCeti.Vortex.amplitudeField`) is a smooth solution
+of the vortex equations whose section `exp (u w) ∏_{a ∈ D} (w - a)` has the degree-`m` end
+framing `α(z) (z / |z|)⁻ᵐ → 1`. -/
+theorem exists_contDiff_equation_amplitudeField_prod_sub_eq_zero {m : ℕ} (D : Sym ℂ m) :
+    ∃ u : ℂ → ℝ, ContDiff ℝ ∞ u ∧
+      ContDiff ℝ ∞ (amplitudeField u fun w ↦ ((D : Multiset ℂ).map fun a ↦ w - a).prod) ∧
+      (∀ z, equation (amplitudeField u fun w ↦ ((D : Multiset ℂ).map fun a ↦ w - a).prod) z = 0) ∧
+      Tendsto (fun z ↦ sectionValue (amplitudeField u fun w ↦
+        ((D : Multiset ℂ).map fun a ↦ w - a).prod) z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
+        (cocompact ℂ) (𝓝 1) := by
   set f : ℂ → ℂ := fun w ↦ ((D : Multiset ℂ).map fun a ↦ w - a).prod with hf
   set P : ℂ[X] := ((D : Multiset ℂ).map fun a ↦ X - C a).prod with hP
   have hPf : P.eval = f := funext fun w ↦ by simp [hP, hf, eval_multiset_prod, Multiset.map_map]
@@ -206,8 +213,8 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
       rw [hf, Sym.eq_nil_of_card_zero D]
       funext _
       simp
-    refine ⟨amplitudeField 0 f, contDiff_amplitudeField (n := ⊤) contDiff_const hfc,
-      fun z ↦ ?_, ?_, isZeroMultiplicity_sectionValue_amplitudeField_prod_sub continuous_const _⟩
+    refine ⟨0, contDiff_const, contDiff_amplitudeField (n := ⊤) contDiff_const hfc,
+      fun z ↦ ?_, ?_⟩
     · rw [equation_amplitudeField_eq_zero_iff (u := 0) (f := f) contDiffAt_const
         (hPf ▸ P.differentiable z)]
       simp [hf1, Pi.zero_def]
@@ -222,8 +229,18 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
     rw [hPf] at hsol
     have hu : ContDiff ℝ ∞ fun z ↦ backgroundAmplitude f z + w z :=
       (contDiff_backgroundAmplitude hfc).add hw
-    exact ⟨_, contDiff_amplitudeField (n := ⊤) (hu.of_le (by simp)) hfc, hsol, hfr,
-      isZeroMultiplicity_sectionValue_amplitudeField_prod_sub hu.continuous _⟩
+    exact ⟨_, hu, contDiff_amplitudeField (n := ⊤) (hu.of_le (by simp)) hfc, hsol, hfr⟩
+
+/-- **Existence of framed plane vortices with prescribed zeros** (Taubes). For every effective
+divisor `D ∈ Sym ℂ m`, repeated points allowed, there is a smooth solution `x` of the vortex
+equations on `ℂ` whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` and
+vanishes exactly at the points of `D`, to the order of their multiplicities. -/
+theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym ℂ m) :
+    ∃ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x ∧ (∀ z, equation x z = 0) ∧
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) ∧
+      IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
+  obtain ⟨u, hu, hx, hsol, hfr⟩ := exists_contDiff_equation_amplitudeField_prod_sub_eq_zero D
+  exact ⟨_, hx, hsol, hfr, isZeroMultiplicity_sectionValue_amplitudeField_prod_sub hu.continuous _⟩
 
 /-! ### The moduli of framed vortices -/
 
