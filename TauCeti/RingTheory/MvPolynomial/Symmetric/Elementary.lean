@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.RingTheory.PowerSeries.Rescale
+import Mathlib.RingTheory.Polynomial.Vieta
 
 /-!
 # Elementary symmetric polynomials
@@ -31,6 +32,9 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
+* `Multiset.esymm_map_mul_left`: scaling the elements by `c` scales `eₙ` by `cⁿ`.
+* `Multiset.forall_esymm_eq_zero_iff`: over a domain, the `eₙ` with `n > 0` all vanish exactly when
+  every element is zero.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
@@ -116,6 +120,39 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- Scaling every element of a multiset by `c` scales its `n`-th elementary symmetric function by
+`cⁿ`: `eₙ(c x₁, …, c xₖ) = cⁿ eₙ(x₁, …, xₖ)`. -/
+theorem Multiset.esymm_map_mul_left {α R : Type*} [CommSemiring R] (s : Multiset α) (f : α → R)
+    (c : R) (n : ℕ) : (s.map fun a ↦ c * f a).esymm n = c ^ n * (s.map f).esymm n := by
+  have hs : s.map (fun a ↦ c * f a) = (s.map f).map (c * ·) := (Multiset.map_map _ _ _).symm
+  rw [hs, Multiset.esymm, Multiset.esymm, Multiset.powersetCard_map, Multiset.map_map,
+    ← Multiset.sum_map_mul_left]
+  refine congrArg Multiset.sum (Multiset.map_congr rfl fun t ht ↦ ?_)
+  rw [Function.comp_apply, Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate,
+    (Multiset.mem_powersetCard.1 ht).2, Multiset.map_id']
+
+/-- The elementary symmetric functions of positive degree of a multiset in a domain all vanish
+exactly when every element is zero: then `∏ (X - a) = Xᵏ`, whose only root is zero. -/
+theorem Multiset.forall_esymm_eq_zero_iff {R : Type*} [CommRing R] [IsDomain R]
+    {s : Multiset R} : (∀ n, 0 < n → s.esymm n = 0) ↔ ∀ a ∈ s, a = 0 := by
+  refine ⟨fun h a ha ↦ ?_, fun h n hn ↦ ?_⟩
+  · have hprod : (s.map fun t ↦ Polynomial.X - Polynomial.C t).prod =
+        Polynomial.X ^ Multiset.card s := by
+      rw [Multiset.prod_X_sub_X_eq_sum_esymm, Finset.sum_eq_single 0]
+      · simp [Multiset.esymm, Multiset.powersetCard_zero_left]
+      · intro j _ hj
+        rw [h j (Nat.pos_of_ne_zero hj), Polynomial.C_0, zero_mul, mul_zero]
+      · simp
+    have hroots := Polynomial.roots_multiset_prod_X_sub_C s
+    rw [hprod, Polynomial.roots_X_pow] at hroots
+    rw [← hroots] at ha
+    exact Multiset.mem_singleton.1 (Multiset.mem_of_mem_nsmul ha)
+  · refine Multiset.sum_eq_zero fun x hx ↦ ?_
+    obtain ⟨t, ht, rfl⟩ := Multiset.mem_map.1 hx
+    obtain ⟨hts, htn⟩ := Multiset.mem_powersetCard.1 ht
+    obtain ⟨a, ha⟩ := Multiset.card_pos_iff_exists_mem.1 (htn ▸ hn)
+    exact Multiset.prod_eq_zero (h a (Multiset.mem_of_le hts ha) ▸ ha)
 
 namespace TauCeti
 
