@@ -18,11 +18,9 @@ Two real additive valuations recovering the same norm with specified bases great
 than one differ by the ratio of the logarithms of those bases. The comparison includes
 zero, whose value remains infinity. In particular, fixing the base determines the
 additive valuation uniquely; no choice of scale is installed as a global instance.
-Likewise a norm-preserving ring homomorphism, such as the inclusion of a normed field extension,
-carries one such valuation to the other (`AddValuation.apply_eq_of_norm_eq_rpow`). Under norm
-recovery, the sphere `‖x‖ = b ^ σ` is the level set `v x = -σ` (`AddValuation.norm_eq_rpow_iff`).
-A norm recovered from an additive valuation with base at least one is ultrametric
-(`AddValuation.isUltrametricDist`).
+Under norm recovery, the sphere `‖x‖ = b ^ σ` is the level set `v x = -σ`
+(`AddValuation.norm_eq_rpow_iff`). A norm recovered from an additive valuation with base at least
+one is ultrametric (`AddValuation.isUltrametricDist`).
 -/
 
 public section
@@ -61,20 +59,6 @@ theorem eq_of_norm_eq_rpow (v w : AddValuation K (WithTop ℝ))
     simp [ne_of_gt (Real.log_pos hb)]
   rw [hid, WithTop.map_id] at h
   exact h
-
-/-- Along a norm-preserving ring homomorphism `f`, real additive valuations recovering the norms
-with the same base `b > 1` correspond: `w (f x) = v x`. -/
-theorem apply_eq_of_norm_eq_rpow {L : Type*} [NormedDivisionRing L] (f : K →+* L)
-    (hf : ∀ x, ‖f x‖ = ‖x‖) (v : AddValuation K (WithTop ℝ)) (w : AddValuation L (WithTop ℝ))
-    {b : ℝ} (hb : 1 < b) (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
-    (hw : ∀ y ≠ 0, ‖y‖ = b ^ (-(w y).untop₀)) (x : K) : w (f x) = v x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  have hfx : f x ≠ 0 := (map_ne_zero f).2 hx
-  have h := (hw (f x) hfx).symm.trans ((hf x).trans (hv x hx))
-  rw [Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne', neg_inj] at h
-  rw [← WithTop.coe_untop₀_of_ne_top (w.ne_top_iff.mpr hfx),
-    ← WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.mpr hx), h]
 
 /-- Under norm recovery with base `b > 1`, the points of norm `b ^ σ` are exactly those of
 valuation `-σ`. Zero lies on neither side. -/

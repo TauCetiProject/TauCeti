@@ -347,8 +347,10 @@ private theorem newtonSlopeMultiplicity_charPowerSeries_mapCoeffs_algebraMap
     (hu : u.IsRowCompact) (σ : ℝ) :
     (u.mapCoeffs (algebraMap K L) ⟨1, by simp⟩).charPowerSeries.newtonSlopeMultiplicity vL σ =
       u.charPowerSeries.newtonSlopeMultiplicity v σ :=
+  -- Pulled back along the isometry `K → L`, `vL` recovers the norm of `K`, so it is `v`.
   hu.newtonSlopeMultiplicity_charPowerSeries_mapCoeffs v (algebraMap K L) _
-    (AddValuation.apply_eq_of_norm_eq_rpow _ (norm_algebraMap' L) v vL hb hv hvL) σ
+    (DFunLike.congr_fun (v.eq_of_norm_eq_rpow (vL.comap (algebraMap K L)) hb hv fun x hx ↦
+      (norm_algebraMap' L x).symm.trans (hvL _ ((map_ne_zero _).2 hx)))) σ
 
 /-- **Slopes are the valuations of the eigenvalues in an algebraically closed extension.** Let
 `u` be a row-compact endomorphism of `C₀(I, K)` and `L` a complete algebraically closed normed
