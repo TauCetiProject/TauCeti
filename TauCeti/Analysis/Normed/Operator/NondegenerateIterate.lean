@@ -21,8 +21,9 @@ import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 
 Let `L` be an endomorphism of a finite-dimensional normed space `E`, for instance the linearized
 return map of a periodic orbit. Composing a map with a perturbation `ψ` fixing a point `p` of the
-orbit changes the linearized return map from `L` to `L * A`, where `A` is the derivative of `ψ` at
-`p` (`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). The `m`-fold cover of the orbit is
+orbit and equal to the identity near the other points of the orbit changes the linearized return
+map from `L` to `L * A`, where `A` is the derivative of `ψ` at `p`
+(`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). The `m`-fold cover of the orbit is
 nondegenerate when `(L * A) ^ m` does not have `1` as an eigenvalue, that is, when
 `det (1 - (L * A) ^ m) ≠ 0`.
 
@@ -65,26 +66,34 @@ open scoped ContDiff
 
 namespace ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E]
+
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedSpace 𝕜 E]
 
 /-- The operators `A` for which `(L * A) ^ m` does not have the eigenvalue `1` form an open set. -/
-theorem isOpen_setOf_det_one_sub_pow_mul_ne_zero (L : E →L[ℝ] E) (m : ℕ) :
-    IsOpen {A : E →L[ℝ] E | (1 - (L * A) ^ m).det ≠ 0} :=
+theorem isOpen_setOf_det_one_sub_pow_mul_ne_zero (L : E →L[𝕜] E) (m : ℕ) :
+    IsOpen {A : E →L[𝕜] E | (1 - (L * A) ^ m).det ≠ 0} :=
   isOpen_ne_fun (continuous_det.comp (by fun_prop)) continuous_const
 
 /-- For every set `s` of exponents, the operators `A` for which no power `(L * A) ^ m` with
 `m ∈ s` has the eigenvalue `1` form a `Gδ` set. -/
-theorem isGδ_setOf_forall_det_one_sub_pow_mul_ne_zero (L : E →L[ℝ] E) (s : Set ℕ) :
-    IsGδ {A : E →L[ℝ] E | ∀ m ∈ s, (1 - (L * A) ^ m).det ≠ 0} := by
+theorem isGδ_setOf_forall_det_one_sub_pow_mul_ne_zero (L : E →L[𝕜] E) (s : Set ℕ) :
+    IsGδ {A : E →L[𝕜] E | ∀ m ∈ s, (1 - (L * A) ^ m).det ≠ 0} := by
   simpa only [Set.ofPred_forall] using
     IsGδ.biInter_of_isOpen s.to_countable fun m _ ↦ isOpen_setOf_det_one_sub_pow_mul_ne_zero L m
 
 /-- For a finite set `s`, the operators `A` for which no power `(L * A) ^ m` with `m ∈ s` has the
 eigenvalue `1` form an open set. -/
-theorem isOpen_setOf_forall_det_one_sub_pow_mul_ne_zero (L : E →L[ℝ] E) {s : Set ℕ}
-    (hs : s.Finite) : IsOpen {A : E →L[ℝ] E | ∀ m ∈ s, (1 - (L * A) ^ m).det ≠ 0} := by
+theorem isOpen_setOf_forall_det_one_sub_pow_mul_ne_zero (L : E →L[𝕜] E) {s : Set ℕ}
+    (hs : s.Finite) : IsOpen {A : E →L[𝕜] E | ∀ m ∈ s, (1 - (L * A) ^ m).det ≠ 0} := by
   simpa only [Set.ofPred_forall] using
     hs.isOpen_biInter fun m _ ↦ isOpen_setOf_det_one_sub_pow_mul_ne_zero L m
+
+end Field
+
+variable [NormedSpace ℝ E]
 
 /-- **Generic nondegeneracy of one iterate.** For `m ≠ 0`, the operators `A` for which
 `(L * A) ^ m` does not have the eigenvalue `1` form a dense set. -/

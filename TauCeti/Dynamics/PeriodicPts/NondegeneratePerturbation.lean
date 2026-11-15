@@ -20,7 +20,7 @@ import TauCeti.Analysis.Normed.Operator.NondegenerateIterate
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 
 /-!
-# Making a periodic orbit nondegenerate in finitely many iterates by a local perturbation
+# Making the covers of a periodic orbit nondegenerate by a local perturbation
 
 Let `φ : E → E` be a map of a finite-dimensional real normed space and `p` a periodic point of
 period `k`, with linearized return map `L`, the derivative of `φ^[k]` at `p`. The `m`-fold cover
