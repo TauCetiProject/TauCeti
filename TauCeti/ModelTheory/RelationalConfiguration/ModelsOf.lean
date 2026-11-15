@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
+public import TauCeti.ModelTheory.Infinitary.Theory
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import TauCeti.ModelTheory.Syntax
@@ -36,6 +37,9 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 * `TauCeti.RelationalConfiguration.modelsOf`: the configurations on `V` decoding to models of a
   sentence.
+* `TauCeti.RelationalConfiguration.modelsOfTheory`: the configurations on `V` decoding to models of
+  a first-order theory, which is the model class of the countable conjunction of the theory when
+  the theory is countable (`modelsOf_conjunction_image_toOmega`).
 
 ## Main results
 
@@ -190,6 +194,30 @@ carrier is a standard Borel space. -/
 instance standardBorelSpace_modelsOf [∀ n, Countable (L.Relations n)] [Countable ι] [Countable V]
     (φ : L.SentenceInf ι) : StandardBorelSpace (modelsOf (V := V) φ) :=
   (measurableSet_modelsOf φ).standardBorel
+
+/-! ### Model classes of first-order theories -/
+
+/-- The **model class** of a first-order theory: the configurations on `V` whose decoded
+structures are models of `T`. -/
+def modelsOfTheory (T : L.Theory) : Set (RelationalConfiguration L V) :=
+  {c | @Theory.Model L V c.toStructure T}
+
+/-- A configuration lies in the model class of `T` exactly when its decoded structure is a model of
+`T`. -/
+@[simp]
+theorem mem_modelsOfTheory {T : L.Theory} {c : RelationalConfiguration L V} :
+    c ∈ modelsOfTheory T ↔ @Theory.Model L V c.toStructure T :=
+  Iff.rfl
+
+/-- The model class of a first-order theory is the model class of the countable conjunction of its
+image in `L_{ω₁ω}`. -/
+theorem modelsOf_conjunction_image_toOmega {T : L.Theory}
+    (hT : (BoundedFormula.toOmega '' T).Countable) :
+    modelsOf (V := V) (Theoryω.conjunction _ hT) = modelsOfTheory T := by
+  ext c
+  let := c.toStructure
+  rw [mem_modelsOf, mem_modelsOfTheory, Theoryω.realize_conjunction_iff,
+    Theoryω.model_image_toOmega_iff]
 
 end TauCeti.RelationalConfiguration
 

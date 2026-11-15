@@ -8,7 +8,7 @@ module
 public import Mathlib.ModelTheory.LanguageMap
 
 /-!
-# Expansions along composite language maps, and language maps for adjoining constants
+# Expansions along composite language maps, adjoining constants, and universe lifts of languages
 
 Additions to Mathlib's `Mathlib.ModelTheory.LanguageMap`: expansions compose along composite
 language maps, and the reduct of an expansion along a composite `h.comp g` along the outer map `h`
@@ -44,6 +44,11 @@ the expansion of its `L`-reduct by the interpretations of the added constants
 
 A function symbol of `L[[γ]]` is a function symbol of `L` or one of the added constants
 (`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
+
+The universe lift `FirstOrder.Language.uLift` presents a language in any pair of universes at
+least as large as its own, by lifting its symbols with `ULift`; it is equivalent to the original
+language (`FirstOrder.Language.uLiftEquiv`) and inherits being relational or algebraic and having
+countably many symbols.
 -/
 
 public section
@@ -235,5 +240,81 @@ theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
 
 end WithConstantsSymbols
+
+end FirstOrder.Language
+
+/-! ### Presenting a language in higher universes -/
+
+namespace FirstOrder.Language
+
+variable (L : Language.{u, v})
+
+/-- The **universe lift** of a language: the language in `Language.{max u u', max v v'}` whose
+symbols of each arity are the `ULift`s of those of `L`. It is equivalent to `L`
+(`FirstOrder.Language.uLiftEquiv`), so a language has a presentation in every pair of universes
+at least as large as its own. The definition is exposed so that the symbol maps of
+`uLiftEquiv` can be stated through `ULift.up` and `ULift.down`. -/
+@[expose] def uLift : Language.{max u u', max v v'} where
+  Functions n := ULift.{u'} (L.Functions n)
+  Relations n := ULift.{v'} (L.Relations n)
+
+/-- The function symbols of the universe lift of each arity are those of `L`, lifted. -/
+theorem uLift_functions (n : ℕ) :
+    (uLift.{u, v, u', v'} L).Functions n = ULift.{u'} (L.Functions n) :=
+  (rfl)
+
+/-- The relation symbols of the universe lift of each arity are those of `L`, lifted. -/
+theorem uLift_relations (n : ℕ) :
+    (uLift.{u, v, u', v'} L).Relations n = ULift.{v'} (L.Relations n) :=
+  (rfl)
+
+/-- The equivalence of a language with its universe lift, sending each symbol to its lift. -/
+def uLiftEquiv : L ≃ᴸ uLift.{u, v, u', v'} L where
+  toLHom := ⟨fun {_} f => ULift.up f, fun {_} R => ULift.up R⟩
+  invLHom := ⟨fun {_} f => ULift.down f, fun {_} R => ULift.down R⟩
+  left_inv := (rfl)
+  right_inv := (rfl)
+
+/-- The equivalence sends a function symbol to its lift. -/
+@[simp]
+theorem uLiftEquiv_toLHom_onFunction {n : ℕ} (f : L.Functions n) :
+    (uLiftEquiv.{u, v, u', v'} L).toLHom.onFunction f = ULift.up f :=
+  (rfl)
+
+/-- The equivalence sends a relation symbol to its lift. -/
+@[simp]
+theorem uLiftEquiv_toLHom_onRelation {n : ℕ} (R : L.Relations n) :
+    (uLiftEquiv.{u, v, u', v'} L).toLHom.onRelation R = ULift.up R :=
+  (rfl)
+
+/-- The inverse equivalence sends a lifted function symbol back. -/
+@[simp]
+theorem uLiftEquiv_invLHom_onFunction {n : ℕ} (f : (uLift.{u, v, u', v'} L).Functions n) :
+    (uLiftEquiv.{u, v, u', v'} L).invLHom.onFunction f = ULift.down f :=
+  (rfl)
+
+/-- The inverse equivalence sends a lifted relation symbol back. -/
+@[simp]
+theorem uLiftEquiv_invLHom_onRelation {n : ℕ} (R : (uLift.{u, v, u', v'} L).Relations n) :
+    (uLiftEquiv.{u, v, u', v'} L).invLHom.onRelation R = ULift.down R :=
+  (rfl)
+
+/-- The universe lift of a relational language is relational. -/
+instance isRelational_uLift [L.IsRelational] : (uLift.{u, v, u', v'} L).IsRelational :=
+  fun n => inferInstanceAs (IsEmpty (ULift (L.Functions n)))
+
+/-- The universe lift of an algebraic language is algebraic. -/
+instance isAlgebraic_uLift [L.IsAlgebraic] : (uLift.{u, v, u', v'} L).IsAlgebraic :=
+  fun n => inferInstanceAs (IsEmpty (ULift (L.Relations n)))
+
+/-- The universe lift has countably many function symbols when `L` does. -/
+instance countable_functions_uLift [Countable (Σ n, L.Functions n)] :
+    Countable (Σ n, (uLift.{u, v, u', v'} L).Functions n) :=
+  Countable.of_equiv _ (Equiv.sigmaCongrRight fun n => Equiv.ulift.{u'} (α := L.Functions n)).symm
+
+/-- The universe lift has countably many relation symbols when `L` does. -/
+instance countable_relations_uLift [Countable (Σ n, L.Relations n)] :
+    Countable (Σ n, (uLift.{u, v, u', v'} L).Relations n) :=
+  Countable.of_equiv _ (Equiv.sigmaCongrRight fun n => Equiv.ulift.{v'} (α := L.Relations n)).symm
 
 end FirstOrder.Language

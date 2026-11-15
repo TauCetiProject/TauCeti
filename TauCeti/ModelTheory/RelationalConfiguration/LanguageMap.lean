@@ -19,7 +19,8 @@ takes the value of the atom `(g R)(x)`. For relational languages this is the cod
 Mathlib's `LHom.reduct`: the reduct configuration decodes to the reduct of the decoded structure.
 It is continuous and measurable on every carrier, commutes with relabelling by permutations of
 the carrier, preserves isomorphism, and the reduct satisfies an infinitary formula `φ` of `L`
-exactly when the original configuration satisfies its translation `g.onBoundedFormulaInf φ`.
+exactly when the original configuration satisfies its translation `g.onBoundedFormulaInf φ`, and
+is a model of a first-order theory `T` exactly when the configuration is a model of `g.onTheory T`.
 
 A language equivalence `e : L ≃ᴸ L'` transports configurations both ways
 (`LEquiv.onConfiguration`, the reduct along `e.invLHom`), giving a homeomorphism of configuration
@@ -56,6 +57,9 @@ countable relational language can be presented in universe `0`.
 * `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOf` and
   `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOf`: transport carries the model class
   of a sentence exactly onto the model class of its translation.
+* `FirstOrder.Language.LHom.preimage_reductConfiguration_modelsOfTheory` and
+  `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOfTheory`: the same for first-order
+  theories and their translations `g.onTheory T`.
 -/
 
 public section
@@ -171,6 +175,17 @@ theorem realize_sentenceInf_reductConfiguration {ι : Type uι} (c : RelationalC
   simp only [SentenceInf.realize_def, FormulaInf.realize_def]
   exact g.realize_reductConfiguration c φ _ _
 
+/-- **Theory model classes of reducts.** A configuration is a model of the translation of a
+first-order theory along `g` exactly when its reduct is a model of the theory. -/
+@[simp]
+theorem preimage_reductConfiguration_modelsOfTheory (T : L.Theory) :
+    g.reductConfiguration ⁻¹' modelsOfTheory (V := V) T = modelsOfTheory (g.onTheory T) :=
+  Set.ext fun c => by
+    rw [Set.mem_preimage, mem_modelsOfTheory, mem_modelsOfTheory, toStructure_reductConfiguration]
+    let := c.toStructure
+    let := g.reduct V
+    exact (g.onTheory_model T).symm
+
 end LHom
 
 namespace LEquiv
@@ -277,6 +292,23 @@ theorem preimage_onConfiguration_modelsOf {ι : Type uι} (φ : L.SentenceInf ι
 theorem image_onConfiguration_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
     e.onConfiguration '' modelsOf (V := V) φ = modelsOf (e.toLHom.onBoundedFormulaInf φ) := by
   rw [← e.preimage_onConfiguration_modelsOf φ,
+    Set.image_preimage_eq _ e.onConfiguration.surjective]
+
+/-- The configurations whose transport along `e` is a model of the translation of a first-order
+theory `T` form the model class of `T`. -/
+@[simp]
+theorem preimage_onConfiguration_modelsOfTheory (T : L.Theory) :
+    e.onConfiguration ⁻¹' modelsOfTheory (V := V) (e.toLHom.onTheory T) = modelsOfTheory T :=
+  Set.ext fun c => by
+    rw [Set.mem_preimage, ← e.toLHom.preimage_reductConfiguration_modelsOfTheory,
+      Set.mem_preimage, toLHom_reductConfiguration_onConfiguration]
+
+/-- Transport along `e` carries the model class of a first-order theory onto the model class of its
+translation. -/
+@[simp]
+theorem image_onConfiguration_modelsOfTheory (T : L.Theory) :
+    e.onConfiguration '' modelsOfTheory (V := V) T = modelsOfTheory (e.toLHom.onTheory T) := by
+  rw [← e.preimage_onConfiguration_modelsOfTheory T,
     Set.image_preimage_eq _ e.onConfiguration.surjective]
 
 end LEquiv

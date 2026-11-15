@@ -23,9 +23,13 @@ isomorphism and carries the model class of a sentence `φ` onto the model class 
   countable models of `φ` correspond, tier by tier, to those of its translation; a countable model
   is sent to the same structure read along `e` (`countableModelClassesEquiv_classOf`);
 * `FirstOrder.Language.LEquiv.lift_countableModelCount_onBoundedFormulaInf`: the two counts agree,
-  after lifting to a common universe;
+  after lifting to a common universe, so in particular one is countable, or the continuum, exactly
+  when the other is;
 * `FirstOrder.Language.LEquiv.hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff`: one
   sentence has perfectly many countable models exactly when the other does.
+
+More generally, transport identifies the isomorphism classes met by any set of configurations with
+those met by its image (`FirstOrder.Language.LEquiv.countable_quotient_comap_isoSetoid_image_iff`).
 
 With the small presentation `L.smallPresentationEquiv`, every sentence of a relational language
 with countably many relation symbols has a counterpart over a relational language in
@@ -60,6 +64,15 @@ noncomputable def quotientIsoSetoidOnEquiv (V : Type w) (φ : L.SentenceInf ι) 
     (e.onConfiguration.toEquiv.subtypeEquiv fun c => by
       rw [← Set.mem_preimage, Homeomorph.coe_toEquiv, preimage_onConfiguration_modelsOf])
     fun _ _ => e.isoSetoid_onConfiguration_iff.symm
+
+/-- Transport along `e` identifies the isomorphism classes met by a set of configurations with those
+met by its image, so one set meets countably many classes exactly when the other does. -/
+theorem countable_quotient_comap_isoSetoid_image_iff {V : Type w}
+    (K : Set (RelationalConfiguration L V)) :
+    Countable (Quotient ((isoSetoid L' V).comap (Subtype.val : e.onConfiguration '' K → _))) ↔
+      Countable (Quotient ((isoSetoid L V).comap (Subtype.val : K → _))) :=
+  (Quotient.congr (Equiv.Set.image _ K e.onConfiguration.injective)
+    fun _ _ => e.isoSetoid_onConfiguration_iff.symm).countable_iff.symm
 
 /-- The class of a model `c` of `φ` is sent to the class of its transport along `e`. -/
 @[simp]
@@ -118,6 +131,22 @@ theorem lift_countableModelCount_onBoundedFormulaInf (φ : L.SentenceInf ι) :
       lift.{v} (countableModelCount (e.toLHom.onBoundedFormulaInf φ)) := by
   rw [countableModelCount_def, countableModelCount_def]
   exact lift_mk_eq'.2 ⟨e.countableModelClassesEquiv φ⟩
+
+/-- A sentence of a relational language has countably many countable models exactly when its
+translation along a language equivalence does. -/
+theorem countableModelCount_onBoundedFormulaInf_le_aleph0_iff (φ : L.SentenceInf ι) :
+    countableModelCount (e.toLHom.onBoundedFormulaInf φ) ≤ ℵ₀ ↔ countableModelCount φ ≤ ℵ₀ := by
+  rw [← Cardinal.lift_le_aleph0 (c := countableModelCount φ),
+    e.lift_countableModelCount_onBoundedFormulaInf, Cardinal.lift_le_aleph0]
+
+/-- A sentence of a relational language has continuum many countable models exactly when its
+translation along a language equivalence does. -/
+theorem countableModelCount_onBoundedFormulaInf_eq_continuum_iff (φ : L.SentenceInf ι) :
+    countableModelCount (e.toLHom.onBoundedFormulaInf φ) = 𝔠 ↔ countableModelCount φ = 𝔠 := by
+  have h := e.lift_countableModelCount_onBoundedFormulaInf φ
+  refine ⟨fun h' => lift_injective.{v'} ?_, fun h' => lift_injective.{v} ?_⟩
+  · rw [h, h', lift_continuum, lift_continuum]
+  · rw [← h, h', lift_continuum, lift_continuum]
 
 /-- **Perfect sets along a language equivalence.** The translation of a sentence along a language
 equivalence of relational languages has perfectly many countable models exactly when the sentence
