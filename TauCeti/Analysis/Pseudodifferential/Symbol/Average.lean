@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.Integral
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.RepresentationTheory.Continuous.LinHom
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap

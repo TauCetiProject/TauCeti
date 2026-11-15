@@ -62,14 +62,6 @@ coefficient vanishing at all large frequencies is smoothing
 `TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), while in positive dimension a nonzero
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
-The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
-spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
-`TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
-operator `T`, so do the values of its derivatives
-(`TauCeti.Symbol.commute_coefficient_spatialDeriv`,
-`TauCeti.Symbol.commute_coefficient_frequencyDeriv`).
-
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
 `TauCeti.Symbol.HasCompactSpatialSupport` asks that the symbol vanish for `x` outside a fixed
@@ -116,7 +108,8 @@ theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ} (h : t 
   Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
 
 /-- The weight `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)` is positive. -/
-theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) : 0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
+theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
+    0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
 /-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
@@ -234,10 +227,13 @@ def HasCompactSpatialSupport (a : Symbol n V W m) : Prop :=
 
 theorem isUniform_iff {a : Symbol n V W m} :
     a.IsUniform ↔ ∀ α β : List (Fin n), ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
-      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := Iff.rfl
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+  Iff.rfl
 
-theorem hasCompactSpatialSupport_iff {a : Symbol n V W m} : a.HasCompactSpatialSupport ↔
-    ∃ K : Set (CoordinateSpace n), IsCompact K ∧ ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0 := Iff.rfl
+theorem hasCompactSpatialSupport_iff {a : Symbol n V W m} :
+    a.HasCompactSpatialSupport ↔
+      ∃ K : Set (CoordinateSpace n), IsCompact K ∧ ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0 :=
+  Iff.rfl
 
 /-- A symbol with compact spatial support satisfies its estimates uniformly in the position:
 outside the support all its mixed derivatives vanish. -/
@@ -382,15 +378,18 @@ theorem coefficient_neg (a : Symbol n V W m) : (-a).coefficient = -a.coefficient
 
 @[simp]
 theorem coefficient_sub (a b : Symbol n V W m) :
-    (a - b).coefficient = a.coefficient - b.coefficient := (sub_eq_add_neg _ _).symm
+    (a - b).coefficient = a.coefficient - b.coefficient :=
+  (sub_eq_add_neg _ _).symm
 
 @[simp]
 theorem coefficient_nsmul (k : ℕ) (a : Symbol n V W m) :
-    (k • a).coefficient = k • a.coefficient := Nat.cast_smul_eq_nsmul ℂ k a.coefficient
+    (k • a).coefficient = k • a.coefficient :=
+  Nat.cast_smul_eq_nsmul ℂ k a.coefficient
 
 @[simp]
 theorem coefficient_zsmul (k : ℤ) (a : Symbol n V W m) :
-    (k • a).coefficient = k • a.coefficient := Int.cast_smul_eq_zsmul ℂ k a.coefficient
+    (k • a).coefficient = k • a.coefficient :=
+  Int.cast_smul_eq_zsmul ℂ k a.coefficient
 
 instance : AddCommGroup (Symbol n V W m) :=
   coefficient_injective.addCommGroup _ coefficient_zero coefficient_add coefficient_neg
@@ -422,7 +421,19 @@ theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUnifor
 theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c • a).IsUniform := by
   intro α β
   obtain ⟨C, hC, hCa⟩ := ha α β
-  exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ => norm_mixedDeriv_smul_le c (hCa x ξ)⟩
+  exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ =>
+    norm_mixedDeriv_smul_le c (hCa x ξ)⟩
+
+theorem IsUniform.neg {a : Symbol n V W m} (ha : a.IsUniform) : (-a).IsUniform := by
+  intro α β
+  obtain ⟨C, hC, hCa⟩ := ha α β
+  exact ⟨C, hC, fun x ξ => by
+    rw [coefficient_neg, mixedDeriv_neg, norm_neg]
+    exact hCa x ξ⟩
+
+theorem IsUniform.sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
+    (a - b).IsUniform :=
+  sub_eq_add_neg a b ▸ ha.add hb.neg
 
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
@@ -549,7 +560,8 @@ theorem hasLineDerivAt_coefficient_single (a : Symbol n V W m) (j : Fin n)
 
 /-- The frequency derivative of the slice `ξ ↦ a(x, ξ)` of a symbol in the `j`-th coordinate
 direction is the coefficient of its frequency derivative `∂_{ξ_j} a`. -/
-theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
+theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
     fderiv ℝ (fun η ↦ a.coefficient (x, η)) ξ (EuclideanSpace.single j 1) =
       (frequencyDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
@@ -762,8 +774,9 @@ theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSp
   simp [frequencyLaplacian]
 
 /-- The frequency Laplacian is the sum of the second frequency derivatives `∂²_{ξ_j} a`. -/
-theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) : frequencyLaplacian a =
-    ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
+theorem frequencyLaplacian_eq_sum (a : Symbol n V W m) :
+    frequencyLaplacian a =
+      ∑ j, inclusion (by linarith) (frequencyDeriv j (frequencyDeriv (m := m) j a)) := by
   simp [frequencyLaplacian]
 
 /-- The iterated frequency Laplacian `Δ_ξ^N a` of a symbol of order `m`, a symbol of order
@@ -879,7 +892,8 @@ theorem not_isUniform_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W} (hT : T ≠
   linarith [le_abs_self C]
 
 /-- The constant symbol with coefficient `T`, a symbol of order `0`. -/
-def const (T : V →L[ℂ] W) : Symbol n V W 0 := ofSpatial (fun _ => T) contDiff_const
+def const (T : V →L[ℂ] W) : Symbol n V W 0 :=
+  ofSpatial (fun _ => T) contDiff_const
 
 @[simp]
 theorem coefficient_const (T : V →L[ℂ] W) (p : CoordinateSpace n × CoordinateSpace n) :
@@ -1224,7 +1238,8 @@ def IsSmoothing (a : Symbol n V W m) : Prop :=
 /-- A symbol is smoothing exactly when its coefficient satisfies the symbol estimates of every real
 order. -/
 theorem isSmoothing_iff {a : Symbol n V W m} :
-    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', b.coefficient = a.coefficient := Iff.rfl
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', b.coefficient = a.coefficient :=
+  Iff.rfl
 
 /-- The estimates characterizing smoothing symbols: a symbol is smoothing exactly when, for every
 real order `m'`, every compact set `K` of positions and all words `α` and `β`, the mixed derivative
@@ -1245,7 +1260,8 @@ theorem isSmoothing_iff_forall_nat {a : Symbol n V W m} :
   exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
 
 @[simp]
-theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing := fun _ => ⟨0, rfl⟩
+theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing :=
+  fun _ => ⟨0, rfl⟩
 
 theorem IsSmoothing.add {a b : Symbol n V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
     (a + b).IsSmoothing := fun m' => by
@@ -1384,114 +1400,6 @@ theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     exact fun _ => ⟨0, by funext p; simp⟩
 
 end Smoothing
-
-section Map
-
-variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
-  [NormedSpace ℂ W']
-
-/-- The image `x, ξ ↦ Φ (a(x, ξ))` of a symbol under a continuous linear map `Φ` of the coefficient
-spaces is a symbol of the same order. For isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'`,
-conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` transports symbols with coefficients in `V →L[ℂ] W` to symbols
-with coefficients in `V' →L[ℂ] W'`. -/
-def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) : Symbol n V' W' m where
-  coefficient := Φ ∘ a.coefficient
-  contDiff_coefficient := Φ.contDiff.comp a.contDiff_coefficient
-  exists_bound K hK α β := by
-    obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α β
-    refine ⟨‖Φ‖ * C, by positivity, fun x hx ξ ↦ ?_⟩
-    rw [Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
-    exact Φ.le_opNorm_of_le (hC x hx ξ)
-
-@[simp]
-theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
-  (rfl)
-
-/-- Mixed derivatives commute with the image under a continuous linear map. -/
-@[simp]
-theorem mixedDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
-    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β (a.map Φ).coefficient x ξ = Φ (mixedDeriv α β a.coefficient x ξ) :=
-  Φ.mixedDeriv_comp_left a.contDiff_coefficient α β x ξ
-
-/-- Iterated derivatives commute with the image under a continuous linear map. -/
-@[simp]
-theorem iteratedFDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (k : ℕ)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    iteratedFDeriv ℝ k (a.map Φ).coefficient p =
-      Φ.compContinuousMultilinearMap (iteratedFDeriv ℝ k a.coefficient p) :=
-  Φ.iteratedFDeriv_comp_left a.contDiff_coefficient.contDiffAt (by exact_mod_cast le_top)
-
-/-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
-isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
-theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') (a : Symbol n V W m) :
-    (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
-      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) := funext fun p ↦ by simp
-
-theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := ha
-  exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
-
-/-- Spatial derivatives commute with the image under a continuous linear map. -/
-@[simp]
-theorem spatialDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (j : Fin n) :
-    spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ :=
-  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
-    rw [coefficient_spatialDeriv, coefficient_map, coefficient_spatialDeriv]
-    exact Φ.coordinateDeriv_comp_left [j] ((a.contDiff_coefficient_slice ξ).of_le (by simp)) x)
-
-/-- Frequency derivatives commute with the image under a continuous linear map. -/
-@[simp]
-theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
-    (j : Fin n) : frequencyDeriv j (a.map Φ) = (frequencyDeriv j a).map Φ :=
-  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
-    rw [coefficient_frequencyDeriv, coefficient_map, coefficient_frequencyDeriv]
-    exact Φ.coordinateDeriv_comp_left [j]
-      ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
-
-/-- A symbol commutes with `T` at every point exactly when its images under right and left
-composition with `T` agree. -/
-private theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
-    (h : ∀ p, Commute (a.coefficient p) T) :
-    a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ) =
-      a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ) :=
-  Symbol.ext (funext fun p ↦ by simpa [← ContinuousLinearMap.mul_def] using (h p).eq)
-
-private theorem commute_of_coefficient_map_compL_flip_eq {a : Symbol n V V m} {T : V →L[ℂ] V}
-    {p : CoordinateSpace n × CoordinateSpace n}
-    (h : (a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ)).coefficient p =
-      (a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ)).coefficient p) :
-    Commute (a.coefficient p) T := by simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using h
-
-/-- If every value of a symbol commutes with an operator `T`, so does every value of its spatial
-derivatives. -/
-theorem commute_coefficient_spatialDeriv {a : Symbol n V V m} {T : V →L[ℂ] V}
-    (h : ∀ p, Commute (a.coefficient p) T) (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
-    Commute ((spatialDeriv j a).coefficient p) T :=
-  commute_of_coefficient_map_compL_flip_eq (by
-    rw [← spatialDeriv_map, ← spatialDeriv_map, map_compL_flip_eq_map_compL h])
-
-/-- If every value of a symbol commutes with an operator `T`, so does every value of its frequency
-derivatives. -/
-theorem commute_coefficient_frequencyDeriv {a : Symbol n V V m} {T : V →L[ℂ] V}
-    (h : ∀ p, Commute (a.coefficient p) T) (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
-    Commute ((frequencyDeriv j a).coefficient p) T :=
-  commute_of_coefficient_map_compL_flip_eq (by
-    rw [← frequencyDeriv_map, ← frequencyDeriv_map, map_compL_flip_eq_map_compL h])
-
-/-- The image of a symbol with estimates uniform in the position under a continuous linear map of
-the coefficient spaces again has estimates uniform in the position. -/
-theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
-    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsUniform := by
-  intro α β
-  obtain ⟨C, hC0, hC⟩ := ha α β
-  refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
-  rw [mixedDeriv_map, mul_assoc]
-  exact Φ.le_opNorm_of_le (hC x ξ)
-
-end Map
 
 end Symbol
 
