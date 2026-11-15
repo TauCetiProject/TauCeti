@@ -421,12 +421,6 @@ private theorem integral_inner_eq_zero_of_mem_orthogonal
   rw [h₁, Pi.add_apply, h₂, h₃, h₄, TestFunction.coe_lineDerivCLM]
   simp [inner_add_left, real_inner_smul_left]
 
-omit [CompleteSpace W] [CompleteSpace H] in
-/-- For invertible `A`, `‖w‖ ≤ ‖A⁻¹‖ ‖A w‖`. -/
-private theorem norm_le_norm_inverse_mul (hinv : A.IsInvertible) (w : W) :
-    ‖w‖ ≤ ‖A.inverse‖ * ‖A w‖ := by
-  simpa [hinv.inverse_apply_self] using A.inverse.le_opNorm (A w)
-
 /-- For a symmetric invertible `A`, an `L²` field orthogonal to the range of the trajectory
 operator vanishes. -/
 private theorem eq_zero_of_mem_orthogonal (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
@@ -478,7 +472,7 @@ theorem surjective_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ =
   set K := LinearMap.range (domainTrajectoryOperator ι A).toLinearMap
   have hK : IsClosed (K : Set (Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) := by
     rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe]
-    exact isClosed_range_domainTrajectoryOperator hA (norm_le_norm_inverse_mul hinv)
+    exact isClosed_range_domainTrajectoryOperator hA hinv.norm_le_norm_inverse_mul_norm
   have hperp : Kᗮ = ⊥ := (Submodule.eq_bot_iff _).2 fun g hg ↦ eq_zero_of_mem_orthogonal hA hinv hg
   have htop : K = ⊤ := by
     rw [← hK.submodule_topologicalClosure_eq]
@@ -492,7 +486,7 @@ theorem isInvertible_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ
     (hinv : A.IsInvertible) : (domainTrajectoryOperator ι A).IsInvertible :=
   ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le
     (surjective_domainTrajectoryOperator hA hinv)
-    (norm_le_mul_norm_domainTrajectoryOperator hA (norm_le_norm_inverse_mul hinv))
+    (norm_le_mul_norm_domainTrajectoryOperator hA hinv.norm_le_norm_inverse_mul_norm)
 
 /-- **The inverse bound.** For `A` symmetric relative to `ι` and invertible, the inverse of the
 trajectory operator has operator norm at most `max ‖A⁻¹‖ 1`. -/
@@ -502,7 +496,7 @@ theorem norm_inverse_domainTrajectoryOperator_le (hA : ∀ x y, ⟪A x, ι y⟫_
   ContinuousLinearMap.opNorm_le_bound _ (by positivity)
     (ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le
       (surjective_domainTrajectoryOperator hA hinv)
-      (norm_le_mul_norm_domainTrajectoryOperator hA (norm_le_norm_inverse_mul hinv)))
+      (norm_le_mul_norm_domainTrajectoryOperator hA hinv.norm_le_norm_inverse_mul_norm))
 
 /-- **The weighted trajectory operator.** For `A` symmetric relative to `ι` and invertible, and
 any `C : W →L[ℝ] H`, the trajectory operator of `A - δ C` is invertible for every `δ` close to

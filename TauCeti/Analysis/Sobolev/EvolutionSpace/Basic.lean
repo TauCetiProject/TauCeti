@@ -30,7 +30,7 @@ The energy identity is stated for the canonical representative.
 The construction reuses `WeakDerivStep` for the closed graph and
 `HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual` for the continuous representative.
 Time derivatives are identified with linear maps from `ℝ` using Mathlib's
-`ContinuousLinearMap.toSpanSingletonLIE`.
+`ContinuousLinearMap.toSpanSingletonLIE`, and `EvolutionSpace.mk` is `WeakDerivStep.mkLine`.
 
 ## References
 
@@ -183,34 +183,16 @@ theorem hasWeakLineDerivOn (u : EvolutionSpace ι a b) :
 def mk (u : Lp V 2 (volume.restrict (Ioo a b)))
     (d : Lp (StrongDual ℝ V) 2 (volume.restrict (Ioo a b)))
     (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
-      (fun t ↦ ι.gelfandDual (ι (u t))) d 1) : EvolutionSpace ι a b := by
-  -- Abstract the field while constructing the map so its normed instances are fixed before
-  -- specializing to the nested continuous-linear-map type `V*`.
-  let lift {F : Type u} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (d : Lp F 2 (volume.restrict (Ioo a b))) :=
-    (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp d
-  let D := lift (F := StrongDual ℝ V) d
-  refine WeakDerivStep.mk (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩)
-    (evolutionBaseL ι a b) u D ?_
-  rw [hasWeakFDerivOn_iff]
-  intro v
-  have hv := (h.smul_direction v).congr_ae (evolutionBaseL_apply_ae ι a b u).symm
-  simp only [smul_eq_mul, mul_one] at hv
-  refine hv.congr_ae_deriv ?_
-  have lift_ae {F : Type u} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (d : Lp F 2 (volume.restrict (Ioo a b))) :
-      lift d =ᵐ[volume.restrict (Ioo a b)] fun t ↦ ContinuousLinearMap.toSpanSingleton ℝ (d t) :=
-    (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
-      |>.coeFn_compLp d
-  filter_upwards [lift_ae d] with t ht
-  simp only [D, ht, ContinuousLinearMap.toSpanSingleton_apply, Pi.smul_apply]
+      (fun t ↦ ι.gelfandDual (ι (u t))) d 1) : EvolutionSpace ι a b :=
+  WeakDerivStep.mkLine (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (evolutionBaseL ι a b) u d
+    (h.congr_ae (evolutionBaseL_apply_ae ι a b u).symm)
 
 @[simp]
 theorem value_mk (u : Lp V 2 (volume.restrict (Ioo a b)))
     (d : Lp (StrongDual ℝ V) 2 (volume.restrict (Ioo a b))) (h) :
     value (mk (ι := ι) u d h) = u := by
   rw [value_eq_prev]
-  exact WeakDerivStep.prev_mk _ _ _ _
+  exact WeakDerivStep.prev_mkLine _ _ _ _
 
 @[simp]
 theorem timeDeriv_mk (u : Lp V 2 (volume.restrict (Ioo a b)))

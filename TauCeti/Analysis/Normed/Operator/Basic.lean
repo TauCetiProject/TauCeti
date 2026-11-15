@@ -47,7 +47,9 @@ it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
 surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
-same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
+same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`). Conversely, an
+invertible operator `A : E →L F` satisfies `‖x‖ ≤ ‖A.inverse‖ ‖A x‖`
+(`ContinuousLinearMap.IsInvertible.norm_le_norm_inverse_mul_norm`); an invertible
 operator `A` on a normed space cancels against its inverse
 (`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
 and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
@@ -280,6 +282,13 @@ theorem norm_inverse_apply_le_of_forall_norm_le {F : Type*} [NormedAddCommGroup 
     ‖L.inverse y‖ ≤ C * ‖y‖ := by
   simpa [(isInvertible_of_surjective_of_forall_norm_le hL hC).self_apply_inverse]
     using hC (L.inverse y)
+
+/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse,
+`‖x‖ ≤ ‖A⁻¹‖ ‖A x‖`. -/
+theorem IsInvertible.norm_le_norm_inverse_mul_norm {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {A : E →L[𝕜] F} (hA : A.IsInvertible) (x : E) :
+    ‖x‖ ≤ ‖A.inverse‖ * ‖A x‖ := by
+  simpa [hA.inverse_apply_self] using A.inverse.le_opNorm (A x)
 
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]
