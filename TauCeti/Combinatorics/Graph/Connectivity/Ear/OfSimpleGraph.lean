@@ -187,6 +187,14 @@ theorem isCycle_toSimpleGraph (s : (Graph.ofSimpleGraph G).EarStart K) :
         ((SimpleGraph.EarStart.isCycle_cycle p.toSimpleGraph _).trans
           (Graph.EarStart.isCycle_cycle p hp).symm)
 
+/-- Transport preserves heterogeneous equality of initial-stage witnesses. -/
+theorem heq_toSimpleGraph_of_heq {L : Graph V (Sym2 V)}
+    {s : (Graph.ofSimpleGraph G).EarStart K} {t : (Graph.ofSimpleGraph G).EarStart L}
+    (hKL : K = L) (hst : HEq s t) : HEq s.toSimpleGraph t.toSimpleGraph := by
+  subst hKL
+  cases eq_of_heq hst
+  rfl
+
 end Graph.EarStart
 
 namespace Graph.EarDecomposition

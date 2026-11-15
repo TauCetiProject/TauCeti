@@ -759,6 +759,10 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
   graphAfter_succ := d.graphAfter_succ
   graphAfter_last := d.graphAfter_last.trans h
 
+/-- Copying along reflexivity leaves an ear decomposition unchanged. -/
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := (rfl)
+
 @[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := (rfl)
@@ -1147,6 +1151,13 @@ theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
     (d.prefix i).kindAt (Fin.cast (length_prefix d i).symm j) =
       d.kindAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
   rw [kindAt_eq, earAt_prefix, ← kindAt_eq]
+
+/-- Prefixing retains the walk of every ear before the chosen index. -/
+theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
+    (j : Fin i.val) :
+    (d.prefix i).walkAt (Fin.cast (length_prefix d i).symm j) =
+      d.walkAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  rw [walkAt_eq, earAt_prefix, ← walkAt_eq]
 
 /-- Every prefix of an open ear decomposition is open. -/
 theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen)
