@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree.Basic
 
 /-!
 # Non-vanishing central extension class of `SL(2, ZMod 3)`
@@ -16,8 +16,8 @@ Through `Subgroup.exists_complement_iff_cohomologyClass_eq_zero` and
 `1 → {±1} → SL(2, ZMod 3) → PSL(2, ZMod 3) → 1` has nonzero class in
 `H²(SL(2, ZMod 3) ⧸ Subgroup.center SL(2, ZMod 3), Subgroup.center SL(2, ZMod 3))`.
 
-This is separated from `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree` so the Sylow and
-matrix-subgroup API of `SL(2, ZMod 3)` does not pull in group cohomology.
+This is separated from `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree.Basic` so the
+Sylow and matrix-subgroup API of `SL(2, ZMod 3)` does not pull in group cohomology.
 
 ## Main results
 

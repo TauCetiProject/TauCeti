@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Complement.Sylow
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic

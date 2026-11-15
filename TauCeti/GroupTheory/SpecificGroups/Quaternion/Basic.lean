@@ -549,30 +549,24 @@ private lemma quaternionFun_a (r s : G) (i : ZMod (2 * n)) :
 private lemma quaternionFun_xa (r s : G) (i : ZMod (2 * n)) :
     quaternionFun r s (.xa i) = s * r ^ (ZMod.cast i : ℤ) := rfl
 
+private theorem quaternionFun_a_intCast (hr : r ^ (2 * n) = 1) (k : ℤ) :
+    quaternionFun r s (.a (k : ZMod (2 * n))) = r ^ k := by
+  rw [quaternionFun_a, zpow_eq_zpow_iff_modEq]
+  apply Int.ModEq.of_dvd ((orderOf_dvd_of_pow_eq_one hr).natCast)
+  rw [← ZMod.intCast_eq_intCast_iff, ZMod.intCast_zmod_cast]
+
 private theorem quaternionFun_a_props (hs : s ^ 2 = r ^ n) (hconj : s * r * s⁻¹ = r⁻¹) :
     (∀ i j : ZMod (2 * n),
       quaternionFun r s (.a (i + j)) = quaternionFun r s (.a i) * quaternionFun r s (.a j)) ∧
     (∀ i : ZMod (2 * n), quaternionFun r s (.a (-i)) = (quaternionFun r s (.a i))⁻¹) ∧
     quaternionFun r s (.a (n : ZMod (2 * n))) = r ^ n := by
   have hr : r ^ (2 * n) = 1 := pow_two_mul_eq_one_of_sq_eq_pow_of_conj_eq_inv hs hconj
-  let p : {f : ℤ →+ Additive G // f ↑(2 * n) = 0} :=
-    ⟨zmultiplesHom (Additive G) (Additive.ofMul r), by
-      simpa only [zmultiplesHom_apply, natCast_zsmul, ofMul_pow, ofMul_one] using
-        congrArg Additive.ofMul hr⟩
-  let f := (ZMod.lift (2 * n) p).toMultiplicativeLeft
-  have hf (i : ZMod (2 * n)) : f (Multiplicative.ofAdd i) = quaternionFun r s (.a i) := by
-    have h := ZMod.lift_coe (2 * n) p (ZMod.cast i : ℤ)
-    rw [ZMod.intCast_zmod_cast] at h
-    simpa only [f, p, quaternionFun_a, AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply,
-      toAdd_ofAdd, zmultiplesHom_apply, toMul_zsmul, toMul_ofMul] using congrArg Additive.toMul h
   refine ⟨fun i j => ?_, fun i => ?_, ?_⟩
-  · simpa only [← ofAdd_add, hf] using f.map_mul (Multiplicative.ofAdd i) (Multiplicative.ofAdd j)
-  · simpa only [← ofAdd_neg, hf] using f.map_inv (Multiplicative.ofAdd i)
-  · have h := ZMod.lift_coe (2 * n) p (n : ℤ)
-    rw [← hf]
-    simpa only [f, p, Int.cast_natCast, AddMonoidHom.coe_toMultiplicativeLeft,
-      Function.comp_apply, toAdd_ofAdd, zmultiplesHom_apply, toMul_zsmul, toMul_ofMul,
-      zpow_natCast] using congrArg Additive.toMul h
+  · conv_lhs => rw [← ZMod.intCast_zmod_cast i, ← ZMod.intCast_zmod_cast j, ← Int.cast_add]
+    rw [quaternionFun_a_intCast hr, zpow_add, quaternionFun_a, quaternionFun_a]
+  · conv_lhs => rw [← ZMod.intCast_zmod_cast i, ← Int.cast_neg]
+    rw [quaternionFun_a_intCast hr, zpow_neg, quaternionFun_a]
+  · rw [← Int.cast_natCast n, quaternionFun_a_intCast hr, zpow_natCast]
 
 private theorem quaternionFun_mul (hs : s ^ 2 = r ^ n) (hconj : s * r * s⁻¹ = r⁻¹)
     (x y : QuaternionGroup n) :
@@ -629,10 +623,7 @@ theorem range_quaternionHom (hs : s ^ 2 = r ^ n) (hconj : s * r * s⁻¹ = r⁻�
     (quaternionHom hs hconj).range = Subgroup.closure {r, s} := by
   have hr2n : r ^ (2 * n) = 1 := pow_two_mul_eq_one_of_sq_eq_pow_of_conj_eq_inv hs hconj
   have hone : r ^ (ZMod.cast (1 : ZMod (2 * n)) : ℤ) = r := by
-    conv_rhs => rw [← zpow_one r]
-    rw [zpow_eq_zpow_iff_modEq]
-    apply Int.ModEq.of_dvd ((orderOf_dvd_of_pow_eq_one hr2n).natCast)
-    rw [← ZMod.intCast_eq_intCast_iff, ZMod.intCast_zmod_cast, Int.cast_one]
+    rw [← quaternionFun_a r s, ← Int.cast_one, quaternionFun_a_intCast hr2n, zpow_one]
   have hrmem : r ∈ Subgroup.closure ({r, s} : Set G) := Subgroup.subset_closure (by simp)
   have hsmem : s ∈ Subgroup.closure ({r, s} : Set G) := Subgroup.subset_closure (by simp)
   refine le_antisymm ?_ ?_
