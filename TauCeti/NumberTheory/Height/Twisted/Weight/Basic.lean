@@ -77,17 +77,25 @@ theorem mem_localWeightBases_iff_linearIndependent_card {L : ι → Module.Dual 
     apply hli.span_eq_top_of_card_eq_finrank'
     simpa [Subspace.dual_finrank_eq] using hcard
 
+omit [Fintype ι] in
+/-- Pulling a spanning family of forms back along an injective linear map still spans the dual. -/
+theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module K W]
+    {L : ι → Module.Dual K V} (hL : span K (range L) = ⊤) {f : W →ₗ[K] V}
+    (hf : Function.Injective f) :
+    span K (range fun i ↦ (L i).comp f) = ⊤ := by
+  have heq : (range fun i ↦ (L i).comp f) = f.dualMap '' range L :=
+    Set.range_comp f.dualMap L
+  rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
+  exact LinearMap.dualMap_surjective_of_injective hf
+
 /-- A generating family of ambient forms contains a basis after restriction to any subspace. -/
 theorem localWeightBases_nonempty {L : ι → Module.Dual K V}
     (hL : span K (range L) = ⊤) (U : Submodule K V) :
     (localWeightBases L U).Nonempty := by
   classical
   let f : ι → Module.Dual K U := fun i ↦ (L i).comp U.subtype
-  have hf : span K (range f) = ⊤ := by
-    have heq : range f = U.subtype.dualMap '' range L := by
-      exact Set.range_comp U.subtype.dualMap L
-    rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
-    exact LinearMap.dualMap_surjective_of_injective U.injective_subtype
+  have hf : span K (range f) = ⊤ :=
+    span_range_comp_eq_top_of_injective hL U.injective_subtype
   obtain ⟨b, -, -, hbspan, hbi⟩ := exists_linearIndepOn_extension
     (v := f) (linearIndepOn_empty K f) (Set.empty_subset (Set.univ : Set ι))
   have hb : span K (f '' b) = ⊤ := by
@@ -302,5 +310,68 @@ theorem localWeight_span_singleton (L : ι → Module.Dual K V) (c : ι → ℝ)
     exact ⟨i, (singleton_mem_localWeightBases_span_singleton L hx i).mp hs, by simp⟩
   · rintro ⟨i, hi, rfl⟩
     exact ⟨{i}, (singleton_mem_localWeightBases_span_singleton L hx i).mpr hi, by simp⟩
+
+/-- Pulling forms back along an injective linear map identifies local dual bases with those of
+the image subspace. -/
+theorem localWeightBases_comp_of_injective (L : ι → Module.Dual K V)
+    {W : Type*} [AddCommGroup W] [Module K W] {f : W →ₗ[K] V}
+    (hf : Function.Injective f) (U : Submodule K W) :
+    localWeightBases (fun i ↦ (L i).comp f) U = localWeightBases L (U.map f) := by
+  classical
+  let e : U ≃ₗ[K] U.map f := Submodule.equivMapOfInjective f hf U
+  ext s
+  simp only [mem_localWeightBases]
+  have hfun : (fun i : s ↦ ((L i).comp f).comp U.subtype) =
+      e.dualMap.toLinearMap ∘ fun i : s ↦ (L i).comp (U.map f).subtype := by
+    ext i x
+    simp [e]
+  rw [hfun, Set.range_comp, ← LinearMap.map_span]
+  constructor
+  · rintro ⟨hli, hsp⟩
+    refine ⟨(LinearMap.linearIndependent_iff e.dualMap.toLinearMap e.dualMap.ker).mp hli, ?_⟩
+    simpa [Submodule.comap_map_eq_of_injective e.dualMap.injective] using
+      congrArg (Submodule.comap e.dualMap.toLinearMap) hsp
+  · rintro ⟨hli, hsp⟩
+    exact ⟨hli.map' e.dualMap.toLinearMap e.dualMap.ker,
+      by rw [hsp, Submodule.map_top, e.dualMap.range]⟩
+
+/-- Restricting forms to a subspace `W` identifies local dual bases on `U ≤ W` with those of its
+ambient image `U.map W.subtype`. -/
+@[simp]
+theorem localWeightBases_comp_subtype (L : ι → Module.Dual K V)
+    (W : Submodule K V) (U : Submodule K W) :
+    localWeightBases (fun i ↦ (L i).comp W.subtype) U = localWeightBases L (U.map W.subtype) :=
+  localWeightBases_comp_of_injective L W.injective_subtype U
+
+/-- Pulling forms back along an injective linear map gives the local weight of the image
+subspace. -/
+theorem localWeight_comp_of_injective (L : ι → Module.Dual K V) (c : ι → ℝ)
+    {W : Type*} [AddCommGroup W] [Module K W] {f : W →ₗ[K] V}
+    (hf : Function.Injective f) (U : Submodule K W) :
+    localWeight (fun i ↦ (L i).comp f) c U = localWeight L c (U.map f) := by
+  rw [localWeight_def, localWeight_def, localWeightBases_comp_of_injective L hf U]
+
+/-- Restricting forms to a subspace `W` gives the local weight of the ambient image subspace. -/
+@[simp]
+theorem localWeight_comp_subtype (L : ι → Module.Dual K V) (c : ι → ℝ)
+    (W : Submodule K V) (U : Submodule K W) :
+    localWeight (fun i ↦ (L i).comp W.subtype) c U = localWeight L c (U.map W.subtype) :=
+  localWeight_comp_of_injective L c W.injective_subtype U
+
+/-- An infinite-dimensional subspace has no finite dual basis extracted from `L`. -/
+theorem localWeightBases_eq_empty_of_not_finite (L : ι → Module.Dual K V)
+    {U : Submodule K V} (hU : ¬Module.Finite K U) :
+    localWeightBases L U = ∅ := by
+  refine Finset.eq_empty_iff_forall_notMem.mpr fun s hs ↦ hU ?_
+  have : Module.Finite K (Module.Dual K U) :=
+    Module.Finite.of_basis (Basis.mk (mem_localWeightBases.mp hs).1
+      (mem_localWeightBases.mp hs).2.ge)
+  exact (Module.finite_dual_iff K).mp inferInstance
+
+/-- An infinite-dimensional subspace has local weight zero. -/
+theorem localWeight_eq_zero_of_not_finite (L : ι → Module.Dual K V) (c : ι → ℝ)
+    {U : Submodule K V} (hU : ¬Module.Finite K U) :
+    localWeight L c U = 0 := by
+  simp [localWeightBases_eq_empty_of_not_finite L hU]
 
 end TauCeti

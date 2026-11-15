@@ -72,6 +72,18 @@ theorem weightRatio_zero (L : Ω → ι → Module.Dual K V) (U : Submodule K V)
     weightRatio L 0 U = 0 := by
   simp [weightRatio_def]
 
+/-- Pulling forms back along a linear equivalence identifies the weight ratio with that of the
+image subspace. -/
+theorem weightRatio_comp_linearEquiv (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    {W : Type*} [AddCommGroup W] [Module K W] (e : W ≃ₗ[K] V) (U : Submodule K W) :
+    weightRatio (fun v i ↦ (L v i).comp e.toLinearMap) c U =
+      weightRatio L c (U.map e.toLinearMap) := by
+  have htop : (⊤ : Submodule K W).map e.toLinearMap = ⊤ := by
+    rw [Submodule.map_top, e.range]
+  rw [weightRatio_def, weightRatio_def, weight_comp_of_injective L c e.injective U,
+    weight_comp_of_injective L c e.injective ⊤, htop, e.finrank_eq,
+    (Submodule.equivMapOfInjective e.toLinearMap e.injective U).finrank_eq]
+
 variable [FiniteDimensional K V]
 
 /-- Multiplying the weight ratio by codimension recovers the weight gain. -/
@@ -329,5 +341,118 @@ theorem exceptionalSubspace_zero (L : Ω → ι → Module.Dual K V) :
   by_cases hL : ∀ v, span K (range (L v)) = ⊤
   · exact (exceptionalSubspace_eq_bot_iff hL (by simp [HasFiniteSupport])).mpr (by simp)
   · exact exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL
+
+/-- Pulling forms back along a linear equivalence transports the exceptional subspace to its
+image, even for degenerate data. -/
+theorem map_exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W] (e : W ≃ₗ[K] V) :
+    (exceptionalSubspace (fun v i ↦ (L v i).comp e.toLinearMap) c).map e.toLinearMap =
+      exceptionalSubspace L c := by
+  cases subsingleton_or_nontrivial V
+  · exact Subsingleton.elim _ _
+  · have : Nontrivial W := e.toEquiv.nontrivial
+    let L' : Ω → ι → Module.Dual K W := fun v i ↦ (L v i).comp e.toLinearMap
+    by_cases hL : ∀ v, span K (range (L v)) = ⊤
+    · by_cases hc : HasFiniteSupport c
+      · have hL' : ∀ v, span K (range (L' v)) = ⊤ := fun v ↦
+          span_range_comp_eq_top_of_injective (hL v) e.injective
+        obtain ⟨hE, hmax, hmin⟩ := exceptionalSubspace_spec hL' hc
+        refine (eq_exceptionalSubspace_iff hL hc _).mpr ⟨?_, ?_, ?_⟩
+        · intro htop
+          apply hE
+          simpa [Submodule.comap_map_eq_of_injective e.injective] using
+            congrArg (Submodule.comap e.toLinearMap) htop
+        · intro U hU
+          have hmap : (U.comap e.toLinearMap).map e.toLinearMap = U :=
+            Submodule.map_comap_eq_of_surjective e.surjective U
+          have hU' : U.comap e.toLinearMap ≠ ⊤ := fun h ↦
+            hU (by rw [← hmap, h, Submodule.map_top, e.range])
+          simpa only [L', weightRatio_comp_linearEquiv, hmap] using hmax _ hU'
+        · intro U hU heq
+          have hmap : (U.comap e.toLinearMap).map e.toLinearMap = U :=
+            Submodule.map_comap_eq_of_surjective e.surjective U
+          have hU' : U.comap e.toLinearMap ≠ ⊤ := fun h ↦
+            hU (by rw [← hmap, h, Submodule.map_top, e.range])
+          have heq' : weightRatio L' c (U.comap e.toLinearMap) =
+              weightRatio L' c (exceptionalSubspace L' c) := by
+            simpa only [L', weightRatio_comp_linearEquiv, hmap] using heq
+          have hle := hmin _ hU' heq'
+          rwa [(Submodule.equivMapOfInjective e.toLinearMap e.injective _).finrank_eq,
+            (Submodule.equivMapOfInjective e.toLinearMap e.injective
+              (U.comap e.toLinearMap)).finrank_eq, hmap] at hle
+      · simp [exceptionalSubspace_eq_bot_of_not_hasFiniteSupport hc]
+    · have hL' : ¬∀ v, span K (range (L' v)) = ⊤ := fun h ↦ hL fun v ↦ by
+        have hcomp : (fun i ↦ (L' v i).comp e.symm.toLinearMap) = L v := by
+          ext i x
+          simp [L']
+        simpa only [hcomp] using span_range_comp_eq_top_of_injective (h v) e.symm.injective
+      simp [L', exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL,
+        exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL']
+
+/-- Pulling forms back along a linear equivalence transports the exceptional subspace by
+preimage (Evertse--Ferretti, Lemma 7.3(iii)), even for degenerate data. -/
+theorem exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W] (e : W ≃ₗ[K] V) :
+    exceptionalSubspace (fun v i ↦ (L v i).comp e.toLinearMap) c =
+      (exceptionalSubspace L c).comap e.toLinearMap := by
+  rw [← map_exceptionalSubspace_comp_linearEquiv L c e,
+    Submodule.comap_map_eq_of_injective e.injective]
+
+section FinTwo
+
+/-- For the two coordinate forms on `K²` with weights supported at one place `v₀` satisfying
+`c v₀ 0 < c v₀ 1`, the exceptional subspace is the second coordinate axis `K ∙ e₂`. -/
+theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
+    {v₀ : Ω} {c : Ω → Fin 2 → ℝ} (hsupp : support c ⊆ {v₀}) (hc : c v₀ 0 < c v₀ 1) :
+    exceptionalSubspace (fun (_ : Ω) (i : Fin 2) ↦
+      (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c =
+      K ∙ Pi.single (1 : Fin 2) (1 : K) := by
+  classical
+  let L : Ω → Fin 2 → Module.Dual K (Fin 2 → K) := fun _ i ↦ LinearMap.proj i
+  have hLi (v : Ω) : LinearIndependent K (L v) :=
+    Fintype.linearIndependent_iff.mpr fun g hg i ↦ by
+      have := LinearMap.congr_fun hg (Pi.single i 1)
+      fin_cases i <;> simpa [L, Pi.single_apply] using this
+  have hL (v : Ω) : span K (range (L v)) = ⊤ :=
+    (hLi v).span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  have hwt (U : Submodule K (Fin 2 → K)) : weight L c U = localWeight (L v₀) (c v₀) U :=
+    (weight_eq_sum_of_support_subset L c U (by simpa using hsupp)).trans (Finset.sum_singleton _ _)
+  have htop : weight L c ⊤ = c v₀ 0 + c v₀ 1 := by
+    rw [hwt, localWeight_top (hLi v₀) (hL v₀), Fin.sum_univ_two]
+  let e₁ : Fin 2 → K := Pi.single 1 1
+  have he₁ : e₁ ≠ 0 := fun h ↦
+    (one_ne_zero : (1 : K) ≠ 0) (by simpa [e₁] using congrFun h (1 : Fin 2))
+  have hdimE : finrank K (K ∙ e₁) = 1 := finrank_span_singleton he₁
+  have hE_ne_top : (K ∙ e₁) ≠ ⊤ := fun h ↦ by
+    have := hdimE; rw [h, finrank_top, Module.finrank_fin_fun] at this; omega
+  have hratioE : weightRatio L c (K ∙ e₁) = -c v₀ 0 := by
+    have hset : {i : Fin 2 | L v₀ i e₁ ≠ 0} = {1} := by ext i; fin_cases i <;> simp [L, e₁]
+    rw [weightRatio_def, hwt, localWeight_span_singleton (L v₀) (c v₀) he₁, hset,
+      Set.image_singleton, csInf_singleton, htop, hdimE, Module.finrank_fin_fun]; ring
+  have hlt_of_ne (U : Submodule K (Fin 2 → K)) (hU : U ≠ ⊤) (hne : U ≠ K ∙ e₁) :
+      weightRatio L c U < weightRatio L c (K ∙ e₁) := by
+    by_cases hUbot : U = ⊥
+    · subst U; rw [weightRatio_bot, htop, hratioE, Module.finrank_fin_fun]; linarith
+    · have hdimU : finrank K U = 1 := by
+        have := Nat.pos_of_ne_zero fun h ↦ hUbot (Submodule.finrank_eq_zero.mp h)
+        have := finrank_lt hU; simp only [Module.finrank_fin_fun] at this; omega
+      obtain ⟨x, hxU, hxE⟩ := IsConcreteLE.not_le_iff_exists.mp fun hle ↦
+        hne (Submodule.eq_of_le_of_finrank_eq hle (hdimU.trans hdimE.symm))
+      have hx0 : x 0 ≠ 0 := fun h0 ↦ hxE <| Submodule.mem_span_singleton.mpr
+        ⟨x 1, funext fun i ↦ by fin_cases i <;> simp [e₁, h0]⟩
+      have hx : x ≠ 0 := fun h ↦ hx0 (by simp [h])
+      have hUx : K ∙ x = U := Submodule.eq_of_le_of_finrank_eq
+        ((Submodule.span_singleton_le_iff_mem x U).mpr hxU)
+        ((finrank_span_singleton hx).trans hdimU.symm)
+      have h0mem : ({0} : Finset (Fin 2)) ∈ localWeightBases (L v₀) U := by
+        rw [← hUx, singleton_mem_localWeightBases_span_singleton (L v₀) hx 0]; exact hx0
+      have hwtU : weight L c U ≤ c v₀ 0 := by simpa [hwt] using localWeight_le_sum (c v₀) h0mem
+      rw [weightRatio_def, htop, hdimU, hratioE, Module.finrank_fin_fun]; linarith
+  refine ((eq_exceptionalSubspace_iff hL ((Set.finite_singleton v₀).subset hsupp) _).mpr
+    ⟨hE_ne_top, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩).symm
+  · exact if h : U = K ∙ e₁ then h ▸ le_rfl else (hlt_of_ne U hU h).le
+  · exact if h : U = K ∙ e₁ then h ▸ le_rfl else ((hlt_of_ne U hU h).ne heq).elim
+
+end FinTwo
 
 end TauCeti
