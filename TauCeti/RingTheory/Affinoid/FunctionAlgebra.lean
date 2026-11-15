@@ -48,11 +48,12 @@ Gauss-normed fraction field `F` of `T` is weakly stable, so on the finite extens
 `f : A`, the minimal polynomial of `f` over `F` is that over the integrally closed `T`, so the
 spectral norm of `f` is at most its supremum seminorm. Clearing denominators, the coordinates of
 `s f`, for a fixed nonzero `s : T`, lie in `T` and define an injective `T`-linear map `A → T^m`
-whose Gauss norm is at most a constant times `|f|sup`. Since `A` is a finite `T`-module, this map
-is strict, hence a topological embedding, so `‖f‖` is at most a constant times the Gauss norm of
-the image of `f` (`LinearMap.antilipschitz_of_injective_of_isNoetherian`). A reduced affinoid
-algebra embeds in the product of its quotients by minimal primes, again strictly, and the
-supremum seminorm of each quotient is at most that of `A`.
+whose Gauss norm is at most a constant times `|f|sup`. Its target `T^m` is a complete noetherian
+`T`-module, so the injective map is bounded below and `‖f‖` is at most a constant times the Gauss
+norm of the image of `f` (`LinearMap.antilipschitz_of_injective_of_isNoetherian`). A reduced
+affinoid algebra embeds in the product of its quotients by minimal primes, a complete noetherian
+`A`-module, so the same lemma bounds `‖f‖` by the norms of the images of `f`, and the supremum
+seminorm of each quotient is at most that of `A`.
 
 ## Main results
 
@@ -87,9 +88,10 @@ variable {n : ℕ} {A : Type*} [CommRing A] [IsDomain A] [Algebra K A]
 
 local notation "Frac " n:max => MvPowerSeries.GaussFractionField (Fin n) K (fun _ ↦ 1)
 
-/-- For an affinoid domain `A` finite over a Tate algebra `T` and a field `L` over `A`, the
-spectral norm of `f : A` over the Gauss-normed fraction field of `T` is at most its supremum
-seminorm, because the minimal polynomial of `f` over the fraction field is that over `T`. -/
+/-- Let `A` be an affinoid domain that is a finite faithful algebra over a Tate algebra `T`, and
+let `L` be a field that is an algebra over `A` and over the Gauss-normed fraction field of `T`,
+with both actions extending that of `T`. The spectral norm of `f : A` in `L` over the fraction
+field of `T` is at most the supremum seminorm of `f`. -/
 private theorem spectralNorm_algebraMap_le_supSeminorm (hA : IsAffinoidAlgebra K A)
     {L : Type*} [Field L] [Algebra A L] [Algebra (Tate (Fin n)) L]
     [IsScalarTower (Tate (Fin n)) A L] [Algebra (Frac n) L]
@@ -110,10 +112,9 @@ private theorem spectralNorm_algebraMap_le_supSeminorm (hA : IsAffinoidAlgebra K
       (Set.finite_range _).bddAbove ⟨i, hi⟩
   · exact supSeminorm_nonneg f
 
-/-- An affinoid domain `A` finite over a Tate algebra `T` admits an injective `T`-linear map into
-a finite free `T`-module whose Gauss norm is bounded by a multiple of the supremum seminorm: the
-coordinates of `s f`, in a basis of `Frac A` over the Gauss-normed fraction field of `T` and for
-a common denominator `s`, are bounded by its spectral norm since that field is weakly stable. -/
+/-- An affinoid domain `A` that is a finite faithful algebra over a Tate algebra `T` admits an
+injective `T`-linear map into a finite free `T`-module whose Gauss norm is bounded by a multiple
+of the supremum seminorm. -/
 private theorem exists_linearMap_injective_norm_le_mul_supSeminorm
     (hA : IsAffinoidAlgebra K A) :
     ∃ (m : ℕ) (Φ : A →ₗ[Tate (Fin n)] (Fin m → Tate (Fin n))), Function.Injective Φ ∧
@@ -184,6 +185,7 @@ private theorem exists_norm_le_mul_supSeminorm_of_isDomain [IsDomain A]
   have : IsNoetherianRing (Tate (Fin d)) := MvPowerSeries.isNoetherianRing_isRestricted_subring
   have : ContinuousSMul (Tate (Fin d)) A :=
     continuousSMul_of_algebraMap _ A (hA.continuous_algHom g)
+  have := Huber.IsTateRing.of_normedAlgebra K (Tate (Fin d))
   obtain ⟨m, Φ, hΦ, C₁, hC₁, hΦC⟩ :=
     exists_linearMap_injective_norm_le_mul_supSeminorm (n := d) hA
   -- Since `A` is a finite module, the injective map `Φ` is bounded below.
@@ -216,6 +218,7 @@ theorem exists_norm_le_mul_supSeminorm [IsReduced A] (hA : IsAffinoidAlgebra K A
     convert Ideal.injective_pi_quotient_mk_minimalPrimes A using 1
     ext f 𝔭
     simp [hΨf]
+  have := Huber.IsTateRing.of_normedAlgebra K A
   obtain ⟨C₀, hC₀⟩ := Ψ.antilipschitz_of_injective_of_isNoetherian K hΨ
   -- A single constant dominates the constants of all quotients.
   let D := 1 + ∑ 𝔭, C 𝔭

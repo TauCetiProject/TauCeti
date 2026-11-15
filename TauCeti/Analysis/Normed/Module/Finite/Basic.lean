@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
+public import TauCeti.RingTheory.Huber.Basic
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # Bounds on maps from finite Banach modules
@@ -28,11 +28,13 @@ on a finite module, expressed without choosing new norms by
 `LinearEquiv.exists_norm_bounds_of_module_finite`. In particular, no prior compatibility of
 the two topologies is required. Zero modules and empty generating families are included.
 
-In the other direction, over a complete ultrametric normed algebra `R` over a nontrivially normed
-field, an injective linear map from a seminormed topological `R`-module into a complete
-noetherian one is bounded below (`LinearMap.antilipschitz_of_injective_of_isNoetherian`): its
-range is closed, hence complete and carrying the module topology, so the inverse on the range is
-continuous.
+In the other direction, let `R` be a complete Hausdorff commutative topological Tate ring and
+let `S` be a Tate seminormed ring acting compatibly on `R` and on the modules, for instance
+`S = R` for a Banach-Tate ring or a nontrivially normed field `S` over an ultrametric normed
+algebra `R`. An injective `R`-linear map from a seminormed module into a complete noetherian
+normed module, both with contractive `S`-actions and continuous `R`-actions, is bounded below
+(`LinearMap.antilipschitz_of_injective_of_isNoetherian`): its range is closed, hence complete and
+carrying the module topology, so the inverse on the range is continuous and therefore bounded.
 
 ## References
 
@@ -96,30 +98,34 @@ end LinearEquiv
 
 namespace LinearMap
 
-variable (K : Type*) {R M N : Type*} [NontriviallyNormedField K]
-  [NormedCommRing R] [NormedAlgebra K R] [IsUltrametricDist R] [CompleteSpace R]
-  [SeminormedAddCommGroup M] [NormedSpace K M] [Module R M]
-  [IsScalarTower K R M] [ContinuousSMul R M]
-  [NormedAddCommGroup N] [NormedSpace K N] [CompleteSpace N] [Module R N]
-  [IsScalarTower K R N] [ContinuousSMul R N] [IsNoetherian R N]
+variable (S : Type*) {R M N : Type*} [SeminormedRing S] [TauCeti.NormedRing.IsTate S]
+  [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [CompleteSpace R] [T2Space R]
+  [IsTopologicalRing R] [TauCeti.Huber.IsTateRing R] [SMul S R]
+  [SeminormedAddCommGroup M] [Module S M] [IsBoundedSMul S M] [Module R M]
+  [IsScalarTower S R M] [ContinuousSMul R M]
+  [NormedAddCommGroup N] [Module S N] [IsBoundedSMul S N] [CompleteSpace N] [Module R N]
+  [IsScalarTower S R N] [ContinuousSMul R N] [IsNoetherian R N]
 
-include K in
+include S in
 /-- **Injective linear maps into noetherian modules are bounded below.** Let `R` be a complete
-ultrametric normed algebra over a nontrivially normed field `K`, let `M` be a seminormed `K`-space
-and `N` a complete normed `K`-space, both topological `R`-modules, with `N` noetherian over `R`.
-Every injective `R`-linear map `f : M → N` is antilipschitz, so `‖x‖ ≤ C ‖f x‖` for some `C`. -/
+Hausdorff commutative topological Tate ring, and let `S` be a seminormed ring with a
+multiplicative pseudo-uniformiser acting on `R`. Let `M` be a seminormed module and `N` a complete
+normed module, both with contractive `S`-actions and with continuous `R`-actions compatible with
+`S`, and let `N` be noetherian over `R`. Every injective `R`-linear map `f : M → N` is
+antilipschitz, so `‖x‖ ≤ C ‖f x‖` for some `C`. Taking `S = R` covers a Banach-Tate ring `R`;
+taking `S` a nontrivially normed field covers ultrametric normed algebras over it. -/
 theorem antilipschitz_of_injective_of_isNoetherian (f : M →ₗ[R] N)
     (hf : Function.Injective f) : ∃ C, AntilipschitzWith C f := by
-  have := TauCeti.Huber.IsTateRing.of_normedAlgebra K R
   -- The range of `f` is closed in `N`, hence complete, and it is finite over `R`.
   have : CompleteSpace (range f) :=
     (TauCeti.Huber.isClosed_of_isNoetherian (range f)).completeSpace_coe
   have := TauCeti.Huber.IsTateRing.isModuleTopology (A := R) (M := range f)
+  have : IsBoundedSMul S (range f) := .of_norm_smul_le fun s x ↦ norm_smul_le s (x : N)
   -- So the inverse of `f` on its range is continuous, hence bounded.
   let g := (LinearEquiv.ofInjective f hf).symm.toLinearMap
-  obtain ⟨C, -, hC⟩ := SemilinearMapClass.nnbound_of_continuous (g.restrictScalars K)
+  obtain ⟨C, hC0, hC⟩ := TauCeti.NormedRing.IsTate.bound_of_continuous (g.restrictScalars S)
     (IsModuleTopology.continuous_of_linearMap g)
-  refine ⟨C, AddMonoidHomClass.antilipschitz_of_bound f fun x ↦ ?_⟩
-  simpa [g] using NNReal.coe_le_coe.mpr (hC (LinearEquiv.ofInjective f hf x))
+  refine ⟨C.toNNReal, AddMonoidHomClass.antilipschitz_of_bound f fun x ↦ ?_⟩
+  simpa [g, Real.coe_toNNReal _ hC0.le] using hC (LinearEquiv.ofInjective f hf x)
 
 end LinearMap
