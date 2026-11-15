@@ -492,6 +492,9 @@ theorem map_mk (f : A →ₙₐ[𝕜] B) (hf : Continuous f) {n : ℕ}
 /-- The identity homomorphism induces the identity on continuous cyclic cohomology. -/
 @[simp]
 theorem map_id (n : ℕ) :
+    -- `continuous_id` is stated for `id`; the `show` fixes the continuity hypothesis at the coerced
+    -- function of the identity homomorphism, which is defeq to `id`, so that the term has exactly
+    -- the type `map` expects and `rw [map_mk]` below matches `map M _ hf n` syntactically.
     map M (NonUnitalAlgHom.id 𝕜 A) (show Continuous (NonUnitalAlgHom.id 𝕜 A) from continuous_id) n =
       ContinuousLinearMap.id 𝕜 _ :=
   hom_ext fun φ ↦ by
@@ -501,6 +504,8 @@ theorem map_id (n : ℕ) :
 /-- Continuous cyclic cohomology is contravariantly functorial. -/
 theorem map_comp (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (g : B →ₙₐ[𝕜] C) (hg : Continuous g)
     (n : ℕ) :
+    -- `hg.comp hf` is continuity of `⇑g ∘ ⇑f`; the `show` restates it at `⇑(g.comp f)` (defeq), the
+    -- form `map` expects, so that `rw [map_mk]` matches `map M (g.comp f) _ n` below.
     map M (g.comp f) (show Continuous (g.comp f) from hg.comp hf) n =
       (map M f hf n).comp (map M g hg n) :=
   hom_ext fun φ ↦ by
