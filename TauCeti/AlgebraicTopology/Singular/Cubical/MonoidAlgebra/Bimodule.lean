@@ -102,6 +102,16 @@ theorem leftAct_ofCube {p q : ℕ} (a : SingularCube G p) (c : SingularCube Y q)
       ofCube Y R ((leftActMap G Y).comp (SingularCube.crossProduct a c)) := by
   simp [leftAct_def]
 
+/-- The left action of the point chain of `g` on the point chain of `y` is the point chain of
+`g • y`. -/
+@[simp]
+theorem leftAct_ofCube_point (g : G) (y : Y) :
+    leftAct G Y R 0 0 (ofCube G R (SingularCube.point g)) (ofCube Y R (SingularCube.point y)) =
+      ofCube Y R (SingularCube.point (g • y)) := by
+  rw [leftAct_ofCube, SingularCube.eq_point ((leftActMap G Y).comp _), ContinuousMap.comp_apply,
+    SingularCube.crossProduct_apply, leftActMap_apply, SingularCube.point_apply,
+    SingularCube.point_apply]
+
 /-- **The Leibniz rule for the left action**: for `a` of degree `p + 1` and `c` of degree `q + 1`,
 `∂ (a · c) = ∂ a · c + (-1) ^ (p + 1) • (a · ∂ c)`, in degree `p + q + 1`. -/
 theorem boundary_leftAct {p q : ℕ} (a : NormalizedCubicalChain G R (p + 1))

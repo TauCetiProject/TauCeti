@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Aspherical
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.From
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
@@ -56,11 +57,27 @@ nontrivial ring `R` (`TauCeti.exists_notMem_range_rowFiniteTwistedDifferential_z
 is the direct sum of two shifted copies of `C_*(Ω_b B; R)`, whose homology is not that of a
 point.
 
+In Brown's theory the resolution is compared with the chains `C_*(P_b B; R)` on the based path
+space `P_b B` of Moore paths from `b`, a left module over `C_*(Ω_b B; R)` through concatenation in
+front (`TauCeti.pathFromChain_isDGLeftModule`). The comparison `f : K → C_*(P_b B; R)`
+(`TauCeti.loopCellComparison`) is linear over `C_*(Ω_b B; R)` and sends `e₀` to the point chain of
+the constant path of length zero at `b`, and `e₁` to the `1`-cube of truncations of `γ`, which
+runs from `γ`, read as a path from `b`, to the constant path: minus the cone on the point chain of
+`γ` along the contraction of the based path space by truncation. The boundary of that cube is the
+image of the attaching cycle `([γ] - [1]) e₀`, so `f` is a chain map
+(`TauCeti.linearCombination_loopCellComparison_differential`), and it preserves the
+augmentations. This holds for every Moore loop of every space. Since the based path space is
+contractible, `f` is a quasi-isomorphism exactly when `ε` is
+(`TauCeti.forall_exists_loopCellComparison_iff_forall_exists_loopCellCocycle`), in particular for
+the circle.
+
 ## Main definitions
 
 * `TauCeti.loopCellCocycle R γ`: the twisting cocycle of one `1`-cell attached along `γ` to one
   `0`-cell.
 * `TauCeti.loopCellAugmentation B b R`: the augmentation of its free module.
+* `TauCeti.loopCellComparison H R γ`: the images of the generators under the comparison with the
+  chains on the based path space.
 
 ## Main results
 
@@ -72,6 +89,15 @@ point.
   case of the circle and its counterclockwise loop.
 * `TauCeti.exists_notMem_range_rowFiniteTwistedDifferential_zero`: the zero cocycle on the same
   generators does not resolve `R`.
+* `TauCeti.linearCombination_loopCellComparison_differential`,
+  `TauCeti.cubicalChainModuleAugmentation_linearCombination_loopCellComparison`: the comparison is
+  a chain map preserving the augmentations.
+* `TauCeti.forall_exists_loopCellComparison_iff_forall_exists_loopCellCocycle`: the comparison is
+  a quasi-isomorphism exactly when the augmentation of the free module is.
+* `TauCeti.exists_loopCellCocycle_differential_eq_of_loopCellComparison_eq`: under the
+  hypotheses of the resolution theorem, the comparison is a quasi-isomorphism.
+* `TauCeti.exists_loopCellCocycle_expLoop_differential_eq_of_loopCellComparison_eq`: the case of
+  the circle and its counterclockwise loop.
 
 ## References
 
@@ -307,6 +333,154 @@ theorem exists_notMem_range_rowFiniteTwistedDifferential_zero [Nontrivial R] :
 
 end Cocycle
 
+section Comparison
+
+variable {B : Type*} [TopologicalSpace B] {b : B} (H : Type*) (R : Type*) [CommRing R]
+
+/-- **The comparison of the loop-cell module with the chains on the based path space**, on the
+generators. The generator `e₀ = Sum.inl ()` goes to the point chain of the constant path of length
+zero at `b`. The generator `e₁ = Sum.inr ()` goes to minus the cone, along the contraction
+`TauCeti.MoorePathFrom.truncateHomotopy` of the based path space, on the point chain of `γ` read as
+a path from `b`: the `1`-cube of the truncations of `γ`, run from `γ` to the constant path. The
+comparison itself is the map `Finsupp.linearCombination` of these images, linear over
+`C_*(Ω_b B; R)`. -/
+def loopCellComparison (γ : MooreLoopSpace B b) :
+    Unit ⊕ Unit → cubicalChainModule (MoorePathFrom B b) H R :=
+  Sum.elim
+    (fun _ ↦ cubicalChainModuleLof _ H R 0
+      (NormalizedCubicalChain.ofCube _ R (SingularCube.point (MoorePathFrom.refl B b))))
+    (fun _ ↦ -cubicalChainModuleCone R MoorePathFrom.truncateHomotopy
+      (cubicalChainModuleLof _ H R 0
+        (NormalizedCubicalChain.ofCube _ R (SingularCube.point (γ • MoorePathFrom.refl B b)))))
+
+variable {H R}
+
+@[simp]
+theorem loopCellComparison_inl (γ : MooreLoopSpace B b) :
+    loopCellComparison H R γ (Sum.inl ()) = cubicalChainModuleLof _ H R 0
+      (NormalizedCubicalChain.ofCube _ R (SingularCube.point (MoorePathFrom.refl B b))) :=
+  (rfl)
+
+@[simp]
+theorem loopCellComparison_inr (γ : MooreLoopSpace B b) :
+    loopCellComparison H R γ (Sum.inr ()) =
+      -cubicalChainModuleCone R MoorePathFrom.truncateHomotopy
+        (cubicalChainModuleLof _ H R 0
+          (NormalizedCubicalChain.ofCube _ R (SingularCube.point (γ • MoorePathFrom.refl B b)))) :=
+  (rfl)
+
+/-- The image of `e₁` bounds the image of its attaching cycle `([γ] - [1]) e₀`: the point chain of
+`γ`, read as a path from `b`, minus that of the constant path. -/
+theorem cubicalChainModuleDifferential_loopCellComparison_inr (γ : MooreLoopSpace B b) :
+    cubicalChainModuleDifferential _ H R (loopCellComparison H R γ (Sum.inr ())) =
+      (cubicalChainLof (MooreLoopSpace B b) R 0
+          (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) - 1) •
+        loopCellComparison H R γ (Sum.inl ()) := by
+  have h := cubicalChainModuleDifferential_cone_add_cone_differential
+    MoorePathFrom.truncateHomotopy (cubicalChainModuleLof (MoorePathFrom B b) H R 0
+      (NormalizedCubicalChain.ofCube _ R (SingularCube.point (γ • MoorePathFrom.refl B b))))
+  rw [cubicalChainModuleDifferential_lof_zero, map_zero, add_zero] at h
+  rw [loopCellComparison_inr, map_neg, h, loopCellComparison_inl, sub_smul, one_smul,
+    lof_smul_cubicalChainModuleLof]
+  simp [NormalizedCubicalChain.augment_ofCube]
+
+/-- **The comparison is a chain map**: it carries the differential of the free module of
+`TauCeti.loopCellCocycle R γ` to the boundary of the chains on the based path space. -/
+theorem linearCombination_loopCellComparison_differential (γ : MooreLoopSpace B b)
+    (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
+    Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ)
+        (rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+          (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+          (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u) =
+      cubicalChainModuleDifferential (MoorePathFrom B b) H R
+        (Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) u) := by
+  refine (forall_linearCombination_rowFiniteTwistedDifferential_iff
+    (pathFromChain_isDGLeftModule B b H R) _ _).2 (fun x ↦ ?_) u
+  rcases x with ⟨⟨⟩⟩ | ⟨⟨⟩⟩
+  · simp
+  · rw [loopCellCocycle_m_inr, Finsupp.linearCombination_single,
+      cubicalChainModuleDifferential_loopCellComparison_inr]
+
+/-- **The comparison preserves the augmentations.** -/
+@[simp]
+theorem cubicalChainModuleAugmentation_linearCombination_loopCellComparison
+    (γ : MooreLoopSpace B b) (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
+    cubicalChainModuleAugmentation (MoorePathFrom B b) H R
+        (Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) u) =
+      loopCellAugmentation B b R u := by
+  induction u using Finsupp.induction_linear with
+  | zero => simp
+  | add u v hu hv => rw [map_add, map_add, hu, hv, map_add]
+  | single x a =>
+    rcases x with ⟨⟨⟩⟩ | ⟨⟨⟩⟩
+    · simp [pathFromChainAugmentation_smul, NormalizedCubicalChain.augment_ofCube]
+    · simp [pathFromChainAugmentation_smul]
+
+/-- **The comparison is a quasi-isomorphism exactly when the loop-cell module resolves `R`.** Since
+the based path space is contractible, its chains have the homology of a point, through the
+augmentation, which the comparison `f` preserves. So the relative cycles `(u, w)` of `f`, cycles
+`u` of the free module of `TauCeti.loopCellCocycle R γ` with `f u = ∂ w`, are all relative
+boundaries (`u = D u'` and `w = f u' + ∂ v`, so that `f` is a quasi-isomorphism of DG left modules
+over `C_*(Ω_b B; R)`) exactly when every cycle of augmentation zero of the free module is a
+boundary. -/
+theorem forall_exists_loopCellComparison_iff_forall_exists_loopCellCocycle
+    (γ : MooreLoopSpace B b) :
+    (∀ (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) (w : cubicalChainModule (MoorePathFrom B b) H R),
+      rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+          (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+          (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u = 0 →
+        Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) u =
+          cubicalChainModuleDifferential (MoorePathFrom B b) H R w →
+        ∃ u' v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+            (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+            (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u' = u ∧
+          Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) u' +
+              cubicalChainModuleDifferential (MoorePathFrom B b) H R v = w) ↔
+      ∀ u : Unit ⊕ Unit →₀ loopChainAlgebra B b R,
+        rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+            (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+            (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u = 0 →
+          loopCellAugmentation B b R u = 0 →
+          ∃ v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+            (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+            (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m v =
+              u := by
+  set D := rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+    (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+    (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m with hD
+  set f := Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) with hf
+  set ε := cubicalChainModuleAugmentation (MoorePathFrom B b) H R
+  constructor
+  · -- A cycle `u` of augmentation zero maps to a cycle of augmentation zero, which bounds.
+    intro hrel u hu hε
+    obtain ⟨w, hw⟩ := exists_pathFromChainDifferential_eq_of_augmentation_eq_zero (m := f u)
+      (by rw [hf, ← linearCombination_loopCellComparison_differential, ← hD, hu, map_zero])
+      (by rw [hf, cubicalChainModuleAugmentation_linearCombination_loopCellComparison, hε])
+    obtain ⟨u', -, hu', -⟩ := hrel u w hu hw.symm
+    exact ⟨u', hu'⟩
+  · intro hres u w hu huw
+    -- The cycle `u` has augmentation `ε (f u) = ε (∂ w) = 0`, so it is a boundary `D u₁`.
+    obtain ⟨u₁, hu₁⟩ := hres u hu (by
+      rw [← cubicalChainModuleAugmentation_linearCombination_loopCellComparison (H := H) γ, ← hf,
+        huw, cubicalChainModuleAugmentation_differential])
+    -- Then `w - f u₁` is a cycle; subtracting the image of a multiple `u₀` of the cycle `e₀`
+    -- leaves a cycle of augmentation zero, which bounds since the based path space is
+    -- contractible.
+    set u₀ : Unit ⊕ Unit →₀ loopChainAlgebra B b R :=
+      Finsupp.single (Sum.inl ()) (algebraMap R _ (ε (w - f u₁)))
+    have hDu₀ : D u₀ = 0 := by
+      rw [hD, loopCellCocycle_differential_single_inl,
+        (loopChain_isDGAlgebra B b R).map_algebraMap, Finsupp.single_zero]
+    obtain ⟨v, hv⟩ := exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
+      (m := w - f u₁ - f u₀)
+      (by rw [map_sub, map_sub, hf, ← linearCombination_loopCellComparison_differential,
+        ← linearCombination_loopCellComparison_differential, ← hD, hu₁, hDu₀, ← hf, huw, map_zero,
+        sub_self, sub_zero])
+      (by simp [hf, u₀, ε])
+    exact ⟨u₁ + u₀, v, by rw [map_add, hu₁, hDu₀, add_zero], by rw [hv, map_add]; abel⟩
+
+end Comparison
+
 section Resolution
 
 variable {B : Type u} [TopologicalSpace B] {b : B} {R : Type u} [CommRing R]
@@ -402,6 +576,32 @@ theorem exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
   rw [map_add, map_add, hv, hw]
   abel
 
+/-- **Brown's resolution of the circle is compared with the based path space by a
+quasi-isomorphism.** Under the hypotheses of
+`TauCeti.exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`, every relative
+cycle `(u, w)` of the comparison `f = TauCeti.loopCellComparison`, a cycle `u` of the free module
+of `TauCeti.loopCellCocycle R γ` with `f u = ∂ w`, is a relative boundary: `u = D u'` and
+`w = f u' + ∂ v`. So `f` is a quasi-isomorphism of DG left modules over `C_*(Ω_b B; R)` onto the
+chains `C_*(P_b B; R)` on the based path space. -/
+theorem exists_loopCellCocycle_differential_eq_of_loopCellComparison_eq
+    {H : Type*} (hB : ∀ n : ℕ, Subsingleton (π_ (n + 2) B b)) {γ : MooreLoopSpace B b}
+    (hgen : Subgroup.zpowers (MooreLoopSpace.fundamentalGroupHom b γ) = ⊤)
+    (hinf : ¬IsOfFinOrder (MooreLoopSpace.fundamentalGroupHom b γ))
+    {u : Unit ⊕ Unit →₀ loopChainAlgebra B b R} {w : cubicalChainModule (MoorePathFrom B b) H R}
+    (hu : rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+      (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u = 0)
+    (huw : Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) u =
+      cubicalChainModuleDifferential (MoorePathFrom B b) H R w) :
+    ∃ u' v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u' = u ∧
+      Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellComparison H R γ) u' +
+          cubicalChainModuleDifferential (MoorePathFrom B b) H R v = w :=
+  (forall_exists_loopCellComparison_iff_forall_exists_loopCellCocycle γ).2
+    (fun _ hu hε ↦ exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero hB hgen
+      hinf hu hε) u w hu huw
+
 end Resolution
 section Circle
 
@@ -429,6 +629,32 @@ theorem exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_e
   · rw [hg, Subgroup.zpowers_inv, Circle.zpowers_fromPath_expLoop]
   · rw [hg, isOfFinOrder_inv_iff]
     exact Circle.not_isOfFinOrder_fromPath_expLoop
+
+/-- **Brown's resolution of the circle is quasi-isomorphic to the chains on its based path space.**
+For the complex unit circle, based at `1`, with its `1`-cell attached along the counterclockwise
+loop `t ↦ exp(2πit)`, every relative cycle of the comparison `TauCeti.loopCellComparison` from the
+free module of `TauCeti.loopCellCocycle R` to the chains on the Moore paths from `1` is a relative
+boundary: the comparison is a quasi-isomorphism of DG left modules over `C_*(Ω_1 S¹; R)`. -/
+theorem exists_loopCellCocycle_expLoop_differential_eq_of_loopCellComparison_eq
+    {H : Type*} {R : Type} [CommRing R] {u : Unit ⊕ Unit →₀ loopChainAlgebra Circle 1 R}
+    {w : cubicalChainModule (MoorePathFrom Circle 1) H R}
+    (hu : rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra Circle 1 R)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace Circle 1) R)
+      (d := cubicalChainDifferential (MooreLoopSpace Circle 1) R)
+      (loopCellCocycle R Circle.expLoop.toMooreLoop).m u = 0)
+    (huw : Finsupp.linearCombination (loopChainAlgebra Circle 1 R)
+      (loopCellComparison H R Circle.expLoop.toMooreLoop) u =
+        cubicalChainModuleDifferential (MoorePathFrom Circle 1) H R w) :
+    ∃ u' v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra Circle 1 R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace Circle 1) R)
+        (d := cubicalChainDifferential (MooreLoopSpace Circle 1) R)
+        (loopCellCocycle R Circle.expLoop.toMooreLoop).m u' = u ∧
+      Finsupp.linearCombination (loopChainAlgebra Circle 1 R)
+          (loopCellComparison H R Circle.expLoop.toMooreLoop) u' +
+        cubicalChainModuleDifferential (MoorePathFrom Circle 1) H R v = w :=
+  (forall_exists_loopCellComparison_iff_forall_exists_loopCellCocycle _).2
+    (fun _ hu hε ↦ exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero
+      hu hε) u w hu huw
 
 end Circle
 
