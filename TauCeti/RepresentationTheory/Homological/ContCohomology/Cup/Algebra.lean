@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Action.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
 public import TauCeti.Topology.Algebra.MulAction.Discrete
 
@@ -20,10 +19,11 @@ and the `G`-action is continuous, on `TauCeti.SmoothDiscreteTopRep.of R G A`
 (`TauCeti.SmoothDiscreteTopRep.ofMulPairing`).
 
 No commutativity of `A` is needed for the pairing itself; when `A` is commutative, the pairing is
-symmetric (`ofDiscreteModuleMulPairing_flip`, `SmoothDiscreteTopRep.ofMulPairing_flip`) and the
-carrier projections inherit `CommMonoid` instances alongside their `Monoid` instances. Over `R = ℤ`,
-both pairings agree (`ofDiscreteModuleMulPairing_int`, `SmoothDiscreteTopRep.ofMulPairing_int`)
-with `TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul`.
+symmetric (`TauCeti.ofDiscreteModuleMulPairing_flip`,
+`TauCeti.SmoothDiscreteTopRep.ofMulPairing_flip`) and the carrier projections inherit `CommMonoid`
+instances alongside their `Monoid` instances. Over `R = ℤ`, both pairings agree
+(`TauCeti.ofDiscreteModuleMulPairing_int`, `TauCeti.SmoothDiscreteTopRep.ofMulPairing_int`) with
+`TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul`.
 
 ## Main definitions
 
@@ -31,6 +31,16 @@ with `TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul`.
   `TauCeti.TopPairing` on `ofDiscreteModule R G A`.
 * `TauCeti.SmoothDiscreteTopRep.ofMulPairing`: the same pairing on
   `(SmoothDiscreteTopRep.of R G A).obj` over a discrete commutative ring `R`.
+
+## Main results
+
+* `TauCeti.SmoothDiscreteTopRep.ofMulPairing_eq_ofDiscreteModuleMulPairing`:
+  `SmoothDiscreteTopRep.ofMulPairing` agrees with `ofDiscreteModuleMulPairing` under any ambient
+  `ContinuousSMul R A` instance.
+* `TauCeti.ofDiscreteModuleMulPairing_flip`, `TauCeti.SmoothDiscreteTopRep.ofMulPairing_flip`:
+  symmetry of the multiplication pairing when `A` is commutative.
+* `TauCeti.ofDiscreteModuleMulPairing_int`, `TauCeti.SmoothDiscreteTopRep.ofMulPairing_int`:
+  comparison over `ℤ` with `TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul`.
 -/
 
 public section
@@ -116,11 +126,12 @@ theorem ofDiscreteModuleMulPairing_flip
     (G : Type v) [Monoid G]
     (A : Type w) [CommRing A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
     [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul R A] :
-    (ofDiscreteModuleMulPairing R G A).flip = ofDiscreteModuleMulPairing R G A :=
-  TopPairing.ext <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦
-    ((ofDiscreteModuleMulPairing R G A).flip_bil x y).trans <|
-      (ofDiscreteModuleMulPairing_bil_apply R G A y x).trans <|
-        (mul_comm y x).trans (ofDiscreteModuleMulPairing_bil_apply R G A x y).symm
+    (ofDiscreteModuleMulPairing R G A).flip = ofDiscreteModuleMulPairing R G A := by
+  apply TopPairing.ext
+  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
+  rw [TopPairing.flip_bil]
+  -- `(ofDiscreteModuleMulPairing R G A).bil` evaluates `LinearMap.mul R A` on `A`.
+  exact mul_comm y x
 
 /-- Over `ℤ`, `ofDiscreteModuleMulPairing` agrees with `ofDiscreteModulePairing` at
 `AddMonoidHom.mul`. -/
@@ -128,11 +139,11 @@ theorem ofDiscreteModuleMulPairing_int
     (G : Type v) [Monoid G]
     (A : Type w) [Ring A] [TopologicalSpace A] [DiscreteTopology A] [MulSemiringAction G A] :
     ofDiscreteModuleMulPairing ℤ G A =
-      ofDiscreteModulePairing AddMonoidHom.mul (fun g a b ↦ (smul_mul' g a b).symm) :=
-  TopPairing.ext <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦
-    (ofDiscreteModuleMulPairing_bil_apply ℤ G A x y).trans <|
-      (AddMonoidHom.mul_apply (R := A) x y).symm.trans
-        (ofDiscreteModulePairing_bil_apply (AddMonoidHom.mul (R := A)) _ x y).symm
+      ofDiscreteModulePairing AddMonoidHom.mul (fun g a b ↦ (smul_mul' g a b).symm) := by
+  apply TopPairing.ext
+  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
+  -- Both `LinearMap.mul ℤ A x y` and `AddMonoidHom.mul x y` evaluate to `x * y` on `A`.
+  exact (ofDiscreteModulePairing_bil_apply (AddMonoidHom.mul (R := A)) _ x y).symm
 
 namespace SmoothDiscreteTopRep
 

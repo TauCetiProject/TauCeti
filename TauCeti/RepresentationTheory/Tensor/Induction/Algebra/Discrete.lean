@@ -68,8 +68,8 @@ compatibility (`TauCeti.cup_coeffMap_smoothTensorInducedMulHom`) in every bidegr
   `SmoothDiscreteTopRep` require the tensor power and `A` to inhabit the same carrier universe
   (`max u v w_A = w_A`, cf.
   `TauCeti.RepresentationTheory.Tensor.Induction.Transitivity.Resolution`).
-  Accordingly, `DiscreteRep.tensorInducedMulHom`, `smoothTensorInducedMulHom`, and
-  `cup_coeffMap_smoothTensorInducedMulHom` place `R : Type u`, `G : Type v`, and
+  Accordingly, `TauCeti.DiscreteRep.tensorInducedMulHom`, `TauCeti.smoothTensorInducedMulHom`, and
+  `TauCeti.cup_coeffMap_smoothTensorInducedMulHom` place `R : Type u`, `G : Type v`, and
   `A : Type (max v u)` so every universe parameter is determined directly from `R` and `G`
   (covering both `R : Type` with `G, A : Type v` and `R = A^G` or equal-universe setups with
   `u = v`); the unrestricted underlying intertwining map remains available as
@@ -258,6 +258,8 @@ theorem smoothTensorInduced_of_obj_ρ_apply {A : Type w} [Ring A] [Algebra R A]
       (DiscreteRep.tensorInduced U hU s
         ((ofSmoothDiscrete R U).obj (SmoothDiscreteTopRep.of R U A)))).obj.ρ g z =
       U.tensorInducedAlgAut s R A g z :=
+  -- Term-mode `Eq.trans` bridges the exposed `toSmoothDiscrete` / `tensorInduced` carrier with
+  -- `⨂[R] _ : G ⧸ U, A`, where `rw` fails at `implicit` transparency.
   (toSmoothDiscrete_obj_obj_ρ_apply _ g z).trans <|
     (DiscreteRep.tensorInduced_ρ_apply U hU s _ g z).trans
       (U.tensorInducedAlgAut_apply s R A g z).symm
@@ -363,6 +365,8 @@ variable {R G A}
 theorem smoothTensorInducedMulHom_hom_hom_apply [Fintype (G ⧸ U)] (z : ⨂[R] _ : G ⧸ U, A) :
     (smoothTensorInducedMulHom R G U hU s A).hom.hom z =
       U.tensorInducedMulAlgHom s R A z :=
+  -- `Eq.trans` aligns `(ofSmoothDiscrete R U).obj (of R U A)` with `DiscreteRep.of R U A` at
+  -- default transparency, where `rw` fails at `implicit` transparency.
   (toSmoothDiscrete_map_hom_hom_apply R G
     (DiscreteRep.tensorInducedMulHom U hU s R A) z).trans
     (DiscreteRep.tensorInducedMulHom_apply U hU s z)
@@ -507,8 +511,9 @@ section Examples
 
 /-- For any discrete commutative `G`-ring `A` (with `R = ℤ`), `SmoothDiscreteTopRep.ofMulPairing`
 and `cup_coeffMap_smoothTensorInducedMulHom` apply in the group's own universe `v` without extra
-scalar-continuity hypotheses, while `simp` discharges `.flip` symmetry and operator `1` / `*`
-preservation on the smooth tensor-induced representation. -/
+scalar-continuity hypotheses, while `simp` discharges `.flip` symmetry and operator `1` invariance
+and `smoothTensorInduced_of_obj_ρ_mul` gives operator `*` preservation on the smooth tensor-induced
+representation. -/
 example {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     (U : OpenSubgroup G) (s : U.toSubgroup.LeftTransversal) [U.toSubgroup.FiniteIndex]
     (A : Type v) [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
@@ -538,6 +543,23 @@ example {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
         (DiscreteRep.tensorInduced U.toSubgroup U.isOpen' s
           ((ofSmoothDiscrete ℤ U.toSubgroup).obj
             (SmoothDiscreteTopRep.of ℤ U.toSubgroup A)))).obj.ρ g 1 = 1) ∧
+    (∀ (g : G)
+      (x y : ((toSmoothDiscrete ℤ G).obj
+        (DiscreteRep.tensorInduced U.toSubgroup U.isOpen' s
+          ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+            (SmoothDiscreteTopRep.of ℤ U.toSubgroup A)))).obj.V),
+      ((toSmoothDiscrete ℤ G).obj
+        (DiscreteRep.tensorInduced U.toSubgroup U.isOpen' s
+          ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+            (SmoothDiscreteTopRep.of ℤ U.toSubgroup A)))).obj.ρ g (x * y) =
+        ((toSmoothDiscrete ℤ G).obj
+          (DiscreteRep.tensorInduced U.toSubgroup U.isOpen' s
+            ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+              (SmoothDiscreteTopRep.of ℤ U.toSubgroup A)))).obj.ρ g x *
+          ((toSmoothDiscrete ℤ G).obj
+            (DiscreteRep.tensorInduced U.toSubgroup U.isOpen' s
+              ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+                (SmoothDiscreteTopRep.of ℤ U.toSubgroup A)))).obj.ρ g y) ∧
     ContinuousCohomology.coeffMap
         (smoothTensorInducedMulHom ℤ G U.toSubgroup U.isOpen' s A).hom (m + n)
         (((SmoothDiscreteTopRep.ofMulPairing ℤ U.toSubgroup A).smoothTensorInduced.{0, v, v}
@@ -550,7 +572,7 @@ example {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
           (smoothTensorInducedMulHom ℤ G U.toSubgroup U.isOpen' s A).hom m a)
         (ContinuousCohomology.coeffMap
           (smoothTensorInducedMulHom ℤ G U.toSubgroup U.isOpen' s A).hom n b) :=
-  ⟨by simp, by simp,
+  ⟨by simp, by simp, smoothTensorInduced_of_obj_ρ_mul U.toSubgroup U.isOpen' s,
     cup_coeffMap_smoothTensorInducedMulHom U.toSubgroup U.isOpen' s m n a b⟩
 
 end Examples

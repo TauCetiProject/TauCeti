@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Action.Subobjects
 public import TauCeti.RepresentationTheory.Tensor.Induction.Diagonal
 public import TauCeti.RingTheory.PiTensorProduct.Equiv
-import Mathlib.Algebra.Polynomial.AlgebraMap
-import Mathlib.Algebra.Polynomial.Eval.Defs
 
 /-!
 # The tensor-induced algebra and its equivariant multiplication
@@ -81,6 +78,9 @@ tensor-induced ring and `G`-ring multiplication of a commutative `G`-ring.
   `Subgroup.tensorInducedMulAlgHom_tensorInducedMapEquiv`: transversal multiplication commutes with
   reindexing and `Subgroup.tensorInducedMapEquiv` along a group homomorphism inducing a bijection of
   coset spaces.
+* `Subgroup.tensorInducedMulAlgHom_tensorInducedDiagonal`,
+  `Subgroup.tensorInducedMulAlgHom_tprod_of_index_two`: evaluation on diagonal `U`-invariant tensors
+  and at index two.
 
 ## References
 
@@ -163,10 +163,16 @@ noncomputable def tensorMulSemiringAction :
     MulSemiringAction (WreathProduct D ι) (⨂[R] _ : ι, A) :=
   { DistribMulAction.compHom (⨂[R] _ : ι, A)
       ((Representation.ofDistribMulAction R D A).wreathTensor ι) with
-    smul_one a := (tensorAlgAut_apply a 1).symm.trans (map_one (tensorAlgAut R D A ι a))
-    smul_mul a y z :=
-      ((tensorAlgAut_apply a (y * z)).symm.trans (map_mul (tensorAlgAut R D A ι a) y z)).trans
-        (congrArg₂ (· * ·) (tensorAlgAut_apply a y) (tensorAlgAut_apply a z)) }
+    smul_one a := by
+      -- `DistribMulAction.compHom` defines `a • _` as `wreathTensor ι a _`.
+      change (Representation.ofDistribMulAction R D A).wreathTensor ι a 1 = 1
+      rw [← tensorAlgAut_apply, map_one]
+    smul_mul a y z := by
+      -- `DistribMulAction.compHom` defines `a • _` as `wreathTensor ι a _`.
+      change (Representation.ofDistribMulAction R D A).wreathTensor ι a (y * z) =
+        (Representation.ofDistribMulAction R D A).wreathTensor ι a y *
+          (Representation.ofDistribMulAction R D A).wreathTensor ι a z
+      rw [← tensorAlgAut_apply, ← tensorAlgAut_apply, ← tensorAlgAut_apply, map_mul] }
 
 /-- Scalar multiplication for `TauCeti.WreathProduct.tensorMulSemiringAction` evaluates
 `TauCeti.WreathProduct.tensorAlgAut`. -/

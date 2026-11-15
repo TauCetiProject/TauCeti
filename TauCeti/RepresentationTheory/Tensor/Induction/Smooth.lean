@@ -25,6 +25,8 @@ power has the discrete topology and continuity of the induced action is availabl
 
 * `TauCeti.smoothTensorInductionFunctor_map_hom_hom_apply`: smooth tensor induction of a morphism
   acts factorwise.
+* `TauCeti.TopPairing.smoothTensorInduced_flip`: tensor induction of a coefficient pairing commutes
+  with `TopPairing.flip`.
 
 ## References
 
@@ -131,12 +133,11 @@ theorem TopPairing.smoothTensorInduced_flip :
       PiTensorProduct.map₂ fun _ : G ⧸ U ↦ P.flip.bil := by
     ext b a
     simp [PiTensorProduct.map₂_tprod_tprod]
-  exact TopPairing.ext <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦
-    ((P.smoothTensorInduced U hU s).flip_bil x y).trans <|
-      (LinearMap.congr_fun (LinearMap.congr_fun (P.smoothTensorInduced_bil U hU s) y) x).trans <|
-        (LinearMap.congr_fun (LinearMap.congr_fun h x) y).trans
-          (LinearMap.congr_fun
-            (LinearMap.congr_fun (P.flip.smoothTensorInduced_bil U hU s) x) y).symm
+  apply TopPairing.ext
+  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
+  rw [TopPairing.flip_bil]
+  -- Each `smoothTensorInduced` pairing has `bil := PiTensorProduct.map₂ ...` by definition.
+  exact LinearMap.congr_fun (LinearMap.congr_fun h x) y
 
 end Pairing
 
