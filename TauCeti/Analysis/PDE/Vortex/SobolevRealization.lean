@@ -43,8 +43,8 @@ operator depends only on the almost-everywhere class of the field, and for a bou
 field `x` one takes `a` with `a = x` almost everywhere. The domain carries the product norm, the
 largest of the `H¹` norms of the four coordinates. Its values are given almost everywhere by the
 same formula with weak gradients (`TauCeti.Vortex.sobolevGaugeFixedOperator_apply_ae`), and on
-fields of test functions it is the classical operator
-(`TauCeti.Vortex.sobolevGaugeFixedOperator_ofTestFunctionₗ_ae`).
+variations with a `C¹` representative it is the classical operator
+(`TauCeti.Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator`).
 
 At a `C¹` vortex `x` with `|α| → 1` and `∇₁ α → 0` at infinity and with an `L∞` class `a`, so
 that its coordinates are bounded by `‖a‖`, the Gårding inequality
@@ -143,21 +143,20 @@ theorem sobolevGaugeFixedOperator_apply_ae (a : Lp (EuclideanSpace ℝ (Fin 4)) 
   ext i
   simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
 
-/-- On fields of test functions, the realization at the `L∞` class of a field `x` is the classical
-gauge-fixed operator `L_x`. -/
-theorem sobolevGaugeFixedOperator_ofTestFunctionₗ_ae {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hax : a =ᵐ[μ⊤] x) (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
-    sobolevGaugeFixedOperator a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤]
-      gaugeFixedOperator x (fun z ↦ WithLp.toLp 2 fun j ↦ φ j z) := by
-  have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      W1p.gradient (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) z = ∇ (φ j : ℂ → ℝ) z :=
-    ae_all_iff.2 fun j ↦ by
-      rw [W1p.gradient_ofTestFunctionₗ]
-      exact gradientTestFunctionLp_apply_ae 2 (φ j)
-  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) z = φ j z :=
-    ae_all_iff.2 fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
-  filter_upwards [sobolevGaugeFixedOperator_apply_ae a _, hax, hg, hv] with z h₁ h₂ h₃ h₄
+/-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
+representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed
+operator `L_x Y`. -/
+theorem sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator
+    {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hax : a =ᵐ[μ⊤] x) {y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    {Y : ℂ → EuclideanSpace ℝ (Fin 4)} (hY : ContDiff ℝ 1 Y)
+    (hyY : ∀ j, W1p.value (y j) =ᵐ[μ⊤] fun z ↦ Y z j) :
+    sobolevGaugeFixedOperator a y =ᵐ[μ⊤] gaugeFixedOperator x Y := by
+  have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4, W1p.gradient (y j) z = ∇ (fun w ↦ Y w j) z :=
+    ae_all_iff.2 fun j ↦
+      W1p.gradient_ae_eq_of_contDiffOn (y j) ((contDiff_piLp 2).1 hY j).contDiffOn (hyY j)
+  filter_upwards [sobolevGaugeFixedOperator_apply_ae a y, hax, hg, ae_all_iff.2 hyY]
+    with z h₁ h₂ h₃ h₄
   rw [h₁, gaugeFixedOperator_eq_gaugeFixedFirstOrder_add, h₂]
   simp_rw [h₃, h₄]
 
@@ -199,14 +198,12 @@ private theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens 
       ∫ z, (‖(WithLp.toLp 2 fun j ↦ φ j z : EuclideanSpace ℝ (Fin 4))‖ ^ 2 +
         ∑ j : Fin 4, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) := by
   set y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2 := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)
-  have hφi (j : Fin 4) : Integrable (fun z ↦ φ j z ^ 2) :=
-    ((φ j).continuous.pow 2).integrable_of_hasCompactSupport
-      ((φ j).hasCompactSupport.comp_left (g := fun t : ℝ ↦ t ^ 2) (by simp) :
-        HasCompactSupport fun z ↦ φ j z ^ 2)
+  have hφi (j : Fin 4) : Integrable (fun z ↦ φ j z ^ 2) := by
+    simpa using (φ j).continuous.integrable_norm_sq_of_hasCompactSupport (μ := volume)
+      (φ j).hasCompactSupport
   have hgi (j : Fin 4) : Integrable (fun z ↦ ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2) :=
-    ((continuous_gradient_testFunction (φ j)).norm.pow 2).integrable_of_hasCompactSupport
-      ((φ j).hasCompactSupport.gradient.comp_left (g := fun v : ℂ ↦ ‖v‖ ^ 2) (by simp) :
-        HasCompactSupport fun z ↦ ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2)
+    (continuous_gradient_testFunction (φ j)).integrable_norm_sq_of_hasCompactSupport
+      (φ j).hasCompactSupport.gradient
   have hnorm (j : Fin 4) :
       ‖y j‖ ^ 2 = (∫ z, φ j z ^ 2) + ∫ z, ‖∇ (φ j : ℂ → ℝ) z‖ ^ 2 := by
     simp only [y, W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
@@ -229,7 +226,11 @@ private theorem norm_sobolevGaugeFixedOperator_ofTestFunctionₗ_sq
     ‖sobolevGaugeFixedOperator a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
       ∫ z, ‖gaugeFixedOperator x (fun z ↦ WithLp.toLp 2 fun j ↦ φ j z) z‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
-  have h := sobolevGaugeFixedOperator_ofTestFunctionₗ_ae hax φ
+  have h := sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
+    (y := fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))
+    (Y := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z)
+    (((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp))
+    fun j ↦ W1p.value_ofTestFunctionₗ_ae (φ j)
   simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
   exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
 
@@ -282,8 +283,7 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
     (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left (g := WithLp.toLp 2)
       (WithLp.toLp_zero 2)
   have hYi : Integrable (fun z ↦ ‖Y z‖ ^ 2) :=
-    (hY.continuous.norm.pow 2).integrable_of_hasCompactSupport
-      (hYc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp) : HasCompactSupport fun z ↦ ‖Y z‖ ^ 2)
+    hY.continuous.integrable_norm_sq_of_hasCompactSupport hYc
   have hGi : Integrable (gaugeFixedGradientDensity x Y) :=
     integrable_gaugeFixedGradientDensity hx (hY.of_le one_le_two) hYc
   -- The flat gradient is controlled by the covariant gradient density.
