@@ -44,6 +44,12 @@ open scoped NNReal ENNReal
 
 namespace TauCeti.NewtonPolygonConvergenceExample
 
+private theorem one_lt_p {p : ℕ} [Fact p.Prime] : (1 : ℝ) < p :=
+  Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
+
+private theorem p_pos {p : ℕ} [Fact p.Prime] : (0 : ℝ) < p :=
+  Nat.cast_pos.mpr (Fact.out : p.Prime).pos
+
 section HalfSlopeSeries
 
 private theorem ceil_two_mul_div_two (k : ℕ) : ⌈((2 * k : ℕ) : ℚ) / 2⌉₊ = k := by
@@ -81,10 +87,11 @@ theorem linearGrowthInf_halfSlopeSeries :
       ((1 / 2 : ℝ) : EReal) := by
   refine le_antisymm ?_ ?_
   · refine Frequently.linearGrowthInf_le (frequently_atTop.mpr fun N ↦ ⟨2 * N, by omega, ?_⟩)
-    rw [padicRealValuation_coeff_halfSlopeSeries, ceil_two_mul_div_two, WithTop.toEReal_coe,
-      ← EReal.coe_natCast, ← EReal.coe_mul, EReal.coe_le_coe_iff]
-    push_cast
-    linarith
+    rw [padicRealValuation_coeff_halfSlopeSeries, ceil_two_mul_div_two, WithTop.toEReal_coe]
+    have hle : ((N : ℝ) : EReal) ≤ ((1 / 2 : ℝ) * (2 * N : ℕ) : ℝ) := by
+      gcongr; push_cast; linarith
+    push_cast at hle ⊢
+    exact hle
   · refine le_linearGrowthInf_of_affine_le (c := 0) (σ := 1 / 2) fun n ↦ ?_
     rw [padicRealValuation_coeff_halfSlopeSeries, WithTop.coe_le_coe, zero_add]
     have hq : (((n : ℚ) / 2 : ℚ) : ℝ) ≤ (⌈(n : ℚ) / 2⌉₊ : ℝ) := by
@@ -95,15 +102,13 @@ theorem linearGrowthInf_halfSlopeSeries :
 /-- The intrinsic coefficient radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` is `√p`. -/
 theorem radius_halfSlopeSeries :
     (halfSlopeSeries p).radius = ENNReal.ofReal (Real.sqrt p) := by
-  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
-  rw [(halfSlopeSeries p).radius_eq_ofReal_rpow (padicRealValuation p) hp1
+  rw [(halfSlopeSeries p).radius_eq_ofReal_rpow (padicRealValuation p) one_lt_p
     (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) linearGrowthInf_halfSlopeSeries,
     Real.sqrt_eq_rpow]
 
 /-- Over `ℚ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` is `1`. -/
 theorem convergenceRadius_padic_halfSlopeSeries :
     (halfSlopeSeries p).convergenceRadius ℚ_[p] = 1 := by
-  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
   have hdisc : ∀ y : ℚ_[p], ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = (p : ℝ) ^ m := fun y hy ↦
     ⟨-y.valuation, Padic.norm_eq_zpow_neg_valuation (norm_ne_zero_iff.mp hy)⟩
   have hfl0 : ⌊(1 / 2 : ℝ)⌋ = 0 := Int.floor_eq_iff.mpr ⟨by norm_num, by norm_num⟩
@@ -112,7 +117,7 @@ theorem convergenceRadius_padic_halfSlopeSeries :
     norm_num
   have hatt : ∃ x : ℚ_[p], ‖x‖ = (p : ℝ) ^ ⌊(1 / 2 : ℝ)⌋ := ⟨1, by rw [hfl0, zpow_zero, norm_one]⟩
   have heq := (halfSlopeSeries p).convergenceRadius_eq_ofReal_zpow_floor
-    (padicRealValuation p) hp1 (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) ℚ_[p]
+    (padicRealValuation p) one_lt_p (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) ℚ_[p]
     hdisc linearGrowthInf_halfSlopeSeries hfloor hatt
   rwa [hfl0, zpow_zero, ENNReal.ofReal_one] at heq
 
@@ -120,8 +125,7 @@ theorem convergenceRadius_padic_halfSlopeSeries :
 smaller than its intrinsic radius `√p`. -/
 theorem convergenceRadius_padic_lt_radius_halfSlopeSeries :
     (halfSlopeSeries p).convergenceRadius ℚ_[p] < (halfSlopeSeries p).radius := by
-  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
-  have hsqrt : (1 : ℝ) < Real.sqrt p := by rwa [Real.lt_sqrt zero_le_one, one_pow]
+  have hsqrt : (1 : ℝ) < Real.sqrt p := by rw [Real.lt_sqrt zero_le_one, one_pow]; exact one_lt_p
   rw [convergenceRadius_padic_halfSlopeSeries, radius_halfSlopeSeries, ← ENNReal.ofReal_one]
   exact ENNReal.ofReal_lt_ofReal_iff (zero_lt_one.trans hsqrt) |>.mpr hsqrt
 
@@ -134,9 +138,10 @@ theorem summable_halfSlopeSeries_padic_iff {x : ℚ_[p]} :
       (le_convergenceRadius_of_summable hs).trans_eq convergenceRadius_padic_halfSlopeSeries
     simpa [← ofReal_norm] using hle
   · intro hx
-    exact (isRestricted_of_lt_radius (r := 1) (by
-      simpa [convergenceRadius_padic_halfSlopeSeries] using
-        convergenceRadius_padic_lt_radius_halfSlopeSeries (p := p))).summable_smul_pow hx
+    have hx1 : ‖x‖ₑ ≤ 1 := by simpa [← ofReal_norm] using hx
+    exact summable_of_lt_radius <|
+      (hx1.trans_eq convergenceRadius_padic_halfSlopeSeries.symm).trans_lt
+        convergenceRadius_padic_lt_radius_halfSlopeSeries
 
 /-- Over `ℂ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` equals its
 intrinsic radius `√p`. -/
@@ -149,7 +154,6 @@ terms satisfy `‖p ^ k‖ * (√p) ^ (2 k) = 1`. -/
 theorem not_isRestricted_halfSlopeSeries_sqrt :
     ¬(halfSlopeSeries p).IsRestricted (Real.sqrt p) := by
   intro hres
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
   rw [_root_.PowerSeries.isRestricted_iff'] at hres
   have heven : Tendsto (fun k : ℕ ↦ ‖PowerSeries.coeff (2 * k) (halfSlopeSeries p)‖ *
       (Real.sqrt p) ^ (2 * k)) atTop (nhds 0) :=
@@ -157,15 +161,13 @@ theorem not_isRestricted_halfSlopeSeries_sqrt :
   have hconst : (fun k : ℕ ↦ ‖PowerSeries.coeff (2 * k) (halfSlopeSeries p)‖ *
       (Real.sqrt p) ^ (2 * k)) = fun _ ↦ (1 : ℝ) := by
     ext k
-    rw [coeff_halfSlopeSeries, ceil_two_mul_div_two, norm_pow, Padic.norm_p,
-      pow_mul, Real.sq_sqrt hp0.le, inv_pow, inv_mul_cancel₀ (pow_ne_zero k hp0.ne')]
+    simp [pow_mul, Real.sq_sqrt (p_pos (p := p)).le, (p_pos (p := p)).ne']
   rw [hconst] at heven
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds heven)
 
 /-- Over `ℂ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ < √p`. -/
 theorem summable_halfSlopeSeries_padicComplex_iff {x : ℂ_[p]} :
     (Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • x ^ n) ↔ ‖x‖ < Real.sqrt p := by
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
   constructor
   · intro hs
     have hle : ‖x‖ ≤ Real.sqrt p := by
@@ -178,20 +180,19 @@ theorem summable_halfSlopeSeries_padicComplex_iff {x : ℂ_[p]} :
   · intro hx
     refine summable_of_lt_convergenceRadius ?_
     rw [convergenceRadius_padicComplex_halfSlopeSeries, ← ofReal_norm]
-    exact ENNReal.ofReal_lt_ofReal_iff (Real.sqrt_pos.mpr hp0) |>.mpr hx
+    exact ENNReal.ofReal_lt_ofReal_iff (Real.sqrt_pos.mpr p_pos) |>.mpr hx
 
 /-- There exist points in `ℂ_[p]` of norm strictly greater than `1` where `halfSlopeSeries p`
 converges (for instance, any element of norm `p ^ (1 / 3)`). -/
 theorem exists_one_lt_norm_and_summable_halfSlopeSeries :
     ∃ x : ℂ_[p], 1 < ‖x‖ ∧
       Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • x ^ n := by
-  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
   obtain ⟨x, hx⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (1 / 3 : ℚ)
   refine ⟨x, ?_, summable_halfSlopeSeries_padicComplex_iff.mpr ?_⟩
   · rw [hx]
-    exact Real.one_lt_rpow hp1 (by norm_num)
+    exact Real.one_lt_rpow one_lt_p (by norm_num)
   · rw [hx, Real.sqrt_eq_rpow]
-    exact Real.rpow_lt_rpow_left_iff hp1 |>.mpr (by norm_num)
+    exact Real.rpow_lt_rpow_left_iff one_lt_p |>.mpr (by norm_num)
 
 end HalfSlopeSeries
 
@@ -203,15 +204,10 @@ variable {p : ℕ} [Fact p.Prime]
 theorem norm_eq_sqrt_of_aeval_one_sub_C_mul_X_sq_eq_zero {α : ℂ_[p]}
     (hα : Polynomial.aeval α (1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2) = 0) :
     ‖α‖ = Real.sqrt p := by
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
   have h1 : 1 - (p : ℂ_[p]) * α ^ 2 = 0 := by simpa using hα
   have hmul : ‖(p : ℂ_[p]) * α ^ 2‖ = 1 := by rw [← sub_eq_zero.mp h1, norm_one]
   rw [norm_mul, PadicComplex.norm_p, norm_pow] at hmul
-  have hsq : ‖α‖ ^ 2 = (p : ℝ) := by
-    calc ‖α‖ ^ 2 = (p : ℝ) * ((p : ℝ)⁻¹ * ‖α‖ ^ 2) := by
-          rw [← mul_assoc, mul_inv_cancel₀ hp0.ne', one_mul]
-      _ = (p : ℝ) := by rw [hmul, mul_one]
-  rw [← hsq, Real.sqrt_sq (norm_nonneg α)]
+  rw [(inv_mul_eq_one₀ (p_pos (p := p)).ne').mp hmul, Real.sqrt_sq (norm_nonneg α)]
 
 /-- The quadratic polynomial `1 - p X ^ 2 ∈ ℚ_[p][X]` has a root in `ℂ_[p]` of norm `√p`. -/
 theorem exists_aeval_one_sub_C_mul_X_sq_eq_zero :

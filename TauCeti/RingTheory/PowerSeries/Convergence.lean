@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Radius
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
@@ -135,6 +136,11 @@ theorem isRestricted_norm_of_summable (h : Summable fun n ↦ coeff n f • x ^ 
     f.IsRestricted ‖x‖ :=
   tendsto_smul_pow_cofinite_iff_isRestricted.mp h.tendsto_cofinite_zero
 
+private theorem isRestricted_norm_of_summable_of_norm_le {y : A}
+    (hx : Summable fun n ↦ coeff n f • x ^ n) (hy : ‖y‖ ≤ ‖x‖) : f.IsRestricted ‖y‖ :=
+  TauCeti.PowerSeries.isRestricted_of_abs_le (isRestricted_norm_of_summable hx)
+    (by rwa [abs_norm, abs_norm])
+
 /-- If `∑ aₙ • xⁿ` is summable at a point `x` with `‖x‖ = |r|`, then `f` is restricted at `r`. -/
 theorem isRestricted_of_summable_of_norm_eq_abs (h : Summable fun n ↦ coeff n f • x ^ n)
     (hx : ‖x‖ = |r|) : f.IsRestricted r := by
@@ -202,9 +208,7 @@ theorem summable_smul_pow_iff_isRestricted_of_norm_eq (hx : ‖x‖ = r) :
 point `y` of the closed disc `‖y‖ ≤ ‖x‖`. -/
 theorem summable_smul_pow_of_summable_of_norm_le (hx : Summable fun n ↦ coeff n f • x ^ n)
     (hy : ‖y‖ ≤ ‖x‖) : Summable fun n ↦ coeff n f • y ^ n :=
-  summable_smul_pow_iff_isRestricted.mpr
-    (TauCeti.PowerSeries.isRestricted_of_abs_le (isRestricted_norm_of_summable hx)
-      (by rwa [abs_norm, abs_norm]))
+  summable_smul_pow_iff_isRestricted.mpr (isRestricted_norm_of_summable_of_norm_le hx hy)
 
 /-- **Closed-ball convergence characterization.** When the radius `r` is attained as the norm of a
 point of `A`, summability of `f` throughout `Metric.closedBall (0 : A) r` is equivalent to
@@ -273,10 +277,7 @@ theorem lt_convergenceRadius_iff :
 /-- `0 < f.convergenceRadius A` exactly when `f` converges at some point of positive norm in `A`. -/
 theorem convergenceRadius_pos_iff :
     0 < f.convergenceRadius A ↔ ∃ x : A, 0 < ‖x‖ ∧ Summable fun n ↦ coeff n f • x ^ n := by
-  rw [lt_convergenceRadius_iff]
-  refine ⟨fun ⟨x, hx, h0⟩ ↦ ⟨x, ?_, hx⟩, fun ⟨x, h0, hx⟩ ↦ ⟨x, hx, ?_⟩⟩
-  · simpa only [eNorm_eq_nnNorm, ENNReal.coe_pos, ← NNReal.coe_pos, coe_nnNorm] using h0
-  · simpa only [eNorm_eq_nnNorm, ENNReal.coe_pos, ← NNReal.coe_pos, coe_nnNorm] using h0
+  simp [lt_convergenceRadius_iff, ← ofReal_norm, and_comm]
 
 /-- If `f` is summable at every point of `A`, then `f.convergenceRadius A` is the supremum of all
 extended norms in `A`. -/
@@ -302,8 +303,7 @@ theorem convergenceRadius_map_algebraMap {R S : Type*} [CommSemiring R] [Semirin
     (A : Type*) [SeminormedRing A] [Algebra R S] [SMul R A] [MulAction S A]
     [IsScalarTower R S A] (f : R⟦X⟧) :
     (f.map (algebraMap R S)).convergenceRadius A = f.convergenceRadius A :=
-  convergenceRadius_map (algebraMap R S) A
-    (fun r x ↦ by rw [Algebra.algebraMap_eq_smul_one, smul_assoc, one_smul]) f
+  convergenceRadius_map (algebraMap R S) A (IsScalarTower.algebraMap_smul S) f
 
 end ConvergenceRadiusMap
 
@@ -384,7 +384,7 @@ convergence radius in `A` is `⨆ x : A, ‖x‖ₑ`. -/
 theorem IsEntire.convergenceRadius_eq_iSup {R : Type*} [NormedRing R] {f : R⟦X⟧} (hf : f.IsEntire)
     (A : Type*) [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A] [CompleteSpace A] :
     f.convergenceRadius A = ⨆ x : A, ‖x‖ₑ :=
-  hf.convergenceRadius_eq_iSup_of_norm_smul_le A norm_smul_le
+  convergenceRadius_eq_iSup_of_forall_summable hf.summable_smul_pow
 
 /-- Over a complete nontrivially normed field `L`, every entire series has infinite pointwise
 convergence radius. -/
@@ -415,14 +415,10 @@ private theorem min_convergenceRadius_le_of_isRestricted [SMul R A] [NormSMulCla
   obtain ⟨x₂, hg₂, hr₂⟩ := lt_convergenceRadius_iff.mp (lt_min_iff.mp hr).2
   obtain ⟨x, hx₁, hx₂, hrx⟩ : ∃ x : A, ‖x‖ ≤ ‖x₁‖ ∧ ‖x‖ ≤ ‖x₂‖ ∧ (r : ℝ≥0∞) ≤ ‖x‖ₑ :=
     if hle : ‖x₁‖ ≤ ‖x₂‖ then ⟨x₁, le_rfl, hle, hr₁.le⟩ else ⟨x₂, le_of_not_ge hle, le_rfl, hr₂.le⟩
-  have hf : f.IsRestricted ‖x‖ :=
-    TauCeti.PowerSeries.isRestricted_of_abs_le (isRestricted_norm_of_summable hf₁)
-      (by rwa [abs_norm, abs_norm])
-  have hg : g.IsRestricted ‖x‖ :=
-    TauCeti.PowerSeries.isRestricted_of_abs_le (isRestricted_norm_of_summable hg₂)
-      (by rwa [abs_norm, abs_norm])
   exact hrx.trans (le_convergenceRadius_of_summable
-    ((summable_smul_pow_iff_isRestricted (R := R)).mpr (hfg ‖x‖ hf hg)))
+    ((summable_smul_pow_iff_isRestricted (R := R)).mpr
+      (hfg ‖x‖ (isRestricted_norm_of_summable_of_norm_le hf₁ hx₁)
+        (isRestricted_norm_of_summable_of_norm_le hg₂ hx₂))))
 
 /-- In a complete ultrametric extension, the pointwise convergence radius of `f + g` is at least
 `min (f.convergenceRadius A) (g.convergenceRadius A)`. -/
@@ -548,8 +544,7 @@ theorem convergenceRadius_pos_iff_radius_pos {R : Type*} [NormedRing R] (f : R�
 theorem convergenceRadius_eq_zero_iff_radius_eq_zero {R : Type*} [NormedRing R] (f : R⟦X⟧)
     (L : Type*) [NontriviallyNormedField L] [SMul R L] [NormSMulClass R L] [CompleteSpace L] :
     f.convergenceRadius L = 0 ↔ f.radius = 0 := by
-  rw [← not_iff_not, ← ne_eq, ← ne_eq, ← pos_iff_ne_zero, ← pos_iff_ne_zero,
-    convergenceRadius_pos_iff_radius_pos]
+  simpa [pos_iff_ne_zero] using (f.convergenceRadius_pos_iff_radius_pos L).not
 
 /-- **Lower bound under dense positive norms.** In a complete seminormed ring `A` with a contractive
 `R`-action (`‖a • x‖ ≤ ‖a‖ * ‖x‖`), if every open subinterval `(r₁, r₂) ⊆ (0, ∞)` contains the norm

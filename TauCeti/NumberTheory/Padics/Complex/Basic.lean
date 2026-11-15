@@ -146,6 +146,7 @@ instance separableSpace : TopologicalSpace.SeparableSpace ℂ_[p] :=
 /-- **`ℂ_[p]` is densely normed**: as an algebraically closed nontrivially normed field, its
 positive norms are dense in `(0, ∞)`. -/
 noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
+  -- `by` enters a private proof context, keeping `Analysis.Normed.Field.Basic` a private import
   lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
 
 -- Ensure that `DenselyNormedField` induces the existing normed and nontrivially normed field
@@ -166,6 +167,7 @@ variable (p : ℕ) [Fact p.Prime]
 /-- **`PadicAlgCl p` is densely normed**: as an algebraically closed nontrivially normed field, its
 positive norms are dense in `(0, ∞)`. -/
 noncomputable instance denselyNormedField : DenselyNormedField (PadicAlgCl p) where
+  -- `by` enters a private proof context, keeping `Analysis.Normed.Field.Basic` a private import
   lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed (PadicAlgCl p)
 
 -- Ensure that `DenselyNormedField` induces the existing nontrivially normed field instance on
