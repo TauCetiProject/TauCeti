@@ -101,13 +101,12 @@ private theorem bijective_pullbackCupRestrict_of_subset_baseSet
   let φ : prodThomPair S F ⟶ thomPairOver F E S := (e.thomPairOverIso ℝ hS).inv
   refine (TopPair.bijective_pullbackCup_iff_of_isIso φ (g := prodThomPairProj S F)
     (𝟙 (TopCat.of S)) ?_ h _).1 ?_
-  · refine TopCat.ext fun x ↦ Subtype.ext ?_
-    have hx : TopPair.Hom.fst (e.thomPairOverIso ℝ hS).hom (TopPair.Hom.fst φ x) = x :=
-      (TopPair.proj₁.mapIso (e.thomPairOverIso ℝ hS)).inv_hom_id_apply x
-    have key := (congrArg Subtype.val (prodThomPairProj_apply F x)).trans
-      (congrArg (fun q : S × F ↦ (q.1 : B))
-        (hx.symm.trans (e.thomPairOverIso_hom_fst_apply ℝ hS (TopPair.Hom.fst φ x))))
-    exact key.symm
+  · refine TopCat.ext fun (x : S × F) ↦ Subtype.ext ?_
+    -- The carrier of `prodThomPair S F` is `S × F` only up to unfolding, so `simp` cannot match the
+    -- evaluation lemmas; state the goal on `S × F` and rewrite with them.
+    change (TopPair.Hom.fst φ x).1.proj = (prodThomPairProj S F x).1
+    rw [Trivialization.thomPairOverIso_inv_fst_apply, prodThomPairProj_apply,
+      Trivialization.preimageHomeomorph_symm_apply, e.proj_symm_apply' (hS x.1.2)]
   · refine bijective_pullbackCup_prodThomPair M hF _ (fun b ↦ ?_) h
     have hb : prodThomPairFiberMap F b ≫ φ ≫ TopCat.restrictPreimagePairMap (proj F E)
         (zeroSectionCompl F E) S =
