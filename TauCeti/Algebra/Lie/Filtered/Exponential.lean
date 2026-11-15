@@ -137,8 +137,8 @@ theorem truncatedExpLieAction_mk (k : ℕ) (x : L) :
 @[simp]
 theorem truncatedExpLieAction_zero (k : ℕ) :
     F.truncatedExpLieAction d ℒ k 0 = AlgEquiv.refl := by
-  simpa only [Submodule.Quotient.mk_zero] using
-    (F.truncatedExpLieAction_mk d ℒ k (0 : L)).trans (F.quotientExpLieAction_zero d ℒ k)
+  rw [← map_zero (d.degreeIdeal ℒ k).mkQ, LieIdeal.mkQ_apply, truncatedExpLieAction_mk,
+    quotientExpLieAction_zero]
 
 /-- Negation in the Lie truncation inverts the coefficient automorphism. -/
 @[simp]

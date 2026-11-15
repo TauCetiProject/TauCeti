@@ -49,6 +49,14 @@ def quotientLieAction (k : ℕ) : L →ₗ⁅R⁆ Module.End R (A ⧸ F.ideal (k
     |>.toLieHom.comp
     (PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k)
 
+/-- The quotient representation is the scalar-restricted one, transported by conjugation. -/
+theorem quotientLieAction_eq_conjAlgEquiv (k : ℕ) (x : L) :
+    F.quotientLieAction d ℒ k x =
+      (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)) :
+        (A ⧸ F.toSubmodule R (k + 1)) ≃ₗ[R] A ⧸ F.ideal (k + 1)).conjAlgEquiv R
+        (PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k x) :=
+  (rfl)
+
 /-- Evaluation transports the scalar-restricted quotient representation by conjugation. -/
 theorem quotientLieAction_apply (k : ℕ) (x : L) (q : A ⧸ F.ideal (k + 1)) :
     F.quotientLieAction d ℒ k x q =
@@ -80,15 +88,10 @@ theorem quotientLieAction_mul [IsDerivationAction L A]
 @[simp]
 theorem quotientLieAction_pow_eq_zero (k : ℕ) (x : L) :
     F.quotientLieAction d ℒ k x ^ (k + 1) = 0 := by
-  let E := Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-  let Q : Module.End R (A ⧸ (F.ideal (k + 1)).restrictScalars R) :=
-    PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k x
-  change (E.conjAlgEquiv R Q ^ (k + 1)) = 0
-  calc
-    E.conjAlgEquiv R Q ^ (k + 1) = E.conjAlgEquiv R (Q ^ (k + 1)) := by rw [map_pow]
-    _ = E.conjAlgEquiv R 0 := congrArg _ (PositiveDegrees.quotientLieAction_pow_eq_zero
-      d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) (F.toSubmodule_zero R) k x)
-    _ = 0 := map_zero _
+  rw [quotientLieAction_eq_conjAlgEquiv]
+  exact (map_pow _ _ _).symm.trans <| (congrArg _ <|
+    PositiveDegrees.quotientLieAction_pow_eq_zero d ℒ (F.toSubmodule R)
+      (F.toSubmodule_antitone R) (F.toSubmodule_zero R) k x).trans (map_zero _)
 
 /-- Every finite-order acting endomorphism is nilpotent. -/
 theorem isNilpotent_quotientLieAction (k : ℕ) (x : L) :
@@ -112,32 +115,30 @@ section Truncated
 
 variable [GradedLieAlgebra ℒ]
 
-/-- Lie terms above order `k` act trivially on the order-`k` coefficient quotient. -/
-theorem degreeIdeal_le_ker_quotientLieAction (k : ℕ) :
-    d.degreeIdeal ℒ k ≤ (F.quotientLieAction d ℒ k).ker := by
-  intro x hx
-  rw [LieHom.mem_ker]
-  have hx' := (PositiveDegrees.degreeIdeal_le_ker_quotientLieAction d ℒ (F.toSubmodule R)
-    (F.toSubmodule_antitone R) (F.toSubmodule_zero R) k) hx
-  rw [LieHom.mem_ker] at hx'
-  let E := Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-  let Q : Module.End R (A ⧸ (F.ideal (k + 1)).restrictScalars R) :=
-    PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k x
-  change E.conjAlgEquiv R Q = 0
-  exact map_eq_zero_iff (E.conjAlgEquiv R) (E.conjAlgEquiv R).injective |>.2 hx'
-
 /-- The representation of the order-`k` Lie truncation on the matching coefficient quotient. -/
 def truncatedLieAction (k : ℕ) :
     d.truncatedLie ℒ k →ₗ⁅R⁆ Module.End R (A ⧸ F.ideal (k + 1)) :=
-  (d.degreeIdeal ℒ k).liftQ (F.quotientLieAction d ℒ k)
-    (F.degreeIdeal_le_ker_quotientLieAction d ℒ k)
+  ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).conjAlgEquiv R).toLieEquiv
+    |>.toLieHom.comp
+    (PositiveDegrees.truncatedLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R)
+      (F.toSubmodule_zero R) k)
+
+/-- The truncated representation is the scalar-restricted one, transported by conjugation. -/
+theorem truncatedLieAction_eq_conjAlgEquiv (k : ℕ) (x : d.truncatedLie ℒ k) :
+    F.truncatedLieAction d ℒ k x =
+      (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)) :
+        (A ⧸ F.toSubmodule R (k + 1)) ≃ₗ[R] A ⧸ F.ideal (k + 1)).conjAlgEquiv R
+        (PositiveDegrees.truncatedLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R)
+          (F.toSubmodule_zero R) k x) :=
+  (rfl)
 
 /-- The truncated representation agrees with the quotient action on Lie representatives. -/
 @[simp]
 theorem truncatedLieAction_mk (k : ℕ) (x : L) :
     F.truncatedLieAction d ℒ k (LieSubmodule.Quotient.mk x) =
       F.quotientLieAction d ℒ k x := by
-  simp [truncatedLieAction]
+  rw [truncatedLieAction_eq_conjAlgEquiv, PositiveDegrees.truncatedLieAction_mk,
+    quotientLieAction_eq_conjAlgEquiv]
 
 /-- The finite-order operator on a truncated Lie element retains the Leibniz rule. -/
 theorem truncatedLieAction_mul [IsDerivationAction L A]
@@ -152,9 +153,10 @@ theorem truncatedLieAction_mul [IsDerivationAction L A]
 @[simp]
 theorem truncatedLieAction_pow_eq_zero (k : ℕ) (x : d.truncatedLie ℒ k) :
     F.truncatedLieAction d ℒ k x ^ (k + 1) = 0 := by
-  obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ k).surjective_mkQ x
-  rw [LieIdeal.mkQ_apply, truncatedLieAction_mk]
-  exact F.quotientLieAction_pow_eq_zero d ℒ k x
+  rw [truncatedLieAction_eq_conjAlgEquiv]
+  exact (map_pow _ _ _).symm.trans <| (congrArg _ <|
+    PositiveDegrees.truncatedLieAction_pow_eq_zero d ℒ (F.toSubmodule R)
+      (F.toSubmodule_antitone R) (F.toSubmodule_zero R) k x).trans (map_zero _)
 
 /-- Every truncated-Lie endomorphism on a finite coefficient quotient is nilpotent. -/
 theorem isNilpotent_truncatedLieAction (k : ℕ) (x : d.truncatedLie ℒ k) :

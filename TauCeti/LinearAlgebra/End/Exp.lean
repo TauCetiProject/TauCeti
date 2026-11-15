@@ -56,7 +56,8 @@ known to be finite-dimensional in advance.
   endomorphisms intertwines their exponentials.
 * `Module.End.locallyNilpotentExp_eq_exp`: for nilpotent `f` the exponential is
   `IsNilpotent.exp f`.
-* `Module.End.restrictScalars_exp`: scalar restriction commutes with the finite exponential.
+* `Module.End.restrictScalars_exp`: scalar restriction commutes with the finite exponential of a
+  nilpotent endomorphism.
 * `Module.End.exp_apply_mem_of_forall_mem`: stable submodules are preserved by the finite
   exponential.
 * `Module.End.exp_apply_of_apply_eq_zero`: vectors in the kernel are fixed by the finite
@@ -245,23 +246,11 @@ section RestrictScalars
 variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommGroup M]
   [Module R M] [Module S M] [Module ℚ M] [LinearMap.CompatibleSMul M M R S]
 
-/-- Restricting the scalars of an endomorphism commutes with its finite exponential. -/
+/-- Restricting the scalars of a nilpotent endomorphism commutes with its finite exponential. -/
 @[simp]
-theorem restrictScalars_exp (D : Module.End S M) :
+theorem restrictScalars_exp {D : Module.End S M} (hD : IsNilpotent D) :
     (IsNilpotent.exp D).restrictScalars R = IsNilpotent.exp (D.restrictScalars R) := by
-  unfold IsNilpotent.exp
-  have hclass : nilpotencyClass (D.restrictScalars R) = nilpotencyClass D := by
-    unfold nilpotencyClass
-    congr
-    ext n
-    rw [← restrictScalars_pow, ← LinearMap.restrictScalars_zero R S M M,
-      LinearMap.restrictScalars_inj R (D ^ n) 0]
-  rw [hclass]
-  have hmap := map_sum (restrictScalarsRingHom R S M).toAddMonoidHom
-    (fun n : ℕ => (n.factorial : ℚ)⁻¹ • D ^ n) (range (nilpotencyClass D))
-  exact hmap.trans <| by
-    simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass,
-      restrictScalarsRingHom_apply, LinearMap.restrictScalars_smul, restrictScalars_pow]
+  simpa only [restrictScalarsRingHom_apply] using hD.map_exp (restrictScalarsRingHom R S M)
 
 end RestrictScalars
 
@@ -357,13 +346,13 @@ variable {R S A : Type*} [CommRing R] [CommRing S] [Ring A]
 
 /-- Scalar restriction commutes with exponentiating a nilpotent derivation. -/
 @[simp]
-theorem expAlgEquiv_restrictScalars (D : Module.End S A)
+theorem restrictScalars_expAlgEquiv (D : Module.End S A)
     (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) :
     (D.expAlgEquiv hder hD).restrictScalars R =
       Module.End.expAlgEquiv (D.restrictScalars R) (fun a b => hder a b)
         ((isNilpotent_restrictScalars_iff (R := R) (D := D)).2 hD) := by
   ext a
-  exact LinearMap.congr_fun (restrictScalars_exp (R := R) D) a
+  exact LinearMap.congr_fun (restrictScalars_exp (R := R) hD) a
 
 end RestrictScalars
 

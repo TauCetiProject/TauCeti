@@ -85,7 +85,7 @@ variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
   [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S]
 
 /-- Scalar restriction of endomorphisms as a ring homomorphism. -/
-@[expose] def restrictScalarsRingHom (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
+def restrictScalarsRingHom (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
     [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S] :
     Module.End S M →+* Module.End R M where
   toFun := LinearMap.restrictScalars R

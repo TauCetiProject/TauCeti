@@ -82,6 +82,7 @@ variable {R L A : Type*} [CommRing R]
   [LieRing L] [NonAssocRing A] [LieRingModule L A] [IsDerivationAction L A]
 
 /-- A derivation action on a unital non-associative ring kills its unit. -/
+@[simp]
 theorem IsDerivationAction.lie_one (x : L) : ⁅x, (1 : A)⁆ = 0 := by
   simpa using IsDerivationAction.lie_mul x (1 : A) (1 : A)
 
