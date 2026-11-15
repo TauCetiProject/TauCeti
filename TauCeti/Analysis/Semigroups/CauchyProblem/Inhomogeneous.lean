@@ -63,6 +63,8 @@ the same forcing and initial value is a mild solution of `u' = A u`, `u(0) = 0`.
 * `TauCeti.Semigroups.StronglyContinuousSemigroup.isForcedMildSolution_realOperator_add_duhamel`
   and `TauCeti.Semigroups.IsForcedMildSolution.eq_realOperator_add_duhamel`: existence and
   uniqueness of the mild solution, given by Duhamel's formula.
+* `TauCeti.Semigroups.StronglyContinuousSemigroup.eqOn_realOperator_add_duhamel_Icc`: a solution of
+  the integrated equation on a bounded interval `[0, T]` is given there by Duhamel's formula.
 
 ## References
 
@@ -503,5 +505,118 @@ theorem unique {v : ℝ → X} (hu : IsForcedMildSolution S.generator F x u)
   (hu.eq_realOperator_add_duhamel ht).trans (hv.eq_realOperator_add_duhamel ht).symm
 
 end IsForcedMildSolution
+
+/-! ### Duhamel's formula on a bounded time interval -/
+
+namespace StronglyContinuousSemigroup
+
+variable [CompleteSpace X] (S : StronglyContinuousSemigroup X) {F : ℝ → X} {x : X} {u : ℝ → X}
+  {T : ℝ}
+
+/-- A solution `d` of the homogeneous integrated equation `A (∫_{(0,t]} d) = d t - d 0` on
+`[0, T]`, continued after `T` by the orbit of `d T`, is a mild solution of `u' = A u`, `u(0) = d 0`,
+on `[0, ∞)`. -/
+private theorem isMildSolution_realOperator_sub_min (hT : 0 ≤ T) {d : ℝ → X}
+    (hd : ContinuousOn d (Icc 0 T))
+    (heq : ∀ t ∈ Icc 0 T, ∃ hdt : (∫ s in Ioc 0 t, d s) ∈ S.generator.domain,
+      S.generator ⟨∫ s in Ioc 0 t, d s, hdt⟩ = d t - d 0) :
+    IsMildSolution S.generator (d 0)
+      (fun t => S.realOperator (t - min t T) (d (min t T))) := by
+  set e : ℝ → X := fun t => S.realOperator (t - min t T) (d (min t T)) with he_def
+  have hmin : MapsTo (fun t => min t T) (Ici 0) (Icc 0 T) :=
+    fun t ht => ⟨le_min (mem_Ici.1 ht) hT, min_le_right t T⟩
+  have he : ContinuousOn e (Ici 0) :=
+    S.continuousOn_realOperator_apply (by fun_prop)
+      (hd.comp (continuous_id.min continuous_const).continuousOn hmin)
+  -- Up to time `T`, the continuation is `d` itself.
+  have he_le {t : ℝ} (htT : t ≤ T) : e t = d t := by
+    simp [he_def, min_eq_left htT]
+  have hint {r s : ℝ} (hr : 0 ≤ r) (hrs : r ≤ s) : IntervalIntegrable e volume r s :=
+    (he.mono fun y hy => mem_Ici.2 (hr.trans (uIcc_of_le hrs ▸ hy).1)).intervalIntegrable
+  refine isMildSolution_iff.2 ⟨inferInstance, he, he_le hT, fun t ht => ?_⟩
+  rcases le_total t T with htT | hTt
+  · -- On `[0, T]` the integrated equation is the one of `d`.
+    have hcongr : ∫ s in Ioc 0 t, e s = ∫ s in Ioc 0 t, d s :=
+      setIntegral_congr_fun measurableSet_Ioc fun s hs => he_le (hs.2.trans htT)
+    obtain ⟨hdt, hAd⟩ := heq t ⟨ht, htT⟩
+    refine ⟨hcongr ▸ hdt, ?_⟩
+    rw [he_le htT, ← hAd]
+    exact congrArg _ (Subtype.ext hcongr)
+  · -- After `T`, the integral splits into the integral of `d` over `(0, T]` and an orbit integral.
+    have hsplit : ∫ s in Ioc 0 t, e s =
+        (∫ s in Ioc 0 T, d s) + ∫ s in Ioc 0 (t - T), S.realOperator s (d T) := by
+      have h₁ : ∫ s in (0 : ℝ)..T, e s = ∫ s in Ioc 0 T, d s := by
+        rw [intervalIntegral.integral_of_le hT]
+        exact setIntegral_congr_fun measurableSet_Ioc fun s hs => he_le hs.2
+      have h₂ : ∫ s in T..t, e s = ∫ s in T..t, S.realOperator (s - T) (d T) :=
+        intervalIntegral.integral_congr fun s hs => by
+          rw [uIcc_of_le hTt] at hs
+          simp [he_def, min_eq_right hs.1]
+      rw [← intervalIntegral.integral_of_le ht,
+        ← intervalIntegral.integral_add_adjacent_intervals (hint le_rfl hT) (hint hT hTt), h₁, h₂,
+        intervalIntegral.integral_comp_sub_right (fun s => S.realOperator s (d T)), sub_self,
+        intervalIntegral.integral_of_le (sub_nonneg.2 hTt)]
+    obtain ⟨hdT, hAdT⟩ := heq T ⟨hT, le_rfl⟩
+    have horb : (∫ s in Ioc 0 (t - T), S.realOperator s (d T)) ∈ S.generator.domain := by
+      rw [S.generator_domain]
+      exact S.integral_orbit_mem_domain (d T) (t - T)
+    have hmem : (∫ s in Ioc 0 t, e s) ∈ S.generator.domain := hsplit ▸ add_mem hdT horb
+    refine ⟨hmem, ?_⟩
+    have hsum : (⟨_, hmem⟩ : S.generator.domain) = ⟨_, hdT⟩ + ⟨_, horb⟩ := Subtype.ext hsplit
+    rw [hsum, LinearPMap.map_add, hAdT, S.generator_integral_orbit, he_def]
+    simp only [min_eq_right hTt]
+    abel
+
+/-- **Duhamel's formula on a bounded time interval.** Let `F` be integrable on `(0, T]` and let `u`
+be continuous on `[0, T]` with `u 0 = x`, such that for every `t ∈ [0, T]` the integral
+`∫_{(0,t]} u` lies in the domain of the generator `A` of `S` and
+`A (∫_{(0,t]} u) = u t - x - ∫_{(0,t]} F`. Then `u` is given on `[0, T]` by Duhamel's formula
+`u t = S(t) x + ∫_{(0,t]} S(t - s) F(s) ds`. Unlike
+`TauCeti.Semigroups.IsForcedMildSolution.eq_realOperator_add_duhamel`, nothing is assumed about `u`
+or `F` after time `T`. -/
+theorem eqOn_realOperator_add_duhamel_Icc (hF : IntegrableOn F (Ioc 0 T))
+    (hu : ContinuousOn u (Icc 0 T)) (h0 : u 0 = x)
+    (heq : ∀ t ∈ Icc 0 T, ∃ hut : (∫ s in Ioc 0 t, u s) ∈ S.generator.domain,
+      S.generator ⟨∫ s in Ioc 0 t, u s, hut⟩ = u t - x - ∫ s in Ioc 0 t, F s) :
+    EqOn u (fun t => S.realOperator t x + S.duhamel F t) (Icc 0 T) := by
+  intro t ht
+  have hT : 0 ≤ T := ht.1.trans ht.2
+  -- Compare `u` with Duhamel's formula for the forcing `G` that vanishes after `T`.
+  set G := (Ioc 0 T).indicator F
+  have hG : LocallyIntegrableOn G (Ici 0) :=
+    (hF.integrable_indicator measurableSet_Ioc).locallyIntegrable.locallyIntegrableOn _
+  have hGF {r : ℝ} (hr : r ≤ T) : Set.EqOn G F (Ioc 0 r) :=
+    fun s hs => indicator_of_mem (Ioc_subset_Ioc_right hr hs) F
+  set v : ℝ → X := fun t => S.realOperator t x + S.duhamel G t with hv_def
+  have hv : IsForcedMildSolution S.generator G x v :=
+    S.isForcedMildSolution_realOperator_add_duhamel hG x
+  have hint {w : ℝ → X} (hw : ContinuousOn w (Icc 0 T)) {r : ℝ} (hr : r ≤ T) :
+      IntegrableOn w (Ioc 0 r) :=
+    hw.integrableOn_Icc.mono_set (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right hr))
+  have hvc : ContinuousOn v (Icc 0 T) := hv.continuousOn.mono Icc_subset_Ici_self
+  have hd0 : (u - v) 0 = 0 := by simp [hv_def, h0]
+  -- The difference `u - v` solves the homogeneous integrated equation on `[0, T]`.
+  have hd := S.isMildSolution_realOperator_sub_min hT (hu.sub hvc) fun r hr => by
+    have hsub : ∫ s in Ioc 0 r, (u - v) s = (∫ s in Ioc 0 r, u s) - ∫ s in Ioc 0 r, v s :=
+      integral_sub (hint hu hr.2) (hint hvc hr.2)
+    obtain ⟨hur, hAu⟩ := heq r hr
+    have hmem : (∫ s in Ioc 0 r, (u - v) s) ∈ S.generator.domain :=
+      hsub ▸ sub_mem hur (hv.integral_mem_domain hr.1)
+    refine ⟨hmem, ?_⟩
+    have hsplit : (⟨_, hmem⟩ : S.generator.domain) = ⟨_, hur⟩ - ⟨_, hv.integral_mem_domain hr.1⟩ :=
+      Subtype.ext hsub
+    rw [hsplit, LinearPMap.map_sub, hAu, hv.map_integral_eq_sub hr.1,
+      setIntegral_congr_fun measurableSet_Ioc (hGF hr.2), hd0]
+    simp only [Pi.sub_apply]
+    abel
+  have h := hd.eq_realOperator ht.1
+  simp only [hd0, ContinuousLinearMap.map_zero, min_eq_left ht.2, sub_self, S.realOperator_zero,
+    ContinuousLinearMap.id_apply, Pi.sub_apply, sub_eq_zero] at h
+  rw [h, hv_def]
+  beta_reduce
+  rw [S.duhamel_congr_ae ((ae_restrict_iff' measurableSet_Ioc).2
+    (Eventually.of_forall (hGF ht.2)))]
+
+end StronglyContinuousSemigroup
 
 end TauCeti.Semigroups
