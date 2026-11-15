@@ -85,9 +85,9 @@ theorem natCard_quotSMulTop_of_norm_ne_zero [IsDomain A] [IsPrincipalIdealRing A
     ← restrictScalars_smul_top_eq_range_lmul]
   exact Nat.card_congr (Submodule.Quotient.restrictScalarsEquiv A _).toEquiv.symm
 
-/-- **Infinite cokernel in a finite free algebra.** Over an infinite domain `A`, if the norm over
-`A` of the image of `r` in a finite free `A`-algebra `S` vanishes, then `S` modulo `r` is
-infinite. -/
+omit [Module.Free A S] [Module.Finite A S] in
+/-- **Infinite cokernel in an algebra.** Over an infinite domain `A`, if the norm over
+`A` of the image of `r` in an `A`-algebra `S` vanishes, then `S` modulo `r` is infinite. -/
 theorem infinite_quotSMulTop_of_norm_eq_zero [IsDomain A] [Infinite A] {r : R}
     (hr : Algebra.norm A (algebraMap R S r) = 0) : Infinite (QuotSMulTop r S) := by
   rw [Algebra.norm_apply] at hr

@@ -382,7 +382,7 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
   -- A coherent family on the singleton `[p, p]`.
   have hFp := hF p (left_mem_Icc.2 hpq)
   have : Nontrivial (T p : E →ₗ[ℝ] F).detLine :=
-    Module.nontrivial_of_finrank_eq_succ hFp.finrank_detLine
+    Module.nontrivial_of_finrank_eq_succ (LinearMap.finrank_detLine _)
   obtain ⟨u₀, hu₀⟩ := exists_ne (0 : (T p : E →ₗ[ℝ] F).detLine)
   have hPp : P p := ⟨Function.update (fun _ ↦ 0) p u₀, by
     rw [Icc_self]
@@ -391,7 +391,7 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
     (fun _ _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂) (left_mem_Icc.2 hpq) (right_mem_Icc.2 hpq)).1 hPp
   -- Rescale to the prescribed value at `x₀`.
   obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_ne_zero' (w x₀) (hw.ne_zero hx₀)).1
-    (hF x₀ hx₀).finrank_detLine v₀
+    (LinearMap.finrank_detLine _) v₀
   have hr0 : r ≠ 0 := by
     rintro rfl
     exact hv₀ (by rw [← hr, zero_smul])

@@ -38,8 +38,8 @@ structure along `u`, as a function of the domain point.
 `Δ ‖v‖² ≥ -K ‖v‖²`, with `K` depending only on bounds for `J`, `B` and their first derivatives
 (`TauCeti.neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq`). Near the orbit these coefficients are
 bounded, so on discs of a fixed small radius `r` the value `‖v‖²` at the centre is at most
-`5 / (π r²)` times its integral over the disc
-(`TauCeti.pi_mul_sq_mul_norm_sq_le_five_mul_setIntegral_ball_of_fderiv_I_eq`). Unlike the
+`15 / (π r²)` times its integral over the disc
+(`TauCeti.pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq`). Unlike the
 mean-value inequality for the nonlinear equation, this needs no smallness of the energy.
 
 **From energy to pointwise decay.** A disc of radius at most `1 / 2` centred in `[s, ∞) × [0, 1]`
@@ -167,9 +167,9 @@ private theorem floerCoeff_eq : floerCoeff ω H u J = fun z ↦
 for `H_t dt`, with a `C²` family `J`, let `a`, `b`, `β`, `γ` bound `J`, its derivative, the
 coefficient `B` of `TauCeti.SymplecticForm.fderiv_fderiv_apply_snd_eq_of_floer` and its
 derivative. Then for every disc `ball y r` of the complex coordinate whose closure lies in `U`,
-with `K r² ≤ 1` for the constant `K` of
+with `16 K r² ≤ 1` for the constant `K` of
 `TauCeti.neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq`, `π r² ‖∂ₛu‖²` at the centre is at most
-five times the integral of `‖∂ₛu‖²` over the disc. -/
+fifteen times the integral of `‖∂ₛu‖²` over the disc. -/
 private theorem pi_mul_sq_mul_norm_sq_le_of_floer (hH : ContDiff ℝ 3 (uncurry H))
     {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 3 u U)
     (hJ : ContDiffOn ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) U)
@@ -180,10 +180,10 @@ private theorem pi_mul_sq_mul_norm_sq_le_of_floer (hH : ContDiff ℝ 3 (uncurry 
     (hb : ∀ z ∈ U, ‖fderiv ℝ (fun w ↦ (J w).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
     (hβ : ∀ z ∈ U, ‖floerCoeff ω H u J z‖ ≤ β)
     (hγ : ∀ z ∈ U, ‖fderiv ℝ (floerCoeff ω H u J) z‖ ≤ γ)
-    (hKr : (((b + a' * b + a' * β) ^ 2 + β ^ 2) / 2 + 2 * (a' * γ + γ)) * r ^ 2 ≤ 1)
+    (hKr : 16 * (((b + a' * b + a' * β) ^ 2 + β ^ 2) / 2 + 2 * (a' * γ + γ)) * r ^ 2 ≤ 1)
     (hr : 0 ≤ r) {y : ℂ} (hy : closedBall y r ⊆ Complex.equivRealProdCLM ⁻¹' U) :
     π * r ^ 2 * ‖fderiv ℝ u (Complex.equivRealProdCLM y) (1, 0)‖ ^ 2 ≤
-      5 * ∫ w in ball y r, ‖fderiv ℝ u (Complex.equivRealProdCLM w) (1, 0)‖ ^ 2 := by
+      15 * ∫ w in ball y r, ‖fderiv ℝ u (Complex.equivRealProdCLM w) (1, 0)‖ ^ 2 := by
   set e : ℂ →L[ℝ] ℝ × ℝ := (Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)
   set Jc : ℝ × ℝ → V →L[ℝ] V := fun w ↦ (J w).toLinearMap.toContinuousLinearMap
   set X : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2
@@ -202,7 +202,7 @@ private theorem pi_mul_sq_mul_norm_sq_le_of_floer (hH : ContDiff ℝ 3 (uncurry 
       (contDiffOn_snd.prodMk (hu.of_le (by norm_num)))).clm_comp contDiffOn_const
   have hv' : ContDiffOn ℝ 2 (fun w ↦ fderiv ℝ u (e w) (1, 0)) (e ⁻¹' U) :=
     hv.comp e.contDiff.contDiffOn fun _ h ↦ h
-  refine pi_mul_sq_mul_norm_sq_le_five_mul_setIntegral_ball_of_fderiv_I_eq
+  refine pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq
     (J := Jc ∘ e) (B := B ∘ e) hr (hv'.mono hball) (hv'.continuousOn.mono hy)
     (fun w hw ↦ ((hJ.contDiffAt (hU.mem_nhds (hball hw))).differentiableAt
       (by norm_num)).comp w e.differentiableAt)
@@ -380,7 +380,7 @@ private theorem exists_bounds_of_floer {L b : ℝ} (hH : ContDiff ℝ 3 (uncurry
       (hJM z (hUa hz) v).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg v))
   have hDu : ∀ z ∈ U, ‖fderiv ℝ u z‖ ≤ L₂ - 1 := fun z hz ↦ by
     have hs := (hL z (hUa hz)).trans (le_max_left L 0)
-    have h := (fderiv ℝ u z).opNorm_le_norm_apply_add_norm_apply
+    have h := (fderiv ℝ u z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one
     rw [fderiv_apply_snd_eq_of_floer (hfloer z (hUa hz))] at h
     have ht : ‖J z (fderiv ℝ u z (1, 0))‖ ≤ max M 0 * max L 0 :=
       ((Jc z).le_of_opNorm_le (hJu z hz) _).trans (mul_le_mul_of_nonneg_left hs hM₀)
@@ -464,21 +464,21 @@ private theorem exists_eventually_norm_sq_fderiv_le_exp {L b κ C₁ : ℝ}
   set U : Set (ℝ × ℝ) := Ioi s₀ ×ˢ Ioo (-1) 2
   have hU : IsOpen U := isOpen_Ioi.prod isOpen_Ioo
   have hUa : U ⊆ Ioi a ×ˢ univ := fun z hz ↦ ⟨(le_max_left _ _).trans_lt hz.1, mem_univ _⟩
-  -- The constant of the mean-value inequality, and a radius `r ≤ 1 / 2` with `K r² ≤ 1`.
+  -- The constant of the mean-value inequality, and a radius `r ≤ 1 / 2` with `16 K r² ≤ 1`.
   set K := ((b' + a' * b' + a' * β) ^ 2 + β ^ 2) / 2 + 2 * (a' * γ + γ)
   have hK₀ : 0 ≤ K := add_nonneg (div_nonneg (add_nonneg (sq_nonneg _) (sq_nonneg _)) two_pos.le)
     (mul_nonneg two_pos.le (add_nonneg (mul_nonneg ha'₀ hγ₀) hγ₀))
-  set r := 1 / (2 * (K + 1))
+  set r := 1 / (8 * (K + 1))
   have hr₀ : 0 < r := div_pos one_pos (by linarith)
   have hr2 : r ≤ 1 / 2 := one_div_le_one_div_of_le two_pos (by linarith)
-  have hKr : K * r ^ 2 ≤ 1 := by
+  have hKr : 16 * K * r ^ 2 ≤ 1 := by
     rw [div_pow, one_pow, mul_one_div, div_le_one (by positivity)]
     nlinarith
   have hvc : ContinuousOn (fun z ↦ fderiv ℝ u z (1, 0)) (Ioi a ×ˢ univ) :=
     (hu.continuousOn_fderiv_of_isOpen hopen (by norm_num)).clm_apply continuousOn_const
   obtain ⟨S₁, hS₁⟩ := eventually_atTop.1 hC₁
   set C₁' := max C₁ 0
-  set D := 5 / (π * r ^ 2) * (2 * ((1 + M ^ 2) / c)) * (C₁' * Real.exp (κ / 2))
+  set D := 15 / (π * r ^ 2) * (2 * ((1 + M ^ 2) / c)) * (C₁' * Real.exp (κ / 2))
   refine ⟨D, by positivity, eventually_atTop.2 ⟨max (s₀ + 1) (S₁ + 1 / 2), fun s hs t ht ↦ ?_⟩⟩
   have hs₀ : s₀ + 1 ≤ s := (le_max_left _ _).trans hs
   have hS : S₁ ≤ s - 1 / 2 := by linarith [le_max_right (s₀ + 1) (S₁ + 1 / 2)]
@@ -515,7 +515,7 @@ private theorem exists_eventually_norm_sq_fderiv_le_exp {L b κ C₁ : ℝ}
     rw [← Real.exp_add]; ring_nf
   rw [hexp] at hE'
   have hpr : 0 < π * r ^ 2 := by positivity
-  rw [show D * Real.exp (-(κ * s)) = 5 * (2 * ((1 + M ^ 2) / c) *
+  rw [show D * Real.exp (-(κ * s)) = 15 * (2 * ((1 + M ^ 2) / c) *
     (C₁' * (Real.exp (κ / 2) * Real.exp (-(κ * s))))) / (π * r ^ 2) by simp only [D]; ring,
     le_div_iff₀ hpr]
   linarith [hmv, hE', mul_comm (‖fderiv ℝ u (s, t) (1, 0)‖ ^ 2) (π * r ^ 2)]
@@ -536,7 +536,7 @@ the hypothesis of the pre-gluing estimate
 The derivative `v = ∂ₛu` solves the linear equation `∂ₜv = J ∂ₛv + B v` of
 `TauCeti.SymplecticForm.fderiv_fderiv_apply_snd_eq_of_floer`, whose coefficients are bounded near
 the orbit, so `‖v‖²` satisfies the mean-value inequality on discs of a fixed radius
-(`TauCeti.pi_mul_sq_mul_norm_sq_le_five_mul_setIntegral_ball_of_fderiv_I_eq`). The energy over
+(`TauCeti.pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq`). The energy over
 `[s, ∞) × [0, 1]` decays exponentially
 (`TauCeti.SymplecticForm.exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp`) and
 dominates the integral of `‖v‖²` over such discs, so `v` decays exponentially pointwise. Finally
@@ -620,7 +620,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
       exact (hδs t).le
   refine ⟨hux0.trans (mul_le_mul_of_nonneg_right (by nlinarith) he'.le), ?_⟩
   refine ((fderiv ℝ u (s, t) - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
-    (ω.hamiltonianVectorField (H t) (x t))).opNorm_le_norm_apply_add_norm_apply.trans ?_)
+    (ω.hamiltonianVectorField (H t) (x t))).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans ?_)
   simp only [sub_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.coe_snd', zero_smul, sub_zero, one_smul]
   nlinarith [mul_le_mul_of_nonneg_left hvs' ha', mul_le_mul_of_nonneg_left hux0 hLx']

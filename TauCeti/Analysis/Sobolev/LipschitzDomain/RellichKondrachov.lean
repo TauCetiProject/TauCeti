@@ -72,7 +72,7 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
-  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  obtain ⟨T, hT, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
   have hK : IsCompactOperator
       ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (W1p.restrictL le_top)) :=
     W1p.isCompactOperator_valueL_restrictL hb.isCompact_closure (subset_univ _)

@@ -29,6 +29,19 @@ A precomplex can omit vertices, so its polyhedron is the subset of an ambient we
 whose supports are its faces. The single-move theorem allows any ambient complex containing
 both precomplexes. The sequence theorem uses the full complex as a common ambient space.
 
+Applied to the closed star of a nonempty face, starred at a vertex fresh for that closed star,
+the homeomorphism exhibits the closed star as a simplicial cone on its barycentre
+(`exists_homeomorph_stellarSubdivision_closedStar`). The starred closed star is a cone with
+apex the new vertex (`isCone_stellarSubdivision_closedStar`), and the apex maps to the face
+barycentre (`AbstractSimplicialComplex.stellarSubdivisionLinearMap_single_eq_faceBarycenter`).
+The open apex star corresponds to the points whose carriers contain the face. The cone link,
+identified combinatorially with `closedStar K σ ⊓ deletion K σ` by
+`link_stellarSubdivision_closedStar_singleton`, corresponds to the part of the closed star
+avoiding the face and is fixed pointwise. This boundary is the base of the cone, not the
+ambient topological frontier. The closed star is a neighbourhood of the open apex star relative
+to the polyhedron of the original precomplex (`setOf_support_mem_closedStar_mem_nhds`, in
+`Realization.Star.Basic`), but it need not be one in the ambient weak realization.
+
 The construction uses the bijective barycentric map of `Stellar.Realization`, the closed-simplex
 continuity criterion of `Realization.Subcomplex`, and, on finite parts, the compact subpolyhedron
 and coordinate-embedding theorems of `Realization.Finite`. Intrinsic stellar equivalences are
@@ -37,7 +50,7 @@ transported through the relabeling homeomorphisms from `Realization.Relabel`.
 ## References
 
 * C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer
-  (1972), Chapter 2 (starrings and stellar equivalence).
+  (1972), Chapter 2 (starrings, stellar equivalence and conical neighbourhoods).
 -/
 
 public section
@@ -216,6 +229,50 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
     refine (F.symm_apply_eq.mpr ((hcompat _ hW _).trans (Subtype.ext ?_)).symm).symm
     simp only [Function.comp_apply, Homeomorph.apply_symm_apply]
   exact ⟨{ toEquiv := F, continuous_toFun := hcont, continuous_invFun := hcontSymm }, hfval⟩
+
+/-- The starred closed star of a face is identified with the original closed star in the weak
+topology. This starred complex is a simplicial cone with apex the new vertex
+(`isCone_stellarSubdivision_closedStar`), and the cone apex maps by the barycentric stellar map
+to the face barycentre. The open apex star maps exactly to carriers containing the face; the
+cone link maps to the boundary subpolyhedron, and that boundary is fixed pointwise. The
+containing realization may have arbitrary unused vertices. -/
+theorem exists_homeomorph_stellarSubdivision_closedStar (hσ : σ ∈ K)
+    (hv : ({v} : Finset ι) ∉ closedStar K σ)
+    (hK : closedStar K σ ≤ A.toPreAbstractSimplicialComplex)
+    (hS : stellarSubdivision (closedStar K σ) σ v ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision (closedStar K σ) σ v} ≃ₜ
+        {x : Realization A // x.1.support ∈ closedStar K σ},
+      (∀ x, (e x).1.1 = Finset.stellarSubdivisionLinearMap σ v x.1.1) ∧
+      (∀ x, 0 < x.1.1 v ↔ σ ⊆ (e x).1.1.support) ∧
+      (∀ x, x.1.1.support ∈ link (stellarSubdivision (closedStar K σ) σ v) {v} ↔
+        (e x).1.1.support ∈ deletion K σ) ∧
+      (∀ x, x.1.1.support ∈ link (stellarSubdivision (closedStar K σ) σ v) {v} →
+        (e x).1 = x.1) := by
+  have hσstar : σ ∈ closedStar K σ := by simp [hσ]
+  have hcone := isCone_stellarSubdivision_closedStar (v := v) hσ
+  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσstar hv hK hS
+  have hopen (x) : 0 < x.1.1 v ↔ σ ⊆ (e x).1.1.support := by
+    rw [he]
+    exact (subset_support_stellarSubdivisionLinearMap_iff (Realization.nonneg A x.1) x.2).symm
+  have hzero (x : {x : Realization A // x.1.support ∈ stellarSubdivision (closedStar K σ) σ v}) :
+      x.1.1 v = 0 ↔ (e x).1.1.support ∈ deletion K σ := by
+    rw [mem_deletion]
+    have hface := closedStar_le (e x).2
+    have hnonneg := Realization.nonneg A x.1 v
+    rw [← hopen]
+    exact ⟨fun hz => ⟨hface, by linarith⟩, fun h => by linarith [h.2]⟩
+  refine ⟨e, he, hopen, ?_, ?_⟩
+  · intro x
+    rw [mem_link, Finset.disjoint_singleton_right, Finsupp.notMem_support_iff]
+    have hinsert := hcone.insert_mem x.2
+    simpa only [x.2, true_and, Finset.union_singleton, hinsert, and_true] using hzero x
+  · intro x hx
+    have hxv : x.1.1 v = 0 := Finsupp.notMem_support_iff.mp
+      (Finset.disjoint_singleton_right.mp (mem_link.mp hx).2.1)
+    apply Subtype.ext
+    rw [he]
+    ext i
+    simp [Finset.stellarSubdivisionLinearMap_apply, hxv]
 
 /-- Stellar equivalent precomplexes have homeomorphic weak polyhedra. The subtypes exclude every
 unused vertex, even though their common ambient complex contains all vertices. -/

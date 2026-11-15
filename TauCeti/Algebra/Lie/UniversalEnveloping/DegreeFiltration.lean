@@ -16,13 +16,17 @@ The word description of the enveloping grading shows that nonnegative support of
 algebra implies nonnegative support of its enveloping algebra, without a basis assumption.
 Every strictly positive degree ideal lies in the augmentation ideal. Conversely,
 the degree filtration contains the powers of the augmentation ideal when the Lie
-algebra is supported in strictly positive degrees.
+algebra is supported in strictly positive degrees. When the canonical map `L → U(L)` is
+injective, the Lie elements it sends into filtration order `k` are those of degree at least `k`.
 
 ## Attribution
 
 Adapted from `Mei/Algebra/Lie/UniversalEnveloping/DegreeFiltration.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). Original copyright and author credit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). The graded-embedding result
+`TauCeti.UniversalEnvelopingAlgebra.comap_degreeFiltration_ι` is adapted from
+`Mei/Algebra/Lie/UniversalEnveloping/GradedEmbedding.lean` in the same repository, commit
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0). Original copyright and author credit
 are retained.
 -/
 
@@ -36,6 +40,9 @@ variable {Γ R L : Type*} [AddCommMonoid Γ] [CommRing R] [LieRing L] [LieAlgebr
   (ℒ : Γ → Submodule R L) (d : Γ →+ ℤ)
 
 variable [DecidableEq Γ] [GradedLieAlgebra ℒ]
+
+-- The canonical map `ι` is a Lie homomorphism into the commutator Lie algebra of `U(L)`.
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The decreasing total-degree filtration on the enveloping algebra. -/
 noncomputable def degreeFiltration (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
@@ -75,6 +82,17 @@ theorem ι_mem_degreeFiltration (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
     ι R x ∈ (degreeFiltration ℒ d hneg).ideal k :=
   mem_degreeFiltration_ideal_of_mem_homogeneousSubmodule ℒ d hneg
     (ι_mem_homogeneousSubmodule ℒ hx) hn
+
+/-- If the canonical map `ι : L → U(L)` is injective, the Lie elements that it sends into
+filtration order `k` are exactly those with no components of degree below `k`. -/
+theorem comap_degreeFiltration_ι (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
+    (hι : Function.Injective (ι R : L → _root_.UniversalEnvelopingAlgebra R L)) (k : ℕ) :
+    (((degreeFiltration ℒ d hneg).ideal k).restrictScalars R).comap
+        (ι R : L →ₗ⁅R⁆ _root_.UniversalEnvelopingAlgebra R L).toLinearMap =
+      TauCeti.DirectSum.degreeTail ℒ d k := by
+  rw [degreeFiltration_ideal, TauCeti.GradedAlgebra.degreeIdeal_restrictScalars]
+  exact LinearMap.comap_degreeTail_eq_of_injective _ ℒ (homogeneousSubmodule ℒ) hι
+    (fun _ _ hx => ι_mem_homogeneousSubmodule ℒ hx) d k
 
 /-- To contain a filtration ideal, it suffices to contain the homogeneous enveloping pieces of
 degree at least `k`. -/

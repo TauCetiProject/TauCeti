@@ -70,6 +70,8 @@ Chevalley--Demazure group schemes, and hence the finite groups themselves, are s
   `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_coweightMap_coroot_simpleIndex`: the defining
   relation of the exceptional isogeny on the simple roots and on the simple coroots, in the
   exponent convention of `TauCeti.SuzukiReeIndex.exponent`.
+* `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_weightMap_apply`: the character map in
+  fundamental-weight coordinates, `(τ^* χ) i = exponent i * χ (σ i)`.
 * `TauCeti.SuzukiReeIndex.datumSpecialIsogeny_mul_self`: its square is scaling by the defining
   characteristic, which is the root-datum form of `τ ^ 2 = Frob_p`.
 
@@ -484,6 +486,23 @@ theorem datumSpecialIsogeny_coweightMap_coroot_simpleIndex (e : SuzukiReeIndex)
   rw [datumSpecialIsogeny_indexEquiv_simpleIndex, lengthPerm_lengthPerm] at h
   rw [h, datumSpecialIsogeny_exponent_simpleIndex, rootLength_lengthPerm]
   simp only [Int.cast_id]
+
+/-- **The character map of the exceptional isogeny in fundamental-weight coordinates.** The
+pullback of a character `χ` has, at the node `i`, the coordinate of `χ` at the length-exchanged
+node, rescaled by `TauCeti.SuzukiReeIndex.exponent i`. This is the transpose of
+`TauCeti.SuzukiReeIndex.datumSpecialIsogeny_coweightMap_coroot_simpleIndex`, the simple coroots
+being the standard basis of the cocharacter lattice. -/
+@[simp]
+theorem datumSpecialIsogeny_weightMap_apply (e : SuzukiReeIndex) (χ : Fin e.1.rank → ℤ)
+    (i : Fin e.1.rank) :
+    e.datumSpecialIsogeny.weightMap χ i = e.exponent i * χ (e.lengthPerm i) := by
+  have h := e.datumSpecialIsogeny.weight_coweight_transpose χ
+    ((e.1.dynkinType.simplyConnectedRootDatum e.1.dynkinType_valid).coroot
+      (e.1.dynkinType.simpleIndex e.1.dynkinType_valid i))
+  -- Both pairings are dot products against the standard basis vectors of the simple coroots.
+  rw [datumSpecialIsogeny_coweightMap_coroot_simpleIndex, toLinearMap_simplyConnectedRootDatum,
+    toLinearMap_simplyConnectedRootDatum, dotProduct_smul] at h
+  simpa [mul_comm] using h
 
 /-! ## The square relation -/
 
