@@ -8,15 +8,16 @@ module
 public import TauCeti.MeasureTheory.Integral.Convolution.Tail
 public import TauCeti.Probability.Renewal.LocalBound
 public import TauCeti.Probability.Renewal.Equation
-import Mathlib.Analysis.SumIntegralComparisons
+import TauCeti.Analysis.SumIntegralComparisons
 
 /-!
 # Uniform truncation of monotone renewal forcing
 
-For nonnegative, nonincreasing, integrable forcing on the half-line, the part of the renewal
-convolution where the age is at least `N` tends to zero uniformly in time. This permits
-compact-support truncation before approximating the forcing by step functions. The estimate
-uses the local renewal bound and the integral test, not a renewal limit theorem.
+For nonincreasing, integrable forcing on the half-line (automatically nonnegative by
+`Antitone.nonneg_of_integrableOn_Ioi_toNNReal`), the part of the renewal convolution where the age
+is at least `N` tends to zero uniformly in time. This permits compact-support truncation before
+approximating the forcing by step functions. The estimate uses the local renewal bound and the
+integral test, not a renewal limit theorem.
 
 For a forcing function `h : ℝ≥0 → ℝ`, Lebesgue integrability on the half-line is expressed as
 `IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)`. Its value at zero is retained: the renewal
@@ -38,14 +39,15 @@ namespace MeasureTheory.Measure
 
 variable (μ : Measure ℝ≥0) [IsProbabilityMeasure μ]
 
-/-- Integrable nonnegative monotone forcing has uniformly negligible distant tails against
-the renewal measure. Thus truncation is uniform over all finite observation times. -/
+/-- Integrable monotone forcing has uniformly negligible distant tails against the renewal measure.
+Thus truncation is uniform over all finite observation times. -/
 theorem tendsto_iSup_lintegral_renewalMeasure_tail (hμ : μ {0} < 1)
-    {h : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
+    {h : ℝ≥0 → ℝ} (hh : Antitone h)
     (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) :
     Tendsto (fun N : ℕ => ⨆ t : ℝ≥0,
       ∫⁻ s in Iic t ∩ {s | (N : ℝ≥0) ≤ t - s}, ENNReal.ofReal (h (t - s))
         ∂μ.renewalMeasure) atTop (𝓝 0) := by
+  have h₀ := hh.nonneg_of_integrableOn_Ioi_toNNReal hint
   have hanti : AntitoneOn (fun x : ℝ => h x.toNNReal) (Ici 0) :=
     fun _ _ _ _ hab => hh (Real.toNNReal_mono hab)
   have hsum : Summable (fun n : ℕ => h n) := by
@@ -59,15 +61,16 @@ theorem tendsto_iSup_lintegral_renewalMeasure_tail (hμ : μ {0} < 1)
 
 open TauCeti.Probability
 
-/-- Removing the initial segment of a nonnegative integrable monotone forcing function
-makes its renewal convolution tend uniformly to zero. This is the uniform error estimate
-for compact-support truncation of the forcing. -/
+/-- Removing the initial segment of an integrable monotone forcing function makes its renewal
+convolution tend uniformly to zero. This is the uniform error estimate for compact-support
+truncation of the forcing. -/
 theorem tendstoUniformly_renewalConv_indicator_Ici (μ : Measure ℝ≥0) [IsProbabilityMeasure μ]
-    (hμ : μ {0} < 1) {h : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
+    (hμ : μ {0} < 1) {h : ℝ≥0 → ℝ} (hh : Antitone h)
     (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) :
     TendstoUniformly (fun N : ℕ => renewalConv ((Ici (N : ℝ≥0)).indicator h) μ.renewalMeasure)
       0 atTop := by
-  have hlim := μ.tendsto_iSup_lintegral_renewalMeasure_tail hμ hh h₀ hint
+  have h₀ := hh.nonneg_of_integrableOn_Ioi_toNNReal hint
+  have hlim := μ.tendsto_iSup_lintegral_renewalMeasure_tail hμ hh hint
   refine EMetric.tendstoUniformly_iff.2 fun ε hε => ?_
   filter_upwards [hlim.eventually_lt_const hε] with N hN t
   have hset : MeasurableSet {s : ℝ≥0 | (N : ℝ≥0) ≤ t - s} := by measurability

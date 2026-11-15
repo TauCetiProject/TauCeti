@@ -57,8 +57,7 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
     fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr))
   simp_rw [measureReal_lt_renewalExcess hT hindep hid hzero]
   rw [Measure.equilibriumExcessLaw_real_Ioi_eq_integral_tail_add]
-  exact (P.map (T 0)).tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim
-    htail (fun _ ↦ measureReal_nonneg)
+  exact (P.map (T 0)).tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim htail
     ((P.map (T 0)).integrableOn_Ioi_measureReal_tail_add x hmean)
 
 /-- Renewal interval limits imply convergence of the excess distribution function at every

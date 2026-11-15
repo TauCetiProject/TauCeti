@@ -11,15 +11,16 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 /-!
 # Darboux sums and decreasing integrable functions
 
-For a nonnegative decreasing integrable function on the positive half-line, the upper and
-lower uniform-mesh Darboux sums bracket its integral. Their difference is exactly the mesh
+For a decreasing integrable function on the positive half-line, nonnegativity holds
+automatically (`AntitoneOn.nonneg_of_integrableOn_Ioi`), and the upper and lower
+uniform-mesh Darboux sums bracket its integral. Their difference is exactly the mesh
 size times the value at zero. Consequently both sums converge to the integral as the mesh
 tends to zero through positive values, even on the unbounded interval and without continuity.
 These estimates allow step-function approximations in convolution limit theorems.
 Finite uniform-mesh sums also bracket the integral on `[0, δ * N]`, including zero mesh,
-and their gap vanishes under refinement of a fixed interval. A decreasing function on
-`[a, ∞)` that is integrable on `(a, ∞)` is automatically nonnegative on `[a, ∞)`, and a
-nonnegative decreasing integrable function on the positive half-line vanishes at infinity.
+and their gap vanishes under refinement of a fixed interval. More generally, a decreasing
+function on `[a, ∞)` that is integrable on `(a, ∞)` is nonnegative on `[a, ∞)`, and a
+decreasing integrable function on the positive half-line vanishes at infinity.
 
 The proofs use Mathlib's integral test (`AntitoneOn.summable_of_integrableOn_Ioi_zero`,
 `AntitoneOn.tsum_add_one_le_integral`, and `AntitoneOn.integral_le_tsum`) after dilation,
@@ -37,23 +38,39 @@ namespace AntitoneOn
 
 variable {f : ℝ → ℝ}
 
-/-- A positive-mesh sample of a nonnegative decreasing integrable function on the half-line
-is summable, including its value at zero. -/
+/-- A decreasing function on `[a, ∞)` that is Lebesgue-integrable on `(a, ∞)` is nonnegative
+everywhere on `[a, ∞)`: a strictly negative value would persist along an unbounded ray of infinite
+measure. -/
+theorem nonneg_of_integrableOn_Ioi {a : ℝ} (hf : AntitoneOn f (Ici a))
+    (hi : IntegrableOn f (Ioi a)) ⦃x : ℝ⦄ (hx : a ≤ x) : 0 ≤ f x := by
+  by_contra! hneg
+  have hle : ∀ y ∈ Ioi x, ENNReal.ofReal (-f x) ≤ ‖f y‖ₑ := fun y hy => by
+    have hfy : f y ≤ f x := hf hx (hx.trans hy.le) hy.le
+    rw [Real.eNorm_eq_ofReal_abs]
+    exact ENNReal.ofReal_le_ofReal (by linarith [neg_le_abs (f y)])
+  have htop : ∫⁻ _ in Ioi x, ENNReal.ofReal (-f x) ≤ ∫⁻ y in Ioi x, ‖f y‖ₑ :=
+    setLIntegral_mono' measurableSet_Ioi hle
+  rw [setLIntegral_const, Real.volume_Ioi,
+    ENNReal.mul_top (ENNReal.ofReal_pos.2 (neg_pos.2 hneg)).ne'] at htop
+  exact (hi.mono_set (Ioi_subset_Ioi hx)).2.ne (top_unique htop)
+
+/-- A positive-mesh sample of a decreasing integrable function on the half-line is summable,
+including its value at zero. -/
 theorem summable_mul_natCast (hf : AntitoneOn f (Ici 0))
-    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x)
-    {δ : ℝ} (hδ : 0 < δ) : Summable (fun n : ℕ => f (δ * n)) := by
+    (hi : IntegrableOn f (Ioi 0)) {δ : ℝ} (hδ : 0 < δ) :
+    Summable (fun n : ℕ => f (δ * n)) := by
   have hanti : AntitoneOn (fun x => f (δ * x)) (Ici 0) :=
     fun x hx y hy hxy => hf (mul_nonneg hδ.le hx) (mul_nonneg hδ.le hy)
       (mul_le_mul_of_nonneg_left hxy hδ.le)
   have hint : IntegrableOn (fun x => f (δ * x)) (Ioi 0) := by
     simpa using (integrableOn_Ioi_comp_mul_left_iff f 0 hδ).2 (by simpa using hi)
-  exact hanti.summable_of_integrableOn_Ioi_zero hint fun x hx => hn _ (mul_pos hδ hx)
+  exact hanti.summable_of_integrableOn_Ioi_zero hint
+    fun _ hx => hf.nonneg_of_integrableOn_Ioi hi (mul_pos hδ hx).le
 
 /-- Lower and upper uniform-mesh Darboux sums bracket the half-line integral. No continuity
 is needed, and either sum may include values at discontinuities. -/
 theorem mul_tsum_le_integral_le_mul_tsum (hf : AntitoneOn f (Ici 0))
-    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x)
-    {δ : ℝ} (hδ : 0 < δ) :
+    (hi : IntegrableOn f (Ioi 0)) {δ : ℝ} (hδ : 0 < δ) :
     δ * (∑' n : ℕ, f (δ * (n + 1))) ≤ ∫ x in Ioi 0, f x ∧
       (∫ x in Ioi 0, f x) ≤ δ * (∑' n : ℕ, f (δ * n)) := by
   have hanti : AntitoneOn (fun x => f (δ * x)) (Ici 0) :=
@@ -62,39 +79,38 @@ theorem mul_tsum_le_integral_le_mul_tsum (hf : AntitoneOn f (Ici 0))
   have hint : IntegrableOn (fun x => f (δ * x)) (Ioi 0) := by
     simpa using (integrableOn_Ioi_comp_mul_left_iff f 0 hδ).2 (by simpa using hi)
   have hnonneg : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f (δ * x) :=
-    fun x hx => hn _ (mul_pos hδ hx)
+    fun _ hx => hf.nonneg_of_integrableOn_Ioi hi (mul_pos hδ hx).le
   have hscale : δ * (∫ x in Ioi 0, f (δ * x)) = ∫ x in Ioi 0, f x := by
     simpa using integral_comp_mul_left_Ioi' f 0 hδ
   constructor
   · have h := mul_le_mul_of_nonneg_left (hanti.tsum_add_one_le_integral hint hnonneg) hδ.le
     simpa only [Nat.cast_add, Nat.cast_one, hscale] using h
   · have h := mul_le_mul_of_nonneg_left
-      (hanti.integral_le_tsum (hf.summable_mul_natCast hi hn hδ) hnonneg) hδ.le
+      (hanti.integral_le_tsum (hf.summable_mul_natCast hi hδ) hnonneg) hδ.le
     rwa [hscale] at h
 
 /-- The error in the upper half-line Darboux sum is at most the mesh times the value at zero.
 In particular this controls the infinite tail as well as the bounded part of the integral. -/
 theorem abs_mul_tsum_sub_integral_le (hf : AntitoneOn f (Ici 0))
-    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x)
-    {δ : ℝ} (hδ : 0 < δ) :
+    (hi : IntegrableOn f (Ioi 0)) {δ : ℝ} (hδ : 0 < δ) :
     |δ * (∑' n : ℕ, f (δ * n)) - ∫ x in Ioi 0, f x| ≤ δ * f 0 := by
-  obtain ⟨hl, hu⟩ := hf.mul_tsum_le_integral_le_mul_tsum hi hn hδ
-  have hsum := (hf.summable_mul_natCast hi hn hδ).tsum_eq_zero_add
+  obtain ⟨hl, hu⟩ := hf.mul_tsum_le_integral_le_mul_tsum hi hδ
+  have hsum := (hf.summable_mul_natCast hi hδ).tsum_eq_zero_add
   simp only [Nat.cast_zero, mul_zero, Nat.cast_add, Nat.cast_one] at hsum
   rw [abs_of_nonneg (sub_nonneg.mpr hu), hsum, mul_add]
   linarith
 
-/-- Upper uniform-mesh Darboux sums of a nonnegative decreasing integrable function converge
-to its integral as the mesh tends to zero from above. -/
+/-- Upper uniform-mesh Darboux sums of a decreasing integrable function converge to its integral
+as the mesh tends to zero from above. -/
 theorem tendsto_mul_tsum_integral (hf : AntitoneOn f (Ici 0))
-    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x) :
+    (hi : IntegrableOn f (Ioi 0)) :
     Tendsto (fun δ : ℝ => δ * ∑' n : ℕ, f (δ * n)) (𝓝[>] 0)
       (𝓝 (∫ x in Ioi 0, f x)) := by
   apply tendsto_iff_norm_sub_tendsto_zero.mpr
   refine squeeze_zero' (g := fun δ : ℝ => δ * f 0)
     (Eventually.of_forall fun _ => norm_nonneg _) ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with δ hδ
-    simpa only [Real.norm_eq_abs] using hf.abs_mul_tsum_sub_integral_le hi hn hδ
+    simpa only [Real.norm_eq_abs] using hf.abs_mul_tsum_sub_integral_le hi hδ
   · have hid : Tendsto (fun δ : ℝ => δ) (𝓝[>] 0) (𝓝 0) :=
       tendsto_id.mono_left nhdsWithin_le_nhds
     simpa only [zero_mul] using hid.mul_const (f 0)
@@ -102,16 +118,16 @@ theorem tendsto_mul_tsum_integral (hf : AntitoneOn f (Ici 0))
 /-- Lower uniform-mesh Darboux sums have the same integral limit. This remains valid for
 functions with jumps, including a jump at zero. -/
 theorem tendsto_mul_tsum_add_one_integral (hf : AntitoneOn f (Ici 0))
-    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x) :
+    (hi : IntegrableOn f (Ioi 0)) :
     Tendsto (fun δ : ℝ => δ * ∑' n : ℕ, f (δ * (n + 1))) (𝓝[>] 0)
       (𝓝 (∫ x in Ioi 0, f x)) := by
   have hid : Tendsto (fun δ : ℝ => δ) (𝓝[>] 0) (𝓝 0) :=
     tendsto_id.mono_left nhdsWithin_le_nhds
-  have hlim := (hf.tendsto_mul_tsum_integral hi hn).sub (hid.mul_const (f 0))
+  have hlim := (hf.tendsto_mul_tsum_integral hi).sub (hid.mul_const (f 0))
   simp only [zero_mul, sub_zero] at hlim
   apply hlim.congr'
   filter_upwards [self_mem_nhdsWithin] with δ hδ
-  have hsum := (hf.summable_mul_natCast hi hn hδ).tsum_eq_zero_add
+  have hsum := (hf.summable_mul_natCast hi hδ).tsum_eq_zero_add
   simp only [Nat.cast_zero, mul_zero, Nat.cast_add, Nat.cast_one] at hsum
   rw [hsum, mul_add, add_sub_cancel_left]
 
@@ -176,11 +192,13 @@ theorem uniform_mesh_darboux_bounds {A : ℝ} (hf : AntitoneOn f (Icc 0 A))
           (tendsto_const_nhds (x := (1 : ℝ))))
     simpa only [hgap, mul_zero, zero_mul] using (hdlim.const_mul r).mul_const (f 0 - f A)
 
-/-- A nonnegative decreasing integrable function on the positive half-line vanishes at
-infinity, without any continuity assumption. -/
+/-- A decreasing integrable function on the positive half-line vanishes at infinity, without any
+continuity assumption. -/
 theorem tendsto_zero_of_integrableOn_Ioi (hf : AntitoneOn f (Ici 0))
-    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x) :
+    (hi : IntegrableOn f (Ioi 0)) :
     Tendsto f atTop (𝓝 0) := by
+  have hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x :=
+    fun _ hx => hf.nonneg_of_integrableOn_Ioi hi hx.le
   have hs := (hf.summable_of_integrableOn_Ioi_zero hi hn).tendsto_atTop_zero
   refine tendsto_order.2 ⟨fun a ha => ?_, fun b hb => ?_⟩
   · filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
@@ -188,22 +206,6 @@ theorem tendsto_zero_of_integrableOn_Ioi (hf : AntitoneOn f (Ici 0))
   · obtain ⟨n, hn'⟩ := (hs.eventually_lt_const hb).exists
     filter_upwards [eventually_ge_atTop (n : ℝ)] with x hx
     exact (hf (Nat.cast_nonneg n) ((Nat.cast_nonneg n).trans hx) hx).trans_lt hn'
-
-/-- A decreasing function on `[a, ∞)` that is Lebesgue-integrable on `(a, ∞)` is nonnegative
-everywhere on `[a, ∞)`: a strictly negative value would persist along an unbounded ray of infinite
-measure. -/
-theorem nonneg_of_integrableOn_Ioi {a : ℝ} (hf : AntitoneOn f (Ici a))
-    (hi : IntegrableOn f (Ioi a)) ⦃x : ℝ⦄ (hx : a ≤ x) : 0 ≤ f x := by
-  by_contra! hneg
-  have hle : ∀ y ∈ Ioi x, ENNReal.ofReal (-f x) ≤ ‖f y‖ₑ := fun y hy => by
-    have hfy : f y ≤ f x := hf hx (hx.trans hy.le) hy.le
-    rw [Real.eNorm_eq_ofReal_abs]
-    exact ENNReal.ofReal_le_ofReal (by linarith [neg_le_abs (f y)])
-  have htop : ∫⁻ _ in Ioi x, ENNReal.ofReal (-f x) ≤ ∫⁻ y in Ioi x, ‖f y‖ₑ :=
-    setLIntegral_mono' measurableSet_Ioi hle
-  rw [setLIntegral_const, Real.volume_Ioi,
-    ENNReal.mul_top (ENNReal.ofReal_pos.2 (neg_pos.2 hneg)).ne'] at htop
-  exact (hi.mono_set (Ioi_subset_Ioi hx)).2.ne (top_unique htop)
 
 end AntitoneOn
 

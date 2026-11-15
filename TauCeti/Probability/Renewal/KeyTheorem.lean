@@ -89,8 +89,7 @@ theorem tendsto_renewalConv_sub_dirac (F : Measure ℝ≥0) [IsProbabilityMeasur
       (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) :=
   F.tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     (measure_singleton_zero_lt_one_of_not_isLattice hNL)
-    (F.tendsto_renewalMeasure_real_Ioc hNL) hh
-    (hh.nonneg_of_integrableOn_Ioi_toNNReal hint) hint
+    (F.tendsto_renewalMeasure_real_Ioc hNL) hh hint
 
 /-- **Smith's key renewal theorem.** For a nonlattice probability measure `F` on `ℝ≥0` and an
 antitone function `h : ℝ≥0 → ℝ` integrable on `(0, ∞)`, the convolution `h ∗ F.renewalMeasure`
@@ -103,8 +102,7 @@ theorem tendsto_renewalConv (F : Measure ℝ≥0) [IsProbabilityMeasure F]
       (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) :=
   F.tendsto_renewalConv_of_tendsto_measureReal_Ioc
     (measure_singleton_zero_lt_one_of_not_isLattice hNL)
-    (F.tendsto_renewalMeasure_real_Ioc hNL) hh
-    (hh.nonneg_of_integrableOn_Ioi_toNNReal hint) hint
+    (F.tendsto_renewalMeasure_real_Ioc hNL) hh hint
 
 end MeasureTheory.Measure
 
@@ -120,16 +118,9 @@ theorem tendsto_of_eq_add_renewalConv {F : Measure ℝ≥0} [IsProbabilityMeasur
     (hg : Measurable g) (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C)
     (hgeq : g = h + renewalConv g F) :
     Tendsto g atTop
-      (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
-  let : IsLocallyFiniteMeasure F.renewalMeasure :=
-    F.isLocallyFiniteMeasure_renewalMeasure
-      (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL)
-  have h₀ := hh.nonneg_of_integrableOn_Ioi_toNNReal hint
-  have hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C := fun _ =>
-    ⟨h 0, fun s _ => by
-      rw [abs_of_nonneg (h₀ s)]
-      exact hh bot_le⟩
-  rw [eq_renewalConv_renewalMeasure hh.measurable hhb hg hgb hgeq]
-  exact F.tendsto_renewalConv hNL hh hint
+      (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) :=
+  tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
+    (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL)
+    (F.tendsto_renewalMeasure_real_Ioc hNL) hh hint hg hgb hgeq
 
 end TauCeti.Probability

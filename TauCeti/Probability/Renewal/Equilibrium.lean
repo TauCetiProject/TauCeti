@@ -24,8 +24,8 @@ This is the candidate limiting distribution of the residual waiting time in an
 ordinary renewal process. Its construction does not require a nonlattice law;
 no convergence assertion is made here. Taking the inverse in `ℝ≥0∞` also makes
 the infinite-mean case explicit: the resulting measure is zero, not a probability.
-In particular, for a nondegenerate (and hence any nonlattice) probability law `F`,
-`F.equilibriumExcessLaw` is a probability measure precisely when `F` has finite mean.
+In particular, for any nonlattice measure `F` (or any probability law `F` not concentrated at
+zero), `F.equilibriumExcessLaw` is a probability measure precisely when `F` has finite mean.
 
 ## References
 
@@ -109,13 +109,16 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_on
   ⟨fun h => (F.isProbabilityMeasure_equilibriumExcessLaw_iff.1 h).2,
     F.isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one hzero⟩
 
-/-- For a nonlattice probability interarrival law, the equilibrium excess-life measure is a
+/-- For a nonlattice interarrival measure, the equilibrium excess-life measure is a
 probability measure if and only if the extended mean is finite. -/
 theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice
-    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hNL : ¬ F.IsLattice) :
-    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
-  F.isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
-    (measure_singleton_zero_lt_one_of_not_isLattice hNL)
+    (F : Measure ℝ≥0) (hNL : ¬ F.IsLattice) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ := by
+  rw [F.isProbabilityMeasure_equilibriumExcessLaw_iff, and_iff_right]
+  intro hz
+  refine hNL ((isLatticeSpan_iff.2 ⟨zero_lt_one, ?_⟩).isLattice)
+  filter_upwards [(lintegral_eq_zero_iff measurable_coe_nnreal_ennreal).1 hz] with u hu
+  exact ⟨0, by simp [ENNReal.coe_eq_zero.1 hu]⟩
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)
