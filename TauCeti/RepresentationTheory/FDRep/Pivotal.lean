@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.FDRep
 public import TauCeti.Algebra.Category.FGModuleCat.Pivotal
 public import TauCeti.CategoryTheory.Action.Pivotal
-public import TauCeti.RepresentationTheory.FDRep.Rigid
 
 /-!
 # The standard spherical structure on finite-dimensional representations

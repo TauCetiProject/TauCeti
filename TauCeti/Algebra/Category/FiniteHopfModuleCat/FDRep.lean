@@ -13,6 +13,7 @@ public import TauCeti.CategoryTheory.Monoidal.Pivotal.Functor.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.FDRep.Pivotal
 public import TauCeti.RepresentationTheory.OfModule
+import TauCeti.RepresentationTheory.FDRep.Rigid
 
 /-!
 # Finite-dimensional modules over a monoid algebra are finite-dimensional representations
