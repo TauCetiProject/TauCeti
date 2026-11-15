@@ -31,8 +31,8 @@ homeomorphism with refining `X` alone and taking the ordinary product with `Y`
 
 ## References
 
-* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Math. Z. 119
-  (1971), 11–28.
+* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
+  (Basel) 22 (1971), 545–555.
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 -/

@@ -42,19 +42,20 @@ object universe `w`.
   `CompactlyGenerated.continuous_eval_toCompactlyGeneratedContinuousMap`,
   `CompactlyGenerated.toCompactlyGeneratedMappingSpaceCurryIso`,
   `CompactlyGenerated.toCompactlyGeneratedMappingSpaceCurryHomeomorph`,
-  `CompactlyGenerated.ihomULiftBoolIso`: compact-open comparisons, evaluation continuity,
-  Hatcher's exponential law `k(C(X ⊗ Y, Z)) ≃ₜ k(C(X, k(C(Y, Z))))`, and `(ihom S⁰).obj Z ≅ Z ⊗ Z`.
+  `CompactlyGenerated.ihomULiftBoolIso`, `CompactlyGenerated.ihomULiftBoolHomeomorph`: compact-open
+  comparisons, evaluation continuity, exponential law `k(C(X ⊗ Y, Z)) ≃ₜ k(C(X, k(C(Y, Z))))`,
+  and `(ihom S⁰).obj Z ≅ Z ⊗ Z`.
 
 ## References
 
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
   133–152.
-* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Math. Z. 119
-  (1971), 11–28.
+* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
+  (Basel) 22 (1971), 545–555.
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix A,
-  Propositions A.14–A.16, pp. 530–531.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix
+  (compactly generated spaces and the compact-open topology).
 -/
 
 public section
@@ -578,6 +579,7 @@ theorem ihom_coev_app_apply (Y Z : CompactlyGenerated.{u, w}) (z : Z) (y : Y) :
 
 /-- Pointwise formula for precomposition `(MonoidalClosed.pre f).app Z` in
 `CompactlyGenerated.{u, w}`. -/
+@[simp]
 theorem pre_app_apply {A B : CompactlyGenerated.{u, w}} (f : B ⟶ A)
     (Z : CompactlyGenerated.{u, w}) (g : ↑((ihom A).obj Z)) (b : B) :
     ((MonoidalClosed.pre f).app Z g) b = g (f b) := by
@@ -660,12 +662,13 @@ theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app_apply
   ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply Y Z f y
 
 /-- Ordinary product evaluation `k(C(Y, Z)) × Y → Z` is continuous whenever the evaluation source
-`Y` is locally compact (Hatcher, Proposition A.14). -/
-theorem continuous_eval_toCompactlyGeneratedContinuousMap (Y Z : Type w)
+`Y` is locally compact. -/
+theorem continuous_eval_toCompactlyGeneratedContinuousMap (Y : Type v₁) (Z : Type v₂)
     [TopologicalSpace Y] [TopologicalSpace Z] [LocallyCompactSpace Y] :
-    Continuous fun p : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)) × Y ↦ p.1 p.2 :=
+    Continuous fun p :
+        TopCat.toCompactlyGenerated.{u, max v₁ v₂}.obj (TopCat.of C(Y, Z)) × Y ↦ p.1 p.2 :=
   (continuous_eval (F := C(Y, Z))).comp <|
-    (adj.{u, w}.counit.app (TopCat.of C(Y, Z))).hom.continuous.prodMap continuous_id
+    (adj.{u, max v₁ v₂}.counit.app (TopCat.of C(Y, Z))).hom.continuous.prodMap continuous_id
 
 /-- When `Y` is locally compact, `u`-small, and Hausdorff, currying `Y ⊗ X ⟶ Z` into `k(C(Y, Z))`
 agrees with currying on the ordinary product `Y × X` in `TopCat` (`TopCat.curryEquiv`) followed by
@@ -693,17 +696,9 @@ theorem isoOfHomeo_hom_apply {X Y : CompactlyGenerated.{u, w}} (e : X ≃ₜ Y) 
 theorem isoOfHomeo_inv_apply {X Y : CompactlyGenerated.{u, w}} (e : X ≃ₜ Y) (y : Y) :
     (isoOfHomeo e).inv y = e.symm y := rfl
 
-/-- Precomposition by an isomorphism `e : B ≅ A` induces a natural isomorphism `ihom A ≅ ihom B`. -/
-@[expose, simps]
-def preIso {A B : CompactlyGenerated.{u, w}} (e : B ≅ A) : ihom A ≅ ihom B where
-  hom := MonoidalClosed.pre e.hom
-  inv := MonoidalClosed.pre e.inv
-  hom_inv_id := by rw [← MonoidalClosed.pre_map, e.inv_hom_id, MonoidalClosed.pre_id]
-  inv_hom_id := by rw [← MonoidalClosed.pre_map, e.hom_inv_id, MonoidalClosed.pre_id]
-
-/-- Hatcher's exponential isomorphism (Proposition A.16) on `k`-ified compact-open mapping spaces:
-when both source factors `X` and `Y` are `u`-small and Hausdorff (and `Z` is arbitrary), currying
-identifies `k(C(X ⊗ Y, Z))` with `k(C(X, k(C(Y, Z))))` in `CompactlyGenerated.{u, w}`. -/
+/-- Exponential isomorphism on `k`-ified compact-open mapping spaces: when both source factors `X`
+and `Y` are `u`-small and Hausdorff (and `Z` is arbitrary), currying identifies `k(C(X ⊗ Y, Z))`
+with `k(C(X, k(C(Y, Z))))` in `CompactlyGenerated.{u, w}`. -/
 @[expose]
 def toCompactlyGeneratedMappingSpaceCurryIso (X Y Z : CompactlyGenerated.{u, w})
     [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y] :
@@ -711,7 +706,7 @@ def toCompactlyGeneratedMappingSpaceCurryIso (X Y Z : CompactlyGenerated.{u, w})
       TopCat.toCompactlyGenerated.{u, w}.obj
         (TopCat.of C(X, TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)))) :=
   (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z)).symm ≪≫
-    (preIso (β_ Y X)).app Z ≪≫ MonoidalClosed.ihomCurryIso Y X Z ≪≫
+    (MonoidalClosed.internalHom.mapIso (β_ Y X).op).app Z ≪≫ MonoidalClosed.ihomCurryIso Y X Z ≪≫
     (ihom X).mapIso (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z)) ≪≫
     isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap X
       (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))))
@@ -728,14 +723,11 @@ def toCompactlyGeneratedMappingSpaceCurryHomeomorph (X Y Z : CompactlyGenerated.
   homeoOfIso (toCompactlyGeneratedMappingSpaceCurryIso X Y Z)
 
 /-- Pointwise evaluation formula for `toCompactlyGeneratedMappingSpaceCurryIso`. -/
+@[simp]
 theorem toCompactlyGeneratedMappingSpaceCurryIso_hom_apply
     (X Y Z : CompactlyGenerated.{u, w}) [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y]
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(↑(X ⊗ Y), Z))) (x : X) (y : Y) :
     (((toCompactlyGeneratedMappingSpaceCurryIso X Y Z).hom f) x) y = f (x, y) := by
-  simp only [toCompactlyGeneratedMappingSpaceCurryIso, Iso.trans_hom, Iso.symm_hom, Iso.app_hom,
-    preIso_hom, MonoidalClosed.ihomCurryIso_hom, Functor.mapIso_hom, CategoryTheory.comp_apply,
-    isoOfHomeo_hom_apply, isoOfHomeo_inv_apply,
-    ihomHomeomorphToCompactlyGeneratedContinuousMap_apply, ihom_map_apply]
   let g4 : ↑((ihom (X ⊗ Y)).obj Z) :=
     (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z).symm f
   let g3 : ↑((ihom (Y ⊗ X)).obj Z) := (MonoidalClosed.pre (β_ Y X).hom).app Z g4
@@ -753,32 +745,16 @@ theorem toCompactlyGeneratedMappingSpaceCurryIso_hom_apply
           ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply (X ⊗ Y) Z f xy
 
 /-- Pointwise evaluation formula for `toCompactlyGeneratedMappingSpaceCurryHomeomorph`. -/
+@[simp]
 theorem toCompactlyGeneratedMappingSpaceCurryHomeomorph_apply
     (X Y Z : CompactlyGenerated.{u, w}) [T2Space X] [Small.{u} X] [T2Space Y] [Small.{u} Y]
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(↑(X ⊗ Y), Z))) (x : X) (y : Y) :
     (((toCompactlyGeneratedMappingSpaceCurryHomeomorph X Y Z f) x) y) = f (x, y) :=
   toCompactlyGeneratedMappingSpaceCurryIso_hom_apply X Y Z f x y
 
-/-! ### Standard objects and concrete product and exponential identifications -/
+/-! ### Concrete exponential identifications -/
 
-/-- The unit interval as an object of `CompactlyGenerated.{u, w}`, matching `TopCat.I.{w}`. -/
-@[expose, implicit_reducible]
-def I : CompactlyGenerated.{u, w} := of (ULift.{w} unitInterval)
-
-/-- The convenient square `I ⊗ I` in `CompactlyGenerated.{u, w}` is homeomorphic to the ordinary
-square `I × I` via the identity on points, retaining both coordinates. -/
-@[expose]
-def tensorIHomeomorph :
-    ↑(I.{u, w} ⊗ I.{u, w}) ≃ₜ ULift.{w} unitInterval × ULift.{w} unitInterval :=
-  tensorRightLocallyCompactHomeomorph I.{u, w} (ULift.{w} unitInterval)
-
-@[simp]
-theorem tensorIHomeomorph_apply (p : ↑(I.{u, w} ⊗ I.{u, w})) : tensorIHomeomorph.{u, w} p = p := rfl
-
-@[simp]
-theorem tensorIHomeomorph_symm_apply (p : ULift.{w} unitInterval × ULift.{w} unitInterval) :
-    (tensorIHomeomorph.{u, w}).symm p = p := rfl
-
+/-- Pointwise formula for `(MonoidalClosed.unitIsoSelf Z).hom` in `CompactlyGenerated.{u, w}`. -/
 @[simp]
 theorem unitIsoSelf_hom_apply (Z : CompactlyGenerated.{u, w})
     (f : ↑((ihom (𝟙_ CompactlyGenerated.{u, w})).obj Z)) :
@@ -787,6 +763,7 @@ theorem unitIsoSelf_hom_apply (Z : CompactlyGenerated.{u, w})
     using ihom_ev_app_apply _ _ (PUnit.unit, f)
 
 /-- Pointwise formula for `(MonoidalClosed.unitIsoSelf Z).inv` in `CompactlyGenerated.{u, w}`. -/
+@[simp]
 theorem unitIsoSelf_inv_apply (Z : CompactlyGenerated.{u, w}) (z : Z) (p : PUnit.{w + 1}) :
     ((MonoidalClosed.unitIsoSelf Z).inv z) p = z := by
   cases p
@@ -852,28 +829,33 @@ theorem ihomULiftBoolIso_inv_apply_true (Z : CompactlyGenerated.{u, w}) (p : ↑
     ((ihomULiftBoolIso Z).inv p) (ULift.up true) = p.2 :=
   curry_apply (uliftBoolEval Z) p (ULift.up true)
 
-/-- Specialization of `ihomULiftBoolIso` to the unit interval: `C(S⁰, I)` in
-`CompactlyGenerated.{u, w}` is homeomorphic to `I × I`, and under evaluation the pair `(0, 1)`
-sends the two vertices `⟨false⟩` and `⟨true⟩` to `0` and `1`. -/
+/-- For any `u`-small locally compact Hausdorff space `L`, the exponential `(ihom S⁰).obj (of L)`
+in `CompactlyGenerated.{u, w}` is homeomorphic to the ordinary product `L × L`, sending `f` to
+`(f ⟨false⟩, f ⟨true⟩)`. -/
 @[expose]
-def ihomULiftBoolIHomeomorph :
-    ↑((ihom (of (ULift.{w} Bool) : CompactlyGenerated.{u, w})).obj I.{u, w}) ≃ₜ
-      ULift.{w} unitInterval × ULift.{w} unitInterval :=
-  (homeoOfIso (ihomULiftBoolIso I.{u, w})).trans tensorIHomeomorph.{u, w}
+def ihomULiftBoolHomeomorph (L : Type w) [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L]
+    [Small.{u} L] :
+    ↑((ihom (of.{u, w} (ULift.{w} Bool))).obj (of.{u, w} L)) ≃ₜ L × L :=
+  (homeoOfIso (ihomULiftBoolIso (of.{u, w} L))).trans
+    (tensorRightLocallyCompactHomeomorph (of.{u, w} L) L)
 
 @[simp]
-theorem ihomULiftBoolIHomeomorph_symm_zero_one_false :
-    ((ihomULiftBoolIHomeomorph.{u, w}).symm (ULift.up 0, ULift.up 1)) (ULift.up false) =
-      ULift.up (0 : unitInterval) := by
-  simp only [ihomULiftBoolIHomeomorph, Homeomorph.symm_trans_apply, tensorIHomeomorph_symm_apply]
-  exact ihomULiftBoolIso_inv_apply_false I.{u, w} (ULift.up 0, ULift.up 1)
+theorem ihomULiftBoolHomeomorph_apply (L : Type w) [TopologicalSpace L] [LocallyCompactSpace L]
+    [T2Space L] [Small.{u} L]
+    (f : ↑((ihom (of.{u, w} (ULift.{w} Bool))).obj (of.{u, w} L))) :
+    ihomULiftBoolHomeomorph.{u, w} L f = (f (ULift.up false), f (ULift.up true)) := rfl
 
 @[simp]
-theorem ihomULiftBoolIHomeomorph_symm_zero_one_true :
-    ((ihomULiftBoolIHomeomorph.{u, w}).symm (ULift.up 0, ULift.up 1)) (ULift.up true) =
-      ULift.up (1 : unitInterval) := by
-  simp only [ihomULiftBoolIHomeomorph, Homeomorph.symm_trans_apply, tensorIHomeomorph_symm_apply]
-  exact ihomULiftBoolIso_inv_apply_true I.{u, w} (ULift.up 0, ULift.up 1)
+theorem ihomULiftBoolHomeomorph_symm_apply_false (L : Type w) [TopologicalSpace L]
+    [LocallyCompactSpace L] [T2Space L] [Small.{u} L] (p : L × L) :
+    ((ihomULiftBoolHomeomorph.{u, w} L).symm p) (ULift.up false) = p.1 :=
+  ihomULiftBoolIso_inv_apply_false (of.{u, w} L) p
+
+@[simp]
+theorem ihomULiftBoolHomeomorph_symm_apply_true (L : Type w) [TopologicalSpace L]
+    [LocallyCompactSpace L] [T2Space L] [Small.{u} L] (p : L × L) :
+    ((ihomULiftBoolHomeomorph.{u, w} L).symm p) (ULift.up true) = p.2 :=
+  ihomULiftBoolIso_inv_apply_true (of.{u, w} L) p
 
 end CompactlyGenerated
 

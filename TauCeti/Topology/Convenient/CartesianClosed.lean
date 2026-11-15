@@ -35,8 +35,8 @@ with the `MonoidalClosed` structure induced by `Topology.ContinuousMapGeneratedB
 
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
-* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Math. Z. 119
-  (1971), 11–28.
+* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
+  (Basel) 22 (1971), 545–555.
 -/
 
 public section

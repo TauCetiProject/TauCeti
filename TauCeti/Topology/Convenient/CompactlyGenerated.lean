@@ -25,13 +25,12 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
 * Locally compact Hausdorff product preservation (`UCompactlyGeneratedSpace.prod_right`,
-  `UCompactlyGeneratedSpace.prod_left`), and Sierpiński separation counterexamples
-  (`TauCeti.not_t1Space_sierpinski`, `TauCeti.not_t2Space_sierpinski`).
+  `UCompactlyGeneratedSpace.prod_left`).
 
 ## References
 
-* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Math. Z. 119
-  (1971), 11–28.
+* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
+  (Basel) 22 (1971), 545–555.
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
@@ -41,7 +40,6 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 public section
 
 open Set Topology
-open scoped Set.Notation
 
 universe u v w
 
@@ -90,9 +88,7 @@ theorem uCompactlyGeneratedSpace_compactlyGenerated (Y : Type v) [TopologicalSpa
 /-- Refining a Hausdorff topology by `TopologicalSpace.compactlyGenerated` preserves `T2Space`. -/
 theorem t2Space_compactlyGenerated (Y : Type v) [TopologicalSpace Y] [T2Space Y] :
     @T2Space Y (compactlyGenerated.{u} Y) :=
-  @T2Space.mk Y (compactlyGenerated.{u} Y) fun _ _ hxy ↦
-    let ⟨u, v, hu, hv, hxu, hyv, huv⟩ := t2_separation hxy
-    ⟨u, v, compactlyGenerated_le.{u} Y u hu, compactlyGenerated_le.{u} Y v hv, hxu, hyv, huv⟩
+  t2Space_antitone (compactlyGenerated_le.{u} Y) inferInstance
 
 end TopologicalSpace
 
@@ -113,10 +109,10 @@ end Topology
 
 namespace TauCeti
 
-/-- Every compact subset of a `u`-small Hausdorff space is the range of a continuous map from a
-compact Hausdorff space in universe `u`. -/
-theorem exists_compHaus_range_eq_of_isCompact {Y : Type v} [TopologicalSpace Y] [T2Space Y]
-    [Small.{u} Y] {K : Set Y} (hK : IsCompact K) :
+/-- Every `u`-small compact Hausdorff subset of a topological space is the range of a continuous map
+from a compact Hausdorff space in universe `u`. -/
+theorem exists_compHaus_range_eq_of_isCompact {Y : Type v} [TopologicalSpace Y]
+    {K : Set Y} [T2Space K] [Small.{u} K] (hK : IsCompact K) :
     ∃ (S : CompHaus.{u}) (p : C(S, Y)), range p = K := by
   have : CompactSpace ↑K := isCompact_iff_compactSpace.1 hK
   let e : ↑K ≃ₜ Shrink.{u} ↑K := Shrink.homeomorph ↑K
@@ -132,32 +128,14 @@ this applies to every `u`-small Hausdorff weakly locally compact space. -/
 instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2
     (Y : Type v) [TopologicalSpace Y] [T2Space Y] [CompactlyCoherentSpace Y] [Small.{u} Y] :
     UCompactlyGeneratedSpace.{u} Y := by
-  refine uCompactlyGeneratedSpace_of_isOpen fun s hs ↦
-    CompactlyCoherentSpace.isOpen_iff.2 fun K hK ↦ ?_
-  have : CompactSpace ↑K := isCompact_iff_compactSpace.1 hK
-  let e : ↑K ≃ₜ Shrink.{u} ↑K := Shrink.homeomorph ↑K
-  have : CompactSpace (Shrink.{u} ↑K) := e.compactSpace
-  have : T2Space (Shrink.{u} ↑K) := e.symm.isEmbedding.t2Space
-  let f : C(CompHaus.of (Shrink.{u} ↑K), Y) :=
-    ⟨Subtype.val ∘ e.symm, continuous_subtype_val.comp e.symm.continuous⟩
-  rw [show (K ↓∩ s) = e ⁻¹' (f ⁻¹' s) by ext; simp [f]]
-  exact (hs _ f).preimage e.continuous
-
-/-- Every `u`-small Hausdorff weakly locally compact space is `u`-compactly generated. -/
-theorem uCompactlyGeneratedSpace_of_weaklyLocallyCompactSpace
-    (Y : Type v) [TopologicalSpace Y] [T2Space Y] [WeaklyLocallyCompactSpace Y] [Small.{u} Y] :
-    UCompactlyGeneratedSpace.{u} Y := inferInstance
-
-/-- Sierpiński space (`Prop` with `{True}` open) is not `T₁`. -/
-theorem not_t1Space_sierpinski : ¬ T1Space Prop := fun _ ↦
-  true_ne_false (specializes_iff_nhds.2 (by simp) : Specializes True False).eq
-
-/-- Sierpiński space (`Prop` with `{True}` open) is not Hausdorff, even though as a finite space it
-is `u`-compactly generated for every universe `u`. -/
-theorem not_t2Space_sierpinski : ¬ T2Space Prop := fun _ ↦ not_t1Space_sierpinski inferInstance
-
-/-- Sierpiński space (`Prop`) is `u`-compactly generated for every universe `u`. -/
-theorem uCompactlyGeneratedSpace_sierpinski : UCompactlyGeneratedSpace.{u} Prop := inferInstance
+  refine uCompactlyGeneratedSpace_of_isClosed fun s hs ↦
+    (CompactlyCoherentSpace.isClosed_iff s).2 fun K hK ↦ ?_
+  obtain ⟨S, p, rfl⟩ := exists_compHaus_range_eq_of_isCompact.{u} hK
+  have hclosed : IsClosed (s ∩ range p) := by
+    rw [← Set.image_preimage_eq_inter_range]
+    exact p.continuous.isClosedMap _ (hs S p)
+  rw [← Subtype.preimage_coe_inter_self]
+  exact hclosed.preimage continuous_subtype_val
 
 end TauCeti
 

@@ -27,16 +27,17 @@ and deduce completeness, cocompleteness, and counit characterizations:
   `Coreflective`, `CreatesColimits`, `HasLimits`, `HasColimits`, and
   `CompactlyGenerated.limitIsoToCompactlyGeneratedLimit`.
 * `CompactlyGenerated.isIso_counit_app_iff` and `CompactlyGenerated.isHomeomorph_counit_app_iff`
-  characterize counit invertibility, specializing to `u`-small Hausdorff weakly locally compact
-  spaces, Hausdorff CW complexes, and colimits of `u`-compactly generated stages.
+  characterize counit invertibility, specializing to `u`-small Hausdorff compactly coherent (in
+  particular weakly locally compact) spaces, Hausdorff CW complexes, and colimits of `u`-compactly
+  generated stages.
 
 ## References
 
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
   133–152.
-* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Math. Z. 119
-  (1971), 11–28.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix A.
+* R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
+  (Basel) 22 (1971), 545–555.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix.
 -/
 
 public section
@@ -254,6 +255,7 @@ instance : HasColimits CompactlyGenerated.{u, w} :=
 
 /-- Limits in `CompactlyGenerated.{u, w}` are computed by taking the limit in `TopCat.{w}` and
 applying the coreflector `TopCat.toCompactlyGenerated`. -/
+@[expose]
 def limitIsoToCompactlyGeneratedLimit {J : Type v} [Category.{v'} J]
     (F : J ⥤ CompactlyGenerated.{u, w}) [HasLimit F]
     [HasLimit (F ⋙ compactlyGeneratedToTop.{u, w})] :
@@ -315,10 +317,10 @@ theorem isHomeomorph_counit_app_iff (X : TopCat.{w}) :
     IsHomeomorph (adj.{u, w}.counit.app X) ↔ UCompactlyGeneratedSpace.{u} X := by
   rw [← TopCat.isIso_iff_isHomeomorph, isIso_counit_app_iff]
 
-/-- On any `u`-small Hausdorff weakly locally compact space, the counit `kX ⟶ X` is an isomorphism
-in `TopCat`. -/
-theorem isIso_counit_app_of_weaklyLocallyCompactSpace (X : Type w) [TopologicalSpace X]
-    [T2Space X] [WeaklyLocallyCompactSpace X] [Small.{u} X] :
+/-- On any `u`-small Hausdorff compactly coherent space (in particular, any `u`-small Hausdorff
+weakly locally compact space), the counit `kX ⟶ X` is an isomorphism in `TopCat`. -/
+theorem isIso_counit_app_of_compactlyCoherentSpace (X : Type w) [TopologicalSpace X]
+    [T2Space X] [CompactlyCoherentSpace X] [Small.{u} X] :
     IsIso (adj.{u, w}.counit.app (TopCat.of X)) := inferInstance
 
 /-- On any Hausdorff CW complex `C : Set X`, the counit `kC ⟶ C` is an isomorphism in `TopCat` for
@@ -337,15 +339,6 @@ theorem isIso_counit_app_of_isColimit {J : Type v} [Category.{v'} J] {F : J ⥤ 
     {c : Cocone F} [∀ j, UCompactlyGeneratedSpace.{u} (F.obj j)] (hc : IsColimit c) :
     IsIso (adj.{u, w}.counit.app c.pt) :=
   have := TauCeti.TopCat.uCompactlyGeneratedSpace_of_isColimit hc; inferInstance
-
-/-- The counit `k(*) ⟶ *` on `PUnit` is an isomorphism in `TopCat`. -/
-theorem isIso_counit_app_punit :
-    IsIso (adj.{u, w}.counit.app (TopCat.of PUnit.{w + 1})) := inferInstance
-
-/-- The counit `k(I) ⟶ I` on `unitInterval` is an isomorphism in `TopCat` for every test universe
-`u`. -/
-theorem isIso_counit_app_unitInterval :
-    IsIso (adj.{u, 0}.counit.app (TopCat.of unitInterval)) := inferInstance
 
 end CompactlyGenerated
 
