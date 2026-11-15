@@ -1386,6 +1386,16 @@ theorem typeABoxDifferential_typeABoxMapOfHom_of_lt [CharP R 2] (N : TypeDStruct
       N.typeABoxMapOfHom f (N.typeABoxDifferential Mm φ) :=
   N.typeABoxDifferential_typeABoxMapOfHom_of_isBounded f (N.isBounded_of_lt h hh) φ
 
+/-- **The operations of the matrix module of a mapping cone vanish along `δ` from some arity on**
+when those of the modules and the components of the morphism do: if `M`, `M'` and `F` vanish from
+arity `K` on, so does `m_{n+1}(·, δ, …, δ)` for the mapping cone of `F`. -/
+theorem cone_matrixAct_eq_zero_of_act_eq_zero (N : TypeDStructure d ι X)
+    {F : UngradedAInfinityRightModuleHom Mm Mm'} {K : ℕ} (hM : ∀ n, K ≤ n → Mm.act n = 0)
+    (hM' : ∀ n, K ≤ n → Mm'.act n = 0) (hF : ∀ n, K ≤ n → F.map n = 0) (n : ℕ) (hn : K ≤ n) :
+    (F.cone.matrixAct X n fun _ => N.coeff) = 0 := by
+  rw [F.cone.matrixAct_eq_zero_of_act_eq_zero X (F.cone_act_eq_zero (hM n hn) (hM' n hn)
+    (hF n hn)), zero_apply]
+
 /-- **Morphisms of bounded modules induce chain maps.** Over a ring of characteristic two, if the
 operations of `M` and `M'` and the components of `f` vanish from arity `K` on, then
 `∂' ∘ T_f = T_f ∘ ∂`, whatever the type `D` structure. -/
@@ -1398,7 +1408,7 @@ theorem typeABoxDifferential_typeABoxMapOfHom_of_act_eq_zero [CharP R 2]
   have hcone (n : ℕ) (hn : K ≤ n) : f.cone.act n = 0 :=
     f.cone_act_eq_zero (hM n hn) (hM' n hn) (hf n hn)
   exact N.typeABoxDifferential_typeABoxMapOfHom_of_bound f (K := K)
-    (fun n hn => by rw [f.cone.matrixAct_eq_zero_of_act_eq_zero X (hcone n hn), zero_apply])
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero hM hM' hf)
     (N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero f.cone hcone) φ
 
 /-- **A morphism without higher components acts componentwise.** If `f_{n+1} = 0` for `n ≥ 1`, the
@@ -1432,17 +1442,14 @@ theorem typeABoxMapOfHom_toUngradedAInfinityRightModuleHom [CharP R 2] [Module A
     (φ : X → M) :
     N.typeABoxMapOfHom (hM.toUngradedAInfinityRightModuleHom hM' g hg) φ = fun x => g (φ x) := by
   funext z
-  rw [N.typeABoxMapOfHom_apply_eq_map_zero _
-    (IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg) (K := 2)
-    fun n hn => ?_]
+  have hmap := IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg
+  -- The operations of differential modules and the components of chain maps vanish from arity 2.
+  rw [N.typeABoxMapOfHom_apply_eq_map_zero _ hmap (K := 2)
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero (fun n hn => ?_) (fun n hn => ?_) fun n hn => ?_)]
   · simp
-  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    rw [UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero _ X
-      (UngradedAInfinityRightModuleHom.cone_act_eq_zero _
-        (hM.toUngradedAInfinityRightModule_act_add_two n)
-        (hM'.toUngradedAInfinityRightModule_act_add_two n)
-        (IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg
-          (n + 1))), zero_apply]
+  all_goals obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  exacts [hM.toUngradedAInfinityRightModule_act_add_two n,
+    hM'.toUngradedAInfinityRightModule_act_add_two n, hmap (n + 1)]
 
 end ModuleHom
 

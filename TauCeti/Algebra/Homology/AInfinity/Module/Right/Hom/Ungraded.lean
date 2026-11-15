@@ -278,6 +278,11 @@ theorem id_map_zero [CharP R 2] (a : Fin 0 → A) (m : M) : (id Mm).map 0 a m = 
 theorem id_map_add_one [CharP R 2] (n : ℕ) : (id Mm).map (n + 1) = 0 :=
   (rfl)
 
+/-- The components of the identity morphism are those of the strict morphism with `f₁ = id`, by
+the definition of `id` as `ofLinearMap Mm Mm LinearMap.id`. -/
+private theorem id_map_eq_strictMap [CharP R 2] : (id Mm).map = strictMap LinearMap.id :=
+  (rfl)
+
 /-- The components of the identity morphism vanish in every positive arity. -/
 theorem id_map_eq_zero [CharP R 2] {n : ℕ} (hn : n ≠ 0) : (id Mm).map n = 0 := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
@@ -374,7 +379,7 @@ noncomputable def toConeHom : UngradedAInfinityRightModuleHom Mm (f + g).cone wh
     · simpa [coneHomMap_apply, Prod.fst_sum] using (id Mm).stasheff n a m
     · simp only [coneHomMap_apply, cone_act_apply, Prod.snd_add, Prod.snd_sum, Prod.snd_zero,
         sum_add_distrib]
-      rw [show (id Mm).map = strictMap LinearMap.id from rfl, sum_strictMap]
+      rw [id_map_eq_strictMap, sum_strictMap]
       simp only [add_map, add_apply, LinearMap.add_apply, LinearMap.id_apply]
       have h := congrArg (· + (f.map n a m + g.map n a m)) (H.stasheff n a m)
       simp only [add_self_eq_zero_of_charTwo R] at h

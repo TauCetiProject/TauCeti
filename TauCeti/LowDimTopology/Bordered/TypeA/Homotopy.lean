@@ -92,15 +92,6 @@ theorem typeABoxMapOfHom_add_of_isBounded (N : TypeDStructure d ι X) (hN : N.Is
   obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
   exact typeABoxMapOfHom_add_of_bound N f g (K := K) (hK _) (hK _) (hK _)
 
-/-- The operations of the matrix module of the mapping cone of a morphism vanish from the arity
-from which those of the modules and the components of the morphism do. -/
-private theorem cone_matrixAct_eq_zero (N : TypeDStructure d ι X)
-    {F : UngradedAInfinityRightModuleHom Mm Mm'} {K : ℕ} (hM : ∀ n, K ≤ n → Mm.act n = 0)
-    (hM' : ∀ n, K ≤ n → Mm'.act n = 0) (hF : ∀ n, K ≤ n → F.map n = 0) (n : ℕ) (hn : K ≤ n) :
-    (F.cone.matrixAct X n fun _ => N.coeff) = 0 := by
-  rw [F.cone.matrixAct_eq_zero_of_act_eq_zero X (F.cone_act_eq_zero (hM n hn) (hM' n hn)
-    (hF n hn)), zero_apply]
-
 /-- **The induced maps are additive in the morphism, for bounded modules and morphisms:**
 `T_{f+g} = T_f + T_g` when the operations of `M` and `M'` and the components of `f` and `g`
 vanish from arity `K` on. -/
@@ -109,10 +100,10 @@ theorem typeABoxMapOfHom_add_of_act_eq_zero (N : TypeDStructure d ι X)
     (hM' : ∀ n, K ≤ n → Mm'.act n = 0) (hf : ∀ n, K ≤ n → f.map n = 0)
     (hg : ∀ n, K ≤ n → g.map n = 0) :
     N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g :=
-  typeABoxMapOfHom_add_of_bound N f g (cone_matrixAct_eq_zero N hM hM' hf)
-    (cone_matrixAct_eq_zero N hM hM' hg)
-    (cone_matrixAct_eq_zero N hM hM' fun n hn => by rw [UngradedAInfinityRightModuleHom.add_map,
-      hf n hn, hg n hn, add_zero])
+  typeABoxMapOfHom_add_of_bound N f g (N.cone_matrixAct_eq_zero_of_act_eq_zero hM hM' hf)
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero hM hM' hg)
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero hM hM' fun n hn => by
+      rw [UngradedAInfinityRightModuleHom.add_map, hf n hn, hg n hn, add_zero])
 
 /-! ### The induced homotopy -/
 
@@ -223,8 +214,8 @@ theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_act_eq_zero (N : TypeDStructure
   have hM₁ (n : ℕ) (hn : K + 1 ≤ n) : Mm.act n = 0 := hM n (by omega)
   have hcone₁ (n : ℕ) (hn : K + 1 ≤ n) : (f + g).cone.act n = 0 := hcone n (by omega)
   exact typeABoxMapOfHom_add_typeABoxMapOfHom_of_bound N H (K := K + 1)
-    (fun n hn => cone_matrixAct_eq_zero N hM hM' hfg n (by omega))
-    (cone_matrixAct_eq_zero N hM₁ hcone₁ hΦ)
+    (fun n hn => N.cone_matrixAct_eq_zero_of_act_eq_zero hM hM' hfg n (by omega))
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero hM₁ hcone₁ hΦ)
     (N.typeABoxDifferential_typeABoxMapOfHom_of_act_eq_zero H.toConeHom hM₁ hcone₁ hΦ)
     (N.typeABoxMapOfHom_add_of_act_eq_zero f g hM hM' hf hg) φ
 
