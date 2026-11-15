@@ -37,8 +37,6 @@ directly with `curveVelocity`.
   speed at any two parameters.
 * `TauCeti.Manifold.IsGeodesicCurve.energy_eq`: the energy of an all-time geodesic between `a`
   and `b` is `(b - a) ‖curveVelocity I γ a‖² / 2`.
-* `TauCeti.Manifold.curveVelocity_maximalGeodesic_zero`: its velocity at zero is the initial
-  velocity.
 * `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: on its maximal interval, the
   squared speed of a maximal geodesic is that of its initial velocity.
 * `TauCeti.Manifold.norm_curveVelocity_maximalGeodesic`: on its maximal interval, its speed
@@ -231,15 +229,6 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- The velocity of a maximal geodesic at zero is its prescribed initial velocity. -/
-@[simp]
-theorem curveVelocity_maximalGeodesic_zero [T2Space M] (p : M) (v : TangentSpace I p) :
-    curveVelocity I (maximalGeodesic I M p v) 0 = v := by
-  have hv := (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).velocity_heq
-  rw [curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds
-    (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := v)))] at hv
-  exact eq_of_heq hv
 
 /-- The squared speed of a maximal geodesic equals the squared norm of its initial velocity at
 every point of its maximal interval. -/
