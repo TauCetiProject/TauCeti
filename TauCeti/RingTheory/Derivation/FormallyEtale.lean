@@ -85,9 +85,7 @@ theorem algHom_apply_of_formallyUnramified
       ← IsScalarTower.algebraMap_apply S M L]
   have hδ : (Algebra.linearMap M L).compDer δ₁ = δ₂.compAlgebraMap M :=
     eq_of_formallyUnramified (S := S) fun s ↦ by
-      rw [coe_comp, LinearMap.comp_apply, coeFn_coe, LinearMap.coe_restrictScalars,
-        Algebra.linearMap_apply, compAlgebraMap_apply, RingHom.algebraMap_toAlgebra,
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, h, φ.commutes]
+      simp [RingHom.algebraMap_toAlgebra, h, φ.commutes]
   exact congr($hδ x)
 
 end Unramified

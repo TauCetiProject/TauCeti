@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Etale
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.FiniteExtension
 
 /-!
 # Differential traces and residues for étale extensions of Laurent series
@@ -14,10 +15,10 @@ public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Etale
 Let `K` be a field, `F = K⸨X⸩`, and `L` a formally étale `F`-algebra. By
 `TauCeti.LaurentSeries.Extension.ContinuousKaehlerDifferential.tensorEquiv`, the module of
 continuous one-forms `Ω¹_cont(L/K)` identifies `L`-linearly with the scalar extension
-`L ⊗_F Ω¹_cont(F/K)`. Applying the algebra trace `Tr_{L/F} : L →ₗ[F] F` to the left tensor factor
-defines the differential trace `trace K L : Ω¹_cont(L/K) →ₗ[F] Ω¹_cont(F/K)`, sending `x • map ω`
-to `Tr_{L/F}(x) • ω` and `x dt` to `Tr_{L/F}(x) dt` (and vanishing when `L` is not finite and free
-over `F`, matching `Algebra.trace`).
+`L ⊗_F Ω¹_cont(F/K)`. Composing `TauCeti.ContinuousKaehlerDifferential.traceBaseChange` with the
+inverse of `tensorEquiv` defines the differential trace
+`trace K L : Ω¹_cont(L/K) →ₗ[F] Ω¹_cont(F/K)`, sending `x • map ω` to `Tr_{L/F}(x) • ω` and `x dt`
+to `Tr_{L/F}(x) dt` (and vanishing when `L` is not finite over `F`, matching `Algebra.trace`).
 
 More generally, in a tower `F → M → L` of formally étale `F`-algebras, the relative base-change
 equivalence `L ⊗_M Ω¹_cont(M/K) ≃ Ω¹_cont(L/K)` (`relativeTensorEquiv K M L`) induces the relative
@@ -29,11 +30,12 @@ towers (`trace_relativeTrace`, `relativeTrace_relativeTrace`). When `L` (and `M`
 `F`-algebras carrying the `F`-module topology, `trace K L` and `relativeTrace K M L` are continuous
 for the canonical module topologies on continuous one-forms.
 
-Taking the `X⁻¹`-coefficient of `trace K L ω` defines the intrinsic `K`-linear residue
-`residue K L : Ω¹_cont(L/K) →ₗ[K] K`. It is invariant under `F`-algebra isomorphisms
-(`residue_mapAlgEquiv`) and preserved by relative differential traces in finite free towers
-(`residue_relativeTrace : residue K M (relativeTrace K M L ω) = residue K L ω`). Compatibility with
-explicit ramified levels `Level K d` and level charts is established in
+Composing `TauCeti.ContinuousKaehlerDifferential.residueBaseChange` with `(tensorEquiv K L).symm`
+and upgrading additivity to `K`-linearity defines the intrinsic residue
+`residue K L : Ω¹_cont(L/K) →ₗ[K] K`, the `X⁻¹`-coefficient of `trace K L ω`. It is invariant under
+`F`-algebra isomorphisms (`residue_mapAlgEquiv`) and preserved by relative differential traces in
+finite free towers (`residue_relativeTrace : residue K M (relativeTrace K M L ω) = residue K L ω`).
+Compatibility with explicit ramified levels `Level K d` and level charts is established in
 `TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Level`.
 
 ## Main definitions
@@ -47,6 +49,8 @@ explicit ramified levels `Level K d` and level charts is established in
 
 ## Main results
 
+* `Extension.ContinuousKaehlerDifferential.trace_tensorEquiv` and `residue_tensorEquiv`: through
+  `tensorEquiv K L`, `trace` and `residue` agree with `traceBaseChange` and `residueBaseChange`.
 * `Extension.ContinuousKaehlerDifferential.trace_smul_map` and `equivLaurentSeries_trace`:
   `trace K L` sends `x • map K L ω` to `Tr_{L/K⸨X⸩}(x) • ω` and `x dt` to `Tr_{L/K⸨X⸩}(x) dt`.
 * `Extension.ContinuousKaehlerDifferential.trace_mapAlgEquiv` and `residue_mapAlgEquiv`:
@@ -76,31 +80,37 @@ variable (K L : Type*) [Field K] [CommRing L] [Algebra K⸨X⸩ L] [Algebra K L]
   [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L]
 
 /-- **The trace of continuous one-forms.** For a formally étale `K⸨X⸩`-algebra `L`, the
-differential trace `Tr_{L/K⸨X⸩} : Ω¹_cont(L/K) →ₗ[K⸨X⸩] Ω¹_cont(K⸨X⸩/K)` applies `Algebra.trace`
-to the first factor of `L ⊗_{K⸨X⸩} Ω¹_cont(K⸨X⸩/K) ≃ Ω¹_cont(L/K)`. As with `Algebra.trace`, this
-map is zero when `L` is not finite and free over `K⸨X⸩`. -/
+differential trace `Tr_{L/K⸨X⸩} : Ω¹_cont(L/K) →ₗ[K⸨X⸩] Ω¹_cont(K⸨X⸩/K)` composes
+`TauCeti.ContinuousKaehlerDifferential.traceBaseChange` with the inverse of `tensorEquiv K L`.
+As with `Algebra.trace`, this map is zero when `L` is not finite over `K⸨X⸩`. -/
 noncomputable def trace :
     ContinuousKaehlerDifferential K L →ₗ[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K :=
-  (TensorProduct.lid K⸨X⸩ _).toLinearMap ∘ₗ
-    (Algebra.trace K⸨X⸩ L).rTensor _ ∘ₗ
-      ((tensorEquiv K L).symm.restrictScalars K⸨X⸩).toLinearMap
+  TauCeti.ContinuousKaehlerDifferential.traceBaseChange L ∘ₗ
+    ((tensorEquiv K L).symm.restrictScalars K⸨X⸩).toLinearMap
 
 variable {K L}
+
+/-- Under `L ⊗_{K⸨X⸩} Ω¹_cont(K⸨X⸩/K) ≃ Ω¹_cont(L/K)`, the intrinsic differential trace agrees with
+`TauCeti.ContinuousKaehlerDifferential.traceBaseChange`. -/
+@[simp]
+theorem trace_tensorEquiv (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
+    trace K L (tensorEquiv K L η) = TauCeti.ContinuousKaehlerDifferential.traceBaseChange L η := by
+  simp [trace]
 
 /-- For a continuous one-form `ω` on `K⸨X⸩`, the trace of `x` times its pullback to `L` is
 `Tr_{L/K⸨X⸩}(x) • ω`. -/
 @[simp]
 theorem trace_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) :
     trace K L (x • map K L ω) = Algebra.trace K⸨X⸩ L x • ω := by
-  rw [← tensorEquiv_tmul]
-  simp [trace, -tensorEquiv_tmul]
+  rw [← tensorEquiv_tmul, trace_tensorEquiv,
+    TauCeti.ContinuousKaehlerDifferential.traceBaseChange_tmul]
 
 /-- Tracing a pulled-back continuous one-form multiplies it by the `K⸨X⸩`-rank of `L`. -/
 @[simp]
-theorem trace_map [Module.Free K⸨X⸩ L] (ω : TauCeti.ContinuousKaehlerDifferential K) :
+theorem trace_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
     trace K L (map K L ω) = Module.finrank K⸨X⸩ L • ω := by
-  rw [← one_smul L (map K L ω), trace_smul_map, ← map_one (algebraMap K⸨X⸩ L),
-    Algebra.trace_algebraMap, smul_assoc, one_smul]
+  rw [← one_smul L (map K L ω), ← tensorEquiv_tmul, trace_tensorEquiv,
+    TauCeti.ContinuousKaehlerDifferential.traceBaseChange_one_tmul]
 
 /-- Every traced one-form is `Tr_{L/K⸨X⸩}(equivSelf K L ω) • dX`. -/
 theorem trace_eq_trace_equivSelf_smul_D_single_one (ω : ContinuousKaehlerDifferential K L) :
@@ -208,8 +218,8 @@ theorem relativeTrace_algebraMap_smul (y : M) (ω : ContinuousKaehlerDifferentia
 /-- **Transitivity of differential trace.** In a tower `K⸨X⸩ → M → L` of finite free formally étale
 algebras, composing `relativeTrace K M L` with `trace K M` recovers `trace K L`. -/
 @[simp]
-theorem trace_relativeTrace [Module.Free K⸨X⸩ M] [Module.Finite K⸨X⸩ M]
-    [Module.Free M L] [Module.Finite M L] (ω : ContinuousKaehlerDifferential K L) :
+theorem trace_relativeTrace [Module.Finite K⸨X⸩ M] [Module.Free M L] [Module.Finite M L]
+    (ω : ContinuousKaehlerDifferential K L) :
     trace K M (relativeTrace K M L ω) = trace K L ω := by
   apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
   rw [equivLaurentSeries_trace, equivSelf_relativeTrace, equivLaurentSeries_trace,
@@ -247,22 +257,34 @@ variable (K L : Type*) [Field K] [CommRing L] [Algebra K⸨X⸩ L] [Algebra K L]
   [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L]
 
 /-- **Intrinsic residue of a continuous one-form.** For a formally étale `K⸨X⸩`-algebra `L`, the
-residue `Res_L : Ω¹_cont(L/K) →ₗ[K] K` is the `X⁻¹`-coefficient of the differential trace
-`trace K L ω` in `Ω¹_cont(K⸨X⸩/K) ≃ K⸨X⸩`. -/
+residue `Res_L : Ω¹_cont(L/K) →ₗ[K] K` composes
+`TauCeti.ContinuousKaehlerDifferential.residueBaseChange` with `(tensorEquiv K L).symm`, yielding
+the `X⁻¹`-coefficient of the differential trace `trace K L ω` in `Ω¹_cont(K⸨X⸩/K) ≃ K⸨X⸩`. -/
 noncomputable def residue : ContinuousKaehlerDifferential K L →ₗ[K] K where
-  toFun ω := (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω)).coeff (-1)
+  toFun ω := TauCeti.ContinuousKaehlerDifferential.residueBaseChange L ((tensorEquiv K L).symm ω)
   map_add' ω η := by simp
   map_smul' c ω := by
+    simp only [TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply, ← trace_tensorEquiv,
+      LinearEquiv.apply_symm_apply, RingHom.id_apply]
     rw [← smul_one_smul K⸨X⸩ c ω, map_smul, map_smul, smul_eq_mul, ← C_mul_eq_smul, mul_one,
-      C_mul_eq_smul, coeff_smul, RingHom.id_apply]
+      C_mul_eq_smul, coeff_smul]
 
 variable {K L}
+
+/-- Under `L ⊗_{K⸨X⸩} Ω¹_cont(K⸨X⸩/K) ≃ Ω¹_cont(L/K)`, the intrinsic residue agrees with
+`TauCeti.ContinuousKaehlerDifferential.residueBaseChange`. -/
+@[simp]
+theorem residue_tensorEquiv (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
+    residue K L (tensorEquiv K L η) =
+      TauCeti.ContinuousKaehlerDifferential.residueBaseChange L η := by
+  simp [residue]
 
 /-- The residue of `ω` is the `X⁻¹`-coefficient of its differential trace. -/
 theorem residue_apply (ω : ContinuousKaehlerDifferential K L) :
     residue K L ω =
-      (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω)).coeff (-1) :=
-  (rfl)
+      (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω)).coeff (-1) := by
+  rw [← (tensorEquiv K L).apply_symm_apply ω, residue_tensorEquiv,
+    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply, trace_tensorEquiv]
 
 /-- In terms of `equivSelf`, `residue K L ω` is the `X⁻¹`-coefficient of
 `Tr_{L/K⸨X⸩}(equivSelf K L ω)`. -/
@@ -277,14 +299,16 @@ theorem residue_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) 
     residue K L (x • map K L ω) =
       (Algebra.trace K⸨X⸩ L x *
         TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω).coeff (-1) := by
-  simp [residue_apply]
+  rw [← tensorEquiv_tmul, residue_tensorEquiv,
+    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_tmul]
 
 /-- Pulling back a continuous one-form from `K⸨X⸩` multiplies its residue by `[L : K⸨X⸩]`. -/
-theorem residue_map [Module.Free K⸨X⸩ L] (ω : TauCeti.ContinuousKaehlerDifferential K) :
+theorem residue_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
     residue K L (map K L ω) =
       Module.finrank K⸨X⸩ L •
         (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω).coeff (-1) := by
-  rw [residue_apply, trace_map, map_nsmul, coeff_nsmul, Pi.smul_apply]
+  rw [← one_smul L (map K L ω), ← tensorEquiv_tmul, residue_tensorEquiv,
+    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_one_tmul]
 
 /-- The intrinsic residue is invariant under `K⸨X⸩`-algebra isomorphisms between formally étale
 `K⸨X⸩`-algebras. -/
@@ -300,8 +324,8 @@ formally étale `K⸨X⸩`-algebras, `Res_M (Tr_{L/M} ω) = Res_L ω`. -/
 @[simp]
 theorem residue_relativeTrace {M : Type*} [CommRing M] [Algebra K⸨X⸩ M] [Algebra K M]
     [IsScalarTower K K⸨X⸩ M] [Algebra.FormallyEtale K⸨X⸩ M] [Algebra M L]
-    [IsScalarTower K⸨X⸩ M L] [Module.Free K⸨X⸩ M] [Module.Finite K⸨X⸩ M]
-    [Module.Free M L] [Module.Finite M L] (ω : ContinuousKaehlerDifferential K L) :
+    [IsScalarTower K⸨X⸩ M L] [Module.Finite K⸨X⸩ M] [Module.Free M L] [Module.Finite M L]
+    (ω : ContinuousKaehlerDifferential K L) :
     residue K M (relativeTrace K M L ω) = residue K L ω := by
   rw [residue_apply, residue_apply, trace_relativeTrace]
 

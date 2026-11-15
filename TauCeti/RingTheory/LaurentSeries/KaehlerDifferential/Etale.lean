@@ -443,12 +443,10 @@ noncomputable def mapAlgEquiv (e : M ≃ₐ[K⸨X⸩] L) :
   left_inv ω := by rw [← mapAlgHom_comp, AlgEquiv.symm_comp, mapAlgHom_id]
   right_inv ω := by rw [← mapAlgHom_comp, AlgEquiv.comp_symm, mapAlgHom_id]
 
-@[simp]
 theorem mapAlgEquiv_apply (e : M ≃ₐ[K⸨X⸩] L) (ω : ContinuousKaehlerDifferential K M) :
     mapAlgEquiv e ω = mapAlgHom e.toAlgHom ω :=
   (rfl)
 
-@[simp]
 theorem mapAlgEquiv_symm_apply (e : M ≃ₐ[K⸨X⸩] L) (ω : ContinuousKaehlerDifferential K L) :
     (mapAlgEquiv e).symm ω = mapAlgHom e.symm.toAlgHom ω :=
   (rfl)
@@ -630,13 +628,11 @@ theorem continuous_lift {N : Type*} [AddCommGroup N] [Module L N] [Module K N]
 
 /-- When `K⸨X⸩` acts continuously on `L`, the pullback `Ω¹_cont(K⸨X⸩/K) → Ω¹_cont(L/K)` is
 continuous. -/
-theorem continuous_map [ContinuousSMul K⸨X⸩ L] : Continuous (map K L) := by
-  have halg : Continuous (algebraMap K⸨X⸩ L) :=
-    (continuous_id.smul (continuous_const (y := (1 : L)))).congr fun f ↦
-      (Algebra.algebraMap_eq_smul_one f).symm
-  exact ((continuousEquivSelf K L).symm.continuous.comp
-    (halg.comp (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).continuous)).congr
-      fun ω ↦ by simp [map, -equivSelf_symm_apply]
+theorem continuous_map [ContinuousSMul K⸨X⸩ L] : Continuous (map K L) :=
+  ((continuousEquivSelf K L).symm.continuous.comp
+    ((continuous_algebraMap K⸨X⸩ L).comp
+      (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).continuous)).congr
+    fun ω ↦ by simp [map, -equivSelf_symm_apply]
 
 end TopologicalSemiring
 
