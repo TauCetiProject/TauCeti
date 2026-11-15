@@ -10,6 +10,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.Normed.Group.Pointwise
+import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.MeasureTheory.Function.Holder
 
 /-!
@@ -60,7 +61,8 @@ for every `m`, since `S_m` is convolution with an `L¹`-dilate of `𝓕⁻ φ`
 
 * `TauCeti.BesovSpace.lowPass`: the low-frequency cut-off `S_m u = ∑_{k < m} Δₖ u` as an `Lᵖ`
   function; `TauCeti.BesovSpace.coe_lowPass_succ` identifies `S_{m+1}` with the Fourier
-  multiplier by `φ (2^{-m} ·)`.
+  multiplier by `φ (2^{-m} ·)`, `TauCeti.BesovSpace.lowPass_one_succ` evaluates `S_m 1`, and
+  `TauCeti.BesovSpace.tendsto_lowPass` proves `Lᵖ` convergence of `S_m u` for `s > 0`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_succ`: `S_{m+1} u` has spectrum in the ball of
   radius `2^m φ.rOut`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_smul_block` and
@@ -68,8 +70,10 @@ for every `m`, since `S_m` is convolution with an `L¹`-dilate of `𝓕⁻ φ`
   have spectra in dyadic annuli.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_block_smul_sum_block`: the terms of the resonant part
   have spectra in dyadic balls.
-* `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq` and
-  `TauCeti.BesovSpace.norm_lowPass_le_of_neg`: the size of the low-frequency cut-offs.
+* `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq`,
+  `TauCeti.BesovSpace.norm_lowPass_le_of_pos`, `TauCeti.BesovSpace.norm_lowPass_le_of_neg`, and
+  `TauCeti.BesovSpace.exists_lp_lowPass_le_of_neg`: pointwise and weighted `ℓ^q` bounds on the
+  low-frequency cut-offs.
 * `TauCeti.BesovSpace.lowPass_smul_lowPass`: Bony's decomposition of `S_M u · S_M v`.
 
 ## References
@@ -86,7 +90,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Set Distribution FourierTransform TemperedDistribution
+open MeasureTheory Metric Filter Topology Set Distribution FourierTransform TemperedDistribution
 open scoped ENNReal SchwartzMap Pointwise
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -208,6 +212,58 @@ theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F �
         gcongr
         linarith
     _ = 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by rw [hpow]
+
+/-- For every `m ≥ 1`, the low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` equals `1 ∈ L^∞`. -/
+@[simp] theorem lowPass_one_succ (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass (m + 1) = 1 := by
+  induction m with
+  | zero => rw [lowPass_succ, lowPass_zero_right, block_one_zero, zero_add]
+  | succ m ih => rw [lowPass_succ, ih, block_one_succ, add_zero]
+
+/-- The low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` is `0` at `m = 0` and `1` for `m ≥ 1`. -/
+theorem lowPass_one (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass m = if m = 0 then 0 else 1 := by
+  rcases m with _ | m <;> simp
+
+/-- For `s > 0`, the low-frequency cut-offs `S_m u` converge in `Lᵖ` to `toLpCLM F φ p q hs u`. -/
+theorem tendsto_lowPass [Fact (1 ≤ q)] (hs : 0 < s) (u : BesovSpace F φ s p q) :
+    Tendsto u.lowPass atTop (𝓝 (toLpCLM F φ p q hs u)) :=
+  (hasSum_block hs u).tendsto_sum_nat.congr fun m ↦ (u.lowPass_eq_sum m).symm
+
+/-- For `s > 0`, the low-frequency cut-offs `S_m u` are bounded in `Lᵖ` uniformly in `m`. -/
+theorem norm_lowPass_le_of_pos [Fact (1 ≤ q)] (hs : 0 < s) (u : BesovSpace F φ s p q) (m : ℕ) :
+    ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
+  calc ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖toLpCLM F φ p q hs u‖ :=
+        u.norm_lowPass_le_of_toDistr_eq (coe_toLpCLM hs u).symm m
+    _ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ((1 - 2 ^ (-s))⁻¹ * ‖u‖) :=
+        mul_le_mul_of_nonneg_left (norm_toLpCLM_apply_le hs u)
+          (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _)
+    _ = _ := by ring
+
+/-- **Weighted `ℓ^q` bound for the low-frequency cut-offs at negative regularity.** For `s < 0` and
+`u ∈ B^s_{p,q}`, the sequence `2^{s m} ‖S_m u‖_p` is bounded pointwise by a nonnegative sequence
+`a ∈ ℓ^q` of norm at most `(2^{-s} - 1)⁻¹ ‖u‖`. -/
+theorem exists_lp_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) :
+    ∃ a : lp (fun _ : ℕ ↦ ℝ) q, (∀ m, 0 ≤ a m) ∧
+      (∀ m : ℕ, 2 ^ (s * m) * ‖u.lowPass m‖ ≤ a m) ∧ ‖a‖ ≤ (2 ^ (-s) - 1)⁻¹ * ‖u‖ := by
+  have hr1 : (2 : ℝ) ^ s < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two hs
+  obtain ⟨a, ha, han⟩ := lp.exists_forall_eq_sum_pow_smul_and_norm_le
+    (lp.toNorm u.weightedBlocks) (by positivity) hr1
+  have hratio : (2 : ℝ) ^ s * (1 - 2 ^ s)⁻¹ = (2 ^ (-s) - 1)⁻¹ := by
+    have hmul : (2 : ℝ) ^ s * 2 ^ (-s) = 1 := by rw [← Real.rpow_add two_pos]; simp
+    refine eq_inv_of_mul_eq_one_left ?_
+    calc (2 : ℝ) ^ s * (1 - 2 ^ s)⁻¹ * (2 ^ (-s) - 1)
+        = (2 ^ s * 2 ^ (-s) - 2 ^ s) * (1 - 2 ^ s)⁻¹ := by ring
+      _ = 1 := by rw [hmul, mul_inv_cancel₀ (sub_pos.2 hr1).ne']
+  refine ⟨a, fun m ↦ by
+      rw [ha]
+      exact Finset.sum_nonneg fun k _ ↦ by simp only [lp.toNorm_coe, smul_eq_mul]; positivity,
+    fun m ↦ ?_, by simpa only [lp.norm_toNorm, u.norm_weightedBlocks, hratio] using han⟩
+  rw [ha m, lowPass_eq_sum]
+  refine ((mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans_eq
+    (Finset.mul_sum ..)).trans (Finset.sum_le_sum fun k hk ↦ ?_)
+  have hexp : (2 : ℝ) ^ (s * m) = (2 ^ s) ^ (m - k) * 2 ^ (s * k) := by
+    rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← mul_add]
+    congr 2; exact_mod_cast (Nat.sub_add_cancel (Finset.mem_range.1 hk).le).symm
+  rw [smul_eq_mul, lp.toNorm_coe, hexp, mul_assoc, u.norm_weightedBlocks_apply]
 
 end LowPass
 

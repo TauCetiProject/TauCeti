@@ -68,25 +68,6 @@ protected theorem smul_eq_mul (f g : Lp R ∞ μ) : f • g = f * g :=
 theorem coeFn_mul (f g : Lp R ∞ μ) : ⇑(f * g) =ᵐ[μ] ⇑f * ⇑g :=
   coeFn_lpSMul f g
 
-instance inftyRing : Ring (Lp R ∞ μ) where
-  mul_assoc f g h := by
-    ext
-    filter_upwards [coeFn_mul (f * g) h, coeFn_mul f g, coeFn_mul f (g * h), coeFn_mul g h]
-      with x h₁ h₂ h₃ h₄
-    simp [h₁, h₂, h₃, h₄, mul_assoc]
-  one_mul f := by
-    ext
-    filter_upwards [coeFn_mul 1 f, coeFn_one (E := R) (μ := μ)] with x h₁ h₂
-    simp [h₁, h₂]
-  mul_one f := by
-    ext
-    filter_upwards [coeFn_mul f 1, coeFn_one (E := R) (μ := μ)] with x h₁ h₂
-    simp [h₁, h₂]
-  left_distrib := Lp.add_smul
-  right_distrib := Lp.smul_add
-  zero_mul := Lp.zero_smul R ∞
-  mul_zero := Lp.smul_zero R ∞
-
 /-- The unit of `L∞` acts as the identity under heterogeneous `Lp` scalar multiplication. -/
 @[simp]
 protected theorem one_smul {E : Type*} [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
@@ -103,6 +84,19 @@ protected theorem smul_one {p : ℝ≥0∞} (f : Lp R p μ) :
   ext
   filter_upwards [coeFn_lpSMul (r := p) f (1 : Lp R ∞ μ), coeFn_one (E := R) (μ := μ)] with x h₁ h₂
   simp [h₁, h₂]
+
+instance inftyRing : Ring (Lp R ∞ μ) where
+  mul_assoc f g h := by
+    ext
+    filter_upwards [coeFn_mul (f * g) h, coeFn_mul f g, coeFn_mul f (g * h), coeFn_mul g h]
+      with x h₁ h₂ h₃ h₄
+    simp [h₁, h₂, h₃, h₄, mul_assoc]
+  one_mul := Lp.one_smul
+  mul_one := Lp.smul_one
+  left_distrib := Lp.add_smul
+  right_distrib := Lp.smul_add
+  zero_mul := Lp.zero_smul R ∞
+  mul_zero := Lp.smul_zero R ∞
 
 theorem coeFn_pow (f : Lp R ∞ μ) (n : ℕ) : ⇑(f ^ n) =ᵐ[μ] ⇑f ^ n := by
   induction n with

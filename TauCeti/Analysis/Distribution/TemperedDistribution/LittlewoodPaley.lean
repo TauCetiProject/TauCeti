@@ -13,6 +13,7 @@ import TauCeti.Analysis.Convolution.Commutator
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -122,7 +123,7 @@ blocks `Δⱼ u`.
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
 * `TemperedDistribution.littlewoodPaleyBlock_delta_zero`,
   `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
-  `TemperedDistribution.littlewoodPaleyBlock_volume_toTemperedDistribution`: the blocks of the
+  `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of the
   Dirac mass `δ₀`, of plane waves `𝓕⁻ δ_ξ`, and of Lebesgue measure (the constant `1`).
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass truncations, uniformly in `N`, by
@@ -585,21 +586,6 @@ theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
   ext u
   simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
 
-/-- The inverse Fourier transform of the Dirac mass at the origin is Lebesgue measure (the
-constant distribution `1`). -/
-theorem fourierInv_delta_zero :
-    𝓕⁻ (delta (0 : E)) =
-      (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution := by
-  ext f
-  simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
-
-/-- The Fourier transform of Lebesgue measure (the constant distribution `1`) is the Dirac mass at
-the origin. -/
-@[simp]
-theorem fourier_volume_toTemperedDistribution :
-    𝓕 (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution = delta 0 := by
-  rw [← fourierInv_delta_zero, FourierTransform.fourier_fourierInv_eq]
-
 /-- **The blocks of a plane wave.** The `j`-th Littlewood–Paley block of `𝓕⁻ δ_ξ` (the plane wave
 `x ↦ e^{2πi ⟪ξ, x⟫}`) scales it by `ψⱼ ξ`. -/
 theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
@@ -613,7 +599,7 @@ theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
 /-- **The blocks of the constant `1`.** The zeroth Littlewood–Paley block of Lebesgue measure (the
 constant distribution `1`) is itself, and every higher block vanishes. -/
 @[simp]
-theorem littlewoodPaleyBlock_volume_toTemperedDistribution (j : ℕ) :
+theorem littlewoodPaleyBlock_toTemperedDistribution_volume (j : ℕ) :
     littlewoodPaleyBlock ℂ φ j
         (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution =
       if j = 0 then (MeasureTheory.volume : MeasureTheory.Measure E).toTemperedDistribution

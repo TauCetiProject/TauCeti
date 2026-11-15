@@ -63,10 +63,12 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
-* `TauCeti.BesovSpace.ofLpCLM` and `TauCeti.BesovSpace.toLpCLM`: the continuous inclusions
-  `Lᵖ ⊆ B^0_{p,∞}` (`1 ≤ p ≤ ∞`) and `B^s_{p,q} ⊆ Lᵖ` (`s > 0`, with norm at most
-  `(1 - 2^{-s})⁻¹`), plus the unit `1 : TauCeti.BesovSpace ℂ φ s ∞ q` representing Lebesgue
+* `MeasureTheory.Lp.memBesov`, `TauCeti.BesovSpace.ofLpCLM`, and `TauCeti.BesovSpace.toLpCLM`: the
+  continuous inclusions `Lᵖ ⊆ B^0_{p,∞}` (`1 ≤ p ≤ ∞`) and `B^s_{p,q} ⊆ Lᵖ` (`s > 0`, with norm at
+  most `(1 - 2^{-s})⁻¹`), plus the unit `1 : TauCeti.BesovSpace ℂ φ s ∞ q` representing Lebesgue
   measure.
+* `TauCeti.BesovSpace.mkContinuousOfHasSum₂`: bundles a bilinear series of `Lʳ` pieces whose sums in
+  `𝓢'(E, F)` belong to `B^γ_{r,q}` as a continuous bilinear map.
 * `TauCeti.BesovSpace.inclusion`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` with norm at most `1` for
   `s' ≤ s` and `q ≤ q'`.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
@@ -337,19 +339,20 @@ theorem MemBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fact (1 ≤ r
   rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_sub_mul_mul_rpow_mul two_pos s a j]
   exact (mul_le_mul_of_nonneg_left (hgf j) (by positivity)).trans_eq (by ring)
 
-/-- **Inclusion of `Lᵖ` in `B^0_{p,∞}`.** Every `f ∈ Lᵖ` has Littlewood–Paley blocks bounded in
-`Lᵖ` uniformly in `j`, so `(f : 𝓢'(E, F))` lies in `B^0_{p,∞}`. -/
-theorem MemBesov.of_lp (φ : ContDiffBump (0 : E)) (f : Lp F p (volume : Measure E)) :
-    (f : 𝓢'(E, F)).MemBesov φ 0 p ∞ := by
-  obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  choose g hg hgC using fun j ↦ hC j f
-  refine memBesov_iff.2 ⟨g, hg, memℓp_infty ⟨C * ‖f‖, ?_⟩⟩
-  rintro _ ⟨j, rfl⟩
-  simpa using hgC j
-
 end MemBesov
 
 end TemperedDistribution
+
+/-- **Inclusion of `Lᵖ` in `B^0_{p,∞}`.** Every `f ∈ Lᵖ` has Littlewood–Paley blocks bounded in
+`Lᵖ` uniformly in `j`, so `(f : 𝓢'(E, F))` lies in `B^0_{p,∞}`. -/
+theorem MeasureTheory.Lp.memBesov {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (f : Lp F p (volume : Measure E)) (φ : ContDiffBump (0 : E)) :
+    (f : 𝓢'(E, F)).MemBesov φ 0 p ∞ := by
+  obtain ⟨C, hC⟩ := TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  choose g hg hgC using fun j ↦ hC j f
+  refine TemperedDistribution.memBesov_iff.2 ⟨g, hg, memℓp_infty ⟨C * ‖f‖, ?_⟩⟩
+  rintro _ ⟨j, rfl⟩
+  simpa using hgC j
 
 namespace TauCeti
 
@@ -1107,46 +1110,47 @@ instance : One (BesovSpace ℂ φ s ∞ q) where
     · rw [lp.single_apply_ne _ _ _ (Nat.succ_ne_zero j)]
       simp⟩
 
-@[simp]
-theorem toDistr_one :
-    (1 : BesovSpace ℂ φ s ∞ q).toDistr = (volume : Measure E).toTemperedDistribution :=
-  (rfl)
+@[simp] theorem toDistr_one :
+    (1 : BesovSpace ℂ φ s ∞ q).toDistr = (volume : Measure E).toTemperedDistribution := rfl
 
-@[simp]
-theorem weightedBlocks_one :
-    (1 : BesovSpace ℂ φ s ∞ q).weightedBlocks = lp.single q 0 1 :=
-  (rfl)
+@[simp] theorem weightedBlocks_one :
+    (1 : BesovSpace ℂ φ s ∞ q).weightedBlocks = lp.single q 0 1 := rfl
 
 /-- The `j`-th Littlewood–Paley block of `1 ∈ B^s_{∞,q}` is `1` at `j = 0` and `0` for `j ≥ 1`. -/
-theorem block_one (j : ℕ) :
-    (1 : BesovSpace ℂ φ s ∞ q).block j = if j = 0 then 1 else 0 := by
+theorem block_one (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block j = if j = 0 then 1 else 0 := by
   rcases j with _ | j <;> simp [block]
 
-@[simp]
-theorem block_one_zero : (1 : BesovSpace ℂ φ s ∞ q).block 0 = 1 := by
-  simp [block_one]
+@[simp] theorem block_one_zero : (1 : BesovSpace ℂ φ s ∞ q).block 0 = 1 := by simp [block_one]
 
-@[simp]
-theorem block_one_succ (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block (j + 1) = 0 := by
+@[simp] theorem block_one_succ (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block (j + 1) = 0 := by
   simp [block_one]
 
 /-- The Besov norm of `1 ∈ B^s_{∞,q}` is `1`. -/
-@[simp]
-protected theorem norm_one [Fact (1 ≤ q)] : ‖(1 : BesovSpace ℂ φ s ∞ q)‖ = 1 := by
-  rw [← norm_weightedBlocks, weightedBlocks_one, lp.norm_single (zero_lt_one.trans_le Fact.out),
-    Lp.norm_one_of_ne_zero (NeZero.ne (volume : Measure E)), norm_one]
+instance [Fact (1 ≤ q)] : NormOneClass (BesovSpace ℂ φ s ∞ q) where
+  norm_one := by
+    rw [← norm_weightedBlocks, weightedBlocks_one, lp.norm_single (zero_lt_one.trans_le Fact.out),
+      Lp.norm_one_of_ne_zero (NeZero.ne (volume : Measure E)), norm_one]
+
+@[simp] theorem inclusion_one {s' : ℝ} {q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')]
+    (hs : s' ≤ s) (hq : q ≤ q') : inclusion ℂ φ ∞ hs hq 1 = 1 := ext (by simp)
+
+@[simp] theorem inclusionOfLT_one {s' : ℝ} {q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')]
+    (hs : s' < s) : inclusionOfLT ℂ φ ∞ q q' hs 1 = 1 := ext (by simp)
+
+@[simp] theorem bumpEquiv_one [Fact (1 ≤ q)] (φ' : ContDiffBump (0 : E)) :
+    bumpEquiv ℂ φ φ' s ∞ q 1 = 1 := ext (by simp)
 
 /-- There is `C`, depending only on `E`, `F` and `φ`, such that `‖f‖_{B^0_{p,∞}} ≤ C ‖f‖_p` for
 every `1 ≤ p ≤ ∞` and every `f ∈ Lᵖ`. -/
-private theorem exists_norm_of_lp_le :
+private theorem exists_norm_ofLp_le :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p (volume : Measure E)),
-      ‖(MemBesov.of_lp φ f).toBesovSpace‖ ≤ C * ‖f‖ := by
+      ‖(Lp.memBesov f φ).toBesovSpace‖ ≤ C * ‖f‖ := by
   obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   refine ⟨max C 0, le_max_right _ _, fun {p} _ f ↦ ?_⟩
   rw [← norm_weightedBlocks]
   refine lp.norm_le_of_forall_le (by positivity) fun j ↦ ?_
   obtain ⟨g, hg, hgC⟩ := hC j f
-  have hj : (MemBesov.of_lp φ f).toBesovSpace.block j = g :=
+  have hj : (Lp.memBesov f φ).toBesovSpace.block j = g :=
     Lp.toTemperedDistribution_injective <| by simp [coe_block, hg]
   simpa [norm_weightedBlocks_apply, hj] using
     hgC.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg f))
@@ -1156,16 +1160,16 @@ variable (F φ p) in
 with norm bounded uniformly in `p` (`TauCeti.BesovSpace.exists_norm_ofLpCLM_le`). -/
 def ofLpCLM : Lp F p (volume : Measure E) →L[ℂ] BesovSpace F φ 0 p ∞ :=
   LinearMap.mkContinuousOfExistsBound
-    { toFun f := (MemBesov.of_lp φ f).toBesovSpace
+    { toFun f := (Lp.memBesov f φ).toBesovSpace
       map_add' _ _ := ext (by simp)
       map_smul' _ _ := ext (by simp) } <| by
-    obtain ⟨C, -, hC⟩ := exists_norm_of_lp_le (F := F) (φ := φ)
+    obtain ⟨C, -, hC⟩ := exists_norm_ofLp_le (F := F) (φ := φ)
     exact ⟨C, fun f ↦ hC f⟩
 
-@[simp]
-theorem toDistr_ofLpCLM (f : Lp F p (volume : Measure E)) :
-    (ofLpCLM F φ p f).toDistr = f :=
-  (rfl)
+@[simp] theorem toDistr_ofLpCLM (f : Lp F p (volume : Measure E)) :
+    (ofLpCLM F φ p f).toDistr = f := by rfl
+
+@[simp] theorem ofLpCLM_one : ofLpCLM ℂ φ ∞ 1 = 1 := ext (by simp)
 
 variable (F φ) in
 /-- **The inclusion `Lᵖ ⊆ B^0_{p,∞}` is bounded uniformly in `p`.** There is `C`, depending only on
@@ -1173,7 +1177,7 @@ variable (F φ) in
 theorem exists_norm_ofLpCLM_le :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p (volume : Measure E)),
       ‖ofLpCLM F φ p f‖ ≤ C * ‖f‖ :=
-  exists_norm_of_lp_le
+  exists_norm_ofLp_le
 
 section ToLp
 
@@ -1219,8 +1223,7 @@ def toLpCLM (hs : 0 < s) : BesovSpace F φ s p q →L[ℂ] Lp F p (volume : Meas
     (1 - 2 ^ (-s))⁻¹ fun u ↦ (exists_hasSum_block_and_norm_le hs u).choose_spec.2.2
 
 /-- The `Lᵖ` representative `toLpCLM F φ p q hs u` realises `u.toDistr`. -/
-@[simp]
-theorem coe_toLpCLM (hs : 0 < s) (u : BesovSpace F φ s p q) :
+@[simp] theorem coe_toLpCLM (hs : 0 < s) (u : BesovSpace F φ s p q) :
     (toLpCLM F φ p q hs u : 𝓢'(E, F)) = u.toDistr :=
   (exists_hasSum_block_and_norm_le hs u).choose_spec.2.1
 
@@ -1239,20 +1242,67 @@ theorem norm_toLpCLM_apply_le (hs : 0 < s) (u : BesovSpace F φ s p q) :
   (exists_hasSum_block_and_norm_le hs u).choose_spec.2.2
 
 /-- Operator norm bound `‖toLpCLM‖ ≤ (1 - 2^{-s})⁻¹` for `s > 0`, independent of `p` and `q`. -/
-theorem norm_toLpCLM_le (hs : 0 < s) :
-    ‖toLpCLM F φ p q hs‖ ≤ (1 - 2 ^ (-s))⁻¹ :=
+theorem norm_toLpCLM_le (hs : 0 < s) : ‖toLpCLM F φ p q hs‖ ≤ (1 - 2 ^ (-s))⁻¹ :=
   LinearMap.mkContinuous_norm_le _
     (inv_nonneg.2 (sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two
       (neg_nonpos_of_nonneg hs.le)))) _
 
 /-- For `s > 0`, `toLpCLM` maps `1 ∈ B^s_{∞,q}` to `1 ∈ L^∞`. -/
-@[simp]
-theorem toLpCLM_one (hs : 0 < s) : toLpCLM ℂ φ ∞ q hs 1 = 1 :=
+@[simp] theorem toLpCLM_one (hs : 0 < s) : toLpCLM ℂ φ ∞ q hs 1 = 1 :=
   Lp.toTemperedDistribution_injective (by simp)
 
 end ToLp
 
 end LpAndUnit
+
+section BilinearSeries
+
+variable {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
+  [NormedAddCommGroup Y] [NormedSpace ℂ Y] {γ : ℝ} {r : ℝ≥0∞} [Fact (1 ≤ r)] [Fact (1 ≤ q)]
+  (term : ℕ → X → Y → Lp F r (volume : Measure E))
+  (hadd₁ : ∀ j x₁ x₂ y, term j (x₁ + x₂) y = term j x₁ y + term j x₂ y)
+  (hsmul₁ : ∀ j (c : ℂ) x y, term j (c • x) y = c • term j x y)
+  (hadd₂ : ∀ j x y₁ y₂, term j x (y₁ + y₂) = term j x y₁ + term j x y₂)
+  (hsmul₂ : ∀ j (c : ℂ) x y, term j x (c • y) = c • term j x y)
+  {C : ℝ} (hC : ∀ x y, ∃ w : BesovSpace F φ γ r q,
+    HasSum (fun j ↦ (term j x y : 𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖x‖ * ‖y‖)
+
+/-- Bundles a bilinear series of `Lʳ` pieces whose sums in `𝓢'(E, F)` belong to `B^γ_{r,q}` with a
+bilinear norm bound as a continuous bilinear map into `B^γ_{r,q}`. -/
+def mkContinuousOfHasSum₂ : X →L[ℂ] Y →L[ℂ] BesovSpace F φ γ r q :=
+  (LinearMap.mk₂ ℂ (fun x y ↦ (hC x y).choose)
+    (fun x₁ x₂ y ↦ ext <| (hC (x₁ + x₂) y).choose_spec.1.unique <| by
+      simpa only [hadd₁, Lp.toTemperedDistribution_add, toDistr_add] using
+        (hC x₁ y).choose_spec.1.add (hC x₂ y).choose_spec.1)
+    (fun c x y ↦ ext <| (hC (c • x) y).choose_spec.1.unique <| by
+      simpa only [hsmul₁, Lp.toTemperedDistribution_smul, toDistr_smul] using
+        (hC x y).choose_spec.1.const_smul c)
+    (fun x y₁ y₂ ↦ ext <| (hC x (y₁ + y₂)).choose_spec.1.unique <| by
+      simpa only [hadd₂, Lp.toTemperedDistribution_add, toDistr_add] using
+        (hC x y₁).choose_spec.1.add (hC x y₂).choose_spec.1)
+    (fun c x y ↦ ext <| (hC x (c • y)).choose_spec.1.unique <| by
+      simpa only [hsmul₂, Lp.toTemperedDistribution_smul, toDistr_smul] using
+        (hC x y).choose_spec.1.const_smul c)).mkContinuous₂ C
+    fun x y ↦ (hC x y).choose_spec.2
+
+/-- The bilinear map built by `mkContinuousOfHasSum₂` has underlying tempered distribution equal to
+the sum of the series `∑' j, (term j x y : 𝓢'(E, F))`. -/
+theorem hasSum_mkContinuousOfHasSum₂ (x : X) (y : Y) :
+    HasSum (fun j ↦ (term j x y : 𝓢'(E, F)))
+      (mkContinuousOfHasSum₂ term hadd₁ hsmul₁ hadd₂ hsmul₂ hC x y).toDistr :=
+  (hC x y).choose_spec.1
+
+/-- Pointwise norm bound for `mkContinuousOfHasSum₂`. -/
+theorem norm_mkContinuousOfHasSum₂_apply_le (x : X) (y : Y) :
+    ‖mkContinuousOfHasSum₂ term hadd₁ hsmul₁ hadd₂ hsmul₂ hC x y‖ ≤ C * ‖x‖ * ‖y‖ :=
+  (hC x y).choose_spec.2
+
+/-- Operator-norm bound for `mkContinuousOfHasSum₂`. -/
+theorem norm_mkContinuousOfHasSum₂_le (hC0 : 0 ≤ C) :
+    ‖mkContinuousOfHasSum₂ term hadd₁ hsmul₁ hadd₂ hsmul₂ hC‖ ≤ C :=
+  LinearMap.mkContinuous₂_norm_le _ hC0 _
+
+end BilinearSeries
 
 end BesovSpace
 
