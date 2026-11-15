@@ -68,20 +68,24 @@ derivative of `u` with at least one tangential direction in `L²(Ω)`; the norma
 
 ## Main declarations
 
-* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo`: on a domain
+All declarations below are in the namespace `TauCeti.PDE`.
+
+* `UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo`: on a domain
   mapped into itself by the translations parallel to a hyperplane, every first derivative of the
   solution has an `L²(Ω)` weak derivative in every direction.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`: on such a domain the solution
+* `UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`: on such a domain the solution
   lies in `W^{2,2}(Ω)`.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace` and
-  `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the case of a half-space.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn_of_mapsTo`
+* `UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace` and
+  `UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the case of a half-space.
+* `UniformlyEllipticOn.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn_of_mapsTo`
   and its half-space case
   `UniformlyEllipticOn.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn_of_halfSpace`:
   a tangential derivative of the solution lies in `H¹₀(Ω)` and solves the differentiated Dirichlet
   problem with `L²` data.
-* `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo` and
-  its half-space case: a tangential derivative of the solution lies in `H²(Ω)`.
+* `UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_hasWeakLineDerivOn_of_mapsTo`
+  and its half-space case
+  `UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_hasWeakLineDerivOn_of_halfSpace`:
+  a tangential derivative of the solution lies in `H²(Ω)`.
 
 ## References
 
@@ -512,10 +516,10 @@ theorem UniformlyEllipticOn.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn
 
 /-- **Third derivatives with a tangential direction.** Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn_of_mapsTo`,
-the derivative `∂_τ u` of the solution in a direction `τ` orthogonal to `ν` lies in `H²(Ω)` up to
-the boundary: for all `y` and `w`, the derivative `∂_y ∂_τ u` has a weak derivative in the direction
-`w` that lies in `L²(Ω)`. -/
-theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo
+the derivative `d = ∂_τ u ∈ H¹(Ω)` of the solution in a direction `τ` orthogonal to `ν` lies in
+`H²(Ω)` up to the boundary: for all `y` and `w`, the derivative `∂_y d` has a weak derivative in the
+direction `w` that lies in `L²(Ω)`. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_hasWeakLineDerivOn_of_mapsTo
     (hν : ν ≠ 0) (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
@@ -523,14 +527,15 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gra
     (hK' : ∀ i j, LipschitzOnWith K' (fderiv ℝ (fun x => a x i j)) Omega)
     {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0) {f g : Lp ℝ 2 (mu.restrict Omega)}
     (hf : HasWeakLineDerivOn mu Omega f g τ) {u : W1p0 mu Omega 2}
-    (hu : IsWeakSolutionDirichlet a 0 0 f u) :
-    ∃ d : W1p mu Omega 2, HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2))
-        (W1p.value d) τ ∧
-      ∀ y w, ∃ G : Lp ℝ 2 (mu.restrict Omega),
-        HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient d x, y⟫_ℝ) G w := by
-  obtain ⟨d, F, hd, hdF⟩ :=
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {d : W1p mu Omega 2}
+    (hd : HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) τ) (y w) :
+    ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient d x, y⟫_ℝ) G w := by
+  obtain ⟨d₀, F, hd₀, hdF⟩ :=
     ha.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn_of_mapsTo hν hΩ hK hs hK' hτ hf hu
-  exact ⟨d, hd, ha.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hΩ hK hdF⟩
+  -- Weak derivatives are unique, so `d` is the solution `d₀` of the differentiated problem.
+  obtain rfl : d = d₀ := W1p.ext_value (Lp.ext (hd.ae_eq hd₀))
+  exact ha.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hΩ hK hdF y w
 
 /-- **Tangential derivatives on a half-space solve the differentiated Dirichlet problem.** This is
 the half-space case `Ω = {x | c < ⟪x, ν⟫}` of
@@ -553,9 +558,9 @@ theorem UniformlyEllipticOn.exists_isWeakSolutionDirichlet_of_hasWeakLineDerivOn
 
 /-- **Third derivatives with a tangential direction on a half-space.** This is the half-space case
 `Ω = {x | c < ⟪x, ν⟫}` of
-`UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo`.
+`TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_hasWeakLineDerivOn_of_mapsTo`
 -/
-theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_halfSpace
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_hasWeakLineDerivOn_of_halfSpace
     (hν : ν ≠ 0) (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
@@ -563,14 +568,12 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gra
     (hK' : ∀ i j, LipschitzOnWith K' (fderiv ℝ (fun x => a x i j)) Omega)
     {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0) {f g : Lp ℝ 2 (mu.restrict Omega)}
     (hf : HasWeakLineDerivOn mu Omega f g τ) {u : W1p0 mu Omega 2}
-    (hu : IsWeakSolutionDirichlet a 0 0 f u) :
-    ∃ d : W1p mu Omega 2, HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2))
-        (W1p.value d) τ ∧
-      ∀ y w, ∃ G : Lp ℝ 2 (mu.restrict Omega),
-        HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient d x, y⟫_ℝ) G w :=
-  ha.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo hν
-    (fun _ hτ' => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ') hK hs hK' hτ hf hu
-
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {d : W1p mu Omega 2}
+    (hd : HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) τ) (y w) :
+    ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient d x, y⟫_ℝ) G w :=
+  ha.exists_hasWeakLineDerivOn_gradient_of_hasWeakLineDerivOn_of_mapsTo hν
+    (fun _ hτ' => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ') hK hs hK' hτ hf hu hd y w
 
 end PDE
 

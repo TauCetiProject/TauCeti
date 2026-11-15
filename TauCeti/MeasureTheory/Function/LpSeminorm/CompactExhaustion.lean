@@ -10,26 +10,28 @@ public import Mathlib.Topology.MetricSpace.ProperSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
-import Mathlib.Topology.MetricSpace.HausdorffDistance
+import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # `Lᵖ` seminorms on an open set through compact subsets
 
-Let `U` be an open subset of a proper metric space and `1 ≤ p < ∞`. The `Lᵖ` seminorm of a function
-on `U` is controlled by its seminorms on the compact subsets of `U`:
+Let `U` be an open subset of a proper metric space. The `Lᵖ` seminorm of a function on `U` is
+controlled by its seminorms on the compact subsets of `U`:
 
-* if `‖f‖_{Lᵖ(K)} ≤ C` for every compact `K ⊆ U`, then `‖f‖_{Lᵖ(U)} ≤ C`
+* for every `p`, if `‖f‖_{Lᵖ(K)} ≤ C` for every compact `K ⊆ U`, then `‖f‖_{Lᵖ(U)} ≤ C`
   (`MeasureTheory.eLpNorm_restrict_le_of_forall_isCompact`);
-* if `‖f‖_{Lᵖ(U)} < ∞`, then for every `ε > 0` there is a compact `K ⊆ U` with
+* for `p ≠ ∞`, if `‖f‖_{Lᵖ(U)} < ∞`, then for every `ε > 0` there is a compact `K ⊆ U` with
   `‖f‖_{Lᵖ(U \ K)} ≤ ε` (`MeasureTheory.exists_isCompact_eLpNorm_restrict_sdiff_le`);
-* for a measurable `K`, `‖f‖_{Lᵖ(U)} ≤ ‖f‖_{Lᵖ(K)} + ‖f‖_{Lᵖ(U \ K)}`
+* for `1 ≤ p`, any set `U` and any measurable `K`, `‖f‖_{Lᵖ(U)} ≤ ‖f‖_{Lᵖ(K)} + ‖f‖_{Lᵖ(U \ K)}`
   (`MeasureTheory.eLpNorm_restrict_le_add_restrict_sdiff`).
 
-Both follow from an increasing exhaustion of `U` by compact sets: the integral of `‖f‖ᵖ` over `U`
-is the supremum of its integrals over the exhausting sets, and the integrals over their complements
-in `U` tend to zero by dominated convergence. Together they carry an estimate proved on compact sets
-to all of `U`: a bound passes to `U` directly, and a convergence statement on compact sets passes to
-`U` once the tail of a fixed function has been cut off.
+The first two follow from an increasing exhaustion of `U` by compact sets
+(`IsOpen.exists_iUnion_isOpen_isCompact_closure`): the integral of `‖f‖ᵖ` over `U` is the supremum
+of its integrals over the exhausting sets, and the integrals over their complements in `U` tend to
+zero by dominated convergence. The third is the triangle inequality for the indicators of `K` and
+its complement. Together they carry an estimate proved on compact sets to all of `U`: a bound
+passes to `U` directly, and a convergence statement on compact sets passes to `U` once the tail of
+a fixed function has been cut off.
 -/
 
 public section
@@ -42,25 +44,6 @@ namespace MeasureTheory
 variable {X F : Type*} [MetricSpace X] [ProperSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [NormedAddCommGroup F] {μ : Measure X} {U : Set X} {p : ℝ≥0∞}
 
-omit [MeasurableSpace X] [OpensMeasurableSpace X] in
-/-- An open subset of a proper metric space is the union of an increasing sequence of compact
-subsets. -/
-private theorem exists_monotone_isCompact_iUnion_eq (hU : IsOpen U) :
-    ∃ K : ℕ → Set X, (∀ n, IsCompact (K n)) ∧ (∀ n, K n ⊆ U) ∧ Monotone K ∧ ⋃ n, K n = U := by
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
-  · exact ⟨fun _ => ∅, fun _ => isCompact_empty, fun _ => empty_subset _, fun _ _ _ => le_rfl,
-      by simp [eq_empty_of_isEmpty U]⟩
-  obtain ⟨C, hCc, hCU, hCun, hCm⟩ := hU.exists_iUnion_isClosed
-  refine ⟨fun n => C n ∩ closedBall x₀ n, fun n => (isCompact_closedBall x₀ _).inter_left (hCc n),
-    fun n => inter_subset_left.trans (hCU n), fun m n hmn => inter_subset_inter (hCm hmn)
-      (closedBall_subset_closedBall (by exact_mod_cast hmn)), ?_⟩
-  refine Subset.antisymm (iUnion_subset fun n => inter_subset_left.trans (hCU n)) fun x hx => ?_
-  rw [← hCun, mem_iUnion] at hx
-  obtain ⟨m, hm⟩ := hx
-  obtain ⟨k, hk⟩ := exists_nat_ge (dist x x₀)
-  exact mem_iUnion.2 ⟨max m k, hCm (le_max_left m k) hm,
-    mem_closedBall.2 (hk.trans (by exact_mod_cast le_max_right m k))⟩
-
 omit [OpensMeasurableSpace X] in
 /-- **`Lᵖ` bounds on an open set from bounds on its compact subsets.** If `f` has `Lᵖ` seminorm at
 most `C` on every compact subset of an open set `U`, then it has `Lᵖ` seminorm at most `C` on `U`.
@@ -70,7 +53,11 @@ theorem eLpNorm_restrict_le_of_forall_isCompact (hU : IsOpen U) {f : X → F} {C
     eLpNorm f p (μ.restrict U) ≤ C := by
   rcases eq_or_ne C ⊤ with rfl | hC
   · exact le_top
-  obtain ⟨K, hKc, hKU, hKm, hKun⟩ := exists_monotone_isCompact_iUnion_eq hU
+  -- Exhaust `U` by the compact closures `K n` of an increasing sequence of open sets.
+  obtain ⟨V, -, hKc, hKU, hVm, hVun⟩ := hU.exists_iUnion_isOpen_isCompact_closure
+  set K := fun n => closure (V n)
+  have hKun : ⋃ n, K n = U :=
+    (iUnion_subset hKU).antisymm (hVun ▸ iUnion_mono fun n => subset_closure)
   have h' : ∀ n, eLpNorm f p (μ.restrict (K n)) ≤ C := fun n => h (K n) (hKc n) (hKU n)
   -- `f` is measurable on each `K n`, where its seminorm is finite, hence on `U`.
   have hm : ∀ n, AEStronglyMeasurable f (μ.restrict (K n)) := fun n =>
@@ -94,7 +81,7 @@ theorem eLpNorm_restrict_le_of_forall_isCompact (hU : IsOpen U) {f : X → F} {C
       ENNReal.rpow_inv_le_iff hr] at h''
     exact h''
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf, one_div, ENNReal.rpow_inv_le_iff hr, ← hKun,
-    setLIntegral_iUnion_of_directed _ hKm.directed_le]
+    setLIntegral_iUnion_of_directed _ (Monotone.directed_le fun _ _ h => closure_mono (hVm h))]
   exact iSup_le hle
 
 /-- **The tail of an `Lᵖ` function on an open set.** If `f ∈ Lᵖ(U)` for an open set `U` and
@@ -108,7 +95,12 @@ theorem exists_isCompact_eLpNorm_restrict_sdiff_le (hU : IsOpen U) (hp : p ≠ �
         zero_le⟩
   rcases eq_or_ne ε ⊤ with rfl | hεt
   · exact ⟨∅, isCompact_empty, empty_subset _, le_top⟩
-  obtain ⟨K, hKc, hKU, hKm, hKun⟩ := exists_monotone_isCompact_iUnion_eq hU
+  -- Exhaust `U` by the compact closures `K n` of an increasing sequence of open sets.
+  obtain ⟨V, -, hKc, hKU, hVm, hVun⟩ := hU.exists_iUnion_isOpen_isCompact_closure
+  set K := fun n => closure (V n)
+  have hKm : Monotone K := fun _ _ h => closure_mono (hVm h)
+  have hKun : ⋃ n, K n = U :=
+    (iUnion_subset hKU).antisymm (hVun ▸ iUnion_mono fun n => subset_closure)
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hKm' : ∀ n, MeasurableSet (K n)ᶜ := fun n => (hKc n).isClosed.measurableSet.compl
   -- The integrals of `‖f‖ᵖ` over `U \ K n` tend to zero by dominated convergence.

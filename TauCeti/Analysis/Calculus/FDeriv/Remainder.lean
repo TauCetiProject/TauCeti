@@ -33,9 +33,10 @@ In particular `F p` is Lipschitz with a constant independent of `p ∈ K` on bal
 independent of `p` about `x p` (`IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sub`), and so
 Lipschitz at `x p` (`IsCompact.exists_pos_forall_norm_sub_le_mul`).
 
-For a single differentiable map whose derivative is `L`-Lipschitz on the whole space, the remainder
-is globally quadratic, `‖f (x + h) - f x - Df(x) h‖ ≤ L ‖h‖²`
-(`TauCeti.norm_sub_sub_fderiv_le_of_lipschitzWith`).
+For a single map differentiable on a convex set `s`, with derivative `L`-Lipschitz on `s`, the
+remainder is quadratic on `s`, `‖f (x + h) - f x - Df(x) h‖ ≤ L ‖h‖²` for `x, x + h ∈ s`
+(`TauCeti.norm_sub_sub_fderiv_le_of_lipschitzOnWith`, and
+`TauCeti.norm_sub_sub_fderiv_le_of_lipschitzWith` on the whole space).
 
 For a family that is jointly `C²` at the graph of `x` the remainder is quadratic, uniformly over
 `K`, in the two-point form
@@ -76,23 +77,35 @@ section LipschitzDerivative
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
+/-- **The quadratic remainder for a Lipschitz derivative on a convex set.** If `f` is
+differentiable at every point of a convex set `s` and its derivative is `L`-Lipschitz on `s`, then
+for `x, x + h ∈ s` the remainder of the first-order expansion is quadratic:
+`‖f (x + h) - f x - Df(x) h‖ ≤ L ‖h‖²`. -/
+theorem norm_sub_sub_fderiv_le_of_lipschitzOnWith {f : E → F} {s : Set E} (hs : Convex ℝ s)
+    (hf : ∀ z ∈ s, DifferentiableAt ℝ f z) {L : NNReal} (hL : LipschitzOnWith L (fderiv ℝ f) s)
+    {x h : E} (hx : x ∈ s) (hxh : x + h ∈ s) :
+    ‖f (x + h) - f x - fderiv ℝ f x h‖ ≤ L * ‖h‖ ^ 2 := by
+  have hseg : segment ℝ x (x + h) ⊆ s := hs.segment_subset hx hxh
+  have hbound : ∀ z ∈ segment ℝ x (x + h), ‖fderiv ℝ f z - fderiv ℝ f x‖ ≤ L * ‖h‖ := by
+    intro z hz
+    rw [← dist_eq_norm]
+    refine (hL.dist_le_mul z (hseg hz) x hx).trans ?_
+    rw [dist_eq_norm]
+    gcongr
+    simpa [norm_sub_rev] using norm_sub_le_of_mem_segment hz
+  have h := (convex_segment x (x + h)).norm_image_sub_le_of_norm_fderiv_le'
+    (fun z hz => hf z (hseg hz)) hbound (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)
+  rw [add_sub_cancel_left] at h
+  exact h.trans_eq (by ring)
+
 /-- **The quadratic remainder for a Lipschitz derivative.** If `f` is differentiable and its
 derivative is `L`-Lipschitz, then the remainder of the first-order expansion is quadratic:
 `‖f (x + h) - f x - Df(x) h‖ ≤ L ‖h‖²`. -/
 theorem norm_sub_sub_fderiv_le_of_lipschitzWith {f : E → F} (hf : Differentiable ℝ f)
     {L : NNReal} (hL : LipschitzWith L (fderiv ℝ f)) (x h : E) :
-    ‖f (x + h) - f x - fderiv ℝ f x h‖ ≤ L * ‖h‖ ^ 2 := by
-  have hbound : ∀ z ∈ segment ℝ x (x + h), ‖fderiv ℝ f z - fderiv ℝ f x‖ ≤ L * ‖h‖ := by
-    intro z hz
-    rw [← dist_eq_norm]
-    refine (hL.dist_le_mul z x).trans ?_
-    rw [dist_eq_norm]
-    gcongr
-    simpa [norm_sub_rev] using norm_sub_le_of_mem_segment hz
-  have h := (convex_segment x (x + h)).norm_image_sub_le_of_norm_fderiv_le' (fun z _ => hf z)
-    hbound (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)
-  rw [add_sub_cancel_left] at h
-  exact h.trans_eq (by ring)
+    ‖f (x + h) - f x - fderiv ℝ f x h‖ ≤ L * ‖h‖ ^ 2 :=
+  norm_sub_sub_fderiv_le_of_lipschitzOnWith convex_univ (fun z _ => hf z)
+    (hL.lipschitzOnWith (s := univ)) (mem_univ x) (mem_univ _)
 
 end LipschitzDerivative
 
