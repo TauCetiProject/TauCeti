@@ -60,11 +60,13 @@ theorem isManifoldNondegenerateCriticalPoint_comp_iff
   have : IsManifold I 2 M' := IsManifold.of_le hn
   obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
     (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
+  have hcomp' : (f ∘ π) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)]
+      f ∘ ((chartAt H (π x)).extend I).symm := hcomp.fun_comp f
   rw [isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le hn he) hx,
     isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
       (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x)), ← hpt]
-  exact ⟨fun h ↦ h.congr_of_eventuallyEq (hcomp f), fun h ↦ h.congr_of_eventuallyEq (hcomp f).symm⟩
+  exact ⟨fun h ↦ h.congr_of_eventuallyEq hcomp', fun h ↦ h.congr_of_eventuallyEq hcomp'.symm⟩
 
 /-- **The Morse index under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at
 `x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²` there, then the
@@ -79,11 +81,13 @@ theorem manifoldMorseIndex_comp
     (hπ.mem_criticalPoints_comp_iff (one_le_two.trans hn)).2 hcrit
   obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
     (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
+  have hcomp' : (f ∘ π) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)]
+      f ∘ ((chartAt H (π x)).extend I).symm := hcomp.fun_comp f
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le hn he) hx (hf.comp x (hπ.contMDiffAt.of_le hn))
       (mem_criticalPoints.1 hcrit'),
     manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (π x))
       (mem_chart_source H (π x)) hf (mem_criticalPoints.1 hcrit),
-    morseIndex_congr_of_eventuallyEq (hcomp f), hpt]
+    morseIndex_congr_of_eventuallyEq hcomp', hpt]
 
 end IsLocalDiffeomorphAt
