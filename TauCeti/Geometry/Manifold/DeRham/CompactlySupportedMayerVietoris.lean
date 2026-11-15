@@ -252,11 +252,8 @@ theorem compactlySupportedMayerVietorisShortComplex_shortExact [FiniteDimensiona
     (fun k ↦ compactlySupportedDeRhamComplex.extendByZero_f _ k) hexact hinj
     fun _ ↦ compactlySupportedForms.surjective_coprod_extendByZero U V
 
-/-- Let `γ` and `δ` be compactly supported forms on `U` and `V` whose extensions by zero to
-`U ⊔ V` have closed sum. Then `dγ` and `-dδ` are the extensions by zero of a compactly supported
-closed form on `U ⊓ V`. This is the form that represents the image of the class of that sum under
-the compactly supported Mayer–Vietoris connecting map
-(`TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ_mk`). -/
+/-- If compactly supported forms `γ` on `U` and `δ` on `V` have closed sum on `U ⊔ V`, then `dγ`
+and `-dδ` are the extensions by zero of a compactly supported closed form on `U ⊓ V`. -/
 theorem exists_compactlySupportedClosedForms_extendByZero_eq_mextDerivₗ {U V : Opens M}
     (γ : compactlySupportedForms I U k) (δ : compactlySupportedForms I V k)
     (hγδ : (compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) k γ +
@@ -267,31 +264,32 @@ theorem exists_compactlySupportedClosedForms_extendByZero_eq_mextDerivₗ {U V :
           (compactlySupportedForms.mextDerivₗ I U k γ).1 ∧
         (compactlySupportedClosedForms.extendByZero inf_le_right (k + 1) τ).1 =
           -(compactlySupportedForms.mextDerivₗ I V k δ).1 := by
-  have hd0 : compactlySupportedForms.mextDerivₗ I (U ⊔ V : Opens M) k
-      (compactlySupportedForms.extendByZero le_sup_left k γ +
-        compactlySupportedForms.extendByZero le_sup_right k δ) = 0 :=
-    Subtype.ext <| by
+  have hd0 : compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) (k + 1)
+        (compactlySupportedForms.mextDerivₗ I U k γ) +
+      compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) (k + 1)
+        (compactlySupportedForms.mextDerivₗ I V k δ) = 0 := by
+    rw [← compactlySupportedForms.mextDerivₗ_extendByZero,
+      ← compactlySupportedForms.mextDerivₗ_extendByZero, ← map_add]
+    exact Subtype.ext (by
       rw [compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero]
-      exact (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mp hγδ
-  rw [map_add, compactlySupportedForms.mextDerivₗ_extendByZero,
-    compactlySupportedForms.mextDerivₗ_extendByZero] at hd0
+      exact (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mp hγδ)
   obtain ⟨θ, hθU, hθV⟩ := compactlySupportedForms.extendByZero_add_extendByZero_eq_zero_iff.mp hd0
   have hθd : compactlySupportedForms.mextDerivₗ I (U ⊓ V : Opens M) (k + 1) θ = 0 :=
     compactlySupportedForms.extendByZero_injective (inf_le_left : U ⊓ V ≤ U) (k + 2) <| by
       rw [map_zero, ← compactlySupportedForms.mextDerivₗ_extendByZero, hθU]
       exact LinearMap.congr_fun (compactlySupportedForms.mextDerivₗ_comp_mextDerivₗ I k) γ
   refine ⟨⟨θ.1, (mem_compactlySupportedClosedForms I).mpr ⟨θ.2,
-    (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr ?_⟩⟩, ?_, ?_⟩
-  · simpa only [compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero] using
-      congrArg Subtype.val hθd
-  · exact Subtype.ext (by
+    (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr
+      (by simpa only [compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero] using
+        congrArg Subtype.val hθd)⟩⟩,
+    Subtype.ext (by
       simpa only [compactlySupportedClosedForms.coe_extendByZero,
         compactlySupportedForms.coe_extendByZero] using
-        congrArg (fun ξ : compactlySupportedForms I U (k + 1) ↦ ξ.1.1) hθU)
-  · exact Subtype.ext (by
+        congrArg (fun ξ : compactlySupportedForms I U (k + 1) ↦ ξ.1.1) hθU),
+    Subtype.ext (by
       simpa only [compactlySupportedClosedForms.coe_extendByZero,
         compactlySupportedForms.coe_extendByZero, Submodule.coe_neg] using
-        congrArg (fun ξ : compactlySupportedForms I V (k + 1) ↦ ξ.1.1) hθV)
+        congrArg (fun ξ : compactlySupportedForms I V (k + 1) ↦ ξ.1.1) hθV)⟩
 
 private theorem extendByZero_f_inv_apply (I : ModelWithCorners ℝ E H) [IsManifold I 2 M]
     {U W : Opens M} (h : U ≤ W) (k : ℕ) (φ : compactlySupportedForms I U k) :
@@ -299,8 +297,7 @@ private theorem extendByZero_f_inv_apply (I : ModelWithCorners ℝ E H) [IsManif
         ((compactlySupportedDeRhamComplexXIso I k).inv φ) =
       (compactlySupportedDeRhamComplexXIso I k).inv
         (compactlySupportedForms.extendByZero h k φ) := by
-  rw [(Iso.eq_comp_inv _).mpr (compactlySupportedDeRhamComplex.extendByZero_f h k)]
-  simp
+  rw [(Iso.eq_comp_inv _).mpr (compactlySupportedDeRhamComplex.extendByZero_f h k)]; simp
 
 end Complex
 
@@ -311,80 +308,21 @@ variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [SigmaCompactSpace M]
 namespace compactlySupportedDeRhamCohomology
 
 variable (I) in
-/-- The **compactly supported Mayer–Vietoris connecting map** `H_c^k(U ⊔ V) → H_c^{k+1}(U ⊓ V)` of
-compactly supported de Rham cohomology: the connecting map of the long exact cohomology sequence of
-the compactly supported Mayer–Vietoris short exact sequence. -/
+/-- The **compactly supported Mayer–Vietoris connecting map** `H_c^k(U ⊔ V) → H_c^{k+1}(U ⊓ V)`. -/
 def mayerVietorisδ (U V : Opens M) (k : ℕ) :
     compactlySupportedDeRhamCohomology I (U ⊔ V : Opens M) k →ₗ[ℝ]
       compactlySupportedDeRhamCohomology I (U ⊓ V : Opens M) (k + 1) :=
   ((compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl).hom
 
-/-- The compactly supported Mayer–Vietoris connecting map is the connecting morphism of the
-homology sequence of the compactly supported Mayer–Vietoris short exact sequence. -/
+/-- `mayerVietorisδ` as a `ModuleCat` morphism is the `ShortComplex.ShortExact.δ` morphism. -/
 theorem ofHom_mayerVietorisδ (U V : Opens M) (k : ℕ) :
     ModuleCat.ofHom (mayerVietorisδ I U V k) =
       (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl :=
   (rfl)
 
-omit [FiniteDimensional ℝ E] [SigmaCompactSpace M] in
-private theorem mayerVietoris_biprod_lift_eq_d (U V : Opens M) {k : ℕ}
-    (γ : compactlySupportedForms I U k) (δ : compactlySupportedForms I V k)
-    (τ : compactlySupportedClosedForms I (U ⊓ V : Opens M) (k + 1))
-    (hτU : (compactlySupportedClosedForms.extendByZero inf_le_left (k + 1) τ).1 =
-      (compactlySupportedForms.mextDerivₗ I U k γ).1)
-    (hτV : (compactlySupportedClosedForms.extendByZero inf_le_right (k + 1) τ).1 =
-      -(compactlySupportedForms.mextDerivₗ I V k δ).1) :
-    (biprod.lift
-        (compactlySupportedDeRhamComplex.extendByZero (I := I) (inf_le_left : U ⊓ V ≤ U))
-        (-compactlySupportedDeRhamComplex.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V))).f
-        (k + 1)
-        ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
-          (Submodule.inclusion
-            (compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1)) τ)) =
-      (compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).d k (k + 1)
-        ((biprod.inl : compactlySupportedDeRhamComplex I U ⟶
-            compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f k
-            ((compactlySupportedDeRhamComplexXIso I k).inv γ) +
-          (biprod.inr : compactlySupportedDeRhamComplex I V ⟶
-            compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f k
-            ((compactlySupportedDeRhamComplexXIso I k).inv δ)) := by
-  have hτUc : compactlySupportedForms.extendByZero (inf_le_left : U ⊓ V ≤ U) (k + 1)
-      (Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1)) τ) =
-      compactlySupportedForms.mextDerivₗ I U k γ :=
-    Subtype.ext <| Subtype.ext <| by
-      simpa only [compactlySupportedForms.coe_extendByZero,
-        compactlySupportedClosedForms.coe_extendByZero, Submodule.coe_inclusion] using
-        congrArg Subtype.val hτU
-  have hτVc : compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (k + 1)
-      (Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1)) τ) =
-      -compactlySupportedForms.mextDerivₗ I V k δ :=
-    Subtype.ext <| Subtype.ext <| by
-      simpa only [compactlySupportedForms.coe_extendByZero,
-        compactlySupportedClosedForms.coe_extendByZero, Submodule.coe_inclusion,
-        Submodule.coe_neg] using congrArg Subtype.val hτV
-  have hneg : -(biprod.inr : compactlySupportedDeRhamComplex I V ⟶
-        compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f (k + 1)
-        ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
-          (-compactlySupportedForms.mextDerivₗ I V k δ)) =
-      (biprod.inr : compactlySupportedDeRhamComplex I V ⟶
-        compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f (k + 1)
-        ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
-          (compactlySupportedForms.mextDerivₗ I V k δ)) :=
-    (congrArg
-      (fun z ↦ -(biprod.inr : compactlySupportedDeRhamComplex I V ⟶
-        compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f (k + 1) z)
-      (map_neg (compactlySupportedDeRhamComplexXIso I (k + 1)).inv.hom _)).trans
-      ((congrArg Neg.neg (map_neg ((biprod.inr : compactlySupportedDeRhamComplex I V ⟶
-        compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f (k + 1)).hom
-        _)).trans (neg_neg _))
-  simp [biprod.lift_eq, extendByZero_f_inv_apply I _ (k + 1), hτUc, hτVc,
-    HomologicalComplex.Hom.comm_apply, compactlySupportedDeRhamComplex_d_apply, hneg]
-
-/-- **Witness formula for `compactlySupportedDeRhamCohomology.mayerVietorisδ`.** Let `ψ` be a
-compactly supported closed form on `U ⊔ V`, written as the sum of the extensions by zero of
-compactly supported forms `γ` on `U` and `δ` on `V`. If `τ` is a compactly supported closed form on
-`U ⊓ V` whose extensions by zero to `U` and to `V` are `dγ` and `-dδ`, then the connecting map sends
-the class of `ψ` to the class of `τ`. -/
+/-- **Witness formula for `compactlySupportedDeRhamCohomology.mayerVietorisδ`.** If `ψ` on `U ⊔ V`
+is the sum of extensions by zero of `γ` on `U` and `δ` on `V`, and `τ` on `U ⊓ V` extends to `dγ` on
+`U` and `-dδ` on `V`, then `mayerVietorisδ` sends `[ψ]` to `[τ]`. -/
 theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ}
     (ψ : compactlySupportedClosedForms I (U ⊔ V : Opens M) k)
     (γ : compactlySupportedForms I U k) (δ : compactlySupportedForms I V k)
@@ -396,30 +334,56 @@ theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ}
     (hτV : (compactlySupportedClosedForms.extendByZero inf_le_right (k + 1) τ).1 =
       -(compactlySupportedForms.mextDerivₗ I V k δ).1) :
     mayerVietorisδ I U V k (mk I k ψ) = mk I (k + 1) τ := by
-  let x₂ : (compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).X k :=
-    (biprod.inl : compactlySupportedDeRhamComplex I U ⟶
-        compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f k
-        ((compactlySupportedDeRhamComplexXIso I k).inv γ) +
-      (biprod.inr : compactlySupportedDeRhamComplex I V ⟶
-        compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V).f k
-        ((compactlySupportedDeRhamComplexXIso I k).inv δ)
-  have hψc : compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) k γ +
-      compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) k δ =
-      Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I k) ψ :=
-    Subtype.ext hγδ
+  let C := compactlySupportedDeRhamComplex I U ⊞ compactlySupportedDeRhamComplex I V
+  let x₂ : C.X k :=
+    (biprod.inl : _ ⟶ C).f k ((compactlySupportedDeRhamComplexXIso I k).inv γ) +
+      (biprod.inr : _ ⟶ C).f k ((compactlySupportedDeRhamComplexXIso I k).inv δ)
   have hx₂ : (biprod.desc
       (compactlySupportedDeRhamComplex.extendByZero (I := I) (le_sup_left : U ≤ U ⊔ V))
       (compactlySupportedDeRhamComplex.extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V))).f k x₂ =
       (compactlySupportedDeRhamComplexXIso I k).inv
         (Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I k) ψ) := by
+    have hψc : compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) k γ +
+        compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) k δ =
+        Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I k) ψ :=
+      Subtype.ext hγδ
     simp only [x₂, ← hψc, map_add, ← extendByZero_f_inv_apply I le_sup_left k γ,
       ← extendByZero_f_inv_apply I le_sup_right k δ, ← ModuleCat.comp_apply,
       ← HomologicalComplex.comp_f, biprod.inl_desc, biprod.inr_desc]
-  have hτ := mayerVietoris_biprod_lift_eq_d U V γ δ τ hτU hτV
+  have hτ : (biprod.lift
+      (compactlySupportedDeRhamComplex.extendByZero (I := I) (inf_le_left : U ⊓ V ≤ U))
+      (-compactlySupportedDeRhamComplex.extendByZero (I := I) (inf_le_right : U ⊓ V ≤ V))).f (k + 1)
+      ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
+        (Submodule.inclusion
+          (compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1)) τ)) =
+      C.d k (k + 1) x₂ := by
+    have hτUc : compactlySupportedForms.extendByZero (inf_le_left : U ⊓ V ≤ U) (k + 1)
+        (Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1))
+          τ) = compactlySupportedForms.mextDerivₗ I U k γ :=
+      Subtype.ext <| Subtype.ext <| by
+        simpa only [compactlySupportedForms.coe_extendByZero,
+          compactlySupportedClosedForms.coe_extendByZero, Submodule.coe_inclusion] using
+          congrArg Subtype.val hτU
+    have hτVc : compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (k + 1)
+        (Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I (k + 1))
+          τ) = -compactlySupportedForms.mextDerivₗ I V k δ :=
+      Subtype.ext <| Subtype.ext <| by
+        simpa only [compactlySupportedForms.coe_extendByZero,
+          compactlySupportedClosedForms.coe_extendByZero, Submodule.coe_inclusion,
+          Submodule.coe_neg] using congrArg Subtype.val hτV
+    have hneg : -(biprod.inr : _ ⟶ C).f (k + 1) ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
+        (-compactlySupportedForms.mextDerivₗ I V k δ)) =
+        (biprod.inr : _ ⟶ C).f (k + 1) ((compactlySupportedDeRhamComplexXIso I (k + 1)).inv
+          (compactlySupportedForms.mextDerivₗ I V k δ)) :=
+      (congrArg (fun z ↦ -(biprod.inr : _ ⟶ C).f (k + 1) z)
+        (map_neg (compactlySupportedDeRhamComplexXIso I (k + 1)).inv.hom _)).trans
+        ((congrArg Neg.neg (map_neg ((biprod.inr : _ ⟶ C).f (k + 1)).hom _)).trans (neg_neg _))
+    simp [C, x₂, biprod.lift_eq, extendByZero_f_inv_apply I _ (k + 1), hτUc, hτVc,
+      HomologicalComplex.Hom.comm_apply, compactlySupportedDeRhamComplex_d_apply, hneg]
   rw [mayerVietorisδ, mk_eq_moduleCatHomologyClass, mk_eq_moduleCatHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_apply,
     HomologicalComplex.moduleCatHomologyClass_apply]
-  refine (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).moduleCat_δ_homologyπ
+  exact (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V).moduleCat_δ_homologyπ
     k (k + 1) rfl _ x₂ (hx₂.trans (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _).symm) _
     ((congrArg _ (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _)).trans hτ)
 
@@ -431,9 +395,8 @@ theorem exact_mayerVietoris₁ (U V : Opens M) (k : ℕ) :
   have h := HomologicalComplex.moduleCat_biprod_homology_exact₁
     (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V) k (k + 1) rfl
   rwa [compactlySupportedDeRhamComplex.homologyMap_extendByZero,
-    HomologicalComplex.homologyMap_neg,
-    compactlySupportedDeRhamComplex.homologyMap_extendByZero, ModuleCat.hom_neg,
-    ModuleCat.hom_ofHom, ModuleCat.hom_ofHom] at h
+    HomologicalComplex.homologyMap_neg, compactlySupportedDeRhamComplex.homologyMap_extendByZero,
+    ModuleCat.hom_neg, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom] at h
 
 /-- Exactness of the compactly supported Mayer–Vietoris sequence at `H_c^k(U) × H_c^k(V)`. -/
 theorem exact_mayerVietoris₂ (U V : Opens M) (k : ℕ) :
@@ -469,7 +432,7 @@ theorem injective_mayerVietoris_zero (U V : Opens M) :
     HomologicalComplex.homologyMap_neg, ModuleCat.hom_neg, ModuleCat.hom_ofHom] using
     HomologicalComplex.moduleCat_biprod_homology_injective_of_not_rel
       (compactlySupportedMayerVietorisShortComplex_shortExact (I := I) U V) 0
-      fun i (h : i + 1 = 0) ↦ Nat.succ_ne_zero i h
+      fun _ ↦ Nat.succ_ne_zero _
 
 end compactlySupportedDeRhamCohomology
 

@@ -751,8 +751,7 @@ theorem exact_mayerVietoris₂ (U V : Opens M) (k : ℕ) :
         (-map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
           (contMDiff_inclusion _) k)) := by
   simpa only [deRhamComplex.homologyMap_map, HomologicalComplex.homologyMap_neg, ModuleCat.hom_neg,
-    ModuleCat.hom_ofHom] using
-    HomologicalComplex.moduleCat_biprod_homology_exact₂
+    ModuleCat.hom_ofHom] using HomologicalComplex.moduleCat_biprod_homology_exact₂
       (mayerVietorisShortComplex_shortExact (I := I) U V) k
 
 /-- Exactness of the Mayer–Vietoris sequence at `H^k(U ⊓ V)`. -/
@@ -778,8 +777,7 @@ theorem injective_mayerVietoris_zero (U V : Opens M) :
           (contMDiff_inclusion _) 0)) := by
   simpa only [deRhamComplex.homologyMap_map, ModuleCat.hom_ofHom] using
     HomologicalComplex.moduleCat_biprod_homology_injective_of_not_rel
-      (mayerVietorisShortComplex_shortExact (I := I) U V) 0 fun i (h : i + 1 = 0) ↦
-        Nat.succ_ne_zero i h
+      (mayerVietorisShortComplex_shortExact (I := I) U V) 0 fun _ ↦ Nat.succ_ne_zero _
 
 end deRhamCohomology
 
