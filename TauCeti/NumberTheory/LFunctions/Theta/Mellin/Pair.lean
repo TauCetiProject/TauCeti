@@ -37,6 +37,16 @@ functional-equation pair.
   `Λ(D, L, s) = Λ(D⁻¹, L^∨, 1/2 - s)` (`mellinKernelFEPair_Λ_eq`, and as germs at every point
   `mellinKernelFEPair_Λ_eventuallyEq`).
 
+* The pole-cleared entire completion `(mellinKernelFEPair hD L).entireΛ` takes the nonzero
+  removable value `a₀ / 2` at both `0` and `1/2`, agrees with `s (s - 1/2) Λ(D, L, s)` off
+  `{0, 1/2}`, and satisfies `entireΛ(D, L, s) = entireΛ(D⁻¹, L^∨, 1/2 - s)` on all of `ℂ`
+  (`mellinKernelFEPair_entireΛ_eq`).
+* For the lattice `σ(I)` of a fractional ideal and its trace dual `J = I^∨`,
+  `mellinKernel_mixedDual_idealLattice` identifies the dual pair with that of `σ(J)` over the
+  shifted unit fundamental domain `(traceShift K * ·) '' D⁻¹`, yielding Neukirch VII (5.9) both
+  off the poles (`mellinKernelFEPair_idealLattice_Λ_eq`) and globally for `entireΛ`
+  (`mellinKernelFEPair_idealLattice_entireΛ_eq`).
+
 At the lattice `σ(𝔞)` of a fractional ideal, Neukirch's (5.5) reads `Λ` at `s/2` as the completed
 partial zeta function of the class of `𝔞⁻¹`; this file does not make that identification.
 
@@ -51,7 +61,7 @@ noncomputable section
 
 open Filter MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
   NumberField.Units TauCeti.NumberField.mixedEmbedding Set
-open scoped Pointwise Topology
+open scoped Pointwise Topology nonZeroDivisors
 
 namespace TauCeti.LFunctions
 
@@ -230,5 +240,113 @@ theorem mellinKernelFEPair_Λ_eventuallyEq {D : Set (realSpace K)} (hD : IsUnitF
   filter_upwards [(mellinKernelFEPair hD L).Λ_eventuallyEq s] with z hz
   rw [hz, mellinKernelFEPair_symm]
   simp
+
+open scoped Classical in
+theorem mellinKernelFEPair_entireΛ_zero {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    (mellinKernelFEPair hD L).entireΛ 0 = (mellinConstant K : ℂ) / 2 := by
+  rw [FEPairWithLevel.entireΛ_zero, mellinKernelFEPair_k, mellinKernelFEPair_f₀, smul_eq_mul]
+  push_cast
+  ring
+
+open scoped Classical in
+theorem mellinKernelFEPair_entireΛ_half {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    (mellinKernelFEPair hD L).entireΛ (1 / 2) = (mellinConstant K : ℂ) / 2 := by
+  have hk : ((1 / 2 : ℝ) : ℂ) = (1 / 2 : ℂ) := by norm_num
+  rw [← hk, ← mellinKernelFEPair_k hD L, FEPairWithLevel.entireΛ_k, mellinKernelFEPair_k,
+    mellinKernelFEPair_ε, mellinKernelFEPair_N, mellinKernelFEPair_g₀]
+  simp only [Complex.ofReal_one, Complex.one_cpow, mul_one, smul_eq_mul]
+  push_cast
+  ring
+
+open scoped Classical in
+@[simp]
+theorem mellinKernelFEPair_entireΛ_inv_two {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    (mellinKernelFEPair hD L).entireΛ 2⁻¹ = (mellinConstant K : ℂ) / 2 := by
+  simpa only [one_div] using mellinKernelFEPair_entireΛ_half hD L
+
+open scoped Classical in
+/-- Away from `0` and `1/2`, `entireΛ` of the lattice pair is `s * (s - 1/2) * Λ s`. -/
+theorem mellinKernelFEPair_entireΛ_eq_mul_Λ {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1 / 2) :
+    (mellinKernelFEPair hD L).entireΛ s =
+      s * (s - 1 / 2) * (mellinKernelFEPair hD L).Λ s := by
+  have hk : s ≠ ((mellinKernelFEPair hD L).k : ℂ) := by simpa using h1
+  simpa [smul_eq_mul] using (mellinKernelFEPair hD L).entireΛ_eq_smul_Λ h0 hk
+
+open scoped Classical in
+/-- **Global functional equation of the pole-cleared lattice completion**:
+`entireΛ(D, L, s) = entireΛ(D⁻¹, L^∨, 1/2 - s)` for every `s : ℂ`, including `0` and `1/2`. -/
+theorem mellinKernelFEPair_entireΛ_eq {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] (s : ℂ) :
+    (mellinKernelFEPair hD L).entireΛ s =
+      (mellinKernelFEPair hD.inv (mixedDual K L)).entireΛ (1 / 2 - s) := by
+  simpa [mellinKernelFEPair_symm] using (mellinKernelFEPair hD L).entireΛ_eq s
+
+/-! ### Ideal lattices and trace duals -/
+
+open scoped Classical in
+/-- For the Euclidean dual of an ideal lattice `σ(I)`, the completed function over `D` coincides
+with that of the trace-dual lattice `σ(J)` over the translated domain `(traceShift K * ·) '' D`. -/
+theorem mellinKernelFEPair_mixedDual_idealLattice_Λ
+    {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) :
+    (mellinKernelFEPair hD (mixedDual K (idealLattice K I))).Λ =
+      (mellinKernelFEPair (hD.mul traceShift_mem_normOneSurface) (idealLattice K J)).Λ := by
+  rw [← FEPairWithLevel.toWeakFEPair_Λ, ← FEPairWithLevel.toWeakFEPair_Λ]
+  refine WeakFEPair.Λ_congr (fun u hu ↦ ?_) (by simp) (by simp) (by simp) (by simp)
+  simp [indicator_of_mem hu, mellinKernel_mixedDual_idealLattice hJ D u]
+
+open scoped Classical in
+/-- Pole-cleared counterpart of `mellinKernelFEPair_mixedDual_idealLattice_Λ`. -/
+theorem mellinKernelFEPair_mixedDual_idealLattice_entireΛ
+    {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) :
+    (mellinKernelFEPair hD (mixedDual K (idealLattice K I))).entireΛ =
+      (mellinKernelFEPair (hD.mul traceShift_mem_normOneSurface) (idealLattice K J)).entireΛ := by
+  rw [← FEPairWithLevel.toWeakFEPair_entireΛ, ← FEPairWithLevel.toWeakFEPair_entireΛ]
+  refine WeakFEPair.entireΛ_congr (fun u hu ↦ ?_) (by simp) (by simp) (by simp) (by simp)
+  simp [indicator_of_mem hu, mellinKernel_mixedDual_idealLattice hJ D u]
+
+open scoped Classical in
+/-- **Functional equation for ideal lattices** (Neukirch VII (5.9)): for a fractional ideal `I`
+and its trace dual `J = I^∨`, `Λ(D, σ(I), s) = Λ(traceShift · D⁻¹, σ(J), 1/2 - s)` off `0`
+and `1/2`. -/
+theorem mellinKernelFEPair_idealLattice_Λ_eq
+    {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1 / 2) :
+    (mellinKernelFEPair hD (idealLattice K I)).Λ s =
+      (mellinKernelFEPair (hD.inv.mul traceShift_mem_normOneSurface) (idealLattice K J)).Λ
+        (1 / 2 - s) := by
+  rw [mellinKernelFEPair_Λ_eq hD (idealLattice K I) h0 h1,
+    mellinKernelFEPair_mixedDual_idealLattice_Λ hJ hD.inv]
+
+open scoped Classical in
+/-- **Global pole-cleared functional equation for ideal lattices**: valid at every `s : ℂ`,
+including the cleared poles `0` and `1/2`. -/
+theorem mellinKernelFEPair_idealLattice_entireΛ_eq
+    {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) (s : ℂ) :
+    (mellinKernelFEPair hD (idealLattice K I)).entireΛ s =
+      (mellinKernelFEPair (hD.inv.mul traceShift_mem_normOneSurface) (idealLattice K J)).entireΛ
+        (1 / 2 - s) := by
+  rw [mellinKernelFEPair_entireΛ_eq hD (idealLattice K I) s,
+    mellinKernelFEPair_mixedDual_idealLattice_entireΛ hJ hD.inv]
 
 end TauCeti.LFunctions

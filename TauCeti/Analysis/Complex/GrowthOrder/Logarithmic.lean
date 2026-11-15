@@ -23,6 +23,11 @@ constant `2 |c| log n`.
 
 * `TauCeti.orderLE_one_of_norm_le_exp_mul_log`: the bound gives order at most one.
 * `TauCeti.norm_le_exp_mul_log_of_norm_le_one_add`: transfer to a comparable argument.
+* `TauCeti.norm_comp_mul_add_le_exp_mul_log` and
+  `TauCeti.exists_norm_comp_mul_add_le_exp_mul_log`: transfer across any affine substitution
+  `s ↦ a * s + b` for vector-valued functions.
+* `TauCeti.one_add_le_exp_one_add_mul_log_two_add` and `TauCeti.norm_sub_le_exp_mul_log`:
+  logarithmic-exponential bounds for `1 + r` and linear factors `s - w`.
 * `TauCeti.norm_natCast_cpow_ofReal_mul_le_exp_mul_log`: the bound for `n ^ (c s)`.
 * `TauCeti.norm_sum_mul_le_mul_exp_mul_log`: the bound for a finite linear combination.
 -/
@@ -64,6 +69,56 @@ theorem norm_le_exp_mul_log_of_norm_le_one_add {F : ℂ → ℂ} {C : ℝ} (hC :
   refine (hF t).trans (exp_le_exp.mpr ?_)
   have := mul_le_mul_of_nonneg_left hscale hC
   linarith
+
+/-- For `0 ≤ r`, `1 + r` is dominated by `exp ((1 + r) * log (2 + r))` with unit constant. -/
+theorem one_add_le_exp_one_add_mul_log_two_add {r : ℝ} (hr : 0 ≤ r) :
+    1 + r ≤ exp ((1 + r) * log (2 + r)) := by
+  have hpos : 0 < 2 + r := by linarith
+  calc
+    1 + r ≤ 2 + r := by linarith
+    _ = exp (log (2 + r)) := (exp_log hpos).symm
+    _ ≤ exp ((1 + r) * log (2 + r)) :=
+      exp_le_exp.mpr (le_mul_of_one_le_left (log_nonneg (by linarith)) (by linarith))
+
+/-- Every linear factor `s - w` satisfies an explicit logarithmic-exponential norm bound. -/
+theorem norm_sub_le_exp_mul_log (w s : ℂ) :
+    ‖s - w‖ ≤ exp ((1 + 2 * ‖w‖) * (1 + ‖s‖) * log (2 + ‖s‖)) := by
+  have hW := one_half_le_one_add_mul_log_two_add (norm_nonneg s)
+  have h1 : 1 + ‖w‖ ≤ exp (2 * ‖w‖ * ((1 + ‖s‖) * log (2 + ‖s‖))) := by
+    refine (by linarith [add_one_le_exp ‖w‖] : 1 + ‖w‖ ≤ exp ‖w‖).trans (exp_le_exp.mpr ?_)
+    nlinarith [norm_nonneg w]
+  calc
+    ‖s - w‖ ≤ ‖s‖ + ‖w‖ := norm_sub_le _ _
+    _ ≤ (1 + ‖w‖) * (1 + ‖s‖) := by nlinarith [norm_nonneg s, norm_nonneg w]
+    _ ≤ exp (2 * ‖w‖ * ((1 + ‖s‖) * log (2 + ‖s‖))) *
+          exp ((1 + ‖s‖) * log (2 + ‖s‖)) :=
+        mul_le_mul h1 (one_add_le_exp_one_add_mul_log_two_add (norm_nonneg s))
+          (by positivity) (exp_pos _).le
+    _ = _ := by rw [← exp_add]; ring_nf
+
+/-- A logarithmic-exponential bound on a vector-valued function transfers across any affine
+substitution `s ↦ a * s + b`. -/
+theorem norm_comp_mul_add_le_exp_mul_log {E : Type*} [SeminormedAddGroup E] {F : ℂ → E} {C : ℝ}
+    (hC : 0 ≤ C) (hF : ∀ z, ‖F z‖ ≤ exp (C * (1 + ‖z‖) * log (2 + ‖z‖))) (a b s : ℂ) :
+    ‖F (a * s + b)‖ ≤
+      exp ((‖a‖ + ‖b‖ + 2) * (2 * (‖a‖ + ‖b‖ + 2) + 1) * C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
+  have ht : ‖a * s + b‖ ≤ (‖a‖ + ‖b‖) * (1 + ‖s‖) := by
+    calc ‖a * s + b‖ ≤ ‖a * s‖ + ‖b‖ := norm_add_le _ _
+      _ = ‖a‖ * ‖s‖ + ‖b‖ := by rw [norm_mul]
+      _ ≤ (‖a‖ + ‖b‖) * (1 + ‖s‖) := by nlinarith [norm_nonneg a, norm_nonneg b, norm_nonneg s]
+  have hscale := add_one_mul_log_add_two_le (norm_nonneg s) (norm_nonneg (a * s + b))
+    (by positivity : 0 ≤ ‖a‖ + ‖b‖) ht
+  refine (hF (a * s + b)).trans (exp_le_exp.mpr ?_)
+  have := mul_le_mul_of_nonneg_left hscale hC
+  linarith
+
+/-- Existential form of `norm_comp_mul_add_le_exp_mul_log` preserving positivity of the constant. -/
+theorem exists_norm_comp_mul_add_le_exp_mul_log {E : Type*} [SeminormedAddGroup E] {F : ℂ → E}
+    (hF : ∃ C > 0, ∀ z, ‖F z‖ ≤ exp (C * (1 + ‖z‖) * log (2 + ‖z‖))) (a b : ℂ) :
+    ∃ C' > 0, ∀ s, ‖F (a * s + b)‖ ≤ exp (C' * (1 + ‖s‖) * log (2 + ‖s‖)) := by
+  obtain ⟨C, hC, hb⟩ := hF
+  exact ⟨(‖a‖ + ‖b‖ + 2) * (2 * (‖a‖ + ‖b‖ + 2) + 1) * C, by positivity,
+    norm_comp_mul_add_le_exp_mul_log hC.le hb a b⟩
 
 /-- For a positive integer `n` and real `c`, the power `n ^ (c s)` is bounded by
 `exp (2 |c| log n (1 + ‖s‖) log (2 + ‖s‖))`. -/
