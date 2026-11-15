@@ -329,8 +329,9 @@ private theorem tendstoUniformlyOn_of_abs_sub_le_mul_exp {F : ℝ → ℝ → �
     TendstoUniformlyOn F G atTop S := by
   have hlim : Tendsto (fun R ↦ C * exp (a - b * R)) atTop (𝓝 0) := by
     have h : Tendsto (fun R : ℝ ↦ a - b * R) atTop atBot :=
-      (tendsto_atBot_add_const_left _ a (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hb))).congr
-        fun R ↦ by simp only [id]; ring
+      (tendsto_atBot_add_const_left _ a
+        (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hb))).congr fun R ↦ by
+          simp only [id]; ring
     simpa using (tendsto_exp_atBot.comp h).const_mul C
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
@@ -346,7 +347,7 @@ theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub (k : ℕ) (c : ℝ) :
       (fun s ↦ -iteratedDeriv k tanh s) atTop (Iic c) := by
   obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le k
   -- On `s ≤ c` the bound is at most `C exp (2 c - 4 R)`.
-  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (a := 2 * c) four_pos fun R s hs ↦ ?_
+  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (C := C) (a := 2 * c) four_pos fun R s hs ↦ ?_
   rw [sub_neg_eq_add]
   refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
   linarith [mem_Iic.1 hs]
@@ -359,7 +360,7 @@ theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_add (k : ℕ) (c : ℝ) :
       (iteratedDeriv k tanh) atTop (Ici c) := by
   obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le k
   -- On `s ≥ c` the bound is at most `C exp (-2 c - 4 R)`.
-  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (a := -(2 * c)) four_pos fun R s hs ↦ ?_
+  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (C := C) (a := -(2 * c)) four_pos fun R s hs ↦ ?_
   refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
   linarith [mem_Ici.1 hs]
 
