@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Graph

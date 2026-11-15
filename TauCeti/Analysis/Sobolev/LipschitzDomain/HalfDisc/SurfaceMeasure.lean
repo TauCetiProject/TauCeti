@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.Basic
 
