@@ -45,6 +45,10 @@ field.
 
 * `TauCeti.isDomain_tensorProduct_of_isLocalization`: localizing the first factor at nonzero
   divisors preserves domains.
+* `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct_left`,
+  `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct_right`: if a localization `Q` of
+  `K ⊗[k] B` (or `A ⊗[k] K`) at nonzerodivisors is tensored over the field `K` with a `K`-algebra
+  `D`, the result is a domain whenever `D ⊗[k] B` (or `A ⊗[k] D`) is a domain.
 * `TauCeti.isDomain_fractionRing_mvPolynomial_tensorProduct`: a rational function field over `K`
   tensored with a domain is a domain.
 * `TauCeti.isDomain_tensorProduct_of_isAlgClosed`: over an algebraically closed field, the tensor
@@ -86,6 +90,39 @@ theorem isDomain_tensorProduct_of_isLocalization {A : Type*} [CommRing A] [Algeb
     Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K L).injective
   exact IsLocalization.isDomain_of_le_nonZeroDivisors _
     (M := Algebra.algebraMapSubmonoid (A ⊗[K] L) M) (map_le_nonZeroDivisors_of_injective _ hinj hM)
+
+/-- Let `Q` be a localization of `K ⊗[k] B` at a submonoid of nonzerodivisors, for a field `K`
+over `k`. For any `K`-algebra `D` such that `D ⊗[k] B` is a domain, `Q ⊗[K] D` is a domain, since
+`(K ⊗[k] B) ⊗[K] D ≃ D ⊗[k] B`. -/
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct_left {k B : Type*} [CommRing k]
+    [CommRing B] [Algebra k B] [Algebra k K] (M : Submonoid (K ⊗[k] B))
+    (hM : M ≤ nonZeroDivisors (K ⊗[k] B)) (Q : Type*) [CommRing Q] [Algebra K Q]
+    [Algebra (K ⊗[k] B) Q] [IsScalarTower K (K ⊗[k] B) Q] [IsLocalization M Q] (D : Type*)
+    [CommRing D] [Algebra k D] [Algebra K D] [IsScalarTower k K D] [IsDomain (D ⊗[k] B)] :
+    IsDomain (Q ⊗[K] D) := by
+  have : IsDomain ((K ⊗[k] B) ⊗[K] D) :=
+    ((Algebra.TensorProduct.comm K (K ⊗[k] B) D).trans
+      (Algebra.TensorProduct.cancelBaseChange k K K D B)).toMulEquiv.isDomain
+  exact isDomain_tensorProduct_of_isLocalization M hM Q D
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- Let `Q` be a localization of `A ⊗[k] K` at a submonoid of nonzerodivisors, for a field `K`
+over `k`. For any `K`-algebra `D` such that `A ⊗[k] D` is a domain, `Q ⊗[K] D` is a domain, since
+`(A ⊗[k] K) ⊗[K] D ≃ A ⊗[k] D`. -/
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct_right {k A : Type*} [CommRing k]
+    [CommRing A] [Algebra k A] [Algebra k K] (M : Submonoid (A ⊗[k] K))
+    (hM : M ≤ nonZeroDivisors (A ⊗[k] K)) (Q : Type*) [CommRing Q] [Algebra K Q]
+    [Algebra (A ⊗[k] K) Q] [IsScalarTower K (A ⊗[k] K) Q] [IsLocalization M Q] (D : Type*)
+    [CommRing D] [Algebra k D] [Algebra K D] [IsScalarTower k K D] [IsDomain (A ⊗[k] D)] :
+    IsDomain (Q ⊗[K] D) := by
+  let e : (A ⊗[k] K) ⊗[K] D ≃* A ⊗[k] D :=
+    (((Algebra.TensorProduct.comm K (A ⊗[k] K) D).trans
+      (Algebra.TensorProduct.congr (AlgEquiv.refl : D ≃ₐ[K] D)
+        (Algebra.TensorProduct.commRight k K A).symm)).trans
+      (Algebra.TensorProduct.cancelBaseChange k K K D A)).toMulEquiv.trans
+      (Algebra.TensorProduct.comm k D A).toMulEquiv
+  have : IsDomain ((A ⊗[k] K) ⊗[K] D) := e.isDomain
+  exact isDomain_tensorProduct_of_isLocalization M hM Q D
 
 /-- The tensor product of a domain over a field `K` with a rational function field over `K` is a
 domain. -/
