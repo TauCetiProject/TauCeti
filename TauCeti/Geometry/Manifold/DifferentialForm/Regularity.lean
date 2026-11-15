@@ -61,14 +61,16 @@ differentiation commutes with this extension.
   is a `C^n` function.
 * `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form;
   `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
-  `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` evaluates `d α` of a smooth `1`-form on two
-  tangent vectors.
+  `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` identifies, for a real-valued smooth `1`-form `α`,
+  `mextDeriv α.1 x ![v, w]` with `(mextDerivₗ I 1 α).bilinFormAt x v w`.
 * `TauCeti.RoughForm.contDiffOn_indicator_inChartAt`,
   `TauCeti.IsSmoothForm.extDerivWithin_indicator_inChartAt`,
-  `TauCeti.IsSmoothForm.contDiff_indicator_inChartAt`: the zero extension of a form supported
-  compactly inside a chart keeps its regularity within the model range, exterior
-  differentiation commutes with the extension, and away from the boundary the extension is `C¹`
-  on the whole model space.
+  `TauCeti.IsSmoothForm.contDiff_indicator_inChartAt`: extending the chart expression
+  `φ.inChartAt α` of a form with compact `tsupport` inside `(extChartAt I α).source` by zero
+  outside `(extChartAt I α).target` preserves `C^r` regularity on `range I`; on a `C²` manifold,
+  `extDerivWithin` on `range I` of this extension agrees with the extension of the chart
+  expression of `mextDeriv φ` for a `C¹` form `φ`; and the extension is `C¹` on all of `E` when
+  moreover `tsupport φ` is disjoint from `I.boundary M`.
 
 ## References
 
