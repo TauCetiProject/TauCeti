@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 public import TauCeti.RingTheory.Polynomial.Rueckert
 
 import TauCeti.Analysis.Analytic.Uniqueness
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.RingTheory.Polynomial.Distinguished
 

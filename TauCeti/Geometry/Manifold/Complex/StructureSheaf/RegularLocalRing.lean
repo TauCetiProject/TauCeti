@@ -11,9 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Cotangent
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Noetherian
 
 import Mathlib.Algebra.Module.SpanRankOperations
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Dimension
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
