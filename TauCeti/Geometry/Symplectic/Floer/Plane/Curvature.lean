@@ -12,7 +12,6 @@ import TauCeti.Analysis.Complex.RealChart.Periodic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
