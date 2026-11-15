@@ -9,14 +9,13 @@ public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Monoid.Prod
 import Mathlib.Algebra.Order.Pi
-import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Int.Interval
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Finiteness.Cardinality
+import TauCeti.LinearAlgebra.Basis.Abs
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
@@ -101,29 +100,6 @@ theorem Submonoid.FG.exists_finset_subset_forall_exists_mul {M : Type*} [CommMon
     refine Finset.prod_congr rfl fun a _ ↦ ?_
     rw [← pow_mul, ← pow_add, add_comm, Nat.div_add_mod]
 
-/-- Coordinate bound for the fundamental parallelepiped of `s`: if `n • z = ∑ a ∈ s, r a • a` with
-`0 < n` and `r a ≤ n` for all `a ∈ s`, then each coordinate of `z` in a `ℤ`-basis `b` is bounded in
-absolute value by `∑ a ∈ s, |b.repr a i|`. -/
-private theorem abs_repr_le_sum_abs_of_nsmul_eq {G ι : Type*} [AddCommGroup G]
-    (b : Module.Basis ι ℤ G) {s : Finset G} {n : ℕ} (hn : 0 < n) {r : G → ℕ}
-    (hr : ∀ a ∈ s, r a ≤ n) {z : G} (hz : n • z = ∑ a ∈ s, r a • a) (i : ι) :
-    |b.repr z i| ≤ ∑ a ∈ s, |b.repr a i| := by
-  have hn' : (0 : ℤ) < n := Nat.cast_pos.mpr hn
-  refine le_of_mul_le_mul_left ?_ hn'
-  calc
-    (n : ℤ) * |b.repr z i|
-        = |(n : ℤ) * b.repr z i| := by rw [abs_mul, abs_of_pos hn']
-    _ = |∑ a ∈ s, (r a : ℤ) * b.repr a i| := by
-        congr 1
-        simpa [map_nsmul, map_sum] using congrArg (fun f ↦ f i) (congrArg b.repr hz)
-    _ ≤ ∑ a ∈ s, |(r a : ℤ) * b.repr a i| := Finset.abs_sum_le_sum_abs _ _
-    _ = ∑ a ∈ s, (r a : ℤ) * |b.repr a i| :=
-        Finset.sum_congr rfl fun a _ ↦ by rw [abs_mul, abs_of_nonneg (Nat.cast_nonneg _)]
-    _ ≤ ∑ a ∈ s, (n : ℤ) * |b.repr a i| :=
-        Finset.sum_le_sum fun a ha ↦
-          mul_le_mul_of_nonneg_right (by exact_mod_cast hr a ha) (abs_nonneg _)
-    _ = (n : ℤ) * ∑ a ∈ s, |b.repr a i| := (Finset.mul_sum _ _ _).symm
-
 /-- **Gordan's lemma for saturation.** In a free `ℤ`-module `G` (of arbitrary rank), the
 positive-multiple saturation of any finitely generated additive submonoid `S` is finitely
 generated. -/
@@ -151,7 +127,7 @@ theorem AddSubmonoid.FG.nsmulSaturation {G : Type*} [AddCommGroup G] [Module.Fre
       rw [nsmul_sub, ← hc, Finset.smul_sum, sub_eq_iff_eq_add, ← Finset.sum_add_distrib]
       exact Finset.sum_congr rfl fun a _ ↦ by rw [smul_smul, ← add_nsmul, add_comm, Nat.div_add_mod]
     have hz_bound (i : Module.Free.ChooseBasisIndex ℤ G) : |b.repr z i| ≤ B i :=
-      abs_repr_le_sum_abs_of_nsmul_eq b hn (fun a _ ↦ (Nat.mod_lt (c a) hn).le) hnz i
+      b.abs_repr_le_sum_abs_of_nsmul_eq hn (fun a _ ↦ (Nat.mod_lt (c a) hn).le) hnz i
     have hz_supp : (b.repr z).support ⊆ I := fun i hi ↦ by
       by_contra hiI
       have hB0 : B i = 0 := Finset.sum_eq_zero fun a ha ↦ abs_eq_zero.mpr <|
@@ -178,18 +154,11 @@ theorem AddSubmonoid.FG.nsmulSaturation_inf_closure {G : Type*} [AddCommGroup G]
   classical
   obtain ⟨s, hs⟩ := AddSubmonoid.isAddFG_iff.mp hS
   let π : (s → ℤ) →+ G := (Fintype.linearCombination ℤ (Subtype.val : s → G)).toAddMonoidHom
-  have hrange : AddMonoidHom.mrange π = (AddSubgroup.closure (S : Set G)).toAddSubmonoid := by
-    have hL : AddSubgroup.closure (s : Set G) = AddSubgroup.closure (S : Set G) := le_antisymm
-      (AddSubgroup.closure_mono (hs ▸ AddSubmonoid.subset_closure))
-      ((AddSubgroup.closure_le _).mpr
-        (hs ▸ AddSubmonoid.closure_le.mpr (AddSubgroup.subset_closure (G := G))))
-    have hπ : AddMonoidHom.range π = AddSubgroup.closure (s : Set G) := by
-      refine le_antisymm ?_ ((AddSubgroup.closure_le _).mpr fun x hx ↦ ?_)
-      · rintro _ ⟨f, rfl⟩
-        exact Submodule.sum_mem (AddSubgroup.closure (s : Set G)).toIntSubmodule fun a _ ↦
-          zsmul_mem (AddSubgroup.subset_closure a.2) (f a)
-      · refine ⟨Pi.single ⟨x, hx⟩ 1, ?_⟩
-        simp [π]
-    exact congrArg AddSubgroup.toAddSubmonoid (hπ.trans hL)
+  have hrange : AddMonoidHom.mrange π = (AddSubgroup.closure (S : Set G)).toAddSubmonoid :=
+    congrArg AddSubgroup.toAddSubmonoid
+      (show AddMonoidHom.range π = AddSubgroup.closure (S : Set G) by
+        rw [← LinearMap.range_toAddSubgroup, Fintype.range_linearCombination,
+          Subtype.range_coe_subtype, Finset.setOfPred_mem, ← Submodule.span_closure, hs,
+          Submodule.span_int_eq_addSubgroupClosure])
   have hfg : ((S.comap π).nsmulSaturation.map π).FG := ((hS.comap π).nsmulSaturation).map π
   rwa [S.nsmulSaturation_comap π, AddSubmonoid.map_comap_eq, hrange] at hfg

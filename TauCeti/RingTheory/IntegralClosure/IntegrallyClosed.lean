@@ -244,9 +244,7 @@ end Subring
 
 /-- **A ring retract of an integrally closed ring along a nonzerodivisor-preserving section is
 integrally closed.** If `i : R →+* A` admits a left inverse `π : A →+* R`, carries nonzerodivisors
-of `R` to nonzerodivisors of `A`, and `A` is integrally closed, then `R` is integrally closed: a
-fraction `a / b` in `FractionRing R` integral over `R` maps to `y ∈ A` with `y * i b = i a`, and
-applying `π` yields `π y * b = a`. -/
+of `R` to nonzerodivisors of `A`, and `A` is integrally closed, then `R` is integrally closed. -/
 theorem IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le {R A : Type*} [CommRing R]
     [CommRing A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R} (h : Function.LeftInverse π i)
     (hnzd : nonZeroDivisors R ≤ (nonZeroDivisors A).comap i) : IsIntegrallyClosed R := by

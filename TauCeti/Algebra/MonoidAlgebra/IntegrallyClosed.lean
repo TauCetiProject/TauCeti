@@ -62,12 +62,10 @@ characterizations `IsIntegrallyClosed (AddMonoidAlgebra R G) ↔ IsIntegrallyClo
 public section
 
 /-- If a commutative monoid algebra `R[M]` is integrally closed, then its coefficient ring `R` is
-integrally closed, as `R` is a ring retract of `R[M]` via the bialgebra counit and scalar inclusion
-carries nonzerodivisors to nonzerodivisors. -/
+integrally closed. -/
 @[to_additive (dont_translate := R)
 /-- If a commutative additive monoid algebra `R[M]` is integrally closed, then its coefficient ring
-`R` is integrally closed, as `R` is a ring retract of `R[M]` via the bialgebra counit and scalar
-inclusion carries nonzerodivisors to nonzerodivisors. -/]
+`R` is integrally closed. -/]
 theorem IsIntegrallyClosed.of_monoidAlgebra (R M : Type*) [CommRing R] [CommMonoid M]
     [IsIntegrallyClosed (MonoidAlgebra R M)] : IsIntegrallyClosed R := by
   refine IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le
@@ -99,8 +97,9 @@ instance isIntegrallyClosed {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrall
   refine (isIntegrallyClosed_iff (FractionRing (AddMonoidAlgebra R G))).mpr
     fun {z} ⟨p, hp, hpz⟩ ↦ ?_
   obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors (AddMonoidAlgebra R G)) z
-  obtain ⟨H, hH, hsH, p₀, hp₀⟩ := exists_fg_subset_exists_map_mapDomainRingHom_eq
-    (a.coeff.support.finite_toSet.union b.1.coeff.support.finite_toSet) p
+  have hs := a.coeff.support.finite_toSet.union b.1.coeff.support.finite_toSet
+  obtain ⟨H, hH, hsH, p₀, hp₀⟩ :=
+    hs.exists_fg_addSubgroup_subset_exists_map_mapDomainRingHom_eq p
   have : H.FG := hH
   have : IsIntegrallyClosed (AddMonoidAlgebra R H) := isIntegrallyClosed_of_free
   let j : AddMonoidAlgebra R H →+* AddMonoidAlgebra R G := mapDomainRingHom R H.subtype

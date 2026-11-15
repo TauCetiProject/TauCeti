@@ -7,15 +7,15 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Hom
 public import TauCeti.AlgebraicGeometry.MonoidAlgebra.Normal
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
+public import TauCeti.Geometry.Toric.Algebraic.AffineScheme
 
 /-!
-# Normality of toric coordinate rings, integral models, and toric schemes
+# Normality of toric coordinate rings, integral models, and affine toric schemes
 
 Every pointed cone `σ` in an integral lattice `(N, V, i)` has a saturated dual semigroup
 `dualSemigroup hi σ ≤ (N →+ ℤ)` (`TauCeti.Toric.nsmulSaturated_dualSemigroup`), and the character
-group `N →+ ℤ` is torsion-free over `ℤ` (`TauCeti.AddMonoidHom.instModuleIsTorsionFree`). Together
-with `TauCeti.Algebra.Group.UniqueProds.TorsionFree` and
+group `N →+ ℤ` is torsion-free over `ℤ` (`AddMonoidHom.instModuleIsTorsionFree`). Together with
+`TauCeti.Algebra.Group.UniqueProds.TorsionFree` and
 `AddSubmonoid.NSMulSaturated.isIntegrallyClosed_addMonoidAlgebra`, this shows that the
 dual-semigroup algebra `AddMonoidAlgebra R (dualSemigroup hi σ)` over any integrally closed domain
 `R` is an integrally closed domain, with no rationality, salience, or finite-generation hypothesis
@@ -27,9 +27,10 @@ Specializing to `R = ℤ` and `R = ℂ` shows that:
   normal scheme;
 * the complex coordinate ring `affineCoordinateRing hi σ` is an integrally closed domain and its
   spectrum `affineToricScheme hi σ` (the complex base change of the integral model) is a normal
-  scheme;
-* the toric scheme `Φ.algebraicRealization` of any finite fan `Φ`—glued from its normal affine
-  toric charts along open immersions—is a normal scheme, even when the cones of `Φ` are singular.
+  scheme.
+
+For normality of the glued toric scheme of a finite fan, see
+`TauCeti.Geometry.Toric.Algebraic.Fan.Normal`.
 
 ## Main declarations
 
@@ -41,13 +42,11 @@ Specializing to `R = ℤ` and `R = ℂ` shows that:
   any cone's dual semigroup is a normal scheme.
 * `TauCeti.Toric.isNormalScheme_affineToricScheme`: the native affine toric scheme of any cone is
   normal.
-* `TauCeti.Toric.Fan.isNormalScheme_algebraicRealization`: the toric scheme of any finite fan is
-  normal.
 
 ## References
 
 * W. Fulton, *Introduction to Toric Varieties*, §2.1, Proposition (p. 29).
-* D. Cox, J. Little and H. Schenck, *Toric Varieties*, Theorem 1.3.5 and Theorem 3.1.19.
+* D. Cox, J. Little and H. Schenck, *Toric Varieties*, Theorem 1.3.5.
 -/
 
 public section
@@ -56,8 +55,6 @@ open AlgebraicGeometry
 open TauCeti.AlgebraicGeometry
 
 namespace TauCeti.Toric
-
-section Cone
 
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
 
@@ -85,20 +82,5 @@ instance isNormalScheme_addMonoidAlgebraIntegralModel_dualSemigroup
 instance isNormalScheme_affineToricScheme (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     IsNormalScheme (affineToricScheme hi σ) :=
   isNormalScheme_Spec (.of (affineCoordinateRing hi σ))
-
-end Cone
-
-namespace Fan
-
-variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
-
-/-- Every toric scheme associated to a finite fan is normal, regardless of whether its cones are
-regular. -/
-instance isNormalScheme_algebraicRealization (Φ : Fan i) :
-    IsNormalScheme Φ.algebraicRealization :=
-  (isNormalScheme_iff_openCover Φ.affineToricOpenCover).mpr fun σ ↦
-    isNormalScheme_affineToricScheme Φ.lattice σ.1
-
-end Fan
 
 end TauCeti.Toric

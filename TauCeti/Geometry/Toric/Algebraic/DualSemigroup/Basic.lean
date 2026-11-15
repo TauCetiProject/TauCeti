@@ -46,21 +46,21 @@ variable {N N' N'' V V' V'' : Type*}
   [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V'']
   [Module ℝ V] [Module ℝ V'] [Module ℝ V'']
   {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
-  {σ : _root_.PointedCone ℝ V} {τ : _root_.PointedCone ℝ V'} {υ : _root_.PointedCone ℝ V''}
+  {σ : PointedCone ℝ V} {τ : PointedCone ℝ V'} {υ : PointedCone ℝ V''}
 
 /-! ### The dual semigroup -/
 
 /-- The dual semigroup of a cone consists of the integral characters whose real-linear
 extensions are nonnegative on the cone. -/
-noncomputable def dualSemigroup (hi : IsIntegralLattice i) (σ : _root_.PointedCone ℝ V) :
+noncomputable def dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     AddSubmonoid (N →+ ℤ) :=
-  (_root_.PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter
+  (PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter
 
 /-- The dual semigroup is the lattice-point monoid of Mathlib's dual cone under real extension of
 integral characters. -/
-theorem dualSemigroup_def (hi : IsIntegralLattice i) (σ : _root_.PointedCone ℝ V) :
+theorem dualSemigroup_def (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     dualSemigroup hi σ =
-      (_root_.PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter :=
+      (PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter :=
   -- The parentheses matter: `(rfl)` elaborates against the definition, whereas a bare `rfl` in
   -- an exported theorem would require `dualSemigroup` to be `@[expose]`d.
   (rfl)
@@ -70,12 +70,12 @@ nonnegative at every point of the cone. -/
 @[simp]
 theorem mem_dualSemigroup (hi : IsIntegralLattice i) (m : N →+ ℤ) :
     m ∈ dualSemigroup hi σ ↔ ∀ ⦃x⦄, x ∈ σ → 0 ≤ hi.realCharacter m x := by
-  simp only [dualSemigroup_def, _root_.PointedCone.mem_latticePoints, _root_.PointedCone.mem_dual,
+  simp only [dualSemigroup_def, PointedCone.mem_latticePoints, PointedCone.mem_dual,
     Module.Dual.eval_apply, SetLike.mem_coe]
 
 /-- Enlarging a cone shrinks its dual semigroup. -/
 @[gcongr]
-theorem dualSemigroup_anti (hi : IsIntegralLattice i) {σ τ : _root_.PointedCone ℝ V} (h : σ ≤ τ) :
+theorem dualSemigroup_anti (hi : IsIntegralLattice i) {σ τ : PointedCone ℝ V} (h : σ ≤ τ) :
     dualSemigroup hi τ ≤ dualSemigroup hi σ := by
   intro m hm
   rw [mem_dualSemigroup] at hm ⊢
@@ -88,9 +88,9 @@ theorem dualSemigroup_antitone (hi : IsIntegralLattice i) :
 /-- The dual semigroup of any cone is saturated under positive natural multiples: if a positive
 multiple of an integral character is nonnegative on `σ`, so is the character itself. -/
 @[simp]
-theorem nsmulSaturated_dualSemigroup (hi : IsIntegralLattice i) (σ : _root_.PointedCone ℝ V) :
+theorem nsmulSaturated_dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     (dualSemigroup hi σ).NSMulSaturated :=
-  _root_.PointedCone.nsmulSaturated_latticePoints _ _
+  PointedCone.nsmulSaturated_latticePoints _ _
 
 /-- The dual semigroup of the zero cone is the full character group. -/
 @[simp]

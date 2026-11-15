@@ -36,10 +36,10 @@ Some torsion-freeness of `G` is needed: in `ℚ[ℤ/2]` the idempotent
 
 ## Main results
 
-* `AddMonoidAlgebra.isIntegralElem_coeff`: the coefficients of an element of `B[G]` integral over
-  `A[G]` are integral over `A`.
-* `AddMonoidAlgebra.isIntegralElem_single_coeff`: the terms of an element of `R[G]` integral over
-  `R[M]` are integral over `R[M]`.
+* `RingHom.isIntegralElem_coeff`: the coefficients of an element of `B[G]` integral over `A[G]` are
+  integral over `A`.
+* `AddMonoidHom.isIntegralElem_single_coeff`: the terms of an element of `R[G]` integral over `R[M]`
+  are integral over `R[M]`.
 
 ## References
 
@@ -50,9 +50,7 @@ Some torsion-freeness of `G` is needed: in `ℚ[ℤ/2]` the idempotent
 
 public section
 
-open Polynomial
-
-namespace AddMonoidAlgebra
+open Polynomial AddMonoidAlgebra
 
 variable {A B : Type*} [CommRing A] [CommRing B]
 
@@ -62,7 +60,7 @@ open TauCeti MvPolynomial
 
 variable {K : Type*}
 
-/-- The case of Laurent rings `B[ℤ^K]` of `AddMonoidAlgebra.isIntegralElem_coeff`. -/
+/-- The case of Laurent rings `B[ℤ^K]` of `RingHom.isIntegralElem_coeff`. -/
 private theorem isIntegralElem_coeff_laurentRing (φ : A →+* B) {y : LaurentRing B K}
     (hy : (mapRingHom (K →₀ ℤ) φ).IsIntegralElem y) (m : K →₀ ℤ) :
     φ.IsIntegralElem (y.coeff m) := by
@@ -132,7 +130,7 @@ private theorem isIntegralElem_coeff_of_free [Module.Free ℤ G] (φ : A →+* B
   let e : G ≃+ (Module.Free.ChooseBasisIndex ℤ G →₀ ℤ) :=
     (Module.Free.chooseBasis ℤ G).repr.toAddEquiv
   have hcomm : (mapDomainRingHom B e.toAddMonoidHom).comp (mapRingHom G φ) =
-      (mapRingHom _ φ).comp (mapDomainRingHom A e.toAddMonoidHom) :=
+      (AddMonoidAlgebra.mapRingHom _ φ).comp (mapDomainRingHom A e.toAddMonoidHom) :=
     (mapRingHom_comp_mapDomainRingHom φ e.toAddMonoidHom).symm
   have hy' := hy.map (mapDomainRingHom B e.toAddMonoidHom)
   rw [hcomm] at hy'
@@ -142,12 +140,13 @@ private theorem isIntegralElem_coeff_of_free [Module.Free ℤ G] (φ : A →+* B
 /-- **Coefficients of integral elements of group algebras.** For a torsion-free abelian group `G`
 and a ring homomorphism `φ : A →+* B`, the coefficients of an element of `B[G]` that is integral
 over `A[G]` are integral over `A`. -/
-theorem isIntegralElem_coeff [Module.IsTorsionFree ℤ G] (φ : A →+* B) {y : AddMonoidAlgebra B G}
-    (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) : φ.IsIntegralElem (y.coeff g) := by
+theorem RingHom.isIntegralElem_coeff [Module.IsTorsionFree ℤ G] (φ : A →+* B)
+    {y : AddMonoidAlgebra B G} (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) :
+    φ.IsIntegralElem (y.coeff g) := by
   obtain ⟨p, hp, hpy⟩ := hy
+  have hs := y.coeff.support.finite_toSet.insert g
   obtain ⟨H, hH, hsH, p₀, hp₀⟩ :=
-    TauCeti.AddMonoidAlgebra.exists_fg_subset_exists_map_mapDomainRingHom_eq
-      (y.coeff.support.finite_toSet.insert g) p
+    hs.exists_fg_addSubgroup_subset_exists_map_mapDomainRingHom_eq p
   have : H.FG := hH
   have hinj : Function.Injective (mapDomainRingHom B H.subtype) :=
     mapDomain_injective H.subtype_injective
@@ -198,17 +197,15 @@ private theorem coeff_diagonal_id (x : AddMonoidAlgebra R G) (g : G) :
 /-- **The integral closure of a monoid algebra in the algebra of a torsion-free abelian group is
 graded.** If `x ∈ R[G]` is integral over `R[M]` along `f : M →+ G`, then so is each of its terms
 `single g (x.coeff g)`. -/
-theorem isIntegralElem_single_coeff [Module.IsTorsionFree ℤ G] (f : M →+ G)
+theorem AddMonoidHom.isIntegralElem_single_coeff [Module.IsTorsionFree ℤ G] (f : M →+ G)
     {x : AddMonoidAlgebra R G} (hx : (mapDomainRingHom R f).IsIntegralElem x) (g : G) :
-    (mapDomainRingHom R f).IsIntegralElem (single g (x.coeff g)) := by
+    (mapDomainRingHom R f).IsIntegralElem (AddMonoidAlgebra.single g (x.coeff g)) := by
   -- The diagonal map turns the grading of `R[G]` into the coefficients of `(R[G])[G]`.
   have hcomm : (diagonal (.id G)).comp (mapDomainRingHom R f) =
       (mapRingHom G (mapDomainRingHom R f)).comp (diagonal f) :=
     ringHom_ext (by simp [diagonal_single]) (by simp [diagonal_single])
   have hx' := hx.map (diagonal (.id G))
   rw [hcomm] at hx'
-  simpa [coeff_diagonal_id] using isIntegralElem_coeff _ hx'.of_comp g
+  simpa [coeff_diagonal_id] using (mapDomainRingHom R f).isIntegralElem_coeff hx'.of_comp g
 
 end Diagonal
-
-end AddMonoidAlgebra

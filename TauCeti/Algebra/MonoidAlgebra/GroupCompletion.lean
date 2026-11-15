@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
-public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.MonoidAlgebra.NonZeroDivisors
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 
@@ -31,9 +31,6 @@ fraction ring `K` of `R[S]` receives an injective canonical map from `R[L_S]`
 
 ## Main definitions and results
 
-* `TauCeti.MonoidAlgebra.single_one_mem_nonZeroDivisors` and
-  `TauCeti.MonoidAlgebra.mrange_of_le_nonZeroDivisors` (with additive counterparts): in the algebra
-  of a cancellative monoid over any semiring, every coefficient-one monomial is a nonzerodivisor.
 * `AddSubmonoid.isLocalization_addMonoidAlgebra_groupClosure`: `R[AddSubgroup.closure S]` is the
   localization of `R[S]` at `MonoidHom.mrange (of R S)`.
 * `AddSubmonoid.isDomain_addMonoidAlgebra_groupClosure`: when `R[S]` is a domain, so is
@@ -51,42 +48,6 @@ fraction ring `K` of `R[S]` receives an injective canonical map from `R[L_S]`
 -/
 
 public section
-
-namespace TauCeti
-
-/-- Over any semiring `R`, every coefficient-one monomial in the algebra of a cancellative monoid
-`M` is a two-sided nonzerodivisor. -/
-@[to_additive (dont_translate := R) TauCeti.AddMonoidAlgebra.single_one_mem_nonZeroDivisors
-/-- Over any semiring `R`, every coefficient-one monomial in the algebra of a cancellative additive
-monoid `M` is a two-sided nonzerodivisor. -/]
-theorem MonoidAlgebra.single_one_mem_nonZeroDivisors (R : Type*) [Semiring R] {M : Type*}
-    [Monoid M] [IsCancelMul M] (m : M) :
-    _root_.MonoidAlgebra.single m (1 : R) ∈ nonZeroDivisors (_root_.MonoidAlgebra R M) := by
-  refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · ext b
-    simpa [_root_.MonoidAlgebra.coeff_single_mul_mul] using congr(($hx).coeff (m * b))
-  · ext b
-    simpa [_root_.MonoidAlgebra.coeff_mul_single_mul] using congr(($hx).coeff (b * m))
-
-/-- Over any semiring `R`, the multiplicative range of `MonoidAlgebra.of R M` consists of
-nonzerodivisors whenever `M` is cancellative. -/
-theorem MonoidAlgebra.mrange_of_le_nonZeroDivisors (R M : Type*) [Semiring R] [Monoid M]
-    [IsCancelMul M] :
-    MonoidHom.mrange (_root_.MonoidAlgebra.of R M) ≤
-      nonZeroDivisors (_root_.MonoidAlgebra R M) := by
-  rintro _ ⟨m, rfl⟩
-  exact single_one_mem_nonZeroDivisors R m
-
-/-- Over any semiring `R`, the multiplicative range of `AddMonoidAlgebra.of R M` consists of
-nonzerodivisors whenever `M` is cancellative. -/
-theorem AddMonoidAlgebra.mrange_of_le_nonZeroDivisors (R M : Type*) [Semiring R] [AddMonoid M]
-    [IsCancelAdd M] :
-    MonoidHom.mrange (_root_.AddMonoidAlgebra.of R M) ≤
-      nonZeroDivisors (_root_.AddMonoidAlgebra R M) := by
-  rintro _ ⟨m, rfl⟩
-  exact single_one_mem_nonZeroDivisors R (Multiplicative.toAdd m)
-
-end TauCeti
 
 open AddMonoidAlgebra
 
