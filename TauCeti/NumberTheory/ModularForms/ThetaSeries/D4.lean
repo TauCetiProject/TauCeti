@@ -12,7 +12,6 @@ import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 import TauCeti.NumberTheory.Divisors
 import TauCeti.NumberTheory.ModularForms.SturmBound
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
 # The theta series of D₄
@@ -107,7 +106,7 @@ theorem thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0 {A : 
       ZLattice.thetaSeries
         ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) := by
   rw [← coe_thetaFormRealModelCheckerboardLatticeFour, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
   exact thetaFormRealModelCheckerboardLatticeFour.slash_action_eq' _
     (Subgroup.mem_map_of_mem _ hA)
 
