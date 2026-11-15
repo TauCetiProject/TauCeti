@@ -7,7 +7,7 @@ name: PR status
 # Each fresh scan reconciles every PR touched since its saved watermark
 # (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
 # run that replaced it. The price is latency: an update waits out a one-minute debounce (see the
-# job's `environment`) and then the run ahead of it, typically one to three minutes in all.
+# job's `environment`) and then the run ahead of it, then reserved reconciliation capacity. Bounded batches retain unfinished work.
 # Failed runs retain unfinished work and quota deadlines in a verified artifact;
 # the next run resumes without replaying its successful prefix.
 # pr-labels.yml keeps the hourly reconcile-all sweep of labels and the manual re-sync.
@@ -49,8 +49,10 @@ jobs:
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
                 || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 20
     # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
     # evaluated, so an irrelevant event could displace the one pending run that mattered and then
     # skip. Here only runs that pass the filter enter the group. (Nothing else may share it: GitHub
@@ -86,16 +88,17 @@ jobs:
       # version proposed by the PR.
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a94bf58e6032630c65da1a61a989bfb985ad8cd0
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@fde8de7370d5ea85493e23968edc377aaadb60df
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a94bf58e6032630c65da1a61a989bfb985ad8cd0
+          tools-ref: fde8de7370d5ea85493e23968edc377aaadb60df
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -169,7 +172,7 @@ jobs:
           args=(--since "$SINCE" --state-in "$RUNNER_TEMP/state-in/state.json" --state-out "$RUNNER_TEMP/progress/state.json")
           mkdir -p "$RUNNER_TEMP/progress"
           case "$PR" in ''|*[!0-9]*) ;; *) args+=(--pr "$PR") ;; esac
-          python3 scripts/pr_status/batch.py "${args[@]}"
+          python3 scripts/pr_status/batch.py "${args[@]}" --prioritize-self-tested --budget-seconds 600
 
       - name: Save completed progress and unfinished work
         if: always()

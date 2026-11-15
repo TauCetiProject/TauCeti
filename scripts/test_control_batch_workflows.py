@@ -130,5 +130,51 @@ class ControlBatches(unittest.TestCase):
                 self.assertFalse(self.trusted(dict(base, **changes)))
 
 
+class PRStatusReservedCapacity(unittest.TestCase):
+    def test_only_reconciliation_jobs_use_the_protected_status_group(self):
+        for filename in ("pr-status.yml", "pr-labels.yml"):
+            doc = workflow(filename)
+            for name, job in doc["jobs"].items():
+                self.assertEqual(job["runs-on"], dict(group="TauCetiPRStatus",
+                    labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr-status"]))
+                for step in job["steps"]:
+                    if step.get("uses", "").startswith("actions/checkout@"):
+                        self.assertEqual(step["with"]["ref"], "main")
+                        self.assertFalse(step["with"]["persist-credentials"])
+        resolve = workflow("pr-labels.yml")["jobs"]["resolve"]
+        self.assertIn("refs/heads/main", resolve["if"])
+        self.assertFalse(any("app-token" in str(step) for step in resolve["steps"]))
+
+    def test_priority_and_sweep_retain_progress_before_token_expiry(self):
+        job = workflow("pr-status.yml")["jobs"]["reconcile"]
+        command = next(s["run"] for s in job["steps"] if s.get("name") == "Reconcile PR status labels")
+        self.assertIn("--prioritize-self-tested", command)
+        self.assertIn("--budget-seconds 600", command)
+        sweep = workflow("pr-labels.yml")["jobs"]["sweep"]
+        command = next(s["run"] for s in sweep["steps"] if "--all-open" in s.get("run", ""))
+        self.assertIn("--prioritize-self-tested", command)
+        self.assertIn("--budget-seconds 1800", command)
+        self.assertIn("--state-in", command)
+        self.assertIn("--state-out", command)
+        self.assertLess(sweep["timeout-minutes"], 60)
+        artifact = next(s for s in sweep["steps"] if s.get("uses") == "actions/upload-artifact@v4")
+        self.assertEqual(artifact["if"], "always()")
+        self.assertEqual(artifact["with"]["name"], "pr-labels-progress")
+
+    def test_sweep_progress_cannot_come_from_candidate_or_other_workflows(self):
+        selector = (ROOT / "scripts/pr_status/trusted-sweep-run.jq").read_text()
+        base = dict(repository=dict(full_name=REPO), path=".github/workflows/pr-labels.yml",
+                    head_repository=dict(full_name=REPO), head_branch="main", event="schedule")
+        for change, accepted in (({}, True), (dict(event="workflow_dispatch"), True),
+                                  (dict(event="pull_request"), False),
+                                  (dict(event="pull_request_target"), False),
+                                  (dict(head_branch="unreviewed"), False),
+                                  (dict(head_repository=dict(full_name="fork/TauCeti")), False),
+                                  (dict(path=".github/workflows/pr-build.yml"), False)):
+            result = subprocess.run(["jq", "-e", selector], input=json.dumps(dict(base, **change)),
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode == 0, accepted, result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
