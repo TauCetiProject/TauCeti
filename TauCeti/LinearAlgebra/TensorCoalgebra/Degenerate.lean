@@ -27,7 +27,8 @@ keeps the letter `e`, up to the sign of the Koszul twist.  Hence the brace and t
 bracket of two such maps vanish on degenerate words again; these are the normalized Hochschild
 cochains.  Degenerate words are also spanned by the pure words of homogeneous letters with a
 letter equal to `e`, so vanishing on them may be tested on homogeneous inputs
-(`degenerateWords_le_iff_of_mem_piece`).
+(`degenerateWords_le_iff_of_mem_piece`), and duplicating a homogeneous letter `e` preserves
+slotwise homogeneity (`duplicateAt_mem_piece`).
 
 ## References
 
@@ -249,6 +250,15 @@ theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
   have hx : x = Function.update x i (c • e) := by rw [← hi, Function.update_eq_self]
   rw [hx, (PiTensorProduct.tprod R).map_update_smul, map_smul]
   exact Submodule.smul_mem _ _ (of_tprod_mem_degenerateWords _ _ ⟨i, by simp⟩)
+
+/-- If a tuple `z` has homogeneous degrees `𝒟` and `e ∈ G.piece E`, then `duplicateAt e j z` has
+homogeneous degrees `duplicateAt E j 𝒟`. -/
+theorem duplicateAt_mem_piece {ι : Type*} [DecidableEq ι] {G : InternalGrading R M ι} {e : M}
+    {E : ι} (he : e ∈ G.piece E) {L : ℕ} (j : Fin L) {z : Fin L → M} {𝒟 : Fin L → ι}
+    (hz : ∀ r, z r ∈ G.piece (𝒟 r)) (k : Fin (L + 1)) :
+    duplicateAt e j z k ∈ G.piece (duplicateAt E j 𝒟 k) := by
+  rw [duplicateAt_apply, duplicateAt_apply]
+  split_ifs <;> first | exact hz _ | exact he
 
 /-- Membership in a submodule for an `n`-letter pure tensor word carrying a homogeneous element `e`
 at slot `i` may be checked on tuples of homogeneous letters carrying `e` with its degree at `i`. -/

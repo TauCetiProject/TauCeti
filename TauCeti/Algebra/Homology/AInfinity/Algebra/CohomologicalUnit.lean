@@ -34,8 +34,10 @@ two-sided unit for `m₂`.
 * `TauCeti.AInfinityHom.IsQuasiIso.cohomologicalUnit` and
   `TauCeti.AInfinityHom.IsQuasiIso.cohomologicallyUnital_iff`: invariance of cohomological units
   and cohomological unitality along `A∞` quasi-isomorphisms.
-* `TauCeti.AInfinityAlgebra.IsMinimal.cohomologicalUnit_iff`: on a minimal `A∞` algebra,
-  cohomological units are degree-zero two-sided units for `m₂`.
+* `TauCeti.AInfinityAlgebra.IsMinimal.cohomologicalUnit_iff` and
+  `TauCeti.AInfinityAlgebra.IsMinimal.cohomologicalUnit_of_m_two_eq`: on a minimal `A∞` algebra,
+  cohomological units are degree-zero two-sided units for `m₂` and depend only on the grading and
+  `m₂`.
 
 ## References
 
@@ -88,9 +90,8 @@ theorem cohomologicallyUnital (h : 𝒜.CohomologicalUnit e) : 𝒜.Cohomologica
   ⟨e, h⟩
 
 /-- A cohomological-unit representative has degree `-1` in the suspended grading. -/
-theorem mem_shift_one_piece (h : 𝒜.CohomologicalUnit e) : e ∈ (𝒜.grading.shift 1).piece (-1) := by
-  rw [InternalGrading.shift_piece, neg_add_cancel]
-  exact h.degree_zero
+theorem mem_shift_one_piece (h : 𝒜.CohomologicalUnit e) : e ∈ (𝒜.grading.shift 1).piece (-1) :=
+  𝒜.grading.mem_shift_piece_neg_of_mem_zero 1 h.degree_zero
 
 /-- The explicit-boundary form of the left unit equation. -/
 theorem exists_differential_eq_left_sub (h : 𝒜.CohomologicalUnit e) {x : A}
@@ -165,8 +166,8 @@ theorem IsMinimal.cohomologicalUnit_binary_right (h𝒜 : 𝒜.IsMinimal) (he : 
   have h := he.right_unit x (h𝒜.mem_cycles x)
   rwa [(isMinimal_iff_boundaries_eq_bot 𝒜).mp h𝒜, Submodule.mem_bot, sub_eq_zero] at h
 
-/-- On a minimal `A∞` algebra, an element `e` is a cohomological unit if and only if it has degree
-zero and is a two-sided unit for `m₂`. -/
+/-- On a minimal `A∞` algebra, `e` is a cohomological unit iff it has degree zero and is a
+two-sided unit for `m₂`. -/
 theorem IsMinimal.cohomologicalUnit_iff (h𝒜 : 𝒜.IsMinimal) :
     𝒜.CohomologicalUnit e ↔
       e ∈ 𝒜.grading.piece 0 ∧ (∀ x, 𝒜.m 2 ![e, x] = x) ∧ (∀ x, 𝒜.m 2 ![x, e] = x) :=
@@ -176,43 +177,47 @@ theorem IsMinimal.cohomologicalUnit_iff (h𝒜 : 𝒜.IsMinimal) :
     fun x _ ↦ by rw [hl, sub_self]; exact Submodule.zero_mem _,
     fun x _ ↦ by rw [hr, sub_self]; exact Submodule.zero_mem _⟩⟩
 
-/-- On a minimal `A∞` algebra with cohomological unit `e`, the Taylor map sends `[e, y]` to `y`. -/
+/-- On a minimal `A∞` algebra with cohomological unit `e`, `𝒜.taylor` sends `[e, y]` to `y`. -/
 theorem IsMinimal.taylor_of_two_cohomologicalUnit_left (h𝒜 : 𝒜.IsMinimal)
     (he : 𝒜.CohomologicalUnit e) (y : A) :
     𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![e, y])) = y := by
   rw [taylor_of_two, 𝒜.grading.koszulTwist_apply_of_mem_zero he.degree_zero,
     h𝒜.cohomologicalUnit_binary_left he]
 
-/-- On a minimal `A∞` algebra with cohomological unit `e`, the Taylor map sends `[y, e]` to the
-degree-one Koszul twist of `y`. -/
+/-- On a minimal `A∞` algebra with cohomological unit `e`, `𝒜.taylor` sends `[y, e]` to
+`𝒜.grading.koszulTwist 1 y`. -/
 theorem IsMinimal.taylor_of_two_cohomologicalUnit_right (h𝒜 : 𝒜.IsMinimal)
     (he : 𝒜.CohomologicalUnit e) (y : A) :
     𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![y, e])) =
       𝒜.grading.koszulTwist 1 y := by
   rw [taylor_of_two, h𝒜.cohomologicalUnit_binary_right he]
 
-/-- If `0` is a cohomological unit of a minimal `A∞` algebra, then every element of `A` is zero and
-`0` is already a strict unit. -/
+/-- If `0` is a cohomological unit of a minimal `A∞` algebra, then `0` is already a strict unit. -/
 theorem IsMinimal.strictUnit_zero_of_cohomologicalUnit_zero (h𝒜 : 𝒜.IsMinimal)
     (he : 𝒜.CohomologicalUnit 0) : 𝒜.StrictUnit 0 := by
   have hall : ∀ x : A, x = 0 := fun x ↦ by
-    rw [← h𝒜.cohomologicalUnit_binary_left he x]
-    exact (𝒜.m 2).map_coord_zero 0 rfl
-  refine ⟨Submodule.zero_mem _, fun x ↦ by rw [hall x, hall (𝒜.m 2 _)],
-    fun x ↦ by rw [hall x, hall (𝒜.m 2 _)], fun n _ x _ ↦ hall _⟩
+    rw [← h𝒜.cohomologicalUnit_binary_left he x]; exact (𝒜.m 2).map_coord_zero 0 rfl
+  exact ⟨Submodule.zero_mem _, fun x ↦ by rw [hall x, hall (𝒜.m 2 _)],
+    fun x ↦ by rw [hall x, hall (𝒜.m 2 _)], fun _ _ _ _ ↦ hall _⟩
 
-/-- On minimal `A∞` algebras with the same grading whose Taylor maps agree on words of length two,
-an element is a cohomological unit of one when it is a cohomological unit of the other. -/
+/-- Minimal `A∞` structures with the same grading and `m 2` have the same cohomological units. -/
+theorem IsMinimal.cohomologicalUnit_of_m_two_eq {𝒜' : AInfinityAlgebra R A} (h𝒜 : 𝒜.IsMinimal)
+    (h𝒜' : 𝒜'.IsMinimal) (hG : 𝒜'.grading = 𝒜.grading) (hm2 : 𝒜'.m 2 = 𝒜.m 2)
+    (he : 𝒜.CohomologicalUnit e) : 𝒜'.CohomologicalUnit e :=
+  h𝒜'.cohomologicalUnit_iff.2 ⟨hG ▸ he.degree_zero,
+    fun x ↦ by rw [hm2, h𝒜.cohomologicalUnit_binary_left he],
+    fun x ↦ by rw [hm2, h𝒜.cohomologicalUnit_binary_right he]⟩
+
+/-- Minimal `A∞` structures with the same grading whose Taylor maps agree on two-letter words have
+the same cohomological units. -/
 theorem IsMinimal.cohomologicalUnit_of_taylor_eq {𝒜' : AInfinityAlgebra R A} (h𝒜 : 𝒜.IsMinimal)
     (h𝒜' : 𝒜'.IsMinimal) (hG : 𝒜'.grading = 𝒜.grading)
-    (htay : ∀ a b,
-      𝒜'.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
-        𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])))
+    (htay : ∀ a b, 𝒜'.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]))
+      = 𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])))
     (he : 𝒜.CohomologicalUnit e) : 𝒜'.CohomologicalUnit e := by
   refine h𝒜'.cohomologicalUnit_iff.2 ⟨hG ▸ he.degree_zero, fun x ↦ ?_, fun x ↦ ?_⟩
   · have h := htay e x
-    rwa [taylor_of_two, taylor_of_two, hG,
-      𝒜.grading.koszulTwist_apply_of_mem_zero he.degree_zero,
+    rwa [taylor_of_two, taylor_of_two, hG, 𝒜.grading.koszulTwist_apply_of_mem_zero he.degree_zero,
       h𝒜.cohomologicalUnit_binary_left he] at h
   · have h := htay (𝒜.grading.koszulTwist 1 x) e
     rw [taylor_of_two, taylor_of_two, hG, InternalGrading.koszulTwist_koszulTwist] at h
@@ -232,8 +237,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R]
   [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
   {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
 
-/-- The linear part of an `A∞` quasi-isomorphism carries a cohomological-unit representative to a
-cohomological-unit representative. -/
+/-- The linear part of an `A∞` quasi-isomorphism preserves cohomological-unit representatives. -/
 theorem IsQuasiIso.cohomologicalUnit {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) {e : A}
     (he : 𝒜.CohomologicalUnit e) : ℬ.CohomologicalUnit (f.linearPart e) where
   degree_zero := f.linearPart_mem he.degree_zero
@@ -255,8 +259,8 @@ theorem IsQuasiIso.cohomologicalUnit {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasi
       ← AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, ← map_mul,
       AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, he.cohomologyMul_cohomologyClass_right]
 
-/-- Along an `A∞` quasi-isomorphism, a degree-zero cycle `e` is a cohomological unit if and only if
-its image under `f.linearPart` is a cohomological unit. -/
+/-- Along an `A∞` quasi-isomorphism, a degree-zero cycle `e` is a cohomological unit iff
+`f.linearPart e` is a cohomological unit. -/
 theorem IsQuasiIso.cohomologicalUnit_iff {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) {e : A}
     (hdeg : e ∈ 𝒜.grading.piece 0) (hcyc : e ∈ 𝒜.cycles) :
     ℬ.CohomologicalUnit (f.linearPart e) ↔ 𝒜.CohomologicalUnit e := by
@@ -278,24 +282,19 @@ theorem IsQuasiIso.cohomologicallyUnital_iff {f : AInfinityHom 𝒜 ℬ} (hf : f
     𝒜.CohomologicallyUnital ↔ ℬ.CohomologicallyUnital := by
   rw [𝒜.cohomologicallyUnital_def, ℬ.cohomologicallyUnital_def]
   refine ⟨fun ⟨e, he⟩ ↦ ⟨f.linearPart e, hf.cohomologicalUnit he⟩, fun ⟨e', he'⟩ ↦ ?_⟩
-  have hc : hf.cohomologyMapInv (ℬ.cohomologyClass he'.cycle) ∈ 𝒜.cohomologyGrading.piece 0 :=
-    hf.cohomologyMapInv_mem_cohomologyGrading_piece
-      (ℬ.cohomologyClass_mem_cohomologyGrading_piece he'.cycle he'.degree_zero)
-  obtain ⟨e, hecyc, hedeg, heq⟩ := 𝒜.mem_cohomologyGrading_piece_iff.mp hc
-  refine ⟨e, (hf.cohomologicalUnit_iff hedeg hecyc).mp ?_⟩
-  have hclass : ℬ.cohomologyClass (f.linearPart_mem_cycles hecyc) =
-      ℬ.cohomologyClass he'.cycle := by
+  obtain ⟨e, hecyc, hedeg, heq⟩ := 𝒜.mem_cohomologyGrading_piece_iff.mp
+    (hf.cohomologyMapInv_mem_cohomologyGrading_piece
+      (ℬ.cohomologyClass_mem_cohomologyGrading_piece he'.cycle he'.degree_zero))
+  have hfcyc := f.linearPart_mem_cycles hecyc
+  have hclass : ℬ.cohomologyClass hfcyc = ℬ.cohomologyClass he'.cycle := by
     rw [← f.cohomologyMap_cohomologyClass hecyc, heq]
     exact NonUnitalAlgHom.congr_fun hf.cohomologyMap_comp_cohomologyMapInv _
-  refine ⟨f.linearPart_mem hedeg, f.linearPart_mem_cycles hecyc, fun y hy ↦ ?_, fun y hy ↦ ?_⟩
-  · refine (ℬ.cohomologyClass_eq_iff
-      (ℬ.m_two_mem_cycles (f.linearPart_mem_cycles hecyc) hy) hy).mp ?_
-    rw [← ℬ.cohomologyMul_cohomologyClass (f.linearPart_mem_cycles hecyc) hy, hclass,
-      he'.cohomologyMul_cohomologyClass_left]
-  · refine (ℬ.cohomologyClass_eq_iff
-      (ℬ.m_two_mem_cycles hy (f.linearPart_mem_cycles hecyc)) hy).mp ?_
-    rw [← ℬ.cohomologyMul_cohomologyClass hy (f.linearPart_mem_cycles hecyc), hclass,
-      he'.cohomologyMul_cohomologyClass_right]
+  refine ⟨e, (hf.cohomologicalUnit_iff hedeg hecyc).mp
+    ⟨f.linearPart_mem hedeg, hfcyc, fun y hy ↦ ?_, fun y hy ↦ ?_⟩⟩
+  · refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles hfcyc hy) hy).mp ?_
+    rw [← ℬ.cohomologyMul_cohomologyClass hfcyc hy, hclass, he'.cohomologyMul_cohomologyClass_left]
+  · refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles hy hfcyc) hy).mp ?_
+    rw [← ℬ.cohomologyMul_cohomologyClass hy hfcyc, hclass, he'.cohomologyMul_cohomologyClass_right]
 
 end AInfinityHom
 

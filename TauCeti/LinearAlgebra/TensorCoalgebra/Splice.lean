@@ -30,6 +30,8 @@ block.
 
 * `TauCeti.ReducedTensorWords.splice`: a block of a tensor word with one of its subblocks collapsed
   to a single letter.
+* `TauCeti.ReducedTensorWords.duplicateAt`: replaces one entry of a `Fin`-tuple by two adjacent
+  copies of a distinguished element.
 
 ## Main results
 
@@ -40,13 +42,17 @@ block.
 * `TauCeti.ReducedTensorWords.splice_two_succ_eq_splice_two_pred`: deleting an interior letter by
   collapsing it with either neighbour gives the same word.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
-* `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod_insertNth`: collapsing two consecutive
+* `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod` and
+  `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod_insertNth`: collapsing two consecutive
   letters of a word.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
   splicing a block of the rest.
 * `TauCeti.ReducedTensorWords.splice_mem_filtration`: a block of `b` letters with `d` of them
   collapsed to one letter has length at most `b + 1 - d`.
+* `TauCeti.ReducedTensorWords.sum_duplicateAt` and the `subword_*_duplicateAt_*` /
+  `splice_two_duplicateAt_*` family: sum, subword, and binary-splice identities for tuples with a
+  duplicated adjacent entry.
 
 ## References
 
@@ -274,6 +280,19 @@ theorem splice_two_succ_eq_splice_two_pred {n p : ℕ} (hp₀ : 0 < p) (hpn : p 
     | omega
     | exact congrArg x rfl
     | exact congrArg x (Fin.ext (by dsimp only; omega))
+
+/-- Collapsing a fitting two-letter block at position `p` of a tuple of length `n + 1` gives the
+`n`-letter pure tensor word with `v` at slot `p` and the remaining letters shifted down by one. -/
+theorem splice_two_eq_of_tprod {n p : ℕ} (hp : p + 2 ≤ n + 1) (w : Fin (n + 1) → M) (v : M) :
+    splice R w 0 (n + 1) p 2 v =
+      of R M ⟨n, by omega⟩ (PiTensorProduct.tprod R fun k : Fin n ↦
+        if _ : k.1 < p then w ⟨k.1, by omega⟩
+        else if _ : k.1 = p then v
+        else w ⟨k.1 + 1, by omega⟩) := by
+  rw [splice_eq_of_tprod R w v two_pos hp (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun k ↦ ?_
+  simp only [Fin.val_cast, zero_add]
+  split_ifs <;> rfl
 
 /-- Collapsing the two letters at positions `p` and `p + 1` of a word of length `n + 2` into `e`
 gives the pure tensor of the remaining `n` letters with `e` inserted at position `p`. -/
@@ -578,6 +597,194 @@ theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R
   · rw [hF _ (subword_mem_filtration R M x c hdj), splice_zero]
     exact zero_mem _
   · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
+
+/-! ### Duplicating an entry into two adjacent copies -/
+
+/-- Replace `z j` in an `L`-tuple `z` by two adjacent copies of `e` at positions `j` and `j + 1`. -/
+def duplicateAt {α : Type*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α) : Fin (L + 1) → α :=
+  j.succ.insertNth e (Function.update z j e)
+
+/-- Explicit definition of `duplicateAt` via `Fin.insertNth` and `Function.update`. -/
+theorem duplicateAt_def {α : Type*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α) :
+    duplicateAt e j z = j.succ.insertNth e (Function.update z j e) := by rfl
+
+/-- Coordinate formula for `duplicateAt`: `< j` unchanged, `j` and `j + 1` equal `e`, `> j + 1`
+shifted down by `1`. -/
+theorem duplicateAt_apply {α : Type*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α)
+    (k : Fin (L + 1)) :
+    duplicateAt e j z k =
+      if hk : k.1 < j.1 then z ⟨k.1, by omega⟩
+      else if k.1 = j.1 ∨ k.1 = j.1 + 1 then e else z ⟨k.1 - 1, by omega⟩ := by
+  rw [duplicateAt]
+  cases k using Fin.succAboveCases j.succ with
+  | x => simp
+  | p r =>
+    rw [Fin.insertNth_apply_succAbove]
+    rcases lt_trichotomy r.1 j.1 with hlt | heq | hgt
+    · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_lt hlt (congrArg Fin.val h)),
+        Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp; omega))]; simp [hlt]
+    · obtain rfl := Fin.ext heq
+      rw [Function.update_self, Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp))]; simp
+    · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_gt hgt (congrArg Fin.val h)),
+        Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega)),
+        dite_eq_right (by rw [Fin.val_succ]; omega), ite_eq_right (by rw [Fin.val_succ]; omega)]
+      exact congrArg z (Fin.ext (by simp))
+
+/-- Sum of `duplicateAt a j 𝒟` when `𝒟 j = a`: replacing `a` at `j` by two copies adds `a`. -/
+theorem sum_duplicateAt {G : Type*} [AddCommMonoid G] {L : ℕ} (j : Fin L) {a : G}
+    {𝒟 : Fin L → G} (h𝒟j : 𝒟 j = a) :
+    ∑ k : Fin (L + 1), duplicateAt a j 𝒟 k = (∑ r : Fin L, 𝒟 r) + a := by
+  rw [duplicateAt, Fin.sum_univ_succAbove _ j.succ, Fin.insertNth_apply_same]
+  simp only [Fin.insertNth_apply_succAbove]
+  rw [Finset.sum_update_of_mem (Finset.mem_univ j), Finset.sdiff_singleton_eq_erase]
+  have hsum := Finset.add_sum_erase Finset.univ 𝒟 (Finset.mem_univ j)
+  rw [h𝒟j] at hsum; rw [hsum, add_comm]
+
+/-- Prefix sums of `duplicateAt a j 𝒟` of length at most `j` agree with those of `𝒟`. -/
+theorem sum_duplicateAt_range_le {G : Type*} [AddCommMonoid G] {L : ℕ} (a : G) (j : Fin L)
+    (𝒟 : Fin L → G) {p : ℕ} (hp : p ≤ j.1) :
+    (∑ r ∈ Finset.range p, if h : r < L + 1 then duplicateAt a j 𝒟 ⟨r, h⟩ else 0) =
+      ∑ r ∈ Finset.range p, if h : r < L then 𝒟 ⟨r, h⟩ else 0 :=
+  Finset.sum_congr rfl fun r hr ↦ by
+    rw [Finset.mem_range] at hr
+    rw [dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply,
+      dite_eq_left (by rw [Fin.val_mk]; omega)]
+
+/-- Prefix sums of `duplicateAt a j 𝒟` of length `q + 1` with `j ≤ q ≤ L` exceed the length-`q`
+prefix sum of `𝒟` by `a` when `𝒟 j = a`. -/
+theorem sum_duplicateAt_range_succ_ge {G : Type*} [AddCommMonoid G] {L : ℕ} (j : Fin L) {a : G}
+    {𝒟 : Fin L → G} (h𝒟j : 𝒟 j = a) {q : ℕ} (hq₁ : j.1 ≤ q) : q ≤ L →
+    (∑ r ∈ Finset.range (q + 1), if h : r < L + 1 then duplicateAt a j 𝒟 ⟨r, h⟩ else 0) =
+      (∑ r ∈ Finset.range q, if h : r < L then 𝒟 ⟨r, h⟩ else 0) + a := by
+  induction q, hq₁ using Nat.le_induction with
+  | base =>
+    intro _
+    rw [Finset.sum_range_succ, sum_duplicateAt_range_le a j 𝒟 le_rfl, dite_eq_left (by omega),
+      duplicateAt_apply, dite_eq_right (lt_irrefl _), ite_eq_left (.inl rfl)]
+  | succ q hjq ih =>
+    intro hq₂
+    rw [Finset.sum_range_succ _ (q + 1), ih (by omega), Finset.sum_range_succ _ q,
+      dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply]
+    rcases eq_or_lt_of_le hjq with heq | hlt
+    · rw [show (⟨q, by omega⟩ : Fin L) = j from Fin.ext heq.symm, h𝒟j,
+        dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_left (.inr (by rw [Fin.val_mk]; omega))]
+    · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega),
+        show (⟨(⟨q + 1, by omega⟩ : Fin (L + 1)).1 - 1, by omega⟩ : Fin L) = ⟨q, by omega⟩
+          from Fin.ext (by simp), add_right_comm]
+
+/-- The initial `(n + 1)`-letter subword of `duplicateAt e j.castSucc w` duplicates `e` at slot `j`
+of the initial `n`-letter prefix of `w`. -/
+theorem subword_init_duplicateAt_castSucc (e : M) {n : ℕ} (j : Fin n) (w : Fin (n + 1) → M) :
+    subword R (duplicateAt e j.castSucc w) 0 (n + 1) =
+      of R M ⟨n + 1, n.succ_pos⟩
+        (PiTensorProduct.tprod R (duplicateAt e j fun r ↦ w r.castSucc)) := by
+  rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.val_cast, zero_add, duplicateAt_apply, Fin.val_castSucc]; split_ifs <;> rfl
+
+/-- When `w (Fin.last n) = e`, the initial `(n + 1)`-letter subword of
+`duplicateAt e (Fin.last n) w` is `w`. -/
+theorem subword_init_duplicateAt_last {e : M} {n : ℕ} {w : Fin (n + 1) → M}
+    (hw : w (Fin.last n) = e) : subword R (duplicateAt e (Fin.last n) w) 0 (n + 1) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  have _hk := k.isLt
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply, Fin.val_last]
+  split_ifs <;> try dsimp only at *
+  all_goals first | omega | (rw [← hw]; exact congrArg w (Fin.ext (by dsimp [Fin.last]; omega)))
+
+/-- When `j = 0` and `w 0 = e`, the tail `(n + 1)`-letter subword of `duplicateAt e j w` is `w`. -/
+theorem subword_tail_duplicateAt_zero {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : j.1 = 0)
+    {w : Fin (n + 1) → M} (hw : w 0 = e) : subword R (duplicateAt e j w) 1 (n + 1) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  rw [Fin.cast_eq_self, duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega)]
+  split_ifs with h <;> dsimp only at h
+  · exact hw.symm.trans (congrArg w (Fin.ext (by rw [Fin.val_zero]; omega)))
+  · exact congrArg w (Fin.ext (by dsimp only; omega))
+
+/-- When `1 ≤ j`, the tail `(n + 1)`-letter subword of `duplicateAt e j w` has `e` at `j - 1`. -/
+theorem subword_tail_duplicateAt_of_pos (e : M) {n : ℕ} {j : Fin (n + 1)} (hj : 1 ≤ j.1)
+    (w : Fin (n + 1) → M) : ∃ u : Fin (n + 1) → M, u ⟨j.1 - 1, by omega⟩ = e ∧
+      subword R (duplicateAt e j w) 1 (n + 1) =
+        of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R u) := by
+  refine ⟨fun k ↦ duplicateAt e j w ⟨1 + k.1, by omega⟩, ?_,
+    subword_eq_of_tprod R _ n.succ_pos (by omega)⟩
+  dsimp only; rw [duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega),
+    ite_eq_left (by rw [Fin.val_mk]; omega)]
+
+/-- Collapsing a 2-letter block strictly before `j` in `duplicateAt e j w` has `e` at `j - 1`. -/
+theorem splice_two_duplicateAt_of_lt (e : M) {n : ℕ} {j : Fin (n + 1)} {p : ℕ}
+    (hp : p + 2 ≤ j.1) (w : Fin (n + 1) → M) (v : M) :
+    ∃ u : Fin (n + 1) → M, u ⟨j.1 - 1, by omega⟩ = e ∧
+      splice R (duplicateAt e j w) 0 (n + 2) p 2 v =
+        of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R u) := by
+  refine ⟨_, ?_, splice_eq_of_tprod R (duplicateAt e j w) v two_pos (by omega) (by omega)⟩
+  dsimp only
+  rw [dite_eq_right (by rw [Fin.val_mk]; omega), dite_eq_right (by rw [Fin.val_mk]; omega),
+    duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk, Fin.val_mk]; omega),
+    ite_eq_left (by rw [Fin.val_mk, Fin.val_mk]; omega)]
+
+/-- Collapsing `[w (j - 1), e]` to `w (j - 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_pred {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : 1 ≤ j.1)
+    {w : Fin (n + 1) → M} (hw : w j = e) :
+    splice R (duplicateAt e j w) 0 (n + 2) (j.1 - 1) 2 (w ⟨j.1 - 1, by omega⟩) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]; split_ifs
+  all_goals first
+    | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
+    | exact congrArg w (Fin.ext (by dsimp only; omega))
+
+/-- Collapsing `[e, e]` at slot `j` to `e` in `duplicateAt e j w` recovers `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_self {e : M} {n : ℕ} {j : Fin (n + 1)} {w : Fin (n + 1) → M}
+    (hw : w j = e) : splice R (duplicateAt e j w) 0 (n + 2) j.1 2 e =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]; split_ifs
+  all_goals first
+    | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
+
+/-- Collapsing `[e, w (j + 1)]` to `w (j + 1)` in `duplicateAt e j w` yields `w` when `w j = e`. -/
+theorem splice_two_duplicateAt_succ {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : j.1 < n)
+    {w : Fin (n + 1) → M} (hw : w j = e) :
+    splice R (duplicateAt e j w) 0 (n + 2) (j.1 + 1) 2 (w ⟨j.1 + 1, by omega⟩) =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
+  rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]; split_ifs
+  all_goals first
+    | omega | exact congrArg w (Fin.ext rfl) | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
+    | exact congrArg w (Fin.ext (by dsimp only; omega))
+
+/-- For `q ≥ j`, the two-letter subword at `q + 1` of `duplicateAt e j w` equals that at `q` of `w`
+when `w j = e`. -/
+theorem subword_two_duplicateAt_ge {e : M} {n : ℕ} {j : Fin (n + 1)} {q : ℕ} (hq₁ : j.1 ≤ q)
+    (hq₂ : q + 2 ≤ n + 1) {w : Fin (n + 1) → M} (hw : w j = e) :
+    subword R (duplicateAt e j w) (q + 1) 2 = subword R w q 2 := by
+  rw [subword_eq_of_tprod R _ two_pos (by omega), subword_eq_of_tprod R _ two_pos hq₂]
+  refine of_tprod_congr R M _ rfl fun k ↦ ?_
+  rw [Fin.cast_eq_self, duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega)]
+  split_ifs with h <;> dsimp only at h
+  · exact hw.symm.trans (congrArg w (Fin.ext (by dsimp only; omega)))
+  · exact congrArg w (Fin.ext (by dsimp only; omega))
+
+/-- Splicing a two-letter block strictly after `j` commutes with duplicating `e` at slot `j`. -/
+theorem splice_two_duplicateAt_after (e : M) {n : ℕ} (j : Fin n) {q : ℕ} (hq₁ : j.1 + 1 ≤ q)
+    (hq₂ : q + 2 ≤ n + 1) (w : Fin (n + 1) → M) (v : M) :
+    splice R (duplicateAt e j.castSucc w) 0 (n + 2) (q + 1) 2 v =
+      of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R (duplicateAt e j fun r : Fin n ↦
+        if _ : r.1 < q then w ⟨r.1, by omega⟩
+        else if _ : r.1 = q then v else w ⟨r.1 + 1, by omega⟩)) := by
+  rw [splice_eq_of_tprod R _ v two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun k ↦ ?_
+  have _hk := k.isLt
+  simp only [Fin.val_cast, zero_add, duplicateAt_apply, Fin.val_castSucc]
+  split_ifs <;> first | omega | rfl | exact congrArg w (Fin.ext (by simp; omega))
 
 end ReducedTensorWords
 

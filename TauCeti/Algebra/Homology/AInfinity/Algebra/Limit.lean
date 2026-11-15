@@ -11,43 +11,36 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
 /-!
 # Limits of stabilising sequences of `A∞` algebra structures
 
-Let `𝒜₀, 𝒜₁, …` be `A∞` structures on the same graded module `(A, G)` whose suspended Taylor maps
-*stabilise*: for every `n`, the Taylor maps of `𝒜ₙ₊₁` and `𝒜ₙ` agree on the words of length at most
-`n`.  Then there is a unique `A∞` structure `TauCeti.AInfinityAlgebra.limit` on `(A, G)` whose
-Taylor map agrees with that of `𝒜ₙ` on the words of length at most `n`, for every `n`.  Its bar
-coderivation agrees with the bar differential of `𝒜ₙ` on the words of length at most `n`, and since
-the bar differential of `𝒜ₙ` preserves that filtration piece and squares to zero, the limit bar
-coderivation squares to zero everywhere.
+Let `𝒜₀, 𝒜₁, …` be `A∞` structures on `(A, G)` whose suspended Taylor maps *stabilise*: for every
+`n`, the Taylor maps of `𝒜ₙ₊₁` and `𝒜ₙ` agree on `filtration R A n`. There is then a unique `A∞`
+structure `TauCeti.AInfinityAlgebra.limit` on `(A, G)` whose Taylor map agrees with `(𝒜 n).taylor`
+on `filtration R A n` for all `n`. Its bar coderivation agrees with `(𝒜 n).barDifferential` on
+`filtration R A n`, and therefore squares to zero everywhere.
 
-Whereas `TauCeti.AInfinityHom.limit` takes the limit of comparison morphisms when the limit algebra
-structure is already given in advance (for example when killing all higher operations toward a fixed
-graded algebra), `TauCeti.AInfinityAlgebra.limit` constructs the limit `A∞` structure itself when a
-sequence of arity-by-arity gauge transformations modifies higher operations inductively, as in unit
-strictification.
+Whereas `TauCeti.AInfinityHom.limit` takes the limit of comparison morphisms toward a fixed target
+algebra, `TauCeti.AInfinityAlgebra.limit` constructs the limit `A∞` structure itself when arity-wise
+gauge transformations modify higher operations inductively, as in unit strictification.
 
 ## Main definitions
 
-* `TauCeti.AInfinityAlgebra.limit`: the limit of a stabilising sequence of `A∞` structures with a
-  common grading.
+* `TauCeti.AInfinityAlgebra.limit`: limit of a stabilising sequence of `A∞` structures with a common
+  grading.
 
 ## Main results
 
 * `TauCeti.AInfinityAlgebra.taylor_limit_apply_of_mem_filtration` and
-  `TauCeti.AInfinityAlgebra.barDifferential_limit_apply_of_mem_filtration`: on the words of length
-  at most `n`, the Taylor map and the bar differential of the limit agree with those of `𝒜ₙ`.
-* `TauCeti.AInfinityAlgebra.m_limit_of_le` and `TauCeti.AInfinityAlgebra.m_limit`: the arity-`k`
-  operation of the limit agrees with that of `𝒜ₙ` whenever `k ≤ n`.
-* `TauCeti.AInfinityAlgebra.eq_limit`: the limit is the unique `A∞` structure with the given
-  grading whose Taylor map agrees with that of `𝒜ₙ` on the words of length at most `n`.
+  `TauCeti.AInfinityAlgebra.barDifferential_limit_apply_of_mem_filtration`: agreement with `𝒜 n` on
+  `filtration R A n`.
+* `TauCeti.AInfinityAlgebra.m_limit_of_le`, `TauCeti.AInfinityAlgebra.m_limit`, and
+  `TauCeti.AInfinityAlgebra.eq_limit`: arity-wise agreement and uniqueness of the limit.
 * `TauCeti.AInfinityAlgebra.differential_limit` and `TauCeti.AInfinityAlgebra.isMinimal_limit_iff`:
-  the limit has the differential of `𝒜₁`, and is minimal if and only if `𝒜₁` is.
+  the limit inherits the differential and minimality of `𝒜 1`.
 
 ## References
 
 * T. Kadeishvili, *The structure of the `A(∞)`-algebra, and the Hochschild and Harrison
   cohomologies*, Trudy Tbiliss. Mat. Inst. 91 (1988), 19--27.
-* K. Lefèvre-Hasegawa, *Sur les `A∞`-catégories*, Ph.D. thesis, Université Paris 7 (2003),
-  Chapitre 3.
+* K. Lefèvre-Hasegawa, *Sur les `A∞`-catégories*, Ph.D. thesis, Université Paris 7 (2003), Ch. 3.
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.3 and 3.4.
 -/
 
@@ -63,86 +56,54 @@ namespace AInfinityAlgebra
 
 open ReducedTensorWords
 
-/-- The suspended Taylor map of the limit of a sequence of `A∞` structures `𝒜 n`: on the words of
-length `k`, that of `𝒜 k`. -/
-private noncomputable def limitTaylor (𝒜 : ℕ → AInfinityAlgebra R A) :
-    ReducedTensorWords R A →ₗ[R] A :=
-  DirectSum.toModule R _ _ fun k ↦ (𝒜 k.1).taylor ∘ₗ of R A k
-
 section Stabilising
 
 variable {G : InternalGrading R A ℤ} {𝒜 : ℕ → AInfinityAlgebra R A}
   (hG : ∀ n, (𝒜 n).grading = G)
   (h𝒜 : ∀ n, ∀ z ∈ filtration R A n, (𝒜 (n + 1)).taylor z = (𝒜 n).taylor z)
 
-include h𝒜 in
-/-- In a stabilising sequence of `A∞` structures, the Taylor map of `𝒜 n` agrees with that of
-`𝒜 k` on the words of length at most `k`, whenever `k ≤ n`. -/
-private theorem taylor_apply_eq_of_le {k n : ℕ} (hkn : k ≤ n) {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A k) : (𝒜 n).taylor z = (𝒜 k).taylor z := by
-  induction n, hkn using Nat.le_induction with
-  | base => rfl
-  | succ n hkn ih => rw [h𝒜 n z (filtration_monotone R A hkn hz), ih]
-
-include h𝒜 in
-/-- The limit Taylor map agrees with that of `𝒜 n` on the words of length at most `n`. -/
-private theorem limitTaylor_apply_of_mem_filtration {n : ℕ} {z : ReducedTensorWords R A}
-    (hz : z ∈ filtration R A n) : limitTaylor 𝒜 z = (𝒜 n).taylor z := by
-  have h : filtration R A n ≤ LinearMap.eqLocus (limitTaylor 𝒜) (𝒜 n).taylor := by
-    rw [filtration_le_iff]
-    rintro k hk _ ⟨x, rfl⟩
-    rw [LinearMap.mem_eqLocus, limitTaylor, toModule_of, LinearMap.comp_apply,
-      taylor_apply_eq_of_le h𝒜 hk (of_mem_filtration R A le_rfl x)]
-  exact h hz
-
 include hG h𝒜
 
-/-- On the words of length at most `n`, the graded coderivation generated by `limitTaylor 𝒜`
-agrees with the bar differential of `𝒜 n`. -/
-private theorem gradedCoderiv_limitTaylor_apply_of_mem_filtration {n : ℕ}
+private theorem gradedCoderiv_filtrationLimit_taylor_apply_of_mem_filtration {n : ℕ}
     {z : ReducedTensorWords R A} (hz : z ∈ filtration R A n) :
-    gradedCoderiv (G.shift 1) (limitTaylor 𝒜) 1 z = (𝒜 n).barDifferential z := by
+    gradedCoderiv (G.shift 1) (filtrationLimit fun k ↦ (𝒜 k).taylor) 1 z =
+      (𝒜 n).barDifferential z := by
   rw [(𝒜 n).barDifferential_def, hG n]
   exact gradedCoderiv_apply_eq_of_mem_filtration _ 1
-    (fun _ hw ↦ limitTaylor_apply_of_mem_filtration h𝒜 hw) hz
+    (fun _ hw ↦ filtrationLimit_apply_of_mem_filtration h𝒜 hw) hz
 
-/-- The limit Taylor map has degree one for the suspended grading. -/
-private theorem isHomogeneous_limitTaylor :
-    LinearMap.IsHomogeneous (limitTaylor 𝒜) (gradedPiece (G.shift 1)) (G.shift 1).piece 1 := by
+private theorem isHomogeneous_filtrationLimit_taylor :
+    LinearMap.IsHomogeneous (filtrationLimit fun k ↦ (𝒜 k).taylor)
+      (gradedPiece (G.shift 1)) (G.shift 1).piece 1 := by
   rw [LinearMap.isHomogeneous_def]
   intro p z hz
   obtain ⟨n, hn⟩ := exists_mem_filtration R A z
   have h := (𝒜 n).taylor_isSuspension.isHomogeneous (𝒜 n).m_degree
   rw [hG n] at h
-  rw [limitTaylor_apply_of_mem_filtration h𝒜 hn]
+  rw [filtrationLimit_apply_of_mem_filtration h𝒜 hn]
   exact h.map_mem hz
 
-/-- The graded coderivation generated by `limitTaylor 𝒜` squares to zero: on the words of length at
-most `n` it agrees with the bar differential of `𝒜 n`, which preserves that filtration piece and
-squares to zero. -/
-private theorem gradedCoderiv_limitTaylor_comp_self :
-    gradedCoderiv (G.shift 1) (limitTaylor 𝒜) 1 ∘ₗ
-      gradedCoderiv (G.shift 1) (limitTaylor 𝒜) 1 = 0 := by
-  refine LinearMap.ext fun z ↦ ?_
-  obtain ⟨n, hn⟩ := exists_mem_filtration R A z
-  rw [LinearMap.comp_apply, LinearMap.zero_apply,
-    gradedCoderiv_limitTaylor_apply_of_mem_filtration hG h𝒜 hn,
-    gradedCoderiv_limitTaylor_apply_of_mem_filtration hG h𝒜
-      ((𝒜 n).barDifferential_mem_filtration hn),
-    ← LinearMap.comp_apply, (𝒜 n).barDifferential_sq, LinearMap.zero_apply]
+private theorem gradedCoderiv_filtrationLimit_taylor_comp_self :
+    gradedCoderiv (G.shift 1) (filtrationLimit fun k ↦ (𝒜 k).taylor) 1 ∘ₗ
+      gradedCoderiv (G.shift 1) (filtrationLimit fun k ↦ (𝒜 k).taylor) 1 = 0 :=
+  LinearMap.ext fun z ↦ by
+    obtain ⟨n, hn⟩ := exists_mem_filtration R A z
+    rw [LinearMap.comp_apply, LinearMap.zero_apply,
+      gradedCoderiv_filtrationLimit_taylor_apply_of_mem_filtration hG h𝒜 hn,
+      gradedCoderiv_filtrationLimit_taylor_apply_of_mem_filtration hG h𝒜
+        ((𝒜 n).barDifferential_mem_filtration hn),
+      ← LinearMap.comp_apply, (𝒜 n).barDifferential_sq, LinearMap.zero_apply]
 
 end Stabilising
 
-/-- The **limit** of a stabilising sequence of `A∞` structures `𝒜 n` with common grading `G`: if
-the Taylor maps of `𝒜 (n + 1)` and `𝒜 n` agree on the words of length at most `n` for every `n`,
-this is the `A∞` structure with grading `G` whose Taylor map agrees with that of `𝒜 n` on the
-words of length at most `n`, for every `n`. -/
+/-- The **limit** of a stabilising sequence of `A∞` structures `𝒜 n` with common grading `G`, whose
+Taylor map agrees with `(𝒜 n).taylor` on `filtration R A n` for every `n`. -/
 noncomputable def limit {G : InternalGrading R A ℤ} (𝒜 : ℕ → AInfinityAlgebra R A)
     (hG : ∀ n, (𝒜 n).grading = G)
     (h𝒜 : ∀ n, ∀ z ∈ filtration R A n, (𝒜 (n + 1)).taylor z = (𝒜 n).taylor z) :
     AInfinityAlgebra R A :=
-  ofTaylor G (limitTaylor 𝒜) (isHomogeneous_limitTaylor hG h𝒜)
-    (gradedCoderiv_limitTaylor_comp_self hG h𝒜)
+  ofTaylor G (filtrationLimit fun k ↦ (𝒜 k).taylor) (isHomogeneous_filtrationLimit_taylor hG h𝒜)
+    (gradedCoderiv_filtrationLimit_taylor_comp_self hG h𝒜)
 
 section Limit
 
@@ -154,41 +115,33 @@ include hG h𝒜
 
 /-- The limit `A∞` structure has the common grading `G`. -/
 @[simp]
-theorem limit_grading : (limit 𝒜 hG h𝒜).grading = G := by
-  rw [limit, ofTaylor_grading]
+theorem limit_grading : (limit 𝒜 hG h𝒜).grading = G := by rw [limit, ofTaylor_grading]
 
 /-- On the words of length at most `n`, the Taylor map of the limit is that of `𝒜 n`. -/
 theorem taylor_limit_apply_of_mem_filtration {n : ℕ} {z : ReducedTensorWords R A}
     (hz : z ∈ filtration R A n) : (limit 𝒜 hG h𝒜).taylor z = (𝒜 n).taylor z := by
-  rw [limit, ofTaylor_taylor, limitTaylor_apply_of_mem_filtration h𝒜 hz]
+  rw [limit, ofTaylor_taylor, filtrationLimit_apply_of_mem_filtration h𝒜 hz]
 
 /-- On the words of length at most `n`, the bar differential of the limit is that of `𝒜 n`. -/
 theorem barDifferential_limit_apply_of_mem_filtration {n : ℕ} {z : ReducedTensorWords R A}
     (hz : z ∈ filtration R A n) :
     (limit 𝒜 hG h𝒜).barDifferential z = (𝒜 n).barDifferential z := by
-  rw [limit, barDifferential_ofTaylor, gradedCoderiv_limitTaylor_apply_of_mem_filtration hG h𝒜 hz]
+  rw [limit, barDifferential_ofTaylor,
+    gradedCoderiv_filtrationLimit_taylor_apply_of_mem_filtration hG h𝒜 hz]
 
 /-- The arity-`k` operation of the limit agrees with that of `𝒜 n` whenever `k ≤ n`. -/
-theorem m_limit_of_le {k n : ℕ} (hkn : k ≤ n) : (limit 𝒜 hG h𝒜).m k = (𝒜 n).m k := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk0
-  · rw [m_zero, m_zero]
-  refine MultilinearMap.ext fun x ↦ ?_
-  have h := taylor_limit_apply_of_mem_filtration hG h𝒜
-    (of_mem_filtration R A (k := ⟨k, hk0⟩) hkn
-      (PiTensorProduct.tprod R fun i ↦ G.koszulTwist ((k : ℤ) - 1 - i) (x i)))
-  rw [taylor_of_tprod, taylor_of_tprod, limit_grading, hG n] at h
-  simpa only [InternalGrading.koszulTwist_koszulTwist] using h
+theorem m_limit_of_le {k n : ℕ} (hkn : k ≤ n) : (limit 𝒜 hG h𝒜).m k = (𝒜 n).m k :=
+  m_eq_of_taylor_eq_on_filtration ((limit_grading hG h𝒜).trans (hG n).symm) hkn
+    fun _ hz ↦ taylor_limit_apply_of_mem_filtration hG h𝒜 hz
 
 /-- The arity-`n` operation of the limit is that of `𝒜 n`. -/
 @[simp]
-theorem m_limit (n : ℕ) : (limit 𝒜 hG h𝒜).m n = (𝒜 n).m n :=
-  m_limit_of_le hG h𝒜 le_rfl
+theorem m_limit (n : ℕ) : (limit 𝒜 hG h𝒜).m n = (𝒜 n).m n := m_limit_of_le hG h𝒜 le_rfl
 
-/-- The limit is the unique `A∞` structure with grading `G` whose Taylor map agrees with that of
-`𝒜 n` on the words of length at most `n`, for every `n`. -/
+/-- The limit is the unique `A∞` structure with grading `G` whose Taylor map agrees with
+`(𝒜 n).taylor` on `filtration R A n` for every `n`. -/
 theorem eq_limit {ℋ : AInfinityAlgebra R A} (hℋG : ℋ.grading = G)
-    (hℋ : ∀ n, ∀ z ∈ filtration R A n, ℋ.taylor z = (𝒜 n).taylor z) :
-    ℋ = limit 𝒜 hG h𝒜 := by
+    (hℋ : ∀ n, ∀ z ∈ filtration R A n, ℋ.taylor z = (𝒜 n).taylor z) : ℋ = limit 𝒜 hG h𝒜 := by
   have htaylor : ℋ.taylor = (limit 𝒜 hG h𝒜).taylor := LinearMap.ext fun z ↦ by
     obtain ⟨n, hn⟩ := exists_mem_filtration R A z
     rw [hℋ n z hn, taylor_limit_apply_of_mem_filtration hG h𝒜 hn]
@@ -198,7 +151,7 @@ theorem eq_limit {ℋ : AInfinityAlgebra R A} (hℋG : ℋ.grading = G)
 /-- The differential of the limit is that of `𝒜 1`. -/
 @[simp]
 theorem differential_limit : (limit 𝒜 hG h𝒜).differential = (𝒜 1).differential :=
-  LinearMap.ext fun x ↦ by rw [differential_apply, differential_apply, m_limit]
+  LinearMap.ext fun _ ↦ by rw [differential_apply, differential_apply, m_limit]
 
 /-- The limit is minimal if and only if `𝒜 1` is minimal. -/
 theorem isMinimal_limit_iff : (limit 𝒜 hG h𝒜).IsMinimal ↔ (𝒜 1).IsMinimal := by
