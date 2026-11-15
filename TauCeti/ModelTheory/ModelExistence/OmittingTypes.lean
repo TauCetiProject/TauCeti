@@ -8,7 +8,6 @@ module
 public import TauCeti.ModelTheory.Infinitary.FiniteInstances
 public import TauCeti.ModelTheory.ModelExistence.Isolation
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
-import TauCeti.ModelTheory.LanguageMap
 import TauCeti.ModelTheory.Semantics
 
 /-!
@@ -205,24 +204,41 @@ private def evalAtConstants {n : ℕ} (ψ : L.BoundedFormula Empty n) : L[[Fin n
   Formula.equivSentence (ψ.toFormula.relabel (Sum.elim Empty.elim id))
 
 private theorem realize_evalAtConstants_iff {M : Type w} [L.Structure M] {n : ℕ}
-    (a : Fin n → M) (ψ : L.BoundedFormula Empty n) :
-    @Sentence.Realize _ M (@withConstantsStructure L M _ (Fin n) (constantsOn.structure a))
-      (evalAtConstants ψ) ↔ ψ.Realize Empty.elim a := by
-  let : (constantsOn (Fin n)).Structure M := constantsOn.structure a
-  rw [evalAtConstants, Formula.realize_equivSentence, Formula.realize_relabel]
-  have hfun :
-      (fun i : Fin n => (L.con i : M)) ∘ Sum.elim Empty.elim id = Sum.elim Empty.elim a := by
-    ext (x | i)
-    · exact x.elim
-    · rfl
-  rw [hfun, BoundedFormula.realize_toFormula]
-  rfl
+    [L[[Fin n]].Structure M] [(L.lhomWithConstants (Fin n)).IsExpansionOn M]
+    (ψ : L.BoundedFormula Empty n) :
+    M ⊨ evalAtConstants ψ ↔ ψ.Realize Empty.elim fun i => (L.con i : M) := by
+  rw [evalAtConstants, Formula.realize_equivSentence, Formula.realize_relabel,
+    BoundedFormula.realize_toFormula, Function.comp_assoc, Sum.elim_comp_inl,
+    Function.comp_assoc, Sum.elim_comp_inr, Function.comp_id,
+    Subsingleton.elim ((fun i : Fin n => (L.con i : M)) ∘ Empty.elim) Empty.elim]
 
-private theorem realize_exs_iff {M : Type w} [L.Structure M] {n : ℕ}
-    (φ : L.BoundedFormula Empty n) :
-    M ⊨ φ.exs ↔ ∃ a : Fin n → M, φ.Realize Empty.elim a := by
-  rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
-    BoundedFormula.realize_exs]
+/-- A partial type `p` is realized in some nonempty model of `T` if and only if `T` together with
+`p` evaluated at `n` fresh constants is satisfiable. -/
+private theorem exists_modelType_realize_iff_isSatisfiable_evalAtConstants {T : L.Theory} {n : ℕ}
+    {p : Set (L.BoundedFormula Empty n)} :
+    (∃ M : ModelType.{u, v, max u v} T, ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a) ↔
+      ((L.lhomWithConstants (Fin n)).onTheory T ∪ evalAtConstants '' p).IsSatisfiable := by
+  let g := L.lhomWithConstants (Fin n)
+  constructor
+  · rintro ⟨M, a, ha⟩
+    let : (constantsOn (Fin n)).Structure M := constantsOn.structure a
+    have hM : M ⊨ g.onTheory T ∪ evalAtConstants '' p := by
+      refine model_union_iff.2 ⟨(g.onTheory_model T).2 M.is_model, (model_iff _).2 ?_⟩
+      rintro _ ⟨ψ, hψ, rfl⟩
+      rw [realize_evalAtConstants_iff]
+      simpa only [coe_con_constantsOn_structure] using ha ψ hψ
+    let := hM
+    exact Model.isSatisfiable M
+  · rintro ⟨M⟩
+    let : L.Structure M := g.reduct M
+    have := g.isExpansionOn_reduct M
+    have hMT : M ⊨ T := (g.onTheory_model T).1 (M.is_model.mono Set.subset_union_left)
+    have hMp : M ⊨ evalAtConstants '' p := M.is_model.mono Set.subset_union_right
+    have hreal (ψ : L.BoundedFormula Empty n) (hψ : ψ ∈ p) :
+        ψ.Realize Empty.elim fun i => (L.con i : M) :=
+      (realize_evalAtConstants_iff ψ).1 (hMp.realize_of_mem _ ⟨ψ, hψ, rfl⟩)
+    let := hMT
+    exact ⟨ModelType.of T M, fun i => (L.con i : M), hreal⟩
 
 /-- A partial type isolated by a first-order formula `φ` modulo `T` is realized in some nonempty
 model of `T`. -/
@@ -232,7 +248,7 @@ theorem exists_modelType_realize_of_isolating {T : L.Theory} {n : ℕ}
     ∃ M : ModelType.{u, v, max u v} T, ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a := by
   obtain ⟨M⟩ := hsat
   have hMT : M ⊨ T := M.is_model.mono (Set.subset_insert _ _)
-  obtain ⟨a, ha⟩ := (realize_exs_iff φ).1 (M.is_model.realize_of_mem _ (Set.mem_insert _ _))
+  obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (M.is_model.realize_of_mem _ (Set.mem_insert _ _))
   let := hMT
   refine ⟨ModelType.of T M, a, fun ψ hψ => ?_⟩
   have hψa := (Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a
@@ -250,12 +266,15 @@ theorem exists_modelType_realize_iff_forall_finset_isSatisfiable {T : L.Theory} 
         (insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T).IsSatisfiable := by
   constructor
   · rintro ⟨M, a, ha⟩ s hs
-    have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T := by
-      refine model_insert_iff.2 ⟨(realize_exs_iff _).2 ?_, M.is_model⟩
-      exact ⟨a, BoundedFormula.realize_iInf.2 fun ψ => ha ψ.1 (hs ψ.2)⟩
+    have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T :=
+      model_insert_iff.2 ⟨(Sentence.realize_exs _).2
+        ⟨a, BoundedFormula.realize_iInf.2 fun ψ => ha ψ.1 (hs ψ.2)⟩, M.is_model⟩
     let := hM
     exact Model.isSatisfiable M
   · intro hfin
+    -- Express `p` as the directed union of its finite subsets in `L[[Fin n]]` and apply
+    -- compactness via `isSatisfiable_directed_union_iff`.
+    rw [exists_modelType_realize_iff_isSatisfiable_evalAtConstants]
     let g := L.lhomWithConstants (Fin n)
     let Sub := {s : Finset (L.BoundedFormula Empty n) // (s : Set (L.BoundedFormula Empty n)) ⊆ p}
     have : Nonempty Sub := ⟨⟨∅, by simp⟩⟩
@@ -263,23 +282,17 @@ theorem exists_modelType_realize_iff_forall_finset_isSatisfiable {T : L.Theory} 
     have hdir : Directed (· ⊆ ·) S := by
       classical
       intro s₁ s₂
-      refine ⟨⟨s₁.1 ∪ s₂.1, by simp [s₁.2, s₂.2]⟩, ?_, ?_⟩
-      · exact Set.union_subset_union_right _ (Set.image_mono (by simp))
-      · exact Set.union_subset_union_right _ (Set.image_mono (by simp))
-    have hsatS : ∀ s : Sub, (S s).IsSatisfiable := by
-      intro s
+      exact ⟨⟨s₁.1 ∪ s₂.1, by simp [s₁.2, s₂.2]⟩,
+        Set.union_subset_union_right _ (Set.image_mono (by simp)),
+        Set.union_subset_union_right _ (Set.image_mono (by simp))⟩
+    have hsatS (s : Sub) : (S s).IsSatisfiable := by
       obtain ⟨N⟩ := hfin s.1 s.2
       have hNT : N ⊨ T := N.is_model.mono (Set.subset_insert _ _)
-      obtain ⟨a, ha⟩ := (realize_exs_iff _).1
+      obtain ⟨a, ha⟩ := (Sentence.realize_exs _).1
         (N.is_model.realize_of_mem _ (Set.mem_insert _ _))
-      let : (constantsOn (Fin n)).Structure N := constantsOn.structure a
       let := hNT
-      have hNS : N ⊨ S s := by
-        refine model_union_iff.2 ⟨(g.onTheory_model T).2 hNT, (model_iff _).2 ?_⟩
-        rintro _ ⟨ψ, hψ, rfl⟩
-        exact (realize_evalAtConstants_iff a ψ).2 (BoundedFormula.realize_iInf.1 ha ⟨ψ, hψ⟩)
-      let := hNS
-      exact Model.isSatisfiable N
+      exact exists_modelType_realize_iff_isSatisfiable_evalAtConstants.1
+        ⟨ModelType.of T N, a, fun ψ hψ => BoundedFormula.realize_iInf.1 ha ⟨ψ, hψ⟩⟩
     have hu : (⋃ s : Sub, S s) = g.onTheory T ∪ evalAtConstants '' p := by
       ext σ
       simp only [S, Set.mem_iUnion, Set.mem_union, Set.mem_image, Finset.mem_coe]
@@ -290,18 +303,10 @@ theorem exists_modelType_realize_iff_forall_finset_isSatisfiable {T : L.Theory} 
       · rintro (hT | ⟨ψ, hψ, rfl⟩)
         · exact ⟨⟨∅, by simp⟩, Or.inl hT⟩
         · exact ⟨⟨{ψ}, by simp [hψ]⟩, Or.inr ⟨ψ, Finset.mem_singleton_self ψ, rfl⟩⟩
-    obtain ⟨M⟩ := (hu ▸ (isSatisfiable_directed_union_iff hdir).2 hsatS)
-    let : L.Structure M := g.reduct M
-    have hMT : M ⊨ T := (g.onTheory_model T).1 (M.is_model.mono Set.subset_union_left)
-    have hMp : M ⊨ evalAtConstants '' p := M.is_model.mono Set.subset_union_right
-    let := hMT
-    refine ⟨ModelType.of T M, fun i => (L.con i : M), fun ψ hψ => ?_⟩
-    have heq := withConstantsStructure_reduct_eq (L := L) (γ := Fin n) M
-    exact (realize_evalAtConstants_iff (fun i => (L.con i : M)) ψ).1
-      (heq.symm ▸ hMp.realize_of_mem _ ⟨ψ, hψ, rfl⟩)
+    exact hu ▸ (isSatisfiable_directed_union_iff hdir).2 hsatS
 
 /-- A **finite** first-order partial type realized in any nonempty model `M` of `T` (in any
-universe `w`) is isolated modulo `T` by the conjunction of its members. -/
+universe `w`) is isolated by a first-order formula modulo `T`. -/
 theorem exists_isolating_of_finite_of_realize {T : L.Theory} {M : Type w} [L.Structure M]
     [Nonempty M] [M ⊨ T] {n : ℕ} {p : Set (L.BoundedFormula Empty n)} (hp : p.Finite)
     {a : Fin n → M} (ha : ∀ ψ ∈ p, ψ.Realize Empty.elim a) :
@@ -309,17 +314,16 @@ theorem exists_isolating_of_finite_of_realize {T : L.Theory} {M : Type w} [L.Str
       (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
   have := hp.fintype
   refine ⟨BoundedFormula.iInf fun ψ : p => ψ.1, ?_, fun ψ hψ => ?_⟩
-  · have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : p => ψ.1).exs T := by
-      refine model_insert_iff.2 ⟨(realize_exs_iff _).2 ?_, inferInstance⟩
-      exact ⟨a, BoundedFormula.realize_iInf.2 fun q => ha q.1 q.2⟩
+  · have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : p => ψ.1).exs T :=
+      model_insert_iff.2 ⟨(Sentence.realize_exs _).2
+        ⟨a, BoundedFormula.realize_iInf.2 fun q => ha q.1 q.2⟩, inferInstance⟩
     let := hM
     exact Model.isSatisfiable M
   · refine models_sentence_iff.2 fun N => (Sentence.realize_alls _).2 fun b => ?_
     exact BoundedFormula.realize_imp.2 fun hb => BoundedFormula.realize_iInf.1 hb ⟨ψ, hψ⟩
 
-/-- A **finite** first-order partial type is isolated modulo `T` if and only if it is realized in
-some nonempty model of `T`: the conjunction of its members is itself a single first-order
-formula. -/
+/-- A **finite** first-order partial type is isolated by a first-order formula modulo `T` if and
+only if it is realized in some nonempty model of `T`. -/
 theorem exists_isolating_iff_of_finite {T : L.Theory} {n : ℕ}
     {p : Set (L.BoundedFormula Empty n)} (hp : p.Finite) :
     (∃ φ : L.BoundedFormula Empty n,
@@ -354,13 +358,11 @@ theorem IsComplete.exists_realize_of_isolating {T : L.Theory} (hT : T.IsComplete
     (hsat : (insert φ.exs T).IsSatisfiable) (himp : ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls)
     (M : Type w) [L.Structure M] [Nonempty M] [M ⊨ T] :
     ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a := by
-  have hφT : T ⊨ᵇ φ.exs := (hT.2 φ.exs).resolve_right fun hnot => by
-    obtain ⟨N⟩ := hsat
-    have hNT : N ⊨ T := N.is_model.mono (Set.subset_insert _ _)
-    let := hNT
-    exact (Sentence.realize_not N).1 (hnot.realize_sentence N)
-      (N.is_model.realize_of_mem _ (Set.mem_insert _ _))
-  obtain ⟨a, ha⟩ := (realize_exs_iff φ).1 (hφT.realize_sentence M)
+  obtain ⟨N⟩ := hsat
+  have : N ⊨ T := N.is_model.mono (Set.subset_insert _ _)
+  have hφT : T ⊨ᵇ φ.exs :=
+    (hT.realize_sentence_iff φ.exs N).1 (N.is_model.realize_of_mem _ (Set.mem_insert _ _))
+  obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (hφT.realize_sentence M)
   refine ⟨a, fun ψ hψ => ?_⟩
   have hψM := (Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a
   exact BoundedFormula.realize_imp.1 hψM ha

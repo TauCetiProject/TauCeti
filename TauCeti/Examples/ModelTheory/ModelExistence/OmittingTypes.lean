@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.ModelExistence.OmittingTypes
 public import TauCeti.ModelTheory.Basic
+import TauCeti.Logic.Function.Update
 import TauCeti.ModelTheory.Infinitary.ConstantSupport
 import TauCeti.ModelTheory.LanguageMap
 import TauCeti.ModelTheory.Semantics
@@ -55,7 +56,7 @@ from first-order satisfiability (`FirstOrder.Language.Theory.IsSatisfiable`):
 * `TauCeti.DistinctConstantsOmitting.nonempty_equiv_stdNat_iff`: a structure is isomorphic to
   `StdNat` if and only if it models `distinctTheory` and omits `unnamedType`.
 * `TauCeti.DistinctConstantsOmitting.exists_modelType_realize_unnamedType_of_stdNat_model` and
-  `TauCeti.DistinctConstantsOmitting.exists_modelType_completeTheory_stdNat_not_equiv`: every
+  `TauCeti.DistinctConstantsOmitting.exists_modelType_completeTheory_stdNat_isEmpty_equiv`: every
   first-order theory satisfied by `StdNat` (even its complete theory) has a model realizing
   `unnamedType`, hence not isomorphic to `StdNat`.
 * `TauCeti.DistinctConstantsOmitting.not_exists_isolating_unnamedType`: `unnamedType` is not
@@ -86,6 +87,7 @@ abbrev ConstLang : Language.{0, 0} := Language.empty[[ℕ]]
 
 /-- The standard carrier wrapping `ℕ` for `ConstLang`, defined as a structure so its
 `ConstLang`-structure does not pollute global instance search on `ℕ`. -/
+@[ext]
 structure StdNat where
   /-- The underlying natural number. -/
   val : ℕ
@@ -118,7 +120,8 @@ instance : (constantsOn ℕ).Structure StdNat := constantsOn.structure StdNat.mk
 /-- In `StdNat`, the `k`-th constant symbol evaluates to `⟨k⟩`. -/
 @[simp]
 theorem coe_con_stdNat (k : ℕ) :
-    (Language.empty.con k : StdNat) = ⟨k⟩ := (rfl)
+    (Language.empty.con k : StdNat) = ⟨k⟩ :=
+  coe_con_constantsOn_structure StdNat.mk k
 
 /-- The first-order theory asserting that all constants `c_k` (`k : ℕ`) are pairwise distinct,
 defined as Mathlib's `Language.distinctConstantsTheory` on `Set.univ`. -/
@@ -141,8 +144,8 @@ theorem countable_distinctTheory : distinctTheory.Countable :=
   Set.Countable.image (Set.to_countable _) _
 
 /-- The standard structure `StdNat` models `distinctTheory`. -/
-instance stdNat_model_distinctTheory : StdNat ⊨ distinctTheory :=
-  (model_distinctTheory_iff StdNat).2 fun _ _ h => StdNat.mk.inj h
+instance stdNat_model_distinctTheory : StdNat ⊨ distinctTheory := by
+  simp [Function.Injective]
 
 /-- The theory `distinctTheory` is satisfiable in Mathlib's sense. -/
 theorem distinctTheory_isSatisfiable : distinctTheory.IsSatisfiable :=
@@ -198,7 +201,7 @@ theorem omits_unnamedType_iff_surjective (M : Type w) [ConstLang.Structure M] :
 /-- The standard structure `StdNat` omits `unnamedType`. -/
 theorem stdNat_omits_unnamedType :
     ∀ a : Fin 1 → StdNat, ∃ ψ ∈ unnamedType, ¬ψ.Realize Empty.elim a :=
-  (omits_unnamedType_iff_surjective StdNat).2 fun ⟨k⟩ => ⟨k, rfl⟩
+  (omits_unnamedType_iff_surjective StdNat).2 fun ⟨k⟩ => ⟨k, coe_con_stdNat k⟩
 
 /-- A `ConstLang`-structure is first-order isomorphic to `StdNat` if and only if it models
 `distinctTheory` and omits `unnamedType`. -/
@@ -208,12 +211,12 @@ theorem nonempty_equiv_stdNat_iff (M : Type w) [ConstLang.Structure M] :
   rw [model_distinctTheory_iff, omits_unnamedType_iff_surjective]
   constructor
   · rintro ⟨e⟩
-    have hcon : (fun k : ℕ => (Language.empty.con k : M)) = e.toEquiv ∘ StdNat.equivNat.symm := by
+    have hcon : (fun k : ℕ => (Language.empty.con k : M)) = e ∘ StdNat.equivNat.symm := by
       ext k
-      exact (e.map_constants (Language.empty.con k)).symm
+      rw [Function.comp_apply, StdNat.equivNat_symm_apply, ← coe_con_stdNat k, e.map_constants]
     rw [hcon]
-    exact ⟨(e.toEquiv.bijective.comp StdNat.equivNat.symm.bijective).injective,
-      (e.toEquiv.bijective.comp StdNat.equivNat.symm.bijective).surjective⟩
+    exact ⟨e.injective.comp StdNat.equivNat.symm.injective,
+      e.surjective.comp StdNat.equivNat.symm.surjective⟩
   · rintro ⟨hinj, hsurj⟩
     let cBij := Equiv.ofBijective (fun k : ℕ => (Language.empty.con k : M)) ⟨hinj, hsurj⟩
     let eqv : StdNat ≃ M := StdNat.equivNat.trans cBij
@@ -224,32 +227,23 @@ theorem nonempty_equiv_stdNat_iff (M : Type w) [ConstLang.Structure M] :
       · exact isEmptyElim f₀
       · rw [sigmaFunctionsWithConstantsEquiv_symm_inr] at h
         obtain ⟨rfl, rfl⟩ := Sigma.mk.inj_iff.1 h
-        have h1 : @Structure.funMap ConstLang StdNat _ 0 (Language.empty.con k) x = ⟨k⟩ := by
-          rw [Subsingleton.elim x default]
-          rfl
-        have h2 : @Structure.funMap ConstLang M _ 0 (Language.empty.con k) (eqv.toFun ∘ x) =
-            (Language.empty.con k : M) := by
-          rw [Subsingleton.elim (eqv.toFun ∘ x) default]
-          rfl
-        rw [h1, h2]
+        rw [funMap_eq_coe_constants, funMap_eq_coe_constants, coe_con_stdNat, Equiv.toFun_as_coe]
         exact Equiv.ofBijective_apply _ ⟨hinj, hsurj⟩ k
     · intro n r _
       rcases r with r | r <;> exact isEmptyElim r
 
-/-- Every finite subset of `unnamedType` has a satisfiable conjunction with any first-order theory
-`T` satisfied by `StdNat`: `StdNat` itself realizes the finite conjunction at a natural number
-exceeding all constants mentioned in the finite subset. -/
+/-- Every finite subset `s` of `unnamedType` has a satisfiable conjunction with any first-order
+theory `T` satisfied by `StdNat`. -/
 theorem isSatisfiable_insert_iInf_unnamedType_of_stdNat_model (T : ConstLang.Theory) [StdNat ⊨ T]
     (s : Finset (ConstLang.BoundedFormula Empty 1))
     (hs : (s : Set (ConstLang.BoundedFormula Empty 1)) ⊆ unnamedType) :
     (insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T).IsSatisfiable := by
   classical
+  -- `StdNat` realizes the finite conjunction at a natural number exceeding all constants in `s`.
   choose idx hidx using fun ψ : s => mem_unnamedType_iff.1 (hs ψ.2)
   let N : ℕ := (Finset.univ.sup idx) + 1
   have hM : StdNat ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T := by
-    refine Theory.model_insert_iff.2 ⟨?_, inferInstance⟩
-    rw [Sentence.Realize, Subsingleton.elim (default : Empty → StdNat) Empty.elim,
-      BoundedFormula.realize_exs]
+    refine Theory.model_insert_iff.2 ⟨(Sentence.realize_exs _).2 ?_, inferInstance⟩
     refine ⟨fun _ => ⟨N⟩, BoundedFormula.realize_iInf.2 fun ψ => ?_⟩
     rw [← hidx ψ, realize_neConstFormula_iff, coe_con_stdNat]
     intro h
@@ -268,7 +262,7 @@ theorem exists_modelType_realize_unnamedType_of_stdNat_model (T : ConstLang.Theo
 
 /-- Even the **complete** first-order theory of `StdNat` has a model realizing `unnamedType`, which
 therefore cannot be isomorphic to `StdNat`. -/
-theorem exists_modelType_completeTheory_stdNat_not_equiv :
+theorem exists_modelType_completeTheory_stdNat_isEmpty_equiv :
     ∃ M : Theory.ModelType.{0, 0, 0} (ConstLang.completeTheory StdNat),
       (∃ a : Fin 1 → M, ∀ ψ ∈ unnamedType, ψ.Realize Empty.elim a) ∧
         IsEmpty (StdNat ≃[ConstLang] M) := by
@@ -280,8 +274,7 @@ theorem exists_modelType_completeTheory_stdNat_not_equiv :
   exact hψa (ha ψ hψ)
 
 /-- Every **finite** subset of `unnamedType` is isolated by a first-order formula modulo
-`distinctTheory`, demonstrating that the finiteness hypothesis in
-`Theory.exists_isolating_iff_of_finite` is essential. -/
+`distinctTheory`. -/
 theorem exists_isolating_of_finite_subset_unnamedType
     {p : Set (ConstLang.BoundedFormula Empty 1)} (hp : p.Finite) (hsub : p ⊆ unnamedType) :
     ∃ φ : ConstLang.BoundedFormula Empty 1,
@@ -289,35 +282,8 @@ theorem exists_isolating_of_finite_subset_unnamedType
   obtain ⟨M, a, ha⟩ := exists_modelType_realize_unnamedType_of_stdNat_model distinctTheory
   exact (Theory.exists_isolating_iff_of_finite hp).2 ⟨M, a, fun ψ hψ => ha ψ (hsub hψ)⟩
 
-/-- Every finitary formula over `L[[γ]]` mentions only finitely many of the adjoined constants. -/
-private theorem finite_constantSupport_toOmega {L : Language} {γ α : Type*} :
-    ∀ {n : ℕ} (φ : L[[γ]].BoundedFormula α n), φ.toOmega.constantSupport.Finite
-  | _, .falsum => by simp [BoundedFormula.toInf_falsum]
-  | _, .equal t₁ t₂ => by
-    simp [BoundedFormula.toInf_equal, t₁.finite_constantSupport, t₂.finite_constantSupport]
-  | _, .rel R ts => by
-    simp [BoundedFormula.toInf_rel, Set.finite_iUnion fun i => (ts i).finite_constantSupport]
-  | _, .imp φ₁ φ₂ => by
-    simp [BoundedFormula.toInf_imp, finite_constantSupport_toOmega φ₁,
-      finite_constantSupport_toOmega φ₂]
-  | _, .all φ => by
-    simp [BoundedFormula.toInf_all, finite_constantSupport_toOmega φ]
-
-private theorem injective_update_of_forall_ne {M : Type*} {e : ℕ → M}
-    (hinj : Function.Injective e) {N : ℕ} {x : M} (hx : ∀ k : ℕ, x ≠ e k) :
-    Function.Injective (Function.update e N x) := by
-  intro i j hij
-  by_cases hi : i = N <;> by_cases hj : j = N
-  · exact hi.trans hj.symm
-  · rw [hi, Function.update_self, Function.update_of_ne hj] at hij
-    exact (hx j hij).elim
-  · rw [Function.update_of_ne hi, hj, Function.update_self] at hij
-    exact (hx i hij.symm).elim
-  · rw [Function.update_of_ne hi, Function.update_of_ne hj] at hij
-    exact hinj hij
-
-/-- Reinterpreting a fresh constant outside the support of `φ` at an unnamed witness preserves
-`distinctTheory` and `φ` while falsifying `x₀ ≠ c_N`. -/
+/-- No first-order formula realized at an unnamed element in an expansion with injective constants
+can entail every member of `unnamedType` modulo `distinctTheory`. -/
 private theorem not_isolating_of_witness {M : Type*} [Language.empty.Structure M]
     {φ : ConstLang.BoundedFormula Empty 1} {e : ℕ → M} (hinj : Function.Injective e)
     {a : Fin 1 → M}
@@ -326,20 +292,21 @@ private theorem not_isolating_of_witness {M : Type*} [Language.empty.Structure M
       Empty 1 φ Empty.elim a)
     (hane : ∀ k : ℕ, a 0 ≠ e k)
     (himp : ∀ ψ ∈ unnamedType, distinctTheory ⊨ᵇ (φ.imp ψ).alls) : False := by
-  obtain ⟨b, hb⟩ := (finite_constantSupport_toOmega φ).bddAbove
+  -- Reinterpret a fresh constant outside the support of `φ` as `a 0`.
+  obtain ⟨b, hb⟩ := (φ.finite_constantSupport_toInf (ι := ℕ)).bddAbove
   let N : ℕ := b + 1
   have hN : N ∉ φ.toOmega.constantSupport := fun h => Nat.not_succ_le_self b (hb h)
   let : (constantsOn ℕ).Structure M := constantsOn.structure (Function.update e N (a 0))
   have hMS' : M ⊨ distinctTheory := (model_distinctTheory_iff M).2
-    (by simpa only [coe_con_constantsOn_structure] using injective_update_of_forall_ne hinj hane)
+    (by simpa only [coe_con_constantsOn_structure] using
+      Set.injOn_univ.1 (Set.injOn_update_of_injOn_diff hinj.injOn fun k _ _ => (hane k).symm))
   have ha' : φ.Realize Empty.elim a := by
     have hω := (@BoundedFormula.realize_toInf ConstLang ℕ Empty M
       (@withConstantsStructure Language.empty M _ ℕ (constantsOn.structure e))
       1 φ Empty.elim a).2 ha
     have hω' := (BoundedFormulaInf.realize_congr_of_eqOn_constantSupport
       (L := Language.empty) (M := M) (e := e) (e' := Function.update e N (a 0)) φ.toOmega
-      (fun k hk => (Function.update_of_ne (ne_of_mem_of_not_mem hk hN) (a 0) e).symm)
-      Empty.elim a).1 hω
+      (Set.eqOn_update_of_notMem hN (a 0)) Empty.elim a).1 hω
     exact (BoundedFormula.realize_toInf φ Empty.elim a).1 hω'
   have : Nonempty M := ⟨a 0⟩
   let := hMS'
@@ -349,10 +316,9 @@ private theorem not_isolating_of_witness {M : Type*} [Language.empty.Structure M
   rw [coe_con_constantsOn_structure, Function.update_self] at hcontra
   exact hcontra rfl
 
-/-- **`unnamedType` is not isolated modulo `distinctTheory`.** Any candidate isolating formula `φ`
-mentions only finitely many constants, so in a model where `a` witnesses `φ` and avoids every
-constant, a fresh constant `c_N` outside the support of `φ` can be reinterpreted as `a 0`,
-preserving `distinctTheory` and `φ` while falsifying `x₀ ≠ c_N`. -/
+/-- The partial 1-type `unnamedType` is not isolated by any first-order formula modulo
+`distinctTheory`. Together with `exists_modelType_realize_unnamedType_of_stdNat_model`, this shows
+that the finiteness hypothesis in `Theory.exists_isolating_iff_of_finite` cannot be dropped. -/
 theorem not_exists_isolating_unnamedType :
     ¬∃ φ : ConstLang.BoundedFormula Empty 1,
       (insert φ.exs distinctTheory).IsSatisfiable ∧
@@ -360,10 +326,7 @@ theorem not_exists_isolating_unnamedType :
   rintro ⟨φ, hsat, himp⟩
   obtain ⟨M⟩ := hsat
   have hMT : M ⊨ distinctTheory := M.is_model.mono (Set.subset_insert _ _)
-  have hφ : M ⊨ φ.exs := M.is_model.realize_of_mem _ (Set.mem_insert _ _)
-  rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
-    BoundedFormula.realize_exs] at hφ
-  obtain ⟨a, ha⟩ := hφ
+  obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (M.is_model.realize_of_mem _ (Set.mem_insert _ _))
   let := hMT
   have hane (k : ℕ) : a 0 ≠ (Language.empty.con k : M) := by
     have hk := (Sentence.realize_alls (φ.imp (neConstFormula k))).1
@@ -374,24 +337,21 @@ theorem not_exists_isolating_unnamedType :
   let : Language.empty.Structure M := (Language.empty.lhomWithConstants ℕ).reduct M
   exact not_isolating_of_witness hinj (heq.symm ▸ ha) hane himp
 
-/-- Over the complete theory of `StdNat`, non-isolation of `unnamedType` also follows directly from
-`Theory.IsComplete.exists_isolating_iff_realized_in_every_countable_model`, since `StdNat` itself is
-a countable model omitting `unnamedType`. -/
+/-- The partial 1-type `unnamedType` is not isolated by any first-order formula modulo
+`ConstLang.completeTheory StdNat`. -/
 theorem not_exists_isolating_unnamedType_completeTheory :
     ¬∃ φ : ConstLang.BoundedFormula Empty 1,
       (insert φ.exs (ConstLang.completeTheory StdNat)).IsSatisfiable ∧
         ∀ ψ ∈ unnamedType, ConstLang.completeTheory StdNat ⊨ᵇ (φ.imp ψ).alls := by
-  have hcomp : (ConstLang.completeTheory StdNat).IsComplete :=
-    (completeTheory.isMaximal ConstLang StdNat).isComplete
-  rw [hcomp.exists_isolating_iff_realized_in_every_countable_model.{0, 0, 0}]
+  rw [(completeTheory.isComplete ConstLang
+    StdNat).exists_isolating_iff_realized_in_every_countable_model.{0, 0, 0}]
   intro hall
   obtain ⟨a, ha⟩ := hall StdNat
   obtain ⟨ψ, hψ, hψa⟩ := stdNat_omits_unnamedType a
   exact hψa (ha ψ hψ)
 
-/-- **Applying the first-order omitting types theorem.** In every universe `w`, `distinctTheory` has
-a countable nonempty model `M : Type w` omitting `unnamedType`; every such model is first-order
-isomorphic to `StdNat`. -/
+/-- In every universe `w`, `distinctTheory` has a countable nonempty model `M : Type w` omitting
+`unnamedType` that is first-order isomorphic to `StdNat`. -/
 theorem exists_countable_model_omitting_unnamedType :
     ∃ (M : Type w) (_ : ConstLang.Structure M), Countable M ∧ Nonempty M ∧
       M ⊨ distinctTheory ∧
@@ -403,8 +363,7 @@ theorem exists_countable_model_omitting_unnamedType :
   let := S
   exact ⟨M, S, hMc, hMne, hMT, hMo (), (nonempty_equiv_stdNat_iff M).2 ⟨hMT, hMo ()⟩⟩
 
-/-- By contrast, the singleton partial 1-type `{x₀ = c_k}` naming the `k`-th constant is realized in
-every model of `distinctTheory` and therefore isolated modulo `distinctTheory`. -/
+/-- The singleton partial 1-type `{x₀ = c_k}` naming the `k`-th constant. -/
 def namedType (k : ℕ) : Set (ConstLang.BoundedFormula Empty 1) :=
   {(&0).bdEqual (Language.empty.con k).term}
 
@@ -418,16 +377,13 @@ theorem mem_namedType_iff {k : ℕ} {ψ : ConstLang.BoundedFormula Empty 1} :
     ψ ∈ namedType k ↔ ψ = (&0).bdEqual (Language.empty.con k).term :=
   Set.mem_singleton_iff
 
-/-- Every structure for `ConstLang` realizes `namedType k` at the constant `c_k`. -/
+/-- Every structure for `ConstLang` realizes `namedType k`. -/
 theorem exists_realize_namedType (M : Type w) [ConstLang.Structure M] (k : ℕ) :
-    ∃ a : Fin 1 → M, ∀ ψ ∈ namedType k, ψ.Realize Empty.elim a := by
-  refine ⟨fun _ => (Language.empty.con k : M), ?_⟩
-  rintro _ rfl
-  simp
+    ∃ a : Fin 1 → M, ∀ ψ ∈ namedType k, ψ.Realize Empty.elim a :=
+  ⟨fun _ => (Language.empty.con k : M), by simp⟩
 
-/-- Because `namedType k` is realized in every countable nonempty model of `distinctTheory`,
-`Theory.exists_isolating_of_realized_in_every_countable_model` concludes that it is isolated by a
-first-order formula modulo `distinctTheory`. -/
+/-- The singleton partial 1-type `namedType k` is isolated by a first-order formula modulo
+`distinctTheory`. -/
 theorem exists_isolating_namedType (k : ℕ) :
     ∃ φ : ConstLang.BoundedFormula Empty 1,
       (insert φ.exs distinctTheory).IsSatisfiable ∧
