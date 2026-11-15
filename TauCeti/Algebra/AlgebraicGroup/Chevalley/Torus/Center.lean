@@ -22,10 +22,10 @@ For every such datum `D`, its toral centralizer is the group of unit-valued char
 of `D.coordinateRoot`, not the roots read in the full weight lattice. For the simply connected
 datum, the root parametrizations are injective over every ring and this quotient is `P / Q`,
 where `P` is the full weight lattice. The equivalences land in actual datum points, not merely
-in torus parameters, and retain their evaluation equations. Specialize
-`ChevalleyDatum.torusInfCentralizerRootTorusSubgroupEquiv` and its evaluation lemmas to
-`t.scChevalleyDatum ht`, using `scChevalleyDatum_rootSubgroupPoints_injective` for the hypothesis
-and `scChevalleyDatum_coordinateRoot` to read the quotient in fundamental-weight coordinates.
+in torus parameters, and retain their evaluation equations.
+`ChevalleyDatum.torusInfCentralizerRootTorusSubgroupEquiv` treats arbitrary faithful root
+parametrizations; `scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv` reads the simply
+connected quotient directly in fundamental-weight coordinates, with no injectivity hypothesis.
 
 This identifies only the intersection of the torus with the centralizer of the generated
 subgroup. It does not assert that all central elements lie in the torus or that the generated
@@ -35,7 +35,8 @@ The construction uses `ChevalleyDatum.torusPoints_conj_rootSubgroupPoints`,
 `scChevalleyDatum_rootSubgroupPoints_injective`, and the lattice-duality equivalence
 `TauCeti.torusAnnihilatorEquiv`. The converse argument and equivalence construction adapt
 `TauCeti.UniversalEnvelopingAlgebra.torusCharacter_eq_one_of_commute_kostantRootSubgroupParam`
-and `TauCeti.UniversalEnvelopingAlgebra.kostantCentralTorusEquiv` from
+from `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic` and
+`TauCeti.UniversalEnvelopingAlgebra.kostantCentralTorusEquiv` from
 `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Center` to actual datum points.
 
 ## References
@@ -86,8 +87,9 @@ theorem torusPoints_mem_centralizer_rootTorusSubgroup_iff
       (D.rootSubgroupPoints_mem_rootTorusSubgroup γ A (Multiplicative.ofAdd 1))).symm
   · exact D.torusPoints_mem_centralizer_rootTorusSubgroup_of_root_eq_one s
 
-/-- In actual character-lattice coordinates, the toral part of the centralizer of the
-generated group is exactly the image of the annihilator of the root lattice. -/
+/-- With injective root parametrizations, in actual character-lattice coordinates, the toral
+part of the centralizer of the generated group is exactly the image of the annihilator of the
+root lattice. -/
 theorem map_torusAnnihilator_eq_range_inf_centralizer_rootTorusSubgroup
     (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ A)) :
     (torusAnnihilator (R := A) (Submodule.span ℤ (Set.range D.coordinateRoot))).map
@@ -131,21 +133,23 @@ theorem coe_torusInfCentralizerRootTorusSubgroupEquiv
       D.torusPoints A (quotientCharTorusPoint _ χ) := by
   simp [torusInfCentralizerRootTorusSubgroupEquiv]
 
-/-- The inverse equivalence evaluates a quotient class by the character of any torus
-parameter representing the given point. Injectivity of the torus makes this independent of
-the chosen representation. -/
+/-- The inverse equivalence evaluates a quotient class by the character of the given torus
+parameter. -/
+@[simp]
 theorem torusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk
     (hinj : ∀ γ, Function.Injective (D.rootSubgroupPoints γ A))
-    (g : ↥((D.torusPoints A).range ⊓
-      Subgroup.centralizer (D.rootTorusSubgroup A : Set (D.points A))))
-    (s : Fin t.rank → Aˣ) (hs : D.torusPoints A s = g) (μ : Fin t.rank → ℤ) :
-    (D.torusInfCentralizerRootTorusSubgroupEquiv A hinj).symm g
+    (s : Fin t.rank → Aˣ)
+    (hg : D.torusPoints A s ∈ (D.torusPoints A).range ⊓
+      Subgroup.centralizer (D.rootTorusSubgroup A : Set (D.points A)))
+    (μ : Fin t.rank → ℤ) :
+    (D.torusInfCentralizerRootTorusSubgroupEquiv A hinj).symm ⟨D.torusPoints A s, hg⟩
       (Submodule.Quotient.mk μ) = torusCharacter s μ := by
   have hcoord : quotientCharTorusPoint _
-      ((D.torusInfCentralizerRootTorusSubgroupEquiv A hinj).symm g) = s := by
+      ((D.torusInfCentralizerRootTorusSubgroupEquiv A hinj).symm
+        ⟨D.torusPoints A s, hg⟩) = s := by
     apply D.torusPoints_injective A
     rw [← D.coe_torusInfCentralizerRootTorusSubgroupEquiv A hinj,
-      MulEquiv.apply_symm_apply, hs]
+      MulEquiv.apply_symm_apply]
   rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
 
 end ChevalleyDatum
@@ -164,6 +168,57 @@ theorem scChevalleyDatum_torusPoints_mem_centralizer_rootTorusSubgroup_iff
   simpa only [scChevalleyDatum_coordinateRoot] using
     (t.scChevalleyDatum ht).torusPoints_mem_centralizer_rootTorusSubgroup_iff
       (fun γ => t.scChevalleyDatum_rootSubgroupPoints_injective ht γ A) s
+
+variable (A)
+
+/-- Unit-valued characters of `P / Q` identify with the simply connected torus points
+centralizing the root-and-torus-generated group, over any commutative ring. Here `P` and `Q`
+are the weight and root lattices in fundamental-weight coordinates. -/
+def scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv :
+    AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) Aˣ ≃*
+      ↥(((t.scChevalleyDatum ht).torusPoints A).range ⊓
+        Subgroup.centralizer ((t.scChevalleyDatum ht).rootTorusSubgroup A :
+          Set ((t.scChevalleyDatum ht).points A))) :=
+  (torusAnnihilatorEquiv _).trans
+    (((torusAnnihilator (R := A)
+      ((t.simplyConnectedRootDatum ht).rootSpan ℤ)).equivMapOfInjective
+        ((t.scChevalleyDatum ht).torusPoints A)
+        ((t.scChevalleyDatum ht).torusPoints_injective A)).trans
+      (MulEquiv.subgroupCongr (by
+        simpa only [funext (t.scChevalleyDatum_coordinateRoot ht)] using
+          (t.scChevalleyDatum ht).map_torusAnnihilator_eq_range_inf_centralizer_rootTorusSubgroup
+            (fun γ => t.scChevalleyDatum_rootSubgroupPoints_injective ht γ A))))
+
+/-- The simply connected equivalence obtains the torus coordinates by evaluating the
+quotient character on the fundamental-weight classes. -/
+@[simp]
+theorem coe_scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv
+    (χ : AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) Aˣ) :
+    (t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht A χ :
+        (t.scChevalleyDatum ht).points A) =
+      (t.scChevalleyDatum ht).torusPoints A (quotientCharTorusPoint _ χ) := by
+  simp [scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv]
+
+/-- The inverse simply connected equivalence evaluates a weight class by the character of
+the given torus parameter. -/
+@[simp]
+theorem scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk
+    (s : Fin t.rank → Aˣ)
+    (hg : (t.scChevalleyDatum ht).torusPoints A s ∈
+      ((t.scChevalleyDatum ht).torusPoints A).range ⊓
+        Subgroup.centralizer ((t.scChevalleyDatum ht).rootTorusSubgroup A :
+          Set ((t.scChevalleyDatum ht).points A)))
+    (μ : Fin t.rank → ℤ) :
+    (t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht A).symm
+      ⟨(t.scChevalleyDatum ht).torusPoints A s, hg⟩ (Submodule.Quotient.mk μ) =
+        torusCharacter s μ := by
+  have hcoord : quotientCharTorusPoint _
+      ((t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht A).symm
+        ⟨(t.scChevalleyDatum ht).torusPoints A s, hg⟩) = s := by
+    apply (t.scChevalleyDatum ht).torusPoints_injective A
+    rw [← coe_scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv,
+      MulEquiv.apply_symm_apply]
+  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
 
 end
 
