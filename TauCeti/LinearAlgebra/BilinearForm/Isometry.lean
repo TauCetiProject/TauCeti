@@ -609,8 +609,7 @@ noncomputable def isometryDet (B : BilinForm R M) : isometryGroup B →* Rˣ :=
 
 @[simp]
 theorem isometryDet_apply (g : isometryGroup B) :
-    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := by
-  rw [isometryDet, MonoidHom.comp_apply, Subgroup.coe_subtype]
+    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := (rfl)
 
 /-- The determinant-one subgroup regarded as a subgroup of the full isometry group. -/
 noncomputable def specialIsometryWithin (B : BilinForm R M) : Subgroup (isometryGroup B) :=
@@ -634,8 +633,7 @@ noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
 
 @[simp]
 theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
-    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := by
-  simp [specialIsometryToIsometry]
+    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := (rfl)
 
 /-- The determinant of a determinant-one isometry is one. -/
 @[simp]
@@ -713,10 +711,8 @@ theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃�
     (g : specialIsometryGroup (LinearMap.BilinForm.congr e B)) :
     ((specialIsometryGroupCongr B e).symm g : M ≃ₗ[R] M) =
       (e.trans (g : M' ≃ₗ[R] M')).trans e.symm := by
-  rw [← (LinearEquiv.autCongr e).injective.eq_iff, LinearEquiv.autCongr_apply,
-    ← coe_specialIsometryGroupCongr_apply, MulEquiv.apply_symm_apply]
   ext x
-  simp
+  simp [specialIsometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply]
 
 end Congr
 
@@ -739,8 +735,7 @@ noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
 theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
     (g : specialIsometryGroup B) :
     (specialIsometryGroupBaseChange A B g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
-      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
-  simp [specialIsometryGroupBaseChange, isometryGroupBaseChange]
+      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := (rfl)
 
 end BaseChange
 
