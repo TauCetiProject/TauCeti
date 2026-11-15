@@ -64,14 +64,6 @@ universe u
 
 variable {X Y Z : AdicSpace.{u}}
 
-private instance {A B : AdicSpace.{u}} (m : A.obj ⟶ B.obj) [PreAdicSpace.IsOpenImmersion m] :
-    PreAdicSpace.IsOpenImmersion (ObjectProperty.homMk m : A ⟶ B).hom := by
-  rw [ObjectProperty.homMk_hom]; infer_instance
-
-private theorem range_ofRestrict {W : PreAdicSpace.{u}} (U : Opens W) :
-    Set.range (W.ofRestrict U.isOpenEmbedding).base = U :=
-  Set.ext fun _ ↦ ⟨by rintro ⟨z, rfl⟩; exact z.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
-
 /-! ### Definition and basic constructors -/
 
 /-- **Étale morphisms of analytic adic spaces** (Kedlaya–Liu I, Definition 8.2.16; Scholze,
@@ -87,22 +79,20 @@ def IsEtaleLocalDescription : MorphismProperty AdicSpace.{u} := fun Y X f ↦
         IsFiniteEtale g ∧ u ≫ f = j ≫ g ≫ i
 
 /-- Unfolding lemma for `TauCeti.AdicSpace.IsEtaleLocalDescription`. -/
-theorem isEtaleLocalDescription_iff (f : Y ⟶ X) :
-    IsEtaleLocalDescription f ↔
-      X.IsAnalytic ∧ Y.IsAnalytic ∧ ∀ y : Y.obj,
-        ∃ (U V W : AdicSpace.{u}) (u : U ⟶ Y) (i : V ⟶ X) (j : U ⟶ W) (g : W ⟶ V),
-          PreAdicSpace.IsOpenImmersion u.hom ∧ y ∈ Set.range u.hom.base ∧
-            PreAdicSpace.IsOpenImmersion i.hom ∧ PreAdicSpace.IsOpenImmersion j.hom ∧
-            IsFiniteEtale g ∧ u ≫ f = j ≫ g ≫ i :=
-  Iff.rfl
+theorem isEtaleLocalDescription_iff (f : Y ⟶ X) : IsEtaleLocalDescription f ↔
+    X.IsAnalytic ∧ Y.IsAnalytic ∧ ∀ y : Y.obj,
+      ∃ (U V W : AdicSpace.{u}) (u : U ⟶ Y) (i : V ⟶ X) (j : U ⟶ W) (g : W ⟶ V),
+        PreAdicSpace.IsOpenImmersion u.hom ∧ y ∈ Set.range u.hom.base ∧
+          PreAdicSpace.IsOpenImmersion i.hom ∧ PreAdicSpace.IsOpenImmersion j.hom ∧
+          IsFiniteEtale g ∧ u ≫ f = j ≫ g ≫ i := Iff.rfl
 
 /-- The target of an étale morphism is analytic. -/
-theorem IsEtaleLocalDescription.isAnalytic_target {f : Y ⟶ X}
-    (hf : IsEtaleLocalDescription f) : X.IsAnalytic := hf.1
+theorem IsEtaleLocalDescription.isAnalytic_target {f : Y ⟶ X} (hf : IsEtaleLocalDescription f) :
+    X.IsAnalytic := hf.1
 
 /-- The source of an étale morphism is analytic. -/
-theorem IsEtaleLocalDescription.isAnalytic_source {f : Y ⟶ X}
-    (hf : IsEtaleLocalDescription f) : Y.IsAnalytic := hf.2.1
+theorem IsEtaleLocalDescription.isAnalytic_source {f : Y ⟶ X} (hf : IsEtaleLocalDescription f) :
+    Y.IsAnalytic := hf.2.1
 
 /-- **Every finite étale morphism is étale.** -/
 theorem IsEtaleLocalDescription.of_isFiniteEtale {f : Y ⟶ X} (hf : IsFiniteEtale f) :
@@ -113,9 +103,8 @@ theorem IsEtaleLocalDescription.of_isFiniteEtale {f : Y ⟶ X} (hf : IsFiniteEta
 /-- **Every open immersion into an analytic adic space is étale.** -/
 theorem IsEtaleLocalDescription.of_isOpenImmersion (f : Y ⟶ X)
     [PreAdicSpace.IsOpenImmersion f.hom] (hX : X.IsAnalytic) : IsEtaleLocalDescription f :=
-  ⟨hX, hX.of_isOpenImmersion f, fun y ↦
-    ⟨Y, X, X, 𝟙 Y, 𝟙 X, f, 𝟙 X, inferInstance, ⟨y, rfl⟩, inferInstance, inferInstance,
-      IsFiniteEtale.id hX, by simp⟩⟩
+  ⟨hX, hX.of_isOpenImmersion f, fun y ↦ ⟨Y, X, X, 𝟙 Y, 𝟙 X, f, 𝟙 X, inferInstance, ⟨y, rfl⟩,
+    inferInstance, inferInstance, .id hX, by simp⟩⟩
 
 /-- **An open immersion in `AdicSpace` is étale if and only if its target is analytic.** -/
 theorem isEtaleLocalDescription_iff_of_isOpenImmersion (f : Y ⟶ X)
@@ -127,8 +116,7 @@ theorem IsEtaleLocalDescription.id {X : AdicSpace.{u}} (hX : X.IsAnalytic) :
     IsEtaleLocalDescription (𝟙 X) := .of_isFiniteEtale (IsFiniteEtale.id hX)
 
 /-- **The identity of an adic space `X` is étale if and only if `X` is analytic.** -/
-@[simp]
-theorem isEtaleLocalDescription_id_iff {X : AdicSpace.{u}} :
+@[simp] theorem isEtaleLocalDescription_id_iff {X : AdicSpace.{u}} :
     IsEtaleLocalDescription (𝟙 X) ↔ X.IsAnalytic :=
   ⟨IsEtaleLocalDescription.isAnalytic_target, IsEtaleLocalDescription.id⟩
 
@@ -164,16 +152,16 @@ theorem IsEtaleLocalDescription.isOpenImmersion_comp {f : Y ⟶ X}
   let l : U' ⟶ U := ObjectProperty.homMk (pullback.fst u.hom v.hom)
   have hz : z ∈ Set.range u'.hom.base := by
     rw [ObjectProperty.homMk_hom, IsOpenImmersion.range_pullback_snd_of_left]; exact ⟨u₀, hu₀⟩
-  have hcond : u' ≫ v = l ≫ u := InducedCategory.Hom.ext pullback.condition.symm
   refine ⟨U', V, W, u', i, l ≫ j, g, inferInstance, hz, hi, ?_, hg, ?_⟩
   · rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
-  · rw [← Category.assoc, hcond, Category.assoc, hfac, Category.assoc]
+  · rw [← Category.assoc, show u' ≫ v = l ≫ u from InducedCategory.Hom.ext pullback.condition.symm,
+      Category.assoc, hfac, Category.assoc]
 
 /-- **Postcomposing an étale morphism with an open immersion into an analytic target gives an étale
 morphism.** -/
-theorem IsEtaleLocalDescription.comp_isOpenImmersion {f : Y ⟶ X}
-    (hf : IsEtaleLocalDescription f) (v : X ⟶ Z) [PreAdicSpace.IsOpenImmersion v.hom]
-    (hZ : Z.IsAnalytic) : IsEtaleLocalDescription (f ≫ v) := by
+theorem IsEtaleLocalDescription.comp_isOpenImmersion {f : Y ⟶ X} (hf : IsEtaleLocalDescription f)
+    (v : X ⟶ Z) [PreAdicSpace.IsOpenImmersion v.hom] (hZ : Z.IsAnalytic) :
+    IsEtaleLocalDescription (f ≫ v) := by
   refine ⟨hZ, hf.isAnalytic_source, fun y ↦ ?_⟩
   obtain ⟨U, V, W, u, i, j, g, hu, hy, hi, hj, hg, hfac⟩ := hf.2.2 y
   refine ⟨U, V, W, u, i ≫ v, j, g, hu, hy, ?_, hj, hg, ?_⟩
@@ -184,11 +172,8 @@ theorem IsEtaleLocalDescription.comp_isOpenImmersion {f : Y ⟶ X}
 instance IsEtaleLocalDescription.respectsIso :
     MorphismProperty.RespectsIso (@IsEtaleLocalDescription.{u}) :=
   MorphismProperty.RespectsIso.mk _
-    (fun e _ hf ↦
-      have : IsIso e.hom.hom := (ObjectProperty.ι isAdic).map_isIso e.hom
-      hf.isOpenImmersion_comp e.hom)
-    (fun e _ hf ↦
-      have : IsIso e.hom.hom := (ObjectProperty.ι isAdic).map_isIso e.hom
+    (fun e _ hf ↦ have := (ObjectProperty.ι isAdic).map_isIso e.hom; hf.isOpenImmersion_comp e.hom)
+    (fun e _ hf ↦ have := (ObjectProperty.ι isAdic).map_isIso e.hom
       hf.comp_isOpenImmersion e.hom (hf.isAnalytic_target.of_iso e.symm))
 
 /-- **Source locality of étale morphisms.** Let `f : Y ⟶ X` be a morphism into an analytic adic
@@ -198,13 +183,7 @@ theorem IsEtaleLocalDescription.of_jointly_surjective {f : Y ⟶ X} (hX : X.IsAn
     {U : ι → AdicSpace.{u}} (u : ∀ k, U k ⟶ Y) [∀ k, PreAdicSpace.IsOpenImmersion (u k).hom]
     (hcov : ∀ y : Y.obj, ∃ (k : ι) (z : (U k).obj), (u k).hom.base z = y)
     (hf : ∀ k, IsEtaleLocalDescription (u k ≫ f)) : IsEtaleLocalDescription f := by
-  have hY : Y.IsAnalytic := by
-    rw [isAnalytic_iff_analyticPoints_eq_univ, Set.eq_univ_iff_forall]
-    intro y
-    obtain ⟨k, z, rfl⟩ := hcov y
-    exact Set.mem_preimage.mp ((preimage_analyticPoints_of_isOpenImmersion (u k).hom).symm ▸
-      (hf k).isAnalytic_source.mem_analyticPoints z)
-  refine ⟨hX, hY, fun y ↦ ?_⟩
+  refine ⟨hX, .of_jointly_surjective u (fun k ↦ (hf k).isAnalytic_source) hcov, fun y ↦ ?_⟩
   obtain ⟨k, z, rfl⟩ := hcov y
   obtain ⟨U', V', W', u', i, j, g, hu', ⟨q, hq⟩, hi, hj, hg, hfac⟩ := (hf k).2.2 z
   refine ⟨U', V', W', u' ≫ u k, i, j, g, ?_, ⟨q, by simp [hq]⟩, hi, hj, hg, ?_⟩
@@ -218,23 +197,22 @@ theorem isEtaleLocalDescription_iff_of_jointly_surjective {f : Y ⟶ X} (hX : X.
     [∀ k, PreAdicSpace.IsOpenImmersion (u k).hom]
     (hcov : ∀ y : Y.obj, ∃ (k : ι) (z : (U k).obj), (u k).hom.base z = y) :
     IsEtaleLocalDescription f ↔ ∀ k, IsEtaleLocalDescription (u k ≫ f) :=
-  ⟨fun hf k ↦ hf.isOpenImmersion_comp (u k),
-    IsEtaleLocalDescription.of_jointly_surjective hX u hcov⟩
+  ⟨fun hf k ↦ hf.isOpenImmersion_comp (u k), .of_jointly_surjective hX u hcov⟩
 
 /-- **Source-cover descent along opens of `Y`.** If `X` is analytic, `U : ι → Opens Y.obj` covers
 `Y`, and the restriction of `f : Y ⟶ X` to each `U k` satisfies `IsEtaleLocalDescription`, then `f`
 satisfies `IsEtaleLocalDescription`. -/
 theorem IsEtaleLocalDescription.of_iSup_eq_top_source {f : Y ⟶ X} (hX : X.IsAnalytic) {ι : Type*}
-    (U : ι → Opens Y.obj) (hU : iSup U = ⊤)
-    (hf : ∀ k, IsEtaleLocalDescription
+    (U : ι → Opens Y.obj) (hU : iSup U = ⊤) (hf : ∀ k, IsEtaleLocalDescription
       ((ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
         (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ :
-          AdicSpace.{u}) ⟶ Y) ≫ f)) :
-    IsEtaleLocalDescription f := by
-  refine @IsEtaleLocalDescription.of_jointly_surjective _ _ _ hX _ _ _
-    (fun _ ↦ inferInstance) (fun y ↦ ?_) hf
-  obtain ⟨k, hk⟩ := Opens.mem_iSup.mp (by rw [hU]; trivial)
-  exact ⟨k, ⟨y, hk⟩, rfl⟩
+          AdicSpace.{u}) ⟶ Y) ≫ f)) : IsEtaleLocalDescription f := by
+  let u : ∀ k, (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ :
+      AdicSpace.{u}) ⟶ Y := fun k ↦ ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding)
+  have _ (k) : PreAdicSpace.IsOpenImmersion (u k).hom := inferInstance
+  exact .of_jointly_surjective hX u
+    (fun y ↦ let ⟨k, hk⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : y ∈ iSup U); ⟨k, ⟨y, hk⟩, rfl⟩)
+    hf
 
 /-- Being étale (`IsEtaleLocalDescription`) is local on the source for morphisms into an analytic
 target `X`. -/
@@ -244,39 +222,33 @@ theorem isEtaleLocalDescription_iff_of_iSup_eq_top_source {f : Y ⟶ X} (hX : X.
       ((ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
         (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ :
           AdicSpace.{u}) ⟶ Y) ≫ f) :=
-  ⟨fun hf _ ↦ hf.isOpenImmersion_comp _, IsEtaleLocalDescription.of_iSup_eq_top_source hX U hU⟩
+  ⟨fun hf _ ↦ hf.isOpenImmersion_comp _, .of_iSup_eq_top_source hX U hU⟩
 
 /-- **Target-cover descent for étale morphisms.** If `V : ι → Opens X.obj` covers `X` and the
 preimage restriction of `f : Y ⟶ X` over every `V k` satisfies `IsEtaleLocalDescription`, then `f`
 satisfies `IsEtaleLocalDescription`. -/
 theorem IsEtaleLocalDescription.of_iSup_eq_top {f : Y ⟶ X} {ι : Type*} (V : ι → Opens X.obj)
-    (hV : iSup V = ⊤)
-    (hf : ∀ k, IsEtaleLocalDescription
+    (hV : iSup V = ⊤) (hf : ∀ k, IsEtaleLocalDescription
       (ObjectProperty.homMk (f.hom.restrictPreimage (V k)) :
         (⟨Y.obj.restrict ((Opens.map f.hom.base).obj (V k)).isOpenEmbedding,
           isAdic_restrict _ Y.property⟩ : AdicSpace.{u}) ⟶
         ⟨X.obj.restrict (V k).isOpenEmbedding, isAdic_restrict _ X.property⟩)) :
     IsEtaleLocalDescription f := by
-  have hX : X.IsAnalytic := by
-    rw [isAnalytic_iff_analyticPoints_eq_univ, Set.eq_univ_iff_forall]; intro x
-    obtain ⟨k, hx⟩ := Opens.mem_iSup.mp (by rw [hV]; trivial)
-    exact Set.mem_preimage.mp
-      ((preimage_analyticPoints_of_isOpenImmersion (X.obj.ofRestrict (V k).isOpenEmbedding)).symm ▸
-        (hf k).isAnalytic_target.mem_analyticPoints ⟨x, hx⟩)
+  let v : ∀ k, (⟨X.obj.restrict (V k).isOpenEmbedding, isAdic_restrict _ X.property⟩ :
+      AdicSpace.{u}) ⟶ X := fun k ↦ ObjectProperty.homMk (X.obj.ofRestrict (V k).isOpenEmbedding)
+  have _ (k) : PreAdicSpace.IsOpenImmersion (v k).hom := inferInstance
+  have hX : X.IsAnalytic := .of_jointly_surjective v (fun k ↦ (hf k).isAnalytic_target)
+    fun x ↦ let ⟨k, hx⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : x ∈ iSup V); ⟨k, ⟨x, hx⟩, rfl⟩
   let U : ι → Opens Y.obj := fun k ↦ (Opens.map f.hom.base).obj (V k)
-  have hU : iSup U = ⊤ := eq_top_iff.mpr fun y _ ↦ by
-    have hm : f.hom.base y ∈ iSup V := by rw [hV]; trivial
-    obtain ⟨k, hk⟩ := Opens.mem_iSup.mp hm
-    exact Opens.mem_iSup.mpr ⟨k, hk⟩
-  refine IsEtaleLocalDescription.of_iSup_eq_top_source hX U hU fun k ↦ ?_
-  let v : (⟨X.obj.restrict (V k).isOpenEmbedding, isAdic_restrict _ X.property⟩ :
-      AdicSpace.{u}) ⟶ X := ObjectProperty.homMk (X.obj.ofRestrict (V k).isOpenEmbedding)
-  have hsq : (ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
+  have hU : iSup U = ⊤ := eq_top_iff.mpr fun y _ ↦
+    let ⟨k, hk⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : f.hom.base y ∈ iSup V)
+    Opens.mem_iSup.mpr ⟨k, hk⟩
+  refine .of_iSup_eq_top_source hX U hU fun k ↦ ?_
+  rw [show (ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
       (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ : AdicSpace.{u}) ⟶ Y) ≫
-      f = ObjectProperty.homMk (f.hom.restrictPreimage (V k)) ≫ v :=
-    InducedCategory.Hom.ext (Hom.restrictPreimage_ofRestrict f.hom (V k)).symm
-  rw [hsq]
-  exact (hf k).comp_isOpenImmersion v hX
+      f = ObjectProperty.homMk (f.hom.restrictPreimage (V k)) ≫ v k from
+    InducedCategory.Hom.ext (Hom.restrictPreimage_ofRestrict f.hom (V k)).symm]
+  exact (hf k).comp_isOpenImmersion (v k) hX
 
 /-! ### Refinement to affinoid middle factors and finiteness properties -/
 
@@ -286,12 +258,11 @@ theorem IsEtaleLocalDescription.exists_affinoid_factorization {f : Y ⟶ X}
     (hf : IsEtaleLocalDescription f) (y : Y.obj) :
     ∃ (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
       (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsTateRing A)
-      (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus)
-      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsTateRing B)
-      (T : Pair B) (hT : IsSheafyForEveryPresentation T.plus)
-      (ψ : Pair.Hom S T) (_ : ψ.IsFiniteEtale)
-      (U : AdicSpace.{u}) (u : U ⟶ Y) (j : U ⟶ ofPair T hT) (i : ofPair S hS ⟶ X),
+      (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) (B : Type u) (_ : CommRing B)
+      (_ : UniformSpace B) (_ : IsUniformAddGroup B) (_ : IsTopologicalRing B) (_ : CompleteSpace B)
+      (_ : T2Space B) (_ : IsTateRing B) (T : Pair B) (hT : IsSheafyForEveryPresentation T.plus)
+      (ψ : Pair.Hom S T) (_ : ψ.IsFiniteEtale) (U : AdicSpace.{u}) (u : U ⟶ Y)
+      (j : U ⟶ ofPair T hT) (i : ofPair S hS ⟶ X),
       PreAdicSpace.IsOpenImmersion u.hom ∧ y ∈ Set.range u.hom.base ∧
         PreAdicSpace.IsOpenImmersion j.hom ∧ PreAdicSpace.IsOpenImmersion i.hom ∧
         u ≫ f = j ≫ comapOfPair hS hT ψ ≫ i := by
@@ -310,31 +281,28 @@ theorem IsEtaleLocalDescription.exists_affinoid_factorization {f : Y ⟶ X}
     exact ⟨⟨j₀.hom.base p₀, Opens.mem_map.mpr hv₀⟩, rfl⟩
   refine ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, S, hS, B, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, T, hT, ψ, hψ, U, r ≫ u₀, j, i,
-    ?_, ⟨q₀, by simp [hq₀, hp₀]⟩, inferInstance, inferInstance, ?_⟩
+    inferInstance, inferInstance, inferInstance, inferInstance, T, hT, ψ, hψ, U, r ≫ u₀, j, i, ?_,
+    ⟨q₀, by simp [hq₀, hp₀]⟩, inferInstance, inferInstance, ?_⟩
   · rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
-  · ext1
-    have h1 := congrArg (fun k ↦ r.hom ≫ k) (congrArg InducedCategory.Hom.hom hfac₀)
+  · ext1; have h1 := congrArg (r.hom ≫ InducedCategory.Hom.hom ·) hfac₀
     simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, r, j, i] at h1 ⊢
-    rw [Category.assoc, h1, ← Category.assoc, ← Category.assoc, ← pullback.condition,
-      Category.assoc, Category.assoc, reassoc_of% hg_fac]
-    simp only [Category.assoc]
+    rw [Category.assoc, h1, ← Category.assoc, ← Category.assoc, ← pullback.condition]
+    simp only [Category.assoc, w, reassoc_of% hg_fac]
 
 /-- **An étale morphism of analytic adic spaces is locally of finite type.** -/
-theorem IsEtaleLocalDescription.locallyOfFiniteType {f : Y ⟶ X}
-    (hf : IsEtaleLocalDescription f) : PreAdicSpace.LocallyOfFiniteType f.hom := by
+theorem IsEtaleLocalDescription.locallyOfFiniteType {f : Y ⟶ X} (hf : IsEtaleLocalDescription f) :
+    PreAdicSpace.LocallyOfFiniteType f.hom := by
   choose U V W u i j g hu hy hi hj hg hfac using hf.2.2
   let O : Y.obj → Opens Y.obj := fun y ↦ ⟨Set.range (u y).hom.base, (hu y).base_open.isOpen_range⟩
   refine PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top O
     (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, hy y⟩) fun y ↦ ?_
   rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (u y).hom (Y.obj.ofRestrict (O y).isOpenEmbedding)
       (Opens.set_range_inclusion' (O y)).symm, Category.assoc,
-    MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u}]
-  have hhom := congrArg InducedCategory.Hom.hom (hfac y)
-  simp only [ObjectProperty.FullSubcategory.comp_hom] at hhom
-  rw [hhom, ← Category.assoc]
-  exact ((hg y).locallyOfFiniteType.comp_of_isOpenImmersion (i y).hom).isOpenImmersion_comp
-    (j y).hom
+    MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u},
+    ← ObjectProperty.FullSubcategory.comp_hom, congrArg InducedCategory.Hom.hom (hfac y),
+    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
+    ← Category.assoc]
+  exact ((hg y).locallyOfFiniteType.comp_of_isOpenImmersion _).isOpenImmersion_comp _
 
 /-- **Locally noetherian analytic structure ascends along étale morphisms.** -/
 theorem IsEtaleLocalDescription.isLocallyNoetherianAnalytic_source {f : Y ⟶ X}
@@ -347,45 +315,19 @@ theorem IsEtaleLocalDescription.isLocallyNoetherianAnalytic_source {f : Y ⟶ X}
 
 section InfinitesimalLifting
 
-private theorem cancel_comp_of_isOpenImmersion {Z' U Y' : AdicSpace.{u}}
-    (u : U ⟶ Y') [PreAdicSpace.IsOpenImmersion u.hom] {l₁ l₂ : Z' ⟶ U} (h : l₁ ≫ u = l₂ ≫ u) :
-    l₁ = l₂ :=
-  InducedCategory.Hom.ext ((cancel_mono u.hom).mp (congrArg InducedCategory.Hom.hom h))
-
-private theorem lift_of_range_subset {Z' U Y' : AdicSpace.{u}}
-    (u : U ⟶ Y') [PreAdicSpace.IsOpenImmersion u.hom] (f : Z' ⟶ Y')
-    (hr : Set.range f.hom.base ⊆ Set.range u.hom.base) : ∃ l : Z' ⟶ U, l ≫ u = f :=
-  ⟨ObjectProperty.homMk (IsOpenImmersion.lift u.hom f.hom hr),
-    InducedCategory.Hom.ext (IsOpenImmersion.lift_fac u.hom f.hom hr)⟩
-
-private theorem hom_ext_of_open_cover {P Y' : PreAdicSpace.{u}} (hP : PreAdicSpace.isSheafy P)
-    {m₁ m₂ : P ⟶ Y'}
-    (h : ∀ p : P, ∃ (Q : PreAdicSpace.{u}) (w : Q ⟶ P),
-      PreAdicSpace.IsOpenImmersion w ∧ p ∈ Set.range w.base ∧ w ≫ m₁ = w ≫ m₂) :
-    m₁ = m₂ := by
-  choose Q w hw hp heq using h
-  let O : P → Opens P := fun p ↦ ⟨Set.range (w p).base, (hw p).base_open.isOpen_range⟩
-  refine PreAdicSpace.hom_ext_of_ofRestrict hP O
-    (eq_top_iff.mpr fun p _ ↦ Opens.mem_iSup.mpr ⟨p, hp p⟩) fun p ↦ ?_
-  rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (w p) (P.ofRestrict (O p).isOpenEmbedding)
-      (Opens.set_range_inclusion' (O p)).symm, Category.assoc, Category.assoc, heq p]
-
 section AffinoidChart
 
-variable {f : Y ⟶ X}
-  {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-  [CompleteSpace A] [T0Space A] [IsHuberRing A] {S : Pair A}
-  (hS : IsSheafyForEveryPresentation S.plus)
-  {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
-  [CompleteSpace B] [T0Space B] [IsHuberRing B] {T : Pair B}
-  (hT : IsSheafyForEveryPresentation T.plus) {ψ : Pair.Hom S T}
+variable {f : Y ⟶ X} {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+  [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsHuberRing A] {S : Pair A}
+  (hS : IsSheafyForEveryPresentation S.plus) {B : Type u} [CommRing B] [UniformSpace B]
+  [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T0Space B] [IsHuberRing B]
+  {T : Pair B} (hT : IsSheafyForEveryPresentation T.plus) {ψ : Pair.Hom S T}
   {U : AdicSpace.{u}} {u : U ⟶ Y} {j : U ⟶ ofPair T hT} {i : ofPair S hS ⟶ X}
   [PreAdicSpace.IsOpenImmersion u.hom] [PreAdicSpace.IsOpenImmersion j.hom]
-  [PreAdicSpace.IsOpenImmersion i.hom]
-  {A₁ : Type u} [CommRing A₁] [UniformSpace A₁] [IsUniformAddGroup A₁] [IsTopologicalRing A₁]
-  [CompleteSpace A₁] [T0Space A₁] [IsHuberRing A₁] {S₁ : Pair A₁}
-  (hS₁ : IsSheafyForEveryPresentation S₁.plus)
-  {K : Ideal A₁} (hSK : IsSheafyForEveryPresentation (S₁.quotient K).plus) [T0Space (A₁ ⧸ K)]
+  [PreAdicSpace.IsOpenImmersion i.hom] {A₁ : Type u} [CommRing A₁] [UniformSpace A₁]
+  [IsUniformAddGroup A₁] [IsTopologicalRing A₁] [CompleteSpace A₁] [T0Space A₁] [IsHuberRing A₁]
+  {S₁ : Pair A₁} (hS₁ : IsSheafyForEveryPresentation S₁.plus) {K : Ideal A₁}
+  (hSK : IsSheafyForEveryPresentation (S₁.quotient K).plus) [T0Space (A₁ ⧸ K)]
 
 private theorem eq_of_affinoid_factorization (hψ : ψ.IsFiniteEtale)
     (hfac : u ≫ f = j ≫ comapOfPair hS hT ψ ≫ i)
@@ -398,21 +340,22 @@ private theorem eq_of_affinoid_factorization (hψ : ψ.IsFiniteEtale)
   let _ : UniformSpace (A₁ ⧸ K) := IsTopologicalAddGroup.rightUniformSpace (A₁ ⧸ K)
   have _ : IsUniformAddGroup (A₁ ⧸ K) := isUniformAddGroup_of_addCommGroup
   have _ : CompleteSpace (A₁ ⧸ K) := hcompK
-  obtain ⟨l₁, hl₁⟩ := lift_of_range_subset u g₁ hr₁
-  obtain ⟨l₂, hl₂⟩ := lift_of_range_subset u g₂ hr₂
+  let l₁ := liftOfIsOpenImmersion u g₁ hr₁
+  let l₂ := liftOfIsOpenImmersion u g₂ hr₂
   have hk_f : (l₁ ≫ j) ≫ comapOfPair hS hT ψ = (l₂ ≫ j) ≫ comapOfPair hS hT ψ :=
-    cancel_comp_of_isOpenImmersion i (by
+    (cancel_mono i).mp (by
       simpa only [Category.assoc, ← hfac] using
-        (congrArg (· ≫ f) hl₁).trans (hf_eq.trans (congrArg (· ≫ f) hl₂).symm))
+        (congrArg (· ≫ f) (liftOfIsOpenImmersion_fac u g₁ hr₁)).trans
+          (hf_eq.trans (congrArg (· ≫ f) (liftOfIsOpenImmersion_fac u g₂ hr₂)).symm))
   have hl_K : comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫ l₁ =
       comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫ l₂ :=
-    cancel_comp_of_isOpenImmersion u (by rw [Category.assoc, Category.assoc, hl₁, hl₂, hK_eq])
+    (cancel_mono u).mp (by simp [l₁, l₂, Category.assoc, hK_eq])
   have hσ_ψ := congrArg (ofPairHomEquiv hS hS₁) hk_f
-  rw [ofPairHomEquiv_comp, ofPairHomEquiv_comp, ofPairHomEquiv_comapOfPair] at hσ_ψ
   have hσ_K := congrArg (ofPairHomEquiv hT hSK) ((reassoc_of% hl_K) j)
-  rw [ofPairHomEquiv_comp, ofPairHomEquiv_comp, ofPairHomEquiv_comapOfPair] at hσ_K
-  have hk := (ofPairHomEquiv hT hS₁).injective (hψ.eq_of_sqZero_quotient hK hσ_ψ hσ_K)
-  rw [← hl₁, ← hl₂, cancel_comp_of_isOpenImmersion j hk]
+  simp only [ofPairHomEquiv_comp, ofPairHomEquiv_comapOfPair] at hσ_ψ hσ_K
+  rw [← liftOfIsOpenImmersion_fac u g₁ hr₁, ← liftOfIsOpenImmersion_fac u g₂ hr₂]
+  exact congrArg (· ≫ u)
+    ((cancel_mono j).mp ((ofPairHomEquiv hT hS₁).injective (hψ.eq_of_sqZero_quotient hK hσ_ψ hσ_K)))
 
 private theorem exists_of_affinoid_factorization (hψ : ψ.IsFiniteEtale)
     (hfac : u ≫ f = j ≫ comapOfPair hS hT ψ ≫ i)
@@ -420,46 +363,44 @@ private theorem exists_of_affinoid_factorization (hψ : ψ.IsFiniteEtale)
     (hK : K ^ 2 = ⊥) (g₀ : ofPair (S₁.quotient K) hSK ⟶ Y) (h : ofPair S₁ hS₁ ⟶ X)
     (hsq : g₀ ≫ f = comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫ h)
     (hr₀ : Set.range g₀.hom.base ⊆ Set.range u.hom.base) :
-    ∃ g : ofPair S₁ hS₁ ⟶ Y,
-      comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫ g = g₀ ∧ g ≫ f = h := by
+    ∃ g : ofPair S₁ hS₁ ⟶ Y, comapOfPair hS₁ hSK (Pair.quotientHom S₁ K) ≫ g = g₀ ∧ g ≫ f = h := by
   let _ : UniformSpace (A₁ ⧸ K) := IsTopologicalAddGroup.rightUniformSpace (A₁ ⧸ K)
   have _ : IsUniformAddGroup (A₁ ⧸ K) := isUniformAddGroup_of_addCommGroup
   have _ : CompleteSpace (A₁ ⧸ K) := hcompK
   let πK := comapOfPair hS₁ hSK (Pair.quotientHom S₁ K)
   have hsurj : Function.Surjective πK.hom.base :=
-    (isHomeomorph_comapOfPair_quotientHom_base S₁ hS₁ K hSK fun a ha ↦
-      ⟨2, by rw [← Ideal.mem_bot, ← hK]; exact Ideal.pow_mem_pow ha 2⟩).surjective
-  obtain ⟨g₀', hg₀'⟩ := lift_of_range_subset u g₀ hr₀
+    (isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent S₁ hS₁ K hSK ⟨2, hK⟩).surjective
+  -- Factor `g₀` through `u` and `h` through `i` via surjectivity of `πK`
+  let g₀' := liftOfIsOpenImmersion u g₀ hr₀
   have hhr : Set.range h.hom.base ⊆ Set.range i.hom.base := by
-    rintro _ ⟨z₁, rfl⟩
-    obtain ⟨z₂, rfl⟩ := hsurj z₁
+    rintro _ ⟨z₁, rfl⟩; obtain ⟨z₂, rfl⟩ := hsurj z₁
     exact ⟨_, (congrArg (fun m : ofPair (S₁.quotient K) hSK ⟶ X ↦ m.hom.base z₂)
-      (by rw [← hsq, ← hg₀', Category.assoc, hfac] :
+      (by rw [← hsq, ← liftOfIsOpenImmersion_fac u g₀ hr₀, Category.assoc, hfac] :
         πK ≫ h = g₀' ≫ j ≫ comapOfPair hS hT ψ ≫ i)).symm⟩
-  obtain ⟨h', hh'⟩ := lift_of_range_subset i h hhr
+  let h' := liftOfIsOpenImmersion i h hhr
+  -- Lift across the finite étale Huber-pair morphism `ψ` via `ofPairHomEquiv`
   have hcomm_space : (g₀' ≫ j) ≫ comapOfPair hS hT ψ = πK ≫ h' :=
-    cancel_comp_of_isOpenImmersion i
-      (by rw [Category.assoc, Category.assoc, ← hfac, ← Category.assoc, hg₀', hsq,
-        Category.assoc, hh'])
+    (cancel_mono i).mp (by
+      rw [Category.assoc, Category.assoc, ← hfac, ← Category.assoc,
+        liftOfIsOpenImmersion_fac, hsq, Category.assoc, liftOfIsOpenImmersion_fac])
   have hcomm_pair := congrArg (ofPairHomEquiv hS hSK) hcomm_space
-  rw [ofPairHomEquiv_comp, ofPairHomEquiv_comp, ofPairHomEquiv_comapOfPair,
-    ofPairHomEquiv_comapOfPair] at hcomm_pair
+  simp only [πK, ofPairHomEquiv_comp, ofPairHomEquiv_comapOfPair] at hcomm_pair
   obtain ⟨β, hβ_ψ, hβ_K⟩ := hψ.exists_of_sqZero_quotient hK _ _ hcomm_pair
   let k : ofPair S₁ hS₁ ⟶ ofPair T hT := comapOfPair hT hS₁ β
-  have hk_K : πK ≫ k = g₀' ≫ j := by
-    rw [← comapOfPair_comp, hβ_K, comapOfPair_ofPairHomEquiv]
+  have hk_K : πK ≫ k = g₀' ≫ j := by rw [← comapOfPair_comp, hβ_K, comapOfPair_ofPairHomEquiv]
   have hk_ψ : k ≫ comapOfPair hS hT ψ = h' := by
     rw [← comapOfPair_comp, hβ_ψ, comapOfPair_ofPairHomEquiv]
+  -- Factor `k` back through the open immersion `j : U ⟶ ofPair T hT`
   have hkr : Set.range k.hom.base ⊆ Set.range j.hom.base := by
-    rintro _ ⟨z₁, rfl⟩
-    obtain ⟨z₂, rfl⟩ := hsurj z₁
-    exact ⟨g₀'.hom.base z₂,
-      (congrArg (fun m : ofPair (S₁.quotient K) hSK ⟶ ofPair T hT ↦ m.hom.base z₂) hk_K).symm⟩
-  obtain ⟨l, hl⟩ := lift_of_range_subset j k hkr
+    rintro _ ⟨z₁, rfl⟩; obtain ⟨z₂, rfl⟩ := hsurj z₁
+    exact ⟨g₀'.hom.base z₂, (congrArg (fun m ↦ m.hom.base z₂) hk_K).symm⟩
+  let l := liftOfIsOpenImmersion j k hkr
   refine ⟨l ≫ u, ?_, ?_⟩
-  · have hlj : πK ≫ l = g₀' := cancel_comp_of_isOpenImmersion j (by rw [Category.assoc, hl, hk_K])
-    rw [← Category.assoc, hlj, hg₀']
-  · rw [Category.assoc, hfac, ← Category.assoc, hl, ← Category.assoc, hk_ψ, hh']
+  · have hlj : πK ≫ l = g₀' := (cancel_mono j).mp (by rw [Category.assoc,
+      liftOfIsOpenImmersion_fac, hk_K])
+    rw [← Category.assoc, hlj, liftOfIsOpenImmersion_fac]
+  · rw [Category.assoc, hfac, ← Category.assoc, liftOfIsOpenImmersion_fac, ← Category.assoc,
+      hk_ψ, liftOfIsOpenImmersion_fac]
 
 end AffinoidChart
 
@@ -476,25 +417,22 @@ theorem IsEtaleLocalDescription.eq_of_sqZero_quotient {f : Y ⟶ X} (hf : IsEtal
     (hf_eq : g₁ ≫ f = g₂ ≫ f)
     (hι_eq : comapOfPair hR hRI (Pair.quotientHom R I) ≫ g₁ =
       comapOfPair hR hRI (Pair.quotientHom R I) ≫ g₂) : g₁ = g₂ := by
-  have hι := isHomeomorph_comapOfPair_quotientHom_base R hR I hRI fun a ha ↦
-    ⟨2, by rw [← Ideal.mem_bot, ← hI]; exact Ideal.pow_mem_pow ha 2⟩
+  have hι := isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent R hR I hRI ⟨2, hI⟩
   have hbase_eq : g₁.hom.base = g₂.hom.base := by
     ext z; obtain ⟨z₀, rfl⟩ := hι.surjective z; exact congrArg (fun m ↦ m.hom.base z₀) hι_eq
-  refine InducedCategory.Hom.ext
-    (hom_ext_of_open_cover (isAdic_iff.mp (ofPair R hR).property).1 fun z ↦ ?_)
+  refine InducedCategory.Hom.ext (PreAdicSpace.hom_ext_of_forall_exists_isOpenImmersion
+    (ofPair R hR).property.isSheafy fun z ↦ ?_)
   obtain ⟨A, _, _, _, _, _, _, _, S, hS, B, _, _, _, _, _, _, _, T, hT, ψ, hψ,
     U, u, j, i, hu, hz_mem, hj, hi, hfac⟩ := hf.exists_affinoid_factorization (g₁.hom.base z)
-  let W : Opens (ofPair R hR).obj :=
-    ⟨g₁.hom.base ⁻¹' Set.range u.hom.base,
-      hu.base_open.isOpen_range.preimage g₁.hom.base.hom.continuous⟩
+  let W : Opens (ofPair R hR).obj := ⟨g₁.hom.base ⁻¹' Set.range u.hom.base,
+    hu.base_open.isOpen_range.preimage g₁.hom.base.hom.continuous⟩
   obtain ⟨O, hzO, hOW, A₁, _, _, _, _, _, _, _, S₁, hS₁, K, hSK, _, hcompK, hK_pow,
     v, _, hv, hv_range, _, _, hKv⟩ := exists_ofPair_quotient_rational_square R hR I hRI W hz_mem
   have hr₁ : Set.range (v ≫ g₁).hom.base ⊆ Set.range u.hom.base := by
     rintro _ ⟨q, rfl⟩; exact hOW (by rw [← SetLike.mem_coe, ← hv_range]; exact ⟨q, rfl⟩)
   have hr₂ : Set.range (v ≫ g₂).hom.base ⊆ Set.range u.hom.base := by
     rintro _ ⟨q, rfl⟩
-    have hq : g₁.hom.base (v.hom.base q) ∈ Set.range u.hom.base :=
-      hOW (by rw [← SetLike.mem_coe, ← hv_range]; exact ⟨q, rfl⟩)
+    have hq : g₁.hom.base (v.hom.base q) ∈ Set.range u.hom.base := hr₁ ⟨q, rfl⟩
     rwa [hbase_eq] at hq
   have hvg : v ≫ g₁ = v ≫ g₂ :=
     eq_of_affinoid_factorization hS hT hS₁ hSK hψ hfac hcompK (hK_pow hI) hr₁ hr₂
@@ -519,12 +457,10 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
         (sqZeroQuotHom R hR I hRI).hom.restrictPreimage O ≫ gO =
           (ofPair (R.quotient I) hRI).obj.ofRestrict
             ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O).isOpenEmbedding ≫ g₀.hom := by
-  let Z := ofPair R hR
-  let Z₀ := ofPair (R.quotient I) hRI
-  let ι := sqZeroQuotHom R hR I hRI
-  have hι := isHomeomorph_comapOfPair_quotientHom_base R hR I hRI fun a ha ↦
-    ⟨2, by rw [← Ideal.mem_bot, ← hI]; exact Ideal.pow_mem_pow ha 2⟩
+  let Z := ofPair R hR; let Z₀ := ofPair (R.quotient I) hRI; let ι := sqZeroQuotHom R hR I hRI
+  have hι := isHomeomorph_comapOfPair_quotientHom_base_of_isNilpotent R hR I hRI ⟨2, hI⟩
   obtain ⟨z₀, hz₀⟩ := hι.surjective z
+  -- Refine around `z` to a rational open `O` where `g₀` lands in an affinoid chart `U` of `f`
   obtain ⟨A, _, _, _, _, _, _, _, S, hS, B, _, _, _, _, _, _, _, T, hT, ψ, hψ,
     U, u, j, i, hu, hz₀_mem, hj, hi, hfac⟩ := hf.exists_affinoid_factorization (g₀.hom.base z₀)
   let W : Opens Z.obj := ⟨ι.hom.base '' (g₀.hom.base ⁻¹' Set.range u.hom.base),
@@ -533,23 +469,26 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
     v, u', hv, hv_range, hu', hu'_range, hKv⟩ :=
     exists_ofPair_quotient_rational_square R hR I hRI W ⟨z₀, hz₀_mem, hz₀⟩
   have hr₀ : Set.range (u' ≫ g₀).hom.base ⊆ Set.range u.hom.base := by
-    rintro _ ⟨q, rfl⟩
-    exact hι.injective.mem_set_image.mp
+    rintro _ ⟨q, rfl⟩; exact hι.injective.mem_set_image.mp
       (hOW (Set.mem_preimage.mp (by rw [← hu'_range]; exact ⟨q, rfl⟩)))
+  -- Lift over the complete affinoid rational localization `S₁` and transport back to `Z|_O`
   obtain ⟨gloc, hgloc_K, hgloc_f⟩ :=
     exists_of_affinoid_factorization hS hT hS₁ hSK hψ hfac hcompK (hK_pow hI) (u' ≫ g₀) (v ≫ h)
       (by rw [Category.assoc, hsq, ← Category.assoc, ← hKv, Category.assoc]) hr₀
-  have hrv := hv_range.trans (range_ofRestrict O).symm
-  have hru' := hu'_range.trans (range_ofRestrict ((Opens.map ι.hom.base).obj O)).symm
+  have hrv : Set.range v.hom.base = Set.range (Z.obj.ofRestrict O.isOpenEmbedding).base :=
+    hv_range.trans (Opens.set_range_inclusion' O).symm
+  have hru' : Set.range u'.hom.base =
+      Set.range (Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding).base :=
+    hu'_range.trans (Opens.set_range_inclusion' ((Opens.map ι.hom.base).obj O)).symm
   let ev := IsOpenImmersion.isoOfRangeEq v.hom (Z.obj.ofRestrict O.isOpenEmbedding) hrv
   let eu' := IsOpenImmersion.isoOfRangeEq u'.hom (Z₀.obj.ofRestrict _) hru'
+  have hKv' := congrArg InducedCategory.Hom.hom hKv
+  simp only [ObjectProperty.FullSubcategory.comp_hom] at hKv'
   have hres_ι : ι.hom.restrictPreimage O =
       eu'.inv ≫ (comapOfPair hS₁ hSK (Pair.quotientHom S₁ K)).hom ≫ ev.hom := by
     rw [← cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding), Hom.restrictPreimage_ofRestrict,
-      Category.assoc, Category.assoc, IsOpenImmersion.isoOfRangeEq_hom_comp]
-    have hKv' := congrArg InducedCategory.Hom.hom hKv
-    simp only [ObjectProperty.FullSubcategory.comp_hom] at hKv'
-    rw [hKv', IsOpenImmersion.isoOfRangeEq_inv_comp_assoc]
+      Category.assoc, Category.assoc, IsOpenImmersion.isoOfRangeEq_hom_comp, hKv',
+      IsOpenImmersion.isoOfRangeEq_inv_comp_assoc]
   refine ⟨O, hzO, ev.inv ≫ gloc.hom, ?_, ?_⟩
   · rw [Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom, hgloc_f,
       ObjectProperty.FullSubcategory.comp_hom, IsOpenImmersion.isoOfRangeEq_inv_comp_assoc]
@@ -571,15 +510,15 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
         ((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O₂).isOpenEmbedding ≫ g₀.hom) :
     pullback.fst ((ofPair R hR).obj.ofRestrict O₁.isOpenEmbedding)
       ((ofPair R hR).obj.ofRestrict O₂.isOpenEmbedding) ≫ g₁ = pullback.snd _ _ ≫ g₂ := by
-  let Z := ofPair R hR
-  let Z₀ := ofPair (R.quotient I) hRI
-  let ι := sqZeroQuotHom R hR I hRI
+  let Z := ofPair R hR; let Z₀ := ofPair (R.quotient I) hRI; let ι := sqZeroQuotHom R hR I hRI
   let pZ := pullback.fst (Z.obj.ofRestrict O₁.isOpenEmbedding)
     (Z.obj.ofRestrict O₂.isOpenEmbedding) ≫ Z.obj.ofRestrict O₁.isOpenEmbedding
-  have hrP : Set.range pZ.base = ((O₁ ⊓ O₂ : Opens Z.obj) : Set Z.obj) := by
-    rw [IsOpenImmersion.range_pullback_to_base_of_left, range_ofRestrict, range_ofRestrict]; rfl
-  refine hom_ext_of_open_cover
-    (isAdic_iff.mp (isAdic_of_isOpenImmersion Z.property pZ)).1 fun p ↦ ?_
+  have hrP : Set.range pZ.base = ((O₁ ⊓ O₂ : Opens Z.obj) : Set Z.obj) :=
+    (IsOpenImmersion.range_pullback_to_base_of_left _ _).trans
+      (congrArg₂ (· ∩ ·) (Opens.set_range_inclusion' O₁) (Opens.set_range_inclusion' O₂))
+  -- Cover `O₁ ⊓ O₂` by rational opens `ofPair S₁ hS₁` and invoke `eq_of_sqZero_quotient`
+  refine PreAdicSpace.hom_ext_of_forall_exists_isOpenImmersion
+    (isAdic_of_isOpenImmersion Z.property pZ).isSheafy fun p ↦ ?_
   obtain ⟨O_z, hzO, hOW, A₁, _, _, _, _, _, _, _, S₁, hS₁, K, hSK, _, _, hK_pow,
     v, u', hv, hv_range, _, hu'_range, hKv⟩ :=
     exists_ofPair_quotient_rational_square R hR I hRI (O₁ ⊓ O₂)
@@ -633,31 +572,25 @@ theorem IsEtaleLocalDescription.exists_of_sqZero_quotient {f : Y ⟶ X}
     (I : Ideal C) (hI : I ^ 2 = ⊥) (hRI : IsSheafyForEveryPresentation (R.quotient I).plus)
     (g₀ : ofPair (R.quotient I) hRI ⟶ Y) (h : ofPair R hR ⟶ X)
     (hsq : g₀ ≫ f = comapOfPair hR hRI (Pair.quotientHom R I) ≫ h) :
-    ∃ g : ofPair R hR ⟶ Y,
-      comapOfPair hR hRI (Pair.quotientHom R I) ≫ g = g₀ ∧ g ≫ f = h := by
+    ∃ g : ofPair R hR ⟶ Y, comapOfPair hR hRI (Pair.quotientHom R I) ≫ g = g₀ ∧ g ≫ f = h := by
   let ι := comapOfPair hR hRI (Pair.quotientHom R I)
-  choose O hzO gO hgO_f hgO_ι using
-    exists_local_lift_of_sqZero_quotient R hR I hRI g₀ h hf hI hsq
+  choose O hzO gO hgO_f hgO_ι using exists_local_lift_of_sqZero_quotient R hR I hRI g₀ h hf hI hsq
   have hcov : ⨆ z, O z = ⊤ := eq_top_iff.mpr fun z _ ↦ Opens.mem_iSup.mpr ⟨z, hzO z⟩
   let g : ofPair R hR ⟶ Y := ObjectProperty.homMk
-    (PreAdicSpace.glueMorphisms (isAdic_iff.mp (ofPair R hR).property).1 O hcov gO fun k l ↦
+    (PreAdicSpace.glueMorphisms (ofPair R hR).property.isSheafy O hcov gO fun k l ↦
       pullback_fst_comp_eq_of_sqZero_quotient R hR I hRI g₀ h hf hI
         (hgO_f k) (hgO_f l) (hgO_ι k) (hgO_ι l))
-  have hcov₀ : ⨆ z, (Opens.map ι.hom.base).obj (O z) = ⊤ := eq_top_iff.mpr fun w _ ↦ by
-    have hm : ι.hom.base w ∈ ⨆ z, O z := by rw [hcov]; trivial
-    obtain ⟨z, hz⟩ := Opens.mem_iSup.mp hm
-    exact Opens.mem_iSup.mpr ⟨z, hz⟩
-  refine ⟨g, ?_, ?_⟩
-  · ext1
-    refine PreAdicSpace.hom_ext_of_ofRestrict
-      (isAdic_iff.mp (ofPair (R.quotient I) hRI).property).1 _ hcov₀ fun z ↦ ?_
-    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, g]
+  have hcov₀ : ⨆ z, (Opens.map ι.hom.base).obj (O z) = ⊤ := eq_top_iff.mpr fun w _ ↦
+    let ⟨z, hz⟩ := Opens.mem_iSup.mp (hcov.symm ▸ trivial : ι.hom.base w ∈ ⨆ z, O z)
+    Opens.mem_iSup.mpr ⟨z, hz⟩
+  refine ⟨g, InducedCategory.Hom.ext (PreAdicSpace.hom_ext_of_ofRestrict
+      (ofPair (R.quotient I) hRI).property.isSheafy _ hcov₀ fun z ↦ ?_),
+    InducedCategory.Hom.ext (PreAdicSpace.hom_ext_of_ofRestrict
+      (ofPair R hR).property.isSheafy O hcov fun z ↦ ?_)⟩
+  · simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, g]
     rw [← Category.assoc, ← Hom.restrictPreimage_ofRestrict, Category.assoc,
       PreAdicSpace.ofRestrict_glueMorphisms, hgO_ι]
-  · ext1
-    refine PreAdicSpace.hom_ext_of_ofRestrict
-      (isAdic_iff.mp (ofPair R hR).property).1 O hcov fun z ↦ ?_
-    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, g,
+  · simp [ObjectProperty.FullSubcategory.comp_hom, g,
       PreAdicSpace.ofRestrict_glueMorphisms_assoc, hgO_f]
 
 /-- **Unique infinitesimal lifting for étale morphisms of analytic adic spaces** along square-zero
@@ -667,8 +600,7 @@ theorem IsEtaleLocalDescription.existsUnique_of_sqZero_quotient {f : Y ⟶ X}
     (I : Ideal C) (hI : I ^ 2 = ⊥) (hRI : IsSheafyForEveryPresentation (R.quotient I).plus)
     (g₀ : ofPair (R.quotient I) hRI ⟶ Y) (h : ofPair R hR ⟶ X)
     (hsq : g₀ ≫ f = comapOfPair hR hRI (Pair.quotientHom R I) ≫ h) :
-    ∃! g : ofPair R hR ⟶ Y,
-      comapOfPair hR hRI (Pair.quotientHom R I) ≫ g = g₀ ∧ g ≫ f = h := by
+    ∃! g : ofPair R hR ⟶ Y, comapOfPair hR hRI (Pair.quotientHom R I) ≫ g = g₀ ∧ g ≫ f = h := by
   obtain ⟨g, hg₁, hg₂⟩ := hf.exists_of_sqZero_quotient R hR I hI hRI g₀ h hsq
   exact ⟨g, ⟨hg₁, hg₂⟩, fun g' ⟨hg'₁, hg'₂⟩ ↦
     hf.eq_of_sqZero_quotient R hR I hI hRI (hg'₂.trans hg₂.symm) (hg'₁.trans hg₁.symm)⟩

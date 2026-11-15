@@ -36,7 +36,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 
 * `TauCeti.PreAdicSpace.isAdic`: the adic spaces among the objects of `𝒱^pre`.
 * `TauCeti.AdicSpace`: Wedhorn's category `(Adic)`, the full subcategory of `𝒱^pre` of adic
-  spaces.
+  spaces, with `TauCeti.AdicSpace.liftOfIsOpenImmersion` factoring morphisms through open
+  immersions.
 
 ## Main results
 
@@ -259,15 +260,58 @@ the sheafy locally affinoid objects (`PreAdicSpace.isAdic`). -/
 abbrev AdicSpace : Type (u + 1) :=
   PreAdicSpace.isAdic.{u}.FullSubcategory
 
+namespace AdicSpace
+
 /-- Adic spaces are objects of `𝒱`: the full inclusion of `(Adic)` into the category of sheafy
 pre-adic spaces. -/
-abbrev AdicSpace.toSheafyPreAdicSpace : AdicSpace.{u} ⥤ SheafyPreAdicSpace.{u} :=
+abbrev toSheafyPreAdicSpace : AdicSpace.{u} ⥤ SheafyPreAdicSpace.{u} :=
   ObjectProperty.ιOfLE PreAdicSpace.isAdic_le_isSheafy
 
+variable {X Y Z : AdicSpace.{u}}
+
+/-- `ObjectProperty.homMk` preserves open immersions of underlying pre-adic spaces. -/
+instance isOpenImmersion_homMk (m : X.obj ⟶ Y.obj) [PreAdicSpace.IsOpenImmersion m] :
+    PreAdicSpace.IsOpenImmersion (ObjectProperty.homMk m : X ⟶ Y).hom :=
+  inferInstanceAs (PreAdicSpace.IsOpenImmersion m)
+
 /-- Every morphism in `AdicSpace` out of an empty adic space is an open immersion. -/
-instance (priority := 100) AdicSpace.isOpenImmersion_of_isEmpty {X Y : AdicSpace.{u}}
-    (f : Y ⟶ X) [IsEmpty Y.obj] : PreAdicSpace.IsOpenImmersion f.hom :=
+instance (priority := 100) isOpenImmersion_of_isEmpty (f : Y ⟶ X) [IsEmpty Y.obj] :
+    PreAdicSpace.IsOpenImmersion f.hom :=
   PreAdicSpace.isOpenImmersion_of_isEmpty f.hom Y.property.isSheafy X.property.isSheafy
+
+/-- Open immersions of adic spaces are monomorphisms. -/
+instance mono_of_isOpenImmersion (f : X ⟶ Y) [PreAdicSpace.IsOpenImmersion f.hom] : Mono f :=
+  (ObjectProperty.ι _).mono_of_mono_map (inferInstanceAs (Mono f.hom))
+
+section LiftOfIsOpenImmersion
+
+variable (f : X ⟶ Z) [PreAdicSpace.IsOpenImmersion f.hom] (g : Y ⟶ Z)
+  (H : Set.range g.hom.base ⊆ Set.range f.hom.base)
+
+/-- **Factorization through an open immersion in `AdicSpace`**: a morphism `g : Y ⟶ Z` whose image
+lies in the image of an open immersion `f : X ⟶ Z` lifts uniquely (`liftOfIsOpenImmersion_uniq`) to
+`Y ⟶ X` (`liftOfIsOpenImmersion_fac`). -/
+noncomputable def liftOfIsOpenImmersion : Y ⟶ X :=
+  ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift f.hom g.hom H)
+
+/-- The underlying morphism of `liftOfIsOpenImmersion` is `PreAdicSpace.IsOpenImmersion.lift`. -/
+@[simp]
+theorem liftOfIsOpenImmersion_hom :
+    (liftOfIsOpenImmersion f g H).hom = PreAdicSpace.IsOpenImmersion.lift f.hom g.hom H := (rfl)
+
+/-- Composing `liftOfIsOpenImmersion` with the open immersion recovers the original morphism. -/
+@[reassoc (attr := simp)]
+theorem liftOfIsOpenImmersion_fac : liftOfIsOpenImmersion f g H ≫ f = g :=
+  InducedCategory.Hom.ext (PreAdicSpace.IsOpenImmersion.lift_fac f.hom g.hom H)
+
+/-- The factorization through an open immersion in `AdicSpace` is unique. -/
+theorem liftOfIsOpenImmersion_uniq (l : Y ⟶ X) (hl : l ≫ f = g) :
+    l = liftOfIsOpenImmersion f g H := by
+  rw [← cancel_mono f, hl, liftOfIsOpenImmersion_fac]
+
+end LiftOfIsOpenImmersion
+
+end AdicSpace
 
 namespace ValuationSpectrum
 

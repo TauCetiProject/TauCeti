@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Gluing
 public import TauCeti.Geometry.RingedSpace.PresheafedSpace.GlueMorphisms
 
+import TauCeti.Topology.Category.TopCat.Opens
+
 /-!
 # Gluing morphisms out of a sheafy pre-adic space
 
@@ -32,8 +34,10 @@ immersion, which is a monomorphism of sheafy pre-adic spaces, to the case of aff
 
 * `TauCeti.PreAdicSpace.ofRestrict_glueMorphisms`: the glued morphism restricts to the given
   morphisms.
-* `TauCeti.PreAdicSpace.hom_ext_of_ofRestrict`: morphisms out of a sheafy pre-adic space agreeing
-  on every member of an open cover are equal.
+* `TauCeti.PreAdicSpace.hom_ext_of_ofRestrict`,
+  `TauCeti.PreAdicSpace.hom_ext_of_jointly_surjective`,
+  `TauCeti.PreAdicSpace.hom_ext_of_forall_exists_isOpenImmersion`: morphisms out of a sheafy
+  pre-adic space agreeing on an open or open-immersion cover are equal.
 * `TauCeti.SheafyPreAdicSpace.exists_comp_eq_of_iSup_eq_top`: factoring through a monomorphism of
   sheafy pre-adic spaces is local on the source.
 
@@ -103,6 +107,30 @@ theorem hom_ext_of_ofRestrict {g g' : X ⟶ Y}
     (h : ∀ i, X.ofRestrict (U i).isOpenEmbedding ≫ g = X.ofRestrict (U i).isOpenEmbedding ≫ g') :
     g = g' :=
   Hom.ext' (PresheafedSpace.hom_ext_of_ofRestrict hX U hU fun i ↦ congrArg Hom.toHom (h i))
+
+include hX in
+/-- Two morphisms out of a sheafy pre-adic space agreeing on a jointly surjective family of open
+immersions are equal. -/
+theorem hom_ext_of_jointly_surjective {ι' : Type*} {V : ι' → PreAdicSpace.{u}}
+    (w : ∀ i, V i ⟶ X) [∀ i, IsOpenImmersion (w i)]
+    (hw : ∀ x : X, ∃ (i : ι') (y : V i), (w i).base y = x)
+    {g g' : X ⟶ Y} (h : ∀ i, w i ≫ g = w i ≫ g') : g = g' := by
+  let O : ι' → Opens X := fun i ↦
+    ⟨Set.range (w i).base, (w i).isOpenEmbedding.isOpenMap.isOpen_range⟩
+  refine hom_ext_of_ofRestrict hX O
+    (eq_top_iff.mpr fun x _ ↦ let ⟨i, y, hy⟩ := hw x; Opens.mem_iSup.mpr ⟨i, y, hy⟩) fun i ↦ ?_
+  rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (w i) (X.ofRestrict (O i).isOpenEmbedding)
+      (Opens.set_range_inclusion' (O i)).symm, Category.assoc, Category.assoc, h i]
+
+include hX in
+/-- Two morphisms out of a sheafy pre-adic space that agree on an open immersion around every point
+are equal. -/
+theorem hom_ext_of_forall_exists_isOpenImmersion {g g' : X ⟶ Y}
+    (h : ∀ x : X, ∃ (V : PreAdicSpace.{u}) (w : V ⟶ X),
+      IsOpenImmersion w ∧ x ∈ Set.range w.base ∧ w ≫ g = w ≫ g') :
+    g = g' := by
+  choose V w hw hx heq using h
+  exact hom_ext_of_jointly_surjective hX w (fun x ↦ let ⟨y, hy⟩ := hx x; ⟨x, y, hy⟩) heq
 
 end PreAdicSpace
 
