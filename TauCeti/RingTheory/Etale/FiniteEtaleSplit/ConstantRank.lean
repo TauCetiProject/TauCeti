@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
+import Mathlib.Algebra.Algebra.Shrink
+import Mathlib.Data.Fintype.EquivFin
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Finiteness.Prod
+import Mathlib.RingTheory.Finiteness.Small
 
 /-!
 # Finite étale algebras of constant rank, and splitting after a faithfully flat extension
@@ -16,9 +19,12 @@ The rank of a finite étale `R`-algebra `S` is a locally constant function on `S
 take different values on different clopen pieces. Many constructions with finite étale covers,
 such as Lenstra's splitting cover (Mathlib's `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`)
 or the Galois closure by ordered tuples of distinct points, are stated for algebras of constant
-rank `n`. This file reduces the general case to that one: `S` is a direct factor of the finite
-étale algebra `S × ∏_{j < n} R ⧸ (1 - e j)` of constant rank `n`, where `n` bounds the rank of `S`
-and the idempotent `e j` cuts out the locus where `j + rank S < n`.
+rank `n`. This file first upgrades Lenstra's splitting cover to an algebra `S` in any universe and
+an arbitrary finite index type `ι` of cardinality equal to the rank
+(`TauCeti.Algebra.exists_algEquiv_pi_of_etale`), and then reduces the general non-constant-rank
+case to constant rank: `S` is a direct factor of the finite étale algebra
+`S × ∏_{j < n} R ⧸ (1 - e j)` of constant rank `n`, where `n` bounds the rank of `S` and the
+idempotent `e j` cuts out the locus where `j + rank S < n`.
 
 As a consequence, every finite étale `R`-algebra becomes totally split, in the sense of
 `TauCeti.Algebra.IsTotallySplit` (a finite product of quotients by idempotents, so with ranks that
@@ -26,6 +32,9 @@ may vary), after base change to some faithfully flat finite étale `R`-algebra.
 
 ## Main results
 
+* `TauCeti.Algebra.exists_algEquiv_pi_of_etale`: a finite étale algebra of constant rank
+  `Fintype.card ι` becomes isomorphic to `ι → T` after a faithfully flat finite étale extension
+  `R → T` in the universe of `R`.
 * `TauCeti.Algebra.exists_etale_rankAtStalk_prod_pi_quotient_eq`: a finite étale algebra is a
   direct factor of a finite étale algebra of constant rank.
 * `TauCeti.Algebra.exists_faithfullyFlat_etale_isTotallySplit_tensorProduct`: a finite étale
@@ -44,6 +53,34 @@ open TensorProduct
 universe u
 
 namespace TauCeti.Algebra
+
+/-- **Lenstra's splitting cover for a prescribed finite index type.** For a finite étale
+`R`-algebra `S` (in any universe) of constant rank `Fintype.card ι`, there is a faithfully flat
+finite étale `R`-algebra `T` in the universe of `R` such that `T ⊗[R] S ≃ₐ[T] (ι → T)`. -/
+theorem exists_algEquiv_pi_of_etale {R : Type u} {S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Fintype ι]
+    (h : Module.rankAtStalk (R := R) S = Fintype.card ι) :
+    ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T)
+      (_ : Module.Finite R T) (_ : Algebra.Etale R T), Nonempty (T ⊗[R] S ≃ₐ[T] (ι → T)) := by
+  cases subsingleton_or_nontrivial R
+  · have : Subsingleton (R ⊗[R] S) := Module.subsingleton R _
+    exact ⟨R, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ⟨default⟩⟩
+  -- Shrink `S` into the universe of `R` so Mathlib's splitting cover applies.
+  have : Small.{u} S := Module.Finite.small R S
+  let e₀ : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
+  have : Algebra.Etale R (Shrink.{u} S) := .of_equiv e₀.symm
+  have : Module.Finite R (Shrink.{u} S) := .equiv e₀.symm.toLinearEquiv
+  have h₀ : Module.rankAtStalk (R := R) (Shrink.{u} S) = Fintype.card ι :=
+    (Module.rankAtStalk_eq_of_equiv e₀.toLinearEquiv).trans h
+  obtain ⟨T, _, _, hT, hfin, het, _⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale h₀
+  obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] Shrink.{u} S)
+  have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
+  obtain rfl : m = Fintype.card ι := by
+    simpa using f.toLinearEquiv.finrank_eq.symm.trans
+      (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq h₀)
+  exact ⟨T, _, _, hT, hfin, het,
+    ⟨((Algebra.TensorProduct.congr AlgEquiv.refl e₀.symm).trans f).trans
+      (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm)⟩⟩
 
 variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S]
   [Module.Finite R S]
@@ -64,23 +101,29 @@ theorem exists_etale_rankAtStalk_prod_pi_quotient_eq :
     Etale.quotient_span_singleton (he j).one_sub
   exact ⟨n, e, he, inferInstance, hrank⟩
 
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S]
+variable {R : Type u} {S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S]
   [Module.Finite R S]
 
 /-- **Finite étale algebras split after a faithfully flat finite étale extension.** For every
-finite étale `R`-algebra `S` there is a faithfully flat finite étale `R`-algebra `T` such that
-`T ⊗[R] S` is totally split over `T`. Unlike in Mathlib's
+finite étale `R`-algebra `S` there is a faithfully flat finite étale `R`-algebra `T` in the
+universe of `R` such that `T ⊗[R] S` is totally split over `T`. Unlike in Mathlib's
 `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`, the rank of `S` need not be constant, and
 the split algebra `T ⊗[R] S` then has varying rank too. -/
 theorem exists_faithfullyFlat_etale_isTotallySplit_tensorProduct :
     ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T)
       (_ : Module.Finite R T) (_ : Algebra.Etale R T), IsTotallySplit T (T ⊗[R] S) := by
-  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq R S
+  have : Small.{u} S := Module.Finite.small R S
+  let e₀ : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
+  have : Algebra.Etale R (Shrink.{u} S) := .of_equiv e₀.symm
+  have : Module.Finite R (Shrink.{u} S) := .equiv e₀.symm.toLinearEquiv
+  obtain ⟨n, e, -, _, hrank⟩ := exists_etale_rankAtStalk_prod_pi_quotient_eq R (Shrink.{u} S)
   -- Split the padded algebra of constant rank `n`, and keep its factor `T ⊗[R] S`.
   obtain ⟨T, _, _, hT, hfin, het, _⟩ :=
     Algebra.IsFiniteSplit.exists_tensorProduct_of_etale hrank
-  have h : IsTotallySplit T (T ⊗[R] (S × Π j, R ⧸ Ideal.span {1 - e j})) := .of_isFiniteSplit
+  have h : IsTotallySplit T (T ⊗[R] (Shrink.{u} S × Π j, R ⧸ Ideal.span {1 - e j})) :=
+    .of_isFiniteSplit
   exact ⟨T, _, _, hT, hfin, het,
-    (h.of_algEquiv (Algebra.TensorProduct.prodRight R T T _ _)).of_prod_fst⟩
+    ((h.of_algEquiv (Algebra.TensorProduct.prodRight R T T _ _)).of_prod_fst).of_algEquiv
+      (Algebra.TensorProduct.congr AlgEquiv.refl e₀)⟩
 
 end TauCeti.Algebra
