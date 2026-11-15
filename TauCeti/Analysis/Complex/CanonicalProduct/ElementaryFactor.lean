@@ -21,7 +21,8 @@ quadratic in the slope `a` for small `a z` and, at an inverse slope `a = ρ⁻¹
 fraction `1 / (z - ρ) + 1 / ρ`.
 
 Both bounds are also recorded in exponential form, for estimating finite products of
-elementary factors.
+elementary factors. Pairing opposite arguments cancels the exponential factor, giving
+`weierstrassFactorOne z * weierstrassFactorOne (-z) = 1 - z ^ 2`.
 
 The quadratic estimate uses Mathlib's `Complex.norm_exp_sub_one_sub_id_le` and
 `Complex.norm_exp_sub_one_le`. The simple-zero statement uses
@@ -59,6 +60,18 @@ theorem weierstrassFactorOne_eq_zero_iff {z : ℂ} :
     weierstrassFactorOne z = 0 ↔ z = 1 := by
   rw [weierstrassFactorOne_def, mul_eq_zero, or_iff_left (exp_ne_zero z), sub_eq_zero]
   exact eq_comm
+
+/-- Pairing opposite arguments cancels the exponential factor: `E₁(z) E₁(-z) = 1 - z²`. -/
+@[simp]
+theorem weierstrassFactorOne_mul_neg (z : ℂ) :
+    weierstrassFactorOne z * weierstrassFactorOne (-z) = 1 - z ^ 2 := by
+  calc weierstrassFactorOne z * weierstrassFactorOne (-z)
+      = (1 - z) * (1 + z) * (exp z * exp (-z)) := by
+        rw [weierstrassFactorOne_def, weierstrassFactorOne_def, sub_neg_eq_add]
+        ring
+    _ = 1 - z ^ 2 := by
+        rw [← exp_add, add_neg_cancel, exp_zero, mul_one]
+        ring
 
 /-- The derivative has no constant term. -/
 theorem hasDerivAt_weierstrassFactorOne (z : ℂ) :
