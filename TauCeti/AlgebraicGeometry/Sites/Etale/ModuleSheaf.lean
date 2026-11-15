@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.AlgebraicGeometry.Sites.EtaleSepClosed
 
@@ -280,15 +280,16 @@ open TauCeti.AlgebraicGeometry.Scheme
 variable {S X Y : Scheme.{u}} {Λ : Type u} [Ring Λ]
 
 /-- An étale sheaf of `Λ`-modules on `S` is *finite lisse* if it is étale locally isomorphic to the
-constant sheaf on a finitely generated `Λ`-module: every étale `S`-scheme is covered by étale
-maps `V ⟶ U` over which the sheaf is the constant sheaf on a finitely generated module. -/
+constant sheaf on a finitely generated `Λ`-module (`ModuleCat.isFG.{u} Λ`): every étale `S`-scheme
+is covered by étale maps `V ⟶ U` over which the sheaf is the constant sheaf on a finitely generated
+module. -/
 abbrev IsFiniteLisse (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) : Prop :=
-  F.IsLocallyConstantIn (smallEtaleTopology S) fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M
+  F.IsLocallyConstantIn (smallEtaleTopology S) (ModuleCat.isFG.{u} Λ)
 
 /-- The constant étale sheaf on a finitely generated `Λ`-module is finite lisse. -/
 theorem isFiniteLisse_constantSheaf (M : ModuleCat.{u} Λ) [Module.Finite Λ M] :
     ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M).IsFiniteLisse :=
-  isLocallyConstantIn_constantSheaf (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) ‹_›
+  isLocallyConstantIn_constantSheaf ((ModuleCat.isFG_iff M).mpr ‹_›)
 
 theorem IsFiniteLisse.of_iso {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
     (e : F ≅ G) (hF : F.IsFiniteLisse) : G.IsFiniteLisse :=
@@ -296,17 +297,16 @@ theorem IsFiniteLisse.of_iso {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} 
 
 /-- The zero étale sheaf of `Λ`-modules is finite lisse. -/
 theorem isFiniteLisse_zero :
-    (0 : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).IsFiniteLisse := by
-  have : Subsingleton (0 : ModuleCat.{u} Λ) :=
-    ModuleCat.subsingleton_of_isZero (isZero_zero _)
-  exact isLocallyConstantIn_zero (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) inferInstance
+    (0 : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).IsFiniteLisse :=
+  isLocallyConstantIn_zero (ModuleCat.isFG.{u} Λ).prop_zero
 
 /-- Binary biproducts of finite lisse étale sheaves of `Λ`-modules are finite lisse. -/
 theorem IsFiniteLisse.biprod {F₁ F₂ : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
     (h₁ : F₁.IsFiniteLisse) (h₂ : F₂.IsFiniteLisse) :
     (F₁ ⊞ F₂).IsFiniteLisse :=
-  IsLocallyConstantIn.biprod (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M)
-    (fun M₁ M₂ _ _ ↦ Module.Finite.equiv (ModuleCat.biprodIsoProd M₁ M₂).symm.toLinearEquiv) h₁ h₂
+  IsLocallyConstantIn.biprod
+    (fun _ _ hM₁ hM₂ ↦ (ModuleCat.isFG.{u} Λ).prop_biprod_of_isClosedUnderBinaryProducts hM₁ hM₂)
+    h₁ h₂
 
 /-- The stalks of a finite lisse étale sheaf of `Λ`-modules at geometric points are finitely
 generated `Λ`-modules. -/
@@ -314,7 +314,7 @@ theorem IsFiniteLisse.finite_etaleStalk {F : Sheaf (smallEtaleTopology S) (Modul
     (hF : F.IsFiniteLisse) {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) :
     Module.Finite Λ ((etaleStalk Λ s).obj F) := by
   obtain ⟨M, hM, ⟨e⟩⟩ := IsLocallyConstantIn.exists_sheafFiber_iso hF (pointSmallEtale s)
-  exact Module.Finite.equiv e.symm.toLinearEquiv
+  exact (ModuleCat.isFG_iff _).mp ((ModuleCat.isFG.{u} Λ).prop_of_iso e.symm hM)
 
 /-- **Base-change stability of finite lisse sheaves.** Pulling a finite lisse étale sheaf of
 `Λ`-modules back along any morphism of schemes `f : X ⟶ Y` yields a finite lisse sheaf on `X`. -/
@@ -353,10 +353,6 @@ section SepClosed
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
-private lemma isClosedUnderIsomorphisms_finite :
-    ObjectProperty.IsClosedUnderIsomorphisms (fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) :=
-  ⟨fun e _ ↦ Module.Finite.equiv e.toLinearEquiv⟩
-
 /-- **Finite lisse sheaves on a separably closed field.** Over `Spec Ω` with `Ω` separably closed,
 an étale sheaf of `Λ`-modules is finite lisse if and only if its module of global sections is
 finitely generated over `Λ`. -/
@@ -364,8 +360,7 @@ theorem isFiniteLisse_iff_finite_Γ_of_isSepClosed
     (F : Sheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)) :
     F.IsFiniteLisse ↔
       Module.Finite Λ ((Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F) :=
-  have := isClosedUnderIsomorphisms_finite (Λ := Λ)
-  isLocallyConstantIn_iff_prop_Γ_obj (fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) F
+  (isLocallyConstantIn_iff_prop_Γ_obj (ModuleCat.isFG.{u} Λ) F).trans (ModuleCat.isFG_iff _)
 
 /-- Over `Spec Ω` with `Ω` separably closed, an étale sheaf of `Λ`-modules is finite lisse if and
 only if it is globally isomorphic to the constant sheaf on a finitely generated `Λ`-module. -/
@@ -375,9 +370,9 @@ theorem isFiniteLisse_iff_exists_finite_iso_constantSheaf_of_isSepClosed
       ∃ (M : ModuleCat.{u} Λ) (_ : Module.Finite Λ M),
         Nonempty (F ≅ (constantSheaf (smallEtaleTopology (Spec (.of Ω)))
           (ModuleCat.{u} Λ)).obj M) :=
-  (isLocallyConstantIn_iff_exists_iso_constantSheaf
-    (fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) F).trans
-    ⟨fun ⟨M, hM, e⟩ ↦ ⟨M, hM, e⟩, fun ⟨M, hM, e⟩ ↦ ⟨M, hM, e⟩⟩
+  (isLocallyConstantIn_iff_exists_iso_constantSheaf (ModuleCat.isFG.{u} Λ) F).trans
+    (exists_congr fun M ↦ ⟨fun ⟨hM, e⟩ ↦ ⟨(ModuleCat.isFG_iff M).mp hM, e⟩,
+      fun ⟨hM, e⟩ ↦ ⟨(ModuleCat.isFG_iff M).mpr hM, e⟩⟩)
 
 /-- For any étale sheaf of `Λ`-modules `F` on `S` and any geometric point `s : Spec Ω ⟶ S`, the
 pullback `s^* F` on `Spec Ω` is finite lisse if and only if the geometric stalk `F_s` is a finitely
@@ -386,9 +381,8 @@ theorem isFiniteLisse_smallEtalePullback_iff_finite_etaleStalk
     (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) (s : Spec (.of Ω) ⟶ S) :
     ((s.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse ↔
       Module.Finite Λ ((etaleStalk Λ s).obj F) :=
-  have := isClosedUnderIsomorphisms_finite (Λ := Λ)
-  isLocallyConstantIn_smallEtalePullback_iff_prop_sheafFiber_obj s
-    (fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) F
+  (isLocallyConstantIn_smallEtalePullback_iff_prop_sheafFiber_obj s
+    (ModuleCat.isFG.{u} Λ) F).trans (ModuleCat.isFG_iff _)
 
 end SepClosed
 

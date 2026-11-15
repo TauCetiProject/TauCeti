@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
-public import Mathlib.CategoryTheory.Sites.Equivalence
 public import Mathlib.CategoryTheory.Sites.LocalSite
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Continuous
+public import TauCeti.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Sites.Point.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Over
 
@@ -191,32 +191,6 @@ lemma IsLocallyConstantIn.biprod [Preadditive A] [HasBinaryBiproducts A]
       ((J.overPullback A Y).mapBiprod _ _).symm ≪≫
       (J.overPullback A Y).mapIso ((constantSheaf J A).mapBiprod M₁ M₂).symm⟩⟩
 
-/-- Over a terminal object `T`, the restriction functor `J.overPullback A T` is an equivalence of
-sheaf categories, induced by `Over.equivalenceOfIsTerminal hT`. -/
-private lemma isEquivalence_overPullback_of_isTerminal {C : Type u} [Category.{v} C]
-    (J : GrothendieckTopology C) (A : Type u') [Category.{v'} A] {T : C} (hT : IsTerminal T) :
-    (J.overPullback A T).IsEquivalence := by
-  have : (Over.equivalenceOfIsTerminal hT).functor.IsCocontinuous (J.over T) J :=
-    inferInstanceAs ((Over.forget T).IsCocontinuous (J.over T) J)
-  have : (Over.equivalenceOfIsTerminal hT).inverse.IsCocontinuous J (J.over T) :=
-    ⟨fun {X S} hS ↦ by
-      refine J.superset_covering ?_ ((J.mem_over_iff S).mp hS)
-      rintro Y _ ⟨Z, g, h, hSg, rfl⟩
-      change S.arrows ((Over.equivalenceOfIsTerminal hT).inverse.map (h ≫ (Over.forget T).map g))
-      have hk : ((Over.equivalenceOfIsTerminal hT).inverse).map (h ≫ (Over.forget T).map g) =
-          (Over.homMk h (hT.hom_ext _ _) :
-            (Over.equivalenceOfIsTerminal hT).inverse.obj Y ⟶ Z) ≫ g :=
-        Over.OverMorphism.ext rfl
-      exact hk.symm ▸ S.downward_closed hSg _⟩
-  have : (Over.equivalenceOfIsTerminal hT).symm.inverse.IsDenseSubsite (J.over T) J :=
-    (Over.equivalenceOfIsTerminal hT).isDenseSubsite_functor_of_isCocontinuous (J.over T) J
-  exact @Functor.isEquivalence_of_iso _ _ _ _
-    ((Over.equivalenceOfIsTerminal hT).symm.sheafCongr J (J.over T) A).functor
-    (J.overPullback A T)
-    (NatIso.ofComponents (fun _ ↦ Iso.refl _)
-      (fun _ ↦ by ext; exact (Category.comp_id _).trans (Category.id_comp _).symm))
-    ((Over.equivalenceOfIsTerminal hT).symm.sheafCongr J (J.over T) A).isEquivalence_functor
-
 /-- On a local site, a sheaf is locally constant with values in `P` if and only if it is globally
 isomorphic to `(constantSheaf J A).obj M` for some `M : A` satisfying `P`. -/
 lemma isLocallyConstantIn_iff_exists_iso_constantSheaf [J.IsLocalSite] (P : ObjectProperty A)
@@ -226,7 +200,6 @@ lemma isLocallyConstantIn_iff_exists_iso_constantSheaf [J.IsLocalSite] (P : Obje
   · intro hF
     obtain ⟨M, hM, ⟨e⟩⟩ :=
       GrothendieckTopology.IsLocalSite.from_terminal_mem_of_mem J (𝟙 (⊤_ C)) (hF (⊤_ C))
-    have := isEquivalence_overPullback_of_isTerminal J A terminalIsTerminal
     exact ⟨M, hM, ⟨(J.overPullback A (⊤_ C)).asEquivalence.fullyFaithfulFunctor.preimageIso e⟩⟩
   · rintro ⟨M, hM, ⟨e⟩⟩
     exact (isLocallyConstantIn_constantSheaf hM).of_iso e.symm

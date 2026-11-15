@@ -72,6 +72,8 @@ lemma functorPushforward_over_map_mem_restrictedTopology_iff {Y : C} {f : Y ⟶ 
       S ∈ ((Over.forget P ⊤ Y).restrictedTopology (J.over Y)) V := by
   rw [mem_restrictedTopology_over_iff, mem_restrictedTopology_over_iff,
     ← Sieve.functorPushforward_comp]
+  -- Align `((Over.map ⊤ hf).obj V).left` with `(F ⋙ G).obj V` in the dependent type of `J` so
+  -- `rw [Over.map_forget_forget]` can rewrite both occurrences simultaneously.
   change Sieve.functorPushforward (Over.map ⊤ hf ⋙ Over.forget P ⊤ X ⋙ CategoryTheory.Over.forget X)
       S ∈ J ((Over.map ⊤ hf ⋙ Over.forget P ⊤ X ⋙ CategoryTheory.Over.forget X).obj V) ↔ _
   rw [Over.map_forget_forget]
@@ -89,6 +91,8 @@ instance isDenseSubsite_iteratedSliceEquiv_inverse (U : P.Over ⊤ X)
   functorPushforward_mem_iff {V S} := by
     rw [Over.iteratedSliceEquiv_inverse, GrothendieckTopology.mem_over_iff, Sieve.overEquiv_apply,
       ← Sieve.functorPushforward_comp]
+    -- Align `(U.iteratedSliceBackward.obj V).left` with `(F ⋙ G).obj V` in the dependent target
+    -- topology before rewriting the composite functor with `Over.iteratedSliceBackward_forget`.
     change Sieve.functorPushforward (U.iteratedSliceBackward ⋙ CategoryTheory.Over.forget U) S ∈
         ((Over.forget P ⊤ X).restrictedTopology (J.over X))
           ((U.iteratedSliceBackward ⋙ CategoryTheory.Over.forget U).obj V) ↔ _
@@ -148,9 +152,7 @@ instance isContinuous_over_map {Y : C} {f : Y ⟶ X} (hf : P f)
       ((Over.forget P ⊤ Y).restrictedTopology (J.over Y))
       (((Over.forget P ⊤ X).restrictedTopology (J.over X)).over (Over.mk ⊤ f hf)) :=
     isContinuous_iteratedSliceBackward J (Over.mk ⊤ f hf)
-  rw [show Over.map (P := P) ⊤ hf =
-      Over.map (X := (Over.mk ⊤ f hf).left) (Y := X) ⊤ (Over.mk ⊤ f hf).prop from rfl,
-    ← Over.iteratedSliceBackward_forget (Over.mk ⊤ f hf)]
+  rw [← Over.iteratedSliceBackward_mk_forget hf]
   exact Functor.isContinuous_comp (Over.iteratedSliceBackward (Over.mk ⊤ f hf))
     (CategoryTheory.Over.forget (Over.mk ⊤ f hf))
     ((Over.forget P ⊤ Y).restrictedTopology (J.over Y))
@@ -199,6 +201,84 @@ lemma overRestrictedSheafEquiv_inverse_obj_obj (U : P.Over ⊤ X) (A : Type*) [C
       (Over.iteratedSliceForward U).op ⋙ F.obj := by
   rw [← Over.iteratedSliceEquiv_functor]
   rfl
+
+@[simp]
+lemma overRestrictedSheafEquiv_functor_map_hom_app (U : P.Over ⊤ X) (A : Type*) [Category* A]
+    [(Over.forget P ⊤ X).LocallyCoverDense (J.over X)]
+    [(Over.forget P ⊤ U.left).LocallyCoverDense (J.over U.left)]
+    {F G : Sheaf (((Over.forget P ⊤ X).restrictedTopology (J.over X)).over U) A} (f : F ⟶ G)
+    (V : (P.Over ⊤ U.left)ᵒᵖ) :
+    (((overRestrictedSheafEquiv J U A).functor.map f).hom.app V) =
+      eqToHom (by simp) ≫ f.hom.app (Opposite.op ((Over.iteratedSliceBackward U).obj V.unop)) ≫
+        eqToHom (by simp) := by
+  generalize_proofs h₁ h₂ h₃ h₄
+  revert h₁ h₂ h₃ h₄
+  rw [← Over.iteratedSliceEquiv_inverse]
+  intros
+  exact ((Category.id_comp (obj := A) _).trans (Category.comp_id _)).symm
+
+@[simp]
+lemma overRestrictedSheafEquiv_inverse_map_hom_app (U : P.Over ⊤ X) (A : Type*) [Category* A]
+    [(Over.forget P ⊤ X).LocallyCoverDense (J.over X)]
+    [(Over.forget P ⊤ U.left).LocallyCoverDense (J.over U.left)]
+    {F G : Sheaf ((Over.forget P ⊤ U.left).restrictedTopology (J.over U.left)) A} (f : F ⟶ G)
+    (V : (CategoryTheory.Over U)ᵒᵖ) :
+    (((overRestrictedSheafEquiv J U A).inverse.map f).hom.app V) =
+      eqToHom (by simp) ≫ f.hom.app (Opposite.op ((Over.iteratedSliceForward U).obj V.unop)) ≫
+        eqToHom (by simp) := by
+  generalize_proofs h₁ h₂ h₃ h₄
+  revert h₁ h₂ h₃ h₄
+  rw [← Over.iteratedSliceEquiv_functor]
+  intros
+  exact ((Category.id_comp (obj := A) _).trans (Category.comp_id _)).symm
+
+@[simp]
+lemma overRestrictedSheafEquiv_unitIso_hom_app_hom_app (U : P.Over ⊤ X) (A : Type*) [Category* A]
+    [(Over.forget P ⊤ X).LocallyCoverDense (J.over X)]
+    [(Over.forget P ⊤ U.left).LocallyCoverDense (J.over U.left)]
+    (F : Sheaf (((Over.forget P ⊤ X).restrictedTopology (J.over X)).over U) A)
+    (V : (CategoryTheory.Over U)ᵒᵖ) :
+    (((overRestrictedSheafEquiv J U A).unitIso.hom.app F).hom.app V) =
+      F.obj.map ((Over.iteratedSliceEquiv U).unitIso.inv.app V.unop).op ≫ eqToHom (by simp) := by
+  simp only [overRestrictedSheafEquiv, Equivalence.sheafCongr_unitIso,
+    Equivalence.sheafCongr.unitIso_hom_app_hom_app]
+  exact (Category.comp_id _).symm
+
+@[simp]
+lemma overRestrictedSheafEquiv_unitIso_inv_app_hom_app (U : P.Over ⊤ X) (A : Type*) [Category* A]
+    [(Over.forget P ⊤ X).LocallyCoverDense (J.over X)]
+    [(Over.forget P ⊤ U.left).LocallyCoverDense (J.over U.left)]
+    (F : Sheaf (((Over.forget P ⊤ X).restrictedTopology (J.over X)).over U) A)
+    (V : (CategoryTheory.Over U)ᵒᵖ) :
+    (((overRestrictedSheafEquiv J U A).unitIso.inv.app F).hom.app V) =
+      eqToHom (by simp) ≫ F.obj.map ((Over.iteratedSliceEquiv U).unitIso.hom.app V.unop).op := by
+  simp only [overRestrictedSheafEquiv, Equivalence.sheafCongr_unitIso,
+    Equivalence.sheafCongr.unitIso_inv_app_hom_app]
+  exact (Category.id_comp _).symm
+
+@[simp]
+lemma overRestrictedSheafEquiv_counitIso_hom_app_hom_app (U : P.Over ⊤ X) (A : Type*) [Category* A]
+    [(Over.forget P ⊤ X).LocallyCoverDense (J.over X)]
+    [(Over.forget P ⊤ U.left).LocallyCoverDense (J.over U.left)]
+    (F : Sheaf ((Over.forget P ⊤ U.left).restrictedTopology (J.over U.left)) A)
+    (V : (P.Over ⊤ U.left)ᵒᵖ) :
+    (((overRestrictedSheafEquiv J U A).counitIso.hom.app F).hom.app V) =
+      eqToHom (by simp) ≫ F.obj.map ((Over.iteratedSliceEquiv U).counitIso.inv.app V.unop).op := by
+  simp only [overRestrictedSheafEquiv, Equivalence.sheafCongr_counitIso,
+    Equivalence.sheafCongr.counitIso_hom_app_hom_app]
+  exact (Category.id_comp _).symm
+
+@[simp]
+lemma overRestrictedSheafEquiv_counitIso_inv_app_hom_app (U : P.Over ⊤ X) (A : Type*) [Category* A]
+    [(Over.forget P ⊤ X).LocallyCoverDense (J.over X)]
+    [(Over.forget P ⊤ U.left).LocallyCoverDense (J.over U.left)]
+    (F : Sheaf ((Over.forget P ⊤ U.left).restrictedTopology (J.over U.left)) A)
+    (V : (P.Over ⊤ U.left)ᵒᵖ) :
+    (((overRestrictedSheafEquiv J U A).counitIso.inv.app F).hom.app V) =
+      F.obj.map ((Over.iteratedSliceEquiv U).counitIso.hom.app V.unop).op ≫ eqToHom (by simp) := by
+  simp only [overRestrictedSheafEquiv, Equivalence.sheafCongr_counitIso,
+    Equivalence.sheafCongr.counitIso_inv_app_hom_app]
+  exact (Category.comp_id _).symm
 
 /-- Under `overRestrictedSheafEquiv`, restricting a sheaf on `P.Over ⊤ X` to the slice over `U`
 identifies with pushing it forward along `Over.map ⊤ U.prop : P.Over ⊤ U.left ⥤ P.Over ⊤ X`. -/

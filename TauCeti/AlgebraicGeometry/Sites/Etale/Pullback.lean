@@ -123,6 +123,10 @@ noncomputable def Hom.smallEtaleBaseChangeFst (f : X ⟶ Y) (V : Y.Etale) :
     (f.smallEtaleBaseChange.obj V).left ⟶ V.left :=
   pullback.fst V.hom f
 
+instance Hom.etale_smallEtaleBaseChangeFst (f : X ⟶ Y) [AlgebraicGeometry.Etale f] (V : Y.Etale) :
+    AlgebraicGeometry.Etale (f.smallEtaleBaseChangeFst V) :=
+  MorphismProperty.pullback_fst V.hom f inferInstance
+
 @[reassoc (attr := simp)]
 lemma Hom.smallEtaleBaseChangeFst_hom (f : X ⟶ Y) (V : Y.Etale) :
     f.smallEtaleBaseChangeFst V ≫ V.hom =
@@ -165,18 +169,18 @@ lemma Hom.smallEtaleBaseChangeCompForgetIso_inv_app_left_fst (f : X ⟶ Y) (V : 
 /-- Base change along `𝟙 X` on `X.Etale` identifies naturally with the identity functor. -/
 noncomputable def smallEtaleBaseChangeId (X : Scheme.{u}) :
     Hom.smallEtaleBaseChange (𝟙 X) ≅ 𝟭 X.Etale :=
-  MorphismProperty.Over.pullbackId @Etale X
+  MorphismProperty.Over.pullbackId @Etale ⊤ X
 
 @[simp]
 lemma smallEtaleBaseChangeId_hom_app_left (X : Scheme.{u}) (V : X.Etale) :
     ((smallEtaleBaseChangeId X).hom.app V).left = Hom.smallEtaleBaseChangeFst (𝟙 X) V :=
-  MorphismProperty.Over.pullbackId_hom_app_left (P := @AlgebraicGeometry.Etale) X V
+  MorphismProperty.Over.pullbackId_hom_app_left (P := @AlgebraicGeometry.Etale) (Q := ⊤) X V
 
 @[reassoc (attr := simp)]
 lemma smallEtaleBaseChangeId_inv_app_left_fst (X : Scheme.{u}) (V : X.Etale) :
     ((smallEtaleBaseChangeId X).inv.app V).left ≫ Hom.smallEtaleBaseChangeFst (𝟙 X) V =
       𝟙 V.left :=
-  MorphismProperty.Over.pullbackId_inv_app_left_fst (P := @AlgebraicGeometry.Etale) X V
+  MorphismProperty.Over.pullbackId_inv_app_left_fst (P := @AlgebraicGeometry.Etale) (Q := ⊤) X V
 
 /-- Base change on small étale sites commutes with composition up to natural isomorphism. -/
 noncomputable def Hom.smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) :
@@ -187,12 +191,8 @@ noncomputable def Hom.smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) :
 lemma Hom.smallEtaleBaseChangeComp_hom_app_left_fst_fst (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
     ((f.smallEtaleBaseChangeComp g).hom.app V).left ≫
       f.smallEtaleBaseChangeFst (g.smallEtaleBaseChange.obj V) ≫ g.smallEtaleBaseChangeFst V =
-        (f ≫ g).smallEtaleBaseChangeFst V := by
-  change (pullback.congrHom (rfl : V.hom = V.hom) (rfl : f ≫ g = f ≫ g) ≪≫
-      (pullbackLeftPullbackSndIso V.hom g f).symm).hom ≫
-    pullback.fst (pullback.snd V.hom g) f ≫ pullback.fst V.hom g =
-      pullback.fst V.hom (f ≫ g)
-  simp
+        (f ≫ g).smallEtaleBaseChangeFst V :=
+  MorphismProperty.Over.pullbackComp_left_fst_fst (P := @AlgebraicGeometry.Etale) (Q := ⊤) f g V
 
 @[reassoc (attr := simp)]
 lemma Hom.smallEtaleBaseChangeComp_inv_app_left_fst (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
@@ -214,28 +214,27 @@ noncomputable def Hom.smallEtaleBaseChangeCongr {f g : X ⟶ Y} (h : f = g) :
 @[reassoc (attr := simp)]
 lemma Hom.smallEtaleBaseChangeCongr_hom_app_left_fst {f g : X ⟶ Y} (h : f = g) (V : Y.Etale) :
     ((Hom.smallEtaleBaseChangeCongr h).hom.app V).left ≫ g.smallEtaleBaseChangeFst V =
-      f.smallEtaleBaseChangeFst V := by
-  subst h
-  change (pullback.congrHom (rfl : V.hom = V.hom) (rfl : f = f)).hom ≫
-    pullback.fst V.hom f = pullback.fst V.hom f
-  simp
+      f.smallEtaleBaseChangeFst V :=
+  MorphismProperty.Over.pullbackCongr_hom_app_left_fst (P := @AlgebraicGeometry.Etale) (Q := ⊤) h V
 
 @[reassoc (attr := simp)]
 lemma Hom.smallEtaleBaseChangeCongr_inv_app_left_fst {f g : X ⟶ Y} (h : f = g) (V : Y.Etale) :
     ((Hom.smallEtaleBaseChangeCongr h).inv.app V).left ≫ f.smallEtaleBaseChangeFst V =
       g.smallEtaleBaseChangeFst V := by
-  subst h
-  change (pullback.congrHom (rfl : V.hom = V.hom) (rfl : f = f)).inv ≫
-    pullback.fst V.hom f = pullback.fst V.hom f
-  simp
+  rw [← Hom.smallEtaleBaseChangeCongr_hom_app_left_fst h V]
+  have h' := congrArg (fun k : g.smallEtaleBaseChange.obj V ⟶ g.smallEtaleBaseChange.obj V ↦
+      k.left) ((Hom.smallEtaleBaseChangeCongr h).inv_hom_id_app V)
+  exact (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ _) h').trans (Category.id_comp _))
 
 @[simp]
 lemma Hom.smallEtaleBaseChangeCongr_refl (f : X ⟶ Y) :
     Hom.smallEtaleBaseChangeCongr (rfl : f = f) = Iso.refl f.smallEtaleBaseChange := by
   ext V
   apply MorphismProperty.Over.Hom.ext
-  change (pullback.congrHom (rfl : V.hom = V.hom) (rfl : f = f)).hom = 𝟙 (pullback V.hom f)
-  simp
+  exact (f.isPullback_smallEtaleBaseChange V).hom_ext
+    ((Hom.smallEtaleBaseChangeCongr_hom_app_left_fst rfl V).trans (Category.id_comp _).symm)
+    ((MorphismProperty.Over.w _).trans (Category.id_comp _).symm)
 
 instance Hom.preservesFiniteLimits_smallEtaleBaseChange (f : X ⟶ Y) :
     PreservesFiniteLimits f.smallEtaleBaseChange :=
@@ -268,11 +267,81 @@ instance Hom.isContinuous_smallEtaleBaseChange (f : X ⟶ Y) :
   have := locallyCoverDense_over_forget_etale X
   MorphismProperty.isContinuous_over_pullback etaleTopology @AlgebraicGeometry.Etale f
 
+/-- For an étale morphism `f : X ⟶ Y`, post-composition with `f` defines a functor
+`X.Etale ⥤ Y.Etale` left adjoint to `f.smallEtaleBaseChange`. -/
+abbrev Hom.smallEtaleMap (f : X ⟶ Y) [AlgebraicGeometry.Etale f] : X.Etale ⥤ Y.Etale :=
+  MorphismProperty.Over.map (P := @AlgebraicGeometry.Etale) ⊤
+    (inferInstance : AlgebraicGeometry.Etale f)
+
+@[simp]
+lemma Hom.smallEtaleMap_obj_left (f : X ⟶ Y) [AlgebraicGeometry.Etale f] (U : X.Etale) :
+    (f.smallEtaleMap.obj U).left = U.left :=
+  (rfl)
+
+@[simp]
+lemma Hom.smallEtaleMap_obj_hom (f : X ⟶ Y) [AlgebraicGeometry.Etale f] (U : X.Etale) :
+    (f.smallEtaleMap.obj U).hom = U.hom ≫ f :=
+  (rfl)
+
+@[simp]
+lemma Hom.smallEtaleMap_map_left (f : X ⟶ Y) [AlgebraicGeometry.Etale f]
+    {U V : X.Etale} (g : U ⟶ V) :
+    (f.smallEtaleMap.map g).left = g.left :=
+  (rfl)
+
+/-- For an étale morphism `f : X ⟶ Y`, `f.smallEtaleMap` preserves coverings for the small étale
+topologies. -/
+lemma Hom.coverPreserving_smallEtaleMap (f : X ⟶ Y) [AlgebraicGeometry.Etale f] :
+    CoverPreserving X.smallEtaleTopology Y.smallEtaleTopology f.smallEtaleMap :=
+  have := locallyCoverDense_over_forget_etale Y
+  have := locallyCoverDense_over_forget_etale X
+  MorphismProperty.coverPreserving_over_map (P := @AlgebraicGeometry.Etale) etaleTopology
+    (inferInstance : AlgebraicGeometry.Etale f)
+
+instance Hom.isContinuous_smallEtaleMap (f : X ⟶ Y) [AlgebraicGeometry.Etale f] :
+    f.smallEtaleMap.IsContinuous X.smallEtaleTopology Y.smallEtaleTopology :=
+  have := locallyCoverDense_over_forget_etale Y
+  have := locallyCoverDense_over_forget_etale X
+  MorphismProperty.isContinuous_over_map (P := @AlgebraicGeometry.Etale) etaleTopology
+    (inferInstance : AlgebraicGeometry.Etale f)
+
+/-- When `f : X ⟶ Y` is étale, `f.smallEtaleMap : X.Etale ⥤ Y.Etale` is left adjoint to
+`f.smallEtaleBaseChange`. -/
+noncomputable def Hom.smallEtaleMapPullbackAdj (f : X ⟶ Y) [AlgebraicGeometry.Etale f] :
+    f.smallEtaleMap ⊣ f.smallEtaleBaseChange :=
+  MorphismProperty.Over.mapPullbackAdj @AlgebraicGeometry.Etale ⊤ f inferInstance trivial
+
+@[reassoc (attr := simp)]
+lemma Hom.smallEtaleMapPullbackAdj_unit_app_left_fst (f : X ⟶ Y) [AlgebraicGeometry.Etale f]
+    (U : X.Etale) :
+    (f.smallEtaleMapPullbackAdj.unit.app U).left ≫
+      f.smallEtaleBaseChangeFst (f.smallEtaleMap.obj U) = 𝟙 U.left := by
+  dsimp [Hom.smallEtaleMapPullbackAdj, MorphismProperty.Over.mapPullbackAdj,
+    Hom.smallEtaleBaseChangeFst]
+  exact pullback.lift_fst _ _ _
+
+@[simp]
+lemma Hom.smallEtaleMapPullbackAdj_counit_app_left (f : X ⟶ Y) [AlgebraicGeometry.Etale f]
+    (V : Y.Etale) :
+    (f.smallEtaleMapPullbackAdj.counit.app V).left = f.smallEtaleBaseChangeFst V := by
+  dsimp [Hom.smallEtaleMapPullbackAdj, MorphismProperty.Over.mapPullbackAdj,
+    Hom.smallEtaleBaseChangeFst]
+  rfl
+
 end BaseChange
 
 section Pullback
 
 variable {X Y Z : Scheme.{u}}
+
+/-- When `f : X ⟶ Y` is étale, `f.smallEtaleBaseChange.sheafPushforwardContinuous` admits a left
+adjoint unconditionally (given up to isomorphism by sheaf pushforward along `f.smallEtaleMap`). -/
+instance Hom.isRightAdjoint_smallEtaleBaseChange_sheafPushforwardContinuous_of_etale
+    (f : X ⟶ Y) [AlgebraicGeometry.Etale f] (A : Type u') [Category.{v'} A] :
+    (f.smallEtaleBaseChange.sheafPushforwardContinuous A
+      Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint :=
+  (f.smallEtaleMapPullbackAdj.sheafPushforwardContinuous
+    X.smallEtaleTopology Y.smallEtaleTopology).isRightAdjoint
 
 /-- The étale sheaf pushforward along `f : X ⟶ Y` admits a left adjoint whenever `A` has `u`-small
 colimits, weak sheafification on `X_ét`, and the affine-to-small étale sheaf pushforward on `Y` is
@@ -293,6 +362,25 @@ instance Hom.isRightAdjoint_smallEtaleBaseChange_sheafPushforwardContinuous
     (AffineEtale.Spec Y) f.smallEtaleBaseChange A
     (AffineEtale.topology Y) Y.smallEtaleTopology X.smallEtaleTopology
 
+/-- If `f : X ⟶ Y` and `g : Y ⟶ Z` admit étale sheaf pullbacks with values in `A`, so does
+`f ≫ g`. -/
+lemma Hom.isRightAdjoint_comp_smallEtaleBaseChange_sheafPushforwardContinuous
+    (f : X ⟶ Y) (g : Y ⟶ Z) (A : Type u') [Category.{v'} A]
+    [(f.smallEtaleBaseChange.sheafPushforwardContinuous A
+      Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint]
+    [(g.smallEtaleBaseChange.sheafPushforwardContinuous A
+      Z.smallEtaleTopology Y.smallEtaleTopology).IsRightAdjoint] :
+    ((f ≫ g).smallEtaleBaseChange.sheafPushforwardContinuous A
+      Z.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint := by
+  have := Functor.isContinuous_comp g.smallEtaleBaseChange f.smallEtaleBaseChange
+    Z.smallEtaleTopology Y.smallEtaleTopology X.smallEtaleTopology
+  have := Functor.isRightAdjoint_sheafPushforwardContinuous_comp A
+    Z.smallEtaleTopology Y.smallEtaleTopology X.smallEtaleTopology
+    g.smallEtaleBaseChange f.smallEtaleBaseChange
+  exact Functor.isRightAdjoint_of_iso
+    (Functor.sheafPushforwardContinuousIso (f.smallEtaleBaseChangeComp g).symm
+      A Z.smallEtaleTopology X.smallEtaleTopology)
+
 /-- Pullback (inverse image) `f^* : Sheaf Y.smallEtaleTopology A ⥤ Sheaf X.smallEtaleTopology A` of
 étale sheaves along a morphism of schemes `f : X ⟶ Y`. -/
 noncomputable abbrev Hom.smallEtalePullback (f : X ⟶ Y) (A : Type u') [Category.{v'} A]
@@ -311,23 +399,17 @@ noncomputable abbrev Hom.smallEtaleAdjunction (f : X ⟶ Y) (A : Type u') [Categ
   f.smallEtaleBaseChange.sheafAdjunctionContinuous A Y.smallEtaleTopology X.smallEtaleTopology
 
 /-- Pullback of étale sheaves along `𝟙 X` identifies with the identity functor. -/
-noncomputable def smallEtalePullbackId (X : Scheme.{u}) (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (𝟙 X)).sheafPushforwardContinuous A
-      X.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
+noncomputable def smallEtalePullbackId (X : Scheme.{u}) (A : Type u') [Category.{v'} A] :
     Hom.smallEtalePullback (𝟙 X) A ≅ 𝟭 (Sheaf X.smallEtaleTopology A) :=
   Functor.sheafPullbackId' A X.smallEtaleTopology (smallEtaleBaseChangeId X)
 
-lemma smallEtalePullbackId_eq (X : Scheme.{u}) (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (𝟙 X)).sheafPushforwardContinuous A
-      X.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
+lemma smallEtalePullbackId_eq (X : Scheme.{u}) (A : Type u') [Category.{v'} A] :
     smallEtalePullbackId X A =
       Functor.sheafPullbackId' A X.smallEtaleTopology (smallEtaleBaseChangeId X) :=
   (rfl)
 
 @[simp]
-lemma conjugateEquiv_smallEtalePullbackId_hom (X : Scheme.{u}) (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (𝟙 X)).sheafPushforwardContinuous A
-      X.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
+lemma conjugateEquiv_smallEtalePullbackId_hom (X : Scheme.{u}) (A : Type u') [Category.{v'} A] :
     conjugateEquiv Adjunction.id (Hom.smallEtaleAdjunction (𝟙 X) A)
       (smallEtalePullbackId X A).hom =
       (Functor.sheafPushforwardContinuousId' (smallEtaleBaseChangeId X)
@@ -338,9 +420,7 @@ lemma conjugateEquiv_smallEtalePullbackId_hom (X : Scheme.{u}) (A : Type u') [Ca
   rfl
 
 @[simp]
-lemma conjugateEquiv_smallEtalePullbackId_inv (X : Scheme.{u}) (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (𝟙 X)).sheafPushforwardContinuous A
-      X.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
+lemma conjugateEquiv_smallEtalePullbackId_inv (X : Scheme.{u}) (A : Type u') [Category.{v'} A] :
     conjugateEquiv (Hom.smallEtaleAdjunction (𝟙 X) A) Adjunction.id
       (smallEtalePullbackId X A).inv =
       (Functor.sheafPushforwardContinuousId' (smallEtaleBaseChangeId X)
@@ -558,8 +638,39 @@ noncomputable def Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso :
 lemma Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso_hom_app_left
     (V : Y.Etale) (u : (pointSmallEtale x).fiber.obj (f.smallEtaleBaseChange.obj V)) : dsimp%
     ((f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x).hom.app V u).left =
-      u.left ≫ f.smallEtaleBaseChangeFst V :=
-  (Category.id_comp _).trans (congrArg (· ≫ pullback.fst V.hom f) (Category.comp_id u.left))
+      u.left ≫ f.smallEtaleBaseChangeFst V := by
+  let e₀ : (CategoryTheory.Over.map f).obj (CategoryTheory.Over.mk x) ≅
+      CategoryTheory.Over.mk (x ≫ f) :=
+    CategoryTheory.Over.isoMk (Iso.refl _) (Category.id_comp _)
+  have h : (f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x).hom.app V =
+      TypeCat.ofHom (fun u' ↦
+        e₀.inv ≫
+          (CategoryTheory.Over.map f).map
+            ((u' : CategoryTheory.Over.mk x ⟶
+              (Etale.forget X).obj (f.smallEtaleBaseChange.obj V)) ≫
+              f.smallEtaleBaseChangeCompForgetIso.hom.app V) ≫
+          (CategoryTheory.Over.mapPullbackAdj f).counit.app ((Etale.forget Y).obj V)) := by
+    dsimp only [Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso, pointSmallEtale]
+    ext u'
+    simp [e₀, Adjunction.compCoyonedaIso, Adjunction.homEquiv_counit]
+  have hu : ((f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x).hom.app V u :
+      CategoryTheory.Over.mk (x ≫ f) ⟶ (Etale.forget Y).obj V) =
+      e₀.inv ≫
+        (CategoryTheory.Over.map f).map
+          ((u : CategoryTheory.Over.mk x ⟶ (Etale.forget X).obj (f.smallEtaleBaseChange.obj V)) ≫
+            f.smallEtaleBaseChangeCompForgetIso.hom.app V) ≫
+        (CategoryTheory.Over.mapPullbackAdj f).counit.app ((Etale.forget Y).obj V) :=
+    CategoryTheory.types_congr_hom h u
+  have hleft {W' : CategoryTheory.Over X} {V' : CategoryTheory.Over Y}
+      (u' : CategoryTheory.Over.mk x ⟶ W')
+      (k : W' ⟶ (CategoryTheory.Over.pullback f).obj V') :
+      (e₀.inv ≫ (CategoryTheory.Over.map f).map (u' ≫ k) ≫
+        (CategoryTheory.Over.mapPullbackAdj f).counit.app V').left =
+      u'.left ≫ k.left ≫ pullback.fst V'.hom f := by
+    simp [e₀]
+  exact (congrArg CategoryTheory.Over.Hom.left hu).trans
+    ((hleft u (f.smallEtaleBaseChangeCompForgetIso.hom.app V)).trans
+      (congrArg (u.left ≫ ·) (f.smallEtaleBaseChangeCompForgetIso_hom_app_left_fst V)))
 
 @[simp]
 lemma Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso_inv_app_left_fst
@@ -582,6 +693,22 @@ lemma Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso_inv_app_left_fst_assoc
     (congrArg (· ≫ k)
       (Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso_inv_app_left_fst f x V v))
 
+/-- A lift `v` of a geometric point `s : Spec Ω ⟶ S` to `V : S.Etale` induces a canonical section
+`Spec Ω ⟶ V ×_S Spec Ω` in the small étale site of `Spec Ω`. -/
+noncomputable def Hom.smallEtaleBaseChangeSection {S : Scheme.{u}} (s : Spec (.of Ω) ⟶ S)
+    (V : S.Etale) (v : (pointSmallEtale s).fiber.obj V) :
+    Etale.mk (𝟙 (Spec (.of Ω))) ⟶ s.smallEtaleBaseChange.obj V :=
+  MorphismProperty.Over.homMk
+    ((s.isPullback_smallEtaleBaseChange V).lift v.left (𝟙 (Spec (.of Ω)))
+      ((CategoryTheory.Over.w v).trans (Category.id_comp s).symm))
+    ((s.isPullback_smallEtaleBaseChange V).lift_snd _ _ _)
+
+@[reassoc (attr := simp)]
+lemma Hom.smallEtaleBaseChangeSection_left_fst {S : Scheme.{u}} (s : Spec (.of Ω) ⟶ S)
+    (V : S.Etale) (v : (pointSmallEtale s).fiber.obj V) :
+    (s.smallEtaleBaseChangeSection V v).left ≫ s.smallEtaleBaseChangeFst V = v.left :=
+  (s.isPullback_smallEtaleBaseChange V).lift_fst _ _ _
+
 /-- **Stalk of an étale sheaf pullback.** For a morphism `f : X ⟶ Y` and a geometric point
 `x : Spec Ω ⟶ X`, the stalk of `f^* F` at `x` identifies naturally with the stalk of `F` at
 `x ≫ f`. -/
@@ -591,7 +718,7 @@ noncomputable def Hom.smallEtalePullbackCompSheafFiberIso
       Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
     f.smallEtalePullback A ⋙ (pointSmallEtale x).sheafFiber ≅
       (pointSmallEtale (x ≫ f)).sheafFiber :=
-  GrothendieckTopology.Point.sheafFiberComapIsoOfFiberIso
+  GrothendieckTopology.Point.sheafPullbackCompSheafFiberIsoOfFiberIso
     (pointSmallEtale x) (pointSmallEtale (x ≫ f))
     f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange
     (f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x) A
@@ -601,7 +728,7 @@ lemma Hom.smallEtalePullbackCompSheafFiberIso_eq
     [(f.smallEtaleBaseChange.sheafPushforwardContinuous A
       Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
     f.smallEtalePullbackCompSheafFiberIso x A =
-      GrothendieckTopology.Point.sheafFiberComapIsoOfFiberIso
+      GrothendieckTopology.Point.sheafPullbackCompSheafFiberIsoOfFiberIso
         (pointSmallEtale x) (pointSmallEtale (x ≫ f))
         f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange
         (f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x) A :=
@@ -623,7 +750,7 @@ lemma Hom.toPresheafFiber_smallEtalePullbackCompSheafFiberIso_inv_app
         (pointSmallEtale x).toPresheafFiber (f.smallEtaleBaseChange.obj V)
           ((f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x).inv.app V v)
           ((f.smallEtalePullback A).obj F).obj :=
-  GrothendieckTopology.Point.toPresheafFiber_sheafFiberComapIsoOfFiberIso_inv_app
+  GrothendieckTopology.Point.toPresheafFiber_sheafPullbackCompSheafFiberIsoOfFiberIso_inv_app
     (pointSmallEtale x) (pointSmallEtale (x ≫ f))
     f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange
     (f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x) A V v F
@@ -643,7 +770,7 @@ lemma Hom.toPresheafFiber_smallEtalePullbackCompSheafFiberIso_inv_app_assoc
         (pointSmallEtale x).toPresheafFiber (f.smallEtaleBaseChange.obj V)
           ((f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x).inv.app V v)
           ((f.smallEtalePullback A).obj F).obj ≫ h :=
-  GrothendieckTopology.Point.toPresheafFiber_sheafFiberComapIsoOfFiberIso_inv_app_assoc
+  GrothendieckTopology.Point.toPresheafFiber_sheafPullbackCompSheafFiberIsoOfFiberIso_inv_app_assoc
     (pointSmallEtale x) (pointSmallEtale (x ≫ f))
     f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange
     (f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x) A V v F h
@@ -664,7 +791,7 @@ lemma Hom.unit_toPresheafFiber_smallEtalePullbackCompSheafFiberIso_hom_app
         (f.smallEtalePullbackCompSheafFiberIso x A).hom.app F =
       (pointSmallEtale (x ≫ f)).toPresheafFiber V
         ((f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x).hom.app V u) F.obj :=
-  GrothendieckTopology.Point.unit_toPresheafFiber_sheafFiberComapIsoOfFiberIso_hom_app
+  GrothendieckTopology.Point.unit_toPresheafFiber_sheafPullbackCompSheafFiberIsoOfFiberIso_hom_app
     (pointSmallEtale x) (pointSmallEtale (x ≫ f))
     f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange
     (f.smallEtaleBaseChangeCompPointSmallEtaleFiberIso x) A V u F
@@ -701,58 +828,11 @@ section EtaleRestriction
 
 variable {X Y S : Scheme.{u}}
 
-/-- For an étale morphism `f : X ⟶ Y`, post-composition with `f` defines a functor
-`X.Etale ⥤ Y.Etale` left adjoint to `f.smallEtaleBaseChange`. -/
-abbrev Hom.smallEtaleMap (f : X ⟶ Y) [AlgebraicGeometry.Etale f] : X.Etale ⥤ Y.Etale :=
-  MorphismProperty.Over.map (P := @AlgebraicGeometry.Etale) ⊤
-    (inferInstance : AlgebraicGeometry.Etale f)
-
-/-- For an étale morphism `f : X ⟶ Y`, `f.smallEtaleMap` preserves coverings for the small étale
-topologies. -/
-lemma Hom.coverPreserving_smallEtaleMap (f : X ⟶ Y) [AlgebraicGeometry.Etale f] :
-    CoverPreserving X.smallEtaleTopology Y.smallEtaleTopology f.smallEtaleMap :=
-  have := locallyCoverDense_over_forget_etale Y
-  have := locallyCoverDense_over_forget_etale X
-  MorphismProperty.coverPreserving_over_map (P := @AlgebraicGeometry.Etale) etaleTopology
-    (inferInstance : AlgebraicGeometry.Etale f)
-
-instance Hom.isContinuous_smallEtaleMap (f : X ⟶ Y) [AlgebraicGeometry.Etale f] :
-    f.smallEtaleMap.IsContinuous X.smallEtaleTopology Y.smallEtaleTopology :=
-  have := locallyCoverDense_over_forget_etale Y
-  have := locallyCoverDense_over_forget_etale X
-  MorphismProperty.isContinuous_over_map (P := @AlgebraicGeometry.Etale) etaleTopology
-    (inferInstance : AlgebraicGeometry.Etale f)
-
-/-- When `f : X ⟶ Y` is étale, `f.smallEtaleMap : X.Etale ⥤ Y.Etale` is left adjoint to
-`f.smallEtaleBaseChange`. -/
-noncomputable def Hom.smallEtaleMapPullbackAdj (f : X ⟶ Y) [AlgebraicGeometry.Etale f] :
-    f.smallEtaleMap ⊣ f.smallEtaleBaseChange :=
-  MorphismProperty.Over.mapPullbackAdj @AlgebraicGeometry.Etale ⊤ f inferInstance trivial
-
-@[reassoc (attr := simp)]
-lemma Hom.smallEtaleMapPullbackAdj_unit_app_left_fst (f : X ⟶ Y) [AlgebraicGeometry.Etale f]
-    (U : X.Etale) :
-    (f.smallEtaleMapPullbackAdj.unit.app U).left ≫
-      f.smallEtaleBaseChangeFst (f.smallEtaleMap.obj U) = 𝟙 U.left := by
-  dsimp [Hom.smallEtaleMapPullbackAdj, MorphismProperty.Over.mapPullbackAdj,
-    Hom.smallEtaleBaseChangeFst]
-  exact pullback.lift_fst _ _ _
-
-@[simp]
-lemma Hom.smallEtaleMapPullbackAdj_counit_app_left (f : X ⟶ Y) [AlgebraicGeometry.Etale f]
-    (V : Y.Etale) :
-    (f.smallEtaleMapPullbackAdj.counit.app V).left = f.smallEtaleBaseChangeFst V := by
-  dsimp [Hom.smallEtaleMapPullbackAdj, MorphismProperty.Over.mapPullbackAdj,
-    Hom.smallEtaleBaseChangeFst]
-  rfl
-
 /-- When `f : X ⟶ Y` is étale, `f.smallEtaleMap` is left adjoint to `f.smallEtaleBaseChange`, so
 `f.smallEtalePullback A` identifies naturally with restriction (sheaf pushforward) along
 `f.smallEtaleMap`. -/
 noncomputable def Hom.smallEtalePullbackIsoPushforwardOfEtale (f : X ⟶ Y)
-    [AlgebraicGeometry.Etale f] (A : Type u') [Category.{v'} A]
-    [(f.smallEtaleBaseChange.sheafPushforwardContinuous A
-      Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint] :
+    [AlgebraicGeometry.Etale f] (A : Type u') [Category.{v'} A] :
     f.smallEtalePullback A ≅
       f.smallEtaleMap.sheafPushforwardContinuous A X.smallEtaleTopology Y.smallEtaleTopology :=
   Adjunction.leftAdjointUniq (f.smallEtaleAdjunction A)
@@ -762,8 +842,6 @@ noncomputable def Hom.smallEtalePullbackIsoPushforwardOfEtale (f : X ⟶ Y)
 @[reassoc (attr := simp)]
 lemma Hom.unit_smallEtalePullbackIsoPushforwardOfEtale_hom_app (f : X ⟶ Y)
     [AlgebraicGeometry.Etale f] (A : Type u') [Category.{v'} A]
-    [(f.smallEtaleBaseChange.sheafPushforwardContinuous A
-      Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint]
     (F : Sheaf Y.smallEtaleTopology A) :
     (f.smallEtaleAdjunction A).unit.app F ≫
       (f.smallEtaleBaseChange.sheafPushforwardContinuous A
@@ -776,8 +854,6 @@ lemma Hom.unit_smallEtalePullbackIsoPushforwardOfEtale_hom_app (f : X ⟶ Y)
 @[reassoc (attr := simp)]
 lemma Hom.smallEtalePullbackIsoPushforwardOfEtale_hom_app_counit (f : X ⟶ Y)
     [AlgebraicGeometry.Etale f] (A : Type u') [Category.{v'} A]
-    [(f.smallEtaleBaseChange.sheafPushforwardContinuous A
-      Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint]
     (F : Sheaf X.smallEtaleTopology A) :
     (f.smallEtalePullbackIsoPushforwardOfEtale A).hom.app
       ((f.smallEtaleBaseChange.sheafPushforwardContinuous A
@@ -792,16 +868,97 @@ lemma Hom.smallEtalePullbackIsoPushforwardOfEtale_hom_app_counit (f : X ⟶ Y)
 def Etale.iteratedSliceForward (U : S.Etale) : CategoryTheory.Over U ⥤ U.left.Etale :=
   MorphismProperty.Over.iteratedSliceForward (P := @AlgebraicGeometry.Etale) U
 
+@[simp]
+lemma Etale.iteratedSliceForward_obj_left (U : S.Etale) (α : CategoryTheory.Over U) :
+    ((Etale.iteratedSliceForward U).obj α).left = α.left.left :=
+  MorphismProperty.Over.iteratedSliceForward_obj_left (P := @AlgebraicGeometry.Etale) U α
+
+@[simp]
+lemma Etale.iteratedSliceForward_obj_hom (U : S.Etale) (α : CategoryTheory.Over U) :
+    ((Etale.iteratedSliceForward U).obj α).hom = eqToHom (by simp) ≫ α.hom.left :=
+  MorphismProperty.Over.iteratedSliceForward_obj_hom (P := @AlgebraicGeometry.Etale) U α
+
+@[simp]
+lemma Etale.iteratedSliceForward_map_left (U : S.Etale) {α β : CategoryTheory.Over U}
+    (κ : α ⟶ β) :
+    ((Etale.iteratedSliceForward U).map κ).left =
+      eqToHom (by simp) ≫ κ.left.left ≫ eqToHom (by simp) :=
+  MorphismProperty.Over.iteratedSliceForward_map_left (P := @AlgebraicGeometry.Etale) U κ
+
+/-- Composing `Etale.iteratedSliceForward U` with the forgetful functor to `Scheme` recovers the
+composite forgetful functor on `CategoryTheory.Over U`. -/
+theorem Etale.iteratedSliceForward_forget (U : S.Etale) :
+    Etale.iteratedSliceForward U ⋙ Etale.forget U.left ⋙ CategoryTheory.Over.forget U.left =
+      CategoryTheory.Over.forget U ⋙ Etale.forget S ⋙ CategoryTheory.Over.forget S :=
+  MorphismProperty.Over.iteratedSliceForward_forget (P := @AlgebraicGeometry.Etale) U
+
 /-- The backward functor `U.left.Etale ⥤ (S.Etale / U)` of the iterated slice equivalence on small
 étale sites. -/
 def Etale.iteratedSliceBackward (U : S.Etale) : U.left.Etale ⥤ CategoryTheory.Over U :=
   MorphismProperty.Over.iteratedSliceBackward (P := @AlgebraicGeometry.Etale) U
 
 @[simp]
+lemma Etale.iteratedSliceBackward_obj_left (U : S.Etale) (V : U.left.Etale) :
+    ((Etale.iteratedSliceBackward U).obj V).left = (Hom.smallEtaleMap (U.left ↘ S)).obj V :=
+  MorphismProperty.Over.iteratedSliceBackward_obj_left (P := @AlgebraicGeometry.Etale) U V
+
+@[simp]
+lemma Etale.iteratedSliceBackward_obj_hom_left (U : S.Etale) (V : U.left.Etale) :
+    ((Etale.iteratedSliceBackward U).obj V).hom.left = eqToHom (by simp) ≫ V.hom :=
+  MorphismProperty.Over.iteratedSliceBackward_obj_hom_left (P := @AlgebraicGeometry.Etale) U V
+
+@[simp]
+lemma Etale.iteratedSliceBackward_map_left (U : S.Etale) {V W : U.left.Etale} (f : V ⟶ W) :
+    ((Etale.iteratedSliceBackward U).map f).left =
+      eqToHom (by simp) ≫ (Hom.smallEtaleMap (U.left ↘ S)).map f ≫ eqToHom (by simp) :=
+  MorphismProperty.Over.iteratedSliceBackward_map_left (P := @AlgebraicGeometry.Etale) U f
+
+@[simp]
 lemma Etale.iteratedSliceBackward_forget (U : S.Etale) :
     Etale.iteratedSliceBackward U ⋙ CategoryTheory.Over.forget U =
       Hom.smallEtaleMap (U.left ↘ S) :=
   MorphismProperty.Over.iteratedSliceBackward_forget (P := @AlgebraicGeometry.Etale) U
+
+/-- For `U : S.Etale`, the slice category `CategoryTheory.Over U` of `S.Etale` over `U` is
+equivalent to the small étale site `U.left.Etale`. -/
+def Etale.iteratedSliceEquiv (U : S.Etale) : CategoryTheory.Over U ≌ U.left.Etale :=
+  MorphismProperty.Over.iteratedSliceEquiv (P := @AlgebraicGeometry.Etale) U
+
+@[simp]
+lemma Etale.iteratedSliceEquiv_functor (U : S.Etale) :
+    (Etale.iteratedSliceEquiv U).functor = Etale.iteratedSliceForward U :=
+  MorphismProperty.Over.iteratedSliceEquiv_functor (P := @AlgebraicGeometry.Etale) U
+
+@[simp]
+lemma Etale.iteratedSliceEquiv_inverse (U : S.Etale) :
+    (Etale.iteratedSliceEquiv U).inverse = Etale.iteratedSliceBackward U :=
+  MorphismProperty.Over.iteratedSliceEquiv_inverse (P := @AlgebraicGeometry.Etale) U
+
+@[simp]
+lemma Etale.iteratedSliceEquiv_unitIso_hom_app_left_left (U : S.Etale)
+    (α : CategoryTheory.Over U) :
+    (((Etale.iteratedSliceEquiv U).unitIso.hom.app α).left).left = eqToHom (by simp) :=
+  MorphismProperty.Over.iteratedSliceEquiv_unitIso_hom_app_left_left
+    (P := @AlgebraicGeometry.Etale) U α
+
+@[simp]
+lemma Etale.iteratedSliceEquiv_unitIso_inv_app_left_left (U : S.Etale)
+    (α : CategoryTheory.Over U) :
+    (((Etale.iteratedSliceEquiv U).unitIso.inv.app α).left).left = eqToHom (by simp) :=
+  MorphismProperty.Over.iteratedSliceEquiv_unitIso_inv_app_left_left
+    (P := @AlgebraicGeometry.Etale) U α
+
+@[simp]
+lemma Etale.iteratedSliceEquiv_counitIso_hom_app_left (U : S.Etale) (V : U.left.Etale) :
+    ((Etale.iteratedSliceEquiv U).counitIso.hom.app V).left = eqToHom (by simp) :=
+  MorphismProperty.Over.iteratedSliceEquiv_counitIso_hom_app_left
+    (P := @AlgebraicGeometry.Etale) U V
+
+@[simp]
+lemma Etale.iteratedSliceEquiv_counitIso_inv_app_left (U : S.Etale) (V : U.left.Etale) :
+    ((Etale.iteratedSliceEquiv U).counitIso.inv.app V).left = eqToHom (by simp) :=
+  MorphismProperty.Over.iteratedSliceEquiv_counitIso_inv_app_left
+    (P := @AlgebraicGeometry.Etale) U V
 
 /-- For `U : S.Etale`, sheaves on the slice étale site `(S.Etale / U, S.smallEtaleTopology.over U)`
 are equivalent to étale sheaves on `U.left`. -/
@@ -831,12 +988,88 @@ lemma Etale.overSheafEquiv_inverse_obj_obj (U : S.Etale) (A : Type u') [Category
   exact MorphismProperty.overRestrictedSheafEquiv_inverse_obj_obj
     (P := @AlgebraicGeometry.Etale) etaleTopology U A F
 
+@[simp]
+lemma Etale.overSheafEquiv_functor_map_hom_app (U : S.Etale) (A : Type u') [Category.{v'} A]
+    {F G : Sheaf (S.smallEtaleTopology.over U) A} (f : F ⟶ G) (V : (U.left.Etale)ᵒᵖ) :
+    (((Etale.overSheafEquiv U A).functor.map f).hom.app V) =
+      eqToHom (by simp) ≫ f.hom.app (op ((Etale.iteratedSliceBackward U).obj V.unop)) ≫
+        eqToHom (by simp) := by
+  have := locallyCoverDense_over_forget_etale S
+  have := locallyCoverDense_over_forget_etale U.left
+  generalize_proofs h₁ h₂
+  revert h₁ h₂
+  dsimp only [Etale.overSheafEquiv, Etale.iteratedSliceBackward]
+  intro _ _
+  exact MorphismProperty.overRestrictedSheafEquiv_functor_map_hom_app
+    (P := @AlgebraicGeometry.Etale) etaleTopology U A f V
+
+@[simp]
+lemma Etale.overSheafEquiv_inverse_map_hom_app (U : S.Etale) (A : Type u') [Category.{v'} A]
+    {F G : Sheaf U.left.smallEtaleTopology A} (f : F ⟶ G) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    (((Etale.overSheafEquiv U A).inverse.map f).hom.app V) =
+      eqToHom (by simp) ≫ f.hom.app (op ((Etale.iteratedSliceForward U).obj V.unop)) ≫
+        eqToHom (by simp) := by
+  have := locallyCoverDense_over_forget_etale S
+  have := locallyCoverDense_over_forget_etale U.left
+  generalize_proofs h₁ h₂
+  revert h₁ h₂
+  dsimp only [Etale.overSheafEquiv, Etale.iteratedSliceForward]
+  intro _ _
+  exact MorphismProperty.overRestrictedSheafEquiv_inverse_map_hom_app
+    (P := @AlgebraicGeometry.Etale) etaleTopology U A f V
+
+@[simp]
+lemma Etale.overSheafEquiv_unitIso_hom_app_hom_app (U : S.Etale) (A : Type u') [Category.{v'} A]
+    (F : Sheaf (S.smallEtaleTopology.over U) A) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    (((Etale.overSheafEquiv U A).unitIso.hom.app F).hom.app V) =
+      F.obj.map ((Etale.iteratedSliceEquiv U).unitIso.inv.app V.unop).op ≫
+        eqToHom (by simp) := by
+  have := locallyCoverDense_over_forget_etale S
+  have := locallyCoverDense_over_forget_etale U.left
+  dsimp only [Etale.overSheafEquiv, Etale.iteratedSliceEquiv]
+  exact MorphismProperty.overRestrictedSheafEquiv_unitIso_hom_app_hom_app
+    (P := @AlgebraicGeometry.Etale) etaleTopology U A F V
+
+@[simp]
+lemma Etale.overSheafEquiv_unitIso_inv_app_hom_app (U : S.Etale) (A : Type u') [Category.{v'} A]
+    (F : Sheaf (S.smallEtaleTopology.over U) A) (V : (CategoryTheory.Over U)ᵒᵖ) :
+    (((Etale.overSheafEquiv U A).unitIso.inv.app F).hom.app V) =
+      eqToHom (by simp) ≫
+        F.obj.map ((Etale.iteratedSliceEquiv U).unitIso.hom.app V.unop).op := by
+  have := locallyCoverDense_over_forget_etale S
+  have := locallyCoverDense_over_forget_etale U.left
+  dsimp only [Etale.overSheafEquiv, Etale.iteratedSliceEquiv]
+  exact MorphismProperty.overRestrictedSheafEquiv_unitIso_inv_app_hom_app
+    (P := @AlgebraicGeometry.Etale) etaleTopology U A F V
+
+@[simp]
+lemma Etale.overSheafEquiv_counitIso_hom_app_hom_app (U : S.Etale) (A : Type u') [Category.{v'} A]
+    (F : Sheaf U.left.smallEtaleTopology A) (V : (U.left.Etale)ᵒᵖ) :
+    (((Etale.overSheafEquiv U A).counitIso.hom.app F).hom.app V) =
+      eqToHom (by simp) ≫
+        F.obj.map ((Etale.iteratedSliceEquiv U).counitIso.inv.app V.unop).op := by
+  have := locallyCoverDense_over_forget_etale S
+  have := locallyCoverDense_over_forget_etale U.left
+  dsimp only [Etale.overSheafEquiv, Etale.iteratedSliceEquiv]
+  exact MorphismProperty.overRestrictedSheafEquiv_counitIso_hom_app_hom_app
+    (P := @AlgebraicGeometry.Etale) etaleTopology U A F V
+
+@[simp]
+lemma Etale.overSheafEquiv_counitIso_inv_app_hom_app (U : S.Etale) (A : Type u') [Category.{v'} A]
+    (F : Sheaf U.left.smallEtaleTopology A) (V : (U.left.Etale)ᵒᵖ) :
+    (((Etale.overSheafEquiv U A).counitIso.inv.app F).hom.app V) =
+      F.obj.map ((Etale.iteratedSliceEquiv U).counitIso.hom.app V.unop).op ≫
+        eqToHom (by simp) := by
+  have := locallyCoverDense_over_forget_etale S
+  have := locallyCoverDense_over_forget_etale U.left
+  dsimp only [Etale.overSheafEquiv, Etale.iteratedSliceEquiv]
+  exact MorphismProperty.overRestrictedSheafEquiv_counitIso_inv_app_hom_app
+    (P := @AlgebraicGeometry.Etale) etaleTopology U A F V
+
 /-- Under `Etale.overSheafEquiv U A`, restricting an étale sheaf on `S` to the slice site over `U`
 identifies with pulling it back along the étale structure morphism `U.left ↘ S`. -/
 noncomputable def Etale.overPullbackCompOverSheafEquivIso (U : S.Etale)
-    (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (U.left ↘ S)).sheafPushforwardContinuous A
-      S.smallEtaleTopology U.left.smallEtaleTopology).IsRightAdjoint] :
+    (A : Type u') [Category.{v'} A] :
     S.smallEtaleTopology.overPullback A U ⋙ (Etale.overSheafEquiv U A).functor ≅
       Hom.smallEtalePullback (U.left ↘ S) A :=
   have := locallyCoverDense_over_forget_etale S
@@ -847,8 +1080,6 @@ noncomputable def Etale.overPullbackCompOverSheafEquivIso (U : S.Etale)
 
 lemma Etale.overPullbackCompOverSheafEquivIso_hom_comp_smallEtalePullbackIsoPushforwardOfEtale_hom
     (U : S.Etale) (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (U.left ↘ S)).sheafPushforwardContinuous A
-      S.smallEtaleTopology U.left.smallEtaleTopology).IsRightAdjoint]
     (F : Sheaf S.smallEtaleTopology A) :
     ((Etale.overPullbackCompOverSheafEquivIso U A).hom.app F ≫
       (Hom.smallEtalePullbackIsoPushforwardOfEtale (U.left ↘ S) A).hom.app F).hom =
@@ -871,8 +1102,6 @@ lemma Etale.overPullbackCompOverSheafEquivIso_hom_comp_smallEtalePullbackIsoPush
 
 lemma Etale.smallEtalePullbackIsoPushforwardOfEtale_inv_comp_overPullbackCompOverSheafEquivIso_inv
     (U : S.Etale) (A : Type u') [Category.{v'} A]
-    [((Hom.smallEtaleBaseChange (U.left ↘ S)).sheafPushforwardContinuous A
-      S.smallEtaleTopology U.left.smallEtaleTopology).IsRightAdjoint]
     (F : Sheaf S.smallEtaleTopology A) :
     ((Hom.smallEtalePullbackIsoPushforwardOfEtale (U.left ↘ S) A).inv.app F ≫
       (Etale.overPullbackCompOverSheafEquivIso U A).inv.app F).hom =
@@ -912,9 +1141,7 @@ lemma mem_locallyConstantSieve_smallEtaleTopology_iff
     [HasWeakSheafify S.smallEtaleTopology A]
     (P : ObjectProperty A) (F : Sheaf S.smallEtaleTopology A)
     {U V : S.Etale} (g : U ⟶ V)
-    [HasWeakSheafify U.left.smallEtaleTopology A]
-    [((Hom.smallEtaleBaseChange (U.left ↘ S)).sheafPushforwardContinuous A
-      S.smallEtaleTopology U.left.smallEtaleTopology).IsRightAdjoint] :
+    [HasWeakSheafify U.left.smallEtaleTopology A] :
     F.locallyConstantSieve P V g ↔
       ∃ M, P M ∧ Nonempty ((Hom.smallEtalePullback (U.left ↘ S) A).obj F ≅
         (constantSheaf U.left.smallEtaleTopology A).obj M) := by
@@ -930,16 +1157,20 @@ lemma mem_locallyConstantSieve_smallEtaleTopology_iff
         ((Etale.overPullbackCompOverSheafEquivIso U A).app _).symm)⟩
 
 variable [∀ T : Scheme.{u}, HasWeakSheafify T.smallEtaleTopology A]
-  [∀ {T₁ T₂ : Scheme.{u}} (h : T₁ ⟶ T₂),
-    (h.smallEtaleBaseChange.sheafPushforwardContinuous A
-      T₂.smallEtaleTopology T₁.smallEtaleTopology).IsRightAdjoint]
 
 /-- **Base-change stability of locally constant étale sheaves.** The pullback of a locally constant
-étale sheaf with values in `P` along an arbitrary morphism of schemes `f : X ⟶ Y` is locally
+étale sheaf with values in `P` along a morphism of schemes `f : X ⟶ Y` (assuming étale sheaf
+pullback exists along `f` and along its base changes `f.smallEtaleBaseChangeFst V`) is locally
 constant with values in `P`. -/
 theorem IsLocallyConstantIn.smallEtalePullback {P : ObjectProperty A}
     {F : Sheaf Y.smallEtaleTopology A}
-    (hF : F.IsLocallyConstantIn Y.smallEtaleTopology P) (f : X ⟶ Y) :
+    (hF : F.IsLocallyConstantIn Y.smallEtaleTopology P) (f : X ⟶ Y)
+    [(f.smallEtaleBaseChange.sheafPushforwardContinuous A
+      Y.smallEtaleTopology X.smallEtaleTopology).IsRightAdjoint]
+    [∀ V : Y.Etale,
+      ((f.smallEtaleBaseChangeFst V).smallEtaleBaseChange.sheafPushforwardContinuous A
+        V.left.smallEtaleTopology (f.smallEtaleBaseChange.obj V).left.smallEtaleTopology)
+        |>.IsRightAdjoint] :
     ((f.smallEtalePullback A).obj F).IsLocallyConstantIn X.smallEtaleTopology P := by
   have hTX : IsTerminal (f.smallEtaleBaseChange.obj (Etale.mk (𝟙 Y))) :=
     IsTerminal.isTerminalObj f.smallEtaleBaseChange _ (Etale.mkIdTerminal Y)
@@ -951,9 +1182,13 @@ theorem IsLocallyConstantIn.smallEtalePullback {P : ObjectProperty A}
   refine (((f.smallEtalePullback A).obj F).locallyConstantSieve P _).downward_closed ?_ k
   rw [mem_locallyConstantSieve_smallEtaleTopology_iff] at hk ⊢
   obtain ⟨M, hM, ⟨eV⟩⟩ := hk
+  have := Hom.isRightAdjoint_comp_smallEtaleBaseChange_sheafPushforwardContinuous
+    ((f.smallEtaleBaseChange.obj V).left ↘ X) f A
+  have := Hom.isRightAdjoint_comp_smallEtaleBaseChange_sheafPushforwardContinuous
+    (f.smallEtaleBaseChangeFst V) (V.left ↘ Y) A
   refine ⟨M, hM, ⟨?_⟩⟩
   exact ((Hom.smallEtalePullbackComp ((f.smallEtaleBaseChange.obj V).left ↘ X) f A).app F).symm ≪≫
-    ((Hom.smallEtalePullbackCongr (f.smallEtaleBaseChangeFst_hom V).symm A).app F) ≪≫
+    ((Hom.smallEtalePullbackCongr (f.isPullback_smallEtaleBaseChange V).w.symm A).app F) ≪≫
     ((Hom.smallEtalePullbackComp (f.smallEtaleBaseChangeFst V) (V.left ↘ Y) A).app F) ≪≫
     ((f.smallEtaleBaseChangeFst V).smallEtalePullback A).mapIso eV ≪≫
     (f.smallEtaleBaseChangeFst V).smallEtalePullbackConstantSheafIso A M

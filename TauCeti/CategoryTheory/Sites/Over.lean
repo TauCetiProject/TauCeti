@@ -36,6 +36,9 @@ presheaves on the category of all schemes.
   with respect to the corresponding sieve on `Y.left`.
 * `CategoryTheory.Over.isSheaf_over_iff_isSheaf_sigmaPresheaf`: `P` is a sheaf for `J.over S`
   if and only if `sigmaPresheaf P` is a sheaf for `J`, when `S` is a sheaf for `J`.
+* `CategoryTheory.GrothendieckTopology.isEquivalence_overPullback_of_isTerminal`,
+  `CategoryTheory.GrothendieckTopology.isEquivalence_overPullback_terminal`: over a terminal object
+  `T`, the localization functor `J.overPullback A T` is an equivalence of sheaf categories.
 
 ## References
 
@@ -200,3 +203,44 @@ theorem isSheaf_over_iff_isSheaf_sigmaPresheaf (J : GrothendieckTopology C)
     fun hP _ R hR ↦ isSheafFor_of_isSheafFor_sigmaPresheaf R (hS _ hR).isSeparatedFor (hP _ hR)⟩
 
 end CategoryTheory.Over
+
+namespace CategoryTheory.GrothendieckTopology
+
+open Limits
+
+/-- Over a terminal object `T`, the restriction functor `J.overPullback A T` is an equivalence of
+sheaf categories, induced by `Over.equivalenceOfIsTerminal hT`. -/
+theorem isEquivalence_overPullback_of_isTerminal {C : Type u} [Category.{v} C]
+    (J : GrothendieckTopology C) (A : Type w) [Category* A] {T : C} (hT : IsTerminal T) :
+    (J.overPullback A T).IsEquivalence := by
+  have : (Over.equivalenceOfIsTerminal hT).functor.IsCocontinuous (J.over T) J :=
+    inferInstanceAs ((Over.forget T).IsCocontinuous (J.over T) J)
+  have : (Over.equivalenceOfIsTerminal hT).inverse.IsCocontinuous J (J.over T) :=
+    ⟨fun {X S} hS ↦ by
+      refine J.superset_covering ?_ ((J.mem_over_iff S).mp hS)
+      intro Y f hf
+      rw [Sieve.functorPullback_apply, Presieve.functorPullback_mem]
+      obtain ⟨Z, g, h, hSg, rfl⟩ := hf
+      have hk : ((Over.equivalenceOfIsTerminal hT).inverse).map (h ≫ (Over.forget T).map g) =
+          (Over.homMk h (hT.hom_ext _ _) :
+            (Over.equivalenceOfIsTerminal hT).inverse.obj Y ⟶ Z) ≫ g :=
+        Over.OverMorphism.ext rfl
+      exact hk.symm ▸ S.downward_closed hSg _⟩
+  have : (Over.equivalenceOfIsTerminal hT).symm.inverse.IsDenseSubsite (J.over T) J :=
+    (Over.equivalenceOfIsTerminal hT).isDenseSubsite_functor_of_isCocontinuous (J.over T) J
+  exact @Functor.isEquivalence_of_iso _ _ _ _
+    ((Over.equivalenceOfIsTerminal hT).symm.sheafCongr J (J.over T) A).functor
+    (J.overPullback A T)
+    (NatIso.ofComponents (fun _ ↦ Iso.refl _)
+      (fun _ ↦ by ext; exact (Category.comp_id _).trans (Category.id_comp _).symm))
+    ((Over.equivalenceOfIsTerminal hT).symm.sheafCongr J (J.over T) A).isEquivalence_functor
+
+/-- Over a chosen terminal object `⊤_ C`, the restriction functor `J.overPullback A (⊤_ C)` is an
+equivalence of sheaf categories. -/
+instance isEquivalence_overPullback_terminal {C : Type u} [Category.{v} C] [HasTerminal C]
+    (J : GrothendieckTopology C) (A : Type w) [Category* A] :
+    (J.overPullback A (⊤_ C)).IsEquivalence :=
+  J.isEquivalence_overPullback_of_isTerminal A terminalIsTerminal
+
+end CategoryTheory.GrothendieckTopology
+

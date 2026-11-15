@@ -16,7 +16,7 @@ the restricted over categories `P.Over Q X`:
 
 * `CategoryTheory.MorphismProperty.overEquivFullSubcategory`: equivalence between `P.Over ⊤ X` and
   any full subcategory of `Over X` characterized by `P` on structure morphisms;
-* `CategoryTheory.MorphismProperty.Over.pullbackId`: base change `Over.pullback P ⊤ (𝟙 X)` along
+* `CategoryTheory.MorphismProperty.Over.pullbackId`: base change `Over.pullback P Q (𝟙 X)` along
   the identity morphism identifies with the identity functor, adapting
   `CategoryTheory.Over.pullbackId` from `Mathlib.CategoryTheory.Comma.Over.Pullback`;
 * `CategoryTheory.MorphismProperty.Over.iteratedSliceEquiv`: for `U : P.Over ⊤ X`, when `P` is
@@ -87,58 +87,78 @@ namespace Over
 
 section PullbackId
 
-variable {C : Type*} [Category* C] (P : MorphismProperty C) [P.IsMultiplicative]
+variable {C : Type*} [Category* C] (P Q : MorphismProperty C)
+  [Q.IsMultiplicative] [Q.RespectsIso] [Q.IsStableUnderBaseChange]
   (X : C) [P.HasPullbacksAlong (𝟙 X)] [P.IsStableUnderBaseChangeAlong (𝟙 X)]
 
-/-- Base change in `P.Over ⊤ X` along `𝟙 X` identifies naturally with the identity functor,
-conjugate to `Over.mapId ⊤ X`. -/
+/-- Base change in `P.Over Q X` along `𝟙 X` identifies naturally with the identity functor,
+conjugate to `Over.mapId Q X` when `P` is multiplicative and `Q` satisfies post-cancellation. -/
 noncomputable def pullbackId :
-    Over.pullback P ⊤ (𝟙 X) ≅ 𝟭 (P.Over ⊤ X) :=
-  conjugateIsoEquiv (Over.mapPullbackAdj P ⊤ (𝟙 X) (P.id_mem X) trivial)
-    Adjunction.id (Over.mapId ⊤ X).symm
+    Over.pullback P Q (𝟙 X) ≅ 𝟭 (P.Over Q X) :=
+  NatIso.ofComponents
+    (fun Y ↦
+      Over.isoMk
+        ({ hom := Limits.pullback.fst Y.hom (𝟙 X)
+           inv := Limits.pullback.lift (𝟙 Y.left) Y.hom (by simp)
+           hom_inv_id := by
+             apply Limits.pullback.hom_ext
+             · rw [Category.assoc, Limits.pullback.lift_fst, Category.comp_id, Category.id_comp]
+             · rw [Category.assoc, Limits.pullback.lift_snd, Limits.pullback.condition,
+                 Category.comp_id, Category.id_comp]
+           inv_hom_id := Limits.pullback.lift_fst _ _ _ } :
+          Limits.pullback Y.hom (𝟙 X) ≅ Y.left)
+        ((Limits.pullback.condition (f := Y.hom) (g := 𝟙 X)).trans (Category.comp_id _)))
+    (fun g ↦ by
+      ext
+      dsimp
+      exact Limits.pullback.lift_fst _ _ _)
 
 @[simp]
-lemma conjugateEquiv_symm_pullbackId_hom :
-    (conjugateEquiv (Over.mapPullbackAdj P ⊤ (𝟙 X) (P.id_mem X) trivial) Adjunction.id).symm
-      (pullbackId P X).hom = (Over.mapId ⊤ X).inv := by
-  simp [pullbackId]
+lemma pullbackId_hom_app_left (Y : P.Over Q X) :
+    ((pullbackId P Q X).hom.app Y).left = Limits.pullback.fst Y.hom (𝟙 X) :=
+  (rfl)
 
 @[simp]
-lemma conjugateEquiv_symm_pullbackId_inv :
-    (conjugateEquiv Adjunction.id (Over.mapPullbackAdj P ⊤ (𝟙 X) (P.id_mem X) trivial)).symm
-      (pullbackId P X).inv = (Over.mapId ⊤ X).hom := by
-  simp [pullbackId]
-
-@[simp]
-lemma pullbackId_hom_app_left (Y : P.Over ⊤ X) :
-    ((pullbackId P X).hom.app Y).left = Limits.pullback.fst Y.hom (𝟙 X) := by
-  simp only [pullbackId, conjugateIsoEquiv_apply_hom, conjugateEquiv_apply_app, Adjunction.id_unit,
-    NatTrans.id_app, Functor.id_obj, Functor.id_map, Over.mapPullbackAdj_counit_app,
-    Category.id_comp]
-  exact Category.id_comp _
-
-@[simp]
-lemma pullbackId_inv_app_left_fst (Y : P.Over ⊤ X) :
-    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.fst Y.hom (𝟙 X) = 𝟙 Y.left := by
+lemma pullbackId_inv_app_left_fst (Y : P.Over Q X) :
+    ((pullbackId P Q X).inv.app Y).left ≫ Limits.pullback.fst Y.hom (𝟙 X) = 𝟙 Y.left := by
   rw [← pullbackId_hom_app_left]
-  exact congrArg (fun g : Y ⟶ Y ↦ g.left) ((pullbackId P X).inv_hom_id_app Y)
+  exact congrArg (fun g : Y ⟶ Y ↦ g.left) ((pullbackId P Q X).inv_hom_id_app Y)
 
 @[simp]
-lemma pullbackId_inv_app_left_fst_assoc (Y : P.Over ⊤ X) {Z : C} (h : Y.left ⟶ Z) :
-    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.fst Y.hom (𝟙 X) ≫ h = h :=
+lemma pullbackId_inv_app_left_fst_assoc (Y : P.Over Q X) {Z : C} (h : Y.left ⟶ Z) :
+    ((pullbackId P Q X).inv.app Y).left ≫ Limits.pullback.fst Y.hom (𝟙 X) ≫ h = h :=
   (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ h) (pullbackId_inv_app_left_fst P X Y)).trans (Category.id_comp h))
+    ((congrArg (· ≫ h) (pullbackId_inv_app_left_fst P Q X Y)).trans (Category.id_comp h))
 
 @[simp]
-lemma pullbackId_inv_app_left_snd (Y : P.Over ⊤ X) :
-    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.snd Y.hom (𝟙 X) = Y.hom := by
-  simpa using Over.w ((pullbackId P X).inv.app Y)
+lemma pullbackId_inv_app_left_snd (Y : P.Over Q X) :
+    ((pullbackId P Q X).inv.app Y).left ≫ Limits.pullback.snd Y.hom (𝟙 X) = Y.hom := by
+  simpa using Over.w ((pullbackId P Q X).inv.app Y)
 
 @[simp]
-lemma pullbackId_inv_app_left_snd_assoc (Y : P.Over ⊤ X) {Z : C} (h : X ⟶ Z) :
-    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.snd Y.hom (𝟙 X) ≫ h = Y.hom ≫ h :=
+lemma pullbackId_inv_app_left_snd_assoc (Y : P.Over Q X) {Z : C} (h : X ⟶ Z) :
+    ((pullbackId P Q X).inv.app Y).left ≫ Limits.pullback.snd Y.hom (𝟙 X) ≫ h = Y.hom ≫ h :=
   (Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ h) (pullbackId_inv_app_left_snd P X Y))
+    (congrArg (· ≫ h) (pullbackId_inv_app_left_snd P Q X Y))
+
+@[simp]
+lemma conjugateEquiv_symm_pullbackId_hom [P.IsMultiplicative] [Q.HasOfPostcompProperty Q] :
+    (conjugateEquiv (Over.mapPullbackAdj P Q (𝟙 X) (P.id_mem X) (Q.id_mem X)) Adjunction.id).symm
+      (pullbackId P Q X).hom = (Over.mapId Q X).inv := by
+  rw [Equiv.symm_apply_eq]
+  ext Y
+  simp only [pullbackId_hom_app_left, conjugateEquiv_adjunction_id,
+    Over.mapPullbackAdj_counit_app]
+  dsimp
+  exact (Category.id_comp _).symm
+
+@[simp]
+lemma conjugateEquiv_symm_pullbackId_inv [P.IsMultiplicative] [Q.HasOfPostcompProperty Q] :
+    (conjugateEquiv Adjunction.id (Over.mapPullbackAdj P Q (𝟙 X) (P.id_mem X) (Q.id_mem X))).symm
+      (pullbackId P Q X).inv = (Over.mapId Q X).hom := by
+  let adj := Over.mapPullbackAdj P Q (𝟙 X) (P.id_mem X) (Q.id_mem X)
+  rw [← Iso.comp_inv_eq_id (Over.mapId Q X), ← conjugateEquiv_symm_pullbackId_hom P Q X]
+  exact conjugateEquiv_symm_comm adj Adjunction.id (pullbackId P Q X).hom_inv_id
 
 end PullbackId
 
@@ -218,6 +238,14 @@ recovers `Over.map ⊤ U.prop`. -/
 theorem iteratedSliceBackward_forget [P.IsStableUnderComposition] (U : P.Over ⊤ X) :
     iteratedSliceBackward U ⋙ CategoryTheory.Over.forget U =
       Over.map (X := U.left) (Y := X) ⊤ U.prop :=
+  (rfl)
+
+/-- Specializing `iteratedSliceBackward_forget` to `Over.mk ⊤ f hf` factors `Over.map ⊤ hf`
+through the slice category `CategoryTheory.Over (Over.mk ⊤ f hf)`. -/
+theorem iteratedSliceBackward_mk_forget [P.IsStableUnderComposition] {Y : C} {f : Y ⟶ X}
+    (hf : P f) :
+    iteratedSliceBackward (Over.mk ⊤ f hf) ⋙ CategoryTheory.Over.forget (Over.mk ⊤ f hf) =
+      Over.map ⊤ hf :=
   (rfl)
 
 /-- Composing `Over.map ⊤ hf` with the forgetful functor to `C` recovers the forgetful functor on

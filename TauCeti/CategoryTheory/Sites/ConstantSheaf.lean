@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Adjunction.Additive
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
+public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.Sites.Sheafification
 
 /-!
 # Pullback and additivity of constant sheaves
@@ -24,15 +25,14 @@ When `u` is final, which holds for instance when `u` is representably flat
 this comparison is an isomorphism: maps out of either side into a sheaf `F` on `(D, K)` are cones
 with apex `X` over `F`, restricted along `u` in the first case.
 
-We also record `Functor.Additive` instances for `Functor.const`, `presheafToSheaf J A`, and
-`constantSheaf J A` whenever `A` is preadditive and `(C, J)` admits weak sheafification in `A`,
-generalizing the abelian instances in `Mathlib.CategoryTheory.Sites.Abelian`.
+We also record the `Functor.Additive` instance for `constantSheaf J A` whenever `A` is preadditive
+and `(C, J)` admits weak sheafification in `A`, generalizing the abelian instance in
+`Mathlib.CategoryTheory.Sites.Abelian`.
 
 ## Main declarations
 
-* `CategoryTheory.Functor.additive_const`, `CategoryTheory.additive_presheafToSheaf`,
-  `CategoryTheory.additive_constantSheaf`: additivity of `Functor.const`, sheafification, and
-  `constantSheaf` for preadditive coefficients with weak sheafification.
+* `CategoryTheory.additive_constantSheaf`: additivity of `constantSheaf J A` for preadditive
+  coefficients with weak sheafification.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
   in `X`.
@@ -48,17 +48,6 @@ public section
 open CategoryTheory Limits
 
 namespace CategoryTheory
-
-/-- For a preadditive target category `A`, the constant diagram functor `A ⥤ J ⥤ A` is additive. -/
-instance Functor.additive_const (J : Type*) [Category* J] {A : Type*} [Category* A]
-    [Preadditive A] : (Functor.const J : A ⥤ J ⥤ A).Additive where
-
-/-- Sheafification `presheafToSheaf J A` is additive whenever `A` is preadditive and `(C, J)` admits
-weak sheafification in `A`, as a left adjoint between preadditive categories. -/
-noncomputable instance additive_presheafToSheaf {C : Type*} [Category* C]
-    (J : GrothendieckTopology C) (A : Type*) [Category* A] [Preadditive A] [HasWeakSheafify J A] :
-    (presheafToSheaf J A).Additive :=
-  (sheafificationAdjunction J A).left_adjoint_additive
 
 /-- The constant sheaf functor `constantSheaf J A` is additive whenever `A` is preadditive and
 `(C, J)` admits weak sheafification in `A`. -/
