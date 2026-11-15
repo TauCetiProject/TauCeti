@@ -57,10 +57,12 @@ is defined on a neighbourhood.
 
 public noncomputable section
 
-open Bundle FiberBundle Function
+open Bundle FiberBundle Function Set
 open scoped Manifold ContDiff TensorProduct Topology
 
 namespace TauCeti
+
+section Conjugation
 
 variable {XB HB B F G : Type*} [NormedAddCommGroup XB] [NormedSpace ℝ XB]
   [TopologicalSpace HB] {IB : ModelWithCorners ℝ XB HB}
@@ -269,7 +271,6 @@ theorem maximalRealFormConjugationDiffeomorph_eq_self_iff (i : ∀ x, W x →L[�
   simp only [maximalRealFormConjugationDiffeomorph_apply, TotalSpace.mk.injEq, heq_eq_eq,
     true_and, LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff]
 
-
 variable (i : ∀ x, W x →L[ℝ] V x)
   (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
     (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
@@ -318,7 +319,6 @@ theorem maximalRealFormConjugationDiffeomorph_congr_range
   rw [(i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_congr_range
     (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
     (hrange p.proj)]
-
 
 variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace ℂ G']
   [IsScalarTower ℝ ℂ G'] {V' : B → Type*}
@@ -390,11 +390,7 @@ theorem maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff
 
 end Submodule
 
-end TauCeti
-
-namespace TauCeti
-
-open Set
+end Conjugation
 
 section Projection
 
@@ -407,7 +403,6 @@ variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousConstSMul ℂ (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
   {n : ℕ∞ω} {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
 
@@ -418,7 +413,6 @@ section Frame
 
 variable {U : Set B} {X : ι → Π x, V x}
 
-omit [∀ x, ContinuousConstSMul ℂ (V x)] in
 /-- **The projection onto a totally real subbundle is smooth, locally.** Let `L` have a `C^n`
 frame on an open set `U` whose points all have maximal totally real fibres. A field of
 endomorphisms equal on `U` to the projection onto `L` along `i L` is `C^n` at each point of `U`. -/
@@ -476,7 +470,6 @@ theorem contMDiffAt_totallyRealProjection [ContMDiffVectorBundle n F V IB] (hU :
 
 end Frame
 
-omit [∀ x, ContinuousConstSMul ℂ (V x)] in
 /-- **The projection onto a smooth totally real subbundle is smooth.** If the fibres of a
 real subbundle `L` with `C^n` local frames are maximal totally real, the projection onto `L`
 along `i L` is a `C^n` section of the endomorphism bundle. -/
