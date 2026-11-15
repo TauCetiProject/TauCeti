@@ -578,12 +578,10 @@ theorem exists_mem_gaugeFixedKernel_sectionValue_eq_mul_add_exp_mul (hx : ContDi
   have hy₀c : HasCompactSupport y₀ := hasCompactSupport_seedField b.hasCompactSupport
   have hLi (i : Fin 4) : ContDiff ℝ ∞ fun z ↦ gaugeFixedOperator x y₀ z i :=
     contDiff_euclidean.mp (contDiff_gaugeFixedOperator hx (hy₀.of_le (by simp))) i
-  have hg (i : Fin 4) : MemLp (fun z ↦ gaugeFixedOperator x y₀ z i) 2 volume := by
-    refine (hLi i).continuous.memLp_of_hasCompactSupport (hy₀c.mono' fun u hu ↦ ?_)
-    by_contra h
-    apply hu
-    simp [gaugeFixedOperator_congr_nhds x (notMem_tsupport_iff_eventuallyEq.1 h),
-      gaugeFixedOperator_zero]
+  have hg (i : Fin 4) : MemLp (fun z ↦ gaugeFixedOperator x y₀ z i) 2 volume :=
+    (hLi i).continuous.memLp_of_hasCompactSupport
+      ((hasCompactSupport_gaugeFixedOperator (x := x) hy₀c).comp_left
+        (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp))
   -- The potential `P = |α|² / 4` lies in `[0, 1 / 4]` and exceeds `1 / 8` outside a disc.
   set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
   have hP₀ (z : ℂ) : 0 ≤ P z := by positivity
