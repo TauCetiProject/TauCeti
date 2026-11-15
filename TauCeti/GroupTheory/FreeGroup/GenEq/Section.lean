@@ -263,6 +263,12 @@ theorem Crosses.isOpenBoundary {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases
     Ω.IsOpenBoundary i :=
   ⟨μ, h⟩
 
+variable {Ω} in
+/-- A closed boundary `i` lies before or after every base `μ`: `i ≤ α(μ)` or `β(μ) ≤ i`. -/
+theorem IsClosedBoundary.le_left_or_right_le {i : Fin (Ω.numItems + 1)}
+    (hi : Ω.IsClosedBoundary i) (μ : Fin Ω.numBases) : i ≤ Ω.left μ ∨ Ω.right μ ≤ i := by
+  simpa only [crosses_iff, not_and_or, not_lt] using Ω.isClosedBoundary_iff.1 hi μ
+
 /-- The first boundary is closed. -/
 @[simp]
 theorem isClosedBoundary_zero : Ω.IsClosedBoundary 0 :=
