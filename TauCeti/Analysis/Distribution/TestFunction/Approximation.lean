@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Convolution.Basic
 
 /-!
 # Uniform approximation of continuous and `C¹` functions by test functions
@@ -16,8 +17,11 @@ import Mathlib.Analysis.Calculus.ContDiff.Convolution
 Let `Ω` be an open set of a finite-dimensional real normed space `E`. Mollifying a continuous
 function supported in a compact set `K` by normalized bumps of small radius gives test functions
 on `Ω` supported in a fixed closed thickening of `K` that converge to it uniformly, as long as that
-thickening lies in `Ω`. For a `C¹` function the derivatives of the mollifications are the
-mollifications of its derivative (Mathlib's `HasCompactSupport.hasFDerivAt_convolution_right`), so
+thickening lies in `Ω`. Because normalized bumps are nonnegative of integral one, any global
+sup-norm bound on the input is preserved
+(`MeasureTheory.norm_convolution_lsmul_le_of_forall_norm_le`). For a `C¹` function the derivatives
+of the mollifications are the mollifications of its derivative
+(Mathlib's `HasCompactSupport.hasFDerivAt_convolution_right`), so
 they converge uniformly as well. The construction follows Mathlib's
 `MeasureTheory.LocallyIntegrable.exists_contDiff_dist_le_of_forall_mem_ball_dist_le` and
 `UniformContinuous.exists_contDiff_dist_le` (in
@@ -29,6 +33,8 @@ error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
 * `Continuous.exists_testFunction_dist_le`: a continuous function supported in a compact set `K`
   is uniformly approximated by test functions supported in any closed thickening of `K` that lies
   in `Ω`.
+* `Continuous.exists_testFunction_dist_le_and_norm_le`: the same uniform approximation while
+  preserving a global pointwise norm bound `‖f x‖ ≤ M`.
 * `ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le`: a `C¹` function supported in a
   compact set `K` is approximated in the same way, uniformly together with its derivative.
 
@@ -88,6 +94,36 @@ theorem Continuous.exists_testFunction_dist_le {f : E → F} (hf : Continuous f)
   rw [hφ]
   exact ρ.dist_normed_convolution_le hf.aestronglyMeasurable fun y hy =>
     (hfη ((mem_ball.mp hy).trans_le (min_le_left _ _))).le
+
+omit [FiniteDimensional ℝ E] in
+/-- A continuous function supported in a compact set `K` and bounded in norm by `M` is uniformly
+approximated by test functions on `Ω` supported in `cthickening δ K` that satisfy the same norm
+bound `‖φ x‖ ≤ M` everywhere, provided `cthickening δ K ⊆ Ω`. -/
+theorem Continuous.exists_testFunction_dist_le_and_norm_le {f : E → F} (hf : Continuous f)
+    {K : Set E} (hK : IsCompact K) (hfK : tsupport f ⊆ K) {M : ℝ} (hM : ∀ x, ‖f x‖ ≤ M)
+    {δ : ℝ} (hδ : 0 < δ) (hKΩ : cthickening δ K ⊆ Ω) {ε : ℝ} (hε : 0 < ε) :
+    ∃ φ : 𝓓(Ω, F), tsupport φ ⊆ cthickening δ K ∧
+      ∀ x, dist (φ x) (f x) ≤ ε ∧ ‖φ x‖ ≤ M := by
+  have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
+  by_cases hfd : FiniteDimensional ℝ E
+  swap
+  · have hf0 : f = 0 := (hfc.eq_zero_or_finiteDimensional ℝ hf).resolve_right hfd
+    subst hf0
+    exact ⟨0, by simp, fun x => ⟨by simp [hε.le], by simpa using hM x⟩⟩
+  borelize E
+  obtain ⟨η, hη, hfη⟩ :=
+    Metric.uniformContinuous_iff.mp (hfc.uniformContinuous_of_continuous hf) ε hε
+  have hr : 0 < min η δ := lt_min hη hδ
+  let ρ : ContDiffBump (0 : E) := ⟨min η δ / 2, min η δ, half_pos hr, half_lt_self hr⟩
+  obtain ⟨φ, hφ, hφs⟩ :=
+    exists_testFunction_eq_normed_convolution hf hK hfK hKΩ ρ (min_le_right _ _)
+  refine ⟨φ, hφs, fun x => ⟨?_, ?_⟩⟩
+  · rw [hφ]
+    exact ρ.dist_normed_convolution_le hf.aestronglyMeasurable fun y hy =>
+      (hfη ((mem_ball.mp hy).trans_le (min_le_left _ _))).le
+  · rw [hφ]
+    exact norm_convolution_lsmul_le_of_forall_norm_le ρ.support_normed_eq.subset ρ.nonneg_normed
+      ρ.integral_normed fun y _ => hM y
 
 omit [FiniteDimensional ℝ E] in
 /-- A `C¹` function supported in a compact set `K` is approximated by test functions on `Ω`

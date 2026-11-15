@@ -7,17 +7,20 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Calibration
 import TauCeti.Analysis.BoundedVariation.SmoothApproximation
 import TauCeti.Analysis.Calculus.ContDiff.LevelSet
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Isoperimetric
+import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
+import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Rigidity
 import TauCeti.Topology.Order.Sublevel
 
 /-!
-# The sharp isoperimetric inequality for sets of finite volume
+# The sharp isoperimetric inequality and ball rigidity for sets of finite volume
 
 Let `E` be a finite-dimensional real inner product space of dimension `n ≥ 1` with its volume,
 and write `ω_n = volume (ball 0 1)` and `P(s)` for the perimeter of `s` in the whole space. Every
@@ -37,6 +40,14 @@ being trivial
 (`NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le`).
 Balls attain equality (`TauCeti.perimeter_ball_pow`), so the constant is sharp. Finite volume
 cannot be dropped: the complement of a ball has finite perimeter.
+
+Equality holds if and only if `s` agrees almost everywhere with an open ball of positive radius
+(`MeasureTheory.NullMeasurableSet.perimeter_pow_eq_iff_exists_ae_eq_ball`, together with its
+normalized extended-real and real forms
+`NullMeasurableSet.perimeter_eq_ofReal_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball` and
+`NullMeasurableSet.perimeter_toReal_eq_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball`).
+Positive volume is essential in dimension `n ≥ 2`, where null sets satisfy `0 = 0` without
+agreeing a.e. with a ball of positive radius.
 
 ## Strategy
 
@@ -60,6 +71,15 @@ Dividing by `η`, letting `η → 0` and then `ε → 0` gives `n ω_n^(1/n) |F|
 and the right-hand side is at most `P(F)` by the definition of the perimeter. No identification of
 the perimeter with surface measure or Minkowski content is used.
 
+For ball rigidity, isoperimetric equality forces `P(s) < ∞`, and for every unit direction `e` the
+Steiner symmetral `S_e s` preserves volume (`TauCeti.volume_steinerSymmetrization`) without
+increasing perimeter (`TauCeti.perimeter_steinerSymmetrization_le`). Comparing with the sharp
+isoperimetric inequality for `S_e s` forces `P(S_e s) = P(s)`, so almost every line section along
+`e` agrees a.e. with an interval
+(`TauCeti.ae_lineSection_ordConnected_of_perimeter_steinerSymmetrization_eq`). Essential convexity
+and Brunn–Minkowski equality for convex bodies then conclude via
+`NullMeasurableSet.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected`.
+
 ## Main results
 
 * `MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`:
@@ -72,12 +92,22 @@ the perimeter with surface measure or Minkowski content is used.
   for sets of finite perimeter.
 * `ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt`: the smooth case, for a
   regular superlevel set `{u > t}` of a compactly supported smooth function `u` with `t > 0`.
+* `MeasureTheory.NullMeasurableSet.perimeter_pow_eq_iff_exists_ae_eq_ball`: unconditional a.e.
+  ball rigidity for `P(s)^n = n^n ω_n |s|^(n-1)` in dimension `n ≥ 1`.
+* `NullMeasurableSet.perimeter_eq_ofReal_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball` and
+  `NullMeasurableSet.perimeter_toReal_eq_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball`:
+  its normalized extended-real and real-valued forms.
 
 ## References
 
+* E. De Giorgi, *Sulla proprietà isoperimetrica dell'ipersfera, nella classe degli insiemi aventi
+  frontiera orientata di misura finita*, Atti Accad. Naz. Lincei Mem. Cl. Sci. Fis. Mat. Natur.
+  Sez. Ia (8) **5** (1958), 33–44.
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Cambridge University
-  Press, 2012, Chapters 13 and 14, for the approximation by smooth sets and the isoperimetric
-  inequality.
+  Press, 2012, Chapters 13 and 14, for the approximation by smooth sets, Steiner symmetrization,
+  and the isoperimetric inequality with ball rigidity.
+* F. Cagnetti, M. Colombo, G. De Philippis, F. Maggi, *Rigidity of equality cases in Steiner's
+  perimeter inequality*, Anal. PDE **7** (2014), 1535–1593, §1.2 and Theorem A.
 * R. J. Gardner, *The Brunn–Minkowski inequality*, Bull. Amer. Math. Soc. **39** (2002), 355–405,
   Section 5.
 -/
@@ -368,5 +398,79 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le
   · rw [hs0, zero_pow (by omega), mul_zero]
     exact zero_le
   exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs hs0
+
+/-- **Ball rigidity in the Euclidean isoperimetric inequality.** In a Euclidean space of
+dimension `n ≥ 1`, a null-measurable set `s` of finite positive volume satisfies
+`P(s)^n = n^n ω_n |s|^(n-1)` if and only if it agrees almost everywhere with an open ball of
+positive radius. No boundedness, connectedness or regularity of `s` is assumed, and finiteness
+of `P(s)` follows automatically from the equality. Positive volume cannot be dropped in dimension
+`n ≥ 2`, where null sets satisfy `0 = 0` without agreeing a.e. with a positive-radius ball. -/
+theorem perimeter_pow_eq_iff_exists_ae_eq_ball
+    {s : Set E} (hs : NullMeasurableSet s volume) (hn : finrank ℝ E ≠ 0)
+    (hpos : 0 < volume s) (hfin : volume s ≠ ⊤) :
+    perimeter volume ⊤ s ^ finrank ℝ E =
+        (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
+          volume s ^ (finrank ℝ E - 1) ↔
+      ∃ c : E, ∃ r : ℝ, 0 < r ∧ s =ᵐ[volume] ball c r := by
+  have hpow_inj {a b : ℝ≥0∞} (h : a ^ finrank ℝ E = b ^ finrank ℝ E) : a = b :=
+    ENNReal.rpow_left_injective (Nat.cast_ne_zero.2 hn)
+      (by simpa only [ENNReal.rpow_natCast] using h)
+  refine ⟨fun heq => ?_, ?_⟩
+  · have hrhs_ne_top : (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
+        volume s ^ (finrank ℝ E - 1) ≠ ⊤ :=
+      ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))
+        measure_ball_lt_top.ne) (ENNReal.pow_ne_top hfin)
+    have hP : perimeter volume ⊤ s ≠ ⊤ := fun htop =>
+      hrhs_ne_top (heq.symm.trans (ENNReal.pow_eq_top_iff.2 ⟨htop, hn⟩))
+    refine (hs.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected hn hpos hfin
+      fun e he => ae_lineSection_ordConnected_of_perimeter_steinerSymmetrization_eq
+        hs hfin hP e he ?_).1 heq
+    let s' := steinerSymmetrization e he s
+    have hs' : NullMeasurableSet s' volume := nullMeasurableSet_steinerSymmetrization e he hs
+    have hvol' : volume s' = volume s := volume_steinerSymmetrization e he hs
+    refine hpow_inj (le_antisymm (pow_le_pow_left₀ zero_le
+      (perimeter_steinerSymmetrization_le e he hs hfin) _) ?_)
+    calc perimeter volume ⊤ s ^ finrank ℝ E
+        = (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
+            volume s' ^ (finrank ℝ E - 1) := by rw [hvol', heq]
+      _ ≤ perimeter volume ⊤ s' ^ finrank ℝ E :=
+          hs'.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
+            (hvol' ▸ hfin) (hvol' ▸ hpos.ne')
+  · rintro ⟨c, r, hr, hsr⟩
+    rw [perimeter_congr_ae (ae_restrict_of_ae hsr), measure_congr hsr]
+    exact perimeter_ball_pow hn hr
+
+/-- **Ball rigidity in the Euclidean isoperimetric inequality, normalized extended-real form.**
+In dimension `n ≥ 1`, a null-measurable set `s` of finite positive volume satisfies
+`P(s) = n ω_n ^ (1 / n) |s| ^ (1 - 1 / n)` in `ℝ≥0∞` if and only if `s` agrees almost everywhere
+with an open ball of positive radius. -/
+theorem perimeter_eq_ofReal_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball
+    {s : Set E} (hs : NullMeasurableSet s volume) (hn : finrank ℝ E ≠ 0)
+    (hpos : 0 < volume s) (hfin : volume s ≠ ⊤) :
+    perimeter volume ⊤ s = ENNReal.ofReal
+        (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+          volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ↔
+      ∃ c : E, ∃ r : ℝ, 0 < r ∧ s =ᵐ[volume] ball c r := by
+  rw [← hs.perimeter_pow_eq_iff_exists_ae_eq_ball hn hpos hfin,
+    finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hfin hn,
+    ENNReal.ofReal_pow (by positivity)]
+  refine ⟨fun h => congrArg (· ^ finrank ℝ E) h, fun h => ?_⟩
+  exact ENNReal.rpow_left_injective (Nat.cast_ne_zero.2 hn)
+    (by simpa only [ENNReal.rpow_natCast] using h)
+
+/-- **Ball rigidity in the Euclidean isoperimetric inequality, real-valued form.** In dimension
+`n ≥ 1`, a null-measurable set `s` of finite positive volume and finite perimeter satisfies
+`(P(s)).toReal = n ω_n ^ (1 / n) |s| ^ (1 - 1 / n)` if and only if `s` agrees almost everywhere
+with an open ball of positive radius. -/
+theorem perimeter_toReal_eq_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball
+    {s : Set E} (hs : NullMeasurableSet s volume) (hn : finrank ℝ E ≠ 0)
+    (hpos : 0 < volume s) (hfin : volume s ≠ ⊤) (hP : perimeter volume ⊤ s ≠ ⊤) :
+    (perimeter volume ⊤ s).toReal =
+        finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+          volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹) ↔
+      ∃ c : E, ∃ r : ℝ, 0 < r ∧ s =ᵐ[volume] ball c r := by
+  rw [← hs.perimeter_eq_ofReal_mul_volume_real_rpow_mul_iff_exists_ae_eq_ball hn hpos hfin]
+  refine ⟨fun h => by rw [← h, ENNReal.ofReal_toReal hP], fun h => ?_⟩
+  rw [h, ENNReal.toReal_ofReal (by positivity)]
 
 end MeasureTheory.NullMeasurableSet
