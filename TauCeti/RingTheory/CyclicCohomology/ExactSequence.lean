@@ -459,6 +459,7 @@ theorem injective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
   have := ModuleCat.isZero_iff_subsingleton.1 h
   rw [Subsingleton.elim b 0, map_zero]
 
+variable (R A M) in
 /-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring in which
 `1, 2, …, m + 1` are invertible (for instance a ring containing `ℚ`), a Hochschild class is killed
 by Connes' operator `B` exactly when it is the image under `I` of a cyclic cohomology class. -/
@@ -499,6 +500,7 @@ theorem hochschildCohomology.connesB_comp_periodicity (m : ℕ) :
     Linear.comp_smul, ← Category.assoc, ← cyclicTotalHomologyConnesB_def,
     cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity, smul_zero]
 
+variable (R A M) in
 /-- **Exactness of `HH^(m+1) →B HC^m →S HC^(m+2)`.** For a unital algebra over a ring containing
 `ℚ`, a cyclic cohomology class is killed by Connes' periodicity operator `S` if and only if it lies
 in the image of Connes' operator `B`. -/
@@ -530,7 +532,7 @@ theorem cyclicCohomology.injective_periodicity_of_isZero {m : ℕ}
     (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
     Function.Injective (cyclicCohomology.periodicity R A M m) := by
   refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  obtain ⟨b, rfl⟩ := (cyclicCohomology.exact_connesB_periodicity m c).1 hc
+  obtain ⟨b, rfl⟩ := (cyclicCohomology.exact_connesB_periodicity R A M m c).1 hc
   have := ModuleCat.isZero_iff_subsingleton.1 h
   rw [Subsingleton.elim b 0, map_zero]
 
