@@ -54,6 +54,8 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 
 * `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext`: the
   universal property of the presentation.
+* `TauCeti.KacMoody.SatisfiesChevalleyRelations.swap`: the Chevalley relations are symmetric
+  under exchanging the raising and lowering families.
 * `TauCeti.KacMoody.lieSpan_generators_eq_top`: the generators generate the presented algebra.
 * `TauCeti.KacMoody.range_serreHom_sup_range_cartanElement`: `𝔤 = 𝔤' + H`, where `𝔤'` is the
   image of `Matrix.ToLieAlgebra K A`.
@@ -298,6 +300,29 @@ theorem SatisfiesChevalleyRelations.map {φ : H →ₗ[K] L} {E F : I → L}
   lie_positive_negative_self i := by simp [← LieHom.map_lie, h.lie_positive_negative_self]
   lie_positive_negative_of_ne i j hij := by
     simp [← LieHom.map_lie, h.lie_positive_negative_of_ne i j hij]
+
+/-- The Chevalley relations descend along injective Lie algebra homomorphisms. -/
+theorem SatisfiesChevalleyRelations.of_injective {φ : H →ₗ[K] L} {E F : I → L} {L' : Type*}
+    [LieRing L'] [LieAlgebra K L'] {g : L →ₗ⁅K⁆ L'} (hg : Function.Injective g)
+    (h : SatisfiesChevalleyRelations R ((g : L →ₗ[K] L') ∘ₗ φ) (g ∘ E) (g ∘ F)) :
+    SatisfiesChevalleyRelations R φ E F where
+  lie_cartan_cartan x y := hg <| by simpa using h.lie_cartan_cartan x y
+  lie_cartan_positive x j := hg <| by simpa using h.lie_cartan_positive x j
+  lie_cartan_negative x j := hg <| by simpa using h.lie_cartan_negative x j
+  lie_positive_negative_self i := hg <| by simpa using h.lie_positive_negative_self i
+  lie_positive_negative_of_ne i j hij := hg <| by simpa using h.lie_positive_negative_of_ne i j hij
+
+/-- The Chevalley relations are symmetric under exchanging the raising and lowering families and
+negating the Cartan map. -/
+theorem SatisfiesChevalleyRelations.swap {φ : H →ₗ[K] L} {E F : I → L}
+    (h : SatisfiesChevalleyRelations R φ E F) : SatisfiesChevalleyRelations R (-φ) F E where
+  lie_cartan_cartan x y := by simp [h.lie_cartan_cartan]
+  lie_cartan_positive x j := by simp [h.lie_cartan_negative]
+  lie_cartan_negative x j := by simp [h.lie_cartan_positive]
+  lie_positive_negative_self i := by
+    rw [← lie_skew, h.lie_positive_negative_self, LinearMap.neg_apply]
+  lie_positive_negative_of_ne i j hij := by
+    rw [← lie_skew, h.lie_positive_negative_of_ne j i hij.symm, neg_zero]
 
 /-- Relations are carried along Lie algebra homomorphisms. -/
 theorem SatisfiesRelations.map {φ : H →ₗ[K] L} {E F : I → L} (h : SatisfiesRelations R φ E F)
