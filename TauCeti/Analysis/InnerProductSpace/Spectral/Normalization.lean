@@ -427,7 +427,6 @@ theorem eq_normalizingTransport_of_mem_relativeSpectralSubspace (hh : IsStrictly
     have h₁ := (negativeSpectralProjection_apply_eq_self_iff hh hq).mpr (hneg _ (hIio w)).1
     have h₂ := (negativeSpectralProjection_apply_eq_zero_iff hh hq hq').mpr (hposS _ (hIoi w')).1
     have := apply_negativeSpectralProjection_apply_sub_eq_zero (q := q) hh (S (P w)) (S (w' - P w'))
-    change q (P (S (P w))) (S (w' - P w') - P (S (w' - P w'))) = 0 at this
     rwa [h₁, h₂, sub_zero] at this
   -- On each subspace, polarize the identity for `q (S x) (S x)`.
   have hpol {M : Submodule ℝ E} {ε : ℝ} (hM : ∀ x ∈ M, q (S x) (S x) = ε * h x x) {x y : E}

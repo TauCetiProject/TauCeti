@@ -319,17 +319,17 @@ theorem _root_.LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero {�
   let B : LinearMap.BilinForm ℝ E := LinearMap.mk₂ ℝ (fun u v ↦ RCLike.re ⟪T u, v⟫_𝕜)
     (fun _ _ _ ↦ by simp only [map_add, inner_add_left])
     (fun c u v ↦ by
-      change RCLike.re ⟪T ((c : 𝕜) • u), v⟫_𝕜 = c * RCLike.re ⟪T u, v⟫_𝕜
-      rw [map_smul, inner_smul_left, RCLike.conj_ofReal, RCLike.re_ofReal_mul])
+      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) c u, map_smul, inner_smul_left,
+        RCLike.conj_ofReal, RCLike.re_ofReal_mul, smul_eq_mul])
     (fun _ _ _ ↦ by simp only [inner_add_right, map_add])
     (fun c u v ↦ by
-      change RCLike.re ⟪T u, (c : 𝕜) • v⟫_𝕜 = c * RCLike.re ⟪T u, v⟫_𝕜
-      rw [inner_smul_right, RCLike.re_ofReal_mul])
+      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) c v, inner_smul_right, RCLike.re_ofReal_mul,
+        smul_eq_mul])
   have hB : LinearMap.IsSymm B := LinearMap.isSymm_def.mpr fun u v ↦ by
-    change RCLike.re ⟪T u, v⟫_𝕜 = RCLike.re ⟪T v, u⟫_𝕜
-    rw [hT.isSymmetric, ← inner_conj_symm, RCLike.conj_re]
+    rw [LinearMap.mk₂_apply, LinearMap.mk₂_apply, RingHom.id_apply, hT.isSymmetric,
+      ← inner_conj_symm, RCLike.conj_re]
   have hBx := (B.apply_apply_same_eq_zero_iff hT.re_inner_nonneg_left hB (x := x)).mp
-    (by change RCLike.re ⟪T x, x⟫_𝕜 = 0; rw [hx, map_zero])
+    (by rw [LinearMap.mk₂_apply, hx, map_zero])
   -- Evaluate `B x = 0` at `T x`.
   have : RCLike.re ⟪T x, T x⟫_𝕜 = 0 := LinearMap.congr_fun (LinearMap.mem_ker.mp hBx) (T x)
   rwa [inner_self_eq_norm_sq, sq_eq_zero_iff, norm_eq_zero] at this
