@@ -35,11 +35,12 @@ universe u v w
 
 namespace ModuleCat
 
-variable {R : Type u} [Ring R] (M : ModuleCat.{max v w} R) (ι : Type v) [DecidableEq ι]
+variable {R : Type u} [Ring R] (M : ModuleCat.{max v w} R) (ι : Type v)
 
 /-- The coproduct `∐_ι M` of copies of a module `M` is the module `ι →₀ M` of finitely supported
 families, the summand of index `i` going to the families supported at `i`. -/
 def coprodLinearEquivFinsupp : (∐ fun _ : ι ↦ M : ModuleCat.{max v w} R) ≃ₗ[R] (ι →₀ M) :=
+  open scoped Classical in
   (coprodIsoDirectSum fun _ : ι ↦ M).toLinearEquiv.trans
     (finsuppLEquivDirectSum R M ι).symm
 
@@ -50,6 +51,7 @@ supported at `i` with value `x`. -/
 @[simp]
 theorem coprodLinearEquivFinsupp_ι_apply (i : ι) (x : M) :
     coprodLinearEquivFinsupp M ι (Sigma.ι (fun _ : ι ↦ M) i x) = Finsupp.single i x := by
+  classical
   rw [coprodLinearEquivFinsupp, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
     ι_coprodIsoDirectSum_hom_apply, finsuppLEquivDirectSum_symm_lof]
 

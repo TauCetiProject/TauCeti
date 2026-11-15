@@ -21,12 +21,12 @@ The free loop space `𝓛S¹ = C(S¹, S¹)` of the circle is homotopy equivalent
 `𝓛S¹` are indexed by the degree, and each of them is homotopy equivalent to the circle through
 evaluation at `1`.
 
-The degree of `f` is read off from a lift of the normalized loop `t ↦ (f 1)⁻¹ * f (e^{2πit})`
-through `Circle.exp`. Mathlib's homotopy lifting for the covering `Circle.exp` lifts these loops
-continuously in `f`, starting at the angle `0`. The lift `Θ f` ends at `2π` times the degree, which
-is therefore locally constant in `f`. Interpolating linearly between `Θ f` and the angle function
-`t ↦ 2π n t` of `w ↦ w ^ n` gives a homotopy from `f` to `w ↦ f 1 * w ^ n` through closed loops,
-continuous in `f`.
+The degree of `f` is the degree of its loop `t ↦ f (e^{2πit})` (`ContinuousMap.toBasedLoop`).
+Mathlib's homotopy lifting for the covering `Circle.exp` lifts the normalized loops
+`t ↦ (f 1)⁻¹ * f (e^{2πit})` continuously in `f`, starting at the angle `0`. The lift `Θ f` ends at
+`2π` times the degree, which is therefore locally constant in `f`. Interpolating linearly between
+`Θ f` and the angle function `t ↦ 2π n t` of `w ↦ w ^ n` gives a homotopy from `f` to
+`w ↦ f 1 * w ^ n` through closed loops, continuous in `f`.
 
 ## Main declarations
 
@@ -35,17 +35,23 @@ continuous in `f`.
 * `Circle.freeLoopHomotopyEquiv_apply_symm_apply`: the equivalence is a left inverse of its
   homotopy inverse.
 * `ContinuousMap.circleDegree`: the degree of a circle map, continuous in the map
-  (`ContinuousMap.continuous_circleDegree`).
+  (`ContinuousMap.continuous_circleDegree`) and invariant under homotopy
+  (`ContinuousMap.Homotopic.circleDegree_eq`).
+* `Circle.degree_toBasedLoop`: it is the degree of the loop `t ↦ f (e^{2πit})`.
 * `ContinuousMap.sub_eq_circleDegree_mul`, `ContinuousMap.circleDegree_eq_degree`: the degree is
   read off from any continuous angle function or from any loop `γ` with `γ t = f (e^{2πit})`.
 * `ContinuousMap.circleDegree_toCircle`, `ContinuousMap.circleDegree_freeLoopHomotopyEquiv_symm`:
   a loop read as a circle map has its degree, and `w ↦ z * w ^ n` has degree `n`.
+* `ContinuousMap.circleDegree_const`, `ContinuousMap.circleDegree_id`: constant maps have degree
+  `0` and the identity has degree `1`.
 * `Circle.freeLoopHomotopyEquiv_apply`: the equivalence is `f ↦ (f.circleDegree, f 1)`.
 * `Circle.freeLoopHomotopyEquiv_toCircle`: a loop `γ` at `x`, read as a circle map, goes to
   `(degree γ, x)`.
 * `Circle.sigmaFreeLoopHomotopyEquiv`, `Circle.freeLoopComponentInclusion`: the same equivalence
   from the disjoint union `Σ m : ℤ, S¹`, and its restriction `z ↦ (w ↦ z * w ^ m)` to the copy of
   index `m`, into the loops of degree `m`.
+* `Circle.sigmaFreeLoopHomotopyEquiv_symm_apply`: the homotopy inverse of
+  `Circle.sigmaFreeLoopHomotopyEquiv` sends `f` to `f 1` in the copy of index the degree of `f`.
 * `Circle.freeLoopHomotopyEquiv_freeLoopComponentInclusion`: the loop `w ↦ z * w ^ m` goes to
   `(m, z)`.
 
@@ -81,34 +87,33 @@ private theorem exp_freeLoopAngle (t : I) (f : C(Circle, Circle)) :
 private theorem freeLoopAngle_zero (f : C(Circle, Circle)) : freeLoopAngle (0, f) = 0 :=
   isCoveringMap_exp.liftHomotopy_zero normalizedLoopFamily _ _ f
 
-/-- The normalized loop `t ↦ (f 1)⁻¹ * f (e^{2πit})` of a circle map, based at `1`. -/
-private def normalizedLoop (f : C(Circle, Circle)) : Path (1 : Circle) 1 where
-  toFun t := (f 1)⁻¹ * f (unitToCircle t)
-  source' := by simp [unitToCircle_zero]
-  target' := by simp [unitToCircle_one]
-
-/-- The **degree** of a circle map `f`: the degree of the loop `t ↦ f (e^{2πit})`, the number of
-times `f` winds counterclockwise around the circle. It is computed from any continuous angle
-function of that loop (`ContinuousMap.sub_eq_circleDegree_mul`). -/
+/-- The **degree** of a circle map `f`: the degree of its loop `t ↦ f (e^{2πit})`
+(`ContinuousMap.toBasedLoop`), the number of times `f` winds counterclockwise around the circle.
+It is computed from any continuous angle function of that loop
+(`ContinuousMap.sub_eq_circleDegree_mul`). -/
 noncomputable def _root_.ContinuousMap.circleDegree (f : C(Circle, Circle)) : ℤ :=
-  degree (normalizedLoop f)
+  degree f.toBasedLoop
 
-/-- The lifted angle of the normalized loop of `f` ends at `2π` times the degree of `f`. -/
-private theorem freeLoopAngle_one (f : C(Circle, Circle)) :
-    freeLoopAngle (1, f) = f.circleDegree * (2 * π) := by
-  have h := sub_eq_degree_mul (normalizedLoop f) (θ := fun t ↦ freeLoopAngle (t, f))
-    (by fun_prop) fun t ↦ exp_freeLoopAngle t f
-  rwa [freeLoopAngle_zero, sub_zero] at h
+/-- The degree of the loop `t ↦ f (e^{2πit})` of a circle map `f` is the degree of `f`. -/
+@[simp]
+theorem degree_toBasedLoop (f : C(Circle, Circle)) : degree f.toBasedLoop = f.circleDegree :=
+  (rfl)
 
 /-- The degree of a circle map `f` is read off from any continuous angle function `θ` of its loop,
 `exp (θ t) = f (e^{2πit})`: `θ` changes by that many full turns. -/
 theorem _root_.ContinuousMap.sub_eq_circleDegree_mul (f : C(Circle, Circle)) {θ : I → ℝ}
     (hθ : Continuous θ) (hθf : ∀ t, exp (θ t) = f (unitToCircle t)) :
-    θ 1 - θ 0 = f.circleDegree * (2 * π) := by
-  -- `θ - θ 0` is another continuous lift of the normalized loop, since `exp (θ 0) = f 1`.
-  have h := sub_eq_degree_mul (normalizedLoop f) (θ := fun t ↦ θ t - θ 0) (by fun_prop)
-    fun t ↦ by simp [normalizedLoop, exp_sub, hθf, div_eq_inv_mul]
-  simpa [ContinuousMap.circleDegree] using h
+    θ 1 - θ 0 = f.circleDegree * (2 * π) :=
+  sub_eq_degree_mul f.toBasedLoop hθ fun t ↦ (hθf t).trans (f.toBasedLoop_apply t).symm
+
+/-- The lifted angle of the normalized loop of `f` ends at `2π` times the degree of `f`. -/
+private theorem freeLoopAngle_one (f : C(Circle, Circle)) :
+    freeLoopAngle (1, f) = f.circleDegree * (2 * π) := by
+  -- shifting by an angle of `f 1` turns the lift of the normalized loop into a lift of `f`'s loop
+  have h := f.sub_eq_circleDegree_mul (θ := fun t ↦ freeLoopAngle (t, f) + Complex.arg (f 1))
+    (by fun_prop) fun t ↦ by rw [exp_add, exp_freeLoopAngle, exp_arg, mul_comm,
+      mul_inv_cancel_left]
+  simpa [freeLoopAngle_zero] using h
 
 /-- The degree of a circle map is continuous, that is, locally constant, in the map. -/
 theorem _root_.ContinuousMap.continuous_circleDegree :
@@ -140,9 +145,9 @@ private theorem continuous_powLoop : Continuous powLoop := by
     (hpow.comp ((continuous_fst.comp continuous_fst).prodMk continuous_snd))
 
 private theorem circleDegree_powLoop (p : ℤ × Circle) : (powLoop p).circleDegree = p.1 := by
-  refine degree_eq_of_sub_eq (normalizedLoop (powLoop p)) (θ := fun t ↦ p.1 * (2 * π * t))
-    (by fun_prop) (fun t ↦ ?_) (by simp)
-  simp [normalizedLoop, powLoop_apply, unitToCircle_apply, exp_intCast_mul]
+  refine degree_eq_of_sub_eq (powLoop p).toBasedLoop
+    (θ := fun t ↦ Complex.arg p.2 + p.1 * (2 * π * t)) (by fun_prop) (fun t ↦ ?_) (by simp)
+  simp [powLoop_apply, unitToCircle_apply, exp_add, exp_arg, exp_intCast_mul]
 
 /-- The straight-line homotopy of angle functions from `t ↦ 2π n t` to the lifted angle of `f`,
 as a family of closed unit-interval loops at `f 1`. -/
@@ -255,10 +260,32 @@ theorem freeLoopHomotopyEquiv_apply_snd (f : C(Circle, Circle)) :
 /-- The degree of a circle map `f` is the degree of any loop `γ` tracing `f`,
 `γ t = f (e^{2πit})`. -/
 theorem _root_.ContinuousMap.circleDegree_eq_degree (f : C(Circle, Circle)) {x : Circle}
-    (γ : Path x x) (hγ : ∀ t, γ t = f (unitToCircle t)) : f.circleDegree = degree γ := by
-  obtain ⟨θ, hθ⟩ := exists_lift γ
-  have h := f.sub_eq_circleDegree_mul θ.continuous fun t ↦ (hθ t).trans (hγ t)
-  exact (degree_eq_of_sub_eq γ θ.continuous hθ h).symm
+    (γ : Path x x) (hγ : ∀ t, γ t = f (unitToCircle t)) : f.circleDegree = degree γ :=
+  degree_congr f.toBasedLoop γ fun t ↦ (f.toBasedLoop_apply t).trans (hγ t).symm
+
+/-- A constant circle map has degree `0`. -/
+@[simp]
+theorem _root_.ContinuousMap.circleDegree_const (z : Circle) :
+    (ContinuousMap.const Circle z).circleDegree = 0 :=
+  ((ContinuousMap.const Circle z).circleDegree_eq_degree (Path.refl z) fun _ ↦ rfl).trans
+    (degree_refl z)
+
+/-- The identity of the circle has degree `1`. -/
+@[simp]
+theorem _root_.ContinuousMap.circleDegree_id : (ContinuousMap.id Circle).circleDegree = 1 :=
+  ((ContinuousMap.id Circle).circleDegree_eq_degree expLoop fun t ↦ by
+    simp [unitToCircle_apply]).trans degree_expLoop
+
+/-- **Homotopy invariance of the degree.** Homotopic circle maps have the same degree. -/
+theorem _root_.ContinuousMap.Homotopic.circleDegree_eq {f g : C(Circle, Circle)}
+    (h : f.Homotopic g) : f.circleDegree = g.circleDegree := by
+  obtain ⟨F⟩ := h
+  have h₀ : F.curry 0 = f := ContinuousMap.ext fun w ↦ by simp
+  have h₁ : F.curry 1 = g := ContinuousMap.ext fun w ↦ by simp
+  -- the degree is locally constant, hence constant along the path `F.curry` from `f` to `g`
+  have h := PreconnectedSpace.constant inferInstance
+    (ContinuousMap.continuous_circleDegree.comp F.curry.continuous) (x := 0) (y := 1)
+  rwa [Function.comp_apply, Function.comp_apply, h₀, h₁] at h
 
 /-- A loop `γ`, read as a circle map, has the degree of `γ`. -/
 @[simp]
@@ -288,6 +315,18 @@ def sigmaFreeLoopHomotopyEquiv : ContinuousMap.HomotopyEquiv (Σ _ : ℤ, Circle
 theorem sigmaFreeLoopHomotopyEquiv_apply (p : Σ _ : ℤ, Circle) (w : Circle) :
     sigmaFreeLoopHomotopyEquiv p w = p.2 * w ^ p.1 := by
   simp [sigmaFreeLoopHomotopyEquiv, ContinuousMap.HomotopyEquiv.trans]
+
+/-- The homotopy inverse of `Circle.sigmaFreeLoopHomotopyEquiv` sends a loop to its value at `1`
+in the copy indexed by its degree. -/
+@[simp]
+theorem sigmaFreeLoopHomotopyEquiv_symm_apply (f : C(Circle, Circle)) :
+    sigmaFreeLoopHomotopyEquiv.symm f = ⟨f.circleDegree, f 1⟩ := by
+  simp only [sigmaFreeLoopHomotopyEquiv, ContinuousMap.HomotopyEquiv.symm_trans,
+    ← Homeomorph.symm_toHomotopyEquiv, ContinuousMap.HomotopyEquiv.trans_apply,
+    Homeomorph.coe_toHomotopyEquiv, Homeomorph.sigmaEquivProd_symm_apply, Sigma.mk.injEq,
+    heq_eq_eq]
+  -- the homotopy inverse of `freeLoopHomotopyEquiv.symm` is `freeLoopHomotopyEquiv` itself
+  exact ⟨rfl, rfl⟩
 
 /-- The inclusion `z ↦ (w ↦ z * w ^ m)` of the circle into the loops of degree `m`. -/
 def freeLoopComponentInclusion (m : ℤ) : C(Circle, C(Circle, Circle)) :=

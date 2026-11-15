@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.Products
 public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.Circle
@@ -27,7 +27,8 @@ coefficients in any abelian category in which coproducts indexed by `ℤ` are ex
 
 Consequently `Hₙ(𝓛S¹; R)` is a coproduct of copies of `R`, one for each integer, in degrees `0`
 and `1`, and vanishes in degrees `n ≥ 2`. For coefficients in a module `M` over a ring `k` this
-is `Hₙ(𝓛S¹; M) ≃ (ℤ →₀ M)` for `n ≤ 1`; for `M = k = ℤ` both groups are the group ring `ℤ[ℤ]`.
+is `Hₙ(𝓛S¹; M) ≃ (ℤ →₀ M)` for `n ≤ 1`; for `M = k` this is the free `k`-module on `ℤ`, the
+underlying module of the group algebra `k[ℤ]` (no multiplication on homology is constructed).
 The coproduct description also holds for the free Moore loop space `MooreFreeLoopSpace S¹`, which
 is homotopy equivalent to `C(S¹, S¹)` (`TauCeti.MooreFreeLoopSpace.homotopyEquivCircleMap`), as
 `Circle.singularHomologyMooreFreeLoopIso`.
@@ -44,6 +45,8 @@ is homotopy equivalent to `C(S¹, S¹)` (`TauCeti.MooreFreeLoopSpace.homotopyEqu
 * `Circle.isZero_singularHomology_freeLoop`: `Hₙ(𝓛S¹; R) = 0` for `n ≥ 2`.
 * `Circle.singularHomologyZeroFreeLoopLinearEquiv`, `Circle.singularHomologyOneFreeLoopLinearEquiv`:
   `H₀(𝓛S¹; M) ≃ₗ[k] (ℤ →₀ M)` and `H₁(𝓛S¹; M) ≃ₗ[k] (ℤ →₀ M)`.
+* `Circle.map_ofCircleMap_singularHomologyMooreFreeLoopIso_hom`: the Moore isomorphism restricts
+  to `Circle.singularHomologyFreeLoopIso` along `TauCeti.MooreFreeLoopSpace.ofCircleMap`.
 
 ## References
 
@@ -59,7 +62,7 @@ noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology TauCeti
 
-universe u v
+universe u v w
 
 namespace Circle
 
@@ -99,6 +102,15 @@ theorem map_freeLoopComponentInclusion_singularHomologyFreeLoopIso_hom (n : ℕ)
   (isColimitCofanSingularHomologyFreeLoop R n).comp_coconePointUniqueUpToIso_hom
     (colimit.isColimit _) ⟨m⟩
 
+/-- The inverse of `Circle.singularHomologyFreeLoopIso` sends the summand of index `m` to the
+component of degree `m`. -/
+@[reassoc (attr := simp)]
+theorem ι_singularHomologyFreeLoopIso_inv (n : ℕ) (m : ℤ) :
+    Sigma.ι (fun _ : ℤ ↦ ((singularHomologyFunctor C n).obj R).obj (TopCat.of Circle)) m ≫
+      (singularHomologyFreeLoopIso R n).inv =
+        ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (freeLoopComponentInclusion m)) :=
+  (Iso.comp_inv_eq _).2 (map_freeLoopComponentInclusion_singularHomologyFreeLoopIso_hom R n m).symm
+
 /-- The homology of the free Moore loop space of the circle is the coproduct over the degree of
 copies of the homology of the circle. -/
 def singularHomologyMooreFreeLoopIso (n : ℕ) :
@@ -106,6 +118,32 @@ def singularHomologyMooreFreeLoopIso (n : ℕ) :
       ∐ fun _ : ℤ ↦ ((singularHomologyFunctor C n).obj R).obj (TopCat.of Circle) :=
   (MooreFreeLoopSpace.homotopyEquivCircleMap Circle).singularHomologyIso R n ≪≫
     singularHomologyFreeLoopIso R n
+
+/-- Reading circle maps as Moore loops, followed by `Circle.singularHomologyMooreFreeLoopIso`, is
+`Circle.singularHomologyFreeLoopIso`. -/
+@[reassoc (attr := simp)]
+theorem map_ofCircleMap_singularHomologyMooreFreeLoopIso_hom (n : ℕ) :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom MooreFreeLoopSpace.ofCircleMap) ≫
+      (singularHomologyMooreFreeLoopIso R n).hom = (singularHomologyFreeLoopIso R n).hom := by
+  have h : (MooreFreeLoopSpace.homotopyEquivCircleMap Circle).toFun.comp
+      MooreFreeLoopSpace.ofCircleMap = ContinuousMap.id _ :=
+    ContinuousMap.ext fun f ↦ by simp [MooreFreeLoopSpace.homotopyEquivCircleMap_apply,
+      MooreFreeLoopSpace.toCircleMap_ofCircleMap]
+  rw [singularHomologyMooreFreeLoopIso, Iso.trans_hom,
+    ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, ← Functor.map_comp_assoc,
+    ← TopCat.ofHom_comp, h, TopCat.ofHom_id, CategoryTheory.Functor.map_id, Category.id_comp]
+
+/-- The inverse of `Circle.singularHomologyMooreFreeLoopIso` sends the summand of index `m` to the
+Moore loops `z ↦ (w ↦ z * w ^ m)` of degree `m`. -/
+@[reassoc (attr := simp)]
+theorem ι_singularHomologyMooreFreeLoopIso_inv (n : ℕ) (m : ℤ) :
+    Sigma.ι (fun _ : ℤ ↦ ((singularHomologyFunctor C n).obj R).obj (TopCat.of Circle)) m ≫
+      (singularHomologyMooreFreeLoopIso R n).inv =
+        ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (freeLoopComponentInclusion m)) ≫
+          ((singularHomologyFunctor C n).obj R).map
+            (TopCat.ofHom MooreFreeLoopSpace.ofCircleMap) := by
+  rw [Iso.comp_inv_eq, Category.assoc, map_ofCircleMap_singularHomologyMooreFreeLoopIso_hom,
+    map_freeLoopComponentInclusion_singularHomologyFreeLoopIso_hom]
 
 /-- `H₀(𝓛S¹; R)` is a coproduct of copies of `R`, one for each degree. -/
 def singularHomologyZeroFreeLoopIso :
@@ -122,6 +160,17 @@ theorem map_freeLoopComponentInclusion_singularHomologyZeroFreeLoopIso_hom (m : 
         (TopCat.of Circle).singularHomology₀ε R ≫ Sigma.ι (fun _ : ℤ ↦ R) m := by
   simp [singularHomologyZeroFreeLoopIso]
 
+/-- The inverse of `Circle.singularHomologyZeroFreeLoopIso` sends the summand of index `m` to the
+component of degree `m`, through the inverse of the augmentation of the circle. -/
+@[reassoc (attr := simp)]
+theorem ι_singularHomologyZeroFreeLoopIso_inv (m : ℤ) :
+    Sigma.ι (fun _ : ℤ ↦ R) m ≫ (singularHomologyZeroFreeLoopIso R).inv =
+      inv ((TopCat.of Circle).singularHomology₀ε R) ≫
+        ((singularHomologyFunctor C 0).obj R).map
+          (TopCat.ofHom (freeLoopComponentInclusion m)) := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    map_freeLoopComponentInclusion_singularHomologyZeroFreeLoopIso_hom, IsIso.inv_hom_id_assoc]
+
 /-- `H₁(𝓛S¹; R)` is a coproduct of copies of `R`, one for each degree. -/
 def singularHomologyOneFreeLoopIso :
     ((singularHomologyFunctor C 1).obj R).obj (TopCat.of C(Circle, Circle)) ≅ ∐ fun _ : ℤ ↦ R :=
@@ -136,29 +185,41 @@ theorem map_freeLoopComponentInclusion_singularHomologyOneFreeLoopIso_hom (m : �
         (singularHomologyOneIso R).hom ≫ Sigma.ι (fun _ : ℤ ↦ R) m := by
   simp [singularHomologyOneFreeLoopIso]
 
+/-- The inverse of `Circle.singularHomologyOneFreeLoopIso` sends the summand of index `m` to the
+component of degree `m`, through the inverse of `Circle.singularHomologyOneIso`. -/
+@[reassoc (attr := simp)]
+theorem ι_singularHomologyOneFreeLoopIso_inv (m : ℤ) :
+    Sigma.ι (fun _ : ℤ ↦ R) m ≫ (singularHomologyOneFreeLoopIso R).inv =
+      (singularHomologyOneIso R).inv ≫
+        ((singularHomologyFunctor C 1).obj R).map
+          (TopCat.ofHom (freeLoopComponentInclusion m)) := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    map_freeLoopComponentInclusion_singularHomologyOneFreeLoopIso_hom, Iso.inv_hom_id_assoc]
+
 /-- The homology of the free loop space of the circle vanishes in degrees at least two. -/
-theorem isZero_singularHomology_freeLoop (j : ℕ) :
-    IsZero (((singularHomologyFunctor C (j + 2)).obj R).obj (TopCat.of C(Circle, Circle))) :=
-  (isColimitCofanSingularHomologyFreeLoop R (j + 2)).isZero_pt
+theorem isZero_singularHomology_freeLoop {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of C(Circle, Circle))) := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  exact (isColimitCofanSingularHomologyFreeLoop R (j + 2)).isZero_pt
     (Functor.isZero _ fun _ ↦ (isZero_singularHomologyFunctor_topCatSphere_of_ne R
       (n := 1) (q := j + 1) (by omega)).of_iso
         (((singularHomologyFunctor C (j + 2)).obj R).mapIso sphereOneIsoCircleUnlifted).symm)
 
 section ModuleCat
 
-variable {k : Type u} [Ring k] (M : ModuleCat.{u} k)
+variable {k : Type u} [Ring k] (M : ModuleCat.{w} k)
 
 /-- `H₀(𝓛S¹; M)` is the module `ℤ →₀ M` of finitely supported families indexed by the degree; for
-`M = k` this is the group algebra `k[ℤ]`. -/
+`M = k` this is the free `k`-module `ℤ →₀ k`, the underlying module of the group algebra `k[ℤ]`. -/
 def singularHomologyZeroFreeLoopLinearEquiv :
-    ((singularHomologyFunctor (ModuleCat.{u} k) 0).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
+    ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
       (ℤ →₀ M) :=
   (singularHomologyZeroFreeLoopIso M).toLinearEquiv.trans (M.coprodLinearEquivFinsupp ℤ)
 
 /-- `H₁(𝓛S¹; M)` is the module `ℤ →₀ M` of finitely supported families indexed by the degree; for
-`M = k` this is the group algebra `k[ℤ]`. -/
+`M = k` this is the free `k`-module `ℤ →₀ k`, the underlying module of the group algebra `k[ℤ]`. -/
 def singularHomologyOneFreeLoopLinearEquiv :
-    ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
+    ((singularHomologyFunctor (ModuleCat.{w} k) 1).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
       (ℤ →₀ M) :=
   (singularHomologyOneFreeLoopIso M).toLinearEquiv.trans (M.coprodLinearEquivFinsupp ℤ)
 
@@ -166,9 +227,9 @@ def singularHomologyOneFreeLoopLinearEquiv :
 to its augmentation placed at `m`. -/
 @[simp]
 theorem singularHomologyZeroFreeLoopLinearEquiv_map (m : ℤ)
-    (x : ((singularHomologyFunctor (ModuleCat.{u} k) 0).obj M).obj (TopCat.of Circle)) :
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj (TopCat.of Circle)) :
     singularHomologyZeroFreeLoopLinearEquiv M
-        (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj M).map
+        (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).map
           (TopCat.ofHom (freeLoopComponentInclusion m)) x) =
       Finsupp.single m ((TopCat.of Circle).singularHomology₀ε M x) := by
   rw [singularHomologyZeroFreeLoopLinearEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
@@ -179,14 +240,34 @@ theorem singularHomologyZeroFreeLoopLinearEquiv_map (m : ℤ)
 to its image under `Circle.singularHomologyOneIso` placed at `m`. -/
 @[simp]
 theorem singularHomologyOneFreeLoopLinearEquiv_map (m : ℤ)
-    (x : ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj M).obj (TopCat.of Circle)) :
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) 1).obj M).obj (TopCat.of Circle)) :
     singularHomologyOneFreeLoopLinearEquiv M
-        (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj M).map
+        (((singularHomologyFunctor (ModuleCat.{w} k) 1).obj M).map
           (TopCat.ofHom (freeLoopComponentInclusion m)) x) =
       Finsupp.single m ((singularHomologyOneIso M).hom x) := by
   rw [singularHomologyOneFreeLoopLinearEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
     ← ModuleCat.comp_apply, map_freeLoopComponentInclusion_singularHomologyOneFreeLoopIso_hom,
     ModuleCat.comp_apply, ModuleCat.coprodLinearEquivFinsupp_ι_apply]
+
+/-- The inverse of `Circle.singularHomologyZeroFreeLoopLinearEquiv` sends `x` placed at `m` to the
+class in the component of degree `m` with augmentation `x`. -/
+@[simp]
+theorem singularHomologyZeroFreeLoopLinearEquiv_symm_single (m : ℤ) (x : M) :
+    (singularHomologyZeroFreeLoopLinearEquiv M).symm (Finsupp.single m x) =
+      ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).map
+        (TopCat.ofHom (freeLoopComponentInclusion m))
+          (inv ((TopCat.of Circle).singularHomology₀ε M) x) := by
+  rw [LinearEquiv.symm_apply_eq, singularHomologyZeroFreeLoopLinearEquiv_map,
+    ← ModuleCat.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
+
+/-- The inverse of `Circle.singularHomologyOneFreeLoopLinearEquiv` sends `x` placed at `m` to the
+image of `(Circle.singularHomologyOneIso M).inv x` in the component of degree `m`. -/
+@[simp]
+theorem singularHomologyOneFreeLoopLinearEquiv_symm_single (m : ℤ) (x : M) :
+    (singularHomologyOneFreeLoopLinearEquiv M).symm (Finsupp.single m x) =
+      ((singularHomologyFunctor (ModuleCat.{w} k) 1).obj M).map
+        (TopCat.ofHom (freeLoopComponentInclusion m)) ((singularHomologyOneIso M).inv x) := by
+  rw [LinearEquiv.symm_apply_eq, singularHomologyOneFreeLoopLinearEquiv_map, Iso.inv_hom_id_apply]
 
 end ModuleCat
 
