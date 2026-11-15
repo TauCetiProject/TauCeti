@@ -43,7 +43,7 @@ invertible for the cup product (`TauCeti.exists_singularCup_matrix_eq_one`), and
 class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`). The inverse has, at
 every point, the inverse matrix of values; it is a class because the matrix of values, and so its
 inverse, is constant on path components. The cup product with a unit is a bijection of the
-cohomology with any coefficients (`TauCeti.bijective_singularCup_right_of_singularCup_eq_one`).
+cohomology with any coefficients (`TauCeti.bijective_singularCup_left_of_singularCup_eq_one`).
 
 ## References
 
@@ -319,7 +319,7 @@ omit [Fintype ι] [DecidableEq ι] in
 /-- **The cup product with a unit of `H⁰(X; k)` is bijective**: if `c` has an inverse `c'` for the
 cup product, then `a ↦ a ⌣ c` is a bijection of `Hᵖ(X; M)` for every `k`-module `M`, with inverse
 `a ↦ a ⌣ c'`. -/
-theorem bijective_singularCup_right_of_singularCup_eq_one
+theorem bijective_singularCup_left_of_singularCup_eq_one
     {c c' : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0}
     (hcc' : X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl c c' = X.singularCohomologyZeroOne)
     (hc'c : X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl c' c = X.singularCohomologyZeroOne)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Sphere
+import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.AlgebraicTopology.Cohomology.Cup.Connecting
 import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
@@ -80,11 +81,6 @@ variable {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
 /-! ### The Thom map of the class pulled back from the sphere -/
 
 section Sphere
-
-/-- Acting twice by the sign `(-1)ⁿ` is the identity. -/
-private theorem neg_one_pow_smul_neg_one_pow_smul {A : Type*} [AddCommGroup A] (n : ℕ) (x : A) :
-    (-1 : ℤ) ^ n • (-1 : ℤ) ^ n • x = x := by
-  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_smul]
 
 variable {d : ℕ}
 
@@ -216,6 +212,6 @@ theorem bijective_pullbackCup_prodThomPair (hF : 2 ≤ finrank ℝ F)
         (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a c :=
     funext (TopPair.pullbackCup_pullbackCup _ _ (add_zero p) (zero_add _) h h v c)
   rw [hcomp]
-  exact (hv M p m h).comp (bijective_singularCup_right_of_singularCup_eq_one hcc' hc'c M p)
+  exact (hv M p m h).comp (bijective_singularCup_left_of_singularCup_eq_one hcc' hc'c M p)
 
 end TauCeti
