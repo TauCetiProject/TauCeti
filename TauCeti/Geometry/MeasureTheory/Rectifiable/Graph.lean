@@ -104,12 +104,12 @@ namespace LipschitzOnWith
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   {φ : E → ℝ} {f : WithLp 2 (ℝ × E) → F} {K L : ℝ≥0}
 
 /-- The pullback derivative provides a within-derivative almost everywhere on a Lipschitz
 normal graph over an arbitrary parameter set, without a unique-differentiability hypothesis. -/
-theorem ae_hasFDerivWithinAt_normalGraphEmbedding_image {s : Set E}
+theorem ae_hasFDerivWithinAt_normalGraphEmbedding_image [FiniteDimensional ℝ F] {s : Set E}
     (hf : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' s))
     (hφ : LipschitzOnWith K φ s) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
@@ -126,7 +126,7 @@ theorem ae_hasFDerivWithinAt_normalGraphEmbedding_image {s : Set E}
 
 /-- Rademacher's theorem on a Lipschitz normal graph over an arbitrary parameter set.
 Almost everywhere refers to normalized Hausdorff surface measure. -/
-theorem ae_differentiableWithinAt_normalGraphEmbedding_image {s : Set E}
+theorem ae_differentiableWithinAt_normalGraphEmbedding_image [FiniteDimensional ℝ F] {s : Set E}
     (hf : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' s))
     (hφ : LipschitzOnWith K φ s) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
@@ -137,9 +137,8 @@ theorem ae_differentiableWithinAt_normalGraphEmbedding_image {s : Set E}
 
 /-- Almost everywhere, every graph within-derivative pulls back to the parameter derivative
 at points where the parameter set has unique derivatives. -/
-theorem ae_comp_normalGraphL_eq_normalGraphEmbedding_image {s : Set E}
-    (hf : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' s))
-    (hφ : LipschitzOnWith K φ s) :
+theorem ae_comp_normalGraphL_eq_of_hasFDerivWithinAt_normalGraphEmbedding_image {s : Set E}
+    (hφ : LipschitzOnWith K φ s) (f : WithLp 2 (ℝ × E) → F) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
       y ∈ TauCeti.normalGraphEmbedding φ '' s → UniqueDiffWithinAt ℝ s y.snd →
         ∀ M : WithLp 2 (ℝ × E) →L[ℝ] F,
@@ -147,19 +146,16 @@ theorem ae_comp_normalGraphL_eq_normalGraphEmbedding_image {s : Set E}
             M.comp (fderivWithin ℝ φ s y.snd).normalGraphL =
               fderivWithin ℝ (f ∘ TauCeti.normalGraphEmbedding φ) s y.snd := by
   apply (hφ.ae_normalGraphEmbedding_image_iff (μHE[Module.finrank ℝ E] : Measure E)).mpr
-  have hp := hf.comp hφ.normalGraphEmbedding (mapsTo_image _ s)
   filter_upwards [hφ.ae_differentiableWithinAt_of_mem
-      (μ := (μHE[Module.finrank ℝ E] : Measure E)),
-    hp.ae_differentiableWithinAt_of_mem
-      (μ := (μHE[Module.finrank ℝ E] : Measure E))] with x hφx hpx hxs hs M hM
+    (μ := (μHE[Module.finrank ℝ E] : Measure E))] with x hφx hxs hs M hM
   rw [TauCeti.normalGraphEmbedding_snd] at hs ⊢
-  exact hM.comp_normalGraphL_eq (hφx hxs).hasFDerivWithinAt (hpx hxs).hasFDerivWithinAt hs
+  exact ((hM.comp x (hφx hxs).hasFDerivWithinAt.normalGraphEmbedding
+    (mapsTo_image _ s)).fderivWithin hs).symm
 
 /-- Almost everywhere, graph within-derivatives have the canonical tangent-plane restriction
 at points where the parameter set has unique derivatives. -/
-theorem ae_comp_subtypeL_eq_normalGraphEmbedding_image {s : Set E}
-    (hf : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' s))
-    (hφ : LipschitzOnWith K φ s) :
+theorem ae_comp_subtypeL_eq_of_hasFDerivWithinAt_normalGraphEmbedding_image {s : Set E}
+    (hφ : LipschitzOnWith K φ s) (f : WithLp 2 (ℝ × E) → F) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
       y ∈ TauCeti.normalGraphEmbedding φ '' s → UniqueDiffWithinAt ℝ s y.snd →
         ∀ M : WithLp 2 (ℝ × E) →L[ℝ] F,
@@ -168,18 +164,43 @@ theorem ae_comp_subtypeL_eq_normalGraphEmbedding_image {s : Set E}
               ((fderivWithin ℝ (f ∘ TauCeti.normalGraphEmbedding φ) s y.snd).comp
                 (WithLp.sndL 2 ℝ ℝ E)).comp
                   (fderivWithin ℝ φ s y.snd).normalGraphL.range.subtypeL := by
+  filter_upwards [hφ.ae_comp_normalGraphL_eq_of_hasFDerivWithinAt_normalGraphEmbedding_image f]
+    with y hy hys hs M hM
+  exact (M.comp_subtypeL_range_normalGraphL_eq_iff _ _).mpr (hy hys hs M hM)
+
+/-- Almost everywhere on a Lipschitz graph, the chosen graph derivative pulls back to
+the chosen parameter derivative at points with unique parameter derivatives.
+No regularity of the function on the graph is required. -/
+theorem ae_fderivWithin_normalGraphEmbedding_image_comp_normalGraphL {s : Set E}
+    (hφ : LipschitzOnWith K φ s) (f : WithLp 2 (ℝ × E) → F) :
+    ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      y ∈ TauCeti.normalGraphEmbedding φ '' s → UniqueDiffWithinAt ℝ s y.snd →
+        (fderivWithin ℝ f (TauCeti.normalGraphEmbedding φ '' s) y).comp
+          (fderivWithin ℝ φ s y.snd).normalGraphL =
+            fderivWithin ℝ (f ∘ TauCeti.normalGraphEmbedding φ) s y.snd := by
   apply (hφ.ae_normalGraphEmbedding_image_iff (μHE[Module.finrank ℝ E] : Measure E)).mpr
-  have hp := hf.comp hφ.normalGraphEmbedding (mapsTo_image _ s)
   filter_upwards [hφ.ae_differentiableWithinAt_of_mem
-      (μ := (μHE[Module.finrank ℝ E] : Measure E)),
-    hp.ae_differentiableWithinAt_of_mem
-      (μ := (μHE[Module.finrank ℝ E] : Measure E))] with x hφx hpx hxs hs M hM
+    (μ := (μHE[Module.finrank ℝ E] : Measure E))] with x hφx hxs hs
   rw [TauCeti.normalGraphEmbedding_snd] at hs ⊢
-  exact hM.comp_subtypeL_normalGraphL_range_eq_of_comp_normalGraphEmbedding
-    (hφx hxs).hasFDerivWithinAt (hpx hxs).hasFDerivWithinAt hs
+  exact (hφx hxs).fderivWithin_normalGraphEmbedding_image_comp_normalGraphL hs
+
+/-- Almost everywhere on a Lipschitz graph, the chosen derivative has the pullback's
+canonical tangent-plane restriction at points with unique parameter derivatives. -/
+theorem ae_fderivWithin_normalGraphEmbedding_image_comp_subtypeL {s : Set E}
+    (hφ : LipschitzOnWith K φ s) (f : WithLp 2 (ℝ × E) → F) :
+    ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      y ∈ TauCeti.normalGraphEmbedding φ '' s → UniqueDiffWithinAt ℝ s y.snd →
+        (fderivWithin ℝ f (TauCeti.normalGraphEmbedding φ '' s) y).comp
+          (fderivWithin ℝ φ s y.snd).normalGraphL.range.subtypeL =
+            ((fderivWithin ℝ (f ∘ TauCeti.normalGraphEmbedding φ) s y.snd).comp
+              (WithLp.sndL 2 ℝ ℝ E)).comp
+                (fderivWithin ℝ φ s y.snd).normalGraphL.range.subtypeL := by
+  filter_upwards [hφ.ae_fderivWithin_normalGraphEmbedding_image_comp_normalGraphL f]
+    with y hy hys hs
+  exact (ContinuousLinearMap.comp_subtypeL_range_normalGraphL_eq_iff _ _ _).mpr (hy hys hs)
 
 /-- The pullback derivative provides a within-derivative almost everywhere on the full graph. -/
-theorem ae_hasFDerivWithinAt_range_normalGraphEmbedding
+theorem ae_hasFDerivWithinAt_range_normalGraphEmbedding [FiniteDimensional ℝ F]
     (hf : LipschitzOnWith L f (range (TauCeti.normalGraphEmbedding φ)))
     (hφ : LipschitzWith K φ) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
@@ -193,7 +214,7 @@ theorem ae_hasFDerivWithinAt_range_normalGraphEmbedding
     hf'.ae_hasFDerivWithinAt_normalGraphEmbedding_image hφ.lipschitzOnWith
 
 /-- Rademacher's theorem within the full Lipschitz normal graph. -/
-theorem ae_differentiableWithinAt_range_normalGraphEmbedding
+theorem ae_differentiableWithinAt_range_normalGraphEmbedding [FiniteDimensional ℝ F]
     (hf : LipschitzOnWith L f (range (TauCeti.normalGraphEmbedding φ)))
     (hφ : LipschitzWith K φ) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
@@ -202,27 +223,33 @@ theorem ae_differentiableWithinAt_range_normalGraphEmbedding
   filter_upwards [hf.ae_hasFDerivWithinAt_range_normalGraphEmbedding hφ] with y hy hys
   exact (hy hys).differentiableWithinAt
 
+end LipschitzOnWith
+
+namespace LipschitzWith
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {φ : E → ℝ} {K : ℝ≥0}
+
 /-- Almost everywhere on the full graph, every within-derivative pulls back to the
 parameter derivative. -/
-theorem ae_comp_normalGraphL_eq_range_normalGraphEmbedding
-    (hf : LipschitzOnWith L f (range (TauCeti.normalGraphEmbedding φ)))
-    (hφ : LipschitzWith K φ) :
+theorem ae_comp_normalGraphL_eq_of_hasFDerivWithinAt_range_normalGraphEmbedding
+    (hφ : LipschitzWith K φ) (f : WithLp 2 (ℝ × E) → F) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
       y ∈ range (TauCeti.normalGraphEmbedding φ) →
         ∀ M : WithLp 2 (ℝ × E) →L[ℝ] F,
           HasFDerivWithinAt f M (range (TauCeti.normalGraphEmbedding φ)) y →
             M.comp (fderiv ℝ φ y.snd).normalGraphL =
               fderiv ℝ (f ∘ TauCeti.normalGraphEmbedding φ) y.snd := by
-  have hf' : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' univ) := by
-    simpa only [image_univ] using hf
   simpa only [image_univ, fderivWithin_univ, uniqueDiffWithinAt_univ, true_implies] using
-    hf'.ae_comp_normalGraphL_eq_normalGraphEmbedding_image hφ.lipschitzOnWith
+    hφ.lipschitzOnWith.ae_comp_normalGraphL_eq_of_hasFDerivWithinAt_normalGraphEmbedding_image
+      (s := univ) f
 
 /-- Almost everywhere on the full graph, every within-derivative has the canonical
 restriction to the tangent plane. -/
-theorem ae_comp_subtypeL_eq_range_normalGraphEmbedding
-    (hf : LipschitzOnWith L f (range (TauCeti.normalGraphEmbedding φ)))
-    (hφ : LipschitzWith K φ) :
+theorem ae_comp_subtypeL_eq_of_hasFDerivWithinAt_range_normalGraphEmbedding
+    (hφ : LipschitzWith K φ) (f : WithLp 2 (ℝ × E) → F) :
     ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
       y ∈ range (TauCeti.normalGraphEmbedding φ) →
         ∀ M : WithLp 2 (ℝ × E) →L[ℝ] F,
@@ -230,12 +257,35 @@ theorem ae_comp_subtypeL_eq_range_normalGraphEmbedding
             M.comp (fderiv ℝ φ y.snd).normalGraphL.range.subtypeL =
               ((fderiv ℝ (f ∘ TauCeti.normalGraphEmbedding φ) y.snd).comp
                 (WithLp.sndL 2 ℝ ℝ E)).comp (fderiv ℝ φ y.snd).normalGraphL.range.subtypeL := by
-  have hf' : LipschitzOnWith L f (TauCeti.normalGraphEmbedding φ '' univ) := by
-    simpa only [image_univ] using hf
-  have h := hf'.ae_comp_subtypeL_eq_normalGraphEmbedding_image hφ.lipschitzOnWith
-  simp only [image_univ, uniqueDiffWithinAt_univ, true_implies] at h
-  filter_upwards [h] with y hy
-  rw [fderivWithin_univ (f := φ)] at hy
-  simpa only [fderivWithin_univ] using hy
+  filter_upwards [hφ.ae_comp_normalGraphL_eq_of_hasFDerivWithinAt_range_normalGraphEmbedding f]
+    with y hy hys M hM
+  exact (M.comp_subtypeL_range_normalGraphL_eq_iff _ _).mpr (hy hys M hM)
 
-end LipschitzOnWith
+/-- Almost everywhere on the full Lipschitz graph, the chosen within-derivative pulls back
+to the parameter derivative, even for an arbitrary function on the graph. -/
+theorem ae_fderivWithin_range_normalGraphEmbedding_comp_normalGraphL
+    (hφ : LipschitzWith K φ) (f : WithLp 2 (ℝ × E) → F) :
+    ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      y ∈ range (TauCeti.normalGraphEmbedding φ) →
+        (fderivWithin ℝ f (range (TauCeti.normalGraphEmbedding φ)) y).comp
+          (fderiv ℝ φ y.snd).normalGraphL =
+            fderiv ℝ (f ∘ TauCeti.normalGraphEmbedding φ) y.snd := by
+  simpa only [image_univ, fderivWithin_univ, uniqueDiffWithinAt_univ, true_implies] using
+    hφ.lipschitzOnWith.ae_fderivWithin_normalGraphEmbedding_image_comp_normalGraphL
+      (s := univ) f
+
+/-- Almost everywhere on the full Lipschitz graph, the chosen within-derivative has the
+canonical tangent-plane restriction. -/
+theorem ae_fderivWithin_range_normalGraphEmbedding_comp_subtypeL
+    (hφ : LipschitzWith K φ) (f : WithLp 2 (ℝ × E) → F) :
+    ∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      y ∈ range (TauCeti.normalGraphEmbedding φ) →
+        (fderivWithin ℝ f (range (TauCeti.normalGraphEmbedding φ)) y).comp
+          (fderiv ℝ φ y.snd).normalGraphL.range.subtypeL =
+            ((fderiv ℝ (f ∘ TauCeti.normalGraphEmbedding φ) y.snd).comp
+              (WithLp.sndL 2 ℝ ℝ E)).comp (fderiv ℝ φ y.snd).normalGraphL.range.subtypeL := by
+  filter_upwards [hφ.ae_fderivWithin_range_normalGraphEmbedding_comp_normalGraphL f]
+    with y hy hys
+  exact (ContinuousLinearMap.comp_subtypeL_range_normalGraphL_eq_iff _ _ _).mpr (hy hys)
+
+end LipschitzWith

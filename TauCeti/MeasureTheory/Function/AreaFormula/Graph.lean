@@ -61,6 +61,19 @@ noncomputable section
 open MeasureTheory Set Module
 open scoped ENNReal NNReal
 
+/-- Normalized Hausdorff measure of any dimension on the parameter set is bounded by
+that of its normal graph, since the second projection is `1`-Lipschitz. -/
+theorem TauCeti.euclideanHausdorffMeasure_le_normalGraphEmbedding_image
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+    (φ : E → ℝ) (s : Set E) (d : ℕ) :
+    μHE[d] s ≤ μHE[d] (TauCeti.normalGraphEmbedding φ '' s) := by
+  have hπ : LipschitzWith 1 (WithLp.snd : WithLp 2 (ℝ × E) → E) :=
+    LipschitzWith.of_edist_le WithLp.edist_snd_le
+  have h := hπ.lipschitzOnWith.euclideanHausdorffMeasure_image_le d
+    (s := TauCeti.normalGraphEmbedding φ '' s)
+  simpa only [image_image, TauCeti.normalGraphEmbedding_snd, image_id',
+    ENNReal.coe_one, one_pow, one_mul] using h
+
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -139,15 +152,8 @@ lower bound uses only that the tangential projection is `1`-Lipschitz. -/
 theorem volume_le_euclideanHausdorffMeasure_normalGraphEmbedding_image (φ : E → ℝ)
     (s : Set E) :
     volume s ≤ μHE[finrank ℝ E] (TauCeti.normalGraphEmbedding φ '' s) := by
-  let π : WithLp 2 (ℝ × E) → E := WithLp.snd
-  have hπ : LipschitzWith 1 π := LipschitzWith.of_edist_le WithLp.edist_snd_le
-  have h := hπ.lipschitzOnWith.euclideanHausdorffMeasure_image_le
-    (finrank ℝ E) (s := TauCeti.normalGraphEmbedding φ '' s)
-  have h_image : π '' (TauCeti.normalGraphEmbedding φ '' s) = s := by
-    rw [image_image]
-    simp only [π, normalGraphEmbedding_snd, image_id']
-  rw [h_image, InnerProductSpace.euclideanHausdorffMeasure_eq_volume] at h
-  simpa using h
+  simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
+    euclideanHausdorffMeasure_le_normalGraphEmbedding_image φ s (finrank ℝ E)
 
 /-- The Euclidean surface measure of a `K`-Lipschitz normal graph over `s` is at most
 `(K + 1) ^ dim E` times the volume of `s`. -/
@@ -184,25 +190,28 @@ theorem _root_.LipschitzWith.surfaceMeasure_le_smul_map_volume_normalGraphEmbedd
   rw [← image_preimage_eq_inter_range]
   exact hφ.euclideanHausdorffMeasure_normalGraphEmbedding_image_le _
 
-/-- A set has zero volume exactly when its image in a Lipschitz normal graph has zero Euclidean
-surface measure. -/
-theorem _root_.LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff
-    {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ) (s : Set E) :
-    μHE[finrank ℝ E] (TauCeti.normalGraphEmbedding φ '' s) = 0 ↔ volume s = 0 := by
-  constructor
-  · intro h
-    exact nonpos_iff_eq_zero.mp
-      ((volume_le_euclideanHausdorffMeasure_normalGraphEmbedding_image φ s).trans_eq h)
-  · intro h
-    exact nonpos_iff_eq_zero.mp <|
-      (hφ.euclideanHausdorffMeasure_normalGraphEmbedding_image_le s).trans_eq (by simp [h])
-
 end TauCeti
 
 namespace LipschitzOnWith
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {K : ℝ≥0} {φ : E → ℝ}
+
+/-- A parameter set is Haar-null exactly when its Lipschitz normal graph is surface-null.
+The graphing function need only be Lipschitz on that set. -/
+theorem euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff {s : Set E}
+    (hφ : LipschitzOnWith K φ s) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    μHE[finrank ℝ E] (TauCeti.normalGraphEmbedding φ '' s) = 0 ↔ μ s = 0 := by
+  constructor
+  · intro h
+    exact Measure.absolutelyContinuous_isAddHaarMeasure μ μHE[finrank ℝ E] <|
+      nonpos_iff_eq_zero.mp <|
+        (TauCeti.euclideanHausdorffMeasure_le_normalGraphEmbedding_image φ s _).trans_eq h
+  · intro h
+    have hz := Measure.absolutelyContinuous_isAddHaarMeasure
+      (μHE[finrank ℝ E] : Measure E) μ h
+    exact nonpos_iff_eq_zero.mp <|
+      (hφ.normalGraphEmbedding.euclideanHausdorffMeasure_image_le _).trans_eq (by simp [hz])
 
 /-- An almost-everywhere assertion on a Lipschitz graph is equivalent to its pullback
 holding almost everywhere for any Haar measure on the parameter set.
@@ -212,38 +221,20 @@ theorem ae_normalGraphEmbedding_image_iff {s : Set E} (hφ : LipschitzOnWith K �
     (∀ᵐ y ∂(μHE[Module.finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
       y ∈ TauCeti.normalGraphEmbedding φ '' s → p y) ↔
       ∀ᵐ x ∂μ, x ∈ s → p (TauCeti.normalGraphEmbedding φ x) := by
-  have hset : {y | ¬(y ∈ TauCeti.normalGraphEmbedding φ '' s → p y)} =
-      TauCeti.normalGraphEmbedding φ '' {x | ¬(x ∈ s → p (TauCeti.normalGraphEmbedding φ x))} := by
-    ext y
-    simp only [mem_ofPred_eq, not_imp, mem_image]
-    constructor
-    · rintro ⟨⟨x, hx, rfl⟩, hp⟩
-      exact ⟨x, ⟨hx, hp⟩, rfl⟩
-    · rintro ⟨x, ⟨hx, hp⟩, rfl⟩
-      exact ⟨⟨x, hx, rfl⟩, hp⟩
-  rw [ae_iff, ae_iff, hset]
-  let t := {x | ¬(x ∈ s → p (TauCeti.normalGraphEmbedding φ x))}
-  have ht : t ⊆ s := fun x hx => (not_imp.mp hx).1
-  have hπ : LipschitzWith 1 (WithLp.snd : WithLp 2 (ℝ × E) → E) :=
-    LipschitzWith.of_edist_le WithLp.edist_snd_le
-  constructor
-  · intro h
-    have hbound := hπ.lipschitzOnWith.euclideanHausdorffMeasure_image_le
-      (Module.finrank ℝ E) (s := TauCeti.normalGraphEmbedding φ '' t)
-    have himage : WithLp.snd '' (TauCeti.normalGraphEmbedding φ '' t) = t := by
-      rw [image_image]
-      simp only [TauCeti.normalGraphEmbedding_snd, image_id']
-    rw [himage, h, mul_zero] at hbound
-    exact Measure.absolutelyContinuous_isAddHaarMeasure μ μHE[Module.finrank ℝ E]
-      (nonpos_iff_eq_zero.mp hbound)
-  · intro h
-    have hz := Measure.absolutelyContinuous_isAddHaarMeasure
-      (μHE[Module.finrank ℝ E] : Measure E) μ h
-    exact nonpos_iff_eq_zero.mp <|
-      ((hφ.mono ht).normalGraphEmbedding.euclideanHausdorffMeasure_image_le
-        (Module.finrank ℝ E)).trans_eq (by rw [hz, mul_zero])
+  simp only [ae_iff, not_imp, ofPred_and, ofPred_mem_eq]
+  rw [← image_inter_preimage (TauCeti.normalGraphEmbedding φ) s {y | ¬p y}]
+  exact (hφ.mono inter_subset_left).euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff
+    μ
 
 end LipschitzOnWith
+
+/-- A set is Haar-null exactly when its image in a Lipschitz normal graph is surface-null. -/
+theorem LipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ)
+    (s : Set E) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    μHE[finrank ℝ E] (TauCeti.normalGraphEmbedding φ '' s) = 0 ↔ μ s = 0 :=
+  hφ.lipschitzOnWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_zero_iff μ
 
 /-- An almost-everywhere assertion on the full Lipschitz graph is equivalent to its
 pullback holding almost everywhere for any Haar measure on the parameter space. -/
