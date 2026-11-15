@@ -171,4 +171,12 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
 
+/-- Matrices indexed by countable types over a separable C⋆-algebra form a separable space. -/
+instance instSeparableSpace {m n A : Type*} [Countable m] [Countable n] [NonUnitalCStarAlgebra A]
+    [TopologicalSpace.SeparableSpace A] :
+    TopologicalSpace.SeparableSpace (CStarMatrix m n A) := by
+  have : TopologicalSpace.SeparableSpace (Matrix m n A) :=
+    inferInstanceAs (TopologicalSpace.SeparableSpace (m → n → A))
+  exact ofMatrixL.toHomeomorph.isQuotientMap.separableSpace
+
 end CStarMatrix

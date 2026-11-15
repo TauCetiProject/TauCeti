@@ -5,17 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import TauCeti.Analysis.CStarAlgebra.Basic
+public import TauCeti.Analysis.CStarAlgebra.Hom
 
 /-!
 # Approximate unitary equivalence in a unital target
 
 Two possibly nonunital star homomorphisms into a unital C⋆-algebra are approximately
 unitarily equivalent when conjugation by target unitaries approximates one by the other
-on every finite set. This file proves the equivalence-relation laws and compatibility
-with composition. Postcomposition is by a unital map, so implementing unitaries remain
-unitaries. The relation preserves pointwise norms, hence injectivity.
+on every finite set, equivalently when one lies in the point-norm closure of the unitary
+conjugacy orbit of the other (`TauCeti.approximatelyUnitarilyEquivalent_iff_mem_closure`).
+This file proves the equivalence-relation laws, joint closedness in the point-norm topology,
+and compatibility with composition. Postcomposition is by a unital map, so implementing
+unitaries remain unitaries. The relation preserves pointwise norms, injectivity, and (when
+the source is unital) preservation of the identity element; in particular, mutually inverse
+maps up to approximate unitary equivalence between unital C⋆-algebras are automatically unital.
 
 The convention is that of Kirchberg–Phillips, *Embedding of exact C*-algebras in the
 Cuntz algebra O₂*, Definition 0.5, extended to possibly nonunital source maps.
@@ -24,6 +29,7 @@ This is the target-unitary relation, not the multiplier- or unitization-unitary 
 
 public section
 
+open Filter Topology
 open scoped CStarAlgebra
 
 namespace TauCeti
@@ -147,6 +153,155 @@ theorem injective_iff (h : ApproximatelyUnitarilyEquivalent φ ψ) :
   exact forall_congr' fun a ↦ by rw [← norm_eq_zero (a := φ a),
     ← norm_eq_zero (a := ψ a), h.norm_eq]
 
+/-- Approximate unitary equivalence is a closed relation in the product point-norm topology on
+`(A →⋆ₙₐ[ℂ] B) × (A →⋆ₙₐ[ℂ] B)`. -/
+theorem isClosed_prod :
+    IsClosed {p : (A →⋆ₙₐ[ℂ] B) × (A →⋆ₙₐ[ℂ] B) | ApproximatelyUnitarilyEquivalent p.1 p.2} := by
+  rw [← closure_subset_iff_isClosed]
+  rintro ⟨φ, ψ⟩ hp F ε hε
+  have hmem : ({φ' : A →⋆ₙₐ[ℂ] B | ∀ a ∈ F, ‖φ' a - φ a‖ < ε / 3} ×ˢ
+      {ψ' : A →⋆ₙₐ[ℂ] B | ∀ a ∈ F, ‖ψ' a - ψ a‖ < ε / 3}) ∈ 𝓝 (φ, ψ) := by
+    refine prod_mem_nhds ?_ ?_
+    · exact (φ.hasBasis_nhds.mem_iff).mpr ⟨⟨F, {x | dist x.1 x.2 < ε / 3}⟩,
+        Metric.dist_mem_uniformity (by positivity),
+        fun χ hχ a ha ↦ by simpa only [dist_eq_norm, Set.mem_ofPred_eq] using hχ a ha⟩
+    · exact (ψ.hasBasis_nhds.mem_iff).mpr ⟨⟨F, {x | dist x.1 x.2 < ε / 3}⟩,
+        Metric.dist_mem_uniformity (by positivity),
+        fun χ hχ a ha ↦ by simpa only [dist_eq_norm, Set.mem_ofPred_eq] using hχ a ha⟩
+  obtain ⟨⟨φ', ψ'⟩, ⟨hφ', hψ'⟩, hrel⟩ := mem_closure_iff_nhds.mp hp _ hmem
+  obtain ⟨u, hu⟩ := hrel F (ε / 3) (by positivity)
+  refine ⟨u, fun a ha ↦ ?_⟩
+  let e := Unitary.conjStarAlgAut ℂ B u
+  have he : ‖(u : B) * (φ a - φ' a) * star (u : B)‖ = ‖φ a - φ' a‖ := by
+    simpa only [e, Unitary.conjStarAlgAut_apply] using StarAlgEquiv.norm_map e (φ a - φ' a)
+  have hsplit : (u : B) * φ a * star (u : B) - ψ a =
+      (u : B) * (φ a - φ' a) * star (u : B) + ((u : B) * φ' a * star (u : B) - ψ' a) +
+        (ψ' a - ψ a) := by
+    simp only [mul_sub, sub_mul]
+    abel
+  rw [hsplit]
+  calc
+    _ ≤ ‖(u : B) * (φ a - φ' a) * star (u : B)‖ + ‖(u : B) * φ' a * star (u : B) - ψ' a‖ +
+        ‖ψ' a - ψ a‖ := (norm_add_le _ _).trans (add_le_add (norm_add_le _ _) le_rfl)
+    _ = ‖φ' a - φ a‖ + ‖(u : B) * φ' a * star (u : B) - ψ' a‖ + ‖ψ' a - ψ a‖ := by
+      rw [he, norm_sub_rev (φ a)]
+    _ < ε / 3 + ε / 3 + ε / 3 :=
+      add_lt_add (add_lt_add (hφ' a ha) (hu a ha)) (hψ' a ha)
+    _ = ε := by ring
+
+/-- For fixed `φ`, the set of maps approximately unitarily equivalent to `φ` is closed in the
+point-norm topology. -/
+theorem isClosed_right (φ : A →⋆ₙₐ[ℂ] B) :
+    IsClosed {ψ : A →⋆ₙₐ[ℂ] B | ApproximatelyUnitarilyEquivalent φ ψ} :=
+  isClosed_prod.preimage (continuous_const.prodMk continuous_id)
+
+/-- For fixed `ψ`, the set of maps approximately unitarily equivalent to `ψ` is closed in the
+point-norm topology. -/
+theorem isClosed_left (ψ : A →⋆ₙₐ[ℂ] B) :
+    IsClosed {φ : A →⋆ₙₐ[ℂ] B | ApproximatelyUnitarilyEquivalent φ ψ} :=
+  isClosed_prod.preimage (continuous_id.prodMk continuous_const)
+
+/-- Approximate unitary equivalence passes to point-norm limits in both arguments along any
+nontrivial filter. -/
+theorem of_tendsto_hom {ι : Type*} {l : Filter ι} [l.NeBot]
+    {f g : ι → A →⋆ₙₐ[ℂ] B} (hf : Tendsto f l (𝓝 φ)) (hg : Tendsto g l (𝓝 ψ))
+    (hfg : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (f i) (g i)) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  isClosed_prod.mem_of_tendsto (hf.prodMk_nhds hg) hfg
+
+/-- Approximate unitary equivalence passes to point-norm limits on the right. -/
+theorem of_tendsto_right {ι : Type*} {l : Filter ι} [l.NeBot]
+    {g : ι → A →⋆ₙₐ[ℂ] B} (hg : Tendsto g l (𝓝 ψ))
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent φ (g i)) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  of_tendsto_hom tendsto_const_nhds hg h
+
+/-- Approximate unitary equivalence passes to point-norm limits on the left. -/
+theorem of_tendsto_left {ι : Type*} {l : Filter ι} [l.NeBot]
+    {f : ι → A →⋆ₙₐ[ℂ] B} (hf : Tendsto f l (𝓝 φ))
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (f i) ψ) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  of_tendsto_hom hf tendsto_const_nhds h
+
+section UnitalSource
+
+variable {A : Type*} [CStarAlgebra A] {φ ψ : A →⋆ₙₐ[ℂ] B}
+
+/-- Between unital C⋆-algebras, approximate unitary equivalence preserves unitality. -/
+theorem map_one_eq_one_iff (h : ApproximatelyUnitarilyEquivalent φ ψ) :
+    φ 1 = 1 ↔ ψ 1 = 1 := by
+  have aux {φ ψ : A →⋆ₙₐ[ℂ] B} (h : ApproximatelyUnitarilyEquivalent φ ψ) (hψ : ψ 1 = 1) :
+      φ 1 = 1 := by
+    obtain ⟨u, hu⟩ := h {1} (1 / 2) (by positivity)
+    let e := Unitary.conjStarAlgAut ℂ B u
+    have hproj : IsStarProjection (e (φ 1)) := ((IsStarProjection.one A).map φ).map e
+    have hlt : ‖e (φ 1) - 1‖ < 1 := by
+      have h1 := hu 1 (Finset.mem_singleton_self 1)
+      simp only [e, hψ, Unitary.conjStarAlgAut_apply] at h1 ⊢
+      linarith
+    exact e.injective ((hproj.eq_one_of_norm_sub_one_lt_one hlt).trans (map_one e).symm)
+  exact ⟨aux h.symm, aux h⟩
+
+/-- If `ψ ∘ φ` and `φ ∘ ψ` are approximately unitarily equivalent to the respective identity maps
+of unital C⋆-algebras `A` and `B`, then both `φ` and `ψ` are unital. -/
+theorem map_one_of_comp_id {ψ : B →⋆ₙₐ[ℂ] A}
+    (hψφ : ApproximatelyUnitarilyEquivalent (ψ.comp φ) (.id ℂ A))
+    (hφψ : ApproximatelyUnitarilyEquivalent (φ.comp ψ) (.id ℂ B)) :
+    φ 1 = 1 ∧ ψ 1 = 1 := by
+  have h1 : ψ (φ 1) = 1 := hψφ.map_one_eq_one_iff.mpr rfl
+  have h2 : φ (ψ 1) = 1 := hφψ.map_one_eq_one_iff.mpr rfl
+  refine ⟨?_, ?_⟩
+  · calc φ 1 = φ 1 * 1 := (mul_one _).symm
+      _ = φ 1 * φ (ψ 1) := by rw [h2]
+      _ = φ (ψ 1) := by rw [← map_mul, one_mul]
+      _ = 1 := h2
+  · calc ψ 1 = ψ 1 * 1 := (mul_one _).symm
+      _ = ψ 1 * ψ (φ 1) := by rw [h1]
+      _ = ψ (φ 1) := by rw [← map_mul, one_mul]
+      _ = 1 := h1
+
+/-- If a `⋆`-isomorphism `θ : A ≃⋆ₐ[ℂ] B` is approximately unitarily equivalent to `φ` and
+`φ ∘ ψ` is approximately unitarily equivalent to `id_B`, then `θ.symm` is approximately unitarily
+equivalent to `ψ`. -/
+theorem symm_of_comp_id {θ : A ≃⋆ₐ[ℂ] B} {ψ : B →⋆ₙₐ[ℂ] A}
+    (hθφ : ApproximatelyUnitarilyEquivalent θ.toNonUnitalStarAlgHom φ)
+    (hφψ : ApproximatelyUnitarilyEquivalent (φ.comp ψ) (.id ℂ B)) :
+    ApproximatelyUnitarilyEquivalent θ.symm.toNonUnitalStarAlgHom ψ := by
+  have h1 := ((hθφ.precomp ψ).trans hφψ).postcomp θ.symm.toStarAlgHom
+  have hlhs : θ.symm.toStarAlgHom.toNonUnitalStarAlgHom.comp (θ.toNonUnitalStarAlgHom.comp ψ) =
+      ψ := by
+    ext b
+    simp
+  have hrhs : θ.symm.toStarAlgHom.toNonUnitalStarAlgHom.comp (.id ℂ B) =
+      θ.symm.toNonUnitalStarAlgHom := by
+    ext b
+    simp
+  rw [hlhs, hrhs] at h1
+  exact h1.symm
+
+end UnitalSource
+
 end ApproximatelyUnitarilyEquivalent
+
+/-- Two `⋆`-homomorphisms `φ, ψ : A →⋆ₙₐ[ℂ] B` into a unital C⋆-algebra are approximately unitarily
+equivalent if and only if `ψ` lies in the point-norm closure of the unitary conjugacy orbit of
+`φ`. -/
+theorem approximatelyUnitarilyEquivalent_iff_mem_closure (φ ψ : A →⋆ₙₐ[ℂ] B) :
+    ApproximatelyUnitarilyEquivalent φ ψ ↔
+      ψ ∈ closure (Set.range fun u : unitary B ↦
+        (Unitary.conjStarAlgAut ℂ B u).toNonUnitalStarAlgHom.comp φ) := by
+  constructor
+  · intro h
+    rw [mem_closure_iff_nhds_basis ψ.hasBasis_nhds]
+    rintro ⟨F, U⟩ hU
+    obtain ⟨ε, hε, hεU⟩ := Metric.mem_uniformity_dist.mp hU
+    obtain ⟨u, hu⟩ := h F ε hε
+    refine ⟨(Unitary.conjStarAlgAut ℂ B u).toNonUnitalStarAlgHom.comp φ, ⟨u, rfl⟩, fun a ha ↦ ?_⟩
+    apply hεU
+    simpa only [NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+      Unitary.conjStarAlgAut_apply, dist_eq_norm] using hu a ha
+  · refine fun h ↦ closure_minimal ?_ (ApproximatelyUnitarilyEquivalent.isClosed_right φ) h
+    rintro _ ⟨u, rfl⟩
+    exact .of_unitary u fun a ↦ rfl
 
 end TauCeti

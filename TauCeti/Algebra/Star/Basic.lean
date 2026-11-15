@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Module
+public import Mathlib.Algebra.Star.StarAlgHom
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -28,7 +29,9 @@ centralizers.
 
 A star-linear (conjugate-linear) equivalence `V ≃ₗ⋆[S] W` is linear over any scalars `R` acting on
 `S` with trivial star (`LinearEquiv.restrictScalarsₛₗ`). For example, a conjugate-linear
-equivalence of complex vector spaces is real-linear.
+equivalence of complex vector spaces is real-linear. Likewise, a `NonUnitalStarAlgHom` between
+unital `R`-algebras that sends `1` to `1` automatically commutes with `algebraMap R A` via
+`r • 1`, and upgrades to a `StarAlgHom` (`NonUnitalStarAlgHom.toStarAlgHom`).
 
 ## Main results
 
@@ -44,6 +47,8 @@ equivalence of complex vector spaces is real-linear.
   there.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
+* `NonUnitalStarAlgHom.toStarAlgHom` and `StarAlgHom.range_toNonUnitalStarAlgHom`: upgrading a
+  unit-preserving `NonUnitalStarAlgHom` to a `StarAlgHom`.
 -/
 
 public section
@@ -138,3 +143,64 @@ theorem restrictScalarsₛₗ_symm (f : V ≃ₗ⋆[S] W) :
   (rfl)
 
 end LinearEquiv
+
+namespace NonUnitalStarAlgHom
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Star A]
+  [Semiring B] [Algebra R B] [Star B]
+
+/-- Upgrade a `NonUnitalStarAlgHom` between unital `R`-algebras that maps `1` to `1` to a unital
+`StarAlgHom`. -/
+def toStarAlgHom (φ : A →⋆ₙₐ[R] B) (hφ : φ 1 = 1) : A →⋆ₐ[R] B where
+  toFun := φ
+  map_one' := hφ
+  map_mul' := map_mul φ
+  map_zero' := map_zero φ
+  map_add' := map_add φ
+  -- `algebraMap R A r = r • 1`, so preserving `1` and `R`-smul implies preserving `algebraMap`.
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, hφ]
+  map_star' := map_star φ
+
+@[simp]
+theorem coe_toStarAlgHom (φ : A →⋆ₙₐ[R] B) (hφ : φ 1 = 1) : ⇑(φ.toStarAlgHom hφ) = φ :=
+  (rfl)
+
+@[simp]
+theorem toStarAlgHom_apply (φ : A →⋆ₙₐ[R] B) (hφ : φ 1 = 1) (a : A) :
+    φ.toStarAlgHom hφ a = φ a :=
+  (rfl)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_toStarAlgHom (φ : A →⋆ₙₐ[R] B) (hφ : φ 1 = 1) :
+    (φ.toStarAlgHom hφ).toNonUnitalStarAlgHom = φ := by
+  ext
+  rfl
+
+end NonUnitalStarAlgHom
+
+namespace StarAlgHom
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Star A]
+  [Semiring B] [Algebra R B] [Star B]
+
+@[simp]
+theorem toStarAlgHom_toNonUnitalStarAlgHom (φ : A →⋆ₐ[R] B) :
+    φ.toNonUnitalStarAlgHom.toStarAlgHom (map_one φ) = φ := by
+  ext
+  rfl
+
+/-- Forgetting unitality of a `StarAlgHom` is injective. -/
+theorem toNonUnitalStarAlgHom_injective :
+    Function.Injective (toNonUnitalStarAlgHom : (A →⋆ₐ[R] B) → A →⋆ₙₐ[R] B) := fun _ _ h ↦ by
+  ext a
+  exact DFunLike.congr_fun h a
+
+/-- A `NonUnitalStarAlgHom` between unital star algebras comes from a `StarAlgHom` if and only if
+it maps `1` to `1`. -/
+@[simp]
+theorem range_toNonUnitalStarAlgHom :
+    Set.range (toNonUnitalStarAlgHom : (A →⋆ₐ[R] B) → A →⋆ₙₐ[R] B) = {φ | φ 1 = 1} := by
+  ext φ
+  exact ⟨by rintro ⟨ψ, rfl⟩; exact map_one ψ, fun hφ ↦ ⟨φ.toStarAlgHom hφ, by simp⟩⟩
+
+end StarAlgHom
