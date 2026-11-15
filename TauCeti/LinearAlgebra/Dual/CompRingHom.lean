@@ -39,36 +39,52 @@ namespace Module.Dual
 section Semiring
 
 variable {R S T ι : Type*} [Semiring R] [Semiring S] [Semiring T]
-  [Fintype ι]
 
 /-- Apply a ring homomorphism to the coefficients of a linear form on a finite
 coordinate module. -/
-noncomputable def compRingHom (L : Dual R (ι → R)) (f : R →+* S) : Dual S (ι → S) := by
+noncomputable def compRingHom [Finite ι] (L : Dual R (ι → R)) (f : R →+* S) : Dual S (ι → S) := by
   classical
   exact (Pi.basisFun S ι).constr ℕ fun i ↦ f (L (Pi.basisFun R ι i))
 
 /-- Evaluate a transported form as a sum of its transported coefficients. -/
-theorem compRingHom_apply (L : Dual R (ι → R)) (f : R →+* S) (x : ι → S) :
+theorem compRingHom_apply [Fintype ι] (L : Dual R (ι → R)) (f : R →+* S) (x : ι → S) :
     L.compRingHom f x = ∑ i, x i * f (L (Pi.basisFun R ι i)) := by
   classical
   simp [compRingHom, Basis.constr_apply_fintype, Pi.basisFun_equivFun, smul_eq_mul]
 
-open scoped Classical in
+variable [Finite ι]
+
+/-- Evaluation at a standard basis vector gives the corresponding transported coefficient. -/
+@[simp]
+theorem compRingHom_basisFun (L : Dual R (ι → R)) (f : R →+* S) (i : ι) :
+    L.compRingHom f (Pi.basisFun S ι i) = f (L (Pi.basisFun R ι i)) := by
+  classical
+  cases nonempty_fintype ι
+  simp [compRingHom_apply, Pi.single_apply]
+
 /-- A transported form on a single coordinate is determined by the image of that coefficient. -/
 @[simp]
-theorem compRingHom_single (L : Dual R (ι → R)) (f : R →+* S) (i : ι) (a : S) :
+theorem compRingHom_single [DecidableEq ι] (L : Dual R (ι → R)) (f : R →+* S) (i : ι) (a : S) :
     L.compRingHom f (Pi.single i a) = a * f (L (Pi.single i 1)) := by
   classical
+  cases nonempty_fintype ι
   rw [compRingHom_apply]
   simp [Pi.single_apply]
 
 /-- Mapping the coordinates and the coefficients commutes with evaluation. -/
 @[simp]
-theorem compRingHom_apply_map (L : Dual R (ι → R)) (f : R →+* S) (x : ι → R) :
+theorem compRingHom_apply_comp (L : Dual R (ι → R)) (f : R →+* S) (x : ι → R) :
     L.compRingHom f (f ∘ x) = f (L x) := by
   classical
+  cases nonempty_fintype ι
   conv_rhs => rw [← (Pi.basisFun R ι).sum_repr x, map_sum, map_sum]
   simp [compRingHom_apply, map_smul, smul_eq_mul]
+
+/-- Evaluation commutes with applying the homomorphism to each coordinate. -/
+@[simp]
+theorem compRingHom_apply_fun (L : Dual R (ι → R)) (f : R →+* S) (x : ι → R) :
+    L.compRingHom f (fun i ↦ f (x i)) = f (L x) :=
+  L.compRingHom_apply_comp f x
 
 /-- Transport along the identity leaves a form unchanged. -/
 @[simp]
@@ -77,7 +93,6 @@ theorem compRingHom_id (L : Dual R (ι → R)) : L.compRingHom (RingHom.id R) = 
   exact (Pi.basisFun R ι).ext fun i ↦ by simp
 
 /-- Successive coefficient transports compose. -/
-@[simp]
 theorem compRingHom_comp (L : Dual R (ι → R)) (f : R →+* S) (g : S →+* T) :
     (L.compRingHom f).compRingHom g = L.compRingHom (g.comp f) := by
   classical
@@ -93,6 +108,14 @@ theorem compRingHom_zero (f : R →+* S) : (0 : Dual R (ι → R)).compRingHom f
 @[simp]
 theorem compRingHom_add (L M : Dual R (ι → R)) (f : R →+* S) :
     (L + M).compRingHom f = L.compRingHom f + M.compRingHom f := by
+  classical
+  exact (Pi.basisFun S ι).ext fun i ↦ by simp
+
+/-- Transport preserves finite sums of forms. -/
+@[simp]
+theorem compRingHom_sum {κ : Type*} (s : Finset κ) (L : κ → Dual R (ι → R))
+    (f : R →+* S) :
+    (∑ i ∈ s, L i).compRingHom f = ∑ i ∈ s, (L i).compRingHom f := by
   classical
   exact (Pi.basisFun S ι).ext fun i ↦ by simp
 
@@ -113,11 +136,41 @@ theorem compRingHom_injective (f : R →+* S) (hf : Function.Injective f) :
   apply hf
   simpa using LinearMap.congr_fun h (Pi.basisFun S ι i)
 
+/-- Transport along an injective homomorphism detects the zero form. -/
+@[simp]
+theorem compRingHom_eq_zero_iff (L : Dual R (ι → R)) (f : R →+* S)
+    (hf : Function.Injective f) : L.compRingHom f = 0 ↔ L = 0 := by
+  constructor
+  · intro h
+    apply compRingHom_injective f hf
+    simpa using h
+  · rintro rfl
+    exact compRingHom_zero f
+
 end Semiring
+
+section Ring
+
+variable {R S ι : Type*} [Ring R] [Ring S] [Finite ι]
+
+/-- Transport preserves negation of forms. -/
+@[simp]
+theorem compRingHom_neg (L : Dual R (ι → R)) (f : R →+* S) :
+    (-L).compRingHom f = -L.compRingHom f := by
+  classical
+  exact (Pi.basisFun S ι).ext fun i ↦ by simp
+
+/-- Transport preserves subtraction of forms. -/
+@[simp]
+theorem compRingHom_sub (L M : Dual R (ι → R)) (f : R →+* S) :
+    (L - M).compRingHom f = L.compRingHom f - M.compRingHom f := by
+  simp [sub_eq_add_neg]
+
+end Ring
 
 section CommSemiring
 
-variable {R S ι : Type*} [CommSemiring R] [CommSemiring S] [Fintype ι]
+variable {R S ι : Type*} [CommSemiring R] [CommSemiring S] [Finite ι]
 
 /-- Transport applies the coefficient homomorphism to scalars. -/
 @[simp]
@@ -131,28 +184,61 @@ end CommSemiring
 section Algebra
 
 variable {A R S ι : Type*} [CommSemiring A] [Semiring R] [Semiring S]
-  [Algebra A R] [Algebra A S] [Fintype ι]
+  [Algebra A R] [Algebra A S] [Finite ι]
+
+/-- A coefficient homomorphism commuting with the base-ring maps preserves evaluation
+on base-ring points. -/
+theorem compRingHom_apply_algebraMap_of_comp_eq (L : Dual R (ι → R)) (f : R →+* S)
+    (hf : f.comp (algebraMap A R) = algebraMap A S) (x : ι → A) :
+    L.compRingHom f (algebraMap A S ∘ x) = f (L (algebraMap A R ∘ x)) := by
+  have h : algebraMap A S ∘ x = f ∘ (algebraMap A R ∘ x) := by
+    ext i
+    exact (RingHom.congr_fun hf (x i)).symm
+  rw [h, compRingHom_apply_comp]
 
 /-- Transport along an algebra homomorphism commutes with evaluation on points over the
 base ring. In particular this applies to conjugation fixing the base field. -/
 @[simp]
-theorem compRingHom_apply_algebraMap (L : Dual R (ι → R)) (f : R →ₐ[A] S) (x : ι → A) :
+theorem compRingHom_apply_algebraMap {F : Type*} [FunLike F R S] [AlgHomClass F A R S]
+    (L : Dual R (ι → R)) (f : F) (x : ι → A) :
     L.compRingHom (f : R →+* S) (algebraMap A S ∘ x) =
       f (L (algebraMap A R ∘ x)) := by
-  have h : algebraMap A S ∘ x = (f : R →+* S) ∘ (algebraMap A R ∘ x) := by
-    ext i
-    simp
-  rw [h, compRingHom_apply_map, AlgHom.coe_toRingHom]
+  exact L.compRingHom_apply_algebraMap_of_comp_eq (f : R →+* S)
+    (RingHom.ext (AlgHomClass.commutes f)) x
+
+/-- Evaluation on base-ring coordinates commutes with transport by an algebra homomorphism. -/
+@[simp]
+theorem compRingHom_apply_algebraMap_fun {F : Type*} [FunLike F R S] [AlgHomClass F A R S]
+    (L : Dual R (ι → R)) (f : F) (x : ι → A) :
+    L.compRingHom (f : R →+* S) (fun i ↦ algebraMap A S (x i)) =
+      f (L (fun i ↦ algebraMap A R (x i))) :=
+  L.compRingHom_apply_algebraMap f x
 
 end Algebra
+
+section ScalarTower
+
+variable {A R S ι : Type*} [CommSemiring A] [CommSemiring R] [Semiring S]
+  [Algebra A R] [Algebra A S] [Algebra R S] [IsScalarTower A R S] [Finite ι]
+
+/-- Extension of coefficients in an algebra tower preserves evaluation on base-ring points. -/
+@[simp]
+theorem compRingHom_algebraMap_apply_algebraMap (L : Dual R (ι → R)) (x : ι → A) :
+    L.compRingHom (algebraMap R S) (fun i ↦ algebraMap A S (x i)) =
+      algebraMap R S (L (fun i ↦ algebraMap A R (x i))) :=
+  L.compRingHom_apply_algebraMap_of_comp_eq (algebraMap R S)
+    (IsScalarTower.algebraMap_eq A R S).symm x
+
+end ScalarTower
 
 section Matrix
 
 variable {R S ι κ : Type*} [CommSemiring R] [CommSemiring S] [Fintype ι]
+  [DecidableEq ι]
 
-open scoped Classical in
 /-- The matrix of a transported system is its original matrix with the homomorphism
 applied entrywise. -/
+@[simp]
 theorem toMatrix'_pi_compRingHom (L : κ → Dual R (ι → R)) (f : R →+* S) :
     LinearMap.toMatrix' (LinearMap.pi fun i ↦ (L i).compRingHom f) =
       (LinearMap.toMatrix' (LinearMap.pi L)).map f := by
@@ -163,13 +249,15 @@ end Matrix
 
 section CommRing
 
-variable {R S ι κ : Type*} [CommRing R] [CommRing S] [Fintype ι]
+variable {R S ι κ : Type*} [CommRing R] [CommRing S] [Finite ι]
 
 /-- The determinant of a square system of forms commutes with coefficient transport. -/
+@[simp]
 theorem det_pi_compRingHom (L : ι → Dual R (ι → R)) (f : R →+* S) :
     LinearMap.det (LinearMap.pi fun i ↦ (L i).compRingHom f) =
       f (LinearMap.det (LinearMap.pi L)) := by
   classical
+  cases nonempty_fintype ι
   rw [← LinearMap.det_toMatrix', toMatrix'_pi_compRingHom, ← RingHom.mapMatrix_apply,
     ← RingHom.map_det, LinearMap.det_toMatrix']
 
@@ -180,6 +268,7 @@ theorem linearIndependent_compRingHom_iff [IsDomain S] (L : κ → Dual R (ι �
     (f : R →+* S) (hf : Function.Injective f) :
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
   classical
+  cases nonempty_fintype ι
   let := f.toAlgebra
   let : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hf
   let eR : Dual R (ι → R) ≃ₗ[R] (ι → R) := ((Pi.basisFun R ι).constr R).symm
@@ -201,7 +290,7 @@ end CommRing
 section Examples
 
 variable {K F E ι κ : Type*} [Field K] [Field F] [Field E]
-  [Algebra K F] [Algebra K E] [Fintype ι]
+  [Algebra K F] [Algebra K E] [Finite ι]
 
 -- Extending coefficients and then conjugating preserves independence of the whole system.
 example (L : κ → Dual F (ι → F)) (hL : LinearIndependent F L) (f : F →ₐ[K] E)
@@ -212,10 +301,9 @@ example (L : κ → Dual F (ι → F)) (hL : LinearIndependent F L) (f : F →�
 
 -- On base-field points, the new value is the conjugate of the extended original value.
 example (L : Dual F (ι → F)) (f : F →ₐ[K] E) (σ : E ≃ₐ[K] E) (x : ι → K) :
-    (L.compRingHom ((σ.toAlgHom : E →+* E).comp (f : F →+* E)))
-      (algebraMap K E ∘ x) = σ (f (L (algebraMap K F ∘ x))) := by
+    (L.compRingHom ((σ : E →+* E).comp (f : F →+* E)))
+      (fun i ↦ algebraMap K E (x i)) = σ (f (L (fun i ↦ algebraMap K F (x i)))) := by
   rw [← compRingHom_comp]
-  rw [compRingHom_apply_algebraMap _ σ.toAlgHom, compRingHom_apply_algebraMap]
   simp
 
 end Examples
