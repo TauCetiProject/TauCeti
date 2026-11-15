@@ -38,6 +38,8 @@ constant form `TauCeti.SymplecticForm.constSmooth`.
 * `SmoothTwoForm.IsNondegenerate.exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact`,
   `SymplecticForm.exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact`: the
   uniform integrated curvature bound for a family with a common compact domain support.
+* `SmoothTwoForm.IsNondegenerate.integrable_hamiltonianCurvature_of_isCompact`: the curvature of a
+  single compactly supported `C¹` one-form is integrable along every map continuous on its support.
 * `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_add_of_eq_zero_on`: a perturbation supported
   inside the zero region of a one-form adds its integrated curvature exactly.
 
@@ -131,6 +133,28 @@ theorem IsNondegenerate.exists_lintegral_enorm_hamiltonianCurvature_le_of_isComp
     _ = ENNReal.ofReal (max B 0 * volume.real D) := by
         rw [setLIntegral_const, ENNReal.ofReal_mul (le_max_right _ _),
           ofReal_measureReal hD.measure_lt_top.ne]
+
+/-- For a nondegenerate two-form on a finite-dimensional manifold, the curvature of a jointly `C¹`
+Hamiltonian one-form supported in a compact domain set `D` is integrable along every map which is
+continuous on `D`. -/
+theorem IsNondegenerate.integrable_hamiltonianCurvature_of_isCompact (hω : ω.IsNondegenerate)
+    {Ks Kt : ℝ × ℝ → M → ℝ} (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
+    (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt)) {D : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (hs : ∀ z ∉ D, Ks z = 0) (ht : ∀ z ∉ D, Kt z = 0) {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u D) :
+    Integrable fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The curvature is jointly continuous: regard the one-form as a family constant in a real
+  -- parameter.
+  have hc : Continuous fun q : (ℝ × (ℝ × ℝ)) × M ↦ ω.hamiltonianCurvature Ks Kt q.1.2 q.2 :=
+    (hω.contMDiff_hamiltonianCurvature_family (J := 𝓘(ℝ, ℝ)) (n := 0) (by simp)
+      (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
+      (by simpa [Function.comp_def] using hKs.comp (contMDiff_fst.snd.prodMk contMDiff_snd))
+      (by simpa [Function.comp_def] using hKt.comp (contMDiff_fst.snd.prodMk contMDiff_snd))
+      ).continuous
+  refine IntegrableOn.integrable_of_forall_notMem_eq_zero
+    ((hc.comp_continuousOn ((continuousOn_const.prodMk continuousOn_id).prodMk hu)
+      (s := D) (f := fun z ↦ (((0 : ℝ), z), u z))).integrableOn_compact hD) fun z hz ↦ ?_
+  exact ω.hamiltonianCurvature_eq_zero_of_notMem hD.isClosed hs ht hz (u z)
 
 omit [FiniteDimensional ℝ E] in
 /-- Adding a perturbation `δ` supported in a closed set `D`, inside an open set `U` on which the
