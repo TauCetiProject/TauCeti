@@ -41,16 +41,19 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
   manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
-* `TauCeti.isRegularPoint_iff_surjective_fderiv_extChartAt`: the same on a boundaryless source,
-  with the Fréchet derivative of the coordinate expression.
+* `TauCeti.isRegularPoint_iff_surjective_fderiv_extChartAt_of_isInteriorPoint` and
+  `TauCeti.isRegularPoint_iff_surjective_fderiv_extChartAt`: the same at an interior point, or on a
+  boundaryless source manifold, with the Fréchet derivative of the coordinate expression.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
 * `TauCeti.isRegularPoint_iff_injective_mfderiv`: between models of the same finite dimension,
   regularity is injectivity of the manifold derivative.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
-* `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
-  the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `TauCeti.isRegularPoint_comp_iff` and `TauCeti.IsRegularPoint.of_comp`: a composite of
+  differentiable maps is regular exactly when the derivative of the outer map sends the tangent
+  image of the inner map onto the target, so regularity of `f ∘ g` at `p` implies regularity of `f`
+  at `g p`.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -262,6 +265,13 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
   rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
     ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
 
+/-- If a composite of differentiable maps is regular at `p`, the outer map is regular at `g p`. -/
+theorem IsRegularPoint.of_comp (h : IsRegularPoint K J (f ∘ g) p)
+    (hfd : MDifferentiableAt I J f (g p)) (hgd : MDifferentiableAt K I g p) :
+    IsRegularPoint I J f (g p) := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ContinuousLinearMap.coe_comp] at h
+  exact h.of_comp
+
 end Composition
 
 /-- Every point of an open subset is a regular point of its inclusion. -/
@@ -323,20 +333,35 @@ theorem IsRegularPoint.range_mfderiv_eq_ker_mfderiv {p : P} (hg : ∀ᶠ q in �
 
 end Level
 
-section Boundaryless
-
-variable [I.Boundaryless]
-
-/-- On a boundaryless source, read in the extended charts at `x₀` and `y₀`, whose sources contain
-`x` and `f x`, a point `x` at which `f` is differentiable is regular exactly when the Fréchet
-derivative of the coordinate expression of `f` is surjective at the chart image of `x`. -/
-theorem isRegularPoint_iff_surjective_fderiv_extChartAt [IsManifold I 1 M] [IsManifold J 1 N]
-    {x₀ : M} {y₀ : N} (hf : MDifferentiableAt I J f x) (hx : x ∈ (chartAt H x₀).source)
+/-- At an interior point `x` of `M`, read in the extended charts at `x₀` and `y₀`, whose sources
+contain `x` and `f x`, the point `x` at which `f` is differentiable is regular exactly when the
+Fréchet derivative of the coordinate expression of `f` is surjective at the chart image of `x`. -/
+theorem isRegularPoint_iff_surjective_fderiv_extChartAt_of_isInteriorPoint
+    [IsManifold I 1 M] [IsManifold J 1 N] {x₀ : M} {y₀ : N} (hi : I.IsInteriorPoint x)
+    (hf : MDifferentiableAt I J f x) (hx : x ∈ (chartAt H x₀).source)
     (hfx : f x ∈ (chartAt H' y₀).source) :
     IsRegularPoint I J f x ↔ Surjective (fderiv 𝕜
       (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x)) := by
-  simpa only [I.range_eq_univ, fderivWithin_univ] using
-    isRegularPoint_iff_surjective_fderivWithin hf hx hfx
+  have hnhds : range I ∈ 𝓝 (extChartAt I x₀ x) :=
+    Filter.mem_of_superset (mem_interior_iff_mem_nhds.1
+      ((I.isInteriorPoint_iff_of_mem_atlas one_ne_zero (chart_mem_atlas H x₀) hx).1 hi))
+      (extChartAt_target_subset_range x₀)
+  rw [isRegularPoint_iff_surjective_fderivWithin hf hx hfx, fderivWithin_of_mem_nhds hnhds]
+
+/-- On a boundaryless source manifold, read in the extended charts at `x₀` and `y₀`, whose sources
+contain `x` and `f x`, a point `x` at which `f` is differentiable is regular exactly when the
+Fréchet derivative of the coordinate expression of `f` is surjective at the chart image of `x`. -/
+theorem isRegularPoint_iff_surjective_fderiv_extChartAt [BoundarylessManifold I M]
+    [IsManifold I 1 M] [IsManifold J 1 N] {x₀ : M} {y₀ : N} (hf : MDifferentiableAt I J f x)
+    (hx : x ∈ (chartAt H x₀).source) (hfx : f x ∈ (chartAt H' y₀).source) :
+    IsRegularPoint I J f x ↔ Surjective (fderiv 𝕜
+      (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x)) :=
+  isRegularPoint_iff_surjective_fderiv_extChartAt_of_isInteriorPoint
+    BoundarylessManifold.isInteriorPoint hf hx hfx
+
+section Boundaryless
+
+variable [I.Boundaryless]
 
 /-- At a regular point of a map into a normed space on a boundaryless manifold, the coordinate
 expression in the preferred extended chart has surjective derivative. -/

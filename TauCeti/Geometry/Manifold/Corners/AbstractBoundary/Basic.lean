@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Filter.Germ.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.Corners.Face
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # The abstract boundary of a manifold with corners
@@ -47,9 +48,10 @@ On a `C¹` manifold the local faces do not depend on the chart
 (`ModelWithCorners.existsUnique_equiv_extend_apply_eq_zero_iff`). Hence any single chart `e` of
 the maximal atlas at `x` lists the local faces through `x` without repetition
 (`ModelWithCorners.faceGermEquiv`), the fibre of `∂ₐM → M` over `x` has exactly `depth x` points
-(`ModelWithCorners.AbstractBoundary.natCard_preimage_point`), and `∂ₐM` is Hausdorff when `M` is
-(`ModelWithCorners.AbstractBoundary.t2Space`). On a manifold with boundary modelled on the
-half-space every boundary point has exactly one local face, and the abstract boundary is the
+(`ModelWithCorners.AbstractBoundary.natCard_preimage_point`), `∂ₐM` is Hausdorff when `M` is
+(`ModelWithCorners.AbstractBoundary.t2Space`), and `∂ₐM` is second countable when `M` is Lindelöf
+(`ModelWithCorners.AbstractBoundary.secondCountableTopology`). On a manifold with boundary modelled
+on the half-space every boundary point has exactly one local face, and the abstract boundary is the
 boundary (`ModelWithCorners.AbstractBoundary.homeomorphBoundary`).
 
 ## Main definitions
@@ -76,6 +78,8 @@ boundary (`ModelWithCorners.AbstractBoundary.homeomorphBoundary`).
   boundary.
 * `ModelWithCorners.AbstractBoundary.t2Space`: the abstract boundary of a Hausdorff manifold is
   Hausdorff.
+* `ModelWithCorners.AbstractBoundary.secondCountableTopology`: the abstract boundary of a Lindelöf
+  manifold is second countable.
 * `ModelWithCorners.AbstractBoundary.homeomorphBoundary`: for the half-space model, the map to `M`
   is a homeomorphism onto the boundary.
 
@@ -462,6 +466,32 @@ theorem t2Space [T2Space M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (hn : 
   · obtain ⟨U, V, hU, hV, hbU, hbV, hUV⟩ := t2_separation hx
     exact ⟨_, _, hU.preimage continuous_point, hV.preimage continuous_point, hbU, hbV,
       hUV.preimage _⟩
+
+/-- **The abstract boundary of a Lindelöf manifold with corners is second countable.** -/
+theorem secondCountableTopology [LindelofSpace M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    (hn : n ≠ 0) : SecondCountableTopology (J.AbstractBoundary M) := by
+  have : SecondCountableTopology H := J.secondCountableTopology
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_lindelof H M
+  obtain ⟨c, hcc, hcU⟩ := LindelofSpace.elim_nhds_subcover (fun x : M ↦ (chartAt H x).source)
+    fun x ↦ chart_source_mem_nhds H x
+  have : Countable c := hcc.to_subtype
+  let U : c × {i : ι // ∀ z ∈ range J, 0 ≤ z i} → Set (J.AbstractBoundary M) := fun p ↦
+    range (faceSection (chart_mem_atlas H p.1.1) p.2.2)
+  have : ∀ p, SecondCountableTopology (U p) := fun p ↦
+    have : SecondCountableTopology
+        {q : M // q ∈ (chartAt H p.1.1).source ∧ (chartAt H p.1.1).extend J q p.2.1 = 0} :=
+      Topology.IsEmbedding.subtypeVal.secondCountableTopology
+    (isOpenEmbedding_faceSection (he := chart_mem_atlas H p.1.1)
+      (hi := p.2.2)).isEmbedding.toHomeomorph.symm.secondCountableTopology
+  refine TopologicalSpace.secondCountableTopology_of_countable_cover
+    (U := U) (fun _ ↦ isOpen_range_faceSection) (eq_univ_iff_forall.2 fun b ↦ ?_)
+  obtain ⟨p, F, hFb⟩ := b
+  obtain ⟨x₀, hx₀c, hbx₀⟩ := mem_iUnion₂.1 (hcU.symm ▸ mem_univ p)
+  obtain ⟨i, hiS, hix₀, hF⟩ := (mem_localFaces_iff_of_mem_maximalAtlas hJ hn
+    (IsManifold.chart_mem_maximalAtlas x₀) hbx₀).1 hFb
+  refine mem_iUnion.2 ⟨(⟨x₀, hx₀c⟩, ⟨i, (forall_mem_range_nonneg_iff hJ).2 hiS⟩),
+    ⟨p, hbx₀, hix₀⟩, ?_⟩
+  simp only [faceSection, hF]
 
 end AbstractBoundary
 
