@@ -57,9 +57,9 @@ All in the namespace `HeckeRing.GL2.Newform`:
 * `eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_eq`: for newforms whose
   eigenvalues agree at almost all primes, the quotient of the nebentypes is a self-twist of the
   prime coefficients.
-* `χ_comp_unitsMap_eq_of_forall_notMem_prime_eigenvalue_eq`: such newforms have nebentypes
-  inducing the same character modulo a common multiple `L` of the levels, provided the first has
-  no nontrivial self-twist modulo `L` on its prime coefficients.
+* `χ_comp_unitsMap_eq_of_forall_selfTwist_eq_one_of_forall_notMem_prime_eigenvalue_eq`: such
+  newforms have nebentypes inducing the same character modulo a common multiple `L` of the levels,
+  provided the first has no nontrivial self-twist modulo `L` on its prime coefficients.
 
 ## References
 
@@ -204,8 +204,7 @@ theorem eventually_changeLevel_inv_mul_changeLevel_apply_mul_qExpansion_coeff_eq
   rw [Nat.cofinite_eq_atTop]
   filter_upwards [eventually_gt_atTop (S.sup id + L)] with p hpB hp
   -- a prime larger than `L` and every element of `S` is prime to `L`, hence to `N` and `M`
-  have hpL : p.Coprime L := hp.coprime_iff_not_dvd.mpr fun hpL ↦
-    (Nat.le_of_dvd (NeZero.pos L) hpL).not_gt (by omega)
+  have hpL : p.Coprime L := Nat.coprime_of_lt_prime (NeZero.ne L) (by omega) hp
   have hpS : p ∉ S := fun hpS ↦ (Finset.le_sup (f := id) hpS).not_gt (by simp only [id]; omega)
   have hpN := hpL.coprime_dvd_right hN
   have hpM := hpL.coprime_dvd_right hM
@@ -238,8 +237,8 @@ The quotient of the nebentypes is such a self-twist
 hypothesis on `f` forces it to be trivial. The hypothesis excludes the forms with a nontrivial
 self-twist, such as the forms with complex multiplication, whose coefficients vanish at the inert
 primes: agreement at the primes sees the nebentypes only where `a_p(f) ≠ 0`. -/
-theorem χ_comp_unitsMap_eq_of_forall_notMem_prime_eigenvalue_eq {L : ℕ} [NeZero L]
-    (f : Newform N k) (g : Newform M k) (hN : N ∣ L) (hM : M ∣ L)
+theorem χ_comp_unitsMap_eq_of_forall_selfTwist_eq_one_of_forall_notMem_prime_eigenvalue_eq
+    {L : ℕ} [NeZero L] (f : Newform N k) (g : Newform M k) (hN : N ∣ L) (hM : M ∣ L)
     (hf : ∀ ψ : DirichletCharacter ℂ L, (∀ᶠ p : ℕ in cofinite, p.Prime →
       ψ p * (qExpansion 1 f.toCuspForm).coeff p = (qExpansion 1 f.toCuspForm).coeff p) → ψ = 1)
     {S : Finset ℕ}
