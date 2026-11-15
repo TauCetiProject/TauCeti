@@ -148,21 +148,8 @@ noncomputable def coaugmentationPreservingGradedCoderivations
     (G : InternalGrading R M ℤ) (q : ℤ) :
     Submodule R (TensorWords R M →ₗ[R] TensorWords R M) where
   carrier := {b | IsGradedCoderivation G q b ∧ b 1 = 0}
-  zero_mem' := by
-    constructor
-    · rw [isGradedCoderivation_iff]
-      simp
-    · simp
-  add_mem' hb hc := by
-    constructor
-    · rw [isGradedCoderivation_iff]
-      apply LinearMap.ext
-      intro w
-      simp only [LinearMap.comp_apply, LinearMap.add_apply, map_add,
-        hb.1.deconcatenation_apply, hc.1.deconcatenation_apply,
-        LinearMap.rTensor_add, LinearMap.lTensor_add]
-      abel
-    · simp [hb.2, hc.2]
+  zero_mem' := ⟨isGradedCoderivation_zero, by simp⟩
+  add_mem' hb hc := ⟨hb.1.add hc.1, by simp [hb.2, hc.2]⟩
   smul_mem' r b hb := by
     constructor
     · rw [isGradedCoderivation_iff]

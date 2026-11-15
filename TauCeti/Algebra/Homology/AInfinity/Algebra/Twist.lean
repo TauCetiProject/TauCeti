@@ -24,8 +24,8 @@ no Koszul signs arise in this suspended formula; unsuspended, the signs are thos
 Maurer--Cartan sum `∑ₖ b(α^k)`, which vanishes: this is what keeps the twisted structure uncurved.
 
 On a bare graded module the sum over `k₀, …, kₙ` is infinite, so this file works in the
-arity-nilpotent regime.  An **insertion bound** for `α` is a number `T` such that `b` vanishes on
-every word into which at least `T` copies of `α` have been inserted
+arity-nilpotent regime.  An **insertion bound** for `α` is a number `T` such that, for every
+`t ≥ T`, `b` vanishes on the sum of all the insertions of `t` copies of `α` into any word
 (`TauCeti.AInfinityAlgebra.IsInsertionBound`).  Then the twisted Taylor map is the finite sum of the
 terms with fewer than `T` insertions, `TauCeti.AInfinityAlgebra.twistTaylor`.  Every algebra whose
 operations vanish above some arity, in particular every DG algebra, admits an insertion bound for
@@ -100,9 +100,10 @@ theorem insertionTaylor_zero (α : A) :
     𝒜.insertionTaylor α 0 = 𝒜.taylor ∘ₗ reducedProjection R A := by
   rw [insertionTaylor, insertions_zero, LinearMap.comp_id]
 
-/-- An **insertion bound** for `α`: the Taylor map vanishes on every word into which at least `T`
-copies of `α` have been inserted, including the empty word.  This makes the twisted operations,
-and the Maurer--Cartan sum, finite sums. -/
+/-- An **insertion bound** for `α`: for every `t ≥ T`, the Taylor map vanishes on the sum of all the
+insertions of `t` copies of `α` into any word, the empty word included, that is
+`𝒜.insertionTaylor α t = 0`.  This makes the twisted operations, and the Maurer--Cartan sum,
+finite sums. -/
 def IsInsertionBound (α : A) (T : ℕ) : Prop :=
   ∀ t, T ≤ t → 𝒜.insertionTaylor α t = 0
 
@@ -120,6 +121,11 @@ theorem twistTaylor_apply (α : A) (T : ℕ) (w : ReducedTensorWords R A) :
   simp [twistTaylor, LinearMap.sum_apply]
 
 variable {𝒜}
+
+/-- A larger number is an insertion bound too. -/
+theorem IsInsertionBound.mono {α : A} {T T' : ℕ} (hT : 𝒜.IsInsertionBound α T) (h : T ≤ T') :
+    𝒜.IsInsertionBound α T' :=
+  fun t ht ↦ hT t (h.trans ht)
 
 /-- The twisted Taylor map does not depend on the insertion bound. -/
 theorem IsInsertionBound.twistTaylor_eq {α : A} {T T' : ℕ} (hT : 𝒜.IsInsertionBound α T)
@@ -143,20 +149,12 @@ theorem isHomogeneous_twistTaylor {α : A} (hα : α ∈ 𝒜.grading.piece 1) (
   rw [add_zero] at h₂
   exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h₂
 
-/-- The word `x y` of length two. -/
-private theorem reducedProjection_cons_cons_one (x y : A) :
-    reducedProjection R A (cons R A x (cons R A y 1)) =
-      ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![x, y]) := by
-  rw [cons_one_eq_of, cons_of_tprod, reducedProjection_of_of_pos R A (n := 1 + 1) (by omega)]
-  exact ReducedTensorWords.of_tprod_congr R A _ rfl
-    fun i ↦ Fin.cases rfl (fun j ↦ Fin.cases rfl (fun k ↦ k.elim0) j) i
-
 /-! ### Algebras of bounded arity -/
 
 variable (𝒜) in
 /-- Inserting `t` copies of `α` into a word of length `n` gives words of length `n + t`, which the
 Taylor map kills when the operation of that arity vanishes. -/
-theorem insertionTaylor_comp_of_eq_zero (α : A) {n t : ℕ} (h : 𝒜.m (n + t) = 0) :
+theorem insertionTaylor_comp_of_eq_zero_of_m_eq_zero (α : A) {n t : ℕ} (h : 𝒜.m (n + t) = 0) :
     𝒜.insertionTaylor α t ∘ₗ of R A n = 0 := by
   rcases Nat.eq_zero_or_pos (n + t) with h0 | hpos
   · obtain ⟨rfl, rfl⟩ : n = 0 ∧ t = 0 := by omega
@@ -168,6 +166,12 @@ theorem insertionTaylor_comp_of_eq_zero (α : A) {n t : ℕ} (h : 𝒜.m (n + t)
     exact LinearMap.congr_fun (𝒜.taylor_comp_of_eq_zero_of_m_eq_zero ⟨n + t, hpos⟩ h) y
 
 variable (𝒜) in
+/-- `TauCeti.AInfinityAlgebra.insertionTaylor_comp_of_eq_zero_of_m_eq_zero`, applied to a word. -/
+theorem insertionTaylor_of_eq_zero_of_m_eq_zero (α : A) {n t : ℕ} (h : 𝒜.m (n + t) = 0)
+    (z : TensorPower R n A) : 𝒜.insertionTaylor α t (of R A n z) = 0 :=
+  LinearMap.congr_fun (𝒜.insertionTaylor_comp_of_eq_zero_of_m_eq_zero α h) z
+
+variable (𝒜) in
 /-- **Algebras of bounded arity admit insertion bounds.**  If the operations of `𝒜` vanish above
 arity `N`, then `N + 1` is an insertion bound for every element.  This covers DG algebras, with
 `N = 2`. -/
@@ -175,7 +179,7 @@ theorem isInsertionBound_of_m_eq_zero {N : ℕ} (hN : ∀ n, N < n → 𝒜.m n 
     𝒜.IsInsertionBound α (N + 1) := fun t ht ↦
   DirectSum.linearMap_ext R fun n ↦ by
     rw [← of_def, LinearMap.zero_comp]
-    exact 𝒜.insertionTaylor_comp_of_eq_zero α (hN (n + t) (by omega))
+    exact 𝒜.insertionTaylor_comp_of_eq_zero_of_m_eq_zero α (hN (n + t) (by omega))
 
 /-! ### The bar equation -/
 
@@ -185,7 +189,8 @@ private theorem insertionTaylor_succ_one (α : A) (n : ℕ) :
     𝒜.insertionTaylor α (n + 1) 1 =
       𝒜.taylor (ReducedTensorWords.of R A ⟨n + 1, n.succ_pos⟩
         (PiTensorProduct.tprod R fun _ ↦ α)) := by
-  rw [insertionTaylor_apply, insertions_one, cons_pow_one, reducedProjection_of_of_pos]
+  rw [insertionTaylor_apply, insertions_apply_one, cons_pow_apply_one_eq_of,
+    reducedProjection_of_of_pos]
 
 /-- Under an insertion bound, the Maurer--Cartan equation says that the arity-zero part of the
 twisted Taylor map vanishes. -/
@@ -237,20 +242,6 @@ private theorem IsInsertionBound.insertionCoderiv_eq_zero {α : A} {T : ℕ}
     LinearMap.zero_apply, map_zero, add_zero]
   exact LinearMap.ext fun w ↦ by simp
 
-/-- The letter component of the coaugmented bar differential is the Taylor map. -/
-private theorem letter_reducedProjection_coaugmentedBarDifferential (w : TensorWords R A) :
-    ReducedTensorWords.letter R A (reducedProjection R A (𝒜.coaugmentedBarDifferential w)) =
-      𝒜.taylor (reducedProjection R A w) := by
-  rw [coaugmentedBarDifferential_def, extendReduced_apply, reducedProjection_reducedInclusion,
-    ← LinearMap.comp_apply (ReducedTensorWords.letter R A), letter_comp_barDifferential]
-
-/-- The Taylor map vanishes after the coaugmented bar differential. -/
-private theorem taylor_reducedProjection_coaugmentedBarDifferential (w : TensorWords R A) :
-    𝒜.taylor (reducedProjection R A (𝒜.coaugmentedBarDifferential w)) = 0 := by
-  rw [coaugmentedBarDifferential_def, extendReduced_apply, reducedProjection_reducedInclusion,
-    ← letter_comp_barDifferential, LinearMap.comp_apply, ← LinearMap.comp_apply 𝒜.barDifferential,
-    barDifferential_sq, LinearMap.zero_apply, map_zero]
-
 /-- **The twisted Taylor map satisfies the bar equation**: for a Maurer--Cartan element `α` with an
 insertion bound, the twisted Taylor map vanishes after its own graded Taylor expansion. -/
 theorem twistTaylor_comp_gradedCoderiv_twistTaylor {α : A} (hα : 𝒜.IsMaurerCartan α) {T : ℕ}
@@ -265,7 +256,7 @@ theorem twistTaylor_comp_gradedCoderiv_twistTaylor {α : A} (hα : 𝒜.IsMaurer
   have key := 𝒜.isGradedCoderivation_coaugmentedBarDifferential.comp_insertions ha
     (isGradedCoderivation_insertionCoderiv α) fun v w ↦
       (letter_reducedProjection_insertionCoderiv α v w).trans
-        (letter_reducedProjection_coaugmentedBarDifferential _).symm
+        (𝒜.letter_reducedProjection_coaugmentedBarDifferential _).symm
   -- The twisted bar differential is the sum of the insertion coderivations.
   have hcod (z : ReducedTensorWords R A) :
       reducedInclusion R A (ReducedTensorWords.gradedCoderiv (𝒜.grading.shift 1)
@@ -369,26 +360,23 @@ theorem twist_m_one_apply (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
       d x - α * x + ((p.negOnePow : ℤ) : R) • (x * α) := by
   have hα1 : α ∈ 𝒜 1 := by
     simpa using hα.mem_piece_one
-  have hins (t : ℕ) (ht : 2 ≤ t) :
-      h.toAInfinityAlgebra.insertionTaylor α t (cons R A x 1) = 0 := by
-    rw [cons_one_eq_of, ← LinearMap.comp_apply,
-      h.toAInfinityAlgebra.insertionTaylor_comp_of_eq_zero α
-        (h.toAInfinityAlgebra_m_of_three_le (by omega)), LinearMap.zero_apply]
-  rw [← taylor_ofLetter, twist_taylor, twistTaylor_apply, ← cons_one, Finset.sum_range_succ,
-    hins 2 le_rfl, add_zero, Finset.sum_range_succ, Finset.sum_range_one, insertionTaylor_zero,
-    insertionTaylor_apply, insertions_cons]
-  simp only [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.antidiagonal_zero, Finset.sum_singleton,
-    zero_add,
-    pow_zero, pow_one, one_apply_eq_self, insertions_one, map_add, LinearMap.comp_apply]
-  rw [reducedProjection_cons_cons_one, reducedProjection_cons_cons_one, cons_one,
-    reducedProjection_reducedInclusion,
-    taylor_ofLetter, toAInfinityAlgebra_m_one_apply]
-  rw [taylor_of_two, taylor_of_two]
-  simp only [toAInfinityAlgebra_m_two_apply, toAInfinityAlgebra_grading,
+  have hins : h.toAInfinityAlgebra.insertionTaylor α 2 (cons R A x 1) = 0 := by
+    rw [cons_one_eq_of]
+    exact h.toAInfinityAlgebra.insertionTaylor_of_eq_zero_of_m_eq_zero α
+      (h.toAInfinityAlgebra_m_of_three_le le_rfl) _
+  rw [← taylor_ofLetter, twist_taylor, twistTaylor_apply, ← cons_one, Finset.sum_range_succ, hins,
+    add_zero]
+  -- Split off the words with one inserted letter before evaluating the one-letter word.
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, insertionTaylor_apply,
+    insertions_cons, Finset.Nat.sum_antidiagonal_succ, Finset.Nat.antidiagonal_zero,
+    Finset.sum_singleton, pow_zero, pow_one, one_apply_eq_self, insertions_apply_one, map_add,
+    reducedProjection_cons_cons_one, taylor_of_two]
+  simp only [cons_one, reducedProjection_reducedInclusion, taylor_ofLetter,
+    toAInfinityAlgebra_m_one_apply, toAInfinityAlgebra_m_two_apply, toAInfinityAlgebra_grading,
     InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx,
     InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hα1, Matrix.cons_val_zero,
-    Matrix.cons_val_one, one_mul, Int.negOnePow_one, Units.val_neg,
-    Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul, neg_mul, smul_mul_assoc]
+    Matrix.cons_val_one, one_mul, Int.negOnePow_one, Units.val_neg, Units.val_one, Int.cast_neg,
+    Int.cast_one, neg_one_smul, neg_mul, smul_mul_assoc]
   abel
 
 /-- **The twisted product of a DG algebra** is the product. -/
@@ -400,10 +388,9 @@ theorem twist_m_two_apply (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
   have h₂ := (h.toAInfinityAlgebra.twist α hα 3
     (h.isInsertionBound_toAInfinityAlgebra α)).taylor_of_two (κ x) y
   rw [twist_grading, toAInfinityAlgebra_grading, InternalGrading.koszulTwist_koszulTwist] at h₂
-  have hins (t : ℕ) (ht : 1 ≤ t) (z : TensorPower R 2 A) :
-      h.toAInfinityAlgebra.insertionTaylor α t (of R A 2 z) = 0 := by
-    rw [← LinearMap.comp_apply, h.toAInfinityAlgebra.insertionTaylor_comp_of_eq_zero α
-      (h.toAInfinityAlgebra_m_of_three_le (by omega)), LinearMap.zero_apply]
+  have hins (t : ℕ) (ht : 1 ≤ t) :=
+    h.toAInfinityAlgebra.insertionTaylor_of_eq_zero_of_m_eq_zero α (n := 2) (t := t)
+      (h.toAInfinityAlgebra_m_of_three_le (by omega))
   have hi : reducedInclusion R A (ReducedTensorWords.of R A (2 : ℕ+)
       (PiTensorProduct.tprod R ![κ x, y])) = of R A 2 (PiTensorProduct.tprod R ![κ x, y]) :=
     reducedInclusion_of R A (2 : ℕ+) _
