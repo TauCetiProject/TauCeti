@@ -387,10 +387,24 @@ theorem dualDeltaIso_hom_hom_apply (g : G)
       (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹) (ModuleCat.of k k)
           (-Additive.ofMul g) (ofMul_inv g).symm).inv.hom
         (φ ((CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
-          (ModuleCat.of k k) (- -Additive.ofMul g) (neg_neg _)).inv.hom 1)) :=
-  -- In this degree the defining `dite` takes its first branch.
-  congrArg (fun e : ((dual (delta (c := c) g)).obj (-Additive.ofMul g) : ModuleCat k) ≅
-      (delta g⁻¹).obj (-Additive.ofMul g) ↦ e.hom.hom φ) (dite_eq_left (ofMul_inv g).symm)
+          (ModuleCat.of k k) (- -Additive.ofMul g) (neg_neg _)).inv.hom 1)) := by
+  -- The first-branch isomorphism, for arbitrary identifications `e` and `f` with the field.
+  have key {A B : ModuleCat k} (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k)
+      (φ : Module.Dual k A) :
+      ((e.symm.toLinearEquiv.dualMap ≪≫ₗ LinearMap.ringLmapEquivSelf k k k).toModuleIso ≪≫
+        f.symm).hom.hom φ = f.inv.hom (φ (e.inv.hom 1)) := by
+    rw [Iso.trans_hom, Iso.symm_hom, LinearEquiv.toModuleIso_hom, ModuleCat.hom_comp,
+      ModuleCat.hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      LinearMap.ringLmapEquivSelf_apply, LinearEquiv.dualMap_apply, Iso.toLinearEquiv_apply,
+      Iso.symm_hom]
+  -- In this degree the defining `dite` takes its first branch (`dite_eq_left`). The goal is not
+  -- type-correct at reducible transparency, since a component of a morphism of
+  -- `TwistedGradedObject` is only a function after unfolding that type synonym, so `rw` and
+  -- `simp` cannot rewrite with `ObjectProperty.isoMk_hom` and `GradedObject.isoMk_hom`; these
+  -- `isoMk` projections are instead reduced definitionally by `congrArg`.
+  exact (congrArg (fun e : ((dual (delta (c := c) g)).obj (-Additive.ofMul g) : ModuleCat k) ≅
+      (delta g⁻¹).obj (-Additive.ofMul g) ↦ e.hom.hom φ) (dite_eq_left (ofMul_inv g).symm)).trans
+    (key _ _ φ)
 
 /-- In degree `g⁻¹`, written `-Additive.ofMul g`, the inverse of `VecTwisted.dualDeltaIso` sends
 `x` to the linear functional on `δ_g` that multiplies by the scalar corresponding to `x`. -/
@@ -403,12 +417,25 @@ theorem dualDeltaIso_inv_hom_apply (g : G)
       (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g) (ModuleCat.of k k)
           (- -Additive.ofMul g) (neg_neg _)).hom.hom v *
         (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹)
-          (ModuleCat.of k k) (-Additive.ofMul g) (ofMul_inv g).symm).hom.hom x :=
-  -- In this degree the defining `dite` takes its first branch.
-  congrArg (fun e : ((dual (delta (c := c) g)).obj (-Additive.ofMul g) : ModuleCat k) ≅
+          (ModuleCat.of k k) (-Additive.ofMul g) (ofMul_inv g).symm).hom.hom x := by
+  -- The first-branch isomorphism, for arbitrary identifications `e` and `f` with the field.
+  have key {A B : ModuleCat k} (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k)
+      (x : B) (v : A) :
+      ((e.symm.toLinearEquiv.dualMap ≪≫ₗ LinearMap.ringLmapEquivSelf k k k).toModuleIso ≪≫
+        f.symm).inv.hom (B := ModuleCat.of k (Module.Dual k A)) x v =
+        e.hom.hom v * f.hom.hom x := by
+    rw [Iso.trans_inv, Iso.symm_inv, LinearEquiv.toModuleIso_inv, ModuleCat.hom_comp,
+      ModuleCat.hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_symm,
+      LinearEquiv.trans_apply, LinearMap.ringLmapEquivSelf_symm_apply, LinearEquiv.dualMap_symm,
+      LinearEquiv.dualMap_apply, LinearMap.smulRight_apply, one_apply_eq_self,
+      Iso.toLinearEquiv_symm, Iso.symm_symm_eq, Iso.toLinearEquiv_apply, smul_eq_mul]
+  -- As in `dualDeltaIso_hom_hom_apply`: `dite_eq_left` picks the first branch, and `congrArg`
+  -- reduces the `isoMk` projections definitionally because the goal is not type-correct at
+  -- reducible transparency.
+  exact (congrArg (fun e : ((dual (delta (c := c) g)).obj (-Additive.ofMul g) : ModuleCat k) ≅
       (delta g⁻¹).obj (-Additive.ofMul g) ↦
     e.inv.hom (B := ModuleCat.of k (Module.Dual k ((delta (c := c) g).obj (- -Additive.ofMul g))))
-      x v) (dite_eq_left (ofMul_inv g).symm)
+      x v) (dite_eq_left (ofMul_inv g).symm)).trans (key _ _ x v)
 
 /-- The right dual of `X` is its graded dual. -/
 @[simp]
