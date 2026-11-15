@@ -79,7 +79,8 @@ places being allowed to ramify (`fieldRange_le_narrowHilbertClassField_iff`,
 * `TauCeti.ClassFieldTheory.finrank_rayClassField`,
   `TauCeti.ClassFieldTheory.finrank_hilbertClassField` and
   `TauCeti.ClassFieldTheory.finrank_narrowHilbertClassField`: the degrees are the order of the ray
-  class group, the class number and the order of the narrow class group.
+  class group, the class number and the order of the narrow class group; in particular
+  `hilbertClassField K = ⊥` iff `𝓞 K` is a principal ideal domain (`hilbertClassField_eq_bot_iff`).
 * `TauCeti.ClassFieldTheory.fieldRange_le_hilbertClassField_iff`: the Hilbert class field is the
   maximal abelian extension unramified at every finite and every infinite place.
 * `TauCeti.ClassFieldTheory.fieldRange_le_narrowHilbertClassField_iff`: the narrow Hilbert class
@@ -309,6 +310,28 @@ theorem gal_hilbertClassField_equiv_classGroup :
 theorem finrank_hilbertClassField : Module.finrank K (hilbertClassField K) = classNumber K := by
   rw [← IsGalois.card_aut_eq_finrank, ← Nat.card_congr (hilbertClassArtinEquiv K).toEquiv,
     classNumber, Nat.card_eq_fintype_card]
+
+/-- **The Galois group of the Hilbert class field is trivial iff `𝓞 K` is a principal ideal
+domain.** -/
+theorem subsingleton_gal_hilbertClassField_iff :
+    Subsingleton Gal(hilbertClassField K/K) ↔ IsPrincipalIdealRing (𝓞 K) := by
+  rw [← classNumber_eq_one_iff, ← finrank_hilbertClassField, ← IsGalois.card_aut_eq_finrank,
+    Nat.card_eq_one_iff_unique, and_iff_left (inferInstance : Nonempty Gal(hilbertClassField K/K))]
+
+/-- When `𝓞 K` is a principal ideal domain, `Gal(hilbertClassField K / K)` is trivial. -/
+theorem subsingleton_gal_hilbertClassField [IsPrincipalIdealRing (𝓞 K)] :
+    Subsingleton Gal(hilbertClassField K/K) :=
+  (subsingleton_gal_hilbertClassField_iff K).2 ‹_›
+
+/-- **The Hilbert class field of `K` is trivial over `K` iff `𝓞 K` is a principal ideal domain.** -/
+theorem hilbertClassField_eq_bot_iff :
+    hilbertClassField K = ⊥ ↔ IsPrincipalIdealRing (𝓞 K) := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_hilbertClassField, classNumber_eq_one_iff]
+
+/-- When `𝓞 K` is a principal ideal domain, the Hilbert class field of `K` is `⊥`. -/
+theorem hilbertClassField_eq_bot [IsPrincipalIdealRing (𝓞 K)] :
+    hilbertClassField K = ⊥ :=
+  (hilbertClassField_eq_bot_iff K).2 ‹_›
 
 /-- **Reciprocity for the narrow Hilbert class field**: the Artin map identifies the narrow class
 group of `K` with the Galois group of the narrow Hilbert class field: `rayClassArtinEquiv` at the
