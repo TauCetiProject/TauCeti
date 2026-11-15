@@ -85,6 +85,13 @@ def degreeAtRegularValue (o : Manifold.Orientation I M ι) (o' : Manifold.Orient
     (f : M → N) (y : N) : ℤ :=
   ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x
 
+/-- Defining equation for `TauCeti.degreeAtRegularValue` as the sum of orientation signs over the
+fibre. -/
+theorem degreeAtRegularValue_def (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
+    (f : M → N) (y : N) :
+    degreeAtRegularValue o o' f y = ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x :=
+  (rfl)
+
 /-- The degree is the sum of the orientation signs over any finset enumerating the fibre. -/
 theorem degreeAtRegularValue_eq_sum {s : Finset M} (hs : ∀ x, x ∈ s ↔ f x = y) :
     degreeAtRegularValue o o' f y = ∑ x ∈ s, orientationSign o o' f x := by
@@ -173,10 +180,23 @@ manifold to a connected boundaryless manifold of the same dimension the choice d
 def degree (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι) (f : M → N) : ℤ :=
   if h : ∃ y, IsRegularValue I J f y then degreeAtRegularValue o o' f h.choose else 0
 
+open Classical in
+/-- Defining equation for `TauCeti.degree`. -/
+theorem degree_def (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
+    (f : M → N) :
+    degree o o' f =
+      if h : ∃ y, IsRegularValue I J f y then degreeAtRegularValue o o' f h.choose else 0 :=
+  (rfl)
+
 /-- If `f` has a regular value, its degree is the signed count at the chosen one. -/
 theorem degree_eq_degreeAtRegularValue_choose (h : ∃ y, IsRegularValue I J f y) :
     degree o o' f = degreeAtRegularValue o o' f h.choose :=
   dite_eq_left h
+
+/-- If `f` has no regular value, its degree is `0`. -/
+theorem degree_eq_zero_of_not_exists (h : ¬∃ y, IsRegularValue I J f y) :
+    degree o o' f = 0 :=
+  dite_eq_right h
 
 /-- Reversing the orientation of the source negates the degree. -/
 @[simp]
