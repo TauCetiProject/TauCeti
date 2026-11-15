@@ -141,7 +141,7 @@ private theorem exists_injective_monoidHom_apply_div_self (hs0 : s ≠ 0)
   refine ⟨ψ, fun σ τ h ↦ ?_, hψ⟩
   have h' : σ s = τ s := by
     have := congrArg Units.val h
-    rwa [hψ, hψ, div_left_inj' hs0] at this
+    rwa [hψ, hψ, div_left_inj₀ hs0] at this
   have htop : Algebra.adjoin K {s} = ⊤ := by
     rw [← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
       (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic, hgen,

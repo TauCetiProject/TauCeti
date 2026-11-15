@@ -86,6 +86,15 @@ end Arithmetic
 
 namespace MeasureTheory.Filtration
 
+/-- Enlarging a filtration enlarges its predictable sigma-algebra. -/
+theorem predictable_mono {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    {m : MeasurableSpace Ω} {ℱ 𝒢 : Filtration ι m} (h : ℱ ≤ 𝒢) :
+    ℱ.predictable ≤ 𝒢.predictable := by
+  apply MeasurableSpace.generateFrom_mono
+  rintro s (⟨A, hA, rfl⟩ | ⟨t, A, hA, rfl⟩)
+  · exact Or.inl ⟨A, h _ _ hA, rfl⟩
+  · exact Or.inr ⟨t, A, h _ _ hA, rfl⟩
+
 variable {ι Ω : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω}
     (ℱ : Filtration ι m)
 
@@ -334,6 +343,21 @@ theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_
     exact ((continuousWithinAt_Iio_iff_Iic.mp (hω t)).tendsto.comp
       (tendsto_nhdsWithin_iff.mpr
         ⟨tendsto_leftSample t, .of_forall fun n => leftSample_le n t⟩)).limUnder_eq
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- An adapted process with almost-surely continuous paths has an almost-surely continuous
+predictable indistinguishable version on the same raw filtration. -/
+theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_continuous
+    [IsCompletelyMetrizableSpace E]
+    {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} {P : Measure Ω}
+    (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, Continuous (fun t => u t ω)) :
+    ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧
+      (∀ᵐ ω ∂P, Continuous (fun t => v t ω)) ∧ v ≡ᵐ[P] u := by
+  obtain ⟨v, hv, heq⟩ := hu.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
+    (hc.mono fun _ h ↦ h.isLeftContinuous)
+  refine ⟨v, hv, ?_, heq⟩
+  filter_upwards [hc, heq] with ω hω heqω
+  exact hω.congr (fun t ↦ (heqω t).symm)
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}

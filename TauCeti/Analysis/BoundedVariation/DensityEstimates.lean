@@ -300,16 +300,10 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     {t : ℝ≥0} (ht : 1 < t) :
     ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
       t * ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ :=
-    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  filter_upwards [eventually_variationMeasure_closedBall_le hx ht, Ioc_mem_nhdsGT hε]
-    with r hr hrε
-  have hball : ball x r ⊆ closedBall x r := ball_subset_closedBall
-  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin
-    (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
-  exact (measure_mono (preimage_mono hball)).trans hr
+  filter_upwards [eventually_variationMeasure_closedBall_le hx ht,
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r hr hP
+  exact hP.trans hr
 
 /-- **The perimeter measure is bounded by Hausdorff measure on the reduced boundary.** Let `μ` be
 an additive Haar measure on a space of dimension `n`. Every set `A` of points of the reduced

@@ -178,7 +178,7 @@ theorem tendsto_rpow_mul_conv_real_Ioi (hα : 0 < α)
     · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
       exact mul_le_mul_of_nonneg_left
         (measureReal_mono (fun y hy ↦ hy.trans_le (le_abs_self y))) (rpow_nonneg hx α)
-  simpa only [mul_zero, add_zero] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto hα hμ hνtail
+  simpa only [mul_zero, add_zero] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto hμ hνtail
 
 /-- Convolution with a finite measure having a finite absolute `α`th moment multiplies a
 left-tail constant by its total mass. Zero tail constants are included. -/

@@ -78,61 +78,57 @@ def symm (f : Iso G H) : Iso H G where
       (f.vertexEquiv.symm y)]
     simp
 
-/-- The identity isomorphism fixes actual vertices. -/
+/-- The vertex equivalence of the identity is the identity equivalence. -/
 @[simp]
-theorem refl_vertexEquiv_apply (G : Graph α β) (x : G.vertexSet) :
-    (refl G).vertexEquiv x = x :=
+theorem refl_vertexEquiv (G : Graph α β) : (refl G).vertexEquiv = Equiv.refl G.vertexSet :=
   (rfl)
 
-/-- The identity isomorphism fixes actual edges. -/
+/-- The edge equivalence of the identity is the identity equivalence. -/
 @[simp]
-theorem refl_edgeEquiv_apply (G : Graph α β) (e : G.edgeSet) :
-    (refl G).edgeEquiv e = e :=
+theorem refl_edgeEquiv (G : Graph α β) : (refl G).edgeEquiv = Equiv.refl G.edgeSet :=
   (rfl)
 
-/-- A composite isomorphism applies the two vertex equivalences in order. -/
+/-- Composition of graph isomorphisms composes their vertex equivalences. -/
 @[simp]
-theorem trans_vertexEquiv_apply (f : Iso G H) (g : Iso H K) (x : G.vertexSet) :
-    (f.trans g).vertexEquiv x = g.vertexEquiv (f.vertexEquiv x) :=
+theorem trans_vertexEquiv (f : Iso G H) (g : Iso H K) :
+    (f.trans g).vertexEquiv = f.vertexEquiv.trans g.vertexEquiv :=
   (rfl)
 
-/-- A composite isomorphism applies the two edge equivalences in order. -/
+/-- Composition of graph isomorphisms composes their edge equivalences. -/
 @[simp]
-theorem trans_edgeEquiv_apply (f : Iso G H) (g : Iso H K) (e : G.edgeSet) :
-    (f.trans g).edgeEquiv e = g.edgeEquiv (f.edgeEquiv e) :=
+theorem trans_edgeEquiv (f : Iso G H) (g : Iso H K) :
+    (f.trans g).edgeEquiv = f.edgeEquiv.trans g.edgeEquiv :=
   (rfl)
 
-/-- The inverse isomorphism applies the inverse vertex equivalence. -/
+/-- Inversion of a graph isomorphism inverts its vertex equivalence. -/
 @[simp]
-theorem symm_vertexEquiv_apply (f : Iso G H) (x : H.vertexSet) :
-    f.symm.vertexEquiv x = f.vertexEquiv.symm x :=
+theorem symm_vertexEquiv (f : Iso G H) : f.symm.vertexEquiv = f.vertexEquiv.symm :=
   (rfl)
 
-/-- The inverse isomorphism applies the inverse edge equivalence. -/
+/-- Inversion of a graph isomorphism inverts its edge equivalence. -/
 @[simp]
-theorem symm_edgeEquiv_apply (f : Iso G H) (e : H.edgeSet) :
-    f.symm.edgeEquiv e = f.edgeEquiv.symm e :=
+theorem symm_edgeEquiv (f : Iso G H) : f.symm.edgeEquiv = f.edgeEquiv.symm :=
   (rfl)
 
 /-- Applying an isomorphism and then its inverse fixes an actual vertex. -/
 theorem symm_vertexEquiv_apply_vertexEquiv (f : Iso G H) (x : G.vertexSet) :
     f.symm.vertexEquiv (f.vertexEquiv x) = x := by
-  rw [symm_vertexEquiv_apply, Equiv.symm_apply_apply]
+  rw [symm_vertexEquiv, Equiv.symm_apply_apply]
 
 /-- Applying an inverse isomorphism and then the original fixes an actual vertex. -/
 theorem vertexEquiv_apply_symm_vertexEquiv (f : Iso G H) (x : H.vertexSet) :
     f.vertexEquiv (f.symm.vertexEquiv x) = x := by
-  rw [symm_vertexEquiv_apply, Equiv.apply_symm_apply]
+  rw [symm_vertexEquiv, Equiv.apply_symm_apply]
 
 /-- Applying an isomorphism and then its inverse fixes an actual edge. -/
 theorem symm_edgeEquiv_apply_edgeEquiv (f : Iso G H) (e : G.edgeSet) :
     f.symm.edgeEquiv (f.edgeEquiv e) = e := by
-  rw [symm_edgeEquiv_apply, Equiv.symm_apply_apply]
+  rw [symm_edgeEquiv, Equiv.symm_apply_apply]
 
 /-- Applying an inverse isomorphism and then the original fixes an actual edge. -/
 theorem edgeEquiv_apply_symm_edgeEquiv (f : Iso G H) (e : H.edgeSet) :
     f.edgeEquiv (f.symm.edgeEquiv e) = e := by
-  rw [symm_edgeEquiv_apply, Equiv.apply_symm_apply]
+  rw [symm_edgeEquiv, Equiv.apply_symm_apply]
 
 /-- Inverting a graph isomorphism twice returns the original isomorphism. -/
 @[simp]

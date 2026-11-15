@@ -94,6 +94,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
   is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
+* `TauCeti.baseChangeOfMulActionEquiv_one_tmul`: on `1 ⊗ x` the identification
+  `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` to `A`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
   reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
@@ -754,6 +756,16 @@ theorem baseChangeOfMulActionEquiv_symm_single (a : A) (x : X) :
       = MonoidAlgebra.single x a := by
     rw [baseChangeOfMulActionEquiv_tmul_single, one_smul]
   rw [← h, Representation.Equiv.symm_apply_apply]
+
+/-- On `1 ⊗ x` the identification `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` along the
+structure map `R → A`. -/
+theorem baseChangeOfMulActionEquiv_one_tmul (x : MonoidAlgebra R G) :
+    baseChangeOfMulActionEquiv R A G G (1 ⊗ₜ x) =
+      MonoidAlgebra.mapAlgHom G (Algebra.ofId R A) x := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => rw [TensorProduct.tmul_add, map_add, hx, hy, map_add]
+  | single g r => simp [Algebra.smul_def]
 
 end PermutationModule
 
