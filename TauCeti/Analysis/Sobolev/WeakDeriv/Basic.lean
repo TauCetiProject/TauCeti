@@ -67,17 +67,18 @@ Two facts make the notion usable, and both are proved here.
   infinite dimension every test function is `0`, so for a complete `F` any two functions locally
   integrable on `Ω` are weak derivatives of any `u` locally integrable on `Ω`.
 * **Consistency.** For an additive Haar measure `μ` on a finite-dimensional `E` with its Borel
-  σ-algebra, a classical derivative that is locally integrable on `Ω` is a weak derivative
-  (`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`, `TauCeti.hasWeakFDerivOn_of_differentiableOn`),
-  by integration by parts. Differentiability alone is not enough: local integrability of `u` and
-  of its derivative is part of what it means to have a weak derivative. Local integrability of the
-  derivative is a hypothesis of both theorems and of the comparison theorems
-  `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`. Local
-  integrability of `u` is a hypothesis of `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` only:
-  `TauCeti.hasWeakFDerivOn_of_differentiableOn` derives it from the continuity of `u`, and the
-  comparison theorems take it from the weak derivative they are given.
-  Together with uniqueness this pins the notion down: on a `C¹` function whose derivative is
-  locally integrable on `Ω`, the weak derivative is the classical one almost everywhere.
+  σ-algebra and a complete `F`, a classical derivative that is locally integrable on `Ω` is a weak
+  derivative (`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`,
+  `TauCeti.hasWeakFDerivOn_of_differentiableOn`), by integration by parts. Differentiability alone
+  is not enough: local integrability of `u` and of its derivative is part of what it means to have
+  a weak derivative. Local integrability of the derivative is a hypothesis of both theorems and of
+  the comparison theorems `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and
+  `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`. Local integrability of `u` is a hypothesis of
+  `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` only: `TauCeti.hasWeakFDerivOn_of_differentiableOn`
+  derives it from the continuity of `u`, and the comparison theorems take it from the weak
+  derivative they are given. Together with uniqueness this pins the notion down: on a `C¹`
+  function whose derivative is locally integrable on `Ω`, the weak derivative is the classical one
+  almost everywhere.
 
 Nothing here assumes that `Ω` is bounded or that its boundary is regular: the weak derivative is a
 purely interior notion, and boundary hypotheses enter only with traces and extensions.
@@ -215,9 +216,9 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: under the same assumptions, a weak line
   derivative vanishes almost everywhere on an open set where the function does.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: for an
-  additive Haar measure on a finite-dimensional `E` with its Borel σ-algebra, where the classical
-  derivative exists and is locally integrable on `Ω`, the weak one agrees with it almost
-  everywhere.
+  additive Haar measure on a finite-dimensional `E` with its Borel σ-algebra, when the classical
+  derivative exists at every point of `Ω` and is locally integrable on `Ω`, the weak one agrees
+  with it almost everywhere on `Ω`.
 -/
 
 public section
@@ -253,12 +254,13 @@ pairs that are not weakly differentiable at all; see the module docstring. They 
 `.completeSpace`, the last of which is how a proof gets the `CompleteSpace F` instance.
 
 For the intended `μ`, an additive Haar measure on a finite-dimensional `E` with its Borel
-σ-algebra, this says exactly that `u'` represents the distributional derivative `∂_v u` on `Ω`,
-and `[μ.IsAddHaarMeasure]` on such an `E` is the hypothesis of every result identifying the two
-(`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and `TauCeti.hasWeakLineDerivOn_const` among
-them). For a `μ` that is not translation invariant the
-identity is instead the adjoint of `∂_v` relative to `μ` — with a weight `w` it describes
-`∂_v (w • u)`, so a constant need not have weak derivative `0`; see the module docstring. -/
+σ-algebra, this says exactly that `u'` represents the distributional derivative `∂_v u` on `Ω`.
+Translation invariance of `μ` on all of `E` is sufficient for the results tying
+`HasWeakLineDerivOn` to the classical derivative (`[μ.IsAddHaarMeasure]` on a finite-dimensional
+Borel `E` is their hypothesis, for instance in `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
+`TauCeti.hasWeakLineDerivOn_const`), not necessary. For general `μ` the identity says that `u'`
+is the adjoint of `∂_v` relative to `μ`: with a weight `w` it describes `∂_v (w • u)`, so a
+constant need not have weak derivative `0`; see the module docstring. -/
 def HasWeakLineDerivOn (μ : Measure E) (Ω : Opens E) (u u' : E → F) (v : E) : Prop :=
   CompleteSpace F ∧ LocallyIntegrableOn u Ω μ ∧ LocallyIntegrableOn u' Ω μ ∧
     ∀ φ : 𝓓(Ω, ℝ), ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u x ∂μ = -∫ x, (φ : E → ℝ) x • u' x ∂μ
@@ -856,10 +858,10 @@ theorem hasWeakLineDerivOn_of_hasLineDerivAt (hu : LocallyIntegrableOn u Ω μ)
   simpa using key
 
 /-- A constant function has weak derivative `0` in every direction, for `μ` an additive Haar
-measure on a finite-dimensional `E` with its Borel σ-algebra: the first sanity check that
-`TauCeti.HasWeakLineDerivOn` is not vacuous. Translation invariance of `μ` is sufficient but not
-necessary (only the weight on `Ω` matters), and some such hypothesis is needed: against a weighted
-measure a constant pairs with `∂_v` of the weight. -/
+measure on a finite-dimensional `E` with its Borel σ-algebra and a complete `F`: the first sanity
+check that `TauCeti.HasWeakLineDerivOn` is not vacuous. Translation invariance of `μ` is sufficient
+but not necessary (only the weight on `Ω` matters), and some such hypothesis is needed: against a
+weighted measure a constant pairs with `∂_v` of the weight. -/
 theorem hasWeakLineDerivOn_const (c : F) :
     HasWeakLineDerivOn μ Ω (fun _ => c) (fun _ => 0) v :=
   hasWeakLineDerivOn_of_hasLineDerivAt (locallyIntegrableOn_const c) locallyIntegrableOn_zero
