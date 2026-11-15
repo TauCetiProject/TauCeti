@@ -159,6 +159,16 @@ theorem norm_gaugeLinearAction (u : ℂ → Circle) (y : ℂ → EuclideanSpace 
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   linear_combination (y z 2 ^ 2 + y z 3 ^ 2) * hn
 
+/-- The linear gauge action preserves the pointwise inner product of the coefficient metric. -/
+@[simp]
+theorem inner_gaugeLinearAction (u : ℂ → Circle) (y v : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    inner ℝ (gaugeLinearAction u y z) (gaugeLinearAction u v z) = inner ℝ (y z) (v z) := by
+  have hn := Circle.re_sq_add_im_sq (u z)
+  simp only [PiLp.inner_apply, Fin.sum_univ_four, gaugeLinearAction_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
+    Matrix.head_cons, Matrix.tail_cons, RCLike.inner_apply, conj_trivial]
+  linear_combination (v z 2 * y z 2 + v z 3 * y z 3) * hn
+
 /-- Pointwise vanishing is preserved in both directions. -/
 @[simp]
 theorem gaugeLinearAction_eq_zero_iff (u : ℂ → Circle)

@@ -314,6 +314,34 @@ theorem rotateTarget_rotateTarget (u v : Circle) (η : ℂ → EuclideanSpace �
   ext z i
   fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
 
+/-- Rotations of fields are pointwise isometries for the coefficient metric: the inner product
+of two rotated fields at `z` is the inner product of the fields at `u z`. -/
+theorem inner_rotateField (u : Circle) (y v : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    inner ℝ (rotateField u y z) (rotateField u v z) = inner ℝ (y (u * z)) (v (u * z)) := by
+  have hn := Circle.re_sq_add_im_sq u
+  simp only [PiLp.inner_apply, Fin.sum_univ_four, rotateField_apply_zero, rotateField_apply_one,
+    rotateField_apply_two, rotateField_apply_three, RCLike.inner_apply, conj_trivial]
+  linear_combination (v (u * z) 0 * y (u * z) 0 + v (u * z) 1 * y (u * z) 1) * hn
+
+/-- Rotations of fields preserve the pointwise norm of the coefficient metric. -/
+theorem norm_rotateField (u : Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖rotateField u y z‖ = ‖y (u * z)‖ := by
+  rw [norm_eq_sqrt_real_inner, inner_rotateField, ← norm_eq_sqrt_real_inner]
+
+/-- Rotations of the target are pointwise isometries: the inner product of two rotated target
+fields at `z` is the inner product of the fields at `u z`. -/
+theorem inner_rotateTarget (u : Circle) (f η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    inner ℝ (rotateTarget u f z) (rotateTarget u η z) = inner ℝ (f (u * z)) (η (u * z)) := by
+  have hn := Circle.re_sq_add_im_sq u
+  simp only [PiLp.inner_apply, Fin.sum_univ_four, rotateTarget_apply_zero, rotateTarget_apply_one,
+    rotateTarget_apply_two, rotateTarget_apply_three, RCLike.inner_apply, conj_trivial]
+  linear_combination (η (u * z) 2 * f (u * z) 2 + η (u * z) 3 * f (u * z) 3) * hn
+
+/-- Rotations of the target preserve the pointwise norm. -/
+theorem norm_rotateTarget (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖rotateTarget u η z‖ = ‖η (u * z)‖ := by
+  rw [norm_eq_sqrt_real_inner, inner_rotateTarget, ← norm_eq_sqrt_real_inner]
+
 /-- Evaluation of a real-linear functional at `u`, in the basis `(1, I)`. -/
 private theorem clm_apply_coe (L : ℂ →L[ℝ] ℝ) (u : Circle) :
     L u = (u : ℂ).re * L 1 + (u : ℂ).im * L I := by

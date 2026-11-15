@@ -38,6 +38,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
+* `LinearIsometryEquiv.measurePreserving_addHaar`: a linear isometry of a space onto itself
+  preserves every additive Haar measure.
 * `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
   space linearly isomorphic to `K × Kᗮ` holds, for almost every `a`, at the image of the
   components of `a` along `K` and `Kᗮ`.
@@ -114,6 +116,19 @@ theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
   exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
 
 end AffineIsometryEquiv
+
+namespace LinearIsometryEquiv
+
+/-- Every linear isometry of a finite-dimensional real inner product space onto itself preserves
+every additive Haar measure, not only the volume measure: such a measure is a constant multiple of
+the volume measure. -/
+theorem measurePreserving_addHaar (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  refine ⟨f.continuous.measurable, ?_⟩
+  rw [μ.isAddLeftInvariant_eq_smul volume, Measure.map_smul _ f.continuous.aemeasurable,
+    f.measurePreserving.map_eq]
+
+end LinearIsometryEquiv
 
 namespace Submodule
 
