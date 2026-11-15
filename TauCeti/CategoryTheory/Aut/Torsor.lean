@@ -85,16 +85,24 @@ instance instMulActionIso : MulAction (Aut Y) (X ≅ Y) where
 instance instSDivIso : SDiv (Aut Y) (X ≅ Y) where
   sdiv e₁ e₂ := .of (e₂.symm ≪≫ e₁)
 
-theorem sdiv_iso_def (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y) = .of (e₂.symm ≪≫ e₁) :=
+end Aut
+
+namespace Iso
+
+theorem sdiv_def (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y) = .of (e₂.symm ≪≫ e₁) :=
   rfl
 
 @[simp]
-theorem sdiv_iso_asIso (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y).asIso = e₂.symm ≪≫ e₁ :=
+theorem sdiv_asIso (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y).asIso = e₂.symm ≪≫ e₁ :=
   rfl
 
 @[simp]
-theorem sdiv_smul_iso (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y) • e₂ = e₁ := by
+theorem sdiv_smul (e₁ e₂ : X ≅ Y) : (e₁ /ₛ e₂ : Aut Y) • e₂ = e₁ := by
   ext; simp
+
+end Iso
+
+namespace Aut
 
 @[simp]
 theorem smul_sdiv_iso (σ : Aut Y) (e : X ≅ Y) : (σ • e) /ₛ e = σ := by
@@ -105,11 +113,11 @@ postcomposition. -/
 instance instTorsorIso [Nonempty (X ≅ Y)] : Torsor (Aut Y) (X ≅ Y) where
   toMulAction := instMulActionIso
   toSDiv := instSDivIso
-  sdiv_smul' := sdiv_smul_iso
+  sdiv_smul' := Iso.sdiv_smul
   smul_sdiv' := smul_sdiv_iso
 
 instance : MulAction.IsPretransitive (Aut Y) (X ≅ Y) :=
-  ⟨fun e₁ e₂ ↦ ⟨e₂ /ₛ e₁, sdiv_smul_iso e₂ e₁⟩⟩
+  ⟨fun e₁ e₂ ↦ ⟨e₂ /ₛ e₁, e₂.sdiv_smul e₁⟩⟩
 
 /-! ### Precomposition by `Aut X` -/
 
@@ -150,7 +158,7 @@ namespace Iso
 /-- **The action of `Aut Y` on `X ≅ Y` is simply transitive**: any two isomorphisms `X ≅ Y` differ
 by a unique automorphism of `Y`. -/
 theorem existsUnique_smul_eq (e₁ e₂ : X ≅ Y) : ∃! σ : Aut Y, σ • e₁ = e₂ := by
-  refine ⟨e₂ /ₛ e₁, Aut.sdiv_smul_iso e₂ e₁, fun σ h ↦ ?_⟩
+  refine ⟨e₂ /ₛ e₁, e₂.sdiv_smul e₁, fun σ h ↦ ?_⟩
   rw [← h, Aut.smul_sdiv_iso]
 
 /-- **The action of `(Aut X)ᵐᵒᵖ` on `X ≅ Y` is simply transitive**: any two isomorphisms `X ≅ Y`
