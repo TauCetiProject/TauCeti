@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.SerreCondition.Basic
+public import TauCeti.RingTheory.SerreCondition.Localization
 public import TauCeti.RingTheory.CohenMacaulay.Normal
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 public import TauCeti.RingTheory.IntegralClosure.LocalRing
@@ -220,7 +220,8 @@ theorem forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satis
   -- `(R_1)` and `(S_2)` pass to `R_p`, which is then integrally closed and, by `(R_0)` and
   -- `(S_1)`, reduced; a reduced integrally closed Noetherian local ring is a domain
   have hR' := hR.localization p.primeCompl (Localization.AtPrime p)
-  have hS' := hS.localization_self p.primeCompl (Localization.AtPrime p)
+  have hS' := hS.localization p.primeCompl (Localization.AtPrime p)
+    (Algebra.linearMap R (Localization.AtPrime p))
   have := isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two hR' hS'
   have : IsReduced (Localization.AtPrime p) :=
     isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one.2

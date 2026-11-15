@@ -87,6 +87,12 @@ namespace TLDiagram
 
 variable {n m n' m' : ℕ}
 
+/-- There is a diagram `n → m` exactly when the total number `n + m` of boundary points is
+even. -/
+theorem nonempty_iff : Nonempty (TLDiagram n m) ↔ Even (n + m) :=
+  ⟨fun ⟨x⟩ => PlanarMatching.nonempty_iff.mp ⟨x.matching⟩,
+    fun h => ⟨⟨(PlanarMatching.nonempty_iff.mpr h).some, 0⟩⟩⟩
+
 /-- Relabelling the matching of a diagram along an equivalence of planar matchings, keeping the
 circles. Every operation of this file is of this form. -/
 private def congrMatching (e : PlanarMatching (n + m) ≃ PlanarMatching (n' + m')) :
