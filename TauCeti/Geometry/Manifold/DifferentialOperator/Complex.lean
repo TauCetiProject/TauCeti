@@ -171,7 +171,7 @@ theorem complexSmoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : 
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : Fin m → TangentSpace I x →L[ℝ] ℂ) (σ : Equiv.Perm (Fin m)) :
     complexSmoothCommutatorSymbol I hx D (ξ ∘ σ) = complexSmoothCommutatorSymbol I hx D ξ :=
-  pointCommutatorSymbol_comp_perm _ (ker_complexEvalAlgHom x).ge D ξ σ
+  pointCommutatorSymbol_comp_perm _ D ξ σ
 
 /-- **Comparison with the cotangent symbol.** The commutator symbol at `x` is the cotangent symbol
 `TauCeti.cotangentSymbol` of the complex vanishing ideal `I_x`, read through the identification
@@ -199,7 +199,7 @@ theorem complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators
       differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
     complexSmoothCommutatorSymbol I hx D = 0 :=
-  pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ (ker_complexEvalAlgHom x).ge D hD
+  pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D hD
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` on complex smooth functions
 has vanishing commutator symbol at every point if and only if it has order at most `m`. -/
@@ -303,7 +303,7 @@ theorem complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D ξ = 0 :=
-  pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ (ker_complexEvalAlgHom x).ge D hD ξ
+  pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD ξ
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` on complex smooth
 functions of orders at most `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order
@@ -319,7 +319,7 @@ theorem complexSmoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
             (Q : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯),
           comp_mem_differentialOperators P.2 Q.2⟩ ξ =
       complexSmoothPrincipalSymbol I hx P ξ * complexSmoothPrincipalSymbol I hx Q ξ :=
-  pointPrincipalSymbol_comp _ (ker_complexEvalAlgHom x).ge P Q ξ
+  pointPrincipalSymbol_comp _ P Q ξ
 
 /-! ### First-order operators -/
 

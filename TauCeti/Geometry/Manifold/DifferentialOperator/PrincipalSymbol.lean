@@ -144,7 +144,7 @@ theorem smoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ) (σ : Equiv.Perm (Fin m)) :
     smoothCommutatorSymbol I hx D (ξ ∘ σ) = smoothCommutatorSymbol I hx D ξ :=
-  pointCommutatorSymbol_comp_perm _ (ker_evalAlgHom x).ge D ξ σ
+  pointCommutatorSymbol_comp_perm _ D ξ σ
 
 /-- **Comparison with the cotangent symbol.** The commutator symbol at `x` is the cotangent symbol
 `TauCeti.cotangentSymbol` of the vanishing ideal `I_x`, read through the identification
@@ -167,7 +167,7 @@ theorem smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsIn
     (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
     smoothCommutatorSymbol I hx D = 0 :=
-  pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ (ker_evalAlgHom x).ge D hD
+  pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D hD
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing commutator
 symbol at every point if and only if it has order at most `m`. -/
@@ -254,7 +254,7 @@ theorem smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInt
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx D ξ = 0 :=
-  pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ (ker_evalAlgHom x).ge D hD ξ
+  pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD ξ
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
@@ -267,7 +267,7 @@ theorem smoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
         ⟨(P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ (Q : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯),
           comp_mem_differentialOperators P.2 Q.2⟩ ξ =
       smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ :=
-  pointPrincipalSymbol_comp _ (ker_evalAlgHom x).ge P Q ξ
+  pointPrincipalSymbol_comp _ P Q ξ
 
 /-! ### Naturality under diffeomorphisms -/
 

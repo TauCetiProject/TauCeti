@@ -512,11 +512,6 @@ private theorem apply_toCotangent_cotangentLift (e : J.Cotangent ≃ₗ[𝕜] V)
     e (J.toCotangent (cotangentLift e v)) = v :=
   congr($((exists_cotangentLinearMap_comp_eq_id e).choose_spec) v)
 
-/-- Every family of vectors of `V` is the image of a family of elements of `J`. -/
-private theorem exists_apply_toCotangent_eq (e : J.Cotangent ≃ₗ[𝕜] V) {ι : Type*} (v : ι → V) :
-    ∃ a : ι → J, (fun i ↦ e (J.toCotangent (a i))) = v :=
-  ⟨fun i ↦ cotangentLift e (v i), funext fun i ↦ apply_toCotangent_cotangentLift e (v i)⟩
-
 /-- The value under `φ` of the image of `1` under an `A`-linear endomorphism of `A`. -/
 private def evalOneAt (φ : A →ₐ[𝕜] 𝕜) : (A →ₗ[A] A) →ₗ[𝕜] 𝕜 where
   toFun L := φ (L 1)
@@ -540,6 +535,13 @@ noncomputable def pointCommutatorSymbol {m : ℕ} :
 
 variable {φ}
 
+/-- The point commutator symbol evaluates `φ([⋯[D, a₁], …, aₘ] 1)` at the chosen lifts `aᵢ ∈ J`. -/
+private theorem pointCommutatorSymbol_apply {m : ℕ} (D : differentialOperators 𝕜 A A A m)
+    (v : Fin m → V) :
+    pointCommutatorSymbol φ e D v =
+      φ (commutatorSymbol 𝕜 A A A m D (fun i ↦ cotangentLift e (v i)) 1) :=
+  rfl
+
 /-- The point commutator symbol at the classes of `a₁, …, aₘ ∈ J` is `φ([⋯[D, a₁], …, aₘ] 1)`. -/
 theorem pointCommutatorSymbol_toCotangent (hJ : J ≤ RingHom.ker φ) {m : ℕ}
     (D : differentialOperators 𝕜 A A A m) (a : Fin m → J) :
@@ -553,14 +555,12 @@ theorem pointCommutatorSymbol_toCotangent (hJ : J ≤ RingHom.ker φ) {m : ℕ}
   exact sub_eq_zero.1 ((map_sub φ _ _).symm.trans (RingHom.mem_ker.1 (hJ h)))
 
 /-- The point commutator symbol is symmetric. -/
-theorem pointCommutatorSymbol_comp_perm (hJ : J ≤ RingHom.ker φ) {m : ℕ}
+theorem pointCommutatorSymbol_comp_perm {m : ℕ}
     (D : differentialOperators 𝕜 A A A m) (v : Fin m → V) (σ : Equiv.Perm (Fin m)) :
     pointCommutatorSymbol φ e D (v ∘ σ) = pointCommutatorSymbol φ e D v := by
-  obtain ⟨a, rfl⟩ := exists_apply_toCotangent_eq e v
-  calc pointCommutatorSymbol φ e D ((fun i ↦ e (J.toCotangent (a i))) ∘ σ)
-      = φ (commutatorSymbol 𝕜 A A A m D ((fun i ↦ (a i : A)) ∘ σ) 1) :=
-        pointCommutatorSymbol_toCotangent e hJ D (a ∘ σ)
-    _ = _ := by rw [commutatorSymbol_comp_perm, pointCommutatorSymbol_toCotangent e hJ]
+  rw [pointCommutatorSymbol_apply, pointCommutatorSymbol_apply,
+    ← commutatorSymbol_comp_perm D (fun i ↦ (cotangentLift e (v i) : A)) σ]
+  rfl
 
 /-- **Comparison with the cotangent symbol.** When `J` is the kernel of `φ`, the class modulo `J`
 of the scalar `σ(e u₁, …, e uₘ)` is the image of the class of `1` under the cotangent symbol at
@@ -580,13 +580,12 @@ theorem mk_algebraMap_pointCommutatorSymbol (hJ : RingHom.ker φ = J) {m : ℕ}
 
 /-- The point commutator symbol of an operator of order at most `m + 1` vanishes if the operator
 has order at most `m`. -/
-theorem pointCommutatorSymbol_eq_zero_of_mem_differentialOperators (hJ : J ≤ RingHom.ker φ)
+theorem pointCommutatorSymbol_eq_zero_of_mem_differentialOperators
     {m : ℕ} (D : differentialOperators 𝕜 A A A (m + 1))
     (hD : (D : A →ₗ[𝕜] A) ∈ differentialOperators 𝕜 A A A m) :
     pointCommutatorSymbol φ e D = 0 := by
   ext v
-  obtain ⟨a, rfl⟩ := exists_apply_toCotangent_eq e v
-  simp [pointCommutatorSymbol_toCotangent e hJ, (commutatorSymbol_eq_zero_iff D).2 hD]
+  simp [pointCommutatorSymbol_apply, (commutatorSymbol_eq_zero_iff D).2 hD]
 
 variable (φ)
 
@@ -632,32 +631,31 @@ variable {φ}
 
 /-- The point principal symbol of an operator of order at most `m + 1` vanishes if the operator
 has order at most `m`. -/
-theorem pointPrincipalSymbol_eq_zero_of_mem_differentialOperators (hJ : J ≤ RingHom.ker φ)
+theorem pointPrincipalSymbol_eq_zero_of_mem_differentialOperators
     {m : ℕ} (D : differentialOperators 𝕜 A A A (m + 1))
     (hD : (D : A →ₗ[𝕜] A) ∈ differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ e D v = 0 := by
   simp [pointPrincipalSymbol_def,
-    pointCommutatorSymbol_eq_zero_of_mem_differentialOperators e hJ D hD]
+    pointCommutatorSymbol_eq_zero_of_mem_differentialOperators e D hD]
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the point principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
 product of the point principal symbols. -/
-theorem pointPrincipalSymbol_comp [CharZero 𝕜] (hJ : J ≤ RingHom.ker φ) {m k : ℕ}
+theorem pointPrincipalSymbol_comp [CharZero 𝕜] {m k : ℕ}
     (P : differentialOperators 𝕜 A A A m) (Q : differentialOperators 𝕜 A A A k) (v : V) :
     pointPrincipalSymbol φ e
         ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A), comp_mem_differentialOperators P.2 Q.2⟩ v =
       pointPrincipalSymbol φ e P v * pointPrincipalSymbol φ e Q v := by
-  obtain ⟨a, rfl⟩ : ∃ a : J, e (J.toCotangent a) = v :=
-    ⟨cotangentLift e v, apply_toCotangent_cotangentLift e v⟩
+  simp only [pointPrincipalSymbol_def, pointCommutatorSymbol_apply]
+  generalize (cotangentLift e v : A) = a
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `a` is `(m + k).choose m` times the product of
   -- the commutators of `P` and `Q`, and `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
   have key : φ (commutatorSymbol 𝕜 A A A (m + k)
       ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A), comp_mem_differentialOperators P.2 Q.2⟩
-      (fun _ ↦ (a : A)) 1) = (m + k).choose m * (φ (commutatorSymbol 𝕜 A A A m P (fun _ ↦ a) 1) *
+      (fun _ ↦ a) 1) = (m + k).choose m * (φ (commutatorSymbol 𝕜 A A A m P (fun _ ↦ a) 1) *
         φ (commutatorSymbol 𝕜 A A A k Q (fun _ ↦ a) 1)) := by
     rw [commutatorSymbol_comp_const, LinearMap.smul_apply, map_nsmul, LinearMap.comp_apply,
       ← Dual.apply_one_mul_eq (commutatorSymbol 𝕜 A A A m P fun _ ↦ a), map_mul, nsmul_eq_mul]
-  simp only [pointPrincipalSymbol_def, pointCommutatorSymbol_toCotangent e hJ _ fun _ ↦ a]
   have hfac (n : ℕ) : (n.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
   rw [key, Nat.cast_add_choose]
   field_simp [hfac]
