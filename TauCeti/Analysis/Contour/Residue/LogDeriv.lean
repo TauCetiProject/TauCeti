@@ -61,7 +61,7 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
   -- Near `z₀`, `logDeriv f` splits into its simple-pole principal part `n · (· − z₀)⁻¹` plus the
   -- analytic tail `logDeriv g` (with `g` the analytic non-vanishing local factor of `f`).
   obtain ⟨g, hg_an, hg_ne, hgerm⟩ := logDeriv_eventuallyEq_principalPart hf hn
-  have hlogg_an : AnalyticAt ℂ (logDeriv g) z₀ := analyticAt_logDeriv_of_analyticAt hg_an hg_ne
+  have hlogg_an : AnalyticAt ℂ (logDeriv g) z₀ := hg_an.logDeriv hg_ne
   have hA : MeromorphicAt (fun z => (n : ℂ) * (z - z₀)⁻¹) z₀ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv z₀)
   have hB : MeromorphicAt (logDeriv g) z₀ := hlogg_an.meromorphicAt
