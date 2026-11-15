@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.RankLocus
-public import TauCeti.RingTheory.Grassmannian.Schubert
+public import TauCeti.RingTheory.Grassmannian.Schubert.Field
 
 import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
@@ -122,25 +122,18 @@ private theorem toSchemeHom_chartHomEquiv_id (x : Fin k → M) :
 private theorem isIso_toSpec_of_unique
     (hU : ∀ (A : Type u) [CommRing A] [Algebra R A], Unique G(k, A ⊗[R] M; A)) :
     IsIso (toSpec R M k) := by
-  let inv : Spec (.of R) ⟶ scheme R M k := toSchemeHom (hU R).default
-  refine ⟨inv, ?_, ?_⟩
+  refine ⟨toSchemeHom (hU R).default, ?_, ?_⟩
   · refine (Scheme.Cover.mkOfCovers (Fin k → M) _ (chartι R)
       chartι_jointly_surjective : (scheme R M k).OpenCover).hom_ext _ _ fun x₀ ↦ ?_
     let x : Fin k → M := x₀
     let A := ChartAlgebra R x
-    change chartι R x ≫ toSpec R M k ≫ inv = chartι R x ≫ 𝟙 (scheme R M k)
-    -- Unfold the cover index `x₀` and component map to `chartι R x`.
-    have h₁ : chartι R x ≫ toSpec R M k ≫ inv =
-        toSchemeHom (map (IsScalarTower.toAlgHom R R A) (hU R).default) := by
-      rw [chartι_toSpec_assoc, ← IsScalarTower.coe_toAlgHom R R A, ← toSchemeHom_map]
-    have h₂ : chartι R x ≫ 𝟙 (scheme R M k) =
-        toSchemeHom (chartHomEquiv R x A (AlgHom.id R A)).1 := by
-      rw [Category.comp_id, ← toSchemeHom_chartHomEquiv_id x]
+    change chartι R x ≫ toSpec R M k ≫ toSchemeHom (hU R).default = chartι R x ≫ 𝟙 (scheme R M k)
+    rw [chartι_toSpec_assoc, ← IsScalarTower.coe_toAlgHom R R A, ← toSchemeHom_map,
+      Category.comp_id, ← toSchemeHom_chartHomEquiv_id x]
     let _ := hU A
-    exact h₁.trans ((congrArg toSchemeHom (Subsingleton.elim _ _)).trans h₂.symm)
-  · have hid : CommRingCat.ofHom (algebraMap R R) = 𝟙 (CommRingCat.of R) :=
-      CommRingCat.hom_ext (RingHom.ext fun _ ↦ rfl)
-    rw [toSchemeHom_toSpec, hid, Spec.map_id]
+    exact congrArg toSchemeHom (Subsingleton.elim _ _)
+  · rw [toSchemeHom_toSpec, show CommRingCat.ofHom (algebraMap R R) = 𝟙 (CommRingCat.of R) from
+      CommRingCat.hom_ext (RingHom.ext fun _ ↦ rfl), Spec.map_id]
 
 /-- For every module `M`, the structure morphism `G(0, M) ⟶ Spec R` is an isomorphism. -/
 instance isIso_toSpec_zero : IsIso (toSpec R M 0) :=
@@ -455,22 +448,19 @@ private theorem range_toSchemeHom_subset_closure_aux (b : Basis (Fin n) R M)
       have hgen := ih _ (hd ▸ hsum) (map ι N_poly) hp'' hp''_le hpiv_gen rfl
       rintro _ ⟨q, rfl⟩
       let q_L : Spec (.of L) := (⊥ : PrimeSpectrum L)
-      let q_gen : Spec (.of P) := Spec.map (CommRingCat.ofHom (ι : P →+* L)) q_L
-      let q₀ : Spec (.of P) := Spec.map (CommRingCat.ofHom (ev₀ : P →+* K)) q
-      let q_gen' : PrimeSpectrum P := q_gen
-      let q₀' : PrimeSpectrum P := q₀
-      have hq_gen_bot : q_gen'.asIdeal = ⊥ := by
-        change Ideal.comap (ι : P →+* L) ⊥ = ⊥
-        -- `Spec.map` acts on points of `PrimeSpectrum` by `PrimeSpectrum.comap`.
-        rw [← RingHom.ker_eq_comap_bot]
-        exact (RingHom.injective_iff_ker_eq_bot _).mp (IsFractionRing.injective P L)
-      have hle_spec : q_gen' ≤ q₀' := show q_gen'.asIdeal ≤ q₀'.asIdeal from hq_gen_bot ▸ bot_le
-      have hspec : toSchemeHom N_poly q_gen ⤳ toSchemeHom N_poly q₀ :=
-        ((PrimeSpectrum.le_iff_specializes q_gen' q₀').mp hle_spec).map
+      let q_gen : PrimeSpectrum P := Spec.map (CommRingCat.ofHom (ι : P →+* L)) q_L
+      let q₀ : PrimeSpectrum P := Spec.map (CommRingCat.ofHom (ev₀ : P →+* K)) q
+      have hle_spec : q_gen ≤ q₀ := show Ideal.comap (ι : P →+* L) ⊥ ≤ q₀.asIdeal by
+        rw [← RingHom.ker_eq_comap_bot,
+          (RingHom.injective_iff_ker_eq_bot (ι : P →+* L)).mp (IsFractionRing.injective P L)]
+        exact bot_le
+      have hspec : toSchemeHom N_poly (q_gen : Spec (.of P)) ⤳
+          toSchemeHom N_poly (q₀ : Spec (.of P)) :=
+        ((PrimeSpectrum.le_iff_specializes q_gen q₀).mp hle_spec).map
           (toSchemeHom N_poly).continuous
-      have heq_gen : toSchemeHom N_poly q_gen = toSchemeHom (map ι N_poly) q_L := by
-        rw [toSchemeHom_map, Scheme.Hom.comp_apply]
-      have heq₀ : toSchemeHom N_poly q₀ = toSchemeHom N q := by
+      have heq_gen : toSchemeHom N_poly (q_gen : Spec (.of P)) =
+          toSchemeHom (map ι N_poly) q_L := by rw [toSchemeHom_map, Scheme.Hom.comp_apply]
+      have heq₀ : toSchemeHom N_poly (q₀ : Spec (.of P)) = toSchemeHom N q := by
         rw [← hN₀, toSchemeHom_map, Scheme.Hom.comp_apply]
       exact heq₀ ▸ hspec.mem_closed isClosed_closure (heq_gen ▸ hgen ⟨q_L, rfl⟩)
 
