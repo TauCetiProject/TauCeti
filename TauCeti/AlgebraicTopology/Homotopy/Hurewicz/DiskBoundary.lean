@@ -19,7 +19,7 @@ image under this map of the standard generator `[Sⁿ⁺¹]` of the homology of 
 class of `p`, up to a sign that depends neither on the space nor on the loop
 (`TauCeti.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`). In particular
 the two classes lie in the same submodules
-(`TauCeti.singularHomologyMap_diskBoundaryMap_mem_iff`).
+(`GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff`).
 
 Both classes are natural in based maps, and every generalized loop factors through the
 tautological loop of the sphere (`GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp`), so it
@@ -124,7 +124,7 @@ theorem exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n : �
 submodules.** Since the two classes differ by a unit of `ℤ`, the image of the generator `[Sⁿ⁺¹]`
 under `GenLoop.diskBoundaryMap p` lies in a submodule `S` of `Hₙ₊₁(X; ℤ)` exactly when the
 Hurewicz class of `p` does. -/
-theorem singularHomologyMap_diskBoundaryMap_mem_iff {n : ℕ} {X : TopCat.{0}} {x : X}
+theorem _root_.GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff {n : ℕ} {X : TopCat.{0}} {x : X}
     (p : Ω^ (Fin (n + 1)) X x)
     (S : Submodule ℤ
       (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj X)) :

@@ -186,8 +186,8 @@ theorem ker_singularHomologyMap_presentation :
     -- `erw` leaves the left side applied through the underlying function of the linear map.
     rfl
   rw [hp] at hh ⊢
-  have hr := (singularHomologyMap_diskBoundaryMap_mem_iff p (LinearMap.ker ψ)).2 hh
-  exact (singularHomologyMap_diskBoundaryMap_mem_iff p _).1
+  have hr := (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p (LinearMap.ker ψ)).2 hh
+  exact (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p _).1
     (Submodule.subset_span ⟨⟨GenLoop.diskBoundaryMap p, hr⟩, rfl⟩)
 
 /-- **The presentation complex has `πₙ₊₂ ≅ A`.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A`, the
