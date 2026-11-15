@@ -26,7 +26,8 @@ dominates the original one. It is an extended metric on an extended metric space
 
 The infimum may equivalently be taken over the curves `γ : ℝ → X` joining `x` to `y` on
 `[0, 1]` in the sense of `TauCeti.IsCurveJoining`, so that a space is a length space exactly when
-its distance is its intrinsic distance.
+its distance is its intrinsic distance. After an affine change of parameter, every curve continuous
+on a compact interval `[a, b]` bounds the intrinsic distance between its endpoints by its length.
 
 ## Main definitions and results
 
@@ -39,6 +40,8 @@ its distance is its intrinsic distance.
 * `TauCeti.intrinsicEDist_eq_iInf_isCurveJoining` and
   `TauCeti.isLengthSpace_iff_edist_eq_intrinsicEDist`: comparison with the length-space
   condition.
+* `TauCeti.intrinsicEDist_le_eVariationOn_Icc`: a curve continuous on `[a, b]` bounds the
+  intrinsic distance between its endpoints by its length on `[a, b]`.
 * `TauCeti.intrinsicEMetricSpace`: the intrinsic extended metric, and
   `TauCeti.continuous_id_intrinsicEMetricSpace`: its topology is finer than the original one.
 
@@ -124,6 +127,15 @@ theorem intrinsicEDist_eq_iInf_isCurveJoining (x y : X) :
     rw [← p.eVariationOn_extend]
     exact eVariationOn.eq_of_eqOn fun t ht ↦ p.extend_apply ht
   · exact iInf₂_le_of_le γ.extend (isCurveJoining_extend γ) γ.eVariationOn_extend.le
+
+/-- A curve continuous on `[a, b]` bounds the intrinsic distance between its endpoints by its length
+on `[a, b]`. -/
+theorem intrinsicEDist_le_eVariationOn_Icc {γ : ℝ → X} {a b : ℝ} (hab : a ≤ b)
+    (hγ : ContinuousOn γ (Icc a b)) :
+    intrinsicEDist (γ a) (γ b) ≤ eVariationOn γ (Icc a b) := by
+  obtain ⟨δ, hδ, hvar⟩ := exists_isCurveJoining_of_continuousOn hab hγ rfl rfl
+  rw [intrinsicEDist_eq_iInf_isCurveJoining, ← hvar]
+  exact iInf₂_le δ hδ
 
 /-- A space is a length space exactly when its distance is its intrinsic distance. -/
 theorem isLengthSpace_iff_edist_eq_intrinsicEDist :
