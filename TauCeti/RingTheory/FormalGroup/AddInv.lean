@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Order
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -157,11 +158,8 @@ theorem coeff_one_addInvX : PowerSeries.coeff 1 F.addInvX = -1 := by
 
 /-- Over a nontrivial ring, the formal inverse has order `1`. -/
 @[simp]
-theorem order_addInvX [Nontrivial R] : F.addInvX.order = 1 := by
-  rw [← Nat.cast_one, PowerSeries.order_eq_nat]
-  refine ⟨by simp, fun i hi ↦ ?_⟩
-  rw [Nat.lt_one_iff.mp hi, PowerSeries.coeff_zero_eq_constantCoeff_apply]
-  exact F.constantCoeff_addInvX
+theorem order_addInvX [Nontrivial R] : F.addInvX.order = 1 :=
+  (PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero F.constantCoeff_addInvX).mpr (by simp)
 
 /-- The formal inverse can be substituted into power series. -/
 theorem hasSubst_addInvX : PowerSeries.HasSubst F.addInvX :=

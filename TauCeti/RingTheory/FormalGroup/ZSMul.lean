@@ -206,6 +206,22 @@ theorem subst_zsmulSeries (f : FormalGroupHom F G) (n : ℤ) :
     FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
     using congrArg Subtype.val (map_zsmul (f.toAddMonoidHom Unit) n F.tautologicalPoint)
 
+/-- **A nonzero homomorphism preserves the order of integer multiplication `[n]`.** Over an integral
+domain, if `f` is a nonzero homomorphism of formal group laws from `F` to `G`, then `[n]_F` and
+`[n]_G` have the same order, since `f ∘ [n]_F = [n]_G ∘ f` and orders multiply under
+substitution. -/
+theorem order_zsmulSeries_eq [NoZeroDivisors R] (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0)
+    (n : ℤ) :
+    (F.zsmulSeries n).order = (G.zsmulSeries n).order := by
+  have h := congrArg PowerSeries.order (f.subst_zsmulSeries n)
+  rw [PowerSeries.order_subst (F.constantCoeff_zsmulSeries n),
+    PowerSeries.order_subst f.zero_constantCoeff, mul_comm] at h
+  have h0 : f.toPowerSeries.order ≠ 0 :=
+    PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr f.zero_constantCoeff
+  have ht : f.toPowerSeries.order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr hf
+  exact le_antisymm ((ENat.mul_le_mul_left_iff h0 ht).mp h.le)
+    ((ENat.mul_le_mul_left_iff h0 ht).mp h.ge)
+
 end TauCeti.FormalGroupHom
 
 namespace TauCeti.FormalGroupIso

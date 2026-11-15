@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # The height ideals of a formal group law
@@ -62,7 +63,8 @@ congruence `η_R(v_n) ≡ η_L(v_n)` modulo `I_n`
   formal group laws have the same coefficient `v_n` modulo `I_n`.
 * `FormalGroup.heightIdeal_𝔾ₘ_eq_top` and `FormalGroup.heightIdeal_𝔾ₐ`: `I_n(𝔾ₘ)` is the unit
   ideal for `n ≥ 2`, while `I_n(𝔾ₐ) = (p)` for `n ≥ 1`.
-* `FormalGroup.heightIdeal_succ`: `I_(n+1) = I_n + (v_n)` for commutative `F`.
+* `FormalGroup.heightIdeal_succ` and `FormalGroup.heightIdeal_succ_eq_top_iff`: `I_(n+1) = I_n +
+  (v_n)` for commutative `F`, so `I_(n+1) = ⊤` exactly when `v_n` is a unit modulo `I_n`.
 * `FormalGroup.heightIdeal_one`: `I₁ = (p)` for commutative `F`.
 * `FormalGroup.heightIdeal_eq_span`: `I_n = (v₀, …, v_(n-1))` for commutative `F`.
 * `FormalGroup.heightIdeal_eq_bot_iff_le_height`: over a field of characteristic `p`, `I_n = 0`
@@ -242,6 +244,15 @@ theorem heightIdeal_succ (hp : p.Prime) (n : ℕ) :
   obtain ⟨h, -, hh⟩ := (F.map (Ideal.Quotient.mk J)).exists_order_nsmulSeries_eq_pow hp hpJ h0
   rw [hh, Nat.cast_le] at hord ⊢
   exact Nat.pow_le_pow_right hp.pos ((Nat.pow_lt_pow_iff_right hp.one_lt).mp hord)
+
+/-- For a commutative formal group law `F` and a prime `p`, the `(n + 1)`-st height ideal is the
+unit ideal if and only if the `n`-th Landweber coefficient `v_n = [X ^ (p ^ n)] [p]_F` is a unit
+modulo `I_n(F)`. -/
+theorem heightIdeal_succ_eq_top_iff (hp : p.Prime) (n : ℕ) :
+    F.heightIdeal p (n + 1) = ⊤ ↔
+      IsUnit (Ideal.Quotient.mk (F.heightIdeal p n)
+        (PowerSeries.coeff (p ^ n) (F.nsmulSeries p))) := by
+  rw [F.heightIdeal_succ hp n, sup_comm, ← Ideal.Quotient.isUnit_mk_iff]
 
 /-- The recursion `I_(n+1) = I_n + (v_n)` holds for every lift `v` of `v_n` modulo `I_n`. -/
 theorem heightIdeal_succ_eq_sup_of_sub_mem (hp : p.Prime) {n : ℕ} {v : R}

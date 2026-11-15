@@ -80,8 +80,9 @@ of a completed group algebra attached to two topological generators.
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
-* `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
-  has trivial kernel.
+* `PowerSeries.subst_eq_zero_iff` and `PowerSeries.substAlgHom_injective`: substitution of a
+  nonzero `q` of zero constant coefficient over a faithful algebra without zero divisors has
+  trivial kernel and is injective.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
@@ -249,17 +250,10 @@ theorem order_subst (hφ : constantCoeff φ = 0) (f : R⟦X⟧) :
   rw [subst_mul ha, subst_pow ha, subst_X ha, order_mul, order_pow, hg, add_zero, nsmul_eq_mul,
     coe_toNat_order hf, mul_comm]
 
-/-- Substituting a nonzero power series `φ` of zero constant coefficient sends only `0` to `0`. -/
-theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} :
-    (f.subst φ : R⟦X⟧) = 0 ↔ f = 0 := by
-  have h₀ := order_ne_zero_iff_constCoeff_eq_zero.mpr hφ
-  have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
-  rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
-  exact WithTop.mul_eq_top_iff.trans (by tauto)
-
-/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into `R⟦X⟧`
-sends only `0` to `0`. -/
-theorem mvPowerSeries_subst_eq_zero_iff {σ : Type*} {q : MvPowerSeries σ R}
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient over a
+faithful `R`-algebra without zero divisors into `R⟦X⟧` sends only `0` to `0`. -/
+theorem subst_eq_zero_iff {R S : Type*} [CommRing R] [CommRing S] [NoZeroDivisors S]
+    [Algebra R S] [FaithfulSMul R S] {σ : Type*} {q : MvPowerSeries σ S}
     (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) {f : R⟦X⟧} :
     f.subst q = 0 ↔ f = 0 := by
   have hs : HasSubst q := .of_constantCoeff_zero hq
@@ -271,17 +265,18 @@ theorem mvPowerSeries_subst_eq_zero_iff {σ : Type*} {q : MvPowerSeries σ R}
   · exact pow_ne_zero _ hq₀ hpow
   · have hc := congrArg MvPowerSeries.constantCoeff hg
     rw [map_zero, constantCoeff_subst_of_constantCoeff_zero hq,
-      Algebra.algebraMap_self_apply] at hc
+      map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R S)] at hc
     exact (constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf₀) hc
 
-/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into `R⟦X⟧`
-is injective. -/
-theorem substAlgHom_mvPowerSeries_injective {σ : Type*} {q : MvPowerSeries σ R}
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient over a
+faithful `R`-algebra without zero divisors into `R⟦X⟧` is injective. -/
+theorem substAlgHom_injective {R S : Type*} [CommRing R] [CommRing S] [NoZeroDivisors S]
+    [Algebra R S] [FaithfulSMul R S] {σ : Type*} {q : MvPowerSeries σ S}
     (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) :
     Function.Injective (substAlgHom (R := R) (.of_constantCoeff_zero hq)) :=
-  (injective_iff_map_eq_zero _).mpr fun f hf ↦ by
+  (injective_iff_map_eq_zero _).mpr fun _ hf ↦ by
     rw [coe_substAlgHom] at hf
-    exact (mvPowerSeries_subst_eq_zero_iff hq hq₀).mp hf
+    exact (subst_eq_zero_iff hq hq₀).mp hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/

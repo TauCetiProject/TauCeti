@@ -9,9 +9,11 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.DivisorPullback
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 import TauCeti.RingTheory.LaurentSeries.Basic
+import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -34,8 +36,6 @@ and hence the ramification index at infinity — with the inseparable degree of 
 
 ## Main results
 
-* `TauCeti.Isogeny.restrict_infinity`: restricting the place at infinity of `W₁` along an isogeny
-  gives the place at infinity of `W₂`.
 * `TauCeti.Isogeny.order_formalSeries_eq_ramificationIdx`: the order of `φ.formalSeries` is the
   ramification index of the place at infinity along `φ`.
 * `TauCeti.Isogeny.formalSeries_relativeFrobeniusIsogeny` and
@@ -65,22 +65,6 @@ namespace TauCeti.Isogeny
 section General
 
 variable {K : Type*} [Field K]
-
-/-- **The place at infinity restricts to the place at infinity** along any isogeny, in the
-normalized `TauCeti.Place` API. -/
-theorem restrict_infinity {W₁ W₂ : WeierstrassCurve.Affine K} (φ : Isogeny W₁ W₂)
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z) :
-    haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
-    haveI := φ.finiteDimensional_functionField h
-    (Place.infinity W₁).restrict K W₂.FunctionField = Place.infinity W₂ := by
-  have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
-  have := φ.finiteDimensional_functionField h
-  rw [Place.restrict_eq_iff_isEquiv_comap, Place.valuation_infinity, Place.valuation_infinity]
-  have hcomap : algebraMap W₂.FunctionField W₁.FunctionField = φ.fieldPullback.toRingHom :=
-    RingHom.ext h
-  rw [hcomap]
-  exact φ.isEquiv_comap_infinityPlace
 
 /-- **The order of an isogeny's formal series is the ramification index at infinity**, for any
 Weierstrass curves (nonsingular or not). -/
@@ -151,17 +135,8 @@ theorem order_formalSeries_eq_one_of_isSeparable
       φ.fieldPullback z := φ.fieldPullback.algebraMap_toAlgebra_apply
   rw [order_formalSeries_eq_ramificationIdx φ h, ramificationIdx_eq_one φ h, Nat.cast_one]
 
-/-- **A separable isogeny to an elliptic curve has nonzero linear coefficient in its formal
-series.** -/
-theorem coeff_one_formalSeries_ne_zero_of_isSeparable
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
-    PowerSeries.coeff 1 φ.formalSeries ≠ 0 := by
-  have h := (PowerSeries.order_eq_nat (φ := φ.formalSeries) (n := 1)).mp
-    (by simpa using φ.order_formalSeries_eq_one_of_isSeparable)
-  exact h.1
-
-/-- **The order of an isogeny's formal series is its inseparable degree** (Silverman IV.4.2(b) /
-II.2.12). -/
+/-- **The order of the formal series of an isogeny to an elliptic curve is its inseparable degree**
+(Silverman II.2.12, III.4.10(b), IV.4). -/
 @[simp]
 theorem order_formalSeries : φ.formalSeries.order = φ.inseparableDegree := by
   -- Factoring `φ = χ ∘ F^r` with `χ` separable gives
@@ -199,14 +174,18 @@ formal series is nonzero.** -/
 theorem coeff_one_formalSeries_ne_zero_iff_isSeparable :
     PowerSeries.coeff 1 φ.formalSeries ≠ 0 ↔
       Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField := by
-  rw [← order_formalSeries_eq_one_iff_isSeparable, ← Nat.cast_one (R := ℕ∞),
-    PowerSeries.order_eq_nat]
-  refine ⟨fun h ↦ ⟨h, fun i hi ↦ ?_⟩, fun h ↦ h.1⟩
-  rw [Nat.lt_one_iff.mp hi, PowerSeries.coeff_zero_eq_constantCoeff_apply]
-  exact φ.constantCoeff_formalSeries
+  rw [← order_formalSeries_eq_one_iff_isSeparable,
+    PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero φ.constantCoeff_formalSeries]
 
-/-- The linear coefficient of an isogeny's formal series is a unit of the base field if and only
-if the isogeny is separable. -/
+/-- **A separable isogeny to an elliptic curve has nonzero linear coefficient in its formal
+series.** -/
+theorem coeff_one_formalSeries_ne_zero_of_isSeparable
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
+    PowerSeries.coeff 1 φ.formalSeries ≠ 0 :=
+  φ.coeff_one_formalSeries_ne_zero_iff_isSeparable.mpr inferInstance
+
+/-- The linear coefficient of the formal series of an isogeny to an elliptic curve is a unit of the
+base field if and only if the isogeny is separable. -/
 theorem isUnit_coeff_one_formalSeries_iff_isSeparable :
     IsUnit (PowerSeries.coeff 1 φ.formalSeries) ↔
       Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField := by
