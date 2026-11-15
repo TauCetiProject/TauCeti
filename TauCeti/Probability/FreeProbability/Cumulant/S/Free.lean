@@ -48,10 +48,14 @@ the compositional inverse of `Ψ = M_{ab} - 1` turns `u` and `v` into the compos
   and `b`.
 * `TauCeti.IsFreelyIndependent.isUnit_apply_mul_of_ne` and
   `TauCeti.IsFreelyIndependentElements.isUnit_apply_mul_of_ne` — `φ (a b)` is a unit for free `a`
-  and `b` with unit means, over a semiring.
+  and `b` with unit means, over a semiring, with finite-product generalisations
+  `TauCeti.IsFreelyIndependent.isUnit_apply_list_prod` and
+  `TauCeti.IsFreelyIndependentElements.isUnit_apply_list_prod`.
 * `TauCeti.IsFreelyIndependent.sSeries_mul` and
   `TauCeti.IsFreelyIndependentElements.sSeries_mul` — `S_{ab} = S_a S_b` for free `a` and `b`
-  with unit means.
+  with unit means, extended to duplicate-free finite products by
+  `TauCeti.IsFreelyIndependent.sSeries_list_prod` and
+  `TauCeti.IsFreelyIndependentElements.sSeries_list_prod`.
 
 ## References
 
@@ -422,6 +426,88 @@ theorem IsFreelyIndependentElements.sSeries_mul {c : ι → A}
       sSeries φ (c i) hua * sSeries φ (c j) hub :=
   (isFreelyIndependentElements_iff.mp h).sSeries_mul hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hua hub
+
+/-- For a normalised `φ` over any semiring `A`, a duplicate-free product of variables of unit means
+from a freely independent family has unit mean. -/
+theorem IsFreelyIndependent.isUnit_apply_list_prod {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {l : List (ι × A)}
+    (hnodup : (l.map Prod.fst).Nodup) (hl : ∀ p ∈ l, p.2 ∈ B p.1)
+    (hu : ∀ p ∈ l, IsUnit (φ p.2)) :
+    IsUnit (φ (l.map Prod.snd).prod) := by
+  rw [h.apply_list_prod hφ hnodup hl]
+  exact List.prod_isUnit (l.forall_mem_map.mpr hu)
+
+/-- For a normalised `φ` over any semiring `A`, a duplicate-free product of free elements of unit
+means has unit mean. -/
+theorem IsFreelyIndependentElements.isUnit_apply_list_prod {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {l : List ι} (hnodup : l.Nodup)
+    (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
+    IsUnit (φ (l.map c).prod) := by
+  rw [h.apply_list_prod hφ hnodup]
+  exact List.prod_isUnit (l.forall_mem_map.mpr hu)
+
+/-- *Multiplicativity of the formal S-series on finite products of free variables*: for a
+normalised `φ`, a freely independent family `B`, and a list `l : List (ι × A)` with pairwise
+distinct indices whose letters `p.2 ∈ B p.1` have unit means, the formal S-series of
+`(l.map Prod.snd).prod` is the product of the formal S-series of the letters. -/
+theorem IsFreelyIndependent.sSeries_list_prod {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {l : List (ι × A)}
+    (hnodup : (l.map Prod.fst).Nodup) (hl : ∀ p ∈ l, p.2 ∈ B p.1)
+    (hu : ∀ p ∈ l, IsUnit (φ p.2)) :
+    sSeries φ (l.map Prod.snd).prod (h.isUnit_apply_list_prod hφ hnodup hl hu) =
+      (l.attach.map fun p => sSeries φ p.1.2 (hu p.1 p.2)).prod := by
+  induction l with
+  | nil => exact (sSeries_congr _ _ (hφ ▸ isUnit_one) (by simp)).trans (sSeries_one hφ _)
+  | cons p l ih =>
+    rw [List.map_cons, List.nodup_cons] at hnodup
+    let S : Bool → Set ι := fun b => if b then {p.1} else {j | j ∈ l.map Prod.fst}
+    have hB := h.biSup_of_pairwise_disjoint (S := S) hφ fun b₁ b₂ hb => by
+      cases b₁ <;> cases b₂ <;> simp_all [S, Function.onFun]
+    have hp : p.2 ∈ ⨆ i ∈ S true, B i :=
+      (le_iSup₂ (f := fun i (_ : i ∈ S true) => B i) p.1 rfl) (hl p List.mem_cons_self)
+    have htail : (l.map Prod.snd).prod ∈ ⨆ i ∈ S false, B i :=
+      Subalgebra.list_prod_mem _ fun _ ha => by
+        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp ha
+        have hqS : q.1 ∈ S false := List.mem_map.mpr ⟨q, hq, rfl⟩
+        exact (le_iSup₂ (f := fun i (_ : i ∈ S false) => B i) q.1 hqS)
+          (hl q (List.mem_cons_of_mem p hq))
+    have hmul := hB.sSeries_mul hφ (i := true) (j := false) (by decide) hp htail
+      (hu p List.mem_cons_self)
+      (h.isUnit_apply_list_prod hφ hnodup.2
+        (fun q hq => hl q (List.mem_cons_of_mem p hq))
+        (fun q hq => hu q (List.mem_cons_of_mem p hq)))
+    refine (sSeries_congr _ _ _ (by simp)).trans (hmul.trans ?_)
+    simp only [List.attach_cons, List.map_cons, List.map_map, Function.comp_def, List.prod_cons]
+    rw [ih hnodup.2 (fun q hq => hl q (List.mem_cons_of_mem p hq))
+      (fun q hq => hu q (List.mem_cons_of_mem p hq))]
+
+/-- *Multiplicativity of the formal S-series on finite products of free elements*: for a
+duplicate-free list `l` of indices of a freely independent family `c` with unit means under a
+normalised `φ`, the S-series of `(l.map c).prod` is the product of the S-series of the factors. -/
+theorem IsFreelyIndependentElements.sSeries_list_prod {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {l : List ι} (hnodup : l.Nodup)
+    (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
+    sSeries φ (l.map c).prod (h.isUnit_apply_list_prod hφ hnodup hu) =
+      (l.attach.map fun i => sSeries φ (c i.1) (hu i.1 i.2)).prod := by
+  let l' : List (ι × A) := l.map fun i => (i, c i)
+  have hprod : (l'.map Prod.snd).prod = (l.map c).prod := by
+    simp [l', List.map_map, Function.comp_def]
+  have hfst : l'.map Prod.fst = l := by
+    simp [l', List.map_map, Function.comp_def]
+  have hu' : ∀ p ∈ l', IsUnit (φ p.2) := by
+    intro p hp
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hp
+    exact hu i hi
+  have hl' : ∀ p ∈ l', p.2 ∈ Algebra.adjoin R {c p.1} := by
+    intro p hp
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp hp
+    exact Algebra.self_mem_adjoin_singleton R (c i)
+  have hunit' := (isFreelyIndependentElements_iff.mp h).isUnit_apply_list_prod hφ
+    (hfst.symm ▸ hnodup) hl' hu'
+  refine (sSeries_congr (l.map c).prod (h.isUnit_apply_list_prod hφ hnodup hu) hunit'
+    (congrArg (momentSeries φ) hprod.symm)).trans ?_
+  rw [(isFreelyIndependentElements_iff.mp h).sSeries_list_prod hφ (hfst.symm ▸ hnodup) hl' hu']
+  simp [l', List.attach_map, List.map_map, Function.comp_def]
 
 end Semiring
 

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.FreeProbability.Cumulant.BoxedConvolution.Associative
+public import TauCeti.Probability.FreeProbability.Cumulant.BoxedConvolution.Basic
 public import TauCeti.Probability.FreeProbability.Cumulant.S.Free
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
+import TauCeti.Probability.FreeProbability.Cumulant.Realization
 import TauCeti.RingTheory.PowerSeries.Geometric
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -20,28 +21,31 @@ hence a unit formal S-series
 
 `f.boxedSSeries hf = (f - f(0))⁻¹ / X`,
 
-packaged as `f.boxedSSeriesUnit hf : R⟦X⟧ˣ` via `FormalCoordinate.unitsEquiv`. For a normalised
-linear functional `φ` and an element `a` of unit mean, the S-series `TauCeti.sSeries φ a ha` is the
-boxed S-series of `C_a` (`TauCeti.sSeries_eq_boxedSSeries_freeCumulantSeries`).
+where `(f - f(0))⁻¹` denotes the compositional inverse in `TauCeti.FormalCoordinate R` and division
+by `X` shifts coefficients; it is packaged as `f.boxedSSeriesUnit hf : R⟦X⟧ˣ` via
+`FormalCoordinate.unitsEquiv`. For a normalised linear functional `φ` and an element `a` of unit
+mean, the S-series `TauCeti.sSeries φ a ha` is the boxed S-series of `C_a`
+(`TauCeti.sSeries_eq_boxedSSeries_freeCumulantSeries`).
 
-Combining universal algebraic realisation (`TauCeti.exists_freeProduct_freeCumulantSeries_eq`) with
-multiplicativity of the S-series for two free elements
+Combining universal algebraic realisation (`PowerSeries.exists_freeProduct_freeCumulantSeries_eq`)
+with multiplicativity of the S-series for two free elements
 (`TauCeti.IsFreelyIndependentElements.sSeries_mul`) shows that `PowerSeries.boxedSSeries` converts
 scalar boxed convolution into Cauchy multiplication:
 `(f.boxedConvolution g).boxedSSeries _ = f.boxedSSeries hf * g.boxedSSeries hg` for arbitrary
 constant coefficients. Together with the explicit inverse map `u ↦ 1 + (X u)⁻¹`
-(`PowerSeries.ofBoxedSSeriesUnit`), this evaluates `PowerSeries.boxedSSeries` on the zeta series
-`∑_{n ≥ 0} Xⁿ` (`∑_{n ≥ 0} (-X)ⁿ`) and the Möbius series `∑_{n ≥ 0} (-1)^(n-1) C_(n-1) Xⁿ`
-(`1 + X`), recovering `sSeries φ a ha = (1 + X) * (momentSeries φ a).boxedSSeries _`.
+(`PowerSeries.ofBoxedSSeriesUnit`, where `(X u)⁻¹` denotes the compositional inverse of `X u`),
+this evaluates `PowerSeries.boxedSSeries` on the zeta series `∑_{n ≥ 0} Xⁿ` (`∑_{n ≥ 0} (-X)ⁿ`) and
+the Möbius series `∑_{n ≥ 0} (-1)^(n-1) C_(n-1) Xⁿ` (`1 + X`), recovering
+`sSeries φ a ha = (1 + X) * (momentSeries φ a).boxedSSeries _`.
 
 ## Main definitions
 
-* `PowerSeries.toFormalCoordinate`: the formal coordinate `f - C (constantCoeff f)` attached to a
-  series `f` with unit linear coefficient.
 * `PowerSeries.boxedSSeriesUnit`, `PowerSeries.boxedSSeries`: the formal S-series `(f - f(0))⁻¹ / X`
-  of `f`, as a unit of `R⟦X⟧` and as a power series.
-* `PowerSeries.ofBoxedSSeriesUnit`: the inverse construction `u ↦ 1 + (X u)⁻¹` producing a
-  normalised series with prescribed boxed S-series unit `u : R⟦X⟧ˣ`.
+  of `f` (with `(f - f(0))⁻¹` the compositional inverse of `f - C (constantCoeff f)`), as a unit of
+  `R⟦X⟧` and as a power series.
+* `PowerSeries.ofBoxedSSeriesUnit`: the inverse construction `u ↦ 1 + (X u)⁻¹` (with `(X u)⁻¹` the
+  compositional inverse of `X u`) producing a normalised series with prescribed boxed S-series unit
+  `u : R⟦X⟧ˣ`.
 
 ## Main results
 
@@ -72,68 +76,31 @@ section SeriesSSeries
 
 variable {R : Type*} [CommRing R]
 
-/-- Subtracts the constant term of a power series `f` with unit linear coefficient to form the
-formal coordinate `f - C (constantCoeff f)`. -/
-noncomputable def toFormalCoordinate (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
-    FormalCoordinate R where
-  toPowerSeries := f - C (constantCoeff f)
-  constantCoeff_toPowerSeries := by simp
-  isUnit_coeff_one := by simpa [coeff_C] using hf
-
-@[simp]
-theorem toPowerSeries_toFormalCoordinate (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
-    (f.toFormalCoordinate hf).toPowerSeries = f - C (constantCoeff f) := (rfl)
-
-@[simp]
-theorem linearCoeff_toFormalCoordinate (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
-    (f.toFormalCoordinate hf).linearCoeff = hf.unit :=
-  Units.ext <| by simp
-
-/-- `toFormalCoordinate` depends only on the positive-degree coefficients of `f`. -/
-theorem toFormalCoordinate_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg : IsUnit (coeff 1 g))
-    (h : ∀ k, k ≠ 0 → coeff k f = coeff k g) :
-    f.toFormalCoordinate hf = g.toFormalCoordinate hg :=
-  FormalCoordinate.ext <| PowerSeries.ext fun n => by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [coeff_zero_eq_constantCoeff_apply]
-    · simp [coeff_C, hn, h n hn]
-
-/-- Base change of `toFormalCoordinate` along a ring homomorphism `α : R →+* S`. -/
-theorem map_toFormalCoordinate {S : Type*} [CommRing S] (α : R →+* S) (f : R⟦X⟧)
-    (hf : IsUnit (coeff 1 f)) :
-    FormalCoordinate.map α (f.toFormalCoordinate hf) =
-      (map α f).toFormalCoordinate (by simpa using hf.map α) :=
-  FormalCoordinate.ext <| PowerSeries.ext fun n => by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [← coeff_zero_eq_constantCoeff_apply (map α f), coeff_map]
-    · simp [coeff_C, hn]
-
-/-- Rescaling `f` by a unit `c` right-multiplies `f.toFormalCoordinate` by `homothety c`. -/
-theorem toFormalCoordinate_rescale {c : R} (hc : IsUnit c) (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
-    (rescale c f).toFormalCoordinate (by simpa [coeff_rescale] using hc.mul hf) =
-      f.toFormalCoordinate hf * FormalCoordinate.homothety hc.unit :=
-  FormalCoordinate.ext <| PowerSeries.ext fun n => by
-    rw [FormalCoordinate.toPowerSeries_mul_homothety]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [← coeff_zero_eq_constantCoeff_apply (rescale _ _), coeff_rescale]
-    · simp [coeff_rescale, coeff_C, hn]
-
 /-- The formal S-series `(f - f(0))⁻¹ / X` of a power series `f` with unit linear coefficient,
-packaged as a unit of `R⟦X⟧`. -/
+where `(f - f(0))⁻¹` denotes the compositional inverse of `f - C (constantCoeff f)`, packaged as a
+unit of `R⟦X⟧`. -/
 noncomputable def boxedSSeriesUnit (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) : R⟦X⟧ˣ :=
   (f.toFormalCoordinate hf)⁻¹.unitsEquiv
 
 theorem boxedSSeriesUnit_def (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
     f.boxedSSeriesUnit hf = (f.toFormalCoordinate hf)⁻¹.unitsEquiv := (rfl)
 
-/-- The formal S-series `(f - f(0))⁻¹ / X` of a power series `f` with unit linear coefficient.
-For a normalised free cumulant series `C_a`, this coincides with `TauCeti.sSeries φ a ha`. -/
+/-- The formal S-series `(f - f(0))⁻¹ / X` of a power series `f` with unit linear coefficient,
+where `(f - f(0))⁻¹` denotes the compositional inverse of `f - C (constantCoeff f)`. For a
+normalised functional `φ`, the boxed S-series of `freeCumulantSeries φ a` coincides with
+`TauCeti.sSeries φ a ha`. -/
 noncomputable def boxedSSeries (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) : R⟦X⟧ :=
   (f.boxedSSeriesUnit hf : R⟦X⟧)
 
 @[simp]
 theorem val_boxedSSeriesUnit (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
     (f.boxedSSeriesUnit hf : R⟦X⟧) = f.boxedSSeries hf := (rfl)
+
+private theorem substInvOfIsUnit_eq {p q : R⟦X⟧} {hp : IsUnit (coeff 1 p)}
+    {hq : IsUnit (coeff 1 q)} (h : p = q) :
+    p.substInvOfIsUnit hp = q.substInvOfIsUnit hq := by
+  cases h
+  rfl
 
 /-- Multiplying `f.boxedSSeries hf` by `X` recovers the compositional inverse of
 `f - C (constantCoeff f)`. -/
@@ -142,15 +109,15 @@ theorem X_mul_boxedSSeries (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
       (f - C (constantCoeff f)).substInvOfIsUnit (by simpa [coeff_C] using hf) := by
   rw [boxedSSeries, boxedSSeriesUnit, FormalCoordinate.X_mul_val_unitsEquiv,
     FormalCoordinate.toPowerSeries_inv]
-  rfl
+  exact substInvOfIsUnit_eq (toPowerSeries_toFormalCoordinate f hf)
 
-/-- The boxed S-series as the coefficient shift of `(f - C (constantCoeff f))⁻¹`. -/
+/-- The boxed S-series as the coefficient shift of the compositional inverse of
+`f - C (constantCoeff f)`. -/
 theorem boxedSSeries_eq_shift_substInvOfIsUnit (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
     f.boxedSSeries hf = mk fun n =>
       coeff (n + 1) ((f - C (constantCoeff f)).substInvOfIsUnit (by simpa [coeff_C] using hf)) := by
-  rw [boxedSSeries, boxedSSeriesUnit, FormalCoordinate.val_unitsEquiv,
-    FormalCoordinate.toPowerSeries_inv]
-  rfl
+  ext n
+  rw [coeff_mk, ← X_mul_boxedSSeries, coeff_succ_X_mul]
 
 /-- The constant coefficient of `f.boxedSSeriesUnit hf` as a unit of `R` is `(coeff 1 f)⁻¹`. -/
 @[simp]
@@ -168,6 +135,7 @@ theorem constantCoeff_boxedSSeries (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
   simpa [Ring.inverse_of_isUnit hf] using h
 
 /-- `f.boxedSSeries hf` is a unit of `R⟦X⟧`. -/
+@[simp]
 theorem isUnit_boxedSSeries (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
     IsUnit (f.boxedSSeries hf) :=
   (f.boxedSSeriesUnit hf).isUnit
@@ -211,6 +179,12 @@ theorem boxedSSeriesUnit_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg : 
     f.boxedSSeriesUnit hf = g.boxedSSeriesUnit hg :=
   congrArg (fun φ => φ⁻¹.unitsEquiv) (toFormalCoordinate_congr hf hg h)
 
+/-- Shifting the constant term of `f` by `C c - 1` leaves `boxedSSeriesUnit` unchanged. -/
+theorem boxedSSeriesUnit_C_sub_one_add (c : R) {f : R⟦X⟧} (hf : IsUnit (coeff 1 f)) :
+    (C c - 1 + f).boxedSSeriesUnit (by simpa [coeff_C, coeff_one] using hf) =
+      f.boxedSSeriesUnit hf :=
+  boxedSSeriesUnit_congr _ hf fun k hk => by simp [coeff_C, coeff_one, hk]
+
 /-- `boxedSSeries` depends only on the positive-degree coefficients of `f`. -/
 theorem boxedSSeries_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg : IsUnit (coeff 1 g))
     (h : ∀ k, k ≠ 0 → coeff k f = coeff k g) :
@@ -218,6 +192,7 @@ theorem boxedSSeries_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg : IsUn
   congrArg Units.val (boxedSSeriesUnit_congr hf hg h)
 
 /-- Base change commutes with `boxedSSeriesUnit`. -/
+@[simp]
 theorem map_boxedSSeriesUnit {S : Type*} [CommRing S] (α : R →+* S) (f : R⟦X⟧)
     (hf : IsUnit (coeff 1 f)) :
     Units.map ↑(map α) (f.boxedSSeriesUnit hf) =
@@ -226,6 +201,7 @@ theorem map_boxedSSeriesUnit {S : Type*} [CommRing S] (α : R →+* S) (f : R⟦
   rfl
 
 /-- Base change commutes with `boxedSSeries`. -/
+@[simp]
 theorem map_boxedSSeries {S : Type*} [CommRing S] (α : R →+* S) (f : R⟦X⟧)
     (hf : IsUnit (coeff 1 f)) :
     map α (f.boxedSSeries hf) = (map α f).boxedSSeries (by simpa using hf.map α) :=
@@ -361,7 +337,8 @@ theorem boxedSSeriesUnit_boxedConvolution {f g : R⟦X⟧} (hf : IsUnit (coeff 1
       f.boxedSSeriesUnit hf * g.boxedSSeriesUnit hg :=
   Units.ext (boxedSSeries_boxedConvolution hf hg)
 
-/-- The boxed S-series of the zeta series `∑_{n ≥ 0} Xⁿ` is `(1 + X)⁻¹ = ∑_{n ≥ 0} (-X)ⁿ`. -/
+/-- The boxed S-series of the zeta series `∑_{n ≥ 0} Xⁿ` is the Cauchy inverse
+`(1 + X)⁻¹ = ∑_{n ≥ 0} (-X)ⁿ`. -/
 theorem boxedSSeries_mk_one :
     (mk 1 : R⟦X⟧).boxedSSeries (by simp) = mk fun n => (-1 : R) ^ n := by
   set S : R⟦X⟧ := mk fun n => (-1 : R) ^ n
@@ -401,8 +378,8 @@ theorem boxedSSeries_mobius :
     _ = (1 + X) * ((mk fun n => (-1 : R) ^ n) * M) := mul_assoc _ _ _
     _ = 1 + X := by rw [hconv, mul_one]
 
-/-- Constructs the unique normalised power series `1 + (X u)⁻¹` whose boxed S-series unit is a
-given `u : R⟦X⟧ˣ`. -/
+/-- Constructs the unique normalised power series `1 + (X u)⁻¹`, where `(X u)⁻¹` denotes the
+compositional inverse of `X u`, whose boxed S-series unit is a given `u : R⟦X⟧ˣ`. -/
 noncomputable def ofBoxedSSeriesUnit (u : R⟦X⟧ˣ) : R⟦X⟧ :=
   1 + (FormalCoordinate.unitsEquiv.symm u)⁻¹.toPowerSeries
 
@@ -428,6 +405,7 @@ theorem isUnit_coeff_one_ofBoxedSSeriesUnit (u : R⟦X⟧ˣ) :
     IsUnit (coeff 1 (ofBoxedSSeriesUnit u)) := by
   simp [ofBoxedSSeriesUnit, coeff_one]
 
+@[simp]
 theorem toFormalCoordinate_ofBoxedSSeriesUnit (u : R⟦X⟧ˣ) :
     (ofBoxedSSeriesUnit u).toFormalCoordinate (isUnit_coeff_one_ofBoxedSSeriesUnit u) =
       (FormalCoordinate.unitsEquiv.symm u)⁻¹ :=
@@ -444,6 +422,7 @@ theorem boxedSSeries_ofBoxedSSeriesUnit (u : R⟦X⟧ˣ) :
   congrArg Units.val (boxedSSeriesUnit_ofBoxedSSeriesUnit u)
 
 /-- `ofBoxedSSeriesUnit` recovers the positive-degree part of `f` shifted by constant term `1`. -/
+@[simp]
 theorem ofBoxedSSeriesUnit_boxedSSeriesUnit (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
     ofBoxedSSeriesUnit (f.boxedSSeriesUnit hf) = 1 + (f - C (constantCoeff f)) := by
   rw [ofBoxedSSeriesUnit, boxedSSeriesUnit, Equiv.symm_apply_apply, inv_inv,
@@ -461,7 +440,7 @@ theorem coeff_eq_of_boxedSSeries_eq {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (
     (h : f.boxedSSeries hf = g.boxedSSeries hg) {n : ℕ} (hn : n ≠ 0) :
     coeff n f = coeff n g := by
   have hu := congrArg (fun u => coeff n (ofBoxedSSeriesUnit u)) (Units.ext h)
-  simpa [ofBoxedSSeriesUnit_boxedSSeriesUnit, coeff_one, coeff_C, hn] using hu
+  simpa [coeff_one, coeff_C, hn] using hu
 
 /-- Two series with equal constant coefficients and equal boxed S-series are equal. -/
 theorem eq_of_constantCoeff_eq_of_boxedSSeries_eq {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f))

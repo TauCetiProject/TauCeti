@@ -176,13 +176,8 @@ theorem sSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
 /-- The formal S-series of the identity element `1` for a normalised `φ` is `1`. -/
 @[simp]
 theorem sSeries_one (hφ : φ 1 = 1) (h1 : IsUnit (φ 1)) :
-    sSeries φ (1 : A) h1 = 1 := by
-  have hC : freeCumulantSeries φ (1 : A) = 1 + X := by
-    refine (eq_freeCumulantSeries_of_subst_eq (1 : A) hφ ?_).symm
-    have hX : HasSubst (X * momentSeries φ (1 : A)) := .of_constantCoeff_zero' (by simp)
-    rw [subst_add hX, subst_one, subst_X hX]
-    ext (_ | n) <;> simp [hφ, coeff_succ_X_mul]
-  exact (eq_sSeries_of_subst_X_mul_eq (1 : A) hφ h1 (by simp [hC])).symm
+    sSeries φ (1 : A) h1 = 1 :=
+  (eq_sSeries_of_subst_X_mul_eq (1 : A) hφ h1 (by rw [freeCumulantSeries_one hφ]; simp)).symm
 
 end Monoid
 
