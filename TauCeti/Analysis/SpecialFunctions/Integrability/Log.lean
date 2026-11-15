@@ -204,16 +204,13 @@ theorem integrableOn_mul_log_log_div_sq {c R : ℝ} (hR : R < c) :
         nlinarith [sq_nonneg (Real.log (Real.log (c / R)))]
       · have : Real.log (Real.log (c / R)) ≤ Real.log L := Real.log_le_log hℓ hℓL
         nlinarith [sq_nonneg L]
-    -- `L < 2 √(c / r)`, so `r L² < 4 c`.
-    have hsq : L < 2 * √(c / r) := by
-      have hcr : 0 ≤ c / r := by positivity
-      have hs : 0 < √(c / r) := Real.sqrt_pos.2 (by positivity)
-      have : Real.log √(c / r) < √(c / r) := by
-        linarith [Real.log_le_sub_one_of_pos hs]
-      rw [Real.log_sqrt hcr] at this
+    -- `L ≤ 2 √(c / r)`, so `r L² ≤ 4 c`.
+    have hsq : L ≤ 2 * √(c / r) := by
+      have := Real.log_le_rpow_div (div_pos hc h0).le (by norm_num : (0 : ℝ) < 1 / 2)
+      rw [← Real.sqrt_eq_rpow] at this
       linarith
     have hrL : r * L ^ 2 ≤ 4 * c := by
-      have h1 : L ^ 2 ≤ (2 * √(c / r)) ^ 2 := pow_le_pow_left₀ hLpos.le hsq.le 2
+      have h1 : L ^ 2 ≤ (2 * √(c / r)) ^ 2 := pow_le_pow_left₀ hLpos.le hsq 2
       rw [mul_pow, Real.sq_sqrt (by positivity)] at h1
       calc r * L ^ 2 ≤ r * (2 ^ 2 * (c / r)) := by gcongr
         _ = 4 * c := by field_simp; norm_num
