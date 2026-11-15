@@ -144,6 +144,12 @@ theorem complexTensorProductEquivProd_tmul (a : ℂ) (x : A) :
     complexTensorProductEquivProd A (a ⊗ₜ x) = (a • x, (starRingEnd ℂ a) • x) :=
   complexTensorProductToProd_tmul A a x
 
+/-- The inverse of the splitting is `(u, v) ↦ 1 ⊗ (u + v) / 2 + I ⊗ (u - v) / 2i`. -/
+theorem complexTensorProductEquivProd_symm_apply (p : A × A) :
+    (complexTensorProductEquivProd A).symm p =
+      1 ⊗ₜ ((1 / 2 : ℂ) • (p.1 + p.2)) + Complex.I ⊗ₜ ((-Complex.I / 2) • (p.1 - p.2)) :=
+  (rfl)
+
 /-- **Naturality of the splitting**: for a complex algebra map `h : A → B`, the splitting of
 `ℂ ⊗[ℝ] B` after `ℂ ⊗ h` is `h` applied to both components of the splitting of `ℂ ⊗[ℝ] A`. -/
 theorem complexTensorProductEquivProd_lTensor {B : Type*} [Ring B] [Algebra ℝ B] [Algebra ℂ B]

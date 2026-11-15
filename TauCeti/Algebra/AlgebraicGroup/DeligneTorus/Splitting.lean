@@ -37,7 +37,9 @@ is defined.
 
 ## Main results
 
-* `TauCeti.DeligneTorus.complexSplitting_mapValue`: the splitting is natural in `R`.
+* `TauCeti.DeligneTorus.complexSplitting_mapValue`, `TauCeti.DeligneTorus.mapValue_mu`,
+  `TauCeti.DeligneTorus.characterGroup_mapValue`: the splitting, `μ` and the characters are natural
+  in `R`.
 * `TauCeti.DeligneTorus.complexSplitting_real`: the image of a real point `z` is `(z, conj z)`.
 * `TauCeti.DeligneTorus.complexSplitting_conj`: complex conjugation on `S(ℂ)` is
   `(z₁, z₂) ↦ (conj z₂, conj z₁)`.
@@ -167,6 +169,14 @@ variable {R}
 theorem complexSplitting_mu (z : Rˣ) : complexSplitting R (mu R z) = (z, 1) := by
   simp [mu]
 
+/-- **Naturality of `μ` in `R`**: post-composing `μ(z)` with a complex algebra map `h : R → R'` is
+`μ(h z)`. -/
+theorem mapValue_mu {R' : Type*} [CommRing R'] [Algebra ℝ R'] [Algebra ℂ R']
+    [IsScalarTower ℝ ℂ R'] (h : R →ₐ[ℂ] R') (z : Rˣ) :
+    AlgHom.mapValue (h.restrictScalars ℝ) (mu R z) = mu R' (Units.map (h : R →* R') z) := by
+  apply (complexSplitting R').injective
+  rw [complexSplitting_mapValue, complexSplitting_mu, complexSplitting_mu, map_one]
+
 end Mu
 
 /-- **`μ` is not defined over `ℝ`**: `μ(-1) = (-1, 1)` is not of the form `(z, conj z)`, so it is
@@ -196,8 +206,8 @@ variable (R : Type*) [CommRing R] [Algebra ℝ R] [Algebra ℂ R] [IsScalarTower
 
 /-- **The characters of the Deligne torus** on points over a complex algebra: the pair `(p, q)`
 gives the character `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q` of `S(R) ≃ Rˣ × Rˣ`. Over `ℂ` distinct pairs give
-distinct characters (`characterGroup_injective`), so this identifies `ℤ²` with characters of
-`S`. -/
+distinct characters (`characterGroup_injective`), so this embeds `ℤ²` as a group of characters of
+`S(ℂ)`. -/
 noncomputable def characterGroup : Multiplicative (ℤ × ℤ) →* (WithConv (S →ₐ[ℝ] R) →* Rˣ) where
   toFun pq :=
     { toFun f := (complexSplitting R f).1 ^ pq.toAdd.1 * (complexSplitting R f).2 ^ pq.toAdd.2
@@ -235,6 +245,17 @@ theorem characterGroup_weight (p q : ℤ) (r : Rˣ) :
     characterGroup R (.ofAdd (p, q)) (weight R r) = r ^ (-(p + q)) := by
   simp [zpow_neg, zpow_add, mul_comm]
 
+/-- **Naturality of the characters in `R`**: the character `(p, q)` of a point post-composed with a
+complex algebra map `h : R → R'` is `h` applied to the character `(p, q)` of the point. -/
+theorem characterGroup_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] [Algebra ℂ R']
+    [IsScalarTower ℝ ℂ R'] (h : R →ₐ[ℂ] R') (pq : Multiplicative (ℤ × ℤ))
+    (f : WithConv (S →ₐ[ℝ] R)) :
+    characterGroup R' pq (AlgHom.mapValue (h.restrictScalars ℝ) f) =
+      Units.map (h : R →* R') (characterGroup R pq f) := by
+  obtain ⟨⟨p, q⟩, rfl⟩ : ∃ pq' : ℤ × ℤ, Multiplicative.ofAdd pq' = pq := ⟨pq.toAdd, rfl⟩
+  rw [characterGroup_apply, characterGroup_apply, complexSplitting_mapValue]
+  simp
+
 end Character
 
 /-- **Complex conjugation exchanges the characters `(p, q)` and `(q, p)`**: the character `(p, q)`
@@ -242,16 +263,16 @@ of the conjugate of a point is the conjugate of the character `(q, p)` of the po
 theorem characterGroup_conj (p q : ℤ) (f : WithConv (S →ₐ[ℝ] ℂ)) :
     characterGroup ℂ (.ofAdd (p, q)) (AlgHom.mapValue Complex.conjAe.toAlgHom f) =
       star (characterGroup ℂ (.ofAdd (q, p)) f) := by
-  rw [characterGroup_apply, characterGroup_apply, complexSplitting_conj, star_mul', star_zpow,
-    star_zpow, mul_comm]
+  rw [characterGroup_apply, characterGroup_apply, complexSplitting_conj]
+  simp [mul_comm]
 
 /-- **The character `(1, 1)` is the norm on real points**: on the image of a real point `z` it is
 `z * conj z = |z|²`, the norm `Nm(z)`. -/
 theorem characterGroup_norm (f : WithConv (S →ₐ[ℝ] ℝ)) :
     (characterGroup ℂ (.ofAdd (1, 1)) (AlgHom.mapValue (Algebra.ofId ℝ ℂ) f) : ℂ) =
       (norm ℝ f : ℝ) := by
-  rw [characterGroup_apply, complexSplitting_real, coe_norm_real, zpow_one, zpow_one,
-    Units.val_mul, Units.coe_star, Complex.star_def, Complex.mul_conj]
+  rw [characterGroup_apply, complexSplitting_real, coe_norm_real]
+  simp [Complex.mul_conj]
 
 /-- **Distinct pairs give distinct characters of `S(ℂ)`**: `(p, q) ↦ ((z₁, z₂) ↦ z₁ ^ p * z₂ ^ q)`
 is injective, so the characters `characterGroup ℂ` form a copy of `ℤ²`. -/
