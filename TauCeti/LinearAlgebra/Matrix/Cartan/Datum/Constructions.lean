@@ -151,24 +151,13 @@ lemma coreflection_rankOne_apply (i : Unit) (y : Y) :
 
 /-- The simply connected rank-one Cartan datum of `sl₂` (`A₁`), on `Y = ℤ` with coroot `1`,
 root `2 • id : Hom(ℤ, ℤ)`, and symmetrizer `1`. -/
-def sl2 : CartanDatum Unit (Dual ℤ ℤ) ℤ :=
-  rankOne (2 • LinearMap.id) 1 rfl
+def sl2 : CartanDatum Unit (Dual ℤ ℤ) ℤ := rankOne (2 • LinearMap.id) 1 rfl
 
-@[simp]
-lemma sl2_pairing_apply (x : Dual ℤ ℤ) (y : ℤ) : sl2.pairing x y = x y := (rfl)
-
-@[simp]
-lemma sl2_root (i : Unit) : sl2.root i = 2 • LinearMap.id := (rfl)
-
-@[simp]
-lemma sl2_coroot (i : Unit) : sl2.coroot i = 1 := (rfl)
-
-@[simp]
-lemma sl2_symmetrizer (i : Unit) : sl2.symmetrizer i = 1 := (rfl)
-
-@[simp]
-lemma sl2_simpleTorus (i : Unit) : sl2.simpleTorus i = 1 := by
-  simp [simpleTorus_def]
+@[simp] lemma sl2_pairing_apply (x : Dual ℤ ℤ) (y : ℤ) : sl2.pairing x y = x y := (rfl)
+@[simp] lemma sl2_root (i : Unit) : sl2.root i = 2 • LinearMap.id := (rfl)
+@[simp] lemma sl2_coroot (i : Unit) : sl2.coroot i = 1 := (rfl)
+@[simp] lemma sl2_symmetrizer (i : Unit) : sl2.symmetrizer i = 1 := (rfl)
+@[simp] lemma sl2_simpleTorus (i : Unit) : sl2.simpleTorus i = 1 := by simp [simpleTorus_def]
 
 end RankOne
 

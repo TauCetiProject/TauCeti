@@ -68,29 +68,9 @@ theorem prod_antidiagonal_prod_antidiagonal_comm {M : Type*} [CommMonoid M] (n :
     (∏ p ∈ antidiagonal n, ∏ u ∈ antidiagonal p.1, ∏ v ∈ antidiagonal p.2, f u.1 u.2 v.1 v.2) =
       ∏ p ∈ antidiagonal n, ∏ u ∈ antidiagonal p.1, ∏ v ∈ antidiagonal p.2, f u.1 v.1 u.2 v.2 := by
   simp only [prod_sigma']
-  let swap : (_ : ℕ × ℕ) × (_ : ℕ × ℕ) × ℕ × ℕ → (_ : ℕ × ℕ) × (_ : ℕ × ℕ) × ℕ × ℕ :=
-    fun ⟨_, ⟨u, v⟩⟩ ↦ ⟨(u.1 + v.1, u.2 + v.2), ⟨(u.1, v.1), (u.2, v.2)⟩⟩
-  refine prod_nbij' swap swap ?_ ?_ ?_ ?_ ?_
-  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
-    dsimp only [swap]
-    simp only [mem_sigma, mem_antidiagonal] at hy ⊢
-    rcases hy with ⟨_, rfl, rfl⟩
-    exact ⟨by omega, trivial, trivial⟩
-  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
-    dsimp only [swap]
-    simp only [mem_sigma, mem_antidiagonal] at hy ⊢
-    rcases hy with ⟨_, rfl, rfl⟩
-    exact ⟨by omega, trivial, trivial⟩
-  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
-    simp only [mem_sigma, mem_antidiagonal] at hy
-    rcases hy with ⟨_, rfl, rfl⟩
-    rfl
-  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
-    simp only [mem_sigma, mem_antidiagonal] at hy
-    rcases hy with ⟨_, rfl, rfl⟩
-    rfl
-  · rintro ⟨_, ⟨_, _⟩⟩ _
-    rfl
+  apply prod_nbij' (fun ⟨_, ⟨u, v⟩⟩ ↦ ⟨(u.1 + v.1, u.2 + v.2), ⟨(u.1, v.1), (u.2, v.2)⟩⟩)
+    (fun ⟨_, ⟨u, v⟩⟩ ↦ ⟨(u.1 + v.1, u.2 + v.2), ⟨(u.1, v.1), (u.2, v.2)⟩⟩) <;>
+    aesop (add safe tactic (by omega))
 
 variable {M : Type*}
 

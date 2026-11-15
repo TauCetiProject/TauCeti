@@ -116,56 +116,47 @@ theorem signedLaurentQuantumBinomial_add_left_eq (m n : ℤ) (r : ℕ) :
       -- when a quantum factorial would vanish after specialization.
       exact mul_left_cancel₀ (isUnit_T (-((r : ℤ) + 1))).ne_zero heq
 
-/-- **Alternating Laurent Gaussian vanishing**: for `n > 0`, the signed `v`-power sum
-`∑_{k=0}^n (-1)^k v^(k*(n-1)) [n choose k]_v` vanishes in `ℤ[v, v⁻¹]`. Obtained by specializing
-`signedLaurentQuantumBinomial_add_left_eq` at `m = -1`. -/
-theorem sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial {n : ℕ} (hn : 0 < n) :
-    ∑ k ∈ range (n + 1),
-      (-1) ^ k * T ((k : ℤ) * ((n : ℤ) - 1)) * laurentQuantumBinomial n k = 0 := by
-  have h := signedLaurentQuantumBinomial_add_left_eq (-1) n n
-  have htop : (-1 : ℤ) + n = ((n - 1 : ℕ) : ℤ) := by omega
-  rw [htop, signedLaurentQuantumBinomial_natCast,
-    laurentQuantumBinomial_eq_zero_of_lt (by omega),
+/-- **Alternating Laurent Gaussian vanishing**: for `r > 0`,
+`∑_{k=0}^r (-1)^k v^(k*(r-1)) [r choose k]_v = 0` in `ℤ[v, v⁻¹]`. -/
+theorem sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial {r : ℕ} (hr : 0 < r) :
+    ∑ k ∈ range (r + 1),
+      (-1) ^ k * T ((k : ℤ) * ((r : ℤ) - 1)) * laurentQuantumBinomial r k = 0 := by
+  have h := signedLaurentQuantumBinomial_add_left_eq (-1) r r
+  have htop : (-1 : ℤ) + r = ((r - 1 : ℕ) : ℤ) := by omega
+  rw [htop, signedLaurentQuantumBinomial_natCast, laurentQuantumBinomial_eq_zero_of_lt (by omega),
     Nat.sum_antidiagonal_eq_sum_range_succ_mk] at h
-  have hterm : ∀ k ∈ range (n + 1),
-      T ((n : ℤ) * k - (-1) * ((n - k : ℕ) : ℤ)) *
-          signedLaurentQuantumBinomial (-1) k * signedLaurentQuantumBinomial n (n - k) =
-        T (n : ℤ) * ((-1) ^ k * T ((k : ℤ) * ((n : ℤ) - 1)) * laurentQuantumBinomial n k) := by
+  have hterm : ∀ k ∈ range (r + 1),
+      T ((r : ℤ) * k - (-1) * ((r - k : ℕ) : ℤ)) *
+          signedLaurentQuantumBinomial (-1) k * signedLaurentQuantumBinomial r (r - k) =
+        T (r : ℤ) * ((-1) ^ k * T ((k : ℤ) * ((r : ℤ) - 1)) * laurentQuantumBinomial r k) := by
     intro k hk
-    have hkn : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
+    have hkr : k ≤ r := Nat.lt_succ_iff.mp (mem_range.mp hk)
+    have hexp : (r : ℤ) * k - (-1) * ((r : ℤ) - k) = (r : ℤ) + (k : ℤ) * ((r : ℤ) - 1) := by ring
     rw [signedLaurentQuantumBinomial_neg_one, signedLaurentQuantumBinomial_natCast,
-      laurentQuantumBinomial_symm hkn, Nat.cast_sub hkn]
-    have hexp : (n : ℤ) * k - (-1) * ((n : ℤ) - k) = (n : ℤ) + (k : ℤ) * ((n : ℤ) - 1) := by ring
-    rw [hexp, T_add]
+      laurentQuantumBinomial_symm hkr, Nat.cast_sub hkr, hexp, T_add]
     ring
   rw [sum_congr rfl hterm, ← mul_sum] at h
-  exact mul_left_cancel₀ (isUnit_T (n : ℤ)).ne_zero (h.symm.trans (mul_zero _).symm)
+  exact mul_left_cancel₀ (isUnit_T (r : ℤ)).ne_zero (h.symm.trans (mul_zero _).symm)
 
-/-- **Inverted alternating Laurent Gaussian vanishing**: for `n > 0`,
-`∑_{k=0}^n (-1)^k v^(-k*(n-1)) [n choose k]_v = 0` in `ℤ[v, v⁻¹]`. -/
-theorem sum_neg_one_pow_mul_T_neg_mul_laurentQuantumBinomial {n : ℕ} (hn : 0 < n) :
-    ∑ k ∈ range (n + 1),
-      (-1) ^ k * T (-((k : ℤ) * ((n : ℤ) - 1))) * laurentQuantumBinomial n k = 0 := by
-  simpa using congrArg invert (sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial hn)
+/-- **Inverted alternating Laurent Gaussian vanishing** in `ℤ[v, v⁻¹]` for `r > 0`. -/
+theorem sum_neg_one_pow_mul_T_neg_mul_laurentQuantumBinomial {r : ℕ} (hr : 0 < r) :
+    ∑ k ∈ range (r + 1),
+      (-1) ^ k * T (-((k : ℤ) * ((r : ℤ) - 1))) * laurentQuantumBinomial r k = 0 := by
+  simpa using congrArg invert (sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial hr)
 
-/-- **Alternating quantum binomial vanishing** over a field: for `q ≠ 0` and `n > 0`,
-`∑_{k=0}^n (-1)^k q^(k*(n-1)) [n choose k]_q = 0`. Holds at roots of unity and at `q = ±1`;
-at `q = 0` and `n = 2` the sum is `1`. -/
+/-- **Alternating quantum binomial vanishing** over a field for `q ≠ 0` and `r > 0`. -/
 theorem sum_neg_one_pow_mul_zpow_mul_quantumBinomial {K : Type*} [Field K] {q : K} (hq : q ≠ 0)
-    {n : ℕ} (hn : 0 < n) :
-    ∑ k ∈ range (n + 1),
-      (-1 : K) ^ k * q ^ ((k : ℤ) * ((n : ℤ) - 1)) * quantumBinomial q n k = 0 := by
-  have h := congrArg (laurentEval (R := ℤ) (Units.mk0 q hq))
-    (sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial hn)
-  simpa [Units.val_zpow_eq_zpow_val] using h
+    {r : ℕ} (hr : 0 < r) :
+    ∑ k ∈ range (r + 1),
+      (-1 : K) ^ k * q ^ ((k : ℤ) * ((r : ℤ) - 1)) * quantumBinomial q r k = 0 := by
+  simpa [Units.val_zpow_eq_zpow_val] using congrArg (laurentEval (R := ℤ) (Units.mk0 q hq))
+    (sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial hr)
 
-/-- **Inverted alternating quantum binomial vanishing** over a field: for `q ≠ 0` and `n > 0`,
-`∑_{k=0}^n (-1)^k q^(-k*(n-1)) [n choose k]_q = 0`. -/
+/-- **Inverted alternating quantum binomial vanishing** over a field for `q ≠ 0` and `r > 0`. -/
 theorem sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial {K : Type*} [Field K] {q : K} (hq : q ≠ 0)
-    {n : ℕ} (hn : 0 < n) :
-    ∑ k ∈ range (n + 1),
-      (-1 : K) ^ k * q ^ (-((k : ℤ) * ((n : ℤ) - 1))) * quantumBinomial q n k = 0 := by
-  simpa [inv_zpow, zpow_neg] using
-    sum_neg_one_pow_mul_zpow_mul_quantumBinomial (inv_ne_zero hq) hn
+    {r : ℕ} (hr : 0 < r) :
+    ∑ k ∈ range (r + 1),
+      (-1 : K) ^ k * q ^ (-((k : ℤ) * ((r : ℤ) - 1))) * quantumBinomial q r k = 0 := by
+  simpa [inv_zpow, zpow_neg] using sum_neg_one_pow_mul_zpow_mul_quantumBinomial (inv_ne_zero hq) hr
 
 end TauCeti
