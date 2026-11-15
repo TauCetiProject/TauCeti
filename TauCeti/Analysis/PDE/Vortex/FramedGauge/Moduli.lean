@@ -9,8 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
-import TauCeti.Analysis.Sobolev.BesselPotential.Basic
-import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Smooth framed vortices in the affine Sobolev field spaces
@@ -33,10 +31,8 @@ at every exponential rate `c < 1 / 2`
 disc, `x - x_ref` is the rotation of the section part of that difference by the winding phase,
 which equals the reference section `x_ref` uses there and has bounded derivatives. Hence every
 derivative of `x - x_ref` decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`). A
-smooth field with this decay lies in every `H^k`
-(`mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`), by the classical
-description of `H^k`
-(`TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv`).
+smooth field with this decay lies in every `A_m^k`
+(`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`).
 
 With Taubes's existence theorem (`TauCeti.Vortex.framedVortexDivisor_surjective`) this shows that
 every effective divisor of degree `m` is the divisor of a `C²` vortex of `A_m^k`
@@ -50,8 +46,6 @@ Conversely, a smooth framed gauge relating two fields of `A_m^k` lies in `G_(k+1
 
 All in the namespace `TauCeti.Vortex`:
 
-* `mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`: a smooth field all of whose
-  derivatives of `x - x_ref` are `O(exp (-c |z|))`, `c > 0`, lies in `A_m^s` for every `s`.
 * `isBigO_iteratedFDeriv_sub_referenceField`: for a smooth vortex normalized at its end, every
   derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
@@ -78,27 +72,6 @@ open Complex Filter Metric Topology Asymptotics
 open scoped ContDiff
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-! ### Exponential decay implies Sobolev regularity -/
-
-/-- **Exponentially decaying fields lie in every `A_m^s`.** A smooth field `x` such that every
-derivative of `x - x_ref` is `O(exp (-c |z|))` at infinity, for some `c > 0`, lies in the affine
-Sobolev space `A_m^s` for every real `s`. -/
-theorem mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField (hx : ContDiff ℝ ∞ x)
-    {c : ℝ} (hc : 0 < c)
-    (hdec : ∀ n : ℕ, iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖))) (s : ℝ) :
-    x ∈ framedFieldSpace f m s := by
-  obtain ⟨k, hk⟩ := exists_nat_ge s
-  refine framedFieldSpace_mono f m hk (mem_framedFieldSpace.2 (mem_sobolevFields.2 fun i ↦ ?_))
-  have hy : ContDiff ℝ ∞ (x - referenceField f m) := hx.sub (contDiff_referenceField f m)
-  have hyi : ContDiff ℝ ∞ fun z ↦ (x - referenceField f m) z i :=
-    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
-  refine TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv
-    (by norm_num) (by norm_num) (hyi.of_le (by exact_mod_cast le_top)) fun n _ ↦ ?_
-  exact (hyi.continuous_iteratedFDeriv (by exact_mod_cast le_top)).memLp_of_isBigO_exp_neg_mul_norm
-    hc ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).isBigO_iteratedFDeriv_comp_left
-      hy (by exact_mod_cast le_top) (hdec n)) 2
 
 /-! ### Exponential decay of all derivatives of `x - x_ref` -/
 
