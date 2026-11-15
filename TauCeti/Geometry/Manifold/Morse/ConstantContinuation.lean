@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
+public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 
@@ -86,6 +87,13 @@ Its time component is that of the continuation field of a path `f_t` of function
 noncomputable def constantContinuationField (X : (x : M) → TangentSpace I x) (C : ℝ) :
     (z : M × ℝ) → TangentSpace (I.prod 𝓘(ℝ)) z :=
   Manifold.prodVectorField X fun t ↦ (-∇ (intervalBasePotential C) t : TangentSpace 𝓘(ℝ) t)
+
+/-- The defining formula of `TauCeti.constantContinuationField`: the product of `X` with the
+negative gradient of the base potential, so the `TauCeti.Manifold.prodVectorField` API applies. -/
+theorem constantContinuationField_def (X : (x : M) → TangentSpace I x) (C : ℝ) :
+    constantContinuationField X C =
+      Manifold.prodVectorField X fun t ↦ (-∇ (intervalBasePotential C) t : TangentSpace 𝓘(ℝ) t) :=
+  (rfl)
 
 /-- The space component of the continuation field of a constant path is the field `X`. -/
 @[simp]
