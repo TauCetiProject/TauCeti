@@ -203,8 +203,7 @@ theorem polynomialChainPrefix_castSucc {I : Fin (n + 2) → Type*} {W : Fin (n +
     refine congrArg (fun F => bind₁ F (P i.castSucc o)) (funext fun x => ?_)
     rcases x with w | a
     · rw [Sum.elim_inl, Sum.elim_inl, rename_X, Sum.map_inl]
-      -- Both sides are `X (Sum.inl ⟨i.castSucc, w⟩)`; `I (Fin.castSucc 0)` is definitionally `I 0`.
-      rfl
+      exact congrArg (fun p => X (Sum.inl p)) (by simp)
     · rw [Sum.elim_inr, Sum.elim_inr]
       exact ih a
 
@@ -238,8 +237,7 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose
     rcases x with w | a
     · rw [Sum.elim_inl, Sum.elim_inl, bind₁_X_right, Sum.elim_inl, rename_X, Sum.map_inl,
         Sum.elim_inr]
-      -- Simplify `⟨i, w⟩` projections; `I (Fin.castSucc 0)` is definitionally `I 0`.
-      rfl
+      exact congrArg (fun p => X (Sum.inl p)) (by simp)
     · rw [Sum.elim_inr, Sum.elim_inr, ← polynomialCompose_apply]
       exact ih a
 
@@ -281,8 +279,7 @@ theorem polynomialChain_succ_last {I : Fin (n + 2) → Type*} {W : Fin (n + 1) �
   rcases x with w | a
   · rw [Sum.elim_inl, Sum.elim_inl, rename_X, rename_X, Sum.map_inl, Sum.map_inl, Sum.elim_inr,
       Sum.elim_inr]
-    -- Both sides are `X (Sum.inl ⟨Fin.last n, w⟩)`; `I (Fin.castSucc 0)` is definitionally `I 0`.
-    rfl
+    exact congrArg (fun p => X (Sum.inl p)) (by simp)
   · simp only [Sum.elim_inr, polynomialChain_def]
     refine (rename_rename _ _ _).trans ?_
     refine ((congrArg _ (polynomialChainPrefix_castSucc P (Fin.last n) a)).trans
@@ -338,6 +335,20 @@ theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl
       (fun j => polynomialRealization (P (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j))
         (fun v => w ⟨Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j, v⟩))
       x).symm
+
+/-- If each layer `P i` realizes `f i` on its slice `v ↦ w ⟨i, v⟩` of parameter coordinates, then
+evaluating `polynomialChainPrefix P k` agrees with the `k.val`-step dependent left fold of `f`. -/
+theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl_of_eq
+    {P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K} {w : (Σ i, W i) → K}
+    {f : ∀ i, (I i.castSucc → K) → I i.succ → K}
+    (hf : ∀ i, polynomialRealization (P i) (fun v => w ⟨i, v⟩) = f i) (x : I 0 → K)
+    (k : Fin (n + 1)) :
+    polynomialRealization (polynomialChainPrefix P k) w x =
+      Fin.dfoldl k.val (fun j => I (Fin.castLE k.isLt j) → K)
+        (fun j => f (Fin.castLE (Nat.le_of_lt_succ k.isLt) j)) x := by
+  rw [polynomialRealization_polynomialChainPrefix_eq_dfoldl]
+  exact congrArg (fun g => Fin.dfoldl k.val (fun j => I (Fin.castLE k.isLt j) → K) g x)
+    (funext fun j => hf (Fin.castLE (Nat.le_of_lt_succ k.isLt) j))
 
 /-- Evaluating `polynomialChain P` realizes the finite chain of layer realizations
 `chain (fun i => polynomialRealization (P i))` after currying the parameter coordinates with
@@ -419,16 +430,6 @@ substitution on `Σ i, W i`. -/
     polynomialReparametrize (fun p => rename (Sigma.mk p.1) (R p.1 p.2)) (polynomialChain P) =
       polynomialChain (fun i => polynomialReparametrize (R i) (P i)) :=
   polynomialChainPrefix_polynomialReparametrize R P (Fin.last n)
-
-/-- Keeping variables `X ⟨i, a⟩` on the left summand and substituting `0` on the right summand of a
-layerwise sum `(i : ι) × (V i ⊕ B i)` applies `Sum.elim X 0` at each layer `i` and tags the kept
-variables with `Sigma.mk i`. -/
-theorem sumElim_X_zero_eq_rename {ι : Type*} {V B : ι → Type*} :
-    ((fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j) :
-        ((k : ι) × (V k ⊕ B k)) → MvPolynomial ((k : ι) × V k) K) =
-      fun p => rename (Sigma.mk p.1) (Sum.elim X (0 : B p.1 → MvPolynomial (V p.1) K) p.2) := by
-  funext ⟨i, j⟩
-  cases j <;> simp
 
 /-- With finite coordinate types, the uniform input-degree bound of prefix `k` of
 `polynomialChainPrefix P` is at most the partial product of the layer input-degree bounds. -/

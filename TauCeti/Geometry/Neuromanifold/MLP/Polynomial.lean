@@ -162,10 +162,7 @@ theorem eval_polynomialPrefix (A : MLPSpec K L) {q : Fin (L - 1) → Polynomial 
     funext y a
     simp [A.layerActivation_eq_eval_layerPolynomial hq, hparam]
   rw [← polynomialRealization_apply, polynomialPrefix_eq_polynomialChainPrefix,
-    polynomialRealization_polynomialChainPrefix_eq_dfoldl, A.evalPrefix_eq_dfoldl]
-  exact congrFun (congrArg
-    (fun g => Fin.dfoldl i.val (fun j => Fin (A.width (Fin.castLE i.isLt j)) → K) g x)
-    (funext fun j => hstep (Fin.castLE (Nat.le_of_lt_succ i.isLt) j))) o
+    polynomialRealization_polynomialChainPrefix_eq_dfoldl_of_eq hstep, A.evalPrefix_eq_dfoldl]
 
 /-- The jointly polynomial tuple of `A` with hidden activation polynomials `q`: the output-layer
 prefix polynomials, in the affine parameter coordinates and the input variables. -/
@@ -227,16 +224,6 @@ def zeroBiasSubstitution (A : MLPSpec K L) : A.ParameterIndex → MvPolynomial A
     A.zeroBiasSubstitution ⟨i, .inr o⟩ = 0 := by
   simp [zeroBiasSubstitution]
 
-/-- `zeroBiasSubstitution` applies the single-layer zero-bias substitution `Sum.elim X 0` at each
-layer `i` and tags the weight variables with `Sigma.mk i`. -/
-theorem zeroBiasSubstitution_eq (A : MLPSpec K L) :
-    A.zeroBiasSubstitution = fun p =>
-      rename (Sigma.mk p.1)
-        (Sum.elim X (0 : Fin (A.width p.1.succ) →
-          MvPolynomial (Fin (A.width p.1.succ) × Fin (A.width p.1.castSucc)) K) p.2) := by
-  funext ⟨i, p⟩
-  cases p <;> simp
-
 /-- Evaluating the zero-bias substitution at bias-free coordinates gives the coordinates of the
 zero-bias embedding. -/
 theorem eval_zeroBiasSubstitution (A : MLPSpec K L) (v : A.WeightIndex → K) :
@@ -253,7 +240,10 @@ theorem polynomialPrefix_zeroBias_eq_polynomialChainPrefix (A : MLPSpec K L)
     polynomialReparametrize A.zeroBiasSubstitution (A.polynomialPrefix q k) =
       polynomialChainPrefix (I := fun j => Fin (A.width j))
         (fun i o => Polynomial.aeval (polynomialLinear o) (layerPolynomial q i)) k := by
-  rw [A.polynomialPrefix_eq_polynomialChainPrefix, A.zeroBiasSubstitution_eq,
+  have hz : A.zeroBiasSubstitution =
+      fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j :=
+    funext fun ⟨_, p⟩ => by cases p <;> simp
+  rw [A.polynomialPrefix_eq_polynomialChainPrefix, hz, sumElim_X_zero_eq_rename,
     polynomialChainPrefix_polynomialReparametrize
       (fun i => Sum.elim X (0 : Fin (A.width i.succ) →
         MvPolynomial (Fin (A.width i.succ) × Fin (A.width i.castSucc)) K))]

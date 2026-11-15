@@ -192,8 +192,8 @@ theorem isHomogeneous_inputPolynomial_polynomialReparametrize (R : W → MvPolyn
 theorem isHomogeneous_inputPolynomial_rename_sumMap (f : W → W')
     {P : J → MvPolynomial (W ⊕ I) K} {d : ℕ} (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d)
     (j : J) : (inputPolynomial (fun k => rename (Sum.map f id) (P k)) j).IsHomogeneous d := by
-  rw [inputPolynomial_rename_sumMap]
-  exact (hP j).map _
+  simpa only [polynomialReparametrize_X] using
+    isHomogeneous_inputPolynomial_polynomialReparametrize (fun w => X (f w)) hP j
 
 /-- Applying the monomial `X ^ r` coordinatewise to the outputs of a model whose input polynomials
 are homogeneous of degree `d` gives input polynomials homogeneous of degree `d * r`. -/

@@ -198,6 +198,16 @@ theorem polynomialInputDegree_rename_sumMap_le [Fintype J] (f : W → W')
   rw [← polynomialReparametrize_X]
   exact polynomialInputDegree_polynomialReparametrize_le _ P
 
+/-- Keeping variables `X ⟨i, a⟩` on the left summand and substituting `0` on the right summand of
+an indexed sum `(i : ι) × (V i ⊕ B i)` applies `Sum.elim X 0` at each index `i` and tags the kept
+variables with `Sigma.mk i`. -/
+theorem sumElim_X_zero_eq_rename {ι : Type*} {V B : ι → Type*} :
+    ((fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j) :
+        ((k : ι) × (V k ⊕ B k)) → MvPolynomial ((k : ι) × V k) K) =
+      fun p => rename (Sigma.mk p.1) (Sum.elim X (0 : B p.1 → MvPolynomial (V p.1) K) p.2) := by
+  funext ⟨i, j⟩
+  cases j <;> simp
+
 /-- Substitute the outputs of `P` for the input variables of `Q`. The parameters of the
 composite are those of `P` followed by those of `Q`. -/
 def polynomialCompose (P : J → MvPolynomial (W ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) :
