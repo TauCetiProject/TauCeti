@@ -19,6 +19,8 @@ of a preconnected space from second-countable pieces with countably many neighbo
 
 ## Main results
 
+* `Subtype.instSecondCountableTopology`: every subtype `Subtype p` of a second-countable space is
+  second countable, covering `SetLike` carriers as well as `Set` subtypes.
 * `TauCeti.secondCountableTopology_of_isOpen_cover`: a preconnected space covered by open
   second-countable subsets, each meeting only countably many cover members, is second countable.
 * `TauCeti.mk_le_continuum_of_secondCountableTopology`: a second-countable `T₀` space has at most
@@ -37,6 +39,11 @@ public section
 open Set Function Cardinal TopologicalSpace
 
 universe u
+
+/-- Every subtype of a second-countable space is second countable. -/
+instance Subtype.instSecondCountableTopology {α : Type*} [TopologicalSpace α]
+    [SecondCountableTopology α] (p : α → Prop) : SecondCountableTopology (Subtype p) :=
+  Topology.IsInducing.subtypeVal.secondCountableTopology
 
 namespace TauCeti
 

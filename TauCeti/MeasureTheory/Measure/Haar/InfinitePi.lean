@@ -11,7 +11,7 @@ public import Mathlib.Probability.ProductMeasure
 /-!
 # Haar measure instances for infinite product probability measures
 
-Given an arbitrary family of probability measures `μ : ∀ i, Measure (G i)` on measurable or
+Given an arbitrary family of probability measures `μ : ∀ i, Measure (G i)` on measurable spaces or
 topological groups `G i`, Kolmogorov's infinite product measure `MeasureTheory.Measure.infinitePi μ`
 on `Π i, G i` inherits translation invariance, inversion invariance, positivity on nonempty open
 sets, and the `IsHaarMeasure` typeclass from its factors.
@@ -30,7 +30,7 @@ in restricted products of locally compact groups.
 * `MeasureTheory.Measure.infinitePi.isInvInvariant`,
   `MeasureTheory.Measure.infinitePi.isNegInvariant`: inversion invariance of `Measure.infinitePi μ`.
 * `MeasureTheory.Measure.infinitePi.isOpenPosMeasure`: positivity of `Measure.infinitePi μ` on
-  nonempty open subsets of `Π i, X i`.
+  nonempty open subsets of `Π i, G i`.
 * `MeasureTheory.Measure.infinitePi.isHaarMeasure`,
   `MeasureTheory.Measure.infinitePi.isAddHaarMeasure`: `Measure.infinitePi μ` is a Haar measure on
   `Π i, G i` when each `μ i` is a probability Haar measure.
@@ -57,7 +57,7 @@ instance infinitePi.isMulLeftInvariant [∀ i, Mul (G i)] [∀ i, MeasurableMul 
     [∀ i, IsMulLeftInvariant (μ i)] :
     IsMulLeftInvariant (infinitePi μ) where
   map_mul_left_eq_self g := by
-    change (infinitePi μ).map (fun x i ↦ g i * x i) = infinitePi μ
+    simp_rw [Pi.mul_def]
     rw [infinitePi_map_pi μ fun i ↦ measurable_const_mul (g i)]
     simp_rw [map_mul_left_eq_self]
 
@@ -68,7 +68,7 @@ instance infinitePi.isMulRightInvariant [∀ i, Mul (G i)] [∀ i, MeasurableMul
     [∀ i, IsMulRightInvariant (μ i)] :
     IsMulRightInvariant (infinitePi μ) where
   map_mul_right_eq_self g := by
-    change (infinitePi μ).map (fun x i ↦ x i * g i) = infinitePi μ
+    simp_rw [Pi.mul_def]
     rw [infinitePi_map_pi μ fun i ↦ measurable_mul_const (g i)]
     simp_rw [map_mul_right_eq_self]
 
@@ -79,8 +79,7 @@ instance infinitePi.isInvInvariant [∀ i, Inv (G i)] [∀ i, MeasurableInv (G i
     [∀ i, IsInvInvariant (μ i)] :
     IsInvInvariant (infinitePi μ) where
   inv_eq_self := by
-    change (infinitePi μ).map (fun x i ↦ (x i)⁻¹) = infinitePi μ
-    rw [infinitePi_map_pi μ fun _ ↦ measurable_inv]
+    rw [Measure.inv_def, funext Pi.inv_def, infinitePi_map_pi μ fun _ ↦ measurable_inv]
     simp_rw [map_inv_eq_self]
 
 /-- An infinite product of probability measures that are positive on nonempty open sets is positive

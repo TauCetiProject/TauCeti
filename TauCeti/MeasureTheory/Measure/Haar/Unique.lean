@@ -33,11 +33,14 @@ inversion-invariant.
   The additive version is `MeasureTheory.Measure.addHaar_apply_le_addHaar_apply_iff`.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_univ_eq`: a left-invariant measure
   with the same total mass as a finite Haar measure coincides with it.
+* `MeasureTheory.Measure.isMulLeftInvariant_eq_of_apply_eq`: a left-invariant measure that is
+  finite on compacts and agrees with a Haar measure on a set of positive finite Haar measure
+  coincides with it.
 * `MeasureTheory.Measure.isMulRightInvariant_of_isHaarMeasure_of_isFiniteMeasure` and
   `MeasureTheory.Measure.isInvInvariant_of_isHaarMeasure_of_isFiniteMeasure`: a finite Haar
   measure is right-invariant and inversion-invariant.
 
-All three have additive versions.
+All five have additive versions.
 -/
 
 public section
@@ -105,6 +108,23 @@ theorem isInvInvariant_of_isHaarMeasure_of_isFiniteMeasure (μ : Measure G)
   exact ⟨isMulLeftInvariant_eq_of_measure_univ_eq _ _ <| by simp [inv_apply]⟩
 
 end FiniteHaar
+
+/-- A left-invariant measure on a second-countable locally compact group that is finite on compact
+sets and agrees with a Haar measure on a single set of positive finite Haar measure coincides with
+that Haar measure. -/
+@[to_additive /-- A left-invariant measure on a second-countable locally compact additive group
+that is finite on compact sets and agrees with an additive Haar measure on a single set of positive
+finite additive Haar measure coincides with that additive Haar measure. -/]
+theorem isMulLeftInvariant_eq_of_apply_eq {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
+    [MeasurableSpace G] [BorelSpace G] (μ' μ : Measure G)
+    [IsHaarMeasure μ] [IsFiniteMeasureOnCompacts μ'] [IsMulLeftInvariant μ']
+    {s : Set G} (h₀ : μ s ≠ 0) (htop : μ s ≠ ⊤) (hs : μ' s = μ s) :
+    μ' = μ := by
+  rw [isMulLeftInvariant_eq_smul μ' μ] at hs ⊢
+  have hc : (haarScalarFactor μ' μ : ENNReal) * μ s = 1 * μ s := by simpa using hs
+  rw [ENNReal.mul_left_inj h₀ htop, ENNReal.coe_eq_one] at hc
+  rw [hc, one_smul]
 
 /-- Two Haar measures on a second-countable locally compact group are positive finite multiples
 of each other, so they compare sets the same way. -/

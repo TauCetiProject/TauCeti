@@ -50,7 +50,7 @@ variable {ι : Type*} {R : ι → Type*} {A : ∀ i, Set (R i)}
 variable [Countable ι] [∀ i, TopologicalSpace (R i)] [∀ i, SecondCountableTopology (R i)]
 
 /-- Every principal stage `Πʳ i, [R i, A i]_[𝓟 S]` of a countable family of second-countable
-spaces is second countable, because its coercion into `Π i, R i` is a topological embedding. -/
+spaces is second countable. -/
 instance instSecondCountableTopologyOfPrincipal {S : Set ι} :
     SecondCountableTopology (Πʳ i, [R i, A i]_[𝓟 S]) :=
   isEmbedding_coe_of_principal.secondCountableTopology
@@ -68,8 +68,7 @@ instance instSecondCountableTopologyOfBot :
   isEmbedding_coe_of_bot.secondCountableTopology
 
 /-- If `ι` is countable, each `R i` is second countable, and each reference set `A i` is open, then
-the cofinite restricted product `Πʳ i, [R i, A i]` is second countable: it is covered by the
-countably many open ranges of the principal inclusions indexed by `T : Finset ι`. -/
+the cofinite restricted product `Πʳ i, [R i, A i]` is second countable. -/
 theorem secondCountableTopology_of_cofinite (hAopen : ∀ i, IsOpen (A i)) :
     SecondCountableTopology (Πʳ i, [R i, A i]) := by
   classical

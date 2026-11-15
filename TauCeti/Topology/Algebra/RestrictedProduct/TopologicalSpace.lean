@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 /-!
 # The topology of a restricted product
@@ -24,11 +25,13 @@ The restricted-product topology is finer than the topology induced from the full
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
 with reference sets of at most one element: every principal stage indexed by a cofinite set, and
 hence the restricted product itself, is discrete (`discreteTopology_restrictedProduct`), whereas
-the full product of discrete groups with infinitely many nontrivial factors is not. So for
-discrete groups with trivial reference subgroups, infinitely many of them nontrivial, the coercion
-to the full product is not inducing (`not_isInducing_coe_bot`): the restricted-product topology is
-not the induced one. This is the reason continuity of a map *into* a restricted product does not
-follow from continuity of its coordinates.
+the full product of discrete groups with infinitely many nontrivial factors is not. Conversely,
+whenever infinitely many reference sets `A i` are nontrivial, no singleton in `Πʳ i, [R i, A i]`
+is open (`RestrictedProduct.not_isOpen_singleton_of_frequently_nontrivial`). For discrete groups
+with trivial reference subgroups, infinitely many of them nontrivial, the coercion to the full
+product is not inducing (`not_isInducing_coe_bot`): the restricted-product topology is not the
+induced one. This is the reason continuity of a map *into* a restricted product does not follow
+from continuity of its coordinates.
 
 ## References
 
@@ -36,6 +39,23 @@ follow from continuity of its coordinates.
 * A. Weil, *Basic Number Theory*.
 -/
 public section
+
+namespace RestrictedProduct
+
+open Filter Set
+
+/-- In a cofinite restricted product where infinitely many reference sets `A i` are nontrivial, no
+singleton `{x}` is open. -/
+theorem not_isOpen_singleton_of_frequently_nontrivial {ι : Type*} {R : ι → Type*}
+    {A : ∀ i, Set (R i)} [∀ i, TopologicalSpace (R i)]
+    (hA : ∃ᶠ i in cofinite, (A i).Nontrivial) (x : Πʳ i, [R i, A i]) :
+    ¬ IsOpen ({x} : Set (Πʳ i, [R i, A i])) := by
+  intro hOpen
+  obtain ⟨C, -, hCA, hxC, hCU⟩ := exists_box_subset_of_isOpen hOpen (mem_singleton x)
+  exact not_exists_eventually_eq_box_eq_singleton hA x
+    ⟨C, hCA, Subset.antisymm hCU (singleton_subset_iff.mpr hxC)⟩
+
+end RestrictedProduct
 
 namespace TauCeti
 
