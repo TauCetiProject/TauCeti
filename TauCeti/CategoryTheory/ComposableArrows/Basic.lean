@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.ComposableArrows.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
-public import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
@@ -19,10 +18,11 @@ string is determined by these arrows (`CategoryTheory.ComposableArrows.ext_of_to
 reindexing the string along a functor of the indexing posets reindexes its arrows
 (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`), prepending an arrow with
 `CategoryTheory.ComposableArrows.precomp` shifts them
-(`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`), appending a terminal object with
-`CategoryTheory.ComposableArrows.snocTerminal` preserves existing arrows and sends every vertex to
-the terminal object (`CategoryTheory.ComposableArrows.totalArrow_snocTerminal_castSucc`,
-`CategoryTheory.ComposableArrows.totalArrow_snocTerminal_last`), and applying a functor to the
+(`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`), appending `g : F.right ⟶ Y`
+with `CategoryTheory.ComposableArrows.postcomp` preserves existing vertices and arrows and joins
+each vertex `i` of `F` to the appended final vertex `Y` by `F.map (homOfLE (Fin.le_last i)) ≫ g`
+(`CategoryTheory.ComposableArrows.totalArrow_postcomp_castSucc`,
+`CategoryTheory.ComposableArrows.totalArrow_postcomp_castSucc_last`), and applying a functor to the
 string maps its arrows along the functor
 (`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`) and commutes with
 prepending (`CategoryTheory.Functor.mapComposableArrows_obj_precomp`). A string of at least one
@@ -34,7 +34,7 @@ All vertices of a composable string in a groupoid have the same isomorphism clas
 ## Main declarations
 
 * `CategoryTheory.ComposableArrows.totalArrow`: the arrow of a string between two positions.
-* `CategoryTheory.ComposableArrows.snocTerminal`: append a terminal object to a string.
+* `CategoryTheory.ComposableArrows.postcomp`: append a morphism at the right end of a string.
 * `CategoryTheory.ComposableArrows.ext_of_totalArrow`: a string is determined by its arrows.
 * `CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`: a string is determined by its first
   arrow and its remaining arrows.
@@ -176,97 +176,122 @@ theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_precomp {D : Type*
   -- By definition of `precomp`, both first arrows are `Φ.map f`.
   rfl
 
-section SnocTerminal
+section Postcomp
 
-open Category Limits
+open Category
 
-private def snocTerminalObj (σ : ComposableArrows C n) (t : C) (i : Fin (n + 2)) : C :=
-  if hi : i.val < n + 1 then σ.obj ⟨i.val, hi⟩ else t
+private def postcompObj (σ : ComposableArrows C n) (Y : C) (i : Fin (n + 2)) : C :=
+  if hi : i.val < n + 1 then σ.obj ⟨i.val, hi⟩ else Y
 
-private lemma snocTerminalObj_pos (σ : ComposableArrows C n) (t : C) {i : Fin (n + 2)}
-    (hi : i.val < n + 1) : snocTerminalObj σ t i = σ.obj ⟨i.val, hi⟩ := dite_eq_left hi
+private lemma postcompObj_pos (σ : ComposableArrows C n) (Y : C) {i : Fin (n + 2)}
+    (hi : i.val < n + 1) : postcompObj σ Y i = σ.obj ⟨i.val, hi⟩ := dite_eq_left hi
 
-private lemma snocTerminalObj_neg (σ : ComposableArrows C n) (t : C) {i : Fin (n + 2)}
-    (hi : ¬ i.val < n + 1) : snocTerminalObj σ t i = t := dite_eq_right hi
+private lemma postcompObj_neg (σ : ComposableArrows C n) (Y : C) {i : Fin (n + 2)}
+    (hi : ¬ i.val < n + 1) : postcompObj σ Y i = Y := dite_eq_right hi
 
-/-- Append a terminal object `t` of `C` at the end of `σ : ComposableArrows C n`. -/
-def snocTerminal (σ : ComposableArrows C n) {t : C} (ht : IsTerminal t) :
-    ComposableArrows C (n + 1) where
-  obj := snocTerminalObj σ t
+/-- Append a morphism `g : σ.right ⟶ Y` at the right end of `σ : ComposableArrows C n`. -/
+def postcomp (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) : ComposableArrows C (n + 1) where
+  obj := postcompObj σ Y
   map {i j} f :=
     if hj : j.val < n + 1 then
       have hi : i.val < n + 1 := Nat.lt_of_le_of_lt f.le hj
-      eqToHom (snocTerminalObj_pos σ t hi) ≫
-        σ.map (homOfLE (show (⟨i.val, hi⟩ : Fin (n + 1)) ≤ ⟨j.val, hj⟩ from f.le)) ≫
-          eqToHom (snocTerminalObj_pos σ t hj).symm
-    else ht.from (snocTerminalObj σ t i) ≫ eqToHom (snocTerminalObj_neg σ t hj).symm
+      eqToHom (postcompObj_pos σ Y hi) ≫
+        σ.map (homOfLE (Fin.mk_le_mk.mpr (Fin.le_def.mp f.le))) ≫
+          eqToHom (postcompObj_pos σ Y hj).symm
+    else if hi : i.val < n + 1 then
+      eqToHom (postcompObj_pos σ Y hi) ≫
+        σ.map (homOfLE (Fin.le_last ⟨i.val, hi⟩)) ≫ g ≫ eqToHom (postcompObj_neg σ Y hj).symm
+    else eqToHom ((postcompObj_neg σ Y hi).trans (postcompObj_neg σ Y hj).symm)
   map_id i := by
     by_cases hi : i.val < n + 1
     · rw [dite_eq_left hi]; simp
-    · rw [dite_eq_right hi, ← cancel_mono (eqToHom (snocTerminalObj_neg σ t hi)),
-        assoc, eqToHom_trans, eqToHom_refl, comp_id]
-      exact ht.hom_ext _ _
-  map_comp {i j k} f g := by
+    · rw [dite_eq_right hi, dite_eq_right hi]; simp
+  map_comp {i j k} f h := by
     by_cases hk : k.val < n + 1
-    · have hj : j.val < n + 1 := Nat.lt_of_le_of_lt g.le hk
+    · have hj : j.val < n + 1 := Nat.lt_of_le_of_lt h.le hk
       have hi : i.val < n + 1 := Nat.lt_of_le_of_lt f.le hj
       rw [dite_eq_left hk, dite_eq_left hj, dite_eq_left hk]
       simp only [assoc, eqToHom_trans_assoc, eqToHom_refl, id_comp, ← σ.map_comp_assoc]
-      exact congrArg (fun u ↦ eqToHom (snocTerminalObj_pos σ t hi) ≫ σ.map u ≫
-        eqToHom (snocTerminalObj_pos σ t hk).symm) (Subsingleton.elim _ _)
-    · rw [dite_eq_right hk, ← cancel_mono (eqToHom (snocTerminalObj_neg σ t hk))]
-      exact ht.hom_ext _ _
+      exact congrArg (fun u ↦ eqToHom (postcompObj_pos σ Y hi) ≫ σ.map u ≫
+        eqToHom (postcompObj_pos σ Y hk).symm) (Subsingleton.elim _ _)
+    · rw [dite_eq_right hk, dite_eq_right hk]
+      by_cases hj : j.val < n + 1
+      · have hi : i.val < n + 1 := Nat.lt_of_le_of_lt f.le hj
+        rw [dite_eq_left hi, dite_eq_left hj, dite_eq_left hj]
+        simp only [assoc, eqToHom_trans_assoc, eqToHom_refl, id_comp, ← σ.map_comp_assoc]
+        exact congrArg (fun u ↦ eqToHom (postcompObj_pos σ Y hi) ≫ σ.map u ≫ g ≫
+          eqToHom (postcompObj_neg σ Y hk).symm) (Subsingleton.elim _ _)
+      · rw [dite_eq_right hj, dite_eq_right hj]
+        by_cases hi : i.val < n + 1
+        · rw [dite_eq_left hi, dite_eq_left hi]; simp only [assoc, eqToHom_trans]
+        · rw [dite_eq_right hi, dite_eq_right hi, eqToHom_trans]
 
-/-- On `castSucc j`, `σ.snocTerminal ht` retains the `j`-th vertex of `σ`. -/
-@[simp]
-theorem snocTerminal_obj_castSucc (σ : ComposableArrows C n) {t : C} (ht : IsTerminal t)
-    (j : Fin (n + 1)) : (σ.snocTerminal ht).obj j.castSucc = σ.obj j :=
-  snocTerminalObj_pos σ t j.isLt
+@[simp] theorem postcomp_obj_castSucc (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y)
+    (j : Fin (n + 1)) : (σ.postcomp g).obj j.castSucc = σ.obj j := postcompObj_pos σ Y j.isLt
 
-/-- Appending a terminal object preserves the initial vertex `0`. -/
-@[simp]
-theorem snocTerminal_obj_zero (σ : ComposableArrows C n) {t : C} (ht : IsTerminal t) :
-    (σ.snocTerminal ht).obj 0 = σ.obj 0 := by
-  rw [← Fin.castSucc_zero]; exact σ.snocTerminal_obj_castSucc ht 0
+@[simp] theorem postcomp_obj_zero (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) :
+    (σ.postcomp g).obj 0 = σ.obj 0 := σ.postcomp_obj_castSucc g 0
 
-/-- The final vertex of `σ.snocTerminal ht` is the terminal object `t`. -/
-@[simp]
-theorem snocTerminal_obj_last (σ : ComposableArrows C n) {t : C} (ht : IsTerminal t) :
-    (σ.snocTerminal ht).obj (Fin.last (n + 1)) = t :=
-  snocTerminalObj_neg σ t (Nat.lt_irrefl (n + 1))
+theorem postcomp_obj_succ_zero (σ : ComposableArrows C (n + 1)) {Y : C} (g : σ.right ⟶ Y) :
+    (σ.postcomp g).obj (Fin.succ 0) = σ.obj (Fin.succ 0) := σ.postcomp_obj_castSucc g (Fin.succ 0)
 
-/-- Arrows between `castSucc` positions of `σ.snocTerminal ht` are the arrows of `σ`. -/
-@[simp]
-theorem totalArrow_snocTerminal_castSucc (σ : ComposableArrows C n) {t : C}
-    (ht : IsTerminal t) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (σ.snocTerminal ht).totalArrow i.castSucc j.castSucc (Fin.castSucc_le_castSucc_iff.mpr hij) =
+@[simp] theorem postcomp_obj_last (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) :
+    (σ.postcomp g).obj (Fin.last (n + 1)) = Y := postcompObj_neg σ Y (Nat.lt_irrefl (n + 1))
+
+theorem postcomp_map_castSucc (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y)
+    {i j : Fin (n + 1)} (hij : i ≤ j) :
+    (σ.postcomp g).map (homOfLE (Fin.castSucc_le_castSucc_iff.mpr hij)) =
+      eqToHom (σ.postcomp_obj_castSucc g i) ≫ σ.map (homOfLE hij) ≫
+        eqToHom (σ.postcomp_obj_castSucc g j).symm := by dsimp [postcomp]; rw [dite_eq_left j.isLt]
+
+theorem postcomp_map_last (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) (i : Fin (n + 1)) :
+    (σ.postcomp g).map (homOfLE (Fin.le_last i.castSucc)) =
+      eqToHom (σ.postcomp_obj_castSucc g i) ≫ σ.map (homOfLE (Fin.le_last i)) ≫ g ≫
+        eqToHom (σ.postcomp_obj_last g).symm := by
+  dsimp [postcomp]; rw [dite_eq_right (Nat.lt_irrefl (n + 1)), dite_eq_left i.isLt]
+
+@[simp] theorem totalArrow_postcomp_castSucc (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y)
+    (i j : Fin (n + 1)) (hij : i ≤ j) :
+    (σ.postcomp g).totalArrow i.castSucc j.castSucc (Fin.castSucc_le_castSucc_iff.mpr hij) =
       σ.totalArrow i j hij := by
   rw [totalArrow_def, totalArrow_def]
-  refine Quiver.Total.ext (σ.snocTerminal_obj_castSucc ht i) (σ.snocTerminal_obj_castSucc ht j)
-    ((conj_eqToHom_iff_heq _ _ (σ.snocTerminal_obj_castSucc ht i)
-      (σ.snocTerminal_obj_castSucc ht j)).mp ?_)
-  dsimp [snocTerminal]; rw [dite_eq_left j.isLt]
+  exact Quiver.Total.ext (σ.postcomp_obj_castSucc g i) (σ.postcomp_obj_castSucc g j)
+    ((conj_eqToHom_iff_heq _ _ (σ.postcomp_obj_castSucc g i)
+      (σ.postcomp_obj_castSucc g j)).mp (σ.postcomp_map_castSucc g hij))
 
-/-- The arrow of `σ.snocTerminal ht` from any position to the last vertex is `ht.from _`. -/
-@[simp]
-theorem totalArrow_snocTerminal_last (σ : ComposableArrows C n) {t : C}
-    (ht : IsTerminal t) (i : Fin (n + 2)) :
-    (σ.snocTerminal ht).totalArrow i (Fin.last (n + 1)) (Fin.le_last i) =
-      ⟨(σ.snocTerminal ht).obj i, t, ht.from ((σ.snocTerminal ht).obj i)⟩ := by
+@[simp] theorem totalArrow_postcomp_castSucc_last (σ : ComposableArrows C n) {Y : C}
+    (g : σ.right ⟶ Y) (i : Fin (n + 1)) :
+    (σ.postcomp g).totalArrow i.castSucc (Fin.last (n + 1)) (Fin.le_last _) =
+      ⟨σ.obj i, Y, σ.map (homOfLE (Fin.le_last i)) ≫ g⟩ := by
   rw [totalArrow_def]
-  refine Quiver.Total.ext rfl (σ.snocTerminal_obj_last ht)
-    ((conj_eqToHom_iff_heq _ _ rfl (σ.snocTerminal_obj_last ht)).mp ?_)
-  rw [eqToHom_refl, id_comp, ← cancel_mono (eqToHom (σ.snocTerminal_obj_last ht))]
-  exact ht.hom_ext _ _
+  refine Quiver.Total.ext (σ.postcomp_obj_castSucc g i) (σ.postcomp_obj_last g)
+    ((conj_eqToHom_iff_heq _ _ (σ.postcomp_obj_castSucc g i) (σ.postcomp_obj_last g)).mp ?_)
+  simpa using σ.postcomp_map_last g i
 
-/-- Appending `t` to the `0`-simplex at `X` yields the `1`-simplex of `ht.from X : X ⟶ t`. -/
-@[simp]
-theorem mk₀_snocTerminal (X : C) {t : C} (ht : IsTerminal t) :
-    (mk₀ X).snocTerminal ht = mk₁ (ht.from X) :=
-  ext₁ ((mk₀ X).snocTerminal_obj_zero ht) ((mk₀ X).snocTerminal_obj_last ht) (by
-    rw [← cancel_mono (eqToHom ((mk₀ X).snocTerminal_obj_last ht))]; exact ht.hom_ext _ _)
+/-- Forgetting the last arrow of `σ.postcomp g` recovers `σ`, dual to `precomp_δ₀`. -/
+@[simp] theorem postcomp_δlast (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) :
+    (σ.postcomp g).δlast = σ := by
+  refine ext_of_totalArrow fun i j hij ↦ ?_
+  dsimp [δlast, δlastFunctor, whiskerLeftFunctor]; rw [totalArrow_whiskerLeft]
+  exact σ.totalArrow_postcomp_castSucc g i j hij
 
-end SnocTerminal
+@[simp] theorem mk₀_postcomp {X Y : C} (g : (mk₀ X).right ⟶ Y) : (mk₀ X).postcomp g = mk₁ g :=
+  ext₁ ((mk₀ X).postcomp_obj_zero g) ((mk₀ X).postcomp_obj_last g) (by
+    dsimp [hom, map', postcomp, mk₀, mk₁]; simp)
+
+theorem eqToHom_postcomp_map_zero_one {D : Type*} [Category* D] (M : C ⥤ D)
+    (σ : ComposableArrows C (n + 1)) {Y : C} (g : σ.right ⟶ Y) :
+    eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫
+        M.map ((σ.postcomp g).map (homOfLE (Fin.zero_le (Fin.succ 0)))) =
+      M.map (σ.map (homOfLE (Fin.zero_le (Fin.succ 0)))) ≫
+        eqToHom (congrArg M.obj (σ.postcomp_obj_succ_zero g).symm) := by
+  have htot := σ.totalArrow_postcomp_castSucc g 0 (Fin.succ 0) (Fin.zero_le _)
+  rw [totalArrow_def, totalArrow_def] at htot; obtain ⟨h0, h1, hm⟩ := Quiver.Total.mk.inj htot
+  dsimp only [← Fin.succ_castSucc, Fin.castSucc_zero] at h0 h1 hm
+  rw [(conj_eqToHom_iff_heq _ _ h0 h1).mpr hm, M.map_comp, M.map_comp, eqToHom_map, eqToHom_map]
+  simp
+
+end Postcomp
 
 end CategoryTheory.ComposableArrows
 
