@@ -29,6 +29,7 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`: `fourier n (x + y) = fourier n x * fourier n y`.
+* `TauCeti.fourier_apply_neg`: `fourier n (-x) = fourier (-n) x`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
@@ -36,7 +37,7 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
-* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_neg_apply`,
+* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_apply_neg`,
   `TauCeti.UnitAddTorus.mFourier_coe_apply` and
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
@@ -85,6 +86,11 @@ theorem fourier_one_pow (m : ℕ) :
 theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
   simp [AddCircle.toCircle_add]
+
+/-- A Fourier monomial at `-x` is the monomial of the opposite frequency at `x`:
+`fourier n (-x) = fourier (-n) x`. -/
+theorem fourier_apply_neg (n : ℤ) (x : AddCircle T) : fourier n (-x) = fourier (-n) x := by
+  simp only [fourier_apply, smul_neg, neg_smul]
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/
@@ -200,9 +206,9 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
     Finset.prod_mul_distrib]
 
 /-- The Fourier monomial `mFourier n` at `-x` is the monomial of index `-n` at `x`. -/
-theorem mFourier_neg_apply (n : d → ℤ) (x : UnitAddTorus d) :
+theorem mFourier_apply_neg (n : d → ℤ) (x : UnitAddTorus d) :
     mFourier n (-x) = mFourier (-n) x := by
-  simp only [mFourier, ContinuousMap.coe_mk, Pi.neg_apply, fourier_apply, smul_neg, neg_smul]
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.neg_apply, TauCeti.fourier_apply_neg]
 
 /-- Multivariate Fourier monomials take values in the unit circle. -/
 @[simp]

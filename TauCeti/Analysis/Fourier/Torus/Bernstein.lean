@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
-public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Integral.Pi
@@ -16,7 +15,6 @@ import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
-import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Bernstein's inequalities on the torus
@@ -24,8 +22,8 @@ import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 On the torus `𝕋ᵈ = (ℝ / ℤ)^d` with its volume, the product of the Haar probability measures of
 the circle factors, let `f` be an integrable function whose Fourier coefficients vanish outside the
 ball `‖n‖ ≤ R`, `R ≥ 1`, for the supremum norm on `d → ℤ`: almost everywhere, a trigonometric
-polynomial of degree at most `R` in each variable. **Bernstein's inequalities** say that for
-`1 ≤ p ≤ q ≤ ∞` there is `C`, depending only on `d`, `p` and `q`, with
+polynomial of degree at most `R` in each variable. **Bernstein's inequalities** say that there is
+`C`, depending only on `d`, such that for `1 ≤ p ≤ q ≤ ∞`
 
 `‖∂_{v 0} ⋯ ∂_{v (k - 1)} f‖_q ≤ C ^ (k + 1) R ^ (k + d (1/p - 1/q)) ∏ l, ‖v l‖ ‖f‖_p`
 
@@ -50,8 +48,7 @@ summation to control the periodic kernel. Let `χ` be a smooth cutoff equal to o
 supported in `(-2, 2)`. The kernel of de la Vallée Poussin type
 `V_R(x) = ∑ n, (∏ i, χ (n i / R)) e_n(x)` is a trigonometric polynomial whose coefficients equal one
 on the ball `‖n‖ ≤ R`, so `V_R ⋆ f = f` almost everywhere
-(`UnitAddTorus.convolution_sum_smul_mFourier_apply` and the uniqueness of Fourier
-coefficients, `MeasureTheory.Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff`). It is the tensor
+(`MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`). It is the tensor
 product of the one-dimensional kernels `t ↦ ∑ n, χ (n / R) e_n(t)`. By Poisson summation
 (`SchwartzMap.tsum_eq_tsum_fourier`) each of these is the periodization of the kernel
 `𝓕⁻ (χ (· / R))` on `ℝ`, a dilate of `𝓕⁻ χ`, so its `L¹` norm on the circle is at most
@@ -410,27 +407,24 @@ private theorem ae_eq_convolution_of_mFourierCoeff_eq_smul [DecidableEq d] {R : 
     (hc : ∀ n, ‖n‖ ≤ R → c n = σ n) (hfg : ∀ n, mFourierCoeff g n = σ n • mFourierCoeff f n) :
     g =ᵐ[volume]
       (fun t ↦ ∑ n ∈ box d R, c n * mFourier n t) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f := by
-  have hfS (n : d → ℤ) (hn : n ∉ box d R) : mFourierCoeff f n = 0 :=
-    hspec n (lt_norm_of_notMem_box hR hn)
-  have hgS (n : d → ℤ) (hn : n ∉ box d R) : mFourierCoeff g n = 0 := by
-    rw [hfg, hfS n hn, smul_zero]
-  filter_upwards [hg.ae_eq_sum_mFourier_smul_mFourierCoeff hgS] with x hx
-  rw [hx, convolution_sum_smul_mFourier_apply hf]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  refine hg.ae_eq_convolution_of_mFourierCoeff_eq_smul hf
+    (fun n hn ↦ by rw [hfg, hspec n (lt_norm_of_notMem_box hR hn), smul_zero]) fun n _ ↦ ?_
   by_cases hn : ‖n‖ ≤ R
-  · rw [hc n hn, hfg, smul_comm]
-  · rw [hfg, hspec n (not_le.1 hn), smul_zero, smul_zero, smul_zero]
+  · rw [hc n hn, hfg]
+  · rw [hfg, hspec n (not_le.1 hn), smul_zero, smul_zero]
 
-/-- **Nikol'skii's inequality on the torus**, Bernstein's inequality without derivatives: for
-`1 ≤ p ≤ q ≤ ∞` there is `C` such that every integrable `f` on `(ℝ / ℤ)^d` whose Fourier
-coefficients vanish outside the ball `‖n‖ ≤ R`, `R ≥ 1`, satisfies
+/-- **Nikol'skii's inequality on the torus**, Bernstein's inequality without derivatives: there is
+`C`, depending only on `d`, such that for `1 ≤ p ≤ q ≤ ∞` every integrable `f` on `(ℝ / ℤ)^d` whose
+Fourier coefficients vanish outside the ball `‖n‖ ≤ R`, `R ≥ 1`, satisfies
 `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`. Here `‖n‖` is the supremum norm of `n : d → ℤ`. -/
-theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {R : ℝ}, 1 ≤ R → ∀ {f : UnitAddTorus d → E}, Integrable f →
-      (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
+theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q → ∀ {R : ℝ}, 1 ≤ R →
+      ∀ {f : UnitAddTorus d → E}, Integrable f → (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       eLpNorm f q volume ≤ ENNReal.ofReal (C * R ^ ((Fintype.card d : ℝ) *
         (p.toReal⁻¹ - q.toReal⁻¹))) * eLpNorm f p volume := by
   classical
+  refine ⟨max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d * 7 ^ Fintype.card d, by positivity,
+    fun {p q} hp hpq {R} hR {f} hf hspec ↦ ?_⟩
   -- The exponent `r` of Young's inequality, with `1/r + 1/p = 1 + 1/q`.
   set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
   have hqp : q⁻¹ ≤ p⁻¹ := ENNReal.inv_le_inv.2 hpq
@@ -443,8 +437,6 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero {p q : ℝ≥0∞} (hp : 1 �
       ENNReal.toReal_add ENNReal.one_ne_top hq1, ENNReal.toReal_inv, ENNReal.toReal_inv,
       ENNReal.toReal_one]
     ring
-  refine ⟨max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d * 7 ^ Fintype.card d, by positivity,
-    fun {R} hR {f} hf hspec ↦ ?_⟩
   have hR0 : 0 < R := one_pos.trans_le hR
   set K := tensorKernel (fun _ : d ↦ cutoff) R
   have hK : Continuous K := continuous_tensorKernel (fun _ ↦ hasCompactSupport_cutoff) hR0
@@ -470,17 +462,17 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero {p q : ℝ≥0∞} (hp : 1 �
 /-- **Bernstein's inequality for one derivative at a fixed exponent.** If the Fourier
 coefficients of `f` vanish outside the ball `‖n‖ ≤ R` and those of `g` are
 `2πi ⟪n, v⟫ f̂(n)`, so that `g` is the derivative of `f` along `v`, then
-`‖g‖_p ≤ C R ‖v‖ ‖f‖_p`. -/
-private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul {p : ℝ≥0∞}
-    (hp : 1 ≤ p) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (v : d → ℝ) {R : ℝ}, 0 < R → ∀ {f g : UnitAddTorus d → E},
+`‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C` depending only on `d`. -/
+private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞}, 1 ≤ p → ∀ (v : d → ℝ) {R : ℝ}, 0 < R →
+      ∀ {f g : UnitAddTorus d → E},
       Integrable f → Integrable g → (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       (∀ n, mFourierCoeff g n = derivSymbol v n • mFourierCoeff f n) →
       eLpNorm g p volume ≤ ENNReal.ofReal (C * R * ‖v‖) * eLpNorm f p volume := by
   classical
   refine ⟨2 * Real.pi * Fintype.card d *
       max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d,
-    by positivity, fun v {R} hR {f g} hf hg hspec hfg ↦ ?_⟩
+    by positivity, fun {p} hp v {R} hR {f g} hf hg hspec hfg ↦ ?_⟩
   have hK : Continuous (derivKernel v R) := by
     unfold derivKernel
     fun_prop
@@ -502,17 +494,16 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul {p : ℝ�
 
 /-- **Bernstein's inequality for `k` derivatives at a fixed exponent**, by iterating the case of
 one derivative through the intermediate trigonometric polynomials. -/
-private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul {p : ℝ≥0∞}
-    (hp : 1 ≤ p) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 0 < R →
+private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞}, 1 ≤ p → ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 0 < R →
       ∀ {f g : UnitAddTorus d → E}, Integrable f → Integrable g →
       (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       (∀ n, mFourierCoeff g n = (∏ l, derivSymbol (v l) n) • mFourierCoeff f n) →
       eLpNorm g p volume ≤ ENNReal.ofReal ((C * R) ^ k * ∏ l, ‖v l‖) * eLpNorm f p volume := by
   classical
   obtain ⟨C, hC, hderiv⟩ :=
-    exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul (d := d) (E := E) hp
-  refine ⟨C, hC, fun k ↦ ?_⟩
+    exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul (d := d) (E := E)
+  refine ⟨C, hC, fun {p} hp k ↦ ?_⟩
   induction k with
   | zero =>
     intro v R _ f g hf hg _ hfg
@@ -541,7 +532,7 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul {p :
       rw [hfg, hhc, hcdef, Fin.prod_univ_castSucc, mul_comm, mul_smul]
     calc eLpNorm g p volume
         ≤ ENNReal.ofReal (C * R * ‖v (Fin.last k)‖) * eLpNorm h p volume :=
-          hderiv _ hR hhint hg hhspec hgh
+          hderiv hp _ hR hhint hg hhspec hgh
       _ ≤ ENNReal.ofReal (C * R * ‖v (Fin.last k)‖) *
             (ENNReal.ofReal ((C * R) ^ k * ∏ l : Fin k, ‖v l.castSucc‖) * eLpNorm f p volume) := by
           gcongr
@@ -551,19 +542,20 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul {p :
           congr 2
           ring
 
-/-- **Bernstein's inequalities on the torus.** For `1 ≤ p ≤ q ≤ ∞` there is `C` with the following
-property. Let `f` be integrable on `(ℝ / ℤ)^d` with Fourier coefficients vanishing outside the ball
-`‖n‖ ≤ R`, `R ≥ 1`, and let `g` be integrable with Fourier coefficients
-`(∏ l, 2πi ⟪n, v l⟫) f̂(n)`, so that `g` is the derivative of `f` along `v 0, …, v (k - 1)`. Then
+/-- **Bernstein's inequalities on the torus.** There is `C`, depending only on `d`, with the
+following property for all `1 ≤ p ≤ q ≤ ∞`. Let `f` be integrable on `(ℝ / ℤ)^d` with Fourier
+coefficients vanishing outside the ball `‖n‖ ≤ R`, `R ≥ 1`, and let `g` be integrable with Fourier
+coefficients `(∏ l, 2πi ⟪n, v l⟫) f̂(n)`, so that `g` is the derivative of `f` along
+`v 0, …, v (k - 1)`. Then
 
 `‖g‖_q ≤ C ^ (k + 1) R ^ (k + d (1/p - 1/q)) ∏ l, ‖v l‖ ‖f‖_p`.
 
 Here `‖n‖` and `‖v l‖` are supremum norms. When the lift of `f` to `d → ℝ` is `Cᵏ`, the hypothesis
 on `g` holds for its `k`-th derivative along `v`, by
 `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv`. -/
-theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul {p q : ℝ≥0∞} (hp : 1 ≤ p)
-    (hpq : p ≤ q) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 1 ≤ R →
+theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q →
+      ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 1 ≤ R →
       ∀ {f g : UnitAddTorus d → E}, Integrable f → Integrable g →
       (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
       (∀ n, mFourierCoeff g n =
@@ -571,19 +563,21 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul {p q : ℝ≥0∞} (hp :
       eLpNorm g q volume ≤ ENNReal.ofReal (C ^ (k + 1) *
         R ^ ((k : ℝ) + Fintype.card d * (p.toReal⁻¹ - q.toReal⁻¹)) * ∏ l, ‖v l‖) *
           eLpNorm f p volume := by
-  obtain ⟨C₀, hC₀, hnik⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_zero (d := d) (E := E) hp hpq
+  obtain ⟨C₀, hC₀, hnik⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_zero (d := d) (E := E)
   obtain ⟨C₁, hC₁, hder⟩ :=
-    exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul (d := d) (E := E) hp
-  refine ⟨max C₀ C₁, le_max_of_le_left hC₀, fun k v {R} hR {f g} hf hg hspec hfg ↦ ?_⟩
+    exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul (d := d) (E := E)
+  refine ⟨max C₀ C₁, le_max_of_le_left hC₀,
+    fun {p q} hp hpq k v {R} hR {f g} hf hg hspec hfg ↦ ?_⟩
   have hR0 : 0 < R := one_pos.trans_le hR
   have hgspec (n : d → ℤ) (hn : R < ‖n‖) : mFourierCoeff g n = 0 := by
     rw [hfg, hspec n hn, smul_zero]
   set θ : ℝ := Fintype.card d * (p.toReal⁻¹ - q.toReal⁻¹)
-  calc eLpNorm g q volume ≤ ENNReal.ofReal (C₀ * R ^ θ) * eLpNorm g p volume := hnik hR hg hgspec
+  calc eLpNorm g q volume ≤ ENNReal.ofReal (C₀ * R ^ θ) * eLpNorm g p volume :=
+        hnik hp hpq hR hg hgspec
     _ ≤ ENNReal.ofReal (C₀ * R ^ θ) *
           (ENNReal.ofReal ((C₁ * R) ^ k * ∏ l, ‖v l‖) * eLpNorm f p volume) := by
         gcongr
-        exact hder k v hR0 hf hg hspec hfg
+        exact hder hp k v hR0 hf hg hspec hfg
     _ = ENNReal.ofReal (C₀ * C₁ ^ k * R ^ ((k : ℝ) + θ) * ∏ l, ‖v l‖) * eLpNorm f p volume := by
         rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), Real.rpow_add hR0,
           Real.rpow_natCast]

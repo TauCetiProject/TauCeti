@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
@@ -21,15 +22,20 @@ coefficient,
 `(mFourier n ⋆ f) x = ∫ mFourier n t • f (x - t) dt = mFourier n x • mFourierCoeff f n`,
 
 because `mFourier n (x - t) = mFourier n x * mFourier (-n) t` and the volume is invariant under
-`t ↦ x - t`. So convolution with a trigonometric polynomial `∑ n ∈ s, c n • mFourier n` is the
-Fourier multiplier with the finitely supported symbol `c`. This is how kernels of de la Vallée
-Poussin type reproduce functions whose spectrum lies where their symbol equals one.
+`t ↦ x - t`. So convolution with a trigonometric polynomial `∑ n ∈ s, c n * mFourier n` is the
+Fourier multiplier with the finitely supported symbol `c`. By uniqueness of Fourier coefficients,
+an integrable `g` with `ĝ = c • f̂` on `s` and `ĝ = 0` off `s` is almost everywhere this
+convolution of `f`. This is how kernels of de la Vallée Poussin type reproduce functions whose
+spectrum lies where their symbol equals one.
 
 ## Main declarations
 
 * `UnitAddTorus.convolution_mFourier_apply`: convolution with a monomial.
-* `UnitAddTorus.convolution_sum_smul_mFourier_apply`: convolution with a trigonometric
+* `UnitAddTorus.convolution_sum_mul_mFourier_apply`: convolution with a trigonometric
   polynomial.
+* `MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`: a function whose Fourier
+  coefficients are those of `f` multiplied by a finitely supported symbol is the convolution of `f`
+  with the trigonometric polynomial of that symbol.
 -/
 
 public section
@@ -53,12 +59,12 @@ theorem convolution_mFourier_apply (n : d → ℤ) (f : UnitAddTorus d → E) (x
   rw [← integral_sub_left_eq_self _ volume x]
   congr 1 with t
   rw [ContinuousLinearMap.lsmul_apply, sub_sub_cancel, smul_smul, sub_eq_add_neg,
-    mFourier_apply_add, mFourier_neg_apply]
+    mFourier_apply_add, mFourier_apply_neg]
 
 /-- **Convolution with a trigonometric polynomial** is the Fourier multiplier with its finitely
 supported coefficients: for integrable `f`,
-`((∑ n ∈ s, c n • mFourier n) ⋆ f) x = ∑ n ∈ s, c n • mFourier n x • mFourierCoeff f n`. -/
-theorem convolution_sum_smul_mFourier_apply (hf : Integrable f) (s : Finset (d → ℤ))
+`((∑ n ∈ s, c n * mFourier n) ⋆ f) x = ∑ n ∈ s, c n • mFourier n x • mFourierCoeff f n`. -/
+theorem convolution_sum_mul_mFourier_apply (hf : Integrable f) (s : Finset (d → ℤ))
     (c : (d → ℤ) → ℂ) (x : UnitAddTorus d) :
     ((fun t ↦ ∑ n ∈ s, c n * mFourier n t) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f) x =
       ∑ n ∈ s, c n • mFourier n x • mFourierCoeff f n := by
@@ -73,3 +79,26 @@ theorem convolution_sum_smul_mFourier_apply (hf : Integrable f) (s : Finset (d �
   simp
 
 end UnitAddTorus
+
+namespace MeasureTheory
+
+open UnitAddTorus TauCeti.UnitAddTorus
+
+variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [CompleteSpace E] {f g : UnitAddTorus d → E}
+
+/-- **Fourier multipliers with finitely supported symbols are convolutions.** If `f` and `g` are
+integrable on the torus, the Fourier coefficients of `g` vanish outside a finite set `s` and
+`ĝ(n) = c n • f̂(n)` on `s`, then `g` is almost everywhere the convolution of `f` with the
+trigonometric polynomial `∑ n ∈ s, c n * mFourier n`. -/
+theorem Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul (hg : Integrable g)
+    (hf : Integrable f) {s : Finset (d → ℤ)} {c : (d → ℤ) → ℂ}
+    (hgs : ∀ n ∉ s, mFourierCoeff g n = 0)
+    (hfg : ∀ n ∈ s, mFourierCoeff g n = c n • mFourierCoeff f n) :
+    g =ᵐ[volume]
+      (fun t ↦ ∑ n ∈ s, c n * mFourier n t) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f := by
+  filter_upwards [hg.ae_eq_sum_mFourier_smul_mFourierCoeff hgs] with x hx
+  rw [hx, convolution_sum_mul_mFourier_apply hf]
+  exact Finset.sum_congr rfl fun n hn ↦ by rw [hfg n hn, smul_comm]
+
+end MeasureTheory

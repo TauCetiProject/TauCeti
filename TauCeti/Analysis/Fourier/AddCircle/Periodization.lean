@@ -15,10 +15,10 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 # Periodized kernels on the circle
 
 For a smooth compactly supported symbol `η : ℝ → ℂ` and a scale `R > 0`, the trigonometric
-polynomial `t ↦ ∑ n, η (n / R) e_n(t)` on the circle `UnitAddCircle = ℝ / ℤ` has only the
-frequencies `|n| ≤ M R` when `η` vanishes outside `[-M, M]`
-(`TauCeti.tsum_mul_fourier_eq_sum`). By Poisson summation (`SchwartzMap.tsum_eq_tsum_fourier`) it
-is the periodization `x ↦ ∑ ℓ, G (x + ℓ)` of the kernel `G = 𝓕⁻ (η (· / R))` on `ℝ`, a dilate of
+polynomial `t ↦ ∑ n, η (n / R) e_n(t)` on a circle `AddCircle T` has only the frequencies
+`|n| ≤ M R` when `η` vanishes outside `[-M, M]` (`TauCeti.tsum_mul_fourier_eq_sum`). On the unit
+circle `UnitAddCircle = ℝ / ℤ`, by Poisson summation (`SchwartzMap.tsum_eq_tsum_fourier`) it is
+the periodization `x ↦ ∑ ℓ, G (x + ℓ)` of the kernel `G = 𝓕⁻ (η (· / R))` on `ℝ`, a dilate of
 `𝓕⁻ η`. Hence its `L¹` norm on the circle is at most `∫ ‖G‖ = ∫ ‖𝓕⁻ η‖`, whatever the scale `R`
 (`TauCeti.integral_norm_tsum_mul_fourier_le`). This is the bound that makes kernels of de la Vallée
 Poussin type uniformly integrable.
@@ -50,7 +50,7 @@ private theorem exists_forall_lt_abs_eq_zero {η : ℝ → ℂ}
 /-- If `η` vanishes outside `[-M, M]` and `R > 0`, the periodized kernel
 `t ↦ ∑ n, η (n / R) e_n(t)` is the trigonometric polynomial with frequencies `|n| ≤ ⌈M R⌉`. -/
 theorem tsum_mul_fourier_eq_sum {η : ℝ → ℂ} {M R : ℝ} (hR : 0 < R)
-    (hη : ∀ ξ, M < |ξ| → η ξ = 0) (t : UnitAddCircle) :
+    (hη : ∀ ξ, M < |ξ| → η ξ = 0) {T : ℝ} (t : AddCircle T) :
     ∑' n : ℤ, η (n / R) * fourier n t =
       ∑ n ∈ Finset.Icc (-⌈M * R⌉) ⌈M * R⌉, η (n / R) * fourier n t := by
   refine tsum_eq_sum fun n hn ↦ ?_
@@ -62,7 +62,7 @@ theorem tsum_mul_fourier_eq_sum {η : ℝ → ℂ} {M R : ℝ} (hR : 0 < R)
 /-- For compactly supported `η` and `R > 0`, the periodized kernel `t ↦ ∑ n, η (n / R) e_n(t)` is
 continuous. -/
 theorem continuous_tsum_mul_fourier {η : ℝ → ℂ} (hc : HasCompactSupport η) {R : ℝ}
-    (hR : 0 < R) : Continuous fun t : UnitAddCircle ↦ ∑' n : ℤ, η (n / R) * fourier n t := by
+    (hR : 0 < R) {T : ℝ} : Continuous fun t : AddCircle T ↦ ∑' n : ℤ, η (n / R) * fourier n t := by
   obtain ⟨M, hM⟩ := exists_forall_lt_abs_eq_zero hc
   simp only [tsum_mul_fourier_eq_sum hR hM]
   fun_prop
@@ -113,7 +113,7 @@ theorem integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ
   calc ∫ t : UnitAddCircle, ‖∑' n : ℤ, η (n / R) * fourier n t‖
       ≤ ∫ y, ‖G y‖ := by
         rw [integral_norm_eq_lintegral_eNorm
-          (continuous_tsum_mul_fourier hc hR).aestronglyMeasurable]
+          (continuous_tsum_mul_fourier hc hR (T := 1)).aestronglyMeasurable]
         exact ENNReal.toReal_le_of_le_ofReal (integral_nonneg fun _ ↦ norm_nonneg _) hlint
     _ = ∫ y, ‖𝓕⁻ η y‖ := by
         rw [hG]
