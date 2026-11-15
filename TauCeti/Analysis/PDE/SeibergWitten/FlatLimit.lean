@@ -51,8 +51,9 @@ the plane vortex equations:
 So the base-independent solutions of the flat limiting equations with spinor on the canonical
 line and connection along the normal factor are exactly the pullbacks of plane vortices, in the
 normalization `∂bar_a α = 0`, `*i F_a = (1 - |α|²) / 8` of `TauCeti.Vortex.equation`. The gauge
-fixing row and the derivation of the limiting equations from actual rescaled solutions are not
-treated here.
+fixing row is not treated here. That rescaled solutions of the large-parameter equations converge,
+in the sense of `1`-jets, only to solutions of the flat limiting equations is
+`TauCeti.Analysis.PDE.SeibergWitten.Rescaling`.
 
 ## References
 

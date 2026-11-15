@@ -30,7 +30,9 @@ function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version o
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
 `HasCompactSupport.fderiv`. `TauCeti.extDerivWithin_of_isOpen` is the version of
-`fderivWithin_of_isOpen`. `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
+`fderivWithin_of_isOpen`. `TauCeti.extDeriv_comp_add_smul` says that precomposing the
+coefficients with an affine dilation `z ↦ x₀ + c • z` multiplies the exterior derivative by `c`.
+`TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
 one-form `∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜` as `∑ᵢ dωᵢ ∧ dxᵢ`.
 -/
 
@@ -61,6 +63,15 @@ because `fderiv` takes the junk value `0` there. -/
 lemma extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
   simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
   exact map_zero _
+
+/-- **The exterior derivative under an affine dilation of the domain.** Precomposing the
+coefficients of a form with `z ↦ x₀ + c • z` multiplies its exterior derivative by `c`. No
+differentiability is needed: both sides use the junk value `0` of `fderiv` at the same points. -/
+theorem extDeriv_comp_add_smul (x₀ : E) (c : 𝕜) (ω : E → E [⋀^Fin n]→L[𝕜] F) (y : E) :
+    extDeriv (fun z ↦ ω (x₀ + c • z)) y = c • extDeriv ω (x₀ + c • y) := by
+  have h : fderiv 𝕜 (fun z ↦ ω (x₀ + c • z)) y = c • fderiv 𝕜 ω (x₀ + c • y) := by
+    rw [fderiv_comp_smul (f := fun w ↦ ω (x₀ + w)) c, fderiv_comp_add_left]
+  rw [extDeriv, h, ContinuousAlternatingMap.alternatizeUncurryFin_smul, extDeriv]
 
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/
