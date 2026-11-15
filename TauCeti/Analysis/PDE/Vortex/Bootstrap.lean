@@ -326,16 +326,8 @@ theorem contDiff_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
     (hk : 1 < k) {x₀ x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx₀ : ∀ j : ℕ, x₀ ∈ framedFieldSpace f m j) (hx₀c : ContDiff ℝ 1 x₀)
     (hx : x ∈ framedFieldSpace f m k) (hxc : ContDiff ℝ 1 x) (heq : ∀ z, equation x z = 0)
-    (hgauge : ∀ z, gaugeAdjoint x₀ (x - x₀) z = 0) : ContDiff ℝ ∞ x := by
-  have hy : ContDiff ℝ ∞ (x - referenceField f m) := by
-    refine contDiff_euclidean.2 fun i ↦ contDiff_infty.2 fun n ↦ ?_
-    have hj := mem_framedFieldSpace_of_equation_eq_zero hk hx₀ hx₀c hx hxc heq hgauge (n + 2)
-    refine contDiff_of_mem_realSobolevFunctions (s := ((n + 2 : ℕ) : ℝ)) ?_
-      (mem_sobolevFields.1 (mem_framedFieldSpace.1 hj) i)
-      (contDiff_euclidean.1 (hxc.sub ((contDiff_referenceField f m).of_le (by simp))) i).continuous
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
-  simpa using hy.add (contDiff_referenceField f m)
+    (hgauge : ∀ z, gaugeAdjoint x₀ (x - x₀) z = 0) : ContDiff ℝ ∞ x :=
+  contDiff_of_forall_mem_framedFieldSpace hxc.continuous
+    (mem_framedFieldSpace_of_equation_eq_zero hk hx₀ hx₀c hx hxc heq hgauge)
 
 end TauCeti.Vortex
