@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
-public import TauCeti.Analysis.PDE.Vortex.Kernel.PrincipalPart
+public import TauCeti.Analysis.PDE.Vortex.FieldSpace
+public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
+import TauCeti.Analysis.PDE.Vortex.SobolevScale
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
-import TauCeti.Analysis.Distribution.TestFunction.Inner
-import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!
@@ -336,8 +335,7 @@ theorem toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero (hx : Contin
   have hae : ∫ z, ⟪(hy₂.toLp y : ℂ → EuclideanSpace ℝ (Fin 4)) z, gaugeFixedAdjoint x η z⟫ =
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ :=
     integral_congr_ae (hy₂.coeFn_toLp.mono fun _ hz ↦ by simp only [hz])
-  rw [hae, ← integral_inner_gaugeFixedOperator_of_hasCompactSupport_right hx hy
-    (hη.of_le (by simp)) hηc]
+  rw [hae, ← integral_inner_gaugeFixedOperator hx hy (hη.of_le (by simp)) (.inr hηc)]
   simp [hker]
 
 /-- The real-linear map sending a classical solution `y ∈ gaugeFixedKernel x` to its `L²`
@@ -406,41 +404,13 @@ theorem exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKern
     {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} (hu : u ∈ weakGaugeFixedKernel x) :
     ∃ y : ℂ → EuclideanSpace ℝ (Fin 4),
       ContDiff ℝ ∞ y ∧ (∀ s, y ∈ sobolevFields s) ∧ y ∈ gaugeFixedKernel x ∧ u =ᵐ[volume] y := by
-  have huS := coeFn_mem_sobolevFields_of_mem_weakGaugeFixedKernel hx hbound hu
-  obtain ⟨y, hycont, huy⟩ :=
-    exists_continuous_ae_eq_of_mem_sobolevFields (by norm_num : (1 : ℝ) < 2) (huS 2)
-  have hyS (s : ℝ) : y ∈ sobolevFields s := mem_sobolevFields_of_ae_eq (huS s) huy
-  have hysmooth : ContDiff ℝ ∞ y :=
-    contDiff_infty.2 fun k ↦
-      contDiff_of_mem_sobolevFields (s := (k : ℝ) + 2) (by linarith) (hyS (k + 2)) hycont
-  -- By Green's identity, `L_x y` pairs to zero against every smooth test field on `ℂ`.
-  have hpair (φ : TestFunction (⊤ : Opens ℂ) (EuclideanSpace ℝ (Fin 4)) (⊤ : ℕ∞)) :
-      ∫ z, ⟪(φ : ℂ → EuclideanSpace ℝ (Fin 4)) z, gaugeFixedOperator x y z⟫ =
-        ∫ z, ⟪(φ : ℂ → EuclideanSpace ℝ (Fin 4)) z, (0 : ℂ → EuclideanSpace ℝ (Fin 4)) z⟫ := by
-    simp only [Pi.zero_apply, inner_zero_right, integral_zero]
-    calc ∫ z, ⟪(φ : ℂ → EuclideanSpace ℝ (Fin 4)) z, gaugeFixedOperator x y z⟫
-        = ∫ z, ⟪gaugeFixedOperator x y z, (φ : ℂ → EuclideanSpace ℝ (Fin 4)) z⟫ :=
-          integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)
-      _ = ∫ z, ⟪y z, gaugeFixedAdjoint x φ z⟫ :=
-          integral_inner_gaugeFixedOperator_of_hasCompactSupport_right hx.continuous
-            (hysmooth.of_le (by simp)) (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-      _ = ∫ z, ⟪u z, gaugeFixedAdjoint x φ z⟫ :=
-          integral_congr_ae (huy.symm.mono fun _ hz ↦ by simp only [hz])
-      _ = 0 :=
-          (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu φ (φ.contDiff.of_le (by simp))
-            φ.hasCompactSupport
-  have hLy_cont : Continuous (gaugeFixedOperator x y) :=
-    continuous_gaugeFixedOperator hx.continuous (hysmooth.of_le (by simp))
-  have hae0 : gaugeFixedOperator x y =ᵐ[volume] 0 := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using
-      TauCeti.ae_eq_of_forall_integral_inner_eq (Ω := (⊤ : Opens ℂ)) (μ := volume)
-        (hLy_cont.locallyIntegrable.locallyIntegrableOn _)
-        (continuous_zero.locallyIntegrable.locallyIntegrableOn _) hpair
-  have hker : ∀ z, gaugeFixedOperator x y z = 0 :=
-    congrFun <| (hLy_cont.ae_eq_iff_eq volume continuous_zero).1 hae0
-  exact ⟨y, hysmooth, hyS,
-    mem_gaugeFixedKernel.2 ⟨hysmooth.of_le (by simp), memLp_of_mem_sobolevFields (hyS 0), hker⟩,
-    huy⟩
+  obtain ⟨y, hys, huy, hyk, hker⟩ :=
+    exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq hx hbound (Lp.memLp u)
+      (fun _ ↦ zero_mem _) continuous_zero fun η hη hηc ↦ by
+        simpa using (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc
+  have hyS (s : ℝ) : y ∈ sobolevFields s := sobolevFields_mono (Nat.le_ceil s) (hyk ⌈s⌉₊)
+  exact ⟨y, hys, hyS,
+    mem_gaugeFixedKernel.2 ⟨hys.of_le (by simp), memLp_of_mem_sobolevFields (hyS 0), hker⟩, huy⟩
 
 /-- At a smooth field `x` with bounded derivatives, `gaugeFixedKernelToWeak` is surjective. -/
 theorem gaugeFixedKernelToWeak_surjective (hx : ContDiff ℝ ∞ x)
@@ -569,9 +539,8 @@ orders, so `gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`. -/
 def framedGaugeFixedKernelEquivWeak {f : ContDiffBump (0 : ℝ)} {m : ℕ}
     (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j) (hcont : Continuous x) :
     gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x :=
-  gaugeFixedKernelEquivWeak (contDiff_of_forall_mem_framedFieldSpace hx hcont) fun i n ↦
-    exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace (k := n)
-      (s := ((n + 2 : ℕ) : ℝ)) (by push_cast; linarith) (hx (n + 2)) hcont i le_rfl
+  gaugeFixedKernelEquivWeak (contDiff_of_forall_mem_framedFieldSpace hcont hx) fun i n ↦
+    exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hcont i n (hx (n + 2))
 
 /-- `framedGaugeFixedKernelEquivWeak` agrees with `gaugeFixedKernelToWeak` on every element. -/
 @[simp]
@@ -588,9 +557,8 @@ theorem finiteDimensional_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace
     {f : ContDiffBump (0 : ℝ)} {m : ℕ} (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j)
     (hcont : Continuous x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     FiniteDimensional ℝ (weakGaugeFixedKernel x) :=
-  finiteDimensional_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hx hcont)
-    (fun i n ↦ exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace (k := n)
-      (s := ((n + 2 : ℕ) : ℝ)) (by push_cast; linarith) (hx (n + 2)) hcont i le_rfl)
+  finiteDimensional_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hcont hx)
+    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hcont i n (hx (n + 2)))
     hhol (tendsto_normSq_of_mem_framedFieldSpace (s := (2 : ℝ)) one_lt_two (hx 2) hcont)
 
 /-- **Exact real dimension `2 m` of `weakGaugeFixedKernel x` for fields in every `A_m^j`.** At a
@@ -602,6 +570,6 @@ theorem finrank_weakGaugeFixedKernel_eq_two_mul_of_forall_mem_framedFieldSpace
     Module.finrank ℝ (weakGaugeFixedKernel x) = 2 * m := by
   rw [← (framedGaugeFixedKernelEquivWeak hx hcont).finrank_eq]
   exact finrank_gaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace (s := (2 : ℝ)) one_lt_two
-    (hx 2) (contDiff_of_forall_mem_framedFieldSpace hx hcont) hhol
+    (hx 2) (contDiff_of_forall_mem_framedFieldSpace hcont hx) hhol
 
 end TauCeti.Vortex
