@@ -242,6 +242,7 @@ theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 
     fun hu ↦ by rw [sobolevReducedFunctional_eq_coe hu]; exact EReal.coe_ne_top _⟩
 
 /-- Taubes's functional on `H¹(ℂ)` never takes the value `⊥`. -/
+@[simp]
 theorem sobolevReducedFunctional_ne_bot (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional P u ≠ ⊥ := by
   by_cases hu : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
