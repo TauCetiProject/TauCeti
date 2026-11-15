@@ -251,9 +251,14 @@ private theorem isCoveredByDiffeomorphisms_sphereOrientation_two
     isRegularValue_iff.2 fun x hx ↦
       ((isRegularValue_sphereRotationFamily p hqp hqp').isRegularPoint hx).comp
         (isRegularPoint_iff.2 (hι x).surjective)
+  -- Stated for the composite of continuous maps that the rotations evaluate to below.
   have key := Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul
-    finrank_euclideanSpace_fin oP' o.sphereOrientation (f := ⟨f ∘ ι, by fun_prop⟩) hreg
-  rw [ContinuousMap.coe_mk, degreeAtRegularValue_comp_of_bijective (e := ι)
+    finrank_euclideanSpace_fin oP' o.sphereOrientation
+    (f := (⟨sphereRotationFamily p, continuous_sphereRotationFamily p⟩ :
+      C(P, sphere (0 : F) 1)).comp ⟨ι, ι.continuous⟩)
+    (by rwa [ContinuousMap.coe_comp, ContinuousMap.coe_mk, ContinuousMap.coe_mk])
+  rw [ContinuousMap.coe_comp, ContinuousMap.coe_mk, ContinuousMap.coe_mk,
+    degreeAtRegularValue_comp_of_bijective (e := ι)
     ι.toHomeomorph.bijective (oP.isOrientationPreservingAt_pullback _ hι _)
     (hf.mdifferentiable (by simp)), o.degreeAtRegularValue_sphereRotationFamily_of_even p hm hqp
     hqp'] at key
