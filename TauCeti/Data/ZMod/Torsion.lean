@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.Data.Nat.Factorization.Basic
 public import TauCeti.Data.ZMod.MulCastHom
 
 /-!
@@ -29,7 +30,10 @@ exactly when it is the reduction of a multiple of `p ^ n`
 (`ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul`). In the first nontrivial case, an element of
 `ZMod (p ^ 2)` is killed by `p` exactly when it reduces to `0` modulo `p`
 (`ZMod.cast_eq_zero_iff_natCast_mul_eq_zero`); this is what prevents a character of order `p`
-from lifting modulo `p ^ 2`.
+from lifting modulo `p ^ 2`. More generally, for a prime `p` and `c ≠ 0`, multiplying by `c` in
+`ZMod (p ^ (n + v))` with `c.factorization p ≤ v` determines reduction modulo `p ^ n`
+(`ZMod.natCast_mul_eq_zero_iff_castHom_pow_eq_zero` and
+`ZMod.castHom_pow_eq_of_natCast_mul_eq`).
 -/
 
 public section
@@ -63,6 +67,62 @@ theorem zsmul_eq_zero_iff_exists_eq_pow_mul {p n : ℕ} [NeZero p] {x : ZMod (p 
     (p : ℤ) • x = 0 ↔ ∃ t : ℤ, x = (((p : ℤ) ^ n * t : ℤ) : ZMod (p ^ (n + 1))) := by
   rw [zsmul_eq_mul, Int.cast_natCast,
     natCast_mul_eq_zero_iff_exists_eq_mul (pow_succ' p n).symm (NeZero.ne p), Nat.cast_pow]
+
+/-- Multiplying by `m * u` with `u` coprime to `N = m * k` kills `x : ZMod N` exactly when `x`
+reduces to `0` modulo `k`. -/
+theorem natCast_mul_eq_zero_iff_of_coprime {m u k N : ℕ} (h : m * k = N) (hm : m ≠ 0)
+    (hu : Nat.Coprime u N) (x : ZMod N) :
+    ((m * u : ℕ) : ZMod N) * x = 0 ↔ castHom (h ▸ dvd_mul_left k m) (ZMod k) x = 0 := by
+  have hunit : IsUnit (u : ZMod N) := by
+    rw [← coe_unitOfCoprime u hu]
+    exact Units.isUnit _
+  rw [Nat.cast_mul, mul_comm (m : ZMod N) (u : ZMod N), mul_assoc, hunit.mul_right_eq_zero,
+    natCast_mul_eq_zero_iff k h hm]
+
+/-- For a prime `p` and `c ≠ 0`, an element of `ZMod (p ^ (n + c.factorization p))` is killed by
+`c` if and only if its reduction modulo `p ^ n` vanishes. -/
+theorem natCast_mul_eq_zero_iff_castHom_pow_eq_zero {p c n : ℕ} (hp : p.Prime) (hc : c ≠ 0)
+    (z : ZMod (p ^ (n + c.factorization p))) :
+    (c : ZMod (p ^ (n + c.factorization p))) * z = 0 ↔
+      castHom (pow_dvd_pow p (Nat.le_add_right n _)) (ZMod (p ^ n)) z = 0 := by
+  let e := c.factorization p
+  have hfact : p ^ e * (c / p ^ e) = c := Nat.ordProj_mul_ordCompl_eq_self c p
+  have hcop : Nat.Coprime (c / p ^ e) (p ^ (n + e)) :=
+    (Nat.coprime_ordCompl hp hc).symm.pow_right (n + e)
+  have hpow : p ^ e * p ^ n = p ^ (n + e) := by rw [← pow_add, add_comm]
+  have hc' : (c : ZMod (p ^ (n + e))) = ((p ^ e * (c / p ^ e) : ℕ) : ZMod (p ^ (n + e))) :=
+    congrArg Nat.cast hfact.symm
+  rw [hc', natCast_mul_eq_zero_iff_of_coprime hpow (pow_ne_zero e hp.ne_zero) hcop]
+
+/-- **Prime-power cancellation in `ZMod`.** If `p` is prime, `c ≠ 0`, and `c.factorization p ≤ v`,
+then `(c : ZMod (p ^ (n + v))) * x = (c : ZMod (p ^ (n + v))) * y` implies that `x` and `y` have
+the same reduction in `ZMod (p ^ n)`. -/
+theorem castHom_pow_eq_of_natCast_mul_eq {p c n v : ℕ} (hp : p.Prime) (hc : c ≠ 0)
+    (hv : c.factorization p ≤ v) {x y : ZMod (p ^ (n + v))}
+    (hxy : (c : ZMod (p ^ (n + v))) * x = (c : ZMod (p ^ (n + v))) * y) :
+    castHom (pow_dvd_pow p (Nat.le_add_right n v)) (ZMod (p ^ n)) x =
+      castHom (pow_dvd_pow p (Nat.le_add_right n v)) (ZMod (p ^ n)) y := by
+  set e := c.factorization p
+  have heq : n + v = (n + (v - e)) + e := by omega
+  have hsub : (c : ZMod (p ^ (n + v))) * (x - y) = 0 := by rw [mul_sub, sub_eq_zero, hxy]
+  let φ : ZMod (p ^ (n + v)) ≃+* ZMod (p ^ ((n + (v - e)) + e)) := ZMod.ringEquivCongr (by rw [heq])
+  have hφ : (c : ZMod (p ^ ((n + (v - e)) + e))) * φ (x - y) = 0 := by
+    rw [← map_natCast φ c, ← map_mul, hsub, map_zero]
+  have hzero : castHom (pow_dvd_pow p (Nat.le_add_right (n + (v - e)) e))
+      (ZMod (p ^ (n + (v - e)))) (φ (x - y)) = 0 :=
+    (natCast_mul_eq_zero_iff_castHom_pow_eq_zero hp hc (φ (x - y))).1 hφ
+  have hcast : castHom (pow_dvd_pow p (Nat.le_add_right n v)) (ZMod (p ^ n)) (x - y) =
+      castHom (pow_dvd_pow p (Nat.le_add_right n (v - e))) (ZMod (p ^ n))
+        (castHom (pow_dvd_pow p (Nat.le_add_right (n + (v - e)) e))
+          (ZMod (p ^ (n + (v - e)))) (φ (x - y))) := by
+    have hcomp :
+        (castHom (pow_dvd_pow p (Nat.le_add_right n (v - e))) (ZMod (p ^ n))).comp
+          ((castHom (pow_dvd_pow p (Nat.le_add_right (n + (v - e)) e))
+            (ZMod (p ^ (n + (v - e))))).comp φ.toRingHom) =
+          castHom (pow_dvd_pow p (Nat.le_add_right n v)) (ZMod (p ^ n)) :=
+      Subsingleton.elim _ _
+    exact (RingHom.congr_fun hcomp (x - y)).symm
+  rw [← sub_eq_zero, ← map_sub, hcast, hzero, map_zero]
 
 end ZMod
 

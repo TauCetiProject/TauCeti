@@ -100,7 +100,7 @@ end TauCeti.MonoidAlgebra
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
+variable {R : Type*} [Semiring R] {G : Type*} [Group G]
 
 /-- Restricting a finitely generated projective `R[G]`-module `X` of a group `G` to the
 group algebra of a finite-index subgroup `C` gives a finitely generated projective `R[C]`-module,
@@ -114,9 +114,9 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
     (hX : ∀ (r : R[C]) (x : X), r • x = mapDomainRingHom R C.subtype r • x) :
     IsScalarTower R[C] R[G] R[G] ∧ IsScalarTower R[C] R[G] X ∧ IsScalarTower R R[C] X ∧
       Module.Finite R[C] X ∧ Module.Projective R[C] X := by
-  let φ : R[C] →ₐ[R] R[G] := mapDomainAlgHom R R C.subtype
-  obtain rfl : inst = (mapDomainRingHom R C.subtype).toModule := Module.ext' _ _ hA
-  let _ : Module R[C] R[G] := (mapDomainRingHom R C.subtype).toModule
+  let φ : R[C] →+* R[G] := mapDomainRingHom R C.subtype
+  obtain rfl : inst = φ.toModule := Module.ext' _ _ hA
+  let _ : Module R[C] R[G] := φ.toModule
   have hAA : IsScalarTower R[C] R[G] R[G] := ⟨fun r s t ↦ mul_assoc (φ r) s t⟩
   let b := TauCeti.MonoidAlgebra.basisCosets R C.subtype C.subtype_injective
   have : Finite (G ⧸ C.subtype.range) := by
@@ -129,6 +129,7 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
     exact mul_smul (φ r) s x⟩
   refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans R[G] X, .trans R[G] X⟩
   rw [hX (a • r) x, hX r x]
-  exact (congrArg (· • x) (map_smul φ a r)).trans (smul_assoc a (φ r) x)
+  have hφ : φ (a • r) = a • φ r := mapDomain_smul C.subtype a r
+  exact (congrArg (· • x) hφ).trans (smul_assoc a (φ r) x)
 
 end MonoidAlgebra
