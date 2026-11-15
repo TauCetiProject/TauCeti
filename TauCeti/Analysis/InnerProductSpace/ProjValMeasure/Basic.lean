@@ -279,12 +279,10 @@ theorem diag_real_univ (P : ProjValMeasure X H) (ξ : H) :
 theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
     P.diag ξ Set.univ = ‖ξ‖ₑ ^ 2 := by
   calc
-    P.diag ξ Set.univ =
-        ENNReal.ofReal ((P.diag ξ Set.univ).toReal) :=
-      (ENNReal.ofReal_toReal
-        (measure_ne_top (μ := P.diag ξ) (s := Set.univ))).symm
-    _ = ENNReal.ofReal (‖ξ‖ ^ 2) :=
-      congrArg ENNReal.ofReal (P.diag_real_univ ξ)
+    P.diag ξ Set.univ = ENNReal.ofReal ((P.diag ξ).real Set.univ) := by
+      rw [measureReal_def,
+        ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := Set.univ))]
+    _ = ENNReal.ofReal (‖ξ‖ ^ 2) := by rw [P.diag_real_univ]
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
 
