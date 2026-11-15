@@ -54,6 +54,7 @@ estimates, paraproducts) specialize to `H^s`.
 
 * `TemperedDistribution.MemSobolev.memBesov`: `H^{s,p} ⊆ B^s_{p,∞}` for tempered distributions.
 * `TemperedDistribution.MemBesov.memSobolev`: `B^s_{p,1} ⊆ H^{s,p}` for tempered distributions.
+* `TemperedDistribution.MemSobolev.of_le`: consequently `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`.
 * `BesselPotentialSpace.toBesovSpace`: the inclusion `H^{s,p} → B^s_{p,∞}` as a continuous
   linear map.
 * `TauCeti.BesovSpace.toBesselPotentialSpace`: the inclusion `B^s_{p,1} → H^{s,p}` as a
@@ -172,6 +173,15 @@ theorem MemBesov.memSobolev {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p 1) : u.Mem
     rw [ENNReal.toReal_one, Real.rpow_one, Real.norm_of_nonneg (by positivity)]
   obtain ⟨g, hg, -⟩ := hC u f hf hsum
   exact ⟨g, hg⟩
+
+/-- **Monotonicity of the Bessel-potential scale.** `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`, for every
+`1 ≤ p ≤ ∞` and every complex Banach space `F`. For `s' < s` this is the chain
+`H^{s,p} ⊆ B^s_{p,∞} ⊆ B^{s'}_{p,1} ⊆ H^{s',p}`. -/
+theorem MemSobolev.of_le {u : 𝓢'(E, F)} (hu : u.MemSobolev s p) {s' : ℝ} (h : s' ≤ s) :
+    u.MemSobolev s' p := by
+  rcases h.lt_or_eq with h | rfl
+  · exact ((hu.memBesov default).of_lt h one_ne_zero).memSobolev
+  · exact hu
 
 end TemperedDistribution
 
