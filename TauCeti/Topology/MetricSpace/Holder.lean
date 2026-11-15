@@ -70,6 +70,7 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   constant by `‖a‖ ^ r`.
 * `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
+* `HolderOnWith.isBounded_image`: a Hölder function maps bounded sets to bounded sets.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
 * `Isometry.comp_holderOnWith`, `Isometry.comp_holderWith`: postcomposition with an isometry
@@ -256,6 +257,16 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
     dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) :=
   hf.dist_le_of_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt (Metric.mem_ball.1 hx)))
     (Metric.mem_ball.1 hx).le
+
+/-- A Hölder function maps a bounded set to a bounded set. -/
+theorem HolderOnWith.isBounded_image {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
+    {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hs : Bornology.IsBounded s) : Bornology.IsBounded (f '' s) := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · simp
+  refine (Metric.isBounded_closedBall (x := f x₀) (r := C * Metric.diam s ^ (r : ℝ))).subset ?_
+  rintro _ ⟨x, hx, rfl⟩
+  exact Metric.mem_closedBall.2 (hf.dist_le_of_le hx hx₀ (Metric.dist_le_diam_of_mem hs hx hx₀))
 
 /-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
 assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
