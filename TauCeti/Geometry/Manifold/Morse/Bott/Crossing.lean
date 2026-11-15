@@ -57,6 +57,15 @@ In the namespace `TauCeti.SmoothEmbedding`:
   crossing the level of a Morse–Bott critical submanifold attaches its negative disc bundle, up to
   a strong deformation retraction.
 
+In the namespace `TauCeti`:
+
+* `exists_sublevel_union_image_deformation`: the attachment theorem
+  `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` with its tube data given in the
+  source of a partial diffeomorphism into `M`.
+* `exists_sublevel_union_image_negativeDiscBundle_deformation`: crossing the level of a quadratic
+  normal form `f ∘ Θ = c + ½ Q` on a Riemannian vector bundle over a compact base attaches the
+  image under `Θ` of the negative disc bundle of `Q`.
+
 ## References
 
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
@@ -135,7 +144,7 @@ on an open set `T` in the source of a partial diffeomorphism `Θ` into `M`, rath
 tube is `Θ '' T` and the attached disc bundle is the image of `{x ∈ T | t x = 0, s x ≤ ε}`. The
 tangent vectors killed by `ds` but not by `dt` are not required: they are the velocities of the
 curves `τ ↦ Θ (φ (τ, x))` at `τ = 1`. -/
-private theorem exists_sublevel_union_image_deformation (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+theorem exists_sublevel_union_image_deformation (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hT : IsOpen T) (hTΘ : T ⊆ Θ.source) (hs : ContMDiffOn IN 𝓘(ℝ) ∞ s T)
     (ht : ContMDiffOn IN 𝓘(ℝ) ∞ t T) (hs₀ : ∀ x ∈ T, 0 ≤ s x) (ht₀ : ∀ x ∈ T, 0 ≤ t x)
     (hf : ∀ x ∈ T, f (Θ x) = c - s x + t x) (hφc : Continuous φ)
@@ -536,16 +545,18 @@ respectively positive, definite, with smooth projections. Then for all small `ε
 disc bundle `{x ∈ Nn | -½ Q (x, x) ≤ ε}` lies in the source of `Θ`, and if the band
 `f⁻¹[c - ε, c + ε]` is compact with its critical points on the image of the zero section, then
 `M_{c-ε}` with the image of this disc bundle is a strong deformation retract of `M_{c+ε}`. -/
-private theorem exists_tube_deformation (hQ : ∀ b, (Q b).IsSymm)
+theorem exists_sublevel_union_image_negativeDiscBundle_deformation (hQ : ∀ b, (Q b).IsSymm)
     (hQNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, Q b v w = 0)
     (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, inner ℝ v w = 0)
     (hQN : ∀ b, ∀ v ∈ Nn b, v ≠ 0 → Q b v v < 0) (hQP : ∀ b, ∀ v ∈ Pp b, v ≠ 0 → 0 < Q b v v)
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hzero : ∀ b, (⟨b, 0⟩ : TotalSpace F V) ∈ Θ.source)
     (hΘf : ∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * Q x.proj x.2 x.2)
     (hneg : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) ∞
-      fun x : TotalSpace F V ↦ (⟨x.proj, negPart hNP x.proj x.2⟩ : TotalSpace F V))
+      fun x : TotalSpace F V ↦
+        (⟨x.proj, (Nn x.proj).projection (Pp x.proj) (hNP x.proj) x.2⟩ : TotalSpace F V))
     (hpos : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) ∞
-      fun x : TotalSpace F V ↦ (⟨x.proj, posPart hNP x.proj x.2⟩ : TotalSpace F V)) :
+      fun x : TotalSpace F V ↦
+        (⟨x.proj, (Pp x.proj).projection (Nn x.proj) (hNP x.proj).symm x.2⟩ : TotalSpace F V)) :
     ∃ ε₀ > 0, ∀ ε ∈ Ioc 0 ε₀,
       {x : TotalSpace F V | x.2 ∈ Nn x.proj ∧ -(2⁻¹ * Q x.proj x.2 x.2) ≤ ε} ⊆ Θ.source ∧
       (IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
@@ -694,7 +705,7 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation
   have hΘf' (x) (hx : x ∈ Θ.source) : f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2 := by
     rw [hΘf x hx, hc]
   have hfi (s : S) : ContMDiffAt I 𝓘(ℝ) (∞ + 2) f (i s) := (hf.of_le htop).contMDiffAt
-  obtain ⟨ε₀, hε₀, hmain⟩ := exists_tube_deformation
+  obtain ⟨ε₀, hε₀, hmain⟩ := exists_sublevel_union_image_negativeDiscBundle_deformation
     (Q := fun s ↦ h.normalHessian hn s)
     (fun s ↦ h.isCompl_negativeNormalSpace_positiveNormalSpace hn g.toRiemannianMetric
       g.toRiemannianMetric s)
