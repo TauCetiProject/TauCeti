@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
-import Mathlib.Data.Nat.Factorization.Basic
-import Mathlib.Data.Nat.Log
+import TauCeti.Data.Nat.Log
+import TauCeti.Data.Nat.Prime.Basic
 
 /-!
 # `p`-typical curves and Cartier's prime-to-`p` projector
@@ -84,28 +85,6 @@ namespace FormalGroup
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-/-- For a prime `p`, a natural number `k` has no prime divisor distinct from `p` if and only if
-`k` is a power of `p`. -/
-private theorem forall_prime_ne_not_dvd_iff_exists_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
-    (∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) ↔ ∃ m : ℕ, p ^ m = k := by
-  constructor
-  · intro hk
-    rcases eq_or_ne k 0 with rfl | hk0
-    · obtain ⟨q, hqp1, hq⟩ := Nat.exists_infinite_primes (p + 1)
-      exact False.elim (hk q hq (by omega) (dvd_zero q))
-    · by_cases h1 : ordCompl[p] k = 1
-      · exact ⟨k.factorization p, by
-          simpa only [h1, mul_one] using Nat.ordProj_mul_ordCompl_eq_self k p⟩
-      · obtain ⟨q, hq, hqd⟩ := Nat.exists_prime_and_dvd h1
-        have hqp : q ≠ p := fun hEq ↦ Nat.not_dvd_ordCompl hp hk0 (hEq ▸ hqd)
-        exact False.elim (hk q hq hqp (hqd.trans (Nat.ordCompl_dvd k p)))
-  · rintro ⟨m, rfl⟩ q hq hqp hqd
-    exact hqp ((Nat.prime_dvd_prime_iff_eq hq hp).mp (hq.dvd_of_dvd_pow hqd))
-
-private theorem pow_log_eq_self_iff_exists_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
-    p ^ Nat.log p k = k ↔ ∃ m : ℕ, p ^ m = k :=
-  ⟨fun h ↦ ⟨Nat.log p k, h⟩, fun ⟨m, hm⟩ ↦ hm ▸ by rw [Nat.log_pow hp.one_lt]⟩
-
 /-! ### `p`-typical curves -/
 
 namespace Curve
@@ -138,14 +117,10 @@ theorem isPTypical_iff_forall_frobeniusCurve_eq_zero {γ : F.Curve} {p : ℕ} (h
       ∀ n : ℕ, (hn : n ≠ 0) → (∀ k : ℕ, p ^ k ≠ n) → F.frobeniusCurve n hn γ = 0 := by
   constructor
   · intro hγ n hn hpow
-    have hnot : ¬ ∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ n :=
-      mt (forall_prime_ne_not_dvd_iff_exists_pow hp n).mp (not_exists.mpr hpow)
-    push Not at hnot
-    obtain ⟨q, hq, hqp, hqn⟩ := hnot
+    obtain ⟨q, hq, hqp, hqn⟩ := (Nat.exists_prime_ne_dvd_iff_forall_pow_ne hp n).mpr hpow
     exact hγ.frobeniusCurve_eq_zero_of_prime_dvd hn hq hqp hqn
   · intro h q hq hqp
-    refine h q hq.ne_zero fun k hk ↦ hqp ?_
-    exact (Nat.prime_dvd_prime_iff_eq hq hp).mp (hq.dvd_of_dvd_pow (dvd_of_eq hk.symm))
+    exact h q hq.ne_zero fun k hk ↦ hqp (Nat.prime_eq_prime_of_dvd_pow hq hp (dvd_of_eq hk.symm))
 
 @[simp]
 theorem IsPTypical.zero (p : ℕ) : (0 : F.Curve).IsPTypical p :=
@@ -220,8 +195,8 @@ theorem IsPTypical.verschiebungCurve_of_coprime {γ : F.Curve} {p : ℕ} (hγ : 
 @[simp]
 theorem isPTypical_verschiebungCurve_pow_iff {γ : F.Curve} {p : ℕ} (hp : p.Prime) (k : ℕ) :
     (F.verschiebungCurve (p ^ k) (pow_ne_zero k hp.ne_zero) γ).IsPTypical p ↔ γ.IsPTypical p :=
-  isPTypical_verschiebungCurve_iff_of_coprime (pow_ne_zero k hp.ne_zero) fun q hq hqp ↦ by
-    simpa only [pow_one] using Nat.coprime_pow_primes 1 k hq hp hqp
+  isPTypical_verschiebungCurve_iff_of_coprime (pow_ne_zero k hp.ne_zero)
+    (hp.coprime_pow_of_prime_ne k)
 
 /-- On the additive formal group law over a ring in which every prime `q ≠ p` is invertible, a
 curve is `p`-typical if and only if its coefficients vanish in all degrees divisible by a prime
@@ -250,10 +225,7 @@ theorem isPTypical_𝔾ₐ_iff_of_prime {p : ℕ} (hp : p.Prime)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (γ : (𝔾ₐ (R := R)).Curve) :
     γ.IsPTypical p ↔ ∀ k : ℕ, (∀ m : ℕ, p ^ m ≠ k) → PowerSeries.coeff k γ.toPowerSeries = 0 := by
   rw [isPTypical_𝔾ₐ_iff p hunit]
-  refine forall_congr' fun k ↦ imp_congr_left ?_
-  rw [← not_exists, ← forall_prime_ne_not_dvd_iff_exists_pow hp k]
-  push Not
-  rfl
+  exact forall_congr' fun k ↦ imp_congr_left (Nat.exists_prime_ne_dvd_iff_forall_pow_ne hp k)
 
 end Curve
 
@@ -278,22 +250,16 @@ section Hom
 variable {R : Type*} [CommRing R] {F G : FormalGroup R} [F.IsComm] [G.IsComm]
 
 /-- Homomorphisms of formal group laws carry `p`-typical curves to `p`-typical curves. -/
-theorem FormalGroupHom.mapCurve_isPTypical (f : FormalGroupHom F G) {γ : F.Curve} {p : ℕ}
+theorem FormalGroupHom.isPTypical_mapCurve (f : FormalGroupHom F G) {γ : F.Curve} {p : ℕ}
     (hγ : γ.IsPTypical p) : (f.mapCurve γ).IsPTypical p := fun q hq hqp ↦ by
   rw [← f.mapCurve_frobeniusCurve q hq.ne_zero, hγ q hq hqp, map_zero]
 
 /-- Isomorphisms of formal group laws preserve and reflect `p`-typicality of curves. -/
-@[simp]
-theorem FormalGroupIso.mapCurve_toHom_isPTypical_iff (e : FormalGroupIso F G) {γ : F.Curve}
-    {p : ℕ} : (e.toHom.mapCurve γ).IsPTypical p ↔ γ.IsPTypical p := by
-  refine ⟨fun h ↦ ?_, e.toHom.mapCurve_isPTypical⟩
-  have h' := e.invHom.mapCurve_isPTypical h
-  rwa [← e.curveEquiv_apply, ← e.curveEquiv_symm_apply, e.curveEquiv.symm_apply_apply] at h'
-
-/-- Isomorphisms of formal group laws preserve and reflect `p`-typicality of curves. -/
-theorem FormalGroupIso.curveEquiv_isPTypical_iff (e : FormalGroupIso F G) {γ : F.Curve} {p : ℕ} :
+theorem FormalGroupIso.isPTypical_curveEquiv_iff (e : FormalGroupIso F G) {γ : F.Curve} {p : ℕ} :
     (e.curveEquiv γ).IsPTypical p ↔ γ.IsPTypical p := by
-  rw [e.curveEquiv_apply, e.mapCurve_toHom_isPTypical_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [e.curveEquiv_apply]; exact e.toHom.isPTypical_mapCurve h⟩
+  have h' := e.invHom.isPTypical_mapCurve h
+  rwa [← e.curveEquiv_symm_apply, e.curveEquiv.symm_apply_apply] at h'
 
 /-- An isomorphism of commutative formal group laws induces an additive equivalence between their
 subgroups of `p`-typical curves. -/
@@ -301,11 +267,11 @@ noncomputable def FormalGroupIso.pTypicalCurvesEquiv (e : FormalGroupIso F G) (p
     F.pTypicalCurves p ≃+ G.pTypicalCurves p where
   toFun γ :=
     ⟨e.curveEquiv γ.1, (FormalGroup.mem_pTypicalCurves G p _).mpr
-      (e.curveEquiv_isPTypical_iff.mpr ((FormalGroup.mem_pTypicalCurves F p _).mp γ.2))⟩
+      (e.isPTypical_curveEquiv_iff.mpr ((FormalGroup.mem_pTypicalCurves F p _).mp γ.2))⟩
   invFun γ :=
     ⟨e.curveEquiv.symm γ.1, (FormalGroup.mem_pTypicalCurves F p _).mpr <| by
       rw [← e.curveEquiv_symm]
-      exact e.symm.curveEquiv_isPTypical_iff.mpr ((FormalGroup.mem_pTypicalCurves G p _).mp γ.2)⟩
+      exact e.symm.isPTypical_curveEquiv_iff.mpr ((FormalGroup.mem_pTypicalCurves G p _).mp γ.2)⟩
   left_inv γ := Subtype.ext (e.curveEquiv.symm_apply_apply γ.1)
   right_inv γ := Subtype.ext (e.curveEquiv.apply_symm_apply γ.1)
   map_add' γ₁ γ₂ := Subtype.ext (map_add e.curveEquiv γ₁.1 γ₂.1)
@@ -340,10 +306,9 @@ theorem Curve.isPTypical_iff_coeff_subst_log_eq_zero [Algebra ℚ R] {F : Formal
     γ.IsPTypical p ↔
       ∀ k : ℕ, (∀ m : ℕ, p ^ m ≠ k) →
         PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) = 0 := by
-  have hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R) := fun q hq _ ↦ by
-    simpa only [map_natCast] using
-      (Ne.isUnit (Nat.cast_ne_zero.mpr hq.ne_zero : (q : ℚ) ≠ 0)).map (algebraMap ℚ R)
-  rw [← F.logIso.curveEquiv_isPTypical_iff, Curve.isPTypical_𝔾ₐ_iff_of_prime hp hunit]
+  rw [← F.logIso.isPTypical_curveEquiv_iff,
+    Curve.isPTypical_𝔾ₐ_iff_of_prime hp
+      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero hq.ne_zero)]
   simp [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom]
 
 /-! ### Cartier's prime-to-`p` projector on curves -/
@@ -412,48 +377,76 @@ private theorem frobeniusCurve_stagePTypicalProjectorCurve_of_le
         ih, map_zero]
     · exact ih
 
+private theorem stagePTypicalProjectorCurve_rel_induction {G : FormalGroup S} [G.IsComm]
+    (hF : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (hG : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : S))
+    {P : (F.Curve →+ F.Curve) → (G.Curve →+ G.Curve) → Prop}
+    (hid : P (AddMonoidHom.id F.Curve) (AddMonoidHom.id G.Curve))
+    (hcomp : ∀ {q : ℕ} {e₁ : F.Curve →+ F.Curve} {e₂ : G.Curve →+ G.Curve}
+      (hq : q.Prime) (hqp : q ≠ p),
+      P e₁ e₂ →
+        P ((F.cartierProjectorCurve q hq.ne_zero (hF q hq hqp)).comp e₁)
+          ((G.cartierProjectorCurve q hq.ne_zero (hG q hq hqp)).comp e₂))
+    (N : ℕ) :
+    P (stagePTypicalProjectorCurve F p hF N) (stagePTypicalProjectorCurve G p hG N) := by
+  induction N with
+  | zero => exact hid
+  | succ N ih =>
+    dsimp only [stagePTypicalProjectorCurve]
+    split_ifs with h
+    · exact hcomp h.1 h.2 ih
+    · exact ih
+
+private theorem stagePTypicalProjectorCurve_induction
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    {Q : (F.Curve →+ F.Curve) → Prop} (hid : Q (AddMonoidHom.id F.Curve))
+    (hcomp : ∀ {q : ℕ} {e : F.Curve →+ F.Curve} (hq : q.Prime) (hqp : q ≠ p),
+      Q e → Q ((F.cartierProjectorCurve q hq.ne_zero (hunit q hq hqp)).comp e))
+    (N : ℕ) :
+    Q (stagePTypicalProjectorCurve F p hunit N) :=
+  stagePTypicalProjectorCurve_rel_induction F p (G := F) hunit hunit (P := fun e _ ↦ Q e) hid
+    (fun hq hqp h ↦ hcomp hq hqp h) N
+
+private theorem apply_stagePTypicalProjectorCurve {G : FormalGroup S} [G.IsComm]
+    (hF : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (hG : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : S))
+    (Φ : F.Curve → G.Curve)
+    (hΦ : ∀ {q : ℕ} (hq : q.Prime) (hqp : q ≠ p) (δ : F.Curve),
+      Φ (F.cartierProjectorCurve q hq.ne_zero (hF q hq hqp) δ) =
+        G.cartierProjectorCurve q hq.ne_zero (hG q hq hqp) (Φ δ))
+    (N : ℕ) (γ : F.Curve) :
+    Φ (stagePTypicalProjectorCurve F p hF N γ) =
+      stagePTypicalProjectorCurve G p hG N (Φ γ) :=
+  stagePTypicalProjectorCurve_rel_induction F p hF hG (P := fun e₁ e₂ ↦ Φ (e₁ γ) = e₂ (Φ γ)) rfl
+    (fun hq hqp ih ↦ by rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ← ih, hΦ hq hqp]) N
+
 private theorem stagePTypicalProjectorCurve_cartierProjectorCurve_comm
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q : ℕ} (hq : q.Prime) (hqp : q ≠ p)
     (N : ℕ) (γ : F.Curve) :
     stagePTypicalProjectorCurve F p hunit N
         (F.cartierProjectorCurve q hq.ne_zero (hunit q hq hqp) γ) =
       F.cartierProjectorCurve q hq.ne_zero (hunit q hq hqp)
-        (stagePTypicalProjectorCurve F p hunit N γ) := by
-  induction N with
-  | zero => rfl
-  | succ N ih =>
-    dsimp only [stagePTypicalProjectorCurve]
-    split_ifs with h
-    · rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ih, F.cartierProjectorCurve_comm]
-    · exact ih
+        (stagePTypicalProjectorCurve F p hunit N γ) :=
+  (apply_stagePTypicalProjectorCurve F p hunit hunit
+    (F.cartierProjectorCurve q hq.ne_zero (hunit q hq hqp))
+    (fun hr hrp δ ↦ F.cartierProjectorCurve_comm hq.ne_zero hr.ne_zero
+      (hunit q hq hqp) (hunit _ hr hrp) δ) N γ).symm
 
 private theorem map_stagePTypicalProjectorCurve
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (φ : R →+* S) (N : ℕ) (γ : F.Curve) :
     Curve.map φ (stagePTypicalProjectorCurve F p hR N γ) =
-      stagePTypicalProjectorCurve (F.map φ) p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map φ)
-        N (Curve.map φ γ) := by
-  induction N with
-  | zero => rfl
-  | succ N ih =>
-    dsimp only [stagePTypicalProjectorCurve]
-    split_ifs with h
-    · rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, F.map_cartierProjectorCurve, ih]
-    · exact ih
+      stagePTypicalProjectorCurve (F.map φ) p (fun q hq hqp ↦ (hR q hq hqp).natCast_map φ)
+        N (Curve.map φ γ) :=
+  apply_stagePTypicalProjectorCurve F p hR (fun q hq hqp ↦ (hR q hq hqp).natCast_map φ)
+    (Curve.map φ) (fun hq hqp δ ↦ F.map_cartierProjectorCurve φ _ hq.ne_zero (hR _ hq hqp) δ) N γ
 
 private theorem mapCurve_stagePTypicalProjectorCurve {G : FormalGroup R} [G.IsComm]
     (f : TauCeti.FormalGroupHom F G) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
     (N : ℕ) (γ : F.Curve) :
     f.mapCurve (stagePTypicalProjectorCurve F p hunit N γ) =
-      stagePTypicalProjectorCurve G p hunit N (f.mapCurve γ) := by
-  induction N with
-  | zero => rfl
-  | succ N ih =>
-    dsimp only [stagePTypicalProjectorCurve]
-    split_ifs with h
-    · rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply,
-        f.mapCurve_cartierProjectorCurve, ih]
-    · exact ih
+      stagePTypicalProjectorCurve G p hunit N (f.mapCurve γ) :=
+  apply_stagePTypicalProjectorCurve F p hunit hunit f.mapCurve
+    (fun hq hqp δ ↦ f.mapCurve_cartierProjectorCurve _ hq.ne_zero (hunit _ hq hqp) δ) N γ
 
 /-- **Cartier's prime-to-`p` projector** on curves of a commutative formal group law `F`, when
 every prime `q ≠ p` is invertible in `R`: the `X`-adic infinite composite of the elementary
@@ -502,16 +495,11 @@ theorem isPTypical_pTypicalProjectorCurve (hunit : ∀ q : ℕ, q.Prime → q �
 theorem pTypicalProjectorCurve_eq_self (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
     {γ : F.Curve} (hγ : γ.IsPTypical p) :
     F.pTypicalProjectorCurve p hunit γ = γ := by
-  have hstage (N : ℕ) : stagePTypicalProjectorCurve F p hunit N γ = γ := by
-    induction N with
-    | zero => rfl
-    | succ N ih =>
-      dsimp only [stagePTypicalProjectorCurve]
-      split_ifs with h
-      · rw [AddMonoidHom.comp_apply, ih]
-        exact F.cartierProjectorCurve_eq_self (N + 1) (Nat.succ_ne_zero N)
-          (hunit (N + 1) h.1 h.2) (hγ (N + 1) h.1 h.2)
-      · exact ih
+  have hstage (N : ℕ) : stagePTypicalProjectorCurve F p hunit N γ = γ :=
+    stagePTypicalProjectorCurve_induction F p hunit (Q := fun e ↦ e γ = γ) rfl
+      (fun hq hqp ih ↦ by
+        rw [AddMonoidHom.comp_apply, ih]
+        exact F.cartierProjectorCurve_eq_self _ hq.ne_zero (hunit _ hq hqp) (hγ _ hq hqp)) N
   ext k
   rw [coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl γ, hstage k]
 
@@ -572,9 +560,8 @@ noncomputable def pTypicalCurveEquiv (hunit : ∀ q : ℕ, q.Prime → q ≠ p �
   map_add' γ₁ γ₂ := by
     apply Prod.ext
     · exact Subtype.ext (map_add _ γ₁ γ₂)
-    · refine Subtype.ext ?_
-      change _ - _ = (_ - _) + (_ - _)
-      rw [map_add]
+    · apply Subtype.ext
+      simp only [Prod.snd_add, AddSubgroup.coe_add, map_add]
       abel
 
 @[simp]
@@ -599,8 +586,8 @@ on the right. -/
 @[simp]
 theorem pTypicalProjectorCurve_cartierProjectorCurve_of_prime
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q : ℕ} (hq : q.Prime) (hqp : q ≠ p)
-    (hqR : IsUnit (q : R)) (γ : F.Curve) :
-    F.pTypicalProjectorCurve p hunit (F.cartierProjectorCurve q hq.ne_zero hqR γ) =
+    (γ : F.Curve) :
+    F.pTypicalProjectorCurve p hunit (F.cartierProjectorCurve q hq.ne_zero (hunit q hq hqp) γ) =
       F.pTypicalProjectorCurve p hunit γ := by
   ext k
   let N := max k q
@@ -615,10 +602,10 @@ projector. -/
 @[simp]
 theorem cartierProjectorCurve_pTypicalProjectorCurve_of_prime
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q : ℕ} (hq : q.Prime) (hqp : q ≠ p)
-    (hqR : IsUnit (q : R)) (γ : F.Curve) :
-    F.cartierProjectorCurve q hq.ne_zero hqR (F.pTypicalProjectorCurve p hunit γ) =
+    (γ : F.Curve) :
+    F.cartierProjectorCurve q hq.ne_zero (hunit q hq hqp) (F.pTypicalProjectorCurve p hunit γ) =
       F.pTypicalProjectorCurve p hunit γ :=
-  F.cartierProjectorCurve_eq_self q hq.ne_zero hqR
+  F.cartierProjectorCurve_eq_self q hq.ne_zero (hunit q hq hqp)
     (F.isPTypical_pTypicalProjectorCurve p hunit γ q hq hqp)
 
 /-- Cartier's Frobenius at any prime `q ≠ p` annihilates the image of Cartier's prime-to-`p`
@@ -636,7 +623,7 @@ theorem pTypicalProjectorCurve_verschiebungCurve_of_prime
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q : ℕ} (hq : q.Prime) (hqp : q ≠ p)
     (γ : F.Curve) :
     F.pTypicalProjectorCurve p hunit (F.verschiebungCurve q hq.ne_zero γ) = 0 := by
-  rw [← F.pTypicalProjectorCurve_cartierProjectorCurve_of_prime p hunit hq hqp (hunit q hq hqp),
+  rw [← F.pTypicalProjectorCurve_cartierProjectorCurve_of_prime p hunit hq hqp,
     F.cartierProjectorCurve_verschiebungCurve, map_zero]
 
 /-- Cartier's prime-to-`p` projector commutes with Verschiebung `V_n` whenever `n` is coprime to
@@ -648,16 +635,10 @@ theorem pTypicalProjectorCurve_verschiebungCurve_of_coprime
       F.verschiebungCurve n hn (F.pTypicalProjectorCurve p hunit γ) := by
   have hstage (N : ℕ) :
       stagePTypicalProjectorCurve F p hunit N (F.verschiebungCurve n hn γ) =
-        F.verschiebungCurve n hn (stagePTypicalProjectorCurve F p hunit N γ) := by
-    induction N with
-    | zero => rfl
-    | succ N ih =>
-      dsimp only [stagePTypicalProjectorCurve]
-      split_ifs with h
-      · rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ih,
-          F.cartierProjectorCurve_verschiebungCurve_of_coprime (Nat.succ_ne_zero N) hn
-            (hunit (N + 1) h.1 h.2) (hcop (N + 1) h.1 h.2)]
-      · exact ih
+        F.verschiebungCurve n hn (stagePTypicalProjectorCurve F p hunit N γ) :=
+    (apply_stagePTypicalProjectorCurve F p hunit hunit (F.verschiebungCurve n hn)
+      (fun hq hqp δ ↦ (F.cartierProjectorCurve_verschiebungCurve_of_coprime hq.ne_zero hn
+        (hunit _ hq hqp) (hcop _ hq hqp) δ).symm) N γ).symm
   ext k
   rw [coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl, hstage k]
   exact F.coeff_verschiebungCurve_congr n hn fun i hi ↦
@@ -670,7 +651,7 @@ theorem pTypicalProjectorCurve_verschiebungCurve_pow {p : ℕ} (hp : p.Prime)
       F.verschiebungCurve (p ^ k) (pow_ne_zero k hp.ne_zero)
         (F.pTypicalProjectorCurve p hunit γ) :=
   F.pTypicalProjectorCurve_verschiebungCurve_of_coprime p hunit (pow_ne_zero k hp.ne_zero)
-    (fun q hq hqp ↦ by simpa only [pow_one] using Nat.coprime_pow_primes 1 k hq hp hqp) γ
+    (hp.coprime_pow_of_prime_ne k) γ
 
 /-- Cartier's prime-to-`p` projector commutes with Frobenius `f_n` whenever `n` is coprime to every
 prime `q ≠ p`. -/
@@ -681,17 +662,10 @@ theorem frobeniusCurve_pTypicalProjectorCurve_of_coprime
       F.pTypicalProjectorCurve p hunit (F.frobeniusCurve n hn γ) := by
   have hstage (N : ℕ) :
       F.frobeniusCurve n hn (stagePTypicalProjectorCurve F p hunit N γ) =
-        stagePTypicalProjectorCurve F p hunit N (F.frobeniusCurve n hn γ) := by
-    induction N with
-    | zero => rfl
-    | succ N ih =>
-      dsimp only [stagePTypicalProjectorCurve]
-      split_ifs with h
-      · rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply,
-          F.frobeniusCurve_cartierProjectorCurve_of_coprime hn (Nat.succ_ne_zero N)
-            (hunit (N + 1) h.1 h.2) (hcop (N + 1) h.1 h.2).symm,
-          ih]
-      · exact ih
+        stagePTypicalProjectorCurve F p hunit N (F.frobeniusCurve n hn γ) :=
+    apply_stagePTypicalProjectorCurve F p hunit hunit (F.frobeniusCurve n hn)
+      (fun hq hqp δ ↦ F.frobeniusCurve_cartierProjectorCurve_of_coprime hn hq.ne_zero
+        (hunit _ hq hqp) (hcop _ hq hqp).symm δ) N γ
   ext k
   rw [F.coeff_frobeniusCurve_congr n hn
       (fun i hi ↦ coeff_pTypicalProjectorCurve_eq_stage F p hunit hi γ),
@@ -706,7 +680,7 @@ theorem frobeniusCurve_pTypicalProjectorCurve_pow {p : ℕ} (hp : p.Prime)
       F.pTypicalProjectorCurve p hunit
         (F.frobeniusCurve (p ^ k) (pow_ne_zero k hp.ne_zero) γ) :=
   F.frobeniusCurve_pTypicalProjectorCurve_of_coprime p hunit (pow_ne_zero k hp.ne_zero)
-    (fun q hq hqp ↦ by simpa only [pow_one] using Nat.coprime_pow_primes 1 k hq hp hqp) γ
+    (hp.coprime_pow_of_prime_ne k) γ
 
 /-- Cartier's prime-to-`p` projector leaves coefficients unchanged in any degree `k` strictly below
 every prime `q ≠ p`. -/
@@ -717,17 +691,12 @@ theorem coeff_pTypicalProjectorCurve_of_forall_lt
       PowerSeries.coeff k γ.toPowerSeries := by
   have hstage (N : ℕ) :
       PowerSeries.coeff k (stagePTypicalProjectorCurve F p hunit N γ).toPowerSeries =
-        PowerSeries.coeff k γ.toPowerSeries := by
-    induction N with
-    | zero => rfl
-    | succ N ih =>
-      dsimp only [stagePTypicalProjectorCurve]
-      split_ifs with h
-      · rw [AddMonoidHom.comp_apply,
-          F.coeff_cartierProjectorCurve_of_lt (N + 1) (Nat.succ_ne_zero N)
-            (hunit (N + 1) h.1 h.2) (hk (N + 1) h.1 h.2),
-          ih]
-      · exact ih
+        PowerSeries.coeff k γ.toPowerSeries :=
+    stagePTypicalProjectorCurve_induction F p hunit
+      (Q := fun e ↦ PowerSeries.coeff k (e γ).toPowerSeries = PowerSeries.coeff k γ.toPowerSeries)
+      rfl (fun hq hqp ih ↦ by
+        rw [AddMonoidHom.comp_apply,
+          F.coeff_cartierProjectorCurve_of_lt _ hq.ne_zero (hunit _ hq hqp) (hk _ hq hqp), ih]) N
   rw [coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl, hstage k]
 
 /-- Cartier's prime-to-`p` projector preserves linear coefficients. -/
@@ -742,8 +711,7 @@ theorem coeff_one_pTypicalProjectorCurve (hunit : ∀ q : ℕ, q.Prime → q ≠
 theorem map_pTypicalProjectorCurve
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (φ : R →+* S) (γ : F.Curve) :
     Curve.map φ (F.pTypicalProjectorCurve p hR γ) =
-      (F.map φ).pTypicalProjectorCurve p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map φ)
+      (F.map φ).pTypicalProjectorCurve p (fun q hq hqp ↦ (hR q hq hqp).natCast_map φ)
         (Curve.map φ γ) := by
   ext k
   rw [Curve.toPowerSeries_map, PowerSeries.coeff_map,
@@ -765,7 +733,7 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_pTypicalProjectorCurve
 
 /-- On the additive formal group law, Cartier's prime-to-`p` projector leaves unchanged any
 coefficient whose degree has no prime divisor distinct from `p`. -/
-theorem coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ}
     (hk : ∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) (γ : (𝔾ₐ (R := R)).Curve) :
     PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries =
@@ -773,20 +741,17 @@ theorem coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd
   have hstage (N : ℕ) :
       PowerSeries.coeff k
         (stagePTypicalProjectorCurve (𝔾ₐ (R := R)) p hunit N γ).toPowerSeries =
-        PowerSeries.coeff k γ.toPowerSeries := by
-    induction N with
-    | zero => rfl
-    | succ N ih =>
-      dsimp only [stagePTypicalProjectorCurve]
-      split_ifs with h
-      · rw [AddMonoidHom.comp_apply, toPowerSeries_cartierProjectorCurve_𝔾ₐ, map_sub,
-          PowerSeries.coeff_expand, ite_eq_right (hk (N + 1) h.1 h.2), sub_zero, ih]
-      · exact ih
+        PowerSeries.coeff k γ.toPowerSeries :=
+    stagePTypicalProjectorCurve_induction (𝔾ₐ (R := R)) p hunit
+      (Q := fun e ↦ PowerSeries.coeff k (e γ).toPowerSeries = PowerSeries.coeff k γ.toPowerSeries)
+      rfl (fun hq hqp ih ↦ by
+        rw [AddMonoidHom.comp_apply, toPowerSeries_cartierProjectorCurve_𝔾ₐ, map_sub,
+          PowerSeries.coeff_expand, ite_eq_right (hk _ hq hqp), sub_zero, ih]) N
   rw [coeff_pTypicalProjectorCurve_eq_stage (𝔾ₐ (R := R)) p hunit le_rfl, hstage k]
 
 /-- On the additive formal group law, Cartier's prime-to-`p` projector zeroes every coefficient
 whose degree is divisible by a prime `q ≠ p`. -/
-theorem coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k q : ℕ}
     (hq : q.Prime) (hqp : q ≠ p) (hqk : q ∣ k) (γ : (𝔾ₐ (R := R)).Curve) :
     PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries = 0 :=
@@ -795,21 +760,17 @@ theorem coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd
 
 /-- On the additive formal group law, for `p` prime, Cartier's prime-to-`p` projector retains
 precisely the coefficients in degrees `p ^ m` and zeroes all others. -/
-theorem coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_of_prime {p : ℕ} (hp : p.Prime)
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_of_prime {p : ℕ} (hp : p.Prime)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (k : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
     PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries =
       if p ^ Nat.log p k = k then PowerSeries.coeff k γ.toPowerSeries else 0 := by
   split_ifs with hk
-  · exact coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd p hunit
-      ((forall_prime_ne_not_dvd_iff_exists_pow hp k).mpr
-        ((pow_log_eq_self_iff_exists_pow hp k).mp hk)) γ
-  · have hnot : ¬ ∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k :=
-      mt (forall_prime_ne_not_dvd_iff_exists_pow hp k).mp
-        (mt (pow_log_eq_self_iff_exists_pow hp k).mpr hk)
-    push Not at hnot
-    obtain ⟨q, hq, hqp, hqk⟩ := hnot
-    exact coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd
-      p hunit hq hqp hqk γ
+  · exact coeff_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd p hunit
+      ((Nat.forall_prime_ne_not_dvd_iff_exists_pow hp k).mpr
+        ((Nat.pow_log_eq_self_iff_exists_pow hp.ne_zero k).mp hk)) γ
+  · obtain ⟨q, hq, hqp, hqk⟩ := (Nat.exists_prime_ne_dvd_iff_forall_pow_ne hp k).mpr
+      fun m hm ↦ hk ((Nat.pow_log_eq_self_iff_exists_pow hp.ne_zero k).mpr ⟨m, hm⟩)
+    exact coeff_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd p hunit hq hqp hqk γ
 
 /-- Over a `ℚ`-algebra, Cartier's prime-to-`p` projector leaves unchanged any formal-logarithm
 coefficient whose degree has no prime divisor distinct from `p`. -/
@@ -823,7 +784,7 @@ theorem coeff_subst_pTypicalProjectorCurve_log_of_forall_not_dvd [Algebra ℚ R]
     (F.logHom.mapCurve_pTypicalProjectorCurve p hunit γ)
   simpa only [Function.comp_apply, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
     logHom_toPowerSeries,
-    coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd p hunit hk] using h
+    coeff_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd p hunit hk] using h
 
 /-- Over a `ℚ`-algebra, Cartier's prime-to-`p` projector zeroes every formal-logarithm coefficient
 whose degree is divisible by a prime `q ≠ p`. -/
@@ -836,7 +797,7 @@ theorem coeff_subst_pTypicalProjectorCurve_log_eq_zero_of_prime_dvd [Algebra ℚ
     (F.logHom.mapCurve_pTypicalProjectorCurve p hunit γ)
   simpa only [Function.comp_apply, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
     logHom_toPowerSeries,
-    coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd p hunit hq hqp hqk] using h
+    coeff_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_prime_dvd p hunit hq hqp hqk] using h
 
 /-- Over a `ℚ`-algebra, for `p` prime, Cartier's prime-to-`p` projector acts on the formal
 logarithm of a curve by retaining the coefficients in degrees `p ^ m` and zeroing all others. -/
@@ -850,7 +811,7 @@ theorem coeff_subst_pTypicalProjectorCurve_log_of_prime [Algebra ℚ R] {p : ℕ
     (F.logHom.mapCurve_pTypicalProjectorCurve p hunit γ)
   simpa only [Function.comp_apply, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
     logHom_toPowerSeries,
-    coeff_toPowerSeries_pTypicalProjectorCurve_𝔾ₐ_of_prime hp hunit k] using h
+    coeff_pTypicalProjectorCurve_𝔾ₐ_of_prime hp hunit k] using h
 
 @[simp]
 theorem coeff_pow_subst_pTypicalProjectorCurve_log [Algebra ℚ R] {p : ℕ} (hp : p.Prime)

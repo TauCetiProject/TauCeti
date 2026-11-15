@@ -11,7 +11,8 @@ public import Mathlib.Algebra.Field.Rat
 /-!
 # Natural numbers invertible in semirings and algebras
 
-A natural number that is a unit in `K` stays nonzero in every nontrivial `K`-algebra `L`. Results
+A ring homomorphism carries a natural number invertible in its source to a unit in its target, and
+a natural number that is a unit in `K` stays nonzero in every nontrivial `K`-algebra `L`. Results
 stated over an extension, such as the separable closure `Kˢ`, often need `(m : L) ≠ 0`, while the
 hypothesis available is `IsUnit (m : K)`, which holds for every `m ≠ 0` in a `ℚ`-algebra.
 Likewise a subalgebra over `K` is closed under division by such a natural number.
@@ -22,6 +23,7 @@ differentiation.
 
 ## Main results
 
+* `IsUnit.natCast_map`: a ring homomorphism carries `(n : R)` invertible to `(n : S)` invertible.
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
@@ -35,6 +37,11 @@ differentiation.
 -/
 
 public section
+
+/-- A ring homomorphism carries a natural number invertible in `R` to a unit in `S`. -/
+theorem IsUnit.natCast_map {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] {n : ℕ} (hn : IsUnit (n : R)) (f : F) : IsUnit (n : S) :=
+  map_natCast f n ▸ hn.map f
 
 /-- A natural number invertible in `K` is nonzero in every nontrivial `K`-algebra `L`. -/
 theorem IsUnit.natCast_ne_zero_of_algebra {K L : Type*} [CommSemiring K] [Semiring L]

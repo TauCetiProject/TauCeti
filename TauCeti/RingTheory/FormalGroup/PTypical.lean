@@ -164,7 +164,7 @@ theorem isPTypical_smul_iff (φ : TauCeti.FormalCoordinate R) (F : FormalGroup R
     rw [TauCeti.FormalGroupIso.curveEquiv_apply, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
       smulIso_toHom_toPowerSeries, toPowerSeries_tautologicalCurve]
     simpa only [PowerSeries.X_subst] using φ.subst_subst_inv PowerSeries.HasSubst.X'
-  rw [isPTypical_iff_tautologicalCurve, ← hδ, (smulIso φ F).curveEquiv_isPTypical_iff]
+  rw [isPTypical_iff_tautologicalCurve, ← hδ, (smulIso φ F).isPTypical_curveEquiv_iff]
 
 /-! ### Rational logarithm characterization and Hazewinkel's formal group laws -/
 
@@ -375,8 +375,7 @@ theorem eq_pTypicalCoordinate_iff (hunit : ∀ q : ℕ, q.Prime → q ≠ p → 
 /-- Base change commutes with Cartier's canonical `p`-typical coordinate. -/
 theorem map_pTypicalCoordinate (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (f : R →+* S) :
     TauCeti.FormalCoordinate.map f (F.pTypicalCoordinate p hR) =
-      (F.map f).pTypicalCoordinate p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map f) := by
+      (F.map f).pTypicalCoordinate p (fun q hq hqp ↦ (hR q hq hqp).natCast_map f) := by
   apply inv_inj.mp
   ext1
   rw [← map_inv, TauCeti.FormalCoordinate.toPowerSeries_map, toPowerSeries_inv_pTypicalCoordinate,
@@ -386,8 +385,7 @@ theorem map_pTypicalCoordinate (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit
 /-- Base change commutes with Cartier's canonical `p`-typicalization. -/
 theorem map_pTypicalize (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (f : R →+* S) :
     (F.pTypicalize p hR).map f =
-      (F.map f).pTypicalize p
-        (fun q hq hqp ↦ by simpa only [map_natCast] using (hR q hq hqp).map f) := by
+      (F.map f).pTypicalize p (fun q hq hqp ↦ (hR q hq hqp).natCast_map f) := by
   rw [pTypicalize_def, pTypicalize_def, map_smul, F.map_pTypicalCoordinate p hR f]
 
 /-- Over a `ℚ`-algebra, the formal logarithm of `F.pTypicalize p hunit` is `log_F((Π_p T)(X))`. -/

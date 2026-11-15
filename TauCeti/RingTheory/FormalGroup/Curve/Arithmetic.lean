@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Basic
+import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.MvPowerSeries.Equiv
 import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -115,38 +116,32 @@ theorem Curve.coeff_symmSum_congr (F : FormalGroup R) [F.IsComm] (σ : Type*) [F
     rw [Curve.val_coordPointHom, PowerSeries.toMvPowerSeries_apply,
       MvPowerSeries.constantCoeff_rename]
     exact γ.constantCoeff_toPowerSeries
-  have hzero (γ : F.Curve) (s : Finset σ) :
-      MvPowerSeries.constantCoeff (∑ a ∈ s, Curve.coordPointHom F a γ).val = 0 :=
-    Finset.sum_induction _ (fun x : F.Point σ ↦ MvPowerSeries.constantCoeff x.val = 0)
-      (fun x y hx hy ↦ MvPowerSeries.constantCoeff_subst_eq_zero
-        (MvPowerSeries.hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
-        (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff)
-      (by simp [zero_apply]) (fun a _ ↦ hzero_single γ a)
   have hcoord (a : σ) : ((M + 1 : ℕ) : ℕ∞) ≤
-      ((Curve.coordPointHom F a γ₁).val - (Curve.coordPointHom F a γ₂).val).order :=
-    MvPowerSeries.nat_le_order fun e he ↦ by
-      rw [map_sub, Curve.val_coordPointHom, Curve.val_coordPointHom,
-        PowerSeries.coeff_toMvPowerSeries, PowerSeries.coeff_toMvPowerSeries]
-      split_ifs with hea
-      · exact sub_eq_zero.mpr (h (e a) ((Finsupp.le_degree a e).trans (Nat.lt_succ_iff.mp he)))
-      · exact sub_self 0
-  have hsum (s : Finset σ) : ((M + 1 : ℕ) : ℕ∞) ≤
-      ((∑ a ∈ s, Curve.coordPointHom F a γ₁).val -
-        (∑ a ∈ s, Curve.coordPointHom F a γ₂).val).order := by
-    induction s using Finset.induction_on with
-    | empty => simp [zero_apply]
-    | insert a s ha ih =>
-      rw [Finset.sum_insert ha, Finset.sum_insert ha, add_apply, add_apply]
-      refine MvPowerSeries.nat_le_order fun e he ↦ ?_
-      rw [F.coeff_subst_sub_subst_of_degree_le (hzero_single γ₁ a) (hzero_single γ₂ a)
-        (hzero γ₁ s) (hzero γ₂ s) (hcoord a) ih he.le,
-        MvPowerSeries.coeff_of_lt_order ((Nat.cast_lt.mpr he).trans_le (hcoord a)),
-        MvPowerSeries.coeff_of_lt_order ((Nat.cast_lt.mpr he).trans_le ih), _root_.add_zero]
+      (Curve.coordPointHom F a γ₁ - Curve.coordPointHom F a γ₂).val.order :=
+    F.le_order_val_sub_of_le_order_sub (hzero_single γ₁ a) (hzero_single γ₂ a) <|
+      MvPowerSeries.nat_le_order fun e he ↦ by
+        rw [map_sub, Curve.val_coordPointHom, Curve.val_coordPointHom,
+          PowerSeries.coeff_toMvPowerSeries, PowerSeries.coeff_toMvPowerSeries]
+        split_ifs with hea
+        · exact sub_eq_zero.mpr (h (e a) ((Finsupp.le_degree a e).trans (Nat.lt_succ_iff.mp he)))
+        · exact sub_self 0
+  have hpt : ((M + 1 : ℕ) : ℕ∞) ≤
+      ((∑ a : σ, Curve.coordPointHom F a γ₁) -
+        (∑ a : σ, Curve.coordPointHom F a γ₂)).val.order := by
+    rw [← Finset.sum_sub_distrib]
+    exact F.le_order_val_sum Finset.univ _ fun a _ ↦ hcoord a
+  have hdiff := (Nat.cast_le.mpr (Nat.le_succ (M + 1))).trans
+    (F.le_order_val_sub_val_sub (Nat.succ_ne_zero M)
+      (Curve.constantCoeff_val_sum_coordPointHom γ₂) hpt)
+  have hsum : ((M + 1 : ℕ) : ℕ∞) ≤
+      ((∑ a : σ, Curve.coordPointHom F a γ₁).val -
+        (∑ a : σ, Curve.coordPointHom F a γ₂).val).order := by
+    simpa only [sub_add_cancel] using MvPowerSeries.le_order_add hdiff hpt
   have hlt : (d.degree : ℕ∞) < ((M + 1 : ℕ) : ℕ∞) := Nat.cast_lt.mpr (Nat.lt_succ_of_le hd)
   rw [Curve.coe_symmSum, Curve.coe_symmSum]
   exact sub_eq_zero.mp <| by
     rw [← map_sub]
-    exact MvPowerSeries.coeff_of_lt_order (hlt.trans_le (hsum Finset.univ))
+    exact MvPowerSeries.coeff_of_lt_order (hlt.trans_le hsum)
 
 /-- The degree-`k` coefficient of `V_n γ` depends only on the coefficients of `γ` up to degree
 `k / n`. -/
