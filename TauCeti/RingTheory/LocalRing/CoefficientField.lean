@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.Smooth.AdicCompletion
 public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.RingTheory.Smooth.Field
+import Mathlib.Algebra.Field.ZMod
 import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
 /-!
