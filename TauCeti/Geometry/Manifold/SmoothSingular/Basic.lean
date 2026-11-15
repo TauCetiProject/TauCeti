@@ -45,7 +45,12 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.smoothSingularSubcomplex_preimage_inclusion`,
   `TauCeti.smoothSingularSubcomplex_preimage_subtypeVal`: a simplex of an open subset is smooth
   exactly when it is smooth in a larger open subset, or in `M`.
+* `TauCeti.range_smoothSingularSubcomplex_ι_comp_subtypeVal`: the smooth singular simplices of an
+  open subset `W`, read in `M`, are the smooth singular simplices of `M` with image in `W`.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
+* `TauCeti.smoothSingularSubcomplexMap_inclusion_ι`,
+  `TauCeti.mono_smoothSingularSubcomplexMap_inclusion`: for open sets `U ≤ V`, the induced map is
+  the restriction of the map induced by `ContinuousMap.inclusion`, and is a monomorphism.
 * `TauCeti.coe_smoothSingularSubcomplexMap_app`: it acts on underlying singular simplices as the
   map of singular simplicial sets.
 * `TauCeti.SmoothSimplex`: the smooth singular `p`-simplices, the `p`-simplices of
@@ -427,6 +432,45 @@ theorem smoothSingularSubcomplex_preimage_subtypeVal (W : TopologicalSpace.Opens
     at hσ
   rw [mem_smoothSingularSubcomplex_iff, ← ContMDiffOnSubset.subtypeVal_comp_iff]
   exact hσ
+
+/-- The smooth singular simplices of an open subset `W`, read in `M`, are the smooth singular
+simplices of `M` whose image lies in `W`. -/
+theorem range_smoothSingularSubcomplex_ι_comp_subtypeVal (W : TopologicalSpace.Opens M) :
+    SSet.Subcomplex.range ((smoothSingularSubcomplex I W).ι ≫
+        TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set M)))) =
+      smoothSingularSubcomplex I M ⊓
+        SSet.Subcomplex.range
+          (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set M)))) := by
+  ext n σ
+  refine ⟨?_, fun ⟨hσ, τ, hτ⟩ ↦ ⟨⟨τ, ?_⟩, hτ⟩⟩
+  · rintro ⟨τ, rfl⟩
+    exact ⟨(smoothSingularSubcomplex_preimage_subtypeVal W).ge n τ.2, τ.1, rfl⟩
+  · rw [← smoothSingularSubcomplex_preimage_subtypeVal W, SSet.Subcomplex.preimage_obj,
+      Set.mem_preimage]
+    exact hτ ▸ hσ
+
+/-- For open sets `U ≤ V` of `M`, the map of smooth singular subcomplexes induced by the inclusion
+is the restriction of the map of singular simplicial sets induced by `ContinuousMap.inclusion`. -/
+@[reassoc]
+theorem smoothSingularSubcomplexMap_inclusion_ι {U V : TopologicalSpace.Opens M} (h : U ≤ V) :
+    smoothSingularSubcomplexMap (I := I) (TopologicalSpace.Opens.inclusion h)
+        (contMDiff_inclusion h) ≫ (smoothSingularSubcomplex I V).ι =
+      (smoothSingularSubcomplex I U).ι ≫
+        TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (SetLike.coe_subset_coe.2 h))) :=
+  -- `⟨Opens.inclusion h, _⟩` is `ContinuousMap.inclusion` of the underlying sets.
+  smoothSingularSubcomplexMap_ι _
+
+/-- The map of smooth singular simplicial sets induced by the inclusion of an open subset in a
+larger one is a monomorphism. -/
+instance mono_smoothSingularSubcomplexMap_inclusion {U V : TopologicalSpace.Opens M} (h : U ≤ V) :
+    Mono (smoothSingularSubcomplexMap (I := I) (TopologicalSpace.Opens.inclusion h)
+      (contMDiff_inclusion h)) := by
+  have : Mono (TopCat.ofHom (ContinuousMap.inclusion (SetLike.coe_subset_coe.2 h))) :=
+    (TopCat.mono_iff_injective _).2 (Set.inclusion_injective (SetLike.coe_subset_coe.2 h))
+  have : Mono (TopCat.toSSet.map
+      (TopCat.ofHom (ContinuousMap.inclusion (SetLike.coe_subset_coe.2 h)))) :=
+    Functor.map_mono _ _
+  exact mono_of_mono_fac (smoothSingularSubcomplexMap_inclusion_ι h)
 
 /-- The identity of `M` induces the identity of its smooth singular subcomplex. -/
 @[simp]

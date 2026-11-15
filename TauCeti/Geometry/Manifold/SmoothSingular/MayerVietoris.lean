@@ -32,7 +32,10 @@ singular chains subordinate to it by a quasi-isomorphism. By the small-chain the
 chains (`TauCeti.quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex`) and for singular
 chains (`TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι`), the inclusion of smooth
 singular chains of `M` into all singular chains of `M` is then a quasi-isomorphism
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_union_eq_univ`).
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_union_eq_univ`). The five-lemma
+argument follows `TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_of_nhds` in
+`TauCeti/AlgebraicTopology/Singular/MayerVietoris/Excisive.lean`, through the shared
+`SSet.quasiIso_chainComplexMap_of_isPushout`.
 
 This is the Mayer–Vietoris step of the comparison of smooth with continuous singular homology, by
 induction over open sets (`TauCeti.mayerVietoris_induction`); the disjoint-union step is
@@ -41,8 +44,6 @@ separation or boundarylessness of `M` is used.
 
 ## Main results
 
-* `TauCeti.range_smoothSingularSubcomplex_ι_comp_subtypeVal`: the smooth singular simplices of an
-  open subset `W`, read in `M`, are the smooth singular simplices of `M` with image in `W`.
 * `TauCeti.isPushout_smoothSingularSubcomplex_inf`: the smooth singular simplicial sets of
   `U ∩ V`, `U` and `V` form a pushout square with the smooth singular simplices of `M` lying in
   `U` or in `V`.
@@ -75,22 +76,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
 /-! ### Smooth singular simplices of open subsets -/
-
-/-- The smooth singular simplices of an open subset `W`, read in `M`, are the smooth singular
-simplices of `M` whose image lies in `W`. -/
-theorem range_smoothSingularSubcomplex_ι_comp_subtypeVal (W : Opens M) :
-    SSet.Subcomplex.range ((smoothSingularSubcomplex I W).ι ≫
-        TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set M)))) =
-      smoothSingularSubcomplex I M ⊓
-        SSet.Subcomplex.range
-          (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set M)))) := by
-  ext n σ
-  refine ⟨?_, fun ⟨hσ, τ, hτ⟩ ↦ ⟨⟨τ, ?_⟩, hτ⟩⟩
-  · rintro ⟨τ, rfl⟩
-    exact ⟨(smoothSingularSubcomplex_preimage_subtypeVal W).ge n τ.2, τ.1, rfl⟩
-  · rw [← smoothSingularSubcomplex_preimage_subtypeVal W, SSet.Subcomplex.preimage_obj,
-      Set.mem_preimage]
-    exact hτ ▸ hσ
 
 /-- A singular simplex of `M` comes from a smooth singular simplex of an open subset `W` exactly
 when it is smooth and its image lies in `W`. -/
@@ -139,16 +124,6 @@ theorem toSmoothSmallSingularSubcomplex_homOfLE {ι : Type*} (S : ι → Set M) 
       (smoothSingularSubcomplex I W).ι ≫ (TopCat.of M).toSmallSingularSubcomplex S h := by
   rw [← cancel_mono (SSet.Subcomplex.ι _), Category.assoc, SSet.Subcomplex.homOfLE_ι,
     toSmoothSmallSingularSubcomplex_ι, Category.assoc, TopCat.toSmallSingularSubcomplex_ι]
-
-/-- The map of smooth singular simplicial sets induced by the inclusion of an open subset in a
-larger one is a monomorphism. -/
-instance mono_smoothSingularSubcomplexMap_inclusion {U V : Opens M} (h : U ≤ V) :
-    Mono (smoothSingularSubcomplexMap (I := I) (Opens.inclusion h) (contMDiff_inclusion h)) := by
-  have : Mono (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩) :=
-    (TopCat.mono_iff_injective _).2 fun _ _ hxy ↦ Subtype.ext (congrArg (Subtype.val : V → M) hxy)
-  have : Mono (TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)) :=
-    Functor.map_mono _ _
-  exact mono_of_mono_fac (smoothSingularSubcomplexMap_ι _)
 
 /-! ### The smooth Mayer–Vietoris square -/
 
@@ -211,16 +186,14 @@ theorem isPushout_smoothSingularSubcomplex_inf (U V : Opens M) :
     ?_ ?_ ?_ ?_
   · rw [← cancel_mono B.ι]
     simp only [A, B, asIso_hom, Category.assoc, SSet.Subcomplex.homOfLE_ι,
-      SSet.Subcomplex.toRange_ι, g, smoothSingularSubcomplexMap_ι_assoc, ← Functor.map_comp]
-    -- Both sides are induced by the inclusion of `U ∩ V` in `M`, as composites of continuous maps
-    -- of subtypes that agree definitionally.
-    rfl
+      SSet.Subcomplex.toRange_ι, g]
+    rw [smoothSingularSubcomplexMap_inclusion_ι_assoc, ← Functor.map_comp, ← TopCat.ofHom_comp,
+      ContinuousMap.subtypeVal_comp_inclusion]
   · rw [← cancel_mono C.ι]
     simp only [A, C, asIso_hom, Category.assoc, SSet.Subcomplex.homOfLE_ι,
-      SSet.Subcomplex.toRange_ι, g, smoothSingularSubcomplexMap_ι_assoc, ← Functor.map_comp]
-    -- Both sides are induced by the inclusion of `U ∩ V` in `M`, as composites of continuous maps
-    -- of subtypes that agree definitionally.
-    rfl
+      SSet.Subcomplex.toRange_ι, g]
+    rw [smoothSingularSubcomplexMap_inclusion_ι_assoc, ← Functor.map_comp, ← TopCat.ofHom_comp,
+      ContinuousMap.subtypeVal_comp_inclusion]
   · rw [← cancel_mono (SSet.Subcomplex.ι _)]
     simp only [asIso_hom, Iso.refl_hom, Category.assoc, Category.comp_id,
       SSet.Subcomplex.homOfLE_ι, toSmoothSmallSingularSubcomplex_ι]
@@ -247,32 +220,23 @@ theorem quasiIso_chainComplexMap_homOfLE_smoothSingularSubcomplex_inf {U V : Ope
       smoothSingularSubcomplex I M ⊓ (TopCat.of M).smallSingularSubcomplex ![(U : Set M), V] ≤
         (TopCat.of M).smallSingularSubcomplex ![(U : Set M), V])) R) := by
   -- The inclusions of smooth singular simplices form a map from the smooth Mayer–Vietoris square
-  -- to the singular one. The top and left squares commute because `⟨Opens.inclusion _, _⟩` is
-  -- `ContinuousMap.inclusion` of the underlying sets.
+  -- to the singular one.
   have ht : smoothSingularSubcomplexMap (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
         (contMDiff_inclusion _) ≫ (smoothSingularSubcomplex I U).ι =
       (smoothSingularSubcomplex I ↥(U ⊓ V)).ι ≫ TopCat.toSSet.map (TopCat.ofHom
         (ContinuousMap.inclusion (Set.inter_subset_left (s := (U : Set M)) (t := V)))) :=
-    smoothSingularSubcomplexMap_ι _
+    smoothSingularSubcomplexMap_inclusion_ι _
   have hl : smoothSingularSubcomplexMap (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
         (contMDiff_inclusion _) ≫ (smoothSingularSubcomplex I V).ι =
       (smoothSingularSubcomplex I ↥(U ⊓ V)).ι ≫ TopCat.toSSet.map (TopCat.ofHom
         (ContinuousMap.inclusion (Set.inter_subset_right (s := (U : Set M)) (t := V)))) :=
-    smoothSingularSubcomplexMap_ι _
-  let sqS := isPushout_smoothSingularSubcomplex_inf I U V
-  let sqT := TopCat.isPushout_toSSet_inter_smallSingularSubcomplex (X := TopCat.of M) U V
+    smoothSingularSubcomplexMap_inclusion_ι _
   -- The map of Mayer–Vietoris short exact sequences is a quasi-isomorphism on the first two
   -- terms, hence on the third.
-  let ψ := SSet.mayerVietorisShortComplexMap R sqS sqT ht hl
+  exact SSet.quasiIso_chainComplexMap_of_isPushout R (isPushout_smoothSingularSubcomplex_inf I U V)
+    (TopCat.isPushout_toSSet_inter_smallSingularSubcomplex (X := TopCat.of M) U V) ht hl
     (toSmoothSmallSingularSubcomplex_homOfLE _ _) (toSmoothSmallSingularSubcomplex_homOfLE _ _)
-  have h₂ : QuasiIso ψ.τ₂ := by
-    rw [SSet.mayerVietorisShortComplexMap_τ₂]
-    exact HomologicalComplex.quasiIso_biprod_map _ _
-  have h₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ
-    (SSet.shortExact_mayerVietorisShortComplex R sqS)
-    (SSet.shortExact_mayerVietorisShortComplex R sqT)
-    (by rwa [SSet.mayerVietorisShortComplexMap_τ₁]) h₂
-  rwa [SSet.mayerVietorisShortComplexMap_τ₃] at h₃
+    hUinfV hU hV
 
 /-- **The Mayer–Vietoris step of the smoothing theorem.** Let `U` and `V` be open subsets covering
 `M`. If the inclusion of smooth singular chains into singular chains with coefficients in `R` is a
