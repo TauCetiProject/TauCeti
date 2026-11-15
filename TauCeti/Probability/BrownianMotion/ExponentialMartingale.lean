@@ -166,6 +166,16 @@ theorem memLp_exponentialMartingale (hB : IsPreBrownianReal B P) (θ : ℝ) (t :
     rpow_exponentialMartingale]
   exact (hB.integrable_exponentialMartingale _ t).const_mul _
 
+/-- The second moment of the Brownian exponential is `exp (θ² t)`. -/
+theorem integral_sq_exponentialMartingale (hB : IsPreBrownianReal B P) (θ : ℝ) (t : ℝ≥0) :
+    ∫ ω, exponentialMartingale θ B t ω ^ 2 ∂P = exp (θ ^ 2 * t) := by
+  have heq (ω : Ω) := rpow_exponentialMartingale θ 2 B t ω
+  norm_num [Real.rpow_two] at heq
+  simp_rw [heq]
+  rw [integral_const_mul, hB.integral_exponentialMartingale, mul_one]
+  congr 1
+  ring
+
 /-- Tilting `P` by `θ B_T` is the change of measure with density `exp (θ B_T - θ² T / 2)`. -/
 theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (T : ℝ≥0) :
     P.tilted (fun ω ↦ θ * B T ω) =
