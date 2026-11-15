@@ -15,10 +15,7 @@ public import TauCeti.Geometry.Lie.Tangent.LeftInvariantDerivation
 For a finite-dimensional smooth real Lie group whose identity is an interior point, the canonical
 linear equivalence between left-invariant derivations and the tangent space at the identity is an
 equivalence of Lie algebras. This supplies the bracket-compatible dictionary needed to transport the
-tangent adjoint action to Mathlib's roadmap-facing Lie algebra `LeftInvariantDerivation I G`.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
+tangent adjoint action to Mathlib's Lie algebra `LeftInvariantDerivation I G`.
 
 ## Main results
 
@@ -31,8 +28,6 @@ This advances Deliverable A, Layer 1 of
 ## References
 
 * `Mathlib/Geometry/Manifold/GroupLieAlgebra.lean`, whose compatibility TODO this file discharges.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section

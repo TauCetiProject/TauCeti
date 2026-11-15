@@ -5,24 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
-public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.LinearAlgebra.DirectSum.Basis
 public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
-public import TauCeti.AlgebraicTopology.Cellular.Coproduct
+public import TauCeti.AlgebraicTopology.Cellular.Projective
 
 /-!
 # Euler--Poincaré for cellular chains
 
 For a relative CW complex `(X, A)` and a coefficient module `M` over a ring `k`, the cellular
 chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for each `n`-cell
-(`TauCeti.cellularChainGroupIso`).  This file draws the numerical and finiteness consequences.
+(`TauCeti.cellularChainGroupIso`), hence free or projective when `M` is
+(`TauCeti.free_cellularChainGroup`, `TauCeti.moduleProjective_cellularChainGroup`).  This file
+draws the numerical and finiteness consequences.
 
 * The Euler characteristic of a relative CW complex is the alternating count of its cells
   (`TauCeti.cwEulerChar`).
-* The cellular chain group is free when `M` is, and finitely generated when `M` is and there are
-  finitely many `n`-cells (`TauCeti.finite_cellularChainGroup`). For free `M` it satisfies
+* The cellular chain group is finitely generated when `M` is and there are finitely many `n`-cells
+  (`TauCeti.finite_cellularChainGroup`). For free `M` it satisfies
   `finrank = #(n-cells) · finrank M` with no finiteness hypothesis
   (`TauCeti.finrank_cellularChainGroup`); both sides are `0` in the infinite case.
 * For free coefficients over a ring with the strong rank condition, the Euler characteristic of
@@ -40,9 +39,10 @@ chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for 
   (`TauCeti.homologyEulerChar_cellularChainComplex`).
 
 The statements concern the cellular chain complex itself; its identification with singular
-homology is what turns them into statements about the space.  The coefficient ring lives in the
-universe of the space, where Mathlib provides the exactness of coproducts of modules that
-`TauCeti.cellularChainGroupIso` needs.
+homology is what turns them into statements about the space.  For the ring-level statements
+(`finite_cellularChainGroup`, `finrank_cellularChainGroup`, `finrank_cellularChainComplex_X`,
+`eulerChar_cellularChainComplex`, `finite_cellularHomology`), the coefficient ring may live in an
+arbitrary universe via `TauCeti.moduleCat_ab4OfSize`.
 
 ## References
 
@@ -56,7 +56,7 @@ noncomputable section
 
 open CategoryTheory Limits Module Topology Topology.RelCWComplex DirectSum
 
-universe w
+universe w u
 
 namespace TauCeti
 
@@ -84,7 +84,7 @@ variable [T2Space X]
 
 section Ring
 
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+variable {k : Type u} [Ring k] (M : ModuleCat.{w} k)
 
 open scoped Classical in
 /-- The cellular chain group in degree `n`, as a `k`-module, is the direct sum of one copy of `M`
@@ -92,11 +92,6 @@ for each `n`-cell. -/
 private def cellularChainGroupLinearEquiv (n : ℕ) :
     (cellularChainGroup C M n : ModuleCat k) ≃ₗ[k] ⨁ _ : cell C n, M :=
   (cellularChainGroupIso C M n ≪≫ ModuleCat.coprodIsoDirectSum _).toLinearEquiv
-
-/-- With free coefficients, the cellular chain groups are free. -/
-instance free_cellularChainGroup [Module.Free k M] (n : ℕ) :
-    Module.Free k (cellularChainGroup C M n : ModuleCat k) :=
-  .of_equiv (cellularChainGroupLinearEquiv C M n).symm
 
 /-- With finitely generated coefficients, the cellular chain group in a degree with finitely many
 cells is finitely generated. -/

@@ -150,17 +150,11 @@ lemma subsingleton_iff_exists_associated_pow :
     Subsingleton f.Factors ↔ ∃ q : K[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) f := by
   classical
   by_cases hf : f = 0
-  · subst f
-    constructor
-    · intro h
-      let x : (0 : K[X]).Factors := ⟨X, irreducible_X, monic_X, dvd_zero X⟩
-      let y : (0 : K[X]).Factors :=
-        ⟨X - C 1, irreducible_X_sub_C 1, monic_X_sub_C 1, dvd_zero (X - C 1)⟩
-      have hxy : (x : K[X]) = y := congrArg Subtype.val (h.elim x y)
-      have := congrArg (coeff · 0) hxy
-      simp [x, y] at this
-    · rintro ⟨q, hq, n, hq0⟩
-      exact ((pow_ne_zero n hq.ne_zero) (hq0.eq_zero_iff.mpr rfl)).elim
+  · -- Both sides fail: `0` has infinitely many factors and is not associated to a power of an
+    -- irreducible polynomial.
+    subst f
+    exact iff_of_false (not_subsingleton _) fun ⟨q, hq, n, hq0⟩ ↦
+      pow_ne_zero n hq.ne_zero (hq0.eq_zero_iff.mpr rfl)
   refine ⟨fun h ↦ ?_, fun ⟨q, hq, n, hqf⟩ ↦ ⟨fun a b ↦ Subtype.ext ?_⟩⟩
   · by_cases hu : IsUnit f
     · exact ⟨X, irreducible_X, 0, by rw [pow_zero]; exact (associated_one_iff_isUnit.mpr hu).symm⟩
@@ -218,13 +212,14 @@ lemma associated_prod [Fintype f.Factors] (hsq : Squarefree f) :
   rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hsq]
   exact prod_normalizedFactors hsq.ne_zero
 
-/-- The degrees of the distinct monic irreducible factors of `f ≠ 0` sum to at most the
-degree of `f`. -/
-lemma sum_natDegree_le [Fintype f.Factors] (hf : f ≠ 0) :
+/-- The degrees of the distinct monic irreducible factors of `f` sum to at most the degree of
+`f`. The `Fintype` instance forces `f ≠ 0`, by `finite_iff`. -/
+lemma sum_natDegree_le [Fintype f.Factors] :
     ∑ p : f.Factors, (p : K[X]).natDegree ≤ f.natDegree := by
   rw [← natDegree_prod _ _ fun p _ ↦ p.ne_zero]
   exact natDegree_le_of_dvd
-    (Fintype.prod_dvd_of_coprime (fun p q hpq ↦ isCoprime hpq) fun p ↦ p.dvd) hf
+    (Fintype.prod_dvd_of_coprime (fun p q hpq ↦ isCoprime hpq) fun p ↦ p.dvd)
+    (finite_iff.mp inferInstance)
 
 /-- For `f` nonzero and squarefree, the ideal `(f)` is the intersection of the ideals `(p)` over
 the monic irreducible factors `p` of `f`. This is the input for the Chinese Remainder

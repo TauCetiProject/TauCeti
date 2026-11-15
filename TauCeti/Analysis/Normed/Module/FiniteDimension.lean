@@ -231,7 +231,7 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   rw [h', continuous_iff_continuousAt]
   intro y
   have := (B y).finiteDimensional_of_finite
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt

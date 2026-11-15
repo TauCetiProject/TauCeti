@@ -43,7 +43,9 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
   the inclusions `ι₀ : Dⁿ ⟶ Dⁿ ⊗ I`.
 * `TauCeti.TopCat.exists_path_lift_of_mem_serreFibrations`: a Serre fibration lifts paths. In
   particular a point joined in the base to a point with path-connected fibre is joined to it in
-  the total space (`TauCeti.TopCat.joined_of_mem_serreFibrations`), and a point of the base
+  the total space (`TauCeti.TopCat.joined_of_mem_serreFibrations`), so the total space is
+  path-connected when the base and one fibre are
+  (`TauCeti.TopCat.pathConnectedSpace_of_mem_serreFibrations`), and a point of the base
   joined to the image has a nonempty fibre
   (`TauCeti.TopCat.nonempty_fiber_of_mem_serreFibrations`).
 * `TauCeti.TopCat.mem_serreFibrations_iff` and `TauCeti.TopCat.mem_serreFibrations_iff_cube`:
@@ -176,6 +178,18 @@ theorem joined_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {x 
   have hΓ1 : p (Γ 1) = p y := (congrFun hΓ 1).trans h.somePath.target
   exact Joined.trans ⟨⟨Γ, hΓ0, rfl⟩⟩ ((PathConnectedSpace.joined (⟨Γ 1, hΓ1⟩ : p.fiber (p y))
     ⟨y, rfl⟩).map continuous_subtype_val)
+
+/-- **The total space is path-connected when the base and one fibre are.** For a Serre fibration
+`p : E → B` over a path-connected base, if the fibre over `b` is path-connected, then so is `E`:
+a path from the projection of a point of `E` to `b` lifts to a path from that point into the
+fibre over `b`. -/
+theorem pathConnectedSpace_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) (b : B)
+    [PathConnectedSpace B] [PathConnectedSpace (p.fiber b)] : PathConnectedSpace E := by
+  obtain ⟨⟨y, hy⟩⟩ := (inferInstance : Nonempty (p.fiber b))
+  obtain rfl : p y = b := Set.mem_singleton_iff.1 hy
+  refine ⟨⟨y⟩, fun x z ↦ ?_⟩
+  exact (joined_of_mem_serreFibrations hp (PathConnectedSpace.joined (p x) (p y))).trans
+    (joined_of_mem_serreFibrations hp (PathConnectedSpace.joined (p z) (p y))).symm
 
 /-- **Lifting the end point of a path.** If a point `b` of the base of a Serre fibration `p` is
 joined to a point of the image of `p`, then the fibre of `p` over `b` is nonempty. -/

@@ -107,7 +107,7 @@ theorem isClosed_singularSupport [FiniteDimensional ℝ V] [Finite ι]
     IsClosed (singularSupport W) := by
   unfold singularSupport
   exact (isClosed_iUnion_of_finite fun i =>
-    isClosed_intrinsicFrontier (affineSpan ℝ (W i)).closed_of_finiteDimensional).union
+    isClosed_intrinsicFrontier (affineSpan ℝ (W i)).isClosed_of_finiteDimensional).union
     (isClosed_iUnion_of_finite fun i => isClosed_iUnion_of_finite fun j =>
       isClosed_iUnion_of_finite fun _ => (hclosed i).inter (hclosed j))
 

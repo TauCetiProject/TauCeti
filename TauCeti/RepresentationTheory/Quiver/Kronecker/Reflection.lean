@@ -239,8 +239,7 @@ theorem nonempty_iso_reflectRep_simpleRep_src_indecProjRep_tgt (hA : Fintype.car
         exact finiteDimensional_indecProjRep_obj (k := k) (Q := Reflect (Kronecker A) tgt) tgt src
       | tgt =>
         exact finiteDimensional_indecProjRep_obj (k := k) (Q := Reflect (Kronecker A) tgt) tgt tgt
-  refine nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
-    (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)
+  refine nonempty_iso_of_dimVector_eq_of_indecomposable
     (titsForm_reflect_posDef (le_of_eq hA)) _ _
     indecomposable_reflectRep_simpleRep_src
     (indecomposable_indecProjRep_of_isAcyclic (IsAcyclic.reflect_of_isSink isAcyclic isSink_tgt)

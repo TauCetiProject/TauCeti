@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 
@@ -25,6 +26,8 @@ homology by morphisms into and out of `A ⊞ B` can be read off from their compo
   `HomologicalComplex.epi_biprod_desc_homologyMap_iff`: the map `Hᵢ(X) ⟶ Hᵢ(A) ⊞ Hᵢ(B)` induced
   by `(f₁, f₂)` is mono, and the map `Hᵢ(A) ⊞ Hᵢ(B) ⟶ Hᵢ(Z)` induced by `g₁ + g₂` is epi, exactly
   when the map induced on `Hᵢ(A ⊞ B)` is.
+* `HomologicalComplex.quasiIso_biprod_map`: a biproduct of quasi-isomorphisms is a
+  quasi-isomorphism.
 -/
 
 public section
@@ -98,6 +101,35 @@ lemma epi_biprod_desc_homologyMap_iff (i : ι) :
     Epi (biprod.desc (homologyMap g₁ i) (homologyMap g₂ i)) ↔
       Epi (homologyMap (biprod.desc g₁ g₂) i) := by
   rw [← homologyBiprodIso_hom_comp_biprod_desc_homologyMap, epi_comp_iff_of_epi]
+
+/-- Under `Hᵢ(A ⊞ B) ≅ Hᵢ(A) ⊞ Hᵢ(B)`, the map induced by `biprod.map g₁ g₂` becomes the biproduct
+of the maps induced by `g₁` and `g₂`. -/
+@[reassoc]
+lemma homologyMap_biprod_map_comp_homologyBiprodIso_hom {A' B' : HomologicalComplex C c}
+    (g₁ : A ⟶ A') (g₂ : B ⟶ B') (i : ι) :
+    homologyMap (biprod.map g₁ g₂) i ≫ (homologyBiprodIso A' B' i).hom =
+      (homologyBiprodIso A B i).hom ≫ biprod.map (homologyMap g₁ i) (homologyMap g₂ i) := by
+  -- Write both biproduct isomorphisms and `biprod.map` through `biprod.lift`.
+  have hA : (homologyBiprodIso A B i).hom =
+      biprod.lift (homologyMap biprod.fst i) (homologyMap biprod.snd i) := by
+    rw [← homologyMap_biprod_lift_comp_homologyBiprodIso_hom,
+      show biprod.lift biprod.fst biprod.snd = 𝟙 (A ⊞ B) by apply biprod.hom_ext <;> simp,
+      homologyMap_id, Category.id_comp]
+  have hmap : biprod.map g₁ g₂ = biprod.lift (biprod.fst ≫ g₁) (biprod.snd ≫ g₂) := by
+    apply biprod.hom_ext <;> simp
+  rw [hmap, homologyMap_biprod_lift_comp_homologyBiprodIso_hom, hA]
+  apply biprod.hom_ext <;> simp [homologyMap_comp]
+
+/-- A biproduct of quasi-isomorphisms is a quasi-isomorphism. -/
+instance quasiIso_biprod_map {A' B' : HomologicalComplex C c} (g₁ : A ⟶ A') (g₂ : B ⟶ B')
+    [QuasiIso g₁] [QuasiIso g₂] : QuasiIso (biprod.map g₁ g₂) := by
+  rw [quasiIso_iff]
+  intro i
+  rw [quasiIsoAt_iff_isIso_homologyMap, ← isIso_comp_right_iff _ (homologyBiprodIso A' B' i).hom,
+    homologyMap_biprod_map_comp_homologyBiprodIso_hom]
+  have : IsIso (biprod.map (homologyMap g₁ i) (homologyMap g₂ i)) :=
+    (biprod.mapIso (asIso (homologyMap g₁ i)) (asIso (homologyMap g₂ i))).isIso_hom
+  infer_instance
 
 end
 

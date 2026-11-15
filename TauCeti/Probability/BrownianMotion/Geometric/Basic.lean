@@ -132,7 +132,7 @@ theorem rpow_geometricBrownianMotion (s μ σ q : ℝ) (W : ℝ≥0 → Ω → �
     geometricBrownianMotion s μ σ W t ω ^ q = s ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) *
       exponentialMartingale (q * σ) W t ω := by
   rw [geometricBrownianMotion_eq_mul_exponentialMartingale, mul_assoc, mul_comm s,
-    Real.mul_rpow_of_pos_left (mul_pos (exp_pos _) (exponentialMartingale_pos σ W t ω)),
+    Real.mul_rpow_of_nonneg_left (mul_pos (exp_pos _) (exponentialMartingale_pos σ W t ω)).le,
     mul_rpow (exp_pos _).le (exponentialMartingale_pos σ W t ω).le,
     ← exp_mul, rpow_exponentialMartingale, add_mul, exp_add]
   ring_nf

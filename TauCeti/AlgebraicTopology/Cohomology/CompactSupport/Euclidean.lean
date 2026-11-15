@@ -60,9 +60,9 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] {R : C}
   {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 private lemma isIso_singularCohomologyMap_singleton_starHull (y : E)
-    (K : Compacts (TopCat.of E)) (n : ℕ) :
+    (K : Compacts (of E)) (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
+      (TopPair.ofSubsetMap (𝟙 (of E))
         (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y K))) n) :=
   TauCeti.isIso_singularCohomologyMap_compl_of_starConvex R k M
     (Compacts.starConvex_starHull (E := E) ℝ y K) (Compacts.mem_starHull_self (E := E) ℝ y K)
@@ -74,7 +74,7 @@ variable (R k M)
 For a real normed space `E` and `y : E`, the map `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an isomorphism.
 -/
 instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
-    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n {y}) := by
+    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := of E) n {y}) := by
   -- Every compact `K ⊆ E` lies in the compact union of the segments from `y` to the points of
   -- `K`, which is star-convex about `y`, and for such sets the restriction
   -- `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ(E, E ∖ K)` is an isomorphism.
@@ -85,7 +85,7 @@ instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
       (M := M) y L n
     refine (injective_iff_map_eq_zero _).1
       ((ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap (R := R) (k := k)
-        (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
+        (M := M) (TopPair.ofSubsetMap (𝟙 (of E))
           (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y L))) n)).1) z ?_
     rw [← singularCohomologyMap_ofSubsetMap_id_trans hL (Compacts.le_starHull (E := E) ℝ y L),
       ConcreteCategory.comp_apply, hzL, map_zero]
@@ -93,9 +93,9 @@ instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
     have := isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k)
       (M := M) y L n
     obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap
-      (R := R) (k := k) (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
+      (R := R) (k := k) (M := M) (TopPair.ofSubsetMap (𝟙 (of E))
         (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y L))) n)).2
-      (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
+      (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (of E))
         (mapsTo_id_compl_compacts (Compacts.le_starHull (E := E) ℝ y L))) n w)
     refine ⟨z, ?_⟩
     rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n
@@ -107,33 +107,33 @@ instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
 every point `y : E`, the inverse of the isomorphism `compactSupportCohomologyι` from the local
 cohomology at `y` (`TopCat.isIso_compactSupportCohomologyι_singleton`). -/
 def compactSupportCohomologyEuclideanIso (y : E) (n : ℕ) :
-    (TopCat.of E).compactSupportCohomology R k M n ≅
-      (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).singularCohomology R k M n :=
-  (asIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n {y})).symm
+    (of E).compactSupportCohomology R k M n ≅
+      (TopPair.ofSubset ({y}ᶜ : Set (of E))).singularCohomology R k M n :=
+  (asIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := of E) n {y})).symm
 
 @[reassoc (attr := simp)]
 lemma compactSupportCohomologyι_compactSupportCohomologyEuclideanIso_hom (y : E) (n : ℕ) :
-    compactSupportCohomologyι (X := TopCat.of E) n ({y} : Compacts E) ≫
+    compactSupportCohomologyι (X := of E) n ({y} : Compacts E) ≫
         (compactSupportCohomologyEuclideanIso R k M y n).hom = 𝟙 _ := by
   simp [compactSupportCohomologyEuclideanIso]
 
 @[reassoc (attr := simp)]
 lemma compactSupportCohomologyEuclideanIso_hom_compactSupportCohomologyι (y : E) (n : ℕ) :
     (compactSupportCohomologyEuclideanIso R k M y n).hom ≫
-        compactSupportCohomologyι (X := TopCat.of E) n ({y} : Compacts E) = 𝟙 _ := by
+        compactSupportCohomologyι (X := of E) n ({y} : Compacts E) = 𝟙 _ := by
   simp [compactSupportCohomologyEuclideanIso]
 
 @[simp]
 lemma compactSupportCohomologyEuclideanIso_inv (y : E) (n : ℕ) :
     (compactSupportCohomologyEuclideanIso R k M y n).inv =
-      compactSupportCohomologyι (X := TopCat.of E) n ({y} : Compacts E) :=
+      compactSupportCohomologyι (X := of E) n ({y} : Compacts E) :=
   (rfl)
 
 /-- Every class with compact support on a real normed space comes from the local cohomology at
 any given point. -/
 lemma compactSupportCohomologyι_singleton_surjective (y : E) (n : ℕ) :
     Function.Surjective (compactSupportCohomologyι (R := R) (k := k) (M := M)
-      (X := TopCat.of E) n {y}) :=
+      (X := of E) n {y}) :=
   (ConcreteCategory.bijective_of_isIso _).2
 
 /-! ### Vanishing and generators -/
@@ -147,7 +147,7 @@ variable {k : Type v} [CommRing k] (R N : ModuleCat.{v} k) [Module.Projective k 
 the dimension**: `Hⁿ_c(E; R, N) = 0` for `n ≠ finrank ℝ E`, for projective coefficients `R` and
 any coefficient module `N`. -/
 theorem isZero_compactSupportCohomology_euclidean {n : ℕ} (h : n ≠ finrank ℝ E) :
-    IsZero ((TopCat.of E).compactSupportCohomology R k N n) :=
+    IsZero ((of E).compactSupportCohomology R k N n) :=
   (TauCeti.isZero_singularCohomology_complSingleton_of_ne R N (OpenPartialHomeomorph.refl E)
     (x := 0) (Set.mem_univ _) rfl h).of_iso (compactSupportCohomologyEuclideanIso R k N 0 n)
 

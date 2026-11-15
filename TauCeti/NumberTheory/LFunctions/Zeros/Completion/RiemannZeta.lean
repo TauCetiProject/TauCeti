@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
+public import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
 
 /-!
 # The entire completion of the Riemann zeta function
@@ -80,5 +81,14 @@ theorem riemannZetaData_entireCompletion :
   have hs0 : s ≠ 0 := by rintro rfl; simp at hs
   have hs1 : s ≠ 1 := by rintro rfl; simp at hs
   simpa using zetaEntireCompletion_eq_mul hs0 hs1
+
+/-- The entire completion has a zero of positive multiplicity exactly where
+`completedRiemannZeta` has one: clearing the poles at `0` and `1` creates no zeros. -/
+theorem zero_lt_divisor_zetaEntireCompletion_iff {s : ℂ} :
+    0 < MeromorphicOn.divisor zetaEntireCompletion Set.univ s ↔
+      0 < MeromorphicOn.divisor completedRiemannZeta Set.univ s := by
+  have h := riemannZetaData_hasMeromorphicContinuation.toNat_divisor_entireCompletion s
+  rw [riemannZetaData_entireCompletion, riemannZetaData_completed] at h
+  omega
 
 end TauCeti.LFunctions
