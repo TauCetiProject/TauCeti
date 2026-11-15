@@ -23,6 +23,14 @@ basis ordering agrees with `Module.Basis.complexToReal` reindexed by
 `EuclideanSpace ℝ (Fin (2 * n))`
 (`TauCeti.map_complexEuclideanRealLinearIsometryEquiv_complexOrientation`). The resulting isometry
 can transport real manifold models and orientations without changing their chart carriers.
+
+Transporting multiplication by `Complex.I` along `TauCeti.complexEuclideanRealLinearIsometryEquiv`
+gives `TauCeti.pairedCoordinateRotation`, the quarter-turn
+`(x₀, x₁, x₂, x₃, …) ↦ (-x₁, x₀, -x₃, x₂, …)` in each consecutive coordinate plane of `ℝ²ⁿ`. It is
+a linear isometry satisfying `J (J x) = -x` and `⟪J x, x⟫ = 0`, and conjugating it by an
+orthonormal basis shows that every even-dimensional real inner product space admits a linear
+isometry orthogonal to the identity at every vector
+(`TauCeti.exists_linearIsometryEquiv_inner_self_eq_zero`).
 -/
 
 public section
@@ -163,5 +171,113 @@ theorem map_complexEuclideanRealLinearIsometryEquiv_reindex_complexOrientation (
   rw [Orientation.map_reindex, map_complexEuclideanRealLinearIsometryEquiv_complexOrientation]
   exact (Orientation.reindex ℝ _
     (finCongr (by rw [finrank_euclideanSpace_fin]))).symm_apply_apply _
+
+section PairedCoordinateRotation
+
+open scoped RealInnerProductSpace
+
+/-- Real linear isometry of `EuclideanSpace ℂ (Fin n)` given by scalar multiplication by `i`. -/
+private noncomputable def complexISmulLinearIsometryEquiv (n : ℕ) :
+    EuclideanSpace ℂ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin n) where
+  toLinearEquiv :=
+    { toFun := fun z ↦ Complex.I • z
+      map_add' := fun x y ↦ smul_add Complex.I x y
+      map_smul' := fun r x ↦ smul_comm Complex.I r x
+      invFun := fun z ↦ (-Complex.I) • z
+      left_inv := fun z ↦ by simp [smul_smul]
+      right_inv := fun z ↦ by simp [smul_smul] }
+  norm_map' := fun z ↦ by simp [norm_smul]
+
+/-- The paired quarter-turn `(x₀, x₁, x₂, x₃, …) ↦ (-x₁, x₀, -x₃, x₂, …)` on
+`EuclideanSpace ℝ (Fin (2 * n))`, obtained by transporting multiplication by `Complex.I` on
+`EuclideanSpace ℂ (Fin n)` along `TauCeti.complexEuclideanRealLinearIsometryEquiv`. -/
+noncomputable def pairedCoordinateRotation (n : ℕ) :
+    EuclideanSpace ℝ (Fin (2 * n)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (2 * n)) :=
+  (complexEuclideanRealLinearIsometryEquiv n).symm.trans
+    ((complexISmulLinearIsometryEquiv n).trans (complexEuclideanRealLinearIsometryEquiv n))
+
+/-- On even coordinates `2 * j`, `TauCeti.pairedCoordinateRotation` negates the partner odd
+coordinate `2 * j + 1`. -/
+@[simp]
+theorem pairedCoordinateRotation_apply_two_mul {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin (2 * n))) (j : Fin n) :
+    pairedCoordinateRotation n x ⟨2 * j.val, by omega⟩ = -x ⟨2 * j.val + 1, by omega⟩ := by
+  have h0 : (⟨2 * j.val, by omega⟩ : Fin (2 * n)) =
+      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 0)) := by
+    ext
+    simp [finProdFinEquiv]
+  have h1 : (⟨2 * j.val + 1, by omega⟩ : Fin (2 * n)) =
+      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 1)) := by
+    ext
+    simp [finProdFinEquiv]
+    omega
+  rw [h0, h1, pairedCoordinateRotation, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.trans_apply, complexEuclideanRealLinearIsometryEquiv_apply_re]
+  simp [complexISmulLinearIsometryEquiv]
+
+/-- On odd coordinates `2 * j + 1`, `TauCeti.pairedCoordinateRotation` returns the partner even
+coordinate `2 * j`. -/
+@[simp]
+theorem pairedCoordinateRotation_apply_two_mul_add_one {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin (2 * n))) (j : Fin n) :
+    pairedCoordinateRotation n x ⟨2 * j.val + 1, by omega⟩ = x ⟨2 * j.val, by omega⟩ := by
+  have h0 : (⟨2 * j.val, by omega⟩ : Fin (2 * n)) =
+      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 0)) := by
+    ext
+    simp [finProdFinEquiv]
+  have h1 : (⟨2 * j.val + 1, by omega⟩ : Fin (2 * n)) =
+      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j, 1)) := by
+    ext
+    simp [finProdFinEquiv]
+    omega
+  rw [h0, h1, pairedCoordinateRotation, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.trans_apply, complexEuclideanRealLinearIsometryEquiv_apply_im]
+  simp [complexISmulLinearIsometryEquiv]
+
+/-- Applying `TauCeti.pairedCoordinateRotation` twice negates the vector. -/
+@[simp]
+theorem pairedCoordinateRotation_pairedCoordinateRotation {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin (2 * n))) :
+    pairedCoordinateRotation n (pairedCoordinateRotation n x) = -x := by
+  simp [pairedCoordinateRotation, complexISmulLinearIsometryEquiv, ← map_neg, smul_smul]
+
+/-- The inverse of `TauCeti.pairedCoordinateRotation` is its negation. -/
+@[simp]
+theorem pairedCoordinateRotation_symm_apply {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin (2 * n))) :
+    (pairedCoordinateRotation n).symm x = -pairedCoordinateRotation n x := by
+  apply (pairedCoordinateRotation n).injective
+  simp
+
+/-- Every vector in `EuclideanSpace ℝ (Fin (2 * n))` is orthogonal to its image under
+`TauCeti.pairedCoordinateRotation`. -/
+@[simp]
+theorem inner_pairedCoordinateRotation_self {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin (2 * n))) :
+    ⟪pairedCoordinateRotation n x, x⟫ = 0 := by
+  have h := (pairedCoordinateRotation n).inner_map_map (pairedCoordinateRotation n x) x
+  rw [pairedCoordinateRotation_pairedCoordinateRotation, inner_neg_left, real_inner_comm] at h
+  linarith
+
+/-- Commuted form of `TauCeti.inner_pairedCoordinateRotation_self`. -/
+@[simp]
+theorem inner_self_pairedCoordinateRotation {n : ℕ}
+    (x : EuclideanSpace ℝ (Fin (2 * n))) :
+    ⟪x, pairedCoordinateRotation n x⟫ = 0 := by
+  rw [real_inner_comm, inner_pairedCoordinateRotation_self]
+
+/-- Every even-dimensional real inner product space admits a linear isometry equivalence sending
+each vector to an orthogonal vector. -/
+theorem exists_linearIsometryEquiv_inner_self_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] (hE : Even (Module.finrank ℝ E)) :
+    ∃ L : E ≃ₗᵢ[ℝ] E, ∀ x : E, ⟪L x, x⟫ = 0 := by
+  obtain ⟨m, hm⟩ := hE
+  let e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (2 * m)) :=
+    ((stdOrthonormalBasis ℝ E).reindex (finCongr (by omega))).repr
+  refine ⟨e.trans ((pairedCoordinateRotation m).trans e.symm), fun x ↦ ?_⟩
+  rw [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.trans_apply,
+    ← e.inner_map_map, e.apply_symm_apply, inner_pairedCoordinateRotation_self]
+
+end PairedCoordinateRotation
 
 end TauCeti
