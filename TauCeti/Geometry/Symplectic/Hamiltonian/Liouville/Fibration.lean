@@ -94,8 +94,9 @@ omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundar
 /-- **Coordinates around a fibre.** For every `b : B` there are a smooth map
 `κ : B → ℝⁿ`, `n = dim B`, whose differential at `b` is a linear isomorphism `e`, such that the
 components of `κ ∘ π` are regular along the fibre `π⁻¹(b)`, and this fibre is the connected
-component of each of its points `x` in the level `(κ ∘ π)⁻¹(κ (π x))`. The map `κ` agrees near `b`
-with a chart of `B`, localized by a bump function. -/
+component of each of its points `x` in the level `(κ ∘ π)⁻¹(κ (π x))`. For instance, `κ` can be
+taken to be a chart of `B` at `b`, localized by a bump function and composed with a linear
+isomorphism. -/
 theorem exists_coordinates (h : hσ.IsLagrangianTorusFibration J π) (b : B) :
     ∃ (κ : B → Fin (finrank ℝ F) → ℝ) (e : F ≃L[ℝ] (Fin (finrank ℝ F) → ℝ)),
       ContMDiff J 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ κ ∧

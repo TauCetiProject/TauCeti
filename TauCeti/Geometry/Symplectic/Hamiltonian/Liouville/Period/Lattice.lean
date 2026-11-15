@@ -26,12 +26,14 @@ determined by `d(g ∘ π) = dg_b ∘ dπ`
 (`IsLagrangianFibration.flowOf_hamiltonianVectorField_comp_eq`).
 The flows of pulled-back functions commute, since the fibres are Lagrangian, so this is an action of
 the vector group `T*_b B` (`IsLagrangianTorusFibration.fiberAction_add`), and it is transitive
-(`IsLagrangianTorusFibration.exists_fiberAction_eq`).
+(`IsLagrangianTorusFibration.exists_fiberAction_eq`). It is packaged as an additive action
+(`IsLagrangianTorusFibration.fiberAddAction`), so that Mathlib's orbit and stabilizer API applies.
 
 The period lattice `Λ_b` (`IsLagrangianTorusFibration.periodLattice`) is the subgroup of the
 covectors acting trivially on the fibre. Since the action is transitive and commutative, a covector
 lies in `Λ_b` as soon as it fixes one point of the fibre
-(`IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_eq`), and two covectors act alike
+(`IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_eq`,
+`IsLagrangianTorusFibration.periodLattice_eq_stabilizer`), and two covectors act alike
 on a point exactly when they differ by an element of `Λ_b`
 (`IsLagrangianTorusFibration.fiberAction_eq_fiberAction_iff`). The period lattice is a discrete
 subgroup (`IsLagrangianTorusFibration.discreteTopology_periodLattice`) spanning `T*_b B`
@@ -54,6 +56,7 @@ here. Its model, for a lattice spanned by global closed one-forms, is
 ## Main definitions
 
 * `IsLagrangianTorusFibration.fiberAction`: the action of `T*_b B` on the fibre over `b`.
+* `IsLagrangianTorusFibration.fiberAddAction`: the same action, as an `AddAction`.
 * `IsLagrangianTorusFibration.periodLattice`: the period lattice `Λ_b ⊆ T*_b B`.
 * `IsLagrangianTorusFibration.quotientPeriodLatticeHomeomorph`: the homeomorphism
   `T*_b B / Λ_b ≃ₜ π⁻¹(b)` given by the orbit map through a point of the fibre.
@@ -67,9 +70,10 @@ here. Its model, for a lattice spanned by global closed one-forms, is
 * `IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_eq`,
   `IsLagrangianTorusFibration.mem_periodLattice_iff_flowOf_eq`: the period lattice is the
   stabilizer of any point of the fibre.
-* `IsLagrangianTorusFibration.isZLattice_periodLattice`,
+* `IsLagrangianTorusFibration.discreteTopology_periodLattice`,
+  `IsLagrangianTorusFibration.isZLattice_periodLattice`,
   `IsLagrangianTorusFibration.finrank_periodLattice`: the period lattice is a full lattice in
-  `T*_b B`, of rank `dim B`.
+  `T*_b B`, of rank `dim B`. The first two are instances.
 
 All in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`.
 
@@ -122,6 +126,36 @@ private theorem coord_spec :
   (h.exists_coordinates b).choose_spec.choose_spec
 
 omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The fibre over `b` is the connected component of each of its points in its level of the
+coordinates `coord ∘ π`. -/
+private theorem connectedComponentIn_coord_comp (x : π ⁻¹' {b}) :
+    connectedComponentIn ((h.coord b ∘ π) ⁻¹' {(h.coord b ∘ π) x}) x = π ⁻¹' {b} :=
+  (h.coord_spec b).2.2.2 x x.2
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The coordinates `coord ∘ π` are regular along the fibre over `b`. -/
+private theorem isRegularPoint_coord_comp {y : M} (hy : y ∈ π ⁻¹' {b}) :
+    IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (h.coord b ∘ π) y :=
+  (h.coord_spec b).2.2.1 y hy
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The coordinates `coord ∘ π` are regular on the connected component of a point of the fibre
+in its level. -/
+private theorem isRegularPoint_coord_comp_of_mem_connectedComponentIn (x : π ⁻¹' {b}) :
+    ∀ y ∈ connectedComponentIn ((h.coord b ∘ π) ⁻¹' {(h.coord b ∘ π) x}) x,
+      IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (h.coord b ∘ π) y := fun _ hy ↦
+  h.isRegularPoint_coord_comp b ((h.connectedComponentIn_coord_comp b x).subset hy)
+
+omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] [FiniteDimensional ℝ F]
+  [IsManifold J ∞ B] [T2Space B] in
+include h in
+/-- The number of coordinates is half the dimension of `M`. -/
+private theorem two_mul_card_eq (x : M) :
+    2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
+  have : Nonempty M := ⟨x⟩
+  rw [Fintype.card_fin, h.two_mul_finrank]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem contMDiff_coord_comp :
     ContMDiff I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (h.coord b ∘ π) :=
   (h.coord_spec b).1.comp h.contMDiff
@@ -148,6 +182,11 @@ private def coordAction (v : Fin (finrank ℝ F) → ℝ) : M → M :=
   ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_coord_comp b)
     (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) v).toMul
 
+/-- The stabilizer of `x` for the coordinate flow action `coordAction`. -/
+private abbrev coordStabilizer (x : M) : AddSubgroup (Fin (finrank ℝ F) → ℝ) :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
+    (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) x
+
 /-- The coordinates of a covector at `b` in the basis dual to the coordinates `coord`. -/
 private def dualCoord : (F →L[ℝ] ℝ) ≃L[ℝ] (Fin (finrank ℝ F) → ℝ) :=
   (((h.coordEquiv b).arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)).toLinearEquiv.trans
@@ -156,8 +195,8 @@ private def dualCoord : (F →L[ℝ] ℝ) ≃L[ℝ] (Fin (finrank ℝ F) → ℝ
 
 omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem dualCoord_apply (α : F →L[ℝ] ℝ) (i : Fin (finrank ℝ F)) :
-    h.dualCoord b α i = α ((h.coordEquiv b).symm (Pi.single i 1)) :=
-  (rfl)
+    h.dualCoord b α i = α ((h.coordEquiv b).symm (Pi.single i 1)) := by
+  simp [dualCoord, dotProductEquiv]
 
 /-! ### The action of the cotangent space on a fibre -/
 
@@ -165,11 +204,8 @@ private theorem dualCoord_apply (α : F →L[ℝ] ℝ) (i : Fin (finrank ℝ F))
 the time-one map of the Hamiltonian flow of `g ∘ π`, for any `C²` function `g` on `B` with
 `dg_b = α` (`coe_fiberAction_eq_flowOf`). -/
 def fiberAction (α : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) : π ⁻¹' {b} :=
-  ⟨h.coordAction hσc b (h.dualCoord b α) x, by
-    have hm : h.coordAction hσc b (h.dualCoord b α) x ∈
-        connectedComponentIn ((h.coord b ∘ π) ⁻¹' {h.coord b (π x)}) x :=
-      (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_apply_mem_connectedComponentIn _ _ _ x _
-    rwa [(h.coord_spec b).2.2.2 x x.2] at hm⟩
+  ⟨h.coordAction hσc b (h.dualCoord b α) x, (h.connectedComponentIn_coord_comp b x).subset <|
+    (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_apply_mem_connectedComponentIn _ _ _ x _⟩
 
 private theorem coe_fiberAction (α : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
     (h.fiberAction hσc b α x : M) = h.coordAction hσc b (h.dualCoord b α) x :=
@@ -228,60 +264,68 @@ theorem fiberAction_comm (α β : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
 
 /-- **The action of `T*_b B` on the fibre over `b` is transitive.** -/
 theorem exists_fiberAction_eq (x y : π ⁻¹' {b}) : ∃ α, h.fiberAction hσc b α x = y := by
-  have : Nonempty M := ⟨x⟩
-  have hcomp := (h.coord_spec b).2.2.2 x x.2
-  have hy : (y : M) ∈ connectedComponentIn ((h.coord b ∘ π) ⁻¹' {h.coord b (π x)}) x := by
-    rw [hcomp]
-    exact y.2
   obtain ⟨v, hv⟩ := (⟨hσc, hσ⟩ : σ.IsSymplectic).exists_hamiltonianFlowAction_apply_eq
     (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b) (by rw [Fintype.card_fin, h.two_mul_finrank])
-    (fun z hz ↦ (h.coord_spec b).2.2.1 z (hcomp ▸ hz)) hy
+    (h.isCompleteVectorField_coord_comp b) (h.two_mul_card_eq x)
+    (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)
+    ((h.connectedComponentIn_coord_comp b x).symm.subset y.2)
   refine ⟨(h.dualCoord b).symm v, Subtype.ext ?_⟩
   rw [coe_fiberAction, ContinuousLinearEquiv.apply_symm_apply]
   exact hv
 
+/-- **The action of `T*_b B` on the fibre over `b` as an additive action.** The covector `α` acts
+on `x` by `α +ᵥ x = fiberAction α x`. It depends on the hypotheses on `σ` and `π`, so it is not an
+instance; it makes Mathlib's orbit and stabilizer API available for this action. -/
+abbrev fiberAddAction : AddAction (F →L[ℝ] ℝ) (π ⁻¹' {b}) where
+  vadd := h.fiberAction hσc b
+  zero_vadd := h.fiberAction_zero hσc b
+  add_vadd := h.fiberAction_add hσc b
+
+/-- The covector `α` acts on `x` for `fiberAddAction` by `fiberAction α x`. -/
+theorem fiberAddAction_vadd (α : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
+    (letI := h.fiberAddAction hσc b; α +ᵥ x) = h.fiberAction hσc b α x :=
+  rfl
+
+/-- The additive action of `T*_b B` on the fibre over `b` is transitive. -/
+theorem isPretransitive_fiberAddAction :
+    letI := h.fiberAddAction hσc b
+    AddAction.IsPretransitive (F →L[ℝ] ℝ) (π ⁻¹' {b}) :=
+  letI := h.fiberAddAction hσc b
+  ⟨h.exists_fiberAction_eq hσc b⟩
+
 /-! ### The period lattice -/
 
 /-- **The period lattice** `Λ_b ⊆ T*_b B` of the fibration at `b`: the subgroup of the covectors
-acting trivially on the fibre over `b`. It is the stabilizer of any single point of the fibre
-(`mem_periodLattice_iff_fiberAction_eq`), and it is a full lattice in `T*_b B`
-(`isZLattice_periodLattice`). -/
-def periodLattice : AddSubgroup (F →L[ℝ] ℝ) where
-  carrier := {α | ∀ x, h.fiberAction hσc b α x = x}
-  add_mem' {α β} hα hβ x := by
-    rw [fiberAction_add, hβ x, hα x]
-  zero_mem' := h.fiberAction_zero hσc b
-  neg_mem' {α} hα x := by
-    conv_lhs => rw [← hα x]
-    rw [← fiberAction_add, neg_add_cancel, fiberAction_zero]
+acting trivially on the fibre over `b`, that is, the intersection of the stabilizers of the points
+of the fibre. It is the stabilizer of any single point of the fibre (`periodLattice_eq_stabilizer`),
+and it is a full lattice in `T*_b B` (`isZLattice_periodLattice`). -/
+def periodLattice : AddSubgroup (F →L[ℝ] ℝ) :=
+  letI := h.fiberAddAction hσc b
+  ⨅ x : π ⁻¹' {b}, AddAction.stabilizer (F →L[ℝ] ℝ) x
 
 /-- A covector lies in the period lattice exactly when it fixes every point of the fibre. -/
 @[simp]
 theorem mem_periodLattice {α : F →L[ℝ] ℝ} :
     α ∈ h.periodLattice hσc b ↔ ∀ x, h.fiberAction hσc b α x = x :=
-  Iff.rfl
+  letI := h.fiberAddAction hσc b
+  AddSubgroup.mem_iInf.trans (forall_congr' fun _ ↦ AddAction.mem_stabilizer_iff)
 
 /-- **The period lattice is the stabilizer of any point of the fibre.** A covector acts trivially
 on the fibre as soon as it fixes one of its points, since the action is transitive and
 commutative. -/
 theorem mem_periodLattice_iff_fiberAction_eq {α : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
     α ∈ h.periodLattice hσc b ↔ h.fiberAction hσc b α x = x := by
-  refine ⟨fun hα ↦ hα x, fun hα y ↦ ?_⟩
+  refine (h.mem_periodLattice hσc b).trans ⟨fun hα ↦ hα x, fun hα y ↦ ?_⟩
   obtain ⟨β, rfl⟩ := h.exists_fiberAction_eq hσc b x y
   rw [fiberAction_comm, hα]
 
-/-- Two covectors act alike on a point of the fibre exactly when they differ by an element of the
-period lattice. -/
-theorem fiberAction_eq_fiberAction_iff {α β : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
-    h.fiberAction hσc b α x = h.fiberAction hσc b β x ↔ -α + β ∈ h.periodLattice hσc b := by
-  rw [h.mem_periodLattice_iff_fiberAction_eq hσc b x]
-  constructor
-  · intro hαβ
-    rw [fiberAction_add, ← hαβ, ← fiberAction_add, neg_add_cancel, fiberAction_zero]
-  · intro hαβ
-    conv_lhs => rw [← hαβ]
-    rw [← fiberAction_add, add_neg_cancel_left]
+/-- **The period lattice is the stabilizer of any point of the fibre**, for the additive action
+`fiberAddAction`. -/
+theorem periodLattice_eq_stabilizer (x : π ⁻¹' {b}) :
+    h.periodLattice hσc b = (letI := h.fiberAddAction hσc b; AddAction.stabilizer _ x) :=
+  letI := h.fiberAddAction hσc b
+  AddSubgroup.ext fun α ↦ (h.mem_periodLattice_iff_fiberAction_eq hσc b x).trans
+    ((AddAction.mem_stabilizer_iff (a := x) (g := α)).trans (by rw [fiberAddAction_vadd])).symm
 
 /-- **The period lattice in terms of Hamiltonian flows.** The differential `α` at `b` of a `C²`
 function `g` on `B` lies in the period lattice exactly when the time-one map of the Hamiltonian
@@ -293,105 +337,111 @@ theorem mem_periodLattice_iff_flowOf_eq {α : F →L[ℝ] ℝ} {g : B → ℝ} (
     h.coe_fiberAction_eq_flowOf hσc b hg hgα]
 
 /-- The period lattice is the stabilizer of the coordinate flow action, read in dual coordinates. -/
-private theorem mem_periodLattice_iff_mem_hamiltonianFlowStabilizer
-    {α : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
-    α ∈ h.periodLattice hσc b ↔ h.dualCoord b α ∈
-      (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
-        (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) x := by
+private theorem mem_periodLattice_iff_mem_coordStabilizer {α : F →L[ℝ] ℝ}
+    (x : π ⁻¹' {b}) :
+    α ∈ h.periodLattice hσc b ↔ h.dualCoord b α ∈ h.coordStabilizer hσc b x := by
   rw [h.mem_periodLattice_iff_fiberAction_eq hσc b x, Subtype.ext_iff, coe_fiberAction,
-    IsSymplectic.mem_hamiltonianFlowStabilizer]
-  rfl
+    coordAction, coordStabilizer, IsSymplectic.mem_hamiltonianFlowStabilizer]
 
-private theorem toIntSubmodule_periodLattice (x : π ⁻¹' {b}) :
-    (h.periodLattice hσc b).toIntSubmodule = ZLattice.comap ℝ
-      ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
-        (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) x).toIntSubmodule
-      (h.dualCoord b).toLinearMap := by
-  ext α
-  exact h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc b x
+/-- Two covectors act alike on a point of the fibre exactly when they differ by an element of the
+period lattice. -/
+theorem fiberAction_eq_fiberAction_iff {α β : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
+    h.fiberAction hσc b α x = h.fiberAction hσc b β x ↔ -α + β ∈ h.periodLattice hσc b := by
+  rw [Subtype.ext_iff, coe_fiberAction, coe_fiberAction, coordAction, coordAction,
+    IsSymplectic.hamiltonianFlowAction_apply_eq_iff, ← map_neg, ← map_add,
+    h.mem_periodLattice_iff_mem_coordStabilizer hσc b x, coordStabilizer]
+
+/-- The dual coordinates map the period lattice onto the stabilizer of a point of the fibre for the
+coordinate flow action. -/
+private theorem map_dualCoord_periodLattice (x : π ⁻¹' {b}) :
+    (h.periodLattice hσc b).map (h.dualCoord b).toLinearEquiv.toAddEquiv.toAddMonoidHom =
+      h.coordStabilizer hσc b x := by
+  ext v
+  rw [AddSubgroup.mem_map_equiv, h.mem_periodLattice_iff_mem_coordStabilizer hσc b x]
+  exact iff_of_eq (congrArg (· ∈ _) ((h.dualCoord b).apply_symm_apply v))
 
 /-- **The period lattice is discrete.** -/
-theorem discreteTopology_periodLattice : DiscreteTopology (h.periodLattice hσc b) := by
-  obtain ⟨x, hx⟩ := (h.isConnected_preimage_singleton b).nonempty
-  have := (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
-    (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b) ((h.coord_spec b).2.2.1 x hx)
-  have hd := (inferInstance : DiscreteTopology (ZLattice.comap ℝ
-    ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
-      (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b)
-      x).toIntSubmodule (h.dualCoord b).toLinearMap))
-  rw [← h.toIntSubmodule_periodLattice hσc b ⟨x, hx⟩] at hd
-  exact hd
+instance discreteTopology_periodLattice : DiscreteTopology (h.periodLattice hσc b) := by
+  obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
+  have : DiscreteTopology (h.coordStabilizer hσc b x) :=
+    (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
+      (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
+      (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.2)
+  -- The dual coordinates embed the period lattice into the discrete stabilizer of `x`.
+  exact DiscreteTopology.of_continuous_injective
+    (f := fun α : h.periodLattice hσc b ↦ (⟨h.dualCoord b α,
+      (h.mem_periodLattice_iff_mem_coordStabilizer hσc b x).1 α.2⟩ : h.coordStabilizer hσc b x))
+    (((h.dualCoord b).continuous.comp continuous_subtype_val).subtype_mk _)
+    fun _ _ hαβ ↦ Subtype.ext ((h.dualCoord b).injective (congrArg Subtype.val hαβ))
 
 /-- **The period lattice is a full lattice.** The period lattice spans `T*_b B`, so with its
 discreteness (`discreteTopology_periodLattice`) it is a `ℤ`-lattice in `T*_b B`. Hence the fibre
 over `b`, which is homeomorphic to `T*_b B / Λ_b` (`quotientPeriodLatticeHomeomorph`), is a torus of
 dimension `dim B`. -/
-theorem isZLattice_periodLattice [DiscreteTopology (h.periodLattice hσc b)] :
-    IsZLattice ℝ (h.periodLattice hσc b).toIntSubmodule := by
-  obtain ⟨x, hx⟩ := (h.isConnected_preimage_singleton b).nonempty
-  have : Nonempty M := ⟨x⟩
-  have hcomp := (h.coord_spec b).2.2.2 x hx
-  have := (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
-    (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b) ((h.coord_spec b).2.2.1 x hx)
-  have := (⟨hσc, hσ⟩ : σ.IsSymplectic).isZLattice_hamiltonianFlowStabilizer
-    (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b) (by rw [Fintype.card_fin, h.two_mul_finrank])
-    (fun z hz ↦ (h.coord_spec b).2.2.1 z (hcomp ▸ hz))
-    (hcomp ▸ h.isCompact_preimage_singleton b)
+instance isZLattice_periodLattice : IsZLattice ℝ (h.periodLattice hσc b).toIntSubmodule := by
+  obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
+  have : DiscreteTopology (h.coordStabilizer hσc b x) :=
+    (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
+      (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
+      (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.2)
+  have : IsZLattice ℝ (h.coordStabilizer hσc b x).toIntSubmodule :=
+    (⟨hσc, hσ⟩ : σ.IsSymplectic).isZLattice_hamiltonianFlowStabilizer
+      (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
+      (h.isCompleteVectorField_coord_comp b) (h.two_mul_card_eq x)
+      (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)
+      (by rw [h.connectedComponentIn_coord_comp b x]; exact h.isCompact_preimage_singleton b)
+  -- The period lattice is the preimage of the stabilizer of `x` under the dual coordinates.
+  have hcomap : (h.periodLattice hσc b).toIntSubmodule =
+      ZLattice.comap ℝ (h.coordStabilizer hσc b x).toIntSubmodule (h.dualCoord b).toLinearMap :=
+    Submodule.ext fun _ ↦ h.mem_periodLattice_iff_mem_coordStabilizer hσc b x
   refine ⟨?_⟩
-  rw [h.toIntSubmodule_periodLattice hσc b ⟨x, hx⟩]
+  rw [hcomap]
   exact IsZLattice.span_top
 
 /-- **The period lattice has rank `dim B`.** -/
-theorem finrank_periodLattice [DiscreteTopology (h.periodLattice hσc b)] :
+theorem finrank_periodLattice :
     finrank ℤ (h.periodLattice hσc b).toIntSubmodule = finrank ℝ F := by
-  have := h.isZLattice_periodLattice hσc b
   rw [ZLattice.rank ℝ, (h.dualCoord b).toLinearEquiv.finrank_eq, finrank_fin_fun]
 
 /-! ### The fibre as the torus `T*_b B / Λ_b` -/
 
+/-- The dual coordinates descend to a homeomorphism from `T*_b B / Λ_b` onto the quotient of `ℝⁿ`
+by the stabilizer of a point of the fibre for the coordinate flow action. -/
+private def quotientDualCoord (x : π ⁻¹' {b}) :
+    (F →L[ℝ] ℝ) ⧸ h.periodLattice hσc b ≃ₜ (Fin (finrank ℝ F) → ℝ) ⧸ h.coordStabilizer hσc b x :=
+  ⟨QuotientAddGroup.congr _ _ (h.dualCoord b).toLinearEquiv.toAddEquiv
+      (h.map_dualCoord_periodLattice hσc b x),
+    (continuous_quotient_mk'.comp (h.dualCoord b).continuous).quotient_lift _,
+    (continuous_quotient_mk'.comp (h.dualCoord b).symm.continuous).quotient_lift _⟩
+
+-- This is the additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups,
+-- also proved by `rfl`.
+private theorem quotientDualCoord_mk (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
+    h.quotientDualCoord hσc b x α = (h.dualCoord b α : (Fin (finrank ℝ F) → ℝ) ⧸ _) :=
+  rfl
+
 /-- **The fibre over `b` is the torus `T*_b B / Λ_b`.** For a point `x` of the fibre, the orbit
-map `α ↦ α • x` of the action of `T*_b B` descends to a homeomorphism from the quotient of `T*_b B`
-by the period lattice onto the fibre over `b`. -/
+map `α ↦ fiberAction α x` of the action of `T*_b B` descends to a homeomorphism from the quotient of
+`T*_b B` by the period lattice onto the fibre over `b`. It is the quotient of the dual coordinates,
+followed by the identification of the quotient of `ℝⁿ` by the stabilizer of `x` for the coordinate
+flow action with the connected component of `x` in its level, which is the fibre. -/
 def quotientPeriodLatticeHomeomorph (x : π ⁻¹' {b}) :
     (F →L[ℝ] ℝ) ⧸ h.periodLattice hσc b ≃ₜ π ⁻¹' {b} :=
-  -- The orbit map, descended to the quotient.
-  let f : (F →L[ℝ] ℝ) ⧸ h.periodLattice hσc b → π ⁻¹' {b} :=
-    Quotient.lift (fun α ↦ h.fiberAction hσc b α x) fun _ _ hαβ ↦
-      (h.fiberAction_eq_fiberAction_iff hσc b x).2 (QuotientAddGroup.leftRel_apply.1 hαβ)
-  have hf : f ∘ QuotientAddGroup.mk = fun α ↦ h.fiberAction hσc b α x := rfl
-  have : Nonempty M := ⟨x⟩
-  have hcomp := (h.coord_spec b).2.2.2 x x.2
-  have hreg : ∀ y ∈ connectedComponentIn ((h.coord b ∘ π) ⁻¹' {(h.coord b ∘ π) x}) x,
-      IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (h.coord b ∘ π) y :=
-    fun y hy ↦ (h.coord_spec b).2.2.1 y (hcomp ▸ hy)
-  -- The orbit map is the orbit map of the coordinate flow action, read in dual coordinates and
-  -- transported to the fibre; the latter descends to a homeomorphism.
-  let Q := (⟨hσc, hσ⟩ : σ.IsSymplectic).quotientHamiltonianFlowStabilizerHomeomorph
-    (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b) (by rw [Fintype.card_fin, h.two_mul_finrank]) hreg
-  have horbit : (fun α ↦ h.fiberAction hσc b α x) =
-      Homeomorph.setCongr hcomp ∘ Q ∘ QuotientAddGroup.mk ∘ h.dualCoord b :=
-    funext fun α ↦ Subtype.ext
-      (IsSymplectic.coe_quotientHamiltonianFlowStabilizerHomeomorph_mk _ _ _ _ _ _ _).symm
-  (Equiv.ofBijective f ⟨fun a a' ↦ Quotient.inductionOn₂ a a' fun α β hαβ ↦
-      QuotientAddGroup.eq.2 ((h.fiberAction_eq_fiberAction_iff hσc b x).1 hαβ),
-    fun y ↦ ⟨QuotientAddGroup.mk (h.exists_fiberAction_eq hσc b x y).choose,
-      (h.exists_fiberAction_eq hσc b x y).choose_spec⟩⟩).toHomeomorphOfContinuousOpen
-    ((QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 <| hf ▸ horbit ▸
-      (Homeomorph.setCongr hcomp).continuous.comp (Q.continuous.comp
-        (QuotientAddGroup.continuous_mk.comp (h.dualCoord b).continuous)))
-    (IsOpenMap.of_comp QuotientAddGroup.continuous_mk QuotientAddGroup.mk_surjective <| hf ▸
-      horbit ▸ (Homeomorph.setCongr hcomp).isOpenMap.comp (Q.isOpenMap.comp
-        (QuotientAddGroup.isOpenMap_coe.comp (h.dualCoord b).toHomeomorph.isOpenMap)))
+  (h.quotientDualCoord hσc b x).trans <|
+    ((⟨hσc, hσ⟩ : σ.IsSymplectic).quotientHamiltonianFlowStabilizerHomeomorph
+      (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
+      (h.isCompleteVectorField_coord_comp b) (h.two_mul_card_eq x)
+      (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)).trans <|
+    Homeomorph.setCongr (h.connectedComponentIn_coord_comp b x)
 
-/-- The homeomorphism `T*_b B / Λ_b ≃ₜ π⁻¹(b)` sends the class of `α` to `α • x`. -/
+/-- The homeomorphism `T*_b B / Λ_b ≃ₜ π⁻¹(b)` sends the class of `α` to `fiberAction α x`. -/
 @[simp]
 theorem quotientPeriodLatticeHomeomorph_mk (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
-    h.quotientPeriodLatticeHomeomorph hσc b x α = h.fiberAction hσc b α x := by
-  rw [quotientPeriodLatticeHomeomorph]
-  rfl
+    h.quotientPeriodLatticeHomeomorph hσc b x α = h.fiberAction hσc b α x :=
+  Subtype.ext <| by
+    rw [quotientPeriodLatticeHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
+      quotientDualCoord_mk, coe_fiberAction, coordAction]
+    -- `Homeomorph.setCongr` does not change the underlying point.
+    exact IsSymplectic.coe_quotientHamiltonianFlowStabilizerHomeomorph_mk _ _ _ _ _ _ _
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration

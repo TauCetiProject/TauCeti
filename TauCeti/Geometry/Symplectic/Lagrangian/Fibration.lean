@@ -49,7 +49,7 @@ back from the base generate the vertical motions:
 These vertical Hamiltonian flows generate the fibrewise action of `T*B` from which the period
 lattice `Λ ⊆ T*B` of the fibration is built; for a regular Lagrangian torus fibration the action of
 `T*_b B` on the fibre over `b` and its stabilizer, the period lattice `Λ_b`, are constructed in
-`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.PeriodLattice`.
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Lattice`.
 
 ## References
 

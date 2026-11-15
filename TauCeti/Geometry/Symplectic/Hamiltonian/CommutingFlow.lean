@@ -694,8 +694,9 @@ theorem isMIntegralCurve_hamiltonianFlowAction_smul (v : ι → ℝ) (x : M) :
   have hvel := (ho (t • v)).curveVelocity_comp_mfderiv (hl t)
   rw [hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x (t • v) v] at hvel
   refine hvel.trans ?_
-  rw [show (fun y ↦ v ⬝ᵥ F y) = fun y ↦ ∑ i, v i * F y i from rfl,
-    hamiltonianVectorField_fun_sum fun i _ ↦ hFi i _]
+  have hdot : (fun y ↦ v ⬝ᵥ F y) = fun y ↦ ∑ i, v i * F y i :=
+    funext fun y ↦ by rw [dotProduct]
+  rw [hdot, hamiltonianVectorField_fun_sum fun i _ ↦ hFi i _]
   exact Finset.sum_congr rfl fun i _ ↦ (hamiltonianVectorField_const_smul (v i) _).symm
 
 /-- **The action of `v` is the time-one map of the flow of `v ⬝ᵥ F`.** For `v : ι → ℝ`, the
