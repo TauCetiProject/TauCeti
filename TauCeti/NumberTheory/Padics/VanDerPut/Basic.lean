@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.Digits.Lemmas
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
-public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The van der Put basis of continuous functions on `ℤ_p`
