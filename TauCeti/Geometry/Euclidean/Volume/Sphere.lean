@@ -63,9 +63,12 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 * `TauCeti.euclideanHausdorffMeasure_sphere`: `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`.
 * `TauCeti.roundSphereVolume`: the area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`, its normalized
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
-* `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
-  real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
-  particular this measure is finite.
+* `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`,
+  `TauCeti.toReal_euclideanHausdorffMeasure_sphere_eq_roundSphereVolume`, and
+  `TauCeti.measureReal_euclideanHausdorffMeasure_sphere_eq_roundSphereVolume`: the unit sphere of
+  every real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`
+  (in `ℝ≥0∞`, `.toReal`, and `Measure.real` forms), together with the `EuclideanSpace ℝ (Fin n)`
+  specializations for `1 ≤ n`.
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
 
@@ -443,5 +446,48 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume {n : ℕ}
     μHE[n] (sphere (0 : E) 1) = ENNReal.ofReal (roundSphereVolume n) := by
   rw [euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma hE,
     roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+
+omit [FiniteDimensional ℝ E] in
+/-- The `.toReal` value of the normalized `n`-dimensional Hausdorff measure of the unit sphere in
+an `(n + 1)`-dimensional real inner product space is `|Sⁿ|`. -/
+theorem toReal_euclideanHausdorffMeasure_sphere_eq_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) :
+    (μHE[n] (sphere (0 : E) 1)).toReal = roundSphereVolume n := by
+  rw [euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le]
+
+omit [FiniteDimensional ℝ E] in
+/-- The `Measure.real` value of the normalized `n`-dimensional Hausdorff measure of the unit sphere
+in an `(n + 1)`-dimensional real inner product space is `|Sⁿ|`. -/
+theorem measureReal_euclideanHausdorffMeasure_sphere_eq_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) :
+    (μHE[n] : Measure E).real (sphere (0 : E) 1) = roundSphereVolume n := by
+  rw [Measure.real_def, toReal_euclideanHausdorffMeasure_sphere_eq_roundSphereVolume hE]
+
+/-- In positive dimension `n`, the unit sphere of `EuclideanSpace ℝ (Fin n)` has normalized
+`(n - 1)`-dimensional Hausdorff measure `ENNReal.ofReal (roundSphereVolume (n - 1))`. -/
+theorem euclideanHausdorffMeasure_euclideanSpace_sphere_zero_one {n : ℕ} (hn : 1 ≤ n) :
+    (μHE[n - 1] : Measure (EuclideanSpace ℝ (Fin n))) (sphere 0 1) =
+      ENNReal.ofReal (roundSphereVolume (n - 1)) := by
+  have hdim : finrank ℝ (EuclideanSpace ℝ (Fin n)) = (n - 1) + 1 := by
+    rw [finrank_euclideanSpace_fin]; omega
+  exact euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hdim
+
+/-- In positive dimension `n`, the `.toReal` value of the normalized `(n - 1)`-dimensional
+Hausdorff measure of the unit sphere of `EuclideanSpace ℝ (Fin n)` is
+`roundSphereVolume (n - 1)`. -/
+theorem toReal_euclideanHausdorffMeasure_euclideanSpace_sphere_zero_one {n : ℕ} (hn : 1 ≤ n) :
+    ((μHE[n - 1] : Measure (EuclideanSpace ℝ (Fin n))) (sphere 0 1)).toReal =
+      roundSphereVolume (n - 1) := by
+  rw [euclideanHausdorffMeasure_euclideanSpace_sphere_zero_one hn,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos (n - 1)).le]
+
+/-- In positive dimension `n`, the `Measure.real` value of the normalized `(n - 1)`-dimensional
+Hausdorff measure of the unit sphere of `EuclideanSpace ℝ (Fin n)` is
+`roundSphereVolume (n - 1)`. -/
+theorem measureReal_euclideanHausdorffMeasure_euclideanSpace_sphere_zero_one {n : ℕ} (hn : 1 ≤ n) :
+    (μHE[n - 1] : Measure (EuclideanSpace ℝ (Fin n))).real (sphere 0 1) =
+      roundSphereVolume (n - 1) := by
+  rw [Measure.real_def, toReal_euclideanHausdorffMeasure_euclideanSpace_sphere_zero_one hn]
 
 end TauCeti

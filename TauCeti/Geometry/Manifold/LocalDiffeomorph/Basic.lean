@@ -96,6 +96,8 @@ diffeomorphism of the model space read through it has explicit source and forwar
 * `TauCeti.isLocalDiffeomorphAt_of_fderiv_eq`: the inverse function theorem in a Banach space, as a
   local diffeomorphism.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
+* `TauCeti.isLocalDiffeomorph_of_injective_mfderiv`: the global injective version between
+  manifolds of the same finite dimension.
 
 -/
 
@@ -708,6 +710,19 @@ theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f) (hn : 1 ≤ n)
   obtain ⟨e, hey⟩ := he y
   exact isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y)
     BoundarylessManifold.isInteriorPoint hn hey
+
+omit [CompleteSpace E] in
+/-- **The inverse function theorem for manifolds**, global injective form: between manifolds of
+the same finite dimension, a `C^n` map (`1 ≤ n`) from a boundaryless source manifold whose
+differential is injective at every point is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_of_injective_mfderiv [FiniteDimensional 𝕂 E]
+    [FiniteDimensional 𝕂 F] (hf : ContMDiff I J n f) (hn : 1 ≤ n)
+    (hinj : ∀ y : M, Function.Injective (mfderiv I J f y))
+    (hdim : Module.finrank 𝕂 E = Module.finrank 𝕂 F) :
+    IsLocalDiffeomorph I J n f := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕂 E
+  exact fun y => isLocalDiffeomorphAt_of_injective_mfderiv (s := univ) hf.contMDiffOn isOpen_univ
+    (mem_univ y) BoundarylessManifold.isInteriorPoint hn (hinj y) hdim
 
 end InverseFunctionTheorem
 

@@ -6,19 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Connected
-public import Mathlib.Topology.Maps.Proper.Basic
-
 import Mathlib.Analysis.Convex.PathConnected
-import Mathlib.Topology.LocalAtTarget
-import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
-# Topology and properness on the exterior of a closed ball
+# The exterior of a closed ball is path-connected
 
 In a real normed space of dimension at least two the complement of a closed ball is path-connected:
 it is the image of the product of the unit sphere with the ray `(r, ∞)` of radii exceeding the
-ball's under the polar-coordinate map `(u, t) ↦ x + t • u`. In any proper seminormed group, the
-norm restricted to `{x : E // R < ‖x‖}` is a proper map onto `Set.Ioi R`.
+ball's under the polar-coordinate map `(u, t) ↦ x + t • u`.
 
 Every unbounded complementary component of a bounded set meets the exterior of any closed ball
 containing that set. Connectedness of the exterior therefore forces all such components to
@@ -29,8 +24,6 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
 
 * `TauCeti.isPathConnected_compl_closedBall` — the exterior of a closed ball is path-connected in
   a real normed space of dimension at least two.
-* `TauCeti.isProperMap_norm_Ioi` — in a proper seminormed group, `x ↦ ⟨‖x‖, ...⟩` from
-  `{x : E // R < ‖x‖}` to `Set.Ioi R` is a proper map.
 
 ## References
 
@@ -42,14 +35,6 @@ public section
 namespace TauCeti
 
 open Metric Set
-
-/-- **The norm on the exterior of a closed ball is proper.** In a proper seminormed group, the norm
-restricted to `{x : E // R < ‖x‖}` is a proper map onto `Set.Ioi R`. -/
-theorem isProperMap_norm_Ioi {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E] (R : ℝ) :
-    IsProperMap (fun x : {x : E // R < ‖x‖} => (⟨‖(x : E)‖, x.2⟩ : Ioi R)) := by
-  have hproper : IsProperMap (norm : E → ℝ) :=
-    (funext dist_zero_left : dist (0 : E) = norm) ▸ isProperMap_dist (0 : E)
-  exact hproper.restrictPreimage (Ioi R)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
