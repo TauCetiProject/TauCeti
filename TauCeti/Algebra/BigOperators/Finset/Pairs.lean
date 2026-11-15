@@ -55,6 +55,8 @@ sign of the permutation.
 * `TauCeti.sum_sum_Ioi_append_of_mul`: the same for a pairing turning products into sums.
 * `TauCeti.prod_prod_Ioi_scale`: scaling all entries of a pair product for a symmetric
   bimultiplicative pairing.
+* `Equiv.prod_filter_lt_of_symm`: pulling back an off-diagonally symmetric function along any
+  bijection between finite linear orders preserves its product over strictly increasing pairs.
 -/
 
 public section
@@ -335,3 +337,31 @@ theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
     · simp [hab, hf]
 
 end TauCeti
+
+namespace Equiv
+
+/-- Pulling back an off-diagonally symmetric function along an arbitrary bijection `e : V ≃ W`
+between finite linear orders preserves its product over strictly increasing pairs, even when `e` is
+not order-preserving. -/
+@[to_additive /-- Pulling back an off-diagonally symmetric function along an arbitrary bijection
+`e : V ≃ W` between finite linear orders preserves its sum over strictly increasing pairs, even
+when `e` is not order-preserving. -/]
+theorem prod_filter_lt_of_symm {V W M : Type*} [Fintype V] [LinearOrder V]
+    [Fintype W] [LinearOrder W] [CommMonoid M] (e : V ≃ W) (f : W → W → M)
+    (hf : ∀ u v, u ≠ v → f v u = f u v) :
+    (∏ p : V × V with p.1 < p.2, f (e p.1) (e p.2)) =
+      ∏ q : W × W with q.1 < q.2, f q.1 q.2 := by
+  refine Finset.prod_nbij' (fun p => (min (e p.1) (e p.2), max (e p.1) (e p.2)))
+    (fun q => (min (e.symm q.1) (e.symm q.2), max (e.symm q.1) (e.symm q.2))) ?_ ?_ ?_ ?_ ?_
+  all_goals
+    rintro ⟨a, b⟩ h
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at h ⊢
+  · rcases lt_or_gt_of_ne (e.injective.ne h.ne) with hab | hab <;> simpa [hab.le] using hab
+  · rcases lt_or_gt_of_ne (e.symm.injective.ne h.ne) with hab | hab <;> simpa [hab.le] using hab
+  · rcases le_total (e a) (e b) with hab | hab <;> simp [hab, h.le]
+  · rcases le_total (e.symm a) (e.symm b) with hab | hab <;> simp [hab, h.le]
+  · rcases lt_or_gt_of_ne (e.injective.ne h.ne) with hab | hab
+    · simp [hab.le]
+    · simp [hab.le, hf (e a) (e b) (e.injective.ne h.ne)]
+
+end Equiv

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Invariance
-import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Nat.Choose.Cast
-import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
@@ -18,7 +16,7 @@ import Mathlib.Tactic.Ring
 
 Comparing a degree-`n` permutation cochain against a vertex gauge of unequal degree `m ≠ n` incurs
 at least `1 / (n + 1)` per edge (`1 / 4` when `n = 3`, with sharper bounds `1 / 3` at `m = 2` and
-`1 - 3 / m` for `3 ≤ m`). Whenever the equal-degree gauge-cost infimum lies at or below this
+`1 - 3 / m` for `5 ≤ m`). Whenever the equal-degree gauge-cost infimum lies at or below this
 unequal-degree baseline, no gauge in a different symmetric group can beat the cochain's own degree.
 This file develops that threshold principle and applies it—together with relabelling invariance—to
 both families of complete-complex extremizers:
@@ -34,25 +32,27 @@ both families of complete-complex extremizers:
   (`Equiv.ciInf_sum_filter_lt_distErr_prod`,
   `Equiv.ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall_le`,
   `Equiv.ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap`, and
-  `TauCeti.exists_equiv_fin_four_prod_ciInf₂_sum_distErr_eq_card_sq_div_eight`): pulling a
-  cluster-replicated assignment on `U × ι` back along any bijection `e : V ≃ U × ι` (requiring
-  neither order preservation of `e` nor any order on `ι`) multiplies the cross-degree infimum by
-  `Fintype.card ι ^ 2` whenever the base labels attain their cross-degree infimum at their own
-  degree, giving exact infimum `Fintype.card V ^ 2 / 8` for replicated `Fin 4` three-transposition
-  seeds whenever `4 ∣ Fintype.card V`.
+  `TauCeti.exists_equiv_fin_four_prod_ciInf₂_sum_distErr_eq_card_sq_div_eight`): pulling the
+  cluster replication of a skew-symmetric degree-`n` assignment on `U` back along any bijection
+  `e : V ≃ U × ι` (requiring neither order preservation of `e` nor any order on `ι`) adds the
+  within-cluster mismatch correction to `Fintype.card ι ^ 2` times the base infimum, and for
+  `2 ≤ n` multiplies the global cross-degree infimum by `Fintype.card ι ^ 2` whenever the base
+  labels attain their cross-degree infimum at degree `n`, giving exact infimum
+  `Fintype.card V ^ 2 / 8` for skew-symmetric replicated `Fin 4` three-transposition seeds whenever
+  `4 ∣ Fintype.card V`.
 * **Staircase cross-degree comparison at `Fintype.card V = q * (2 * t + 1)`**
-  (`TauCeti.choose_two_mul_two_mul_add_one_div_four_sub`,
+  (`TauCeti.mul_two_mul_add_one_choose_two_div_four_sub`,
+  `TauCeti.sq_mul_mul_add_one_div_three_lt_choose_two_div_four`,
   `TauCeti.sq_mul_mul_add_one_div_three_le_choose_two_div_four`,
   `TauCeti.sq_mul_mul_add_one_div_three_lt_ciInf_sum_distErr_three_of_ne`,
   `TauCeti.ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq`, and
-  `TauCeti.exists_two_pow_mul_odd_crossDegree_bounds_of_not_dvd_four`): the slack between the
-  complete-graph `1 / 4` baseline `((q * (2 * t + 1)).choose 2 : ℝ) / 4` and the normalized
-  staircase edge count `D₃ = q ^ 2 * t * (t + 1) / 3` equals
+  `TauCeti.ciInf₂_sum_distErr_three_eq_sq_mul_mul_add_one_div_three_of_card_eq`): the slack between
+  the complete-graph `1 / 4` baseline `((q * (2 * t + 1)).choose 2 : ℝ) / 4` and the degree-`3`
+  staircase cross-degree gauge cost `D₃ = q ^ 2 * t * (t + 1) / 3` equals
   `q * (q * (4 * t ^ 2 + 4 * t + 3) - (6 * t + 3)) / 24`, which is nonnegative for all `q, t : ℕ`
-  and strictly positive (at least `q / 12`) whenever `1 ≤ q` and `1 ≤ t`. Hence every degree-`3`
-  assignment on `V` of `movedNorm` gauge distance at most `q ^ 2 * t * (t + 1)` attains its global
-  cross-degree infimum at degree `3`, covering all non-powers-of-two and in particular every vertex
-  cardinality `3 ≤ Fintype.card V` not divisible by `4`.
+  and strictly positive whenever `1 ≤ q` and `1 ≤ t`. Hence every degree-`3` assignment on `V` of
+  `movedNorm (Fin 3)` gauge-cost infimum at most `q ^ 2 * t * (t + 1)` attains its global
+  cross-degree infimum at degree `3`.
 
 ## References
 
@@ -70,40 +70,9 @@ namespace Finset
 
 open Equiv Equiv.Perm TauCeti
 
-variable {ι V : Type*} {n m : ℕ}
+variable {V : Type*} {n : ℕ}
 
-/-! ### Degree-`3` edge-sum baselines and unequal-degree threshold exactness -/
-
-/-- Comparing degree-`n` permutations against degree-`m` permutations with `n ≤ m` over a finite set
-`s` has total distance with errors at least `#s * (1 - n / m)`. -/
-theorem card_mul_one_sub_div_le_sum_distErr_of_le (s : Finset ι) (f : ι → Perm (Fin n))
-    (g : ι → Perm (Fin m)) (hnm : n ≤ m) :
-    (#s : ℝ) * (1 - (n : ℝ) / m) ≤ ∑ x ∈ s, distErr (f x) (g x) := by
-  simpa [nsmul_eq_mul] using
-    s.card_nsmul_le_sum _ _ fun x _ => one_sub_div_le_distErr_of_le (f x) (g x) hnm
-
-/-- Comparing degree-`n` permutations against degree-`m` permutations with `m ≤ n` over a finite set
-`s` has total distance with errors at least `#s * (1 - m / n)`. -/
-theorem card_mul_one_sub_div_le_sum_distErr_of_ge (s : Finset ι) (f : ι → Perm (Fin n))
-    (g : ι → Perm (Fin m)) (hmn : m ≤ n) :
-    (#s : ℝ) * (1 - (m : ℝ) / n) ≤ ∑ x ∈ s, distErr (f x) (g x) := by
-  simpa [nsmul_eq_mul] using
-    s.card_nsmul_le_sum _ _ fun x _ => one_sub_div_le_distErr_of_ge (f x) (g x) hmn
-
-/-- Comparing degree-`3` permutations against degree-`2` permutations over a finite set `s` has
-total distance with errors at least `#s / 3`. -/
-theorem card_div_three_le_sum_distErr_three_two (s : Finset ι) (f : ι → Perm (Fin 3))
-    (g : ι → Perm (Fin 2)) :
-    (#s : ℝ) / 3 ≤ ∑ x ∈ s, distErr (f x) (g x) := by
-  have h := s.card_mul_one_sub_div_le_sum_distErr_of_ge f g (by decide)
-  exact (by ring : (#s : ℝ) / 3 = (#s : ℝ) * (1 - ((2 : ℕ) : ℝ) / (3 : ℕ))) ▸ h
-
-/-- Comparing degree-`3` permutations against degree-`m` permutations (`3 ≤ m`) over a finite set
-`s` has total distance with errors at least `#s * (1 - 3 / m)`. -/
-theorem card_mul_one_sub_three_div_le_sum_distErr_three_of_three_le (s : Finset ι)
-    (f : ι → Perm (Fin 3)) (g : ι → Perm (Fin m)) (hm : 3 ≤ m) :
-    (#s : ℝ) * (1 - 3 / (m : ℝ)) ≤ ∑ x ∈ s, distErr (f x) (g x) := by
-  simpa using s.card_mul_one_sub_div_le_sum_distErr_of_le f g hm
+/-! ### Unequal-degree threshold exactness -/
 
 /-- Whenever the equal-degree `distErr` gauge-cost infimum on `E` is at most `#E / (n + 1)`, it is a
 lower bound for the degree-`m` gauge-cost infimum in every degree `m : ℕ`. -/
@@ -154,20 +123,6 @@ theorem ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le (E : Finse
   rw [E.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one α hn hle',
     E.ciInf_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div α]
 
-/-- Degree-`3` threshold exactness: when the degree-`3` `distErr` gauge-cost infimum on `E` is at
-most `#E / 4`, the global cross-degree infimum over all `m + 2 ≥ 2` equals the degree-`3` infimum.
--/
-theorem ciInf₂_sum_distErr_three_mul_inv_eq_ciInf_of_le_card_div_four (E : Finset (V × V))
-    (α : V → V → Perm (Fin 3))
-    (hle : (⨅ β : V → Perm (Fin 3), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ≤
-      (#E : ℝ) / 4) :
-    (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-        ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
-      ⨅ β : V → Perm (Fin 3), ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-  refine E.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one α (by decide) ?_
-  norm_num
-  exact hle
-
 /-- Degree-`3` moved-norm threshold exactness: when the `movedNorm (Fin 3)` gauge-cost infimum on
 `E` is at most `3 * #E / 4`, the global cross-degree infimum over all `m + 2 ≥ 2` equals `1 / 3`
 times the `movedNorm (Fin 3)` infimum. -/
@@ -191,11 +146,12 @@ namespace Equiv
 
 open Equiv.Perm TauCeti
 
-/-- Pulling a cluster-replicated assignment on `U × ι` (with identity labels inside each cluster
-`{u} × ι`) back along an arbitrary bijection `e : V ≃ U × ι`—requiring neither order preservation
-of `e` nor any linear order on `ι`—gives exact degree-`m` cross-degree gauge-cost infimum
-`(Fintype.card U * (Fintype.card ι).choose 2) * (1 - min n m / max n m) + Fintype.card ι ^ 2` times
-the base degree-`m` infimum on `U`. -/
+/-- Pulling the cluster replication of a skew-symmetric assignment on `U` (with identity labels
+inside each cluster `{u} × ι`) back along an arbitrary bijection `e : V ≃ U × ι`—requiring neither
+order preservation of `e` nor any linear order on `ι`—gives exact degree-`m` cross-degree
+gauge-cost infimum equal to the within-cluster correction
+`(Fintype.card U * (Fintype.card ι).choose 2) * (1 - min n m / max n m)` plus `Fintype.card ι ^ 2`
+times the base degree-`m` infimum on `U`. -/
 theorem ciInf_sum_filter_lt_distErr_prod {V U ι : Type*} [Fintype V] [LinearOrder V]
     [Fintype U] [LinearOrder U] [Fintype ι] {n : ℕ} (e : V ≃ U × ι) (α : U → U → Perm (Fin n))
     (hα : ∀ u v : U, u ≠ v → α v u = (α u v)⁻¹) (m : ℕ) :
@@ -241,22 +197,14 @@ theorem ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall
         ⨅ β₀ : U → Perm (Fin n),
           ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
   let _ : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  let αLex (x y : U ×ₗ ι) : Perm (Fin n) :=
-    if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1
-  have hαLex : ∀ x y : U ×ₗ ι, x ≠ y → αLex y x = (αLex x y)⁻¹ := by
-    intro x y _
-    dsimp only [αLex]
-    by_cases h1 : (ofLex x).1 = (ofLex y).1
-    · simp [h1]
-    · simp [h1, Ne.symm h1, hα (ofLex x).1 (ofLex y).1 h1]
-  have hrel := (e.trans toLex).ciInf₂_sum_filter_lt_distErr_mul_inv αLex hαLex
-  dsimp only [αLex, trans_apply, ofLex_toLex] at hrel
-  exact hrel.trans
+  exact (iInf_congr fun m =>
+    (e.ciInf_sum_filter_lt_distErr_prod α hα (m + 2)).trans
+      (ciInf_sum_distErr_lex (V := U) (ι := ι) α (m + 2)).symm).trans
     (ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le (V := U) (ι := ι) α hn hmin)
 
-/-- Pulling a cluster-replicated three-transposition seed on `Fin 4 × ι` back along an arbitrary
-bijection `e : V ≃ Fin 4 × ι` (requiring neither order preservation of `e` nor any `Fintype` or
-`LinearOrder` structure on `ι`) yields exact cross-degree gauge-cost infimum
+/-- Pulling the cluster replication of a skew-symmetric three-transposition seed on `Fin 4` back
+along an arbitrary bijection `e : V ≃ Fin 4 × ι` (requiring neither order preservation of `e` nor
+any `Fintype` or `LinearOrder` structure on `ι`) yields exact cross-degree gauge-cost infimum
 `Fintype.card V ^ 2 / 8` across all gauge degrees `m + 2 ≥ 2`. -/
 theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
     {V ι : Type*} [Fintype V] [LinearOrder V] (e : V ≃ Fin 4 × ι)
@@ -322,17 +270,29 @@ private theorem six_mul_add_three_add_two_mul_le {q t : ℕ} (hq : 1 ≤ q) (ht 
   nlinarith
 
 /-- Exact algebraic identity for the slack between the complete-graph `1 / 4` unequal-degree
-baseline on `q * (2 * t + 1)` vertices and the normalized staircase edge count
+baseline on `q * (2 * t + 1)` vertices and the degree-`3` staircase cross-degree gauge cost
 `q ^ 2 * t * (t + 1) / 3`. -/
-theorem choose_two_mul_two_mul_add_one_div_four_sub (q t : ℕ) :
+theorem mul_two_mul_add_one_choose_two_div_four_sub (q t : ℕ) :
     ((q * (2 * t + 1)).choose 2 : ℝ) / 4 - (q : ℝ) ^ 2 * t * (t + 1) / 3 =
       (q : ℝ) * ((q : ℝ) * (4 * (t : ℝ) ^ 2 + 4 * t + 3) - (6 * t + 3)) / 24 := by
   rw [Nat.cast_choose_two]
   push_cast
   ring
 
-/-- For all `q, t : ℕ` (including `q = 0` and `t = 0`), the normalized staircase edge count
-`q ^ 2 * t * (t + 1) / 3` is at most the `1 / 4` complete-graph baseline
+/-- When `1 ≤ q` and `1 ≤ t`, the complete-graph `1 / 4` baseline on `q * (2 * t + 1)` vertices
+strictly exceeds the degree-`3` staircase cross-degree gauge cost `q ^ 2 * t * (t + 1) / 3`. -/
+theorem sq_mul_mul_add_one_div_three_lt_choose_two_div_four {q t : ℕ}
+    (hq : 1 ≤ q) (ht : 1 ≤ t) :
+    (q : ℝ) ^ 2 * t * (t + 1) / 3 < ((q * (2 * t + 1)).choose 2 : ℝ) / 4 := by
+  have hpoly : ((6 * t + 3 + 2 * q : ℕ) : ℝ) ≤ ((q * (4 * t ^ 2 + 4 * t + 3) : ℕ) : ℝ) :=
+    Nat.cast_le.mpr (six_mul_add_three_add_two_mul_le hq ht)
+  push_cast at hpoly
+  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast hq
+  have hsub := mul_two_mul_add_one_choose_two_div_four_sub q t
+  nlinarith
+
+/-- For all `q, t : ℕ` (including `q = 0` and `t = 0`), the degree-`3` staircase cross-degree gauge
+cost `q ^ 2 * t * (t + 1) / 3` is at most the `1 / 4` complete-graph baseline
 `((q * (2 * t + 1)).choose 2 : ℝ) / 4`. -/
 theorem sq_mul_mul_add_one_div_three_le_choose_two_div_four (q t : ℕ) :
     (q : ℝ) ^ 2 * t * (t + 1) / 3 ≤ ((q * (2 * t + 1)).choose 2 : ℝ) / 4 := by
@@ -341,44 +301,12 @@ theorem sq_mul_mul_add_one_div_three_le_choose_two_div_four (q t : ℕ) :
   rcases eq_or_ne t 0 with rfl | ht0
   · simp only [Nat.cast_zero, mul_zero, zero_add, mul_one, zero_div]
     positivity
-  have hpoly : ((6 * t + 3 + 2 * q : ℕ) : ℝ) ≤ ((q * (4 * t ^ 2 + 4 * t + 3) : ℕ) : ℝ) :=
-    Nat.cast_le.mpr (six_mul_add_three_add_two_mul_le (Nat.pos_of_ne_zero hq0)
-      (Nat.pos_of_ne_zero ht0))
-  push_cast at hpoly
-  have hsub := choose_two_mul_two_mul_add_one_div_four_sub q t
-  have hq_nn : (0 : ℝ) ≤ q := Nat.cast_nonneg q
-  have hprod : 0 ≤ (q : ℝ) * ((q : ℝ) * (4 * (t : ℝ) ^ 2 + 4 * t + 3) - (6 * t + 3)) :=
-    mul_nonneg hq_nn (by linarith)
-  linarith
-
-/-- When `1 ≤ q` and `1 ≤ t`, the complete-graph `1 / 4` baseline exceeds the normalized staircase
-edge count `q ^ 2 * t * (t + 1) / 3` by at least `q / 12` (and hence strictly). -/
-theorem sq_mul_mul_add_one_div_three_add_div_twelve_le_choose_two_div_four {q t : ℕ}
-    (hq : 1 ≤ q) (ht : 1 ≤ t) :
-    (q : ℝ) ^ 2 * t * (t + 1) / 3 + (q : ℝ) / 12 ≤ ((q * (2 * t + 1)).choose 2 : ℝ) / 4 := by
-  have hpoly : ((6 * t + 3 + 2 * q : ℕ) : ℝ) ≤ ((q * (4 * t ^ 2 + 4 * t + 3) : ℕ) : ℝ) :=
-    Nat.cast_le.mpr (six_mul_add_three_add_two_mul_le hq ht)
-  push_cast at hpoly
-  have hq1 : (1 : ℝ) ≤ q := by exact_mod_cast hq
-  have hsub := choose_two_mul_two_mul_add_one_div_four_sub q t
-  nlinarith
-
-/-- Strict unequal-degree separation at `q * (2 * t + 1)` vertices when `1 ≤ q` and `1 ≤ t`. -/
-theorem sq_mul_mul_add_one_div_three_lt_choose_two_div_four {q t : ℕ}
-    (hq : 1 ≤ q) (ht : 1 ≤ t) :
-    (q : ℝ) ^ 2 * t * (t + 1) / 3 < ((q * (2 * t + 1)).choose 2 : ℝ) / 4 := by
-  have h := sq_mul_mul_add_one_div_three_add_div_twelve_le_choose_two_div_four hq ht
-  have hq_pos : (0 : ℝ) < (q : ℝ) / 12 := by positivity
-  linarith
+  exact (sq_mul_mul_add_one_div_three_lt_choose_two_div_four
+    (Nat.pos_of_ne_zero hq0) (Nat.pos_of_ne_zero ht0)).le
 
 section StaircaseGraph
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {q t m : ℕ}
-
-/-- Cardinality of strictly increasing vertex pairs on `V`. -/
-private theorem card_filter_lt_eq_choose_two :
-    #(univ.filter fun p : V × V => p.1 < p.2) = (Fintype.card V).choose 2 := by
-  simpa [← univ_product_univ] using card_product_filter_lt (s := (univ : Finset V))
 
 /-- On `Fintype.card V = q * (2 * t + 1)` vertices with `1 ≤ q` and `1 ≤ t`, every unequal-degree
 (`m ≠ 3`) vertex gauge `β : V → Perm (Fin m)` against any degree-`3` assignment has complete-graph
@@ -391,7 +319,7 @@ theorem sq_mul_mul_add_one_div_three_lt_sum_distErr_three_of_ne
   have hlt := sq_mul_mul_add_one_div_three_lt_choose_two_div_four hq ht
   have hbase := (univ.filter fun p : V × V => p.1 < p.2).card_div_four_le_sum_distErr_three_of_ne
     (fun e => α e.1 e.2) (fun e => β e.1 * (β e.2)⁻¹) hm
-  rw [card_filter_lt_eq_choose_two, hcard] at hbase
+  rw [Fintype.card_product_filter_lt, hcard] at hbase
   exact hlt.trans_le hbase
 
 /-- On `Fintype.card V = q * (2 * t + 1)` vertices with `1 ≤ q` and `1 ≤ t`, the degree-`m`
@@ -423,7 +351,7 @@ theorem ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq
         ∑ e : V × V with e.1 < e.2, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) / 3 := by
   refine (univ.filter fun p : V × V => p.1 < p.2
     ).ciInf₂_sum_distErr_three_mul_inv_eq_ciInf_sum_movedNorm_div_three_of_le α ?_
-  rw [card_filter_lt_eq_choose_two, hcard]
+  rw [Fintype.card_product_filter_lt, hcard]
   have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
   linarith
 
@@ -439,79 +367,6 @@ theorem ciInf₂_sum_distErr_three_eq_sq_mul_mul_add_one_div_three_of_card_eq
         ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
       (q : ℝ) ^ 2 * t * (t + 1) / 3 := by
   rw [ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq hcard α heq.le, heq]
-
-/-- Whenever `Fintype.card V ≠ 0` is not a power of `2`, decomposing
-`Fintype.card V = 2 ^ a * (2 * t + 1)` with `1 ≤ t` ensures both strict unequal-degree separation
-above `(2 ^ a) ^ 2 * t * (t + 1) / 3` and exact degree-`3` attainment of the cross-degree infimum
-for every degree-`3` assignment below that `movedNorm` threshold. -/
-theorem exists_two_pow_mul_odd_crossDegree_bounds_of_not_exists_eq_two_pow
-    (h0 : Fintype.card V ≠ 0) (hnpow : ¬ ∃ a : ℕ, Fintype.card V = 2 ^ a) :
-    ∃ a t : ℕ, 1 ≤ t ∧ Fintype.card V = 2 ^ a * (2 * t + 1) ∧
-      (∀ (α : V → V → Perm (Fin 3)) {m : ℕ}, m ≠ 3 →
-        ((2 ^ a : ℕ) : ℝ) ^ 2 * t * (t + 1) / 3 <
-          ⨅ β : V → Perm (Fin m),
-            ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ∧
-      (∀ α : V → V → Perm (Fin 3),
-        (⨅ β : V → Perm (Fin 3),
-            ∑ e : V × V with e.1 < e.2, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) ≤
-          ((2 ^ a : ℕ) : ℝ) ^ 2 * t * (t + 1) →
-        (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-            ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
-          (⨅ β : V → Perm (Fin 3),
-            ∑ e : V × V with e.1 < e.2,
-              movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) / 3) := by
-  obtain ⟨a, d, ⟨t, rfl⟩, hcard⟩ := Nat.exists_eq_two_pow_mul_odd h0
-  have ht : 1 ≤ t := by
-    by_contra ht0
-    have ht_eq : t = 0 := by omega
-    rw [ht_eq, mul_zero, zero_add, mul_one] at hcard
-    exact hnpow ⟨a, hcard⟩
-  refine ⟨a, t, ht, hcard, ?_, ?_⟩
-  · intro α m hm
-    exact sq_mul_mul_add_one_div_three_lt_ciInf_sum_distErr_three_of_ne hcard
-      (Nat.one_le_two_pow) ht α hm
-  · intro α hle
-    exact ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq hcard α hle
-
-/-- Whenever `3 ≤ Fintype.card V` and `¬ 4 ∣ Fintype.card V`, decomposing
-`Fintype.card V = q * (2 * t + 1)` with `q ∈ {1, 2}` and `1 ≤ t` gives strict unequal-degree
-separation and exact degree-`3` attainment of the cross-degree gauge-cost infimum. -/
-theorem exists_two_pow_mul_odd_crossDegree_bounds_of_not_dvd_four
-    (hV : 3 ≤ Fintype.card V) (h4 : ¬ 4 ∣ Fintype.card V) :
-    ∃ q t : ℕ, (q = 1 ∨ q = 2) ∧ 1 ≤ t ∧ Fintype.card V = q * (2 * t + 1) ∧
-      (∀ (α : V → V → Perm (Fin 3)) {m : ℕ}, m ≠ 3 →
-        (q : ℝ) ^ 2 * t * (t + 1) / 3 <
-          ⨅ β : V → Perm (Fin m),
-            ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ∧
-      (∀ α : V → V → Perm (Fin 3),
-        (⨅ β : V → Perm (Fin 3),
-            ∑ e : V × V with e.1 < e.2, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) ≤
-          (q : ℝ) ^ 2 * t * (t + 1) →
-        (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
-            ∑ e : V × V with e.1 < e.2, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) =
-          (⨅ β : V → Perm (Fin 3),
-            ∑ e : V × V with e.1 < e.2,
-              movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) / 3) := by
-  have hnpow : ¬ ∃ a : ℕ, Fintype.card V = 2 ^ a := by
-    rintro ⟨a, ha⟩
-    match a with
-    | 0 | 1 => omega
-    | a + 2 =>
-      apply h4
-      rw [ha, pow_add]
-      exact dvd_mul_left 4 (2 ^ a)
-  obtain ⟨a, t, ht, hcard, hsep, heq⟩ :=
-    exists_two_pow_mul_odd_crossDegree_bounds_of_not_exists_eq_two_pow (by omega) hnpow
-  have ha : 2 ^ a = 1 ∨ 2 ^ a = 2 := by
-    match a with
-    | 0 => exact Or.inl rfl
-    | 1 => exact Or.inr rfl
-    | a + 2 =>
-      exfalso
-      apply h4
-      rw [hcard, pow_add, mul_right_comm]
-      exact dvd_mul_left 4 (2 ^ a * (2 * t + 1))
-  exact ⟨2 ^ a, t, ha, ht, hcard, hsep, heq⟩
 
 end StaircaseGraph
 

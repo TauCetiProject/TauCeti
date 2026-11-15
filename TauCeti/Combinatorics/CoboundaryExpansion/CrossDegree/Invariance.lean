@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Relabel
 import Mathlib.Basic.Real.Pointwise
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Attainment, coboundary vanishing, and relabelling invariance of cross-degree pair costs
@@ -347,99 +347,39 @@ open Equiv Equiv.Perm
 
 variable {V W : Type*} {n m : ℕ}
 
-/-- Membership of the unordered pair `{u, v}` in `X.edges` is equivalent to `u ≠ v` together with a
-witness edge `s ∈ X.edges` containing both vertices, independent of the `DecidableEq V` instance. -/
-private theorem pair_mem_edges_iff [DecidableEq V] (X : TwoComplex V) (u v : V) :
-    ({u, v} : Finset V) ∈ X.edges ↔ u ≠ v ∧ ∃ s ∈ X.edges, u ∈ s ∧ v ∈ s := by
-  constructor
-  · intro he
-    have hc := X.edge_card {u, v} he
-    have hne : u ≠ v := by
-      rintro rfl
-      simp at hc
-    exact ⟨hne, {u, v}, he, mem_insert_self u {v}, mem_insert_of_mem (mem_singleton_self v)⟩
-  · rintro ⟨hne, s, hs, hu, hv⟩
-    have hsub : ({u, v} : Finset V) ⊆ s :=
-      insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩
-    have hcard : ({u, v} : Finset V).card = s.card :=
-      (card_pair hne).trans (X.edge_card s hs).symm
-    exact (eq_of_subset_of_card_le hsub hcard.ge) ▸ hs
-
-/-- On `complete V`, strictly increasing pairs whose unordered pair lies in `(complete V).edges` are
-simply all strictly increasing pairs `p.1 < p.2`. -/
-theorem filter_lt_and_pair_mem_edges_complete [Fintype V] [LinearOrder V] :
-    (univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ (complete V).edges) =
-      univ.filter fun p : V × V => p.1 < p.2 := by
-  ext p
-  simp only [mem_filter, mem_univ, true_and, mem_edges_complete, and_iff_left_iff_imp]
-  exact fun hlt => card_pair hlt.ne
-
 /-- When reversing an edge of `X` inverts `α`, twice the cross-degree pair cost summed over
 increasing edges `p.1 < p.2` equals the orientation-free sum over all ordered pairs of endpoints of
 edges of `X`. -/
 theorem two_mul_sum_distErr_mul_inv [Fintype V] [LinearOrder V] (X : TwoComplex V)
-    (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, ({u, v} : Finset V) ∈ X.edges → α v u = (α u v)⁻¹)
+    (α : V → V → Perm (Fin n)) (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹)
     (β : V → Perm (Fin m)) :
     2 * (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
         distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
       ∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges,
         distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
-  set E_lt : Finset (V × V) := univ.filter fun p => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  set E_gt : Finset (V × V) := univ.filter fun p => p.2 < p.1 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
-  have hunion : (univ.filter fun p : V × V => ({p.1, p.2} : Finset V) ∈ X.edges) =
-      E_lt ∪ E_gt := by
-    ext p
-    simp only [E_lt, E_gt, mem_union, mem_filter, mem_univ, true_and]
-    constructor
-    · intro he
-      rcases lt_or_gt_of_ne ((X.pair_mem_edges_iff p.1 p.2).mp he).1 with hlt | hgt
-      · exact Or.inl ⟨hlt, he⟩
-      · exact Or.inr ⟨hgt, he⟩
-    · rintro (⟨_, he⟩ | ⟨_, he⟩) <;> exact he
-  have hdisj : Disjoint E_lt E_gt :=
-    disjoint_left.mpr fun p h₁ h₂ =>
-      lt_asymm (mem_filter.mp h₁).2.1 (mem_filter.mp h₂).2.1
-  have hswap : (∑ p ∈ E_gt, distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
-      ∑ p ∈ E_lt, distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
-    refine sum_equiv (Equiv.prodComm V V) (fun p => ?_) (fun p hp => ?_)
-    · simp [E_gt, E_lt, pair_comm]
-    · have he : ({p.2, p.1} : Finset V) ∈ X.edges := by
-        simpa [pair_comm] using (mem_filter.mp hp).2.2
-      simp only [coe_prodComm, hα p.2 p.1 he]
-      exact distErr_inv_mul_inv (α p.2 p.1) (β p.2) (β p.1)
-  rw [hunion, sum_union hdisj, hswap, two_mul]
+  simpa only [nsmul_eq_mul, Nat.cast_ofNat] using
+    X.two_nsmul_sum_filter_lt_edges (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
+      rw [hα u v huv, distErr_inv_mul_inv]
 
 /-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` (not required to
 preserve the vertex linear order) preserves the cross-degree pair cost of skew-symmetric edge
 labels. -/
 theorem sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (X : TwoComplex V) (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, ({u, v} : Finset W) ∈ (X.relabel e).edges → α v u = (α u v)⁻¹)
+    (hα : ∀ u v, (X.relabel e).Adj u v → α v u = (α u v)⁻¹)
     (β : W → Perm (Fin m)) :
     (∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
         distErr (α (e p.1) (e p.2)) (β (e p.1) * (β (e p.2))⁻¹)) =
       ∑ q : W × W with q.1 < q.2 ∧ ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges,
-        distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) := by
-  have hmap (u v : V) : ({e u, e v} : Finset W) ∈ (X.relabel e).edges ↔
-      ({u, v} : Finset V) ∈ X.edges := by
-    have hpair : ({u, v} : Finset V).map e.toEmbedding = {e u, e v} := by simp
-    rw [← hpair, X.map_mem_edges_relabel e]
-  have h₁ := X.two_mul_sum_distErr_mul_inv (fun u v => α (e u) (e v))
-    (fun u v he => hα (e u) (e v) ((hmap u v).mpr he)) (fun u => β (e u))
-  have h₂ := (X.relabel e).two_mul_sum_distErr_mul_inv α hα β
-  have hbij : (∑ p : V × V with ({p.1, p.2} : Finset V) ∈ X.edges,
-        distErr (α (e p.1) (e p.2)) (β (e p.1) * (β (e p.2))⁻¹)) =
-      ∑ q : W × W with ({q.1, q.2} : Finset W) ∈ (X.relabel e).edges,
         distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
-    sum_equiv (e.prodCongr e) (fun p => by simp) (fun _ _ => rfl)
-  linarith
+  X.sum_filter_lt_edges_relabel e (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
+    rw [hα u v huv, distErr_inv_mul_inv]
 
 /-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` preserves the degree-`m`
 cross-degree gauge-cost infimum of skew-symmetric edge labels. -/
 theorem ciInf_sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (X : TwoComplex V) (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, ({u, v} : Finset W) ∈ (X.relabel e).edges → α v u = (α u v)⁻¹) (m : ℕ) :
+    (hα : ∀ u v, (X.relabel e).Adj u v → α v u = (α u v)⁻¹) (m : ℕ) :
     (⨅ β : V → Perm (Fin m),
         ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
           distErr (α (e p.1) (e p.2)) (β p.1 * (β p.2)⁻¹)) =
@@ -450,10 +390,10 @@ theorem ciInf_sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W
     simpa using X.sum_distErr_mul_inv_relabel e α hα β).symm
 
 /-- Relabelling `X : TwoComplex V` along an arbitrary bijection `e : V ≃ W` preserves the global
-cross-degree gauge-cost infimum over all degrees `m + 2 ≥ 2`. -/
+cross-degree gauge-cost infimum of skew-symmetric edge labels over all degrees `m + 2 ≥ 2`. -/
 theorem ciInf₂_sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (X : TwoComplex V) (e : V ≃ W) (α : W → W → Perm (Fin n))
-    (hα : ∀ u v, ({u, v} : Finset W) ∈ (X.relabel e).edges → α v u = (α u v)⁻¹) :
+    (hα : ∀ u v, (X.relabel e).Adj u v → α v u = (α u v)⁻¹) :
     (⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
         ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
           distErr (α (e p.1) (e p.2)) (β p.1 * (β p.2)⁻¹)) =
@@ -466,25 +406,23 @@ theorem ciInf₂_sum_distErr_mul_inv_relabel [Fintype V] [LinearOrder V] [Fintyp
 `V` whenever reversing an edge of `X` inverts `α`. -/
 theorem sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex V)
     (l₁ l₂ : LinearOrder V) (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, (u ≠ v ∧ ∃ s ∈ X.edges, u ∈ s ∧ v ∈ s) → α v u = (α u v)⁻¹)
+    (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹)
     (β : V → Perm (Fin m)) :
     (letI := l₁
       ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
         distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) =
     (letI := l₂
       ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
-        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) := by
-  have h := @sum_distErr_mul_inv_relabel V V n m _ l₁ _ l₂ X (Equiv.refl V) α
-    (fun u v he => by
-      rw [relabel_refl] at he
-      exact hα u v ((@pair_mem_edges_iff V l₂.toDecidableEq X u v).mp he)) β
-  simpa only [relabel_refl, Equiv.refl_apply] using h
+        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)) :=
+  X.sum_filter_lt_edges_congr_linearOrder l₁ l₂
+    (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
+      rw [hα u v huv, distErr_inv_mul_inv]
 
 /-- The degree-`m` cross-degree gauge-cost infimum on `X : TwoComplex V` is independent of the
 chosen linear order on `V` whenever reversing an edge of `X` inverts `α`. -/
 theorem ciInf_sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex V)
     (l₁ l₂ : LinearOrder V) (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, (u ≠ v ∧ ∃ s ∈ X.edges, u ∈ s ∧ v ∈ s) → α v u = (α u v)⁻¹) (m : ℕ) :
+    (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹) (m : ℕ) :
     (letI := l₁
       ⨅ β : V → Perm (Fin m),
         ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
@@ -499,7 +437,7 @@ theorem ciInf_sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex 
 independent of the chosen linear order on `V` whenever reversing an edge of `X` inverts `α`. -/
 theorem ciInf₂_sum_distErr_mul_inv_congr_linearOrder [Fintype V] (X : TwoComplex V)
     (l₁ l₂ : LinearOrder V) (α : V → V → Perm (Fin n))
-    (hα : ∀ u v, (u ≠ v ∧ ∃ s ∈ X.edges, u ∈ s ∧ v ∈ s) → α v u = (α u v)⁻¹) :
+    (hα : ∀ u v, X.Adj u v → α v u = (α u v)⁻¹) :
     (letI := l₁
       ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
         ∑ p : V × V with p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges,
@@ -516,7 +454,7 @@ end TauCeti.TwoComplex
 
 namespace Equiv
 
-open Equiv.Perm TauCeti.TwoComplex
+open Equiv.Perm
 
 variable {V W : Type*} [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] {n m : ℕ}
 
@@ -527,14 +465,9 @@ theorem sum_filter_lt_distErr_mul_inv (e : V ≃ W) (α : W → W → Perm (Fin 
     (hα : ∀ u v, u ≠ v → α v u = (α u v)⁻¹) (β : W → Perm (Fin m)) :
     (∑ p : V × V with p.1 < p.2,
         distErr (α (e p.1) (e p.2)) (β (e p.1) * (β (e p.2))⁻¹)) =
-      ∑ q : W × W with q.1 < q.2, distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) := by
-  have hα' : ∀ u v, ({u, v} : Finset W) ∈ ((complete V).relabel e).edges → α v u = (α u v)⁻¹ := by
-    intro u v he
-    rw [relabel_complete, mem_edges_complete] at he
-    exact hα u v fun huv => by subst huv; simp at he
-  have h := (complete V).sum_distErr_mul_inv_relabel e α hα' β
-  rwa [relabel_complete, filter_lt_and_pair_mem_edges_complete,
-    filter_lt_and_pair_mem_edges_complete] at h
+      ∑ q : W × W with q.1 < q.2, distErr (α q.1 q.2) (β q.1 * (β q.2)⁻¹) :=
+  e.sum_filter_lt_of_symm (fun u v => distErr (α u v) (β u * (β v)⁻¹)) fun u v huv => by
+    rw [hα u v huv, distErr_inv_mul_inv]
 
 /-- Pulling back skew-symmetric edge labels along `e : V ≃ W` preserves the degree-`m`
 complete-graph cross-degree gauge-cost infimum. -/
