@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Transversality
+import TauCeti.Analysis.Calculus.Morse.RegularLevel
 import TauCeti.Dynamics.Flow.TangentCone
 
 /-!
@@ -37,6 +38,9 @@ statements that use it.
 * `TauCeti.isMorseSmale_congr`: the predicate does not depend on the Lipschitz witness.
 * `TauCeti.IsMorseSmale.of_forall_exists_negativeGradientFlow`: for a `C²` function it suffices to
   check transversality at one point of each connecting trajectory.
+* `TauCeti.IsMorseSmale.of_forall_ne_of_morseIndex_ne`: for a `C²` function on a
+  finite-dimensional space it suffices to check transversality between distinct critical points
+  whose Morse indices are neither `0` nor the dimension of the space.
 * `TauCeti.IsMorseSmale.morseIndex_lt`: for a Morse–Smale function, a trajectory between two
   different nondegenerate critical points runs from higher to strictly lower Morse index.
 * `TauCeti.IsMorseSmale.unstableSet_inter_stableSet_eq_empty`: consequently no trajectory runs
@@ -123,6 +127,54 @@ theorem IsMorseSmale.of_forall_exists_negativeGradientFlow {f : E → ℝ} {K : 
       (differentiable_negativeGradientFlow_apply f hf hfs t _)).1 ht
 
 variable [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q y : E}
+
+/-- **Introduction rule for `IsMorseSmale` from the nonautomatic cases.** For a `C²` function on a
+finite-dimensional space, the Morse–Smale condition holds as soon as the unstable set of `p` and
+the stable set of `q` are transverse at their common points for distinct nondegenerate critical
+points `p ≠ q` whose Morse indices are neither `0` nor `finrank ℝ E`. In the remaining cases
+transversality is automatic: for `p = q` the two sets meet only at `p`; the unstable set of a
+critical point of index `finrank ℝ E`, and the stable set of one of index `0`, have tangent spaces
+of full dimension; and the unstable set of a critical point of index `0`, or the stable set of one
+of index `finrank ℝ E`, has no nonzero tangent vectors, so meets no nonconstant trajectory. -/
+theorem IsMorseSmale.of_forall_ne_of_morseIndex_ne (hfs : ContDiff ℝ 2 f)
+    (h : ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
+      p ≠ q → morseIndex f p ≠ 0 → morseIndex f p ≠ Module.finrank ℝ E → morseIndex f q ≠ 0 →
+      morseIndex f q ≠ Module.finrank ℝ E →
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+        Flow.stableSet (negativeGradientFlow f hf) q →
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
+    IsMorseSmale f hf :=
+  .of_forall fun p q y hp hq hy ↦ by
+    rcases eq_or_ne p q with rfl | hpq
+    · -- A point of `W^u(p) ∩ W^s(p)` is `p` itself.
+      obtain rfl :=
+        (isNegativeGradient_negativeGradientFlow f hf).eq_of_mem_unstableSet_inter_stableSet
+          (fun _ ↦ hfs.differentiable (by norm_num) _) hfs.continuous.continuousAt hy
+      exact hp.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_eq_top hfs hf
+    have hu := hp.finrank_span_tangentConeAt_unstableSet hfs hf hy.1
+    have hs := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hy.2
+    -- The velocity `-∇f y` is a nonzero tangent vector to both sets.
+    have hgrad : ∇ f y ≠ 0 := Flow.gradient_ne_zero_of_mem_unstableSet_inter_stableSet
+      (fun z ↦ (forall_negativeGradientFlow_eq_self_iff f hf z).2) hpq hy
+    have hvu := Submodule.subset_span (R := ℝ)
+      (neg_gradient_mem_tangentConeAt_of_isInvariant f hf (Flow.isInvariant_unstableSet _ p) hy.1)
+    have hvs := Submodule.subset_span (R := ℝ)
+      (neg_gradient_mem_tangentConeAt_of_isInvariant f hf (Flow.isInvariant_stableSet _ q) hy.2)
+    by_cases hp0 : morseIndex f p = 0
+    · rw [hp0, Submodule.finrank_eq_zero] at hu
+      rw [hu, SetLike.mem_coe, Submodule.mem_bot, neg_eq_zero] at hvu
+      exact absurd hvu hgrad
+    by_cases hpn : morseIndex f p = Module.finrank ℝ E
+    · rw [Submodule.eq_top_of_finrank_eq (hu.trans hpn), top_sup_eq]
+    by_cases hq0 : morseIndex f q = 0
+    · rw [hq0, add_zero] at hs
+      rw [Submodule.eq_top_of_finrank_eq hs, sup_top_eq]
+    by_cases hqn : morseIndex f q = Module.finrank ℝ E
+    · rw [hqn, Nat.add_eq_right, Submodule.finrank_eq_zero] at hs
+      rw [hs, SetLike.mem_coe, Submodule.mem_bot, neg_eq_zero] at hvs
+      exact absurd hvs hgrad
+    exact h hp hq hpq hp0 hpn hq0 hqn hy
 
 /-- **The Morse index drops along trajectories.** For a `C²` Morse–Smale function, a trajectory of
 the negative-gradient flow from a nondegenerate critical point `p` to a different nondegenerate

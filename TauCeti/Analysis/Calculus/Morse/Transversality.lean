@@ -47,6 +47,9 @@ of `p`, and the complementary dimension for the stable set of `q`.
 * `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_unstableSet` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_stableSet_add_morseIndex`: the
   dimensions of the tangent spaces of the unstable and stable sets.
+* `span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_eq_top` (in the namespace
+  `TauCeti.IsNondegenerateCriticalPoint`): at a Morse critical point itself, its unstable and
+  stable sets are transverse.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_unstableSet_inter_stableSet_chart`: a transverse
   intersection of an unstable and a stable set is an embedded `C^n` submanifold, flattened onto
   the intersection of the tangent spaces.
@@ -123,6 +126,24 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
   rw [(isSliceChart_iff.2 hS).finrank_span_tangentConeAt
     (Submodule.isClosed_of_finiteDimensional _) hye hy hA]
   exact hq.finrank_stableLinearSubspace_add_morseIndex
+
+/-- **Transversality at a critical point.** At a Morse critical point `p` itself, the tangent
+spaces of the unstable and of the stable set of `p` span the whole space: they are the unstable
+and stable Hessian subspaces, which are complementary. -/
+theorem span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_eq_top
+    (hp : IsNondegenerateCriticalPoint f p) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) p) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) p) p) = ⊤ := by
+  have hfs' : ContDiff ℝ (1 + 1) f := by simpa [one_add_one_eq_two] using hfs
+  have hfix := (forall_negativeGradientFlow_eq_self_iff f hf p).2 hp.gradient_eq_zero
+  obtain ⟨e₁, hp₁, hA₁, -, -, hS₁⟩ := hp.exists_unstableSet_chart_hasFDerivAt_id hfs' hf
+  obtain ⟨e₂, hp₂, hA₂, -, -, hS₂⟩ := hp.exists_stableSet_chart_hasFDerivAt_id hfs' hf
+  rw [(isSliceChart_iff.2 hS₁).span_tangentConeAt_eq_comap (A := ContinuousLinearEquiv.refl ℝ E)
+      (Submodule.isClosed_of_finiteDimensional _) hp₁ (Flow.self_mem_unstableSet_iff.2 hfix) hA₁,
+    (isSliceChart_iff.2 hS₂).span_tangentConeAt_eq_comap (A := ContinuousLinearEquiv.refl ℝ E)
+      (Submodule.isClosed_of_finiteDimensional _) hp₂ (Flow.self_mem_stableSet_iff.2 hfix) hA₂]
+  convert hp.isCompl_unstableLinearSubspace_stableLinearSubspace.sup_eq_top using 2 <;>
+    exact Submodule.comap_id _
 
 /-- **Transverse unstable and stable sets meet in an embedded submanifold.** If the unstable set of
 a Morse critical point `p` and the stable set of a Morse critical point `q` meet transversally at
