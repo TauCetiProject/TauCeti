@@ -26,8 +26,9 @@ Sweedler's normalized two-sided invariant integral `TauCeti.sweedlerIntegral`.
   field spanned by its simple coefficient submodules, with
   `TauCeti.isLeftInvariantIntegral_sweedlerIntegral` and
   `TauCeti.isRightInvariantIntegral_sweedlerIntegral`.
-* `TauCeti.Coalgebra.IsLinearlyReductive.existsUnique_twoSidedInvariantIntegral`: existence and
-  uniqueness of a normalized two-sided invariant integral on a linearly reductive bialgebra.
+* `existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one` (in
+  `TauCeti.Coalgebra.IsLinearlyReductive`): existence and uniqueness of a normalized two-sided
+  invariant integral on a linearly reductive bialgebra.
 
 ## References
 
@@ -60,10 +61,10 @@ def sweedlerIntegral (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤) : A 
 theorem sweedlerIntegral_apply_of_mem_span_one (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤)
     {x : A} (hx : x ∈ Submodule.span k ({1} : Set A)) :
     sweedlerIntegral hspan x = Coalgebra.counit (R := k) x := by
-  let hInt := isInternal_of_sSup_simpleCoefficientSubmodules_eq_top hspan
   let P₁ : simpleCoefficientSubmodules k A :=
     ⟨Submodule.span k ({1} : Set A), span_singleton_one_mem_simpleCoefficientSubmodules⟩
-  have hcomp := hInt.ofBijective_coeLinearMap_of_mem (i := P₁) hx
+  have hcomp := (isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    hspan).ofBijective_coeLinearMap_of_mem (i := P₁) hx
   simpa [sweedlerIntegral, P₁, ← DirectSum.apply_eq_component] using
     congrArg (fun y : P₁.1 ↦ Coalgebra.counit (R := k) (y : A)) hcomp
 
@@ -72,12 +73,11 @@ theorem sweedlerIntegral_apply_of_mem_of_ne (hspan : sSup (simpleCoefficientSubm
     {P : Submodule k A} (hP : P ∈ simpleCoefficientSubmodules k A)
     (hPne : P ≠ Submodule.span k ({1} : Set A)) {x : A} (hx : x ∈ P) :
     sweedlerIntegral hspan x = 0 := by
-  let hInt := isInternal_of_sSup_simpleCoefficientSubmodules_eq_top hspan
   let P₁ : simpleCoefficientSubmodules k A :=
     ⟨Submodule.span k ({1} : Set A), span_singleton_one_mem_simpleCoefficientSubmodules⟩
-  have hQne : (⟨P, hP⟩ : simpleCoefficientSubmodules k A) ≠ P₁ :=
-    fun h ↦ hPne (congrArg Subtype.val h)
-  have hcomp := hInt.ofBijective_coeLinearMap_of_mem_ne hQne hx
+  have hcomp := (isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    hspan).ofBijective_coeLinearMap_of_mem_ne (i := ⟨P, hP⟩) (j := P₁)
+      (fun h ↦ hPne (congrArg Subtype.val h)) hx
   simpa [sweedlerIntegral, P₁, ← DirectSum.apply_eq_component] using
     congrArg (fun y : P₁.1 ↦ Coalgebra.counit (R := k) (y : A)) hcomp
 
@@ -105,8 +105,7 @@ private theorem linearMap_eq_of_sweedlerIntegral
   rw [eq_top_iff, ← hspan]
   refine sSup_le fun P hP ↦ ?_
   by_cases hP1 : P = Submodule.span k ({1} : Set A)
-  · rw [hP1, Submodule.span_le, Set.singleton_subset_iff]
-    exact h1
+  · simp [hP1, h1]
   · obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
     let _ := hM
     have : Module.Finite k M := finite_of_isSimpleOrder (C := A)
@@ -125,8 +124,7 @@ theorem isLeftInvariantIntegral_sweedlerIntegral
   LinearMap.isLeftInvariantIntegral_iff.mpr fun a ↦ by
     simpa [Algebra.algebraMap_eq_smul_one] using linearMap_eq_of_sweedlerIntegral hspan
       (F := (TensorProduct.rid k A).toLinearMap ∘ₗ (sweedlerIntegral hspan).lTensor A ∘ₗ
-        Coalgebra.comul)
-      (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
+        Coalgebra.comul) (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
       (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
       (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
 
@@ -137,8 +135,7 @@ theorem isRightInvariantIntegral_sweedlerIntegral
   LinearMap.isRightInvariantIntegral_iff.mpr fun a ↦ by
     simpa [Algebra.algebraMap_eq_smul_one] using linearMap_eq_of_sweedlerIntegral hspan
       (F := (TensorProduct.lid k A).toLinearMap ∘ₗ (sweedlerIntegral hspan).rTensor A ∘ₗ
-        Coalgebra.comul)
-      (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
+        Coalgebra.comul) (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
       (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
       (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
 
@@ -157,8 +154,9 @@ universe u v
 
 /-- Every linearly reductive bialgebra over a field admits a unique normalized two-sided invariant
 integral. -/
-theorem existsUnique_twoSidedInvariantIntegral {k : Type u} [Field k] {A : Type v} [Ring A]
-    [Bialgebra k A] (hLR : IsLinearlyReductive.{u, v, u} k A) :
+theorem existsUnique_isLeftInvariantIntegral_and_isRightInvariantIntegral_and_map_one
+    {k : Type u} [Field k] {A : Type v} [Ring A] [Bialgebra k A]
+    (hLR : IsLinearlyReductive.{u, v, u} k A) :
     ∃! h : A →ₗ[k] k, h.IsLeftInvariantIntegral ∧ h.IsRightInvariantIntegral ∧ h 1 = 1 := by
   have hspan := hLR.sSup_simpleCoefficientSubmodules_eq_top
   exact ⟨sweedlerIntegral hspan, ⟨isLeftInvariantIntegral_sweedlerIntegral hspan,

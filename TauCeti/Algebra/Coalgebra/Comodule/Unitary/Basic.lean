@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import Mathlib.RingTheory.HopfAlgebra.Convolution
 
 /-!
 # Finite-dimensional unitary comodules
@@ -21,7 +22,9 @@ on the coefficient algebra is required.
 including bases with different finite index types. Consequently
 `OrthonormalBasis.isUnitary_comodule_iff` tests unitarity in any orthonormal basis,
 independently of the arbitrary standard basis used in the definition. For Hopf algebras,
-unitarity is equivalent to the antipode acting on coefficients by transposed star.
+unitarity is equivalent to the antipode acting on coefficients by transposed star, and any matrix
+`G` satisfying `(u.map star)ᴴ * G * u.map star = G` for a unitary coefficient matrix `u` has `Gᵀ`
+intertwining `u` with its double antipode `(u.map S).map S`.
 
 These algebraic unitary objects are the finite coefficient objects used in unitarization
 and reconstruction of compact quantum groups.
@@ -185,5 +188,35 @@ theorem IsUnitary.antipode_coefficientMatrix (h : IsUnitary 𝕜 A M)
   exact congrFun (congrFun (b.isUnitary_comodule_iff_map_antipode_eq_conjTranspose.mp h) i) j
 
 end TauCeti.Comodule
+
+namespace Module.Basis
+
+/-- If the coefficient matrix `u` of `b` is unitary and `(u.map star)ᴴ * G * u.map star = G`, then
+`Gᵀ` intertwines `u` with its double antipode `(u.map S).map S`. -/
+theorem map_antipode_map_antipode_mul_transpose_of_conjTranspose_map_star_mul_mul_eq
+    {R A M ι : Type*} [CommSemiring R] [Semiring A] [StarRing A] [HopfAlgebra R A]
+    [AddCommMonoid M] [Module R M] [Comodule R A M] [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M) (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
+    {G : Matrix ι ι R} (hG : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap R A) *
+      (coefficientMatrix (C := A) b).map star = G.map (algebraMap R A)) :
+    (((coefficientMatrix (C := A) b).map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R)) *
+        Gᵀ.map (algebraMap R A) =
+      Gᵀ.map (algebraMap R A) * coefficientMatrix (C := A) b := by
+  set u := coefficientMatrix (C := A) b
+  set S : A →ₗ[R] A := HopfAlgebra.antipode R
+  obtain ⟨hu1, hu2⟩ := Matrix.mem_unitary_iff_conjTranspose.mp hu
+  have huS : u.map S = uᴴ := left_inv_eq_right_inv (map_antipode_mul_coefficientMatrix b) hu2
+  have hmulS (X Y : Matrix ι ι A) : ((X * Y).map S)ᵀ = (Y.map S)ᵀ * (X.map S)ᵀ :=
+    Matrix.ext fun _ _ ↦ by simp [Matrix.mul_apply, S, _root_.HopfAlgebra.antipode_mul_antidistrib]
+  have hij (i j) : S (u i j) = star (u j i) := by simpa using congrFun (congrFun huS i) j
+  have hf1 : ((u.map star).map S)ᵀ = (u.map S).map S := Matrix.ext fun _ _ ↦ by simp [← hij]
+  have hf2 : ((G.map (algebraMap R A)).map S)ᵀ = Gᵀ.map (algebraMap R A) :=
+    Matrix.ext fun _ _ ↦ by simp [S, Algebra.algebraMap_eq_smul_one]
+  have hf3 : (((u.map star)ᴴ).map S)ᵀ = uᴴ := Matrix.ext fun _ _ ↦ by simp [hij]
+  have h1 := congrArg (fun X : Matrix ι ι A ↦ (X.map S)ᵀ) hG
+  rw [hmulS, hmulS, hf1, hf2, hf3, ← Matrix.mul_assoc] at h1
+  simpa only [Matrix.mul_assoc _ uᴴ, hu1, Matrix.mul_one] using congrArg (· * u) h1
+
+end Module.Basis
 
 end Hopf

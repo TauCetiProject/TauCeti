@@ -143,16 +143,12 @@ theorem _root_.Module.Basis.mem_matrixCoefficientSubmodule_iff_exists_matrix (b 
       ∃ X : Matrix ι ι R, x = ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j := by
   classical
   let L : Matrix ι ι R →ₗ[R] C :=
-    { toFun X := ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j
-      map_add' X Y := by simp only [Matrix.add_apply, add_smul, Finset.sum_add_distrib]
-      map_smul' r X := by
-        simp only [Matrix.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply, Finset.smul_sum] }
+    Matrix.liftLinear R fun i j ↦ LinearMap.toSpanSingleton R C (coefficientMatrix (C := C) b i j)
   constructor
   · intro hx
     obtain ⟨X, rfl⟩ := b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem
-      (P := LinearMap.range L)
-      (fun i j ↦ ⟨Matrix.of fun p q ↦ if p = i ∧ q = j then 1 else 0, by simp [L, ite_and]⟩) hx
-    exact ⟨X, rfl⟩
+      (P := LinearMap.range L) (fun i j ↦ ⟨Matrix.single i j 1, by simp [L]⟩) hx
+    exact ⟨X, by simp [L, Matrix.liftLinear_apply]⟩
   · rintro ⟨X, rfl⟩
     refine Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦ ?_
     rw [coefficientMatrix_apply]

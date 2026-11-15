@@ -156,7 +156,7 @@ def conjEquivFun [Finite ι] (b : Basis ι R M) : M ≃ₛₗ[starRingEnd R] (ι
 @[simp]
 theorem conjEquivFun_apply [Finite ι] (b : Basis ι R M) (m : M) (i : ι) :
     b.conjEquivFun m i = star (b.repr m i) := by
-  rfl
+  simp [conjEquivFun]
 
 /-- Evaluating `b.conjEquivFun.symm` reconstructs a vector from conjugated coordinates. -/
 theorem conjEquivFun_symm_apply [Fintype ι] (b : Basis ι R M) (x : ι → R) :

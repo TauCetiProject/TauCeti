@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 public import TauCeti.Algebra.Coalgebra.Star
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.LinearAlgebra.Basis.Semilinear
-import Mathlib.Algebra.Star.LinearMap
-import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Conjugate comodules over star bialgebras
@@ -22,10 +20,10 @@ again a multiplicative matrix (`Module.Basis.conjugateMatrixComodule`), whose ma
 submodule is the `star`-preimage of that of `M`
 (`Module.Basis.mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff`).
 
-Over a commutative star ring `R` over which `A` is projective, coordinatewise conjugation
-(`Module.Basis.conjEquivFun`) induces an order isomorphism between the subcomodule lattices of `M`
-and `b.conjugateMatrixComodule` (`Module.Basis.conjugateSubcomoduleOrderIso`), and hence preserves
-simplicity (`Module.Basis.isSimpleOrder_conjugateMatrixComodule`).
+Coordinatewise conjugation (`Module.Basis.conjEquivFun`) intertwines the coaction of `M` with that
+of `b.conjugateMatrixComodule` via `star` on `A`, inducing an order isomorphism between their
+subcomodule lattices (`Module.Basis.conjugateSubcomoduleOrderIso`) and preserving simplicity
+(`Module.Basis.isSimpleOrder_conjugateMatrixComodule`).
 
 ## References
 
@@ -36,10 +34,47 @@ simplicity (`Module.Basis.isSimpleOrder_conjugateMatrixComodule`).
 
 public section
 
-open Module Matrix WithConv TauCeti TauCeti.Comodule
+open Module Matrix TauCeti TauCeti.Comodule
 open scoped TensorProduct
 
 namespace Module.Basis
+
+section SemilinearSubcomodule
+
+variable {R A M' N' : Type*} [CommSemiring R] [StarRing R]
+  [AddCommMonoid A] [StarAddMonoid A] [Module R A] [StarModule R A] [Coalgebra R A]
+  [AddCommMonoid M'] [Module R M'] [Comodule R A M']
+  [AddCommMonoid N'] [Module R N'] [Comodule R A N']
+
+private noncomputable def mapSemilinearSubcomodule (e : M' ≃ₛₗ[starRingEnd R] N')
+    (he : ∀ m, coact (R := R) (C := A) (e m) = TensorProduct.map e.toLinearMap
+      (starLinearEquiv R (A := A)).toLinearMap (coact (R := R) (C := A) m))
+    (S : Subcomodule R A M') : Subcomodule R A N' :=
+  let f : M' →ₛₗ[starRingEnd R] N' := e
+  let s : A →ₛₗ[starRingEnd R] A := (starLinearEquiv R (A := A)).toLinearMap
+  Subcomodule.ofSubmodule (S.toSubmodule.map f) fun n hn ↦ by
+    rw [S.toSubmodule_carrier] at hn ⊢
+    rcases Submodule.mem_map.mp hn with ⟨m, hm, rfl⟩
+    rcases S.coact_mem hm with ⟨t, ht⟩
+    refine ⟨TensorProduct.map (f.submoduleMap S.carrier) s t, ?_⟩
+    have h1 : (S.carrier.map f).subtype ∘ₛₗ f.submoduleMap S.carrier = f ∘ₛₗ S.carrier.subtype := by
+      ext; simp
+    have h2 : (LinearMap.id : A →ₗ[R] A) ∘ₛₗ s = s ∘ₛₗ (LinearMap.id : A →ₗ[R] A) := by ext; simp
+    have hcomp := congrArg (fun g ↦ g t) (TensorProduct.map_comp (σ₁₃ := starRingEnd R)
+      (S.carrier.map f).subtype (LinearMap.id : A →ₗ[R] A) (f.submoduleMap S.carrier) s).symm
+    rw [LinearMap.comp_apply] at hcomp
+    rw [hcomp, h1, h2, TensorProduct.map_comp (σ₁₃ := starRingEnd R), LinearMap.comp_apply, ht]
+    exact (he m).symm
+
+@[simp]
+private theorem mapSemilinearSubcomodule_toSubmodule (e : M' ≃ₛₗ[starRingEnd R] N')
+    (he : ∀ m, coact (R := R) (C := A) (e m) = TensorProduct.map e.toLinearMap
+      (starLinearEquiv R (A := A)).toLinearMap (coact (R := R) (C := A) m))
+    (S : Subcomodule R A M') :
+    (mapSemilinearSubcomodule e he S).toSubmodule =
+      S.toSubmodule.map (e : M' →ₛₗ[starRingEnd R] N') := (rfl)
+
+end SemilinearSubcomodule
 
 section ConjugateMatrixComodule
 
@@ -98,60 +133,39 @@ theorem mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff (b : Basis ι
   refine ⟨fun ⟨X, hX⟩ ↦ ⟨X.map star, by simp [hX, star_sum, star_smul]⟩,
     fun ⟨X, hX⟩ ↦ ⟨X.map star, by simpa [star_sum, star_smul] using congrArg star hX⟩⟩
 
-end ConjugateMatrixComodule
-
-section ConjugateSubcomodule
-
-variable {R A M ι : Type*} [CommRing R] [StarRing R]
-  [Ring A] [StarRing A] [Bialgebra R A] [Module.Projective R A] [StarModule R A] [StarCoalgebra R A]
-  [AddCommGroup M] [Module R M] [Comodule R A M] [Fintype ι]
-
-omit [Module.Projective R A] in
-private theorem coactComponent_conjEquivFun (b : Basis ι R M) (f : WithConv (A →ₗ[R] R)) (m : M) :
+private theorem coact_conjEquivFun (b : Basis ι R M) (m : M) :
     letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
-    coactComponent (R := R) (C := A) (M := ι → R) f.ofConv (b.conjEquivFun m) =
-      b.conjEquivFun (coactComponent (R := R) (C := A) (M := M) (star f).ofConv m) := by
+    coact (R := R) (C := A) (M := ι → R) (b.conjEquivFun m) =
+      TensorProduct.map b.conjEquivFun.toLinearMap (starLinearEquiv R (A := A)).toLinearMap
+        (coact (R := R) (C := A) (M := M) m) := by
   let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
   conv_lhs => rw [← b.sum_repr m]
   conv_rhs => rw [← b.sum_repr m]
-  simp only [map_sum, map_smulₛₗ, b.conjEquivFun_self]
+  simp only [map_sum, map_smulₛₗ, RingHom.id_apply, b.conjEquivFun_self]
   refine Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_
-  rw [coactComponent_apply, coactComponent_apply, b.conjugateMatrixComodule_coact,
-    matrixCoact_apply_basisFun, coact_basis_eq_sum_coefficientMatrix b j, map_sum, map_sum, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp [LinearMap.tensorComponent_tmul, map_smulₛₗ, b.conjEquivFun_self,
-    LinearMap.intrinsicStar_apply, starRingEnd_apply]
+  rw [b.conjugateMatrixComodule_coact, matrixCoact_apply_basisFun,
+    coact_basis_eq_sum_coefficientMatrix b j, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp [b.conjEquivFun_self]
 
-private theorem map_conjEquivFun_coact_mem (b : Basis ι R M) (S : Subcomodule R A M) :
+private theorem coact_conjEquivFun_symm (b : Basis ι R M) :
     letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
-    ∀ y ∈ S.toSubmodule.map b.conjEquivFun.toLinearMap, coact (R := R) (C := A) y ∈
-      LinearMap.range (TensorProduct.map
-        (S.toSubmodule.map b.conjEquivFun.toLinearMap).subtype LinearMap.id) := by
+    ∀ y : ι → R, coact (R := R) (C := A) (M := M) (b.conjEquivFun.symm y) =
+      TensorProduct.map b.conjEquivFun.symm.toLinearMap (starLinearEquiv R (A := A)).toLinearMap
+        (coact (R := R) (C := A) (M := ι → R) y) := by
   let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
-  rintro _ ⟨m, hm, rfl⟩
-  refine (Submodule.tensor_mem_range_iff_forall_tensorComponent_mem _ _).mpr fun f ↦ ?_
-  rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply, coactComponent_conjEquivFun b (toConv f)]
-  exact ⟨_, by simpa [coactComponent_apply, LinearMap.tensorComponent_def] using
-    S.rid_lTensor_coact_mem (star (toConv f)).ofConv hm, rfl⟩
-
-private theorem map_conjEquivFun_symm_coact_mem (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
-    ∀ (T : Subcomodule R A (ι → R)) (m : M),
-      m ∈ T.toSubmodule.map b.conjEquivFun.symm.toLinearMap → coact (R := R) (C := A) m ∈
-        LinearMap.range (TensorProduct.map
-          (T.toSubmodule.map b.conjEquivFun.symm.toLinearMap).subtype LinearMap.id) := by
-  let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
-  rintro T _ ⟨y, hy, rfl⟩
-  refine (Submodule.tensor_mem_range_iff_forall_tensorComponent_mem _ _).mpr fun f ↦ ?_
-  have hcomp : coactComponent (R := R) (C := A) (M := M) f (b.conjEquivFun.symm y) =
-      b.conjEquivFun.symm
-        (coactComponent (R := R) (C := A) (M := ι → R) (star (toConv f)).ofConv y) :=
-    b.conjEquivFun.injective <| by
-      rw [LinearEquiv.apply_symm_apply, ← b.conjEquivFun.apply_symm_apply y,
-        coactComponent_conjEquivFun b (star (toConv f)), star_star, LinearEquiv.apply_symm_apply]
-  rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply, hcomp]
-  exact ⟨_, by simpa [coactComponent_apply, LinearMap.tensorComponent_def] using
-    T.rid_lTensor_coact_mem (star (toConv f)).ofConv hy, rfl⟩
+  let s := (starLinearEquiv R (A := A)).toLinearMap
+  intro y
+  have hy := congrArg (TensorProduct.map b.conjEquivFun.symm.toLinearMap s)
+    (coact_conjEquivFun b (b.conjEquivFun.symm y))
+  have hcomp := congrArg (fun f ↦ f (coact (R := R) (C := A) (M := M) (b.conjEquivFun.symm y)))
+    (TensorProduct.map_comp (σ₁₃ := RingHom.id R) b.conjEquivFun.symm.toLinearMap s
+      b.conjEquivFun.toLinearMap s)
+  rw [LinearMap.comp_apply] at hcomp
+  rw [b.conjEquivFun.apply_symm_apply, ← hcomp] at hy
+  have h1 : (b.conjEquivFun.symm.toLinearMap ∘ₛₗ b.conjEquivFun.toLinearMap : M →ₗ[R] M) =
+      LinearMap.id := LinearMap.ext b.conjEquivFun.symm_apply_apply
+  have h2 : (s ∘ₛₗ s : A →ₗ[R] A) = LinearMap.id := LinearMap.ext star_star
+  simpa [s, h1, h2] using hy.symm
 
 /-- Coordinatewise conjugation in a finite basis `b` induces an order isomorphism between the
 subcomodule lattice of `M` and that of `b.conjugateMatrixComodule`. -/
@@ -159,31 +173,34 @@ noncomputable def conjugateSubcomoduleOrderIso (b : Basis ι R M) :
     letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
     Subcomodule R A M ≃o Subcomodule R A (ι → R) :=
   letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
-  { toFun S := Subcomodule.ofSubmodule (S.toSubmodule.map b.conjEquivFun.toLinearMap)
-      (map_conjEquivFun_coact_mem b S)
-    invFun T := Subcomodule.ofSubmodule (T.toSubmodule.map b.conjEquivFun.symm.toLinearMap)
-      (map_conjEquivFun_symm_coact_mem b T)
-    left_inv S := Subcomodule.ext fun _ ↦ by simp
-    right_inv T := Subcomodule.ext fun _ ↦ by simp
-    map_rel_iff' := ⟨fun h m hm ↦ by obtain ⟨_, hm', heq⟩ := h ⟨m, hm, rfl⟩
-                                     exact b.conjEquivFun.injective heq ▸ hm',
-      fun h _ ⟨m, hm, heq⟩ ↦ ⟨m, h hm, heq⟩⟩ }
+  { toFun := mapSemilinearSubcomodule b.conjEquivFun (coact_conjEquivFun b)
+    invFun := mapSemilinearSubcomodule b.conjEquivFun.symm (coact_conjEquivFun_symm b)
+    left_inv S := Subcomodule.ext fun _ ↦ by
+      simp [← Subcomodule.mem_toSubmodule, Submodule.mem_map_equiv]
+    right_inv T := Subcomodule.ext fun _ ↦ by
+      simp [← Subcomodule.mem_toSubmodule, Submodule.mem_map_equiv]
+    map_rel_iff' := fun {S₁ S₂} ↦ by
+      simp [← Subcomodule.toSubmodule_le_toSubmodule,
+        Submodule.map_le_map_iff_of_injective b.conjEquivFun.injective] }
 
 /-- Membership in `b.conjugateSubcomoduleOrderIso S` reduces to `b.conjEquivFun.symm`. -/
 @[simp]
 theorem mem_conjugateSubcomoduleOrderIso_iff (b : Basis ι R M) (S : Subcomodule R A M) (y : ι → R) :
     letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
-    y ∈ b.conjugateSubcomoduleOrderIso S ↔ b.conjEquivFun.symm y ∈ S :=
-  ⟨fun ⟨_, hm, h⟩ ↦ h ▸ by simpa using hm, fun hy ↦ ⟨_, hy, by simp⟩⟩
+    y ∈ b.conjugateSubcomoduleOrderIso S ↔ b.conjEquivFun.symm y ∈ S := by
+  let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
+  simp [← Subcomodule.mem_toSubmodule, conjugateSubcomoduleOrderIso, Submodule.mem_map_equiv]
 
 /-- Membership in `(b.conjugateSubcomoduleOrderIso).symm T` reduces to `b.conjEquivFun`. -/
 @[simp]
 theorem mem_conjugateSubcomoduleOrderIso_symm_iff (b : Basis ι R M) :
     letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
     ∀ (T : Subcomodule R A (ι → R)) (m : M),
-      m ∈ b.conjugateSubcomoduleOrderIso.symm T ↔ b.conjEquivFun m ∈ T :=
-  letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
-  fun _ _ ↦ ⟨fun ⟨_, hy, h⟩ ↦ h ▸ by simpa using hy, fun hm ↦ ⟨_, hm, by simp⟩⟩
+      m ∈ b.conjugateSubcomoduleOrderIso.symm T ↔ b.conjEquivFun m ∈ T := by
+  let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
+  intro T m
+  simp [← Subcomodule.mem_toSubmodule, conjugateSubcomoduleOrderIso, OrderIso.symm,
+    Submodule.mem_map_equiv]
 
 /-- If `M` is a simple comodule, then `b.conjugateMatrixComodule` is also simple. -/
 theorem isSimpleOrder_conjugateMatrixComodule [IsSimpleOrder (Subcomodule R A M)]
@@ -193,6 +210,6 @@ theorem isSimpleOrder_conjugateMatrixComodule [IsSimpleOrder (Subcomodule R A M)
   letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
   b.conjugateSubcomoduleOrderIso.symm.isSimpleOrder
 
-end ConjugateSubcomodule
+end ConjugateMatrixComodule
 
 end Module.Basis
