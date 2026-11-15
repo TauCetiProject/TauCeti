@@ -59,7 +59,10 @@ embedding whose image consists of the partitions coarser than the partition of `
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
 of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
 inverse equivalence; and the partition of `α × β` into the fibres of the first coordinate
-(`Finpartition.ofSetoid_ker_fst_parts`).
+(`Finpartition.ofSetoid_ker_fst_parts`). For a finite partition of a set `u`, the parts are
+nonempty and cover `u` (`Finpartition.sUnion_parts`), every point of `u` lies in exactly one part
+(`Finpartition.existsUnique_mem_set`), and under refinement each coarse part is the union of the
+fine parts inside it (`Finpartition.eq_sUnion_of_le`).
 -/
 
 public section
@@ -279,6 +282,47 @@ theorem inter_part_eq_self_or_eq_empty_of_le {P Q : Finpartition u} (href : Q �
   · exact Or.inl (Set.inter_eq_self_of_subset_left (h ▸ hrp'))
   · refine Or.inr (Set.eq_empty_of_subset_empty fun x hx => ?_)
     exact absurd hx.2 (Set.disjoint_left.mp (P.disjoint hp' hp h) (hrp' hx.1))
+
+section SetPartition
+
+variable (P : Finpartition u)
+
+/-- The parts of a finite partition of a set `u` cover `u`. -/
+@[simp]
+theorem sUnion_parts : ⋃₀ (P.parts : Set (Set Ω)) = u := by
+  rw [← Finset.sup_id_set_eq_sUnion, P.sup_parts]
+
+/-- A part of a finite partition of a set is nonempty. -/
+theorem nonempty_of_mem_parts_set {s : Set Ω} (hs : s ∈ P.parts) : s.Nonempty :=
+  Set.nonempty_iff_ne_empty.2 (P.ne_bot hs)
+
+/-- Every point of a set lies in some part of a finite partition of it. -/
+theorem exists_mem_set {x : Ω} (hx : x ∈ u) : ∃ s ∈ P.parts, x ∈ s := by
+  rw [← P.sUnion_parts] at hx
+  exact Set.mem_sUnion.1 hx
+
+/-- Two parts of a finite partition of a set that contain a common point are equal. -/
+theorem eq_of_mem_parts_set {s t : Set Ω} (hs : s ∈ P.parts) (ht : t ∈ P.parts) {x : Ω}
+    (hxs : x ∈ s) (hxt : x ∈ t) : s = t :=
+  P.disjoint.elim_set hs ht x hxs hxt
+
+/-- Every point of a set lies in exactly one part of a finite partition of it. -/
+theorem existsUnique_mem_set {x : Ω} (hx : x ∈ u) : ∃! s, s ∈ P.parts ∧ x ∈ s := by
+  obtain ⟨s, hs, hxs⟩ := P.exists_mem_set hx
+  exact ⟨s, ⟨hs, hxs⟩, fun t ⟨ht, hxt⟩ ↦ P.eq_of_mem_parts_set ht hs hxt hxs⟩
+
+variable {P} {Q : Finpartition u}
+
+/-- If `P` refines `Q`, each part of `Q` is the union of the parts of `P` inside it. -/
+theorem eq_sUnion_of_le (hPQ : P ≤ Q) {t : Set Ω} (ht : t ∈ Q.parts) :
+    t = ⋃₀ {s ∈ (P.parts : Set (Set Ω)) | s ⊆ t} := by
+  refine Set.Subset.antisymm (fun x hxt ↦ ?_) (Set.sUnion_subset fun s hs ↦ hs.2)
+  obtain ⟨s, hs, hxs⟩ := P.exists_mem_set (Q.le ht hxt)
+  obtain ⟨t', ht', hst'⟩ := hPQ hs
+  obtain rfl := Q.eq_of_mem_parts_set ht ht' hxt (hst' hxs)
+  exact ⟨s, ⟨hs, hst'⟩, hxs⟩
+
+end SetPartition
 
 section Refinement
 

@@ -87,6 +87,57 @@ namespace TauCeti.Multiquadratic
 
 variable {d : ℤ}
 
+/-- A relative arithmetic Frobenius at a prime `Q` above a degree-one prime `qIdeal` over `q` fixes
+the generator of a prime discriminant `P` prime to `q` exactly when the prime-discriminant
+character at `q` is `1`. -/
+private theorem apply_candidateGenusFieldGen_eq_self_iff (hd : Squarefree d)
+    {q : ℕ} [Fact q.Prime] (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd)))
+    (hnorm : Ideal.absNorm qIdeal = q) (Q : Ideal (𝓞 (candidateGenusField hd)))
+    [Q.LiesOver qIdeal]
+    (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
+    (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q)
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) (hqP : ¬ (q : ℤ) ∣ P.val) :
+    σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P ↔
+      primeDiscriminantCharFun P.val q = 1 := by
+  have hprimeNorm : (Ideal.absNorm qIdeal).Prime := hnorm ▸ Fact.out
+  let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
+  let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
+    simpa [hnorm, Ideal.under_def] using
+      Ideal.span_singleton_absNorm (I := qIdeal) hprimeNorm⟩
+  let _ : Q.LiesOver (Ideal.span {(q : ℤ)}) :=
+    Ideal.LiesOver.trans Q qIdeal (Ideal.span {(q : ℤ)})
+  have hσint : IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q :=
+    NumberField.isArithFrobAt_int_of_absNorm_eq qIdeal hnorm Q hσ
+  have hroot : candidateGenusFieldGen hd P ^ 2 =
+      algebraMap ℤ (candidateGenusField hd) (primeDiscriminantRadicand P.val) := by
+    rw [candidateGenusFieldGen_sq]
+    simp
+  exact isArithFrobAt_apply_sqrt_primeDiscriminantRadicand_eq_self_iff
+    ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hqP hroot Q hσint
+
+/-- The genus character of the narrow class of a degree-one prime `qIdeal` over `q`, at a prime
+discriminant `P` prime to `q`, is the prime-discriminant character at `q`. -/
+private theorem coe_genusCharFunNarrowClassGroupHom_mk0_eq (hd : Squarefree d)
+    (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) {q : ℕ} [Fact q.Prime]
+    (qIdeal : Ideal (𝓞 (candidateGenusFieldBase hd))) (hnorm : Ideal.absNorm qIdeal = q)
+    (hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰)
+    (P : {P // P ∈ genusPrimeDiscriminants hd}) (hqP : ¬ (q : ℤ) ∣ P.val) :
+    ((genusCharFunNarrowClassGroupHom
+      (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
+      (genusPrimeDiscriminants_spec hd).2.2
+      (minpoly_candidateGenusFieldBaseGen hd hnsq)
+      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd
+      (Finset.singleton_subset_iff.mpr P.property)
+      (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩) : ℤˣ) : ℤ) = primeDiscriminantCharFun P.val q := by
+  rw [genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
+    (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
+    (genusPrimeDiscriminants_spec hd).2.2
+    (minpoly_candidateGenusFieldBaseGen hd hnsq)
+    (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal P.val P.property (by
+      rw [hnorm]
+      exact (Nat.prime_iff_prime_int.mp Fact.out).coprime_iff_not_dvd.mpr hqP),
+    hnorm]
+
 /-- At a degree-one prime above a rational prime `q`, the Frobenius sign on a
 prime-discriminant generator agrees with the corresponding genus character whenever `q` does
 not divide that prime discriminant. Other prime discriminants may be divisible by `q`. -/
@@ -109,55 +160,15 @@ theorem candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar
   have hqIdeal : qIdeal ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ := by
     rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors, hnorm]
     exact (Fact.out : q.Prime).ne_zero
-  have hprimeNorm : (Ideal.absNorm qIdeal).Prime := hnorm ▸ Fact.out
-  let _ : qIdeal.IsPrime := Ideal.isPrime_of_irreducible_absNorm hprimeNorm
-  let _ : qIdeal.LiesOver (Ideal.span {(q : ℤ)}) := ⟨by
-    simpa [hnorm, Ideal.under_def] using
-      Ideal.span_singleton_absNorm (I := qIdeal) hprimeNorm⟩
-  let _ : Q.LiesOver (Ideal.span {(q : ℤ)}) :=
-    Ideal.LiesOver.trans Q qIdeal (Ideal.span {(q : ℤ)})
-  have hσint : IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q :=
-    NumberField.isArithFrobAt_int_of_absNorm_eq qIdeal hnorm Q hσ
-  let u : ℤˣ :=
-    genusCharFunNarrowClassGroupHom
-      (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
-      (genusPrimeDiscriminants_spec hd).2.2
-      (minpoly_candidateGenusFieldBaseGen hd hnsq)
-      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd
-      (Finset.singleton_subset_iff.mpr P.property)
-      (NarrowClassGroup.mk0 ⟨qIdeal, hqIdeal⟩)
+  -- Both sides are sign encodings `if _ then 0 else 1`; their tests agree by the two helpers.
   rw [candidateGenusFieldBaseGenusCharLinearMap_apply,
     genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
     genusCharFunElementaryTwoQuotientLinearMap_mk,
     candidateGenusFieldRelativeSignPattern_apply,
-    TauCeti.additiveIntUnitsLinearEquiv_apply]
-  -- The two sign encodings are definitionally if-expressions; name the genus-character unit
-  -- above so their equality reduces to equivalence of their respective fixed-sign tests.
-  change (if σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P then 0 else 1) =
-    if u = 1 then 0 else 1
-  have hroot : candidateGenusFieldGen hd P ^ 2 =
-      algebraMap ℤ (candidateGenusField hd) (primeDiscriminantRadicand P.val) := by
-    rw [candidateGenusFieldGen_sq]
-    simp
-  have hfix :
-      σ (candidateGenusFieldGen hd P) = candidateGenusFieldGen hd P ↔
-        primeDiscriminantCharFun P.val q = 1 :=
-    isArithFrobAt_apply_sqrt_primeDiscriminantRadicand_eq_self_iff
-      ((genusPrimeDiscriminants_spec hd).1 P.val P.property) hqP hroot Q hσint
-  have hchar : (u : ℤ) = primeDiscriminantCharFun P.val q := by
-    dsimp only [u]
-    rw [genusCharFunNarrowClassGroupHom_mk0_eq_primeDiscriminantCharFun_absNorm
-      (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
-      (genusPrimeDiscriminants_spec hd).2.2
-      (minpoly_candidateGenusFieldBaseGen hd hnsq)
-      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd qIdeal hqIdeal P.val P.property (by
-        rw [hnorm]
-        exact (Nat.prime_iff_prime_int.mp Fact.out).coprime_iff_not_dvd.mpr hqP),
-      hnorm]
-  have hunit :
-      u = 1 ↔ primeDiscriminantCharFun P.val q = 1 := by
-    rw [← Units.val_eq_one, hchar]
-  simp only [hfix, hunit]
+    TauCeti.additiveIntUnitsLinearEquiv_apply, toMul_ofMul]
+  simp only [apply_candidateGenusFieldGen_eq_self_iff hd qIdeal hnorm Q σ hσ P hqP,
+    ← Units.val_eq_one,
+    coe_genusCharFunNarrowClassGroupHom_mk0_eq hd hnsq qIdeal hnorm hqIdeal P hqP]
 
 /-- **The genus-field isomorphism sends Frobenius to the prime class.**
 Let q be a rational prime, let qIdeal be a degree-one prime of K = ℚ(√d) above q, and let Q be
@@ -273,6 +284,62 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
 
 /-! ### The Frobenius at an arbitrary unramified prime -/
 
+/-- A relative Frobenius at a prime `Q` above an inert prime `v` (of absolute norm `q ^ 2`) is
+trivial: the absolute Frobenius at `Q` is an involution and the residue field of `v` already has
+`q ^ 2` elements. -/
+private theorem eq_one_of_absNorm_eq_sq
+    (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
+    (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.IsPrime] [Q.LiesOver v.asIdeal]
+    (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
+    (hσ : IsArithFrobAt (𝓞 (candidateGenusFieldBase hd)) σ Q)
+    (hnorm : Ideal.absNorm v.asIdeal = TauCeti.rationalPrimeBelow v ^ 2) : σ = 1 := by
+  have hqprime := TauCeti.prime_rationalPrimeBelow v
+  have : Fact (TauCeti.rationalPrimeBelow v).Prime := ⟨hqprime⟩
+  have : v.asIdeal.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
+    ⟨(TauCeti.under_eq_span_rationalPrimeBelow v).symm⟩
+  have : Q.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
+    Ideal.LiesOver.trans Q v.asIdeal (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)})
+  have : Algebra.IsUnramifiedAt (𝓞 (candidateGenusFieldBase hd)) Q :=
+    isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q inferInstance inferInstance
+  obtain ⟨ρ, hρ⟩ := NumberField.exists_isArithFrobAt_int_of_liesOver
+    (K := candidateGenusField hd) (p := TauCeti.rationalPrimeBelow v) Q
+  have hcard : Nat.card (𝓞 (candidateGenusFieldBase hd) ⧸
+      Q.under (𝓞 (candidateGenusFieldBase hd))) = TauCeti.rationalPrimeBelow v ^ 2 := by
+    have hunder : Q.under (𝓞 (candidateGenusFieldBase hd)) = v.asIdeal := Ideal.LiesOver.over.symm
+    rw [hunder, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm]
+  -- Every automorphism of the candidate genus field over `ℚ` is an involution: transport
+  -- `aut_mul_self_eq_one` along the presentation of `candidateGenusField` as an `adjoin`.
+  have hρ2 : ρ ^ 2 = 1 := by
+    apply (AlgEquiv.autCongr (candidateGenusFieldEquivAdjoin hd)).injective
+    rw [map_pow, map_one, pow_two]
+    exact aut_mul_self_eq_one (genusFieldRoot_sq_algebraMap hd) _
+  exact NumberField.isArithFrobAt_eq_one_of_pow_eq_one hρ hρ2 hcard hσ
+
+/-- The narrow class of an inert prime `v` (of absolute norm `q ^ 2`) is trivial: `v` is generated
+by the totally positive rational integer `q`. -/
+private theorem mk0_eq_one_of_absNorm_eq_sq
+    (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
+    (hnorm : Ideal.absNorm v.asIdeal = TauCeti.rationalPrimeBelow v ^ 2) :
+    NarrowClassGroup.mk0
+      (⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩ :
+        (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰) = 1 := by
+  have hqprime := TauCeti.prime_rationalPrimeBelow v
+  have hspan : v.asIdeal =
+      Ideal.span {((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd))} :=
+    TauCeti.asIdeal_eq_span_singleton_of_absNorm_eq_pow_finrank
+      (by rw [hnorm, finrank_candidateGenusFieldBase hd hnsq])
+  have hane : ((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd)) ≠ 0 :=
+    Nat.cast_ne_zero.mpr hqprime.ne_zero
+  have hpos : NumberField.IsTotallyPositive
+      ((((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd)) :
+        candidateGenusFieldBase hd)) := by
+    have hcast := NumberField.isTotallyPositive_intCast (K := candidateGenusFieldBase hd)
+      (n := (TauCeti.rationalPrimeBelow v : ℤ)) (by exact_mod_cast hqprime.pos)
+    simpa using hcast
+  exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hane hpos hspan
+
 /-- **The genus-field isomorphism sends every Frobenius to the class of the prime below it.**
 Let `v` be a height-one prime of the embedded quadratic base `K = ℚ(√d)` and let `Q` be a prime
 of the candidate genus field above `v`. Every relative arithmetic
@@ -312,40 +379,8 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_at_prim
     exact autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius hd hnsq
       v.asIdeal hnorm Q σ hσ
   · -- `v` is inert: the Frobenius and the narrow class are both trivial.
-    have : Q.LiesOver (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)}) :=
-      Ideal.LiesOver.trans Q v.asIdeal (Ideal.span {(TauCeti.rationalPrimeBelow v : ℤ)})
-    have : Algebra.IsUnramifiedAt (𝓞 (candidateGenusFieldBase hd)) Q :=
-      isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q inferInstance inferInstance
-    obtain ⟨ρ, hρ⟩ := NumberField.exists_isArithFrobAt_int_of_liesOver
-      (K := candidateGenusField hd) (p := TauCeti.rationalPrimeBelow v) Q
-    have hcard : Nat.card (𝓞 (candidateGenusFieldBase hd) ⧸
-        Q.under (𝓞 (candidateGenusFieldBase hd))) = TauCeti.rationalPrimeBelow v ^ 2 := by
-      have hunder : Q.under (𝓞 (candidateGenusFieldBase hd)) = v.asIdeal := Ideal.LiesOver.over.symm
-      rw [hunder, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm]
-    -- Every automorphism of the candidate genus field over `ℚ` is an involution: transport
-    -- `aut_mul_self_eq_one` along the presentation of `candidateGenusField` as an `adjoin`.
-    have hρ2 : ρ ^ 2 = 1 := by
-      apply (AlgEquiv.autCongr (candidateGenusFieldEquivAdjoin hd)).injective
-      rw [map_pow, map_one, pow_two]
-      exact aut_mul_self_eq_one (genusFieldRoot_sq_algebraMap hd) _
-    have hσone : σ = 1 := NumberField.isArithFrobAt_eq_one_of_pow_eq_one hρ hρ2 hcard hσ
-    have hspan : v.asIdeal =
-        Ideal.span {((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd))} :=
-      TauCeti.asIdeal_eq_span_singleton_of_absNorm_eq_pow_finrank
-        (by rw [hnorm, finrank_candidateGenusFieldBase hd hnsq])
-    have hane : ((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd)) ≠ 0 :=
-      Nat.cast_ne_zero.mpr hqprime.ne_zero
-    have hpos : NumberField.IsTotallyPositive
-        ((((TauCeti.rationalPrimeBelow v : ℕ) : 𝓞 (candidateGenusFieldBase hd)) :
-          candidateGenusFieldBase hd)) := by
-      have hcast := NumberField.isTotallyPositive_intCast (K := candidateGenusFieldBase hd)
-        (n := (TauCeti.rationalPrimeBelow v : ℤ)) (by exact_mod_cast hqprime.pos)
-      simpa using hcast
-    have hcls : NarrowClassGroup.mk0
-        (⟨v.asIdeal, mem_nonZeroDivisors_iff_ne_zero.mpr v.ne_bot⟩ :
-          (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰) = 1 :=
-      NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hane hpos hspan
-    rw [hσone, map_one, hcls, TauCeti.elementaryTwoQuotientMk_one, ofAdd_zero]
+    rw [eq_one_of_absNorm_eq_sq hd hnsq v Q σ hσ hnorm, map_one,
+      mk0_eq_one_of_absNorm_eq_sq hd hnsq v hnorm, TauCeti.elementaryTwoQuotientMk_one, ofAdd_zero]
 
 /-! ### The Artin map on ideals -/
 
