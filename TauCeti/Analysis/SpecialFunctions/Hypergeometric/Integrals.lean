@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.MellinTransform
+public import TauCeti.Analysis.MellinTransform.Convolution
 public import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 
@@ -19,10 +19,12 @@ transform at `s`, and
 `∫₀^∞ x^{s - 1} E(a, b, c, -x) dx = Γ(s) Γ(a - s) Γ(b - s) / (Γ(a) Γ(b) Γ(c - s))`.
 
 Euler's integral represents the regularized Gauss function `𝐅(a, b; c; ·)` in this parameter
-range (DLMF 15.6.1), so this is DLMF 15.14.1 there. The proof inserts Euler's integral, exchanges
-the two integrals by Fubini, evaluates the inner integral over `x` by the Beta integral of the
-second kind `Complex.hasMellin_one_add_cpow_neg` (DLMF 5.12.3) after scaling `x ↦ t x`, and
-evaluates the remaining integral over `t` as the Beta integral `B(b - s, c - b)`.
+range (DLMF 15.6.1), so this is DLMF 15.14.1 there. The proof writes `x ↦ E(a, b, c, -x)` as the
+Mellin convolution `x ↦ ∫₀^∞ f(t) h(x t) dt` of the Beta weight
+`f(t) = t^{b - 1} (1 - t)^{c - b - 1}` on `(0, 1]` with `h(u) = (1 + u)^{-a}`, and applies
+`TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `h` at `s` is the Beta integral
+of the second kind `Complex.hasMellin_one_add_cpow_neg` (DLMF 5.12.3), and that of `f` at `1 - s`
+is the Beta integral `B(b - s, c - b)`.
 
 ## Main results
 
@@ -40,81 +42,33 @@ open Complex hiding exp continuous_exp log
 
 namespace Complex
 
-/-- Scaling `x ↦ t x` in the Mellin integrand of `(1 + x)^{-a}`: for `t > 0` and `x ≥ 0`,
-`x^{s - 1} (1 + x t)^{-a} = t^{1 - s} ((t x)^{s - 1} (1 + t x)^{-a})`. -/
-private lemma cpow_mul_one_add_mul_cpow_neg_eq (s a : ℂ) {t x : ℝ} (ht : 0 < t)
-    (hx : 0 ≤ x) :
-    (x : ℂ) ^ (s - 1) * (1 + x * t) ^ (-a) =
-      (t : ℂ) ^ (1 - s) * (((t * x : ℝ) : ℂ) ^ (s - 1) * (1 + ((t * x : ℝ) : ℂ)) ^ (-a)) := by
-  have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
-  have h1 : (t : ℂ) ^ (1 - s) * (t : ℂ) ^ (s - 1) = 1 := by
-    rw [← cpow_add _ _ ht', show 1 - s + (s - 1) = 0 by ring, cpow_zero]
-  rw [ofReal_mul, mul_cpow_ofReal_nonneg ht.le hx, mul_comm (x : ℂ) (t : ℂ)]
-  linear_combination (-((x : ℂ) ^ (s - 1) * (1 + t * x) ^ (-a))) * h1
-
-/-- The Mellin transform of `(1 + x t)^{-a}` for `t > 0` and `0 < Re s < Re a`, by scaling the
-Beta integral of the second kind. -/
-private lemma hasMellin_one_add_mul_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re)
-    {t : ℝ} (ht : 0 < t) :
-    HasMellin (fun x : ℝ ↦ (1 + (x : ℂ) * t) ^ (-a)) s
-      ((t : ℂ) ^ (-s) * (Gamma s * Gamma (a - s) / Gamma a)) := by
-  simpa only [ofReal_mul, smul_eq_mul] using (hasMellin_one_add_cpow_neg hs hsa).comp_mul_right ht
-
-/-- The integral of the norm of the Mellin integrand of `(1 + x t)^{-a}` scales as
-`t^{-Re s}`. -/
-private lemma integral_norm_cpow_mul_one_add_mul_cpow_neg (s a : ℂ) {t : ℝ} (ht : 0 < t) :
-    ∫ x in Ioi (0 : ℝ), ‖(x : ℂ) ^ (s - 1) * (1 + x * t) ^ (-a)‖ =
-      t ^ (-s.re) * ∫ x in Ioi (0 : ℝ), ‖(x : ℂ) ^ (s - 1) * (1 + x) ^ (-a)‖ := by
-  rw [setIntegral_congr_fun measurableSet_Ioi (g := fun x : ℝ ↦
-      t ^ (1 - s.re) * ‖((t * x : ℝ) : ℂ) ^ (s - 1) * (1 + ((t * x : ℝ) : ℂ)) ^ (-a)‖)
-      fun x hx ↦ by
-        rw [cpow_mul_one_add_mul_cpow_neg_eq s a ht (le_of_lt hx), norm_mul,
-          norm_cpow_eq_rpow_re_of_pos ht, sub_re, one_re],
-    integral_const_mul, integral_comp_mul_left_Ioi
-      (fun u : ℝ ↦ ‖(u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a)‖) 0 ht, mul_zero, smul_eq_mul,
-    ← mul_assoc, ← rpow_neg_one, ← rpow_add ht]
-  ring_nf
-
-/-- Multiplying the Beta weight of Euler's integral by `t^{-s}` shifts its first parameter. -/
-private lemma cpow_mul_one_sub_cpow_mul_cpow_neg (b c s : ℂ) {t : ℝ} (ht : 0 < t) :
-    (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (t : ℂ) ^ (-s) =
-      (t : ℂ) ^ (b - s - 1) * (1 - (t : ℂ)) ^ (c - b - 1) := by
-  rw [show b - s - 1 = b - 1 + -s by ring, cpow_add _ _ (ofReal_ne_zero.mpr ht.ne')]
-  ring
-
-/-- The integrand of the Mellin transform of Euler's integral, as a function of `(x, t)`, is
-absolutely integrable on `(0, ∞) × (0, 1]` when `0 < Re s < min(Re a, Re b)` and
-`Re b < Re c`. -/
-private lemma integrable_cpow_mul_eulerIntegrand {a b c s : ℂ} (hs : 0 < s.re)
-    (hsa : s.re < a.re) (hsb : s.re < b.re) (hbc : b.re < c.re) :
-    Integrable (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (s - 1) *
-        ((p.2 : ℂ) ^ (b - 1) * (1 - (p.2 : ℂ)) ^ (c - b - 1) * (1 + (p.1 : ℂ) * p.2) ^ (-a)))
-      ((volume.restrict (Ioi 0)).prod (volume.restrict (Ioc 0 1))) := by
+/-- The Beta weight of Euler's integral, extended by zero outside `(0, 1]`, has Mellin transform
+`B(b - s, c - b)` at `1 - s` when `Re s < Re b < Re c`. -/
+private lemma hasMellin_indicator_cpow_mul_one_sub_cpow {b c s : ℂ} (hsb : s.re < b.re)
+    (hbc : b.re < c.re) :
+    HasMellin
+      ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) (1 - s)
+      (betaIntegral (b - s) (c - b)) := by
   have hbeta := betaIntegral_convergent (u := b - s) (v := c - b) (by simpa using hsb)
     (by simpa using hbc)
   rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hbeta
-  refine (integrable_prod_iff' (by fun_prop)).mpr ⟨?_, ?_⟩
-  · filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    refine (((hasMellin_one_add_mul_cpow_neg hs hsa ht.1).1).const_mul
-      ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1))).congr
-      (Eventually.of_forall fun x ↦ ?_)
-    simp only [smul_eq_mul]
-    ring
-  · -- the inner integral of the norm is `t^{-Re s}` times a constant
-    refine (hbeta.norm.mul_const
-        (∫ x in Ioi (0 : ℝ), ‖(x : ℂ) ^ (s - 1) * (1 + x) ^ (-a)‖)).congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    have hnorm (x : ℝ) : ‖(x : ℂ) ^ (s - 1) *
-        ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 + (x : ℂ) * t) ^ (-a))‖ =
-          ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖ *
-            ‖(x : ℂ) ^ (s - 1) * (1 + (x : ℂ) * t) ^ (-a)‖ := by
-      simp only [norm_mul]
-      ring
-    simp only [hnorm]
-    rw [integral_const_mul, integral_norm_cpow_mul_one_add_mul_cpow_neg s a ht.1,
-      ← cpow_mul_one_sub_cpow_mul_cpow_neg b c s ht.1, norm_mul (_ * _),
-      norm_cpow_eq_rpow_re_of_pos ht.1 (-s), neg_re]
-    ring
+  -- multiplying by `t^{-s}` shifts the first parameter of the Beta weight
+  have heq : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (1 - s - 1) •
+        (Ioc 0 1).indicator (fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) t)
+      ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ (b - s - 1) * (1 - (t : ℂ)) ^ (c - b - 1))
+      (Ioi 0) := by
+    intro t ht
+    dsimp only
+    by_cases h : t ∈ Ioc 0 1
+    · rw [indicator_of_mem h, indicator_of_mem h, smul_eq_mul,
+        show b - s - 1 = 1 - s - 1 + (b - 1) by ring,
+        cpow_add _ _ (ofReal_ne_zero.mpr (ne_of_gt ht)), mul_assoc]
+    · rw [indicator_of_notMem h, indicator_of_notMem h, smul_zero]
+  refine ⟨(integrableOn_congr_fun heq measurableSet_Ioi).mpr
+    ((integrable_indicator_iff measurableSet_Ioc).mpr hbeta).integrableOn, ?_⟩
+  rw [mellin, setIntegral_congr_fun measurableSet_Ioi heq,
+    setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self,
+    ← intervalIntegral.integral_of_le zero_le_one, betaIntegral]
 
 /-- **The Mellin transform of Euler's integral along the negative real axis** (DLMF 15.14.1 for
 `𝐅(a, b; c; ·)` represented by Euler's integral). For `0 < Re s < min(Re a, Re b)` and
@@ -126,34 +80,28 @@ theorem hasMellin_eulerIntegral_neg {a b c s : ℂ} (hs : 0 < s.re) (hsa : s.re 
       (Gamma s * Gamma (a - s) * Gamma (b - s) / (Gamma a * Gamma b * Gamma (c - s))) := by
   have hbs : 0 < (b - s).re := by simpa using hsb
   have hcb : 0 < (c - b).re := by simpa using hbc
-  have hFint := integrable_cpow_mul_eulerIntegrand hs hsa hsb hbc
-  -- the Mellin integrand is the `t`-integral of the joint integrand
-  have houter : ∀ x ∈ Ioi (0 : ℝ), (x : ℂ) ^ (s - 1) • eulerIntegral a b c (-x) =
-      (Gamma b * Gamma (c - b))⁻¹ * ∫ t in Ioc (0 : ℝ) 1, (x : ℂ) ^ (s - 1) *
-        ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 + (x : ℂ) * t) ^ (-a)) := by
-    intro x _
-    rw [eulerIntegral_def, intervalIntegral.integral_of_le zero_le_one, smul_eq_mul,
-      mul_left_comm, ← integral_const_mul]
-    simp only [neg_mul, sub_neg_eq_add]
-  -- the inner integral in `x`, at each `t ∈ (0, 1]`, is a scaled Beta integral of the second kind
-  have hinner : ∀ t ∈ Ioc (0 : ℝ) 1, ∫ x in Ioi (0 : ℝ), (x : ℂ) ^ (s - 1) *
-      ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 + (x : ℂ) * t) ^ (-a)) =
-      Gamma s * Gamma (a - s) / Gamma a *
-        ((t : ℂ) ^ (b - s - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) := by
-    intro t ht
-    have h := (hasMellin_one_add_mul_cpow_neg hs hsa ht.1).2
-    simp only [mellin, smul_eq_mul] at h
-    simp only [mul_left_comm ((_ : ℂ) ^ (s - 1))]
-    rw [integral_const_mul, h, ← cpow_mul_one_sub_cpow_mul_cpow_neg b c s ht.1]
-    ring
-  refine ⟨?_, ?_⟩
-  · refine ((hFint.integral_prod_left).const_mul (Gamma b * Gamma (c - b))⁻¹).congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-    exact (houter x hx).symm
-  · rw [mellin, setIntegral_congr_fun measurableSet_Ioi houter, integral_const_mul,
-      integral_integral_swap hFint, setIntegral_congr_fun measurableSet_Ioc hinner,
-      integral_const_mul, ← intervalIntegral.integral_of_le zero_le_one, ← betaIntegral,
-      betaIntegral_eq_Gamma_mul_div _ _ hbs hcb, show b - s + (c - b) = c - s by ring]
-    field_simp [Gamma_ne_zero_of_re_pos (hs.trans hsb), Gamma_ne_zero_of_re_pos hcb]
+  have hf := hasMellin_indicator_cpow_mul_one_sub_cpow hsb hbc
+  have hh := hasMellin_one_add_cpow_neg hs hsa
+  -- Euler's integral at `-x` is a Mellin convolution of its Beta weight with `(1 + u)^{-a}`
+  have heuler : (fun x : ℝ ↦ eulerIntegral a b c (-x)) = fun x : ℝ ↦
+      (Gamma b * Gamma (c - b))⁻¹ • ∫ t in Ioi 0,
+        (Ioc 0 1).indicator (fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) t *
+          (1 + ((x * t : ℝ) : ℂ)) ^ (-a) := by
+    ext x
+    have h := setIntegral_indicator (μ := volume) (s := Ioi 0)
+      (measurableSet_Ioc (a := 0) (b := 1)) (f := fun t : ℝ ↦
+        (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 + ((x * t : ℝ) : ℂ)) ^ (-a))
+    rw [inter_eq_right.mpr Ioc_subset_Ioi_self,
+      ← intervalIntegral.integral_of_le zero_le_one] at h
+    simp only [indicator_mul_left _
+      fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)] at h
+    rw [eulerIntegral_def, smul_eq_mul, h]
+    simp only [ofReal_mul, neg_mul, sub_neg_eq_add]
+  have hconv := TauCeti.hasMellin_integral_mul_comp_mul hf.1 hh.1
+  have hmel := hasMellin_const_smul hconv.1 (Gamma b * Gamma (c - b))⁻¹
+  rw [← heuler, hconv.2, hf.2, hh.2, betaIntegral_eq_Gamma_mul_div _ _ hbs hcb,
+    show b - s + (c - b) = c - s by ring, smul_eq_mul] at hmel
+  convert hmel using 1
+  field_simp [Gamma_ne_zero_of_re_pos (hs.trans hsb), Gamma_ne_zero_of_re_pos hcb]
 
 end Complex
