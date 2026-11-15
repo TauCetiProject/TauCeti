@@ -23,10 +23,10 @@ inverse that is bounded on `L²` and orthogonal to the weak kernel.
   coordinates have bounded derivatives of every order, a weak `L²` solution of `L_x y = f`, with
   `f` continuous and in every `H^k`, agrees almost everywhere with a smooth classical solution
   lying in every `H^k`. With `f = 0`, the weak `L²` kernel of `L_x` consists of smooth classical
-  solutions of `L_x y = 0`; conversely `contDiff_of_gaugeFixedOperator_eq` and
-  `mem_sobolevFields_natCast_add_one_of_gaugeFixedOperator_eq` show that a `C¹`, `L²` classical
-  solution is smooth and gains one Sobolev derivative over `f`. So the weak and classical `L²`
-  kernels coincide, and lie in every `H^k`.
+  solutions of `L_x y = 0`; conversely a `C¹`, `L²` classical solution is a weak solution, so
+  it is smooth (`contDiff_of_gaugeFixedOperator_eq`) and gains one Sobolev derivative over `f`
+  (`mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`). So the weak and
+  classical `L²` kernels coincide, and lie in every `H^k`.
 * `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one`:
   at a continuous vortex lying in `A_m^k` for every `k`, the weak right inverse `Q` of `L_x` maps
   `H^k` into `H^(k+1)` for every `k`. This is the vanishing of the cokernel of `L_x` on the
@@ -103,18 +103,6 @@ theorem contDiff_of_gaugeFixedOperator_eq (hx : ContDiff ℝ ∞ x)
   obtain ⟨y', hy', hyy', -⟩ := exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq hx
     hbound hyL hf hfc ((forall_integral_inner_gaugeFixedAdjoint_eq_iff hx.continuous hy hfc).2 heq)
   rwa [(hy.continuous.ae_eq_iff_eq volume hy'.continuous).1 hyy']
-
-/-- **Elliptic regularity of classical `L²` solutions.** Let `x` be a smooth field whose
-coordinates have bounded derivatives through order `k`. A square-integrable `C¹` solution of
-`L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. In particular every `C¹` element of the `L²` kernel
-of `L_x` lies in every `H^k` when `x` has bounded derivatives of every order. -/
-theorem mem_sobolevFields_natCast_add_one_of_gaugeFixedOperator_eq (k : ℕ) (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hy : ContDiff ℝ 1 y) (hyL : MemLp y 2 volume) (hf : f ∈ sobolevFields k)
-    (heq : ∀ z, gaugeFixedOperator x y z = f z) : y ∈ sobolevFields (k + 1) := by
-  have hfc : Continuous f := funext heq ▸ continuous_gaugeFixedOperator hx.continuous hy
-  exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hx hbound hyL
-    hf ((forall_integral_inner_gaugeFixedAdjoint_eq_iff hx.continuous hy hfc).2 heq)
 
 /-! ### Surjectivity at a vortex -/
 
