@@ -60,17 +60,10 @@ variable {ι : Type*} [Fintype ι]
 theorem contDiff_polynomialEvalₗ (p : MvPolynomial ι ℝ) {n : ℕ∞ω} :
     ContDiff ℝ n (polynomialEvalₗ ι p) := by
   induction p using MvPolynomial.induction_on with
-  | C a =>
-    rw [polynomialEvalₗ_C]
-    exact contDiff_const
-  | add p q hp hq =>
-    rw [map_add]
-    exact hp.add hq
+  | C a => rw [polynomialEvalₗ_C]; exact contDiff_const
+  | add p q hp hq => rw [map_add]; exact hp.add hq
   | mul_X p i hp =>
-    have hmul : polynomialEvalₗ ι (p * X i) = fun x ↦ polynomialEvalₗ ι p x * x i := by
-      ext x
-      simp
-    rw [hmul]
+    rw [show polynomialEvalₗ ι (p * X i) = fun x ↦ polynomialEvalₗ ι p x * x i by ext; simp]
     exact hp.mul (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff
 
 /-- Every bounded-degree polynomial function on `EuclideanSpace ℝ ι` is smooth of every order. -/
@@ -88,22 +81,12 @@ theorem hasFDerivAt_polynomialEvalₗ (p : MvPolynomial ι ℝ) (x : EuclideanSp
         (EuclideanSpace.proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι →L[ℝ] ℝ)) x := by
   classical
   induction p using MvPolynomial.induction_on with
-  | C a =>
-    have h0 : (∑ i : ι, polynomialEvalₗ ι (pderiv i (C a : MvPolynomial ι ℝ)) x •
-        (EuclideanSpace.proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι →L[ℝ] ℝ)) = 0 := by
-      simp
-    rw [polynomialEvalₗ_C, h0]
-    exact hasFDerivAt_const a x
+  | C a => rw [polynomialEvalₗ_C]; simpa using hasFDerivAt_const a x
   | add p q hp hq =>
     rw [map_add]
-    refine (hp.add hq).congr_fderiv ?_
-    ext v
-    simp [add_smul, Finset.sum_add_distrib]
+    exact (hp.add hq).congr_fderiv (by ext v; simp [add_smul, Finset.sum_add_distrib])
   | mul_X p j hp =>
-    have hmul : polynomialEvalₗ ι (p * X j) = fun y ↦ polynomialEvalₗ ι p y * y j := by
-      ext y
-      simp
-    rw [hmul]
+    rw [show polynomialEvalₗ ι (p * X j) = fun y ↦ polynomialEvalₗ ι p y * y j by ext; simp]
     refine (hp.mul (EuclideanSpace.proj (𝕜 := ℝ) j).hasFDerivAt).congr_fderiv ?_
     ext v
     simp [Derivation.leibniz, pderiv_X, Pi.single_apply, apply_ite (eval (fun i ↦ x i)),
@@ -113,8 +96,7 @@ theorem hasFDerivAt_polynomialEvalₗ (p : MvPolynomial ι ℝ) (x : EuclideanSp
 `∑ i, v i * polynomialEvalₗ ι (pderiv i p) x`. -/
 theorem fderiv_polynomialEvalₗ_apply (p : MvPolynomial ι ℝ) (x v : EuclideanSpace ℝ ι) :
     fderiv ℝ (polynomialEvalₗ ι p) x v = ∑ i : ι, v i * polynomialEvalₗ ι (pderiv i p) x := by
-  rw [(hasFDerivAt_polynomialEvalₗ p x).fderiv]
-  simp [mul_comm]
+  rw [(hasFDerivAt_polynomialEvalₗ p x).fderiv]; simp [mul_comm]
 
 end Fintype
 
@@ -125,11 +107,8 @@ theorem fderiv_apply_mem_polynomialsDegLE {ι : Type*} [Finite ι] {m : ℕ}
     (fun x ↦ fderiv ℝ q x v) ∈ polynomialsDegLE ι (m - 1) := by
   have := Fintype.ofFinite ι
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hq
-  have hfun : (fun x ↦ fderiv ℝ (polynomialEvalₗ ι p) x v) =
-      ∑ i : ι, v i • polynomialEvalₗ ι (pderiv i p) := by
-    ext x
-    simp [fderiv_polynomialEvalₗ_apply]
-  rw [hfun]
+  rw [show (fun x ↦ fderiv ℝ (polynomialEvalₗ ι p) x v) =
+      ∑ i : ι, v i • polynomialEvalₗ ι (pderiv i p) by ext; simp [fderiv_polynomialEvalₗ_apply]]
   refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ (v i) ?_
   rw [polynomialEvalₗ_mem_polynomialsDegLE_iff]
   exact (MvPolynomial.totalDegree_pderiv_le i p).trans (Nat.sub_le_sub_right hp 1)
@@ -158,12 +137,9 @@ theorem iteratedFDerivAlong_eq_zero_of_mem_polynomialsDegLE {m : ℕ} {q : Eucli
   | nil => simp at hvs
   | cons v ws =>
     have hmw : m - ws.length = 0 := Nat.sub_eq_zero_of_le (Nat.lt_succ_iff.mp hvs)
-    have hmem0 : iteratedFDerivAlong ℝ ws q ∈ polynomialsDegLE ι 0 :=
-      hmw ▸ iteratedFDerivAlong_mem_polynomialsDegLE hq ws
-    obtain ⟨c, hc⟩ := (mem_polynomialsDegLE_zero_iff ι).1 hmem0
-    rw [iteratedFDerivAlong_cons, hc]
-    ext x
-    simp
+    obtain ⟨c, hc⟩ := (mem_polynomialsDegLE_zero_iff ι).1
+      (hmw ▸ iteratedFDerivAlong_mem_polynomialsDegLE hq ws)
+    rw [iteratedFDerivAlong_cons, hc]; ext; simp
 
 /-- Every iterated Fréchet derivative of order strictly greater than `m` vanishes identically on
 `polynomialsDegLE ι m`. -/
@@ -182,19 +158,13 @@ point `y`, the `m`-th Taylor polynomial `taylorPolynomial ℝ m u y` belongs to
 theorem taylorPolynomial_mem_polynomialsDegLE (m : ℕ) (u : EuclideanSpace ℝ ι → ℝ)
     (y : EuclideanSpace ℝ ι) :
     taylorPolynomial ℝ m u y ∈ polynomialsDegLE ι m := by
-  have hfun : taylorPolynomial ℝ m u y =
-      ∑ j ∈ Finset.range (m + 1), (j ! : ℝ)⁻¹ •
-        fun x ↦ iteratedFDeriv ℝ j u y (fun _ ↦ x - y) := by
-    ext x
-    simp [taylorPolynomial_apply]
-  rw [hfun]
-  refine Submodule.sum_mem _ fun j hj ↦ Submodule.smul_mem _ _ ?_
-  have hjle : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-  refine polynomialsDegLE_mono ι hjle ?_
-  have hhom : (fun x : EuclideanSpace ℝ ι ↦ iteratedFDeriv ℝ j u y (fun _ ↦ x)) ∈
-      polynomialsDegLE ι j := by
-    simpa using (iteratedFDeriv ℝ j u y).toMultilinearMap.apply_const_mem_polynomialsDegLE
-  exact comp_sub_mem_polynomialsDegLE y hhom
+  rw [show taylorPolynomial ℝ m u y = ∑ j ∈ Finset.range (m + 1),
+      (j ! : ℝ)⁻¹ • fun x ↦ iteratedFDeriv ℝ j u y (fun _ ↦ x - y) by
+    ext; simp [taylorPolynomial_apply]]
+  refine Submodule.sum_mem _ fun j hj ↦ Submodule.smul_mem _ _ <|
+    polynomialsDegLE_mono ι (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) ?_
+  exact comp_sub_mem_polynomialsDegLE y
+    (by simpa using (iteratedFDeriv ℝ j u y).toMultilinearMap.apply_const_mem_polynomialsDegLE)
 
 /-- Every polynomial function of degree at most `m` is reproduced by its `m`-th Taylor polynomial
 about any expansion center `y`. -/

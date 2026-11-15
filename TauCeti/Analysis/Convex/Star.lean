@@ -91,4 +91,3 @@ theorem Set.Nonempty.subset_of_forall_starConvex {𝕜 E : Type*} [Semiring 𝕜
     [ZeroLEOneClass 𝕜] [AddCommMonoid E] [Module 𝕜 E] {s t : Set E} (ht : t.Nonempty)
     (h : ∀ y ∈ s, StarConvex 𝕜 y t) : s ⊆ t :=
   fun _ hy ↦ (h _ hy).mem ht
-

@@ -178,10 +178,8 @@ theorem mul_mem_polynomialsDegLE {m k : ℕ} {f g : EuclideanSpace ℝ ι → �
     f * g ∈ polynomialsDegLE ι (m + k) := by
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
   obtain ⟨q, hq, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hg
-  refine (mem_polynomialsDegLE_iff ι).2
-    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), ?_⟩
-  ext x
-  simp
+  exact (mem_polynomialsDegLE_iff ι).2
+    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), by ext; simp⟩
 
 /-- A finite product of polynomial functions has degree at most the sum of their degree bounds. -/
 theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
@@ -201,17 +199,10 @@ whenever `j ≤ m`. -/
 theorem prod_coord_mem_polynomialsDegLE {m j : ℕ} (hj : j ≤ m)
     (I : Fin j → ι) (S : Finset (Fin j)) :
     (fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l)) ∈ polynomialsDegLE ι m := by
-  have hprod : (∏ l ∈ S, fun x : EuclideanSpace ℝ ι ↦ x (I l)) ∈
-      polynomialsDegLE ι (∑ _ ∈ S, 1) :=
-    finset_prod_mem_polynomialsDegLE S fun l _ ↦
-      (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl
-  have hcard : (∑ _ ∈ S, 1) ≤ m := by
-    have hS : S.card ≤ j := (Finset.card_le_univ S).trans (by simp)
-    simpa using hS.trans hj
-  have hfn : (∏ l ∈ S, fun x : EuclideanSpace ℝ ι ↦ x (I l)) = fun x ↦ ∏ l ∈ S, x (I l) := by
-    ext x
-    simp
-  exact polynomialsDegLE_mono ι hcard (hfn ▸ hprod)
+  have hcard : (∑ _ ∈ S, 1) ≤ m := by simpa using (Finset.card_le_univ S).trans (by simpa using hj)
+  convert polynomialsDegLE_mono ι hcard (finset_prod_mem_polynomialsDegLE S fun l _ ↦
+    (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl) using 1
+  ext x; simp
 
 /-- Translating the input by adding a fixed vector preserves the total-degree bound. -/
 theorem comp_add_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
@@ -220,10 +211,9 @@ theorem comp_add_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → �
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
   have hdeg (i : ι) : (X i + C (a i) : MvPolynomial ι ℝ).totalDegree ≤ 1 :=
     (totalDegree_add _ _).trans (max_le (by simp [totalDegree_X]) (by simp))
-  refine (mem_polynomialsDegLE_iff ι).2
-    ⟨aeval (fun i ↦ X i + C (a i)) p,
-      (mem_restrictTotalDegree ι m _).1
-        (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
+  refine (mem_polynomialsDegLE_iff ι).2 ⟨aeval (fun i ↦ X i + C (a i)) p,
+    (mem_restrictTotalDegree ι m _).1
+      (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
   ext x
   simp only [polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply, map_add, aeval_X, aeval_C,
     Algebra.algebraMap_self, RingHom.id_apply, PiLp.add_apply]
@@ -244,24 +234,19 @@ theorem comp_affineMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
   have := Fintype.ofFinite κ
   set b := EuclideanSpace.basisFun κ ℝ
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
-  let g : ι → MvPolynomial κ ℝ :=
-    fun i ↦ C (F 0 i) + ∑ j : κ, C (F.linear (b j) i) * X j
-  have hdeg (i : ι) : (g i).totalDegree ≤ 1 := by
-    refine (totalDegree_add _ _).trans (max_le (by simp) ?_)
-    refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun j _ ↦ ?_)
-    exact (totalDegree_mul _ _).trans (by simp [totalDegree_X])
-  refine (mem_polynomialsDegLE_iff κ).2
-    ⟨aeval g p,
-      (mem_restrictTotalDegree κ m _).1
-        (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
+  let g (i : ι) : MvPolynomial κ ℝ := C (F 0 i) + ∑ j : κ, C (F.linear (b j) i) * X j
+  have hdeg (i : ι) : (g i).totalDegree ≤ 1 :=
+    (totalDegree_add _ _).trans <| max_le (by simp) <| (totalDegree_finsetSum _ _).trans <|
+      Finset.sup_le fun j _ ↦ (totalDegree_mul _ _).trans (by simp [totalDegree_X])
+  refine (mem_polynomialsDegLE_iff κ).2 ⟨aeval g p,
+    (mem_restrictTotalDegree κ m _).1
+      (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
   ext x
   simp only [Function.comp_apply, polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply]
-  congr 1
-  ext i
+  congr 1; ext i
   have hx : F x = F 0 + ∑ j : κ, x j • F.linear (b j) := by
-    conv_lhs => rw [← add_zero x, ← vadd_eq_add, AffineMap.map_vadd, vadd_eq_add, add_comm]
-    congr 1
-    conv_lhs => rw [← b.sum_repr x, map_sum]
+    conv_lhs => rw [← add_zero x, ← vadd_eq_add, AffineMap.map_vadd, vadd_eq_add, add_comm,
+      ← b.sum_repr x, map_sum]
     simp [b]
   simp [g, hx, mul_comm]
 
@@ -289,4 +274,3 @@ theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
     finrank_restrictTotalDegree]
 
 end TauCeti
-

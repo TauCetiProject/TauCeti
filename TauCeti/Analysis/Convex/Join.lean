@@ -73,6 +73,4 @@ theorem Convex.convexHull_insert_subset_of_forall_starConvex {𝕜 E : Type*} [F
   rcases TauCeti.mem_convexHull_insert.1 hz with rfl | ⟨y, hy, hzy⟩
   · exact hx
   · rw [hs.convexHull_eq] at hy
-    rw [segment_symm] at hzy
-    exact (h y hy).segment_subset hx hzy
-
+    exact (h y hy).segment_subset hx (segment_symm 𝕜 x y ▸ hzy)

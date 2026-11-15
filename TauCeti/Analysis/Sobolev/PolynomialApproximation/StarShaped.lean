@@ -191,13 +191,9 @@ gives `1`. -/
 theorem setIntegral_ballCutoff (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) {s : Set E}
     (hs : closedBall x₀ (ρ / 2) ⊆ s) :
     ∫ y in s, ballCutoff μ x₀ hρ y ∂μ = 1 := by
-  rw [setIntegral_eq_integral_of_forall_compl_eq_zero]
-  · exact integral_ballCutoff μ x₀ hρ
-  · intro y hys
-    have hy : y ∉ tsupport (ballCutoff μ x₀ hρ) := by
-      rw [tsupport_ballCutoff]
-      exact fun h ↦ hys (hs h)
-    exact image_eq_zero_of_notMem_tsupport hy
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun y hys ↦
+    image_eq_zero_of_notMem_tsupport (by rw [tsupport_ballCutoff]; exact fun h ↦ hys (hs h))]
+  exact integral_ballCutoff μ x₀ hρ
 
 end LocallyFinite
 
@@ -211,16 +207,11 @@ theorem norm_ballCutoff_le (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) (y : E) :
     ‖ballCutoff μ x₀ hρ y‖ ≤
       (4 ^ finrank ℝ E / μ.real (closedBall (0 : E) 1)) * ρ ^ (-(finrank ℝ E : ℝ)) := by
   rw [Real.norm_of_nonneg (nonneg_ballCutoff μ x₀ hρ y)]
-  have hle := (ballBump x₀ hρ).normed_le_div_measure_closedBall_rOut μ 2
-    (by simp; linarith) y
-  rw [ballBump_rOut, Measure.addHaar_real_closedBall' μ x₀ (by positivity)] at hle
-  refine hle.trans (le_of_eq ?_)
-  have hpow : (2 : ℝ) ^ finrank ℝ E * 2 ^ finrank ℝ E = 4 ^ finrank ℝ E := by
-    rw [← mul_pow]
-    norm_num
-  rw [Real.rpow_neg hρ.le, Real.rpow_natCast, div_pow, div_mul_eq_mul_div, div_div_eq_mul_div,
-    hpow]
-  ring
+  refine ((ballBump x₀ hρ).normed_le_div_measure_closedBall_rOut μ 2 (by simp; linarith) y).trans
+    (le_of_eq ?_)
+  rw [ballBump_rOut, Measure.addHaar_real_closedBall' μ x₀ (by positivity), Real.rpow_neg hρ.le,
+    Real.rpow_natCast, div_pow, div_mul_eq_mul_div, div_div_eq_mul_div, ← mul_pow]
+  norm_num; ring
 
 /-- Existential form of `norm_ballCutoff_le`: there is a nonnegative constant `C`, depending only on
 the ambient space and Haar measure `μ`, such that
@@ -238,45 +229,26 @@ theorem setIntegral_ballCutoff_halfSpace {ρ : ℝ} (hρ : 0 < ρ) {L : E →L[�
   set φ := ballCutoff μ (0 : E) hρ
   let P : Set E := {y | 0 ≤ L y}
   let N : Set E := {y | L y < 0}
-  let Ppos : Set E := {y | 0 < L y}
   let Z : Submodule ℝ E := LinearMap.ker L.toLinearMap
   have hNm : MeasurableSet N := (isOpen_lt L.continuous continuous_const).measurableSet
   have hZm : MeasurableSet (Z : Set E) := (isClosed_eq L.continuous continuous_const).measurableSet
-  have hPpos_m : MeasurableSet Ppos := (isOpen_lt continuous_const L.continuous).measurableSet
-  have hZ_ne_top : Z ≠ ⊤ := by
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hL
-    intro htop
-    have hvZ : v ∈ Z := htop ▸ Submodule.mem_top
-    exact hv hvZ
-  have hZ_null : μ (Z : Set E) = 0 := Measure.addHaar_submodule μ Z hZ_ne_top
+  have hPpos_m : MeasurableSet {y | 0 < L y} :=
+    (isOpen_lt continuous_const L.continuous).measurableSet
+  have hZ_null : μ (Z : Set E) = 0 := Measure.addHaar_submodule μ Z fun htop ↦
+    let ⟨v, hv⟩ := DFunLike.ne_iff.mp hL; hv (htop ▸ Submodule.mem_top : v ∈ Z)
   have hsum : ∫ y in P, φ y ∂μ + ∫ y in N, φ y ∂μ = 1 := by
-    have hdisj : Disjoint P N :=
-      Set.disjoint_left.mpr fun y (hyP : 0 ≤ L y) (hyN : L y < 0) ↦ not_lt_of_ge hyP hyN
-    have hunion : P ∪ N = univ := by
-      ext y
-      simp [P, N, le_or_gt]
-    rw [← setIntegral_union hdisj hNm (integrable_ballCutoff μ 0 hρ).integrableOn
-      (integrable_ballCutoff μ 0 hρ).integrableOn, hunion, setIntegral_univ]
+    rw [← setIntegral_union (disjoint_left.mpr fun y (h1 : 0 ≤ L y) (h2 : L y < 0) ↦
+        not_lt_of_ge h1 h2) hNm (integrable_ballCutoff μ 0 hρ).integrableOn
+        (integrable_ballCutoff μ 0 hρ).integrableOn,
+      show P ∪ N = univ by ext; simp [P, N, le_or_gt], setIntegral_univ]
     exact integral_ballCutoff μ 0 hρ
   have heq_PN : ∫ y in P, φ y ∂μ = ∫ y in N, φ y ∂μ := by
-    have hP_diff : P = Ppos ∪ (Z : Set E) := by
-      ext y
-      simp [P, Ppos, Z, le_iff_lt_or_eq, eq_comm]
-    have hdisjZ : Disjoint Ppos (Z : Set E) :=
-      Set.disjoint_left.mpr fun y (hy1 : 0 < L y) (hy2 : L y = 0) ↦ hy1.ne' hy2
-    rw [hP_diff, setIntegral_union hdisjZ hZm (integrable_ballCutoff μ 0 hρ).integrableOn
-      (integrable_ballCutoff μ 0 hρ).integrableOn, setIntegral_measure_zero _ hZ_null, add_zero,
-      ← integral_indicator hPpos_m, ← integral_indicator hNm]
-    conv_lhs => rw [← integral_neg_eq_self]
-    congr 1
-    ext y
-    by_cases hy : L y < 0
-    · have h1 : -y ∈ Ppos := by simpa [Ppos] using hy
-      have h2 : y ∈ N := hy
-      simp [h1, h2, φ]
-    · have h1 : -y ∉ Ppos := by simpa [Ppos] using hy
-      have h2 : y ∉ N := hy
-      simp [h1, h2]
+    rw [show P = {y | 0 < L y} ∪ (Z : Set E) by ext; simp [P, Z, le_iff_lt_or_eq, eq_comm],
+      setIntegral_union (disjoint_left.mpr fun y (h1 : 0 < L y) (h2 : L y = 0) ↦ h1.ne' h2) hZm
+        (integrable_ballCutoff μ 0 hρ).integrableOn (integrable_ballCutoff μ 0 hρ).integrableOn,
+      setIntegral_measure_zero _ hZ_null, add_zero, ← integral_indicator hPpos_m,
+      ← integral_indicator hNm, ← integral_neg_eq_self]
+    congr 1; ext y; by_cases hy : L y < 0 <;> simp [N, hy, φ]
   linarith
 
 end AddHaar

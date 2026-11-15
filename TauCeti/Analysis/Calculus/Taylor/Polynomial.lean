@@ -113,8 +113,7 @@ theorem taylorPolynomial_self (m : ℕ) (u : E → F) (y : E) :
 @[simp]
 theorem taylorPolynomial_const (m : ℕ) (c : F) (y : E) :
     taylorPolynomial 𝕜 m (fun _ : E ↦ c) y = fun _ ↦ c := by
-  ext x
-  rw [taylorPolynomial_apply, Finset.sum_range_succ']
+  ext x; rw [taylorPolynomial_apply, Finset.sum_range_succ']
   simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero _)]
 
 @[simp]
@@ -124,23 +123,19 @@ theorem taylorPolynomial_zero_fun (m : ℕ) (y : E) :
 
 theorem taylorPolynomial_neg (m : ℕ) (u : E → F) (y : E) :
     taylorPolynomial 𝕜 m (-u) y = -taylorPolynomial 𝕜 m u y := by
-  ext x
-  simp [taylorPolynomial_apply, iteratedFDeriv_neg_apply, Finset.sum_neg_distrib]
+  ext x; simp [taylorPolynomial_apply, iteratedFDeriv_neg_apply, Finset.sum_neg_distrib]
 
 /-- The Taylor polynomial at `y` depends only on the germ of `u` at `y`. -/
 theorem _root_.Filter.EventuallyEq.taylorPolynomial_eq {m : ℕ} {u v : E → F} {y : E}
     (h : u =ᶠ[𝓝 y] v) :
     taylorPolynomial 𝕜 m u y = taylorPolynomial 𝕜 m v y := by
-  ext x
-  simp only [taylorPolynomial_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [(h.iteratedFDeriv 𝕜 j).eq_of_nhds]
+  ext x; simp only [taylorPolynomial_apply]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [(h.iteratedFDeriv 𝕜 j).eq_of_nhds]
 
 theorem taylorPolynomial_add {m : ℕ} {u v : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (hv : ContDiffAt 𝕜 m v y) :
     taylorPolynomial 𝕜 m (u + v) y = taylorPolynomial 𝕜 m u y + taylorPolynomial 𝕜 m v y := by
-  ext x
-  simp only [Pi.add_apply, taylorPolynomial_apply, ← Finset.sum_add_distrib]
+  ext x; simp only [Pi.add_apply, taylorPolynomial_apply, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j hj ↦ ?_
   have hjle : (j : ℕ∞ω) ≤ m := by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
   rw [iteratedFDeriv_add_apply (hu.of_le hjle) (hv.of_le hjle), add_apply, smul_add]
@@ -148,14 +143,13 @@ theorem taylorPolynomial_add {m : ℕ} {u v : E → F} {y : E}
 theorem taylorPolynomial_sub {m : ℕ} {u v : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (hv : ContDiffAt 𝕜 m v y) :
     taylorPolynomial 𝕜 m (u - v) y = taylorPolynomial 𝕜 m u y - taylorPolynomial 𝕜 m v y := by
-  have hv' : ContDiffAt 𝕜 m (-v) y := hv.neg
-  rw [sub_eq_add_neg, taylorPolynomial_add hu hv', taylorPolynomial_neg, sub_eq_add_neg]
+  rw [sub_eq_add_neg, taylorPolynomial_add hu (show ContDiffAt 𝕜 m (-v) y from hv.neg),
+    taylorPolynomial_neg, sub_eq_add_neg]
 
 theorem taylorPolynomial_const_smul {m : ℕ} {u : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (c : 𝕜) :
     taylorPolynomial 𝕜 m (c • u) y = c • taylorPolynomial 𝕜 m u y := by
-  ext x
-  simp only [Pi.smul_apply, taylorPolynomial_apply, Finset.smul_sum]
+  ext x; simp only [Pi.smul_apply, taylorPolynomial_apply, Finset.smul_sum]
   refine Finset.sum_congr rfl fun j hj ↦ ?_
   have hjle : (j : ℕ∞ω) ≤ m := by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
   rw [iteratedFDeriv_const_smul_apply (hu.of_le hjle), smul_apply, smul_comm]
@@ -180,8 +174,8 @@ theorem iteratedFDeriv_taylorPolynomial_self [IsRCLikeNormedField 𝕜] {m : ℕ
     (hu : ContDiffAt 𝕜 m u y) {j : ℕ} (hj : j ≤ m) :
     iteratedFDeriv 𝕜 j (taylorPolynomial 𝕜 m u y) y = iteratedFDeriv 𝕜 j u y := by
   let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  let i : Fin (m + 1) := ⟨j, Nat.lt_succ_of_le hj⟩
-  exact iteratedFDeriv_finiteJetPolynomial_self m (fun r ↦ iteratedFDeriv 𝕜 r.val u y) y i
+  exact iteratedFDeriv_finiteJetPolynomial_self m (fun r ↦ iteratedFDeriv 𝕜 r.val u y) y
+    ⟨j, Nat.lt_succ_of_le hj⟩
     fun v σ ↦ iteratedFDeriv_comp_perm_of_contDiffAt (hu.of_le (by exact_mod_cast hj)) v σ
 
 end NormedField
@@ -196,9 +190,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem taylorPolynomial_real_eq_taylorWithinEval (m : ℕ) (u : ℝ → F) (y x : ℝ) :
     taylorPolynomial ℝ m u y x = taylorWithinEval u m univ y x := by
   rw [taylorPolynomial_apply, taylor_within_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [iteratedDerivWithin_univ, iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod, Finset.prod_const,
-    Finset.card_fin, smul_smul]
+  exact Finset.sum_congr rfl fun j _ ↦ by
+    rw [iteratedDerivWithin_univ, iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod, Finset.prod_const,
+      Finset.card_fin, smul_smul]
 
 variable [CompleteSpace F]
 
@@ -211,8 +205,7 @@ theorem sub_taylorPolynomial_eq_integral {m : ℕ} {u : E → F} {y x : E}
       (m ! : ℝ)⁻¹ • ∫ t in (0 : ℝ)..1,
         (1 - t) ^ m • iteratedFDeriv ℝ (m + 1) u (y + t • (x - y)) (fun _ ↦ x - y) := by
   have h := map_add_eq_sum_add_integral_iteratedFDeriv (n := m) (f := u) (x := y) (y := x - y) hu
-  rw [add_sub_cancel, ← taylorPolynomial_apply] at h
-  exact sub_eq_of_eq_add' h
+  rwa [add_sub_cancel, ← taylorPolynomial_apply, ← sub_eq_iff_eq_add'] at h
 
 /-- If `u` is `C^{m + 1}` along the closed segment from `y` to `x` and its `(m + 1)`-st Fréchet
 derivative vanishes along that segment, then its `m`-th Taylor polynomial at `y` equals `u x` at
@@ -222,24 +215,18 @@ theorem taylorPolynomial_eq_self_of_iteratedFDeriv_eq_zero_segment {m : ℕ} {u 
     (h0 : ∀ t ∈ Icc (0 : ℝ) 1, iteratedFDeriv ℝ (m + 1) u (y + t • (x - y)) = 0) :
     taylorPolynomial ℝ m u y x = u x := by
   symm
-  rw [← sub_eq_zero, sub_taylorPolynomial_eq_integral hu]
-  have hint : Set.EqOn
-      (fun t : ℝ ↦ (1 - t) ^ m • iteratedFDeriv ℝ (m + 1) u (y + t • (x - y)) (fun _ ↦ x - y))
-      0 (uIcc (0 : ℝ) 1) := by
-    rw [uIcc_of_le zero_le_one]
-    intro t ht
-    simp [h0 t ht]
-  rw [intervalIntegral.integral_congr hint]
+  rw [← sub_eq_zero, sub_taylorPolynomial_eq_integral hu,
+    intervalIntegral.integral_congr (g := 0) fun t ht ↦ by
+      simp [h0 t (by simpa [uIcc_of_le zero_le_one] using ht)]]
   simp
 
 /-- A globally `C^{m + 1}` map whose `(m + 1)`-st Fréchet derivative vanishes everywhere coincides
 with its `m`-th Taylor polynomial about any expansion point `y`. -/
 theorem taylorPolynomial_eq_self_of_iteratedFDeriv_eq_zero {m : ℕ} {u : E → F}
     (hu : ContDiff ℝ (m + 1) u) (h0 : iteratedFDeriv ℝ (m + 1) u = 0) (y : E) :
-    taylorPolynomial ℝ m u y = u := by
-  ext x
-  exact taylorPolynomial_eq_self_of_iteratedFDeriv_eq_zero_segment
-    (fun t _ ↦ hu.contDiffAt) (fun t _ ↦ congrFun h0 _)
+    taylorPolynomial ℝ m u y = u :=
+  funext fun _ ↦ taylorPolynomial_eq_self_of_iteratedFDeriv_eq_zero_segment
+    (fun _ _ ↦ hu.contDiffAt) (fun _ _ ↦ congrFun h0 _)
 
 end Real
 

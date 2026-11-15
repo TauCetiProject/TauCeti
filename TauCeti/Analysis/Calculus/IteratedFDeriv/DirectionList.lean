@@ -182,19 +182,14 @@ theorem iteratedFDerivAlong_sum {α : Type*} (s : Finset α) {f : α → E → F
       fun x => ∑ a ∈ s, iteratedFDerivAlong 𝕜 vs (f a) x := by
   classical
   induction s using Finset.induction_on with
-  | empty =>
-    simp only [Finset.sum_empty]
-    exact iteratedFDerivAlong_zero vs
+  | empty => simp only [Finset.sum_empty]; exact iteratedFDerivAlong_zero vs
   | insert a s ha ih =>
-    have hsum : (fun x => ∑ b ∈ insert a s, f b x) = f a + fun x => ∑ b ∈ s, f b x := by
-      ext x
-      exact Finset.sum_insert ha
-    have hcont_s : ContDiff 𝕜 n (fun x => ∑ b ∈ s, f b x) :=
-      ContDiff.sum fun b hb => hf b (Finset.mem_insert_of_mem hb)
-    rw [hsum, iteratedFDerivAlong_add (hf a (Finset.mem_insert_self a s)) hcont_s vs hvs,
+    have hsum : (fun x => ∑ b ∈ insert a s, f b x) = f a + fun x => ∑ b ∈ s, f b x :=
+      funext fun _ => Finset.sum_insert ha
+    rw [hsum, iteratedFDerivAlong_add (hf a (Finset.mem_insert_self a s))
+      (ContDiff.sum fun b hb => hf b (Finset.mem_insert_of_mem hb)) vs hvs,
       ih fun b hb => hf b (Finset.mem_insert_of_mem hb)]
-    ext x
-    simp [Finset.sum_insert ha]
+    ext x; simp [Finset.sum_insert ha]
 
 theorem iteratedFDerivAlong_neg (f : E → F) (vs : List E) :
     iteratedFDerivAlong 𝕜 vs (-f) = -iteratedFDerivAlong 𝕜 vs f := by
