@@ -121,8 +121,12 @@ def singularHomologyIsoOfContractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
   @asIso _ _ _ _ (P.singularHomologyπ R (k + 1))
     (P.isIso_singularHomologyπ_of_contractibleSpace R k)
 
--- Not `@[simp]`: the source of the quotient map agrees with the source of this isomorphism only up
--- to unfolding, so rewriting with this lemma inside composites leaves ill-typed motives.
+/-- The forward map of `TopPair.singularHomologyIsoOfContractibleSpace` is the quotient map
+`Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)`. Clients use it to replace the isomorphism by `singularHomologyπ` and apply
+the long exact sequence API of the pair.
+
+Not `@[simp]`: the source of the quotient map agrees with the source of this isomorphism only up
+to unfolding, so rewriting with this lemma inside composites leaves ill-typed motives. -/
 lemma singularHomologyIsoOfContractibleSpace_hom [ContractibleSpace P.snd] (k : ℕ) :
     (P.singularHomologyIsoOfContractibleSpace R k).hom = P.singularHomologyπ R (k + 1) :=
   (rfl)

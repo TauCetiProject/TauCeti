@@ -476,9 +476,11 @@ theorem contractibleSpace_sublevel_projectiveMomentFunction {w : Fin (n + 1) →
       exact Finset.sum_le_sum fun j _ ↦
         mul_le_mul_of_nonneg_right (hw _ (Fin.succAbove_ne k j)).le (by positivity)
     have hb1 : b ^ 2 ≤ 1 := by nlinarith
-    rw [← Finset.mul_sum, show ∑ j, w (k.succAbove j) * (b ^ 2 * ‖z j‖ ^ 2) =
-      b ^ 2 * ∑ j, w (k.succAbove j) * ‖z j‖ ^ 2 by
-        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun j _ ↦ by ring]
+    have hscale : ∑ j, w (k.succAbove j) * (b ^ 2 * ‖z j‖ ^ 2) =
+        b ^ 2 * ∑ j, w (k.succAbove j) * ‖z j‖ ^ 2 := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun j _ ↦ by ring
+    rw [← Finset.mul_sum, hscale]
     simp only [Function.comp_apply] at hz
     nlinarith [mul_le_mul_of_nonneg_right hb1 (sub_nonneg.2 hν)]
   have hne : {z | f ((affineChart (K := 𝕜) (n := n) k).symm z) ≤ c}.Nonempty :=
@@ -750,8 +752,10 @@ private theorem natCast_eq_of_mem_Icc {k : ℕ} {q : ℤ}
     (h : (k : ℝ) ∈ Icc ((q : ℝ) - 1 / 2) (((q + 1 : ℤ) : ℝ) - 1 / 2)) : (k : ℤ) = q := by
   obtain ⟨h₁, h₂⟩ := h
   push_cast at h₂
-  have h₁' : q - 1 < (k : ℤ) := by exact_mod_cast (show (q : ℝ) - 1 < k by linarith)
-  have h₂' : (k : ℤ) < q + 1 := by exact_mod_cast (show (k : ℝ) < q + 1 by linarith)
+  have h₁real : (q : ℝ) - 1 < k := by linarith
+  have h₂real : (k : ℝ) < q + 1 := by linarith
+  have h₁' : q - 1 < (k : ℤ) := by exact_mod_cast h₁real
+  have h₂' : (k : ℤ) < q + 1 := by exact_mod_cast h₂real
   omega
 
 /-- With the standard weights `w i = i`, a critical point of the moment function with value in
