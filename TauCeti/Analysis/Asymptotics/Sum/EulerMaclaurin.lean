@@ -22,6 +22,10 @@ Bernoulli numbers, and an exact remainder integral against the periodic Bernoull
 `bernoulliFun k (Int.fract x)`. The function `f` takes values in a real Banach space `E`, so
 complex-valued `f` is included.
 
+For the first-order formula, the endpoints may instead be real `0 ≤ a ≤ b`. The sum runs over
+natural indices in `(⌊a⌋₊, ⌊b⌋₊]`, with endpoint terms
+`B₁({a}) • f a - B₁({b}) • f b`, where `B₁({x}) = bernoulliFun 1 (Int.fract x)`.
+
 It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`, such as those of
 `∑ j^α`, `∑ 1/j` and `∑ j log j`: the remainder integral is controlled by `f^{(k)}` alone.
 
@@ -41,9 +45,9 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
   `C^{2m}` on `[a, n]`, with derivatives taken within `[a, n]`, and remainder
   `∫_a^n (B_{2m} - B_{2m}({x}))/(2m)! f^{(2m)}(x) dx`.
 
-The higher-order proof integrates by parts on each unit interval `[j, j + 1]`, on whose interior
-`(j, j + 1)`
-`Bₖ({x}) = Bₖ(x - j)` (the endpoints do not affect the integral), using `Bₖ' = k Bₖ₋₁`
+The integer-endpoint proof integrates by parts on each unit interval `[j, j + 1]`, on whose
+interior `(j, j + 1)` we have `Bₖ({x}) = Bₖ(x - j)` (the endpoints do not affect the integral),
+using `Bₖ' = k Bₖ₋₁`
 (`hasDerivAt_bernoulliFun`), `Bₖ(1) = Bₖ(0) = Bₖ` for `k ≠ 1`
 (`bernoulliFun_endpoints_eq_of_ne_one`) and the vanishing of the odd Bernoulli numbers beyond
 `B₁` (`bernoulli_eq_zero_of_odd`).
