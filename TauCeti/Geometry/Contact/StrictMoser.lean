@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Contactomorphism
-public import TauCeti.Geometry.Contact.Family
 public import TauCeti.Geometry.Contact.Hamiltonian
+public import TauCeti.Geometry.Contact.Moser
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The strict contact-Moser equation
