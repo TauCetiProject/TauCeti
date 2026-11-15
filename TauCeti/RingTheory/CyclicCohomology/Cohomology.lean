@@ -50,9 +50,9 @@ its forced unitization, and in general differs from the cohomology of this compl
 * `TauCeti.cyclicCohomology.mk`: the class of a cyclic cocycle.
 * `TauCeti.cyclicCohomology.desc`: the linear map out of cyclic cohomology induced by a linear map
   on cyclic cocycles vanishing on cyclic coboundaries.
-* `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.map`,
-  `TauCeti.cyclicCohomology.pullback`: pullback along a homomorphism of nonunital algebras,
-  induced by `TauCeti.cyclicCochainsMap`.
+* `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.mapLinearMap`,
+  `TauCeti.cyclicCohomology.map`: pullback along a homomorphism of nonunital algebras, induced by
+  `TauCeti.cyclicCochainsMap` (across arbitrary universes as a linear map, and in `ModuleCat R`).
 
 ## Main results
 
@@ -62,7 +62,8 @@ its forced unitization, and in general differs from the cohomology of this compl
   cohomology is the quotient of cyclic cocycles by cyclic coboundaries.
 * `TauCeti.cyclicCohomology.zeroEquiv`, `TauCeti.mem_cyclicCocycles_zero_iff`: `HC⁰(A; M)` is the
   module of `M`-valued traces on `A`.
-* `TauCeti.cyclicCohomology.map_id`, `TauCeti.cyclicCohomology.map_comp`: functoriality.
+* `TauCeti.cyclicCohomology.mapLinearMap_id`, `TauCeti.cyclicCohomology.mapLinearMap_comp`,
+  `TauCeti.cyclicCohomology.map_id`, `TauCeti.cyclicCohomology.map_comp`: functoriality.
 
 ## References
 
@@ -412,6 +413,46 @@ theorem desc_comp_mk (n : ℕ) (f : cyclicCocycles R A M n →ₗ[R] N)
 
 end Desc
 
+section MapLinearMap
+
+variable {R A M} {B C : Type*} [Ring B] [Algebra R B] [Ring C] [Algebra R C]
+
+variable (M) in
+/-- The `R`-linear map on cyclic cohomology induced contravariantly by a homomorphism of nonunital
+algebras between unital algebras in arbitrary universes; the homomorphism need not preserve the
+unit. -/
+def mapLinearMap (f : A →ₙₐ[R] B) (n : ℕ) :
+    cyclicCohomology R B M n →ₗ[R] cyclicCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ (cyclicCochainsMap M (f : A →ₗ[R] B) n).restrict
+      fun _ ↦ cyclicCochainsMap_mem_cyclicCocycles f)
+    fun _ hφ ↦ (mk_eq_zero_iff R A M n _).2 (cyclicCochainsMap_mem_cyclicCoboundaries f hφ)
+
+/-- The induced linear map sends the class of a cocycle to the class of its pullback. -/
+@[simp]
+theorem mapLinearMap_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
+    mapLinearMap M f n (mk R B M n φ) =
+      mk R A M n
+        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ :=
+  desc_mk _ _ _ φ
+
+/-- The identity homomorphism induces the identity linear map on cyclic cohomology. -/
+@[simp]
+theorem mapLinearMap_id (n : ℕ) : mapLinearMap M (NonUnitalAlgHom.id R A) n = LinearMap.id :=
+  linearMap_ext <| LinearMap.ext fun φ ↦ by
+    simp only [LinearMap.comp_apply, mapLinearMap_mk, LinearMap.id_apply]
+    exact congrArg (mk R A M n)
+      (Subtype.ext (Subtype.ext (MultilinearMap.ext fun x ↦ by simp)))
+
+/-- `mapLinearMap` is contravariantly functorial across arbitrary universes. -/
+theorem mapLinearMap_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
+    mapLinearMap M (g.comp f) n = mapLinearMap M f n ∘ₗ mapLinearMap M g n :=
+  linearMap_ext <| LinearMap.ext fun φ ↦ by
+    simp only [LinearMap.comp_apply, mapLinearMap_mk]
+    exact congrArg (mk R A M n)
+      (Subtype.ext (Subtype.ext (MultilinearMap.ext fun x ↦ by simp)))
+
+end MapLinearMap
+
 section Map
 
 variable {R A M} {B C : Type u} [Ring B] [Algebra R B] [Ring C] [Algebra R C]
@@ -420,15 +461,28 @@ variable (M) in
 /-- The map on cyclic cohomology induced by a homomorphism of nonunital algebras between unital
 algebras; the homomorphism need not preserve the unit. -/
 def map (f : A →ₙₐ[R] B) (n : ℕ) : cyclicCohomology R B M n ⟶ cyclicCohomology R A M n :=
-  HomologicalComplex.homologyMap (cyclicCochainComplexMap M f) n
+  ModuleCat.ofHom (mapLinearMap M f n)
 
-/-- The induced map sends the class of a cocycle to the class of its pullback. -/
+/-- The underlying `R`-linear map of `cyclicCohomology.map` is `mapLinearMap`. -/
 @[simp]
+theorem hom_map (f : A →ₙₐ[R] B) (n : ℕ) : (map M f n).hom = mapLinearMap M f n :=
+  (rfl)
+
+/-- The induced map sends the class of a cocycle to the class of its pullback. (Not marked
+`@[simp]` because `simp` already proves it via `hom_map` and `mapLinearMap_mk`.) -/
 theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     map M f n (mk R B M n φ) =
       mk R A M n
-        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ := by
-  rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
+        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ :=
+  mapLinearMap_mk f φ
+
+/-- `cyclicCohomology.map` agrees with the map induced on homology by `cyclicCochainComplexMap`. -/
+theorem map_eq_homologyMap (f : A →ₙₐ[R] B) (n : ℕ) :
+    map M f n = HomologicalComplex.homologyMap (cyclicCochainComplexMap M f) n := by
+  refine ModuleCat.hom_ext <| linearMap_ext <| LinearMap.ext fun φ ↦ ?_
+  simp only [LinearMap.comp_apply, hom_map, mapLinearMap_mk]
+  symm
+  rw [mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
@@ -438,38 +492,15 @@ theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
 
 /-- The identity homomorphism induces the identity on cyclic cohomology. -/
 @[simp]
-theorem map_id (n : ℕ) : map M (NonUnitalAlgHom.id R A) n = 𝟙 _ := by
-  rw [map, cyclicCochainComplexMap_id, HomologicalComplex.homologyMap_id]
+theorem map_id (n : ℕ) : map M (NonUnitalAlgHom.id R A) n = 𝟙 _ :=
+  ModuleCat.hom_ext (mapLinearMap_id n)
 
 /-- Cyclic cohomology is contravariantly functorial. -/
 theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
-    map M (g.comp f) n = map M g n ≫ map M f n := by
-  rw [map, map, map, cyclicCochainComplexMap_comp, HomologicalComplex.homologyMap_comp]
+    map M (g.comp f) n = map M g n ≫ map M f n :=
+  ModuleCat.hom_ext (mapLinearMap_comp f g n)
 
 end Map
-
-section Pullback
-
-variable {R A M} {B : Type*} [Ring B] [Algebra R B]
-
-variable (M) in
-/-- Contravariant pullback on cyclic cohomology along a homomorphism of nonunital algebras between
-unital algebras in arbitrary universes. -/
-def pullback (f : A →ₙₐ[R] B) (n : ℕ) :
-    cyclicCohomology R B M n →ₗ[R] cyclicCohomology R A M n :=
-  desc n (mk R A M n ∘ₗ (cyclicCochainsMap M (f : A →ₗ[R] B) n).restrict
-      fun _ ↦ cyclicCochainsMap_mem_cyclicCocycles f)
-    fun _ hφ ↦ (mk_eq_zero_iff R A M n _).2 (cyclicCochainsMap_mem_cyclicCoboundaries f hφ)
-
-/-- Pullback on cyclic cohomology sends the class of a cocycle to the class of its pullback. -/
-@[simp]
-theorem pullback_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
-    pullback M f n (mk R B M n φ) =
-      mk R A M n
-        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ :=
-  desc_mk _ _ _ φ
-
-end Pullback
 
 end cyclicCohomology
 

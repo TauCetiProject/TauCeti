@@ -55,8 +55,10 @@ corner pullback.
 * `TauCeti.periodicCyclicCohomology.matrixExtension`,
   `TauCeti.periodicCyclicCohomology.matrixExtensionEquiv`: matrix extension and Morita equivalence
   on periodic cyclic cohomology `HP^n(A; M)`.
-* `TauCeti.cyclicCohomology.matrixExtensionEquiv`: matrix Morita equivalence
-  `HC^n(A; M) ≃ₗ[R] HC^n(Matrix ι ι A; M)` over a `ℚ`-algebra.
+* `TauCeti.cyclicCohomology.matrixExtensionEquivOfIsUnit`,
+  `TauCeti.cyclicCohomology.matrixExtensionEquiv`: matrix Morita equivalence
+  `HC^n(A; M) ≃ₗ[R] HC^n(Matrix ι ι A; M)` when `1, …, n` are invertible in `R`, and over a
+  `ℚ`-algebra.
 
 ## Main results
 
@@ -307,6 +309,7 @@ theorem cyclicTotalHomologyPeriodicTransition_cyclicTotalHomologyMatrixExtension
       ModuleCat.comp_apply, ModuleCat.comp_apply, ih,
       cyclicTotalHomologyPeriodicTransition_succ, cyclicTotalHomologyPeriodicTransition_succ,
       cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixExtension]
+    -- The degrees `(n + 2 * j) + 2` and `n + 2 * (j + 1)` are definitionally equal in `ℕ`.
     rfl
 
 end TotalHomology
@@ -482,17 +485,18 @@ induced on the direct limit of `H^(n+2k)(Tot)` across arbitrary universes for `R
 `ι`. -/
 def matrixExtension (ι : Type*) [Fintype ι] (n : ℕ) :
     periodicCyclicCohomology R A M n →ₗ[R] periodicCyclicCohomology R (Matrix ι ι A) M n :=
-  lift
+  descLinearMap
     (fun k ↦ (periodicCyclicCohomology.ι R (Matrix ι ι A) M n k).hom ∘ₗ
       cyclicTotalHomologyMatrixExtension M ι (n + 2 * k))
-    fun k ↦ LinearMap.ext fun c ↦ by
-      change periodicCyclicCohomology.ι R (Matrix ι ι A) M n (k + 1)
-          (cyclicTotalHomologyMatrixExtension M ι ((n + 2 * k) + 2)
-            (cyclicTotalHomologyPeriodicity R A M (n + 2 * k) c)) =
-        periodicCyclicCohomology.ι R (Matrix ι ι A) M n k
-          (cyclicTotalHomologyMatrixExtension M ι (n + 2 * k) c)
-      rw [← cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixExtension,
-        ← ModuleCat.comp_apply, cyclicTotalHomologyPeriodicity_ι]
+    -- Note `(n + 2 * k) + 2` and `n + 2 * (k + 1)` are definitionally equal in `ℕ`.
+    fun k ↦ LinearMap.ext fun c ↦
+      (congrArg (periodicCyclicCohomology.ι R (Matrix ι ι A) M n (k + 1)).hom
+        (cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMatrixExtension ι
+          (n + 2 * k) c).symm).trans
+        (LinearMap.congr_fun
+          (congrArg ModuleCat.Hom.hom
+            (periodicCyclicCohomology.cyclicTotalHomologyPeriodicity_ι R (Matrix ι ι A) M n k))
+          (cyclicTotalHomologyMatrixExtension M ι (n + 2 * k) c))
 
 /-- Matrix extension on `HP^n` commutes with the canonical stage maps `H^(n+2k)(Tot) → HP^n`. -/
 @[simp]
@@ -501,7 +505,7 @@ theorem matrixExtension_ι (ι : Type*) [Fintype ι] (n k : ℕ)
     matrixExtension M ι n (periodicCyclicCohomology.ι R A M n k c) =
       periodicCyclicCohomology.ι R (Matrix ι ι A) M n k
         (cyclicTotalHomologyMatrixExtension M ι (n + 2 * k) c) :=
-  lift_ι _ _ k c
+  descLinearMap_ι _ _ k c
 
 end NonUnital
 
@@ -564,11 +568,11 @@ variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [M
 /-- Pulling back along a diagonal corner inclusion `a ↦ E_{rr}(a)` is a left inverse to matrix
 extension on cyclic cohomology, over any commutative ring `R`. -/
 @[simp]
-theorem pullback_singleNonUnitalAlgHom_matrixExtension {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem mapLinearMap_singleNonUnitalAlgHom_matrixExtension {ι : Type*} [Fintype ι] [DecidableEq ι]
     (r : ι) {n : ℕ} (c : cyclicCohomology R A M n) :
-    pullback M (Matrix.singleNonUnitalAlgHom R A r) n (matrixExtension M ι n c) = c := by
+    mapLinearMap M (Matrix.singleNonUnitalAlgHom R A r) n (matrixExtension M ι n c) = c := by
   obtain ⟨φ, rfl⟩ := mk_surjective R A M n c
-  rw [matrixExtension_mk, pullback_mk]
+  rw [matrixExtension_mk, mapLinearMap_mk]
   congr 1
   apply Subtype.ext
   ext x
@@ -579,7 +583,7 @@ every degree over any commutative ring `R`. -/
 theorem injective_matrixExtension (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (n : ℕ) :
     Function.Injective (matrixExtension (R := R) (A := A) M ι n) := by
   obtain ⟨r⟩ := ‹Nonempty ι›
-  exact Function.LeftInverse.injective (pullback_singleNonUnitalAlgHom_matrixExtension r)
+  exact Function.LeftInverse.injective (mapLinearMap_singleNonUnitalAlgHom_matrixExtension r)
 
 /-- **Matrix Morita invariance of cyclic cohomology at invertible degrees.** If `q + 1` is a unit
 in `R` for every `q < n`, then matrix extension induces a bijection
@@ -607,6 +611,43 @@ theorem bijective_matrixExtension_of_isUnit (ι : Type*) [Fintype ι] [Decidable
   rw [hcomm]
   exact (bijective_cyclicTotalHomologyMatrixExtension ι n).comp htotA
 
+/-- If `q + 1` is a unit in `R` for every `q < n`, matrix extension is a right inverse to
+pullback along a diagonal corner inclusion `a ↦ E_{rr}(a)` on cyclic cohomology. -/
+theorem matrixExtension_mapLinearMap_singleNonUnitalAlgHom_of_isUnit {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (r : ι) {n : ℕ} (hR : ∀ q < n, IsUnit ((q : R) + 1))
+    (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    matrixExtension M ι n (mapLinearMap M (Matrix.singleNonUnitalAlgHom R A r) n c) = c := by
+  have : Nonempty ι := ⟨r⟩
+  obtain ⟨x, rfl⟩ := (bijective_matrixExtension_of_isUnit ι n hR).2 c
+  rw [mapLinearMap_singleNonUnitalAlgHom_matrixExtension]
+
+variable (M) in
+/-- **Matrix Morita equivalence for cyclic cohomology at invertible degrees.** If `q + 1` is a unit
+in `R` for every `q < n`, matrix extension is an `R`-linear equivalence
+`HC^n(A; M) ≃ₗ[R] HC^n(Matrix ι ι A; M)`. -/
+def matrixExtensionEquivOfIsUnit (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (n : ℕ)
+    (hR : ∀ q < n, IsUnit ((q : R) + 1)) :
+    cyclicCohomology R A M n ≃ₗ[R] cyclicCohomology R (Matrix ι ι A) M n :=
+  LinearEquiv.ofBijective (matrixExtension M ι n) (bijective_matrixExtension_of_isUnit ι n hR)
+
+/-- The forward map of `cyclicCohomology.matrixExtensionEquivOfIsUnit` is `matrixExtension`. -/
+@[simp]
+theorem matrixExtensionEquivOfIsUnit_apply (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι]
+    (n : ℕ) (hR : ∀ q < n, IsUnit ((q : R) + 1)) (c : cyclicCohomology R A M n) :
+    matrixExtensionEquivOfIsUnit M ι n hR c = matrixExtension M ι n c :=
+  (rfl)
+
+/-- The inverse of `cyclicCohomology.matrixExtensionEquivOfIsUnit` is pullback along any diagonal
+corner inclusion `a ↦ E_{rr}(a)`. -/
+theorem matrixExtensionEquivOfIsUnit_symm_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [Nonempty ι] (r : ι) {n : ℕ} (hR : ∀ q < n, IsUnit ((q : R) + 1))
+    (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    (matrixExtensionEquivOfIsUnit M ι n hR).symm c =
+      mapLinearMap M (Matrix.singleNonUnitalAlgHom R A r) n c := by
+  apply (matrixExtensionEquivOfIsUnit M ι n hR).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquivOfIsUnit_apply,
+    matrixExtension_mapLinearMap_singleNonUnitalAlgHom_of_isUnit r hR]
+
 /-- Matrix extension on `HC^0` is bijective over any commutative ring `R`. -/
 theorem bijective_matrixExtension_zero (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] :
     Function.Bijective (matrixExtension (R := R) (A := A) M ι 0) :=
@@ -623,31 +664,33 @@ section Rational
 
 variable [Algebra ℚ R]
 
+/-- Every positive natural number `q + 1` is a unit in any `ℚ`-algebra `R`. -/
+private theorem isUnit_natCast_add_one (q : ℕ) : IsUnit ((q : R) + 1) := by
+  simpa using (Nat.cast_add_one_ne_zero (R := ℚ) q).isUnit.map (algebraMap ℚ R)
+
 /-- **Matrix Morita invariance of cyclic cohomology.** For a unital algebra `A` over a commutative
 `ℚ`-algebra `R`, coefficients in an `R`-module `M` and a nonempty finite index type `ι`, the matrix
 extension `φ ↦ φ#Tr` induces a bijection `HC^n(A; M) → HC^n(Matrix ι ι A; M)` in every degree
 `n`. -/
 theorem bijective_matrixExtension (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (n : ℕ) :
     Function.Bijective (matrixExtension (R := R) (A := A) M ι n) :=
-  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ by
-    simpa using (Nat.cast_add_one_ne_zero (R := ℚ) q).isUnit.map (algebraMap ℚ R)
+  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ isUnit_natCast_add_one q
 
 /-- Over a `ℚ`-algebra, matrix extension is a right inverse to diagonal corner pullback on cyclic
 cohomology. -/
 @[simp]
-theorem matrixExtension_pullback_singleNonUnitalAlgHom {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem matrixExtension_mapLinearMap_singleNonUnitalAlgHom {ι : Type*} [Fintype ι] [DecidableEq ι]
     (r : ι) {n : ℕ} (c : cyclicCohomology R (Matrix ι ι A) M n) :
-    matrixExtension M ι n (pullback M (Matrix.singleNonUnitalAlgHom R A r) n c) = c := by
-  have : Nonempty ι := ⟨r⟩
-  obtain ⟨x, rfl⟩ := (bijective_matrixExtension ι n).2 c
-  rw [pullback_singleNonUnitalAlgHom_matrixExtension]
+    matrixExtension M ι n (mapLinearMap M (Matrix.singleNonUnitalAlgHom R A r) n c) = c :=
+  matrixExtension_mapLinearMap_singleNonUnitalAlgHom_of_isUnit r
+    (fun q _ ↦ isUnit_natCast_add_one q) c
 
 variable (M) in
 /-- **Matrix Morita equivalence for cyclic cohomology.** Matrix extension as an `R`-linear
 equivalence `HC^n(A; M) ≃ₗ[R] HC^n(Matrix ι ι A; M)` over a commutative `ℚ`-algebra `R`. -/
 def matrixExtensionEquiv (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (n : ℕ) :
     cyclicCohomology R A M n ≃ₗ[R] cyclicCohomology R (Matrix ι ι A) M n :=
-  LinearEquiv.ofBijective (matrixExtension M ι n) (bijective_matrixExtension ι n)
+  matrixExtensionEquivOfIsUnit M ι n fun q _ ↦ isUnit_natCast_add_one q
 
 /-- The forward map of `cyclicCohomology.matrixExtensionEquiv` is `matrixExtension`. -/
 @[simp]
@@ -661,10 +704,8 @@ inclusion `a ↦ E_{rr}(a)`. -/
 theorem matrixExtensionEquiv_symm_apply {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
     (r : ι) {n : ℕ} (c : cyclicCohomology R (Matrix ι ι A) M n) :
     (matrixExtensionEquiv M ι n).symm c =
-      pullback M (Matrix.singleNonUnitalAlgHom R A r) n c := by
-  apply (matrixExtensionEquiv M ι n).injective
-  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply,
-    matrixExtension_pullback_singleNonUnitalAlgHom]
+      mapLinearMap M (Matrix.singleNonUnitalAlgHom R A r) n c :=
+  matrixExtensionEquivOfIsUnit_symm_apply r (fun q _ ↦ isUnit_natCast_add_one q) c
 
 end Rational
 
