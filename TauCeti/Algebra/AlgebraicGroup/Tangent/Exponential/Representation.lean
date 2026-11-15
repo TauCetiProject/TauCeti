@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
-import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
 import TauCeti.Algebra.AlgebraicGroup.Representation.Kernel
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
@@ -32,10 +33,11 @@ Quantifying over all finitely generated comodules yields two consequences:
 * every point `expPointAt d hd t` (and `expPoint d hd`) is unipotent in the representation-theoretic
   sense (`HopfAlgebra.IsUnipotentPoint`) whenever `d` acts nilpotently on every finitely generated
   `H`-comodule;
-* conversely, if `H` has a faithful finite free representation with surjective coordinate map
-  `O(GLₙ) ⟶ H` on which `Comodule.differential d` is nilpotent — in particular, over a field when
-  `H` is of finite type and `d` acts nilpotently on every finite-dimensional comodule — then the
-  left-invariant derivation of `d` is locally nilpotent on `H`.
+* conversely, if `H` has a finite free representation with surjective coordinate map `O(GLₙ) ⟶ H`
+  on which `Comodule.differential d` is nilpotent, or if `H` is projective as an `R`-module (in
+  particular whenever `R` is a field, without any finite-type assumption on `H`) and `d` acts
+  nilpotently on every finitely generated `H`-comodule, then the left-invariant derivation of `d`
+  is locally nilpotent on `H`.
 
 ## Main declarations
 
@@ -134,9 +136,8 @@ theorem basePointsRepresentation_apply_eq_convolutionAction
     (g : WithConv (H →ₐ[R] R)) (m : M) :
     basePointsRepresentation (H := H) M g m =
       convolutionAction (R := R) (C := H) (M := M) (toConv g.ofConv.toLinearMap) m := by
-  rw [basePointsRepresentation_apply, endOfPoint_tmul, one_smul, TensorProduct.lid_comm,
-    convolutionAction_apply, ofConv_toConv, tensorComponent_def, LinearMap.comp_apply,
-    LinearEquiv.coe_coe]
+  rw [basePointsRepresentation_apply, endOfPoint_tmul, one_smul, TensorProduct.lid_comm]
+  simp [convolutionAction_apply, tensorComponent_def]
 
 variable [Algebra ℚ H]
 
@@ -216,7 +217,7 @@ theorem endOfPoint_expPointAt {A : Type*} [CommRing A] [Algebra R A] [Module ℚ
   let f := differential (R := R) (H := H) (M := M) d
   obtain ⟨K, hK⟩ := hdiff
   have hbaseK : (t • f.baseChange A) ^ K = 0 := by
-    rw [smul_pow, ← LinearMap.baseChange_pow, hK, LinearMap.baseChange_zero, smul_zero]
+    simp [f, smul_pow, ← LinearMap.baseChange_pow, hK]
   apply LinearMap.restrictScalars_injective R
   apply TensorProduct.ext'
   intro a m
@@ -233,8 +234,8 @@ theorem endOfPoint_expPointAt {A : Type*} [CommRing A] [Algebra R A] [Module ℚ
   rw [endOfPoint_tmul, one_smul, hN₀ N (le_max_left N₀ K), IsNilpotent.exp_eq_sum hbaseN,
     LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [← differential_pow_apply, LinearMap.smul_apply, smul_pow, LinearMap.smul_apply,
-    ← LinearMap.baseChange_pow, LinearMap.baseChange_tmul]
+  rw [← differential_pow_apply]
+  simp [smul_pow, ← LinearMap.baseChange_pow]
 
 /-- The exponential curve evaluated at a base scalar `t : R` acts on a comodule `M` by
 `IsNilpotent.exp (t • differential d)` whenever `differential d` is nilpotent on `M`. -/
@@ -246,22 +247,20 @@ theorem basePointsRepresentation_expPointAt [Module ℚ M]
       IsNilpotent.exp (t • differential (R := R) (H := H) (M := M) d) := by
   let : Algebra ℚ R :=
     ((Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
-  ext m
-  obtain ⟨K, hK⟩ := hdiff
-  have htK : (t • differential (R := R) (H := H) (M := M) d) ^ K = 0 := by
-    rw [smul_pow, hK, smul_zero]
-  have hbaseK : (t • (differential (R := R) (H := H) (M := M) d).baseChange R) ^ K = 0 := by
-    rw [smul_pow, ← LinearMap.baseChange_pow, hK, LinearMap.baseChange_zero, smul_zero]
-  rw [basePointsRepresentation_apply, endOfPoint_expPointAt d hd ⟨K, hK⟩ t,
-    IsNilpotent.exp_eq_sum hbaseK, IsNilpotent.exp_eq_sum htK, LinearMap.sum_apply,
-    LinearMap.sum_apply, map_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
   have hrat : ∀ (q : ℚ) (x : R ⊗[R] M),
       TensorProduct.lid R M (q • x) = q • TensorProduct.lid R M x :=
     map_rat_smul (TensorProduct.lid R M).toAddMonoidHom
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, hrat, smul_pow, smul_pow,
-    LinearMap.smul_apply, LinearMap.smul_apply, ← LinearMap.baseChange_pow,
-    LinearMap.baseChange_tmul, map_smul, TensorProduct.lid_tmul, one_smul]
+  ext m
+  obtain ⟨K, hK⟩ := hdiff
+  have htK : (t • differential (R := R) (H := H) (M := M) d) ^ K = 0 := by
+    simp [smul_pow, hK]
+  have hbaseK : (t • (differential (R := R) (H := H) (M := M) d).baseChange R) ^ K = 0 := by
+    simp [smul_pow, ← LinearMap.baseChange_pow, hK]
+  rw [basePointsRepresentation_apply, endOfPoint_expPointAt d hd ⟨K, hK⟩ t,
+    IsNilpotent.exp_eq_sum hbaseK, IsNilpotent.exp_eq_sum htK]
+  simp only [LinearMap.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  simp [hrat, smul_pow, ← LinearMap.baseChange_pow]
 
 /-- The exponential point `expPoint d hd` acts on a comodule `M` by
 `IsNilpotent.exp (differential d)` whenever `differential d` is nilpotent on `M`. -/
@@ -301,7 +300,7 @@ theorem isUnipotentPoint_expPointAt {A : Type x} [CommRing A] [Algebra R A]
   rw [Comodule.endOfPoint_expPointAt d hd (hdiff M) t]
   obtain ⟨k, hk⟩ := hdiff M
   refine ⟨k, IsNilpotent.pow_exp_sub_one_eq_zero ?_⟩
-  rw [smul_pow, ← LinearMap.baseChange_pow, hk, LinearMap.baseChange_zero, smul_zero]
+  simp [smul_pow, ← LinearMap.baseChange_pow, hk]
 
 /-- The exponential point `expPoint d hd` is unipotent whenever the differentiated action of `d`
 is nilpotent on every finitely generated `H`-comodule. -/
@@ -344,40 +343,37 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differenti
 
 end SurjectiveCoordinate
 
-section FiniteTypeField
+section ProjectiveBialgebra
 
 universe u v
 
-/-- Over a field, if `H` is of finite type and `d` acts nilpotently on every finitely generated
-`H`-comodule, then the left-invariant derivation of `d` is locally nilpotent on `H`. -/
+/-- If `H` is projective as an `R`-module (for instance whenever `R` is a field, without any
+finite-type assumption on `H`) and `d` acts nilpotently on every finitely generated `H`-comodule,
+then the left-invariant derivation of `d` is locally nilpotent on `H`. -/
 theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule
-    {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
-    (d : Derivation k H (Bialgebra.CounitAlgebra k H k))
-    (hdiff : ∀ M : FGComoduleCat.{u, v, v} k H,
-      IsNilpotent (Comodule.differential (R := k) (H := H) (M := M) d)) :
+    {R : Type u} {H : Type v} [CommRing R] [CommRing H] [Bialgebra R H] [Module.Projective R H]
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (hdiff : ∀ M : FGComoduleCat.{u, v, v} R H,
+      IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d)) :
     ∀ h : H, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
-  obtain ⟨M, n, b, hb⟩ := Comodule.exists_coordinateBialgHom_surjective (k := k) (H := H)
-  let _ : Module.Finite k M := Module.Finite.of_basis b
-  let N : FGComoduleCat.{u, v, v} k H := FGComoduleCat.of (R := k) (C := H) M
-  obtain ⟨m, hm⟩ := hdiff N
-  refine d.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential b hb ⟨m, ?_⟩
-  let f : Module.End k M := Comodule.differential (R := k) (H := H) (M := M) d
-  let fN : @Module.End k N _ (FGComoduleCat.instAddCommGroupCarrier N).toAddCommMonoid _ :=
-    @Comodule.differential k H N _ _ _ (FGComoduleCat.instAddCommGroupCarrier N) _ _ d
-  have hiter : ∀ (j : ℕ) (x : M), (⇑f)^[j] x = (⇑fN)^[j] x := by
-    intro j
-    induction j with
-    | zero => intro x; rfl
-    | succ j ih =>
-      intro x
-      rw [Function.iterate_succ_apply', Function.iterate_succ_apply', ih]
-      simp only [f, fN, Comodule.differential_apply]
-  refine LinearMap.ext fun x => ?_
-  rw [LinearMap.zero_apply, pow_apply_eq_iterate, hiter]
-  have hmx : (fN ^ m) x = 0 := by
-    simpa using LinearMap.congr_fun hm x
-  rwa [pow_apply_eq_iterate] at hmx
+  intro h
+  obtain ⟨W, hWfin, hh⟩ := Subcomodule.exists_finite_subcomodule_mem (R := R) (C := H) h
+  let _ : Module.Finite R W := hWfin
+  let M : FGComoduleCat.{u, v, v} R H := FGComoduleCat.of (R := R) (C := H) W
+  obtain ⟨m, hm⟩ := hdiff M
+  refine ⟨m, ?_⟩
+  let fM := @Comodule.differential R H M _ _ _ M.instAddCommGroupCarrier M.instModuleCarrier
+    M.instComoduleCarrier d
+  have hsemi : Function.Semiconj W.subtype fM (Bialgebra.leftInvariantDerivation d) := fun w => by
+    have hfw : fM w = Comodule.differential (R := R) (H := H) (M := W) d w := by
+      simp only [fM, M, Comodule.differential_apply]
+    rw [hfw, ← Derivation.coeFn_coe, Bialgebra.toLinearMap_leftInvariantDerivation,
+      ← W.subtype.map_differential d w]
+  have hm0 : (⇑fM)^[m] ⟨h, hh⟩ = 0 := by
+    simpa [fM, pow_apply_eq_iterate] using LinearMap.congr_fun hm ⟨h, hh⟩
+  rw [show h = W.subtype ⟨h, hh⟩ from (W.subtype_apply ⟨h, hh⟩).symm,
+    ← hsemi.iterate_right m ⟨h, hh⟩, hm0, map_zero]
 
-end FiniteTypeField
+end ProjectiveBialgebra
 
 end Derivation

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.InvariantDerivation
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
 
@@ -15,10 +16,24 @@ If a subgroup tangent vector has a locally nilpotent ambient invariant derivatio
 its entire polynomial exponential curve vanishes on the subgroup's defining Hopf ideal.
 Consequently every algebra-valued parameter gives a point of the subgroup, including
 parameters in nonreduced algebras. This strengthens ideal preservation by the exponential
-at parameter one to factorization of the polynomial curve itself.
+at parameter one to factorization of the polynomial curve itself. Over an algebraically
+closed field, since a finite-type group and every closed subgroup share the Lie algebra of
+their identity components, every exponential curve factors through the identity component.
 
 The argument uses `HopfIdeal.leftInvariantDerivation_mem` to preserve the ideal under
 every iterate, and `Bialgebra.expPointPolynomial` for the polynomial curve.
+
+## Main declarations
+
+* `TauCeti.HopfIdeal.expPointPolynomial_apply_eq_zero`: the polynomial exponential curve of a
+  subgroup tangent vector vanishes on the defining Hopf ideal.
+* `TauCeti.HopfIdeal.expPointAt_mem_quotientPointsSubgroup`: every algebra-valued point on the
+  exponential curve lies in the closed subgroup.
+* `TauCeti.HopfIdeal.expPointAt_mem_quotientPointsSubgroup_identityComponent`: over an
+  algebraically closed field, the exponential curve of a subgroup tangent vector lies in the
+  identity component of the subgroup.
+* `TauCeti.HopfAlgebra.expPointAt_mem_quotientPointsSubgroup_identityComponentHopfIdeal`: over an
+  algebraically closed field, every exponential curve of `G` lies in `G°`.
 
 ## References
 
@@ -28,7 +43,11 @@ every iterate, and `Bialgebra.expPointPolynomial` for the polynomial curve.
 
 public section
 
-namespace TauCeti.HopfIdeal
+namespace TauCeti
+
+section General
+
+namespace HopfIdeal
 
 open TauCeti.Bialgebra
 
@@ -63,4 +82,43 @@ theorem expPointAt_mem_quotientPointsSubgroup (I : HopfIdeal R H)
   intro x hx
   rw [expPointAt_apply, I.expPointPolynomial_apply_eq_zero hd hD hx, map_zero]
 
-end TauCeti.HopfIdeal
+end HopfIdeal
+
+end General
+
+section IdentityComponent
+
+universe u v
+
+variable {k : Type u} [Field k] [IsAlgClosed k]
+  {H : FiniteTypeCommHopfAlgCat.{u, u} k} [Algebra ℚ H]
+
+/-- Over an algebraically closed field, every algebra-valued point on the exponential curve of a
+tangent vector to a closed subgroup lies in the identity component of that subgroup, since
+`Lie(I°) = Lie(I)`. -/
+theorem HopfIdeal.expPointAt_mem_quotientPointsSubgroup_identityComponent
+    (I : HopfIdeal k H) {d : Derivation k H (Bialgebra.CounitAlgebra k H k)}
+    (hd : d ∈ I.lieSubalgebra (B := k))
+    (hD : ∀ h : H, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0)
+    {B : Type v} [CommRing B] [Algebra k B] (t : B) :
+    Bialgebra.expPointAt d hD t ∈
+      CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k B) :=
+  I.identityComponent.expPointAt_mem_quotientPointsSubgroup
+    (I.lieSubalgebra_identityComponent ▸ hd) hD t
+
+/-- Over an algebraically closed field, every algebra-valued point on an exponential curve of `G`
+lies in the identity component `G°`. -/
+theorem HopfAlgebra.expPointAt_mem_quotientPointsSubgroup_identityComponentHopfIdeal
+    {d : Derivation k H (Bialgebra.CounitAlgebra k H k)}
+    (hD : ∀ h : H, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0)
+    {B : Type v} [CommRing B] [Algebra k B] (t : B) :
+    Bialgebra.expPointAt d hD t ∈
+      CommHopfAlgCat.quotientPointsSubgroup H.obj
+        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k B) :=
+  (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).expPointAt_mem_quotientPointsSubgroup
+    (HopfIdeal.lieSubalgebra_identityComponentHopfIdeal_eq_top (k := k) (H := H) ▸
+      LieSubalgebra.mem_top d) hD t
+
+end IdentityComponent
+
+end TauCeti
