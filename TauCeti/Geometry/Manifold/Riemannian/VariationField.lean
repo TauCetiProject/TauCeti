@@ -92,8 +92,8 @@ theorem hasDerivAt_norm_sq_curveVelocity_curveVelocity_fst {u t : ℝ}
 
 /-- **The transverse derivative of the squared speed.** At a parameter `t` where the family is
 `C²`, the function `s ↦ ‖∂_t F (s, t)‖²` has derivative `2 ⟪D_t V(t), γ'(t)⟫` at `s = 0`, where
-`V` is the variation field and `γ = F 0`.  Integrated over `[a, b]`, this is the derivative of
-the energy of the curves `F s` in the first variation formula. -/
+`V` is the variation field and `γ = F 0`.  Half of this, integrated over `[a, b]`, is the
+derivative of the energy of the curves `F s` in the first variation formula. -/
 theorem hasDerivAt_norm_sq_curveVelocity {t : ℝ}
     (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     HasDerivAt (fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2)

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 import TauCeti.Analysis.Calculus.ParametricFDeriv
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Coordinates
@@ -104,7 +103,11 @@ private theorem alongCurve_alongCurve_eq_symmL
   have hw : ContDiffAt ℝ 2 w (u, v) :=
     hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
   -- Near `u`, the inner covariant derivatives read in the chart by the coordinate formula.
-  have hinner := sectionCoord_alongCurve_eventuallyEq cov hW hφdef hwdef
+  have hinner : sectionCoord (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
+      (f u v) =ᶠ[𝓝 u]
+      fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v) := by
+    subst hφdef hwdef
+    exact sectionCoord_alongCurve_eventuallyEq cov (hW.of_le one_le_two) hbase
   -- The derivative in `q` of the coordinate formula, by the product rule.
   have hfu : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ f q v) u :=
     (hf.comp u (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) v)).contMDiffAt)

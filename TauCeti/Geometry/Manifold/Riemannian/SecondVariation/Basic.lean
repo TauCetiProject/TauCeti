@@ -42,8 +42,9 @@ curvature term: `D_s D_t ∂_s F = D_t A + R(V, γ') V`. The antisymmetry
 `⟪D_t A, γ'⟫ = d/dt ⟪A, γ'⟫ - ⟪A, D_t γ'⟫` integrates to the endpoint terms.
 
 For a variation with fixed endpoints the transverse curves through the endpoints are constant, so
-the endpoint accelerations vanish; if moreover `γ` is a geodesic on `[a, b]`, the last integral
-vanishes as well and the second variation is the index form `I(V, V)`.
+the endpoint accelerations vanish. If `γ` is a geodesic on the open interval between `a` and `b`,
+the last integral vanishes; for a variation of a geodesic with fixed endpoints the second
+variation is therefore the index form `I(V, V)`.
 
 The formulas hold for a family which is `C³` at the points of `{0} × [a, b]`, on a smooth manifold
 with a smooth Riemannian metric.
@@ -51,11 +52,13 @@ with a smooth Riemannian metric.
 ## Main results
 
 * `TauCeti.Manifold.hasDerivAt_deriv_norm_sq_curveVelocity`: the pointwise second variation of
-  the squared speed, whose integral over `[a, b]` is the second variation of energy.
+  the squared speed, half of whose integral over `[a, b]` is the second variation of energy.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy`: **the second variation formula** for the energy,
   with endpoint acceleration terms.
 * `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy`: the second variation
   formula for a `C³` variation with fixed endpoints.
+* `TauCeti.Manifold.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`: the second variation formula
+  for a variation of a geodesic, where only the endpoint acceleration terms remain.
 * `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn`: for a
   fixed-endpoint variation of a geodesic, the second variation of energy is the index form of the
   variation field.
@@ -93,12 +96,8 @@ private theorem contMDiffAt_acceleration_slice {t : ℝ}
     (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (F 0 r)
       (acceleration (leviCivitaConnection I M) (fun q ↦ F q r) 0)) t := by
-  have hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2 (fun z : ℝ × ℝ ↦
-      TotalSpace.mk' E (F z.2 z.1) (curveVelocity I (fun p ↦ F p z.1) z.2)) (t, 0) :=
-    (hf.contMDiffAt_curveVelocity_fst (by norm_num)).comp (t, 0) (contMDiff_iff_contDiff.mpr
-      (by fun_prop : ContDiff ℝ 2 fun z : ℝ × ℝ ↦ (z.2, z.1))).contMDiffAt
-  simpa only [acceleration_def] using contMDiffAt_alongCurve_slice (leviCivitaConnection I M)
-    (f := fun a b ↦ F b a) (W := fun a b ↦ curveVelocity I (fun p ↦ F p a) b) hW
+  simpa only [acceleration_def] using contMDiffAt_alongCurve_fst_slice (leviCivitaConnection I M)
+    (hf.contMDiffAt_curveVelocity_fst (m := 2) (by norm_num))
 
 /-- **The pointwise second variation of the squared speed.** At a parameter `t` where the family
 is `C³`, the second derivative at `s = 0` of `s ↦ ‖∂_t F (s, t)‖²` is twice
@@ -106,8 +105,8 @@ is `C³`, the second derivative at `s = 0` of `s ↦ ‖∂_t F (s, t)‖²` is 
 `‖D_t V(t)‖² - ⟪R(V, γ') γ', V⟫(t) + d/dt ⟪A, γ'⟫(t) - ⟪A(t), D_t γ'(t)⟫`,
 
 the integrand of the index form plus a derivative and an acceleration term, where `γ = F 0`, `V`
-is the variation field and `A(r) = D_s ∂_s F (0, r)` is the transverse acceleration. Integrated
-over `[a, b]`, this is the second variation of energy. -/
+is the variation field and `A(r) = D_s ∂_s F (0, r)` is the transverse acceleration. Half of this
+second derivative, integrated over `[a, b]`, is the second variation of energy. -/
 theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
     (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     HasDerivAt (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2)
@@ -146,7 +145,7 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   have hXcoord : DifferentiableAt ℝ (sectionCoord (F := E) (fun q ↦ F q t)
       (fun q ↦ alongCurve cov (F q) (W q) t) (F 0 t)) 0 :=
     differentiableAt_sectionCoord (fun q ↦ F q t) _
-      ((contMDiffAt_alongCurve_slice cov hW).mdifferentiableAt one_ne_zero) hbase
+      ((contMDiffAt_alongCurve_snd_slice cov hW).mdifferentiableAt one_ne_zero) hbase
   have hYcoord := (hf.of_le (by norm_num : (2 : WithTop ℕ∞) ≤ 3))
     |>.differentiableAt_sectionCoord_curveVelocity_snd (f := F) hbase
   have hprod := hm.hasDerivAt_inner_alongCurve hcurve hXcoord hYcoord
@@ -159,14 +158,14 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   have hAcoord : DifferentiableAt ℝ (sectionCoord (F := E) (F 0) A (F 0 t)) t :=
     differentiableAt_sectionCoord (F 0) A
       ((contMDiffAt_acceleration_slice hf).mdifferentiableAt one_ne_zero) hbase
+  have hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 3 (F 0) t :=
+    hf.comp t (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt
   have hγcoord : DifferentiableAt ℝ
       (sectionCoord (F := E) (F 0) (curveVelocity I (F 0)) (F 0 t)) t :=
     differentiableAt_sectionCoord (F 0) _
-      ((hf.contMDiffAt_curveVelocity_snd_along (m := 2) (by norm_num)).mdifferentiableAt
+      ((hγ.contMDiffAt_curveVelocity (m := 2) (by norm_num)).mdifferentiableAt
         two_ne_zero) hbase
-  have hγt : MDifferentiableAt 𝓘(ℝ, ℝ) I (F 0) t :=
-    (hf.comp t (contMDiff_iff_contDiff.mpr
-      (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt).mdifferentiableAt (by norm_num)
+  have hγt : MDifferentiableAt 𝓘(ℝ, ℝ) I (F 0) t := hγ.mdifferentiableAt (by norm_num)
   have hkd := (hm.hasDerivAt_inner_alongCurve hγt hAcoord hγcoord).deriv
   -- The antisymmetry of the curvature in its last two slots.
   have hcurv : inner ℝ (cov.curvatureTensor (F 0 t) (variationField I F t)
@@ -289,8 +288,9 @@ theorem hasDerivAt_deriv_energy {a b : ℝ}
   have hk : ContDiffOn ℝ 1 k O := contMDiffOn_iff_contDiffOn.mp
     (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := F 0)
       (fun t ht ↦ (contMDiffAt_acceleration_slice (hsurf ht)).contMDiffWithinAt)
-      (fun t ht ↦ ((hsurf ht).contMDiffAt_curveVelocity_snd_along (m := 1)
-        (by norm_num)).contMDiffWithinAt))
+      (fun t ht ↦ (ContMDiffAt.contMDiffAt_curveVelocity (γ := F 0) (m := 1)
+        ((hsurf ht).comp t (contMDiff_iff_contDiff.mpr
+          (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt) (by norm_num)).contMDiffWithinAt))
   -- Integrate the pointwise identity over `[a, b]`.
   have hIint : IntervalIntegrable
       (indexFormIntegrand I (F 0) (variationField I F) (variationField I F)) volume a b := by
@@ -334,20 +334,47 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy {a b : ℝ}
     inner_zero_left]
   ring
 
+omit [T2Space M] in
+/-- If `γ = F 0` is a geodesic on a set containing the open interval between `a` and `b`, the
+acceleration term `∫_a^b ⟪A(t), D_t γ'(t)⟫ dt` of the second variation formula vanishes. -/
+private theorem integral_inner_acceleration_eq_zero {a b : ℝ} {J : Set ℝ}
+    (hγ : IsGeodesicCurveOn I (F 0) J) (hJ : uIoo a b ⊆ J) :
+    ∫ t in a..b, inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0)
+      (acceleration (leviCivitaConnection I M) (F 0) t) = 0 := by
+  rw [intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_,
+    intervalIntegral.integral_zero]
+  have hmem : J ∈ 𝓝 t := mem_of_superset (isOpen_Ioo.mem_nhds ht) hJ
+  dsimp only
+  rw [← accelerationWithin_of_mem_nhds (leviCivitaConnection I M) (γ := F 0) hmem,
+    hγ.accelerationWithin_eq_zero t (hJ ht), inner_zero_right]
+
+/-- **The second variation of energy at a geodesic.** Let `F` be a two-parameter family which is
+`C³` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` is a geodesic on a set `J`
+containing the open interval between `a` and `b`, with variation field `V` and transverse
+acceleration `A(t) = D_s ∂_s F (0, t)`. Then the derivative of the energy of `F s` is
+differentiable at `s = 0`, with derivative `I(V, V) + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫`. -/
+theorem hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a b : ℝ} {J : Set ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    (hγ : IsGeodesicCurveOn I (F 0) J) (hJ : uIoo a b ⊆ J) :
+    HasDerivAt (deriv fun s ↦ energy I (F s) a b)
+      (indexForm I (F 0) (variationField I F) (variationField I F) a b +
+        inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q b) 0)
+          (curveVelocity I (F 0) b) -
+        inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q a) 0)
+          (curveVelocity I (F 0) a)) 0 := by
+  refine (hasDerivAt_deriv_energy hF).congr_deriv ?_
+  rw [integral_inner_acceleration_eq_zero hγ hJ, sub_zero]
+
 /-- **The second variation of energy at a geodesic is the index form.** For a `C³` variation `F`
-with fixed endpoints between `a` and `b` of a geodesic `γ = F 0` on `[a, b]`, the derivative of
-the energy of `F s` is differentiable at `s = 0`, with derivative the index form `I(V, V)` of the
-variation field `V`. -/
+with fixed endpoints between `a` and `b` of a curve `γ = F 0` which is a geodesic on a set `J`
+containing the open interval between `a` and `b`, the derivative of the energy of `F s` is
+differentiable at `s = 0`, with derivative the index form `I(V, V)` of the variation field `V`. -/
 theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a b : ℝ}
-    (hF : IsFixedEndpointVariation I 3 F a b) (hγ : IsGeodesicCurveOn I (F 0) (uIcc a b)) :
+    {J : Set ℝ} (hF : IsFixedEndpointVariation I 3 F a b) (hγ : IsGeodesicCurveOn I (F 0) J)
+    (hJ : uIoo a b ⊆ J) :
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
       (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
   refine hF.hasDerivAt_deriv_energy.congr_deriv ?_
-  rw [intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_,
-    intervalIntegral.integral_zero, sub_zero]
-  have hmem : uIcc a b ∈ 𝓝 t := mem_of_superset (isOpen_Ioo.mem_nhds ht) uIoo_subset_uIcc_self
-  dsimp only
-  rw [← accelerationWithin_of_mem_nhds (leviCivitaConnection I M) (γ := F 0) hmem,
-    hγ.accelerationWithin_eq_zero t (uIoo_subset_uIcc_self ht), inner_zero_right]
+  rw [integral_inner_acceleration_eq_zero hγ hJ, sub_zero]
 
 end TauCeti.Manifold
