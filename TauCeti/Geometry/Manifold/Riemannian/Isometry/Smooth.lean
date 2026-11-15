@@ -339,17 +339,17 @@ theorem toIsometryEquiv_toRiemannianIsometry (f : M ≃ᵢ N) :
     ((f.toRiemannianIsometry I J : RiemannianIsometry I J M N) : M ≃ᵢ N) = f :=
   IsometryEquiv.ext fun _ ↦ (rfl)
 
-/-- `toRiemannianIsometry` recovers a smooth Riemannian isometry from its isometry equivalence. -/
-@[simp]
-theorem toRiemannianIsometry_toIsometryEquiv (Φ : RiemannianIsometry I J M N) :
-    (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ :=
-  RiemannianIsometry.ext fun _ ↦ (rfl)
-
 end IsometryEquiv
 
 namespace TauCeti.RiemannianIsometry
 
 variable [CompleteSpace N]
+
+/-- `toRiemannianIsometry` recovers a smooth Riemannian isometry from its isometry equivalence. -/
+@[simp]
+theorem toRiemannianIsometry_toIsometryEquiv (Φ : RiemannianIsometry I J M N) :
+    (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ :=
+  ext fun _ ↦ (rfl)
 
 variable (I J) in
 /-- **Smooth Riemannian isometries are exactly the isometries of the Riemannian distances**, when
