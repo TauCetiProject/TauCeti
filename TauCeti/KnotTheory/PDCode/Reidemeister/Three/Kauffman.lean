@@ -13,9 +13,12 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Invariance of the Kauffman bracket under the third Reidemeister move
 
-The eight local smoothings are reduced to the five matchings of the six boundary ports.
-The reduction inserts six internal vertices into the traversal, except for the middle
-smoothing, which leaves an additional circle. The surrounding diagram is arbitrary.
+The eight local smoothings are reduced to the five noncrossing matchings of the six boundary
+ports (six ports have fifteen perfect matchings; these five are the planar ones). The reduction
+inserts six internal vertices into the traversal, except for the middle smoothing, which leaves
+an additional circle. The middle smoothing is the raw over-pair choice `![false, true, false]` at
+the three crossings, whose reading as an `A`- or `B`-smoothing depends on the heights. The
+surrounding diagram is arbitrary.
 The crossing weights cancel for each of the six acyclic height orders;
 `kauffmanBracket_reidemeisterThree` states the resulting invariance.
 
@@ -155,7 +158,6 @@ private theorem localPairing_internal (k : Fin 5) (p : Fin 3 × Fin 4)
   revert k p
   decide
 
-
 private theorem smoothingTurn_split (u : Fin n → Bool) :
     D.smoothingTurn u = localLift D c (localSmoothing (u ∘ c)) *
       exteriorSlots D c (fun i ↦ slotSmoothing (u i)) := by
@@ -250,13 +252,11 @@ private noncomputable def assembleState {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin
 private theorem assembleState_local {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (j : Fin 3) :
     assembleState c q r (c j) = q j := by
-  classical
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr]
 
 private theorem assembleState_outside {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (i : {i : Fin n // i ∉ Set.range c}) :
     assembleState c q r i = r i := by
-  classical
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr, i.property]
 
 private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
@@ -264,7 +264,6 @@ private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
     (f : Fin n → Bool → M) :
     (∏ i, f i (assembleState c q r i)) =
       (∏ j, f (c j) (q j)) * ∏ i : {i : Fin n // i ∉ Set.range c}, f i (r i) := by
-  classical
   let : Fintype (Set.range c) := Subtype.fintype (fun i ↦ i ∈ Set.range c)
   rw [← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ i ∈ Set.range c)
     (fun i ↦ f i (assembleState c q r i))]
@@ -492,7 +491,6 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
             (jonesDelta a ^ pairingExponent D c r 0) (jonesDelta a ^ pairingExponent D c r 1)
             (jonesDelta a ^ pairingExponent D c r 2) (jonesDelta a ^ pairingExponent D c r 3)
             (jonesDelta a ^ pairingExponent D c r 4) (q 0) (q 1) (q 2)) := by
-  classical
   rw [kauffmanBracket_raw, ← (localStatesEquiv c).symm.sum_comp]
   simp only [Fintype.sum_prod_type, ← assembleState.eq_def]
   rw [Finset.sum_comm]
@@ -510,7 +508,6 @@ PD-code and all six acyclic strand height orders. -/
 @[simp] theorem kauffmanBracket_reidemeisterThree (ht : D.HasReidemeisterThreeTriangle c)
     {R : Type*} [CommRing R] (a : Rˣ) :
     (D.reidemeisterThree c).kauffmanBracket a = D.kauffmanBracket a := by
-  classical
   have hs0 := kauffmanBracket_split D c ht.arcs a false
   have hs1 := kauffmanBracket_split D c ht.arcs a true
   simp only [Bool.false_eq_true, ↓reduceIte] at hs0 hs1

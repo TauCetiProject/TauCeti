@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Current.ResidueCocycle
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
 -- Non-public: used only inside proofs.
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
@@ -350,7 +351,7 @@ end Coefficients
 
 section Classification
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [_root_.LieAlgebra.IsKilling K L]
 
 open _root_.LieAlgebra
@@ -569,6 +570,7 @@ theorem finrank_continuousSecondCohomology_eq_one [IsAlgClosed K]
     Module.finrank K (continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) K)) = 1 :=
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _j := TauCeti.finite_of_isKilling (R := K) (L := L)
   (residueClassEquiv K (_root_.LieModule.traceForm_lieInvariant K L L)
     (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))
     (fun _ hΦ ↦ TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ)
