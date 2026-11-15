@@ -296,8 +296,9 @@ theorem ncard_setOf_ne_add_ncard_setOf_eq_zero [Finite ι] (hpq : ∀ i, p i ≠
     · by_cases hi : q i = 0
       · exact .inr hi
       · exact .inl (h ▸ Ne.symm hi)
-    · by_contra hne
-      exact hne (hpq i fun h ↦ hne (h ▸ h')) |>.elim
+    · by_cases hi : p i = q i
+      · rw [hi, h']
+      · exact hpq i hi
   rw [hunion, ncard_union_eq (disjoint_left.2 fun i (hi : p i ≠ q i) (hi' : q i = 0) ↦
     hi (by rw [hpq i hi, hi']))]
 
