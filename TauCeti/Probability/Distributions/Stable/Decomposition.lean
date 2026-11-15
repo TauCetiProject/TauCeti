@@ -99,22 +99,22 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
   rw [← charFun_conv, ← charFun_conv, hσ, hconv]
 
 /-- A probability measure can be convolved with the compensated compound-Poisson law to give a
-stable law only for admissible skewness, since the stable measure is zero otherwise. -/
-theorem abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq {μ : ProbabilityMeasure ℝ}
+stable law only for admissible shape and skewness, since the stable measure is zero otherwise. -/
+theorem valid_of_conv_stableCompensatedPoissonMeasure_eq {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
-    |β| ≤ 1 := by
-  by_contra hβ
+    α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+  by_contra hv
   have := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have h : IsProbabilityMeasure ((μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r) :=
     inferInstance
-  rw [hμ, stableMeasure_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))] at h
+  rw [hμ, stableMeasure_of_not_valid hv] at h
   simpa using h.measure_univ
 
 /-- The small-jump factor has the compensated Lévy exponent restricted to jumps of size at
 most the cutoff. The statement applies to any probability law satisfying the decomposition,
 without choosing a particular representative of the unique factor. -/
 theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
-    (hα : α ∈ Ioo 0 2) (hr : 0 < r)
+    (hα : α ≠ 2) (hr : 0 < r)
     {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0)
     (t : ℝ) :
@@ -122,8 +122,10 @@ theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
       Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β) := by
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
-  -- An invalid skewness would make the right-hand side the zero measure, not a probability law.
-  have hβ := abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq hμ
+  -- Invalid parameters would make the right-hand side the zero measure, not a probability law.
+  have hv := valid_of_conv_stableCompensatedPoissonMeasure_eq hμ
+  have hα : α ∈ Ioo 0 2 := ⟨hv.1.1, lt_of_le_of_ne hv.1.2 hα⟩
+  have hβ := hv.2
   let ν := stableLevyMeasure α β
   let f := fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
     (t * sin x : ℝ) * Complex.I

@@ -58,7 +58,7 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
       isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩ :
         ℕ → ProbabilityMeasure ℝ) atTop (𝓝 μ) := by
   have hr : 0 < r := (hε 0).trans_le (hεr 0)
-  have hβ := abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq hμ
+  have hβ := (valid_of_conv_stableCompensatedPoissonMeasure_eq hμ).2
   let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
@@ -87,7 +87,7 @@ private theorem lintegral_sq_le_of_conv_eq
     let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
     ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(μ : Measure ℝ) ≤
       ENNReal.ofReal (V + (r / 6 * V) ^ 2) := by
-  have hβ := abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq hμ
+  have hβ := (valid_of_conv_stableCompensatedPoissonMeasure_eq hμ).2
   let V := ∫ x in Metric.ball (0 : ℝ) r, x ^ 2 ∂stableLevyMeasure α β
   let ε (n : ℕ) := min r ((2 : ℝ)⁻¹ ^ n)
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
