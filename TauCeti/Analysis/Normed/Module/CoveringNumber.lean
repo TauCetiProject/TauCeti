@@ -35,6 +35,10 @@ theorem on almost Euclidean sections of finite-dimensional normed spaces.
   has an `ε`-net consisting of at most `(1 + 2 r / ε) ^ n` of its points.
 * `TauCeti.exists_finset_isCover_sphere`: the unit sphere has an `η`-net consisting of at most
   `(1 + 2 / η) ^ n` of its points.
+* `TauCeti.pow_finrank_le_card_mul_pow_of_isCover_closedBall` and
+  `TauCeti.div_pow_finrank_le_externalCoveringNumber_closedBall`: volumetric lower bounds
+  `r ^ n ≤ N.card * ε ^ n` and `(r / ε) ^ n ≤ externalCoveringNumber ε (closedBall x r)` on covers
+  of a closed ball.
 
 ## References
 
@@ -140,5 +144,47 @@ theorem exists_finset_isCover_sphere {η : ℝ≥0} (hη : η ≠ 0) :
       (N.card : ℝ) ≤ (1 + 2 / η) ^ finrank ℝ E := by
   simpa using exists_finset_isCover_of_subset_closedBall (r := 1) hη
     (sphere_subset_closedBall (x := (0 : E)))
+
+/-- **Volumetric covering lower bound.** If a closed ball of radius `r` in a finite-dimensional
+real normed space is covered by a finite `ε`-net `N`, then `r ^ dim E ≤ N.card * ε ^ dim E`. -/
+theorem pow_finrank_le_card_mul_pow_of_isCover_closedBall {N : Finset E}
+    (hcov : IsCover ε (closedBall x r) N) :
+    (r : ℝ) ^ finrank ℝ E ≤ N.card * (ε : ℝ) ^ finrank ℝ E := by
+  borelize E
+  let μ : Measure E := Measure.addHaar
+  have key : ENNReal.ofReal ((r : ℝ) ^ finrank ℝ E) * μ (ball 0 1) ≤
+      ENNReal.ofReal ((N.card : ℝ) * (ε : ℝ) ^ finrank ℝ E) * μ (ball 0 1) :=
+    calc ENNReal.ofReal ((r : ℝ) ^ finrank ℝ E) * μ (ball 0 1)
+        = μ (closedBall x r) := (μ.addHaar_closedBall x r.2).symm
+      _ ≤ μ (⋃ y ∈ (N : Set E), closedBall y ε) := measure_mono hcov.subset_iUnion_closedBall
+      _ ≤ ∑ y ∈ N, μ (closedBall y ε) := measure_biUnion_finset_le N fun y ↦ closedBall y ε
+      _ = ∑ _y ∈ N, ENNReal.ofReal ((ε : ℝ) ^ finrank ℝ E) * μ (ball 0 1) :=
+          Finset.sum_congr rfl fun y _ ↦ μ.addHaar_closedBall y ε.2
+      _ = ENNReal.ofReal ((N.card : ℝ) * (ε : ℝ) ^ finrank ℝ E) * μ (ball 0 1) := by
+          rw [Finset.sum_const, nsmul_eq_mul, ← mul_assoc, ENNReal.ofReal_mul (Nat.cast_nonneg _),
+            ENNReal.ofReal_natCast]
+  have h := ENNReal.toReal_le_of_le_ofReal (by positivity)
+    ((ENNReal.mul_le_mul_iff_left (measure_ball_pos μ (0 : E) zero_lt_one).ne'
+      measure_ball_lt_top.ne).1 key)
+  rwa [ENNReal.toReal_ofReal (by positivity)] at h
+
+/-- **Volumetric external covering lower bound.** At scale `ε > 0`, the external covering number
+of a closed ball of radius `r` in a finite-dimensional real normed space is at least
+`(r / ε) ^ dim E`. -/
+theorem div_pow_finrank_le_externalCoveringNumber_closedBall (x : E) (r : ℝ≥0) (hε : ε ≠ 0) :
+    ((r : ℝ≥0∞) / ε) ^ finrank ℝ E ≤ externalCoveringNumber ε (closedBall x r) := by
+  rcases eq_top_or_lt_top (externalCoveringNumber ε (closedBall x r)) with htop | hlt
+  · simp [htop]
+  obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.mp hlt.ne
+  rw [← hk]
+  obtain ⟨N, hNk, hcov⟩ := externalCoveringNumber_le_natCast_iff.mp hk.ge
+  have hcard := pow_finrank_le_card_mul_pow_of_isCover_closedBall hcov
+  have hdiv : ((r / ε : ℝ) ^ finrank ℝ E) ≤ k := by
+    refine ((div_pow (r : ℝ) (ε : ℝ) (finrank ℝ E)).trans_le ?_).trans (Nat.cast_le.mpr hNk)
+    rwa [div_le_iff₀ (by positivity)]
+  rw [ENat.toENNReal_coe, ← ENNReal.ofReal_natCast]
+  refine (le_of_eq ?_).trans (ENNReal.ofReal_le_ofReal hdiv)
+  rw [ENNReal.ofReal_pow (by positivity), ← NNReal.coe_div, ENNReal.ofReal_coe_nnreal,
+    ENNReal.coe_div hε]
 
 end TauCeti
