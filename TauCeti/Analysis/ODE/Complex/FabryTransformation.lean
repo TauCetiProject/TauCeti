@@ -22,15 +22,22 @@ This identity holds for every constant `c` and every `t ≠ 0` at which `w` is a
 solution near `t²` (`deriv_deriv_fabryTransform_add_eq_zero`).
 
 Its use is at an irregular singularity of rank one at infinity. Suppose `f(z) = ∑ f_s z^{-s}` and
-`g(z) = ∑ g_s z^{-s}` converge for `|z| > a`, and `c = f₀`. Then `F` and `G` are convergent
-series in `t⁻¹` for `|t| > √a`. The series of `F` has only odd powers and starts at `t⁻¹`
-(`hasSum_fabryFirstCoeff`), so `F₀ = 0`. In the degenerate case `f₀² = 4g₀`, in which the
-characteristic equation `λ² + f₀λ + g₀ = 0` of the original equation has a double root, the
-series of `G` has only even powers, with constant term `G₀ = 4g₁ - 2f₀f₁`
-(`hasSum_fabrySecondCoeff`), so `G₁ = 0`. Hence either `G₀ ≠ 0`, and the characteristic equation
-`λ² + G₀ = 0` of the new equation has two distinct roots; or `G₀ = 0`, and then `t² G(t)` is
-again a convergent series in `t⁻¹` (`hasSum_sq_mul_fabrySecondCoeff`), so that, together with
-`t F(t)`, infinity is a regular singularity of the new equation.
+`g(z) = ∑ g_s z^{-s}` converge for `|z| > a`, and `c = f₀`. Then `F` is a convergent series in
+odd powers of `t⁻¹` for `|t| > √a`, starting at `t⁻¹` (`hasSum_fabryFirstCoeff`), so `F₀ = 0`;
+likewise `t F(t)` is a series in even powers of `t⁻¹` (`hasSum_mul_fabryFirstCoeff`). In general
+`G(t)` has the leading term `(4g₀ - f₀²) t²` and is not a series in `t⁻¹`. In the degenerate case
+`f₀² = 4g₀`, in which the characteristic equation `λ² + f₀λ + g₀ = 0` of the original equation has
+a double root, this term cancels and `G` is a convergent series in even powers of `t⁻¹`, with
+constant term `G₀ = 4g₁ - 2f₀f₁` (`hasSum_fabrySecondCoeff`), so `G₁ = 0`. Hence either `G₀ ≠ 0`,
+and the characteristic equation `λ² + G₀ = 0` of the new equation has two distinct roots; or
+`G₀ = 0`, and then `t² G(t)` is again a convergent series in `t⁻¹`
+(`hasSum_sq_mul_fabrySecondCoeff`), so that, together with `t F(t)`, infinity is a regular
+singularity of the new equation.
+
+The transformed operator is `4t² exp(c t²/2)` times the original operator evaluated at `t²`
+(`deriv_deriv_fabryTransform_add_eq`), so for `t ≠ 0` solutions correspond in both directions
+(`deriv_deriv_fabryTransform_add_eq_zero_iff`); `w` is recovered from `W` by cancelling the
+exponential factor (`cexp_neg_mul_fabryTransform`).
 
 ## References
 
@@ -49,7 +56,6 @@ namespace TauCeti
 noncomputable def fabryTransform (c : ℂ) (w : ℂ → ℂ) (t : ℂ) : ℂ :=
   Complex.exp (c * t ^ 2 / 2) * w (t ^ 2)
 
-@[simp]
 theorem fabryTransform_apply (c : ℂ) (w : ℂ → ℂ) (t : ℂ) :
     fabryTransform c w t = Complex.exp (c * t ^ 2 / 2) * w (t ^ 2) := (rfl)
 
@@ -58,7 +64,6 @@ theorem fabryTransform_apply (c : ℂ) (w : ℂ → ℂ) (t : ℂ) :
 noncomputable def fabryFirstCoeff (c : ℂ) (f : ℂ → ℂ) (t : ℂ) : ℂ :=
   2 * t * (f (t ^ 2) - c) - t⁻¹
 
-@[simp]
 theorem fabryFirstCoeff_apply (c : ℂ) (f : ℂ → ℂ) (t : ℂ) :
     fabryFirstCoeff c f t = 2 * t * (f (t ^ 2) - c) - t⁻¹ := (rfl)
 
@@ -67,9 +72,70 @@ by `fabryTransform c w`. -/
 noncomputable def fabrySecondCoeff (c : ℂ) (f g : ℂ → ℂ) (t : ℂ) : ℂ :=
   4 * t ^ 2 * (g (t ^ 2) - c / 2 * f (t ^ 2) + c ^ 2 / 4)
 
-@[simp]
 theorem fabrySecondCoeff_apply (c : ℂ) (f g : ℂ → ℂ) (t : ℂ) :
     fabrySecondCoeff c f g t = 4 * t ^ 2 * (g (t ^ 2) - c / 2 * f (t ^ 2) + c ^ 2 / 4) := (rfl)
+
+@[simp]
+theorem fabryTransform_apply_zero (c : ℂ) (w : ℂ → ℂ) : fabryTransform c w 0 = w 0 := by
+  simp [fabryTransform_apply]
+
+/-- Fabry's rescaling is even in `t`. -/
+@[simp]
+theorem fabryTransform_apply_neg (c : ℂ) (w : ℂ → ℂ) (t : ℂ) :
+    fabryTransform c w (-t) = fabryTransform c w t := by
+  simp [fabryTransform_apply]
+
+@[simp]
+theorem fabryTransform_zero (c : ℂ) : fabryTransform c 0 = 0 := by
+  funext t
+  simp [fabryTransform_apply]
+
+@[simp]
+theorem fabryTransform_add (c : ℂ) (v w : ℂ → ℂ) :
+    fabryTransform c (v + w) = fabryTransform c v + fabryTransform c w := by
+  funext t
+  simp only [fabryTransform_apply, Pi.add_apply]
+  ring
+
+@[simp]
+theorem fabryTransform_smul (c a : ℂ) (w : ℂ → ℂ) :
+    fabryTransform c (a • w) = a • fabryTransform c w := by
+  funext t
+  simp only [fabryTransform_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- Cancelling the exponential factor recovers `w(t²)` from Fabry's rescaling. -/
+theorem cexp_neg_mul_fabryTransform (c : ℂ) (w : ℂ → ℂ) (t : ℂ) :
+    Complex.exp (-(c * t ^ 2 / 2)) * fabryTransform c w t = w (t ^ 2) := by
+  rw [fabryTransform_apply, ← mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero,
+    one_mul]
+
+/-- Fabry's rescaling of `exp(-c z / 2) v(z)` is `v(t²)`. -/
+theorem fabryTransform_cexp_neg_mul (c : ℂ) (v : ℂ → ℂ) (t : ℂ) :
+    fabryTransform c (fun z => Complex.exp (-(c * z / 2)) * v z) t = v (t ^ 2) := by
+  rw [fabryTransform_apply, ← mul_assoc, ← Complex.exp_add, mul_div_assoc, add_neg_cancel,
+    Complex.exp_zero, one_mul]
+
+@[simp]
+theorem fabryFirstCoeff_apply_zero (c : ℂ) (f : ℂ → ℂ) : fabryFirstCoeff c f 0 = 0 := by
+  simp [fabryFirstCoeff_apply]
+
+/-- The coefficient `F` is odd in `t`. -/
+@[simp]
+theorem fabryFirstCoeff_apply_neg (c : ℂ) (f : ℂ → ℂ) (t : ℂ) :
+    fabryFirstCoeff c f (-t) = -fabryFirstCoeff c f t := by
+  simp only [fabryFirstCoeff_apply, even_two, Even.neg_pow, inv_neg]
+  ring
+
+@[simp]
+theorem fabrySecondCoeff_apply_zero (c : ℂ) (f g : ℂ → ℂ) : fabrySecondCoeff c f g 0 = 0 := by
+  simp [fabrySecondCoeff_apply]
+
+/-- The coefficient `G` is even in `t`. -/
+@[simp]
+theorem fabrySecondCoeff_apply_neg (c : ℂ) (f g : ℂ → ℂ) (t : ℂ) :
+    fabrySecondCoeff c f g (-t) = fabrySecondCoeff c f g t := by
+  simp [fabrySecondCoeff_apply]
 
 private theorem hasDerivAt_mul_sq_div_two (c t : ℂ) :
     HasDerivAt (fun s : ℂ => c * s ^ 2 / 2) (c * t) t := by
@@ -87,6 +153,30 @@ theorem hasDerivAt_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
   have h := (hasDerivAt_mul_sq_div_two c t).cexp.mul
     (hw.hasDerivAt.comp (h := fun s : ℂ => s ^ 2) t (hasDerivAt_sq t))
   exact h.congr_deriv (by simp only [Function.comp_apply]; ring)
+
+/-- The first derivative of Fabry's rescaling, as a value of `deriv`. -/
+theorem deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ} (hw : DifferentiableAt ℂ w (t ^ 2)) :
+    deriv (fabryTransform c w) t =
+      Complex.exp (c * t ^ 2 / 2) * (c * t * w (t ^ 2) + 2 * t * deriv w (t ^ 2)) :=
+  (hasDerivAt_fabryTransform c hw).deriv
+
+/-- Fabry's rescaling of a function analytic at `t²` is analytic at `t`. -/
+theorem analyticAt_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ} (hw : AnalyticAt ℂ w (t ^ 2)) :
+    AnalyticAt ℂ (fabryTransform c w) t := by
+  have hsq : AnalyticAt ℂ (fun s : ℂ => s ^ 2) t := analyticAt_id.pow 2
+  have hexp : AnalyticAt ℂ (fun s : ℂ => Complex.exp (c * s ^ 2 / 2)) t :=
+    ((analyticAt_const.mul hsq).div_const).cexp
+  exact hexp.mul (hw.comp (f := fun s : ℂ => s ^ 2) hsq)
+
+/-- Fabry's rescaling of a function holomorphic on `s` is holomorphic on the preimage of `s`
+under `t ↦ t²`. -/
+theorem differentiableOn_fabryTransform (c : ℂ) {w : ℂ → ℂ} {s : Set ℂ}
+    (hw : DifferentiableOn ℂ w s) :
+    DifferentiableOn ℂ (fabryTransform c w) ((fun t : ℂ => t ^ 2) ⁻¹' s) := by
+  have hsq : Differentiable ℂ (fun t : ℂ => t ^ 2) := differentiable_id.pow 2
+  have hexp : Differentiable ℂ (fun t : ℂ => Complex.exp (c * t ^ 2 / 2)) :=
+    ((differentiable_const c).mul hsq).div_const 2 |>.cexp
+  exact hexp.differentiableOn.mul (hw.comp hsq.differentiableOn fun _ ht => ht)
 
 /-- The second derivative of Fabry's rescaling of a function holomorphic near `t²`. -/
 theorem deriv_deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
@@ -110,6 +200,32 @@ theorem deriv_deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
   simp only [Pi.mul_apply, Pi.add_apply, Function.comp_apply, id]
   ring
 
+/-- The operator identity behind Fabry's transformation: for `t ≠ 0` and `w` holomorphic near
+`t²`, the transformed operator applied to `W = fabryTransform c w` at `t` is `4t² exp(c t²/2)`
+times the original operator applied to `w` at `t²`. -/
+theorem deriv_deriv_fabryTransform_add_eq (c : ℂ) (f g : ℂ → ℂ) {w : ℂ → ℂ} {t : ℂ}
+    (ht : t ≠ 0) (hw : AnalyticAt ℂ w (t ^ 2)) :
+    deriv (deriv (fabryTransform c w)) t +
+        fabryFirstCoeff c f t * deriv (fabryTransform c w) t +
+        fabrySecondCoeff c f g t * fabryTransform c w t =
+      4 * t ^ 2 * Complex.exp (c * t ^ 2 / 2) *
+        (deriv (deriv w) (t ^ 2) + f (t ^ 2) * deriv w (t ^ 2) + g (t ^ 2) * w (t ^ 2)) := by
+  rw [deriv_deriv_fabryTransform c hw, deriv_fabryTransform c hw.differentiableAt,
+    fabryFirstCoeff_apply, fabrySecondCoeff_apply, fabryTransform_apply]
+  have ht' : t⁻¹ * t = 1 := inv_mul_cancel₀ ht
+  linear_combination -(Complex.exp (c * t ^ 2 / 2) * (c * w (t ^ 2) + 2 * deriv w (t ^ 2))) * ht'
+
+/-- For `t ≠ 0` and `w` holomorphic near `t²`, `w` solves `w'' + f w' + g w = 0` at `t²` if and
+only if `W = fabryTransform c w` solves `W'' + F W' + G W = 0` at `t`. -/
+theorem deriv_deriv_fabryTransform_add_eq_zero_iff (c : ℂ) (f g : ℂ → ℂ) {w : ℂ → ℂ} {t : ℂ}
+    (ht : t ≠ 0) (hw : AnalyticAt ℂ w (t ^ 2)) :
+    deriv (deriv (fabryTransform c w)) t +
+        fabryFirstCoeff c f t * deriv (fabryTransform c w) t +
+        fabrySecondCoeff c f g t * fabryTransform c w t = 0 ↔
+      deriv (deriv w) (t ^ 2) + f (t ^ 2) * deriv w (t ^ 2) + g (t ^ 2) * w (t ^ 2) = 0 := by
+  rw [deriv_deriv_fabryTransform_add_eq c f g ht hw]
+  simp [ht, Complex.exp_ne_zero]
+
 /-- **Fabry's transformation** (DLMF 2.7.19). If `w` is holomorphic near `t² ≠ 0` and solves
 `w'' + f w' + g w = 0` at `t²`, then `W = fabryTransform c w` solves
 `W'' + F W' + G W = 0` at `t`, with `F = fabryFirstCoeff c f` and `G = fabrySecondCoeff c f g`.
@@ -119,30 +235,19 @@ theorem deriv_deriv_fabryTransform_add_eq_zero (c : ℂ) {f g w : ℂ → ℂ} {
     (heq : deriv (deriv w) (t ^ 2) + f (t ^ 2) * deriv w (t ^ 2) + g (t ^ 2) * w (t ^ 2) = 0) :
     deriv (deriv (fabryTransform c w)) t +
         fabryFirstCoeff c f t * deriv (fabryTransform c w) t +
-        fabrySecondCoeff c f g t * fabryTransform c w t = 0 := by
-  rw [deriv_deriv_fabryTransform c hw, (hasDerivAt_fabryTransform c hw.differentiableAt).deriv,
-    fabryFirstCoeff_apply, fabrySecondCoeff_apply, fabryTransform_apply]
-  have ht' : t⁻¹ * t = 1 := inv_mul_cancel₀ ht
-  linear_combination (Complex.exp (c * t ^ 2 / 2) * 4 * t ^ 2) * heq -
-    (Complex.exp (c * t ^ 2 / 2) * (c * w (t ^ 2) + 2 * deriv w (t ^ 2))) * ht'
+        fabrySecondCoeff c f g t * fabryTransform c w t = 0 :=
+  (deriv_deriv_fabryTransform_add_eq_zero_iff c f g ht hw).2 heq
 
-/-- Fabry's transformation on a neighbourhood of infinity: a holomorphic solution of
-`w'' + f w' + g w = 0` on `|z| > a` (with `0 ≤ a`) is carried to a solution of
-`W'' + F W' + G W = 0` on `|t| > √a`. -/
+/-- Fabry's transformation for a solution holomorphic on a neighbourhood `s` of `t²`, such as
+the region `|z| > a` around a singularity at infinity, or a sector or slit domain on which a
+multi-valued solution has a holomorphic branch. -/
 theorem deriv_deriv_fabryTransform_add_eq_zero_of_differentiableOn (c : ℂ) {f g w : ℂ → ℂ}
-    {a : ℝ} (ha : 0 ≤ a) (hw : DifferentiableOn ℂ w {z | a < ‖z‖})
-    (heq : ∀ z, a < ‖z‖ → deriv (deriv w) z + f z * deriv w z + g z * w z = 0)
-    {t : ℂ} (ht : a < ‖t‖ ^ 2) :
+    {s : Set ℂ} {t : ℂ} (ht : t ≠ 0) (hw : DifferentiableOn ℂ w s) (hs : s ∈ 𝓝 (t ^ 2))
+    (heq : deriv (deriv w) (t ^ 2) + f (t ^ 2) * deriv w (t ^ 2) + g (t ^ 2) * w (t ^ 2) = 0) :
     deriv (deriv (fabryTransform c w)) t +
         fabryFirstCoeff c f t * deriv (fabryTransform c w) t +
-        fabrySecondCoeff c f g t * fabryTransform c w t = 0 := by
-  have ht₂ : a < ‖t ^ 2‖ := by rwa [norm_pow]
-  have ht₀ : t ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at ht
-    linarith
-  refine deriv_deriv_fabryTransform_add_eq_zero c ht₀ ?_ (heq _ ht₂)
-  exact hw.analyticAt ((isOpen_lt continuous_const continuous_norm).mem_nhds ht₂)
+        fabrySecondCoeff c f g t * fabryTransform c w t = 0 :=
+  deriv_deriv_fabryTransform_add_eq_zero c ht (hw.analyticAt hs) heq
 
 /-- If `f(t²) = ∑ f_s t^{-2s}`, then `F(t) = 2t (f(t²) - f₀) - 1/t` is the series
 `∑ (2 f_{s+1} - δ_{s0}) t^{-(2s+1)}` in odd powers of `t⁻¹`. In particular its constant
@@ -164,6 +269,18 @@ theorem hasSum_fabryFirstCoeff {f : ℂ → ℂ} {fc : ℕ → ℂ} {t : ℂ}
       field_simp
       ring
   · simp [fabryFirstCoeff_apply]
+
+/-- If `f(t²) = ∑ f_s t^{-2s}` and `t ≠ 0`, then `t F(t)` is the series
+`∑ (2 f_{s+1} - δ_{s0}) t^{-2s}` in even powers of `t⁻¹`, with constant term `2f₁ - 1`. This is
+the coefficient condition at a regular singularity at infinity. -/
+theorem hasSum_mul_fabryFirstCoeff {f : ℂ → ℂ} {fc : ℕ → ℂ} {t : ℂ} (ht : t ≠ 0)
+    (hf : HasSum (fun s => fc s / (t ^ 2) ^ s) (f (t ^ 2))) :
+    HasSum (fun s => (2 * fc (s + 1) - if s = 0 then 1 else 0) / t ^ (2 * s))
+      (t * fabryFirstCoeff (fc 0) f t) := by
+  convert (hasSum_fabryFirstCoeff hf).mul_left t using 1
+  funext s
+  rw [pow_succ]
+  field_simp
 
 /-- If `f(t²) = ∑ f_s t^{-2s}`, `g(t²) = ∑ g_s t^{-2s}` and `f₀² = 4g₀`, then
 `G(t) = 4t² (g(t²) - (f₀/2) f(t²) + f₀²/4)` is the series `∑ (4 g_{s+1} - 2 f₀ f_{s+1}) t^{-2s}`
