@@ -123,10 +123,9 @@ theorem projectiveX_suyamaPoint (hB : suyamaB σ ≠ 0) :
 
 /-- The projective `x`-coordinate of Suyama's native point commutes with field embeddings. -/
 theorem mapProjective_projectiveX_suyamaPoint {L : Type*} [Field L] (f : K →+* L)
-    (hB : suyamaB σ ≠ 0) :
+    (hB : suyamaB σ ≠ 0) (hB' : suyamaB (f σ) ≠ 0) :
     f.mapProjective (projectiveX (suyamaA σ) hB (suyamaPoint hB)) =
-      projectiveX (suyamaA (f σ)) (map_suyamaB f σ ▸ (map_ne_zero f).mpr hB)
-        (suyamaPoint (map_suyamaB f σ ▸ (map_ne_zero f).mpr hB)) := by
+      projectiveX (suyamaA (f σ)) hB' (suyamaPoint hB') := by
   rw [projectiveX_suyamaPoint, Pair.mapProjective_toProj, projectiveX_suyamaPoint]
   congr 1
   ext <;> simp [map_ofNat]

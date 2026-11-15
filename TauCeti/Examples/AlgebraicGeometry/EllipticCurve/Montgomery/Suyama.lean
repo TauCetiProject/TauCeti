@@ -118,16 +118,9 @@ example {L : Type*} [Field L] [CharZero L] :
   have hB : suyamaB (3 : ℚ) ≠ 0 := by
     rw [suyamaB_ne_zero_iff]
     norm_num
-  have hBL : suyamaB (3 : L) ≠ 0 := by
-    rw [suyamaB_ne_zero_iff]
-    norm_num
-  refine ⟨hB, hBL, (mapProjective_projectiveX_suyamaPoint (Rat.castHom L) hB).trans ?_⟩
-  have hcongr : ∀ (x : L) (hx : suyamaB x ≠ 0), x = 3 →
-      projectiveX (suyamaA x) hx (suyamaPoint hx) =
-        projectiveX (suyamaA 3) hBL (suyamaPoint hBL) := by
-    rintro _ _ rfl
-    rfl
-  exact hcongr _ _ (map_ofNat (Rat.castHom L) 3)
+  rw [← map_ofNat (Rat.castHom L) 3]
+  exact ⟨hB, by rwa [← map_suyamaB, map_ne_zero],
+    mapProjective_projectiveX_suyamaPoint (Rat.castHom L) hB _⟩
 
 -- σ = 0 over ℚ: all five factors of isElliptic_model_suyama_iff are nonzero (28125 ≠ 0),
 -- yet B = 0 and the model is singular, showing that σ ≠ 0 cannot be dropped there.
@@ -190,15 +183,8 @@ example : (2 : ZMod 11) ^ 2 ≠ 25 ∧
     rw [suyamaB_eq, suyamaU_def, suyamaV_def]
     apply (div_eq_iff (by decide)).mpr
     decide
-  have hA : suyamaA (2 : ZMod 11) ^ 2 = 4 := by
-    have h := suyamaA_sq_sub_four (2 : ZMod 11)
-    have hrhs : ((2 : ZMod 11) ^ 2 - 1) ^ 3 * ((2 : ZMod 11) ^ 2 - 25) ^ 3 *
-        (9 * (2 : ZMod 11) ^ 2 - 25) * ((2 : ZMod 11) ^ 2 - 9) /
-        (16 * suyamaU (2 : ZMod 11) ^ 6 * suyamaV (2 : ZMod 11) ^ 2) = 0 := by
-      rw [suyamaU_def, suyamaV_def, div_eq_zero_iff]
-      left
-      decide
-    exact sub_eq_zero.mp (h.trans hrhs)
+  have hA : suyamaA (2 : ZMod 11) ^ 2 = 4 :=
+    not_ne_iff.mp (suyamaA_sq_ne_four_iff.not.mpr (by decide))
   have hE : ¬ (model (suyamaA (2 : ZMod 11)) (suyamaB (2 : ZMod 11))).IsElliptic := by
     rw [isElliptic_model_suyama_iff_ne_zero]
     decide
@@ -262,13 +248,10 @@ example {R : Type*} [CommRing R] [CharP R 3] (σ : R) :
 example {K : Type*} [Field K] [CharP K 3] {σ : K} (hu : σ ^ 2 ≠ 5) :
     (model (suyamaA σ) (suyamaB σ)).IsElliptic ↔
       σ * (σ ^ 2 - 1) * (σ ^ 2 - 25) * (σ ^ 2 + 5) ≠ 0 := by
-  have h₃ : (3 : K) = 0 := CharP.ofNat_eq_zero K 3
-  have h₂₅ : σ ^ 2 - 25 = σ ^ 2 - 1 := by linear_combination -8 * h₃
-  have h₅ : σ ^ 2 + 5 = σ ^ 2 - 1 := by linear_combination 2 * h₃
-  have hu' : σ ^ 2 + 1 ≠ 0 := fun h ↦ hu (by linear_combination h - 2 * h₃)
-  have h₁ : σ ^ 4 - 1 = (σ ^ 2 - 1) * (σ ^ 2 + 1) := by ring
-  rw [isElliptic_model_suyama_iff_of_char_three, ← sub_ne_zero (a := σ ^ 4), h₁, h₂₅, h₅]
-  simp only [ne_eq, mul_eq_zero, hu', or_false]
+  have h₂ : (2 : K) ≠ 0 := Ring.two_ne_zero (by rw [ringChar.eq K 3]; decide)
+  have hf : σ ^ 4 - 25 = (σ ^ 2 - 5) * (σ ^ 2 + 5) := by ring
+  rw [isElliptic_model_suyama_iff_suyamaB_ne_zero_of_char_three, suyamaB_ne_zero_iff, hf]
+  simp only [ne_eq, mul_eq_zero, sub_eq_zero, h₂, hu, not_false_eq_true, false_or, true_and]
   tauto
 
 local instance suyamaPrimeThree : Fact (Nat.Prime 3) := ⟨by decide⟩
