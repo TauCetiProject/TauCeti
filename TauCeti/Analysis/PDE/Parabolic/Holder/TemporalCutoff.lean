@@ -99,19 +99,16 @@ private theorem exists_scaled_time_deriv {M : ℝ≥0}
     exact HolderSpace.ofBoundedContinuousFunction_apply _ _ p
   have hut : ‖ut‖ ≤ M / δ :=
     BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity) _
-  refine ⟨v, fun p ↦ by simp [v, ut], ?_, ?_, ?_⟩
-  · simpa only [v, HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction] using hut
-  · have hsemi : nnHolderNorm α (ut : ParabolicSpaceTime.slab (E := E) a b → ℝ) ≤
-        M * (δ ^ (-1 - (α : ℝ) / 2)).toNNReal := by
-      exact_mod_cast coe_nnHolderNorm_le_eHolderNorm.trans huthol.eHolderNorm_le
+  have hsup : ‖v.toBoundedContinuousFunction‖ ≤ M / δ := by
+    simpa only [v, HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction] using hut
+  have hsemi : (nnHolderNorm α (v : ParabolicSpaceTime.slab (E := E) a b → ℝ) : ℝ) ≤
+      M * δ ^ (-1 - (α : ℝ) / 2) := by
     rw [hvfun]
     simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using
-      (NNReal.coe_le_coe.2 hsemi)
-  · have h := HolderSpace.norm_le_of_norm_le_of_holderWith (f := v)
-      (M := (M : ℝ) / δ) (by positivity)
-      (fun p ↦ by rw [hvfun]; exact (ut.norm_coe_le_norm p).trans hut)
-      (by rw [hvfun]; exact huthol)
-    simpa only [NNReal.coe_mul, Real.coe_toNNReal _ (rpow_nonneg hδ.le _)] using h
+      (NNReal.coe_le_coe.2 huthol.nnholderNorm_le)
+  refine ⟨v, fun p ↦ by simp [v, ut], hsup, hsemi, ?_⟩
+  rw [HolderSpace.norm_def, HolderSpace.coe_toBoundedContinuousFunction]
+  exact add_le_add hsup hsemi
 
 /-- **Temporal cutoffs with parabolic scaling.** For `α ≤ 2`, one constant works for every
 transition interval `[s, s + δ]` and every closed time slab. The cutoff is zero before the
@@ -147,9 +144,8 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
     ((contDiff_id.sub contDiff_const).div_const δ)
   have hder (t : ℝ) : HasDerivAt f
       (δ⁻¹ * deriv smoothTransition ((t - s) / δ)) t := by
-    simpa [f, Function.comp_def, div_eq_mul_inv, mul_comm] using
-      (((smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _).hasDerivAt.comp t
-        (((hasDerivAt_id t).sub_const s).div_const δ))
+    simpa [f, div_eq_mul_inv, mul_comm] using
+      (((hasDerivAt_id t).sub_const s).div_const δ).smoothTransition
   -- Bundle the value and time derivative. Their bounds depend on the transition scale,
   -- not on the containing slab; both spatial derivative fields are zero.
   let u : ParabolicSpaceTime.slab (E := E) a b →ᵇ ℝ :=
