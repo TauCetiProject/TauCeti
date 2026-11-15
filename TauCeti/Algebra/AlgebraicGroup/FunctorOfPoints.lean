@@ -49,6 +49,8 @@ the inverse.
   information when `φ` does not.
 * `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
   gives the corresponding constant point.
+* `AlgEquiv.mapValueMulEquiv`: an algebra equivalence of value algebras induces a multiplicative
+  equivalence on convolution monoids, preserving identities and composition.
 
 ## References
 
@@ -235,3 +237,58 @@ noncomputable instance convCommGroupOfSemiring : CommGroup (WithConv (H →ₐ[R
 end CommHopf
 
 end AlgHom
+
+namespace AlgEquiv
+
+variable {R H A B C : Type*} [CommSemiring R] [Semiring H] [_root_.Bialgebra R H]
+  [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B] [CommSemiring C] [Algebra R C]
+
+/-- Covariant functoriality of `A ↦ WithConv (H →ₐ[R] A)` in algebra equivalences: an `R`-algebra
+equivalence `e : A ≃ₐ[R] B` induces a multiplicative equivalence of convolution monoids by
+post-composition. -/
+noncomputable def mapValueMulEquiv (e : A ≃ₐ[R] B) :
+    WithConv (H →ₐ[R] A) ≃* WithConv (H →ₐ[R] B) where
+  toFun := AlgHom.mapValue (e : A →ₐ[R] B)
+  invFun := AlgHom.mapValue (e.symm : B →ₐ[R] A)
+  map_mul' := map_mul _
+  left_inv f := by
+    have h : (AlgHom.mapValue (H := H) (e.symm : B →ₐ[R] A)).comp
+        (AlgHom.mapValue (e : A →ₐ[R] B)) = MonoidHom.id _ := by
+      rw [← AlgHom.mapValue_comp, e.symm_comp, AlgHom.mapValue_id]
+    exact DFunLike.congr_fun h f
+  right_inv f := by
+    have h : (AlgHom.mapValue (H := H) (e : A →ₐ[R] B)).comp
+        (AlgHom.mapValue (e.symm : B →ₐ[R] A)) = MonoidHom.id _ := by
+      rw [← AlgHom.mapValue_comp, e.comp_symm, AlgHom.mapValue_id]
+    exact DFunLike.congr_fun h f
+
+/-- `mapValueMulEquiv e` acts as `AlgHom.mapValue e`. -/
+@[simp]
+lemma mapValueMulEquiv_apply (e : A ≃ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
+    e.mapValueMulEquiv f = AlgHom.mapValue (e : A →ₐ[R] B) f := (rfl)
+
+/-- The inverse of `mapValueMulEquiv e` is `mapValueMulEquiv e.symm`. -/
+@[simp]
+lemma mapValueMulEquiv_symm (e : A ≃ₐ[R] B) :
+    (e.mapValueMulEquiv (H := H)).symm = e.symm.mapValueMulEquiv := (rfl)
+
+/-- Coercing `e.mapValueMulEquiv` to a monoid homomorphism recovers `AlgHom.mapValue e`. -/
+@[simp]
+lemma toMonoidHom_mapValueMulEquiv (e : A ≃ₐ[R] B) :
+    (e.mapValueMulEquiv (H := H) : WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] B)) =
+      AlgHom.mapValue (e : A →ₐ[R] B) := (rfl)
+
+/-- `mapValueMulEquiv` sends the identity algebra equivalence to the identity multiplicative
+equivalence. -/
+@[simp]
+lemma mapValueMulEquiv_refl :
+    (AlgEquiv.refl : A ≃ₐ[R] A).mapValueMulEquiv (H := H) = MulEquiv.refl _ :=
+  MulEquiv.ext fun _ ↦ by simp
+
+/-- `mapValueMulEquiv` respects `AlgEquiv.trans`. -/
+lemma mapValueMulEquiv_trans (e₁ : A ≃ₐ[R] B) (e₂ : B ≃ₐ[R] C) :
+    (e₁.trans e₂).mapValueMulEquiv (H := H) =
+      (e₁.mapValueMulEquiv (H := H)).trans e₂.mapValueMulEquiv :=
+  MulEquiv.ext fun _ ↦ WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ rfl
+
+end AlgEquiv

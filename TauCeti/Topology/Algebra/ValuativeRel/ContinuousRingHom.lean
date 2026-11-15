@@ -54,8 +54,12 @@ Chapter II, Proposition (3.3), for absolute values.
   `TauCeti.isEmbedding_algebraMap_of_valuativeExtension`, and
   `TauCeti.isClosedEmbedding_algebraMap_of_valuativeExtension`: the specializations to algebraic
   compatible extensions.
-* `TauCeti.continuous_algebraMap_integerRing`: continuity of the restriction to the rings of
-  integers.
+* `TauCeti.range_algebraMap_integerRing`,
+  `TauCeti.continuous_algebraMap_integerRing_of_continuous`,
+  `TauCeti.isEmbedding_algebraMap_integerRing_of_isEmbedding`,
+  `TauCeti.isClosedEmbedding_algebraMap_integerRing_of_isClosedEmbedding`, and
+  `TauCeti.continuous_algebraMap_integerRing`: range, continuity, topological embedding, and closed
+  embedding of the restriction to the rings of integers.
 * `RingHom.isEquiv_comap_valuation_of_continuous`: the pullback of the valuation of `L` along a
   continuous `f : K →+* L` is equivalent to the valuation of `K`.
 * `RingHom.map_vle_map_iff_of_continuous`: a continuous `f : K →+* L` satisfies
@@ -181,6 +185,67 @@ theorem TauCeti.isClosedEmbedding_algebraMap_of_valuativeExtension (K L : Type*)
   isClosedEmbedding_algebraMap_of_coinitial K L fun y hy ↦
     (Algebra.IsAlgebraic.isAlgebraic y).exists_ne_zero_vle hy
 
+/-- In a compatible extension of valued rings, an element of `𝒪[A]` comes from `𝒪[R]` if and only
+if its coercion to `A` lies in the image of `R`, since `ValuativeExtension R A` reflects `v ≤ 1`. -/
+theorem TauCeti.range_algebraMap_integerRing (R A : Type*)
+    [CommRing R] [ValuativeRel R] [Ring A] [ValuativeRel A]
+    [Algebra R A] [ValuativeExtension R A] :
+    Set.range (algebraMap (Valuation.integer (valuation R)) (Valuation.integer (valuation A))) =
+      ((↑) : Valuation.integer (valuation A) → A) ⁻¹' Set.range (algebraMap R A) := by
+  refine Set.ext fun y ↦ ⟨?_, fun ⟨a, ha⟩ ↦ ?_⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨x.1, (Valuation.HasExtension.val_algebraMap x).symm⟩
+  · have ha1 : a ∈ Valuation.integer (valuation R) := by
+      rw [Valuation.mem_integer_iff,
+        ← ValuativeExtension.valuation_algebraMap_le_one_iff (A := R) (B := A), ha]
+      exact y.2
+    exact ⟨⟨a, ha1⟩, Subtype.ext ((Valuation.HasExtension.val_algebraMap ⟨a, ha1⟩).trans ha)⟩
+
+/-- If `algebraMap R A` is continuous in a compatible extension of valued rings, so is the induced
+map `algebraMap 𝒪[R] 𝒪[A]` for the subspace topologies. -/
+theorem TauCeti.continuous_algebraMap_integerRing_of_continuous {R A : Type*}
+    [CommRing R] [ValuativeRel R] [TopologicalSpace R]
+    [Ring A] [ValuativeRel A] [TopologicalSpace A]
+    [Algebra R A] [ValuativeExtension R A] (h : Continuous (algebraMap R A)) :
+    Continuous
+      (algebraMap (Valuation.integer (valuation R)) (Valuation.integer (valuation A))) := by
+  refine continuous_induced_rng.2 ?_
+  have hcomp : ((↑) : Valuation.integer (valuation A) → A) ∘ algebraMap _ _ =
+      algebraMap R A ∘ ((↑) : Valuation.integer (valuation R) → R) :=
+    funext Valuation.HasExtension.val_algebraMap
+  rw [hcomp]
+  exact h.comp continuous_subtype_val
+
+/-- If `algebraMap R A` is a topological embedding in a compatible extension of valued rings, so is
+the induced map `algebraMap 𝒪[R] 𝒪[A]` for the subspace topologies. -/
+theorem TauCeti.isEmbedding_algebraMap_integerRing_of_isEmbedding {R A : Type*}
+    [CommRing R] [ValuativeRel R] [TopologicalSpace R]
+    [Ring A] [ValuativeRel A] [TopologicalSpace A]
+    [Algebra R A] [ValuativeExtension R A] (h : IsEmbedding (algebraMap R A)) :
+    IsEmbedding
+      (algebraMap (Valuation.integer (valuation R)) (Valuation.integer (valuation A))) := by
+  refine .of_comp (TauCeti.continuous_algebraMap_integerRing_of_continuous h.continuous)
+    continuous_subtype_val ?_
+  have hcomp : ((↑) : Valuation.integer (valuation A) → A) ∘ algebraMap _ _ =
+      algebraMap R A ∘ ((↑) : Valuation.integer (valuation R) → R) :=
+    funext Valuation.HasExtension.val_algebraMap
+  rw [hcomp]
+  exact h.comp .subtypeVal
+
+/-- If `algebraMap R A` is a closed embedding in a compatible extension of valued rings, so is the
+induced map `algebraMap 𝒪[R] 𝒪[A]` for the subspace topologies. No valuative-topology hypothesis on
+`R` or `A` is needed, because `Set.range (algebraMap 𝒪[R] 𝒪[A])` is the preimage of
+`Set.range (algebraMap R A)` under the continuous inclusion `𝒪[A] → A`. -/
+theorem TauCeti.isClosedEmbedding_algebraMap_integerRing_of_isClosedEmbedding {R A : Type*}
+    [CommRing R] [ValuativeRel R] [TopologicalSpace R]
+    [Ring A] [ValuativeRel A] [TopologicalSpace A]
+    [Algebra R A] [ValuativeExtension R A] (h : IsClosedEmbedding (algebraMap R A)) :
+    IsClosedEmbedding
+      (algebraMap (Valuation.integer (valuation R)) (Valuation.integer (valuation A))) := by
+  refine ⟨TauCeti.isEmbedding_algebraMap_integerRing_of_isEmbedding h.isEmbedding, ?_⟩
+  rw [TauCeti.range_algebraMap_integerRing]
+  exact h.isClosed_range.preimage continuous_subtype_val
+
 /-- The structure map of the rings of integers of an algebraic compatible extension is continuous
 for the subspace topologies. -/
 theorem TauCeti.continuous_algebraMap_integerRing (K L : Type*)
@@ -188,13 +253,9 @@ theorem TauCeti.continuous_algebraMap_integerRing (K L : Type*)
     [Field L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
     [Algebra K L] [ValuativeExtension K L] [Algebra.IsAlgebraic K L] :
     Continuous
-      (algebraMap (Valuation.integer (valuation K)) (Valuation.integer (valuation L))) := by
-  refine continuous_induced_rng.2 ?_
-  have : ((↑) : Valuation.integer (valuation L) → L) ∘ algebraMap _ _ =
-      algebraMap K L ∘ ((↑) : Valuation.integer (valuation K) → K) :=
-    funext Valuation.HasExtension.val_algebraMap
-  rw [this]
-  exact (continuous_algebraMap_of_valuativeExtension K L).comp continuous_subtype_val
+      (algebraMap (Valuation.integer (valuation K)) (Valuation.integer (valuation L))) :=
+  TauCeti.continuous_algebraMap_integerRing_of_continuous
+    (TauCeti.continuous_algebraMap_of_valuativeExtension K L)
 
 section RingHom
 
