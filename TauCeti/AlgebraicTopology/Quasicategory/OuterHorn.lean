@@ -9,40 +9,52 @@ public import TauCeti.AlgebraicTopology.Quasicategory.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 
 /-!
-# Joyal's theorem on special outer horns
+# Joyal's theorem on special outer horns and the Kan core of a quasicategory
 
-In a quasicategory `C`, the outer horns `Λ[n + 2, 0]` cannot be filled in general, but they can
-when their initial edge, from `0` to `1`, is an equivalence. Conversely, an edge all of whose
-outer horns `Λ[n + 2, 0]` can be filled is an equivalence (HTT Proposition 1.2.4.3). Together
-with its dual for the horns `Λ[n + 2, n + 2]`, which is not proved here, this is the input for
-showing that the core of a quasicategory and its right mapping spaces are Kan complexes.
+In a quasicategory `C`, the outer horns `Λ[n + 2, 0]` and `Λ[n + 2, n + 2]` cannot be filled in
+general, but `Λ[n + 2, 0]` can be filled when its initial edge, from `0` to `1`, is an
+equivalence, and `Λ[n + 2, n + 2]` can be filled when its final edge, from `n + 1` to `n + 2`, is
+an equivalence. Conversely, an edge all of whose outer horns `Λ[n + 2, 0]` (or all of whose outer
+horns `Λ[n + 2, n + 2]`) can be filled is an equivalence (HTT Proposition 1.2.4.3). Consequently, a
+quasicategory in which every edge is an equivalence is a Kan complex, and the core `C.core` of a
+quasicategory is a Kan complex — the largest Kan subcomplex of `C` (HTT Proposition 1.2.5.3).
 
-The proof follows Kerodon: under the isomorphism `Δ[1] ⋆ Δ[n] ≅ Δ[n + 2]`, the horn
-`Λ[n + 2, 0]` is the pushout-join `(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`, so filling it amounts to
-lifting an edge, with prescribed source, along the restriction of cones
-`C_{/σ} ⟶ C_{/∂σ}` for the face `σ : Δ[n] ⟶ C` opposite to the vertices `0` and `1`. This
-restriction is a right fibration, and right fibrations lift equivalences with prescribed source.
-The edge to be lifted is an equivalence because its image in `C` is, and the projection
-`C_{/∂σ} ⟶ C` is a right fibration, which reflects equivalences. These facts about right
-fibrations are in `TauCeti.AlgebraicTopology.Quasicategory.RightFibration`, and the lifting
-property of the restriction of cones is `SSet.slice.hasLift_of_isEquivalence`.
+The proof for `Λ[n + 2, 0]` follows Kerodon: under the isomorphism `Δ[1] ⋆ Δ[n] ≅ Δ[n + 2]`, the
+horn `Λ[n + 2, 0]` is the pushout-join `(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`, so filling it amounts
+to lifting an edge, with prescribed source, along the restriction of cones `C_{/σ} ⟶ C_{/∂σ}` for
+the face `σ : Δ[n] ⟶ C` opposite to the vertices `0` and `1`. This restriction is a right
+fibration, and right fibrations lift equivalences with prescribed source. The edge to be lifted is
+an equivalence because its image in `C` is, and the projection `C_{/∂σ} ⟶ C` is a right fibration,
+which reflects equivalences. These facts about right fibrations are in
+`TauCeti.AlgebraicTopology.Quasicategory.RightFibration`, and the lifting property of the
+restriction of cones is `SSet.slice.hasLift_of_isEquivalence`.
 
 Conversely, filling the horns `Λ[2, 0]` and `Λ[3, 0]` with initial edge `e` produces a right
-inverse of `e` and shows that it is also a left inverse.
+inverse of `e` and shows that it is also a left inverse. Passing to the opposite quasicategory
+`Cᵒᵖ` via `SSet.horn.opHomEquiv` gives the dual statements for `Λ[n + 2, n + 2]`.
 
 ## Main results
 
-* `SSet.Quasicategory.hornFilling_zero`: **Joyal's theorem**, a horn `Λ[n + 2, 0]` in a
-  quasicategory whose initial edge is an equivalence can be filled.
-* `SSet.Edge.isEquivalence_iff_hornFilling_zero`: an edge of a quasicategory is an equivalence
-  exactly when every horn `Λ[n + 2, 0]` with that initial edge can be filled.
+* `SSet.Quasicategory.hornFilling_zero`, `SSet.Quasicategory.hornFilling_last`: **Joyal's
+  theorem**, a horn `Λ[n + 2, 0]` (resp. `Λ[n + 2, n + 2]`) in a quasicategory whose initial
+  (resp. final) edge is an equivalence can be filled.
+* `SSet.Edge.isEquivalence_iff_hornFilling_zero`,
+  `SSet.Edge.isEquivalence_iff_hornFilling_last`: an edge of a quasicategory is an equivalence
+  exactly when every horn `Λ[n + 2, 0]` (resp. `Λ[n + 2, n + 2]`) with that initial (resp. final)
+  edge can be filled.
+* `SSet.Quasicategory.kanComplex_of_forall_isEquivalence`,
+  `SSet.kanComplex_iff_quasicategory_and_forall_isEquivalence`: a simplicial set is a Kan complex
+  if and only if it is a quasicategory in which every edge is an equivalence.
+* `SSet.core.kanComplex`, `SSet.isGreatest_kanComplex_core`: the core of a quasicategory is a Kan
+  complex, and it is the largest Kan subcomplex.
 
 ## References
 
-* A. Joyal, *Quasi-categories and Kan complexes*, J. Pure Appl. Algebra 175 (2002), Theorem 1.3.
-* J. Lurie, *Higher Topos Theory*, Proposition 1.2.4.3.
-* J. Lurie, *Kerodon*, Theorem 4.4.2.6, Proposition 4.4.2.11, Proposition 4.4.2.13 and
-  Example 4.4.1.11.
+* A. Joyal, *Quasi-categories and Kan complexes*, J. Pure Appl. Algebra 175 (2002), Theorem 1.3
+  and Corollary 1.4.
+* J. Lurie, *Higher Topos Theory*, Propositions 1.2.4.3 and 1.2.5.3.
+* J. Lurie, *Kerodon*, Theorem 4.4.2.6, Corollary 4.4.2.7, Proposition 4.4.2.11,
+  Proposition 4.4.2.13 and Example 4.4.1.11.
 -/
 
 public section
@@ -121,7 +133,82 @@ theorem hornFilling_zero [Quasicategory C] {n : ℕ} (σ₀ : (Λ[n + 2, 0] : SS
     ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, 0].ι ≫ σ :=
   hornFilling_zero_aux (n + 2) (by omega) σ₀ _ h
 
+/-- Under horn reversal `Λ[n + 2, n + 2] ⟶ C` corresponds to `Λ[n + 2, 0] ⟶ Cᵒᵖ`, sending the
+initial edge of `Λ[n + 2, 0]` to the opposite of the final edge of `Λ[n + 2, n + 2]`. -/
+private lemma opHomEquiv_zero_app_edge {n : ℕ}
+    (σ₀ : (Λ[n + 2, Fin.last (n + 2)] : SSet) ⟶ C) :
+    (horn.opHomEquiv (n + 2) (0 : Fin (n + 3)) σ₀).app _
+      (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
+      C.opObjEquiv.symm (σ₀.app _ (horn.edge (n + 2) (Fin.last (n + 2))
+        (Fin.last (n + 1)).castSucc (Fin.last (n + 2)) (Fin.le_last _) (by simp))) := by
+  have hrev₁ : (1 : Fin (n + 3)).rev = (Fin.last (n + 1)).castSucc := by
+    ext
+    simp
+  refine (horn.opHomEquiv_app_edge (i := (0 : Fin (n + 3))) σ₀ 0 1
+    (Fin.zero_le _) (by simp) (by simp [hrev₁])).trans
+      (congrArg (fun z ↦ C.opObjEquiv.symm (σ₀.app _ z)) ?_)
+  apply Subtype.ext
+  ext k
+  fin_cases k <;> simp [hrev₁]
+
+/-- **Joyal's theorem on special final horns** (HTT Proposition 1.2.4.3): in a quasicategory, a
+horn `Λ[n + 2, n + 2]` whose final edge, from `n + 1` to `n + 2`, is an equivalence can be
+filled. -/
+theorem hornFilling_last [Quasicategory C] {n : ℕ}
+    (σ₀ : (Λ[n + 2, Fin.last (n + 2)] : SSet) ⟶ C)
+    (h : (Edge.mk' (σ₀.app _ (horn.edge (n + 2) (Fin.last (n + 2))
+      (Fin.last (n + 1)).castSucc (Fin.last (n + 2)) (Fin.le_last _) (by simp)))).IsEquivalence) :
+    ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, Fin.last (n + 2)].ι ≫ σ :=
+  (horn.exists_extension_opHomEquiv_iff (i := (0 : Fin (n + 3))) σ₀).1
+    (hornFilling_zero _ (by rwa [opHomEquiv_zero_app_edge, isEquivalence_mk'_opObjEquiv_symm_iff]))
+
+/-- **Joyal's Kan-complex criterion** (Joyal Corollary 1.4, HTT Proposition 1.2.4.3): a
+quasicategory in which every edge is an equivalence is a Kan complex. -/
+theorem kanComplex_of_forall_isEquivalence [Quasicategory C]
+    (h : ∀ s : C _⦋1⦌, (Edge.mk' s).IsEquivalence) : KanComplex C := by
+  rw [KanComplex.iff]
+  intro n i f hf
+  obtain _ | m := n
+  · -- A horn `Λ[1, i]` is a single vertex, filled by precomposing with `stdSimplex.σ 0`.
+    refine ⟨stdSimplex.σ 0 ≫ f i.rev (by fin_cases i <;> decide), fun j hj ↦ ?_⟩
+    fin_cases i <;> fin_cases j
+    · exact absurd rfl hj
+    · exact CosimplicialObject.δ_comp_σ_succ_assoc (X := stdSimplex) (i := (0 : Fin 1)) _
+    · exact CosimplicialObject.δ_comp_σ_self_assoc (X := stdSimplex) (i := (0 : Fin 1)) _
+    · exact absurd rfl hj
+  · have hex : ∃ σ : Δ[m + 2] ⟶ C, hf.desc = Λ[m + 2, i].ι ≫ σ := by
+      by_cases hi0 : i = 0
+      · subst hi0
+        exact hornFilling_zero hf.desc (h _)
+      · by_cases hil : i = Fin.last (m + 2)
+        · subst hil
+          exact hornFilling_last hf.desc (h _)
+        · exact hornFilling (Fin.pos_iff_ne_zero.2 hi0) (lt_of_le_of_ne (Fin.le_last i) hil) hf.desc
+    obtain ⟨σ, hσ⟩ := hex
+    exact ⟨σ, fun j hj ↦ by rw [← horn.ι_ι_assoc i j hj, ← hσ, hf.ι_desc]⟩
+
+/-- A quasicategory is a Kan complex if and only if its core is everything. -/
+theorem kanComplex_iff_core_eq_top [Quasicategory C] : KanComplex C ↔ C.core = ⊤ :=
+  ⟨fun _ ↦ core_eq_top, fun h ↦ kanComplex_of_forall_isEquivalence (core_eq_top_iff.1 h)⟩
+
 end Quasicategory
+
+/-- A simplicial set is a Kan complex if and only if it is a quasicategory in which every edge is
+an equivalence. -/
+theorem kanComplex_iff_quasicategory_and_forall_isEquivalence {C : SSet.{u}} :
+    KanComplex C ↔ Quasicategory C ∧ ∀ s : C _⦋1⦌, (Edge.mk' s).IsEquivalence :=
+  ⟨fun _ ↦ ⟨inferInstance, fun _ ↦ isEquivalence_of_kanComplex _⟩,
+    fun ⟨_, h⟩ ↦ have := ‹Quasicategory C›; Quasicategory.kanComplex_of_forall_isEquivalence h⟩
+
+/-- The core of a quasicategory is a Kan complex (HTT Proposition 1.2.5.3). -/
+instance core.kanComplex {C : SSet.{u}} [Quasicategory C] : KanComplex (C.core : SSet) :=
+  Quasicategory.kanComplex_of_forall_isEquivalence fun _ ↦ core.isEquivalence _
+
+/-- The core of a quasicategory `C` is the largest Kan subcomplex of `C`
+(HTT Proposition 1.2.5.3). -/
+theorem isGreatest_kanComplex_core {C : SSet.{u}} [Quasicategory C] :
+    IsGreatest {A : C.Subcomplex | KanComplex (A : SSet)} C.core :=
+  ⟨core.kanComplex, fun A hA ↦ have : KanComplex (A : SSet) := hA; le_core_of_kanComplex A⟩
 
 namespace Edge
 
@@ -221,6 +308,23 @@ theorem isEquivalence_iff_hornFilling_zero [Quasicategory C] (e : Edge x y) :
   obtain ⟨g, ⟨c₁⟩⟩ := exists_compStruct_id_of_hornFilling_zero e (H 0)
   obtain ⟨c₂⟩ := nonempty_compStruct_id_of_hornFilling_zero c₁ (H 1)
   exact InvStruct.isEquivalence { inv := g, homInvId := c₁, invHomId := c₂ }
+
+/-- **Joyal's characterization of equivalences by special final horns** (HTT Proposition
+1.2.4.3): an edge `e` of a quasicategory is an equivalence exactly when every horn
+`Λ[n + 2, n + 2]` whose final edge is `e` can be filled. -/
+theorem isEquivalence_iff_hornFilling_last [Quasicategory C] (e : Edge x y) :
+    e.IsEquivalence ↔ ∀ (n : ℕ) (σ₀ : (Λ[n + 2, Fin.last (n + 2)] : SSet) ⟶ C),
+      σ₀.app _ (horn.edge (n + 2) (Fin.last (n + 2)) (Fin.last (n + 1)).castSucc
+        (Fin.last (n + 2)) (Fin.le_last _) (by simp)) = e.edge →
+        ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, Fin.last (n + 2)].ι ≫ σ := by
+  refine ⟨fun he n σ₀ h ↦ Quasicategory.hornFilling_last σ₀
+    ((isEquivalence_iff_of_edge_eq (e := mk' _) (e' := e) h).2 he), fun H ↦ ?_⟩
+  rw [← isEquivalence_opEquiv_iff, isEquivalence_iff_hornFilling_zero]
+  intro n τ₀ hτ₀
+  obtain ⟨σ₀ : (Λ[n + 2, Fin.last (n + 2)] : SSet) ⟶ C, rfl⟩ :=
+    (horn.opHomEquiv (n + 2) (0 : Fin (n + 3))).surjective τ₀
+  rw [Quasicategory.opHomEquiv_zero_app_edge, opEquiv_edge, Equiv.apply_eq_iff_eq] at hτ₀
+  exact (horn.exists_extension_opHomEquiv_iff (i := (0 : Fin (n + 3))) σ₀).2 (H n σ₀ hτ₀)
 
 end Edge
 
