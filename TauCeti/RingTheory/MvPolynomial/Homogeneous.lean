@@ -32,10 +32,11 @@ degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient van
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
 polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`, and `hp.not_dvd_X` records that over a domain a homogeneous polynomial of degree at least
-two divides no variable. Without zero divisors, the factors of a nonzero homogeneous product are
-homogeneous (`hp.of_mul_left`, `hp.of_mul_right`). `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`
-restates the expansion of values for `eval` on elements of `homogeneousSubmodule`.
+by `d`, and `hp.not_dvd_X` records that without zero divisors a homogeneous polynomial of degree at
+least two divides no variable. Without zero divisors, the factors of a homogeneous product are
+homogeneous when the other factor is nonzero (`hp.of_mul_left`, `hp.of_mul_right`).
+`TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for `eval` on
+elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -44,7 +45,9 @@ homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq
 degree-one component of a polynomial in finitely many variables as the linear form
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 The top component of a nonzero polynomial is nonzero
-(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`). With no variables every homogeneous
+(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`), and a polynomial of total degree at
+most `m` is the sum of its components of degree at most `m`
+(`MvPolynomial.sum_homogeneousComponent_of_totalDegree_le`). With no variables every homogeneous
 polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
@@ -170,8 +173,10 @@ theorem aeval_eq_sum_finsuppAntidiag {σ R S : Type*} [Fintype σ] [DecidableEq 
     exact (hp.degree_eq_sum_deg_support hl).symm
   · rw [notMem_support_iff.mp hl, map_zero, zero_mul]
 
-/-- Over a domain, a homogeneous polynomial of degree at least two divides none of the variables. -/
-theorem not_dvd_X {σ R : Type*} [CommRing R] [IsDomain R] {p : MvPolynomial σ R} {n : ℕ}
+/-- Without zero divisors, a homogeneous polynomial of degree at least two divides none of the
+variables. -/
+theorem not_dvd_X {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] [Nontrivial R]
+    {p : MvPolynomial σ R} {n : ℕ}
     (hp : p.IsHomogeneous n) (hn : 2 ≤ n) (i : σ) : ¬ p ∣ _root_.MvPolynomial.X i := by
   rintro ⟨q, hq⟩
   have hq0 : q ≠ 0 := by rintro rfl; simp at hq
@@ -181,12 +186,13 @@ theorem not_dvd_X {σ R : Type*} [CommRing R] [IsDomain R] {p : MvPolynomial σ 
     hp.totalDegree hp0] at this
   omega
 
-/-- Without zero divisors, the left factor of a nonzero homogeneous product is homogeneous, of
-degree its total degree. -/
+/-- Without zero divisors, the left factor of a homogeneous product with nonzero right factor is
+homogeneous, of degree its total degree. -/
 theorem of_mul_left {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
-    {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : p.IsHomogeneous p.totalDegree := by
-  have hp : p ≠ 0 := left_ne_zero_of_mul hpq
-  have hq : q ≠ 0 := right_ne_zero_of_mul hpq
+    {n : ℕ} (h : (p * q).IsHomogeneous n) (hq : q ≠ 0) : p.IsHomogeneous p.totalDegree := by
+  obtain rfl | hp := eq_or_ne p 0
+  · exact isHomogeneous_zero _ _ _
+  have hpq : p * q ≠ 0 := mul_ne_zero hp hq
   have hweight (s : σ →₀ ℕ) : Finsupp.weight 1 s = s.degree := by
     rw [Pi.one_def, ← Finsupp.degree_eq_weight_one]
   -- As a power series, a polynomial has order at most the degree of each of its monomials, hence
@@ -226,11 +232,11 @@ theorem of_mul_left {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : Mv
   rw [hweight]
   omega
 
-/-- Without zero divisors, the right factor of a nonzero homogeneous product is homogeneous, of
-degree its total degree. -/
+/-- Without zero divisors, the right factor of a homogeneous product with nonzero left factor is
+homogeneous, of degree its total degree. -/
 theorem of_mul_right {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
-    {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : q.IsHomogeneous q.totalDegree :=
-  of_mul_left (mul_comm p q ▸ h) (mul_comm p q ▸ hpq)
+    {n : ℕ} (h : (p * q).IsHomogeneous n) (hp : p ≠ 0) : q.IsHomogeneous q.totalDegree :=
+  of_mul_left (mul_comm p q ▸ h) hp
 
 end MvPolynomial.IsHomogeneous
 
@@ -275,6 +281,15 @@ theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p
   rw [component_eq]
   simpa only [weightInitialForm_def, weightedTotalDegree_one] using
     (weightInitialForm_eq_zero_iff (1 : σ → ℕ) p).not.mpr hp
+
+/-- A polynomial of total degree at most `m` is the sum of its homogeneous components of degree
+at most `m`. -/
+theorem sum_homogeneousComponent_of_totalDegree_le {φ : MvPolynomial σ R} {m : ℕ}
+    (h : φ.totalDegree ≤ m) :
+    ∑ d ∈ Finset.range (m + 1), homogeneousComponent d φ = φ := by
+  conv_rhs => rw [← sum_homogeneousComponent φ]
+  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun d _ hd ↦ ?_).symm
+  exact homogeneousComponent_eq_zero d φ (by simpa using hd)
 
 /-- The degree-one component of a polynomial in finitely many variables is the linear form whose
 coefficient of `X i` is the coefficient of `X i` in the polynomial. -/

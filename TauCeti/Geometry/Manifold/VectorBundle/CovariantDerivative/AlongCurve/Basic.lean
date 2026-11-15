@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -506,6 +507,23 @@ theorem alongCurve_comp (φ : 𝕜 → 𝕜) {t : 𝕜} (hφ : DifferentiableAt 
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← derivWithin_univ]
   exact alongCurveWithin_comp cov γ V φ hφ.differentiableWithinAt (Set.mapsTo_univ φ Set.univ)
     hγ.differentiableWithinAt hV.differentiableWithinAt
+
+/-- Reflecting the parameter negates the covariant derivative of a transported field, without
+regularity assumptions on the curve or field. -/
+theorem alongCurve_comp_const_sub (d t : 𝕜) :
+    alongCurve cov (fun r ↦ γ (d - r)) (fun r ↦ V (d - r)) t =
+      -alongCurve cov γ V (d - t) := by
+  have hcoord : sectionCoord (F := E) (fun r ↦ γ (d - r)) (fun r ↦ V (d - r)) (γ (d - t)) =
+      fun r ↦ sectionCoord (F := E) γ V (γ (d - t)) (d - r) := by
+    simpa only [Function.comp_def] using sectionCoord_comp (F := E) γ V
+      (fun r ↦ d - r) (γ (d - t))
+  have hchart : deriv (extChartAt I (γ (d - t)) ∘ fun r ↦ γ (d - r)) t =
+      -deriv (extChartAt I (γ (d - t)) ∘ γ) (d - t) := by
+    simpa only [Function.comp_def] using
+      deriv_comp_const_sub (extChartAt I (γ (d - t)) ∘ γ) d t
+  rw [alongCurve_apply, alongCurve_apply, alongCurveInChartWithin_apply,
+    alongCurveInChartWithin_apply, hcoord]
+  simp only [derivWithin_univ, hchart, deriv_comp_const_sub, map_neg, ← neg_add]
 
 /-! ### Finite sums -/
 
