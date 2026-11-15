@@ -13,8 +13,9 @@ public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 # Subgraphs of graphs associated to simple graphs
 
 This file identifies a subgraph of a simple graph `G` with a subgraph of the edge-labelled graph
-`Graph.ofSimpleGraph G`. The conversions preserve vertex and edge sets and adjacency; the forward
-conversion also preserves inclusion, singleton subgraphs, and the full subgraph.
+`Graph.ofSimpleGraph G`. The conversions are mutually inverse, preserve and reflect inclusion, and
+preserve vertex and edge sets and adjacency; the forward conversion also preserves singleton
+subgraphs and the full subgraph.
 -/
 
 public section
@@ -72,7 +73,7 @@ theorem toGraph_le (H : G.Subgraph) : H.toGraph ≤ Graph.ofSimpleGraph G := by
   exact ⟨he.1, he.1 ▸ G.mem_edgeSet.mpr (H.adj_sub he.2)⟩
 
 @[simp]
-theorem adj_toGraph (H : G.Subgraph) (x y : V) : H.toGraph.Adj x y ↔ H.Adj x y := by
+theorem toGraph_adj (H : G.Subgraph) (x y : V) : H.toGraph.Adj x y ↔ H.Adj x y := by
   simp [Graph.Adj]
 
 /-- Inclusion of simple-graph subgraphs is preserved by the edge-labelled representation. -/
@@ -158,6 +159,13 @@ theorem toSubgraphOfSimpleGraph_ofSimpleGraph :
     (Graph.ofSimpleGraph G).toSubgraphOfSimpleGraph le_rfl = (⊤ : G.Subgraph) := by
   ext <;> simp
 
+/-- Inclusion of subgraphs of `Graph.ofSimpleGraph G` is preserved by the simple-graph
+representation. -/
+theorem toSubgraphOfSimpleGraph_mono {K L : Graph V (Sym2 V)} (hKL : K ≤ L)
+    (hK : K ≤ Graph.ofSimpleGraph G) (hL : L ≤ Graph.ofSimpleGraph G) :
+    K.toSubgraphOfSimpleGraph hK ≤ L.toSubgraphOfSimpleGraph hL :=
+  ⟨hKL.vertexSet_mono, fun _ _ hxy ↦ hxy.mono hKL⟩
+
 @[simp]
 theorem toSubgraphOfSimpleGraph_noEdge_singleton (v : V)
     (h : Graph.noEdge {v} (Sym2 V) ≤ Graph.ofSimpleGraph G) :
@@ -188,4 +196,34 @@ theorem toGraph_injective (G : SimpleGraph V) :
   · have hlink := congrArg (fun L : Graph V (Sym2 V) ↦ L.IsLink s(x, y) x y) h
     simpa using hlink
 
+@[simp]
+theorem toGraph_inj {H K : G.Subgraph} : H.toGraph = K.toGraph ↔ H = K :=
+  (toGraph_injective G).eq_iff
+
+@[simp]
+theorem toGraph_le_toGraph {H K : G.Subgraph} : H.toGraph ≤ K.toGraph ↔ H ≤ K := by
+  refine ⟨fun h ↦ ⟨?_, fun x y hxy ↦ ?_⟩, toGraph_mono⟩
+  · simpa using h.vertexSet_mono
+  · simpa using (H.toGraph_adj x y |>.mpr hxy).mono h
+
 end SimpleGraph.Subgraph
+
+namespace Graph
+
+variable {V : Type u} {G : SimpleGraph V}
+
+@[simp]
+theorem toSubgraphOfSimpleGraph_le_toSubgraphOfSimpleGraph {K L : Graph V (Sym2 V)}
+    {hK : K ≤ Graph.ofSimpleGraph G} {hL : L ≤ Graph.ofSimpleGraph G} :
+    K.toSubgraphOfSimpleGraph hK ≤ L.toSubgraphOfSimpleGraph hL ↔ K ≤ L := by
+  rw [← SimpleGraph.Subgraph.toGraph_le_toGraph, toGraph_toSubgraphOfSimpleGraph,
+    toGraph_toSubgraphOfSimpleGraph]
+
+@[simp]
+theorem toSubgraphOfSimpleGraph_inj {K L : Graph V (Sym2 V)}
+    {hK : K ≤ Graph.ofSimpleGraph G} {hL : L ≤ Graph.ofSimpleGraph G} :
+    K.toSubgraphOfSimpleGraph hK = L.toSubgraphOfSimpleGraph hL ↔ K = L := by
+  rw [← SimpleGraph.Subgraph.toGraph_inj, toGraph_toSubgraphOfSimpleGraph,
+    toGraph_toSubgraphOfSimpleGraph]
+
+end Graph

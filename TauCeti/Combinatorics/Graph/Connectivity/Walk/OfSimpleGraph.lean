@@ -171,8 +171,8 @@ theorem toGraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
 @[simp]
 theorem toSubgraphOfSimpleGraph_walkGraph
     (p : (Graph.ofSimpleGraph H).Walk x y)
-    (hx : x ∈ (Graph.ofSimpleGraph H).vertexSet) :
-    ((Graph.ofSimpleGraph H).walkGraph p).toSubgraphOfSimpleGraph (p.walkGraph_le hx) =
+    (h : (Graph.ofSimpleGraph H).walkGraph p ≤ Graph.ofSimpleGraph H) :
+    ((Graph.ofSimpleGraph H).walkGraph p).toSubgraphOfSimpleGraph h =
       p.toSimpleGraph.toSubgraph := by
   apply SimpleGraph.Subgraph.toGraph_injective H
   simp
