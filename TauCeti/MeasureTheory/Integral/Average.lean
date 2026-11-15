@@ -466,6 +466,24 @@ theorem laverage_const_mul {c : ℝ≥0∞} (hc : c ≠ ∞) (f : X → ℝ≥0�
     ⨍⁻ x, c * f x ∂μ = c * ⨍⁻ x, f x ∂μ := by
   rw [laverage_eq, laverage_eq, lintegral_const_mul' _ _ hc, mul_div_assoc]
 
+/-- Adding a constant raises the lower average by at most that constant. -/
+theorem laverage_add_const_le (f : X → ℝ≥0∞) (c : ℝ≥0∞) :
+    ⨍⁻ x, (f x + c) ∂μ ≤ ⨍⁻ x, f x ∂μ + c := by
+  rw [laverage_eq, laverage_eq, lintegral_add_right _ measurable_const, lintegral_const,
+    ENNReal.add_div]
+  gcongr
+  rw [mul_div_assoc]
+  exact mul_le_of_le_one_right' ENNReal.div_self_le_one
+
+/-- The average of `‖f - c‖ₑ` over a set is at most the average of `‖f - d‖ₑ` plus `‖d - c‖ₑ`, for
+constants `c` and `d`. -/
+theorem setLAverage_enorm_sub_le_setLAverage_enorm_sub_add_enorm_sub {F : Type*}
+    [NormedAddCommGroup F] (f : X → F) (s : Set X) (c d : F) :
+    ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ ≤ ⨍⁻ x in s, ‖f x - d‖ₑ ∂μ + ‖d - c‖ₑ :=
+  (setLAverage_mono_ae s (ae_of_all _ fun x => by
+    simpa only [eDist_eq_eNorm_sub] using edist_triangle (f x) d c)).trans
+    (laverage_add_const_le _ _)
+
 /-- For `0 < p < ∞`, the `p`-th root of the lower average of `‖f‖ₑ ^ p` is the `Lᵖ` seminorm of
 `f` divided by the `p`-th root of the total mass. -/
 theorem laverage_rpow_enorm_rpow_inv_eq {F : Type*} [NormedAddCommGroup F] {f : X → F}
