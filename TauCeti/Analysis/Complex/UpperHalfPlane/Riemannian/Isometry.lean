@@ -115,45 +115,38 @@ namespace TauCeti.UpperHalfPlane
 
 open _root_.UpperHalfPlane
 
-/-- An element of `GL(2, ℝ)` acts on `ℍ` as a smooth Riemannian isometry of the Poincaré metric. -/
-private def glIsom (g : GL (Fin 2) ℝ) : Isom 𝓘(ℝ, ℂ) ℍ where
-  toDiffeomorph := Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g
-  inner_mfderiv' z v w := by
-    rw [Diffeomorph.coe_constSmul, (g • z).inner_tangentSpace, z.inner_tangentSpace,
-      z.tangentSpaceCastModel_mfderiv_smul g v, z.tangentSpaceCastModel_mfderiv_smul g w]
-    exact z.inner_smulFDeriv_div_im_sq g _ _
-
-@[simp]
-private theorem glIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : glIsom g z = g • z := by
-  rw [← RiemannianIsometry.coe_toDiffeomorph]
-  exact Diffeomorph.constSmul_apply (I := 𝓘(ℝ, ℂ)) (n := ∞) g z
-
 /-- The group homomorphism sending each element of `GL(2, ℝ)` to the Riemannian isometry it induces
 on the Poincaré upper half-plane `ℍ`. Positive-determinant matrices act holomorphically and
 negative-determinant matrices act antiholomorphically. -/
 def glToIsom : GL (Fin 2) ℝ →* Isom 𝓘(ℝ, ℂ) ℍ where
-  toFun := glIsom
+  toFun g :=
+    { toDiffeomorph := Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g
+      inner_mfderiv' z v w := by
+        rw [Diffeomorph.coe_constSmul, (g • z).inner_tangentSpace, z.inner_tangentSpace,
+          z.tangentSpaceCastModel_mfderiv_smul g v, z.tangentSpaceCastModel_mfderiv_smul g w]
+        exact z.inner_smulFDeriv_div_im_sq g _ _ }
   map_one' := by
     ext z
-    simp
+    simp [← RiemannianIsometry.coe_toDiffeomorph]
   map_mul' g h := by
     ext z
-    simp [mul_smul]
-
-/-- `glToIsom g` acts on `ℍ` by `g • z`. -/
-@[simp]
-theorem glToIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : glToIsom g z = g • z :=
-  glIsom_apply g z
-
-/-- The inverse of `glToIsom g` acts on `ℍ` by `g⁻¹ • z`. -/
-@[simp]
-theorem glToIsom_symm_apply (g : GL (Fin 2) ℝ) (z : ℍ) : (glToIsom g).symm z = g⁻¹ • z := by
-  rw [← RiemannianIsometry.inv_apply, ← map_inv, glToIsom_apply]
+    simp [← RiemannianIsometry.coe_toDiffeomorph, mul_smul]
 
 /-- The underlying diffeomorphism of `glToIsom g` is `Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g`. -/
 @[simp]
 theorem toDiffeomorph_glToIsom (g : GL (Fin 2) ℝ) :
     (glToIsom g).toDiffeomorph = Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g := (rfl)
+
+/-- `glToIsom g` acts on `ℍ` by `g • z`. -/
+@[simp]
+theorem glToIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : glToIsom g z = g • z := by
+  rw [← RiemannianIsometry.coe_toDiffeomorph, toDiffeomorph_glToIsom]
+  exact Diffeomorph.constSmul_apply (I := 𝓘(ℝ, ℂ)) (n := ∞) g z
+
+/-- The inverse of `glToIsom g` acts on `ℍ` by `g⁻¹ • z`. -/
+@[simp]
+theorem glToIsom_symm_apply (g : GL (Fin 2) ℝ) (z : ℍ) : (glToIsom g).symm z = g⁻¹ • z := by
+  rw [← RiemannianIsometry.inv_apply, ← map_inv, glToIsom_apply]
 
 /-- The group homomorphism sending each element of `PGL(2, ℝ)` to the Riemannian isometry it
 induces on the Poincaré upper half-plane `ℍ`. -/

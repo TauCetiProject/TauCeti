@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Distance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 
@@ -41,9 +42,9 @@ with two-point transitivity of `PSL(2, ℝ)` on parametrised geodesic lines
   `geodesicLine g`. Its Riemannian length on `[0, dist z w]` is `ENNReal.ofReal (dist z w) =
   edist z w`, giving `riemannianEDist 𝓘(ℝ, ℂ) z w ≤ edist z w`.
 
-Identifying `edist` with `riemannianEDist` immediately implies that
-`TauCeti.MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ` equals Mathlib's `MetricSpace ℍ`
-(`metricSpace_ofRiemannianMetric_eq`), and therefore inherits completeness from `ProperSpace ℍ`
+Identifying `edist` with `riemannianEDist` immediately implies via
+`TauCeti.MetricSpace.ofRiemannianMetric_eq` that `TauCeti.MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ`
+equals Mathlib's `MetricSpace ℍ`, and therefore inherits completeness from `ProperSpace ℍ`
 (`completeSpace_of_riemannianMetric`).
 
 ## Main results
@@ -55,11 +56,9 @@ Identifying `edist` with `riemannianEDist` immediately implies that
   `TauCeti.UpperHalfPlane.pathELength_geodesicLine`: every `geodesicLine g` is real-analytic and
   unit-speed for the Poincaré metric, of Riemannian length `ENNReal.ofReal (b - a)` on `[a, b]`.
 * `TauCeti.isRiemannianManifold_upperHalfPlane`: `IsRiemannianManifold 𝓘(ℝ, ℂ) ℍ`, with `simp`
-  lemma `UpperHalfPlane.riemannianEDist_eq_edist` and real-valued corollary
-  `UpperHalfPlane.toReal_riemannianEDist_eq_dist`.
-* `TauCeti.UpperHalfPlane.metricSpace_ofRiemannianMetric_eq` and
-  `TauCeti.UpperHalfPlane.completeSpace_of_riemannianMetric`: the metric-space structure induced by
-  the Poincaré metric coincides with Mathlib's `MetricSpace ℍ` and is complete.
+  lemma `UpperHalfPlane.riemannianEDist_eq_edist`.
+* `TauCeti.UpperHalfPlane.completeSpace_of_riemannianMetric`: the metric-space structure induced by
+  the Poincaré metric is complete.
 
 ## References
 
@@ -80,12 +79,9 @@ namespace UpperHalfPlane
 
 private theorem norm_mfderiv_logIm_le (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
     ‖mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z v‖ ≤ (1 : ℝ≥0) * ‖v‖ := by
-  have hcast : ‖mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z v‖ =
-      ‖tangentSpaceCastModel 𝓘(ℝ, ℝ) (Real.log z.im)
-        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z v)‖ :=
-    norm_tangentSpace_vectorSpace
-  rw [hcast, ((TauCeti.UpperHalfPlane.contMDiff_log_im (n := ∞) z).mdifferentiableAt (by simp)
-    |>.tangentSpaceCastModel_mfderiv_apply v)]
+  rw [norm_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace,
+    ((TauCeti.UpperHalfPlane.contMDiff_log_im (n := ∞) z).mdifferentiableAt (by simp)
+      |>.tangentSpaceCastModel_mfderiv_apply v)]
   have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) z (fun w : ℍ ↦ Real.log w.im)
       =ᶠ[nhds (z : ℂ)] fun w : ℂ ↦ Real.log w.im := by
     filter_upwards [z.writtenInExtChartAt_eventuallyEq 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im),
@@ -149,8 +145,8 @@ private theorem norm_mfderiv_geodesicLine_one (t : ℝ) (v : TangentSpace 𝓘(�
     ((Real.hasDerivAt_exp t).ofReal_comp.mul_const Complex.I).hasFDerivAt
   have him : (geodesicLine (1 : PSL(2, ℝ)) t).im = Real.exp t := by
     simp [geodesicLine_one_apply]
-  have hv : ‖tangentSpaceCastModel 𝓘(ℝ, ℝ) t v‖ = ‖v‖ :=
-    (norm_tangentSpace_vectorSpace (x := t) (v := v)).symm
+  have hv : ‖tangentSpaceCastModel 𝓘(ℝ, ℝ) t v‖ = ‖v‖ := by
+    rw [norm_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace]
   rw [hwritten, hchart, hfderiv.fderiv]
   simp [him, hv, Real.exp_ne_zero t]
 
@@ -171,7 +167,9 @@ theorem norm_mfderiv_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) (v : TangentSpace 
 theorem norm_curveVelocity_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) :
     ‖Manifold.curveVelocity 𝓘(ℝ, ℂ) (geodesicLine g) t‖ = 1 := by
   rw [Manifold.curveVelocity_apply]
-  exact (norm_mfderiv_geodesicLine g t _).trans (norm_tangentSpace_vectorSpace.trans norm_one)
+  exact (norm_mfderiv_geodesicLine g t _).trans <|
+    norm_tangentSpace_vectorSpace.trans <|
+      (congrArg norm (NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) t _)).trans norm_one
 
 /-- On any interval `[a, b]`, `geodesicLine g` has Poincaré path length `ENNReal.ofReal (b - a)`
 (which is `0` when `b < a`). -/
@@ -224,20 +222,9 @@ theorem riemannianEDist_eq_edist (z w : ℍ) :
     Manifold.riemannianEDist 𝓘(ℝ, ℂ) z w = edist z w :=
   (IsRiemannianManifold.out (I := 𝓘(ℝ, ℂ)) z w).symm
 
-/-- The real value of the Riemannian extended distance on `ℍ` equals Mathlib's hyperbolic `dist`. -/
-theorem toReal_riemannianEDist_eq_dist (z w : ℍ) :
-    (Manifold.riemannianEDist 𝓘(ℝ, ℂ) z w).toReal = dist z w :=
-  (TauCeti.IsRiemannianManifold.dist_eq_toReal_riemannianEDist 𝓘(ℝ, ℂ) z w).symm
-
 end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
-
-/-- The metric-space structure `MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ` induced by the Poincaré
-Riemannian metric equals Mathlib's `MetricSpace ℍ`. -/
-theorem metricSpace_ofRiemannianMetric_eq :
-    MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ = (inferInstance : MetricSpace ℍ) :=
-  MetricSpace.ofRiemannianMetric_eq 𝓘(ℝ, ℂ) ℍ
 
 /-- The Riemannian distance of the Poincaré metric on `ℍ` is complete, matching the `complete`
 field of `TauCeti.HyperbolicMetric`. -/

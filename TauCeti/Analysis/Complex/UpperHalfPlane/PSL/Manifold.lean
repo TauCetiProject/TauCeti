@@ -105,10 +105,8 @@ instance instContMDiffConstSMulPGLReal {n : ℕ∞ω} :
 
 /-- Every element of `SL(2, R)` acts on `ℍ` by a real-analytic map. -/
 instance instContMDiffConstSMulSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :
-    ContMDiffConstSMul 𝓘(ℝ, ℂ) n SL(2, R) ℍ where
-  contMDiff_const_smul g := by
-    simpa only [MulAction.compHom_smul_def] using
-      contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := n) (Matrix.SpecialLinearGroup.mapGL ℝ g)
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n SL(2, R) ℍ :=
+  MulAction.contMDiffConstSMul_compHom (I := 𝓘(ℝ, ℂ)) (f := Matrix.SpecialLinearGroup.mapGL ℝ)
 
 /-- Every element of `PSL(2, R)` acts on `ℍ` by a real-analytic map. -/
 instance instContMDiffConstSMulPSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :

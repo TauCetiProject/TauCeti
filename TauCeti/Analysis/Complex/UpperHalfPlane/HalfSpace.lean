@@ -58,8 +58,8 @@ with the Riemannian distance of the Poincaré metric, `upperHalfSpaceIsometry` u
 * `TauCeti.UpperHalfPlane.hasConstantSectionalCurvature` and
   `UpperHalfPlane.curvatureTensor_eq`: constant curvature `−1` of the Poincaré metric.
 * `TauCeti.UpperHalfPlane.isHyperbolic`: `IsHyperbolic (I := 𝓘(ℝ, ℂ)) (M := ℍ)`.
-* `TauCeti.UpperHalfPlane.riemannianEDist_upperHalfSpace_eq_edist_symm`: comparison of Mathlib's
-  hyperbolic distance on `ℍ` with `riemannianEDist` on `UpperHalfSpace ℝ`.
+* `TauCeti.UpperHalfPlane.riemannianEDist_eq_edist_upperHalfSpaceIsometry_symm`: comparison of
+  Mathlib's hyperbolic distance on `ℍ` with `riemannianEDist` on `UpperHalfSpace ℝ`.
 
 ## References
 
@@ -380,7 +380,7 @@ theorem pslToUpperHalfSpaceIsom_injective {R : Type*} [CommRing R] [Algebra R �
 
 /-- The Riemannian extended distance on `UpperHalfSpace ℝ` equals Mathlib's `edist` pulled back
 along `upperHalfSpaceIsometry.symm`. -/
-theorem riemannianEDist_upperHalfSpace_eq_edist_symm (p q : UpperHalfSpace ℝ) :
+theorem riemannianEDist_eq_edist_upperHalfSpaceIsometry_symm (p q : UpperHalfSpace ℝ) :
     Manifold.riemannianEDist 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) p q =
       edist (upperHalfSpaceIsometry.symm p) (upperHalfSpaceIsometry.symm q) :=
   (upperHalfSpaceIsometry.symm.riemannianEDist_eq p q).symm.trans
