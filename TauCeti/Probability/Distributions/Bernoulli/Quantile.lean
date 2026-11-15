@@ -6,19 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Bernoulli.Cdf
+public import TauCeti.Probability.Distributions.Bernoulli.Support
 public import TauCeti.Probability.Quantile
-public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
 # Quantiles of Bernoulli laws
 
-At an interior probability level `u`, the lower quantile of the real Bernoulli law is zero
-when `u ≤ 1 - p`, and one otherwise. In particular the level at the cumulative jump belongs
-to the lower branch. The formula includes the Dirac boundaries `p = 0` and `p = 1`.
+A real Bernoulli law `Ber(a, b, p)` puts mass `p` on `a` and mass `1 - p` on `b`. At an interior
+probability level `u`, its lower quantile is the lower atom through the cumulative mass of that
+atom, and the upper atom above it; the level at the cumulative jump belongs to the lower branch.
+The formula is stated separately for the two orders of the atoms and includes coincident atoms
+and the Dirac boundaries `p = 0` and `p = 1`. For the standard law `Ber(1, 0, p)` the quantile is
+zero when `u ≤ 1 - p` and one otherwise.
 
-The one-sided endpoint limits in `EReal` are the endpoints of the actual support: the lower
-endpoint is one at `p = 1` and zero otherwise, while the upper endpoint is zero at `p = 0`
-and one otherwise. The proofs use the cdf formula and the measure-level quantile adjunction.
+The one-sided endpoint limits in `EReal` are the endpoints of the actual support: at the Dirac
+boundaries both are the single atom carrying all the mass, and otherwise they are the minimum
+and the maximum of the two atoms. These need no order between the atoms, and they specialise
+`MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero` and
+`MeasureTheory.Measure.tendsto_quantile_nhdsLT_one`, which identify the one-sided limits of the
+lower quantile at `0` and `1` with the infimum and supremum of the support of any probability
+measure on the real line.
 -/
 
 public section
@@ -30,51 +37,54 @@ open scoped ProbabilityTheory
 
 namespace TauCeti.Probability
 
-variable {p : unitInterval} {u : ℝ}
+variable {a b : ℝ} {p : unitInterval} {u : ℝ}
 
-/-- The lower quantile of a Bernoulli law is zero through cumulative mass `1 - p` and one
-above it, including the probability-zero and probability-one boundaries. -/
+/-- The lower quantile of a Bernoulli law whose failure atom `b` lies below its success atom `a`
+is `b` through cumulative mass `1 - p` and `a` above it, including coincident atoms and the
+probability-zero and probability-one boundaries. -/
 @[simp]
-theorem quantile_bernoulliMeasure (hu : u ∈ Ioo 0 1) :
-    Ber((1 : ℝ), 0, p).quantile u = if u ≤ 1 - (p : ℝ) then 0 else 1 := by
+theorem quantile_bernoulliMeasure_of_ge (hba : b ≤ a) (hu : u ∈ Ioo 0 1) :
+    Ber(a, b, p).quantile u = if u ≤ 1 - (p : ℝ) then b else a := by
+  refine eq_of_forall_lt_iff fun x ↦ ?_
+  rw [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_bernoulliMeasure]
+  split_ifs <;> grind
+
+/-- The lower quantile of a Bernoulli law whose success atom `a` lies below its failure atom `b`
+is `a` through cumulative mass `p` and `b` above it, including coincident atoms and the
+probability-zero and probability-one boundaries. -/
+@[simp]
+theorem quantile_bernoulliMeasure_of_le (hab : a ≤ b) (hu : u ∈ Ioo 0 1) :
+    Ber(a, b, p).quantile u = if u ≤ (p : ℝ) then a else b := by
   refine eq_of_forall_lt_iff fun x ↦ ?_
   rw [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_bernoulliMeasure]
   split_ifs <;> grind
 
 /-- As the level tends to zero from above, the Bernoulli quantile tends to the lower endpoint
-of its support, including the singleton support at success probability one. -/
-theorem tendsto_quantile_bernoulliMeasure_nhdsGT_zero (p : unitInterval) :
-    Tendsto (fun u ↦ (Ber((1 : ℝ), 0, p).quantile u : EReal))
-      (𝓝[>] 0) (𝓝 (if p = 1 then 1 else 0)) := by
-  refine tendsto_const_nhds.congr' ?_
-  by_cases hp : p = 1
-  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-    rw [quantile_bernoulliMeasure hu]
-    simp [hp, not_le.mpr hu.1]
-  · have hp' : (p : ℝ) < 1 := unitInterval.coe_lt_one.mpr
-      (unitInterval.lt_one_iff_ne_one.mpr hp)
-    filter_upwards [Ioo_mem_nhdsGT (sub_pos.mpr hp')] with u hu
-    have hu' : u ∈ Ioo (0 : ℝ) 1 :=
-      ⟨hu.1, hu.2.trans_le (unitInterval.one_sub_le_one p)⟩
-    rw [quantile_bernoulliMeasure hu', ite_eq_left hu.2.le, ite_eq_right hp]
-    rfl
+of its support: the single atom at success probability zero or one, and the smaller atom
+otherwise. -/
+theorem tendsto_quantile_bernoulliMeasure_nhdsGT_zero (a b : ℝ) (p : unitInterval) :
+    Tendsto (fun u ↦ (Ber(a, b, p).quantile u : EReal)) (𝓝[>] 0)
+      (𝓝 ↑(if p = 0 then b else if p = 1 then a else min a b)) := by
+  convert Measure.tendsto_quantile_nhdsGT_zero Ber(a, b, p) using 2
+  -- Compute the support endpoint from the explicit support of the Bernoulli law.
+  rw [iInf_subtype'', support_bernoulliMeasure]
+  split_ifs
+  · simp
+  · simp
+  · rw [iInf_pair, EReal.coe_strictMono.monotone.map_min]
 
 /-- As the level tends to one from below, the Bernoulli quantile tends to the upper endpoint
-of its support, including the singleton support at success probability zero. -/
-theorem tendsto_quantile_bernoulliMeasure_nhdsLT_one (p : unitInterval) :
-    Tendsto (fun u ↦ (Ber((1 : ℝ), 0, p).quantile u : EReal))
-      (𝓝[<] 1) (𝓝 (if p = 0 then 0 else 1)) := by
-  refine tendsto_const_nhds.congr' ?_
-  by_cases hp : p = 0
-  · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    rw [quantile_bernoulliMeasure hu]
-    simp [hp, hu.2.le]
-  · have hp' : 0 < (p : ℝ) := unitInterval.coe_pos.mpr
-      (unitInterval.pos_iff_ne_zero.mpr hp)
-    filter_upwards [Ioo_mem_nhdsLT (sub_lt_self 1 hp')] with u hu
-    have hu' : u ∈ Ioo (0 : ℝ) 1 :=
-      ⟨(unitInterval.one_sub_nonneg p).trans_lt hu.1, hu.2⟩
-    rw [quantile_bernoulliMeasure hu', ite_eq_right (not_le.mpr hu.1), ite_eq_right hp]
-    rfl
+of its support: the single atom at success probability zero or one, and the larger atom
+otherwise. -/
+theorem tendsto_quantile_bernoulliMeasure_nhdsLT_one (a b : ℝ) (p : unitInterval) :
+    Tendsto (fun u ↦ (Ber(a, b, p).quantile u : EReal)) (𝓝[<] 1)
+      (𝓝 ↑(if p = 0 then b else if p = 1 then a else max a b)) := by
+  convert Measure.tendsto_quantile_nhdsLT_one Ber(a, b, p) using 2
+  -- Compute the support endpoint from the explicit support of the Bernoulli law.
+  rw [iSup_subtype'', support_bernoulliMeasure]
+  split_ifs
+  · simp
+  · simp
+  · rw [iSup_pair, EReal.coe_strictMono.monotone.map_max]
 
 end TauCeti.Probability
