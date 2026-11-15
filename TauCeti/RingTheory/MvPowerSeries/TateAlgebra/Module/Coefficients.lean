@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Approximation
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import Mathlib.Topology.WithTopology
 
@@ -155,28 +155,6 @@ theorem coeffLinearIsometryEquiv_ofFinsupp_single (t : σ →₀ ℕ) (e : E) :
     simp [coeffLinearIsometryEquiv_apply, ofFinsupp_apply]
   · simp [coeffLinearIsometryEquiv_apply, ofFinsupp_apply,
       ZeroAtInftyContinuousMap.single_apply, h]
-
-omit [DecidableEq (WithDiscreteTopology (σ →₀ ℕ))] in
-/-- A unit-radius restricted family is the unconditional sum of its single coefficients. -/
-theorem hasSum_ofFinsupp_single (a : Gauss (fun _ : σ ↦ 1) E) :
-    HasSum (fun t ↦ ofFinsupp R (fun _ ↦ 1) (Finsupp.single t (a t))) a := by
-  classical
-  apply (coeffLinearIsometryEquiv (σ := σ) (E := E) R).toContinuousLinearEquiv.hasSum'.mp
-  have h := ((WithTopology.toTopology_injective ⊥).hasSum_iff
-    (fun t ht ↦ (ht ((WithTopology.toTopology_surjective ⊥) t)).elim)).mpr
-    (ZeroAtInftyContinuousMap.hasSum_single
-      (coeffLinearIsometryEquiv (σ := σ) (E := E) R a))
-  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    coeffLinearIsometryEquiv_ofFinsupp_single, Function.comp_def,
-    coeffLinearIsometryEquiv_apply] using h
-
-omit [DecidableEq (WithDiscreteTopology (σ →₀ ℕ))] in
-/-- Finite-support coefficient families are dense in the unit Gauss topology. -/
-theorem denseRange_ofFinsupp : DenseRange (ofFinsupp (σ := σ) (E := E) R (fun _ ↦ 1)) := by
-  classical
-  intro a
-  exact mem_closure_of_tendsto (hasSum_ofFinsupp_single R a) <|
-    .of_forall fun s ↦ ⟨∑ t ∈ s, Finsupp.single t (a t), by simp⟩
 
 end Module
 
