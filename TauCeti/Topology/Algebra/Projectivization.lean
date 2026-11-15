@@ -53,6 +53,8 @@ of projective space.
   points.
 * `Projectivization.instCompactSpace`: `ℙ 𝕜 V` is compact for a finite-dimensional normed space
   `V` over `ℝ` or `ℂ`.
+* `Projectivization.isClosedEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
+  linear map out of a finite-dimensional normed space is a closed embedding.
 * `Projectivization.instSecondCountableTopology`: `ℙ K V` is second countable when `V` is.
 * `Projectivization.pathConnectedSpace_of_one_lt_rank`: `ℙ K V` is path-connected when `V` has
   real dimension greater than one, for any division ring `K`.
@@ -193,6 +195,13 @@ instance instCompactSpace [FiniteDimensional 𝕜 V] : CompactSpace (ℙ 𝕜 V)
     (continuous_mk continuous_subtype_val _) fun x ↦ ?_
   obtain ⟨v, -, hv, rfl⟩ := exists_norm_eq_one_mk_eq x
   exact ⟨⟨v, mem_sphere_zero_iff_norm.2 hv⟩, rfl⟩
+
+/-- Over `ℝ` or `ℂ`, the map of projective spaces induced by an injective linear map out of a
+finite-dimensional normed space is a closed embedding, since projective space is compact. -/
+theorem isClosedEmbedding_map [FiniteDimensional 𝕜 V] {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] (f : V →ₗ[𝕜] W) (hf : Function.Injective f) :
+    IsClosedEmbedding (map f hf) :=
+  (continuous_map hf f.continuous_of_finiteDimensional).isClosedEmbedding (map_injective f hf)
 
 end RCLike
 
