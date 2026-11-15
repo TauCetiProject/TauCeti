@@ -53,7 +53,10 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 ## Main definitions
 
 * `PowerSeries.OnOpenDisc`: `f` is restricted at every radius `0 < r < R₀`.
-* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`.
+* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`, with
+  its `R`-module and `S`-algebra structures.
+* `PowerSeries.OnOpenDisc.polynomialHom` and `PowerSeries.OnOpenDisc.polynomialAlgHom`: the
+  inclusion of polynomials into series on the open disc.
 
 ## Main results
 
@@ -345,11 +348,90 @@ theorem IsRestricted.subring_le_onOpenDiscSubring [IsUltrametricDist R] (R₀ : 
     IsRestricted.subring R₀ ≤ OnOpenDisc.subring R R₀ :=
   fun _ hf ↦ IsRestricted.onOpenDisc hf
 
+/-- Over any normed ring, the series on the open disc of radius `R₀` form a left `R`-module
+under coefficientwise scalar multiplication. -/
+noncomputable instance OnOpenDisc.instModuleSubring :
+    Module R (OnOpenDisc.subring R R₀) where
+  smul r f := ⟨r • (f : R⟦X⟧),
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.2).smul r)⟩
+  one_smul f := Subtype.ext (one_smul R (f : R⟦X⟧))
+  mul_smul r s f := Subtype.ext (mul_smul r s (f : R⟦X⟧))
+  smul_zero r := Subtype.ext (smul_zero r)
+  smul_add r f g := Subtype.ext (smul_add r (f : R⟦X⟧) g)
+  add_smul r s f := Subtype.ext (add_smul r s (f : R⟦X⟧))
+  zero_smul f := Subtype.ext (zero_smul R (f : R⟦X⟧))
+
+/-- Coefficient scalars act on open-disc series as on their underlying formal power series. -/
+@[simp]
+theorem OnOpenDisc.coe_smul_self (r : R) (f : OnOpenDisc.subring R R₀) :
+    ((r • f : OnOpenDisc.subring R R₀) : R⟦X⟧) = r • (f : R⟦X⟧) := (rfl)
+
+/-- An algebra structure on the coefficients induces one on series on an open disc through
+constant series. Scalars act as on the ambient formal series, and neither commutativity nor an
+ultrametric norm on `R` is needed. -/
+noncomputable instance OnOpenDisc.instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (OnOpenDisc.subring R R₀) where
+  smul s f := ⟨s • (f : R⟦X⟧), OnOpenDisc.mem_subring.mpr <| by
+    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
+    exact (onOpenDisc_C (algebraMap S R s)).mul (OnOpenDisc.mem_subring.mp f.2)⟩
+  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ OnOpenDisc.mem_subring.mpr <| by
+    rw [PowerSeries.algebraMap_apply]
+    exact onOpenDisc_C _
+  commutes' s f := Subtype.ext <| by
+    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
+      Algebra.commutes s (f : R⟦X⟧)
+  smul_def' s f := Subtype.ext <| by
+    rw [Subring.coe_mul, RingHom.codRestrict_apply]
+    exact Algebra.smul_def s (f : R⟦X⟧)
+
+/-- A scalar maps to the constant open-disc series of its image in the coefficient ring. -/
+@[simp]
+theorem OnOpenDisc.coe_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) := by
+  calc
+    _ = algebraMap S R⟦X⟧ s := (rfl)
+    _ = _ := PowerSeries.algebraMap_apply
+
+/-- Algebra scalars act on open-disc series as on their underlying formal power series. -/
+@[simp]
+theorem OnOpenDisc.coe_smul {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : OnOpenDisc.subring R R₀) :
+    ((s • f : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (f : R⟦X⟧) := (rfl)
+
+/-- Scalar towers on the coefficients induce scalar towers on open-disc power series. -/
+instance OnOpenDisc.instIsScalarTowerSubring {S T : Type*} [CommSemiring S] [CommSemiring T]
+    [Algebra S R] [Algebra T R] [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (OnOpenDisc.subring R R₀) where
+  smul_assoc s t f := Subtype.ext <| smul_assoc s t (f : R⟦X⟧)
+
+/-- Algebra actions on the coefficients commute on open-disc power series. -/
+instance OnOpenDisc.instSMulCommClassSubring {S T : Type*} [CommSemiring S] [CommSemiring T]
+    [Algebra S R] [Algebra T R] :
+    SMulCommClass S T (OnOpenDisc.subring R R₀) where
+  smul_comm s t f := Subtype.ext <| smul_comm s t (f : R⟦X⟧)
+
 end NormedRing
 
 section NormedCommRing
 
 variable {R : Type*} [NormedCommRing R] {R₀ : ℝ} {f : R⟦X⟧}
+
+/-- The inclusion of polynomials into the algebra of series on an open disc. -/
+noncomputable def OnOpenDisc.polynomialAlgHom : Polynomial R →ₐ[R] OnOpenDisc.subring R R₀ where
+  __ := OnOpenDisc.polynomialHom
+  commutes' a := Subtype.ext (Polynomial.coe_C a)
+
+/-- Polynomial algebra inclusion agrees with `OnOpenDisc.polynomialHom`. -/
+@[simp]
+theorem OnOpenDisc.coe_polynomialAlgHom (p : Polynomial R) :
+    OnOpenDisc.polynomialAlgHom (R₀ := R₀) p = OnOpenDisc.polynomialHom p := (rfl)
+
+/-- Forgetting the `R`-linearity of `OnOpenDisc.polynomialAlgHom` gives
+`OnOpenDisc.polynomialHom`. -/
+@[simp]
+theorem OnOpenDisc.coe_polynomialAlgHom_ringHom :
+    (OnOpenDisc.polynomialAlgHom (R := R) (R₀ := R₀) :
+      Polynomial R →+* OnOpenDisc.subring R R₀) = OnOpenDisc.polynomialHom := (rfl)
 
 /-- The derivative of a series on an open disc lies on that disc. -/
 theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R₀ := by

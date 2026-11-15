@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
 
 /-!
@@ -12,9 +13,10 @@ public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
 
 Let `g` be a series on the open disc of radius `S₀`. Suppose that its Gauss norm on every
 smaller closed disc is strictly less than `R₀`. Substitution by `g` then defines a continuous
-ring homomorphism from series on the open disc of radius `R₀` to those on the open disc of
+`R`-algebra homomorphism from series on the open disc of radius `R₀` to those on the open disc of
 radius `S₀`. It is the convergent sum `∑ aₙ gⁿ`, not formal substitution: the constant
-coefficient of `g` need not vanish.
+coefficient of `g` need not vanish. When Mathlib's formal substitution of `g` is defined, for
+instance when its constant coefficient is nilpotent, the two agree.
 
 Restriction to any smaller closed disc identifies this sum with evaluation in the corresponding
 Banach algebra. This gives the local Gauss bounds and compatibility with point evaluation.
@@ -142,6 +144,33 @@ theorem analyticSubst_C (a : R) :
   rw [restrict_analyticSubst, OnOpenDisc.coe_polynomialHom, Polynomial.coe_C, evalAt_C,
     restrict_polynomialHom_C]
 
+/-- Scalar constants are fixed by analytic substitution. -/
+@[simp]
+theorem analyticSubst_algebraMap (a : R) :
+    analyticSubst g hg (algebraMap R (OnOpenDisc.subring R R₀) a) =
+      algebraMap R (OnOpenDisc.subring R S₀) a := by
+  have ha (T₀ : ℝ) : algebraMap R (OnOpenDisc.subring R T₀) a =
+      OnOpenDisc.polynomialHom (Polynomial.C a) :=
+    Subtype.ext (by simp)
+  rw [ha R₀, ha S₀, analyticSubst_C]
+
+/-- Analytic substitution bundled as an `R`-algebra homomorphism. -/
+noncomputable def analyticSubstAlgHom :
+    OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R S₀ where
+  __ := analyticSubst g hg
+  commutes' := analyticSubst_algebraMap g hg
+
+/-- `analyticSubstAlgHom` acts as `analyticSubst`. -/
+@[simp]
+theorem coe_analyticSubstAlgHom (f : OnOpenDisc.subring R R₀) :
+    analyticSubstAlgHom g hg f = analyticSubst g hg f := (rfl)
+
+/-- Forgetting `R`-linearity of `analyticSubstAlgHom` recovers `analyticSubst`. -/
+@[simp]
+theorem coe_analyticSubstAlgHom_ringHom :
+    (analyticSubstAlgHom g hg : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀) =
+      analyticSubst g hg := (rfl)
+
 /-- The source variable is sent to the inner series. -/
 @[simp]
 theorem analyticSubst_X :
@@ -164,6 +193,45 @@ theorem coeff_analyticSubst (f : OnOpenDisc.subring R R₀) (m : ℕ) :
     coeff m (analyticSubst g hg f : R⟦X⟧) =
       ∑' n, coeff n (f : R⟦X⟧) * coeff m ((g : R⟦X⟧) ^ n) :=
   (hasSum_coeff_analyticSubst g hg f m).tsum_eq.symm
+
+/-- **Comparison with formal substitution.** When Mathlib's formal substitution of `g` is
+defined, for instance when the constant coefficient of `g` is nilpotent, it agrees with analytic
+substitution. -/
+theorem coe_analyticSubst_eq_subst (hsub : PowerSeries.HasSubst (g : R⟦X⟧))
+    (f : OnOpenDisc.subring R R₀) :
+    (analyticSubst g hg f : R⟦X⟧) = (f : R⟦X⟧).subst (g : R⟦X⟧) := by
+  ext m
+  rw [coeff_analyticSubst, coeff_subst' hsub,
+    ← tsum_eq_finsum (L := .unconditional _) (coeff_subst_finite' hsub _ m)]
+  simp only [smul_eq_mul]
+
+/-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
+@[simp]
+theorem analyticSubst_zero_apply
+    (h0 : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s (0 : OnOpenDisc.subring R S₀)‖ < R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    analyticSubst 0 h0 f = algebraMap R _ (constantCoeff (f : R⟦X⟧)) := by
+  refine Subtype.ext ?_
+  rw [coe_analyticSubst_eq_subst 0 h0 PowerSeries.HasSubst.zero', OnOpenDisc.coe_algebraMap,
+    Algebra.algebraMap_self, RingHom.id_apply]
+  exact PowerSeries.subst_zero_eq_C_constantCoeff
+
+/-- The constant coefficient of an analytic substitution `f(g)` is the value of `f` at the
+constant coefficient of `g`. Unlike `evalAt_analyticSubst`, this needs no `NormOneClass`
+hypothesis. -/
+theorem constantCoeff_analyticSubst (f : OnOpenDisc.subring R R₀) :
+    constantCoeff (analyticSubst g hg f : R⟦X⟧) =
+      (f : R⟦X⟧).evalAt (constantCoeff (g : R⟦X⟧)) := by
+  have hc : ‖constantCoeff (g : R⟦X⟧)‖ < R₀ := by
+    let s : Set.Ioo (0 : ℝ) S₀ := substRadius
+    calc ‖constantCoeff (g : R⟦X⟧)‖
+        = ‖coeff 0 (restrict s g : R⟦X⟧)‖ * (s : ℝ) ^ 0 := by simp
+      _ ≤ ‖restrict s g‖ := norm_coeff_mul_pow_le (restrict s g) 0
+      _ < R₀ := hg s
+  have hsum := hasSum_coeff_analyticSubst g hg f 0
+  simp only [coeff_zero_eq_constantCoeff_apply, map_pow] at hsum
+  exact hsum.unique (by simpa only [smul_eq_mul] using
+    (OnOpenDisc.mem_subring.mp f.2).hasSum_evalAt hc)
 
 /-- On polynomials analytic substitution is polynomial evaluation. -/
 @[simp low]
