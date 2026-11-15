@@ -221,7 +221,7 @@ private theorem eLpNorm_toReal_rnDeriv_sub_le [IsFiniteMeasure μ] [IsFiniteMeas
     simp
   have hkey := mul_lintegral_enorm_sub_add_two_mul_klDiv_le (μ := π) (ν := σ) (ρ := R) t
   rw [← hπ.measure_univ_left, ← hσ.measure_univ_left] at hkey
-  rw [eLpNorm_one_eq_lintegral_enorm (by fun_prop)]
+  rw [eLpNorm_one_eq_lintegral_eNorm (by fun_prop)]
   set E := ∫⁻ z, ‖(π.rnDeriv R z).toReal - (σ.rnDeriv R z).toReal‖ₑ ∂R
   -- The midpoint is a coupling, so its entropy is at least `S`; cancel `2 * S` and then `t`.
   have h1 : (t : ℝ≥0∞) * E + 2 * S ≤ t * (t * (2 * μ Set.univ + 2)) + 2 * S :=

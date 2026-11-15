@@ -44,7 +44,7 @@ jobs:
       matrix:
         replica: ${{ fromJSON(inputs.capacity && '[1,2,3]' || '[1]') }}
     # Existing provisioned staging shape; ordinary priority leaves bors first.
-    runs-on: [nscloud-ubuntu-24.04-amd64-8x16-with-features, 'namespace-features:container.privileged=true']
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout immutable trusted tooling
         uses: actions/checkout@v4

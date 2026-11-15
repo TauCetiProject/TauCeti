@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
-public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
+public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -54,7 +54,7 @@ top degree is determined by those restrictions
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
-`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair`. With coefficients `Hom(C(-; R), M)` for
+`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic`. With coefficients `Hom(C(-; R), M)` for
 `k`-modules `R` and `M`, `R` projective, this gives the two facts about a trivializable bundle that
 the gluing uses: `Hⁿ(E, E₀) = 0` for `n < r`
 (`Bundle.Trivialization.isZero_singularCohomology_thomPair`), and a class of `Hʳ(E, E₀)`, for

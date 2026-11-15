@@ -58,6 +58,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `TensorProduct.ker_mk_one_of_surjective`: if `R → S` is surjective with kernel `I`, then
+  `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`.
 * `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
   kernel annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`.
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
@@ -106,26 +108,33 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
     Submodule.mem_smul_pointwise_iff_exists]
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
 
+/-- **Base change along a surjective ring map.** If `R → S` is surjective with kernel `I`, then
+`x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`: writing `S = R ⧸ I`, the tensor product is
+`M ⧸ I M`. -/
+theorem ker_mk_one_of_surjective {S : Type*} [CommRing S] [Algebra R S]
+    (hS : Function.Surjective (algebraMap R S)) :
+    LinearMap.ker (mk R S M 1) = RingHom.ker (algebraMap R S) • ⊤ := by
+  let e₀ := Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS
+  let e : (R ⧸ RingHom.ker (algebraMap R S)) ≃ₗ[R] S := e₀.toLinearEquiv
+  have he : e 1 = 1 := map_one e₀
+  have h : mk R S M 1 =
+      e.toLinearMap.rTensor M ∘ₗ mk R (R ⧸ RingHom.ker (algebraMap R S)) M 1 := by
+    ext x
+    simp [he]
+  rw [h, ← LinearEquiv.coe_rTensor, LinearEquiv.ker_comp]
+  exact LinearMap.ker_tensorProductMk M
+
 /-- **Base change to a quotient ring that already acts.** If `R → S` is surjective and its kernel
 annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`: writing `S = R ⧸ I`, the
 tensor product is `M ⧸ I M = M`. -/
 theorem mk_one_bijective_of_ker_le_annihilator {S : Type*} [CommRing S] [Algebra R S]
     (hS : Function.Surjective (algebraMap R S))
     (hM : RingHom.ker (algebraMap R S) ≤ Module.annihilator R M) :
-    Function.Bijective (TensorProduct.mk R S M 1) := by
-  refine ⟨?_, TensorProduct.mk_surjective R M S hS⟩
-  let I := RingHom.ker (algebraMap R S)
-  let e₀ := (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS).symm
-  let e : S ≃ₗ[R] R ⧸ I := e₀.toLinearEquiv
-  have hI : I • (⊤ : Submodule R M) = ⊥ := eq_bot_iff.mpr <|
-    (Submodule.smul_mono_left hM).trans_eq <| by
-      rw [← Submodule.annihilator_top, Submodule.annihilator_smul]
-  -- A left inverse: `S ⊗[R] M ≃ (R ⧸ I) ⊗[R] M ≃ M ⧸ I M ≃ M`, sending `1 ⊗ x` to `x`.
-  let ψ := (Submodule.quotEquivOfEqBot _ hI).toLinearMap ∘ₗ
-    (quotTensorEquivQuotSMul M I).toLinearMap ∘ₗ e.toLinearMap.rTensor M
-  have he : e 1 = 1 := map_one e₀
-  refine Function.LeftInverse.injective (g := ψ) fun x ↦ ?_
-  simp [ψ, he]
+    Function.Bijective (mk R S M 1) := by
+  refine ⟨LinearMap.ker_eq_bot.mp ?_, mk_surjective R M S hS⟩
+  rw [ker_mk_one_of_surjective hS, eq_bot_iff]
+  refine (Submodule.smul_mono_left hM).trans_eq ?_
+  rw [← Submodule.annihilator_top, Submodule.annihilator_smul]
 
 end TensorProduct
 
@@ -139,7 +148,7 @@ reductions `(R ⧸ (r)) ⊗ b` and `(R ⧸ (r)) ⊗ a` form an exact pair: if `a
 `a x = r • n`, then `r • b n = b (a x) = r • x`, so `x = b n`. -/
 theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddCommGroup M]
     [Module R M] [AddCommGroup N] [Module R N] {r : R} (a : M →ₗ[R] N) (b : N →ₗ[R] M)
-    (hab : a ∘ₗ b = r • LinearMap.id) (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular M r) :
+    (hab : a ∘ₗ b = r • id) (hba : b ∘ₗ a = r • id) (hr : IsSMulRegular M r) :
     Function.Exact (b.lTensor (R ⧸ Ideal.span {r})) (a.lTensor (R ⧸ Ideal.span {r})) := by
   intro y
   obtain ⟨x, rfl⟩ := exists_one_tmul_eq _ y
@@ -154,7 +163,7 @@ theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddC
     rw [lTensor_tmul, ← sub_eq_zero, ← tmul_sub, one_tmul_eq_zero_iff_exists_smul_eq] at hz
     obtain ⟨m, hm⟩ := hz
     refine ⟨n - a m, ?_⟩
-    rw [smul_sub, ← map_smul, hm, map_sub, ← LinearMap.comp_apply, hab]
+    rw [smul_sub, ← map_smul, hm, map_sub, ← comp_apply, hab]
     simp
 
 /-- **Reductions of a factorization of a regular scalar are dually exact.** Let `a : M → N` and
@@ -166,8 +175,8 @@ this says that reducing a matrix factorization modulo a non-zero-divisor gives a
 periodic complex. -/
 theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing R]
     [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N] {r : R}
-    (a : M →ₗ[R] N) (b : N →ₗ[R] M) (hab : a ∘ₗ b = r • LinearMap.id)
-    (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular R r) :
+    (a : M →ₗ[R] N) (b : N →ₗ[R] M) (hab : a ∘ₗ b = r • id)
+    (hba : b ∘ₗ a = r • id) (hr : IsSMulRegular R r) :
     Function.Exact
       (fun ψ : (R ⧸ Ideal.span {r}) ⊗[R] M →ₗ[R ⧸ Ideal.span {r}] R ⧸ Ideal.span {r} ↦
         ψ ∘ₗ b.baseChange (R ⧸ Ideal.span {r}))
@@ -197,7 +206,7 @@ theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing 
     -- From `a ∘ b = r • id`, `r • χ (b n) = ϕ (a (b n)) = r • ϕ n`, so `χ ∘ b = ϕ`.
     have hχ (n : N) : χ (b n) = ϕ n := hr (by
       simp only [smul_eq_mul]
-      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← LinearMap.comp_apply a b, hab]
+      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← comp_apply a b, hab]
       simp)
     refine ⟨((Ideal.span {r}).mkQ ∘ₗ χ).liftBaseChange _, ?_⟩
     refine TensorProduct.AlgebraTensorModule.ext fun s n ↦ ?_

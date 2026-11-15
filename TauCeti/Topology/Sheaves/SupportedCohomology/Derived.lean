@@ -17,7 +17,9 @@ For a closed subset `S` and an open `W`, the supported-section functor
 Right deriving this representation identifies its native right derived functors
 with the existing supported cohomology groups `Extⁿ(Q_S(W),F)`, naturally in `F`.
 Thus supported Ext groups and derived supported sections are two computations of
-the same functor, rather than unrelated cohomology carriers.
+the same functor, rather than unrelated cohomology carriers. The comparison also
+commutes with restriction to smaller opens: right deriving supported-section
+restriction gives the existing restriction in `supportedModuleHPresheaf`.
 
 The construction uses `Closeds.supportedFreeModuleSheafHomEquiv` for the
 representation, `NatIso.rightDerived` for its transport, and
@@ -80,6 +82,29 @@ lemma supportedSubmoduleSectionsRepresentableIso_inv_app_apply
       (S.supportedFreeModuleSheafHomEquiv R W F).symm s :=
   (rfl)
 
+/-- The representation of supported sections by `Q_S(W)` respects restriction of opens. -/
+@[reassoc]
+lemma supportedSubmoduleSectionsRepresentableIso_hom_restrict {W' : Opens X} (i : W' ⟶ W) :
+    (linearCoyoneda R _).map ((S.supportedFreeModuleSheafFunctor R).map i).op ≫
+        (supportedSubmoduleSectionsRepresentableIso (R := R) S W').hom =
+      (supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom ≫
+        supportedSubmoduleSectionsRestrict S i := by
+  ext F g
+  apply Subtype.ext
+  -- Unbundle composition and the linear coyoneda action before using the opaque
+  -- representing isomorphism's application lemmas.
+  change (((supportedSubmoduleSectionsRepresentableIso (R := R) S W').hom.app F)
+      ((S.supportedFreeModuleSheafFunctor R).map i ≫ g)).val =
+    (((supportedSubmoduleSectionsRestrict (R := R) S i).app F)
+      (((supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.app F) g)).val
+  -- `erw` identifies the evaluated `linearCoyoneda` module containing `g` with
+  -- the sheaf Hom module, and the evaluated section module with its supported subtype.
+  -- Plain `rw` cannot typecheck `map i ≫ g` across the first of these wrappers.
+  erw [supportedSubmoduleSectionsRepresentableIso_hom_app_apply,
+    coe_supportedSubmoduleSectionsRestrict_app_apply,
+    supportedSubmoduleSectionsRepresentableIso_hom_app_apply]
+  exact S.coe_supportedFreeModuleSheafHomEquiv_map_comp R i F g
+
 /-- Right derived supported sections are the supported Ext groups, naturally in the
 coefficient sheaf. The target evaluates the existing supported cohomology presheaf on `W`. -/
 def rightDerivedSupportedSubmoduleSectionsIso (n : ℕ) :
@@ -103,6 +128,29 @@ lemma rightDerivedSupportedSubmoduleSectionsIso_hom_comp (n : ℕ) :
       (rightDerivedLinearCoyonedaIsoExt R ((S.supportedFreeModuleSheafFunctor R).obj W) n).hom
   rw [NatIso.rightDerived_hom] at h
   exact h
+
+/-- The derived supported-section-to-Ext comparison commutes with restriction in every
+cohomological degree, naturally in the coefficient sheaf. -/
+@[reassoc]
+lemma rightDerivedSupportedSubmoduleSectionsIso_hom_restrict {W' W : Opens X}
+    (i : W' ⟶ W) (n : ℕ) :
+    (supportedSubmoduleSectionsRestrict (R := R) S i).rightDerived n ≫
+        (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W' n).hom =
+      (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W n).hom ≫
+        Functor.whiskerLeft (supportedModuleHPresheafFunctor S n)
+          ((evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).map i.op) := by
+  have : IsIso ((supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.rightDerived n) := by
+    rw [← NatIso.rightDerived_hom]
+    infer_instance
+  apply (cancel_epi
+    ((supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.rightDerived n)).1
+  rw [← Category.assoc, ← NatTrans.rightDerived_comp,
+    ← supportedSubmoduleSectionsRepresentableIso_hom_restrict,
+    NatTrans.rightDerived_comp, Category.assoc,
+    rightDerivedSupportedSubmoduleSectionsIso_hom_comp,
+    rightDerivedSupportedSubmoduleSectionsIso_hom_comp_assoc]
+  exact rightDerivedLinearCoyonedaIsoExt_hom_naturality_left R _
+    ((S.supportedFreeModuleSheafFunctor R).map i) n
 
 end
 

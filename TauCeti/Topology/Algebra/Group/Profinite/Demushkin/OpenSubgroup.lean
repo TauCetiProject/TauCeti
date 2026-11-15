@@ -106,8 +106,8 @@ private theorem natCard_H2_openSubgroup : Nat.card (H2 U.toSubgroup (ZMod p)) = 
   -- `|H²(U, 𝔽_p)| = |H²(G, Coind_U^G 𝔽_p)| = |Hom(H⁰(G, M'), H²(G, 𝔽_p))| = |H⁰(G, M')|`, where
   -- `M' = Hom(Coind_U^G 𝔽_p, 𝔽_p)` is killed by `p`
   rw [← Nat.card_congr (explicitShapiro2 G U.toSubgroup (ZMod p) hUc).toEquiv,
-    Nat.card_congr (Equiv.ofBijective _ (hG.dualityMap2_bijective htriv _ hM)),
-    hG.natCard_addMonoidHom_H2 htriv _ fun v ↦ Subtype.ext (by
+    Nat.card_congr (Equiv.ofBijective _ (hG.dualityMap2_bijective _ hM)),
+    hG.natCard_addMonoidHom_H2 _ fun v ↦ Subtype.ext (by
       simpa using InternalHom.nsmul_eq_zero (ZModModule.char_nsmul_eq_zero p)
         (v : InternalHom G (DiscreteCoind G U.toSubgroup (ZMod p)) (ZMod p)))]
   -- `H⁰(G, M') ≅ H⁰(G, Coind_U^G Hom(𝔽_p, 𝔽_p)) ≅ H⁰(U, Hom(𝔽_p, 𝔽_p)) = Hom(𝔽_p, 𝔽_p) ≅ 𝔽_p`
@@ -147,7 +147,6 @@ theorem openSubgroup : IsDemushkin p U.toSubgroup := by
   -- The explicit models need an action of `G` on `𝔽_p`; the trivial one is installed for the
   -- duration of the proof and does not appear in the statement.
   let _ := trivialZModAction p G
-  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := fun _ _ ↦ rfl
   have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
   have htrivU : ∀ (u : U.toSubgroup) (m : ZMod p), u • m = m := fun _ _ ↦ rfl
   have hUc : IsClosed (U.toSubgroup : Set G) := U.isClosed
@@ -165,7 +164,7 @@ theorem openSubgroup : IsDemushkin p U.toSubgroup := by
     obtain ⟨c, hc⟩ : ∃ c, dualityMap1 G (DiscreteCoind G U.toSubgroup (ZMod p)) (ZMod p)
         ((explicitShapiro1 G U.toSubgroup (ZMod p) hUc).symm x) c ≠ 0 := by
       by_contra! h
-      exact hx0 ((hG.dualityMap1_bijective htriv _ hM).1
+      exact hx0 ((hG.dualityMap1_bijective _ hM).1
         ((AddMonoidHom.ext h).trans (map_zero _).symm))
     -- `c` is a class of `H¹(G, Coind_U^G Hom(𝔽_p, 𝔽_p))`, since the dual of the permutation module
     -- is the permutation module
@@ -210,7 +209,7 @@ theorem demushkinRank_openSubgroup_sub_two :
   -- `cd_p G ≤ 2`, by Tate's duality criterion
   have hcd : CohomologicalDimensionLE.{u} p G 2 := (cohomologicalDimensionAt_le_iff p G 2).1 <|
     hG.isProP.cohomologicalDimensionAt_le_two_of_forall_dualityMap2_bijective (ZMod p)
-      fun M _ _ _ _ _ _ hM ↦ hG.dualityMap2_bijective htriv M hM
+      fun M _ _ _ _ _ _ hM ↦ hG.dualityMap2_bijective M hM
   have : Module.Finite (ZMod p) (cohomFp p G 2) :=
     Module.finite_of_finrank_eq_succ hG.finrank_cohomFp_two
   have : Finite (H2 G (ZMod p)) := Nat.finite_of_card_ne_zero (by

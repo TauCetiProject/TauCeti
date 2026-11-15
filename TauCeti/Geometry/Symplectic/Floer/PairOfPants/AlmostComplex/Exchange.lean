@@ -354,14 +354,8 @@ theorem isComplexLinearMap_perturbedFDeriv_exchange_one (h₀ : ω.Compatible J�
   have hS : e ((1, 0) - z) ≠ 0 ∧ e ((1, 0) - z) ≠ 1 := by
     rw [hσ]
     exact ⟨fun h0 => hz.2 (by linear_combination -h0), fun h1 => hz.1 (by linear_combination -h1)⟩
-  have hK (v : ℂ) : DifferentiableAt ℝ
-      (fun x ↦ pairOfPantsPerturbation (exchangeEndData H) (e ((1, 0) - z)) x v)
-      (u ((1, 0) - z)) := by
-    have hd := (contDiffAt_pairOfPantsPerturbation_prod (periodic_exchangeEndData hH)
-      (contDiff_uncurry_exchangeEndData hHs) hS (u ((1, 0) - z))).differentiableAt
-      one_ne_zero
-    exact (hd.comp _ ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
-      (differentiableAt_const v)
+  have hK := differentiableAt_pairOfPantsPerturbation_target (periodic_exchangeEndData hH)
+    (contDiff_uncurry_exchangeEndData hHs) hS (u ((1, 0) - z))
   -- The exchange is holomorphic: its derivative is `-1`.
   have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
     (differentiableAt_const _).sub differentiableAt_id

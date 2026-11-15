@@ -49,6 +49,10 @@ linear maps used by the semigroup development.
   eigenvector for a nonreal eigenvalue.
 * `LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`: a vector orthogonal to the range
   of the shift `c • x - A x` is an eigenvector of the adjoint `A†` for the eigenvalue `conj c`.
+* `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
+  the range of a symmetric map is orthogonal to its kernel, and for a self-adjoint map
+  `(range A)ᗮ = ker A`; `LinearPMap.exists_coe_eq_sub_starProjection` removes the kernel
+  component of a vector of the domain without changing its image.
 * `IsSelfAdjoint.denseRange_smul_sub_of_norm_le` and
   `IsSelfAdjoint.smul_sub_surjective_of_norm_le`: the range of a shift of a self-adjoint operator
   that is bounded below is dense, and is the whole space.
@@ -130,6 +134,38 @@ theorem exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero [CompleteSpace E] {A :
     rw [inner_smul_left, RCLike.conj_conj, ← hx, inner_smul_right]
   have hy : y ∈ A†.domain := mem_adjoint_domain_of_exists y ⟨_, hpair⟩
   exact ⟨hy, adjoint_apply_eq hdense ⟨y, hy⟩ hpair⟩
+
+/-- The values of a symmetric partial linear map are orthogonal to its kernel. -/
+theorem IsFormalAdjoint.apply_mem_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A)
+    (x : A.domain) : A x ∈ A.kerᗮ := by
+  refine (Submodule.mem_orthogonal _ _).2 fun y hy ↦ ?_
+  obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hy
+  rw [← hA z x, hz, inner_zero_left]
+
+/-- The range of a symmetric partial linear map is orthogonal to its kernel. -/
+theorem IsFormalAdjoint.range_le_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A) :
+    LinearMap.range A.toFun ≤ A.kerᗮ := by
+  rintro _ ⟨x, rfl⟩
+  exact hA.apply_mem_orthogonal_ker x
+
+/-- Removing the kernel component of `u ∈ D(A)` gives a vector of `D(A)` with the same image. -/
+theorem exists_coe_eq_sub_starProjection {A : E →ₗ.[𝕜] E} [A.ker.HasOrthogonalProjection]
+    (u : A.domain) : ∃ v : A.domain, (v : E) = u - A.ker.starProjection u ∧ A v = A u :=
+  ⟨u - ⟨_, A.ker_le_domain (A.ker.starProjection_apply_mem u)⟩, rfl, by
+    rw [map_sub, (coe_mem_ker_iff (x := ⟨_, _⟩)).1 (A.ker.starProjection_apply_mem u), sub_zero]⟩
+
+/-- For a self-adjoint `A`, the orthogonal complement of the range is the kernel: a vector
+orthogonal to the range lies in the domain of `A† = A` and is killed by it. -/
+theorem _root_.IsSelfAdjoint.orthogonal_range_eq_ker [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : IsSelfAdjoint A) : (LinearMap.range A.toFun)ᗮ = A.ker := by
+  refine le_antisymm (fun y hy ↦ ?_)
+    (Submodule.isOrtho_comm.1 hA.isFormalAdjoint.range_le_orthogonal_ker)
+  have hortho : ∀ x : A.domain, inner 𝕜 y ((0 : 𝕜) • (x : E) - A x) = 0 := fun x ↦ by
+    rw [zero_smul, zero_sub, inner_neg_right, neg_eq_zero]
+    exact Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self A.toFun x) hy
+  obtain ⟨hy', hAy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hA.dense_domain hortho
+  obtain ⟨z, hz, hAz⟩ := exists_of_le (isSelfAdjoint_def.mp hA).le ⟨y, hy'⟩
+  exact mem_ker_iff.2 ⟨z, hz, by rw [← hAz, hAy]; simp⟩
 
 
 /-- For a formally self-adjoint partial linear map, the real cross term between `c • x` and `A x`

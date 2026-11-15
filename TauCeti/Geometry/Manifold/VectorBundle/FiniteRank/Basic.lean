@@ -70,7 +70,7 @@ theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpa
       (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
     ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n f := by
   intro p₀
-  rw [Bundle.contMDiffAt_totalSpace, hf_proj p₀]
+  rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀]
   refine ⟨((contMDiff_proj E.core.Fiber).congr hf_proj).contMDiffAt, ?_⟩
   exact (L.contDiff.comp_contMDiffAt (E.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun p ↦ hL p₀.proj p)

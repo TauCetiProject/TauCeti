@@ -488,17 +488,36 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
 
-/-- The Laplace–Beltrami operator is additive on `C²` functions. -/
-theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+/-- The Laplace–Beltrami operator is additive at a point where both functions are `C²`. -/
+theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami,
-    mgradient_add (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
-  exact divergence_add I _ _ x
-    (mdifferentiable_mgradient (I := I) hf x)
-    (mdifferentiable_mgradient (I := I) hg x)
+  have hgrad {u : M → ℝ} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) :
+      MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I u y⟩ : TangentBundle I M)) x :=
+    (contMDiffAt_mgradient (I := I) (n := 1)
+      (by simpa only [one_add_one_eq_two] using hu)).mdifferentiableAt (by simp)
+  -- Both functions are differentiable near `x`, so the gradient is additive there.
+  have hev : ∀ᶠ y in nhds x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
+    filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf,
+      (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg] with y hfy hgy
+    apply ext_inner_right ℝ
+    intro v
+    rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
+      mvfderiv_add (hfy.mdifferentiableAt (by simp)) (hgy.mdifferentiableAt (by simp))]
+    rfl
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [laplaceBeltrami_def, divergence_def, hcov.congr_of_eventuallyEq (hgrad (hf.add hg))
+    (mdifferentiableAt_add_section (hgrad hf) (hgrad hg)) Filter.univ_mem hev,
+    ← divergence_def, divergence_add I _ _ x (hgrad hf) (hgrad hg), laplaceBeltrami_def,
+    laplaceBeltrami_def]
+
+/-- The Laplace–Beltrami operator is additive on `C²` functions. -/
+theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
+  laplaceBeltrami_add_of_contMDiffAt I (hf x) (hg x)
 
 /- The product rule below is the manifold counterpart of
 `ContDiffAt.laplacian_fun_mul` for the flat Laplacian. -/
@@ -539,14 +558,21 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     ← inner_mgradient (I := I) (f := g) (x := x), real_inner_comm]
   ring
 
-/-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
-theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
+function is `C²`. -/
+theorem laplaceBeltrami_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [laplaceBeltrami, mgradient_smul]
-  exact divergence_smul I c _ x
-    (mdifferentiable_mgradient (I := I) hf x)
+  exact divergence_smul I c _ x ((contMDiffAt_mgradient (I := I) (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
+theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
+  laplaceBeltrami_smul_of_contMDiffAt I c (hf x)
 
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
@@ -712,7 +738,7 @@ theorem laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner
 /-! ### Linear coordinates -/
 
 /-- **The Hessian in linear coordinates.** On a finite-dimensional real normed space `F` whose
-Riemannian metric is the field of bilinear forms `g`, differentiable at `x`, the Hessian of a
+Riemannian metric is the field of bilinear forms `g`, the Hessian of a
 function `f` that is `C²` at `x` is `Hess f(u, v) = D²f(u, v) - Df(Γ(u, v))`, where `Γ` is
 `TauCeti.Manifold.christoffelSecondKind g`. Tangent vectors are read in the model space through
 `tangentSpaceCastModel`. -/
@@ -723,7 +749,7 @@ theorem hessian_model_space_eq_fderiv_sub_christoffelSecondKind
     {g : F → F →L[ℝ] F →L[ℝ] ℝ}
     (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
       g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
-    {x : F} (hgx : DifferentiableAt ℝ g x) {f : F → ℝ} (hf : ContDiffAt ℝ 2 f x) (u v : F) :
+    {x : F} {f : F → ℝ} (hf : ContDiffAt ℝ 2 f x) (u v : F) :
     hessian 𝓘(ℝ, F) f x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm u)
         ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v) =
       fderiv ℝ (fderiv ℝ f) x u v - fderiv ℝ f x (christoffelSecondKind g x u v) := by
@@ -738,8 +764,8 @@ theorem hessian_model_space_eq_fderiv_sub_christoffelSecondKind
     -- `NormedSpace.fromTangentSpace z` is `tangentSpaceCastModel 𝓘(ℝ, F) z` by definition.
     simp [NormedSpace.fromTangentSpace]
   -- The Levi-Civita derivative of the constant field `C v` in the direction `u` is `Γ(u, v)`.
-  have hΓ := leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind (V := C v) hg
-    hgx (differentiableAt_const v) u
+  have hΓ := leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind
+    (V := C v) (x := x) hg (differentiableAt_const v) u
   -- Read in the model space, the constant field `C v` is the constant map `v`.
   have h0 : fderiv ℝ (C v) x = 0 := fderiv_const_apply (x := x) v
   have hD : DifferentiableAt ℝ (fderiv ℝ f) x :=
