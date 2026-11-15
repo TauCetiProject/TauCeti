@@ -27,7 +27,9 @@ the smallest surfaces.
 
 These are the first consistency checks on the presentations: the Euler characteristics
 `χ = 2 - 2g - m` and `χ = 2 - g - m` of the disc, sphere, pair of pants, torus and projective plane
-are `1, 2, -1, 0, 1`, and in each case with boundary the group is free of rank `1 - χ`.
+are `1, 2, -1, 0, 1`, and in each case with boundary the group is free of rank `1 - χ`. The closed
+orientable surface of genus two has `χ = -2`, and the Klein bottle, the closed nonorientable surface
+of genus two, has `χ = 0`, like the torus.
 
 ## Main definitions
 
@@ -44,12 +46,18 @@ are `1, 2, -1, 0, 1`, and in each case with boundary the group is free of rank `
 * `TauCeti.SurfaceGroup.Orientable.commute_torus_a_b`: the two generators of the torus group
   commute.
 * `TauCeti.SurfaceGroup.Nonorientable.natCard_projectivePlane`: `S⁻(1, 0)` has order two.
+* `TauCeti.SurfaceGroup.Orientable.eulerChar_zero_zero`, `eulerChar_zero_one`,
+  `eulerChar_zero_three`, `eulerChar_one_zero`, `eulerChar_two_zero` and
+  `TauCeti.SurfaceGroup.Nonorientable.eulerChar_one_zero`, `eulerChar_two_zero`: the Euler
+  characteristics of the sphere, disc, pair of pants, torus, closed genus-two surface, projective
+  plane and Klein bottle.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Cambridge University Press, 2002, Section 1.2 (the fundamental groups of the torus, the
-  projective plane and the closed surfaces from their polygon presentations).
+  projective plane and the closed surfaces from their polygon presentations) and Section 2.2,
+  p. 147 (the Euler characteristics `χ(M_g) = 2 - 2g` and `χ(N_g) = 2 - g` of the closed surfaces).
 -/
 
 public section
@@ -135,6 +143,27 @@ theorem torusEquiv_symm_apply (v : Multiplicative (Fin 2 → ℤ)) :
     torusEquiv.symm v = a 1 0 0 ^ v.toAdd 0 * b 1 0 0 ^ v.toAdd 1 :=
   (rfl)
 
+/-- The sphere, the closed orientable surface of genus zero, has Euler characteristic `2`. -/
+@[simp]
+theorem eulerChar_zero_zero : eulerChar 0 0 = 2 := by norm_num [eulerChar_def]
+
+/-- The disc, of genus zero with one boundary component, has Euler characteristic `1`. -/
+@[simp]
+theorem eulerChar_zero_one : eulerChar 0 1 = 1 := by norm_num [eulerChar_def]
+
+/-- The pair of pants, of genus zero with three boundary components, has Euler
+characteristic `-1`. -/
+@[simp]
+theorem eulerChar_zero_three : eulerChar 0 3 = -1 := by norm_num [eulerChar_def]
+
+/-- The torus, the closed orientable surface of genus one, has Euler characteristic `0`. -/
+@[simp]
+theorem eulerChar_one_zero : eulerChar 1 0 = 0 := by norm_num [eulerChar_def]
+
+/-- The closed orientable surface of genus two has Euler characteristic `-2`. -/
+@[simp]
+theorem eulerChar_two_zero : eulerChar 2 0 = -2 := by norm_num [eulerChar_def]
+
 end Orientable
 
 namespace Nonorientable
@@ -178,6 +207,16 @@ theorem projectivePlaneEquiv_symm_ofAdd_intCast (k : ℤ) :
 /-- The nonorientable surface group `S⁻(1, 0)` of the projective plane has order two. -/
 theorem natCard_projectivePlane : Nat.card (Nonorientable 1 0) = 2 := by
   rw [Nat.card_congr (projectivePlaneEquiv.toEquiv.trans Multiplicative.toAdd), Nat.card_zmod]
+
+/-- The projective plane, the closed nonorientable surface of genus one, has Euler
+characteristic `1`. -/
+@[simp]
+theorem eulerChar_one_zero : eulerChar 1 0 = 1 := by norm_num [eulerChar_def]
+
+/-- The Klein bottle, the closed nonorientable surface of genus two, has Euler characteristic `0`,
+the same as the torus. -/
+@[simp]
+theorem eulerChar_two_zero : eulerChar 2 0 = 0 := by norm_num [eulerChar_def]
 
 end Nonorientable
 

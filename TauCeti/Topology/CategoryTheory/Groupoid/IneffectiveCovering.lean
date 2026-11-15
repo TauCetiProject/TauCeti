@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.CategoryTheory.Groupoid.Effective
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Basic
 public import TauCeti.Topology.Covering.Degree
 public import TauCeti.Topology.Covering.Proper
 

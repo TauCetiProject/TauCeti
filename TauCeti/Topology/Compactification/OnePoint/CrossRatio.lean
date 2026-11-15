@@ -377,7 +377,7 @@ transformations**: two quadruples have the same cross ratio exactly when an elem
 theorem crossRatio_eq_crossRatio_iff (x y : Fin 4 ↪ OnePoint K) :
     crossRatio (x 0) (x 1) (x 2) (x 3) = crossRatio (y 0) (y 1) (y 2) (y 3) ↔
       ∃ g : PGL(2, K), g • x = y := by
-  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by simp [← hg, Function.Embedding.smul_apply]⟩
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by simp [← hg, smul_apply]⟩
   obtain ⟨g, hx0, hx1, hx2⟩ :=
     exists_pgl_smul_eq_zero_one_infty (x := x 0) (y := x 1) (z := x 2) (by simp) (by simp) (by simp)
   obtain ⟨k, hy0, hy1, hy2⟩ :=
@@ -385,7 +385,7 @@ theorem crossRatio_eq_crossRatio_iff (x y : Fin 4 ↪ OnePoint K) :
   rw [crossRatio_eq_smul _ hx0 hx1 hx2, crossRatio_eq_smul _ hy0 hy1 hy2] at h
   -- Both quadruples are carried to `0`, `1`, `∞` and their common cross ratio.
   refine ⟨k⁻¹ * g, Function.Embedding.ext fun i ↦ ?_⟩
-  rw [Function.Embedding.smul_apply, mul_smul, inv_smul_eq_iff]
+  rw [smul_apply, mul_smul, inv_smul_eq_iff]
   fin_cases i
   · exact hx0.trans hy0.symm
   · exact hx1.trans hy1.symm
@@ -405,9 +405,9 @@ private theorem crossRatio_eq_crossRatio_iff_psl_of_factor
   · obtain ⟨h, rfl⟩ := ProjGenLinGroup.mk_surjective g
     obtain ⟨s, z, rfl⟩ := hK h
     refine ⟨s, Function.Embedding.ext fun i ↦ ?_⟩
-    simpa [Function.Embedding.smul_apply, mul_smul] using congr($hg i)
+    simpa [smul_apply, mul_smul] using congr($hg i)
   · ext i
-    simpa [Function.Embedding.smul_apply, ProjectiveSpecialLinearGroup.toPGL_smul] using
+    simpa [smul_apply, ProjectiveSpecialLinearGroup.toPGL_smul] using
       congr($hg i)
 
 /-- If every unit of `K` is a square, the cross ratio classifies ordered quadruples of distinct

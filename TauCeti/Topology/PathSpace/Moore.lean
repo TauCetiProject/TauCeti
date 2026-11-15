@@ -475,14 +475,40 @@ theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
   ext (by rw [length_rescale, length_refl]) fun t ↦ by
     rw [rescale_apply, div_zero, refl_apply, source_def]
 
+/-- Rescaling is continuous in the path and in the length, also where the length vanishes,
+provided the paths rescaled to length zero are constant. -/
+theorem _root_.Continuous.moorePath_rescale_of_forall_eq_source {f : Y → MoorePath X}
+    {g : Y → ℝ≥0} (hf : Continuous f) (hg : Continuous g)
+    (h0 : ∀ y, g y = 0 → ∀ t, f y t = (f y).source) :
+    Continuous fun y ↦ (f y).rescale (g y) := by
+  refine continuous_iff.2 ⟨hg, continuous_iff_continuousAt.2 fun p ↦ ?_⟩
+  simp only [rescale_apply]
+  rcases eq_or_ne (g p.1) 0 with hp | hp
+  · -- Near a constant path, the nearby paths stay close to the constant on a compact time
+    -- interval longer than all their lengths, so all their values are close to it.
+    refine (nhds_basis_opens _).tendsto_right_iff.2 fun V ⟨hxV, hV⟩ ↦ ?_
+    have hx : (f p.1).source ∈ V := h0 p.1 hp _ ▸ hxV
+    have hlen : ∀ᶠ y in nhds p.1, (f y).length < (f p.1).length + 1 :=
+      (continuous_length.comp hf).continuousAt.eventually_lt continuousAt_const (lt_add_one _)
+    have hmaps : ∀ᶠ y in nhds p.1, Set.MapsTo (f y).toContinuousMap
+        (Set.Icc 0 ((f p.1).length + 1)) V :=
+      (continuous_toContinuousMap.comp hf).continuousAt.eventually
+        (ContinuousMap.eventually_mapsTo isCompact_Icc hV fun t _ ↦ (h0 p.1 hp t).symm ▸ hx)
+    filter_upwards [continuous_fst.continuousAt.eventually (hlen.and hmaps)] with q ⟨hq, hqV⟩
+    rw [← apply_min_length]
+    exact hqV ⟨zero_le, (min_le_right _ _).trans hq.le⟩
+  · exact continuous_eval.continuousAt.comp (f := fun q : Y × ℝ≥0 ↦
+      (f q.1, (f q.1).length * q.2 / g q.1))
+      ((hf.comp continuous_fst).continuousAt.prodMk
+        (((continuous_length.comp (hf.comp continuous_fst)).mul continuous_snd).continuousAt.div
+          (hg.comp continuous_fst).continuousAt hp))
+
 /-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
 @[fun_prop]
 theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
     (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
-    Continuous fun y ↦ (f y).rescale (g y) := by
-  refine continuous_iff.2 ⟨hg, ?_⟩
-  simp only [rescale_apply]
-  fun_prop (disch := exact fun p ↦ h0 p.1)
+    Continuous fun y ↦ (f y).rescale (g y) :=
+  hf.moorePath_rescale_of_forall_eq_source hg fun y hy ↦ absurd hy (h0 y)
 
 end MoorePath
 
@@ -543,6 +569,12 @@ theorem map_id (γ : MoorePath X) : γ.map (.id X) = γ :=
 @[simp]
 theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
     (γ.map f).map g = γ.map (g.comp f) :=
+  (rfl)
+
+/-- The image of a Moore path under a constant map is the constant path of the same length. -/
+@[simp]
+theorem map_const (y : Y) (γ : MoorePath X) :
+    γ.map (.const X y) = constOfLength y γ.length :=
   (rfl)
 
 @[fun_prop]
@@ -684,6 +716,16 @@ def length (γ : MooreLoopSpace X x) : ℝ≥0 :=
 theorem length_toMoorePath (γ : MooreLoopSpace X x) : γ.toMoorePath.length = γ.length :=
   (rfl)
 
+/-- A Moore loop starts at its base point. -/
+@[simp]
+theorem toMoorePath_apply_zero (γ : MooreLoopSpace X x) : γ.toMoorePath 0 = x :=
+  γ.source_eq
+
+/-- A Moore loop is back at its base point at its length. -/
+@[simp]
+theorem toMoorePath_apply_length (γ : MooreLoopSpace X x) : γ.toMoorePath γ.length = x :=
+  γ.target_eq
+
 @[simp]
 theorem length_one : (1 : MooreLoopSpace X x).length = 0 :=
   (rfl)
@@ -800,6 +842,13 @@ theorem toMoorePath_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
 @[simp]
 theorem length_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
     (map f hf γ).length = γ.length :=
+  (rfl)
+
+/-- The Moore loop map of the constant map at the base point sends a loop to the constant loop of
+the same length. -/
+@[simp]
+theorem map_const_apply (hy : ContinuousMap.const X y x = y) (γ : MooreLoopSpace X x) :
+    map (.const X y) hy γ = constOfLength y γ.length :=
   (rfl)
 
 @[simp]

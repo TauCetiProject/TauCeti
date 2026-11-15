@@ -176,6 +176,7 @@ section Free
 
 variable [Module.Free A B] [Module.Finite A B]
 
+omit [Module.Finite A B] in
 /-- If the norm form of `B` in a basis `b` factors as `∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ`, then the norm on
 every base change `T ⊗[A] B` is the product of the values at the sections: write
 `f = ∑ j, cⱼ ⊗ bⱼ` and specialize `Xⱼ ↦ cⱼ`. -/
@@ -246,10 +247,11 @@ end Free
 
 /-! ### Finite flat algebras
 
-For `B` finite over `A`, being a full set of sections is local on `Spec A`: it can be checked on
-the localizations at a family of elements generating the unit ideal
-(`IsFullSetOfSections.of_localizationSpan`). The characteristic-polynomial criterion likewise
-requires only finiteness when test algebras stay in the universe of `A`. If `B` is also flat over
+Being a full set of sections is local on `Spec A`, with no finiteness hypothesis on `B`: it can be
+checked on the localizations at a family of elements generating the unit ideal
+(`IsFullSetOfSections.of_localizationSpan`) or at every maximal ideal
+(`IsFullSetOfSections.of_localization_maximal`). The characteristic-polynomial criterion requires
+`B` finite over `A` when test algebras stay in the universe of `A`. If `B` is also flat over
 `A`, as it is when `Spec B → Spec A` is finite locally free, full sets of sections are stable
 under arbitrary base change and descend along injective ring maps, so that full sets of sections
 can be checked locally and transported to any base. -/
@@ -281,7 +283,7 @@ private theorem IsFullSetOfSections.baseChange_of_univ (h : IsFullSetOfSections 
 
 -- The image in `T'` of the norm identity for `f ∈ T ⊗[A] B`, when `T'` is an algebra over both
 -- `T` and `A'` and the norm identity holds on `T' ⊗[A'] (A' ⊗[A] B)` for the base change of `s`.
-private theorem algebraMap_norm_eq_algebraMap_prod [Module.Finite A B] {A' T T' : Type*}
+private theorem algebraMap_norm_eq_algebraMap_prod {A' T T' : Type*}
     [CommRing A'] [Algebra A A'] [CommRing T] [Algebra A T] [Module.Free T (T ⊗[A] B)]
     [CommRing T'] [Algebra T T'] [Algebra A' T'] [Algebra A T'] [IsScalarTower A A' T']
     [IsScalarTower A T T'] (f : T ⊗[A] B)
@@ -294,7 +296,7 @@ private theorem algebraMap_norm_eq_algebraMap_prod [Module.Finite A B] {A' T T' 
 
 -- When `T'` is in the universe of `A'`, fullness supplies the norm identity after transporting
 -- freeness through the two base changes.
-private theorem IsFullSetOfSections.algebraMap_norm_eq_prod [Module.Finite A B]
+private theorem IsFullSetOfSections.algebraMap_norm_eq_prod
     {A' T' : Type u} [CommRing A'] [Algebra A A'] {T : Type*} [CommRing T] [Algebra A T]
     [Module.Free T (T ⊗[A] B)] [CommRing T'] [Algebra T T'] [Algebra A' T'] [Algebra A T']
     [IsScalarTower A A' T'] [IsScalarTower A T T']
@@ -308,7 +310,7 @@ private theorem IsFullSetOfSections.algebraMap_norm_eq_prod [Module.Finite A B]
 
 /-- **Zariski locality.** If `t` generates the unit ideal of `A` and the base changes of `s` to the
 localizations `A[1/r]`, `r ∈ t`, are full sets of sections, then `s` is a full set of sections. -/
-theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
+theorem IsFullSetOfSections.of_localizationSpan (t : Set A)
     (ht : Ideal.span t = ⊤)
     (h : ∀ r : t, IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.Away r.1)) :
     IsFullSetOfSections s := by
@@ -319,9 +321,9 @@ theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
   exact (h r).algebraMap_norm_eq_prod f
 
-/-- A family of sections of a finite algebra is full if it is full after localization at
-every maximal ideal of the base. -/
-theorem IsFullSetOfSections.of_localization_maximal [Module.Finite A B]
+/-- A family of sections is full if it is full after localization at every maximal ideal of the
+base. -/
+theorem IsFullSetOfSections.of_localization_maximal
     (h : ∀ (P : Ideal A) [P.IsMaximal],
       IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.AtPrime P)) :
     IsFullSetOfSections s := by
