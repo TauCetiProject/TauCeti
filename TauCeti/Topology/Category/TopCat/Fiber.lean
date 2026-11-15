@@ -15,6 +15,8 @@ The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is
 `p ⁻¹' {b}` with the subspace topology, and `TopCat.Hom.fiberι p b` is its inclusion into `E`.
 A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
 fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
+More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
+(`TopCat.Hom.preimageMap`).
 
 The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
 `AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
@@ -49,6 +51,46 @@ lemma apply_coe_fiber (p : E ⟶ B) (b : B) (x : p.fiber b) : p x.1 = b :=
 lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
   ext x
   exact x.2
+
+/-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
+into the part of `E'` over it. -/
+lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
+  rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
+  exact he
+
+/-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
+parts over a subset `S` of `B`. -/
+def preimageMap {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) : TopCat.of (p ⁻¹' S) ⟶ TopCat.of (p' ⁻¹' S) :=
+  TopCat.ofHom ⟨(f.mapsTo_preimage_of_comp_eq hf S).restrict,
+    f.hom.continuous.restrict (f.mapsTo_preimage_of_comp_eq hf S)⟩
+
+@[simp]
+lemma coe_preimageMap_apply {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (f.preimageMap hf S x : E') = f x :=
+  (rfl)
+
+@[simp]
+lemma preimageMap_id {p : E ⟶ B} (hf : 𝟙 E ≫ p = p) (S : Set B) :
+    preimageMap (𝟙 E) hf S = 𝟙 _ :=
+  (rfl)
+
+/-- Restrictions of maps over `B` compose. It is stated in this direction so that `simp` can use
+it: the middle map `p'` cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma preimageMap_comp_preimageMap {E' E'' : TopCat.{u}} (f : E ⟶ E') (f' : E' ⟶ E'')
+    {p : E ⟶ B} {p' : E' ⟶ B} {p'' : E'' ⟶ B} (hf : f ≫ p' = p) (hf' : f' ≫ p'' = p')
+    (S : Set B) :
+    f.preimageMap hf S ≫ f'.preimageMap hf' S =
+      preimageMap (f ≫ f') (by rw [Category.assoc, hf', hf]) S :=
+  (rfl)
+
+/-- On fibres, the restriction of a map `f` over `B` commutes with the inclusions of the fibres. -/
+@[reassoc (attr := simp)]
+lemma preimageMap_comp_fiberι {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (b : B) : f.preimageMap hf {b} ≫ p'.fiberι b = p.fiberι b ≫ f :=
+  (rfl)
 
 /-- The composite of two maps with finite fibres has finite fibres. -/
 theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
