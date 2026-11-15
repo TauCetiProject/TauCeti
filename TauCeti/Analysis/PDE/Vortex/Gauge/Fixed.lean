@@ -35,7 +35,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
-  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`).
+  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and
+  each is the negative transpose of the other (`inner_gaugeFixedAdjointSymbol`).
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -297,6 +298,13 @@ theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
     Fin.sum_univ_two, coe_orthonormalBasisOneI]
   ring
 
+/-- The adjoint symbol is jointly continuous in the covector and the field value. -/
+theorem continuous_gaugeFixedAdjointSymbol :
+    Continuous fun p : (ℂ →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin 4) ↦
+      gaugeFixedAdjointSymbol p.1 p.2 := by
+  simp_rw [gaugeFixedAdjointSymbol_def]
+  exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
+
 /-- The adjoint symbol commutes with real scaling of the covector. -/
 @[simp]
 theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
@@ -392,6 +400,15 @@ theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
     gaugeFixedOperatorSymbol d (r • v) = r • gaugeFixedOperatorSymbol d v := by
   ext i
   fin_cases i <;> simp <;> ring
+
+/-- The two symbols are negative transposes of each other, as the principal symbols of a
+first-order operator and of its formal adjoint: `⟪u, σ*(d) v⟫ = -⟪σ(d) u, v⟫`. -/
+theorem inner_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ) (u v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪u, gaugeFixedAdjointSymbol d v⟫ = -⟪gaugeFixedOperatorSymbol d u, v⟫ := by
+  simp only [gaugeFixedAdjointSymbol_def, gaugeFixedOperatorSymbol_def, PiLp.inner_apply,
+    Fin.sum_univ_four]
+  simp
+  ring
 
 /-- The Leibniz rule of the gauge-fixed operator for a real weight, with its exact symbol
 commutator. -/
