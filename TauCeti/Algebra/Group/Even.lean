@@ -13,7 +13,8 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 # Squares and finite products
 
 A unit square factor does not change whether an element is a square
-(`IsUnit.isSquare_sq_mul_iff`).
+(`IsUnit.isSquare_sq_mul_iff`), and neither does a multiplicative equivalence
+(`MulEquiv.isSquare_apply_iff`).
 
 If all but the last entries of two finite families agree modulo squares, agreement of their
 products modulo squares determines the last entry. This is useful when prescribing the last
@@ -46,3 +47,10 @@ theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : Is
   refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
   have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
   rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
+
+/-- A multiplicative equivalence preserves and reflects squares. -/
+@[simp]
+theorem MulEquiv.isSquare_apply_iff {α β : Type*} [Mul α] [Mul β] (e : α ≃* β) {a : α} :
+    IsSquare (e a) ↔ IsSquare a :=
+  ⟨fun ⟨r, hr⟩ ↦ ⟨e.symm r, by rw [← map_mul, ← hr, MulEquiv.symm_apply_apply]⟩,
+    fun ⟨r, hr⟩ ↦ ⟨e r, by rw [hr, map_mul]⟩⟩

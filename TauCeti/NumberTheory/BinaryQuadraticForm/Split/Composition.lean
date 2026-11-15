@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Classes
 public import TauCeti.NumberTheory.QuadraticOrder.Split.Lattice
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Algebra.Group.TransferInstance
+import TauCeti.Algebra.Group.Even
 
 /-!
 # Composition of split proper classes
@@ -173,16 +174,12 @@ def splitProperClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃* (Z
   apply Units.ext
   simp
 
-private theorem isSquare_iff_isSquare_splitProperClassEquivUnits (s : ℕ) [NeZero s]
-    (q : SplitProperClass s) : IsSquare q ↔ IsSquare (splitProperClassEquivUnits s q) :=
-  ⟨fun h ↦ h.map _, fun h ↦ by simpa using h.map (splitProperClassEquivUnits s).symm⟩
-
 /-- A triangular class is a square exactly when its coefficient is a square modulo the square
 root. -/
 @[simp] theorem isSquare_splitProperClassMk_iff (s : ℕ) [NeZero s] (c : ℤ)
     (hc : IsCoprime (s : ℤ) c) :
     IsSquare (splitProperClassMk s c hc) ↔ IsSquare (c : ZMod s) := by
-  rw [isSquare_iff_isSquare_splitProperClassEquivUnits, splitProperClassEquivUnits_mk,
+  rw [← (splitProperClassEquivUnits s).isSquare_apply_iff, splitProperClassEquivUnits_mk,
     ← Units.isSquare_coe_iff, ZMod.coe_unitOfIsCoprime]
 
 /-- Two triangular classes differ by a square exactly when the coefficient of the second is a
@@ -191,7 +188,7 @@ theorem isSquare_inv_mul_splitProperClassMk_iff (s : ℕ) [NeZero s] (c d : ℤ)
     (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
     IsSquare ((splitProperClassMk s c hc)⁻¹ * splitProperClassMk s d hd) ↔
       ∃ z : ZMod s, (d : ZMod s) = c * z ^ 2 := by
-  rw [isSquare_iff_isSquare_splitProperClassEquivUnits, map_mul, map_inv,
+  rw [← (splitProperClassEquivUnits s).isSquare_apply_iff, map_mul, map_inv,
     splitProperClassEquivUnits_mk, splitProperClassEquivUnits_mk, ← Units.isSquare_coe_iff,
     isSquare_iff_exists_sq]
   simp only [Units.val_mul, Units.inv_mul_eq_iff_eq_mul, ZMod.coe_unitOfIsCoprime]

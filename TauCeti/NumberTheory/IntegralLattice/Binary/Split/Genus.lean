@@ -138,14 +138,15 @@ private theorem sameGenus_of_intCast_eq_mul_sq {s : ℕ} [NeZero s]
       ((ZMod.val_coe_unit_coprime w).coprime_dvd_right (Int.natCast_dvd_natCast.mp hp)).symm
     exact equivalent_of_toMatrix_eq_map_gramMatrix hb hb' _ _ (toMatrix_localIntegralForm L p b)
       (toMatrix_localIntegralForm M p b') hup.unit (r * ↑hup.unit⁻¹) (by
-        rw [mul_assoc, mul_assoc, Units.inv_mul, mul_one, IsUnit.unit_spec]
-        exact_mod_cast (by linear_combination hr : a' = s * r + u ^ 2 * a))
+        have hr' : (a' : ℤ_[p]) - a * u ^ 2 = s * r := by exact_mod_cast hr
+        push_cast [IsUnit.unit_spec]
+        linear_combination hr' - (s : ℤ_[p]) * r * hup.val_inv_mul)
   · -- At a prime not dividing `s`, the coefficient `s` is a unit; take `μ = 1`.
     have hsp : IsUnit ((s : ℤ) : ℤ_[p]) := PadicInt.isUnit_intCast_iff.mpr hp
     exact equivalent_of_toMatrix_eq_map_gramMatrix hb hb' _ _ (toMatrix_localIntegralForm L p b)
       (toMatrix_localIntegralForm M p b') 1 ((a' - a) * ↑hsp.unit⁻¹) (by
-        rw [Units.val_one, mul_one, one_pow, one_mul, mul_left_comm, hsp.mul_val_inv, mul_one,
-          sub_add_cancel])
+        simp only [Units.val_one]
+        linear_combination (a - a') * hsp.mul_val_inv)
 
 /-- **A local isometry forces a square congruence.** If `L` and `M` have norm forms
 `c (sxy + ay²)` and `c (sxy + a'y²)` with `c ≠ 0` and their localizations at `p` are isometric,

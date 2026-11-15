@@ -780,7 +780,12 @@ theorem equivalent_of_toMatrix_eq_isotropic {B : BilinForm R M} {B' : BilinForm 
   refine ⟨E.isometryEquivOfToMatrixEq w ?_⟩
   rw [hB', h]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [toMatrix_apply, hE0, hE1, hv]
-  ring
+  fin_cases i <;> fin_cases j
+  · simp [toMatrix_apply, hE0, hv]
+  · simp [toMatrix_apply, hE0, hE1, hv]
+  · simp [toMatrix_apply, hE0, hE1, hv]
+  · -- The `(1, 1)` entry is `B (t v₀ + μ v₁) (t v₀ + μ v₁) = 2tμβ + μ²γ`.
+    simp [toMatrix_apply, hE1, hv]
+    ring
 
 end LinearMap.BilinForm
