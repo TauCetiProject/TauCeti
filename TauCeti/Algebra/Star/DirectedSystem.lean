@@ -57,6 +57,7 @@ theorem seqTransHom_le_succ (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) (n : ℕ
     seqTransHom α (Nat.le_succ n) = α n := by
   rw [seqTransHom_succ α le_rfl (Nat.le_succ n), seqTransHom_self, NonUnitalStarAlgHom.comp_id]
 
+@[simp]
 theorem seqTransHom_comp (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {i j k : ℕ} (hij : i ≤ j)
     (hjk : j ≤ k) :
     (seqTransHom α hjk).comp (seqTransHom α hij) = seqTransHom α (hij.trans hjk) := by

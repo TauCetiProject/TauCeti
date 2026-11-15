@@ -12,30 +12,34 @@ public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Sequen
 # Elliott's approximate intertwining from approximate unitary equivalence
 
 Given sequential inductive systems of separable unital C⋆-algebras `A₀ →[α₀] A₁ →[α₁] ⋯` and
-`B₀ →[β₀] B₁ →[β₁] ⋯` together with (possibly nonunital) stage maps `φ₀ n : A n →⋆ₙₐ[ℂ] B (n + 1)`
+`B₀ →[β₀] B₁ →[β₁] ⋯` together with (possibly non-unital) stage maps `φ₀ n : A n →⋆ₙₐ[ℂ] B (n + 1)`
 and `ψ₀ n : B n →⋆ₙₐ[ℂ] A n` whose triangles `(ψ₀ (n + 1)).comp (φ₀ n)` and `(φ₀ n).comp (ψ₀ n)`
 are approximately unitarily equivalent to `α n` and `β n`, a recursive zig-zag of inner
 automorphisms replaces `φ₀ n` and `ψ₀ n` by unitarily conjugate maps `φ n` and `ψ n` that form an
 honest norm-approximate intertwining (`IsApproximateIntertwining`) on propagating finite subsets
-with geometric tolerances `(1 / 2) ^ n`. Because postcomposition with any (even nonunital)
+with geometric tolerances `(1 / 2) ^ n`. Because postcomposition with any (even non-unital)
 `⋆`-homomorphism `ρ` between unital C⋆-algebras preserves approximate unitary equivalence via the
 corner unitization `ρ u + (1 - ρ 1)`, neither the connecting maps `α n`, `β n` nor the stage maps
 `φ₀ n`, `ψ₀ n` need be unital.
 
-Passing to sequential colimit cones into unital C⋆-algebras `C` and `D` and using closure of
-approximate unitary equivalence under point-norm limits (`of_tendsto_left`) yields a
-`⋆`-isomorphism `θ : C ≃⋆ₐ[ℂ] D` whose stage restrictions are approximately unitarily equivalent
-to `(ιB (n + 1)).comp (φ₀ n)` in the forward direction and `(ιA n).comp (ψ₀ n)` in the backward
-direction (`elliott_intertwining_of_isSeqColimitCone`). Specializing to constant systems recovers
+Passing to sequential colimit cocones into unital C⋆-algebras `C` and `D` and using closure of
+approximate unitary equivalence under point-norm limits
+(`IsApproximateCocone.approximatelyUnitarilyEquivalent_hom_comp`) yields a `⋆`-isomorphism
+`θ : C ≃⋆ₐ[ℂ] D` whose stage restrictions are approximately unitarily equivalent to
+`(ιB (n + 1)).comp (φ₀ n)` in the forward direction and `(ιA n).comp (ψ₀ n)` in the backward
+direction (`elliott_intertwining_of_isSeqColimitCocone`). Specializing to constant systems recovers
 Elliott's two-algebra intertwining theorem (`elliott_intertwining`).
 
 ## Main results
 
+* `TauCeti.IsApproximateCocone.approximatelyUnitarilyEquivalent_hom_comp`: when an approximate
+  cocone `ξ` into a unital C⋆-algebra `D` commutes with `α` up to approximate unitary equivalence,
+  its induced colimit homomorphism satisfies `(hc.hom hι).comp (ι n) ≈_u ξ n`.
 * `TauCeti.IsApproximateIntertwining.exists_of_approximatelyUnitarilyEquivalent`: recursive
   zig-zag unitary conjugation turning an approximately unitarily commuting diagram of separable
   unital C⋆-systems into an `IsApproximateIntertwining` on finite sets with geometric tolerances
   `(1 / 2) ^ n`.
-* `TauCeti.elliott_intertwining_of_isSeqColimitCone`: sequential colimit `⋆`-isomorphism
+* `TauCeti.elliott_intertwining_of_isSeqColimitCocone`: sequential colimit `⋆`-isomorphism
   `C ≃⋆ₐ[ℂ] D` preserving stagewise approximate unitary equivalence in both directions.
 * `TauCeti.elliott_intertwining`: if `φ : A →⋆ₙₐ[ℂ] B` and `ψ : B →⋆ₙₐ[ℂ] A` between separable
   unital C⋆-algebras satisfy `ψ ∘ φ ≈_u id_A` and `φ ∘ ψ ≈_u id_B`, then there exists
@@ -58,37 +62,36 @@ open scoped CStarAlgebra
 
 namespace TauCeti
 
+/-- If an approximate cocone `ξ` from a sequential C⋆-system `(A, α)` into a unital C⋆-algebra `D`
+commutes with each connecting map `α n` up to approximate unitary equivalence, then the induced
+colimit `⋆`-homomorphism `hc.hom hι` restricts on stage `n` to a map approximately unitarily
+equivalent to `ξ n`. Neither the stages `A n` nor the colimit `C` need be unital or separable. -/
+theorem IsApproximateCocone.approximatelyUnitarilyEquivalent_hom_comp
+    {A : ℕ → Type*} [∀ n, NonUnitalCStarAlgebra (A n)]
+    {C D : Type*} [NonUnitalCStarAlgebra C] [CStarAlgebra D]
+    {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {ι : ∀ n, A n →⋆ₙₐ[ℂ] C}
+    {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D} {F : ∀ n, Set (A n)} {τ : ℕ → ℝ}
+    (hc : IsApproximateCocone α ξ F τ) (hι : IsSeqColimitCocone α ι)
+    (hstep : ∀ n, ApproximatelyUnitarilyEquivalent ((ξ (n + 1)).comp (α n)) (ξ n)) (n : ℕ) :
+    ApproximatelyUnitarilyEquivalent ((hc.hom hι).comp (ι n)) (ξ n) := by
+  have hiter (k : ℕ) : ApproximatelyUnitarilyEquivalent
+      ((ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k))) (ξ n) := by
+    induction k with
+    | zero =>
+      rw [seqTransHom_self, NonUnitalStarAlgHom.comp_id]
+      exact .refl _
+    | succ k ih =>
+      rw [seqTransHom_succ α (Nat.le_add_right n k), ← NonUnitalStarAlgHom.comp_assoc]
+      exact ((hstep (n + k)).precomp _).trans ih
+  exact ApproximatelyUnitarilyEquivalent.of_tendsto_left
+    (Φ := fun k ↦ (ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k)))
+    (Eventually.of_forall hiter) (fun a ↦ hc.tendsto_hom hι n a)
+
 section ZigZag
 
 private noncomputable abbrev conjHom {X Y : Type*} [NonUnitalCStarAlgebra X] [CStarAlgebra Y]
     (w : unitary Y) (f : X →⋆ₙₐ[ℂ] Y) : X →⋆ₙₐ[ℂ] Y :=
   (Unitary.conjStarAlgAut ℂ Y w).toNonUnitalStarAlgHom.comp f
-
-open Classical in
-/-- Finite seed at stage `m` collecting one pushed dense-sequence term from each earlier stage
-`i ≤ m`, ensuring asymptotic stagewise density along the connecting maps. -/
-private noncomputable def denseSeed {X : ℕ → Type*} [∀ n, NonUnitalCStarAlgebra (X n)]
-    [∀ n, TopologicalSpace.SeparableSpace (X n)]
-    (γ : ∀ n, X n →⋆ₙₐ[ℂ] X (n + 1)) (m : ℕ) : Finset (X m) :=
-  (Finset.Iic m).attach.image fun i ↦
-    seqTransHom γ (Finset.mem_Iic.mp i.2) (TopologicalSpace.denseSeq (X i.1) (m - i.1))
-
-private theorem exists_approx_of_denseSeed_subset {X : ℕ → Type*}
-    [∀ n, NonUnitalCStarAlgebra (X n)] [∀ n, TopologicalSpace.SeparableSpace (X n)]
-    (γ : ∀ n, X n →⋆ₙₐ[ℂ] X (n + 1)) {H : ∀ n, Finset (X n)}
-    (hseed : ∀ m, denseSeed γ m ⊆ H m) (n : ℕ) (x : X n) (r : ℝ) (hr : 0 < r) :
-    ∃ k, ∃ y ∈ (H (n + k) : Set (X (n + k))),
-      ‖seqTransHom γ (Nat.le_add_right n k) x - y‖ < r := by
-  obtain ⟨k, hk⟩ := Metric.denseRange_iff.mp (TopologicalSpace.denseRange_denseSeq (X n)) x r hr
-  refine ⟨k, seqTransHom γ (Nat.le_add_right n k) (TopologicalSpace.denseSeq (X n) k), ?_, ?_⟩
-  · apply hseed (n + k)
-    classical
-    refine Finset.mem_image.mpr ⟨⟨n, Finset.mem_Iic.mpr (Nat.le_add_right n k)⟩,
-      Finset.mem_attach _ _, ?_⟩
-    simp only [Nat.add_sub_cancel_left]
-  · rw [← map_sub]
-    refine (NonUnitalStarAlgHom.norm_apply_le _ _).trans_lt ?_
-    simpa only [dist_eq_norm] using hk
 
 private structure ZigZagStage {A B : ℕ → Type*} [∀ n, CStarAlgebra (A n)] [∀ n, CStarAlgebra (B n)]
     (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
@@ -114,7 +117,7 @@ private theorem exists_conjHom_comp_sub_le {X Y Z : Type*}
     (w : unitary Y) (S : Finset X) {ε : ℝ} (hε : 0 < ε) :
     ∃ u : unitary Z, ∀ x ∈ S, ‖conjHom u g (conjHom w f x) - h x‖ ≤ ε := by
   have hEq : ApproximatelyUnitarilyEquivalent (g.comp (conjHom w f)) h :=
-    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp w f).postcomp_nonUnital g).trans hgf
+    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp w f).postcomp g).trans hgf
   obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hEq S ε hε
   refine ⟨u, fun x hx ↦ ?_⟩
   simpa only [conjHom, NonUnitalStarAlgHom.comp_apply,
@@ -204,12 +207,13 @@ theorem IsApproximateIntertwining.exists_of_approximatelyUnitarilyEquivalent
         (fun n ↦ (F n : Set (A n))) (fun n ↦ (G n : Set (B n)))
         (fun n ↦ (1 / 2 : ℝ) ^ n) (fun n ↦ (1 / 2 : ℝ) ^ n) := by
   classical
-  have hseedA (m : ℕ) : denseSeed α m ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).F := by
-    cases m <;> exact Finset.subset_union_right
-  have hseedB (m : ℕ) : denseSeed β m ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).G := by
-    cases m with
-    | zero => exact Finset.Subset.refl _
-    | succ m => exact Finset.subset_union_right
+  have hseedA (m : ℕ) : (denseSeed α m : Set (A m)) ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).F :=
+    Finset.coe_subset.mpr <| by cases m <;> exact Finset.subset_union_right
+  have hseedB (m : ℕ) : (denseSeed β m : Set (B m)) ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).G :=
+    Finset.coe_subset.mpr <| by
+      cases m with
+      | zero => exact Finset.Subset.refl _
+      | succ m => exact Finset.subset_union_right
   refine ⟨fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).u,
     fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).v,
     fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).F,
@@ -244,19 +248,19 @@ end ZigZag
 
 section ColimitIntertwining
 
-/-- Elliott's approximate-intertwining theorem for sequential colimit cones of separable unital
+/-- Elliott's approximate-intertwining theorem for sequential colimit cocones of separable unital
 C⋆-algebras into unital C⋆-algebras `C` and `D` (Rørdam, Theorem 2.3.3 and Corollary 2.3.4): if
 stage maps `φ₀ n : A n →⋆ₙₐ[ℂ] B (n + 1)` and `ψ₀ n : B n →⋆ₙₐ[ℂ] A n` satisfy
 `(ψ₀ (n + 1)).comp (φ₀ n) ≈_u α n` and `(φ₀ n).comp (ψ₀ n) ≈_u β n`, then there exists a
 `⋆`-isomorphism `θ : C ≃⋆ₐ[ℂ] D` whose stage restrictions are approximately unitarily equivalent
 to `(ιB (n + 1)).comp (φ₀ n)` and `(ιA n).comp (ψ₀ n)` for every `n`. -/
-theorem elliott_intertwining_of_isSeqColimitCone
+theorem elliott_intertwining_of_isSeqColimitCocone
     {A B : ℕ → Type*} [∀ n, CStarAlgebra (A n)] [∀ n, CStarAlgebra (B n)]
     [∀ n, TopologicalSpace.SeparableSpace (A n)] [∀ n, TopologicalSpace.SeparableSpace (B n)]
     {C D : Type*} [CStarAlgebra C] [CStarAlgebra D]
     {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
     {ιA : ∀ n, A n →⋆ₙₐ[ℂ] C} {ιB : ∀ n, B n →⋆ₙₐ[ℂ] D}
-    (hιA : IsSeqColimitCone α ιA) (hιB : IsSeqColimitCone β ιB)
+    (hιA : IsSeqColimitCocone α ιA) (hιB : IsSeqColimitCocone β ιB)
     (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
     (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
     (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n)) :
@@ -268,59 +272,28 @@ theorem elliott_intertwining_of_isSeqColimitCone
   obtain ⟨u, v, F, G, hinter⟩ :=
     IsApproximateIntertwining.exists_of_approximatelyUnitarilyEquivalent φ₀ ψ₀ hψφ hφψ
   let θ := hinter.equiv hιA hιB
-  have hstep_φ (m : ℕ) : ApproximatelyUnitarilyEquivalent
+  have hconj (m : ℕ) : ApproximatelyUnitarilyEquivalent
+      ((ιB (m + 1)).comp
+        ((Unitary.conjStarAlgAut ℂ (B (m + 1)) (v m)).toNonUnitalStarAlgHom.comp (φ₀ m)))
+      ((ιB (m + 1)).comp (φ₀ m)) :=
+    (ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (v m) (φ₀ m)).postcomp (ιB (m + 1))
+  have hstep₀ (m : ℕ) : ApproximatelyUnitarilyEquivalent
       (((ιB (m + 2)).comp (φ₀ (m + 1))).comp (α m)) ((ιB (m + 1)).comp (φ₀ m)) := by
-    have h₁ := (hψφ m).symm.postcomp_nonUnital (φ₀ (m + 1))
+    have h₁ := (hψφ m).symm.postcomp (φ₀ (m + 1))
     have h₂ := (hφψ (m + 1)).precomp (φ₀ m)
     rw [NonUnitalStarAlgHom.comp_assoc] at h₂
-    have h₃ := (h₁.trans h₂).postcomp_nonUnital (ιB (m + 2))
+    have h₃ := (h₁.trans h₂).postcomp (ιB (m + 2))
     rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc,
       hιB.comp_eq (m + 1)] at h₃
-  have hstep_ψ (m : ℕ) : ApproximatelyUnitarilyEquivalent
-      (((ιA (m + 1)).comp (ψ₀ (m + 1))).comp (β m)) ((ιA m).comp (ψ₀ m)) := by
-    have h₁ := (hφψ m).symm.postcomp_nonUnital (ψ₀ (m + 1))
-    have h₂ := (hψφ m).precomp (ψ₀ m)
-    rw [NonUnitalStarAlgHom.comp_assoc] at h₂
-    have h₃ := (h₁.trans h₂).postcomp_nonUnital (ιA (m + 1))
-    rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc,
-      hιA.comp_eq m] at h₃
-  refine ⟨θ, fun n ↦ ?_, fun n ↦ ?_⟩
-  · have hiter (k : ℕ) : ApproximatelyUnitarilyEquivalent
-        (((ιB (n + k + 1)).comp (φ₀ (n + k))).comp (seqTransHom α (Nat.le_add_right n k)))
-        ((ιB (n + 1)).comp (φ₀ n)) := by
-      induction k with
-      | zero =>
-        rw [seqTransHom_self, NonUnitalStarAlgHom.comp_id]
-        exact .refl _
-      | succ k ih =>
-        rw [seqTransHom_succ α (Nat.le_add_right n k), ← NonUnitalStarAlgHom.comp_assoc]
-        exact ((hstep_φ (n + k)).precomp _).trans ih
-    refine ApproximatelyUnitarilyEquivalent.of_tendsto_left
-      (Φ := fun k ↦ ((ιB (n + k + 1)).comp
-        ((Unitary.conjStarAlgAut ℂ (B (n + k + 1)) (v (n + k))).toNonUnitalStarAlgHom.comp
-          (φ₀ (n + k)))).comp (seqTransHom α (Nat.le_add_right n k)))
-      (Eventually.of_forall fun k ↦ ?_) (fun a ↦ hinter.tendsto_equiv hιA hιB n a)
-    exact (((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (v (n + k))
-      (φ₀ (n + k))).postcomp_nonUnital (ιB (n + k + 1))).precomp
-      (seqTransHom α (Nat.le_add_right n k))).trans (hiter k)
-  · have hiter (k : ℕ) : ApproximatelyUnitarilyEquivalent
-        (((ιA (n + k)).comp (ψ₀ (n + k))).comp (seqTransHom β (Nat.le_add_right n k)))
-        ((ιA n).comp (ψ₀ n)) := by
-      induction k with
-      | zero =>
-        rw [seqTransHom_self, NonUnitalStarAlgHom.comp_id]
-        exact .refl _
-      | succ k ih =>
-        rw [seqTransHom_succ β (Nat.le_add_right n k), ← NonUnitalStarAlgHom.comp_assoc]
-        exact ((hstep_ψ (n + k)).precomp _).trans ih
-    refine ApproximatelyUnitarilyEquivalent.of_tendsto_left
-      (Φ := fun k ↦ ((ιA (n + k)).comp
-        ((Unitary.conjStarAlgAut ℂ (A (n + k)) (u (n + k))).toNonUnitalStarAlgHom.comp
-          (ψ₀ (n + k)))).comp (seqTransHom β (Nat.le_add_right n k)))
-      (Eventually.of_forall fun k ↦ ?_) (fun b ↦ hinter.tendsto_equiv_symm hιA hιB n b)
-    exact (((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (u (n + k))
-      (ψ₀ (n + k))).postcomp_nonUnital (ιA (n + k))).precomp
-      (seqTransHom β (Nat.le_add_right n k))).trans (hiter k)
+  have hθ (n : ℕ) : ApproximatelyUnitarilyEquivalent
+      (θ.toNonUnitalStarAlgHom.comp (ιA n)) ((ιB (n + 1)).comp (φ₀ n)) := by
+    rw [hinter.toNonUnitalStarAlgHom_equiv]
+    refine ((hinter.isApproximateCocone_comp_left hιB).approximatelyUnitarilyEquivalent_hom_comp
+      hιA (fun m ↦ ?_) n).trans (hconj n)
+    exact ((hconj (m + 1)).precomp (α m)).trans ((hstep₀ m).trans (hconj m).symm)
+  refine ⟨θ, hθ, fun n ↦ (ApproximatelyUnitarilyEquivalent.symm_comp_iff θ).mpr ?_⟩
+  rw [← NonUnitalStarAlgHom.comp_assoc, ← hιB.comp_eq n]
+  exact ((hθ n).precomp (ψ₀ n)).trans ((hφψ n).postcomp (ιB (n + 1)))
 
 /-- Elliott's approximate intertwining theorem (Rørdam, *Classification of Nuclear C⋆-Algebras*,
 §2.3; Kirchberg–Phillips, *Embedding of exact C⋆-algebras in the Cuntz algebra O₂*, Lemma 0.6):
@@ -335,8 +308,8 @@ theorem elliott_intertwining {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
     (hψφ : ApproximatelyUnitarilyEquivalent (ψ.comp φ) (NonUnitalStarAlgHom.id ℂ A))
     (hφψ : ApproximatelyUnitarilyEquivalent (φ.comp ψ) (NonUnitalStarAlgHom.id ℂ B)) :
     ∃ θ : A ≃⋆ₐ[ℂ] B, ApproximatelyUnitarilyEquivalent θ.toNonUnitalStarAlgHom φ := by
-  obtain ⟨θ, hθ, _⟩ := elliott_intertwining_of_isSeqColimitCone
-    (IsSeqColimitCone.const A) (IsSeqColimitCone.const B)
+  obtain ⟨θ, hθ, _⟩ := elliott_intertwining_of_isSeqColimitCocone
+    (IsSeqColimitCocone.const A) (IsSeqColimitCocone.const B)
     (fun _ ↦ φ) (fun _ ↦ ψ) (fun _ ↦ hψφ) (fun _ ↦ hφψ)
   refine ⟨θ, ?_⟩
   simpa only [NonUnitalStarAlgHom.comp_id, NonUnitalStarAlgHom.id_comp] using hθ 0

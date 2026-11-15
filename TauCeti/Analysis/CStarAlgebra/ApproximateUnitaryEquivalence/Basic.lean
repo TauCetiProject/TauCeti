@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import TauCeti.Algebra.Star.MonoidHom
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -15,11 +16,12 @@ import TauCeti.Analysis.Normed.Ring.Basic
 Two possibly nonunital star homomorphisms into a unital C⋆-algebra are approximately
 unitarily equivalent when conjugation by target unitaries approximates one by the other
 on every finite set. This file proves the equivalence-relation laws and compatibility
-with composition: postcomposition by a unital map pushes unitaries directly, and
-postcomposition by a nonunital map `ρ` between unital C⋆-algebras uses the corner-unitized
-unitary `ρ u + (1 - ρ 1)`. The relation preserves pointwise norms, hence injectivity, as well as
-the condition of mapping an idempotent (in particular, a source unit) to the target unit;
-consequently, approximate unitary equivalence of `ψ ∘ φ` with `id` forces `ψ` to be unital.
+with composition: precomposition preserves the relation unconditionally, and postcomposition
+by any possibly nonunital map `ρ` between unital C⋆-algebras pushes unitaries along the
+corner-unitized `⋆`-monoid homomorphism `ρ u + (1 - ρ 1)`. The relation preserves pointwise
+norms, hence injectivity, as well as the condition of mapping an idempotent (in particular, a
+source unit) to the target unit; consequently, approximate unitary equivalence of `ψ ∘ φ` with
+`id` forces `ψ` to be unital.
 
 The convention is that of Kirchberg–Phillips, *Embedding of exact C*-algebras in the
 Cuntz algebra O₂*, Definition 0.5, extended to possibly nonunital source maps.
@@ -124,65 +126,16 @@ theorem precomp [NonUnitalCStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent 
   obtain ⟨u, hu⟩ := h (F.image ρ) ε hε
   exact ⟨u, fun a ha ↦ hu (ρ a) (Finset.mem_image.mpr ⟨a, ha, rfl⟩)⟩
 
-/-- Unital postcomposition preserves approximate unitary equivalence. -/
-theorem postcomp [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent φ ψ)
-    (ρ : B →⋆ₐ[ℂ] C) : ApproximatelyUnitarilyEquivalent
-      (ρ.toNonUnitalStarAlgHom.comp φ) (ρ.toNonUnitalStarAlgHom.comp ψ) := by
-  intro F ε hε
-  obtain ⟨u, hu⟩ := h F ε hε
-  refine ⟨Unitary.map (StarMonoidHom.ofClass ρ) u, fun a ha ↦ ?_⟩
-  -- The class-to-bundled star-monoid hom has no coercion simp lemma.
-  have hρ (b : B) : (StarMonoidHom.ofClass ρ) b = ρ b := rfl
-  simpa only [NonUnitalStarAlgHom.comp_apply, StarAlgHom.coe_toNonUnitalStarAlgHom,
-    Unitary.coe_map, hρ, ← map_star, ← map_mul, ← map_sub] using
-    (NonUnitalStarAlgHom.norm_apply_le ρ
-      ((u : B) * φ a * star (u : B) - ψ a)).trans_lt (hu a ha)
-
 /-- Postcomposition with a possibly nonunital `⋆`-homomorphism between unital C⋆-algebras preserves
-approximate unitary equivalence, implemented by the corner-unitized unitary `ρ u + (1 - ρ 1)`. -/
-theorem postcomp_nonUnital [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent φ ψ)
+approximate unitary equivalence, implemented by pushing unitaries along
+`NonUnitalStarAlgHom.unitizeStarMonoidHom` (`u ↦ ρ u + (1 - ρ 1)`). -/
+theorem postcomp [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent φ ψ)
     (ρ : B →⋆ₙₐ[ℂ] C) : ApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) := by
   intro F ε hε
   obtain ⟨u, hu⟩ := h F ε hε
-  have h1l (b : B) : ρ 1 * ρ b = ρ b := by rw [← map_mul, one_mul]
-  have h1r (b : B) : ρ b * ρ 1 = ρ b := by rw [← map_mul, mul_one]
-  have h0l (b : B) : (1 - ρ 1) * ρ b = 0 := by rw [sub_mul, one_mul, h1l, sub_self]
-  have h0r (b : B) : ρ b * (1 - ρ 1) = 0 := by rw [mul_sub, mul_one, h1r, sub_self]
-  have hstar1 : star (ρ 1) = ρ 1 := by rw [← map_star, star_one]
-  have hidem : (1 - ρ 1) * (1 - ρ 1) = 1 - ρ 1 := by rw [mul_sub, mul_one, h0l, sub_zero]
-  let w : C := ρ u + (1 - ρ 1)
-  have hw_star : star w = ρ (star (u : B)) + (1 - ρ 1) := by
-    simp [w, map_star, hstar1]
-  have hw_mem : w ∈ unitary C := by
-    rw [Unitary.mem_iff, hw_star]
-    constructor
-    · calc
-        (ρ (star (u : B)) + (1 - ρ 1)) * (ρ u + (1 - ρ 1))
-          = ρ (star (u : B)) * ρ u + ρ (star (u : B)) * (1 - ρ 1) +
-              ((1 - ρ 1) * ρ u + (1 - ρ 1) * (1 - ρ 1)) := by
-            rw [add_mul, mul_add, mul_add]
-        _ = ρ (star (u : B) * (u : B)) + (1 - ρ 1) := by
-            rw [← map_mul, h0r, h0l, hidem, add_zero, zero_add]
-        _ = 1 := by rw [Unitary.star_mul_self_of_mem u.prop, add_sub_cancel]
-    · calc
-        (ρ u + (1 - ρ 1)) * (ρ (star (u : B)) + (1 - ρ 1))
-          = ρ u * ρ (star (u : B)) + ρ u * (1 - ρ 1) +
-              ((1 - ρ 1) * ρ (star (u : B)) + (1 - ρ 1) * (1 - ρ 1)) := by
-            rw [add_mul, mul_add, mul_add]
-        _ = ρ ((u : B) * star (u : B)) + (1 - ρ 1) := by
-            rw [← map_mul, h0r, h0l, hidem, add_zero, zero_add]
-        _ = 1 := by rw [Unitary.mul_star_self_of_mem u.prop, add_sub_cancel]
-  refine ⟨⟨w, hw_mem⟩, fun a ha ↦ ?_⟩
-  have hconj (b : B) : w * ρ b * star w = ρ ((u : B) * b * star (u : B)) := by
-    rw [hw_star]
-    calc
-      (ρ u + (1 - ρ 1)) * ρ b * (ρ (star (u : B)) + (1 - ρ 1))
-        = (ρ u * ρ b + (1 - ρ 1) * ρ b) * (ρ (star (u : B)) + (1 - ρ 1)) := by rw [add_mul]
-      _ = ρ ((u : B) * b) * (ρ (star (u : B)) + (1 - ρ 1)) := by rw [h0l, add_zero, ← map_mul]
-      _ = ρ ((u : B) * b) * ρ (star (u : B)) + ρ ((u : B) * b) * (1 - ρ 1) := by rw [mul_add]
-      _ = ρ ((u : B) * b * star (u : B)) := by rw [h0r, add_zero, ← map_mul]
-  simp only [NonUnitalStarAlgHom.comp_apply]
-  rw [hconj, ← map_sub]
+  refine ⟨Unitary.map ρ.unitizeStarMonoidHom u, fun a ha ↦ ?_⟩
+  simp only [NonUnitalStarAlgHom.comp_apply, Unitary.coe_map,
+    ρ.unitizeStarMonoidHom_mul_apply_mul_star, ← map_sub]
   exact (NonUnitalStarAlgHom.norm_apply_le ρ _).trans_lt (hu a ha)
 
 /-- Approximately unitarily equivalent maps have the same pointwise norm. -/
@@ -243,6 +196,24 @@ theorem map_one_of_comp_id {D E : Type*} [CStarAlgebra D] [CStarAlgebra E]
     (h : ApproximatelyUnitarilyEquivalent (ψ.comp φ) (.id ℂ D)) : ψ 1 = 1 :=
   h.map_one_of_comp rfl
 
+private theorem symm_comp_of_comp {D E : Type*} [CStarAlgebra D] [CStarAlgebra E]
+    (θ : D ≃⋆ₐ[ℂ] E) {ξ : A →⋆ₙₐ[ℂ] D} {η : A →⋆ₙₐ[ℂ] E}
+    (h : ApproximatelyUnitarilyEquivalent (θ.toNonUnitalStarAlgHom.comp ξ) η) :
+    ApproximatelyUnitarilyEquivalent (θ.symm.toNonUnitalStarAlgHom.comp η) ξ := by
+  have h' := (h.postcomp θ.symm.toNonUnitalStarAlgHom).symm
+  have hcomp : θ.symm.toNonUnitalStarAlgHom.comp (θ.toNonUnitalStarAlgHom.comp ξ) = ξ := by
+    ext a
+    simp
+  rwa [hcomp] at h'
+
+/-- Postcomposing by `θ.symm` moves a `⋆`-isomorphism `θ : D ≃⋆ₐ[ℂ] E` between unital C⋆-algebras
+across approximate unitary equivalence. -/
+theorem symm_comp_iff {D E : Type*} [CStarAlgebra D] [CStarAlgebra E]
+    (θ : D ≃⋆ₐ[ℂ] E) {ξ : A →⋆ₙₐ[ℂ] D} {η : A →⋆ₙₐ[ℂ] E} :
+    ApproximatelyUnitarilyEquivalent (θ.symm.toNonUnitalStarAlgHom.comp η) ξ ↔
+      ApproximatelyUnitarilyEquivalent (θ.toNonUnitalStarAlgHom.comp ξ) η :=
+  ⟨symm_comp_of_comp θ.symm, symm_comp_of_comp θ⟩
+
 /-- If a `⋆`-isomorphism `θ : D ≃⋆ₐ[ℂ] E` between unital C⋆-algebras is approximately unitarily
 equivalent to `φ` and `φ ∘ ψ` is approximately unitarily equivalent to `id`, then `θ.symm` is
 approximately unitarily equivalent to `ψ`. -/
@@ -251,12 +222,8 @@ theorem symm_of_comp_id {D E : Type*} [CStarAlgebra D] [CStarAlgebra E]
     (hθ : ApproximatelyUnitarilyEquivalent θ.toNonUnitalStarAlgHom φ)
     (hφψ : ApproximatelyUnitarilyEquivalent (φ.comp ψ) (.id ℂ E)) :
     ApproximatelyUnitarilyEquivalent θ.symm.toNonUnitalStarAlgHom ψ := by
-  have h := ((hθ.precomp ψ).trans hφψ).postcomp_nonUnital θ.symm.toNonUnitalStarAlgHom
-  have hcomp : θ.symm.toNonUnitalStarAlgHom.comp (θ.toNonUnitalStarAlgHom.comp ψ) = ψ := by
-    ext b
-    simp
-  rw [hcomp, NonUnitalStarAlgHom.comp_id] at h
-  exact h.symm
+  simpa only [NonUnitalStarAlgHom.comp_id] using
+    (symm_comp_iff θ).mpr ((hθ.precomp ψ).trans hφψ)
 
 end ApproximatelyUnitarilyEquivalent
 

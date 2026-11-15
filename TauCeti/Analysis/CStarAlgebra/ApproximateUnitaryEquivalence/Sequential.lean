@@ -48,20 +48,26 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] (u : ι → unitary B)
   obtain ⟨i, hi⟩ := (F.eventually_all.mpr fun a _ ↦ he a).exists
   exact ⟨u i, hi⟩
 
-/-- Approximate unitary equivalence is closed in the left argument under point-norm convergence
-along any nontrivial filter, without separability assumptions. -/
-theorem of_tendsto_left {ι : Type*} {l : Filter ι} [l.NeBot] {Φ : ι → A →⋆ₙₐ[ℂ] B}
-    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (Φ i) ψ)
-    (hlim : ∀ a, Tendsto (fun i ↦ Φ i a) l (𝓝 (φ a))) :
+/-- Approximate unitary equivalence is jointly closed in both arguments under point-norm
+convergence along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (Φ i) (Ψ i))
+    (hφ : ∀ a, Tendsto (fun i ↦ Φ i a) l (𝓝 (φ a)))
+    (hψ : ∀ a, Tendsto (fun i ↦ Ψ i a) l (𝓝 (ψ a))) :
     ApproximatelyUnitarilyEquivalent φ ψ := by
   rw [approximatelyUnitarilyEquivalent_def]
   intro F ε hε
-  have hε₂ : 0 < ε / 2 := half_pos hε
-  have he (a : A) : ∀ᶠ i in l, ‖Φ i a - φ a‖ < ε / 2 :=
-    (Metric.tendsto_nhds.mp (hlim a) (ε / 2) hε₂).mono fun _ hi ↦ by
+  have hε₃ : 0 < ε / 3 := by positivity
+  have heΦ (a : A) : ∀ᶠ i in l, ‖Φ i a - φ a‖ < ε / 3 :=
+    (Metric.tendsto_nhds.mp (hφ a) (ε / 3) hε₃).mono fun _ hi ↦ by
       simpa only [dist_eq_norm] using hi
-  obtain ⟨i, hi, hFi⟩ := (h.and (F.eventually_all.mpr fun a _ ↦ he a)).exists
-  obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hi F (ε / 2) hε₂
+  have heΨ (a : A) : ∀ᶠ i in l, ‖Ψ i a - ψ a‖ < ε / 3 :=
+    (Metric.tendsto_nhds.mp (hψ a) (ε / 3) hε₃).mono fun _ hi ↦ by
+      simpa only [dist_eq_norm] using hi
+  obtain ⟨i, ⟨hi, hΦi⟩, hΨi⟩ :=
+    ((h.and (F.eventually_all.mpr fun a _ ↦ heΦ a)).and
+      (F.eventually_all.mpr fun a _ ↦ heΨ a)).exists
+  obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hi F (ε / 3) hε₃
   refine ⟨u, fun a ha ↦ ?_⟩
   let e := Unitary.conjStarAlgAut ℂ B u
   have hsub : ‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ = ‖Φ i a - φ a‖ := by
@@ -69,11 +75,23 @@ theorem of_tendsto_left {ι : Type*} {l : Filter ι} [l.NeBot] {Φ : ι → A �
       StarAlgEquiv.norm_map e (φ a - Φ i a)
   calc
     ‖(u : B) * φ a * star (u : B) - ψ a‖
-      ≤ ‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ +
-          ‖(u : B) * Φ i a * star (u : B) - ψ a‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ = ‖Φ i a - φ a‖ + ‖(u : B) * Φ i a * star (u : B) - ψ a‖ := by rw [hsub]
-    _ < ε / 2 + ε / 2 := add_lt_add (hFi a ha) (hu a ha)
-    _ = ε := add_halves ε
+      ≤ (‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ +
+          ‖(u : B) * Φ i a * star (u : B) - Ψ i a‖) + ‖Ψ i a - ψ a‖ :=
+        (norm_sub_le_norm_sub_add_norm_sub _ (Ψ i a) _).trans
+          (add_le_add_left (norm_sub_le_norm_sub_add_norm_sub _ ((u : B) * Φ i a * star (u : B)) _)
+            _)
+    _ = ‖Φ i a - φ a‖ + ‖(u : B) * Φ i a * star (u : B) - Ψ i a‖ + ‖Ψ i a - ψ a‖ := by
+        rw [hsub]
+    _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hΦi a ha) (hu a ha)) (hΨi a ha)
+    _ = ε := by ring
+
+/-- Approximate unitary equivalence is closed in the left argument under point-norm convergence
+along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_left {ι : Type*} {l : Filter ι} [l.NeBot] {Φ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (Φ i) ψ)
+    (hlim : ∀ a, Tendsto (fun i ↦ Φ i a) l (𝓝 (φ a))) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  of_tendsto_of_tendsto h hlim fun _ ↦ tendsto_const_nhds
 
 /-- Approximate unitary equivalence is closed in the right argument under point-norm convergence
 along any nontrivial filter, without separability assumptions. -/
@@ -81,7 +99,7 @@ theorem of_tendsto_right {ι : Type*} {l : Filter ι} [l.NeBot] {Ψ : ι → A �
     (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent φ (Ψ i))
     (hlim : ∀ a, Tendsto (fun i ↦ Ψ i a) l (𝓝 (ψ a))) :
     ApproximatelyUnitarilyEquivalent φ ψ :=
-  (of_tendsto_left (h.mono fun _ hi ↦ hi.symm) hlim).symm
+  of_tendsto_of_tendsto h (fun _ ↦ tendsto_const_nhds) hlim
 
 /-- For a separable source, approximate unitary equivalence is equivalent to pointwise
 convergence of conjugates along a sequence of target unitaries. -/
