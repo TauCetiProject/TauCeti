@@ -11,19 +11,18 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homology.Basic
 /-!
 # Zeroth homology of a category and colimits
 
-For a category `C` and a diagram `M : C ⥤ A` in a preadditive category `A` with homology and
-coproducts of size `max u v`, the degree-`0` differential `(categoryChainComplex M).d 1 0` sends the
-`1`-chain of `f : X ⟶ Y` with coefficient `m ∈ M(X)` to `M(f)(m)` at `Y` minus `m` at `X`. Its
-cokernel therefore presents `categoryHomology M 0` as a colimit of `M`:
+For a category `C` and `M : C ⥤ A` in a preadditive category `A` with homology and coproducts of
+size `max u v`, `(categoryChainComplex M).d 1 0` sends the `1`-chain of `f : X ⟶ Y` with
+coefficient `m ∈ M(X)` to `M(f)(m)` at `Y` minus `m` at `X`, presenting `categoryHomology M 0` as
+a colimit of `M`:
 
-* `TauCeti.ιCategoryHomology₀ M X : M.obj X ⟶ categoryHomology M 0` is the canonical morphism of
-  the vertex `X` into zeroth category homology, compatible with `M.map f`, coefficient maps, and
-  pushforwards along functors `F : C ⥤ D`;
+* `TauCeti.ιCategoryHomology₀ M X : M.obj X ⟶ categoryHomology M 0` is the canonical map into
+  zeroth category homology, compatible with `M.map f`, coefficient maps, and pushforwards;
 * `TauCeti.categoryHomology₀Cocone M` and `TauCeti.isColimitCategoryHomology₀Cocone M` exhibit
-  `categoryHomology M 0` as a colimit cocone of `M`, yielding `TauCeti.categoryHomology₀IsoColimit`
-  and `TauCeti.categoryHomology₀NatIsoColim : categoryHomologyFunctor C A 0 ≅ colim`;
-* when `C` is connected, `TauCeti.categoryHomology₀ConstIso` identifies the zeroth homology of a
-  constant coefficient diagram `(Functor.const C).obj X` with `X`.
+  `categoryHomology M 0` as a colimit of `M`, yielding `TauCeti.categoryHomology₀IsoColimit` and
+  `TauCeti.categoryHomology₀NatIsoColim : categoryHomologyFunctor C A 0 ≅ colim`;
+* when `C` is connected, `TauCeti.categoryHomology₀ConstIso` identifies
+  `categoryHomology ((Functor.const C).obj X) 0` with `X`.
 
 ## References
 
@@ -49,9 +48,7 @@ onto zeroth category homology. -/
 def πCategoryHomology₀ (M : C ⥤ A) : (categoryChainComplex M).X 0 ⟶ categoryHomology M 0 :=
   (categoryChainComplex M).pOpcycles 0 ≫ (categoryChainComplex M).isoHomologyι₀.inv
 
-instance (M : C ⥤ A) : Epi (πCategoryHomology₀ M) := by
-  dsimp only [πCategoryHomology₀]
-  exact epi_comp _ _
+instance (M : C ⥤ A) : Epi (πCategoryHomology₀ M) := epi_comp _ _
 
 @[reassoc (attr := simp)]
 lemma d_πCategoryHomology₀ (M : C ⥤ A) (n : ℕ) :
@@ -80,8 +77,7 @@ def ιCategoryHomology₀ (M : C ⥤ A) (X : C) : M.obj X ⟶ categoryHomology M
 
 @[reassoc (attr := simp)]
 lemma ιCategoryChainComplex₀_πCategoryHomology₀ (M : C ⥤ A) (X : C) :
-    ιCategoryChainComplex₀ M X ≫ πCategoryHomology₀ M = ιCategoryHomology₀ M X :=
-  (rfl)
+    ιCategoryChainComplex₀ M X ≫ πCategoryHomology₀ M = ιCategoryHomology₀ M X := (rfl)
 
 /-- Every arrow `f : X ⟶ Y` in `C` identifies `M.map f ≫ ιCategoryHomology₀ M Y` with
 `ιCategoryHomology₀ M X` in zeroth category homology. -/
@@ -169,7 +165,7 @@ def categoryHomology₀NatIsoColim [HasColimitsOfShape C A] :
   NatIso.ofComponents (fun M ↦ categoryHomology₀IsoColimit M) fun α ↦
     categoryHomology₀_hom_ext fun X ↦ by
       change ιCategoryHomology₀ _ X ≫ categoryHomologyMap α 0 ≫
-        (categoryHomology₀IsoColimit _).hom =
+          (categoryHomology₀IsoColimit _).hom =
         ιCategoryHomology₀ _ X ≫ (categoryHomology₀IsoColimit _).hom ≫ colimMap α
       rw [ιCategoryHomology₀_map_assoc, ιCategoryHomology₀_isoColimit_hom,
         ιCategoryHomology₀_isoColimit_hom_assoc, ι_colimMap]
