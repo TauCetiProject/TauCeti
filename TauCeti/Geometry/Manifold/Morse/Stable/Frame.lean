@@ -583,6 +583,24 @@ private theorem negativeExtend_eq_fderiv_of_unstableFrame_eq
     mfderiv_unstableFrame hφ hT, map_smul] at h'
   exact smul_right_injective E (Real.exp_ne_zero _) h'.symm
 
+omit hφ in
+/-- The centre of a Morse chart, a critical point of `f`, lies on its own unstable manifold. -/
+private theorem self_mem_unstableSet_of_morseChart (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x) : x ∈ hX.flow.unstableSet x :=
+  Flow.self_mem_unstableSet_iff.2
+    (hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl))
+
+/-- Two Morse charts at `x` in which `X` is linear have a common time of linear backward flow at
+their centre `x`. -/
+private theorem exists_mem_linearBackwardTimes_self
+    (hφ' : ∀ y ∈ φ'.toChart.source, φ'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ'.toChart y (X y)) =
+      fun i ↦ -(φ'.weight i * φ'.coord (φ'.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f) :
+    ∃ T, T ∈ hX.linearBackwardTimes φ x ∧ T ∈ hX.linearBackwardTimes φ' x :=
+  have hxu := self_mem_unstableSet_of_morseChart hX φ
+  ((hX.eventually_mem_linearBackwardTimes hφ hf hxu).and
+    (hX.eventually_mem_linearBackwardTimes hφ' hf hxu)).exists
+
 /-- A linear map `e` along which the unstable frames of two Morse charts agree at their centre is
 the block of the derivative of the transition at the origin from the coordinates of negative weight
 of `φ` to those of `φ'`. -/
@@ -594,12 +612,9 @@ private theorem fderiv_transition_negativeExtend
     (he : ∀ c, hX.unstableFrame φ' x (e c) = hX.unstableFrame φ x c)
     (c : {i // φ.weight i < 0} → ℝ) :
     fderiv ℝ (φ'.toChart ∘ φ.toChart.symm) 0 (φ.negativeExtend c) = φ'.negativeExtend (e c) := by
-  have hfix (t : ℝ) : hX.flow t x = x :=
-    hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl) t
-  have hxu : x ∈ hX.flow.unstableSet x := Flow.self_mem_unstableSet_iff.2 hfix
-  obtain ⟨T, hT, hT'⟩ := ((hX.eventually_mem_linearBackwardTimes hφ hf hxu).and
-    (hX.eventually_mem_linearBackwardTimes hφ' hf hxu)).exists
-  rw [negativeExtend_eq_fderiv_of_unstableFrame_eq hφ hφ' hT hT' (he c).symm, hfix, φ.apply_self]
+  obtain ⟨T, hT, hT'⟩ := exists_mem_linearBackwardTimes_self hφ hφ' hf
+  rw [negativeExtend_eq_fderiv_of_unstableFrame_eq hφ hφ' hT hT' (he c).symm,
+    hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl), φ.apply_self]
 
 /-- **The unstable frames of two Morse charts agree along the unstable manifold once they agree at
 the critical point.** Let `φ` and `φ'` be Morse charts at `x` in which `X` is linear, and `e` a
@@ -661,13 +676,13 @@ theorem stableNormal_apply_eq_of_forall_unstableFrame_apply_eq
         Real.exp T • φ.negativeExtend c :=
       hinv.self_apply_inverse _
     have hc : hX.stableNormal φ y wT = c := by
-      rw [stableNormal_apply hφ hT, hwT, map_smul, φ.negativeCoord_negativeExtend, smul_smul,
-        ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+      rw [stableNormal_apply hφ hT, hwT, map_smul, φ.negativeCoord_negativeExtend]
+      simp [smul_smul, ← Real.exp_add]
     have hker : hX.stableNormal φ' y (w - wT) = 0 := by
       rw [stableNormal_eq_zero_iff hφ' hy, ← stableNormal_eq_zero_iff hφ hy, map_sub, hc, sub_self]
     rw [sub_eq_zero.1 ((map_sub _ _ _).symm.trans hker), stableNormal_apply hφ' hT',
-      mfderiv_toChart_comp_flow_eq_fderiv_comp hT.1, hwT, map_smul,
-      map_smul, smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+      mfderiv_toChart_comp_flow_eq_fderiv_comp hT.1, hwT, map_smul, map_smul]
+    simp [smul_smul, ← Real.exp_add]
   have hlim := ((LinearMap.toContinuousLinearMap φ'.negativeCoord).continuous.tendsto _).comp
     (tendsto_fderiv_transition (φ := φ) (φ' := φ') (Flow.mem_stableSet.1 hy) (φ.negativeExtend c))
   rw [tendsto_nhds_unique (tendsto_const_nhds.congr' hev) hlim]
@@ -684,10 +699,8 @@ theorem exists_linearEquiv_unstableFrame_apply_eq
     (hf : IsMorse 𝓘(ℝ, E) f) :
     ∃ e : ({i // φ.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ),
       ∀ c, hX.unstableFrame φ' x (e c) = hX.unstableFrame φ x c := by
-  have hxu : x ∈ hX.flow.unstableSet x := Flow.self_mem_unstableSet_iff.2
-    (hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl))
-  obtain ⟨T, hT, hT'⟩ := ((hX.eventually_mem_linearBackwardTimes hφ hf hxu).and
-    (hX.eventually_mem_linearBackwardTimes hφ' hf hxu)).exists
+  have hxu := self_mem_unstableSet_of_morseChart hX φ
+  obtain ⟨T, hT, hT'⟩ := exists_mem_linearBackwardTimes_self hφ hφ' hf
   have hinj := injective_unstableFrame hφ hT
   have hinj' := injective_unstableFrame hφ' hT'
   have hrange : LinearMap.range (hX.unstableFrame φ x).toLinearMap =

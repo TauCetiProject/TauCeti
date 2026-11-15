@@ -158,6 +158,7 @@ theorem eq_or_eq_neg_trajectoryTargetOrientation
 
 /-- Transporting `oq` along a linear equivalence `e` to the coordinates of negative weight of
 another Morse chart `φ'` transports the target orientation along `id × e`. -/
+@[simp]
 theorem trajectoryTargetOrientation_map {φ' : MorseChart E f x}
     (e : ({i // φ.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ)) :
     φ'.trajectoryTargetOrientation (Orientation.map _ e oq) hpq =
@@ -507,18 +508,17 @@ theorem trajectorySign_map_of_forall_unstableFrame_apply_eq (hf : IsMorse 𝓘(�
     rw [LinearEquiv.coe_coe] at hu
     rw [trajectoryComparison_apply, trajectoryComparison_apply, hu,
       stableNormal_apply_eq_of_forall_unstableFrame_apply_eq hφq hφq' hf (e := ψq.toLinearMap) hψq
-        hy.2, LinearEquiv.coe_coe]
-    rfl
+        hy.2, LinearEquiv.coe_coe, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply]
   have hfun : ⇑(hX.trajectoryComparison φp' φq' y) =
       P ∘ hX.trajectoryComparison φp φq y ∘ ψp.symm := funext fun v ↦ by
     simp only [comp_apply, ← hcomp, LinearEquiv.apply_symm_apply]
+  have hiff : Bijective (hX.trajectoryComparison φp' φq' y) ↔
+      Bijective (hX.trajectoryComparison φp φq y) := by
+    rw [hfun, EquivLike.comp_bijective, EquivLike.bijective_comp]
   by_cases hC : Bijective (hX.trajectoryComparison φp φq y)
   swap
-  · have hC' : ¬Bijective (hX.trajectoryComparison φp' φq' y) := by
-      rwa [hfun, EquivLike.comp_bijective, EquivLike.bijective_comp]
-    rw [trajectorySign_of_not_bijective hC, trajectorySign_of_not_bijective hC']
-  have hC' : Bijective (hX.trajectoryComparison φp' φq' y) := by
-    rwa [hfun, EquivLike.comp_bijective, EquivLike.bijective_comp]
+  · rw [trajectorySign_of_not_bijective hC, trajectorySign_of_not_bijective (mt hiff.1 hC)]
+  have hC' := hiff.2 hC
   rw [trajectorySign_of_bijective hC, trajectorySign_of_bijective hC']
   set e := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap hC
   set e' := LinearEquiv.ofBijective (hX.trajectoryComparison φp' φq' y).toLinearMap hC'
