@@ -11,74 +11,35 @@ public import Mathlib.Algebra.RingQuot
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Hom
 public import TauCeti.QuantumGroups.QuantumInteger.DividedPower
 
-import Mathlib.Tactic
+import TauCeti.Algebra.Field.Basic
 
 /-!
 # The Drinfeld–Jimbo quantized enveloping algebra of a Cartan datum
 
-Given a symmetrizable Cartan datum `D : CartanDatum ι X Y`, a field `K`, and a parameter `q : K`,
-this file defines the quantized enveloping algebra `QuantizedEnvelopingAlgebra D q` over `K` by
-generators `Eᵢ` (`i : ι`), `Fᵢ` (`i : ι`), and `K_y` (`y : Y`) subject to the group-algebra torus
-relations `K_0 = 1` and `K_(y + z) = K_y K_z`, weight conjugations `K_y Eᵢ = q^⟨αᵢ, y⟩ Eᵢ K_y` and
-`K_y Fᵢ = q^(-⟨αᵢ, y⟩) Fᵢ K_y`, commutators
-`[Eᵢ, Fⱼ] = δᵢⱼ (qᵢ - qᵢ⁻¹)⁻¹ • (Kᵢ - Kᵢ⁻¹)` with `qᵢ = q^(dᵢ)` and `Kᵢ = K_(dᵢ hᵢ)`, and the
-divided-power quantum Serre relations of length `1 - aᵢⱼ` for `i ≠ j`.
-
-Toral generators are indexed by the full coweight lattice `Y`, retaining central and intermediate
-isogeny directions, without finiteness or decidability assumptions on `ι` or freeness assumptions on
-`X` and `Y`. At `q = 0` the weight relations force `Eᵢ = Fᵢ = 0`, so presentation-level commutation,
-functoriality (`map`), and diagonal rescaling (`rescaleAlgEquiv`) hold for all `q : K`.
+For `D : CartanDatum ι X Y` and `q : K` in a field, `QuantizedEnvelopingAlgebra D q` is generated
+by `Eᵢ`, `Fᵢ` (`i : ι`), and `K_y` (`y : Y`) subject to `K_0 = 1`, `K_(y + z) = K_y K_z`,
+`K_y Eᵢ = q^⟨αᵢ, y⟩ Eᵢ K_y`, `K_y Fᵢ = q^(-⟨αᵢ, y⟩) Fᵢ K_y`,
+`[Eᵢ, Fⱼ] = δᵢⱼ (qᵢ - qᵢ⁻¹)⁻¹ • (Kᵢ - Kᵢ⁻¹)` (`qᵢ = q^(dᵢ)`, `Kᵢ = K_(dᵢ hᵢ)`), and the
+divided-power quantum Serre relations of length `1 - aᵢⱼ` (`i ≠ j`), without finiteness or
+decidability assumptions on `ι` or freeness assumptions on `X` and `Y`. At `q = 0` the weight
+relations force `Eᵢ = Fᵢ = 0`, so `map` and `rescaleAlgEquiv` hold for all `q : K`.
 
 ## References
 
 * G. Lusztig, *Introduction to Quantum Groups*, Birkhäuser, 1993, §3.1.
 * J. C. Jantzen, *Lectures on Quantum Groups*, American Mathematical Society, 1996, Chapter 4.
-* S. Lentner, *Quantum groups and Nichols algebras acting on conformal field theories*, Adv. Math.
-  268 (2014), Definition 3.2.
-* K. McGerty, *Generalized `q`-Schur algebras and quantum Frobenius*, Adv. Math. 214 (2007), §2.
+* S. D. Lentner, *A Frobenius homomorphism for Lusztig's quantum groups over arbitrary roots of
+  unity*, Commun. Contemp. Math. 18 (2016), no. 3, 1550040 (arXiv:1406.0865), Definition 3.2.
+* K. McGerty, *Hall algebras and quantum Frobenius*, Duke Math. J. 140 (2007), no. 1, 91–116
+  (arXiv:math/0601150), §2.
+* `TauCeti.QuantumGroups.UqSl2.Basic` and `TauCeti.QuantumGroups.UqSl2.Rescale`, from which the
+  `RingQuot`/`GeneratorTuple`/`liftEquiv` presentation and multiplicative `rescaleAlgEquiv` pattern
+  are adapted.
 -/
 
 public section
 
 namespace TauCeti
-
-namespace CartanDatum
-
-section SerreLength
-
-variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y] (D : CartanDatum ι X Y)
-
-/-- The quantum Serre exponent `(1 - aᵢⱼ).toNat` between nodes `i` and `j`: equal to `1 - aᵢⱼ ≥ 1`
-for `i ≠ j`, and `0` on the diagonal `i = j`. -/
-def serreLength (i j : ι) : ℕ := (1 - D.cartan i j).toNat
-
-lemma serreLength_def (i j : ι) : D.serreLength i j = (1 - D.cartan i j).toNat := (rfl)
-@[simp] lemma serreLength_self (i : ι) : D.serreLength i i = 0 := by simp [serreLength_def]
-
-/-- For distinct nodes `i ≠ j`, `aᵢⱼ ≤ 0`, so `(serreLength i j : ℤ) = 1 - aᵢⱼ`. -/
-lemma serreLength_cast_of_ne {i j : ι} (hij : i ≠ j) :
-    (D.serreLength i j : ℤ) = 1 - D.cartan i j := by
-  have := D.cartan_nonpos hij; rw [serreLength_def, Int.toNat_of_nonneg (by omega)]
-
-lemma serreLength_pos_of_ne {i j : ι} (hij : i ≠ j) : 0 < D.serreLength i j := by
-  have := D.cartan_nonpos hij; have := D.serreLength_cast_of_ne hij; omega
-lemma serreLength_ne_zero_of_ne {i j : ι} (hij : i ≠ j) : D.serreLength i j ≠ 0 :=
-  (D.serreLength_pos_of_ne hij).ne'
-lemma serreLength_of_cartan_eq_zero {i j : ι} (h : D.cartan i j = 0) : D.serreLength i j = 1 := by
-  simp [serreLength_def, h]
-
-/-- Symmetrizability `dᵢ aᵢⱼ = dⱼ aⱼᵢ` equates `(q^(dᵢ))^(aᵢⱼ)` and `(q^(dⱼ))^(aⱼᵢ)`. -/
-lemma pow_symmetrizer_zpow_cartan {G₀ : Type*} [GroupWithZero G₀] (q : G₀) (i j : ι) :
-    (q ^ D.symmetrizer i) ^ D.cartan i j = (q ^ D.symmetrizer j) ^ D.cartan j i := by
-  rw [← zpow_natCast, ← zpow_mul, D.symmetrizer_mul_cartan, zpow_mul, zpow_natCast]
-
-lemma Hom.serreLength_eq {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
-    {D : CartanDatum ι X Y} {D' : CartanDatum ι X' Y'} (φ : D.Hom D') (i j : ι) :
-    D'.serreLength i j = D.serreLength i j := by simp [serreLength_def, φ.cartan_eq]
-
-end SerreLength
-
-end CartanDatum
 
 namespace QuantizedEnvelopingAlgebra
 
@@ -108,7 +69,7 @@ inductive Rel {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
           FreeAlgebra.ι K (.f i) * FreeAlgebra.ι K (.e i))
         ((q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹)⁻¹ •
           (FreeAlgebra.ι K (.k (D.simpleTorus i)) - FreeAlgebra.ι K (.k (-D.simpleTorus i))))
-  | commutator_ne {i j : ι} (hij : i ≠ j) :
+  | commutator_of_ne {i j : ι} (hij : i ≠ j) :
       Rel D q (FreeAlgebra.ι K (.e i) * FreeAlgebra.ι K (.f j) -
         FreeAlgebra.ι K (.f j) * FreeAlgebra.ι K (.e i)) 0
   | serre_e {i j : ι} (hij : i ≠ j) :
@@ -122,9 +83,8 @@ end QuantizedEnvelopingAlgebra
 
 /-- The **Drinfeld–Jimbo quantized enveloping algebra** `U_q(D)` over `K` attached to a
 symmetrizable Cartan datum `D : CartanDatum ι X Y` and parameter `q : K`. -/
-@[expose]
-def QuantizedEnvelopingAlgebra {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
-    (D : CartanDatum ι X Y) (q : K) : Type _ :=
+@[expose] def QuantizedEnvelopingAlgebra {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y]
+    [Field K] (D : CartanDatum ι X Y) (q : K) : Type _ :=
   RingQuot (QuantizedEnvelopingAlgebra.Rel D q)
 
 namespace QuantizedEnvelopingAlgebra
@@ -143,7 +103,6 @@ instance (D : CartanDatum ι X Y) (q : K) : Inhabited (QuantizedEnvelopingAlgebr
 def mkAlgHom (D : CartanDatum ι X Y) (q : K) :
     FreeAlgebra K (Generator ι Y) →ₐ[K] QuantizedEnvelopingAlgebra D q :=
   RingQuot.mkAlgHom K (Rel D q)
-
 theorem mkAlgHom_surjective (D : CartanDatum ι X Y) (q : K) :
     Function.Surjective (mkAlgHom D q) := RingQuot.mkAlgHom_surjective K (Rel D q)
 theorem mkAlgHom_rel {D : CartanDatum ι X Y} {q : K}
@@ -153,10 +112,8 @@ theorem mkAlgHom_rel {D : CartanDatum ι X Y} {q : K}
 /-- The image of a formal generator in `QuantizedEnvelopingAlgebra D q`. -/
 def generator (D : CartanDatum ι X Y) (q : K) (g : Generator ι Y) :
     QuantizedEnvelopingAlgebra D q := mkAlgHom D q (FreeAlgebra.ι K g)
-
 @[simp] theorem mkAlgHom_ι (D : CartanDatum ι X Y) (q : K) (g : Generator ι Y) :
     mkAlgHom D q (FreeAlgebra.ι K g) = generator D q g := (rfl)
-
 /-- The raising Chevalley generator `Eᵢ`. -/
 def e (D : CartanDatum ι X Y) (q : K) (i : ι) : QuantizedEnvelopingAlgebra D q :=
   generator D q (.e i)
@@ -166,20 +123,17 @@ def f (D : CartanDatum ι X Y) (q : K) (i : ι) : QuantizedEnvelopingAlgebra D q
 /-- The toral generator `K_y` attached to a coweight `y ∈ Y`. -/
 def k (D : CartanDatum ι X Y) (q : K) (y : Y) : QuantizedEnvelopingAlgebra D q :=
   generator D q (.k y)
-
 @[simp] theorem generator_e (D : CartanDatum ι X Y) (q : K) (i : ι) :
     generator D q (.e i) = e D q i := (rfl)
 @[simp] theorem generator_f (D : CartanDatum ι X Y) (q : K) (i : ι) :
     generator D q (.f i) = f D q i := (rfl)
 @[simp] theorem generator_k (D : CartanDatum ι X Y) (q : K) (y : Y) :
     generator D q (.k y) = k D q y := (rfl)
-
 /-- The simple toral generator `Kᵢ = K_(dᵢ hᵢ)`. -/
 def simpleK (D : CartanDatum ι X Y) (q : K) (i : ι) : QuantizedEnvelopingAlgebra D q :=
   k D q (D.simpleTorus i)
 theorem simpleK_def (D : CartanDatum ι X Y) (q : K) (i : ι) :
     simpleK D q i = k D q (D.simpleTorus i) := (rfl)
-
 /-- The inverse simple toral generator `Kᵢ⁻¹ = K_(-dᵢ hᵢ)`. -/
 def simpleKInv (D : CartanDatum ι X Y) (q : K) (i : ι) : QuantizedEnvelopingAlgebra D q :=
   k D q (-D.simpleTorus i)
@@ -198,33 +152,43 @@ theorem k_add (y z : Y) : k D q (y + z) = k D q y * k D q z := by
   rw [← k_add, neg_add_cancel, k_zero]
 theorem commute_k (y z : Y) : Commute (k D q y) (k D q z) := by
   rw [Commute, SemiconjBy, ← k_add, ← k_add, add_comm]
+theorem commute_k_simpleK (y : Y) (i : ι) : Commute (k D q y) (simpleK D q i) :=
+  commute_k y (D.simpleTorus i)
+theorem commute_k_simpleKInv (y : Y) (i : ι) : Commute (k D q y) (simpleKInv D q i) :=
+  commute_k y (-D.simpleTorus i)
+theorem commute_simpleK (i j : ι) : Commute (simpleK D q i) (simpleK D q j) :=
+  commute_k (D.simpleTorus i) (D.simpleTorus j)
+theorem commute_simpleKInv (i j : ι) : Commute (simpleKInv D q i) (simpleKInv D q j) :=
+  commute_k (-D.simpleTorus i) (-D.simpleTorus j)
+theorem commute_simpleK_simpleKInv (i j : ι) : Commute (simpleK D q i) (simpleKInv D q j) :=
+  commute_k (D.simpleTorus i) (-D.simpleTorus j)
 
 /-- The toral generator `K_y` packaged as a unit with inverse `K_(-y)`. -/
 def kUnit (D : CartanDatum ι X Y) (q : K) (y : Y) : (QuantizedEnvelopingAlgebra D q)ˣ :=
   ⟨k D q y, k D q (-y), k_mul_k_neg y, k_neg_mul_k y⟩
-
 @[simp] theorem kUnit_val (y : Y) : (kUnit D q y : QuantizedEnvelopingAlgebra D q) = k D q y :=
   (rfl)
 @[simp] theorem kUnit_inv (y : Y) : ↑(kUnit D q y)⁻¹ = k D q (-y) := (rfl)
+@[simp] theorem kUnit_zero : kUnit D q 0 = 1 := Units.ext k_zero
+theorem kUnit_add (y z : Y) : kUnit D q (y + z) = kUnit D q y * kUnit D q z :=
+  Units.ext (k_add y z)
+@[simp] theorem kUnit_neg (y : Y) : kUnit D q (-y) = (kUnit D q y)⁻¹ := Units.ext rfl
 @[simp] theorem k_mul_k_neg_mul (y : Y) (x : QuantizedEnvelopingAlgebra D q) :
     k D q y * (k D q (-y) * x) = x := Units.mul_inv_cancel_left (kUnit D q y) x
 @[simp] theorem k_neg_mul_k_mul (y : Y) (x : QuantizedEnvelopingAlgebra D q) :
     k D q (-y) * (k D q y * x) = x := Units.inv_mul_cancel_left (kUnit D q y) x
-
 theorem k_nsmul (n : ℕ) (y : Y) : k D q (n • y) = k D q y ^ n := by
   induction n with
   | zero => simp
   | succ n ih => rw [succ_nsmul, k_add, ih, pow_succ]
-
-theorem k_zsmul (m : ℤ) (y : Y) :
-    k D q (m • y) = ((kUnit D q y ^ m : (QuantizedEnvelopingAlgebra D q)ˣ) :
-      QuantizedEnvelopingAlgebra D q) := by
+theorem k_zsmul (m : ℤ) (y : Y) : k D q (m • y) = ↑(kUnit D q y ^ m) := by
   cases m with
   | ofNat n => simp [k_nsmul]
   | negSucc n =>
     rw [negSucc_zsmul, zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val, kUnit_inv, ← k_nsmul,
       ← smul_neg]
-
+theorem kUnit_zsmul (m : ℤ) (y : Y) : kUnit D q (m • y) = kUnit D q y ^ m :=
+  Units.ext (k_zsmul m y)
 @[simp] theorem simpleK_mul_simpleKInv (i : ι) : simpleK D q i * simpleKInv D q i = 1 :=
   k_mul_k_neg (D.simpleTorus i)
 @[simp] theorem simpleKInv_mul_simpleK (i : ι) : simpleKInv D q i * simpleK D q i = 1 :=
@@ -237,26 +201,20 @@ theorem simpleK_pow (i : ι) (n : ℕ) : simpleK D q i ^ n = k D q (n • D.simp
   (k_nsmul n (D.simpleTorus i)).symm
 theorem simpleKInv_pow (i : ι) (n : ℕ) : simpleKInv D q i ^ n = k D q (-(n • D.simpleTorus i)) := by
   rw [simpleKInv_def, ← k_nsmul, smul_neg]
-
-/-- The defining commutation relation `K_y * Eᵢ = q^⟨αᵢ, y⟩ • (Eᵢ * K_y)`. -/
 theorem k_mul_e (i : ι) (y : Y) :
     k D q y * e D q i = q ^ D.pairing (D.root i) y • (e D q i * k D q y) := by
   simpa only [map_mul, map_smul, mkAlgHom_ι, generator_k, generator_e] using
     mkAlgHom_rel (Rel.k_mul_e (D := D) (q := q) i y)
-
-/-- The defining commutation relation `K_y * Fᵢ = q^(-⟨αᵢ, y⟩) • (Fᵢ * K_y)`. -/
 theorem k_mul_f (i : ι) (y : Y) :
     k D q y * f D q i = q ^ (-D.pairing (D.root i) y) • (f D q i * k D q y) := by
   simpa only [map_mul, map_smul, mkAlgHom_ι, generator_k, generator_f] using
     mkAlgHom_rel (Rel.k_mul_f (D := D) (q := q) i y)
-
 theorem k_mul_e_mul_k_neg (i : ι) (y : Y) :
     k D q y * e D q i * k D q (-y) = q ^ D.pairing (D.root i) y • e D q i := by
   rw [k_mul_e, smul_mul_assoc, mul_assoc, k_mul_k_neg, mul_one]
 theorem k_mul_f_mul_k_neg (i : ι) (y : Y) :
     k D q y * f D q i * k D q (-y) = q ^ (-D.pairing (D.root i) y) • f D q i := by
   rw [k_mul_f, smul_mul_assoc, mul_assoc, k_mul_k_neg, mul_one]
-
 theorem e_mul_k (i : ι) (y : Y) :
     e D q i * k D q y = q ^ (-D.pairing (D.root i) y) • (k D q y * e D q i) := by
   rw [← k_mul_k_neg_mul y (e D q i * k D q y), ← mul_assoc (k D q (-y)), k_mul_e i (-y),
@@ -265,98 +223,83 @@ theorem f_mul_k (i : ι) (y : Y) :
     f D q i * k D q y = q ^ D.pairing (D.root i) y • (k D q y * f D q i) := by
   rw [← k_mul_k_neg_mul y (f D q i * k D q y), ← mul_assoc (k D q (-y)), k_mul_f i (-y),
     map_neg, neg_neg, smul_mul_assoc, mul_smul_comm, mul_assoc, k_neg_mul_k, mul_one]
-
 @[simp] theorem e_zero (i : ι) : e D (0 : K) i = 0 := by
   rw [← k_neg_mul_k_mul (D.coroot i) (e D (0 : K) i), k_mul_e, D.pairing_root_coroot_self]; simp
 @[simp] theorem f_zero (i : ι) : f D (0 : K) i = 0 := by
   rw [← k_mul_k_neg_mul (D.coroot i) (f D (0 : K) i), k_mul_f, map_neg, neg_neg,
     D.pairing_root_coroot_self]; simp
-
-private theorem pairing_simpleTorus_zpow (i j : ι) :
-    q ^ D.pairing (D.root j) (D.simpleTorus i) = (q ^ D.symmetrizer i) ^ D.cartan i j := by
-  rw [D.pairing_root_simpleTorus, ← D.symmetrizer_mul_cartan, zpow_mul, zpow_natCast]
-
 theorem simpleK_mul_e (i j : ι) :
     simpleK D q i * e D q j =
       (q ^ D.symmetrizer i) ^ D.cartan i j • (e D q j * simpleK D q i) := by
-  rw [simpleK_def, k_mul_e, pairing_simpleTorus_zpow]
+  rw [simpleK_def, k_mul_e, D.zpow_pairing_root_simpleTorus]
+theorem e_mul_simpleK (i j : ι) :
+    e D q j * simpleK D q i =
+      (q ^ D.symmetrizer i) ^ (-D.cartan i j) • (simpleK D q i * e D q j) := by
+  rw [simpleK_def, e_mul_k, zpow_neg, D.zpow_pairing_root_simpleTorus, zpow_neg]
 theorem e_mul_simpleKInv (i j : ι) :
     e D q j * simpleKInv D q i =
       (q ^ D.symmetrizer i) ^ D.cartan i j • (simpleKInv D q i * e D q j) := by
-  rw [simpleKInv_def, e_mul_k, map_neg, neg_neg, pairing_simpleTorus_zpow]
+  rw [simpleKInv_def, e_mul_k, map_neg, neg_neg, D.zpow_pairing_root_simpleTorus]
 theorem simpleKInv_mul_e (i j : ι) :
     simpleKInv D q i * e D q j =
       (q ^ D.symmetrizer i) ^ (-D.cartan i j) • (e D q j * simpleKInv D q i) := by
-  rw [simpleKInv_def, k_mul_e, map_neg, zpow_neg, pairing_simpleTorus_zpow, zpow_neg]
+  rw [simpleKInv_def, k_mul_e, map_neg, zpow_neg, D.zpow_pairing_root_simpleTorus, zpow_neg]
 theorem simpleK_mul_f (i j : ι) :
     simpleK D q i * f D q j =
       (q ^ D.symmetrizer i) ^ (-D.cartan i j) • (f D q j * simpleK D q i) := by
-  rw [simpleK_def, k_mul_f, zpow_neg, pairing_simpleTorus_zpow, zpow_neg]
-theorem simpleKInv_mul_f (i j : ι) :
-    simpleKInv D q i * f D q j =
-      (q ^ D.symmetrizer i) ^ D.cartan i j • (f D q j * simpleKInv D q i) := by
-  rw [simpleKInv_def, k_mul_f, map_neg, neg_neg, pairing_simpleTorus_zpow]
+  rw [simpleK_def, k_mul_f, zpow_neg, D.zpow_pairing_root_simpleTorus, zpow_neg]
 theorem f_mul_simpleK (i j : ι) :
     f D q j * simpleK D q i =
       (q ^ D.symmetrizer i) ^ D.cartan i j • (simpleK D q i * f D q j) := by
-  rw [simpleK_def, f_mul_k, pairing_simpleTorus_zpow]
-
-/-- The diagonal commutator relation `Eᵢ Fᵢ - Fᵢ Eᵢ = (qᵢ - qᵢ⁻¹)⁻¹ • (Kᵢ - Kᵢ⁻¹)`. -/
+  rw [simpleK_def, f_mul_k, D.zpow_pairing_root_simpleTorus]
+theorem simpleKInv_mul_f (i j : ι) :
+    simpleKInv D q i * f D q j =
+      (q ^ D.symmetrizer i) ^ D.cartan i j • (f D q j * simpleKInv D q i) := by
+  rw [simpleKInv_def, k_mul_f, map_neg, neg_neg, D.zpow_pairing_root_simpleTorus]
+theorem f_mul_simpleKInv (i j : ι) :
+    f D q j * simpleKInv D q i =
+      (q ^ D.symmetrizer i) ^ (-D.cartan i j) • (simpleKInv D q i * f D q j) := by
+  rw [simpleKInv_def, f_mul_k, map_neg, zpow_neg, D.zpow_pairing_root_simpleTorus, zpow_neg]
 theorem e_mul_f_sub_f_mul_e_self (i : ι) :
     e D q i * f D q i - f D q i * e D q i =
       (q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹)⁻¹ •
         (simpleK D q i - simpleKInv D q i) := by
   simpa only [map_sub, map_mul, map_smul, mkAlgHom_ι, generator_e, generator_f, generator_k,
     ← simpleK_def, ← simpleKInv_def] using mkAlgHom_rel (Rel.commutator_self (D := D) (q := q) i)
-
-theorem e_mul_f_sub_f_mul_e_ne {i j : ι} (hij : i ≠ j) :
+theorem e_mul_f_sub_f_mul_e_of_ne {i j : ι} (hij : i ≠ j) :
     e D q i * f D q j - f D q j * e D q i = 0 := by
   simpa only [map_sub, map_mul, map_zero, mkAlgHom_ι, generator_e, generator_f] using
-    mkAlgHom_rel (Rel.commutator_ne (D := D) (q := q) hij)
+    mkAlgHom_rel (Rel.commutator_of_ne (D := D) (q := q) hij)
 theorem e_mul_f_of_ne {i j : ι} (hij : i ≠ j) : e D q i * f D q j = f D q j * e D q i :=
-  sub_eq_zero.mp (e_mul_f_sub_f_mul_e_ne hij)
-
-/-- Combined Kronecker-delta form of the `[Eᵢ, Fⱼ]` commutator relation. -/
+  sub_eq_zero.mp (e_mul_f_sub_f_mul_e_of_ne hij)
 theorem e_mul_f_sub_f_mul_e [DecidableEq ι] (i j : ι) :
     e D q i * f D q j - f D q j * e D q i =
       if i = j then
         (q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹)⁻¹ • (simpleK D q i - simpleKInv D q i)
       else 0 := by
   split_ifs with hij; · exact hij ▸ e_mul_f_sub_f_mul_e_self i
-  exact e_mul_f_sub_f_mul_e_ne hij
-
-/-- The raising quantum Serre relation for `i ≠ j`. -/
-theorem serre_e_eq_zero {i j : ι} (hij : i ≠ j) :
+  exact e_mul_f_sub_f_mul_e_of_ne hij
+theorem quantumSerre_e_eq_zero_of_ne {i j : ι} (hij : i ≠ j) :
     quantumSerre (q ^ D.symmetrizer i) (D.serreLength i j) (e D q i) (e D q j) = 0 := by
-  simpa only [AlgHom.map_quantumSerre, map_zero, mkAlgHom_ι, generator_e] using
+  simpa only [map_quantumSerre, map_zero, mkAlgHom_ι, generator_e] using
     mkAlgHom_rel (Rel.serre_e (D := D) (q := q) hij)
-
-/-- The lowering quantum Serre relation for `i ≠ j`. -/
-theorem serre_f_eq_zero {i j : ι} (hij : i ≠ j) :
+theorem quantumSerre_f_eq_zero_of_ne {i j : ι} (hij : i ≠ j) :
     quantumSerre (q ^ D.symmetrizer i) (D.serreLength i j) (f D q i) (f D q j) = 0 := by
-  simpa only [AlgHom.map_quantumSerre, map_zero, mkAlgHom_ι, generator_f] using
+  simpa only [map_quantumSerre, map_zero, mkAlgHom_ι, generator_f] using
     mkAlgHom_rel (Rel.serre_f (D := D) (q := q) hij)
-
-private theorem sub_inv_ne_zero_of_sq_ne_one {u : K} (hu₀ : u ≠ 0) (hu : u ^ 2 ≠ 1) :
-    u - u⁻¹ ≠ 0 := fun h0 =>
-  hu (by have h := mul_inv_cancel₀ hu₀; rwa [← sub_eq_zero.mp h0, ← sq] at h)
-
-/-- When `aᵢⱼ = 0` and `(q^(dᵢ))² ≠ 1`, the raising generators `Eᵢ` and `Eⱼ` commute. -/
 theorem e_mul_e_of_cartan_eq_zero {i j : ι} (h : D.cartan i j = 0)
     (hq : (q ^ D.symmetrizer i) ^ 2 ≠ 1) : e D q i * e D q j = e D q j * e D q i := by
   rcases eq_or_ne q 0 with rfl | hq₀; · simp
-  have hserre := serre_e_eq_zero (D := D) (q := q) (by rintro rfl; simp at h : i ≠ j)
+  have hserre := quantumSerre_e_eq_zero_of_ne (D := D) (q := q) (by rintro rfl; simp at h : i ≠ j)
   rw [D.serreLength_of_cartan_eq_zero h,
-    quantumSerre_one (sub_inv_ne_zero_of_sq_ne_one (pow_ne_zero _ hq₀) hq)] at hserre
+    quantumSerre_one (mt (sub_inv_eq_zero_iff (pow_ne_zero _ hq₀)).mp hq)] at hserre
   exact (sub_eq_zero.mp hserre).symm
-
-/-- When `aᵢⱼ = 0` and `(q^(dᵢ))² ≠ 1`, the lowering generators `Fᵢ` and `Fⱼ` commute. -/
 theorem f_mul_f_of_cartan_eq_zero {i j : ι} (h : D.cartan i j = 0)
     (hq : (q ^ D.symmetrizer i) ^ 2 ≠ 1) : f D q i * f D q j = f D q j * f D q i := by
   rcases eq_or_ne q 0 with rfl | hq₀; · simp
-  have hserre := serre_f_eq_zero (D := D) (q := q) (by rintro rfl; simp at h : i ≠ j)
+  have hserre := quantumSerre_f_eq_zero_of_ne (D := D) (q := q) (by rintro rfl; simp at h : i ≠ j)
   rw [D.serreLength_of_cartan_eq_zero h,
-    quantumSerre_one (sub_inv_ne_zero_of_sq_ne_one (pow_ne_zero _ hq₀) hq)] at hserre
+    quantumSerre_one (mt (sub_inv_eq_zero_iff (pow_ne_zero _ hq₀)).mp hq)] at hserre
   exact (sub_eq_zero.mp hserre).symm
 
 end Basic
@@ -382,7 +325,7 @@ structure GeneratorTuple (D : CartanDatum ι X Y) (q : K) (A : Type*) [Ring A] [
     e i * f i - f i * e i =
       (q ^ D.symmetrizer i - (q ^ D.symmetrizer i)⁻¹)⁻¹ •
         (k (D.simpleTorus i) - k (-D.simpleTorus i))
-  commutator_ne {i j : ι} (hij : i ≠ j) : e i * f j - f j * e i = 0
+  commutator_of_ne {i j : ι} (hij : i ≠ j) : e i * f j - f j * e i = 0
   serre_e {i j : ι} (hij : i ≠ j) :
     quantumSerre (q ^ D.symmetrizer i) (D.serreLength i j) (e i) (e j) = 0
   serre_f {i j : ι} (hij : i ≠ j) :
@@ -393,23 +336,17 @@ namespace GeneratorTuple
 variable {D : CartanDatum ι X Y} {q : K} {A : Type*} [Ring A] [Algebra K A]
 
 /-- Evaluation of a `GeneratorTuple` on formal generators. -/
-def toFun (t : GeneratorTuple D q A) : Generator ι Y → A
-  | .e i => t.e i
-  | .f i => t.f i
-  | .k y => t.k y
-
+def toFun (t : GeneratorTuple D q A) : Generator ι Y → A :=
+  fun | .e i => t.e i | .f i => t.f i | .k y => t.k y
 @[simp] theorem toFun_e (t : GeneratorTuple D q A) (i : ι) : t.toFun (.e i) = t.e i := (rfl)
 @[simp] theorem toFun_f (t : GeneratorTuple D q A) (i : ι) : t.toFun (.f i) = t.f i := (rfl)
 @[simp] theorem toFun_k (t : GeneratorTuple D q A) (y : Y) : t.toFun (.k y) = t.k y := (rfl)
-
 @[ext] theorem ext {s t : GeneratorTuple D q A}
     (he : ∀ i, s.e i = t.e i) (hf : ∀ i, s.f i = t.f i) (hk : ∀ y, s.k y = t.k y) : s = t := by
   cases s; cases t; simp only [mk.injEq]; exact ⟨funext he, funext hf, funext hk⟩
-
 end GeneratorTuple
 
 section Lift
-
 variable {D : CartanDatum ι X Y} {q : K} {A : Type*} [Ring A] [Algebra K A]
 
 /-- The universal property of `QuantizedEnvelopingAlgebra D q`: a `GeneratorTuple` extends to a
@@ -419,9 +356,16 @@ def lift (t : GeneratorTuple D q A) : QuantizedEnvelopingAlgebra D q →ₐ[K] A
     rintro a b (_ | ⟨y, z⟩ | ⟨i, y⟩ | ⟨i, y⟩ | ⟨i⟩ | @⟨i, j, hij⟩ | @⟨i, j, hij⟩ | @⟨i, j, hij⟩)
     exacts [by simpa using t.k_zero, by simpa using t.k_add y z, by simpa using t.k_mul_e i y,
       by simpa using t.k_mul_f i y, by simpa using t.commutator_self i,
-      by simpa using t.commutator_ne hij, by simpa using t.serre_e hij,
+      by simpa using t.commutator_of_ne hij, by simpa using t.serre_e hij,
       by simpa using t.serre_f hij]⟩
-
+instance (D : CartanDatum ι X Y) (q : K) : Nontrivial (QuantizedEnvelopingAlgebra D q) :=
+  (lift (A := K)
+    { e _ := 0, f _ := 0, k _ := 1, k_zero := rfl, k_add _ _ := (mul_one 1).symm
+      k_mul_e _ _ := by simp, k_mul_f _ _ := by simp, commutator_self _ := by simp
+      commutator_of_ne _ := by simp
+      serre_e hij := quantumSerre_zero_left _ (D.serreLength_ne_zero_of_ne hij) 0
+      serre_f hij := quantumSerre_zero_left _ (D.serreLength_ne_zero_of_ne hij) 0
+    }).toRingHom.domain_nontrivial
 @[simp] theorem lift_generator (t : GeneratorTuple D q A) (g : Generator ι Y) :
     lift t (generator D q g) = t.toFun g :=
   (RingQuot.liftAlgHom_mkAlgHom_apply K _ _ _).trans (FreeAlgebra.lift_ι_apply _ _)
@@ -435,11 +379,7 @@ def lift (t : GeneratorTuple D q A) : QuantizedEnvelopingAlgebra D q →ₐ[K] A
     lift t (simpleK D q i) = t.k (D.simpleTorus i) := lift_k t (D.simpleTorus i)
 @[simp] theorem lift_simpleKInv (t : GeneratorTuple D q A) (i : ι) :
     lift t (simpleKInv D q i) = t.k (-D.simpleTorus i) := lift_k t (-D.simpleTorus i)
-
-/-- Two `K`-algebra homomorphisms from `QuantizedEnvelopingAlgebra D q` agreeing on `Eᵢ`, `Fᵢ`,
-and `K_y` are equal. -/
-@[ext high]
-theorem hom_ext {φ ψ : QuantizedEnvelopingAlgebra D q →ₐ[K] A}
+@[ext high] theorem hom_ext {φ ψ : QuantizedEnvelopingAlgebra D q →ₐ[K] A}
     (he : ∀ i, φ (e D q i) = ψ (e D q i)) (hf : ∀ i, φ (f D q i) = ψ (f D q i))
     (hk : ∀ y, φ (k D q y) = ψ (k D q y)) : φ = ψ := by
   refine RingQuot.ringQuot_ext' K φ ψ (FreeAlgebra.hom_ext (funext fun g => ?_))
@@ -457,16 +397,16 @@ def liftEquiv : (QuantizedEnvelopingAlgebra D q →ₐ[K] A) ≃ GeneratorTuple 
       commutator_self i := by
         simpa only [map_sub, map_mul, map_smul, simpleK_def, simpleKInv_def] using
           congrArg φ (e_mul_f_sub_f_mul_e_self i)
-      commutator_ne hij := by
-        simpa only [map_sub, map_mul, map_zero] using congrArg φ (e_mul_f_sub_f_mul_e_ne hij)
+      commutator_of_ne hij := by
+        simpa only [map_sub, map_mul, map_zero] using congrArg φ (e_mul_f_sub_f_mul_e_of_ne hij)
       serre_e hij := by
-        simpa only [AlgHom.map_quantumSerre, map_zero] using congrArg φ (serre_e_eq_zero hij)
+        simpa only [map_quantumSerre, map_zero] using congrArg φ (quantumSerre_e_eq_zero_of_ne hij)
       serre_f hij := by
-        simpa only [AlgHom.map_quantumSerre, map_zero] using congrArg φ (serre_f_eq_zero hij) }
+        simpa only [map_quantumSerre, map_zero] using
+          congrArg φ (quantumSerre_f_eq_zero_of_ne hij) }
   invFun := lift
   left_inv _ := hom_ext (by simp) (by simp) (by simp)
   right_inv _ := by ext <;> simp
-
 @[simp] theorem liftEquiv_apply_e (φ : QuantizedEnvelopingAlgebra D q →ₐ[K] A) (i : ι) :
     (liftEquiv φ).e i = φ (e D q i) := (rfl)
 @[simp] theorem liftEquiv_apply_f (φ : QuantizedEnvelopingAlgebra D q →ₐ[K] A) (i : ι) :
@@ -475,11 +415,8 @@ def liftEquiv : (QuantizedEnvelopingAlgebra D q →ₐ[K] A) ≃ GeneratorTuple 
     (liftEquiv φ).k y = φ (k D q y) := (rfl)
 @[simp] theorem liftEquiv_symm_apply (t : GeneratorTuple D q A) : liftEquiv.symm t = lift t :=
   (rfl)
-
 end Lift
 
-/-- The formal generators `Eᵢ`, `Fᵢ`, and `K_y` generate `QuantizedEnvelopingAlgebra D q` as a
-`K`-algebra. -/
 theorem adjoin_range_generator (D : CartanDatum ι X Y) (q : K) :
     Algebra.adjoin K (Set.range (generator D q)) = ⊤ := by
   have h : FreeAlgebra.lift K (generator D q) = mkAlgHom D q :=
@@ -506,23 +443,19 @@ theorem induction {P : QuantizedEnvelopingAlgebra D q → Prop}
   | algebraMap c => exact algebraMap c
   | add a b _ _ ha hb => exact add a b ha hb
   | mul a b _ _ ha hb => exact mul a b ha hb
-
 theorem commute_of_commute_generators {z : QuantizedEnvelopingAlgebra D q}
     (he : ∀ i, Commute (e D q i) z) (hf : ∀ i, Commute (f D q i) z)
     (hk : ∀ y, Commute (k D q y) z) (a : QuantizedEnvelopingAlgebra D q) : Commute a z := by
   refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (R := K)
     (s := Set.range (generator D q)) ((adjoin_range_generator D q).symm ▸ Algebra.mem_top) ?_).symm
   rintro _ ⟨g, rfl⟩; cases g; exacts [(he _).symm, (hf _).symm, (hk _).symm]
-
-/-- For a coweight `c ∈ Y` annihilated by every simple root (`⟨αᵢ, c⟩ = 0` for all `i`), the toral
-generator `K_c` lies in the center of `QuantizedEnvelopingAlgebra D q`. -/
+/-- For a coweight `c ∈ Y` annihilated by every simple root, `K_c` lies in the center. -/
 theorem k_mem_center_of_pairing_root_eq_zero {c : Y} (hc : ∀ i, D.pairing (D.root i) c = 0) :
     k D q c ∈ Subalgebra.center K (QuantizedEnvelopingAlgebra D q) := by
   rw [Subalgebra.mem_center_iff]
   refine commute_of_commute_generators (fun i => ?_) (fun i => ?_) (fun y => commute_k y c)
   · rw [Commute, SemiconjBy, k_mul_e, hc i, zpow_zero, one_smul]
   · rw [Commute, SemiconjBy, k_mul_f, hc i, neg_zero, zpow_zero, one_smul]
-
 end UniversalProperty
 
 section Map
@@ -544,10 +477,11 @@ def map (φ : D.Hom D') (q : K) :
       commutator_self i := by
         rw [e_mul_f_sub_f_mul_e_self, φ.symmetrizer_eq, simpleK_def, simpleKInv_def,
           ← φ.map_simpleTorus, map_neg]
-      commutator_ne hij := e_mul_f_sub_f_mul_e_ne hij
-      serre_e hij := by rw [← φ.symmetrizer_eq, ← φ.serreLength_eq]; exact serre_e_eq_zero hij
-      serre_f hij := by rw [← φ.symmetrizer_eq, ← φ.serreLength_eq]; exact serre_f_eq_zero hij }
-
+      commutator_of_ne hij := e_mul_f_sub_f_mul_e_of_ne hij
+      serre_e hij := by
+        rw [← φ.symmetrizer_eq, ← φ.serreLength_eq]; exact quantumSerre_e_eq_zero_of_ne hij
+      serre_f hij := by
+        rw [← φ.symmetrizer_eq, ← φ.serreLength_eq]; exact quantumSerre_f_eq_zero_of_ne hij }
 @[simp] theorem map_e (φ : D.Hom D') {q : K} (i : ι) : map φ q (e D q i) = e D' q i := lift_e _ i
 @[simp] theorem map_f (φ : D.Hom D') {q : K} (i : ι) : map φ q (f D q i) = f D' q i := lift_f _ i
 @[simp] theorem map_k (φ : D.Hom D') {q : K} (y : Y) :
@@ -569,9 +503,7 @@ section Rescale
 
 variable {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
 
-/-- Rescaling `Eᵢ ↦ cᵢ • Eᵢ`, `Fᵢ ↦ cᵢ⁻¹ • Fᵢ`, and `K_y ↦ K_y` for `c : ι → Kˣ` defines an
-endomorphism of `QuantizedEnvelopingAlgebra D q`. -/
-def rescaleAlgHom (D : CartanDatum ι X Y) (q : K) (c : ι → Kˣ) :
+private def rescaleAlgHom (D : CartanDatum ι X Y) (q : K) (c : ι → Kˣ) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] QuantizedEnvelopingAlgebra D q :=
   lift
     { e i := (c i : K) • e D q i, f i := ((c i : K))⁻¹ • f D q i, k y := k D q y,
@@ -582,42 +514,46 @@ def rescaleAlgHom (D : CartanDatum ι X Y) (q : K) (c : ι → Kˣ) :
         rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_inv_cancel₀ (c i).ne_zero,
           inv_mul_cancel₀ (c i).ne_zero, one_smul, one_smul, e_mul_f_sub_f_mul_e_self,
           simpleK_def, simpleKInv_def]
-      commutator_ne {i j} hij := by
+      commutator_of_ne {i j} hij := by
         rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_comm ((c j : K))⁻¹, ← smul_sub,
-          e_mul_f_sub_f_mul_e_ne hij, smul_zero]
-      serre_e hij := by rw [quantumSerre_smul, serre_e_eq_zero hij, smul_zero]
-      serre_f hij := by rw [quantumSerre_smul, serre_f_eq_zero hij, smul_zero] }
+          e_mul_f_sub_f_mul_e_of_ne hij, smul_zero]
+      serre_e hij := by rw [quantumSerre_smul, quantumSerre_e_eq_zero_of_ne hij, smul_zero]
+      serre_f hij := by rw [quantumSerre_smul, quantumSerre_f_eq_zero_of_ne hij, smul_zero] }
 
 variable {D : CartanDatum ι X Y} {q : K}
 
-@[simp] theorem rescaleAlgHom_e (c : ι → Kˣ) (i : ι) :
+@[simp] private theorem rescaleAlgHom_e (c : ι → Kˣ) (i : ι) :
     rescaleAlgHom D q c (e D q i) = (c i : K) • e D q i := lift_e _ i
-@[simp] theorem rescaleAlgHom_f (c : ι → Kˣ) (i : ι) :
+@[simp] private theorem rescaleAlgHom_f (c : ι → Kˣ) (i : ι) :
     rescaleAlgHom D q c (f D q i) = (c i : K)⁻¹ • f D q i := lift_f _ i
-@[simp] theorem rescaleAlgHom_k (c : ι → Kˣ) (y : Y) :
+@[simp] private theorem rescaleAlgHom_k (c : ι → Kˣ) (y : Y) :
     rescaleAlgHom D q c (k D q y) = k D q y := lift_k _ y
-@[simp] theorem rescaleAlgHom_one :
+private theorem rescaleAlgHom_one :
     rescaleAlgHom D q 1 = AlgHom.id K (QuantizedEnvelopingAlgebra D q) := by ext <;> simp
-theorem rescaleAlgHom_mul (c d : ι → Kˣ) :
+private theorem rescaleAlgHom_mul (c d : ι → Kˣ) :
     rescaleAlgHom D q (c * d) = (rescaleAlgHom D q c).comp (rescaleAlgHom D q d) := by
   ext <;> simp [smul_smul, mul_comm]
 
-/-- The `K`-algebra automorphism rescaling `Eᵢ ↦ cᵢ • Eᵢ`, `Fᵢ ↦ cᵢ⁻¹ • Fᵢ`, and fixing `K_y`. -/
-def rescaleAlgEquiv (D : CartanDatum ι X Y) (q : K) (c : ι → Kˣ) :
-    QuantizedEnvelopingAlgebra D q ≃ₐ[K] QuantizedEnvelopingAlgebra D q :=
-  AlgEquiv.ofAlgHom (rescaleAlgHom D q c) (rescaleAlgHom D q c⁻¹)
+/-- The multiplicative family of `K`-algebra automorphisms rescaling `Eᵢ ↦ cᵢ • Eᵢ`,
+`Fᵢ ↦ cᵢ⁻¹ • Fᵢ`, and fixing `K_y`. -/
+def rescaleAlgEquiv (D : CartanDatum ι X Y) (q : K) :
+    (ι → Kˣ) →* (QuantizedEnvelopingAlgebra D q ≃ₐ[K] QuantizedEnvelopingAlgebra D q) where
+  toFun c := AlgEquiv.ofAlgHom (rescaleAlgHom D q c) (rescaleAlgHom D q c⁻¹)
     (by rw [← rescaleAlgHom_mul, mul_inv_cancel, rescaleAlgHom_one])
     (by rw [← rescaleAlgHom_mul, inv_mul_cancel, rescaleAlgHom_one])
-
-@[simp] theorem rescaleAlgEquiv_toAlgHom (c : ι → Kˣ) :
-    (rescaleAlgEquiv D q c).toAlgHom = rescaleAlgHom D q c := (rfl)
+  map_one' := AlgEquiv.coe_toAlgHom_injective rescaleAlgHom_one
+  map_mul' c d := AlgEquiv.coe_toAlgHom_injective (rescaleAlgHom_mul c d)
 @[simp] theorem rescaleAlgEquiv_e (c : ι → Kˣ) (i : ι) :
     rescaleAlgEquiv D q c (e D q i) = (c i : K) • e D q i := rescaleAlgHom_e c i
 @[simp] theorem rescaleAlgEquiv_f (c : ι → Kˣ) (i : ι) :
     rescaleAlgEquiv D q c (f D q i) = (c i : K)⁻¹ • f D q i := rescaleAlgHom_f c i
 @[simp] theorem rescaleAlgEquiv_k (c : ι → Kˣ) (y : Y) :
     rescaleAlgEquiv D q c (k D q y) = k D q y := rescaleAlgHom_k c y
-@[simp] theorem rescaleAlgEquiv_symm (c : ι → Kˣ) :
+@[simp] theorem rescaleAlgEquiv_simpleK (c : ι → Kˣ) (i : ι) :
+    rescaleAlgEquiv D q c (simpleK D q i) = simpleK D q i := by simp [simpleK_def]
+@[simp] theorem rescaleAlgEquiv_simpleKInv (c : ι → Kˣ) (i : ι) :
+    rescaleAlgEquiv D q c (simpleKInv D q i) = simpleKInv D q i := by simp [simpleKInv_def]
+theorem rescaleAlgEquiv_symm (c : ι → Kˣ) :
     (rescaleAlgEquiv D q c).symm = rescaleAlgEquiv D q c⁻¹ := (rfl)
 
 end Rescale

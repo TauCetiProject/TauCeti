@@ -38,6 +38,7 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
   `TauCeti.CartanDatum.reflection`: the simple reflection `λ ↦ λ − ⟨λ, hᵢ⟩ αᵢ` of `X`, both
   Mathlib's `Module.reflection`.
 * `TauCeti.CartanDatum.simpleTorus`: the toral direction `dᵢ hᵢ ∈ Y`.
+* `TauCeti.CartanDatum.serreLength`: the quantum Serre exponent `(1 - aᵢⱼ).toNat`.
 * `TauCeti.CartanDatum.braidLength`: the length `2, 3, 4, 6` of the braid relation between two
   distinct nodes with Cartan product `aᵢⱼ aⱼᵢ = 0, 1, 2, 3`.
 * `TauCeti.CartanDatum.Hom`: a morphism of Cartan data, a linear map of coweight lattices carrying
@@ -245,6 +246,34 @@ lemma coreflection_simpleTorus (i j : ι) :
 lemma coreflection_simpleTorus_self (i : ι) :
     D.coreflection i (D.simpleTorus i) = -D.simpleTorus i := by
   rw [simpleTorus_def, map_nsmul, coreflection_coroot_self, smul_neg]
+
+lemma zpow_pairing_root_simpleTorus {M : Type*} [DivisionMonoid M] (q : M) (i j : ι) :
+    q ^ D.pairing (D.root j) (D.simpleTorus i) = (q ^ D.symmetrizer i) ^ D.cartan i j := by
+  rw [D.pairing_root_simpleTorus, ← D.symmetrizer_mul_cartan, zpow_mul, zpow_natCast]
+
+/-- Symmetrizability `dᵢ aᵢⱼ = dⱼ aⱼᵢ` equates `(q^(dᵢ))^(aᵢⱼ)` and `(q^(dⱼ))^(aⱼᵢ)`. -/
+lemma pow_symmetrizer_zpow_cartan {M : Type*} [DivisionMonoid M] (q : M) (i j : ι) :
+    (q ^ D.symmetrizer i) ^ D.cartan i j = (q ^ D.symmetrizer j) ^ D.cartan j i := by
+  rw [← zpow_natCast, ← zpow_mul, D.symmetrizer_mul_cartan, zpow_mul, zpow_natCast]
+
+/-! ### Serre lengths -/
+
+/-- The quantum Serre exponent `(1 - aᵢⱼ).toNat`: `1 - aᵢⱼ ≥ 1` for `i ≠ j`, and `0` for `i = j`. -/
+def serreLength (i j : ι) : ℕ := (1 - D.cartan i j).toNat
+lemma serreLength_def (i j : ι) : D.serreLength i j = (1 - D.cartan i j).toNat := (rfl)
+@[simp] lemma serreLength_self (i : ι) : D.serreLength i i = 0 := by simp [serreLength_def]
+lemma natCast_serreLength_of_ne {i j : ι} (hij : i ≠ j) :
+    (D.serreLength i j : ℤ) = 1 - D.cartan i j := by
+  have := D.cartan_nonpos hij; rw [serreLength_def, Int.toNat_of_nonneg (by omega)]
+lemma one_sub_natCast_serreLength_of_ne {i j : ι} (hij : i ≠ j) :
+    1 - (D.serreLength i j : ℤ) = D.cartan i j := by
+  rw [D.natCast_serreLength_of_ne hij, sub_sub_cancel]
+lemma serreLength_pos_of_ne {i j : ι} (hij : i ≠ j) : 0 < D.serreLength i j := by
+  have := D.cartan_nonpos hij; have := D.natCast_serreLength_of_ne hij; omega
+lemma serreLength_ne_zero_of_ne {i j : ι} (hij : i ≠ j) : D.serreLength i j ≠ 0 :=
+  (D.serreLength_pos_of_ne hij).ne'
+lemma serreLength_of_cartan_eq_zero {i j : ι} (h : D.cartan i j = 0) : D.serreLength i j = 1 := by
+  simp [serreLength_def, h]
 
 /-! ### Braid lengths -/
 
