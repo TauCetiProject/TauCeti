@@ -50,9 +50,8 @@ theorem walkAssignment_mapPath [AddMonoid R] (e : N ≃ₙ N') {x y : V} (p : Ar
   classical
   rw [← Equiv.symm_apply_eq]
   ext a b f
-  rw [assignmentEquiv_symm_apply, walkAssignment_apply, walkAssignment_apply, arrows_mapPath,
-    ← List.count_map_of_injective p.arrows e.totalHomEquiv e.totalHomEquiv.injective ⟨a, b, f⟩,
-    totalHomEquiv_apply]
+  simp [walkAssignment_apply, arrows_mapPath, totalHomEquiv_apply,
+    ← List.count_map_of_injective _ _ e.totalHomEquiv.injective]
 
 /-! ### Weighted walks -/
 
@@ -158,6 +157,18 @@ private def mapPathCycleDecomposition (e : N ≃ₙ N') {f : N.Assignment R} {g 
     simp only [assignmentEquiv_add, assignmentEquiv_list_sum, List.map_map, Function.comp_def,
       assignment_weightedWalkEquiv, assignment_weightedClosedWalkEquiv]
 
+@[simp]
+private theorem mapPathCycleDecomposition_paths (e : N ≃ₙ N') {f : N.Assignment R}
+    {g : N'.Assignment R} (hfg : e.assignmentEquiv R f = g) (D : PathCycleDecomposition f) :
+    (mapPathCycleDecomposition e hfg D).paths = D.paths.map (e.weightedWalkEquiv R) :=
+  rfl
+
+@[simp]
+private theorem mapPathCycleDecomposition_cycles (e : N ≃ₙ N') {f : N.Assignment R}
+    {g : N'.Assignment R} (hfg : e.assignmentEquiv R f = g) (D : PathCycleDecomposition f) :
+    (mapPathCycleDecomposition e hfg D).cycles = D.cycles.map (e.weightedClosedWalkEquiv R) :=
+  rfl
+
 /-- A network isomorphism identifies the path–cycle decompositions of an assignment with those of
 its transport, transporting every path and cycle component. -/
 def pathCycleDecompositionEquiv (e : N ≃ₙ N') (f : N.Assignment R) :
@@ -166,11 +177,9 @@ def pathCycleDecompositionEquiv (e : N ≃ₙ N') (f : N.Assignment R) :
   invFun := mapPathCycleDecomposition e.symm <| by
     rw [← assignmentEquiv_symm, Equiv.symm_apply_apply]
   left_inv D := by
-    ext1 <;> simp [mapPathCycleDecomposition, ← weightedWalkEquiv_symm,
-      ← weightedClosedWalkEquiv_symm]
+    ext1 <;> simp [← weightedWalkEquiv_symm, ← weightedClosedWalkEquiv_symm]
   right_inv D := by
-    ext1 <;> simp [mapPathCycleDecomposition, ← weightedWalkEquiv_symm,
-      ← weightedClosedWalkEquiv_symm]
+    ext1 <;> simp [← weightedWalkEquiv_symm, ← weightedClosedWalkEquiv_symm]
 
 @[simp]
 theorem pathCycleDecompositionEquiv_apply_paths (e : N ≃ₙ N') {f : N.Assignment R}
@@ -189,16 +198,14 @@ theorem pathCycleDecompositionEquiv_symm_apply_paths (e : N ≃ₙ N') {f : N.As
     (D : PathCycleDecomposition (e.assignmentEquiv R f)) :
     ((e.pathCycleDecompositionEquiv f).symm D).paths =
       D.paths.map (e.symm.weightedWalkEquiv R) := by
-  simp only [pathCycleDecompositionEquiv, Equiv.coe_fn_symm_mk]
-  rfl
+  simp only [pathCycleDecompositionEquiv, Equiv.coe_fn_symm_mk, mapPathCycleDecomposition_paths]
 
 @[simp]
 theorem pathCycleDecompositionEquiv_symm_apply_cycles (e : N ≃ₙ N') {f : N.Assignment R}
     (D : PathCycleDecomposition (e.assignmentEquiv R f)) :
     ((e.pathCycleDecompositionEquiv f).symm D).cycles =
       D.cycles.map (e.symm.weightedClosedWalkEquiv R) := by
-  simp only [pathCycleDecompositionEquiv, Equiv.coe_fn_symm_mk]
-  rfl
+  simp only [pathCycleDecompositionEquiv, Equiv.coe_fn_symm_mk, mapPathCycleDecomposition_cycles]
 
 /-- The path part of a transported decomposition is the transported path part. -/
 @[simp]
