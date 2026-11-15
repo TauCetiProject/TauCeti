@@ -308,6 +308,7 @@ theorem norm_alternatingFormEquiv_symm_one (φ : E [⋀^Fin 1]→L[ℝ] ℝ) :
 
 /-- **In degree one, the Hilbert norm of a real form is its comass**: `√⟨φ, φ⟩ = ‖φ‖` for every
 real `1`-form `φ`. -/
+@[simp]
 theorem sqrt_alternatingFormInner_self_one (φ : E [⋀^Fin 1]→L[ℝ] ℝ) :
     √(alternatingFormInner E 1 φ φ) = ‖φ‖ := by
   rw [sqrt_alternatingFormInner_self, norm_alternatingFormEquiv_symm_one]
