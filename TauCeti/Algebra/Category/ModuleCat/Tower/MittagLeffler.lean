@@ -153,15 +153,11 @@ private theorem exists_sub_shift_mem (B : ∀ n, Submodule R (F.obj (op n)))
     congr 1
     exact Finset.sum_congr rfl fun k hk ↦ (hg_succ (Finset.mem_Ico.1 hk).1).symm
   -- An increasing sequence of truncation points `Mₙ ≥ n + 1` with `Mₙ ≥ mₙ`.
-  let M (n : ℕ) : ℕ := n + 1 + (Finset.range (n + 1)).sup m
+  let M (n : ℕ) : ℕ := n + 1 + partialSups m n
   have hM_succ (n : ℕ) : n + 1 ≤ M n := Nat.le_add_right _ _
-  have hM_mono (n : ℕ) : M n ≤ M (n + 1) := by
-    have : (Finset.range (n + 1)).sup m ≤ (Finset.range (n + 1 + 1)).sup m :=
-      Finset.sup_mono (Finset.range_subset_range.2 (Nat.le_succ _))
-    simp only [M]
-    omega
-  have hM_ge (n : ℕ) : m n ≤ M n :=
-    (Finset.le_sup (Finset.self_mem_range_succ n)).trans (Nat.le_add_left _ _)
+  have hM_mono (n : ℕ) : M n ≤ M (n + 1) :=
+    Nat.add_le_add (Nat.le_succ _) ((partialSups m).monotone (Nat.le_succ n))
+  have hM_ge (n : ℕ) : m n ≤ M n := (le_partialSups m n).trans (Nat.le_add_left _ _)
   refine ⟨fun n ↦ s n (M n), fun n ↦ ?_⟩
   -- `bₙ - δ(y)ₙ = s n Mₙ₊₁ - s n Mₙ` is a sum of terms `φₙₖ(bₖ)` with `k ≥ Mₙ ≥ mₙ`.
   have hsum : b n - F.shift (fun n ↦ s n (M n)) n =
