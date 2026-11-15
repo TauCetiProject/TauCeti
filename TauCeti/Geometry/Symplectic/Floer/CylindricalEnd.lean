@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Ring.Periodic
@@ -26,7 +26,7 @@ import TauCeti.Topology.ContinuousMap.Ascoli
 On a cylindrical end of a punctured Floer domain, such as an end of a pair of pants or of a Floer
 cylinder, a solution is read in the coordinate `z = s + i t`, with `s` running along the end and
 `t ∈ ℝ / ℤ` the circle coordinate. In the local coordinates of
-`TauCeti.Geometry.Symplectic.Floer.Compactness` it solves
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic` it solves
 
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`
 

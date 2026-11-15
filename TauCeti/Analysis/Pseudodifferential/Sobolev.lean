@@ -843,8 +843,6 @@ theorem quantizeSobolev_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
     BesselPotentialSpace.ext ?_
   ext φ
-  obtain ⟨C, -, hC⟩ := isUniform_iff.mp ha.isUniform [] []
-  obtain ⟨C', -, hC'⟩ := isUniform_iff.mp hb.isUniform [] []
   have hia : Integrable fun x ↦ φ x • quantizeSchwartzValue a.coefficient u x :=
     (ha.integrable_quantizeSchwartzValue u).smul_of_top_right (φ.memLp ⊤)
   have hib : Integrable fun x ↦ φ x • quantizeSchwartzValue b.coefficient u x :=
@@ -854,10 +852,7 @@ theorem quantizeSobolev_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   rw [← integral_add hia hib]
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
   dsimp only
-  rw [coefficient_add, quantizeSchwartzValue_add_left
-    (a.continuous_coefficient_slice x).aestronglyMeasurable (fun ξ ↦ by simpa using hC x ξ)
-    (b.continuous_coefficient_slice x).aestronglyMeasurable (fun ξ ↦ by simpa using hC' x ξ),
-    smul_add]
+  rw [coefficient_add, quantizeSchwartzValue_coefficient_add, smul_add]
 
 /-- The operator `Op(a) : H^s → H^{s - m}` is homogeneous in the symbol. -/
 theorem quantizeSobolev_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)

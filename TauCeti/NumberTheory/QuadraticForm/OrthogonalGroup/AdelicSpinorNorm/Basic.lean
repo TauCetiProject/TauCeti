@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.FiniteAdelic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.SpinorNormImage
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinorNorm
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
-import Mathlib.NumberTheory.Padics.LocalField
 
 /-!
 # The finite adelic spinor norm
@@ -89,9 +87,7 @@ theorem adelicSpinorNorm_apply (g : U.finiteAdelicSpecialOrthogonal) (p : Nat.Pr
 theorem continuous_adelicSpinorNorm : Continuous (U.adelicSpinorNorm hQ) := by
   apply continuous_restrictedProductMapOfForall
   intro p
-  apply CliffordAlgebra.continuous_spinorNorm
-  rw [square_eq_range_powMonoidHom]
-  exact isOpen_range_powMonoidHom (K := ℚ_[p]) (n := 2) two_ne_zero
+  exact CliffordAlgebra.continuous_spinorNorm _ _
 
 /-- The kernel of the finite adelic spinor norm in the finite adelic special orthogonal group. -/
 def adelicSpinorKernel : Subgroup U.finiteAdelicSpecialOrthogonal :=

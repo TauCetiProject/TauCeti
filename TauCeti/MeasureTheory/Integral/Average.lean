@@ -82,6 +82,7 @@ applied to an integrable function that is almost everywhere at least `a`.
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.setLAverage_enorm_eq_ofReal_setAverage_norm`: the mean of the extended norm of an
   integrable function over a set is the `ENNReal.ofReal` of the mean of its norm.
+* `TauCeti.ofReal_setAverage_norm_rpow`: the same for the power `‖h‖ ^ k`, `k ≥ 0`.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
@@ -129,6 +130,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   moves inside it as `(f / λ)²`.
 * `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
   nonnegative function and `r ≥ 1`.
+* `TauCeti.sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq`: Jensen's inequality
+  `(⨍_s ‖h‖ₑ)² ≤ ofReal (⨍_s ‖h‖²)` between a lower average and a Bochner average.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
   `TauCeti.setLAverage_smul_measure`, `TauCeti.setAverage_smul_measure`: averages are unchanged
   when the measure is multiplied by a positive finite scalar.
@@ -202,6 +205,17 @@ theorem setLAverage_enorm_eq_ofReal_setAverage_norm {μ : Measure α} {s : Set �
     ⨍⁻ x in s, ‖g x‖ₑ ∂μ = ENNReal.ofReal (⨍ x in s, ‖g x‖ ∂μ) := by
   rw [setLAverage_eq, ofReal_setAverage hg.norm (ae_of_all _ fun _ => norm_nonneg _)]
   simp only [ofReal_norm]
+
+omit [NormedSpace ℝ E] in
+/-- The `ENNReal.ofReal` of the mean of `‖h‖ ^ k` over a set, for `k ≥ 0` and `‖h‖ ^ k`
+integrable there, is the mean of `‖h‖ₑ ^ k`. -/
+theorem ofReal_setAverage_norm_rpow {μ : Measure α} {s : Set α} {h : α → E} {k : ℝ} (hk : 0 ≤ k)
+    (hi : IntegrableOn (fun x => ‖h x‖ ^ k) s μ) :
+    ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ k ∂μ) = ⨍⁻ x in s, ‖h x‖ₑ ^ k ∂μ := by
+  rw [ofReal_setAverage hi (ae_of_all _ fun x => by positivity), setLAverage_eq]
+  congr 1
+  refine lintegral_congr fun x => ?_
+  rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hk, ofReal_norm]
 
 end ENorm
 
@@ -529,6 +543,18 @@ theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} {r : ℝ}
       rw [ENNReal.rpow_sub _ _ h0 htop, ENNReal.rpow_one, ENNReal.div_eq_inv_mul,
         ENNReal.div_eq_inv_mul]
       ring
+
+/-- **Jensen's inequality for the square of a mean, in `ℝ≥0∞`.** If `‖h‖²` is integrable on `s`,
+the square of the mean of `‖h‖ₑ` over `s` is at most the mean of `‖h‖²`. No finiteness of the
+measure of `s` is assumed. -/
+theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s : Set X} {h : X → E} (hi : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
+    (⨍⁻ x in s, ‖h x‖ₑ ∂μ) ^ 2 ≤ ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ 2 ∂μ) := by
+  have h2 := ofReal_setAverage_norm_rpow zero_le_two (by simpa only [Real.rpow_two] using hi)
+  simp only [Real.rpow_two, ENNReal.rpow_two] at h2
+  rw [h2]
+  simpa only [ENNReal.rpow_two] using
+    rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
 
 end Jensen
 
