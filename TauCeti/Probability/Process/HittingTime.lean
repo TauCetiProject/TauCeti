@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Process.HittingTime
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
+public import TauCeti.Probability.Process.HittingTime.Basic
 import Mathlib.Topology.Order.IntermediateValue
 
 /-!

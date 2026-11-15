@@ -10,6 +10,7 @@ public import TauCeti.Probability.MarkovChain.ClosedClass
 public import TauCeti.Probability.MarkovChain.Invariant
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Probability.MarkovChain.Pointwise
+import TauCeti.Data.ENat.ENNReal
 
 /-!
 # Null recurrence, recurrence trichotomy, and finite closed communicating classes
@@ -29,12 +30,11 @@ measurable, null recurrence is inherited along reachability and is constant on c
 classes, giving the global trichotomy of counting-measure-irreducible chains: either all states are
 transient, all states are positive recurrent, or all states are null recurrent.
 
-Around any recurrent state `x`, the cycle occupation measure `κ.cycleOccupation x` assigns finite
-mass to every singleton (zero outside the reachable set, finite inside by return reachability) and
-is therefore `σ`-finite on countable state spaces. At a null recurrent state its total mass is
-infinite, every finite `κ`-invariant measure assigns mass zero to `{x}`, no invariant probability
-measure exists when `κ` is irreducible, and on aperiodic irreducible chains the time-`n` singleton
-masses decay to zero from every initial probability law.
+At a null recurrent state `x`, the cycle occupation measure `κ.cycleOccupation x` has infinite total
+mass (`IsNullRecurrent.cycleOccupation_univ`), every finite `κ`-invariant measure assigns mass zero
+to `{x}`, no invariant probability measure exists when `κ` is irreducible, and on
+counting-measure-irreducible chains the time-`n` singleton masses decay to zero from every finite
+initial law with no aperiodicity assumption.
 
 On countable state spaces with measurable singletons, the occupation strong law characterizes
 positive and null recurrence via long-run visit frequencies: positive recurrence is equivalent to a
@@ -44,30 +44,36 @@ null recurrence is equivalent to recurrence with vanishing expected limiting vis
 Finally, restricting to a finite closed communicating class transfers finite irreducible positive
 recurrence to arbitrary ambient state spaces with measurable singletons: every state in a finite
 closed communicating class is positive recurrent, and `κ` admits a unique invariant probability
-measure concentrated on that class. On a finite state space, recurrence and positive recurrence
-therefore coincide unconditionally, no state is null recurrent, and almost every trajectory
-eventually enters and remains in the closed communicating class of a positive recurrent state.
+measure concentrated on that class. On a countable state space every recurrent state with a finite
+communicating class is positive recurrent; on a finite state space recurrence and positive
+recurrence therefore coincide unconditionally, no state is null recurrent, and almost every
+trajectory eventually enters and remains in the closed communicating class of a positive recurrent
+state.
 
 ## Main definitions and statements
 
-* `ProbabilityTheory.Kernel.IsNullRecurrent`: `κ.IsRecurrent x ∧ κ.meanReturnTime x = ∞`.
-* `ProbabilityTheory.Kernel.isTransient_or_isPositiveRecurrent_or_isNullRecurrent`: state-level
-  recurrence trichotomy.
-* `ProbabilityTheory.Kernel.isPositiveRecurrent_subtype_iff` and
-  `ProbabilityTheory.Kernel.isNullRecurrent_subtype_iff`: invariance under restriction to a closed
-  measurable set.
-* `ProbabilityTheory.Kernel.IsNullRecurrent.of_reaches` and
-  `ProbabilityTheory.Kernel.Communicates.isNullRecurrent_iff`: class property of null recurrence
-  and irreducible-chain trichotomy.
-* `ProbabilityTheory.Kernel.IsRecurrent.cycleOccupation_singleton_lt_top` and
-  `ProbabilityTheory.Kernel.IsRecurrent.sigmaFinite_cycleOccupation`: singleton finiteness and
-  `σ`-finiteness of the cycle occupation measure at any recurrent state.
-* `ProbabilityTheory.Kernel.isPositiveRecurrent_iff_exists_pos_tendsto_integral_visitCount_div`:
-  occupation-frequency characterizations of positive and null recurrence.
-* `ProbabilityTheory.Kernel.IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass`,
-  `ProbabilityTheory.Kernel.isPositiveRecurrent_iff_isRecurrent`, and
-  `ProbabilityTheory.Kernel.not_isNullRecurrent_of_finite`: finite closed communicating classes and
-  finite state spaces.
+* `Kernel.IsNullRecurrent`: `κ.IsRecurrent x ∧ κ.meanReturnTime x = ∞`.
+* `Kernel.isTransient_or_isPositiveRecurrent_or_isNullRecurrent`: state-level recurrence
+  trichotomy.
+* `Kernel.isPositiveRecurrent_subtype_iff` and `Kernel.isNullRecurrent_subtype_iff`: invariance
+  under restriction to a closed measurable set.
+* `Kernel.IsNullRecurrent.of_reaches` and `Kernel.Communicates.isNullRecurrent_iff`: class
+  property of null recurrence.
+* `Kernel.forall_isTransient_or_forall_isPositiveRecurrent_or_forall_isNullRecurrent`: global
+  recurrence trichotomy for counting-measure-irreducible chains.
+* `Kernel.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent` and
+  `Kernel.IsNullRecurrent.tendsto_pow_comp_real_singleton`: pointwise decay of transition masses
+  without aperiodicity.
+* `Kernel.isPositiveRecurrent_iff_exists_pos_tendsto_integral_visitCount_div`,
+  `Kernel.isPositiveRecurrent_iff_exists_pos_ae_tendsto_visitCount_div`,
+  `Kernel.isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero`, and
+  `Kernel.IsNullRecurrent.ae_tendsto_visitCount_div_zero`: occupation-frequency characterizations
+  and limits for positive and null recurrence.
+* `Kernel.IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass`,
+  `Kernel.IsRecurrent.isPositiveRecurrent_of_finite_communicatingClass`,
+  `Kernel.isPositiveRecurrent_iff_isRecurrent_of_finite`, and
+  `Kernel.not_isNullRecurrent_of_finite`: finite closed communicating classes and finite state
+  spaces.
 
 ## References
 
@@ -95,13 +101,6 @@ def IsNullRecurrent (κ : Kernel α α) [IsMarkovKernel κ] (x : α) : Prop :=
 /-- Defining equivalence for `Kernel.IsNullRecurrent`. -/
 theorem isNullRecurrent_iff (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
     κ.IsNullRecurrent x ↔ κ.IsRecurrent x ∧ κ.meanReturnTime x = ∞ := (Iff.rfl)
-
-/-- Congruence in the kernel argument of `Kernel.IsRecurrent`. -/
-theorem isRecurrent_congr {κ η : Kernel α α} [IsMarkovKernel κ] [IsMarkovKernel η]
-    (h : κ = η) (x : α) :
-    κ.IsRecurrent x ↔ η.IsRecurrent x := by
-  subst h
-  rfl
 
 /-- Congruence in the kernel argument of `Kernel.IsNullRecurrent`. -/
 theorem isNullRecurrent_congr {κ η : Kernel α α} [IsMarkovKernel κ] [IsMarkovKernel η]
@@ -141,17 +140,6 @@ theorem IsNullRecurrent.not_isTransient {κ : Kernel α α} [IsMarkovKernel κ] 
 theorem IsPositiveRecurrent.not_isNullRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
     (hx : κ.IsPositiveRecurrent x) : ¬ κ.IsNullRecurrent x :=
   fun h => h.not_isPositiveRecurrent hx
-
-/-- A positive recurrent state is not transient. -/
-theorem IsPositiveRecurrent.not_isTransient {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
-    (hx : κ.IsPositiveRecurrent x) : ¬ κ.IsTransient x := by
-  rw [isTransient_iff, not_not]
-  exact hx.isRecurrent
-
-/-- A transient state is not positive recurrent. -/
-theorem IsTransient.not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
-    (hx : κ.IsTransient x) : ¬ κ.IsPositiveRecurrent x :=
-  fun h => h.not_isTransient hx
 
 /-- A transient state is not null recurrent. -/
 theorem IsTransient.not_isNullRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
@@ -201,22 +189,7 @@ theorem meanReturnTime_eq_top_iff {κ : Kernel α α} [IsMarkovKernel κ] {x : �
     κ.meanReturnTime x = ∞ ↔ κ.IsTransient x ∨ κ.IsNullRecurrent x := by
   rw [← not_lt_top_iff, ← isPositiveRecurrent_iff, not_isPositiveRecurrent_iff]
 
-/-- The real reciprocal mean return time `(κ.meanReturnTime x)⁻¹.toReal` is strictly positive if
-and only if `x` is positive recurrent. -/
-theorem inv_meanReturnTime_toReal_pos_iff {κ : Kernel α α} [IsMarkovKernel κ] {x : α} :
-    0 < (κ.meanReturnTime x)⁻¹.toReal ↔ κ.IsPositiveRecurrent x := by
-  rw [ENNReal.toReal_pos_iff, ENNReal.inv_pos, lt_top_iff_ne_top, ENNReal.inv_ne_top,
-    isPositiveRecurrent_iff]
-  exact ⟨fun h => lt_top_iff_ne_top.mpr h.1, fun hx => ⟨hx.ne, κ.meanReturnTime_ne_zero x⟩⟩
-
-/-- The real reciprocal mean return time `(κ.meanReturnTime x)⁻¹.toReal` vanishes if and only if
-`x` is not positive recurrent. -/
-theorem inv_meanReturnTime_toReal_eq_zero_iff {κ : Kernel α α} [IsMarkovKernel κ] {x : α} :
-    (κ.meanReturnTime x)⁻¹.toReal = 0 ↔ ¬ κ.IsPositiveRecurrent x := by
-  rw [← inv_meanReturnTime_toReal_pos_iff]
-  exact ⟨fun h hpos => hpos.ne' h, fun h => le_antisymm (not_lt.mp h) ENNReal.toReal_nonneg⟩
-
-/-! ### Restriction to a closed set and singleton-free cycle occupation bounds -/
+/-! ### Restriction to a closed set and singleton-free properties -/
 
 /-- Restricting a Markov kernel to a closed set preserves and reflects positive recurrence of each
 of its states. -/
@@ -233,48 +206,6 @@ theorem isNullRecurrent_subtype_iff {s : Set α} (κ : Kernel α α) [IsMarkovKe
     (hs : MeasurableSet s) [IsMarkovKernel (κ.subtype hs)] (x : s) :
     (κ.subtype hs).IsNullRecurrent x ↔ κ.IsNullRecurrent x.val := by
   simp only [isNullRecurrent_iff, isRecurrent_subtype_iff, meanReturnTime_subtype]
-
-/-- If `x` does not reach `y`, the cycle occupation measure around `x` assigns mass zero to `{y}`.
-No measurability of singletons is needed. -/
-theorem cycleOccupation_singleton_eq_zero_of_not_reaches {κ : Kernel α α} [IsMarkovKernel κ]
-    {x y : α} (hxy : ¬ κ.Reaches x y) :
-    κ.cycleOccupation x {y} = 0 := by
-  let P := markovChainLaw (Measure.dirac x) κ
-  let μ : ℕ → Measure α := fun n =>
-    (P.restrict {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}).map fun w => w n
-  have hstep : ∀ n : ℕ, μ n {y} = 0 := fun n => by
-    have hpow : (κ ^ n) x {y} = 0 :=
-      nonpos_iff_eq_zero.mp (not_lt.mp fun hn => hxy ((reaches_def x y).mpr ⟨n, hn⟩))
-    let B := toMeasurable ((κ ^ n) x) {y}
-    have hB : MeasurableSet B := measurableSet_toMeasurable _ _
-    have hyB : ({y} : Set α) ⊆ B := subset_toMeasurable _ _
-    refine nonpos_iff_eq_zero.mp ((measure_mono hyB).trans ?_)
-    rw [Measure.map_apply (measurable_pi_apply n) hB,
-      Measure.restrict_apply (hB.preimage (measurable_pi_apply n))]
-    refine (measure_mono inter_subset_left).trans ?_
-    have hlaw : P ((fun w : ℕ → α => w n) ⁻¹' B) = (κ ^ n) x B := by
-      rw [← Measure.map_apply (measurable_pi_apply n) hB, Measure.markovChainLaw_map_eval,
-        Measure.dirac_bind (κ ^ n).measurable]
-    rw [hlaw, measure_toMeasurable, hpow]
-  let B := ⋂ n : ℕ, toMeasurable (μ n) {y}
-  have hB : MeasurableSet B := MeasurableSet.iInter fun n => measurableSet_toMeasurable _ _
-  have hyB : ({y} : Set α) ⊆ B :=
-    subset_iInter fun n => subset_toMeasurable (μ n) {y}
-  refine nonpos_iff_eq_zero.mp ((measure_mono hyB).trans ?_)
-  rw [cycleOccupation_def, Measure.sum_apply _ hB]
-  refine (tsum_eq_zero_iff.mpr fun n => nonpos_iff_eq_zero.mp ?_).le
-  exact (measure_mono (iInter_subset _ n)).trans (by rw [measure_toMeasurable, hstep n])
-
-/-- The total mass of the cycle occupation measure around `x` is at least `κ.meanReturnTime x`,
-even without measurable singletons. -/
-theorem meanReturnTime_le_cycleOccupation_univ (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
-    κ.meanReturnTime x ≤ κ.cycleOccupation x Set.univ := by
-  refine (meanReturnTime_def.trans_le (lintegral_enat_le_tsum _ _)).trans_eq ?_
-  rw [cycleOccupation_def, Measure.sum_apply _ MeasurableSet.univ]
-  refine tsum_congr fun n => ?_
-  rw [Measure.map_apply (measurable_pi_apply n) MeasurableSet.univ, preimage_univ,
-    Measure.restrict_apply_univ]
-  rfl
 
 /-- At a null recurrent state `x`, the cycle occupation measure has infinite total mass. -/
 theorem IsNullRecurrent.cycleOccupation_univ {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
@@ -316,13 +247,13 @@ private theorem exists_forall_measurableSet_iff_of_isRecurrent_deterministic {f 
       ((measure_mono hsub).trans (by simp [Measure.dirac_apply' _ hEm, hw₀E]))
   exact one_ne_zero (h1.symm.trans h0)
 
-/-- A deterministic kernel has no null recurrent states on any measurable space: if the orbit
-`n ↦ f^[n] x` cannot be measurably separated from `x` at all positive times, replacing one
-inseparable positive step `k` by `x` preserves the Dirac path measure and bounds the mean return
-time by `k`. -/
+/-- A deterministic kernel has no null recurrent states, on any measurable space. -/
 @[simp]
 theorem not_isNullRecurrent_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     ¬ (deterministic f hf).IsNullRecurrent x := by
+  -- If `x` is recurrent under `f`, some positive iterate `f^[k] x` cannot be measurably separated
+  -- from `x`; replacing coordinate `k` of the orbit `w₀` by `x` preserves `Measure.dirac w₀` and
+  -- bounds the mean positive return time by `k`.
   rintro ⟨hrec, hmean⟩
   obtain ⟨k, hk, hBiff⟩ := exists_forall_measurableSet_iff_of_isRecurrent_deterministic hf hrec
   let w₀ : ℕ → α := fun n => f^[n] x
@@ -334,10 +265,12 @@ theorem not_isNullRecurrent_deterministic {f : α → α} (hf : Measurable f) (x
         measurableSet_empty := by simp
         measurableSet_compl _ hT := not_congr hT
         measurableSet_iUnion _ hT := by simp [hT] }
+    -- Unfold `m'.MeasurableSet'` and preimage membership explicitly on each cylinder generator.
+    have hm'_iff (T : Set (ℕ → α)) : @MeasurableSet (ℕ → α) m' T ↔ (w₀ ∈ T ↔ w' ∈ T) := Iff.rfl
     have hle : (MeasurableSpace.pi : MeasurableSpace (ℕ → α)) ≤ m' := by
       rw [MeasurableSpace.pi, iSup_le_iff]
       rintro j _ ⟨B, hB, rfl⟩
-      change w₀ j ∈ B ↔ w' j ∈ B
+      rw [hm'_iff, mem_preimage, mem_preimage]
       by_cases hjk : j = k
       · subst hjk
         simpa [w', w₀] using hBiff B hB
@@ -361,37 +294,14 @@ theorem not_isNullRecurrent_deterministic {f : α → α} (hf : Measurable f) (x
 @[simp]
 theorem not_isNullRecurrent_const_dirac (a x : α) :
     ¬ (const α (Measure.dirac a)).IsNullRecurrent x := by
-  have hconst : const α (Measure.dirac a) = deterministic (fun _ : α => a) measurable_const := by
-    ext1 _
-    simp [deterministic_apply]
-  rw [isNullRecurrent_congr hconst]
+  rw [isNullRecurrent_congr (const_dirac_eq_deterministic a)]
   exact not_isNullRecurrent_deterministic measurable_const x
 
-/-! ### Class properties, cycle occupation, invariant measures, and pointwise decay -/
+/-! ### Class properties and invariant measures -/
 
 section MeasurableSingleton
 
 variable [MeasurableSingletonClass α]
-
-/-- Started at a recurrent state `x`, the chain returns to `x` at a positive time almost surely. -/
-theorem IsRecurrent.ae_hittingAfter_one_ne_top {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
-    (hx : κ.IsRecurrent x) :
-    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ, hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤ :=
-  ae_iff.mpr ((prob_compl_eq_zero_iff
-    (measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton x) 1)).mpr
-      (isRecurrent_iff.mp hx))
-
-/-- Started at a null recurrent state `x`, the chain returns to `x` almost surely. -/
-theorem IsNullRecurrent.ae_hittingAfter_ne_top {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
-    (hx : κ.IsNullRecurrent x) :
-    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ, hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤ :=
-  hx.isRecurrent.ae_hittingAfter_one_ne_top
-
-/-- A null recurrent state has divergent diagonal Green function `∑' n, (κ ^ n) x {x} = ∞`. -/
-theorem IsNullRecurrent.tsum_pow_apply_singleton_self_eq_top {κ : Kernel α α} [IsMarkovKernel κ]
-    {x : α} (hx : κ.IsNullRecurrent x) :
-    ∑' n : ℕ, (κ ^ n) x {x} = ∞ :=
-  isRecurrent_iff_tsum_eq_top.mp hx.isRecurrent
 
 /-- **Null recurrence is inherited by reachable states.** If `x` is null recurrent and reaches `y`,
 then `y` is null recurrent. -/
@@ -409,18 +319,6 @@ theorem Communicates.isNullRecurrent_iff {κ : Kernel α α} [IsMarkovKernel κ]
   ⟨fun hx => hx.of_reaches ((communicates_def x y).mp hxy).1,
     fun hy => hy.of_reaches ((communicates_def x y).mp hxy).2⟩
 
-/-- Transience of a counting-measure-irreducible chain does not depend on the state. -/
-theorem isTransient_iff_isTransient {κ : Kernel α α} [IsMarkovKernel κ]
-    [IsIrreducible Measure.count κ] (x y : α) :
-    κ.IsTransient x ↔ κ.IsTransient y :=
-  Communicates.isTransient_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
-
-/-- Positive recurrence of a counting-measure-irreducible chain does not depend on the state. -/
-theorem isPositiveRecurrent_iff_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
-    [IsIrreducible Measure.count κ] (x y : α) :
-    κ.IsPositiveRecurrent x ↔ κ.IsPositiveRecurrent y :=
-  Communicates.isPositiveRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
-
 /-- Null recurrence of a counting-measure-irreducible chain does not depend on the state. -/
 theorem isNullRecurrent_iff_isNullRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
     [IsIrreducible Measure.count κ] (x y : α) :
@@ -433,36 +331,14 @@ recurrent, or every state is null recurrent. -/
 theorem forall_isTransient_or_forall_isPositiveRecurrent_or_forall_isNullRecurrent
     (κ : Kernel α α) [IsMarkovKernel κ] [IsIrreducible Measure.count κ] :
     (∀ x, κ.IsTransient x) ∨ (∀ x, κ.IsPositiveRecurrent x) ∨ (∀ x, κ.IsNullRecurrent x) := by
-  rcases isEmpty_or_nonempty α with hEmpty | ⟨x₀⟩
-  · exact Or.inl fun x => hEmpty.elim x
-  · obtain ⟨x₀⟩ := ‹Nonempty α›
+  cases isEmpty_or_nonempty α with
+  | inl hEmpty => exact Or.inl fun x => hEmpty.elim x
+  | inr hne =>
+    let ⟨x₀⟩ := hne
     rcases κ.isTransient_or_isPositiveRecurrent_or_isNullRecurrent x₀ with ht | hp | hn
     · exact Or.inl fun x => (isTransient_iff_isTransient x₀ x).mp ht
     · exact Or.inr (Or.inl fun x => (isPositiveRecurrent_iff_isPositiveRecurrent x₀ x).mp hp)
     · exact Or.inr (Or.inr fun x => (isNullRecurrent_iff_isNullRecurrent x₀ x).mp hn)
-
-/-- Around any recurrent state `x`, the cycle occupation measure assigns finite mass to every
-singleton `{y}`: states reachable from `x` reach `x` back, and unreachable states receive mass
-zero. -/
-theorem IsRecurrent.cycleOccupation_singleton_lt_top {κ : Kernel α α} [IsMarkovKernel κ]
-    {x : α} (hx : κ.IsRecurrent x) (y : α) :
-    κ.cycleOccupation x {y} < ∞ := by
-  by_cases hxy : κ.Reaches x y
-  · exact hx.cycleOccupation_singleton_lt_top_of_reaches (hx.reaches_of_reaches hxy)
-  · simp [cycleOccupation_singleton_eq_zero_of_not_reaches hxy]
-
-/-- Around a recurrent state `x`, `κ.cycleOccupation x {y}` is positive if and only if `x` and `y`
-communicate. -/
-theorem IsRecurrent.cycleOccupation_singleton_pos_iff {κ : Kernel α α} [IsMarkovKernel κ]
-    {x y : α} (hx : κ.IsRecurrent x) :
-    0 < κ.cycleOccupation x {y} ↔ κ.Communicates x y := by
-  constructor
-  · intro hpos
-    have hxy : κ.Reaches x y :=
-      by_contra fun hnot => hpos.ne' (cycleOccupation_singleton_eq_zero_of_not_reaches hnot)
-    exact (communicates_def x y).mpr ⟨hxy, hx.reaches_of_reaches hxy⟩
-  · intro hcomm
-    exact hx.cycleOccupation_singleton_pos_of_reaches ((communicates_def x y).mp hcomm).1
 
 /-- Every finite `κ`-invariant measure assigns mass zero to any null recurrent state. -/
 theorem Invariant.apply_singleton_eq_zero_of_isNullRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
@@ -478,112 +354,13 @@ theorem IsNullRecurrent.not_invariant_of_isProbabilityMeasure {κ : Kernel α α
     ¬ κ.Invariant π :=
   fun hπ => hx.not_isPositiveRecurrent (hπ.isPositiveRecurrent x)
 
-omit [MeasurableSingletonClass α] in
-private theorem lintegral_return_eq_top_of_not_isPositiveRecurrent {κ : Kernel α α}
-    [IsMarkovKernel κ] {y : α} (hy : ¬ κ.IsPositiveRecurrent y) :
-    (∫⁻ ω, (hittingAfter (fun n ω => ω n) {y} 1 ω).recTopCoe ⊤ (fun n => (n : ℝ≥0∞))
-      ∂markovChainLaw (Measure.dirac y) κ) = ⊤ := by
-  have hm : κ.meanReturnTime y = ⊤ := not_lt_top_iff.mp ((isPositiveRecurrent_iff κ y).not.mp hy)
-  refine (lintegral_congr fun ω => ?_).trans ((meanReturnTime_def (κ := κ) (x := y)).symm.trans hm)
-  induction hittingAfter (fun n ω => ω n) {y} 1 ω using WithTop.recTopCoe <;> rfl
-
-/-- **Pointwise decay at non-positive-recurrent states.** On a counting-measure-irreducible
-aperiodic chain, if `y` is not positive recurrent, then the time-`n` singleton probability at `y`
-tends to zero from every initial probability law. -/
-theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositiveRecurrent
-    {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
-    (hκ : κ.IsAperiodic) {y : α} (hy : ¬ κ.IsPositiveRecurrent y)
-    (ν : Measure α) [IsProbabilityMeasure ν] :
-    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) :=
-  κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ
-    (lintegral_return_eq_top_of_not_isPositiveRecurrent hy) ν
-
-/-- **Pointwise decay at null recurrent states.** On a counting-measure-irreducible aperiodic
-chain, if `y` is null recurrent, then the time-`n` singleton probability at `y` tends to zero from
-every initial probability law. -/
-theorem IsNullRecurrent.tendsto_pow_comp_real_singleton {κ : Kernel α α} [IsMarkovKernel κ]
-    [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α} (hy : κ.IsNullRecurrent y)
-    (ν : Measure α) [IsProbabilityMeasure ν] :
-    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) :=
-  tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositiveRecurrent hκ
-    hy.not_isPositiveRecurrent ν
-
-/-! ### Deterministic and constant-kernel recurrence classifications -/
-
-/-- Under `deterministic f hf`, `x` is recurrent if and only if `x` is a periodic point of `f`. -/
-@[simp]
-theorem isRecurrent_deterministic {f : α → α} (hf : Measurable f) (x : α) :
-    (deterministic f hf).IsRecurrent x ↔ x ∈ Function.periodicPts f := by
-  refine ⟨fun hrec => by_contra fun hnper => ?_,
-    fun hper => ((isPositiveRecurrent_deterministic hf x).mpr hper).isRecurrent⟩
-  have hE : MeasurableSet {w : ℕ → α | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} :=
-    measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton x) 1
-  have hmem : (fun n => f^[n] x) ∉ {w : ℕ → α | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} := by
-    simp only [mem_ofPred_eq, not_not, hittingAfter_eq_top_iff, mem_singleton_iff]
-    intro j hj hfx
-    exact hnper (Function.mk_mem_periodicPts (Nat.pos_of_ne_zero (by omega)) hfx)
-  have hzero : markovChainLaw (Measure.dirac x) (deterministic f hf)
-      {w | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} = 0 := by
-    rw [markovChainLaw_dirac_deterministic, Measure.dirac_apply' _ hE, indicator_of_notMem hmem]
-  exact one_ne_zero ((isRecurrent_iff.mp hrec).symm.trans hzero)
-
-/-- Under `deterministic f hf`, `x` is transient if and only if `x` is not a periodic point of
-`f`. -/
-@[simp]
-theorem isTransient_deterministic {f : α → α} (hf : Measurable f) (x : α) :
-    (deterministic f hf).IsTransient x ↔ x ∉ Function.periodicPts f := by
-  rw [isTransient_iff, isRecurrent_deterministic]
-
-/-- Under `const α (Measure.dirac a)`, `x` is recurrent if and only if `x = a`. -/
-@[simp]
-theorem isRecurrent_const_dirac (a x : α) :
-    (const α (Measure.dirac a)).IsRecurrent x ↔ x = a := by
-  have hconst : const α (Measure.dirac a) = deterministic (fun _ : α => a) measurable_const := by
-    ext1 _
-    simp [deterministic_apply]
-  rw [isRecurrent_congr hconst, isRecurrent_deterministic,
-    ← isPositiveRecurrent_deterministic measurable_const x,
-    ← isPositiveRecurrent_congr hconst, isPositiveRecurrent_const_dirac]
-
-/-- Under `const α (Measure.dirac a)`, `x` is transient if and only if `x ≠ a`. -/
-@[simp]
-theorem isTransient_const_dirac (a x : α) :
-    (const α (Measure.dirac a)).IsTransient x ↔ x ≠ a := by
-  rw [isTransient_iff, isRecurrent_const_dirac]
-
 end MeasurableSingleton
 
-/-! ### Countable state spaces: `σ`-finiteness and occupation-frequency characterizations -/
+/-! ### Countable state spaces: occupation-frequency characterizations and period sampling -/
 
 section Countable
 
 variable [Countable α] [MeasurableSingletonClass α]
-
-/-- On a countable state space with measurable singletons, the cycle occupation measure around any
-recurrent state is `σ`-finite. In particular, every null recurrent state carries an infinite
-`σ`-finite `κ`-invariant measure `κ.cycleOccupation x`. -/
-theorem IsRecurrent.sigmaFinite_cycleOccupation {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
-    (hx : κ.IsRecurrent x) :
-    SigmaFinite (κ.cycleOccupation x) :=
-  Measure.sigmaFinite_iff_measure_singleton_lt_top.mpr hx.cycleOccupation_singleton_lt_top
-
-/-- Started at `y`, the expected positive-time visit fraction converges to the real reciprocal mean
-return time `(κ.meanReturnTime y)⁻¹.toReal`. -/
-theorem tendsto_integral_visitCount_div_markovChainLaw_dirac (κ : Kernel α α) [IsMarkovKernel κ]
-    (y : α) :
-    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
-        ∂markovChainLaw (Measure.dirac y) κ)
-      atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) :=
-  (HasLaw.id
-    (μ := markovChainLaw (Measure.dirac y) κ)).tendsto_integral_visitCount_div_markovChainLaw_dirac
-
-/-- The Cesàro averages of the positive-time return probabilities `((κ ^ (i + 1)) y).real {y}`
-converge to `(κ.meanReturnTime y)⁻¹.toReal`. -/
-theorem tendsto_cesaro_pow_real_singleton_self (κ : Kernel α α) [IsMarkovKernel κ] (y : α) :
-    Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, ((κ ^ (i + 1)) y).real {y}) / n)
-      atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
-  simpa only [integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac] using
-    κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y
 
 /-- **Expected occupation characterization of positive recurrence.** A state `y` is positive
 recurrent if and only if its expected positive-time visit fraction starting from `y` converges to a
@@ -644,7 +421,231 @@ theorem IsNullRecurrent.ae_tendsto_visitCount_div_zero {κ : Kernel α α} [IsMa
       Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) :=
   ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent ν hy.not_isPositiveRecurrent
 
+omit [Countable α] in
+private theorem period_pos_of_isRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
+    (hy : κ.IsRecurrent y) :
+    0 < κ.period y := by
+  refine Nat.pos_of_ne_zero fun h0 => ?_
+  have hempty := period_eq_zero_iff.mp h0
+  have hzero (n : ℕ) : (κ ^ (n + 1)) y {y} = 0 :=
+    nonpos_iff_eq_zero.mp (not_lt.mp fun hpos =>
+      Set.eq_empty_iff_forall_notMem.mp hempty (n + 1)
+        (mem_returnLengths.mpr ⟨Nat.succ_pos n, hpos⟩))
+  have hsum : ∑' n : ℕ, (κ ^ n) y {y} = 1 := by
+    rw [tsum_eq_zero_add' CompleteLattice.summable]
+    simp [hzero, one_def, id_apply]
+  exact ENNReal.one_ne_top (hsum.symm.trans (isRecurrent_iff_tsum_eq_top.mp hy))
+
+omit [Countable α] [MeasurableSingletonClass α] in
+private theorem cesaro_pow_mul_le (κ : Kernel α α) {d : ℕ} (hd : 0 < d) (y : α) (k : ℕ) :
+    (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) / k ≤
+      (d : ℝ) * ((∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y}) / (d * k : ℕ)) := by
+  let φ : ℕ → ℕ := fun j => d * (j + 1) - 1
+  have hφ (j : ℕ) : φ j + 1 = d * (j + 1) :=
+    Nat.sub_add_cancel (Nat.succ_le_of_lt (Nat.mul_pos hd (Nat.succ_pos j)))
+  have hφ_inj : Function.Injective φ := fun i j hij => by
+    have hmul : d * (i + 1) = d * (j + 1) := by rw [← hφ i, ← hφ j, hij]
+    exact Nat.succ.inj (mul_right_injective₀ hd.ne' hmul)
+  have hsub : (Finset.range k).image φ ⊆ Finset.range (d * k) := by
+    intro m hm
+    obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hm
+    rw [Finset.mem_range] at hj ⊢
+    exact Nat.lt_of_lt_of_le (by rw [← hφ j]; exact Nat.lt_succ_self _)
+      (Nat.mul_le_mul_left d hj)
+  have hsum_le :
+      (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) ≤
+        ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} := calc
+    (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y})
+      = ∑ j ∈ Finset.range k, ((κ ^ (φ j + 1)) y).real {y} := by
+          refine Finset.sum_congr rfl fun j _ => ?_
+          rw [← pow_mul, hφ j]
+    _ = ∑ i ∈ (Finset.range k).image φ, ((κ ^ (i + 1)) y).real {y} :=
+          (Finset.sum_image (f := fun i => ((κ ^ (i + 1)) y).real {y})
+            fun _ _ _ _ hij => hφ_inj hij).symm
+    _ ≤ ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} :=
+          Finset.sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ => measureReal_nonneg
+  have hd0 : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
+  rw [Nat.cast_mul, ← mul_div_assoc, mul_div_mul_left _ _ hd0]
+  exact div_le_div_of_nonneg_right hsum_le (Nat.cast_nonneg k)
+
+/-- Sampling a chain at multiples of `κ.period y` preserves null recurrence of `y`. -/
+theorem IsNullRecurrent.pow_period {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
+    (hy : κ.IsNullRecurrent y) :
+    (κ ^ κ.period y).IsNullRecurrent y := by
+  -- Positive return probabilities occur only at multiples of `κ.period y`, while Cesàro return
+  -- averages of `κ ^ κ.period y` are bounded by `κ.period y` times those of `κ`.
+  set d := κ.period y
+  have hd : 0 < d := period_pos_of_isRecurrent hy.isRecurrent
+  have hrec : (κ ^ d).IsRecurrent y := by
+    rw [isRecurrent_iff_tsum_eq_top]
+    simp_rw [← pow_mul]
+    have htsum : (∑' k : ℕ, (κ ^ (d * k)) y {y}) = ∑' n : ℕ, (κ ^ n) y {y} := by
+      refine Function.Injective.tsum_eq (f := fun n => (κ ^ n) y {y})
+        (mul_right_injective₀ hd.ne') fun n hn => ?_
+      rw [Function.mem_support] at hn
+      obtain ⟨k, rfl⟩ := Classical.not_not.mp
+        (mt pow_apply_singleton_self_eq_zero_of_not_period_dvd hn)
+      exact ⟨k, rfl⟩
+    exact htsum.trans (isRecurrent_iff_tsum_eq_top.mp hy.isRecurrent)
+  refine ⟨hrec, ?_⟩
+  rw [← not_lt_top_iff, ← isPositiveRecurrent_iff, ← inv_meanReturnTime_toReal_eq_zero_iff]
+  refine tendsto_nhds_unique ((κ ^ d).tendsto_cesaro_pow_real_singleton_self y) ?_
+  have hlim0 : Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, ((κ ^ (i + 1)) y).real {y}) / n)
+      atTop (𝓝 0) := by
+    simpa only [inv_meanReturnTime_toReal_eq_zero_iff.mpr hy.not_isPositiveRecurrent] using
+      κ.tendsto_cesaro_pow_real_singleton_self y
+  have hlim_dk : Tendsto (fun k : ℕ =>
+      (d : ℝ) * ((∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y}) / (d * k : ℕ)))
+      atTop (𝓝 0) := by
+    simpa only [mul_zero, Function.comp_def] using (tendsto_const_nhds (x := (d : ℝ))).mul
+      (hlim0.comp (tendsto_atTop_mono (fun k => Nat.le_mul_of_pos_left k hd) tendsto_id))
+  exact squeeze_zero (fun k => div_nonneg (Finset.sum_nonneg fun _ _ => measureReal_nonneg)
+    (Nat.cast_nonneg k)) (cesaro_pow_mul_le κ hd y) hlim_dk
+
 end Countable
+
+/-! ### Pointwise decay at non-positive-recurrent states -/
+
+section PointwiseDecay
+
+variable [MeasurableSingletonClass α]
+
+omit [MeasurableSingletonClass α] in
+private theorem lintegral_return_eq_top_of_not_isPositiveRecurrent {κ : Kernel α α}
+    [IsMarkovKernel κ] {y : α} (hy : ¬ κ.IsPositiveRecurrent y) :
+    (∫⁻ ω, (hittingAfter (fun n ω => ω n) {y} 1 ω).recTopCoe ⊤ (fun n => (n : ℝ≥0∞))
+      ∂markovChainLaw (Measure.dirac y) κ) = ⊤ := by
+  simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
+  rw [← meanReturnTime_def]
+  exact not_lt_top_iff.mp ((isPositiveRecurrent_iff κ y).not.mp hy)
+
+private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositiveRecurrent_finite
+    {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
+    (hκ : κ.IsAperiodic) {y : α} (hy : ¬ κ.IsPositiveRecurrent y)
+    (ν : Measure α) [IsFiniteMeasure ν] :
+    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+  by_cases h0 : ν Set.univ = 0
+  · have hzero (n : ℕ) : ((κ ^ n) ∘ₘ ν).real {y} = 0 := by
+      rw [Measure.measure_univ_eq_zero.mp h0, measureReal_def,
+        Measure.bind_apply (measurableSet_singleton y) (κ ^ n).aemeasurable]
+      simp
+    simp_rw [hzero]
+    exact tendsto_const_nhds
+  · let ν₀ : Measure α := (ν Set.univ)⁻¹ • ν
+    have : IsProbabilityMeasure ν₀ :=
+      ⟨by simp [ν₀, smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel h0 (measure_ne_top ν Set.univ)]⟩
+    have hν : ν = ν Set.univ • ν₀ := by
+      simp [ν₀, smul_smul, ENNReal.mul_inv_cancel h0 (measure_ne_top ν Set.univ)]
+    have hprob := κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ
+      (lintegral_return_eq_top_of_not_isPositiveRecurrent hy) ν₀
+    have hscale (n : ℕ) : ((κ ^ n) ∘ₘ ν).real {y} =
+        ν.real Set.univ * ((κ ^ n) ∘ₘ ν₀).real {y} := by
+      conv_lhs => rw [hν]
+      simp [Measure.comp_smul, Measure.real, smul_apply, smul_eq_mul, ENNReal.toReal_mul]
+    simp_rw [hscale]
+    simpa only [mul_zero] using (tendsto_const_nhds (x := ν.real Set.univ)).mul hprob
+
+private theorem pow_period_mul_comp_restrict_compl_singleton_eq_zero
+    {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
+    (y : α) (μ : Measure α) (q : ℕ) :
+    (((κ ^ κ.period y) ^ q) ∘ₘ (μ.restrict ((κ ^ κ.period y).communicatingClass y)ᶜ)) {y} = 0 := by
+  have := countable_of_isIrreducible_count (κ := κ)
+  set d := κ.period y
+  set η := κ ^ d
+  set s := η.communicatingClass y
+  have hs : MeasurableSet s := η.measurableSet_communicatingClass y
+  have hzero_outside : ∀ z ∈ sᶜ, (η ^ q) z {y} = 0 := fun z hz => by
+    refine nonpos_iff_eq_zero.mp (not_lt.mp fun hpos => hz ?_)
+    obtain ⟨a, ha⟩ := exists_pos_pow_apply_singleton (κ := κ) y z
+    have hpos' : 0 < (κ ^ (d * q)) z {y} := by rwa [pow_mul]
+    have hdvd_sum : d ∣ a + d * q := Classical.not_not.mp
+      (mt pow_apply_singleton_self_eq_zero_of_not_period_dvd (pow_add_apply_pos ha hpos').ne')
+    obtain ⟨m, rfl⟩ := (Nat.dvd_add_left (dvd_mul_right d q)).mp hdvd_sum
+    have hyz : η.Reaches y z := (reaches_def y z).mpr ⟨m, by rwa [← pow_mul]⟩
+    have hzy : η.Reaches z y := (reaches_def z y).mpr ⟨q, hpos⟩
+    exact (mem_communicatingClass_iff y z).mpr ((communicates_def y z).mpr ⟨hyz, hzy⟩)
+  rw [Measure.bind_apply (measurableSet_singleton y) (η ^ q).aemeasurable]
+  exact (lintegral_eq_zero_iff ((η ^ q).measurable_coe (measurableSet_singleton y))).mpr
+    ((ae_restrict_iff' hs.compl).mpr (Eventually.of_forall hzero_outside))
+
+private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
+    {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
+    {y : α} (hy : κ.IsNullRecurrent y) (μ : Measure α) [IsFiniteMeasure μ] :
+    Tendsto (fun q : ℕ => ((κ ^ (κ.period y * q)) ∘ₘ μ).real {y}) atTop (𝓝 0) := by
+  have := countable_of_isIrreducible_count (κ := κ)
+  set d := κ.period y
+  set η := κ ^ d
+  have hη : η.IsNullRecurrent y := hy.pow_period
+  set s := η.communicatingClass y
+  have hs : MeasurableSet s := η.measurableSet_communicatingClass y
+  have hclosed : η.IsClosedSet s := hη.isRecurrent.isClosedSet_communicatingClass
+  have : IsMarkovKernel (η.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
+  have : IsIrreducible Measure.count (η.subtype hs) :=
+    hclosed.isIrreducible_subtype_communicatingClass hs
+  let y_s : s := ⟨y, (mem_communicatingClass_iff y y).mpr (Communicates.refl y)⟩
+  have haper : (η.subtype hs).IsAperiodic := by
+    rw [isAperiodic_iff_period_eq_one y_s, period_subtype hs hclosed]
+    exact period_pow_period κ y
+  have hy_s : ¬ (η.subtype hs).IsPositiveRecurrent y_s := by
+    rw [isPositiveRecurrent_subtype_iff η hs y_s]
+    exact hη.not_isPositiveRecurrent
+  let μ_s : Measure s := μ.comap Subtype.val
+  have : IsFiniteMeasure μ_s := ⟨by
+    rw [(MeasurableEmbedding.subtype_coe hs).comap_apply]
+    exact measure_lt_top _ _⟩
+  have heq (q : ℕ) : ((κ ^ (d * q)) ∘ₘ μ).real {y} =
+      (((η.subtype hs) ^ q) ∘ₘ μ_s).real {y_s} := by
+    rw [pow_mul]
+    conv_lhs => rw [← Measure.restrict_add_restrict_compl hs (μ := μ)]
+    rw [Measure.comp_add, measureReal_def, add_apply,
+      pow_period_mul_comp_restrict_compl_singleton_eq_zero y μ q, add_zero,
+      ← map_comap_subtype_coe hs μ, ← map_pow_comp_subtype η hs hclosed q μ_s,
+      (MeasurableEmbedding.subtype_coe hs).map_apply]
+    have hpre : (Subtype.val : s → α) ⁻¹' {y_s.val} = {y_s} := by
+      rw [← Set.image_singleton, Subtype.coe_injective.preimage_image]
+    rw [← measureReal_def]
+    exact congrArg (((η.subtype hs) ^ q) ∘ₘ μ_s).real hpre
+  simp_rw [heq]
+  exact tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositiveRecurrent_finite
+    haper hy_s μ_s
+
+/-- **Pointwise decay at null recurrent states.** On a counting-measure-irreducible chain (periodic
+or aperiodic), if `y` is null recurrent, then the time-`n` singleton mass at `y` tends to zero from
+every finite initial measure. -/
+theorem IsNullRecurrent.tendsto_pow_comp_real_singleton {κ : Kernel α α} [IsMarkovKernel κ]
+    [IsIrreducible Measure.count κ] {y : α} (hy : κ.IsNullRecurrent y)
+    (ν : Measure α) [IsFiniteMeasure ν] :
+    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+  set d := κ.period y
+  have hd : 0 < d := period_pos_of_isRecurrent hy.isRecurrent
+  have hres (r : ℕ) : Tendsto (fun q : ℕ => ((κ ^ (d * q + r)) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+    have hcomp (q : ℕ) :
+        (κ ^ (d * q + r)) ∘ₘ ν = (κ ^ (d * q)) ∘ₘ ((κ ^ r : Kernel α α) ∘ₘ ν) := by
+      rw [pow_add, Measure.comp_assoc]
+    simp_rw [hcomp]
+    exact tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent hy
+      ((κ ^ r : Kernel α α) ∘ₘ ν)
+  refine tendsto_def.mpr fun U hU => mem_preimage.mp ?_
+  have hall : ∀ᶠ n in atTop, ∀ r ∈ Finset.range d,
+      ((κ ^ (d * (n / d) + r)) ∘ₘ ν).real {y} ∈ U :=
+    (eventually_all_finset (Finset.range d)).mpr fun r _ =>
+      ((hres r).comp (Nat.tendsto_div_const_atTop hd.ne')).eventually hU
+  exact hall.mono fun n hn => by
+    simpa only [Nat.div_add_mod] using hn (n % d) (Finset.mem_range.mpr (Nat.mod_lt n hd))
+
+/-- **Pointwise decay at non-positive-recurrent states.** On a counting-measure-irreducible chain
+(periodic or aperiodic), if `y` is not positive recurrent, then the time-`n` singleton mass at `y`
+tends to zero from every finite initial measure. -/
+theorem tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent
+    {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
+    {y : α} (hy : ¬ κ.IsPositiveRecurrent y)
+    (ν : Measure α) [IsFiniteMeasure ν] :
+    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+  rcases not_isPositiveRecurrent_iff.mp hy with ht | hn
+  · exact ht.tendsto_pow_comp_real_singleton ν
+  · exact hn.tendsto_pow_comp_real_singleton ν
+
+end PointwiseDecay
 
 /-! ### Finite closed communicating classes and finite state spaces -/
 
@@ -663,8 +664,7 @@ theorem IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass {κ : Kerne
   have : Finite (κ.communicatingClass x) := hfin.to_subtype
   have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
   have : IsIrreducible Measure.count (κ.subtype hs) :=
-    (isIrreducible_subtype_iff hs hclosed).mpr fun a ha b hb =>
-      ((mem_communicatingClass_iff x a).mp ha).symm.trans ((mem_communicatingClass_iff x b).mp hb)
+    hclosed.isIrreducible_subtype_communicatingClass hs
   exact (isPositiveRecurrent_subtype_iff κ hs ⟨y, hy⟩).mp
     ((κ.subtype hs).isPositiveRecurrent_of_finite ⟨y, hy⟩)
 
@@ -691,32 +691,38 @@ theorem IsClosedSet.existsUnique_invariant_probability_of_finite_communicatingCl
     ⟨⟨x, (mem_communicatingClass_iff x x).mpr (Communicates.refl x)⟩⟩
   have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
   have : IsIrreducible Measure.count (κ.subtype hs) :=
-    (isIrreducible_subtype_iff hs hclosed).mpr fun a ha b hb =>
-      ((mem_communicatingClass_iff x a).mp ha).symm.trans ((mem_communicatingClass_iff x b).mp hb)
+    hclosed.isIrreducible_subtype_communicatingClass hs
   exact (existsUnique_invariant_probability_subtype_iff κ hs hclosed).mp
     (existsUnique_invariant_probability (κ.subtype hs))
 
+/-- On a countable state space with measurable singletons, every recurrent state whose
+communicating class is finite is positive recurrent. -/
+theorem IsRecurrent.isPositiveRecurrent_of_finite_communicatingClass [Countable α]
+    {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsRecurrent x)
+    (hfin : (κ.communicatingClass x).Finite) :
+    κ.IsPositiveRecurrent x :=
+  hx.isClosedSet_communicatingClass.isPositiveRecurrent_self_of_finite_communicatingClass hfin
+
 /-- On a finite state space with measurable singletons, every recurrent state is positive
 recurrent, with no irreducibility hypothesis on `κ`. -/
-theorem IsRecurrent.isPositiveRecurrent [Finite α] {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
-    (hx : κ.IsRecurrent x) :
+theorem IsRecurrent.isPositiveRecurrent_of_finite [Finite α] {κ : Kernel α α} [IsMarkovKernel κ]
+    {x : α} (hx : κ.IsRecurrent x) :
     κ.IsPositiveRecurrent x :=
-  hx.isClosedSet_communicatingClass.isPositiveRecurrent_self_of_finite_communicatingClass
-    (Set.toFinite _)
+  hx.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _)
 
 /-- On a finite state space with measurable singletons, positive recurrence is equivalent to
 recurrence. -/
-theorem isPositiveRecurrent_iff_isRecurrent [Finite α] {κ : Kernel α α} [IsMarkovKernel κ]
-    {x : α} :
+theorem isPositiveRecurrent_iff_isRecurrent_of_finite [Finite α] {κ : Kernel α α}
+    [IsMarkovKernel κ] {x : α} :
     κ.IsPositiveRecurrent x ↔ κ.IsRecurrent x :=
-  ⟨IsPositiveRecurrent.isRecurrent, IsRecurrent.isPositiveRecurrent⟩
+  ⟨IsPositiveRecurrent.isRecurrent, IsRecurrent.isPositiveRecurrent_of_finite⟩
 
 /-- **A finite-state Markov chain has no null recurrent states.** -/
 @[simp]
 theorem not_isNullRecurrent_of_finite [Finite α] (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
     ¬ κ.IsNullRecurrent x := by
   simp [isNullRecurrent_iff_isRecurrent_and_not_isPositiveRecurrent,
-    isPositiveRecurrent_iff_isRecurrent]
+    isPositiveRecurrent_iff_isRecurrent_of_finite]
 
 /-- Almost every path of a finite-state Markov chain eventually enters and remains in the closed
 communicating class of a positive recurrent state. -/
@@ -735,30 +741,32 @@ end ProbabilityTheory.Kernel
 
 namespace ProbabilityTheory.HasLaw
 
-/-- On any realization of a counting-measure-irreducible aperiodic chain, the probability of
-occupying a non-positive-recurrent state tends to zero. -/
-theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_not_isPositiveRecurrent
+/-- On any realization of a counting-measure-irreducible chain (periodic or aperiodic) started from
+a finite initial law, the time-`n` measure of occupying a non-positive-recurrent state tends to
+zero. -/
+theorem tendsto_measureReal_apply_eq_of_not_isPositiveRecurrent
     {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
-    [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsProbabilityMeasure ν]
+    [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsFiniteMeasure ν]
     {P : Measure Ω} {X : ℕ → Ω → α}
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
-    (hκ : κ.IsAperiodic) {y : α} (hy : ¬ κ.IsPositiveRecurrent y) :
-    Tendsto (fun n : ℕ => P.real {ω | X n ω = y}) atTop (𝓝 0) :=
-  hX.tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top hκ
-    (Kernel.lintegral_return_eq_top_of_not_isPositiveRecurrent hy)
+    {y : α} (hy : ¬ κ.IsPositiveRecurrent y) :
+    Tendsto (fun n : ℕ => P.real {ω | X n ω = y}) atTop (𝓝 0) := by
+  have heq (n : ℕ) : P.real {ω | X n ω = y} = ((κ ^ n) ∘ₘ ν).real {y} :=
+    (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
+  simp_rw [heq]
+  exact Kernel.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent hy ν
 
-/-- On any realization of a counting-measure-irreducible aperiodic chain, the probability of
-occupying a null recurrent state tends to zero. -/
-theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_isNullRecurrent
+/-- On any realization of a counting-measure-irreducible chain (periodic or aperiodic) started from
+a finite initial law, the time-`n` measure of occupying a null recurrent state tends to zero. -/
+theorem tendsto_measureReal_apply_eq_of_isNullRecurrent
     {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
-    [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsProbabilityMeasure ν]
+    [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsFiniteMeasure ν]
     {P : Measure Ω} {X : ℕ → Ω → α}
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
-    (hκ : κ.IsAperiodic) {y : α} (hy : κ.IsNullRecurrent y) :
+    {y : α} (hy : κ.IsNullRecurrent y) :
     Tendsto (fun n : ℕ => P.real {ω | X n ω = y}) atTop (𝓝 0) :=
-  hX.tendsto_measureReal_apply_eq_of_isAperiodic_of_not_isPositiveRecurrent hκ
-    hy.not_isPositiveRecurrent
+  hX.tendsto_measureReal_apply_eq_of_not_isPositiveRecurrent hy.not_isPositiveRecurrent
 
 end ProbabilityTheory.HasLaw

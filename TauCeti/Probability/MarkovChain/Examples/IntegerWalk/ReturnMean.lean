@@ -27,9 +27,7 @@ Combining this unconditional infinite-mean formula with the return-series recurr
 criterion classifies every integer walk across the recurrence trichotomy:
 
 * no state of `integerWalk p` is positive recurrent for any `p : unitInterval`;
-* `integerWalk p` is null recurrent if and only if `(p : ℝ) = 1 / 2`;
-* every finite `(integerWalk p)`-invariant measure is zero, so no integer walk admits an
-  invariant probability measure.
+* `integerWalk p` is null recurrent if and only if `(p : ℝ) = 1 / 2`.
 
 ## References
 
@@ -102,19 +100,6 @@ recurrent at `x` if and only if `(p : ℝ) = 1 / 2`. -/
 theorem integerWalk_isNullRecurrent_iff (p : unitInterval) (x : ℤ) :
     (integerWalk p).IsNullRecurrent x ↔ (p : ℝ) = 1 / 2 := by
   simp [Kernel.isNullRecurrent_iff, integerWalk_isRecurrent_iff, integerWalk_meanReturnTime_eq_top]
-
-/-- Every finite invariant measure of any nearest-neighbor integer walk is zero. -/
-theorem integerWalk_invariant_eq_zero {p : unitInterval} {μ : Measure ℤ} [IsFiniteMeasure μ]
-    (hμ : (integerWalk p).Invariant μ) :
-    μ = 0 :=
-  Measure.ext_of_singleton fun x =>
-    hμ.apply_singleton_eq_zero_of_not_isPositiveRecurrent (not_integerWalk_isPositiveRecurrent p x)
-
-/-- No nearest-neighbor integer walk admits an invariant probability measure. -/
-theorem not_integerWalk_invariant_of_isProbabilityMeasure (p : unitInterval) (μ : Measure ℤ)
-    [IsProbabilityMeasure μ] :
-    ¬ (integerWalk p).Invariant μ :=
-  fun hμ => IsProbabilityMeasure.ne_zero μ (integerWalk_invariant_eq_zero hμ)
 
 end TauCeti.Probability
 

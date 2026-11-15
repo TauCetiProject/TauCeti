@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.Data.Set.Card
 
 /-!
 # Lebesgue integrals of counting functions
@@ -41,21 +42,12 @@ theorem lintegral_encard_setOf_eq_tsum {ι β : Type*} [Countable ι] [Measurabl
   rw [lintegral_tsum fun k => (measurable_const.indicator (hP k)).aemeasurable]
   simp_rw [lintegral_indicator_const (hP _), one_mul]
 
-private theorem enat_toENNReal_eq_encard (m : ℕ∞) :
-    (m : ℝ≥0∞) = ({k : ℕ | (k : ℕ∞) < m}.encard : ℝ≥0∞) := by
-  induction m using ENat.recTopCoe with
-  | top => simp
-  | coe n =>
-    have hr : {k : ℕ | (k : ℕ∞) < (n : ℕ∞)} = ↑(Finset.range n) := by ext k; simp
-    rw [hr, Set.encard_coe_eq_coe_finsetCard, Finset.card_range, ENat.toENNReal_coe]
-
 /-- **Tail-sum formula for `ℕ∞`-valued functions.** The Lebesgue integral of an `ℕ∞`-valued
 function whose strict superlevel sets are measurable is `∑' k : ℕ, μ {x | (k : ℕ∞) < f x}`. -/
 theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
     {f : β → ℕ∞} (hf : ∀ k : ℕ, MeasurableSet {x | (k : ℕ∞) < f x}) :
     ∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} :=
-  (lintegral_congr fun x => enat_toENNReal_eq_encard (f x)).trans
-    (lintegral_encard_setOf_eq_tsum μ hf)
+  (lintegral_congr fun _ => by simp).trans (lintegral_encard_setOf_eq_tsum μ hf)
 
 /-- **Outer-measure tail-sum bound for `ℕ∞`-valued functions.** For any (not necessarily
 measurable) `f : β → ℕ∞`, the lower Lebesgue integral of `f` is bounded above by the sum of the
@@ -67,7 +59,7 @@ theorem lintegral_enat_le_tsum {β : Type*} [MeasurableSpace β] (μ : Measure �
   calc
     ∫⁻ x, (f x : ℝ≥0∞) ∂μ ≤ ∫⁻ x, ({k : ℕ | x ∈ M k}.encard : ℝ≥0∞) ∂μ :=
       lintegral_mono fun x => by
-        rw [enat_toENNReal_eq_encard]
+        rw [← Set.encard_setOf_natCast_lt (f x)]
         exact ENat.toENNReal_mono
           (Set.encard_le_encard fun k hk => subset_toMeasurable μ _ hk)
     _ = ∑' k : ℕ, μ (M k) := lintegral_encard_setOf_eq_tsum μ hM

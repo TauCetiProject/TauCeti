@@ -43,7 +43,7 @@ public section
 
 open MeasureTheory TauCeti.Probability
 
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace ProbabilityTheory.Kernel
 
@@ -59,6 +59,13 @@ def IsRecurrent (κ : Kernel S S) [IsMarkovKernel κ] (x : S) : Prop :=
 theorem isRecurrent_iff : κ.IsRecurrent x ↔
     markovChainLaw (Measure.dirac x) κ
       {ω | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} = 1 := Iff.rfl
+
+/-- Congruence in the kernel argument of `Kernel.IsRecurrent`. -/
+theorem isRecurrent_congr {κ η : Kernel S S} [IsMarkovKernel κ] [IsMarkovKernel η]
+    (h : κ = η) (x : S) :
+    κ.IsRecurrent x ↔ η.IsRecurrent x := by
+  subst h
+  rfl
 
 /-- A state is transient if it is not recurrent. -/
 def IsTransient (κ : Kernel S S) [IsMarkovKernel κ] (x : S) : Prop :=
@@ -189,6 +196,24 @@ theorem Communicates.isTransient_iff (hxy : κ.Communicates x y) :
   rw [ProbabilityTheory.Kernel.isTransient_iff, ProbabilityTheory.Kernel.isTransient_iff]
   exact not_congr hxy.isRecurrent_iff
 
+/-- Started at a recurrent state `x`, the chain returns to `x` at a positive time almost surely. -/
+theorem IsRecurrent.ae_hittingAfter_one_ne_top (hx : κ.IsRecurrent x) :
+    ∀ᵐ ω ∂markovChainLaw (Measure.dirac x) κ, hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤ :=
+  ae_iff.mpr ((prob_compl_eq_zero_iff
+    (TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton x) 1)).mpr
+      (isRecurrent_iff.mp hx))
+
+/-- From any finite initial measure, the time-`n` singleton mass at a transient state tends to
+zero. -/
+theorem IsTransient.tendsto_pow_comp_real_singleton (hy : κ.IsTransient y)
+    (ν : Measure S) [IsFiniteMeasure ν] :
+    Filter.Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) Filter.atTop (𝓝 0) := by
+  have hdiag : ∑' n : ℕ, (κ ^ n) y {y} ≠ ∞ := mt isRecurrent_iff_tsum_eq_top.mpr hy
+  have hsum : ∑' n : ℕ, ((κ ^ n) ∘ₘ ν) {y} ≠ ∞ := by
+    rw [κ.tsum_pow_comp_apply_singleton ν y]
+    exact ENNReal.mul_ne_top (measure_ne_top _ _) hdiag
+  exact (ENNReal.summable_toReal hsum).tendsto_atTop_zero
+
 /-- From a state reachable from a recurrent state, the chain hits the recurrent state
 almost surely. The entrance may occur at time zero. -/
 theorem IsRecurrent.ae_hittingAfter_ne_top_of_reaches (hx : κ.IsRecurrent x)
@@ -272,6 +297,11 @@ theorem IsRecurrent.ae_hittingAfter_ne_top_of_isIrreducible [IsIrreducible Measu
 theorem isRecurrent_iff_isRecurrent [IsIrreducible Measure.count κ] (x y : S) :
     κ.IsRecurrent x ↔ κ.IsRecurrent y :=
   Communicates.isRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
+
+/-- Transience of an irreducible chain does not depend on the state. -/
+theorem isTransient_iff_isTransient [IsIrreducible Measure.count κ] (x y : S) :
+    κ.IsTransient x ↔ κ.IsTransient y :=
+  Communicates.isTransient_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
 
 /-- In an irreducible chain with a recurrent state, from any initial measure, almost every path
 visits every state infinitely often. The state space is automatically countable by

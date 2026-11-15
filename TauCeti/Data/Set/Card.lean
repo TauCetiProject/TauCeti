@@ -47,6 +47,9 @@ coinfiniteness from this counting invariant.
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
+
+The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`
+(`Set.encard_setOf_natCast_lt`).
 -/
 
 public section
@@ -181,5 +184,16 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   rw [two_mul, ← ncard_sumEquiv_symm_apply]
   congr 1
   ext (i | i) <;> simp
+
+/-- The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`. -/
+@[simp]
+theorem encard_setOf_natCast_lt (m : ℕ∞) : {k : ℕ | (k : ℕ∞) < m}.encard = m := by
+  induction m using ENat.recTopCoe with
+  | top => simp
+  | coe n =>
+    have hr : {k : ℕ | (k : ℕ∞) < (n : ℕ∞)} = ↑(Finset.range n) := by
+      ext k
+      simp
+    rw [hr, Set.encard_coe_eq_coe_finsetCard, Finset.card_range]
 
 end Set

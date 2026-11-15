@@ -11,6 +11,7 @@ public import TauCeti.Probability.MarkovChain.Reachability
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 public import TauCeti.Probability.MarkovChain.Recurrence
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Entrance into closed communicating classes and restriction of path laws
@@ -190,37 +191,28 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFinite
   rw [← MeasureTheory.lintegral_map hmean hhit',
     map_hittingAfter_markovChainLaw_subtype κ hs ν ht, MeasureTheory.lintegral_map hmean hhit]
 
-private theorem hittingAfter_singleton_subtype_coe {S : Type*} {s : Set S} (x : s) (m : ℕ)
-    (ω : ℕ → s) :
-    hittingAfter (fun n (w : ℕ → S) => w n) {x.val} m (fun n => (ω n).val) =
-      hittingAfter (fun n w => w n) {x} m ω := by
-  have hpre : (Subtype.val : s → S) ⁻¹' {x.val} = {x} := by
-    ext
-    simp [Subtype.ext_iff]
-  exact congrArg (fun t => hittingAfter (fun n w => w n) t m ω) hpre
+private theorem measurableEmbedding_subtype_path (hs : MeasurableSet s) :
+    MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) :=
+  (MeasurableEmbedding.subtype_coe hs).comp_left
 
 /-- Restricting a Markov kernel to a closed set preserves the extended mean positive return time
 of each of its states. -/
 @[simp]
 theorem meanReturnTime_subtype (x : s) :
     (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
-  have hembed : MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) := by
-    convert MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtype_coe hs
-    simp
   rw [meanReturnTime_def, meanReturnTime_def, ← Measure.map_dirac' measurable_subtype_coe x,
-    ← markovChainLaw_map_subtype κ hs (Measure.dirac x), hembed.lintegral_map]
-  simp only [hittingAfter_singleton_subtype_coe]
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x),
+    (measurableEmbedding_subtype_path hs).lintegral_map]
+  simp only [hittingAfter_eval_subtype_coe_singleton]
 
 /-- Restricting to a closed set preserves and reflects recurrence of each of its states. -/
 @[simp]
 theorem isRecurrent_subtype_iff (x : s) :
     (κ.subtype hs).IsRecurrent x ↔ κ.IsRecurrent x.val := by
-  have hembed : MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) := by
-    convert MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtype_coe hs
-    simp
   rw [isRecurrent_iff, isRecurrent_iff, ← Measure.map_dirac' measurable_subtype_coe x,
-    ← markovChainLaw_map_subtype κ hs (Measure.dirac x), hembed.map_apply]
-  simp only [preimage_ofPred_eq, hittingAfter_singleton_subtype_coe]
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x),
+    (measurableEmbedding_subtype_path hs).map_apply]
+  simp only [preimage_ofPred_eq, hittingAfter_eval_subtype_coe_singleton]
 
 /-- Restricting to a closed set preserves and reflects transience of each of its states. -/
 @[simp]

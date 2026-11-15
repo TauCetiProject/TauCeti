@@ -22,7 +22,7 @@ measurable embeddings across a countable product is likewise a measurable embedd
 
 * `MeasurableEmbedding.of_injective_of_countable`
 * `MeasurableEmbedding.inl` and `MeasurableEmbedding.inr`
-* `MeasurableEmbedding.piMap`
+* `MeasurableEmbedding.piMap` and `MeasurableEmbedding.comp_left`
 -/
 
 public section
@@ -60,31 +60,25 @@ theorem MeasurableEmbedding.piMap {ι : Type*} [Countable ι] {α β : ι → Ty
     MeasurableEmbedding (Pi.map f) := by
   have hf₁ : Measurable (Pi.map f) :=
     measurable_pi_iff.2 fun i => (hf i).measurable.comp (measurable_pi_apply i)
-  have hrange : range (Pi.map f) = ⋂ i, (fun y : ∀ j, β j => y i) ⁻¹' range (f i) := by
-    ext y
-    simp only [mem_range, mem_iInter, mem_preimage]
-    exact ⟨fun ⟨x, hx⟩ i => ⟨x i, congrFun hx i⟩,
-      fun h => ⟨fun i => (h i).choose, funext fun i => (h i).choose_spec⟩⟩
-  have hf₂ : MeasurableSet (range (Pi.map f)) :=
-    hrange ▸ MeasurableSet.iInter fun i =>
-      (hf i).measurableSet_range.preimage (measurable_pi_apply i)
+  have hf₂ : MeasurableSet (range (Pi.map f)) := by
+    rw [range_piMap]
+    exact MeasurableSet.univ_pi fun i => (hf i).measurableSet_range
   have hmem : ∀ y : range (Pi.map f), ∀ i, y.val i ∈ range (f i) :=
     fun ⟨_, x, hx⟩ i => ⟨x i, congrFun hx i⟩
-  have hinv : ∀ i, Measurable (Equiv.ofInjective (f i) (hf i).injective).symm := fun i t ht => by
-    have hpre : (Equiv.ofInjective (f i) (hf i).injective).symm ⁻¹' t =
-        Subtype.val ⁻¹' (f i '' t) := by
-      ext z
-      simp only [mem_preimage, mem_image]
-      exact ⟨fun hz => ⟨_, hz, Equiv.apply_ofInjective_symm (hf i).injective z⟩,
-        fun ⟨a, ha, hfa⟩ => by
-          have hz : z = Equiv.ofInjective (f i) (hf i).injective a := Subtype.ext hfa.symm
-          simpa [hz] using ha⟩
-    rw [hpre]
-    exact ((hf i).measurableSet_image' ht).preimage measurable_subtype_coe
   refine MeasurableEmbedding.of_measurable_inverse_on_range hf₁ hf₂
-    (g := fun y i => (Equiv.ofInjective (f i) (hf i).injective).symm ⟨y.val i, hmem y i⟩)
-    ?_ fun x => ?_
+    (g := fun y i => (hf i).equivRange.symm ⟨y.val i, hmem y i⟩) ?_ fun x => ?_
   · exact measurable_pi_iff.2 fun i =>
-      (hinv i).comp (((measurable_pi_apply i).comp measurable_subtype_coe).subtype_mk)
+      (hf i).equivRange.symm.measurable.comp
+        (((measurable_pi_apply i).comp measurable_subtype_coe).subtype_mk)
   · funext i
-    exact Equiv.ofInjective_symm_apply (hf i).injective (x i)
+    exact (hf i).equivRange_symm_apply_mk (x i)
+
+/-- Postcomposition with a measurable embedding on functions out of a countable index type is a
+measurable embedding. -/
+theorem MeasurableEmbedding.comp_left {ι α β : Type*} [Countable ι] [MeasurableSpace α]
+    [MeasurableSpace β] {f : α → β} (hf : MeasurableEmbedding f) :
+    MeasurableEmbedding (f ∘ · : (ι → α) → ι → β) := by
+  have heq : (f ∘ · : (ι → α) → ι → β) = Pi.map fun _ : ι => f :=
+    funext fun w => funext fun i => (Pi.map_apply (fun _ : ι => f) w i).symm
+  rw [heq]
+  exact MeasurableEmbedding.piMap fun _ => hf

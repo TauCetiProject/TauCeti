@@ -36,7 +36,9 @@ at a transient state the visits are almost surely finite and `m_y = ∞`. The fi
 transfer then gives the almost-sure limit from any initial law
 (`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and, from any finite initial
 law, the limit of the mean occupation frequency
-(`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
+(`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`); started at `y`, this
+gives the Cesàro limit of the positive-time return probabilities
+(`ProbabilityTheory.Kernel.tendsto_cesaro_pow_real_singleton_self`).
 
 ## References
 
@@ -173,6 +175,30 @@ theorem tendsto_integral_visitCount_div_markovChainLaw_dirac
       (integrable_const 1) hb hX.ae_tendsto_visitCount_div_markovChainLaw_dirac
 
 end ProbabilityTheory.HasLaw
+
+namespace ProbabilityTheory.Kernel
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
+
+/-- Started at `y`, the expected positive-time visit fraction converges to the real reciprocal mean
+return time `(κ.meanReturnTime y)⁻¹.toReal`. -/
+theorem tendsto_integral_visitCount_div_markovChainLaw_dirac (κ : Kernel α α) [IsMarkovKernel κ]
+    (y : α) :
+    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
+        ∂markovChainLaw (Measure.dirac y) κ)
+      atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) :=
+  (HasLaw.id
+    (μ := markovChainLaw (Measure.dirac y) κ)).tendsto_integral_visitCount_div_markovChainLaw_dirac
+
+/-- The Cesàro averages of the positive-time return probabilities `((κ ^ (i + 1)) y).real {y}`
+converge to `(κ.meanReturnTime y)⁻¹.toReal`. -/
+theorem tendsto_cesaro_pow_real_singleton_self (κ : Kernel α α) [IsMarkovKernel κ] (y : α) :
+    Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, ((κ ^ (i + 1)) y).real {y}) / n)
+      atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
+  simpa only [integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac] using
+    κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y
+
+end ProbabilityTheory.Kernel
 
 namespace MeasureTheory.Measure
 
