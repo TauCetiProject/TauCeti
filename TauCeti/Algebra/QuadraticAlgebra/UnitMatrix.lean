@@ -56,6 +56,15 @@ theorem periodUnitMatrix_injective :
     simpa only [Function.Injective, periodMulMatrixHom_apply] using
       (periodMulMatrix_injective (a := a) (b := b)))
 
+/-- The unit representation preserves negation. -/
+@[simp]
+theorem periodUnitMatrix_neg (u : (QuadraticAlgebra R a b)ˣ) :
+    periodUnitMatrix (-u) = -periodUnitMatrix u := by
+  apply Units.ext
+  simp only [coe_periodUnitMatrix, Units.val_neg, periodMulMatrix_eq]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp; ring
+
 /-- The group of invertible quadratic multiplication matrices. -/
 def periodMatrixGroup (a b : R) : Subgroup (GL (Fin 2) R) :=
   (periodUnitMatrix : (QuadraticAlgebra R a b)ˣ →* GL (Fin 2) R).range
@@ -65,6 +74,22 @@ quotients without a separate normality hypothesis. -/
 instance : IsMulCommutative (periodMatrixGroup a b) :=
   inferInstanceAs (IsMulCommutative
     (periodUnitMatrix : (QuadraticAlgebra R a b)ˣ →* GL (Fin 2) R).range)
+
+/-- Entrywise negation preserves invertible quadratic multiplication matrices. -/
+instance : Neg (periodMatrixGroup a b) where
+  neg g := ⟨-g.1, by
+    rcases g.2 with ⟨u, hu⟩
+    exact ⟨-u, by rw [periodUnitMatrix_neg, hu]⟩⟩
+
+/-- Coercing `-g` from `periodMatrixGroup a b` to `GL (Fin 2) R` negates in `GL (Fin 2) R`. -/
+@[simp]
+theorem coe_neg_periodMatrixGroup (g : periodMatrixGroup a b) :
+    ((-g : periodMatrixGroup a b) : GL (Fin 2) R) = -(g : GL (Fin 2) R) :=
+  (by rfl)
+
+/-- Distributive negation on invertible quadratic multiplication matrices. -/
+instance : HasDistribNeg (periodMatrixGroup a b) :=
+  Subtype.coe_injective.hasDistribNeg _ coe_neg_periodMatrixGroup (periodMatrixGroup a b).coe_mul
 
 /-- An invertible matrix is a quadratic multiplication matrix exactly when its entries satisfy
 the two linear equations imposed by its bottom row. -/
@@ -93,6 +118,13 @@ def periodUnitMatrixEquiv : (QuadraticAlgebra R a b)ˣ ≃* periodMatrixGroup a 
 theorem coe_periodUnitMatrixEquiv (u : (QuadraticAlgebra R a b)ˣ) :
     (periodUnitMatrixEquiv u : GL (Fin 2) R) = periodUnitMatrix u :=
   (by rfl)
+
+/-- `periodUnitMatrixEquiv` commutes with negation. -/
+@[simp]
+theorem periodUnitMatrixEquiv_neg (u : (QuadraticAlgebra R a b)ˣ) :
+    periodUnitMatrixEquiv (-u) = -periodUnitMatrixEquiv u := by
+  apply Subtype.ext
+  simp
 
 /-- The bottom row gives the algebra element underlying the inverse equivalence. -/
 @[simp]
