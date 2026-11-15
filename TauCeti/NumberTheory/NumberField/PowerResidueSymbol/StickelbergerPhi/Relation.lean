@@ -117,6 +117,16 @@ theorem stickelbergerProduct_pow (α : 𝓞 K) (n : ℕ) :
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
 
+variable {m} in
+/-- For `m ≥ 2`, the Stickelberger product of `α` is a unit if and only if `α` is a unit. -/
+theorem isUnit_stickelbergerProduct_iff (hm : 2 ≤ m) {α : 𝓞 K} :
+    IsUnit (stickelbergerProduct m α) ↔ IsUnit α := by
+  classical
+  have : Fact (1 < m) := ⟨hm⟩
+  rw [stickelbergerProduct_def, IsUnit.prod_univ_iff]
+  exact ⟨fun h ↦ by simpa [ZMod.val_one] using h 1,
+    fun h σ ↦ (h.map (MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ⁻¹)).pow _⟩
+
 end TauCeti
 
 namespace Ideal
@@ -143,19 +153,11 @@ theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (𝔅 : Idea
     rw [absNorm_bot, Nat.cast_zero, span_singleton_eq_bot.mpr rfl, powerResidueSymbolIdeal_bot]
     have hbot : ∀ x : 𝓞 K, IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) x) ↔ IsUnit x := fun x ↦ by
       rw [Quotient.isUnit_mk_iff, sup_bot_eq, span_singleton_eq_top]
-    have hunit : IsUnit (TauCeti.stickelbergerProduct m α) ↔ IsUnit α := by
-      rw [TauCeti.stickelbergerProduct_def]
-      refine ⟨fun h ↦ ?_, fun h ↦ Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one
-        fun σ _ ↦ (h.map (MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ⁻¹)).pow _⟩
-      have hdvd : ((1 : Gal(K/ℚ))⁻¹ • α) ^ (galEquivZMod m K 1 : ZMod m).val ∣
-          ∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val :=
-        Finset.dvd_prod_of_mem (fun σ : Gal(K/ℚ) ↦ (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val)
-          (Finset.mem_univ (1 : Gal(K/ℚ)))
-      rw [inv_one, one_smul, map_one, Units.val_one, ZMod.val_one, pow_one] at hdvd
-      exact isUnit_of_dvd_unit hdvd h
     by_cases hα : IsUnit α
-    · rw [MulChar.one_apply ((hbot _).mpr (hunit.mpr hα)), MulChar.one_apply ((hbot _).mpr hα)]
-    · rw [MulChar.map_nonunit _ (mt (hbot _).mp (mt hunit.mp hα)),
+    · rw [MulChar.one_apply ((hbot _).mpr ((TauCeti.isUnit_stickelbergerProduct_iff hm).mpr hα)),
+        MulChar.one_apply ((hbot _).mpr hα)]
+    · rw [MulChar.map_nonunit _
+          (mt (hbot _).mp (mt (TauCeti.isUnit_stickelbergerProduct_iff hm).mp hα)),
         MulChar.map_nonunit _ (mt (hbot _).mp hα)]
   · have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
     have hσ𝔅 (σ : Gal(K/ℚ)) : σ • 𝔅 ≠ ⊥ := fun h ↦
@@ -174,16 +176,21 @@ theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (𝔅 : Idea
         · exact (galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbolIdeal_pow_eq_one hu)).symm
         · simp [x, MulChar.map_nonunit _ hu, zero_pow hc]
       have hmap := map_powerResidueSymbolIdeal (n := m) 𝔅 τ (σ⁻¹ • α)
-      have hτx : τ x = σ • x := rfl
-      have hτ𝔅 : 𝔅.map τ = σ • 𝔅 := rfl
-      have hτα : τ (σ⁻¹ • α) = α := smul_inv_smul σ α
+      have hτx : τ x = σ • x := MulSemiringAction.toRingEquiv_apply_apply _ _ σ x
+      have hτ_hom : (τ : 𝓞 K →+* 𝓞 K) = MulSemiringAction.toRingHom _ _ σ :=
+        RingHom.ext (MulSemiringAction.toRingEquiv_apply_apply _ _ σ)
+      have hτ𝔅 : 𝔅.map τ = σ • 𝔅 := by
+        rw [← Ideal.map_coe, hτ_hom, Ideal.pointwise_smul_def]
+      have hτα : τ (σ⁻¹ • α) = α :=
+        (MulSemiringAction.toRingEquiv_apply_apply _ _ σ _).trans (smul_inv_smul σ α)
       rw [map_pow, map_pow, hpow, ← hτx, hmap, hτα, hτ𝔅]
     rw [TauCeti.stickelbergerProduct_def, map_prod, map_prod,
       Finset.prod_congr rfl fun σ _ ↦ hfactor σ,
       ← powerResidueSymbolIdeal_prod_right Finset.univ (fun σ _ ↦ hσ𝔅 σ) α,
       prod_automorphisms_smul_eq_span_absNorm]
 
-/-- At a maximal ideal `P`, the `m`-th power residue symbol of `α ^ γ` is `(α / N P)_m`. -/
+/-- For `m ≥ 2` and a maximal ideal `P` of `𝓞 K`, the `m`-th power residue symbol of `α ^ γ` at
+`P` is `(α / N P)_m`. -/
 theorem powerResidueSymbol_stickelbergerProduct (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
     (α : 𝓞 K) :
     powerResidueSymbol P m (Quotient.mk P (TauCeti.stickelbergerProduct m α)) =

@@ -50,9 +50,9 @@ The proof passes through Stickelberger's relation:
   `¬ p ∣ n`.
 * `IsPrimitiveRoot.eisenstein_reciprocity`: **the Eisenstein reciprocity law**,
   `(α / a)_p = (a / α)_p` for `a : ℤ` with `¬ (p : ℤ) ∣ a`.
-* `IsPrimitiveRoot.eisenstein_reciprocity_toInteger_pow_mul`: for a primary `α`, multiplying by
-  `ζ ^ c` shifts `(α / a)_p` relative to `(a / (ζ ^ c α))_p` by the Fermat-quotient power
-  `ζ ^ (c * ((|a| ^ (p - 1) - 1) / p))`.
+* `IsPrimitiveRoot.eisenstein_reciprocity_toInteger_pow_mul`:
+  `(ζ ^ c α / a)_p = ζ ^ (c * ((|a| ^ (p - 1) - 1) / p)) * (a / ζ ^ c α)_p` for primary `α` and
+  `a : ℤ` with `¬ (p : ℤ) ∣ a`.
 * `IsPrimitiveRoot.eisenstein_reciprocity_toInteger_mul_iff`: for coprime primary `α` and `a` prime
   to `p`, unshifted reciprocity holds for `ζ α` if and only if `p ^ 2 ∣ |a| ^ (p - 1) - 1`.
 
@@ -67,6 +67,55 @@ The proof passes through Stickelberger's relation:
 public section
 
 open NumberField Ideal UniqueFactorizationMonoid
+
+/-- An integer cast and its `natAbs` generate the same principal ideal in any commutative ring. -/
+private theorem span_intCast_eq_span_natAbs {R : Type*} [CommRing R] (a : ℤ) :
+    span {(a : R)} = span {(a.natAbs : R)} := by
+  simpa only [Ideal.map_span, Set.image_singleton, Int.coe_castRingHom, Int.cast_natCast] using
+    congrArg (Ideal.map (Int.castRingHom R)) (Int.span_natAbs a).symm
+
+/-- Non-divisibility of `a : ℤ` by `(p : ℤ)` transfers to `a.natAbs`. -/
+private theorem not_dvd_natAbs {p : ℕ} {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) : ¬ p ∣ a.natAbs :=
+  mt (Int.dvd_natAbs.mp ∘ Int.natCast_dvd_natCast.mpr) ha
+
+/-- Two elements of a commutative monoid with zero and no zero divisors, each either `0` or an
+`n`-th root of unity, are equal when they have equal `f`-th powers for some `f ≠ 0` coprime to
+`n`. -/
+private theorem eq_of_pow_eq_of_eq_zero_or_pow_eq_one {M : Type*} [CommMonoidWithZero M]
+    [NoZeroDivisors M] {x y : M} {f n : ℕ} (hf0 : f ≠ 0) (hfn : f.Coprime n)
+    (hxy : x ^ f = y ^ f) (hx : x = 0 ∨ x ^ n = 1) (hy : y = 0 ∨ y ^ n = 1) : x = y := by
+  rcases hx with rfl | hx
+  · exact (eq_zero_of_pow_eq_zero (hxy.symm.trans (zero_pow hf0))).symm
+  rcases hy with rfl | hy
+  · exact eq_zero_of_pow_eq_zero (hxy.trans (zero_pow hf0))
+  obtain rfl | hn := eq_or_ne n 0
+  · simpa [(Nat.coprime_zero_right f).mp hfn] using hxy
+  obtain ⟨u, rfl⟩ := IsUnit.of_pow_eq_one hx hn
+  obtain ⟨v, rfl⟩ := IsUnit.of_pow_eq_one hy hn
+  refine congrArg Units.val (div_eq_one.mp ((pow_eq_one_iff_of_coprime hfn).mp ⟨?_, ?_⟩))
+  · rw [div_pow, div_eq_one, Units.ext_iff]; exact hxy
+  · rw [div_pow, div_eq_one, Units.ext_iff]; exact hx.trans hy.symm
+
+/-- Every value of the `n`-th power residue symbol at an ideal is either `0` or an `n`-th root of
+unity. -/
+private theorem powerResidueSymbolIdeal_eq_zero_or_pow_eq_one {K : Type*} [Field K] [NumberField K]
+    {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity (𝓞 K) n] (𝔞 : Ideal (𝓞 K)) (x : 𝓞 K ⧸ 𝔞) :
+    powerResidueSymbolIdeal 𝔞 n x = 0 ∨ powerResidueSymbolIdeal 𝔞 n x ^ n = 1 := by
+  by_cases hx : IsUnit x
+  · exact Or.inr (powerResidueSymbolIdeal_pow_eq_one hx)
+  · exact Or.inl (MulChar.map_nonunit _ hx)
+
+/-- In `K = ℚ(ζ_p)` for prime `p`, the residue degree of any prime ideal above a rational prime
+divides `[K : ℚ] = p - 1`. -/
+private theorem inertiaDeg_dvd_sub_one {p : ℕ} [Fact p.Prime] (K : Type*) [Field K] [NumberField K]
+    [IsCyclotomicExtension {p} ℚ K] (q : ℕ) [Fact q.Prime] (P : Ideal (𝓞 K)) [P.IsPrime]
+    [P.LiesOver (span {(q : ℤ)})] : P.inertiaDeg ℤ ∣ p - 1 := by
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {p} ℚ K
+  have hcard := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
+    (span {(q : ℤ)}) (𝓞 K) Gal(K/ℚ)
+  rw [inertiaDegIn_eq_inertiaDeg (span {(q : ℤ)}) P Gal(K/ℚ), IsGalois.card_aut_eq_finrank,
+    IsCyclotomicExtension.Rat.finrank p K, Nat.totient_prime Fact.out] at hcard
+  exact dvd_of_mul_left_eq _ (by rw [← hcard, ← mul_assoc])
 
 namespace IsPrimitiveRoot
 
@@ -101,54 +150,26 @@ private theorem eisenstein_reciprocity_prime (hp2 : p ≠ 2) {α : 𝓞 K}
       powerResidueSymbolIdeal (span {α}) p (Ideal.Quotient.mk _ (q : 𝓞 K)) := by
   obtain ⟨P, hPprime, hP0, hPover⟩ := NumberField.exists_prime_ne_zero_liesOver (K := K) q hq
   have : Fact q.Prime := ⟨hq⟩
-  have := hPprime
-  have := hPover
-  have hPbot : P ≠ ⊥ := by rwa [← zero_eq_bot]
-  have : P.IsMaximal := hPprime.isMaximal hPbot
+  have : P.IsMaximal := hPprime.isMaximal (by rwa [← zero_eq_bot])
   set f := P.inertiaDeg ℤ
   have hf0 : f ≠ 0 := (Ideal.inertiaDeg_pos P ℤ).ne'
   have hNP : absNorm P = q ^ f := (Ideal.pow_inertiaDeg q P).symm
-  have hPcop : (absNorm P).Coprime p := by
-    rw [hNP]
-    exact (((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hqp).symm).pow_left f
+  have hPcop : (absNorm P).Coprime p :=
+    hNP ▸ (((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hqp).symm).pow_left f
   -- Reciprocity at `N P = q ^ f` gives equality of the `f`-th powers of the two symbols.
   have hf_eq : powerResidueSymbolIdeal (span {(q : 𝓞 K)}) p (Ideal.Quotient.mk _ α) ^ f =
       powerResidueSymbolIdeal (span {α}) p (Ideal.Quotient.mk _ (q : 𝓞 K)) ^ f := by
     have h := hζ.eisenstein_reciprocity_absNorm hp2 hα hPcop
     rwa [hNP, Nat.cast_pow, ← span_singleton_pow, powerResidueSymbolIdeal_pow_right,
       map_pow, map_pow] at h
-  -- Since `f` divides `[K : ℚ] = p - 1`, it is coprime to `p`.
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {p} ℚ K
-  have hf_dvd : f ∣ p - 1 := by
-    have hcard := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
-      (span {(q : ℤ)}) (𝓞 K) Gal(K/ℚ)
-    rw [inertiaDegIn_eq_inertiaDeg (span {(q : ℤ)}) P Gal(K/ℚ), IsGalois.card_aut_eq_finrank,
-      IsCyclotomicExtension.Rat.finrank p K, Nat.totient_prime Fact.out] at hcard
-    exact dvd_of_mul_left_eq _ (by rw [← hcard, ← mul_assoc])
   have hp1 : 1 < p := (Fact.out : p.Prime).one_lt
   have hfp : f.Coprime p :=
     ((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr fun hpf ↦ by
-      have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp1) (hpf.trans hf_dvd)
+      have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp1) (hpf.trans (inertiaDeg_dvd_sub_one K q P))
       omega).symm
-  set x := powerResidueSymbolIdeal (span {(q : 𝓞 K)}) p (Ideal.Quotient.mk _ α)
-  set y := powerResidueSymbolIdeal (span {α}) p (Ideal.Quotient.mk _ (q : 𝓞 K))
-  by_cases hy0 : y = 0
-  · rw [eq_zero_of_pow_eq_zero (hf_eq.trans (by rw [hy0, zero_pow hf0])), hy0]
-  · have hx0 : x ≠ 0 :=
-      fun hx ↦ hy0 (eq_zero_of_pow_eq_zero (hf_eq.symm.trans (by rw [hx, zero_pow hf0])))
-    have hxu : IsUnit (Ideal.Quotient.mk (span {(q : 𝓞 K)}) α) :=
-      not_imp_comm.mp (MulChar.map_nonunit (powerResidueSymbolIdeal _ p)) hx0
-    have hyu : IsUnit (Ideal.Quotient.mk (span {α}) (q : 𝓞 K)) :=
-      not_imp_comm.mp (MulChar.map_nonunit (powerResidueSymbolIdeal _ p)) hy0
-    have hxp : (x : K) ^ p = 1 := by exact_mod_cast powerResidueSymbolIdeal_pow_eq_one hxu
-    have hyp : (y : K) ^ p = 1 := by exact_mod_cast powerResidueSymbolIdeal_pow_eq_one hyu
-    have hyK : (y : K) ≠ 0 :=
-      fun h ↦ hy0 (FaithfulSMul.algebraMap_injective (𝓞 K) K (by simpa using h))
-    have hdiv : (x : K) / (y : K) = 1 :=
-      (pow_eq_one_iff_of_coprime hfp).mp
-        ⟨by rw [div_pow, div_eq_one_iff_eq (pow_ne_zero f hyK)]; exact_mod_cast hf_eq,
-         by rw [div_pow, hxp, hyp, div_one]⟩
-    exact FaithfulSMul.algebraMap_injective (𝓞 K) K ((div_eq_one_iff_eq hyK).mp hdiv)
+  exact eq_of_pow_eq_of_eq_zero_or_pow_eq_one hf0 hfp hf_eq
+    (powerResidueSymbolIdeal_eq_zero_or_pow_eq_one _ _)
+    (powerResidueSymbolIdeal_eq_zero_or_pow_eq_one _ _)
 
 /-- **Eisenstein reciprocity for natural numbers.** Let `p` be an odd prime, `α ∈ 𝓞 K` a primary
 integer of `ℚ(ζ_p)`, and `n : ℕ` a natural number not divisible by `p`. Then
@@ -184,36 +205,29 @@ theorem eisenstein_reciprocity (hp2 : p ≠ 2) {α : 𝓞 K}
     (hα : TauCeti.IsEisensteinPrimary hζ.toInteger α) {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) :
     powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p (Ideal.Quotient.mk _ α) =
       powerResidueSymbolIdeal (span {α}) p (Ideal.Quotient.mk _ (a : 𝓞 K)) := by
-  have hn : ¬ p ∣ a.natAbs := fun h ↦ ha (Int.dvd_natAbs.mp (Int.natCast_dvd_natCast.mpr h))
+  rw [span_intCast_eq_span_natAbs, hζ.eisenstein_reciprocity_natCast hp2 hα (not_dvd_natAbs ha)]
   rcases Int.natAbs_eq a with h | h
-  · rw [h, Int.cast_natCast]
-    exact hζ.eisenstein_reciprocity_natCast hp2 hα hn
-  · have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp2
-    rw [h, Int.cast_neg, Int.cast_natCast, span_singleton_neg, map_neg,
-      powerResidueSymbolIdeal_neg hp_odd]
-    exact hζ.eisenstein_reciprocity_natCast hp2 hα hn
+  · nth_rw 2 [h]; rw [Int.cast_natCast]
+  · nth_rw 2 [h]; rw [Int.cast_neg, Int.cast_natCast, map_neg,
+      powerResidueSymbolIdeal_neg ((Fact.out : p.Prime).odd_of_ne_two hp2)]
 
-/-- **Shifted Eisenstein reciprocity for `ζ ^ c * α`.** Multiplying a primary integer `α ∈ 𝓞 K` by
-`ζ ^ c` leaves the ideal `(ζ ^ c * α) = (α)` unchanged while multiplying the left-hand symbol at
-`a 𝓞 K` by `(ζ / a)_p ^ c = ζ ^ (c * ((|a| ^ (p - 1) - 1) / p))`. -/
+/-- **Shifted Eisenstein reciprocity for `ζ ^ c * α`.** For an odd prime `p`, a primary integer
+`α ∈ 𝓞 K`, `c : ℕ`, and `a : ℤ` with `¬ (p : ℤ) ∣ a`,
+`(ζ ^ c α / a)_p = ζ ^ (c * ((|a| ^ (p - 1) - 1) / p)) * (a / ζ ^ c α)_p`: multiplying `α` by
+`ζ ^ c` leaves the ideal `(ζ ^ c * α) = (α)` unchanged while multiplying the symbol at `a 𝓞 K` by
+`(ζ / a)_p ^ c`. -/
 theorem eisenstein_reciprocity_toInteger_pow_mul (hp2 : p ≠ 2) {α : 𝓞 K}
     (hα : TauCeti.IsEisensteinPrimary hζ.toInteger α) (c : ℕ) {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) :
     powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p (Ideal.Quotient.mk _ (hζ.toInteger ^ c * α)) =
       hζ.toInteger ^ (c * ((a.natAbs ^ (p - 1) - 1) / p)) *
         powerResidueSymbolIdeal (span {hζ.toInteger ^ c * α}) p
           (Ideal.Quotient.mk _ (a : 𝓞 K)) := by
-  have hn : ¬ p ∣ a.natAbs := fun h ↦ ha (Int.dvd_natAbs.mp (Int.natCast_dvd_natCast.mpr h))
   have hz : IsPrimitiveRoot hζ.toInteger p := hζ.toInteger_isPrimitiveRoot
-  have hspan_abs : (span {(a : 𝓞 K)} : Ideal (𝓞 K)) = span {(a.natAbs : 𝓞 K)} := by
-    rcases Int.natAbs_eq a with h | h
-    · nth_rw 1 [h]; rw [Int.cast_natCast]
-    · nth_rw 1 [h]; rw [Int.cast_neg, Int.cast_natCast, span_singleton_neg]
   have hnorm : absNorm (span {(a : 𝓞 K)}) = a.natAbs ^ (p - 1) := by
-    rw [hspan_abs, absNorm_span_natCast, NumberField.RingOfIntegers.rank,
+    rw [span_intCast_eq_span_natAbs, absNorm_span_natCast, NumberField.RingOfIntegers.rank,
       IsCyclotomicExtension.Rat.finrank p K, Nat.totient_prime Fact.out]
-  have hcop_p : (absNorm (span {(a : 𝓞 K)})).Coprime p := by
-    rw [hnorm]
-    exact (((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hn).symm).pow_left _
+  have hcop_p : (absNorm (span {(a : 𝓞 K)})).Coprime p :=
+    hnorm ▸ (((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr (not_dvd_natAbs ha)).symm).pow_left _
   have hz_sym : powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p (Ideal.Quotient.mk _ hζ.toInteger) =
       hζ.toInteger ^ ((a.natAbs ^ (p - 1) - 1) / p) := by
     rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hcop_p hz.pow_eq_one, hnorm]
@@ -233,7 +247,6 @@ theorem eisenstein_reciprocity_toInteger_mul_iff (hp2 : p ≠ 2) {α : 𝓞 K}
         powerResidueSymbolIdeal (span {hζ.toInteger * α}) p (Ideal.Quotient.mk _ (a : 𝓞 K)) ↔
       p ^ 2 ∣ a.natAbs ^ (p - 1) - 1 := by
   have hz : IsPrimitiveRoot hζ.toInteger p := hζ.toInteger_isPrimitiveRoot
-  have hn : ¬ p ∣ a.natAbs := fun h ↦ ha (Int.dvd_natAbs.mp (Int.natCast_dvd_natCast.mpr h))
   have hshift := hζ.eisenstein_reciprocity_toInteger_pow_mul hp2 hα 1 ha
   rw [pow_one, one_mul] at hshift
   have hspan_unit : span {hζ.toInteger * α} = span {α} :=
@@ -242,14 +255,9 @@ theorem eisenstein_reciprocity_toInteger_mul_iff (hp2 : p ≠ 2) {α : 𝓞 K}
       (Ideal.Quotient.mk _ (a : 𝓞 K)) ≠ 0 := by
     rw [hspan_unit, ← hζ.eisenstein_reciprocity hp2 hα ha]
     exact fun h ↦ powerResidueSymbolIdeal_mk_eq_zero_iff.mp h hcop
-  have hpos : 1 ≤ a.natAbs ^ (p - 1) :=
-    Nat.one_le_pow _ _ (Nat.pos_of_ne_zero fun h0 ↦ hn (h0 ▸ dvd_zero p))
-  have hflt : p ∣ a.natAbs ^ (p - 1) - 1 := by
-    have ha0 : (a.natAbs : ZMod p) ≠ 0 := (ZMod.natCast_eq_zero_iff _ _).not.mpr hn
-    have h1 : ((a.natAbs ^ (p - 1) : ℕ) : ZMod p) = 1 := by
-      push_cast
-      exact ZMod.pow_card_sub_one_eq_one ha0
-    rw [← ZMod.natCast_eq_zero_iff, Nat.cast_sub hpos, h1, Nat.cast_one, sub_self]
+  have hflt : p ∣ a.natAbs ^ (p - 1) - 1 :=
+    Nat.dvd_of_mod_eq_zero (Nat.pow_card_sub_one_sub_one_mod_card Fact.out
+      (((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr (not_dvd_natAbs ha)).symm))
   rw [hshift, mul_eq_right₀ hS0, hz.pow_eq_one_iff_dvd, Nat.dvd_div_iff_mul_dvd hflt, sq]
 
 end IsPrimitiveRoot
