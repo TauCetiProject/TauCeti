@@ -166,10 +166,7 @@ instance _root_.Subrepresentation.isSmooth_toRepresentation {ρ : Representation
 /-- The restriction of a smooth representation to an invariant submodule is smooth. -/
 instance isSmooth_subrepresentation (ρ : Representation A G V) [IsSmooth ρ] (W : Submodule A V)
     (le_comap : ∀ g, W ≤ W.comap (ρ g)) : IsSmooth (ρ.subrepresentation W le_comap) :=
-  ⟨fun w ↦ by
-    convert ρ.isOpen_stabilizer (w : V) using 2
-    ext g
-    simp [Subtype.ext_iff]⟩
+  Subrepresentation.isSmooth_toRepresentation ⟨W, fun g _ hv ↦ le_comap g hv⟩
 
 /-- The quotient of a smooth representation by an invariant submodule is smooth. -/
 instance isSmooth_quotient [SeparatelyContinuousMul G] {A V : Type*} [Ring A] [AddCommGroup V]
@@ -255,9 +252,8 @@ the stabilizer of the basis vector at `x` contains the stabilizer of `x`, and th
 are closed under sums. -/
 theorem isSmooth_ofMulAction {X : Type*} [MulAction G X]
     (h : ∀ x : X, IsOpen (MulAction.stabilizer G x : Set G)) : IsSmooth (ofMulAction A G X) := by
-  refine smoothVectors_eq_top_iff.mp <| eq_top_iff.mpr fun f hf ↦ ?_
-  clear hf
-  rw [← Subrepresentation.mem_toSubmodule]
+  refine ⟨fun f ↦ ?_⟩
+  rw [← mem_smoothVectors, ← Subrepresentation.mem_toSubmodule]
   induction f using MonoidAlgebra.induction_linear with
   | zero => exact zero_mem _
   | add f₁ f₂ h₁ h₂ => exact add_mem h₁ h₂

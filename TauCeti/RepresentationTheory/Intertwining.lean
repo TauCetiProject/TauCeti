@@ -222,6 +222,7 @@ namespace Representation
 
 /-- The stabilizer of a vector for the restriction `ρ.comp f` along a homomorphism `f : H →* G` is
 the preimage under `f` of its stabilizer for `ρ`. -/
+@[simp]
 theorem stabilizer_comp {A G H V : Type*} [Semiring A] [Group G] [Group H] [AddCommMonoid V]
     [Module A V] (ρ : Representation A G V) (f : H →* G) (v : V) :
     stabilizer (ρ.comp f) v = (ρ.stabilizer v).comap f := by
