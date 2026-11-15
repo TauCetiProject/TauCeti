@@ -299,7 +299,7 @@ instance instFunLike : FunLike (CkHolderSpace k α E F) E F where
   coe := toFun
   coe_injective := toFun_injective
 
-/-- The field `toFun` is the coercion to a function. -/
+/-- `CkHolderSpace.toFun f` is equal to the coercion `⇑f` of `f` to a function. -/
 @[simp]
 theorem toFun_eq_coe (f : CkHolderSpace k α E F) : f.toFun = ⇑f :=
   (rfl)
