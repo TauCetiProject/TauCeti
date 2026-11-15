@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Quaternion.QuotientDeriv
-import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.Analysis.Quaternion.PartialDeriv
 
 /-!

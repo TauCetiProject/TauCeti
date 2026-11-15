@@ -112,21 +112,17 @@ theorem fderiv_imK_apply (hf : HasFDerivAt f f' x) (v : E) :
 /-- For a real-valued `g`, the function `y ↦ (g y : ℍ)` has the real derivative `g'` followed
 by the coercion `ℝ → ℍ` exactly when `g` has derivative `g'`. -/
 theorem hasFDerivAt_coe_comp_iff {g : E → ℝ} {g' : E →L[ℝ] ℝ} :
-    HasFDerivAt (fun y ↦ (g y : ℍ)) ((Algebra.linearMap ℝ ℍ).toContinuousLinearMap.comp g') x ↔
-      HasFDerivAt g g' x := by
-  -- The coercion `Algebra.linearMap ℝ ℍ` has the real part as a left inverse.
-  have hemb : Topology.IsEmbedding (Algebra.linearMap ℝ ℍ).toContinuousLinearMap :=
-    .of_leftInverse (f := (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap)
-      (fun r ↦ by simp) (map_continuous _) (map_continuous _)
+    HasFDerivAt (fun y ↦ (g y : ℍ)) ((algebraMapCLM ℝ ℍ).comp g') x ↔ HasFDerivAt g g' x := by
   simpa [Function.comp_def] using
-    ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding _ hemb (k := g) (k' := g') (y := x)
+    (algebraMapCLM ℝ ℍ).hasFDerivAt_comp_left_iff_of_isEmbedding
+      (algebraMap_isometry ℝ ℍ).isEmbedding (k := g) (k' := g') (y := x)
 
 /-- For a real-valued `g`, every real derivative of `y ↦ (g y : ℍ)` takes real values. -/
 theorem coe_re_of_hasFDerivAt_coe_comp {g : E → ℝ} {D : E →L[ℝ] ℍ}
     (hD : HasFDerivAt (fun y ↦ (g y : ℍ)) D x) (v : E) : ((D v).re : ℍ) = D v := by
   simpa using DFunLike.congr_fun (ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left
-    (Algebra.linearMap ℝ ℍ).toContinuousLinearMap
-    (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap (fun r ↦ by simp) (k := g)
+    (algebraMapCLM ℝ ℍ) (QuaternionAlgebra.reₗ (-1 : ℝ) 0 (-1)).toContinuousLinearMap
+    (fun r ↦ by simp) (k := g)
     (by simpa [Function.comp_def] using hD)) v
 
 /-- A continuous real-linear map `D : ℍ →L[ℝ] ℍ` is a left multiplication
