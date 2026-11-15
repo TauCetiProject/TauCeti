@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -214,9 +215,8 @@ theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp 𝕜
     Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   set f := indicatorConstLp p ht hμt_top.ne v
-  have hf_pos : 0 < ‖f‖ := norm_pos_iff.2 fun hf0 ↦
-    hμt_pos.ne' (ae_eq_empty.1 ((indicatorConstLp_inj ht hμt_top.ne .empty (by simp) hv).1
-      (hf0.trans indicatorConstLp_empty.symm)))
+  have hf_pos : 0 < ‖f‖ :=
+    norm_pos_iff.2 fun hf0 ↦ (TauCeti.indicatorConstLp_eq_zero_iff.1 hf0).elim hμt_pos.ne' hv
   have hcancel : c * ‖f‖ ≤ ‖multiplicationOperator (E := E) (p := p) a‖ * ‖f‖ :=
     (mul_norm_indicatorConstLp_le hc_pos ht hμt_top.ne
       (ha_meas.ae_eq_mk.mono fun _ hmk hx ↦ by rw [hmk]; exact le_of_lt (hts hx)) v).trans
