@@ -110,6 +110,7 @@ variable {F}
 
 /-- The clutching function sends `v` to `e (Φ y (e⁻¹ v))`, where `e` is the trivialization of `E`
 at `x`, inverted over `f y` and applied over `x`. -/
+@[simp]
 theorem clutchingFunction_apply (f : (I^Fin 2) → X) (Φ : ∀ y, E (f y) ≃L[ℂ] E x) (y : I^Fin 2)
     (v : F) : clutchingFunction F f Φ y v = (trivializationAt F E x).continuousLinearMapAt ℂ x
       (Φ y ((trivializationAt F E x).symmL ℂ (f y) v)) := by

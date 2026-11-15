@@ -9,14 +9,14 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.Topology.Path
-public import TauCeti.Analysis.Complex.NormalizedDeterminant
+public import TauCeti.Analysis.Complex.DeterminantPhase
 public import TauCeti.Topology.Homotopy.Cube.SquareBoundary
 
 /-!
-# Normalized determinants of loops of operators
+# Determinant phases of loops of operators
 
 A continuous loop `P` of invertible complex-linear endomorphisms of a complex normed space has a
-loop `δ` in the circle of normalized determinants, `det (P t) = ‖det (P t)‖ δ t`
+loop `δ` in the circle of determinant phases, `det (P t) = ‖det (P t)‖ δ t`
 (`TauCeti.exists_path_det_eq_norm_mul`). Its degree is the winding number of the loop of
 determinants, the quantity that enters the product axiom of the Maslov index
 (`TauCeti.TotallyRealLoop.maslovIndex_map`).
@@ -36,7 +36,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- Every continuous loop `P` of invertible complex-linear endomorphisms has a circle loop `δ` of
-normalized determinants, `det (P t) = ‖det (P t)‖ δ t`, as required by
+determinant phases, `det (P t) = ‖det (P t)‖ δ t`, as required by
 `TauCeti.TotallyRealLoop.maslovIndex_map`. -/
 theorem exists_path_det_eq_norm_mul {P : I → E →L[ℂ] E} (hP : Continuous P)
     (hP01 : P 0 = P 1) (hdet : ∀ t, LinearMap.det (P t : E →ₗ[ℂ] E) ≠ 0) :

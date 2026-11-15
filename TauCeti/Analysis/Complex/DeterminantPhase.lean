@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
-# The normalized determinant of a complex-linear operator
+# The determinant phase of a complex-linear operator
 
 The determinant of a complex-linear operator `L` is `‖det L‖` times the point
 `det L / ‖det L‖` of the unit circle when it is nonzero (`ContinuousLinearMap.detPhase`, the

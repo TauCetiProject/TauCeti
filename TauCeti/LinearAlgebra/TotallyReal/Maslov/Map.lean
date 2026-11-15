@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.NormalizedDeterminant
+public import TauCeti.Analysis.Complex.DeterminantPhase
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 
 /-!
@@ -18,7 +18,7 @@ Let `Λ` be a loop of maximal totally real subspaces of a complex normed space
 `μ(B Λ) = μ(Λ) + 2 deg (det B)`,
 
 where `deg (det B)` is the winding number of the loop of determinants, read as the degree of the
-circle loop `t ↦ det (B t) / ‖det (B t)‖` of normalized determinants
+circle loop `t ↦ det (B t) / ‖det (B t)‖` of determinant phases
 (`ContinuousLinearMap.detPhase`, `TauCeti.TotallyRealLoop.maslovIndex_map`). The reason is
 that the Maslov phase
 `ρ(L₀, A L₀) = det A / conj (det A)` is multiplicative and that `z / conj z = (z / ‖z‖) ^ 2`
@@ -63,7 +63,7 @@ namespace TotallyRealLoop
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- **The Maslov index under a loop of automorphisms.** If `B` is a loop of complex-linear
-automorphisms and `δ` is the circle loop of normalized determinants,
+automorphisms and `δ` is the circle loop of determinant phases,
 `det (B t) = ‖det (B t)‖ δ t`, then `μ(B Λ) = μ(Λ) + 2 deg δ`. -/
 theorem maslovIndex_map (B : I → E ≃L[ℂ] E) (hB : Continuous fun t => (B t : E →L[ℂ] E))
     (hB01 : B 0 = B 1) {x : Circle} (δ : Path x x)
@@ -71,7 +71,7 @@ theorem maslovIndex_map (B : I → E ≃L[ℂ] E) (hB : Continuous fun t => (B t
       ‖LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E)‖ * δ t) :
     (Λ.map B hB hB01).maslovIndex = Λ.maslovIndex + 2 * Circle.degree δ := by
   have hL₀ := Λ.isMaximalTotallyReal 0
-  -- The determinant phase of `B t` is the square of its normalized determinant `δ t`.
+  -- The Maslov phase `det / conj det` of `B t` is the square of its determinant phase `δ t`.
   have hdet (t : I) : LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E) /
       conj (LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E)) = δ t * δ t := by
     have hd : LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E) ≠ 0 :=
@@ -101,7 +101,7 @@ theorem maslovIndex_map_const (A : E ≃L[ℂ] E) :
 
 /-- **The shift of the Maslov index under a loop of automorphisms does not depend on the loop it
 moves.** For any two loops `Λ` and `Γ` of maximal totally real subspaces,
-`μ(B Λ) - μ(Λ) = μ(B Γ) - μ(Γ)`: both are twice the degree of the loop of normalized determinants
+`μ(B Λ) - μ(Λ) = μ(B Γ) - μ(Γ)`: both are twice the degree of the loop of determinant phases
 of `B`. -/
 theorem maslovIndex_map_sub_maslovIndex (Γ : TotallyRealLoop E) (B : I → E ≃L[ℂ] E)
     (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
@@ -124,7 +124,7 @@ theorem maslovIndex_map_eq_of_homotopy (B : I × I → E ≃L[ℂ] E)
     (hB : Continuous fun p => (B p : E →L[ℂ] E)) (hB01 : ∀ s, B (s, 0) = B (s, 1)) :
     (Λ.map (fun t => B (0, t)) (hB.comp (Continuous.prodMk_right 0)) (hB01 0)).maslovIndex =
       (Λ.map (fun t => B (1, t)) (hB.comp (Continuous.prodMk_right 1)) (hB01 1)).maslovIndex := by
-  -- The free homotopy of loops of normalized determinants.
+  -- The free homotopy of loops of determinant phases.
   let F : C(I × I, Circle) := ⟨fun p => (B p : E →L[ℂ] E).detPhase,
     ContinuousLinearMap.continuous_detPhase hB fun p => (B p).det_coe_ne_zero⟩
   let γ (s : I) : Path (F (s, 0)) (F (s, 0)) :=

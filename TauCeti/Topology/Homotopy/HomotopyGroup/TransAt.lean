@@ -115,6 +115,7 @@ theorem transAt_apply_of_lt (i : N) (f g : Ω^ N X x) {t : I^N} (h : 1 / 2 < (t 
 
 /-- The concatenation `transAt i f g` restricts to `f` on the first half of the cube in the `i`-th
 direction. -/
+@[simp]
 theorem transAt_firstHalf (i : N) (f g : Ω^ N X x) (y : I^N) :
     transAt i f g (TauCeti.Cube.firstHalf i y) = f y := by
   have h := TauCeti.Cube.coe_firstHalf_apply_self i y
@@ -123,6 +124,7 @@ theorem transAt_firstHalf (i : N) (f g : Ω^ N X x) (y : I^N) :
 
 /-- The concatenation `transAt i f g` restricts to `g` on the second half of the cube in the `i`-th
 direction. -/
+@[simp]
 theorem transAt_secondHalf (i : N) (f g : Ω^ N X x) (y : I^N) :
     transAt i f g (TauCeti.Cube.secondHalf i y) = g y := by
   have h := TauCeti.Cube.coe_secondHalf_apply_self i y

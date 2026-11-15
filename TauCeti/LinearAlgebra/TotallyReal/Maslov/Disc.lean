@@ -27,7 +27,7 @@ properties that make this a well-defined invariant with the expected axioms on t
   (`TauCeti.TotallyRealLoop.maslovIndex_map_add_maslovIndex_map_symm_of_continuousOn_annulus`),
   whose inner circle degenerates to the centre, where `B` is constant. Equivalently, by the product
   formula `μ(B Λ) = μ(Λ) + 2 deg (det B)` (`TauCeti.TotallyRealLoop.maslovIndex_map`)
-  it suffices that the loop of normalized determinants of `B` along the boundary has degree zero,
+  it suffices that the loop of determinant phases of `B` along the boundary has degree zero,
   and it is null-homotopic through the loops `t ↦ det B (s e^{2πit})`, `s ∈ [0, 1]`. The general
   statement behind it is that the Maslov index of `B Λ` only depends on the free homotopy class of
   the loop `B` of automorphisms (`TauCeti.TotallyRealLoop.maslovIndex_map_eq_of_homotopy`).

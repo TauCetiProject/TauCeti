@@ -209,6 +209,14 @@ theorem IsPullbackTrivialization.comp {Z' : Type*} [TopologicalSpace Z'] {f : Z 
     simp only [Function.comp_def, Pullback.lift_mk] at h ⊢
     exact h
 
+/-- The transitions `(Φ z)⁻¹ ≫ Ψ z` between two pullback trivializations of `f *ᵖ E` form a
+pullback trivialization of the trivial bundle with fibre `E x`. -/
+theorem IsPullbackTrivialization.symm_trans {f : Z → X} {x : X} {Φ Ψ : ∀ z, E (f z) ≃L[𝕜] E x}
+    (hΦ : IsPullbackTrivialization F f x Φ) (hΨ : IsPullbackTrivialization F f x Ψ) :
+    IsPullbackTrivialization F (fun _ ↦ x) x fun z ↦ (Φ z).symm.trans (Ψ z) :=
+  ⟨hΨ.continuous_apply.comp hΦ.continuous_symm_apply,
+    hΦ.continuous_apply.comp hΨ.continuous_symm_apply⟩
+
 end PullbackTrivialization
 
 section Coordinates
@@ -219,30 +227,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : X → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [VectorBundle 𝕜 F E] {f : Z → X} {x : X}
-
-/-- The coordinate expression `e ∘ Ψ z ∘ (Φ z)⁻¹ ∘ e⁻¹` of the transition between two pullback
-trivializations, in the trivialization `e` of `E` at `x`, depends continuously on `z`. -/
-theorem IsPullbackTrivialization.continuous_coord_trans {Φ Ψ : ∀ z, E (f z) ≃L[𝕜] E x}
-    (hΦ : IsPullbackTrivialization F f x Φ) (hΨ : IsPullbackTrivialization F f x Ψ) :
-    Continuous fun z ↦ (trivializationAt F E x).continuousLinearMapAt 𝕜 x ∘L
-      (Ψ z : E (f z) →L[𝕜] E x) ∘L ((Φ z).symm : E x →L[𝕜] E (f z)) ∘L
-      (trivializationAt F E x).symmL 𝕜 x := by
-  set e := trivializationAt F E x
-  refine continuous_clm_apply.2 fun w ↦ ?_
-  have h₀ : Continuous fun z : Z ↦
-      TotalSpace.mk' F (E := (fun _ : Z ↦ x) *ᵖ E) z (e.symmL 𝕜 x w) :=
-    Pullback.continuous_iff.2 ⟨continuous_id, by
-      simp only [TotalSpace.mk', Pullback.lift_mk]
-      exact continuous_const⟩
-  have h := (Pullback.continuous_lift F E _).comp
-    (hΨ.continuous_apply.comp (hΦ.continuous_symm_apply.comp h₀))
-  have h' := (e.continuousOn.comp_continuous h fun z ↦
-    e.mem_source.2 (FiberBundle.mem_baseSet_trivializationAt' x)).snd
-  refine h'.congr fun z ↦ ?_
-  simp only [Function.comp_apply, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
-    Pullback.lift_mk, TotalSpace.mk']
-  exact (e.continuousLinearMapAt_apply_of_mem 𝕜
-    (FiberBundle.mem_baseSet_trivializationAt' x) _).symm
 
 /-- The coordinate expression `e ∘ Φ z ∘ e⁻¹` of a pullback trivialization, read in the
 trivialization `e` of `E` at `x` on both sides, depends continuously on `z` wherever `f z` lies in
@@ -269,6 +253,18 @@ theorem IsPullbackTrivialization.continuousOn_coord {Φ : ∀ z, E (f z) ≃L[�
   simp only [Function.comp_apply, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
     Pullback.lift_mk, TotalSpace.mk']
   exact (e.continuousLinearMapAt_apply_of_mem 𝕜 (FiberBundle.mem_baseSet_trivializationAt' x) _)
+
+/-- The coordinate expression `e ∘ Ψ z ∘ (Φ z)⁻¹ ∘ e⁻¹` of the transition between two pullback
+trivializations, in the trivialization `e` of `E` at `x`, depends continuously on `z`. -/
+theorem IsPullbackTrivialization.continuous_coord_trans {Φ Ψ : ∀ z, E (f z) ≃L[𝕜] E x}
+    (hΦ : IsPullbackTrivialization F f x Φ) (hΨ : IsPullbackTrivialization F f x Ψ) :
+    Continuous fun z ↦ (trivializationAt F E x).continuousLinearMapAt 𝕜 x ∘L
+      (Ψ z : E (f z) →L[𝕜] E x) ∘L ((Φ z).symm : E x →L[𝕜] E (f z)) ∘L
+      (trivializationAt F E x).symmL 𝕜 x := by
+  have h := (hΦ.symm_trans hΨ).continuousOn_coord continuous_const
+  rw [Set.preimage_const_of_mem (FiberBundle.mem_baseSet_trivializationAt' x),
+    continuousOn_univ] at h
+  simpa only [← ContinuousLinearEquiv.comp_coe, ContinuousLinearMap.comp_assoc] using h
 
 end Coordinates
 
