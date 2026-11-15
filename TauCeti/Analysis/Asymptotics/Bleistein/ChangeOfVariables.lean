@@ -141,10 +141,10 @@ theorem bleisteinA_neg {p : ℝ → ℝ} {α : ℝ} (hα : α < 0) (hp : p α < 
   rw [bleisteinA, sign_neg hα, SignType.coe_neg_one, neg_one_mul, neg_lt_zero]
   exact Real.sqrt_pos.mpr (by linarith)
 
-/-- When `α ≠ 0` and `p α < p 0`, `bleisteinA p α` is nonzero. -/
-theorem bleisteinA_ne_zero {p : ℝ → ℝ} {α : ℝ} (hα : α ≠ 0) (hp : p α < p 0) :
+/-- When `p α < p 0`, `bleisteinA p α` is nonzero. -/
+theorem bleisteinA_ne_zero {p : ℝ → ℝ} {α : ℝ} (hp : p α < p 0) :
     bleisteinA p α ≠ 0 :=
-  hα.lt_or_gt.elim (fun h => (bleisteinA_neg h hp).ne) fun h => (bleisteinA_pos h hp).ne'
+  abs_pos.mp <| by rw [abs_bleisteinA]; exact Real.sqrt_pos.mpr (by linarith)
 
 /-- When `p α < p 0`, `bleisteinA p α` has the same sign as `α` (DLMF 2.3.26). -/
 theorem sign_bleisteinA {p : ℝ → ℝ} {α : ℝ} (hp : p α < p 0) :
@@ -279,11 +279,14 @@ theorem strictMonoOn_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α : ℝ} (hα 
 
 /-! ### Differentiability, `C¹` smoothness across the critical point, and positivity of `w'` -/
 
-/-- Away from the critical point `t = α`, `bleisteinW p α` is differentiable whenever `p` is,
-with derivative `p' / (bleisteinW p α t - bleisteinA p α)` (DLMF 2.3.28). -/
-theorem hasDerivAt_bleisteinW_of_ne {p : ℝ → ℝ} {α t p' : ℝ} (hne : t ≠ α) (hpt : p α < p t)
+/-- Away from the critical point `t = α` (where `p α < p t`), `bleisteinW p α` is differentiable
+whenever `p` is, with derivative `p' / (bleisteinW p α t - bleisteinA p α)` (DLMF 2.3.28). -/
+theorem hasDerivAt_bleisteinW_of_ne {p : ℝ → ℝ} {α t p' : ℝ} (hpt : p α < p t)
     (hp : HasDerivAt p p' t) :
     HasDerivAt (bleisteinW p α) (p' / (bleisteinW p α t - bleisteinA p α)) t := by
+  have hne : t ≠ α := by
+    rintro rfl
+    exact lt_irrefl _ hpt
   have hpos : 0 < 2 * (p t - p α) := by linarith
   have hsqrt : HasDerivAt (fun u => Real.sqrt (2 * (p u - p α)))
       (2 * p' / (2 * Real.sqrt (2 * (p t - p α)))) t :=
@@ -312,11 +315,11 @@ theorem hasDerivAt_bleisteinW_of_ne {p : ℝ → ℝ} {α t p' : ℝ} (hne : t �
       = (s * s) * p' / (s * Real.sqrt (2 * (p t - p α))) := by field_simp [hs_ne, hr_ne]
     _ = p' / (s * Real.sqrt (2 * (p t - p α))) := by rw [hs_sq, one_mul]
 
-/-- Value of `deriv (bleisteinW p α) t` away from `t = α` (DLMF 2.3.28). -/
-theorem deriv_bleisteinW_of_ne {p : ℝ → ℝ} {α t : ℝ} (hne : t ≠ α) (hpt : p α < p t)
+/-- Value of `deriv (bleisteinW p α) t` away from `t = α` where `p α < p t` (DLMF 2.3.28). -/
+theorem deriv_bleisteinW_of_ne {p : ℝ → ℝ} {α t : ℝ} (hpt : p α < p t)
     (hp : DifferentiableAt ℝ p t) :
     deriv (bleisteinW p α) t = deriv p t / (bleisteinW p α t - bleisteinA p α) :=
-  (hasDerivAt_bleisteinW_of_ne hne hpt hp.hasDerivAt).deriv
+  (hasDerivAt_bleisteinW_of_ne hpt hp.hasDerivAt).deriv
 
 /-- At the critical point `t = α`, `bleisteinW p α` is differentiable with positive derivative
 `√(p'')` whenever `deriv p α = 0` and `HasDerivAt (deriv p) p'' α` with `0 < p''`. -/
@@ -394,7 +397,7 @@ theorem contDiffOn_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α : ℝ} (hI : I
   have hw_diff : DifferentiableOn ℝ (bleisteinW p α) I := fun t ht => by
     rcases eq_or_ne α t with rfl | hne
     · exact hw_self.differentiableAt.differentiableWithinAt
-    · exact (hasDerivAt_bleisteinW_of_ne hne.symm (hlt_of_ne t ht hne.symm)
+    · exact (hasDerivAt_bleisteinW_of_ne (hlt_of_ne t ht hne.symm)
         (hp_diff t ht).hasDerivAt).differentiableAt.differentiableWithinAt
   have h1 : (1 : WithTop ℕ∞) = (0 : WithTop ℕ∞) + 1 := rfl
   rw [h1, contDiffOn_succ_iff_deriv_of_isOpen hI]
@@ -416,7 +419,7 @@ theorem contDiffOn_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α : ℝ} (hI : I
     have hpu : p α < p u := hlt_of_ne u huI hne'
     have hw_ne := bleisteinW_sub_bleisteinA_ne_zero hpu
     have hsub_ne : u - α ≠ 0 := sub_ne_zero.mpr hne'
-    rw [Pi.div_apply, deriv_bleisteinW_of_ne hne' hpu (hp_diff u huI), hpα, sub_zero,
+    rw [Pi.div_apply, deriv_bleisteinW_of_ne hpu (hp_diff u huI), hpα, sub_zero,
       bleisteinW_self]
     field_simp [hsub_ne, hw_ne]
   · have hne : t ≠ α := hne_at.symm
@@ -429,7 +432,7 @@ theorem contDiffOn_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α : ℝ} (hI : I
       hp'_cont.div (hw_cont.sub continuousAt_const) (bleisteinW_sub_bleisteinA_ne_zero hpt)
     refine hquot.congr (Filter.eventually_of_mem
       (inter_mem (hI.mem_nhds ht) (isOpen_ne.mem_nhds hne)) fun u ⟨huI, hu_ne⟩ => ?_)
-    exact (deriv_bleisteinW_of_ne hu_ne (hlt_of_ne u huI hu_ne) (hp_diff u huI)).symm
+    exact (deriv_bleisteinW_of_ne (hlt_of_ne u huI hu_ne) (hp_diff u huI)).symm
 
 /-- Strict differentiability of `bleisteinW p α` at every point of an open set `I` under the
 hypotheses of `TauCeti.contDiffOn_bleisteinW`. -/
@@ -457,7 +460,7 @@ theorem deriv_bleisteinW_pos {p : ℝ → ℝ} {I : Set ℝ} {α t : ℝ}
   · have hpt : p α < p t := hanti ⟨ht, hlt.le⟩ ⟨hα, le_rfl⟩ hlt
     have hsign := sign_deriv_eq_sign_sub hord hα hp'_cont hpα hp''_pos hp' ht
     rw [sign_neg (sub_neg.mpr hlt), sign_eq_neg_one_iff] at hsign
-    rw [deriv_bleisteinW_of_ne hlt.ne hpt (hp_diff t ht), bleisteinW_sub_bleisteinA,
+    rw [deriv_bleisteinW_of_ne hpt (hp_diff t ht), bleisteinW_sub_bleisteinA,
       sign_neg (sub_neg.mpr hlt), SignType.coe_neg_one, neg_one_mul]
     exact div_pos_of_neg_of_neg hsign (neg_lt_zero.mpr (Real.sqrt_pos.mpr (by linarith)))
   · have hp''_at : HasDerivAt (deriv p) (deriv (deriv p) t) t :=
@@ -469,7 +472,7 @@ theorem deriv_bleisteinW_pos {p : ℝ → ℝ} {I : Set ℝ} {α t : ℝ}
   · have hpt : p α < p t := hmono ⟨hα, le_rfl⟩ ⟨ht, hgt.le⟩ hgt
     have hsign := sign_deriv_eq_sign_sub hord hα hp'_cont hpα hp''_pos hp' ht
     rw [sign_pos (sub_pos.mpr hgt), sign_eq_one_iff] at hsign
-    rw [deriv_bleisteinW_of_ne hgt.ne' hpt (hp_diff t ht), bleisteinW_sub_bleisteinA,
+    rw [deriv_bleisteinW_of_ne hpt (hp_diff t ht), bleisteinW_sub_bleisteinA,
       sign_pos (sub_pos.mpr hgt), SignType.coe_one, one_mul]
     exact div_pos hsign (Real.sqrt_pos.mpr (by linarith))
 

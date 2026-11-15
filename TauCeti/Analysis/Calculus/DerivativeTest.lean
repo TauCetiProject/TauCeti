@@ -32,8 +32,9 @@ point `x₀` with `deriv (deriv f) x₀ > 0` the function has a *strict* local m
 `f x₀ < f x` for `x ≠ x₀` near `x₀`, and dually for `deriv (deriv f) x₀ < 0`. Strictness is what
 the stability of an equilibrium at a minimum of the energy needs. This goes through a strict
 version of Mathlib's first-derivative test `isLocalMin_of_sign_deriv`. When `deriv f` is continuous
-on an order-connected set `I` and vanishes nowhere on `I \ {α}`, connectedness propagates the local
-sign of `deriv f` to all of `I`, yielding global strict antitonicity to the left of `α` and strict
+on an order-connected set `I`, vanishes at `α ∈ I` with `0 < deriv (deriv f) α`, and vanishes
+nowhere else on `I`, connectedness propagates the local sign of `deriv f` to all of `I`; when `f`
+is also continuous on `I`, this yields global strict antitonicity to the left of `α` and strict
 monotonicity to the right of `α`.
 
 It also records the one-sided first-derivative tests at an endpoint: a function with a local
