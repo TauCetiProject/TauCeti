@@ -21,10 +21,12 @@ invertible nearby, and `deg r = deg s + n`. For `n = 0` this recovers the struct
 
 The construction is adapted from Mathlib's
 `Mathlib/AlgebraicGeometry/ProjectiveSpectrum/StructureSheaf.lean` (Jujian Zhang), which builds the
-structure sheaf `AlgebraicGeometry.Proj.structureSheaf` through the same sequence `IsFraction`,
-`isFractionPrelocal`, `isLocallyFraction`, a presheaf of abelian groups and its comparison with
-the sheaf of types. The passage to a presheaf of modules via `PresheafOfModules.ofPresheaf`
-follows `AlgebraicGeometry.StructureSheaf.moduleStructurePresheaf` in Mathlib's
+structure sheaf `AlgebraicGeometry.ProjectiveSpectrum.Proj.structureSheaf` through the same
+sequence `IsFraction`, `isFractionPrelocal`, `isLocallyFraction`, a presheaf of commutative rings
+(`AlgebraicGeometry.ProjectiveSpectrum.StructureSheaf.structurePresheafInCommRing`) and its
+comparison with the sheaf of types. Here the construction is adapted to a presheaf of abelian
+groups, and the passage to a presheaf of modules via `PresheafOfModules.ofPresheaf` follows
+`AlgebraicGeometry.moduleStructurePresheaf` in Mathlib's
 `Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
 
 The fractions `r / s` form sections `AlgebraicGeometry.Proj.twistingSheaf.const`, and the
@@ -265,7 +267,7 @@ variable {𝒜} {n : ℤ} {U V : (Proj 𝒜).Opens}
 
 /-- A section of `𝒪(n)` is determined by its values in the localizations. -/
 @[ext]
-theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x, s.1 x = t.1 x) : s = t :=
+theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x : U, s.1 x = t.1 x) : s = t :=
   Subtype.ext (funext h)
 
 /-- Restriction of sections of `𝒪(n)` is restriction of the underlying functions. -/
