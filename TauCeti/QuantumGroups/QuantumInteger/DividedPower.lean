@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Factorial
 
 import Mathlib.Tactic.FieldSimp
+import TauCeti.Algebra.Group.Action.Semiconj
 
 /-!
 # Quantum divided powers in associative algebras
@@ -31,28 +32,6 @@ open Finset
 open scoped TensorProduct
 
 namespace TauCeti
-
-section CommSemiring
-
-theorem mul_pow_of_mul_eq_smul_mul {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    {c : R} {u x : A} (h : x * u = c • (u * x)) (n : ℕ) :
-    (u * x) ^ n = c ^ n.choose 2 • (u ^ n * x ^ n) := by
-  have hpow (m : ℕ) : x ^ m * u = c ^ m • (u * x ^ m) := by
-    have hsc : SemiconjBy u (c • x) x := by rw [SemiconjBy, mul_smul_comm, h]
-    rw [← (hsc.pow_right m).eq, smul_pow, mul_smul_comm]
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, ih, smul_mul_assoc, mul_assoc, ← mul_assoc (x ^ n) u, hpow n, smul_mul_assoc,
-      mul_smul_comm, smul_smul, ← pow_add, Nat.choose_succ_succ, Nat.choose_one_right, add_comm]
-    simp only [pow_succ, mul_assoc]
-theorem mul_pow_of_mul_eq_sq_smul_mul {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    {q : R} {u x : A} (h : x * u = q ^ 2 • (u * x)) (n : ℕ) :
-    (u * x) ^ n = q ^ (n * (n - 1)) • (u ^ n * x ^ n) := by
-  rw [mul_pow_of_mul_eq_smul_mul h, ← pow_mul, Nat.choose_two_right,
-    Nat.mul_div_cancel' n.even_mul_pred_self.two_dvd]
-
-end CommSemiring
 
 section Semiring
 
@@ -123,12 +102,12 @@ theorem quantumDividedPower_mul_left_of_mul_eq_smul_mul (q : K) {u x : A} {c : K
     quantumDividedPower q (u * x) n = c ^ n.choose 2 • (u ^ n * quantumDividedPower q x n) := by
   rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_of_mul_eq_smul_mul h,
     smul_comm, mul_smul_comm]
-theorem quantumDividedPower_mul_of_mul_eq_sq_smul_mul {q : K} {u x : A}
-    (h : x * u = q ^ 2 • (u * x)) (n : ℕ) :
+theorem quantumDividedPower_mul_left_of_mul_eq_sq_smul_mul (q : K) {u x : A} {c : K}
+    (h : x * u = c ^ 2 • (u * x)) (n : ℕ) :
     quantumDividedPower q (u * x) n =
-      q ^ (n * (n - 1)) • (u ^ n * quantumDividedPower q x n) := by
-  rw [quantumDividedPower_mul_left_of_mul_eq_smul_mul q h, ← pow_mul, Nat.choose_two_right,
-    Nat.mul_div_cancel' n.even_mul_pred_self.two_dvd]
+      c ^ (n * (n - 1)) • (u ^ n * quantumDividedPower q x n) := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, mul_pow_of_mul_eq_sq_smul_mul h,
+    smul_comm, mul_smul_comm]
 theorem quantumDividedPower_tmul_left {B : Type*} [Semiring B] [Algebra K B] (q : K) (a : A)
     (b : B) (n : ℕ) :
     quantumDividedPower q (a ⊗ₜ[K] b) n = quantumDividedPower q a n ⊗ₜ[K] (b ^ n) := by
@@ -234,8 +213,8 @@ theorem quantumSerre_mul_left {q : K} (m : ℕ) {u₁ x₁ u₂ x₂ : A}
     rw [(hsc.pow_right k).eq, smul_pow, smul_mul_assoc]
   rw [quantumSerre_def, quantumSerre_def, mul_sum]; refine sum_congr rfl fun r hr => ?_
   have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
-  rw [quantumDividedPower_mul_of_mul_eq_sq_smul_mul hx₁u₁ r,
-    quantumDividedPower_mul_of_mul_eq_sq_smul_mul hx₁u₁ (m - r)]
+  rw [quantumDividedPower_mul_left_of_mul_eq_sq_smul_mul q hx₁u₁ r,
+    quantumDividedPower_mul_left_of_mul_eq_sq_smul_mul q hx₁u₁ (m - r)]
   simp only [smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
   rw [← mul_assoc (quantumDividedPower q x₁ r) u₂,
     quantumDividedPower_mul_of_mul_eq_smul_mul q hx₁u₂ r, ← mul_assoc x₂ (u₁ ^ (m - r)),

@@ -233,24 +233,25 @@ def antipodeOp (D : CartanDatum ι X Y) (q : K) :
     antipodeOp D' q (map φ q x) = MulOpposite.op (map φ q (antipodeOp D q x).unop) := by
   simpa only [AlgHom.comp_apply, AlgHom.op_apply_apply] using
     AlgHom.congr_fun (antipodeOp_comp_map φ) x
-theorem antipodeOp_e_quantumDividedPower (i : ι) (n : ℕ) :
+theorem antipodeOp_quantumDividedPower_e (i : ι) (n : ℕ) :
     antipodeOp D q (quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) =
       MulOpposite.op (((-1 : K) ^ n * (q ^ D.symmetrizer i) ^ (n * (n - 1))) •
         (simpleKInv D q i ^ n * quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n)) := by
   rw [map_quantumDividedPower, antipodeOp_e, quantumDividedPower_op, quantumDividedPower_neg,
-    quantumDividedPower_mul_of_mul_eq_sq_smul_mul
+    quantumDividedPower_mul_left_of_mul_eq_sq_smul_mul _
       (by simpa [D.cartan_apply_self] using e_mul_simpleKInv (D := D) (q := q) i i) n,
     smul_smul, MulOpposite.op_smul]
-theorem antipodeOp_f_quantumDividedPower (i : ι) (n : ℕ) :
+theorem antipodeOp_quantumDividedPower_f (i : ι) (n : ℕ) :
     antipodeOp D q (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n) =
       MulOpposite.op (((-1 : K) ^ n * (q ^ D.symmetrizer i)⁻¹ ^ (n * (n - 1))) •
         (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n * simpleK D q i ^ n)) := by
   rw [map_quantumDividedPower, antipodeOp_f, MulOpposite.op_neg, quantumDividedPower_neg,
-    ← quantumDividedPower_inv, MulOpposite.op_mul,
-    quantumDividedPower_mul_of_mul_eq_sq_smul_mul
-      (by simpa [D.cartan_apply_self] using op_f_mul_op_simpleK (D := D) (q := q) i i) n,
-    quantumDividedPower_inv, quantumDividedPower_op, ← MulOpposite.op_pow, ← MulOpposite.op_mul,
-    ← MulOpposite.op_smul, ← MulOpposite.op_smul, smul_smul]
+    MulOpposite.op_mul,
+    quantumDividedPower_mul_left_of_mul_eq_sq_smul_mul _
+      (by simpa only [D.cartan_apply_self, zpow_ofNat] using
+        op_f_mul_op_simpleK (D := D) (q := q) i i) n,
+    quantumDividedPower_op, ← MulOpposite.op_pow, ← MulOpposite.op_mul, ← MulOpposite.op_smul,
+    ← MulOpposite.op_smul, smul_smul]
 
 /-- The diagonal rescaling automorphism equal to the square of the antipode: scaling `Eᵢ` by
 `qᵢ⁻²`, `Fᵢ` by `qᵢ²`, and fixing every `K_y` (reducing to the identity at `q = 0`). -/
@@ -532,7 +533,7 @@ theorem isGroupLikeElem_k (y : Y) : IsGroupLikeElem K (k D q y) := ⟨counit_app
     add_mul, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, one_mul,
     simpleKInv_mul_simpleK, ← normalizedF_def]
 /-- **Divided-power coproduct of `Eᵢ`** when `[n]_(qᵢ)! ≠ 0`. -/
-theorem comul_e_quantumDividedPower (i : ι) {n : ℕ}
+theorem comul_quantumDividedPower_e (i : ι) {n : ℕ}
     (hn : quantumFactorial (q ^ D.symmetrizer i) n ≠ 0) :
     Coalgebra.comul (R := K) (quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) =
       ∑ a ∈ Finset.range (n + 1),
@@ -546,7 +547,7 @@ theorem comul_e_quantumDividedPower (i : ι) {n : ℕ}
   rw [quantumDividedPower_tmul_left, quantumDividedPower_tmul_right, one_pow,
     Algebra.TensorProduct.tmul_mul_tmul, one_mul]
 /-- **Divided-power coproduct of `Fᵢ`** when `[n]_(qᵢ)! ≠ 0`. -/
-theorem comul_f_quantumDividedPower (i : ι) {n : ℕ}
+theorem comul_quantumDividedPower_f (i : ι) {n : ℕ}
     (hn : quantumFactorial (q ^ D.symmetrizer i) n ≠ 0) :
     Coalgebra.comul (R := K) (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n) =
       ∑ a ∈ Finset.range (n + 1),
@@ -563,16 +564,16 @@ theorem comul_f_quantumDividedPower (i : ι) {n : ℕ}
   rw [Nat.add_sub_cancel, Nat.sub_sub_self han, mul_comm (n - a) a,
     quantumDividedPower_tmul_right, quantumDividedPower_tmul_left, one_pow,
     Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-theorem antipode_e_quantumDividedPower (i : ι) (n : ℕ) :
+theorem antipode_quantumDividedPower_e (i : ι) (n : ℕ) :
     HopfAlgebra.antipode K (quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) =
       ((-1 : K) ^ n * (q ^ D.symmetrizer i) ^ (n * (n - 1))) •
         (simpleKInv D q i ^ n * quantumDividedPower (q ^ D.symmetrizer i) (e D q i) n) :=
-  MulOpposite.op_injective <| (antipodeOp_apply _).symm.trans (antipodeOp_e_quantumDividedPower i n)
-theorem antipode_f_quantumDividedPower (i : ι) (n : ℕ) :
+  MulOpposite.op_injective <| (antipodeOp_apply _).symm.trans (antipodeOp_quantumDividedPower_e i n)
+theorem antipode_quantumDividedPower_f (i : ι) (n : ℕ) :
     HopfAlgebra.antipode K (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n) =
       ((-1 : K) ^ n * (q ^ D.symmetrizer i)⁻¹ ^ (n * (n - 1))) •
         (quantumDividedPower (q ^ D.symmetrizer i) (f D q i) n * simpleK D q i ^ n) :=
-  MulOpposite.op_injective <| (antipodeOp_apply _).symm.trans (antipodeOp_f_quantumDividedPower i n)
+  MulOpposite.op_injective <| (antipodeOp_apply _).symm.trans (antipodeOp_quantumDividedPower_f i n)
 theorem antipode_antipode (x : QuantizedEnvelopingAlgebra D q) :
     HopfAlgebra.antipode K (HopfAlgebra.antipode K x) = antipodeSqEquiv D q x := by
   simpa only [AlgHom.comp_apply, AlgHom.opComm_apply_apply, AlgEquiv.coe_toAlgHom,
@@ -591,30 +592,40 @@ theorem antipode_bijective (D : CartanDatum ι X Y) (q : K) [Fact (HasComul D q)
       QuantizedEnvelopingAlgebra D q →ₗ[K] QuantizedEnvelopingAlgebra D q) := by
   simpa only [Function.comp_def, antipodeOp_apply, MulOpposite.unop_op] using
     MulOpposite.unop_bijective.comp (antipodeOp_bijective D q)
+/-- The Hopf-algebra inverse antipode agrees elementwise with
+`(antipodeEquiv D q).symm ∘ MulOpposite.op`. -/
+theorem inverseAntipode_eq_antipodeEquiv_symm_op (x : QuantizedEnvelopingAlgebra D q) :
+    TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) x =
+      (antipodeEquiv D q).symm (MulOpposite.op x) :=
+  (antipode_bijective D q).injective <| by
+    rw [TauCeti.HopfAlgebra.antipode_inverseAntipode, ← MulOpposite.op_inj, ← antipodeOp_apply,
+      ← antipodeEquiv_apply, AlgEquiv.apply_symm_apply]
 @[simp] theorem inverseAntipode_e (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) (e D q i) =
-      -(e D q i * simpleKInv D q i) :=
-  (antipode_bijective D q).injective (by simp [HopfAlgebra.antipode_mul_antidistrib])
+      -(e D q i * simpleKInv D q i) := by
+  rw [inverseAntipode_eq_antipodeEquiv_symm_op, antipodeEquiv_symm_op_e]
 @[simp] theorem inverseAntipode_f (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) (f D q i) =
-      -(simpleK D q i * f D q i) :=
-  (antipode_bijective D q).injective (by simp [HopfAlgebra.antipode_mul_antidistrib, mul_assoc])
+      -(simpleK D q i * f D q i) := by
+  rw [inverseAntipode_eq_antipodeEquiv_symm_op, antipodeEquiv_symm_op_f]
 @[simp] theorem inverseAntipode_k (y : Y) :
-    TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) (k D q y) = k D q (-y) :=
-  (antipode_bijective D q).injective (by simp)
+    TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) (k D q y) = k D q (-y) := by
+  rw [inverseAntipode_eq_antipodeEquiv_symm_op, antipodeEquiv_symm_op_k]
 @[simp] theorem inverseAntipode_simpleK (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) (simpleK D q i) =
-      simpleKInv D q i := (antipode_bijective D q).injective (by simp)
+      simpleKInv D q i := by
+  rw [inverseAntipode_eq_antipodeEquiv_symm_op, antipodeEquiv_symm_op_simpleK]
 @[simp] theorem inverseAntipode_simpleKInv (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective D q) (simpleKInv D q i) =
-      simpleK D q i := (antipode_bijective D q).injective (by simp)
+      simpleK D q i := by
+  rw [inverseAntipode_eq_antipodeEquiv_symm_op, antipodeEquiv_symm_op_simpleKInv]
 
 /-- A morphism of Cartan data `φ : D.Hom D'` induces a `K`-bialgebra morphism
 `QuantizedEnvelopingAlgebra D q →ₐc[K] QuantizedEnvelopingAlgebra D' q`. -/
 noncomputable def mapBialgHom (φ : D.Hom D') (q : K) [Fact (HasComul D q)] [Fact (HasComul D' q)] :
     QuantizedEnvelopingAlgebra D q →ₐc[K] QuantizedEnvelopingAlgebra D' q :=
   BialgHom.ofAlgHom (map φ q) (by ext <;> simp) (by ext <;> simp)
-@[simp] theorem coe_mapBialgHom (φ : D.Hom D') [Fact (HasComul D' q)] :
+@[simp] theorem mapBialgHom_toAlgHom (φ : D.Hom D') [Fact (HasComul D' q)] :
     (mapBialgHom φ q : QuantizedEnvelopingAlgebra D q →ₐ[K] QuantizedEnvelopingAlgebra D' q) =
       map φ q := (rfl)
 @[simp] theorem mapBialgHom_apply (φ : D.Hom D') [Fact (HasComul D' q)]
@@ -633,7 +644,7 @@ theorem mapBialgHom_comp {X'' Y'' : Type*} [AddCommGroup X''] [AddCommGroup Y'']
 theorem comul_map (φ : D.Hom D') [Fact (HasComul D' q)] (x : QuantizedEnvelopingAlgebra D q) :
     Coalgebra.comul (R := K) (map φ q x) =
       Algebra.TensorProduct.map (map φ q) (map φ q) (Coalgebra.comul (R := K) x) := by
-  simpa only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, coe_mapBialgHom] using
+  simpa only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, mapBialgHom_toAlgHom] using
     (AlgHom.congr_fun (BialgHom.map_comp_comulAlgHom (mapBialgHom φ q)) x).symm
 theorem antipode_map (φ : D.Hom D') [Fact (HasComul D' q)] (x : QuantizedEnvelopingAlgebra D q) :
     HopfAlgebra.antipode K (map φ q x) = map φ q (HopfAlgebra.antipode K x) := by
