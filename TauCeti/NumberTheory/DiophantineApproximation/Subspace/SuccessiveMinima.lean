@@ -13,8 +13,9 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMini
 
 Let `K` be a number field of degree `d`, and let `μ l` be the successive minima over `K` of the
 approximation domain `TauCeti.NumberField.approxDomain S₀ L c Q`, that is, of the lattice
-`approxModule S₀ L c Q` with respect to the body `approxBody L c Q`. Their product is
-`Q ^ (-approxWeight S₀ c)` up to two constants that do not depend on `Q` or on the exponents `c`:
+`approxModule S₀ L c Q` with respect to the body `approxBody L c Q`. The product of their `d`-th
+powers is `Q ^ (-approxWeight S₀ c)` up to two constants that do not depend on `Q` or on the
+exponents `c`:
 
 ```text
 2 ^ N / (N! · c_K ^ N · C) · Q ^ (-w)  ≤  ∏ l, μ l ^ d,
@@ -22,7 +23,8 @@ approximation domain `TauCeti.NumberField.approxDomain S₀ L c Q`, that is, of 
 ```
 
 where `n = card ι`, `N = d n`, `w = approxWeight S₀ c`, `C = approxConst S₀ L` and
-`c_K = integralBasisHouse K`.
+`c_K = integralBasisHouse K`. Taking `d`-th roots, the product of the minima themselves is
+`Q ^ (-approxWeight S₀ c / d)` up to constants.
 
 Both bounds combine Minkowski's second theorem over `K` with the comparison of the volume of the
 body with the covolume of the lattice. The lower bound uses the half of that comparison which
