@@ -150,6 +150,7 @@ def lift {α : Sort*}
     (c : FiniteExtensionClass K) : α :=
   Quotient.liftOn c (fun M ↦ @f M.1 _ _ M.2) fun M₁ M₂ ⟨e⟩ ↦ @hf M₁.1 M₂.1 _ _ M₁.2 _ _ M₂.2 e
 
+/-- Evaluating `FiniteExtensionClass.lift` on `mk K L` recovers the value on `L`. -/
 @[simp]
 theorem lift_mk {α : Sort*}
     (f : ∀ (L : Type u) [Field L] [Algebra K L] [Module.Finite K L], α)
@@ -171,6 +172,7 @@ variable {K : Type u} [Field K]
 def finrank (c : FiniteExtensionClass K) : ℕ :=
   c.lift (fun L _ _ _ ↦ Module.finrank K L) fun _ _ _ _ _ _ _ _ e ↦ e.toLinearEquiv.finrank_eq
 
+/-- The degree of `mk K L` is `Module.finrank K L`. -/
 @[simp]
 theorem finrank_mk (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
     (mk K L).finrank = Module.finrank K L := by
@@ -178,15 +180,18 @@ theorem finrank_mk (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
   obtain ⟨e⟩ := (mk_eq_mk_iff L M).1 hM
   rw [hM, finrank, lift_mk, e.toLinearEquiv.finrank_eq]
 
+/-- Every finite extension class has positive degree. -/
 theorem finrank_pos (c : FiniteExtensionClass K) : 0 < c.finrank := by
   induction c using induction_on with | h L =>
   rw [finrank_mk]
   exact Module.finrank_pos
 
+/-- The degree of a finite extension class is nonzero. -/
 @[simp]
 theorem finrank_ne_zero (c : FiniteExtensionClass K) : c.finrank ≠ 0 :=
   c.finrank_pos.ne'
 
+/-- The trivial extension class `self K` has degree `1`. -/
 @[simp]
 theorem finrank_self : (self K).finrank = 1 := by
   rw [self, finrank_mk, Module.finrank_self]
@@ -207,6 +212,7 @@ def IsSeparable (c : FiniteExtensionClass K) : Prop :=
     propext ⟨fun _ ↦ Algebra.IsSeparable.of_algHom _ _ e.symm.toAlgHom,
       fun _ ↦ Algebra.IsSeparable.of_algHom _ _ e.toAlgHom⟩
 
+/-- `mk K L` is separable if and only if `L/K` is separable. -/
 @[simp]
 theorem isSeparable_mk_iff (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
     (mk K L).IsSeparable ↔ Algebra.IsSeparable K L := by
@@ -216,6 +222,7 @@ theorem isSeparable_mk_iff (L : Type v) [Field L] [Algebra K L] [Module.Finite K
   exact ⟨fun _ ↦ Algebra.IsSeparable.of_algHom _ _ e.toAlgHom,
     fun _ ↦ Algebra.IsSeparable.of_algHom _ _ e.symm.toAlgHom⟩
 
+/-- The trivial extension class `self K` is separable. -/
 @[simp]
 theorem isSeparable_self : (self K).IsSeparable := by
   rw [self, isSeparable_mk_iff]
@@ -226,6 +233,7 @@ def natCardAut (c : FiniteExtensionClass K) : ℕ :=
   c.lift (fun L _ _ _ ↦ Nat.card (L ≃ₐ[K] L)) fun _ _ _ _ _ _ _ _ e ↦
     Nat.card_congr (AlgEquiv.autCongr e).toEquiv
 
+/-- The automorphism count of `mk K L` is `Nat.card (L ≃ₐ[K] L)`. -/
 @[simp]
 theorem natCardAut_mk (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
     (mk K L).natCardAut = Nat.card (L ≃ₐ[K] L) := by
@@ -234,15 +242,18 @@ theorem natCardAut_mk (L : Type v) [Field L] [Algebra K L] [Module.Finite K L] :
   rw [hM, natCardAut, lift_mk]
   exact Nat.card_congr (AlgEquiv.autCongr e.symm).toEquiv
 
+/-- Every finite extension class has positive automorphism count. -/
 theorem natCardAut_pos (c : FiniteExtensionClass K) : 0 < c.natCardAut := by
   induction c using induction_on with | h L =>
   rw [natCardAut_mk]
   exact Nat.card_pos
 
+/-- The automorphism count of a finite extension class is nonzero. -/
 @[simp]
 theorem natCardAut_ne_zero (c : FiniteExtensionClass K) : c.natCardAut ≠ 0 :=
   c.natCardAut_pos.ne'
 
+/-- The trivial extension class `self K` has automorphism count `1`. -/
 @[simp]
 theorem natCardAut_self : (self K).natCardAut = 1 := by
   rw [self, natCardAut_mk, Nat.card_unique]
@@ -271,6 +282,7 @@ def restrictScalars (c : FiniteExtensionClass F) : FiniteExtensionClass K :=
       have : Module.Finite K L₂ := Module.Finite.trans F L₂
       exact (mk_eq_mk_iff L₁ L₂).2 ⟨e.restrictScalars K⟩
 
+/-- Restricting scalars of `mk F L` along a scalar tower `K/F/L` yields `mk K L`. -/
 @[simp]
 theorem restrictScalars_mk (L : Type w) [Field L] [Algebra K L] [Algebra F L]
     [IsScalarTower K F L] [Module.Finite F L] [Module.Finite K L] :
@@ -283,10 +295,12 @@ theorem restrictScalars_mk (L : Type w) [Field L] [Algebra K L] [Algebra F L]
   have : Module.Finite K M := Module.Finite.trans F M
   exact (mk_eq_mk_iff M L).2 ⟨(e.restrictScalars K).symm⟩
 
+/-- Restricting scalars of the trivial class `self F` down to `K` gives `mk K F`. -/
 @[simp]
 theorem restrictScalars_self : (self F).restrictScalars K = mk K F :=
   restrictScalars_mk K F
 
+/-- **Multiplicativity of degree under restriction of scalars.** -/
 @[simp]
 theorem finrank_restrictScalars (c : FiniteExtensionClass F) :
     (c.restrictScalars K).finrank = Module.finrank K F * c.finrank := by
@@ -296,6 +310,8 @@ theorem finrank_restrictScalars (c : FiniteExtensionClass F) :
   have : Module.Finite K L := Module.Finite.trans F L
   rw [restrictScalars_mk (F := F) K L, finrank_mk, finrank_mk, Module.finrank_mul_finrank K F L]
 
+/-- **Tower law for separability of finite extension classes.** `c.restrictScalars K` is separable
+over `K` if and only if both `F/K` and `c` are separable. -/
 theorem isSeparable_restrictScalars_iff (c : FiniteExtensionClass F) :
     (c.restrictScalars K).IsSeparable ↔ Algebra.IsSeparable K F ∧ c.IsSeparable := by
   induction c using induction_on with | h L =>
@@ -392,26 +408,31 @@ theorem mapEquiv_mk_eq_mk_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [Fiel
       ∃ φ : L₁ ≃+* L₂, ∀ a : F₁, φ (algebraMap F₁ L₁ a) = algebraMap F₂ L₂ (e a) :=
   mapAux_mk_eq_mk_iff e
 
+/-- Transport along the identity ring equivalence is the identity on `FiniteExtensionClass F`. -/
 @[simp]
 theorem mapEquiv_refl {F : Type u} [Field F] :
     mapEquiv (RingEquiv.refl F) = Equiv.refl (FiniteExtensionClass F) :=
   Equiv.ext mapAux_refl
 
+/-- The inverse of `mapEquiv e` is `mapEquiv e.symm`. -/
 @[simp]
 theorem mapEquiv_symm {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂) :
     (mapEquiv e).symm = mapEquiv e.symm :=
   (rfl)
 
+/-- Transport of finite extension classes is functorial under composition of ring equivalences. -/
 theorem mapEquiv_trans {F₁ : Type u} {F₂ : Type v} {F₃ : Type w}
     [Field F₁] [Field F₂] [Field F₃] (e₁ : F₁ ≃+* F₂) (e₂ : F₂ ≃+* F₃) :
     mapEquiv (e₁.trans e₂) = (mapEquiv e₁).trans (mapEquiv e₂) :=
   Equiv.ext (mapAux_trans e₁ e₂)
 
+/-- Transport along `e : F₁ ≃+* F₂` sends the trivial class `self F₁` to `self F₂`. -/
 @[simp]
 theorem mapEquiv_self {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂) :
     mapEquiv e (self F₁) = self F₂ :=
   (mapEquiv_mk_eq_mk_iff e).2 ⟨e, fun a ↦ by simp⟩
 
+/-- Transport of structure along a ring equivalence preserves extension degree. -/
 @[simp]
 theorem finrank_mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
     (c : FiniteExtensionClass F₁) :
@@ -422,6 +443,7 @@ theorem finrank_mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F�
   rw [hL₂, finrank_mk, finrank_mk]
   exact (Algebra.finrank_eq_of_equiv_equiv e φ (RingHom.ext fun a ↦ (hφ a).symm)).symm
 
+/-- Transport of structure along a ring equivalence preserves and reflects separability. -/
 @[simp]
 theorem isSeparable_mapEquiv_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
     (c : FiniteExtensionClass F₁) :
@@ -432,6 +454,7 @@ theorem isSeparable_mapEquiv_iff {F₁ : Type u} {F₂ : Type v} [Field F₁] [F
   rw [hL₂, isSeparable_mk_iff, isSeparable_mk_iff]
   exact (Algebra.IsSeparable.iff_of_equiv_equiv e φ (RingHom.ext fun a ↦ (hφ a).symm)).symm
 
+/-- Transport of structure along a ring equivalence preserves the automorphism count. -/
 @[simp]
 theorem natCardAut_mapEquiv {F₁ : Type u} {F₂ : Type v} [Field F₁] [Field F₂] (e : F₁ ≃+* F₂)
     (c : FiniteExtensionClass F₁) :
@@ -459,24 +482,30 @@ instance instMulActionAlgEquiv : MulAction (F ≃ₐ[R] F) (FiniteExtensionClass
     dsimp only [HSMul.hSMul]
     rw [AlgEquiv.toRingEquiv_mul, mapEquiv_trans, Equiv.trans_apply]
 
+/-- The action of `τ : F ≃ₐ[R] F` on `FiniteExtensionClass F` is given by `mapEquiv (τ : F ≃+* F)`.
+-/
 theorem smul_def (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
     τ • c = mapEquiv (τ : F ≃+* F) c :=
   (rfl)
 
+/-- Every `R`-algebra automorphism of `F` fixes the trivial class `self F`. -/
 @[simp]
 theorem smul_self (τ : F ≃ₐ[R] F) : τ • self F = self F :=
   mapEquiv_self _
 
+/-- The action of `F ≃ₐ[R] F` preserves extension degree. -/
 @[simp]
 theorem finrank_smul (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
     (τ • c).finrank = c.finrank :=
   finrank_mapEquiv _ c
 
+/-- The action of `F ≃ₐ[R] F` preserves and reflects separability. -/
 @[simp]
 theorem isSeparable_smul_iff (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
     (τ • c).IsSeparable ↔ c.IsSeparable :=
   isSeparable_mapEquiv_iff _ c
 
+/-- The action of `F ≃ₐ[R] F` preserves the automorphism count. -/
 @[simp]
 theorem natCardAut_smul (τ : F ≃ₐ[R] F) (c : FiniteExtensionClass F) :
     (τ • c).natCardAut = c.natCardAut :=
