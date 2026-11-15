@@ -224,7 +224,7 @@ private theorem involutionGraphSentence_realize_iff {M : Type w} [InvLang.Struct
 /-- Extract an involutive permutation whose graph is `invRel` from `involutionGraphSentence`. -/
 private theorem exists_perm_of_involutionGraphSentence {M : Type w} [InvLang.Structure M]
     (h : SentenceInf.Realize involutionGraphSentence M) :
-    ∃ σ : Equiv.Perm M, σ ^ (2 ^ 1) = 1 ∧
+    ∃ σ : Equiv.Perm M, σ ^ 2 = 1 ∧
       ∀ x y : M, Structure.RelMap (L := InvLang) invRel ![x, y] ↔ σ x = y := by
   obtain ⟨htot, hfun, hsym⟩ := involutionGraphSentence_realize_iff.1 h
   let f : M → M := fun x => (htot x).choose
@@ -242,7 +242,6 @@ private def graphStructure {M : Type w} [Language.empty.Structure M] (f : M → 
   @Language.sumStructure Language.empty Language.graph M _
     { RelMap | .adj, xs => f (xs 0) = xs 1 }
 
-@[simp]
 private theorem relMap_graphStructure {M : Type w} [Language.empty.Structure M]
     (f : M → M) (xs : Fin 2 → M) :
     @Structure.RelMap InvLang M (graphStructure f) 2 invRel xs ↔ f (xs 0) = xs 1 :=
