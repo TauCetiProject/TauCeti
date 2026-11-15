@@ -39,8 +39,9 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
 * `puncturedSphereTruncation`: the truncation `Σ_R`, with `mem_puncturedSphereTruncation`,
   `isCompact_puncturedSphereTruncation` and `ne_of_mem_puncturedSphereTruncation`. It increases
   with `R` (`puncturedSphereTruncation_mono`), exhausts the sphere minus its punctures
-  (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
-  sphere (`puncturedSphereTruncation_eq_truncation`).
+  (`iUnion_puncturedSphereTruncation`), so that it eventually contains every compact set avoiding
+  the centers (`eventually_subset_puncturedSphereTruncation`), and specializes to the truncation
+  of the thrice-punctured sphere (`puncturedSphereTruncation_eq_truncation`).
 * `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
 * `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
   lift of an input end is injective on every horizontal strip of height one.
@@ -137,6 +138,30 @@ theorem iUnion_puncturedSphereTruncation [Finite ι] (ha : ∀ i, a i ≠ 0) :
     ((Real.tendsto_exp_atTop.comp hexp).const_mul_atTop two_pos).eventually_ge_atTop ‖w‖
   obtain ⟨R, hR⟩ := ((eventually_all.2 hin).and hout).exists
   exact ⟨R, hR⟩
+
+/-- For finitely many input ends, a compact set avoiding the centers lies in the truncation `Σ_R`
+for every large enough `R`. -/
+theorem eventually_subset_puncturedSphereTruncation [Finite ι] {D : Set ℂ} (hD : IsCompact D)
+    (hDc : ∀ w ∈ D, ∀ i, w ≠ c i) :
+    ∀ᶠ R in atTop, D ⊆ puncturedSphereTruncation c a R := by
+  have hexp : Tendsto (fun R : ℝ ↦ 2 * π * R) atTop atTop :=
+    tendsto_id.const_mul_atTop Real.two_pi_pos
+  -- The distance to each center is bounded below on `D` by a positive constant, which eventually
+  -- exceeds the radius `‖a i‖ exp (-2πR) / 2`.
+  have hin (i : ι) : ∀ᶠ R in atTop,
+      ∀ w ∈ D, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖ := by
+    obtain ⟨m, hm, hmD⟩ := hD.exists_forall_le' (continuous_norm.comp
+      (continuous_id.sub continuous_const)).continuousOn fun w hw ↦
+        norm_pos_iff.2 (sub_ne_zero.2 (hDc w hw i))
+    have h : Tendsto (fun R : ℝ ↦ ‖a i‖ * Real.exp (-(2 * π * R)) / 2) atTop (𝓝 0) := by
+      simpa using ((Real.tendsto_exp_neg_atTop_nhds_zero.comp hexp).const_mul ‖a i‖).div_const 2
+    exact (h.eventually (ge_mem_nhds hm)).mono fun _ hR w hw ↦ hR.trans (hmD w hw)
+  -- `D` is bounded, and the outer radius `2 exp (2πR)` tends to `∞`.
+  obtain ⟨M, hM⟩ := hD.isBounded.exists_norm_le
+  have hout : ∀ᶠ R in atTop, M ≤ 2 * Real.exp (2 * π * R) :=
+    ((Real.tendsto_exp_atTop.comp hexp).const_mul_atTop two_pos).eventually_ge_atTop M
+  exact ((eventually_all.2 hin).and hout).mono fun _ hR w hw ↦
+    ⟨fun i ↦ hR.1 i w hw, (hM w hw).trans hR.2⟩
 
 /-- A point of the input end with center `c` and scale `a`, at longitudinal coordinate `s`, lies
 at distance `‖a‖ exp (-2πs) / 2` from the center. -/
