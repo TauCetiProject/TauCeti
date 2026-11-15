@@ -24,11 +24,6 @@ generator to `1`; under that identification, the abstract Lie-group exponential 
   `Circle.expContinuousMonoidHom`.
 * `circleLieAlgebraEquiv`: the identification `Lie(Circle) ≃ₗ[ℝ] ℝ` normalized by that generator.
 * `lieExp_circle`: under this identification, the abstract exponential is `Circle.exp`.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The matrix and circle shadows".
 -/
 
 public section

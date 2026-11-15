@@ -85,7 +85,6 @@ theorem hypergeometricMeasure_real_Iic_eq_one_of_upper_le
     have hsupp := (hypergeometricWeight_ne_zero_iff N K n j).mp hweight
     omega
   filter_upwards [hle] with j hj
-  apply propext
   simp only [mem_Iic, mem_univ, iff_true]
   exact hj
 

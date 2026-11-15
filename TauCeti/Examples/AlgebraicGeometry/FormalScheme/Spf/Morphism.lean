@@ -54,7 +54,8 @@ example (a : R) :
         (globalSectionsIso (IsAdicRing.ideal_spec R).2.1).hom =
       CommRingCat.ofHom (Polynomial.evalRingHom a) := by
   intro _ _
-  erw [map_globalSections, Iso.inv_hom_id_assoc]
+  exact (Iso.inv_comp_eq _).mpr
+    (map_globalSections (Polynomial.evalRingHom a) continuous_of_discreteTopology)
 
 end Evaluation
 
