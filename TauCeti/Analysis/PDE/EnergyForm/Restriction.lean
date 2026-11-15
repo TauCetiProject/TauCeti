@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.Extension
+public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.Integral
-import TauCeti.Analysis.PDE.DirichletProblem
 
 /-!
 # The energy form under restriction to a smaller domain
@@ -28,6 +28,8 @@ integrability hypotheses on `Ω`.
   extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL`: `a(u₀, v₀) = a(u, v)` for `u, v ∈ H¹₀(U)` with zero
   extensions `u₀, v₀ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.dirichletForcing_extendByZeroL`: `∫_Ω f v₀ = ∫_U f v` for `v ∈ H¹₀(U)` with zero
+  extension `v₀ ∈ H¹₀(Ω)`, the same identity for the forcing functional of the Dirichlet problem.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_left`: `a(u₀, w) = a(u, w|_U)` for `u ∈ H¹₀(U)` with
   zero extension `u₀ ∈ H¹₀(Ω)` and any `w ∈ H¹(Ω)`.
 * `TauCeti.PDE.isCoercive_energyFormH1L0_of_domain_le`: coercivity passes to smaller domains.
@@ -136,6 +138,30 @@ theorem energyFormH1_extendByZeroL (a : EuclideanSpace ℝ ι → Matrix ι ι �
   have h := energyFormH1_restrictL a b c hU (W1p0.extendByZeroL hU u : W1p mu Omega 2) v
   rw [W1p0.restrictL_extendByZeroL] at h
   exact h.symm
+
+/-- **The forcing functional of a zero extension.** For open sets `U ⊆ Ω`, `f ∈ L²(Ω)` and
+`g ∈ L²(U)` with `g = f` almost everywhere on `U`, the forcing functional of `f` on `H¹₀(Ω)`
+evaluated at the zero extension of `v ∈ H¹₀(U)` is the forcing functional of `g` on `H¹₀(U)`
+evaluated at `v`: `∫_Ω f v₀ = ∫_U g v`. -/
+theorem dirichletForcing_extendByZeroL (hU : U ≤ Omega) {f : Lp ℝ 2 (mu.restrict Omega)}
+    {g : Lp ℝ 2 (mu.restrict U)} (hg : ⇑g =ᵐ[mu.restrict U] ⇑f) (v : W1p0 mu U 2) :
+    dirichletForcing f (W1p0.extendByZeroL hU v) = dirichletForcing g v := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  rw [dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply_eq_setIntegral]
+  calc ∫ x in Omega, f x * W1p.value (W1p0.extendByZeroL hU v : W1p mu Omega 2) x ∂mu
+      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
+          (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
+        refine integral_congr_ae ?_
+        rw [W1p0.value_extendByZeroL]
+        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
+        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+        · rw [hx, indicator_of_mem hxU, indicator_of_mem hxU]
+        · rw [hx, indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
+    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+    _ = ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu :=
+        integral_congr_ae (by filter_upwards [hg] with x hx; rw [hx])
 
 /-- **The energy form of a zero extension against an arbitrary function.** For open sets
 `U ⊆ Ω`, `u ∈ H¹₀(U)` and `w ∈ H¹(Ω)`, the energy form on `Ω` of the zero extension of `u`

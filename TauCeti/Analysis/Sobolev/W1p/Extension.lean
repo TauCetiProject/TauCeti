@@ -53,6 +53,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
   extension preserves the norms of both components.
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
+* `TauCeti.W1p0.dense_iUnion_range_extendByZeroL`: for a directed family of open sets `U i`
+  covering `Ω`, the zero extensions of the spaces `W^{1,p}_0(U i)` are dense in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -317,6 +319,44 @@ theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omeg
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hsub _).trans (by
     rw [W1p0.value_extendByZeroL]
     exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
+
+/-! ### Exhaustions -/
+
+/-- A test function on `Ω'` whose support lies in an open set `Ω ⊆ Ω'` is the zero-extension of
+the same function, viewed as a test function on `Ω`. -/
+private theorem ofTestFunctionₗ_mem_image_range_extendByZeroL (hsub : Omega ≤ Omega')
+    (phi : 𝓓(Omega', ℝ)) (hphi : tsupport (phi : E → ℝ) ⊆ Omega) :
+    W1p.ofTestFunctionₗ mu Omega' p phi ∈
+      Subtype.val '' range (W1p0.extendByZeroL (mu := mu) (p := p) hsub) := by
+  let psi : 𝓓(Omega, ℝ) := ⟨phi, phi.contDiff, phi.hasCompactSupport, hphi⟩
+  have hpsi : (TestFunction.monoCLM ℝ psi : 𝓓(Omega', ℝ)) = phi :=
+    TestFunction.ext fun x => by simp [psi, TestFunction.monoCLM_apply, hsub]
+  refine ⟨_, ⟨⟨W1p.ofTestFunctionₗ mu Omega p psi, W1p.ofTestFunctionₗ_mem_w1p0Submodule psi⟩,
+    rfl⟩, Subtype.ext ?_⟩
+  simp only [W1p0.coe_extendByZeroL, Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ, hpsi]
+
+/-- **Zero extensions from an exhaustion are dense.** Let the open sets `U i ⊆ Ω` form a directed
+family covering `Ω`, such as an increasing sequence of open sets with union `Ω`. Then the
+zero-extensions to `Ω` of the functions of the spaces `W^{1,p}_0(U i)` are dense in
+`W^{1,p}_0(Ω)`. No regularity or boundedness of the open sets is needed: a test function on `Ω`
+has compact support, which lies in a single `U i`. -/
+theorem W1p0.dense_iUnion_range_extendByZeroL {ι : Type*} [Nonempty ι] {U : ι → Opens E}
+    (hU : ∀ i, U i ≤ Omega) (hdir : Directed (· ≤ ·) U) (hcover : Omega ≤ ⨆ i, U i) :
+    Dense (⋃ i, range (W1p0.extendByZeroL (mu := mu) (p := p) (hU i))) := by
+  have hcov : (Omega : Set E) ⊆ ⋃ i, (U i : Set E) := by
+    simpa only [Opens.coe_iSup] using SetLike.coe_subset_coe.mpr hcover
+  have hsub : (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) ⊆
+      closure (Subtype.val '' ⋃ i, range (W1p0.extendByZeroL (mu := mu) (p := p) (hU i))) := by
+    refine w1p0Submodule_subset_of_isClosed isClosed_closure fun phi => subset_closure ?_
+    obtain ⟨i, hi⟩ := phi.hasCompactSupport.isCompact.elim_directed_cover (fun i => (U i : Set E))
+      (fun i => (U i).isOpen) (phi.tsupport_subset.trans hcov)
+      (hdir.mono_comp _ fun _ _ h => SetLike.coe_subset_coe.mpr h)
+    obtain ⟨v, hv, hv'⟩ :=
+      ofTestFunctionₗ_mem_image_range_extendByZeroL (mu := mu) (p := p) (hU i) phi hi
+    exact ⟨v, mem_iUnion.2 ⟨i, hv⟩, hv'⟩
+  intro u
+  rw [Topology.IsInducing.subtypeVal.closure_eq_preimage_closure_image]
+  exact hsub u.2
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the
