@@ -30,7 +30,7 @@ The computation takes place in the preferred chart at the north pole, stereograp
 from the south pole. There the height is `TauCeti.stereographicHeight`, whose second derivative at
 the origin is minus the inner product (`TauCeti.fderiv_fderiv_stereographicHeight_zero`), and the
 differential of the inclusion of the sphere is isometric at the centre of the chart
-(`TauCeti.inner_mvfderiv_coe_sphere`).
+(`TauCeti.inner_mvfderiv_subtypeVal_sphere`).
 
 ## Main results
 
@@ -41,9 +41,8 @@ differential of the inclusion of the sphere is isometric at the centre of the ch
 * `TauCeti.criticalPoints_mul_sphereHeight` and `TauCeti.isMorse_mul_sphereHeight`: for `c ≠ 0`,
   the rescaled height `c h_v` is a Morse function with critical points `±v`.
 * `TauCeti.criticalHessian_mul_sphereHeight` and `TauCeti.manifoldMorseIndex_mul_sphereHeight`:
-  for `c ≠ 0`, the critical Hessian of the rescaled height `c h_v` at a critical point `x` is
-  `-c h_v(x)` times the inner product, so its Morse index is `n` when `c h_v(x) > 0` and `0`
-  otherwise.
+  the critical Hessian of the rescaled height `c h_v` at a critical point `x` is `-c h_v(x)` times
+  the inner product, so its Morse index is `n` when `c h_v(x) > 0` and `0` otherwise.
 
 ## References
 
@@ -68,10 +67,8 @@ theorem criticalHessian_sphereHeight_self (v : sphere (0 : E) 1) (a b : TangentS
       -⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v a,
         mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b⟫_ℝ := by
   rw [criticalHessian_apply_eq_fderiv_fderiv, sphereHeight_comp_extChartAt_symm,
-    extChartAt_sphere_apply_self, fderiv_fderiv_stereographicHeight_zero,
-    inner_mvfderiv_coe_sphere v a b]
-  -- `tangentSpaceCastModel` reads a tangent vector as its chart coordinate, by definition.
-  rfl
+    extChartAt_sphere_apply_self, fderiv_fderiv_stereographicHeight_zero, neg_apply, neg_apply,
+    innerSL_apply_apply, inner_mvfderiv_subtypeVal_sphere]
 
 /-- **The Hessian of the height at the south pole.** At the south pole `-v` the critical Hessian
 of the height `x ↦ ⟪x, v⟫` is the inner product of tangent vectors read in `E`. -/
@@ -126,10 +123,10 @@ theorem isMorse_mul_sphereHeight {c : ℝ} (hc : c ≠ 0) (v : sphere (0 : E) 1)
   (isMorse_sphereHeight v).scalar_comp (φ := fun t ↦ c * t)
     (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt) fun _ ↦ by simpa using hc
 
-/-- **The Morse index of a rescaled height.** For `c ≠ 0`, at a critical point `x` of the height
-`h_v`, the Morse index of `c h_v` is `n` when its Hessian `-c h_v(x) ⟪·, ·⟫` is negative definite
-and `0` when it is positive definite. -/
-theorem manifoldMorseIndex_mul_sphereHeight {c : ℝ} (hc : c ≠ 0) {v x : sphere (0 : E) 1}
+/-- **The Morse index of a rescaled height.** At a critical point `x` of the height `h_v`, the
+Morse index of `c h_v` is `n` when its Hessian `-c h_v(x) ⟪·, ·⟫` is negative definite, and `0`
+otherwise, when that Hessian is positive semidefinite. -/
+theorem manifoldMorseIndex_mul_sphereHeight (c : ℝ) {v x : sphere (0 : E) 1}
     (hx : x ∈ criticalPoints (𝓡 n) (sphereHeight v)) :
     manifoldMorseIndex (𝓡 n) (fun y ↦ c * sphereHeight v y) x =
       if 0 < c * sphereHeight v x then n else 0 := by
@@ -139,15 +136,11 @@ theorem manifoldMorseIndex_mul_sphereHeight {c : ℝ} (hc : c ≠ 0) {v x : sphe
       exact mul_neg_of_neg_of_pos (neg_neg_of_pos hpos)
         (inner_mvfderiv_subtypeVal_sphere_self_pos x ha)
     rwa [finrank_euclideanSpace_fin] at h
-  · have hneg : c * sphereHeight v x < 0 := lt_of_le_of_ne (not_lt.1 hpos)
-      (mul_ne_zero hc (sphereHeight_ne_zero_of_mem_criticalPoints hx))
-    have hcrit : x ∈ criticalPoints (𝓡 n) (fun y ↦ c * sphereHeight v y) := by
-      rw [criticalPoints_mul_sphereHeight hc, ← criticalPoints_sphereHeight (n := n)]
-      exact hx
-    have hnd := IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (isMorse_mul_sphereHeight hc v) hcrit
-    refine hnd.manifoldMorseIndex_eq_zero_iff.2 fun a ha ↦ ?_
-    rw [criticalHessian_mul_sphereHeight c hx]
-    exact mul_pos (neg_pos_of_neg hneg) (inner_mvfderiv_subtypeVal_sphere_self_pos x ha)
+  · rw [manifoldMorseIndex_eq_sigNeg_criticalHessian,
+      ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
+    intro a
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
+      criticalHessian_mul_sphereHeight c hx]
+    exact mul_nonneg (neg_nonneg.2 (not_lt.1 hpos)) real_inner_self_nonneg
 
 end TauCeti

@@ -35,7 +35,8 @@ sphere (`TauCeti.soThreeDualEquiv_smul_apply_soThreeEquiv_smul`). Hence, for `r 
   whose tangent vectors are the images `r v` of the tangent vectors `v` of `S²` read in `ℝ³`
   (`TauCeti.criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self`);
 * `f_X` is a Morse function, and its Morse index is `2` at the maximum and `0` at the minimum:
-  at `Z` it is `2` when `r a > 0` and `0` when `r a < 0`, and the reverse at `-Z`
+  at `Z` it is `2` when `r a > 0` and `0` otherwise, and at `-Z` it is `2` when `r a < 0` and `0`
+  otherwise, which also covers the constant case `r a = 0`
   (`TauCeti.manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self`,
   `TauCeti.manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_neg`).
 
@@ -54,7 +55,7 @@ public section
 noncomputable section
 
 open Metric Module Matrix WithLp LieAlgebra.Orthogonal
-open scoped Manifold ContDiff InnerProductSpace
+open scoped Manifold ContDiff EuclideanSpace InnerProductSpace
 
 namespace TauCeti
 
@@ -66,12 +67,6 @@ local notation "S²" => sphere (0 : ℝ³) 1
 
 /-- The inclusion of the unit sphere into `ℝ³`. -/
 local notation "ι" => ((↑) : S² → ℝ³)
-
-/-- The dimension of `ℝ³`, in the form used by the sphere lemmas. -/
-private theorem fact_finrank_euclideanSpace_three : Fact (finrank ℝ ℝ³ = 2 + 1) :=
-  ⟨finrank_euclideanSpace_fin⟩
-
-attribute [local instance] fact_finrank_euclideanSpace_three
 
 /-- The height of `X = a Ẑ` on the coadjoint sphere of radius `r`, at the point `r x`, is `r a`
 times the height `⟪x, Z⟫` of the unit sphere. -/
@@ -138,30 +133,27 @@ theorem isMorse_soThreeDualEquiv_smul_apply_soThreeEquiv_smul {r a : ℝ} (hra :
   exact isMorse_mul_sphereHeight hra Z
 
 /-- The Morse index of the height of `X = a Ẑ` on the coadjoint sphere of radius `r` at `Z` is
-`2` when `r a > 0`, where `Z` is the maximum, and `0` when `r a < 0`, where it is the minimum. -/
-theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self {r a : ℝ}
-    (hra : r * a ≠ 0) (Z : S²) :
+`2` when `r a > 0`, where `Z` is the maximum, and `0` otherwise. -/
+theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self (r a : ℝ)
+    (Z : S²) :
     manifoldMorseIndex (𝓡 2)
         (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
         Z =
       if 0 < r * a then 2 else 0 := by
   rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
-  exact (manifoldMorseIndex_mul_sphereHeight hra (by simp)).trans
+  exact (manifoldMorseIndex_mul_sphereHeight (r * a) (by simp)).trans
     (by rw [sphereHeight_self, mul_one])
 
 /-- The Morse index of the height of `X = a Ẑ` on the coadjoint sphere of radius `r` at `-Z` is
-`0` when `r a > 0`, where `-Z` is the minimum, and `2` when `r a < 0`, where it is the maximum. -/
-theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_neg {r a : ℝ}
-    (hra : r * a ≠ 0) (Z : S²) :
+`2` when `r a < 0`, where `-Z` is the maximum, and `0` otherwise. -/
+theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_neg (r a : ℝ)
+    (Z : S²) :
     manifoldMorseIndex (𝓡 2)
         (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
         (-Z) =
-      if 0 < r * a then 0 else 2 := by
+      if r * a < 0 then 2 else 0 := by
   rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
-  refine (manifoldMorseIndex_mul_sphereHeight hra (by simp)).trans ?_
-  rw [sphereHeight_neg_self, mul_neg_one]
-  rcases lt_or_gt_of_ne hra with h | h
-  · simp [neg_pos.2 h, h.not_gt]
-  · simp [(neg_neg_of_pos h).not_gt, h]
+  refine (manifoldMorseIndex_mul_sphereHeight (r * a) (by simp)).trans ?_
+  simp only [sphereHeight_neg_self, mul_neg_one, neg_pos]
 
 end TauCeti
