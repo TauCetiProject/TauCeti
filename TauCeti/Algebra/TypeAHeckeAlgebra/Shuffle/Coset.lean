@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.ReducedWord
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Shuffle.Induced
 public import TauCeti.GroupTheory.Perm.Parabolic
-import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Pi
+import Mathlib.RingTheory.Nilpotent.Basic
 
 /-!
 # Shuffle masks as minimal coset representatives, coset bases, and the sign gauge
@@ -33,7 +33,7 @@ of `S_k × S_l ≤ S_(k+l)` (`TauCeti.blockParabolicSet k l`):
    `T_(S.toPerm) • (Pi.single initial u)` defines an `R`-linear automorphism
    `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv` of `Sh_k(U)` over every commutative ring `R`, unit
    `q : Rˣ`, and `H_l`-module `U`: after rescaling by `(-1) ^ S.length`, the operator is `1 - N`
-   where `N` strictly raises mask lengths and so satisfies `N ^ (k * l + 1) = 0`. Mapping a basis
+   where `N` strictly lowers mask lengths and so satisfies `N ^ (k * l + 1) = 0`. Mapping a basis
    `b` of `U` across this automorphism produces the PBW coset basis
    `TauCeti.TypeAHeckeAlgebra.shuffleCosetBasis` of `Sh_k(U)`, indexed by `ShuffleMask k l × ι`.
 3. **The mask-length sign gauge.** Multiplying the value at each mask `S` by `(-1) ^ S.length`
@@ -91,15 +91,6 @@ namespace TauCeti.TypeAHeckeAlgebra
 namespace ShuffleMask
 
 variable {k l : ℕ}
-
-/-- Every `(k, l)`-mask has length at most `k * l`: each of its `k` selected positions is preceded
-by at most `l` rest positions. -/
-theorem length_le_mul (S : ShuffleMask k l) : S.length ≤ k * l := by
-  rw [length_def]
-  refine (Finset.sum_le_card_nsmul S.1 _ l fun s _ ↦ ?_).trans_eq (by rw [S.2, smul_eq_mul])
-  rw [restIndex_def]
-  exact (Finset.card_filter_le _ _).trans_eq
-    (by rw [Finset.card_compl, Fintype.card_fin, S.2, Nat.add_sub_cancel_left])
 
 /-! ### Permuting masks -/
 
@@ -314,6 +305,11 @@ end ShuffleMask
 
 /-! ### The PBW coset isomorphism and coset basis of `Sh_k(U)` -/
 
+@[simp]
+private theorem neg_one_pow_smul_neg_one_pow_smul {R M : Type*} [Monoid R] [HasDistribNeg R]
+    [MulAction R M] (m : ℕ) (x : M) : (-1 : R) ^ m • ((-1 : R) ^ m • x) = x := by
+  rw [smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+
 section CosetBasis
 
 variable {R : Type*} [CommRing R] {q : Rˣ} {k l : ℕ}
@@ -355,9 +351,7 @@ def shuffleSignEquiv : (ShuffleMask k l → U) ≃ₗ[R] (ShuffleMask k l → U)
     { toFun f S := (-1 : R) ^ S.length • f S
       map_add' f g := funext fun S ↦ smul_add _ (f S) (g S)
       map_smul' c f := funext fun S ↦ smul_comm ((-1 : R) ^ S.length) c (f S) }
-    fun f ↦ funext fun S ↦ by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, smul_smul, ← mul_pow, neg_one_mul, neg_neg,
-        one_pow, one_smul]
+    fun f ↦ funext fun S ↦ neg_one_pow_smul_neg_one_pow_smul S.length (f S)
 
 /-- `TauCeti.TypeAHeckeAlgebra.shuffleSignEquiv` multiplies the value at `S` by
 `(-1) ^ S.length`. -/
@@ -421,8 +415,7 @@ noncomputable def shuffleCosetEquiv
     (ShuffleMask k l → U) ≃ₗ[R] (ShuffleMask k l → U) :=
   let D : Module.End R (ShuffleMask k l → U) := (shuffleSignEquiv R k l U).toLinearMap
   let N : Module.End R (ShuffleMask k l → U) := 1 - shuffleCosetMap ρ * D
-  let C : Module.End R (ShuffleMask k l → U) := ∑ m ∈ Finset.range (k * l + 1), N ^ m
-  have hBC_CB : (shuffleCosetMap ρ * D) * C = 1 ∧ C * (shuffleCosetMap ρ * D) = 1 := by
+  have hnil : N ^ (k * l + 1) = 0 := by
     have hN_apply (g : ShuffleMask k l → U) (M : ShuffleMask k l) :
         N g M = -∑ S ∈ Finset.univ.erase M,
           (-1 : R) ^ S.length • shuffleRep k ρ (Tw q (permCoxeterSystem (k + l)) S.toPerm)
@@ -431,8 +424,8 @@ noncomputable def shuffleCosetEquiv
         shuffleCosetMap_apply, Finset.sum_apply, D, LinearEquiv.coe_coe, shuffleSignEquiv_apply,
         Pi.single_smul, map_smul, Pi.smul_apply]
       rw [← Finset.add_sum_erase _ _ (Finset.mem_univ M),
-        shuffleRep_Tw_toPerm_single_initial_apply_self, smul_smul, ← mul_pow, neg_one_mul, neg_neg,
-        one_pow, one_smul, sub_add_eq_sub_sub, sub_self, zero_sub]
+        shuffleRep_Tw_toPerm_single_initial_apply_self, neg_one_pow_smul_neg_one_pow_smul,
+        sub_add_eq_sub_sub, sub_self, zero_sub]
     have hpow : ∀ (m : ℕ) (f : ShuffleMask k l → U) (M : ShuffleMask k l),
         k * l < M.length + m → (N ^ m) f M = 0 := by
       intro m
@@ -449,20 +442,15 @@ noncomputable def shuffleCosetEquiv
         rcases le_or_gt S.length M.length with hle | hgt
         · rw [shuffleRep_Tw_toPerm_single_initial_apply_of_length_le ρ S _ hle hne, smul_zero]
         · rw [ih f S (by omega), Pi.single_zero, map_zero, Pi.zero_apply, smul_zero]
-    have hnil : N ^ (k * l + 1) = 0 :=
-      LinearMap.ext fun f ↦ funext fun M ↦ hpow (k * l + 1) f M (by omega)
-    have hB : shuffleCosetMap ρ * D = 1 - N := (sub_sub_cancel 1 _).symm
-    exact ⟨by rw [hB, mul_neg_geom_sum, hnil, sub_zero],
-      by rw [hB, geom_sum_mul_neg, hnil, sub_zero]⟩
-  LinearEquiv.ofLinearMap (shuffleCosetMap ρ) (D * C)
-    ((mul_assoc (shuffleCosetMap ρ) D C).symm.trans hBC_CB.1)
-    (by
-      have hD : D * D = 1 := LinearMap.ext (shuffleSignEquiv_shuffleSignEquiv (R := R))
-      exact calc (D * C) * shuffleCosetMap ρ
-          = (D * C) * (shuffleCosetMap ρ * (D * D)) := by rw [hD, mul_one]
-        _ = D * (C * (shuffleCosetMap ρ * D)) * D := by simp only [mul_assoc]
-        _ = D * D := by rw [hBC_CB.2, mul_one]
-        _ = 1 := hD)
+    exact LinearMap.ext fun f ↦ funext fun M ↦ hpow (k * l + 1) f M (by omega)
+  have hBD : IsUnit (shuffleCosetMap ρ * D) :=
+    sub_sub_cancel 1 (shuffleCosetMap ρ * D) ▸ IsNilpotent.isUnit_one_sub ⟨k * l + 1, hnil⟩
+  have hD : IsUnit D := (Module.End.isUnit_iff D).mpr (shuffleSignEquiv R k l U).bijective
+  have hmul : (shuffleCosetMap ρ * D) * D = shuffleCosetMap ρ := by
+    have hD : D * D = 1 :=
+      LinearMap.ext (shuffleSignEquiv_shuffleSignEquiv (R := R) (k := k) (l := l) (U := U))
+    rw [mul_assoc, hD, mul_one]
+  LinearEquiv.ofBijective (shuffleCosetMap ρ) ((Module.End.isUnit_iff _).mp (hmul ▸ hBD.mul hD))
 
 /-- `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv` expands `f` as
 `∑ S, T_(S.toPerm) • Pi.single initial (f S)`. -/
@@ -482,7 +470,7 @@ theorem shuffleCosetEquiv_single
     shuffleCosetEquiv k ρ (Pi.single S u) =
       shuffleRep k ρ (Tw q (permCoxeterSystem (k + l)) S.toPerm)
         (Pi.single ShuffleMask.initial u) := by
-  rw [shuffleCosetEquiv, LinearEquiv.coe_ofLinearMap, shuffleCosetMap, LinearMap.lsum_piSingle,
+  rw [shuffleCosetEquiv, LinearEquiv.ofBijective_apply, shuffleCosetMap, LinearMap.lsum_piSingle,
     LinearMap.comp_apply, LinearMap.single_apply]
 
 variable (k) in
@@ -558,8 +546,7 @@ theorem unsignedShuffleRep_T_apply_of_mem_of_mem
     unsignedShuffleRep k ρ (T q i) f S = (q : R) • f S := by
   rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_mem_of_mem ρ ha hb,
-    shuffleSignEquiv_apply, smul_comm, smul_smul ((-1 : R) ^ S.length), ← mul_pow,
-    neg_one_mul, neg_neg, one_pow, one_smul]
+    shuffleSignEquiv_apply, smul_comm, neg_one_pow_smul_neg_one_pow_smul]
 
 /-- When `i` is selected and `i + 1` is not, `T q i` acts at `S` in `unsignedShuffleRep` by
 `(q - q⁻¹) • f S + f (S.swap i (i + 1))`, with a `+` sign on the exchange term. -/
@@ -575,8 +562,7 @@ theorem unsignedShuffleRep_T_apply_of_mem_of_notMem
     LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_mem_of_notMem ρ ha hb,
     shuffleSignEquiv_apply, shuffleSignEquiv_apply, hlen, pow_succ,
     mul_neg_one, neg_smul, sub_neg_eq_add, smul_add, smul_comm ((-1 : R) ^ S.length),
-    smul_smul ((-1 : R) ^ S.length), smul_smul ((-1 : R) ^ S.length), ← mul_pow, neg_one_mul,
-    neg_neg, one_pow, one_smul, one_smul]
+    neg_one_pow_smul_neg_one_pow_smul, neg_one_pow_smul_neg_one_pow_smul]
 
 /-- When `i` is not selected and `i + 1` is selected, `T q i` acts at `S` in `unsignedShuffleRep`
 by `f (S.swap i (i + 1))`, with no `-` sign. -/
@@ -591,7 +577,7 @@ theorem unsignedShuffleRep_T_apply_of_notMem_of_mem
   rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_notMem_of_mem ρ ha hb,
     shuffleSignEquiv_apply, ← hlen, pow_succ, mul_neg_one, neg_smul,
-    smul_neg, neg_neg, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    smul_neg, neg_neg, neg_one_pow_smul_neg_one_pow_smul]
 
 /-- When neither `i` nor `i + 1` is selected in `S`, `T q i` acts at `S` in `unsignedShuffleRep`
 by the compressed `H_l`-generator `T q (S.restIndex i)`. -/
@@ -605,8 +591,7 @@ theorem unsignedShuffleRep_T_apply_of_notMem_of_notMem
         ShuffleMask.restIndex_lt_sub_one (by simp [Fin.lt_def]) ha hb⟩) (f S) := by
   rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_notMem_of_notMem ρ ha hb,
-    shuffleSignEquiv_apply, map_smul, smul_smul, ← mul_pow, neg_one_mul,
-    neg_neg, one_pow, one_smul]
+    shuffleSignEquiv_apply, map_smul, neg_one_pow_smul_neg_one_pow_smul]
 
 /-- **Sign-free monomial action of inverse shuffle words**: in `unsignedShuffleRep`, the inverse
 shuffle word of `S` sends `Pi.single initial u` directly to `Pi.single S u`, with no `(-1)` sign. -/
@@ -616,8 +601,7 @@ theorem unsignedShuffleRep_shuffleInvWord_single_initial
       Pi.single S u := by
   rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, shuffleSignEquiv_single_initial, shuffleRep_shuffleInvWord_single_initial,
-    map_smul, shuffleSignEquiv_single, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
-    one_smul]
+    map_smul, shuffleSignEquiv_single, neg_one_pow_smul_neg_one_pow_smul]
 
 /-- **Sign-free leading coefficient of `T_(S.toPerm)`**: in `unsignedShuffleRep`, `T_(S.toPerm)`
 sends `Pi.single initial u` to a function with value `u` at `S`. -/
@@ -627,8 +611,8 @@ theorem unsignedShuffleRep_Tw_toPerm_single_initial_apply_self
         (Pi.single ShuffleMask.initial u) S = u := by
   rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, shuffleSignEquiv_single_initial,
-    shuffleSignEquiv_apply, shuffleRep_Tw_toPerm_single_initial_apply_self, smul_smul,
-    ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    shuffleSignEquiv_apply, shuffleRep_Tw_toPerm_single_initial_apply_self,
+    neg_one_pow_smul_neg_one_pow_smul]
 
 end UnsignedShuffle
 

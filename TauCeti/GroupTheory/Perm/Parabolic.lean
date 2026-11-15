@@ -37,9 +37,7 @@ representatives, uniformly for all `k, l : ℕ` (including `k = 0` and `l = 0`):
   `d` is strictly increasing on the first `k` letters and strictly increasing on the last `l`
   letters;
 * `TauCeti.eq_of_isMinimalCosetRep_blockParabolicSet`: a minimal coset representative is uniquely
-  determined by the `k`-element image of the first block;
-* `TauCeti.lengthPowHom_neg_one_permCoxeterSystem`: the length-parity character `w ↦ (-1) ^ ℓ(w)`
-  of `TauCeti.permCoxeterSystem n` is `Equiv.Perm.sign`.
+  determined by the `k`-element image of the first block.
 
 ## Main definitions
 
@@ -48,7 +46,6 @@ representatives, uniformly for all `k, l : ℕ` (including `k = 0` and `l = 0`):
 
 ## Main results
 
-* `Equiv.Perm.finSumPermHom_injective`: `Equiv.Perm.finSumPermHom k l` is injective.
 * `Equiv.Perm.finSumPerm_transposition_one` and `Equiv.Perm.finSumPerm_one_transposition`: adjacent
   transpositions of the two blocks map to the corresponding adjacent transpositions of
   `Fin (k + l)`.
@@ -61,7 +58,6 @@ representatives, uniformly for all `k, l : ℕ` (including `k = 0` and `l = 0`):
 * `TauCeti.isMinimalCosetRep_blockParabolicSet_iff` and
   `TauCeti.eq_of_isMinimalCosetRep_blockParabolicSet`: minimal coset representatives are the
   `(k, l)`-shuffles, determined by the image of the first `k` letters.
-* `TauCeti.lengthPowHom_neg_one_permCoxeterSystem`: `(-1) ^ ℓ(σ) = Equiv.Perm.sign σ`.
 
 ## References
 
@@ -78,19 +74,6 @@ open TauCeti TauCeti.BraidGroup
 namespace Equiv.Perm
 
 variable {k l : ℕ}
-
-/-- The block embedding `S_k × S_l →* S_(k+l)` is injective. -/
-theorem finSumPermHom_injective (k l : ℕ) : Function.Injective (finSumPermHom k l) := by
-  rintro ⟨σ₁, τ₁⟩ ⟨σ₂, τ₂⟩ h
-  refine Prod.ext (Equiv.ext fun i ↦ ?_) (Equiv.ext fun j ↦ ?_)
-  · have hi := Equiv.congr_fun h (Fin.castAdd l i)
-    rw [finSumPermHom_apply, finSumPermHom_apply, finSumPerm_apply_castAdd,
-      finSumPerm_apply_castAdd] at hi
-    exact Fin.ext (by simpa using congrArg Fin.val hi)
-  · have hj := Equiv.congr_fun h (Fin.natAdd k j)
-    rw [finSumPermHom_apply, finSumPermHom_apply, finSumPerm_apply_natAdd,
-      finSumPerm_apply_natAdd] at hj
-    exact Fin.ext (by simpa using congrArg Fin.val hj)
 
 /-- An adjacent transposition of the first `k` letters, extended by the identity on the last `l`,
 is the same adjacent transposition in `Equiv.Perm (Fin (k + l))`. -/
@@ -351,14 +334,5 @@ theorem _root_.Equiv.Perm.mem_range_finSumPermHom_iff {π : Equiv.Perm (Fin (k +
         (cs.isMinimalCosetRep_one J) hd
     rw [h1, mul_one] at hmem
     simpa using inv_mem hmem
-
-/-- **The length-parity character of `TauCeti.permCoxeterSystem n` is `Equiv.Perm.sign`.** -/
-theorem lengthPowHom_neg_one_permCoxeterSystem (n : ℕ)
-    (h : (-1 : ℤˣ) ^ 2 = 1 := by decide) :
-    (permCoxeterSystem n).lengthPowHom (-1 : ℤˣ) h = Equiv.Perm.sign :=
-  (permCoxeterSystem n).ext_simple fun i ↦ by
-    rw [CoxeterSystem.lengthPowHom_apply, (permCoxeterSystem n).length_simple, pow_one,
-      permCoxeterSystem_simple, transposition_eq_swap,
-      Equiv.Perm.sign_swap (strand_ne_strandSucc i)]
 
 end TauCeti

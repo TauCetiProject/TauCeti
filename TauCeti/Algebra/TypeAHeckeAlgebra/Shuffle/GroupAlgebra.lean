@@ -191,6 +191,12 @@ private theorem shuffleToInd_single (hq : q = q⁻¹)
     groupRepresentationEquiv_symm_apply_Tw, LinearMap.comp_apply, TensorProduct.mk_apply,
     Representation.ind_mk, one_mul]
 
+private theorem ind_apply_map_mk_one {G H W : Type*} [Group G] [Group H]
+    [AddCommGroup W] [Module R W] (φ : G →* H) (τ : Representation R G W) (g : G) (y : W) :
+    Representation.ind φ τ (φ g) (IndV.mk φ τ 1 y) = IndV.mk φ τ 1 (τ g y) := by
+  rw [Representation.ind_mk, one_mul, ← map_inv, ← mul_one (φ g⁻¹),
+    ← TauCeti.indV_mk_apply_inv φ τ g⁻¹ 1, inv_inv]
+
 private theorem shuffleToInd_intertwining (hq : q = q⁻¹)
     (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U)
     (π : Equiv.Perm (Fin (k + l))) :
@@ -214,10 +220,7 @@ private theorem shuffleToInd_intertwining (hq : q = q⁻¹)
         groupRepresentationEquiv_symm_apply_T, permCoxeterSystem_simple, ← hi₀,
         ← Equiv.Perm.finSumPerm_transposition_one i₀,
         ← Equiv.Perm.finSumPermHom_apply (BraidGroup.transposition i₀, 1),
-        Representation.ind_mk, one_mul, ← map_inv,
-        ← mul_one (φ (BraidGroup.transposition i₀, 1)⁻¹),
-        ← TauCeti.indV_mk_apply_inv φ W₀ (BraidGroup.transposition i₀, 1)⁻¹ 1, inv_inv,
-        externalTensor_apply_tmul, ofLinearCharacter_apply,
+        ind_apply_map_mk_one, externalTensor_apply_tmul, ofLinearCharacter_apply,
         ← permCoxeterSystem_simple, CoxeterSystem.lengthPowHom_apply,
         (permCoxeterSystem k).length_simple, pow_one, mul_one, map_one, one_apply_eq_self,
         ← map_smul, smul_tmul', smul_eq_mul, mul_one]
@@ -229,11 +232,9 @@ private theorem shuffleToInd_intertwining (hq : q = q⁻¹)
         groupRepresentationEquiv_symm_apply_T, permCoxeterSystem_simple,
         ← Equiv.Perm.finSumPerm_one_transposition j,
         ← Equiv.Perm.finSumPermHom_apply (1, BraidGroup.transposition j),
-        Representation.ind_mk, one_mul, ← map_inv,
-        ← mul_one (φ (1, BraidGroup.transposition j)⁻¹),
-        ← TauCeti.indV_mk_apply_inv φ W₀ (1, BraidGroup.transposition j)⁻¹ 1, inv_inv,
-        externalTensor_apply_tmul, ofLinearCharacter_apply, map_one, Units.val_one,
-        one_mul, groupRepresentationEquiv_apply, ← permCoxeterSystem_simple, Tw_simple]
+        ind_apply_map_mk_one, externalTensor_apply_tmul, ofLinearCharacter_apply, map_one,
+        Units.val_one, one_mul, groupRepresentationEquiv_apply, ← permCoxeterSystem_simple,
+        Tw_simple]
   have hG := (forall_comp_groupRepresentationEquiv_iff (permCoxeterSystem (k + l)) hq
     (shuffleRep k ρ) σ_H (shuffleToInd k hq ρ)).mpr hcomp π
   rwa [Equiv.apply_symm_apply] at hG
@@ -373,8 +374,9 @@ noncomputable def shuffleGroupAlgebraEquiv
           LinearMap.id_apply])
       (LinearMap.pi_ext fun S u ↦ by
         rw [LinearMap.comp_apply, shuffleToInd_single, map_smul, indToShuffle_mk, inv_inv,
-          one_smul, shuffleRep_Tw_toPerm_single_initial_of_eq_inv ρ hq, smul_smul, ← mul_pow,
-          neg_one_mul, neg_neg, one_pow, one_smul, LinearMap.id_apply]))
+          one_smul, shuffleRep_Tw_toPerm_single_initial_of_eq_inv ρ hq, ← shuffleSignEquiv_single,
+          ← map_smul, ← shuffleSignEquiv_single, shuffleSignEquiv_shuffleSignEquiv,
+          LinearMap.id_apply]))
     (shuffleToInd_intertwining hq ρ)
 
 /-- `TauCeti.TypeAHeckeAlgebra.shuffleGroupAlgebraEquiv` sends `Pi.single S u` to
@@ -490,10 +492,11 @@ theorem shuffleGroupAlgebraOneEquiv_symm_mk_toPerm_inv
         (IndV.mk (Equiv.Perm.finSumPermHom k l) _ S.toPerm⁻¹ (c ⊗ₜ[R] u)) =
       (-1 : R) ^ S.length • Pi.single S (c • u) :=
   EquivLike.injective (shuffleGroupAlgebraOneEquiv k ρ) <| by
-    rw [Representation.Equiv.apply_symm_apply, map_smul, Pi.single_smul', map_smul,
-      shuffleGroupAlgebraOneEquiv_single, smul_comm c, smul_smul ((-1 : R) ^ S.length),
-      ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul, ← map_smul, smul_tmul', smul_eq_mul,
-      mul_one]
+    rw [Representation.Equiv.apply_symm_apply,
+      ← shuffleGroupAlgebraEquiv_symm_mk_toPerm_inv inv_one.symm ρ S c u,
+      shuffleGroupAlgebraOneEquiv, Representation.Equiv.trans_apply,
+      Representation.Equiv.apply_symm_apply, Representation.Equiv.ind_mk]
+    rfl
 
 variable (k) in
 /-- **At `q = 1`, the unsigned shuffle module is parabolic induction of `triv_k ⊠ U` without
@@ -514,10 +517,12 @@ theorem unsignedShuffleGroupAlgebraOneEquiv_single
     (ρ : TypeAHeckeAlgebra R 1 l →ₐ[R] Module.End R U) (S : ShuffleMask k l) (u : U) :
     unsignedShuffleGroupAlgebraOneEquiv k ρ (Pi.single S u) =
       IndV.mk (Equiv.Perm.finSumPermHom k l) _ S.toPerm⁻¹ (1 ⊗ₜ[R] u) := by
-  rw [unsignedShuffleGroupAlgebraOneEquiv, Representation.Equiv.trans_apply,
-    shuffleSignRepEquiv_symm_apply, shuffleSignEquiv_single, map_smul,
-    shuffleGroupAlgebraOneEquiv_single, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
-    one_smul]
+  rw [unsignedShuffleGroupAlgebraOneEquiv, shuffleGroupAlgebraOneEquiv,
+    Representation.Equiv.trans_apply, Representation.Equiv.trans_apply,
+    ← Representation.Equiv.trans_apply (shuffleSignRepEquiv k inv_one.symm ρ).symm,
+    ← unsignedShuffleGroupAlgebraEquiv, unsignedShuffleGroupAlgebraEquiv_single,
+    Representation.Equiv.ind_mk]
+  rfl
 
 /-- The inverse of `TauCeti.TypeAHeckeAlgebra.unsignedShuffleGroupAlgebraOneEquiv` on the coset
 generator at `S.toPerm⁻¹` evaluates to `Pi.single S (c • u)`. -/
@@ -571,10 +576,11 @@ theorem shuffleGroupAlgebraNegOneEquiv_symm_mk_toPerm_inv
         (IndV.mk (Equiv.Perm.finSumPermHom k l) _ S.toPerm⁻¹ (c ⊗ₜ[R] u)) =
       (-1 : R) ^ S.length • Pi.single S (c • u) :=
   EquivLike.injective (shuffleGroupAlgebraNegOneEquiv k ρ) <| by
-    rw [Representation.Equiv.apply_symm_apply, map_smul, Pi.single_smul', map_smul,
-      shuffleGroupAlgebraNegOneEquiv_single, smul_comm c, smul_smul ((-1 : R) ^ S.length),
-      ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul, ← map_smul, smul_tmul', smul_eq_mul,
-      mul_one]
+    rw [Representation.Equiv.apply_symm_apply,
+      ← shuffleGroupAlgebraEquiv_symm_mk_toPerm_inv (by ext; simp) ρ S c u,
+      shuffleGroupAlgebraNegOneEquiv, Representation.Equiv.trans_apply,
+      Representation.Equiv.apply_symm_apply, Representation.Equiv.ind_mk]
+    rfl
 
 variable (k) in
 /-- **At `q = -1`, the unsigned shuffle module is parabolic induction of `sgn_k ⊠ U` without
@@ -595,10 +601,12 @@ theorem unsignedShuffleGroupAlgebraNegOneEquiv_single
     (ρ : TypeAHeckeAlgebra R (-1) l →ₐ[R] Module.End R U) (S : ShuffleMask k l) (u : U) :
     unsignedShuffleGroupAlgebraNegOneEquiv k ρ (Pi.single S u) =
       IndV.mk (Equiv.Perm.finSumPermHom k l) _ S.toPerm⁻¹ (1 ⊗ₜ[R] u) := by
-  rw [unsignedShuffleGroupAlgebraNegOneEquiv, Representation.Equiv.trans_apply,
-    shuffleSignRepEquiv_symm_apply, shuffleSignEquiv_single, map_smul,
-    shuffleGroupAlgebraNegOneEquiv_single, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
-    one_smul]
+  rw [unsignedShuffleGroupAlgebraNegOneEquiv, shuffleGroupAlgebraNegOneEquiv,
+    Representation.Equiv.trans_apply, Representation.Equiv.trans_apply,
+    ← Representation.Equiv.trans_apply (shuffleSignRepEquiv k (by ext; simp) ρ).symm,
+    ← unsignedShuffleGroupAlgebraEquiv, unsignedShuffleGroupAlgebraEquiv_single,
+    Representation.Equiv.ind_mk]
+  rfl
 
 /-- The inverse of `TauCeti.TypeAHeckeAlgebra.unsignedShuffleGroupAlgebraNegOneEquiv` on the coset
 generator at `S.toPerm⁻¹` evaluates to `Pi.single S (c • u)`. -/
