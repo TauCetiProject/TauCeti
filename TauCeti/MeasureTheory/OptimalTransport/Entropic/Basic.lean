@@ -12,6 +12,7 @@ public import TauCeti.InformationTheory.KullbackLeibler.Tilted
 public import TauCeti.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.L1Convergence
+import Mathlib.InformationTheory.KullbackLeibler.DataProcessing
 
 /-!
 # Entropic optimal transport and the static Schrödinger problem
@@ -68,9 +69,14 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
   `TauCeti.entropicTransportCost_ne_top_of_ae_le`: for probability measures the regularised
   value is at most the cost of the product coupling, so it is finite for a cost of finite integral
   against `μ ⊗ ν`, in particular for a bounded cost.
-* `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
-  constant; when it is finite, with `Mathlib`'s `InformationTheory.klDiv_eq_zero_iff`, the product
-  coupling is then the unique optimal plan at positive temperature.
+* `TauCeti.entropicTransportCost_const`, `TauCeti.entropicTransportCost_comp_swap`,
+  `TauCeti.entropicTransportCost_comm`, `TauCeti.entropicTransportCost_dirac_left`,
+  `TauCeti.entropicTransportCost_dirac_right` and `TauCeti.entropicTransportCost_dirac_dirac`:
+  constant costs, factor exchange, symmetry, and evaluation against Dirac marginals (where the
+  product coupling is unique, so the entropy vanishes at every temperature).
+* `TauCeti.entropicTransportCost_smul_add_smul_left_le` and
+  `TauCeti.entropicTransportCost_smul_add_smul_right_le`: separate convexity of the regularised
+  transport cost in each marginal, from the joint sublinearity of relative entropy.
 * `TauCeti.lintegral_add_mul_klDiv_eq_mul_klDiv_tilted`: the Gibbs identity above, plan by plan.
 * `TauCeti.entropicTransportCost_eq_mul_schroedingerValue_add`: the same identity for the
   optimal values.
@@ -507,6 +513,124 @@ theorem entropicTransportCost_const [IsProbabilityMeasure μ] [IsProbabilityMeas
     (le_entropicTransportCost fun π hπ ↦ ?_)
   have := hπ.isProbabilityMeasure
   simp
+
+private theorem entropicTransportCost_comp_swap_le [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    entropicTransportCost (c ∘ Prod.swap) ε ν μ ≤ entropicTransportCost c ε μ ν :=
+  le_entropicTransportCost fun π hπ ↦ by
+    have := hπ.isFiniteMeasure
+    calc entropicTransportCost (c ∘ Prod.swap) ε ν μ
+        ≤ ∫⁻ w, c w.swap ∂π.map Prod.swap +
+            ε * klDiv (π.map Prod.swap) (ν.prod μ) := entropicTransportCost_le hπ.swap _ ε
+      _ ≤ ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) := by
+          rw [show ∫⁻ w, c w.swap ∂π.map Prod.swap = ∫⁻ z, c z ∂π from
+            lintegral_map_equiv (μ := π) (fun w : Y × X ↦ c w.swap) MeasurableEquiv.prodComm,
+            ← Measure.prod_swap (μ := μ) (ν := ν)]
+          gcongr
+          exact klDiv_map_le _ _ measurable_swap
+
+/-- Exchanging the two factors and transporting the cost along `Prod.swap` preserves the
+regularised transport cost. -/
+@[simp]
+theorem entropicTransportCost_comp_swap [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    entropicTransportCost (c ∘ Prod.swap) ε ν μ = entropicTransportCost c ε μ ν :=
+  le_antisymm entropicTransportCost_comp_swap_le
+    ((entropicTransportCost_comp_swap_le (c := c ∘ Prod.swap) (μ := ν) (ν := μ)).trans_eq'
+      (by rfl))
+
+/-- A symmetric cost gives a symmetric regularised transport cost. -/
+theorem entropicTransportCost_comm {c : X × X → ℝ≥0∞} {μ ν : Measure X} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] (hcs : c ∘ Prod.swap = c) :
+    entropicTransportCost c ε μ ν = entropicTransportCost c ε ν μ := by
+  rw [← entropicTransportCost_comp_swap (c := c) (μ := ν) (ν := μ), hcs]
+
+/-- A Dirac source has only the product coupling with a probability target, so its regularised
+transport cost equals the unregularised cost `∫⁻ y, c (x, y) ∂ν` at every temperature. -/
+theorem entropicTransportCost_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c) (x : X) :
+    entropicTransportCost c ε (Measure.dirac x) ν = ∫⁻ y, c (x, y) ∂ν := by
+  refine le_antisymm ?_ (le_entropicTransportCost fun π hπ ↦ ?_)
+  · exact (entropicTransportCost_le_lintegral_prod c ε).trans_eq
+      (by rw [Measure.dirac_prod, lintegral_map hc measurable_prodMk_left])
+  · rw [hπ.eq_map_prodMk, Measure.dirac_prod, klDiv_self, mul_zero, add_zero,
+      lintegral_map hc measurable_prodMk_left]
+
+/-- A Dirac target has only the product coupling with a probability source, so its regularised
+transport cost equals `∫⁻ x, c (x, y) ∂μ` at every temperature. -/
+theorem entropicTransportCost_dirac_right [IsProbabilityMeasure μ] (hc : Measurable c) (y : Y) :
+    entropicTransportCost c ε μ (Measure.dirac y) = ∫⁻ x, c (x, y) ∂μ := by
+  rw [← entropicTransportCost_comp_swap, entropicTransportCost_dirac_left (hc.comp measurable_swap)]
+  rfl
+
+/-- Two Dirac measures have only the product coupling, so their regularised transport cost is
+`c (x, y)` at every temperature. -/
+theorem entropicTransportCost_dirac_dirac (hc : Measurable c) (x : X) (y : Y) :
+    entropicTransportCost c ε (Measure.dirac x) (Measure.dirac y) = c (x, y) := by
+  have hcx : Measurable fun y : Y ↦ c (x, y) := hc.comp measurable_prodMk_left
+  rw [entropicTransportCost_dirac_left hc x, lintegral_dirac' _ hcx]
+
+/-- **Convexity of entropic transport in the source marginal.** For finite measures `μ₁`, `μ₂`, `ν`
+and nonnegative weights `w₁ + w₂ = 1`, the regularised transport cost of `w₁ • μ₁ + w₂ • μ₂` to `ν`
+is at most the weighted sum of the regularised transport costs of `μ₁` and `μ₂` to `ν`. -/
+theorem entropicTransportCost_smul_add_smul_left_le {μ₁ μ₂ : Measure X} [IsFiniteMeasure μ₁]
+    [IsFiniteMeasure μ₂] [IsFiniteMeasure ν] {w₁ w₂ : ℝ≥0} (hw : w₁ + w₂ = 1) :
+    entropicTransportCost c ε (w₁ • μ₁ + w₂ • μ₂) ν ≤
+      w₁ * entropicTransportCost c ε μ₁ ν + w₂ * entropicTransportCost c ε μ₂ ν := by
+  rcases eq_or_ne w₁ 0 with rfl | hw₁
+  · have hw₂ : w₂ = 1 := by simpa using hw
+    simp [hw₂]
+  rcases eq_or_ne w₂ 0 with rfl | hw₂
+  · have hw₁ : w₁ = 1 := by simpa using hw
+    simp [hw₁]
+  by_cases h₁ : entropicTransportCost c ε μ₁ ν = ∞
+  · simp [h₁, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hw₁)]
+  by_cases h₂ : entropicTransportCost c ε μ₂ ν = ∞
+  · simp [h₂, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hw₂)]
+  refine ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_
+  obtain ⟨π₁, hπ₁, hπ₁c⟩ :=
+    entropicTransportCost_lt_iff.1 (ENNReal.lt_add_right h₁ (ENNReal.coe_ne_zero.2 hδ.ne'))
+  obtain ⟨π₂, hπ₂, hπ₂c⟩ :=
+    entropicTransportCost_lt_iff.1 (ENNReal.lt_add_right h₂ (ENNReal.coe_ne_zero.2 hδ.ne'))
+  have := hπ₁.isFiniteMeasure
+  have := hπ₂.isFiniteMeasure
+  have hcoup : IsCoupling (w₁ • π₁ + w₂ • π₂) (w₁ • μ₁ + w₂ • μ₂) ν := by
+    have h := (hπ₁.smul (w₁ : ℝ≥0∞)).add (hπ₂.smul (w₂ : ℝ≥0∞))
+    simp only [Measure.coe_nnreal_smul] at h
+    rwa [← add_smul, hw, one_smul] at h
+  have hprod : (w₁ • μ₁ + w₂ • μ₂).prod ν = w₁ • (μ₁.prod ν) + w₂ • (μ₂.prod ν) := by
+    rw [Measure.add_prod, Measure.prod_smul_left, Measure.prod_smul_left]
+  calc entropicTransportCost c ε (w₁ • μ₁ + w₂ • μ₂) ν
+      ≤ ∫⁻ z, c z ∂(w₁ • π₁ + w₂ • π₂) +
+          ε * klDiv (w₁ • π₁ + w₂ • π₂) ((w₁ • μ₁ + w₂ • μ₂).prod ν) :=
+        entropicTransportCost_le hcoup c ε
+    _ ≤ ∫⁻ z, c z ∂(w₁ • π₁ + w₂ • π₂) +
+          ε * (w₁ * klDiv π₁ (μ₁.prod ν) + w₂ * klDiv π₂ (μ₂.prod ν)) := by
+        rw [hprod]
+        gcongr
+        exact klDiv_smul_add_smul_smul_add_smul_le w₁ w₂
+    _ = w₁ * (∫⁻ z, c z ∂π₁ + ε * klDiv π₁ (μ₁.prod ν)) +
+          w₂ * (∫⁻ z, c z ∂π₂ + ε * klDiv π₂ (μ₂.prod ν)) := by
+        rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure]
+        simp only [ENNReal.smul_def, smul_eq_mul]
+        ring
+    _ ≤ w₁ * (entropicTransportCost c ε μ₁ ν + δ) +
+          w₂ * (entropicTransportCost c ε μ₂ ν + δ) := by
+        gcongr
+    _ = w₁ * entropicTransportCost c ε μ₁ ν + w₂ * entropicTransportCost c ε μ₂ ν + δ := by
+        have hw' : (w₁ : ℝ≥0∞) + w₂ = 1 := by exact_mod_cast hw
+        calc _ = w₁ * entropicTransportCost c ε μ₁ ν +
+              w₂ * entropicTransportCost c ε μ₂ ν + (w₁ + w₂) * δ := by ring
+          _ = _ := by rw [hw', one_mul]
+
+/-- **Convexity of entropic transport in the target marginal.** For finite measures `μ`, `ν₁`, `ν₂`
+and nonnegative weights `w₁ + w₂ = 1`, the regularised transport cost of `μ` to `w₁ • ν₁ + w₂ • ν₂`
+is at most the weighted sum of the regularised transport costs of `μ` to `ν₁` and `ν₂`. -/
+theorem entropicTransportCost_smul_add_smul_right_le [IsFiniteMeasure μ] {ν₁ ν₂ : Measure Y}
+    [IsFiniteMeasure ν₁] [IsFiniteMeasure ν₂] {w₁ w₂ : ℝ≥0} (hw : w₁ + w₂ = 1) :
+    entropicTransportCost c ε μ (w₁ • ν₁ + w₂ • ν₂) ≤
+      w₁ * entropicTransportCost c ε μ ν₁ + w₂ * entropicTransportCost c ε μ ν₂ := by
+  rw [← entropicTransportCost_comp_swap,
+    ← entropicTransportCost_comp_swap (c := c) (μ := μ) (ν := ν₁),
+    ← entropicTransportCost_comp_swap (c := c) (μ := μ) (ν := ν₂)]
+  exact entropicTransportCost_smul_add_smul_left_le hw
 
 /-! ### The Gibbs reformulation -/
 

@@ -7,9 +7,10 @@ module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.InformationTheory.KullbackLeibler.Variational
 
 /-!
-# Convexity of relative entropy in its first measure
+# Convexity of relative entropy
 
 For a fixed finite reference measure `ρ`, relative entropy is convex in the measure being
 compared to `ρ`. On its finite-value domain it is strictly convex: mixing two distinct
@@ -17,10 +18,17 @@ finite measures with positive weights gives strictly less than their weighted en
 This is the uniqueness mechanism for entropy minimization over convex sets of measures,
 in particular sets with prescribed marginals.
 
+Relative entropy is also jointly convex — indeed subadditive and jointly sublinear — in both
+the measure and the reference (`TauCeti.klDiv_add_le`,
+`TauCeti.klDiv_smul_add_smul_smul_add_smul_le`), because each linear variational lower bound
+`∫ f dμ - ∫ (exp f - 1) dρ` is additive in `(μ, ρ)` and `InformationTheory.klDiv` is positively
+homogeneous under simultaneous scaling.
+
 The statements use Mathlib's finite-measure I-divergence `InformationTheory.klDiv`, including
 its mass correction. Neither normalization nor a topology on the measurable carrier is needed.
-Infinite values are retained in the convexity inequality; strictness requires both endpoint
-values to be finite. Equality for an interior mixture holds exactly when the measures agree.
+Infinite values are retained in the convexity inequalities; strictness requires both endpoint
+values to be finite. Equality for an interior mixture against a fixed reference holds exactly
+when the measures agree.
 
 For absolutely continuous measures, relative entropy is the integral of
 `InformationTheory.klFun` of the Radon–Nikodym density. Strict convexity of this integrand
@@ -188,6 +196,40 @@ theorem strictConvexOn_toReal_klDiv :
   rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul,
     ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.coe_toReal] at h
   simpa only [NNReal.smul_def, smul_eq_mul] using h
+
+/-- **Subadditivity of relative entropy.** For finite measures `μ`, `ν` and finite references
+`ρ`, `ρ'`, the relative entropy of the sum against the sum of references is at most the sum of
+the two relative entropies. -/
+theorem klDiv_add_le {ρ' : Measure α} [IsFiniteMeasure ρ'] :
+    klDiv (μ + ν) (ρ + ρ') ≤ klDiv μ ρ + klDiv ν ρ' := by
+  rw [klDiv_eq_iSup_integral_sub_integral_exp_sub_one]
+  refine iSup₂_le fun f hf ↦ iSup_le fun ⟨C, hC⟩ ↦ ?_
+  have hb {σ : Measure α} [IsFiniteMeasure σ] :
+      Integrable f σ ∧ Integrable (fun x ↦ exp (f x)) σ :=
+    ⟨.of_bound hf.aestronglyMeasurable C (ae_of_all _ hC),
+      .of_bound hf.exp.aestronglyMeasurable (exp C) (ae_of_all _ fun x ↦ by
+        rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
+        exact exp_le_exp.2 (le_of_abs_le (hC x)))⟩
+  have hbe {σ : Measure α} [IsFiniteMeasure σ] : Integrable (fun x ↦ exp (f x) - 1) σ :=
+    hb.2.sub (integrable_const 1)
+  rw [integral_add_measure hb.1 hb.1, integral_add_measure hbe hbe,
+    show (∫ x, f x ∂μ + ∫ x, f x ∂ν) -
+        (∫ x, (exp (f x) - 1) ∂ρ + ∫ x, (exp (f x) - 1) ∂ρ') =
+      (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ρ) +
+        (∫ x, f x ∂ν - ∫ x, (exp (f x) - 1) ∂ρ') by ring]
+  exact ENNReal.ofReal_add_le.trans (add_le_add
+    (ofReal_integral_sub_integral_exp_sub_one_le_klDiv hb.1 hb.2)
+    (ofReal_integral_sub_integral_exp_sub_one_le_klDiv hb.1 hb.2))
+
+/-- **Joint sublinearity and joint convexity of relative entropy.** For finite measures and any
+nonnegative weights `a` and `b`, the relative entropy of `a • μ + b • ν` against `a • ρ + b • ρ'`
+is at most `a * klDiv μ ρ + b * klDiv ν ρ'`. No `a + b = 1` normalization is needed because
+`InformationTheory.klDiv` carries the mass correction. -/
+theorem klDiv_smul_add_smul_smul_add_smul_le {ρ' : Measure α} [IsFiniteMeasure ρ']
+    (a b : ℝ≥0) :
+    klDiv (a • μ + b • ν) (a • ρ + b • ρ') ≤ a * klDiv μ ρ + b * klDiv ν ρ' := by
+  simpa only [klDiv_smul_same] using
+    klDiv_add_le (μ := a • μ) (ν := b • ν) (ρ := a • ρ) (ρ' := b • ρ')
 
 /-! ### Quantitative strict convexity -/
 
