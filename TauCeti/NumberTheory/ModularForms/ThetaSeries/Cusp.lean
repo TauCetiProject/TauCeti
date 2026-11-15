@@ -49,8 +49,10 @@ divisible by `8`.
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
-  `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
-  `Θ_L ≥ 1`.
+  `ZLattice.one_le_re_thetaSeries`, `ZLattice.one_lt_re_thetaSeries_iff`,
+  `ZLattice.re_thetaSeries_le_re_thetaSeries`, `ZLattice.re_thetaSeries_lt_re_thetaSeries`: on the
+  imaginary axis `θ_{γ+L}` is real and positive, `Θ_L ≥ 1` (strictly iff `L ≠ ⊥`), and `Θ_M < Θ_L`
+  whenever `M < L`.
 
 ## References
 
@@ -243,6 +245,29 @@ theorem thetaCoset_eq_ofReal_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0)
   push_cast
   linear_combination (π * ‖γ + (v : E)‖ ^ 2 * τ.im : ℂ) * I_sq
 
+/-- On the imaginary axis the theta series of `L` is real:
+`Θ_L(i y) = ∑_{v ∈ L} exp (-π y ‖v‖²)`. -/
+theorem thetaSeries_eq_ofReal_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries L τ = ((∑' v : L, Real.exp (-(π * τ.im) * ‖(v : E)‖ ^ 2) : ℝ) : ℂ) := by
+  simpa using thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ
+
+/-- On the imaginary axis the theta series of `γ + L` has zero imaginary part. -/
+theorem im_thetaCoset_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) : (thetaCoset L γ τ).im = 0 := by
+  rw [thetaCoset_eq_ofReal_of_re_eq_zero L γ hτ, ofReal_im]
+
+/-- On the imaginary axis the theta series of `L` has zero imaginary part. -/
+theorem im_thetaSeries_eq_zero {τ : ℍ} (hτ : τ.re = 0) : (thetaSeries L τ).im = 0 := by
+  simpa using im_thetaCoset_eq_zero L 0 hτ
+
+/-- The chosen representative `Quotient.out 0` of the zero coset in `L ⧸ M` lies in `M`, so its
+coset theta series is `Θ_M`. -/
+private theorem thetaCoset_out_zero {M : Submodule ℤ E} :
+    thetaCoset M ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) = thetaSeries M := by
+  refine thetaCoset_of_mem M ?_
+  have := (Submodule.Quotient.mk_eq_zero _).mp
+    (Submodule.Quotient.mk_out (0 : L ⧸ M.submoduleOf L))
+  rwa [Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] at this
+
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- On the imaginary axis the theta series of `γ + L` has positive real part (and is real, by
@@ -262,6 +287,63 @@ theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries 
 /-- The theta series of a discrete subgroup does not vanish on the imaginary axis. -/
 theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
+
+/-- On the imaginary axis the theta series of a discrete subgroup has real part strictly greater
+than `1` if and only if the subgroup is nontrivial. -/
+theorem one_lt_re_thetaSeries_iff {τ : ℍ} (hτ : τ.re = 0) :
+    1 < (thetaSeries L τ).re ↔ L ≠ ⊥ := by
+  classical
+  refine ⟨?_, fun hL ↦ ?_⟩
+  · rintro hlt rfl
+    rw [thetaSeries_apply,
+      tsum_eq_single (0 : (⊥ : Submodule ℤ E)) fun v hv ↦ (hv (Subsingleton.elim v 0)).elim] at hlt
+    simp at hlt
+  · obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hL
+    have hs := summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) 0
+    rw [← thetaCoset_zero, thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ, ofReal_re,
+      hs.tsum_eq_add_tsum_ite (0 : L)]
+    simp only [ZeroMemClass.coe_zero, add_zero, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, zero_pow, mul_zero, Real.exp_zero, lt_add_iff_pos_right]
+    exact (hasSum_ite_sub_hasSum hs.hasSum 0).summable.tsum_pos
+      (fun _ ↦ by split_ifs <;> positivity) ⟨v, hv⟩ (by simp [Subtype.ext_iff, hv0, Real.exp_pos])
+
+/-- On the imaginary axis, a sublattice `M ≤ L` of a discrete subgroup has `Re Θ_M(τ) ≤ Re Θ_L(τ)`:
+splitting `L` into cosets of `M` adds nonnegative coset theta series to `Θ_M(τ)`. -/
+theorem re_thetaSeries_le_re_thetaSeries {M : Submodule ℤ E} (hML : M ≤ L) {τ : ℍ}
+    (hτ : τ.re = 0) : (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  have : DiscreteTopology M := (Topology.IsEmbedding.inclusion hML).discreteTopology
+  have hs := hasSum_re (hasSum_thetaCoset_out L hML τ)
+  rw [← hs.tsum_eq, ← congrFun (thetaCoset_out_zero L) τ]
+  exact hs.summable.le_tsum (0 : L ⧸ M.submoduleOf L) fun _ _ ↦ (re_thetaCoset_pos M _ hτ).le
+
+/-- On the imaginary axis, a strict sublattice `M < L` of a discrete subgroup satisfies
+`Re Θ_M(τ) < Re Θ_L(τ)`: every nontrivial coset of `M` in `L` contributes a strictly positive coset
+theta series. -/
+theorem re_thetaSeries_lt_re_thetaSeries {M : Submodule ℤ E} (hML : M < L) {τ : ℍ}
+    (hτ : τ.re = 0) : (thetaSeries M τ).re < (thetaSeries L τ).re := by
+  classical
+  have : DiscreteTopology M := (Topology.IsEmbedding.inclusion hML.le).discreteTopology
+  have hs := hasSum_re (hasSum_thetaCoset_out L hML.le τ)
+  obtain ⟨v, hvL, hvM⟩ := IsConcreteLE.exists_of_lt hML
+  have hy0 : (Submodule.Quotient.mk ⟨v, hvL⟩ : L ⧸ M.submoduleOf L) ≠ 0 := by
+    rwa [ne_eq, Submodule.Quotient.mk_eq_zero, Submodule.submoduleOf, Submodule.mem_comap,
+      Submodule.subtype_apply]
+  rw [← hs.tsum_eq, hs.summable.tsum_eq_add_tsum_ite 0, congrFun (thetaCoset_out_zero L) τ,
+    lt_add_iff_pos_right]
+  exact (hasSum_ite_sub_hasSum hs 0).summable.tsum_pos
+    (fun _ ↦ by split_ifs; exacts [le_rfl, (re_thetaCoset_pos M _ hτ).le])
+    (Submodule.Quotient.mk ⟨v, hvL⟩) (by simp [hy0, re_thetaCoset_pos M _ hτ])
+
+/-- At every point on the imaginary axis, a strict sublattice `M < L` of a discrete subgroup has a
+different theta value from `L`. -/
+theorem thetaSeries_ne_thetaSeries_of_lt {M : Submodule ℤ E} (hML : M < L) {τ : ℍ}
+    (hτ : τ.re = 0) : thetaSeries M τ ≠ thetaSeries L τ :=
+  fun h ↦ (re_thetaSeries_lt_re_thetaSeries L hML hτ).ne (congrArg re h)
+
+/-- A strict sublattice `M < L` of a discrete subgroup never has the same theta series as `L`. -/
+theorem thetaSeries_ne_of_lt {M : Submodule ℤ E} (hML : M < L) :
+    thetaSeries M ≠ thetaSeries L :=
+  fun h ↦ thetaSeries_ne_thetaSeries_of_lt L hML UpperHalfPlane.I_re (congrFun h _)
 
 end ImaginaryAxis
 
