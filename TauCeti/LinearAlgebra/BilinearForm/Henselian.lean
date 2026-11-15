@@ -50,8 +50,6 @@ of them.
 * `LinearMap.BilinForm.iIsOrtho.equivalent_of_forall_occCount_eq_and_isSquare` and
   `LinearMap.BilinForm.iIsOrtho.equivalent_iff_forall_occCount_eq_and_isSquare`: diagonal Jordan
   forms are classified by the multiplicity and unit-product square class at every scale `m`.
-* `LinearMap.BilinForm.iIsOrtho.occCount_eq_and_isSquare_of_iIsOrtho`: two diagonal Jordan bases of
-  the same form have equal multiplicities and square-equivalent unit products at every scale `m`.
 
 ## References
 
@@ -306,19 +304,6 @@ theorem iIsOrtho.equivalent_iff_forall_occCount_eq_and_isSquare
     toMatrix_span_of_smul_eq hc hπm hcv hlic hUC, Matrix.det_diagonal, Matrix.det_diagonal,
     ← Units.coe_prod, ← Units.coe_prod, ← Units.val_mul, Units.isSquare_coe_iff] at hdet
   exact hdet
-
-/-- **Uniqueness of diagonal Jordan invariants.** Any two diagonal Jordan decompositions of the
-same symmetric form over a Henselian local domain with finite residue field and two invertible have
-equal multiplicities and square-equivalent unit products at every scale `m`. -/
-theorem iIsOrtho.occCount_eq_and_isSquare_of_iIsOrtho
-    {ι κ : Type*} [Fintype ι] [Fintype κ] {b : Basis ι R M} {c : Basis κ R M}
-    (hb : B.iIsOrtho b) (hc : B.iIsOrtho c) (h2 : IsUnit (2 : R)) (hπ : π ≠ 0) (hπ' : ¬IsUnit π)
-    {u : ι → Rˣ} {v : κ → Rˣ} {k : ι → ℕ} {l : κ → ℕ}
-    (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i)
-    (hcv : ∀ j, B (c j) (c j) = v j * π ^ l j) (m : ℕ) :
-    Function.occCount k m = Function.occCount l m ∧
-      IsSquare ((∏ i : {i // k i = m}, u i.1) * ∏ j : {j // l j = m}, v j.1) :=
-  (hb.equivalent_iff_forall_occCount_eq_and_isSquare hc h2 hπ hπ' hbu hcv).mp (Equivalent.refl B) m
 
 end JordanSplitting
 

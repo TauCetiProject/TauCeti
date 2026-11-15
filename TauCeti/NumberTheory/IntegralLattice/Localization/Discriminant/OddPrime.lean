@@ -49,9 +49,6 @@ isometry over `ℤ_p`.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_forall_occCount_eq_and_isSquare`: two
   diagonal Jordan forms at an odd prime are integrally isometric if and only if they have the same
   rank and the same unit determinant square class at every scale `p^m`, `m ≥ 0`.
-* `TauCeti.IntegralLattice.occCount_eq_and_isSquare_of_iIsOrtho_localIntegralForm`: uniqueness of
-  the diagonal Jordan invariants of `L_p` at an odd prime, including the unimodular `m = 0`
-  constituent.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantBilinear`: `L_p` and
   `M_p` are integrally isometric at an odd prime `p` if and only if `L` and `M` have equal rank,
   their signed determinants agree modulo squares in `ℤ_p`, and the `p`-primary components of their
@@ -134,7 +131,7 @@ private theorem sum_eq_and_pos_invariants_of_primaryDiscriminantBilinear
       (Finset.univ.filter (l · = m)) (by simp) (fun j ↦ legendreSym p (η j))).symm
   rw [hksub, hlsub, hleg]
 
-/-! ### Diagonal Jordan classification and uniqueness at odd primes -/
+/-! ### Diagonal Jordan classification at odd primes -/
 
 /-- **Classification of diagonal Jordan forms at an odd prime.** Let `p` be an odd prime and let
 `b` and `c` be orthogonal bases of the localizations `L_p` and `M_p` of two integral lattices, with
@@ -159,29 +156,11 @@ theorem localIntegralForm_equivalent_iff_forall_occCount_eq_and_isSquare
     (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
     (PadicInt.not_isUnit_iff_dvd.mpr dvd_rfl) hbu hcv
 
-/-- **Uniqueness of diagonal Jordan invariants at an odd prime.** Any two diagonal Jordan bases of
-the localization `L_p` of an integral lattice at an odd prime `p` have the same multiplicity and
-the same unit determinant square class at every scale `p^m`, `m ≥ 0`. -/
-theorem occCount_eq_and_isSquare_of_iIsOrtho_localIntegralForm
-    {V : Type*} [AddCommGroup V] [Module ℚ V] {L : IntegralLattice V}
-    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) {ι κ : Type*} [Fintype ι] [Fintype κ]
-    {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {c : Basis κ ℤ_[p] (L.LocalCarrier p)}
-    {u : ι → ℤ_[p]ˣ} {v : κ → ℤ_[p]ˣ} {k : ι → ℕ} {l : κ → ℕ}
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
-    (hc : (L.localIntegralForm p).iIsOrtho c)
-    (hcv : ∀ j, L.localIntegralForm p (c j) (c j) = v j * (p : ℤ_[p]) ^ l j) (m : ℕ) :
-    occCount k m = occCount l m ∧
-      IsSquare ((∏ i : {i // k i = m}, u i) * ∏ j : {j // l j = m}, v j) :=
-  hb.occCount_eq_and_isSquare_of_iIsOrtho hc (PadicInt.isUnit_two hp)
-    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-    (PadicInt.not_isUnit_iff_dvd.mpr dvd_rfl) hbu hcv m
-
 /-! ### Local isometry from rank, determinant, and `p`-primary discriminant form -/
 
 /-- The signed determinant of `K` in `ℤ_p` differs from the diagonal Jordan Gram determinant
 `(∏ i, u i) · p ^ (∑ i, k i)` by the square of the change-of-basis unit. -/
-private theorem exists_isUnit_determinant_eq_sq_mul_prod
+private theorem exists_unit_determinant_eq_sq_mul_prod
     {V : Type*} [AddCommGroup V] [Module ℚ V] (K : IntegralLattice V)
     {p : ℕ} [Fact p.Prime]
     {b : Basis (Fin (finrank ℤ_[p] (K.LocalCarrier p))) ℤ_[p] (K.LocalCarrier p)}
@@ -189,24 +168,16 @@ private theorem exists_isUnit_determinant_eq_sq_mul_prod
     {k : Fin (finrank ℤ_[p] (K.LocalCarrier p)) → ℕ}
     (hb : (K.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, K.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
-    ∃ d : ℤ_[p], IsUnit d ∧
-      (K.determinant : ℤ_[p]) = d ^ 2 * ((∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ ∑ i, k i) := by
-  classical
+    ∃ d : ℤ_[p]ˣ,
+      (K.determinant : ℤ_[p]) =
+        (d : ℤ_[p]) ^ 2 * ((∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ ∑ i, k i) := by
   have hfin : finrank ℤ_[p] (K.LocalCarrier p) = finrank ℤ K := Module.finrank_baseChange
   let b₀ := ((Module.finBasis ℤ K).baseChange ℤ_[p]).reindex (finCongr hfin.symm)
-  refine ⟨(b.toMatrix b₀).det, ?_, ?_⟩
-  · rw [← LinearMap.toMatrix_id_eq_basis_toMatrix b₀ b]
-    exact (LinearEquiv.refl ℤ_[p] _).isUnit_det b₀ b
-  · calc (K.determinant : ℤ_[p])
-        = ((K.localIntegralForm p).toMatrix ((Module.finBasis ℤ K).baseChange ℤ_[p])).det :=
-          (K.det_toMatrix_localIntegralForm p (Module.finBasis ℤ K)).symm
-      _ = ((K.localIntegralForm p).toMatrix b₀).det :=
-          (LinearMap.BilinForm.det_toMatrix_reindex _ _ _).symm
-      _ = (b.toMatrix b₀).det ^ 2 * ((K.localIntegralForm p).toMatrix b).det :=
-          LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det b b₀ _
-      _ = (b.toMatrix b₀).det ^ 2 * ((∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ ∑ i, k i) := by
-          rw [hb.det_toMatrix]
-          simp_rw [hbu, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
+  obtain ⟨d, hd⟩ := (LinearMap.BilinForm.Equivalent.refl _).exists_det_eq_unit_sq_mul_det b₀ b
+  rw [LinearMap.BilinForm.det_toMatrix_reindex, K.det_toMatrix_localIntegralForm,
+    hb.det_toMatrix] at hd
+  simp_rw [hbu, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum] at hd
+  exact ⟨d, hd⟩
 
 /-- **Odd-prime local classification by the discriminant bilinear form.** At an odd prime `p`, the
 integral localizations `L_p` and `M_p` of two nondegenerate integral lattices are isometric if and
@@ -239,13 +210,14 @@ theorem localIntegralForm_equivalent_iff_primaryDiscriminantBilinear
       simp [LocalCarrier, hrank]
     obtain ⟨hsum, hpos⟩ :=
       sum_eq_and_pos_invariants_of_primaryDiscriminantBilinear hp hb hbu hc hcv hdisc
-    obtain ⟨dL, hdL, hdetL⟩ := exists_isUnit_determinant_eq_sq_mul_prod L hb hbu
-    obtain ⟨dM, hdM, hdetM⟩ := exists_isUnit_determinant_eq_sq_mul_prod M hc hcv
-    have hw : dL * dM * (p : ℤ_[p]) ^ ∑ j, l j ≠ 0 :=
-      mul_ne_zero (mul_ne_zero hdL.ne_zero hdM.ne_zero)
+    obtain ⟨dL, hdetL⟩ := exists_unit_determinant_eq_sq_mul_prod L hb hbu
+    obtain ⟨dM, hdetM⟩ := exists_unit_determinant_eq_sq_mul_prod M hc hcv
+    have hw : (dL : ℤ_[p]) * dM * (p : ℤ_[p]) ^ ∑ j, l j ≠ 0 :=
+      mul_ne_zero (mul_ne_zero dL.ne_zero dM.ne_zero)
         (pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
     have hdet' : IsSquare
-        ((((∏ i, u i) * ∏ j, v j : ℤ_[p]ˣ) : ℤ_[p]) * (dL * dM * (p : ℤ_[p]) ^ ∑ j, l j) ^ 2) := by
+        ((((∏ i, u i) * ∏ j, v j : ℤ_[p]ˣ) : ℤ_[p]) *
+          ((dL : ℤ_[p]) * dM * (p : ℤ_[p]) ^ ∑ j, l j) ^ 2) := by
       convert hdet using 1
       rw [hdetL, hdetM, hsum]
       push_cast

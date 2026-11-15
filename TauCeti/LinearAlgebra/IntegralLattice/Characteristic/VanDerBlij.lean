@@ -139,6 +139,8 @@ private theorem halfCharacteristicDual_mem_primaryComponent_two [L.IsNondegenera
     rw [map_smul, Submodule.coe_subtype, Submodule.coe_smul, halfCharacteristicDual]
     simp only [Nat.cast_pow, Nat.cast_ofNat, ← Int.cast_smul_eq_zsmul ℚ, smul_smul]
     norm_num
+  -- Both `discriminantQuadraticModule` and `discriminantBilinearModule` are `@[expose]` with
+  -- carrier `DiscriminantGroup`, and their `AddCommGroup` field is `DiscriminantGroup`'s instance.
   exact h0
 
 private theorem natCard_comap_primaryComponent_two_evenSublattice_sq [L.IsNondegenerate]
@@ -235,14 +237,21 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
   let a₂ : A₂ := ⟨Submodule.Quotient.mk (halfCharacteristicDual L hw),
     halfCharacteristicDual_mem_primaryComponent_two L hw⟩
   have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
-    quadratic_halfCharacteristicDual_add L hw ⟨h.1.1, h.2⟩
+    (A.restrict_quadratic P (a₂ + (h : A₂))).trans <|
+      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
+        (a₂ + (h : A₂)).1).trans <|
+        (quadratic_halfCharacteristicDual_add L hw ⟨h.1.1, h.2⟩).trans <|
+          (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
+            a₂.1).symm.trans (A.restrict_quadratic P a₂).symm
   have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
-    quadratic_halfCharacteristicDual L hw
+    (A.restrict_quadratic P a₂).trans <|
+      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice a₂.1).trans
+        (quadratic_halfCharacteristicDual L hw)
+  have hsq' : Nat.card H₂ ^ 2 = Nat.card A₂ := hsq.trans (A.natCard_restrict P).symm
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq A₂ ?_
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a₂
-    hH₂_lag ha₂, hqa₂, ← hsq, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),
+    hH₂_lag ha₂, hqa₂, ← hsq', Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),
     Complex.ofReal_natCast]
-  rfl
 
 /-- **Van der Blij's congruence:** the signature difference of a unimodular
 integral lattice is congruent modulo eight to the norm of any characteristic vector. -/
@@ -253,16 +262,9 @@ theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
   have hdisc : L.discriminant = 1 := L.isUnimodular_iff_discriminant_eq_one.mp hL
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   have hsub : (Nat.card A).primeFactors ⊆ ({2} : Finset ℕ) := by
-    intro p hp
-    have hp_prime := Nat.prime_of_mem_primeFactors hp
-    have hdvd : p ∣ Nat.card A := Nat.dvd_of_mem_primeFactors hp
     rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
-      L.evenSublattice.natCard_discriminantGroup,
-      L.evenSublattice.discriminant_eq_mul_relIndex_sq L L.evenSublattice_form
-        L.evenSublattice_carrier_le, hdisc, one_mul] at hdvd
-    by_contra hp2
-    exact L.not_dvd_relIndex_evenSublattice_of_ne_two hp_prime (Finset.mem_singleton.not.mp hp2)
-      (hp_prime.dvd_of_dvd_pow hdvd)
+      L.evenSublattice.natCard_discriminantGroup]
+    simpa [hdisc] using L.primeFactors_discriminant_evenSublattice_subset
   have hg := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
     (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
     (fun p hp ↦ Finset.mem_singleton.mp hp ▸ Nat.prime_two) hsub

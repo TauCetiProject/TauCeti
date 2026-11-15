@@ -12,9 +12,7 @@ import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
-import TauCeti.LinearAlgebra.IntegralLattice.Index
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
-import TauCeti.NumberTheory.IntegralLattice.Localization.Characteristic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.OddPrime
 import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
@@ -46,15 +44,14 @@ When `L` has odd discriminant — equivalently, when its signed determinant is a
   signature and isometric discriminant quadratic forms (the odd-discriminant case of Nikulin's
   Corollary 1.9.4).
 * For general nondegenerate lattices of odd discriminant (even or odd), `L` admits an integral
-  characteristic vector `w`
-  (`TauCeti.IntegralLattice.exists_isCharacteristicVector_of_odd_discriminant`), and the oddity
-  `w² mod 8` is pinned down by `sigPos L - sigNeg L mod 8` together with the odd primary components
-  of `b_L`: passing to the canonical even sublattice `N` leaves all odd-prime localizations
-  unchanged (`[L : N] ≤ 2`), while Milgram's theorem on `q_N` equates `sigPos L - sigNeg L` modulo
-  `8` with `(w² mod 8)` plus the odd-prime Gauss-sum invariants determined by `b_L`. Consequently
-  two nondegenerate lattices of odd discriminant lie in one genus if and only if they have the same
-  signature, the same parity, and isometric discriminant bilinear forms (the odd-discriminant case
-  of Nikulin's Corollary 1.16.3).
+  characteristic vector `w` (`TauCeti.IntegralLattice.exists_isCharacteristicVector`), and the
+  oddity `w² mod 8` is pinned down by `sigPos L - sigNeg L mod 8` together with the odd primary
+  components of `b_L`: passing to the canonical even sublattice `N` leaves all odd-prime
+  localizations unchanged (`[L : N] ≤ 2`), while Milgram's theorem on `q_N` equates
+  `sigPos L - sigNeg L` modulo `8` with `(w² mod 8)` plus the odd-prime Gauss-sum invariants
+  determined by `b_L`. Consequently two nondegenerate lattices of odd discriminant lie in one genus
+  if and only if they have the same signature, the same parity, and isometric discriminant bilinear
+  forms (the odd-discriminant case of Nikulin's Corollary 1.16.3).
 
 ## Main results
 
@@ -161,25 +158,25 @@ private theorem gaussSign_restrict_primaryComponent_evenSublattice_eq_of_odd
   exact FiniteQuadraticModule.gaussSign_eq_of_bilinear_isometry_of_odd hodd
     (eL.trans (e.trans eM.symm))
 
-private theorem primeFactors_evenSublattice_subset (K : IntegralLattice V) [K.IsNondegenerate]
-    {d : ℕ} (hd : Odd d) (hK : K.discriminant = d) :
-    (Nat.card (K.evenSublattice.discriminantQuadraticModule
-      K.isEven_evenSublattice)).primeFactors ⊆ insert 2 d.primeFactors := by
-  intro p hp
-  have hp_prime := Nat.prime_of_mem_primeFactors hp
-  have hdvd : p ∣ Nat.card (K.evenSublattice.discriminantQuadraticModule K.isEven_evenSublattice) :=
-    Nat.dvd_of_mem_primeFactors hp
-  rw [K.evenSublattice.natCard_discriminantQuadraticModule K.isEven_evenSublattice,
-    K.evenSublattice.natCard_discriminantGroup,
-    K.evenSublattice.discriminant_eq_mul_relIndex_sq K K.evenSublattice_form
-      K.evenSublattice_carrier_le, hK] at hdvd
-  rcases hp_prime.dvd_mul.mp hdvd with hdvdD | hdvdIdx
-  · exact Finset.mem_insert_of_mem (hp_prime.mem_primeFactors hdvdD hd.pos.ne')
-  · by_cases hp2 : p = 2
-    · subst hp2
-      exact Finset.mem_insert_self 2 _
-    · exact False.elim (K.not_dvd_relIndex_evenSublattice_of_ne_two hp_prime hp2
-        (hp_prime.dvd_of_dvd_pow hdvdIdx))
+private theorem discriminant_eq_of_isometry_discriminantBilinearModule
+    {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
+    (e : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
+    L.discriminant = M.discriminant := by
+  have hcard : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup :=
+    Nat.card_congr e.toAddEquiv.toEquiv
+  rwa [L.natCard_discriminantGroup, M.natCard_discriminantGroup] at hcard
+
+/-- Milgram's theorem applied to `K.evenSublattice` expresses its Gauss-sum invariant as the
+signature difference of `K` modulo eight. -/
+private theorem gaussSign_evenSublattice_eq_sigPos_sub_sigNeg
+    (K : IntegralLattice V) [K.IsNondegenerate] :
+    (K.evenSublattice.discriminantQuadraticModule K.isEven_evenSublattice).gaussSign =
+      (K.sigPos : ZMod 8) - K.sigNeg := by
+  have hmil := K.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
+    K.isEven_evenSublattice
+  have hsig := K.evenSublattice_signature
+  simp only [signature, Prod.mk.injEq] at hsig
+  rwa [hsig.1, hsig.2.2] at hmil
 
 /-- **Oddity invariance for odd discriminant.** If two nondegenerate integral lattices `L` and `M`
 with `L.discriminant` odd have signature differences `sigPos - sigNeg` congruent modulo eight and
@@ -193,11 +190,11 @@ theorem integralNorm_modEq_eight_of_odd_discriminant
     {w : L} {w' : M} (hw : L.IsCharacteristicVector w) (hw' : M.IsCharacteristicVector w') :
     L.integralNorm w ≡ M.integralNorm w' [ZMOD 8] := by
   classical
-  have hdisc_eq : L.discriminant = M.discriminant := by
-    have hcard : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup :=
-      Nat.card_congr e.toAddEquiv.toEquiv
-    rwa [L.natCard_discriminantGroup, M.natCard_discriminantGroup] at hcard
+  have hdisc_eq : L.discriminant = M.discriminant :=
+    discriminant_eq_of_isometry_discriminantBilinearModule e
   have hM : Odd M.discriminant := hdisc_eq ▸ hL
+  -- Step 1: Decompose `gaussSign` of both even sublattices over `insert 2 P`, where `P` is the set
+  -- of odd prime factors of the common discriminant.
   let P : Finset ℕ := L.discriminant.primeFactors
   have h2P : 2 ∉ P := fun hmem ↦ hL.not_two_dvd_nat (Nat.dvd_of_mem_primeFactors hmem)
   have hP_prime (p : ℕ) (hp : p ∈ insert 2 P) : p.Prime := by
@@ -206,28 +203,32 @@ theorem integralNorm_modEq_eight_of_odd_discriminant
     · exact Nat.prime_of_mem_primeFactors hp'
   let AL := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   let AM := M.evenSublattice.discriminantQuadraticModule M.isEven_evenSublattice
+  have hsubL : (Nat.card AL).primeFactors ⊆ insert 2 P := by
+    rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
+      L.evenSublattice.natCard_discriminantGroup]
+    exact L.primeFactors_discriminant_evenSublattice_subset
+  have hsubM : (Nat.card AM).primeFactors ⊆ insert 2 P := by
+    rw [M.evenSublattice.natCard_discriminantQuadraticModule M.isEven_evenSublattice,
+      M.evenSublattice.natCard_discriminantGroup]
+    simpa only [P, hdisc_eq] using M.primeFactors_discriminant_evenSublattice_subset
   have hsumL := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
     (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
-    hP_prime (primeFactors_evenSublattice_subset L hL rfl)
+    hP_prime hsubL
   have hsumM := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
     (M.evenSublattice.isNondegenerate_discriminantQuadraticModule M.isEven_evenSublattice)
-    hP_prime (primeFactors_evenSublattice_subset M hL hdisc_eq.symm)
+    hP_prime hsubM
+  -- Step 2: Evaluate the `2`-primary terms as `w²` and `w'²` modulo `8`.
   rw [Finset.sum_insert h2P,
     L.gaussSign_restrict_primaryComponent_two_evenSublattice hL hw] at hsumL
   rw [Finset.sum_insert h2P,
     M.gaussSign_restrict_primaryComponent_two_evenSublattice hM hw'] at hsumM
-  have hmilL := L.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
-    L.isEven_evenSublattice
-  have hmilM := M.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
-    M.isEven_evenSublattice
-  have hsigL := L.evenSublattice_signature
-  have hsigM := M.evenSublattice_signature
-  simp only [signature, Prod.mk.injEq] at hsigL hsigM
-  have hsig_eq : ((L.sigPos : ZMod 8) - L.sigNeg) = ((M.sigPos : ZMod 8) - M.sigNeg) := by
+  -- Step 3: Match the total `gaussSign` values via Milgram's theorem and the signature congruence.
+  have hAL_eq_AM : AL.gaussSign = AM.gaussSign := by
+    rw [gaussSign_evenSublattice_eq_sigPos_sub_sigNeg L,
+      gaussSign_evenSublattice_eq_sigPos_sub_sigNeg M]
     simpa only [Int.cast_sub, Int.cast_natCast] using
       (ZMod.intCast_eq_intCast_iff _ _ 8).mpr hsig
-  have hAL_eq_AM : AL.gaussSign = AM.gaussSign := by
-    rw [hmilL, hmilM, hsigL.1, hsigL.2.2, hsigM.1, hsigM.2.2, hsig_eq]
+  -- Step 4: Match the odd-primary sums termwise using `e.restrictPrimaryComponent p`, then cancel.
   have hodd_sum : ∑ p ∈ P, (AL.restrict (primaryComponent AL p)).gaussSign =
       ∑ p ∈ P, (AM.restrict (primaryComponent AM p)).gaussSign := by
     refine Finset.sum_congr rfl fun p hp ↦ ?_
@@ -252,19 +253,17 @@ theorem sameGenus_iff_discriminantBilinear_of_odd_discriminant
   refine ⟨fun h ↦ ⟨h.signature_eq, h.isEven_iff, h.nonempty_isometry_discriminantBilinearModule⟩,
     ?_⟩
   rintro ⟨hsig, heven, ⟨e⟩⟩
-  have hcard : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup :=
-    Nat.card_congr e.toAddEquiv.toEquiv
-  have hdisc_eq : L.discriminant = M.discriminant := by
-    rwa [L.natCard_discriminantGroup, M.natCard_discriminantGroup] at hcard
-  have hM : Odd M.discriminant := hdisc_eq ▸ hL
+  have hM : Odd M.discriminant :=
+    discriminant_eq_of_isometry_discriminantBilinearModule e ▸ hL
   have hdet : L.determinant = M.determinant :=
-    determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq hsig hcard
+    determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq hsig
+      (Nat.card_congr e.toAddEquiv.toEquiv)
   have hsig8 : ((L.sigPos : ℤ) - L.sigNeg) ≡ ((M.sigPos : ℤ) - M.sigNeg) [ZMOD 8] := by
     have h : ((L.sigPos : ℤ) - L.sigNeg) = ((M.sigPos : ℤ) - M.sigNeg) :=
       congrArg (fun s : ℕ × ℕ × ℕ ↦ (s.1 : ℤ) - s.2.2) hsig
     rw [h]
-  obtain ⟨w, hw⟩ := exists_isCharacteristicVector_of_odd_discriminant hL
-  obtain ⟨w', hw'⟩ := exists_isCharacteristicVector_of_odd_discriminant hM
+  obtain ⟨w, hw⟩ := L.exists_isCharacteristicVector
+  obtain ⟨w', hw'⟩ := M.exists_isCharacteristicVector
   refine (sameGenus_iff_localIntegralForm_two_and_discriminantBilinear L M).mpr ⟨hsig, ?_, ⟨e⟩⟩
   exact (L.localIntegralForm_two_equivalent_iff_of_isCharacteristicVector M
     (L.isUnit_determinant_two_iff_odd_discriminant.mpr hL)

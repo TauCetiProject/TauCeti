@@ -566,20 +566,6 @@ theorem restrict_toFiniteBilinearModule (H : AddSubgroup A) :
 theorem natCard_restrict (H : AddSubgroup A) : Nat.card (A.restrict H) = Nat.card H :=
   (rfl)
 
-/-- Coercion of an element of a restricted finite quadratic module to the ambient module. -/
-@[coe, expose] def restrictCoe {A : FiniteQuadraticModule} {H : AddSubgroup A}
-    (x : A.restrict H) : A :=
-  x.1
-
-/-- Elements of a restricted finite quadratic module coerce to the ambient module. -/
-instance {A : FiniteQuadraticModule} (H : AddSubgroup A) : CoeOut (A.restrict H) A :=
-  ⟨restrictCoe⟩
-
-/-- Coercion from a restricted finite quadratic module to the ambient module is injective. -/
-theorem restrictCoe_injective {A : FiniteQuadraticModule} {H : AddSubgroup A} :
-    Function.Injective (restrictCoe (A := A) (H := H)) :=
-  Subtype.val_injective
-
 /-- The inclusion of a restricted finite quadratic module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
   toLinearMap := H.toIntSubmodule.subtype

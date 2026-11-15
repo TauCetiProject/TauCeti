@@ -48,8 +48,7 @@ theorem scaledGaussSum_eq_prod_primeFactors (A : FiniteQuadraticModule) (n : ℕ
     A.scaledGaussSum n =
       ∏ p ∈ (Nat.card A).primeFactors,
         (A.restrict (primaryComponent A p)).scaledGaussSum n := by
-  rw [← A.primaryDecomposition.scaledGaussSum_eq, A.primaryComponentsIsometryPi.scaledGaussSum_eq,
-    scaledGaussSum_pi]
+  rw [← A.primaryDecomposition.scaledGaussSum_eq, primaryComponents, scaledGaussSum_pi]
   exact Finset.prod_coe_sort (Nat.card A).primeFactors
     (fun p ↦ (A.restrict (primaryComponent A p)).scaledGaussSum n)
 
@@ -66,7 +65,7 @@ components. -/
 theorem gaussSign_eq_sum_primeFactors {A : FiniteQuadraticModule} (hA : A.IsNondegenerate) :
     A.gaussSign =
       ∑ p ∈ (Nat.card A).primeFactors, (A.restrict (primaryComponent A p)).gaussSign := by
-  rw [← A.primaryDecomposition.gaussSign_eq, A.primaryComponentsIsometryPi.gaussSign_eq,
+  rw [← A.primaryDecomposition.gaussSign_eq, primaryComponents,
     gaussSign_pi _ fun p ↦
       A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.2)]
   exact Finset.sum_coe_sort (Nat.card A).primeFactors

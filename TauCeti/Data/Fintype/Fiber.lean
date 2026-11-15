@@ -38,8 +38,7 @@ covering the range is weighted by its occurrence count.
   remaining indices.
 * `Function.occCount_eq_of_forall_ne`: equal total cardinality and equal occurrence counts away
   from `z` force equal occurrence count at `z`.
-* `Function.isSquare_prod_fiber_subtype_of_forall_ne` and
-  `Function.isSquare_prod_fiber_subtype_mul_of_forall_ne`: in a commutative group, square total
+* `Function.isSquare_prod_fiber_subtype_mul_of_forall_ne`: in a commutative group, square total
   product and square fiber products away from `z` force a square fiber product at `z`.
 * `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
 * `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
@@ -230,22 +229,25 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
       · rw [occCount_subtype_ne u ha, occCount_subtype_ne v ha, h a ha]
   exact ⟨σ, congrFun hσ⟩
 
+private theorem exists_finset_mem_and_forall_mem {Y : Type*} [Finite X] [Finite Y]
+    (u : X → S) (v : Y → S) (z : S) :
+    ∃ T : Finset S, z ∈ T ∧ (∀ x, u x ∈ T) ∧ ∀ y, v y ∈ T := by
+  classical
+  let _ := Fintype.ofFinite X
+  let _ := Fintype.ofFinite Y
+  exact ⟨insert z (Finset.univ.image u ∪ Finset.univ.image v), Finset.mem_insert_self z _,
+    fun x => Finset.mem_insert_of_mem
+      (Finset.mem_union_left _ (Finset.mem_image_of_mem u (Finset.mem_univ x))),
+    fun y => Finset.mem_insert_of_mem
+      (Finset.mem_union_right _ (Finset.mem_image_of_mem v (Finset.mem_univ y)))⟩
+
 /-- Two finite families on index types of the same cardinality with equal occurrence counts away
 from `z` also have equal occurrence count at `z`. -/
 theorem occCount_eq_of_forall_ne {Y : Type*} [Finite X] [Finite Y] {u : X → S} {v : Y → S}
     {z : S} (hcard : Nat.card X = Nat.card Y) (h : ∀ a, a ≠ z → occCount u a = occCount v a) :
     occCount u z = occCount v z := by
   classical
-  let _ := Fintype.ofFinite X
-  let _ := Fintype.ofFinite Y
-  let T : Finset S := insert z (Finset.univ.image u ∪ Finset.univ.image v)
-  have hzT : z ∈ T := Finset.mem_insert_self z _
-  have huT (x : X) : u x ∈ T :=
-    Finset.mem_insert_of_mem
-      (Finset.mem_union_left _ (Finset.mem_image_of_mem u (Finset.mem_univ x)))
-  have hvT (y : Y) : v y ∈ T :=
-    Finset.mem_insert_of_mem
-      (Finset.mem_union_right _ (Finset.mem_image_of_mem v (Finset.mem_univ y)))
+  obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
   have hsumu := sum_occCount_eq_card u huT
   have hsumv := sum_occCount_eq_card v hvT
   rw [← Finset.add_sum_erase _ _ hzT] at hsumu hsumv
@@ -262,14 +264,7 @@ theorem isSquare_prod_fiber_subtype_mul_of_forall_ne {Y G : Type*} [Fintype X] [
     (hne : ∀ a, a ≠ z →
       IsSquare ((∏ x : {x // u x = a}, f x.1) * ∏ y : {y // v y = a}, g y.1)) :
     IsSquare ((∏ x : {x // u x = z}, f x.1) * ∏ y : {y // v y = z}, g y.1) := by
-  let T : Finset S := insert z (Finset.univ.image u ∪ Finset.univ.image v)
-  have hzT : z ∈ T := Finset.mem_insert_self z _
-  have huT (x : X) : u x ∈ T :=
-    Finset.mem_insert_of_mem
-      (Finset.mem_union_left _ (Finset.mem_image_of_mem u (Finset.mem_univ x)))
-  have hvT (y : Y) : v y ∈ T :=
-    Finset.mem_insert_of_mem
-      (Finset.mem_union_right _ (Finset.mem_image_of_mem v (Finset.mem_univ y)))
+  obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
   have hmul :
       ((∏ x : {x // u x = z}, f x.1) * ∏ y : {y // v y = z}, g y.1) *
         ∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.1) * ∏ y : {y // v y = a}, g y.1) =
@@ -284,16 +279,6 @@ theorem isSquare_prod_fiber_subtype_mul_of_forall_ne {Y G : Type*} [Fintype X] [
     Finset.prod_induction _ IsSquare (fun _ _ => IsSquare.mul) IsSquare.one fun a ha =>
       hne a (Finset.mem_erase.mp ha).1
   simpa only [← hmul, mul_div_cancel_right] using hall.div hsq
-
-/-- If a finite family in a commutative group has square product and square fiber products away
-from `z`, then its fiber product at `z` is also a square. -/
-theorem isSquare_prod_fiber_subtype_of_forall_ne {G : Type*} [Fintype X] [DecidableEq S]
-    [CommGroup G] {u : X → S} {f : X → G} {z : S} (hall : IsSquare (∏ x, f x))
-    (hne : ∀ a, a ≠ z → IsSquare (∏ x : {x // u x = a}, f x.1)) :
-    IsSquare (∏ x : {x // u x = z}, f x.1) := by
-  simpa using isSquare_prod_fiber_subtype_mul_of_forall_ne (Y := Empty)
-    (v := Empty.elim) (f := f) (g := fun _ => (1 : G)) (by simpa using hall)
-    (fun a ha => by simpa using hne a ha)
 
 /-- Occurrence counts are the multiplicities in the multiset of values of a finite family. -/
 theorem occCount_eq_count_map_univ [Fintype X] [DecidableEq S] (f : X → S) (y : S) :

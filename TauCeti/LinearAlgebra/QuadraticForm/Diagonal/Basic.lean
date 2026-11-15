@@ -201,17 +201,14 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [Decidable
     have hj : (Equiv.sigmaFiberEquiv l).symm j.1 = ⟨m, j⟩ :=
       (Equiv.sigmaFiberEquiv l).symm_apply_eq.mpr rfl
     simp only [E, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
-      LinearMap.funLeft_apply, LinearEquiv.piCurry_apply, LinearEquiv.piCurry_symm_apply,
-      LinearEquiv.piCongrRight, Sigma.uncurry]
+      LinearEquiv.piCurry_apply, LinearEquiv.piCongrRight_apply,
+      LinearEquiv.piCurry_symm_apply, LinearMap.funLeft_apply, Sigma.uncurry]
     rw [hj]
-    rfl
+    exact congrArg (fun f => e m f j) (funext fun i => by simp [Sigma.curry])
   let T : Finset S := Finset.univ.image k ∪ Finset.univ.image l
-  have hkT (i : ι) : k i ∈ T :=
-    Finset.mem_union_left _ (Finset.mem_image_of_mem k (Finset.mem_univ i))
-  have hlT (j : κ) : l j ∈ T :=
-    Finset.mem_union_right _ (Finset.mem_image_of_mem l (Finset.mem_univ j))
   simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
-  rw [← Function.sum_fiber_subtype l hlT, ← Function.sum_fiber_subtype k hkT]
+  rw [← Function.sum_fiber_subtype l (T := T) (by simp [T]),
+    ← Function.sum_fiber_subtype k (T := T) (by simp [T])]
   refine Finset.sum_congr rfl fun m _ => ?_
   have hmap := (e m).map_app (fun i => x i.1)
   simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul] at hmap

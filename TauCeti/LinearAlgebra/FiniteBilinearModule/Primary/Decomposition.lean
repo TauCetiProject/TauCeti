@@ -29,8 +29,6 @@ orthogonality and finite-sum identities proved in
   bilinear isometry.
 * `TauCeti.FiniteQuadraticModule.primaryDecomposition`: the canonical primary decomposition as a
   quadratic isometry.
-* `TauCeti.FiniteQuadraticModule.primaryComponentsIsometryPi`: canonical isometry identifying
-  `primaryComponents` with the orthogonal sum `pi` of the prime-primary restrictions.
 * `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponents` and
   `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponents`: nondegeneracy is equivalent
   to nondegeneracy of the orthogonal product.
@@ -241,83 +239,32 @@ namespace FiniteQuadraticModule
 variable (A : FiniteQuadraticModule)
 
 /-- The orthogonal product of the prime-primary restrictions of a finite quadratic module. -/
-@[expose] noncomputable def primaryComponents : FiniteQuadraticModule where
-  toFiniteBilinearModule := A.toFiniteBilinearModule.primaryComponents
-  quadratic := ∑ p : (Nat.card A).primeFactors,
-    (A.restrict (AddCommGroup.primaryComponent A p.1)).quadratic.comp (LinearMap.proj p)
-  polar_eq_pairing' x y := by
-    simp only [QuadraticMap.polar, sum_apply]
-    rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-    apply Finset.sum_congr rfl
-    intro p _
-    exact A.polar_eq_pairing (x p) (y p)
+@[expose] noncomputable def primaryComponents : FiniteQuadraticModule :=
+  pi fun p : (Nat.card A).primeFactors ↦ A.restrict (AddCommGroup.primaryComponent A p.1)
 
 /-- The quadratic map on the orthogonal product is the sum of the component quadratic maps. -/
 @[simp]
 theorem primaryComponents_quadratic (x : A.primaryComponents) :
-    A.primaryComponents.quadratic x = ∑ p, A.quadratic (x p) := by
-  -- Unfold the carrier together with the structure so the dependent-product module instances
-  -- used by `QuadraticMap.sum_apply` agree definitionally.
-  unfold FiniteQuadraticModule.primaryComponents at x ⊢
-  unfold FiniteBilinearModule.primaryComponents at x ⊢
-  rw [sum_apply]
-  apply Finset.sum_congr rfl
-  intro p _
-  rfl
-
-/-- `primaryComponents` has the same carrier and quadratic map as the orthogonal sum `pi` of the
-prime-primary restrictions. -/
-noncomputable def primaryComponentsIsometryPi :
-    Isometry A.primaryComponents
-      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1)) where
-  toLinearEquiv := LinearEquiv.refl ℤ _
-  map_app' x := by
-    rw [primaryComponents_quadratic, pi_quadratic]
-    rfl
-
-/-- `primaryComponentsIsometryPi` acts as the identity on each prime-factor coordinate. -/
-@[simp]
-theorem primaryComponentsIsometryPi_apply (x : A.primaryComponents)
-    (p : (Nat.card A).primeFactors) :
-    A.primaryComponentsIsometryPi x p = x p :=
-  (rfl)
-
-/-- The inverse of `primaryComponentsIsometryPi` acts as the identity on each prime-factor
-coordinate. -/
-@[simp]
-theorem primaryComponentsIsometryPi_symm_apply
-    (x : pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1))
-    (p : (Nat.card A).primeFactors) :
-    A.primaryComponentsIsometryPi.symm x p = x p :=
-  (rfl)
-
-/-- The additive equivalence underlying `primaryComponentsIsometryPi` is the identity. -/
-@[simp]
-theorem primaryComponentsIsometryPi_toAddEquiv :
-    A.primaryComponentsIsometryPi.toAddEquiv = AddEquiv.refl _ :=
-  (rfl)
+    A.primaryComponents.quadratic x = ∑ p, A.quadratic (x p).1 :=
+  (pi_quadratic _ x).trans (Finset.sum_congr rfl fun p _ ↦ A.restrict_quadratic _ (x p))
 
 /-- The canonical primary decomposition is a quadratic isometry. -/
 noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
   toLinearEquiv := (AddCommGroup.primaryDecomposition A).toIntLinearEquiv
   map_app' x := by
-    -- Unfolding the carrier variable and goal together aligns the bundled carrier's synthesized
-    -- module instance with the dependent-product instance used by the group decomposition.
-    unfold FiniteQuadraticModule.primaryComponents at x ⊢
-    unfold FiniteBilinearModule.primaryComponents at x ⊢
-    rw [sum_apply]
-    change A.quadratic (AddCommGroup.primaryDecomposition A x) =
-      ∑ p, A.quadratic (x p)
+    let x' : ∀ p : (Nat.card A).primeFactors, primaryComponent A p.1 := x
+    rw [primaryComponents_quadratic]
+    change A.quadratic (AddCommGroup.primaryDecomposition A x') = ∑ p, A.quadratic (x' p).1
     rw [AddCommGroup.primaryDecomposition_apply]
-    exact A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val (fun p ↦ x p)
+    exact A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val (fun p ↦ (x' p).1)
       (fun p _ ↦ Nat.prime_of_mem_primeFactors p.2)
       (fun p _ q _ hpq ↦ by simpa using hpq)
-      (fun p _ ↦ (x p).2)
+      (fun p _ ↦ (x' p).2)
 
 /-- The quadratic primary-decomposition isometry maps a tuple to its component sum. -/
 @[simp]
 theorem primaryDecomposition_apply (x : A.primaryComponents) :
-    A.primaryDecomposition x = ∑ p, (x p : A) :=
+    A.primaryDecomposition x = ∑ p, (x p).1 :=
   AddCommGroup.primaryDecomposition_apply A x
 
 /-- The orthogonal product of primary components is nondegenerate exactly when the original
@@ -340,7 +287,8 @@ ambient module. -/
 @[simp]
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
-    (x : A.restrict (primaryComponent A n)) : (f.restrictPrimaryComponent n x : B) = f x :=
+    (x : A.restrict (primaryComponent A n)) :
+    (f.restrictPrimaryComponent n x).1 = f x.1 :=
   f.toAddEquiv.coe_primaryComponent_apply n x
 
 /-- The additive equivalence underlying a restricted quadratic isometry is the restricted additive
@@ -355,11 +303,18 @@ theorem Isometry.restrictPrimaryComponent_toAddEquiv {A : FiniteQuadraticModule.
 quadratic isometry. -/
 @[simp]
 theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (n : ℕ) :
-    Isometry.restrictPrimaryComponent (QuadraticMap.IsometryEquiv.refl A.quadratic) n =
-      QuadraticMap.IsometryEquiv.refl (A.restrict (primaryComponent A n)).quadratic :=
-  DFunLike.ext _ _ fun x ↦ restrictCoe_injective <| by
-    rw [Isometry.coe_restrictPrimaryComponent_apply]
-    rfl
+    Isometry.restrictPrimaryComponent (A := A) (B := A)
+      (QuadraticMap.IsometryEquiv.refl A.quadratic) n =
+      QuadraticMap.IsometryEquiv.refl (A.restrict (primaryComponent A n)).quadratic := by
+  have hrefl (B : FiniteQuadraticModule.{u}) (y : B) :
+      (QuadraticMap.IsometryEquiv.refl B.quadratic) y = y :=
+    (Isometry.toHom_apply (A := B) (B := B)
+      (QuadraticMap.IsometryEquiv.refl B.quadratic) y).symm.trans
+      ((DFunLike.congr_fun (Isometry.refl_toHom B) y).trans (Hom.id_apply B y))
+  exact DFunLike.ext _ _ fun x ↦ Subtype.ext <|
+    (Isometry.coe_restrictPrimaryComponent_apply (A := A) (B := A)
+      (QuadraticMap.IsometryEquiv.refl A.quadratic) n x).trans <|
+      (hrefl A x.1).trans (congrArg Subtype.val (hrefl (A.restrict (primaryComponent A n)) x).symm)
 
 /-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
 restricted isometry. -/
@@ -370,7 +325,7 @@ theorem Isometry.symm_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
   DFunLike.ext _ _ fun y ↦ by
     apply EquivLike.injective (f.restrictPrimaryComponent n)
     rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
-    exact restrictCoe_injective (by simp)
+    exact Subtype.ext (by simp)
 
 /-- Restricting a composite quadratic isometry to `n`-primary components gives the composite of the
 restricted isometries. -/
@@ -378,9 +333,17 @@ restricted isometries. -/
 theorem Isometry.trans_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} {C : FiniteQuadraticModule}
     (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
-    Isometry.restrictPrimaryComponent (f.trans g) n =
+    Isometry.restrictPrimaryComponent (A := A) (B := C) (f.trans g) n =
       (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) :=
-  DFunLike.ext _ _ fun _ ↦ restrictCoe_injective (by simp)
+  DFunLike.ext _ _ fun x ↦ Subtype.ext <|
+    (Isometry.coe_restrictPrimaryComponent_apply (A := A) (B := C) (f.trans g) n x).trans <|
+      (Isometry.trans_apply f g x.1).trans <|
+        (congrArg g (Isometry.coe_restrictPrimaryComponent_apply f n x).symm).trans <|
+          (Isometry.coe_restrictPrimaryComponent_apply g n
+            (f.restrictPrimaryComponent n x)).symm.trans
+            (congrArg Subtype.val
+              (Isometry.trans_apply (f.restrictPrimaryComponent n)
+                (g.restrictPrimaryComponent n) x).symm)
 
 /-- Forgetting the quadratic structure of a restricted quadratic isometry gives the restricted
 polar bilinear isometry. -/
@@ -412,7 +375,7 @@ theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteQuadraticModule.
   rw [primaryComponents_quadratic, primaryComponents_quadratic]
   -- The coercion of `g.toIntLinearEquiv` is `g` (`AddEquiv.coe_toIntLinearEquiv` is `rfl`).
   exact Fintype.sum_equiv (FiniteBilinearModule.primeFactorsEquiv hcard).symm _ _ fun q ↦
-    (congrArg (fun y : primaryComponent B.carrier q.1 ↦ B.quadratic y)
+    (congrArg (fun y : primaryComponent B.carrier q.1 ↦ B.quadratic y.1)
       (FiniteBilinearModule.primaryComponentsAddEquiv_apply hcard _ x q)).trans
       ((f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_app _)
 

@@ -5,12 +5,15 @@ Authors: Wentao Li
 -/
 module
 
+public import Mathlib.Data.Nat.PrimeFin
+public import Mathlib.LinearAlgebra.Isomorphisms
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
-public import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Tactic.FinCases
+import TauCeti.LinearAlgebra.IntegralLattice.Index
 
 /-!
 # The even sublattice of an integral lattice
@@ -28,9 +31,11 @@ van der Blij's characteristic-norm congruence for odd unimodular lattices.
 * `TauCeti.IntegralLattice.evenSubmodule` and `TauCeti.IntegralLattice.evenSublattice`: the
   norm-parity kernel and the canonical full even sublattice.
 * `TauCeti.IntegralLattice.relIndex_evenSublattice_pos`,
-  `TauCeti.IntegralLattice.relIndex_evenSublattice_le_two`, and
-  `TauCeti.IntegralLattice.not_dvd_relIndex_evenSublattice_of_ne_two`: the index of the even
-  sublattice in `L` is `1` or `2`, so no odd prime divides it.
+  `TauCeti.IntegralLattice.relIndex_evenSublattice_le_two`,
+  `TauCeti.IntegralLattice.not_dvd_relIndex_evenSublattice_of_ne_two`, and
+  `TauCeti.IntegralLattice.primeFactors_discriminant_evenSublattice_subset`: the index of the even
+  sublattice in `L` is `1` or `2`, so every prime factor of `disc(L.evenSublattice)` is `2` or a
+  prime factor of `disc(L)`.
 
 ## References
 
@@ -215,5 +220,21 @@ theorem not_dvd_relIndex_evenSublattice_of_ne_two {p : ℕ} (hp : p.Prime) (hp2 
     L.relIndex_evenSublattice_le_two
   have hge := hp.two_le
   omega
+
+/-- Every prime factor of the discriminant of the even sublattice is either `2` or a prime factor of
+the discriminant of `L`. -/
+theorem primeFactors_discriminant_evenSublattice_subset :
+    L.evenSublattice.discriminant.primeFactors ⊆ insert 2 L.discriminant.primeFactors := by
+  intro p hp
+  obtain ⟨hp_prime, hdvd, hne⟩ := Nat.mem_primeFactors.mp hp
+  rw [L.evenSublattice.discriminant_eq_mul_relIndex_sq L L.evenSublattice_form
+    L.evenSublattice_carrier_le] at hdvd hne
+  rcases hp_prime.dvd_mul.mp hdvd with hdvdD | hdvdIdx
+  · exact Finset.mem_insert_of_mem (hp_prime.mem_primeFactors hdvdD (left_ne_zero_of_mul hne))
+  · by_cases hp2 : p = 2
+    · subst hp2
+      exact Finset.mem_insert_self 2 _
+    · exact (L.not_dvd_relIndex_evenSublattice_of_ne_two hp_prime hp2
+        (hp_prime.dvd_of_dvd_pow hdvdIdx)).elim
 
 end TauCeti.IntegralLattice
