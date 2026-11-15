@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.NumberTheory.Height.FiniteOrder
 
 import TauCeti.NumberTheory.Height.House
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
 # Height zero and torsion units

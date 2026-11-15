@@ -25,6 +25,11 @@ inequalities with coefficients in a `d`-dimensional space, into inequalities for
 `TauCeti.sum_sum_sum_mul_sub_eq` writes the difference between a triple sum
 `∑ x, ∑ y, ∑ z, a x y * b x z * c y z` and the sum of the constant product of the three constants
 over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one-factor discrepancies.
+
+## Restricting a weighted sum to the points in a set
+
+`Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
+`∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
 -/
 
 public section
@@ -71,3 +76,14 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
   ring
 
 end TauCeti
+
+namespace Finset
+
+/-- If the weight `w` vanishes outside `U`, then the weighted sum over the points of `S` lying in
+`U` is the weighted sum over all of `S`. -/
+theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : Finset α)
+    (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
+    ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
+  sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+end Finset

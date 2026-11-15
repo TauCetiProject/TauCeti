@@ -62,6 +62,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `TauCeti.Localization.map_integralClosure_adjoin_divBy_le`: that map carries `R[T/s]`, and its
   integral closure in the localisation, into `R'[T'/f(s)]` and its integral closure, as soon as
   `f` carries `R` into `R'` and `T` into `T'`.
+* `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
+  `g ∣ x` and `x` divides a power of `g`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -459,6 +461,28 @@ theorem map_integralClosure_adjoin_divBy_le (hT : ∀ t ∈ T, f t ∈ T')
 end TauCeti.Localization
 
 namespace IsLocalization.Away
+
+/-- Inverting `x` is also a localization away from `g` if `g` divides `x` and `x` divides
+some power of `g`. -/
+theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {x g : R} {n : ℕ} [IsLocalization.Away x A] (hxg : g ∣ x) (hgx : x ∣ g ^ n) :
+    IsLocalization.Away g A := by
+  have hgA : IsUnit (algebraMap R A g) := IsLocalization.Away.isUnit_of_dvd x hxg
+  let B := Localization.Away g
+  have hxB : IsUnit (algebraMap R B x) :=
+    (IsLocalization.Away.algebraMap_isUnit_iff (S := B) g).mpr ⟨n, hgx⟩
+  -- Inverting `x`, `g`, or both gives the same localization.
+  let M := Submonoid.powers x ⊔ Submonoid.powers g
+  have hMA : M ≤ (IsUnit.submonoid A).comap (algebraMap R A) :=
+    sup_le (Submonoid.powers_le.mpr (IsLocalization.Away.algebraMap_isUnit x))
+      (Submonoid.powers_le.mpr hgA)
+  have hMB : M ≤ (IsUnit.submonoid B).comap (algebraMap R B) :=
+    sup_le (Submonoid.powers_le.mpr hxB)
+      (Submonoid.powers_le.mpr (IsLocalization.Away.algebraMap_isUnit g))
+  have : IsLocalization M A := IsLocalization.of_le (Submonoid.powers x) M le_sup_left hMA
+  have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
+  exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
+    inferInstance
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 

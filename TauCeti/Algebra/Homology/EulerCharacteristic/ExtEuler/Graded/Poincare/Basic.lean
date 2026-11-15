@@ -240,7 +240,7 @@ degree, and zero from it on. -/
 theorem coeff_diagonalExtPoincarePolynomial (M N : GradedModuleCat.{v} 𝒜) (b n : ℕ) :
     (diagonalExtPoincarePolynomial.{w} k M N b).coeff n =
       if n < b then (Module.finrank k (Ext.{w} M (N.shiftObj n) n) : ℤ) else 0 := by
-  simp [diagonalExtPoincarePolynomial_def, Polynomial.coeff_monomial]
+  simp [diagonalExtPoincarePolynomial_def, Finsupp.single_apply]
 
 /-- The diagonal Ext Poincaré polynomial is unchanged by raising its truncation degree past a
 cohomological vanishing bound. -/

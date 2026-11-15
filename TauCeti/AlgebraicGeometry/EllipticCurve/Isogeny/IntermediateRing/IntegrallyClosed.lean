@@ -52,9 +52,8 @@ a difference of convention between the two files.
 
 ## Provenance
 
-⚠ *mathlib-track*. `TauCetiRoadmap/EllipticCurves/README.md:1092` lists
-`intermediateRingIsIntegrallyClosed` among the components of D. Angdinata's shared isogeny
-development, under the same flag the sibling `Isogeny` files carry.
+D. Angdinata's isogeny development carries this result as `intermediateRingIsIntegrallyClosed`,
+on the way to `pushClass` and `toPointHom`.
 
 The result is also proved in the AINTLIB project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, by
 Chris Birkbeck), though not separately: `HasseWeil/Curves/RamificationFinite.lean` proves

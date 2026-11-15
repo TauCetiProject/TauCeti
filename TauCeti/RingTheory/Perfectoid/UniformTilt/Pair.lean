@@ -134,10 +134,8 @@ noncomputable def Hom.tilt {P : Pair B} {Q : Pair C} (f : Hom P Q) :
     Hom (P.tilt (p := p)) (Q.tilt (p := p)) where
   toRingHom := uniformTilt.map f.toRingHom f.continuous_toRingHom
   continuous_toRingHom := uniformTilt.continuous_map f.toRingHom f.continuous_toRingHom
-  map_mem_plus x hx := by
-    rw [tilt_plus, uniformTilt.mem_plusSubring_iff_coeff_zero] at hx ⊢
-    rw [uniformTilt.coeff_map]
-    exact f.map_mem_plus _ hx
+  map_mem_plus _ hx :=
+    uniformTilt.map_mem_plusSubring _ _ (fun _ ↦ f.map_mem_plus _) hx
 
 /-- The underlying homomorphism of a tilted pair morphism acts coordinatewise. -/
 @[simp]

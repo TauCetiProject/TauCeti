@@ -60,7 +60,7 @@ theorem MSemianalyticAt.congr {s t : Set M} {x : M} (hs : MSemianalyticAt I s x)
   apply (mSemianalyticAt_def I).2
   have hlim : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
     simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) x).tendsto
-  exact ((mSemianalyticAt_def I).1 hs).congr (hst.comp_tendsto hlim)
+  exact ((mSemianalyticAt_def I).1 hs).congr (hlim.eventually hst)
 
 /-- Germ-equivalent sets have the same semianalyticity at a manifold point. -/
 theorem mSemianalyticAt_congr {s t : Set M} {x : M} (hst : s =ᶠ[𝓝 x] t) :

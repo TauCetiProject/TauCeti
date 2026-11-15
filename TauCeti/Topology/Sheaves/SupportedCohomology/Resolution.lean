@@ -9,6 +9,7 @@ public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 public import TauCeti.CategoryTheory.Abelian.AcyclicResolution
 public import TauCeti.Topology.Sheaves.Flasque.Module
 public import TauCeti.Topology.Sheaves.Flasque.Locality
+import TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence
 
 /-!
 # Flasque resolutions for supported sections
@@ -46,21 +47,9 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R] (S : Closeds X)
 theorem shortExact_map_supportedSubmoduleFunctor_of_isFlasque
     {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))}
     (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₁.obj] :
-    (T.map (supportedSubmoduleFunctor S)).ShortExact := by
-  let U := sheafCompose (Opens.grothendieckTopology X)
-    (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})
-  have : TopCat.Presheaf.IsFlasque (T.map U).X₁.obj :=
-    TopCat.Presheaf.isFlasque_comp T.X₁.obj _
-  have h := shortExact_map_supportedSectionsFunctor S
-    (shortExact_map_sheafCompose_forget₂_moduleCat hT)
-    (isZero_supportedHSheaf_succ_of_isFlasque (T.map U).X₁ S 0)
-  have h' : ((T.map (supportedSubmoduleFunctor S)).map U).ShortExact := by
-    rw [← ShortComplex.map_comp]
-    apply (ShortComplex.shortExact_iff_of_iso
-      (T.mapNatIso (supportedSubmoduleFunctorForgetIso (R := R) S))).2
-    simpa only [ShortComplex.map_comp] using h
-  exact ShortComplex.ShortExact.mk' (U.reflects_exact_of_faithful _ h'.exact)
-    (U.mono_of_mono_map h'.mono_f) (U.epi_of_epi_map h'.epi_g)
+    (T.map (supportedSubmoduleFunctor S)).ShortExact :=
+  shortExact_map_supportedSubmoduleFunctor S hT
+    (isZero_supportedModuleHSheaf_succ_of_isFlasque S _ 0)
 
 /-- Taking sections supported in `S` on any open preserves short exact sequences
 with flasque kernel. -/

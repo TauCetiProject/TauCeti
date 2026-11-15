@@ -19,7 +19,9 @@ operation preserves Massey's degenerate cubes in both variables.
 
 Associativity holds as an equality after the canonical reindexing of finite coordinates and
 reassociation of Cartesian products. For zero-dimensional factors, the formulas retain the
-chosen point in the product. No homotopy or shuffle correction is involved.
+chosen point in the product. No homotopy or shuffle correction is involved. The cross product of the
+identity cubes of `Iᵖ` and `I^q` is the inverse of the canonical homeomorphism
+`Fin.appendHomeomorph : Iᵖ × I^q ≃ₜ I^(p + q)` (`TauCeti.SingularCube.crossProduct_id_id`).
 
 ## References
 
@@ -53,6 +55,17 @@ theorem crossProduct_apply (c : SingularCube X p) (d : SingularCube Y q)
 theorem crossProduct_comp (f : C(X, Z)) (g : C(Y, W))
     (c : SingularCube X p) (d : SingularCube Y q) :
     crossProduct (f.comp c) (g.comp d) = (f.prodMap g).comp (crossProduct c d) := by
+  ext x <;> simp
+
+/-- **The cross product of the identity cubes** of `Iᵖ` and `I^q` is the inverse of the canonical
+homeomorphism `Fin.appendHomeomorph : Iᵖ × I^q ≃ₜ I^(p + q)`. So, read in `I^(p + q)` through this
+homeomorphism, the cross product of the fundamental cubes of `Iᵖ` and `I^q` is the fundamental cube
+of `I^(p + q)` (`Homeomorph.toContinuousMap_comp_symm`). -/
+@[simp]
+theorem crossProduct_id_id (p q : ℕ) :
+    crossProduct (ContinuousMap.id (Fin p → I)) (ContinuousMap.id (Fin q → I)) =
+      ((Fin.appendHomeomorph (X := I) p q).symm :
+        C(Fin (p + q) → I, (Fin p → I) × (Fin q → I))) := by
   ext x <;> simp
 
 /-- Cross products are associative after the canonical coordinate and product identifications. -/

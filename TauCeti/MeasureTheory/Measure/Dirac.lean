@@ -40,6 +40,8 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   space onto a point `b` is measure preserving onto `Measure.dirac b`.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
   avoiding a point is a multiple of its Dirac measure.
+* `MeasureTheory.Measure.eq_dirac_of_measure_singleton_eq_one` — a measure of total mass `0` or
+  `1` giving full mass to a point is the Dirac measure at that point.
 * `TauCeti.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried by a
   finite set is a convex combination of the Dirac measures at its points.
 * `TauCeti.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
@@ -121,6 +123,15 @@ theorem eq_smul_dirac_of_forall_notMem (κ : Measure X) (x : X)
     simpa [dirac_apply' _ hs, hx] using
       measure_of_measure_compl_eq_zero (hk sᶜ hs.compl (notMem_compl_iff.2 hx))
   · simpa [dirac_apply' _ hs, hx] using hk s hs hx
+
+/-- A measure of total mass `0` or `1` giving full mass to a point is the Dirac measure at that
+point; the full mass at the point rules out the zero measure. No measurability assumption on the
+singleton is needed. -/
+theorem eq_dirac_of_measure_singleton_eq_one {μ : Measure X} [IsZeroOrProbabilityMeasure μ]
+    {x : X} (h : μ {x} = 1) : μ = dirac x := by
+  have : IsProbabilityMeasure μ :=
+    ⟨le_antisymm prob_le_one (h.symm.le.trans (measure_mono (subset_univ _)))⟩
+  exact (eq_of_le_of_isProbabilityMeasure ((dirac_le_iff_one_le_apply_singleton μ x).2 h.ge)).symm
 
 end MeasureTheory.Measure
 

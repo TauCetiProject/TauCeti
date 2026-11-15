@@ -64,7 +64,7 @@ theorem Convex.exists_nhdsWithin_injOn_of_hasFDerivWithinAt (hs : Convex ℝ s)
   obtain ⟨K, hK, hL⟩ := (L : E →ₗ[𝕜] F).injective_iff_antilipschitz.1 hinj
   -- Near `x` within `s`, the difference `f - L` has derivative close to `f' x - L = 0`, so it is
   -- Lipschitz with constant `(2 * K)⁻¹`, below the antilipschitz modulus `K⁻¹` of `L`.
-  obtain ⟨t, ht, hlip⟩ := hs.exists_nhdsWithin_lipschitzOnWith_of_hasFDerivWithinAt_of_nnnorm_lt
+  obtain ⟨t, ht, hlip⟩ := hs.exists_nhdsWithin_lipschitzOnWith_of_hasFDerivWithinAt_of_nnNorm_lt
     (f := fun y ↦ f y - L y) (f' := fun y ↦ f' y - L)
     (hder.mono fun y hy ↦ hy.sub L.hasFDerivWithinAt) (hcont.sub continuousWithinAt_const)
     (2 * K)⁻¹ (by simpa [L] using hK)

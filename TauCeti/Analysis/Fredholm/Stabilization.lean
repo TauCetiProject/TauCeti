@@ -156,7 +156,7 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
   obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT₀.isClosed_range hD
   have : FiniteDimensional 𝕜 S :=
     ((T x₀).range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
-  have : IsClosed (S : Set F) := S.closed_of_finiteDimensional
+  have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
   let A : X → (E × S) →L[𝕜] F := fun x ↦ (T x).coprod S.subtypeL
   have hsurj : Surjective (A x₀) := by
     apply LinearMap.range_eq_top.mp

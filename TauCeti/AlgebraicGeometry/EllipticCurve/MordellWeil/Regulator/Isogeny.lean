@@ -97,7 +97,7 @@ theorem regulator_mul_degree_pow_eq_index_sq_mul_regulator {f : Hom W₁ W₂} (
     algebraMap_int_eq, ← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast] at hdet
   rw [regulator_eq_abs_det_neronTateGramMatrix W₁ b₁,
     regulator_eq_abs_det_neronTateGramMatrix W₂ b₂,
-    LinearMap.index_range_eq_natAbs_det_toMatrix b₁ b₂ (pointModTorsionMap_injective hf),
+    LinearMap.index_range_eq_natAbs_det_toMatrix b₁ b₂ f.pointModTorsionMap,
     Nat.cast_natAbs, Int.cast_abs]
   have hd : (0 : ℝ) ≤ (f.degree : ℝ) ^ finrank ℤ (PointModTorsion W₁) := by positivity
   calc _ = |(f.degree : ℝ) ^ finrank ℤ (PointModTorsion W₁) * (neronTateGramMatrix W₁ b₁).det| := by

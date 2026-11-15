@@ -91,7 +91,7 @@ end Map
 
 section Comap
 
-variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A) (f : A →ₗ[R] B)
+variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A ℤ) (f : A →ₗ[R] B)
   (hf : Function.Injective f) (hG : ∀ (p : ℤ) (a : A), f a ∈ ℬ.grading.piece p ↔ a ∈ G.piece p)
   (hm : ∀ n, 0 < n → ∀ x : Fin n → A, ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f)
 
@@ -106,7 +106,8 @@ private theorem m_mem_range (n : ℕ) (x : Fin n → A) :
 
 /-- The operations of the pullback: `mₙ(a₁, …, aₙ)` is the preimage under `f` of
 `mₙ(f a₁, …, f aₙ)`. -/
-private noncomputable def comapOperation (n : ℕ) : MultilinearMap R (fun _ : Fin n ↦ A) A :=
+private noncomputable def comapOperation (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦
+    A) A :=
   (LinearEquiv.ofInjective f hf).symm.toLinearMap.compMultilinearMap
     (((ℬ.m n).compLinearMap fun _ ↦ f).codRestrict _ (m_mem_range ℬ f hm n))
 

@@ -58,8 +58,7 @@ private theorem IsSpanningForest.exists_cycle_chord (hF : Γ.IsSpanningForest O 
     rw [hF.reachable_eq]
     by_cases h : Γ.src e.val = Γ.tgt e.val
     · rw [h]
-    · exact ((Γ.supportGraph_adj O _ _).mpr
-        ⟨h, Or.inl ⟨e.val, e.property.1, rfl, rfl⟩⟩).reachable
+    · exact (supportGraph_adj_src_tgt e.property.1 h).reachable
   obtain ⟨b, hb⟩ := single_sub_single_mem_range_incidenceBoundary (R := R) hreach
   let c : O →₀ R := Finsupp.single ⟨e.val, e.property.1⟩ 1 -
     Finsupp.mapDomain (Set.inclusion hF.subset) b
@@ -141,9 +140,14 @@ retains that loop's coefficient rather than discarding it. -/
   rw [← hF.cycleBasis_repr]
   simp
 
+/-- The chord coordinates of a fundamental cycle form the unit vector of its chord. -/
+@[simp] theorem IsSpanningForest.cycleChordCoordinates_cycleBasis (hF : Γ.IsSpanningForest O F)
+    (e : ↥(O \ F)) : Γ.cycleChordCoordinates O F R (hF.cycleBasis R e) = Finsupp.single e 1 :=
+  (hF.cycleBasis R).repr_self e
+
 /-- The fundamental cycle of a loop is the unit chain on that loop: no forest edge is
 needed to return to its source. -/
-@[simp] theorem IsSpanningForest.cycleBasis_of_loop (hF : Γ.IsSpanningForest O F)
+theorem IsSpanningForest.cycleBasis_of_loop (hF : Γ.IsSpanningForest O F)
     (e : ↥(O \ F)) (he : Γ.src e.val = Γ.tgt e.val) :
     (hF.cycleBasis R e).val = Finsupp.single ⟨e.val, e.property.1⟩ 1 := by
   classical
@@ -154,8 +158,32 @@ needed to return to its source. -/
     simpa [Finsupp.single_apply, Subtype.ext_iff] using
       hF.cycleBasis_apply_chord (R := R) e ⟨f.val, f.property, hf⟩
 
+/-- The fundamental cycle of a chord parallel to a forest dart, with the same source and the
+same target, traverses the chord forward and that forest dart backward. -/
+theorem IsSpanningForest.cycleBasis_of_parallel (hF : Γ.IsSpanningForest O F)
+    (f : ↥(O \ F)) {e : Γ.E} (he : e ∈ F) (hsrc : Γ.src f.val = Γ.src e)
+    (htgt : Γ.tgt f.val = Γ.tgt e) :
+    (hF.cycleBasis R f).val =
+      Finsupp.single ⟨f.val, f.property.1⟩ 1 - Finsupp.single ⟨e, hF.subset he⟩ 1 := by
+  classical
+  apply hF.eq_of_incidenceBoundary_eq_of_forall_notMem
+  · exact (LinearMap.mem_ker.mp (hF.cycleBasis R f).property).trans (LinearMap.mem_ker.mp
+      (single_sub_single_mem_ker_incidenceBoundary R (e := ⟨e, hF.subset he⟩)
+        (f := ⟨f.val, f.property.1⟩) hsrc htgt)).symm
+  · intro g hg
+    have hne : (⟨e, hF.subset he⟩ : O) ≠ g := fun h => hg (h ▸ he)
+    simpa [Finsupp.single_apply, Subtype.ext_iff, hne] using
+      hF.cycleBasis_apply_chord (R := R) f ⟨g.val, g.property, hg⟩
+
 /- The basis supplies freeness via `Module.Free.of_basis`, and, for finite chord sets,
 finite generation via `Module.Finite.of_basis`; no additional module structure is needed. -/
+
+/-- The cycle rank is the number of chords of any spanning forest. No finiteness is
+assumed: both sides vanish when there are infinitely many chords. -/
+theorem IsSpanningForest.finrank_ker_incidenceBoundary [StrongRankCondition R]
+    (hF : Γ.IsSpanningForest O F) :
+    Module.finrank R (Γ.incidenceBoundary O R).ker = Nat.card ↥(O \ F) :=
+  Module.finrank_eq_nat_card_basis (hF.cycleBasis R)
 
 /-- The cycle rank plus the number of vertices equals the number of actual edges plus
 the number of components. This applies to disconnected and empty graphs, integral cycles,
@@ -165,10 +193,27 @@ theorem finrank_ker_incidenceBoundary_add_card [StrongRankCondition R]
     Module.finrank R (Γ.incidenceBoundary O R).ker + Nat.card Γ.V =
       Nat.card O + Nat.card (Γ.supportGraph O).ConnectedComponent := by
   obtain ⟨F, hF⟩ := Γ.exists_spanningForest O
-  rw [Module.finrank_eq_nat_card_basis (hF.cycleBasis R)]
+  rw [hF.finrank_ker_incidenceBoundary]
   have hforest := hF.card_add_card_connectedComponent
   have hchord := Set.ncard_sdiff_add_ncard_of_subset hF.subset (Set.toFinite O)
   simp only [Nat.card_coe_set_eq] at hforest ⊢
   omega
+
+/-- When every chosen dart is a loop, the cycle rank is the number of chosen darts. This
+includes graphs without edges, where the rank is zero, and requires no finiteness. -/
+theorem finrank_ker_incidenceBoundary_of_forall_src_eq_tgt [StrongRankCondition R]
+    (h : ∀ e ∈ O, Γ.src e = Γ.tgt e) :
+    Module.finrank R (Γ.incidenceBoundary O R).ker = Nat.card O := by
+  rw [(isSpanningForest_empty_iff.mpr h).finrank_ker_incidenceBoundary, Set.sdiff_empty]
+
+/-- If every chosen dart that is not a loop joins the endpoints of the dart `e`, itself not a
+loop, the cycle rank plus one is the number of chosen darts. Thus a bundle of `n` parallel
+edges has cycle rank `n - 1`, and every further loop adds one. -/
+theorem finrank_ker_incidenceBoundary_add_one [StrongRankCondition R] [Finite O] {e : Γ.E}
+    (he : e ∈ O) (hne : Γ.src e ≠ Γ.tgt e)
+    (hO : ∀ f ∈ O, Γ.src f ≠ Γ.tgt f → s(Γ.src f, Γ.tgt f) = s(Γ.src e, Γ.tgt e)) :
+    Module.finrank R (Γ.incidenceBoundary O R).ker + 1 = Nat.card O := by
+  rw [(isSpanningForest_singleton he hne hO).finrank_ker_incidenceBoundary,
+    Nat.card_coe_set_eq, Nat.card_coe_set_eq, Set.ncard_sdiff_singleton_add_one he]
 
 end TauCeti.SerreGraph

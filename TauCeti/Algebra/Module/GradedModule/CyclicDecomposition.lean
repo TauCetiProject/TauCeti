@@ -58,7 +58,7 @@ namespace TauCeti.InternalGrading
 universe u
 
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  [IsScalarTower k k[X] M] {G : InternalGrading k M} {d : ℕ}
+  [IsScalarTower k k[X] M] {G : InternalGrading k M ℤ} {d : ℕ}
 
 omit [IsScalarTower k k[X] M] in
 /-- For a homogeneous `t` with `X ^ (m - 1) • t ≠ 0` there is a `k`-linear functional `φ` that is
