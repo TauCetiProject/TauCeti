@@ -76,7 +76,7 @@ def orbitSplitEquiv (ha : a ∈ s) :
         obtain ⟨g, hg⟩ : (x : α) ∈ Set.range (fun g => ρ.1 g a) := by
           rw [ρ.2]
           exact x.2
-        exact ⟨g, Subtype.ext hg⟩⟩,
+        exact ⟨g, Subtype.ext <| (MonoidHom.subtypePerm_apply_coe _ _ _ _ _).trans hg⟩⟩,
       ρ.1.subtypePerm (· ∉ s) fun g x => not_congr (hs g x))
   invFun στ :=
     ⟨(Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.1.prod στ.2), by
@@ -105,14 +105,14 @@ def orbitSplitEquiv (ha : a ∈ s) :
 theorem orbitSplitEquiv_apply_fst_coe_apply (ha : a ∈ s)
     (ρ : {ρ : Γ →* Perm α // Set.range (fun g => ρ g a) = s}) (g : Γ) (x : s) :
     ((orbitSplitEquiv ha ρ).1.1 g x : α) = ρ.1 g x :=
-  (rfl)
+  MonoidHom.subtypePerm_apply_coe _ _ _ g x
 
 /-- Off the orbit, the split representation acts as the original one. -/
 @[simp]
 theorem orbitSplitEquiv_apply_snd_apply (ha : a ∈ s)
     (ρ : {ρ : Γ →* Perm α // Set.range (fun g => ρ g a) = s}) (g : Γ) (x : {x // x ∉ s}) :
     ((orbitSplitEquiv ha ρ).2 g x : α) = ρ.1 g x :=
-  (rfl)
+  MonoidHom.subtypePerm_apply_coe _ _ _ g x
 
 /-- The glued representation acts on the orbit and on its complement by the two pieces. -/
 @[simp]

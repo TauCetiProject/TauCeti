@@ -56,7 +56,7 @@ open Equiv
 variable {Γ α : Type*} [MulOneClass Γ]
 
 /-- The restriction of a permutation representation to a subset that every `ρ g` preserves. -/
-@[expose] def subtypePerm (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ g x, p (ρ g x) ↔ p x) :
+def subtypePerm (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ g x, p (ρ g x) ↔ p x) :
     Γ →* Perm {x // p x} where
   toFun g := (ρ g).subtypePerm (h g)
   map_one' := by ext; simp
