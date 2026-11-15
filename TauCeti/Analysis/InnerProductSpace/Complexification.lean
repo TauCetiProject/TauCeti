@@ -41,11 +41,13 @@ self-adjoint operator, to operators on real Hilbert spaces.
 * `WithLp.complexification_norm_sq_eq`: `‖x + i y‖² = ‖x‖² + ‖y‖²`.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
   `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
-  `WithLp.instComplexificationCompleteSpace` as a consequence.
+  `WithLp.instComplexificationCompleteSpace` and `WithLp.instComplexificationFiniteDimensional`
+  as consequences.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
-  `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
-  `ContinuousLinearMap.adjoint_complexifyL2`.
+  `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp`,
+  `ContinuousLinearMap.adjoint_complexifyL2` and `ContinuousLinearMap.exact_complexifyL2_iff`
+  (complexification preserves and reflects exactness).
 * `ContinuousLinearMap.complexifyL2ₗᵢ`: complexification as a real-linear isometry of operator
   spaces.
 * `ContinuousLinearMap.complexifyL2StarAlgHom`: complexification of the bounded operators on a
@@ -136,6 +138,14 @@ theorem complexificationEquivProd_symm_apply (p : WithLp 2 (X × X)) :
 instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
+
+/-- The `L²` complexification of a finite-dimensional real space is finite-dimensional over
+`ℂ`. -/
+instance instComplexificationFiniteDimensional [FiniteDimensional ℝ X] :
+    FiniteDimensional ℂ (WithLp 2 (Complexification X)) :=
+  have : FiniteDimensional ℝ (WithLp 2 (Complexification X)) :=
+    (complexificationEquivProd X).toLinearEquiv.symm.finiteDimensional
+  .of_restrictScalars_finite ℝ ℂ _
 
 end Norm
 
@@ -304,6 +314,33 @@ theorem complexifyL2_comp (T : Y →L[ℝ] Z) (S : X →L[ℝ] Y) :
   ext1 z
   apply ofLp_injective 2
   simp
+
+/-- Complexification preserves and reflects exactness: `X → Y → Z` is exact exactly when its
+complexification is, since kernels and ranges are computed on real and imaginary parts
+separately. -/
+@[simp]
+theorem exact_complexifyL2_iff {T : X →L[ℝ] Y} {S : Y →L[ℝ] Z} :
+    Function.Exact T.complexifyL2 S.complexifyL2 ↔ Function.Exact T S := by
+  refine ⟨fun h y ↦ ?_, fun h z ↦ ?_⟩
+  · refine ⟨fun hy ↦ ?_, ?_⟩
+    · obtain ⟨w, hw⟩ := (h (toLp 2 (ofReal y))).1 (by simp [hy])
+      exact ⟨w.ofLp.re, by simpa using congrArg (fun z ↦ z.ofLp.re) hw⟩
+    · rintro ⟨x, rfl⟩
+      simpa using congrArg (fun z ↦ z.ofLp.re)
+        ((h _).2 ⟨toLp 2 (ofReal x), complexifyL2_toLp_ofReal T x⟩)
+  · constructor
+    · intro hz
+      have hre := congrArg (fun z ↦ z.ofLp.re) hz
+      have him := congrArg (fun z ↦ z.ofLp.im) hz
+      simp only [ofLp_complexifyL2_apply, complexify_apply_re, complexify_apply_im, ofLp_zero,
+        Complexification.zero_re, Complexification.zero_im] at hre him
+      obtain ⟨a, ha⟩ := (h _).1 hre
+      obtain ⟨b, hb⟩ := (h _).1 him
+      exact ⟨toLp 2 ⟨a, b⟩, ofLp_injective 2 <| Complexification.ext (by simpa using ha)
+        (by simpa using hb)⟩
+    · rintro ⟨w, rfl⟩
+      apply ofLp_injective 2
+      ext <;> simp [h.apply_apply_eq_zero]
 
 end NormedSpace
 
