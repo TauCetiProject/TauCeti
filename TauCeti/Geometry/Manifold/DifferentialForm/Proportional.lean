@@ -14,9 +14,11 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 
 A smooth one-form annihilating the kernel of a nowhere-zero smooth real one-form is a unique
 smooth function times that form. In particular, generators of the same annihilator line have
-smooth transition functions. Smoothness is local: extend a tangent vector on which the first
-form is nonzero and divide the two evaluations on that local field. No metric, finite-dimensionality
-or global transverse vector field is needed.
+smooth transition functions. Pointwise, the multiplier is the ratio of the values of the two
+forms on any vector outside the first kernel (`TauCeti.RoughForm.apply_eq_div_smul_of_ker_le`).
+Smoothness is local: extend a tangent vector on which the first form is nonzero and divide the
+two evaluations on that local field. No metric, finite-dimensionality or global transverse vector
+field is needed.
 -/
 
 public noncomputable section
@@ -29,6 +31,30 @@ namespace TauCeti.SmoothForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
+
+omit [IsManifold I ∞ M] in
+/-- **Proportional covectors at a point.** If the kernel of `α_x` lies in the kernel of `β_x`, and
+`α_x(u) ≠ 0`, then `β_x` is the multiple `β_x(u) / α_x(u)` of `α_x`. -/
+theorem _root_.TauCeti.RoughForm.apply_eq_div_smul_of_ker_le {α β : RoughForm I M ℝ 1} {x : M}
+    (hker : RoughForm.ker α x ≤ RoughForm.ker β x) {u : TangentSpace I x}
+    (hu : α x ![u] ≠ 0) : β x = (β x ![u] / α x ![u]) • α x := by
+  -- A one-form is linear in its single argument.
+  have hlin (γ : RoughForm I M ℝ 1) (v : TangentSpace I x) (c : ℝ) :
+      γ x ![v - c • u] = γ x ![v] - c * γ x ![u] := by
+    rw [ContinuousAlternatingMap.map_vecCons_sub]
+    congr 1
+    simpa using (γ x).toAlternatingMap.map_vecCons_smul ![] c u
+  ext w
+  obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by fin_cases i; rfl⟩
+  -- The vector `v - (α_x(v) / α_x(u)) u` lies in the kernel of `α_x`, hence of `β_x`.
+  have hv : v - (α x ![v] / α x ![u]) • u ∈ RoughForm.ker α x := by
+    rw [RoughForm.mem_ker, hlin]
+    field_simp
+    ring
+  have h := RoughForm.mem_ker.1 (hker hv)
+  rw [hlin, sub_eq_zero] at h
+  rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, h]
+  ring
 
 /-- A pointwise multiplier of a nowhere-zero smooth one-form is automatically smooth. -/
 theorem contMDiff_of_eq_fun_smul (hα : ∀ x, α.1 x ≠ 0)

@@ -61,7 +61,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
 * `TauCeti.SmoothForm.IsContactForm.exists_linearEquiv_eq_stdContact`: at each point, a contact
   form and its exterior derivative are standard in suitable linear coordinates.
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
-  `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff` and
+  `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff`,
+  `TauCeti.SmoothForm.isContactFormAt_iff_isContact` and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
@@ -125,17 +126,26 @@ theorem isContactForm_def {α : SmoothForm I M ℝ 1} :
         ((mextDerivₗ I 1 α).bilinFormAt x) :=
   Iff.rfl
 
+/-- The contact condition at a point, elementwise: `α_x` does not vanish, and the only vector of
+`ker α_x` which is `dα_x`-orthogonal to all of `ker α_x` is zero. -/
+theorem isContact_iff {α : SmoothForm I M ℝ 1} {x : M} :
+    Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+        ((mextDerivₗ I 1 α).bilinFormAt x) ↔
+      (∃ v : TangentSpace I x, α.1 x ![v] ≠ 0) ∧
+        ∀ v : TangentSpace I x, α.1 x ![v] = 0 →
+          (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 := by
+  rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
+  simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq, LinearMap.ext_iff,
+    LinearMap.zero_apply, not_forall]
+
 /-- The contact condition, elementwise: at each point `α` does not vanish, and the only vector
 of `ker α` which is `dα`-orthogonal to all of `ker α` is zero. -/
 theorem isContactForm_iff {α : SmoothForm I M ℝ 1} :
     α.IsContactForm ↔
       ∀ x, (∃ v : TangentSpace I x, α.1 x ![v] ≠ 0) ∧
         ∀ v : TangentSpace I x, α.1 x ![v] = 0 →
-          (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 := by
-  refine forall_congr' fun x ↦ ?_
-  rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
-  simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq, LinearMap.ext_iff,
-    LinearMap.zero_apply, not_forall]
+          (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 :=
+  forall_congr' fun _ ↦ isContact_iff
 
 /-- A contact form does not vanish. -/
 theorem IsContactForm.exists_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
@@ -334,12 +344,15 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
 
 end Rescaling
 
-/-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
-at every point. -/
-theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
-    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x := by
-  rw [SmoothForm.isContactForm_iff]
-  refine forall_congr' fun x ↦ ?_
+/-- A smooth one-form is a contact form at `x` exactly when its value `α_x` is a contact covector
+for the bilinear form of `dα_x`, the condition which `TauCeti.SmoothForm.IsContactForm` imposes at
+every point. -/
+theorem SmoothForm.isContactFormAt_iff_isContact [IsManifold I 2 M] {α : SmoothForm I M ℝ 1}
+    {x : M} :
+    IsContactFormAt α.1 x ↔ Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      ((mextDerivₗ I 1 α).bilinFormAt x) := by
+  rw [SmoothForm.isContact_iff]
+  symm
   constructor
   · rintro ⟨⟨v, hv⟩, h⟩
     refine ⟨fun hz ↦ hv (by rw [hz]; rfl), ?_⟩
@@ -356,6 +369,17 @@ theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
         rfl
       simpa only [hv, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] using hn (v 0)
     · simpa only [RoughForm.mem_ker] using h.nondegenerate
+
+/-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
+at every point. -/
+theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
+    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x :=
+  forall_congr' fun _ ↦ SmoothForm.isContactFormAt_iff_isContact.symm
+
+/-- A contact form is a contact form at every point. -/
+theorem SmoothForm.IsContactForm.isContactFormAt [IsManifold I 2 M] {α : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (x : M) : IsContactFormAt α.1 x :=
+  SmoothForm.isContactForm_iff_forall_isContactFormAt.1 hα x
 
 end Pointwise
 

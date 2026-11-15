@@ -50,7 +50,9 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
 * `TauCeti.SmoothForm.contMDiffAt_sectionAlong_contactFlat`: the contact flat maps of a smooth
   family of one-forms depend smoothly on the parameter.
 * `TauCeti.SmoothForm.IsContactForm.isInvertible_contactFlat`: for a contact form in finite
-  dimensions the contact flat maps are invertible.
+  dimensions the contact flat maps are invertible; more precisely the contact flat map is
+  invertible at every point where `α` is contact
+  (`TauCeti.IsContactFormAt.isInvertible_contactFlat`).
 * `TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`: the preimage of `α` is
   characterized by the Reeb equations.
 * `TauCeti.SmoothForm.contactFlatₗ`, `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`: the
@@ -160,6 +162,36 @@ theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :
   fun x₀ ↦ contMDiffAt_sectionAlong_contactFlat (b := id) (α := fun _ ↦ α) (α.contMDiff x₀)
     (contMDiff_mextDeriv α x₀)
 
+/-! ### Contact flat maps at points where `α` is contact -/
+
+section Pointwise
+
+variable [FiniteDimensional ℝ E] {x : M}
+
+/-- **The contact flat map is invertible at a point where `α` is a contact form**, on a
+finite-dimensional manifold. -/
+theorem _root_.TauCeti.IsContactFormAt.isInvertible_contactFlat (hx : IsContactFormAt α.1 x) :
+    (α.contactFlat x).IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
+    (isContactFormAt_iff_isContact.1 hx).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v
+      fun w ↦ by
+        rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
+          LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
+          degreeOneEquiv_coe_apply, smul_eq_mul]
+        exact (contactFlat_apply α x v w).symm.trans (hv w)
+
+/-- At a point where `α` is a contact form, the Reeb vector is the image of `α_x` under the
+inverse contact flat map. -/
+theorem _root_.TauCeti.IsContactFormAt.reebVectorField_eq_inverse_contactFlat
+    (hx : IsContactFormAt α.1 x) :
+    α.reebVectorField x = (α.contactFlat x).inverse (degreeOneEquiv α x) := by
+  have h : α.contactFlat x (α.reebVectorField x) = degreeOneEquiv α x := by
+    ext w
+    simp [hx.apply_reebVectorField, hx.mextDeriv_reebVectorField_left]
+  rw [← h, hx.isInvertible_contactFlat.inverse_apply_self]
+
+end Pointwise
+
 /-! ### Contact flat maps of contact forms -/
 
 namespace IsContactForm
@@ -184,19 +216,13 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
 finite-dimensional manifold. -/
 theorem isInvertible_contactFlat [FiniteDimensional ℝ E] (x : M) :
     (α.contactFlat x).IsInvertible :=
-  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
-    (isContactForm_def.1 hα x).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v fun w ↦ by
-      rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
-        LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
-        degreeOneEquiv_coe_apply, smul_eq_mul]
-      exact (contactFlat_apply α x v w).symm.trans (hv w)
+  (hα.isContactFormAt x).isInvertible_contactFlat
 
 /-- The Reeb vector field of a contact form is the image of `α` under the inverse contact flat
 map. -/
 theorem reebVectorField_eq_inverse_contactFlat [FiniteDimensional ℝ E] (x : M) :
-    α.reebVectorField x = (α.contactFlat x).inverse (degreeOneEquiv α x) := by
-  rw [← hα.contactFlat_apply_eq_iff.2 ⟨hα.apply_reebVectorField x,
-    hα.mextDeriv_reebVectorField_left x⟩, (hα.isInvertible_contactFlat x).inverse_apply_self]
+    α.reebVectorField x = (α.contactFlat x).inverse (degreeOneEquiv α x) :=
+  (hα.isContactFormAt x).reebVectorField_eq_inverse_contactFlat
 
 end IsContactForm
 
@@ -290,14 +316,15 @@ theorem IsContactForm.contMDiff_reebVectorField [FiniteDimensional ℝ E] (hα :
   exact (hα.contactFlatEquiv.symm α).contMDiff
 
 /-- **Reeb vector fields of a smooth family of contact forms.** Let `α m` be one-forms on `M`
-depending on a parameter `m ∈ N` which are contact forms for `m` near `m₀`, and let `b : N → M`.
+depending on a parameter `m ∈ N`, and let `b : N → M` be such that `α m` is a contact form at
+`b m` for `m` near `m₀`.
 If the values `(α m)_(b m)` and the exterior derivatives `(dα m)_(b m)` depend `C^n` on `m`, as
 sections along `b`, then so do the Reeb vectors `R_(α m)(b m)`, as a map to the tangent bundle. -/
 theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN HN N : Type*}
     [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] {n : WithTop ℕ∞}
     {b : N → M} {α : N → SmoothForm I M ℝ 1} {m₀ : N}
-    (hc : ∀ᶠ m in 𝓝 m₀, (α m).IsContactForm)
+    (hc : ∀ᶠ m in 𝓝 m₀, IsContactFormAt (α m).1 (b m))
     (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).1 (b m))) m₀)
@@ -309,7 +336,7 @@ theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN H
       (fun m ↦ (⟨b m, (α m).reebVectorField (b m)⟩ : TangentBundle I M)) m₀ := by
   have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))
     (contMDiffAt_sectionAlong_contactFlat hα hdα)
-    (hc.self_of_nhds.isInvertible_contactFlat (b m₀))).clm_bundle_apply
+    hc.self_of_nhds.isInvertible_contactFlat).clm_bundle_apply
       (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)
   refine h.congr_of_eventuallyEq ?_
   filter_upwards [hc] with m hm
