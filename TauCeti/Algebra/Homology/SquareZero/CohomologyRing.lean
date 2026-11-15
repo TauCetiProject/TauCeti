@@ -171,6 +171,8 @@ def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
       induction x using Submodule.Quotient.induction_on with | H a => ?_
       induction y using Submodule.Quotient.induction_on with | H b => ?_
       induction z using Submodule.Quotient.induction_on with | H c => ?_
+      -- The products in the goal go through the local `GMul` instance above; `change` unfolds it
+      -- to `LinearMap.cohomologyMul`, so that `LinearMap.cohomologyMul_mk` can rewrite.
       change GradedMonoid.mk _ (cohomologyMul μ hdeg hL (cohomologyMul μ hdeg hL _ _) _) =
         GradedMonoid.mk _ (cohomologyMul μ hdeg hL _ (cohomologyMul μ hdeg hL _ _))
       rw [cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk]
