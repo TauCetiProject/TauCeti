@@ -137,8 +137,8 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 
 ## References
 
-The type-`G₂` Killing-simplicity of `Der 𝕆` and its identification with `LieAlgebra.g₂` are not
-proved here.
+The type-`G₂` Killing-simplicity of `Der 𝕆` is in `TauCeti/Algebra/Octonion/Simple.lean`, and its
+identification with `LieAlgebra.g₂` in `TauCeti/Algebra/Octonion/G2.lean`.
 
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §2.
 * R. D. Schafer, *An Introduction to Nonassociative Algebras*, Ch. III, where the skewness of a

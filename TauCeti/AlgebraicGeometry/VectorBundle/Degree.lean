@@ -70,6 +70,9 @@ Stacks, Lemma 0AYZ).
   `InvertibleSheaf.eulerDegree`;
 * `FixedRank.vectorBundleDegree_eq_relativeDegree`: the degree of `𝒪_X(D)` is the degree of the
   divisor `D`;
+* `FixedRank.vectorBundleDegree_biprod` and `FixedRank.vectorBundleDegree_biprod_of_isCurveOver`:
+  `deg (E ⊞ F) = deg E + deg F`, given finite-dimensional cohomology in degrees `0` and `1`, and
+  on a proper integral curve whose codimension-one local rings are discrete valuation rings;
 * `FixedRank.vectorBundleDegree_add_of_shortExact`: additivity in a short exact sequence, given
   finite-dimensionality of the cohomology it reads and vanishing of `H²` of the subbundle, and
   `FixedRank.vectorBundleDegree_add_of_shortExact_of_isCurveOver`, where these hypotheses are
@@ -194,6 +197,47 @@ theorem vectorBundleDegree_eq_relativeDegree [IsIntegral X] [IsLocallyNoetherian
     vectorBundleDegree k E = SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D := by
   rw [vectorBundleDegree_eq_eulerDegree_toInvertible]
   exact InvertibleSheaf.eulerDegree_eq_relativeDegree k hX (eqToIso (toInvertible_obj_obj X E) ≪≫ e)
+
+section Biprod
+
+/-- The cohomology of the direct sum `E ⊞ F` is finite-dimensional in every degree where the
+cohomology of `E` and `F` is. -/
+instance finiteDimensional_cohomology_biprod {s : ℕ} (E : FixedRank X r) (F : FixedRank X s)
+    (i : ℕ) [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj i)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology F.obj.obj i)] :
+    FiniteDimensional k (Scheme.Modules.Cohomology (E.biprod F).obj.obj i) :=
+  (finiteDimensional_cohomology_congr k (biprodObjIso E F) i).mpr inferInstance
+
+/-- **The degree of a direct sum.** For vector bundles `E` and `F` of constant ranks `r` and `s`
+whose cohomology in degrees `0` and `1` is finite-dimensional, `deg (E ⊞ F) = deg E + deg F`. No
+vanishing of `H²` is needed, since cohomology commutes with direct sums in every degree. -/
+theorem vectorBundleDegree_biprod {s : ℕ} (E : FixedRank X r) (F : FixedRank X s)
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology F.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology F.obj.obj 1)] :
+    vectorBundleDegree k (E.biprod F) = vectorBundleDegree k E + vectorBundleDegree k F := by
+  rw [vectorBundleDegree_def, vectorBundleDegree_def, vectorBundleDegree_def,
+    eulerCharBelow_congr k (biprodObjIso E F) 2,
+    eulerCharBelow_biprod k _ _ 2 (fun i hi ↦ by interval_cases i <;> infer_instance)
+      (fun i hi ↦ by interval_cases i <;> infer_instance)]
+  push_cast
+  ring
+
+/-- **The degree of a direct sum on a curve.** On a proper integral curve over `k` whose
+codimension-one local rings are discrete valuation rings, `deg (E ⊞ F) = deg E + deg F` for vector
+bundles `E` and `F` of constant ranks. -/
+theorem vectorBundleDegree_biprod_of_isCurveOver [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] {s : ℕ}
+    (E : FixedRank X r) (F : FixedRank X s) :
+    vectorBundleDegree k (E.biprod F) = vectorBundleDegree k E + vectorBundleDegree k F := by
+  have := finiteDimensional_cohomology_of_isCurveOver k E.obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k E.obj.obj 1
+  have := finiteDimensional_cohomology_of_isCurveOver k F.obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k F.obj.obj 1
+  exact vectorBundleDegree_biprod k E F
+
+end Biprod
 
 section ShortExact
 

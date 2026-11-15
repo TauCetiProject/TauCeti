@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Int.Cast.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
@@ -351,10 +352,9 @@ theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePr
 `x ↦ σ x` equals its total increase. -/
 theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
-  have key (a b : ℕ) : ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = a - b := by omega
   have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
     push_cast [← Finset.sum_sub_distrib]
-    simp_rw [key]
+    simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
 
@@ -498,33 +498,20 @@ theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
     exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
   · rw [Equiv.trans_apply, Equiv.swap_apply_left]
 
-/-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
-image of the other. -/
-theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involutive f) (a b : α) :
-    (hf.toPerm f).SameCycle a b ↔ a = b ∨ a = f b := by
-  constructor
-  · intro h
-    obtain ⟨i, hi⟩ := h.symm
-    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self
-      (f := hf.toPerm f) (x := b) (hf b) i with h | h
-    · exact Or.inl (hi.symm.trans h)
-    · exact Or.inr (hi.symm.trans h)
-  · rintro (rfl | h)
-    · exact Equiv.Perm.SameCycle.rfl
-    · refine ⟨1, ?_⟩
-      have : f a = b := by
-        calc
-          f a = f (f b) := congrArg f h
-          _ = b := hf b
-      simpa using this
-
 /-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
 one is the image of the other. -/
 theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
     (hf : Function.Involutive f) (x y : α) :
     f.SameCycle x y ↔ x = y ∨ x = f y := by
-  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
-  exact he ▸ sameCycle_toPerm_iff _ hf x y
+  constructor
+  · intro h
+    obtain ⟨i, hi⟩ := h.symm
+    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self (f := f) (x := y) (hf y) i with h | h
+    · exact Or.inl (hi.symm.trans h)
+    · exact Or.inr (hi.symm.trans h)
+  · rintro (rfl | rfl)
+    · exact Equiv.Perm.SameCycle.rfl
+    · exact ⟨1, by simpa using hf y⟩
 
 /-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
 at most two points. -/

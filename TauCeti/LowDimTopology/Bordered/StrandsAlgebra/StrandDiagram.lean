@@ -51,6 +51,8 @@ product is associative in the form needed for the associativity of the strands a
   product are nonzero under the same condition.
 * `TauCeti.StrandDiagram.composable_idOn_left_iff`, `TauCeti.StrandDiagram.idOn_trans_of_eq_source`
   and their right-hand versions: the identity diagrams are the units of composition.
+* `TauCeti.StrandDiagram.trans_eq_idOn_iff_of_target_eq`: an identity diagram factors only as
+  itself composed with itself.
 
 ## References
 
@@ -366,6 +368,34 @@ theorem trans_idOn_of_target_eq {s : Finset α} {φ : StrandDiagram α} (h : φ.
   simp only [mem_idOn]
   refine ⟨fun ⟨_, hj, rfl, _⟩ ↦ hj, fun hk ↦ ⟨k, hk, rfl, ?_⟩⟩
   exact h ▸ mem_target.2 ⟨i, hk⟩
+
+/-- **Only identity diagrams factor an identity diagram.** If `φ` ends where `ψ` starts, their
+composite is the identity diagram on `s` exactly when both are. Strands go upwards, so a strand of
+the composite returning to its starting point is horizontal in both factors. -/
+theorem trans_eq_idOn_iff_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ.source)
+    {s : Finset α} : φ.trans ψ = idOn s ↔ φ = idOn s ∧ ψ = idOn s := by
+  refine ⟨fun hφψ ↦ ?_, fun ⟨hφ, hψ⟩ ↦ by
+    rw [hφ, hψ, idOn_trans_of_eq_source (source_idOn s).symm]⟩
+  have hmem {i k : α} : k ∈ φ.trans ψ i ↔ i = k ∧ i ∈ s := by rw [hφψ, mem_idOn]
+  -- Every strand of `φ` is horizontal and starts in `s`.
+  have hφ {i j : α} (hij : j ∈ φ i) : j = i ∧ i ∈ s := by
+    obtain ⟨k, hk⟩ := mem_source.1 (h ▸ mem_target.2 ⟨i, hij⟩)
+    obtain ⟨rfl, hi⟩ := hmem.1 (mem_trans.2 ⟨j, hij, hk⟩)
+    exact ⟨le_antisymm (ψ.le_of_mem hk) (φ.le_of_mem hij), hi⟩
+  -- Every point of `s` carries a horizontal strand of `φ`.
+  have hs {i : α} (hi : i ∈ s) : i ∈ φ i := by
+    obtain ⟨j, hij, -⟩ := mem_trans.1 (hmem.2 ⟨rfl, hi⟩)
+    obtain ⟨rfl, -⟩ := hφ hij
+    exact hij
+  have hφ' : φ = idOn s := by
+    refine ext fun i ↦ Option.ext fun j ↦ ?_
+    rw [← Option.mem_def, ← Option.mem_def, mem_idOn]
+    refine ⟨fun hij ↦ ?_, fun ⟨hij, hi⟩ ↦ hij ▸ hs hi⟩
+    obtain ⟨rfl, hi⟩ := hφ hij
+    exact ⟨rfl, hi⟩
+  -- So `ψ` is the composite `I(s) ψ = I(s)`.
+  refine ⟨hφ', ?_⟩
+  rwa [hφ', idOn_trans_of_eq_source (by rwa [hφ', target_idOn] at h)] at hφψ
 
 /-- The inversions of a strand diagram: the pairs `i < j` of starting points whose strands cross,
 `φ j < φ i`. These are the inversions (`Finset.inversions`) of the end-point map of `φ` on its

@@ -88,8 +88,17 @@ theorem cellularIncidence_zero (i : cell C 0) (j : cell C 1) :
     -- The singular homology of the boundary sphere and of the skeleton appear both through
     -- `singularHomologyFunctor` and through `SSet.homology`, which agree only up to unfolding.
     erw [map_sub, map_sub, hmap, hmap]
-    rw [singularHomologyπ_singularHomology₀Section_apply_one C R x hx,
-      singularHomologyπ_singularHomology₀Section_apply_one C R x hx]
+    have hone (y : skeletonObj C 1) :
+        (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ (ModuleCat.of R R) 0
+          (singularHomology₀Section (ModuleCat.of R R) y (1 : R)) =
+        if (y : X) ∈ openCell 0 i then cellLocalClass C (ModuleCat.of R R) x hx 1 else 0 := by
+      -- The composite is evaluated at `1` across the two presentations of the homology of the
+      -- `0`-skeleton, which `simp` cannot split as a composite.
+      refine (ConcreteCategory.congr_hom
+        (singularHomology₀Section_comp_singularHomologyπ_eq_ite C (ModuleCat.of R R) x hx y)
+        (1 : R)).trans ?_
+      split_ifs <;> simp
+    rw [hone, hone]
   have hL : inv (cellLocalClass C (ModuleCat.of R R) x hx)
       (cellLocalClass C (ModuleCat.of R R) x hx 1) = 1 := by
     rw [← ModuleCat.comp_apply, IsIso.hom_inv_id, ModuleCat.id_apply]
