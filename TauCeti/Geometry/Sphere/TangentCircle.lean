@@ -84,18 +84,21 @@ theorem tangentCircle_add_two_pi (p u q : V) (θ : ℝ) :
     tangentCircle p u q (θ + 2 * π) = tangentCircle p u q θ := by
   simp [tangentCircle]
 
-/-- The circle closes up at `θ = 2π`. -/
 @[simp]
 theorem tangentCircle_two_pi (p u q : V) : tangentCircle p u q (2 * π) = p := by
   simp [tangentCircle]
 
-/-- The circle `TauCeti.tangentCircle` depends continuously on its two points, its direction and
-the angle. -/
+/-- The circle through `p` tangent to `u` and through `q` depends continuously on all of `p`,
+`u`, `q` and the angle. -/
 @[fun_prop]
 theorem _root_.Continuous.tangentCircle {X : Type*} [TopologicalSpace X] {p u q : X → V}
-    {θ : X → ℝ} (hp : Continuous p) (hu : Continuous u) (hq : Continuous q) (hθ : Continuous θ) :
-    Continuous fun x ↦ TauCeti.tangentCircle (p x) (u x) (q x) (θ x) := by
+    {θ : X → ℝ} (hp : Continuous p) (hu : Continuous u) (hq : Continuous q)
+    (hθ : Continuous θ) : Continuous fun x ↦ tangentCircle (p x) (u x) (q x) (θ x) := by
   simp only [tangentCircle_def]
+  fun_prop
+
+theorem continuous_tangentCircle (p u : V) :
+    Continuous fun x : V × ℝ ↦ tangentCircle p u x.1 x.2 := by
   fun_prop
 
 /-- A linear isometry carries the circle through `p` and `q` tangent to `u` to the circle through
@@ -111,6 +114,11 @@ theorem _root_.Submodule.coe_tangentCircle (K : Submodule ℝ V) (p u q : K) (θ
     ((TauCeti.tangentCircle p u q θ : K) : V) = TauCeti.tangentCircle (p : V) u q θ :=
   K.subtypeₗᵢ.map_tangentCircle p u q θ
 
+/-- A vector orthogonal to `p`, `q` and `u` is orthogonal to the whole circle. -/
+theorem inner_tangentCircle_eq_zero {p u q w : V} (hp : ⟪p, w⟫ = 0) (hu : ⟪u, w⟫ = 0)
+    (hq : ⟪q, w⟫ = 0) (θ : ℝ) : ⟪tangentCircle p u q θ, w⟫ = 0 := by
+  simp [tangentCircle, inner_add_left, real_inner_smul_left, hp, hu, hq]
+
 variable {p u q : V}
 
 /-- The component of the circle along `u`. -/
@@ -124,12 +132,6 @@ theorem tangentCircle_sub_inner_smul (hu : ‖u‖ = 1) (hpu : ⟪p, u⟫ = 0) (
     tangentCircle p u q θ - ⟪tangentCircle p u q θ, u⟫ • u = p + ((1 - cos θ) / 2) • (q - p) := by
   rw [inner_tangentCircle hu hpu hqu, tangentCircle]
   module
-
-/-- The circle stays orthogonal to every vector orthogonal to `p`, `u` and `q`: it lies in the
-span of these three vectors. -/
-theorem inner_tangentCircle_eq_zero {w : V} (hpw : ⟪p, w⟫ = 0) (huw : ⟪u, w⟫ = 0)
-    (hqw : ⟪q, w⟫ = 0) (θ : ℝ) : ⟪tangentCircle p u q θ, w⟫ = 0 := by
-  simp [tangentCircle, inner_add_left, real_inner_smul_left, hpw, huw, hqw]
 
 /-- The circle lies on the unit sphere. -/
 theorem norm_tangentCircle (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪p, u⟫ = 0) (hq : ‖q‖ = 1)

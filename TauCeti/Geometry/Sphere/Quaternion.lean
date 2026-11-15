@@ -30,6 +30,7 @@ Tangent vector fields on a sphere are represented, as usual in topology, by maps
 * `TauCeti.quaternionFrame`: the three vectors `x <• i`, `x <• j`, `x <• k`.
 * `TauCeti.orthonormal_quaternionFrame`, `TauCeti.inner_quaternionFrame_self`: the three
   vectors are orthogonal to `x`, and orthonormal when `x` is a unit vector.
+* `TauCeti.orthonormal_vecCons_quaternionFrame`: with `x`, they form an orthonormal four-frame.
 * `TauCeti.contDiff_quaternionFrame`, `TauCeti.contMDiff_quaternionFrame`: they are analytic on
   `E` and on the unit sphere.
 
@@ -107,23 +108,23 @@ theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
   ext j
   fin_cases j <;> simp
 
-/-- A unit vector `x` together with the first two vectors `x <• i` and `x <• j` of its quaternionic
-frame is an orthonormal triple: two pointwise orthonormal tangent vector fields on the unit
-sphere. -/
+/-- A unit vector `x` followed by its quaternionic frame `x <• i`, `x <• j`, `x <• k` is
+orthonormal. -/
 theorem orthonormal_vecCons_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
-    Orthonormal ℝ ![x, quaternionFrame x 0, quaternionFrame x 1] := by
-  have h := orthonormal_quaternionFrame hx
-  refine ⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩
-  · fin_cases i
-    · simpa using hx
-    · simpa using h.1 0
-    · simpa using h.1 1
-  · have h0 (k : Fin 3) : ⟪x, quaternionFrame x k⟫ = 0 := by
-      rw [real_inner_comm]
-      exact inner_quaternionFrame_self x k
-    have h01 : ⟪quaternionFrame x 0, quaternionFrame x 1⟫ = 0 := h.2 (by decide)
-    have h10 : ⟪quaternionFrame x 1, quaternionFrame x 0⟫ = 0 := h.2 (by decide)
-    fin_cases i <;> fin_cases j <;>
-      simp [h0, h01, h10, -quaternionFrame_zero, -quaternionFrame_one] at hij ⊢
+    Orthonormal ℝ (Matrix.vecCons x (quaternionFrame x)) :=
+  orthonormal_vecCons_iff.2 ⟨hx, fun i ↦ by rw [real_inner_comm, inner_quaternionFrame_self],
+    orthonormal_quaternionFrame hx⟩
+
+/-- A unit vector `x` followed by two distinct vectors of its quaternionic frame is orthonormal:
+any two of `x <• i`, `x <• j`, `x <• k` are two pointwise orthonormal tangent vector fields on the
+unit sphere. -/
+theorem orthonormal_vecCons_quaternionFrame_of_ne {x : E} (hx : ‖x‖ = 1) {i j : Fin 3}
+    (hij : i ≠ j) : Orthonormal ℝ ![x, quaternionFrame x i, quaternionFrame x j] := by
+  have hinj : Function.Injective ![0, i.succ, j.succ] := by
+    intro a b hab
+    fin_cases a <;> fin_cases b <;> simp_all [Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm]
+  convert (orthonormal_vecCons_quaternionFrame hx).comp _ hinj using 1
+  ext a
+  fin_cases a <;> rfl
 
 end TauCeti
