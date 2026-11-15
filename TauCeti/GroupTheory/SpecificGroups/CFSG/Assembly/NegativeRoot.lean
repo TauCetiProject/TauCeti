@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.AmbientGroup
+import TauCeti.Algebra.Group.IterateOneParameter
 
 /-!
 # Negative simple roots in the represented Lie-type groups
@@ -60,7 +61,7 @@ def negativeSimpleRootSubgroup :
       let d : TypeE7LieIndex := ⟨⟨_, hv⟩, by simp⟩
       E7Minuscule.rootSubgroupPoints (.inr (finCongr d.rank_eq_seven i)) _
   | ⟨.E8 _, hv⟩, i | ⟨.F4 _, hv⟩, i | ⟨.G2 _, hv⟩, i =>
-      DynkinType.geckRootSubgroupPoints _ (ValidLieTypeIndex.dynkinType_valid ⟨_, hv⟩) (.inr i) _
+      geckRootSubgroup ⟨_, hv⟩ (.inr i)
   | ⟨.twistedE6 _, hv⟩, i =>
       let d : TypeTwistedE6LieIndex := ⟨⟨_, hv⟩, by simp⟩
       E6DoubledMinuscule.rootSubgroupPoints (.inr (finCongr d.rank_eq_six i)) _
@@ -145,22 +146,19 @@ theorem negativeSimpleRootSubgroup_E7 (hv : (LieTypeIndex.E7 q).Valid)
 /-- On E₈, negative simple roots are those of the Geck carrier. -/
 theorem negativeSimpleRootSubgroup_E8 (hv : (LieTypeIndex.E8 q).Valid)
     (i : Fin (rank ⟨.E8 q, hv⟩)) :
-    negativeSimpleRootSubgroup ⟨_, hv⟩ i = DynkinType.geckRootSubgroupPoints _
-      (dynkinType_valid ⟨.E8 q, hv⟩) (.inr i) _ :=
+    negativeSimpleRootSubgroup ⟨_, hv⟩ i = geckRootSubgroup ⟨.E8 q, hv⟩ (.inr i) :=
   (rfl)
 
 /-- On F₄, negative simple roots are those of the Geck carrier. -/
 theorem negativeSimpleRootSubgroup_F4 (hv : (LieTypeIndex.F4 q).Valid)
     (i : Fin (rank ⟨.F4 q, hv⟩)) :
-    negativeSimpleRootSubgroup ⟨_, hv⟩ i = DynkinType.geckRootSubgroupPoints _
-      (dynkinType_valid ⟨.F4 q, hv⟩) (.inr i) _ :=
+    negativeSimpleRootSubgroup ⟨_, hv⟩ i = geckRootSubgroup ⟨.F4 q, hv⟩ (.inr i) :=
   (rfl)
 
 /-- On G₂, negative simple roots are those of the Geck carrier. -/
 theorem negativeSimpleRootSubgroup_G2 (hv : (LieTypeIndex.G2 q).Valid)
     (i : Fin (rank ⟨.G2 q, hv⟩)) :
-    negativeSimpleRootSubgroup ⟨_, hv⟩ i = DynkinType.geckRootSubgroupPoints _
-      (dynkinType_valid ⟨.G2 q, hv⟩) (.inr i) _ :=
+    negativeSimpleRootSubgroup ⟨_, hv⟩ i = geckRootSubgroup ⟨.G2 q, hv⟩ (.inr i) :=
   (rfl)
 
 /-- The twisted E₆ family uses the doubled minuscule carrier's negative root maps. -/
@@ -259,20 +257,14 @@ theorem primeFrobenius_negativeSimpleRootSubgroup (d : ValidLieTypeIndex) (i : F
     erw [E7Minuscule.frobenius_rootSubgroupPoints, pow_one]
     rfl
   · rw [primeFrobenius_E8, negativeSimpleRootSubgroup_E8, GraphTwistedIndex.primeFrobenius_E8]
-    rw [UnimodularExceptionalIndex.primeFrobenius_eq_geckPrimeFrobenius,
-      geckPrimeFrobenius_def]
-    erw [DynkinType.geckFrobenius_geckRootSubgroupPoints, pow_one]
-    rfl
+    exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
+      ⟨⟨⟨_, hv⟩, by simp⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ (.inr i) u
   · rw [primeFrobenius_F4, negativeSimpleRootSubgroup_F4, GraphTwistedIndex.primeFrobenius_F4]
-    rw [UnimodularExceptionalIndex.primeFrobenius_eq_geckPrimeFrobenius,
-      geckPrimeFrobenius_def]
-    erw [DynkinType.geckFrobenius_geckRootSubgroupPoints, pow_one]
-    rfl
+    exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
+      ⟨⟨⟨_, hv⟩, by simp⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ (.inr i) u
   · rw [primeFrobenius_G2, negativeSimpleRootSubgroup_G2, GraphTwistedIndex.primeFrobenius_G2]
-    rw [UnimodularExceptionalIndex.primeFrobenius_eq_geckPrimeFrobenius,
-      geckPrimeFrobenius_def]
-    erw [DynkinType.geckFrobenius_geckRootSubgroupPoints, pow_one]
-    rfl
+    exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
+      ⟨⟨⟨_, hv⟩, by simp⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ (.inr i) u
   · rw [primeFrobenius_twistedE6, negativeSimpleRootSubgroup_twistedE6,
       GraphTwistedIndex.primeFrobenius_twistedE6, TypeTwistedE6LieIndex.primeFrobenius_def]
     erw [E6DoubledMinuscule.frobenius_rootSubgroupPoints, pow_one]
@@ -308,20 +300,13 @@ theorem frobenius_negativeSimpleRootSubgroup (d : ValidLieTypeIndex) (i : Fin d.
     d.frobenius (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.fieldOrder)) := by
-  have iterate (k : ℕ) :
-      (d.primeFrobenius : d.AmbientGroup → d.AmbientGroup)^[k]
-        (d.negativeSimpleRootSubgroup i u) =
-        d.negativeSimpleRootSubgroup i
-          (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.characteristic ^ k)) := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-        simp [Function.iterate_succ_apply', ih, ← pow_mul, pow_succ]
   rw [DFunLike.congr_fun d.frobenius_eq_primeFrobenius_pow _]
   -- The endomorphism power uses the dispatched ambient-group instance; erw reduces it
   -- to the instance in Monoid.End.coe_pow, which identifies powers with function iteration.
   erw [Monoid.End.coe_pow, fieldOrder_eq_characteristic_pow]
-  exact iterate d.fieldExponent
+  exact iterate_apply_pow (x := fun a => d.negativeSimpleRootSubgroup i (.ofAdd a))
+    (fun a => d.primeFrobenius_negativeSimpleRootSubgroup i (.ofAdd a))
+    d.fieldExponent (Multiplicative.toAdd u)
 
 end
 
