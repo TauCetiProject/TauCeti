@@ -5,39 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.End
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Defs
 
 /-!
-# Invariants and rigidity of permutations preserving a binary relation
+# Anchor profiles and common-neighbor counts for invariant binary relations
 
-Let `g : Equiv.Perm α` preserve a binary valuation or relation `r` in the sense that
+Let a map or permutation on `α` preserve a binary valuation or relation `r` in the sense that
 `∀ x y, r (g x) (g y) = r x y`, and suppose `g` fixes every anchor in a list `l : List α`. Two
 finite invariants of a point `x : α` are then preserved by `g`:
 
-* `TauCeti.relationProfile r l x`, the list of pairs `(decide (x = z), r z x)` for `z ∈ l`
+* `TauCeti.relationProfile r l x`, the list of pairs `(decide (x = z), r z x)` for `z ∈ l`,
+  preserved by any injective map preserving `r` and fixing the anchors in `l`
   (`TauCeti.relationProfile_apply`). Recording `decide (x = z)` alongside `r z x` separates fixed
   anchors from other points with the same values of `r`.
 * `TauCeti.commonNeighborCount r l x`, on a finite type `α` and for `Bool`-valued `r`, the number of
-  points `y` with `r x y = true` and `r z y = true` for every `z ∈ l`
-  (`TauCeti.commonNeighborCount_apply`). Using a `Bool`-valued relation avoids `DecidableRel`
-  dictionary overhead during kernel evaluation.
-
-Iterating profile uniqueness along a rank function `rank : α → ℕ` yields base-rigidity criteria for
-automorphisms of `r`: if every non-seed point `x ∉ s` is uniquely determined by its profile relative
-to anchors of strictly smaller rank, then fixing all seeds of rank `< n` fixes all points of rank
-`< n` (`TauCeti.apply_eq_self_of_relationProfile_unique`), and fixing all seeds forces `g = 1`
-(`TauCeti.eq_one_of_relationProfile_unique`).
+  points `y` with `r x y = true` and `r z y = true` for every `z ∈ l`, preserved by any permutation
+  preserving `r` and fixing the anchors in `l` (`TauCeti.commonNeighborCount_apply`). Using a
+  `Bool`-valued relation avoids `DecidableRel` dictionary overhead during kernel evaluation.
 
 ## Main declarations
 
 * `TauCeti.relationProfile`, `TauCeti.relationProfile_apply`: anchor profiles of a binary valuation
-  and their invariance under relation-preserving permutations fixing the anchors.
-* `TauCeti.apply_eq_self_of_relationProfile_unique`, `TauCeti.eq_one_of_relationProfile_unique`:
-  ranked anchor-profile rigidity below a rank bound and on the whole carrier.
+  and their invariance under relation-preserving injective maps fixing the anchors.
 * `TauCeti.commonNeighborCount`, `TauCeti.commonNeighborCount_apply`: common-neighbor counts for a
-  `Bool`-valued binary relation on a finite type and their invariance.
+  `Bool`-valued binary relation on a finite type and their invariance under permutations.
 -/
 
 public section
@@ -67,56 +59,17 @@ theorem relationProfile_cons {α β : Type*} [DecidableEq α] (r : α → α →
     (x : α) :
     relationProfile r (z :: l) x = (decide (x = z), r z x) :: relationProfile r l x := (rfl)
 
-/-- A permutation preserving `r` and fixing every anchor in `l` preserves `relationProfile r l`. -/
-theorem relationProfile_apply {α β : Type*} [DecidableEq α] {r : α → α → β} {g : Equiv.Perm α}
-    (hg : ∀ x y, r (g x) (g y) = r x y) {l : List α} (hl : ∀ z ∈ l, g z = z) (x : α) :
+/-- An injective map preserving `r` and fixing every anchor in `l` preserves
+`relationProfile r l`. -/
+theorem relationProfile_apply {α β : Type*} [DecidableEq α] {r : α → α → β} {g : α → α}
+    (hginj : Function.Injective g) (hg : ∀ x y, r (g x) (g y) = r x y) {l : List α}
+    (hl : ∀ z ∈ l, g z = z) (x : α) :
     relationProfile r l (g x) = relationProfile r l x := by
   apply List.map_congr_left
   intro z hz
   have hfix := hl z hz
-  have heq : (g x = z) ↔ x = z :=
-    ⟨fun h ↦ g.injective (h.trans hfix.symm), fun h ↦ h ▸ hfix⟩
-  exact Prod.ext (Bool.decide_congr heq) (by simpa only [hfix] using hg z x)
-
-/-- **Ranked anchor-profile rigidity below a rank bound.** Let `g` be a permutation preserving `r`.
-Suppose every non-seed point `x ∉ s` is uniquely determined by its `r`-profile relative to a list
-`anchors x` of points of strictly smaller rank. If `g` fixes every seed point in `s` of rank less
-than `n`, then `g` fixes every point of rank less than `n`. -/
-theorem apply_eq_self_of_relationProfile_unique {α β : Type*} [DecidableEq α] {r : α → α → β}
-    {g : Equiv.Perm α} (hg : ∀ x y, r (g x) (g y) = r x y) {s : Set α} {rank : α → ℕ}
-    {anchors : α → List α} (hrank : ∀ x ∉ s, ∀ z ∈ anchors x, rank z < rank x)
-    (huniq : ∀ x ∉ s, ∀ y,
-      relationProfile r (anchors x) y = relationProfile r (anchors x) x → y = x)
-    {n : ℕ} (hseed : ∀ x ∈ s, rank x < n → g x = x) {x : α} (hx : rank x < n) :
-    g x = x := by
-  have h : ∀ m < n, ∀ y, rank y = m → g y = y := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      intro hmn y hym
-      by_cases hys : y ∈ s
-      · exact hseed y hys (hym ▸ hmn)
-      · apply huniq y hys
-        apply relationProfile_apply hg
-        intro z hz
-        have hlt := hrank y hys z hz
-        rw [hym] at hlt
-        exact ih _ hlt (hlt.trans hmn) z rfl
-  exact h (rank x) hx x rfl
-
-/-- **Ranked anchor-profile base rigidity.** Let `g` be a permutation preserving `r`. If every
-non-seed point `x ∉ s` is uniquely determined by its `r`-profile relative to a list `anchors x` of
-points of strictly smaller rank, and `g` fixes every seed point in `s`, then `g = 1`. -/
-theorem eq_one_of_relationProfile_unique {α β : Type*} [DecidableEq α] {r : α → α → β}
-    {g : Equiv.Perm α} (hg : ∀ x y, r (g x) (g y) = r x y) {s : Set α} {rank : α → ℕ}
-    {anchors : α → List α} (hrank : ∀ x ∉ s, ∀ z ∈ anchors x, rank z < rank x)
-    (huniq : ∀ x ∉ s, ∀ y,
-      relationProfile r (anchors x) y = relationProfile r (anchors x) x → y = x)
-    (hseed : ∀ x ∈ s, g x = x) :
-    g = 1 := by
-  ext x
-  exact apply_eq_self_of_relationProfile_unique hg hrank huniq
-    (fun y hy _ ↦ hseed y hy) (Nat.lt_succ_self _)
+  exact Prod.ext (Bool.decide_congr ⟨fun h ↦ hginj (h.trans hfix.symm), fun h ↦ h ▸ hfix⟩)
+    (by simpa only [hfix] using hg z x)
 
 /-- The number of points `y` of a finite type `α` satisfying `r x y = true` together with
 `r z y = true` for every anchor `z ∈ l`. In a directed or undirected graph encoded by `r`, this is
@@ -130,6 +83,12 @@ the number of common out-neighbors of `x` and the anchors in `l`. The body is ex
 theorem commonNeighborCount_def {α : Type*} [Fintype α] (r : α → α → Bool) (l : List α) (x : α) :
     commonNeighborCount r l x =
       (Finset.univ.filter fun y ↦ r x y = true ∧ ∀ z ∈ l, r z y = true).card := (rfl)
+
+/-- With no anchors, `commonNeighborCount` counts the points `y` with `r x y = true`. -/
+@[simp]
+theorem commonNeighborCount_nil {α : Type*} [Fintype α] (r : α → α → Bool) (x : α) :
+    commonNeighborCount r [] x = (Finset.univ.filter fun y ↦ r x y = true).card := by
+  simp [commonNeighborCount]
 
 /-- A permutation preserving `r` and fixing every anchor in `l` preserves
 `commonNeighborCount r l`. -/

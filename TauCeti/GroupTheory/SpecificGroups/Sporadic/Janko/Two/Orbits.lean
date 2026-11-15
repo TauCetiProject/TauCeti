@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Janko.Two.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.InvariantRelation
+import TauCeti.Logic.Function.Rigidity
 import Mathlib.Algebra.Group.Action.Prod
 import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Algebra.Group.Submonoid.BigOperators
@@ -636,20 +637,31 @@ private theorem rigidAnchors_unique : ∀ x : Fin 100, 4 ≤ x.val → ∀ y,
 
 private theorem eq_one_of_fix_four (g : Equiv.Perm (Fin 100))
     (hg : ∀ x y, orbital (g x) (g y) = orbital x y)
-    (hfix : ∀ x : Fin 100, x.val < 4 → g x = x) : g = 1 :=
-  eq_one_of_relationProfile_unique (s := {x : Fin 100 | x.val < 4}) hg
-    (fun x _ ↦ rigidAnchors_rank x)
-    (fun x hx ↦ rigidAnchors_unique x (Nat.le_of_not_lt hx)) hfix
+    (hfix : ∀ x : Fin 100, x.val < 4 → g x = x) : g = 1 := by
+  apply Equiv.ext
+  intro x
+  refine Function.apply_eq_self_of_rank (⇑g) (seed := fun y ↦ y.val < 4)
+    (rel := fun z y ↦ (decide (y = z), orbital z y))
+    (fun a b ↦ Prod.ext (Bool.decide_congr g.injective.eq_iff) (hg a b)) (rigidRank x + 1)
+    (fun y _ hy ↦ hfix y hy) (fun y _ hy w hw ↦ ?_) x (Nat.lt_succ_self _)
+  exact rigidAnchors_unique y (Nat.le_of_not_lt hy) w
+    (List.map_congr_left fun z hz ↦ hw z (rigidAnchors_rank y z hz))
+
+private theorem basePoint_coe (x : Fin 100) : basePoint x.val = x := by
+  rw [basePoint_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self]
+
+private theorem apply_eq_self_of_mem_stabilizerChain {g : Equiv.Perm (Fin 100)} {n : ℕ}
+    (hg : g ∈ J2.stabilizerChain basePoint n) {x : Fin 100} (hx : x.val < n) : g x = x := by
+  obtain ⟨_, hfix⟩ := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hg
+  simpa only [basePoint_coe, Equiv.Perm.smul_def] using hfix x.val hx
 
 /-- The points `0, 1, 2, 3` form a base of the ATLAS model of `J₂`. -/
 theorem stabilizerChain_four_eq_bot : J2.stabilizerChain basePoint 4 = ⊥ := by
   apply (Subgroup.eq_bot_iff_forall _).mpr
   intro g hg
-  obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hg
-  apply eq_one_of_fix_four g (orbital_apply hg)
-  intro x hx
-  simpa only [basePoint_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self,
-    Equiv.Perm.smul_def] using hfix x.val hx
+  exact eq_one_of_fix_four g
+    (orbital_apply ((Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hg).1)
+    fun _ ↦ apply_eq_self_of_mem_stabilizerChain hg
 
 /-! ### The fourth basic orbit -/
 
@@ -680,10 +692,7 @@ private def oddSymmetry : Equiv.Perm (Fin 100) :=
     #[68, 53, 89, 39, 35, 36, 94, 45, 60, 69, 57, 44, 9, 43, 74, 81, 32, 27, 78, 51],
     #[87, 75, 17, 50, 48, 85, 14, 80, 22, 62, 30, 26, 46, 93, 66, 19, 96, 56, 98, 28]] :
       Array (Array (Fin 100))) |>.getD (i.val / 20) #[] |>.getD (i.val % 20) 0
-  { toFun := f
-    invFun := f
-    left_inv := by decide +kernel
-    right_inv := by decide +kernel }
+  Function.Involutive.toPerm f (by unfold Function.Involutive; decide +kernel)
 
 private theorem orbital_oddSymmetry :
     ∀ x y, orbital (oddSymmetry x) (oddSymmetry y) = orbital x y := by
@@ -696,8 +705,8 @@ private theorem not_eq_oddSymmetry_three {k g : Equiv.Perm (Fin 100)}
     (hk : k ∈ J2.stabilizerChain basePoint 3) (hg : g ∈ J2.stabilizerChain basePoint 3) :
     k 3 ≠ oddSymmetry (g 3) := by
   intro hk3
-  obtain ⟨hkJ, hkfix⟩ := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hk
-  obtain ⟨hgJ, hgfix⟩ := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hg
+  have hkJ := ((Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hk).1
+  have hgJ := ((Subgroup.mem_stabilizerChain_iff J2 basePoint).mp hg).1
   have hrel : ∀ x y, orbital ((k⁻¹ * (oddSymmetry * g)) x) ((k⁻¹ * (oddSymmetry * g)) y) =
       orbital x y := by
     intro x y
@@ -709,14 +718,9 @@ private theorem not_eq_oddSymmetry_three {k g : Equiv.Perm (Fin 100)}
     apply k.injective
     simp only [Equiv.Perm.mul_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
     by_cases hx3 : x.val < 3
-    · have hgx : g x = x := by
-        simpa only [basePoint_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self,
-          Equiv.Perm.smul_def] using hgfix x.val hx3
-      have hkx : k x = x := by
-        simpa only [basePoint_def, Fin.ofNat_eq_cast, Fin.cast_val_eq_self,
-          Equiv.Perm.smul_def] using hkfix x.val hx3
-      have hodd : ∀ y : Fin 100, y.val < 3 → oddSymmetry y = y := by decide +kernel
-      rw [hgx, hodd x hx3, hkx]
+    · have hodd : ∀ y : Fin 100, y.val < 3 → oddSymmetry y = y := by decide +kernel
+      rw [apply_eq_self_of_mem_stabilizerChain hg hx3, hodd x hx3,
+        apply_eq_self_of_mem_stabilizerChain hk hx3]
     · have hx_eq : x = 3 := Fin.ext (by omega)
       subst hx_eq
       exact hk3.symm
@@ -744,21 +748,19 @@ private theorem not_mem_oddCandidates {g : Equiv.Perm (Fin 100)}
 theorem orbit_stabilizerChain_three :
     orbit (J2.stabilizerChain basePoint 3) (basePoint 3) =
       ({3, 6, 41, 56} : Finset (Fin 100)) := by
-  have h3 : basePoint 3 = 3 := rfl
+  have h3 : basePoint 3 = 3 := by decide +kernel
   rw [h3]
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hgJ, hfix⟩ := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp g.2
+    have hgJ := ((Subgroup.mem_stabilizerChain_iff J2 basePoint).mp g.2).1
     have hfixed : ∀ z ∈ ([0, 1, 2] : List (Fin 100)), (g : Equiv.Perm (Fin 100)) z = z := by
       intro z hz
+      apply apply_eq_self_of_mem_stabilizerChain g.2
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hz
-      rcases hz with rfl | rfl | rfl
-      · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 0 (by omega)
-      · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 1 (by omega)
-      · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 2 (by omega)
+      rcases hz with rfl | rfl | rfl <;> decide
     have hcand := fourthOrbit_candidates ((g : Equiv.Perm (Fin 100)) 3)
-      (relationProfile_apply (orbital_apply hgJ) hfixed 3)
+      (relationProfile_apply (g : Equiv.Perm (Fin 100)).injective (orbital_apply hgJ) hfixed 3)
       (commonNeighborCount_apply (orbital_apply hgJ) hfixed 3)
     exact hcand.resolve_right (not_mem_oddCandidates g.2)
   · intro hx
