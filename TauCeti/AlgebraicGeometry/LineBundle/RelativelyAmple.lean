@@ -14,8 +14,9 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
 Let `f : X ⟶ S` be a morphism of schemes. A line-bundle class `a` on `X` is *relatively ample*
 for `f`, or `f`-ample, if for every affine open `V` of `S` its restriction to the open subscheme
-`f⁻¹ V` of `X` is ample. This is the positivity notion for families: a family of curves is stable
-when its (log-)dualizing sheaf is relatively ample, and schemes over a base are recovered from a
+`f⁻¹ V` of `X` is ample. This is the positivity notion for families: a prestable family of
+marked nodal curves, with its sections disjoint and in the smooth locus, is stable exactly when its
+log-dualizing sheaf `ω(Σsᵢ)` is relatively ample; and schemes over a base are recovered from a
 relatively ample line bundle as the relative `Proj` of its section algebra.
 
 Ampleness of the restrictions forces the preimages of affine opens to be quasi-compact and
@@ -91,7 +92,9 @@ theorem IsRelativelyAmple.quasiSeparated {f : X ⟶ S} {a : LineBundleClass X}
     (h : a.IsRelativelyAmple f) : QuasiSeparated f :=
   -- Instance search cannot use Mathlib's instance `HasAffineProperty @QuasiSeparated _`: its affine
   -- property is stored at a dependent function type, not at `AffineTargetMorphismProperty`, so it
-  -- cannot be assigned to that out-parameter. The instance is therefore supplied explicitly.
+  -- cannot be assigned to that out-parameter. Mathlib itself only uses this instance under a
+  -- `set_option` override, which this repository forbids, and a typed `inferInstance` fails for the
+  -- same reason. The instance is therefore supplied explicitly.
   @HasAffineProperty.of_iSup_eq_top _ _
     instHasAffinePropertyQuasiSeparatedQuasiSeparatedSpaceCarrierCarrierCommRingCat _ _ f _
     (fun V : S.affineOpens ↦ V) (iSup_affineOpens_eq_top S)
