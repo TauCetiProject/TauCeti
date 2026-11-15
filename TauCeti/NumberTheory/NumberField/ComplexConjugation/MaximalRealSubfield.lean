@@ -15,7 +15,9 @@ Let `K` be a CM field with maximal real subfield `K⁺`. Mathlib defines `K⁺` 
 element be real under *every* complex embedding (`NumberField.mem_maximalRealSubfield_iff`). Since
 every complex embedding `φ` turns the complex conjugation `IsCMField.complexConj K` into complex
 conjugation of `ℂ`, a single embedding already decides membership:
-`x ∈ K⁺ ↔ star (φ x) = φ x`.
+`x ∈ K⁺ ↔ star (φ x) = φ x`. The same holds for any abelian Galois extension `K` of `ℚ`, finite or
+not: complex conjugation through one embedding `φ` is an automorphism of `K`, every other complex
+embedding is `φ ∘ σ` for an automorphism `σ`, and `σ` commutes with that conjugation.
 
 The same intertwining controls minimal polynomials. If `K` is a `ℂ`-subfield (`[Algebra K ℂ]`)
 and `x` is a real complex number, then complex conjugation of `ℂ` fixes `x` and lies over
@@ -32,6 +34,8 @@ coefficients in the class number one problem.
 
 * `NumberField.IsCMField.mem_maximalRealSubfield_iff_star_eq`: one complex embedding suffices to
   test membership in `K⁺`.
+* `IsAbelianGalois.mem_maximalRealSubfield_iff_star_eq`: the same for an abelian Galois extension
+  of `ℚ`.
 * `NumberField.IsCMField.coeff_minpoly_mem_maximalRealSubfield`: the minimal polynomial over `K`
   of a real complex number has its coefficients in `K⁺`.
 * `NumberField.CMExtension.maximalRealSubfield_eq_fieldRange`: for a CM extension `K / F`, `K⁺`
@@ -69,9 +73,37 @@ theorem coeff_minpoly_mem_maximalRealSubfield [Algebra K ℂ] {x : ℂ} (hx : st
   have h := minpoly.map_eq_self (σ := (complexConj K : K →+* K)) (τ := starRingEnd ℂ)
     (RingHom.ext fun c ↦ complexEmbedding_complexConj K (algebraMap K ℂ) c) (by simpa using hx)
   rw [← complexConj_eq_self_iff]
-  simpa using congrArg (coeff · n) h
+  simpa using congrArg (AddMonoidAlgebra.coeff · n) h
 
 end NumberField.IsCMField
+
+namespace IsAbelianGalois
+
+open NumberField
+
+variable {K : Type*} [Field K] [CharZero K] [IsAbelianGalois ℚ K]
+
+/-- **One complex embedding detects the maximal real subfield of an abelian extension of `ℚ`.**
+An element of an abelian Galois extension `K` of `ℚ`, such as a cyclotomic field, lies in its
+maximal real subfield as soon as it is real under one complex embedding `φ`. Complex conjugation
+through `φ` is an automorphism `c` of `K`; any other complex embedding is `φ ∘ σ` for an
+automorphism `σ`, and `σ` commutes with `c`. -/
+theorem mem_maximalRealSubfield_iff_star_eq (φ : K →+* ℂ) (x : K) :
+    x ∈ maximalRealSubfield K ↔ star (φ x) = φ x := by
+  rw [mem_maximalRealSubfield_iff]
+  refine ⟨fun hx ↦ hx φ, fun hx ψ ↦ ?_⟩
+  obtain ⟨c, hc⟩ := ComplexEmbedding.exists_comp_symm_eq_of_comp_eq (k := ℚ) φ
+    ((starRingEnd ℂ).comp φ) (Subsingleton.elim _ _)
+  obtain ⟨σ, rfl⟩ :=
+    ComplexEmbedding.exists_comp_symm_eq_of_comp_eq (k := ℚ) φ ψ (Subsingleton.elim _ _)
+  have hconj (y : K) : φ (c.symm y) = star (φ y) := by
+    simpa only [RingHom.comp_apply, RingHom.coe_coe, starRingEnd_apply] using congr($hc y)
+  have hcomm : c.symm (σ.symm x) = σ.symm (c.symm x) := by
+    simpa only [AlgEquiv.mul_apply] using congr($(mul_comm' c.symm σ.symm) x)
+  simp only [RingHom.comp_apply, RingHom.coe_coe]
+  rw [← hconj, hcomm, φ.injective ((hconj x).trans hx)]
+
+end IsAbelianGalois
 
 namespace NumberField.CMExtension
 

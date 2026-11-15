@@ -14,13 +14,13 @@ import Mathlib.Analysis.LocallyConvex.HahnBanach
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Multilinear.Basis
-import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
 
@@ -315,9 +315,6 @@ private theorem basisEvalCLM_injective (N : ℕ) : Injective (basisEvalCLM (E :=
 vectors. -/
 private theorem exists_norm_le_mul_norm_basisEvalCLM (N : ℕ) :
     ∃ C : ℝ≥0, ∀ A : Π i : Fin (N + 1), E [×i]→L[ℝ] ℝ, ‖A‖ ≤ C * ‖basisEvalCLM N A‖ := by
-  have _ (i : Fin (N + 1)) : FiniteDimensional ℝ (E [×i]→L[ℝ] ℝ) :=
-    Module.Finite.of_injective ContinuousMultilinearMap.toMultilinearMapLinear
-      ContinuousMultilinearMap.toMultilinearMap_injective
   obtain ⟨C, -, hC⟩ := (basisEvalCLM (E := E) N).toLinearMap.exists_antilipschitzWith
     (LinearMap.ker_eq_bot.2 (basisEvalCLM_injective N))
   exact ⟨C, ZeroHomClass.bound_of_antilipschitz _ hC⟩

@@ -34,9 +34,7 @@ jobs:
   shadow:
     # Keep unbounded/long-running research and maintenance off the hosted
     # capacity shared by small automation and roadmap merge builds.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       BWRAP_VER: 0.9.0-1build1
@@ -48,10 +46,10 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Prepare pinned shared tools
-      uses: TauCetiProject/TauCetiTools/.github/actions/setup@ede36083deac17ab1e407c77a30305fa5341d911
+      uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
       with:
         tools-repository: TauCetiProject/TauCetiTools
-        tools-ref: ede36083deac17ab1e407c77a30305fa5341d911
+        tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
         project-directory: .
     - name: Restore the project-owned toolchain-pin contract
       # Match infrastructure-tests: the older shared overlay must not replace

@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Fourier.AbsolutelyContinuous
+import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -28,7 +29,13 @@ distance from `θ` to the nearest integer, so the constant is positive exactly w
 Such an `f` is a section of the flat line bundle over the circle `ℝ / (b - a) ℤ` with holonomy
 `exp (2πiθ)`, and the inequality says that the covariant derivative of this flat connection is
 bounded below by `2π |θ - round θ| / (b - a)` in `L²`. For `θ = 1 / 2` it is the Poincaré
-inequality for antiperiodic functions.
+inequality for antiperiodic functions, which holds more generally for functions valued in a
+finite-dimensional real inner product space with `f b = -f a`:
+
+`(π / (b - a)) ^ 2 ∫ₐᵇ ‖f‖ ^ 2 ≤ ∫ₐᵇ ‖f'‖ ^ 2`
+
+(`TauCeti.mul_integral_norm_sq_le_integral_norm_sq_of_eq_neg`), by applying the complex
+statement to each coordinate in an orthonormal basis.
 
 The proof multiplies `f` by the phase `exp (-2πiθ (t - a) / (b - a))`, which produces a closed curve
 `g` whose `n`-th Fourier coefficient is multiplied by `2πi (n + θ) / (b - a)` under the twisted
@@ -45,7 +52,7 @@ derivative (`TauCeti.fourierCoeffOn_sub_mul_I_mul`). Parseval's identity
 public section
 
 open MeasureTheory Set Complex intervalIntegral
-open scoped Real Interval
+open scoped Real Interval RealInnerProductSpace
 
 namespace TauCeti
 
@@ -144,5 +151,48 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_of_eq_exp_mul (hab : a < b)
   have h := hasSum_le hterm (hc.mul_left C) hc'
   rw [← mul_assoc, mul_comm C, mul_assoc] at h
   exact le_of_mul_le_mul_left h (inv_pos.2 (sub_pos.2 hab))
+
+section Antiperiodic
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {g g' : ℝ → V}
+
+/-- **The Poincaré inequality for antiperiodic functions.** If `g` is absolutely continuous on
+`[a, b]`, valued in a finite-dimensional real inner product space, with square-integrable
+almost-everywhere derivative `g'`, and `g b = -g a`, then
+`(π / (b - a)) ^ 2 ∫ₐᵇ ‖g‖ ^ 2 ≤ ∫ₐᵇ ‖g'‖ ^ 2`. The constant is sharp: equality holds for
+`g t = cos (π (t - a) / (b - a)) • v`. -/
+theorem mul_integral_norm_sq_le_integral_norm_sq_of_eq_neg (hab : a < b)
+    (hg : AbsolutelyContinuousOnInterval g a b)
+    (hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (g' t) t)
+    (hg' : MemLp g' 2 (volume.restrict (Ioc a b))) (hgab : g b = -g a) :
+    (π / (b - a)) ^ 2 * ∫ t in a..b, ‖g t‖ ^ 2 ≤ ∫ t in a..b, ‖g' t‖ ^ 2 := by
+  -- Each coordinate `⟪w, g⟫`, read as a complex number, has phase `exp (2πi / 2) = -1`.
+  have hcoord (w : V) :
+      (π / (b - a)) ^ 2 * ∫ t in a..b, ⟪w, g t⟫ ^ 2 ≤ ∫ t in a..b, ⟪w, g' t⟫ ^ 2 := by
+    let L : V →L[ℝ] ℂ := ofRealCLM.comp (innerSL ℝ w)
+    have hL (v : V) : ‖L v‖ ^ 2 = ⟪w, v⟫ ^ 2 := by
+      simp [L, Real.norm_eq_abs, sq_abs]
+    have hround : |(1 / 2 : ℝ) - round (1 / 2 : ℝ)| = 1 / 2 := by
+      rw [round_eq]
+      norm_num
+    have h := mul_integral_norm_sq_le_integral_norm_sq_of_eq_exp_mul hab
+      (f := fun t => L (g t)) (f' := fun t => L (g' t))
+      (L.lipschitzWith.comp_absolutelyContinuousOnInterval hg)
+      (by filter_upwards [hgg'] with t ht hmem using L.hasFDerivAt.comp_hasDerivAt t (ht hmem))
+      (L.comp_memLp' hg') (θ := 1 / 2) (by
+        rw [show 2 * π * (1 / 2 : ℝ) * I = π * I by push_cast; ring, exp_pi_mul_I, hgab,
+          map_neg, neg_one_mul])
+    simp only [hL, hround] at h
+    convert h using 2
+    ring
+  have hgc : ContinuousOn g (Icc a b) := by simpa only [uIcc_of_le hab.le] using hg.continuousOn
+  rw [integral_norm_sq_eq_sum_integral_inner_sq hab.le
+      (hgc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
+        Ioc_subset_Icc_self 2),
+    integral_norm_sq_eq_sum_integral_inner_sq hab.le hg', Finset.mul_sum]
+  exact Finset.sum_le_sum fun i _ => hcoord _
+
+end Antiperiodic
 
 end TauCeti

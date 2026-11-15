@@ -19,8 +19,9 @@ computations on finite lists of integers; multiplication convolves coefficient l
 `TauCeti.Polynomial.mulCoeffList` and then applies the computable cyclotomic reduction from
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Computable`.
 
-The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and integer scalar
-multiplication scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`).
+The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and multiplying by an
+integer cast scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`, and
+`TauCeti.Cyclotomic.coeff_zsmul` for the scalar form).
 
 The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`.  For nonzero `e`,
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
@@ -158,9 +159,6 @@ theorem add_def (x y : Cyclotomic e) :
 
 /-- Negation negates every coefficient. -/
 theorem neg_def (x : Cyclotomic e) : -x = ofCoeffList e (x.coeffs.map (-·)) := rfl
-
-/-- `TauCeti.Cyclotomic.neg` is the negation of the `Neg` instance. -/
-theorem neg_eq (x : Cyclotomic e) : neg x = -x := rfl
 
 /-- Multiplication convolves coefficient lists and reduces modulo `Φ_e`. -/
 theorem mul_def (x y : Cyclotomic e) :
@@ -363,7 +361,7 @@ theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     (z • x).coeff j = z • x.coeff j := by
   simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
 
-/-- Integer scalar multiplication scales every power-basis coefficient. -/
+/-- Multiplying by an integer cast scales every power-basis coefficient. -/
 @[simp]
 theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
@@ -384,8 +382,7 @@ theorem toAdjoinRoot_surjective : Function.Surjective (toAdjoinRoot : Cyclotomic
 
 private theorem toAdjoinRootRingHom_bijective :
     Function.Bijective (toAdjoinRootRingHom (e := e)) :=
-  ⟨fun _ _ h => toAdjoinRoot_injective (by simpa using h),
-    fun z => (toAdjoinRoot_surjective z).imp fun _ h => by simpa using h⟩
+  ⟨toAdjoinRoot_injective, toAdjoinRoot_surjective⟩
 
 /-- Exact cyclotomic integers are the quotient `ℤ[X] / (Φ_e)`. -/
 noncomputable def equivAdjoinRoot :
@@ -552,6 +549,10 @@ theorem reduce_zeta {p : ℕ} {r : ZMod p}
 /-- The distinguished complex `e`-th root of unity `exp (2πi/e)`.  It is primitive for `e ≠ 0`
 (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`); at `e = 0` it is `exp 0 = 1`. -/
 noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Complex.I / e)
+
+/-- The defining equation `complexRoot e = exp (2πi/e)` of the distinguished complex root. -/
+theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
+  (rfl)
 
 /-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
 `e`-th root of unity.  Which primitive root it is, and hence which embedding

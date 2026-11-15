@@ -10,12 +10,11 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the third Conway group
 
-This file carries the `Co₃` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records Đoković's Coxeter-type presentation of the
-third Conway group on seven involutions as a `TauCeti.GroupPresentation`, together with its exact
-source, generator convention, transcription notes, expected counts, and decidable checks on the
-transcription: the relator count, the per-relator and total letter counts of the compiled words, and
-their cyclic reducedness.
+This file carries the `Co₃` row of the sporadic presentation data. It records Đoković's Coxeter-type
+presentation of the third Conway group on seven involutions as a `TauCeti.GroupPresentation`,
+together with its exact source, generator convention, transcription notes, expected counts, and
+decidable checks on the transcription: the relator count, the per-relator and total letter counts of
+the compiled words, and their cyclic reducedness.
 
 The twenty-four defining relators are
 
@@ -55,7 +54,7 @@ with the checked 150 letters plus 24 separators. Its following `Consequences` li
 lists twelve words, from `afaf` through `(bede)⁴`; none is part of the defining-relator list or
 the Lean row. This checks every source relator, exponent, binding boundary, and the
 defining-relator/consequence boundary independently of the original transcription and closes this
-row's S1 source-to-Lean read-through without duplicating the audited list.
+row's source-to-Lean read-through without duplicating the audited list.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -90,8 +89,7 @@ The check used GAP 4.15.1, Python 3.14.6, pynauty 2.8.8.1, and SymPy 1.14.0. Con
 transported forward image tables for `a` through `g`, with each image stored as a two-byte
 little-endian integer, has SHA-256
 `ee4532949351e7b12adf4a156f7d7aeecb07c4c3ae134773f1cbf19da7da546c`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau
-Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

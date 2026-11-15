@@ -39,6 +39,8 @@ restrict to open subsets and are compared along homeomorphisms.
 * `TauCeti.isIso_localHomologyMap`: excision along an open embedding.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap`: the map induced by an
   open embedding undoes the inverse of this isomorphism.
+* `TauCeti.localHomologyMap_comp_localHomologyRestriction_singleton`: these isomorphisms are
+  natural with respect to restriction to a point.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_id`,
   `TauCeti.localHomologyIsoOfIsOpenEmbedding_trans`: these isomorphisms are functorial.
 * `TauCeti.localHomologyTransport_comp_localHomologyIsoOfIsOpenEmbedding_hom`: open embeddings
@@ -118,6 +120,20 @@ lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap [T1Space N] {j
     (localHomologyIsoOfIsOpenEmbedding R hj x k).inv ≫ localHomologyMap R ⟨j, hj.continuous⟩ h k =
       𝟙 _ := by
   rw [Iso.inv_comp_eq, Category.comp_id, localHomologyIsoOfIsOpenEmbedding_hom]
+
+/-- **Naturality of the local isomorphisms of an open embedding.** For `j ⁻¹' T ⊆ S` and a point
+`x` with `j x ∈ T`, the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j` followed by restriction
+to `j x` is restriction to `x` followed by `localHomologyIsoOfIsOpenEmbedding`. -/
+@[reassoc]
+lemma localHomologyMap_comp_localHomologyRestriction_singleton [T1Space N] {j : M → N}
+    (hj : IsOpenEmbedding j) {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) {x : M} (hxT : j x ∈ T)
+    (k : ℕ) :
+    localHomologyMap R ⟨j, hj.continuous⟩ h k ≫
+        localHomologyRestriction R (singleton_subset_iff.2 hxT) k =
+      localHomologyRestriction R (singleton_subset_iff.2 (h (mem_preimage.2 hxT))) k ≫
+        (localHomologyIsoOfIsOpenEmbedding R hj x k).hom := by
+  rw [localHomologyMap_comp_localHomologyRestriction, localHomologyIsoOfIsOpenEmbedding_hom,
+    localHomologyRestriction_comp_localHomologyMap]
 
 /-- The isomorphism of local homology induced by the identity is the identity. -/
 @[simp]

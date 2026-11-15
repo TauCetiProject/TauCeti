@@ -109,15 +109,10 @@ private lemma exists_sub_eq {W A₀ A₁ A₀₁ : X.Opens} (hW : IsAffineOpen W
     rfl
   rw [hρ] at hy hy'
   -- `c ^ m` and `d ^ n` generate the unit ideal of `Γ(X, W)`
-  have hpow (f : Γ(X, W)) (k : ℕ) : X.basicOpen f ≤ X.basicOpen (f ^ k) := by
-    rcases k.eq_zero_or_pos with rfl | hk
-    · simpa using X.basicOpen_le f
-    · rw [Scheme.basicOpen_pow _ _ hk]
-  obtain ⟨p, q, hpq⟩ := Ideal.mem_span_pair.1 ((hW.self_le_iSup_basicOpen_iff
-    (s := {c ^ m, d ^ n})).1 (hcd.trans (sup_le
-      ((hpow c m).trans (le_iSup_of_le ⟨c ^ m, by simp⟩ le_rfl))
-      ((hpow d n).trans (le_iSup_of_le ⟨d ^ n, by simp⟩ le_rfl)))) ▸ Submodule.mem_top :
-        (1 : Γ(X, W)) ∈ Ideal.span {c ^ m, d ^ n})
+  have hspan : Ideal.span ({c, d} : Set Γ(X, W)) = ⊤ :=
+    hW.self_le_iSup_basicOpen_iff.mp (by simpa only [iSup_subtype, iSup_pair] using hcd)
+  have hcd' : IsCoprime c d := Ideal.mem_span_pair.mp (hspan ▸ Submodule.mem_top)
+  obtain ⟨p, q, hpq⟩ := hcd'.pow (m := m) (n := n)
   refine ⟨X.presheaf.map (homOfLE (X.basicOpen_le c)).op q • y,
     -(X.presheaf.map (homOfLE (X.basicOpen_le d)).op p • y'), ?_⟩
   -- the restriction of `p * c ^ m + q * d ^ n = 1` to `D(c) ∩ D(d)`
@@ -183,7 +178,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
   | singleton a =>
     exact quasiIso_cechAugmentation_prod_of_hom _ isTerminalTop _ Y
       (i₀ := ⟨a, Finset.mem_singleton_self a⟩) (homOfLE (by simpa using hYs))
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     obtain ⟨V₁, hV₁, hYV₁, hV₁s⟩ := hU.exists_mem_range_basicOpen_le_sup hY (hV a) V hV s
       (by simpa [Finset.sup_cons] using hYs)
     let F := (SheafOfModules.toSheaf X.ringCatSheaf).obj M

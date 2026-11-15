@@ -44,7 +44,7 @@ jobs:
       matrix:
         replica: ${{ fromJSON(inputs.capacity && '[1,2,3]' || '[1]') }}
     # Existing provisioned staging shape; ordinary priority leaves bors first.
-    runs-on: [nscloud-ubuntu-24.04-amd64-8x16-with-features, 'namespace-features:container.privileged=true']
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout immutable trusted tooling
         uses: actions/checkout@v4
@@ -54,10 +54,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ede36083deac17ab1e407c77a30305fa5341d911
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ede36083deac17ab1e407c77a30305fa5341d911
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: .
       - name: Resolve immutable pins and validate before any dependency code executes
         env:

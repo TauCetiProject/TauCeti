@@ -104,7 +104,6 @@ private theorem inserted_eq_zero_of_re_endCoord_le (hq : q ≠ inf) (hL : 0 ≤ 
   have hf : ‖q.plumbingFactor L‖ = u ^ 2 / 4 := by
     rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
     ring_nf
-  have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
   have hψ := q.plumbingMap_one_sub_endCenter L
   rcases eq_or_ne w q.endCenter with rfl | hc

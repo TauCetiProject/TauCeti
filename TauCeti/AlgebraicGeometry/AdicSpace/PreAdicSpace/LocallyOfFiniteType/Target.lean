@@ -48,7 +48,7 @@ private theorem locallyOfFiniteType_restrict_chart {f : X ⟶ Y} {W : Opens Y} {
       ((Opens.map (X.ofRestrict ((Opens.map f.base).obj W).isOpenEmbedding).base).obj
         U).isOpenEmbedding) ≫ f.restrictPreimage W) := by
   set R : Opens YA := (Opens.map eV.inv.base).obj
-    ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W) with hR
+    ((Opens.map (Y.ofRestrict V.isOpenEmbedding).base).obj W)
   have w := restrictPreimage_comp_eq_of_chart eU eV hfac R
   let eK := IsOpenImmersion.isoOfRangeEq _ _ (range_restrict_chart_source_eq (W := W) eU eV hfac)
   let eO := IsOpenImmersion.isoOfRangeEq _ _ (range_restrict_chart_target_eq (W := W) eV)

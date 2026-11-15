@@ -25,6 +25,10 @@ geometric point, because the corresponding point action preserves the scalar ext
 Reduced finite-type point separation makes every coordinate zero. Right exactness of tensor
 product then identifies `coact m` with a tensor in `N ⊗ C`.
 
+For example, `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule` uses
+`TauCeti.Subcomodule.ofEndOfPointStable` to show that the invariants of a normal closed subgroup
+form a subcomodule of the ambient representation.
+
 ## Main declarations
 
 * `Submodule.coact_mem_range_of_forall_endOfPoint_tmul_mem_baseChange`: pointwise
@@ -39,10 +43,6 @@ product then identifies `coact m` with a tensor in `N ⊗ C`.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.2.
-
-This supplies the point-separation step in Layer 6 of the ReductiveGroups roadmap: for a normal
-closed subgroup, pointwise normality makes its fixed subspace stable under the ambient group, and
-the result here promotes that stable subspace to an ambient-group subcomodule.
 -/
 
 public section

@@ -84,8 +84,6 @@ generator rather than the donor's separate one-parameter group representation.
   Theorem VIII.8.
 * K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
   Section II.3.11.
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part A (C₀-groups and Stone's
-  theorem stretch target).
 -/
 
 public section

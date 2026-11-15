@@ -134,7 +134,7 @@ private theorem exists_eqOn_swap_mul_mul_inv_mem_zpowers {g : Perm α} (hgc : g.
     g.supportᶜ.equivFin.symm.toEmbedding.trans (Function.Embedding.subtype _)
   obtain ⟨x, hx⟩ := exists_smul_eq G e (e.trans (swap a b).toEmbedding)
   have hxΔ : ∀ z ∉ g.support, (x : Perm α) z = swap a b z := fun z hz ↦ by
-    simpa only [e, Function.Embedding.smul_apply, Function.Embedding.trans_apply,
+    simpa only [e, smul_apply, Function.Embedding.trans_apply,
       Function.Embedding.subtype_apply, Equiv.toEmbedding_apply, Equiv.symm_apply_apply,
       Subgroup.smul_def, Perm.smul_def] using
       DFunLike.congr_fun hx (g.supportᶜ.equivFin ⟨z, mem_compl.2 hz⟩)

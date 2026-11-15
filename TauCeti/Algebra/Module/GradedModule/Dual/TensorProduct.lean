@@ -45,7 +45,7 @@ variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Modu
 
 /-- The ordinary tensor product of homogeneous functionals has the sum of their degrees.
 No finite-generation or projectivity hypothesis is needed for this support statement. -/
-theorem dualDistrib_tmul_mem_dualPiece (G : InternalGrading R M) (H : InternalGrading R N)
+theorem dualDistrib_tmul_mem_dualPiece (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     {p q : ℤ} {φ : Module.Dual R M} {ψ : Module.Dual R N}
     (hφ : φ ∈ G.dualPiece p) (hψ : ψ ∈ H.dualPiece q) :
     TensorProduct.dualDistrib R M N (φ ⊗ₜ[R] ψ) ∈ (G.tensorProduct H).dualPiece (p + q) := by
@@ -62,7 +62,7 @@ theorem dualDistrib_tmul_mem_dualPiece (G : InternalGrading R M) (H : InternalGr
   exact hle hz
 
 /-- Mathlib's ordinary tensor-dual map preserves the internal total degree. -/
-theorem isHomogeneous_dualDistrib (G : InternalGrading R M) (H : InternalGrading R N)
+theorem isHomogeneous_dualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hG : {p | G.dualPiece p ≠ ⊥}.Finite) (hH : {p | H.dualPiece p ≠ ⊥}.Finite) :
     TauCeti.LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N)
       ((G.dual hG).tensorProduct (H.dual hH)).piece (G.tensorProduct H).dualPiece 0 := by
@@ -86,19 +86,19 @@ variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N
 
 /-- The graded tensor-dual map, with the Koszul sign in evaluation.
 It is the ordinary tensor-dual map precomposed on its argument with the sign automorphism. -/
-noncomputable def signedDualDistrib (G : InternalGrading R M) (H : InternalGrading R N) :
+noncomputable def signedDualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
     Module.Dual R M ⊗[R] Module.Dual R N →ₗ[R] Module.Dual R (M ⊗[R] N) :=
   (G.koszulTensorTwist H).toLinearMap.dualMap ∘ₗ TensorProduct.dualDistrib R M N
 
 /-- Evaluation of the signed map uses the ordinary functional on the sign-twisted tensor. -/
-theorem signedDualDistrib_apply (G : InternalGrading R M) (H : InternalGrading R N)
+theorem signedDualDistrib_apply (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (w : Module.Dual R M ⊗[R] Module.Dual R N) (z : M ⊗[R] N) :
     G.signedDualDistrib H w z = TensorProduct.dualDistrib R M N w (G.koszulTensorTwist H z) := by
   rw [signedDualDistrib, LinearMap.comp_apply, LinearMap.dualMap_apply, LinearEquiv.coe_coe]
 
 /-- On homogeneous arguments the signed comparison multiplies ordinary evaluation by the
 Koszul sign of their two degrees. -/
-theorem signedDualDistrib_tmul_tmul (G : InternalGrading R M) (H : InternalGrading R N)
+theorem signedDualDistrib_tmul_tmul (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (φ : Module.Dual R M) (ψ : Module.Dual R N) {p q : ℤ} {x : M} {y : N}
     (hx : x ∈ G.piece p) (hy : y ∈ H.piece q) :
     G.signedDualDistrib H (φ ⊗ₜ[R] ψ) (x ⊗ₜ[R] y) =
@@ -108,8 +108,8 @@ theorem signedDualDistrib_tmul_tmul (G : InternalGrading R M) (H : InternalGradi
 
 /-- The evaluation sign is `(-1)^(|ψ||x|)`, as prescribed for a tensor product of graded maps.
 If the degree of `y` does not match that of `ψ`, both sides vanish. -/
-theorem signedDualDistrib_tmul_tmul_of_mem_dualPiece (G : InternalGrading R M)
-    (H : InternalGrading R N) (φ : Module.Dual R M) {ψ : Module.Dual R N} {p q s : ℤ}
+theorem signedDualDistrib_tmul_tmul_of_mem_dualPiece (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (φ : Module.Dual R M) {ψ : Module.Dual R N} {p q s : ℤ}
     {x : M} {y : N} (hx : x ∈ G.piece p) (hy : y ∈ H.piece s) (hψ : ψ ∈ H.dualPiece q) :
     G.signedDualDistrib H (φ ⊗ₜ[R] ψ) (x ⊗ₜ[R] y) =
       (q * p).negOnePow • (φ x * ψ y) := by
@@ -119,7 +119,7 @@ theorem signedDualDistrib_tmul_tmul_of_mem_dualPiece (G : InternalGrading R M)
   · rw [(mem_dualPiece_iff H q ψ).mp hψ s y hy hs, mul_zero, smul_zero, smul_zero]
 
 /-- The signed tensor-dual map preserves degree; this does not require projectivity. -/
-theorem isHomogeneous_signedDualDistrib (G : InternalGrading R M) (H : InternalGrading R N)
+theorem isHomogeneous_signedDualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hG : {p | G.dualPiece p ≠ ⊥}.Finite) (hH : {p | H.dualPiece p ≠ ⊥}.Finite) :
     TauCeti.LinearMap.IsHomogeneous (G.signedDualDistrib H)
       ((G.dual hG).tensorProduct (H.dual hH)).piece (G.tensorProduct H).dualPiece 0 := by
@@ -137,13 +137,13 @@ section FiniteProjective
 variable [Module.Finite R M] [Module.Finite R N] [Module.Projective R M] [Module.Projective R N]
 
 /-- The signed tensor-dual equivalence for finite projective graded modules. -/
-noncomputable def signedDualDistribEquiv (G : InternalGrading R M) (H : InternalGrading R N) :
+noncomputable def signedDualDistribEquiv (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
     Module.Dual R M ⊗[R] Module.Dual R N ≃ₗ[R] Module.Dual R (M ⊗[R] N) :=
   TensorProduct.dualDistribEquiv R M N ≪≫ₗ (G.koszulTensorTwist H).dualMap
 
 /-- The finite-projective equivalence has the signed tensor-dual map as its forward map. -/
 @[simp]
-theorem signedDualDistribEquiv_toLinearMap (G : InternalGrading R M) (H : InternalGrading R N) :
+theorem signedDualDistribEquiv_toLinearMap (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
     (G.signedDualDistribEquiv H).toLinearMap = G.signedDualDistrib H := by
   rw [signedDualDistribEquiv, LinearEquiv.coe_trans,
     TensorProduct.toLinearMap_dualDistribEquiv]
@@ -151,14 +151,14 @@ theorem signedDualDistribEquiv_toLinearMap (G : InternalGrading R M) (H : Intern
 
 /-- Applying the finite-projective equivalence is applying the signed tensor-dual map. -/
 @[simp]
-theorem signedDualDistribEquiv_apply (G : InternalGrading R M) (H : InternalGrading R N)
+theorem signedDualDistribEquiv_apply (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (w : Module.Dual R M ⊗[R] Module.Dual R N) :
     G.signedDualDistribEquiv H w = G.signedDualDistrib H w :=
   LinearMap.congr_fun (G.signedDualDistribEquiv_toLinearMap H) w
 
 /-- The signed tensor-dual equivalence preserves the internal grading. -/
-theorem isHomogeneous_signedDualDistribEquiv (G : InternalGrading R M)
-    (H : InternalGrading R N) :
+theorem isHomogeneous_signedDualDistribEquiv (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) :
     TauCeti.LinearMap.IsHomogeneous (G.signedDualDistribEquiv H).toLinearMap
       ((G.dual (G.finite_dualPiece_ne_bot G.finite_piece_ne_bot)).tensorProduct
         (H.dual (H.finite_dualPiece_ne_bot H.finite_piece_ne_bot))).piece
@@ -172,8 +172,8 @@ theorem isHomogeneous_signedDualDistribEquiv (G : InternalGrading R M)
       (H.finite_dualPiece_ne_bot H.finite_piece_ne_bot)).map_mem hw
 
 /-- The inverse tensor-dual comparison preserves degree as well. -/
-theorem isHomogeneous_signedDualDistribEquiv_symm (G : InternalGrading R M)
-    (H : InternalGrading R N) :
+theorem isHomogeneous_signedDualDistribEquiv_symm (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) :
     TauCeti.LinearMap.IsHomogeneous (G.signedDualDistribEquiv H).symm.toLinearMap
       ((G.tensorProduct H).dual
         ((G.tensorProduct H).finite_dualPiece_ne_bot (G.tensorProduct H).finite_piece_ne_bot)).piece
@@ -183,8 +183,8 @@ theorem isHomogeneous_signedDualDistribEquiv_symm (G : InternalGrading R M)
 
 /-- A functional on the tensor product has degree `p` exactly when its inverse image under
 the signed comparison has total degree `p`. -/
-theorem signedDualDistribEquiv_mem_piece_iff (G : InternalGrading R M)
-    (H : InternalGrading R N) (p : ℤ) (w : Module.Dual R M ⊗[R] Module.Dual R N) :
+theorem signedDualDistribEquiv_mem_piece_iff (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (p : ℤ) (w : Module.Dual R M ⊗[R] Module.Dual R N) :
     G.signedDualDistribEquiv H w ∈ (G.tensorProduct H).dualPiece p ↔
       w ∈ ((G.dual (G.finite_dualPiece_ne_bot G.finite_piece_ne_bot)).tensorProduct
         (H.dual (H.finite_dualPiece_ne_bot H.finite_piece_ne_bot))).piece p := by

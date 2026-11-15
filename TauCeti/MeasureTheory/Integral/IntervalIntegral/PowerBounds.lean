@@ -159,7 +159,7 @@ theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : �
 private theorem nonneg_of_ae_norm_le_mul {F : Type*} [NormedAddCommGroup F] {Φ : ℝ → F}
     {w : ℝ → ℝ} {t C : ℝ} (ht : 0 < t) (hw : ∀ s ∈ Ioo 0 t, 0 < w s)
     (h : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ C * w s) : 0 ≤ C := by
-  have h' : ∀ᵐ s ∂volume.restrict (Ioo 0 t), 0 ≤ C := by
+  have h' : ∀ᵐ _ ∂volume.restrict (Ioo 0 t), 0 ≤ C := by
     rw [ae_restrict_iff' measurableSet_Ioo]
     filter_upwards [h] with s hs hs'
     exact (mul_nonneg_iff_of_pos_right (hw s hs')).1 ((norm_nonneg _).trans (hs ⟨hs'.1, hs'.2.le⟩))

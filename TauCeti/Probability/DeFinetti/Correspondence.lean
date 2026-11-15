@@ -44,13 +44,11 @@ equivalence; and it takes the point masses of
 canonical decomposition of an exchangeable law over the extreme — equivalently the
 i.i.d. — exchangeable laws: the mixing law is unique, and the path laws it averages are extreme.
 
-This settles the Layer 8 bullet "the affine and ergodic decomposition of exchangeable laws" in
-`TauCetiRoadmap/Exchangeability/README.md`. Together with `exchangeableSigma_trivial_iff_iid`,
-`exchangeableSigma_trivial_iff_ergodicSMul` and `exchangeable_extreme_iff_iid`, this correspondence
-identifies the product — equivalently extreme — components with the ergodic components for the
-finitely supported permutation action, which that bullet sequences after the `ErgodicSMul` interface
-of Layer 6. Those equivalences compose directly; no additional correspondence declaration is
-required.
+Together with `exchangeableSigma_trivial_iff_iid`, `exchangeableSigma_trivial_iff_ergodicSMul` and
+`exchangeable_extreme_iff_iid`, this correspondence gives the affine and ergodic decomposition of
+exchangeable laws: it identifies the product — equivalently extreme — components with the ergodic
+components for the finitely supported permutation action. Those equivalences compose directly, so
+no separate declaration states the combination.
 
 ⚠ The action is the finitely supported permutations of the *time index*. Ergodicity for it is a
 different statement from ergodicity of the one-sided shift, which concerns the smaller σ-algebra of
@@ -219,14 +217,17 @@ carried by the extreme — equivalently i.i.d. — exchangeable laws
 (`infinitePi_mem_extremePoints_exchangeable`), degenerating exactly on the extreme points
 themselves. -/
 theorem deFinettiBarycenter_mem_extremePoints_iff [StandardBorelSpace α]
-    {π : Measure (ProbabilityMeasure α)} [IsProbabilityMeasure π] :
+    {π : Measure (ProbabilityMeasure α)} :
     Measure.deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α, π = Measure.dirac P := by
-  rw [exchangeable_extreme_iff_iid]
-  refine ⟨fun ⟨P, hP⟩ => ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_⟩,
-    fun ⟨P, hP⟩ => ⟨P, ?_⟩⟩
-  · simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac]
+  refine ⟨fun h => ?_, fun ⟨P, hP⟩ => ?_⟩
+  · have hπ : IsProbabilityMeasure π := (Measure.isProbabilityMeasure_deFinettiBarycenter_iff π).1
+      (mem_exchangeableProbabilityMeasures_iff.1 h.1).2
+    obtain ⟨P, hP⟩ := exchangeable_extreme_iff_iid.1 h
+    exact ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq (by
+      simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac])⟩
   · rw [hP, Measure.deFinettiBarycenter_dirac]
+    exact infinitePi_mem_extremePoints_exchangeable P
 
 end Probability
 

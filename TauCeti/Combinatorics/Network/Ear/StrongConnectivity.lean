@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Network.DirectedCycle
 public import TauCeti.Combinatorics.Network.Ear.Basic
 
 /-!
@@ -24,7 +25,7 @@ Conversely, a finite network on a nonempty vertex type is strongly connected onl
 directed ear decomposition covering every vertex and every arrow. In a strongly connected network
 every arrow leaving a subnetwork returns to it along a directed walk, and the first return closes
 an ear through that arrow. Since each ear adds a new arrow, finitely many ears exhaust a finite
-network, starting from any vertex.
+network, starting from any vertex or any directed cycle.
 
 ## Main results
 
@@ -40,9 +41,15 @@ network, starting from any vertex.
   target can return to it, lies on an ear.
 * `TauCeti.Network.EarDecomposition.exists_earDecomposition_top_extend`: in a finite strongly
   connected network, every directed ear decomposition of a subnetwork extends to the whole
-  network.
-* `TauCeti.Network.isStronglyConnected_iff_nonempty_earDecomposition`: the directed ear
-  characterization of strong connectivity.
+  network, preserving its initial vertex, prefix stages, and displayed ears.
+* `TauCeti.Network.isStronglyConnected_iff_exists_earDecomposition_initialVertex`,
+  `TauCeti.Network.isStronglyConnected_iff_nonempty_earDecomposition`, and
+  `TauCeti.Network.nonempty_earDecomposition_top_iff`: directed ear characterizations of strong
+  connectivity.
+* `TauCeti.Network.exists_earDecomposition_of_isCycle` and
+  `TauCeti.Network.isStronglyConnected_iff_exists_cycle_earDecomposition`: extending a directed
+  cycle to a full ear decomposition and the cycle-starting characterization on nontrivial vertex
+  types.
 
 ## References
 
@@ -177,7 +184,7 @@ private theorem exists_mem_toSubnetwork_arrowSet_of_isPath {x y b : V} (e : N.Ho
     rcases List.mem_cons.1 hc with rfl | hc
     exacts [he, hqA c hc]
   have hmem : ⟨x, y, e⟩ ∈ (((ArrowWalk.nil x).cons e).comp q).toSubnetwork.arrowSet := by
-    simp [harr]
+    simp
   by_cases hxb : x = b
   · subst hxb
     refine ⟨.closed ⟨x, ((ArrowWalk.nil x).cons e).comp q, (ArrowWalk.isCycle_def _).2 ⟨?_, ?_⟩,
@@ -242,27 +249,42 @@ namespace EarDecomposition
 variable {T : N.Subnetwork}
 
 /-- In a finite strongly connected network, every directed ear decomposition of a subnetwork
-extends to one of the whole network: the extension starts at the same vertex and passes through
-the same stages before adjoining further ears. -/
+extends to one of the whole network: the extension starts at the same vertex, passes through the
+same stages, and preserves the displayed ears before adjoining further ears. -/
 theorem exists_earDecomposition_top_extend [Finite V] [∀ v w, Finite (N.Hom v w)]
     (hN : @Quiver.IsStronglyConnected V ⟨N.Hom⟩) (D : EarDecomposition T) :
     ∃ (D' : EarDecomposition (⊤ : N.Subnetwork)) (h : D.length ≤ D'.length),
       D'.initialVertex = D.initialVertex ∧
-        ∀ i : Fin (D.length + 1), D'.stage (Fin.castLE (Nat.succ_le_succ h) i) = D.stage i := by
+        (∀ i : Fin (D.length + 1), D'.stage (Fin.castLE (Nat.succ_le_succ h) i) = D.stage i) ∧
+        ∀ i : Fin D.length, HEq (D'.ear (Fin.castLE h i)) (D.ear i) := by
   induction T using WellFoundedGT.induction with
   | _ T ih =>
   by_cases hT : T = ⊤
   · subst hT
-    exact ⟨D, le_rfl, rfl, fun i ↦ rfl⟩
+    exact ⟨D, le_rfl, rfl, fun _ ↦ rfl, fun _ ↦ HEq.rfl⟩
   obtain ⟨P⟩ := Ear.nonempty_of_ne_top hN ⟨_, D.initialVertex_mem⟩ hT
-  obtain ⟨D', h, hinit, hstage⟩ := ih P.adjoin P.lt_adjoin (D.snoc P)
-  refine ⟨D', (Nat.le_succ _).trans ((D.snoc_length P).symm.trans_le h),
-    hinit.trans (D.snoc_initialVertex P), fun i ↦ ?_⟩
-  -- Both indices have value `i`; `simp` cannot see this through the length of `D.snoc P`.
-  exact (congrArg D'.stage (Fin.ext rfl)).trans
-    ((hstage i.castSucc).trans (D.snoc_stage_castSucc P i))
+  obtain ⟨D', h, hinit, hstage, hear⟩ := ih P.adjoin P.lt_adjoin (D.snoc P)
+  have h' : D.length ≤ D'.length := (Nat.le_succ _).trans ((D.snoc_length P).symm.trans_le h)
+  refine ⟨D', h', hinit.trans (D.snoc_initialVertex P), fun i ↦ ?_, fun i ↦ ?_⟩
+  · -- Both indices have value `i`; `simp` cannot see this through the length of `D.snoc P`.
+    exact (congrArg D'.stage (Fin.ext rfl)).trans
+      ((hstage i.castSucc).trans (D.snoc_stage_castSucc P i))
+  · have hi : Fin.castLE h' i = Fin.castLE h i.castSucc := Fin.ext rfl
+    rw [hi]
+    exact (hear i.castSucc).trans (D.snoc_ear_castSucc P i)
 
 end EarDecomposition
+
+/-- A finite network is strongly connected if and only if `⊤` admits a directed ear decomposition
+starting at a prescribed vertex `v₀`. -/
+theorem isStronglyConnected_iff_exists_earDecomposition_initialVertex
+    [Finite V] [∀ v w, Finite (N.Hom v w)] (v₀ : V) :
+    @Quiver.IsStronglyConnected V ⟨N.Hom⟩ ↔
+      ∃ D : EarDecomposition (⊤ : N.Subnetwork), D.initialVertex = v₀ := by
+  refine ⟨fun hN ↦ ?_, fun ⟨D, _⟩ ↦ D.isStronglyConnected_full⟩
+  obtain ⟨D, _, hinit, -, -⟩ := EarDecomposition.exists_earDecomposition_top_extend hN
+    (EarDecomposition.singleton (N := N) v₀)
+  exact ⟨D, hinit⟩
 
 /-- **Directed ear decomposition.** A finite network on a nonempty vertex type is strongly
 connected exactly when it can be built from a single vertex by adjoining directed open and closed
@@ -274,5 +296,58 @@ theorem isStronglyConnected_iff_nonempty_earDecomposition [Finite V] [∀ v w, F
   obtain ⟨D, -⟩ := EarDecomposition.exists_earDecomposition_top_extend hN
     (EarDecomposition.singleton (N := N) (Classical.arbitrary V))
   exact ⟨D⟩
+
+/-- On any finite network, `⊤` admits a directed ear decomposition if and only if the vertex type
+is nonempty and the network is strongly connected. -/
+theorem nonempty_earDecomposition_top_iff [Finite V] [∀ v w, Finite (N.Hom v w)] :
+    Nonempty (EarDecomposition (⊤ : N.Subnetwork)) ↔
+      Nonempty V ∧ @Quiver.IsStronglyConnected V ⟨N.Hom⟩ :=
+  ⟨fun ⟨D⟩ ↦ ⟨⟨D.initialVertex⟩, D.isStronglyConnected_full⟩,
+    fun ⟨_, hN⟩ ↦ isStronglyConnected_iff_nonempty_earDecomposition.1 hN⟩
+
+/-- In a finite strongly connected network, every directed cycle appears as the initial closed ear
+and first positive stage (`stage 1`) of a directed ear decomposition of `⊤`. -/
+theorem exists_earDecomposition_of_isCycle [Finite V] [∀ v w, Finite (N.Hom v w)]
+    (hN : @Quiver.IsStronglyConnected V ⟨N.Hom⟩) {v₀ : V} {c : ArrowWalk N.Hom v₀ v₀}
+    (hc : c.IsCycle) :
+    ∃ (D : EarDecomposition (⊤ : N.Subnetwork)) (h : 0 < D.length),
+      D.initialVertex = v₀ ∧ D.kindAt ⟨0, h⟩ = .closed ∧ D.walkAt ⟨0, h⟩ = ⟨v₀, v₀, c⟩ ∧
+        D.stage ⟨1, Nat.succ_lt_succ h⟩ = c.toSubnetwork := by
+  let D₀ := EarDecomposition.ofIsCycle (N := N) hc
+  obtain ⟨D, hlen, hinit, hstage, hear⟩ :=
+    EarDecomposition.exists_earDecomposition_top_extend hN D₀
+  have hpos : 0 < D.length :=
+    (EarDecomposition.ofIsCycle_length (N := N) hc ▸ Nat.zero_lt_one).trans_le hlen
+  let i₀ : Fin D₀.length := ⟨0, by simp [D₀]⟩
+  have hi : (⟨0, hpos⟩ : Fin D.length) = Fin.castLE hlen i₀ := Fin.ext rfl
+  have hwalk : D.walkAt ⟨0, hpos⟩ = ⟨v₀, v₀, c⟩ := by
+    rw [hi, EarDecomposition.walkAt_def]
+    have hstage₀ : D.stage (Fin.castLE hlen i₀).castSucc = D₀.stage i₀.castSucc :=
+      (congrArg D.stage (Fin.ext rfl)).trans (hstage i₀.castSucc)
+    exact (Ear.toWalk_eq_of_heq hstage₀ (hear i₀)).trans
+      ((D₀.walkAt_def i₀).symm.trans (EarDecomposition.ofIsCycle_walkAt hc i₀))
+  refine ⟨D, hpos, hinit.trans (EarDecomposition.ofIsCycle_initialVertex hc),
+    D.kindAt_zero_eq_closed hpos, hwalk, ?_⟩
+  let j₁ : Fin (D₀.length + 1) := ⟨1, Nat.succ_lt_succ (by simp [D₀])⟩
+  have hj : (⟨1, Nat.succ_lt_succ hpos⟩ : Fin (D.length + 1)) =
+      Fin.castLE (Nat.succ_le_succ hlen) j₁ := Fin.ext rfl
+  rw [hj, hstage j₁]
+  exact EarDecomposition.ofIsCycle_stage_one hc j₁.isLt
+
+/-- **Cycle-starting directed ear characterization on nontrivial vertex types.** On a finite
+network with at least two vertices, strong connectivity is equivalent to the existence of a
+directed cycle of length at least `2` that forms `stage 1` of a directed ear decomposition of
+`⊤`. -/
+theorem isStronglyConnected_iff_exists_cycle_earDecomposition
+    [Nontrivial V] [Finite V] [∀ v w, Finite (N.Hom v w)] :
+    @Quiver.IsStronglyConnected V ⟨N.Hom⟩ ↔
+      ∃ (v₀ : V) (c : ArrowWalk N.Hom v₀ v₀) (D : EarDecomposition (⊤ : N.Subnetwork))
+        (h : 0 < D.length),
+        c.IsCycle ∧ 2 ≤ c.length ∧ D.initialVertex = v₀ ∧
+          D.stage ⟨1, Nat.succ_lt_succ h⟩ = c.toSubnetwork := by
+  refine ⟨fun hN ↦ ?_, fun ⟨_, _, D, _, _, _, _, _⟩ ↦ D.isStronglyConnected_full⟩
+  obtain ⟨v₀, c, hc, hlen2⟩ := ArrowWalk.exists_isCycle_two_le_length hN
+  obtain ⟨D, hpos, hinit, -, -, hstage1⟩ := exists_earDecomposition_of_isCycle hN hc
+  exact ⟨v₀, c, D, hpos, hc, hlen2, hinit, hstage1⟩
 
 end TauCeti.Network

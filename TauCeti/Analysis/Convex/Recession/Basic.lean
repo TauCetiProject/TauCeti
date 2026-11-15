@@ -31,6 +31,8 @@ the empty set is the whole space by its universal definition.
 * `Set.recessionCone_preimage_const_add` and `Set.recessionCone_vadd`: translation invariance.
 * `AffineEquiv.recessionCone_image`: transport by the linear part of an affine equivalence.
 * `PointedCone.recessionCone_coe`: the recession cone of a pointed cone is itself.
+* `PointedCone.mem_iff_forall_linear_nonpos`: a cone cut out by affine inequalities is cut out by
+  their linear parts.
 * `Set.isClosed_recessionCone`: closed sets have closed recession cones.
 * `Convex.recessionCone_eq_asymptoticCone`: agreement with asymptotic directions for
   nonempty closed convex sets.
@@ -260,6 +262,21 @@ theorem recessionCone_coe (C : PointedCone R V) : Set.recessionCone R (C : Set V
     simpa using hv 0 C.zero_mem 1 zero_le_one
   · intro hv x hx t ht
     exact C.add_mem hx (PointedCone.smul_mem C ht hv)
+
+end PointedCone
+
+namespace PointedCone
+
+variable {R V : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V]
+  [Module R V] {C : PointedCone R V}
+
+/-- A pointed cone over an ordered field cut out by affine inequalities is already cut out by
+their linear parts. -/
+theorem mem_iff_forall_linear_nonpos {ι : Type*} (g : ι → (V →ᵃ[R] R))
+    (hC : (C : Set V) = {x | ∀ j, g j x ≤ 0}) (x : V) : x ∈ C ↔ ∀ j, (g j).linear x ≤ 0 := by
+  have hne : {x : V | ∀ j, g j x ≤ 0}.Nonempty := ⟨0, hC ▸ C.zero_mem⟩
+  have hmem := Set.mem_recessionCone_setOf_forall_iff hne (v := x)
+  rwa [← hC, recessionCone_coe] at hmem
 
 end PointedCone
 

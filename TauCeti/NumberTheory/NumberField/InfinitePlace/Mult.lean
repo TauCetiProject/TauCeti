@@ -49,15 +49,19 @@ theorem mem_placesOver {v : InfinitePlace K} {w : InfinitePlace L} :
 
 variable [NumberField K] [NumberField L]
 
+omit [NumberField K] in
 variable (L) in
 open scoped Classical in
 /-- The multiplicities of the infinite places of `L` above an infinite place `v` of `K` add up to
 the multiplicity of `v` times `[L : K]`. -/
 theorem sum_mult_eq_mult_mul_finrank (v : InfinitePlace K) :
     ∑ w ∈ v.placesOver L, w.mult = v.mult * finrank K L := by
+  have : CharZero K := (algebraMap K L).charZero
+  have : NumberField K := NumberField.of_tower ℚ L K
   rw [← sum_inertiaDeg_eq_finrank K L v, Finset.mul_sum]
   refine Finset.sum_congr rfl fun w hw ↦ ?_
   have : w.LiesOver v := by simpa using hw
+  let := AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
   rw [inertiaDeg_eq_finrank, mult_mul_finrank]
 
 /-- Grouping the infinite places of `L` by their restriction to `K`: a product over the infinite
