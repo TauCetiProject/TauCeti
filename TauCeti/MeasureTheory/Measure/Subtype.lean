@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Regular
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 import TauCeti.MeasureTheory.Measure.Comap
 
@@ -36,7 +37,10 @@ of `μ.comap (↑)`:
 
 * `MeasurableSet.measurableEmbedding_inclusion`: `Set.inclusion hst : s → t` is a measurable
   embedding when `s` is measurable in `α`.
-* `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
+* `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`, and
+  consequently `Measurable.sigmaFinite_comap`.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_iff`: `μ.comap ((↑) : s → α)` is a
+  probability measure on a measurable set `s` if and only if `μ s = 1`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
@@ -73,6 +77,21 @@ theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) 
   exact (measure_mono (preimage_mono (subset_toMeasurable μ v))).trans <|
     ((comap_apply_le f μ hT.nullMeasurableSet).trans
       (measure_mono (image_preimage_subset f _))).trans_eq (measure_toMeasurable v)
+
+/-- Pulling a σ-finite measure back along a measurable map gives a σ-finite measure. -/
+theorem _root_.Measurable.sigmaFinite_comap {f : α → β} (hf : Measurable f) (μ : Measure β)
+    [SigmaFinite μ] : SigmaFinite (μ.comap f) :=
+  ⟨⟨{ set n := f ⁻¹' spanningSets μ n
+      set_mem _ := trivial
+      finite n := (comap_preimage_le hf μ _).trans_lt (measure_spanningSets_lt_top μ n)
+      spanning := by rw [← preimage_iUnion, iUnion_spanningSets, preimage_univ] }⟩⟩
+
+/-- For a measurable subset `s`, the pullback `μ.comap ((↑) : s → α)` is a probability measure if
+and only if `μ s = 1`. -/
+theorem isProbabilityMeasure_comap_subtype_iff {s : Set α} (hs : MeasurableSet s) (μ : Measure α) :
+    IsProbabilityMeasure (μ.comap ((↑) : s → α)) ↔ μ s = 1 := by
+  rw [isProbabilityMeasure_iff, (MeasurableEmbedding.subtype_coe hs).comap_apply, image_univ,
+    Subtype.range_coe]
 
 /-- Pulling `μ` back to a measurable subtype `t` and then along `Set.inclusion hst` to a subset
 `s ⊆ t` agrees with pulling `μ` back directly to `s`. -/

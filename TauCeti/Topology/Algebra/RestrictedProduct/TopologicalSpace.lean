@@ -18,7 +18,13 @@ of `continuous_mulSingle` (and, additively, `continuous_single`) for `Pi` types,
 factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map.
 On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
-product topology.
+product topology. When `T` is cofinite and `A i` is open for `i ∈ T`, the principal stage at `T`
+embeds as an open subspace (`isOpenEmbedding_inclusion_principal_of_isOpen`), with no openness
+requirement on the finitely many remaining indices. Over a countable index type with
+second-countable factors, each principal stage embeds in `Π i, R i` and is therefore second
+countable (`secondCountableTopology_restrictedProduct_principal`), and when cofinitely many
+reference sets are open these open principal stages form a countable open cover, making the
+restricted product itself second countable (`secondCountableTopology_restrictedProduct`).
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -206,5 +212,72 @@ theorem not_isInducing_coe_bot [∀ i, DiscreteTopology (G i)]
   exact hg hmem
 
 end Discrete
+
+section SecondCountable
+
+/-- For a cofinite set `T` at whose indices the reference sets are open, the inclusion of the
+principal stage `Πʳ i, [R i, A i]_[𝓟 T]` into `Πʳ i, [R i, A i]` is an open embedding; openness
+of `A i` outside `T` is not needed. -/
+theorem isOpenEmbedding_inclusion_principal_of_isOpen {T : Set ι} (hT : cofinite ≤ 𝓟 T)
+    (hAopen : ∀ i ∈ T, IsOpen (A i)) :
+    IsOpenEmbedding (RestrictedProduct.inclusion R A hT) where
+  toIsEmbedding := RestrictedProduct.isEmbedding_inclusion_principal hT
+  isOpen_range := by
+    rw [RestrictedProduct.range_inclusion]
+    refine isOpen_restrictedProduct_iff.2 fun S hS ↦ ?_
+    have hST : (Sᶜ ∩ T).Finite := (mem_cofinite.1 (le_principal_iff.1 hS)).inter_of_left T
+    convert (isOpen_set_pi hST fun i hi ↦ hAopen i hi.2).preimage RestrictedProduct.continuous_coe
+      using 1
+    ext x
+    simp only [Set.mem_preimage, RestrictedProduct.inclusion_apply, Set.mem_ofPred_eq,
+      eventually_principal, Set.mem_pi, Set.mem_inter_iff, Set.mem_compl_iff]
+    refine ⟨fun h i hi ↦ h i hi.2, fun h i hiT ↦ ?_⟩
+    by_cases hiS : i ∈ S
+    · exact eventually_principal.1 x.2 i hiS
+    · exact h i ⟨hiS, hiT⟩
+
+/-- A principal stage of a restricted product over a countable index type is second countable
+whenever all factors are second countable: it embeds into the full product `Π i, R i`. -/
+instance secondCountableTopology_restrictedProduct_principal [Countable ι]
+    [∀ i, SecondCountableTopology (R i)] {S : Set ι} :
+    SecondCountableTopology (Πʳ i, [R i, A i]_[𝓟 S]) :=
+  RestrictedProduct.isEmbedding_coe_of_principal.secondCountableTopology
+
+/-- **Second countability of a restricted product.** Over a countable index type with
+second-countable factors, if cofinitely many reference sets are open, the restricted product
+`Πʳ i, [R i, A i]` is second countable: the principal stages away from finite sets containing
+`{i | ¬ IsOpen (A i)}` form a countable open cover by second-countable subspaces. -/
+theorem secondCountableTopology_restrictedProduct [Countable ι]
+    [∀ i, SecondCountableTopology (R i)] (hAopen : ∀ᶠ i in cofinite, IsOpen (A i)) :
+    SecondCountableTopology (Πʳ i, [R i, A i]) := by
+  classical
+  -- Adjoin the finite set `S₀` of non-open indices to each `F : Finset ι` so every stage in the
+  -- cover embeds openly.
+  set S₀ : Set ι := {i | ¬ IsOpen (A i)}
+  have hS₀ : S₀.Finite := hAopen
+  let T (F : Finset ι) : Set ι := ((F : Set ι) ∪ S₀)ᶜ
+  have hT (F : Finset ι) : (cofinite : Filter ι) ≤ 𝓟 (T F) :=
+    le_principal_iff.2 (F.finite_toSet.union hS₀).compl_mem_cofinite
+  have hTopen (F : Finset ι) : IsOpenEmbedding (RestrictedProduct.inclusion R A (hT F)) :=
+    isOpenEmbedding_inclusion_principal_of_isOpen (hT F) fun i hi ↦ not_not.1 fun h ↦ hi (Or.inr h)
+  let U (F : Finset ι) : Set (Πʳ i, [R i, A i]) :=
+    Set.range (RestrictedProduct.inclusion R A (hT F))
+  have _ (F : Finset ι) : SecondCountableTopology (U F) :=
+    (isEmbedding_restrictedProduct_coe_comp (hT F) .subtypeVal fun x i hi ↦ by
+      obtain ⟨y, hy⟩ := x.2
+      exact hy ▸ eventually_principal.1 y.2 i hi).secondCountableTopology
+  refine TopologicalSpace.secondCountableTopology_of_countable_cover
+    (fun F ↦ (hTopen F).isOpen_range) (Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 ?_)
+  exact ⟨x.2.toFinset, RestrictedProduct.exists_inclusion_eq_of_eventually R A (hT x.2.toFinset)
+    fun i hi ↦ by_contra fun hx ↦ hi (Or.inl (x.2.mem_toFinset.2 hx))⟩
+
+/-- When all reference sets are open (`[Fact (∀ i, IsOpen (A i))]`), a restricted product of
+second-countable spaces over a countable index type is second countable. -/
+instance instSecondCountableTopologyRestrictedProduct [Countable ι]
+    [∀ i, SecondCountableTopology (R i)] [hAopen : Fact (∀ i, IsOpen (A i))] :
+    SecondCountableTopology (Πʳ i, [R i, A i]) :=
+  secondCountableTopology_restrictedProduct (.of_forall hAopen.out)
+
+end SecondCountable
 
 end TauCeti
