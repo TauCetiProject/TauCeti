@@ -17,11 +17,14 @@ left and right Fueter regular throughout that region. The two-sided Cauchy theor
 therefore gives zero boundary flux for `G * eᵢ * f` when `f` is left regular, and for
 `f * eᵢ * G` when `f` is right regular. The order of all three factors is essential.
 
-We prove these statements for coordinate boxes and for affine parallelepipeds, using
-the signed cofactor pullback in the latter case. The affine statements allow either
-orientation. Continuity is required only on the closed region, and Fueter regularity
-only pointwise in the interior; no continuous-derivative hypothesis is used. A pole
-on the boundary is excluded, not treated using the kernel's totalized value there.
+We prove these statements for coordinate boxes and for affine parallelepipeds, both for
+the signed cofactor pullback (`left_cauchyFueter_affine_cofactor_of_notMem`,
+`right_cauchyFueter_affine_cofactor_of_notMem`) and for the geometrically parametrized
+surface integral `ContinuousLinearMap.rawAffineBoundary` (`left_cauchyFueter_affine_of_notMem`,
+`right_cauchyFueter_affine_of_notMem`). The affine statements allow either orientation.
+Continuity is required only on the closed region, and Fueter regularity only pointwise
+in the interior; no continuous-derivative hypothesis is used. A pole on the boundary is
+excluded, not treated using the kernel's totalized value there.
 
 ## References
 
@@ -104,5 +107,35 @@ theorem right_cauchyFueter_affine_cofactor_of_notMem
   rw [boxBoundarySum_zero_one]
   simpa only [dq_single, one_smul] using cauchy_affine_cofactor L p hc
       (hK.comp dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx)) hf hl
+
+/-- The left Cauchy–Fueter raw affine boundary integral of `G * Dq * f` vanishes when the
+pole lies outside the closed affine parallelepiped. Both orientations of `L` are allowed. -/
+theorem left_cauchyFueter_affine_of_notMem
+    {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
+    (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
+    (hc : ContinuousOn (fun x ↦ f (dq x)) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
+      LeftFueterAt f (dq (p + L u))) :
+    ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
+      (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
+        (cauchyFueterKernel (dq x) q₀) (f (dq x))) = 0 := by
+  rw [L.rawAffineBoundary_eq_cofactor, ← boxBoundarySum_zero_one]
+  simpa only [ContinuousLinearMap.mulLeftRight_apply] using
+    left_cauchyFueter_affine_cofactor_of_notMem hq₀ hc hf
+
+/-- The right Cauchy–Fueter raw affine boundary integral of `f * Dq * G` vanishes when the
+pole lies outside the closed affine parallelepiped. Both orientations of `L` are allowed. -/
+theorem right_cauchyFueter_affine_of_notMem
+    {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
+    (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
+    (hc : ContinuousOn (fun x ↦ f (dq x)) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
+      RightFueterAt f (dq (p + L u))) :
+    ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
+      (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
+        (f (dq x)) (cauchyFueterKernel (dq x) q₀)) = 0 := by
+  rw [L.rawAffineBoundary_eq_cofactor, ← boxBoundarySum_zero_one]
+  simpa only [ContinuousLinearMap.mulLeftRight_apply] using
+    right_cauchyFueter_affine_cofactor_of_notMem hq₀ hc hf
 
 end TauCeti

@@ -5,26 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Quaternion.Forms
+public import TauCeti.Analysis.Quaternion.AffineFace
 public import TauCeti.Analysis.Quaternion.Fueter
-public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Affine
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
-# Quaternionic Cauchy flux on affine parallelepipeds
+# Quaternionic Cauchy theorems on affine parallelepipeds
 
 For `A u = p + L u`, the signed cofactor pullback transports a flux field on the
 parallelepiped to the parameter cube. This file proves that its boundary flux vanishes
 for the ordered field `g * eᵢ * f` when `g` is right Fueter regular and `f` is left
-Fueter regular in the interior. Taking either function to be one gives the two
-one-sided Cauchy theorems in cofactor coordinates.
+Fueter regular in the interior (`cauchy_affine_cofactor`), and then transfers this via
+`ContinuousLinearEquiv.rawAffineBoundary_eq_cofactor` to the geometrically parametrized
+surface integral `ContinuousLinearMap.rawAffineBoundary` of `g * Dq * f` (`cauchy_affine`).
+Taking either function to be `1` gives the left and right Cauchy theorems in both cofactor
+and `rawAffineBoundary` forms.
 
 The assumptions are continuity on the closed parallelepiped and pointwise regularity
 in its interior, not continuity of the derivative. All integrals are Bochner integrals
-on the real coordinate space; no measure on quaternions is introduced. The determinant
-in the cofactor pullback is signed, so these vanishing statements hold for either
-orientation of the invertible affine chart. They concern the cofactor flux, not a
-comparison with a geometrically parametrized surface integral.
+on the real coordinate space; no measure on quaternions is introduced. Both the cofactor
+pullback and `rawAffineBoundary` carry the parameter orientation of `A`, so these vanishing
+statements hold for either orientation of the invertible affine chart.
 
 ## References
 
@@ -135,5 +136,58 @@ theorem right_cauchy_affine_cofactor
             QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i) j (j.insertNth 0 x)) = 0 := by
   simpa only [mul_one] using cauchy_affine_cofactor L p hf
     (f := fun _ ↦ 1) continuousOn_const hfr (fun _ _ ↦ leftFueterAt_const _ _)
+
+/-- The two-sided Cauchy theorem on an affine parallelepiped, stated as vanishing of the
+geometrically parametrized surface integral `rawAffineBoundary` of `g * Dq * f` for a right
+Fueter regular `g` and a left Fueter regular `f`. Both orientations of `L` are allowed. -/
+theorem cauchy_affine
+    (hg : ContinuousOn (fun x ↦ g (Quaternion.dq x))
+      ((fun u ↦ p + L u) '' Icc 0 1))
+    (hf : ContinuousOn (fun x ↦ f (Quaternion.dq x))
+      ((fun u ↦ p + L u) '' Icc 0 1))
+    (hgr : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
+      RightFueterAt g (Quaternion.dq (p + L u)))
+    (hfl : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
+      LeftFueterAt f (Quaternion.dq (p + L u))) :
+    ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
+      (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
+        (g (Quaternion.dq x)) (f (Quaternion.dq x))) = 0 := by
+  rw [L.rawAffineBoundary_eq_cofactor]
+  simpa only [ContinuousLinearMap.mulLeftRight_apply, Quaternion.dq_single, one_smul] using
+    cauchy_affine_cofactor L p hg hf hgr hfl
+
+/-- The left Cauchy theorem on an affine parallelepiped, stated as vanishing of the
+geometrically parametrized surface integral `rawAffineBoundary` of `Dq * f` for a left
+Fueter regular `f`. Both orientations of `L` are allowed. -/
+theorem left_cauchy_affine
+    (hf : ContinuousOn (fun x ↦ f (Quaternion.dq x))
+      ((fun u ↦ p + L u) '' Icc 0 1))
+    (hfl : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
+      LeftFueterAt f (Quaternion.dq (p + L u))) :
+    ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
+      (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (Quaternion.dq x))) = 0 := by
+  have hmul : (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (Quaternion.dq x))) =
+      fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ 1 (f (Quaternion.dq x)) :=
+    funext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+  rw [hmul]
+  exact cauchy_affine L p (g := fun _ ↦ 1) continuousOn_const hf
+    (fun _ _ ↦ rightFueterAt_const _ _) hfl
+
+/-- The right Cauchy theorem on an affine parallelepiped, stated as vanishing of the
+geometrically parametrized surface integral `rawAffineBoundary` of `f * Dq` for a right
+Fueter regular `f`. Both orientations of `L` are allowed. -/
+theorem right_cauchy_affine
+    (hf : ContinuousOn (fun x ↦ f (Quaternion.dq x))
+      ((fun u ↦ p + L u) '' Icc 0 1))
+    (hfr : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
+      RightFueterAt f (Quaternion.dq (p + L u))) :
+    ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
+      (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (f (Quaternion.dq x))) = 0 := by
+  have hmul : (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (f (Quaternion.dq x))) =
+      fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ (f (Quaternion.dq x)) 1 :=
+    funext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+  rw [hmul]
+  exact cauchy_affine L p hf (f := fun _ ↦ 1) continuousOn_const hfr
+    (fun _ _ ↦ leftFueterAt_const _ _)
 
 end TauCeti

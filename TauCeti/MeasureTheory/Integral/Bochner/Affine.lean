@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+public import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Affine change of variables for Bochner integrals
@@ -22,9 +23,11 @@ uses the totalized Bochner integral, and
 is equivalent to integrability in the parameters. In particular, both integrals vanish
 when the integrands are not integrable.
 
-On `Fin n → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Icc 0 1` gives
-the change of variables from the unit cube to an affine parallelepiped. The same formula
-in one lower dimension gives the scaling of individual face integrals.
+On `ι → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Icc 0 1` gives invariance
+under single-coordinate reflections `u k ↦ 1 - u k`
+(`ContinuousLinearEquiv.setIntegral_Icc_single_add_negCoord`) and rescaling of arbitrary closed
+boxes `Set.Icc a b` (`a ≤ b`) to the unit cube with Jacobian `∏ i, (b i - a i)`
+(`MeasureTheory.setIntegral_Icc_eq_smul_integral_unitCube`), including on degenerate boxes.
 
 The proofs use `MeasureTheory.Measure.map_affine_addHaar_eq_smul`, the image of an additive Haar
 measure under an affine map, and Mathlib's transport of set integrals along measurable
@@ -91,4 +94,127 @@ theorem integral_image_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f
       rw [smul_smul, abs_inv, mul_inv_cancel₀ (abs_ne_zero.mpr hdet), one_smul]
     _ = _ := congrArg (|LinearMap.det (L : V →ₗ[ℝ] V)| • ·) h
 
+section UnitCube
+
+/-- Reflecting the `k`-th coordinate around `1 / 2`, namely `u ↦ Pi.single k 1 + negCoord ℝ k u`,
+maps the unit cube `Set.Icc 0 1` onto itself. -/
+theorem image_single_add_negCoord_Icc {ι : Type*} [DecidableEq ι] (k : ι) :
+    (fun u : ι → ℝ ↦ Pi.single k 1 + negCoord ℝ k u) '' Icc 0 1 = Icc 0 1 := by
+  have hmaps {u : ι → ℝ} (hu : u ∈ Icc 0 1) : Pi.single k 1 + negCoord ℝ k u ∈ Icc 0 1 := by
+    refine ⟨fun i ↦ ?_, fun i ↦ ?_⟩ <;> by_cases hik : i = k
+    · subst hik
+      simpa [sub_eq_add_neg] using sub_nonneg.mpr (hu.2 i)
+    · simpa [hik] using hu.1 i
+    · subst hik
+      simpa using hu.1 i
+    · simpa [hik] using hu.2 i
+  ext y
+  refine ⟨fun ⟨u, hu, hy⟩ ↦ hy ▸ hmaps hu, fun hy ↦ ⟨_, hmaps hy, ?_⟩⟩
+  ext i
+  by_cases hik : i = k
+  · subst hik
+    simp
+  · simp [hik]
+
+/-- Reflecting the `k`-th coordinate around `1 / 2` maps the open unit cube onto itself. -/
+theorem image_single_add_negCoord_pi_Ioo {ι : Type*} [DecidableEq ι] (k : ι) :
+    (fun u : ι → ℝ ↦ Pi.single k 1 + negCoord ℝ k u) '' univ.pi (fun _ ↦ Ioo 0 1) =
+      univ.pi (fun _ ↦ Ioo 0 1) := by
+  have hmaps {u : ι → ℝ} (hu : u ∈ univ.pi fun _ ↦ Ioo 0 1) :
+      Pi.single k 1 + negCoord ℝ k u ∈ univ.pi fun _ ↦ Ioo 0 1 := by
+    intro i _
+    have hui := hu i (mem_univ i)
+    by_cases hik : i = k
+    · subst hik
+      exact ⟨by simpa [sub_eq_add_neg] using sub_pos.mpr hui.2, by simpa using hui.1⟩
+    · simpa [hik] using hui
+  ext y
+  refine ⟨fun ⟨u, hu, hy⟩ ↦ hy ▸ hmaps hu, fun hy ↦ ⟨_, hmaps hy, ?_⟩⟩
+  ext i
+  by_cases hik : i = k
+  · subst hik
+    simp
+  · simp [hik]
+
+/-- Reflecting one coordinate `u k ↦ 1 - u k` of the unit cube `[0, 1]^ι` leaves the Bochner set
+integral invariant, without measurability, integrability or completeness hypotheses. -/
+theorem setIntegral_Icc_single_add_negCoord {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [NormedSpace ℝ E] (k : ι) (f : (ι → ℝ) → E) :
+    ∫ u in Icc (0 : ι → ℝ) 1, f (Pi.single k 1 + negCoord ℝ k u) =
+      ∫ u in Icc (0 : ι → ℝ) 1, f u := by
+  have h := (negCoord ℝ (Q := fun _ : ι ↦ ℝ) k).integral_image_affine
+    (Pi.single k 1) f (Icc 0 1) volume
+  simpa [image_single_add_negCoord_Icc] using h.symm
+
+/-- Positive coordinatewise scaling from `a` by `b - a` maps the unit cube `[0, 1]^ι` onto the
+closed box `Set.Icc a b`. -/
+theorem image_add_piCongrRight_smulLeft_Icc {ι : Type*} {a b : ι → ℝ} (hab : ∀ i, a i < b i) :
+    (fun u : ι → ℝ ↦ a +
+      piCongrRight (fun i ↦
+        (smulLeft (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) : ℝ ≃L[ℝ] ℝ)) u) ''
+        Icc 0 1 = Icc a b := by
+  ext y
+  constructor
+  · rintro ⟨u, ⟨hu₀, hu₁⟩, rfl⟩
+    refine ⟨fun i ↦ ?_, fun i ↦ ?_⟩
+    · simp only [Pi.add_apply, piCongrRight_apply, smulLeft_apply_apply, Units.smul_def,
+        Units.val_mk0, smul_eq_mul, le_add_iff_nonneg_right]
+      exact mul_nonneg (sub_nonneg.mpr (hab i).le) (hu₀ i)
+    · simp only [Pi.add_apply, piCongrRight_apply, smulLeft_apply_apply, Units.smul_def,
+        Units.val_mk0, smul_eq_mul]
+      have hu₁i := hu₁ i
+      rw [Pi.one_apply] at hu₁i
+      nlinarith [hab i]
+  · intro ⟨hy₀, hy₁⟩
+    refine ⟨fun i ↦ (b i - a i)⁻¹ * (y i - a i), ⟨fun i ↦ ?_, fun i ↦ ?_⟩, ?_⟩
+    · exact mul_nonneg (inv_nonneg.mpr (sub_nonneg.mpr (hab i).le)) (sub_nonneg.mpr (hy₀ i))
+    · rw [Pi.one_apply, inv_mul_le_iff₀ (sub_pos.mpr (hab i)), mul_one]
+      exact sub_le_sub_right (hy₁ i) (a i)
+    · ext i
+      simp only [Pi.add_apply, piCongrRight_apply, smulLeft_apply_apply, Units.smul_def,
+        Units.val_mk0, smul_eq_mul]
+      rw [mul_inv_cancel_left₀ (sub_ne_zero.mpr (hab i).ne'), add_sub_cancel]
+
+end UnitCube
+
 end ContinuousLinearEquiv
+
+namespace MeasureTheory
+
+/-- Rescaling a closed rectangular box `Set.Icc a b` (`a ≤ b`) in `ι → ℝ` to the unit cube
+`[0, 1]^ι` pulls back any Bochner set integral with the box volume `∏ i, (b i - a i)` as Jacobian,
+including on degenerate boxes and without measurability, integrability or completeness
+hypotheses. -/
+theorem setIntegral_Icc_eq_smul_integral_unitCube {ι E : Type*} [Fintype ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ι → ℝ} (hab : a ≤ b) (f : (ι → ℝ) → E) :
+    ∫ y in Icc a b, f y =
+      (∏ i, (b i - a i)) • ∫ u in Icc (0 : ι → ℝ) 1, f (fun i ↦ a i + (b i - a i) * u i) := by
+  by_cases hdeg : ∃ k, a k = b k
+  · obtain ⟨k, hk⟩ := hdeg
+    have hvol : volume (Icc a b) = 0 := by
+      rw [Real.volume_Icc_pi]
+      exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp [hk])
+    have hprod : ∏ i, (b i - a i) = 0 :=
+      Finset.prod_eq_zero (Finset.mem_univ k) (sub_eq_zero.mpr hk.symm)
+    rw [setIntegral_measure_zero _ hvol, hprod, zero_smul]
+  · push Not at hdeg
+    have hlt : ∀ i, a i < b i := fun i ↦ (hab i).lt_of_ne (hdeg i)
+    let L : (ι → ℝ) ≃L[ℝ] (ι → ℝ) := ContinuousLinearEquiv.piCongrRight fun i ↦
+      (ContinuousLinearEquiv.smulLeft
+        (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hlt i).ne')) : ℝ ≃L[ℝ] ℝ)
+    have hdet : |LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ)| = ∏ i, (b i - a i) := by
+      have hpos : 0 < ∏ i, (b i - a i) :=
+        Finset.prod_pos fun i _ ↦ sub_pos.mpr (hlt i)
+      have hd : LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ) = ∏ i, (b i - a i) := by
+        simp [L, ContinuousLinearEquiv.det_piCongrRight]
+      rw [hd, abs_of_pos hpos]
+    have himg : (fun u ↦ a + L u) '' Icc 0 1 = Icc a b :=
+      ContinuousLinearEquiv.image_add_piCongrRight_smulLeft_Icc hlt
+    have hfun : ∀ u, a + L u = fun i ↦ a i + (b i - a i) * u i := fun u ↦ by
+      ext i
+      simp [L]
+    have h := L.integral_image_affine a f (Icc 0 1) volume
+    rw [himg, hdet, integral_smul] at h
+    simpa only [hfun] using h
+
+end MeasureTheory

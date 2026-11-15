@@ -21,6 +21,8 @@ The construction combines `LinearEquiv.piOptionEquivProd` with
 For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family indexed by `S ⊕ T`
 into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
 `ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
+`ContinuousLinearEquiv.negCoord` negates a single coordinate of a dependent product while leaving
+the remaining coordinates fixed.
 
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
@@ -74,6 +76,84 @@ to `T`. -/
     (sumPiEquivProdPi R S T A).symm p = Sum.rec p.1 p.2 := (rfl)
 
 end SumPi
+
+section NegCoord
+
+variable {R} [DecidableEq ι] {N P : ι → Type*}
+  [∀ i, TopologicalSpace (N i)] [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
+  [∀ i, TopologicalSpace (P i)] [∀ i, AddCommMonoid (P i)] [∀ i, Module R (P i)]
+
+/-- A coordinatewise continuous linear equivalence sends a one-point family to the one-point family
+of its image in that coordinate. -/
+@[simp]
+theorem piCongrRight_single (e : ∀ i, N i ≃L[R] P i) (i : ι) (x : N i) :
+    piCongrRight e (Pi.single i x) = Pi.single i (e i x) := by
+  funext j
+  exact Pi.apply_single (fun i ↦ e i) (fun _ ↦ map_zero _) i x j
+
+variable (R) {Q : ι → Type*} [∀ i, TopologicalSpace (Q i)] [∀ i, AddCommGroup (Q i)]
+  [∀ i, Module R (Q i)] [∀ i, ContinuousNeg (Q i)]
+
+/-- Negate the `k`-th coordinate of a dependent product while leaving all other coordinates
+unchanged, as a continuous linear equivalence. -/
+def negCoord (k : ι) : ((i : ι) → Q i) ≃L[R] (i : ι) → Q i :=
+  piCongrRight (Function.update (fun i ↦ ContinuousLinearEquiv.refl R (Q i)) k (neg R))
+
+variable {R}
+
+theorem negCoord_def (k : ι) :
+    negCoord R (Q := Q) k =
+      piCongrRight (Function.update (fun i ↦ ContinuousLinearEquiv.refl R (Q i)) k (neg R)) :=
+  (rfl)
+
+/-- `negCoord` updates the `k`-th coordinate by its negation. -/
+theorem negCoord_eq_update (k : ι) (x : (i : ι) → Q i) :
+    negCoord R k x = Function.update x k (-x k) := by
+  ext i
+  by_cases h : i = k
+  · subst h
+    simp [negCoord]
+  · simp [negCoord, h]
+
+@[simp]
+theorem negCoord_apply_same (k : ι) (x : (i : ι) → Q i) :
+    negCoord R k x k = -x k := by
+  simp [negCoord]
+
+@[simp]
+theorem negCoord_apply_of_ne {k i : ι} (h : i ≠ k) (x : (i : ι) → Q i) :
+    negCoord R k x i = x i := by
+  simp [negCoord, h]
+
+@[simp]
+theorem symm_negCoord (k : ι) :
+    (negCoord R (Q := Q) k).symm = negCoord R k := by
+  ext x i
+  by_cases h : i = k
+  · subst h
+    simp [negCoord]
+  · simp [negCoord, h]
+
+@[simp]
+theorem negCoord_negCoord (k : ι) (x : (i : ι) → Q i) :
+    negCoord R k (negCoord R k x) = x := by
+  ext i
+  by_cases h : i = k
+  · subst h
+    simp
+  · simp [h]
+
+@[simp]
+theorem negCoord_single_same (k : ι) (v : Q k) :
+    negCoord R (Q := Q) k (Pi.single k v) = Pi.single k (-v) := by
+  simp [negCoord]
+
+@[simp]
+theorem negCoord_single_of_ne {k i : ι} (h : i ≠ k) (v : Q i) :
+    negCoord R (Q := Q) k (Pi.single i v) = Pi.single i v := by
+  simp [negCoord, h]
+
+end NegCoord
 
 end ContinuousLinearEquiv
 

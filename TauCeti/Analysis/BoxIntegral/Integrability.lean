@@ -1,0 +1,69 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.BoxIntegral.Integrability
+
+/-!
+# Equality of box integrals and closed-box Bochner set integrals
+
+For a function `f : (ι → ℝ) → E` taking values in a Banach space `E` and continuous on the closed
+rectangular box `Set.Icc I.lower I.upper`, Mathlib's `MeasureTheory.ContinuousOn.hasBoxIntegral`
+identifies the box integral of `f` (for any `BoxIntegral.IntegrationParams`, including Riemann,
+Henstock–Kurzweil, McShane and `⊥`) with the Bochner integral over the half-open box `(I : Set _)`,
+and `BoxIntegral.Box.coe_ae_eq_Icc` identifies that half-open box almost everywhere with the closed
+box `Set.Icc I.lower I.upper`. Combining the two gives direct `BoxIntegral.integral` rewrite lemmas
+against closed-box Bochner set integrals, on a box and on its coordinate hyperfaces `I.face i`.
+-/
+
+public section
+
+open BoxIntegral MeasureTheory Set
+
+namespace MeasureTheory
+
+universe u v
+
+variable {ι : Type u} [Fintype ι] {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E]
+
+/-- If `f` is continuous on `Box.Icc I`, its `BoxIntegral.integral` with respect to any locally
+finite measure `μ` and any `IntegrationParams` equals the Bochner set integral over `I`. -/
+theorem ContinuousOn.boxIntegral_eq_setIntegral {f : (ι → ℝ) → E} (μ : Measure (ι → ℝ))
+    [IsLocallyFiniteMeasure μ] {I : Box ι} (hc : ContinuousOn f (Box.Icc I))
+    (l : IntegrationParams) :
+    BoxIntegral.integral.{u, v, v} I l f μ.toBoxAdditive.toSMul = ∫ x in I, f x ∂μ :=
+  (hc.hasBoxIntegral μ l).integral_eq
+
+/-- If `f` is continuous on the closed box `Set.Icc I.lower I.upper`, its volume `BoxIntegral` for
+any `IntegrationParams` equals its Bochner set integral over `Set.Icc I.lower I.upper`. -/
+theorem ContinuousOn.boxIntegral_volume_eq_setIntegral_Icc {f : (ι → ℝ) → E}
+    {I : Box ι} (hc : ContinuousOn f (Icc I.lower I.upper)) (l : IntegrationParams) :
+    BoxIntegral.integral.{u, v, v} I l f BoxAdditiveMap.volume =
+      ∫ x in Icc I.lower I.upper, f x := by
+  have hc' : ContinuousOn f (Box.Icc I) := hc
+  rw [BoxAdditiveMap.volume, hc'.boxIntegral_eq_setIntegral volume l,
+    setIntegral_congr_set I.coe_ae_eq_Icc, Box.Icc_def]
+
+end MeasureTheory
+
+namespace BoxIntegral.Box
+
+variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+/-- On any slice `x i = c` (`c ∈ Set.Icc (I.lower i) (I.upper i)`) of a box `I`, the volume
+`BoxIntegral` over `I.face i` of a function continuous on `Set.Icc I.lower I.upper` equals the
+Bochner set integral over `Set.Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)`. -/
+theorem integral_face_eq_setIntegral_Icc (I : Box (Fin (n + 1))) {f : (Fin (n + 1) → ℝ) → E}
+    (hc : ContinuousOn f (Icc I.lower I.upper)) (i : Fin (n + 1)) {c : ℝ}
+    (hx : c ∈ Icc (I.lower i) (I.upper i)) (l : IntegrationParams) :
+    BoxIntegral.integral (I.face i) l (fun x ↦ f (i.insertNth c x)) BoxAdditiveMap.volume =
+      ∫ x in Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove), f (i.insertNth c x) := by
+  have hface : ContinuousOn (fun x ↦ f (i.insertNth c x)) (Icc (I.face i).lower (I.face i).upper) :=
+    I.continuousOn_face_Icc hc hx
+  exact hface.boxIntegral_volume_eq_setIntegral_Icc l
+
+end BoxIntegral.Box
