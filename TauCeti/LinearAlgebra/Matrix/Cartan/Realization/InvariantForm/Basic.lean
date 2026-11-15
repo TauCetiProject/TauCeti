@@ -123,8 +123,7 @@ theorem form_coroot_right (h : H) (i : I) :
 /-- Division-free form of the defining identity on the left: `d i * (hᵢ, h) = αᵢ(h)`. -/
 theorem symmetrizer_mul_form_coroot (i : I) (h : H) :
     (A.symmetrizer i : K) * B.form (R.coroot i) h = R.root i h := by
-  have hd : (A.symmetrizer i : K) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
-  rw [B.form_coroot, mul_div_cancel₀ _ hd]
+  rw [B.form_coroot, mul_div_cancel₀ _ (A.symmetrizer_cast_ne_zero i)]
 
 /-- Division-free form of the defining identity on the right: `d i * (h, hᵢ) = αᵢ(h)`. -/
 theorem symmetrizer_mul_form_coroot_right (h : H) (i : I) :
@@ -147,7 +146,7 @@ theorem form_coroot_self (i : I) : B.form (R.coroot i) (R.coroot i) = 2 / A.symm
 /-- Every simple coroot is non-isotropic for a standard invariant form. -/
 theorem form_coroot_self_ne_zero (i : I) : B.form (R.coroot i) (R.coroot i) ≠ 0 := by
   rw [B.form_coroot_self]
-  exact div_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i))
+  exact div_ne_zero two_ne_zero (A.symmetrizer_cast_ne_zero i)
 
 /-! ### Uniqueness on the coroot span and orthogonality with the Cartan center -/
 
@@ -236,8 +235,7 @@ theorem disjoint_ker_form_corootSpan : Disjoint (LinearMap.ker B.form) R.corootS
     by_cases hi : i ∈ c.support
     · have hdiv := linearIndependent_iff'.mp R.root_linearIndependent c.support
         (fun j ↦ c j / A.symmetrizer j) hrel i hi
-      exact (div_eq_zero_iff.mp hdiv).resolve_right
-        (Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i))
+      exact (div_eq_zero_iff.mp hdiv).resolve_right (A.symmetrizer_cast_ne_zero i)
     · exact Finsupp.notMem_support_iff.mp hi
   simp [hc0]
 
@@ -406,12 +404,10 @@ private theorem corootHalfForm_projection_symm [CharZero K] (A : SymmetrizableDa
     smul_eq_mul, root_coroot, Matrix.map_apply, Finset.mul_sum]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  have hd_i : (A.symmetrizer i : K) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
-  have hd_j : (A.symmetrizer j : K) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero j)
   have hsymm : (A.symmetrizer i : K) * A.cartan i j = A.symmetrizer j * A.cartan j i := by
     exact_mod_cast A.symmetrizes i j
   have hdiv : (A.cartan i j : K) / A.symmetrizer j = (A.cartan j i : K) / A.symmetrizer i := by
-    rw [div_eq_div_iff hd_j hd_i]
+    rw [div_eq_div_iff (A.symmetrizer_cast_ne_zero j) (A.symmetrizer_cast_ne_zero i)]
     linear_combination hsymm
   calc
     cy j * (cx i / A.symmetrizer i * A.cartan j i) =

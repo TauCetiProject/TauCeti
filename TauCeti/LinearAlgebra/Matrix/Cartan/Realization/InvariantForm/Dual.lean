@@ -22,7 +22,7 @@ a symmetrizable generalized Cartan matrix `A`, the musical isomorphism
 transfers `B.form` to a symmetric nondegenerate bilinear form `B.dualForm hB` on `Module.Dual K H`
 satisfying `(αᵢ, μ) = d i * μ(hᵢ)` and `(αᵢ, αⱼ) = d i * a i j`.
 
-Although `B.dualForm hB` depends on `B` on central weights outside the root span, its values
+Although `B.dualForm hB` depends on `B` when both arguments lie outside the root span, its values
 whenever at least one argument lies in the root span (or root lattice `R.rootLattice`) are
 completely independent of the choice of nondegenerate standard invariant form `B`
 (`dualForm_eq_of_mem_rootSpan_left`). Moreover, `B.dualForm hB` is invariant under every simple
@@ -33,8 +33,8 @@ reflections on `H` and `Module.Dual K H`.
 Finally, over a strict ordered field (`ℚ` or `ℝ`), for dominant weights `μ, λ` with `R.RootLE μ λ`
 and `μ ≠ λ` and any weight `ρ` with `ρ(hᵢ) > 0` for all `i`, one has strict norm separation
 `(μ + ρ, μ + ρ) < (λ + ρ, λ + ρ)` (`dualForm_add_lt_of_rootLE`), the eigenvalue inequality
-governing Kac's generalized Casimir operator, complete reducibility in Category `𝒪`, and the
-Weyl–Kac character formula.
+governing Kac's generalized Casimir operator, complete reducibility of integrable modules in
+Category `𝒪`, and the Weyl–Kac character formula.
 
 ## Main definitions
 
@@ -98,8 +98,8 @@ theorem toDual_coroot (i : I) :
 @[simp]
 theorem toDual_symm_root (i : I) :
     (B.form.toDual hB).symm (R.root i) = (A.symmetrizer i : K) • R.coroot i := by
-  have hd : (A.symmetrizer i : K) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
-  rw [LinearEquiv.symm_apply_eq, map_smul, B.toDual_coroot hB, smul_inv_smul₀ hd]
+  rw [LinearEquiv.symm_apply_eq, map_smul, B.toDual_coroot hB,
+    smul_inv_smul₀ (A.symmetrizer_cast_ne_zero i)]
 
 /-- The symmetric nondegenerate bilinear form on `Module.Dual K H` transported from `B.form` along
 `B.form.toDual hB` (Kac, §2.1, eq. (2.1.5)). -/
@@ -157,7 +157,7 @@ theorem dualForm_root_self (i : I) :
 theorem dualForm_root_self_ne_zero (i : I) :
     B.dualForm hB (R.root i) (R.root i) ≠ 0 := by
   rw [B.dualForm_root_self]
-  exact mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i))
+  exact mul_ne_zero two_ne_zero (A.symmetrizer_cast_ne_zero i)
 
 /-- **Canonicality of `dualForm` on the root span**: for any two nondegenerate standard invariant
 forms on `R` (including on non-minimal central enlargements), their induced dual forms agree
@@ -237,7 +237,7 @@ theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H)
     Module.reflection h μ =
       μ - (2 * B.dualForm hB μ (R.root i) / B.dualForm hB (R.root i) (R.root i)) • R.root i := by
   have hd : (2 : K) * A.symmetrizer i ≠ 0 :=
-    mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i))
+    mul_ne_zero two_ne_zero (A.symmetrizer_cast_ne_zero i)
   rw [Module.reflection_apply, Dual.eval_apply, B.dualForm_root_right, B.dualForm_root_self]
   congr 2
   field_simp [hd]
@@ -353,9 +353,9 @@ example :
     InvariantForm.eq_of_corootSpan_eq_top htop B' B⟩
   rw [B.dualForm_root_self]; simp [a1Datum]
 
-/-- Non-simply-laced type `B₂` (`A = !![2, -2; -1, 2]`, `d = ![1, 2]`) over `ℚ`: a nondegenerate
-realization exists and satisfies `(h₀, h₀) = 2`, `(h₁, h₁) = 1`, `(α₀, α₀) = 2`, `(α₁, α₁) = 4`,
-and `(α₀, α₁) = -2`. -/
+/-- Non-simply-laced type `B₂` (`A = !![2, -2; -1, 2]`, `d = ![1, 2]`) over `ℚ`: there is a
+realization `R` on `Fin N → ℚ` carrying a nondegenerate standard invariant form `B`, which satisfies
+`(h₀, h₀) = 2`, `(h₁, h₁) = 1`, `(α₀, α₀) = 2`, `(α₁, α₁) = 4`, and `(α₀, α₁) = -2`. -/
 example :
     let A : SymmetrizableDatum (Fin 2) :=
       { cartan := !![2, -2; -1, 2], diag := by decide,
