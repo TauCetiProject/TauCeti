@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Basic.Real.Pointwise
 public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # Replication of pairwise optimization problems
@@ -97,15 +98,16 @@ theorem card_sq_nsmul_le_sum_of_forall_le_sum [Fintype ι] [AddCommMonoid M]
   simpa only [sum_const, card_univ, Fintype.card_fun, hpow, mul_smul] using hsum
 
 /-- If every assignment `V → A` has pair cost at least `d` and the penalty `c` is nonnegative, any
-replicated assignment `β : V → ι → A` has total cost at least `(Fintype.card ι : ℝ) ^ 2 * d`. No
+replicated assignment `β : V → ι → A` has total cost at least `(Fintype.card ι : R) ^ 2 * d`. No
 cluster-constancy condition on `c` and no nonemptiness assumption on `A` are required. -/
-theorem card_sq_mul_le_add_sum_of_forall_le_sum [Fintype ι] (E : Finset (V × V))
-    (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : V × V → A → A → ℝ) {c d : ℝ} (hc : 0 ≤ c)
+theorem card_sq_mul_le_add_sum_of_forall_le_sum {R : Type*} [Fintype ι] [Semiring R]
+    [LinearOrder R] [IsOrderedCancelAddMonoid R] (E : Finset (V × V))
+    (hE : ∀ e ∈ E, e.1 ≠ e.2) (w : V × V → A → A → R) {c d : R} (hc : 0 ≤ c)
     (hd : ∀ β : V → A, d ≤ ∑ e ∈ E, w e (β e.1) (β e.2)) (β : V → ι → A) :
-    (Fintype.card ι : ℝ) ^ 2 * d ≤ c + ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b) := by
+    (Fintype.card ι : R) ^ 2 * d ≤ c + ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b) := by
   have hsections := E.card_sq_nsmul_le_sum_of_forall_le_sum hE
     (fun e a b ↦ w e (β e.1 a) (β e.2 b)) (fun s ↦ hd (fun v ↦ β v (s v)))
-  have hbound : (Fintype.card ι : ℝ) ^ 2 * d ≤ ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b) := by
+  have hbound : (Fintype.card ι : R) ^ 2 * d ≤ ∑ e ∈ E, ∑ a, ∑ b, w e (β e.1 a) (β e.2 b) := by
     simpa [nsmul_eq_mul, Nat.cast_pow] using hsections
   exact hbound.trans (le_add_of_nonneg_left hc)
 
@@ -197,68 +199,105 @@ theorem ciInf_sum_eq_card_sq_mul_ciInf_sum [Fintype ι] (E : Finset (V × V))
 
 section ProdLex
 
+private theorem withinCluster_sum_nonneg [LT ι] [DecidableLT ι] (s : Finset V) (t : Finset ι)
+    (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ)
+    (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
+      0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
+    (β : V → ↥t → A) :
+    0 ≤ ∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.1 < j.1,
+      W (toLex (v, i)) (toLex (v, j)) (β v i) (β v j) :=
+  sum_nonneg fun v hv ↦ sum_nonneg fun i _ ↦ sum_nonneg fun j hj ↦
+    hz_nonneg v hv i.1 i.2 j.1 j.2 (mem_filter.mp hj).2 _ _
+
 variable [Preorder V] [Preorder ι] [DecidableLT V] [DecidableLT (V ×ₗ ι)]
 
-private theorem sum_product_lt_map_toLex_eq_add [DecidableLT ι] (s : Finset V) (t : Finset ι)
-    (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
-    (hw : ∀ u ∈ s, ∀ v ∈ s, u < v → ∀ i ∈ t, ∀ j ∈ t, ∀ a b,
-      W (toLex (u, i)) (toLex (v, j)) a b = w u v a b)
-    (φ : (V ×ₗ ι) → A) :
+private theorem sum_product_filter_lt_map_toLex_eq_add [AddCommMonoid M] [DecidableLT ι]
+    (s : Finset V) (t : Finset ι)
+    (f : (V ×ₗ ι) → (V ×ₗ ι) → M) (w : V → V → A → A → M) (φ : (V ×ₗ ι) → A)
+    (hw : ∀ u ∈ s, ∀ v ∈ s, u < v → ∀ i ∈ t, ∀ j ∈ t,
+      f (toLex (u, i)) (toLex (v, j)) = w u v (φ (toLex (u, i))) (φ (toLex (v, j)))) :
     (∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
-        with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2)) =
-      (∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t,
-          if (i : ι) < j then
-            W (toLex (v, i)) (toLex (v, j)) (φ (toLex (v, i))) (φ (toLex (v, j)))
-          else 0) +
+        with p.1 < p.2, f p.1 p.2) =
+      (∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.1 < j.1, f (toLex (v, i)) (toLex (v, j))) +
         ∑ e ∈ {e ∈ s ×ˢ s | e.1 < e.2}, ∑ i : ↥t, ∑ j : ↥t,
           w e.1 e.2 (φ (toLex (e.1, i))) (φ (toLex (e.2, j))) := by
-  rw [sum_product_lt_map_toLex s t fun x y ↦ W x y (φ x) (φ y)]
+  rw [sum_product_filter_lt_map_toLex s t f]
   congr 1
   · refine sum_congr rfl fun v _ ↦ ?_
-    simp_rw [sum_filter, sum_product]
-    rw [← sum_coe_sort t]
-    exact sum_congr rfl fun i _ ↦ (sum_coe_sort t _).symm
+    rw [sum_filter_product t t (· < ·) fun i j ↦ f (toLex (v, i)) (toLex (v, j)), ← sum_coe_sort t]
+    refine sum_congr rfl fun i _ ↦ ?_
+    simp_rw [sum_filter]
+    exact (sum_coe_sort t _).symm
   · refine sum_congr rfl fun e he ↦ ?_
     simp only [mem_filter, mem_product] at he
     calc
-      (∑ i ∈ t, ∑ j ∈ t,
-          W (toLex (e.1, i)) (toLex (e.2, j)) (φ (toLex (e.1, i))) (φ (toLex (e.2, j)))) =
+      (∑ i ∈ t, ∑ j ∈ t, f (toLex (e.1, i)) (toLex (e.2, j))) =
           ∑ i ∈ t, ∑ j ∈ t, w e.1 e.2 (φ (toLex (e.1, i))) (φ (toLex (e.2, j))) :=
         sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦
-          hw e.1 he.1.1 e.2 he.1.2 he.2 i hi j hj _ _
+          hw e.1 he.1.1 e.2 he.1.2 he.2 i hi j hj
       _ = ∑ i : ↥t, ∑ j : ↥t, w e.1 e.2 (φ (toLex (e.1, i))) (φ (toLex (e.2, j))) := by
         rw [← sum_coe_sort t]
         exact sum_congr rfl fun i _ ↦ (sum_coe_sort t _).symm
 
-/-- If within-cluster increasing pairs in `(s ×ˢ t).map toLex.toEmbedding` have nonnegative cost,
-inter-cluster pairs depend only on their `V` coordinates, and every assignment `V → A` has
-increasing-pair cost at least `d` on `s`, then any assignment `φ : (V ×ₗ ι) → A` has increasing-pair
-cost at least `(#t : ℝ) ^ 2 * d`. -/
-theorem card_sq_mul_le_sum_product_lt_map_toLex_of_forall_le_sum (s : Finset V) (t : Finset ι)
+private theorem ciInf_sum_product_filter_lt_map_toLex_eq [DecidableLT ι]
+    (s : Finset V) (t : Finset ι)
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
-    (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
-      0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
     (hw : ∀ u ∈ s, ∀ v ∈ s, u < v → ∀ i ∈ t, ∀ j ∈ t, ∀ a b,
-      W (toLex (u, i)) (toLex (v, j)) a b = w u v a b)
-    {d : ℝ} (hd : ∀ β : V → A, d ≤ ∑ e ∈ s ×ˢ s with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2))
-    (φ : (V ×ₗ ι) → A) :
-    (#t : ℝ) ^ 2 * d ≤
+      W (toLex (u, i)) (toLex (v, j)) a b = w u v a b) :
+    (⨅ φ : (V ×ₗ ι) → A,
+        ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
+          with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2)) =
+      ⨅ β : V → ↥t → A,
+        ((∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t with i.1 < j.1,
+            W (toLex (v, i)) (toLex (v, j)) (β v i) (β v j)) +
+          ∑ e ∈ {e ∈ s ×ˢ s | e.1 < e.2}, ∑ i : ↥t, ∑ j : ↥t,
+            w e.1 e.2 (β e.1 i) (β e.2 j)) := by
+  obtain hA | hA := isEmpty_or_nonempty A
+  · obtain hV | hV := isEmpty_or_nonempty V
+    · rcases isEmpty_or_nonempty ((V ×ₗ ι) → A) with _ | _ <;>
+        simp [s.eq_empty_of_isEmpty]
+    · rcases t.eq_empty_or_nonempty with rfl | ⟨i, hi⟩
+      · rcases isEmpty_or_nonempty ((V ×ₗ ι) → A) with _ | _ <;> simp
+      · have : Nonempty (V ×ₗ ι) := ⟨toLex (Classical.arbitrary V, i)⟩
+        have : Nonempty ↥t := ⟨⟨i, hi⟩⟩
+        simp
+  · have hsurj :
+        Function.Surjective (fun φ : (V ×ₗ ι) → A ↦ fun v (i : ↥t) ↦ φ (toLex (v, i))) :=
+      (Function.RightInverse.surjective Function.curry_uncurry).comp
+        (toLex.injective.comp
+          (Function.injective_id.prodMap Subtype.val_injective)).surjective_comp_right
+    exact hsurj.iInf_congr _ fun φ ↦
+      (sum_product_filter_lt_map_toLex_eq_add s t (fun x y ↦ W x y (φ x) (φ y)) w φ
+        fun u hu v hv huv i hi j hj ↦ hw u hu v hv huv i hi j hj _ _).symm
+
+/-- If within-cluster increasing pairs in `(s ×ˢ t).map toLex.toEmbedding` have nonnegative value
+under `f`, inter-cluster pairs agree with `w` evaluated on `φ`, and every assignment `V → A` has
+increasing-pair cost at least `d` on `s`, then the increasing-pair sum of `f` is at least
+`(#t : R) ^ 2 * d`. -/
+theorem card_sq_mul_le_sum_product_filter_lt_map_toLex_of_forall_le_sum
+    {R : Type*} [Semiring R] [LinearOrder R] [IsOrderedCancelAddMonoid R]
+    (s : Finset V) (t : Finset ι)
+    (f : (V ×ₗ ι) → (V ×ₗ ι) → R) (w : V → V → A → A → R) (φ : (V ×ₗ ι) → A)
+    (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → 0 ≤ f (toLex (v, i)) (toLex (v, j)))
+    (hw : ∀ u ∈ s, ∀ v ∈ s, u < v → ∀ i ∈ t, ∀ j ∈ t,
+      f (toLex (u, i)) (toLex (v, j)) = w u v (φ (toLex (u, i))) (φ (toLex (v, j))))
+    {d : R} (hd : ∀ β : V → A, d ≤ ∑ e ∈ s ×ˢ s with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2)) :
+    (#t : R) ^ 2 * d ≤
       ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
-        with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) := by
+        with p.1 < p.2, f p.1 p.2 := by
   have : DecidableLT ι := Classical.decRel _
-  rw [sum_product_lt_map_toLex_eq_add s t W w hw φ, ← Fintype.card_coe t]
+  rw [sum_product_filter_lt_map_toLex_eq_add s t f w φ hw, ← Fintype.card_coe t]
   refine card_sq_mul_le_add_sum_of_forall_le_sum {e ∈ s ×ˢ s | e.1 < e.2}
     (fun _ he ↦ (mem_filter.mp he).2.ne) (fun e ↦ w e.1 e.2) ?_ hd
     (fun v (i : ↥t) ↦ φ (toLex (v, i)))
-  refine sum_nonneg fun v hv ↦ sum_nonneg fun i _ ↦ sum_nonneg fun j _ ↦ ?_
-  split_ifs with hij
-  · exact hz_nonneg v hv i.1 i.2 j.1 j.2 hij _ _
-  · exact le_rfl
+  exact sum_nonneg fun v hv ↦ sum_nonneg fun i _ ↦ sum_nonneg fun j hj ↦
+    hz_nonneg v hv i.1 i.2 j.1 j.2 (mem_filter.mp hj).2
 
-/-- Infimum form of `Finset.card_sq_mul_le_sum_product_lt_map_toLex_of_forall_le_sum`: nonnegative
-within-cluster costs preserve a uniform lower bound multiplied by `(#t : ℝ) ^ 2`, even when
-within-cluster costs are positive on constant assignments. -/
-theorem card_sq_mul_le_ciInf_sum_product_lt_map_toLex [Nonempty A] (s : Finset V) (t : Finset ι)
+/-- Infimum form of `Finset.card_sq_mul_le_sum_product_filter_lt_map_toLex_of_forall_le_sum`:
+nonnegative within-cluster costs preserve a uniform lower bound multiplied by `(#t : ℝ) ^ 2`, even
+when within-cluster costs are positive on constant assignments. -/
+theorem card_sq_mul_le_ciInf_sum_product_filter_lt_map_toLex [Nonempty A]
+    (s : Finset V) (t : Finset ι)
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
       0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
@@ -269,12 +308,16 @@ theorem card_sq_mul_le_ciInf_sum_product_lt_map_toLex [Nonempty A] (s : Finset V
       ⨅ φ : (V ×ₗ ι) → A,
         ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
           with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) :=
-  le_ciInf (card_sq_mul_le_sum_product_lt_map_toLex_of_forall_le_sum s t W w hz_nonneg hw hd)
+  le_ciInf fun φ ↦
+    card_sq_mul_le_sum_product_filter_lt_map_toLex_of_forall_le_sum s t
+      (fun x y ↦ W x y (φ x) (φ y)) w φ
+      (fun v hv i hi j hj hij ↦ hz_nonneg v hv i hi j hj hij _ _)
+      (fun u hu v hv huv i hi j hj ↦ hw u hu v hv huv i hi j hj _ _) hd
 
 /-- Section-averaging lower bound for the infimum of increasing-pair costs on
 `(s ×ˢ t).map toLex.toEmbedding`, without assuming within-cluster costs vanish on constant
 assignments or that `A` is nonempty. -/
-theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex
+theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_map_toLex
     (s : Finset V) (t : Finset ι)
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
@@ -287,24 +330,16 @@ theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex
       ⨅ φ : (V ×ₗ ι) → A,
         ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
           with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) := by
-  obtain hA | hA := isEmpty_or_nonempty A
-  · have h0 : (⨅ β : V → A, ∑ e ∈ s ×ˢ s with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2)) = 0 := by
-      obtain hV | hV := isEmpty_or_nonempty V
-      · simp [s.eq_empty_of_isEmpty]
-      · simp
-    rw [h0, mul_zero]
-    refine Real.iInf_nonneg fun φ ↦ ?_
-    obtain hV | hV := isEmpty_or_nonempty V
-    · simp [s.eq_empty_of_isEmpty]
-    · obtain hι | hι := isEmpty_or_nonempty ι
-      · simp [t.eq_empty_of_isEmpty]
-      · exact (IsEmpty.false (φ (toLex (Classical.arbitrary V, Classical.arbitrary ι)))).elim
-  · exact card_sq_mul_le_ciInf_sum_product_lt_map_toLex s t W w hz_nonneg hw fun β ↦ ciInf_le hf β
+  have : DecidableLT ι := Classical.decRel _
+  rw [ciInf_sum_product_filter_lt_map_toLex_eq s t W w hw, ← Fintype.card_coe t]
+  exact card_sq_mul_ciInf_sum_le_ciInf_add_sum {e ∈ s ×ˢ s | e.1 < e.2}
+    (fun _ he ↦ (mem_filter.mp he).2.ne) (fun e ↦ w e.1 e.2) _
+    (withinCluster_sum_nonneg s t W hz_nonneg) hf
 
 /-- Nonnegative-weight specialization of
-`Finset.card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex`, discharging `BddBelow`
+`Finset.card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_map_toLex`, discharging `BddBelow`
 automatically by `0`. -/
-theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex_of_nonneg
+theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_map_toLex_of_nonneg
     (s : Finset V) (t : Finset ι)
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
@@ -316,7 +351,8 @@ theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex_of_nonneg
       ⨅ φ : (V ×ₗ ι) → A,
         ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
           with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) := by
-  refine card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex s t W w hz_nonneg hw ⟨0, ?_⟩
+  refine card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_map_toLex s t W w hz_nonneg hw
+    ⟨0, ?_⟩
   rintro _ ⟨β, rfl⟩
   refine sum_nonneg fun (e : V × V) he ↦ ?_
   simp only [mem_filter, mem_product] at he
@@ -327,7 +363,7 @@ that vanishes on equal labels and inter-cluster pairs depend only on their `V` c
 infimum of the increasing-pair cost over `(V ×ₗ ι) → A` equals `(#t : ℝ) ^ 2` times the base infimum
 over `V → A`. Neither `V`, `ι`, nor `A` need be finite or nonempty, and no infimum need be
 attained. -/
-theorem ciInf_sum_product_lt_map_toLex_eq_card_sq_mul_ciInf_sum (s : Finset V) (t : Finset ι)
+theorem ciInf_sum_product_filter_lt_map_toLex_eq_card_sq_mul_ciInf_sum (s : Finset V) (t : Finset ι)
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v ∈ s, ∀ i ∈ t, ∀ j ∈ t, i < j → ∀ a b,
       0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
@@ -339,59 +375,20 @@ theorem ciInf_sum_product_lt_map_toLex_eq_card_sq_mul_ciInf_sum (s : Finset V) (
         ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
           with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2)) =
       (#t : ℝ) ^ 2 * ⨅ β : V → A, ∑ e ∈ s ×ˢ s with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2) := by
+  have : DecidableLT ι := Classical.decRel _
+  rw [ciInf_sum_product_filter_lt_map_toLex_eq s t W w hw, ← Fintype.card_coe t]
   obtain hA | hA := isEmpty_or_nonempty A
   · obtain hV | hV := isEmpty_or_nonempty V
-    · rcases isEmpty_or_nonempty ((V ×ₗ ι) → A) with _ | _ <;>
-        rcases isEmpty_or_nonempty (V → A) with _ | _ <;>
-        simp [s.eq_empty_of_isEmpty]
-    · obtain hι | hι := isEmpty_or_nonempty ι
-      · rcases isEmpty_or_nonempty ((V ×ₗ ι) → A) with _ | _ <;>
-          simp [t.eq_empty_of_isEmpty]
-      · have : Nonempty (V ×ₗ ι) := ⟨toLex (Classical.arbitrary V, Classical.arbitrary ι)⟩
+    · simp [s.eq_empty_of_isEmpty]
+    · rcases t.eq_empty_or_nonempty with rfl | ⟨i, hi⟩
+      · simp
+      · have : Nonempty ↥t := ⟨⟨i, hi⟩⟩
         simp
-  have : DecidableLT ι := Classical.decRel _
-  have : DecidablePred (· ∈ t) := Classical.decPred _
-  let E : Finset (V × V) := {e ∈ s ×ˢ s | e.1 < e.2}
-  let c (β : V → ↥t → A) : ℝ :=
-    ∑ v ∈ s, ∑ i : ↥t, ∑ j : ↥t,
-      if (i : ι) < j then W (toLex (v, i)) (toLex (v, j)) (β v i) (β v j) else 0
-  let F (β : V → ↥t → A) : ℝ :=
-    c β + ∑ e ∈ E, ∑ i : ↥t, ∑ j : ↥t, w e.1 e.2 (β e.1 i) (β e.2 j)
-  let G (φ : (V ×ₗ ι) → A) : ℝ :=
-    ∑ p ∈ ((s ×ˢ t).map toLex.toEmbedding) ×ˢ ((s ×ˢ t).map toLex.toEmbedding)
-      with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2)
-  have hGF (φ : (V ×ₗ ι) → A) : G φ = F (fun v (i : ↥t) ↦ φ (toLex (v, i))) :=
-    sum_product_lt_map_toLex_eq_add s t W w hw φ
-  let extφ (β : V → ↥t → A) (x : V ×ₗ ι) : A :=
-    if hx : (ofLex x).2 ∈ t then β (ofLex x).1 ⟨(ofLex x).2, hx⟩ else Classical.arbitrary A
-  have hext (β : V → ↥t → A) : (fun v (i : ↥t) ↦ extφ β (toLex (v, i))) = β := by
-    ext v i
-    simp [extφ, i.2]
-  have hrange : Set.range G = Set.range F := by
-    ext r
-    simp only [Set.mem_range]
-    constructor
-    · rintro ⟨φ, rfl⟩
-      exact ⟨_, (hGF φ).symm⟩
-    · rintro ⟨β, rfl⟩
-      refine ⟨extφ β, ?_⟩
-      rw [hGF, hext]
-  have hEq : (⨅ φ : (V ×ₗ ι) → A, G φ) = ⨅ β : V → ↥t → A, F β := by
-    simp only [iInf, hrange]
-  rw [hEq]
-  have hc : ∀ β : V → ↥t → A, 0 ≤ c β := fun β ↦
-    sum_nonneg fun v hv ↦ sum_nonneg fun i _ ↦ sum_nonneg fun j _ ↦ by
-      split_ifs with hij
-      · exact hz_nonneg v hv i.1 i.2 j.1 j.2 hij _ _
-      · exact le_rfl
-  have hc_const : ∀ β : V → A, c (fun v _ ↦ β v) = 0 := fun β ↦
-    sum_eq_zero fun v hv ↦ sum_eq_zero fun i _ ↦ sum_eq_zero fun j _ ↦ by
-      split_ifs with hij
-      · exact hz_diag v hv i.1 i.2 j.1 j.2 hij (β v)
-      · rfl
-  simpa [F, E, Fintype.card_coe] using
-    E.ciInf_add_sum_eq_card_sq_mul_ciInf_sum (fun _ he ↦ (mem_filter.mp he).2.ne)
-      (fun e ↦ w e.1 e.2) c hc hc_const
+  · refine ciInf_add_sum_eq_card_sq_mul_ciInf_sum {e ∈ s ×ˢ s | e.1 < e.2}
+      (fun _ he ↦ (mem_filter.mp he).2.ne) (fun e ↦ w e.1 e.2) _
+      (withinCluster_sum_nonneg s t W hz_nonneg) fun β ↦ ?_
+    exact sum_eq_zero fun v hv ↦ sum_eq_zero fun i _ ↦ sum_eq_zero fun j hj ↦
+      hz_diag v hv i.1 i.2 j.1 j.2 (mem_filter.mp hj).2 (β v)
 
 end ProdLex
 
@@ -404,28 +401,27 @@ open Finset
 variable {V A ι : Type*} [Fintype V] [Fintype ι] [Preorder V] [Preorder ι]
   [DecidableLT V] [DecidableLT (V ×ₗ ι)]
 
-/-- If within-cluster increasing pairs of `V ×ₗ ι` have nonnegative cost, inter-cluster pairs
-depend only on their `V` coordinates, and every assignment `V → A` has increasing-pair cost at
-least `d`, then any assignment `φ : (V ×ₗ ι) → A` has increasing-pair cost at least
-`(Fintype.card ι : ℝ) ^ 2 * d`. -/
-theorem card_sq_mul_le_sum_lt_prodLex_of_forall_le_sum
-    (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
-    (hz_nonneg : ∀ v i j, i < j → ∀ a b, 0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
-    (hw : ∀ u v, u < v → ∀ i j a b, W (toLex (u, i)) (toLex (v, j)) a b = w u v a b)
-    {d : ℝ} (hd : ∀ β : V → A, d ≤ ∑ e : V × V with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2))
-    (φ : (V ×ₗ ι) → A) :
-    (Fintype.card ι : ℝ) ^ 2 * d ≤
-      ∑ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) := by
+/-- If within-cluster increasing pairs of `V ×ₗ ι` have nonnegative value under `f`, inter-cluster
+pairs agree with `w` evaluated on `φ`, and every assignment `V → A` has increasing-pair cost at
+least `d`, then the increasing-pair sum of `f` is at least `(Fintype.card ι : R) ^ 2 * d`. -/
+theorem card_sq_mul_le_sum_product_filter_lt_prodLex_of_forall_le_sum
+    {R : Type*} [Semiring R] [LinearOrder R] [IsOrderedCancelAddMonoid R]
+    (f : (V ×ₗ ι) → (V ×ₗ ι) → R) (w : V → V → A → A → R) (φ : (V ×ₗ ι) → A)
+    (hz_nonneg : ∀ v i j, i < j → 0 ≤ f (toLex (v, i)) (toLex (v, j)))
+    (hw : ∀ u v, u < v → ∀ i j,
+      f (toLex (u, i)) (toLex (v, j)) = w u v (φ (toLex (u, i))) (φ (toLex (v, j))))
+    {d : R} (hd : ∀ β : V → A, d ≤ ∑ e : V × V with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2)) :
+    (Fintype.card ι : R) ^ 2 * d ≤
+      ∑ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2, f p.1 p.2 := by
   simpa [univ_product_univ, map_univ_equiv] using
-    Finset.card_sq_mul_le_sum_product_lt_map_toLex_of_forall_le_sum (univ : Finset V)
-      (univ : Finset ι) W w (fun v _ i _ j _ ↦ hz_nonneg v i j)
-      (fun u _ v _ huv i _ j _ ↦ hw u v huv i j)
-      (by simpa [univ_product_univ] using hd) φ
+    Finset.card_sq_mul_le_sum_product_filter_lt_map_toLex_of_forall_le_sum (univ : Finset V)
+      (univ : Finset ι) f w φ (fun v _ i _ j _ ↦ hz_nonneg v i j)
+      (fun u _ v _ huv i _ j _ ↦ hw u v huv i j) (by simpa [univ_product_univ] using hd)
 
-/-- Infimum form of `Fintype.card_sq_mul_le_sum_lt_prodLex_of_forall_le_sum`: nonnegative
-within-cluster costs preserve a uniform lower bound multiplied by `(Fintype.card ι : ℝ) ^ 2`, even
-when within-cluster costs are positive on constant assignments. -/
-theorem card_sq_mul_le_ciInf_sum_lt_prodLex [Nonempty A]
+/-- Infimum form of `Fintype.card_sq_mul_le_sum_product_filter_lt_prodLex_of_forall_le_sum`:
+nonnegative within-cluster costs preserve a uniform lower bound multiplied by
+`(Fintype.card ι : ℝ) ^ 2`, even when within-cluster costs are positive on constant assignments. -/
+theorem card_sq_mul_le_ciInf_sum_product_filter_lt_prodLex [Nonempty A]
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v i j, i < j → ∀ a b, 0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
     (hw : ∀ u v, u < v → ∀ i j a b, W (toLex (u, i)) (toLex (v, j)) a b = w u v a b)
@@ -433,11 +429,15 @@ theorem card_sq_mul_le_ciInf_sum_lt_prodLex [Nonempty A]
     (Fintype.card ι : ℝ) ^ 2 * d ≤
       ⨅ φ : (V ×ₗ ι) → A,
         ∑ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) :=
-  le_ciInf (card_sq_mul_le_sum_lt_prodLex_of_forall_le_sum W w hz_nonneg hw hd)
+  le_ciInf fun φ ↦
+    card_sq_mul_le_sum_product_filter_lt_prodLex_of_forall_le_sum
+      (fun x y ↦ W x y (φ x) (φ y)) w φ
+      (fun v i j hij ↦ hz_nonneg v i j hij _ _)
+      (fun u v huv i j ↦ hw u v huv i j _ _) hd
 
 /-- Section-averaging lower bound for the infimum of increasing-pair costs on `V ×ₗ ι`, without
 assuming within-cluster costs vanish on constant assignments or that `A` is nonempty. -/
-theorem card_sq_mul_ciInf_sum_lt_le_ciInf_sum_lt_prodLex
+theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_prodLex
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v i j, i < j → ∀ a b, 0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
     (hw : ∀ u v, u < v → ∀ i j a b, W (toLex (u, i)) (toLex (v, j)) a b = w u v a b)
@@ -448,13 +448,14 @@ theorem card_sq_mul_ciInf_sum_lt_le_ciInf_sum_lt_prodLex
       ⨅ φ : (V ×ₗ ι) → A,
         ∑ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) := by
   simpa [univ_product_univ, map_univ_equiv] using
-    Finset.card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex (univ : Finset V)
+    Finset.card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_map_toLex (univ : Finset V)
       (univ : Finset ι) W w (fun v _ i _ j _ ↦ hz_nonneg v i j)
       (fun u _ v _ huv i _ j _ ↦ hw u v huv i j) (by simpa [univ_product_univ] using hf)
 
-/-- Nonnegative-weight specialization of `Fintype.card_sq_mul_ciInf_sum_lt_le_ciInf_sum_lt_prodLex`,
-discharging `BddBelow` automatically by `0`. -/
-theorem card_sq_mul_ciInf_sum_lt_le_ciInf_sum_lt_prodLex_of_nonneg
+/-- Nonnegative-weight specialization of
+`Fintype.card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_prodLex`, discharging `BddBelow`
+automatically by `0`. -/
+theorem card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_prodLex_of_nonneg
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v i j, i < j → ∀ a b, 0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
     (hw_nonneg : ∀ u v, u < v → ∀ a b, 0 ≤ w u v a b)
@@ -464,15 +465,15 @@ theorem card_sq_mul_ciInf_sum_lt_le_ciInf_sum_lt_prodLex_of_nonneg
       ⨅ φ : (V ×ₗ ι) → A,
         ∑ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2, W p.1 p.2 (φ p.1) (φ p.2) := by
   simpa [univ_product_univ, map_univ_equiv] using
-    Finset.card_sq_mul_ciInf_sum_le_ciInf_sum_product_lt_map_toLex_of_nonneg (univ : Finset V)
-      (univ : Finset ι) W w (fun v _ i _ j _ ↦ hz_nonneg v i j)
+    Finset.card_sq_mul_ciInf_sum_le_ciInf_sum_product_filter_lt_map_toLex_of_nonneg
+      (univ : Finset V) (univ : Finset ι) W w (fun v _ i _ j _ ↦ hz_nonneg v i j)
       (fun u _ v _ huv ↦ hw_nonneg u v huv) (fun u _ v _ huv i _ j _ ↦ hw u v huv i j)
 
 /-- When within-cluster increasing pairs of `V ×ₗ ι` have nonnegative cost vanishing on equal labels
 and inter-cluster pairs depend only on their `V` coordinates, the infimum of the increasing-pair
 cost over `(V ×ₗ ι) → A` equals `(Fintype.card ι : ℝ) ^ 2` times the base infimum over `V → A`.
-Neither `A` nor an optimal assignment need be finite or nonempty. -/
-theorem ciInf_sum_lt_prodLex_eq_card_sq_mul_ciInf_sum_lt
+`V`, `ι`, and `A` need not be nonempty, `A` need not be finite, and no infimum need be attained. -/
+theorem ciInf_sum_product_filter_lt_prodLex_eq_card_sq_mul_ciInf_sum
     (W : (V ×ₗ ι) → (V ×ₗ ι) → A → A → ℝ) (w : V → V → A → A → ℝ)
     (hz_nonneg : ∀ v i j, i < j → ∀ a b, 0 ≤ W (toLex (v, i)) (toLex (v, j)) a b)
     (hz_diag : ∀ v i j, i < j → ∀ a, W (toLex (v, i)) (toLex (v, j)) a a = 0)
@@ -482,7 +483,7 @@ theorem ciInf_sum_lt_prodLex_eq_card_sq_mul_ciInf_sum_lt
       (Fintype.card ι : ℝ) ^ 2 *
         ⨅ β : V → A, ∑ e : V × V with e.1 < e.2, w e.1 e.2 (β e.1) (β e.2) := by
   simpa [univ_product_univ, map_univ_equiv] using
-    Finset.ciInf_sum_product_lt_map_toLex_eq_card_sq_mul_ciInf_sum (univ : Finset V)
+    Finset.ciInf_sum_product_filter_lt_map_toLex_eq_card_sq_mul_ciInf_sum (univ : Finset V)
       (univ : Finset ι) W w (fun v _ i _ j _ ↦ hz_nonneg v i j)
       (fun v _ i _ j _ ↦ hz_diag v i j) (fun u _ v _ huv i _ j _ ↦ hw u v huv i j)
 
