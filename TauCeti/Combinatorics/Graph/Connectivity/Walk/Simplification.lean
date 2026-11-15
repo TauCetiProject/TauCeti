@@ -13,7 +13,8 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
 A path in a multigraph cannot traverse a loop, since that would repeat its incident vertex.
 Consequently, forgetting the identities of its traversed edges gives a path in the underlying
 simple graph. This file constructs that projection and proves that it preserves the complete
-vertex sequence. In particular, projection preserves and reflects vertex-disjointness and
+vertex sequence, and computes it on trivial paths, on paths beginning with an edge, and on
+reversed paths. In particular, projection preserves and reflects vertex-disjointness and
 internal vertex-disjointness.
 
 Distinct paths using parallel edges can have the same projection. Thus the construction is a
@@ -81,6 +82,39 @@ theorem length_projectPath (p : G.Walk s t) (hp : p.IsPath) :
   have h := congrArg List.length (support_projectPath p hp)
   simp only [List.unattach, List.length_map, SimpleGraph.Walk.length_support, length_support] at h
   omega
+
+private theorem projectPath_eq_of_support_unattach (p : G.Walk s t) (hp : p.IsPath)
+    (q : G.toSimpleGraph.Walk s t) (hq : q.support.unattach = p.support) :
+    (p.projectPath hp : G.toSimpleGraph.Walk s t) = q :=
+  SimpleGraph.Walk.ext_support <| List.map_injective_iff.2 Subtype.val_injective <| by
+    simpa only [List.unattach] using (support_projectPath p hp).trans hq.symm
+
+/-- Projecting the trivial path gives the trivial path. -/
+@[simp]
+theorem projectPath_nil (hp : (nil : G.Walk s s).IsPath) :
+    ((nil : G.Walk s s).projectPath hp : G.toSimpleGraph.Walk s s) = .nil :=
+  projectPath_eq_of_support_unattach _ hp _ (by simp)
+
+/-- Projecting a path that starts with the edge `e` from `s` to `t` starts with the adjacency
+from `s` to `t`; the edge is not a loop because the path does not revisit `s`. -/
+@[simp]
+theorem projectPath_cons {u : V(G)} (e : β) (h : G.IsLink e s t) (p : G.Walk t u)
+    (hp : (cons e h p).IsPath) :
+    ((cons e h p).projectPath hp : G.toSimpleGraph.Walk s u) =
+      .cons (by
+          rw [toSimpleGraph_adj]
+          exact ⟨fun hst ↦ ((isPath_cons e h p).mp hp).2 (by
+            simpa only [hst] using p.start_mem_support), h.adj⟩)
+        (p.projectPath ((isPath_cons e h p).mp hp).1 : G.toSimpleGraph.Walk t u) :=
+  projectPath_eq_of_support_unattach _ hp _ (by
+    rw [SimpleGraph.Walk.support_cons, List.unattach_cons, support_projectPath, support_cons])
+
+/-- Projection commutes with reversal. -/
+@[simp]
+theorem projectPath_reverse (p : G.Walk s t) (hp : p.reverse.IsPath) :
+    (p.reverse.projectPath hp : G.toSimpleGraph.Walk t s) =
+      (p.projectPath ((isPath_reverse p).mp hp) : G.toSimpleGraph.Walk s t).reverse :=
+  projectPath_eq_of_support_unattach _ hp _ (by simp [support_reverse])
 
 /-- Two projected paths are vertex-disjoint exactly when the original paths are. -/
 theorem support_projectPath_disjoint_iff {s₁ t₁ s₂ t₂ : V(G)}
