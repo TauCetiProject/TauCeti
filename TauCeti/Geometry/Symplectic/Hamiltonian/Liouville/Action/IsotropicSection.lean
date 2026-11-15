@@ -115,18 +115,9 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
   -- `(h • s)^* σ = s^* σ + ∑ᵢ dhᵢ ∧ dcᵢ`.
   set ρ : (ι → ℝ) → (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ := mpullbackWithin 𝓘(ℝ, ι → ℝ) I s t σ.1
     with hρ
-  have hρs : ContDiffOn ℝ ∞ ρ t := by
-    have h := ContMDiffOn.mpullbackWithin_form (σ.contMDiff.contMDiffOn (s := univ)) hs
-      (by simp) (mapsTo_univ _ _) ht.uniqueMDiffOn
-    exact fun c hc ↦ RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (h c hc)
-  have hdρ : ∀ c ∈ t, extDeriv ρ c = 0 := by
-    intro c hct
-    have h : extDerivWithin ρ t c = 0 := by
-      have h := extDerivWithin_mpullbackWithin (φ := σ.1) ((hs c hct).of_le (by simp))
-        ht.uniqueDiffOn (subset_closure (ht.interior_eq.symm ▸ hct)) hct (σ.mdifferentiable _)
-      rw [(SmoothForm.isClosed_def σ).1 hσ.isClosed, mpullbackWithin_zero] at h
-      exact h
-    rwa [← extDerivWithin_of_isOpen ht hct]
+  have hρs : ContDiffOn ℝ ∞ ρ t := σ.contDiffOn_mpullbackWithin ht.uniqueDiffOn hs
+  have hdρ : ∀ c ∈ t, extDeriv ρ c = 0 := fun c hct ↦
+    hσ.isClosed.extDeriv_mpullbackWithin_eq_zero ht (hs.of_le (by simp)) hct
   obtain ⟨β, hβs, hβ0, hβ⟩ := htc.exists_contDiffOn_forall_extDeriv_eq ht (r := ⊤) le_top hρs hdρ
   -- `hᵢ(c) = -β_c(eᵢ)` for the standard basis vectors `eᵢ`.
   set h : (ι → ℝ) → ι → ℝ := fun c i ↦ -β c (fun _ ↦ Pi.single i 1) with hh

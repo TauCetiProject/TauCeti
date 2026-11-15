@@ -14,13 +14,10 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.TwoForm.Pullback
 import TauCeti.Geometry.Symplectic.Darboux.Basic
 import TauCeti.RepresentationTheory.Continuous.InvariantNeighborhood
 
@@ -39,7 +36,7 @@ a smooth partial diffeomorphism `chart` from a `G`-invariant neighbourhood of `x
 
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_equivariant_darbouxChart`). Since `ρ g` is the
 differential of a symplectomorphism fixing `x₀`, it preserves `σ_{x₀}`
-(`TauCeti.SmoothTwoForm.eval₂_mfderiv_of_mpullback_eq`), so `G` acts on the chart
+(`TauCeti.SmoothForm.eval₂_mpullback`), so `G` acts on the chart
 by linear symplectic maps of `(E, σ_{x₀})`. This is the local model of a compact symplectic action
 near a fixed point, in which the action and the form are both linear.
 
@@ -85,7 +82,38 @@ variable {E H M EG HG G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup EG] [NormedSpace ℝ EG] [TopologicalSpace HG]
   {IG : ModelWithCorners ℝ EG HG} [TopologicalSpace G] [ChartedSpace HG G]
   [Group G] [MulAction G M] [ContMDiffSMul IG I ∞ G M]
-  [FiniteDimensional ℝ E] [I.Boundaryless] [IG.Boundaryless] [IsTopologicalGroup G]
+
+variable (IG) in
+/-- Read in the coordinates of a chart `e` that intertwines the action of `G` with a linear
+representation `ρ`, a `G`-invariant form is `ρ`-invariant: at every point `y` of `e.target`, the
+pullback `ζ = (e⁻¹)^* form` satisfies `ζ_{ρ g y}(ρ g ·, ρ g ·) = ζ_y`. This holds because
+`e⁻¹ ∘ ρ g = (g • ·) ∘ e⁻¹` near `y`. -/
+private theorem compContinuousLinearMap_mpullback_symm_eq {form : SmoothTwoForm I M}
+    (hG : ∀ g : G, SmoothForm.mpullback (g • ·)
+      (ContMDiffSMul.contMDiff_const_smul (I := IG) g) form = form)
+    {ρ : ContRepresentation ℝ G E} {e : OpenPartialHomeomorph M E}
+    (hesymm : ContMDiffOn 𝓘(ℝ, E) I ∞ e.symm e.target)
+    (hequiv : ∀ g : G, ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = ρ g (e z))
+    (g : G) {y : E} (hy : y ∈ e.target) :
+    (TauCeti.mpullback 𝓘(ℝ, E) I e.symm form.1 (ρ g y)).compContinuousLinearMap (ρ g) =
+      TauCeti.mpullback 𝓘(ℝ, E) I e.symm form.1 y := by
+  have hesd {y' : E} (hy' : y' ∈ e.target) : MDifferentiableAt 𝓘(ℝ, E) I e.symm y' :=
+    (hesymm.contMDiffAt (e.open_target.mem_nhds hy')).mdifferentiableAt (by simp)
+  have hesρ {y' : E} (hy' : y' ∈ e.target) :
+      ρ g y' ∈ e.target ∧ e.symm (ρ g y') = g • e.symm y' := by
+    obtain ⟨hgz, hegz⟩ := hequiv g (e.symm y') (e.map_target hy')
+    rw [e.right_inv hy'] at hegz
+    exact ⟨hegz ▸ e.map_source hgz, by rw [← hegz, e.left_inv hgz]⟩
+  have hcomp : (e.symm ∘ ρ g : E → M) =ᶠ[𝓝 y] (g • ·) ∘ e.symm :=
+    eventually_of_mem (e.open_target.mem_nhds hy) fun _ hy' ↦ (hesρ hy').2
+  have hsmul : MDifferentiableAt I I (g • ·) (e.symm y) :=
+    ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable (by simp)) _
+  refine (mpullback_comp_apply_of_hasFDerivAt (ρ g).hasFDerivAt
+    (hesd (hesρ hy).1) form.1).symm.trans <| (hcomp.mpullback_eq _).trans <|
+      (mpullback_comp_at (hesd hy) hsmul _).trans ?_
+  rw [← SmoothForm.coe_mpullback (g • ·) (ContMDiffSMul.contMDiff_const_smul (I := IG) g), hG g]
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IG.Boundaryless] [IsTopologicalGroup G]
   [CompactSpace G] [IsManifold IG ∞ G]
 
 variable (IG) in
@@ -143,41 +171,28 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     exact mpullback_apply_pair _ _ _ _ _
   have hζ0 (u w : E) : ζ 0 ![u, w] = form.eval₂ x₀ u w := by
     rw [hζapp, hes0, hes0, SmoothForm.eval₂_congr_basePoint form (by rw [← he0, e.left_inv hx₀e])]
-  have hζs : ContDiffOn ℝ ∞ ζ D := fun y hy ↦
-    RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
-      ((form.contMDiff (e.symm y)).mpullback_form (hesymm.contMDiffAt (hD.mem_nhds hy))
-        (by simp)).contMDiffWithinAt
-  -- Closedness of `ζ` is naturality of the exterior derivative under pullback.
+  -- On the open set `D`, `ζ` is the pullback within `D`, which is smooth, and closed by
+  -- naturality of the exterior derivative under pullback.
+  have hζD : EqOn ζ (mpullbackWithin 𝓘(ℝ, E) I e.symm D form.1) D := fun y hy ↦
+    (mpullbackWithin_eq_mpullback (hD.uniqueMDiffOn y hy) (hesd hy) _).symm
+  have hζs : ContDiffOn ℝ ∞ ζ D :=
+    (form.contDiffOn_mpullbackWithin hD.uniqueDiffOn hesymm).congr hζD
   have hζc {y : E} (hy : y ∈ D) : extDeriv ζ y = 0 := by
     have hloc : ζ =ᶠ[𝓝[D] y] mpullbackWithin 𝓘(ℝ, E) I e.symm D form.1 :=
-      eventually_nhdsWithin_of_forall fun y' hy' ↦
-        (mpullbackWithin_eq_mpullback (hD.uniqueMDiffOn y' hy') (hesd hy') _).symm
-    rw [← extDerivWithin_of_isOpen hD hy, hloc.extDerivWithin_eq (hloc.self_of_nhdsWithin hy),
-      extDerivWithin_mpullbackWithin ((hesymm.of_le (by simp)) y hy) hD.uniqueDiffOn
-        (subset_closure (hD.interior_eq.symm ▸ hy)) hy (form.mdifferentiableAt _),
-      (SmoothForm.isClosed_def _).1 hform.isClosed, mpullbackWithin_zero]
-    rfl
+      eventually_nhdsWithin_of_forall hζD
+    rw [← extDerivWithin_of_isOpen hD hy, hloc.extDerivWithin_eq (hζD hy)]
+    exact (extDerivWithin_of_isOpen hD hy).trans <|
+      hform.isClosed.extDeriv_mpullbackWithin_eq_zero hD (hesymm.of_le (by simp)) hy
   -- An invariant convex neighbourhood of `0` inside `D`, and the flat equivariant Darboux theorem.
   have hρb : Bornology.IsBounded (range ρ) := (isCompact_range hρc).isBounded
   have hρ0 (g : G) : ρ g 0 = 0 := map_zero (ρ g)
   obtain ⟨U₀, ⟨hU₀o, -, h0U₀, hU₀ρ⟩, hU₀D⟩ :=
     (ContRepresentation.nhds_basis_isOpen_convex_mapsTo ρ hρb hρ0).mem_iff.1 (hD.mem_nhds h0D)
   have hU₀D : U₀ ⊆ D := hU₀D
-  -- Near `y ∈ D`, `e⁻¹ ∘ ρ g = (g • ·) ∘ e⁻¹`, so the invariance of `form` makes `ζ` invariant.
-  have hesρ (g : G) {y : E} (hy : y ∈ D) : e.symm (ρ g y) = g • e.symm y := by
-    obtain ⟨hgz, hegz⟩ := hequiv g (e.symm y) (e.map_target hy)
-    rw [e.right_inv hy] at hegz
-    rw [← hegz, e.left_inv hgz]
+  -- `ζ` is `ρ`-invariant, because `form` is `G`-invariant and `e` intertwines the actions.
   have hζinv (g : G) (y : E) (hy : y ∈ U₀) :
-      (ζ (ρ g y)).compContinuousLinearMap (ρ g) = ζ y := by
-    have hcomp : (e.symm ∘ ρ g : E → M) =ᶠ[𝓝 y] (g • ·) ∘ e.symm :=
-      eventually_of_mem (hD.mem_nhds (hU₀D hy)) fun y' hy' ↦ hesρ g hy'
-    have hsmul : MDifferentiableAt I I (g • ·) (e.symm y) :=
-      ((ContMDiffSMul.contMDiff_const_smul (I := IG) (n := ∞) g).mdifferentiable hinf) _
-    refine (mpullback_comp_apply_of_hasFDerivAt (ρ g).hasFDerivAt
-      (hesd (hU₀D (hU₀ρ g hy))) form.1).symm.trans <| (hcomp.mpullback_eq _).trans <|
-        (mpullback_comp_at (hesd (hU₀D hy)) hsmul _).trans ?_
-    rw [← SmoothForm.coe_mpullback (g • ·) (ContMDiffSMul.contMDiff_const_smul (I := IG) g), hG g]
+      (ζ (ρ g y)).compContinuousLinearMap (ρ g) = ζ y :=
+    compContinuousLinearMap_mpullback_symm_eq IG hG hesymm hequiv g (hU₀D hy)
   have hnd (v : E) (hv : ∀ w, ζ 0 ![v, w] = 0) : v = 0 :=
     isNondegenerate_iff_separatingLeft.1 hform.isNondegenerate x₀ v fun w ↦
       (hζ0 v w).symm.trans (hv w)
@@ -200,14 +215,17 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     simp [eP]
   have hψs0 : ψ.symm 0 = 0 := (congrArg ψ.symm hψ0.symm).trans (ψ.symm_apply_apply 0)
   refine ⟨ρ, chart, hρc, hρ, fun g u w ↦ ?_, ?_, ?_, ?_, ?_⟩
+  -- `ρ g` is the differential at the fixed point `x₀` of `g • ·`, which preserves `form`.
   · rw [hρ g]
     exact (SmoothForm.eval₂_congr_basePoint form (hx₀ g).symm _ _).trans
-      (eval₂_mfderiv_of_mpullback_eq _ (hG g) x₀ u w)
+      ((SmoothForm.eval₂_mpullback _ _ form x₀ u w).symm.trans (by rw [hG g]))
+  -- `x₀ ∈ S`, since `ψ⁻¹ (e x₀) = 0 ∈ U ∩ ψ⁻¹ U₀`.
   · rw [hsrc]
     refine ⟨hx₀e, ?_⟩
     simp only [mem_preimage, he0, hψs0]
     exact ⟨h0U, by rw [mem_preimage, hψ0]; exact h0U₀⟩
   · rw [hcoe, comp_apply, he0, hψs0]
+  -- Equivariance: `e` intertwines `g • ·` with `ρ g`, and `ψ⁻¹` commutes with `ρ g` on `U`.
   · intro g z hz
     rw [hsrc] at hz ⊢
     obtain ⟨hgz, hegz⟩ := hequiv g z hz.1
@@ -220,6 +238,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     · rw [mem_preimage, mem_preimage, hegz, hψ']
       exact hU'ρ g hy
     · rw [hcoe, comp_apply, comp_apply, hegz, hψ']
+  -- The form: `form` at `z` is `ζ` at `e z`, which `ψ` pulls back to `ζ 0 = form_{x₀}`.
   · intro z hz v w
     rw [hsrc] at hz
     have hψψ (a : E) : fderiv ℝ ψ (ψ.symm (e z)) (fderiv ℝ ψ.symm (e z) a) = a :=

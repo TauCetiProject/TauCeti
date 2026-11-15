@@ -20,7 +20,9 @@ It also restates closedness through the bundled derivative `mextDerivₗ` and sh
 exterior derivatives are closed.
 The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
 Since pullback commutes with the exterior derivative, smooth pullback sends closed forms to closed
-forms (`TauCeti.SmoothForm.IsClosed.mpullback`).
+forms (`TauCeti.SmoothForm.IsClosed.mpullback`); likewise, the within-set pullback along a `C²` map
+on an open subset of a normed space has vanishing flat exterior derivative there
+(`TauCeti.SmoothForm.IsClosed.extDeriv_mpullbackWithin_eq_zero`).
 The predicate and its generic API live here so they can be reused at every degree.
 -/
 
@@ -196,6 +198,17 @@ theorem isClosed_mpullback_iff_of_surjective {φ : SmoothForm I' M' F k} {f : M 
   rw [isClosed_def, isClosed_def, ← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback,
     mextDerivₗ_apply]
   exact (TauCeti.mpullback_injective_of_surjective hsurj hdf).eq_iff' (TauCeti.mpullback_zero f)
+
+/-- Along a map that is `C²` on an open subset `s` of a normed space, the within-set pullback of a
+closed smooth form has vanishing flat exterior derivative at every point of `s`. -/
+theorem IsClosed.extDeriv_mpullbackWithin_eq_zero {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (h : form.IsClosed) {f : V → M} {s : Set V} (hs : IsOpen s)
+    (hf : ContMDiffOn 𝓘(ℝ, V) I 2 f s) {z : V} (hz : z ∈ s) :
+    extDeriv (E := V) (F := F) (mpullbackWithin 𝓘(ℝ, V) I f s form.1) z = 0 := by
+  have h' := extDerivWithin_mpullbackWithin (hf z hz) hs.uniqueDiffOn
+    (subset_closure (hs.interior_eq.symm ▸ hz)) hz (form.mdifferentiableAt _)
+  rw [(isClosed_def form).1 h, mpullbackWithin_zero] at h'
+  exact (extDerivWithin_of_isOpen hs hz).symm.trans h'
 
 end Pullback
 

@@ -24,7 +24,9 @@ The relative theorem uses derivatives within the source set, so it applies at bo
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
-Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
+Its underlying rough form is the existing `TauCeti.mpullback`. Along a map smooth on a set of a
+normed space, the within-set pullback of a smooth form is a smooth flat form there
+(`TauCeti.SmoothForm.contDiffOn_mpullbackWithin`). Pullback along a smooth map with a
 smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
 preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
 (`TauCeti.SmoothForm.diffeomorphStabilizer`).
@@ -308,6 +310,16 @@ theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
   ext i
   fin_cases i
   rfl
+
+/-- Along a map smooth on a set `s` of a normed space with unique derivatives, the within-set
+pullback of a smooth form is a smooth function on `s` into the alternating maps. -/
+theorem contDiffOn_mpullbackWithin {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (φ : SmoothForm I' M' F k) {f : V → M'} {s : Set V} (hs : UniqueDiffOn ℝ s)
+    (hf : ContMDiffOn 𝓘(ℝ, V) I' ∞ f s) :
+    ContDiffOn ℝ (E := V) (F := V [⋀^Fin k]→L[ℝ] F) ∞ (mpullbackWithin 𝓘(ℝ, V) I' f s φ.1) s :=
+  fun x hx ↦ RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
+    ((φ.contMDiff.contMDiffOn (s := univ)).mpullbackWithin_form hf (by simp) (mapsTo_univ _ _)
+      hs.uniqueMDiffOn x hx)
 
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
