@@ -57,7 +57,8 @@ statement.
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`. Near each point of
   `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
-  (`TauCeti.MemWkpLoc.exists_ball_extension`).
+  (`TauCeti.MemWkpLoc.exists_ball_extension`). Local `Lᵖ` membership extends in the same way,
+  `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
 * `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
   reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
@@ -735,6 +736,13 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball {p : ℝ≥0∞} (
     MemWkpLoc p (Metric.ball (x : ℂ) r) k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
   MemWkpLoc.planarReflection_higherReflectionCoeff (Ω := ⟨_, Metric.isOpen_ball⟩) hp
     (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) hu
+
+/-- The reflection of a locally `Lᵖ` map on a half-disc centred on the real axis is locally `Lᵖ`
+on the disc, for any weights. -/
+theorem MemLpLoc.planarReflection_ball {p : ℝ≥0∞} (x r : ℝ) {u : ℂ → F}
+    (hu : MemLpLoc p (Metric.ball (x : ℂ) r ∩ {z | 0 ≤ z.im}) u) (d : Fin k → ℝ) :
+    MemLpLoc p (Metric.ball (x : ℂ) r) (TauCeti.planarReflection d u) :=
+  hu.planarReflection (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) d
 
 /-- **Extension from the closed half-plane to the plane.** -/
 theorem MemWkpLoc.planarReflection_higherReflectionCoeff_univ {p : ℝ≥0∞} (hp : 1 ≤ p)

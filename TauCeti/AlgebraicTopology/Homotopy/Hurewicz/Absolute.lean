@@ -173,6 +173,14 @@ theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup 
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
   (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
 
+/-- The forward map of the Hurewicz isomorphism is the integral Hurewicz homomorphism
+`HomotopyGroup.hurewiczIntHom`. -/
+theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
+    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
+    (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
+    hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=
+  AddEquiv.ofBijective_apply _ _ _
+
 /-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
 `GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/
 theorem hurewiczAddEquiv_ofMul_mk (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
@@ -196,7 +204,7 @@ theorem isIso_hurewicz_iff_bijective_zmultiplesHom_of_bijective
     rw [zmultiplesHom_apply, ← map_zsmul, smul_eq_mul, mul_one]
   rw [ConcreteCategory.isIso_iff_bijective, h,
     ← (AddEquiv.ofBijective _ hX).bijective_zmultiplesHom_apply_iff, AddEquiv.ofBijective_apply,
-    hurewiczIntHom_ofMul_mk]
+    hurewiczIntHom_mk]
 
 /-- **The Hurewicz class of a generalized loop generates exactly when its homotopy class does.**
 For an `(n + 1)`-connected space, the Hurewicz class of `p` is an isomorphism `ℤ ≅ Hₙ₊₂(X; ℤ)`
