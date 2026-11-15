@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
 public import TauCeti.RingTheory.Polynomial.HermiteInterpolation
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # The confluent Vandermonde matrix is the matrix of the Hermite jet map
@@ -63,6 +62,13 @@ theorem lexJetBasis_repr (m : Fin r → ℕ) (c : (i : Fin r) → Fin (m i) → 
     (lexJetBasis R m).repr c ρ = c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
   simp [lexJetBasis]
 
+/-- The basis vector at the position `ρ` is the indicator of the jet `finSigmaFinEquiv.symm ρ`. -/
+@[simp]
+theorem lexJetBasis_apply (m : Fin r → ℕ) (ρ : Fin (∑ i, m i)) :
+    lexJetBasis R m ρ =
+      Pi.single (finSigmaFinEquiv.symm ρ).1 (Pi.single (finSigmaFinEquiv.symm ρ).2 1) := by
+  simp [lexJetBasis, Pi.basis_apply]
+
 variable {R}
 
 /-- The confluent Vandermonde matrix is the matrix of the Hermite jet map in the monomial basis
@@ -84,19 +90,9 @@ theorem toLin_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
 /-- The Hermite jet map is bijective iff the confluent Vandermonde determinant is a unit. -/
 theorem hermiteJet_bijective_iff_isUnit_det (a : Fin r → R) (m : Fin r → ℕ) :
     Bijective (hermiteJet a m) ↔ IsUnit (Matrix.confluentVandermonde a m).det := by
-  set v₁ := degreeLT.basis R (∑ i, m i)
-  set v₂ := lexJetBasis R m
-  have h : (v₂.equivFun ∘ hermiteJet a m) ∘ v₁.equivFun.symm =
-      (Matrix.confluentVandermonde a m).mulVec := by
-    ext x ρ
-    have := LinearMap.toMatrix_mulVec_repr v₁ v₂ (hermiteJet a m) (v₁.equivFun.symm x)
-    rw [toMatrix_hermiteJet] at this
-    simp only [comp_apply, Module.Basis.equivFun_apply]
-    rw [← this, ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  rw [← EquivLike.comp_bijective _ v₂.equivFun, ← EquivLike.bijective_comp v₁.equivFun.symm, h,
-    ← Matrix.isUnit_iff_isUnit_det]
-  exact ⟨fun hb => Matrix.mulVec_surjective_iff_isUnit.1 hb.2,
-    fun hu => ⟨Matrix.mulVec_injective_of_isUnit hu, Matrix.mulVec_surjective_iff_isUnit.2 hu⟩⟩
+  rw [← toMatrix_hermiteJet]
+  exact ⟨fun hb => (LinearEquiv.ofBijective _ hb).isUnit_det _ _,
+    fun h => (LinearEquiv.ofIsUnitDet h).bijective⟩
 
 /-- Over a field, the Hermite jet map is bijective iff the nodes of nonzero multiplicity are
 pairwise distinct. A repeated node of multiplicity `0` is allowed. -/
