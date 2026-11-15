@@ -75,6 +75,13 @@ theorem reflPathChain_def :
         (SingularCube.point (MoorePathFrom.refl B b))) :=
   (rfl)
 
+/-- The point chain of the constant path has degree zero. -/
+theorem reflPathChain_mem :
+    reflPathChain H R ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R 0 := by
+  simpa [reflPathChain_def] using cubicalChainModuleLof_mem (G := H)
+    (NormalizedCubicalChain.ofCube (MoorePathFrom B b) R
+      (SingularCube.point (MoorePathFrom.refl B b)))
+
 /-- The point chain of the constant path is a cycle. -/
 @[simp]
 theorem cubicalChainModuleDifferential_reflPathChain :
