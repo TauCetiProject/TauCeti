@@ -172,12 +172,9 @@ private theorem exists_analyticOnNhd_zeroPolynomial
     subst R
     exact Multiset.eq_zero_iff_forall_notMem.2 fun z hz ↦
       by simpa using AnalyticOnNhd.mem_of_mem_zeroMultiset hz
-  have hpow_an (k : ℕ) : AnalyticOnNhd ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U := by
-    rcases hR.eq_or_lt with rfl | hR
-    · simpa only [hZzero rfl, Multiset.map_zero, Multiset.sum_zero] using
-        (analyticOnNhd_const : AnalyticOnNhd ℂ (fun _ : E ↦ (0 : ℂ)) U)
-    · exact DifferentiableOn.analyticOnNhd_of_finiteDimensional
-        (differentiableOn_sum_map_pow_zeroMultiset hR hF_an hF_sphere k) hU
+  have hpow_an (k : ℕ) : AnalyticOnNhd ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U :=
+    DifferentiableOn.analyticOnNhd_of_finiteDimensional
+      (differentiableOn_sum_map_pow_zeroMultiset hF_an hF_sphere k) hU
   have hZ0 : Z x₀ = Multiset.replicate d 0 := by
     rcases hR.eq_or_lt with rfl | hR
     · have hd : d = 0 := by
@@ -186,12 +183,9 @@ private theorem exists_analyticOnNhd_zeroPolynomial
       rw [hd, Multiset.replicate_zero, hZzero rfl]
     · exact (hFx_an hx₀).zeroMultiset_eq_replicate (mem_ball_self hR) hF_ord
         fun w hw ↦ hF_only w (ball_subset_closedBall hw)
-  have hcard {x : E} (hx : x ∈ U) : (Z x).card = d := by
-    rcases hR.eq_or_lt with rfl | hR
-    · simpa only [hZzero rfl, Multiset.card_zero, Multiset.card_replicate] using
-        congrArg Multiset.card hZ0
-    · exact (card_zeroMultiset_eq_of_isPreconnected hU_conn hR hF_an hF_sphere hx hx₀).trans
-        ((congrArg Multiset.card hZ0).trans (Multiset.card_replicate d 0))
+  have hcard {x : E} (hx : x ∈ U) : (Z x).card = d :=
+    (card_zeroMultiset_eq_of_isPreconnected hU_conn hF_an hF_sphere hx hx₀).trans
+      ((congrArg Multiset.card hZ0).trans (Multiset.card_replicate d 0))
   refine ⟨fun i x ↦ (-1) ^ (d - (i : ℕ)) * (Z x).esymm (d - (i : ℕ)),
     fun i x hx ↦ analyticAt_const.fun_mul
       (TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun j _ _ ↦ hpow_an j x hx),
