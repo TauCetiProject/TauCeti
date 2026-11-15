@@ -12,6 +12,10 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Nondegenerate
 public import Mathlib.AlgebraicTopology.SimplicialSet.Splitting
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homology.Basic
 
+import TauCeti.AlgebraicTopology.SimplexCategory.Basic
+import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
+import TauCeti.CategoryTheory.Limits.Shapes.Products
+
 /-!
 # Normalized chain complex for homology of a category with functor coefficients
 
@@ -49,57 +53,16 @@ lemma nerveNonDegSimplex_mk {n : ℕ} (σ : ComposableArrows C n)
     (hσ : (σ : (nerve C) _⦋n⦌) ∈ (nerve C).nonDegenerate n) :
     nerveNonDegSimplex ⟨σ, hσ⟩ = σ := (rfl)
 
-private lemma toOrderHom_zero_of_epi {Δ Δ' : SimplexCategory} (α : Δ ⟶ Δ') [Epi α] :
-    α.toOrderHom 0 = 0 := by
-  obtain ⟨k, hk⟩ := (SimplexCategory.epi_iff_surjective.mp ‹Epi α›) 0
-  exact le_antisymm (hk ▸ α.toOrderHom.monotone (Fin.zero_le k)) (Fin.zero_le _)
-
-private lemma eqToHom_trans_inj {S : Type*} {Q : S → A} {T : A} (inj : ∀ s, Q s ⟶ T)
-    {s s' : S} (hs : s' = s) {X : A} (h₁ : Q s = X) (h₂ : X = Q s') :
-    eqToHom h₁ ≫ eqToHom h₂ ≫ inj s' = inj s := by subst hs; simp
-
-private def isColimitCofanOfEquiv {S J : Type*} (e : S ≃ J) {Q : S → A} {P : J → A}
-    (cP : Cofan P) (hcP : IsColimit cP) (h : ∀ s, Q s = P (e s)) :
-    IsColimit (Cofan.mk cP.pt (fun s ↦ eqToHom (h s) ≫ cP.inj (e s))) := by
-  have hQ : ∀ j : J, P j = Q (e.symm j) := fun j ↦
-    (congrArg P (e.apply_symm_apply j).symm).trans (h (e.symm j)).symm
-  refine Cofan.IsColimit.mk _
-    (fun t ↦ Cofan.IsColimit.desc hcP fun j ↦ eqToHom (hQ j) ≫ t.inj (e.symm j))
-    (fun t s ↦ ?_) (fun t m hm ↦ Cofan.IsColimit.hom_ext hcP _ _ fun j ↦ ?_)
-  · dsimp only [Cofan.mk_pt, Limits.cofan_mk_inj]
-    rw [Category.assoc, Cofan.IsColimit.fac]
-    exact eqToHom_trans_inj t.inj (e.symm_apply_apply s) (h s) (hQ (e s))
-  · rw [Cofan.IsColimit.fac, ← hm (e.symm j)]
-    dsimp only [Limits.cofan_mk_inj]
-    rw [← Category.assoc]
-    exact congrArg (· ≫ m)
-      (eqToHom_trans_inj cP.inj (e.apply_symm_apply j) (hQ j) (h (e.symm j))).symm
-
-private def isColimitCofanOfSigma {I : Type*} {β : I → Type*} {X : I → A} (c : Cofan X)
-    {Y : ∀ i, β i → A} (π : ∀ i b, Y i b ⟶ X i) (hs : ∀ i, IsColimit (Cofan.mk (X i) (π i)))
-    (htot : IsColimit (Cofan.mk (f := fun p : Σ i, β i ↦ Y p.1 p.2) c.pt
-      (fun p ↦ π p.1 p.2 ≫ c.inj p.1))) : IsColimit c :=
-  Cofan.IsColimit.mk _
-    (fun t ↦ Cofan.IsColimit.desc htot fun p : Σ i, β i ↦ π p.1 p.2 ≫ t.inj p.1)
-    (fun t i ↦ Cofan.IsColimit.hom_ext (hs i) _ _ fun b ↦ by
-      dsimp only [Limits.cofan_mk_inj]; rw [← Category.assoc]
-      exact Cofan.IsColimit.fac htot (fun p : Σ i, β i ↦ π p.1 p.2 ≫ t.inj p.1) ⟨i, b⟩)
-    (fun t m hm ↦ Cofan.IsColimit.hom_ext htot _ _ fun ⟨i, b⟩ ↦ by
-      dsimp only [Cofan.mk_pt, Limits.cofan_mk_inj]; rw [Category.assoc, hm]
-      exact (Cofan.IsColimit.fac htot (fun p : Σ i, β i ↦ π p.1 p.2 ≫ t.inj p.1) ⟨i, b⟩).symm)
-
 variable [HasCoproducts.{max u v} A]
 
 private lemma ιCategorySimplicialObject_map_of_epi {m n : ℕ} (M : C ⥤ A) (φ : ⦋n⦌ ⟶ ⦋m⦌)
     [Epi φ] (σ : ComposableArrows C m) :
     ιCategorySimplicialObject M σ ≫ (categorySimplicialObject C M).map φ.op =
-      eqToHom (by
-        change M.obj (σ.obj 0) = M.obj (σ.obj (φ.toOrderHom 0))
-        rw [toOrderHom_zero_of_epi φ]) ≫
+      eqToHom (by rw [CategoryTheory.nerve.map_obj, SimplexCategory.toOrderHom_zero_of_epi]) ≫
         ιCategorySimplicialObject M ((nerve C).map φ.op σ) := by
   rw [ιCategorySimplicialObject_map]
   refine congrArg (· ≫ _) (eq_of_heq ?_)
-  have hz : φ.toOrderHom 0 = 0 := toOrderHom_zero_of_epi φ
+  have hz : φ.toOrderHom 0 = 0 := SimplexCategory.toOrderHom_zero_of_epi φ
   have hm : M.map (σ.map (homOfLE (Fin.zero_le (φ.toOrderHom 0)))) ≍ 𝟙 (M.obj (σ.obj 0)) := by
     generalize φ.toOrderHom 0 = z at hz ⊢; subst hz
     rw [Subsingleton.elim (homOfLE (Fin.zero_le (0 : Fin (m + 1)))) (𝟙 0), σ.map_id, M.map_id]
@@ -117,19 +80,22 @@ def categorySimplicialObjectSplitting (M : C ⥤ A) :
         (nerve C).nonDegenerate I.1.unop.len) ≃ ComposableArrows C n :=
       CofanTypes.equivOfIsColimit (((nerve C).splitting.cofan (op ⦋n⦌)).isColimit_cofanTypes_iff.mpr
         ⟨(nerve C).splitting.isColimit (op ⦋n⦌)⟩)
+    have he : ∀ (I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌))
+        (y : (nerve C).nonDegenerate I.1.unop.len),
+        e ⟨I, y⟩ = (nerve C).map I.e.op (nerveNonDegSimplex y) := fun _ _ ↦ rfl
     have hEq : ∀ p : Σ I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌),
         (nerve C).nonDegenerate I.1.unop.len,
         M.obj ((nerveNonDegSimplex p.2).obj 0) = M.obj ((e p).obj 0) := fun ⟨I, y⟩ ↦ by
-      change M.obj ((nerveNonDegSimplex y).obj 0) =
-        M.obj ((nerveNonDegSimplex y).obj (I.e.toOrderHom 0))
-      rw [toOrderHom_zero_of_epi I.e]
-    refine isColimitCofanOfSigma _
+      rw [he, CategoryTheory.nerve.map_obj, SimplexCategory.toOrderHom_zero_of_epi]
+    refine (SimplicialObject.Splitting.cofan' _ _ _ (op ⦋n⦌)).isColimitOfIsColimitSigma
       (fun I y ↦ Sigma.ι (fun z : (nerve C).nonDegenerate I.1.unop.len ↦
         M.obj ((nerveNonDegSimplex z).obj 0)) y) (fun _ ↦ coproductIsCoproduct _) ?_
     refine IsColimit.ofIsoColimit
-      (isColimitCofanOfEquiv e (categorySimplicialObjectXCofan M n)
-        (isColimitCategorySimplicialObjectXCofan M n) hEq) (Cofan.ext (Iso.refl _) fun ⟨I, y⟩ ↦ ?_)
-    dsimp only [Cofan.mk_pt, Limits.cofan_mk_inj, SimplicialObject.Splitting.cofan', Iso.refl_hom]
+      ((categorySimplicialObjectXCofan M n).isColimitOfEquiv
+        (isColimitCategorySimplicialObjectXCofan M n) e fun p ↦ eqToIso (hEq p))
+      (Cofan.ext (Iso.refl _) fun ⟨I, y⟩ ↦ ?_)
+    dsimp only [Cofan.mk_pt, Limits.cofan_mk_inj, SimplicialObject.Splitting.cofan', Iso.refl_hom,
+      eqToIso.hom]
     exact (Category.comp_id _).trans ((Category.assoc _ _ _).symm.trans
       ((congrArg (· ≫ (categorySimplicialObject C M).map I.e.op)
         (Sigma.ι_comp_desc (fun z : (nerve C).nonDegenerate I.1.unop.len ↦

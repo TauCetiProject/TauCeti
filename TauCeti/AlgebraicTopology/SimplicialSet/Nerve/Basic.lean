@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
-public import TauCeti.CategoryTheory.ComposableArrows.Basic
+public import TauCeti.CategoryTheory.ComposableArrows.Postcomp
 
 /-!
 # Arrows and faces of simplices of the nerve, and the images of its degeneracies
@@ -26,7 +26,11 @@ An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exact
 
 Prepending an arrow `b` to a string commutes with deleting any vertex but the first two, and
 deleting the second vertex composes `b` with the first arrow of the string
-(`CategoryTheory.nerve.δ_succ_precomp`).
+(`CategoryTheory.nerve.δ_succ_precomp`). Dually, appending an arrow `g` at the right end of a
+string recovers the original string under the last face (`CategoryTheory.nerve.δ_last_postcomp`),
+commutes with every non-last face when the target is terminal
+(`CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal`), and has zeroth face `mk₀ Y` on
+`0`-simplices (`CategoryTheory.nerve.δ_zero_postcomp_zero`).
 
 A `3`-simplex of the nerve is a sequence of three composable morphisms `ComposableArrows.mk₃ f g h`.
 Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are composites of
@@ -39,7 +43,9 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
   `i`-th degeneracy of its `i`-th face.
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
-* `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
+* `CategoryTheory.nerve.δ_succ_precomp`, `CategoryTheory.nerve.δ_last_postcomp`,
+  `CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal`: the faces of strings with a prepended or
+  appended arrow.
 * `CategoryTheory.nerve.map_obj`, `CategoryTheory.nerve.totalArrow_map`,
   `CategoryTheory.nerve.map_const`: the objects, arrows and vertices of a reindexed simplex.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
@@ -48,7 +54,7 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
 
 public section
 
-open CategoryTheory Simplicial
+open CategoryTheory Limits Simplicial
 
 universe v u
 
@@ -173,6 +179,71 @@ lemma map_const {n : ℕ} (s : ComposableArrows C n) (i : Fin (n + 1)) :
   ComposableArrows.ext₀ rfl
 
 end Map
+
+section Postcomp
+
+private lemma totalArrow_δ {m : ℕ} (i : Fin (m + 2)) (F : ComposableArrows C (m + 1))
+    (a b : Fin (m + 1)) (hab : a ≤ b) :
+    ((nerve C).δ i F).totalArrow a b hab =
+      F.totalArrow (i.succAbove a) (i.succAbove b) ((Fin.strictMono_succAbove i).monotone hab) :=
+  totalArrow_map (SimplexCategory.δ i) F a b hab
+
+private lemma totalArrow_congr_idx {m : ℕ} (F : ComposableArrows C m) {a a' b b' : Fin (m + 1)}
+    (ha : a = a') (hb : b = b') (hab : a ≤ b) :
+    F.totalArrow a b hab = F.totalArrow a' b' (ha ▸ hb ▸ hab) := by subst ha; subst hb; rfl
+
+/-- The last face of `F.postcomp g` in `nerve C` is `F`. -/
+@[simp]
+theorem δ_last_postcomp {n : ℕ} (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+    (nerve C).δ (Fin.last (n + 1)) (F.postcomp g) = F :=
+  ComposableArrows.ext_of_totalArrow fun i j hij ↦ by
+    rw [totalArrow_δ, totalArrow_congr_idx _ (Fin.succAbove_last_apply i)
+      (Fin.succAbove_last_apply j)]
+    exact F.totalArrow_postcomp_castSucc_castSucc g i j hij
+
+/-- When `t` is terminal, every non-last face `δ k.castSucc` commutes with appending the unique
+morphism to `t`. -/
+theorem δ_castSucc_postcomp_isTerminal {n : ℕ} (F : ComposableArrows C (n + 1)) {t : C}
+    (ht : IsTerminal t) (k : Fin (n + 2)) :
+    (nerve C).δ k.castSucc (F.postcomp (ht.from F.right)) =
+      ComposableArrows.postcomp (n := n) ((nerve C).δ k F)
+        (ht.from (ComposableArrows.right (n := n) ((nerve C).δ k F))) := by
+  let G : ComposableArrows C n := (nerve C).δ k F
+  refine ComposableArrows.ext_of_totalArrow (n := n + 1) fun i j hij ↦ ?_
+  rw [totalArrow_δ (m := n + 1)]
+  have hl : k.castSucc.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
+    (Fin.succAbove_castSucc_of_le k (Fin.last (n + 1)) (Fin.le_last k)).trans (Fin.succ_last _)
+  induction j using Fin.lastCases with
+  | last =>
+    induction i using Fin.lastCases with
+    | last =>
+      rw [totalArrow_congr_idx _ hl hl, ComposableArrows.totalArrow_self,
+        ComposableArrows.totalArrow_self]
+      have hlast : (F.postcomp (ht.from F.right)).obj (Fin.last (n + 2)) =
+          (G.postcomp (ht.from G.right)).obj (Fin.last (n + 1)) := by
+        rw [F.postcomp_obj_last _, G.postcomp_obj_last _]
+      exact Quiver.Total.ext hlast hlast ((conj_eqToHom_iff_heq _ _ hlast hlast).mp (by simp [G]))
+    | cast i =>
+      rw [totalArrow_congr_idx _ Fin.castSucc_succAbove_castSucc hl,
+        ComposableArrows.totalArrow_postcomp_castSucc_last, G.totalArrow_postcomp_castSucc_last]
+      exact Quiver.Total.ext rfl rfl ((conj_eqToHom_iff_heq _ _ rfl rfl).mp (ht.hom_ext _ _))
+  | cast j =>
+    induction i using Fin.lastCases with
+    | last => exact (Nat.not_lt.mpr hij j.isLt).elim
+    | cast i =>
+      have hij' : i ≤ j := Fin.castSucc_le_castSucc_iff.mp hij
+      rw [totalArrow_congr_idx _ Fin.castSucc_succAbove_castSucc Fin.castSucc_succAbove_castSucc,
+        ComposableArrows.totalArrow_postcomp_castSucc_castSucc,
+        G.totalArrow_postcomp_castSucc_castSucc _ _ _ hij']
+      exact (totalArrow_δ k F i j hij').symm
+
+/-- For a `0`-simplex `σ` of `nerve C`, the zeroth face of `σ.postcomp g` is `mk₀ Y`. -/
+@[simp]
+theorem δ_zero_postcomp_zero (σ : ComposableArrows C 0) {Y : C} (g : σ.right ⟶ Y) :
+    (nerve C).δ 0 (σ.postcomp g) = ComposableArrows.mk₀ Y :=
+  ComposableArrows.ext₀ (σ.postcomp_obj_last g)
+
+end Postcomp
 
 section Faces
 

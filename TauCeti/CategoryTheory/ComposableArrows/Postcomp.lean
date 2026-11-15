@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.CategoryTheory.ComposableArrows.Basic
 
 /-!
@@ -13,16 +12,15 @@ public import TauCeti.CategoryTheory.ComposableArrows.Basic
 
 Given `F : ComposableArrows C n` and `g : F.right ⟶ Y`, `F.postcomp g : ComposableArrows C (n + 1)`
 appends `g` at the right end of `F`, dual to `CategoryTheory.ComposableArrows.precomp`. Deleting the
-final vertex recovers `F` (`CategoryTheory.nerve.δ_last_postcomp`), and for a terminal object `t`
-every non-last face commutes with appending the unique arrow to `t`
-(`CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal`).
+final vertex recovers `F` (`CategoryTheory.ComposableArrows.δlast_postcomp`), and applying a functor
+commutes with right-appending (`CategoryTheory.Functor.mapComposableArrows_obj_postcomp`).
 -/
 
 public section
 
 universe v u
 
-open CategoryTheory Limits Simplicial
+open CategoryTheory
 
 namespace CategoryTheory.ComposableArrows
 
@@ -52,7 +50,7 @@ private def map (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) (i j : Fi
   if hj : j.val < n + 1 then
     have hi : i.val < n + 1 := lt_of_le_of_lt hij hj
     eqToHom (obj_of_lt F Y i hi) ≫
-      F.map (homOfLE (show (⟨i.val, hi⟩ : Fin (n + 1)) ≤ ⟨j.val, hj⟩ from hij)) ≫
+      F.map (homOfLE (Fin.mk_le_mk.mpr (Fin.le_def.mp hij))) ≫
       eqToHom (obj_of_lt F Y j hj).symm
   else if hi : i.val < n + 1 then
     eqToHom (obj_of_lt F Y i hi) ≫ F.map (homOfLE (Fin.le_last ⟨i.val, hi⟩)) ≫ g ≫
@@ -161,70 +159,3 @@ theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_postcomp {D : Type
         FΦ.totalArrow_postcomp_castSucc_castSucc _ _ _ hij', totalArrow_mapComposableArrows_obj]
 
 end CategoryTheory.ComposableArrows
-
-namespace CategoryTheory.nerve
-
-variable {C : Type u} [Category.{v} C] {n : ℕ}
-
-private lemma totalArrow_δ {m : ℕ} (i : Fin (m + 2)) (F : ComposableArrows C (m + 1))
-    (a b : Fin (m + 1)) (hab : a ≤ b) :
-    ((nerve C).δ i F).totalArrow a b hab =
-      F.totalArrow (i.succAbove a) (i.succAbove b) ((Fin.strictMono_succAbove i).monotone hab) :=
-  F.totalArrow_whiskerLeft _ a b hab
-
-private lemma totalArrow_congr_idx {m : ℕ} (F : ComposableArrows C m) {a a' b b' : Fin (m + 1)}
-    (ha : a = a') (hb : b = b') (hab : a ≤ b) :
-    F.totalArrow a b hab = F.totalArrow a' b' (ha ▸ hb ▸ hab) := by subst ha; subst hb; rfl
-
-/-- The last face of `F.postcomp g` in `nerve C` is `F`. -/
-@[simp]
-theorem δ_last_postcomp (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
-    (nerve C).δ (Fin.last (n + 1)) (F.postcomp g) = F :=
-  ComposableArrows.ext_of_totalArrow fun i j hij ↦ by
-    rw [totalArrow_δ, totalArrow_congr_idx _ (Fin.succAbove_last_apply i)
-      (Fin.succAbove_last_apply j)]
-    exact F.totalArrow_postcomp_castSucc_castSucc g i j hij
-
-/-- When `t` is terminal, every non-last face `δ k.castSucc` commutes with appending the unique
-morphism to `t`. -/
-theorem δ_castSucc_postcomp_isTerminal (F : ComposableArrows C (n + 1)) {t : C} (ht : IsTerminal t)
-    (k : Fin (n + 2)) :
-    (nerve C).δ k.castSucc (F.postcomp (ht.from F.right)) =
-      ComposableArrows.postcomp (n := n) ((nerve C).δ k F)
-        (ht.from (ComposableArrows.right (n := n) ((nerve C).δ k F))) := by
-  let G : ComposableArrows C n := (nerve C).δ k F
-  refine ComposableArrows.ext_of_totalArrow (n := n + 1) fun i j hij ↦ ?_
-  rw [totalArrow_δ (m := n + 1)]
-  have hl : k.castSucc.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
-    (Fin.succAbove_castSucc_of_le k (Fin.last (n + 1)) (Fin.le_last k)).trans (Fin.succ_last _)
-  induction j using Fin.lastCases with
-  | last =>
-    induction i using Fin.lastCases with
-    | last =>
-      rw [totalArrow_congr_idx _ hl hl, ComposableArrows.totalArrow_self,
-        ComposableArrows.totalArrow_self]
-      have hlast : (F.postcomp (ht.from F.right)).obj (Fin.last (n + 2)) =
-          (G.postcomp (ht.from G.right)).obj (Fin.last (n + 1)) := by
-        rw [F.postcomp_obj_last _, G.postcomp_obj_last _]
-      exact Quiver.Total.ext hlast hlast ((conj_eqToHom_iff_heq _ _ hlast hlast).mp (by simp [G]))
-    | cast i =>
-      rw [totalArrow_congr_idx _ Fin.castSucc_succAbove_castSucc hl,
-        ComposableArrows.totalArrow_postcomp_castSucc_last, G.totalArrow_postcomp_castSucc_last]
-      exact Quiver.Total.ext rfl rfl ((conj_eqToHom_iff_heq _ _ rfl rfl).mp (ht.hom_ext _ _))
-  | cast j =>
-    induction i using Fin.lastCases with
-    | last => exact (Nat.not_lt.mpr hij j.isLt).elim
-    | cast i =>
-      have hij' : i ≤ j := Fin.castSucc_le_castSucc_iff.mp hij
-      rw [totalArrow_congr_idx _ Fin.castSucc_succAbove_castSucc Fin.castSucc_succAbove_castSucc,
-        ComposableArrows.totalArrow_postcomp_castSucc_castSucc,
-        G.totalArrow_postcomp_castSucc_castSucc _ _ _ hij']
-      exact (totalArrow_δ k F i j hij').symm
-
-/-- For a `0`-simplex `σ` of `nerve C`, the zeroth face of `σ.postcomp g` is `mk₀ Y`. -/
-@[simp]
-theorem δ_zero_postcomp_zero (σ : ComposableArrows C 0) {Y : C} (g : σ.right ⟶ Y) :
-    (nerve C).δ 0 (σ.postcomp g) = ComposableArrows.mk₀ Y :=
-  ComposableArrows.ext₀ (σ.postcomp_obj_last g)
-
-end CategoryTheory.nerve

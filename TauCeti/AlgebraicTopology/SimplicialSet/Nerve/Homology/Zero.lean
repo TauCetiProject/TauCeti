@@ -6,24 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Single
-public import Mathlib.Algebra.Homology.SingleHomology
 public import Mathlib.CategoryTheory.Limits.Connected
-public import Mathlib.CategoryTheory.SingleObj
-public import Mathlib.Data.ZMod.Basic
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homology.Normalized
-public import TauCeti.CategoryTheory.ComposableArrows.Postcomp
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homology.Basic
+
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+import Mathlib.Algebra.Homology.QuasiIso
+import Mathlib.Algebra.Homology.SingleHomology
+import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 
 /-!
-# Degree-zero homology of a category and concrete homological checks
+# Degree-zero homology of a category and contractibility for categories with a terminal object
 
 For `C` and `M : C ⥤ A`, `TauCeti.ιCategoryHomology₀ M` forms a colimit cocone
 `TauCeti.categoryHomology₀Cocone M` presenting `categoryHomology C M 0` as `colimit M`
-(`TauCeti.categoryHomologyZeroIso`, `TauCeti.categoryHomologyFunctorZeroIso`). We also prove
-`H₀(C, const X) ≅ X` when `[IsConnected C]`, the contracting homotopy equivalence onto
-`(ChainComplex.single₀ A).obj (M.obj t)` when `t` is terminal, and `H₂(B(ℤ/2), ℤ) = 0` whereas
-`H²(ℤ/2, ℤ) ≅ ℤ/2 ≠ 0` ([Daniel Quillen, *Higher algebraic K-theory: I*][quillen1973]).
+(`TauCeti.categoryHomologyZeroIso`, `TauCeti.categoryHomologyFunctorZeroIso`). In particular,
+`H₀(C, const X) ≅ X` when `[IsConnected C]` (`TauCeti.categoryHomologyZeroConstIsoOfIsConnected`).
+
+When `C` has a terminal object `t`, appending the unique morphism to `t` yields a contracting
+chain homotopy equivalence `TauCeti.categoryChainComplexTerminalHomotopyEquiv` between
+`categoryChainComplex C M` and `(ChainComplex.single₀ A).obj (M.obj t)`, giving `H₀(C, M) ≅ M(t)`
+and `Hₙ₊₁(C, M) = 0` (`TauCeti.isZero_categoryHomology_succ_of_isTerminal`).
+
+## References
+
+* [Daniel Quillen, *Higher algebraic K-theory: I*][quillen1973]
 -/
 
 public noncomputable section
@@ -157,9 +163,9 @@ variable (C A) [HasColimitsOfShape C A] in
 def categoryHomologyFunctorZeroIso : categoryHomologyFunctor C A 0 ≅ colim :=
   NatIso.ofComponents (fun M ↦ categoryHomologyZeroIso M) fun α ↦
     categoryHomology₀_hom_ext fun c ↦ by
-      change ιCategoryHomology₀ _ c ≫
-          (categoryHomologyCoeffMap α 0 ≫ (categoryHomologyZeroIso _).hom) =
-        ιCategoryHomology₀ _ c ≫ ((categoryHomologyZeroIso _).hom ≫ colimMap α)
+      dsimp only [categoryHomologyFunctor, categoryChainComplexFunctor,
+        categorySimplicialObjectFunctor, Functor.comp_map,
+        HomologicalComplex.homologyFunctor, colim_map]
       rw [ιCategoryHomology₀_categoryHomologyCoeffMap_assoc,
         ιCategoryHomology₀_categoryHomologyZeroIso_hom,
         ιCategoryHomology₀_categoryHomologyZeroIso_hom_assoc, ι_colimMap]
@@ -282,7 +288,7 @@ private lemma ιPostcomp_d_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : �
             ιPostcomp M (nerveFace j.succ σ) (ht.from _))) +
         (-1 : ℤ) ^ (n + 2) • ιCategoryChainComplex M σ := by
   let g := ht.from σ.right; let τ := σ.postcomp g
-  change (eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫ ιCategoryChainComplex M τ) ≫ _ = _
+  conv_lhs => dsimp only [ιPostcomp]
   rw [Category.assoc, ιCategoryChainComplex_d_nerveFace, Preadditive.comp_add,
     Preadditive.comp_sum, Fin.sum_univ_castSucc, ← add_assoc]
   congr 1
@@ -461,203 +467,5 @@ lemma isZero_categoryHomology_succ_of_isTerminal (M : C ⥤ A) {t : C} (ht : IsT
 end TerminalHomology
 
 end Terminal
-
-section ZModTwoCheck
-
-private abbrev G₂ : Type := Multiplicative (ZMod 2)
-private abbrev C₂ : Type := SingleObj G₂
-private abbrev toNerve₂ {n : ℕ} (σ : ComposableArrows C₂ n) : (nerve C₂) _⦋n⦌ := σ
-private def mapG₂ {m : ℕ} (τ : ComposableArrows C₂ m) {i j : Fin (m + 1)} (f : i ⟶ j) : G₂ :=
-  τ.map f
-
-private lemma mapG₂_eq_one_of_totalArrow {m : ℕ} (τ : ComposableArrows C₂ (m + 1))
-    (i : Fin (m + 1)) {x : C₂}
-    (hx : Quiver.Total.mk x x (𝟙 x) = τ.totalArrow i.castSucc i.succ i.castSucc_le_succ) :
-    mapG₂ τ (homOfLE i.castSucc_le_succ) = 1 := by
-  rw [ComposableArrows.totalArrow_def] at hx
-  exact (eq_of_heq (Quiver.Total.mk.inj hx).2.2).symm
-
-private lemma totalArrow_eq_of_mapG₂_eq_one {m : ℕ} (τ : ComposableArrows C₂ (m + 1))
-    (i : Fin (m + 1)) (h1 : mapG₂ τ (homOfLE i.castSucc_le_succ) = 1) :
-    Quiver.Total.mk (SingleObj.star G₂) (SingleObj.star G₂) (𝟙 (SingleObj.star G₂)) =
-      τ.totalArrow i.castSucc i.succ i.castSucc_le_succ := by
-  rw [ComposableArrows.totalArrow_def]
-  exact Quiver.Total.ext (Subsingleton.elim _ _) (Subsingleton.elim _ _) (heq_of_eq h1.symm)
-
-private def paritySimplex (n : ℕ) : ComposableArrows C₂ n where
-  obj _ := SingleObj.star G₂
-  map {i j} _ := Multiplicative.ofAdd ((j.val : ZMod 2) - (i.val : ZMod 2))
-  map_id _ := by simp only [sub_self]; rfl
-  map_comp {i j k} _ _ := by
-    change Multiplicative.ofAdd ((k.val : ZMod 2) - (i.val : ZMod 2)) =
-      Multiplicative.ofAdd ((k.val : ZMod 2) - (j.val : ZMod 2)) *
-        Multiplicative.ofAdd ((j.val : ZMod 2) - (i.val : ZMod 2))
-    rw [← ofAdd_add, sub_add_sub_cancel]
-
-private lemma g₂_ne_one_iff (x : G₂) : x ≠ 1 ↔ x = Multiplicative.ofAdd (1 : ZMod 2) := by
-  revert x; decide
-
-private lemma paritySimplex_nonDegenerate (n : ℕ) :
-    toNerve₂ (paritySimplex n) ∈ (nerve C₂).nonDegenerate n := by
-  rw [SSet.mem_nonDegenerate_iff_notMem_degenerate]
-  obtain _ | n := n
-  · simp
-  · rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
-    rintro ⟨i, hi⟩
-    change (paritySimplex (n + 1) : (nerve C₂) _⦋n + 1⦌) ∈ Set.range ((nerve C₂).σ i) at hi
-    obtain ⟨_, hx⟩ := (CategoryTheory.nerve.mem_range_σ_iff _ i).mp hi
-    have h1 := mapG₂_eq_one_of_totalArrow (paritySimplex (n + 1)) i hx
-    change Multiplicative.ofAdd (((i.val + 1 : ℕ) : ZMod 2) - (i.val : ZMod 2)) =
-      Multiplicative.ofAdd 0 at h1
-    rw [show ((i.val + 1 : ℕ) : ZMod 2) - (i.val : ZMod 2) = 1 by push_cast; ring] at h1
-    exact absurd (Multiplicative.ofAdd.injective h1) (by decide)
-
-private lemma mapG₂_zero_le_of_notMem_degenerate {n : ℕ} (σ : ComposableArrows C₂ n)
-    (hnotdeg : toNerve₂ σ ∉ (nerve C₂).degenerate n) (m : ℕ) (hm : m < n + 1) :
-    mapG₂ σ (homOfLE (Fin.zero_le (⟨m, hm⟩ : Fin (n + 1)))) =
-      Multiplicative.ofAdd (m : ZMod 2) := by
-  induction m with
-  | zero =>
-    change mapG₂ σ (homOfLE (Fin.zero_le (0 : Fin (n + 1)))) = Multiplicative.ofAdd 0
-    rw [Subsingleton.elim (homOfLE (Fin.zero_le (0 : Fin (n + 1)))) (𝟙 0)]
-    exact σ.map_id 0
-  | succ d ih =>
-    obtain _ | r := n
-    · omega
-    · let k : Fin (r + 1) := ⟨d, by omega⟩
-      have hne : mapG₂ σ (homOfLE k.castSucc_le_succ) ≠ 1 := fun h1 ↦ hnotdeg <| by
-        rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
-        exact ⟨k, (CategoryTheory.nerve.mem_range_σ_iff σ k).mpr
-          ⟨SingleObj.star G₂, totalArrow_eq_of_mapG₂_eq_one σ k h1⟩⟩
-      have hmul : mapG₂ σ (homOfLE (Fin.zero_le (⟨d + 1, hm⟩ : Fin (r + 2)))) =
-          mapG₂ σ (homOfLE k.castSucc_le_succ) * mapG₂ σ (homOfLE (Fin.zero_le k.castSucc)) := by
-        rw [Subsingleton.elim (homOfLE (Fin.zero_le (⟨d + 1, hm⟩ : Fin (r + 2))))
-          (homOfLE (Fin.zero_le k.castSucc) ≫ homOfLE k.castSucc_le_succ)]
-        exact σ.map_comp _ _
-      rw [hmul, (g₂_ne_one_iff _).mp hne, ih (by omega), ← ofAdd_add]
-      congr 1; push_cast; ring
-
-private lemma eq_paritySimplex_of_nonDegenerate {n : ℕ} (σ : ComposableArrows C₂ n)
-    (hσ : toNerve₂ σ ∈ (nerve C₂).nonDegenerate n) : σ = paritySimplex n := by
-  have hnotdeg := (SSet.mem_nonDegenerate_iff_notMem_degenerate _ _).mp hσ
-  refine CategoryTheory.Functor.ext (fun _ ↦ Subsingleton.elim _ _) fun i j f ↦ ?_
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-  have hmul : mapG₂ σ (homOfLE (Fin.zero_le j)) =
-      mapG₂ σ f * mapG₂ σ (homOfLE (Fin.zero_le i)) := by
-    rw [Subsingleton.elim (homOfLE (Fin.zero_le j)) (homOfLE (Fin.zero_le i) ≫ f)]
-    exact σ.map_comp _ _
-  change mapG₂ σ f = Multiplicative.ofAdd ((j.val : ZMod 2) - (i.val : ZMod 2))
-  rw [eq_mul_inv_of_mul_eq hmul.symm, mapG₂_zero_le_of_notMem_degenerate σ hnotdeg j.val j.isLt,
-    mapG₂_zero_le_of_notMem_degenerate σ hnotdeg i.val i.isLt,
-    ← ofAdd_neg, ← ofAdd_add, sub_eq_add_neg]
-
-private instance uniqueNonDegenerateSingleObjZModTwo (n : ℕ) :
-    Unique ((nerve C₂).nonDegenerate n) where
-  default := ⟨toNerve₂ (paritySimplex n), paritySimplex_nonDegenerate n⟩
-  uniq y := Subtype.ext (eq_paritySimplex_of_nonDegenerate y.1 y.2)
-
-private lemma δ₁_paritySimplex_two_degenerate :
-    toNerve₂ ((nerve C₂).δ 1 (paritySimplex 2)) ∈ (nerve C₂).degenerate 1 := by
-  let τ : ComposableArrows C₂ 1 := (nerve C₂).δ 1 (paritySimplex 2)
-  rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
-  refine ⟨0, (CategoryTheory.nerve.mem_range_σ_iff τ 0).mpr
-    ⟨SingleObj.star G₂, totalArrow_eq_of_mapG₂_eq_one τ 0 ?_⟩⟩
-  change Multiplicative.ofAdd (((2 : ℕ) : ZMod 2) - ((0 : ℕ) : ZMod 2)) = Multiplicative.ofAdd 0
-  decide
-
-private lemma paritySimplex_two_face_eq (k : Fin 3)
-    (hne : mapG₂ ((nerve C₂).δ k (paritySimplex 2)) (homOfLE (0 : Fin 1).castSucc_le_succ) ≠ 1) :
-    (nerve C₂).δ k (paritySimplex 2) = paritySimplex 1 := by
-  refine eq_paritySimplex_of_nonDegenerate _ ?_
-  rw [SSet.mem_nonDegenerate_iff_notMem_degenerate, SSet.degenerate_eq_iUnion_range_σ,
-    Set.mem_iUnion]
-  rintro ⟨i, hi⟩; fin_cases i
-  obtain ⟨_, hx⟩ := (CategoryTheory.nerve.mem_range_σ_iff _ 0).mp hi
-  exact hne (mapG₂_eq_one_of_totalArrow _ 0 hx)
-
-/-- For `G = Multiplicative (ZMod 2)` with trivial integral coefficients, degree-`2` category
-homology `H₂(BG, ℤ)` vanishes (contrasting with `H²(ℤ/2, ℤ) ≅ ℤ/2`). -/
-theorem isZero_categoryHomology_singleObj_zmod_two_int_two :
-    IsZero (categoryHomology (SingleObj (Multiplicative (ZMod 2)))
-      ((Functor.const _).obj (ModuleCat.of ℤ ℤ)) 2) := by
-  let R : ModuleCat ℤ := ModuleCat.of ℤ ℤ
-  let M : C₂ ⥤ ModuleCat ℤ := (Functor.const C₂).obj R
-  let e₂ := normalizedCategoryChainComplexXIsoOfUnique M 2
-  let e₁ := normalizedCategoryChainComplexXIsoOfUnique M 1
-  have hdef₂ : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 2) = paritySimplex 2 :=
-    nerveNonDegSimplex_mk _ _
-  have hdef₁ : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 1) = paritySimplex 1 :=
-    nerveNonDegSimplex_mk _ _
-  have hd₀ : (nerve C₂).δ 0 (paritySimplex 2) = paritySimplex 1 :=
-    paritySimplex_two_face_eq 0 (by decide)
-  have hd₂ : (nerve C₂).δ 2 (paritySimplex 2) = paritySimplex 1 :=
-    paritySimplex_two_face_eq 2 (by decide)
-  have hd : e₂.hom ≫ (normalizedCategoryChainComplex C₂ M).d 2 1 = ((2 : ℤ) • 𝟙 R) ≫ e₁.hom := by
-    dsimp only [e₂, e₁]
-    rw [normalizedCategoryChainComplexXIsoOfUnique_hom,
-      normalizedCategoryChainComplexXIsoOfUnique_hom, hdef₂, hdef₁,
-      ιNormalizedCategoryChainComplex_d, Fin.sum_univ_two]
-    dsimp only [M, Functor.const_obj_obj, Functor.const_obj_map]
-    simp only [Category.id_comp, Fin.val_zero, Fin.val_one, zero_add, Nat.reduceAdd, pow_one,
-      neg_smul, one_smul, neg_one_sq, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
-    rw [ιNormalizedCategoryChainComplex_eq_zero M _ δ₁_paritySimplex_two_degenerate,
-      neg_zero, zero_add, Preadditive.zsmul_comp, Category.id_comp, two_zsmul, hd₀, hd₂]
-  have hmono₂ : Mono ((2 : ℤ) • 𝟙 R) :=
-    (ModuleCat.mono_iff_injective _).mpr fun a b (hab : (2 : ℤ) * a = 2 * b) ↦
-      mul_left_cancel₀ (by decide : (2 : ℤ) ≠ 0) hab
-  have hmono_d : Mono ((normalizedCategoryChainComplex C₂ M).d 2 1) := by
-    rw [show (normalizedCategoryChainComplex C₂ M).d 2 1 = e₂.inv ≫ ((2 : ℤ) • 𝟙 R) ≫ e₁.hom by
-      rw [← hd, Iso.inv_hom_id_assoc]]
-    exact mono_comp _ _
-  have hex : (normalizedCategoryChainComplex C₂ M).ExactAt 2 := by
-    rw [HomologicalComplex.exactAt_iff' _ 3 2 1 (ChainComplex.prev ℕ 2)
-      (ChainComplex.next_nat_succ 1)]
-    exact (ShortComplex.exact_iff_mono _
-      (zero_of_comp_mono _ ((normalizedCategoryChainComplex C₂ M).d_comp_d 3 2 1))).mpr hmono_d
-  exact hex.isZero_homology.of_iso (normalizedCategoryHomologyIso M 2)
-
-private lemma zpowers_gen_g₂ (x : G₂) :
-    x ∈ Subgroup.zpowers (Multiplicative.ofAdd (1 : ZMod 2)) := by
-  rcases eq_or_ne x 1 with rfl | hx
-  · exact ⟨0, zpow_zero _⟩
-  · exact ⟨1, (zpow_one _).trans ((g₂_ne_one_iff x).mp hx).symm⟩
-
-/-- Second group cohomology `H²(ℤ/2, ℤ)` with trivial integral action is isomorphic to `ℤ/2`. -/
-def groupCohomologyTrivialZModTwoIntTwoIso :
-    groupCohomology (Rep.trivial ℤ (Multiplicative (ZMod 2)) ℤ) 2 ≅
-      ModuleCat.of ℤ (ZMod 2) := by
-  let A₀ := Rep.trivial ℤ G₂ ℤ
-  let g₀ : G₂ := Multiplicative.ofAdd (1 : ZMod 2)
-  let S := Rep.FiniteCyclicGroup.normHomCompSub A₀ g₀
-  have hf (x : ℤ) : S.f.hom x = 2 * x := by
-    change (∑ _ : G₂, x) = 2 * x
-    rw [Finset.sum_const, Finset.card_univ, show Fintype.card G₂ = 2 by decide,
-      nsmul_eq_mul, Nat.cast_two]
-  let K := LinearMap.ker S.g.hom
-  let R₀ := LinearMap.range S.moduleCatToCycles
-  let φ : K →ₗ[ℤ] ZMod 2 := (Algebra.linearMap ℤ (ZMod 2)).comp K.subtype
-  have hR₀ : R₀ ≤ LinearMap.ker φ := by
-    rintro _ ⟨x, rfl⟩
-    exact LinearMap.mem_ker.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd (S.f.hom x) 2).mpr ⟨x, hf x⟩)
-  let ψ : (K ⧸ R₀) →ₗ[ℤ] ZMod 2 := Submodule.liftQ R₀ φ hR₀
-  have hinj : Function.Injective ψ :=
-    (injective_iff_map_eq_zero ψ).mpr fun z hz ↦ by
-      obtain ⟨⟨x, _⟩, rfl⟩ := Submodule.Quotient.mk_surjective R₀ z
-      obtain ⟨q, rfl⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd x 2).mp hz
-      exact (Submodule.Quotient.mk_eq_zero R₀).mpr ⟨q, Subtype.ext (hf q)⟩
-  have hsurj : Function.Surjective ψ := fun y ↦ by
-    obtain ⟨x, rfl⟩ := ZMod.intCast_surjective y
-    exact ⟨Submodule.Quotient.mk ⟨x, LinearMap.mem_ker.mpr (sub_self x)⟩, rfl⟩
-  exact Rep.FiniteCyclicGroup.groupCohomologyIsoEven A₀ g₀ zpowers_gen_g₂ 2 ⟨1, rfl⟩ ≪≫
-    S.moduleCatHomologyIso ≪≫ (LinearEquiv.ofBijective ψ ⟨hinj, hsurj⟩).toModuleIso
-
-/-- Second group cohomology `H²(ℤ/2, ℤ)` with trivial integral action is nonzero. -/
-theorem not_isZero_groupCohomology_trivial_zmod_two_int_two :
-    ¬ IsZero (groupCohomology (Rep.trivial ℤ (Multiplicative (ZMod 2)) ℤ) 2) := fun hz ↦ by
-  have hid : (𝟙 (ModuleCat.of ℤ (ZMod 2))) = 0 :=
-    (hz.of_iso groupCohomologyTrivialZModTwoIntTwoIso.symm).eq_of_src _ _
-  exact absurd (congrArg (fun φ : ModuleCat.of ℤ (ZMod 2) ⟶ _ ↦ φ.hom 1) hid) (by decide)
-
-end ZModTwoCheck
 
 end TauCeti

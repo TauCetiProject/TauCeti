@@ -302,6 +302,9 @@ section ChainComplexLemmas
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{max u v} A]
 
+/-- `categorySimplicialObjectFunctor C A` is an additive functor, supplying additivity and
+preservation of zero morphisms for `categoryChainComplexFunctor C A` and
+`categoryHomologyFunctor C A n`. -/
 instance : (categorySimplicialObjectFunctor C A).Additive where
   map_add {_ _} _ _ :=
     NatTrans.ext (funext fun ⟨⟨_⟩⟩ ↦ categorySimplicialObject_hom_ext fun _ ↦ by simp)
@@ -594,10 +597,8 @@ lemma categoryHomologyMap_constIso_hom {D : Type u} [Category.{v} D]
     categoryHomologyMap F ((Functor.const D).obj X) n ≫
       (categoryHomologyConstIso D X n).hom =
       (categoryHomologyConstIso C X n).hom ≫ SSet.homologyMap (nerveMap F) X n := by
-  change HomologicalComplex.homologyMap _ n ≫
-      HomologicalComplex.homologyMap (categoryChainComplexConstIso D X).hom n =
-    HomologicalComplex.homologyMap (categoryChainComplexConstIso C X).hom n ≫
-      HomologicalComplex.homologyMap _ n
+  dsimp only [categoryHomologyMap, categoryHomologyConstIso, Functor.mapIso_hom,
+    HomologicalComplex.homologyFunctor, SSet.homologyMap]
   rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
     categoryChainComplexMap_constIso_hom]
 
