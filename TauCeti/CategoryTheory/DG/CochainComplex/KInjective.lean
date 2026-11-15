@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
+public import TauCeti.Algebra.Homology.DerivedCategory.DerivedHom
 public import TauCeti.AlgebraicTopology.DGNerve.Equivalence
+public import TauCeti.AlgebraicTopology.DGNerve.HomotopyGroups
 public import TauCeti.CategoryTheory.DG.CochainComplex.HomotopyCategory
 public import TauCeti.CategoryTheory.DG.QuasiEquivalence
 
@@ -31,6 +32,15 @@ has homotopy category `D(C)`
 enhancement of an unbounded derived category: its higher simplices record homotopies between
 chain maps and the coherences among them, which the derived category forgets.
 
+What the enhancement retains is computed by derived Homs. For K-injective complexes `K` and `L`,
+the `n`-th cohomology of their Hom complex is `Q K ⟶ (Q L)⟦n⟧` in `D(C)`
+(`TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`), so the homotopy group
+`π_(i + 1)` of the right mapping space from `K` to `L` in the dg nerve, based at zero, is
+`Q K ⟶ (Q L)⟦-(i + 1)⟧` (`TauCeti.KInjectiveDGCategory.rightMappingSpacePiAddEquiv`). This is the
+formula `π_i Map(K, L) = H^(-i) RHom(K, L)` for `i ≥ 1`, with no boundedness assumption. In degree
+zero, homotopy classes of edges are identified with morphisms of `D(C)` by the equivalence of
+homotopy categories above.
+
 ## Main definitions
 
 * `TauCeti.KInjectiveDGCategory C`: the full DG subcategory of K-injective cochain complexes.
@@ -39,6 +49,9 @@ chain maps and the coherences among them, which the derived category forgets.
 * `TauCeti.KInjectiveDGCategory.dgNerveHomotopyCategoryEquiv R C`: the equivalence between the
   homotopy category of the differential graded nerve of K-injective complexes and
   `DerivedCategory C`.
+* `TauCeti.KInjectiveDGCategory.rightMappingSpacePiAddEquiv`: the positive homotopy groups of the
+  mapping spaces of the differential graded nerve, as morphisms to negative shifts in the derived
+  category.
 
 ## Main results
 
@@ -52,7 +65,7 @@ chain maps and the coherences among them, which the derived category forgets.
 
 ## References
 
-* J. Lurie, *Higher Algebra*, Definition 1.3.5.8 and Proposition 1.3.5.15.
+* J. Lurie, *Higher Algebra*, Remark 1.3.1.12, Definition 1.3.5.8 and Proposition 1.3.5.15.
 * N. Spaltenstein, *Resolutions of unbounded complexes*, Compositio Math. 65 (1988), 121–154.
 * B. Keller, *Deriving DG categories*, Section 2.
 -/
@@ -232,6 +245,27 @@ theorem isEquivalence_edgeMk_iff_isIso_homologyMap {K L : CochainComplex C ℤ}
       ∀ n : ℤ, IsIso (HomologicalComplex.homologyMap f n) := by
   rw [isEquivalence_edgeMk_iff_quasiIso R C f hf, quasiIso_iff]
   exact forall_congr' fun n ↦ quasiIsoAt_iff_isIso_homologyMap f n
+
+section MappingSpace
+
+variable {C}
+
+/-- **Mapping spaces of the K-injective enhancement.** The homotopy group `π_(n + 1)` of the right
+mapping space from `X` to `Y` in the differential graded nerve of K-injective complexes, based at
+the zero map, is the group of morphisms `Q X ⟶ (Q Y)⟦-(n + 1)⟧` in the derived category. Thus the
+higher homotopy groups of the mapping spaces are the negative cohomology groups of `RHom(X, Y)`. -/
+def rightMappingSpacePiAddEquiv (X Y : KInjectiveDGCategory C) (n : ℕ) :
+    Additive (SSet.KanComplex.π (n + 1)
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace ((dgNerveEquiv R _).symm X)
+        ((dgNerveEquiv R _).symm Y)) (dgNerve.rightMappingSpaceZero (R := R) X Y)) ≃+
+      (Q.obj X.obj ⟶ (Q.obj Y.obj)⟦-((n + 1 : ℕ) : ℤ)⟧) :=
+  have : Y.obj.IsKInjective := Y.property
+  -- The Hom complex of the full DG subcategory is by definition the enriched Hom of the ambient
+  -- DG category (`DGFullSubcategory.dgHomComplex_eq`), which is the linear Hom complex.
+  (dgNerve.rightMappingSpacePiAddEquivHomology X Y n).trans
+    (linearHomComplexHomologyLinearEquivOfIsKInjective R X.obj Y.obj _).toAddEquiv
+
+end MappingSpace
 
 end KInjectiveDGCategory
 
