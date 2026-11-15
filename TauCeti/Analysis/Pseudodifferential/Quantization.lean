@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
@@ -15,7 +16,9 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -72,6 +75,10 @@ frequency derivative of its Fourier transform.
   `i ⟪ξ, v⟫`.
 * `TauCeti.quantizeSchwartzValue_arrowCongr`: the quantization is compatible with isomorphisms
   `V ≃L[ℂ] V'` and `W ≃L[ℂ] W'` of the coefficient spaces.
+* `TauCeti.quantizeSchwartzValue_compCLMOfContinuousLinearEquiv`: the quantization under a linear
+  change of coordinates `y = A x`. Pulling the input back along `A` and quantizing `a` is pulling
+  back the quantization of the coefficient `(y, η) ↦ a(A⁻¹ y, Aᵀ η)`, which is `a` written in the
+  coordinates `y`: positions move by `A` and frequencies by `(A⁻¹)ᵀ`.
 * `TauCeti.Symbol.continuous_quantizeSchwartzValue_coefficient` and
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
@@ -350,6 +357,54 @@ theorem quantizeSchwartzValue_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[
   simp only [quantizeSchwartzValue_def, hF, ContinuousLinearEquiv.arrowCongr_apply,
     ContinuousLinearEquiv.symm_apply_apply, Circle.smul_def, ← map_smul]
   exact e₂.integral_comp_comm _
+
+/-- **Linear change of coordinates.** For a linear automorphism `A` of `E`, quantizing `a` on the
+pullback `u ∘ A` of a Schwartz function and evaluating at `x` is quantizing the coefficient
+`(y, η) ↦ a(A⁻¹ y, Aᵀ η)` on `u` and evaluating at `A x`. In operator form,
+`Op(a) ∘ A^* = A^* ∘ Op(a_A)` with `a_A(y, η) = a(A⁻¹ y, Aᵀ η)`: the coefficient `a_A` is `a`
+written in the coordinates `y = A x`, in which a covector `ξ` at `x` has components `(A⁻¹)ᵀ ξ`. -/
+theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (A : E ≃L[ℝ] E)
+    (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
+    quantizeSchwartzValue a (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) x =
+      quantizeSchwartzValue
+        (fun p ↦ a (A.symm p.1, ContinuousLinearMap.adjoint (A : E →L[ℝ] E) p.2)) u (A x) := by
+  -- Both sides are inverse Fourier transforms. The frequency substitution `ζ = Aᵀ ω` turns the
+  -- left side into the right one, with Jacobian `|det A|` cancelling that of `𝓕 (u ∘ A)`.
+  set C : E ≃L[ℝ] E := A.symm.adjointEquiv
+  have hF (ζ : E) : 𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) ζ =
+      |A.toLinearEquiv.toLinearMap.det|⁻¹ • 𝓕 u (C ζ) := by
+    rw [SchwartzMap.fourier_coe, SchwartzMap.fourier_coe,
+      SchwartzMap.compCLMOfContinuousLinearEquiv_apply, A.fourier_comp,
+      ContinuousLinearEquiv.adjointEquiv_apply]
+  have hCA (ζ : E) : ContinuousLinearMap.adjoint (A : E →L[ℝ] E) (C ζ) = ζ := by
+    simpa [C] using A.symm.adjoint_symm_adjoint_apply ζ
+  have hCs : ContinuousLinearMap.adjoint (C.symm : E →L[ℝ] E) x = A x := by
+    have hC : (C.symm : E →L[ℝ] E) = ContinuousLinearMap.adjoint (A : E →L[ℝ] E) := by
+      ext1 y
+      simp [C]
+    rw [hC, ContinuousLinearMap.adjoint_adjoint, ContinuousLinearEquiv.coe_coe]
+  have hdet : |A.toLinearEquiv.toLinearMap.det|⁻¹ * |C.toLinearEquiv.toLinearMap.det|⁻¹ = 1 := by
+    have hC : C.toLinearEquiv.toLinearMap =
+        LinearMap.adjoint (A.symm.toLinearEquiv.toLinearMap) := by
+      ext1 y
+      simp [C, LinearMap.adjoint_eq_toCLM_adjoint]
+      rfl
+    have hsymm : LinearMap.det (A.symm.toLinearEquiv : E →ₗ[ℝ] E) =
+        (LinearMap.det (A.toLinearEquiv : E →ₗ[ℝ] E))⁻¹ := A.toLinearEquiv.det_coe_symm
+    rw [hC, LinearMap.det_adjoint, star_trivial, ← abs_inv, ← abs_inv, ← abs_mul, hsymm, inv_inv,
+      inv_mul_cancel₀ A.toLinearEquiv.isUnit_det'.ne_zero, abs_one]
+  have hfun : (fun ζ ↦ a (x, (2 * π) • ζ)
+      (𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) ζ)) =
+        (fun ω ↦ |A.toLinearEquiv.toLinearMap.det|⁻¹ •
+          a (A.symm (A x), ContinuousLinearMap.adjoint (A : E →L[ℝ] E) ((2 * π) • ω))
+            (𝓕 u ω)) ∘ C := by
+    ext1 ζ
+    simp only [Function.comp_apply, hF, map_smul, hCA, ContinuousLinearEquiv.symm_apply_apply,
+      ContinuousLinearMap.map_smul_of_tower]
+  rw [quantizeSchwartzValue_eq_fourierInv, quantizeSchwartzValue_eq_fourierInv, hfun,
+    C.fourierInv_comp, hCs]
+  simp only [Real.fourierInv_eq, smul_comm _ (|A.toLinearEquiv.toLinearMap.det|⁻¹ : ℝ),
+    integral_smul, smul_smul, hdet, one_smul]
 
 end Transport
 
