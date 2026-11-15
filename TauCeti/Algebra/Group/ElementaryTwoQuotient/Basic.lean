@@ -21,7 +21,7 @@ For a commutative group `G`, the quotient by its subgroup of squares, `G / G²`,
 of order dividing `2`, so it is a vector space over `𝔽₂ = ZMod 2`. When `G` is finite its dimension
 is the **2-rank** of `G`. This file develops that construction at the level of an arbitrary
 commutative group; the genus-theory specialization to a class group lives in
-`TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient`, and the square-class group `Kˣ ⧸ (Kˣ)²` of
+`TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient`, and the square-class group `Kˣ ⧸ (Kˣ)²` of
 `TauCeti.FieldTheory.SquareClassGroup.Basic` is the same construction for `G = Kˣ`.
 
 ⚠ This quotient is the **maximal elementary-2 quotient** of `G`, *not* its 2-torsion subgroup
