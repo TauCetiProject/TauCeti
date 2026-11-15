@@ -36,7 +36,9 @@ energies over `T_R`, and the truncated identity gives
 the curvature term must be integrable over `S`: it is continuous on `S`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.continuousOn_hamiltonianCurvature_comp`), and the integral
 of its absolute value is at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`
-(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`). Hence the
+(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`), so it is
+integrable over `S`
+(`SmoothTwoForm.IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePerturbation`). Hence the
 energy is finite, the energy density is integrable over `S`
 (`SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity_exchangePerturbation`), and
 
@@ -79,26 +81,6 @@ namespace TauCeti
 
 namespace Floer
 
-/-- The truncations with recentred output end exhaust `S`, in real coordinates. -/
-private theorem iUnion_preimage_exchangeTruncation (c : ℝ) :
-    ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R =
-      thricePuncturedSphereReal := by
-  ext z
-  simp only [← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
-    mem_thricePuncturedSphereReal_iff]
-
-/-- Integrals over `S` are the limits of the integrals over its truncations with output end
-recentred at `c`. -/
-theorem tendsto_setIntegral_exchangeTruncation (c : ℝ) {f : ℝ × ℝ → ℝ}
-    (hf : IntegrableOn f thricePuncturedSphereReal) :
-    Tendsto (fun R : ℝ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R, f z)
-      atTop (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
-  rw [← iUnion_preimage_exchangeTruncation c] at hf ⊢
-  exact tendsto_setIntegral_of_monotone
-    (fun R ↦ ((isClosed_exchangeTruncation c R).preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet)
-    (fun _ _ h ↦ preimage_mono (exchangeTruncation_mono c h)) hf
-
 /-- The Hamiltonian terms along the boundary circles of the truncations with output end recentred
 at `c` converge to the signed sum of their limits on the three ends. -/
 private theorem tendsto_exchangeBoundary {M : Type*} {H : Puncture → ℝ → M → ℝ} {c : ℝ}
@@ -130,22 +112,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ} {c : ℝ}
 
-/-- The components of the member `c` of the family in real coordinates are `C¹` on `S × M`. -/
-private theorem contMDiffOn_exchangePerturbation_apply (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) (v : ℂ) :
-    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 1
-      (fun p : (ℝ × ℝ) × M ↦ (c, (Complex.equivRealProdCLM.symm p.1, p.2))) (z, x) :=
-    contMDiffAt_const.prodMk
-      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
-        contMDiffAt_snd)
-  exact (((contMDiffAt_exchangePerturbation hH hHs c
-    ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
-      contMDiffAt_const).contMDiffWithinAt
-
 variable [IsManifold I ⊤ M]
 
 /-- The integrated curvature of the member `c ∈ [0, 1]` of the family over `S` is at most
@@ -172,9 +138,12 @@ private theorem abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
-/-- Along a map continuous on `S`, the curvature of the member `c ∈ [0, 1]` of the family is
-integrable over `S`: it is continuous there, and the integral of its absolute value is bounded. -/
-private theorem IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePerturbation
+/-- **The curvature of the input-exchange family is integrable, for a manifold target.** Along a
+map continuous on `S`, the curvature of the member `c ∈ [0, 1]` of the family of bounded
+period-one `C¹` Hamiltonians on a finite-dimensional manifold with a nondegenerate two-form is
+integrable over `S`: it is continuous there, and the integral of its absolute value is at most
+`B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`. -/
+theorem IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePerturbation
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
     (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {u : ℝ × ℝ → M}
@@ -184,8 +153,8 @@ private theorem IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePertur
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z)) thricePuncturedSphereReal :=
   ⟨(hω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu
-      (contMDiffOn_exchangePerturbation_apply hH hHs c 1)
-      (contMDiffOn_exchangePerturbation_apply hH hHs c Complex.I)).aestronglyMeasurable
+      (contMDiffOn_uncurry_exchangePerturbation hH hHs c 1)
+      (contMDiffOn_uncurry_exchangePerturbation hH hHs c Complex.I)).aestronglyMeasurable
       isOpen_thricePuncturedSphereReal.measurableSet,
     (setLIntegral_le_lintegral _ _).trans_lt
       ((lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u).trans_lt
@@ -193,6 +162,26 @@ private theorem IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePertur
 
 variable {B : Puncture → ℝ} {u : ℝ × ℝ → M} {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
   {h : Puncture → ℝ}
+
+/-- Along a map which is `C¹` on `S`, the energy density of the member `c ∈ [0, 1]` of the family
+is integrable over each truncation with recentred output end. -/
+private theorem
+    IsNondegenerate.integrableOn_floerEnergyDensity_exchangePerturbation_exchangeTruncation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) (R : ℝ) :
+    IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      (Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R) :=
+  hω.integrableOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu
+    (contMDiffOn_uncurry_exchangePerturbation hH hHs c 1)
+    (contMDiffOn_uncurry_exchangePerturbation hH hHs c Complex.I)
+    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+      (isCompact_exchangeTruncation c R)) (preimage_exchangeTruncation_subset c R)
+    ((hω.integrableOn_hamiltonianCurvature_exchangePerturbation hH hHs hB hc₀ hc₁
+      hu.continuousOn).mono_set (preimage_exchangeTruncation_subset c R))
 
 /-- **The energy along the input-exchange family, for a manifold target, from the limits of its
 end terms.** Let `K_c` be the member `c ∈ [0, 1]` of the input-exchange family of bounded
@@ -242,10 +231,8 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_exchangePerturbation_eq
     (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u
   set T : ℝ → Set (ℝ × ℝ) := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R
-  have hTS (R : ℝ) : T R ⊆ thricePuncturedSphereReal := fun z hz ↦ exchangeTruncation_subset c R hz
-  have hTm (R : ℝ) : MeasurableSet (T R) :=
-    ((isClosed_exchangeTruncation c R).preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  have hTS := preimage_exchangeTruncation_subset c
+  have hTm := measurableSet_preimage_exchangeTruncation c
   have hR := hω.integrableOn_hamiltonianCurvature_exchangePerturbation hH hHs hB hc₀ hc₁
     hu.continuousOn
   -- The energies over the truncations increase to the energy over `S`.
@@ -259,15 +246,10 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_exchangePerturbation_eq
       (tendsto_setIntegral_exchangeTruncation c hR))) |>.congr' ?_)
   -- On `T R`, `R ≥ 2`, the energy density is integrable and the truncated identity applies.
   filter_upwards [eventually_ge_atTop 2] with R hR₂
-  have hEint : IntegrableOn e (T R) :=
-    hω.integrableOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu
-      (contMDiffOn_exchangePerturbation_apply hH hHs c 1)
-      (contMDiffOn_exchangePerturbation_apply hH hHs c Complex.I)
-      (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-        (isCompact_exchangeTruncation c R)) (hTS R) (hR.mono_set (hTS R))
   simp only [Function.comp_apply]
-  rw [eq_comm, withDensity_apply _ (hTm R),
-    ← ofReal_integral_eq_lintegral_ofReal hEint
+  rw [eq_comm, withDensity_apply _ (hTm R), ← ofReal_integral_eq_lintegral_ofReal
+    (hω.integrableOn_floerEnergyDensity_exchangePerturbation_exchangeTruncation hH hHs hB hc₀ hc₁
+      hu R)
     (ae_restrict_of_forall_mem (hTm R) fun z hz ↦
       floerEnergyDensity_nonneg hω (hJ z (hTS R hz)) (hfloer z (hTS R hz))),
     hω.integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation hH hHs hc₀ hc₁ hu
@@ -339,27 +321,19 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_exchangePerturbation
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
       thricePuncturedSphereReal := by
-  set T : ℕ → Set (ℝ × ℝ) := fun n ↦ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c n
-  have hTS (n : ℕ) : T n ⊆ thricePuncturedSphereReal := fun z hz ↦ exchangeTruncation_subset c _ hz
   -- The truncations of integer size also exhaust `S`.
-  have hU : ⋃ n, T n = thricePuncturedSphereReal := by
-    refine Subset.antisymm (iUnion_subset hTS) ?_
+  have hU : ⋃ n : ℕ, Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c n =
+      thricePuncturedSphereReal := by
     rw [← iUnion_preimage_exchangeTruncation c]
-    refine iUnion_subset fun R z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge R
-    exact mem_iUnion.2 ⟨n, preimage_mono (exchangeTruncation_mono c hn) hz⟩
-  have hR := hω.integrableOn_hamiltonianCurvature_exchangePerturbation hH hHs hB hc₀ hc₁
-    hu.continuousOn
+    exact Monotone.iUnion_comp_tendsto_atTop
+      (fun _ _ h ↦ preimage_mono (exchangeTruncation_mono c h)) tendsto_natCast_atTop_atTop
   have hmeas : AEStronglyMeasurable (ω.floerEnergyDensity
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
       (volume.restrict thricePuncturedSphereReal) := by
     rw [← hU, aestronglyMeasurable_iUnion_iff]
-    exact fun n ↦ (hω.integrableOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu
-      (contMDiffOn_exchangePerturbation_apply hH hHs c 1)
-      (contMDiffOn_exchangePerturbation_apply hH hHs c Complex.I)
-      (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-        (isCompact_exchangeTruncation c n)) (hTS n) (hR.mono_set (hTS n))).aestronglyMeasurable
+    exact fun n ↦ (hω.integrableOn_floerEnergyDensity_exchangePerturbation_exchangeTruncation hH hHs
+      hB hc₀ hc₁ hu n).aestronglyMeasurable
   refine ⟨hmeas, (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem
     isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
       floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz))).2 ?_⟩
@@ -402,8 +376,7 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_tendsto_exchangePerturbat
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         ∑ q, q.endSign * h q := by
-  have hTS (R : ℝ) : Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R ⊆
-      thricePuncturedSphereReal := fun z hz ↦ exchangeTruncation_subset c R hz
+  have hTS := preimage_exchangeTruncation_subset c
   refine ge_of_tendsto ((tendsto_setIntegral_exchangeTruncation c hA).add
     (tendsto_exchangeBoundary hh hhinf)) ?_
   filter_upwards [eventually_ge_atTop 2] with R hR

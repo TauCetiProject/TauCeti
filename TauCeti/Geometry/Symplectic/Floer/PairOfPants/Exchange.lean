@@ -54,7 +54,9 @@ rotation of the end at `∞` under `σ`. The main results are:
   datum on the disc `|w| ≤ 3`, vanishes on the annulus `2 ≤ |w - c| ≤ 10`, and off the disc
   `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
-  `c`, the domain point of `S` and the target point.
+  `c`, the domain point of `S` and the target point;
+  `TauCeti.Floer.contMDiffOn_uncurry_exchangePerturbation` states this for the components of a
+  member in real coordinates.
 * `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`: for `C¹` Hamiltonians on a normed
   space, every member is `C¹` jointly in the domain point of `S`, in real coordinates, and the
   target point.
@@ -387,6 +389,24 @@ theorem contMDiffAt_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q
         (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs)
       w x).comp (c, ((w : ℂ), x)) contMDiffAt_snd
   exact hin.add (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
+
+/-- **The family is `C^n` in real coordinates.** For period-one Hamiltonians of class `C^n` on
+`ℝ × M`, the components of the member `c` of the family are `C^n` jointly in the domain point of
+`S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
+theorem contMDiffOn_uncurry_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (c : ℝ) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : (ℝ × ℝ) × M ↦ (c, (Complex.equivRealProdCLM.symm p.1, p.2))) (z, x) :=
+    contMDiffAt_const.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+        contMDiffAt_snd)
+  exact (((contMDiffAt_exchangePerturbation hH hHs c
+    ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
+      contMDiffAt_const).contMDiffWithinAt
 
 end TauCeti.Floer
 

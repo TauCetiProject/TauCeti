@@ -31,8 +31,9 @@ output end; it is absorbed by the input-exchange family of Floer perturbation da
 of the member of that family whose output end is recentred at `c` is truncated by
 `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`: the closed disc `‖w - c‖ ≤ 2 exp (2πR)`,
 bounded by the circle `s = -R` of the recentred output end, with the parts `s > R` of the two input
-ends removed. It is a compact subset of `S`
+ends removed. It is a compact subset of `S`, measurable in real coordinates
 (`TauCeti.ThricePuncturedSphere.isCompact_exchangeTruncation`,
+`TauCeti.ThricePuncturedSphere.measurableSet_preimage_exchangeTruncation`,
 `TauCeti.ThricePuncturedSphere.exchangeTruncation_subset`), and for `c = 0` it is the truncation
 `S_R` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_zero`). These truncations increase with
 `R` and exhaust `S` (`TauCeti.ThricePuncturedSphere.exchangeTruncation_mono`,
@@ -172,6 +173,12 @@ theorem isClosed_exchangeTruncation (c R : ℝ) : IsClosed (exchangeTruncation c
 theorem isCompact_exchangeTruncation (c R : ℝ) : IsCompact (exchangeTruncation c R) :=
   Metric.isCompact_of_isClosed_isBounded (isClosed_exchangeTruncation c R)
     (Metric.isBounded_closedBall.subset Set.inter_subset_right)
+
+/-- The truncation with recentred output end is measurable in the real coordinates. -/
+theorem measurableSet_preimage_exchangeTruncation (c R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R) :=
+  ((isClosed_exchangeTruncation c R).preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
 
 /-- The truncation with recentred output end lies in the thrice-punctured sphere
 `S = ℂ ∖ {0, 1}`. -/
