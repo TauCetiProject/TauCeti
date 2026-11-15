@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Parametric
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 
 /-!
 # Global parametric transversality for Fredholm equations
@@ -35,8 +36,10 @@ of Banach bundles require a separate bundle-level extension.
 ## Main results
 
 * `TauCeti.IsRegularParameter`: every solution at a parameter has surjective fixed-parameter
-  linearization.
-* `TauCeti.IsRegularParameterOn`: the variant restricted to the solutions in a set `U`; it is
+  linearization, which implies differentiability there
+  (`TauCeti.IsRegularParameter.differentiableAt`).
+* `TauCeti.IsRegularParameterOn`: the variant restricted to the solutions in a set `U`
+  (`TauCeti.IsRegularParameterOn.differentiableAt`); it is
   `TauCeti.IsRegularParameter` for `U = univ` (`TauCeti.isRegularParameterOn_univ`), holds vacuously
   on `∅` (`TauCeti.isRegularParameterOn_empty`), distributes over binary and indexed unions
   (`TauCeti.isRegularParameterOn_union`, `TauCeti.isRegularParameterOn_iUnion`), is monotone in `U`
@@ -157,6 +160,21 @@ theorem _root_.IsOpen.isRegularParameterOn_congr {f g : E × Λ → F} {U : Set 
   refine forall_congr' fun x ↦ imp_congr_right fun hxU ↦ ?_
   have hev : f =ᶠ[𝓝 (x, l)] g := hEq.eventuallyEq_of_mem (hU.mem_nhds hxU)
   rw [hEq hxU, hev.fderiv_eq]
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter equation is differentiable at each solution in its specified set. -/
+theorem IsRegularParameterOn.differentiableAt {f : E × Λ → F} {U : Set (E × Λ)}
+    {c : F} {l : Λ} {x : E} (h : IsRegularParameterOn f U c l)
+    (hxU : (x, l) ∈ U) (hx : f (x, l) = c) : DifferentiableAt ℝ f (x, l) := by
+  have hs := isRegularParameterOn_iff.1 h x hxU hx
+  rw [ContinuousLinearMap.coe_comp] at hs
+  exact differentiableAt_of_fderiv_surjective hs.of_comp
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter equation is differentiable at each solution. -/
+theorem IsRegularParameter.differentiableAt {f : E × Λ → F} {c : F} {l : Λ} {x : E}
+    (h : IsRegularParameter f c l) (hx : f (x, l) = c) : DifferentiableAt ℝ f (x, l) :=
+  h.isRegularParameterOn.differentiableAt (mem_univ _) hx
 
 /-- **Global parametric transversality.** The non-regular parameters of a sufficiently smooth
 universal Fredholm equation form a meagre set.

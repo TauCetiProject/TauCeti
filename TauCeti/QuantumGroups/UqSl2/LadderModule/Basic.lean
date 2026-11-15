@@ -628,6 +628,13 @@ theorem nonempty_linearEquiv_iff (hq : IsGenericQuantumParameter q) {n : ℕ} {�
   have hδε : ((δ : ℤ) : ℂ) = ε := mul_right_cancel₀ (quantumInteger_ne_zero hq (by omega)) htr
   exact Units.ext (Int.cast_injective hδε).symm
 
+/-- At a generic parameter, signed ladder modules `L_m^ε` with distinct labels `(m, ε)` are not
+isomorphic. -/
+theorem eq_of_nonempty_linearEquiv (hq : IsGenericQuantumParameter q)
+    {p p' : ℕ × ℤˣ}
+    (h : Nonempty (LadderModule q p.1 p.2 ≃ₗ[UqSl2 q] LadderModule q p'.1 p'.2)) : p = p' :=
+  Prod.ext_iff.mpr ((nonempty_linearEquiv_iff hq).mp h)
+
 /-- At a generic parameter, no module isomorphism exists between `L_m^ε` and `L_n^δ` when
 `m ≠ n` or `ε ≠ δ`. -/
 theorem isEmpty_linearEquiv_of_ne (hq : IsGenericQuantumParameter q) {n : ℕ} {δ : ℤˣ}
