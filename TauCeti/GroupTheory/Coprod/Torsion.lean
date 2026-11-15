@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Algebra.Group.ULift
 import TauCeti.Algebra.Group.Conj
 import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Word
 
 /-!
 # Torsion elements and conjugacy of factors in free products
@@ -130,28 +131,6 @@ private theorem not_isOfFinOrder_prod_neWord_of_ne {i j : ι} (u : NeWord G i j)
     Word.equiv.symm.injective hprod
   exact (neWordPowAux u hij.symm k).toList_ne_nil (congrArg Word.toList hempty)
 
-private theorem length_neWord_inv {i j : ι} (u : NeWord G i j) :
-    u.inv.toList.length = u.toList.length := by
-  induction u with
-  | singleton => rfl
-  | append _ _ _ ih₁ ih₂ =>
-    simp only [NeWord.inv, NeWord.toList, List.length_append, ih₁, ih₂, Nat.add_comm]
-
-/-- Left-multiplying a reduced word whose first letter lies in `G i` by an element of `G i` does
-not increase its word length: the leading `G i` letter merges with the new factor. -/
-private theorem length_smul_of_le_of_fstIdx_eq [DecidableEq ι] [∀ i, DecidableEq (G i)]
-    {i : ι} (x : G i) {z : Word G} (hz : z.fstIdx = some i) :
-    (of x • z).toList.length ≤ z.toList.length := by
-  let p := Word.equivPair i z
-  have hp : Word.rcons p = z := (Word.equivPair i).symm_apply_apply z
-  have hp1 : p.head ≠ 1 := fun h1 =>
-    p.fstIdx_ne (by simpa [Word.rcons, h1, hz] using congrArg Word.fstIdx hp)
-  have hz_len : z.toList.length = p.tail.toList.length + 1 := by
-    rw [← hp, Word.rcons, dite_eq_right hp1]
-    rfl
-  rw [Word.of_smul_def, Word.rcons]
-  split_ifs <;> simp [p, hz_len]
-
 /-- Cyclic reduction step: if a reduced word `Word.cons a v hfv ha1` with `v` nonempty represents an
 element of finite order, its first and last letters lie in the same factor `G i`, so conjugating by
 `(of a)⁻¹` and inverting yields a strictly shorter reduced word `w'`. -/
@@ -188,10 +167,11 @@ private theorem exists_word_length_lt_of_cons
   let w' : Word G := of a⁻¹ • z
   have hz_fst : z.fstIdx = some i := by simp [z, Word.fstIdx, NeWord.toWord]
   have hw'_len : w'.toList.length < w.toList.length := by
-    have hle : w'.toList.length ≤ z.toList.length := length_smul_of_le_of_fstIdx_eq a⁻¹ hz_fst
+    have hle : w'.toList.length ≤ z.toList.length :=
+      Word.length_toList_of_smul_le_of_fstIdx_eq a⁻¹ hz_fst
     have hz_len : z.toList.length = v.toList.length := by
       rw [← hq]
-      exact length_neWord_inv q
+      exact q.length_toList_inv
     exact (hz_len ▸ hle).trans_lt (by simp [w])
   refine ⟨w', hw'_len, isConj_iff.mpr ⟨(of a)⁻¹, ?_⟩⟩
   have hz_prod : z.prod = v.prod⁻¹ := by

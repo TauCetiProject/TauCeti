@@ -49,43 +49,27 @@ noncomputable section
 
 namespace TauCeti.TriangleGroup
 
-private theorem ofAdd_one_pow_self (n : ℕ) : (Multiplicative.ofAdd (1 : ZMod n)) ^ n = 1 := by
-  rw [← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero]
-
 /-- **Free-product decomposition of `Δ(a, b, 0)`.** For all `a b : ℕ`, the triangle group
 `TriangleGroup a b 0` is isomorphic to `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)`,
 sending `x` to `inl (ofAdd 1)` and `y` to `inr (ofAdd 1)`. -/
 def equivCoprod (a b : ℕ) :
     TriangleGroup a b 0 ≃* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) :=
-  let fx : Multiplicative (ZMod a) →* TriangleGroup a b 0 :=
-    (ZMod.lift a ⟨zmultiplesHom _ (.ofMul (x a b 0)), by
-      rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, x_pow, ofMul_one]⟩).toMultiplicativeLeft
-  let fy : Multiplicative (ZMod b) →* TriangleGroup a b 0 :=
-    (ZMod.lift b ⟨zmultiplesHom _ (.ofMul (y a b 0)), by
-      rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, y_pow, ofMul_one]⟩).toMultiplicativeLeft
-  have hfx : fx (.ofAdd 1) = x a b 0 := by
-    rw [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-      toAdd_ofAdd, ← Int.cast_one, ZMod.lift_coe, zmultiplesHom_apply, one_zsmul, toMul_ofMul]
-  have hfy : fy (.ofAdd 1) = y a b 0 := by
-    rw [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-      toAdd_ofAdd, ← Int.cast_one, ZMod.lift_coe, zmultiplesHom_apply, one_zsmul, toMul_ofMul]
   MonoidHom.toMulEquiv
     (lift (.inl (.ofAdd 1)) (.inr (.ofAdd 1)) (.inr (.ofAdd 1) * .inl (.ofAdd 1))⁻¹
       (by rw [← map_pow, ofAdd_one_pow_self, map_one])
       (by rw [← map_pow, ofAdd_one_pow_self, map_one])
       (pow_zero _)
       (by rw [mul_assoc, inv_mul_cancel]))
-    (Monoid.Coprod.lift fx fy)
-    (by ext <;> simp [hfx, hfy])
+    (Monoid.Coprod.lift (zmodMulLift (x a b 0) (x_pow a b 0))
+      (zmodMulLift (y a b 0) (y_pow a b 0)))
+    (by ext <;> simp)
     (Monoid.Coprod.hom_ext
       (MonoidHom.ext fun u => by
         obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (Multiplicative.mem_zpowers_ofAdd_one u)
-        simp only [MonoidHom.comp_apply, Monoid.Coprod.lift_apply_inl, map_zpow, hfx, lift_x,
-          MonoidHom.id_apply])
+        simp)
       (MonoidHom.ext fun v => by
         obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (Multiplicative.mem_zpowers_ofAdd_one v)
-        simp only [MonoidHom.comp_apply, Monoid.Coprod.lift_apply_inr, map_zpow, hfy, lift_y,
-          MonoidHom.id_apply]))
+        simp))
 
 /-- `equivCoprod` maps the first generator `x a b 0` to `inl (ofAdd 1)`. -/
 @[simp]
@@ -140,14 +124,6 @@ theorem orderOf_x_zero (a b : ℕ) : orderOf (x a b 0) = a := by
 theorem orderOf_y_zero (a b : ℕ) : orderOf (y a b 0) = b := by
   rw [← (equivCoprod a b).orderOf_eq, equivCoprod_y, Monoid.Coprod.orderOf_inr,
     orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
-
-private theorem ofAdd_neg_one_ne_one_of_ne_one {n : ℕ} (hn : n ≠ 1) :
-    (Multiplicative.ofAdd (-1 : ZMod n)) ≠ 1 := by
-  intro h
-  have h1 : (1 : ZMod n) = 0 := neg_eq_zero.mp (Multiplicative.ofAdd.injective h)
-  have hord := ZMod.addOrderOf_one n
-  rw [h1, addOrderOf_zero] at hord
-  exact hn hord.symm
 
 /-- When `a ≠ 1` and `b ≠ 1`, the third generator `z a b 0 = (y a b 0 * x a b 0)⁻¹` of
 `Δ(a, b, 0)` has infinite order. -/

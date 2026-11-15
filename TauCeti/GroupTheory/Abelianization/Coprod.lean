@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # Abelianization of a free product of groups
@@ -30,11 +31,6 @@ public section
 namespace Group.Abelianization
 
 variable {G H : Type*} [Group G] [Group H]
-
-/-- The map induced on abelianizations by the trivial homomorphism `1 : G →* H` is `1`. -/
-@[simp]
-theorem map_one_hom : map (1 : G →* H) = 1 :=
-  hom_ext _ _ (by ext; simp)
 
 /-- **Abelianization of a free product.** The abelianization of `Monoid.Coprod G H` is canonically
 isomorphic to `Group.Abelianization G × Group.Abelianization H`: the class of an element projects to
