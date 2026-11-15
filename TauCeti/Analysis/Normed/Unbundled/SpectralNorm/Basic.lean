@@ -17,12 +17,14 @@ This file collects elementary vanishing, invariance, scaling, and tower-descent 
 assumptions.
 
 In addition, over any complete ultrametric field `K` (including trivially normed fields), the
-spectral norm on an algebraic extension `L` is multiplicative (`TauCeti.spectralNorm_mul_eq`) and
-defines an unbundled ultrametric normed `K`-algebra structure (`TauCeti.spectralNormedField`,
-`TauCeti.isUltrametricDist_spectralNormedField`, `TauCeti.spectralNormedAlgebra`). In any algebraic
-normed field extension of `K` the norm coincides with the spectral norm
-(`TauCeti.norm_eq_spectralNorm`), so an element `x` whose minimal polynomial has degree `d` and
-constant coefficient `a₀` satisfies `‖x‖ ^ d = ‖a₀‖`.
+spectral norm on an algebraic extension `L` is multiplicative (`TauCeti.spectralNorm_mul_eq`,
+extending Mathlib's `spectralAlgNorm_mul`) and defines an unbundled ultrametric normed `K`-algebra
+structure (`TauCeti.spectralNormedField`, adapted from Mathlib's `spectralNorm.normedField`,
+together with `TauCeti.isUltrametricDist_spectralNormedField` and `TauCeti.spectralNormedAlgebra`).
+In any algebraic normed field extension of `K` the norm coincides with the spectral norm
+(`TauCeti.norm_eq_spectralNorm`, extending Mathlib's `NormedAlgebra.norm_eq_spectralNorm`), so an
+element `x` whose minimal polynomial has degree `d` and constant coefficient `a₀` satisfies
+`‖x‖ ^ d = ‖a₀‖` (`NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero`).
 
 ## Main results
 
@@ -269,6 +271,10 @@ theorem spectralNorm_eq_zero_of_not_isAlgebraic {K L : Type*} [NormedField K] [F
   rw [spectralNorm, minpoly.eq_zero fun h ↦ hy h.isAlgebraic, spectralValue, h0]
   exact ciSup_const
 
+private theorem norm_eq_one_of_forall_norm_le_one {K : Type*} [NormedField K]
+    (hK : ∀ c : K, ‖c‖ ≤ 1) {c : K} (hc : c ≠ 0) : ‖c‖ = 1 :=
+  le_antisymm (hK c) ((inv_le_one₀ (norm_pos_iff.2 hc)).1 (norm_inv c ▸ hK c⁻¹))
+
 /-- Over a trivially normed field (`∀ c : K, ‖c‖ ≤ 1`), every nonzero element integral over `K`
 has spectral norm `1`. -/
 theorem spectralNorm_eq_one_of_forall_norm_le_one {K L : Type*} [NormedField K] [Field L]
@@ -276,10 +282,8 @@ theorem spectralNorm_eq_one_of_forall_norm_le_one {K L : Type*} [NormedField K] 
     spectralNorm K L y = 1 := by
   refine le_antisymm
     ((spectralValue_le_one_iff (minpoly.monic hy)).2 fun n ↦ hK _) ?_
-  have hc0 : (minpoly K y).coeff 0 ≠ 0 := minpoly.coeff_zero_ne_zero hy hy0
   have hnorm0 : ‖(minpoly K y).coeff 0‖ = 1 :=
-    le_antisymm (hK _)
-      ((inv_le_one₀ (norm_pos_iff.2 hc0)).1 (norm_inv ((minpoly K y).coeff 0) ▸ hK _))
+    norm_eq_one_of_forall_norm_le_one hK (minpoly.coeff_zero_ne_zero hy hy0)
   have hterm : spectralValueTerms (minpoly K y) 0 = 1 := by
     rw [spectralValueTerms_of_lt_natDegree _ (minpoly.natDegree_pos hy), hnorm0, Real.one_rpow]
   exact hterm ▸ le_ciSup (spectralValueTerms_bddAbove (minpoly K y)) 0
@@ -290,7 +294,7 @@ variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
 
 /-- Over any complete ultrametric field `K`, the spectral norm on an algebraic extension `L` is
-multiplicative, without requiring the norm on `K` to be nontrivial. -/
+multiplicative. This extends Mathlib's `spectralAlgNorm_mul` to trivially normed `K`. -/
 theorem spectralNorm_mul_eq (x y : L) :
     spectralNorm K L (x * y) = spectralNorm K L x * spectralNorm K L y := by
   by_cases h : ∃ c : K, 1 < ‖c‖
@@ -308,7 +312,8 @@ theorem spectralNorm_mul_eq (x y : L) :
 
 variable (K L) in
 /-- An algebraic field extension `L` of any complete ultrametric field `K`, equipped with the
-spectral norm as a `NormedField`. Not registered as an instance because `L` may carry its own
+spectral norm as a `NormedField`. Adapted from Mathlib's `spectralNorm.normedField`, without the
+`NontriviallyNormedField K` assumption. Not registered as an instance because `L` may carry its own
 topology or norm. -/
 @[expose, instance_reducible]
 noncomputable def spectralNormedField : NormedField L :=
@@ -352,7 +357,8 @@ noncomputable def spectralNormedAlgebra (K L : Type*) [NormedField K] [IsUltrame
 end CompleteSpace
 
 /-- In an algebraic normed field extension `L` of any complete ultrametric field `K`, the norm on
-`L` coincides with `spectralNorm K L`. -/
+`L` coincides with `spectralNorm K L`. This extends Mathlib's `NormedAlgebra.norm_eq_spectralNorm`
+to trivially normed `K`. -/
 theorem norm_eq_spectralNorm (K : Type*) {L : Type*} [NormedField K] [IsUltrametricDist K]
     [CompleteSpace K] [NormedField L] [NormedAlgebra K L] [Algebra.IsAlgebraic K L] (x : L) :
     ‖x‖ = spectralNorm K L x := by
@@ -377,14 +383,23 @@ theorem norm_eq_spectralNorm (K : Type*) {L : Type*} [NormedField K] [IsUltramet
 
 end TauCeti
 
-/-- In an algebraic normed field extension `L` of a complete ultrametric field `K`, the norm of an
-element `x` raised to the degree of its minimal polynomial is the norm of the constant coefficient
-of that polynomial. -/
+/-- In an algebraic normed field extension `L` of any complete ultrametric field `K`, the norm of
+an element `x` raised to the degree of its minimal polynomial is the norm of the constant
+coefficient of that polynomial. -/
 theorem NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero (K : Type*) {L : Type*}
-    [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K] [NormedField L]
+    [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [NormedField L]
     [NormedAlgebra K L] [Algebra.IsAlgebraic K L] (x : L) :
     ‖x‖ ^ (minpoly K x).natDegree = ‖(minpoly K x).coeff 0‖ := by
-  have hd : ((minpoly K x).natDegree : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral x)).ne'
-  rw [NormedAlgebra.norm_eq_spectralNorm K, spectralNorm.spectralNorm_eq_norm_coeff_zero_rpow,
-    ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), one_div_mul_cancel hd, Real.rpow_one]
+  by_cases h : ∃ c : K, 1 < ‖c‖
+  · let : NontriviallyNormedField K := { non_trivial := h }
+    have hd : ((minpoly K x).natDegree : ℝ) ≠ 0 :=
+      Nat.cast_ne_zero.2 (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral x)).ne'
+    rw [NormedAlgebra.norm_eq_spectralNorm K, spectralNorm.spectralNorm_eq_norm_coeff_zero_rpow,
+      ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), one_div_mul_cancel hd, Real.rpow_one]
+  · push Not at h
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp [minpoly.zero]
+    have hx_int : IsIntegral K x := Algebra.IsIntegral.isIntegral x
+    rw [TauCeti.norm_eq_spectralNorm K x,
+      TauCeti.spectralNorm_eq_one_of_forall_norm_le_one h hx_int hx, one_pow,
+      TauCeti.norm_eq_one_of_forall_norm_le_one h (minpoly.coeff_zero_ne_zero hx_int hx)]

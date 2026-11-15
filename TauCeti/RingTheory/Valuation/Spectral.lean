@@ -68,7 +68,7 @@ support.
   `AddValuation.eq_spectralAddValuation_of_spectralNorm_eq_rpow`: spectral norm recovery and
   uniqueness at a fixed base `b > 1`.
 * `TauCeti.spectralAddValuation_algebraMap`, `TauCeti.spectralAddValuation_algebraMap_eq`,
-  `AlgHom.spectralAddValuation_apply`, and `TauCeti.spectralAddValuation_eq_ofNorm`: compatibility
+  `AlgHom.spectralAddValuation_map`, and `TauCeti.spectralAddValuation_eq_ofNorm`: compatibility
   with scalars, `K`-algebra maps, towers, and normed `K`-algebra extensions.
 -/
 
@@ -245,7 +245,7 @@ theorem spectralNorm_eq_rpow_neg_spectralAddValuation {b : ℝ} (hb : 1 < b) {x 
   AddValuation.norm_eq_rpow_neg_ofNorm_of_ne_zero hb hx
 
 /-- `TauCeti.spectralAddValuation` reverses the order of `spectralNorm K L`. -/
-theorem spectralAddValuation_le_iff {b : ℝ} (hb : 1 < b) {x y : L} :
+theorem spectralAddValuation_le_spectralAddValuation_iff {b : ℝ} (hb : 1 < b) {x y : L} :
     spectralAddValuation K L b hb x ≤ spectralAddValuation K L b hb y ↔
       spectralNorm K L y ≤ spectralNorm K L x :=
   let := spectralNormedField K L
@@ -290,7 +290,7 @@ theorem spectralAddValuation_algebraMap_eq (v : AddValuation K (WithTop ℝ)) {b
   rw [spectralAddValuation_algebraMap, ← v.eq_ofNorm_of_norm_eq_rpow hb hv]
 
 /-- `K`-algebra homomorphisms of algebraic extensions preserve `TauCeti.spectralAddValuation`. -/
-theorem _root_.AlgHom.spectralAddValuation_apply {E : Type*} [Field E] [Algebra K E]
+theorem _root_.AlgHom.spectralAddValuation_map {E : Type*} [Field E] [Algebra K E]
     [Algebra.IsAlgebraic K E] (ψ : E →ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : E) :
     spectralAddValuation K L b hb (ψ x) = spectralAddValuation K E b hb x := by
   let := spectralNormedField K L
@@ -301,16 +301,16 @@ theorem _root_.AlgHom.spectralAddValuation_apply {E : Type*} [Field E] [Algebra 
 
 /-- `K`-algebra automorphisms of `L` preserve `TauCeti.spectralAddValuation`. -/
 @[simp]
-theorem _root_.AlgEquiv.spectralAddValuation_apply (σ : L ≃ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : L) :
+theorem _root_.AlgEquiv.spectralAddValuation_map (σ : L ≃ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : L) :
     spectralAddValuation K L b hb (σ x) = spectralAddValuation K L b hb x :=
-  (σ : L →ₐ[K] L).spectralAddValuation_apply hb x
+  (σ : L →ₐ[K] L).spectralAddValuation_map hb x
 
 /-- In a tower `K → E → L` of algebraic extensions, `TauCeti.spectralAddValuation` on `L`
 restricts to `TauCeti.spectralAddValuation` on `E`. -/
 theorem spectralAddValuation_eq_of_tower {E : Type*} [Field E] [Algebra K E]
     [Algebra.IsAlgebraic K E] [Algebra E L] [IsScalarTower K E L] {b : ℝ} (hb : 1 < b) (x : E) :
     spectralAddValuation K L b hb (algebraMap E L x) = spectralAddValuation K E b hb x :=
-  (IsScalarTower.toAlgHom K E L).spectralAddValuation_apply hb x
+  (IsScalarTower.toAlgHom K E L).spectralAddValuation_map hb x
 
 /-- **Uniqueness**: a real additive valuation on `L` recovering `spectralNorm K L` at base `b > 1`
 equals `TauCeti.spectralAddValuation K L b hb`. -/

@@ -132,45 +132,51 @@ end SpectralAddValuation
 
 section SingleRoot
 
-variable {K L : Type*} [NormedField K] [CompleteSpace K] [Field L] [Algebra K L]
+universe u
+
+variable {K : Type*} {L : Type u} [NormedField K] [CompleteSpace K] [Field L] [Algebra K L]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
 
 include hb hv
+
+/-- Transfer a predicate on the norm of a root of nonzero `f : K[X]` in a normed `K`-algebra field
+extension to `spectralNorm K L x` for a root `x` in an arbitrary field extension `L`, by descending
+to the finite extension `K⟮x⟯` equipped with `TauCeti.spectralNormedField`. -/
+private theorem spectralNorm_prop_of_aeval_eq_zero {P : ℝ → Prop} {f : K[X]} (hf : f ≠ 0) {x : L}
+    (hx : aeval x f = 0)
+    (h : ∀ (E : Type u) [NormedField E] [NormedAlgebra K E] (y : E),
+      (x ≠ 0 → y ≠ 0) → aeval y f = 0 → P ‖y‖) :
+    P (spectralNorm K L x) := by
+  have hgen : aeval (IntermediateField.AdjoinSimple.gen K x) f = 0 :=
+    ZeroMemClass.coe_eq_zero.mp (by rwa [IntermediateField.AdjoinSimple.coe_aeval_gen_apply])
+  have hgen0 : x ≠ 0 → IntermediateField.AdjoinSimple.gen K x ≠ 0 := fun hx0 h0 ↦
+    hx0 (by simpa using congrArg (algebraMap K⟮x⟯ L) h0)
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  have hx_int : IsIntegral K x := isAlgebraic_iff_isIntegral.mp ⟨f, hf, hx⟩
+  have : FiniteDimensional K K⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx_int
+  let := spectralNormedField K K⟮x⟯
+  let := spectralNormedAlgebra K K⟮x⟯
+  rw [← IntermediateField.AdjoinSimple.algebraMap_gen K x, ← spectralNorm.eq_of_tower]
+  exact h K⟮x⟯ (IntermediateField.AdjoinSimple.gen K x) hgen0 hgen
 
 /-- Over a complete field `K` with `‖x‖ = b ^ (-v x)`, every root `x` of a nonzero polynomial
 `f : K[X]` pure of slope `m` in any field extension `L` of `K` satisfies
 `spectralNorm K L x ≤ b ^ m`. Neither `[Algebra.IsAlgebraic K L]` nor splitting is needed. -/
 theorem spectralNorm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
     (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx : aeval x f = 0) :
-    spectralNorm K L x ≤ b ^ m := by
-  have hgen : aeval (IntermediateField.AdjoinSimple.gen K x) f = 0 :=
-    ZeroMemClass.coe_eq_zero.mp (by rwa [IntermediateField.AdjoinSimple.coe_aeval_gen_apply])
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have hx_int : IsIntegral K x := isAlgebraic_iff_isIntegral.mp ⟨f, hf, hx⟩
-  have : FiniteDimensional K K⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx_int
-  let := spectralNormedField K K⟮x⟯
-  let := spectralNormedAlgebra K K⟮x⟯
-  rw [← IntermediateField.AdjoinSimple.algebraMap_gen K x, ← spectralNorm.eq_of_tower]
-  exact norm_le_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm hgen
+    spectralNorm K L x ≤ b ^ m :=
+  spectralNorm_prop_of_aeval_eq_zero (P := (· ≤ b ^ m)) v hb hv hf hx fun _ _ _ _ _ hy ↦
+    norm_le_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm hy
 
 /-- Over a complete field `K` with `‖x‖ = b ^ (-v x)`, every nonzero root `x` of a nonzero
 polynomial `f : K[X]` pure of slope `m` in any field extension `L` of `K` has
 `spectralNorm K L x = b ^ m`. Neither `[Algebra.IsAlgebraic K L]` nor splitting is needed. -/
 theorem spectralNorm_eq_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
     (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx0 : x ≠ 0) (hx : aeval x f = 0) :
-    spectralNorm K L x = b ^ m := by
-  have hgen : aeval (IntermediateField.AdjoinSimple.gen K x) f = 0 :=
-    ZeroMemClass.coe_eq_zero.mp (by rwa [IntermediateField.AdjoinSimple.coe_aeval_gen_apply])
-  have hgen0 : IntermediateField.AdjoinSimple.gen K x ≠ 0 := fun h ↦
-    hx0 (by simpa using congrArg (algebraMap K⟮x⟯ L) h)
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have hx_int : IsIntegral K x := isAlgebraic_iff_isIntegral.mp ⟨f, hf, hx⟩
-  have : FiniteDimensional K K⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx_int
-  let := spectralNormedField K K⟮x⟯
-  let := spectralNormedAlgebra K K⟮x⟯
-  rw [← IntermediateField.AdjoinSimple.algebraMap_gen K x, ← spectralNorm.eq_of_tower]
-  exact norm_eq_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm hgen0 hgen
+    spectralNorm K L x = b ^ m :=
+  spectralNorm_prop_of_aeval_eq_zero (P := (· = b ^ m)) v hb hv hf hx fun _ _ _ _ hy0 hy ↦
+    norm_eq_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm (hy0 hx0) hy
 
 /-- Over a complete field `K` with `‖x‖ = b ^ (-v x)`, for any nonzero root `α` of a nonzero
 polynomial `f : K[X]` in any field extension `L` of `K`, `Real.logb b (spectralNorm K L α)` is one
@@ -178,18 +184,9 @@ of the finite slopes `f.newtonSlopes v`. Neither `[Algebra.IsAlgebraic K L]` nor
 needed. -/
 theorem logb_spectralNorm_mem_newtonSlopes_of_aeval_eq_zero {f : K[X]} (hf : f ≠ 0) {α : L}
     (hα : α ≠ 0) (hx : aeval α f = 0) :
-    Real.logb b (spectralNorm K L α) ∈ f.newtonSlopes v := by
-  have hgen : aeval (IntermediateField.AdjoinSimple.gen K α) f = 0 :=
-    ZeroMemClass.coe_eq_zero.mp (by rwa [IntermediateField.AdjoinSimple.coe_aeval_gen_apply])
-  have hgen0 : IntermediateField.AdjoinSimple.gen K α ≠ 0 := fun h ↦
-    hα (by simpa using congrArg (algebraMap K⟮α⟯ L) h)
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have hα_int : IsIntegral K α := isAlgebraic_iff_isIntegral.mp ⟨f, hf, hx⟩
-  have : FiniteDimensional K K⟮α⟯ := IntermediateField.adjoin.finiteDimensional hα_int
-  let := spectralNormedField K K⟮α⟯
-  let := spectralNormedAlgebra K K⟮α⟯
-  rw [← IntermediateField.AdjoinSimple.algebraMap_gen K α, ← spectralNorm.eq_of_tower]
-  exact logb_norm_mem_newtonSlopes_of_aeval_eq_zero v hb hv hf hgen0 hgen
+    Real.logb b (spectralNorm K L α) ∈ f.newtonSlopes v :=
+  spectralNorm_prop_of_aeval_eq_zero (P := (Real.logb b · ∈ f.newtonSlopes v)) v hb hv hf hx
+    fun _ _ _ _ hy0 hy ↦ logb_norm_mem_newtonSlopes_of_aeval_eq_zero v hb hv hf (hy0 hα) hy
 
 end SingleRoot
 
@@ -208,84 +205,66 @@ include hb hv
 theorem newtonSlopes_eq_map_roots_map_spectralNorm [DecidableEq L] {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) :
     f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
-      Real.logb b (spectralNorm K L α) := by
+      Real.logb b (spectralNorm K L α) :=
   have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  rw [newtonSlopes_eq_map_roots_map_spectralAddValuation v hb hv hf]
-  exact Multiset.map_congr rfl fun α _ ↦ by rw [untop₀_spectralAddValuation, neg_neg]
+  let := spectralNormedField K L
+  let := spectralNormedAlgebra K L
+  newtonSlopes_eq_map_roots_map_norm (L := L) v hb hv hf
 
 /-- If `f : K[X]` splits in an algebraic extension `L` of complete `K` and every nonzero root of `f`
 in `L` has spectral norm `b ^ m`, then every finite slope of `f` equals `m`. -/
 theorem newtonSlopes_eq_replicate_of_spectralNorm_eq {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) {m : ℝ}
     (hm : ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m) :
-    f.newtonSlopes v = Multiset.replicate (f.natDegree - f.natTrailingDegree) m := by
-  classical
-  rw [← card_newtonSlopes f v (fun _ ↦ v.top_iff.mp), Multiset.eq_replicate_card,
-    newtonSlopes_eq_map_roots_map_spectralNorm v hb hv hf]
-  intro s hs
-  obtain ⟨α, hα, rfl⟩ := Multiset.mem_map.mp hs
-  rw [Multiset.mem_filter] at hα
-  rw [hm α hα.1 hα.2, Real.logb_rpow (zero_lt_one.trans hb) hb.ne']
+    f.newtonSlopes v = Multiset.replicate (f.natDegree - f.natTrailingDegree) m :=
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  let := spectralNormedField K L
+  let := spectralNormedAlgebra K L
+  newtonSlopes_eq_replicate_of_norm_eq (L := L) v hb hv hf hm
 
 /-- When `f : K[X]` splits in an algebraic extension `L` of complete `K`, every finite slope of `f`
 equals `m` if and only if every nonzero root of `f` in `L` has spectral norm `b ^ m`. -/
 theorem forall_mem_newtonSlopes_eq_iff_spectralNorm_eq {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) {m : ℝ} :
     (∀ s ∈ f.newtonSlopes v, s = m) ↔
-      ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m := by
-  rcases eq_or_ne f 0 with rfl | hf0
-  · simp
-  refine ⟨fun hm α hα hα0 ↦ ?_, fun hm s hs ↦ ?_⟩
-  · refine spectralNorm_eq_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf0 hm hα0 ?_
-    rw [← eval_map_algebraMap]
-    exact isRoot_of_mem_roots hα
-  · rw [newtonSlopes_eq_replicate_of_spectralNorm_eq v hb hv hf hm] at hs
-    exact Multiset.eq_of_mem_replicate hs
+      ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m :=
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  let := spectralNormedField K L
+  let := spectralNormedAlgebra K L
+  forall_mem_newtonSlopes_eq_iff_norm_eq (L := L) v hb hv hf
 
 /-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, the left endpoint `l` of
 the finite face of slope `σ` counts the roots `α` of `f` in `L` in the open spectral ball
 `spectralNorm K L α < b ^ σ`, counted with multiplicity and including the root zero. -/
 theorem card_filter_roots_map_spectralNorm_lt {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
-    ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α < b ^ σ).card = l := by
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α < b ^ σ).card = l :=
   have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have hfaceL : IsFiniteFace
-      ((f.map (algebraMap K L)).newtonPolygon (spectralAddValuation K L b hb)) σ l u := by
-    rwa [newtonPolygon_map_spectralAddValuation v hb hv]
-  rw [← card_filter_roots_lt_addValuation
-    (fun _ ↦ (spectralAddValuation K L b hb).top_iff.mp) hf hfaceL]
-  refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
-  rw [coe_lt_spectralAddValuation_iff hb, neg_neg]
+  let := spectralNormedField K L
+  let := spectralNormedAlgebra K L
+  card_filter_roots_map_norm_lt (L := L) v hb hv hf hface
 
 /-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, the right endpoint `u` of
 the finite face of slope `σ` counts the roots `α` of `f` in `L` in the closed spectral ball
 `spectralNorm K L α ≤ b ^ σ`, counted with multiplicity and including the root zero. -/
 theorem card_filter_roots_map_spectralNorm_le {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
-    ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α ≤ b ^ σ).card = u := by
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α ≤ b ^ σ).card = u :=
   have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have hfaceL : IsFiniteFace
-      ((f.map (algebraMap K L)).newtonPolygon (spectralAddValuation K L b hb)) σ l u := by
-    rwa [newtonPolygon_map_spectralAddValuation v hb hv]
-  rw [← card_filter_roots_le_addValuation
-    (fun _ ↦ (spectralAddValuation K L b hb).top_iff.mp) hf hfaceL]
-  refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
-  rw [coe_le_spectralAddValuation_iff hb, neg_neg]
+  let := spectralNormedField K L
+  let := spectralNormedAlgebra K L
+  card_filter_roots_map_norm_le (L := L) v hb hv hf hface
 
 /-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, the horizontal width
 `u - l` of the finite face of slope `σ` counts the roots `α` of `f` in `L` on the spectral sphere
 `spectralNorm K L α = b ^ σ`, counted with multiplicity. -/
 theorem card_filter_roots_map_spectralNorm_eq {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
-    ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α = b ^ σ).card = u - l := by
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α = b ^ σ).card = u - l :=
   have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have hfaceL : IsFiniteFace
-      ((f.map (algebraMap K L)).newtonPolygon (spectralAddValuation K L b hb)) σ l u := by
-    rwa [newtonPolygon_map_spectralAddValuation v hb hv]
-  rw [← card_filter_roots_addValuation_eq
-    (fun _ ↦ (spectralAddValuation K L b hb).top_iff.mp) hf hfaceL]
-  refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
-  rw [spectralAddValuation_eq_coe_iff hb, neg_neg]
+  let := spectralNormedField K L
+  let := spectralNormedAlgebra K L
+  card_filter_roots_map_norm_eq (L := L) v hb hv hf hface
 
 end AlgebraicExtension
 
@@ -310,7 +289,7 @@ theorem newtonSlopes_eq_map_roots_spectralNorm [DecidableEq L] (f : K[X]) :
 
 /-- In any algebraically closed algebraic extension `L` of complete `K`, every finite slope of
 `f : K[X]` equals `m` if and only if every nonzero root of `f` in `L` has spectral norm `b ^ m`. -/
-theorem forall_mem_newtonSlopes_eq_iff_isAlgClosed_spectralNorm_eq (f : K[X]) {m : ℝ} :
+theorem forall_mem_newtonSlopes_eq_iff_spectralNorm_eq_of_isAlgClosed (f : K[X]) {m : ℝ} :
     (∀ s ∈ f.newtonSlopes v, s = m) ↔
       ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m :=
   forall_mem_newtonSlopes_eq_iff_spectralNorm_eq v hb hv

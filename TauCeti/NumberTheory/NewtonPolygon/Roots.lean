@@ -282,23 +282,25 @@ theorem norm_eq_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m 
   exact (inv_le_inv₀ (norm_pos_iff.mpr hx0)
     (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m)).mp hinv
 
-private theorem ofNorm_algebraMap_eq [IsUltrametricDist L] (c : K) :
-    AddValuation.ofNorm (R := L) b hb (algebraMap K L c) = v c := by
+private theorem isUltrametricDist_of_norm_eq_rpow : IsUltrametricDist L :=
   have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  rw [AddValuation.ofNorm_eq_of_norm_eq hb (norm_algebraMap' L c),
-    ← v.eq_ofNorm_of_norm_eq_rpow hb hv]
+  .of_normedAlgebra K
+
+private theorem isFiniteFace_map_ofNorm [IsUltrametricDist L] {f : K[X]} {σ : ℝ} {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    IsFiniteFace ((f.map (algebraMap K L)).newtonPolygon (AddValuation.ofNorm b hb)) σ l u := by
+  rwa [newtonPolygon_map f v (algebraMap K L) (AddValuation.ofNorm_algebraMap_eq v hb hv)]
 
 /-- For a nonzero polynomial `f : K[X]` and any nonzero root `α` in a normed field extension `L` of
 `K`, `Real.logb b ‖α‖` is a finite slope of `f`. Neither completeness nor splitting is needed. -/
 theorem logb_norm_mem_newtonSlopes_of_aeval_eq_zero {f : K[X]} (hf : f ≠ 0) {α : L} (hα : α ≠ 0)
     (hx : aeval α f = 0) : Real.logb b ‖α‖ ∈ f.newtonSlopes v := by
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have : IsUltrametricDist L := .of_normedAlgebra K
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
   have hroot : (f.map (algebraMap K L)).IsRoot α := by rwa [IsRoot, eval_map_algebraMap]
   have hmem := neg_untop₀_mem_newtonSlopes_of_isRoot
     (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp)
     (Polynomial.map_ne_zero hf) hα hroot
-  rwa [newtonSlopes_map f v (algebraMap K L) (ofNorm_algebraMap_eq v hb hv),
+  rwa [newtonSlopes_map f v (algebraMap K L) (AddValuation.ofNorm_algebraMap_eq v hb hv),
     AddValuation.untop₀_ofNorm, neg_neg] at hmem
 
 /-- If `f : K[X]` splits in a normed field extension `L` of `K`, its finite slope multiset
@@ -308,11 +310,10 @@ theorem newtonSlopes_eq_map_roots_map_norm [DecidableEq L] {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) :
     f.newtonSlopes v =
       ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦ Real.logb b ‖α‖ := by
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have : IsUltrametricDist L := .of_normedAlgebra K
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
   rw [newtonSlopes_eq_map_roots_map
     (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp)
-    (algebraMap K L) (ofNorm_algebraMap_eq v hb hv) hf]
+    (algebraMap K L) (AddValuation.ofNorm_algebraMap_eq v hb hv) hf]
   exact Multiset.map_congr rfl fun α _ ↦ by rw [AddValuation.untop₀_ofNorm, neg_neg]
 
 /-- If `f : K[X]` splits in `K`, its finite slope multiset `f.newtonSlopes v` is the multiset of
@@ -358,13 +359,10 @@ counted with multiplicity and including the root zero. -/
 theorem card_filter_roots_map_norm_lt {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ ‖α‖ < b ^ σ).card = l := by
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have : IsUltrametricDist L := .of_normedAlgebra K
-  have hfaceL : IsFiniteFace ((f.map (algebraMap K L)).newtonPolygon (AddValuation.ofNorm b hb))
-      σ l u := by
-    rwa [newtonPolygon_map f v (algebraMap K L) (ofNorm_algebraMap_eq v hb hv)]
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
   rw [← card_filter_roots_lt_addValuation
-    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf hfaceL]
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf
+    (isFiniteFace_map_ofNorm v hb hv hface)]
   refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
   rw [AddValuation.coe_lt_ofNorm_iff hb, neg_neg]
 
@@ -374,13 +372,10 @@ theorem card_filter_roots_map_norm_lt {f : K[X]} (hf : (f.map (algebraMap K L)).
 theorem card_filter_roots_map_norm_le {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ ‖α‖ ≤ b ^ σ).card = u := by
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have : IsUltrametricDist L := .of_normedAlgebra K
-  have hfaceL : IsFiniteFace ((f.map (algebraMap K L)).newtonPolygon (AddValuation.ofNorm b hb))
-      σ l u := by
-    rwa [newtonPolygon_map f v (algebraMap K L) (ofNorm_algebraMap_eq v hb hv)]
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
   rw [← card_filter_roots_le_addValuation
-    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf hfaceL]
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf
+    (isFiniteFace_map_ofNorm v hb hv hface)]
   refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
   rw [AddValuation.coe_le_ofNorm_iff hb, neg_neg]
 
@@ -390,13 +385,10 @@ counted with multiplicity. -/
 theorem card_filter_roots_map_norm_eq {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ ‖α‖ = b ^ σ).card = u - l := by
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  have : IsUltrametricDist L := .of_normedAlgebra K
-  have hfaceL : IsFiniteFace ((f.map (algebraMap K L)).newtonPolygon (AddValuation.ofNorm b hb))
-      σ l u := by
-    rwa [newtonPolygon_map f v (algebraMap K L) (ofNorm_algebraMap_eq v hb hv)]
+  have : IsUltrametricDist L := isUltrametricDist_of_norm_eq_rpow v hb hv
   rw [← card_filter_roots_addValuation_eq
-    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf hfaceL]
+    (fun _ ↦ (AddValuation.ofNorm (R := L) b hb).top_iff.mp) hf
+    (isFiniteFace_map_ofNorm v hb hv hface)]
   refine congrArg Multiset.card (Multiset.filter_congr fun α _ ↦ ?_)
   rw [AddValuation.ofNorm_eq_coe_iff hb, neg_neg]
 

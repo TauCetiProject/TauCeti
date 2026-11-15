@@ -254,7 +254,7 @@ theorem realValuation_algebraMap (x : ℚ_[p]) :
     realValuation p (algebraMap ℚ_[p] ℂ_[p] x) = TauCeti.padicRealValuation p x := by
   rw [realValuation_eq_map_addValuation, addValuation_algebraMap,
     TauCeti.padicRealValuation_eq_map, WithTop.map_map]
-  rfl
+  simp only [Function.comp_def, Rat.cast_intCast]
 
 /-- Pulling `PadicComplex.realValuation p` back to `ℚ_[p]` gives `TauCeti.padicRealValuation p`. -/
 @[simp]
@@ -281,9 +281,10 @@ theorem exists_rat_realValuation {x : ℂ_[p]} (hx : x ≠ 0) :
 /-- If `x ^ n = p ^ m` in `ℂ_[p]` with `n > 0`, then `realValuation p x = m / n`. -/
 theorem realValuation_eq_of_pow_eq_zpow {x : ℂ_[p]} {m : ℤ} {n : ℕ} (hn : 0 < n)
     (h : x ^ n = (p : ℂ_[p]) ^ m) : realValuation p x = ((m / n : ℝ) : WithTop ℝ) := by
-  rw [realValuation_eq_map_addValuation, addValuation_eq_of_pow_eq_zpow hn h, WithTop.map_coe]
+  rw [realValuation_eq_map_addValuation, addValuation_eq_of_pow_eq_zpow hn h, WithTop.map_coe,
+    WithTop.coe_eq_coe]
   push_cast
-  rfl
+  ring
 
 /-- Changing from base `p` (`PadicComplex.realValuation p`) to base `Real.exp 1`
 (`-Real.log ‖x‖`) multiplies finite valuation values by `Real.log p`. -/

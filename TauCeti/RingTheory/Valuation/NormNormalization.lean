@@ -45,6 +45,9 @@ one is ultrametric (`AddValuation.isUltrametricDist`).
   the real additive valuation recovering a norm at a fixed base `b > 1`.
 * `AddValuation.eq_map_of_norm_eq_rpow` and `AddValuation.ofNorm_eq_map_ofNorm`: changing base
   from `b` to `b'` scales values by `Real.log b / Real.log b'`.
+* `AddValuation.ofNorm_algebraMap`, `AddValuation.comap_ofNorm`, and
+  `AddValuation.ofNorm_algebraMap_eq`: scalar restriction of `AddValuation.ofNorm` along a normed
+  algebra map.
 -/
 
 public section
@@ -311,6 +314,36 @@ theorem eq_ofNorm_of_norm_eq_rpow {K : Type*} [NormedDivisionRing K] [IsUltramet
     (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) : v = ofNorm b hb :=
   eq_of_norm_eq_rpow (ofNorm b hb) v hb (fun _ ↦ norm_eq_rpow_neg_ofNorm_of_ne_zero hb) hv
+
+section NormedAlgebra
+
+variable {K A : Type*} [NormedField K]
+  [SeminormedRing A] [IsUltrametricDist A] [NormMulClass A] [NormOneClass A] [NormedAlgebra K A]
+
+/-- On a normed `K`-algebra `A` with multiplicative ultrametric seminorm and `‖1‖ = 1`,
+`AddValuation.ofNorm` restricts on `K` to `AddValuation.ofNorm`. -/
+@[simp]
+theorem ofNorm_algebraMap [IsUltrametricDist K] {b : ℝ} (hb : 1 < b) (c : K) :
+    ofNorm (R := A) b hb (algebraMap K A c) = ofNorm b hb c :=
+  ofNorm_eq_of_norm_eq hb (norm_algebraMap' A c)
+
+/-- Pulling `AddValuation.ofNorm` on a normed `K`-algebra `A` back to `K` gives
+`AddValuation.ofNorm` on `K`. -/
+@[simp]
+theorem comap_ofNorm [IsUltrametricDist K] {b : ℝ} (hb : 1 < b) :
+    (ofNorm (R := A) b hb).comap (algebraMap K A) = ofNorm b hb :=
+  AddValuation.ext (ofNorm_algebraMap hb)
+
+/-- On a normed `K`-algebra `A` with multiplicative ultrametric seminorm and `‖1‖ = 1`,
+`AddValuation.ofNorm` restricts on `K` to any real additive valuation `v` recovering the norm of
+`K` at base `b`. -/
+theorem ofNorm_algebraMap_eq (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (c : K) :
+    ofNorm (R := A) b hb (algebraMap K A c) = v c := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  rw [ofNorm_algebraMap hb c, ← v.eq_ofNorm_of_norm_eq_rpow hb hv]
+
+end NormedAlgebra
 
 end OfNorm
 

@@ -181,7 +181,7 @@ theorem exists_rat_of_mem_newtonSlopes_realValuation {f : ℂ_[p][X]} {s : ℝ}
   classical
   rw [newtonSlopes_realValuation_eq_map_roots_addValuation] at hs
   obtain ⟨α, -, rfl⟩ := Multiset.mem_map.mp hs
-  exact ⟨-(PadicComplex.addValuation p α).untop₀, by push_cast; rfl⟩
+  exact ⟨-(PadicComplex.addValuation p α).untop₀, (Rat.cast_neg _).symm⟩
 
 /-- Over `ℂ_[p]`, every finite slope of `f` equals `m` if and only if every nonzero root of `f` has
 norm `p ^ m`. -/
