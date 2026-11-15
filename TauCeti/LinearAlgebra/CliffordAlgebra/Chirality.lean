@@ -15,7 +15,6 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
@@ -206,13 +205,8 @@ omit hQ in
 `CliffordAlgebra.chirality_mul_self`. -/
 theorem chirality_mul_self_of_forall_eq_zero (hQ₀ : ∀ v, Q v = 0) :
     chirality Q o * chirality Q o = 0 := by
-  have hQb : (QuadraticMap.associated Q).IsOrthoᵢ (frame o).toBasis := fun i j _ ↦ by
-    simp [QuadraticMap.associated_apply, hQ₀, Function.onFun]
-  have hl : ((List.finRange 4).map (frame o)).Pairwise Q.IsOrtho :=
-    List.pairwise_of_forall fun x y ↦ by rw [QuadraticMap.isOrtho_def, hQ₀, hQ₀, hQ₀, add_zero]
   rw [chirality_eq_neg_volumeElement, neg_mul_neg,
-    volumeElement_eq o (frame o) (frame_orientation o) hQb, prod_map_ι_sq_scalar hl]
-  simp [hQ₀, List.finRange_succ]
+    volumeElement_mul_self_of_forall_eq_zero o four_ne_zero hQ₀]
 
 omit hQ in
 /-- **The chirality element anticommutes with every generator**: `Γ c(v) = -c(v) Γ`. -/
@@ -627,6 +621,12 @@ variable {K W : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W
 /-- The positive half-spinors `W⁺ = {ψ | Γ ψ = ψ}` of a Clifford module `W`. -/
 def positiveHalfSpinors : Submodule K W :=
   Module.End.eigenspace (ρ (chirality Q o)) 1
+
+/-- The positive half-spinors are the `1`-eigenspace of `Γ`, the space on which the half-spin
+representations with `ε = 1` act. -/
+theorem positiveHalfSpinors_eq_eigenspace :
+    positiveHalfSpinors o ρ = Module.End.eigenspace (ρ (chirality Q o)) 1 :=
+  (rfl)
 
 variable {o ρ} in
 /-- A vector is a positive half-spinor exactly when `Γ ψ = ψ`. -/
