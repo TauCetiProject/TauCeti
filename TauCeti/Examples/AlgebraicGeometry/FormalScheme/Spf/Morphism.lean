@@ -15,7 +15,10 @@ public import TauCeti.RingTheory.Huber.Padic.Basic
 Evaluation at distinct scalars gives distinct formal-spectrum morphisms, including over
 nonreduced coefficient rings. The global-section formula retains the coordinate being
 evaluated. The examples also exercise composition, the empty formal spectrum and reduction
-from a nondiscrete ring of `p`-adic integers to its residue ring.
+from a nondiscrete ring of `p`-adic integers to its residue ring. Finally, every morphism is
+induced by a continuous homomorphism: `Spf ℤ_[p]` has only the identity endomorphism, and there
+is no morphism from the spectrum of the discrete ring `ℚ_[p][X]` to `Spf ℤ_[p]`, although
+`ℤ_[p]` embeds into `ℚ_[p][X]`.
 -/
 
 public section
@@ -115,6 +118,31 @@ private local instance : IsAdicRing ℤ_[p] :=
 example (J : Ideal ℤ_[p]) :
     Spf (ℤ_[p] ⧸ J) ⟶ Spf ℤ_[p] :=
   map (Ideal.Quotient.mk J) (QuotientRing.isOpenQuotientMap_mk J).continuous
+
+-- `Spf ℤ_[p]` has no endomorphisms other than the identity: the map on global sections is a
+-- continuous ring endomorphism of `ℤ_[p]`, so it fixes the dense image of `ℤ`.
+example (f : Spf ℤ_[p] ⟶ Spf ℤ_[p]) : f = 𝟙 _ := by
+  refine Equiv.injective homEquiv (Subtype.ext ?_)
+  rw [homEquiv_apply_coe, homEquiv_apply_coe, globalSectionsHom_id]
+  exact RingHom.coe_inj (PadicInt.denseRange_intCast.equalizer (continuous_globalSectionsHom f)
+    continuous_id (funext fun n ↦ by simp))
+
+/-- The discrete topology on the polynomial ring over `ℚ_[p]`. -/
+private local instance padicPolynomialTopology : TopologicalSpace (Polynomial ℚ_[p]) := ⊥
+private local instance : DiscreteTopology (Polynomial ℚ_[p]) := ⟨rfl⟩
+
+-- Although `ℤ_[p]` embeds into `ℚ_[p][X]`, there is no morphism `Spec ℚ_[p][X] ⟶ Spf ℤ_[p]`:
+-- by automatic continuity its map on global sections would carry `p` to a nilpotent element of
+-- the discrete ring `ℚ_[p][X]`.
+example : IsEmpty (Spf (Polynomial ℚ_[p]) ⟶ Spf ℤ_[p]) := by
+  refine ⟨fun f ↦ ?_⟩
+  have hp : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
+    rw [PadicInt.maximalIdeal_eq_span_p]
+    exact Ideal.mem_span_singleton_self _
+  obtain ⟨n, hn⟩ := Huber.PadicInt.isAdic_maximalIdeal.map_le_radical_of_continuous
+    (is_bot_adic_iff.mpr inferInstance) (continuous_globalSectionsHom f)
+    (Ideal.mem_map_of_mem _ hp)
+  simp [Fact.out (p := p.Prime) |>.ne_zero] at hn
 
 end Padic
 
