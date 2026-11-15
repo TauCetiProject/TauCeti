@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 
 /-!
 # Symmetries of the glue columns act on the rootful rank-24 lattices
@@ -170,18 +169,146 @@ theorem mem_glueSymmetries_of_forall_gluePatterns {g : Equiv.Perm (Fin r.compone
     simpa [Function.comp_assoc] using hd
   · exact (r.spanMode.ofFn_comp_mem_scalarOrbit_ofFn_comp_iff g d e).mpr hd
 
+/-! ### Coupled componentwise isometries and row permutations -/
+
+/-- **Digit-word criterion for coupled row symmetries.**  If `g` preserves component types and
+`φ k` is an additive automorphism of the glue alphabet of component `k` acting on labels as `δ k`,
+then the coupled glue-word map `w ↦ fun k ↦ φ k (piGlueAlphabetCongr … g hg w k)` preserves
+`r.glueSubgroup` as soon as it maps the finite set `r.glueWords` into itself. -/
+theorem coupled_mem_glueSubgroup_iff_of_glueWords
+    {g : Equiv.Perm (Fin r.components.length)}
+    (hg : ∀ k, r.componentType (g k) = r.componentType k)
+    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) ≃+
+      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
+    (δ : Fin r.components.length → ℕ → ℕ)
+    (hδ : ∀ k (j : Fin (r.componentType k).glueLabelCount),
+      (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm
+        (φ k ((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k) j))).val =
+        δ k j.val)
+    (hwords : ∀ l ∈ r.glueWords,
+      List.ofFn (fun k ↦ δ k (l.getD (g k) 0)) ∈ r.glueWords)
+    (w : r.glueModule) :
+    (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
+      r.glueSubgroup ↔ w ∈ r.glueSubgroup := by
+  let ψ₀ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
+    (hs := r.isSimplyLaced_componentType)
+  let ψ : r.glueModule ≃+ r.glueModule := ψ₀.toAddEquiv.trans (AddEquiv.piCongrRight φ)
+  have hψ₀_apply (v : r.glueModule) : ψ₀.toAddEquiv v = ψ₀ v := by
+    rw [LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+      QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  -- `r.glueModule` is `FiniteQuadraticModule.pi …`, whose carrier is definitionally the dependent
+  -- function type `∀ k, (r.componentType k).glueAlphabet _`; `congrFun` evaluates equality in
+  -- `r.glueModule` at coordinate `k` so `AddEquiv.piCongrRight_apply` applies.
+  have hψ_apply (v : r.glueModule) (k : Fin r.components.length) :
+      ψ v k = φ k (ψ₀ v k) :=
+    (congrFun (AddEquiv.trans_apply ψ₀.toAddEquiv (AddEquiv.piCongrRight φ) v) k).trans
+      ((AddEquiv.piCongrRight_apply φ (ψ₀.toAddEquiv v) k).trans
+        (congrArg (φ k) (congrFun (hψ₀_apply v) k)))
+  have hgen : ∀ v ∈ r.glueGenerators, ψ v ∈ r.glueGenerators := by
+    intro v hv
+    rw [mem_glueGenerators_iff] at hv ⊢
+    rw [encodeGlueWord_def]
+    convert hwords _ hv using 1
+    refine congrArg List.ofFn (funext fun k ↦ ?_)
+    have hk : φ k (ψ₀ v k) = φ k ((r.componentType k).glueLabelEquiv
+        (r.isSimplyLaced_componentType k)
+          (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm (ψ₀ v k))) :=
+      congrArg (φ k) (((r.componentType k).glueLabelEquiv
+        (r.isSimplyLaced_componentType k)).apply_symm_apply _).symm
+    rw [hψ_apply, hk, hδ k]
+    refine congrArg (δ k) ?_
+    have hpsi0 := congrArg (fun l : List ℕ ↦ l.getD k 0)
+      (encodeGlueWord_piGlueAlphabetCongr_eq_ofFn r.componentType r.isSimplyLaced_componentType
+        r.isSimplyLaced_componentType g hg v)
+    rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord,
+      List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn, Fin.eta] at hpsi0
+    exact hpsi0.trans
+      ((List.getD_eq_getElem _ _ (by simp)).trans (getElem_encodeGlueWord _ _ v (g k))).symm
+  have hmap_le : r.glueSubgroup.map (ψ : r.glueModule →+ r.glueModule) ≤ r.glueSubgroup := by
+    rw [glueSubgroup_def, AddMonoidHom.map_closure, AddSubgroup.closure_le,
+      AddMonoidHom.coe_ofClass]
+    rintro _ ⟨v, hv, rfl⟩
+    exact AddSubgroup.subset_closure (hgen v hv)
+  have hinj : Function.Injective (ψ : r.glueModule →+ r.glueModule) := by
+    rw [AddMonoidHom.coe_ofClass]
+    exact ψ.injective
+  have hmap : r.glueSubgroup.map (ψ : r.glueModule →+ r.glueModule) = r.glueSubgroup :=
+    AddSubgroup.eq_of_le_of_card_ge hmap_le (AddSubgroup.card_map_of_injective hinj).ge
+  have h := AddSubgroup.mem_map_iff_mem hinj (K := r.glueSubgroup) (x := w)
+  rwa [hmap, AddMonoidHom.coe_ofClass, funext (hψ_apply w)] at h
+
+/-- **Coupled componentwise root-lattice self-isometries and a type-preserving row permutation
+induce a self-isometry of `r.lattice`** whenever their combined action on glue labels preserves
+`r.glueSubgroup`. -/
+noncomputable def coupledLatticeIsometry
+    {g : Equiv.Perm (Fin r.components.length)}
+    (hg : ∀ k, r.componentType (g k) = r.componentType k)
+    (f : ∀ k, IntegralLattice.Isometry
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k))
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k)))
+    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) →
+      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
+    (hfφ : ∀ k x,
+      (r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+          (r.isSimplyLaced_componentType k) (φ k x) =
+        (f k).discriminantQuadraticIsometry
+          ((r.componentType k).isEven_rootLattice (r.isSimplyLaced_componentType k))
+          ((r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+            (r.isSimplyLaced_componentType k) x))
+    (hH : ∀ w : r.glueModule,
+      (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
+        r.glueSubgroup ↔ w ∈ r.glueSubgroup) :
+    IntegralLattice.Isometry r.lattice r.lattice :=
+  (Isometry.ofEq (lattice_def r)).trans <|
+    (gluedLatticePiOfEqIsometry r.componentType r.isSimplyLaced_componentType r.valid_componentType
+      r.glueSubgroup r.isIsotropic_glueSubgroup r.valid_componentType r.isIsotropic_glueSubgroup
+      g hg f φ hfφ hH).trans
+    (Isometry.ofEq (lattice_def r).symm)
+
+/-- `coupledLatticeIsometry` reads component `k` from position `g k` across `hg k` and applies
+`f k`. -/
+@[simp]
+theorem coupledLatticeIsometry_apply
+    {g : Equiv.Perm (Fin r.components.length)}
+    (hg : ∀ k, r.componentType (g k) = r.componentType k)
+    (f : ∀ k, IntegralLattice.Isometry
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k))
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k)))
+    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) →
+      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
+    (hfφ : ∀ k x,
+      (r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+          (r.isSimplyLaced_componentType k) (φ k x) =
+        (f k).discriminantQuadraticIsometry
+          ((r.componentType k).isEven_rootLattice (r.isSimplyLaced_componentType k))
+          ((r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+            (r.isSimplyLaced_componentType k) x))
+    (hH : ∀ w : r.glueModule,
+      (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
+        r.glueSubgroup ↔ w ∈ r.glueSubgroup)
+    (x : ∀ i, Fin (r.componentType i).rank → ℚ) (k : Fin r.components.length) :
+    r.coupledLatticeIsometry hg f φ hfφ hH x k =
+      f k ((r.componentType (g k)).rootLatticeIsometryOfEq
+        (r.isSimplyLaced_componentType (g k)) (hg k)
+          (r.isSimplyLaced_componentType k) (x (g k))) := by
+  rw [coupledLatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
+    Isometry.ofEq_apply]
+  exact gluedLatticePiOfEqIsometry_apply _ _ _ _ _ _ _ _ _ _ _ _ _ x k
+
 /-! ### Glue symmetries act on the glued lattice -/
 
 /-- The self-isometry of `N_r` induced by a glue symmetry `g`, reading the component in position
 `k` from position `g k`. -/
 private noncomputable def glueSymmetryIsometry {g : Equiv.Perm (Fin r.components.length)}
     (hg : g ∈ r.glueSymmetries) : IntegralLattice.Isometry r.lattice r.lattice :=
-  (Isometry.ofEq (lattice_def r)).trans <|
-    (gluedLatticeIsometryOfEq r.componentType r.isSimplyLaced_componentType r.valid_componentType
-      r.glueSubgroup r.isIsotropic_glueSubgroup r.valid_componentType r.isIsotropic_glueSubgroup g
-      (r.componentType_apply_of_mem_glueSymmetries hg)
-      (r.piGlueAlphabetCongr_mem_glueSubgroup_iff hg)).trans
-    (Isometry.ofEq (lattice_def r).symm)
+  r.coupledLatticeIsometry (r.componentType_apply_of_mem_glueSymmetries hg)
+    (fun _ ↦ IntegralLattice.Isometry.refl _) (fun _ ↦ id)
+    (fun k x ↦ by
+      refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+      rw [Isometry.discriminantGroupEquiv_refl]
+      -- `LinearEquiv.refl` acts as the identity on the discriminant carrier.
+      rfl)
+    (r.piGlueAlphabetCongr_mem_glueSubgroup_iff hg)
 
 /-- The isometry induced by a glue symmetry `g` reads the component in position `k` from position
 `g k`. -/
@@ -191,9 +318,8 @@ private theorem glueSymmetryIsometry_apply {g : Equiv.Perm (Fin r.components.len
     r.glueSymmetryIsometry hg x k j =
       x (g k)
         (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries hg k)).symm j) := by
-  rw [glueSymmetryIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
-    Isometry.ofEq_apply]
-  exact gluedLatticeIsometryOfEq_apply _ _ _ _ _ _ _ _ _ _ x k j
+  rw [glueSymmetryIsometry, coupledLatticeIsometry_apply, Isometry.refl_apply,
+    rootLatticeIsometryOfEq_apply]
 
 /-- Reading coordinates of `x` at equal positions, through casts of the coordinate index to their
 ranks, gives the same value. -/
@@ -303,6 +429,14 @@ theorem patternIsometryHom_apply {r : RootfulNiemeierType} (hr : r ≠ a5FourthD
           (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.2)) k)).symm j) :=
   r.latticeIsometryHom_apply _ x k j
 
+/-- On any literal pattern of a row `r ≠ a5FourthD4`, `patternIsometryHom` is trivial. -/
+@[simp]
+theorem patternIsometryHom_literal {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
+    (word : List ℕ) (hp : GluePattern.literal word ∈ r.gluePatterns) :
+    patternIsometryHom hr hp = 1 := by
+  ext g
+  rw [Subsingleton.elim g 1, map_one, MonoidHom.one_apply]
+
 /-- **For every row other than `A₅⁴ D₄`, each pattern symmetry group embeds faithfully into the
 isometry group of `N_r`.** -/
 theorem patternIsometryHom_injective {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
@@ -311,125 +445,6 @@ theorem patternIsometryHom_injective {r : RootfulNiemeierType} (hr : r ≠ a5Fou
   r.latticeIsometryHom_injective.comp fun _ _ hab ↦
     Subtype.ext <| (finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.injective <|
       congrArg Subtype.val hab
-
-/-! ### Coupled componentwise isometries and row permutations -/
-
-/-- **Digit-word criterion for coupled row symmetries.**  If `g` preserves component types and
-`φ k` is an additive automorphism of the glue alphabet of component `k` acting on labels as `δ k`,
-then the coupled glue-word map `w ↦ fun k ↦ φ k (piGlueAlphabetCongr … g hg w k)` preserves
-`r.glueSubgroup` as soon as it maps the finite set `r.glueWords` into itself. -/
-theorem coupled_mem_glueSubgroup_iff_of_glueWords
-    {g : Equiv.Perm (Fin r.components.length)}
-    (hg : ∀ k, r.componentType (g k) = r.componentType k)
-    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) ≃+
-      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
-    (δ : Fin r.components.length → ℕ → ℕ)
-    (hδ : ∀ k (j : Fin (r.componentType k).glueLabelCount),
-      (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm
-        (φ k ((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k) j))).val =
-        δ k j.val)
-    (hwords : ∀ l ∈ r.glueWords,
-      List.ofFn (fun k ↦ δ k (l.getD (g k) 0)) ∈ r.glueWords)
-    (w : r.glueModule) :
-    (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
-      r.glueSubgroup ↔ w ∈ r.glueSubgroup := by
-  let ψ₀ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
-    (hs := r.isSimplyLaced_componentType)
-  let ψ : r.glueModule ≃+ r.glueModule := ψ₀.toAddEquiv.trans (AddEquiv.piCongrRight φ)
-  have hψ₀_apply (v : r.glueModule) : ψ₀.toAddEquiv v = ψ₀ v := by
-    rw [LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-      QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  -- `r.glueModule` is `FiniteQuadraticModule.pi …`, whose carrier is definitionally the dependent
-  -- function type `∀ k, (r.componentType k).glueAlphabet _`; `congrFun` evaluates equality in
-  -- `r.glueModule` at coordinate `k` so `AddEquiv.piCongrRight_apply` applies.
-  have hψ_apply (v : r.glueModule) (k : Fin r.components.length) :
-      ψ v k = φ k (ψ₀ v k) :=
-    (congrFun (AddEquiv.trans_apply ψ₀.toAddEquiv (AddEquiv.piCongrRight φ) v) k).trans
-      ((AddEquiv.piCongrRight_apply φ (ψ₀.toAddEquiv v) k).trans
-        (congrArg (φ k) (congrFun (hψ₀_apply v) k)))
-  have hgen : ∀ v ∈ r.glueGenerators, ψ v ∈ r.glueGenerators := by
-    intro v hv
-    rw [mem_glueGenerators_iff, encodeGlueWord_def] at hv ⊢
-    convert hwords _ hv using 1
-    refine congrArg List.ofFn (funext fun k ↦ ?_)
-    have hk : φ k (ψ₀ v k) = φ k ((r.componentType k).glueLabelEquiv
-        (r.isSimplyLaced_componentType k)
-          (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm (ψ₀ v k))) :=
-      congrArg (φ k) (((r.componentType k).glueLabelEquiv
-        (r.isSimplyLaced_componentType k)).apply_symm_apply _).symm
-    rw [hψ_apply, hk, hδ k]
-    refine congrArg (δ k) ?_
-    rw [List.getD_eq_getElem?_getD, List.getElem?_ofFn, dite_eq_left (g k).isLt, Option.getD_some,
-      Fin.eta, piGlueAlphabetCongr_apply]
-    exact DynkinType.val_glueLabelEquiv_symm_ofEq (hg k) _ _ _
-  have hle : r.glueSubgroup ≤ r.glueSubgroup.comap (ψ : r.glueModule →+ r.glueModule) := by
-    rw [glueSubgroup_def, AddSubgroup.closure_le]
-    exact fun v hv ↦ AddSubgroup.subset_closure (hgen v hv)
-  have hf_inj : Function.Injective
-      (fun x : r.glueSubgroup ↦ (⟨ψ x.1, hle x.2⟩ : r.glueSubgroup)) :=
-    fun a b h ↦ Subtype.ext (ψ.injective (congrArg Subtype.val h))
-  rw [← funext (hψ_apply w)]
-  refine ⟨fun hw ↦ ?_, fun hw ↦ hle hw⟩
-  obtain ⟨⟨v, hv⟩, hv_eq⟩ := Finite.surjective_of_injective hf_inj ⟨ψ w, hw⟩
-  exact ψ.injective (congrArg Subtype.val hv_eq) ▸ hv
-
-/-- **Coupled componentwise root-lattice self-isometries and a type-preserving row permutation
-induce a self-isometry of `r.lattice`** whenever their combined action on glue labels preserves
-`r.glueSubgroup`. -/
-noncomputable def coupledLatticeIsometry
-    {g : Equiv.Perm (Fin r.components.length)}
-    (hg : ∀ k, r.componentType (g k) = r.componentType k)
-    (f : ∀ k, IntegralLattice.Isometry
-      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k))
-      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k)))
-    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) →
-      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
-    (hfφ : ∀ k x,
-      (r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
-          (r.isSimplyLaced_componentType k) (φ k x) =
-        (f k).discriminantQuadraticIsometry
-          ((r.componentType k).isEven_rootLattice (r.isSimplyLaced_componentType k))
-          ((r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
-            (r.isSimplyLaced_componentType k) x))
-    (hH : ∀ w : r.glueModule,
-      (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
-        r.glueSubgroup ↔ w ∈ r.glueSubgroup) :
-    IntegralLattice.Isometry r.lattice r.lattice :=
-  (Isometry.ofEq (lattice_def r)).trans <|
-    (gluedLatticePiOfEqIsometry r.componentType r.isSimplyLaced_componentType r.valid_componentType
-      r.glueSubgroup r.isIsotropic_glueSubgroup r.valid_componentType r.isIsotropic_glueSubgroup
-      g hg f φ hfφ hH).trans
-    (Isometry.ofEq (lattice_def r).symm)
-
-/-- `coupledLatticeIsometry` reads component `k` from position `g k` across `hg k` and applies
-`f k`. -/
-@[simp]
-theorem coupledLatticeIsometry_apply
-    {g : Equiv.Perm (Fin r.components.length)}
-    (hg : ∀ k, r.componentType (g k) = r.componentType k)
-    (f : ∀ k, IntegralLattice.Isometry
-      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k))
-      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k)))
-    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) →
-      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
-    (hfφ : ∀ k x,
-      (r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
-          (r.isSimplyLaced_componentType k) (φ k x) =
-        (f k).discriminantQuadraticIsometry
-          ((r.componentType k).isEven_rootLattice (r.isSimplyLaced_componentType k))
-          ((r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
-            (r.isSimplyLaced_componentType k) x))
-    (hH : ∀ w : r.glueModule,
-      (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
-        r.glueSubgroup ↔ w ∈ r.glueSubgroup)
-    (x : ∀ i, Fin (r.componentType i).rank → ℚ) (k : Fin r.components.length) :
-    r.coupledLatticeIsometry hg f φ hfφ hH x k =
-      f k ((r.componentType (g k)).rootLatticeIsometryOfEq
-        (r.isSimplyLaced_componentType (g k)) (hg k)
-          (r.isSimplyLaced_componentType k) (x (g k))) := by
-  rw [coupledLatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
-    Isometry.ofEq_apply]
-  exact gluedLatticePiOfEqIsometry_apply _ _ _ _ _ _ _ _ _ _ _ _ _ x k
 
 end RootfulNiemeierType
 

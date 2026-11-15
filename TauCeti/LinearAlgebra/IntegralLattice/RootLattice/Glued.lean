@@ -467,36 +467,6 @@ variable {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).Is
   (hH' : (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k)).IsIsotropic H')
   (σ : κ ≃ ι) (h : ∀ k, t (σ k) = s k)
 
-/-- **Glued lattices of equal families of components.**  If the components `s k` are the
-components `t (σ k)` for an equivalence `σ : κ ≃ ι`, and the glue word
-`TauCeti.DynkinType.piGlueAlphabetCongr t ht σ h w` lies in `H'` exactly when `w` lies in `H`,
-then the lattice glued from `t` along `H` is isometric to the lattice glued from `s` along `H'`,
-by the isometry moving the coordinates of component `σ k` to component `k`.  This compares a
-family of components read off by position from a list with an explicitly given family. -/
-noncomputable def gluedLatticeIsometryOfEq
-    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H) :
-    IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
-  gluedLatticePiCongrIsometry t ht hv H hH hvs hH' σ
-    (fun k ↦ (t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k))
-    (fun k ↦ FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k)))
-    (fun k x ↦ glueAlphabetIsometry_ofEq (h k) (hv (σ k)) (hvs k) (ht (σ k)) (hs k) x)
-    fun w ↦ by
-      have hw : (fun k ↦ FiniteQuadraticModule.Isometry.ofEq
-          (glueAlphabet_congr (h k) (ht (σ k)) (hs k)) (w (σ k))) =
-          piGlueAlphabetCongr t ht σ h w :=
-        funext fun k ↦ (piGlueAlphabetCongr_apply t ht σ h w k).symm
-      exact (congrArg (· ∈ H') hw).to_iff.trans (hHH' w)
-
-/-- The isometry of glued lattices of equal families of components reads the coordinates of
-component `k` from those of component `σ k`. -/
-@[simp]
-theorem gluedLatticeIsometryOfEq_apply
-    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H)
-    (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) (j : Fin (s k).rank) :
-    gluedLatticeIsometryOfEq t ht hv H hH hvs hH' σ h hHH' x k j =
-      x (σ k) (Fin.cast (congrArg rank (h k)).symm j) := by
-  rw [gluedLatticeIsometryOfEq, gluedLatticePiCongrIsometry_apply, rootLatticeIsometryOfEq_apply]
-
 /-- **Componentwise root-lattice self-isometries and a permutation of equal-type components induce
 an isometry of glued lattices.**  If `t (σ k) = s k` for an equivalence `σ : κ ≃ ι`, and `f k` are
 self-isometries of the root lattices of `s k` acting on glue labels by `g k`, then reindexing
@@ -522,6 +492,7 @@ noncomputable def gluedLatticePiOfEqIsometry
           (Isometry.discriminantQuadraticIsometry_apply _ _ _))).trans ?_
       refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
       rw [Isometry.discriminantGroupEquiv_trans]
+      -- `LinearEquiv.trans` evaluates by applying the two equivalences in sequence.
       rfl)
     fun w ↦ by
       have hw : (fun k ↦ g k (FiniteQuadraticModule.Isometry.ofEq
@@ -544,6 +515,35 @@ theorem gluedLatticePiOfEqIsometry_apply
     gluedLatticePiOfEqIsometry t ht hv H hH hvs hH' σ h f g hfg hHH' x k =
       f k ((t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k) (x (σ k))) := by
   rw [gluedLatticePiOfEqIsometry, gluedLatticePiCongrIsometry_apply, Isometry.trans_apply]
+
+/-- **Glued lattices of equal families of components.**  If the components `s k` are the
+components `t (σ k)` for an equivalence `σ : κ ≃ ι`, and the glue word
+`TauCeti.DynkinType.piGlueAlphabetCongr t ht σ h w` lies in `H'` exactly when `w` lies in `H`,
+then the lattice glued from `t` along `H` is isometric to the lattice glued from `s` along `H'`,
+by the isometry moving the coordinates of component `σ k` to component `k`.  This compares a
+family of components read off by position from a list with an explicitly given family. -/
+noncomputable def gluedLatticeIsometryOfEq
+    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H) :
+    IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
+  gluedLatticePiOfEqIsometry t ht hv H hH hvs hH' σ h
+    (fun _ ↦ IntegralLattice.Isometry.refl _) (fun _ ↦ id)
+    (fun k x ↦ by
+      refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+      rw [Isometry.discriminantGroupEquiv_refl]
+      -- `LinearEquiv.refl` acts as the identity on the discriminant carrier.
+      rfl)
+    hHH'
+
+/-- The isometry of glued lattices of equal families of components reads the coordinates of
+component `k` from those of component `σ k`. -/
+@[simp]
+theorem gluedLatticeIsometryOfEq_apply
+    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H)
+    (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) (j : Fin (s k).rank) :
+    gluedLatticeIsometryOfEq t ht hv H hH hvs hH' σ h hHH' x k j =
+      x (σ k) (Fin.cast (congrArg rank (h k)).symm j) := by
+  rw [gluedLatticeIsometryOfEq, gluedLatticePiOfEqIsometry_apply, Isometry.refl_apply,
+    rootLatticeIsometryOfEq_apply]
 
 end OfEq
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.NormShell
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
