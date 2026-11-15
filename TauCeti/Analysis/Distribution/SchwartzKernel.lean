@@ -470,15 +470,16 @@ private def pairing : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] ℂ :=
   LinearMap.mk₂ ℂ (fun φ ψ ↦ (T ψ).complexPairing φ) (fun _ _ _ ↦ map_add _ _ _)
     (fun _ _ _ ↦ map_smul _ _ _) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
 
-private theorem continuous_pairing_left (ψ : 𝓓(O, ℂ)) : Continuous fun φ ↦ pairing T φ ψ :=
-  (T ψ).complexPairing.continuous
+private theorem pairing_apply (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) :
+    pairing T φ ψ = (T ψ).complexPairing φ :=
+  rfl
 
-private theorem continuous_pairing_right (φ : 𝓓(Ω, ℂ)) : Continuous (pairing T φ) := by
-  -- The complex-linear extension `T ψ (re φ) + i T ψ (im φ)` is continuous in the distribution.
-  have h : Continuous fun D : 𝓓'(Ω, ℂ) ↦ D.complexPairing φ := by
-    simp only [Distribution.complexPairing_apply]
-    fun_prop
-  exact h.comp T.continuous
+private theorem continuous_pairing_left (ψ : 𝓓(O, ℂ)) : Continuous fun φ ↦ pairing T φ ψ := by
+  simpa only [pairing_apply] using (T ψ).complexPairing.continuous
+
+private theorem continuous_pairing_right (φ : 𝓓(Ω, ℂ)) : Continuous (pairing T φ) :=
+  ((Distribution.continuous_complexPairing_apply φ).comp T.continuous).congr fun ψ ↦
+    (pairing_apply T φ ψ).symm
 
 /-- **The Schwartz kernel theorem.** A continuous linear map `T` from the complex test functions on
 an open set `O ⊆ ℝ^b` to the complex-valued distributions on an open set `Ω ⊆ ℝ^a` has a unique
@@ -487,9 +488,10 @@ complex test functions `φ` on `Ω` and `ψ` on `O`, where both distributions ac
 functions through their complex-linear extensions. -/
 theorem existsUnique_schwartzKernel :
     ∃! K : 𝓓'(V, ℂ), ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
-      K.complexPairing (φ.tensor ψ hV.symm.subset) = (T ψ).complexPairing φ :=
-  LinearMap.existsUnique_schwartzKernel_distribution_of_continuous (pairing T)
-    (continuous_pairing_left T) (continuous_pairing_right T) hV
+      K.complexPairing (φ.tensor ψ hV.symm.subset) = (T ψ).complexPairing φ := by
+  simpa only [pairing_apply] using
+    LinearMap.existsUnique_schwartzKernel_distribution_of_continuous (pairing T)
+      (continuous_pairing_left T) (continuous_pairing_right T) hV
 
 /-- The **Schwartz kernel** of a continuous linear map `T` from test functions on `O` to
 distributions on `Ω`: the unique distribution on `V = Ω × O` taking the value `(T ψ) φ` on

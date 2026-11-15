@@ -118,6 +118,13 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
   simp
   ring
 
+/-- For a fixed complex test function `φ`, the pairing `T ↦ T φ` is continuous in the
+distribution `T`. -/
+theorem continuous_complexPairing_apply (φ : 𝓓^{n}(Ω, ℂ)) :
+    Continuous fun T : 𝓓'^{n}(Ω, ℂ) ↦ T.complexPairing φ := by
+  simp only [complexPairing_apply]
+  fun_prop
+
 /-- The complex-linear extension of a derivative of `T` is minus the extension of `T` applied to
 the derivative of the test function: `(∂_{v} T) φ = - T (∂_{v} φ)` on complex test functions. -/
 theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
