@@ -236,9 +236,10 @@ private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
   refine ⟨B, Q, hBa.mono (closedBall_subset_closedBall hrR.le), hB0,
     fun w hw ↦ hBbound w (closedBall_subset_closedBall hrR.le hw), ?_, ?_,
     hf.sum_divisor_le_log_div_log hr hrR hz₀ hM⟩
-  · rw [hlogf, show logDeriv B z = logDeriv G z + logDeriv Q z from
-      logDeriv_mul z (hG0 z (by simpa [mem_closedBall, dist_eq_norm] using hz.le))
-        (hQ0 z hzR) (hG z hzR).differentiableAt (hQ z)]
+  · dsimp only [B]
+    rw [hlogf, logDeriv_mul z
+      (hG0 z (by simpa [mem_closedBall, dist_eq_norm] using hz.le))
+      (hQ0 z hzR) (hG z hzR).differentiableAt (hQ z)]
     ring
   · simpa only [← Int.cast_sum, ← finsum_eq_sum D hfin] using hQbound
 
