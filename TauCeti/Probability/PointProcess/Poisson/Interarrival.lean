@@ -519,10 +519,7 @@ private lemma poisson_occurrenceTime_apply_separatedBox {Ω : Type*} [Measurable
     hind_comp.congr fun _ => Filter.Eventually.of_forall fun _ => rfl
   let S : Fin (k + 1) ⊕ Fin (k + 1) → Set ℕ :=
     Sum.elim (fun _ => {0}) (fun i => if i = Fin.last k then Ici 1 else {1})
-  have hae_zero : ∀ᵐ ω ∂P, N ω {0} = 0 := by
-    have hlaw0 : HasLaw (fun ω => N ω {0}) (Measure.dirac 0) P := by
-      simpa [poissonMeasure_zero] using h.hasLaw (measurableSet_singleton 0) (by simp)
-    exact hlaw0.ae_eq_of_dirac
+  have hae_zero : ∀ᵐ ω ∂P, N ω {0} = 0 := h.ae_eq_zero (by simp)
   have hmeas_time : Measurable fun ω (i : Fin (k + 1)) => ((N ω).occurrenceTime i).toNNReal :=
     measurable_pi_iff.mpr fun i =>
       ((Measure.measurable_occurrenceTime i).comp h.measurable).ennreal_toNNReal
@@ -642,12 +639,10 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- A Poisson random measure with zero intensity vanishes almost surely. No topological or
 countability hypothesis on the state space is needed. -/
-theorem IsPoissonRandomMeasure.ae_eq_zero {X : Type*} [MeasurableSpace X]
+theorem IsPoissonRandomMeasure.ae_eq_zero_of_zero {X : Type*} [MeasurableSpace X]
     {N : Ω → Measure X} (h : IsPoissonRandomMeasure P N 0) :
     ∀ᵐ ω ∂P, N ω = 0 := by
-  have hlaw : HasLaw (fun ω => N ω univ) (Measure.dirac 0) P := by
-    simpa [poissonMeasure_zero] using h.hasLaw MeasurableSet.univ (by simp)
-  filter_upwards [hlaw.ae_eq_of_dirac] with ω hω
+  filter_upwards [h.ae_eq_zero (A := univ) rfl] with ω hω
   exact Measure.measure_univ_eq_zero.mp hω
 
 /-- For a Poisson random measure on `ℝ≥0` with zero intensity, every occurrence time is infinite
@@ -655,7 +650,7 @@ almost surely. -/
 theorem IsPoissonRandomMeasure.ae_forall_occurrenceTime_eq_top_of_zero
     {N : Ω → Measure ℝ≥0} (h : IsPoissonRandomMeasure P N 0) :
     ∀ᵐ ω ∂P, ∀ n, (N ω).occurrenceTime n = ∞ := by
-  filter_upwards [h.ae_eq_zero] with ω hω n
+  filter_upwards [h.ae_eq_zero_of_zero] with ω hω n
   simp [hω]
 
 /-- For a Poisson random measure on `ℝ≥0` with zero intensity, every extended interarrival gap is
@@ -663,7 +658,7 @@ infinite almost surely. -/
 theorem IsPoissonRandomMeasure.ae_forall_occurrenceGap_eq_top_of_zero
     {N : Ω → Measure ℝ≥0} (h : IsPoissonRandomMeasure P N 0) :
     ∀ᵐ ω ∂P, ∀ n, (N ω).occurrenceGap n = ∞ := by
-  filter_upwards [h.ae_eq_zero] with ω hω n
+  filter_upwards [h.ae_eq_zero_of_zero] with ω hω n
   simp [hω]
 
 section Homogeneous
