@@ -21,8 +21,8 @@ Two bundle morphisms have the Kronecker product of their chart operators as tens
 a continuous fibrewise linear map whose fibre maps are the Kronecker products of the fibre maps
 (`FiniteRankBundleCore.fiberMap_tensorHom`). The construction is a bifunctor: it preserves
 identities and composition, is additive in each variable, preserves isomorphisms, and commutes
-strictly with pullback (`pullback_tensor`, `pullbackMap_tensorHom`).
-The base is arbitrary, and the scalar field need not be complete.
+strictly with pullback along continuous maps of bases (`pullback_tensor`,
+`pullbackMap_tensorHom`). The base is arbitrary, and the scalar field need not be complete.
 
 The construction uses Mathlib's coordinate cores and the coordinate morphisms
 `VectorBundleCore.CoordinateHom`.
@@ -196,20 +196,23 @@ instance (f : A ⟶ A') (g : D ⟶ D') [IsIso f] [IsIso g] : IsIso (tensorHom f 
 
 section Pullback
 
-variable {X : Type*} [TopologicalSpace X]
+variable {X : Type*} {Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- Pulling back commutes strictly with tensor products of finite-rank cores. -/
-@[simp] theorem pullback_tensor (A D : FiniteRankBundleCore 𝕜 B) (f : C(X, B)) :
+/-- Pulling back commutes strictly with tensor products of cores. -/
+@[simp] theorem pullback_tensor (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (tensor A D).pullback f = tensor (A.pullback f) (D.pullback f) := (rfl)
 
-/-- Pulling back commutes with tensor products of bundle maps. -/
-@[simp] theorem pullbackMap_tensorHom (a : A ⟶ A') (b : D ⟶ D') (f : C(X, B)) :
-    pullbackMap (tensorHom a b) f = tensorHom (pullbackMap a f) (pullbackMap b f) :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_tensorHom a b (f x)).trans <|
-      (congrArg₂ ContinuousLinearMap.kronecker
-        (fiberMap_pullbackMap a f x) (fiberMap_pullbackMap b f x)).symm.trans
-        (fiberMap_tensorHom (pullbackMap a f) (pullbackMap b f) x).symm
+/-- Pulling back commutes with tensor products of bundle morphisms. -/
+@[simp] theorem pullbackMap_tensorHom {A A' D D' : FiniteRankBundleCore 𝕜 Y}
+    (a : A ⟶ A') (b : D ⟶ D') (f : C(X, Y)) :
+    pullbackMap (tensorHom a b) f = tensorHom (pullbackMap a f) (pullbackMap b f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_tensorHom, ← fiberMap_pullbackMap a f x,
+    ← fiberMap_pullbackMap b f x]
+  -- `(tensor A D).pullback f` is definitionally `tensor (A.pullback f) (D.pullback f)`
+  -- (`pullback_tensor`), identifying the implicit cores of `fiberMap` on the right.
+  exact Eq.symm (fiberMap_tensorHom _ _ x)
 
 end Pullback
 

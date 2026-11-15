@@ -19,13 +19,14 @@ presenting bundles in the universe of their base.
 `FiniteRankBundleCore.pullbackFunctor` pulls back both bundles and continuous linear
 bundle maps, and preserves addition. Identity and composition of base maps give
 strict equalities of functors, not just equality of bundle classes. Pullback is also strictly
-compatible with trivial cores (`pullback_trivial`), constant intertwining morphisms
-(`pullbackMap_constHom`), and Whitney sums and their canonical morphisms (`pullback_whitneySum`,
-`pullbackMap_whitneyLift`, `pullbackMap_whitneyDesc`, `pullbackMap_whitneyMap`).
-The canonical map `pullbackLift` covers the base map on core total spaces, and the
-reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
+compatible with trivial cores, constant intertwining morphisms and isomorphisms
+(`pullbackMap_constHom`, `pullbackMap_constIso_hom`, `pullbackMap_constIso_inv`), and Whitney sums
+(`pullback_trivial`, `pullback_whitneySum`) together with the Whitney projections, inclusions,
+pairings, copairings, and direct sums of maps.
+The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
 which carries each core chart to Mathlib's pulled-back trivialization
-(`pullbackHomeomorph_localTriv`).
+(`pullbackHomeomorph_localTriv`, `pullback_trivializationAt_eq`), and lifts to the original core
+total space via `pullbackLift`.
 
 The construction uses Mathlib's vector-bundle cores and native pullback topology,
 and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle maps.
@@ -109,6 +110,20 @@ def pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y)) 
       dsimp only [pullback, pullbackMap, ContinuousMap.comp_apply, ContinuousMap.coe_mk, id_eq]
       convert a.coordChange_fiberMap (f i) (f j) x.2.1 x.2.2 v using 1 <;>
         simp only [A.indexAt_eq, D.indexAt_eq])) x
+
+/-- Pulling back a cocycle morphism with bijective fibre maps preserves fibrewise bijectivity. -/
+theorem bijective_fiberMap_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
+    (hbij : ∀ y, Function.Bijective (a.fiberMap y)) (f : C(X, Y)) (x : X) :
+    Function.Bijective ((pullbackMap a f).fiberMap x) := by
+  simpa only [fiberMap_pullbackMap] using hbij (f x)
+
+/-- Expressing a fibre operator in pulled-back charts `i` and `j` at `x` evaluates the expression
+in the original charts `f i` and `f j` at `f x`. -/
+@[simp] theorem inChartCoordinates_pullback (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (i j x : X) (ϕ : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) :
+    (A.pullback f).core.inChartCoordinates (D.pullback f).core i j x ϕ =
+      A.core.inChartCoordinates D.core (f i) (f j) (f x) ϕ := by
+  rw [inChartCoordinates_core, inChartCoordinates_core, coordChange_pullback, coordChange_pullback]
 
 /-- Pullback preserves identity bundle maps. -/
 @[simp] theorem pullbackMap_id (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
@@ -201,15 +216,6 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
   exact (fiberMap_pullbackMap (pullbackMap a g) f x).trans
     ((fiberMap_pullbackMap a g (f x)).trans (fiberMap_pullbackMap a (g.comp f) x).symm)
 
-/-- Expressing a fibre map in pulled-back charts evaluates the original chart-coordinate
-expression at the image points. -/
-@[simp] theorem inChartCoordinates_pullback (A D : FiniteRankBundleCore 𝕜 Y)
-    (f : C(X, Y)) (i j x : X) (ϕ : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) :
-    (A.pullback f).core.inChartCoordinates (D.pullback f).core i j x ϕ =
-      A.core.inChartCoordinates D.core (f i) (f j) (f x) ϕ :=
-  ((A.pullback f).inChartCoordinates_core (D.pullback f) i j x ϕ).trans
-    (A.inChartCoordinates_core D (f i) (f j) (f x) ϕ).symm
-
 /-- Pulling back a constant intertwining bundle map gives the constant intertwining bundle map
 with the same coordinate matrix over the new base. -/
 @[simp] theorem pullbackMap_constHom {A D : FiniteRankBundleCore 𝕜 Y}
@@ -260,62 +266,6 @@ on the pulled-back cores. -/
   intro x
   simp only [fiberMap_pullbackMap, fiberMap_constIso_inv]
 
-/-- Pullback preserves the first projection of a Whitney sum. -/
-@[simp] theorem pullbackMap_whitneyFst (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    pullbackMap (whitneyFst A D) f = whitneyFst (A.pullback f) (D.pullback f) :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_whitneyFst A D (f x)).trans
-      (fiberMap_whitneyFst (A.pullback f) (D.pullback f) x).symm
-
-/-- Pullback preserves the second projection of a Whitney sum. -/
-@[simp] theorem pullbackMap_whitneySnd (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    pullbackMap (whitneySnd A D) f = whitneySnd (A.pullback f) (D.pullback f) :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_whitneySnd A D (f x)).trans
-      (fiberMap_whitneySnd (A.pullback f) (D.pullback f) x).symm
-
-/-- Pullback preserves the first inclusion into a Whitney sum. -/
-@[simp] theorem pullbackMap_whitneyInl (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    pullbackMap (whitneyInl A D) f = whitneyInl (A.pullback f) (D.pullback f) :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_whitneyInl A D (f x)).trans
-      (fiberMap_whitneyInl (A.pullback f) (D.pullback f) x).symm
-
-/-- Pullback preserves the second inclusion into a Whitney sum. -/
-@[simp] theorem pullbackMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    pullbackMap (whitneyInr A D) f = whitneyInr (A.pullback f) (D.pullback f) :=
-  hom_ext fun x => (fiberMap_pullbackMap _ _ _).trans <|
-    (fiberMap_whitneyInr A D (f x)).trans
-      (fiberMap_whitneyInr (A.pullback f) (D.pullback f) x).symm
-
-/-- Pullback commutes with pairing into a Whitney sum. -/
-@[simp] theorem pullbackMap_whitneyLift {E A D : FiniteRankBundleCore 𝕜 Y}
-    (a : E ⟶ A) (b : E ⟶ D) (f : C(X, Y)) :
-    pullbackMap (whitneyLift a b) f = whitneyLift (pullbackMap a f) (pullbackMap b f) := by
-  simp only [whitneyLift_def, pullbackMap_add, pullbackMap_comp, pullbackMap_whitneyInl,
-    pullbackMap_whitneyInr]
-  -- Both sides now add in `Hom` into definitionally equal cores `(whitneySum A D).pullback f` and
-  -- `whitneySum (A.pullback f) (D.pullback f)`.
-  rfl
-
-/-- Pullback commutes with copairing out of a Whitney sum. -/
-@[simp] theorem pullbackMap_whitneyDesc {A D E : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ E) (b : D ⟶ E) (f : C(X, Y)) :
-    pullbackMap (whitneyDesc a b) f = whitneyDesc (pullbackMap a f) (pullbackMap b f) := by
-  simp only [whitneyDesc_def, pullbackMap_add, pullbackMap_comp, pullbackMap_whitneyFst,
-    pullbackMap_whitneySnd]
-  -- Both sides now add in `Hom` out of definitionally equal pulled-back Whitney-sum cores.
-  rfl
-
-/-- Pullback commutes with direct sums of bundle maps. -/
-@[simp] theorem pullbackMap_whitneyMap {A A' D D' : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ A') (b : D ⟶ D') (f : C(X, Y)) :
-    pullbackMap (whitneyMap a b) f = whitneyMap (pullbackMap a f) (pullbackMap b f) := by
-  simp only [whitneyMap_def, pullbackMap_whitneyLift, pullbackMap_comp, pullbackMap_whitneyFst,
-    pullbackMap_whitneySnd]
-  -- Both sides now compose across definitionally equal pulled-back Whitney-sum cores.
-  rfl
-
 private def pullbackTotalEquiv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (A.pullback f).core.TotalSpace ≃ TotalSpace (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber) where
   toFun p := ⟨p.proj, p.2⟩
@@ -329,37 +279,49 @@ private theorem pullback_chart (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
       (((A.pullback f).core.localTriv i) p).2 := by
   simp only [localTriv_apply, indexAt_eq, coordChange_pullback]
 
-/-- The canonical bundle map over `f` from the total space of `A.pullback f` to that of `A`,
-sending each fibre over `x` identically to the fibre over `f x`. -/
--- Expose this constructor wrapper so pulled-back sections `x ↦ pullbackLift f ⟨x, σ (f x)⟩`
--- reduce definitionally to `(y ↦ ⟨y, σ y⟩) ∘ f`, matching `Bundle.Pullback.lift`.
-@[expose]
+/-- The canonical lift from the reconstructed pullback total space to the original core total space,
+covering `f` on the base and acting as the identity on preferred fibre coordinates. -/
 def pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (p : (A.pullback f).core.TotalSpace) : A.core.TotalSpace :=
   ⟨f p.proj, p.2⟩
 
+/-- The base projection of `pullbackLift` applies `f` to the base projection. -/
 @[simp] theorem pullbackLift_proj (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (p : (A.pullback f).core.TotalSpace) :
     (A.pullbackLift f p).proj = f p.proj := (rfl)
 
+/-- On preferred fibre coordinates, `pullbackLift` acts as the identity. -/
 @[simp] theorem pullbackLift_snd (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (p : (A.pullback f).core.TotalSpace) :
     (A.pullbackLift f p).2 = p.2 := (rfl)
 
+/-- On a fibre coordinate pair `⟨x, v⟩`, `pullbackLift` shifts the base point to `f x`. -/
 @[simp] theorem pullbackLift_mk (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
-    (x : X) (v : Fin A.rank → 𝕜) :
+    (x : X) (v : (A.pullback f).core.Fiber x) :
     A.pullbackLift f ⟨x, v⟩ = ⟨f x, v⟩ := (rfl)
 
+/-- `A.pullbackLift f p` equals `⟨y, v⟩` whenever `f p.proj = y` and `p.2 = v` in preferred fibre
+coordinates. -/
+theorem pullbackLift_eq_mk (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (p : (A.pullback f).core.TotalSpace) {y : Y} {v : Fin A.rank → 𝕜}
+    (hy : f p.proj = y) (hv : p.2 = v) :
+    A.pullbackLift f p = ⟨y, v⟩ :=
+  TotalSpace.ext ((A.pullbackLift_proj f p).trans hy)
+    (heq_of_eq ((A.pullbackLift_snd f p).trans hv))
+
+/-- Along the identity map, `pullbackLift` acts as the identity on base points and preferred fibre
+coordinates. -/
 @[simp] theorem pullbackLift_id (A : FiniteRankBundleCore 𝕜 Y)
     (p : (A.pullback (ContinuousMap.id Y)).core.TotalSpace) :
-    A.pullbackLift (ContinuousMap.id Y) p = ⟨p.proj, p.2⟩ := (rfl)
+    A.pullbackLift (ContinuousMap.id Y) p = ⟨p.proj, p.2⟩ :=
+  A.pullbackLift_eq_mk (ContinuousMap.id Y) p rfl rfl
 
-@[simp] theorem pullbackLift_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z))
-    (p : ((A.pullback g).pullback f).core.TotalSpace) :
-    A.pullbackLift g ((A.pullback g).pullbackLift f p) = A.pullbackLift (g.comp f) p := (rfl)
+/-- The canonical lift of a composite pullback factors through the two individual lifts. -/
+theorem pullbackLift_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z))
+    (p : (A.pullback (g.comp f)).core.TotalSpace) :
+    A.pullbackLift (g.comp f) p = A.pullbackLift g ((A.pullback g).pullbackLift f p) := (rfl)
 
-/-- The canonical lift from the pulled-back core total space to the original core total space
-is continuous. -/
+/-- The canonical lift `pullbackLift` is continuous on the reconstructed pullback total space. -/
 theorem continuous_pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     Continuous (A.pullbackLift f) := by
   refine continuous_iff_continuousAt.2 fun p => ?_
@@ -372,19 +334,6 @@ theorem continuous_pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) 
   filter_upwards [] with q
   simp only [VectorBundleCore.trivializationAt, localTrivAt, indexAt_eq]
   exact pullback_chart A f p.proj q
-
-/-- `pullbackLift` intertwines the total-space map of `pullbackMap a f` with `a.totalSpaceMap`. -/
-@[simp] theorem pullbackLift_totalSpaceMap_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ D) (f : C(X, Y)) (p : (A.pullback f).core.TotalSpace) :
-    D.pullbackLift f ((pullbackMap a f).totalSpaceMap p) =
-      a.totalSpaceMap (A.pullbackLift f p) :=
-  calc D.pullbackLift f ((pullbackMap a f).totalSpaceMap p)
-      = D.pullbackLift f ⟨p.proj, (pullbackMap a f).fiberMap p.proj p.2⟩ :=
-        congrArg (D.pullbackLift f) (CoordinateHom.totalSpaceMap_mk (pullbackMap a f) p.proj p.2)
-    _ = ⟨f p.proj, a.fiberMap (f p.proj) p.2⟩ := by
-        rw [pullbackLift_mk, fiberMap_pullbackMap]
-    _ = a.totalSpaceMap (A.pullbackLift f p) :=
-        (CoordinateHom.totalSpaceMap_mk a (f p.proj) p.2).symm
 
 /-- The reconstructed pullback core is the native Mathlib pullback bundle. The map
 covers the identity and is the identity linear equivalence in preferred fibre coordinates. -/
@@ -418,12 +367,46 @@ def pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (p : TotalSpace (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber)) :
     (A.pullbackHomeomorph f).symm p = ⟨p.proj, p.2⟩ := (rfl)
 
-/-- Under `pullbackHomeomorph`, Mathlib's `Pullback.lift f` agrees with `pullbackLift`. -/
-@[simp] theorem lift_pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+/-- Mathlib's `Pullback.lift f` composed with `pullbackHomeomorph` is `pullbackLift`. -/
+theorem lift_pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (p : (A.pullback f).core.TotalSpace) :
     Pullback.lift f (A.pullbackHomeomorph f p) = A.pullbackLift f p := by
   rcases p with ⟨x, v⟩
   exact Pullback.lift_mk (E := A.core.Fiber) (F := Fin A.rank → 𝕜) f x v
+
+/-- A map into the reconstructed pullback total space is continuous if and only if its base
+projection and its lift to `A.core.TotalSpace` are continuous. -/
+theorem continuous_core_pullback_iff (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    {q : Z → (A.pullback f).core.TotalSpace} :
+    Continuous q ↔
+      Continuous (fun z ↦ (q z).proj) ∧ Continuous (fun z ↦ A.pullbackLift f (q z)) := by
+  rw [← (A.pullbackHomeomorph f).comp_continuous_iff,
+    (inducing_pullbackTotalSpaceEmbedding (Fin A.rank → 𝕜) A.core.Fiber f).continuous_iff]
+  simp only [Function.comp_def, pullbackTotalSpaceEmbedding, pullbackHomeomorph_apply,
+    continuous_prodMk]
+  -- `pullbackTotalSpaceEmbedding` builds `⟨f (q z).proj, (q z).2⟩`, which is
+  -- `A.pullbackLift f (q z)` by definition of `pullbackLift`.
+  rfl
+
+/-- The canonical lift intertwines the total-space map of a pulled-back morphism with the original
+total-space map. -/
+theorem pullbackLift_totalSpaceMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
+    (f : C(X, Y)) (p : (A.pullback f).core.TotalSpace) :
+    D.pullbackLift f ((pullbackMap a f).totalSpaceMap p) =
+      a.totalSpaceMap (A.pullbackLift f p) := by
+  rcases p with ⟨x, v⟩
+  exact (congrArg (D.pullbackLift f) ((pullbackMap a f).totalSpaceMap_mk x v)).trans
+    ((congrArg (fun m ↦ (⟨f x, m v⟩ : D.core.TotalSpace)) (fiberMap_pullbackMap a f x)).trans
+      (a.totalSpaceMap_mk (f x) v).symm)
+
+/-- Mathlib's preferred trivialization of `((⇑f) *ᵖ A.core.Fiber)` at `x` is the pullback along `f`
+of the core chart `A.core.localTriv (f x)`. -/
+theorem pullback_trivializationAt_eq (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (x : X) :
+    trivializationAt (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber) x =
+      (A.core.localTriv (f x)).pullback f := by
+  refine (FiberBundle.pullback_trivializationAt' (F := Fin A.rank → 𝕜) (E := A.core.Fiber)
+    f x).trans ?_
+  rw [A.trivializationAt_core]
 
 /-- The comparison carries the chart at `i` to Mathlib's pullback of the chart at `f i`. -/
 theorem pullbackHomeomorph_localTriv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (i : X)
@@ -440,6 +423,95 @@ theorem pullbackHomeomorph_naturality {A D : FiniteRankBundleCore 𝕜 Y} (a : A
     (f : C(X, Y)) (p : (A.pullback f).core.TotalSpace) :
     Pullback.lift f (D.pullbackHomeomorph f ((pullbackMap a f).totalSpaceMap p)) =
       a.totalSpaceMap (Pullback.lift f (A.pullbackHomeomorph f p)) := by
-  rw [lift_pullbackHomeomorph, lift_pullbackHomeomorph, pullbackLift_totalSpaceMap_pullbackMap]
+  rw [lift_pullbackHomeomorph, lift_pullbackHomeomorph]
+  exact pullbackLift_totalSpaceMap a f p
+
+section WhitneySum
+
+/-- Pulling back the first projection of a Whitney sum gives the first projection of the pulled-back
+Whitney sum. -/
+@[simp] theorem pullbackMap_whitneyFst (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (whitneyFst A D) f = whitneyFst (A.pullback f) (D.pullback f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_whitneyFst]
+  -- `(whitneySum A D).pullback f` is definitionally `whitneySum (A.pullback f) (D.pullback f)`
+  -- (`pullback_whitneySum`), identifying the implicit source core of `fiberMap` on the right.
+  exact Eq.symm (fiberMap_whitneyFst _ _ x)
+
+/-- Pulling back the second projection of a Whitney sum gives the second projection of the
+pulled-back Whitney sum. -/
+@[simp] theorem pullbackMap_whitneySnd (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (whitneySnd A D) f = whitneySnd (A.pullback f) (D.pullback f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_whitneySnd]
+  -- `(whitneySum A D).pullback f` is definitionally `whitneySum (A.pullback f) (D.pullback f)`
+  -- (`pullback_whitneySum`), identifying the implicit source core of `fiberMap` on the right.
+  exact Eq.symm (fiberMap_whitneySnd _ _ x)
+
+/-- Pulling back the first inclusion into a Whitney sum gives the first inclusion into the
+pulled-back Whitney sum. -/
+@[simp] theorem pullbackMap_whitneyInl (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (whitneyInl A D) f = whitneyInl (A.pullback f) (D.pullback f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_whitneyInl]
+  -- `(whitneySum A D).pullback f` is definitionally `whitneySum (A.pullback f) (D.pullback f)`
+  -- (`pullback_whitneySum`), identifying the implicit target core of `fiberMap` on the right.
+  exact Eq.symm (fiberMap_whitneyInl _ _ x)
+
+/-- Pulling back the second inclusion into a Whitney sum gives the second inclusion into the
+pulled-back Whitney sum. -/
+@[simp] theorem pullbackMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (whitneyInr A D) f = whitneyInr (A.pullback f) (D.pullback f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_whitneyInr]
+  -- `(whitneySum A D).pullback f` is definitionally `whitneySum (A.pullback f) (D.pullback f)`
+  -- (`pullback_whitneySum`), identifying the implicit target core of `fiberMap` on the right.
+  exact Eq.symm (fiberMap_whitneyInr _ _ x)
+
+/-- Pulling back commutes with pairing into a Whitney sum. -/
+@[simp] theorem pullbackMap_whitneyLift {A D E : FiniteRankBundleCore 𝕜 Y}
+    (a : E ⟶ A) (b : E ⟶ D) (f : C(X, Y)) :
+    pullbackMap (whitneyLift a b) f = whitneyLift (pullbackMap a f) (pullbackMap b f) := by
+  simp only [whitneyLift_def, pullbackMap_add, pullbackMap_comp, pullbackMap_whitneyInl,
+    pullbackMap_whitneyInr]
+  -- `(whitneySum A D).pullback f` and `whitneySum (A.pullback f) (D.pullback f)` coincide
+  -- definitionally, as recorded by `pullback_whitneySum`.
+  rfl
+
+/-- Pulling back commutes with copairing out of a Whitney sum. -/
+@[simp] theorem pullbackMap_whitneyDesc {A D E : FiniteRankBundleCore 𝕜 Y}
+    (a : A ⟶ E) (b : D ⟶ E) (f : C(X, Y)) :
+    pullbackMap (whitneyDesc a b) f = whitneyDesc (pullbackMap a f) (pullbackMap b f) := by
+  simp only [whitneyDesc_def, pullbackMap_add, pullbackMap_comp, pullbackMap_whitneyFst,
+    pullbackMap_whitneySnd]
+  -- `(whitneySum A D).pullback f` and `whitneySum (A.pullback f) (D.pullback f)` coincide
+  -- definitionally, as recorded by `pullback_whitneySum`.
+  rfl
+
+/-- Pulling back commutes with direct sums of bundle morphisms. -/
+@[simp] theorem pullbackMap_whitneyMap {A A' D D' : FiniteRankBundleCore 𝕜 Y}
+    (a : A ⟶ A') (b : D ⟶ D') (f : C(X, Y)) :
+    pullbackMap (whitneyMap a b) f = whitneyMap (pullbackMap a f) (pullbackMap b f) := by
+  simp only [whitneyMap_def, pullbackMap_whitneyLift, pullbackMap_comp, pullbackMap_whitneyFst,
+    pullbackMap_whitneySnd]
+  -- `(whitneySum A D).pullback f` and `whitneySum (A.pullback f) (D.pullback f)` coincide
+  -- definitionally, as recorded by `pullback_whitneySum`.
+  rfl
+
+/-- On every fibre, `whitneySumFiberEquiv` on a pulled-back Whitney sum agrees with
+`whitneySumFiberEquiv` at the image base point. -/
+@[simp] theorem whitneySumFiberEquiv_pullback_apply (A D : FiniteRankBundleCore 𝕜 Y)
+    (f : C(X, Y)) (x : X) (v : (whitneySum (A.pullback f) (D.pullback f)).core.Fiber x) :
+    whitneySumFiberEquiv (A.pullback f) (D.pullback f) x v = whitneySumFiberEquiv A D (f x) v := by
+  rw [whitneySumFiberEquiv_apply]
+  -- Both fibres are `Fin (A.rank + D.rank) → 𝕜` (`rank_pullback`), matching
+  -- `whitneySumFiberEquiv_apply` on the right.
+  exact Eq.symm (whitneySumFiberEquiv_apply _ _ (f x) v)
+
+end WhitneySum
 
 end TauCeti.FiniteRankBundleCore
