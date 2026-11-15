@@ -60,8 +60,9 @@ trivialization and of `x - x_ref` are at most `K exp (-c |z|)`
 (`TauCeti.Vortex.exists_eventually_norm_fderiv_gaugeTransform_inv_windingPhase_le_mul_exp`,
 `TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`). When the connection
 is `C¹`, the bound for `x - x_ref` holds on the whole plane
-(`TauCeti.Vortex.exists_norm_fderiv_sub_referenceField_le_mul_exp`). Higher derivatives are not
-treated here.
+(`TauCeti.Vortex.exists_norm_fderiv_sub_referenceField_le_mul_exp`). The decay of the
+derivatives of every order is
+`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`.
 
 ## Main definitions
 
@@ -222,38 +223,20 @@ theorem gaugeTransform_inv_windingPhase_referenceField (f : ContDiffBump (0 : �
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
-/-- If the section of `x` is `|α|` times the winding phase at `z`, then its end
-trivialization has the real section `|α|` there. -/
-theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
-    (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    sectionValue (gaugeTransform (windingPhase m)⁻¹ x) z = ‖sectionValue x z‖ := by
-  have h1 : ((windingPhase m z)⁻¹ : Circle) * (windingPhase m z : ℂ) = 1 := by
-    rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-  rw [sectionValue_gaugeTransform, Pi.inv_apply]
-  nth_rw 1 [hphase]
-  rw [mul_left_comm, h1, mul_one]
-
 /-- If the section of `x` is `|α|` times the winding phase at `z`, then the first section
 coordinate of its end trivialization is `|α| / 2` there. -/
 theorem gaugeTransform_inv_windingPhase_apply_two {z : ℂ}
     (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
     gaugeTransform (windingPhase m)⁻¹ x z 2 = ‖sectionValue x z‖ / 2 := by
-  have hsec := sectionValue_gaugeTransform_inv_windingPhase hphase
-  rw [sectionValue_apply] at hsec
-  have h := congrArg Complex.re hsec
-  simp only [mul_re, add_re, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at h
-  linarith
+  simpa only [ofReal_re] using (sectionValue_eq_iff.1 (sectionValue_gaugeTransform_inv_eq hphase)).1
 
 /-- If the section of `x` is `|α|` times the winding phase at `z`, then the second section
 coordinate of its end trivialization vanishes there. -/
 theorem gaugeTransform_inv_windingPhase_apply_three {z : ℂ}
     (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
     gaugeTransform (windingPhase m)⁻¹ x z 3 = 0 := by
-  have hsec := sectionValue_gaugeTransform_inv_windingPhase hphase
-  rw [sectionValue_apply] at hsec
-  have h := congrArg Complex.im hsec
-  simp only [mul_im, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at h
-  linarith
+  simpa only [ofReal_im, zero_div] using
+    (sectionValue_eq_iff.1 (sectionValue_gaugeTransform_inv_eq hphase)).2
 
 /-- **The connection in the end trivialization.** If the section of `x` is `|α|` times the
 winding phase near `z ≠ 0`, the connection coefficient `b'(v)` of the end trivialization of `x`
@@ -275,12 +258,12 @@ private theorem abs_mul_norm_le_norm_covariantDerivative {z : ℂ} (hz : z ≠ 0
     have hconst : (fun w ↦ (sectionValue (gaugeTransform (windingPhase m)⁻¹ x) w).im) =ᶠ[𝓝 z]
         fun _ ↦ (0 : ℝ) := by
       filter_upwards [hphase] with w hw
-      rw [sectionValue_gaugeTransform_inv_windingPhase hw, ofReal_im]
+      rw [sectionValue_gaugeTransform_inv_eq hw, ofReal_im]
     have h := (imCLM.hasFDerivAt.comp z hsy.hasFDerivAt).fderiv
     have h' := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (hconst.fderiv_eq.symm.trans h)
     simpa using h'.symm
   have hcov := covariantDerivative_gaugeTransform hu hp hq v
-  rw [covariantDerivative_apply, sectionValue_gaugeTransform_inv_windingPhase hphase.self_of_nhds]
+  rw [covariantDerivative_apply, sectionValue_gaugeTransform_inv_eq hphase.self_of_nhds]
     at hcov
   have hval := congrArg Complex.im hcov
   simp only [add_im, him, mul_im, I_re, I_im, ofReal_re, ofReal_im, one_mul, mul_zero,
@@ -413,7 +396,7 @@ private theorem gaugeTransform_inv_windingPhase_apply_zero_one {z : ℂ} (hz : z
     field_simp
   -- The section of the end trivialization is `|α|` near `z`, so its derivative is real.
   have hσ : sectionValue y =ᶠ[𝓝 z] fun w ↦ ofRealCLM (N w) :=
-    hphase.mono fun w hw ↦ sectionValue_gaugeTransform_inv_windingPhase hw
+    hphase.mono fun w hw ↦ sectionValue_gaugeTransform_inv_eq hw
   have hcov (v : ℂ) : covariantDerivative y z v =
       (fderiv ℝ N z v : ℂ) + I * ((y z 0 * v.re + y z 1 * v.im : ℝ) : ℂ) * N z := by
     have hd : HasFDerivAt (fun w ↦ ofRealCLM (N w)) (ofRealCLM.comp (fderiv ℝ N z)) z :=
@@ -601,7 +584,7 @@ private theorem norm_fderiv_gaugeTransform_inv_windingPhase_le
   set y := gaugeTransform (windingPhase m)⁻¹ x
   -- Near `z` the section of `y` is the real function `|α|`, and `‖D |α|‖ ≤ ‖D |α|²‖`.
   have hσ : sectionValue y =ᶠ[𝓝 z] fun w ↦ ofRealCLM ‖sectionValue x w‖ :=
-    hU.mono fun w hw ↦ sectionValue_gaugeTransform_inv_windingPhase (hphase w hw)
+    hU.mono fun w hw ↦ sectionValue_gaugeTransform_inv_eq (hphase w hw)
   have hσd : ‖fderiv ℝ (sectionValue y) z‖ ≤ ‖fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z‖ := by
     have hd : HasFDerivAt (fun w ↦ ofRealCLM ‖sectionValue x w‖)
         (ofRealCLM.comp (fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z)) z :=
