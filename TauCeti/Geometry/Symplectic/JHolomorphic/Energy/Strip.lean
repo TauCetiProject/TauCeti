@@ -87,7 +87,7 @@ theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero
             filter_upwards [Icc_mem_nhds hs.1 hs.2] with r hr
             exact L.sub_mem (hline r hr) (hline s (Ioo_subset_Icc_self hs))
           simpa using hd.hasFDerivAt.apply_mem_of_eventually_sub_mem
-            L.closed_of_finiteDimensional hmem (1 : ℝ)
+            L.isClosed_of_finiteDimensional hmem (1 : ℝ)
         simpa only [hB] using
           isIsotropic_iff.mp hL _ (hline s (Ioo_subset_Icc_self hs)) _ htangent
       _ = 0 := intervalIntegral.integral_zero

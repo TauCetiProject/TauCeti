@@ -257,7 +257,7 @@ theorem baseChange_chartGraphVector_symplecticChartBasis (Φ : Matrix (Fin r) (F
   simp only [hsum, Fintype.sum_sum_type, symplecticChartBasis_inl,
     symplecticChartBasis_inr_symm_inl, symplecticChartBasis_inr_symm_inr, hω]
   simp [Matrix.J, Matrix.mul_apply, Fintype.sum_sum_type, symplecticChartDualBlock,
-    symplecticChartFree, Matrix.one_apply]
+    symplecticChartFree, Matrix.one_apply, Function.swap]
   ring
 
 /-- **Isotropy in the standard chart.** A point of the standard chart is isotropic exactly when the

@@ -109,10 +109,10 @@ abelianized Galois group of the layer `V ◁ G_K`, and let `ψ : G_K → ℚ/ℤ
 on `G_K`. Then for `a ∈ Kˣ` the inflation to `Br K` of the class `a₀ ∪ δχ` of the character formula
 is the Brauer class of the carry cocycle of `ψ` and `a`. -/
 theorem brInfl_artinCharacterCup
-    (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+    (χ : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
     (ψ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
     (hχψ : ∀ g : AbsoluteGaloisGroup K, ψ (.ofMul g) =
-      χ (.ofMul (Abelianization.of
+      χ (.ofMul (Group.Abelianization.of
         ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
     (a : Kˣ) :
     brInfl V ((ofOpenNormal V).artinCharacterCup (unitsFormation K)
@@ -173,10 +173,10 @@ theorem apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
     AddMonoidHom.toMultiplicativeRight χ
   have hVχ : V.toSubgroup ≤ χm.ker := fun g hg ↦ by
     simpa [χm] using hV hg
-  let χbar : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ) :=
-    MonoidHom.toAdditiveLeft (Abelianization.lift
+  let χbar : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ) :=
+    MonoidHom.toAdditiveLeft (Group.Abelianization.lift
       ((QuotientGroup.lift V.toSubgroup χm hVχ).comp (galOfOpenNormalEquiv V).toMonoidHom))
-  have hχbar (g : AbsoluteGaloisGroup K) : χ (.ofMul g) = χbar (.ofMul (Abelianization.of
+  have hχbar (g : AbsoluteGaloisGroup K) : χ (.ofMul g) = χbar (.ofMul (Group.Abelianization.of
       ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))) := by
     simp [χbar, χm]
   -- The character formula of the layer, with the Artin symbol of the layer read off `σ`.

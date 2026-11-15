@@ -160,9 +160,12 @@ theorem closure_canonicalRootSubgroup_union_range_canonicalTorus :
           Set.range (d.canonicalRootSubgroup
             ((d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid).reflectionPerm
               (d.dynkinType.simpleIndex d.dynkinType_valid i)
-              (d.dynkinType.simpleIndex d.dynkinType_valid i)))) :=
-  (d.dynkinType.scChevalleyDatum d.dynkinType_valid).closure_rootSubgroup_union_range_torusPoints
-    d.Closure
+              (d.dynkinType.simpleIndex d.dynkinType_valid i)))) := by
+  dsimp only [CanonicalAmbientGroup, chevalleyGroup, canonicalRootSubgroup, canonicalTorus]
+  -- Unfold the datum dimension when matching the canonical matrix group.
+  erw [← ChevalleyDatum.rootTorusSubgroup_def]
+  exact ChevalleyDatum.rootTorusSubgroup_eq_closure_rootSubgroup
+    (d.dynkinType.scChevalleyDatum d.dynkinType_valid) d.Closure
 
 end
 

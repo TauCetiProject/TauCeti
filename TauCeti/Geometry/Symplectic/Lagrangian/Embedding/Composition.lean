@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.Immersion.Differential
 
 Let `f : L₁ → M₁ × M₂` and `g : L₂ → M₂ × M₃` be Lagrangian maps for the twisted products, and let
 `a : C → L₁`, `b : C → L₂` present their fibre product as in
-`TauCeti.Geometry.Symplectic.Lagrangian.Composition`. When the composite map
+`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Basic`. When the composite map
 `h c = ((f (a c)).1, (g (b c)).2)` is a smooth embedding, it is a Lagrangian correspondence
 `M₁ ⇝ M₃`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isLagrangianEmbedding_relComp`).
@@ -23,7 +23,12 @@ When `x ↦ (f x).2` and `y ↦ (g y).1` are transverse, the fibre product itsel
 (`TauCeti.transverseFiberProductChartedSpace`), and a transverse composite without excess that is
 a topological embedding is a Lagrangian correspondence `M₁ ⇝ M₃`
 (`IsLagrangianMap.isLagrangianEmbedding_relComp_transverseFiberProduct`, building on
-`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Transverse`).
+`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Transverse`). For Lagrangian immersions
+transversality already removes the excess, so the transverse composite is a Lagrangian
+correspondence exactly when it is a topological embedding
+(`IsLagrangianImmersion.isLagrangianEmbedding_relComp_transverseFiberProduct_iff`). The
+composite need not be injective, even for embedded `f` and `g`, so the embedding hypothesis is
+kept separate.
 
 ## References
 
@@ -121,6 +126,27 @@ theorem IsLagrangianMap.isLagrangianEmbedding_relComp_transverseFiberProduct
         (injective_mfderiv_relComp_transverseFiberProduct_iff hf hg htrans p).2 (hexc p),
     hemb, hfL.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hf hg htrans
       hgL⟩
+
+omit hf hg in
+/-- **Transverse composition of Lagrangian correspondences, embedded case.** Under the hypotheses
+of `IsLagrangianImmersion.relComp_transverseFiberProduct`, the composite
+`(x, y) ↦ ((f x).1, (g y).2)` on the transverse fibre-product manifold is a Lagrangian
+correspondence `M₁ ⇝ M₃` exactly when it is a topological embedding. -/
+theorem IsLagrangianImmersion.isLagrangianEmbedding_relComp_transverseFiberProduct_iff
+    [I₁.Boundaryless] [I₃.Boundaryless]
+    (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianImmersion K₁ f)
+    (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianImmersion K₂ g) :
+    letI := transverseFiberProductChartedSpace (by simp)
+      hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
+    (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding KF
+        (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) ↔
+      Topology.IsEmbedding
+        (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+  let := transverseFiberProductChartedSpace (by simp)
+    hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
+  have h := IsLagrangianImmersion.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂)
+    (hσ₃ := hσ₃) htrans hfL hgL
+  exact ⟨fun he ↦ he.isEmbedding, fun he ↦ ⟨h.isImmersion, he, h.isLagrangianMap⟩⟩
 
 end Transverse
 

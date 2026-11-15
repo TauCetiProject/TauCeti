@@ -115,8 +115,8 @@ lemma injective_mapπ₀_unit : Function.Injective (mapπ₀ (sSetTopAdj.unit.ap
   -- is constant along paths since its target is discrete.
   let r : π₀ (TopCat.toSSet.obj |X|) → π₀ X := fun z ↦
     ZerothHomotopy.lift (toTopToπ₀ X) (fun a b p ↦ by
-      have h := PreconnectedSpace.constant inferInstance
-        ((ConcreteCategory.hom (toTopToπ₀ X)).continuous.comp p.continuous) (x := 0) (y := 1)
+      have h := ((ConcreteCategory.hom (toTopToπ₀ X)).continuous.comp
+        p.continuous).isConst_of_preconnectedSpace 0 1
       simp only [Function.comp_apply, Path.source, Path.target] at h
       exact h)
       (TopCat.zerothHomotopyEquiv.symm z)

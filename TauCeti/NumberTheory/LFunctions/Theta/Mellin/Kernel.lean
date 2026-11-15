@@ -372,7 +372,7 @@ theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ 
     congr 1
     ext w
     simp only [Pi.mul_apply, surfaceScale_apply, hc, traceShift_def, surfacePart_apply _ hN.le,
-      Real.mul_rpow_of_pos_left hN]
+      Real.mul_rpow_of_nonneg_left hN.le]
     field_simp
   have hpre : surfaceMul c ⁻¹' (Subtype.val ⁻¹' ((traceShift K * ·) '' D)) =
       Subtype.val ⁻¹' D := by

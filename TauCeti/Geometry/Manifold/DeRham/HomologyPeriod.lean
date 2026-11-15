@@ -88,7 +88,6 @@ def homologyPeriodHom : ((singularChains ℤ).obj (.of M)).homology 1 →+ F :=
 
 /-- The period on the class of a cycle, given in the explicit description `H₁` of the first
 homology group. -/
-@[simp]
 theorem homologyPeriodHom_H₁AddEquivHomology_mk (c : cycles₁ (.of M)) :
     homologyPeriodHom φ (H₁AddEquivHomology (.of M) (H₁.mk c)) =
       chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
@@ -107,7 +106,6 @@ theorem homologyPeriodHom_homologyπ (z : ((singularChains ℤ).obj (.of M)).cyc
   rw [← H₁AddEquivHomology_mk ⟨_, hz⟩ z rfl, homologyPeriodHom_H₁AddEquivHomology_mk]
 
 /-- The period on the homology class of a loop is the integral along the loop. -/
-@[simp]
 theorem homologyPeriodHom_loopClass {x : M} (γ : Path x x) :
     homologyPeriodHom φ (H₁AddEquivHomology (.of M) (loopClass (X := .of M) γ)) =
       pathClassIntegral φ (.mk γ) := by
@@ -132,7 +130,7 @@ transported along the Hurewicz isomorphism from the abelianization of `π₁(M, 
 theorem homologyPeriodHom_hurewiczHomologyAddEquiv [PathConnectedSpace M] {x : M}
     (g : FundamentalGroup M x) :
     homologyPeriodHom φ (hurewiczHomologyAddEquiv (X := .of M) x
-        (Additive.ofMul (Abelianization.of g))) =
+        (Additive.ofMul (Group.Abelianization.of g))) =
       periodHom φ x (Additive.ofMul g) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of, homologyPeriodHom_hurewicz₁]
 
@@ -289,8 +287,7 @@ theorem exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero {r : ℕ∞} (hr : 1 �
   -- The primitive is the integral from a base point chosen in each path component.
   obtain ⟨b, hb, hbj⟩ := exists_pathComponent_representative (X := M)
   set f : M → F := fun y ↦ pathClassIntegral φ (.mk (hb y).somePath)
-  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
-    (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
+  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const (f := f) fun x ↦ ?_
   -- Near `x`, `f` differs by a constant from a local primitive `g` of `φ`.
   obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
   refine ⟨g, f x - g x, hg.contMDiffAt, ?_, hgU.mextDeriv_eq x hxU⟩

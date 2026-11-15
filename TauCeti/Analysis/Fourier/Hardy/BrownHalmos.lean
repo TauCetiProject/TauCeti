@@ -217,13 +217,13 @@ private theorem exists_toeplitz_eq_of_inner_hardyBasis_succ {T : HardySpace →L
         ContinuousMap.coeFn_toLp (E := ℂ) (p := ∞) (𝕜 := ℂ) AddCircle.haarAddCircle q]
         with x hx hqx
       rw [hx, hqx, Pi.mul_apply, smul_eq_mul, mul_comm]
-    rw [← eLpNorm_congr_ae hae, ← Lp.enorm_def,
+    rw [← eLpNorm_congr_ae hae, ← Lp.eNorm_def,
       ← eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (E := ℂ) (p := 2) (𝕜 := ℂ)
-        AddCircle.haarAddCircle q), ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
+        AddCircle.haarAddCircle q), ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
       ← ENNReal.ofReal_mul (norm_nonneg _)]
     exact ENNReal.ofReal_le_ofReal (norm_multiplicationOperator_toLp_apply_le hb hq)
   have hb_mem : MemLp (⇑b) ∞ AddCircle.haarAddCircle :=
-    memLp_iff.2 (hbT.trans_lt enorm_lt_top)
+    memLp_iff.2 (hbT.trans_lt eNorm_lt_top)
   refine ⟨hb_mem.toLp b, HilbertBasis.ext_inner_apply hardyBasis hardyBasis fun i j ↦ ?_⟩
   rw [inner_hardyBasis_toeplitz_hardyBasis, fourierCoeff_congr_ae hb_mem.coeFn_toLp, hb]
 

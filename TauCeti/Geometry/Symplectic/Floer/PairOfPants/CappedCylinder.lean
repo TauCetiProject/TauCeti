@@ -351,16 +351,16 @@ theorem abs_setIntegral_hamiltonianCurvature_cappedCylinderComponent_le (ω : Sm
         (cappedCylinderComponent Hb L Complex.I) z (u z)| ≤ Bb one + ∑ r, Bb r := by
   have hB0 (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 (u 0))
   have hsum : 0 ≤ ∑ r, Bb r := Finset.sum_nonneg fun r _ ↦ hB0 r
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.enorm_eq_ofReal_abs,
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.eNorm_eq_ofReal_abs,
     ENNReal.ofReal_add (hB0 one) hsum, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hB0 r]
   have hcurv := ω.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le hHb hHbs hL hBb
     0 u
   -- The rectangle lies in `ℝ × [0, 1]`, which is `ℝ × [0, 1)` up to a null set.
   have hsets : ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] univ ×ˢ Icc 0 1 := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq EventuallyEq.rfl Ico_ae_eq_Icc
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
   rw [zero_add, setLIntegral_congr hsets] at hcurv
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     ((lintegral_mono_set (prod_mono (subset_univ _) le_rfl)).trans hcurv)
 
 variable [FiniteDimensional ℝ E]

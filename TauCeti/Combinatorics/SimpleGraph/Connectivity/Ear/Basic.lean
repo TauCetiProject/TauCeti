@@ -47,6 +47,8 @@ and Whitney's open ear characterization are proved in
 * `SimpleGraph.Ear.lt_adjoin`: adjoining an ear strictly enlarges the subgraph.
 * `SimpleGraph.Ear.isEdgeConnected_two_adjoin`: adjoining an ear to a `2`-edge-connected subgraph
   preserves `2`-edge-connectivity.
+* `SimpleGraph.Subgraph.IsSpanning.exists_open_ear`: a proper spanning subgraph admits an open
+  ear, namely a single missing edge.
 * `SimpleGraph.EarDecomposition.ext`: an ear decomposition is determined by its length, initial
   subgraph and witness, and displayed ear walks.
 * `SimpleGraph.EarDecomposition.subgraphAfter_strictMono`: prefix subgraphs grow strictly.
@@ -363,6 +365,30 @@ theorem isEdgeConnected_two_adjoin (hH : H.coe.IsEdgeConnected 2) (e : G.Ear H) 
 
 end Ear
 
+/-- A proper spanning subgraph admits an open ear consisting of a single missing edge. -/
+theorem Subgraph.IsSpanning.exists_open_ear (hspan : H.IsSpanning) (hH : H ≠ ⊤) :
+    ∃ e : G.Ear H, e.kind = .«open» := by
+  classical
+  -- `H` is spanning and `H ≠ ⊤`, so some edge of `G` is missing from `H`.
+  have hex : ∃ u v : V, G.Adj u v ∧ ¬H.Adj u v := by
+    by_contra! hall
+    apply hH
+    ext x y
+    · simp [hspan x]
+    · exact ⟨fun h ↦ by simp [H.adj_sub h], fun h ↦ hall x y (by simpa using h)⟩
+  obtain ⟨u, v, hadj, hnotH⟩ := hex
+  refine ⟨Ear.«open» hadj.toWalk (Walk.IsPath.cons .nil (by simp [hadj.ne]))
+    (hspan u) (hspan v) hadj.ne ?_ ?_, Ear.kind_open ..⟩
+  · intro w hw hwu hwv
+    simp only [Adj.toWalk, Walk.support_cons, Walk.support_nil, List.mem_cons,
+      List.not_mem_nil, or_false] at hw
+    exact (hw.elim hwu hwv).elim
+  · intro e he
+    simp only [Adj.toWalk, Walk.edges_cons, Walk.edges_nil, List.mem_cons,
+      List.not_mem_nil, or_false] at he
+    subst he
+    rwa [Subgraph.mem_edgeSet]
+
 /-! ### Initial subgraphs -/
 
 /-- Witness that an initial subgraph `H : G.Subgraph` of an ear decomposition is either a single
@@ -384,6 +410,14 @@ theorem isCycle_vertex (v : V) : (EarStart.vertex (G := G) v).IsCycle ↔ False 
 @[simp]
 theorem isCycle_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
     (EarStart.cycle c hc).IsCycle ↔ True := (Iff.rfl)
+
+/-- Transporting an initial stage along an equality of its subgraphs preserves whether it is a
+cycle. -/
+@[simp]
+theorem isCycle_eqRec {K L : G.Subgraph} (h : K = L) (s : G.EarStart K) :
+    (h ▸ s).IsCycle ↔ s.IsCycle := by
+  subst h
+  rfl
 
 /-- Every valid initial subgraph is connected. -/
 theorem connected : ∀ _ : G.EarStart H, H.Connected
@@ -675,10 +709,8 @@ theorem kindAt_snoc_last (d : G.EarDecomposition H) (e : G.Ear H) :
 theorem isOpen_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
     (d.snoc e).IsOpen ↔ d.IsOpen ∧ e.kind = .«open» := by
   have hstart : (d.snoc e).start.IsCycle ↔ d.start.IsCycle := by
-    dsimp only [snoc]
-    have hrec : ∀ {K L : G.Subgraph} (h : K = L) (s : G.EarStart L),
-        (Eq.mpr (congrArg G.EarStart h) s).IsCycle ↔ s.IsCycle := by rintro _ _ rfl _; rfl
-    exact hrec (d.initial_snoc e) d.start
+    rw [start_snoc]
+    exact EarStart.isCycle_eqRec _ _
   rw [isOpen_iff, isOpen_iff]
   refine ⟨fun ⟨hs, hk⟩ ↦ ⟨⟨hstart.mp hs, fun i ↦ ?_⟩, ?_⟩,
     fun ⟨⟨hs, hk⟩, he⟩ ↦ ⟨hstart.mpr hs, ?_⟩⟩

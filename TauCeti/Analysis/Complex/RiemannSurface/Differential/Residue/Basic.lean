@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
 public import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 
 /-!
@@ -21,11 +22,14 @@ maximal atlas (`TauCeti.RiemannSurface.OneForm.residue_eq_of_mem_maximalAtlas`).
 of a function, the residue is attached to the `1`-form `f(z) dz` and not to the function `f`.
 
 The residue is additive on meromorphic `1`-forms, homogeneous, and vanishes where `ω` is
-holomorphic. The differential of a meromorphic function has residue `0`
-(`TauCeti.RiemannSurface.OneForm.residue_mvfderiv`), and the logarithmic differential `df / f` has
-residue the order of `f` (`TauCeti.RiemannSurface.OneForm.residue_inv_smul_mvfderiv`). These are
-the local facts behind the residue pairing of Serre duality and the vanishing of the degree of a
-principal divisor.
+holomorphic, in particular off the support of the divisor of `ω` on a compact Riemann surface
+(`TauCeti.RiemannSurface.OneForm.residue_eq_zero_of_notMem_support`). The differential of a
+meromorphic function has residue `0` (`TauCeti.RiemannSurface.OneForm.residue_mvfderiv`), and the
+logarithmic differential `df / f` has residue the order of `f`
+(`TauCeti.RiemannSurface.OneForm.residue_inv_smul_mvfderiv`). These are the local facts behind the
+residue pairing of Serre duality and the vanishing of the degree of a principal divisor. On a
+compact Riemann surface a `1`-form meromorphic everywhere has nonzero residue at only finitely many
+points (`TauCeti.RiemannSurface.OneForm.finite_support_residue`).
 
 ## References
 
@@ -118,6 +122,31 @@ theorem residue_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (
   rw [residue_def, Contour.residue_congr_nhdsNE ((coeff_eventuallyEq ω he
     (chart_mem_maximalAtlas x) hx hcx).filter_mono nhdsWithin_le_nhds), ← hψx]
   exact Contour.residue_comp_mul_deriv hψ hψ'
+
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
+finitely many points: a nonzero residue forces a pole. -/
+theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
+    (support ω.residue).Finite :=
+  (finite_support_untop₀_order hω).subset fun _ hy h0 ↦
+    hy (residue_eq_zero_of_order_nonneg (WithTop.untop₀_nonneg.1 h0.ge))
+
+section Compact
+
+variable [CompactSpace X]
+
+/-- Off the support of its divisor, a `1`-form meromorphic everywhere has residue `0`. -/
+theorem residue_eq_zero_of_notMem_support (hω : ∀ x, ω.MeromorphicAt x)
+    (hx : x ∉ ω.divisor.support) : ω.residue x = 0 :=
+  residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hω hx)
+
+/-- The sum of the residues over the support of the divisor equals the sum over any finite set
+containing that support. -/
+theorem sum_residue_divisor_support_eq_of_subset (hω : ∀ x, ω.MeromorphicAt x) {s : Finset X}
+    (hs : ω.divisor.support ⊆ s) :
+    ∑ x ∈ ω.divisor.support, ω.residue x = ∑ x ∈ s, ω.residue x :=
+  Finset.sum_subset hs fun _ _ hx ↦ residue_eq_zero_of_notMem_support hω hx
+
+end Compact
 
 variable {f : X → ℂ}
 
