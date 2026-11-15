@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # The weighted interior estimate for parabolic operators with Hölder coefficients

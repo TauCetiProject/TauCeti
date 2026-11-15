@@ -397,6 +397,49 @@ theorem norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2Holder
   (le_add_of_nonneg_left (norm_nonneg _)).trans
     (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
 
+/-- The powers of `ε` and `r = ε²` occurring in `norm_valueHolderL_le_add_mul`, written in terms
+of `r^(-α/2) = ε^(-α)`. -/
+private theorem rpow_eq_of_sq_eq {ε r : ℝ} (hε : 0 < ε) (hεr : ε ^ 2 = r) (α : ℝ) :
+    ε ^ (-α) = r ^ (-α / 2) ∧ ε ^ (1 - α) = ε * r ^ (-α / 2) ∧
+      r ^ (1 - α / 2) = r * r ^ (-α / 2) ∧ ε ^ α * r ^ (-α / 2) = 1 := by
+  have hr : 0 < r := hεr ▸ by positivity
+  have hεq : ε ^ (-α) = r ^ (-α / 2) := by
+    rw [← hεr, ← Real.rpow_natCast, ← Real.rpow_mul hε.le]
+    congr 1
+    push_cast
+    ring
+  refine ⟨hεq, ?_, ?_, ?_⟩
+  · rw [sub_eq_add_neg, Real.rpow_add hε, Real.rpow_one, hεq]
+  · rw [sub_eq_add_neg, Real.rpow_add hr, Real.rpow_one, neg_div]
+  · rw [← hεq, ← Real.rpow_add hε, add_neg_cancel, Real.rpow_zero]
+
+/-- The arithmetic of `norm_valueHolderL_le_add_mul`: the interpolation bound `h` for the value
+seminorm `Hv` is combined with the supremum bounds `hD`, `hS` and `hT` on the gradient, the spatial
+Hessian and the time derivative at the scale `ε`, and with the bound `hN` on the top-order
+seminorms. Here `r = ε²`, `q = ε^(-α)` and `e = ε^α`. -/
+private theorem norm_valueHolderL_le_add_mul_arith {V Hv D S T H₂ Hₜ N ε r q e : ℝ}
+    (h : Hv ≤ D * (ε * q) + 2 * V * q + (T * (r * q) + 2 * V * q))
+    (hD : D ≤ 2 * V / ε + S * ε) (hS : S ≤ 32 * V / r + 2 * H₂ * e)
+    (hT : T ≤ 2 * V / r + Hₜ * e) (hN : H₂ + Hₜ ≤ N) (hεr : ε ^ 2 = r) (heq : e * q = 1)
+    (hε : 0 < ε) (hq : 0 ≤ q) (hHₜ : 0 ≤ Hₜ) :
+    V + Hv ≤ (1 + 40 * q) * V + 2 * r * N := by
+  have hr : 0 < r := hεr ▸ by positivity
+  have e₁ : ε * q * D ≤ 2 * q * V + r * q * S := by
+    calc
+      _ ≤ ε * q * (2 * V / ε + S * ε) := mul_le_mul_of_nonneg_left hD (by positivity)
+      _ = _ := by rw [← hεr]; field_simp
+  have e₂ : r * q * S ≤ 32 * q * V + 2 * r * H₂ := by
+    calc
+      _ ≤ r * q * (32 * V / r + 2 * H₂ * e) := mul_le_mul_of_nonneg_left hS (by positivity)
+      _ = 32 * q * V + 2 * r * H₂ * (e * q) := by field_simp
+      _ = _ := by rw [heq, mul_one]
+  have e₃ : r * q * T ≤ 2 * q * V + r * Hₜ := by
+    calc
+      _ ≤ r * q * (2 * V / r + Hₜ * e) := mul_le_mul_of_nonneg_left hT (by positivity)
+      _ = 2 * q * V + r * Hₜ * (e * q) := by field_simp
+      _ = _ := by rw [heq, mul_one]
+  linarith [mul_le_mul_of_nonneg_left hN (by positivity : (0 : ℝ) ≤ 2 * r), mul_nonneg hr.le hHₜ]
+
 /-- **Interpolation for the value at a prescribed time step.** For `α ≤ 1` and every time step
 `r > 0` with `2 r ≤ b - a`,
 
@@ -414,21 +457,7 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
   set ε := √r
   have hε : 0 < ε := Real.sqrt_pos.2 hr
   have hεr : ε ^ 2 = r := Real.sq_sqrt hr.le
-  set q := r ^ (-(α : ℝ) / 2) with hqdef
-  -- The powers of `ε` that occur, in terms of `q = r^(-α/2) = ε^(-α)`.
-  have hεq : ε ^ (-(α : ℝ)) = q := by
-    rw [hqdef, ← hεr, ← Real.rpow_natCast, ← Real.rpow_mul hε.le]
-    congr 1
-    push_cast
-    ring
-  have hq₁ : ε ^ (1 - (α : ℝ)) = ε * q := by
-    rw [sub_eq_add_neg, Real.rpow_add hε, Real.rpow_one, hεq]
-  have hq₂ : r ^ (1 - (α : ℝ) / 2) = r * q := by
-    rw [sub_eq_add_neg, Real.rpow_add hr, Real.rpow_one, hqdef, neg_div]
-  have hq₃ : ε ^ (α : ℝ) * q = 1 := by
-    rw [← hεq, ← Real.rpow_add hε, add_neg_cancel, Real.rpow_zero]
-  have hq₄ : r ^ (-((α : ℝ) / 2)) = q := by
-    rw [hqdef, neg_div]
+  obtain ⟨hεq, hq₁, hq₂, hq₃⟩ := rpow_eq_of_sq_eq hε hεr α
   -- Interpolate between the Lipschitz bounds and the oscillation bound, at the spatial scale `ε`
   -- and the temporal scale `r = ε²`.
   obtain ⟨ε', hε'⟩ : ∃ ε' : ℝ≥0, (ε' : ℝ) = ε := ⟨⟨ε, hε.le⟩, rfl⟩
@@ -441,41 +470,18 @@ theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpac
   rw [← (memHolder_valueL hα f).coe_nnHolderNorm_eq_eHolderNorm, ENNReal.coe_le_coe,
     ← NNReal.coe_le_coe] at h
   push_cast at h
-  rw [hε', hr'] at h
-  rw [hq₁, hεq, hq₂, hq₄] at h
+  rw [hε', hr', hq₁, hεq, hq₂, ← neg_div] at h
   -- The three supremum-norm interpolation inequalities, at the scale `ε`.
   have hD := f.norm_spatialFDerivL_le hε
   have hH := f.norm_toBoundedContinuousFunction_spatialSecondFDerivL_le (α := α) hε
   have hT := f.norm_toBoundedContinuousFunction_timeDerivL_le hε (by rwa [hεr])
   rw [hεr] at hH hT
   rw [HolderSpace.norm_def, toBoundedContinuousFunction_valueHolderL]
-  set V := ‖valueL f‖
-  set H₂ := (nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) : ℝ)
-  set Hₜ := (nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _) : ℝ)
-  have e₁ : ε * q * ‖spatialFDerivL f‖ ≤
-      2 * q * V + r * q * ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ := by
-    calc
-      _ ≤ ε * q * (2 * V / ε + ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ * ε) :=
-        mul_le_mul_of_nonneg_left hD (by positivity)
-      _ = _ := by rw [← hεr]; field_simp
-  have e₂ : r * q * ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ ≤
-      32 * q * V + 2 * r * H₂ := by
-    calc
-      _ ≤ r * q * (32 * V / r + 2 * H₂ * ε ^ (α : ℝ)) :=
-        mul_le_mul_of_nonneg_left hH (by positivity)
-      _ = 32 * q * V + 2 * r * H₂ * (ε ^ (α : ℝ) * q) := by field_simp
-      _ = _ := by rw [hq₃, mul_one]
-  have e₃ : r * q * ‖(timeDerivL f).toBoundedContinuousFunction‖ ≤ 2 * q * V + r * Hₜ := by
-    calc
-      _ ≤ r * q * (2 * V / r + Hₜ * ε ^ (α : ℝ)) := mul_le_mul_of_nonneg_left hT (by positivity)
-      _ = 2 * q * V + r * Hₜ * (ε ^ (α : ℝ) * q) := by field_simp
-      _ = _ := by rw [hq₃, mul_one]
   -- The top-order seminorms are bounded by the order-two norm.
-  have hN : H₂ + Hₜ ≤ ‖f‖ :=
-    (add_le_add (spatialSecondFDerivL f).nnHolderNorm_le (timeDerivL f).nnHolderNorm_le).trans
-      f.norm_spatialSecondFDerivL_add_norm_timeDerivL_le
-  linarith [mul_le_mul_of_nonneg_left hN (by positivity : (0 : ℝ) ≤ 2 * r),
-    mul_nonneg hr.le (NNReal.coe_nonneg _ : (0 : ℝ) ≤ Hₜ)]
+  exact norm_valueHolderL_le_add_mul_arith h hD hH hT
+    ((add_le_add (spatialSecondFDerivL f).nnHolderNorm_le (timeDerivL f).nnHolderNorm_le).trans
+      f.norm_spatialSecondFDerivL_add_norm_timeDerivL_le) hεr hq₃ hε (by positivity)
+    (NNReal.coe_nonneg _)
 
 /-- **Absorption with a prescribed small constant.** For `α < 1` and every `η > 0` there is a
 constant `C`, depending only on `α` and `η`, such that on every slab
