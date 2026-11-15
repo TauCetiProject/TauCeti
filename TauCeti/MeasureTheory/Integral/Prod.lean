@@ -45,6 +45,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
+* `TauCeti.integral_setIntegral_Iio_eq_setIntegral` writes an iterated integral over `s < t` as the
+  integral over the region below the diagonal, as for retarded (Duhamel) pairings in time.
 -/
 
 public section
@@ -275,5 +277,20 @@ theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β 
     exact h.2
   exact ⟨hG_int, (integral_prod G hG_int).trans_le
     (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
+
+/-- **Fubini's theorem below the diagonal.** On a linearly ordered space, the iterated integral
+`∫ (∫_{s < t} f(s, t) dμ(s)) dρ(t)` is the integral of `f` over the region `{(s, t) | s < t}` for
+the product measure. -/
+theorem integral_setIntegral_Iio_eq_setIntegral [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [SecondCountableTopology α] [OpensMeasurableSpace α] {ρ : Measure α}
+    [SFinite μ] [SFinite ρ] {f : α × α → E} (hf : Integrable f (μ.prod ρ)) :
+    ∫ t, ∫ s in Iio t, f (s, t) ∂μ ∂ρ = ∫ z in {z : α × α | z.1 < z.2}, f z ∂μ.prod ρ := by
+  have hS : MeasurableSet {z : α × α | z.1 < z.2} := measurableSet_lt measurable_fst measurable_snd
+  rw [← integral_indicator hS, integral_prod_symm _ (hf.indicator hS)]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [← integral_indicator measurableSet_Iio]
+  exact integral_congr_ae (.of_forall fun s ↦ by
+    simp only [indicator_apply, mem_ofPred_eq, mem_Iio])
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
@@ -36,7 +37,9 @@ product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
+`integral_inner` with the integrand in the left slot. For integrable `f` and `g` the pairing
+`⟪f x, g y⟫` is integrable on the product (`MeasureTheory.Integrable.inner_prod`) with integral
+`⟪∫ f, ∫ g⟫` (`integral_prod_inner`). The integral of the Hilbert space
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
 (`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
@@ -297,6 +300,25 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+/-- The pairing `⟪f x, g y⟫` of two integrable functions is integrable for the product measure,
+the counterpart of `MeasureTheory.Integrable.mul_prod` for the inner product. -/
+theorem MeasureTheory.Integrable.inner_prod {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    {f : α → E} {g : β → E} (hf : Integrable f μ) (hg : Integrable g ν) :
+    Integrable (fun z : α × β ↦ ⟪f z.1, g z.2⟫_𝕜) (μ.prod ν) :=
+  hf.op_fst_snd (op := fun x y ↦ ⟪x, y⟫_𝕜) continuous_inner
+    ⟨1, fun x y ↦ by simpa using norm_inner_le_norm x y⟩ hg
+
+/-- **Fubini's theorem for the pairing of separated variables**:
+`∫∫ ⟪f x, g y⟫ dμ(x) dν(y) = ⟪∫ f dμ, ∫ g dν⟫`, the counterpart of
+`MeasureTheory.integral_prod_mul` for the inner product. -/
+theorem integral_prod_inner {β : Type*} [MeasurableSpace β] {ν : Measure β} [SFinite μ]
+    [SFinite ν] {f : α → E} {g : β → E} (hf : Integrable f μ) (hg : Integrable g ν) :
+    ∫ z, ⟪f z.1, g z.2⟫_𝕜 ∂μ.prod ν = ⟪∫ x, f x ∂μ, ∫ y, g y ∂ν⟫_𝕜 := by
+  rw [integral_prod _ (hf.inner_prod hg)]
+  simp_rw [integral_inner hg]
+  exact integral_inner_left hf _
 
 /-- The Hilbert space adjoint commutes with the integral of an operator-valued function:
 `∫ (f x)† = (∫ f)†`, the counterpart of Mathlib's `integral_conj`. No integrability is needed,

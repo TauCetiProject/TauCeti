@@ -32,6 +32,7 @@ covers comparing a function with its derivative.
   along any countably generated filter at arbitrary `p : ℝ≥0∞`.
 * `TauCeti.ae_lt_top_of_eLpNorm_ne_top`: at any nonzero exponent, an `ℝ≥0∞`-valued function with
   finite `Lᵖ` seminorm is finite almost everywhere.
+* `TauCeti.eLpNorm_toReal`: such a function has the same `Lᵖ` seminorm as its real part.
 * `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, from
   `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` conclude `‖v‖_p ≤ c * ‖w‖_p`; no measurability of `w` is
   needed.
@@ -123,6 +124,20 @@ theorem ae_lt_top_of_eLpNorm_ne_top {α : Type*} [MeasurableSpace α] {μ : Meas
       exact (ENNReal.rpow_lt_top_of_nonneg hr.le h).ne
     filter_upwards [ae_lt_top' (hf.pow_const p.toReal) hint] with x hx
     rwa [← ENNReal.lt_rpow_inv_iff hr, ENNReal.top_rpow_of_pos (inv_pos.2 hr)] at hx
+
+/-- An `ℝ≥0∞`-valued function with finite `Lᵖ` seminorm has the same seminorm as its real part
+`x ↦ (f x).toReal`, since it is finite almost everywhere. -/
+theorem eLpNorm_toReal {α : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞}
+    {f : α → ℝ≥0∞} (h : eLpNorm f p μ ≠ ∞) :
+    eLpNorm (fun x ↦ (f x).toReal) p μ = eLpNorm f p μ := by
+  have hf := aestronglyMeasurable_of_eLpNorm_ne_top h
+  have hm : AEStronglyMeasurable (fun x ↦ (f x).toReal) μ :=
+    hf.aemeasurable.ennreal_toReal.aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero hm, eLpNorm_exponent_zero hf]
+  refine eLpNorm_congr_eNorm_ae hm hf ?_
+  filter_upwards [ae_lt_top_of_eLpNorm_ne_top hp0 h] with x hx
+  rw [Real.eNorm_eq_ofReal ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx.ne, eNorm_eq_self]
 
 /-- Turn a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals into a bound between the `Lᵖ` seminorms.
 The two functions may have different codomains, which is what lets such a bound compare a
