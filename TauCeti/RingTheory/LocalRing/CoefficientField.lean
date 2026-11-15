@@ -127,7 +127,7 @@ include k in
 /-- **Cohen's theorem: a complete local ring containing a field has a coefficient field.** If the
 complete local ring `R` is an algebra over some field `k`, then reduction `R → ResidueField R` has
 a ring homomorphism section. When `k` is perfect, `TauCeti.residueFieldSection k R` is even a
-`k`-algebra section. In general a `k`-linear section need not exist. -/
+`k`-algebra section. In general a `k`-algebra section need not exist. -/
 theorem exists_residueFieldSection :
     ∃ s : ResidueField R →+* R, ∀ a, residue R (s a) = a := by
   obtain _ | ⟨p, hp, hpk⟩ := CharP.exists' k

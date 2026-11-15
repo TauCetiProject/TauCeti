@@ -5,64 +5,57 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Binomial
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Analysis.Analytic.ChangeOrigin
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import TauCeti.Analysis.Calculus.Bilinear
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.Topology.Algebra.InfiniteSum.Module
-import TauCeti.Analysis.Analytic.Binomial
+public import TauCeti.Analysis.Analytic.Binomial
 
 /-!
 # Square roots near the identity in a Banach algebra
 
-Every element `a` of a real Banach algebra with `‖a - 1‖ < 1` has a canonical square root, the sum
-of the binomial series `∑ (1/2 choose n) (a - 1) ^ n`. This file packages it as
-`TauCeti.sqrtNearOne` together with the facts downstream arguments need: it fixes `1`, it is
-analytic, hence smooth, at `1`, and it is a two-sided inverse of squaring on a neighbourhood of
-`1`. The two-sided statements are phrased as `Filter.Eventually` assertions rather than by
-exhibiting a neighbourhood, since that is how they get used.
+Every element `x` of a Banach algebra over `ℝ` with `‖x - 1‖ < 1` has a square root, the sum of the
+binomial series of `(1 + y) ^ (1 / 2)` (Mathlib's `binomialSeries`) at `y = x - 1`:
 
-Squaring, `a ↦ a * a`, has invertible derivative `x ↦ 2 * x` at `1`, so by the inverse function
-theorem it is injective near `1`. Hence the binomial square root is the *only* square root near
-`1` (`TauCeti.eventually_sqrtNearOne_mul_self`).
+`√x = ∑ₙ (1/2 choose n) (x - 1)ⁿ`.
 
-Because it is the sum of a power series with scalar coefficients, the square root commutes with
-every continuous algebra equivalence (`TauCeti.map_sqrtNearOne`), with no smallness hypothesis:
-the summability of a series, and its sum, only depend on the topology. In particular it commutes
-with conjugation by a continuous linear equivalence. A square root obtained as a local inverse of
-squaring would instead have a domain depending on the norm, and so would only be natural near
-`1`, with a neighbourhood depending on the equivalence.
+This file packages it as `TauCeti.sqrtNearOne`. It is a square root on the whole open unit ball
+about `1` (`TauCeti.mul_self_sqrtNearOne`), analytic there (`TauCeti.analyticOnNhd_sqrtNearOne`),
+and it fixes `1`. It is the *only* square root near `1`: two elements whose distances to `1` add up
+to less than `2` and which have the same square are equal
+(`TauCeti.eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two`), so near `1` it is
+a two-sided inverse of squaring. These two-sided statements are also phrased as
+`Filter.Eventually` assertions, since that is how they get used.
+
+Since it is given by a power series with scalar coefficients, the square root near the identity is
+natural: a continuous algebra homomorphism `φ` satisfies `φ (√x) = √(φ x)` whenever `‖x - 1‖ < 1`
+(`ContinuousAlgHom.map_sqrtNearOne`), and a continuous algebra isomorphism commutes with it at every
+element (`ContinuousAlgEquiv.map_sqrtNearOne`). In particular, for a continuous linear equivalence
+`e`, conjugation by `e` (`ContinuousLinearEquiv.conjContinuousAlgEquiv`) carries the square root of
+an operator to the square root of its conjugate, with no smallness condition depending on `e`.
 
 The motivating application is the Morse lemma, in
 `TauCeti.Analysis.Calculus.Morse.NormalForm`: the operator `(D²f x)⁻¹ ∘ B v` comparing the
 averaged Hessian along a segment with the Hessian at a nondegenerate critical point is close to
 the identity, and the change of coordinates flattening `f` is built from its square root. The
-exact naturality makes that change of coordinates independent of the linear coordinates in which
-it is computed. Nothing here is a substitute for the continuous functional calculus: `CFC.sqrt`
-computes the *positive* square root of a positive element of a C⋆-algebra, whereas what is needed
-here is a square root near `1` in a bare Banach algebra, with smooth dependence on the element.
+naturality makes that change of coordinates independent of the linear coordinates in which it is
+computed. Nothing here is a substitute for the continuous functional calculus: `CFC.sqrt` computes
+the *positive* square root of a positive element of a C⋆-algebra, whereas what is needed here is a
+square root near `1` in a bare Banach algebra, with smooth dependence on the element.
 
 ## Main declarations
 
-* `TauCeti.sqrtNearOne`: the binomial square root, with `TauCeti.sqrtNearOne_eq_tsum`.
-* `TauCeti.sqrtNearOne_one`, `TauCeti.analyticAt_sqrtNearOne`, `TauCeti.contDiffAt_sqrtNearOne`:
-  it fixes `1` and is analytic, hence smooth, there.
-* `TauCeti.mul_self_sqrtNearOne`: on the unit ball around `1` it is a square root.
-* `TauCeti.eventually_mul_self_sqrtNearOne`: near `1` it is a right inverse of squaring.
-* `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
-  the uniqueness statement: an element close to `1` is recovered from its square.
+* `TauCeti.sqrtNearOne`: the binomial-series square root near the identity.
+* `TauCeti.mul_self_sqrtNearOne`: it is a square root on the open unit ball about `1`.
+* `TauCeti.analyticOnNhd_sqrtNearOne`: it is analytic on the open unit ball about `1`.
+* `TauCeti.eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two`: uniqueness of
+  square roots near `1`.
+* `TauCeti.eventually_mul_self_sqrtNearOne`, `TauCeti.eventually_sqrtNearOne_mul_self`: near `1`
+  it is a right and a left inverse of squaring.
 * `TauCeti.eventually_sqrtNearOne_eq_of_tendsto`: the same uniqueness along an arbitrary filter,
   for a family of square roots tending to `1`.
 * `TauCeti.eventually_sqrtNearOne_fixed`: a map continuous at `1` and reversing products
   fixes the square root of every fixed element sufficiently close to `1`.
-* `TauCeti.map_sqrtNearOne`: continuous algebra equivalences commute with the square root.
-
-## References
-
-The uniqueness is the inverse function theorem in Banach spaces, as in
-S. Lang, *Real and Functional Analysis*, Chapter XIV.
+* `ContinuousAlgHom.map_sqrtNearOne`, `ContinuousAlgEquiv.map_sqrtNearOne`: naturality under
+  continuous algebra homomorphisms and isomorphisms.
 -/
 
 public section
@@ -75,71 +68,87 @@ namespace TauCeti
 
 variable (A : Type*) [NormedRing A] [NormedAlgebra ℝ A]
 
-private theorem hasStrictFDerivAt_mul_self_one :
-    HasStrictFDerivAt (fun a : A ↦ a * a)
-      ((ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A) :
-        A →L[ℝ] A) 1 := by
-  have h := ContinuousLinearMap.hasStrictFDerivAt_apply_self
-    (ContinuousLinearMap.mul ℝ A) 1
-  have he : (ContinuousLinearMap.mul ℝ A).flip 1 + ContinuousLinearMap.mul ℝ A 1 =
-      ((ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A) :
-        A →L[ℝ] A) := by
-    ext a
-    simp [two_smul]
-  rw [he] at h
-  exact h
-
-/-- The **square root near the identity** of a Banach algebra: the sum of the binomial series
-`∑ (1/2 choose n) (a - 1) ^ n` (`TauCeti.sqrtNearOne_eq_tsum`). It is a square root when
-`‖a - 1‖ < 1` (`TauCeti.mul_self_sqrtNearOne`), and the only one near `1`
-(`TauCeti.eventually_sqrtNearOne_mul_self`); it is only meaningful there. -/
-noncomputable def sqrtNearOne (a : A) : A :=
-  (binomialSeries A (2⁻¹ : ℝ)).sum (a - 1)
+/-- The **square root near the identity** of a normed algebra over `ℝ`: the sum of the binomial
+series of `(1 + y) ^ (1 / 2)` at `y = x - 1`, that is `∑ₙ (1/2 choose n) (x - 1)ⁿ`. In a Banach
+algebra it is a square root of `x` whenever `‖x - 1‖ < 1` (`TauCeti.mul_self_sqrtNearOne`); outside
+the open unit ball about `1` it has no meaning. -/
+noncomputable def sqrtNearOne (x : A) : A :=
+  (binomialSeries A (2⁻¹ : ℝ)).sum (x - 1)
 
 variable {A}
 
-/-- The square root near the identity is the sum of the binomial series of exponent `1/2`. -/
-theorem sqrtNearOne_eq_tsum (a : A) :
-    sqrtNearOne A a = ∑' n, Ring.choose (2⁻¹ : ℝ) n • (a - 1) ^ n := by
-  rw [sqrtNearOne, binomialSeries, ← FormalMultilinearSeries.ofScalarsSum,
-    FormalMultilinearSeries.ofScalarsSum_eq_tsum]
+/-- The square root near the identity is the binomial series of `(1 + y) ^ (1 / 2)` at
+`y = x - 1`. -/
+theorem sqrtNearOne_def (x : A) :
+    sqrtNearOne A x = (binomialSeries A (2⁻¹ : ℝ)).sum (x - 1) := (rfl)
+
+/-- The square root near the identity is the sum of the terms `(1/2 choose n) • (x - 1)ⁿ`. -/
+theorem sqrtNearOne_eq_tsum (x : A) :
+    sqrtNearOne A x = ∑' n, Ring.choose (2⁻¹ : ℝ) n • (x - 1) ^ n :=
+  binomialSeries_sum_eq_tsum _ _
 
 /-- The square root near the identity fixes the identity. -/
 @[simp]
 theorem sqrtNearOne_one : sqrtNearOne A 1 = 1 := by
-  rw [sqrtNearOne, sub_self, binomialSeries, ← FormalMultilinearSeries.ofScalarsSum,
-    FormalMultilinearSeries.ofScalarsSum_zero, Ring.choose_zero_right, one_smul]
+  rw [sqrtNearOne_eq_tsum, tsum_eq_single 0 fun n hn ↦ by simp [hn]]
+  simp
+
+/-- **Uniqueness of square roots near the identity.** Two elements of a normed algebra over `ℝ`
+whose distances to `1` add up to less than `2` and which have the same square are equal. -/
+theorem eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two {r s : A}
+    (h : r * r = s * s) (hrs : ‖r - 1‖ + ‖s - 1‖ < 2) : r = s := by
+  -- With `r * r = s * s`, the difference `d = r - s` satisfies `2 d = (1 - r) d + d (1 - s)`,
+  -- which is too short to hold for `d ≠ 0`.
+  have hkey : (1 - r) * (r - s) + (r - s) * (1 - s) = (2 : ℝ) • (r - s) := by
+    have hexp : (1 - r) * (r - s) + (r - s) * (1 - s) = (r - s) + (r - s) - (r * r - s * s) := by
+      noncomm_ring
+    rw [hexp, h, sub_self, sub_zero, two_smul]
+  have hle : 2 * ‖r - s‖ ≤ (‖r - 1‖ + ‖s - 1‖) * ‖r - s‖ := by
+    calc 2 * ‖r - s‖ = ‖(2 : ℝ) • (r - s)‖ := by rw [norm_smul, Real.norm_two]
+      _ ≤ ‖1 - r‖ * ‖r - s‖ + ‖r - s‖ * ‖1 - s‖ := by
+        rw [← hkey]
+        exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) (norm_mul_le _ _))
+      _ = (‖r - 1‖ + ‖s - 1‖) * ‖r - s‖ := by rw [norm_sub_rev 1 r, norm_sub_rev 1 s]; ring
+  by_contra hne
+  have hpos : 0 < ‖r - s‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne)
+  nlinarith
+
+omit [NormedAlgebra ℝ A] in
+/-- A map tending to `1` eventually stays in the open unit ball about `1`. -/
+private theorem eventually_norm_sub_one_lt {α : Type*} {l : Filter α} {r : α → A}
+    (hr : Tendsto r l (𝓝 1)) : ∀ᶠ t in l, ‖r t - 1‖ < 1 := by
+  simpa only [Metric.mem_ball, dist_eq_norm] using hr.eventually (Metric.ball_mem_nhds 1 one_pos)
 
 variable [CompleteSpace A]
 
-/-- **The binomial square root is a square root on the unit ball around `1`.** The Cauchy square
-of the binomial series of exponent `1/2` is the binomial series of exponent `1`, by the
-Chu–Vandermonde identity, and that series is `1 + x`. -/
-theorem mul_self_sqrtNearOne {a : A} (ha : ‖a - 1‖ < 1) :
-    sqrtNearOne A a * sqrtNearOne A a = a := by
-  have hs := summable_norm_choose_smul_pow (a := (2⁻¹ : ℝ)) ha
-  rw [sqrtNearOne_eq_tsum, tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hs hs]
-  have hterm (n : ℕ) : ∑ kl ∈ Finset.antidiagonal n,
-      Ring.choose (2⁻¹ : ℝ) kl.1 • (a - 1) ^ kl.1 * Ring.choose (2⁻¹ : ℝ) kl.2 • (a - 1) ^ kl.2 =
-        (Nat.choose 1 n : ℝ) • (a - 1) ^ n := by
-    have hv := Ring.add_choose_eq (r := (2⁻¹ : ℝ)) (s := 2⁻¹) n (Commute.refl _)
-    rw [show (2⁻¹ : ℝ) + 2⁻¹ = ((1 : ℕ) : ℝ) by norm_num, Ring.choose_natCast] at hv
-    rw [hv, Finset.sum_smul]
-    refine Finset.sum_congr rfl fun kl hkl ↦ ?_
-    rw [smul_mul_smul_comm, ← pow_add, Finset.mem_antidiagonal.mp hkl]
-  simp_rw [hterm]
-  rw [tsum_eq_sum (s := Finset.range 2) fun n hn ↦ by
-    rw [Nat.choose_eq_zero_of_lt (by simpa using hn), Nat.cast_zero, zero_smul]]
-  simp [Finset.sum_range_succ]
+/-- On the open unit ball about `1`, the binomial series of the square root near the identity
+converges to it. -/
+theorem hasSum_sqrtNearOne {x : A} (hx : ‖x - 1‖ < 1) :
+    HasSum (fun n ↦ Ring.choose (2⁻¹ : ℝ) n • (x - 1) ^ n) (sqrtNearOne A x) :=
+  hasSum_binomialSeries _ hx
+
+/-- **The square root near the identity is a square root** of every element of the open unit ball
+about `1`. -/
+theorem mul_self_sqrtNearOne {x : A} (hx : ‖x - 1‖ < 1) :
+    sqrtNearOne A x * sqrtNearOne A x = x := by
+  rw [sqrtNearOne_def, binomialSeries_sum_mul_binomialSeries_sum _ _ hx,
+    show (2⁻¹ + 2⁻¹ : ℝ) = ((1 : ℕ) : ℝ) by norm_num, binomialSeries_sum_natCast, pow_one,
+    add_sub_cancel]
+
+/-- The square root near the identity is analytic on the open unit ball about `1`. -/
+theorem analyticOnNhd_sqrtNearOne : AnalyticOnNhd ℝ (sqrtNearOne A) (Metric.ball 1 1) := by
+  intro x hx
+  rw [Metric.mem_ball, dist_eq_norm] at hx
+  have hsum := ((binomialSeries A (2⁻¹ : ℝ)).hasFPowerSeriesOnBall
+    (zero_lt_one.trans_le (binomialSeries_radius_ge_one_of_normedRing _))).analyticAt_of_mem
+      (mem_eball_binomialSeries_radius hx _)
+  have hsub : AnalyticAt ℝ (fun z : A ↦ z - 1) x := analyticAt_id.sub analyticAt_const
+  simpa only [Function.comp_def, ← sqrtNearOne_def] using hsum.comp_of_eq hsub rfl
 
 /-- The square root near the identity is analytic at the identity.  This gives a single
 neighborhood on which it is smooth to every finite order. -/
-theorem analyticAt_sqrtNearOne : AnalyticAt ℝ (sqrtNearOne A) 1 := by
-  have hp : AnalyticAt ℝ (binomialSeries A (2⁻¹ : ℝ)).sum 0 :=
-    ((binomialSeries A (2⁻¹ : ℝ)).hasFPowerSeriesOnBall
-      (zero_lt_one.trans_le one_le_radius_binomialSeries)).analyticAt
-  have hsub : AnalyticAt ℝ (fun a : A ↦ a - 1) 1 := analyticAt_id.sub analyticAt_const
-  exact hp.comp_of_eq hsub (sub_self _)
+theorem analyticAt_sqrtNearOne : AnalyticAt ℝ (sqrtNearOne A) 1 :=
+  analyticOnNhd_sqrtNearOne 1 (Metric.mem_ball_self one_pos)
 
 /-- The square root near the identity is smooth at the identity. -/
 theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
@@ -152,31 +161,21 @@ theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
 /-- Near the identity, `TauCeti.sqrtNearOne` really produces a square root. -/
 theorem eventually_mul_self_sqrtNearOne :
     ∀ᶠ a in 𝓝 (1 : A), sqrtNearOne A a * sqrtNearOne A a = a := by
-  filter_upwards [Metric.ball_mem_nhds (1 : A) one_pos] with a ha
-  exact mul_self_sqrtNearOne (by rwa [← dist_eq_norm])
+  filter_upwards [eventually_norm_sub_one_lt (tendsto_id (x := 𝓝 (1 : A)))] with a ha
+  exact mul_self_sqrtNearOne ha
 
 /-- Near the identity, an element is recovered from its square by `TauCeti.sqrtNearOne`.  This is
-the uniqueness half: two elements close to `1` with the same square are equal. Squaring is
-injective near `1` by the inverse function theorem. -/
+the uniqueness half: two elements close to `1` with the same square are equal. -/
 theorem eventually_sqrtNearOne_mul_self :
     ∀ᶠ b in 𝓝 (1 : A), sqrtNearOne A (b * b) = b := by
-  set g := (hasStrictFDerivAt_mul_self_one A).localInverse (fun a : A ↦ a * a)
-    (ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A) 1
-  -- The local inverse `g` of squaring recovers every element near `1` from its square.
-  have hg : ∀ᶠ b in 𝓝 (1 : A), g (b * b) = b := by
-    simpa [g] using (hasStrictFDerivAt_mul_self_one A).eventually_left_inverse
-      (f := fun a : A ↦ a * a)
-      (f' := (ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A))
-        (a := 1)
   have hsq : Tendsto (fun b : A ↦ b * b) (𝓝 1) (𝓝 1) := by
     simpa using (tendsto_id (x := 𝓝 (1 : A))).mul tendsto_id
-  have hroot : Tendsto (sqrtNearOne A) (𝓝 1) (𝓝 1) := by
-    simpa only [sqrtNearOne_one] using (continuousAt_sqrtNearOne (A := A)).tendsto
-  -- Both `b` and the binomial square root of `b * b` are square roots of `b * b` near `1`.
-  filter_upwards [hg, hsq.eventually (hroot.eventually hg), hsq.eventually
-    eventually_mul_self_sqrtNearOne] with b hb hb' hb''
-  rw [← hb', hb'', hb]
-
+  have hroot : Tendsto (fun b : A ↦ sqrtNearOne A (b * b)) (𝓝 1) (𝓝 1) := by
+    simpa only [Function.comp_def, sqrtNearOne_one] using continuousAt_sqrtNearOne.tendsto.comp hsq
+  filter_upwards [eventually_norm_sub_one_lt hsq, eventually_norm_sub_one_lt hroot,
+    eventually_norm_sub_one_lt (tendsto_id (x := 𝓝 (1 : A)))] with b hb hroot hb'
+  exact eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two (mul_self_sqrtNearOne hb)
+    (by simp only [id] at hb'; linarith)
 
 /-- **Uniqueness of the square root near the identity, along a filter.** If `r` tends to `1` and
 eventually squares to `x`, then `TauCeti.sqrtNearOne` eventually recovers `r` from `x`. -/
@@ -205,16 +204,30 @@ theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
   rw [← hmul, hs, ha] at hu
   exact hu.symm
 
-omit [CompleteSpace A] in
-/-- **The square root near the identity commutes with continuous algebra equivalences.** No
-smallness hypothesis is needed: an equivalence maps the binomial series of `a - 1` termwise to
-that of `φ a - 1`, and preserves its summability and sum. In particular the square root commutes
-with conjugation by a continuous linear equivalence
-(`ContinuousLinearEquiv.conjContinuousAlgEquiv`). -/
-theorem map_sqrtNearOne {B : Type*} [NormedRing B] [NormedAlgebra ℝ B]
-    (φ : A ≃A[ℝ] B) (a : A) : φ (sqrtNearOne A a) = sqrtNearOne B (φ a) := by
-  rw [sqrtNearOne_eq_tsum, sqrtNearOne_eq_tsum,
-    ← ContinuousAlgEquiv.toContinuousLinearEquiv_apply, ContinuousLinearEquiv.map_tsum]
-  simp [map_sub, map_pow]
-
 end TauCeti
+
+open TauCeti
+
+variable {A B : Type*} [NormedRing A] [NormedAlgebra ℝ A] [NormedRing B] [NormedAlgebra ℝ B]
+
+/-- **The square root near the identity commutes with continuous algebra homomorphisms** on the
+open unit ball about `1` of a Banach algebra, where its binomial series converges. The target
+need not be complete. -/
+theorem ContinuousAlgHom.map_sqrtNearOne [CompleteSpace A] (φ : A →A[ℝ] B) {x : A}
+    (hx : ‖x - 1‖ < 1) : φ (sqrtNearOne A x) = sqrtNearOne B (φ x) := by
+  rw [sqrtNearOne_eq_tsum (φ x)]
+  refine (HasSum.tsum_eq ?_).symm
+  simpa only [Function.comp_def, map_smul, map_pow, map_sub, map_one] using
+    (hasSum_sqrtNearOne hx).map φ φ.continuous
+
+/-- **The square root near the identity commutes with continuous algebra isomorphisms**, at every
+element: the binomial series of `x` converges exactly when that of its image does. For instance,
+conjugating an operator by a continuous linear equivalence `e`
+(`ContinuousLinearEquiv.conjContinuousAlgEquiv`) conjugates its square root near the identity by
+`e`. -/
+theorem ContinuousAlgEquiv.map_sqrtNearOne (e : A ≃A[ℝ] B) (x : A) :
+    e (sqrtNearOne A x) = sqrtNearOne B (e x) := by
+  rw [sqrtNearOne_eq_tsum, sqrtNearOne_eq_tsum, ← e.toContinuousLinearEquiv_apply,
+    e.toContinuousLinearEquiv.map_tsum]
+  simp only [ContinuousAlgEquiv.toContinuousLinearEquiv_apply, map_smul, map_pow, map_sub,
+    map_one]

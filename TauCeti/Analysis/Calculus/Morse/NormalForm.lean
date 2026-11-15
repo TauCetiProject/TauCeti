@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Calculus.Hadamard
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -67,7 +68,7 @@ The operators are a definite choice: the canonical congruence `TauCeti.morseCong
 is the square root near the identity of `B₀⁻¹ ∘ B`. It is a congruence for every pair of symmetric
 forms near a pair `(B₀, B₀)` with `B₀` invertible (`TauCeti.eventually_morseCongruence_apply`),
 and it depends smoothly on both forms, so the reference form may vary too. Being canonical, it
-is exactly compatible with linear changes of coordinates, for all pairs of forms
+is compatible with linear changes of coordinates, exactly and for all forms
 (`TauCeti.morseCongruence_bilinearComp`), which is what the parametric Morse lemma on a vector
 bundle needs to glue local normal forms.
 
@@ -91,8 +92,8 @@ differentiability order, including order zero.
   reference form `B₀`, with `TauCeti.eventually_morseCongruence_apply` (it is a congruence),
   `TauCeti.eventually_contDiffAt_morseCongruence` (it is smooth in both forms),
   `TauCeti.tendsto_morseCongruence`, `TauCeti.eventually_morseCongruence_eq_of_tendsto` (it is
-  the unique square root near the identity) and `TauCeti.morseCongruence_bilinearComp`
-  (it is natural for linear changes of coordinates).
+  the unique square root near the identity) and `TauCeti.morseCongruence_bilinearComp` (it is
+  natural for linear changes of coordinates).
 * `TauCeti.exists_congruence_of_symmetric_family`: a `C^n` family of symmetric continuous
   bilinear forms whose value at a basepoint is invertible is, near that point, the congruence of
   that value by a `C^n` family of operators equal to the identity at the basepoint.
@@ -321,19 +322,19 @@ theorem morseCongruence_self (hB₀ : B₀.IsInvertible) : morseCongruence B₀ 
 
 /-- **The canonical congruence is natural for linear changes of coordinates.** Pulling both forms
 back along a continuous linear equivalence `e` conjugates their canonical congruence by `e`. This
-holds for all pairs of forms, since the square root near the identity commutes with conjugation
-(`TauCeti.map_sqrtNearOne`). -/
+holds exactly, for every pair of forms and every `e`, because the square root near the identity
+commutes with conjugation (`ContinuousAlgEquiv.map_sqrtNearOne`). -/
 theorem morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     (B₁ B : E →L[ℝ] E →L[ℝ] ℝ) (e : E' ≃L[ℝ] E) :
     morseCongruence (B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
         (B.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)) =
-      ((e.symm : E →L[ℝ] E') ∘L morseCongruence B₁ B ∘L (e : E' →L[ℝ] E)) := by
-  have hconj (X : E →L[ℝ] E) :
-      (e.symm : E →L[ℝ] E') ∘L X ∘L (e : E' →L[ℝ] E) = e.symm.conjContinuousAlgEquiv X := by
-    ext
-    simp
-  rw [morseCongruence, morseCongruence, ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp,
-    hconj, hconj, map_sqrtNearOne]
+      (e.symm : E →L[ℝ] E') ∘L morseCongruence B₁ B ∘L (e : E' →L[ℝ] E) := by
+  have hcomp : (B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)).inverse ∘L
+      B.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E) =
+      e.symm.conjContinuousAlgEquiv (B₁.inverse ∘L B) :=
+    ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp B₁ B e e
+  rw [morseCongruence_def, morseCongruence_def, hcomp, ← ContinuousAlgEquiv.map_sqrtNearOne,
+    ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, ContinuousLinearEquiv.symm_symm]
 
 variable [CompleteSpace E]
 

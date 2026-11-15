@@ -45,9 +45,9 @@ normal bundle.
 In the chart of the total space at a zero vector, `g` is a family `G (y, w)` on the product of the
 base model with the model fibre, and the parametric Morse lemma along the zero section
 (`TauCeti.exists_parametricMorseCoord_partialDiffeomorph_prod_ball`) puts it in normal form by the
-canonical coordinate `(y, w) ↦ (y, TauCeti.parametricMorseCoord G (y, w))`. This coordinate is
-natural for fibrewise linear changes of coordinates, so the coordinates of two charts agree near
-the zero section, where both charts read the same family
+canonical coordinate `(y, w) ↦ (y, TauCeti.parametricMorseCoord G (y, w))`. Near the zero
+section the chart families of two charts differ by a change of base chart and a fibrewise linear
+change of coordinates, so their coordinates agree there
 (`TauCeti.eventually_parametricMorseCoord_transition`). They are glued along a locally finite
 closed cover of the base subordinate to the charts: over each base point the coordinate of the
 chart at one chosen member of the cover is used. Near a zero vector `0_a` only the finitely many
