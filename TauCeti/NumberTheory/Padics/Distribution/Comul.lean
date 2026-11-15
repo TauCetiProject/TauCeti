@@ -73,81 +73,6 @@ variable {p : ℕ} [hp : Fact p.Prime]
 
 namespace TauCeti.AnalyticStage
 
-section Functoriality
-
-variable {h : ℕ} {E F : Type*}
-  [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E]
-  [IsUltrametricDist E] [CompleteSpace E]
-  [NormedAddCommGroup F] [Module ℤ_[p] F] [IsBoundedSMul ℤ_[p] F]
-  [IsUltrametricDist F] [CompleteSpace F]
-
-/-- Stage evaluation at `0` reads off the constant coefficient on the disc `pʰℤ_p` of `0`. -/
-@[simp]
-theorem eval_apply_zero (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
-    [SMulCommClass ℤ_[p] S E] (c : AnalyticStage p h E) :
-    eval S c 0 = c (0, 0) := by
-  have h0 : (0 : ℤ_[p]) = (((0 : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) + (p : ℤ_[p]) ^ h * 0 := by
-    simp
-  conv_lhs => rw [h0]
-  rw [eval_natCast_val_add_mul, tsum_eq_single 0]
-  · simp
-  · intro n hn
-    simp [zero_pow hn]
-
-/-- The underlying function of `eval S c` does not depend on the auxiliary scalar ring `S`. -/
-theorem eval_eq_eval_padicInt (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
-    [SMulCommClass ℤ_[p] S E] (c : AnalyticStage p h E) :
-    eval S c = eval ℤ_[p] c := by
-  ext x
-  rw [eval_apply, eval_apply]
-
-/-- The underlying vector of `transition S c` does not depend on the auxiliary scalar ring `S`. -/
-theorem transition_eq_transition_padicInt (S : Type*) [Semiring S] [Module S E]
-    [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E] (c : AnalyticStage p h E) :
-    transition S c = transition ℤ_[p] c := by
-  ext ⟨a', j⟩
-  rw [transition_apply, transition_apply]
-
-/-- Stage evaluation commutes with any uniformly bounded coefficient map compatible with `ℤ_p`. -/
-theorem eval_compLeft (S : Type*) [Semiring S]
-    [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
-    [Module S F] [ContinuousConstSMul S F] [SMulCommClass ℤ_[p] S F]
-    [LinearMap.CompatibleSMul E F ℤ_[p] S]
-    (φ : E →L[S] F) (hφ : ∃ C, ∀ e, ‖φ e‖ ≤ C * ‖e‖)
-    (c : AnalyticStage p h E) (x : ℤ_[p]) :
-    eval S (compLeft φ hφ c) x = φ (eval S c x) :=
-  (hasSum_eval_apply S (compLeft φ hφ c) x).unique <| by
-    simpa only [compLeft_apply, ContinuousLinearMap.map_smul_of_tower] using
-      (hasSum_eval_apply S c x).mapL φ
-
-/-- Stage re-expansion commutes with any uniformly bounded coefficient map compatible with `ℤ_p`. -/
-theorem transition_compLeft (S : Type*) [Semiring S]
-    [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
-    [Module S F] [ContinuousConstSMul S F] [SMulCommClass ℤ_[p] S F]
-    [LinearMap.CompatibleSMul E F ℤ_[p] S]
-    (φ : E →L[S] F) (hφ : ∃ C, ∀ e, ‖φ e‖ ≤ C * ‖e‖)
-    (c : AnalyticStage p h E) :
-    transition S (compLeft φ hφ c) = compLeft φ hφ (transition S c) := by
-  have hcomp : (transition (p := p) (h := h) S).comp (compLeft φ hφ) =
-      (compLeft φ hφ).comp (transition S) := by
-    refine continuousLinearMap_ext fun ⟨a, k⟩ e ↦ ?_
-    ext ⟨a', j⟩
-    simp only [ContinuousLinearMap.comp_apply, compLeft_single, compLeft_apply, transition_apply]
-    rw [tsum_eq_single k (fun m hm ↦ by simp [single_apply, hm]),
-      tsum_eq_single k (fun m hm ↦ by simp [single_apply, hm])]
-    by_cases ha : a'.cast = a <;> simp [single_apply, ha]
-  exact DFunLike.congr_fun hcomp c
-
-/-- Multiplication by `p` is injective on `LA_h(E)` whenever it is injective on `E`. -/
-theorem isSMulRegular_p {h : ℕ} {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E]
-    [ContinuousConstSMul ℤ_[p] E] (hpE : IsSMulRegular E (p : ℤ_[p])) :
-    IsSMulRegular (AnalyticStage p h E) (p : ℤ_[p]) :=
-  fun f g hfg ↦ ZeroAtInftyContinuousMap.ext fun i ↦
-    hpE (by simpa only [FunLike.coe_smul, Pi.smul_apply] using
-      DFunLike.congr_fun hfg i)
-
-end Functoriality
-
 /-! ### Carry-binomial coefficients and the addition matrix -/
 
 /-- The coefficient of `uⁱ vʲ` in `(q + u + v)ᵏ`. -/
@@ -231,6 +156,21 @@ private theorem comulMatrix_norm_le_one (h : ℕ)
     (r : (ZMod (p ^ h) × ℕ) × (ZMod (p ^ h) × ℕ)) (s : ZMod (p ^ h) × ℕ) :
     ‖comulMatrix p h r s‖ ≤ 1 :=
   PadicInt.norm_le_one _
+
+/-- Carry decomposition of `x + y` in level-`h` disc coordinates: adding `a.val + pʰ u` and
+`b.val + pʰ v` lands in the disc of `a + b` with coordinate `⌊(a.val + b.val) / pʰ⌋ + u + v`. -/
+private theorem discHomeomorph_add (h : ℕ) (a b : ZMod (p ^ h)) (u v : ℤ_[p]) :
+    PadicInt.discHomeomorph p h (a, u) + PadicInt.discHomeomorph p h (b, v) =
+      (((a + b).val : ℕ) : ℤ_[p]) +
+        (p : ℤ_[p]) ^ h * ((((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) + u + v) := by
+  have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
+  have hnat : a.val + b.val = (a + b).val + p ^ h * ((a.val + b.val) / p ^ h) := by
+    rw [ZMod.val_add, Nat.mod_add_div]
+  simp only [PadicInt.discHomeomorph_apply]
+  have hcast : (a.val : ℤ_[p]) + (b.val : ℤ_[p]) =
+      ((a + b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) := by
+    exact_mod_cast hnat
+  linear_combination hcast
 
 /-! ### Stage comultiplication -/
 
@@ -356,60 +296,67 @@ theorem norm_comulCurried (c : AnalyticStage p h E) : ‖comulCurried S c‖ = �
   rw [comulCurried, ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.norm_map, norm_comul]
 
+/-- Curried stage comultiplication is uniformly bounded with constant `1`, in the form required by
+`ZeroAtInftyContinuousMap.compLeft`. -/
+theorem exists_norm_comulCurried_le :
+    ∃ C, ∀ c : AnalyticStage p h E, ‖comulCurried S c‖ ≤ C * ‖c‖ :=
+  ⟨1, fun c ↦ by simpa only [one_mul] using (norm_comulCurried S c).le⟩
+
 /-- Over a nontrivially normed field, `comul` has operator norm at most `1`. -/
 theorem opNorm_comul_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
     [SMulCommClass ℤ_[p] 𝕜 E] : ‖comul (p := p) (h := h) (E := E) 𝕜‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ by simp
 
+/-- On a degree-`k` coordinate vector `single (d, k) e`, all rows of `comulCurried` above degree `k`
+vanish, truncating the outer stage evaluation to `Finset.range (k + 1)`. -/
+private theorem eval_comulCurried_single_eq_sum (d a : ZMod (p ^ h)) (k : ℕ) (e : E) (u : ℤ_[p]) :
+    eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e)) (PadicInt.discHomeomorph p h (a, u)) =
+      ∑ i ∈ Finset.range (k + 1), u ^ i • comulCurried ℤ_[p] (single (d, k) e) (a, i) := by
+  have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
+  rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul]
+  refine tsum_eq_sum fun i hi ↦ ?_
+  have hki : k < i := not_lt.mp (mt Finset.mem_range.mpr hi)
+  have hrow : comulCurried ℤ_[p] (single (d, k) e) (a, i) = 0 := by
+    ext ⟨b', j⟩
+    rw [comulCurried_apply_apply, comul, Matrix.toZeroAtInftySMulCLM_single_apply]
+    have hkij : k < i + j := by omega
+    simp [comulMatrix, comulScalar_eq_zero_of_lt hkij]
+  simp [hrow]
+
+/-- Each row of `comulCurried ℤ_[p] (single (d, k) e)` vanishes above degree `k`, truncating the
+inner stage evaluation to `Finset.range (k + 1)`. -/
+private theorem eval_comulCurried_single_apply_eq_sum (d a b : ZMod (p ^ h)) (k i : ℕ) (e : E)
+    (v : ℤ_[p]) :
+    eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e) (a, i))
+        (PadicInt.discHomeomorph p h (b, v)) =
+      ∑ j ∈ Finset.range (k + 1), v ^ j • comul ℤ_[p] (single (d, k) e) ((a, i), (b, j)) := by
+  have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
+  rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul]
+  simp_rw [comulCurried_apply_apply]
+  refine tsum_eq_sum fun j hj ↦ ?_
+  have hkj : k < j := not_lt.mp (mt Finset.mem_range.mpr hj)
+  have hkij : k < i + j := by omega
+  rw [comul, Matrix.toZeroAtInftySMulCLM_single_apply]
+  simp [comulMatrix, comulScalar_eq_zero_of_lt hkij]
+
 private theorem eval_eval_comulCurried_single (d : ZMod (p ^ h)) (k : ℕ) (e : E) (x y : ℤ_[p]) :
     eval ℤ_[p] (eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e)) x) y =
       eval ℤ_[p] (single (d, k) e) (x + y) := by
+  -- Write `x` and `y` in level-`h` disc coordinates `(a, u)` and `(b, v)`.
   obtain ⟨⟨a, u⟩, rfl⟩ := (PadicInt.discHomeomorph p h).surjective x
   obtain ⟨⟨b, v⟩, rfl⟩ := (PadicInt.discHomeomorph p h).surjective y
   have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
-  set q : ℤ_[p] := (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p])
-  have hxy : PadicInt.discHomeomorph p h (a, u) + PadicInt.discHomeomorph p h (b, v) =
-      (((a + b).val : ℕ) : ℤ_[p]) + (p : ℤ_[p]) ^ h * (q + u + v) := by
-    have hnat : a.val + b.val = (a + b).val + p ^ h * ((a.val + b.val) / p ^ h) := by
-      rw [ZMod.val_add, Nat.mod_add_div]
-    simp only [PadicInt.discHomeomorph_apply, q]
-    have hcast : ((a.val : ℤ_[p]) + (b.val : ℤ_[p])) =
-        ((a + b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) := by
-      exact_mod_cast hnat
-    linear_combination hcast
-  have houter : eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e))
-        (PadicInt.discHomeomorph p h (a, u)) =
-      ∑ i ∈ Finset.range (k + 1), u ^ i • comulCurried ℤ_[p] (single (d, k) e) (a, i) := by
-    rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul]
-    refine tsum_eq_sum fun i hi ↦ ?_
-    have hki : k < i := not_lt.mp (mt Finset.mem_range.mpr hi)
-    have hrow : comulCurried ℤ_[p] (single (d, k) e) (a, i) = 0 := by
-      ext ⟨b', j⟩
-      rw [comulCurried_apply_apply, comul, Matrix.toZeroAtInftySMulCLM_single_apply]
-      have hkij : k < i + j := by omega
-      simp [comulMatrix, comulScalar_eq_zero_of_lt hkij]
-    simp [hrow]
-  have hinner (i : ℕ) : eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e) (a, i))
-        (PadicInt.discHomeomorph p h (b, v)) =
-      ∑ j ∈ Finset.range (k + 1), v ^ j •
-        comul ℤ_[p] (single (d, k) e) ((a, i), (b, j)) := by
-    rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul]
-    simp_rw [comulCurried_apply_apply]
-    refine tsum_eq_sum fun j hj ↦ ?_
-    have hkj : k < j := not_lt.mp (mt Finset.mem_range.mpr hj)
-    have hkij : k < i + j := by omega
-    rw [comul, Matrix.toZeroAtInftySMulCLM_single_apply]
-    simp [comulMatrix, comulScalar_eq_zero_of_lt hkij]
+  -- Truncate both the outer and inner series to `range (k + 1)` and match the trinomial sum.
   let Φ : AnalyticStage p h E →L[ℤ_[p]] E :=
     (ContinuousMap.evalCLM ℤ_[p] (PadicInt.discHomeomorph p h (b, v))).comp (eval ℤ_[p])
-  have hlhs : eval ℤ_[p] (eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e))
-        (PadicInt.discHomeomorph p h (a, u))) (PadicInt.discHomeomorph p h (b, v)) =
-      Φ (eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e))
-        (PadicInt.discHomeomorph p h (a, u))) := rfl
-  rw [hlhs, houter, map_sum]
-  simp_rw [map_smul, Φ, ContinuousLinearMap.comp_apply, ContinuousMap.evalCLM_apply, hinner,
-    Finset.smul_sum, comul, Matrix.toZeroAtInftySMulCLM_single_apply]
-  rw [hxy, eval_natCast_val_add_mul, tsum_eq_single k (fun n hn ↦ by simp [single_apply, hn])]
+  change Φ (eval ℤ_[p] (comulCurried ℤ_[p] (single (d, k) e))
+    (PadicInt.discHomeomorph p h (a, u))) = _
+  rw [eval_comulCurried_single_eq_sum, map_sum]
+  simp_rw [map_smul, Φ, ContinuousLinearMap.comp_apply, ContinuousMap.evalCLM_apply,
+    eval_comulCurried_single_apply_eq_sum, Finset.smul_sum, comul,
+    Matrix.toZeroAtInftySMulCLM_single_apply]
+  rw [discHomeomorph_add, eval_natCast_val_add_mul,
+    tsum_eq_single k (fun n hn ↦ by simp [single_apply, hn])]
   by_cases hab : a + b = d
   · simp only [comulMatrix, Matrix.of_apply, hab, ↓reduceIte, single_apply, smul_smul,
       ← Finset.sum_smul]
@@ -478,86 +425,44 @@ section Structural
 
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
 
-omit [IsUltrametricDist E] [CompleteSpace E] in
-private theorem smulRight_bound (e : E) :
-    ∃ C, ∀ r : ℤ_[p], ‖(ContinuousLinearMap.id ℤ_[p] ℤ_[p]).smulRight e r‖ ≤ C * ‖r‖ :=
-  ⟨‖e‖, fun r ↦ by
-    simpa only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-      (mul_comm ‖e‖)] using norm_smul_le r e⟩
-
-omit [IsUltrametricDist E] [CompleteSpace E] in
-private theorem compLeft_smulRight_single_one (s : ZMod (p ^ h) × ℕ) (e : E) :
-    compLeft ((ContinuousLinearMap.id ℤ_[p] ℤ_[p]).smulRight e) (smulRight_bound e)
-        (single s (1 : ℤ_[p])) =
-      single s e := by
-  ext t
-  by_cases ht : t = s <;> simp [single_apply, ht]
-
 private theorem comulCurried_transition_padicInt (c : AnalyticStage p h ℤ_[p]) :
     transition ℤ_[p]
-        (compLeft (transition ℤ_[p])
-          ⟨1, fun y ↦ by simpa only [one_mul] using norm_transition_le ℤ_[p] y⟩
-          (comulCurried ℤ_[p] c)) =
+        (compLeft (transition ℤ_[p]) (exists_norm_transition_le ℤ_[p]) (comulCurried ℤ_[p] c)) =
       comulCurried ℤ_[p] (transition ℤ_[p] c) := by
-  have hp_reg : IsSMulRegular ℤ_[p] (p : ℤ_[p]) :=
-    mul_right_injective₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  apply eval_injective ℤ_[p] (isSMulRegular_p hp_reg)
+  apply eval_injective ℤ_[p] (isSMulRegular PadicInt.isSMulRegular_natCast_p)
   refine ContinuousMap.ext fun x ↦ ?_
-  apply eval_injective ℤ_[p] hp_reg
+  apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
   refine ContinuousMap.ext fun y ↦ ?_
   rw [eval_transition, eval_compLeft, eval_transition, eval_eval_comulCurried,
     eval_eval_comulCurried, eval_transition]
 
 /-- **Curried stage comultiplication commutes with level transitions.** -/
 theorem transition_compLeft_transition_comulCurried (c : AnalyticStage p h E) :
-    transition S
-        (compLeft (transition S)
-          ⟨1, fun y ↦ by simpa only [one_mul] using norm_transition_le S y⟩
-          (comulCurried S c)) =
+    transition S (compLeft (transition S) (exists_norm_transition_le S) (comulCurried S c)) =
       comulCurried S (transition S c) := by
-  let ht : ∃ C, ∀ y : AnalyticStage p h E, ‖transition ℤ_[p] y‖ ≤ C * ‖y‖ :=
-    ⟨1, fun y ↦ by simpa only [one_mul] using norm_transition_le ℤ_[p] y⟩
-  let ht0 : ∃ C, ∀ y : AnalyticStage p h ℤ_[p], ‖transition ℤ_[p] y‖ ≤ C * ‖y‖ :=
-    ⟨1, fun y ↦ by simpa only [one_mul] using norm_transition_le ℤ_[p] y⟩
+  -- Reduce to `S = ℤ_p` and test on coordinate vectors `single s e`, written as images of
+  -- `single s (1 : ℤ_p)` under `r ↦ r • e` so functoriality reduces to the torsion-free `ℤ_p` case.
   have hcomp : (transition (p := p) (h := h) ℤ_[p]).comp
-        ((compLeft (transition ℤ_[p]) ht).comp (comulCurried ℤ_[p])) =
+        ((compLeft (transition ℤ_[p]) (exists_norm_transition_le ℤ_[p])).comp
+          (comulCurried ℤ_[p])) =
       (comulCurried (p := p) (h := h + 1) (E := E) ℤ_[p]).comp (transition ℤ_[p]) := by
+    have : DecidableEq (ZMod (p ^ h) × ℕ) := Classical.decEq _
     refine continuousLinearMap_ext fun s e ↦ ?_
     let φ : ℤ_[p] →L[ℤ_[p]] E := (ContinuousLinearMap.id ℤ_[p] ℤ_[p]).smulRight e
-    simp only [ContinuousLinearMap.comp_apply, ← compLeft_smulRight_single_one s e]
-    calc
-      transition ℤ_[p] (compLeft (transition ℤ_[p]) ht
-          (comulCurried ℤ_[p] (compLeft φ (smulRight_bound e) (single s (1 : ℤ_[p])))))
-        = transition ℤ_[p] (compLeft (transition ℤ_[p]) ht
-            (compLeft (compLeft φ (smulRight_bound e))
-              (exists_norm_compLeft_apply_le φ (smulRight_bound e))
-              (comulCurried ℤ_[p] (single s 1)))) := by
-          rw [comulCurried_compLeft]
-      _ = transition ℤ_[p] (compLeft (compLeft φ (smulRight_bound e))
-            (exists_norm_compLeft_apply_le φ (smulRight_bound e))
-            (compLeft (transition ℤ_[p]) ht0 (comulCurried ℤ_[p] (single s 1)))) := by
-          congr 1
-          refine ZeroAtInftyContinuousMap.ext fun u ↦ ?_
-          simp only [compLeft_apply]
-          rw [transition_compLeft]
-      _ = compLeft (compLeft φ (smulRight_bound e))
-            (exists_norm_compLeft_apply_le φ (smulRight_bound e))
-            (transition ℤ_[p]
-              (compLeft (transition ℤ_[p]) ht0 (comulCurried ℤ_[p] (single s 1)))) := by
-          rw [transition_compLeft]
-      _ = compLeft (compLeft φ (smulRight_bound e))
-            (exists_norm_compLeft_apply_le φ (smulRight_bound e))
-            (comulCurried ℤ_[p] (transition ℤ_[p] (single s 1))) := by
-          rw [comulCurried_transition_padicInt]
-      _ = comulCurried ℤ_[p]
-            (compLeft φ (smulRight_bound e) (transition ℤ_[p] (single s 1))) := by
-          rw [← comulCurried_compLeft]
-      _ = comulCurried ℤ_[p]
-            (transition ℤ_[p] (compLeft φ (smulRight_bound e) (single s 1))) := by
-          rw [← transition_compLeft]
-  have harg : compLeft (transition S)
-        ⟨1, fun y ↦ by simpa only [one_mul] using norm_transition_le S y⟩ (comulCurried S c) =
-      compLeft (transition ℤ_[p]) ht (comulCurried ℤ_[p] c) := by
+    let hφ := ContinuousLinearMap.exists_norm_smulRight_id_apply_le ℤ_[p] ℤ_[p] e
+    simp only [ContinuousLinearMap.comp_apply, ← compLeft_smulRight_id_single_one ℤ_[p] ℤ_[p] s e]
+    have hswap : compLeft (transition ℤ_[p]) (exists_norm_transition_le ℤ_[p])
+          (compLeft (compLeft φ hφ) (exists_norm_compLeft_apply_le φ hφ)
+            (comulCurried ℤ_[p] (single s (1 : ℤ_[p])))) =
+        compLeft (compLeft φ hφ) (exists_norm_compLeft_apply_le φ hφ)
+          (compLeft (transition ℤ_[p]) (exists_norm_transition_le ℤ_[p])
+            (comulCurried ℤ_[p] (single s (1 : ℤ_[p])))) := by
+      ext u
+      simp [transition_compLeft]
+    rw [comulCurried_compLeft, hswap, transition_compLeft, comulCurried_transition_padicInt,
+      ← comulCurried_compLeft, ← transition_compLeft]
+  have harg : compLeft (transition S) (exists_norm_transition_le S) (comulCurried S c) =
+      compLeft (transition ℤ_[p]) (exists_norm_transition_le ℤ_[p]) (comulCurried ℤ_[p] c) := by
     ext u
     simp [transition_eq_transition_padicInt S, comulCurried_eq_comulCurried_padicInt S]
   rw [transition_eq_transition_padicInt S, harg, comulCurried_eq_comulCurried_padicInt S,
@@ -566,16 +471,12 @@ theorem transition_compLeft_transition_comulCurried (c : AnalyticStage p h E) :
 
 private theorem comulCurried_comulCurried_padicInt (c : AnalyticStage p h ℤ_[p]) :
     comulCurried ℤ_[p] (comulCurried ℤ_[p] c) =
-      compLeft (comulCurried ℤ_[p])
-        ⟨1, fun y ↦ by simpa only [one_mul] using (norm_comulCurried ℤ_[p] y).le⟩
-        (comulCurried ℤ_[p] c) := by
-  have hp_reg : IsSMulRegular ℤ_[p] (p : ℤ_[p]) :=
-    mul_right_injective₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  apply eval_injective ℤ_[p] (isSMulRegular_p (isSMulRegular_p hp_reg))
+      compLeft (comulCurried ℤ_[p]) (exists_norm_comulCurried_le ℤ_[p]) (comulCurried ℤ_[p] c) := by
+  apply eval_injective ℤ_[p] (isSMulRegular (isSMulRegular PadicInt.isSMulRegular_natCast_p))
   refine ContinuousMap.ext fun x ↦ ?_
-  apply eval_injective ℤ_[p] (isSMulRegular_p hp_reg)
+  apply eval_injective ℤ_[p] (isSMulRegular PadicInt.isSMulRegular_natCast_p)
   refine ContinuousMap.ext fun y ↦ ?_
-  apply eval_injective ℤ_[p] hp_reg
+  apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
   refine ContinuousMap.ext fun z ↦ ?_
   rw [eval_eval_comulCurried, eval_eval_comulCurried, eval_compLeft,
     eval_eval_comulCurried, eval_eval_comulCurried, add_assoc]
@@ -585,16 +486,14 @@ equals re-expanding in the inner slot after re-expanding once; holds for every c
 `ℤ_p`-module `E`, including torsion modules. -/
 theorem comulCurried_comulCurried (c : AnalyticStage p h E) :
     comulCurried S (comulCurried S c) =
-      compLeft (comulCurried S)
-        ⟨1, fun y ↦ by simpa only [one_mul] using (norm_comulCurried S y).le⟩
-        (comulCurried S c) := by
+      compLeft (comulCurried S) (exists_norm_comulCurried_le S) (comulCurried S c) := by
   have hcomp : (comulCurried (p := p) (h := h) (E := AnalyticStage p h E) ℤ_[p]).comp
         (comulCurried ℤ_[p]) =
-      (compLeft (comulCurried ℤ_[p])
-        ⟨1, fun y ↦ by simpa only [one_mul] using (norm_comulCurried ℤ_[p] y).le⟩).comp
+      (compLeft (comulCurried ℤ_[p]) (exists_norm_comulCurried_le ℤ_[p])).comp
         (comulCurried ℤ_[p]) := by
+    have : DecidableEq (ZMod (p ^ h) × ℕ) := Classical.decEq _
     refine continuousLinearMap_ext fun s e ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, ← compLeft_smulRight_single_one s e]
+    simp only [ContinuousLinearMap.comp_apply, ← compLeft_smulRight_id_single_one ℤ_[p] ℤ_[p] s e]
     rw [comulCurried_compLeft, comulCurried_compLeft, comulCurried_comulCurried_padicInt]
     ext u
     simp [comulCurried_compLeft]

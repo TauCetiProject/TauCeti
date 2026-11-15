@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.AddChar
 public import Mathlib.NumberTheory.Padics.Measure.Monoid
 public import TauCeti.NumberTheory.Padics.Distribution.Comul
 public import TauCeti.NumberTheory.Padics.Distribution.Dual
@@ -174,16 +173,15 @@ theorem dirac_zero : dirac (p := p) (K := K) 0 = 1 := (rfl)
 noncomputable instance : Mul (LocallyAnalyticDistribution p K) where
   mul μ ν := stagesEquiv.symm
     ⟨fun h ↦ (prodFunctional (stage h μ) (stage h ν)
-      ⟨‖stage h ν‖, (stage h ν).le_opNorm⟩).comp (comul K),
+      (stage h ν).exists_norm_apply_le).comp (comul K),
       mem_compatibleStageFunctionals_iff.mpr fun h ↦ by
         ext c
         simp only [ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
         rw [← transition_compLeft_transition_comulCurried K c]
-        have hrow : compLeft (stage (h + 1) ν) ⟨‖stage (h + 1) ν‖, (stage (h + 1) ν).le_opNorm⟩
-              (transition K (compLeft (transition K)
-                ⟨1, fun y ↦ by simpa only [one_mul] using norm_transition_le K y⟩
+        have hrow : compLeft (stage (h + 1) ν) (stage (h + 1) ν).exists_norm_apply_le
+              (transition K (compLeft (transition K) (exists_norm_transition_le K)
                 (comulCurried K c))) =
-            transition K (compLeft (stage h ν) ⟨‖stage h ν‖, (stage h ν).le_opNorm⟩
+            transition K (compLeft (stage h ν) (stage h ν).exists_norm_apply_le
               (comulCurried K c)) := by
           rw [← transition_compLeft K]
           refine congrArg (transition (p := p) (h := h) (E := K) K) ?_
@@ -203,14 +201,14 @@ theorem stage_one (h : ℕ) :
 theorem stage_mul (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
     stage h (μ * ν) =
       (prodFunctional (stage h μ) (stage h ν)
-        ⟨‖stage h ν‖, (stage h ν).le_opNorm⟩).comp (comul K) :=
+        (stage h ν).exists_norm_apply_le).comp (comul K) :=
   stage_stagesEquiv_symm _ h
 
 /-- Pointwise form of `stage_mul` in terms of `comulCurried`: `μ * ν` applies `stage h ν` to each
 row of `comulCurried K c` and `stage h μ` to the resulting column. -/
 theorem stage_mul_apply (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) (c : AnalyticStage p h K) :
     stage h (μ * ν) c =
-      stage h μ (compLeft (stage h ν) ⟨‖stage h ν‖, (stage h ν).le_opNorm⟩ (comulCurried K c)) := by
+      stage h μ (compLeft (stage h ν) (stage h ν).exists_norm_apply_le (comulCurried K c)) := by
   rw [stage_mul, ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
 
 /-- **Submultiplicativity of the stage seminorms** under additive convolution. -/
@@ -227,90 +225,18 @@ theorem stageSeminorm_one (h : ℕ) :
   stageSeminorm_dirac h 0
 
 noncomputable instance : MulZeroClass (LocallyAnalyticDistribution p K) where
-  zero_mul ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦
-    let st := stage (p := p) (K := K) h
-    let z : LocallyAnalyticDistribution p K := 0
-    let d := compLeft (st ν) ⟨‖st ν‖, (st ν).le_opNorm⟩ (comulCurried K c)
-    calc
-      st (z * ν) c = st z d := stage_mul_apply h z ν c
-      _ = (0 : AnalyticStage p h K →L[K] K) d := congrArg (· d) (map_zero st)
-      _ = 0 := _root_.zero_apply (F := AnalyticStage p h K →L[K] K) d
-      _ = (0 : AnalyticStage p h K →L[K] K) c :=
-        (_root_.zero_apply (F := AnalyticStage p h K →L[K] K) c).symm
-      _ = st z c := congrArg (· c) (map_zero st).symm
-  mul_zero μ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦
-    let st := stage (p := p) (K := K) h
-    let z : LocallyAnalyticDistribution p K := 0
-    have hd : compLeft (st z) ⟨‖st z‖, (st z).le_opNorm⟩ (comulCurried K c) = 0 :=
-      ZeroAtInftyContinuousMap.ext fun u ↦ calc
-        compLeft (st z) ⟨‖st z‖, (st z).le_opNorm⟩ (comulCurried K c) u
-          = st z (comulCurried K c u) := compLeft_apply _ _ _ u
-        _ = (0 : AnalyticStage p h K →L[K] K) (comulCurried K c u) :=
-          congrArg (· (comulCurried K c u)) (map_zero st)
-        _ = 0 := _root_.zero_apply (F := AnalyticStage p h K →L[K] K) _
-        _ = (0 : AnalyticStage p h K) u := (_root_.zero_apply (F := AnalyticStage p h K) u).symm
-    calc
-      st (μ * z) c =
-          st μ (compLeft (st z) ⟨‖st z‖, (st z).le_opNorm⟩
-            (comulCurried K c)) := stage_mul_apply h μ z c
-      _ = st μ 0 := congrArg (st μ) hd
-      _ = 0 := map_zero (st μ)
-      _ = (0 : AnalyticStage p h K →L[K] K) c :=
-        (_root_.zero_apply (F := AnalyticStage p h K →L[K] K) c).symm
-      _ = st z c := congrArg (· c) (map_zero st).symm
+  zero_mul ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
+    simp only [stage_mul_apply, map_zero, _root_.zero_apply]
+  mul_zero μ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
+    simp only [stage_mul_apply, map_zero, _root_.zero_apply, compLeft_zero]
 
 noncomputable instance : Distrib (LocallyAnalyticDistribution p K) where
-  left_distrib μ ν₁ ν₂ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦
-    let st := stage (p := p) (K := K) h
-    let b₁ : ∃ C, ∀ y, ‖st ν₁ y‖ ≤ C * ‖y‖ := ⟨‖st ν₁‖, (st ν₁).le_opNorm⟩
-    let b₂ : ∃ C, ∀ y, ‖st ν₂ y‖ ≤ C * ‖y‖ := ⟨‖st ν₂‖, (st ν₂).le_opNorm⟩
-    let b₁₂ : ∃ C, ∀ y, ‖st (ν₁ + ν₂) y‖ ≤ C * ‖y‖ :=
-      ⟨‖st (ν₁ + ν₂)‖, (st (ν₁ + ν₂)).le_opNorm⟩
-    have hd : compLeft (st (ν₁ + ν₂)) b₁₂ (comulCurried K c) =
-        compLeft (st ν₁) b₁ (comulCurried K c) +
-          compLeft (st ν₂) b₂ (comulCurried K c) :=
-      ZeroAtInftyContinuousMap.ext fun u ↦ calc
-        compLeft (st (ν₁ + ν₂)) b₁₂ (comulCurried K c) u
-          = st (ν₁ + ν₂) (comulCurried K c u) := compLeft_apply _ _ _ u
-        _ = (st ν₁ + st ν₂) (comulCurried K c u) :=
-          congrArg (· (comulCurried K c u)) (map_add st ν₁ ν₂)
-        _ = st ν₁ (comulCurried K c u) + st ν₂ (comulCurried K c u) :=
-          _root_.add_apply (st ν₁) (st ν₂) _
-        _ = compLeft (st ν₁) b₁ (comulCurried K c) u +
-              compLeft (st ν₂) b₂ (comulCurried K c) u :=
-          congrArg₂ (· + ·) (compLeft_apply _ _ _ u).symm (compLeft_apply _ _ _ u).symm
-        _ = (compLeft (st ν₁) b₁ (comulCurried K c) +
-              compLeft (st ν₂) b₂ (comulCurried K c)) u :=
-          (_root_.add_apply _ _ u).symm
-    calc
-      st (μ * (ν₁ + ν₂)) c
-        = st μ (compLeft (st (ν₁ + ν₂)) b₁₂ (comulCurried K c)) :=
-          stage_mul_apply h μ (ν₁ + ν₂) c
-      _ = st μ (compLeft (st ν₁) b₁ (comulCurried K c) +
-            compLeft (st ν₂) b₂ (comulCurried K c)) := congrArg (st μ) hd
-      _ = st μ (compLeft (st ν₁) b₁ (comulCurried K c)) +
-            st μ (compLeft (st ν₂) b₂ (comulCurried K c)) :=
-          map_add (st μ) _ _
-      _ = st (μ * ν₁) c + st (μ * ν₂) c :=
-          congrArg₂ (· + ·) (stage_mul_apply h μ ν₁ c).symm (stage_mul_apply h μ ν₂ c).symm
-      _ = (st (μ * ν₁) + st (μ * ν₂)) c :=
-          (_root_.add_apply (st (μ * ν₁)) (st (μ * ν₂)) c).symm
-      _ = st (μ * ν₁ + μ * ν₂) c :=
-          congrArg (· c) (map_add st (μ * ν₁) (μ * ν₂)).symm
+  left_distrib μ ν₁ ν₂ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
+    simp only [stage_mul_apply, map_add, _root_.add_apply,
+      compLeft_add _ _ (stage h ν₁).exists_norm_apply_le (stage h ν₂).exists_norm_apply_le]
   right_distrib μ₁ μ₂ ν :=
-    LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦
-      let st := stage (p := p) (K := K) h
-      let d := compLeft (st ν) ⟨‖st ν‖, (st ν).le_opNorm⟩ (comulCurried K c)
-      calc
-        st ((μ₁ + μ₂) * ν) c = st (μ₁ + μ₂) d := stage_mul_apply h (μ₁ + μ₂) ν c
-        _ = (st μ₁ + st μ₂) d := congrArg (· d) (map_add st μ₁ μ₂)
-        _ = st μ₁ d + st μ₂ d := _root_.add_apply (st μ₁) (st μ₂) d
-        _ = st (μ₁ * ν) c + st (μ₂ * ν) c :=
-          congrArg₂ (· + ·) (stage_mul_apply h μ₁ ν c).symm (stage_mul_apply h μ₂ ν c).symm
-        _ = (st (μ₁ * ν) + st (μ₂ * ν)) c :=
-          (_root_.add_apply (st (μ₁ * ν)) (st (μ₂ * ν)) c).symm
-        _ = st (μ₁ * ν + μ₂ * ν) c :=
-          congrArg (· c) (map_add st (μ₁ * ν) (μ₂ * ν)).symm
+    LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
+      simp only [stage_mul_apply, map_add, _root_.add_apply]
 
 noncomputable instance : NonUnitalNonAssocRing (LocallyAnalyticDistribution p K) where
   left_distrib := left_distrib
@@ -339,8 +265,8 @@ noncomputable instance : Ring (LocallyAnalyticDistribution p K) where
 noncomputable instance : CommRing (LocallyAnalyticDistribution p K) where
   mul_comm μ ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
     rw [stage_mul, stage_mul, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ← prodFunctional_comp_congrLeft_prodComm (stage h ν) ⟨‖stage h ν‖, (stage h ν).le_opNorm⟩
-        (stage h μ) ⟨‖stage h μ‖, (stage h μ).le_opNorm⟩,
+      ← prodFunctional_comp_congrLeft_prodComm (stage h ν) (stage h ν).exists_norm_apply_le
+        (stage h μ) (stage h μ).exists_norm_apply_le,
       ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
       LinearIsometryEquiv.coe_toLinearIsometry, comul_swap K]
 
@@ -407,8 +333,8 @@ noncomputable def ofMulMeasure :
     (ofMeasure.comp (AbstractMeasure.arrowCongrLeft Homeomorph.ofAdd.symm).toLinearMap)
     (by
       rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.one_def, AbstractMeasure.map_dirac]
-      rfl)
+        AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.one_def, AbstractMeasure.map_dirac,
+        ContinuousMap.coe_mk, Homeomorph.ofAdd_symm_apply, toAdd_one, ofMeasure_dirac, dirac_zero])
     (fun μ ν ↦ by
       rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearMap.comp_apply,
         LinearEquiv.coe_toLinearMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
@@ -444,8 +370,8 @@ theorem ofMulMeasure_ofAdd (μ : D(ℤ_[p], K)) :
 @[simp]
 theorem ofMulMeasure_dirac (x : Multiplicative ℤ_[p]) :
     ofMulMeasure (p := p) (K := K) (AbstractMeasure.dirac K x) = dirac x.toAdd := by
-  rw [ofMulMeasure_apply, AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.map_dirac]
-  rfl
+  rw [ofMulMeasure_apply, AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.map_dirac,
+    ContinuousMap.coe_mk, Homeomorph.ofAdd_symm_apply, ofMeasure_dirac]
 
 /-- The `K`-algebra homomorphism `ofMulMeasure` is injective. -/
 theorem ofMulMeasure_injective :

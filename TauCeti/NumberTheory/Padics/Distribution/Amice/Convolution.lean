@@ -70,40 +70,30 @@ namespace AnalyticStage
 
 private theorem eval_curryEquiv_prodMul {h : ℕ} (a b : AnalyticStage p h ℤ_[p]) (x : ℤ_[p]) :
     eval ℤ_[p] (curryEquiv ℤ_[p] ℤ_[p] (prodMul a b)) x = eval ℤ_[p] a x • b := by
-  have hq : curryEquiv ℤ_[p] ℤ_[p] (prodMul a b) =
-      compLeft ((ContinuousLinearMap.id ℤ_[p] ℤ_[p]).smulRight b)
-        ⟨‖b‖, fun r ↦ by
-          simpa only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-            (mul_comm ‖b‖)] using norm_smul_le r b⟩ a := by
-    ext i
-    simp
-  rw [hq, eval_compLeft ℤ_[p]]
-  rfl
+  rw [curryEquiv_prodMul_eq_compLeft, eval_compLeft ℤ_[p],
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply]
 
 private theorem comul_amiceTerm_padicInt_of_lt {h n : ℕ} (hn : n < p ^ h) :
     comul ℤ_[p] (amiceTerm p h n (1 : ℤ_[p])) =
       ∑ ij ∈ Finset.antidiagonal n,
         prodMul (amiceTerm p h ij.1 (1 : ℤ_[p])) (amiceTerm p h ij.2 (1 : ℤ_[p])) := by
-  have hp_reg : IsSMulRegular ℤ_[p] (p : ℤ_[p]) :=
-    mul_right_injective₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
   apply (curryEquiv ℤ_[p] ℤ_[p]).injective
   rw [curryEquiv_comul, map_sum]
-  apply eval_injective ℤ_[p] (isSMulRegular_p hp_reg)
+  apply eval_injective ℤ_[p] (isSMulRegular PadicInt.isSMulRegular_natCast_p)
   refine ContinuousMap.ext fun x ↦ ?_
-  apply eval_injective ℤ_[p] hp_reg
+  apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
   refine ContinuousMap.ext fun y ↦ ?_
-  rw [eval_eval_comulCurried ℤ_[p], eval_amiceTerm ℤ_[p], Nat.div_eq_of_lt hn,
-    Nat.factorial_zero, one_smul, PadicInt.mahlerTerm_apply, mahler_apply, smul_eq_mul, mul_one,
-    Ring.add_choose_eq n (Commute.all x y), map_sum, ContinuousMap.coe_sum, Finset.sum_apply,
-    map_sum, ContinuousMap.coe_sum, Finset.sum_apply]
+  rw [eval_eval_comulCurried ℤ_[p], eval_amiceTerm ℤ_[p]]
+  simp only [Nat.div_eq_of_lt hn, Nat.factorial_zero, one_smul, PadicInt.mahlerTerm_apply,
+    mahler_apply, smul_eq_mul, mul_one, Ring.add_choose_eq n (Commute.all x y), map_sum,
+    ContinuousMap.coe_sum, Finset.sum_apply]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
   have hij' := Finset.mem_antidiagonal.mp hij
   have hij1 : ij.1 < p ^ h := by omega
   have hij2 : ij.2 < p ^ h := by omega
   rw [eval_curryEquiv_prodMul, map_smul, ContinuousMap.smul_apply, eval_amiceTerm ℤ_[p],
-    eval_amiceTerm ℤ_[p], Nat.div_eq_of_lt hij1, Nat.div_eq_of_lt hij2, Nat.factorial_zero,
-    one_smul, PadicInt.mahlerTerm_apply, PadicInt.mahlerTerm_apply, mahler_apply, mahler_apply]
-  simp only [smul_eq_mul, mul_one]
+    eval_amiceTerm ℤ_[p]]
+  simp [Nat.div_eq_of_lt hij1, Nat.div_eq_of_lt hij2, mahler_apply]
 
 /-- **Vandermonde formula for `comul` on unweighted Amice basis vectors.** When `n < p ^ h`, so
 that `⌊n / pʰ⌋! = 1` and `amiceTerm p h n 1` represents `x choose n`, stage comultiplication
@@ -117,9 +107,7 @@ theorem comul_amiceTerm_of_lt {h n : ℕ} {R : Type*} [NormedRing R] [Algebra �
         prodMul (amiceTerm p h ij.1 (1 : R)) (amiceTerm p h ij.2 (1 : R)) := by
   let φ : ℤ_[p] →L[ℤ_[p]] R := (ContinuousLinearMap.id ℤ_[p] ℤ_[p]).smulRight (1 : R)
   have hφ : ∃ C, ∀ r : ℤ_[p], ‖φ r‖ ≤ C * ‖r‖ :=
-    ⟨‖(1 : R)‖, fun r ↦ by
-      simpa only [φ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-        (mul_comm ‖(1 : R)‖)] using norm_smul_le r (1 : R)⟩
+    ContinuousLinearMap.exists_norm_smulRight_id_apply_le ℤ_[p] ℤ_[p] (1 : R)
   have hterm (m : ℕ) : compLeft φ hφ (amiceTerm p h m (1 : ℤ_[p])) = amiceTerm p h m (1 : R) := by
     ext i
     simp [φ]
@@ -163,8 +151,8 @@ theorem amiceTransform_mul (μ ν : LocallyAnalyticDistribution p K) :
   have hij' := Finset.mem_antidiagonal.mp hij
   have hij1 : ij.1 < p ^ n := by omega
   have hij2 : ij.2 < p ^ n := by omega
-  rw [prodFunctional_prodMul, stage_amiceTerm, stage_amiceTerm, Nat.div_eq_of_lt hij1,
-    Nat.div_eq_of_lt hij2, Nat.factorial_zero, Nat.cast_one, one_mul, one_mul, one_mul]
+  rw [prodFunctional_prodMul, stage_amiceTerm, stage_amiceTerm]
+  simp [Nat.div_eq_of_lt hij1, Nat.div_eq_of_lt hij2]
 
 /-- **The Amice transform as a `K`-algebra homomorphism** from locally analytic distributions under
 additive convolution to formal power series. -/
@@ -238,38 +226,30 @@ ultrametric normed `ℚ_p`-algebra, the Amice transform is a `K`-algebra isomorp
 `LocallyAnalyticDistribution p K` under additive convolution onto the subring
 `PowerSeries.OnOpenDisc.subring K 1` of formal power series converging on the open unit disc. -/
 noncomputable def amiceTransformAlgEquiv :
-    LocallyAnalyticDistribution p K ≃ₐ[K] PowerSeries.OnOpenDisc.subring K 1 where
-  toFun μ := ⟨amiceTransform μ,
-    PowerSeries.OnOpenDisc.mem_subring.mpr (onOpenDisc_amiceTransform μ)⟩
-  invFun F := ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2)
-  left_inv := ofOnOpenDisc_amiceTransform
-  right_inv F := Subtype.ext
-    (amiceTransform_ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2))
-  map_add' μ ν := Subtype.ext (map_add amiceTransform μ ν)
-  map_mul' μ ν := Subtype.ext (amiceTransform_mul μ ν)
-  commutes' a := Subtype.ext <| by
-    dsimp only
-    rw [Algebra.algebraMap_eq_smul_one, map_smul, amiceTransform_one,
-      PowerSeries.OnOpenDisc.coe_algebraMap_subring, Algebra.smul_def, mul_one,
-      PowerSeries.algebraMap_apply]
+    LocallyAnalyticDistribution p K ≃ₐ[K] PowerSeries.OnOpenDisc.subring K 1 :=
+  AlgEquiv.ofRingEquiv
+    (f := { amiceTransformEquiv with
+      map_mul' := fun μ ν ↦ Subtype.ext <| by simp [amiceTransform_mul] })
+    fun a ↦ Subtype.ext <| by
+      simp [Algebra.algebraMap_eq_smul_one]
 
 /-- The underlying power series of `amiceTransformAlgEquiv μ` is `amiceTransform μ`. -/
 @[simp]
 theorem coe_amiceTransformAlgEquiv (μ : LocallyAnalyticDistribution p K) :
-    (amiceTransformAlgEquiv μ : PowerSeries K) = amiceTransform μ := (rfl)
+    (amiceTransformAlgEquiv μ : PowerSeries K) = amiceTransform μ :=
+  coe_amiceTransformEquiv μ
 
 /-- Forgetting multiplication and scalars recovers `amiceTransformEquiv`. -/
 @[simp]
 theorem amiceTransformAlgEquiv_toAddEquiv :
-    (amiceTransformAlgEquiv (p := p) (K := K)).toAddEquiv = amiceTransformEquiv :=
-  AddEquiv.ext fun μ ↦ Subtype.ext <|
-    (coe_amiceTransformAlgEquiv μ).trans (coe_amiceTransformEquiv μ).symm
+    (amiceTransformAlgEquiv (p := p) (K := K)).toAddEquiv = amiceTransformEquiv := (rfl)
 
 /-- The inverse of `amiceTransformAlgEquiv` is `ofOnOpenDisc`. -/
 @[simp]
 theorem amiceTransformAlgEquiv_symm_apply (F : PowerSeries.OnOpenDisc.subring K 1) :
     amiceTransformAlgEquiv.symm F =
-      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2) := (rfl)
+      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2) :=
+  amiceTransformEquiv_symm_apply F
 
 end NormedAlgebra
 

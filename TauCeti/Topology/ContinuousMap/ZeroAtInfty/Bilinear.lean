@@ -54,9 +54,7 @@ two-variable family `(i, j) ↦ a i * b j` vanishes at infinity on `I × J`. -/
 noncomputable def prodMul (a : C₀(I, R)) (b : C₀(J, R)) : C₀(I × J, R) :=
   (curryEquiv ℕ R).symm
     (compLeft ((ContinuousLinearMap.id ℕ R).smulRight b)
-      ⟨‖b‖, fun r ↦ by
-        simpa only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-          (mul_comm ‖b‖)] using norm_smul_le r b⟩ a)
+      (ContinuousLinearMap.exists_norm_smulRight_id_apply_le ℕ R b) a)
 
 /-- `prodMul a b` evaluates at `(i, j)` to `a i * b j`. -/
 @[simp]
@@ -122,6 +120,15 @@ theorem prodMul_smul_right (r : R) (a : C₀(I, R)) (b : C₀(J, R)) :
 theorem curryEquiv_prodMul (a : C₀(I, R)) (b : C₀(J, R)) (i : I) :
     curryEquiv R R (prodMul a b) i = a i • b := by
   ext j; simp
+
+/-- Currying an outer product applies coordinatewise right scalar multiplication by `b` to `a`. -/
+theorem curryEquiv_prodMul_eq_compLeft (a : C₀(I, R)) (b : C₀(J, R)) :
+    curryEquiv R R (prodMul a b) =
+      compLeft ((ContinuousLinearMap.id R R).smulRight b)
+        (ContinuousLinearMap.exists_norm_smulRight_id_apply_le R R b) a := by
+  ext i
+  rw [curryEquiv_prodMul, compLeft_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.id_apply]
 
 /-- Swapping the two indices swaps the factors of an outer product. -/
 @[simp]
@@ -193,9 +200,8 @@ theorem prodFunctional_zero_left (v : C₀(J, R) →L[R] R) (hv : ∃ C, ∀ y, 
 theorem prodFunctional_zero_right (u : C₀(I, R) →L[R] R)
     (hv : ∃ C, ∀ y, ‖(0 : C₀(J, R) →L[R] R) y‖ ≤ C * ‖y‖) :
     prodFunctional u (0 : C₀(J, R) →L[R] R) hv = 0 := by
-  have h0 : compLeft (α := I) (0 : C₀(J, R) →L[R] R) hv = 0 := by ext; simp
   ext f
-  simp [prodFunctional_apply, h0]
+  simp [prodFunctional_apply]
 
 /-- `prodFunctional` is additive in its first factor. -/
 theorem prodFunctional_add_left (u₁ u₂ : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
@@ -208,10 +214,8 @@ theorem prodFunctional_add_right (u : C₀(I, R) →L[R] R) (v₁ v₂ : C₀(J,
     (hv₁ : ∃ C, ∀ y, ‖v₁ y‖ ≤ C * ‖y‖) (hv₂ : ∃ C, ∀ y, ‖v₂ y‖ ≤ C * ‖y‖)
     (hv : ∃ C, ∀ y, ‖(v₁ + v₂) y‖ ≤ C * ‖y‖) :
     prodFunctional u (v₁ + v₂) hv = prodFunctional u v₁ hv₁ + prodFunctional u v₂ hv₂ := by
-  have hadd : compLeft (α := I) (v₁ + v₂) hv = compLeft v₁ hv₁ + compLeft v₂ hv₂ := by
-    ext; simp
   ext f
-  simp [prodFunctional_apply, hadd]
+  simp [prodFunctional_apply, compLeft_add v₁ v₂ hv₁ hv₂ hv]
 
 /-- `prodFunctional` commutes with scalar multiplication in its first factor. -/
 theorem prodFunctional_smul_left (r : R) (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
@@ -223,10 +227,8 @@ theorem prodFunctional_smul_left (r : R) (u : C₀(I, R) →L[R] R) (v : C₀(J,
 theorem prodFunctional_smul_right (r : R) (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
     (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) (hrv : ∃ C, ∀ y, ‖(r • v) y‖ ≤ C * ‖y‖) :
     prodFunctional u (r • v) hrv = r • prodFunctional u v hv := by
-  have hsmul : compLeft (α := I) (r • v) hrv = r • compLeft v hv := by
-    ext; simp
   ext f
-  simp [prodFunctional_apply, hsmul]
+  simp [prodFunctional_apply, compLeft_smul r v hv hrv]
 
 /-- If `u` is bounded by `C₁ ≥ 0` and `v` is bounded by `C₂`, then `prodFunctional u v hv` is
 bounded by `C₁ * C₂`. -/

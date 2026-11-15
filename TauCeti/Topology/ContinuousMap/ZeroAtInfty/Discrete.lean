@@ -547,6 +547,16 @@ theorem compLeft_single [DecidableEq I] (u : E →L[R] F) (hu : ∃ C, ∀ x, �
   ext j
   by_cases h : j = i <;> simp [h]
 
+/-- Coordinatewise right scalar multiplication by `e` sends `single i (1 : S)` to `single i e`. -/
+theorem compLeft_smulRight_id_single_one (M S : Type*) [DecidableEq I] [Semiring M]
+    [SeminormedRing S] [Module M S] [ContinuousConstSMul M S] [Module M E]
+    [ContinuousConstSMul M E] [Module S E] [IsScalarTower M S E] [IsBoundedSMul S E]
+    (i : I) (e : E) :
+    compLeft ((ContinuousLinearMap.id M S).smulRight e)
+        (ContinuousLinearMap.exists_norm_smulRight_id_apply_le M S e) (single i (1 : S)) =
+      single i e := by
+  simp
+
 variable (R E) in
 /-- **Disjoint sums of index types.** Restriction to the two summands identifies
 `C₀(I ⊕ J, E)` isometrically with the product `C₀(I, E) × C₀(J, E)`, which carries the max
