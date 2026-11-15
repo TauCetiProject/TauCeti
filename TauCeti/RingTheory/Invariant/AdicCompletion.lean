@@ -105,6 +105,15 @@ theorem le_comap_toAlgHom_of_mem_stabilizer {A S G : Type*} [CommSemiring A] [Se
   rw [Ideal.mem_comap, MulSemiringAction.toAlgHom_apply, ← hg']
   exact Ideal.smul_mem_pointwise_smul g s 𝔪 hs
 
+private theorem mapₐ_congr {R₁ R₂ S S' : Type*} [CommRing R₁] [CommRing R₂]
+    [CommRing S] [CommRing S'] [Algebra R₁ S] [Algebra R₁ S'] [Algebra R₂ S] [Algebra R₂ S']
+    {I : Ideal S} {I' : Ideal S'} {f₁ : S →ₐ[R₁] S'} {hf₁ : I ≤ I'.comap f₁}
+    {f₂ : S →ₐ[R₂] S'} {hf₂ : I ≤ I'.comap f₂} (h : ∀ s, f₁ s = f₂ s) (x : AdicCompletion I S) :
+    AdicCompletion.mapₐ f₁ hf₁ x = AdicCompletion.mapₐ f₂ hf₂ x :=
+  AdicCompletion.ext_evalₐ fun n ↦ by
+    obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
+    simp [← hs, h]
+
 end ActionHelpers
 
 section FixedSubalgebraSameUniverse
@@ -127,14 +136,8 @@ private theorem proj_comp_defectMap (i : Fin (Nat.card G)) :
 private theorem exact_algebraLinearMap_defectMap :
     Function.Exact (Algebra.linearMap (FixedPoints.subalgebra A S G) S) (defectMap A S G) := by
   intro s
-  constructor
-  · intro hs
-    refine ⟨⟨s, fun g ↦ ?_⟩, rfl⟩
-    have hi := congrFun hs (Finite.equivFin G g)
-    simp only [defectMap, LinearMap.pi_apply, LinearMap.sub_apply, AlgHom.toLinearMap_apply,
-      MulSemiringAction.toAlgHom_apply, LinearMap.id_apply, Pi.zero_apply,
-      Equiv.symm_apply_apply, sub_eq_zero] at hi
-    exact hi
+  refine ⟨fun hs ↦ ⟨⟨s, fun g ↦ ?_⟩, rfl⟩, ?_⟩
+  · simpa [defectMap, sub_eq_zero] using congrFun hs (Finite.equivFin G g)
   · rintro ⟨a, rfl⟩
     ext i
     simpa [defectMap, sub_eq_zero] using a.2 ((Finite.equivFin G).symm i)
@@ -151,31 +154,21 @@ private theorem mem_range_map_algebraLinearMap_subalgebra_iff
       Function.Exact (Algebra.linearMap (FixedPoints.subalgebra A S G) S)
         (defectMap A S G).rangeRestrict :=
     fun s ↦ Subtype.ext_iff.trans (exact_algebraLinearMap_defectMap A S G s)
-  have hinj_alg : Function.Injective (Algebra.linearMap (FixedPoints.subalgebra A S G) S) :=
-    fun _ _ h ↦ Subtype.ext h
-  have hexact :
-      Function.Exact
-        (AdicCompletion.map I₀ (Algebra.linearMap (FixedPoints.subalgebra A S G) S))
-        (AdicCompletion.map I₀ (defectMap A S G).rangeRestrict) :=
-    AdicCompletion.map_exact hinj_alg hexact₀ (LinearMap.surjective_rangeRestrict (defectMap A S G))
+  have hexact := AdicCompletion.map_exact (I := I₀) (fun _ _ h ↦ Subtype.ext h) hexact₀
+    (LinearMap.surjective_rangeRestrict (defectMap A S G))
   have hinj_sub :
       Function.Injective (AdicCompletion.map I₀ (LinearMap.range (defectMap A S G)).subtype) :=
     AdicCompletion.map_injective I₀ Subtype.val_injective
-  have hsub :
-      (LinearMap.range (defectMap A S G)).subtype ∘ₗ (defectMap A S G).rangeRestrict =
-        defectMap A S G :=
-    LinearMap.ext fun _ ↦ rfl
+  have hsub : (LinearMap.range (defectMap A S G)).subtype ∘ₗ (defectMap A S G).rangeRestrict =
+      defectMap A S G := LinearMap.ext fun _ ↦ rfl
   rw [← hexact y, ← hinj_sub.eq_iff, map_zero, AdicCompletion.map_comp_apply, hsub]
-  constructor
-  · intro hy g
-    let i := Finite.equivFin G g
-    have hi : AdicCompletion.map I₀ (LinearMap.proj i ∘ₗ defectMap A S G) y = 0 := by
+  refine ⟨fun hy g ↦ ?_, fun hy ↦ ?_⟩
+  · have hi : AdicCompletion.map I₀
+        (LinearMap.proj (Finite.equivFin G g) ∘ₗ defectMap A S G) y = 0 := by
       rw [← AdicCompletion.map_comp_apply, hy, map_zero]
-    rw [proj_comp_defectMap, Equiv.symm_apply_apply, map_sub, LinearMap.sub_apply,
+    rwa [proj_comp_defectMap, Equiv.symm_apply_apply, map_sub, LinearMap.sub_apply,
       AdicCompletion.map_id, LinearMap.id_apply, sub_eq_zero] at hi
-    exact hi
-  · intro hy
-    apply (AdicCompletion.piEquivOfFintype I₀ (fun _ : Fin (Nat.card G) ↦ S)).injective
+  · apply (AdicCompletion.piEquivOfFintype I₀ (fun _ : Fin (Nat.card G) ↦ S)).injective
     rw [map_zero, AdicCompletion.piEquivOfFintype_apply]
     funext i
     rw [Pi.zero_apply, AdicCompletion.pi, LinearMap.pi_apply, AdicCompletion.map_comp_apply,
@@ -206,51 +199,34 @@ private theorem coe_fixedSubalgebraAlgEquiv [Algebra.IsInvariant A S G] (a : A) 
 
 private theorem map_fixedSubalgebraAlgEquiv_map [Algebra.IsInvariant A S G] (I : Ideal A) :
     (I.map (fixedSubalgebraAlgEquiv (A := A) (S := S) G)).map
-      (algebraMap (FixedPoints.subalgebra A S G) S) = I.map (algebraMap A S) := by
-  refine le_antisymm ?_ ?_
-  · rw [Ideal.map_le_iff_le_comap, Ideal.map_le_iff_le_comap]
-    exact fun a ha ↦ Ideal.mem_comap.mpr (Ideal.mem_comap.mpr
-      (coe_fixedSubalgebraAlgEquiv (S := S) G a ▸ Ideal.mem_map_of_mem _ ha))
-  · rw [Ideal.map_le_iff_le_comap]
-    exact fun a ha ↦ Ideal.mem_comap.mpr (coe_fixedSubalgebraAlgEquiv (S := S) G a ▸
-      Ideal.mem_map_of_mem _ (Ideal.mem_map_of_mem _ ha))
+      (algebraMap (FixedPoints.subalgebra A S G) S) = I.map (algebraMap A S) :=
+  le_antisymm
+    (Ideal.map_le_iff_le_comap.mpr <| Ideal.map_le_iff_le_comap.mpr fun a ha ↦
+      Ideal.mem_comap.mpr <| Ideal.mem_comap.mpr <|
+        coe_fixedSubalgebraAlgEquiv (S := S) G a ▸ Ideal.mem_map_of_mem _ ha)
+    (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ Ideal.mem_comap.mpr <|
+      coe_fixedSubalgebraAlgEquiv (S := S) G a ▸
+        Ideal.mem_map_of_mem _ (Ideal.mem_map_of_mem _ ha))
 
-private noncomputable def congrIdealAlgEquiv {R : Type*} [CommRing R] {I J : Ideal R} (h : I = J) :
-    AdicCompletion I R ≃ₐ[R] AdicCompletion J R :=
-  AlgEquiv.ofAlgHom
-    (AdicCompletion.mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (h ▸ hx)))
-    (AdicCompletion.mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (h.symm ▸ hx)))
-    (by
-      apply AlgHom.ext
-      intro x
-      refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-      rw [AlgHom.comp_apply, AlgHom.id_apply, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-      obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ J n x)
-      rw [← hr]
-      simp)
-    (by
-      apply AlgHom.ext
-      intro x
-      refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-      rw [AlgHom.comp_apply, AlgHom.id_apply, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-      obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
-      rw [← hr]
-      simp)
+private theorem map_algEquiv_refl {R : Type*} [CommRing R] (J : Ideal R) :
+    J.map (AlgEquiv.refl : R ≃ₐ[R] R) = J :=
+  le_antisymm (Ideal.map_le_iff_le_comap.mpr fun _ h ↦ Ideal.mem_comap.mpr h)
+    fun _ h ↦ Ideal.mem_map_of_mem _ h
 
 variable (S) in
 private noncomputable def extendedSubalgebraEquiv [Algebra.IsInvariant A S G] (I : Ideal A) :
     AdicCompletion (I.map (fixedSubalgebraAlgEquiv (A := A) (S := S) G)) S
       ≃ₗ[FixedPoints.subalgebra A S G] AdicCompletion (I.map (algebraMap A S)) S :=
   (AdicCompletion.mapAlgebraMapLinearEquiv _ S S).trans
-    ((congrIdealAlgEquiv
-      (map_fixedSubalgebraAlgEquiv_map (S := S) G I)).toLinearEquiv.restrictScalars _)
+    ((AdicCompletion.congrₐ (AlgEquiv.refl : S ≃ₐ[S] S)
+      ((map_algEquiv_refl _).trans
+        (map_fixedSubalgebraAlgEquiv_map (S := S) G I))).toLinearEquiv.restrictScalars _)
 
 private theorem extendedSubalgebraEquiv_apply [Algebra.IsInvariant A S G] (I : Ideal A)
     (y₀ : AdicCompletion (I.map (fixedSubalgebraAlgEquiv (A := A) (S := S) G)) S) :
     extendedSubalgebraEquiv S G I y₀ =
-      AdicCompletion.mapₐ (AlgHom.id S S)
-        (fun _ hx ↦ Ideal.mem_comap.mpr
-          (map_fixedSubalgebraAlgEquiv_map (S := S) G I ▸ hx))
+      AdicCompletion.congrₐ (AlgEquiv.refl : S ≃ₐ[S] S)
+        ((map_algEquiv_refl _).trans (map_fixedSubalgebraAlgEquiv_map (S := S) G I))
         (AdicCompletion.mapAlgebraMapLinearEquiv _ S S y₀) :=
   rfl
 
@@ -262,17 +238,13 @@ private theorem extendedSubalgebraEquiv_map_algebraLinearMap [Algebra.IsInvarian
         (AdicCompletion.congrₐ (fixedSubalgebraAlgEquiv (A := A) (S := S) G) rfl x)) =
       AdicCompletion.mapₐ (Algebra.ofId A S) hle x := by
   rw [extendedSubalgebraEquiv_apply, AdicCompletion.mapAlgebraMapLinearEquiv_map_algebraLinearMap]
-  refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-  rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_congrₐ,
-    AdicCompletion.evalₐ_mapₐ]
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
-  rw [← ha]
-  simp [coe_fixedSubalgebraAlgEquiv]
+  exact AdicCompletion.ext_evalₐ fun n ↦ by
+    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
+    simp [← ha, coe_fixedSubalgebraAlgEquiv]
 
 private theorem extendedSubalgebraEquiv_map_toAlgHom [Algebra.IsInvariant A S G] (I : Ideal A)
     (hg_le : ∀ g : G,
-      I.map (algebraMap A S) ≤
-        (I.map (algebraMap A S)).comap (MulSemiringAction.toAlgHom A S g))
+      I.map (algebraMap A S) ≤ (I.map (algebraMap A S)).comap (MulSemiringAction.toAlgHom A S g))
     (g : G) (y₀ : AdicCompletion (I.map (fixedSubalgebraAlgEquiv (A := A) (S := S) G)) S) :
     extendedSubalgebraEquiv S G I
       (AdicCompletion.map _
@@ -282,13 +254,10 @@ private theorem extendedSubalgebraEquiv_map_toAlgHom [Algebra.IsInvariant A S G]
   rw [extendedSubalgebraEquiv_apply, extendedSubalgebraEquiv_apply,
     AdicCompletion.mapAlgebraMapLinearEquiv_map_algHom _
       (MulSemiringAction.toAlgHom (FixedPoints.subalgebra A S G) S g)]
-  refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-  rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ,
-    AdicCompletion.evalₐ_mapₐ]
-  obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective
-    (AdicCompletion.evalₐ _ n (AdicCompletion.mapAlgebraMapLinearEquiv _ S S y₀))
-  rw [← hs]
-  simp
+  exact AdicCompletion.ext_evalₐ fun n ↦ by
+    obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective
+      (AdicCompletion.evalₐ _ n (AdicCompletion.mapAlgebraMapLinearEquiv _ S S y₀))
+    simp [← hs]
 
 variable [IsNoetherianRing A] [Module.Finite A S]
 
@@ -303,11 +272,8 @@ theorem mapₐ_algebraOfId_injective [Algebra.IsInvariant A S G] (I : Ideal A)
     isNoetherianRing_of_ringEquiv A (fixedSubalgebraAlgEquiv (A := A) (S := S) G).toRingEquiv
   have : Module.Finite (FixedPoints.subalgebra A S G) S :=
     Module.Finite.of_restrictScalars_finite A (FixedPoints.subalgebra A S G) S
-  have hinj_alg : Function.Injective (Algebra.linearMap (FixedPoints.subalgebra A S G) S) :=
-    fun _ _ h ↦ Subtype.ext h
-  have hinj := AdicCompletion.map_injective
-    (I.map (fixedSubalgebraAlgEquiv (A := A) (S := S) G))
-    hinj_alg
+  have hinj := AdicCompletion.map_injective (I.map (fixedSubalgebraAlgEquiv (A := A) (S := S) G))
+    (f := Algebra.linearMap (FixedPoints.subalgebra A S G) S) fun _ _ h ↦ Subtype.ext h
   intro x₁ x₂ hx
   rw [← extendedSubalgebraEquiv_map_algebraLinearMap G I hle x₁,
     ← extendedSubalgebraEquiv_map_algebraLinearMap G I hle x₂] at hx
@@ -333,26 +299,18 @@ theorem mem_range_mapₐ_algebraOfId_iff [Algebra.IsInvariant A S G] (I : Ideal 
     isNoetherianRing_of_ringEquiv A (fixedSubalgebraAlgEquiv (A := A) (S := S) G).toRingEquiv
   have : Module.Finite (FixedPoints.subalgebra A S G) S :=
     Module.Finite.of_restrictScalars_finite A (FixedPoints.subalgebra A S G) S
-  constructor
+  refine ⟨?_, fun hfix ↦ ?_⟩
   · rintro ⟨x, rfl⟩ g
-    refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-    rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
-    rw [← ha]
-    simp [(MulSemiringAction.toAlgHom A S g).commutes a]
-  · intro hfix
-    set y₀ := (extendedSubalgebraEquiv S G I).symm y
+    rw [AdicCompletion.mapₐ_mapₐ]
+    exact mapₐ_congr ((MulSemiringAction.toAlgHom A S g).commutes) x
+  · set y₀ := (extendedSubalgebraEquiv S G I).symm y
     have hy : extendedSubalgebraEquiv S G I y₀ = y := LinearEquiv.apply_symm_apply _ y
-    have hy₀ : y₀ ∈ Set.range
-        (AdicCompletion.map _ (Algebra.linearMap (FixedPoints.subalgebra A S G) S)) := by
-      rw [mem_range_map_algebraLinearMap_subalgebra_iff]
-      intro g
-      apply (extendedSubalgebraEquiv S G I).injective
-      rw [extendedSubalgebraEquiv_map_toAlgHom G I hg_le g y₀, hy]
-      exact hfix g
-    obtain ⟨x₀, hx₀⟩ := hy₀
-    refine ⟨(AdicCompletion.congrₐ
-      (fixedSubalgebraAlgEquiv (A := A) (S := S) G) rfl).symm x₀, ?_⟩
+    obtain ⟨x₀, hx₀⟩ : y₀ ∈ Set.range
+        (AdicCompletion.map _ (Algebra.linearMap (FixedPoints.subalgebra A S G) S)) :=
+      (mem_range_map_algebraLinearMap_subalgebra_iff _ _ _ _ _).mpr fun g ↦
+        (extendedSubalgebraEquiv S G I).injective <| by
+          rw [extendedSubalgebraEquiv_map_toAlgHom G I hg_le g y₀, hy]; exact hfix g
+    refine ⟨(AdicCompletion.congrₐ (fixedSubalgebraAlgEquiv (A := A) (S := S) G) rfl).symm x₀, ?_⟩
     rw [← extendedSubalgebraEquiv_map_algebraLinearMap G I hle, AlgEquiv.apply_symm_apply, hx₀, hy]
 
 end GlobalIdeal
@@ -369,10 +327,8 @@ private theorem isMaximal_orbit [𝔪.IsMaximal] (Q : MulAction.orbit G 𝔪) : 
   infer_instance
 
 private theorem pairwise_isCoprime_orbit [𝔪.IsMaximal] :
-    Pairwise (IsCoprime on fun Q : MulAction.orbit G 𝔪 ↦ Q.1) := by
-  intro Q₁ Q₂ hne
-  have := isMaximal_orbit G 𝔪 Q₁
-  have := isMaximal_orbit G 𝔪 Q₂
+    Pairwise (IsCoprime on fun Q : MulAction.orbit G 𝔪 ↦ Q.1) := fun Q₁ Q₂ hne ↦ by
+  have := isMaximal_orbit G 𝔪 Q₁; have := isMaximal_orbit G 𝔪 Q₂
   exact Ideal.isCoprime_of_isMaximal (Subtype.coe_ne_coe.mpr hne)
 
 private def orbitInf : Ideal S :=
@@ -384,20 +340,18 @@ private theorem inv_smul_mem_orbit (g : G) (Q : MulAction.orbit G 𝔪) :
   exact MulAction.mem_orbit_iff.mpr ⟨g⁻¹ * h, by rw [mul_smul, hh]⟩
 
 private theorem orbitInf_stable (g : G) {s : S} (hs : s ∈ orbitInf G 𝔪) :
-    g • s ∈ orbitInf G 𝔪 := by
-  rw [orbitInf, Ideal.mem_iInf] at hs ⊢
-  intro Q
-  exact Ideal.mem_inv_pointwise_smul_iff.mp (hs ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩)
+    g • s ∈ orbitInf G 𝔪 :=
+  Ideal.mem_iInf.mpr fun Q ↦
+    Ideal.mem_inv_pointwise_smul_iff.mp
+      ((Ideal.mem_iInf.mp hs) ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩)
 
 private theorem under_orbitInf [𝔪.LiesOver 𝔭] : (orbitInf G 𝔪).under A = 𝔭 := by
   ext a
   simp only [Ideal.mem_under, orbitInf, Ideal.mem_iInf]
-  constructor
-  · intro ha
-    have h₀ := ha ⟨𝔪, MulAction.mem_orbit_self 𝔪⟩
+  refine ⟨fun ha ↦ ?_, fun ha Q ↦ ?_⟩
+  · have h₀ := ha ⟨𝔪, MulAction.mem_orbit_self 𝔪⟩
     rwa [← Ideal.mem_under, ← ‹𝔪.LiesOver 𝔭›.over] at h₀
-  · intro ha Q
-    obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp Q.2
+  · obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp Q.2
     have hQ : Q.1.under A = 𝔭 := by rw [← hg, Ideal.under_smul, ‹𝔪.LiesOver 𝔭›.over]
     rwa [← hQ, Ideal.mem_under] at ha
 
@@ -423,9 +377,7 @@ private theorem orbitPiMapₐ_eq_mapₐ [𝔪.LiesOver 𝔭]
           (((map_le_orbitInf G 𝔭 𝔪).trans (iInf_le (fun R : MulAction.orbit G 𝔪 ↦ R.1) Q)) hx))
         y := by
   simp only [orbitPiMapₐ, AlgHom.comp_apply, AlgHom.pi_apply, AdicCompletion.mapₐ_mapₐ]
-  refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-  rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-  rfl
+  exact mapₐ_congr (fun _ ↦ rfl) y
 
 variable [Finite G] [FaithfulSMul A S] [IsNoetherianRing A] [Module.Finite A S]
   [𝔪.IsMaximal] [𝔪.LiesOver 𝔭]
@@ -434,12 +386,10 @@ omit [FaithfulSMul A S] [𝔪.IsMaximal] in
 private theorem exists_orbitInf_pow_le_map [Algebra.IsInvariant A S G] :
     ∃ k : ℕ, orbitInf G 𝔪 ^ k ≤ 𝔭.map (algebraMap A S) := by
   have : IsNoetherian A S := isNoetherian_of_isNoetherianRing_of_finite A S
-  have hfg : (orbitInf G 𝔪).FG :=
-    (IsNoetherian.noetherian ((orbitInf G 𝔪).restrictScalars A)).of_restrictScalars A
-  refine Ideal.exists_pow_le_of_le_radical_of_fg (fun b hb ↦ ?_) hfg
-  refine ⟨Nat.card G, ?_⟩
-  rw [← under_orbitInf G 𝔭 𝔪]
-  exact Ideal.pow_card_mem_map_under A G (orbitInf_stable G 𝔪) hb
+  refine Ideal.exists_pow_le_of_le_radical_of_fg
+    (fun b hb ↦ ⟨Nat.card G, under_orbitInf G 𝔭 𝔪 ▸
+      Ideal.pow_card_mem_map_under A G (orbitInf_stable G 𝔪) hb⟩)
+    ((IsNoetherian.noetherian ((orbitInf G 𝔪).restrictScalars A)).of_restrictScalars A)
 
 omit [FaithfulSMul A S] in
 private theorem orbitPiMapₐ_bijective [Algebra.IsInvariant A S G] :
@@ -470,13 +420,8 @@ theorem mapₐ_maximalIdeal_injective [Algebra.IsInvariant A S G]
         AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S g)
           (fun s hs ↦ Ideal.mem_comap.mpr (hgQ ▸ Ideal.smul_mem_pointwise_smul g s 𝔪 hs))
           (AdicCompletion.mapₐ (Algebra.ofId A S) h𝔭𝔪 x) := by
-    rw [orbitPiMapₐ_eq_mapₐ]
-    refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-    rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ,
-      AdicCompletion.evalₐ_mapₐ]
-    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔭 n x)
-    rw [← ha]
-    simp [(MulSemiringAction.toAlgHom A S g).commutes a]
+    rw [orbitPiMapₐ_eq_mapₐ, AdicCompletion.mapₐ_mapₐ, AdicCompletion.mapₐ_mapₐ]
+    exact mapₐ_congr (fun a ↦ ((MulSemiringAction.toAlgHom A S g).commutes a).symm) x
   rw [hcoord x₁, hcoord x₂, hx]
 
 omit [Finite G] [FaithfulSMul A S] [IsNoetherianRing A] [Module.Finite A S] [𝔪.IsMaximal] in
@@ -487,14 +432,8 @@ private theorem orbitPiMapₐ_mapₐ_toAlgHom (g : G)
       AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S g)
         (fun _ hs ↦ Ideal.mem_comap.mpr (Ideal.mem_inv_pointwise_smul_iff.mp hs))
         (orbitPiMapₐ G 𝔭 𝔪 y ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩) := by
-  rw [orbitPiMapₐ_eq_mapₐ, orbitPiMapₐ_eq_mapₐ]
-  refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-  rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ,
-    AdicCompletion.evalₐ_mapₐ]
-  obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective
-    (AdicCompletion.evalₐ (𝔭.map (algebraMap A S)) n y)
-  rw [← hs]
-  rfl
+  rw [orbitPiMapₐ_eq_mapₐ, orbitPiMapₐ_eq_mapₐ, AdicCompletion.mapₐ_mapₐ, AdicCompletion.mapₐ_mapₐ]
+  exact mapₐ_congr (fun _ ↦ rfl) y
 
 variable {G} in
 /-- **Decomposition-group invariants of the completion at a maximal ideal.** Under the hypotheses
@@ -508,15 +447,11 @@ theorem mem_range_mapₐ_maximalIdeal_iff [Algebra.IsInvariant A S G]
       ∀ g (hg : g ∈ MulAction.stabilizer G 𝔪),
         AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S g)
           (le_comap_toAlgHom_of_mem_stabilizer hg) z = z := by
-  constructor
+  refine ⟨?_, fun hz ↦ ?_⟩
   · rintro ⟨x, rfl⟩ g hg
-    refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-    rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔭 n x)
-    rw [← ha]
-    simp [(MulSemiringAction.toAlgHom A S g).commutes a]
-  · intro hz
-    have hle : 𝔭 ≤ (𝔭.map (algebraMap A S)).comap (Algebra.ofId A S) :=
+    rw [AdicCompletion.mapₐ_mapₐ]
+    exact mapₐ_congr ((MulSemiringAction.toAlgHom A S g).commutes) x
+  · have hle : 𝔭 ≤ (𝔭.map (algebraMap A S)).comap (Algebra.ofId A S) :=
       fun _ hx ↦ Ideal.mem_comap.mpr (Ideal.mem_map_of_mem _ hx)
     -- Spread `z` equivariantly across the `G`-orbit of `𝔪` using orbit representatives.
     choose γ hγ using fun Q : MulAction.orbit G 𝔪 ↦ MulAction.mem_orbit_iff.mp Q.2
@@ -527,11 +462,9 @@ theorem mem_range_mapₐ_maximalIdeal_iff [Algebra.IsInvariant A S G]
       fun Q ↦ AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S (γ Q)) (hγ_le Q) z
     obtain ⟨y, hy⟩ := (orbitPiMapₐ_bijective G 𝔭 𝔪).surjective f
     -- Show `y` is `G`-fixed by checking equivariance of `f` on `MulAction.orbit G 𝔪`.
-    have hy_fix : y ∈ Set.range (AdicCompletion.mapₐ (Algebra.ofId A S) hle) := by
+    obtain ⟨x, rfl⟩ : y ∈ Set.range (AdicCompletion.mapₐ (Algebra.ofId A S) hle) := by
       refine (mem_range_mapₐ_algebraOfId_iff (G := G) 𝔭 hle (map_le_comap_toAlgHom 𝔭) y).mpr
-        fun g ↦ ?_
-      apply (orbitPiMapₐ_bijective G 𝔭 𝔪).injective
-      funext Q
+        fun g ↦ (orbitPiMapₐ_bijective G 𝔭 𝔪).injective <| funext fun Q ↦ ?_
       let Q' : MulAction.orbit G 𝔪 := ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩
       rw [orbitPiMapₐ_mapₐ_toAlgHom G 𝔭 𝔪 g y Q, hy]
       dsimp only [f]
@@ -539,23 +472,15 @@ theorem mem_range_mapₐ_maximalIdeal_iff [Algebra.IsInvariant A S G]
         rw [MulAction.mem_stabilizer_iff, mul_smul, mul_smul, hγ Q', smul_inv_smul,
           ← hγ Q, inv_smul_smul]
       conv_rhs => rw [← hz _ hk_mem]
-      refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-      rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ,
-        AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-      obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔪 n z)
-      rw [← hs]
-      simp [mul_smul, Q']
-    obtain ⟨x, rfl⟩ := hy_fix
-    refine ⟨x, ?_⟩
+      rw [AdicCompletion.mapₐ_mapₐ, AdicCompletion.mapₐ_mapₐ]
+      exact mapₐ_congr (fun s ↦ by simp [mul_smul, Q']) z
     let Q₀ : MulAction.orbit G 𝔪 := ⟨𝔪, MulAction.mem_orbit_self 𝔪⟩
     have hf₀ : f Q₀ = z := hz (γ Q₀) (MulAction.mem_stabilizer_iff.mpr (hγ Q₀))
-    have hy₀ := (congrFun hy Q₀).trans hf₀
-    refine (AdicCompletion.ext_evalₐ fun n ↦ ?_).trans hy₀
-    rw [orbitPiMapₐ_eq_mapₐ, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ,
-      AdicCompletion.evalₐ_mapₐ]
-    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔭 n x)
-    rw [← ha]
-    rfl
+    refine ⟨x, (?_ : AdicCompletion.mapₐ (Algebra.ofId A S) h𝔭𝔪 x =
+      orbitPiMapₐ G 𝔭 𝔪 (AdicCompletion.mapₐ (Algebra.ofId A S) hle x) Q₀).trans
+      ((congrFun hy Q₀).trans hf₀)⟩
+    rw [orbitPiMapₐ_eq_mapₐ, AdicCompletion.mapₐ_mapₐ]
+    exact mapₐ_congr (fun _ ↦ rfl) x
 
 end MaximalIdeal
 
@@ -580,12 +505,8 @@ private theorem mapₐ_toAlgHom_subgroup_eq {S G : Type*} [CommRing S] [Group G]
     AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S g)
         (le_comap_toAlgHom_of_mem_stabilizer hg) z =
       AdicCompletion.mapₐ (MulSemiringAction.toAlgHom B S h)
-        (le_comap_toAlgHom_of_mem_stabilizer hh) z := by
-  refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-  rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-  obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔪 n z)
-  rw [← hs]
-  simp [← hhG, Subgroup.smul_def]
+        (le_comap_toAlgHom_of_mem_stabilizer hh) z :=
+  mapₐ_congr (fun s ↦ by simp [← hhG, Subgroup.smul_def]) z
 
 variable {A B S G : Type*} [CommRing A] [CommRing B] [CommRing S]
   [Algebra A B] [Algebra B S] [Algebra A S] [IsScalarTower A B S]
@@ -610,14 +531,11 @@ theorem bijective_mapₐ_of_stabilizer_le (hH : MulAction.stabilizer G 𝔪 ≤ 
   have h𝔭𝔪 : 𝔭 ≤ 𝔪.comap (Algebra.ofId A S) :=
     fun a ha ↦ Ideal.mem_comap.mpr ((𝔪.mem_of_liesOver 𝔭 a).mp ha)
   have hcomp (x : AdicCompletion 𝔭 A) :
-      AdicCompletion.mapₐ (Algebra.ofId B S) h𝔮𝔪
-        (AdicCompletion.mapₐ (Algebra.ofId A B) h𝔭𝔮 x) =
-      AdicCompletion.mapₐ (Algebra.ofId A S) h𝔭𝔪 x := by
-    refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-    rw [AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ, AdicCompletion.evalₐ_mapₐ]
-    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔭 n x)
-    rw [← ha]
-    simp [← IsScalarTower.algebraMap_apply A B S]
+      AdicCompletion.mapₐ (Algebra.ofId B S) h𝔮𝔪 (AdicCompletion.mapₐ (Algebra.ofId A B) h𝔭𝔮 x) =
+        AdicCompletion.mapₐ (Algebra.ofId A S) h𝔭𝔪 x :=
+    AdicCompletion.ext_evalₐ fun n ↦ by
+      obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ 𝔭 n x)
+      simp [← ha, ← IsScalarTower.algebraMap_apply A B S]
   refine ⟨fun x₁ x₂ hx ↦ mapₐ_maximalIdeal_injective G 𝔭 𝔪 h𝔭𝔪 ?_, fun y ↦ ?_⟩
   · rw [← hcomp x₁, ← hcomp x₂, hx]
   · set z : AdicCompletion 𝔪 S := AdicCompletion.mapₐ (Algebra.ofId B S) h𝔮𝔪 y

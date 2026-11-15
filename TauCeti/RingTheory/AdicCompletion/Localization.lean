@@ -278,13 +278,10 @@ theorem mapₐ_algebraMap_bijective_of_isMaximal
       (IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map) :
     Function.Bijective (mapₐ (Algebra.ofId R Rₚ) hp) := by
   refine mapₐ_bijective (Algebra.ofId R Rₚ) hp fun n ↦ ?_
-  have hq : ⇑(Ideal.quotientMap (IsLocalRing.maximalIdeal Rₚ ^ n)
-      (Algebra.ofId R Rₚ).toRingHom
+  have hq : ⇑(Ideal.quotientMap (IsLocalRing.maximalIdeal Rₚ ^ n) (Algebra.ofId R Rₚ).toRingHom
       ((Ideal.pow_right_mono hp n).trans (Ideal.le_comap_pow _ n))) =
-      ⇑(IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n) := by
-    funext x
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rfl
+      ⇑(IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n) :=
+    funext fun x ↦ by obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x; rfl
   exact hq ▸ (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n).bijective
 
 /-- The canonical `R`-algebra isomorphism between the `p`-adic completion of `R` at a maximal ideal
@@ -303,8 +300,7 @@ theorem toAlgHom_equivMaximalIdealOfAtPrime :
       AdicCompletion p R →ₐ[R] AdicCompletion (IsLocalRing.maximalIdeal Rₚ) Rₚ) =
       mapₐ (Algebra.ofId R Rₚ)
         ((IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map) := by
-  rw [equivMaximalIdealOfAtPrime]
-  exact AlgEquiv.toAlgHom_ofBijective _ _
+  rw [equivMaximalIdealOfAtPrime]; exact AlgEquiv.toAlgHom_ofBijective _ _
 
 /-- Applying `equivMaximalIdealOfAtPrime` agrees with `mapₐ (Algebra.ofId R Rₚ)`. -/
 @[simp]
@@ -317,8 +313,7 @@ theorem equivMaximalIdealOfAtPrime_apply (x : AdicCompletion p R) :
 /-- `equivMaximalIdealOfAtPrime` extends `algebraMap R Rₚ` along `AdicCompletion.of`. -/
 theorem equivMaximalIdealOfAtPrime_of (r : R) :
     equivMaximalIdealOfAtPrime p Rₚ (of p R r) =
-      of (IsLocalRing.maximalIdeal Rₚ) Rₚ (algebraMap R Rₚ r) := by
-  simp
+      of (IsLocalRing.maximalIdeal Rₚ) Rₚ (algebraMap R Rₚ r) := by simp
 
 end MaximalIdeal
 

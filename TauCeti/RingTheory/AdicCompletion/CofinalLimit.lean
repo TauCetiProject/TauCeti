@@ -238,11 +238,9 @@ noncomputable def equivOfPowLe {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
 
 /-- As an algebra homomorphism, `equivOfPowLe` is `ofPowLe`. -/
 @[simp]
-theorem toAlgHom_equivOfPowLe {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
-    (hJI : ∃ k : ℕ, J ^ k ≤ I) :
+theorem toAlgHom_equivOfPowLe {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) (hJI : ∃ k : ℕ, J ^ k ≤ I) :
     (equivOfPowLe hIJ hJI : AdicCompletion I R →ₐ[R] AdicCompletion J R) = ofPowLe hIJ := by
-  rw [equivOfPowLe]
-  exact AlgEquiv.toAlgHom_ofAlgHom _ _ _ _
+  rw [equivOfPowLe]; exact AlgEquiv.toAlgHom_ofAlgHom _ _ _ _
 
 /-- Applying `equivOfPowLe` agrees with `ofPowLe`. -/
 @[simp]
@@ -253,11 +251,9 @@ theorem equivOfPowLe_apply {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
 
 /-- Swapping the ideal inclusions gives the inverse of `equivOfPowLe`. -/
 @[simp]
-theorem equivOfPowLe_symm {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
-    (hJI : ∃ k : ℕ, J ^ k ≤ I) :
+theorem equivOfPowLe_symm {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) (hJI : ∃ k : ℕ, J ^ k ≤ I) :
     (equivOfPowLe hIJ hJI).symm = equivOfPowLe hJI hIJ := by
-  ext x
-  simp [equivOfPowLe]
+  ext x; simp [equivOfPowLe]
 
 /-- `equivOfPowLe` commutes with the canonical maps from `R` into the completions. -/
 theorem equivOfPowLe_of {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
@@ -272,14 +268,10 @@ theorem mapₐ_id_bijective_of_pow_le {A : Type*} [CommRing A] [Algebra A R] {J 
     (hle : I ≤ J.comap (AlgHom.id A R)) (hJI : ∃ k : ℕ, J ^ k ≤ I) :
     Function.Bijective (mapₐ (AlgHom.id A R) hle) := by
   have hIJ₀ : I ≤ J := fun _ hr ↦ Ideal.mem_comap.mp (hle hr)
-  have hle' : I ≤ J.comap (AlgHom.id R R) := fun _ hr ↦ Ideal.mem_comap.mpr (hIJ₀ hr)
   have hIJ : ∃ k : ℕ, I ^ k ≤ J := ⟨1, (pow_one I).le.trans hIJ₀⟩
-  have hcoe : ⇑(mapₐ (AlgHom.id A R) hle) = ⇑(equivOfPowLe hIJ hJI) := by
-    funext x
-    rw [equivOfPowLe_apply, ofPowLe_eq_mapₐ_id hIJ hle']
-    refine ext_evalₐ fun n ↦ ?_
-    rw [evalₐ_mapₐ, evalₐ_mapₐ]
-    rfl
+  have hcoe : ⇑(mapₐ (AlgHom.id A R) hle) = ⇑(equivOfPowLe hIJ hJI) := funext fun x ↦ by
+    rw [equivOfPowLe_apply, ofPowLe_eq_mapₐ_id hIJ fun _ hr ↦ Ideal.mem_comap.mpr (hIJ₀ hr)]
+    exact ext_evalₐ fun n ↦ by rw [evalₐ_mapₐ, evalₐ_mapₐ]; rfl
   exact hcoe ▸ (equivOfPowLe hIJ hJI).bijective
 
 end PowLe

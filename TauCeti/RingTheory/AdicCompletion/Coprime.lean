@@ -76,23 +76,28 @@ private theorem piEvalRingHom_apply (n : ℕ) (z : ∀ i, AdicCompletion (I i) R
     piEvalRingHom I n z i = evalₐ (I i) n (z i) :=
   rfl
 
-private theorem coprimeInv_aux [Finite ι] (hI : Pairwise (IsCoprime on I)) {m n : ℕ}
-    (hmn : m ≤ n) :
+private theorem exists_mk_coprimeQuotEquiv_symm [Finite ι] (hI : Pairwise (IsCoprime on I)) (n : ℕ)
+    (z : ∀ i, AdicCompletion (I i) R) :
+    ∃ r : R, Ideal.Quotient.mk ((⨅ j, I j) ^ n) r =
+        (coprimeQuotEquiv I hI n).symm (piEvalRingHom I n z) ∧
+      ∀ i, Ideal.Quotient.mk (I i ^ n) r = evalₐ (I i) n (z i) := by
+  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective
+    ((coprimeQuotEquiv I hI n).symm (piEvalRingHom I n z))
+  refine ⟨r, hr, fun i ↦ ?_⟩
+  simpa [coprimeQuotEquiv_mk_apply, piEvalRingHom_apply] using
+    congrFun (congrArg (coprimeQuotEquiv I hI n) hr) i
+
+private theorem coprimeInv_aux [Finite ι] (hI : Pairwise (IsCoprime on I)) {m n : ℕ} (hmn : m ≤ n) :
     (Ideal.Quotient.factorPow (⨅ i, I i) hmn).comp
         ((coprimeQuotEquiv I hI n).symm.toRingHom.comp (piEvalRingHom I n)) =
       (coprimeQuotEquiv I hI m).symm.toRingHom.comp (piEvalRingHom I m) := by
   ext z
   apply (coprimeQuotEquiv I hI m).injective
   funext i
+  obtain ⟨r, hr, hri⟩ := exists_mk_coprimeQuotEquiv_symm I hI n z
   simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    RingEquiv.apply_symm_apply, piEvalRingHom_apply]
-  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective
-    ((coprimeQuotEquiv I hI n).symm (piEvalRingHom I n z))
-  have hri : Ideal.Quotient.mk (I i ^ n) r = evalₐ (I i) n (z i) := by
-    have h := congrFun (congrArg (coprimeQuotEquiv I hI n) hr) i
-    simpa only [RingEquiv.apply_symm_apply, coprimeQuotEquiv_mk_apply, piEvalRingHom_apply] using h
-  rw [← hr, Ideal.Quotient.factorPow, Ideal.Quotient.factor_mk, coprimeQuotEquiv_mk_apply,
-    ← factor_evalₐ hmn (z i), ← hri, Ideal.Quotient.factor_mk]
+    RingEquiv.apply_symm_apply, piEvalRingHom_apply, ← hr, Ideal.Quotient.factorPow,
+    Ideal.Quotient.factor_mk, coprimeQuotEquiv_mk_apply, ← factor_evalₐ hmn (z i), ← hri]
 
 private noncomputable def coprimeInv [Finite ι] (hI : Pairwise (IsCoprime on I)) :
     (∀ i, AdicCompletion (I i) R) →ₐ[R] AdicCompletion (⨅ i, I i) R :=
@@ -101,14 +106,8 @@ private noncomputable def coprimeInv [Finite ι] (hI : Pairwise (IsCoprime on I)
     (coprimeInv_aux I hI)
   { g with
     toFun := g
-    commutes' := fun r ↦ ext_evalₐ fun n ↦ by
-      have heval : evalₐ (⨅ i, I i) n (g (algebraMap R (∀ i, AdicCompletion (I i) R) r)) =
-          (coprimeQuotEquiv I hI n).symm
-            (piEvalRingHom I n (algebraMap R (∀ i, AdicCompletion (I i) R) r)) :=
-        evalₐ_liftRingHom (⨅ i, I i) _ (coprimeInv_aux I hI) n _
-      rw [heval, algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, evalₐ_of]
-      apply (coprimeQuotEquiv I hI n).injective
-      funext i
+    commutes' := fun r ↦ ext_evalₐ fun n ↦ (coprimeQuotEquiv I hI n).injective <| funext fun i ↦ by
+      rw [evalₐ_liftRingHom (⨅ i, I i) _ (coprimeInv_aux I hI) n]
       simp [coprimeQuotEquiv_mk_apply, piEvalRingHom_apply, algebraMap_apply] }
 
 private theorem evalₐ_coprimeInv [Finite ι] (hI : Pairwise (IsCoprime on I)) (n : ℕ)
@@ -120,30 +119,18 @@ private theorem evalₐ_coprimeInv [Finite ι] (hI : Pairwise (IsCoprime on I)) 
 private theorem coprimeFwd_comp_coprimeInv [Finite ι] (hI : Pairwise (IsCoprime on I)) :
     (AlgHom.pi fun i ↦
       mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (iInf_le I i hx))).comp
-      (coprimeInv I hI) = AlgHom.id R (∀ i, AdicCompletion (I i) R) := by
-  refine AlgHom.ext fun z ↦ funext fun i ↦ ext_evalₐ fun n ↦ ?_
-  rw [AlgHom.comp_apply, AlgHom.id_apply, AlgHom.pi_apply, evalₐ_mapₐ, evalₐ_coprimeInv]
-  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective
-    ((coprimeQuotEquiv I hI n).symm (piEvalRingHom I n z))
-  have hri : Ideal.Quotient.mk (I i ^ n) r = evalₐ (I i) n (z i) := by
-    have h := congrFun (congrArg (coprimeQuotEquiv I hI n) hr) i
-    simpa only [RingEquiv.apply_symm_apply, coprimeQuotEquiv_mk_apply, piEvalRingHom_apply] using h
-  rw [← hr, Ideal.quotientMap_mk, AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom,
-    RingHom.id_apply, hri]
+      (coprimeInv I hI) = AlgHom.id R (∀ i, AdicCompletion (I i) R) :=
+  AlgHom.ext fun z ↦ funext fun i ↦ ext_evalₐ fun n ↦ by
+    obtain ⟨r, hr, hri⟩ := exists_mk_coprimeQuotEquiv_symm I hI n z
+    simp [evalₐ_coprimeInv, ← hr, hri]
 
 private theorem coprimeInv_comp_coprimeFwd [Finite ι] (hI : Pairwise (IsCoprime on I)) :
     (coprimeInv I hI).comp
-      (AlgHom.pi fun i ↦
-        mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (iInf_le I i hx))) =
-      AlgHom.id R (AdicCompletion (⨅ i, I i) R) := by
-  refine AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ ?_
-  rw [AlgHom.comp_apply, AlgHom.id_apply, evalₐ_coprimeInv]
-  apply (coprimeQuotEquiv I hI n).injective
-  funext i
-  rw [RingEquiv.apply_symm_apply, piEvalRingHom_apply, AlgHom.pi_apply, evalₐ_mapₐ]
-  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (evalₐ (⨅ j, I j) n x)
-  rw [← hr, coprimeQuotEquiv_mk_apply, Ideal.quotientMap_mk, AlgHom.toRingHom_eq_coe,
-    AlgHom.id_toRingHom, RingHom.id_apply]
+      (AlgHom.pi fun i ↦ mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (iInf_le I i hx))) =
+      AlgHom.id R (AdicCompletion (⨅ i, I i) R) :=
+  AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ (coprimeQuotEquiv I hI n).injective <| funext fun i ↦ by
+    obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (evalₐ (⨅ j, I j) n x)
+    simp [evalₐ_coprimeInv, piEvalRingHom_apply, ← hr, coprimeQuotEquiv_mk_apply]
 
 /-- Completing a commutative ring along the intersection of finitely many pairwise coprime ideals
 gives the product of the individual completions as an `R`-algebra. Neither Noetherianity nor finite
@@ -151,11 +138,8 @@ generation is required; the empty family and unit ideals are allowed. -/
 noncomputable def coprimeEquiv [Finite ι] (hI : Pairwise (IsCoprime on I)) :
     AdicCompletion (⨅ i, I i) R ≃ₐ[R] ∀ i, AdicCompletion (I i) R :=
   AlgEquiv.ofAlgHom
-    (AlgHom.pi fun i ↦
-      mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (iInf_le I i hx)))
-    (coprimeInv I hI)
-    (coprimeFwd_comp_coprimeInv I hI)
-    (coprimeInv_comp_coprimeFwd I hI)
+    (AlgHom.pi fun i ↦ mapₐ (AlgHom.id R R) (fun _ hx ↦ Ideal.mem_comap.mpr (iInf_le I i hx)))
+    (coprimeInv I hI) (coprimeFwd_comp_coprimeInv I hI) (coprimeInv_comp_coprimeFwd I hI)
 
 /-- Each coordinate of `coprimeEquiv` is the functorial map induced by `(⨅ j, I j) ≤ I i`. -/
 @[simp]
@@ -167,8 +151,7 @@ theorem coprimeEquiv_apply [Finite ι] (hI : Pairwise (IsCoprime on I))
 
 /-- `coprimeEquiv` sends `of _ R r` to the constant tuple `fun i ↦ of (I i) R r`. -/
 theorem coprimeEquiv_of [Finite ι] (hI : Pairwise (IsCoprime on I)) (r : R) (i : ι) :
-    coprimeEquiv I hI (of (⨅ j, I j) R r) i = of (I i) R r := by
-  simp
+    coprimeEquiv I hI (of (⨅ j, I j) R r) i = of (I i) R r := by simp
 
 /-- The product of the natural projections
 `AdicCompletion (⨅ j, I j) R →ₐ[A] AdicCompletion (I i) R` is bijective for any scalar ring `A`
@@ -178,12 +161,9 @@ theorem bijective_pi_mapₐ {A : Type*} [CommRing A] [Algebra A R] [Finite ι]
     (hle : ∀ i, (⨅ j, I j) ≤ (I i).comap (AlgHom.id A R) :=
       fun i _ hx ↦ Ideal.mem_comap.mpr (iInf_le I i hx)) :
     Function.Bijective (AlgHom.pi fun i ↦ mapₐ (AlgHom.id A R) (hle i)) := by
-  have hcoe : ⇑(AlgHom.pi fun i ↦ mapₐ (AlgHom.id A R) (hle i)) = ⇑(coprimeEquiv I hI) := by
-    funext x i
-    rw [AlgHom.pi_apply, coprimeEquiv_apply]
-    refine ext_evalₐ fun n ↦ ?_
-    rw [evalₐ_mapₐ, evalₐ_mapₐ]
-    rfl
+  have hcoe : ⇑(AlgHom.pi fun i ↦ mapₐ (AlgHom.id A R) (hle i)) = ⇑(coprimeEquiv I hI) :=
+    funext fun x ↦ funext fun i ↦ ext_evalₐ fun n ↦ by
+      rw [AlgHom.pi_apply, coprimeEquiv_apply, evalₐ_mapₐ, evalₐ_mapₐ]; rfl
   exact hcoe ▸ (coprimeEquiv I hI).bijective
 
 end AdicCompletion

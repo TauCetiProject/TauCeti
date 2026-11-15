@@ -121,38 +121,23 @@ theorem translation_symmetricAlgebra (f : M →ₗ[R] R) (g : G) (p : SymmetricA
   simpa only [symmetricAlgebra_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] using
     DFunLike.congr_fun h p
 
+private noncomputable def translationInvariantsAlgHom (f : M →ₗ[R] R)
+    (hf : ∀ g : G, f ∘ₗ ρ g = f) :
+    ρ.symmetricAlgebraInvariants →ₐ[R] ρ.symmetricAlgebraInvariants :=
+  ((SymmetricAlgebra.translation f).toAlgHom.comp ρ.symmetricAlgebraInvariants.val).codRestrict
+    ρ.symmetricAlgebraInvariants fun x ↦ (ρ.mem_symmetricAlgebraInvariants _).mpr fun g ↦ by
+      simpa [hf g, (ρ.mem_symmetricAlgebraInvariants x.1).mp x.2 g] using
+        (ρ.translation_symmetricAlgebra f g x.1).symm
+
 /-- When a linear form `f : M →ₗ[R] R` is `G`-invariant (`∀ g, f ∘ₗ ρ g = f`), translation by `f`
 restricts to an `R`-algebra automorphism of `ρ.symmetricAlgebraInvariants`. -/
 noncomputable def translationSymmetricAlgebraInvariantsEquiv (f : M →ₗ[R] R)
     (hf : ∀ g : G, f ∘ₗ ρ g = f) :
     ρ.symmetricAlgebraInvariants ≃ₐ[R] ρ.symmetricAlgebraInvariants :=
-  AlgEquiv.ofAlgHom
-    (((SymmetricAlgebra.translation f).toAlgHom.comp ρ.symmetricAlgebraInvariants.val).codRestrict
-      ρ.symmetricAlgebraInvariants fun x ↦ (ρ.mem_symmetricAlgebraInvariants _).mpr fun g ↦ by
-        rw [AlgHom.comp_apply, Subalgebra.coe_val, AlgEquiv.coe_toAlgHom]
-        calc ρ.symmetricAlgebra g (SymmetricAlgebra.translation f x)
-          _ = ρ.symmetricAlgebra g (SymmetricAlgebra.translation (f ∘ₗ ρ g) x) := by rw [hf g]
-          _ = SymmetricAlgebra.translation f (ρ.symmetricAlgebra g x) :=
-            (ρ.translation_symmetricAlgebra f g x).symm
-          _ = SymmetricAlgebra.translation f x := by
-            rw [(ρ.mem_symmetricAlgebraInvariants x.1).mp x.2 g])
-    (((SymmetricAlgebra.translation (-f)).toAlgHom.comp
-        ρ.symmetricAlgebraInvariants.val).codRestrict
-      ρ.symmetricAlgebraInvariants fun x ↦ (ρ.mem_symmetricAlgebraInvariants _).mpr fun g ↦ by
-        have hnf : (-f) ∘ₗ ρ g = -f := by rw [LinearMap.neg_comp, hf g]
-        rw [AlgHom.comp_apply, Subalgebra.coe_val, AlgEquiv.coe_toAlgHom]
-        calc ρ.symmetricAlgebra g (SymmetricAlgebra.translation (-f) x)
-          _ = ρ.symmetricAlgebra g (SymmetricAlgebra.translation ((-f) ∘ₗ ρ g) x) := by rw [hnf]
-          _ = SymmetricAlgebra.translation (-f) (ρ.symmetricAlgebra g x) :=
-            (ρ.translation_symmetricAlgebra (-f) g x).symm
-          _ = SymmetricAlgebra.translation (-f) x := by
-            rw [(ρ.mem_symmetricAlgebraInvariants x.1).mp x.2 g])
-    (by
-      ext x
-      simp)
-    (by
-      ext x
-      simp)
+  AlgEquiv.ofAlgHom (ρ.translationInvariantsAlgHom f hf)
+    (ρ.translationInvariantsAlgHom (-f) fun g ↦ by rw [LinearMap.neg_comp, hf g])
+    (by ext; simp [translationInvariantsAlgHom])
+    (by ext; simp [translationInvariantsAlgHom])
 
 /-- Within `SymmetricAlgebra R M`, `translationSymmetricAlgebraInvariantsEquiv f hf` acts as
 `SymmetricAlgebra.translation f`. -/
@@ -161,8 +146,8 @@ theorem coe_translationSymmetricAlgebraInvariantsEquiv_apply (f : M →ₗ[R] R)
     (hf : ∀ g : G, f ∘ₗ ρ g = f) (x : ρ.symmetricAlgebraInvariants) :
     (ρ.translationSymmetricAlgebraInvariantsEquiv f hf x : SymmetricAlgebra R M) =
       SymmetricAlgebra.translation f x := by
-  rw [translationSymmetricAlgebraInvariantsEquiv]
-  rfl
+  rw [translationSymmetricAlgebraInvariantsEquiv, AlgEquiv.ofAlgHom_apply,
+    translationInvariantsAlgHom]; rfl
 
 /-- Within `SymmetricAlgebra R M`, `(translationSymmetricAlgebraInvariantsEquiv f hf).symm` acts as
 `SymmetricAlgebra.translation (-f)`. -/
@@ -171,8 +156,8 @@ theorem coe_translationSymmetricAlgebraInvariantsEquiv_symm_apply (f : M →ₗ[
     (hf : ∀ g : G, f ∘ₗ ρ g = f) (x : ρ.symmetricAlgebraInvariants) :
     ((ρ.translationSymmetricAlgebraInvariantsEquiv f hf).symm x : SymmetricAlgebra R M) =
       SymmetricAlgebra.translation (-f) x := by
-  rw [translationSymmetricAlgebraInvariantsEquiv]
-  rfl
+  rw [translationSymmetricAlgebraInvariantsEquiv, AlgEquiv.ofAlgHom_symm_apply,
+    translationInvariantsAlgHom]; rfl
 
 private theorem lift_zero_eq_algebraMapInv :
     SymmetricAlgebra.lift (0 : M →ₗ[R] R) = SymmetricAlgebra.algebraMapInv :=
@@ -187,33 +172,13 @@ theorem map_translationSymmetricAlgebraInvariantsEquiv_under_ker_lift
       (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.under
         ρ.symmetricAlgebraInvariants := by
   let e := ρ.translationSymmetricAlgebraInvariantsEquiv f hf
+  have hf0 : (0 : M →ₗ[R] R) + Algebra.linearMap R R ∘ₗ f = f := by ext; simp
+  have hfn : f + Algebra.linearMap R R ∘ₗ (-f) = 0 := by ext; simp
   rw [toIdeal_irrelevant_eq_ker_algebraMapInv, ← lift_zero_eq_algebraMapInv]
-  refine le_antisymm ?_ ?_
-  · rw [Ideal.map_le_iff_le_comap]
-    intro x hx
-    rw [Ideal.mem_under, Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHom.id_comp,
-      RingHom.coe_coe, Subalgebra.coe_val, RingHom.mem_ker] at hx
-    rw [Ideal.mem_comap, Ideal.mem_under, Subalgebra.algebraMap_eq, Algebra.algebraMap_self,
-      RingHom.id_comp, RingHom.coe_coe, Subalgebra.coe_val, RingHom.mem_ker,
-      coe_translationSymmetricAlgebraInvariantsEquiv_apply, SymmetricAlgebra.lift_translation]
-    have hf_eq : (0 : M →ₗ[R] R) + Algebra.linearMap R R ∘ₗ f = f := by
-      ext m
-      simp
-    rwa [hf_eq]
-  · intro y hy
-    rw [Ideal.mem_under, Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHom.id_comp,
-      RingHom.coe_coe, Subalgebra.coe_val, RingHom.mem_ker] at hy
-    have hxy : e.symm y ∈
-        (RingHom.ker (SymmetricAlgebra.lift f)).under ρ.symmetricAlgebraInvariants := by
-      rw [Ideal.mem_under, Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHom.id_comp,
-        RingHom.coe_coe, Subalgebra.coe_val, RingHom.mem_ker,
-        coe_translationSymmetricAlgebraInvariantsEquiv_symm_apply,
-        SymmetricAlgebra.lift_translation]
-      have hzero : f + Algebra.linearMap R R ∘ₗ (-f) = 0 := by
-        ext m
-        simp
-      rwa [hzero]
-    exact e.apply_symm_apply y ▸ Ideal.mem_map_of_mem e hxy
+  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦ ?_
+  · simpa [Ideal.mem_under, SymmetricAlgebra.lift_translation, hf0] using hx
+  · refine e.apply_symm_apply y ▸ Ideal.mem_map_of_mem e ?_
+    simpa [e, Ideal.mem_under, SymmetricAlgebra.lift_translation, hfn] using hy
 
 end Translation
 
@@ -228,9 +193,7 @@ theorem eval_comp_dual_stabilizer (v : M) (h : ρ.stabilizer v) :
     Module.Dual.eval R M v ∘ₗ dual (ρ.comp (ρ.stabilizer v).subtype) h =
       Module.Dual.eval R M v := by
   ext φ
-  have hinv : ρ (h : G)⁻¹ v = v := by
-    rw [← Subgroup.coe_inv]
-    exact (ρ.stabilizer v).inv_mem h.2
+  have hinv : ρ (h : G)⁻¹ v = v := by rw [← Subgroup.coe_inv]; exact (ρ.stabilizer v).inv_mem h.2
   simp [dual_apply, Module.Dual.transpose_apply, hinv]
 
 /-- Every element of `ρ.stabilizer v` stabilizes the evaluation ideal
@@ -261,12 +224,9 @@ theorem stabilizer_ker_lift_eval [Module.Projective R M] (v : M) :
   rw [mem_stabilizer, ← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff R]
   intro φ
   set 𝔪 := RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval R M v))
-  set p : SymmetricAlgebra R (Module.Dual R M) :=
-    SymmetricAlgebra.ι R _ φ - algebraMap R _ (φ v)
-  have hp : p ∈ 𝔪 := by simp [𝔪, p]
-  have hginv : g⁻¹ • 𝔪 = 𝔪 :=
-    MulAction.mem_stabilizer_iff.mp ((MulAction.stabilizer G 𝔪).inv_mem hg)
-  have hgp : g⁻¹ • p ∈ 𝔪 := hginv ▸ Ideal.smul_mem_pointwise_smul g⁻¹ p 𝔪 hp
+  set p : SymmetricAlgebra R (Module.Dual R M) := SymmetricAlgebra.ι R _ φ - algebraMap R _ (φ v)
+  have hginv := MulAction.mem_stabilizer_iff.mp ((MulAction.stabilizer G 𝔪).inv_mem hg)
+  have hgp : g⁻¹ • p ∈ 𝔪 := hginv ▸ Ideal.smul_mem_pointwise_smul g⁻¹ p 𝔪 (by simp [𝔪, p])
   rw [RingHom.mem_ker, symmetricAlgebraMulSemiringAction_smul,
     ρ.lift_eval_symmetricAlgebra_dual, inv_inv] at hgp
   simpa [p, map_sub] using hgp
@@ -280,10 +240,8 @@ variable {K G V : Type*} [Field K] [Group G] [Finite G] [AddCommGroup V] [Module
 
 private theorem under_le_comap_inclusion {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     {A B : Subalgebra R S} (hAB : A ≤ B) (I : Ideal S) :
-    I.under A ≤ (I.under B).comap (Subalgebra.inclusion hAB) := fun a ha ↦ by
-  rw [Ideal.mem_comap, Ideal.mem_under]
-  rw [Ideal.mem_under] at ha
-  simpa using ha
+    I.under A ≤ (I.under B).comap (Subalgebra.inclusion hAB) := fun _ ha ↦ by
+  rw [Ideal.mem_comap, Ideal.mem_under]; rw [Ideal.mem_under] at ha; simpa using ha
 
 private theorem bijective_mapₐ_of_bijective_toAlgebra {R A B : Type*} [CommRing R] [CommRing A]
     [CommRing B] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) {I : Ideal A} {J : Ideal B}
@@ -298,11 +256,9 @@ private theorem bijective_mapₐ_of_bijective_toAlgebra {R A B : Type*} [CommRin
   suffices (AdicCompletion.mapₐ f hf₁ : AdicCompletion I A → AdicCompletion J B) =
       AdicCompletion.mapₐ (Algebra.ofId A B) hf₂ from this ▸ hbij
   funext x
-  refine AdicCompletion.ext_evalₐ fun n ↦ ?_
-  rw [AdicCompletion.evalₐ_mapₐ f hf₁, AdicCompletion.evalₐ_mapₐ (Algebra.ofId A B) hf₂]
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
-  rw [← ha]
-  simp [RingHom.algebraMap_toAlgebra]
+  exact AdicCompletion.ext_evalₐ fun n ↦ by
+    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n x)
+    simp [← ha, RingHom.algebraMap_toAlgebra]
 
 omit [Finite G] [FiniteDimensional K V] in
 /-- Invariants of `G` on `Sym(V*)` lie in the invariants of any subgroup `H ≤ G`. -/
@@ -325,9 +281,8 @@ theorem bijective_mapₐ_inclusion_under_ker_lift_eval {v : V} {H : Subgroup G}
         ((RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval K V v))).under
           (dual (ρ.comp H.subtype)).symmetricAlgebraInvariants).comap
           (Subalgebra.inclusion (ρ.symmetricAlgebraInvariants_dual_le_comp_subtype H)) := by
-      intro a ha
-      rw [Ideal.mem_comap, Ideal.mem_under]
-      simpa using Ideal.mem_under.mp ha) :
+      intro _ ha; rw [Ideal.mem_comap, Ideal.mem_under]; rw [Ideal.mem_under] at ha
+      simpa using ha) :
     Function.Bijective
       (AdicCompletion.mapₐ
         (Subalgebra.inclusion (ρ.symmetricAlgebraInvariants_dual_le_comp_subtype H)) hle) := by
@@ -340,34 +295,28 @@ theorem bijective_mapₐ_inclusion_under_ker_lift_eval {v : V} {H : Subgroup G}
       s ∈ (dual (ρ.comp H.subtype)).symmetricAlgebraInvariants ↔ ∀ h : H, (h : G) • s = s := by
     rw [dual_comp, mem_symmetricAlgebraInvariants]
     exact forall_congr' fun h ↦ by
-      rw [symmetricAlgebra_comp_apply, symmetricAlgebraMulSemiringAction_smul]
-      rfl
+      rw [symmetricAlgebra_comp_apply, symmetricAlgebraMulSemiringAction_smul]; rfl
   set A := ρ.dual.symmetricAlgebraInvariants
   set B := (dual (ρ.comp H.subtype)).symmetricAlgebraInvariants
   set 𝔪 := RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval K V v))
-  have : SMulCommClass G A S :=
-    ⟨fun g a s ↦ by
-      have ha : g • (a : S) = a := (ρ.dual.mem_symmetricAlgebraInvariants a.1).mp a.2 g
-      calc g • (a • s) = g • ((a : S) * s) := rfl
-        _ = (g • (a : S)) * (g • s) := MulSemiringAction.smul_mul g a.1 s
-        _ = (a : S) * (g • s) := by rw [ha]⟩
+  have : SMulCommClass G A S := ⟨fun g a s ↦ by
+    change g • ((a : S) * s) = (a : S) * (g • s)
+    rw [MulSemiringAction.smul_mul, symmetricAlgebraMulSemiringAction_smul,
+      (ρ.dual.mem_symmetricAlgebraInvariants a.1).mp a.2 g]⟩
   have : Algebra.IsInvariant A S G := ρ.dual.isInvariant_symmetricAlgebraInvariants
   have : FaithfulSMul A S := (faithfulSMul_iff_algebraMap_injective A S).mpr Subtype.val_injective
   have : FaithfulSMul B S := (faithfulSMul_iff_algebraMap_injective B S).mpr Subtype.val_injective
   have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing K A
-  have : SMulCommClass H B S :=
-    ⟨fun h b s ↦ by
-      have hb : (h : G) • (b : S) = b := (hB_mem b.1).mp b.2 h
-      calc h • (b • s) = (h : G) • ((b : S) * s) := rfl
-        _ = ((h : G) • (b : S)) * ((h : G) • s) := MulSemiringAction.smul_mul (h : G) b.1 s
-        _ = (b : S) * (h • s) := by rw [hb]; rfl⟩
+  have : SMulCommClass H B S := ⟨fun h b s ↦ by
+    change (h : G) • ((b : S) * s) = (b : S) * ((h : G) • s)
+    rw [MulSemiringAction.smul_mul, (hB_mem b.1).mp b.2 h]⟩
   have : Algebra.IsInvariant B S H := ⟨fun s hs ↦ ⟨⟨s, (hB_mem s).mpr hs⟩, rfl⟩⟩
   let : Algebra A B :=
     (Subalgebra.inclusion (ρ.symmetricAlgebraInvariants_dual_le_comp_subtype H)).toRingHom.toAlgebra
   have : IsScalarTower A B S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have hstab : MulAction.stabilizer G 𝔪 ≤ H := (ρ.stabilizer_ker_lift_eval v).le.trans hH
   exact ⟨_, TauCeti.Algebra.IsInvariant.bijective_mapₐ_of_stabilizer_le
-    (A := A) (B := B) (S := S) H (𝔪.under A) (𝔪.under B) 𝔪 hstab⟩
+    (A := A) (B := B) (S := S) H (𝔪.under A) (𝔪.under B) 𝔪
+    ((ρ.stabilizer_ker_lift_eval v).le.trans hH)⟩
 
 /-- **Completed-local isomorphism between `Sym(V*)^G` at `v` and `Sym(V*)^{G_v}` at its vertex.**
 Composing `Subalgebra.inclusion` on completions with Taylor translation by `v` identifies the

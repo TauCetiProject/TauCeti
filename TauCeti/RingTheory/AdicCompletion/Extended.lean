@@ -61,45 +61,32 @@ private noncomputable def quotLevelEquiv (n : ℕ) :
   (Submodule.quotEquivOfEq _ _ (pow_smul_top_eq_restrictScalars_map_pow I S M n)).trans
     (Submodule.Quotient.restrictScalarsEquiv R _)
 
-private theorem quotLevelEquiv_mk (n : ℕ) (m : M) :
-    quotLevelEquiv I S M n (Submodule.Quotient.mk m) = Submodule.Quotient.mk m :=
-  rfl
-
-private theorem quotLevelEquiv_symm_mk (n : ℕ) (m : M) :
-    (quotLevelEquiv I S M n).symm (Submodule.Quotient.mk m) = Submodule.Quotient.mk m :=
-  rfl
-
 private theorem transitionMap_quotLevelEquiv {m n : ℕ} (hmn : m ≤ n)
     (q : M ⧸ (I ^ n • ⊤ : Submodule R M)) :
     transitionMap (I.map (algebraMap R S)) M hmn (quotLevelEquiv I S M n q) =
       quotLevelEquiv I S M m (transitionMap I M hmn q) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  rfl
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q; rfl
 
 private theorem transitionMap_quotLevelEquiv_symm {m n : ℕ} (hmn : m ≤ n)
     (q : M ⧸ ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M)) :
     transitionMap I M hmn ((quotLevelEquiv I S M n).symm q) =
       (quotLevelEquiv I S M m).symm (transitionMap (I.map (algebraMap R S)) M hmn q) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  rfl
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q; rfl
 
 /-- Completing an `S`-module `M` as an `R`-module along `I` is canonically `R`-linearly isomorphic
 to completing `M` as an `S`-module along the extended ideal `I.map (algebraMap R S)`. -/
 noncomputable def mapAlgebraMapLinearEquiv :
     AdicCompletion I M ≃ₗ[R] AdicCompletion (I.map (algebraMap R S)) M :=
   LinearEquiv.ofLinearMap
-    { toFun := fun x ↦
-        ⟨fun n ↦ quotLevelEquiv I S M n (x.val n), fun hmn ↦ by
-          rw [transitionMap_quotLevelEquiv, x.property hmn]⟩
+    { toFun := fun x ↦ ⟨fun n ↦ quotLevelEquiv I S M n (x.val n),
+        fun hmn ↦ by rw [transitionMap_quotLevelEquiv, x.property hmn]⟩
       map_add' := fun x y ↦ ext fun n ↦ map_add (quotLevelEquiv I S M n) (x.val n) (y.val n)
       map_smul' := fun r x ↦ ext fun n ↦ by
         simp only [RingHom.id_apply, val_smul_apply]
         exact map_smul (quotLevelEquiv I S M n) r (x.val n) }
-    { toFun := fun y ↦
-        ⟨fun n ↦ (quotLevelEquiv I S M n).symm (y.val n), fun hmn ↦ by
-          rw [transitionMap_quotLevelEquiv_symm, y.property hmn]⟩
-      map_add' := fun x y ↦ ext fun n ↦
-        map_add (quotLevelEquiv I S M n).symm (x.val n) (y.val n)
+    { toFun := fun y ↦ ⟨fun n ↦ (quotLevelEquiv I S M n).symm (y.val n),
+        fun hmn ↦ by rw [transitionMap_quotLevelEquiv_symm, y.property hmn]⟩
+      map_add' := fun x y ↦ ext fun n ↦ map_add (quotLevelEquiv I S M n).symm (x.val n) (y.val n)
       map_smul' := fun r x ↦ ext fun n ↦ by
         simp only [RingHom.id_apply, val_smul_apply]
         exact map_smul (quotLevelEquiv I S M n).symm r (x.val n) }
@@ -129,9 +116,7 @@ theorem mapAlgebraMapLinearEquiv_map_restrictScalars {N : Type*} [AddCommGroup N
       map (I.map (algebraMap R S)) f (mapAlgebraMapLinearEquiv I S M x) := by
   refine ext fun n ↦ ?_
   rw [val_mapAlgebraMapLinearEquiv, map_val_apply, map_val_apply, val_mapAlgebraMapLinearEquiv]
-  obtain ⟨m, hm⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
-  rw [← hm]
-  rfl
+  obtain ⟨m, hm⟩ := Submodule.Quotient.mk_surjective _ (x.val n); rw [← hm]; rfl
 
 end Module
 
@@ -153,9 +138,7 @@ theorem mapAlgebraMapLinearEquiv_map_algebraLinearMap
   rw [evalₐ_mapₐ, ← factor_eval_eq_evalₐ _ _ (le_of_eq (Ideal.mul_top _)),
     ← factor_eval_eq_evalₐ I x (le_of_eq (Ideal.mul_top _)), eval_apply, eval_apply,
     val_mapAlgebraMapLinearEquiv, map_val_apply]
-  obtain ⟨r, hr⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
-  rw [← hr]
-  rfl
+  obtain ⟨r, hr⟩ := Submodule.Quotient.mk_surjective _ (x.val n); rw [← hr]; rfl
 
 /-- An `R`-algebra homomorphism `f : S →ₐ[R] S'` maps `I.map (algebraMap R S)` into
 `I.map (algebraMap R S')`, and `mapAlgebraMapLinearEquiv` intertwines `map I f.toLinearMap` with
@@ -171,9 +154,7 @@ theorem mapAlgebraMapLinearEquiv_map_algHom (f : S →ₐ[R] S')
   rw [evalₐ_mapₐ, ← factor_eval_eq_evalₐ _ _ (le_of_eq (Ideal.mul_top _)),
     ← factor_eval_eq_evalₐ _ _ (le_of_eq (Ideal.mul_top _)), eval_apply, eval_apply,
     val_mapAlgebraMapLinearEquiv, val_mapAlgebraMapLinearEquiv, map_val_apply]
-  obtain ⟨s, hs⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
-  rw [← hs]
-  rfl
+  obtain ⟨s, hs⟩ := Submodule.Quotient.mk_surjective _ (x.val n); rw [← hs]; rfl
 
 end Algebra
 
