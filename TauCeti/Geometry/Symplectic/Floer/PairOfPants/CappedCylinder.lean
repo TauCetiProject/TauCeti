@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
 # The pair of pants capped at `1` as a Floer cylinder
@@ -37,7 +38,9 @@ of the cylinder, and:
 * it has period one in `t` (`TauCeti.Floer.periodic_cappedCylinderComponent`);
 * for `L > 4` and period-one `C^n` Hamiltonians it is `C^n` jointly in the cylinder point and the
   target point (`TauCeti.Floer.contMDiff_cappedCylinderComponent`, for a manifold target, and
-  `TauCeti.Floer.contDiff_uncurry_cappedCylinderComponent`, for a vector space target).
+  `TauCeti.Floer.contDiff_uncurry_cappedCylinderComponent`, for a vector space target), and also
+  jointly in the neck length (`TauCeti.Floer.contMDiffAt_cappedCylinderComponent_family`,
+  `TauCeti.Floer.contDiffOn_cappedCylinderComponent_family`).
 
 For a symplectic vector space target `(V, ω)` and bounds `|H_r| ≤ B_r`, the integrated curvature
 `∫ |R_K(u)|` over one period `ℝ × [t₀, t₀ + 1)` of the cylinder is at most
@@ -56,7 +59,10 @@ output loop is at most the action of the input loop plus this constant
 (`TauCeti.SymplecticForm.hamiltonianAction_le_add_add_sum_of_cappedCylinderComponent`), and the
 same holds for the limiting actions at the two ends
 (`TauCeti.SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction_cappedCylinderComponent`).
-This is the action filtration shift of the capping family, the same at every neck length.
+This is the action filtration shift of the capping family, the same at every neck length. If the
+actions of the loops tend to `a_0` at the input end and to `a_∞` at the output end, the energy of
+such a solution over the strip `ℝ × [0, 1]` is at most `a_0 - a_∞ + B_1 + (B_0 + B_1 + B_∞)`
+(`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_cappedCylinderComponent_le`).
 
 For a manifold target `M` with a nondegenerate two-form `ω`, such as a closed symplectic
 manifold, the curvature bound, the energy identity and the action bound between loops at finite
@@ -222,13 +228,14 @@ section Smooth
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-/-- **The capped datum on the cylinder is smooth.** For period-one Hamiltonians `Hb` of class
-`C^n` on `ℝ × M` and neck length `L > 4`, every component of the capped datum on the cylinder is
-`C^n` jointly in the cylinder point and the target point. -/
-theorem contMDiff_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r))) (hL : 4 < L) (v : ℂ) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (cappedCylinderComponent Hb L v)) := by
-  rintro ⟨z, x⟩
+/-- **The capped datum on the cylinder is smooth in the neck length.** For period-one Hamiltonians
+`Hb` of class `C^n` on `ℝ × M` and neck length `L > 4`, every component of the capped datum on the
+cylinder is `C^n` jointly in the neck length, the cylinder point and the target point. -/
+theorem contMDiffAt_cappedCylinderComponent_family {n : ℕ∞} (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r))) (hL : 4 < L) (v : ℂ)
+    (z : ℝ × ℝ) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n
+      (fun p : ℝ × ((ℝ × ℝ) × M) ↦ cappedCylinderComponent Hb p.1 v p.2.1 p.2.2) (L, (z, x)) := by
   have hlift : ContDiff ℝ n
       (fun z : ℝ × ℝ ↦ zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
     ((zero.contDiff_cylindricalEndLift n).restrict_scalars ℝ).comp
@@ -238,13 +245,25 @@ theorem contMDiff_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Periodic (H
     simp only [deriv_cylindricalEndLift]
     exact ((contDiff_const.mul (hlift.sub contDiff_const)).neg).mul contDiff_const
   -- The end lift maps the cylinder into `ℂ ∖ {0}`, where the capped datum is smooth.
-  have hK := contMDiffAt_plumbedPerturbation_single_inf (q := one) (by simp) hHb hHbs hL
+  have hK := contMDiffAt_plumbedPerturbation_single_inf_family (q := one) (by simp) hHb hHbs hL
     (cylindricalEndLift_zero_eq_endCenter_one_or (Complex.equivRealProdCLM.symm z)) x
-  have hg : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℝ × ℝ) × M ↦ (zero.cylindricalEndLift (Complex.equivRealProdCLM.symm p.1), p.2))
-      (z, x) :=
-    ((hlift.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
-  exact (hK.comp (z, x) hg).clm_apply (hderiv.contMDiff.comp contMDiff_fst).contMDiffAt
+  have hg : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : ℝ × ((ℝ × ℝ) × M) ↦
+        (p.1, (zero.cylindricalEndLift (Complex.equivRealProdCLM.symm p.2.1), p.2.2)))
+      (L, (z, x)) :=
+    (contMDiff_fst.prodMk ((hlift.contMDiff.comp (contMDiff_fst.comp contMDiff_snd)).prodMk
+      (contMDiff_snd.comp contMDiff_snd))).contMDiffAt
+  exact (hK.comp (L, (z, x)) hg).clm_apply
+    (hderiv.contMDiff.comp (contMDiff_fst.comp contMDiff_snd)).contMDiffAt
+
+/-- **The capped datum on the cylinder is smooth.** For period-one Hamiltonians `Hb` of class
+`C^n` on `ℝ × M` and neck length `L > 4`, every component of the capped datum on the cylinder is
+`C^n` jointly in the cylinder point and the target point. -/
+theorem contMDiff_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r))) (hL : 4 < L) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (cappedCylinderComponent Hb L v)) :=
+  fun p ↦ (contMDiffAt_cappedCylinderComponent_family hHb hHbs hL v p.1 p.2).comp p
+    (contMDiffAt_const.prodMk contMDiffAt_id)
 
 end Smooth
 
@@ -260,6 +279,24 @@ theorem contDiff_uncurry_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Peri
     ContDiff ℝ n (uncurry (cappedCylinderComponent Hb L v)) :=
   (contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_cappedCylinderComponent hHb
     (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL v)).contDiff
+
+/-- **The capped datum on the cylinder is smooth in the neck length**, for a vector space target.
+For period-one Hamiltonians `Hb` of class `C^n` on `ℝ × V`, every component of the capped datum on
+the cylinder is `C^n` jointly in the neck length `L > 4`, the cylinder point and the target
+point. -/
+theorem contDiffOn_cappedCylinderComponent_family {n : ℕ∞} (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (v : ℂ) :
+    ContDiffOn ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦ cappedCylinderComponent Hb p.1 v p.2.1 p.2.2)
+      (Ioi 4 ×ˢ univ) := by
+  rintro ⟨L, z, x⟩ ⟨hL, -⟩
+  have h := contMDiffAt_cappedCylinderComponent_family hHb
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL v z x
+  -- Read the product of the self-models as the self-model of the product.
+  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V))) n
+      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (p.2.1, p.2.2)) :=
+    contDiff_fst.contMDiff.prodMk ((contDiff_fst.comp contDiff_snd).contMDiff.prodMk
+      (contDiff_snd.comp contDiff_snd).contMDiff)
+  exact (h.comp (L, (z, x)) hg.contMDiffAt).contDiffAt.contDiffWithinAt
 
 end VectorSpace
 
@@ -643,5 +680,56 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_cappedCylinderComponent
       (fun z hz ↦ hJ z (hsub hz)) fun z hz ↦ hfloer z (hsub hz)⟩
   exact le_of_tendsto_of_tendsto (hinf.comp tendsto_neg_atTop_atBot)
     ((h₀.add_const _).add_const _) hbound
+
+/-- **The energy of the capped cylinder.** Under the hypotheses of
+`TauCeti.SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction_cappedCylinderComponent`, the
+Floer energy of `u` over the strip `ℝ × [0, 1]` is at most `a_0 - a_∞ + (Bb 1 + ∑ r, Bb r)`: the
+change of action between the two ends plus the curvature allowance, uniformly in the neck
+length. -/
+theorem lintegral_floerEnergyDensity_cappedCylinderComponent_le (ω : SymplecticForm V)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) (hL : 4 < L) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r)
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) {u : ℝ × ℝ → V} (hu : ContDiffOn ℝ 2 u U)
+    (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s, u (s, 1) = u (s, 0))
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (cappedCylinderComponent Hb L 1)
+          (cappedCylinderComponent Hb L Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a₀ a_inf : ℝ}
+    (hinf : Tendsto (fun s ↦ ω.hamiltonianAction (Hb inf) (fun t ↦ u (s, t))) atBot (𝓝 a_inf))
+    (h₀ : Tendsto (fun s ↦ ω.hamiltonianAction (Hb zero) (fun t ↦ u (s, t))) atTop (𝓝 a₀)) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity
+        (cappedCylinderComponent Hb L 1) (cappedCylinderComponent Hb L Complex.I) u z) ≤
+      ENNReal.ofReal (a₀ - a_inf + (Bb one + ∑ r, Bb r)) := by
+  set e := ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+    (cappedCylinderComponent Hb L Complex.I) u
+  have hsub (n : ℕ) : Icc (-(n : ℝ)) n ×ˢ Icc (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
+    prod_mono (subset_univ _) le_rfl
+  have hcont : ContinuousOn e U := ω.continuousOn_floerEnergyDensity hU (hu.of_le one_le_two)
+    (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL 1).contDiffOn
+    (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL Complex.I).contDiffOn
+  -- Over `[-n, n] × [0, 1]` with `n ≥ 3` the energy is at most the change of action between the
+  -- loops at `s = -n` and `s = n`, plus the curvature allowance.
+  have hrect : ∀ᶠ n : ℕ in atTop, ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1, ENNReal.ofReal (e z) ≤
+      ENNReal.ofReal (ω.hamiltonianAction (Hb zero) (fun t ↦ u (n, t)) -
+        ω.hamiltonianAction (Hb inf) (fun t ↦ u (-n, t)) + (Bb one + ∑ r, Bb r)) := by
+    filter_upwards [eventually_ge_atTop 3] with n hn
+    have hn' : (3 : ℝ) ≤ n := by exact_mod_cast hn
+    have hR := (hsub n).trans hRU
+    rw [← ofReal_integral_eq_lintegral_ofReal ((hcont.mono hR).integrableOn_compact
+        (isCompact_Icc.prod isCompact_Icc))
+      (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
+        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hsub n hz)) (hfloer z (hsub n hz)))]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have h := (abs_le.1 (abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le ω hHb hHbs
+      hL hBb hU hu (by linarith : -(n : ℝ) ≤ -3) (by linarith : (2 : ℝ) ≤ n) hR
+      fun s _ ↦ hper s)).2
+    linarith
+  refine le_of_tendsto_of_tendsto (tendsto_setLIntegral_Icc_neg_prod (volume : Measure (ℝ × ℝ))
+      (Icc 0 1) fun z ↦ ENNReal.ofReal (e z))
+    ((ENNReal.continuous_ofReal.tendsto _).comp ?_) hrect
+  exact ((h₀.comp tendsto_natCast_atTop_atTop).sub
+    ((hinf.comp tendsto_neg_atTop_atBot).comp tendsto_natCast_atTop_atTop)).add_const _
 
 end TauCeti.SymplecticForm

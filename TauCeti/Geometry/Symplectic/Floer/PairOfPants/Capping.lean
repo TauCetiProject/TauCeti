@@ -84,8 +84,9 @@ negative planes and the output by a positive plane.
   the resulting energy bound, uniform in `R`.
 * `TauCeti.Floer.plumbedPerturbation_single_inf_eq_zero`: the capped datum vanishes on the disc of
   radius `exp (-2π(L - 1)) / 2` about the capped puncture.
-* `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf`: for `L > 4` the capped datum is of
-  class `C^n` on the cylinder obtained by capping.
+* `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf_family`,
+  `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf`: for `L > 4` the capped datum is of
+  class `C^n` on the cylinder obtained by capping, jointly in the neck length.
 * `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf`: the same for a vector space
   target, in real coordinates on the domain.
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le`:
@@ -416,6 +417,34 @@ theorem plumbedPerturbation_single_inf_eq_zero (hq : q ≠ inf) (hL : 2 < L) {w 
       negativePlanePerturbation_eq_zero_of_norm_le (by simpa using hw'),
       ContinuousLinearMap.zero_comp]
 
+/-- **The capping family is smooth in the neck length.** For period-one Hamiltonians `Hb` of class
+`C^n` on `ℝ × M` and neck length `L > 4`, the perturbation obtained by plumbing the negative plane
+with Hamiltonian `Hb q` into the input end `q` of the pair of pants with Hamiltonians `Hb` is
+`C^n` jointly in the neck length, the domain point and the target point, at every domain point
+which is the capped puncture `c_q` or a point of `ℂ ∖ {0, 1}`. -/
+theorem contMDiffAt_plumbedPerturbation_single_inf_family {n : ℕ∞} (hq : q ≠ inf)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r))) (hL : 4 < L) {w : ℂ}
+    (hw : w = q.endCenter ∨ w ≠ 0 ∧ w ≠ 1) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℝ × (ℂ × M) => plumbedPerturbation (Pi.single inf (Hb q)) Hb q p.1 p.2.1 p.2.2)
+      (L, (w, x)) := by
+  set ρ : ℝ → ℝ := fun l => Real.exp (-(2 * π * (l - 1))) / 2
+  rcases lt_or_ge ‖w - q.endCenter‖ (ρ L) with hlt | hge
+  · -- Near a point of the open capped disc, for nearby neck lengths, the datum vanishes.
+    refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
+    have hdisc : ∀ᶠ p : ℝ × (ℂ × M) in 𝓝 (L, (w, x)), ‖p.2.1 - q.endCenter‖ < ρ p.1 :=
+      ((continuous_fst.comp continuous_snd).sub continuous_const).norm.continuousAt.eventually_lt
+        ((by fun_prop : Continuous ρ).comp continuous_fst).continuousAt hlt
+    have hlen : ∀ᶠ p : ℝ × (ℂ × M) in 𝓝 (L, (w, x)), 2 < p.1 :=
+      continuous_fst.continuousAt.eventually (lt_mem_nhds (by linarith))
+    filter_upwards [hdisc, hlen] with p hp hp₂
+    exact plumbedPerturbation_single_inf_eq_zero hq hp₂ hp.le p.2.2
+  · -- Off it, the point lies in the plumbed four-punctured sphere.
+    exact contMDiffAt_plumbedPerturbation_family hq ((hHb q).piSingle_apply inf) hHb
+      ((hHbs q).uncurry_piSingle_apply inf) hHbs (by simp) hL
+      (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
+
 /-- **The capped datum is smooth.** For period-one Hamiltonians `Hb` of class `C^n` on `ℝ × M` and
 neck length `L > 4`, the perturbation obtained by plumbing the negative plane with Hamiltonian
 `Hb q` into the input end `q` of the pair of pants with Hamiltonians `Hb` is `C^n` at every point
@@ -426,20 +455,9 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r))) (hL : 4 < L) {w : ℂ}
     (hw : w = q.endCenter ∨ w ≠ 0 ∧ w ≠ 1) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × M => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L p.1 p.2) (w, x) := by
-  set ρ := Real.exp (-(2 * π * (L - 1))) / 2
-  rcases lt_or_ge ‖w - q.endCenter‖ ρ with hlt | hge
-  · -- On the open capped disc the datum vanishes.
-    refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
-    have h : ∀ᶠ p : ℂ × M in 𝓝 (w, x), ‖p.1 - q.endCenter‖ < ρ :=
-      (continuous_fst.sub continuous_const).norm.continuousAt.eventually (gt_mem_nhds hlt)
-    filter_upwards [h] with p hp
-    exact plumbedPerturbation_single_inf_eq_zero hq (by linarith) hp.le p.2
-  · -- Off it, the point lies in the plumbed four-punctured sphere.
-    exact contMDiffAt_plumbedPerturbation hq
-      ((hHb q).piSingle_apply inf) hHb
-      ((hHbs q).uncurry_piSingle_apply inf) hHbs (by simp) hL
-      (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
+      (fun p : ℂ × M => plumbedPerturbation (Pi.single inf (Hb q)) Hb q L p.1 p.2) (w, x) :=
+  (contMDiffAt_plumbedPerturbation_single_inf_family hq hHb hHbs hL hw x).comp (w, x)
+    (contMDiffAt_const.prodMk contMDiffAt_id)
 
 section VectorSpace
 

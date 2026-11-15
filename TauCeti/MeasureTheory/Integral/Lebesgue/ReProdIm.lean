@@ -27,7 +27,9 @@ periodic functions on half-strips.
 * For a function periodic under `z ↦ z + I`, translating the band `t` vertically by an integer
   does not change the integral (`Function.Periodic.setLIntegral_reProdIm_preimage_add_intCast`),
   so its integral over a band of `k` periods is `k` times its integral over one period
-  (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`). A disc of radius at most
+  (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`), and the same holds on
+  `ℝ × ℝ` for a function of period `1` in the second variable
+  (`TauCeti.setLIntegral_prod_Ico_intCast_add_natCast`). A disc of radius at most
   `1/2` lies in two periods, so the integral over it is at most twice the integral over one period
   of the vertical strip of the same width
   (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo`), and the same holds
@@ -142,6 +144,20 @@ theorem setIntegral_ball_le_two_mul {g : ℂ → ℝ} (hg : Periodic g I) (hg0 :
 end Function.Periodic
 
 namespace TauCeti
+
+/-- **Periodic functions on `ℝ × ℝ`.** For a function on `ℝ × ℝ` of period `1` in the second
+variable, its integral over `k` consecutive periods `s × [n, n + k)` is `k` times its integral over
+the period `s × [0, 1)`. This is `Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`
+transported along `ℂ ≃ ℝ × ℝ`. -/
+theorem setLIntegral_prod_Ico_intCast_add_natCast {g : ℝ × ℝ → ℝ≥0∞}
+    (hg : ∀ s t, g (s, t + 1) = g (s, t)) {s : Set ℝ} (hs : MeasurableSet s) (n : ℤ) (k : ℕ) :
+    ∫⁻ p in s ×ˢ Ico (n : ℝ) (n + k), g p = k * ∫⁻ p in s ×ˢ Ico 0 1, g p := by
+  have h (t : Set ℝ) : ∫⁻ z in s ×ℂ t, g (measurableEquivRealProd z) = ∫⁻ p in s ×ˢ t, g p :=
+    volume_preserving_equiv_real_prod.setLIntegral_comp_preimage_emb
+      measurableEquivRealProd.measurableEmbedding g (s ×ˢ t)
+  have hper : Periodic (fun z ↦ g (measurableEquivRealProd z)) I := fun z ↦ by
+    simpa [measurableEquivRealProd_apply] using hg z.re z.im
+  rw [← h, ← h, hper.setLIntegral_reProdIm_Ico_intCast_add_natCast hs]
 
 variable {f : ℂ → ℝ≥0∞}
 
