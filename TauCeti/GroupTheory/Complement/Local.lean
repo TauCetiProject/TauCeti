@@ -23,7 +23,8 @@ conjugating a local complement `K` of `N` in `H` by `g` gives a local complement
 along `K` and `G` acts on `N` by conjugation.
 
 These constructions reuse Mathlib's `Subgroup.IsComplement.equiv` for global complements.
-Restriction of a complement to an intermediate subgroup uses Dedekind's modular law.
+Restriction of a complement to an intermediate subgroup uses Dedekind's modular law, and local
+complements pull back along injective homomorphisms (`Subgroup.exists_isLocalComplement_map_iff`).
 -/
 
 public section
@@ -154,6 +155,23 @@ theorem IsComplement'.of_map {f : G →* G'} {D : Subgroup G'}
       rw [map_mul, map_inv, he, ← hd, inv_mul_cancel_left]
     refine ⟨n, hn, n⁻¹ * x, ?_, by simp⟩
     exact mem_comap.mpr (hfd.symm ▸ d.property)
+
+/-- A local complement of the image of a subgroup in the image of an ambient subgroup pulls back
+along an injective homomorphism. -/
+theorem IsLocalComplement.of_map {f : G →* G'} {K : Subgroup G'}
+    (h : (N.map f).IsLocalComplement K (H.map f)) (hf : Function.Injective f) :
+    N.IsLocalComplement (K.comap f) H := by
+  have hK : (K.comap f).map f = K := map_comap_eq_self (h.right_le.trans (map_le_range f H))
+  refine ⟨map_injective hf ?_, map_injective hf ?_⟩
+  · rw [map_inf _ _ f hf, hK, h.inf_eq_bot, map_bot]
+  · rw [map_sup, hK, h.sup_eq]
+
+/-- Along an injective homomorphism, the image of `N` has a local complement in the image of `H`
+precisely when `N` has a local complement in `H`. -/
+theorem exists_isLocalComplement_map_iff {f : G →* G'} (hf : Function.Injective f) :
+    (∃ K : Subgroup G', (N.map f).IsLocalComplement K (H.map f)) ↔
+      ∃ K : Subgroup G, N.IsLocalComplement K H :=
+  ⟨fun ⟨_, hK⟩ => ⟨_, hK.of_map hf⟩, fun ⟨_, hK⟩ => ⟨_, hK.map hf⟩⟩
 
 /-- Local complementation is global complementation inside the specified subgroup. -/
 theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]

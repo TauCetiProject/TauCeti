@@ -28,7 +28,8 @@ extension it defines and its class are the subject of
 ## Main declarations
 
 * `TauCeti.zmodFourExtension`: the extension `1 → ℤ/2 → ℤ/4 → ℤ/2 → 1`, with its inclusion and
-  projection `TauCeti.zmodFourExtension_inl` and `TauCeti.zmodFourExtension_rightHom`.
+  projection `TauCeti.zmodFourExtension_inl` and `TauCeti.zmodFourExtension_rightHom`, and its
+  canonical normalized section `TauCeti.zmodFourExtensionSection`.
 * `TauCeti.isEmpty_splitting_zmodFourExtension`: **it has no homomorphic section.**
 
 ## References
@@ -86,6 +87,49 @@ theorem zmodFourExtension_rightHom :
       AddMonoidHom.toMultiplicative
         (ZMod.castHom (by decide : (2 : ℕ) ∣ 4) (ZMod 2)).toAddMonoidHom :=
   (rfl)
+
+/-- The inclusion of `TauCeti.zmodFourExtension` sends the generator `ofAdd 1` of `ℤ/2` to
+`ofAdd 2` in `ℤ/4`. -/
+theorem zmodFourExtension_inl_ofAdd_one :
+    zmodFourExtension.inl (ofAdd 1) = ofAdd 2 := by
+  rw [zmodFourExtension_inl, AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd,
+    ZMod.mulCastHom_apply]
+  decide
+
+/-- The projection of `TauCeti.zmodFourExtension` sends `ofAdd 1` in `ℤ/4` to `ofAdd 1` in
+`ℤ/2`. -/
+theorem zmodFourExtension_rightHom_ofAdd_one :
+    zmodFourExtension.rightHom (ofAdd 1) = ofAdd 1 := by
+  rw [zmodFourExtension_rightHom]
+  decide
+
+/-- **The canonical normalized section `0 ↦ 0, 1 ↦ 1` of `1 → ℤ/2 → ℤ/4 → ℤ/2 → 1`**, lifting each
+residue modulo two to its canonical representative `{0, 1}` modulo four. -/
+def zmodFourExtensionSection : zmodFourExtension.Section where
+  toFun y := ofAdd ((toAdd y).cast : ZMod 4)
+  rightInverse_rightHom y := by
+    rw [zmodFourExtension_rightHom, AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd,
+      RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
+    conv_rhs => rw [← ofAdd_toAdd y]
+    refine congrArg ofAdd ?_
+    generalize toAdd y = z
+    revert z
+    decide
+
+theorem zmodFourExtensionSection_apply (y : Multiplicative (ZMod 2)) :
+    zmodFourExtensionSection y = ofAdd ((toAdd y).cast : ZMod 4) :=
+  (rfl)
+
+/-- The canonical section of `TauCeti.zmodFourExtension` is normalized at `1`. -/
+@[simp]
+theorem zmodFourExtensionSection_one : zmodFourExtensionSection 1 = 1 := by
+  decide
+
+/-- The canonical section of `TauCeti.zmodFourExtension` lifts the generator `ofAdd 1` of `ℤ/2` to
+`ofAdd 1` in `ℤ/4`. -/
+@[simp]
+theorem zmodFourExtensionSection_ofAdd_one : zmodFourExtensionSection (ofAdd 1) = ofAdd 1 := by
+  decide
 
 /-- **The extension `1 → ℤ/2 → ℤ/4 → ℤ/2 → 1` has no homomorphic section**: a section would send
 the generator of `ℤ/2` to an element of `ℤ/4` of order dividing two with odd residue, and the only

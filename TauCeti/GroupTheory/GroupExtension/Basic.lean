@@ -18,7 +18,10 @@ This file provides operations on an existing group extension.
   kernel term.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
 * `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
-* `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
+* `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension, with
+  `GroupExtension.Section.relabelEquiv` transporting sections across the relabelling.
+* `GroupExtension.relabelEquivOfMulEquiv`: packages compatible multiplicative equivalences on all
+  three terms of two extensions into a `GroupExtension.Equiv` after relabelling.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
@@ -38,7 +41,9 @@ namespace GroupExtension
 variable {N : Type u} {E : Type v} {G : Type w} [Group N] [Group E] [Group G]
 
 /-- Evaluating the underlying section of a splitting agrees with evaluating the splitting. -/
-@[simp]
+@[to_additive (attr := simp)
+  /-- Evaluating the underlying section of an additive splitting agrees with evaluating the
+  splitting. -/]
 theorem Splitting.toSection_apply {S : GroupExtension N E G} (s : S.Splitting) (g : G) :
     s.toSection g = s g := (rfl)
 
@@ -152,6 +157,155 @@ theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtensio
   apply S.inl_injective
   rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
     GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
+
+/-- Relabelling the kernel conjugates conjugation on the kernel by the kernel equivalence. -/
+@[simp]
+theorem relabelKer_conjAct {S : GroupExtension N E G} {N' : Type*} [Group N'] (e : N' ≃* N)
+    (x : E) (n : N') :
+    (S.relabelKer e).conjAct x n = e.symm (S.conjAct x (e n)) := by
+  apply (S.relabelKer e).inl_injective
+  rw [inl_conjAct_comm]
+  simp [inl_conjAct_comm]
+
+/-- Relabelling both outer terms conjugates conjugation on the kernel by the kernel equivalence. -/
+@[simp]
+theorem relabel_conjAct {S : GroupExtension N E G} {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') (x : E) (n : N') :
+    (S.relabel eN eG).conjAct x n = eN.symm (S.conjAct x (eN n)) := by
+  rw [relabel, _root_.TauCeti.GroupExtension.relabelQuotient_conjAct, relabelKer_conjAct]
+
+section RelabelSection
+
+/-- Relabelling the kernel does not change the projection, so sections are unchanged. -/
+@[to_additive
+  /-- Relabelling the kernel of an additive extension does not change the projection, so sections
+  are unchanged. -/]
+def Section.relabelKerEquiv (S : GroupExtension N E G) {N' : Type*} [Group N'] (e : N' ≃* N) :
+    S.Section ≃ (S.relabelKer e).Section where
+  toFun σ := ⟨σ, σ.rightInverse_rightHom⟩
+  invFun σ := ⟨σ, σ.rightInverse_rightHom⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[to_additive (attr := simp)]
+theorem Section.relabelKerEquiv_apply (S : GroupExtension N E G) {N' : Type*} [Group N']
+    (e : N' ≃* N) (σ : S.Section) (g : G) :
+    Section.relabelKerEquiv S e σ g = σ g :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem Section.relabelKerEquiv_symm_apply (S : GroupExtension N E G) {N' : Type*} [Group N']
+    (e : N' ≃* N) (σ : (S.relabelKer e).Section) (g : G) :
+    (Section.relabelKerEquiv S e).symm σ g = σ g :=
+  (rfl)
+
+/-- Relabelling the quotient along `e : G ≃* G'` transports sections by precomposition with
+`e.symm`. -/
+@[to_additive
+  /-- Relabelling the quotient of an additive extension along `e : G ≃+ G'` transports sections by
+  precomposition with `e.symm`. -/]
+def Section.relabelQuotientEquiv (S : GroupExtension N E G) {G' : Type*} [Group G']
+    (e : G ≃* G') : S.Section ≃ (S.relabelQuotient e).Section where
+  toFun σ :=
+    { toFun g' := σ (e.symm g')
+      rightInverse_rightHom g' := by
+        rw [relabelQuotient_rightHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+          σ.rightHom_section, e.apply_symm_apply] }
+  invFun σ' :=
+    { toFun g := σ' (e g)
+      rightInverse_rightHom g := by
+        have h := σ'.rightHom_section (e g)
+        rwa [relabelQuotient_rightHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+          e.apply_eq_iff_eq] at h }
+  left_inv σ := DFunLike.ext _ _ fun g => congrArg σ (e.symm_apply_apply g)
+  right_inv σ' := DFunLike.ext _ _ fun g' => congrArg σ' (e.apply_symm_apply g')
+
+@[to_additive (attr := simp)]
+theorem Section.relabelQuotientEquiv_apply (S : GroupExtension N E G) {G' : Type*} [Group G']
+    (e : G ≃* G') (σ : S.Section) (g' : G') :
+    Section.relabelQuotientEquiv S e σ g' = σ (e.symm g') :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem Section.relabelQuotientEquiv_symm_apply (S : GroupExtension N E G) {G' : Type*} [Group G']
+    (e : G ≃* G') (σ' : (S.relabelQuotient e).Section) (g : G) :
+    (Section.relabelQuotientEquiv S e).symm σ' g = σ' (e g) :=
+  (rfl)
+
+/-- Precomposing with `e.symm` preserves normalization of a section at `1`. -/
+@[to_additive
+  /-- Precomposing with `e.symm` preserves normalization of an additive section at `0`. -/]
+theorem Section.relabelQuotientEquiv_one_eq_one_iff (S : GroupExtension N E G) {G' : Type*}
+    [Group G'] (e : G ≃* G') (σ : S.Section) :
+    Section.relabelQuotientEquiv S e σ 1 = 1 ↔ σ 1 = 1 := by
+  rw [Section.relabelQuotientEquiv_apply, map_one]
+
+/-- Relabelling both outer terms transports sections by precomposition with the inverse quotient
+equivalence. -/
+@[to_additive
+  /-- Relabelling both outer terms of an additive extension transports sections by precomposition
+  with the inverse quotient equivalence. -/]
+def Section.relabelEquiv (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') : S.Section ≃ (S.relabel eN eG).Section :=
+  (Section.relabelKerEquiv S eN).trans (Section.relabelQuotientEquiv (S.relabelKer eN) eG)
+
+@[to_additive (attr := simp)]
+theorem Section.relabelEquiv_apply (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') (σ : S.Section) (g' : G') :
+    Section.relabelEquiv S eN eG σ g' = σ (eG.symm g') :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem Section.relabelEquiv_symm_apply (S : GroupExtension N E G) {N' G' : Type*} [Group N']
+    [Group G'] (eN : N' ≃* N) (eG : G ≃* G') (σ' : (S.relabel eN eG).Section) (g : G) :
+    (Section.relabelEquiv S eN eG).symm σ' g = σ' (eG g) :=
+  (rfl)
+
+/-- Relabelling both outer terms preserves normalization of a section at `1`. -/
+@[to_additive
+  /-- Relabelling both outer terms preserves normalization of an additive section at `0`. -/]
+theorem Section.relabelEquiv_one_eq_one_iff (S : GroupExtension N E G) {N' G' : Type*} [Group N']
+    [Group G'] (eN : N' ≃* N) (eG : G ≃* G') (σ : S.Section) :
+    Section.relabelEquiv S eN eG σ 1 = 1 ↔ σ 1 = 1 := by
+  rw [Section.relabelEquiv_apply, map_one]
+
+/-- Compatible multiplicative equivalences `(eN, eE, eG)` between all three terms of two group
+extensions define an equivalence `(S.relabel eN.symm eG).Equiv S'` with fixed kernel `N'` and
+quotient `G'`. -/
+@[to_additive
+  /-- Compatible additive equivalences `(eN, eE, eG)` between all three terms of two additive group
+  extensions define an equivalence `(S.relabel eN.symm eG).Equiv S'` with fixed kernel `N'` and
+  quotient `G'`. -/]
+def relabelEquivOfMulEquiv (S : GroupExtension N E G) {N' E' G' : Type*} [Group N'] [Group E']
+    [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E') (eG : G ≃* G')
+    (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) :
+    (S.relabel eN.symm eG).Equiv S' where
+  toMulEquiv := eE
+  inl_comm := by
+    ext n'
+    have h := DFunLike.congr_fun hinl (eN.symm n')
+    simpa only [relabel_inl, Function.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, eN.apply_symm_apply] using h
+  rightHom_comm := DFunLike.coe_fn_eq.mpr hright
+
+@[to_additive (attr := simp)]
+theorem relabelEquivOfMulEquiv_apply (S : GroupExtension N E G) {N' E' G' : Type*} [Group N']
+    [Group E'] [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E')
+    (eG : G ≃* G') (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (x : E) :
+    S.relabelEquivOfMulEquiv S' eN eE eG hinl hright x = eE x :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem relabelEquivOfMulEquiv_symm_apply (S : GroupExtension N E G) {N' E' G' : Type*} [Group N']
+    [Group E'] [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E')
+    (eG : G ≃* G') (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (y : E') :
+    (S.relabelEquivOfMulEquiv S' eN eE eG hinl hright).symm y = eE.symm y :=
+  (rfl)
+
+end RelabelSection
 
 section Hom
 

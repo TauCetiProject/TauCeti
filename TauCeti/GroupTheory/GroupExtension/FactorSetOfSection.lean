@@ -60,7 +60,9 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
   ambient action is trivial.
 * `TauCeti.GroupExtension.factorSet_monoidHomComp`: the factor set of a section transported along a
   homomorphism of extensions over `G` restricting to `f` on the kernels is the pushforward along
-  `f` of the factor set of the section.
+  `f` of the factor set of the section; `TauCeti.GroupExtension.factorSetFun_relabel` and
+  `TauCeti.GroupExtension.sectionDiff_relabel` likewise evaluate factor sets and section
+  differences under outer-term relabellings.
 * `TauCeti.GroupExtension.section_mul`: `σ g * σ h = inl (α (g, h)) * σ (g * h)`, the defining
   property of the factor set.
 * `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`: the extension is equivalent to the
@@ -267,6 +269,40 @@ theorem _root_.GroupExtension.Section.factorSetFun_mul (σ : S.Section) (g h j :
   simp only [map_mul, GroupExtension.inl_conjAct_comm, inl_factorSetFun]
   simp [mul_assoc]
 
+/-- Relabelling the kernel applies the inverse kernel equivalence to the noncommutative factor set
+of a section. -/
+@[simp]
+theorem factorSetFun_relabelKer {M' : Type*} [Group M']
+    (e : M' ≃* M) (σ : S.Section) (p : G × G) :
+    factorSetFun (GroupExtension.Section.relabelKerEquiv S e σ) p =
+      e.symm (factorSetFun σ p) := by
+  obtain ⟨g, h⟩ := p
+  apply (S.relabelKer e).inl_injective
+  rw [inl_factorSetFun]
+  simp [inl_factorSetFun]
+
+/-- Relabelling the quotient pulls back the noncommutative factor set of a section along the
+inverse quotient equivalence. -/
+@[simp]
+theorem factorSetFun_relabelQuotient {G' : Type*} [Group G']
+    (e : G ≃* G') (σ : S.Section) (g h : G') :
+    factorSetFun (GroupExtension.Section.relabelQuotientEquiv S e σ) (g, h) =
+      factorSetFun σ (e.symm g, e.symm h) := by
+  apply S.inl_injective
+  rw [← GroupExtension.relabelQuotient_inl S e, inl_factorSetFun]
+  simp [inl_factorSetFun]
+
+/-- Relabelling both outer terms pulls back the noncommutative factor set along the inverse
+quotient equivalence and applies the inverse kernel equivalence to its values. -/
+@[simp]
+theorem factorSetFun_relabel {M' G' : Type*} [Group M'] [Group G']
+    (eM : M' ≃* M) (eG : G ≃* G') (σ : S.Section) (g h : G') :
+    factorSetFun (GroupExtension.Section.relabelEquiv S eM eG σ) (g, h) =
+      eM.symm (factorSetFun σ (eG.symm g, eG.symm h)) := by
+  apply (S.relabel eM eG).inl_injective
+  rw [inl_factorSetFun]
+  simp [inl_factorSetFun]
+
 end FactorSetFun
 
 section FactorSet
@@ -432,6 +468,18 @@ noncomputable def sectionDiff (g : G) : M :=
 @[simp]
 theorem inl_sectionDiff (g : G) : S.inl (sectionDiff σ σ' g) = σ g * (σ' g)⁻¹ :=
   MonoidHom.apply_ofInjective_symm S.inl_injective _
+
+/-- Relabelling both outer terms pulls back the difference of two sections along the inverse
+quotient equivalence and applies the inverse kernel equivalence to its values. -/
+@[simp]
+theorem sectionDiff_relabel {M' G' : Type*} [Group M'] [Group G']
+    (eM : M' ≃* M) (eG : G ≃* G') (g : G') :
+    sectionDiff (GroupExtension.Section.relabelEquiv S eM eG σ)
+      (GroupExtension.Section.relabelEquiv S eM eG σ') g =
+      eM.symm (sectionDiff σ σ' (eG.symm g)) := by
+  apply (S.relabel eM eG).inl_injective
+  rw [inl_sectionDiff]
+  simp [inl_sectionDiff]
 
 end SectionDiff
 
