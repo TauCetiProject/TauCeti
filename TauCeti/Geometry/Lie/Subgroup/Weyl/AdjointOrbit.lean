@@ -44,9 +44,8 @@ there. Maximal tori lying in a closed subgroup are conjugate by an element of it
 ## References
 
 * T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
-  Chapter IV, Proposition (2.5).
-* J. J. Duistermaat and J. A. C. Kolk, *Lie Groups*, Springer Universitext (2000),
-  Theorem 3.7.13 and Corollary 3.7.14.
+  Chapter IV, § 2.
+* J. J. Duistermaat and J. A. C. Kolk, *Lie Groups*, Springer Universitext (2000), Section 3.7.
 -/
 
 public section
