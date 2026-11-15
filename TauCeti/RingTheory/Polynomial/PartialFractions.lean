@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.Polynomial.DegreeLT
-import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Data.Multiset.Fintype
@@ -45,13 +44,6 @@ namespace Polynomial
 section Independent
 
 variable {R : Type*} [CommRing R] [IsDomain R] [DecidableEq R]
-
-/-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
-at least `k` times in `E`. -/
-private theorem X_sub_C_pow_dvd_smul_multiset_prod_iff {E : Multiset R} {a c : R} (hc : c ≠ 0)
-    {k : ℕ} : (X - C a) ^ k ∣ c • (E.map fun b ↦ X - C b).prod ↔ k ≤ E.count a := by
-  rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
-    ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
 
 /-- **Partial-fraction polynomials are independent.** For a multiset `D` of points of an integral
 domain and `P = ∏_{a ∈ D} (X - a)`, the polynomials `P / (X - a) ^ (j + 1)`, for the points
