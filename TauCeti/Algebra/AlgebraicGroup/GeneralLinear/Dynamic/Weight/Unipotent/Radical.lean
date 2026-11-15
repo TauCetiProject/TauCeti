@@ -77,15 +77,9 @@ weight-unipotent ideal is defined. -/
         ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k)
           (_root_.CommHopfAlgCat.{u} k)).mapIso eU) hUconnected)
       ((smoothUnipotentCommHopfAlgProperty k).prop_of_iso eU hUsmoothUnipotent)
-  let D : FiniteTypeCommHopfAlgCat.{u, u} k :=
-    ⟨weightLeviCoordinateHopfAlgebra k w,
-      weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w ▸
-        (weightLeviFiniteTypeCoordinateHopfAlgebra k w).property⟩
-  let eD : weightLeviFiniteTypeCoordinateHopfAlgebra k w ≅ D :=
-    ObjectProperty.isoMk _ (eqToIso (weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w))
+  let D := weightLeviFiniteTypeCoordinateHopfAlgebra k w
   have hD : reductiveCommHopfAlgProperty k D :=
-    (reductiveCommHopfAlgProperty k).prop_of_iso eD
-      (reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra k w)
+    reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra k w
   let f : D.obj ⟶ H.obj := weightParabolicLimitCoordinateMap k w
   have hleft : Function.LeftInverse (weightLeviToParabolicCoordinateMap k w).hom f.hom := by
     intro x
