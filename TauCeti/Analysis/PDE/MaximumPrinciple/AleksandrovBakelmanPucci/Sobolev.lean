@@ -325,7 +325,7 @@ private theorem tendsto_setLIntegral_hessianOperator_smoothField_sub
   refine (setLIntegral_congr_fun (hUo k).measurableSet fun y hy => ?_).trans_le
     (lintegral_mono_set (hUΩ k))
   rw [← fderiv_gradient,
-    Wkp.fderiv_gradient_smoothField_value u (φ k) (((hUo k).eventually_mem hy).mono (hball k)),
+    Wkp.fderiv_gradient_smoothField_value u (φ k) (hball k y hy),
     Pi.sub_apply]
 
 /-- **The Aleksandrov measure estimate for `W^{2,n}` functions and bounded slopes.** Let `Ω` be

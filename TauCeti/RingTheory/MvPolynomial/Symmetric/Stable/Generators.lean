@@ -28,12 +28,14 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 * `TauCeti.stableEsymm R n`, `TauCeti.stableHsymm R n`: the symmetric functions `e_n` and `h_n`.
 * `TauCeti.stablePsum R hn`: the power sum symmetric function `p_n`, for `hn : n ≠ 0`.
+* `TauCeti.stablePsumPart R μ`: the power-sum product symmetric function `p_μ` of a partition `μ`.
 * `TauCeti.SymmetricFunction.esymmAlgHom R`: the algebra homomorphism `R[X₀, X₁, …] → Λ_R` sending
   `X r` to `e_(r + 1)`.
 * `TauCeti.SymmetricFunction.esymmAlgEquiv R`: this homomorphism as an algebra equivalence.
 
 ## Main results
 
+* `TauCeti.SymmetricFunction.of_stablePsumPart`: `p_μ = p_(μ₁) p_(μ₂) ⋯` in `Λ_R`.
 * `TauCeti.SymmetricFunction.algHom_ext`: algebra homomorphisms out of `Λ_R` are determined by
   their values on the elementary symmetric functions.
 
@@ -102,7 +104,36 @@ theorem coe_stableSymmetricProj_stablePsum {n : ℕ} (hn : n ≠ 0) (d : ℕ) :
     (stableSymmetricProj R n d (stablePsum R hn) : MvPolynomial (Fin d) R) = psum (Fin d) R n := by
   rw [stablePsum, stableSymmetricProj_mk]
 
+/-- **The power-sum product symmetric function** `p_μ = p_(μ₁) p_(μ₂) ⋯` of a partition `μ` of
+`n`: the compatible family of the power-sum products `MvPolynomial.psumPart`. Unlike the zeroth
+power sum it is stable for every partition, since the parts of a partition are positive. -/
+noncomputable def stablePsumPart {n : ℕ} (μ : n.Partition) : stableSymmetricSubmodule R n :=
+  ⟨fun d => ⟨psumPart (Fin d) R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩,
+    mem_stableSymmetricSubmodule.mpr fun d => by
+      simp only [psumPart, map_multiset_prod, Multiset.map_map]
+      exact congrArg _ (Multiset.map_congr rfl fun i hi =>
+        aeval_snoc_zero_psum d (μ.parts_pos hi).ne')⟩
+
+/-- The power-sum product symmetric function `p_μ`, read in `d` variables, is the power-sum product
+polynomial. -/
+@[simp]
+theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d : ℕ) :
+    (stableSymmetricProj R n d (stablePsumPart R μ) : MvPolynomial (Fin d) R) =
+      psumPart (Fin d) R μ := by
+  rw [stablePsumPart, stableSymmetricProj_mk]
+
 namespace SymmetricFunction
+
+/-- **The power-sum product symmetric function is the product of the power sums of its parts**:
+`p_μ = p_(μ₁) p_(μ₂) ⋯` in the ring of symmetric functions. -/
+theorem of_stablePsumPart {n : ℕ} (μ : n.Partition) :
+    DirectSum.of _ n (stablePsumPart R μ) =
+      (μ.parts.pmap (fun i hi => DirectSum.of _ i (stablePsum R (Nat.pos_iff_ne_zero.mp hi)))
+        fun _ hi => μ.parts_pos hi).prod := by
+  refine ext_specialization fun d => ?_
+  rw [specialization_of, coe_stableSymmetricProj_stablePsumPart, map_multiset_prod,
+    Multiset.map_pmap]
+  simp only [specialization_of, coe_stableSymmetricProj_stablePsum, Multiset.pmap_eq_map, psumPart]
 
 /-- The algebra homomorphism from polynomials in countably many variables to the symmetric functions
 sending the variable `X r` to the elementary symmetric function `e_(r + 1)`. -/
