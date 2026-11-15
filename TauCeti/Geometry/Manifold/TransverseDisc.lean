@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.TangentCone
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.LinearAlgebra.Dimension.Submodule

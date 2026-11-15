@@ -62,6 +62,13 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
+/-- The inclusion of the positive-definite cone into the matrices is smooth, of every
+regularity. -/
+theorem contMDiff_coe_posDefOpens {k : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, Matrix n n 𝕜) k
+      (fun P : posDefOpens n 𝕜 ↦ ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
+  (selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtype_val
+
 variable (n 𝕜) in
 /-- Exponential coordinates on the positive-definite cone: a global real diffeomorphism from
 Hermitian matrices (symmetric matrices over `ℝ`), with inverse the matrix logarithm.
@@ -86,12 +93,8 @@ def hermitianExpDiffeomorph (k : ℕ∞ω) :
     exact (X.prop.exp.selfAdjointPart_apply ℝ).symm
   contMDiff_invFun := by
     have hlog := (Matrix.contDiffOn_cfc_log (n := n) (𝕜 := 𝕜) (k := k)).restrict_scalars ℝ
-    have hval : ContMDiff 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))
-        𝓘(ℝ, Matrix n n 𝕜) k
-        (fun P : posDefOpens n 𝕜 ↦ (P.1 : Matrix n n 𝕜)) :=
-      (selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtype_val
     have h := (selfAdjointPartL ℝ (Matrix n n 𝕜)).contDiff.contMDiff.comp
-      (hlog.contMDiffOn.comp_contMDiff hval fun P ↦ P.prop)
+      (hlog.contMDiffOn.comp_contMDiff contMDiff_coe_posDefOpens fun P ↦ P.prop)
     refine h.congr fun P ↦ ?_
     exact ((cfc_predicate Real.log (P.1 : Matrix n n 𝕜)).selfAdjointPart_apply ℝ).symm
 
