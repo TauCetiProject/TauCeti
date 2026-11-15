@@ -133,8 +133,7 @@ theorem norm_evalL_apply_le (j : ℕ) (m : Fin (j + 1) → E) (G : IteratedGradi
           mul_le_mul_of_nonneg_right (G.le_opNorm (m 0))
             (Finset.prod_nonneg fun _ _ => norm_nonneg _)
         _ = ‖G‖ * (‖m 0‖ * ∏ k : Fin (j + 1), ‖m k.succ‖) := by
-          rw [mul_assoc]
-          rfl
+          rw [mul_assoc, Fin.tail_def]
 
 /-- Multilinear evaluation at `m` has operator norm at most `∏ k, ‖m k‖`. -/
 theorem norm_evalL_le (j : ℕ) (m : Fin (j + 1) → E) :
@@ -194,6 +193,14 @@ def toContinuousMultilinearMapₗᵢ :
 
 variable {E}
 
+/-- Unfolding `toContinuousMultilinearMapₗᵢ` at a successor index curries `m 0` into `G` and
+applies `toContinuousMultilinearMapₗᵢ E j` to the remaining directions `Fin.tail m`. -/
+theorem toContinuousMultilinearMapₗᵢ_succ_apply (j : ℕ) (G : IteratedGradient E (j + 1))
+    (m : Fin (j + 1 + 1) → E) :
+    toContinuousMultilinearMapₗᵢ E (j + 1) G m =
+      toContinuousMultilinearMapₗᵢ E j (G (m 0)) (Fin.tail m) := by
+  simp [toContinuousMultilinearMapₗᵢ, continuousMultilinearCurryLeftEquiv_symm_apply]
+
 /-- Evaluating `toContinuousMultilinearMapₗᵢ E j G` at `m` agrees with `evalL j m G`. -/
 @[simp]
 theorem toContinuousMultilinearMapₗᵢ_apply (j : ℕ) (G : IteratedGradient E j)
@@ -205,7 +212,15 @@ theorem toContinuousMultilinearMapₗᵢ_apply (j : ℕ) (G : IteratedGradient E
         continuousMultilinearCurryFin1_symm_apply, InnerProductSpace.toDual_apply_apply,
         evalL_zero_apply, real_inner_comm]
   | succ j ih =>
+      rw [toContinuousMultilinearMapₗᵢ_succ_apply, evalL_succ_apply]
       exact ih (G (m 0)) (Fin.tail m)
+
+/-- Evaluating `(toContinuousMultilinearMapₗᵢ E j).symm M` along `m` recovers `M m`. -/
+@[simp]
+theorem evalL_toContinuousMultilinearMapₗᵢ_symm (j : ℕ) (m : Fin (j + 1) → E)
+    (M : E [×(j + 1)]→L[ℝ] ℝ) :
+    evalL j m ((toContinuousMultilinearMapₗᵢ E j).symm M) = M m := by
+  rw [← toContinuousMultilinearMapₗᵢ_apply, LinearIsometryEquiv.apply_symm_apply]
 
 /-- Contracting one outer slot of `G` at `h` curries `h` into the first argument of the
 corresponding continuous multilinear map. -/
@@ -219,7 +234,8 @@ theorem toContinuousMultilinearMapₗᵢ_contractL_one (j : ℕ) (h : E)
 
 /-- Under `toContinuousMultilinearMapₗᵢ`, the classical `j`th iterated-gradient field of any
 scalar function `f` at `x` is `iteratedFDeriv ℝ (j + 1) f x`. No differentiability assumption is
-needed: at non-differentiable points both sides vanish. -/
+needed: both sides use the `fderiv` junk-value convention at each step, vanishing whenever the
+preceding stage fails to be differentiable at `x`. -/
 theorem toContinuousMultilinearMapₗᵢ_iteratedGradientChain (f : E → ℝ) (j : ℕ) (x : E) :
     toContinuousMultilinearMapₗᵢ E j (iteratedGradientChain f j x) =
       iteratedFDeriv ℝ (j + 1) f x := by

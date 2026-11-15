@@ -534,6 +534,18 @@ theorem norm_value_le : ∀ (k : ℕ) (u : Wkp mu Omega p k), ‖value k u‖ �
   | k + 1, u =>
       (norm_value_le k (lowerOrder k u)).trans (norm_lowerOrder_le k u)
 
+/-- Every element of `W^{m,p}(Ω)` projects to an element of `W^{n,p}(Ω)` for `n ≤ m` with the same
+`Lᵖ` value and norm at most `‖u‖`. -/
+theorem exists_value_eq_of_le {n m : ℕ} (h : n ≤ m) (u : Wkp mu Omega p m) :
+    ∃ u₀ : Wkp mu Omega p n, value m u = value n u₀ ∧ ‖u₀‖ ≤ ‖u‖ := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  clear h
+  induction k with
+  | zero => exact ⟨u, rfl, le_rfl⟩
+  | succ k ih =>
+      obtain ⟨u₀, hval, hnorm⟩ := ih (lowerOrder (n + k) u)
+      exact ⟨u₀, (value_succ (n + k) u).trans hval, hnorm.trans (norm_lowerOrder_le (n + k) u)⟩
+
 /-- The graph norm controls the highest weak derivative. -/
 theorem norm_iteratedGradient_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖iteratedGradient k u‖ ≤ ‖u‖ := by

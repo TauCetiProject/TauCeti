@@ -8,19 +8,21 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Finite sums of `MemLp.toLp` classes
+# Basic lemmas on `Lp` classes and `ContinuousLinearMap.compLp`
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
 class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
-witness on the sum.
+witness on the sum, together with functoriality of `ContinuousLinearMap.compLp` under composition of
+continuous linear maps.
 
 ## Main declarations
 
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `ContinuousLinearMap.compLp_comp`: `L₁.compLp (L₂.compLp f) = (L₁.comp L₂).compLp f`.
 -/
 
 public section
@@ -47,3 +49,22 @@ theorem toLp_finsetSum (hsum : MemLp (fun x ↦ ∑ i ∈ s, f i x) p μ) (hf : 
   exact toLp_congr _ _ (.of_forall fun x ↦ (Finset.sum_apply x s f).symm)
 
 end MeasureTheory.MemLp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+/-- Composing `Lp` postcompositions by two continuous linear maps agrees with postcomposing by their
+composition. -/
+@[simp]
+theorem compLp_comp {α 𝕜 F₁ F₂ F₃ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+    [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+    (L₁ : F₂ →L[𝕜] F₃) (L₂ : F₁ →L[𝕜] F₂) (f : Lp F₁ p μ) :
+    L₁.compLp (L₂.compLp f) = (L₁.comp L₂).compLp f := by
+  apply Lp.ext
+  filter_upwards [L₁.coeFn_compLp (L₂.compLp f), L₂.coeFn_compLp f,
+    (L₁.comp L₂).coeFn_compLp f] with x h₁ h₂ h₁₂
+  rw [h₁, h₂, h₁₂, ContinuousLinearMap.comp_apply]
+
+end ContinuousLinearMap

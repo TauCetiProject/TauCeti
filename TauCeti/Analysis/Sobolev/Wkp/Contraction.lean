@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
-import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # Iterated directional derivatives, contractions, and all-order symmetry on `W^{k,p}`
@@ -27,7 +28,7 @@ orders gives the full algebra of bundled directional derivatives on `W^{k,p}(Ω)
 * **Operator-norm bounds**. Each derivative component satisfies the bound with constant `1`
   (`TauCeti.Wkp.norm_lineDerivL_zero_apply_le`, `TauCeti.Wkp.norm_iteratedGradient_lineDerivL_le`).
   In the full Sobolev graph norm, the constant is `1` at `k = 0` and for `p = 2` at every order
-  (`TauCeti.Wkp.norm_lineDerivL_two_le`), and `√2` for every `1 ≤ p ≤ ∞` and every `k`
+  (`TauCeti.Wkp.norm_lineDerivL_le_of_exponent_two`), and `√2` for every `1 ≤ p ≤ ∞` and every `k`
   (`TauCeti.Wkp.norm_lineDerivL_le`, `TauCeti.Wkp.norm_lineDerivCLM_le`).
 * **Iterated directional derivatives and all-order symmetry**. Iterating `lineDerivL` along a tuple
   `m : Fin j → E` defines `TauCeti.Wkp.iteratedLineDerivL` and its order-zero specialisation
@@ -46,8 +47,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 ## Main declarations
 
 * `TauCeti.Wkp.iteratedGradient_lineDerivL`: `D^{j+1}(∂_v u) = (D^{j+2} u)⟨v⟩¹` in `Lᵖ(Ω)`.
-* `TauCeti.Wkp.norm_lineDerivL_le` and `TauCeti.Wkp.norm_lineDerivL_two_le`: graph-norm bounds for
-  `lineDerivL` (`√2 * ‖v‖` in general, `‖v‖` at `p = 2`).
+* `TauCeti.Wkp.norm_lineDerivL_le` and `TauCeti.Wkp.norm_lineDerivL_le_of_exponent_two`: graph-norm
+  bounds for `lineDerivL` (`√2 * ‖v‖` in general, `‖v‖` at `p = 2`).
 * `TauCeti.Wkp.iteratedLineDerivL` and `TauCeti.Wkp.iteratedLineDerivZeroL`: iterated bundled
   directional derivatives along a tuple `Fin j → E`.
 * `TauCeti.Wkp.iteratedLineDerivL_comp_perm`: permutation invariance of iterated directional
@@ -73,99 +74,6 @@ namespace TauCeti
 open MeasureTheory TopologicalSpace
 open scoped ENNReal InnerProductSpace ContDiff
 
-section PermCombinator
-
-/-- Auxiliary tuple identity expressing `m ∘ Equiv.swap 0 q.succ` via `Equiv.swap 0 1` and a tail
-transposition `Equiv.swap 0 q`. -/
-private theorem cons_tail_swap_eq_comp_swap_succ {α : Type*} {j : ℕ} (q : Fin (j + 1))
-    (m : Fin (j + 2) → α) :
-    (let m₁ := Fin.cons (α := fun _ => α) (m 0) (Fin.tail m ∘ Equiv.swap 0 q)
-     let m₂ := m₁ ∘ Equiv.swap 0 1
-     Fin.cons (α := fun _ => α) (m₂ 0) (Fin.tail m₂ ∘ Equiv.swap 0 q)) =
-      m ∘ Equiv.swap 0 q.succ := by
-  dsimp only
-  funext x
-  refine Fin.cases ?_ (fun y => ?_) x
-  · simp [Fin.tail]
-  · simp only [Fin.cons_succ, Function.comp_apply, Fin.tail]
-    by_cases hy : y = q
-    · subst hy
-      simp [Fin.succ_zero_eq_one]
-    · have hswap : Equiv.swap 0 q y ≠ 0 := by
-        intro h0
-        have hq := congrArg (Equiv.swap 0 q) h0
-        simp only [Equiv.swap_apply_self, Equiv.swap_apply_left] at hq
-        exact hy hq
-      have hne1 : (Equiv.swap 0 q y).succ ≠ 1 := by
-        rw [← Fin.succ_zero_eq_one]
-        exact Fin.succ_inj.ne.2 hswap
-      have hysucc : y.succ ≠ q.succ := Fin.succ_inj.ne.2 hy
-      rw [Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _) hne1, Fin.cons_succ,
-        Function.comp_apply, Equiv.swap_apply_self,
-        Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _) hysucc]
-      rfl
-
-/-- Any family of maps on tuples `Fin j → α` that respects permutations of `Fin.tail` and swaps of
-the first two entries is invariant under every permutation of `Fin j`. -/
-private theorem eq_comp_perm_of_tail_of_swap {α : Type*} {β : ℕ → Type*}
-    (F : ∀ j, (Fin j → α) → β j)
-    (htail : ∀ j (v : α) (m m' : Fin j → α), F j m = F j m' →
-      F (j + 1) (Fin.cons v m) = F (j + 1) (Fin.cons v m'))
-    (hswap : ∀ j (m : Fin (j + 2) → α), F (j + 2) (m ∘ Equiv.swap 0 1) = F (j + 2) m) :
-    ∀ (j : ℕ) (m : Fin j → α) (σ : Equiv.Perm (Fin j)), F j (m ∘ σ) = F j m
-  | 0, m, σ => by
-      have hm : m ∘ σ = m := funext fun i => i.elim0
-      rw [hm]
-  | j + 1, m, σ => by
-      have ih := eq_comp_perm_of_tail_of_swap F htail hswap j
-      have h0 : ∀ (r : Fin (j + 1)) (m' : Fin (j + 1) → α),
-          F (j + 1) (m' ∘ Equiv.swap 0 r) = F (j + 1) m' := by
-        intro r
-        refine Fin.cases (fun m' => by simp) (fun q m' => ?_) r
-        cases j with
-        | zero => exact q.elim0
-        | succ j' =>
-            let m₁ := Fin.cons (α := fun _ => α) (m' 0) (Fin.tail m' ∘ Equiv.swap 0 q)
-            let m₂ := m₁ ∘ Equiv.swap 0 1
-            have hm₁ : F (j' + 2) m₁ = F (j' + 2) m' := by
-              simpa only [Fin.cons_self_tail] using
-                htail (j' + 1) (m' 0) _ _ (ih (Fin.tail m') (Equiv.swap 0 q))
-            have hm₂ : F (j' + 2) m₂ = F (j' + 2) m₁ := hswap j' m₁
-            have hm₃ : F (j' + 2) (Fin.cons (α := fun _ => α) (m₂ 0)
-                (Fin.tail m₂ ∘ Equiv.swap 0 q)) = F (j' + 2) m₂ := by
-              simpa only [Fin.cons_self_tail] using
-                htail (j' + 1) (m₂ 0) _ _ (ih (Fin.tail m₂) (Equiv.swap 0 q))
-            rw [← cons_tail_swap_eq_comp_swap_succ q m', hm₃, hm₂, hm₁]
-      set r := (Equiv.Perm.decomposeFin σ).1
-      set e := (Equiv.Perm.decomposeFin σ).2
-      have hσ : Equiv.Perm.decomposeFin.symm (r, e) = σ := by
-        simpa only [Prod.mk.eta] using Equiv.Perm.decomposeFin.symm_apply_apply σ
-      have hdecomp : m ∘ σ = Fin.cons (α := fun _ => α) ((m ∘ Equiv.swap 0 r) 0)
-          (Fin.tail (m ∘ Equiv.swap 0 r) ∘ e) := by
-        rw [← hσ]
-        funext x
-        refine Fin.cases ?_ (fun y => ?_) x <;> simp [Fin.tail]
-      rw [hdecomp]
-      refine (htail j ((m ∘ Equiv.swap 0 r) 0) _ _ (ih _ e)).trans ?_
-      rw [Fin.cons_self_tail]
-      exact h0 r m
-
-end PermCombinator
-
-section CompLp
-
-private theorem compLp_comp {α F₁ F₂ F₃ : Type*} [MeasurableSpace α] {ν : Measure α}
-    {p : ENNReal} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
-    (L₁ : F₂ →L[ℝ] F₃) (L₂ : F₁ →L[ℝ] F₂) (f : Lp F₁ p ν) :
-    L₁.compLp (L₂.compLp f) = (L₁.comp L₂).compLp f := by
-  apply Lp.ext
-  filter_upwards [L₁.coeFn_compLp (L₂.compLp f), L₂.coeFn_compLp f,
-    (L₁.comp L₂).coeFn_compLp f] with x h₁ h₂ h₁₂
-  rw [h₁, h₂, h₁₂, ContinuousLinearMap.comp_apply]
-
-end CompLp
-
 namespace Wkp
 
 section Sobolev
@@ -173,20 +81,6 @@ section Sobolev
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
-
-/-! ### Lowering the Sobolev order -/
-
-/-- Every element of `W^{m,p}(Ω)` projects to an element of `W^{n,p}(Ω)` for `n ≤ m` with the same
-`Lᵖ` value and norm at most `‖u‖`. -/
-theorem exists_value_eq_of_le {n m : ℕ} (h : n ≤ m) (u : Wkp mu Omega p m) :
-    ∃ u₀ : Wkp mu Omega p n, value m u = value n u₀ ∧ ‖u₀‖ ≤ ‖u‖ := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  clear h
-  induction k with
-  | zero => exact ⟨u, rfl, le_rfl⟩
-  | succ k ih =>
-      obtain ⟨u₀, hval, hnorm⟩ := ih (lowerOrder (n + k) u)
-      exact ⟨u₀, (value_succ (n + k) u).trans hval, hnorm.trans (norm_lowerOrder_le (n + k) u)⟩
 
 /-! ### Outer contraction of `iteratedGradient` under `lineDerivL` -/
 
@@ -289,28 +183,26 @@ theorem lineDerivL_zero_eq_fullContractL_compLp (v : E) (u : Wkp mu Omega p 1) :
 /-- Componentwise `Lᵖ` bound at order zero: `‖∂_v u‖_{Lᵖ} ≤ ‖v‖ ‖∇u‖_{Lᵖ}`. -/
 theorem norm_lineDerivL_zero_apply_le (v : E) (u : Wkp mu Omega p 1) :
     ‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖iteratedGradient 0 u‖ := by
-  rw [lineDerivL_zero_eq_fullContractL_compLp]
-  have hv : ‖IteratedGradient.fullContractL 0 v‖ ≤ ‖v‖ :=
-    (IteratedGradient.norm_fullContractL_le (E := E) 0 v).trans_eq (pow_one ‖v‖)
-  exact ((IteratedGradient.fullContractL 0 v).norm_compLp_le _).trans
-    (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
+  rw [lineDerivL_zero_apply]
+  exact ((innerSL ℝ v).norm_compLp_le _).trans_eq (by rw [innerSL_apply_norm])
+
+/-- Pointwise graph-norm bound at order zero: `‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖u‖`. -/
+theorem norm_lineDerivL_zero_apply_le_norm (v : E) (u : Wkp mu Omega p 1) :
+    ‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖u‖ :=
+  (norm_lineDerivL_zero_apply_le v u).trans
+    (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le 0 u) (norm_nonneg v))
 
 /-- Operator-norm bound `‖lineDerivL v 0‖ ≤ ‖v‖` from `W^{1,p}(Ω)` to `Lᵖ(Ω)`. -/
 theorem norm_lineDerivL_zero_le (v : E) :
     ‖lineDerivL (mu := mu) (Omega := Omega) (p := p) v 0‖ ≤ ‖v‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun u =>
-    (norm_lineDerivL_zero_apply_le v u).trans
-      (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le 0 u) (norm_nonneg v))
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) (norm_lineDerivL_zero_apply_le_norm v)
 
 /-- The `Lᵖ` norm of the value of `lineDerivL v k u` is at most `‖v‖` times the `Lᵖ` norm of the
 weak gradient of `firstOrder k u`. -/
 theorem norm_value_lineDerivL_le (v : E) (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖value k (lineDerivL v k u)‖ ≤ ‖v‖ * ‖W1p.gradient (firstOrder k u)‖ := by
   rw [value_lineDerivL]
-  have hv : ‖(innerSL ℝ v : E →L[ℝ] ℝ)‖ ≤ ‖v‖ := by
-    rw [← IteratedGradient.fullContractL_zero]
-    exact (IteratedGradient.norm_fullContractL_le (E := E) 0 v).trans_eq (pow_one ‖v‖)
-  exact ((innerSL ℝ v).norm_compLp_le _).trans (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
+  exact ((innerSL ℝ v).norm_compLp_le _).trans_eq (by rw [innerSL_apply_norm])
 
 /-- Componentwise `Lᵖ` bound on the highest weak derivative of `lineDerivL v (j + 1) u`. -/
 theorem norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :
@@ -321,56 +213,77 @@ theorem norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Omega 
   exact ((IteratedGradient.contractL j 1 v).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
 
+private theorem le_mul_of_sq_le_mul_add_sq {a C s x y n : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C)
+    (hs : 0 ≤ s) (hn : 0 ≤ n) (hn_sq : n ^ 2 = x ^ 2 + y ^ 2)
+    (h : a ^ 2 ≤ C ^ 2 * s ^ 2 * (x ^ 2 + y ^ 2)) :
+    a ≤ C * s * n := by
+  refine (sq_le_sq₀ ha (by positivity)).1 ?_
+  calc
+    a ^ 2 ≤ C ^ 2 * s ^ 2 * (x ^ 2 + y ^ 2) := h
+    _ = (C * s * n) ^ 2 := by rw [← hn_sq, mul_pow, mul_pow]
+
+/-- **Euclidean-stage induction step for `lineDerivL` graph-norm bounds.** For any `1 ≤ C`, if
+`‖lineDerivL v k w‖ ≤ C * ‖v‖ * ‖w‖` at order `k` and both `lineDerivL v (k + 1) u` and `u`
+satisfy the Euclidean squared-norm identity on `(lowerOrder, iteratedGradient)`, then
+`‖lineDerivL v (k + 1) u‖ ≤ C * ‖v‖ * ‖u‖`. -/
+theorem norm_lineDerivL_succ_apply_le_of_norm_sq {C : ℝ} (hC : 1 ≤ C) (v : E) (k : ℕ)
+    (u : Wkp mu Omega p (k + 2))
+    (hlow : ‖lineDerivL v k (lowerOrder (k + 1) u)‖ ≤ C * ‖v‖ * ‖lowerOrder (k + 1) u‖)
+    (hd_sq : ‖lineDerivL v (k + 1) u‖ ^ 2 =
+      ‖lowerOrder k (lineDerivL v (k + 1) u)‖ ^ 2 +
+        ‖iteratedGradient k (lineDerivL v (k + 1) u)‖ ^ 2)
+    (hu_sq : ‖u‖ ^ 2 = ‖lowerOrder (k + 1) u‖ ^ 2 + ‖iteratedGradient (k + 1) u‖ ^ 2) :
+    ‖lineDerivL v (k + 1) u‖ ≤ C * ‖v‖ * ‖u‖ := by
+  have hC0 : 0 ≤ C := zero_le_one.trans hC
+  have h1C : 1 ≤ C ^ 2 := by nlinarith
+  have hlow' : ‖lowerOrder k (lineDerivL v (k + 1) u)‖ ≤ C * ‖v‖ * ‖lowerOrder (k + 1) u‖ := by
+    rwa [lowerOrder_lineDerivL]
+  have hlow_sq := pow_le_pow_left₀ (norm_nonneg _) hlow' 2
+  have htop_sq : ‖iteratedGradient k (lineDerivL v (k + 1) u)‖ ^ 2 ≤
+      C ^ 2 * ‖v‖ ^ 2 * ‖iteratedGradient (k + 1) u‖ ^ 2 := by
+    refine (pow_le_pow_left₀ (norm_nonneg _)
+      (norm_iteratedGradient_lineDerivL_le v k u) 2).trans ?_
+    rw [mul_pow, mul_assoc]
+    exact le_mul_of_one_le_left (by positivity) h1C
+  refine le_mul_of_sq_le_mul_add_sq (norm_nonneg _) hC0 (norm_nonneg v) (norm_nonneg u) hu_sq ?_
+  rw [mul_pow, mul_pow] at hlow_sq
+  linarith
+
 /-- At exponent `p = 2`, `lineDerivL v k` has graph-norm bound `‖v‖ * ‖u‖` at every order `k`. -/
-theorem norm_lineDerivL_two_apply_le (v : E) :
+theorem norm_lineDerivL_apply_le_of_exponent_two (v : E) :
     ∀ (k : ℕ) (u : Wkp mu Omega 2 (k + 1)), ‖lineDerivL v k u‖ ≤ ‖v‖ * ‖u‖
-  | 0, u =>
-      (norm_lineDerivL_zero_apply_le v u).trans
-        (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le 0 u) (norm_nonneg v))
+  | 0, u => norm_lineDerivL_zero_apply_le_norm v u
   | k + 1, u => by
-      let d := lineDerivL v (k + 1) u
-      have hlow : ‖lowerOrder k d‖ ≤ ‖v‖ * ‖lowerOrder (k + 1) u‖ := by
-        rw [lowerOrder_lineDerivL]
-        exact norm_lineDerivL_two_apply_le v k (lowerOrder (k + 1) u)
-      have htop : ‖iteratedGradient k d‖ ≤ ‖v‖ * ‖iteratedGradient (k + 1) u‖ :=
-        norm_iteratedGradient_lineDerivL_le v k u
-      have hd_sq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq k d
-      have hu_sq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k + 1) u
-      have hlow_sq := pow_le_pow_left₀ (norm_nonneg _) hlow 2
-      have htop_sq := pow_le_pow_left₀ (norm_nonneg _) htop 2
-      have hsq : ‖d‖ ^ 2 ≤ (‖v‖ * ‖u‖) ^ 2 := by
-        rw [mul_pow, hu_sq, mul_add]
-        rw [mul_pow] at hlow_sq htop_sq
-        linarith
-      exact (sq_le_sq₀ (norm_nonneg d) (by positivity)).1 hsq
+      simpa only [one_mul] using norm_lineDerivL_succ_apply_le_of_norm_sq le_rfl v k u
+        (by simpa only [one_mul] using
+          norm_lineDerivL_apply_le_of_exponent_two v k (lowerOrder (k + 1) u))
+        (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq k _)
+        (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k + 1) u)
 
 /-- Operator-norm bound `‖lineDerivL v k‖ ≤ ‖v‖` at `p = 2` for every order `k`. -/
-theorem norm_lineDerivL_two_le (v : E) (k : ℕ) :
+theorem norm_lineDerivL_le_of_exponent_two (v : E) (k : ℕ) :
     ‖lineDerivL (mu := mu) (Omega := Omega) (p := 2) v k‖ ≤ ‖v‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) (norm_lineDerivL_two_apply_le v k)
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v)
+    (norm_lineDerivL_apply_le_of_exponent_two v k)
+
+private theorem one_le_sqrt_two : (1 : ℝ) ≤ √2 := by
+  rw [← Real.sqrt_one]
+  exact Real.sqrt_le_sqrt one_le_two
 
 private theorem norm_lineDerivL_one_apply_le (v : E) (u : Wkp mu Omega p 2) :
     ‖lineDerivL v 1 u‖ ≤ √2 * ‖v‖ * ‖u‖ := by
   let d := lineDerivL v 1 u
   have hlow : ‖lowerOrder 0 d‖ ≤ ‖v‖ * ‖lowerOrder 1 u‖ := by
     rw [lowerOrder_lineDerivL]
-    exact (norm_lineDerivL_zero_apply_le v (lowerOrder 1 u)).trans
-      (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le 0 _) (norm_nonneg v))
-  have htop : ‖iteratedGradient 0 d‖ ≤ ‖v‖ * ‖iteratedGradient 1 u‖ :=
-    norm_iteratedGradient_lineDerivL_le v 0 u
+    exact norm_lineDerivL_zero_apply_le_norm v (lowerOrder 1 u)
+  have htop := norm_iteratedGradient_lineDerivL_le v 0 u
   have hd := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 d
-  have hu_sq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ 0 u
   have hsum : ‖d‖ ≤ ‖v‖ * (‖lowerOrder 1 u‖ + ‖iteratedGradient 1 u‖) := by linarith
   have hsum_sq := pow_le_pow_left₀ (norm_nonneg d) hsum 2
-  have h2 : (√2 : ℝ) ^ 2 = 2 := Real.sq_sqrt zero_le_two
-  have hsq : ‖d‖ ^ 2 ≤ (√2 * ‖v‖ * ‖u‖) ^ 2 := by
-    calc
-      ‖d‖ ^ 2 ≤ (‖v‖ * (‖lowerOrder 1 u‖ + ‖iteratedGradient 1 u‖)) ^ 2 := hsum_sq
-      _ ≤ 2 * ‖v‖ ^ 2 * (‖lowerOrder 1 u‖ ^ 2 + ‖iteratedGradient 1 u‖ ^ 2) := by
-        nlinarith [sq_nonneg (‖lowerOrder 1 u‖ - ‖iteratedGradient 1 u‖), sq_nonneg ‖v‖]
-      _ = (√2 * ‖v‖ * ‖u‖) ^ 2 := by
-        rw [← hu_sq, mul_pow, mul_pow, h2]
-  exact (sq_le_sq₀ (norm_nonneg d) (by positivity)).1 hsq
+  refine le_mul_of_sq_le_mul_add_sq (norm_nonneg d) (Real.sqrt_nonneg 2) (norm_nonneg v)
+    (norm_nonneg u) (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ 0 u) ?_
+  rw [Real.sq_sqrt zero_le_two]
+  nlinarith [sq_nonneg (‖lowerOrder 1 u‖ - ‖iteratedGradient 1 u‖), sq_nonneg ‖v‖]
 
 /-- **Uniform graph-norm bound for `lineDerivL`.** For every exponent `1 ≤ p ≤ ∞` and every order
 `k`, `‖lineDerivL v k u‖ ≤ √2 * ‖v‖ * ‖u‖`. Because every stage from order two upwards uses a
@@ -379,45 +292,18 @@ compound at higher orders. -/
 theorem norm_lineDerivL_apply_le (v : E) :
     ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)), ‖lineDerivL v k u‖ ≤ √2 * ‖v‖ * ‖u‖
   | 0, u => by
-      have h1 : (1 : ℝ) ≤ √2 := by
-        rw [← Real.sqrt_one]
-        exact Real.sqrt_le_sqrt one_le_two
       calc
         ‖lineDerivL v 0 u‖ ≤ 1 * (‖v‖ * ‖u‖) := by
           rw [one_mul]
-          exact (norm_lineDerivL_zero_apply_le v u).trans
-            (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le 0 u) (norm_nonneg v))
-        _ ≤ √2 * (‖v‖ * ‖u‖) := mul_le_mul_of_nonneg_right h1 (by positivity)
+          exact norm_lineDerivL_zero_apply_le_norm v u
+        _ ≤ √2 * (‖v‖ * ‖u‖) := mul_le_mul_of_nonneg_right one_le_sqrt_two (by positivity)
         _ = √2 * ‖v‖ * ‖u‖ := (mul_assoc _ _ _).symm
   | 1, u => norm_lineDerivL_one_apply_le v u
-  | k + 2, u => by
-      let d := lineDerivL v (k + 2) u
-      have hlow : ‖lowerOrder (k + 1) d‖ ≤ √2 * ‖v‖ * ‖lowerOrder (k + 2) u‖ := by
-        rw [lowerOrder_lineDerivL]
-        exact norm_lineDerivL_apply_le v (k + 1) (lowerOrder (k + 2) u)
-      have htop : ‖iteratedGradient (k + 1) d‖ ≤ ‖v‖ * ‖iteratedGradient (k + 2) u‖ :=
-        norm_iteratedGradient_lineDerivL_le v (k + 1) u
-      have hd_sq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k d
-      have hu_sq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ (k + 1) u
-      have hlow_sq := pow_le_pow_left₀ (norm_nonneg _) hlow 2
-      have htop_sq := pow_le_pow_left₀ (norm_nonneg _) htop 2
-      have h2 : (√2 : ℝ) ^ 2 = 2 := Real.sq_sqrt zero_le_two
-      have hsq : ‖d‖ ^ 2 ≤ (√2 * ‖v‖ * ‖u‖) ^ 2 := by
-        have hlow_sq' : ‖lowerOrder (k + 1) d‖ ^ 2 ≤
-            2 * ‖v‖ ^ 2 * ‖lowerOrder (k + 2) u‖ ^ 2 := by
-          refine hlow_sq.trans_eq ?_
-          rw [mul_pow, mul_pow, h2]
-        have htop_sq' : ‖iteratedGradient (k + 1) d‖ ^ 2 ≤
-            2 * ‖v‖ ^ 2 * ‖iteratedGradient (k + 2) u‖ ^ 2 := by
-          rw [mul_pow] at htop_sq
-          linarith [sq_nonneg (‖v‖ * ‖iteratedGradient (k + 2) u‖)]
-        calc
-          ‖d‖ ^ 2 = ‖lowerOrder (k + 1) d‖ ^ 2 + ‖iteratedGradient (k + 1) d‖ ^ 2 := hd_sq
-          _ ≤ 2 * ‖v‖ ^ 2 * (‖lowerOrder (k + 2) u‖ ^ 2 + ‖iteratedGradient (k + 2) u‖ ^ 2) := by
-            linarith
-          _ = (√2 * ‖v‖ * ‖u‖) ^ 2 := by
-            rw [← hu_sq, mul_pow, mul_pow, h2]
-      exact (sq_le_sq₀ (norm_nonneg d) (by positivity)).1 hsq
+  | k + 2, u =>
+      norm_lineDerivL_succ_apply_le_of_norm_sq one_le_sqrt_two v (k + 1) u
+        (norm_lineDerivL_apply_le v (k + 1) (lowerOrder (k + 2) u))
+        (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k _)
+        (norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ (k + 1) u)
 
 /-- Uniform operator-norm bound `‖lineDerivL v k‖ ≤ √2 * ‖v‖` for every `k` and `1 ≤ p ≤ ∞`. -/
 theorem norm_lineDerivL_le (v : E) (k : ℕ) :
@@ -452,8 +338,9 @@ theorem iteratedLineDerivL_succ (k j : ℕ) (m : Fin (j + 1) → E) :
   (rfl)
 
 theorem iteratedLineDerivL_one (k : ℕ) (m : Fin 1 → E) :
-    iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k 1 m = lineDerivL (m 0) k :=
-  ContinuousLinearMap.ext fun _ => (rfl)
+    iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k 1 m = lineDerivL (m 0) k := by
+  rw [iteratedLineDerivL_succ, iteratedLineDerivL_zero]
+  exact ContinuousLinearMap.id_comp _
 
 /-- **Order-zero iterated directional derivative.** Differentiate an element of `W^{j,p}(Ω)` along
 `j` directions `m : Fin j → E`, landing directly in `Lᵖ(Ω)` without arithmetic casts on `0 + j`. -/
@@ -474,27 +361,36 @@ theorem iteratedLineDerivZeroL_succ (j : ℕ) (m : Fin (j + 1) → E) :
   (rfl)
 
 theorem iteratedLineDerivZeroL_one (m : Fin 1 → E) :
-    iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) 1 m = lineDerivL (m 0) 0 :=
-  ContinuousLinearMap.ext fun _ => (rfl)
+    iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) 1 m = lineDerivL (m 0) 0 := by
+  rw [iteratedLineDerivZeroL_succ, iteratedLineDerivZeroL_zero]
+  exact ContinuousLinearMap.id_comp _
+
+/-- The `Lᵖ` value of `iteratedLineDerivL k j m u` agrees with `iteratedLineDerivZeroL j m u₀`
+whenever `u` and `u₀` have the same `Lᵖ` value. -/
+theorem value_iteratedLineDerivL_eq_iteratedLineDerivZeroL (k : ℕ) :
+    ∀ (j : ℕ) (m : Fin j → E) {u : Wkp mu Omega p (k + j)} {u₀ : Wkp mu Omega p j},
+      value (k + j) u = value j u₀ →
+      value k (iteratedLineDerivL k j m u) = iteratedLineDerivZeroL j m u₀
+  | 0, _, _, u₀, h => h.trans (value_zero u₀)
+  | j + 1, m, _, _, h => by
+      rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, iteratedLineDerivZeroL_succ,
+        ContinuousLinearMap.comp_apply]
+      exact value_iteratedLineDerivL_eq_iteratedLineDerivZeroL k j (Fin.tail m)
+        (value_lineDerivL_eq_of_value_eq h (m 0))
 
 /-- **Permutation invariance of `iteratedLineDerivL`.** Reordering the tuple of directions by any
 permutation `σ : Equiv.Perm (Fin j)` leaves the operator unchanged. -/
 theorem iteratedLineDerivL_comp_perm (k : ℕ) (j : ℕ) (m : Fin j → E) (σ : Equiv.Perm (Fin j)) :
     iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k j (m ∘ σ) =
       iteratedLineDerivL k j m := by
-  refine eq_comp_perm_of_tail_of_swap
+  refine Fin.eq_comp_perm_of_tail_of_swap
     (fun i m' => iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k i m')
     (fun i v m₁ m₂ h => ?_) (fun i m' => ?_) j m σ
   · rw [iteratedLineDerivL_succ, iteratedLineDerivL_succ, Fin.cons_zero, Fin.cons_zero,
       Fin.tail_cons, Fin.tail_cons, h]
-  · have htail : Fin.tail (Fin.tail (m' ∘ Equiv.swap 0 1)) = Fin.tail (Fin.tail m') := by
-      funext r
-      have hne1 : r.succ.succ ≠ 1 := by
-        rw [← Fin.succ_zero_eq_one]
-        exact Fin.succ_inj.ne.2 (Fin.succ_ne_zero r)
-      simp [Fin.tail, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _) hne1]
-    simp only [iteratedLineDerivL_succ, ContinuousLinearMap.comp_assoc, htail,
-      Function.comp_apply, Equiv.swap_apply_left, Fin.tail, Fin.succ_zero_eq_one,
+  · simp only [iteratedLineDerivL_succ, ContinuousLinearMap.comp_assoc,
+      Fin.tail_tail_comp_swap_zero_one]
+    simp only [Function.comp_apply, Equiv.swap_apply_left, Fin.tail_def, Fin.succ_zero_eq_one,
       Equiv.swap_apply_right]
     congr 1
     exact lineDerivL_comp_lineDerivL_comm (m' 0) (m' 1) (k + i)
@@ -503,21 +399,11 @@ theorem iteratedLineDerivL_comp_perm (k : ℕ) (j : ℕ) (m : Fin j → E) (σ :
 theorem iteratedLineDerivZeroL_comp_perm (j : ℕ) (m : Fin j → E) (σ : Equiv.Perm (Fin j)) :
     iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) j (m ∘ σ) =
       iteratedLineDerivZeroL j m := by
-  refine eq_comp_perm_of_tail_of_swap
-    (fun i m' => iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) i m')
-    (fun i v m₁ m₂ h => ?_) (fun i m' => ?_) j m σ
-  · rw [iteratedLineDerivZeroL_succ, iteratedLineDerivZeroL_succ, Fin.cons_zero, Fin.cons_zero,
-      Fin.tail_cons, Fin.tail_cons, h]
-  · have htail : Fin.tail (Fin.tail (m' ∘ Equiv.swap 0 1)) = Fin.tail (Fin.tail m') := by
-      funext r
-      have hne1 : r.succ.succ ≠ 1 := by
-        rw [← Fin.succ_zero_eq_one]
-        exact Fin.succ_inj.ne.2 (Fin.succ_ne_zero r)
-      simp [Fin.tail, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _) hne1]
-    simp only [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_assoc, htail,
-      Function.comp_apply, Equiv.swap_apply_left, Fin.tail, Fin.succ_zero_eq_one,
-      Equiv.swap_apply_right]
-    rw [lineDerivL_comp_lineDerivL_comm]
+  refine ContinuousLinearMap.ext fun u => ?_
+  obtain ⟨u', hu', -⟩ := exists_value_eq_of_le (Nat.zero_add j).le u
+  rw [← value_iteratedLineDerivL_eq_iteratedLineDerivZeroL 0 j (m ∘ σ) hu'.symm,
+    ← value_iteratedLineDerivL_eq_iteratedLineDerivZeroL 0 j m hu'.symm,
+    iteratedLineDerivL_comp_perm]
 
 /-- **Iterated directional derivatives evaluate `iteratedGradient`.** Differentiating
 `u ∈ W^{j+1,p}(Ω)` along `m : Fin (j + 1) → E` produces `(IteratedGradient.evalL j m).compLp`
@@ -532,7 +418,7 @@ theorem iteratedLineDerivZeroL_succ_apply :
   | j + 1, m, u => by
       rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply,
         iteratedLineDerivZeroL_succ_apply j (Fin.tail m) (lineDerivL (m 0) (j + 1) u),
-        iteratedGradient_lineDerivL (m 0) j u, compLp_comp,
+        iteratedGradient_lineDerivL (m 0) j u, ContinuousLinearMap.compLp_comp,
         IteratedGradient.evalL_comp_contractL_one, Fin.cons_self_tail]
 
 /-- Sharp `Lᵖ` bound for `(j + 1)`-fold directional derivatives in terms of the top seminorm. -/
@@ -542,19 +428,6 @@ theorem norm_iteratedLineDerivZeroL_succ_apply_le (j : ℕ) (m : Fin (j + 1) →
   rw [iteratedLineDerivZeroL_succ_apply]
   exact ((IteratedGradient.evalL j m).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right (IteratedGradient.norm_evalL_le j m) (norm_nonneg _))
-
-/-- The `Lᵖ` value of `iteratedLineDerivL k j m u` agrees with `iteratedLineDerivZeroL j m u₀`
-whenever `u` and `u₀` have the same `Lᵖ` value. -/
-theorem value_iteratedLineDerivL_eq_iteratedLineDerivZeroL (k : ℕ) :
-    ∀ (j : ℕ) (m : Fin j → E) {u : Wkp mu Omega p (k + j)} {u₀ : Wkp mu Omega p j},
-      value (k + j) u = value j u₀ →
-      value k (iteratedLineDerivL k j m u) = iteratedLineDerivZeroL j m u₀
-  | 0, _, _, u₀, h => h.trans (value_zero u₀)
-  | j + 1, m, _, _, h => by
-      rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, iteratedLineDerivZeroL_succ,
-        ContinuousLinearMap.comp_apply]
-      exact value_iteratedLineDerivL_eq_iteratedLineDerivZeroL k j (Fin.tail m)
-        (value_lineDerivL_eq_of_value_eq h (m 0))
 
 /-- **Multilinear evaluations of `D^{j+1} u` belong to `W^{k,p}(Ω)` when `u ∈ W^{k+j+1,p}(Ω)`.**
 If `u ∈ W^{k+j+1,p}(Ω)` and `u₀ ∈ W^{j+1,p}(Ω)` share the same `Lᵖ` value (for instance via
@@ -589,11 +462,15 @@ theorem iteratedGradient_iteratedLineDerivL_const (k : ℕ) (h : E) :
       have hd : value (k + 1 + i) (lineDerivL h (k + 1 + i) u) =
           value (k + i + 1) (lineDerivL h (k + i + 1) u') :=
         value_lineDerivL_eq_of_value_eq hu h
-      have htail : Fin.tail (fun _ : Fin (i + 1) => h) = fun _ : Fin i => h := rfl
-      rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, htail,
+      -- By right-recursion of `Nat.add` (`Nat.add_succ`), `(k + 1) + i` and `k + (i + 1)` are
+      -- definitionally `k + 1 + i` and `k + i + 1`, aligning the dependent `Wkp`/`IteratedGradient`
+      -- indices across the rewrite chain.
+      rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, Fin.tail_def,
         iteratedGradient_iteratedLineDerivL_const k h i hd,
-        iteratedGradient_lineDerivL h (k + i) u', compLp_comp,
+        iteratedGradient_lineDerivL h (k + i) u', ContinuousLinearMap.compLp_comp,
         IteratedGradient.contractL_one, ← IteratedGradient.contractL_succ k i h]
+      -- The remaining goal aligns the dependent index `(k + i) + 1` with `k + (i + 1)` via
+      -- `Nat.add_succ`.
       rfl
 
 /-- Differentiating `j + 1` times in a repeated direction `h` evaluates `fullContractL j h` on
@@ -635,31 +512,24 @@ theorem domDomCongr_toContinuousMultilinearMapₗᵢ_iteratedGradient_ae (j : �
   let b := stdOrthonormalBasis ℝ E
   have hbasis (σ : Equiv.Perm (Fin (j + 1))) (r : Fin (j + 1) → Fin (Module.finrank ℝ E)) :
       ∀ᵐ x ∂mu.restrict Omega,
-        IteratedGradient.evalL j ((fun k => b (r k)) ∘ σ) (iteratedGradient j u x) =
+        IteratedGradient.evalL j (fun i => b (r (σ i))) (iteratedGradient j u x) =
           IteratedGradient.evalL j (fun k => b (r k)) (iteratedGradient j u x) := by
     have heq := evalL_compLp_iteratedGradient_comp_perm j u (fun k => b (r k)) σ
-    filter_upwards [(IteratedGradient.evalL j ((fun k => b (r k)) ∘ σ)).coeFn_compLp
+    rw [Function.comp_def] at heq
+    filter_upwards [(IteratedGradient.evalL j (fun i => b (r (σ i)))).coeFn_compLp
       (iteratedGradient j u),
       (IteratedGradient.evalL j (fun k => b (r k))).coeFn_compLp (iteratedGradient j u)]
       with x hx₁ hx₂
     rw [← hx₁, ← hx₂, heq]
   filter_upwards [ae_all_iff.2 fun σ => ae_all_iff.2 fun r => hbasis σ r] with x hx σ
-  let M := IteratedGradient.toContinuousMultilinearMapₗᵢ E j (iteratedGradient j u x)
-  let G := (IteratedGradient.toContinuousMultilinearMapₗᵢ E j).symm (M.domDomCongr σ - M)
+  set M := IteratedGradient.toContinuousMultilinearMapₗᵢ E j (iteratedGradient j u x) with hM
   refine sub_eq_zero.1 (norm_le_zero_iff.1 ?_)
-  have hG : ‖M.domDomCongr σ - M‖ = ‖G‖ :=
-    ((IteratedGradient.toContinuousMultilinearMapₗᵢ E j).symm.norm_map _).symm
-  rw [hG]
-  refine (IteratedGradient.norm_le_sum_norm_evalL_orthonormalBasis j G b).trans ?_
+  rw [← (IteratedGradient.toContinuousMultilinearMapₗᵢ E j).symm.norm_map (M.domDomCongr σ - M)]
+  refine (IteratedGradient.norm_le_sum_norm_evalL_orthonormalBasis j _ b).trans ?_
   refine Finset.sum_nonpos fun r _ => ?_
-  rw [← IteratedGradient.toContinuousMultilinearMapₗᵢ_apply,
-    LinearIsometryEquiv.apply_symm_apply, sub_apply,
-    ContinuousMultilinearMap.domDomCongr_apply]
-  change ‖IteratedGradient.toContinuousMultilinearMapₗᵢ E j (iteratedGradient j u x)
-      ((fun k => b (r k)) ∘ σ) -
-      IteratedGradient.toContinuousMultilinearMapₗᵢ E j (iteratedGradient j u x)
-      (fun k => b (r k))‖ ≤ 0
-  rw [IteratedGradient.toContinuousMultilinearMapₗᵢ_apply,
+  rw [IteratedGradient.evalL_toContinuousMultilinearMapₗᵢ_symm, sub_apply,
+    ContinuousMultilinearMap.domDomCongr_apply, hM,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_apply,
     IteratedGradient.toContinuousMultilinearMapₗᵢ_apply, hx σ r, sub_self, norm_zero]
 
 /-! ### Classical `ContDiffOn` bridges -/
@@ -754,17 +624,8 @@ example {p : ENNReal} [Fact (1 ≤ p)] :
     have hd : HasFDerivAt (fun y : ℝ => (2 : ℝ) * y)
         ((2 : ℝ) • ContinuousLinearMap.id ℝ ℝ) x := by
       simpa using (hasFDerivAt_id x).const_mul (2 : ℝ)
-    rw [hd.fderiv]
-    change (2 : ℝ) * 3 = 6
+    rw [hd.fderiv, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
     norm_num
-
-private theorem restrict_Ioo_ne_zero {a b : ℝ} (hab : a < b) :
-    volume.restrict (Set.Ioo a b) ≠ 0 := by
-  intro h0
-  have hvol := congrArg (fun μ : Measure ℝ => μ Set.univ) h0
-  simp only [Measure.restrict_apply_univ, FunLike.coe_zero, Pi.zero_apply,
-    Real.volume_Ioo, ENNReal.ofReal_eq_zero] at hvol
-  linarith
 
 private theorem eLpNorm_const_mul_id_Ioo_top_le {c : ℝ} (hc : 0 ≤ c) :
     eLpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) ≤ ENNReal.ofReal c := by
@@ -811,7 +672,8 @@ private theorem lpNorm_const_mul_id_Ioo_top {c : ℝ} (hc : 0 < c) :
       (ae_restrict_mem isOpen_Ioo.measurableSet).and
         (ae_restrict_of_ae_restrict_of_subset hsub hae)
     have : NeZero (volume.restrict (Set.Ioo (r / c) 1)) :=
-      ⟨restrict_Ioo_ne_zero ((div_lt_one hc).2 hrc)⟩
+      ⟨Measure.restrict_eq_zero.not.2
+        ((Measure.measure_Ioo_pos volume).2 ((div_lt_one hc).2 hrc)).ne'⟩
     obtain ⟨x, hxI, hxr⟩ := hae'.exists
     have hcx_pos : 0 < c * x := mul_pos hc (lt_trans (div_pos hr0 hc) hxI.1)
     have hcx_lt : c * x < r := by
@@ -879,22 +741,25 @@ example {p : ENNReal} [Fact (1 ≤ p)] :
       (lineDerivL e₀ 0 (lineDerivL e₁ 1 u) : E₂ → ℝ) =ᵐ[volume.restrict (Ω : Set E₂)]
         fun _ : E₂ => 1 := by
   intro E₂ Ω e₀ e₁
-  let l₀ : E₂ →L[ℝ] ℝ := (ContinuousLinearMap.proj (R := ℝ) (0 : Fin 2)).comp
-    (EuclideanSpace.equiv (Fin 2) ℝ).toContinuousLinearMap
-  let l₁ : E₂ →L[ℝ] ℝ := (ContinuousLinearMap.proj (R := ℝ) (1 : Fin 2)).comp
-    (EuclideanSpace.equiv (Fin 2) ℝ).toContinuousLinearMap
-  have hl₀ (v : E₂) : l₀ v = v 0 := rfl
-  have hl₁ (v : E₂) : l₁ v = v 1 := rfl
+  let l₀ : E₂ →L[ℝ] ℝ := EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2)
+  let l₁ : E₂ →L[ℝ] ℝ := EuclideanSpace.proj (𝕜 := ℝ) (1 : Fin 2)
+  have hl₀ (v : E₂) : l₀ v = v 0 := congrFun (EuclideanSpace.coe_proj ℝ) v
+  have hl₁ (v : E₂) : l₁ v = v 1 := congrFun (EuclideanSpace.coe_proj ℝ) v
+  have hfun : (fun x : E₂ => x 0 * x 1) = fun x : E₂ => l₀ x * l₁ x :=
+    funext fun v => by rw [hl₀, hl₁]
   have hf : ContDiff ℝ 2 (fun x : E₂ => l₀ x * l₁ x) := l₀.contDiff.mul l₁.contDiff
   obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume) (Omega := Ω)
     (p := p) 2 isOpen_univ hf.contDiffOn (isCompact_closedBall (0 : E₂) 1)
     Metric.ball_subset_closedBall (Set.subset_univ _)
-  refine ⟨u, hu, lineDerivL_comm e₀ e₁ 0 u, ?_⟩
-  have hiter : lineDerivL e₀ 0 (lineDerivL e₁ 1 u) = iteratedLineDerivZeroL 2 ![e₁, e₀] u := rfl
+  refine ⟨u, hfun ▸ hu, lineDerivL_comm e₀ e₁ 0 u, ?_⟩
+  have hiter : lineDerivL e₀ 0 (lineDerivL e₁ 1 u) = iteratedLineDerivZeroL 2 ![e₁, e₀] u := by
+    rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply, Matrix.cons_val_zero,
+      iteratedLineDerivZeroL_one]
+    simp [Fin.tail]
   rw [hiter]
   refine (iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn 1 u ![e₁, e₀] hf.contDiffOn hu).trans
     (.of_forall fun x => ?_)
-  change iteratedFDeriv ℝ 2 (fun y : E₂ => l₀ y * l₁ y) x ![e₁, e₀] = 1
+  dsimp only
   rw [iteratedFDeriv_two_apply]
   have hfd : fderiv ℝ (fun y : E₂ => l₀ y * l₁ y) =
       fun y => l₀ y • l₁ + l₁ y • l₀ := by

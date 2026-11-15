@@ -33,8 +33,10 @@ once.
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
-* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
-  appending.
+* `Fin.snoc_comp_swap_castSucc`, `Fin.cons_comp_swap_succ`: exchanging two entries other than the
+  last (first) one commutes with appending (prepending).
+* `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
+  `Fin.tail (Fin.tail a)` unchanged.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
@@ -71,6 +73,8 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
+* `Fin.eq_comp_perm_of_tail_of_swap`: a family of maps on tuples `Fin j → α` that respects
+  permutations of `Fin.tail` and swaps of the first two entries is invariant under all permutations.
 -/
 
 public section
@@ -124,6 +128,27 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
     simp
+
+/-- Exchanging the entries `j.succ` and `k.succ` of `Fin.cons x c` is prepending `x` to `c` with
+the entries `j` and `k` exchanged. -/
+theorem cons_comp_swap_succ {n : ℕ} (x : α) (c : Fin n → α) (j k : Fin n) :
+    (cons x c : Fin (n + 1) → α) ∘ Equiv.swap j.succ k.succ = cons x (c ∘ Equiv.swap j k) := by
+  funext i
+  refine cases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero j).symm, (succ_ne_zero k).symm]
+  · rw [Function.comp_apply, ← (succ_injective n).map_swap j k i]
+    simp
+
+/-- Swapping the first two entries of a tuple of length at least two leaves `Fin.tail (Fin.tail a)`
+unchanged. -/
+@[simp]
+theorem tail_tail_comp_swap_zero_one {n : ℕ} (a : Fin (n + 2) → α) :
+    tail (tail (a ∘ Equiv.swap 0 1)) = tail (tail a) := by
+  funext r
+  have hne1 : r.succ.succ ≠ 1 := by
+    rw [← succ_zero_eq_one]
+    exact succ_inj.ne.2 (succ_ne_zero r)
+  simp [tail, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) hne1]
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
@@ -450,5 +475,62 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
     omega
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
+
+private theorem swap_zero_succ_eq {n : ℕ} (q : Fin (n + 1)) :
+    Equiv.swap (0 : Fin (n + 2)) q.succ =
+      ((Equiv.swap 1 q.succ).trans (Equiv.swap 0 1)).trans (Equiv.swap 1 q.succ) := by
+  have h := Equiv.symm_trans_swap_trans (0 : Fin (n + 2)) 1 (Equiv.swap 1 q.succ)
+  rw [Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne zero_ne_one (succ_ne_zero q).symm,
+    Equiv.swap_apply_left] at h
+  exact h.symm
+
+/-- Any family of maps on tuples `Fin j → α` that respects permutations of `Fin.tail` and swaps of
+the first two entries is invariant under every permutation of `Fin j`. -/
+theorem eq_comp_perm_of_tail_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j → α) → β j)
+    (htail : ∀ j (v : α) (m m' : Fin j → α), F j m = F j m' →
+      F (j + 1) (cons v m : Fin (j + 1) → α) = F (j + 1) (cons v m' : Fin (j + 1) → α))
+    (hswap : ∀ j (m : Fin (j + 2) → α), F (j + 2) (m ∘ Equiv.swap 0 1) = F (j + 2) m) :
+    ∀ (j : ℕ) (m : Fin j → α) (σ : Equiv.Perm (Fin j)), F j (m ∘ σ) = F j m
+  | 0, m, σ => by
+      have hm : m ∘ σ = m := funext fun i => i.elim0
+      rw [hm]
+  | j + 1, m, σ => by
+      have ih := eq_comp_perm_of_tail_of_swap F htail hswap j
+      have h0 : ∀ (r : Fin (j + 1)) (m' : Fin (j + 1) → α),
+          F (j + 1) (m' ∘ Equiv.swap 0 r) = F (j + 1) m' := by
+        intro r
+        refine cases (fun m' => by simp) (fun q m' => ?_) r
+        cases j with
+        | zero => exact q.elim0
+        | succ j' =>
+            have h1q (a : Fin (j' + 2) → α) :
+                F (j' + 2) (a ∘ Equiv.swap 1 q.succ) = F (j' + 2) a := by
+              conv_lhs =>
+                rw [← cons_self_tail a, ← succ_zero_eq_one, cons_comp_swap_succ]
+              exact (htail (j' + 1) (a 0) _ _ (ih (tail a) (Equiv.swap 0 q))).trans
+                (congrArg (F (j' + 2)) (cons_self_tail a))
+            rw [swap_zero_succ_eq q, Equiv.coe_trans, Equiv.coe_trans, ← Function.comp_assoc,
+              ← Function.comp_assoc, h1q, hswap, h1q]
+      let r := σ 0
+      let τ : Equiv.Perm (Fin (j + 1)) := σ.trans (Equiv.swap 0 r)
+      have hτ0 : τ 0 = 0 := Equiv.swap_apply_right 0 r
+      have hτs0 : τ.symm 0 = 0 := τ.symm_apply_eq.2 hτ0.symm
+      let e : Equiv.Perm (Fin j) :=
+        { toFun := fun x =>
+            (τ x.succ).pred (by rw [← hτ0]; exact τ.injective.ne (succ_ne_zero x))
+          invFun := fun x =>
+            (τ.symm x.succ).pred (by rw [← hτs0]; exact τ.symm.injective.ne (succ_ne_zero x))
+          left_inv := fun x => by simp [τ, succ_pred]
+          right_inv := fun x => by simp [τ, succ_pred] }
+      have hdecomp : m ∘ σ =
+          (cons ((m ∘ Equiv.swap 0 r) 0) (tail (m ∘ Equiv.swap 0 r) ∘ e) : Fin (j + 1) → α) := by
+        funext x
+        refine cases ?_ (fun y => ?_) x
+        · simp [r]
+        · simp [e, τ, tail, succ_pred]
+      rw [hdecomp]
+      refine (htail j ((m ∘ Equiv.swap 0 r) 0) _ _ (ih _ e)).trans ?_
+      rw [cons_self_tail]
+      exact h0 r m
 
 end Fin

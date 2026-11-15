@@ -275,6 +275,7 @@ theorem Wkp.lineDerivL_eq_of_hasWeakLineDerivOn {v : E} {k : ℕ} {w : Wkp mu Om
   Wkp.eq_of_hasWeakLineDerivOn (Wkp.hasWeakLineDerivOn_lineDerivL v k w) h
 
 /-- Scaling the direction scales `TauCeti.Wkp.lineDerivL` by the same scalar. -/
+@[simp]
 theorem Wkp.lineDerivL_smul_left (c : ℝ) (v : E) (k : ℕ) :
     Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (c • v) k =
       c • Wkp.lineDerivL v k := by
@@ -287,9 +288,11 @@ theorem Wkp.lineDerivL_smul_left (c : ℝ) (v : E) (k : ℕ) :
 @[simp]
 theorem Wkp.lineDerivL_zero_left (k : ℕ) :
     Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (0 : E) k = 0 := by
-  simpa using Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) 0 (0 : E) k
+  have h := Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) 0 (0 : E) k
+  rwa [zero_smul, zero_smul] at h
 
 /-- The bundled directional derivative is additive in the direction. -/
+@[simp]
 theorem Wkp.lineDerivL_add_left (v₁ v₂ : E) (k : ℕ) :
     Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (v₁ + v₂) k =
       Wkp.lineDerivL v₁ k + Wkp.lineDerivL v₂ k := by
@@ -304,9 +307,11 @@ theorem Wkp.lineDerivL_add_left (v₁ v₂ : E) (k : ℕ) :
 theorem Wkp.lineDerivL_neg_left (v : E) (k : ℕ) :
     Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (-v) k =
       -Wkp.lineDerivL v k := by
-  simpa using Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) (-1) v k
+  have h := Wkp.lineDerivL_smul_left (mu := mu) (Omega := Omega) (p := p) (-1) v k
+  rwa [neg_one_smul, neg_one_smul] at h
 
 /-- Subtracting directions subtracts the corresponding directional derivative operators. -/
+@[simp]
 theorem Wkp.lineDerivL_sub_left (v₁ v₂ : E) (k : ℕ) :
     Wkp.lineDerivL (mu := mu) (Omega := Omega) (p := p) (v₁ - v₂) k =
       Wkp.lineDerivL v₁ k - Wkp.lineDerivL v₂ k := by
