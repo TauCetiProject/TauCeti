@@ -93,6 +93,28 @@ theorem mem_principalUnitGroup {I : Ideal R} {u : Rˣ} :
     u ∈ I.principalUnitGroup ↔ (u : R) - 1 ∈ I :=
   Iff.rfl
 
+/-- For a two-sided ideal `I` and two units `u` and `v` of `R`, `u * v⁻¹` lies in
+`I.principalUnitGroup` if and only if `u - v ∈ I`. -/
+theorem mul_inv_mem_principalUnitGroup {I : Ideal R} [I.IsTwoSided] {u v : Rˣ} :
+    u * v⁻¹ ∈ I.principalUnitGroup ↔ (u : R) - (v : R) ∈ I := by
+  rw [mem_principalUnitGroup, Units.val_mul]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hv := I.mul_mem_right (v : R) h
+    rwa [sub_mul, mul_assoc, Units.inv_mul, mul_one, one_mul] at hv
+  · have hv := I.mul_mem_right (↑v⁻¹ : R) h
+    rwa [sub_mul, Units.mul_inv] at hv
+
+/-- For two units `u` and `v` of `R`, `u⁻¹ * v` lies in `I.principalUnitGroup` if and only if
+`v - u ∈ I`. -/
+theorem inv_mul_mem_principalUnitGroup {I : Ideal R} {u v : Rˣ} :
+    u⁻¹ * v ∈ I.principalUnitGroup ↔ (v : R) - (u : R) ∈ I := by
+  rw [mem_principalUnitGroup, Units.val_mul]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hu := I.mul_mem_left (u : R) h
+    rwa [mul_sub, ← mul_assoc, Units.mul_inv, one_mul, mul_one] at hu
+  · have hu := I.mul_mem_left (↑u⁻¹ : R) h
+    rwa [mul_sub, Units.inv_mul] at hu
+
 theorem principalUnitGroup_mono : Monotone (principalUnitGroup (R := R)) :=
   fun _ _ h _ hu ↦ h hu
 
