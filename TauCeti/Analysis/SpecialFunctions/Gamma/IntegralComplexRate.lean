@@ -9,27 +9,51 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # The Gamma integral with a complex rate
 
 For `Re s > 0` and `Re z > 0`,
-`∫₀^∞ t^{s-1} e^{-zt} dt = Γ(s) z^{-s}` with the principal power `z^{-s}`.
+`∫₀^∞ t^{s-1} e^{-zt} dt = Γ(s) z^{-s} = Γ(s) exp(-s log z)` with the principal logarithm and power.
 
 Mathlib's `Complex.integral_cpow_mul_exp_neg_mul_Ioi` is the case of a positive real rate. Both
 sides are holomorphic in `z` on the right half-plane: the integral by differentiation under the
 integral sign, the right side because the half-plane lies in the slit plane. They agree on the
 positive reals, so they agree on the half-plane by the identity theorem.
 
+Powers of `|log t|` and `t` arise when differentiating `(s, z) ↦ t^{s-1} e^{-zt}` to arbitrary
+order in `s` and `z`. On every compact subset of `{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}`, the
+weighted integrand `t^{p.1} (log t)^k e^{-p.2 t}` admits a single integrable real majorant on
+`(0, ∞)`, yielding holomorphy in `s` and joint analyticity in `(s, z)`.
+
 ## Main results
 
-* `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`: the Gamma integral with complex rate.
+* `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos` and
+  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp`: the Gamma integral with complex
+  rate, written with `z^{-s}` and with `exp(-s log z)`.
 * `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi` and
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: the integral converges and is
   holomorphic in the rate on the right half-plane.
+* `Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi` and
+  `Complex.integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)` with
+  logarithmic power factors.
+* `Complex.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le`: uniform integrable
+  majorant on compact parameter sets for every logarithmic derivative order.
+* `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left`,
+  `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`, and
+  `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod`: holomorphy in `s` and joint
+  analyticity and holomorphy in `(s, z)` on `{0 < Re s} × {0 < Re z}`.
 
-The proof is adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
-`DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`.
+## References
+
+* J. C. Lagarias and W. C. W. Li, *The Lerch zeta function II. Analytic continuation*, Forum Math.
+  24 (2012), 49–84, §2, (2.2)–(2.4), p. 53.
+* The complex-rate evaluation proof is adapted from the lean-DLMF project
+  (<https://github.com/bjbraams/lean-DLMF>), file
+  `DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`.
 -/
 
 @[expose] public section
@@ -139,3 +163,212 @@ theorem integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos {s z : ℂ} (hs : 0 < s.re) 
     (by simp [hU]) hfreq hz
 
 end Complex
+
+end
+
+public section
+
+open MeasureTheory Set Filter
+open scoped Topology
+
+private theorem abs_log_pow_mul_rpow_le {s t : ℝ} (hs : -1 < s) (ht : 0 < t) {k : ℕ}
+    (hk : 0 < k) :
+    |Real.log t| ^ k * t ^ s ≤
+      (2 : ℝ) ^ (k - 1) * (((s + 1) / (2 * k))⁻¹ ^ k * t ^ (s - (s + 1) / 2) + t ^ (s + k)) := by
+  set ε : ℝ := (s + 1) / (2 * k) with hε_def
+  have hε : 0 < ε := div_pos (by linarith) (by positivity)
+  have hlog : |Real.log t| ≤ t ^ (-ε) / ε + t := by
+    have hlow := Real.neg_rpow_div_le_log ht.le hε
+    rw [neg_div] at hlow
+    exact abs_le.mpr ⟨by linarith [Real.rpow_nonneg ht.le (-ε)],
+      by linarith [Real.log_le_self ht.le, div_nonneg (Real.rpow_nonneg ht.le (-ε)) hε.le]⟩
+  have hrpow : (t ^ (-ε) / ε) ^ k = ε⁻¹ ^ k * t ^ (-(s + 1) / 2) := by
+    have hk' : (k : ℝ) ≠ 0 := by positivity
+    rw [div_eq_mul_inv, mul_pow, mul_comm _ (ε⁻¹ ^ k), ← Real.rpow_natCast (t ^ (-ε)) k,
+      ← Real.rpow_mul ht.le, hε_def]
+    congr 2
+    field_simp
+  have ha : t ^ (-(s + 1) / 2) * t ^ s = t ^ (s - (s + 1) / 2) := by
+    rw [← Real.rpow_add ht]; ring_nf
+  have hb : t ^ k * t ^ s = t ^ (s + k) := by
+    rw [← Real.rpow_natCast t k, ← Real.rpow_add ht, add_comm]
+  calc |Real.log t| ^ k * t ^ s
+      ≤ (t ^ (-ε) / ε + t) ^ k * t ^ s := by gcongr
+    _ ≤ (2 : ℝ) ^ (k - 1) * ((t ^ (-ε) / ε) ^ k + t ^ k) * t ^ s := by
+        gcongr; exact add_pow_le (by positivity) ht.le k
+    _ = (2 : ℝ) ^ (k - 1) * (ε⁻¹ ^ k * t ^ (s - (s + 1) / 2) + t ^ (s + k)) := by
+        rw [hrpow]
+        linear_combination (2 : ℝ) ^ (k - 1) * ε⁻¹ ^ k * ha + (2 : ℝ) ^ (k - 1) * hb
+
+/-- For `s > -1`, `b > 0`, and any natural power `k`, `t ↦ |log t|^k t^s e^{-bt}` is integrable
+on `(0, ∞)`. Bounding `|log t|` by `t^{-ε}/ε + t` with `ε = (s + 1) / (2k)` reduces both the
+origin singularity and the tail at infinity to `integrableOn_rpow_mul_exp_neg_mul_rpow`. -/
+theorem Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi {s b : ℝ} (hs : -1 < s)
+    (hb : 0 < b) (k : ℕ) :
+    IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioi 0) := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simpa using integrableOn_rpow_mul_exp_neg_mul_rpow hs one_pos hb
+  set ε : ℝ := (s + 1) / (2 * k)
+  have hlow_exp : -1 < s - (s + 1) / 2 := by linarith
+  have hhigh_exp : -1 < s + k := by linarith [(Nat.cast_pos (α := ℝ)).2 hk]
+  have h1 : Integrable
+      (fun t : ℝ => (2 : ℝ) ^ (k - 1) * ε⁻¹ ^ k * (t ^ (s - (s + 1) / 2) * Real.exp (-b * t)))
+      (volume.restrict (Ioi 0)) := by
+    simpa only [Real.rpow_one] using
+      (integrableOn_rpow_mul_exp_neg_mul_rpow hlow_exp one_pos hb).const_mul
+        ((2 : ℝ) ^ (k - 1) * ε⁻¹ ^ k)
+  have h2 : Integrable
+      (fun t : ℝ => (2 : ℝ) ^ (k - 1) * (t ^ (s + k) * Real.exp (-b * t)))
+      (volume.restrict (Ioi 0)) := by
+    simpa only [Real.rpow_one] using
+      (integrableOn_rpow_mul_exp_neg_mul_rpow hhigh_exp one_pos hb).const_mul ((2 : ℝ) ^ (k - 1))
+  refine (h1.add h2).mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  have ht0 : 0 < t := ht
+  rw [Real.norm_of_nonneg (by positivity), Pi.add_apply]
+  have hpt := mul_le_mul_of_nonneg_right (abs_log_pow_mul_rpow_le hs ht hk)
+    (Real.exp_pos (-b * t)).le
+  linarith
+
+namespace Complex
+
+private theorem norm_cpow_mul_log_pow_mul_exp_neg_mul (s w : ℂ) (k : ℕ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))‖ =
+      |Real.log t| ^ k * t ^ s.re * Real.exp (-w.re * t) := by
+  rw [norm_mul, norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_pow, ← ofReal_log ht.le,
+    norm_real, Real.norm_eq_abs, norm_exp]
+  simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, neg_mul]
+  ring
+
+/-- For `Re s > -1`, `Re w > 0`, and `k : ℕ`, `t ↦ t^s (log t)^k e^{-wt}` is integrable on
+`(0, ∞)`. -/
+theorem integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : -1 < s.re)
+    (hw : 0 < w.re) (k : ℕ) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))) (Ioi 0) := by
+  refine (Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi hs hw k).mono'
+    (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  rw [norm_cpow_mul_log_pow_mul_exp_neg_mul s w k ht]
+
+/-- On any compact subset `K` of `{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}`, the weighted
+Gamma-Laplace integrand `t^{p.1} (log t)^k e^{-p.2 t}` admits a single integrable real majorant
+on `(0, ∞)`. -/
+theorem exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le {K : Set (ℂ × ℂ)}
+    (hK : IsCompact K) (hKs : ∀ p ∈ K, -1 < p.1.re) (hKw : ∀ p ∈ K, 0 < p.2.re) (k : ℕ) :
+    ∃ g : ℝ → ℝ, IntegrableOn g (Ioi 0) ∧
+      ∀ p ∈ K, ∀ t > (0 : ℝ),
+        ‖(t : ℂ) ^ p.1 * (log t) ^ k * exp (-(p.2 * t))‖ ≤ g t := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · exact ⟨0, integrableOn_zero, by simp⟩
+  obtain ⟨p₁, hp₁, hmin_s⟩ := hK.exists_isMinOn hne (continuous_re.comp continuous_fst).continuousOn
+  obtain ⟨p₂, hp₂, hmax_s⟩ := hK.exists_isMaxOn hne (continuous_re.comp continuous_fst).continuousOn
+  obtain ⟨q, hq, hmin_w⟩ := hK.exists_isMinOn hne (continuous_re.comp continuous_snd).continuousOn
+  have ha : -1 < p₁.1.re := hKs p₁ hp₁
+  have hb : -1 < p₂.1.re := hKs p₂ hp₂
+  have hη : 0 < q.2.re := hKw q hq
+  refine ⟨fun t => |Real.log t| ^ k * t ^ p₁.1.re * Real.exp (-q.2.re * t) +
+      |Real.log t| ^ k * t ^ p₂.1.re * Real.exp (-q.2.re * t),
+    (Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi ha hη k).add
+      (Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi hb hη k),
+    fun p hp t ht => ?_⟩
+  rw [norm_cpow_mul_log_pow_mul_exp_neg_mul p.1 p.2 k ht]
+  have hexp : Real.exp (-p.2.re * t) ≤ Real.exp (-q.2.re * t) := by
+    apply Real.exp_le_exp.mpr
+    have hqw : q.2.re ≤ p.2.re := hmin_w hp
+    nlinarith
+  rcases le_or_gt t 1 with ht1 | ht1
+  · have hrp : t ^ p.1.re ≤ t ^ p₁.1.re :=
+      Real.rpow_le_rpow_of_exponent_ge ht ht1 (hmin_s hp)
+    have h2 : 0 ≤ |Real.log t| ^ k * t ^ p₂.1.re * Real.exp (-q.2.re * t) := by positivity
+    have h1 : |Real.log t| ^ k * t ^ p.1.re * Real.exp (-p.2.re * t) ≤
+        |Real.log t| ^ k * t ^ p₁.1.re * Real.exp (-q.2.re * t) := by gcongr
+    linarith
+  · have hrp : t ^ p.1.re ≤ t ^ p₂.1.re :=
+      Real.rpow_le_rpow_of_exponent_le ht1.le (hmax_s hp)
+    have h1 : 0 ≤ |Real.log t| ^ k * t ^ p₁.1.re * Real.exp (-q.2.re * t) := by positivity
+    have h2 : |Real.log t| ^ k * t ^ p.1.re * Real.exp (-p.2.re * t) ≤
+        |Real.log t| ^ k * t ^ p₂.1.re * Real.exp (-q.2.re * t) := by gcongr
+    linarith
+
+/-- The Gamma integral with a complex rate written in principal-logarithm form: for `Re s > 0` and
+`Re z > 0`, `∫₀^∞ t^{s-1} e^{-zt} dt = Γ(s) exp(-s log z)`. -/
+theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp {s z : ℂ} (hs : 0 < s.re)
+    (hz : 0 < z.re) :
+    ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(z * t)) = Gamma s * exp (-s * log z) := by
+  have hzne : z ≠ 0 := fun h => by simp [h] at hz
+  rw [integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs hz, cpow_def_of_ne_zero hzne, mul_comm (log z)]
+
+/-- For `Re w > 0`, the Gamma integral `s ↦ ∫₀^∞ t^{s-1} e^{-wt} dt` is holomorphic on the right
+half-plane `{s | 0 < s.re}`. -/
+theorem differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left {w : ℂ} (hw : 0 < w.re) :
+    DifferentiableOn ℂ (fun s : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(w * t)))
+      {s | 0 < s.re} := by
+  intro s₀ hs₀
+  have hs₀' : 0 < s₀.re := hs₀
+  set r : ℝ := s₀.re / 2 with hr_def
+  have hr : 0 < r := half_pos hs₀'
+  have hK : IsCompact ((fun s : ℂ => (s - 1, w)) '' Metric.closedBall s₀ r) :=
+    (isCompact_closedBall s₀ r).image (by fun_prop)
+  obtain ⟨g, hg, hbound⟩ := exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le hK
+    (by
+      rintro _ ⟨s, hs, rfl⟩
+      have habs : |s.re - s₀.re| ≤ r := by
+        calc |s.re - s₀.re| ≤ ‖s - s₀‖ := by simpa [sub_re] using abs_re_le_norm (s - s₀)
+          _ ≤ r := mem_closedBall_iff_norm.mp hs
+      dsimp only
+      rw [sub_re, one_re]
+      linarith [hr_def, hs₀', (abs_le.mp habs).1])
+    (by rintro _ ⟨_, _, rfl⟩; exact hw) 1
+  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := volume.restrict (Ioi 0))
+    (F := fun s (t : ℝ) => (t : ℂ) ^ (s - 1) * exp (-(w * t)))
+    (F' := fun s (t : ℝ) => (t : ℂ) ^ (s - 1) * log t * exp (-(w * t)))
+    (bound := g)
+    (Metric.closedBall_mem_nhds s₀ hr)
+    (Eventually.of_forall fun _ => Measurable.aestronglyMeasurable (by fun_prop))
+    (integrableOn_cpow_mul_exp_neg_mul_Ioi hs₀' hw)
+    (Measurable.aestronglyMeasurable (by fun_prop)) ?_ hg ?_
+  · exact h.2.differentiableAt.differentiableWithinAt
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht s hs
+    simpa only [pow_one] using hbound (s - 1, w) ⟨s, hs, rfl⟩ t ht
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht s _
+    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (ne_of_gt ht)
+    have hd : HasDerivAt (fun s : ℂ => (t : ℂ) ^ (s - 1)) ((t : ℂ) ^ (s - 1) * log t) s := by
+      simpa using (((hasDerivAt_id s).sub_const 1).const_cpow (c := (t : ℂ)) (Or.inl ht0))
+    simpa [mul_assoc] using hd.mul_const (exp (-(w * t)))
+
+/-- The complex-rate Gamma integral `(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` is jointly analytic on
+`{p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re}`. -/
+theorem analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod :
+    AnalyticOnNhd ℂ
+      (fun p : ℂ × ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (p.1 - 1) * exp (-(p.2 * t)))
+      {p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re} := by
+  set U : Set (ℂ × ℂ) := {p | 0 < p.1.re ∧ 0 < p.2.re}
+  have hUo : IsOpen U :=
+    (isOpen_lt continuous_const (continuous_re.comp continuous_fst)).inter
+      (isOpen_lt continuous_const (continuous_re.comp continuous_snd))
+  let F : ℂ × ℂ → ℂ := fun p => Gamma p.1 * p.2 ^ (-p.1)
+  have hF : DifferentiableOn ℂ F U := fun p hp => by
+    have hs0 : ∀ m : ℕ, p.1 ≠ -(m : ℂ) := fun m h => by
+      have hre := congrArg re h
+      simp only [neg_re, natCast_re] at hre
+      linarith [hp.1, Nat.cast_nonneg (α := ℝ) m]
+    have hG : DifferentiableAt ℂ (fun q : ℂ × ℂ => Gamma q.1) p :=
+      (differentiableAt_Gamma p.1 hs0).comp p differentiableAt_fst
+    have hP : DifferentiableAt ℂ (fun q : ℂ × ℂ => q.2 ^ (-q.1)) p :=
+      differentiableAt_snd.cpow differentiableAt_fst.neg (mem_slitPlane_iff.mpr (Or.inl hp.2))
+    exact (hG.mul hP).differentiableWithinAt
+  exact (DifferentiableOn.analyticOnNhd_of_finiteDimensional hF hUo).congr hUo fun p hp =>
+    (integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hp.1 hp.2).symm
+
+/-- The complex-rate Gamma integral `(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` is jointly complex
+differentiable on `{p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re}`. -/
+theorem differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod :
+    DifferentiableOn ℂ
+      (fun p : ℂ × ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (p.1 - 1) * exp (-(p.2 * t)))
+      {p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re} :=
+  analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod.differentiableOn
+
+end Complex
+
+end
