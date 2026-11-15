@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Topology.Algebra.Group.Basic
 public import TauCeti.Analysis.Normed.Lp.BoundedContinuous
 
 /-!
@@ -42,7 +40,7 @@ Specializing to `X = G` gives the sequence-space counterpart of
 * `lp.leftTranslation_single`: `L_g (lp.single p x v) = lp.single p (g • x) v`.
 * `lp.leftTranslation_stdSimplex_toLp`: `L_g (s.toLp p) = (s.map (g • ·)).toLp p`.
 * `lp.tsum_leftTranslation`: left translation preserves `∑' x, u x`.
-* `lp.norm_leftTranslation_sub_one`: `‖L_g u - u‖₁ = ∑' x, ‖u (g⁻¹ • x) - u x‖`.
+* `lp.norm_leftTranslation_one_sub`: `‖L_g u - u‖₁ = ∑' x, ‖u (g⁻¹ • x) - u x‖`.
 * `lp.bcfPairing_leftTranslation`: `⟨L_g u, f⟩ = ⟨u, f (g • ·)⟩`.
 -/
 
@@ -87,15 +85,27 @@ theorem leftTranslation_apply (g : G) (u : lp (fun _ : X ↦ E) p) (x : X) :
     leftTranslation p 𝕜 g u x = u (g⁻¹ • x) := by
   simp [leftTranslation_eq_lpCongrLeft]
 
-@[simp]
+/-- The inverse of left translation by `g` is left translation by `g⁻¹`. -/
 theorem leftTranslation_symm (g : G) :
     (leftTranslation p 𝕜 (X := X) (E := E) g).symm = leftTranslation p 𝕜 g⁻¹ := by
   rw [map_inv, LinearIsometryEquiv.inv_def]
 
 @[simp]
+theorem leftTranslation_symm_apply (g : G) (u : lp (fun _ : X ↦ E) p) (x : X) :
+    (leftTranslation p 𝕜 g).symm u x = u (g • x) := by
+  rw [leftTranslation_symm, leftTranslation_apply, inv_inv]
+
+/-- Left translation by `g` sends the coordinate vector `lp.single p x v` to
+`lp.single p (g • x) v`. -/
+@[simp]
 theorem leftTranslation_single [DecidableEq X] (g : G) (x : X) (v : E) :
     leftTranslation p 𝕜 g (lp.single p x v) = lp.single p (g • x) v :=
   LinearIsometryEquiv.lpCongrLeft_single (MulAction.toPerm g) x v
+
+@[simp]
+theorem leftTranslation_symm_single [DecidableEq X] (g : G) (x : X) (v : E) :
+    (leftTranslation p 𝕜 g).symm (lp.single p x v) = lp.single p (g⁻¹ • x) v := by
+  rw [leftTranslation_symm, leftTranslation_single]
 
 /-- Left translation preserves the series sum of coordinates. -/
 theorem tsum_leftTranslation (g : G) (u : lp (fun _ : X ↦ E) p) :
@@ -106,10 +116,27 @@ theorem tsum_leftTranslation (g : G) (u : lp (fun _ : X ↦ E) p) :
 /-- Left translation of `f.toLp p` pushes `f : X →₀ E` forward along `g • ·`. -/
 theorem leftTranslation_finsupp_toLp (g : G) (f : X →₀ E) :
     leftTranslation p 𝕜 g (f.toLp p) = (f.mapDomain (g • ·)).toLp p := by
-  change leftTranslation p 𝕜 g (f.toLp p) = (f.mapDomain (MulAction.toPerm g)).toLp p
-  rw [f.toLp_mapDomain_equiv (MulAction.toPerm g) p]
-  ext x
-  simp
+  simp_rw [← MulAction.toPerm_apply g, f.toLp_mapDomain_equiv (MulAction.toPerm g) p]
+  rw [leftTranslation_eq_lpCongrLeft, LinearIsometryEquiv.coe_lpCongrLeft]
+
+/-- Left translation preserves and reflects the pointwise order on `ℓᵖ`. -/
+@[simp]
+theorem coeFn_leftTranslation_le_coeFn_leftTranslation_iff [LE E] (g : G)
+    {u v : lp (fun _ : X ↦ E) p} :
+    ⇑(leftTranslation p 𝕜 g u) ≤ ⇑(leftTranslation p 𝕜 g v) ↔ ⇑u ≤ ⇑v := by
+  refine ⟨fun h x ↦ ?_, fun h x ↦ by simpa using h (g⁻¹ • x)⟩
+  simpa using h (g • x)
+
+/-- Left translation preserves and reflects pointwise nonnegativity on `ℓᵖ`. -/
+@[simp]
+theorem coeFn_leftTranslation_nonneg_iff [LE E] (g : G) {u : lp (fun _ : X ↦ E) p} :
+    0 ≤ ⇑(leftTranslation p 𝕜 g u) ↔ 0 ≤ ⇑u :=
+  ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ by simpa using h (g⁻¹ • x)⟩
+
+/-- Left translation preserves pointwise nonnegativity on `ℓᵖ`. -/
+theorem coeFn_leftTranslation_nonneg [LE E] (g : G) {u : lp (fun _ : X ↦ E) p} (hu : 0 ≤ ⇑u) :
+    0 ≤ ⇑(leftTranslation p 𝕜 g u) :=
+  (coeFn_leftTranslation_nonneg_iff g).2 hu
 
 end MulAction
 
@@ -118,14 +145,14 @@ section Specializations
 variable {G X : Type*} [Group G] [MulAction G X]
 
 /-- The `ℓ¹` norm of `L_g u - u` is `∑' x, ‖u (g⁻¹ • x) - u x‖`. -/
-theorem norm_leftTranslation_sub_one {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E]
+theorem norm_leftTranslation_one_sub {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E]
     [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (g : G) (u : lp (fun _ : X ↦ E) 1) :
     ‖leftTranslation 1 𝕜 g u - u‖ = ∑' x, ‖u (g⁻¹ • x) - u x‖ := by
   simpa using lp.norm_eq_tsum_rpow (p := 1) (by simp) (leftTranslation 1 𝕜 g u - u)
 
 /-- Left translation fixes the constant sequence `1` in `ℓ∞`. -/
 @[simp]
-theorem leftTranslation_one_const {𝕜 B : Type*} [NormedRing 𝕜] [NormedRing B] [NormOneClass B]
+theorem leftTranslation_one {𝕜 B : Type*} [NormedRing 𝕜] [NormedRing B] [NormOneClass B]
     [Module 𝕜 B] [IsBoundedSMul 𝕜 B] (g : G) :
     leftTranslation ∞ 𝕜 g (1 : lp (fun _ : X ↦ B) ∞) = 1 := by
   ext x
@@ -137,13 +164,6 @@ theorem leftTranslation_stdSimplex_toLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (g : G
     leftTranslation p ℝ g (s.toLp p) = (s.map (g • ·)).toLp p := by
   simpa [Convexity.StdSimplex.toLp_def] using
     leftTranslation_finsupp_toLp (p := p) (𝕜 := ℝ) g s.weights
-
-/-- Left translation preserves nonnegativity of real-valued sequences in `ℓᵖ`. -/
-theorem nonneg_coeFn_leftTranslation {p : ℝ≥0∞} [Fact (1 ≤ p)] (g : G)
-    {u : lp (fun _ : X ↦ ℝ) p} (hu : 0 ≤ ⇑u) :
-    0 ≤ ⇑(leftTranslation p ℝ g u) := by
-  intro x
-  simpa using hu (g⁻¹ • x)
 
 end Specializations
 
@@ -174,8 +194,8 @@ theorem bcfPairing_leftTranslation {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Pairing `L_g u` with the left translate `x ↦ f (g⁻¹ • x)` equals pairing `u` with `f`. -/
 @[simp]
-theorem bcfPairing_leftTranslation_inv {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
-    [CompleteSpace E] (g : G) (u : lp (fun _ : X ↦ 𝕜) 1) (f : X →ᵇ E) :
+theorem bcfPairing_leftTranslation_compContinuous_inv_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 E] [CompleteSpace E] (g : G) (u : lp (fun _ : X ↦ 𝕜) 1) (f : X →ᵇ E) :
     bcfPairing 𝕜 X E (leftTranslation 1 𝕜 g u)
         (f.compContinuous ⟨(g⁻¹ • ·), continuous_const_smul g⁻¹⟩) =
       bcfPairing 𝕜 X E u f := by
@@ -186,14 +206,13 @@ theorem bcfPairing_leftTranslation_inv {𝕜 : Type*} [NontriviallyNormedField �
 
 end BoundedContinuous
 
-/-- On a topological group `G`, `BoundedContinuousFunction.toLpInfty` intertwines precomposition
-with `ContinuousMap.mulLeft g⁻¹` and `lp.leftTranslation ∞ 𝕜 g`. -/
+/-- On a group `G` with separately continuous multiplication, `BoundedContinuousFunction.toLpInfty`
+intertwines precomposition with `ContinuousMap.mulLeft g⁻¹` and `lp.leftTranslation ∞ 𝕜 g`. -/
 theorem leftTranslation_toLpInfty_mulLeft {G E 𝕜 : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-    (g : G) (f : G →ᵇ E) :
+    [SeparatelyContinuousMul G] [NormedAddCommGroup E] [NormedRing 𝕜] [Module 𝕜 E]
+    [IsBoundedSMul 𝕜 E] (g : G) (f : G →ᵇ E) :
     leftTranslation ∞ 𝕜 g (BoundedContinuousFunction.toLpInfty 𝕜 f) =
-      BoundedContinuousFunction.toLpInfty 𝕜 (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) := by
-  ext x
-  simp
+      BoundedContinuousFunction.toLpInfty 𝕜 (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) :=
+  leftTranslation_toLpInfty (X := G) g f
 
 end lp

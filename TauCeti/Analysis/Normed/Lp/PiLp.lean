@@ -207,10 +207,12 @@ variable [DecidableEq ι]
 omit [Fintype ι] in
 /-- Scalar multiplication commutes with `PiLp.single`. -/
 @[simp]
-theorem single_smul {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*} [∀ i, AddCommGroup (β i)]
-    [∀ i, Module 𝕜 (β i)] (p : ℝ≥0∞) (i : ι) (c : 𝕜) (a : β i) :
+theorem single_smul {𝕜 : Type*} {β : ι → Type*} [∀ i, Zero (β i)] [∀ i, SMulZeroClass 𝕜 (β i)]
+    (p : ℝ≥0∞) (i : ι) (c : 𝕜) (a : β i) :
     single p i (c • a) = c • single p i a := by
-  simp_rw [← toLp_single, Pi.single_smul, WithLp.toLp_smul]
+  simp_rw [← toLp_single, ← WithLp.toLp_smul]
+  exact congrArg (WithLp.toLp p)
+    (Pi.single_op (fun i ↦ (c • · : β i → β i)) (fun _ ↦ smul_zero _) i a)
 
 /-- Every vector in `PiLp p β` is the sum over all coordinates of its coordinate embeddings. -/
 theorem univ_sum_single {β : ι → Type*} [∀ i, AddCommGroup (β i)] (x : PiLp p β) :
@@ -228,11 +230,12 @@ noncomputable def singleLinearIsometry (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 :
   map_smul' := single_smul p i
   norm_map' := norm_single p β i
 
-/-- Inclusion of the `i`-th coordinate into `PiLp p β`, `p ≥ 1`, as a continuous linear map. -/
-noncomputable def singleCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) [Semiring 𝕜]
-    (β : ι → Type*) [∀ i, SeminormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] (i : ι) :
+omit [Fintype ι] in
+/-- Inclusion of the `i`-th coordinate into `PiLp p β` as a continuous linear map. -/
+def singleCLM (p : ℝ≥0∞) (𝕜 : Type*) [Semiring 𝕜] (β : ι → Type*)
+    [∀ i, TopologicalSpace (β i)] [∀ i, AddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] (i : ι) :
     β i →L[𝕜] PiLp p β :=
-  (singleLinearIsometry p 𝕜 β i).toContinuousLinearMap
+  (continuousLinearEquiv p 𝕜 β).symm.toContinuousLinearMap.comp (.single 𝕜 β i)
 
 @[simp]
 theorem singleLinearIsometry_apply [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
@@ -240,14 +243,23 @@ theorem singleLinearIsometry_apply [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring �
     singleLinearIsometry p 𝕜 β i a = single p i a := by
   rfl
 
+omit [Fintype ι] in
 @[simp]
-theorem singleCLM_apply [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
-    [∀ i, SeminormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] (i : ι) (a : β i) :
+theorem singleCLM_apply {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
+    [∀ i, TopologicalSpace (β i)] [∀ i, AddCommGroup (β i)] [∀ i, Module 𝕜 (β i)]
+    (i : ι) (a : β i) :
     singleCLM p 𝕜 β i a = single p i a := by
-  rfl
+  simp [singleCLM]
+
+@[simp]
+theorem toContinuousLinearMap_singleLinearIsometry [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜]
+    {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] (i : ι) :
+    (singleLinearIsometry p 𝕜 β i).toContinuousLinearMap = singleCLM p 𝕜 β i := by
+  ext a
+  simp
 
 /-- The coordinate projections and inclusions decompose the identity on `PiLp p β`. -/
-theorem univ_sum_singleCLM [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
+theorem sum_singleCLM_comp_proj [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
     [∀ i, NormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] :
     ∑ i, (singleCLM p 𝕜 β i).comp (proj p β i) = ContinuousLinearMap.id 𝕜 (PiLp p β) := by
   ext x j
@@ -256,8 +268,9 @@ theorem univ_sum_singleCLM [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β :
 /-- The operator norm of `PiLp.singleCLM` is at most `1`. -/
 theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] [∀ i, NormedSpace 𝕜 (β i)] (i : ι) :
-    ‖singleCLM p 𝕜 β i‖ ≤ 1 :=
-  (singleLinearIsometry p 𝕜 β i).norm_toContinuousLinearMap_le
+    ‖singleCLM p 𝕜 β i‖ ≤ 1 := by
+  rw [← toContinuousLinearMap_singleLinearIsometry]
+  exact (singleLinearIsometry p 𝕜 β i).norm_toContinuousLinearMap_le
 
 end Single
 

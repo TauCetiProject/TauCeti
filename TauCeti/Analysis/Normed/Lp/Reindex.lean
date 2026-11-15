@@ -16,9 +16,10 @@ import TauCeti.Algebra.BigOperators.Intervals
 Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injective on a set `s ⊆ ι'`. The
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
-(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `g` is a bijection
-`e : ι ≃ ι'`, reindexing identifies `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)` isometrically
-(`Memℓp.comp_equiv`, `AddEquiv.lpCongrLeft`, `LinearIsometryEquiv.lpCongrLeft`). Shifts of a
+(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). For a bijection `e : ι ≃ ι'`,
+reindexing yields a norm-preserving additive equivalence between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`
+(`Memℓp.comp_equiv`, `AddEquiv.lpCongrLeft`), and a linear isometry equivalence for `1 ≤ p`
+(`LinearIsometryEquiv.lpCongrLeft`). Shifts of a
 sequence indexed by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`,
 `j ↦ f (j - d)`. In particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail
 `j ↦ f (j + d)` does (`TauCeti.memℓp_nat_add_iff`).
@@ -184,6 +185,17 @@ theorem coeFn_lpCongrLeft (e : ι ≃ ι') (f : lp (fun _ : ι ↦ G) p) :
 theorem lpCongrLeft_apply (e : ι ≃ ι') (f : lp (fun _ : ι ↦ G) p) (j : ι') :
     lpCongrLeft p 𝕜 G e f j = f (e.symm j) := by
   rfl
+
+@[simp]
+theorem toAddEquiv_lpCongrLeft (e : ι ≃ ι') :
+    (lpCongrLeft p 𝕜 G e).toLinearEquiv.toAddEquiv = AddEquiv.lpCongrLeft p G e := by
+  ext f i
+  simp
+
+theorem coe_lpCongrLeft (e : ι ≃ ι') :
+    ⇑(lpCongrLeft p 𝕜 G e) = AddEquiv.lpCongrLeft p G e := by
+  ext f i
+  simp
 
 @[simp]
 theorem lpCongrLeft_refl : lpCongrLeft p 𝕜 G (Equiv.refl ι) = LinearIsometryEquiv.refl 𝕜 _ := by

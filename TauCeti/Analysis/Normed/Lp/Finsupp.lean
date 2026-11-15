@@ -12,6 +12,14 @@ public import TauCeti.Analysis.Normed.Lp.Reindex
 /-!
 # Finitely supported functions and standard simplices in `ℓᵖ`
 
+Embedding finitely supported functions `α →₀ E` and finitely supported probability distributions
+`Convexity.StdSimplex ℝ α` into the sequence spaces `ℓᵖ(α, E)` brings Banach-space tools—norm
+closures, continuous duals, and Hahn–Banach separation—to bear on algebraic and combinatorial
+objects while keeping every norm and series sum equal to a finite sum over the support. In
+particular, finitely supported probabilities land on the unit sphere of `ℓ¹(α, ℝ)` as the convex
+hull of the unit coordinate vectors `lp.single 1 x 1`, which is the setting for Reiter's `ℓ¹`
+criterion for amenability.
+
 Every finitely supported function `f : α → E` lies in `ℓᵖ(α, E)` for every exponent `p : ℝ≥0∞`:
 it lies in `ℓ⁰` by finiteness of its support and therefore in `ℓᵖ` by monotonicity of `Memℓp`.
 Bundling this gives the additive and `𝕜`-linear inclusions `Finsupp.toLpAddMonoidHom` and
@@ -35,6 +43,8 @@ elements of `ℓᵖ` as the nonnegative finitely supported sequences of sum `1`
 
 ## Main results
 
+* `Finsupp.mem_range_toLp_iff`: an element of `ℓᵖ(α, E)` lies in the range of `Finsupp.toLp` iff it
+  has finite support.
 * `Finsupp.norm_toLp_one`, `Finsupp.tsum_toLp`: the `ℓ¹` norm and series sum of `f.toLp` reduce to
   `Finsupp.sum`.
 * `Convexity.StdSimplex.norm_toLp_one`, `Convexity.StdSimplex.tsum_toLp`: a finitely supported
@@ -84,30 +94,41 @@ theorem hasFiniteSupport_toLp (f : α →₀ E) (p : ℝ≥0∞) : (⇑(f.toLp p
   simpa using f.hasFiniteSupport
 
 @[simp]
-theorem toLp_zero (p : ℝ≥0∞) : (0 : α →₀ E).toLp p = 0 := by
-  ext
-  rfl
+theorem toLp_ofSupportFinite {u : lp (fun _ : α ↦ E) p} (hu : (⇑u).HasFiniteSupport) :
+    (Finsupp.ofSupportFinite ⇑u hu).toLp p = u :=
+  lp.ext <| (coeFn_toLp _ p).trans ofSupportFinite_coe
+
+/-- An element of `lp (fun _ : α ↦ E) p` lies in the range of `Finsupp.toLp` if and only if it has
+finite support. -/
+theorem mem_range_toLp_iff {u : lp (fun _ : α ↦ E) p} :
+    u ∈ (Set.range fun f : α →₀ E ↦ f.toLp p) ↔ (⇑u).HasFiniteSupport :=
+  ⟨by rintro ⟨f, rfl⟩; exact f.hasFiniteSupport_toLp p,
+    fun hu ↦ ⟨Finsupp.ofSupportFinite ⇑u hu, toLp_ofSupportFinite hu⟩⟩
 
 @[simp]
-theorem toLp_add (f g : α →₀ E) (p : ℝ≥0∞) : (f + g).toLp p = f.toLp p + g.toLp p := by
-  ext
-  rfl
+theorem toLp_zero (p : ℝ≥0∞) : (0 : α →₀ E).toLp p = 0 :=
+  lp.ext <| by rw [coeFn_toLp, ← lp.coeFnAddMonoidHom_apply, map_zero]; simp
 
 @[simp]
-theorem toLp_neg (f : α →₀ E) (p : ℝ≥0∞) : (-f).toLp p = -f.toLp p := by
-  ext
-  rfl
+theorem toLp_eq_zero {f : α →₀ E} : f.toLp p = 0 ↔ f = 0 := by
+  rw [← toLp_zero p, toLp_inj]
 
 @[simp]
-theorem toLp_sub (f g : α →₀ E) (p : ℝ≥0∞) : (f - g).toLp p = f.toLp p - g.toLp p := by
-  ext
-  rfl
+theorem toLp_add (f g : α →₀ E) (p : ℝ≥0∞) : (f + g).toLp p = f.toLp p + g.toLp p :=
+  lp.ext <| by rw [coeFn_toLp, ← lp.coeFnAddMonoidHom_apply, map_add]; simp
+
+@[simp]
+theorem toLp_neg (f : α →₀ E) (p : ℝ≥0∞) : (-f).toLp p = -f.toLp p :=
+  lp.ext <| by rw [coeFn_toLp, ← lp.coeFnAddMonoidHom_apply, map_neg]; simp
+
+@[simp]
+theorem toLp_sub (f g : α →₀ E) (p : ℝ≥0∞) : (f - g).toLp p = f.toLp p - g.toLp p :=
+  lp.ext <| by rw [coeFn_toLp, ← lp.coeFnAddMonoidHom_apply, map_sub]; simp
 
 @[simp]
 theorem toLp_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-    (c : 𝕜) (f : α →₀ E) (p : ℝ≥0∞) : (c • f).toLp p = c • f.toLp p := by
-  ext
-  rfl
+    (c : 𝕜) (f : α →₀ E) (p : ℝ≥0∞) : (c • f).toLp p = c • f.toLp p :=
+  lp.ext <| by simp
 
 /-- Inclusion of `α →₀ E` into `lp (fun _ : α ↦ E) p` as an additive monoid homomorphism. -/
 def toLpAddMonoidHom (p : ℝ≥0∞) : (α →₀ E) →+ lp (fun _ : α ↦ E) p where
@@ -119,6 +140,11 @@ def toLpAddMonoidHom (p : ℝ≥0∞) : (α →₀ E) →+ lp (fun _ : α ↦ E)
 theorem toLpAddMonoidHom_apply (p : ℝ≥0∞) (f : α →₀ E) :
     toLpAddMonoidHom p f = f.toLp p := by
   rfl
+
+@[simp]
+theorem toLp_sum {ι : Type*} (s : Finset ι) (f : ι → α →₀ E) (p : ℝ≥0∞) :
+    (∑ i ∈ s, f i).toLp p = ∑ i ∈ s, (f i).toLp p :=
+  map_sum (toLpAddMonoidHom p) f s
 
 /-- Inclusion of `α →₀ E` into `lp (fun _ : α ↦ E) p` as a `𝕜`-linear map. -/
 def toLpLinearMap (p : ℝ≥0∞) (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] :
@@ -141,8 +167,7 @@ theorem toLp_single [DecidableEq α] (a : α) (v : E) (p : ℝ≥0∞) :
 theorem toLp_eq_sum_single [DecidableEq α] (f : α →₀ E) (p : ℝ≥0∞) :
     f.toLp p = ∑ a ∈ f.support, lp.single p a (f a) := by
   conv_lhs => rw [← f.sum_single]
-  rw [Finsupp.sum, ← toLpAddMonoidHom_apply p, map_sum]
-  simp
+  simp [Finsupp.sum]
 
 /-- The series sum of `f.toLp p` equals the finite sum `f.sum`. -/
 theorem tsum_toLp (f : α →₀ E) (p : ℝ≥0∞) :
@@ -170,9 +195,7 @@ theorem toLp_equivMapDomain (e : α ≃ β) (f : α →₀ E) (p : ℝ≥0∞) :
 `AddEquiv.lpCongrLeft`. -/
 theorem toLp_mapDomain_equiv (e : α ≃ β) (f : α →₀ E) (p : ℝ≥0∞) :
     (f.mapDomain e).toLp p = AddEquiv.lpCongrLeft p E e (f.toLp p) := by
-  ext b
-  conv_lhs => rw [coeFn_toLp, ← e.apply_symm_apply b, mapDomain_apply_of_injective e.injective]
-  simp
+  rw [← equivMapDomain_eq_mapDomain, toLp_equivMapDomain]
 
 end Finsupp
 
@@ -202,10 +225,7 @@ theorem toLp_injective (p : ℝ≥0∞) : Function.Injective (fun s : StdSimplex
 theorem toLp_inj {s t : StdSimplex ℝ α} : s.toLp p = t.toLp p ↔ s = t :=
   (toLp_injective p).eq_iff
 
-theorem toLp_apply_nonneg (s : StdSimplex ℝ α) (p : ℝ≥0∞) (a : α) : 0 ≤ s.toLp p a := by
-  simp
-
-theorem nonneg_coeFn_toLp (s : StdSimplex ℝ α) (p : ℝ≥0∞) : 0 ≤ ⇑(s.toLp p) := by
+theorem coeFn_toLp_nonneg (s : StdSimplex ℝ α) (p : ℝ≥0∞) : 0 ≤ ⇑(s.toLp p) := by
   intro a
   simp
 
@@ -240,20 +260,16 @@ theorem toLp_iConvexComb {ι : Type*} (w : StdSimplex ℝ ι) (f : ι → StdSim
     (w.iConvexComb f).toLp p = w.weights.sum fun i r ↦ r • (f i).toLp p := by
   have hw := (isAffineMap_weights ℝ α).map_iConvexComb w f
   rw [toLp, hw, iConvexComb_eq_sum, ← Finsupp.toLpLinearMap_apply p (𝕜 := ℝ), map_finsuppSum]
-  rfl
+  simp [toLp]
 
 /-- The weights of a finitely supported probability have series sum `1`. -/
 @[simp]
-theorem tsum_weights (s : StdSimplex ℝ α) : ∑' a, s.weights a = 1 := by
-  refine (tsum_eq_sum fun _ ha ↦ Finsupp.notMem_support_iff.mp ha).trans ?_
-  exact s.total
+theorem tsum_weights {R : Type*} [LE R] [AddCommMonoid R] [One R] [TopologicalSpace R]
+    (s : StdSimplex R α) : ∑' a, s.weights a = 1 :=
+  (tsum_eq_sum fun _ ha ↦ Finsupp.notMem_support_iff.mp ha).trans s.total
 
 /-- The coordinates of a finitely supported probability sum to `1`. -/
 theorem tsum_toLp (s : StdSimplex ℝ α) (p : ℝ≥0∞) : ∑' a, s.toLp p a = 1 := by
-  simp
-
-/-- `lp.tsumCLM` evaluates to `1` on any finitely supported probability in `ℓ¹`. -/
-theorem tsumCLM_toLp (s : StdSimplex ℝ α) : lp.tsumCLM ℝ α ℝ (s.toLp 1) = 1 := by
   simp
 
 /-- Every finitely supported probability has `ℓ¹` norm equal to `1`. -/
@@ -295,15 +311,13 @@ theorem mem_range_toLp_iff {u : lp (fun _ : α ↦ ℝ) p} :
       0 ≤ ⇑u ∧ (⇑u).HasFiniteSupport ∧ ∑' x, u x = 1 := by
   refine ⟨?_, fun ⟨h0, hfin, hsum⟩ ↦ ?_⟩
   · rintro ⟨s, rfl⟩
-    exact ⟨s.nonneg_coeFn_toLp p, s.hasFiniteSupport_toLp p, s.tsum_toLp p⟩
+    exact ⟨s.coeFn_toLp_nonneg p, s.hasFiniteSupport_toLp p, s.tsum_toLp p⟩
   · refine ⟨{
       weights := Finsupp.ofSupportFinite ⇑u hfin
-      nonneg := h0
+      nonneg := fun x ↦ (h0 x).trans_eq (congrFun Finsupp.ofSupportFinite_coe x).symm
       total := by
-        rw [← hsum, Finsupp.sum]
-        symm
-        refine (tsum_eq_sum fun x hx ↦ ?_).trans (Finset.sum_congr rfl fun _ _ ↦ rfl)
-        exact Finsupp.notMem_support_iff.mp hx },
-      by ext; rfl⟩
+        rw [← Finsupp.tsum_toLp (p := p)]
+        simpa using hsum },
+      by simp [toLp]⟩
 
 end Convexity.StdSimplex
