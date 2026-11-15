@@ -20,7 +20,7 @@ public section
 
 /-- The logarithmic derivative is analytic wherever the function is analytic and nonzero. -/
 @[fun_prop]
-theorem AnalyticAt.logDeriv {𝕜 𝕝 : Type*} [NontriviallyNormedField 𝕜]
+protected theorem AnalyticAt.logDeriv {𝕜 𝕝 : Type*} [NontriviallyNormedField 𝕜]
     [NontriviallyNormedField 𝕝] [NormedAlgebra 𝕜 𝕝] [CompleteSpace 𝕝]
     {f : 𝕜 → 𝕝} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) (hx : f x ≠ 0) :
     AnalyticAt 𝕜 (logDeriv f) x :=
