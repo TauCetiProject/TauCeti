@@ -289,13 +289,10 @@ theorem eqOn_halfCoord_toSection (hp : 2 < p) {w : BorderedSobolevSection A p 1}
     EqOn (A.halfCoord i (toSection hp w)) (halfPlanePreciseRepresentative (A.halfCoord i s))
       (A.halfClosedImage i) := by
   have hu := memWkpLoc_halfCoord w hs i
-  have hc := A.continuousOn_halfCoord (continuous_toSection hp w) i
-  have hc' := A.continuousOn_halfPlanePreciseRepresentative hp hu
-  have hsub := A.halfImage_subset_halfClosedImage i
-  exact (Measure.eqOn_open_of_ae_eq ((chartValueL_ae_eq_halfCoord_toSection hp w i).symm.trans
-    ((hs i).trans (A.ae_eq_halfPlanePreciseRepresentative hu))) (A.halfImage i).isOpen
-      (hc.mono hsub) (hc'.mono hsub)).of_subset_closure hc hc' hsub
-        (A.halfClosedImage_subset_closure_halfImage i)
+  exact A.eqOn_halfClosedImage_of_ae_eq ((chartValueL_ae_eq_halfCoord_toSection hp w i).symm.trans
+    ((hs i).trans (A.ae_eq_halfPlanePreciseRepresentative hu)))
+    (A.continuousOn_halfCoord (continuous_toSection hp w) i)
+    (A.continuousOn_halfPlanePreciseRepresentative hp hu)
 
 /-- **Morrey's embedding for Sobolev sections over surfaces with boundary: Hölder continuity in
 charts.** For `2 < p ≤ ∞`, the chart expression of the continuous representative of an element of

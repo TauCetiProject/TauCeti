@@ -55,6 +55,8 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
 * `TauCeti.FiniteBundleAtlas.exists_continuous_halfCoord_eqOn`: functions continuous on the chart
   images and related by the coordinate changes on the interiors of the overlaps are the chart
   expressions of a continuous section.
+* `TauCeti.FiniteBundleAtlas.eqOn_halfClosedImage_of_ae_eq`: functions continuous on a chart
+  image that agree almost everywhere on its interior agree on the whole image.
 * `TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq`: continuous sections are
   determined by their chart expressions almost everywhere.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_halfCoord`: the chart coordinates of a `Cᵏ` section are
@@ -159,6 +161,17 @@ theorem halfClosedImage_subset_closure_halfImage (i : Fin A.n) :
   have h := subset_closure_interior_setOfPred_le_im_inter hO
   rwa [inter_comm, interior_inter_setOf_im_nonneg hO] at h
 
+/-- Two functions continuous on the image of chart `i` in `ℂ` that agree almost everywhere on its
+interior, for a measure charging nonempty open sets, agree on the whole image, including its points
+on the real axis. -/
+theorem eqOn_halfClosedImage_of_ae_eq {X : Type*} [TopologicalSpace X] [T2Space X]
+    {μ : Measure ℂ} [μ.IsOpenPosMeasure] {i : Fin A.n} {f g : ℂ → X}
+    (h : f =ᵐ[μ.restrict (A.halfImage i : Set ℂ)] g) (hf : ContinuousOn f (A.halfClosedImage i))
+    (hg : ContinuousOn g (A.halfClosedImage i)) : EqOn f g (A.halfClosedImage i) := by
+  have hsub := A.halfImage_subset_halfClosedImage i
+  exact (Measure.eqOn_open_of_ae_eq h (A.halfImage i).isOpen (hf.mono hsub)
+    (hg.mono hsub)).of_subset_closure hf hg hsub (A.halfClosedImage_subset_closure_halfImage i)
+
 /-- The overlap of the domains of charts `i` and `i'`, read in chart `i'`, at points of positive
 imaginary part. -/
 def halfOverlap (i i' : Fin A.n) : Set ℂ :=
@@ -242,13 +255,8 @@ theorem eq_of_continuous_of_halfCoord_ae_eq [T2Space F] {μ : Measure ℂ} [μ.I
     s = t := by
   funext x
   obtain ⟨i, hx⟩ := A.exists_mem_dom x
-  have hcs := A.continuousOn_halfCoord hs i
-  have hct := A.continuousOn_halfCoord ht i
-  have hsub := A.halfImage_subset_halfClosedImage i
-  have heq : EqOn (A.halfCoord i s) (A.halfCoord i t) (A.halfClosedImage i) :=
-    (Measure.eqOn_open_of_ae_eq (h i) (A.halfImage i).isOpen (hcs.mono hsub)
-      (hct.mono hsub)).of_subset_closure hcs hct hsub (A.halfClosedImage_subset_closure_halfImage i)
-  have hxz := heq (A.coe_mem_halfClosedImage.2 (A.mem_image.2 ⟨x, hx, rfl⟩))
+  have hxz := A.eqOn_halfClosedImage_of_ae_eq (h i) (A.continuousOn_halfCoord hs i)
+    (A.continuousOn_halfCoord ht i) (A.coe_mem_halfClosedImage.2 (A.mem_image.2 ⟨x, hx, rfl⟩))
   rw [halfCoord_def, halfCoord_def, closedUpperHalfPlaneModel_symm_coe] at hxz
   exact A.eq_of_coord_chart_eq hx hxz
 
