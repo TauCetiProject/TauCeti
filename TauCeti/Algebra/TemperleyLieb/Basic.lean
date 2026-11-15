@@ -9,6 +9,9 @@ public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.RingQuot
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Matrix.Notation
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+-- Supplies `CommSemiring.strongRankCondition_of_nontrivial` for `finrank_two`.
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.Tactic.Module
 
 /-!
@@ -49,10 +52,11 @@ ring the whole algebra is zero.
 On at most one strand, `algEquivOfLeOne` transports the singleton basis of `R` to a singleton free
 `R`-basis `TauCeti.TemperleyLieb.basisOfLeOne` (`TauCeti.TemperleyLieb.finrank_of_le_one`), and on
 two strands `twoStrandRep` certifies that `1` and `e 0` are `R`-linearly independent
-(`TauCeti.TemperleyLieb.linearIndependent_two`). That `e i ≠ 0` for *every* `n` over a nontrivial
-base ring — indeed that `TemperleyLieb R δ n` is free of rank the Catalan number `catalan n` on the
-planar-matching diagrams — is the fundamental structure theorem of the algebra, which needs the
-diagram basis developed separately.
+(`TauCeti.TemperleyLieb.linearIndependent_two`), yielding the free `R`-basis
+`TauCeti.TemperleyLieb.basisTwo` (`TauCeti.TemperleyLieb.finrank_two`). That `e i ≠ 0` for *every*
+`n` over a nontrivial base ring — indeed that `TemperleyLieb R δ n` is free of rank the Catalan
+number `catalan n` on the planar-matching diagrams — is the fundamental structure theorem of the
+algebra, which needs the diagram basis developed separately.
 
 ## Main definitions
 
@@ -68,6 +72,7 @@ diagram basis developed separately.
   base ring.
 * `TauCeti.TemperleyLieb.basisOfLeOne`: the singleton free `R`-basis on at most one
   strand.
+* `TauCeti.TemperleyLieb.basisTwo`: the free `R`-basis `![1, e δ 0]` on two strands.
 * `TauCeti.TemperleyLieb.crossing`: the Kauffman-bracket expansion `α • 1 + β • e i`
   of a crossing.
 
@@ -84,8 +89,9 @@ diagram basis developed separately.
   relation under their respective scalar hypotheses.
 * `TauCeti.TemperleyLieb.finrank_of_le_one`: the algebra on at most one strand has `finrank` equal
   to `1`.
-* `TauCeti.TemperleyLieb.linearIndependent_two` and `TauCeti.TemperleyLieb.e_ne_zero_two`: linear
-  independence of `![1, e δ 0]` and non-degeneracy on two strands.
+* `TauCeti.TemperleyLieb.linearIndependent_two`, `TauCeti.TemperleyLieb.finrank_two`, and
+  `TauCeti.TemperleyLieb.e_ne_zero_two`: linear independence of `![1, e δ 0]`, exact `finrank`
+  equal to `2`, and non-degeneracy on two strands.
 
 ## References
 
@@ -362,6 +368,57 @@ theorem linearIndependent_two :
   fin_cases i
   · simpa using congr_fun₂ hrep 0 0
   · simpa using congr_fun₂ hrep 1 0
+
+/-- On two strands, `![1, e δ 0]` is a free `R`-basis of `TemperleyLieb R δ 2` over every
+commutative semiring `R`. -/
+noncomputable def basisTwo : Module.Basis (Fin 2) R (TemperleyLieb R δ 2) :=
+  Module.Basis.mk (linearIndependent_two δ) <| by
+    let S := Submodule.span R (Set.range ![1, e (R := R) (n := 2) δ 0])
+    have h1 : (1 : TemperleyLieb R δ 2) ∈ S := Submodule.subset_span ⟨0, rfl⟩
+    have he : e (R := R) (n := 2) δ 0 ∈ S := Submodule.subset_span ⟨1, rfl⟩
+    have hmul : ∀ x ∈ S, ∀ y ∈ S, x * y ∈ S := by
+      intro x hx y hy
+      induction hx using Submodule.span_induction with
+      | mem u hu =>
+        rcases hu with ⟨i, rfl⟩
+        fin_cases i
+        · simpa using hy
+        · induction hy using Submodule.span_induction with
+          | mem v hv =>
+            rcases hv with ⟨j, rfl⟩
+            fin_cases j
+            · simpa using he
+            · simpa [e_mul_self] using Submodule.smul_mem S δ he
+          | zero => simp
+          | add _ _ _ _ h₁ h₂ => rw [mul_add]; exact Submodule.add_mem S h₁ h₂
+          | smul r _ _ h => rw [mul_smul_comm]; exact Submodule.smul_mem S r h
+      | zero => simp
+      | add _ _ _ _ h₁ h₂ => rw [add_mul]; exact Submodule.add_mem S h₁ h₂
+      | smul r _ _ h => rw [smul_mul_assoc]; exact Submodule.smul_mem S r h
+    suffices ∀ x : TemperleyLieb R δ 2, x ∈ S from fun x _ ↦ this x
+    intro x
+    induction x using TemperleyLieb.induction with
+    | e i => fin_cases i; exact he
+    | algebraMap r => rw [Algebra.algebraMap_eq_smul_one]; exact Submodule.smul_mem S r h1
+    | add _ _ hx hy => exact Submodule.add_mem S hx hy
+    | mul _ _ hx hy => exact hmul _ hx _ hy
+
+/-- The `0`-th vector of `basisTwo` is `1`. -/
+@[simp]
+theorem basisTwo_zero : basisTwo (R := R) δ 0 = 1 := by
+  simp [basisTwo]
+
+/-- The `1`-st vector of `basisTwo` is `e δ 0`. -/
+@[simp]
+theorem basisTwo_one : basisTwo (R := R) δ 1 = e δ 0 := by
+  simp [basisTwo]
+
+/-- On two strands over a nontrivial commutative semiring `R`, `TemperleyLieb R δ 2` has `finrank`
+equal to `2`. Nontriviality is required because `Module.finrank_subsingleton` equals `1` over a
+trivial semiring. -/
+theorem finrank_two [Nontrivial R] :
+    Module.finrank R (TemperleyLieb R δ 2) = 2 := by
+  rw [Module.finrank_eq_card_basis (basisTwo δ), Fintype.card_fin]
 
 variable {δ}
 
