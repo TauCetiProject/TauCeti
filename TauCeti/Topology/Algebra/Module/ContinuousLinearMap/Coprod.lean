@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Surjectivity of coproducts of continuous linear maps
@@ -40,7 +41,8 @@ variable {R M M₁ M₂ : Type*} [Semiring R]
 if their ranges together span the codomain. -/
 theorem surjective_coprod_iff (f₁ : M₁ →L[R] M) (f₂ : M₂ →L[R] M) :
     Function.Surjective (f₁.coprod f₂) ↔ f₁.range ⊔ f₂.range = ⊤ := by
-  rw [← coe_coe, ← LinearMap.range_eq_top, range_coprod]
+  rw [← coe_coe, coe_coprod]
+  exact LinearMap.surjective_coprod_iff _ _
 
 end Semiring
 
@@ -55,7 +57,8 @@ variable {R M M₁ M₂ : Type*} [Ring R]
 and only if their ranges together span the codomain. -/
 theorem surjective_coprod_neg_iff (f₁ : M₁ →L[R] M) (f₂ : M₂ →L[R] M) :
     Function.Surjective (f₁.coprod (-f₂)) ↔ f₁.range ⊔ f₂.range = ⊤ := by
-  rw [surjective_coprod_iff, toLinearMap_neg, LinearMap.range_neg]
+  rw [← coe_coe, coe_coprod, toLinearMap_neg]
+  exact LinearMap.surjective_coprod_neg_iff _ _
 
 end Ring
 
