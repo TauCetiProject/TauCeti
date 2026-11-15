@@ -216,27 +216,6 @@ private theorem quadratic_terms_le {a e d d' S S₁ S₂ B : ℝ≥0∞} (he : e
         a * (S₁ + S₂) * (1 + B) * S := by gcongr
     _ = 3 * a * (1 + B) * (S₁ + S₂) * S := by ring
 
-/-- The `W^{1,p}` seminorm `‖ξ‖_{Lᵖ(Ω)} + ‖Dξ‖_{Lᵖ(Ω)}` of a difference of maps that are `C¹` on an
-open set `Ω` is at most the sum of their seminorms. -/
-private theorem eLpNorm_sub_add_eLpNorm_fderiv_sub_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
-    {ξ₁ ξ₂ : ℝ × ℝ → E} (hξ₁ : ContDiffOn ℝ 1 ξ₁ Ω) (hξ₂ : ContDiffOn ℝ 1 ξ₂ Ω) :
-    eLpNorm (ξ₁ - ξ₂) p (volume.restrict Ω) + eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p (volume.restrict Ω) ≤
-      eLpNorm ξ₁ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ₁) p (volume.restrict Ω) +
-        (eLpNorm ξ₂ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ₂) p (volume.restrict Ω)) := by
-  have hfd : fderiv ℝ (ξ₁ - ξ₂) =ᵐ[volume.restrict Ω] fderiv ℝ ξ₁ - fderiv ℝ ξ₂ :=
-    ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => fderiv_sub
-      ((hξ₁.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz))
-      ((hξ₂.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz))
-  calc _ ≤ eLpNorm ξ₁ p (volume.restrict Ω) + eLpNorm ξ₂ p (volume.restrict Ω) +
-        (eLpNorm (fderiv ℝ ξ₁) p (volume.restrict Ω) +
-          eLpNorm (fderiv ℝ ξ₂) p (volume.restrict Ω)) := by
-        gcongr
-        · exact eLpNorm_sub_le hp
-        · rw [eLpNorm_congr_ae hfd]
-          exact eLpNorm_sub_le hp
-    _ = _ := by ring
-
 /-- The choice of the radius `δ₁ / (2 (a + 1))` in the `W^{1,p}` estimate makes `a` times the sum of
 two such radii at most `δ₁`. -/
 private theorem mul_add_div_two_mul_add_one_le (a δ₁ : ℝ≥0) :
@@ -307,14 +286,15 @@ theorem
   have hξ : ContDiffOn ℝ 1 (ξ₁ - ξ₂) Ω := hξ₁.sub hξ₂
   -- The `W^{1,p}` norm of the difference is finite.
   have hSle : S ≤ S₁ + S₂ :=
-    eLpNorm_sub_add_eLpNorm_fderiv_sub_le (by exact_mod_cast hp1) hΩ hξ₁ hξ₂
+    eLpNorm_sub_add_eLpNorm_fderiv_sub_le (by exact_mod_cast hp1) hΩ
+      (hξ₁.differentiableOn one_ne_zero) (hξ₂.differentiableOn one_ne_zero)
   have hS₁₂ : S₁ + S₂ ≠ ∞ := ENNReal.add_ne_top.2
     ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩
   have hS : S ≠ ∞ := (hSle.trans_lt hS₁₂.lt_top).ne
   -- The supremum bounds, by Morrey's inequality.
   have hsup (ξ : ℝ × ℝ → V) (hξ : ContDiffOn ℝ 1 ξ Ω) (z : ℝ × ℝ) (hz : z ∈ Ω) :
       ‖ξ z‖ₑ ≤ CM * (eLpNorm ξ p μ + eLpNorm (fderiv ℝ ξ) p μ) :=
-    hCM Ω ξ z hΩ hΩc hξ hz (hfat z hz)
+    hCM Ω ξ z hΩ (hΩc.starConvex hz) hξ (hfat z hz)
   have hε : ((CM * (S₁ + S₂)).toNNReal : ℝ≥0∞) = CM * (S₁ + S₂) :=
     ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top hS₁₂)
   have hη : ((CM * S).toNNReal : ℝ≥0∞) = CM * S :=
