@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
@@ -60,13 +61,15 @@ quasi-coherent algebra on `X` directly, with its algebra structure transported f
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.normalConeAlgebra_obj_X`: the homogeneous components of the
-  normal cone algebra are the pullbacks `j^* Iⁿ`.
+  normal cone algebra are the pullbacks `j^* Iⁿ`, and `one_normalConeAlgebra` and
+  `mul_normalConeAlgebra`: its unit and multiplication are the pullbacks of those of `⨁ₙ Iⁿ`.
 * `AlgebraicGeometry.Scheme.Hom.conormal_obj`: the conormal sheaf is the pullback `j^* I`, and
   `AlgebraicGeometry.Scheme.Hom.conormal_eq_degreeOne`: it is the degree-one component of the
   normal cone algebra.
 * `AlgebraicGeometry.Scheme.Hom.normalConeAlgebraObjXIsoPullbackKerPow` and
   `AlgebraicGeometry.Scheme.Hom.conormalObjIsoPullbackKer`: for a quasi-compact immersion, for
-  instance a closed immersion, these components are `i^* (ker i)ⁿ` and `i^* (ker i)`.
+  instance a closed immersion, these components are `i^* (ker i)ⁿ` and `i^* (ker i)`, with the
+  comparison morphisms described by their `_hom` and `_inv` lemmas.
 * `AlgebraicGeometry.Scheme.Hom.isIso_one_normalConeAlgebra`: the unit `𝒪_X ⟶ j^* I⁰` is an
   isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.isAffineHom_normalConeToBase`: the projection of the normal cone
@@ -119,6 +122,43 @@ theorem normalConeAlgebra_obj_X (n : ℕ) :
   rw [normalConeAlgebra_def, GradedQuasicoherentAlgebra.pullback_obj_obj_X,
     IdealSheafData.reesAlgebra_obj_X]
 
+/-- The unit of the normal cone algebra is the pullback along `j = i.liftCoborder` of the unit of
+the Rees algebra of `I = ker j` (`IdealSheafData.one_reesAlgebra`), preceded by `𝒪_X ≅ j^* 𝒪_U`,
+up to the identification `normalConeAlgebra_obj_X`. -/
+@[simp]
+theorem one_normalConeAlgebra :
+    i.normalConeAlgebra.obj.toMon.one =
+      (Scheme.Modules.pullbackObjUnitIso i.liftCoborder).inv ≫
+        (Scheme.Modules.pullback i.liftCoborder).map
+          i.liftCoborder.ker.reesAlgebra.obj.toMon.one ≫
+          eqToHom (by
+            rw [normalConeAlgebra_def]
+            exact (GradedQuasicoherentAlgebra.pullback_obj_obj_X _ _ _).symm) :=
+  GradedQuasicoherentAlgebra.pullback_obj_one _ _
+
+open MonoidalCategory Functor.OplaxMonoidal in
+/-- The homogeneous multiplication of the normal cone algebra is the pullback along
+`j = i.liftCoborder` of that of the Rees algebra of `I = ker j` (`IdealSheafData.mul_reesAlgebra`),
+preceded by the inverse of the tensor comparison `j^* (Iᵐ ⊗ Iⁿ) ≅ j^* Iᵐ ⊗ j^* Iⁿ`, up to the
+identifications `normalConeAlgebra_obj_X`. -/
+@[simp]
+theorem mul_normalConeAlgebra (m n : ℕ) :
+    i.normalConeAlgebra.obj.toMon.mul m n =
+      (eqToHom (by
+          rw [normalConeAlgebra_def]
+          exact GradedQuasicoherentAlgebra.pullback_obj_obj_X _ _ _) ⊗ₘ
+        eqToHom (by
+          rw [normalConeAlgebra_def]
+          exact GradedQuasicoherentAlgebra.pullback_obj_obj_X _ _ _)) ≫
+        inv (δ (Scheme.Modules.pullback i.liftCoborder)
+          (i.liftCoborder.ker.reesAlgebra.obj.X m) (i.liftCoborder.ker.reesAlgebra.obj.X n)) ≫
+          (Scheme.Modules.pullback i.liftCoborder).map
+            (i.liftCoborder.ker.reesAlgebra.obj.toMon.mul m n) ≫
+            eqToHom (by
+              rw [normalConeAlgebra_def]
+              exact (GradedQuasicoherentAlgebra.pullback_obj_obj_X _ _ _).symm) :=
+  GradedQuasicoherentAlgebra.pullback_obj_mul _ _ m n
+
 /-- The unit `𝒪_X ⟶ j^* I⁰` of the normal cone algebra is an isomorphism: `I⁰ = 𝒪_U`, so the
 degree-zero component `j^* I⁰` of the normal cone algebra is `j^* 𝒪_U = 𝒪_X`. -/
 instance isIso_one_normalConeAlgebra : IsIso i.normalConeAlgebra.obj.toMon.one :=
@@ -161,11 +201,55 @@ def normalConeAlgebraObjXIsoPullbackKerPow (n : ℕ) :
     (Scheme.Modules.pullbackComp i.liftCoborder i.coborderRange.ι).app _ ≪≫
     (Scheme.Modules.pullbackCongr i.liftCoborder_ι).app _
 
+/-- The comparison `j^* Iⁿ ≅ i^* (ker i)ⁿ` is the pullback along `j = i.liftCoborder` of the inverse
+of `ι^* (ker i)ⁿ ≅ ((ker i)ⁿ).comap ι` for the open immersion `ι : i.coborderRange ⟶ Y`, followed
+by `j^* ι^* ≅ (j ≫ ι)^* = i^*`. -/
+@[simp]
+theorem normalConeAlgebraObjXIsoPullbackKerPow_hom (n : ℕ) :
+    (i.normalConeAlgebraObjXIsoPullbackKerPow n).hom =
+      eqToHom (by rw [normalConeAlgebra_obj_X, ker_liftCoborder, ← IdealSheafData.comap_pow]) ≫
+        (Scheme.Modules.pullback i.liftCoborder).map
+          (inv ((i.ker ^ n).pullbackSheafHom i.coborderRange.ι)) ≫
+        (Scheme.Modules.pullbackComp i.liftCoborder i.coborderRange.ι).hom.app _ ≫
+        (Scheme.Modules.pullbackCongr i.liftCoborder_ι).hom.app _ :=
+  (rfl)
+
+/-- The inverse comparison `i^* (ker i)ⁿ ≅ j^* Iⁿ` identifies `i^* = (j ≫ ι)^*` with `j^* ι^*` and
+then applies the pullback along `j = i.liftCoborder` of `ι^* (ker i)ⁿ ≅ ((ker i)ⁿ).comap ι`. -/
+@[simp]
+theorem normalConeAlgebraObjXIsoPullbackKerPow_inv (n : ℕ) :
+    (i.normalConeAlgebraObjXIsoPullbackKerPow n).inv =
+      (Scheme.Modules.pullbackCongr i.liftCoborder_ι).inv.app _ ≫
+        (Scheme.Modules.pullbackComp i.liftCoborder i.coborderRange.ι).inv.app _ ≫
+        (Scheme.Modules.pullback i.liftCoborder).map
+          ((i.ker ^ n).pullbackSheafHom i.coborderRange.ι) ≫
+        eqToHom (by rw [normalConeAlgebra_obj_X, ker_liftCoborder, ← IdealSheafData.comap_pow]) :=
+  (rfl)
+
 /-- For a quasi-compact immersion `i`, for instance a closed immersion, the conormal sheaf is the
 pullback `i^* (ker i)` of the ideal sheaf of `i`. -/
 def conormalObjIsoPullbackKer : i.conormal.obj ≅ (Scheme.Modules.pullback i).obj i.ker.sheaf :=
   eqToIso (by rw [conormal_eq_degreeOne, GradedQuasicoherentAlgebra.degree_obj_obj]) ≪≫
     i.normalConeAlgebraObjXIsoPullbackKerPow 1 ≪≫ eqToIso (by rw [pow_one])
+
+
+/-- The conormal comparison `j^* I ≅ i^* (ker i)` is the degree-one comparison of the normal cone
+algebra. -/
+@[simp]
+theorem conormalObjIsoPullbackKer_hom :
+    i.conormalObjIsoPullbackKer.hom =
+      eqToHom (by rw [conormal_eq_degreeOne, GradedQuasicoherentAlgebra.degree_obj_obj]) ≫
+        (i.normalConeAlgebraObjXIsoPullbackKerPow 1).hom ≫ eqToHom (by rw [pow_one]) :=
+  (rfl)
+
+/-- The inverse conormal comparison `i^* (ker i) ≅ j^* I` is the inverse degree-one comparison of
+the normal cone algebra. -/
+@[simp]
+theorem conormalObjIsoPullbackKer_inv :
+    i.conormalObjIsoPullbackKer.inv =
+      eqToHom (by rw [pow_one]) ≫ (i.normalConeAlgebraObjXIsoPullbackKerPow 1).inv ≫
+        eqToHom (by rw [conormal_eq_degreeOne, GradedQuasicoherentAlgebra.degree_obj_obj]) :=
+  (rfl)
 
 end QuasiCompact
 
@@ -219,35 +303,17 @@ variable {X Y : Scheme.{u}} (i : X ⟶ Y)
 
 /-- For an open immersion `i`, for instance an isomorphism, the positive-degree components
 `j^* Iⁿ` of the normal cone algebra vanish: `j = i.liftCoborder` is then an open immersion as
-well, and its ideal sheaf `I` has no nonzero sections over the image of `j`. -/
+well, so `j^* Iⁿ` is the inverse image `(Iⁿ).comap j = (I.comap j)ⁿ`, and `I.comap j = ⊥` since
+`I = ker j`. -/
 theorem isZero_normalConeAlgebra_obj_X [IsOpenImmersion i] {n : ℕ} (hn : n ≠ 0) :
     IsZero (i.normalConeAlgebra.obj.X n) := by
   rw [normalConeAlgebra_obj_X]
   set j := i.liftCoborder
   have : IsOpenImmersion (j ≫ i.coborderRange.ι) := by rw [i.liftCoborder_ι]; infer_instance
   have : IsOpenImmersion j := .of_comp j i.coborderRange.ι
-  -- Pullback along the open immersion `j` is restriction, so it suffices that every section of
-  -- `Iⁿ` over an open `j ''ᵁ U` in the image of `j` vanishes.
-  refine IsZero.of_iso ?_ ((Scheme.Modules.restrictFunctorIsoPullback j).app _).symm
-  refine (IsZero.iff_id_eq_zero _).mpr
-    (Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_)
-  simp only [Scheme.Modules.Hom.id_app, Scheme.Modules.Hom.zero_app, ConcreteCategory.id_apply,
-    AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply]
-  -- Sections of the restriction of `Iⁿ` over `U` are sections of `Iⁿ` over `j ''ᵁ U`.
-  refine (ConcreteCategory.bijective_of_isIso ((j.ker ^ n).sheaf.restrictAppIso j U).hom).1 ?_
-  rw [map_zero]
-  generalize ((j.ker ^ n).sheaf.restrictAppIso j U).hom t = t
-  have hle : j.ker ^ n ≤ j.ker := fun V ↦ by
-    rw [IdealSheafData.ideal_pow, Pi.pow_apply]
-    exact Ideal.pow_le_self hn
-  have h0 := j.mem_ker_sections_iff.mp
-    (IdealSheafData.sections_mono hle _ ((j.ker ^ n).sheafι_app_mem (j ''ᵁ U) t))
-  have hinj : Function.Injective (j.app (j ''ᵁ U)) := by
-    have := (ConcreteCategory.bijective_of_isIso (j.appIso U).hom).1
-    rw [j.appIso_hom] at this
-    exact fun a b hab ↦ this (by simp only [ConcreteCategory.comp_apply, hab])
-  have h1 : (j.ker ^ n).sheafι.app (j ''ᵁ U) t = 0 := hinj (h0.trans (map_zero _).symm)
-  exact (j.ker ^ n).sheafι_app_injective _ (h1.trans (map_zero _).symm)
+  refine IsZero.of_iso ?_ (asIso ((j.ker ^ n).pullbackSheafHom j))
+  rw [IdealSheafData.comap_pow, j.comap_ker_self]
+  exact (zero_pow hn : (0 : X.IdealSheafData) ^ n = 0) ▸ IdealSheafData.isZero_sheaf_bot
 
 /-- An open immersion, for instance an isomorphism, has zero conormal sheaf, as a sheaf of
 modules. -/

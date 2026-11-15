@@ -76,10 +76,14 @@ theorem mem_sections_of_app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶
     [IsOpenImmersion g] {U : Y.Opens} (hU : U ≤ g.opensRange) {s : Γ(Y, U)}
     (hs : g.app U s ∈ (I.comap g).sections (g ⁻¹ᵁ U)) : s ∈ I.sections U := by
   rw [mem_sections_iff] at hs ⊢
-  rw [← I.comapIso_hom_fst g] at hs
-  -- Write `P` for the fibre product of `g` and `V(I) ⟶ Y`. The pullback of `g^♯ s` to `P` vanishes.
-  have h1 : (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) = 0 :=
-    (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso ((I.comapIso g).hom.app _)).1).mp hs
+  -- Write `P` for the fibre product of `g` and `V(I) ⟶ Y`. The pullback of `g^♯ s` to `P` vanishes,
+  -- since `V(I.comap g) ≅ P` identifies the closed immersions into `X` (`comapIso_hom_fst`).
+  have h1 : (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) = 0 := by
+    have h := ConcreteCategory.congr_hom
+      (Scheme.Hom.congr_app (I.comapIso_hom_fst g) (g ⁻¹ᵁ U)) (g.app U s)
+    simp only [Scheme.Hom.comp_app, CommRingCat.hom_comp, RingHom.comp_apply, hs, map_zero] at h
+    exact (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+      ((I.comapIso g).hom.app _)).1).mp h
   -- Hence so does the pullback to `P` of the restriction of `s` to `V(I)`.
   have h2 : (pullback.snd g I.subschemeι).app (I.subschemeι ⁻¹ᵁ U) (I.subschemeι.app U s) = 0 := by
     have h : (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) =
@@ -90,20 +94,14 @@ theorem mem_sections_of_app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶
       rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
         ← ConcreteCategory.comp_apply, ← Scheme.Hom.comp_app, ← Category.assoc,
         ← Scheme.Hom.comp_app]
-      exact congrArg (fun φ ↦ φ s)
-        (Scheme.Hom.congr_app (pullback.condition (f := g) (g := I.subschemeι)) U)
+      exact ConcreteCategory.congr_hom
+        (Scheme.Hom.congr_app (pullback.condition (f := g) (g := I.subschemeι)) U) s
     rw [h1] at h
-    have key : ∀ {A B : (pullback g I.subschemeι).Opens} (e : A = B)
-        (x : Γ(pullback g I.subschemeι, B)),
-        (pullback g I.subschemeι).presheaf.map (eqToHom e).op x = 0 → x = 0 := by
-      rintro A B rfl x hx
-      simpa using hx
-    exact key _ _ h.symm
+    exact (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+      ((pullback g I.subschemeι).presheaf.map (eqToHom _).op)).1).mp h.symm
   -- The open immersion `P ⟶ V(I)` is an isomorphism over the preimage of `U ≤ g.opensRange`.
-  have hle : I.subschemeι ⁻¹ᵁ U ≤ (pullback.snd g I.subschemeι).opensRange := by
-    intro x hx
-    rw [← SetLike.mem_coe, Scheme.Hom.coe_opensRange, Scheme.Pullback.range_snd]
-    exact hU hx
+  have hle : I.subschemeι ⁻¹ᵁ U ≤ (pullback.snd g I.subschemeι).opensRange :=
+    Scheme.Hom.opensRange_pullbackSnd g I.subschemeι ▸ I.subschemeι.preimage_mono hU
   have := Scheme.Hom.isIso_app (pullback.snd g I.subschemeι) _ hle
   exact (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
     ((pullback.snd g I.subschemeι).app _)).1).mp h2
@@ -188,6 +186,12 @@ instance isIso_pullbackSheafHom_of_isOpenImmersion [IsOpenImmersion g] :
         (I.comap g).sectionMk _ (app_mem_sections_comap I g (I.sheafι_app_mem U t)) := by
     rw [← pullbackSheafHom_app_unit_app, ← Adjunction.unit_leftAdjointUniq_hom_app
       (Scheme.Modules.restrictAdjunction g) (Scheme.Modules.pullbackPushforwardAdjunction g)]
+    simp only [χ, Scheme.Modules.restrictFunctorIsoPullback, Scheme.Modules.Hom.comp_app,
+      Scheme.Modules.pushforward_map_app]
+    -- Both sides now apply the unit over `U`, the comparison `θ` over `g ⁻¹ᵁ U` and
+    -- `pullbackSheafHom` over `g ⁻¹ᵁ U` to `t`, bracketed differently. `comp_apply` does not
+    -- match the right side syntactically: its middle object is the pushforward along `g` over
+    -- `U`, whose sections are by definition the sections over `g ⁻¹ᵁ U`. So `rfl` closes it.
     rfl
   refine Scheme.Modules.Hom.isIso_iff_isIso_app.mpr fun V ↦ ?_
   rw [← g.preimage_image_eq V, ConcreteCategory.isIso_iff_bijective]
