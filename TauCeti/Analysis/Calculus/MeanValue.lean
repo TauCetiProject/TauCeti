@@ -67,6 +67,14 @@ A function of time and space with derivative bounded by `C` that vanishes outsid
 interval `(a, b)` is bounded by `C (b - a)`, by the mean value inequality from its value at the
 time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
 
+## A uniform first-order remainder estimate
+
+If `G` is differentiable on `s` with a derivative `G'` uniformly continuous there, one radius
+`η` serves at every centre: on each ball of radius at most `η` inside `s`, the first-order
+remainder of `G` against its derivative at the centre is at most `c` times the increment
+(`UniformContinuousOn.exists_pos_norm_image_sub_sub_le_of_hasFDerivAt`). This is the pointwise
+estimate behind the differentiability of superposition operators.
+
 ## Comparing maps with nearby derivatives
 
 If two maps on a convex set have derivatives within `ε` of a common linear map and agree at a
@@ -74,6 +82,11 @@ point `y`, then by the mean value inequality applied to their difference they st
 `2 ε ‖x - y‖` of each other (`Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le`).
 This compares a map to a model agreeing with it to first order before splicing them together
 (`TauCeti.Analysis.Calculus.Splice`).
+
+For a family of operators `Φ : E → Λ →L[𝕜] F` whose pointwise derivatives stay within `C` of a
+fixed `L` in operator norm, the mean value inequality applied to each `w ↦ Φ w f` bounds the
+operator norm of `Φ z - Φ y - L.flip (z - y)` by `C ‖z - y‖`
+(`Convex.norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le`).
 
 For an antilipschitz parametrization with bounded derivative, an image chord controls the
 parametric chord and its intervening points. A scalar mean value estimate permits bounds on
@@ -111,6 +124,28 @@ theorem Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le {X Y : Type*} [NormedA
     (fun v hv => (norm_sub_le_norm_sub_add_norm_sub (l' v) A (k' v)).trans
       (by rw [norm_sub_rev A]; linarith [hl' v hv, hk' v hv])) hy hx
   rwa [hxy, sub_self, sub_zero] at h
+
+/-- **The mean value inequality for the operator norm.** Let `Φ : E → Λ →L[𝕜] F` be a family of
+operators on a convex set `s` such that each `w ↦ Φ w f` has derivative `D w f` within `s`, where
+`D w` stays within `C` of `L` in operator norm. Then on `s`, `Φ` stays within `C ‖z - y‖` of its
+first-order approximation `Φ y + L.flip (z - y)`, for the operator norm. -/
+theorem Convex.norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le {𝕜 Λ E F : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup Λ]
+    [NormedSpace 𝕜 Λ] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {s : Set E} (hs : Convex ℝ s)
+    {Φ : E → Λ →L[𝕜] F} {D : E → Λ →L[𝕜] E →L[𝕜] F} {L : Λ →L[𝕜] E →L[𝕜] F} {C : ℝ}
+    (hD : ∀ w ∈ s, ∀ f, HasFDerivWithinAt (fun w ↦ Φ w f) (D w f) s w)
+    (hC : ∀ w ∈ s, ‖D w - L‖ ≤ C) {y z : E} (hy : y ∈ s) (hz : z ∈ s) :
+    ‖Φ z - Φ y - L.flip (z - y)‖ ≤ C * ‖z - y‖ := by
+  have hC0 : 0 ≤ C := (norm_nonneg (D y - L)).trans (hC y hy)
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun f ↦ ?_
+  have key := hs.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun w ↦ Φ w f)
+    (f' := fun w ↦ D w f) (φ := L f) (C := C * ‖f‖) (fun w hw ↦ hD w hw f)
+    (fun w hw ↦ ((D w - L).le_opNorm f).trans (mul_le_mul_of_nonneg_right (hC w hw)
+      (norm_nonneg f))) hy hz
+  calc ‖(Φ z - Φ y - L.flip (z - y)) f‖ = ‖Φ z f - Φ y f - L f (z - y)‖ := by simp
+    _ ≤ C * ‖f‖ * ‖z - y‖ := key
+    _ = C * ‖z - y‖ * ‖f‖ := by ring
 
 open Set
 
@@ -177,6 +212,37 @@ theorem norm_image_sub_le_of_norm_hasFDerivWithin_apply_le
   simpa [γ] using norm_image_sub_le_of_norm_deriv_le_segment_01' hd hb
 
 end Convex
+
+namespace UniformContinuousOn
+
+open Metric
+
+/-- **A uniform first-order remainder estimate.** Let `G` have derivative `G' x` at every point
+`x` of `s`, with `G'` uniformly continuous on `s`. Then for every `c > 0` there is `η > 0` such
+that on every ball of radius `r ≤ η` contained in `s`, with centre `x₀`, the first-order remainder
+of `G` against `G' x₀` is at most `c` times the increment: `‖G x₁ - G x₂ - G' x₀ (x₁ - x₂)‖ ≤
+c ‖x₁ - x₂‖`. The radius `η` does not depend on `x₀`. Derivatives may be taken over a real or
+complex scalar field. -/
+theorem exists_pos_norm_image_sub_sub_le_of_hasFDerivAt {𝕜 X Y : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y} {G' : X → X →L[𝕜] Y} {s : Set X}
+    (hG' : UniformContinuousOn G' s) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x) {c : ℝ}
+    (hc : 0 < c) :
+    ∃ η > 0, ∀ x₀ r, r ≤ η → ball x₀ r ⊆ s → ∀ x₁ ∈ ball x₀ r, ∀ x₂ ∈ ball x₀ r,
+      ‖G x₁ - G x₂ - G' x₀ (x₁ - x₂)‖ ≤ c * ‖x₁ - x₂‖ := by
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
+  obtain ⟨η, hη, hG'η⟩ := Metric.uniformContinuousOn_iff_le.1 hG' c hc
+  refine ⟨η, hη, fun x₀ r hr hs x₁ h₁ x₂ h₂ ↦ ?_⟩
+  have hx₀ : x₀ ∈ s := hs (mem_ball_self (dist_nonneg.trans_lt h₁))
+  exact (convex_ball x₀ r).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (fun x hx ↦ (hGs x (hs hx)).hasFDerivWithinAt)
+    (fun x hx ↦ by
+      rw [← dist_eq_norm]
+      exact hG'η x (hs hx) x₀ hx₀ ((mem_ball.1 hx).le.trans hr))
+    h₂ h₁
+
+end UniformContinuousOn
 
 namespace TauCeti
 

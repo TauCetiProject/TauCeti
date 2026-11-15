@@ -31,8 +31,8 @@ or complex, keeps the element away from `0`.
   prescribed sign at every real place.
 * `NumberField.InfinitePlace.IsReal.mul_pos_of_apply_sub_lt`: an element closer to a target than
   the target is to `0`, as measured by a real place, has the sign of that target there.
-* `NumberField.ne_zero_of_infinitePlace_sub_lt`: an element closer to a target than the target is
-  to `0`, as measured by any infinite place, is nonzero.
+* `NumberField.InfinitePlace.ne_zero_of_apply_sub_lt`: an element closer to a target than the
+  target is to `0`, as measured by any infinite place, is nonzero.
 * `NumberField.exists_ne_zero_forall_isReal_pos`: a nonzero element of `K` whose real
   embeddings have prescribed signs.
 * `NumberField.exists_ne_zero_neg_iff_mem`: the same statement with the prescription given
@@ -85,7 +85,7 @@ place, whose entry at `v` has absolute value one at `v` and whose entry at a rea
 there exactly the prescribed sign.
 
 This is the family that weak approximation at the infinite places is aimed at: an approximation
-to within `1` is nonzero by `NumberField.ne_zero_of_infinitePlace_sub_lt`, and
+to within `1` is nonzero by `NumberField.InfinitePlace.ne_zero_of_apply_sub_lt`, and
 `NumberField.InfinitePlace.IsReal.mul_pos_of_apply_sub_lt` turns it into a sign prescription. -/
 theorem exists_forall_apply_eq_one_and_embedding_of_isReal_eq
     (s : {w : InfinitePlace K // w.IsReal} → ℤˣ) :
@@ -113,8 +113,8 @@ theorem InfinitePlace.IsReal.mul_pos_of_apply_sub_lt {w : InfinitePlace K} (hw :
     cases abs_cases (embedding_of_isReal hw y) <;> nlinarith
 
 /-- An element closer to `y` than `y` is to `0`, as measured by an infinite place, is nonzero. -/
-theorem ne_zero_of_infinitePlace_sub_lt {w : InfinitePlace K} {x y : K} (h : w (x - y) < w y) :
-    x ≠ 0 := by
+theorem InfinitePlace.ne_zero_of_apply_sub_lt {w : InfinitePlace K} {x y : K}
+    (h : w (x - y) < w y) : x ≠ 0 := by
   rintro rfl
   simp [coe_apply] at h
 
@@ -133,7 +133,7 @@ theorem exists_ne_zero_forall_isReal_pos (s : {w : InfinitePlace K // w.IsReal} 
     fun w => if 0 < s w then 1 else -1
   obtain ⟨x, hx⟩ := exists_forall_infinitePlace_sub_lt b (fun v => v (b v)) fun v => by
     simp [habs]
-  refine ⟨x, ne_zero_of_infinitePlace_sub_lt (hx (Classical.arbitrary _)), fun w => ?_⟩
+  refine ⟨x, InfinitePlace.ne_zero_of_apply_sub_lt (hx (Classical.arbitrary _)), fun w => ?_⟩
   have h := w.2.mul_pos_of_apply_sub_lt (hx w.1)
   rw [hb w] at h
   rcases (hs w).lt_or_gt with h' | h' <;> simp [h', h'.not_gt] at h <;> nlinarith
