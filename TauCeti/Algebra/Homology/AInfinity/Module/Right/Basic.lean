@@ -55,27 +55,27 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
 namespace AInfinityRightModule
 
 /-- The total suspended grading on the cofree bar comodule `sM ⊗ Tᶜ(sA)`. -/
-noncomputable def barGrading (AA : AInfinityAlgebra R A) (G : InternalGrading R M) :
-    InternalGrading R (M ⊗[R] TensorWords R A) :=
+noncomputable def barGrading (AA : AInfinityAlgebra R A) (G : InternalGrading R M ℤ) :
+    InternalGrading R (M ⊗[R] TensorWords R A) ℤ :=
   (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))
 
 /-- The degree-`p` part of the bar-comodule grading is the total-degree part of the suspended
 module grading and the suspended tensor-word grading. -/
 @[simp]
-theorem barGrading_piece (AA : AInfinityAlgebra R A) (G : InternalGrading R M) (p : ℤ) :
+theorem barGrading_piece (AA : AInfinityAlgebra R A) (G : InternalGrading R M ℤ) (p : ℤ) :
     (barGrading AA G).piece p =
       ((G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))).piece p :=
   (rfl)
 
 /-- The bar-comodule grading is the tensor product of the suspended module grading and the
 suspended tensor-word grading. -/
-theorem barGrading_def (AA : AInfinityAlgebra R A) (G : InternalGrading R M) :
+theorem barGrading_def (AA : AInfinityAlgebra R A) (G : InternalGrading R M ℤ) :
     barGrading AA G = (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) :=
   (rfl)
 
 /-- A homogeneous map `f` gives a map `f ⊗ 1` of the bar comodules of the same degree. -/
 theorem isHomogeneous_rTensor {AA : AInfinityAlgebra R A} {N : Type*} [AddCommGroup N]
-    [Module R N] {G : InternalGrading R M} {G' : InternalGrading R N} {f : M →ₗ[R] N} {r : ℤ}
+    [Module R N] {G : InternalGrading R M ℤ} {G' : InternalGrading R N ℤ} {f : M →ₗ[R] N} {r : ℤ}
     (hf : LinearMap.IsHomogeneous f G.piece G'.piece r) :
     LinearMap.IsHomogeneous (f.rTensor (TensorWords R A)) (barGrading AA G).piece
       (barGrading AA G').piece r := by
@@ -96,7 +96,7 @@ carrier as `sM ⊗ Tᶜ(sA)`. -/
 structure AInfinityRightModule (AA : AInfinityAlgebra R A) (M : Type uM)
     [AddCommGroup M] [Module R M] where
   /-- The internal cohomological grading of the module carrier. -/
-  grading : InternalGrading R M
+  grading : InternalGrading R M ℤ
   /-- The suspended module bar differential on the cofree right bar comodule. -/
   barDifferential :
     (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A
@@ -168,7 +168,7 @@ theorem taylor_comp_barDifferential (MM : AInfinityRightModule AA M) :
 
 /-- A degree-one coderivation over the algebra bar differential squares to zero if and only if
 its Taylor component after one further application vanishes. -/
-theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
+theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M ℤ)
     (D : (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
@@ -182,7 +182,7 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
 
 /-- Construct a right `A∞` module from a homogeneous coderivation over the algebra bar
 differential.  By cofreeness, it suffices to check the square-zero law on the Taylor component. -/
-noncomputable def ofBarDifferential (G : InternalGrading R M)
+noncomputable def ofBarDifferential (G : InternalGrading R M ℤ)
     (D : (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
@@ -197,7 +197,7 @@ noncomputable def ofBarDifferential (G : InternalGrading R M)
   bar_square_zero := (barDifferential_sq_iff_taylor_comp_eq_zero G D hD hcod).2 hsq
 
 @[simp]
-theorem ofBarDifferential_grading (G : InternalGrading R M)
+theorem ofBarDifferential_grading (G : InternalGrading R M ℤ)
     (D : (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
@@ -208,7 +208,7 @@ theorem ofBarDifferential_grading (G : InternalGrading R M)
   (rfl)
 
 @[simp]
-theorem ofBarDifferential_barDifferential (G : InternalGrading R M)
+theorem ofBarDifferential_barDifferential (G : InternalGrading R M ℤ)
     (D : (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
@@ -219,7 +219,7 @@ theorem ofBarDifferential_barDifferential (G : InternalGrading R M)
   (rfl)
 
 @[simp]
-theorem ofBarDifferential_taylor (G : InternalGrading R M)
+theorem ofBarDifferential_taylor (G : InternalGrading R M ℤ)
     (D : (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1

@@ -111,5 +111,5 @@ theorem ContMDiff.isSmoothEmbedding_fst_prod
   -- A slice immersion into a finite-dimensional target makes the source model finite-dimensional.
   have : FiniteDimensional ℝ E := FiniteDimensional.of_injective
     (mfderiv I J (fun x => G (q.1, x)) q.2).toLinearMap hq.mfderiv_injective
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact hG.isImmersionAt_fst_prod hn hq

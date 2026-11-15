@@ -45,7 +45,8 @@ On the unit disc `D₁` this gives `TauCeti.memWkpLoc_ball_one_iff`: membership 
 
 ## Main declarations
 
-* `TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient`: `MemWkpLoc` through iterated gradients.
+* `TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient`: `MemWkpLoc` through iterated gradients;
+  `TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient_interior` is the form on an arbitrary set.
 * `TauCeti.MemWkpLoc.exists_wkp_iteratedGradient_ae_eq`, `TauCeti.MemWkpLoc.exists_wkp`: a member
   is represented by an element of `Wkp` on every relatively compact open subset.
 * `TauCeti.memWkpLoc_of_forall_wkp`, `TauCeti.memWkpLoc_iff_forall_wkp`: the comparison.
@@ -77,13 +78,14 @@ section Local
 variable {p : ℝ≥0∞} {Ω : Opens ℂ} {k : ℕ}
 
 /-- `MemWkpLoc` for an iterated-gradient-valued field, through a chain of iterated gradients
-indexed by absolute level: a field `g` at level `j` is in `MemWkpLoc p Ω n` exactly when it is the
-level-`j` member of a chain whose fields from level `j` through `j + n` are locally `Lᵖ`, each the
-weak derivative of the previous one. -/
-private theorem memWkpLoc_iff_exists_chain (n : ℕ) : ∀ (j : ℕ) (g : ℂ → IteratedGradient ℂ j),
-    MemWkpLoc p Ω n g ↔ ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i, G j = g ∧
-      (∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume Ω (G i) (G (i + 1))) ∧
-      ∀ i, j ≤ i → i ≤ j + n → MemLpLoc p Ω (G i) := by
+indexed by absolute level: a field `g` at level `j` is in `MemWkpLoc p U n` exactly when it is the
+level-`j` member of a chain whose fields from level `j` through `j + n` are locally `Lᵖ` on `U`,
+each the weak derivative on `interior U` of the previous one. -/
+private theorem memWkpLoc_iff_exists_chain {U : Set ℂ} (n : ℕ) :
+    ∀ (j : ℕ) (g : ℂ → IteratedGradient ℂ j),
+    MemWkpLoc p U n g ↔ ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i, G j = g ∧
+      (∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1))) ∧
+      ∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i) := by
   induction n with
   | zero =>
     intro j g
@@ -95,7 +97,7 @@ private theorem memWkpLoc_iff_exists_chain (n : ℕ) : ∀ (j : ℕ) (g : ℂ �
       exact memWkpLoc_zero_iff.2 (hGp j le_rfl (by omega))
   | succ n ih =>
     intro j g
-    rw [memWkpLoc_succ_iff_of_isOpen]
+    rw [memWkpLoc_succ_iff]
     constructor
     · rintro ⟨hg, D, hD, hDn⟩
       obtain ⟨G, hGD, hG, hGp⟩ := (ih (j + 1) D).1 hDn
@@ -116,6 +118,29 @@ private theorem memWkpLoc_iff_exists_chain (n : ℕ) : ∀ (j : ℕ) (g : ℂ �
         (ih (j + 1) (G (j + 1))).2 ⟨G, rfl, fun i hji hi => hG i (by omega) (by omega),
           fun i hji hi => hGp i (by omega) (by omega)⟩⟩
 
+/-- **`MemWkpLoc` through iterated gradients, on an arbitrary set.** A real function `u` lies in
+`MemWkpLoc p U (n + 1)` exactly when it is locally `Lᵖ` on `U` and has iterated weak gradients
+`G 0, …, G n` on `interior U`, each locally `Lᵖ` on `U` itself: the weak derivative of `u` is
+`innerSL ℝ ∘ G 0`, and each `G (i + 1)` is the weak derivative of `G i`. For a half-disc
+`Ω ∩ {0 ≤ im}` the `Lᵖ` bounds reach the real axis while the derivatives live on `Ω ∩ {0 < im}`. -/
+theorem memWkpLoc_succ_iff_exists_iteratedGradient_interior (n : ℕ) {U : Set ℂ} {u : ℂ → ℝ} :
+    MemWkpLoc p U (n + 1) u ↔ MemLpLoc p U u ∧
+      ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i,
+        HasWeakFDerivOn volume (Opens.interior U) u (fun z => innerSL ℝ (G 0 z)) ∧
+        (∀ i < n, HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1))) ∧
+        ∀ i ≤ n, MemLpLoc p U (G i) := by
+  rw [memWkpLoc_succ_iff]
+  refine and_congr_right fun _ => ⟨fun ⟨D, hD, hDn⟩ => ?_, fun ⟨G, h0, hG, hGp⟩ => ?_⟩
+  · obtain ⟨G, hG0, hG, hGp⟩ := (memWkpLoc_iff_exists_chain n 0
+      (fun z => InnerProductSpace.toDualSymmL (D z))).1 (hDn.clm_comp InnerProductSpace.toDualSymmL)
+    refine ⟨G, ?_, fun i hi => hG i (Nat.zero_le i) (by omega),
+      fun i hi => hGp i (Nat.zero_le i) (by omega)⟩
+    simpa only [hG0, InnerProductSpace.toDualSymmL_apply,
+      InnerProductSpace.innerSL_toDual_symm] using hD
+  · have hG0 := (memWkpLoc_iff_exists_chain n 0 (G 0)).2
+      ⟨G, rfl, fun i _ hi => hG i (by omega), fun i _ hi => hGp i (by omega)⟩
+    exact ⟨_, h0, hG0.clm_comp (innerSL ℝ (E := ℂ))⟩
+
 /-- **`MemWkpLoc` through iterated gradients.** A real function `u` lies in
 `MemWkpLoc p Ω (n + 1)` exactly when it is locally `Lᵖ` on `Ω` and has locally `Lᵖ` iterated weak
 gradients `G 0, …, G n` on `Ω`: the weak derivative of `u` is `innerSL ℝ ∘ G 0`, and each
@@ -127,17 +152,8 @@ theorem memWkpLoc_succ_iff_exists_iteratedGradient (n : ℕ) {u : ℂ → ℝ} :
         HasWeakFDerivOn volume Ω u (fun z => innerSL ℝ (G 0 z)) ∧
         (∀ i < n, HasWeakFDerivOn volume Ω (G i) (G (i + 1))) ∧
         ∀ i ≤ n, MemLpLoc p Ω (G i) := by
-  rw [memWkpLoc_succ_iff_of_isOpen]
-  refine and_congr_right fun _ => ⟨fun ⟨D, hD, hDn⟩ => ?_, fun ⟨G, h0, hG, hGp⟩ => ?_⟩
-  · obtain ⟨G, hG0, hG, hGp⟩ := (memWkpLoc_iff_exists_chain n 0
-      (fun z => InnerProductSpace.toDualSymmL (D z))).1 (hDn.clm_comp InnerProductSpace.toDualSymmL)
-    refine ⟨G, ?_, fun i hi => hG i (Nat.zero_le i) (by omega),
-      fun i hi => hGp i (Nat.zero_le i) (by omega)⟩
-    simpa only [hG0, InnerProductSpace.toDualSymmL_apply,
-      InnerProductSpace.innerSL_toDual_symm] using hD
-  · have hG0 := (memWkpLoc_iff_exists_chain n 0 (G 0)).2
-      ⟨G, rfl, fun i _ hi => hG i (by omega), fun i _ hi => hGp i (by omega)⟩
-    exact ⟨_, h0, hG0.clm_comp (innerSL ℝ (E := ℂ))⟩
+  simpa only [Opens.interior_coe] using
+    memWkpLoc_succ_iff_exists_iteratedGradient_interior n (p := p) (U := (Ω : Set ℂ))
 
 /-- The gluing step for iterated-gradient-valued fields: a field `g` at level `j` that, on every
 relatively compact open `W ⊆ Ω`, agrees almost everywhere with the level-`j` member of a chain of
@@ -302,7 +318,7 @@ theorem memWkpLoc_ball_one_iff {u : ℂ → ℝ} :
     MemWkpLoc p (ball 0 1) k u ↔ ∀ r < 1,
       ∃ v : Wkp volume ⟨ball (0 : ℂ) r, isOpen_ball⟩ p k,
         Wkp.value k v =ᵐ[volume.restrict (ball 0 r)] u := by
-  refine ⟨fun hu r hr => ?_, fun h => memWkpLoc_of_forall_wkp (Ω := disc 1) fun W hWc hWΩ => ?_⟩
+  refine ⟨fun hu r hr => ?_, fun h => memWkpLoc_of_forall_wkp (Ω := disc 1) fun W _ hWΩ => ?_⟩
   · exact hu.exists_wkp (Ω := disc 1) (W := disc r) ((isCompact_closedBall 0 r).of_isClosed_subset
       isClosed_closure closure_ball_subset_closedBall)
       (closure_ball_subset_closedBall.trans (closedBall_subset_ball hr))

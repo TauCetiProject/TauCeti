@@ -199,10 +199,10 @@ converge to the norm of its derivative. -/
 theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {γ : ℝ → E} {v : E} {t : ℝ} (h : HasDerivAt γ v t) :
     Tendsto (fun s ↦ edist (γ s) (γ t) / edist s t) (𝓝[≠] t) (𝓝 ‖v‖ₑ) := by
-  refine ((continuous_enorm.tendsto v).comp (HasDerivAtFilter.tendsto_slope h)).congr' <|
+  refine ((continuous_eNorm.tendsto v).comp (HasDerivAtFilter.tendsto_slope h)).congr' <|
     eventually_nhdsWithin_of_forall fun s hs ↦ ?_
-  simp only [Function.comp_apply, slope_def_module, enorm_smul, enorm_inv (sub_ne_zero.2 hs),
-    edist_eq_enorm_sub, ENNReal.div_eq_inv_mul]
+  simp only [Function.comp_apply, slope_def_module, eNorm_smul, eNorm_inv (sub_ne_zero.2 hs),
+    eDist_eq_eNorm_sub, ENNReal.div_eq_inv_mul]
 
 /-- On a seminormed space the metric derivative of a curve is the norm of its derivative. -/
 theorem _root_.HasDerivAt.metricDerivative_eq {E : Type*} [SeminormedAddCommGroup E]
@@ -225,9 +225,9 @@ theorem _root_.BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOn
   have hV {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) (hsu : s ≤ u) :
       edist (γ s) (γ u) ≤ edist (V s) (V u) := by
     simp only [V]
-    rw [edist_comm (variationOnFromTo _ _ _ s), edist_eq_enorm_sub,
+    rw [edist_comm (variationOnFromTo _ _ _ s), eDist_eq_eNorm_sub,
       ← variationOnFromTo.add hγ.locallyBoundedVariationOn left_mem_uIcc hs hu, add_sub_cancel_left,
-      variationOnFromTo.eq_of_le _ _ hsu, Real.enorm_eq_ofReal ENNReal.toReal_nonneg,
+      variationOnFromTo.eq_of_le _ _ hsu, Real.eNorm_eq_ofReal ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal ((eVariationOn.mono _ inter_subset_left).trans_lt hγ.lt_top).ne]
     exact eVariationOn.edist_le _ ⟨hs, le_rfl, hsu⟩ ⟨hu, hsu, le_rfl⟩
   have hVmono : MonotoneOn V (uIcc a b) :=
@@ -259,7 +259,7 @@ private noncomputable def profileSpeed (γ : ℝ → X) (c : Set X) (r : ℝ) : 
 
 private lemma measurable_profileSpeed (c : Set X) [Countable c] :
     Measurable (profileSpeed γ c) :=
-  Measurable.iSup fun _ ↦ (measurable_deriv _).enorm
+  Measurable.iSup fun _ ↦ (measurable_deriv _).eNorm
 
 /-- If `c` is dense in the image of `[a, b]`, the distances along `γ` are bounded by the integrals
 of `profileSpeed γ c`. Each distance profile is the integral of its derivative, and the profile of
@@ -277,10 +277,10 @@ private lemma edist_le_lintegral_profileSpeed (hγ : AbsolutelyContinuousOnInter
         (uIcc_subset_uIcc hs hu)
     rw [← hφ.integral_deriv_eq_sub, ← ofReal_norm,
       intervalIntegral.norm_integral_eq_norm_integral_uIoc, ofReal_norm]
-    exact (enorm_integral_le_lintegral_enorm _).trans <| lintegral_mono fun r ↦
+    exact (eNorm_integral_le_lintegral_eNorm _).trans <| lintegral_mono fun r ↦
       le_iSup (fun y : c ↦ ‖deriv (fun r ↦ dist (γ r) y) r‖ₑ) ⟨x, hxc⟩
   have hux : edist x (γ u) ≤ edist (γ s) x + ‖dist (γ u) x - dist (γ s) x‖ₑ := by
-    rw [edist_comm, edist_dist, edist_dist, Real.enorm_eq_ofReal_abs]
+    rw [edist_comm, edist_dist, edist_dist, Real.eNorm_eq_ofReal_abs]
     refine (ENNReal.ofReal_le_ofReal ?_).trans ENNReal.ofReal_add_le
     linarith [le_abs_self (dist (γ u) x - dist (γ s) x)]
   calc edist (γ s) (γ u) ≤ edist (γ s) x + edist x (γ u) := edist_triangle _ _ _
@@ -452,7 +452,7 @@ theorem metricDerivative_eq_iInf_iSup_rat (hγ : Continuous γ) (t : ℝ) :
     metricDerivative γ t = ⨅ n : ℕ, ⨆ r ∈ {r : ℚ | r ≠ 0 ∧ |(r : ℝ)| < 1 / (n + 1)},
       edist (γ (t + r)) (γ t) / ‖(r : ℝ)‖ₑ := by
   have hden (r : ℝ) : edist (t + r) t = ‖r‖ₑ := by
-    rw [edist_dist, Real.dist_eq, add_sub_cancel_left, Real.enorm_eq_ofReal_abs]
+    rw [edist_dist, Real.dist_eq, add_sub_cancel_left, Real.eNorm_eq_ofReal_abs]
   rw [metricDerivative_def,
     (nhdsWithin_hasBasis Metric.nhds_basis_ball_inv_nat_succ {t}ᶜ).limsup_eq_iInf_iSup]
   simp only [iInf_true]

@@ -1,0 +1,50 @@
+name: Cancel obsolete PR CI
+on:
+  pull_request_target:
+    types: [closed, synchronize, reopened, labeled, unlabeled]
+  status:
+  workflow_dispatch:
+    inputs:
+      pr: {description: "PR number to reconcile", type: string, required: true}
+permissions:
+  contents: read
+  actions: write
+  pull-requests: read
+  statuses: read
+jobs:
+  cleanup:
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
+      (github.event_name == 'pull_request_target' &&
+       (github.event.action != 'labeled' && github.event.action != 'unlabeled' ||
+        contains(fromJSON('["self-tested","full-lint","lint-repair"]'), github.event.label.name))) ||
+      (github.event_name == 'status' && startsWith(github.event.context, 'self-tested/') && github.event.state == 'success')
+    # Coalesce bursts; the host timer reconciles any collapsed event's PR.
+    concurrency:
+      group: pr-ci-cleanup
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: tauceti.toml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
+          project-directory: .
+      - name: Cancel only builds whose live PR state makes them obsolete
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+          STATUS_CONTEXT: ${{ github.event.context }}
+        run: |
+          set -euo pipefail
+          number="${PR_NUMBER:-${STATUS_CONTEXT#self-tested/}}"
+          [[ "$number" =~ ^[1-9][0-9]*$ ]] || exit 1
+          python3 scripts/ci_recovery.py --repo "$GITHUB_REPOSITORY" --cleanup-only --pr "$number" --apply

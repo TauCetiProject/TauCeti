@@ -105,9 +105,9 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
         ite_eq_right, add_zero]
     by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
     · -- The collapsed block contains the unit, so `F` kills it.
-      simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x hfit.2
+      simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x
         ⟨j, hblock.1, hblock.2, hj⟩)), splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
-    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.1 hfit.2
+    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.2
       (F (subword R x p d)) hblock
     by_cases hlen : n + 1 + 1 - d = 2
     swap
@@ -166,7 +166,7 @@ private theorem sign_smul_apply_splice_taylor_subword (h : 𝒜.StrictUnit e)
   by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
   swap
   · -- The unit survives in the spliced word, which `F` kills.
-    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.1 hfit.2
+    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.2
       (𝒜.taylor (subword R x p d)) hblock
     simp (disch := omega) only [hy,
       LinearMap.mem_ker.mp
@@ -285,7 +285,7 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
     rw [hsign, zero_smul, smul_zero, sub_zero]
   · -- A unit in the last position: the collapse `m₂(F(⋯), e)` cancels that of `[a, e]`.
     have hW : splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) = subword R x 0 n :=
-      splice_two_pred_eq_subword R hn (by omega) x
+      splice_two_pred_eq_subword R (by omega) x
     -- The value of `F` on the first `n` letters has degree `S n + q` after suspension.
     have hdeg : F (subword R x 0 n) ∈ 𝒜.grading.piece (S n + q + 1) :=
       apply_subword_mem_piece hF x 𝒟 hx

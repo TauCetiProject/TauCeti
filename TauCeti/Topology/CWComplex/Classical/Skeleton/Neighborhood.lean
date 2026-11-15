@@ -165,6 +165,7 @@ private lemma norm_radialPushMap_le_one (n : ℕ) (t : I) (y : Fin n → ℝ) (h
     ‖radialPushMap n (t, y)‖ ≤ 1 :=
   norm_radialPush_le_one t hy
 
+omit [T2Space X] in
 /-- Through the characteristic map of an `n`-cell, the radial push of the cells is the radial
 push of the closed unit ball. -/
 private lemma cellDeformation_radialPushMap_map {n : ℕ} (t : I) (j : cell C n) {y : Fin n → ℝ}

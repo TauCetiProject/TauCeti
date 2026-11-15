@@ -121,9 +121,10 @@ lemma shortExact_mayerVietorisCochainShortComplex (sq : IsPushout t l r b) [Mono
     (((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
       (linearYonedaFunctor k M).mapBiprod _ _).symm)
     (Iso.refl ((linearYonedaFunctor k M).obj (op (X₁.chainComplex R)))) ?_ ?_
-  · rw [Iso.symm_hom, he]
+  · rw [Iso.symm_hom]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
-    simp [biprod.desc_eq, ← Functor.map_comp, ← op_comp, -linearYonedaFunctor_obj]
+    rw [Category.id_comp]
+    exact (Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv _ _ _).symm
   · rw [Iso.symm_hom, he]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     apply biprod.hom_ext' <;>
@@ -258,12 +259,17 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
   exacts [mayerVietorisCochainFromBiprod_eq R k M t l n, rfl]
 
 include sq in
+omit [Mono t] in
 /-- The map `H⁰(X₄) ⟶ H⁰(X₂) ⊞ H⁰(X₃)` at the start of the cochain Mayer–Vietoris sequence is a
 monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero : Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
-  have := (shortExact_mayerVietorisCochainShortComplex R k M sq).mono_f
-  have : Mono (HomologicalComplex.homologyMap
-      (mayerVietorisCochainShortComplex R k M sq.toCommSq).f 0) :=
+  have hepi : Epi (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) :=
+    (sq.map ((chainComplexFunctor C).obj R)).epi_shortComplex_g
+  have : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
+      (cochainComplexMap b)) :=
+    mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f k M _ _ fun i ↦ inferInstance
+  have : Mono (HomologicalComplex.homologyMap (biprod.lift
+      (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b)) 0) :=
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega

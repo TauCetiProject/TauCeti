@@ -149,7 +149,6 @@ characters modulo `p ^ k` for `k ≠ 0`, and one modulo `p ^ 0 = 1`. -/
 theorem natCard_isQuadratic_prime_pow [Nontrivial R] (hR : ringChar R ≠ 2) (hp2 : p ≠ 2)
     (k : ℕ) :
     Nat.card {χ : DirichletCharacter R (p ^ k) // χ.IsQuadratic} = if k = 0 then 1 else 2 := by
-  have hp : p.Prime := Fact.out
   split_ifs with hk
   · subst hk
     exact Nat.card_eq_one_iff_exists.mpr

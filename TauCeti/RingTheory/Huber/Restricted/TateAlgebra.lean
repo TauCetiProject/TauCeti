@@ -59,8 +59,7 @@ public section
 
 namespace TauCeti.Huber
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-  [CompleteSpace K] {n : ℕ}
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {n : ℕ}
 
 /-- **The completed Tate algebra is a unique factorisation domain** over a complete nonarchimedean
 field. By `UniqueFactorizationMonoid.instIsIntegrallyClosed` it is therefore integrally
@@ -103,7 +102,7 @@ open TauCeti.Huber UniformSpace
 
 section Maximal
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
   [CompleteSpace K] {n : ℕ} (m : Ideal (restrictedMvPowerSeriesCompletion n K)) [m.IsMaximal]
 
 /-- **Every maximal ideal of the completed Tate algebra in `n` variables has height `n`** over a
@@ -134,7 +133,7 @@ end Maximal
 
 section NontriviallyNormedField
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
   [CompleteSpace K] {n : ℕ} (m : Ideal (restrictedMvPowerSeriesCompletion n K)) [m.IsMaximal]
 
 /-- The polynomials in a maximal ideal `m` of the completed Tate algebra `K⟨X₁, …, Xₙ⟩` form a

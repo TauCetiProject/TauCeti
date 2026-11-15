@@ -83,7 +83,7 @@ theorem tendsto_quantile_inverseGammaMeasure_nhdsGT_zero (ha : 0 < a) (hr : 0 < 
   have hlim := ((tendsto_inverseRegularizedGamma_nhdsLT_one ha).comp hcomp).const_div_atTop r
   apply EReal.tendsto_coe.mpr
   apply hlim.congr'
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u _
   exact (quantile_inverseGammaMeasure hr).symm
 
 /-- The inverse-gamma quantile tends to infinity as the level tends to `1` from below. -/
@@ -100,7 +100,7 @@ theorem tendsto_quantile_inverseGammaMeasure_nhdsLT_one (ha : 0 < a) (hr : 0 < r
     simpa only [div_eq_mul_inv, Function.comp_apply] using hinv.const_mul_atTop hr
   apply EReal.tendsto_coe_nhds_top_iff.mpr
   apply hlim.congr'
-  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u _
   exact (quantile_inverseGammaMeasure hr).symm
 
 end TauCeti.Probability

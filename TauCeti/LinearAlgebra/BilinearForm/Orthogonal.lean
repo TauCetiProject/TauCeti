@@ -39,6 +39,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.eq_bot_of_le_orthogonal` and
   `LinearMap.BilinForm.sSupIndep_of_pairwise_le_orthogonal`: for an anisotropic form, a
   self-orthogonal submodule is zero and pairwise orthogonal submodules are independent.
+* `LinearMap.BilinForm.apply_eq_zero_of_mem_span`: the spans of two mutually orthogonal sets of
+  vectors are orthogonal.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
@@ -55,7 +57,7 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   anisotropic vector or orthogonal pair to an orthogonal basis.
 * `LinearMap.BilinForm.exists_apply_self_ne_zero_isOrtho_pair`: find an anisotropic vector
   orthogonal to a given vector and to one member of an anisotropic orthogonal triple.
-* `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
+* `LinearMap.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
 * `LinearMap.BilinForm.isCompl_orthogonal_of_flip_restrict_bijective`: a perfect flipped
   restriction splits a bilinear module over a commutative ring.
@@ -137,6 +139,13 @@ theorem sSupIndep_of_pairwise_le_orthogonal {B : LinearMap.BilinForm K V}
   refine B.iSupIndep_of_restrict_separatingRight (fun i j hij x hx y hy ↦ ?_) fun i y hy ↦ ?_
   · exact hS j.2 i.2 (fun h ↦ hij (Subtype.ext h.symm)) hy x hx
   · exact Subtype.ext <| hani y (by simpa using hy y)
+
+/-- Vectors in the spans of two sets of mutually orthogonal vectors are orthogonal. -/
+theorem apply_eq_zero_of_mem_span {B : LinearMap.BilinForm K V} {s t : Set V}
+    (h : ∀ x ∈ s, ∀ y ∈ t, B x y = 0) {x y : V} (hx : x ∈ Submodule.span K s)
+    (hy : y ∈ Submodule.span K t) : B x y = 0 :=
+  (Submodule.span_le.mpr fun y hy ↦ Submodule.mem_orthogonalBilin_span.mpr fun x hx ↦
+    h x hx y hy : Submodule.span K t ≤ (Submodule.span K s).orthogonalBilin B) hy x hx
 
 /-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
 sets are orthogonal. -/
@@ -272,18 +281,14 @@ theorem exists_forall_restrict_eq_of_isInternal {ι : Type*} [DecidableEq ι]
 
 end LinearMap.BilinForm
 
-namespace TauCeti
-
-open LinearMap (BilinForm)
-
-namespace BilinForm
+namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
 /-- Adjoining a vector whose self-pairing is a right non-zero-divisor from the orthogonal complement
 of a left-separating subspace preserves nondegeneracy. -/
 theorem restrict_nondegenerate_sup_span_singleton
-    (B : BilinForm K V) (hB : B.IsRefl) (W : Submodule K V)
+    (B : LinearMap.BilinForm K V) (hB : B.IsRefl) (W : Submodule K V)
     (hW : (B.restrict W).SeparatingLeft) (x : V) (hxx : B x x ∈ nonZeroDivisorsRight K)
     (hx : x ∈ B.orthogonal W) :
     (B.restrict (W ⊔ Submodule.span K {x})).Nondegenerate := by
@@ -314,9 +319,7 @@ theorem restrict_nondegenerate_sup_span_singleton
   refine ⟨hleft, fun y hy ↦ hleft y fun z ↦ ?_⟩
   exact (hB.domRestrict S).eq_zero (hy z)
 
-end BilinForm
-
-end TauCeti
+end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm
 
@@ -445,7 +448,7 @@ theorem IsRefl.isInternal_orthogonal_finCons {B : LinearMap.BilinForm R M} (hB :
   let Q := fun i ↦ (N i).map T.subtype
   let P : Fin (k + 1) → Submodule R M := Fin.cons S Q
   have hQle : ∀ i, Q i ≤ T := by
-    rintro i _ ⟨x, hx, rfl⟩
+    rintro i _ ⟨x, _, rfl⟩
     exact x.2
   have hT : iSup Q = T := by
     rw [← Submodule.map_iSup, hN.submodule_iSup_eq_top,
@@ -474,9 +477,9 @@ theorem IsRefl.isInternal_orthogonal_finCons {B : LinearMap.BilinForm R M} (hB :
     refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
     all_goals intro hij
     · exact (hij rfl).elim
-    · rintro x hx _ ⟨y, hy, rfl⟩
+    · rintro x hx _ ⟨y, _, rfl⟩
       exact y.2 x hx
-    · rintro _ ⟨x, hx, rfl⟩ y hy
+    · rintro _ ⟨x, _, rfl⟩ y hy
       exact hB.eq_zero (x.2 y hy)
     · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
       exact horth i j (fun h ↦ hij (congrArg Fin.succ h)) x hx y hy

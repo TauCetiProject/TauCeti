@@ -316,7 +316,7 @@ theorem exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq
     simp at hzo
   refine ⟨z, hzg, hzo, fun σ hσ ↦ ?_⟩
   -- A nonidentity automorphism translates `y` by a nonzero constant `c ∈ V`.
-  set c : V := (V.artinSchreierTranslationHom hy σ).toAdd with hc
+  set c : V := (V.artinSchreierTranslationHom hy σ).toAdd
   have hc0 : c ≠ 0 := by
     intro h
     apply hσ

@@ -23,6 +23,7 @@ the point `(1, 0)` and is injective elsewhere, so it is a quotient map of `I¹` 
 * `TauCeti.circleLoop_eq_east_iff`, `TauCeti.circleLoop_surjective` and
   `TauCeti.eq_or_of_circleLoop_eq`: it collapses exactly the boundary to `(1, 0)`, is surjective,
   and is injective elsewhere.
+* `TauCeti.circleGenLoop`: the standard loop as a generalized loop at `(1, 0)`.
 * `TauCeti.sphereHomeomorphCircle_circleLoop`: identified with the complex unit circle, it is
   `t ↦ exp(2πit)`.
 * `TauCeti.diskBoundaryTwoLoop`: the same counterclockwise parametrization as a loop of the
@@ -35,7 +36,7 @@ public section
 noncomputable section
 
 open Metric Real
-open scoped unitInterval
+open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
@@ -90,6 +91,14 @@ theorem circleLoop_eq_east_iff (t : Fin 1 → I) :
     · refine Subtype.ext ?_
       ext i
       fin_cases i <;> simp [circleLoop_apply_zero, circleLoop_apply_one, Sphere1.coe_east, h]
+
+/-- The standard loop `t ↦ (cos 2πt, sin 2πt)` as a generalized loop `I¹ → S¹` at `(1, 0)`. -/
+def circleGenLoop : Ω^ (Fin 1) Sphere1 Sphere1.east :=
+  ⟨circleLoop, fun t ht => (circleLoop_eq_east_iff t).2 ht⟩
+
+@[simp]
+theorem circleGenLoop_apply (t : Fin 1 → I) : circleGenLoop t = circleLoop t :=
+  (rfl)
 
 /-- Two points of the interval with the same image under the standard loop are equal, or both
 end points. -/

@@ -416,7 +416,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
     simp
   case pos =>
     obtain ⟨n, hn⟩ := hint
-    have hsplit := sum_Icc_eq_add_sum_range (stringTerm M mu (alpha : Dual K H)) N
+    have hsplit := sum_Icc_eq_add_sum_range (stringTerm M mu (alpha : Dual K H)) N N
     rw [sum_Icc_stringTerm_eq_zero_of_eq_bot hn hN, sum_range_stringTerm_natCast halphaD mu hbotPos,
       sum_range_stringTerm_neg_natCast halphaD mu hbotNeg, zero_add, stringTerm_zero] at hsplit
     linear_combination hsplit

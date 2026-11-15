@@ -177,12 +177,12 @@ theorem rep_rootGenerator_exteriorBasis_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1)
         ((polarizationBasis 1).ExteriorAlgebra S) =
       ∑ T, (rankTwoRootMatrix k T S : ℚ) • (polarizationBasis 1).ExteriorAlgebra T := by
   rcases k with k | k <;> fin_cases k
-  · exact (rep_rootGenerator_inl_castSucc 1 0 _).trans
+  · exact (rep_rootGenerator_inl_castSucc_apply 1 0 _).trans
       (ι_mul_contractLeft_one_exteriorBasis _ S)
-  · exact (rep_rootGenerator_inl_last 1 _).trans (ι_mul_involute_exteriorBasis _ S)
-  · exact (rep_rootGenerator_inr_castSucc 1 0 _).trans
+  · exact (rep_rootGenerator_inl_last_apply 1 _).trans (ι_mul_involute_exteriorBasis _ S)
+  · exact (rep_rootGenerator_inr_castSucc_apply 1 0 _).trans
       (ι_mul_contractLeft_zero_exteriorBasis _ S)
-  · exact (rep_rootGenerator_inr_last 1 _).trans (involute_contractLeft_one_exteriorBasis _ S)
+  · exact (rep_rootGenerator_inr_last_apply 1 _).trans (involute_contractLeft_one_exteriorBasis _ S)
 
 
 /-! ## The generators in the lattice basis -/

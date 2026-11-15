@@ -14,6 +14,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
@@ -26,7 +27,8 @@ The second derivative `fderiv 𝕜 (fderiv 𝕜 g) x` of a map between normed sp
 the derivative at `x` of the map `fderiv 𝕜 g`. Mathlib supplies the differentiability of
 `fderiv 𝕜 g` at a twice continuously differentiable point through `ContDiffAt.fderiv_right`; this
 file packages that into the single `HasFDerivAt` statement that second-order arguments use, so
-that the identification is made once rather than at each use.
+that the identification is made once rather than at each use, and records the continuity of the
+second derivative at such a point.
 
 An invertible second derivative therefore lets the differential avoid any prescribed value `c`
 on some punctured neighbourhood of the point, the neighbourhood being allowed to depend on `c`.
@@ -93,7 +95,13 @@ Morse-theoretic definitions that use them.
   scalar function `P`, times `v`.
 * `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
   derivative.
-* `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
+* `TauCeti.fderiv_fderiv_smul_apply`: the second-order product rule for a scalar multiple, with
+  `TauCeti.fderiv_fderiv_fun_smul_apply` its form for `fun y ↦ f y • g y`, and
+  `TauCeti.fderiv_fderiv_mul_apply` (and `TauCeti.fderiv_fderiv_fun_mul_apply`) its case of a
+  product of maps into a commutative algebra.
+* `TauCeti.sum_mul_fderiv_apply_eq_zero_of_sum_sq_eventuallyEq_const` and
+  `TauCeti.sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const`:
+  the first and second derivatives of a partition of unity by squares, `∑ₐ Jₐ²` constant.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
@@ -122,12 +130,25 @@ namespace TauCeti
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- Negating a map negates its second derivative, including at points where the totalized
+first or second derivative is zero because differentiability fails. -/
+theorem fderiv_fderiv_neg {f : E → F} {x : E} :
+    fderiv 𝕜 (fderiv 𝕜 (-f)) x = -fderiv 𝕜 (fderiv 𝕜 f) x := by
+  have hneg : fderiv 𝕜 (-f) = -fderiv 𝕜 f := funext fun _ ↦ fderiv_neg
+  rw [hneg, fderiv_neg]
+
 /-- At a twice continuously differentiable point, `fderiv 𝕜 g` is differentiable, with derivative
 the second derivative of `g`. -/
 theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) :
     HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) x) x :=
   ((h.fderiv_right (m := 1) (by exact_mod_cast hn)).differentiableAt one_ne_zero).hasFDerivAt
+
+/-- At a twice continuously differentiable point, the second derivative `fderiv 𝕜 (fderiv 𝕜 g)` is
+continuous. -/
+theorem _root_.ContDiffAt.continuousAt_fderiv_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}
+    (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) : ContinuousAt (fderiv 𝕜 (fderiv 𝕜 g)) x :=
+  (h.fderiv_right (m := 1) (by exact_mod_cast hn)).continuousAt_fderiv one_ne_zero
 
 /-- At a twice continuously differentiable point, the directional derivative `y ↦ Dg(y) v` is
 differentiable, with derivative `u ↦ D²g(x)(u, v)`. -/
@@ -404,23 +425,87 @@ theorem fderiv_fderiv_sub_clm {g : E → F} {x : E} (hg : ∀ᶠ y in 𝓝 x, Di
     hg.mono fun y hy => by rw [fderiv_fun_sub hy L.differentiableAt, L.fderiv]
   rw [h.fderiv_eq, fderiv_sub_const]
 
-/-- **The second-order product rule.** For scalar-valued maps `f` and `g` which are `C²` at `x`,
-`D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. -/
-theorem fderiv_fderiv_mul_apply {f g : E → 𝕜} {x : E} (hf : ContDiffAt 𝕜 2 f x)
-    (hg : ContDiffAt 𝕜 2 g x) (v w : E) :
+/-- **The second-order product rule for a scalar multiple.** For a map `f` into a normed algebra
+`𝕜'` and a map `g` into a `𝕜'`-module which are `C²` at `x`,
+`D²(f • g)(v, w) = f D²g(v, w) + D²f(v, w) g + Df(v) Dg(w) + Df(w) Dg(v)`. -/
+@[to_fun fderiv_fderiv_fun_smul_apply]
+theorem fderiv_fderiv_smul_apply {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Module 𝕜' F]
+    [IsBoundedSMul 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {f : E → 𝕜'} {g : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 (f • g)) x v w =
+      f x • fderiv 𝕜 (fderiv 𝕜 g) x v w + fderiv 𝕜 (fderiv 𝕜 f) x v w • g x +
+        fderiv 𝕜 f x v • fderiv 𝕜 g x w + fderiv 𝕜 f x w • fderiv 𝕜 g x v := by
+  have hev : (fun y ↦ fderiv 𝕜 (f • g) y w) =ᶠ[𝓝 x]
+      fun y ↦ f y • fderiv 𝕜 g y w + fderiv 𝕜 f y w • g y := by
+    filter_upwards [(hf.of_le (m := 1) (by norm_num)).eventually (by simp),
+      (hg.of_le (m := 1) (by norm_num)).eventually (by simp)] with y hfy hgy
+    simp [fderiv_smul (hfy.differentiableAt one_ne_zero) (hgy.differentiableAt one_ne_zero)]
+  have hfx := (hf.differentiableAt (by norm_num)).hasFDerivAt
+  have hgx := (hg.differentiableAt (by norm_num)).hasFDerivAt
+  rw [← fderiv_clm_apply_const_apply ((hf.smul hg).hasFDerivAt_fderiv le_rfl).differentiableAt w v,
+    (((hfx.fun_smul (hg.hasFDerivAt_fderiv_apply le_rfl w)).add
+      ((hf.hasFDerivAt_fderiv_apply le_rfl w).fun_smul hgx)).congr_of_eventuallyEq hev).fderiv]
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.flip_apply]
+  abel
+
+/-- **The second-order product rule.** For maps `f` and `g` into a normed commutative algebra
+which are `C²` at `x`,
+`D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. This is the case
+`𝕜' = F` of `TauCeti.fderiv_fderiv_smul_apply`. -/
+@[to_fun fderiv_fderiv_fun_mul_apply]
+theorem fderiv_fderiv_mul_apply {𝔸' : Type*} [NormedCommRing 𝔸'] [NormedAlgebra 𝕜 𝔸']
+    {f g : E → 𝔸'} {x : E} (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) (v w : E) :
     fderiv 𝕜 (fderiv 𝕜 (f * g)) x v w =
       f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
         fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
-  have hev : fderiv 𝕜 (f * g) =ᶠ[𝓝 x] f • fderiv 𝕜 g + g • fderiv 𝕜 f := by
-    filter_upwards [(hf.of_le (m := 1) (by norm_num)).eventually (by simp),
-      (hg.of_le (m := 1) (by norm_num)).eventually (by simp)] with y hfy hgy
-    exact fderiv_mul (hfy.differentiableAt one_ne_zero) (hgy.differentiableAt one_ne_zero)
-  have hfx := (hf.differentiableAt (by norm_num)).hasFDerivAt
-  have hgx := (hg.differentiableAt (by norm_num)).hasFDerivAt
-  rw [((((hfx.smul (hg.hasFDerivAt_fderiv le_rfl)).add
-    (hgx.smul (hf.hasFDerivAt_fderiv le_rfl)))).congr_of_eventuallyEq hev).fderiv]
-  simp
+  simp_rw [Pi.mul_def, ← smul_eq_mul, fderiv_fderiv_fun_smul_apply hf hg v w, smul_eq_mul]
   ring
+
+/-- **The derivative of a partition of unity by squares.** If `∑ₐ Jₐ²` is constant near `x` and
+every `Jₐ` is differentiable at `x`, differentiating this identity in a direction `v` gives
+`∑ₐ Jₐ ∂ᵥJₐ = 0` at `x`. -/
+theorem sum_mul_fderiv_apply_eq_zero_of_sum_sq_eventuallyEq_const [NeZero (2 : 𝕜)] {α : Type*}
+    {A : Finset α} {J : α → E → 𝕜} {x : E} {c : 𝕜} (hJ : ∀ a ∈ A, DifferentiableAt 𝕜 (J a) x)
+    (hJA : (fun y ↦ ∑ a ∈ A, J a y ^ 2) =ᶠ[𝓝 x] fun _ ↦ c) (v : E) :
+    ∑ a ∈ A, J a x * fderiv 𝕜 (J a) x v = 0 := by
+  have hd : HasFDerivAt (fun y ↦ ∑ a ∈ A, J a y ^ 2)
+      (∑ a ∈ A, (2 • J a x ^ (2 - 1)) • fderiv 𝕜 (J a) x) x :=
+    HasFDerivAt.fun_sum fun a ha ↦ HasFDerivAt.pow (hJ a ha).hasFDerivAt 2
+  have h := congrArg (fun L : E →L[𝕜] 𝕜 ↦ L v) (hd.fderiv.symm.trans hJA.fderiv_eq)
+  simp only [fderiv_const_apply, zero_apply, FunLike.coe_sum, Finset.sum_apply, smul_apply,
+    nsmul_eq_mul, Nat.cast_ofNat, Nat.reduceSub, pow_one, smul_eq_mul, mul_assoc,
+    ← Finset.mul_sum] at h
+  exact (mul_eq_zero.1 h).resolve_left two_ne_zero
+
+/-- **The second derivative of a partition of unity by squares.** If `∑ₐ Jₐ²` is constant near
+`x` and every `Jₐ` is `C²` at `x`, differentiating this identity in the directions `v` and `w`
+gives `∑ₐ (Jₐ D²Jₐ(v, w) + DJₐ(v) DJₐ(w)) = 0` at `x`. -/
+theorem sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const
+    [NeZero (2 : 𝕜)] {α : Type*} {A : Finset α} {J : α → E → 𝕜} {x : E} {c : 𝕜}
+    (hJ : ∀ a ∈ A, ContDiffAt 𝕜 2 (J a) x)
+    (hJA : (fun y ↦ ∑ a ∈ A, J a y ^ 2) =ᶠ[𝓝 x] fun _ ↦ c) (v w : E) :
+    ∑ a ∈ A, (J a x * fderiv 𝕜 (fderiv 𝕜 (J a)) x v w +
+      fderiv 𝕜 (J a) x v * fderiv 𝕜 (J a) x w) = 0 := by
+  set G : E → 𝕜 := fun y ↦ ∑ a ∈ A, J a y * fderiv 𝕜 (J a) y w
+  -- `G` is the derivative of `∑ₐ Jₐ²` in the direction `w`, up to a factor `2`; it vanishes
+  -- near `x`.
+  have hG : G =ᶠ[𝓝 x] fun _ ↦ 0 := by
+    have hdiff : ∀ᶠ y in 𝓝 x, ∀ a ∈ A, DifferentiableAt 𝕜 (J a) y :=
+      (Filter.eventually_all_finset A).2 fun a ha ↦
+        (((hJ a ha).of_le (m := 1) (by norm_num)).eventually (by simp)).mono fun y hy ↦
+          hy.differentiableAt one_ne_zero
+    filter_upwards [hdiff, hJA.eventuallyEq_nhds] with y hy hS
+    exact sum_mul_fderiv_apply_eq_zero_of_sum_sq_eventuallyEq_const hy hS w
+  have hGd : HasFDerivAt G (∑ a ∈ A, (J a x • (fderiv 𝕜 (fderiv 𝕜 (J a)) x).flip w +
+      fderiv 𝕜 (J a) x w • fderiv 𝕜 (J a) x)) x :=
+    HasFDerivAt.fun_sum fun a ha ↦ ((hJ a ha).differentiableAt (by norm_num)).hasFDerivAt.mul
+      ((hJ a ha).hasFDerivAt_fderiv_apply le_rfl w)
+  have h := congrArg (fun L : E →L[𝕜] 𝕜 ↦ L v) (hGd.fderiv.symm.trans hG.fderiv_eq)
+  simp only [fderiv_const_apply, zero_apply, FunLike.coe_sum, Finset.sum_apply, add_apply,
+    smul_apply, ContinuousLinearMap.flip_apply, smul_eq_mul] at h
+  rw [← h]
+  exact Finset.sum_congr rfl fun a _ ↦ by ring
 
 /-- **The second-order product rule for a cutoff.** If `f` and `g` are `C²` on an open set `s`
 containing the topological support of `f`, then the second-order product rule

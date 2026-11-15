@@ -20,13 +20,6 @@ and characteristic structures are the canonical Mathlib instances rather than pa
 ## Main definition
 
 * `TauCeti.ValidLieTypeIndex.Closure`: the algebraic closure of the index's prime field.
-
-## Roadmap
-
-This is the algebraic-closure part of item I0 in
-`TauCetiRoadmap/CFSGStatement/README.md`. Milestone L0 uses this carrier when it base-changes the
-pinned Chevalley--Demazure group scheme to the characteristic of a valid Lie-type index and takes
-its algebraic-closure-valued points.
 -/
 
 public section

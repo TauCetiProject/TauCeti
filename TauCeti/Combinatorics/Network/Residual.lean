@@ -166,7 +166,7 @@ arrow minus its value on the reverse copy. -/
 def residualNet : Assignment (ResidualHom Q) K →+ Assignment Q K where
   toFun r _ _ e := r (Sum.inl e) - r (Sum.inr e)
   map_zero' := by
-    funext _ _ e
+    funext _ _ _
     exact sub_self 0
   map_add' r r' := by
     funext _ _ e

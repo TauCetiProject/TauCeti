@@ -185,19 +185,11 @@ theorem separateVertexPerm_column (rowPerm colPerm : Equiv.Perm ℕ) :
     separateVertexPerm rowPerm colPerm .column = colPerm :=
   by simp [separateVertexPerm]
 
-/-- The action on cell-noise coordinates associated to two axis permutations. -/
-def separateCellPerm (rowPerm colPerm : Equiv.Perm ℕ) : ℕ × ℕ ≃ ℕ × ℕ :=
-  rowPerm.prodCongr colPerm
-
-@[simp]
-theorem separateCellPerm_apply (rowPerm colPerm : Equiv.Perm ℕ) (p : ℕ × ℕ) :
-    separateCellPerm rowPerm colPerm p = (rowPerm p.1, colPerm p.2) :=
-  by simp [separateCellPerm, Prod.map]
-
-/-- The measurable equivalence reindexing the separate-coding noise by two axis permutations. -/
+/-- The measurable equivalence reindexing the separate-coding noise by two axis permutations,
+acting on the cell indices through `Equiv.prodCongr`. -/
 def separateNoiseCongr (rowPerm colPerm : Equiv.Perm ℕ) :
     (NoiseIndex Axis (ℕ × ℕ) → I) ≃ᵐ (NoiseIndex Axis (ℕ × ℕ) → I) :=
-  noiseCongr (separateVertexPerm rowPerm colPerm) (separateCellPerm rowPerm colPerm)
+  noiseCongr (separateVertexPerm rowPerm colPerm) (rowPerm.prodCongr colPerm)
 
 @[simp]
 theorem separateNoiseCongr_apply_global (rowPerm colPerm : Equiv.Perm ℕ)
@@ -216,7 +208,7 @@ theorem separateNoiseCongr_apply_vertex (rowPerm colPerm : Equiv.Perm ℕ)
 theorem separateNoiseCongr_apply_cell (rowPerm colPerm : Equiv.Perm ℕ)
     (u : NoiseIndex Axis (ℕ × ℕ) → I) (p : ℕ × ℕ) :
     separateNoiseCongr rowPerm colPerm u (.cell p) =
-      u (.cell (separateCellPerm rowPerm colPerm p)) := by
+      u (.cell (rowPerm.prodCongr colPerm p)) := by
   simp [separateNoiseCongr]
 
 /-- The separate noise reindexing preserves the canonical independent-uniform noise law. -/
@@ -281,7 +273,7 @@ theorem separateArray_reindex (f : I × I × I × I → α)
       separateArray f p (separateNoiseCongr rowPerm colPerm u) := by
   simp only [separateArray_apply, separateNoiseCongr_apply_global,
     separateNoiseCongr_apply_vertex, separateNoiseCongr_apply_cell, separateVertexPerm_row,
-    separateVertexPerm_column, separateCellPerm_apply]
+    separateVertexPerm_column, Equiv.prodCongr_apply, Prod.map_apply']
 
 /-- A measurable separate Aldous--Hoover coding is measurable as an array-valued random
 variable. -/

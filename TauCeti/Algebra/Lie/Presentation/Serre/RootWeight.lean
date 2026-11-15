@@ -65,6 +65,7 @@ The comparison of weight spaces rests on
 public section
 
 open LieAlgebra LieSubalgebra Matrix
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -143,12 +144,10 @@ theorem iInf_eigenspace_ad_eq_bot_of_ne_pairingIn {χ : b.support → ℤ} (h0 :
       ψ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row) ∨
         -ψ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row) := by
     by_contra! hsign
-    -- `Matrix.row` is `Matrix.of.symm`, the identity equivalence from matrices to functions, so
-    -- the rows of `CMᵀᵀ` are the rows of `A`.
+    -- `Matrix.row_def` identifies the rows of a matrix with the matrix as a function, so the
+    -- rows of `CMᵀᵀ` are the rows of `A`.
     have hpos : ψ ∉ AddSubsemigroup.closure (Set.range b.cartanMatrixᵀᵀ) := by
-      have h := hsign.1
-      rw [Matrix.row_eq_self] at h
-      rwa [transpose_transpose]
+      simpa only [transpose_transpose, Matrix.row_def] using hsign.1
     refine hψ.2 (h.iInf_eigenspace_ad_eq_bot hspan hψ.1 hpos fun hneg ↦ hsign.2 ?_)
     -- The negated columns of `CM` are the negations of its columns.
     have hs : Set.range (-b.cartanMatrixᵀᵀ) ⊆ -Set.range b.cartanMatrix.row :=

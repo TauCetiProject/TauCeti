@@ -47,6 +47,7 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `PowerSeries.constantCoeff_iterate_of_derivative_subst`: iteration and coefficient extraction
   for an operator intertwined with the derivative by substitution.
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
+* `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
 * `PowerSeries.coeff_iterate_derivative_eq_descFactorial`: the `M`-th coefficient of `f⁽ⁱ⁾` is
@@ -90,6 +91,12 @@ variable {R S : Type*} [CommSemiring R] [CommSemiring S]
 theorem derivative_map (φ : R⟦X⟧) (f : R →+* S) : d⁄dX (map f φ) = map f (d⁄dX φ) := by
   ext n
   simp [coeff_derivative]
+
+/-- **The chain rule for rescaling**: the derivative of `f(a X)` is `a f'(a X)`. -/
+theorem derivative_rescale (φ : R⟦X⟧) (a : R) : d⁄dX (rescale a φ) = C a * rescale a (d⁄dX φ) := by
+  ext n
+  simp only [coeff_derivative, coeff_rescale, coeff_C_mul]
+  ring
 
 /-- Iterated derivatives of a polynomial, viewed as a power series, are computed as
 polynomials. -/

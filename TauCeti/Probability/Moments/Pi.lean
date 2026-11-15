@@ -83,7 +83,7 @@ theorem integral_pow_sum_pi [DecidableEq ι] {𝕜 : Type*} [RCLike 𝕜]
   simp_rw [Finset.sum_pow_eq_sum_piAntidiag]
   rw [integral_finsetSum _ hterm]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   rw [integral_const_mul, integral_fintype_prod_eq_prod (fun i x ↦ f i x ^ k i)]
 
 /-- Under a product measure the exponential of a sum of coordinate statistics factors over the

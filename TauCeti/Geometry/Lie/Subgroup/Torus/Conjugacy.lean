@@ -37,6 +37,8 @@ cover all of `G` as soon as `lieExp` is known to be surjective, which is a separ
   cover exactly the image of the exponential map.
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_le`: a torus is conjugate into any maximal torus.
 * `TauCeti.Lie.IsMaximalTorus.exists_map_conj_eq`: **any two maximal tori are conjugate**.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_map_conj_eq_of_le`: two maximal tori contained in a closed
+  subgroup `K` are conjugate by an element of `K`.
 * `TauCeti.Lie.IsMaximalTorus.finrank_lieSubalgebraOfSubgroup_eq`: any two maximal tori have the
   same dimension.
 
@@ -131,6 +133,29 @@ theorem IsMaximalTorus.exists_map_conj_eq {S T : Subgroup G} (hS : IsMaximalToru
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   obtain ⟨g, hg⟩ := hT.exists_map_conj_le I hS.isTorus
   exact ⟨g, (hS.map_conj g).eq_of_le hT.isTorus hg⟩
+
+/-- Two maximal tori of a compact Lie group that lie in a closed subgroup `K` are conjugate by an
+element of `K`. -/
+theorem IsMaximalTorus.exists_mem_map_conj_eq_of_le {K S T : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hS : IsMaximalTorus S) (hT : IsMaximalTorus T)
+    (hSK : S ≤ K) (hTK : T ≤ K) : ∃ c ∈ K, S.map (MulAut.conj c).toMonoidHom = T := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  -- Cartan's theorem makes `K` a compact Lie group, whose conjugacy theorem applies; `K` need not
+  -- be connected.
+  let L := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
+  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
+    (I := I) (K := K) hK
+  let _ : ChartedSpace L K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, L) ∞ K := d.lieGroup
+  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
+  obtain ⟨c, hc⟩ := (hS.subgroupOf hSK).exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTK)
+  refine ⟨c, c.2, (hS.map_conj c).eq_of_le hT.isTorus ?_⟩
+  rintro _ ⟨s, hs, rfl⟩
+  have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K := hc ▸ ⟨_, hs, rfl⟩
+  exact hmem
 
 end Conjugacy
 
