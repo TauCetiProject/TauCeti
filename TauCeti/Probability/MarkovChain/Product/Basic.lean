@@ -8,13 +8,15 @@ module
 public import TauCeti.Probability.MarkovChain.Period
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.Kernel.Composition.ParallelComp
-public import TauCeti.Probability.Process.MarkovChain
+public import TauCeti.Probability.MarkovChain.MarkovProperty
 
 /-!
 # Independent product chains
 
 The independent product of two chains uses Mathlib's parallel composition `κ ∥ₖ η`.
-Its path law is obtained by pairing independent coordinate paths. Products of aperiodic
+Pushing its path law from any initial measure `ρ` forward along either coordinate projection yields
+the coordinate chain started from the corresponding marginal of `ρ`, and for a product initial law
+its path law is obtained by pairing independent coordinate paths. Products of aperiodic
 kernels are aperiodic; if both factors are also irreducible, the product is irreducible. The key
 point is that aperiodicity synchronizes the positive transition times of the two coordinates.
 Irreducibility alone does not do so (two deterministic two-cycles give a reducible product).
@@ -87,7 +89,36 @@ namespace MeasureTheory.Measure
 open TauCeti.Probability
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-  [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
+
+/-- The first coordinate of a chain driven by `κ ∥ₖ η` from any initial joint measure `ρ` has path
+law `markovChainLaw ρ.fst κ`. Neither finiteness nor independence of `ρ` nor countability is
+required. -/
+@[simp]
+theorem markovChainLaw_parallelComp_map_fst (ρ : Measure (α × β))
+    (κ : Kernel α α) (η : Kernel β β) [IsMarkovKernel κ] [IsMarkovKernel η] :
+    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).1) = markovChainLaw ρ.fst κ := by
+  rw [markovChainLaw_eq_comp, map_comp _ _ (by fun_prop),
+    Kernel.markovChainKernel_map_comp (κ ∥ₖ η) κ measurable_fst
+      (fun p => by simp [Kernel.parallelComp_apply]),
+    markovChainLaw_eq_comp, Measure.fst,
+    Measure.bind_map measurable_fst.aemeasurable (Kernel.aemeasurable _),
+    Kernel.coe_comap, Function.comp_def]
+
+/-- The second coordinate of a chain driven by `κ ∥ₖ η` from any initial joint measure `ρ` has path
+law `markovChainLaw ρ.snd η`. Neither finiteness nor independence of `ρ` nor countability is
+required. -/
+@[simp]
+theorem markovChainLaw_parallelComp_map_snd (ρ : Measure (α × β))
+    (κ : Kernel α α) (η : Kernel β β) [IsMarkovKernel κ] [IsMarkovKernel η] :
+    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).2) = markovChainLaw ρ.snd η := by
+  rw [markovChainLaw_eq_comp, map_comp _ _ (by fun_prop),
+    Kernel.markovChainKernel_map_comp (κ ∥ₖ η) η measurable_snd
+      (fun p => by simp [Kernel.parallelComp_apply]),
+    markovChainLaw_eq_comp, Measure.snd,
+    Measure.bind_map measurable_snd.aemeasurable (Kernel.aemeasurable _),
+    Kernel.coe_comap, Function.comp_def]
+
+variable [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
 
 /-- The law of the independent product chain is obtained by pairing independent coordinate
 paths. The identity holds for finite initial measures, not only probability laws. -/

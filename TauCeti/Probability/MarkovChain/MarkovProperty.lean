@@ -39,7 +39,8 @@ This file proves it in the following forms.
   (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ`).
 * As a consequence, a measurable function `f` of a chain whose transition laws depend on the
   current state only through its value under `f` is again a chain
-  (`MeasureTheory.Measure.markovChainLaw_map_comp`).
+  (`MeasureTheory.Measure.markovChainLaw_map_comp`,
+  `ProbabilityTheory.Kernel.markovChainKernel_map_comp`).
 
 The proof restricts the path law to an event of the history and identifies the law of the future
 path on it by the uniqueness theorem `MeasureTheory.Measure.eq_markovChainLaw`: the prefix
@@ -323,5 +324,17 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S) [I
   rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ ν η n hB (hf hC)]
   refine lintegral_congr fun ω => ?_
   rw [← Measure.map_apply hf hC, h]
+
+/-- **Kernel form of `Measure.markovChainLaw_map_comp`.** If `f` is measurable and
+`(η s).map f = κ (f s)` for every state `s`, pushing `η.markovChainKernel` forward coordinatewise
+along `f` equals pulling `κ.markovChainKernel` back along `f`. -/
+theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_map_comp
+    (η : Kernel S S) [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ}
+    (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) :
+    η.markovChainKernel.map (fun ω n => f (ω n)) = κ.markovChainKernel.comap f hf := by
+  ext1 s
+  rw [Kernel.map_apply _ (by fun_prop),
+    Kernel.comap_apply, Kernel.markovChainKernel_apply, Kernel.markovChainKernel_apply,
+    Measure.markovChainLaw_map_comp (Measure.dirac s) η κ hf h, Measure.map_dirac' hf]
 
 end TauCeti.Probability
