@@ -234,18 +234,16 @@ open scoped TensorProduct
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
   {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
 
-private abbrev mkRatAddHom (X : Type*) [AddCommGroup X] : X →+ (ℚ ⊗[ℤ] X) :=
-  (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
-
 /-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
 theorem weight_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
     (hlam' : lam + χ ∈ dominantChamber P b)
     (π : LSPath P b lam) :
     (centralTransport χ hχ π).weight hlam' = π.weight hlam + χ := by
-  apply RootPairing.injective_mk_rat P
-  change mkRatAddHom X _ = mkRatAddHom X _
-  rw [apply_weight ℚ (mkRatAddHom X) hlam', map_add, apply_weight ℚ (mkRatAddHom X) hlam,
+  let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
+  apply P.tensorProduct_mk_injective ℚ
+  change f₀ _ = f₀ _
+  rw [apply_weight ℚ f₀ hlam', map_add, apply_weight ℚ f₀ hlam,
     endpoint_toPLPath_centralTransport]
 
 /-- **Central transport commutes with crystal lowering operators.** -/
@@ -256,9 +254,9 @@ theorem crystal_f_centralTransport (hlam : lam ∈ dominantChamber P b) {χ : X}
     (crystal hlam').f i (centralTransport χ hχ π) =
       ((crystal hlam).f i π).map (centralTransport χ hχ) := by
   have := P.flip_isReduced
-  let f₀ : X →+ (ℚ ⊗[ℤ] X) := mkRatAddHom X
+  let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
   let F₀ : Module.Dual ℚ (ℚ ⊗[ℤ] X) := RootPairing.corootRat P i
-  have hf₀ : Function.Injective f₀ := RootPairing.injective_mk_rat P
+  have hf₀ : Function.Injective f₀ := P.tensorProduct_mk_injective ℚ
   have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) := RootPairing.corootRat_mk_one P i x
   have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.2, Int.cast_zero]
   have hS₀ (μ : X) := RootPairing.pairwise_not_sameRay_mk_rat_orbit P b μ

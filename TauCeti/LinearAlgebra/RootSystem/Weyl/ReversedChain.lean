@@ -126,14 +126,6 @@ theorem conj_longestElement_mem_parabolic_wallIndices_iff (lam : M) (p : P.weylG
     rw [← mul_assoc, ← mul_assoc, hmul, one_mul, mul_assoc, hmul, mul_one]
   simpa [smul_neg, neg_neg, smul_smul_longestElement, hp] using h'
 
-/-- Every element of the wall parabolic subgroup of a weight fixes that weight. -/
-theorem parabolic_wallIndices_le_stabilizer (lam : M) :
-    (weylCoxeterSystem P b).parabolic (P.wallIndices b lam) ≤
-      MulAction.stabilizer P.weylGroup lam :=
-  (CoxeterSystem.parabolic_le_iff _).mpr fun i hi ↦ by
-    rw [MulAction.mem_stabilizer_iff, weylCoxeterSystem_simple]
-    exact ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hi)
-
 /-- **The minimal coset representative of `u * w₀` for `-(w₀ • λ)` sends `-(w₀ • λ)` to
 `-(u • λ)`.** -/
 theorem minimalCosetRep_mul_longestElement_smul (lam : M) (u : P.weylGroup) :
@@ -144,7 +136,7 @@ theorem minimalCosetRep_mul_longestElement_smul (lam : M) (u : P.weylGroup) :
   have hfix : ((u * longestElement P b)⁻¹ *
       (weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b lam') (u * longestElement P b)) •
       lam' = lam' :=
-    MulAction.mem_stabilizer_iff.mp (parabolic_wallIndices_le_stabilizer lam'
+    MulAction.mem_stabilizer_iff.mp (P.parabolic_wallIndices_le_stabilizer b lam'
       ((weylCoxeterSystem P b).inv_mul_minimalCosetRep_mem _ _))
   rw [← mul_inv_cancel_left (u * longestElement P b)
     ((weylCoxeterSystem P b).minimalCosetRep _ _), mul_smul, hfix]
