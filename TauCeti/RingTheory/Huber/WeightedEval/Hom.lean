@@ -33,6 +33,9 @@ with these values on the generators.
   series, which is how every computation about it is done.
 * `TauCeti.Huber.weightedEvalHom_weightedC` and `TauCeti.Huber.weightedEvalHom_weightedX`: it
   sends `weightedC a` to `φ a` and `weightedX i` to `bᵢ`.
+* `TauCeti.Huber.weightedEvalHom_weightedPolynomialHom`: on polynomials it is `MvPolynomial.eval₂`.
+* `TauCeti.Huber.weightedEvalHom_weightedMap` and `TauCeti.Huber.map_weightedEvalHom`: naturality
+  under coefficient maps on the source and continuous ring homomorphisms on the target.
 
 ## References
 
@@ -87,6 +90,49 @@ theorem weightedEvalHom_weightedX (hT : IsWeightFamily T) (hφ : ContinuousAt φ
     (hb : IsWeightBounded φ T b) (i : Fin k) :
     weightedEvalHom hT hφ hb (weightedX T hT i) = b i := by
   rw [coe_weightedEvalHom, coe_weightedX, weightedEval_X]
+
+/-- On polynomials, `weightedEvalHom` agrees with polynomial evaluation `MvPolynomial.eval₂`. -/
+theorem weightedEvalHom_weightedPolynomialHom (hT : IsWeightFamily T) (hφ : ContinuousAt φ 0)
+    (hb : IsWeightBounded φ T b) (p : MvPolynomial (Fin k) A) :
+    weightedEvalHom hT hφ hb (weightedPolynomialHom T hT p) = MvPolynomial.eval₂ φ b p := by
+  have h : (weightedEvalHom hT hφ hb).comp (weightedPolynomialHom T hT) =
+      MvPolynomial.eval₂Hom φ b :=
+    MvPolynomial.ringHom_ext
+      (fun _ ↦ by simp)
+      (fun _ ↦ by simp)
+  exact congr($h p)
+
+/-- **Naturality in the source coefficients**: evaluating after a continuous weight-preserving
+coefficient map `θ : C →+* A` agrees with evaluating along `φ.comp θ`. Any weight-boundedness
+witness for `φ.comp θ` may be used. -/
+theorem weightedEvalHom_weightedMap {C : Type*} [CommRing C] [TopologicalSpace C]
+    [NonarchimedeanRing C] {θ : C →+* A} {R : Fin k → Set C}
+    (hθ : Continuous θ) (hR : IsWeightFamily R) (hT : IsWeightFamily T)
+    (hRT : ∀ i, θ '' R i ⊆ T i) (hφ : ContinuousAt φ 0) (hb : IsWeightBounded φ T b)
+    (hφθ : ContinuousAt (φ.comp θ) 0) (hb' : IsWeightBounded (φ.comp θ) R b)
+    (f : weightedRestrictedSubring R hR) :
+    weightedEvalHom hT hφ hb (weightedMap hθ hR hT hRT f) =
+      weightedEvalHom hR hφθ hb' f := by
+  simp only [coe_weightedEvalHom, coe_weightedMap, weightedEval_def, weightedEvalTerm_def,
+    MvPowerSeries.coeff_map, RingHom.comp_apply]
+
+/-- **Naturality in the target**: applying a continuous ring homomorphism `ψ : B →+* D` into a
+complete Hausdorff nonarchimedean ring to an evaluated series agrees with evaluating along
+`ψ.comp φ` at `ψ ∘ b`. -/
+theorem map_weightedEvalHom {D : Type*} [CommRing D] [UniformSpace D] [IsUniformAddGroup D]
+    [NonarchimedeanRing D] [CompleteSpace D] [T3Space D] {ψ : B →+* D} (hψ : Continuous ψ)
+    (hT : IsWeightFamily T) (hφ : ContinuousAt φ 0) (hb : IsWeightBounded φ T b)
+    (hψφ : ContinuousAt (ψ.comp φ) 0) (hb' : IsWeightBounded (ψ.comp φ) T (ψ ∘ b))
+    (f : weightedRestrictedSubring T hT) :
+    ψ (weightedEvalHom hT hφ hb f) = weightedEvalHom hT hψφ hb' f := by
+  have ht : ψ ∘ weightedEvalTerm φ b (f : MvPowerSeries (Fin k) A) =
+      weightedEvalTerm (ψ.comp φ) (ψ ∘ b) f := by
+    funext ν
+    simp only [Function.comp_apply, weightedEvalTerm_def, map_mul, map_prod, map_pow,
+      RingHom.comp_apply]
+  rw [coe_weightedEvalHom, coe_weightedEvalHom]
+  exact (ht ▸ (hasSum_weightedEval hφ hb (mem_weightedRestrictedSubring.mp f.2)).map ψ hψ).unique
+    (hasSum_weightedEval hψφ hb' (mem_weightedRestrictedSubring.mp f.2))
 
 end TauCeti.Huber
 
