@@ -96,21 +96,10 @@ def rightChamberMap (q : B) : SlabAlgebra B q →ₐ[B] B[T;T⁻¹] :=
   lift q (C q * T (-1)) (T 1) (by
     rw [mul_assoc, ← T_add, neg_add_cancel, T_zero, mul_one, C_eq_algebraMap])
 
-@[simp]
-theorem leftChamberMap_X (q : B) : leftChamberMap q (X q) = T 1 :=
-  lift_X _ _ _ _
-
-@[simp]
-theorem leftChamberMap_Y (q : B) : leftChamberMap q (Y q) = C q * T (-1) :=
-  lift_Y _ _ _ _
-
-@[simp]
-theorem rightChamberMap_X (q : B) : rightChamberMap q (X q) = C q * T (-1) :=
-  lift_X _ _ _ _
-
-@[simp]
-theorem rightChamberMap_Y (q : B) : rightChamberMap q (Y q) = T 1 :=
-  lift_Y _ _ _ _
+@[simp] theorem leftChamberMap_X (q : B) : leftChamberMap q (X q) = T 1 := lift_X _ _ _ _
+@[simp] theorem leftChamberMap_Y (q : B) : leftChamberMap q (Y q) = C q * T (-1) := lift_Y _ _ _ _
+@[simp] theorem rightChamberMap_X (q : B) : rightChamberMap q (X q) = C q * T (-1) := lift_X _ _ _ _
+@[simp] theorem rightChamberMap_Y (q : B) : rightChamberMap q (Y q) = T 1 := lift_Y _ _ _ _
 
 /-- In the left chamber, the normal-form basis element `Z q n` maps to
 `C (q ^ n.toNat) * T (-n)`. -/
@@ -119,12 +108,10 @@ theorem leftChamberMap_Z (q : B) (n : ℤ) :
     leftChamberMap q (Z q n) = C (q ^ n.toNat) * T (-n) := by
   rw [leftChamberMap, lift_Z]
   split_ifs with hn
-  · have hto : n.toNat = 0 := Int.toNat_of_nonpos hn.le
-    have habs : (n.natAbs : ℤ) = -n := by omega
-    rw [T_pow, mul_one, habs, hto, pow_zero, map_one, one_mul]
-  · have hto : n.toNat = n.natAbs := by omega
-    have habs : (n.natAbs : ℤ) * (-1) = -n := by omega
-    rw [mul_pow, ← map_pow, T_pow, habs, hto]
+  · rw [T_pow, mul_one, show (n.natAbs : ℤ) = -n by omega, Int.toNat_of_nonpos hn.le,
+      pow_zero, map_one, one_mul]
+  · rw [mul_pow, ← map_pow, T_pow, show (n.natAbs : ℤ) * (-1) = -n by omega,
+      show n.toNat = n.natAbs by omega]
 
 /-- In the right chamber, the normal-form basis element `Z q n` maps to
 `C (q ^ (-n).toNat) * T n`. -/
@@ -133,12 +120,10 @@ theorem rightChamberMap_Z (q : B) (n : ℤ) :
     rightChamberMap q (Z q n) = C (q ^ (-n).toNat) * T n := by
   rw [rightChamberMap, lift_Z]
   split_ifs with hn
-  · have hto : (-n).toNat = n.natAbs := by omega
-    have habs : (n.natAbs : ℤ) * (-1) = n := by omega
-    rw [mul_pow, ← map_pow, T_pow, habs, hto]
-  · have hto : (-n).toNat = 0 := Int.toNat_of_nonpos (by omega)
-    have habs : (n.natAbs : ℤ) = n := by omega
-    rw [T_pow, mul_one, habs, hto, pow_zero, map_one, one_mul]
+  · rw [mul_pow, ← map_pow, T_pow, show (n.natAbs : ℤ) * (-1) = n by omega,
+      show (-n).toNat = n.natAbs by omega]
+  · rw [T_pow, mul_one, show (n.natAbs : ℤ) = n by omega,
+      Int.toNat_of_nonpos (by omega), pow_zero, map_one, one_mul]
 
 /-- The `k`-th Laurent coefficient of `leftChamberMap q u` is the `(-k)`-th slab basis coordinate
 multiplied by `q ^ (-k).toNat`. -/
@@ -149,15 +134,12 @@ theorem coeff_leftChamberMap (q : B) (u : SlabAlgebra B q) (k : ℤ) :
   | add x y hx hy => simp [hx, hy, add_mul]
   | @homogeneous m x =>
     obtain ⟨b, hb⟩ := (mem_weightSubmodule_iff q m x.1).mp x.2
-    rw [← hb, map_smul, map_smul, leftChamberMap_Z, slabBasis_repr_Z,
-      ← single_eq_C_mul_T, AddMonoidAlgebra.smul_single, smul_eq_mul,
-      AddMonoidAlgebra.coeff_single, Finsupp.smul_single', mul_one,
-      Finsupp.single_apply, Finsupp.single_apply]
+    rw [← hb, map_smul, map_smul, leftChamberMap_Z, slabBasis_repr_Z, ← single_eq_C_mul_T,
+      AddMonoidAlgebra.smul_single, smul_eq_mul, AddMonoidAlgebra.coeff_single,
+      Finsupp.smul_single', mul_one, Finsupp.single_apply, Finsupp.single_apply]
     by_cases h : -m = k
-    · have hm : m = -k := by omega
-      simp [hm]
-    · have hm : ¬ m = -k := by omega
-      simp [h, hm]
+    · simp [show m = -k by omega]
+    · simp [h, show ¬ m = -k by omega]
 
 /-- The `k`-th Laurent coefficient of `rightChamberMap q u` is the `k`-th slab basis coordinate
 multiplied by `q ^ (-k).toNat`. -/
@@ -168,14 +150,10 @@ theorem coeff_rightChamberMap (q : B) (u : SlabAlgebra B q) (k : ℤ) :
   | add x y hx hy => simp [hx, hy, add_mul]
   | @homogeneous m x =>
     obtain ⟨b, hb⟩ := (mem_weightSubmodule_iff q m x.1).mp x.2
-    rw [← hb, map_smul, map_smul, rightChamberMap_Z, slabBasis_repr_Z,
-      ← single_eq_C_mul_T, AddMonoidAlgebra.smul_single, smul_eq_mul,
-      AddMonoidAlgebra.coeff_single, Finsupp.smul_single', mul_one,
-      Finsupp.single_apply, Finsupp.single_apply]
-    by_cases h : m = k
-    · subst h
-      simp
-    · simp [h]
+    rw [← hb, map_smul, map_smul, rightChamberMap_Z, slabBasis_repr_Z, ← single_eq_C_mul_T,
+      AddMonoidAlgebra.smul_single, smul_eq_mul, AddMonoidAlgebra.coeff_single,
+      Finsupp.smul_single', mul_one, Finsupp.single_apply, Finsupp.single_apply]
+    rcases eq_or_ne m k with rfl | h <;> simp [*]
 
 @[simp]
 theorem coeff_leftChamberMap_natCast (q : B) (u : SlabAlgebra B q) (a : ℕ) :
@@ -198,54 +176,55 @@ theorem chamberProd_injective (q : B) :
   apply (slabBasis q).repr.injective
   ext n
   rcases lt_or_ge n 0 with hn | hn
-  · have hn' : -((n.natAbs : ℤ)) = n := by omega
-    rw [← hn', ← coeff_leftChamberMap_natCast, ← coeff_leftChamberMap_natCast, hL]
-  · have hn' : (n.natAbs : ℤ) = n := by omega
-    rw [← hn', ← coeff_rightChamberMap_natCast, ← coeff_rightChamberMap_natCast, hR]
+  · rw [show n = -(n.natAbs : ℤ) by omega, ← coeff_leftChamberMap_natCast,
+      ← coeff_leftChamberMap_natCast, hL]
+  · rw [show n = (n.natAbs : ℤ) by omega, ← coeff_rightChamberMap_natCast,
+      ← coeff_rightChamberMap_natCast, hR]
 
 /-- When `q` is regular in `B`, `leftChamberMap q` is individually injective. -/
 theorem leftChamberMap_injective_of_isRegular {q : B} (hq : IsRegular q) :
-    Function.Injective (leftChamberMap q) := by
-  intro u v huv
-  apply (slabBasis q).repr.injective
-  ext n
-  have hk := congrArg (fun p : B[T;T⁻¹] => p.coeff (-n)) huv
-  simp only [coeff_leftChamberMap, neg_neg] at hk
-  exact (hq.pow n.toNat).right hk
+    Function.Injective (leftChamberMap q) := fun _ _ huv =>
+  (slabBasis q).repr.injective <| Finsupp.ext fun n => (hq.pow n.toNat).right <| by
+    simpa [coeff_leftChamberMap] using congrArg (fun p : B[T;T⁻¹] => p.coeff (-n)) huv
 
 /-- When `q` is regular in `B`, `rightChamberMap q` is individually injective. -/
 theorem rightChamberMap_injective_of_isRegular {q : B} (hq : IsRegular q) :
-    Function.Injective (rightChamberMap q) := by
-  intro u v huv
-  apply (slabBasis q).repr.injective
-  ext n
-  have hk := congrArg (fun p : B[T;T⁻¹] => p.coeff n) huv
-  simp only [coeff_rightChamberMap] at hk
-  exact (hq.pow (-n).toNat).right hk
+    Function.Injective (rightChamberMap q) := fun _ _ huv =>
+  (slabBasis q).repr.injective <| Finsupp.ext fun n => (hq.pow (-n).toNat).right <| by
+    simpa [coeff_rightChamberMap] using congrArg (fun p : B[T;T⁻¹] => p.coeff n) huv
 
 /-- Naturality of `leftChamberMap` along a coefficient `R`-algebra homomorphism `φ : B →ₐ[R] B'`
 that sends `q` to `q'`. -/
 theorem mapAlgHom_comp_leftChamberMap [CommSemiring R] [Algebra R B] [Algebra R B']
     (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q') :
     (AddMonoidAlgebra.mapAlgHom ℤ φ).comp ((leftChamberMap q).restrictScalars R) =
-      ((leftChamberMap q').restrictScalars R).comp (mapAlgHom φ hq) := by
-  refine algHom_ext_of_algebra (fun b => ?_) ?_ ?_
-  · simp [← C_eq_algebraMap]
-  · simp
-  · simp [hq]
+      ((leftChamberMap q').restrictScalars R).comp (mapAlgHom φ hq) :=
+  algHom_ext_of_algebra (fun _ => by simp [← C_eq_algebraMap]) (by simp) (by simp [hq])
 
 /-- Naturality of `rightChamberMap` along a coefficient `R`-algebra homomorphism `φ : B →ₐ[R] B'`
 that sends `q` to `q'`. -/
 theorem mapAlgHom_comp_rightChamberMap [CommSemiring R] [Algebra R B] [Algebra R B']
     (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q') :
     (AddMonoidAlgebra.mapAlgHom ℤ φ).comp ((rightChamberMap q).restrictScalars R) =
-      ((rightChamberMap q').restrictScalars R).comp (mapAlgHom φ hq) := by
-  refine algHom_ext_of_algebra (fun b => ?_) ?_ ?_
-  · simp [← C_eq_algebraMap]
-  · simp [hq]
-  · simp
+      ((rightChamberMap q').restrictScalars R).comp (mapAlgHom φ hq) :=
+  algHom_ext_of_algebra (fun _ => by simp [← C_eq_algebraMap]) (by simp [hq]) (by simp)
 
 /-! ### `B`-linear graded correspondence across a slab -/
+
+private theorem single_coeff_of_mem_grade {S M : Type*} [CommSemiring S]
+    {m : M} {x : AddMonoidAlgebra S M} (hx : x ∈ AddMonoidAlgebra.grade S m) :
+    AddMonoidAlgebra.single m (x.coeff m) = x := by
+  obtain ⟨s, rfl⟩ := (AddMonoidAlgebra.mem_grade_iff' S m x).mp hx
+  simp [AddMonoidAlgebra.lsingle_apply]
+
+private theorem mapAlgHom_mem_grade {R S S' M : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring S'] [Algebra R S] [Algebra R S'] [AddCommMonoid M]
+    (φ : S →ₐ[R] S') (m : M) (x : AddMonoidAlgebra S M)
+    (hx : x ∈ (AddMonoidAlgebra.grade S m).restrictScalars R) :
+    AddMonoidAlgebra.mapAlgHom M φ x ∈ (AddMonoidAlgebra.grade S' m).restrictScalars R := by
+  rw [Submodule.restrictScalars_mem, ← single_coeff_of_mem_grade hx,
+    AddMonoidAlgebra.mapAlgHom_single]
+  exact AddMonoidAlgebra.single_mem_grade m _
 
 /-- Auxiliary `B`-linear map reading the `k`-th Laurent coefficient and scaling a slab element. -/
 private def coeffLiftLinearMap (q : B) (k : ℤ) (z : SlabAlgebra B q) :
@@ -257,8 +236,7 @@ private def coeffLiftLinearMap (q : B) (k : ℤ) (z : SlabAlgebra B q) :
 @[simp]
 private theorem coeffLiftLinearMap_apply (q : B) (k : ℤ) (z : SlabAlgebra B q)
     (a : AddMonoidAlgebra.grade B k) :
-    coeffLiftLinearMap q k z a = ((a : B[T;T⁻¹]).coeff k) • z :=
-  (rfl)
+    coeffLiftLinearMap q k z a = ((a : B[T;T⁻¹]).coeff k) • z := (rfl)
 
 /-- The `B`-linear `GradedCorrespondence` across `SlabAlgebra B q` for incoming degree sets
 `I, J ⊆ Set.Ici (0 : ℤ)` (such as `Set.Ici 0` for all nonnegative incoming powers or `Set.Ioi 0`
@@ -273,30 +251,18 @@ def slabCorrespondence (q : B) {I J : Set ℤ}
   right := (rightChamberMap q).toLinearMap
   liftLeft i := coeffLiftLinearMap q (i : ℤ) (Z q (-(i : ℤ)))
   liftRight j := coeffLiftLinearMap q (j : ℤ) (Z q (j : ℤ))
-  left_liftLeft i := by
-    refine LinearMap.ext fun a => ?_
-    obtain ⟨b, hb⟩ := (AddMonoidAlgebra.mem_grade_iff' B (i : ℤ) a.1).mp a.property
-    have hi : 0 ≤ (i : ℤ) := hI i.property
-    have hc : (a : B[T;T⁻¹]).coeff (i : ℤ) = b := by
-      rw [← hb, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.coeff_single,
-        Finsupp.single_eq_same]
+  left_liftLeft i := LinearMap.ext fun a => by
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, coeffLiftLinearMap_apply,
-      Submodule.subtype_apply, hc, map_smul, leftChamberMap_Z, neg_neg,
-      Int.toNat_of_nonpos (neg_nonpos.mpr hi), pow_zero, map_one, one_mul]
-    rw [Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
-    exact hb
-  right_liftRight j := by
-    refine LinearMap.ext fun a => ?_
-    obtain ⟨b, hb⟩ := (AddMonoidAlgebra.mem_grade_iff' B (j : ℤ) a.1).mp a.property
-    have hj : 0 ≤ (j : ℤ) := hJ j.property
-    have hc : (a : B[T;T⁻¹]).coeff (j : ℤ) = b := by
-      rw [← hb, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.coeff_single,
-        Finsupp.single_eq_same]
+      Submodule.subtype_apply, map_smul, leftChamberMap_Z, neg_neg,
+      Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.2)), pow_zero, map_one, one_mul,
+      Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
+    exact single_coeff_of_mem_grade a.2
+  right_liftRight j := LinearMap.ext fun a => by
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, coeffLiftLinearMap_apply,
-      Submodule.subtype_apply, hc, map_smul, rightChamberMap_Z,
-      Int.toNat_of_nonpos (neg_nonpos.mpr hj), pow_zero, map_one, one_mul]
-    rw [Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
-    exact hb
+      Submodule.subtype_apply, map_smul, rightChamberMap_Z,
+      Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.2)), pow_zero, map_one, one_mul,
+      Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T]
+    exact single_coeff_of_mem_grade a.2
 
 @[simp]
 theorem slabCorrespondence_liftLeft_apply (q : B) {I J : Set ℤ}
@@ -305,8 +271,8 @@ theorem slabCorrespondence_liftLeft_apply (q : B) {I J : Set ℤ}
     (slabCorrespondence q hI hJ).liftLeft i a =
       ((a : B[T;T⁻¹]).coeff (i : ℤ)) • X q ^ (i : ℤ).natAbs := by
   have hi : 0 ≤ (i : ℤ) := hI i.property
-  have habs : -(((i : ℤ).natAbs : ℤ)) = -(i : ℤ) := by omega
-  rw [slabCorrespondence, coeffLiftLinearMap_apply, ← habs, Z_neg_natCast]
+  rw [slabCorrespondence, coeffLiftLinearMap_apply,
+    show -(i : ℤ) = -((i : ℤ).natAbs : ℤ) by omega, Z_neg_natCast]
 
 @[simp]
 theorem slabCorrespondence_liftRight_apply (q : B) {I J : Set ℤ}
@@ -315,10 +281,7 @@ theorem slabCorrespondence_liftRight_apply (q : B) {I J : Set ℤ}
     (slabCorrespondence q hI hJ).liftRight j a =
       ((a : B[T;T⁻¹]).coeff (j : ℤ)) • Y q ^ (j : ℤ).natAbs := by
   have hj : 0 ≤ (j : ℤ) := hJ j.property
-  have hZ : Z q (j : ℤ) = Y q ^ (j : ℤ).natAbs := by
-    have habs : ((j : ℤ).natAbs : ℤ) = (j : ℤ) := by omega
-    conv_lhs => rw [← habs, Z_natCast]
-  rw [slabCorrespondence, coeffLiftLinearMap_apply, hZ]
+  rw [slabCorrespondence, coeffLiftLinearMap_apply, Z_of_nonneg q hj]
 
 /-- The two chamber legs of `slabCorrespondence` are jointly injective for arbitrary `q`. -/
 theorem slabCorrespondence_injective (q : B) {I J : Set ℤ}
@@ -338,20 +301,16 @@ theorem slabCorrespondence_liftLeft_mul (q : B) {I J : Set ℤ}
           SetLike.mul_mem_graded a₁.property a₂.property⟩ =
       (slabCorrespondence q hI hJ).liftLeft i₁ a₁ *
         (slabCorrespondence q hI hJ).liftLeft i₂ a₂ := by
-  obtain ⟨b₁, hb₁⟩ := (AddMonoidAlgebra.mem_grade_iff' B (i₁ : ℤ) a₁.1).mp a₁.property
-  obtain ⟨b₂, hb₂⟩ := (AddMonoidAlgebra.mem_grade_iff' B (i₂ : ℤ) a₂.1).mp a₂.property
   have h1 : 0 ≤ (i₁ : ℤ) := hI i₁.property
   have h2 : 0 ≤ (i₂ : ℤ) := hI i₂.property
-  have habs : ((i₁ : ℤ) + (i₂ : ℤ)).natAbs =
-      (i₁ : ℤ).natAbs + (i₂ : ℤ).natAbs := by omega
   have hcoeff : ((a₁ : B[T;T⁻¹]) * (a₂ : B[T;T⁻¹])).coeff ((i₁ : ℤ) + (i₂ : ℤ)) =
       (a₁ : B[T;T⁻¹]).coeff (i₁ : ℤ) * (a₂ : B[T;T⁻¹]).coeff (i₂ : ℤ) := by
-    rw [← hb₁, ← hb₂, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.lsingle_apply,
-      AddMonoidAlgebra.single_mul_single, AddMonoidAlgebra.coeff_single,
-      AddMonoidAlgebra.coeff_single, AddMonoidAlgebra.coeff_single,
-      Finsupp.single_eq_same, Finsupp.single_eq_same, Finsupp.single_eq_same]
+    conv_lhs => rw [← single_coeff_of_mem_grade a₁.2, ← single_coeff_of_mem_grade a₂.2]
+    rw [AddMonoidAlgebra.single_mul_single, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same]
   rw [slabCorrespondence_liftLeft_apply, slabCorrespondence_liftLeft_apply,
-    slabCorrespondence_liftLeft_apply, hcoeff, habs, pow_add, smul_mul_smul_comm]
+    slabCorrespondence_liftLeft_apply, hcoeff,
+    show ((i₁ : ℤ) + (i₂ : ℤ)).natAbs = (i₁ : ℤ).natAbs + (i₂ : ℤ).natAbs by omega,
+    pow_add, smul_mul_smul_comm]
 
 /-- Explicit right-chamber transfer of an incoming left monomial `C b * T i` across
 `slabCorrespondence`. -/
@@ -364,22 +323,21 @@ theorem slabCorrespondence_transfer_C_mul_T (q : B) {I J : Set ℤ}
           exact AddMonoidAlgebra.single_mem_grade (i : ℤ) b⟩ : B[T;T⁻¹]) =
       if -(i : ℤ) = k then C (b * q ^ (i : ℤ).natAbs) * T (-(i : ℤ)) else 0 := by
   have hi : 0 ≤ (i : ℤ) := hI i.property
-  have habs : ((i : ℤ).natAbs : ℤ) * (-1) = -(i : ℤ) := by omega
+  have hc : (C b * T (i : ℤ)).coeff (i : ℤ) = b := by simp [← single_eq_C_mul_T]
   have himg : (slabCorrespondence q hI hJ).right
       ((slabCorrespondence q hI hJ).liftLeft i
         ⟨C b * T (i : ℤ), by
           rw [← single_eq_C_mul_T]
           exact AddMonoidAlgebra.single_mem_grade (i : ℤ) b⟩) =
       C (b * q ^ (i : ℤ).natAbs) * T (-(i : ℤ)) := by
-    have hc : (C b * T (i : ℤ)).coeff (i : ℤ) = b := by
-      rw [← single_eq_C_mul_T, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same]
     rw [slabCorrespondence_liftLeft_apply, hc]
     simp only [slabCorrespondence, AlgHom.toLinearMap_apply]
-    rw [map_smul, map_pow, rightChamberMap_X, mul_pow, ← map_pow, T_pow, habs,
+    rw [map_smul, map_pow, rightChamberMap_X, mul_pow, ← map_pow, T_pow,
+      show ((i : ℤ).natAbs : ℤ) * (-1) = -(i : ℤ) by omega,
       Algebra.smul_def, ← C_eq_algebraMap, ← mul_assoc, ← map_mul]
   rw [GradedCorrespondence.transfer_apply, himg, ← single_eq_C_mul_T,
     AddMonoidAlgebra.grade.decompose_single, DirectSum.coe_of_apply]
-  split_ifs with hk <;> simp [single_eq_C_mul_T]
+  split_ifs <;> simp [single_eq_C_mul_T]
 
 private theorem mapAlgHom_coeffLiftLinearMap [CommSemiring R] [Algebra R B] [Algebra R B']
     (φ : B →ₐ[R] B') {q : B} {q' : B'} (hq : φ q = q')
@@ -390,9 +348,7 @@ private theorem mapAlgHom_coeffLiftLinearMap [CommSemiring R] [Algebra R B] [Alg
         coeffLiftLinearMap q' k z' ⟨AddMonoidAlgebra.mapAlgHom ℤ φ a.1, hmem⟩ := by
   have ha : (a : B[T;T⁻¹]) ∈ AddMonoidAlgebra.grade B k := a.property
   obtain ⟨b, hb⟩ := (AddMonoidAlgebra.mem_grade_iff' B k a.1).mp ha
-  refine ⟨by
-    rw [← hb, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.mapAlgHom_single]
-    exact AddMonoidAlgebra.single_mem_grade k (φ b), ?_⟩
+  refine ⟨mapAlgHom_mem_grade φ k a.1 a.2, ?_⟩
   have hc1 : (a : B[T;T⁻¹]).coeff k = b := by
     rw [← hb, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.coeff_single,
       Finsupp.single_eq_same]
@@ -417,24 +373,12 @@ def slabCorrespondenceHom [CommSemiring R] [Algebra R B] [Algebra R B']
   middle := (mapAlgHom φ hq).toLinearMap
   left := (AddMonoidAlgebra.mapAlgHom ℤ φ).toLinearMap
   right := (AddMonoidAlgebra.mapAlgHom ℤ φ).toLinearMap
-  left_comm := by
-    refine LinearMap.ext fun u => ?_
+  left_comm := LinearMap.ext fun u => by
     simpa [slabCorrespondence] using AlgHom.congr_fun (mapAlgHom_comp_leftChamberMap φ hq) u
-  right_comm := by
-    refine LinearMap.ext fun u => ?_
+  right_comm := LinearMap.ext fun u => by
     simpa [slabCorrespondence] using AlgHom.congr_fun (mapAlgHom_comp_rightChamberMap φ hq) u
-  left_mem k p hp := by
-    rw [Submodule.restrictScalars_mem] at hp ⊢
-    obtain ⟨b, rfl⟩ := (AddMonoidAlgebra.mem_grade_iff' B k p).mp hp
-    simp only [AddMonoidAlgebra.lsingle_apply, AlgHom.toLinearMap_apply,
-      AddMonoidAlgebra.mapAlgHom_single]
-    exact AddMonoidAlgebra.single_mem_grade k (φ b)
-  right_mem k p hp := by
-    rw [Submodule.restrictScalars_mem] at hp ⊢
-    obtain ⟨b, rfl⟩ := (AddMonoidAlgebra.mem_grade_iff' B k p).mp hp
-    simp only [AddMonoidAlgebra.lsingle_apply, AlgHom.toLinearMap_apply,
-      AddMonoidAlgebra.mapAlgHom_single]
-    exact AddMonoidAlgebra.single_mem_grade k (φ b)
+  left_mem := mapAlgHom_mem_grade φ
+  right_mem := mapAlgHom_mem_grade φ
   admissible_left := hII'
   admissible_right := hJJ'
   middle_liftLeft i a := by
@@ -474,39 +418,31 @@ def rightTangentialMap (q : AddMonoidAlgebra S Λ) :
 theorem leftTangentialMap_algebraMap_single (q : AddMonoidAlgebra S Λ) (m : Λ) (s : S) :
     leftTangentialMap q (algebraMap (AddMonoidAlgebra S Λ) _ (AddMonoidAlgebra.single m s)) =
       AddMonoidAlgebra.single (0, m) s := by
-  have hC : C (AddMonoidAlgebra.single m s) =
-      AddMonoidAlgebra.single (0 : ℤ) (AddMonoidAlgebra.single m s) := rfl
-  rw [leftTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-    AlgHom.restrictScalars_apply, AlgHom.commutes, ← C_eq_algebraMap, hC,
-    AddMonoidAlgebra.curryAlgEquiv_symm_single]
+  rw [leftTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgHom.restrictScalars_apply,
+    AlgHom.commutes, ← C_eq_algebraMap]
+  exact AddMonoidAlgebra.curryAlgEquiv_symm_single (0 : ℤ) m s
 
 @[simp]
 theorem rightTangentialMap_algebraMap_single (q : AddMonoidAlgebra S Λ) (m : Λ) (s : S) :
     rightTangentialMap q (algebraMap (AddMonoidAlgebra S Λ) _ (AddMonoidAlgebra.single m s)) =
       AddMonoidAlgebra.single (0, m) s := by
-  have hC : C (AddMonoidAlgebra.single m s) =
-      AddMonoidAlgebra.single (0 : ℤ) (AddMonoidAlgebra.single m s) := rfl
-  rw [rightTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-    AlgHom.restrictScalars_apply, AlgHom.commutes, ← C_eq_algebraMap, hC,
-    AddMonoidAlgebra.curryAlgEquiv_symm_single]
+  rw [rightTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgHom.restrictScalars_apply,
+    AlgHom.commutes, ← C_eq_algebraMap]
+  exact AddMonoidAlgebra.curryAlgEquiv_symm_single (0 : ℤ) m s
 
 @[simp]
 theorem leftTangentialMap_X (q : AddMonoidAlgebra S Λ) :
     leftTangentialMap q (X q) = AddMonoidAlgebra.single (1, 0) 1 := by
-  have hT : (T 1 : (AddMonoidAlgebra S Λ)[T;T⁻¹]) =
-      AddMonoidAlgebra.single 1 (AddMonoidAlgebra.single 0 1) := rfl
-  rw [leftTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-    AlgHom.restrictScalars_apply, leftChamberMap_X, hT,
-    AddMonoidAlgebra.curryAlgEquiv_symm_single]
+  rw [leftTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgHom.restrictScalars_apply,
+    leftChamberMap_X]
+  exact AddMonoidAlgebra.curryAlgEquiv_symm_single (1 : ℤ) (0 : Λ) (1 : S)
 
 @[simp]
 theorem rightTangentialMap_Y (q : AddMonoidAlgebra S Λ) :
     rightTangentialMap q (Y q) = AddMonoidAlgebra.single (1, 0) 1 := by
-  have hT : (T 1 : (AddMonoidAlgebra S Λ)[T;T⁻¹]) =
-      AddMonoidAlgebra.single 1 (AddMonoidAlgebra.single 0 1) := rfl
-  rw [rightTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-    AlgHom.restrictScalars_apply, rightChamberMap_Y, hT,
-    AddMonoidAlgebra.curryAlgEquiv_symm_single]
+  rw [rightTangentialMap, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgHom.restrictScalars_apply,
+    rightChamberMap_Y]
+  exact AddMonoidAlgebra.curryAlgEquiv_symm_single (1 : ℤ) (0 : Λ) (1 : S)
 
 theorem leftTangentialMap_algebraMap_single_mul_Z
     (q : AddMonoidAlgebra S Λ) (m : Λ) (s : S) (n : ℤ) :
@@ -531,13 +467,10 @@ theorem rightTangentialMap_algebraMap_single_mul_Z
 /-- Joint injectivity of the full-exponent chamber maps into `S[ℤ × Λ]` for arbitrary `q`. -/
 theorem tangentialChamberProd_injective (q : AddMonoidAlgebra S Λ) :
     Function.Injective
-      ((leftTangentialMap q).toLinearMap.prod (rightTangentialMap q).toLinearMap) := by
-  intro u v huv
-  have hL : leftChamberMap q u = leftChamberMap q v :=
-    (AddMonoidAlgebra.curryAlgEquiv S).symm.injective (congrArg Prod.fst huv)
-  have hR : rightChamberMap q u = rightChamberMap q v :=
-    (AddMonoidAlgebra.curryAlgEquiv S).symm.injective (congrArg Prod.snd huv)
-  exact chamberProd_injective q (Prod.ext hL hR)
+      ((leftTangentialMap q).toLinearMap.prod (rightTangentialMap q).toLinearMap) :=
+  fun _ _ huv => chamberProd_injective q <| Prod.ext
+    ((AddMonoidAlgebra.curryAlgEquiv S).symm.injective (congrArg Prod.fst huv))
+    ((AddMonoidAlgebra.curryAlgEquiv S).symm.injective (congrArg Prod.snd huv))
 
 /-- Auxiliary `S`-linear lift reading the `p`-th coefficient in `S[ℤ × Λ]` and scaling a
 tangential monomial times a slab basis element. -/
@@ -557,7 +490,7 @@ private theorem tangentialLiftLinearMap_apply (q : AddMonoidAlgebra S Λ) (p : �
   simp only [tangentialLiftLinearMap, LinearMap.comp_apply, Submodule.subtype_apply,
     LinearEquiv.coe_coe, Finsupp.lapply_apply, LinearMap.smulRight_apply, LinearMap.id_apply]
   have hcoe : (AddMonoidAlgebra.coeffLinearEquiv S) (a : AddMonoidAlgebra S (ℤ × Λ)) =
-      (a : AddMonoidAlgebra S (ℤ × Λ)).coeff := rfl
+      (a : AddMonoidAlgebra S (ℤ × Λ)).coeff := (rfl)
   have hsmul (r : S) (x : AddMonoidAlgebra S Λ) :
       r • algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q) x =
         algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q) (r • x) :=
@@ -576,30 +509,18 @@ def tangentialSlabCorrespondence (q : AddMonoidAlgebra S Λ)
   right := (rightTangentialMap q).toLinearMap
   liftLeft i := tangentialLiftLinearMap q (i : ℤ × Λ) (Z q (-(i : ℤ × Λ).1))
   liftRight j := tangentialLiftLinearMap q (j : ℤ × Λ) (Z q (j : ℤ × Λ).1)
-  left_liftLeft i := by
-    refine LinearMap.ext fun a => ?_
-    obtain ⟨s, hs⟩ := (AddMonoidAlgebra.mem_grade_iff' S (i : ℤ × Λ) a.1).mp a.property
-    have hi : 0 ≤ (i : ℤ × Λ).1 := hI i.1 i.property
-    have hc : (a : AddMonoidAlgebra S (ℤ × Λ)).coeff (i : ℤ × Λ) = s := by
-      rw [← hs, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.coeff_single,
-        Finsupp.single_eq_same]
+  left_liftLeft i := LinearMap.ext fun a => by
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      tangentialLiftLinearMap_apply, hc, leftTangentialMap_algebraMap_single_mul_Z,
-      neg_neg, Int.toNat_of_nonpos (neg_nonpos.mpr hi), pow_zero, mul_one,
+      tangentialLiftLinearMap_apply, leftTangentialMap_algebraMap_single_mul_Z,
+      neg_neg, Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.1 i.2)), pow_zero, mul_one,
       AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
-    exact hs
-  right_liftRight j := by
-    refine LinearMap.ext fun a => ?_
-    obtain ⟨s, hs⟩ := (AddMonoidAlgebra.mem_grade_iff' S (j : ℤ × Λ) a.1).mp a.property
-    have hj : 0 ≤ (j : ℤ × Λ).1 := hJ j.1 j.property
-    have hc : (a : AddMonoidAlgebra S (ℤ × Λ)).coeff (j : ℤ × Λ) = s := by
-      rw [← hs, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.coeff_single,
-        Finsupp.single_eq_same]
+    exact single_coeff_of_mem_grade a.2
+  right_liftRight j := LinearMap.ext fun a => by
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      tangentialLiftLinearMap_apply, hc, rightTangentialMap_algebraMap_single_mul_Z,
-      Int.toNat_of_nonpos (neg_nonpos.mpr hj), pow_zero, mul_one,
+      tangentialLiftLinearMap_apply, rightTangentialMap_algebraMap_single_mul_Z,
+      Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.1 j.2)), pow_zero, mul_one,
       AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
-    exact hs
+    exact single_coeff_of_mem_grade a.2
 
 @[simp]
 theorem tangentialSlabCorrespondence_liftLeft_apply (q : AddMonoidAlgebra S Λ)
@@ -642,12 +563,12 @@ theorem tangentialSlabCorrespondence_transfer_single
   have hto : (i : ℤ × G).1.toNat = (i : ℤ × G).1.natAbs := by omega
   let f : AddMonoidAlgebra S G :=
     AddMonoidAlgebra.single (i : ℤ × G).2 s * q ^ (i : ℤ × G).1.natAbs
-  have hcur : (AddMonoidAlgebra.curryAlgEquiv S).symm (AddMonoidAlgebra.single (-(i : ℤ × G).1) f) =
+  have hcur : (AddMonoidAlgebra.curryAlgEquiv S).symm
+      (AddMonoidAlgebra.single (-(i : ℤ × G).1) f) =
       ∑ m₀ ∈ f.coeff.support, AddMonoidAlgebra.single (-(i : ℤ × G).1, m₀) (f.coeff m₀) := by
     conv_lhs => rw [← AddMonoidAlgebra.sum_coeff_single f]
     rw [Finsupp.sum, ← AddMonoidAlgebra.lsingle_apply (R := ℕ), map_sum, map_sum]
-    refine Finset.sum_congr rfl fun m₀ _ => ?_
-    rw [AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.curryAlgEquiv_symm_single]
+    exact Finset.sum_congr rfl fun _ _ => AddMonoidAlgebra.curryAlgEquiv_symm_single _ _ _
   have himg : (tangentialSlabCorrespondence q hI hJ).right
       ((tangentialSlabCorrespondence q hI hJ).liftLeft i
         ⟨AddMonoidAlgebra.single (i : ℤ × G) s,
@@ -668,23 +589,18 @@ theorem tangentialSlabCorrespondence_transfer_single
       · rw [DirectSum.decompose_of_mem_same (AddMonoidAlgebra.grade S (M := ℤ × G))
           (AddMonoidAlgebra.single_mem_grade (-(i : ℤ × G).1, m') (f.coeff m'))]
         simp [f, sub_eq_neg_add]
-      · intro m₀ _ hm₀
-        exact DirectSum.decompose_of_mem_ne _ (AddMonoidAlgebra.single_mem_grade _ _)
-          (fun h => hm₀ (Prod.mk.inj h).2)
-      · intro h; exact absurd hm' h
+      · exact fun _ _ hm₀ => DirectSum.decompose_of_mem_ne _
+          (AddMonoidAlgebra.single_mem_grade _ _) fun h => hm₀ (Prod.mk.inj h).2
+      · exact fun h => absurd hm' h
     · rw [Finset.sum_eq_zero]
-      · have h0 : f.coeff m' = 0 := Finsupp.notMem_support_iff.mp hm'
-        have h0' : s * (q ^ (i : ℤ × G).1.natAbs).coeff (m' - (i : ℤ × G).2) = 0 := by
-          simpa [f, sub_eq_neg_add] using h0
-        rw [h0', AddMonoidAlgebra.single_zero]
-      · intro m₀ hm₀
-        have hne : m₀ ≠ m' := fun h => hm' (h ▸ hm₀)
-        exact DirectSum.decompose_of_mem_ne _ (AddMonoidAlgebra.single_mem_grade _ _)
-          (fun h => hne (Prod.mk.inj h).2)
+      · have h0 : s * (q ^ (i : ℤ × G).1.natAbs).coeff (m' - (i : ℤ × G).2) = 0 := by
+          simpa [f, sub_eq_neg_add] using Finsupp.notMem_support_iff.mp hm'
+        rw [h0, AddMonoidAlgebra.single_zero]
+      · exact fun _ hm₀ => DirectSum.decompose_of_mem_ne _
+          (AddMonoidAlgebra.single_mem_grade _ _) fun h => hm' ((Prod.mk.inj h).2 ▸ hm₀)
   · simp only [hk, ↓reduceIte]
-    refine Finset.sum_eq_zero fun m₀ _ => ?_
-    exact DirectSum.decompose_of_mem_ne _ (AddMonoidAlgebra.single_mem_grade _ _)
-      (fun h => hk (Prod.mk.inj h).1)
+    exact Finset.sum_eq_zero fun _ _ => DirectSum.decompose_of_mem_ne _
+      (AddMonoidAlgebra.single_mem_grade _ _) fun h => hk (Prod.mk.inj h).1
 
 private theorem mapAlgHom_tangentialLiftLinearMap [CommSemiring R] [Algebra R S] [Algebra R S']
     (φ : S →ₐ[R] S') {q : AddMonoidAlgebra S Λ} {q' : AddMonoidAlgebra S' Λ}
@@ -698,24 +614,13 @@ private theorem mapAlgHom_tangentialLiftLinearMap [CommSemiring R] [Algebra R S]
         (tangentialLiftLinearMap q p z ⟨a.1, a.2⟩) =
         tangentialLiftLinearMap q' p z' ⟨AddMonoidAlgebra.mapAlgHom (ℤ × Λ) φ a.1, hmem⟩ := by
   have ha : (a : AddMonoidAlgebra S (ℤ × Λ)) ∈ AddMonoidAlgebra.grade S p := a.property
-  obtain ⟨s, hs⟩ := (AddMonoidAlgebra.mem_grade_iff' S p a.1).mp ha
-  refine ⟨by
-    rw [← hs, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.mapAlgHom_single]
-    exact AddMonoidAlgebra.single_mem_grade p (φ s), ?_⟩
-  have hc1 : (a : AddMonoidAlgebra S (ℤ × Λ)).coeff p = s := by
-    rw [← hs, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.coeff_single,
-      Finsupp.single_eq_same]
-  have hc2 : ((AddMonoidAlgebra.mapAlgHom (ℤ × Λ) φ) (a : AddMonoidAlgebra S (ℤ × Λ))).coeff p =
-      φ s := by
-    rw [← hs, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.mapAlgHom_single,
-      AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same]
-  rw [tangentialLiftLinearMap_apply, tangentialLiftLinearMap_apply, hc1, hc2,
+  refine ⟨mapAlgHom_mem_grade φ p a.1 a.2, ?_⟩
+  have hc : ((AddMonoidAlgebra.mapAlgHom (ℤ × Λ) φ) a.1).coeff p = φ (a.1.coeff p) := by
+    conv_lhs => rw [← single_coeff_of_mem_grade ha, AddMonoidAlgebra.mapAlgHom_single]
+    rw [AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same]
+  rw [tangentialLiftLinearMap_apply, tangentialLiftLinearMap_apply, hc,
     map_mul, mapAlgHom_algebraMap, hz]
   simp
-
-private theorem rightTangentialMap_X_eq_leftTangentialMap_Y (q : AddMonoidAlgebra S Λ) :
-    rightTangentialMap q (X q) = leftTangentialMap q (Y q) := by
-  simp [rightTangentialMap, leftTangentialMap]
 
 private theorem mapAlgHom_leftTangentialMap_Y [CommSemiring R] [Algebra R S] [Algebra R S']
     (φ : S →ₐ[R] S') (q : AddMonoidAlgebra S Λ) :
@@ -731,6 +636,11 @@ private theorem mapAlgHom_leftTangentialMap_Y [CommSemiring R] [Algebra R S] [Al
   | single m s =>
     simp only [AddMonoidAlgebra.mapAlgHom_single, ← single_eq_C_mul_T,
       AddMonoidAlgebra.curryAlgEquiv_symm_single]
+
+private theorem rightTangentialMap_X_eq_leftTangentialMap_Y {S₀ : Type*} [CommRing S₀]
+    (q₀ : AddMonoidAlgebra S₀ Λ) :
+    rightTangentialMap q₀ (X q₀) = leftTangentialMap q₀ (Y q₀) := by
+  simp [rightTangentialMap, leftTangentialMap]
 
 /-- Functorial `R`-linear morphism of full-exponent tangential slab correspondences along a
 coefficient `R`-algebra homomorphism `φ : S →ₐ[R] S'` (covering scalar extensions and compatible
@@ -757,43 +667,31 @@ def tangentialSlabCorrespondenceHom [CommSemiring R] [Algebra R S] [Algebra R S'
       ((leftTangentialMap q').restrictScalars R).comp
         (mapAlgHom ((AddMonoidAlgebra.mapAlgHom Λ φ).restrictScalars R)
           ((AlgHom.restrictScalars_apply R (AddMonoidAlgebra.mapAlgHom Λ φ) q).trans hq)) := by
-      refine algHom_ext_of_algebra (fun b => ?_) (by simp) ?_
-      · induction b using AddMonoidAlgebra.induction_linear with
-        | zero => simp
-        | add x y hx hy => simp [map_add, hx, hy]
-        | single m s => simp
-      · cases hq
-        simp [mapAlgHom_leftTangentialMap_Y φ q]
-    refine LinearMap.ext fun u => ?_
-    simpa [tangentialSlabCorrespondence] using AlgHom.congr_fun hAlg u
+      refine algHom_ext_of_algebra (fun b => ?_) (by simp) (by
+        cases hq; simp [mapAlgHom_leftTangentialMap_Y φ q])
+      induction b using AddMonoidAlgebra.induction_linear with
+      | zero => simp
+      | add x y hx hy => simp [map_add, hx, hy]
+      | single m s => simp
+    exact LinearMap.ext fun u => by
+      simpa [tangentialSlabCorrespondence] using AlgHom.congr_fun hAlg u
   right_comm := by
     have hAlg : ((AddMonoidAlgebra.mapAlgHom (ℤ × Λ) φ).restrictScalars R).comp
         ((rightTangentialMap q).restrictScalars R) =
       ((rightTangentialMap q').restrictScalars R).comp
         (mapAlgHom ((AddMonoidAlgebra.mapAlgHom Λ φ).restrictScalars R)
           ((AlgHom.restrictScalars_apply R (AddMonoidAlgebra.mapAlgHom Λ φ) q).trans hq)) := by
-      refine algHom_ext_of_algebra (fun b => ?_) ?_ (by simp)
-      · induction b using AddMonoidAlgebra.induction_linear with
-        | zero => simp
-        | add x y hx hy => simp [map_add, hx, hy]
-        | single m s => simp
-      · cases hq
-        simp [rightTangentialMap_X_eq_leftTangentialMap_Y,
-          mapAlgHom_leftTangentialMap_Y φ q]
-    refine LinearMap.ext fun u => ?_
-    simpa [tangentialSlabCorrespondence] using AlgHom.congr_fun hAlg u
-  left_mem p x hx := by
-    rw [Submodule.restrictScalars_mem] at hx ⊢
-    obtain ⟨s, rfl⟩ := (AddMonoidAlgebra.mem_grade_iff' S p x).mp hx
-    simp only [AddMonoidAlgebra.lsingle_apply, AlgHom.toLinearMap_apply,
-      AlgHom.restrictScalars_apply, AddMonoidAlgebra.mapAlgHom_single]
-    exact AddMonoidAlgebra.single_mem_grade p (φ s)
-  right_mem p x hx := by
-    rw [Submodule.restrictScalars_mem] at hx ⊢
-    obtain ⟨s, rfl⟩ := (AddMonoidAlgebra.mem_grade_iff' S p x).mp hx
-    simp only [AddMonoidAlgebra.lsingle_apply, AlgHom.toLinearMap_apply,
-      AlgHom.restrictScalars_apply, AddMonoidAlgebra.mapAlgHom_single]
-    exact AddMonoidAlgebra.single_mem_grade p (φ s)
+      refine algHom_ext_of_algebra (fun b => ?_) (by
+        cases hq; simp [rightTangentialMap_X_eq_leftTangentialMap_Y,
+          mapAlgHom_leftTangentialMap_Y φ q]) (by simp)
+      induction b using AddMonoidAlgebra.induction_linear with
+      | zero => simp
+      | add x y hx hy => simp [map_add, hx, hy]
+      | single m s => simp
+    exact LinearMap.ext fun u => by
+      simpa [tangentialSlabCorrespondence] using AlgHom.congr_fun hAlg u
+  left_mem := mapAlgHom_mem_grade φ
+  right_mem := mapAlgHom_mem_grade φ
   admissible_left := hII'
   admissible_right := hJJ'
   middle_liftLeft i a := by
@@ -829,22 +727,17 @@ theorem rightChamberMap_binomial (t : S) (a : ℕ) (b : ℤ) :
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [one_pow, mul_one, T_pow, mul_one, mul_comm _ (a.choose j : S[T;T⁻¹]), mul_assoc,
       ← T_add, add_comm (j : ℤ) b]
-  have habs : (a : ℤ) * (-1) = -(a : ℤ) := by omega
-  calc
-    rightChamberMap q (X q ^ a * algebraMap S[T;T⁻¹] (SlabAlgebra S[T;T⁻¹] q) (T b))
-        = (C q * T (-1)) ^ a * C (T b) := by
-          rw [map_mul, map_pow, rightChamberMap_X, AlgHom.commutes, ← C_eq_algebraMap]
-    _ = C (C (t ^ a) * ((1 + T 1 : S[T;T⁻¹]) ^ a * T b)) * T (-(a : ℤ)) := by
-          rw [mul_pow, T_pow, habs, mul_right_comm (C q ^ a) (T (-(a : ℤ))) (C (T b)),
-            ← map_pow, ← map_mul]
-          simp [q, mul_pow, mul_assoc]
+  calc rightChamberMap q (X q ^ a * algebraMap S[T;T⁻¹] (SlabAlgebra S[T;T⁻¹] q) (T b))
+      = C (C (t ^ a) * ((1 + T 1 : S[T;T⁻¹]) ^ a * T b)) * T (-(a : ℤ)) := by
+        rw [map_mul, map_pow, rightChamberMap_X, AlgHom.commutes, ← C_eq_algebraMap, mul_pow,
+          T_pow, show (a : ℤ) * (-1) = -(a : ℤ) by omega,
+          mul_right_comm (C q ^ a) (T (-(a : ℤ))) (C (T b)), ← map_pow, ← map_mul]
+        simp [q, mul_pow, mul_assoc]
     _ = C (C (t ^ a)) * T (-(a : ℤ)) *
           ∑ j ∈ Finset.range (a + 1),
             (a.choose j : (S[T;T⁻¹])[T;T⁻¹]) * C (T (b + j)) := by
-          rw [h1T, map_mul, map_sum, mul_right_comm]
-          congr 1
-          refine Finset.sum_congr rfl fun j _ => ?_
-          rw [map_mul, map_natCast]
+        rw [h1T, map_mul, map_sum, mul_right_comm]
+        exact congrArg _ (Finset.sum_congr rfl fun _ _ => by rw [map_mul, map_natCast])
 
 end Tangential
 

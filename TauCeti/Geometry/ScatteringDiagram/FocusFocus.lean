@@ -106,21 +106,19 @@ def modelW (k : ℕ) : (ModelAlgebra K k)ˣ where
     rw [coordinate, coordinate, ← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
     exact Ideal.subset_span (Set.mem_insert _ _)
   inv_val := by
-    rw [coordinate, coordinate, ← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq,
-      mul_comm]
+    rw [mul_comm, coordinate, coordinate, ← map_mul, ← map_one (Ideal.Quotient.mk _),
+      Ideal.Quotient.eq]
     exact Ideal.subset_span (Set.mem_insert _ _)
 
 @[simp]
 theorem val_modelW (k : ℕ) :
     ((modelW K k : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) =
-      coordinate K (modelIdeal K k) w := by
-  rfl
+      coordinate K (modelIdeal K k) w := (rfl)
 
 @[simp]
 theorem val_inv_modelW (k : ℕ) :
     (((modelW K k)⁻¹ : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) =
-      coordinate K (modelIdeal K k) wInv := by
-  rfl
+      coordinate K (modelIdeal K k) wInv := (rfl)
 
 theorem coordinate_t_pow_succ_eq_zero (k : ℕ) :
     coordinate K (modelIdeal K k) t ^ (k + 1) = 0 := by
@@ -147,8 +145,7 @@ theorem modelTheta_zero_left (k : ℕ) (b : ℤ) :
     modelTheta K k 0 b = ((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k) := by
   simp [modelTheta]
 
-theorem modelTheta_zero (k : ℕ) : modelTheta K k 0 0 = 1 := by
-  simp
+theorem modelTheta_zero (k : ℕ) : modelTheta K k 0 0 = 1 := by simp
 
 /-! ### Identification with `SlabAlgebra` over `(K[t] / (t^{k + 1}))[w, w⁻¹]` -/
 
@@ -171,7 +168,8 @@ private def coordToSlab (k : ℕ) : Coordinate → TargetSlab K k
 
 private def modelToSlab (k : ℕ) : ModelAlgebra K k →ₐ[K] TargetSlab K k :=
   Ideal.Quotient.liftₐ (modelIdeal K k) (MvPolynomial.aeval (coordToSlab K k)) (by
-    have hle : modelIdeal K k ≤ RingHom.ker (MvPolynomial.aeval (coordToSlab K k)).toRingHom := by
+    have hle : modelIdeal K k ≤
+        RingHom.ker (MvPolynomial.aeval (coordToSlab K k)).toRingHom := by
       rw [modelIdeal, Ideal.span_le]
       intro p hp
       simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hp
@@ -184,31 +182,26 @@ private def modelToSlab (k : ℕ) : ModelAlgebra K k →ₐ[K] TargetSlab K k :=
           simpa using AdjoinRoot.eval₂_root (Polynomial.X ^ (k + 1) : Polynomial K)
         rw [map_pow, MvPolynomial.aeval_X, coordToSlab, ← map_pow, ← map_pow, hroot, map_zero,
           map_zero]
-      · have hpar : slabParam K k =
-            C (AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K)) * (1 + T 1) := rfl
-        rw [map_sub, map_mul, map_mul, map_add, map_one, MvPolynomial.aeval_X,
-          MvPolynomial.aeval_X, MvPolynomial.aeval_X, MvPolynomial.aeval_X,
-          coordToSlab, coordToSlab, coordToSlab, coordToSlab, SlabAlgebra.X_mul_Y,
-          ← map_one (algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k)),
-          ← map_add, ← map_mul, ← hpar, sub_self]
-    intro a ha
-    exact hle ha)
+      · rw [map_sub, map_mul, map_mul, map_add, map_one, MvPolynomial.aeval_X,
+          MvPolynomial.aeval_X, MvPolynomial.aeval_X, MvPolynomial.aeval_X, coordToSlab,
+          coordToSlab, coordToSlab, coordToSlab, SlabAlgebra.X_mul_Y,
+          ← map_one (algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k)), ← map_add, ← map_mul]
+        exact sub_self _
+    exact fun _ ha => hle ha)
 
 @[simp]
 private theorem modelToSlab_coordinate (k : ℕ) (c : Coordinate) :
-    modelToSlab K k (coordinate K (modelIdeal K k) c) = coordToSlab K k c := by
-  exact MvPolynomial.aeval_X (coordToSlab K k) c
+    modelToSlab K k (coordinate K (modelIdeal K k) c) = coordToSlab K k c :=
+  MvPolynomial.aeval_X (coordToSlab K k) c
 
 private def baseToModel (k : ℕ) : BaseRing K k →ₐ[K] ModelAlgebra K k :=
   AdjoinRoot.liftAlgHom (Polynomial.X ^ (k + 1) : Polynomial K)
-    (Algebra.ofId K (ModelAlgebra K k))
-    (coordinate K (modelIdeal K k) t)
+    (Algebra.ofId K (ModelAlgebra K k)) (coordinate K (modelIdeal K k) t)
     (by simp [coordinate_t_pow_succ_eq_zero])
 
 private def slabToModel (k : ℕ) : TargetSlab K k →ₐ[K] ModelAlgebra K k :=
   { SlabAlgebra.liftRingHom (eval₂ (baseToModel K k).toRingHom (modelW K k))
-      (coordinate K (modelIdeal K k) x)
-      (coordinate K (modelIdeal K k) y)
+      (coordinate K (modelIdeal K k) x) (coordinate K (modelIdeal K k) y)
       (by
         simp only [slabParam, map_mul, map_add, map_one, eval₂_C, eval₂_T,
           AlgHom.toRingHom_eq_coe, RingHom.coe_coe, baseToModel, AdjoinRoot.liftAlgHom_root,
@@ -234,8 +227,8 @@ private theorem modelToSlab_baseToModel (k : ℕ) (a : BaseRing K k) :
     induction f using Polynomial.induction_on' with
     | add p₁ p₂ hp₁ hp₂ => simp [hp₁, hp₂]
     | monomial d r =>
-      rw [← Polynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow,
-        AdjoinRoot.mk_C, AdjoinRoot.mk_X]
+      rw [← Polynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow, AdjoinRoot.mk_C,
+        AdjoinRoot.mk_X]
       simp [baseToModel, coordToSlab, hK]
 
 private theorem modelToSlab_modelW_zpow (k : ℕ) (n : ℤ) :
@@ -243,47 +236,38 @@ private theorem modelToSlab_modelW_zpow (k : ℕ) (n : ℤ) :
       algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T n) := by
   let u : (TargetSlab K k)ˣ := Units.map (modelToSlab K k).toMonoidHom (modelW K k)
   have hu : (u : TargetSlab K k) =
-      algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T 1) := by
-    simp [u, modelW, coordToSlab]
+      algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T 1) := by simp [u, modelW, coordToSlab]
   have hu_inv : ((u⁻¹ : (TargetSlab K k)ˣ) : TargetSlab K k) =
       algebraMap (BaseRing K k)[T;T⁻¹] (TargetSlab K k) (T (-1)) := by
     simp [u, modelW, coordToSlab]
-  have hmap : modelToSlab K k
-      (((modelW K k ^ n : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
+  have hmap : modelToSlab K k (((modelW K k ^ n : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
       ((u ^ n : (TargetSlab K k)ˣ) : TargetSlab K k) :=
     (Units.coe_map (modelToSlab K k).toMonoidHom (modelW K k ^ n)).symm.trans
-      (congrArg Units.val (map_zpow (Units.map (modelToSlab K k).toMonoidHom)
-        (modelW K k) n))
+      (congrArg Units.val (map_zpow (Units.map (modelToSlab K k).toMonoidHom) (modelW K k) n))
   rw [hmap]
   cases n with
-  | ofNat d =>
-    simp [zpow_natCast, Units.val_pow_eq_pow_val, hu, ← map_pow, T_pow]
+  | ofNat d => simp [zpow_natCast, Units.val_pow_eq_pow_val, hu, ← map_pow, T_pow]
   | negSucc d =>
     rw [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val, hu_inv, ← map_pow, T_pow]
-    congr 2
-    omega
+    exact congrArg _ (congrArg T (by omega))
 
 /-- Canonical `K`-algebra isomorphism between `ModelAlgebra K k` and the slab algebra
 `SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)` over `BaseRing K k = K[t] / (t ^ (k + 1))`. -/
 def modelSlabEquiv (k : ℕ) :
     ModelAlgebra K k ≃ₐ[K] SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k) :=
   AlgEquiv.ofAlgHom (modelToSlab K k) (slabToModel K k)
-    (by
-      refine SlabAlgebra.algHom_ext_of_algebra (fun p => ?_)
-        (by simp [slabToModel, coordToSlab]) (by simp [slabToModel, coordToSlab])
-      simp only [AlgHom.comp_apply, AlgHom.id_apply, slabToModel, AlgHom.coe_mk,
-        SlabAlgebra.liftRingHom_algebraMap]
-      induction p using AddMonoidAlgebra.induction_linear with
-      | zero => simp
-      | add f g hf hg => rw [map_add, map_add, hf, hg, map_add]
-      | single n a =>
-        rw [single_eq_C_mul_T, map_mul, map_mul, eval₂_C, eval₂_T,
-          AlgHom.toRingHom_eq_coe, RingHom.coe_coe, modelToSlab_baseToModel,
-          modelToSlab_modelW_zpow, ← map_mul])
-    (by
-      apply Ideal.Quotient.algHom_ext
-      apply MvPolynomial.algHom_ext
-      intro c
+    (SlabAlgebra.algHom_ext_of_algebra
+      (fun p => by
+        simp only [AlgHom.comp_apply, AlgHom.id_apply, slabToModel, AlgHom.coe_mk,
+          SlabAlgebra.liftRingHom_algebraMap]
+        induction p using AddMonoidAlgebra.induction_linear with
+        | zero => simp
+        | add f g hf hg => rw [map_add, map_add, hf, hg, map_add]
+        | single n a =>
+          rw [single_eq_C_mul_T, map_mul, map_mul, eval₂_C, eval₂_T, AlgHom.toRingHom_eq_coe,
+            RingHom.coe_coe, modelToSlab_baseToModel, modelToSlab_modelW_zpow, ← map_mul])
+      (by simp [slabToModel, coordToSlab]) (by simp [slabToModel, coordToSlab]))
+    (Ideal.Quotient.algHom_ext _ <| MvPolynomial.algHom_ext fun c => by
       rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply,
         Ideal.Quotient.mkₐ_eq_mk, ← coordinate]
       cases c <;> simp [slabToModel, coordToSlab, baseToModel])
@@ -299,15 +283,13 @@ theorem modelSlabEquiv_coordinate_t (k : ℕ) :
 theorem modelSlabEquiv_coordinate_w (k : ℕ) :
     modelSlabEquiv K k (coordinate K (modelIdeal K k) w) =
       algebraMap (BaseRing K k)[T;T⁻¹] (SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k))
-        (T 1) := by
-  simp [modelSlabEquiv, coordToSlab]
+        (T 1) := by simp [modelSlabEquiv, coordToSlab]
 
 @[simp]
 theorem modelSlabEquiv_coordinate_wInv (k : ℕ) :
     modelSlabEquiv K k (coordinate K (modelIdeal K k) wInv) =
       algebraMap (BaseRing K k)[T;T⁻¹] (SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k))
-        (T (-1)) := by
-  simp [modelSlabEquiv, coordToSlab]
+        (T (-1)) := by simp [modelSlabEquiv, coordToSlab]
 
 @[simp]
 theorem modelSlabEquiv_coordinate_x (k : ℕ) :
@@ -323,8 +305,7 @@ theorem modelSlabEquiv_coordinate_y (k : ℕ) :
 theorem modelSlabEquiv_modelW_zpow (k : ℕ) (b : ℤ) :
     modelSlabEquiv K k (((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
       algebraMap (BaseRing K k)[T;T⁻¹] (SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k))
-        (T b) :=
-  modelToSlab_modelW_zpow K k b
+        (T b) := modelToSlab_modelW_zpow K k b
 
 /-- Image of `modelTheta K k n b` under `modelSlabEquiv K k`: it equals the slab basis element
 `SlabAlgebra.Z (slabParam K k) n` multiplied by the tangential Laurent monomial `T b`. -/
@@ -344,8 +325,7 @@ theorem modelSlabEquiv_symm_Z_mul_T (k : ℕ) (n b : ℤ) :
     (modelSlabEquiv K k).symm
       (SlabAlgebra.Z (slabParam K k) n *
         algebraMap (BaseRing K k)[T;T⁻¹] (SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k))
-          (T b)) =
-      modelTheta K k n b := by
+          (T b)) = modelTheta K k n b := by
   rw [← modelSlabEquiv_modelTheta, AlgEquiv.symm_apply_apply]
 
 /-! ### Module freeness and the `K`-basis `t^i ϑ_{n,b}` -/
@@ -511,61 +491,55 @@ def mapRingHom {K K' : Type*} [CommRing K] [CommRing K'] (φ : K →+* K') (k : 
         · simp only [map_sub, map_mul, map_add, map_one, MvPolynomial.map_X]
           exact Ideal.subset_span
             (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
-      intro a ha
-      exact hle ha)
+      exact fun _ ha => hle ha)
 
 @[simp]
 theorem mapRingHom_coordinate {K K' : Type*} [CommRing K] [CommRing K']
     (φ : K →+* K') (k : ℕ) (c : Coordinate) :
-    mapRingHom φ k (coordinate K (modelIdeal K k) c) = coordinate K' (modelIdeal K' k) c := by
-  exact congrArg (Ideal.Quotient.mk (modelIdeal K' k)) (MvPolynomial.map_X φ c)
+    mapRingHom φ k (coordinate K (modelIdeal K k) c) = coordinate K' (modelIdeal K' k) c :=
+  congrArg (Ideal.Quotient.mk (modelIdeal K' k)) (MvPolynomial.map_X φ c)
 
 @[simp]
 theorem mapRingHom_algebraMap {K K' : Type*} [CommRing K] [CommRing K']
     (φ : K →+* K') (k : ℕ) (r : K) :
     mapRingHom φ k (algebraMap K (ModelAlgebra K k) r) =
-      algebraMap K' (ModelAlgebra K' k) (φ r) := by
-  exact congrArg (Ideal.Quotient.mk (modelIdeal K' k)) (MvPolynomial.map_C φ r)
+      algebraMap K' (ModelAlgebra K' k) (φ r) :=
+  congrArg (Ideal.Quotient.mk (modelIdeal K' k)) (MvPolynomial.map_C φ r)
+
+private theorem map_modelTheta_of_coordinate {K K' : Type*} [CommRing K] [CommRing K']
+    {k k' : ℕ} (f : ModelAlgebra K k →+* ModelAlgebra K' k')
+    (hc : ∀ c, f (coordinate K (modelIdeal K k) c) = coordinate K' (modelIdeal K' k') c)
+    (n b : ℤ) : f (modelTheta K k n b) = modelTheta K' k' n b := by
+  have hw : Units.map f.toMonoidHom (modelW K k) = modelW K' k' := Units.ext (by simp [modelW, hc])
+  have hzb : f (((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
+      ((modelW K' k' ^ b : (ModelAlgebra K' k')ˣ) : ModelAlgebra K' k') :=
+    (Units.coe_map f.toMonoidHom (modelW K k ^ b)).symm.trans
+      (congrArg Units.val (by rw [map_zpow, hw]))
+  rw [modelTheta, modelTheta, map_mul, hzb]
+  split_ifs <;> simp [hc]
 
 @[simp]
 theorem mapRingHom_modelTheta {K K' : Type*} [CommRing K] [CommRing K']
     (φ : K →+* K') (k : ℕ) (n b : ℤ) :
-    mapRingHom φ k (modelTheta K k n b) = modelTheta K' k n b := by
-  have hw : Units.map (mapRingHom φ k).toMonoidHom (modelW K k) = modelW K' k := by
-    ext
-    simp [modelW]
-  have hzb : mapRingHom φ k (((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
-      ((modelW K' k ^ b : (ModelAlgebra K' k)ˣ) : ModelAlgebra K' k) :=
-    (Units.coe_map (mapRingHom φ k).toMonoidHom (modelW K k ^ b)).symm.trans
-      (congrArg Units.val (by rw [map_zpow, hw]))
-  rw [modelTheta, modelTheta, map_mul, hzb]
-  split_ifs with hn <;> simp
+    mapRingHom φ k (modelTheta K k n b) = modelTheta K' k n b :=
+  map_modelTheta_of_coordinate (mapRingHom φ k) (mapRingHom_coordinate φ k) n b
 
 @[simp]
 theorem mapRingHom_id (K : Type*) [CommRing K] (k : ℕ) :
-    mapRingHom (RingHom.id K) k = RingHom.id (ModelAlgebra K k) := by
-  apply Ideal.Quotient.ringHom_ext
-  apply MvPolynomial.ringHom_ext
-  · intro r
-    exact mapRingHom_algebraMap (RingHom.id K) k r
-  · intro c
-    exact mapRingHom_coordinate (RingHom.id K) k c
+    mapRingHom (RingHom.id K) k = RingHom.id (ModelAlgebra K k) :=
+  Ideal.Quotient.ringHom_ext <| MvPolynomial.ringHom_ext
+    (mapRingHom_algebraMap (RingHom.id K) k) (mapRingHom_coordinate (RingHom.id K) k)
 
 theorem mapRingHom_comp {K K' K'' : Type*} [CommRing K] [CommRing K'] [CommRing K'']
     (ψ : K' →+* K'') (φ : K →+* K') (k : ℕ) :
-    mapRingHom (ψ.comp φ) k = (mapRingHom ψ k).comp (mapRingHom φ k) := by
-  apply Ideal.Quotient.ringHom_ext
-  apply MvPolynomial.ringHom_ext
-  · intro r
-    simp only [RingHom.comp_apply]
-    exact (mapRingHom_algebraMap (ψ.comp φ) k r).trans
+    mapRingHom (ψ.comp φ) k = (mapRingHom ψ k).comp (mapRingHom φ k) :=
+  Ideal.Quotient.ringHom_ext <| MvPolynomial.ringHom_ext
+    (fun r => (mapRingHom_algebraMap (ψ.comp φ) k r).trans
       ((mapRingHom_algebraMap ψ k (φ r)).symm.trans
-        (congrArg (mapRingHom ψ k) (mapRingHom_algebraMap φ k r).symm))
-  · intro c
-    simp only [RingHom.comp_apply]
-    exact (mapRingHom_coordinate (ψ.comp φ) k c).trans
+        (congrArg (mapRingHom ψ k) (mapRingHom_algebraMap φ k r).symm)))
+    (fun c => (mapRingHom_coordinate (ψ.comp φ) k c).trans
       ((mapRingHom_coordinate ψ k c).symm.trans
-        (congrArg (mapRingHom ψ k) (mapRingHom_coordinate φ k c).symm))
+        (congrArg (mapRingHom ψ k) (mapRingHom_coordinate φ k c).symm)))
 
 /-- Order-truncation `K`-algebra homomorphism `ModelAlgebra K k →ₐ[K] ModelAlgebra K k'` for
 `k' ≤ k`. -/
@@ -582,55 +556,37 @@ def truncAlgHom (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k) :
       rcases hp with rfl | rfl | rfl
       · exact Ideal.subset_span (Set.mem_insert _ _)
       · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
-        have hpow : (MvPolynomial.X t : Ambient K) ^ (k' + d + 1) =
-            MvPolynomial.X t ^ (k' + 1) * MvPolynomial.X t ^ d := by
-          rw [← pow_add]
-          congr 1
-          omega
-        rw [hpow]
+        rw [show (MvPolynomial.X t : Ambient K) ^ (k' + d + 1) =
+            MvPolynomial.X t ^ (k' + 1) * MvPolynomial.X t ^ d by rw [← pow_add]; congr 1; omega]
         exact Ideal.mul_mem_right _ _
           (Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_insert _ _)))
       · exact Ideal.subset_span
           (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
-    intro a ha
-    exact hle ha)
+    exact fun _ ha => hle ha)
 
 @[simp]
 theorem truncAlgHom_coordinate (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k)
     (c : Coordinate) :
-    truncAlgHom K hk (coordinate K (modelIdeal K k) c) = coordinate K (modelIdeal K k') c := by
-  rfl
+    truncAlgHom K hk (coordinate K (modelIdeal K k) c) = coordinate K (modelIdeal K k') c := (rfl)
 
 @[simp]
 theorem truncAlgHom_modelTheta (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k) (n b : ℤ) :
-    truncAlgHom K hk (modelTheta K k n b) = modelTheta K k' n b := by
-  have hw : Units.map (truncAlgHom K hk).toMonoidHom (modelW K k) = modelW K k' := by
-    ext
-    simp [modelW]
-  have hzb : truncAlgHom K hk (((modelW K k ^ b : (ModelAlgebra K k)ˣ) : ModelAlgebra K k)) =
-      ((modelW K k' ^ b : (ModelAlgebra K k')ˣ) : ModelAlgebra K k') :=
-    (Units.coe_map (truncAlgHom K hk).toMonoidHom (modelW K k ^ b)).symm.trans
-      (congrArg Units.val (by rw [map_zpow, hw]))
-  rw [modelTheta, modelTheta, map_mul, hzb]
-  split_ifs with hn <;> simp
+    truncAlgHom K hk (modelTheta K k n b) = modelTheta K k' n b :=
+  map_modelTheta_of_coordinate (truncAlgHom K hk).toRingHom (truncAlgHom_coordinate K hk) n b
 
 @[simp]
 theorem truncAlgHom_refl (K : Type*) [CommRing K] (k : ℕ) :
-    truncAlgHom K (le_refl k) = AlgHom.id K (ModelAlgebra K k) := by
-  apply Ideal.Quotient.algHom_ext
-  apply MvPolynomial.algHom_ext
-  intro c
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk,
-    ← coordinate, truncAlgHom_coordinate]
+    truncAlgHom K (le_refl k) = AlgHom.id K (ModelAlgebra K k) :=
+  Ideal.Quotient.algHom_ext K <| MvPolynomial.algHom_ext fun c => by
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk,
+      ← coordinate, truncAlgHom_coordinate]
 
 theorem truncAlgHom_trans (K : Type*) [CommRing K] {k'' k' k : ℕ}
     (hk' : k'' ≤ k') (hk : k' ≤ k) :
-    truncAlgHom K (hk'.trans hk) = (truncAlgHom K hk').comp (truncAlgHom K hk) := by
-  apply Ideal.Quotient.algHom_ext
-  apply MvPolynomial.algHom_ext
-  intro c
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-    ← coordinate, truncAlgHom_coordinate, truncAlgHom_coordinate, truncAlgHom_coordinate]
+    truncAlgHom K (hk'.trans hk) = (truncAlgHom K hk').comp (truncAlgHom K hk) :=
+  Ideal.Quotient.algHom_ext K <| MvPolynomial.algHom_ext fun c => by
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
+      ← coordinate, truncAlgHom_coordinate, truncAlgHom_coordinate, truncAlgHom_coordinate]
 
 end
 
