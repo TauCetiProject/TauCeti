@@ -55,13 +55,14 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
-* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; hence when
-  `(k! : R)` is a unit (in particular for `k < p` in prime characteristic `p`),
-  `(pderiv i)^[k] P` and `hasseDeriv (single i k) P` have the same vanishing and evaluated
-  vanishing (`MvPolynomial.iterate_pderiv_eq_zero_iff_of_isUnit_factorial`,
-  `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_of_isUnit_factorial`,
-  `MvPolynomial.iterate_pderiv_eq_zero_iff_of_lt_charP`,
-  `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_of_lt_charP`).
+* `MvPolynomial.factorial_smul_hasseDeriv_single`,
+  `MvPolynomial.eval_iterate_pderiv_eq_factorial_mul`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; so when
+  `k!` is a unit (for instance `k < p` in characteristic `p`), an ordinary partial derivative or
+  jet vanishes exactly when the corresponding Hasse one does
+  (`MvPolynomial.iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero`,
+  `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero`,
+  `MvPolynomial.iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero_of_lt`,
+  `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt`).
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
   `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative, and `∂^d` vanishes whenever `d`
@@ -86,8 +87,6 @@ public section
 namespace MvPolynomial
 
 open Finsupp
-
-section CommSemiring
 
 variable {R σ : Type*} [CommSemiring R]
 
@@ -275,21 +274,35 @@ theorem eval_iterate_pderiv_eq_factorial_mul (i : σ) (k : ℕ) (P : MvPolynomia
     eval a ((pderiv i)^[k] P) = (k.factorial : R) * eval a (hasseDeriv (single i k) P) := by
   rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
 
-/-- When `(k! : R)` is a unit, the `k`-th partial derivative of `P` in `Xᵢ` vanishes if and only if
-its Hasse derivative `∂^(k eᵢ) P` vanishes. -/
-theorem iterate_pderiv_eq_zero_iff_of_isUnit_factorial {k : ℕ} (hk : IsUnit (k.factorial : R))
+/-- If `k!` is a unit, the `k`-th partial derivative in `Xᵢ` vanishes exactly when the Hasse
+derivative along `k • eᵢ` does. -/
+theorem iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero {k : ℕ} (hk : IsUnit (k.factorial : R))
     (i : σ) (P : MvPolynomial σ R) :
     (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 := by
-  rw [← factorial_smul_hasseDeriv_single, nsmul_eq_mul, ← C_eq_natCast]
-  exact (hk.map C).mul_right_eq_zero
+  rw [← factorial_smul_hasseDeriv_single, ← Nat.cast_smul_eq_nsmul R, hk.smul_eq_zero]
 
-/-- When `(k! : R)` is a unit, the `k`-th partial derivative of `P` in `Xᵢ` vanishes at `a` if and
-only if its Hasse derivative `∂^(k eᵢ) P` vanishes at `a`. -/
-theorem eval_iterate_pderiv_eq_zero_iff_of_isUnit_factorial {k : ℕ} (hk : IsUnit (k.factorial : R))
-    (i : σ) (P : MvPolynomial σ R) (a : σ → R) :
+/-- In characteristic `p`, for `k < p` the `k`-th partial derivative in `Xᵢ` vanishes exactly when
+the Hasse derivative along `k • eᵢ` does. -/
+theorem iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero_of_lt {R : Type*} [CommRing R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] {k : ℕ} (hk : k < p) (i : σ) (P : MvPolynomial σ R) :
+    (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 :=
+  iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero
+    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) i P
+
+/-- If `k!` is a unit, the ordinary jet `(∂ᵢ^k P)(a)` vanishes exactly when the Hasse jet
+`(∂^(k eᵢ) P)(a)` does. -/
+theorem eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero {k : ℕ}
+    (hk : IsUnit (k.factorial : R)) (i : σ) (P : MvPolynomial σ R) (a : σ → R) :
     eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 := by
-  rw [eval_iterate_pderiv_eq_factorial_mul]
-  exact hk.mul_right_eq_zero
+  rw [eval_iterate_pderiv_eq_factorial_mul, hk.mul_right_eq_zero]
+
+/-- In characteristic `p`, for `k < p` the ordinary jet `(∂ᵢ^k P)(a)` vanishes exactly when the
+Hasse jet `(∂^(k eᵢ) P)(a)` does. -/
+theorem eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt {R : Type*} [CommRing R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] {k : ℕ} (hk : k < p) (i : σ) (P : MvPolynomial σ R)
+    (a : σ → R) : eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 :=
+  eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero
+    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) i P a
 
 /-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
 univariate `k`-th Hasse derivative. -/
@@ -403,30 +416,6 @@ theorem hasseDeriv_X [DecidableEq σ] (d : σ →₀ ℕ) (i : σ) :
           rw [tsub_eq_zero_iff_le] at h
           exact le_antisymm h (single_le_iff.mpr (Nat.one_le_iff_ne_zero.mpr hdi))
         simp [hd, hdi, hds, hsub]
-
-end CommSemiring
-
-section CharP
-
-variable {R σ : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP R p]
-
-/-- In prime characteristic `p`, for every order `k < p`, the `k`-th partial derivative of `P` in
-`Xᵢ` vanishes if and only if its Hasse derivative `∂^(k eᵢ) P` vanishes. -/
-theorem iterate_pderiv_eq_zero_iff_of_lt_charP {k : ℕ} (hk : k < p) (i : σ)
-    (P : MvPolynomial σ R) :
-    (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 :=
-  iterate_pderiv_eq_zero_iff_of_isUnit_factorial
-    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) i P
-
-/-- In prime characteristic `p`, for every order `k < p`, the `k`-th partial derivative of `P` in
-`Xᵢ` vanishes at `a` if and only if its Hasse derivative `∂^(k eᵢ) P` vanishes at `a`. -/
-theorem eval_iterate_pderiv_eq_zero_iff_of_lt_charP {k : ℕ} (hk : k < p) (i : σ)
-    (P : MvPolynomial σ R) (a : σ → R) :
-    eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 :=
-  eval_iterate_pderiv_eq_zero_iff_of_isUnit_factorial
-    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) i P a
-
-end CharP
 
 /-- `∂^(2, 0) (X₀³ X₁) = 3 X₀ X₁` over `ℤ`. -/
 example : hasseDeriv (single 0 2) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) ℤ) = 3 * (X 0 * X 1) := by

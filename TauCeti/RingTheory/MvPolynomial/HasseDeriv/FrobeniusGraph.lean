@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.HasseDeriv
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.JetEvaluation
+public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.OrdinaryJet
 public import TauCeti.RingTheory.MvPolynomial.PowerSubstitution
 
-import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.ZMod.Basic
 import Mathlib.FieldTheory.Finite.GaloisField
 
@@ -30,7 +29,8 @@ For any finite set `S : Finset R` and any derivative order bound `m < q`:
   (`MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph`). This holds for every `e ≥ 0`
   (including `e = 0`, where `q = 1` forces `m = 0`) and for orders `p ≤ m < q`.
 * In prime characteristic `p`, when `0 < e` and `m < p`, we have `m < p ≤ q`, and `(k! : R)` is a
-  unit for every `k ≤ m < p` (`MvPolynomial.eval_iterate_pderiv_eq_zero_iff_of_lt_charP`), yielding
+  unit for every `k ≤ m < p`
+  (`MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt`), yielding
   a nonzero ordinary `Z`-jet `(∂_Z ^ k F)(a, a ^ q) ≠ 0` on the Frobenius graph
   (`MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph`). Both `0 < e` and `m < p` are
   sharp for the ordinary form.
@@ -160,7 +160,7 @@ theorem exists_nonzero_ordinary_jet_on_frobenius_graph {e : ℕ} (he : 0 < e)
   obtain ⟨a, ha, k, hk, hne⟩ :=
     exists_nonzero_hasse_jet_on_frobenius_graph F hF hZ S m hmq hdeg
   refine ⟨a, ha, k, hk, ?_⟩
-  rwa [ne_eq, eval_iterate_pderiv_eq_zero_iff_of_lt_charP (hk.trans_lt hm)]
+  rwa [ne_eq, eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt p (hk.trans_lt hm)]
 
 /-- Partial-degree form of `exists_nonzero_ordinary_jet_on_frobenius_graph`, assuming
 `F.degreeOf 0 + p ^ e * F.degreeOf 1 < S.card * (m + 1)`. -/
@@ -197,7 +197,7 @@ theorem ordinaryJetEval_frobeniusGraph_injective {e : ℕ} (he : 0 < e) {s : Set
     Function.Injective
       (ordinaryJetEval s (fun i : S × Fin (m + 1) ↦ ![(i.1 : R), (i.1 : R) ^ p ^ e])
         (fun _ ↦ 0) (fun i : S × Fin (m + 1) ↦ (i.2 : ℕ))) := by
-  rw [ordinaryJetEval_injective_iff_of_lt_charP
+  rw [ordinaryJetEval_injective_iff_of_lt s (fun _ ↦ 0) p _
     fun i ↦ (Nat.lt_succ_iff.1 i.2.isLt).trans_lt hm]
   exact jetEval_frobeniusGraph_injective (hm.trans_le (Nat.le_self_pow he.ne' p)) hsZ hsdeg
 

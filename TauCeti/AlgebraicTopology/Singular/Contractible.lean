@@ -19,7 +19,8 @@ morphism of a pair is an isomorphism whenever its ambient space is contractible.
 `TauCeti.diskBoundaryPair n`, this identifies the relative homology of a disk modulo its boundary
 with the reduced homology of the boundary sphere.  Dually, the quotient map
 `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism whenever the subspace is contractible; for a point this is
-`TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`.
+`TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`. The connecting morphism
+`Hₖ₊₁(X, A) ⟶ Hₖ(A)` then vanishes (`TopPair.singularHomologyδ_eq_zero_of_contractibleSpace`).
 
 Coefficients are an object `R` of an abelian category with coproducts, as everywhere in relative
 singular homology.
@@ -106,6 +107,13 @@ instance isIso_singularHomologyπ_of_contractibleSpace [ContractibleSpace P.snd]
   P.isIso_singularHomologyπ R
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd (k + 1))
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd k)
+
+/-- If the subspace of a pair is contractible, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)`
+vanishes. -/
+theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
+    P.singularHomologyδ R (k + 1) k = 0 := by
+  rw [← cancel_epi (P.singularHomologyπ R (k + 1)),
+    singularHomologyπ_comp_singularHomologyδ _ R (k + 1) k, comp_zero]
 
 end TopPair
 
