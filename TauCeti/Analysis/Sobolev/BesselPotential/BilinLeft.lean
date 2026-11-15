@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
@@ -60,7 +59,9 @@ with norm at most `‖B‖ ‖bₖ‖` (`BesselPotentialSpace.norm_postcomp_le`)
 * `BesselPotentialSpace.bilinLeftCLM`: for a complex Banach space `F` and a complex Hilbert space
   `K`, the bounded operator `H^s(E, F) → H^s(E, K)` extending `SchwartzMap.bilinLeftCLM B hg`,
   characterised on Schwartz functions by
-  `BesselPotentialSpace.bilinLeftCLM_toBesselPotentialSpaceCLM`.
+  `BesselPotentialSpace.bilinLeftCLM_toBesselPotentialSpaceCLM`. For scalar multiplication it is
+  `TemperedDistribution.smulLeftCLM` on every element of `H^s`
+  (`BesselPotentialSpace.toDistr_bilinLeftCLM_lsmul_flip`).
 * `BesselPotentialSpace.exists_norm_bilinLeftCLM_le`: its operator norm is at most `C ‖B‖ M`.
 * `SchwartzMap.hasSobolevExtension_bilinLeftCLM`: `SchwartzMap.bilinLeftCLM B hg` extends to a
   bounded operator `H^s → H^s`.
@@ -214,6 +215,27 @@ theorem bilinLeftCLM_toBesselPotentialSpaceCLM (B : F →L[ℂ] G →L[ℂ] K) {
   exact LinearMap.extendOfNorm_eq
     (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) s ENNReal.ofNat_ne_top)
     ⟨C * ‖B‖ * M, hC B hg hM⟩ u
+
+/-- **Scalar multiplication on `H^s` as an operation on distributions.** For
+`B = (ContinuousLinearMap.lsmul ℂ ℂ).flip`, the operator `BesselPotentialSpace.bilinLeftCLM`
+is multiplication by `g` on the underlying tempered distributions, Mathlib's
+`TemperedDistribution.smulLeftCLM`, as soon as the derivatives of `g` of order at most
+`⌊|s|⌋₊ + 1` are bounded. -/
+@[simp]
+theorem toDistr_bilinLeftCLM_lsmul_flip {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (u : H^{s}(E, K)) :
+    (bilinLeftCLM s (ContinuousLinearMap.lsmul ℂ ℂ).flip hg u).toDistr =
+      smulLeftCLM K g u.toDistr := by
+  -- Compare with the Besov multiplier transported along `B^s_{2,2} ≃ H^s`, which has this
+  -- property by construction, on the dense subspace of Schwartz functions.
+  let e := BesovSpace.besselPotentialSpaceEquiv K (default : ContDiffBump (0 : E)) s
+  have h : bilinLeftCLM s (ContinuousLinearMap.lsmul ℂ ℂ).flip hg =
+      e.toContinuousLinearMap ∘L BesovSpace.smulLeftCLM K _ s 2 2 g hg hbd ∘L
+        e.symm.toContinuousLinearMap := by
+    refine continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦ ext ?_
+    simp [bilinLeftCLM_toBesselPotentialSpaceCLM s _ hg hbd, e,
+      smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.smulLeftCLM, hg]
+  simp [h, e]
 
 variable {s} in
 /-- **The norm of a bilinear multiplier of `H^s`.** Let `N` be a natural number with `|s| < N`.
