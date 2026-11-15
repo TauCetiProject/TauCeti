@@ -113,19 +113,11 @@ theorem not_isContained_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsStrict
   refine Finset.sum_nonpos fun u _ ↦ mul_nonpos_of_nonneg_of_nonpos (hm u).le ?_
   -- At a vertex of the copy, the neighbours in `G` include the images of the neighbours in the
   -- affine graph, whose marks already sum to twice the mark of the vertex.
-  have hsub : (t.graph.neighborFinset u).map f.toEmbedding ⊆ G.neighborFinset (f u) := by
-    intro y hy
-    obtain ⟨w, hw, rfl⟩ := Finset.mem_map.1 hy
-    rw [mem_neighborFinset] at hw ⊢
-    exact f.toHom.map_adj hw
-  have hle : ∑ w ∈ t.graph.neighborFinset u, x (f w) ≤ ∑ y ∈ G.neighborFinset (f u), x y := by
-    have h := Finset.sum_le_sum_of_subset_of_nonneg hsub fun y _ _ ↦ hx0le y
-    rwa [Finset.sum_map] at h
   have hsum : ∑ w ∈ t.graph.neighborFinset u, x (f w) = 2 * m u := by
     simp only [hx, m]
     exact_mod_cast sum_marks_neighborFinset_eq_two_mul ht hg u
   rw [graphCartanMatrix_mulVec_apply, hx, sub_nonpos, ← hsum]
-  exact hle
+  exact f.sum_neighborFinset_comp_le hx0le u
 
 end AffineDynkinType
 

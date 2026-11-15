@@ -51,9 +51,9 @@ position without precarious vertices.
 * `SimpleGraph.Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_iso`: its
   semidefinite form.
 * `SimpleGraph.Connected.posSemidef_and_det_eq_zero_iff_exists_sum_eq_two_mul` and
-  `SimpleGraph.Connected.posSemidef_and_det_eq_zero_iff_exists_isStuck`: a positive semidefinite
-  singular `2I - A` is the same as a nonzero natural null vector, and as a nonzero stuck position
-  without precarious vertices.
+  `SimpleGraph.Connected.posSemidef_and_det_eq_zero_iff_exists_isStuck_and_forall_not_isPrecarious`:
+  a positive semidefinite singular `2I - A` is the same as a nonzero natural null vector, and as
+  a nonzero stuck position without precarious vertices.
 
 ## References
 
@@ -174,7 +174,8 @@ theorem Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_i
 /-- **Stuck positions and singular semidefinite graphs.** A connected finite simple graph carries
 a nonzero position `a : V → ℕ`, read in `ℤ^V`, which is stuck and has no precarious vertex exactly
 when its real matrix `2I - A` is positive semidefinite and singular. -/
-theorem Connected.posSemidef_and_det_eq_zero_iff_exists_isStuck (hG : G.Connected) :
+theorem Connected.posSemidef_and_det_eq_zero_iff_exists_isStuck_and_forall_not_isPrecarious
+    (hG : G.Connected) :
     ((G.graphCartanMatrix ℝ).PosSemidef ∧ (G.graphCartanMatrix ℝ).det = 0) ↔
       ∃ a : V → ℕ, a ≠ 0 ∧ G.IsStuck (fun i ↦ (a i : ℤ)) ∧
         ∀ i, ¬ G.IsPrecarious (fun i ↦ (a i : ℤ)) i := by
