@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
-import TauCeti.Analysis.SpecialFunctions.Complex.LogTaylor
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Taylor
 import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
