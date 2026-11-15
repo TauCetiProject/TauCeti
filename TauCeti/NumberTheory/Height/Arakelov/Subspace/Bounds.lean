@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 import TauCeti.Analysis.ExteriorPower.Plucker
+import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
@@ -16,16 +17,30 @@ The Euclidean height of a subspace is at most the product of the Euclidean
 heights of any basis. The constant is one: the local estimate is Hadamard's
 inequality at infinity and the ultrametric determinant bound at finite places.
 This bound lets one estimate the height of a kernel using its defining forms
-and dot-product duality.
+and dot-product duality (`Matrix.subspaceHeight_ker_mulVecLin` and
+`Matrix.subspaceHeight_ker_mulVecLin_le_prod`).
 
 We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
-gives the absolute Euclidean bound for vectors and subspaces.
+gives the absolute Euclidean bound for vectors and subspaces, both for
+linearly independent families and, by passing to a maximal independent
+subfamily, for arbitrary finite families of nonzero tuples.
+
+## Main results
+
+* `TauCeti.arakelovMulHeight_plucker_le_prod` and `TauCeti.height2_plucker_le_prod`: Hadamard-type
+  product bounds on the relative Arakelov and absolute Euclidean heights of a Plücker vector.
+* `Submodule.subspaceHeight_le_prod`, `Submodule.subspaceHeight_span_range_le_prod`, and
+  `Submodule.relativeSubspaceArakelovHeight_le_prod`: bounds on the height of a subspace in terms of
+  an independent or arbitrary nonzero spanning family.
+* `Matrix.relativeSubspaceArakelovHeight_ker_mulVecLin`, `Matrix.subspaceHeight_ker_mulVecLin`, and
+  `Matrix.subspaceHeight_ker_mulVecLin_le_prod`: kernel height equalities and row-product bound for
+  an arbitrary matrix.
 
 ## References
 
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative
-  Subspace Theorem*, Ann. of Math. 177 (2013), §6.1, (6.11).
+  Subspace Theorem*, Ann. of Math. 177 (2013), §6.1, (6.11) and (6.13).
 -/
 
 public noncomputable section
@@ -114,6 +129,40 @@ theorem subspaceHeight_le_prod {p : ℕ} {x : Fin p → ι → K}
   rw [subspaceHeight_span_range hx]
   exact height2_plucker_le_prod x
 
+/-- A subspace's absolute Euclidean height is at most the product of the
+Euclidean heights of any finite spanning family of nonzero tuples, without
+assuming linear independence: passing to a maximal linearly independent
+subfamily drops only factors `height2 (x i) ≥ 1`. -/
+theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {x : m → ι → K}
+    (hx : ∀ i, x i ≠ 0) :
+    subspaceHeight (span K (range x)) ≤ ∏ i, height2 (x i) := by
+  classical
+  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K x
+  let _ : Finite κ := Finite.of_injective a ha
+  let _ : Fintype κ := Fintype.ofFinite κ
+  let e : Fin (Fintype.card κ) ↪ m := (Fintype.equivFin κ).symm.toEmbedding.trans ⟨a, ha⟩
+  have hli' : LinearIndependent K (x ∘ e) := hli.comp _ (Fintype.equivFin κ).symm.injective
+  have hrange : range (x ∘ e) = range (x ∘ a) := by
+    ext v
+    simp only [mem_range, Function.comp_apply, e, Function.Embedding.trans_apply,
+      Equiv.toEmbedding_apply]
+    exact ⟨fun ⟨j, hj⟩ ↦ ⟨(Fintype.equivFin κ).symm j, hj⟩,
+      fun ⟨k, hk⟩ ↦ ⟨Fintype.equivFin κ k, by simpa using hk⟩⟩
+  rw [← hspan, ← hrange]
+  refine (subspaceHeight_le_prod hli').trans ?_
+  calc ∏ j, height2 ((x ∘ e) j)
+      = ∏ i ∈ Finset.univ.map e, height2 (x i) :=
+        (Finset.prod_map Finset.univ e fun i ↦ height2 (x i)).symm
+    _ = ∏ i : m, if i ∈ Finset.univ.map e then height2 (x i) else 1 := by
+        rw [Finset.prod_ite_mem, Finset.univ_inter]
+    _ ≤ ∏ i : m, height2 (x i) := Finset.prod_le_prod₀ (fun i _ ↦ by
+        split_ifs
+        · exact height2_nonneg _
+        · exact zero_le_one) fun i _ ↦ by
+        split_ifs
+        · exact le_rfl
+        · exact one_le_height2_of_ne_zero (hx i)
+
 /-- The relative Arakelov height of a subspace is bounded by the product of
 relative Arakelov heights of its basis vectors. -/
 theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p : ℕ}
@@ -123,3 +172,36 @@ theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p :
   exact arakelovMulHeight_plucker_le_prod _
 
 end Submodule
+
+namespace Matrix
+
+open Submodule TauCeti
+
+variable {K m ι : Type*} [Field K] [NumberField K] [Fintype ι] [LinearOrder ι]
+
+/-- The relative Arakelov height of the kernel of a matrix equals the relative
+Arakelov height of its row space, without assuming linearly independent rows. -/
+theorem relativeSubspaceArakelovHeight_ker_mulVecLin [Finite m] (A : Matrix m ι K) :
+    (LinearMap.ker A.mulVecLin).relativeSubspaceArakelovHeight =
+      (span K (range A.row)).relativeSubspaceArakelovHeight := by
+  cases nonempty_fintype m
+  rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy,
+    relativeSubspaceArakelovHeight_euclideanDual, generatedBy_eq_span_rows]
+
+/-- The absolute Euclidean height of the kernel of a matrix equals the absolute
+Euclidean height of its row space, without assuming linearly independent rows. -/
+theorem subspaceHeight_ker_mulVecLin [Finite m] (A : Matrix m ι K) :
+    (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (range A.row)).subspaceHeight := by
+  cases nonempty_fintype m
+  rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy,
+    subspaceHeight_euclideanDual, generatedBy_eq_span_rows]
+
+/-- The absolute Euclidean height of the kernel of a matrix with nonzero rows is
+at most the product of the absolute Euclidean heights of its rows. -/
+theorem subspaceHeight_ker_mulVecLin_le_prod [Fintype m] {A : Matrix m ι K}
+    (hA : ∀ i, A.row i ≠ 0) :
+    (LinearMap.ker A.mulVecLin).subspaceHeight ≤ ∏ i, height2 (A.row i) := by
+  rw [A.subspaceHeight_ker_mulVecLin]
+  exact subspaceHeight_span_range_le_prod hA
+
+end Matrix

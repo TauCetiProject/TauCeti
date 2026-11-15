@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattice
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Subspace.Lattice
 
 import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
