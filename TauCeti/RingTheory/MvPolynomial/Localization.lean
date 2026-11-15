@@ -151,6 +151,7 @@ theorem awayProdPrimesUnitsMulEquiv_symm_map {J : Type*} (S : Type*) [CommSemiri
   rw [MulEquiv.symm_apply_eq]
   simp
 
+@[simp]
 theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} [DecidableEq J] (S : Type*)
     [CommSemiring S] [Algebra (_root_.MvPolynomial σ R) S] (s : Finset J)
     {p : J → _root_.MvPolynomial σ R} (hp : ∀ j ∈ s, Prime (p j))

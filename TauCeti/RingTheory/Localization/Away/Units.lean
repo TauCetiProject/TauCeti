@@ -272,6 +272,7 @@ theorem awayProdPrimesUnitsMulEquiv_symm_map {ι R : Type*} (S : Type*) [CommSem
   rw [MulEquiv.symm_apply_eq]
   simp
 
+@[simp]
 theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {ι R : Type*} [DecidableEq ι] (S : Type*)
     [CommSemiring R] [IsDomain R] [CommSemiring S] [Algebra R S] (s : Finset ι) {p : ι → R}
     (hp : ∀ i ∈ s, Prime (p i)) (hs : (s : Set ι).Pairwise fun i j ↦ ¬Associated (p i) (p j))
