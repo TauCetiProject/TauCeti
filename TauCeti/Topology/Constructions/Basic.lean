@@ -142,4 +142,27 @@ theorem ContinuousMap.coe_pullbackFst : ⇑(pullbackFst f g) = Function.Pullback
 theorem ContinuousMap.coe_pullbackSnd : ⇑(pullbackSnd f g) = Function.Pullback.snd :=
   (rfl)
 
+/-- Swapping the two factors of a fibre product is a homeomorphism `X ×_Y Z ≃ₜ Z ×_Y X`. -/
+def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
+  toFun x := ⟨x.1.swap, x.2.symm⟩
+  invFun y := ⟨y.1.swap, y.2.symm⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun :=
+    ((_root_.continuous_snd.comp continuous_subtype_val).prodMk
+      (_root_.continuous_fst.comp continuous_subtype_val)).subtype_mk _
+  continuous_invFun :=
+    ((_root_.continuous_snd.comp continuous_subtype_val).prodMk
+      (_root_.continuous_fst.comp continuous_subtype_val)).subtype_mk _
+
+@[simp]
+theorem Homeomorph.coe_pullbackComm_apply (x : f.Pullback g) :
+    (Homeomorph.pullbackComm f g x).1 = x.1.swap :=
+  (rfl)
+
+@[simp]
+theorem Homeomorph.pullbackComm_symm :
+    (Homeomorph.pullbackComm f g).symm = Homeomorph.pullbackComm g f :=
+  (rfl)
+
 end Pullback

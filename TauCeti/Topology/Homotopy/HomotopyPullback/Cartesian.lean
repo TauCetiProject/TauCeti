@@ -10,76 +10,43 @@ public import TauCeti.Topology.Homotopy.MappingPath.Functoriality
 public import TauCeti.Topology.Homotopy.SerreFibration.MappingPath
 
 /-!
-# Homotopy-cartesian squares, Serre pullbacks, and pasting
+# Homotopy-cartesian squares and fibration pullbacks
 
-Consider a homotopy-commutative square of topological spaces
+A homotopy-commutative square `H : (p.comp α).Homotopy (h.comp p')` (`E' → E` over `B' → B`)
+induces a canonical map `E' → HomotopyPullback p h` via `TauCeti.HomotopyPullback.lift`. It is
+**homotopy-cartesian** (`ContinuousMap.Homotopy.IsHomotopyCartesian`) when this map is a weak
+homotopy equivalence; strict squares (`TauCeti.IsHomotopyCartesian` and
+`CategoryTheory.CommSq.IsHomotopyCartesian`) specialize via `TauCeti.HomotopyPullback.liftStrict`.
 
-```
-E' --α--> E
-|         |
-p'        p
-v         v
-B' --h--> B
-```
+To characterize homotopy-cartesian squares across four independent universes without embedding into
+a single `TopCat.{u}`, we factor `lift α p' H` up to homotopy through `MappingPathSpace p'`, giving
+a map over `B'` between the Hurewicz fibrations `MappingPathSpace.endpoint p'` and
+`HomotopyPullback.snd p h`. By
+`TauCeti.IsHurewiczFibration.isWeakHomotopyEquivalence_iff_forall_fiberMap`, `H` is
+homotopy-cartesian iff
+`H.mappingPathFiberSqMap b' : MappingPathFiber p' b' → MappingPathFiber p (h b')` is a weak
+homotopy equivalence for every `b' : B'`.
 
-witnessed by a homotopy `H : (p.comp α).Homotopy (h.comp p')`. By the universal property of the
-homotopy pullback (`TauCeti.HomotopyPullback.lift`), such a square corresponds to a canonical
-comparison map `E' → HomotopyPullback p h`. The square is **homotopy-cartesian**
-(`ContinuousMap.Homotopy.IsHomotopyCartesian`) when this comparison map is a weak homotopy
-equivalence. Strictly commuting squares `p.comp α = h.comp p'` (and `CategoryTheory.CommSq` in
-`TopCat`) inherit this predicate via `TauCeti.HomotopyPullback.liftStrict`.
-
-Because `E, B, E', B'` may live in four independent universes, the homotopy-fibre and pasting
-characterizations cannot rely on placing all four spaces inside a single `TopCat.{u}`. Instead, we
-factor `lift α p' H` up to homotopy through the mapping-path replacement `MappingPathSpace p'`,
-which maps to `HomotopyPullback p h` over `B'` as a morphism between Hurewicz fibrations
-(`MappingPathSpace.endpoint p'` and `HomotopyPullback.snd p h`). Applying the universe-polymorphic
-fibrewise criterion `TauCeti.IsHurewiczFibration.isWeakHomotopyEquivalence_iff_forall_fiberMap`
-shows that `H` is homotopy-cartesian if and only if, for every `b' : B'`, the induced map
-`H.mappingPathFiberSqMap b' : MappingPathFiber p' b' → MappingPathFiber p (h b')` on mapping-path
-fibres is a weak homotopy equivalence
-(`ContinuousMap.Homotopy.isHomotopyCartesian_iff_forall_mappingPathFiber`).
-
-From this characterization we deduce:
-* **Homotopy base change of weak homotopy equivalences**
-  (`TauCeti.HomotopyPullback.isWeakHomotopyEquivalence_fst_of_right`,
-  `TauCeti.HomotopyPullback.isWeakHomotopyEquivalence_snd_of_left`): if one leg of a cospan is a
-  weak homotopy equivalence, the opposite projection from the homotopy pullback is a weak homotopy
-  equivalence; consequently a square over a weak homotopy equivalence on the bottom is
-  homotopy-cartesian if and only if its top map is a weak homotopy equivalence.
-* **Strict vs. homotopy pullbacks along Serre and Hurewicz fibrations**: when `p : E ⟶ B` in
-  `TopCat` is a Serre fibration, the constant-path inclusion `ofPullback p.hom h.hom` from the
-  strict pullback to `HomotopyPullback p.hom h.hom` is a weak homotopy equivalence, every
-  categorical pullback square along `p` is homotopy-cartesian, and a square of Serre fibrations is
-  homotopy-cartesian if and only if the induced map on every strict fibre is a weak homotopy
-  equivalence.
-* **Horizontal and vertical pasting** (`ContinuousMap.Homotopy.isHomotopyCartesian_hcompSq_iff`,
-  `ContinuousMap.Homotopy.isHomotopyCartesian_vcompSq_iff`, and their strict counterparts): when the
-  right (respectively bottom) square is homotopy-cartesian, the pasted rectangle is
-  homotopy-cartesian if and only if the left (respectively top) square is homotopy-cartesian.
+From this criterion we deduce homotopy base change of weak homotopy equivalences along arbitrary
+maps and the comparison between strict and homotopy pullbacks along Hurewicz and Serre fibrations.
 
 ## Main declarations
 
-* `ContinuousMap.Homotopy.IsHomotopyCartesian`: homotopy-cartesianness of a homotopy-commutative
-  square `H : (p.comp α).Homotopy (h.comp p')`.
-* `TauCeti.IsHomotopyCartesian` and `CategoryTheory.CommSq.IsHomotopyCartesian`: strict-square
-  specializations.
-* `ContinuousMap.Homotopy.mappingPathFiberSqMap` and
-  `ContinuousMap.Homotopy.isHomotopyCartesian_iff_forall_mappingPathFiber`: characterization on
-  mapping-path fibres over every `b' : B'`.
-* `TauCeti.IsHomotopyCartesian.iff_forall_mappingPathFiber`: the strict-square mapping-path fibre
-  criterion in terms of `MappingPathFiber.map`.
-* `TauCeti.HomotopyPullback.isWeakHomotopyEquivalence_fst_of_right` and
-  `ContinuousMap.Homotopy.isHomotopyCartesian_iff_top_of_bottom`: stability of weak homotopy
-  equivalences under homotopy pullback.
+* `ContinuousMap.Homotopy.IsHomotopyCartesian`, `TauCeti.IsHomotopyCartesian`,
+  `CategoryTheory.CommSq.IsHomotopyCartesian`: homotopy-cartesian squares (up to homotopy and
+  strict).
+* `ContinuousMap.Homotopy.mappingPathFiberSqMap`,
+  `ContinuousMap.Homotopy.isHomotopyCartesian_iff_forall_mappingPathFiber`,
+  `TauCeti.IsHomotopyCartesian.iff_forall_mappingPathFiber`,
+  `TauCeti.isHomotopyCartesian_fiber_iff_ofFiber`: mapping-path fibre characterizations and
+  point-inclusion specialization.
+* `TauCeti.HomotopyPullback.isWeakHomotopyEquivalence_fst_of_right`,
+  `ContinuousMap.Homotopy.isHomotopyCartesian_iff_top_of_bottom`: homotopy base change of weak
+  homotopy equivalences.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_ofPullback_of_left`,
-  `CategoryTheory.IsPullback.isHomotopyCartesian_of_right`, and
+  `CategoryTheory.IsPullback.isHomotopyCartesian_of_right`,
   `CategoryTheory.CommSq.isHomotopyCartesian_iff_forall_fiberMap`: strict pullbacks and squares of
   Serre fibrations in `TopCat`.
-* `ContinuousMap.Homotopy.hcompSq`, `ContinuousMap.Homotopy.vcompSq`,
-  `ContinuousMap.Homotopy.isHomotopyCartesian_hcompSq_iff`, and
-  `ContinuousMap.Homotopy.isHomotopyCartesian_vcompSq_iff`: horizontal and vertical pasting and
-  right/top cancellation of homotopy-cartesian squares.
 
 ## References
 
@@ -93,7 +60,7 @@ public section
 
 open CategoryTheory unitInterval
 
-universe u v u' v' u'' v'' w
+universe u v u' v'
 
 /-! ### Auxiliary weak-equivalence and path-family lemmas -/
 
@@ -106,44 +73,20 @@ private theorem reparamHomotopy_continuous_family {A X : Type*}
     (γ : ∀ a, Path (x a) (y a)) (hγ : Continuous ↿γ)
     {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
     Continuous ↿fun q : I × A ↦
-      (Path.Homotopy.reparam (γ q.2) f hf hf₀ hf₁).eval q.1 := by
-  have h : Continuous (fun q : (I × A) × I ↦
-      γ q.1.2 ⟨σ q.1.1 * q.2 + q.1.1 * f q.2,
-        show (σ q.1.1 : ℝ) • (q.2 : ℝ) + (q.1.1 : ℝ) • (f q.2 : ℝ) ∈ I from
-          convex_Icc _ _ q.2.2 (f q.2).2 (by unit_interval) (by unit_interval) (by simp)⟩) :=
-    hγ.comp ((continuous_snd.comp continuous_fst).prodMk <|
-      (by fun_prop : Continuous fun q : (I × A) × I ↦
-        (σ q.1.1 : ℝ) * (q.2 : ℝ) + (q.1.1 : ℝ) * (f q.2 : ℝ)).subtype_mk _)
-  exact h
-
-/-- Conjugating a continuous map by homeomorphisms preserves and reflects weak homotopy
-equivalences. -/
-private theorem isWeakHomotopyEquivalence_conj_homeomorph_iff {X Y X' Y' : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace X'] [TopologicalSpace Y']
-    (eX : X' ≃ₜ X) (eY : Y ≃ₜ Y') (φ : C(X, Y)) :
-    (eY.toHomotopyEquiv.toFun.comp
-      (φ.comp eX.toHomotopyEquiv.toFun)).IsWeakHomotopyEquivalence ↔
-      φ.IsWeakHomotopyEquivalence := by
-  have heX := eX.toHomotopyEquiv.isWeakHomotopyEquivalence
-  have heY := eY.toHomotopyEquiv.isWeakHomotopyEquivalence
-  exact ⟨fun h ↦ heX.of_precomp (heY.of_postcomp h), fun h ↦ heY.comp (h.comp heX)⟩
+      (Path.Homotopy.reparam (γ q.2) f hf hf₀ hf₁).eval q.1 :=
+  hγ.comp ((continuous_snd.comp continuous_fst).prodMk <|
+    (by fun_prop : Continuous fun q : (I × A) × I ↦
+      (σ q.1.1 : ℝ) * (q.2 : ℝ) + (q.1.1 : ℝ) * (f q.2 : ℝ)).subtype_mk fun q ↦
+      show (σ q.1.1 : ℝ) • (q.2 : ℝ) + (q.1.1 : ℝ) • (f q.2 : ℝ) ∈ I from
+        convex_Icc _ _ q.2.2 (f q.2).2 (by unit_interval) (by unit_interval) (by simp))
 
 /-- `HomotopyPullback.swap` is a weak homotopy equivalence. -/
 theorem HomotopyPullback.isWeakHomotopyEquivalence_swap {A : Type u} {B : Type v} {C : Type u'}
     [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
     (f : C(A, B)) (g : C(C, B)) :
-    (HomotopyPullback.swap f g).IsWeakHomotopyEquivalence := by
-  convert (HomotopyPullback.swapHomeomorph f g).toHomotopyEquiv.isWeakHomotopyEquivalence using 1
-  ext x : 1
-  exact (HomotopyPullback.swapHomeomorph_apply f g x).symm
-
-/-- `MappingPathSpace.incl` is a weak homotopy equivalence. -/
-theorem MappingPathSpace.isWeakHomotopyEquivalence_incl {B : Type u} {K : Type v}
-    [TopologicalSpace B] [TopologicalSpace K] (f : C(B, K)) :
-    (MappingPathSpace.incl f).IsWeakHomotopyEquivalence := by
-  convert (MappingPathSpace.homotopyEquiv f).isWeakHomotopyEquivalence using 1
-  ext x : 1
-  exact (MappingPathSpace.homotopyEquiv_apply f x).symm
+    (HomotopyPullback.swap f g).IsWeakHomotopyEquivalence :=
+  HomotopyPullback.coe_swapHomeomorph f g ▸
+    (HomotopyPullback.swapHomeomorph f g).isWeakHomotopyEquivalence
 
 end TauCeti
 
@@ -250,16 +193,8 @@ theorem lift_homotopic_mappingPathReplacementLift_comp_incl
         (p'.continuous.comp continuous_snd).prodMk ?_).subtype_mk _
       apply ContinuousMap.continuous_of_continuous_uncurry
       exact reparamHomotopy_continuous_family (fun e' : E' ↦ H.evalAt e')
-        (H.continuous.comp (continuous_snd.prodMk continuous_fst))
-        hφ hφ₀ hφ₁
-    map_zero_left e' := by
-      apply Subtype.ext
-      rw [HomotopyPullback.lift_val]
-      refine Prod.ext rfl (Prod.ext rfl ?_)
-      ext t : 1
-      have h0 : (Path.Homotopy.reparam (H.evalAt e') φ hφ hφ₀ hφ₁).eval 0 =
-          H.evalAt e' := by simp
-      exact congrArg (fun γ : Path (p (α e')) (h (p' e')) ↦ γ t) h0
+        (H.continuous.comp (continuous_snd.prodMk continuous_fst)) hφ hφ₀ hφ₁
+    map_zero_left e' := HomotopyPullback.ext (by simp) (by simp) fun _ ↦ by simp
     map_one_left e' := by
       apply Subtype.ext
       change (α e', p' e',
@@ -269,10 +204,12 @@ theorem lift_homotopic_mappingPathReplacementLift_comp_incl
       refine Prod.ext (by simp) (Prod.ext (by simp) ?_)
       ext t : 1
       have h1 : (Path.Homotopy.reparam (H.evalAt e') φ hφ hφ₀ hφ₁).eval 1 =
-          (H.evalAt e').reparam φ hφ hφ₀ hφ₁ := by simp
-      have hrep := (Path.Homotopy.trans_refl_reparam (H.evalAt e')).symm
-      have hlhs := congrArg (fun γ : Path (p (α e')) (h (p' e')) ↦ γ t) (h1.trans hrep)
-      exact hlhs.trans (by simp [Path.trans_apply]) }⟩
+          (H.evalAt e').trans (.refl (h (p' e'))) :=
+        (by simp : (Path.Homotopy.reparam (H.evalAt e') φ hφ hφ₀ hφ₁).eval 1 =
+          (H.evalAt e').reparam φ hφ hφ₀ hφ₁).trans
+          (Path.Homotopy.trans_refl_reparam (H.evalAt e')).symm
+      exact (congrArg (fun γ : Path (p (α e')) (h (p' e')) ↦ γ t) h1).trans
+        (by simp [Path.trans_apply]) }⟩
 
 /-- The map on mapping-path fibres over `b' : B'` induced by a homotopy-commutative square
 `H : (p.comp α).Homotopy (h.comp p')`, sending `(e', γ')` (`γ' : p' e' ⇝ b'`) to
@@ -338,26 +275,26 @@ theorem isHomotopyCartesian_iff_forall_mappingPathFiber
   rw [hrep, hp_end.isWeakHomotopyEquivalence_iff_forall_fiberMap
     hp_snd H.snd_comp_mappingPathReplacementLift]
   refine forall_congr' fun b' ↦ ?_
+  let eX : MappingPathFiber p' b' ≃ₜ {e // MappingPathSpace.endpoint p' e = b'} :=
+    MappingPathFiber.endpointHomeomorph p' b'
+  let eY : {e' // HomotopyPullback.snd p h e' = b'} ≃ₜ MappingPathFiber p (h b') :=
+    HomotopyPullback.sndFiberHomeomorph p h b'
   have hconj : H.mappingPathFiberSqMap b' =
-      (HomotopyPullback.sndFiberHomeomorph p h b').toHomotopyEquiv.toFun.comp
+      (eY : C(_, _)).comp
         ((fiberMap H.mappingPathReplacementLift H.snd_comp_mappingPathReplacementLift b').comp
-          (MappingPathFiber.endpointHomeomorph p' b').toHomotopyEquiv.toFun) := by
+          (eX : C(_, _))) := by
     ext q : 1
     apply Subtype.ext
     let x : (HomotopyPullback.snd p h) ⁻¹' {b'} :=
-      fiberMap H.mappingPathReplacementLift H.snd_comp_mappingPathReplacementLift b'
-        (MappingPathFiber.endpointHomeomorph p' b' q)
+      fiberMap H.mappingPathReplacementLift H.snd_comp_mappingPathReplacementLift b' (eX q)
     change (H.mappingPathFiberSqMap b' q).val =
       (HomotopyPullback.sndFiberHomeomorph p h b' x).val
     rw [HomotopyPullback.sndFiberHomeomorph_val]
-    refine Prod.ext (by simp [x]) ?_
+    refine Prod.ext (by simp [x, eX]) ?_
     ext t : 1
-    simp [x, Path.trans_apply]
+    simp [x, eX, Path.trans_apply]
   rw [hconj]
-  exact (isWeakHomotopyEquivalence_conj_homeomorph_iff
-    (MappingPathFiber.endpointHomeomorph p' b')
-    (HomotopyPullback.sndFiberHomeomorph p h b')
-    (fiberMap H.mappingPathReplacementLift H.snd_comp_mappingPathReplacementLift b')).symm
+  exact (Homeomorph.isWeakHomotopyEquivalence_conj_iff eX eY _).symm
 
 end Basic
 
@@ -379,12 +316,8 @@ theorem isWeakHomotopyEquivalence_fst_of_right (f : C(A, B)) {g : C(C, B)}
     (hg : g.IsWeakHomotopyEquivalence) :
     (fst f g).IsWeakHomotopyEquivalence := by
   have hincl := MappingPathSpace.isWeakHomotopyEquivalence_incl g
-  have hend : (MappingPathSpace.endpoint g).IsWeakHomotopyEquivalence := by
-    have hcomp :
-        ((MappingPathSpace.endpoint g).comp
-          (MappingPathSpace.incl g)).IsWeakHomotopyEquivalence := by
-      rwa [MappingPathSpace.endpoint_comp_incl]
-    exact hincl.of_precomp hcomp
+  have hend : (MappingPathSpace.endpoint g).IsWeakHomotopyEquivalence :=
+    hincl.of_precomp (by rwa [MappingPathSpace.endpoint_comp_incl])
   have hp_end : IsHurewiczFibration.{0} (MappingPathSpace.endpoint g) :=
     MappingPathSpace.isHurewiczFibration_endpoint g
   have hp_idB : IsHurewiczFibration.{0} (ContinuousMap.id B) :=
@@ -392,30 +325,28 @@ theorem isWeakHomotopyEquivalence_fst_of_right (f : C(A, B)) {g : C(C, B)}
   have hp_fst : IsHurewiczFibration.{0} (fst f g) := isHurewiczFibration_fst f g
   have hp_idA : IsHurewiczFibration.{0} (ContinuousMap.id A) :=
     (Homeomorph.refl A).isHurewiczFibration
-  have hend_fib : ∀ b : B,
-      (fiberMap (MappingPathSpace.endpoint g)
-        (ContinuousMap.id_comp _) b).IsWeakHomotopyEquivalence :=
-    (hp_end.isWeakHomotopyEquivalence_iff_forall_fiberMap hp_idB
-      (ContinuousMap.id_comp _)).mp hend
+  have hend_fib := (hp_end.isWeakHomotopyEquivalence_iff_forall_fiberMap hp_idB
+    (ContinuousMap.id_comp _)).mp hend
   rw [hp_fst.isWeakHomotopyEquivalence_iff_forall_fiberMap hp_idA (ContinuousMap.id_comp _)]
   intro a
-  let eDom : (MappingPathSpace.endpoint g) ⁻¹' {f a} ≃ₜ (fst f g) ⁻¹' {a} :=
+  let eDom : {e // MappingPathSpace.endpoint g e = f a} ≃ₜ {e // fst f g e = a} :=
     (MappingPathFiber.endpointHomeomorph g (f a)).symm.trans (fstFiberHomeomorph f g a).symm
-  let eCod : ((ContinuousMap.id A) ⁻¹' {a}) ≃ₜ ((ContinuousMap.id B) ⁻¹' {f a}) :=
+  let eCod : {e // ContinuousMap.id A e = a} ≃ₜ {e // ContinuousMap.id B e = f a} :=
     { toFun _ := ⟨f a, rfl⟩
       invFun _ := ⟨a, rfl⟩
       left_inv x := Subtype.ext x.2.symm
       right_inv y := Subtype.ext y.2.symm
       continuous_toFun := continuous_const
       continuous_invFun := continuous_const }
-  have hconj : eCod.toHomotopyEquiv.toFun.comp
-      ((fiberMap (fst f g) (ContinuousMap.id_comp _) a).comp eDom.toHomotopyEquiv.toFun) =
+  have hconj : (eCod : C(_, _)).comp
+      ((fiberMap (fst f g) (ContinuousMap.id_comp _) a).comp (eDom : C(_, _))) =
       fiberMap (MappingPathSpace.endpoint g) (ContinuousMap.id_comp _) (f a) := by
-    ext x : 1
-    apply Subtype.ext
-    exact (fiberMap (MappingPathSpace.endpoint g) (ContinuousMap.id_comp _) (f a) x).2.symm
-  exact (isWeakHomotopyEquivalence_conj_homeomorph_iff eDom eCod
-    (fiberMap (fst f g) (ContinuousMap.id_comp _) a)).mp (hconj ▸ hend_fib (f a))
+    ext x : 1; apply Subtype.ext
+    rw [ContinuousMap.comp_apply, ContinuousMap.coe_apply]
+    have hy := (fiberMap (MappingPathSpace.endpoint g) (ContinuousMap.id_comp _) (f a) x).2
+    rw [ContinuousMap.id_apply] at hy
+    exact hy.symm
+  exact (Homeomorph.isWeakHomotopyEquivalence_conj_iff eDom eCod _).mp (hconj ▸ hend_fib (f a))
 
 /-- **Homotopy base change preserves weak homotopy equivalences (left leg).** If `f : C(A, B)` is
 a weak homotopy equivalence, then for any continuous map `g : C(C, B)` the projection
@@ -476,244 +407,6 @@ theorem isHomotopyCartesian_of_vertical (H : (p.comp α).Homotopy (h.comp p'))
 
 end WeakEquivLegs
 
-/-! ### Horizontal and vertical pasting of homotopy-commutative squares -/
-
-section Pasting
-
-/-- **Horizontal pasting of homotopy-commutative squares.** Given
-`H : (p.comp α).Homotopy (h.comp p')` on the right and `H' : (p'.comp α').Homotopy (h'.comp p'')`
-on the left, concatenate `H` at `α' x` with `h` applied to `H'` at `x`. -/
-noncomputable def hcompSq
-    {E : Type u} {B : Type v} {E' : Type u'} {B' : Type v'} {E'' : Type u''} {B'' : Type v''}
-    [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E'] [TopologicalSpace B']
-    [TopologicalSpace E''] [TopologicalSpace B'']
-    {α : C(E', E)} {p : C(E, B)} {p' : C(E', B')} {h : C(B', B)}
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    (H : (p.comp α).Homotopy (h.comp p')) (H' : (p'.comp α').Homotopy (h'.comp p'')) :
-    (p.comp (α.comp α')).Homotopy ((h.comp h').comp p'') where
-  toFun q := ((H.evalAt (α' q.2)).trans ((H'.evalAt q.2).map h.continuous)) q.1
-  continuous_toFun := by
-    have hfam := Path.trans_continuous_family
-      (fun e'' : E'' ↦ H.evalAt (α' e''))
-      (H.continuous.comp (continuous_snd.prodMk (α'.continuous.comp continuous_fst)))
-      (fun e'' : E'' ↦ (H'.evalAt e'').map h.continuous)
-      (h.continuous.comp (H'.continuous.comp (continuous_snd.prodMk continuous_fst)))
-    exact hfam.comp (continuous_snd.prodMk continuous_fst)
-  map_zero_left e'' := Path.source _
-  map_one_left e'' := Path.target _
-
-@[simp]
-theorem hcompSq_evalAt
-    {E : Type u} {B : Type v} {E' : Type u'} {B' : Type v'} {E'' : Type u''} {B'' : Type v''}
-    [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E'] [TopologicalSpace B']
-    [TopologicalSpace E''] [TopologicalSpace B'']
-    {α : C(E', E)} {p : C(E, B)} {p' : C(E', B')} {h : C(B', B)}
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    (H : (p.comp α).Homotopy (h.comp p')) (H' : (p'.comp α').Homotopy (h'.comp p''))
-    (e'' : E'') :
-    (H.hcompSq H').evalAt e'' =
-      (H.evalAt (α' e'')).trans ((H'.evalAt e'').map h.continuous) :=
-  Path.ext rfl
-
-/-- On mapping-path fibres over `b'' : B''`, the map induced by the horizontal paste `H.hcompSq H'`
-is homotopic to `(H.mappingPathFiberSqMap (h' b'')).comp (H'.mappingPathFiberSqMap b'')` by path
-associativity. -/
-theorem mappingPathFiberSqMap_comp_homotopic_hcompSq
-    {E : Type u} {B : Type v} {E' : Type u'} {B' : Type v'} {E'' : Type u''} {B'' : Type v''}
-    [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E'] [TopologicalSpace B']
-    [TopologicalSpace E''] [TopologicalSpace B'']
-    {α : C(E', E)} {p : C(E, B)} {p' : C(E', B')} {h : C(B', B)}
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    (H : (p.comp α).Homotopy (h.comp p')) (H' : (p'.comp α').Homotopy (h'.comp p''))
-    (b'' : B'') :
-    ((H.mappingPathFiberSqMap (h' b'')).comp (H'.mappingPathFiberSqMap b'')).Homotopic
-      ((H.hcompSq H').mappingPathFiberSqMap b'') := by
-  let φ : I → I := fun t ↦
-    ⟨Path.Homotopy.transAssocReparamAux t, Path.Homotopy.transAssocReparamAux_mem_I t⟩
-  have hφ : Continuous φ := by fun_prop
-  have hφ₀ : φ 0 = 0 := Subtype.ext Path.Homotopy.transAssocReparamAux_zero
-  have hφ₁ : φ 1 = 1 := Subtype.ext Path.Homotopy.transAssocReparamAux_one
-  let P₁ (q : MappingPathFiber p'' b'') : Path (p (α (α' q.val.1))) (h (p' (α' q.val.1))) :=
-    H.evalAt (α' q.val.1)
-  let P₂ (q : MappingPathFiber p'' b'') : Path (h (p' (α' q.val.1))) (h (h' (p'' q.val.1))) :=
-    (H'.evalAt q.val.1).map h.continuous
-  let P₃ (q : MappingPathFiber p'' b'') : Path (h (h' (p'' q.val.1))) (h (h' b'')) :=
-    (⟨q.val.2, q.property.1, q.property.2⟩ : Path (p'' q.val.1) b'').map (h.comp h').continuous
-  have hP₁ : Continuous ↿P₁ := H.continuous.comp
-    (continuous_snd.prodMk (α'.continuous.comp (continuous_subtype_val.fst.comp continuous_fst)))
-  have hP₂ : Continuous ↿P₂ := h.continuous.comp
-    (H'.continuous.comp (continuous_snd.prodMk (continuous_subtype_val.fst.comp continuous_fst)))
-  have hP₃ : Continuous ↿P₃ := (h.comp h').continuous.comp
-    ((continuous_subtype_val.snd.comp continuous_fst).eval continuous_snd)
-  have hP₂₃ : Continuous ↿fun q ↦ (P₂ q).trans (P₃ q) :=
-    Path.trans_continuous_family P₂ hP₂ P₃ hP₃
-  have hP₁₂₃ : Continuous ↿fun q ↦ (P₁ q).trans ((P₂ q).trans (P₃ q)) :=
-    Path.trans_continuous_family P₁ hP₁ _ hP₂₃
-  refine ⟨{
-    toFun r := ⟨(α (α' r.2.val.1),
-      ((Path.Homotopy.reparam ((P₁ r.2).trans ((P₂ r.2).trans (P₃ r.2)))
-        φ hφ hφ₀ hφ₁).eval r.1).toContinuousMap),
-      Path.source _, Path.target _⟩
-    continuous_toFun := by
-      refine (((α.comp α').continuous.comp
-        (continuous_subtype_val.fst.comp continuous_snd)).prodMk ?_).subtype_mk _
-      apply ContinuousMap.continuous_of_continuous_uncurry
-      exact reparamHomotopy_continuous_family
-        (fun q : MappingPathFiber p'' b'' ↦ (P₁ q).trans ((P₂ q).trans (P₃ q)))
-        hP₁₂₃ hφ hφ₀ hφ₁
-    map_zero_left q := by
-      apply Subtype.ext
-      refine Prod.ext (by simp) ?_
-      ext t : 1
-      have h0 : (Path.Homotopy.reparam ((P₁ q).trans ((P₂ q).trans (P₃ q)))
-          φ hφ hφ₀ hφ₁).eval 0 = (P₁ q).trans ((P₂ q).trans (P₃ q)) := by simp
-      change ((Path.Homotopy.reparam ((P₁ q).trans ((P₂ q).trans (P₃ q)))
-          φ hφ hφ₀ hφ₁).eval 0) t =
-        (H.mappingPathFiberSqMap (h' b'') (H'.mappingPathFiberSqMap b'' q)).val.2 t
-      rw [h0, mappingPathFiberSqMap_val_snd_apply]
-      have hmap : (((H'.evalAt q.val.1).trans
-          ((⟨q.val.2, q.property.1, q.property.2⟩ : Path (p'' q.val.1) b'').map
-            h'.continuous)).map h.continuous) = (P₂ q).trans (P₃ q) := by
-        apply Path.ext
-        funext s
-        simp [P₂, P₃, Path.trans_apply]
-      change ((P₁ q).trans ((P₂ q).trans (P₃ q))) t =
-        ((P₁ q).trans (((H'.evalAt q.val.1).trans
-          ((⟨q.val.2, q.property.1, q.property.2⟩ : Path (p'' q.val.1) b'').map
-            h'.continuous)).map h.continuous)) t
-      rw [hmap]
-    map_one_left q := by
-      apply Subtype.ext
-      refine Prod.ext (by simp) ?_
-      ext t : 1
-      have h1 : (Path.Homotopy.reparam ((P₁ q).trans ((P₂ q).trans (P₃ q)))
-          φ hφ hφ₀ hφ₁).eval 1 =
-          ((P₁ q).trans ((P₂ q).trans (P₃ q))).reparam φ hφ hφ₀ hφ₁ := by simp
-      change ((Path.Homotopy.reparam ((P₁ q).trans ((P₂ q).trans (P₃ q)))
-          φ hφ hφ₀ hφ₁).eval 1) t =
-        ((H.hcompSq H').mappingPathFiberSqMap b'' q).val.2 t
-      rw [h1, ← Path.Homotopy.trans_assoc_reparam, mappingPathFiberSqMap_val_snd_apply,
-        hcompSq_evalAt] }⟩
-
-/-- **Horizontal pasting and cancellation of homotopy-cartesian squares.** When the right square
-`H : (p.comp α).Homotopy (h.comp p')` is homotopy-cartesian, the horizontally pasted rectangle
-`H.hcompSq H'` is homotopy-cartesian if and only if the left square
-`H' : (p'.comp α').Homotopy (h'.comp p'')` is homotopy-cartesian. -/
-theorem isHomotopyCartesian_hcompSq_iff
-    {E : Type u} {B : Type v} {E' : Type u'} {B' : Type v'} {E'' : Type u''} {B'' : Type v''}
-    [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E'] [TopologicalSpace B']
-    [TopologicalSpace E''] [TopologicalSpace B'']
-    {α : C(E', E)} {p : C(E, B)} {p' : C(E', B')} {h : C(B', B)}
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    {H : (p.comp α).Homotopy (h.comp p')} (hH : H.IsHomotopyCartesian)
-    (H' : (p'.comp α').Homotopy (h'.comp p'')) :
-    (H.hcompSq H').IsHomotopyCartesian ↔ H'.IsHomotopyCartesian := by
-  rw [isHomotopyCartesian_iff_forall_mappingPathFiber,
-    isHomotopyCartesian_iff_forall_mappingPathFiber]
-  have hH_fib := (isHomotopyCartesian_iff_forall_mappingPathFiber H).mp hH
-  refine forall_congr' fun b'' ↦ ?_
-  have hhom := H.mappingPathFiberSqMap_comp_homotopic_hcompSq H' b''
-  exact ⟨fun hcomp ↦ (hH_fib (h' b'')).of_postcomp (hcomp.of_homotopic hhom.symm),
-    fun h'fib ↦ ((hH_fib (h' b'')).comp h'fib).of_homotopic hhom⟩
-
-/-- Horizontal pasting of two homotopy-cartesian squares is homotopy-cartesian. -/
-theorem IsHomotopyCartesian.hcompSq
-    {E : Type u} {B : Type v} {E' : Type u'} {B' : Type v'} {E'' : Type u''} {B'' : Type v''}
-    [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E'] [TopologicalSpace B']
-    [TopologicalSpace E''] [TopologicalSpace B'']
-    {α : C(E', E)} {p : C(E, B)} {p' : C(E', B')} {h : C(B', B)}
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    {H : (p.comp α).Homotopy (h.comp p')} {H' : (p'.comp α').Homotopy (h'.comp p'')}
-    (hH : H.IsHomotopyCartesian) (hH' : H'.IsHomotopyCartesian) :
-    (H.hcompSq H').IsHomotopyCartesian :=
-  (isHomotopyCartesian_hcompSq_iff hH H').mpr hH'
-
-/-- Right cancellation for horizontal pasting: if the right square `H` and the outer rectangle
-`H.hcompSq H'` are homotopy-cartesian, then the left square `H'` is homotopy-cartesian. -/
-theorem IsHomotopyCartesian.of_hcompSq
-    {E : Type u} {B : Type v} {E' : Type u'} {B' : Type v'} {E'' : Type u''} {B'' : Type v''}
-    [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace E'] [TopologicalSpace B']
-    [TopologicalSpace E''] [TopologicalSpace B'']
-    {α : C(E', E)} {p : C(E, B)} {p' : C(E', B')} {h : C(B', B)}
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    {H : (p.comp α).Homotopy (h.comp p')} {H' : (p'.comp α').Homotopy (h'.comp p'')}
-    (hH : H.IsHomotopyCartesian) (hHH' : (H.hcompSq H').IsHomotopyCartesian) :
-    H'.IsHomotopyCartesian :=
-  (isHomotopyCartesian_hcompSq_iff hH H').mp hHH'
-
-/-- **Vertical pasting of homotopy-commutative squares.** Given a bottom square
-`H : (p.comp α').Homotopy (h.comp p')` and a top square
-`H' : (q.comp α'').Homotopy (α'.comp q')`, concatenate `p` applied to `H'` with `H` at `q'`. -/
-noncomputable def vcompSq
-    {E : Type u} {M : Type u'} {B : Type v} {E' : Type u''} {M' : Type w} {B' : Type v'}
-    [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace B]
-    [TopologicalSpace E'] [TopologicalSpace M'] [TopologicalSpace B']
-    {α' : C(M', M)} {p : C(M, B)} {p' : C(M', B')} {h : C(B', B)}
-    {α'' : C(E', E)} {q : C(E, M)} {q' : C(E', M')}
-    (H : (p.comp α').Homotopy (h.comp p')) (H' : (q.comp α'').Homotopy (α'.comp q')) :
-    ((p.comp q).comp α'').Homotopy (h.comp (p'.comp q')) :=
-  (H.symm.hcompSq H'.symm).symm
-
-@[simp]
-theorem vcompSq_evalAt
-    {E : Type u} {M : Type u'} {B : Type v} {E' : Type u''} {M' : Type w} {B' : Type v'}
-    [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace B]
-    [TopologicalSpace E'] [TopologicalSpace M'] [TopologicalSpace B']
-    {α' : C(M', M)} {p : C(M, B)} {p' : C(M', B')} {h : C(B', B)}
-    {α'' : C(E', E)} {q : C(E, M)} {q' : C(E', M')}
-    (H : (p.comp α').Homotopy (h.comp p')) (H' : (q.comp α'').Homotopy (α'.comp q'))
-    (e' : E') :
-    (H.vcompSq H').evalAt e' =
-      ((H'.evalAt e').map p.continuous).trans (H.evalAt (q' e')) := by
-  apply Path.ext
-  funext t
-  change ((H.symm.hcompSq H'.symm).evalAt e').symm t = _
-  rw [hcompSq_evalAt, Path.trans_symm]
-  simp [Path.trans_apply, unitInterval.symm_symm]
-
-/-- **Vertical pasting and cancellation of homotopy-cartesian squares.** When the bottom square
-`H : (p.comp α').Homotopy (h.comp p')` is homotopy-cartesian, the vertically pasted rectangle
-`H.vcompSq H'` is homotopy-cartesian if and only if the top square
-`H' : (q.comp α'').Homotopy (α'.comp q')` is homotopy-cartesian. -/
-theorem isHomotopyCartesian_vcompSq_iff
-    {E : Type u} {M : Type u'} {B : Type v} {E' : Type u''} {M' : Type w} {B' : Type v'}
-    [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace B]
-    [TopologicalSpace E'] [TopologicalSpace M'] [TopologicalSpace B']
-    {α' : C(M', M)} {p : C(M, B)} {p' : C(M', B')} {h : C(B', B)}
-    {α'' : C(E', E)} {q : C(E, M)} {q' : C(E', M')}
-    {H : (p.comp α').Homotopy (h.comp p')} (hH : H.IsHomotopyCartesian)
-    (H' : (q.comp α'').Homotopy (α'.comp q')) :
-    (H.vcompSq H').IsHomotopyCartesian ↔ H'.IsHomotopyCartesian := by
-  rw [vcompSq, isHomotopyCartesian_symm_iff, isHomotopyCartesian_hcompSq_iff hH.symm,
-    isHomotopyCartesian_symm_iff]
-
-/-- Vertical pasting of two homotopy-cartesian squares is homotopy-cartesian. -/
-theorem IsHomotopyCartesian.vcompSq
-    {E : Type u} {M : Type u'} {B : Type v} {E' : Type u''} {M' : Type w} {B' : Type v'}
-    [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace B]
-    [TopologicalSpace E'] [TopologicalSpace M'] [TopologicalSpace B']
-    {α' : C(M', M)} {p : C(M, B)} {p' : C(M', B')} {h : C(B', B)}
-    {α'' : C(E', E)} {q : C(E, M)} {q' : C(E', M')}
-    {H : (p.comp α').Homotopy (h.comp p')} {H' : (q.comp α'').Homotopy (α'.comp q')}
-    (hH : H.IsHomotopyCartesian) (hH' : H'.IsHomotopyCartesian) :
-    (H.vcompSq H').IsHomotopyCartesian :=
-  (isHomotopyCartesian_vcompSq_iff hH H').mpr hH'
-
-/-- Bottom cancellation for vertical pasting: if the bottom square `H` and the outer vertical
-rectangle `H.vcompSq H'` are homotopy-cartesian, then the top square `H'` is homotopy-cartesian. -/
-theorem IsHomotopyCartesian.of_vcompSq
-    {E : Type u} {M : Type u'} {B : Type v} {E' : Type u''} {M' : Type w} {B' : Type v'}
-    [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace B]
-    [TopologicalSpace E'] [TopologicalSpace M'] [TopologicalSpace B']
-    {α' : C(M', M)} {p : C(M, B)} {p' : C(M', B')} {h : C(B', B)}
-    {α'' : C(E', E)} {q : C(E, M)} {q' : C(E', M')}
-    {H : (p.comp α').Homotopy (h.comp p')} {H' : (q.comp α'').Homotopy (α'.comp q')}
-    (hH : H.IsHomotopyCartesian) (hHH' : (H.vcompSq H').IsHomotopyCartesian) :
-    H'.IsHomotopyCartesian :=
-  (isHomotopyCartesian_vcompSq_iff hH H').mp hHH'
-
-end Pasting
-
 end ContinuousMap.Homotopy
 
 /-! ### Strict homotopy-cartesian squares -/
@@ -737,12 +430,7 @@ theorem isHomotopyCartesian_iff_homotopy (hcomm : p.comp α = h.comp p') :
       ((ContinuousMap.Homotopy.refl (p.comp α)).cast rfl hcomm).IsHomotopyCartesian := by
   have heq : HomotopyPullback.liftStrict hcomm =
       HomotopyPullback.lift α p' ((ContinuousMap.Homotopy.refl (p.comp α)).cast rfl hcomm) := by
-    ext x : 1
-    apply Subtype.ext
-    rw [HomotopyPullback.liftStrict_val, HomotopyPullback.lift_val]
-    refine Prod.ext rfl (Prod.ext rfl ?_)
-    ext _ : 1
-    rfl
+    ext x : 1; exact HomotopyPullback.ext (by simp) (by simp) fun _ ↦ by simp
   rw [IsHomotopyCartesian, ContinuousMap.Homotopy.IsHomotopyCartesian, heq]
 
 theorem IsHomotopyCartesian.symm {hcomm : p.comp α = h.comp p'}
@@ -750,12 +438,8 @@ theorem IsHomotopyCartesian.symm {hcomm : p.comp α = h.comp p'}
   have heq : HomotopyPullback.liftStrict hcomm.symm =
       (HomotopyPullback.swap p h).comp (HomotopyPullback.liftStrict hcomm) := by
     ext x : 1
-    apply Subtype.ext
-    rw [ContinuousMap.comp_apply, HomotopyPullback.liftStrict_val, HomotopyPullback.swap_val,
-      HomotopyPullback.liftStrict_val]
-    refine Prod.ext rfl (Prod.ext rfl ?_)
-    ext _ : 1
-    exact (ContinuousMap.congr_fun hcomm x).symm
+    exact HomotopyPullback.ext (by simp) (by simp)
+      fun _ ↦ by simpa using (ContinuousMap.congr_fun hcomm x).symm
   rw [IsHomotopyCartesian, heq]
   exact (HomotopyPullback.isWeakHomotopyEquivalence_swap p h).comp hcart
 
@@ -786,22 +470,17 @@ theorem mappingPathFiberSqMap_refl_homotopic_map (hcomm : p.comp α = h.comp p')
         (hγ.comp ((continuous_snd.comp continuous_fst).prodMk continuous_snd))
         ContinuousMap.fst
     map_zero_left q := by
-      apply Subtype.ext
-      refine Prod.ext (by simp) ?_
-      ext t : 1
+      apply Subtype.ext; refine Prod.ext (by simp) ?_; ext t : 1
       change (Path.delayReflLeft 0 (γ q)) t =
         (((ContinuousMap.Homotopy.refl (p.comp α)).cast rfl hcomm).mappingPathFiberSqMap
           b' q).val.2 t
       rw [Path.delayReflLeft_zero, ContinuousMap.Homotopy.mappingPathFiberSqMap_val_snd_apply]
       simp [γ, Path.trans_apply]
     map_one_left q := by
-      apply Subtype.ext
-      refine Prod.ext (by simp [MappingPathFiber.map_val]) ?_
-      ext t : 1
+      apply Subtype.ext; refine Prod.ext (by simp [MappingPathFiber.map_val]) ?_; ext t : 1
       change (Path.delayReflLeft 1 (γ q)) t =
         (MappingPathFiber.map α h hcomm.symm rfl q).val.2 t
-      rw [Path.delayReflLeft_one, MappingPathFiber.map_val]
-      rfl }⟩
+      rw [Path.delayReflLeft_one, MappingPathFiber.map_val]; rfl }⟩
 
 /-- **Strict-square mapping-path fibre criterion.** A strictly commuting square
 `hcomm : p.comp α = h.comp p'` is homotopy-cartesian if and only if the induced map
@@ -817,36 +496,53 @@ theorem IsHomotopyCartesian.iff_forall_mappingPathFiber (hcomm : p.comp α = h.c
   have hhom := mappingPathFiberSqMap_refl_homotopic_map hcomm b'
   exact ⟨fun hf ↦ hf.of_homotopic hhom, fun hf ↦ hf.of_homotopic hhom.symm⟩
 
-/-- **Horizontal pasting of strict squares.** When the right strict square
-`hcomm : p.comp α = h.comp p'` is homotopy-cartesian, the composite rectangle with
-`hcomm' : p'.comp α' = h'.comp p''` on the left is homotopy-cartesian iff `hcomm'` is. -/
-theorem isHomotopyCartesian_hcomp_iff
-    {E'' : Type u''} {B'' : Type v''} [TopologicalSpace E''] [TopologicalSpace B'']
-    {α' : C(E'', E')} {p'' : C(E'', B'')} {h' : C(B'', B')}
-    {hcomm : p.comp α = h.comp p'} (hcart : IsHomotopyCartesian hcomm)
-    (hcomm' : p'.comp α' = h'.comp p'') :
-    IsHomotopyCartesian
-        (show p.comp (α.comp α') = (h.comp h').comp p'' by
-          rw [← ContinuousMap.comp_assoc, hcomm, ContinuousMap.comp_assoc, hcomm',
-            ← ContinuousMap.comp_assoc]) ↔
-      IsHomotopyCartesian hcomm' := by
-  let houter : p.comp (α.comp α') = (h.comp h').comp p'' := by
-    rw [← ContinuousMap.comp_assoc, hcomm, ContinuousMap.comp_assoc, hcomm',
-      ← ContinuousMap.comp_assoc]
-  change IsHomotopyCartesian houter ↔ IsHomotopyCartesian hcomm'
-  rw [IsHomotopyCartesian.iff_forall_mappingPathFiber,
-    IsHomotopyCartesian.iff_forall_mappingPathFiber]
-  have hfib := (IsHomotopyCartesian.iff_forall_mappingPathFiber hcomm).mp hcart
-  refine forall_congr' fun b'' ↦ ?_
-  have hcomp : (MappingPathFiber.map α h hcomm.symm rfl :
-      C(MappingPathFiber p' (h' b''), MappingPathFiber p (h (h' b'')))).comp
-      (MappingPathFiber.map α' h' hcomm'.symm rfl) =
-      MappingPathFiber.map (α.comp α') (h.comp h') houter.symm rfl := by
-    ext q : 1
-    apply Subtype.ext
-    simp
-  rw [← hcomp]
-  exact ⟨fun hc ↦ (hfib (h' b'')).of_postcomp hc, fun hc ↦ (hfib (h' b'')).comp hc⟩
+/-- For any map `p : C(E, B)`, the strict comparison of the horizontal-identity square
+`p ∘ id = id ∘ p` identifies under `HomotopyPullback.idRightHomeomorph p` with the mapping-path
+inclusion `MappingPathSpace.incl p`. -/
+@[simp]
+theorem idRightHomeomorph_comp_liftStrict_id (p : C(E, B)) :
+    (HomotopyPullback.idRightHomeomorph p : C(_, _)).comp
+      (HomotopyPullback.liftStrict (p.comp_id.trans p.id_comp.symm)) =
+      MappingPathSpace.incl p := by
+  ext x : 1; apply Subtype.ext
+  rw [ContinuousMap.comp_apply, ContinuousMap.coe_apply,
+    HomotopyPullback.idRightHomeomorph_val, MappingPathSpace.incl_val]
+  simp
+
+/-- For any map `p : C(E, B)`, the square `p ∘ id = id ∘ p` is homotopy-cartesian. -/
+theorem isHomotopyCartesian_id_horizontal (p : C(E, B)) :
+    IsHomotopyCartesian (p.comp_id.trans p.id_comp.symm) := by
+  rw [isHomotopyCartesian_iff_homotopy]
+  exact ContinuousMap.Homotopy.isHomotopyCartesian_of_horizontal _ .id .id
+
+/-- The canonical strict square exhibiting the strict fibre `p ⁻¹' {b}` over `Unit → B` at `b`. -/
+theorem fiberSquare_comm (p : C(E, B)) (b : B) :
+    p.comp ⟨Subtype.val, continuous_subtype_val⟩ =
+      (ContinuousMap.const Unit b).comp (.const ↥(p ⁻¹' {b}) ()) :=
+  ContinuousMap.ext fun x ↦ x.2
+
+/-- Under `HomotopyPullback.constRightHomeomorphOfUnique p b`, the strict-square comparison of
+`fiberSquare_comm p b` is the constant-path fibre inclusion `MappingPathFiber.ofFiber p b`. -/
+@[simp]
+theorem constRightHomeomorphOfUnique_comp_liftStrict_fiberSquare (p : C(E, B)) (b : B) :
+    (HomotopyPullback.constRightHomeomorphOfUnique (C := Unit) p b : C(_, _)).comp
+      (HomotopyPullback.liftStrict (fiberSquare_comm p b)) =
+      MappingPathFiber.ofFiber p b := by
+  ext x : 1; apply Subtype.ext
+  rw [ContinuousMap.comp_apply, ContinuousMap.coe_apply,
+    HomotopyPullback.constRightHomeomorphOfUnique_val, MappingPathFiber.ofFiber_val]
+  simp [show p x.1 = b from x.2]
+
+/-- **Point-inclusion specialization.** The strict fibre square of `p ⁻¹' {b}` over `Unit → B`
+at `b` is homotopy-cartesian if and only if `MappingPathFiber.ofFiber p b` is a weak homotopy
+equivalence. -/
+theorem isHomotopyCartesian_fiber_iff_ofFiber (p : C(E, B)) (b : B) :
+    IsHomotopyCartesian (fiberSquare_comm p b) ↔
+      (MappingPathFiber.ofFiber p b).IsWeakHomotopyEquivalence := by
+  have he :=
+    (HomotopyPullback.constRightHomeomorphOfUnique (C := Unit) p b).isWeakHomotopyEquivalence
+  rw [IsHomotopyCartesian, ← constRightHomeomorphOfUnique_comp_liftStrict_fiberSquare p b]
+  exact ⟨he.comp, he.of_postcomp⟩
 
 end StrictSquare
 
@@ -893,13 +589,18 @@ section TopCat
 
 variable {E B E' B' : TopCat.{u}} {α : E' ⟶ E} {p' : E' ⟶ B'} {p : E ⟶ B} {h : B' ⟶ B}
 
+/-- Underlying `ContinuousMap` commutativity `p.hom.comp α.hom = h.hom.comp p'.hom` of a
+commutative square `sq : CommSq α p' p h` in `TopCat`. -/
+theorem hom_comp_eq (sq : CommSq α p' p h) : p.hom.comp α.hom = h.hom.comp p'.hom := by
+  rw [← _root_.TopCat.hom_comp, ← _root_.TopCat.hom_comp, sq.w]
+
 /-- A commutative square `sq : CommSq α p' p h` in `TopCat` is **homotopy-cartesian** if its
 underlying square `p.hom.comp α.hom = h.hom.comp p'.hom` is homotopy-cartesian. -/
 def IsHomotopyCartesian (sq : CommSq α p' p h) : Prop :=
-  TauCeti.IsHomotopyCartesian (congrArg TopCat.Hom.hom sq.w)
+  TauCeti.IsHomotopyCartesian sq.hom_comp_eq
 
 theorem isHomotopyCartesian_iff (sq : CommSq α p' p h) :
-    sq.IsHomotopyCartesian ↔ TauCeti.IsHomotopyCartesian (congrArg TopCat.Hom.hom sq.w) :=
+    sq.IsHomotopyCartesian ↔ TauCeti.IsHomotopyCartesian sq.hom_comp_eq :=
   Iff.rfl
 
 theorem IsHomotopyCartesian.flip {sq : CommSq α p' p h} (hsq : sq.IsHomotopyCartesian) :
@@ -922,7 +623,7 @@ theorem isHomotopyCartesian_iff_forall_fiberMap (sq : CommSq α p' p h)
   refine forall_congr' fun b' ↦ ?_
   have hof' := isWeakHomotopyEquivalence_ofFiber hp' b'
   have hof := isWeakHomotopyEquivalence_ofFiber hp (h b')
-  have hsq_of : (MappingPathFiber.map α.hom h.hom (congrArg TopCat.Hom.hom sq.w).symm rfl :
+  have hsq_of : (MappingPathFiber.map α.hom h.hom sq.hom_comp_eq.symm rfl :
       C(MappingPathFiber p'.hom b', MappingPathFiber p.hom (h b'))).comp
       (MappingPathFiber.ofFiber p'.hom b') =
       (MappingPathFiber.ofFiber p.hom (h b')).comp (sq.fiberMap b').hom := by
@@ -933,27 +634,6 @@ theorem isHomotopyCartesian_iff_forall_fiberMap (sq : CommSq α p' p h)
     exact (sq.fiberMap_apply_coe b' x).symm
   exact ⟨fun hm ↦ hof.of_postcomp (hsq_of ▸ hm.comp hof'),
     fun hf ↦ hof'.of_precomp (hsq_of.symm ▸ hof.comp hf)⟩
-
-/-- **Horizontal pasting of commutative squares in `TopCat`.** When the right square `sq₂` is
-homotopy-cartesian, the horizontal composite `sq₁.horiz_comp sq₂` is homotopy-cartesian iff the
-left square `sq₁` is homotopy-cartesian. -/
-theorem isHomotopyCartesian_horiz_comp_iff {E'' B'' : TopCat.{u}}
-    {α' : E'' ⟶ E'} {p'' : E'' ⟶ B''} {h' : B'' ⟶ B'}
-    (sq₁ : CommSq α' p'' p' h') {sq₂ : CommSq α p' p h} (hsq₂ : sq₂.IsHomotopyCartesian) :
-    (sq₁.horiz_comp sq₂).IsHomotopyCartesian ↔ sq₁.IsHomotopyCartesian :=
-  TauCeti.isHomotopyCartesian_hcomp_iff hsq₂ (congrArg TopCat.Hom.hom sq₁.w)
-
-/-- **Vertical pasting of commutative squares in `TopCat`.** When the bottom square `sq₂` is
-homotopy-cartesian, the vertical composite `sq₁.vert_comp sq₂` is homotopy-cartesian iff the top
-square `sq₁` is homotopy-cartesian. -/
-theorem isHomotopyCartesian_vert_comp_iff {M M' : TopCat.{u}}
-    {α'' : E' ⟶ E} {q' : E' ⟶ M'} {q : E ⟶ M} {α' : M' ⟶ M}
-    {pM' : M' ⟶ B'} {pM : M ⟶ B}
-    (sq₁ : CommSq α'' q' q α') {sq₂ : CommSq α' pM' pM h}
-    (hsq₂ : sq₂.IsHomotopyCartesian) :
-    (sq₁.vert_comp sq₂).IsHomotopyCartesian ↔ sq₁.IsHomotopyCartesian := by
-  rw [← isHomotopyCartesian_flip_iff, ← sq₁.isHomotopyCartesian_flip_iff]
-  exact isHomotopyCartesian_horiz_comp_iff sq₁.flip hsq₂.flip
 
 end TopCat
 
@@ -966,15 +646,12 @@ open TauCeti TauCeti.TopCat
 /-- **Pullback along a Serre fibration is homotopy-cartesian (right leg).** Any categorical pullback
 square `IsPullback α p' p h` in `TopCat` whose right vertical map `p` is a Serre fibration is
 homotopy-cartesian. -/
-theorem isHomotopyCartesian_of_right {P E B B' : TopCat.{u}}
+theorem isHomotopyCartesian_of_right {P E B B' : _root_.TopCat.{u}}
     {α : P ⟶ E} {p' : P ⟶ B'} {p : E ⟶ B} {h : B' ⟶ B}
     (hpb : IsPullback α p' p h) (hp : serreFibrations p) :
     hpb.toCommSq.IsHomotopyCartesian := by
-  have hp' : serreFibrations p' := serreFibrations.of_isPullback hpb hp
-  rw [hpb.toCommSq.isHomotopyCartesian_iff_forall_fiberMap hp hp']
-  -- Reduce to the explicit `TopCat.pullbackCone` along the limit isomorphism.
-  have hc : IsPullback (TopCat.pullbackSnd h p) (TopCat.pullbackFst h p) p h :=
-    (IsPullback.of_isLimit (TopCat.pullbackConeIsLimit h p)).flip
+  have hc : IsPullback (_root_.TopCat.pullbackSnd h p) (_root_.TopCat.pullbackFst h p) p h :=
+    (IsPullback.of_isLimit (_root_.TopCat.pullbackConeIsLimit h p)).flip
   have hcanon : hc.toCommSq.IsHomotopyCartesian := by
     rw [hc.toCommSq.isHomotopyCartesian_iff_forall_fiberMap hp
       (mem_serreFibrations_pullbackFst hp h)]
@@ -982,38 +659,38 @@ theorem isHomotopyCartesian_of_right {P E B B' : TopCat.{u}}
     have heq : hc.toCommSq.fiberMap b' = (p.fiberPullbackFstIso h b').hom := by
       ext x
       exact (hc.toCommSq.fiberMap_apply_coe b' x).trans
-        (TopCat.Hom.fiberPullbackFstIso_hom_apply_coe p h b' x).symm
+        (_root_.TopCat.Hom.fiberPullbackFstIso_hom_apply_coe p h b' x).symm
     rw [heq, ← mem_weakEquivalences_iff]
     exact MorphismProperty.isomorphisms_le_of_containsIdentities weakEquivalences _ inferInstance
-  -- Paste with the top isomorphism `P ≅ {q : B' × E // h q.1 = p q.2}` over `B'`.
-  let e : P ≅ TopCat.of { q : B' × E // h q.1 = p q.2 } :=
-    Limits.IsLimit.conePointUniqueUpToIso hpb.flip.isLimit (TopCat.pullbackConeIsLimit h p)
-  have he_snd : e.hom ≫ TopCat.pullbackSnd h p = α :=
+  let e : P ≅ _root_.TopCat.of { q : B' × E // h q.1 = p q.2 } :=
+    Limits.IsLimit.conePointUniqueUpToIso hpb.flip.isLimit (_root_.TopCat.pullbackConeIsLimit h p)
+  have he_snd : e.hom ≫ _root_.TopCat.pullbackSnd h p = α :=
     Limits.IsLimit.conePointUniqueUpToIso_hom_comp hpb.flip.isLimit
-      (TopCat.pullbackConeIsLimit h p) Limits.WalkingCospan.right
-  have he_fst : e.hom ≫ TopCat.pullbackFst h p = p' :=
+      (_root_.TopCat.pullbackConeIsLimit h p) Limits.WalkingCospan.right
+  have he_fst : e.hom ≫ _root_.TopCat.pullbackFst h p = p' :=
     Limits.IsLimit.conePointUniqueUpToIso_hom_comp hpb.flip.isLimit
-      (TopCat.pullbackConeIsLimit h p) Limits.WalkingCospan.left
-  let sqIso : CommSq e.hom p' (TopCat.pullbackFst h p) (𝟙 B') :=
-    ⟨he_fst.trans (Category.comp_id p').symm⟩
-  have hsqIso : sqIso.IsHomotopyCartesian := by
-    rw [CommSq.isHomotopyCartesian_iff, TauCeti.isHomotopyCartesian_iff_homotopy]
-    refine ContinuousMap.Homotopy.isHomotopyCartesian_of_horizontal _ ?_ .id
-    convert (TopCat.homeoOfIso e).toHomotopyEquiv.isWeakHomotopyEquivalence using 1
-    ext p₀ : 1
-    exact (TopCat.homeoOfIso_apply e p₀).symm
-  have hpasted := (sqIso.isHomotopyCartesian_horiz_comp_iff hcanon).mpr hsqIso
-  have hcomm_eq {t : P ⟶ E} {b : B' ⟶ B} (ht : t = α) (hb : b = h) (sq' : CommSq t p' p b) :
-      sq'.IsHomotopyCartesian ↔ hpb.toCommSq.IsHomotopyCartesian := by
-    subst ht hb
-    rfl
-  exact (hpb.toCommSq.isHomotopyCartesian_iff_forall_fiberMap hp hp').mp
-    ((hcomm_eq he_snd (Category.id_comp h) (sqIso.horiz_comp hc.toCommSq)).mp hpasted)
+      (_root_.TopCat.pullbackConeIsLimit h p) Limits.WalkingCospan.left
+  have hcomp : HomotopyPullback.liftStrict hpb.toCommSq.hom_comp_eq =
+      (HomotopyPullback.liftStrict hc.toCommSq.hom_comp_eq).comp e.hom.hom := by
+    ext x : 1
+    have hs : α.hom x = (_root_.TopCat.pullbackSnd h p).hom (e.hom.hom x) := by
+      simpa [_root_.TopCat.hom_comp] using
+        (ContinuousMap.congr_fun (congrArg _root_.TopCat.Hom.hom he_snd) x).symm
+    have hf : p'.hom x = (_root_.TopCat.pullbackFst h p).hom (e.hom.hom x) := by
+      simpa [_root_.TopCat.hom_comp] using
+        (ContinuousMap.congr_fun (congrArg _root_.TopCat.Hom.hom he_fst) x).symm
+    exact HomotopyPullback.ext (by simpa using hs) (by simpa using hf)
+      fun _ ↦ by simpa using congrArg p.hom hs
+  have he : e.hom.hom.IsWeakHomotopyEquivalence := by
+    convert (_root_.TopCat.homeoOfIso e).isWeakHomotopyEquivalence using 1
+    ext x : 1; exact (_root_.TopCat.homeoOfIso_apply e x).symm
+  change (HomotopyPullback.liftStrict hpb.toCommSq.hom_comp_eq).IsWeakHomotopyEquivalence
+  exact hcomp ▸ hcanon.comp he
 
 /-- **Pullback along a Serre fibration is homotopy-cartesian (left leg).** Any categorical pullback
 square `IsPullback α p' p h` in `TopCat` whose bottom map `h` is a Serre fibration is
 homotopy-cartesian. -/
-theorem isHomotopyCartesian_of_left {P E B B' : TopCat.{u}}
+theorem isHomotopyCartesian_of_left {P E B B' : _root_.TopCat.{u}}
     {α : P ⟶ E} {p' : P ⟶ B'} {p : E ⟶ B} {h : B' ⟶ B}
     (hpb : IsPullback α p' p h) (hh : serreFibrations h) :
     hpb.toCommSq.IsHomotopyCartesian :=
@@ -1032,27 +709,13 @@ theorem isWeakHomotopyEquivalence_ofPullback_of_left {A B C : _root_.TopCat.{u}}
     (HomotopyPullback.ofPullback p.hom g.hom).IsWeakHomotopyEquivalence := by
   have hc : IsPullback (_root_.TopCat.pullbackSnd g p) (_root_.TopCat.pullbackFst g p) p g :=
     (IsPullback.of_isLimit (_root_.TopCat.pullbackConeIsLimit g p)).flip
-  have hcart := hc.isHomotopyCartesian_of_right hp
-  let eDom : (⇑p.hom).Pullback ⇑g.hom ≃ₜ { q : C × A // g q.1 = p q.2 } :=
-    { toFun x := ⟨(x.1.2, x.1.1), x.2.symm⟩
-      invFun y := ⟨(y.1.2, y.1.1), y.2.symm⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun :=
-        ((continuous_subtype_val.snd).prodMk continuous_subtype_val.fst).subtype_mk _
-      continuous_invFun :=
-        ((continuous_subtype_val.snd).prodMk continuous_subtype_val.fst).subtype_mk _ }
-  have heDom := eDom.toHomotopyEquiv.isWeakHomotopyEquivalence
   have hcomp : HomotopyPullback.ofPullback p.hom g.hom =
-      (HomotopyPullback.liftStrict
-        (congrArg _root_.TopCat.Hom.hom hc.w)).comp eDom.toHomotopyEquiv.toFun := by
+      (HomotopyPullback.liftStrict hc.toCommSq.hom_comp_eq).comp
+        (Homeomorph.pullbackComm ⇑p.hom ⇑g.hom : C(_, _)) := by
     ext x : 1
-    apply Subtype.ext
-    rw [HomotopyPullback.ofPullback_val, ContinuousMap.comp_apply,
-      HomotopyPullback.liftStrict_val]
-    rfl
-  rw [hcomp]
-  exact hcart.comp heDom
+    exact HomotopyPullback.ext (by simp) (by simp) fun _ ↦ by simp
+  exact hcomp ▸ (hc.isHomotopyCartesian_of_right hp).comp
+    (Homeomorph.pullbackComm ⇑p.hom ⇑g.hom).isWeakHomotopyEquivalence
 
 /-- **Strict-to-homotopy pullback comparison along a Serre fibration (right leg).** When
 `q : C ⟶ B` is a Serre fibration in `TopCat` and `f : A ⟶ B` is any morphism,
@@ -1060,29 +723,14 @@ theorem isWeakHomotopyEquivalence_ofPullback_of_left {A B C : _root_.TopCat.{u}}
 theorem isWeakHomotopyEquivalence_ofPullback_of_right {A B C : _root_.TopCat.{u}}
     (f : A ⟶ B) {q : C ⟶ B} (hq : serreFibrations q) :
     (HomotopyPullback.ofPullback f.hom q.hom).IsWeakHomotopyEquivalence := by
-  let eDom : (⇑f.hom).Pullback ⇑q.hom ≃ₜ (⇑q.hom).Pullback ⇑f.hom :=
-    { toFun x := ⟨(x.1.2, x.1.1), x.2.symm⟩
-      invFun y := ⟨(y.1.2, y.1.1), y.2.symm⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun :=
-        ((continuous_subtype_val.snd).prodMk continuous_subtype_val.fst).subtype_mk _
-      continuous_invFun :=
-        ((continuous_subtype_val.snd).prodMk continuous_subtype_val.fst).subtype_mk _ }
-  have heDom := eDom.toHomotopyEquiv.isWeakHomotopyEquivalence
-  have hswap := HomotopyPullback.isWeakHomotopyEquivalence_swap q.hom f.hom
   have hcomp : HomotopyPullback.ofPullback f.hom q.hom =
       (HomotopyPullback.swap q.hom f.hom).comp
-        ((HomotopyPullback.ofPullback q.hom f.hom).comp eDom.toHomotopyEquiv.toFun) := by
-    ext x : 1
-    apply Subtype.ext
-    rw [HomotopyPullback.ofPullback_val, ContinuousMap.comp_apply, ContinuousMap.comp_apply,
-      HomotopyPullback.swap_val, HomotopyPullback.ofPullback_val]
-    refine Prod.ext rfl (Prod.ext rfl ?_)
-    ext _ : 1
-    exact x.2
-  rw [hcomp]
-  exact hswap.comp ((isWeakHomotopyEquivalence_ofPullback_of_left hq f).comp heDom)
+        ((HomotopyPullback.ofPullback q.hom f.hom).comp
+          (Homeomorph.pullbackComm ⇑f.hom ⇑q.hom : C(_, _))) := by
+    ext x : 1; exact HomotopyPullback.ext (by simp) (by simp) fun _ ↦ by simp [x.2]
+  exact hcomp ▸ (HomotopyPullback.isWeakHomotopyEquivalence_swap q.hom f.hom).comp
+    ((isWeakHomotopyEquivalence_ofPullback_of_left hq f).comp
+      (Homeomorph.pullbackComm ⇑f.hom ⇑q.hom).isWeakHomotopyEquivalence)
 
 /-- When the right vertical map `p : E ⟶ B` is a Serre fibration, a commutative square
 `sq : CommSq α p' p h` in `TopCat` is homotopy-cartesian if and only if the induced map into the
@@ -1101,18 +749,21 @@ theorem isHomotopyCartesian_iff_pullbackLift {E B E' B' : _root_.TopCat.{u}}
     (_root_.TopCat.pullbackConeIsLimit h p).fac _ Limits.WalkingCospan.left
   have hφ_snd : φ ≫ _root_.TopCat.pullbackSnd h p = α :=
     (_root_.TopCat.pullbackConeIsLimit h p).fac _ Limits.WalkingCospan.right
-  let sqL : CommSq φ p' (_root_.TopCat.pullbackFst h p) (𝟙 B') :=
-    ⟨hφ_fst.trans (Category.comp_id p').symm⟩
   have hcartR := hc.isHomotopyCartesian_of_right hp
-  have hsqL_iff : sqL.IsHomotopyCartesian ↔ φ.hom.IsWeakHomotopyEquivalence := by
-    rw [CommSq.isHomotopyCartesian_iff, TauCeti.isHomotopyCartesian_iff_homotopy]
-    exact ContinuousMap.Homotopy.isHomotopyCartesian_iff_top_of_bottom _ .id
-  have hcomm_eq {t : E' ⟶ E} {b : B' ⟶ B} (ht : t = α) (hb : b = h) (sq' : CommSq t p' p b) :
-      sq'.IsHomotopyCartesian ↔ sq.IsHomotopyCartesian := by
-    subst ht hb
-    rfl
-  change sq.IsHomotopyCartesian ↔ φ.hom.IsWeakHomotopyEquivalence
-  rw [← hsqL_iff, ← sqL.isHomotopyCartesian_horiz_comp_iff hcartR,
-    hcomm_eq hφ_snd (Category.id_comp h) (sqL.horiz_comp hc.toCommSq)]
+  have hcomp : HomotopyPullback.liftStrict sq.hom_comp_eq =
+      (HomotopyPullback.liftStrict hc.toCommSq.hom_comp_eq).comp φ.hom := by
+    ext x : 1
+    have hs : α.hom x = (_root_.TopCat.pullbackSnd h p).hom (φ.hom x) := by
+      simpa [_root_.TopCat.hom_comp] using
+        (ContinuousMap.congr_fun (congrArg _root_.TopCat.Hom.hom hφ_snd) x).symm
+    have hf : p'.hom x = (_root_.TopCat.pullbackFst h p).hom (φ.hom x) := by
+      simpa [_root_.TopCat.hom_comp] using
+        (ContinuousMap.congr_fun (congrArg _root_.TopCat.Hom.hom hφ_fst) x).symm
+    exact HomotopyPullback.ext (by simpa using hs) (by simpa using hf)
+      fun _ ↦ by simpa using congrArg p.hom hs
+  change (HomotopyPullback.liftStrict sq.hom_comp_eq).IsWeakHomotopyEquivalence ↔
+    φ.hom.IsWeakHomotopyEquivalence
+  rw [hcomp]
+  exact ⟨hcartR.of_postcomp, hcartR.comp⟩
 
 end TauCeti.TopCat

@@ -216,17 +216,5 @@ theorem fiberHomotopyEquiv_apply_val (hp : IsHurewiczFibration.{max u v} p) (b :
     (hp.fiberHomotopyEquiv b e).val = (e.val, ContinuousMap.const I (p e.val)) :=
   LiftingFunction.fiberHomotopyEquiv_apply_val _ b e
 
-theorem _root_.TauCeti.LiftingFunction.fiberHomotopyEquiv_toFun (Λ : LiftingFunction p) (b : B) :
-    (Λ.fiberHomotopyEquiv b).toFun = MappingPathFiber.ofFiber p b := by
-  ext e : 1
-  apply Subtype.ext
-  exact (Λ.fiberHomotopyEquiv_apply_val b e).trans
-    ((congrArg (e.val, ContinuousMap.const I ·) e.2).trans
-      (MappingPathFiber.ofFiber_val p b e).symm)
-
-theorem fiberHomotopyEquiv_toFun (hp : IsHurewiczFibration.{max u v} p) (b : B) :
-    (hp.fiberHomotopyEquiv b).toFun = MappingPathFiber.ofFiber p b :=
-  LiftingFunction.fiberHomotopyEquiv_toFun _ b
-
 end IsHurewiczFibration
 end TauCeti

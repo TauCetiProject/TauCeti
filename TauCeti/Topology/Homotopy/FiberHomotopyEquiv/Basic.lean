@@ -91,19 +91,6 @@ theorem fiberMap_id {p : C(E, B)} (b : B) :
     fiberMap (.id E) (ContinuousMap.comp_id p) b = .id _ :=
   (rfl)
 
-/-- The map of fibres `p⁻¹(b) → q⁻¹(g b)` induced by a commutative square `q ∘ f = g ∘ p`. -/
-def sqFiberMap {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B')}
-    (f : C(E, E')) (g : C(B, B')) (h : q.comp f = g.comp p) (b : B) :
-    C(p ⁻¹' {b}, q ⁻¹' {g b}) :=
-  ⟨fun e ↦ ⟨f e.1, (ContinuousMap.congr_fun h e.1).trans (congrArg g e.2)⟩,
-    (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
-
-@[simp]
-theorem coe_sqFiberMap {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(E', B')}
-    (f : C(E, E')) (g : C(B, B')) (h : q.comp f = g.comp p) (b : B) (e : p ⁻¹' {b}) :
-    (sqFiberMap f g h b e : E') = f e.1 :=
-  (rfl)
-
 theorem apply_homotopyWith {p : C(E, B)} {f₀ f₁ : C(E, E)}
     (H : HomotopyWith f₀ f₁ fun f ↦ p.comp f = p) (t : I) (e : E) : p (H (t, e)) = p e :=
   congr($(H.prop' t) e)

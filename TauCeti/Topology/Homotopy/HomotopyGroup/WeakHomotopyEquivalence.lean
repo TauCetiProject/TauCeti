@@ -414,7 +414,6 @@ theorem HomotopyEquiv.isWeakHomotopyEquivalence (e : X ≃ₕ Y) :
   exists_joined y := ⟨e.invFun y, ⟨e.right_inv.some.evalAt y⟩⟩
   bijective _ x := HomotopyGroup.map_bijective_of_homotopyEquiv e x
 
-
 /-- **A map between contractible spaces is a weak homotopy equivalence.** It is homotopic to a
 homotopy equivalence, since any two maps into a contractible space are homotopic. -/
 theorem isWeakHomotopyEquivalence_of_contractibleSpace [ContractibleSpace X] [ContractibleSpace Y]
@@ -426,3 +425,20 @@ theorem isWeakHomotopyEquivalence_of_contractibleSpace [ContractibleSpace X] [Co
   exact e.isWeakHomotopyEquivalence.of_homotopic ((hconst _).trans (hconst f).symm)
 
 end ContinuousMap
+
+/-- **A homeomorphism is a weak homotopy equivalence.** -/
+theorem Homeomorph.isWeakHomotopyEquivalence {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] (e : X ≃ₜ Y) :
+    (e : C(X, Y)).IsWeakHomotopyEquivalence := by
+  convert e.toHomotopyEquiv.isWeakHomotopyEquivalence using 1
+  ext : 1; rfl
+
+/-- Conjugating a continuous map by homeomorphisms preserves and reflects weak homotopy
+equivalences. -/
+theorem Homeomorph.isWeakHomotopyEquivalence_conj_iff {X Y X' Y' : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace X'] [TopologicalSpace Y']
+    (eX : X' ≃ₜ X) (eY : Y ≃ₜ Y') (f : C(X, Y)) :
+    ((eY : C(Y, Y')).comp (f.comp (eX : C(X', X)))).IsWeakHomotopyEquivalence ↔
+      f.IsWeakHomotopyEquivalence :=
+  ⟨fun h ↦ eX.isWeakHomotopyEquivalence.of_precomp (eY.isWeakHomotopyEquivalence.of_postcomp h),
+    fun h ↦ eY.isWeakHomotopyEquivalence.comp (h.comp eX.isWeakHomotopyEquivalence)⟩
