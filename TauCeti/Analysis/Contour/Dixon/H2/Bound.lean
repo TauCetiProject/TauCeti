@@ -31,7 +31,7 @@ only interval-integrable.
   its decay at infinity.
 * `TauCeti.Contour.dixonH2_norm_le_of_integrable` / `dixonH2_tendsto_zero_of_integrable` — the `L¹`
   versions, via the shared estimate `norm_integral_inv_sub_smul_le`.
-* `TauCeti.Contour.dixonH2_tendsto_zero_of_continuousOn` — decay at infinity for every `f`, the
+* `TauCeti.Contour.dixonH2_tendsto_zero_of_continuousOn`: decay at infinity for every `f`, the
   integral being `0` far out when the weight is not integrable.
 
 The decay of `dixonH2` (hence of Dixon's glued function, which agrees with it far out) is the input

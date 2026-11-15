@@ -38,7 +38,7 @@ hence so is the cycle integral.
 * `TauCeti.Contour.Cycle.integral_eq_of_windingNumber_eq` — cycles with the same winding numbers
   about the singular set have the same integral.
 * `TauCeti.Contour.Cycle.differentiableOn_integral_div_sub` and
-  `TauCeti.Contour.Cycle.tendsto_integral_div_sub_cocompact` — for every `f`, the Cauchy integral
+  `TauCeti.Contour.Cycle.tendsto_integral_div_sub_cocompact`: for every `f`, the Cauchy integral
   `w ↦ ∮_C f(z)/(z - w) dz` is holomorphic off the trace of `C` and tends to `0` at infinity. These
   are the two properties of Dixon's second auxiliary function that the proof uses.
 
