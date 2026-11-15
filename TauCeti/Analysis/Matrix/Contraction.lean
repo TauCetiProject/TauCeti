@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
+import Mathlib.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Contracting an endomorphism of `ℝⁿ` with a matrix
@@ -33,6 +35,9 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
   measurable fields of matrices and endomorphisms is almost everywhere strongly measurable.
 * `Matrix.abs_sum_sum_mul_apply_single_le`: the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ` of an
   endomorphism `T` is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in absolute value.
+* `Matrix.setLAverage_enorm_contraction_sq_le`: Hölder's inequality for the mean square of the
+  contraction of a field `H` with a field `A - a` of matrices, in terms of the mean of
+  `∑ᵢⱼ ‖A - a‖ᵢⱼ` and a higher mean of `‖H‖`.
 -/
 
 public section
@@ -177,5 +182,81 @@ theorem abs_sum_sum_mul_apply_single_le {ι : Type*} [Fintype ι] [DecidableEq �
         simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le (T (EuclideanSpace.single j 1)) i
     _ ≤ ‖T‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := T.le_opNorm _
     _ = ‖T‖ := by simp
+
+section Average
+
+open MeasureTheory
+
+open scoped ENNReal
+
+/-- **The coefficient error in mean.** Let `H` vanish almost everywhere on `s ∖ S`, and let the
+entries of `A - a` have absolute values summing to at most `W` on `s`. For Hölder conjugate
+exponents `t, t'`, the mean square of the error `∑ᵢⱼ (A - a)ᵢⱼ ⟪H eᵢ, eⱼ⟫` on `s` is controlled by
+the average over `s` of `w = ∑ᵢⱼ ‖A - a‖ᵢⱼ` restricted to `S` and the `L^{2t}` mean of `H` on `s`:
+
+`⨍_s (∑ᵢⱼ (A - a)ᵢⱼ ⟪H eᵢ, eⱼ⟫)² ≤ (W^(2t' - 1) ⨍_s 1_S w)^(1/t') (⨍_s ‖H‖^(2t))^(1/t)`. -/
+theorem setLAverage_enorm_contraction_sq_le {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {s S : Set X} {m : ℕ} {A : Matrix (Fin m) (Fin m) ℝ}
+    {a : X → Matrix (Fin m) (Fin m) ℝ}
+    {H : X → EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m)} {W : ℝ}
+    (hW : ∀ᵐ x ∂μ.restrict s, ∑ i, ∑ j, |A i j - a x i j| ≤ W) (hS : MeasurableSet S)
+    (hw : AEMeasurable (fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ) (μ.restrict s))
+    (hH : AEMeasurable (fun x => ‖H x‖ₑ) (μ.restrict s))
+    (hsupp : ∀ᵐ x ∂μ.restrict s, x ∉ S → H x = 0) {t t' : ℝ} (htt : t.HolderConjugate t') :
+    ⨍⁻ x in s, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ∂μ ≤
+      (ENNReal.ofReal W ^ (2 * t' - 1) *
+        ⨍⁻ x in s, S.indicator (fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ) x ∂μ) ^ (1 / t') *
+        (⨍⁻ x in s, ‖H x‖ₑ ^ (2 * t) ∂μ) ^ (1 / t) := by
+  set w : X → ℝ≥0∞ := fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ
+  set v : X → ℝ≥0∞ := S.indicator w
+  set ν : Measure X := (μ s)⁻¹ • μ.restrict s
+  have hν : ν ≪ μ.restrict s := Measure.smul_absolutelyContinuous
+  have ht' : 1 < t' := htt.symm.lt
+  -- Pointwise: `‖err‖ₑ² ≤ v² ‖H‖ₑ²`, since `H = 0` off `S`.
+  have hpt : ∀ᵐ x ∂ν, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ≤ v x ^ 2 * ‖H x‖ₑ ^ 2 := by
+    filter_upwards [hν.ae_le hsupp] with x hx
+    by_cases hxS : x ∈ S
+    · have h := enorm_contraction_le (A - a x) (H x)
+      simp only [Matrix.sub_apply] at h
+      rw [show v x = w x from Set.indicator_of_mem hxS w, ← mul_pow]
+      gcongr
+    · simp [hx hxS]
+  -- The bound `v ≤ W` on `s`.
+  have hvW : ∀ᵐ x ∂ν, v x ≤ ENNReal.ofReal W := by
+    filter_upwards [hν.ae_le hW] with x hx
+    refine (Set.indicator_le_self S w x).trans ?_
+    refine le_trans (le_of_eq ?_) (ENNReal.ofReal_le_ofReal hx)
+    rw [ENNReal.ofReal_sum_of_nonneg (f := fun i => ∑ j, |A i j - a x i j|)
+      fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [ENNReal.ofReal_sum_of_nonneg (f := fun j => |A i j - a x i j|) fun _ _ => abs_nonneg _]
+    exact Finset.sum_congr rfl fun j _ => Real.eNorm_eq_ofReal_abs _
+  have hvm : AEMeasurable v ν := ((hw.indicator hS)).mono_ac hν
+  have hHm : AEMeasurable (fun x => ‖H x‖ₑ) ν := hH.mono_ac hν
+  have hv2 : ∀ᵐ x ∂ν, (v x ^ 2) ^ t' ≤ ENNReal.ofReal W ^ (2 * t' - 1) * v x := by
+    filter_upwards [hvW] with x hx
+    rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, Nat.cast_ofNat]
+    conv_lhs => rw [show 2 * t' = (2 * t' - 1) + 1 by ring]
+    rw [ENNReal.rpow_add_of_nonneg _ _ (by linarith) zero_le_one, ENNReal.rpow_one]
+    gcongr
+    linarith
+  have hH2 : ∀ x, (‖H x‖ₑ ^ 2) ^ t = ‖H x‖ₑ ^ (2 * t) := fun x => by
+    rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, Nat.cast_ofNat]
+  simp only [setLAverage_eq']
+  calc ∫⁻ x, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ∂ν
+      ≤ ∫⁻ x, ((fun x => v x ^ 2) * fun x => ‖H x‖ₑ ^ 2) x ∂ν := lintegral_mono_ae hpt
+    _ ≤ (∫⁻ x, (v x ^ 2) ^ t' ∂ν) ^ (1 / t') * (∫⁻ x, (‖H x‖ₑ ^ 2) ^ t ∂ν) ^ (1 / t) :=
+        ENNReal.lintegral_mul_le_Lp_mul_Lq ν htt.symm (hvm.pow_const 2) (hHm.pow_const 2)
+    _ ≤ (∫⁻ x, ENNReal.ofReal W ^ (2 * t' - 1) * v x ∂ν) ^ (1 / t') *
+          (∫⁻ x, ‖H x‖ₑ ^ (2 * t) ∂ν) ^ (1 / t) := by
+        simp_rw [hH2]
+        gcongr ?_ * _
+        exact ENNReal.rpow_le_rpow (lintegral_mono_ae hv2)
+          (one_div_nonneg.2 (zero_le_one.trans ht'.le))
+    _ = _ := by
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by linarith)
+          ENNReal.ofReal_ne_top)]
+
+end Average
 
 end Matrix

@@ -11,9 +11,11 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Analysis.PDE.Ellipticity.Average
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The `W^{2,p}` estimate for coefficients of vanishing mean oscillation
@@ -144,10 +146,9 @@ theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mu
       {s t : Set (EuclideanSpace ℝ (Fin (n + 1)))}, MemLp g 2 (volume.restrict t) → s ⊆ t →
       volume s ≠ ∞ → ∀ b : G,
       ENNReal.ofReal (∫ x in s, ‖g x - b‖ ^ 2) = ∫⁻ x in s, ‖g x - b‖ₑ ^ 2 :=
-    fun hg hst hs b => by
-      rw [ofReal_integral_eq_lintegral_ofReal (hg.integrableOn_norm_sub_sq_of_subset hst hs b)
-        (ae_of_all _ fun _ => by positivity)]
-      exact lintegral_congr fun x => by rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    fun hg hst hs b =>
+      (setLIntegral_enorm_sq_eq_ofReal_setIntegral
+        (hg.integrableOn_norm_sub_sq_of_subset hst hs b)).symm
   -- `g` is square integrable on `B_r`, being a contraction of the Hessian.
   have hHr : MemLp H 2 (volume.restrict (ball c r)) := by
     simpa [Measure.restrict_restrict_of_subset hball] using hH.restrict (ball c r)
@@ -216,74 +217,6 @@ theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mu
           ring_nf
         rw [e4, e2]
         ring
-
-/-- **The coefficient error in mean.** Let `H` vanish almost everywhere on `s ∖ S`, and let the
-entries of `A - a` have absolute values summing to at most `W` on `s`. For Hölder conjugate
-exponents `t, t'`, the mean square of the error `∑ᵢⱼ (A - a)ᵢⱼ ⟪H eᵢ, eⱼ⟫` on `s` is controlled by
-the average over `s` of `w = ∑ᵢⱼ ‖A - a‖ᵢⱼ` restricted to `S` and the `L^{2t}` mean of `H` on `s`:
-
-`⨍_s (∑ᵢⱼ (A - a)ᵢⱼ ⟪H eᵢ, eⱼ⟫)² ≤ (W^(2t' - 1) ⨍_s 1_S w)^(1/t') (⨍_s ‖H‖^(2t))^(1/t)`. -/
-private theorem setLAverage_enorm_contraction_sq_le {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {s S : Set X} {m : ℕ} {A : Matrix (Fin m) (Fin m) ℝ}
-    {a : X → Matrix (Fin m) (Fin m) ℝ}
-    {H : X → EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m)} {W : ℝ}
-    (hW : ∀ᵐ x ∂μ.restrict s, ∑ i, ∑ j, |A i j - a x i j| ≤ W) (hS : MeasurableSet S)
-    (hw : AEMeasurable (fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ) (μ.restrict s))
-    (hH : AEMeasurable (fun x => ‖H x‖ₑ) (μ.restrict s))
-    (hsupp : ∀ᵐ x ∂μ.restrict s, x ∉ S → H x = 0) {t t' : ℝ} (htt : t.HolderConjugate t') :
-    ⨍⁻ x in s, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ∂μ ≤
-      (ENNReal.ofReal W ^ (2 * t' - 1) *
-        ⨍⁻ x in s, S.indicator (fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ) x ∂μ) ^ (1 / t') *
-        (⨍⁻ x in s, ‖H x‖ₑ ^ (2 * t) ∂μ) ^ (1 / t) := by
-  set w : X → ℝ≥0∞ := fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ
-  set v : X → ℝ≥0∞ := S.indicator w
-  set ν : Measure X := (μ s)⁻¹ • μ.restrict s
-  have hν : ν ≪ μ.restrict s := Measure.smul_absolutelyContinuous
-  have ht' : 1 < t' := htt.symm.lt
-  -- Pointwise: `‖err‖ₑ² ≤ v² ‖H‖ₑ²`, since `H = 0` off `S`.
-  have hpt : ∀ᵐ x ∂ν, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ≤ v x ^ 2 * ‖H x‖ₑ ^ 2 := by
-    filter_upwards [hν.ae_le hsupp] with x hx
-    by_cases hxS : x ∈ S
-    · have h := enorm_contraction_le (A - a x) (H x)
-      simp only [Matrix.sub_apply] at h
-      rw [show v x = w x from Set.indicator_of_mem hxS w, ← mul_pow]
-      gcongr
-    · simp [hx hxS]
-  -- The bound `v ≤ W` on `s`.
-  have hvW : ∀ᵐ x ∂ν, v x ≤ ENNReal.ofReal W := by
-    filter_upwards [hν.ae_le hW] with x hx
-    refine (Set.indicator_le_self S w x).trans ?_
-    refine le_trans (le_of_eq ?_) (ENNReal.ofReal_le_ofReal hx)
-    rw [ENNReal.ofReal_sum_of_nonneg (f := fun i => ∑ j, |A i j - a x i j|)
-      fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [ENNReal.ofReal_sum_of_nonneg (f := fun j => |A i j - a x i j|) fun _ _ => abs_nonneg _]
-    exact Finset.sum_congr rfl fun j _ => Real.eNorm_eq_ofReal_abs _
-  have hvm : AEMeasurable v ν := ((hw.indicator hS)).mono_ac hν
-  have hHm : AEMeasurable (fun x => ‖H x‖ₑ) ν := hH.mono_ac hν
-  have hv2 : ∀ᵐ x ∂ν, (v x ^ 2) ^ t' ≤ ENNReal.ofReal W ^ (2 * t' - 1) * v x := by
-    filter_upwards [hvW] with x hx
-    rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, Nat.cast_ofNat]
-    conv_lhs => rw [show 2 * t' = (2 * t' - 1) + 1 by ring]
-    rw [ENNReal.rpow_add_of_nonneg _ _ (by linarith) zero_le_one, ENNReal.rpow_one]
-    gcongr
-    linarith
-  have hH2 : ∀ x, (‖H x‖ₑ ^ 2) ^ t = ‖H x‖ₑ ^ (2 * t) := fun x => by
-    rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, Nat.cast_ofNat]
-  simp only [setLAverage_eq']
-  calc ∫⁻ x, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ∂ν
-      ≤ ∫⁻ x, ((fun x => v x ^ 2) * fun x => ‖H x‖ₑ ^ 2) x ∂ν := lintegral_mono_ae hpt
-    _ ≤ (∫⁻ x, (v x ^ 2) ^ t' ∂ν) ^ (1 / t') * (∫⁻ x, (‖H x‖ₑ ^ 2) ^ t ∂ν) ^ (1 / t) :=
-        ENNReal.lintegral_mul_le_Lp_mul_Lq ν htt.symm (hvm.pow_const 2) (hHm.pow_const 2)
-    _ ≤ (∫⁻ x, ENNReal.ofReal W ^ (2 * t' - 1) * v x ∂ν) ^ (1 / t') *
-          (∫⁻ x, ‖H x‖ₑ ^ (2 * t) ∂ν) ^ (1 / t) := by
-        simp_rw [hH2]
-        gcongr ?_ * _
-        exact ENNReal.rpow_le_rpow (lintegral_mono_ae hv2)
-          (one_div_nonneg.2 (zero_le_one.trans ht'.le))
-    _ = _ := by
-        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by linarith)
-          ENNReal.ofReal_ne_top)]
 
 /-- The constant of the decaying term in the frozen-coefficient estimate. -/
 private noncomputable def decayConst (n : ℕ) (lam Lam : ℝ) : ℝ :=
@@ -573,31 +506,6 @@ private theorem sq_sharpMaximalFunction_iteratedGradient_le
   exact sq_setLAverage_enorm_iteratedGradient_sub_le hA ha hell u heq hS hρ hκ (by positivity) hx
     hsuppS hw htt
 
-/-- If `g → 0` along `l`, then eventually `K ofReal(g)^e < ε` for finite `K`, `e > 0` and
-`ε > 0`; this is how the absorbed terms are made small. -/
-private theorem eventually_mul_ofReal_rpow_lt {α : Type*} {l : Filter α} {g : α → ℝ}
-    (hg : Tendsto g l (𝓝 0)) {K : ℝ≥0∞} (hK : K ≠ ∞) {e : ℝ} (he : 0 < e) {ε : ℝ≥0∞}
-    (hε : 0 < ε) : ∀ᶠ x in l, K * ENNReal.ofReal (g x) ^ e < ε := by
-  have h := ENNReal.Tendsto.const_mul
-    (((ENNReal.continuous_rpow_const (y := e)).tendsto _).comp (ENNReal.tendsto_ofReal hg))
-    (Or.inr hK)
-  rw [ENNReal.ofReal_zero, ENNReal.zero_rpow_of_pos he, mul_zero] at h
-  exact h.eventually (gt_mem_nhds hε)
-
-/-- A function determined almost everywhere by the equation `∑ᵢⱼ aᵢⱼ ⟪H eᵢ, eⱼ⟫ = f` is almost
-everywhere strongly measurable. -/
-private theorem aestronglyMeasurable_of_sum_mul_inner_eq
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume)
-    {H : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))}
-    (hH : AEStronglyMeasurable H volume) {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (heq : ∀ᵐ x, ∑ i, ∑ j, a x i j *
-      ⟪H x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = f x) :
-    AEStronglyMeasurable f volume := by
-  refine (aestronglyMeasurable_contraction ha hH).congr (heq.mono fun x hx => ?_)
-  simp only [contraction_apply, hx]
-
 /-- The estimate before absorption: `∫ ‖D²u‖^q` is bounded by the Fefferman–Stein constant times
 the integrated pointwise bound for the sharp maximal function, in which `∫ ‖D²u‖^q` reappears with
 the factors `κ⁻²` and `γ^(1/t')`. -/
@@ -633,7 +541,9 @@ private theorem lintegral_enorm_iteratedGradient_rpow_le
             ∫⁻ x, ‖Wkp.iteratedGradient 1 u x‖ₑ ^ q))) := by
   set H := Wkp.iteratedGradient 1 u
   have hHm : AEStronglyMeasurable H volume := hint.aestronglyMeasurable
-  have hfm : AEStronglyMeasurable f volume := aestronglyMeasurable_of_sum_mul_inner_eq ha hHm heq
+  have hfm : AEStronglyMeasurable f volume :=
+    (aestronglyMeasurable_contraction ha hHm).congr
+      (heq.mono fun x hx => by simp only [contraction_apply, hx])
   have hsq : ∀ (y : ℝ≥0∞) (e : ℝ), e * (q / e) = q → (y ^ e) ^ (q / e) = y ^ q :=
     fun y e he => by rw [← ENNReal.rpow_mul, he]
   have h2 : ∀ y : ℝ≥0∞, (y ^ 2) ^ (q / 2) = y ^ q := fun y => by
@@ -748,7 +658,8 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
       (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hK₂)),
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hHm,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top
-      (aestronglyMeasurable_of_sum_mul_inner_eq ha hHm heq),
+      ((aestronglyMeasurable_contraction ha hHm).congr
+        (heq.mono fun x hx => by simp only [contraction_apply, hx])),
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← hq_def]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
   -- The Hessian is integrable, being in `Lᵖ` and supported in a ball.
