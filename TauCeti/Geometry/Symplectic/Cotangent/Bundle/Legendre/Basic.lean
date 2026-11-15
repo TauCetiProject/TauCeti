@@ -151,7 +151,7 @@ theorem legendreMap_def (L : TangentBundle I M → 𝕜) (v : TangentBundle I M)
 
 /-- **The Legendre map in a trivialization.** Read in a trivialization `e` of the tangent bundle,
 the covector `FL(v)` is the derivative of `u ↦ L(e⁻¹(x, u))` at the fibre coordinate of `v`. -/
-private theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle I M → 𝕜)
+theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle I M → 𝕜)
     {x₀ : M} {v : TangentBundle I M}
     (hv : v.proj ∈ (trivializationAt E (TangentSpace I) x₀).baseSet) :
     ((legendreMap L v).2 ∘L (trivializationAt E (TangentSpace I) x₀).symmL 𝕜 v.proj :
