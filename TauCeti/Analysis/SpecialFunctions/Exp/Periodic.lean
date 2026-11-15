@@ -25,6 +25,9 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 
 * `Complex.exp_pi_mul_I_mul_eq_of_sub_eq`: `exp (π i a) = exp (π i b)` whenever `a - b` is an
   even integer.
+* `Complex.exp_pi_mul_I_mul_div_eq_of_dvd`,
+  `Complex.exp_pi_mul_I_mul_div_eq_neg_of_dvd`: `exp (π i x / n) = ±exp (π i y / n)` when
+  `x - y` is congruent to `0` or `n` modulo `2 n`.
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
@@ -44,6 +47,34 @@ namespace Complex
 theorem exp_pi_mul_I_mul_eq_of_sub_eq {a b : ℂ} {m : ℤ} (h : a - b = 2 * m) :
     cexp (π * I * a) = cexp (π * I * b) :=
   exp_eq_exp_iff_exists_int.mpr ⟨m, by linear_combination (π * I) * h⟩
+
+/-- `exp (π i x / n) = exp (π i y / n)` whenever `2 n ∣ x - y` (for any integer `n`, including
+`n = 0`, where both sides equal `1`). -/
+theorem exp_pi_mul_I_mul_div_eq_of_dvd {x y n : ℤ} (h : 2 * n ∣ x - y) :
+    cexp (π * I * (x : ℂ) / n) = cexp (π * I * (y : ℂ) / n) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · obtain ⟨k, hk⟩ := h
+    have hnC : (n : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hn
+    have hkC : (x : ℂ) - y = 2 * k * n := by
+      have : x - y = 2 * k * n := by linear_combination hk
+      exact_mod_cast this
+    rw [mul_div_assoc, mul_div_assoc]
+    exact exp_pi_mul_I_mul_eq_of_sub_eq
+      (by rw [← sub_div, hkC, mul_div_cancel_right₀ _ hnC])
+
+/-- Half-period negation for `exp (π i · / n)`: for `n ≠ 0`, if `2 n ∣ x - y - n`, then
+`exp (π i x / n) = -exp (π i y / n)`. The hypothesis `n ≠ 0` is needed: at `x = y = n = 0` the
+divisibility holds while `1 ≠ -1`. -/
+theorem exp_pi_mul_I_mul_div_eq_neg_of_dvd {x y n : ℤ} (hn : n ≠ 0) (h : 2 * n ∣ x - y - n) :
+    cexp (π * I * (x : ℂ) / n) = -cexp (π * I * (y : ℂ) / n) := by
+  have hnC : (n : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hn
+  have hy : π * I * (x : ℂ) / n = π * I * ((x - n : ℤ) : ℂ) / n + π * I := by
+    push_cast
+    rw [mul_sub, sub_div, mul_div_assoc, mul_div_cancel_right₀ _ hnC, sub_add_cancel]
+  have hdvd : 2 * n ∣ (x - n) - y := by simpa [sub_right_comm] using h
+  rw [hy, exp_add, exp_pi_mul_I, mul_neg_one, neg_inj]
+  exact exp_pi_mul_I_mul_div_eq_of_dvd hdvd
 
 /-- `e(z + k) = e(z)` for `e(z) = exp (2 π i z)` and an integer `k`. -/
 @[simp]

@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Int.Units
+public import Mathlib.Algebra.Ring.Parity
 import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.ZMod.Basic
+import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -26,13 +29,16 @@ The unit-shifted form `0 ≤ s * (s - δ)` for `δ : ℤˣ` follows by rescaling
 The same product is always even, so every integer satisfies `c ^ 2 ≡ c` modulo `2`, and the
 halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the addition law
 `T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural numbers it is
-the binomial coefficient `n.choose 2`.
+the binomial coefficient `n.choose 2`. Likewise `c * (c ^ 2 - 1) = (c - 1) * c * (c + 1)` is a
+multiple of `3` for every integer `c`, and of `24` whenever `c` is odd.
 
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_units` : `0 ≤ s * (s - δ)` for a unit `δ`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
+* `Int.three_dvd_mul_sq_sub_one` : `3 ∣ c * (c ^ 2 - 1)`.
+* `Int.twentyFour_dvd_mul_sq_sub_one_of_odd` : `24 ∣ c * (c ^ 2 - 1)` when `Odd c`.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
 * `Int.one_sub_mul_one_sub_sub_one_ediv_two` : the reflection `n ↦ 1 - n` fixes `n * (n - 1) / 2`.
@@ -65,6 +71,23 @@ theorem zero_le_mul_sub_units (δ : ℤˣ) (s : ℤ) : 0 ≤ s * (s - (δ : ℤ)
 theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
+
+/-- Every integer satisfies `3 ∣ c * (c ^ 2 - 1)`, since `(c - 1) * c * (c + 1)` is the product of
+three consecutive integers. -/
+theorem three_dvd_mul_sq_sub_one (c : ℤ) : (3 : ℤ) ∣ c * (c ^ 2 - 1) := by
+  refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 3).mp ?_
+  push_cast
+  generalize (c : ZMod 3) = x
+  revert x
+  decide
+
+/-- For every odd integer `c`, `24 ∣ c * (c ^ 2 - 1)`: `8 ∣ c ^ 2 - 1` by
+`Int.eight_dvd_sq_sub_one_of_odd` and `3 ∣ c * (c ^ 2 - 1)` by `Int.three_dvd_mul_sq_sub_one`. -/
+theorem twentyFour_dvd_mul_sq_sub_one_of_odd {c : ℤ} (hc : Odd c) :
+    (24 : ℤ) ∣ c * (c ^ 2 - 1) :=
+  IsCoprime.mul_dvd (show IsCoprime (8 : ℤ) 3 from ⟨2, -5, by norm_num⟩)
+    (dvd_mul_of_dvd_right (eight_dvd_sq_sub_one_of_odd hc))
+    (three_dvd_mul_sq_sub_one c)
 
 /-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
 theorem two_mul_mul_sub_one_ediv_two (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=

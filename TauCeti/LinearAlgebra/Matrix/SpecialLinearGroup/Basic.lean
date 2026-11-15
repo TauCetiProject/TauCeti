@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.RingTheory.Int.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
 
@@ -81,6 +82,11 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
+* `Matrix.SpecialLinearGroup.apply_one_zero_eq_one_of_nonneg_of_apply_one_one_eq_zero`,
+  `Matrix.SpecialLinearGroup.odd_apply_one_one_of_even_apply_one_zero`, and
+  `Matrix.SpecialLinearGroup.odd_apply_zero_zero_of_even_apply_one_zero`: over `ℤ`, a nonnegative
+  lower-left entry paired with `d = 0` must be `1`, and an even lower-left entry forces both
+  diagonal entries `a` and `d` to be odd.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
@@ -270,6 +276,27 @@ relation `a d - b c = 1`. -/
 lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL(2, R)}
     (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
+
+/-- For `γ ∈ SL₂(ℤ)` with `γ 1 0 ≥ 0` and `γ 1 1 = 0`, the determinant equation
+`-γ 0 1 * γ 1 0 = 1` forces `γ 1 0 = 1`. Integrality is needed: `!![0, -1/2; 2, 0] ∈ SL₂(ℚ)` has
+`γ 1 0 = 2`. -/
+theorem apply_one_zero_eq_one_of_nonneg_of_apply_one_one_eq_zero {γ : SL(2, ℤ)}
+    (hc : 0 ≤ γ 1 0) (hd : γ 1 1 = 0) : γ 1 0 = 1 := by
+  have hdet := γ.fin_two_mul_sub_mul_eq_one
+  rw [hd, mul_zero, zero_sub, neg_mul_eq_neg_mul] at hdet
+  rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨_, h⟩ | ⟨_, h⟩ <;> omega
+
+/-- If the lower-left entry of `γ ∈ SL₂(ℤ)` is even, its lower-right entry is odd, since the bottom
+row is coprime. -/
+theorem odd_apply_one_one_of_even_apply_one_zero {γ : SL(2, ℤ)} (hc : Even (γ 1 0)) :
+    Odd (γ 1 1) :=
+  Int.isCoprime_two_left.mp ((γ.isCoprime_row 1).of_isCoprime_of_dvd_left hc.two_dvd)
+
+/-- If the lower-left entry of `γ ∈ SL₂(ℤ)` is even, its upper-left entry is odd, since the first
+column is coprime. -/
+theorem odd_apply_zero_zero_of_even_apply_one_zero {γ : SL(2, ℤ)} (hc : Even (γ 1 0)) :
+    Odd (γ 0 0) :=
+  Int.isCoprime_two_right.mp ((γ.isCoprime_col 0).of_isCoprime_of_dvd_right hc.two_dvd)
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)

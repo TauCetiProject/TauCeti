@@ -14,7 +14,8 @@ import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 This module records the matrix of the standard modular-group generator `S` after scalar extension
 from `SL₂(ℤ)` to `SL₂(R)`, writes it as a word in three transvections, and shows that `S` and
 `U = T S` generate `SL₂(ℤ)`. It also makes explicit the right action `r ↦ r γ` of `S` and `T` on
-row vectors over any ring, through the integer cast of the entries; the general composition laws
+row vectors over any ring, through the integer cast of the entries, and the individual matrix
+entries of `γ * T ^ n`, `γ * T`, and `γ * S` on `SL₂(ℤ)`; the general composition laws
 of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 
 ## Main declarations
@@ -33,6 +34,10 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
   `r T = (r₁, r₁ + r₂)`.
+* `Matrix.SpecialLinearGroup.mul_T_zpow_apply_zero_zero`,
+  `Matrix.SpecialLinearGroup.mul_T_apply_zero_zero`,
+  `Matrix.SpecialLinearGroup.mul_S_apply_zero_zero`, and their siblings: the coordinates of
+  `γ * T ^ n`, `γ * T`, and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
 
 public section
@@ -122,3 +127,69 @@ theorem S_pow_four : S ^ 4 = (1 : SL(2, ℤ)) := by
     _ = 1 := by rw [S_sq]; decide
 
 end TauCeti.ModularGroup
+
+namespace Matrix.SpecialLinearGroup
+
+open ModularGroup
+
+/-- The top-left entry of `γ * T ^ n` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_zpow_apply_zero_zero (γ : SL(2, ℤ)) (n : ℤ) :
+    (γ * T ^ n) 0 0 = γ 0 0 := by
+  simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The top-right entry of `γ * T ^ n` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_zpow_apply_zero_one (γ : SL(2, ℤ)) (n : ℤ) :
+    (γ * T ^ n) 0 1 = γ 0 0 * n + γ 0 1 := by
+  simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The bottom-left entry of `γ * T ^ n` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_zpow_apply_one_zero (γ : SL(2, ℤ)) (n : ℤ) :
+    (γ * T ^ n) 1 0 = γ 1 0 := by
+  simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The bottom-right entry of `γ * T ^ n` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_zpow_apply_one_one (γ : SL(2, ℤ)) (n : ℤ) :
+    (γ * T ^ n) 1 1 = γ 1 0 * n + γ 1 1 := by
+  simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The top-left entry of `γ * T` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_apply_zero_zero (γ : SL(2, ℤ)) :
+    (γ * T) 0 0 = γ 0 0 := by
+  simpa using γ.mul_T_zpow_apply_zero_zero 1
+
+/-- The top-right entry of `γ * T` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_apply_zero_one (γ : SL(2, ℤ)) :
+    (γ * T) 0 1 = γ 0 0 + γ 0 1 := by
+  simpa using γ.mul_T_zpow_apply_zero_one 1
+
+/-- The bottom-left entry of `γ * T` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_apply_one_zero (γ : SL(2, ℤ)) :
+    (γ * T) 1 0 = γ 1 0 := by
+  simpa using γ.mul_T_zpow_apply_one_zero 1
+
+/-- The bottom-right entry of `γ * T` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_T_apply_one_one (γ : SL(2, ℤ)) :
+    (γ * T) 1 1 = γ 1 0 + γ 1 1 := by
+  simpa using γ.mul_T_zpow_apply_one_one 1
+
+/-- The top-left entry of `γ * S` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_S_apply_zero_zero (γ : SL(2, ℤ)) :
+    (γ * S) 0 0 = γ 0 1 := by
+  simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The top-right entry of `γ * S` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_S_apply_zero_one (γ : SL(2, ℤ)) :
+    (γ * S) 0 1 = -γ 0 0 := by
+  simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The bottom-left entry of `γ * S` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_S_apply_one_zero (γ : SL(2, ℤ)) :
+    (γ * S) 1 0 = γ 1 1 := by
+  simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The bottom-right entry of `γ * S` for `γ ∈ SL₂(ℤ)`. -/
+theorem mul_S_apply_one_one (γ : SL(2, ℤ)) :
+    (γ * S) 1 1 = -γ 1 0 := by
+  simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+end Matrix.SpecialLinearGroup

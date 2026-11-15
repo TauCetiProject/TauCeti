@@ -330,7 +330,6 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) :
 
 /-- `(2 / b) = χ₈ b` for every integer `b`, of either sign and parity: both vanish at even `b`,
 both are even in `b`, and at odd `b > 0` this is the second supplement `jacobiSym.at_two`. -/
-@[simp]
 theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
   wlog hb₀ : 0 ≤ b generalizing b
   · rw [← neg_neg b, kroneckerSym_neg_right_of_nonneg (by norm_num), this (-b) (by omega),
@@ -344,7 +343,6 @@ theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
 
 /-- `(-2 / b) = χ₈' b` for every integer `b`: both vanish at even `b`, and at odd `b` both equal
 `χ₄ b * χ₈ b`. -/
-@[simp]
 theorem kroneckerSym_neg_two_left (b : ℤ) : kroneckerSym (-2) b = χ₈' b := by
   rw [χ₈'_int_eq_χ₄_mul_χ₈]
   by_cases hb : Odd b
