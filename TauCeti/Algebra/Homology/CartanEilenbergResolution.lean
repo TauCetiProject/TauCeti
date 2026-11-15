@@ -46,7 +46,9 @@ homology sequence of `0 ⟶ ker ⟶ cover M ⟶ M ⟶ 0` breaks into short exact
 on the kernels gives `Q`, whose differentials are the composites
 `cover (ker) ⟶ ker ⟶ cover M`. The columns and the homology of the rows are then spliced from
 short exact sequences, which makes them resolutions
-(`CategoryTheory.ProjectiveResolution.ofShortExact`).
+(`CategoryTheory.ProjectiveResolution.ofShortExact`). Splicing short exact sequences gives a
+quasi-isomorphism to the first cokernel also without projectivity
+(`ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact`).
 
 ## References
 
@@ -83,25 +85,25 @@ lemma ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono {X₁ A₁ X₂ A₂ X�
     (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w]))
     (S₂ := ShortComplex.mk (e ≫ i) (g' ≫ m) zero) { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := m }).1 h₁
 
-namespace ProjectiveResolution
+section Splice
 
-variable {X : ChainComplex C ℕ} [∀ p, Projective (X.X p)] {A : ℕ → C}
+variable {X : ChainComplex C ℕ} {A : ℕ → C}
   (ι : ∀ p, A (p + 1) ⟶ X.X p) (ε : ∀ p, X.X p ⟶ A p) (w : ∀ p, ι p ≫ ε p = 0)
   (hS : ∀ p, (ShortComplex.mk _ _ (w p)).ShortExact) (hd : ∀ p, X.d (p + 1) p = ε (p + 1) ≫ ι p)
 
-/-- **Splicing short exact sequences into a resolution.** Let `X` be a complex of projectives
-whose differentials factor as `X.X (p + 1) ⟶ A (p + 1) ⟶ X.X p` through short exact sequences
-`0 ⟶ A (p + 1) ⟶ X.X p ⟶ A p ⟶ 0`. Then `X` is a projective resolution of `A 0`, with
-augmentation `X.X 0 ⟶ A 0`. -/
-def ofShortExact : ProjectiveResolution (A 0) where
-  complex := X
-  π := (ChainComplex.toSingle₀Equiv _ _).symm ⟨ε 0, by rw [hd, Category.assoc, w, comp_zero]⟩
-  quasiIso := ⟨fun n => by
+include hS in
+/-- **Splicing short exact sequences.** Let `X` be a complex whose differentials factor as
+`X.X (p + 1) ⟶ A (p + 1) ⟶ X.X p` through short exact sequences
+`0 ⟶ A (p + 1) ⟶ X.X p ⟶ A p ⟶ 0`. Then the map from `X` to `A 0` placed in degree `0` is a
+quasi-isomorphism. -/
+lemma _root_.ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact :
+    QuasiIso ((ChainComplex.toSingle₀Equiv X (A 0)).symm
+      ⟨ε 0, by rw [hd, Category.assoc, w, comp_zero]⟩) :=
+  ⟨fun n => by
     cases n with
     | zero =>
       rw [ChainComplex.quasiIsoAt₀_iff,
-        ShortComplex.quasiIso_iff_of_zeros' _ (by simp) (by simp; rfl)
-          (by simp; rfl)]
+        ShortComplex.quasiIso_iff_of_zeros' _ (by simp) (by simp; rfl) (by simp; rfl)]
       have : Epi (ε 1) := (hS 1).epi_g
       have : Epi (ε 0) := (hS 0).epi_g
       have hg : ((ChainComplex.toSingle₀Equiv X (A 0)).symm
@@ -121,6 +123,23 @@ def ofShortExact : ProjectiveResolution (A 0) where
       have : Mono (ι n) := (hS n).mono_f
       exact ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono _ (ε (n + 2)) (ι (n + 1))
         (ε (n + 1)) (ι n) (hd _) (hd _) (w (n + 1)) (hS (n + 1)).exact⟩
+
+end Splice
+
+namespace ProjectiveResolution
+
+variable {X : ChainComplex C ℕ} [∀ p, Projective (X.X p)] {A : ℕ → C}
+  (ι : ∀ p, A (p + 1) ⟶ X.X p) (ε : ∀ p, X.X p ⟶ A p) (w : ∀ p, ι p ≫ ε p = 0)
+  (hS : ∀ p, (ShortComplex.mk _ _ (w p)).ShortExact) (hd : ∀ p, X.d (p + 1) p = ε (p + 1) ≫ ι p)
+
+/-- **Splicing short exact sequences into a resolution.** Let `X` be a complex of projectives
+whose differentials factor as `X.X (p + 1) ⟶ A (p + 1) ⟶ X.X p` through short exact sequences
+`0 ⟶ A (p + 1) ⟶ X.X p ⟶ A p ⟶ 0`. Then `X` is a projective resolution of `A 0`, with
+augmentation `X.X 0 ⟶ A 0`. -/
+def ofShortExact : ProjectiveResolution (A 0) where
+  complex := X
+  π := (ChainComplex.toSingle₀Equiv _ _).symm ⟨ε 0, by rw [hd, Category.assoc, w, comp_zero]⟩
+  quasiIso := ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact ι ε w hS hd
 
 @[simp]
 lemma ofShortExact_complex : (ofShortExact ι ε w hS hd).complex = X := rfl
