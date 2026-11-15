@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
-import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
@@ -77,7 +76,8 @@ theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
   subst hn
   rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_weylProjection K n,
     (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, DoubleCoset.image_doubleCoset,
-    Subgroup.image_subtype_subgroupOf_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
+    ← Subgroup.coe_map,
+    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
     Subgroup.subtype_apply, coe_titsSubgroupNMulEquiv_symm]
 
 /-- The Bruhat cell of `D.weylProjection K n` is the double coset `B n B` in `D.points K`. -/
@@ -91,8 +91,9 @@ theorem bruhatCell_weylProjection (n : D.weylSubgroup K) :
 @[simp]
 theorem bruhatCell_one :
     D.bruhatCell K 1 = (D.borelSubgroup K : Set (D.points K)) := by
-  rw [bruhatCell, map_one, (D.titsSystem K).bruhatCell_one, titsSystem_subgroupB]
-  exact Subgroup.image_subtype_subgroupOf_of_le (D.borelSubgroup_le_extendedElementarySubgroup K)
+  rw [bruhatCell, map_one, (D.titsSystem K).bruhatCell_one, titsSystem_subgroupB,
+    ← Subgroup.coe_map,
+    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K)]
 
 /-- The Bruhat cell of the `i`-th simple reflection is the double coset `B nᵢ(1) B`. -/
 @[simp]

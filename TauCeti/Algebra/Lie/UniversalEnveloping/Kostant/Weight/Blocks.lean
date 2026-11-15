@@ -61,8 +61,10 @@ noncomputable def orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η →
 
 /-- Evaluating `weightBlockEquiv` at the weight of a basis index recovers `orderedWeightBlock`.
 
-Not a `simp` lemma because `Nat.card_coe_set_eq` rewrites `Nat.card (Set.range wt)` inside the
-dependent codomain type `Fin (Nat.card (Set.range wt))`. -/
+Downstream this lemma is not optional: `orderedWeightBlock` is not `@[expose]`d, so outside this
+module the two sides are not definitionally equal and `rfl` does not close the goal. Not a `simp`
+lemma because `Nat.card_coe_set_eq` rewrites `Nat.card (Set.range wt)` inside the dependent
+codomain type `Fin (Nat.card (Set.range wt))`. -/
 theorem weightBlockEquiv_mk (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) (x : η)
     (hx : wt x ∈ Set.range wt := ⟨x, rfl⟩) :
     weightBlockEquiv degree wt ⟨wt x, hx⟩ = orderedWeightBlock degree wt x :=

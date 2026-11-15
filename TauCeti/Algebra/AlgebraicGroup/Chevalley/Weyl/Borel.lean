@@ -125,8 +125,9 @@ theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontri
   rw [← D.exists_blockLDU_weylWord_iff l A (weightBlockEquiv (t.weightDegree ht) D.weight)]
   have hfun :
       (fun j => weightBlockEquiv (t.weightDegree ht) D.weight ⟨D.weight j, Set.mem_range_self j⟩) =
-        orderedWeightBlock (t.weightDegree ht) D.weight :=
-    funext fun j => weightBlockEquiv_mk (t.weightDegree ht) D.weight j
+        orderedWeightBlock (t.weightDegree ht) D.weight := by
+    funext j
+    exact weightBlockEquiv_mk (t.weightDegree ht) D.weight j
   let Nmat : Matrix (Fin D.dim) (Fin D.dim) A :=
     ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
       Matrix (Fin D.dim) (Fin D.dim) A)
@@ -187,13 +188,17 @@ theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
         ext
         simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul]
       rw [hsplit, map_mul, D.weylProjection_weylElement K i, ih, geckWeylWordProd_cons]
+  -- Split the `D.weylSubgroup K` subtype into the word product and torus factor by comparing
+  -- their underlying elements in `D.points K`.
   have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod *
       D.torusPoints K s,
       mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
         (D.torusPoints_mem_weylSubgroup K s)⟩ : D.weylSubgroup K) =
       ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
         D.list_prod_map_weylElement_mem_weylSubgroup K l⟩ *
-        ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := rfl
+        ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := by
+    apply Subtype.ext
+    rw [Subgroup.coe_mul]
   rw [hmul, map_mul, hword l, D.weylProjection_torusPoints K s, mul_one]
 
 private theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one
