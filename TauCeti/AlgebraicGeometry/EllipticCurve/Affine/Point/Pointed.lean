@@ -103,6 +103,11 @@ theorem smul_point : (C • X).point = (equivVariableChange X.curve C).symm X.po
 theorem equivVariableChange_smul_point : equivVariableChange X.curve C (C • X).point = X.point :=
   Equiv.apply_symm_apply _ _
 
+/-- The marked point of `C • X` is the point at infinity exactly when that of `X` is. -/
+@[simp]
+theorem smul_point_eq_zero_iff : (C • X).point = 0 ↔ X.point = 0 := by
+  rw [smul_point, Equiv.symm_apply_eq, equivVariableChange_zero]
+
 /-- A change of variables acts on a pointed curve `(W, P)` by `(C • W, Q)`, with `Q` the point
 of `C • W` carried to `P`. -/
 theorem smul_mk (W : WeierstrassCurve R) (P : W.toAffine.Point) :

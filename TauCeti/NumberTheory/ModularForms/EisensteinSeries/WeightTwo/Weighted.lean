@@ -405,11 +405,15 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)
 
+omit [NeZero N] in
 /-- **The division values of `℘` are holomorphic**: for `b ∈ ℤ²`, the function
 `z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` is holomorphic on `ℍ`. -/
 theorem mdifferentiable_weierstrassP_periodPair_div (b : Fin 2 → ℤ) :
-    MDiff fun z : ℍ ↦ ℘[z.periodPair] (((b 0 : ℂ) * z + b 1) / N) :=
-  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
+    MDiff fun z : ℍ ↦ ℘[z.periodPair] (((b 0 : ℂ) * z + b 1) / N) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simpa [PeriodPair.weierstrassP_zero] using mdifferentiable_const
+  have : NeZero N := ⟨hN⟩
+  exact TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
     (tendstoLocallyUniformly_weierstrassP_divisionPoint b) (Eventually.of_forall fun _ ↦
       UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum fun y _ ↦
         ((eisSummand_extension_differentiableOn 2 _).const_mul _).sub
