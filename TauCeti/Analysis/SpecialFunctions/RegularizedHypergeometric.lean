@@ -9,8 +9,10 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Regularized hypergeometric functions `₀F₁` and `₂F₁`
@@ -19,18 +21,19 @@ Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFu
 of its power series. This file records that series as a `HasSum` statement, develops the
 function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))` (`a = 0`, `b = {b}`) underlying the Bessel functions,
 and establishes the unit-disk calculus, parameter-shift relations, first-order contiguous-derivative
-relations, and parameter entirety of the regularized Gaussian function
+relations, and joint analyticity of the regularized Gaussian function
 `Complex.regularizedGaussHGFun a b c z = ∑ (a)ₙ (b)ₙ zⁿ / (n! Γ(c + n))`.
 
 For every complex `b`, Mathlib provides the contiguous relation
 `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
-Likewise, on the open unit disk `‖z‖ < 1`, `Complex.regularizedGaussHGFun a b c` is analytic in `z`,
-has derivative `a * b * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z`, satisfies the classical
-first-order parameter-shift and derivative-contiguous relations, and is entire under holomorphic
-variation of `(a, b, c)`. Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements
-needs a pole-avoidance hypothesis on the lower parameter.
+Likewise, on the open unit disk `‖z‖ < 1`, `Complex.regularizedGaussHGFun a b c` evaluates to
+`(Gamma c)⁻¹` at `z = 0`, is analytic in `z`, has derivative
+`a * b * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z`, satisfies the classical first-order
+parameter-shift and derivative-contiguous relations, and is jointly analytic in `(a, b, c, z)`.
+Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a pole-avoidance
+hypothesis on the lower parameter.
 
 ## Main results
 
@@ -44,19 +47,23 @@ needs a pole-avoidance hypothesis on the lower parameter.
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
+* `Complex.regularizedGaussHGFun_zero` — the origin value `(Gamma c)⁻¹` at `z = 0`.
 * `Complex.hasFPowerSeriesOnBall_regularizedGaussHGFun`, `Complex.analyticAt_regularizedGaussHGFun`,
   `Complex.analyticOnNhd_regularizedGaussHGFun` — power-series representation and analyticity of
   `regularizedGaussHGFun` on the open unit disk.
 * `Complex.deriv_regularizedGaussHGFun`, `Complex.hasDerivAt_regularizedGaussHGFun` — the derivative
   `a * b * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z` on `‖z‖ < 1` (DLMF 15.5.1).
 * `Complex.regularizedGaussHGFun_eq_sub_mul_add_mul`,
-  `Complex.regularizedGaussHGFun_eq_sub_mul_mul`,
+  `Complex.regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul`,
   `Complex.mul_deriv_regularizedGaussHGFun_add_mul_eq`,
-  `Complex.mul_deriv_regularizedGaussHGFun_add_right`,
+  `Complex.mul_deriv_regularizedGaussHGFun_add_mul_eq_mul`,
   `Complex.mul_one_sub_mul_deriv_regularizedGaussHGFun` — parameter-shift and first-order
   contiguous-derivative identities on `‖z‖ < 1` (DLMF §15.5).
-* `Differentiable.regularizedGaussHGFun` — entirety of
-  `w ↦ regularizedGaussHGFun (fa w) (fb w) (fc w) z` for holomorphic `fa`, `fb`, `fc` and `‖z‖ < 1`.
+* `Complex.analyticAt_uncurry_regularizedGaussHGFun`, `AnalyticAt.regularizedGaussHGFun`,
+  `DifferentiableAt.regularizedGaussHGFun`, `DifferentiableWithinAt.regularizedGaussHGFun`,
+  `DifferentiableOn.regularizedGaussHGFun`, `Differentiable.regularizedGaussHGFun` — joint
+  analyticity of `(a, b, c, z) ↦ regularizedGaussHGFun a b c z` on `‖z‖ < 1` and composition with
+  analytic or holomorphic maps on complex normed spaces.
 -/
 
 public section
@@ -240,8 +247,9 @@ theorem hasFPowerSeriesOnBall_regularizedGaussHGFun (a b c : ℂ) :
 /-- For any complex parameters `a`, `b`, `c`, `regularizedGaussHGFun a b c` is analytic at every
 point of the open unit disk. -/
 theorem analyticAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
-    AnalyticAt ℂ (regularizedGaussHGFun a b c) z :=
-  analyticAt_regularizedHGFun_of_card_eq_add_one rfl hz
+    AnalyticAt ℂ (regularizedGaussHGFun a b c) z := by
+  refine (hasFPowerSeriesOnBall_regularizedGaussHGFun a b c).analyticAt_of_mem ?_
+  rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
 
 /-- For any complex parameters `a`, `b`, `c`, `regularizedGaussHGFun a b c` is analytic on the open
 unit disk. -/
@@ -253,8 +261,16 @@ theorem analyticOnNhd_regularizedGaussHGFun (a b c : ℂ) :
 theorem regularizedGaussHGFun_eq_tsum_coeff_mul_pow (a b c z : ℂ) :
     regularizedGaussHGFun a b c z =
       ∑' n : ℕ, (regularizedGaussHGFunSeries a b c).coeff n * z ^ n := by
-  simp [regularizedGaussHGFun, regularizedGaussHGFunSeries, regularizedHGFunSeries,
-    FormalMultilinearSeries.sum, mul_comm]
+  simp [regularizedGaussHGFun, FormalMultilinearSeries.sum, mul_comm]
+
+/-- At `z = 0`, the regularized Gaussian hypergeometric function evaluates to `(Gamma c)⁻¹` for all
+complex parameters `a`, `b`, `c`. -/
+@[simp]
+theorem regularizedGaussHGFun_zero (a b c : ℂ) :
+    regularizedGaussHGFun a b c 0 = (Gamma c)⁻¹ := by
+  rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow,
+    tsum_eq_single 0 fun n hn => by simp [zero_pow hn]]
+  simp [coeff_regularizedGaussHGFunSeries]
 
 /-- On the open unit disk, the power series of `regularizedGaussHGFun a b c` is summable. -/
 theorem summable_coeff_regularizedGaussHGFunSeries_mul_pow (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -262,8 +278,7 @@ theorem summable_coeff_regularizedGaussHGFunSeries_mul_pow (a b c : ℂ) {z : �
   have hmem : z ∈ Metric.eball (0 : ℂ) 1 := by
     rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
   have hs := (hasFPowerSeriesOnBall_regularizedGaussHGFun a b c).hasSum (y := z) hmem
-  simpa [regularizedGaussHGFunSeries, regularizedHGFunSeries,
-    FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hs.summable
+  simpa [mul_comm] using hs.summable
 
 private theorem succ_mul_coeff_regularizedGaussHGFunSeries_succ (a b c : ℂ) (n : ℕ) :
     ((n : ℂ) + 1) * (regularizedGaussHGFunSeries a b c).coeff (n + 1) =
@@ -282,12 +297,9 @@ theorem deriv_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     deriv (regularizedGaussHGFun a b c) z =
       a * b * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z := by
   have hz' : ‖z‖ₑ < 1 := by rwa [← ofReal_norm, ENNReal.ofReal_lt_one]
-  have hcoeff : (regularizedGaussHGFunSeries a b c).coeff = regularizedHGFunCoeff {a, b} {c} :=
-    regularizedHGFunSeries_coeff
   have hp : HasFPowerSeriesOnBall (regularizedGaussHGFun a b c)
       (FormalMultilinearSeries.ofScalars ℂ (regularizedGaussHGFunSeries a b c).coeff) 0 1 := by
-    rw [hcoeff]
-    exact hasFPowerSeriesOnBall_regularizedGaussHGFun a b c
+    simpa using hasFPowerSeriesOnBall_regularizedGaussHGFun a b c
   have hd := hp.iteratedDeriv_eq_tsum_descFactorial_mul_pow hz' 1
   rw [iteratedDeriv_one] at hd
   have hsum : Summable fun k : ℕ =>
@@ -328,9 +340,10 @@ theorem regularizedGaussHGFun_eq_sub_mul_add_mul (a b c : ℂ) {z : ℂ} (hz : �
   linear_combination
     (ascPochhammer ℂ n).eval b * (n ! : ℂ)⁻¹ * (Gamma (c + n + 1))⁻¹ * z ^ n * (-hap)
 
-/-- Regularized Gauss contiguous shift in `b` on the open unit disk (DLMF 15.5.16):
+/-- Regularized Gauss contiguous shift in `b` on the open unit disk (DLMF 15.5.16_5):
 `𝐅(a, b; c; z) = 𝐅(a, b + 1; c; z) - a z 𝐅(a + 1, b + 1; c + 1; z)`. -/
-theorem regularizedGaussHGFun_eq_sub_mul_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+theorem regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul (a b c : ℂ) {z : ℂ}
+    (hz : ‖z‖ < 1) :
     regularizedGaussHGFun a b c z =
       regularizedGaussHGFun a (b + 1) c z -
         a * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z := by
@@ -361,7 +374,7 @@ theorem mul_deriv_regularizedGaussHGFun_add_mul_eq (a b c : ℂ) {z : ℂ} (hz :
     z * deriv (regularizedGaussHGFun a b (c + 1)) z + c * regularizedGaussHGFun a b (c + 1) z =
       regularizedGaussHGFun a b c z := by
   have h₁ := regularizedGaussHGFun_eq_sub_mul_add_mul a b c hz
-  have h₂ := regularizedGaussHGFun_eq_sub_mul_mul b a (c + 1) hz
+  have h₂ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul b a (c + 1) hz
   rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b (a + 1),
     regularizedGaussHGFun_symm (b + 1) (a + 1)] at h₂
   rw [deriv_regularizedGaussHGFun a b (c + 1) hz]
@@ -369,11 +382,11 @@ theorem mul_deriv_regularizedGaussHGFun_add_mul_eq (a b c : ℂ) {z : ℂ} (hz :
 
 /-- Regularized differential-contiguous relation raising `b` on the open unit disk (DLMF 15.5.3):
 `z * deriv (𝐅(a, b; c)) z + b * 𝐅(a, b; c; z) = b * 𝐅(a, b + 1; c; z)`. -/
-theorem mul_deriv_regularizedGaussHGFun_add_right (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+theorem mul_deriv_regularizedGaussHGFun_add_mul_eq_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     z * deriv (regularizedGaussHGFun a b c) z + b * regularizedGaussHGFun a b c z =
       b * regularizedGaussHGFun a (b + 1) c z := by
   rw [deriv_regularizedGaussHGFun a b c hz]
-  linear_combination b * regularizedGaussHGFun_eq_sub_mul_mul a b c hz
+  linear_combination b * regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz
 
 /-- Regularized differential-contiguous relation lowering `b` on the open unit disk (DLMF 15.5.19):
 `z * (1 - z) * deriv (𝐅(a, b; c)) z` equals
@@ -385,22 +398,35 @@ theorem mul_one_sub_mul_deriv_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz 
   have h₁ := regularizedGaussHGFun_eq_sub_mul_add_mul b (a + 1) c hz
   rw [regularizedGaussHGFun_symm b (a + 1), regularizedGaussHGFun_symm b (a + 1),
     regularizedGaussHGFun_symm (b + 1) (a + 1)] at h₁
-  have h₂ := regularizedGaussHGFun_eq_sub_mul_mul b a c hz
+  have h₂ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul b a c hz
   rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b (a + 1),
     regularizedGaussHGFun_symm (b + 1) (a + 1)] at h₂
-  have h₃ := regularizedGaussHGFun_eq_sub_mul_mul a (b - 1) c hz
+  have h₃ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a (b - 1) c hz
   rw [sub_add_cancel] at h₃
   rw [deriv_regularizedGaussHGFun a b c hz]
   linear_combination -a * z * h₁ - a * z * h₂ - (c - b) * h₃
 
-private theorem norm_regularizedGaussHGFun_term_add_le {fa fb fc : ℂ → ℂ} {M k : ℕ} {CΓ : ℝ}
-    {w z : ℂ} (hfa : ‖fa w‖ ≤ M) (hfb : ‖fb w‖ ≤ M) (hfc : 1 ≤ (fc w + ((M + 1 : ℕ) : ℂ)).re)
-    (hCΓ : ‖(Gamma (fc w + ((M + 1 : ℕ) : ℂ)))⁻¹‖ ≤ CΓ) :
-    ‖(ascPochhammer ℂ (M + 1 + k)).eval (fa w) * (ascPochhammer ℂ (M + 1 + k)).eval (fb w) /
-        ((M + 1 + k)! * Gamma (fc w + ((M + 1 + k : ℕ) : ℂ))) * z ^ (M + 1 + k)‖ ≤
-      CΓ * (M.ascFactorial (M + 1) : ℝ) ^ 2 * ‖z‖ ^ (M + 1) *
+private theorem differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {fa fb fc fz : E → ℂ}
+    (ha : Differentiable ℂ fa) (hb : Differentiable ℂ fb)
+    (hc : Differentiable ℂ fc) (hz : Differentiable ℂ fz) (n : ℕ) :
+    Differentiable ℂ fun w =>
+      (regularizedGaussHGFunSeries (fa w) (fb w) (fc w)).coeff n * fz w ^ n := by
+  simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
+  have _ : Differentiable ℂ fun w => (Gamma (fc w + n))⁻¹ :=
+    differentiable_one_div_Gamma.comp (by fun_prop)
+  fun_prop
+
+private theorem norm_regularizedGaussHGFun_term_add_le {a b c z : ℂ} {M k : ℕ} {CΓ r : ℝ}
+    (ha : ‖a‖ ≤ M) (hb : ‖b‖ ≤ M) (hc : 1 ≤ (c + ((M + 1 : ℕ) : ℂ)).re)
+    (hCΓ : ‖(Gamma (c + ((M + 1 : ℕ) : ℂ)))⁻¹‖ ≤ CΓ) (hz : ‖z‖ ≤ r) :
+    ‖(regularizedGaussHGFunSeries a b c).coeff (M + 1 + k) * z ^ (M + 1 + k)‖ ≤
+      CΓ * (M.ascFactorial (M + 1) : ℝ) ^ 2 * r ^ (M + 1) *
         ‖(regularizedGaussHGFunSeries ((2 * M + 1 : ℕ) : ℂ) ((2 * M + 1 : ℕ) : ℂ) 1).coeff k *
-          z ^ k‖ := by
+          (r : ℂ) ^ k‖ := by
+  have hr₀ : 0 ≤ r := (norm_nonneg z).trans hz
+  have hCΓ₀ : 0 ≤ CΓ := (norm_nonneg _).trans hCΓ
+  -- Bound each ascending Pochhammer factor by `(M)_{M + 1 + k} = (M)_{M + 1} (2M + 1)_k`.
   have hpoch {s : ℂ} (hs : ‖s‖ ≤ M) (n : ℕ) :
       ‖(ascPochhammer ℂ n).eval s‖ ≤ (M.ascFactorial n : ℝ) := by
     induction n with
@@ -412,112 +438,186 @@ private theorem norm_regularizedGaussHGFun_term_add_le {fa fb fc : ℂ → ℂ} 
       exact mul_le_mul ih ((norm_add_le s n).trans (by simp [hs])) (norm_nonneg _)
         (Nat.cast_nonneg _)
   let P : ℝ := M.ascFactorial (M + 1)
-  have hΓk : ‖(Gamma (fc w + ((M + 1 + k : ℕ) : ℂ)))⁻¹‖ ≤ CΓ / k ! := by
+  have hΓk : ‖(Gamma (c + ((M + 1 + k : ℕ) : ℂ)))⁻¹‖ ≤ CΓ / k ! := by
     rw [Nat.cast_add, ← add_assoc]
-    exact (norm_inv_Gamma_add_natCast_le hfc k).trans
+    exact (norm_inv_Gamma_add_natCast_le hc k).trans
       (div_le_div_of_nonneg_right hCΓ (Nat.cast_nonneg _))
   have hM2 : M + (M + 1) = 2 * M + 1 := by omega
   have hpM : (M.ascFactorial (M + 1 + k) : ℝ) = P * ((2 * M + 1).ascFactorial k : ℝ) := by
     rw [← Nat.ascFactorial_mul_ascFactorial M (M + 1) k, hM2, Nat.cast_mul]
+  -- Compare with the positive majorant series `𝐅(2M + 1, 2M + 1; 1; r)`.
   have hk_coeff :
       ‖(regularizedGaussHGFunSeries ((2 * M + 1 : ℕ) : ℂ) ((2 * M + 1 : ℕ) : ℂ) 1).coeff k *
-          z ^ k‖ =
-        ((2 * M + 1).ascFactorial k : ℝ) ^ 2 / (k ! * k !) * ‖z‖ ^ k := by
+          (r : ℂ) ^ k‖ =
+        ((2 * M + 1).ascFactorial k : ℝ) ^ 2 / (k ! * k !) * r ^ k := by
     rw [coeff_regularizedGaussHGFunSeries, add_comm (1 : ℂ) k, Gamma_nat_eq_factorial,
       ascPochhammer_nat_eq_natCast_ascFactorial, norm_mul, norm_div, norm_mul, norm_mul, norm_pow,
-      Complex.norm_natCast, Complex.norm_natCast, sq]
-  rw [hk_coeff, div_eq_mul_inv, mul_inv, norm_mul, norm_mul, norm_mul, norm_mul,
-    norm_inv (((M + 1 + k)! : ℕ) : ℂ), Complex.norm_natCast, norm_pow, pow_add ‖z‖ (M + 1) k]
-  have ha_le := (hpoch hfa (M + 1 + k)).trans_eq hpM
-  have hb_le := (hpoch hfb (M + 1 + k)).trans_eq hpM
+      Complex.norm_natCast, Complex.norm_natCast, Complex.norm_of_nonneg hr₀, sq]
+  rw [hk_coeff, coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv, norm_mul, norm_mul,
+    norm_mul, norm_mul, norm_inv (((M + 1 + k)! : ℕ) : ℂ), Complex.norm_natCast, norm_pow,
+    pow_add ‖z‖ (M + 1) k]
+  have ha_le := (hpoch ha (M + 1 + k)).trans_eq hpM
+  have hb_le := (hpoch hb (M + 1 + k)).trans_eq hpM
   have hinv_fac : ((((M + 1 + k)! : ℕ) : ℝ))⁻¹ ≤ ((k ! : ℝ))⁻¹ :=
     inv_anti₀ (mod_cast Nat.factorial_pos k) (mod_cast Nat.factorial_le (Nat.le_add_left k (M + 1)))
-  calc ‖(ascPochhammer ℂ (M + 1 + k)).eval (fa w)‖ *
-          ‖(ascPochhammer ℂ (M + 1 + k)).eval (fb w)‖ *
-          (((((M + 1 + k)! : ℕ) : ℝ))⁻¹ * ‖(Gamma (fc w + ↑(M + 1 + k)))⁻¹‖) *
+  calc ‖(ascPochhammer ℂ (M + 1 + k)).eval a‖ *
+          ‖(ascPochhammer ℂ (M + 1 + k)).eval b‖ *
+          (((((M + 1 + k)! : ℕ) : ℝ))⁻¹ * ‖(Gamma (c + ↑(M + 1 + k)))⁻¹‖) *
           (‖z‖ ^ (M + 1) * ‖z‖ ^ k)
       ≤ (P * ((2 * M + 1).ascFactorial k : ℝ)) * (P * ((2 * M + 1).ascFactorial k : ℝ)) *
-          (((k ! : ℝ))⁻¹ * (CΓ / k !)) * (‖z‖ ^ (M + 1) * ‖z‖ ^ k) := by gcongr
-    _ = CΓ * P ^ 2 * ‖z‖ ^ (M + 1) *
-          (((2 * M + 1).ascFactorial k : ℝ) ^ 2 / (k ! * k !) * ‖z‖ ^ k) := by ring
+          (((k ! : ℝ))⁻¹ * (CΓ / k !)) * (r ^ (M + 1) * r ^ k) := by gcongr
+    _ = CΓ * P ^ 2 * r ^ (M + 1) *
+          (((2 * M + 1).ascFactorial k : ℝ) ^ 2 / (k ! * k !) * r ^ k) := by ring
 
-private theorem exists_summable_bound_regularizedGaussHGFun_comp {fa fb fc : ℂ → ℂ}
-    (ha : Differentiable ℂ fa) (hb : Differentiable ℂ fb) (hc : Differentiable ℂ fc)
-    {z : ℂ} (hz : ‖z‖ < 1) (w₀ : ℂ) :
-    ∃ u : ℕ → ℝ, Summable u ∧ ∀ n : ℕ, ∀ w ∈ Metric.ball w₀ 1,
-      ‖(ascPochhammer ℂ n).eval (fa w) * (ascPochhammer ℂ n).eval (fb w) /
-        (n ! * Gamma (fc w + n)) * z ^ n‖ ≤ u n := by
-  let K : Set ℂ := Metric.closedBall w₀ 1
-  have hK : IsCompact K := isCompact_closedBall w₀ 1
-  obtain ⟨Ca, hCa⟩ := hK.exists_bound_of_continuousOn ha.continuous.continuousOn
-  obtain ⟨Cb, hCb⟩ := hK.exists_bound_of_continuousOn hb.continuous.continuousOn
-  obtain ⟨Cc, hCc⟩ := hK.exists_bound_of_continuousOn hc.continuous.continuousOn
-  obtain ⟨M, hM⟩ := exists_nat_gt (max (max Ca Cb) Cc + 1)
-  have hinv (c₀ : ℂ) : Differentiable ℂ fun w => (Gamma (fc w + c₀))⁻¹ := by
-    convert differentiable_one_div_Gamma.comp (hc.add (differentiable_const c₀)) using 1
-    rfl
-  obtain ⟨CΓ, hCΓ⟩ := hK.exists_bound_of_continuousOn (hinv (M + 1 : ℕ)).continuous.continuousOn
+private theorem exists_summable_bound_regularizedGaussHGFun_polydisc {v₀ : Fin 4 → ℂ}
+    (hv₀ : ‖v₀ 3‖ < 1) :
+    ∃ δ > 0, ∃ u : ℕ → ℝ, Summable u ∧ ∀ n : ℕ, ∀ w ∈ Metric.ball v₀ δ,
+      ‖(regularizedGaussHGFunSeries (w 0) (w 1) (w 2)).coeff n * w 3 ^ n‖ ≤ u n := by
+  let δ : ℝ := (1 - ‖v₀ 3‖) / 2
+  let r : ℝ := (1 + ‖v₀ 3‖) / 2
+  have hδ : 0 < δ := by dsimp [δ]; linarith
+  have hr₀ : 0 ≤ r := by dsimp [r]; linarith [norm_nonneg (v₀ 3)]
+  have hr_norm : ‖(r : ℂ)‖ < 1 := by rw [Complex.norm_of_nonneg hr₀]; dsimp [r]; linarith
+  -- On the compact closed ball `K` around `v₀`, all parameters are bounded and `‖w 3‖ ≤ r < 1`.
+  let K : Set (Fin 4 → ℂ) := Metric.closedBall v₀ δ
+  have hK : IsCompact K := isCompact_closedBall v₀ δ
+  obtain ⟨M, hM⟩ := exists_nat_gt (‖v₀‖ + δ + 1)
+  have hΓ_cont : Continuous fun w : Fin 4 → ℂ => (Gamma (w 2 + ((M + 1 : ℕ) : ℂ)))⁻¹ :=
+    (differentiable_one_div_Gamma.comp (by fun_prop)).continuous
+  obtain ⟨CΓ, hCΓ⟩ := hK.exists_bound_of_continuousOn hΓ_cont.continuousOn
   have hfin (n : ℕ) : ∃ B : ℝ, ∀ w ∈ K,
-      ‖(ascPochhammer ℂ n).eval (fa w) * (ascPochhammer ℂ n).eval (fb w) /
-        (n ! * Gamma (fc w + n)) * z ^ n‖ ≤ B := by
-    refine hK.exists_bound_of_continuousOn (Continuous.continuousOn ?_)
-    simp only [div_eq_mul_inv, mul_inv]
-    exact ((((ascPochhammer ℂ n).differentiable.comp ha).mul
-      ((ascPochhammer ℂ n).differentiable.comp hb)).mul
-        ((differentiable_const _).mul (hinv n))).mul (differentiable_const _) |>.continuous
+      ‖(regularizedGaussHGFunSeries (w 0) (w 1) (w 2)).coeff n * w 3 ^ n‖ ≤ B :=
+    hK.exists_bound_of_continuousOn
+      (differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
+        (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop) n).continuous.continuousOn
   choose Bf hBf using hfin
-  let C : ℝ := CΓ * (M.ascFactorial (M + 1) : ℝ) ^ 2 * ‖z‖ ^ (M + 1)
+  -- Bound the first `M + 1` terms by compactness and the tail by `𝐅(2M + 1, 2M + 1; 1; r)`.
+  let C : ℝ := CΓ * (M.ascFactorial (M + 1) : ℝ) ^ 2 * r ^ (M + 1)
   let u : ℕ → ℝ := fun n => if n < M + 1 then Bf n else
     C * ‖(regularizedGaussHGFunSeries ((2 * M + 1 : ℕ) : ℂ) ((2 * M + 1 : ℕ) : ℂ) 1).coeff
-      (n - (M + 1)) * z ^ (n - (M + 1))‖
-  refine ⟨u, ?_, fun n w hw => ?_⟩
+      (n - (M + 1)) * (r : ℂ) ^ (n - (M + 1))‖
+  refine ⟨δ, hδ, u, ?_, fun n w hw => ?_⟩
   · rw [← summable_nat_add_iff (M + 1)]
     refine ((summable_coeff_regularizedGaussHGFunSeries_mul_pow
-      ((2 * M + 1 : ℕ) : ℂ) ((2 * M + 1 : ℕ) : ℂ) 1 hz).norm.mul_left C).congr fun k => ?_
+      ((2 * M + 1 : ℕ) : ℂ) ((2 * M + 1 : ℕ) : ℂ) 1 hr_norm).norm.mul_left C).congr fun k => ?_
     dsimp only [u]
     split_ifs with h
     · omega
     · rw [Nat.add_sub_cancel]
   · have hwK : w ∈ K := Metric.ball_subset_closedBall hw
+    have hw_sub : ‖w - v₀‖ ≤ δ := mem_closedBall_iff_norm.mp hwK
+    have hw_coord (i : Fin 4) : ‖w i‖ ≤ ‖v₀ i‖ + δ := by
+      have hi : ‖w i - v₀ i‖ ≤ δ := (norm_le_pi_norm (w - v₀) i).trans hw_sub
+      linarith [norm_le_norm_add_norm_sub' (w i) (v₀ i)]
     dsimp only [u]
     split_ifs with hlt
     · exact hBf n w hwK
     · obtain ⟨k, rfl⟩ : ∃ k, n = M + 1 + k :=
         ⟨n - (M + 1), (Nat.add_sub_of_le (not_lt.mp hlt)).symm⟩
       rw [Nat.add_sub_cancel_left]
+      have hM_coord (i : Fin 4) : ‖w i‖ ≤ M - 1 := by
+        linarith [hw_coord i, norm_le_pi_norm v₀ i]
       refine norm_regularizedGaussHGFun_term_add_le
-        ((hCa w hwK).trans (by linarith [le_max_left Ca Cb, le_max_left (max Ca Cb) Cc]))
-        ((hCb w hwK).trans (by linarith [le_max_right Ca Cb, le_max_left (max Ca Cb) Cc])) ?_
-        (hCΓ w hwK)
-      have h1 : ‖fc w‖ ≤ M - 1 := by linarith [hCc w hwK, le_max_right (max Ca Cb) Cc]
-      have h2 := neg_le_of_abs_le ((Complex.abs_re_le_norm (fc w)).trans h1)
+        ((hM_coord 0).trans (by linarith)) ((hM_coord 1).trans (by linarith)) ?_
+        (hCΓ w hwK) ((hw_coord 3).trans_eq (by dsimp [δ, r]; ring))
+      have hre := neg_le_of_abs_le ((Complex.abs_re_le_norm (w 2)).trans (hM_coord 2))
       simp only [add_re, natCast_re, Nat.cast_add, Nat.cast_one, one_re]
       linarith
 
-/-- For fixed `z` in the open unit disk, `w ↦ regularizedGaussHGFun (fa w) (fb w) (fc w) z` is
-entire whenever `fa`, `fb`, `fc` are entire. -/
-theorem _root_.Differentiable.regularizedGaussHGFun {fa fb fc : ℂ → ℂ}
-    (ha : Differentiable ℂ fa) (hb : Differentiable ℂ fb) (hc : Differentiable ℂ fc)
-    {z : ℂ} (hz : ‖z‖ < 1) :
-    Differentiable ℂ fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) z := by
-  intro w₀
-  obtain ⟨u, hu, hbound⟩ := exists_summable_bound_regularizedGaussHGFun_comp ha hb hc hz w₀
-  have hfun : (fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) z) =
-      fun w => ∑' n : ℕ, (ascPochhammer ℂ n).eval (fa w) * (ascPochhammer ℂ n).eval (fb w) /
-        (n ! * Gamma (fc w + n)) * z ^ n := by
-    ext w
-    simp [regularizedGaussHGFun_eq_tsum_coeff_mul_pow, coeff_regularizedGaussHGFunSeries]
-  rw [hfun]
-  refine (differentiableOn_tsum_of_summable_norm hu (fun n => ?_) Metric.isOpen_ball
-    hbound).differentiableAt (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self zero_lt_one))
-  refine Differentiable.differentiableOn ?_
-  simp only [div_eq_mul_inv, mul_inv]
-  have hinvΓ : Differentiable ℂ fun w => (Gamma (fc w + n))⁻¹ := by
-    convert differentiable_one_div_Gamma.comp (hc.add (differentiable_const (n : ℂ))) using 1
-    rfl
-  exact ((((ascPochhammer ℂ n).differentiable.comp ha).mul
-    ((ascPochhammer ℂ n).differentiable.comp hb)).mul
-      ((differentiable_const _).mul hinvΓ)).mul (differentiable_const _)
+/-- The regularized Gaussian hypergeometric function is jointly analytic in `(a, b, c, z)` at every
+point where `‖z‖ < 1`. -/
+theorem analyticAt_uncurry_regularizedGaussHGFun {p : ℂ × ℂ × ℂ × ℂ} (hp : ‖p.2.2.2‖ < 1) :
+    AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
+      regularizedGaussHGFun q.1 q.2.1 q.2.2.1 q.2.2.2) p := by
+  let e : ℂ × ℂ × ℂ × ℂ → Fin 4 → ℂ := fun q => ![q.1, q.2.1, q.2.2.1, q.2.2.2]
+  have he : AnalyticAt ℂ e p := AnalyticAt.pi fun i => by
+    fin_cases i
+    · exact analyticAt_fst
+    · exact analyticAt_fst.comp analyticAt_snd
+    · exact analyticAt_fst.comp (analyticAt_snd.comp analyticAt_snd)
+    · exact analyticAt_snd.comp (analyticAt_snd.comp analyticAt_snd)
+  obtain ⟨δ, hδ, u, hu, hbound⟩ := exists_summable_bound_regularizedGaussHGFun_polydisc
+    (v₀ := e p) hp
+  -- Apply Osgood's lemma on `ball (e p) δ`, using the uniform majorant `u` for continuity and
+  -- slice-wise complex differentiability.
+  let F : ℕ → (Fin 4 → ℂ) → ℂ := fun n w =>
+    (regularizedGaussHGFunSeries (w 0) (w 1) (w 2)).coeff n * w 3 ^ n
+  let g : (Fin 4 → ℂ) → ℂ := fun w => ∑' n, F n w
+  have hF_diff (n : ℕ) : Differentiable ℂ (F n) :=
+    differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
+      (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop) n
+  have hg_cont : ContinuousOn g (Metric.ball (e p) δ) :=
+    continuousOn_tsum (fun n => (hF_diff n).continuous.continuousOn) hu fun n w hw => hbound n w hw
+  have hg_anal : AnalyticAt ℂ g (e p) := by
+    refine hg_cont.analyticAt_of_differentiableAt_update
+      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hδ)) fun y hy i => ?_
+    have hupd_diff (j : Fin 4) : Differentiable ℂ fun x : ℂ => Function.update y i x j := by
+      by_cases h : j = i
+      · subst h; simp
+      · simp [Function.update_of_ne h]
+    let V : Set ℂ := Function.update y i ⁻¹' Metric.ball (e p) δ
+    have hV : IsOpen V :=
+      Metric.isOpen_ball.preimage (continuous_pi fun j => (hupd_diff j).continuous)
+    have hyV : y i ∈ V := by simp [V, hy]
+    exact (differentiableOn_tsum_of_summable_norm hu
+      (fun n => (differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
+        (hupd_diff 0) (hupd_diff 1) (hupd_diff 2) (hupd_diff 3) n).differentiableOn)
+      hV fun n x hx => hbound n _ hx).differentiableAt (hV.mem_nhds hyV)
+  have hgf : g ∘ e = fun q : ℂ × ℂ × ℂ × ℂ =>
+      regularizedGaussHGFun q.1 q.2.1 q.2.2.1 q.2.2.2 := by
+    ext q
+    simp [g, F, e, regularizedGaussHGFun_eq_tsum_coeff_mul_pow]
+  exact hgf ▸ hg_anal.comp he
+
+/-- `Complex.regularizedGaussHGFun` composed with four analytic functions is analytic wherever the
+fourth function takes values in the open unit disk. -/
+theorem _root_.AnalyticAt.regularizedGaussHGFun {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {fa fb fc fz : E → ℂ} {x : E}
+    (ha : AnalyticAt ℂ fa x) (hb : AnalyticAt ℂ fb x)
+    (hc : AnalyticAt ℂ fc x) (hz : AnalyticAt ℂ fz x) (hz_lt : ‖fz x‖ < 1) :
+    AnalyticAt ℂ (fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w)) x :=
+  (analyticAt_uncurry_regularizedGaussHGFun hz_lt).comp (ha.prod (hb.prod (hc.prod hz)))
+
+/-- `Complex.regularizedGaussHGFun` composed with four complex-differentiable functions at `x` is
+complex-differentiable at `x` when `‖fz x‖ < 1`. -/
+theorem _root_.DifferentiableAt.regularizedGaussHGFun {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {fa fb fc fz : E → ℂ} {x : E}
+    (ha : DifferentiableAt ℂ fa x) (hb : DifferentiableAt ℂ fb x)
+    (hc : DifferentiableAt ℂ fc x) (hz : DifferentiableAt ℂ fz x) (hz_lt : ‖fz x‖ < 1) :
+    DifferentiableAt ℂ (fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w)) x :=
+  (analyticAt_uncurry_regularizedGaussHGFun hz_lt).differentiableAt.comp x
+    (ha.prodMk (hb.prodMk (hc.prodMk hz)))
+
+/-- `Complex.regularizedGaussHGFun` composed with four functions complex-differentiable within `s`
+at `x` is complex-differentiable within `s` at `x` when `‖fz x‖ < 1`. -/
+theorem _root_.DifferentiableWithinAt.regularizedGaussHGFun {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {fa fb fc fz : E → ℂ} {s : Set E} {x : E}
+    (ha : DifferentiableWithinAt ℂ fa s x) (hb : DifferentiableWithinAt ℂ fb s x)
+    (hc : DifferentiableWithinAt ℂ fc s x) (hz : DifferentiableWithinAt ℂ fz s x)
+    (hz_lt : ‖fz x‖ < 1) :
+    DifferentiableWithinAt ℂ
+      (fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w)) s x :=
+  (analyticAt_uncurry_regularizedGaussHGFun hz_lt).differentiableAt.comp_differentiableWithinAt x
+    (ha.prodMk (hb.prodMk (hc.prodMk hz)))
+
+/-- `Complex.regularizedGaussHGFun` composed with four functions complex-differentiable on `s` is
+complex-differentiable on `s` when `‖fz x‖ < 1` on `s`. -/
+theorem _root_.DifferentiableOn.regularizedGaussHGFun {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {fa fb fc fz : E → ℂ} {s : Set E}
+    (ha : DifferentiableOn ℂ fa s) (hb : DifferentiableOn ℂ fb s)
+    (hc : DifferentiableOn ℂ fc s) (hz : DifferentiableOn ℂ fz s)
+    (hz_lt : ∀ x ∈ s, ‖fz x‖ < 1) :
+    DifferentiableOn ℂ (fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w)) s :=
+  fun x hx => (ha x hx).regularizedGaussHGFun (hb x hx) (hc x hx) (hz x hx) (hz_lt x hx)
+
+/-- `Complex.regularizedGaussHGFun` composed with four complex-differentiable functions is
+complex-differentiable everywhere when `‖fz x‖ < 1` everywhere. -/
+theorem _root_.Differentiable.regularizedGaussHGFun {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {fa fb fc fz : E → ℂ}
+    (ha : Differentiable ℂ fa) (hb : Differentiable ℂ fb)
+    (hc : Differentiable ℂ fc) (hz : Differentiable ℂ fz) (hz_lt : ∀ x, ‖fz x‖ < 1) :
+    Differentiable ℂ fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w) :=
+  fun x => (ha x).regularizedGaussHGFun (hb x) (hc x) (hz x) (hz_lt x)
 
 end Gaussian
 

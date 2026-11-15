@@ -12,10 +12,11 @@ import Mathlib.Analysis.Complex.Convex
 /-!
 # Holomorphic functions and their values on the real line
 
-Two entire functions with values in a complex normed space that agree at every real point are
-equal. This is the identity principle `AnalyticOnNhd.eq_of_frequently_eq`, applied at the
-accumulation point `0` of the real axis. It is the uniqueness statement behind analytic
-continuation of real one-parameter orbits to complex time.
+Two entire functions with values in a complex normed space that agree at every real point, or on
+an open real ray `(a, ∞)`, are equal (`Differentiable.eq_of_ofReal_eq`,
+`Differentiable.eq_of_ofReal_gt_eq`). This is the identity principle
+`AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real axis. It is the
+uniqueness statement behind analytic continuation of real one-parameter orbits to complex time.
 On the complex slit plane, agreement on the positive real axis likewise determines a
 holomorphic function uniquely.
 
@@ -43,6 +44,23 @@ theorem Differentiable.eq_of_ofReal_eq {f g : ℂ → E} (hf : Differentiable �
     (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hf).analyticAt z)
     (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hg).analyticAt z)
     (hreal.frequently (.of_forall fun t => congrArg ι (h t)))
+  exact ι.injective.comp_left hιfg
+
+/-- Two entire functions agreeing on an open real ray `(a, ∞)` are equal. -/
+theorem Differentiable.eq_of_ofReal_gt_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) {a : ℝ} (h : ∀ t : ℝ, a < t → f t = g t) : f = g := by
+  let ι : E →ₗᵢ[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplₗᵢ
+  -- real points near `a + 1` lie in `(a, ∞)` and accumulate at `a + 1` in `ℂ`
+  have hreal : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] (a + 1)) (𝓝[≠] ((a + 1 : ℝ) : ℂ)) :=
+    Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ ht =>
+      Complex.ofReal_inj.not.mpr ht
+  have hev : ∀ᶠ t : ℝ in 𝓝[≠] (a + 1), (ι ∘ f) t = (ι ∘ g) t :=
+    eventually_nhdsWithin_of_eventually_nhds
+      ((lt_mem_nhds (lt_add_one a)).mono fun t ht => congrArg ι (h t ht))
+  have hιfg : ι ∘ f = ι ∘ g := AnalyticOnNhd.eq_of_frequently_eq
+    (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hf).analyticAt z)
+    (fun z _ => (ι.toContinuousLinearMap.differentiable.comp hg).analyticAt z)
+    (hreal.frequently hev.frequently)
   exact ι.injective.comp_left hιfg
 
 /-- Two holomorphic functions on the slit plane agreeing on the positive real axis agree

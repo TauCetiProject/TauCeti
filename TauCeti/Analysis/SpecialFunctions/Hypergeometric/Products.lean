@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.RealIdentity
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 
 /-!
 # Bilinear product identities for Gauss hypergeometric series
@@ -66,7 +64,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
+open Filter Set
 open scoped Nat Real Topology
 
 namespace Complex
@@ -80,18 +78,12 @@ private theorem mul_regularizedGaussHGFun_eq (a b c : ℂ) {z : ℂ} (hz : ‖z�
   have h₂ := regularizedGaussHGFun_eq_sub_mul_add_mul b a c hz
   rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b a,
     regularizedGaussHGFun_symm (b + 1) a] at h₂
-  have h₅ := regularizedGaussHGFun_eq_sub_mul_mul a b c hz
-  have h₇ := regularizedGaussHGFun_eq_sub_mul_mul a b (c + 1) hz
+  have h₅ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz
+  have h₇ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b (c + 1) hz
   have hc2 : c + 1 + 1 = c + 2 := by ring
   rw [hc2] at h₇
   have h₉ := regularizedGaussHGFun_eq_sub_mul_add_mul a (b + 1) c hz
   linear_combination -(c - a) * h₂ - (c - a) * (c - b) * h₇ + c * h₅ + c * h₉
-
-private theorem regularizedGaussHGFun_apply_zero (a b c : ℂ) :
-    regularizedGaussHGFun a b c 0 = (Gamma c)⁻¹ := by
-  rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow,
-    tsum_eq_single 0 fun n hn => by simp [zero_pow hn]]
-  simp [coeff_regularizedGaussHGFunSeries]
 
 private theorem hasDerivAt_regularizedGaussHGFun_mul_neg_sub (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasDerivAt (fun w =>
@@ -150,7 +142,7 @@ theorem regularizedGaussHGFun_mul_neg_sub_eq_inv_Gamma_mul (a b c : ℂ) {z : �
         (by simpa using hw)).differentiableAt.differentiableWithinAt
     · exact (hasDerivAt_regularizedGaussHGFun_mul_neg_sub a b c (by simpa using hw)).deriv
   have hΦ₀ : Φ 0 = (Gamma c * Gamma (-c))⁻¹ := by
-    simp [Φ, regularizedGaussHGFun_apply_zero, mul_comm]
+    simp [Φ, mul_comm]
   exact hconst.trans hΦ₀
 
 /-- Regularized bilinear product identity at opposite parameters on the open unit disk
@@ -226,9 +218,9 @@ private def legendreCombination (lam mu nu z : ℂ) : ℂ :=
     regularizedGaussHGFun (1 / 2 + lam) (1 / 2 - nu) (1 + lam + mu) z *
       regularizedGaussHGFun (1 / 2 - lam) (1 / 2 + nu) (1 + nu + mu) (1 - z)
 
-private theorem deriv_legendreCombination_eq_zero (lam mu nu : ℂ) {z : ℂ}
+private theorem hasDerivAt_legendreCombination (lam mu nu : ℂ) {z : ℂ}
     (hz₀ : ‖z‖ < 1) (hz₁ : ‖1 - z‖ < 1) :
-    deriv (legendreCombination lam mu nu) z = 0 := by
+    HasDerivAt (legendreCombination lam mu nu) 0 z := by
   have hz_ne : z ≠ 0 := by intro rfl; norm_num at hz₁
   have h1z_ne : 1 - z ≠ 0 := sub_ne_zero.mpr fun h => by rw [← h] at hz₀; norm_num at hz₀
   let u₀ := regularizedGaussHGFun (1 / 2 + lam) (1 / 2 - nu) (1 + lam + mu)
@@ -243,16 +235,13 @@ private theorem deriv_legendreCombination_eq_zero (lam mu nu : ℂ) {z : ℂ}
     (1 + nu + mu) hz₁).differentiableAt.hasDerivAt).comp z ((hasDerivAt_id z).const_sub 1)
   have hvm := ((analyticAt_regularizedGaussHGFun (-1 / 2 - lam) (1 / 2 + nu)
     (1 + nu + mu) hz₁).differentiableAt.hasDerivAt).comp z ((hasDerivAt_id z).const_sub 1)
-  have hd : deriv (legendreCombination lam mu nu) z =
-      deriv um z * v₀ (1 - z) + um z * (deriv v₀ (1 - z) * -1) +
-        (deriv u₀ z * vm (1 - z) + u₀ z * (deriv vm (1 - z) * -1)) -
-        (deriv u₀ z * v₀ (1 - z) + u₀ z * (deriv v₀ (1 - z) * -1)) :=
-    (((hum.mul hv₀).add (hu₀.mul hvm)).sub (hu₀.mul hv₀)).deriv
-  have eq1 := mul_deriv_regularizedGaussHGFun_add_right (1 / 2 + lam) (-1 / 2 - nu)
+  -- Eliminate all four first derivatives using the `b`-raising and `b`-lowering contiguous ODEs.
+  refine (((hum.mul hv₀).add (hu₀.mul hvm)).sub (hu₀.mul hv₀)).congr_deriv ?_
+  have eq1 := mul_deriv_regularizedGaussHGFun_add_mul_eq_mul (1 / 2 + lam) (-1 / 2 - nu)
     (1 + lam + mu) hz₀
   have eq2 := mul_one_sub_mul_deriv_regularizedGaussHGFun (1 / 2 + lam) (1 / 2 - nu)
     (1 + lam + mu) hz₀
-  have eq3 := mul_deriv_regularizedGaussHGFun_add_right (1 / 2 + nu) (-1 / 2 - lam)
+  have eq3 := mul_deriv_regularizedGaussHGFun_add_mul_eq_mul (1 / 2 + nu) (-1 / 2 - lam)
     (1 + nu + mu) hz₁
   have eq4 := mul_one_sub_mul_deriv_regularizedGaussHGFun (1 / 2 + nu) (1 / 2 - lam)
     (1 + nu + mu) hz₁
@@ -263,8 +252,10 @@ private theorem deriv_legendreCombination_eq_zero (lam mu nu : ℂ) {z : ℂ}
   have h_add (s : ℂ) : (-1 : ℂ) / 2 - s + 1 = 1 / 2 - s := by ring
   have h_sub (s : ℂ) : (1 : ℂ) / 2 - s - 1 = -1 / 2 - s := by ring
   simp only [h_add, h_sub] at eq1 eq2 eq3 eq4
-  have hmul : z * (1 - z) * deriv (legendreCombination lam mu nu) z = 0 := by
-    rw [hd]
+  have hmul : z * (1 - z) *
+      (deriv um z * v₀ (1 - z) + um z * (deriv v₀ (1 - z) * -1) +
+        (deriv u₀ z * vm (1 - z) + u₀ z * (deriv vm (1 - z) * -1)) -
+        (deriv u₀ z * v₀ (1 - z) + u₀ z * (deriv v₀ (1 - z) * -1))) = 0 := by
     linear_combination
       (1 - z) * v₀ (1 - z) * eq1 + (vm (1 - z) - v₀ (1 - z)) * eq2 -
         z * u₀ z * eq3 + (u₀ z - um z) * eq4
@@ -283,249 +274,90 @@ private theorem legendreCombination_eq_at_half (lam mu nu : ℂ) {z : ℂ}
     ((convex_ball (0 : ℂ) 1).inter (convex_ball (1 : ℂ) 1)).isPreconnected
     (fun w hw => ?_) (fun w hw => ?_) ((hmem z).mpr ⟨hz₀, hz₁⟩) hhalf
   · obtain ⟨hw₀, hw₁⟩ := (hmem w).mp hw
-    have ha0 := (analyticAt_regularizedGaussHGFun (1 / 2 + lam) (-1 / 2 - nu)
-      (1 + lam + mu) hw₀).differentiableAt
-    have ha1 := (analyticAt_regularizedGaussHGFun (1 / 2 + lam) (1 / 2 - nu)
-      (1 + lam + mu) hw₀).differentiableAt
-    have hb0 := ((analyticAt_regularizedGaussHGFun (1 / 2 - lam) (1 / 2 + nu)
-      (1 + nu + mu) hw₁).differentiableAt).comp w (differentiableAt_id.const_sub 1)
-    have hb1 := ((analyticAt_regularizedGaussHGFun (-1 / 2 - lam) (1 / 2 + nu)
-      (1 + nu + mu) hw₁).differentiableAt).comp w (differentiableAt_id.const_sub 1)
-    exact (((ha0.mul hb0).add (ha1.mul hb1)).sub (ha1.mul hb0)).differentiableWithinAt
+    exact (hasDerivAt_legendreCombination lam mu nu hw₀ hw₁).differentiableAt.differentiableWithinAt
   · obtain ⟨hw₀, hw₁⟩ := (hmem w).mp hw
-    exact deriv_legendreCombination_eq_zero lam mu nu hw₀ hw₁
+    exact (hasDerivAt_legendreCombination lam mu nu hw₀ hw₁).deriv
 
-private theorem inv_Gamma_mul_integral_term {a b c w : ℝ} (hb : 1 < b) (hcb : 1 < c - b)
-    (n : ℕ) :
-    (Real.Gamma b * Real.Gamma (c - b))⁻¹ *
-        (∫ t in (0 : ℝ)..1,
-          t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (Ring.multichoose a n * (w * t) ^ n)) =
-      (ascPochhammer ℝ n).eval a * (ascPochhammer ℝ n).eval b /
-        (n ! * Real.Gamma (c + n)) * w ^ n := by
-  have hint :
-      (∫ t in (0 : ℝ)..1,
-        t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (Ring.multichoose a n * (w * t) ^ n)) =
-      Ring.multichoose a n * w ^ n *
-        ∫ t in (0 : ℝ)..1, t ^ (b + n - 1) * (1 - t) ^ (c - b - 1) := by
-    rw [← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr_ae (Eventually.of_forall fun t ht => ?_)
-    rw [uIoc_of_le zero_le_one] at ht
-    have hpow : t ^ (b - 1) * t ^ n = t ^ (b + n - 1) := by
-      rw [← Real.rpow_natCast t n, ← Real.rpow_add ht.1, sub_add_eq_add_sub]
-    rw [mul_pow]
-    linear_combination Ring.multichoose a n * w ^ n * (1 - t) ^ (c - b - 1) * hpow
-  have hmc : Ring.multichoose a n = (ascPochhammer ℝ n).eval a / n ! := by
-    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    rw [← h]
-    field_simp
-  have hbn : ∀ k : ℕ, b ≠ -k := fun k => by linarith [k.cast_nonneg (α := ℝ)]
-  have hΓb : Real.Gamma b ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hΓcb : Real.Gamma (c - b) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hpoch := Real.Gamma_add_nat_div_Gamma_eq (n := n) b hbn
-  have hbnc : b + (n : ℝ) + (c - b) = c + n := by ring
-  rw [hint, TauCeti.integral_rpow_mul_one_sub_rpow (by linarith) (by linarith),
-    ProbabilityTheory.beta, hbnc, hmc, ← hpoch]
-  field_simp [hΓb, hΓcb]
-
-private theorem regularizedGaussHGFun_ofReal_eq_integral {a b c w : ℝ}
-    (hb : 1 < b) (hcb : 1 < c - b) (hw : w ∈ Ioo (0 : ℝ) 1) :
-    regularizedGaussHGFun a b c w =
-      (((Real.Gamma b * Real.Gamma (c - b))⁻¹ *
-        ∫ t in (0 : ℝ)..1,
-          t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - w * t) ^ (-a) : ℝ) : ℂ) := by
-  have hsum : Summable fun n : ℕ => ‖Ring.multichoose a n‖ * w ^ n := by
-    have hs := (TauCeti.hasSum_multichoose_mul_geometric_of_abs_lt_one (r := a)
-      (by rw [abs_of_pos hw.1]; exact hw.2)).summable.norm
-    exact hs.congr fun n => by rw [norm_mul, norm_pow, Real.norm_of_nonneg hw.1.le]
-  have hcont (n : ℕ) : Continuous fun t : ℝ =>
-      t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (Ring.multichoose a n * (w * t) ^ n) :=
-    ((Real.continuous_rpow_const (by linarith)).mul
-      ((Real.continuous_rpow_const (by linarith)).comp (continuous_const.sub continuous_id))).mul
-        (continuous_const.mul ((continuous_const.mul continuous_id).pow n))
-  have hdct := intervalIntegral.hasSum_integral_of_dominated_convergence
-    (F := fun n t => t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (Ring.multichoose a n * (w * t) ^ n))
-    (f := fun t => t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - w * t) ^ (-a))
-    (μ := volume) (a := 0) (b := 1) (fun n _ => ‖Ring.multichoose a n‖ * w ^ n)
-    (fun n => (hcont n).aestronglyMeasurable)
-    (fun n => ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      obtain ⟨ht₀, ht₁⟩ := ht
-      have htb : t ^ (b - 1) ≤ 1 := Real.rpow_le_one ht₀.le ht₁ (by linarith)
-      have htcb : (1 - t) ^ (c - b - 1) ≤ 1 :=
-        Real.rpow_le_one (by linarith) (by linarith) (by linarith)
-      have hwt : ‖w * t‖ ≤ w := by
-        rw [norm_mul, Real.norm_of_nonneg hw.1.le, Real.norm_of_nonneg ht₀.le]
-        exact mul_le_of_le_one_right hw.1.le ht₁
-      rw [norm_mul, norm_mul, norm_mul, norm_pow,
-        Real.norm_of_nonneg (Real.rpow_nonneg ht₀.le _),
-        Real.norm_of_nonneg (Real.rpow_nonneg (by linarith) _)]
-      calc t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (‖Ring.multichoose a n‖ * ‖w * t‖ ^ n)
-          ≤ 1 * 1 * (‖Ring.multichoose a n‖ * w ^ n) := by gcongr
-        _ = ‖Ring.multichoose a n‖ * w ^ n := by ring)
-    (ae_of_all _ fun _ _ => hsum) intervalIntegrable_const
-    (ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      have hwt : |w * t| < 1 := by
-        rw [abs_of_nonneg (mul_nonneg hw.1.le ht.1.le)]
-        exact (mul_le_of_le_one_right hw.1.le ht.2).trans_lt hw.2
-      have h := TauCeti.hasSum_multichoose_mul_geometric_of_abs_lt_one (r := a) hwt
-      rw [one_div, ← Real.rpow_neg (by nlinarith [hw.1, hw.2, ht.1, ht.2])] at h
-      exact h.mul_left _)
-  have hreal := (hdct.mul_left (Real.Gamma b * Real.Gamma (c - b))⁻¹).congr_fun
-    fun n => (inv_Gamma_mul_integral_term hb hcb n).symm
-  refine (regularizedGaussHGFun_eq_tsum_coeff_mul_pow _ _ _ _).trans (HasSum.tsum_eq ?_)
-  have hp (r : ℝ) (n : ℕ) :
-      (ascPochhammer ℂ n).eval (r : ℂ) = (((ascPochhammer ℝ n).eval r : ℝ) : ℂ) := by
-    induction n with
-    | zero => simp
-    | succ n ih => simp [ascPochhammer_succ_eval, ih]
-  refine (hasSum_ofReal.mpr hreal).congr_fun fun n => ?_
-  rw [coeff_regularizedGaussHGFunSeries, hp a n, hp b n, ← ofReal_natCast n, ← ofReal_add c n,
-    Gamma_ofReal]
-  push_cast
-  rfl
-
-private theorem tendsto_beta_euler_nhdsGE {a b c : ℝ} (ha : a < 0) (hb : 1 < b)
-    (hcb : 1 < c - b) :
-    Tendsto (fun x : ℝ =>
-      ∫ t in (0 : ℝ)..1, t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - (1 - x) * t) ^ (-a))
-      (𝓝[≥] 0) (𝓝 (ProbabilityTheory.beta b (c - b - a))) := by
-  let F : ℝ → ℝ → ℝ := fun x t =>
-    t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - (1 - x) * t) ^ (-a)
-  have hcont_F (x : ℝ) : Continuous (F x) :=
-    ((Real.continuous_rpow_const (by linarith)).mul
-      ((Real.continuous_rpow_const (by linarith)).comp (continuous_const.sub continuous_id))).mul
-        ((Real.continuous_rpow_const (by linarith)).comp
-          (continuous_const.sub (continuous_const.mul continuous_id)))
-  have hIco : Ico (0 : ℝ) 1 ∈ 𝓝[≥] (0 : ℝ) :=
-    inter_mem self_mem_nhdsWithin (mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds zero_lt_one))
-  have hcwa : ContinuousWithinAt (fun x : ℝ => ∫ t in (0 : ℝ)..1, F x t) (Ici 0) 0 :=
-    intervalIntegral.continuousWithinAt_of_dominated_interval (bound := fun _ => (1 : ℝ))
-      (Eventually.of_forall fun x => (hcont_F x).aestronglyMeasurable)
-      (Filter.eventually_of_mem hIco fun x hx => ae_of_all _ fun t ht => by
-        rw [uIoc_of_le zero_le_one] at ht
-        obtain ⟨ht₀, ht₁⟩ := ht
-        have h1 : 0 ≤ 1 - (1 - x) * t := by nlinarith [hx.1, hx.2, ht₀, ht₁]
-        have h2 : 1 - (1 - x) * t ≤ 1 := by nlinarith [hx.1, hx.2, ht₀, ht₁]
-        rw [Real.norm_of_nonneg (mul_nonneg (mul_nonneg (Real.rpow_nonneg ht₀.le _)
-          (Real.rpow_nonneg (by linarith) _)) (Real.rpow_nonneg h1 _))]
-        calc F x t ≤ 1 * 1 * 1 := by
-              refine mul_le_mul (mul_le_mul (Real.rpow_le_one ht₀.le ht₁ (by linarith))
-                (Real.rpow_le_one (by linarith) (by linarith) (by linarith))
-                (Real.rpow_nonneg (by linarith) _) zero_le_one)
-                (Real.rpow_le_one h1 h2 (by linarith)) (Real.rpow_nonneg h1 _) (by positivity)
-          _ = 1 := by ring)
-      intervalIntegrable_const
-      (ae_of_all _ fun t _ => (Continuous.continuousWithinAt
-        (by
-          dsimp only [F]
-          exact (continuous_const.mul
-            ((Real.continuous_rpow_const (by linarith)).comp
-              (continuous_const.sub ((continuous_const.sub continuous_id).mul
-                continuous_const)))))))
-  have hI₀ : (∫ t in (0 : ℝ)..1, F 0 t) = ProbabilityTheory.beta b (c - b - a) := by
-    rw [← TauCeti.integral_rpow_mul_one_sub_rpow (by linarith) (by linarith)]
-    refine intervalIntegral.integral_congr_ae (Eventually.of_forall fun t ht => ?_)
-    rw [uIoc_of_le zero_le_one] at ht
-    dsimp only [F]
-    rw [sub_zero, one_mul, mul_assoc]
-    congr 1
-    rcases eq_or_lt_of_le ht.2 with rfl | hlt
-    · simp [Real.zero_rpow (by linarith : c - b - 1 ≠ 0),
-        Real.zero_rpow (by linarith : c - b - a - 1 ≠ 0)]
-    · rw [← Real.rpow_add (by linarith)]
-      congr 1
-      ring
-  exact hI₀ ▸ hcwa.tendsto
-
-private theorem tendsto_regularizedGaussHGFun_one_sub_nhdsGT {a b c : ℝ}
-    (ha : a < 0) (hb : 1 < b) (hcb : 1 < c - b) :
-    Tendsto (fun x : ℝ => regularizedGaussHGFun a b c ((1 - x : ℝ) : ℂ)) (𝓝[>] 0)
-      (𝓝 (((Real.Gamma (c - b - a) / (Real.Gamma (c - b) * Real.Gamma (c - a)) : ℝ) : ℂ))) := by
-  have hΓb : Real.Gamma b ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hΓcb : Real.Gamma (c - b) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hΓca : Real.Gamma (c - a) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hval : (Real.Gamma b * Real.Gamma (c - b))⁻¹ * ProbabilityTheory.beta b (c - b - a) =
-      Real.Gamma (c - b - a) / (Real.Gamma (c - b) * Real.Gamma (c - a)) := by
-    have hca : b + (c - b - a) = c - a := by ring
-    rw [ProbabilityTheory.beta, hca]
-    field_simp [hΓb, hΓcb, hΓca]
-  have hint := ((tendsto_beta_euler_nhdsGE ha hb hcb).mono_left
-    (nhdsWithin_mono 0 Ioi_subset_Ici_self)).const_mul (Real.Gamma b * Real.Gamma (c - b))⁻¹
-  rw [hval] at hint
-  refine (continuous_ofReal.continuousAt.tendsto.comp hint).congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
-  exact (regularizedGaussHGFun_ofReal_eq_integral hb hcb
-    ⟨by linarith [hx.2], by linarith [hx.1]⟩).symm
-
-private theorem legendreCombination_half_ofReal {lam mu nu : ℝ}
-    (hlam : 1 < lam) (hmu : 1 < mu) (hnu : 1 < nu) :
+private theorem legendreCombination_half_of_re_gt {lam mu nu : ℂ}
+    (hlam : 1 < lam.re) (hmu : 1 < mu.re) (hnu : 1 < nu.re) :
     legendreCombination lam mu nu (1 / 2) =
-      (Gamma ((lam : ℂ) + mu + nu + 3 / 2) * Gamma (1 / 2 + mu))⁻¹ := by
-  have hcont_u (β : ℂ) : Tendsto (fun x : ℝ =>
-      regularizedGaussHGFun (1 / 2 + (lam : ℂ)) β (1 + lam + mu) (x : ℂ)) (𝓝[>] 0)
-      (𝓝 ((Gamma (1 + (lam : ℂ) + mu))⁻¹)) := by
-    have hc : ContinuousAt (fun x : ℝ =>
-        regularizedGaussHGFun (1 / 2 + (lam : ℂ)) β (1 + lam + mu) (x : ℂ)) 0 :=
+      (Gamma (lam + mu + nu + 3 / 2) * Gamma (1 / 2 + mu))⁻¹ := by
+  -- Send `z = x → 0⁺` along `(0, 1)`: the factors at `x` approach `(Γ(1 + λ + μ))⁻¹` while the
+  -- factors at `1 - x` approach their Gauss `z → 1` values.
+  have hcont_u (β : ℂ) : Tendsto
+      (fun x : ℝ => regularizedGaussHGFun (1 / 2 + lam) β (1 + lam + mu) (x : ℂ))
+      (𝓝[>] 0) (𝓝 (Gamma (1 + lam + mu))⁻¹) := by
+    have hc : ContinuousAt
+        (fun x : ℝ => regularizedGaussHGFun (1 / 2 + lam) β (1 + lam + mu) (x : ℂ)) 0 :=
       (analyticAt_regularizedGaussHGFun _ _ _ (by simp : ‖((0 : ℝ) : ℂ)‖ < 1)).continuousAt.comp
         continuous_ofReal.continuousAt
-    rw [← regularizedGaussHGFun_apply_zero (1 / 2 + (lam : ℂ)) β (1 + lam + mu), ← ofReal_zero]
-    exact hc.tendsto.mono_left nhdsWithin_le_nhds
-  have hv₀ := tendsto_regularizedGaussHGFun_one_sub_nhdsGT
-    (a := 1 / 2 - lam) (b := 1 / 2 + nu) (c := 1 + nu + mu)
-    (by linarith) (by linarith) (by linarith)
-  have hvm := tendsto_regularizedGaussHGFun_one_sub_nhdsGT
-    (a := -1 / 2 - lam) (b := 1 / 2 + nu) (c := 1 + nu + mu)
-    (by linarith) (by linarith) (by linarith)
-  have hcomb := (((hcont_u (-1 / 2 - nu)).sub (hcont_u (1 / 2 - nu))).mul hv₀).add
-    ((hcont_u (1 / 2 - nu)).mul hvm)
-  have hconst :
-      (fun x : ℝ =>
-        (regularizedGaussHGFun (1 / 2 + (lam : ℂ)) (-1 / 2 - nu) (1 + lam + mu) x -
-            regularizedGaussHGFun (1 / 2 + (lam : ℂ)) (1 / 2 - nu) (1 + lam + mu) x) *
-          regularizedGaussHGFun ((1 / 2 - lam : ℝ) : ℂ) ((1 / 2 + nu : ℝ) : ℂ)
-            ((1 + nu + mu : ℝ) : ℂ) ((1 - x : ℝ) : ℂ) +
-        regularizedGaussHGFun (1 / 2 + (lam : ℂ)) (1 / 2 - nu) (1 + lam + mu) x *
-          regularizedGaussHGFun ((-1 / 2 - lam : ℝ) : ℂ) ((1 / 2 + nu : ℝ) : ℂ)
-            ((1 + nu + mu : ℝ) : ℂ) ((1 - x : ℝ) : ℂ)) =ᶠ[𝓝[>] 0]
+    simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
+  have htend_one : Tendsto (fun x : ℝ => (1 : ℂ) - x) (𝓝[>] 0) (𝓝[Metric.ball 0 1] 1) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · have hc : Continuous fun x : ℝ => (1 : ℂ) - x := by fun_prop
+      simpa using (hc.continuousAt (x := 0)).tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
+      rw [Metric.mem_ball, dist_zero_right, ← ofReal_one, ← ofReal_sub, norm_real,
+        Real.norm_eq_abs, abs_of_pos (by linarith [hx.2])]
+      linarith [hx.1]
+  have h12 : ((1 : ℂ) / 2).re = 1 / 2 := by norm_num
+  have hm12 : ((-1 : ℂ) / 2).re = -1 / 2 := by norm_num
+  have hb_re : 0 < (1 / 2 + nu).re := by simp only [add_re, h12]; linarith
+  have hbc_re : (1 / 2 + nu).re < (1 + nu + mu).re := by
+    simp only [add_re, one_re, h12]; linarith
+  have hv₀ := (tendsto_regularizedGaussHGFun_nhdsWithin_ball_one (a := 1 / 2 - lam) hb_re hbc_re
+    (by simp only [add_re, sub_re, one_re, h12]; linarith)).comp htend_one
+  have hvm := (tendsto_regularizedGaussHGFun_nhdsWithin_ball_one (a := -1 / 2 - lam) hb_re hbc_re
+    (by simp only [add_re, sub_re, one_re, h12, hm12]; linarith)).comp htend_one
+  have hcomb := (((hcont_u (-1 / 2 - nu)).mul hv₀).add ((hcont_u (1 / 2 - nu)).mul hvm)).sub
+    ((hcont_u (1 / 2 - nu)).mul hv₀)
+  have hconst : (fun x : ℝ => legendreCombination lam mu nu x) =ᶠ[𝓝[>] 0]
       fun _ => legendreCombination lam mu nu (1 / 2) := by
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
     have hx₀ : ‖(x : ℂ)‖ < 1 := by simp [Real.norm_eq_abs, abs_of_pos hx.1, hx.2]
-    have hx₁ : ‖(1 : ℂ) - (x : ℂ)‖ < 1 := by
+    have hx₁ : ‖(1 : ℂ) - x‖ < 1 := by
       rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_of_pos (by linarith [hx.2])]
       linarith [hx.1]
-    rw [← legendreCombination_eq_at_half (lam : ℂ) mu nu hx₀ hx₁, legendreCombination]
-    push_cast; ring
-  rw [tendsto_nhds_unique tendsto_const_nhds (hcomb.congr' hconst), sub_self, zero_mul, zero_add]
-  have hΓpos : Real.Gamma (1 + lam + mu) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  have hc1 : (1 : ℂ) + lam + mu = ((1 + lam + mu : ℝ) : ℂ) := by push_cast; ring
-  have hc2 : (lam : ℂ) + mu + nu + 3 / 2 = ((lam + mu + nu + 3 / 2 : ℝ) : ℂ) := by push_cast; ring
-  have hc3 : (1 : ℂ) / 2 + mu = ((1 / 2 + mu : ℝ) : ℂ) := by push_cast; ring
-  rw [hc1, hc2, hc3, Gamma_ofReal, Gamma_ofReal, Gamma_ofReal, ← ofReal_inv, ← ofReal_mul,
-    ← ofReal_mul, ← ofReal_inv]
-  congr 1
-  have hr1 : 1 + nu + mu - (1 / 2 + nu) - (-1 / 2 - lam) = 1 + lam + mu := by ring
-  have hr2 : 1 + nu + mu - (1 / 2 + nu) = 1 / 2 + mu := by ring
-  have hr3 : 1 + nu + mu - (-1 / 2 - lam) = lam + mu + nu + 3 / 2 := by ring
-  rw [hr1, hr2, hr3]
-  field_simp [hΓpos]
+    exact legendreCombination_eq_at_half lam mu nu hx₀ hx₁
+  rw [tendsto_nhds_unique tendsto_const_nhds (hcomb.congr' hconst)]
+  have hΓ_ne : Gamma (1 + lam + mu) ≠ 0 :=
+    Gamma_ne_zero_of_re_pos (by simp only [add_re, one_re]; linarith)
+  have hr1 : 1 + nu + mu - (-1 / 2 - lam) - (1 / 2 + nu) = 1 + lam + mu := by ring
+  have hr2 : 1 + nu + mu - (-1 / 2 - lam) = lam + mu + nu + 3 / 2 := by ring
+  have hr3 : 1 + nu + mu - (1 / 2 + nu) = 1 / 2 + mu := by ring
+  rw [add_sub_right_comm, sub_self, zero_add, hr1, hr2, hr3]
+  field_simp [hΓ_ne]
 
 private theorem differentiable_legendreCombination_half {fl fm fn : ℂ → ℂ}
     (hl : Differentiable ℂ fl) (hm : Differentiable ℂ fm) (hn : Differentiable ℂ fn) :
     Differentiable ℂ fun w => legendreCombination (fl w) (fm w) (fn w) (1 / 2) := by
-  have hhalf : ‖(1 / 2 : ℂ)‖ < 1 := by norm_num
-  have hhalf' : ‖(1 : ℂ) - 1 / 2‖ < 1 := by norm_num
-  have dc (c : ℂ) : Differentiable ℂ fun _ : ℂ => c := differentiable_const c
-  have hu_m := Differentiable.regularizedGaussHGFun ((dc (1 / 2)).add hl)
-    ((dc (-1 / 2)).sub hn) (((dc 1).add hl).add hm) hhalf
-  have hu_0 := Differentiable.regularizedGaussHGFun ((dc (1 / 2)).add hl)
-    ((dc (1 / 2)).sub hn) (((dc 1).add hl).add hm) hhalf
-  have hv_0 := Differentiable.regularizedGaussHGFun ((dc (1 / 2)).sub hl)
-    ((dc (1 / 2)).add hn) (((dc 1).add hn).add hm) hhalf'
-  have hv_m := Differentiable.regularizedGaussHGFun ((dc (-1 / 2)).sub hl)
-    ((dc (1 / 2)).add hn) (((dc 1).add hn).add hm) hhalf'
+  have hhalf : ∀ _ : ℂ, ‖(1 / 2 : ℂ)‖ < 1 := fun _ => by norm_num
+  have hhalf' : ∀ _ : ℂ, ‖(1 : ℂ) - 1 / 2‖ < 1 := fun _ => by norm_num
+  have hu_m : Differentiable ℂ fun w =>
+      regularizedGaussHGFun (1 / 2 + fl w) (-1 / 2 - fn w) (1 + fl w + fm w) (1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      (differentiable_const _) hhalf
+  have hu_0 : Differentiable ℂ fun w =>
+      regularizedGaussHGFun (1 / 2 + fl w) (1 / 2 - fn w) (1 + fl w + fm w) (1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      (differentiable_const _) hhalf
+  have hv_0 : Differentiable ℂ fun w =>
+      regularizedGaussHGFun (1 / 2 - fl w) (1 / 2 + fn w) (1 + fn w + fm w) (1 - 1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      (differentiable_const _) hhalf'
+  have hv_m : Differentiable ℂ fun w =>
+      regularizedGaussHGFun (-1 / 2 - fl w) (1 / 2 + fn w) (1 + fn w + fm w) (1 - 1 / 2) :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop)
+      (differentiable_const _) hhalf'
   exact ((hu_m.mul hv_0).add (hu_0.mul hv_m)).sub (hu_0.mul hv_0)
+
+private theorem differentiable_inv_Gamma_legendreRHS {fl fm fn : ℂ → ℂ}
+    (hl : Differentiable ℂ fl) (hm : Differentiable ℂ fm) (hn : Differentiable ℂ fn) :
+    Differentiable ℂ fun w =>
+      (Gamma (fl w + fm w + fn w + 3 / 2) * Gamma (1 / 2 + fm w))⁻¹ := by
+  simp_rw [mul_inv]
+  exact (differentiable_one_div_Gamma.comp (by fun_prop)).mul
+    (differentiable_one_div_Gamma.comp (by fun_prop))
 
 /-- Regularized form of Elliott's generalized Legendre relation (DLMF 15.16.5) on the open lens
 `{z | ‖z‖ < 1 ∧ ‖1 - z‖ < 1}`, valid for all complex parameters `lam`, `mu`, `nu`. -/
@@ -538,56 +370,33 @@ theorem regularizedGaussHGFun_legendreRelation (lam mu nu : ℂ) {z : ℂ}
       regularizedGaussHGFun (1 / 2 + lam) (1 / 2 - nu) (1 + lam + mu) z *
         regularizedGaussHGFun (1 / 2 - lam) (1 / 2 + nu) (1 + nu + mu) (1 - z) =
       (Gamma (lam + mu + nu + 3 / 2) * Gamma (1 / 2 + mu))⁻¹ := by
+  -- First collapse `z` to `1 / 2` using vanishing of the `z`-derivative on the open lens.
   have hz_half := legendreCombination_eq_at_half lam mu nu hz₀ hz₁
   dsimp only [legendreCombination] at hz_half
   rw [hz_half]
-  have h_id {f g : ℂ → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
-      (h : ∀ r : ℝ, 1 < r → f r = g r) : f = g := by
-    have hslit := AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq
-      (f := fun w => f (w + 1)) (g := fun w => g (w + 1))
-      (fun w _ => (hf.comp (differentiable_id.add (differentiable_const 1))).analyticAt w)
-      (fun w _ => (hg.comp (differentiable_id.add (differentiable_const 1))).analyticAt w)
-      fun t ht => by exact_mod_cast h (t + 1) (by linarith)
-    have hshift := (hf.comp (differentiable_id.add (differentiable_const (I + 1)))).eq_of_ofReal_eq
-      (hg.comp (differentiable_id.add (differentiable_const (I + 1)))) fun t => by
-        simpa [add_assoc] using hslit (Or.inr (by simp : ((t : ℂ) + I).im ≠ 0))
-    ext w
-    simpa [sub_add_cancel] using congrFun hshift (w - (I + 1))
-  have hinv_diff {f : ℂ → ℂ} (hf : Differentiable ℂ f) :
-      Differentiable ℂ fun w => (Gamma (f w))⁻¹ := by
-    convert differentiable_one_div_Gamma.comp hf using 1
-    rfl
+  -- Extend from `(1, ∞)³` to `ℂ³` one parameter at a time via `Differentiable.eq_of_ofReal_gt_eq`.
   have step1 {l m : ℝ} (hl : 1 < l) (hm : 1 < m) (ν : ℂ) :
       legendreCombination l m ν (1 / 2) =
         (Gamma ((l : ℂ) + m + ν + 3 / 2) * Gamma (1 / 2 + m))⁻¹ :=
-    congrFun (h_id (g := fun ν => (Gamma ((l : ℂ) + m + ν + 3 / 2) * Gamma (1 / 2 + m))⁻¹)
-      (differentiable_legendreCombination_half (differentiable_const _) (differentiable_const _)
-        differentiable_id)
-      (by
-        simp_rw [mul_inv]
-        exact (hinv_diff (((differentiable_const _).add differentiable_id).add
-          (differentiable_const _))).mul (differentiable_const _))
-      (fun r hr => legendreCombination_half_ofReal hl hm hr)) ν
+    congrFun ((differentiable_legendreCombination_half
+        (differentiable_const _) (differentiable_const _) differentiable_fun_id).eq_of_ofReal_gt_eq
+      (differentiable_inv_Gamma_legendreRHS
+        (differentiable_const _) (differentiable_const _) differentiable_fun_id)
+      fun r (hr : 1 < r) => legendreCombination_half_of_re_gt
+        (by simpa using hl) (by simpa using hm) (by simpa using hr)) ν
   have step2 {l : ℝ} (hl : 1 < l) (μ ν : ℂ) :
       legendreCombination l μ ν (1 / 2) =
         (Gamma ((l : ℂ) + μ + ν + 3 / 2) * Gamma (1 / 2 + μ))⁻¹ :=
-    congrFun (h_id (g := fun μ => (Gamma ((l : ℂ) + μ + ν + 3 / 2) * Gamma (1 / 2 + μ))⁻¹)
-      (differentiable_legendreCombination_half (differentiable_const _) differentiable_id
-        (differentiable_const _))
-      (by
-        simp_rw [mul_inv]
-        exact (hinv_diff ((((differentiable_const _).add differentiable_id).add
-          (differentiable_const _)).add (differentiable_const _))).mul
-          (hinv_diff ((differentiable_const _).add differentiable_id)))
-      (fun r hr => step1 hl hr ν)) μ
-  exact congrFun (h_id (g := fun lam => (Gamma (lam + mu + nu + 3 / 2) * Gamma (1 / 2 + mu))⁻¹)
-    (differentiable_legendreCombination_half differentiable_id (differentiable_const _)
-      (differentiable_const _))
-    (by
-      simp_rw [mul_inv]
-      exact (hinv_diff (((differentiable_id.add (differentiable_const _)).add
-        (differentiable_const _)).add (differentiable_const _))).mul (differentiable_const _))
-    (fun r hr => step2 hr mu nu)) lam
+    congrFun ((differentiable_legendreCombination_half
+        (differentiable_const _) differentiable_fun_id (differentiable_const _)).eq_of_ofReal_gt_eq
+      (differentiable_inv_Gamma_legendreRHS
+        (differentiable_const _) differentiable_fun_id (differentiable_const _))
+      fun r (hr : 1 < r) => step1 hl hr ν) μ
+  exact congrFun ((differentiable_legendreCombination_half
+      differentiable_fun_id (differentiable_const _) (differentiable_const _)).eq_of_ofReal_gt_eq
+    (differentiable_inv_Gamma_legendreRHS
+      differentiable_fun_id (differentiable_const _) (differentiable_const _))
+    fun r (hr : 1 < r) => step2 hr mu nu) lam
 
 /-- **Elliott's generalized Legendre relation** (DLMF 15.16.5) for the ordinary Gauss
 hypergeometric series on `{z | ‖z‖ < 1 ∧ ‖1 - z‖ < 1}`, with `Γ(1/2 + mu)` in place of DLMF's
