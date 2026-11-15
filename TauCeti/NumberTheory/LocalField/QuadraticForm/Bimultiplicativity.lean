@@ -85,14 +85,14 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 a subgroup of index two in `Kˣ` for every `a` that is not a square. -/
 theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
-  obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp ha)
+  obtain ⟨d, hd⟩ := exists_defectExponent_eq_coe ha
   rcases Int.even_or_odd d with hev | hodd
   · exact quadraticNormSubgroup_index_eq_two_of_unramified_class
-      ((unramified_class_iff_even_defectExponent h2 hd.symm).mpr hev)
+      ((unramified_class_iff_even_defectExponent h2 hd).mpr hev)
   · rw [← index_subgroupOf_unitFiltration_eq_quadraticNormSubgroup_index_of_odd_defectExponent
-        hd.symm hodd,
+        hd hodd,
       ← relIndex_unitQuadraticNormSquareClasses]
-    exact relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent h2 hd.symm hodd
+    exact relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent h2 hd hodd
 
 /-- Over a nonarchimedean local field with `2 ≠ 0`, every unit of `K` is a norm from `K[√a]` if and
 only if `a : Kˣ` is a square. -/

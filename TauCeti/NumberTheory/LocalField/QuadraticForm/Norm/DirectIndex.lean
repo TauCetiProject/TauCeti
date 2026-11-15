@@ -144,10 +144,10 @@ theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (h2 : (2 : K) �
       unitQuadraticNormSquareClasses_eq_unitSquareClasses_of_isSquare h2 ha⟩
     rw [defectExponent_eq_top_iff.mpr ha] at hd
     exact absurd hd.symm WithTop.coe_ne_top
-  · obtain ⟨d₀, hd₀⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp ha)
-    rw [unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff_even_defectExponent h2 hd₀.symm]
-    refine ⟨fun hev d hd ↦ ?_, fun h ↦ h d₀ hd₀.symm⟩
-    rw [← hd₀, WithTop.coe_inj] at hd
+  · obtain ⟨d₀, hd₀⟩ := exists_defectExponent_eq_coe ha
+    rw [unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff_even_defectExponent h2 hd₀]
+    refine ⟨fun hev d hd ↦ ?_, fun h ↦ h d₀ hd₀⟩
+    rw [hd₀, WithTop.coe_inj] at hd
     exact hd ▸ hev
 
 /-- For a nonsquare `a : Kˣ` of defect exponent `d` over a nonarchimedean local field with `2 ≠ 0`,
@@ -175,8 +175,8 @@ theorem relIndex_unitQuadraticNormSquareClasses_eq_two_iff (h2 : (2 : K) ≠ 0) 
     rw [unitQuadraticNormSquareClasses_eq_unitSquareClasses_of_isSquare h2 ha,
       Subgroup.relIndex_self] at hidx
     omega
-  obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp ha)
-  exact ⟨d, hd.symm,
-    (relIndex_unitQuadraticNormSquareClasses_eq_two_iff_odd_defectExponent h2 hd.symm).mp hidx⟩
+  obtain ⟨d, hd⟩ := exists_defectExponent_eq_coe ha
+  exact ⟨d, hd,
+    (relIndex_unitQuadraticNormSquareClasses_eq_two_iff_odd_defectExponent h2 hd).mp hidx⟩
 
 end TauCeti
