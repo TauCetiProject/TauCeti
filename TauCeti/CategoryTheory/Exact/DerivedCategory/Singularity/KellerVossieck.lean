@@ -284,6 +284,21 @@ private theorem eq_zero_of_isStrictlyLE {n b : ℤ} (hbn : b < n) (A : C)
   rw [hg0, Functor.map_zero]
 
 include hF in
+/-- Given maps `δ k` to `X₀` from objects placed in degree `k + 1`, every map from `X₀` to an
+object of `Kᵇ(proj E)` is killed by some `δ k`. -/
+private theorem exists_comp_eq_zero_of_boundedProjective {X₀ : E.BoundedDerivedCategory}
+    (A : ℕ → C) (δ : ∀ k : ℕ, (BoundedDerivedCategory.Q E).obj (HomotopyCategory.Bounded.mk _
+      (CochainComplex.bounded_single ((k + 1 : ℕ) : ℤ) (A k))) ⟶ X₀)
+    (K : E.BoundedDerivedCategory) (hK : E.boundedProjective K) (a : X₀ ⟶ K) :
+    ∃ k, δ k ≫ a = 0 := by
+  -- `K` vanishes above some degree `b`; take `k + 1 > b`.
+  obtain ⟨K', hK', ⟨e⟩⟩ := (E.boundedProjective_iff K).1 hK
+  obtain ⟨_, b, _, _⟩ := (CochainComplex.bounded_iff C K'.obj).1 K'.property
+  refine ⟨b.toNat, ?_⟩
+  rw [← cancel_mono e.hom, zero_comp, Category.assoc]
+  exact eq_zero_of_isStrictlyLE hF (by lia : b < ((b.toNat + 1 : ℕ) : ℤ)) _ K' hK' _
+
+include hF in
 /-- Let `j : T ⟶ I_M` identify the top term `Tᵏ⁺¹` of a complex vanishing above degree `k + 1`
 with the cycles `Zᵏ⁺¹` of the injective resolution of `M`. Every map from the top term, placed in
 degree `k + 1`, to the injective resolution of `N` factors as `ιTop ≫ j ≫ Φ` through a map of
@@ -421,12 +436,7 @@ theorem singleToSingularity_map_surjective (M N : C) :
     inv ((BoundedDerivedCategory.Q E).map (sR k))
   -- A map from `M` to a bounded complex of projectives `K` is killed by `δ k` for `k` beyond `K`.
   obtain ⟨k, h, hh⟩ := ObjectProperty.TrWLocalization.exists_map_comp_eq_map E.boundedProjective
-    (SingularityCategory.Q E) δ (fun K hK a ↦ by
-      obtain ⟨K', hK', ⟨e⟩⟩ := (E.boundedProjective_iff K).1 hK
-      obtain ⟨_, b, _, _⟩ := (CochainComplex.bounded_iff C K'.obj).1 K'.property
-      refine ⟨b.toNat, ?_⟩
-      rw [← cancel_mono e.hom, zero_comp, Category.assoc]
-      exact eq_zero_of_isStrictlyLE hF (by lia : b < ((b.toNat + 1 : ℕ) : ℤ)) _ K' hK' _) α
+    (SingularityCategory.Q E) δ (exists_comp_eq_zero_of_boundedProjective hF _ δ) α
   have : T k |>.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle k
   -- In `D⁺(E)`, `h` is a map from the top term to the resolution of `N`, which comes from a map
   -- of resolutions `Φ`.
