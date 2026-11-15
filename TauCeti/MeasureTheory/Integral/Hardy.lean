@@ -12,8 +12,8 @@ import TauCeti.MeasureTheory.Integral.SchurTest
 /-!
 # Weighted Hardy inequalities on `(0, ∞)`
 
-For `θ > 0` and `1 ≤ q ≤ ∞`, the prefix and tail integration operators satisfy the sharp bounds
-with respect to the multiplicative Haar measure `dt / t` (`TauCeti.multHaar`):
+For `θ > 0` and `1 ≤ q ≤ ∞`, the prefix and tail integration operators satisfy the weighted norm
+bounds with respect to the multiplicative Haar measure `dt / t` (`TauCeti.multHaar`):
 
 * `‖t ↦ t ^ (-θ) ∫₀ᵗ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (-θ) ψ(s)‖_{L^q(ds / s)}`,
 * `‖t ↦ t ^ θ ∫_t^∞ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ θ ψ(s)‖_{L^q(ds / s)}`.
@@ -105,15 +105,14 @@ private theorem lintegral_hardyKernel_col {θ s : ℝ} (hθ : 0 < θ) (hs : 0 < 
     rw [← ENNReal.ofReal_mul (inv_nonneg.2 ht0.le),
       ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _)]
     congr 1
-    rw [Real.div_rpow hs.le ht0.le, show -θ - 1 = -(θ + 1) by ring, Real.rpow_neg ht0.le,
-      Real.rpow_add ht0, Real.rpow_one]
-    simp only [div_eq_mul_inv, mul_inv]; ring
+    rw [Real.div_rpow hs.le ht0.le, Real.rpow_sub_one ht0.ne', Real.rpow_neg ht0.le]
+    simp only [div_eq_mul_inv]; ring
   rw [setLIntegral_congr_fun measurableSet_Ioi hpt, lintegral_const_mul _ (by fun_prop),
     lintegral_ofReal_rpow_Ioi_of_lt (by linarith) hs,
     ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _)]
   congr 1
   have hsθ : s ^ θ ≠ 0 := (Real.rpow_pos_of_pos hs θ).ne'
-  rw [show -θ - 1 + 1 = -θ by ring, neg_div_neg_eq, Real.rpow_neg hs.le]; field_simp
+  rw [sub_add_cancel, neg_div_neg_eq, Real.rpow_neg hs.le]; field_simp
 
 private theorem schur_const_eq_self (A : ℝ≥0∞) {q : ℝ≥0∞} (hq : 1 ≤ q) :
     A ^ (1 - q.toReal⁻¹) * A ^ q.toReal⁻¹ = A := by
@@ -122,15 +121,6 @@ private theorem schur_const_eq_self (A : ℝ≥0∞) {q : ℝ≥0∞} (hq : 1 �
     · simp
     · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hq_top hq))
   rw [← ENNReal.rpow_add_of_nonneg _ _ h₀ (by positivity), sub_add_cancel, ENNReal.rpow_one]
-
-private theorem setLIntegral_eq_multHaar {S : Set ℝ} (hS : MeasurableSet S) (hS0 : S ⊆ Ioi 0)
-    (φ : ℝ → ℝ≥0∞) :
-    ∫⁻ s in S, φ s = ∫⁻ s in S, ENNReal.ofReal s * φ s ∂multHaar := by
-  rw [setLIntegral_multHaar_eq_setLIntegral hS, inter_eq_self_of_subset_left hS0]
-  refine setLIntegral_congr_fun hS fun s hs ↦ ?_
-  have hs0 : 0 < s := hS0 hs
-  rw [← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 hs0.le), inv_mul_cancel₀ hs0.ne',
-    ENNReal.ofReal_one, one_mul]
 
 /-- **Prefix Hardy inequality** in multiplicative Haar form: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ (-θ) ∫₀ᵗ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (-θ) ψ(s)‖_{L^q(ds / s)}`. -/
@@ -153,8 +143,7 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_multHaar_le {θ : ℝ} (hθ : 0 < 
           one_mul]
       simp only [indicator_of_mem hs, hardyKernel, ht, hs.1, hs.2, and_self, ↓reduceIte, g]
       rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg (div_nonneg hs.1.le ht.le) θ), hpow]
-    · simp [indicator_of_notMem hs, hardyKernel, show ¬(0 < t ∧ 0 < s ∧ s ≤ t) from
-        fun h ↦ hs ⟨h.2.1, h.2.2⟩]
+    · rw [indicator_of_notMem hs, hardyKernel, ite_eq_right fun h ↦ hs ⟨h.2.1, h.2.2⟩, zero_mul]
   rw [eLpNorm_congr_ae hae]
   exact (eLpNorm_lintegral_mul_le (measurable_uncurry_hardyKernel θ).aemeasurable hg hq
     (ae_pos_multHaar.mono fun t ht ↦ (lintegral_hardyKernel_row hθ ht).le)
@@ -169,13 +158,13 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le {θ : ℝ} (hθ : 0 < θ) {q : 
       ENNReal.ofReal θ⁻¹ * eLpNorm (fun s ↦ ENNReal.ofReal (s ^ (1 - θ)) * φ s) q multHaar := by
   have hφ_mh : AEMeasurable φ multHaar :=
     multHaar_def ▸ hφ.mono_ac (withDensity_absolutelyContinuous _ _)
-  simp_rw [setLIntegral_eq_multHaar measurableSet_Ioc Ioc_subset_Ioi_self]
+  simp_rw [setLIntegral_eq_setLIntegral_multHaar measurableSet_Ioc Ioc_subset_Ioi_self]
   refine (eLpNorm_rpow_neg_mul_setLIntegral_Ioc_multHaar_le hθ hq
     (measurable_id.ennreal_ofReal.aemeasurable.mul hφ_mh)).trans_eq ?_
   congr 1; refine eLpNorm_congr_ae (ae_pos_multHaar.mono fun s hs ↦ ?_)
   dsimp only [Pi.mul_apply, id_eq]
   rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _), ← Real.rpow_add_one hs.ne',
-    show -θ + 1 = 1 - θ by ring]
+    neg_add_eq_sub]
 
 /-- **Tail Hardy inequality** in multiplicative Haar form: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ θ ∫_t^∞ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ θ ψ(s)‖_{L^q(ds / s)}`. -/
@@ -198,8 +187,7 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le {θ : ℝ} (hθ : 0 < θ) 
         rw [Real.div_rpow ht.le hs0.le, div_mul_cancel₀ _ (Real.rpow_pos_of_pos hs0 θ).ne']
       simp only [indicator_of_mem hs, hardyKernel, hs0, ht, hst, and_self, ↓reduceIte, g]
       rw [← mul_assoc, ← ENNReal.ofReal_mul (Real.rpow_nonneg (div_nonneg ht.le hs0.le) θ), hpow]
-    · simp [indicator_of_notMem hs, hardyKernel,
-        show ¬(0 < s ∧ 0 < t ∧ t ≤ s) from fun h ↦ hs h.2.2]
+    · rw [indicator_of_notMem hs, hardyKernel, ite_eq_right fun h ↦ hs h.2.2, zero_mul]
   rw [eLpNorm_congr_ae hae]
   exact (eLpNorm_lintegral_mul_le (measurable_uncurry_hardyKernel_swap θ).aemeasurable hg hq
     (ae_pos_multHaar.mono fun t ht ↦ (lintegral_hardyKernel_col hθ ht).le)
@@ -217,7 +205,7 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ�
   have hlhs : (fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, φ s) =ᵐ[multHaar]
       fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, ENNReal.ofReal s * φ s ∂multHaar :=
     ae_pos_multHaar.mono fun t ht ↦ by
-      dsimp only; rw [setLIntegral_eq_multHaar measurableSet_Ici (Ici_subset_Ioi.2 ht)]
+      dsimp only; rw [setLIntegral_eq_setLIntegral_multHaar measurableSet_Ici (Ici_subset_Ioi.2 ht)]
   rw [eLpNorm_congr_ae hlhs]
   refine (eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le hθ hq
     (measurable_id.ennreal_ofReal.aemeasurable.mul hφ_mh)).trans_eq ?_

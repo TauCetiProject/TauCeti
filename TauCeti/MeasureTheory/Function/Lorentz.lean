@@ -21,11 +21,12 @@ gauge** `TauCeti.eLorentzNorm f p q μ` (`‖f‖_{p, q}`) is the `L^q(dt / t)` 
 Following `MeasureTheory.eLpNorm`, `eLorentzNorm f p q μ` is `∞` when `f` is not `μ`-a.e. strongly
 measurable, and `0` when `f` is a.e. strongly measurable and `p = 0` or `q = 0`. On the diagonal
 `q = p`, equimeasurability gives `eLorentzNorm f p p μ = eLpNorm f p μ` unconditionally
-(`TauCeti.eLorentzNorm_self`). At `q = ∞` and `0 < p < ∞`, right continuity identifies `‖f‖_{p, ∞}`
-with `⨆ t > 0, t ^ (1 / p) f*(t)` (`TauCeti.eLorentzNorm_top_eq_iSup_Ioi`) and with
-`⨆ c, c * μ {‖f‖ > c} ^ (1 / p)` (`TauCeti.eLorentzNorm_top_eq_iSup_mul_measure_rpow`).
-Monotonicity of `f*` and log-convexity give `‖f‖_{p, q₁} ≤ (q₀ / p) ^ (1 / q₀ - 1 / q₁) ‖f‖_{p, q₀}`
-for `0 < q₀ ≤ q₁ ≤ ∞` (`TauCeti.eLorentzNorm_le_of_exponent_le`).
+(`TauCeti.eLorentzNorm_self`). For `μ`-a.e. strongly measurable `f` at `q = ∞`, right continuity
+identifies `‖f‖_{p, ∞}` with `⨆ t > 0, t ^ (1 / p) f*(t)` when `p ≠ 0`
+(`TauCeti.eLorentzNorm_top_eq_iSup_Ioi`), and with `⨆ c, c * μ {‖f‖ > c} ^ (1 / p)` when
+`0 < p < ∞` (`TauCeti.eLorentzNorm_top_eq_iSup_mul_measure_rpow`). Monotonicity of `f*` and
+log-convexity give `‖f‖_{p, q₁} ≤ (q₀ / p) ^ (1 / q₀ - 1 / q₁) ‖f‖_{p, q₀}` for `0 < p < ∞` and
+`0 < q₀ ≤ q₁ ≤ ∞` (`TauCeti.eLorentzNorm_le_of_exponent_le`).
 
 Shifted subadditivity gives the quasi-triangle inequality with constant `2 ^ (1 / p)` for
 `1 ≤ q ≤ ∞` (`TauCeti.eLorentzNorm_add_le`), while cyclic shifts on `Fin 3` show non-subadditivity
@@ -34,10 +35,11 @@ at `q = ∞` (`TauCeti.exists_lt_eLorentzNorm_add_top`). On `(0, ∞)`, `t ↦ t
 
 ## Main declarations
 
-* `TauCeti.eLorentzNorm`, `TauCeti.MemLorentz`: Lorentz gauge `‖f‖_{p, q}` and membership class.
+* `TauCeti.eLorentzNorm`, `TauCeti.eLorentzNorm_def`, `TauCeti.MemLorentz`: Lorentz gauge
+  `‖f‖_{p, q}` and membership class.
 * `TauCeti.eLorentzNorm_self`, `TauCeti.memLorentz_self`: `‖f‖_{p, p} = ‖f‖_p`.
-* `TauCeti.eLorentzNorm_decreasingRearrangement`, `TauCeti.eLorentzNorm_eNorm_rpow`: rearrangement
-  invariance and power rescaling.
+* `TauCeti.eLorentzNorm_decreasingRearrangement_eNorm`, `TauCeti.eLorentzNorm_eNorm_rpow`:
+  rearrangement invariance and power rescaling.
 * `TauCeti.eLorentzNorm_indicator_const`: explicit formula for `‖c 1_A‖_{p, q}`.
 * `TauCeti.eLorentzNorm_top_eq_iSup_Ioi`, `TauCeti.eLorentzNorm_top_eq_iSup_mul_measure_rpow`,
   `TauCeti.measure_gt_le_eLorentzNorm_top_div_rpow`: weak-`L^p` formulas and Chebyshev's bound.
@@ -82,6 +84,15 @@ noncomputable def eLorentzNorm (f : α → ε) (p q : ℝ≥0∞)
       ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t) q multHaar
   else ∞
 
+/-- The defining case split of `TauCeti.eLorentzNorm`. -/
+theorem eLorentzNorm_def (f : α → ε) (p q : ℝ≥0∞) (μ : Measure α) :
+    eLorentzNorm f p q μ = open scoped Classical in
+      if AEStronglyMeasurable f μ then
+        if p = 0 then 0
+        else eLpNorm (fun t : ℝ ↦
+          ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t) q multHaar
+      else ∞ := (rfl)
+
 /-- Membership in the **Lorentz class** `L^{p, q}(μ)`: `eLorentzNorm f p q μ < ∞`. Because
 `eLorentzNorm` assigns `∞` to functions that are not a.e. strongly measurable, `MemLorentz f p q μ`
 implies `AEStronglyMeasurable f μ` (`TauCeti.MemLorentz.aestronglyMeasurable`). -/
@@ -104,12 +115,12 @@ theorem continuousWithinAt_rpow_mul_decreasingRearrangement (r : ℝ) (h : α �
     (Or.inr ENNReal.ofReal_ne_top)
 
 theorem eLorentzNorm_of_not_aestronglyMeasurable (hf : ¬AEStronglyMeasurable f μ) :
-    eLorentzNorm f p q μ = ∞ := by simp [eLorentzNorm, hf]
+    eLorentzNorm f p q μ = ∞ := by simp [eLorentzNorm_def, hf]
 
 theorem eLorentzNorm_eq_eLpNorm (hf : AEStronglyMeasurable f μ) (hp : p ≠ 0) :
     eLorentzNorm f p q μ = eLpNorm (fun t : ℝ ↦
       ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t) q multHaar := by
-  simp [eLorentzNorm, hf, hp]
+  simp [eLorentzNorm_def, hf, hp]
 
 theorem aestronglyMeasurable_of_eLorentzNorm_ne_top (h : eLorentzNorm f p q μ ≠ ∞) :
     AEStronglyMeasurable f μ :=
@@ -125,7 +136,7 @@ theorem memLorentz_iff : MemLorentz f p q μ ↔ eLorentzNorm f p q μ < ∞ := 
 
 @[simp]
 theorem eLorentzNorm_exponent_zero_left (hf : AEStronglyMeasurable f μ) :
-    eLorentzNorm f 0 q μ = 0 := by simp [eLorentzNorm, hf]
+    eLorentzNorm f 0 q μ = 0 := by simp [eLorentzNorm_def, hf]
 
 @[simp]
 theorem eLorentzNorm_exponent_zero_right (hf : AEStronglyMeasurable f μ) :
@@ -159,7 +170,7 @@ theorem eLorentzNorm_congr_eNorm_ae {ε' : Type*} [TopologicalSpace ε'] [ENorm 
     (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ)
     (h : (‖f ·‖ₑ) =ᵐ[μ] (‖g ·‖ₑ)) :
     eLorentzNorm f p q μ = eLorentzNorm g p q μ := by
-  simp only [eLorentzNorm, hf, hg, ↓reduceIte, μ.decreasingRearrangement_congr_ae h]
+  simp only [eLorentzNorm_def, hf, hg, ↓reduceIte, μ.decreasingRearrangement_congr_ae h]
 
 theorem eLorentzNorm_congr_ae (h : f =ᵐ[μ] g) :
     eLorentzNorm f p q μ = eLorentzNorm g p q μ := by
@@ -213,15 +224,8 @@ theorem eLorentzNorm_decreasingRearrangement_eNorm (hf : AEStronglyMeasurable f 
       eLorentzNorm f p q μ := by
   have hm : AEStronglyMeasurable (μ.decreasingRearrangement (‖f ·‖ₑ)) (volume.restrict (Ioi 0)) :=
     (μ.measurable_decreasingRearrangement _).aestronglyMeasurable
-  simp only [eLorentzNorm, hm, hf, ↓reduceIte, eNorm_eq_self,
+  simp only [eLorentzNorm_def, hm, hf, ↓reduceIte, eNorm_eq_self,
     μ.decreasingRearrangement_decreasingRearrangement]
-
-/-- Taking the decreasing rearrangement onto `(0, ∞)` preserves the Lorentz gauge. -/
-@[simp]
-theorem eLorentzNorm_decreasingRearrangement {h : α → ℝ≥0∞} (hh : AEMeasurable h μ) :
-    eLorentzNorm (μ.decreasingRearrangement h) p q (volume.restrict (Ioi 0)) =
-      eLorentzNorm h p q μ := by
-  simpa using eLorentzNorm_decreasingRearrangement_eNorm (p := p) (q := q) hh.aestronglyMeasurable
 
 /-- **Diagonal identity:** at `q = p`, the Lorentz gauge agrees with the `L^p` seminorm for every
 function, exponent `p ∈ [0, ∞]`, and measure `μ`. -/
@@ -287,12 +291,6 @@ theorem eLorentzNorm_eNorm_rpow {ε' : Type*} [TopologicalSpace ε'] [Continuous
       ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _), ← Real.rpow_mul ht.le, hexp]
   exact (eLpNorm_congr_ae hae).trans <|
     eLpNorm_eNorm_rpow g (measurable_rpow_mul_decreasingRearrangement _ _ _).aestronglyMeasurable hr
-
-/-- Positive powers rescale both Lorentz exponents: `‖h ^ r‖_{p, q} = ‖h‖_{p r, q r} ^ r`. -/
-theorem eLorentzNorm_rpow {h : α → ℝ≥0∞} (hh : AEMeasurable h μ) {r : ℝ} (hr : 0 < r) :
-    eLorentzNorm (fun x ↦ h x ^ r) p q μ =
-      eLorentzNorm h (p * ENNReal.ofReal r) (q * ENNReal.ofReal r) μ ^ r := by
-  simpa using eLorentzNorm_eNorm_rpow h hh.aestronglyMeasurable hr
 
 /-! ### Weak `L^p` (`q = ∞`) and Chebyshev's inequality -/
 
@@ -417,11 +415,11 @@ private theorem eLorentzNorm_indicator_one {A : Set α} (hA : NullMeasurableSet 
           inv_mul_eq_div]
       · simp [htA, ENNReal.zero_rpow_of_pos hrq]
     have hα : 0 < r * q.toReal := mul_pos hr hrq
+    have hdiv : 1 / (r * q.toReal) = p.toReal / q.toReal := by
+      simp only [r, ENNReal.toReal_inv]; field_simp
     rw [setLIntegral_congr_fun measurableSet_Ioi hcongr,
       lintegral_indicator_ofReal_rpow_Ioi (by linarith) one_pos (μ A),
-      show (1 : ℝ) ^ (-(r * q.toReal - 1 + 1)) / (r * q.toReal - 1 + 1) = p.toReal / q.toReal by
-        simp only [Real.one_rpow, sub_add_cancel, r, ENNReal.toReal_inv]; field_simp,
-      sub_add_cancel, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hrq.le),
+      Real.one_rpow, sub_add_cancel, hdiv, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hrq.le),
       ENNReal.ofReal_rpow_of_pos (div_pos hrp hrq), ← ENNReal.rpow_mul, mul_assoc,
       mul_inv_cancel₀ hrq.ne', mul_one]
 
@@ -512,7 +510,7 @@ theorem eLorentzNorm_le_of_exponent_le (hp0 : p ≠ 0) (hptop : p ≠ ∞) {q₀
     calc ∫⁻ t, g t ^ q₁.toReal ∂multHaar
         ≤ ∫⁻ t, (ENNReal.ofReal C₀ * eLorentzNorm f p q₀ μ) ^ (q₁.toReal - q₀.toReal) *
             g t ^ q₀.toReal ∂multHaar := lintegral_mono_ae <| hsup.mono fun t ht ↦ by
-          conv_lhs => rw [show q₁.toReal = q₁.toReal - q₀.toReal + q₀.toReal by ring,
+          conv_lhs => rw [← sub_add_cancel q₁.toReal q₀.toReal,
             ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hrle) hr₀.le]
           exact mul_le_mul_left (ENNReal.rpow_le_rpow ht (sub_nonneg.2 hrle)) _
       _ = _ := by
@@ -606,12 +604,6 @@ theorem memLorentz_indicator_const {A : Set α} (hA : NullMeasurableSet A μ) (c
     · rw [MemLorentz, eLorentzNorm_indicator_const_top hA c hp0 hptop]
       exact ENNReal.mul_lt_top hc.lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg hμA)
 
-private theorem eLpNorm_comp_half_multHaar {φ : ℝ → ℝ≥0∞} (hφ : Measurable φ) (q : ℝ≥0∞) :
-    eLpNorm (fun t ↦ φ (2⁻¹ * t)) q multHaar = eLpNorm φ q multHaar :=
-  (eLpNorm_map_measure hφ.aestronglyMeasurable
-    (measurable_const_mul (2⁻¹ : ℝ)).aemeasurable).symm.trans
-    (by rw [map_multHaar_mul_left (by positivity)])
-
 private theorem rpow_mul_decreasingRearrangement_add_le (f g : α → ε) (r : ℝ) {t : ℝ}
     (ht : 0 < t) :
     ENNReal.ofReal (t ^ r) * μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t ≤
@@ -623,14 +615,14 @@ private theorem rpow_mul_decreasingRearrangement_add_le (f g : α → ε) (r : �
         μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ * t) := by
     calc μ.decreasingRearrangement (‖(f + g) ·‖ₑ) t
         ≤ μ.decreasingRearrangement ((fun x ↦ ‖f x‖ₑ) + fun x ↦ ‖g x‖ₑ) (2⁻¹ * t + 2⁻¹ * t) := by
-          rw [show 2⁻¹ * t + 2⁻¹ * t = t by ring]
+          rw [← two_mul, mul_inv_cancel_left₀ two_ne_zero]
           exact μ.decreasingRearrangement_mono_ae
             (Eventually.of_forall fun x ↦ eNorm_add_le (f x) (g x)) t
       _ ≤ _ := μ.decreasingRearrangement_add_le _ _ (by positivity) (by positivity)
   have htr : ENNReal.ofReal (t ^ r) =
       ENNReal.ofReal (2 ^ r) * ENNReal.ofReal ((2⁻¹ * t) ^ r) := by
     rw [← ENNReal.ofReal_mul (by positivity), ← Real.mul_rpow zero_le_two (by positivity),
-      show (2 : ℝ) * (2⁻¹ * t) = t by ring]
+      mul_inv_cancel_left₀ two_ne_zero]
   rw [htr]
   exact (mul_le_mul_right hdr _).trans_eq (by simp only [mul_add, mul_assoc])
 
@@ -668,17 +660,18 @@ theorem eLorentzNorm_add_le' (p q : ℝ≥0∞) :
           (ae_pos_multHaar.mono fun t ht ↦ by
             simpa only [eNorm_eq_self, F, G] using
               rpow_mul_decreasingRearrangement_add_le (μ := μ) f g r ht)
-    _ = ENNReal.ofReal (2 ^ r) *
+      _ = ENNReal.ofReal (2 ^ r) *
           eLpNorm ((fun t ↦ F (2⁻¹ * t)) + fun t ↦ G (2⁻¹ * t)) q multHaar :=
         eLpNorm_const_mul_ennreal
           ((hF.comp (measurable_const_mul _)).add
             (hG.comp (measurable_const_mul _))).aestronglyMeasurable
-    _ ≤ ENNReal.ofReal (2 ^ r) * (ENNReal.LpAddConst q *
+      _ ≤ ENNReal.ofReal (2 ^ r) * (ENNReal.LpAddConst q *
           (eLpNorm (fun t ↦ F (2⁻¹ * t)) q multHaar +
             eLpNorm (fun t ↦ G (2⁻¹ * t)) q multHaar)) :=
         mul_le_mul_right (eLpNorm_add_le' q) _
-    _ = _ := by
-        rw [eLpNorm_comp_half_multHaar hF, eLpNorm_comp_half_multHaar hG,
+      _ = _ := by
+        rw [eLpNorm_comp_mul_left_multHaar F (by positivity),
+          eLpNorm_comp_mul_left_multHaar G (by positivity),
           ← mul_assoc, mul_comm (ENNReal.ofReal (2 ^ r))]
 
 /-- For `1 ≤ q ≤ ∞`, the Lorentz gauge satisfies the quasi-triangle inequality with constant
@@ -845,10 +838,10 @@ private theorem eLorentzNorm_fin_three_le (f : Fin 3 → ℝ) (σ : Equiv.Perm (
     (mul_le_mul' (ENNReal.rpow_le_rpow hc zero_le_two) hμ).trans <| by
       rw [ENNReal.ofReal_rpow_of_pos ha, ← ENNReal.ofReal_mul (by positivity)]
       exact ENNReal.ofReal_le_ofReal hnum
-  rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ by norm_num,
+  rw [ENNReal.toReal_inv, ENNReal.toReal_ofNat,
     ← ENNReal.rpow_le_rpow_iff (z := 2) zero_lt_two,
     ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ← ENNReal.rpow_mul,
-    show (2⁻¹ : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one,
+    inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one,
     ENNReal.ofReal_rpow_of_pos (by positivity)]
   rcases le_or_gt (ENNReal.ofReal 4) c with hc4 | hc4
   · have hempty : {y : Fin 3 | c < ‖f y‖ₑ} = ∅ := eq_empty_of_forall_notMem fun y hy ↦ by
@@ -890,10 +883,7 @@ theorem exists_lt_eLorentzNorm_add_top :
     eLorentzNorm_fin_three_le f₀ (Equiv.refl _) (by norm_num [f₀]) (by norm_num [f₀])
       (by norm_num [f₀])
   have hg : eLorentzNorm g₀ 2 ∞ Measure.count ≤ ENNReal.ofReal (17 / 4) :=
-    eLorentzNorm_fin_three_le g₀ (Equiv.addRight 1)
-      (by rw [show Equiv.addRight (1 : Fin 3) 0 = 1 by decide]; norm_num [g₀])
-      (by rw [show Equiv.addRight (1 : Fin 3) 1 = 2 by decide]; norm_num [g₀])
-      (by rw [show Equiv.addRight (1 : Fin 3) 2 = 0 by decide]; norm_num [g₀])
+    eLorentzNorm_fin_three_le g₀ (Equiv.addRight 1) (by simp [g₀]) (by simp [g₀]) (by simp [g₀])
   have hsum : eLorentzNorm f₀ 2 ∞ Measure.count +
       eLorentzNorm g₀ 2 ∞ Measure.count ≤ ENNReal.ofReal (17 / 2) :=
     (add_le_add hf hg).trans_eq (by
@@ -906,13 +896,13 @@ theorem exists_lt_eLorentzNorm_add_top :
     fin_cases y
     all_goals rw [Real.eNorm_of_nonneg (by norm_num [f₀, g₀])]
     all_goals exact (ENNReal.ofReal_lt_ofReal_iff (by norm_num [f₀, g₀])).2 (by norm_num [f₀, g₀])
+  have hcount : Measure.count (univ : Set (Fin 3)) = ENNReal.ofReal 3 := by simp
   have hlt : ENNReal.ofReal (17 / 2) <
       ENNReal.ofReal (99 / 20) * (Measure.count (univ : Set (Fin 3))) ^ ((2 : ℝ≥0∞)⁻¹).toReal := by
-    rw [show Measure.count (univ : Set (Fin 3)) = ENNReal.ofReal 3 by simp,
-      show ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ by norm_num,
+    rw [hcount, ENNReal.toReal_inv, ENNReal.toReal_ofNat,
       ← ENNReal.rpow_lt_rpow_iff (z := 2) zero_lt_two,
       ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ← ENNReal.rpow_mul,
-      show (2⁻¹ : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one,
+      inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one,
       ENNReal.ofReal_rpow_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
       ← ENNReal.ofReal_mul (by positivity)]
     exact ENNReal.ofReal_lt_ofReal_iff (by positivity) |>.2 (by norm_num)

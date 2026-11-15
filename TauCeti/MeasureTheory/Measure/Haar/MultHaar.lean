@@ -17,8 +17,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 `TauCeti.multHaar` is the measure `dt / t` on `ℝ`, concentrated on `(0, ∞)`: Lebesgue measure on
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
 (`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
-(`TauCeti.map_multHaar_mul_left`), is invariant under inversion (`TauCeti.map_multHaar_inv`),
-and gives the interval `[1, e]` mass one.
+(`TauCeti.map_multHaar_mul_left`, `TauCeti.eLpNorm_comp_mul_left_multHaar`), is invariant under
+inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one.
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -29,7 +29,8 @@ radial coordinate is split off a multiplicative Haar measure, as in the decompos
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
 
 Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
-(`TauCeti.lintegral_multHaar_eq_setLIntegral`, `TauCeti.integral_multHaar_eq_setIntegral`,
+(`TauCeti.lintegral_multHaar_eq_setLIntegral`, `TauCeti.setLIntegral_multHaar_eq_setLIntegral`,
+`TauCeti.setLIntegral_eq_setLIntegral_multHaar`, `TauCeti.integral_multHaar_eq_setIntegral`,
 `TauCeti.integrable_multHaar_iff`), and a right-continuous function on `(0, ∞)` has
 `dt / t`-essential supremum equal to its pointwise supremum
 (`TauCeti.essSup_multHaar_eq_iSup_Ioi`). In particular the Mellin transform
@@ -138,6 +139,13 @@ theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = m
     simp [Real.exp_add, Real.exp_log hc]
   rw [← map_volume_exp, map_map (measurable_const_mul c) Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp (measurable_const_add _), map_add_left_eq_self]
+
+/-- The `L^q(dt / t)` seminorm is invariant under the dilations `t ↦ c * t`, `c > 0`. -/
+theorem eLpNorm_comp_mul_left_multHaar {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+    (f : ℝ → ε) {c : ℝ} (hc : 0 < c) (q : ℝ≥0∞) :
+    eLpNorm (fun t ↦ f (c * t)) q multHaar = eLpNorm f q multHaar := by
+  rw [← Function.comp_def, ← (measurableEmbedding_mulLeft₀ hc.ne').eLpNorm_map_measure,
+    map_multHaar_mul_left hc]
 
 /-- `dt / t` is invariant under inversion on `(0, ∞)`. -/
 theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
@@ -320,6 +328,17 @@ theorem setLIntegral_multHaar_eq_setLIntegral {s : Set ℝ} (hs : MeasurableSet 
     ← Measure.restrict_restrict hs, ← lintegral_indicator hs]
   exact setLIntegral_congr_fun measurableSet_Ioi fun t _ ↦
     (indicator_mul_right s (fun u ↦ ENNReal.ofReal u⁻¹) f).symm
+
+/-- On a measurable subset `s` of `(0, ∞)`, the Lebesgue lower integral of `f` is the lower
+integral of `t * f t` against `dt / t`. -/
+theorem setLIntegral_eq_setLIntegral_multHaar {s : Set ℝ} (hs : MeasurableSet s)
+    (hs0 : s ⊆ Ioi 0) (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t in s, f t = ∫⁻ t in s, ENNReal.ofReal t * f t ∂multHaar := by
+  rw [setLIntegral_multHaar_eq_setLIntegral hs, inter_eq_self_of_subset_left hs0]
+  refine setLIntegral_congr_fun hs fun t ht ↦ ?_
+  have ht0 : 0 < t := hs0 ht
+  rw [← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ht0.le), inv_mul_cancel₀ ht0.ne',
+    ENNReal.ofReal_one, one_mul]
 
 /-- A function with values in `ℝ≥0∞` that is right continuous on `(0, ∞)` has essential supremum
 with respect to `dt / t` equal to its pointwise supremum on `(0, ∞)`. -/

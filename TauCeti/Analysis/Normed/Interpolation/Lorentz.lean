@@ -176,7 +176,7 @@ theorem eLorentzNorm_le_kMethodENorm_l1Linfty (hθ : θ ∈ Ioo 0 1)
   simp only [eNorm_eq_self]
   calc ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t
       = ENNReal.ofReal (t ^ (-θ)) * (ENNReal.ofReal t * μ.decreasingRearrangement (‖f ·‖ₑ) t) := by
-        rw [toReal_inv_eq_one_sub hθ hp, show 1 - θ = -θ + 1 by ring, Real.rpow_add_one ht.ne',
+        rw [toReal_inv_eq_one_sub hθ hp, sub_eq_neg_add, Real.rpow_add_one ht.ne',
           ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), mul_assoc]
     _ ≤ ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) :=
         mul_le_mul_right ((mul_decreasingRearrangement_le_setLIntegral_Ioc μ _ t).trans
@@ -479,8 +479,11 @@ theorem kMethodENorm_lebesgue_one_top_rpow_sub_one (hθ : θ ∈ Ioo 0 1)
   have hcont : ∀ s > 0, ContinuousWithinAt (fun r : ℝ ↦ ENNReal.ofReal (r ^ (θ - 1))) (Ici s) s :=
     fun s hs ↦ (ENNReal.continuous_ofReal.continuousAt.comp
       (Real.continuousAt_rpow_const s (θ - 1) (Or.inl hs.ne'))).continuousWithinAt
-  rw [kMethodENorm_def, ← show eLpNorm (fun _ : ℝ ↦ ENNReal.ofReal θ⁻¹) ∞ multHaar =
-    ENNReal.ofReal θ⁻¹ by simp [eLpNorm_const _ ENNReal.top_ne_zero hμ]]
+  -- Express `ENNReal.ofReal θ⁻¹` as a constant `L^∞(dt / t)` seminorm so `eLpNorm_mono_eNorm_ae`
+  -- compares the `ℝ≥0∞`-valued constant with the `ℝ`-valued `K`-functional integrand across `‖·‖ₑ`.
+  have hconst : eLpNorm (fun _ : ℝ ↦ ENNReal.ofReal θ⁻¹) ∞ multHaar = ENNReal.ofReal θ⁻¹ := by
+    simp [eLpNorm_const _ ENNReal.top_ne_zero hμ]
+  rw [kMethodENorm_def, ← hconst]
   refine eLpNorm_mono_eNorm_ae aestronglyMeasurable_const (ae_pos_multHaar.mono fun t ht ↦ ?_)
   have hint : ∫⁻ s in Ioc 0 t, ν.decreasingRearrangement (fun x : ℝ ↦ ‖x ^ (θ - 1)‖ₑ) s =
       ENNReal.ofReal (t ^ θ / θ) := by

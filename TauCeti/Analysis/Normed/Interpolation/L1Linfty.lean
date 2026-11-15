@@ -87,6 +87,28 @@ private theorem memLp_of_eLpNorm_add_mul_ne_top {f₀ f₁ : α → E} (ht : 0 <
   refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
   rw [htop, ENNReal.mul_top (by simpa using ht)]
 
+/-- Any almost-everywhere splitting `f₀ + f₁ =ᵐ[μ] f` bounds `K(t, u)` (`t > 0`) by
+`‖f₀‖₁ + t ‖f₁‖_∞`. -/
+private theorem ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul {u : L1AddLinfty 𝕜 E μ}
+    {f f₀ f₁ : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (hsum : f₀ + f₁ =ᵐ[μ] f)
+    (ht : 0 < t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
+  by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
+  · rw [hfin]
+    exact le_top
+  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
+  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
+      u := L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 <| by
+    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hsum, hu] with y hy₀ hy₁ hsy hy
+    rw [Pi.add_apply, hy₀, hy₁, ← Pi.add_apply, hsy, hy]
+  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
+      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
+        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
+    _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
+        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
+          eLpNorm_congr_ae h₁.coeFn_toLp]
+
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions, hence the same
 `K`-functional, read through the embedding of the sum space of the former into `L¹ + L^∞`. -/
 theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
@@ -144,19 +166,14 @@ private theorem ofReal_kFunctional_l1Linfty_le_two_mul_of_pos {u : L1AddLinfty �
     (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 < t) :
     ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
       2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  -- Split `f = 1_S f + 1_{Sᶜ} f` at the rearrangement height `c = ‖f‖* t`.
   have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
-  have hfin : ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s < ∞ :=
-    (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le).trans_lt
-      ENNReal.ofReal_lt_top
   have hsub := μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t
   set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
-  obtain ⟨_, hfin₁⟩ := ENNReal.add_lt_top.1 (hsub ▸ hfin)
-  have hc : c ≠ ∞ := fun hc => by
-    rw [hc, ENNReal.mul_top (by simpa using ht)] at hfin₁
-    exact lt_irrefl _ hfin₁
   set S := {y | c < ‖f y‖ₑ}
   have hS : NullMeasurableSet S μ := nullMeasurableSet_lt aemeasurable_const hf.eNorm
   have hμS : μ S ≤ ENNReal.ofReal t := μ.measure_setOf_decreasingRearrangement_lt_le _ t
+  -- Bound the `L¹` tail above `c` and the `L^∞` truncation below `c`.
   have hest₀ :
       eLpNorm (S.indicator f) 1 μ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
     rw [eLpNorm_one_eq_lintegral_eNorm (hf.indicator₀ hS), hsub]
@@ -176,19 +193,11 @@ private theorem ofReal_kFunctional_l1Linfty_le_two_mul_of_pos {u : L1AddLinfty �
     · simp [hy]
     · rw [Set.indicator_of_mem ((Set.mem_compl_iff S y).2 hy)]
       exact not_lt.1 hy
-  have h₀ : MemLp (S.indicator f) 1 μ := memLp_iff.2 (hest₀.trans_lt hfin)
-  have h₁ : MemLp (Sᶜ.indicator f) ∞ μ := memLp_iff.2 (hest₁.trans_lt hc.lt_top)
-  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp _) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp _) =
-      u := by
-    refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
-    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hu] with y hy₀ hy₁ hy
-    rw [Pi.add_apply, hy₀, hy₁, hy, Set.indicator_self_add_compl_apply]
+  -- Combine both bounds in the `K`-functional decomposition estimate.
   calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
-      ≤ ENNReal.ofReal (‖h₀.toLp _‖ + t * ‖h₁.toLp _‖) :=
-        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
-    _ = eLpNorm (S.indicator f) 1 μ + ENNReal.ofReal t * eLpNorm (Sᶜ.indicator f) ∞ μ := by
-        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
-          eLpNorm_congr_ae h₁.coeFn_toLp]
+      ≤ eLpNorm (S.indicator f) 1 μ + ENNReal.ofReal t * eLpNorm (Sᶜ.indicator f) ∞ μ :=
+        ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul hu
+          (Eventually.of_forall (Set.indicator_self_add_compl_apply S f)) ht
     _ ≤ (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s) +
           (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s) := by
         gcongr
@@ -242,24 +251,10 @@ private theorem ofReal_kFunctional_l1Linfty_of_pos {u : L1AddLinfty 𝕜 E μ} {
   have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
   refine le_antisymm ?_
     (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le)
-  -- A splitting `f = f₀ + f₁` of finite cost gives a decomposition of `u` of the same cost.
+  -- A splitting `f = f₀ + f₁` gives a decomposition of `u` of at most the same cost.
   rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf]
-  refine le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hsum => ?_
-  by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
-  · rw [hfin]
-    exact le_top
-  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
-  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
-      u := by
-    refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
-    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hu] with y hy₀ hy₁ hy
-    rw [Pi.add_apply, hy₀, hy₁, hy, ← Pi.add_apply, hsum]
-  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
-      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
-        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
-    _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
-        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
-          eLpNorm_congr_ae h₁.coeFn_toLp]
+  exact le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hsum =>
+    ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul hu (hsum ▸ EventuallyEq.rfl) ht
 
 /-- **The `K`-functional of `(L¹, L^∞)`.** For `t ≥ 0` and an element `u` of `L¹ + L^∞`
 represented by `f`, `K(t, u) = ∫₀ᵗ ‖f‖*`. -/
