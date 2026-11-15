@@ -116,7 +116,7 @@ theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1)
     (map_ne_zero_iff _ (IsFractionRing.injective _ _)).mpr hc
   rw [X.ord_eq_iff hx hne, ← hn, ENat.toNat_natCast]
   simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
-  rw [Ring.ordFrac_eq_ord _ hc, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
+  rw [Ring.ordFrac_eq_ord _, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
 
 /-- At a codimension-one generization `η` of `x`, the order of a germ at `x` is the order of
 vanishing `Ring.ord` of its image in the one-dimensional local ring `𝒪_{X,η}`. -/

@@ -22,8 +22,10 @@ the number of vertices. No connectedness or nonemptiness assumption is needed. T
 darts, rather than their endpoint pairs, provide the forest coordinates used in cycle bases.
 
 Two vertices are joined in the simple support of a reversal-closed set of darts exactly when a
-path through those darts joins them. In particular, the simple support of an orientation has
-the connectivity of the graph.
+path through those darts joins them. A set of darts containing at least one dart of every
+reversal pair, such as an orientation, has the simple support of all darts, and hence the
+connectivity of the graph: its simple support has exactly one component precisely when the
+graph is connected.
 
 ## References
 
@@ -241,35 +243,75 @@ theorem reachable_supportGraph_iff {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e �
     rintro f (hf | rfl)
     exacts [hp f hf, he]
 
-/-- The positive darts of a reversal-closed set of darts have the same simple support as the
-whole set. -/
-theorem IsOrientation.supportGraph_inter (hO : Γ.IsOrientation O) {S : Set Γ.E}
-    (hS : ∀ e ∈ S, Γ.rev e ∈ S) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S := by
+/-- The darts of a reversal-closed set `S` lying in `O` have the same simple support as `S`
+when `O` contains at least one dart of every reversal pair in `S`. -/
+theorem supportGraph_inter {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+    (hO : ∀ e ∈ S, e ∈ O ∨ Γ.rev e ∈ O) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S := by
   have key : ∀ x y, ∀ e ∈ S, x ≠ y → Γ.src e = x → Γ.tgt e = y →
       (Γ.supportGraph (S ∩ O)).Adj x y := by
     intro x y e he hne h₁ h₂
     refine (Γ.supportGraph_adj _ x y).mpr ⟨hne, ?_⟩
-    by_cases heO : e ∈ O
+    rcases hO e he with heO | heO
     · exact .inl ⟨e, ⟨he, heO⟩, h₁, h₂⟩
-    · exact .inr ⟨Γ.rev e, ⟨hS e he, (hO.mem_rev_iff Γ e).mpr heO⟩, by simpa using h₂,
-        by simpa using h₁⟩
+    · exact .inr ⟨Γ.rev e, ⟨hS e he, heO⟩, by simpa using h₂, by simpa using h₁⟩
   refine le_antisymm (Γ.supportGraph_mono Set.inter_subset_left) fun x y hxy => ?_
   obtain ⟨hne, ⟨e, he, h₁, h₂⟩ | ⟨e, he, h₁, h₂⟩⟩ := (Γ.supportGraph_adj S x y).mp hxy
   · exact key x y e he hne h₁ h₂
   · exact (key y x e he hne.symm h₁ h₂).symm
 
+/-- The positive darts of a reversal-closed set of darts have the same simple support as the
+whole set. -/
+theorem IsOrientation.supportGraph_inter (hO : Γ.IsOrientation O) {S : Set Γ.E}
+    (hS : ∀ e ∈ S, Γ.rev e ∈ S) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S :=
+  SerreGraph.supportGraph_inter hS fun e _ => hO.mem_or_rev_mem e
+
+/-- A dart set containing at least one dart of every reversal pair has the simple support of
+all darts: the simple support does not see the direction of a dart. -/
+theorem supportGraph_eq_supportGraph_univ (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    Γ.supportGraph O = Γ.supportGraph Set.univ := by
+  simpa using SerreGraph.supportGraph_inter (S := Set.univ) (by simp) fun e _ => hO e
+
+/-- An orientation has the simple support of all darts. -/
+theorem IsOrientation.supportGraph_eq_supportGraph_univ (hO : Γ.IsOrientation O) :
+    Γ.supportGraph O = Γ.supportGraph Set.univ :=
+  SerreGraph.supportGraph_eq_supportGraph_univ hO.mem_or_rev_mem
+
+/-- For a dart set containing at least one dart of every reversal pair, two vertices are joined
+in the simple support exactly when they are joined by a path of the graph. -/
+theorem reachable_supportGraph_iff_nonempty_path (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) {a b : Γ.V} :
+    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) := by
+  simp [supportGraph_eq_supportGraph_univ hO, reachable_supportGraph_iff]
+
 /-- Two vertices are joined in the simple support of an orientation exactly when they are
 joined by a path of the graph. -/
-theorem IsOrientation.reachable_supportGraph_iff (hO : Γ.IsOrientation O) {a b : Γ.V} :
-    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) := by
-  rw [← Set.univ_inter O, hO.supportGraph_inter fun _ _ => Set.mem_univ _,
-    SerreGraph.reachable_supportGraph_iff fun _ _ => Set.mem_univ _]
-  exact ⟨fun ⟨p, _⟩ => ⟨p⟩, fun ⟨p⟩ => ⟨p, fun _ _ => Set.mem_univ _⟩⟩
+theorem IsOrientation.reachable_supportGraph_iff_nonempty_path (hO : Γ.IsOrientation O)
+    {a b : Γ.V} :
+    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) :=
+  SerreGraph.reachable_supportGraph_iff_nonempty_path hO.mem_or_rev_mem
+
+/-- The simple support of a dart set containing at least one dart of every reversal pair is
+connected exactly when the graph is. -/
+theorem connected_supportGraph_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    (Γ.supportGraph O).Connected ↔ Γ.Connected := by
+  simp only [SimpleGraph.connected_iff, SimpleGraph.Preconnected,
+    reachable_supportGraph_iff_nonempty_path hO, connected_iff, preconnected_iff, and_comm]
 
 /-- The simple support of an orientation is connected exactly when the graph is. -/
 theorem IsOrientation.connected_supportGraph_iff (hO : Γ.IsOrientation O) :
-    (Γ.supportGraph O).Connected ↔ Γ.Connected := by
-  simp only [SimpleGraph.connected_iff, SimpleGraph.Preconnected, hO.reachable_supportGraph_iff,
-    connected_iff, preconnected_iff, and_comm]
+    (Γ.supportGraph O).Connected ↔ Γ.Connected :=
+  SerreGraph.connected_supportGraph_iff hO.mem_or_rev_mem
+
+/-- For a dart set containing at least one dart of every reversal pair, the simple support has
+exactly one component precisely when the Serre graph is connected; an empty graph has none. -/
+theorem card_connectedComponent_supportGraph_eq_one_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    Nat.card (Γ.supportGraph O).ConnectedComponent = 1 ↔ Γ.Connected :=
+  SimpleGraph.card_connectedComponent_eq_one_iff.trans (connected_supportGraph_iff hO)
+
+/-- The simple support of an orientation has exactly one component precisely when the Serre
+graph is connected; an empty graph has none. -/
+theorem IsOrientation.card_connectedComponent_supportGraph_eq_one_iff
+    (hO : Γ.IsOrientation O) :
+    Nat.card (Γ.supportGraph O).ConnectedComponent = 1 ↔ Γ.Connected :=
+  SerreGraph.card_connectedComponent_supportGraph_eq_one_iff hO.mem_or_rev_mem
 
 end TauCeti.SerreGraph
