@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
+import TauCeti.Algebra.Group.Subgroup.Normalizer
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
@@ -196,19 +197,13 @@ theorem mem_torus_iff_isDiag (hσ : Function.Involutive σ) (g : Group R σ) :
 /-- The fixed Weyl representative normalizes the diagonal torus. -/
 theorem weyl_mem_normalizer_torus (hσ : Function.Involutive σ) :
     weyl R σ ∈ Subgroup.normalizer (torus R σ hσ : Set (Group R σ)) := by
-  apply Subgroup.mem_normalizer_iff.mpr
-  intro g
-  constructor
-  · rintro ⟨t, rfl⟩
-    rw [weyl_inv, weyl_mul_torusHom_mul_weyl]
-    exact ⟨_, rfl⟩
-  · rintro ⟨t, ht⟩
-    have heq : g = weyl R σ * torusHom R σ hσ t * weyl R σ := by
-      calc
-        g = (weyl R σ)⁻¹ * (weyl R σ * g * (weyl R σ)⁻¹) * weyl R σ := by group
-        _ = weyl R σ * torusHom R σ hσ t * weyl R σ := by rw [← ht, weyl_inv]
-    rw [heq, weyl_mul_torusHom_mul_weyl]
-    exact ⟨_, rfl⟩
+  rw [torus_def]
+  exact (torusHom R σ hσ).mem_normalizer_range_of_surjective
+    (σ := fun t => (Units.map σ.toMonoidHom t)⁻¹)
+    (Function.Involutive.surjective fun t => by
+      rw [map_inv, inv_inv]
+      exact Units.ext (hσ t))
+    (fun t => by rw [weyl_inv, weyl_mul_torusHom_mul_weyl])
 
 /-- The Weyl representative is not diagonal over a nontrivial ring, so it lies outside the
 torus even in the smallest characteristic. -/
