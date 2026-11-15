@@ -24,7 +24,8 @@ its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
 
 Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
 giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`, and
-`sectionTopAlgHom` on `Γ(Z, ⊤)`).
+`sectionTopAlgHom` on `Γ(Z, ⊤)`). More generally, a morphism `f : X ⟶ Y` over `S` induces a
+`Γ(S, ⊤)`-algebra homomorphism `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
 -/
 
 public section
@@ -201,28 +202,48 @@ theorem sectionAlgHom_top_apply (b : Γ(Z, g ⁻¹ᵁ ⊤)) :
   have happ : σ.appLE ⊤ ⊤ σ.preimage_top.ge = σ.appTop := σ.appLE_eq_app
   rw [sectionAlgHom_apply, ← CommRingCat.comp_apply, ← happ, Scheme.Hom.map_appLE]
 
-/-- The `Γ(S, ⊤)`-algebra retraction `Γ(Z, ⊤) →ₐ[Γ(S, ⊤)] Γ(S, ⊤)` induced on global sections by a
-section `σ` of `g : Z ⟶ S`. -/
+/-- A morphism `f : X ⟶ Y` over `S` (`f ≫ g = h`) induces `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)`. -/
+noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+    Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤) :=
+  letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+  { f.appTop.hom with
+    commutes' r := congr($((Scheme.Hom.comp_appTop f g).symm.trans
+      (congrArg Scheme.Hom.appTop hfg)).hom r) }
+
+/-- Evaluating `f.appTopAlgHom hfg` applies `f.appTop`. -/
+@[simp] theorem _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom_apply {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) (u : Γ(Y, ⊤)) :
+    f.appTopAlgHom hfg u = f.appTop u := (rfl)
+
+/-- The underlying function of `f.appTopAlgHom hfg` is `f.appTop`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) : ⇑(f.appTopAlgHom hfg) = f.appTop :=
+  (rfl)
+
+/-- Coercing `f.appTopAlgHom hfg` to a ring homomorphism recovers `f.appTop.hom`. -/
+@[simp, norm_cast] theorem _root_.AlgebraicGeometry.Scheme.Hom.toRingHom_appTopAlgHom
+    {X Y S : Scheme.{u}} (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    (f.appTopAlgHom hfg : Γ(Y, ⊤) →+* Γ(X, ⊤)) = f.appTop.hom := (rfl)
+
+/-- The `Γ(S, ⊤)`-algebra retraction `Γ(Z, ⊤) →ₐ[Γ(S, ⊤)] Γ(S, ⊤)` of a section `σ` of `g`. -/
 noncomputable def sectionTopAlgHom :
-    letI := g.appTop.hom.toAlgebra
-    Γ(Z, ⊤) →ₐ[Γ(S, ⊤)] Γ(S, ⊤) :=
-  letI := g.appTop.hom.toAlgebra
-  { σ.appTop.hom with
-    commutes' r := congr($((Scheme.Hom.comp_appTop σ g).symm.trans
-      ((congrArg Scheme.Hom.appTop hσ).trans Scheme.Hom.id_appTop)).hom r) }
+    letI := g.appTop.hom.toAlgebra; Γ(Z, ⊤) →ₐ[Γ(S, ⊤)] Γ(S, ⊤) := σ.appTopAlgHom hσ
 
 /-- Evaluating `sectionTopAlgHom g hσ` applies `σ.appTop`. -/
-@[simp]
-theorem sectionTopAlgHom_apply (u : Γ(Z, ⊤)) : sectionTopAlgHom g hσ u = σ.appTop u := (rfl)
+@[simp] theorem sectionTopAlgHom_apply (u : Γ(Z, ⊤)) : sectionTopAlgHom g hσ u = σ.appTop u := (rfl)
 
-/-- Evaluating `sectionAlgHom g hσ ⊤` on `u : Γ(Z, ⊤)` transported along `g.preimage_top` gives
-`σ.appTop u`. -/
+/-- Coercing `sectionTopAlgHom g hσ` to a ring homomorphism recovers `σ.appTop.hom`. -/
+@[simp, norm_cast] theorem toRingHom_sectionTopAlgHom :
+    (sectionTopAlgHom g hσ : Γ(Z, ⊤) →+* Γ(S, ⊤)) = σ.appTop.hom := (rfl)
+
+/-- Evaluating `sectionAlgHom g hσ ⊤` after transport along `g.preimage_top` gives `σ.appTop u`. -/
 theorem sectionAlgHom_top_map_apply (u : Γ(Z, ⊤)) :
     sectionAlgHom g hσ ⊤ (Z.presheaf.map (eqToHom g.preimage_top).op u) = σ.appTop u := by
-  rw [sectionAlgHom_top_apply,
-    ← CommRingCat.comp_apply (Z.presheaf.map _) (Z.presheaf.map _), ← Functor.map_comp,
-    eqToHom_op, eqToHom_op, eqToHom_trans, eqToHom_refl, CategoryTheory.Functor.map_id,
-    CommRingCat.id_apply]
+  rw [sectionAlgHom_top_apply, ← CommRingCat.comp_apply (Z.presheaf.map _) (Z.presheaf.map _),
+    ← Functor.map_comp, eqToHom_op, eqToHom_op, eqToHom_trans, eqToHom_refl,
+    CategoryTheory.Functor.map_id, CommRingCat.id_apply]
 
 end SectionAlgHom
 

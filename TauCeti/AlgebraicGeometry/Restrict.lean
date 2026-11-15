@@ -114,36 +114,35 @@ theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Op
   rfl
 
 /-- Composing `f.app ⊤` with transport along `f.preimage_top.symm` gives `f.appTop`. -/
-@[reassoc]
-theorem Scheme.Hom.app_top_comp_map_preimage_top :
+@[reassoc] theorem Scheme.Hom.app_top_comp_map_preimage_top :
     f.app ⊤ ≫ X.presheaf.map (eqToHom f.preimage_top.symm).op = f.appTop := by
   have htop : f.appLE ⊤ ⊤ f.preimage_top.ge = f.appTop := f.appLE_eq_app
   rw [f.app_eq_appLE, Scheme.Hom.appLE_map, htop]
 
 /-- Composing `f.appTop` with transport along `f.preimage_top` gives `f.app ⊤`. -/
-@[reassoc]
-theorem Scheme.Hom.appTop_comp_map_preimage_top :
+@[reassoc] theorem Scheme.Hom.appTop_comp_map_preimage_top :
     f.appTop ≫ X.presheaf.map (eqToHom f.preimage_top).op = f.app ⊤ := by
   have htop : f.appLE ⊤ ⊤ f.preimage_top.ge = f.appTop := f.appLE_eq_app
-  rw [← htop, Scheme.Hom.appLE_map]
-  exact f.appLE_eq_app
+  rw [← htop, Scheme.Hom.appLE_map]; exact f.appLE_eq_app
 
 /-- Transport along `f.preimage_top` as a `Γ(Y, ⊤)`-algebra isomorphism
 `Γ(X, ⊤) ≃ₐ[Γ(Y, ⊤)] Γ(X, f ⁻¹ᵁ ⊤)`. -/
 noncomputable def Scheme.Hom.preimageTopAlgEquiv :
-    letI := f.appTop.hom.toAlgebra
-    letI := (f.app ⊤).hom.toAlgebra
+    letI := f.appTop.hom.toAlgebra; letI := (f.app ⊤).hom.toAlgebra
     Γ(X, ⊤) ≃ₐ[Γ(Y, ⊤)] Γ(X, f ⁻¹ᵁ ⊤) :=
-  letI := f.appTop.hom.toAlgebra
-  letI := (f.app ⊤).hom.toAlgebra
+  letI := f.appTop.hom.toAlgebra; letI := (f.app ⊤).hom.toAlgebra
   AlgEquiv.ofRingEquiv
     (f := (X.presheaf.mapIso (eqToIso f.preimage_top).op).commRingCatIsoToRingEquiv)
     fun r ↦ congr($(f.appTop_comp_map_preimage_top).hom r)
 
 /-- Evaluating `f.preimageTopAlgEquiv` transports a global section along `f.preimage_top`. -/
 theorem Scheme.Hom.preimageTopAlgEquiv_apply (u : Γ(X, ⊤)) :
-    f.preimageTopAlgEquiv u = X.presheaf.map (eqToHom f.preimage_top).op u :=
-  (rfl)
+    f.preimageTopAlgEquiv u = X.presheaf.map (eqToHom f.preimage_top).op u := (rfl)
+
+/-- Evaluating `f.preimageTopAlgEquiv.symm` transports along `f.preimage_top.symm`. -/
+theorem Scheme.Hom.preimageTopAlgEquiv_symm_apply (b : Γ(X, f ⁻¹ᵁ ⊤)) :
+    letI := f.appTop.hom.toAlgebra; letI := (f.app ⊤).hom.toAlgebra
+    f.preimageTopAlgEquiv.symm b = X.presheaf.map (eqToHom f.preimage_top.symm).op b := (rfl)
 
 end AlgebraicGeometry
 

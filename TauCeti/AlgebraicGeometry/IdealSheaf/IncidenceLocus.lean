@@ -259,26 +259,3 @@ theorem comap_equalityLocus {X' S' : Scheme.{u}} {g : X' ⟶ X} {f' : X' ⟶ S'}
 end Equality
 
 end AlgebraicGeometry.Scheme.IdealSheafData
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-variable {Z X S : Scheme.{u}} (i : Z ⟶ X) (f : X ⟶ S) [IsClosedImmersion i]
-
-/-- If `i : Z ⟶ X` is a closed immersion with `i ≫ f` finite, then `V(i.ker) ⟶ S` is finite. -/
-instance isFinite_ker_subschemeι_comp [IsFinite (i ≫ f)] : IsFinite (i.ker.subschemeι ≫ f) := by
-  rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]
-  infer_instance
-
-/-- If `i : Z ⟶ X` is a closed immersion with `i ≫ f` flat, then `V(i.ker) ⟶ S` is flat. -/
-instance flat_ker_subschemeι_comp [Flat (i ≫ f)] : Flat (i.ker.subschemeι ≫ f) := by
-  rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]
-  infer_instance
-
-/-- If `i : Z ⟶ X` is a closed immersion with `i ≫ f` locally of finite presentation, then
-`V(i.ker) ⟶ S` is locally of finite presentation. -/
-instance locallyOfFinitePresentation_ker_subschemeι_comp [LocallyOfFinitePresentation (i ≫ f)] :
-    LocallyOfFinitePresentation (i.ker.subschemeι ≫ f) := by
-  rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]
-  infer_instance
-
-end AlgebraicGeometry.Scheme.Hom
