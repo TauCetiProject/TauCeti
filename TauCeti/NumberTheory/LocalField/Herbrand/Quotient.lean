@@ -70,12 +70,7 @@ theorem lowerIndex_mul_restrictScalars_of_forall_le (σ : M ≃ₐ[K] M)
     lowerIndex 𝒪[M] (σ * τ.restrictScalars K) =
       min (lowerIndex 𝒪[M] τ) (lowerIndex 𝒪[M] σ) := by
   rw [← lowerIndex_restrictScalars (K := K) τ]
-  set τ' := τ.restrictScalars K
-  -- `i(σ τ) ≥ min (i(σ), i(τ))`, and `i(τ) = i(σ⁻¹ (σ τ)) ≥ min (i(σ), i(σ τ)) = i(σ τ)`.
-  have h₁ := TauCeti.IsLocalRing.min_le_lowerIndex_mul (S := 𝒪[M]) σ τ'
-  have h₂ := TauCeti.IsLocalRing.min_le_lowerIndex_mul (S := 𝒪[M]) σ⁻¹ (σ * τ')
-  rw [inv_mul_cancel_left, TauCeti.IsLocalRing.lowerIndex_inv, min_eq_right (hσ τ)] at h₂
-  exact le_antisymm (le_min h₂ (hσ τ)) (by rw [min_comm]; exact h₁)
+  exact TauCeti.IsLocalRing.lowerIndex_mul_eq_min_of_le (hσ τ)
 
 omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
   [Module.Finite K L] [Normal K L] [ValuativeExtension L M] [IsGalois L M] in

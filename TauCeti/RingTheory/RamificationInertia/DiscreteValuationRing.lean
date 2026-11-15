@@ -24,6 +24,8 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
   `e` the ramification index of `𝔪_T` over `S`.
 * `TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals
   any exponent satisfying this maximal-ideal identity.
+* `TauCeti.IsDiscreteValuationRing.addVal_algebraMap`: for an extension of discrete valuation
+  rings, `v_T = e · v_S` on `S`.
 
 ## References
 
@@ -41,6 +43,8 @@ public section
 open IsLocalRing IsDiscreteValuationRing
 
 namespace TauCeti.IsDiscreteValuationRing
+
+section
 
 variable {S T : Type*} [CommRing S] [CommRing T] [IsLocalRing S] [IsDomain T]
   [IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]
@@ -80,5 +84,43 @@ theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
     rw [hexponent]
     exact ne_of_gt (lt_of_le_of_lt bot_le (hpowers (Nat.lt_succ_self exponent)))
   exact hpowers.injective ((map_maximalIdeal_eq_pow_ramificationIdx hmap).symm.trans hexponent)
+
+end
+
+section Extension
+
+variable {S T : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S] [CommRing T]
+  [IsDomain T] [IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]
+  [FaithfulSMul S T]
+
+/-- For an extension of discrete valuation rings, the additive valuation of `T` restricts to `e`
+times that of `S`, where `e` is the ramification index of the maximal ideal of `T` over `S`. -/
+theorem addVal_algebraMap (s : S) :
+    addVal T (algebraMap S T s) = (maximalIdeal T).ramificationIdx S • addVal S s := by
+  obtain ⟨π, hπ⟩ := exists_irreducible S
+  obtain ⟨ϖ, hϖ⟩ := exists_irreducible T
+  set e := (maximalIdeal T).ramificationIdx S
+  -- `π T = 𝔪_T ^ e = ϖ ^ e T`, so `π` and `ϖ ^ e` are associated in `T`.
+  have hmap : Ideal.span {algebraMap S T π} = Ideal.span {ϖ ^ e} := by
+    rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, ← Set.image_singleton, ← Ideal.map_span,
+      ← hπ.maximalIdeal_eq]
+    refine map_maximalIdeal_eq_pow_ramificationIdx ?_
+    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton, ne_eq, Ideal.span_singleton_eq_bot]
+    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective S T)).2 hπ.ne_zero
+  have hval : addVal T (algebraMap S T π) = e := by
+    rw [(addVal_eq_iff_associated _ _).2 (Ideal.span_singleton_eq_span_singleton.1 hmap),
+      addVal_pow, addVal_uniformizer hϖ, nsmul_one]
+  rcases eq_or_ne s 0 with rfl | hs
+  · -- `e ≠ 0`, so `e • ⊤ = ⊤`.
+    have he : e ≠ 0 := (Ideal.ramificationIdx_pos_of_isDedekindDomain' (p := maximalIdeal S) _
+      (not_a_field S)).ne'
+    simp [he]
+  obtain ⟨n, u, rfl⟩ := eq_unit_mul_pow_irreducible hs hπ
+  rw [map_mul, map_pow, addVal_mul, addVal_mul, addVal_pow, addVal_pow, hval,
+    addVal_uniformizer hπ, (addVal_eq_zero_iff).2 u.isUnit,
+    (addVal_eq_zero_iff).2 (u.isUnit.map _)]
+  simp [nsmul_eq_mul, mul_comm]
+
+end Extension
 
 end TauCeti.IsDiscreteValuationRing

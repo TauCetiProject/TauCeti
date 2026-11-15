@@ -29,6 +29,9 @@ extension `M / K` need not be finite or Galois.
   finite and flat over `A`, with Galois group `Gal(M/K)`.
 * `TauCeti.IsIntegralClosure.isDedekindDomain_and_finite_and_flat_fixedField`: `C` is a Dedekind
   domain, finite and flat over `A`.
+* `TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed`: conversely, starting from the
+  rings, an integrally closed domain `B` with a finite Galois group over a Noetherian integrally
+  closed domain `A` is a finite `A`-module.
 -/
 
 public section
@@ -80,3 +83,17 @@ theorem isDedekindDomain_and_finite_and_flat_fixedField :
 end FixedField
 
 end TauCeti.IsIntegralClosure
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra in
+/-- If a finite group `G` is a Galois group of an integrally closed domain `B` over a Noetherian
+integrally closed domain `A`, then `B` is a finite `A`-module: it is the integral closure of `A` in
+the finite Galois extension `Frac B / Frac A`. -/
+theorem TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed (G A B : Type*) [Group G]
+    [Finite G] [CommRing A] [IsDomain A] [IsIntegrallyClosed A] [IsNoetherianRing A] [CommRing B]
+    [IsDomain B] [IsIntegrallyClosed B] [Algebra A B] [FaithfulSMul A B] [MulSemiringAction G B]
+    [IsGaloisGroup G A B] : Module.Finite A B :=
+  let := IsFractionRing.mulSemiringAction G B (FractionRing B)
+  have := IsGaloisGroup.isGalois G (FractionRing A) (FractionRing B)
+  have := IsGaloisGroup.finiteDimensional G (FractionRing A) (FractionRing B)
+  have := Algebra.IsInvariant.isIntegral A B G
+  IsIntegralClosure.finite A (FractionRing A) (FractionRing B) B
