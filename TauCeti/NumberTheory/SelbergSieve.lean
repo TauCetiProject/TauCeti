@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.SelbergSieve
 
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
+
 /-!
 # Normalized finite Selberg weights
 
@@ -14,14 +16,12 @@ For a Mathlib bounding sieve and a real cutoff, the normalized upper-divisor sum
 weights whose quadratic main term is the reciprocal truncated sum of `selbergTerms`.
 This identity includes a zero normalizer: totalized weights and the main term are then zero.
 Normalization at one and the finite upper bound still require a cutoff containing one.
-The construction uses the native finite quadratic diagonalization and Möbius inversion.
-It supplies the finite weight calculation for AnalyticNumberTheoryPartI §§3.31a and 3.36b.
+The weights are supported on divisors of the sieving product within the inclusive cutoff.
 
-The proof is adapted from Arend Mellendijk's Selberg sieve in PNT+; the weights are
-defined directly by their upper-divisor sum rather than a coprime-factor parametrization.
+The construction is adapted from Arend Mellendijk's Selberg sieve in PNT+.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 open Finset Nat ArithmeticFunction
 open scoped ArithmeticFunction.Moebius
@@ -32,6 +32,12 @@ namespace BoundingSieve
 def truncatedSelbergSum (s : BoundingSieve) (z : ℝ) : ℝ :=
   ∑ d ∈ s.prodPrimes.divisors, if (d : ℝ) ≤ z then s.selbergTerms d else 0
 
+/-- The defining formula for the truncated Selberg normalizer. -/
+theorem truncatedSelbergSum_def (s : BoundingSieve) (z : ℝ) :
+    s.truncatedSelbergSum z =
+      ∑ d ∈ s.prodPrimes.divisors, if (d : ℝ) ≤ z then s.selbergTerms d else 0 := by
+  rfl
+
 /-- Normalized Selberg weights, written as an upper-divisor sum. -/
 def selbergWeights (s : BoundingSieve) (z : ℝ) (d : ℕ) : ℝ :=
   if d ∣ s.prodPrimes then
@@ -39,6 +45,16 @@ def selbergWeights (s : BoundingSieve) (z : ℝ) (d : ℕ) : ℝ :=
       ∑ l ∈ s.prodPrimes.divisors,
         if d ∣ l ∧ (l : ℝ) ≤ z then s.selbergTerms l else 0
   else 0
+
+/-- The defining upper-divisor formula for the normalized Selberg weights. -/
+theorem selbergWeights_def (s : BoundingSieve) (z : ℝ) (d : ℕ) :
+    s.selbergWeights z d =
+      if d ∣ s.prodPrimes then
+        (s.nu d)⁻¹ * (μ d : ℝ) * (s.truncatedSelbergSum z)⁻¹ *
+          ∑ l ∈ s.prodPrimes.divisors,
+            if d ∣ l ∧ (l : ℝ) ≤ z then s.selbergTerms l else 0
+      else 0 := by
+  rfl
 
 /-- The normalizing sum is positive whenever the cutoff contains one. -/
 theorem truncatedSelbergSum_pos (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
@@ -50,7 +66,7 @@ theorem truncatedSelbergSum_pos (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
   · exact ⟨1, mem_filter.mpr ⟨one_mem_divisors.mpr s.prodPrimes_ne_zero, by simpa using hz⟩⟩
 
 /-- A Selberg weight vanishes off the divisors of the sieving product. -/
-theorem selbergWeights_eq_zero_of_not_dvd (s : BoundingSieve) (z : ℝ) {d : ℕ}
+@[simp] theorem selbergWeights_eq_zero_of_not_dvd (s : BoundingSieve) (z : ℝ) {d : ℕ}
     (hd : ¬d ∣ s.prodPrimes) : s.selbergWeights z d = 0 := by
   simp [selbergWeights, hd]
 
@@ -71,37 +87,12 @@ theorem nu_mul_selbergWeights (s : BoundingSieve) (z : ℝ) (d : ℕ) :
       exact ite_eq_right fun h => hd (h.1.trans (dvd_of_mem_divisors hl))
     rw [hsum, mul_zero]
 
-private theorem sum_moebius_upper (l m : ℕ) (hm : Squarefree m) :
-    (∑ d ∈ m.divisors, if l ∣ d then (μ d : ℤ) else 0) =
-      if l = m then (μ l : ℤ) else 0 := by
-  have hm_pos : 0 < m := Nat.pos_of_ne_zero hm.ne_zero
-  revert hm
-  revert m
-  apply (ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq_on
-    {n | Squarefree n} (fun _ _ => Squarefree.squarefree_of_dvd)).mpr
-  intro m _ hm
-  rw [sum_divisorsAntidiagonal' (f := fun x y => μ x • if l = y then μ l else 0)]
-  by_cases hl : l ∣ m
-  · rw [ite_eq_left hl, sum_eq_single l]
-    · have hmul : m / l * l = m := Nat.div_mul_cancel hl
-      rw [ite_eq_left rfl, smul_eq_mul, ← isMultiplicative_moebius.map_mul_of_coprime, hmul]
-      exact coprime_of_squarefree_mul (hmul.symm ▸ hm)
-    · intro d _ hdl
-      rw [ite_eq_right hdl.symm, smul_zero]
-    · intro h
-      exact False.elim (h (mem_divisors.mpr ⟨hl, hm.ne_zero⟩))
-  · rw [ite_eq_right hl, sum_eq_zero]
-    intro d hd
-    rw [ite_eq_right, smul_zero]
-    intro h
-    exact hl (h ▸ dvd_of_mem_divisors hd)
-
 private theorem sum_moebius_upper_in_product (s : BoundingSieve) (l m : ℕ)
     (hm : m ∣ s.prodPrimes) :
     (∑ d ∈ s.prodPrimes.divisors,
       if l ∣ d ∧ d ∣ m then (μ d : ℝ) else 0) =
       if l = m then (μ l : ℝ) else 0 := by
-  have h := sum_moebius_upper l m (s.squarefree_of_dvd_prodPrimes hm)
+  have h := ArithmeticFunction.sum_moebius_upper l m (s.squarefree_of_dvd_prodPrimes hm)
   have h' : (∑ d ∈ m.divisors, if l ∣ d then (μ d : ℝ) else 0) =
       if l = m then (μ l : ℝ) else 0 := by exact_mod_cast h
   calc
@@ -153,14 +144,14 @@ theorem sum_nu_mul_selbergWeights (s : BoundingSieve) (z : ℝ) (l : ℕ)
         exact False.elim (h (mem_divisors.mpr ⟨hl, s.prodPrimes_ne_zero⟩))
 
 /-- The Selberg weight at one is normalized to one. -/
-theorem selbergWeights_one (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
+@[simp] theorem selbergWeights_one (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
     s.selbergWeights z 1 = 1 := by
   simp only [selbergWeights, one_dvd, ite_true, s.nu_mult.map_one, inv_one,
     moebius_apply_one, Int.cast_one, mul_one, one_mul, true_and]
   rw [← truncatedSelbergSum, inv_mul_cancel₀ (s.truncatedSelbergSum_pos hz).ne']
 
 /-- A normalized weight vanishes when its index lies beyond the cutoff. -/
-theorem selbergWeights_eq_zero_of_lt (s : BoundingSieve) (z : ℝ) (d : ℕ)
+@[simp] theorem selbergWeights_eq_zero_of_lt (s : BoundingSieve) (z : ℝ) (d : ℕ)
     (hd : z < (d : ℝ)) : s.selbergWeights z d = 0 := by
   unfold selbergWeights
   split_ifs
