@@ -27,6 +27,8 @@ The square root of a natural power of a nonnegative real is the real power with 
 `√(x ^ n) = x ^ (n / 2)`. This is the form in which a determinant `det (c • G) = c ^ n det G` of
 an `n × n` matrix contributes to a volume density `√(det G)`.
 
+In particular `x ^ (3 / 2) = x * √x`.
+
 A real power of a nonnegative base can also be written as a power of its square:
 `(x ^ 2) ^ (s / 2) = x ^ s`, and as the square of a power: `(x ^ (s / 2)) ^ 2 = x ^ s`.
 
@@ -80,6 +82,10 @@ A nonnegative factor splits off a real power of any real number, including a neg
 `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
 the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
 
+A common nonnegative factor comes out of a weighted geometric mean:
+`(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for `0 ≤ c`. This is how a common factor is
+pulled out of the bound `A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
 with the corresponding integral of `q`-th powers.
@@ -121,6 +127,8 @@ with the corresponding integral of `q`-th powers.
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
+* `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
+  `0 ≤ c`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -189,6 +197,15 @@ theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √(x ^ n) = x ^ (
 exponent: `√x ^ n = x ^ (n / 2)`. -/
 theorem pow_sqrt_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √x ^ n = x ^ ((n : ℝ) / 2) := by
   rw [← rpow_natCast, ← rpow_div_two_eq_sqrt _ hx]
+
+/-- The power `x ^ (3 / 2)` is `x * √x` for every real `x`. For `x < 0` both sides vanish: the
+square root is `0`, and `x ^ (3 / 2)` has the factor `cos (3 π / 2) = 0`. -/
+theorem rpow_three_div_two_eq_mul_sqrt (x : ℝ) : x ^ (3 / 2 : ℝ) = x * √x := by
+  rcases le_or_gt 0 x with hx | hx
+  · rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add' hx (by norm_num), rpow_one,
+      ← sqrt_eq_rpow]
+  · rw [sqrt_eq_zero'.mpr hx.le, mul_zero, rpow_def_of_neg hx,
+      show 3 / 2 * π = π / 2 + π by ring, cos_add_pi, cos_pi_div_two, neg_zero, mul_zero]
 
 /-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
 @[simp]
@@ -334,6 +351,13 @@ theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
     · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
         log_mul ha.ne' ht.ne, add_mul, exp_add]
       ring
+
+/-- A common factor `c ≥ 0` comes out of a weighted geometric mean:
+`(c a) ^ (1 - θ) (c b) ^ θ = c (a ^ (1 - θ) b ^ θ)`, for all real `a`, `b` and `θ`. -/
+theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
+    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
+  rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
+    ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

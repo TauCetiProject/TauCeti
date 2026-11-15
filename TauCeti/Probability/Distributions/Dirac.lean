@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Distributional formulas for Dirac measures
@@ -31,13 +32,12 @@ public section
 
 namespace TauCeti.Probability
 
-open MeasureTheory ProbabilityTheory Set
+open _root_.MeasureTheory ProbabilityTheory Set
 
 /-- The cumulative distribution function of a Dirac measure is a step function. -/
 @[simp]
 theorem cdf_dirac (a x : ℝ) : cdf (Measure.dirac a) x = if a ≤ x then 1 else 0 := by
-  rw [cdf_eq_real, measureReal_def]
-  by_cases h : a ≤ x <;> simp [Measure.dirac_apply' _ measurableSet_Iic, h]
+  rw [cdf_eq_real, Measure.dirac_real_Iic]
 
 /-- Every exponential moment of a Dirac measure exists. -/
 @[simp]
