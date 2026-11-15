@@ -81,9 +81,8 @@ private theorem integrable_kernel_prod {F : Type*} [SeminormedAddCommGroup F] [N
       rw [Measure.restrict_apply_univ]
       simpa only [Set.uIoc] using
         (measure_Ioc_lt_top (μ := volume) (a := min (-T) T) (b := max (-T) T))⟩
-  have hn : Integrable (fun u ↦ ‖f u‖) := by
-    simpa only [toReal_eNorm] using integrable_toReal_of_lintegral_ne_top
-      hf.eNorm.aestronglyMeasurable.aemeasurable (hasFiniteIntegral_iff_eNorm.mp hf.2).ne
+  have hn : Integrable (fun u ↦ ‖f u‖) :=
+    hf.mono_eNorm hf.aestronglyMeasurable.norm (.of_forall fun _ ↦ by simp)
   refine (hn.comp_snd (volume.restrict (Set.uIoc (-T) T))).mono_eNorm ?_ ?_
   · exact (by fun_prop : Continuous (fun z : ℝ × ℝ ↦
       Complex.exp (((2 * π * z.1 * (x - z.2) : ℝ) : ℂ) * I)))
@@ -167,9 +166,8 @@ private theorem error_integrable {F : Type*} [SeminormedAddCommGroup F] [NormedS
       (fun u ↦ (u : ℂ)⁻¹ • (f (x - u) - f x)) u +
       (Set.Ioc (-R) R)ᶜ.indicator (fun u ↦ (u : ℂ)⁻¹ • f (x - u)) u) := by
   have hi := (integrable_indicator_iff measurableSet_Ioc).mpr hq
-  have hn : Integrable (fun u ↦ ‖f u‖) := by
-    simpa only [toReal_eNorm] using integrable_toReal_of_lintegral_ne_top
-      hf.eNorm.aestronglyMeasurable.aemeasurable (hasFiniteIntegral_iff_eNorm.mp hf.2).ne
+  have hn : Integrable (fun u ↦ ‖f u‖) :=
+    hf.mono_eNorm hf.aestronglyMeasurable.norm (.of_forall fun _ ↦ by simp)
   have hb : ∀ u : ℝ,
       ‖((Set.Ioc (-R) R)ᶜ.indicator (fun u : ℝ ↦ (u : ℂ)⁻¹) u)‖ ≤ R⁻¹ := by
     intro u
@@ -268,9 +266,8 @@ private theorem sine_quotient_split {F : Type*} [AddCommGroup F] [Module ℂ F]
 private theorem integrable_raw_kernel {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℂ F]
     {f : ℝ → F} (hf : Integrable f) (x T : ℝ) :
     Integrable (fun u : ℝ ↦ (Real.sin (2 * π * T * u) / (π * u) : ℂ) • f (x - u)) := by
-  have hn : Integrable (fun u ↦ ‖f u‖) := by
-    simpa only [toReal_eNorm] using integrable_toReal_of_lintegral_ne_top
-      hf.eNorm.aestronglyMeasurable.aemeasurable (hasFiniteIntegral_iff_eNorm.mp hf.2).ne
+  have hn : Integrable (fun u ↦ ‖f u‖) :=
+    hf.mono_eNorm hf.aestronglyMeasurable.norm (.of_forall fun _ ↦ by simp)
   have H : Integrable (fun u : ℝ ↦ (2 * T * Real.sinc (2 * π * T * u) : ℂ) • f (x - u)) := by
     refine ((hn.comp_sub_left x).const_mul (2 * |T|)).mono_eNorm ?_ ?_
     · exact (by fun_prop : Continuous (fun u : ℝ ↦
