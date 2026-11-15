@@ -235,6 +235,18 @@ theorem coord_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) 
     A.coord i s (A.chart i x) = (A.triv i ⟨x, s x⟩).2 := by
   rw [coord, (A.chart i).left_inv (A.dom_subset_chart_source i hx)]
 
+/-- Two sections agree at a point of the domain of chart `i` if their chart expressions in chart
+`i` agree at the image of the point. -/
+theorem eq_of_coord_chart_eq {i : Fin A.n} {s t : ∀ x, V x} {x : M} (hx : x ∈ A.dom i)
+    (h : A.coord i s (A.chart i x) = A.coord i t (A.chart i x)) : s x = t x := by
+  rw [A.coord_chart s hx, A.coord_chart t hx] at h
+  have hb : x ∈ (A.triv i).baseSet := A.dom_subset_baseSet i hx
+  have himage : A.triv i ⟨x, s x⟩ = A.triv i ⟨x, t x⟩ := by
+    rw [← (A.triv i).mk_proj_snd' (x := ⟨x, s x⟩) hb,
+      ← (A.triv i).mk_proj_snd' (x := ⟨x, t x⟩) hb, h]
+  exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
+    ((A.triv i).mem_source.2 hb) himage)
+
 theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).symm y ∈ A.dom i := by
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]

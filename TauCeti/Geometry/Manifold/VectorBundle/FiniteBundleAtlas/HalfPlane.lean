@@ -249,13 +249,8 @@ theorem eq_of_continuous_of_halfCoord_ae_eq [T2Space F] {μ : Measure ℂ} [μ.I
     (Measure.eqOn_open_of_ae_eq (h i) (A.halfImage i).isOpen (hcs.mono hsub)
       (hct.mono hsub)).of_subset_closure hcs hct hsub (A.halfClosedImage_subset_closure_halfImage i)
   have hxz := heq (A.coe_mem_halfClosedImage.2 (A.mem_image.2 ⟨x, hx, rfl⟩))
-  rw [A.halfCoord_coe_chart s hx, A.halfCoord_coe_chart t hx] at hxz
-  have hb : x ∈ (A.triv i).baseSet := A.dom_subset_baseSet i hx
-  have himage : A.triv i ⟨x, s x⟩ = A.triv i ⟨x, t x⟩ := by
-    rw [← (A.triv i).mk_proj_snd' (x := ⟨x, s x⟩) hb,
-      ← (A.triv i).mk_proj_snd' (x := ⟨x, t x⟩) hb, hxz]
-  exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
-    ((A.triv i).mem_source.2 hb) himage)
+  rw [halfCoord_def, halfCoord_def, closedUpperHalfPlaneModel_symm_coe] at hxz
+  exact A.eq_of_coord_chart_eq hx hxz
 
 /-- The extended chart `i` sends a point to its image under the manifold chart, read in `ℂ`. -/
 theorem extChartAt_center_apply (i : Fin A.n) (x : M) :

@@ -233,10 +233,10 @@ theorem toSection_add (hp : 2 < p) (w v : BorderedSobolevSection A p 1) :
       (contMDiff_zero_iff.2 (continuous_toSection hp v)))
   · filter_upwards [Lp.coeFn_add (A.halfSectionChartData.chartValueL volume p 1 i w)
         (A.halfSectionChartData.chartValueL volume p 1 i v),
-      chartValueL_ae_eq_halfCoord_toSection hp w i, chartValueL_ae_eq_halfCoord_toSection hp v i,
+      chartValueL_ae_eq_coord_toSection hp w i, chartValueL_ae_eq_coord_toSection hp v i,
       ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz hw hv hzU
-    rw [AddMemClass.coe_add, map_add, hz, Pi.add_apply, hw, hv, halfCoord_def, halfCoord_def,
-      halfCoord_def, A.coord_add i _ _ (A.mem_halfImage.1 hzU).1]
+    rw [AddMemClass.coe_add, map_add, hz, Pi.add_apply, hw, hv,
+      ← A.halfSectionChartData.coord_add i _ _ z hzU, A.halfSectionChartData_coord_of_mem _ hzU]
 
 /-- Taking continuous representatives commutes with real scalar multiplication. -/
 @[simp]
@@ -246,10 +246,10 @@ theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : BorderedSobolevSection A p 1)
   · exact contMDiff_zero_iff.1 (ContMDiff.const_smul_section (I := closedUpperHalfPlaneModel)
       (a := c) (contMDiff_zero_iff.2 (continuous_toSection hp w)))
   · filter_upwards [Lp.coeFn_smul c (A.halfSectionChartData.chartValueL volume p 1 i w),
-      chartValueL_ae_eq_halfCoord_toSection hp w i,
+      chartValueL_ae_eq_coord_toSection hp w i,
       ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz hw hzU
-    rw [SetLike.val_smul, map_smul, hz, Pi.smul_apply, hw, halfCoord_def, halfCoord_def,
-      A.coord_smul i _ _ (A.mem_halfImage.1 hzU).1]
+    rw [SetLike.val_smul, map_smul, hz, Pi.smul_apply, hw,
+      ← A.halfSectionChartData.coord_smul i _ _ z hzU, A.halfSectionChartData_coord_of_mem _ hzU]
 
 /-- Taking continuous representatives, as a real-linear map from `W^{1,p}(V)` to sections. -/
 def toSectionₗ (hp : 2 < p) : BorderedSobolevSection A p 1 →ₗ[ℝ] ∀ x, V x where
