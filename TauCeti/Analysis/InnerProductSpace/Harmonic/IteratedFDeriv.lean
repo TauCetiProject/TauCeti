@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
@@ -28,6 +29,10 @@ the interior estimates for derivatives of every order `k`:
   `‖D^k u(x)‖ ≤ 2ⁿ (2ⁿ⁺² n k)^k / (μ(B₁) r^(n+k)) ∫_{B(x,r)} ‖u‖ dμ`
   (`InnerProductSpace.HarmonicOnNhd.norm_iteratedFDeriv_le_integral_norm`), where `μ(B₁)` is the
   measure of the unit ball.
+
+Consequently, if harmonic functions converge locally uniformly to a harmonic function on an open
+set, so do their derivatives of every order
+(`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`).
 
 Here `D^k u(x)` is the iterated Fréchet derivative `iteratedFDeriv ℝ k u x`, whose operator norm
 bounds every partial derivative `∂^α u(x)` with `|α| = k`. The constants depend only on `n` and
@@ -60,7 +65,7 @@ public section
 
 noncomputable section
 
-open Metric Set Module MeasureTheory Topology
+open Filter Metric Set Module MeasureTheory Topology
 
 namespace InnerProductSpace
 
@@ -175,5 +180,43 @@ theorem HarmonicOnNhd.norm_iteratedFDeriv_le_integral_norm [FiniteDimensional �
   rw [hc, μ.addHaar_real_ball_of_pos 0 hr2, div_pow r, div_pow]
   field_simp
   ring
+
+/-- **Locally uniform convergence of harmonic functions upgrades to all derivatives.** If,
+eventually along `l`, the functions `u i` are harmonic on an open set `U` and converge locally
+uniformly on `U` to a function `f` harmonic on `U`, then for every `k` their `k`-th iterated
+Fréchet derivatives converge locally uniformly on `U` to that of `f`. -/
+theorem _root_.TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd [FiniteDimensional ℝ F]
+    {ι : Type*} {l : Filter ι} {u : ι → E → F} {f : E → F} {U : Set E}
+    (hlim : TendstoLocallyUniformlyOn u f l U) (hu : ∀ᶠ i in l, HarmonicOnNhd (u i) U)
+    (hf : HarmonicOnNhd f U) (hU : IsOpen U) (k : ℕ) :
+    TendstoLocallyUniformlyOn (fun i ↦ iteratedFDeriv ℝ k (u i)) (iteratedFDeriv ℝ k f) l U := by
+  rw [Metric.tendstoLocallyUniformlyOn_iff]
+  intro ε hε x hx
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
+  have hr2 : 0 < r / 2 := half_pos hr
+  set C : ℝ := (2 ^ (finrank ℝ E + 1) * finrank ℝ E * k / (r / 2)) ^ k
+  have : 0 ≤ C := by positivity
+  have hunif := (tendstoLocallyUniformlyOn_iff_forall_isCompact hU).1 hlim _ hrU
+    (isCompact_closedBall x r)
+  refine ⟨ball x (r / 2), mem_nhdsWithin_of_mem_nhds (ball_mem_nhds x hr2), ?_⟩
+  filter_upwards [hu, Metric.tendstoUniformlyOn_iff.1 hunif (ε / (C + 1)) (by positivity)]
+    with i hi hδ y hy
+  have hball : ball y (r / 2) ⊆ closedBall x r := fun z hz ↦ by
+    rw [mem_closedBall]
+    rw [mem_ball] at hz hy
+    linarith [dist_triangle z y x]
+  have hyU : y ∈ U := hrU (hball (mem_ball_self hr2))
+  -- The interior estimate for `u i - f`, which is bounded by `ε / (C + 1)` on `ball y (r / 2)`.
+  have hb := ((hi.sub hf).mono (hball.trans hrU)).norm_iteratedFDeriv_le_of_norm_le
+    (M := ε / (C + 1)) (fun z hz ↦ by
+      rw [Pi.sub_apply, ← dist_eq_norm, dist_comm]
+      exact (hδ z (hball hz)).le) hr2 k
+  rw [iteratedFDeriv_sub_apply (hi y hyU).analyticAt.contDiffAt
+    (hf y hyU).analyticAt.contDiffAt] at hb
+  rw [dist_comm, dist_eq_norm]
+  calc _ ≤ C * (ε / (C + 1)) := hb
+    _ < ε := by
+      rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+      nlinarith
 
 end InnerProductSpace

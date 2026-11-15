@@ -24,12 +24,12 @@ normalization of representatives.
 If the space of sections has dimension greater than one, its image cannot consist only of
 constants. On a compact connected Riemann surface this produces a finite holomorphic map to
 the sphere, with the prescribed pole bound. This is the linear-algebra step converting a
-lower bound on the dimension of a divisor's section space into an actual finite map. Its
-degree is at most the degree of an effective divisor, so a second section of the divisor of a
-single point gives a map of degree one.
+lower bound on the dimension of a divisor's section space into an actual finite map. When the
+divisor `D` bounding the poles is effective, the degree of this map is at most `deg D`, so a
+second section of the divisor of a single point gives a map of degree one.
 
-Since principal divisors have degree zero, a divisor of negative degree has no nonzero global
-sections.
+Since principal divisors have degree zero, the same embedding shows that a divisor of negative
+degree on a compact connected Riemann surface has no nonzero global sections.
 
 ## References
 
@@ -187,12 +187,6 @@ theorem isZero_divisorSheaf_globalSections_of_degree_neg (hD : WeilDivisor.degre
     rw [divisorSections.eq_zero_of_degree_neg hD (divisorSheafSectionsEquiv D ⊤ f),
       divisorSections.eq_zero_of_degree_neg hD (divisorSheafSectionsEquiv D ⊤ g)]⟩
 
-/-- On a compact connected Riemann surface, `h⁰(𝒪(D)) = 0` when `deg D < 0`. -/
-theorem finrank_divisorSheaf_globalSections_of_degree_neg (hD : WeilDivisor.degree D < 0) :
-    Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) = 0 :=
-  have := ModuleCat.isZero_iff_subsingleton.1 (isZero_divisorSheaf_globalSections_of_degree_neg hD)
-  Module.finrank_zero_of_subsingleton
-
 end DegreeNeg
 
 /-- A dimension bound on global divisor sections produces an actual finite holomorphic map
@@ -210,6 +204,14 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
   simpa only [FiniteHolomorphicMap.coe_ofMDifferentiable,
     ← MeromorphicFunction.finitePart_def, MeromorphicFunction.order_apply] using
     divisorSections.neg_le_order_toMeromorphic s
+
+/-- A divisor of negative degree has no nonzero global sections: a nonzero section is a meromorphic
+function whose principal divisor is at least `-D`, and principal divisors have degree zero. -/
+theorem finrank_divisorSheaf_eq_zero_of_degree_neg [CompactSpace X] [T2Space X]
+    {D : WeilDivisor X} (hD : WeilDivisor.degree D < 0) :
+    Module.finrank ℂ ((divisorSheaf D).obj.obj (Opposite.op ⊤)) = 0 :=
+  have := ModuleCat.isZero_iff_subsingleton.1 (isZero_divisorSheaf_globalSections_of_degree_neg hD)
+  Module.finrank_zero_of_subsingleton
 
 /-- **A second section of `𝒪(x)` gives a degree-one map to `ℙ¹`.** If the global sections of the
 divisor of a point `x` on a compact connected Riemann surface have dimension greater than one,

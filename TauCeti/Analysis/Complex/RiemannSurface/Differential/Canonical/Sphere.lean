@@ -47,7 +47,7 @@ theorem finrank_divisorSheaf_globalSections_eq_finrank_divisorCechCohomology_zer
     {K : WeilDivisor (OnePoint ℂ)} (hK : IsCanonicalDivisor K) :
     Module.finrank ℂ ((divisorSheaf K).obj.obj (op ⊤)) =
       Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor (OnePoint ℂ)) 1) := by
-  rw [finrank_divisorSheaf_globalSections_of_degree_neg (by simp [hK.degree_eq_neg_two_of_sphere]),
+  rw [finrank_divisorSheaf_eq_zero_of_degree_neg (by simp [hK.degree_eq_neg_two_of_sphere]),
     finrank_divisorCechCohomology_zero_one_sphere]
 
 /-- Every canonical divisor of `ℙ¹` has degree `2 h¹(𝒪) - 2`, the value `-2` for

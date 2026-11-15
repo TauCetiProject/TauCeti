@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 
+import TauCeti.Algebra.Group.Subgroup.ModularLaw
 import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
@@ -53,6 +54,8 @@ class-field correspondences directly in terms of their abelian Galois groups.
 * `OpenNormalSubgroup.le_maximalAbelianLayer` and
   `OpenNormalSubgroup.maximalAbelianLayer_le`: the universal property of the maximal
   abelian sublayer.
+* `OpenNormalSubgroup.maximalAbelianLayer_inf_of_isAbelianClassFieldLayer`: the maximal abelian
+  sublayer of `V ⊓ W` is that of `V` intersected with `W`, when `W` is abelian.
 * `OpenNormalSubgroup.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
   abelian layers.
 * `OpenNormalSubgroup.subgroupGround_commutator`: the preimage
@@ -197,6 +200,17 @@ theorem maximalAbelianLayer_sup (V W : OpenNormalSubgroup G) :
   toSubgroup_injective <| by
     simp only [toSubgroup_maximalAbelianLayer, toSubgroup_sup]
     exact sup_sup_distrib_right _ _ _
+
+/-- The maximal abelian sublayer of the compositum of a layer `V` with an abelian layer `W` is the
+compositum of the maximal abelian sublayer of `V` with `W`: the closed commutator lies in `W`, so
+this is Dedekind's modular law. -/
+theorem maximalAbelianLayer_inf_of_isAbelianClassFieldLayer {V W : OpenNormalSubgroup G}
+    (hW : IsAbelianClassFieldLayer W) :
+    maximalAbelianLayer (V ⊓ W) = maximalAbelianLayer V ⊓ W :=
+  toSubgroup_injective <| by
+    simp only [toSubgroup_maximalAbelianLayer, toSubgroup_inf]
+    rw [inf_comm V.toSubgroup, Subgroup.inf_sup_assoc_of_le (Subgroup.mul_normal _ _) hW,
+      inf_comm]
 
 /-- A layer is already abelian exactly when its maximal abelian sublayer is itself. -/
 @[simp]

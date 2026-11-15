@@ -8,13 +8,14 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 
 /-!
 # Divisor cohomology on the Riemann sphere
 
-For a divisor `D` on the Riemann sphere `ℙ¹ = OnePoint ℂ`, specializing the point-twist
-Euler-characteristic calculation on a compact connected curve to `h¹(𝒪) = 0` shows that
-`H¹(𝒪(D))` is finite-dimensional with `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. Since
+For a divisor `D` on the Riemann sphere `ℙ¹ = OnePoint ℂ`, specializing Riemann–Roch for divisor
+sheaves (`TauCeti.RiemannSurface.finrank_divisorSheaf_euler_characteristic`) to `h¹(𝒪) = 0` shows
+that `H¹(𝒪(D))` is finite-dimensional with `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. Since
 `h⁰(𝒪(D)) = 0` for `deg D < 0` and `h¹` does not increase with `D`, we obtain
 
 `h⁰(𝒪(D)) = max(deg D + 1, 0)` and `h¹(𝒪(D)) = max(-deg D - 1, 0)`.
@@ -62,7 +63,8 @@ theorem finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_on
     (D : WeilDivisor (OnePoint ℂ)) :
     (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
       Module.finrank ℂ (divisorCechCohomology D 1) = WeilDivisor.degree D + 1 := by
-  rw [finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one,
+  have := (finiteDimensional_divisorCechCohomology_zero_iff (X := OnePoint ℂ) 1).1 inferInstance
+  rw [finrank_divisorSheaf_euler_characteristic, analyticGenus_eq_finrank_divisorCechCohomology,
     finrank_divisorCechCohomology_zero_one_sphere]
   simp
 
@@ -74,7 +76,7 @@ theorem finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree
     ⟨D - (WeilDivisor.degree D + 1) • WeilDivisor.ofPoint ∞,
       sub_le_self _ (zsmul_nonneg (WeilDivisor.ofPoint_nonneg _) (by omega)), by simp⟩
   have h := finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere E
-  rw [finrank_divisorSheaf_globalSections_of_degree_neg (by omega), hE] at h
+  rw [finrank_divisorSheaf_eq_zero_of_degree_neg (by omega), hE] at h
   have := finrank_divisorCechCohomology_one_le_of_le hle
   omega
 
@@ -93,7 +95,7 @@ theorem finrank_divisorSheaf_globalSections_sphere (D : WeilDivisor (OnePoint �
   rcases le_or_gt 0 (WeilDivisor.degree D) with hD | hD
   · rw [finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree (by omega)] at h
     omega
-  · rw [finrank_divisorSheaf_globalSections_of_degree_neg hD]
+  · rw [finrank_divisorSheaf_eq_zero_of_degree_neg hD]
     omega
 
 /-- **The dimension of `H¹` of a divisor sheaf on `ℙ¹`.** `h¹(𝒪(D)) = max(-deg D - 1, 0)`. -/

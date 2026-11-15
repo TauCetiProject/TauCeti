@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Data.Set.Card
+import TauCeti.Geometry.Convex.Cone.Basis
 
 /-!
 # The weight model of a torus action at a fixed point
@@ -109,6 +110,8 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
 * `TauCeti.torusRotation_add`, `TauCeti.torusRotation_apply_eq_self_iff`,
   `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
   `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`.
+* `TauCeti.prodMap_piLpCongrLeft_torusRotation`: relabelling the coordinates of `ℂ^ι` relabels the
+  angles of the rotations.
 * `TauCeti.forall_weightRotation_apply_eq_self_iff`: the fixed points of the action of `𝔱`.
 * `TauCeti.weightMomentMap_eq_weightMomentMap_iff_exists_weightRotation`: for linearly independent
   weights, the fibres of the moment map are orbits of `𝔱`.
@@ -353,14 +356,7 @@ theorem _root_.Module.Basis.range_weightMomentMap_neg (b : Module.Basis ι ℝ (
     Set.range (weightMomentMap (-⇑b)) = {ν | ∀ i, 0 ≤ b.repr ν i} := by
   rw [range_weightMomentMap, neg_neg]
   ext ν
-  rw [SetLike.mem_coe, PointedCone.hull, Submodule.mem_span_range_iff_exists_fun,
-    Set.mem_ofPred_eq]
-  constructor
-  · rintro ⟨c, rfl⟩ i
-    simp only [← Nonneg.coe_smul, b.repr_sum_self]
-    exact (c i).2
-  · intro h
-    exact ⟨fun i ↦ ⟨b.repr ν i, h i⟩, by simp [Nonneg.mk_smul]⟩
+  exact b.mem_pointedCone_hull_range_iff ν
 
 /-- **Stabilizers in the weight model.** The rotation by `θ` fixes `z` exactly when `θ_i ∈ 2πℤ`
 for every coordinate `z_i = q_i + i p_i` that is nonzero. -/
@@ -853,6 +849,18 @@ theorem torusRotation_apply_eq_self_iff (θ : ι → AddCircle (2 * π))
     simp only [Pi.neg_apply]
     push_cast
     linarith
+
+/-- **Relabelling the coordinates.** Moving the coordinates of `ℂ^ι'` to `ℂ^ι` along a bijection
+`e : ι' ≃ ι` turns the rotation by `θ ∈ (ℝ / 2πℤ)^ι'` into the rotation by `θ ∘ e.symm`. -/
+theorem prodMap_piLpCongrLeft_torusRotation {ι' : Type*} [Fintype ι'] (e : ι' ≃ ι)
+    (θ : ι' → AddCircle (2 * π)) (x : EuclideanSpace ℝ ι' × EuclideanSpace ℝ ι') :
+    Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) (torusRotation θ x) =
+      torusRotation (θ ∘ e.symm) (Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) x) := by
+  ext j <;>
+    simp [torusRotation_apply_fst, torusRotation_apply_snd,
+      LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply]
 
 /-- The action of the rotation torus is jointly continuous. -/
 theorem continuous_torusRotation :
