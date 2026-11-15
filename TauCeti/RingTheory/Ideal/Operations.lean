@@ -576,18 +576,9 @@ cancels from a product in the second generator: if `IsCoprime x y`, then
 theorem Ideal.span_pair_mul_left_right_of_isCoprime {R : Type u} [CommSemiring R] {x y : R}
     (h : IsCoprime x y) (z : R) :
     Ideal.span {x, y * z} = Ideal.span {x, z} := by
-  refine le_antisymm (Ideal.span_le.mpr ?_) (Ideal.span_le.mpr ?_)
-  · exact Set.pair_subset (Ideal.subset_span (Set.mem_insert x _))
-      (Ideal.mul_mem_left _ y (Ideal.subset_span (by simp)))
-  · obtain ⟨a, b, hab⟩ := h
-    have hx : x ∈ Ideal.span {x, y * z} := Ideal.subset_span (Set.mem_insert x _)
-    have hyz : y * z ∈ Ideal.span {x, y * z} := Ideal.subset_span (by simp)
-    refine Set.pair_subset hx ?_
-    have hz : z = a * z * x + b * (y * z) := by
-      calc z = z * (a * x + b * y) := by rw [hab, mul_one]
-        _ = a * z * x + b * (y * z) := by ring
-    have hmem := add_mem (Ideal.mul_mem_left _ (a * z) hx) (Ideal.mul_mem_left _ b hyz)
-    rwa [← hz] at hmem
+  rw [Ideal.span_insert, ← Ideal.span_singleton_mul_span_singleton,
+    Ideal.sup_mul_eq_of_coprime_left ((Ideal.sup_eq_top_iff_isCoprime x y).mpr h),
+    ← Ideal.span_insert]
 
 namespace Subalgebra
 

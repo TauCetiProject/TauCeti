@@ -126,14 +126,14 @@ theorem lucasV_two_mul_sq (x : R) (n : ℕ) :
 /-- Weighted homogeneity of `lucasU`: scaling `P` by `s` and `Q` by `s ^ 2` scales `U_{n + 1}` by
 `s ^ n`. -/
 @[simp]
-theorem lucasU_mul_sq_succ (s P Q : R) (n : ℕ) :
+theorem lucasU_mul_sq_mul_succ (s P Q : R) (n : ℕ) :
     lucasU (s * P) (s ^ 2 * Q) (n + 1) = s ^ n * lucasU P Q (n + 1) := by
   rw [lucasU_succ_eq_dickson_eval, lucasU_succ_eq_dickson_eval, dickson_sq_mul_eval_mul]
 
 /-- Weighted homogeneity of `lucasV`: scaling `P` by `s` and `Q` by `s ^ 2` scales `V_n` by
 `s ^ n`. -/
 @[simp]
-theorem lucasV_mul_sq (s P Q : R) (n : ℕ) :
+theorem lucasV_mul_sq_mul (s P Q : R) (n : ℕ) :
     lucasV (s * P) (s ^ 2 * Q) n = s ^ n * lucasV P Q n := by
   rw [lucasV_eq_dickson_eval, lucasV_eq_dickson_eval, dickson_sq_mul_eval_mul]
 

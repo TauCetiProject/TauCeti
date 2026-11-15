@@ -28,7 +28,6 @@ namespace LinearRecurrence
 
 /-- The characteristic polynomial of the order-two linear recurrence `⟨2, ![a, b]⟩`
 (`u (n + 2) = a * u n + b * u (n + 1)`) is `X ^ 2 - C b * X - C a`. -/
-@[simp]
 theorem charPoly_mk_two {R : Type*} [CommRing R] (a b : R) :
     (⟨2, ![a, b]⟩ : LinearRecurrence R).charPoly = X ^ 2 - C b * X - C a := by
   simp only [charPoly, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,

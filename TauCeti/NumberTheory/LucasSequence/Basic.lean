@@ -78,6 +78,7 @@ theorem lucasU_add_two (P Q : R) (n : ℕ) :
     lucasU P Q (n + 2) = P * lucasU P Q (n + 1) - Q * lucasU P Q n := (rfl)
 
 /-- Value of `lucasU` at index `2`: `U₂(P, Q) = P`. -/
+@[simp, grind =]
 theorem lucasU_two (P Q : R) : lucasU P Q 2 = P := by
   simp [lucasU]
 
