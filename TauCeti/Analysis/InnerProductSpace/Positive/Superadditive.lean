@@ -38,8 +38,10 @@ which contributes `φ 0 ≤ 0`.
 
 ## Main results
 
-* `LinearMap.IsPositive.sum_map_eigenvalues_add_sum_map_eigenvalues_le`: the convex inequality.
-* `LinearMap.IsPositive.sum_map_eigenvalues_add_le`: the concave inequality.
+* `LinearMap.IsPositive.sum_map_eigenvalues_add_sum_map_eigenvalues_le_sum_map_eigenvalues_add`:
+  the convex inequality.
+* `LinearMap.IsPositive.sum_map_eigenvalues_add_le_sum_map_eigenvalues_add_sum_map_eigenvalues`:
+  the concave inequality.
 
 ## References
 
@@ -92,12 +94,21 @@ private theorem re_inner_sqrtColumn_comp_adjoint_apply_self (hA : A.IsPositive)
       WithLp.toLp 2 (x, y)⟫_𝕜 = ‖hA.sqrt x + hB.sqrt y‖ ^ 2 := by
   rw [comp_apply, ← adjoint_inner_right, adjoint_sqrtColumn_toLp, inner_self_eq_norm_sq]
 
+/-- The squared norm of `√A` at an eigenvector basis vector of `A` is the eigenvalue. -/
+private theorem norm_sqrt_eigenvectorBasis_sq (hA : A.IsPositive) (hn : finrank 𝕜 E = n)
+    (i : Fin n) :
+    ‖hA.sqrt (hA.isSymmetric.eigenvectorBasis hn i)‖ ^ 2 = hA.isSymmetric.eigenvalues hn i := by
+  rw [hA.norm_sqrt_apply_sq, hA.isSymmetric.apply_eigenvectorBasis, inner_smul_left,
+    inner_self_eq_norm_sq_to_K, OrthonormalBasis.norm_eq_one]
+  simp
+
 /-- **Superadditivity of convex spectral sums** (McCarthy; Bourin–Uchiyama). For positive
 operators `A` and `B` on an `n`-dimensional inner product space and a function `φ` convex on
 `[0, ∞)` with `φ 0 ≤ 0`, `tr φ(A) + tr φ(B) ≤ tr φ(A + B)`, written as sums over the eigenvalues.
 For `φ(t) = tʳ` with `1 ≤ r` this is McCarthy's inequality `tr Aʳ + tr Bʳ ≤ tr (A + B)ʳ`. -/
-theorem sum_map_eigenvalues_add_sum_map_eigenvalues_le (hA : A.IsPositive) (hB : B.IsPositive)
-    (hn : finrank 𝕜 E = n) {φ : ℝ → ℝ} (hφ : ConvexOn ℝ (Set.Ici 0) φ) (hφ0 : φ 0 ≤ 0) :
+theorem sum_map_eigenvalues_add_sum_map_eigenvalues_le_sum_map_eigenvalues_add
+    (hA : A.IsPositive) (hB : B.IsPositive) (hn : finrank 𝕜 E = n) {φ : ℝ → ℝ}
+    (hφ : ConvexOn ℝ (Set.Ici 0) φ) (hφ0 : φ 0 ≤ 0) :
     ∑ i, φ (hA.isSymmetric.eigenvalues hn i) + ∑ i, φ (hB.isSymmetric.eigenvalues hn i) ≤
       ∑ i, φ ((hA.add hB).isSymmetric.eigenvalues hn i) := by
   set V := sqrtColumn hA hB
@@ -106,12 +117,14 @@ theorem sum_map_eigenvalues_add_sum_map_eigenvalues_le (hA : A.IsPositive) (hB :
   -- Schur–Horn for `V V†` in the basis `(vᵢ, 0)`, `(0, wⱼ)`.
   have key := hV.sum_map_re_inner_apply_self_le_sum_map_eigenvalues rfl e hφ
     fun i ↦ V.isPositive_self_comp_adjoint.nonneg_eigenvalues rfl i
-  simp only [Fintype.sum_sum_type, e, OrthonormalBasis.prod_apply, Sum.elim_inl, Sum.elim_inr,
-    Function.comp_apply, LinearMap.inl_apply, LinearMap.inr_apply, V,
-    re_inner_sqrtColumn_comp_adjoint_apply_self, map_zero, add_zero, zero_add,
-    norm_sqrt_apply_sq, LinearMap.IsSymmetric.apply_eigenvectorBasis, inner_smul_left,
-    RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, OrthonormalBasis.norm_eq_one, map_one, one_pow,
-    mul_one, RCLike.ofReal_re] at key
+  -- The diagonal entries are `‖√A vᵢ‖² = αᵢ` and `‖√B wⱼ‖² = βⱼ`.
+  have hdiag : ∀ i, RCLike.re ⟪(V ∘ₗ adjoint V) (e i), e i⟫_𝕜 =
+      Sum.elim (hA.isSymmetric.eigenvalues hn) (hB.isSymmetric.eigenvalues hn) i := by
+    rintro (i | j) <;>
+      simp only [e, OrthonormalBasis.prod_apply, Sum.elim_inl, Sum.elim_inr, Function.comp_apply,
+        inl_apply, inr_apply, V, re_inner_sqrtColumn_comp_adjoint_apply_self, map_zero, add_zero,
+        zero_add, norm_sqrt_eigenvectorBasis_sq]
+  simp only [hdiag, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] at key
   refine key.trans ?_
   -- The eigenvalues of `V V†` are the squared singular values of `V`: those of `V† V = A + B`,
   -- then zeros.
@@ -135,11 +148,13 @@ theorem sum_map_eigenvalues_add_sum_map_eigenvalues_le (hA : A.IsPositive) (hB :
 an `n`-dimensional inner product space and a function `φ` concave on `[0, ∞)` with `0 ≤ φ 0`,
 `tr φ(A + B) ≤ tr φ(A) + tr φ(B)`, written as sums over the eigenvalues. For `φ(t) = tʳ` with
 `0 ≤ r ≤ 1` this is McCarthy's inequality `tr (A + B)ʳ ≤ tr Aʳ + tr Bʳ`. -/
-theorem sum_map_eigenvalues_add_le (hA : A.IsPositive) (hB : B.IsPositive)
-    (hn : finrank 𝕜 E = n) {φ : ℝ → ℝ} (hφ : ConcaveOn ℝ (Set.Ici 0) φ) (hφ0 : 0 ≤ φ 0) :
+theorem sum_map_eigenvalues_add_le_sum_map_eigenvalues_add_sum_map_eigenvalues
+    (hA : A.IsPositive) (hB : B.IsPositive) (hn : finrank 𝕜 E = n) {φ : ℝ → ℝ}
+    (hφ : ConcaveOn ℝ (Set.Ici 0) φ) (hφ0 : 0 ≤ φ 0) :
     ∑ i, φ ((hA.add hB).isSymmetric.eigenvalues hn i) ≤
       ∑ i, φ (hA.isSymmetric.eigenvalues hn i) + ∑ i, φ (hB.isSymmetric.eigenvalues hn i) := by
-  have h := hA.sum_map_eigenvalues_add_sum_map_eigenvalues_le hB hn hφ.neg
+  have h :=
+    hA.sum_map_eigenvalues_add_sum_map_eigenvalues_le_sum_map_eigenvalues_add hB hn hφ.neg
     (by simpa using hφ0)
   simp only [Pi.neg_apply, Finset.sum_neg_distrib] at h
   linarith

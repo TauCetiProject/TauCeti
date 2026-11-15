@@ -27,16 +27,17 @@ with the unnormalized trace. They compare the Schatten `r`-th powers `‖·‖�
 of positive matrices with those of its terms; for `r ≤ 1` the second is the `r`-triangle
 inequality of the Schatten quasi-norms on positive matrices.
 
-The two-matrix inequalities transfer
-`LinearMap.IsPositive.sum_map_eigenvalues_add_sum_map_eigenvalues_le` and
-`LinearMap.IsPositive.sum_map_eigenvalues_add_le` from the Euclidean operators of the matrices,
-using `Matrix.IsHermitian.trace_cfc_eq_sum_eigenvalues₀`; the finite families follow by
-induction.
+The convex two-matrix inequality transfers
+`LinearMap.IsPositive.sum_map_eigenvalues_add_sum_map_eigenvalues_le_sum_map_eigenvalues_add`
+from the Euclidean operators of the matrices, using
+`Matrix.IsHermitian.trace_cfc_eq_sum_eigenvalues₀`, and the convex finite-family inequality
+follows by induction. The concave inequalities are the convex ones applied to `-φ`.
 
 ## Main results
 
-* `Matrix.PosSemidef.re_trace_cfc_add_re_trace_cfc_le`,
-  `Matrix.PosSemidef.re_trace_cfc_add_le`: the convex and concave inequalities for two matrices.
+* `Matrix.PosSemidef.re_trace_cfc_add_re_trace_cfc_le_re_trace_cfc_add`,
+  `Matrix.PosSemidef.re_trace_cfc_add_le_re_trace_cfc_add_re_trace_cfc`: the convex and concave
+  inequalities for two matrices.
 * `Matrix.sum_re_trace_cfc_le_re_trace_cfc_sum`, `Matrix.re_trace_cfc_sum_le_sum_re_trace_cfc`:
   the same for finite families.
 * `Matrix.sum_re_trace_rpow_le_re_trace_rpow_sum`,
@@ -61,11 +62,13 @@ variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A B : Matri
 /-- **Superadditivity of convex trace functions** (McCarthy). For positive semidefinite `A` and
 `B` and a function `φ` convex on `[0, ∞)` with `φ 0 ≤ 0`,
 `Re tr φ(A) + Re tr φ(B) ≤ Re tr φ(A + B)`. -/
-theorem PosSemidef.re_trace_cfc_add_re_trace_cfc_le (hA : A.PosSemidef) (hB : B.PosSemidef)
-    (hφ : ConvexOn ℝ (Set.Ici 0) φ) (hφ0 : φ 0 ≤ 0) :
+theorem PosSemidef.re_trace_cfc_add_re_trace_cfc_le_re_trace_cfc_add (hA : A.PosSemidef)
+    (hB : B.PosSemidef) (hφ : ConvexOn ℝ (Set.Ici 0) φ) (hφ0 : φ 0 ≤ 0) :
     RCLike.re (cfc φ A).trace + RCLike.re (cfc φ B).trace ≤ RCLike.re (cfc φ (A + B)).trace := by
-  have h := (isPositive_toEuclideanLin_iff.mpr hA).sum_map_eigenvalues_add_sum_map_eigenvalues_le
-    (isPositive_toEuclideanLin_iff.mpr hB) finrank_euclideanSpace hφ hφ0
+  have h :=
+    LinearMap.IsPositive.sum_map_eigenvalues_add_sum_map_eigenvalues_le_sum_map_eigenvalues_add
+      (isPositive_toEuclideanLin_iff.mpr hA) (isPositive_toEuclideanLin_iff.mpr hB)
+      finrank_euclideanSpace hφ hφ0
   rw [LinearMap.IsSymmetric.eigenvalues_congr (map_add toEuclideanLin A B).symm _
     (isSymmetric_toEuclideanLin_iff.mpr (hA.add hB).isHermitian)] at h
   rw [hA.isHermitian.trace_cfc_eq_sum_eigenvalues₀, hB.isHermitian.trace_cfc_eq_sum_eigenvalues₀,
@@ -75,16 +78,13 @@ theorem PosSemidef.re_trace_cfc_add_re_trace_cfc_le (hA : A.PosSemidef) (hB : B.
 /-- **Subadditivity of concave trace functions** (Rotfel'd). For positive semidefinite `A` and
 `B` and a function `φ` concave on `[0, ∞)` with `0 ≤ φ 0`,
 `Re tr φ(A + B) ≤ Re tr φ(A) + Re tr φ(B)`. -/
-theorem PosSemidef.re_trace_cfc_add_le (hA : A.PosSemidef) (hB : B.PosSemidef)
-    (hφ : ConcaveOn ℝ (Set.Ici 0) φ) (hφ0 : 0 ≤ φ 0) :
+theorem PosSemidef.re_trace_cfc_add_le_re_trace_cfc_add_re_trace_cfc (hA : A.PosSemidef)
+    (hB : B.PosSemidef) (hφ : ConcaveOn ℝ (Set.Ici 0) φ) (hφ0 : 0 ≤ φ 0) :
     RCLike.re (cfc φ (A + B)).trace ≤ RCLike.re (cfc φ A).trace + RCLike.re (cfc φ B).trace := by
-  have h := (isPositive_toEuclideanLin_iff.mpr hA).sum_map_eigenvalues_add_le
-    (isPositive_toEuclideanLin_iff.mpr hB) finrank_euclideanSpace hφ hφ0
-  rw [LinearMap.IsSymmetric.eigenvalues_congr (map_add toEuclideanLin A B).symm _
-    (isSymmetric_toEuclideanLin_iff.mpr (hA.add hB).isHermitian)] at h
-  rw [hA.isHermitian.trace_cfc_eq_sum_eigenvalues₀, hB.isHermitian.trace_cfc_eq_sum_eigenvalues₀,
-    (hA.add hB).isHermitian.trace_cfc_eq_sum_eigenvalues₀]
-  simpa only [map_sum, RCLike.ofReal_re, IsHermitian.eigenvalues₀] using h
+  have h := hA.re_trace_cfc_add_re_trace_cfc_le_re_trace_cfc_add hB hφ.neg (by simpa using hφ0)
+  rw [cfc_neg'] at h
+  simp only [Pi.neg_apply, trace_neg, map_neg] at h
+  linarith
 
 /-- **Superadditivity of convex trace functions for finite families.** For positive
 semidefinite `a k`, `k ∈ s`, and a function `φ` convex on `[0, ∞)` with `φ 0 = 0`,
@@ -96,7 +96,7 @@ theorem sum_re_trace_cfc_le_re_trace_cfc_sum {ι : Type*} (s : Finset ι) {a : �
   | empty => simp [hφ0]
   | cons k s hk ih =>
     have ha' : ∀ j ∈ s, (a j).PosSemidef := fun j hj ↦ ha j (Finset.mem_cons_of_mem hj)
-    have h := (ha k (Finset.mem_cons_self k s)).re_trace_cfc_add_re_trace_cfc_le
+    have h := (ha k (Finset.mem_cons_self k s)).re_trace_cfc_add_re_trace_cfc_le_re_trace_cfc_add
       (posSemidef_sum s ha') hφ hφ0.le
     rw [Finset.sum_cons, Finset.sum_cons]
     linarith [ih ha']
@@ -107,14 +107,10 @@ theorem sum_re_trace_cfc_le_re_trace_cfc_sum {ι : Type*} (s : Finset ι) {a : �
 theorem re_trace_cfc_sum_le_sum_re_trace_cfc {ι : Type*} (s : Finset ι) {a : ι → Matrix n n 𝕜}
     (ha : ∀ k ∈ s, (a k).PosSemidef) (hφ : ConcaveOn ℝ (Set.Ici 0) φ) (hφ0 : φ 0 = 0) :
     RCLike.re (cfc φ (∑ k ∈ s, a k)).trace ≤ ∑ k ∈ s, RCLike.re (cfc φ (a k)).trace := by
-  induction s using Finset.cons_induction with
-  | empty => simp [hφ0]
-  | cons k s hk ih =>
-    have ha' : ∀ j ∈ s, (a j).PosSemidef := fun j hj ↦ ha j (Finset.mem_cons_of_mem hj)
-    have h := (ha k (Finset.mem_cons_self k s)).re_trace_cfc_add_le
-      (posSemidef_sum s ha') hφ hφ0.ge
-    rw [Finset.sum_cons, Finset.sum_cons]
-    linarith [ih ha']
+  have h := sum_re_trace_cfc_le_re_trace_cfc_sum s ha hφ.neg (by simp [hφ0])
+  rw [cfc_neg'] at h
+  simp only [Pi.neg_apply, trace_neg, map_neg, Finset.sum_neg_distrib] at h
+  linarith
 
 /-- **McCarthy's trace-power inequality for `1 ≤ r`.** For positive semidefinite `a k`, `k ∈ s`,
 `∑ₖ tr aₖʳ ≤ tr (∑ₖ aₖ)ʳ`, stated for the real parts of the traces. -/
