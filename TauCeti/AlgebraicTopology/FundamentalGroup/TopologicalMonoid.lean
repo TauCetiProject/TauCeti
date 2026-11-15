@@ -37,13 +37,14 @@ laws on both sides, `f` need not be multiplicative.
 The group law of `π₁(M, 1)` is concatenation of loops: by `FundamentalGroup.mul_def`, the product
 `a * b` is the class of a loop representing `b` followed by one representing `a`. At the level of
 paths, the pointwise product of two loops at `1` is homotopic to their concatenation in either
-order (`Path.Homotopic.cast_mul_trans_swap` and `Path.Homotopic.cast_mul_trans`), so both orders
-of concatenation agree with the pointwise product, as `FundamentalGroup.cast_map_prod_mul` and
-`FundamentalGroup.instCommGroup` say on classes.
+order (`Path.Homotopic.cast_mul_trans_swap` and `Path.Homotopic.cast_mul_trans`, in
+`TauCeti.Topology.Homotopy.Product`), so both orders of concatenation agree with the pointwise
+product, as `FundamentalGroup.cast_map_prod_mul` and `FundamentalGroup.instCommGroup` say on
+classes.
 
 For a topological group `G` the pointwise product is the group law of the universal cover based
-at `1`, and the first fact identifies the kernel of the covering homomorphism with `π₁(G, 1)`
-(`TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`).
+at `1`, and `FundamentalGroup.cast_map_prod_mul` identifies the kernel of the covering
+homomorphism with `π₁(G, 1)` (`TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`).
 
 ## Main results
 
