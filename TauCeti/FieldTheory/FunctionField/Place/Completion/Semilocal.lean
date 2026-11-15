@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Completion.Approximation
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.RingTheory.NormTrace.Pi
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # The completions above a place
@@ -91,6 +92,24 @@ variable (k')
 
 section Spanning
 
+/-- The diagonal embedding `F' → ∏_{P' ∣ P} F̂'_{P'}`, semilinear over the embedding of `F` in
+`F̂_P`. -/
+private noncomputable def completionEmbeddingPi :
+    letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
+      P.completionExtensionAlgebra P'.1 P'.2
+    F' →ₛₗ[(P.completionEmbedding : F →+* P.Completion)]
+      ∀ P' : {P' : Place k' F' // P'.restrict k F = P}, P'.1.Completion :=
+  letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
+    P.completionExtensionAlgebra P'.1 P'.2
+  { toFun y P' := P'.1.completionEmbedding y
+    map_add' _ _ := funext fun _ ↦ map_add _ _ _
+    map_smul' c y := funext fun P' ↦ completionEmbedding_smul P P'.1 P'.2 c y }
+
+/-- `TauCeti.Place.completionEmbeddingPi` is the coordinatewise completion embedding. -/
+private theorem completionEmbeddingPi_apply (y : F') :
+    completionEmbeddingPi k' P y = fun P' ↦ P'.1.completionEmbedding y :=
+  rfl
+
 variable (F') in
 /-- **The completed valuation rings above `P` are spanned by the functions regular above `P`**:
 the diagonal images of the functions of `F'` regular at every place over `P` span
@@ -144,23 +163,18 @@ theorem span_completion_pi_eq_top :
   set W := Submodule.span P.Completion
     (Set.range fun (y : F') (P' : ι) ↦ P'.1.completionEmbedding y)
   -- Families of completed integers lie in `W`, since they are spanned by functions of `F'`.
-  let toV : (∀ P' : ι, P'.1.completionPlace.integers) → ∀ P' : ι, P'.1.Completion :=
-    fun m P' ↦ m P'
+  let toV : (∀ P' : ι, P'.1.completionPlace.integers) →+* ∀ P' : ι, P'.1.Completion :=
+    RingHom.pi fun P' ↦ P'.1.completionPlace.integers.subtype.comp (Pi.evalRingHom _ P')
   have hint (m : ∀ P' : ι, P'.1.completionPlace.integers) : toV m ∈ W := by
-    have hm : m ∈ Submodule.span P.completionPlace.integers _ :=
-      (span_completionIntegers_pi_eq_top k' F' P).symm ▸ Submodule.mem_top
-    induction hm using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨y, rfl⟩ := hx
+    refine Submodule.map_mem_span_of_forall_exists (A := P.completionPlace.integers) toV _ _
+      (fun a ↦ ⟨(a : P.Completion), funext fun P' ↦ ?_⟩) ?_
+      ((span_completionIntegers_pi_eq_top k' F' P).symm ▸ Submodule.mem_top)
+    · simp only [toV, RingHom.pi_apply, RingHom.comp_apply, Pi.evalRingHom_apply,
+        Pi.algebraMap_apply]
+      change ((algebraMap _ P'.1.completionPlace.integers a : _) : P'.1.Completion) = _
+      rw [coe_algebraMap_completionIntegersExtensionAlgebra, algebraMap_completionExtensionAlgebra]
+    · rintro _ ⟨y, rfl⟩
       exact Submodule.subset_span ⟨y.1, funext fun P' ↦ by simp [toV]⟩
-    | zero => exact W.zero_mem
-    | add x z _ _ hx hz => exact W.add_mem hx hz
-    | smul a x _ hx =>
-      convert W.smul_mem (a : P.Completion) hx using 1
-      funext P'
-      simp only [toV, Pi.smul_apply]
-      rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul,
-        coe_algebraMap_completionIntegersExtensionAlgebra, algebraMap_completionExtensionAlgebra]
   refine eq_top_iff.mpr fun z _ ↦ ?_
   -- Subtracting a function of `F'` leaves a family of completed integers.
   obtain ⟨y, hy⟩ := exists_forall_sub_completionEmbedding_mem_filtration
@@ -180,23 +194,10 @@ theorem span_completionEmbedding_pi_eq_top {ι' : Type*} {v : ι' → F'}
     Submodule.span P.Completion
       (Set.range fun (i : ι') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
         P'.1.completionEmbedding (v i)) = ⊤ := by
-  let ι := {P' : Place k' F' // P'.restrict k F = P}
-  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
-  refine eq_top_iff.mpr
-    ((span_completion_pi_eq_top k' F' P).symm.le.trans (Submodule.span_le.mpr ?_))
-  rintro _ ⟨y, rfl⟩
-  obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp
-    (hv.symm ▸ Submodule.mem_top : y ∈ Submodule.span F (Set.range v))
-  have hy : (fun P' : ι ↦ P'.1.completionEmbedding (c.sum fun i a ↦ a • v i)) =
-      c.sum fun i a ↦ P.completionEmbedding a • fun P' : ι ↦ P'.1.completionEmbedding (v i) := by
-    funext P'
-    simp only [Finsupp.sum, map_sum, Finset.sum_apply, Pi.smul_apply,
-      completionEmbedding_smul P P'.1 P'.2]
-  rw [SetLike.mem_coe]
-  beta_reduce
-  rw [hy]
-  exact Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦
-    Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+  let _ := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
+    P.completionExtensionAlgebra P'.1 P'.2
+  exact (Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := P.Completion) hv
+    (completionEmbeddingPi k' P)).symm.trans (span_completion_pi_eq_top k' F' P)
 
 end Spanning
 
@@ -263,10 +264,9 @@ private theorem linearIndependent_completionEmbedding_pi_iff_of_finsum
     refine P.completionEmbedding.injective ?_
     rw [map_zero]
     refine h s (fun i ↦ P.completionEmbedding (g i)) ?_ i hi
-    funext P'
-    have := congrArg P'.1.completionEmbedding hg
-    simpa only [map_sum, map_zero, completionEmbedding_smul P P'.1 P'.2, Finset.sum_apply,
-      Pi.smul_apply, Pi.zero_apply] using this
+    simpa only [map_sum, map_zero, LinearMap.map_smulₛₗ, AlgHom.coe_toRingHom,
+      completionEmbeddingPi_apply] using
+      congrArg (completionEmbeddingPi k' P) hg
   · -- Extend `v` to a basis of `F'`.
     have h := (linearIndependent_completionEmbedding_basis_of_finsum k' P hdeg
       (Basis.extend hv.linearIndepOn_id)).comp
@@ -298,10 +298,10 @@ private theorem completionEmbedding_trace_of_finsum
       B.repr (fun P' : ι ↦ P'.1.completionEmbedding y) i = P.completionEmbedding (b.repr y i) := by
     have hy : (fun P' : ι ↦ P'.1.completionEmbedding y) =
         ∑ j, P.completionEmbedding (b.repr y j) • B j := by
-      funext P'
+      change completionEmbeddingPi k' P y = _
       conv_lhs => rw [← b.sum_repr y]
-      simp only [B, Basis.coe_mk, map_sum, Finset.sum_apply, Pi.smul_apply,
-        completionEmbedding_smul P P'.1 P'.2]
+      simp only [B, Basis.coe_mk, map_sum, LinearMap.map_smulₛₗ, AlgHom.coe_toRingHom,
+        completionEmbeddingPi_apply]
     rw [hy, B.repr_sum_self]
   have hmat : Algebra.leftMulMatrix B (fun P' : ι ↦ P'.1.completionEmbedding x) =
       (P.completionEmbedding : F →+* P.Completion).mapMatrix (Algebra.leftMulMatrix b x) := by
