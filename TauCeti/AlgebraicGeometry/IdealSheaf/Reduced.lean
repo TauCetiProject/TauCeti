@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
+import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 import Mathlib.AlgebraicGeometry.Properties
 import Mathlib.RingTheory.Localization.Ideal
 
@@ -15,6 +16,11 @@ import Mathlib.RingTheory.Localization.Ideal
 A closed subscheme is reduced exactly when its defining ideal sheaf is radical. Equivalently,
 its ideal on every affine open is radical. This permits reducedness of a divisor to be checked
 on its local equations, rather than on the local rings of the closed subscheme.
+
+In particular, the nilradical `X.nilradical` cuts out a reduced closed subscheme
+`X.nilradical.subscheme` (`AlgebraicGeometry.Scheme.isReduced_subscheme_nilradical`), and every
+morphism `f : Y ⟶ X` from a reduced scheme factors uniquely through `X.nilradical.subschemeι`
+(`AlgebraicGeometry.Scheme.Hom.liftNilradicalSubscheme`).
 
 ## References
 
@@ -92,3 +98,43 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
     exact Ideal.radical_eq_iff.mpr (isRadical_iff_span_singleton.mp (h x))
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme
+
+open CategoryTheory
+
+universe u
+
+/-- The reduced induced closed subscheme `X.nilradical.subscheme` of any scheme `X` is reduced. -/
+instance isReduced_subscheme_nilradical (X : Scheme.{u}) : IsReduced X.nilradical.subscheme := by
+  rw [← IdealSheafData.vanishingIdeal_top]
+  infer_instance
+
+/-- Every morphism from a reduced scheme kills the nilradical of its target. -/
+theorem nilradical_le_ker {X Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) : X.nilradical ≤ f.ker :=
+  IdealSheafData.vanishingIdeal_top ▸
+    IdealSheafData.vanishingIdeal_le_ker_of_range_subset f (Set.subset_univ _)
+
+/-- **Universal property of the reduced induced subscheme.** Every morphism `f : Y ⟶ X` from a
+reduced scheme `Y` factors through the closed immersion `X.nilradical.subschemeι` of the reduced
+induced subscheme `X.nilradical.subscheme`. -/
+noncomputable def Hom.liftNilradicalSubscheme {X Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) :
+    Y ⟶ X.nilradical.subscheme :=
+  IsClosedImmersion.lift X.nilradical.subschemeι f
+    (by rw [IdealSheafData.ker_subschemeι]; exact nilradical_le_ker f)
+
+/-- Composing `f.liftNilradicalSubscheme` with the closed immersion `X.nilradical.subschemeι`
+recovers `f`. -/
+@[reassoc (attr := simp)]
+theorem Hom.liftNilradicalSubscheme_subschemeι {X Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) :
+    f.liftNilradicalSubscheme ≫ X.nilradical.subschemeι = f :=
+  IsClosedImmersion.lift_fac _ _ _
+
+/-- A morphism into `X.nilradical.subscheme` from a reduced scheme is uniquely determined by its
+composite with `X.nilradical.subschemeι`. -/
+theorem Hom.eq_liftNilradicalSubscheme {X Y : Scheme.{u}} [IsReduced Y] {f : Y ⟶ X}
+    (g : Y ⟶ X.nilradical.subscheme) (hg : g ≫ X.nilradical.subschemeι = f) :
+    g = f.liftNilradicalSubscheme := by
+  rw [← cancel_mono X.nilradical.subschemeι, hg, liftNilradicalSubscheme_subschemeι]
+
+end AlgebraicGeometry.Scheme
