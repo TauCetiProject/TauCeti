@@ -34,6 +34,8 @@ different Coxeter matrices. These facts feed the Poincaré polynomial in
 
 * `CoxeterSystem.lengthParityEquiv`: left multiplication by a simple reflection, as an
   equivalence between the even-length and the odd-length elements.
+* `CoxeterSystem.lengthPowHom`: raising an element `a` with `a ^ 2 = 1` to the Coxeter length, as a
+  homomorphism `W →* G`.
 
 ## Main results
 
@@ -134,6 +136,48 @@ two, so two divides the order of the group. (For infinite `W` this reads `Even 0
 theorem even_natCard_of_nonempty_index [Nonempty B] : Even (Nat.card W) :=
   even_iff_two_dvd.mpr <|
     cs.orderOf_simple (Classical.arbitrary B) ▸ orderOf_dvd_natCard _
+
+/-- **Raising an involution to the Coxeter length is a group homomorphism.** If `a ^ 2 = 1` in a
+monoid `G`, then `w ↦ a ^ cs.length w` is a monoid homomorphism `W →* G`: by
+`CoxeterSystem.length_mul_mod_two`, `cs.length (u * v)` and `cs.length u + cs.length v` have the
+same parity, and powers of `a` depend only on the exponent modulo two. -/
+noncomputable def lengthPowHom {G : Type*} [Monoid G] (a : G) (ha : a ^ 2 = 1) : W →* G where
+  toFun w := a ^ cs.length w
+  map_one' := by simp
+  map_mul' u v := by
+    have hpow (n : ℕ) : a ^ n = a ^ (n % 2) := by
+      conv_lhs => rw [← Nat.div_add_mod n 2]
+      rw [pow_add, pow_mul, ha, one_pow, one_mul]
+    rw [hpow (cs.length (u * v)), cs.length_mul_mod_two, ← hpow (cs.length u + cs.length v),
+      pow_add]
+
+/-- `CoxeterSystem.lengthPowHom` raises `a` to the Coxeter length. -/
+@[simp]
+theorem lengthPowHom_apply {G : Type*} [Monoid G] (a : G) (ha : a ^ 2 = 1) (w : W) :
+    cs.lengthPowHom a ha w = a ^ cs.length w := (rfl)
+
+/-- On the identity of `G`, `CoxeterSystem.lengthPowHom` is the trivial homomorphism. -/
+@[simp]
+theorem lengthPowHom_one {G : Type*} [Monoid G] (h : (1 : G) ^ 2 = 1 := one_pow 2) :
+    cs.lengthPowHom (1 : G) h = 1 := by
+  ext w
+  simp
+
+/-- In a commutative monoid, `CoxeterSystem.lengthPowHom` squares to the trivial homomorphism. -/
+@[simp]
+theorem lengthPowHom_mul_self {G : Type*} [CommMonoid G] (a : G) (ha : a ^ 2 = 1) :
+    cs.lengthPowHom a ha * cs.lengthPowHom a ha = 1 := by
+  ext w
+  simp [← sq, pow_right_comm _ _ 2, ha]
+
+/-- Postcomposing `CoxeterSystem.lengthPowHom` with a monoid homomorphism pushes the base element
+forward. -/
+theorem comp_lengthPowHom {G H : Type*} [Monoid G] [Monoid H] (f : G →* H) (a : G)
+    (ha : a ^ 2 = 1) :
+    f.comp (cs.lengthPowHom a ha) =
+      cs.lengthPowHom (f a) (by rw [← map_pow, ha, map_one]) := by
+  ext w
+  simp
 
 /-! ### An element with every simple reflection as a left descent -/
 
