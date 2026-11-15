@@ -157,46 +157,39 @@ private theorem cauchySeq_offset_of_mem (hc : IsApproximateCocone α ξ F τ) {n
   cauchySeq_of_dist_le_of_summable (fun k ↦ τ (n + k)) (hc.dist_step_le hx)
     (hc.summable.comp_injective (add_right_injective n))
 
+private theorem cauchySeq_evalAt_of_mem (hc : IsApproximateCocone α ξ F τ) {n : ℕ} {x : A n}
+    (hx : x ∈ F n) : CauchySeq (evalAt α ξ x) := by
+  have h : evalAt α ξ x ∘ (· + n) =
+      fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) x) := by
+    ext k
+    rw [Function.comp_apply, Nat.add_comm k n, evalAt_add]
+  rw [CauchySeq, ← map_add_atTop_eq_nat n, map_map, h, ← CauchySeq]
+  exact hc.cauchySeq_offset_of_mem hx
+
 private theorem cauchySeq_evalAt (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
     CauchySeq (evalAt α ξ a) := by
   rw [Metric.cauchySeq_iff]
   intro ε hε
   obtain ⟨k₀, x, hxF, hax⟩ := hc.approx n a (ε / 3) (by positivity)
   obtain ⟨N₀, hN₀⟩ :=
-    Metric.cauchySeq_iff.mp (hc.cauchySeq_offset_of_mem hxF) (ε / 3) (by positivity)
-  refine ⟨n + k₀ + N₀, fun p hp q hq ↦ ?_⟩
-  have hclose (r : ℕ) (hr : n + k₀ + N₀ ≤ r) :
-      dist (evalAt α ξ a r)
-        (ξ (n + k₀ + (r - (n + k₀)))
-          (seqTransHom α (Nat.le_add_right (n + k₀) (r - (n + k₀))) x)) < ε / 3 := by
-    have hnr : n ≤ r := by omega
-    have hnkr : n + k₀ ≤ r := by omega
-    have heq : evalAt α ξ x r =
-        ξ (n + k₀ + (r - (n + k₀)))
-          (seqTransHom α (Nat.le_add_right (n + k₀) (r - (n + k₀))) x) := by
-      have hr' : n + k₀ + (r - (n + k₀)) = r := Nat.add_sub_of_le hnkr
-      rw [← evalAt_add (n + k₀) (r - (n + k₀)) x, hr']
-    rw [← heq, evalAt_of_le hnr, evalAt_of_le hnkr,
+    Metric.cauchySeq_iff.mp (hc.cauchySeq_evalAt_of_mem hxF) (ε / 3) (by positivity)
+  refine ⟨max (n + k₀) N₀, fun p hp q hq ↦ ?_⟩
+  have hclose (r : ℕ) (hr : max (n + k₀) N₀ ≤ r) :
+      dist (evalAt α ξ a r) (evalAt α ξ x r) < ε / 3 := by
+    have hnkr : n + k₀ ≤ r := (le_max_left _ _).trans hr
+    rw [evalAt_of_le ((Nat.le_add_right n k₀).trans hnkr), evalAt_of_le hnkr,
       ← seqTransHom_comp_apply α (Nat.le_add_right n k₀) hnkr a, dist_eq_norm,
       ← map_sub, ← map_sub]
     exact (le_trans (NonUnitalStarAlgHom.norm_apply_le _ _)
       (NonUnitalStarAlgHom.norm_apply_le _ _)).trans_lt hax
   calc
     dist (evalAt α ξ a p) (evalAt α ξ a q)
-      ≤ dist (evalAt α ξ a p)
-          (ξ (n + k₀ + (p - (n + k₀)))
-            (seqTransHom α (Nat.le_add_right (n + k₀) (p - (n + k₀))) x)) +
-        dist
-          (ξ (n + k₀ + (p - (n + k₀)))
-            (seqTransHom α (Nat.le_add_right (n + k₀) (p - (n + k₀))) x))
-          (ξ (n + k₀ + (q - (n + k₀)))
-            (seqTransHom α (Nat.le_add_right (n + k₀) (q - (n + k₀))) x)) +
-        dist
-          (ξ (n + k₀ + (q - (n + k₀)))
-            (seqTransHom α (Nat.le_add_right (n + k₀) (q - (n + k₀))) x))
-          (evalAt α ξ a q) := dist_triangle4 _ _ _ _
+      ≤ dist (evalAt α ξ a p) (evalAt α ξ x p) +
+        dist (evalAt α ξ x p) (evalAt α ξ x q) +
+        dist (evalAt α ξ x q) (evalAt α ξ a q) := dist_triangle4 _ _ _ _
     _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hclose p hp)
-        (hN₀ _ (by omega) _ (by omega))) (by rw [dist_comm]; exact hclose q hq)
+        (hN₀ p ((le_max_right _ _).trans hp) q ((le_max_right _ _).trans hq)))
+        (by rw [dist_comm]; exact hclose q hq)
     _ = ε := by ring
 
 private noncomputable def stageLim (hc : IsApproximateCocone α ξ F τ) {n : ℕ} (a : A n) : D :=

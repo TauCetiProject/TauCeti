@@ -260,34 +260,35 @@ private theorem extendUnionFun_apply {D : Type*} [NonUnitalCStarAlgebra D]
     (hι.lipschitzWith_unionFun hξ).uniformContinuous ⟨ι n a, hu⟩).trans
     (hι.unionFun_apply hξ n a hu)
 
+private theorem extendUnionFun_map₂ {D : Type*} [NonUnitalCStarAlgebra D]
+    (hι : IsSeqColimitCocone α ι) {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n)
+    (opA : ∀ n, A n → A n → A n) (opC : C → C → C) (opD : D → D → D)
+    (hopC : Continuous fun p : C × C ↦ opC p.1 p.2)
+    (hopD : Continuous fun p : D × D ↦ opD p.1 p.2)
+    (hι_op : ∀ n x y, ι n (opA n x y) = opC (ι n x) (ι n y))
+    (hξ_op : ∀ n x y, ξ n (opA n x y) = opD (ξ n x) (ξ n y)) (x y : C) :
+    hι.extendUnionFun ξ (opC x y) = opD (hι.extendUnionFun ξ x) (hι.extendUnionFun ξ y) := by
+  let cont := hι.continuous_extendUnionFun hξ
+  refine hι.dense_iUnion_range.denseRange_val.induction_on₂
+    (isClosed_eq (cont.comp hopC) (hopD.comp (cont.prodMap cont))) ?_ x y
+  rintro ⟨_, ⟨_, ⟨n₁, rfl⟩, a₁, rfl⟩⟩ ⟨_, ⟨_, ⟨n₂, rfl⟩, a₂, rfl⟩⟩
+  dsimp only
+  rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
+    ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← hι_op,
+    hι.extendUnionFun_apply hξ, hι.extendUnionFun_apply hξ,
+    hι.extendUnionFun_apply hξ, hξ_op]
+
 /-- Universal property of a sequential colimit cocone: any compatible family of stage
 `⋆`-homomorphisms `ξ : ∀ n, A n →⋆ₙₐ[ℂ] D` descends to a `⋆`-homomorphism `C →⋆ₙₐ[ℂ] D`. -/
 noncomputable def lift {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCocone α ι)
     (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D) (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) : C →⋆ₙₐ[ℂ] D where
   toFun := hι.extendUnionFun ξ
   map_zero' := by rw [← map_zero (ι 0), hι.extendUnionFun_apply hξ 0 0, map_zero]
-  map_add' :=
-    let cont := hι.continuous_extendUnionFun hξ
-    hι.dense_iUnion_range.denseRange_val.induction_on₂
-      (isClosed_eq (cont.comp continuous_add)
-        ((cont.comp continuous_fst).add (cont.comp continuous_snd))) <| by
-      rintro ⟨_, ⟨_, ⟨n₁, rfl⟩, a₁, rfl⟩⟩ ⟨_, ⟨_, ⟨n₂, rfl⟩, a₂, rfl⟩⟩
-      dsimp only
-      rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
-        ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← map_add,
-        hι.extendUnionFun_apply hξ, hι.extendUnionFun_apply hξ,
-        hι.extendUnionFun_apply hξ, map_add]
-  map_mul' :=
-    let cont := hι.continuous_extendUnionFun hξ
-    hι.dense_iUnion_range.denseRange_val.induction_on₂
-      (isClosed_eq (cont.comp continuous_mul)
-        ((cont.comp continuous_fst).mul (cont.comp continuous_snd))) <| by
-      rintro ⟨_, ⟨_, ⟨n₁, rfl⟩, a₁, rfl⟩⟩ ⟨_, ⟨_, ⟨n₂, rfl⟩, a₂, rfl⟩⟩
-      dsimp only
-      rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
-        ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← map_mul,
-        hι.extendUnionFun_apply hξ, hι.extendUnionFun_apply hξ,
-        hι.extendUnionFun_apply hξ, map_mul]
+  map_add' := hι.extendUnionFun_map₂ hξ (fun _ ↦ (· + ·)) (· + ·) (· + ·)
+    continuous_add continuous_add (fun n ↦ map_add (ι n)) (fun n ↦ map_add (ξ n))
+  map_mul' := hι.extendUnionFun_map₂ hξ (fun _ ↦ (· * ·)) (· * ·) (· * ·)
+    continuous_mul continuous_mul (fun n ↦ map_mul (ι n)) (fun n ↦ map_mul (ξ n))
   map_smul' c x :=
     let cont := hι.continuous_extendUnionFun hξ
     hι.dense_iUnion_range.denseRange_val.induction_on x

@@ -48,6 +48,11 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] (u : ι → unitary B)
   obtain ⟨i, hi⟩ := (F.eventually_all.mpr fun a _ ↦ he a).exists
   exact ⟨u i, hi⟩
 
+private theorem norm_unitary_conj_sub (u : unitary B) (x y : B) :
+    ‖(u : B) * x * star (u : B) - (u : B) * y * star (u : B)‖ = ‖x - y‖ := by
+  rw [← Unitary.conjStarAlgAut_apply (S := ℂ) u x, ← Unitary.conjStarAlgAut_apply (S := ℂ) u y,
+    ← map_sub, StarAlgEquiv.norm_map]
+
 /-- Approximate unitary equivalence is jointly closed in both arguments under point-norm
 convergence along any nontrivial filter, without separability assumptions. -/
 theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι → A →⋆ₙₐ[ℂ] B}
@@ -69,10 +74,6 @@ theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι
       (F.eventually_all.mpr fun a _ ↦ heΨ a)).exists
   obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hi F (ε / 3) hε₃
   refine ⟨u, fun a ha ↦ ?_⟩
-  let e := Unitary.conjStarAlgAut ℂ B u
-  have hsub : ‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ = ‖Φ i a - φ a‖ := by
-    simpa only [e, Unitary.conjStarAlgAut_apply, mul_sub, sub_mul, norm_sub_rev] using
-      StarAlgEquiv.norm_map e (φ a - Φ i a)
   calc
     ‖(u : B) * φ a * star (u : B) - ψ a‖
       ≤ (‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ +
@@ -81,7 +82,7 @@ theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι
           (add_le_add_left (norm_sub_le_norm_sub_add_norm_sub _ ((u : B) * Φ i a * star (u : B)) _)
             _)
     _ = ‖Φ i a - φ a‖ + ‖(u : B) * Φ i a * star (u : B) - Ψ i a‖ + ‖Ψ i a - ψ a‖ := by
-        rw [hsub]
+        rw [norm_unitary_conj_sub, norm_sub_rev (φ a)]
     _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hΦi a ha) (hu a ha)) (hΨi a ha)
     _ = ε := by ring
 
