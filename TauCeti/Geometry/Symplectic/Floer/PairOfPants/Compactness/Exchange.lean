@@ -98,34 +98,18 @@ private theorem integrableOn_and_setIntegral_floerEnergyDensity_exchangePerturba
       (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u z ≤
         a .zero + a .one - a .inf + ∑ q, B q := by
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
-  have hf0 {z : ℝ × ℝ} (hz : z ∈ Ω) : 0 ≤ ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u z :=
-    ω.floerEnergyDensity_nonneg (hJ z (hΩS hz)) (hfloer z (hΩS hz))
-  -- The energy over `Ω` is at most the energy over `S`.
-  have hlin := (lintegral_mono_set hΩS).trans
-    (lintegral_floerEnergyDensity_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ hu hJ hfloer ha₀
-      ha₁ ha)
   have hKc (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x v)
       (thricePuncturedSphereReal ×ˢ univ) :=
     fun p hp ↦ (contDiffAt_uncurry_exchangePerturbation hH hHs c hp.1 p.2 v).contDiffWithinAt
-  have hint : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
-      (hu.of_le one_le_two) (hKc 1) (hKc I)).mono hΩS).aestronglyMeasurable hΩm,
-      (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩm fun _ ↦ hf0)).2
-        (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
   -- The action bound `a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` makes the energy bound nonnegative.
   have hE0 : 0 ≤ a .zero + a .one - a .inf + ∑ q, B q := by
     linarith [le_add_add_sum_of_tendsto_hamiltonianAction_exchangePerturbation ω hH hHs hB hc₀
       hc₁ hu hJ hfloer ha₀ ha₁ ha]
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hΩm fun _ ↦ hf0)
-    hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+  exact ω.integrableOn_and_setIntegral_floerEnergyDensity_le isOpen_thricePuncturedSphereReal
+    (hu.of_le one_le_two) (hKc 1) (hKc I) hJ hfloer hE0
+    (lintegral_floerEnergyDensity_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ hu hJ hfloer ha₀
+      ha₁ ha) hΩ.measurableSet hΩS
 
 end Energy
 

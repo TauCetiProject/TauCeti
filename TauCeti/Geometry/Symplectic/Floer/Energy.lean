@@ -73,6 +73,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
+* `SymplecticForm.integrableOn_and_setIntegral_floerEnergyDensity_le`: a bound on the energy of a
+  `C¹` solution over an open set makes its energy density integrable on every measurable subset,
+  with integral at most the bound.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -726,6 +729,33 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
+
+/-- **An energy bound makes the energy density integrable.** Let `u` solve the Floer equation for
+`ω`-tame structures `J` on an open set `U`, with `u` and the perturbation data `C¹` over `U`. If
+the energy of `u` over `U` is at most `E ≥ 0`, then on every measurable `Ω ⊆ U` the energy density
+is integrable with integral at most `E`. -/
+theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SymplecticForm V)
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
+    (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ)) (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ))
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ U, ω.Tames (J z))
+    (hfloer : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    {E : ℝ} (hE₀ : 0 ≤ E)
+    (hE : ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E)
+    {Ω : Set (ℝ × ℝ)} (hΩ : MeasurableSet Ω) (hΩU : Ω ⊆ U) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
+  have hf0 : ∀ᵐ z ∂volume.restrict Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z :=
+    ae_restrict_of_forall_mem hΩ fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJ z (hΩU hz)) (hfloer z (hΩU hz))
+  -- The energy over `Ω` is at most the energy over `U`.
+  have hlin := (lintegral_mono_set hΩU).trans hE
+  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
+    ⟨((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hΩU).aestronglyMeasurable hΩ,
+      (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
+  refine ⟨hint, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0 hint.aestronglyMeasurable]
+  exact ENNReal.toReal_le_of_le_ofReal hE₀ hlin
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/

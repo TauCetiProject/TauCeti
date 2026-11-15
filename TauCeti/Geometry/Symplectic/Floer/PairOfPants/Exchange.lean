@@ -403,19 +403,14 @@ theorem contDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic
     (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
     ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
       exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) (c, (z, x)) := by
-  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h : ContDiffAt ℝ n (fun p : ℝ × (ℂ × V) ↦ exchangePerturbation H p.1 p.2.1 p.2.2)
-      (c, (Complex.equivRealProdCLM.symm z, x)) := by
-    rw [← contMDiffAt_iff_contDiffAt, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
-      modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact contMDiffAt_exchangePerturbation hH hHs' c ⟨_, hz⟩ x
-  have hg : ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
-      (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2))) (c, (z, x)) := by
-    fun_prop
-  exact (h.comp (c, (z, x)) hg).clm_apply contDiffAt_const
+  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2)) :=
+    contDiff_fst.contMDiff.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
+        |>.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
+  exact ((contMDiffAt_exchangePerturbation hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c ⟨_, hz⟩ x).comp
+      (c, (z, x)) hg.contMDiffAt).contDiffAt.clm_apply contDiffAt_const
 
 /-- **The members are `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
 space, the member `c` of the family is `C¹` jointly in the domain point of

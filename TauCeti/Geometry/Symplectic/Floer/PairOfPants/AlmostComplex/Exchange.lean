@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Almost complex structures along the input-exchange family
@@ -322,22 +323,14 @@ theorem contDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞
     ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) => (exchangeAlmostComplex h₀ J hJ p.1
       (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap)
       (c, (z, x)) := by
-  have hJs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V →L[ℝ] V) n
-      (fun p : ℝ × V => (J q p.1 p.2).toLinearMap.toContinuousLinearMap) := by
-    have h := (hJs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h : ContDiffAt ℝ n (fun p : ℝ × (ℂ × V) =>
-      (exchangeAlmostComplex h₀ J hJ p.1 p.2.1 p.2.2).toLinearMap.toContinuousLinearMap)
-      (c, (Complex.equivRealProdCLM.symm z, x)) := by
-    rw [← contMDiffAt_iff_contDiffAt, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
-      modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact contMDiffAt_exchangeAlmostComplex h₀ hJp hJs' hc ⟨_, hz⟩ x
-  have hg : ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) =>
-      (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2))) (c, (z, x)) := by
-    fun_prop
-  exact h.comp (f := fun p : ℝ × ((ℝ × ℝ) × V) =>
-    (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2))) (c, (z, x)) hg
+  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2)) :=
+    contDiff_fst.contMDiff.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
+        |>.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
+  exact ((contMDiffAt_exchangeAlmostComplex h₀ hJp
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff) hc ⟨_, hz⟩ x).comp
+      (c, (z, x)) hg.contMDiffAt).contDiffAt
 
 end SmoothNormed
 
