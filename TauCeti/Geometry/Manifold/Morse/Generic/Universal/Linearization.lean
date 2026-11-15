@@ -49,7 +49,7 @@ transversality argument runs on.
 
 The statements here concern the linear map alone. The section `S` itself, its regularity as a map
 on a Banach space of `C^k` functions and the identification of its derivative with this map are in
-`TauCeti.Geometry.Manifold.Morse.Generic.UniversalDifferential`.
+`TauCeti.Geometry.Manifold.Morse.Generic.Universal.Differential`.
 
 ## References
 

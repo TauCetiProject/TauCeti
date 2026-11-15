@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.SmoothEvaluation
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
-public import TauCeti.Geometry.Manifold.Morse.Generic.UniversalLinearization
+public import TauCeti.Geometry.Manifold.Morse.Generic.Universal.Linearization
+public import TauCeti.Geometry.Manifold.Morse.Linearization
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Parametric
-import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
 /-!
 # The universal differential
@@ -24,11 +24,8 @@ Fredholm sections (`TauCeti.isMeagre_setOf_not_isRegularSectionParameter`). This
 the regularity, linearization and transversality of `S` that this application uses.
 
 * The differential `df` of a single function, read as a section of the cotangent bundle, has
-  intrinsic linearization the critical Hessian at every point where `f` is `C²`
-  (`TauCeti.sectionLinearization_mvfderiv`). At a critical point it is onto exactly when the
-  critical point is nondegenerate (`TauCeti.surjective_sectionLinearization_mvfderiv_iff`). The
-  tangent and cotangent spaces have the same finite dimension, so this linearization is Fredholm
-  of index zero (`TauCeti.index_sectionLinearization_of_finiteDimensional`).
+  intrinsic linearization the critical Hessian, which is onto exactly at nondegenerate critical
+  points; this is `TauCeti.Geometry.Manifold.Morse.Linearization`.
 * For the norm of a finite chart atlas on the `C^k` functions
   (`ContMDiffMap.finiteAtlasNormedAddCommGroup`), `S` is `C^m` whenever `m + 1 ≤ k`
   (`TauCeti.contMDiff_universalDifferential`). This rests on the joint regularity of evaluation,
@@ -59,63 +56,6 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-
-section Hessian
-
-variable [I.Boundaryless] [IsManifold I 2 M] {f : M → ℝ} {x : M}
-
-/-- In the canonical trivialization at `x`, the coordinate derivative of `df` at `x`, evaluated
-on `v` and then on `w`, is the critical Hessian `Hess_x f (v, w)`. -/
-private theorem mvfderiv_trivializationAt_mvfderiv_apply_apply (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (v w : TangentSpace I x) :
-    mvfderiv I (fun y ↦ (trivializationAt (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) x
-        ⟨y, mvfderiv I f y⟩).2) x v w = criticalHessian I f x v w := by
-  set t := trivializationAt E (TangentSpace I) x
-  -- The coordinates of `df` are those of Mathlib's `mfderiv` in tangent coordinates, which is `C¹`.
-  have hd : MDifferentiableAt I 𝓘(ℝ, E →L[ℝ] ℝ)
-      (fun y ↦ mvfderiv I f y ∘L t.symmL ℝ y) x := by
-    have h := (hf.mfderiv_const (m := 1) le_rfl).mdifferentiableAt one_ne_zero
-    refine h.congr_of_eventuallyEq (Eventually.of_forall fun y ↦ ?_)
-    simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates,
-      TangentBundle.continuousLinearMapAt_model_space]
-    -- `mvfderiv` is `mfderiv` with its values read in the model space `ℝ`.
-    rfl
-  simp only [CotangentBundle.trivializationAt_mk_snd]
-  rw [← mvfderiv_clm_apply_const hd w v, ← mvfderiv_mvfderiv_extend_eq_criticalHessian hf v w,
-    Manifold.extend_eq_trivializationAt_symm]
-  refine congrArg (· v) (EventuallyEq.mvfderiv_eq (F := ℝ) ?_)
-  filter_upwards [t.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)]
-    with y hy
-  exact congrArg (mvfderiv I f y) (t.symmL_apply (R := ℝ) hy w)
-
-/-- **The linearization of a differential is the Hessian.** As a section of the cotangent bundle,
-the differential `df` of a function which is `C²` at `x` has intrinsic linearization the critical
-Hessian of `f` at `x`. This holds at every point, critical or not, since both sides are computed
-in the preferred chart at `x`. -/
-theorem sectionLinearization_mvfderiv (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
-    sectionLinearization (F := E →L[ℝ] ℝ) (E := fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) I
-      (fun y ↦ y) (mvfderiv I f) x = criticalHessian I f x := by
-  ext v w
-  rw [sectionLinearization_def, ContinuousLinearMap.comp_apply]
-  exact (congrArg (· w) (CotangentBundle.symmL_trivializationAt_self x _)).trans
-    (mvfderiv_trivializationAt_mvfderiv_apply_apply hf v w)
-
-/-- **Regular zeros of a differential are nondegenerate critical points.** At a critical point
-`x` of a function `f` which is `C²` at `x`, the differential `df`, as a section of the cotangent
-bundle, has surjective linearization exactly when `x` is a nondegenerate critical point. -/
-theorem surjective_sectionLinearization_mvfderiv_iff [FiniteDimensional ℝ E]
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hx : x ∈ criticalPoints I f) :
-    Surjective (sectionLinearization (F := E →L[ℝ] ℝ)
-      (E := fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) I (fun y ↦ y) (mvfderiv I f) x) ↔
-      IsManifoldNondegenerateCriticalPoint I f x := by
-  rw [sectionLinearization_mvfderiv hf, isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
-  -- The critical Hessian maps `TangentSpace I x`, which is `E`, to its dual, of the same
-  -- dimension, so it is invertible exactly when it is onto.
-  exact ⟨fun hs ↦ ⟨hf, mem_criticalPoints.1 hx,
-      ContinuousLinearMap.isInvertible_of_surjective (E := E) hs⟩,
-    fun ⟨_, _, hinv⟩ ↦ hinv.surjective⟩
-
-end Hessian
 
 section Universal
 
@@ -212,16 +152,15 @@ theorem sectionLinearization_universalDifferential_apply (hk : 2 ≤ k)
       p.1 w
   have h₂ (w : E) : mvfderiv 𝓘(ℝ, C^k⟮I, M; 𝓘(ℝ), ℝ⟯)
       (fun φ ↦ (e ⟨x, universalDifferential I (x, φ)⟩).2) f p.2 w = mvfderiv I p.2 x w := by
-    have hfd : fderiv ℝ (fun φ : C^k⟮I, M; 𝓘(ℝ), ℝ⟯ ↦ (e ⟨x, universalDifferential I (x, φ)⟩).2) f =
-        L := hlin ▸ L.fderiv
-    exact (congrArg (· p.2 w) (mvfderiv_eq_fderiv.trans (congrArg (· ∘L _) hfd))).trans
-      (congrArg (· w) (ContMDiffMap.mvfderivCLM_apply _ x p.2))
+    rw [hlin, mvfderiv_eq_fderiv, L.fderiv]
+    exact congrArg (· w) (ContMDiffMap.mvfderivCLM_apply _ x p.2)
   ext w
   rw [sectionLinearization_def]
   -- The trivialization at `x` is the identity on the fibre over `x`, and the derivative of the
   -- coordinates is the sum of the two partial derivatives.
-  exact (congrArg (· w) (CotangentBundle.symmL_trivializationAt_self x _)).trans
-    ((congrArg (· w) (hd.mvfderiv_prod_eq_add_apply p)).trans (congrArg₂ (· + ·) (h₁ w) (h₂ w)))
+  rw [ContinuousLinearMap.comp_apply, CotangentBundle.symmL_trivializationAt_self,
+    hd.mvfderiv_prod_eq_add_apply]
+  exact congrArg₂ (· + ·) (h₁ w) (h₂ w)
 
 end FiniteRegularity
 
@@ -246,8 +185,8 @@ theorem surjective_sectionLinearization_universalDifferential [FiniteDimensional
     (by exact_mod_cast one_le_two.trans hk) z.1 ξ
   -- The direction `(0, h)` is sent to `Hess_x f (0) + dh_x = ξ`.
   refine ⟨((0 : E), h), (sectionLinearization_universalDifferential_apply k hK hk z _).trans ?_⟩
-  exact (congrArg (· + _) (map_zero (criticalHessian I z.2 z.1))).trans
-    ((zero_add _).trans ((ContMDiffMap.mvfderivCLM_apply _ _ _).symm.trans hh))
+  rw [← hh, ContMDiffMap.mvfderivCLM_apply]
+  exact (congrArg (· + _) (map_zero (criticalHessian I z.2 z.1))).trans (zero_add _)
 
 end Universal
 
