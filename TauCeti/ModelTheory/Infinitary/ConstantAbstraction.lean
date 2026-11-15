@@ -28,7 +28,9 @@ variable universes. In an expansion along `lhomWithConstants`, abstraction prese
 when the new free variables or bound slot are assigned the interpretations of the corresponding
 constants, while preserving occurring relation and non-constant function symbols and removing `c`
 from the constant support. Instantiating the abstracted slot at a term substitutes that term for
-the constant (`realize_inst_abstractConst`).
+the constant (`realize_inst_abstractConst`). Both `constantsVarsEquiv` and `abstractConst` commute
+with extending a language map by `LHom.addConstants`, and `constantsVarsEquiv` interacts naturally
+with `lhomWithConstants` and `lhomWithConstantsMap`.
 
 The construction of `constantsVarsEquiv` follows Mathlib's `BoundedFormula.constantsVarsEquiv`,
 reusing `Term.constantsVarsEquivLeft` on atoms. The infinitary conjunction and disjunction cases
@@ -679,4 +681,115 @@ theorem realize_inst_abstractConst [DecidableEq γ] {M : Type w} [L.Structure M]
     (Function.update e c (@Term.realize _ M (@withConstantsStructure L M _ γ
       (constantsOn.structure e)) _ (Sum.elim v default) t)))) φ v).symm
 
+/-! ### Commutation with language homomorphisms -/
+
+/-- Abstracting the added constants of a formula coming from `L` injects its free variables into
+the right summand of `γ ⊕ α`. -/
+@[simp]
+theorem constantsVarsEquiv_lhomWithConstants_onBoundedFormulaInf
+    (φ : L.BoundedFormulaInf ι α n) :
+    constantsVarsEquiv ((L.lhomWithConstants γ).onBoundedFormulaInf φ) =
+      TauCeti.BoundedFormulaInf.subst φ (Term.var ∘ Sum.inr) := by
+  have hatom {k : ℕ} (t : L.Term (α ⊕ Fin k)) :
+      Term.constantsVarsEquivLeft ((L.lhomWithConstants γ).onTerm t) =
+        t.subst (Sum.elim (Term.relabel Sum.inl ∘ (Term.var ∘ Sum.inr)) (Term.var ∘ Sum.inr)) := by
+    rw [Term.constantsVarsEquivLeft_lhomWithConstants_onTerm, Term.relabel_eq_subst]
+    congr 1
+    funext x
+    cases x <;> rfl
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp [hatom]
+  | rel R ts =>
+    simp only [LHom.onBoundedFormulaInf_rel, constantsVarsEquiv_rel, hatom,
+      TauCeti.BoundedFormulaInf.subst_rel]
+    rfl
+  | imp _ _ ihφ ihψ => simp [ihφ, ihψ]
+  | all _ ih => simp [ih]
+  | iSup _ ih => simp [ih]
+  | iInf _ ih => simp [ih]
+
+/-- Restoring constants after injecting free variables into the right summand of `γ ⊕ α` embeds the
+formula along `lhomWithConstants`. -/
+@[simp]
+theorem constantsVarsEquiv_symm_subst_inr (φ : L.BoundedFormulaInf ι α n) :
+    constantsVarsEquiv.symm
+        (TauCeti.BoundedFormulaInf.subst φ (Term.var ∘ Sum.inr : α → L.Term (γ ⊕ α))) =
+      (L.lhomWithConstants γ).onBoundedFormulaInf φ := by
+  rw [← constantsVarsEquiv_lhomWithConstants_onBoundedFormulaInf,
+    constantsVarsEquiv.symm_apply_apply]
+
+/-- Abstracting constants after mapping them along `f` substitutes `Sum.map f id` into the free
+variables of the abstracted formula. -/
+@[simp]
+theorem constantsVarsEquiv_lhomWithConstantsMap_onBoundedFormulaInf {δ : Type*}
+    (φ : L[[γ]].BoundedFormulaInf ι α n) (f : γ → δ) :
+    constantsVarsEquiv ((L.lhomWithConstantsMap f).onBoundedFormulaInf φ) =
+      TauCeti.BoundedFormulaInf.subst (constantsVarsEquiv φ) (Term.var ∘ Sum.map f id) := by
+  have hatom {k : ℕ} (t : L[[γ]].Term (α ⊕ Fin k)) :
+      Term.constantsVarsEquivLeft ((L.lhomWithConstantsMap f).onTerm t) =
+        (Term.constantsVarsEquivLeft t).subst
+          (Sum.elim (Term.relabel Sum.inl ∘ (Term.var ∘ Sum.map f id)) (Term.var ∘ Sum.inr)) := by
+    rw [Term.constantsVarsEquivLeft_lhomWithConstantsMap_onTerm, Term.relabel_eq_subst]
+    congr 1
+    funext x
+    rcases x with (c | a) | i <;> rfl
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp [hatom]
+  | rel R ts => simp [hatom]
+  | imp _ _ ihφ ihψ => simp [ihφ, ihψ]
+  | all _ ih => simp [ih]
+  | iSup _ ih => simp [ih]
+  | iInf _ ih => simp [ih]
+
+/-- Mapping constants along `f` after restoring constants from free variables restores constants
+after relabelling the left free-variable summand by `f`. -/
+@[simp]
+theorem lhomWithConstantsMap_onBoundedFormulaInf_constantsVarsEquiv_symm {δ : Type*}
+    (φ : L.BoundedFormulaInf ι (γ ⊕ α) n) (f : γ → δ) :
+    (L.lhomWithConstantsMap f).onBoundedFormulaInf (constantsVarsEquiv.symm φ) =
+      constantsVarsEquiv.symm (TauCeti.BoundedFormulaInf.subst φ (Term.var ∘ Sum.map f id)) := by
+  apply constantsVarsEquiv.injective
+  simp
+
 end FirstOrder.Language.BoundedFormulaInf
+
+namespace FirstOrder.Language.LHom
+
+variable {L : FirstOrder.Language.{u, v}} {L' : FirstOrder.Language}
+  {ι : Type uι} {α : Type uα} {γ : Type uγ} {n : ℕ}
+
+/-- Constant abstraction commutes with extending a language map by `addConstants`. -/
+@[simp]
+theorem constantsVarsEquiv_addConstants_onBoundedFormulaInf (g : L →ᴸ L')
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    BoundedFormulaInf.constantsVarsEquiv ((g.addConstants γ).onBoundedFormulaInf φ) =
+      g.onBoundedFormulaInf (BoundedFormulaInf.constantsVarsEquiv φ) := by
+  induction φ with
+  | falsum => simp
+  | equal => simp
+  | rel => simp
+  | imp _ _ ihφ ihψ => simp [ihφ, ihψ]
+  | all _ ih => simp [ih]
+  | iSup _ ih => simp [ih]
+  | iInf _ ih => simp [ih]
+
+/-- Inverse constant abstraction commutes with extending a language map by `addConstants`. -/
+@[simp]
+theorem addConstants_onBoundedFormulaInf_constantsVarsEquiv_symm (g : L →ᴸ L')
+    (φ : L.BoundedFormulaInf ι (γ ⊕ α) n) :
+    (g.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.constantsVarsEquiv.symm φ) =
+      BoundedFormulaInf.constantsVarsEquiv.symm (g.onBoundedFormulaInf φ) := by
+  apply BoundedFormulaInf.constantsVarsEquiv.injective
+  simp
+
+/-- Single-constant abstraction commutes with extending a language map by `addConstants`. -/
+@[simp]
+theorem addConstants_onBoundedFormulaInf_abstractConst [DecidableEq γ] (g : L →ᴸ L') (c : γ)
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    (g.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ) =
+      BoundedFormulaInf.abstractConst c ((g.addConstants γ).onBoundedFormulaInf φ) := by
+  simp [BoundedFormulaInf.abstractConst_def]
+
+end FirstOrder.Language.LHom

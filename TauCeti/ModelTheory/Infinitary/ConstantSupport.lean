@@ -39,13 +39,18 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`,
   `FirstOrder.Language.BoundedFormulaInf.constantSupport_eq_empty_iff`: a formula of `L[[γ]]` has
   empty support precisely when it comes from `L`.
+* `FirstOrder.Language.LHom.constantSupport_addConstants_onBoundedFormulaInf` and
+  `FirstOrder.Language.BoundedFormulaInf.constantSupport_lhomWithConstantsMap_onBoundedFormulaInf`:
+  changing the base language preserves the constant support, and mapping the constants sends the
+  constant support to its image.
 
 ## References
 
 * `cameronfreer/infinitary-logic` at commit `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
   `InfinitaryLogic/Methods/ConstantSupport.lean`: `sentenceJConsts` and `Term.jConsts`, the constant
   supports of formulas and terms of `L[[J]]`, likewise read off the occurring function symbols.
-  Divergence from that source: the support here is defined at every carrier, not only at `ℕ`.
+  Divergence from that source: the support here is defined at every carrier, not only at `ℕ`, and
+  its behaviour under `LHom.addConstants` and `lhomWithConstantsMap` is recorded.
 -/
 
 public section
@@ -112,6 +117,24 @@ theorem constantSupport_onTerm (t : L.Term α) :
   obtain ⟨⟨k, f⟩, -, h⟩ := (functionsIn_onTerm t (L.lhomWithConstants γ)).subset hc
   obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
   exact Sum.inl_ne_inr (eq_of_heq h)
+
+/-- Mapping constants along `f` sends the constant support of a term to its image under `f`; no
+injectivity of `f` is required. -/
+@[simp]
+theorem constantSupport_lhomWithConstantsMap_onTerm {δ : Type*} (t : L[[γ]].Term α)
+    (f : γ → δ) :
+    ((L.lhomWithConstantsMap f).onTerm t).constantSupport = f '' t.constantSupport := by
+  ext d
+  simp only [mem_constantSupport, functionsIn_onTerm, Set.mem_image]
+  constructor
+  · rintro ⟨⟨k, g | c⟩, hs, hm⟩
+    · obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hm
+      exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
+    · cases k with
+      | zero => exact ⟨c, hs, Sum.inr_injective (eq_of_heq (Sigma.mk.inj hm).2)⟩
+      | succ _ => exact isEmptyElim c
+  · rintro ⟨c, hc, rfl⟩
+    exact ⟨⟨0, L.con c⟩, hc, rfl⟩
 
 /-- The constant `L.con c` is the only constant occurring in its term. -/
 @[simp]
@@ -353,6 +376,64 @@ theorem realize_congr_of_eqOn_constantSupport {M : Type w} [L.Structure M] {e e'
   · rfl
   · exact R.elim
 
+/-- Mapping constants along `f` sends the constant support of an infinitary formula to its image
+under `f`; no injectivity of `f` is required. -/
+@[simp]
+theorem constantSupport_lhomWithConstantsMap_onBoundedFormulaInf {δ : Type*}
+    (φ : L[[γ]].BoundedFormulaInf ι α n) (f : γ → δ) :
+    ((L.lhomWithConstantsMap f).onBoundedFormulaInf φ).constantSupport =
+      f '' φ.constantSupport := by
+  ext d
+  simp only [mem_constantSupport, LHom.functionsIn_onBoundedFormulaInf, Set.mem_image]
+  constructor
+  · rintro ⟨⟨k, g | c⟩, hs, hm⟩
+    · obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hm
+      exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
+    · cases k with
+      | zero => exact ⟨c, hs, Sum.inr_injective (eq_of_heq (Sigma.mk.inj hm).2)⟩
+      | succ _ => exact isEmptyElim c
+  · rintro ⟨c, hc, rfl⟩
+    exact ⟨⟨0, L.con c⟩, hc, rfl⟩
+
 end BoundedFormulaInf
+
+namespace LHom
+
+/-- Extending a language map by `addConstants` preserves the constant support of a term; no
+injectivity on symbols is required. -/
+@[simp]
+theorem constantSupport_addConstants_onTerm {L' : Language} (g : L →ᴸ L')
+    (t : L[[γ]].Term α) :
+    ((g.addConstants γ).onTerm t).constantSupport = t.constantSupport := by
+  ext c
+  simp only [Term.mem_constantSupport, Term.functionsIn_onTerm, Set.mem_image]
+  constructor
+  · rintro ⟨⟨k, f | d⟩, hs, hm⟩
+    · obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hm
+      exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
+    · cases k with
+      | zero => exact Sum.inr_injective (eq_of_heq (Sigma.mk.inj hm).2) ▸ hs
+      | succ _ => exact isEmptyElim d
+  · exact fun hc => ⟨⟨0, L.con c⟩, hc, rfl⟩
+
+/-- Extending a language map by `addConstants` preserves the constant support of an infinitary
+formula; no injectivity on symbols is required. -/
+@[simp]
+theorem constantSupport_addConstants_onBoundedFormulaInf {L' : Language} (g : L →ᴸ L')
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    ((g.addConstants γ).onBoundedFormulaInf φ).constantSupport = φ.constantSupport := by
+  ext c
+  simp only [BoundedFormulaInf.mem_constantSupport, functionsIn_onBoundedFormulaInf,
+    Set.mem_image]
+  constructor
+  · rintro ⟨⟨k, f | d⟩, hs, hm⟩
+    · obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 hm
+      exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
+    · cases k with
+      | zero => exact Sum.inr_injective (eq_of_heq (Sigma.mk.inj hm).2) ▸ hs
+      | succ _ => exact isEmptyElim d
+  · exact fun hc => ⟨⟨0, L.con c⟩, hc, rfl⟩
+
+end LHom
 
 end FirstOrder.Language
