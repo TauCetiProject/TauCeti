@@ -17,20 +17,21 @@ import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 Mathlib's `ExteriorAlgebra.algebraMapInv : ExteriorAlgebra R M →ₐ[R] R` is the algebra
 homomorphism killing every generator; it reads off the degree-zero component, the left inverse of
-`algebraMap`. This file records how it interacts with the operations that the exterior algebra
-inherits from being the Clifford algebra of the zero form: the grade involution and reversion
-preserve the constant term, and contracting from the left or from the right against a linear
-functional produces the same constant term.
+`algebraMap`. This file records how it interacts with functoriality and with the operations that the
+exterior algebra inherits from being the Clifford algebra of the zero form: induced linear maps, the
+grade involution, and reversion preserve the constant term, and contracting from the left or from
+the right against a linear functional produces the same constant term.
 
 These are the facts that make the scalar part of a Clifford algebra, read through
-`CliffordAlgebra.equivExterior`, invariant under the grade involution and reversion, and
-cyclic.
+`CliffordAlgebra.equivExterior`, natural under quadratic isometries, invariant under the grade
+involution and reversion, and cyclic.
 
 ## Main results
 
 * `ExteriorAlgebra.algebraMapInv_ι`: generators have constant term zero.
-* `ExteriorAlgebra.algebraMapInv_involute` and `ExteriorAlgebra.algebraMapInv_reverse`: the grade
-  involution and reversion preserve the constant term.
+* `ExteriorAlgebra.algebraMapInv_map`, `ExteriorAlgebra.algebraMapInv_involute`, and
+  `ExteriorAlgebra.algebraMapInv_reverse`: induced linear maps, the grade involution, and reversion
+  preserve the constant term.
 * `ExteriorAlgebra.algebraMapInv_contractRight`: left and right contraction against the same
   functional have the same constant term.
 * `Module.Basis.exteriorAlgebra_repr_empty`: the constant term is the coordinate at the empty index
@@ -51,6 +52,15 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 @[simp]
 theorem algebraMapInv_ι (m : M) : algebraMapInv (ι R m) = 0 := by
   simp [algebraMapInv]
+
+/-- Induced exterior-algebra maps preserve the constant term. -/
+@[simp]
+theorem algebraMapInv_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (x : ExteriorAlgebra R M) :
+    algebraMapInv (_root_.ExteriorAlgebra.map f x) = algebraMapInv x := by
+  have h : algebraMapInv.comp (_root_.ExteriorAlgebra.map f) = algebraMapInv :=
+    ExteriorAlgebra.hom_ext <| LinearMap.ext fun m ↦ by simp
+  exact AlgHom.congr_fun h x
 
 /-- The grade involution preserves the constant term. -/
 @[simp]

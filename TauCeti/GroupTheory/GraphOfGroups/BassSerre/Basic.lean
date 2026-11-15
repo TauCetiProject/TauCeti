@@ -29,7 +29,7 @@ The fundamental group `π₁(𝔸, v₀)` acts on `X(𝔸, v₀)` on the left by
 at `v₀`. Because the type projection `X(𝔸, v₀) → Γ` sending `p A_v` to `v` and `[e, p]` to `e` is
 invariant under this action, no element inverts a dart. Connectedness of `X(𝔸, v₀)` follows by
 induction on `𝔸`-paths from the base vertex `1 · A_{v₀}`, while acyclicity follows from Britton's
-lemma (`AlternatingPath.IsReduced.not_homotopic_ofVertex_cons`): a nonempty reduced closed path in
+lemma (`AlternatingPath.IsReduced.toPath_homotopic_ofVertex_iff`): a nonempty reduced closed path in
 `X(𝔸, v₀)` lifts to a reduced closed alternating `𝔸`-path containing at least one dart and homotopic
 to a single vertex group letter, which is impossible. Bundling the graph, tree proof, and action
 gives `GraphOfGroups.bassSerreTree` as a `GTree (π₁ 𝔸 v₀)`.
@@ -376,7 +376,7 @@ private theorem not_closed_lift_of_isReduced (e : Γ.E) (p_e : 𝔸.Path ⟨v₀
   rintro w rfl p_w q hr hp_hom hv_eq
   obtain ⟨g, hg⟩ := BassSerreVertex.mk_eq_mk_iff.mp hv_eq
   rw [← Path.comp_ofVertex] at hg
-  exact hr.not_homotopic_ofVertex_cons
+  exact nomatch hr.toPath_homotopic_ofVertex_iff.mp
     ((Path.Homotopic.comp_left_iff p_w).mp (hp_hom.symm.trans hg))
 
 /-- `X(𝔸, v₀)` is acyclic. -/
