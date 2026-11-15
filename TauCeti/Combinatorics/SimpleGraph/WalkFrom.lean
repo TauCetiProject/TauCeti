@@ -25,8 +25,12 @@ decidable subset of a finite function type.
 
 * `SimpleGraph.isWalkFrom_snoc`: a walk extended by one vertex is a walk exactly when the new
   vertex is adjacent to the old endpoint.
+* `SimpleGraph.IsWalkFrom.init`, `SimpleGraph.IsWalkFrom.comp_castLE`: prefixes of walks from `v₀`
+  are walks from `v₀`.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
+* `SimpleGraph.IsWalkFrom.apply_le_add`, `SimpleGraph.IsWalkFrom.le_apply_add`: a function that
+  changes by at most `1` along edges changes by at most `i` over the first `i` steps of a walk.
 -/
 
 public section
@@ -81,12 +85,23 @@ theorem isWalkFrom_iff_init {m : ℕ} (s : Fin (m + 2) → V) :
   conv_lhs => rw [← Fin.snoc_init_self s]
   exact isWalkFrom_snoc _ _
 
+/-- The initial segment of a walk from `v₀` is a walk from `v₀`. -/
+theorem IsWalkFrom.init {m : ℕ} {s : Fin (m + 2) → V} (hs : IsWalkFrom G v₀ s) :
+    IsWalkFrom G v₀ (Fin.init s) :=
+  ((isWalkFrom_iff_init s).1 hs).1
+
 /-- Consecutive vertices of a walk are adjacent. -/
 theorem IsWalkFrom.adj {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
     {a b : Fin (m + 1)} (hab : a.val + 1 = b.val) : G.Adj (s a) (s b) := by
   have h := hs.2 ⟨a, by omega⟩
   rwa [show (⟨a, _⟩ : Fin m).castSucc = a from Fin.ext rfl,
     show (⟨a, _⟩ : Fin m).succ = b from Fin.ext (by simp [hab])] at h
+
+/-- Restricting an `m`-step walk from `v₀` to its first `k ≤ m` steps gives a walk from `v₀`. -/
+theorem IsWalkFrom.comp_castLE {k m : ℕ} (h : k ≤ m) {s : Fin (m + 1) → V}
+    (hs : IsWalkFrom G v₀ s) :
+    IsWalkFrom G v₀ (s ∘ Fin.castLE (Nat.succ_le_succ h)) :=
+  ⟨by simpa using hs.1, fun _ ↦ hs.adj (by simp)⟩
 
 /-- Moving the vertex at an interior position `b` of a walk, whose two neighbouring positions
 carry the same vertex, to another neighbour of that vertex gives a walk. -/
@@ -106,5 +121,39 @@ theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]
     exact hs.2 i
+
+/-- If `f : V → ℕ` increases by at most `1` along edges of `G`, then at position `i` of a walk
+from `v₀` its value is at most `f v₀ + i`. -/
+theorem IsWalkFrom.apply_le_add {f : V → ℕ} (hf : ∀ ⦃u v⦄, G.Adj u v → f v ≤ f u + 1)
+    {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) (i : Fin (m + 1)) :
+    f (s i) ≤ f v₀ + i.val := by
+  induction m with
+  | zero => rw [Fin.eq_zero i, hs.apply_zero, Fin.val_zero, add_zero]
+  | succ m ih =>
+    obtain ⟨t, y, rfl⟩ : ∃ t y, s = Fin.snoc t y := ⟨_, _, (Fin.snoc_init_self s).symm⟩
+    rw [isWalkFrom_snoc] at hs
+    refine i.lastCases ?_ fun j ↦ ?_
+    · have h1 := ih hs.1 (Fin.last m)
+      have h2 := hf hs.2
+      simp only [Fin.snoc_last, Fin.val_last] at h1 ⊢
+      omega
+    · simpa only [Fin.snoc_castSucc, Fin.val_castSucc] using ih hs.1 j
+
+/-- If `f : V → ℕ` increases by at most `1` along edges of `G`, then at position `i` of a walk
+from `v₀` its value is at least `f v₀ - i`, written additively as `f v₀ ≤ f (s i) + i`. -/
+theorem IsWalkFrom.le_apply_add {f : V → ℕ} (hf : ∀ ⦃u v⦄, G.Adj u v → f v ≤ f u + 1)
+    {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) (i : Fin (m + 1)) :
+    f v₀ ≤ f (s i) + i.val := by
+  induction m with
+  | zero => rw [Fin.eq_zero i, hs.apply_zero, Fin.val_zero, add_zero]
+  | succ m ih =>
+    obtain ⟨t, y, rfl⟩ : ∃ t y, s = Fin.snoc t y := ⟨_, _, (Fin.snoc_init_self s).symm⟩
+    rw [isWalkFrom_snoc] at hs
+    refine i.lastCases ?_ fun j ↦ ?_
+    · have h1 := ih hs.1 (Fin.last m)
+      have h2 := hf hs.2.symm
+      simp only [Fin.snoc_last, Fin.val_last] at h1 ⊢
+      omega
+    · simpa only [Fin.snoc_castSucc, Fin.val_castSucc] using ih hs.1 j
 
 end SimpleGraph
