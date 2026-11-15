@@ -12,10 +12,10 @@ public import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 # Units of multivariate polynomial rings
 
 Over a commutative ring, a polynomial is a unit exactly when its constant coefficient is a unit and
-its other coefficients are nilpotent (`MvPolynomial.isUnit_iff`). Over a reduced commutative ring,
-or over any commutative semiring without zero divisors, every unit is therefore a constant unit
-`C r`, giving a canonical multiplicative equivalence `Rˣ ≃* (MvPolynomial σ R)ˣ` via `C` and
-`constantCoeff`.
+its other coefficients are nilpotent (`MvPolynomial.isUnit_iff`). Over any reduced commutative
+semiring `R`, every unit of `MvPolynomial σ R` is a constant unit `C r`
+(`TauCeti.MvPolynomial.isUnit_iff_eq_C`), giving a canonical multiplicative equivalence
+`Rˣ ≃* (MvPolynomial σ R)ˣ` via `C` and `constantCoeff` (`TauCeti.MvPolynomial.unitsMulEquiv`).
 
 Mapping the coefficients along an injective local homomorphism `f : R →+* S` of commutative rings
 also reflects units: if `map f p` is a unit of `S[X_σ]`, then, since `f` is injective and reflects
@@ -27,15 +27,13 @@ closure, gives irreducibility over every intermediate field.
 
 ## Main definitions
 
-* `MvPolynomial.unitsMulEquiv`: the unit group equivalence `Rˣ ≃* (MvPolynomial σ R)ˣ` over a
-  reduced commutative ring `R`.
-* `MvPolynomial.unitsMulEquivOfNoZeroDivisors`: the unit group equivalence
-  `Rˣ ≃* (MvPolynomial σ R)ˣ` over a commutative semiring `R` without zero divisors.
+* `TauCeti.MvPolynomial.unitsMulEquiv`: the unit group equivalence `Rˣ ≃* (MvPolynomial σ R)ˣ` over
+  any reduced commutative semiring `R`.
 
 ## Main results
 
-* `MvPolynomial.isUnit_iff_eq_C_of_noZeroDivisors`: over a commutative semiring without zero
-  divisors, a multivariate polynomial is a unit if and only if it is `C r` for a unit `r`.
+* `TauCeti.MvPolynomial.isUnit_iff_eq_C`: over a reduced commutative semiring, a multivariate
+  polynomial is a unit if and only if it is `C r` for a unit `r`.
 * `MvPolynomial.isLocalHom_map_of_injective`: `map f` reflects units for an injective local
   homomorphism `f` of commutative rings.
 * `MvPolynomial.isLocalHom_map`: its specialization to a ring homomorphism `f` out of a field into a
@@ -78,64 +76,72 @@ applies to `map f`. -/
 instance isLocalHom_map [Nontrivial L] (f : k →+* L) : IsLocalHom (map (σ := σ) f) :=
   isLocalHom_map_of_injective f f.injective
 
-/-- Over a commutative semiring without zero divisors, a multivariate polynomial is a unit if and
-only if it is `C r` for a unit `r` of the coefficient semiring. -/
-theorem isUnit_iff_eq_C_of_noZeroDivisors {R : Type*} [CommSemiring R] [NoZeroDivisors R]
-    {p : MvPolynomial σ R} : IsUnit p ↔ ∃ r, IsUnit r ∧ p = C r := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · have : Subsingleton (MvPolynomial σ R) :=
-      ⟨fun f g ↦ MvPolynomial.ext f g fun _ ↦ Subsingleton.elim _ _⟩
-    exact ⟨fun _ ↦ ⟨0, isUnit_of_subsingleton 0, Subsingleton.elim _ _⟩,
-      fun _ ↦ isUnit_of_subsingleton p⟩
-  · rw [isUnit_iff_dvd_one, ← map_one C, dvd_C_iff_exists one_ne_zero]
-    simp_rw [isUnit_iff_dvd_one]
-
-/-- Over a commutative semiring `R` without zero divisors, `C` and `constantCoeff` identify the
-units of `R` with the units of `MvPolynomial σ R`. -/
-noncomputable def unitsMulEquivOfNoZeroDivisors (σ R : Type*) [CommSemiring R] [NoZeroDivisors R] :
-    Rˣ ≃* (MvPolynomial σ R)ˣ where
-  toFun := Units.map (C : R →+* MvPolynomial σ R).toMonoidHom
-  invFun := Units.map (constantCoeff : MvPolynomial σ R →+* R).toMonoidHom
-  left_inv u := Units.ext (by simp)
-  right_inv u := by
-    obtain ⟨r, -, hr⟩ := isUnit_iff_eq_C_of_noZeroDivisors.mp u.isUnit
-    exact Units.ext (by simp [hr])
-  map_mul' := map_mul _
-
-@[simp]
-theorem coe_unitsMulEquivOfNoZeroDivisors (σ R : Type*) [CommSemiring R] [NoZeroDivisors R]
-    (u : Rˣ) :
-    ((unitsMulEquivOfNoZeroDivisors σ R u : (MvPolynomial σ R)ˣ) : MvPolynomial σ R) = C (u : R) :=
-  (rfl)
-
-@[simp]
-theorem coe_unitsMulEquivOfNoZeroDivisors_symm (σ R : Type*) [CommSemiring R] [NoZeroDivisors R]
-    (u : (MvPolynomial σ R)ˣ) :
-    (((unitsMulEquivOfNoZeroDivisors σ R).symm u : Rˣ) : R) =
-      constantCoeff (u : MvPolynomial σ R) :=
-  (rfl)
-
-/-- Over a reduced commutative ring `R`, `C` and `constantCoeff` identify the units of `R` with
-the units of `MvPolynomial σ R`. -/
-noncomputable def unitsMulEquiv (σ R : Type*) [CommRing R] [IsReduced R] :
-    Rˣ ≃* (MvPolynomial σ R)ˣ where
-  toFun := Units.map (C : R →+* MvPolynomial σ R).toMonoidHom
-  invFun := Units.map (constantCoeff : MvPolynomial σ R →+* R).toMonoidHom
-  left_inv u := Units.ext (by simp)
-  right_inv u := by
-    obtain ⟨r, -, hr⟩ := isUnit_iff_eq_C_of_isReduced.mp u.isUnit
-    exact Units.ext (by simp [hr])
-  map_mul' := map_mul _
-
-@[simp]
-theorem coe_unitsMulEquiv (σ R : Type*) [CommRing R] [IsReduced R] (u : Rˣ) :
-    ((unitsMulEquiv σ R u : (MvPolynomial σ R)ˣ) : MvPolynomial σ R) = C (u : R) :=
-  (rfl)
-
-@[simp]
-theorem coe_unitsMulEquiv_symm (σ R : Type*) [CommRing R] [IsReduced R]
-    (u : (MvPolynomial σ R)ˣ) :
-    (((unitsMulEquiv σ R).symm u : Rˣ) : R) = constantCoeff (u : MvPolynomial σ R) :=
-  (rfl)
-
 end MvPolynomial
+
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial
+
+/-- Over any reduced commutative semiring, a multivariate polynomial is a unit if and only if it is
+`C r` for a unit `r` of the coefficient semiring. -/
+theorem isUnit_iff_eq_C {σ R : Type*} [CommSemiring R] [IsReduced R]
+    {p : _root_.MvPolynomial σ R} : IsUnit p ↔ ∃ r, IsUnit r ∧ p = C r := by
+  refine ⟨fun hp ↦ ?_, ?_⟩
+  · rcases subsingleton_or_nontrivial R with hR | hR
+    · exact ⟨0, isUnit_of_subsingleton 0, Subsingleton.elim _ _⟩
+    obtain ⟨q, hpq⟩ := hp.exists_right_inv
+    have hp0 : p ≠ 0 := by rintro rfl; simp at hpq
+    cases exists_wellFoundedGT σ
+    let m : MonomialOrder σ := MonomialOrder.degLex
+    let a : R := m.leadingCoeff p
+    have ha : a ≠ 0 := m.leadingCoeff_ne_zero_iff.mpr hp0
+    let r : _root_.MvPolynomial σ R := C a * q
+    have hpr : p * r = C a := by rw [mul_left_comm p (C a) q, hpq, mul_one]
+    have hr0 : r ≠ 0 := by
+      rintro hr0
+      apply ha
+      simpa [hr0] using congrArg constantCoeff hpr.symm
+    have hlr : m.leadingCoeff r ≠ 0 := m.leadingCoeff_ne_zero_iff.mpr hr0
+    -- Scaling `q` by `a = m.leadingCoeff p` makes `m.leadingCoeff r` a multiple of `a`, so if
+    -- `a * m.leadingCoeff r = 0` then `(m.leadingCoeff r) ^ 2 = 0`, contradicting reducedness.
+    have hmul : a * m.leadingCoeff r ≠ 0 := by
+      intro hzero
+      apply hlr
+      apply eq_zero_of_pow_eq_zero (n := 2)
+      have hcoeff : m.leadingCoeff r = a * q.coeff (m.degree r) := by
+        simp [MonomialOrder.leadingCoeff, r]
+      rw [sq, hcoeff, mul_right_comm, ← hcoeff, hzero, zero_mul]
+    have hdeg : m.degree p + m.degree r = 0 := by
+      rw [← m.degree_mul_of_mul_leadingCoeff_ne_zero hmul, hpr, m.degree_C]
+    have hp_eq : p = C (m.leadingCoeff p) :=
+      m.eq_C_of_degree_eq_zero (add_eq_zero.mp hdeg).1
+    have hc : IsUnit (constantCoeff p) := hp.map constantCoeff
+    rw [hp_eq, constantCoeff_C] at hc
+    exact ⟨m.leadingCoeff p, hc, hp_eq⟩
+  · rintro ⟨r, hr, rfl⟩
+    exact hr.map C
+
+/-- Over a reduced commutative semiring `R`, `C` and `constantCoeff` identify the units of `R` with
+the units of `MvPolynomial σ R`. -/
+noncomputable def unitsMulEquiv (σ R : Type*) [CommSemiring R] [IsReduced R] :
+    Rˣ ≃* (_root_.MvPolynomial σ R)ˣ where
+  toFun := Units.map (C : R →+* _root_.MvPolynomial σ R).toMonoidHom
+  invFun := Units.map (constantCoeff : _root_.MvPolynomial σ R →+* R).toMonoidHom
+  left_inv u := Units.ext (by simp)
+  right_inv u := by
+    obtain ⟨r, -, hr⟩ := isUnit_iff_eq_C.mp u.isUnit
+    exact Units.ext (by simp [hr])
+  map_mul' := map_mul _
+
+@[simp]
+theorem coe_unitsMulEquiv (σ R : Type*) [CommSemiring R] [IsReduced R] (u : Rˣ) :
+    ((unitsMulEquiv σ R u : (_root_.MvPolynomial σ R)ˣ) : _root_.MvPolynomial σ R) = C (u : R) := by
+  simp [unitsMulEquiv]
+
+@[simp]
+theorem coe_unitsMulEquiv_symm (σ R : Type*) [CommSemiring R] [IsReduced R]
+    (u : (_root_.MvPolynomial σ R)ˣ) :
+    (((unitsMulEquiv σ R).symm u : Rˣ) : R) = constantCoeff (u : _root_.MvPolynomial σ R) := by
+  simp [unitsMulEquiv]
+
+end TauCeti.MvPolynomial

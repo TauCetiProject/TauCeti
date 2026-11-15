@@ -138,14 +138,14 @@ theorem shiftClass_eq_mk_iff {d : ℤ} :
       ← hφ n (φ.symm (φ₀ x)), φ.apply_symm_apply, hφ₀]⟩⟩
 
 /-- If `ℳ` contains a homogeneous unit in degree `c`, its shift class is `-c`. -/
-theorem shiftClass_eq_neg_mk_of_isUnit_mem {u : A} (hu : IsUnit u) {c : ℤ} (hmem : u ∈ ℳ c) :
+theorem shiftClass_eq_mk_neg_of_isUnit_mem {u : A} (hu : IsUnit u) {c : ℤ} (hmem : u ∈ ℳ c) :
     shiftClass 𝒜 ℳ = ((-c : ℤ) : ShiftClassGroup 𝒜) :=
   (shiftClass_eq_mk_iff 𝒜 ℳ).mpr <|
     (exists_linearEquiv_iff_exists_isUnit_mem 𝒜 ℳ).mpr ⟨u, hu, by simpa using hmem⟩
 
 @[simp]
 theorem shiftClass_self : shiftClass 𝒜 𝒜 = 0 := by
-  simpa using shiftClass_eq_neg_mk_of_isUnit_mem 𝒜 𝒜 isUnit_one (c := 0) (SetLike.one_mem_graded 𝒜)
+  simpa using shiftClass_eq_mk_neg_of_isUnit_mem 𝒜 𝒜 isUnit_one (c := 0) (SetLike.one_mem_graded 𝒜)
 
 /-- Over a `ℤ`-graded commutative ring with preconnected prime spectrum, two compatible
 `ℤ`-gradings of `A` are graded-isomorphic as `A`-modules if and only if they have the same

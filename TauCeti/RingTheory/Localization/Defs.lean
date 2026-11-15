@@ -8,13 +8,16 @@ module
 public import Mathlib.RingTheory.Localization.Defs
 
 /-!
-# Injectivity of ring homomorphisms lifted out of a localization
+# Basic lemmas on localizations
 
-For a localization `S` of a commutative semiring `R` at a submonoid `M`, a ring homomorphism
-`g : R →+* P` that maps `M` into the units of `P` extends to `IsLocalization.lift hg : S →+* P`.
-Complementing Mathlib's `IsLocalization.lift_injective_iff` and `IsLocalization.eq_of_eq`, this file
-records that `IsLocalization.lift hg` is injective whenever `g` is injective
-(`IsLocalization.lift_injective_of_injective`).
+For a localization `S` of a commutative semiring `R` at a submonoid `M`:
+
+* `IsLocalization.lift_injective_of_injective`: if an injective ring homomorphism `g : R →+* P`
+  maps `M` into the units of `P`, then its lift `IsLocalization.lift hg : S →+* P` is injective
+  (complementing Mathlib's `IsLocalization.lift_injective_iff` and `IsLocalization.eq_of_eq`).
+* `TauCeti.IsLocalization.isUnit_mk'_iff` and `TauCeti.Localization.isUnit_mk_iff`: a fraction
+  `a / m` (`m ∈ M`) is a unit in `S` (or `Localization M`) if and only if `algebraMap R S a` is a
+  unit, since `m` already maps to a unit.
 -/
 
 public section
@@ -32,3 +35,35 @@ theorem lift_injective_of_injective (hg : ∀ y : M, IsUnit (g y)) (hinj : Funct
     ⟨eq_of_eq (S := S) hg, fun h ↦ congrArg (algebraMap R S) (hinj h)⟩
 
 end IsLocalization
+
+namespace TauCeti.IsLocalization
+
+open _root_.IsLocalization
+
+variable {R : Type*} [CommSemiring R] {M : Submonoid R} {S : Type*} [CommSemiring S]
+  [Algebra R S] [IsLocalization M S]
+
+/-- A fraction `IsLocalization.mk' S x y` is a unit in `S` if and only if its numerator `x` maps to
+a unit in `S`. -/
+@[simp]
+theorem isUnit_mk'_iff {x : R} {y : M} :
+    IsUnit (mk' S x y) ↔ IsUnit (algebraMap R S x) :=
+  ⟨fun h ↦ mk'_spec S x y ▸ h.mul (map_units S y),
+    fun h ↦ isUnit_of_dvd_unit ⟨algebraMap R S y, (mk'_spec S x y).symm⟩ h⟩
+
+end TauCeti.IsLocalization
+
+namespace TauCeti.Localization
+
+open _root_.Localization
+
+variable {R : Type*} [CommSemiring R] {M : Submonoid R}
+
+/-- A fraction `Localization.mk x y` is a unit in `Localization M` if and only if `x` maps to a unit
+in `Localization M`. -/
+@[simp]
+theorem isUnit_mk_iff {x : R} {y : M} :
+    IsUnit (mk x y) ↔ IsUnit (algebraMap R (_root_.Localization M) x) := by
+  rw [mk_eq_mk'_apply, TauCeti.IsLocalization.isUnit_mk'_iff]
+
+end TauCeti.Localization

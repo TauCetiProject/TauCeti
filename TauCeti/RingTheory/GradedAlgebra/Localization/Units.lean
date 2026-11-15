@@ -37,15 +37,12 @@ therefore gives `ShiftClassGroup (awayGrading 𝒜 hf) ≃+ ZMod e.natAbs`.
 
 ## Main results
 
-* `TauCeti.homogeneousUnitDegrees_le_awayGrading` and
+* `TauCeti.homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading` and
   `TauCeti.mem_homogeneousUnitDegrees_awayGrading_of_dvd`: containment of original homogeneous unit
   degrees and degrees of homogeneous divisors of `f`.
 * `TauCeti.homogeneousUnitDegrees_awayGrading_of_eq_zero` and
   `TauCeti.homogeneousUnitDegrees_awayGrading_of_isUnit`: boundary cases `f = 0` (`⊤`) and `f` a
   unit (`homogeneousUnitDegrees 𝒜`).
-* `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated`: in a graded domain, two nonzero
-  associated homogeneous elements have degrees differing by an element of
-  `homogeneousUnitDegrees 𝒜`.
 * `TauCeti.homogeneousUnitDegrees_awayGrading_of_prime` and
   `TauCeti.homogeneousUnitDegrees_awayGrading_prod_primes`: the homogeneous unit degrees of
   `awayGrading 𝒜 hf` when `f` is a homogeneous prime or a finite product of homogeneous primes.
@@ -68,7 +65,7 @@ variable [SetLike.GradedMonoid 𝒜] {f : A} {e : ι} (hf : f ∈ 𝒜 e)
 
 /-- Every homogeneous unit degree of `𝒜` remains a homogeneous unit degree of
 `awayGrading 𝒜 hf`. -/
-theorem homogeneousUnitDegrees_le_awayGrading :
+theorem homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading :
     homogeneousUnitDegrees 𝒜 ≤ homogeneousUnitDegrees (awayGrading 𝒜 hf) :=
   homogeneousUnitDegrees_le_iff.mpr fun u _ hu ↦
     mem_homogeneousUnitDegrees_of_mem
@@ -103,31 +100,14 @@ theorem homogeneousUnitDegrees_awayGrading_of_eq_zero (hf0 : f = 0) :
       ⟨1, by simp [hf0]⟩
   exact homogeneousUnitDegrees_eq_top_of_subsingleton
 
-end GradedMonoid
-
-private theorem isUnit_algebraMap_of_eq_mk {f : A} {v : (Localization.Away f)ˣ} {n : ℕ} {a : A}
-    (hv_eq : (v : Localization.Away f) = Localization.mk a (Submonoid.pow f n)) :
-    IsUnit (algebraMap A (Localization.Away f) a) := by
-  have hmap : algebraMap A (Localization.Away f) a =
-      (v : Localization.Away f) * algebraMap A (Localization.Away f) (f ^ n) := by
-    rw [hv_eq, Localization.mk_eq_mk'_apply]
-    exact (IsLocalization.mk'_spec (Localization.Away f) a (Submonoid.pow f n)).symm
-  rw [hmap, map_pow, ← val_awayUnit (Localization.Away f) f]
-  exact v.isUnit.mul ((awayUnit (Localization.Away f) f).isUnit.pow n)
-
-section GradedAlgebra
-
-variable [DecidableEq ι] [GradedAlgebra 𝒜]
-
 /-- Localizing away from a homogeneous unit `f` does not enlarge `homogeneousUnitDegrees`. -/
-theorem homogeneousUnitDegrees_awayGrading_of_isUnit {f : A} {e : ι} (hf : f ∈ 𝒜 e)
-    (hu : IsUnit f) :
+theorem homogeneousUnitDegrees_awayGrading_of_isUnit (hu : IsUnit f) :
     homogeneousUnitDegrees (awayGrading 𝒜 hf) = homogeneousUnitDegrees 𝒜 := by
   refine le_antisymm (homogeneousUnitDegrees_le_iff.mpr fun v d hv ↦ ?_)
-    (homogeneousUnitDegrees_le_awayGrading hf)
+    (homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading hf)
   obtain ⟨n, a, ha, hv_eq⟩ := mem_awayGrading_iff.mp hv
   obtain ⟨k, hk⟩ := (IsLocalization.Away.algebraMap_isUnit_iff (S := Localization.Away f) f).mp
-    (isUnit_algebraMap_of_eq_mk hv_eq)
+    (Localization.isUnit_mk_iff.mp (hv_eq ▸ v.isUnit))
   have ha_unit : IsUnit a := isUnit_of_dvd_unit hk (hu.pow k)
   have had : d + n • e ∈ homogeneousUnitDegrees 𝒜 :=
     mem_homogeneousUnitDegrees_of_mem (u := ha_unit.unit) (by simpa using ha)
@@ -141,7 +121,7 @@ theorem homogeneousUnitDegrees_awayGrading_one (h1 : (1 : A) ∈ 𝒜 (0 : ι)) 
     homogeneousUnitDegrees (awayGrading 𝒜 h1) = homogeneousUnitDegrees 𝒜 :=
   homogeneousUnitDegrees_awayGrading_of_isUnit h1 isUnit_one
 
-end GradedAlgebra
+end GradedMonoid
 
 end Semiring
 
@@ -150,18 +130,6 @@ section Domain
 variable {ι R A : Type*} [DecidableEq ι] [AddCommGroup ι] [CommSemiring R] [CommSemiring A]
   [IsDomain A] [Algebra R A] {𝒜 : ι → Submodule R A} [GradedAlgebra 𝒜]
 
-/-- In a graded domain, if a nonzero homogeneous element `b ∈ 𝒜 db` is associated to a homogeneous
-element `a ∈ 𝒜 da`, then `da - db ∈ homogeneousUnitDegrees 𝒜`: the unit cofactor is homogeneous of
-degree `da - db`. -/
-theorem sub_mem_homogeneousUnitDegrees_of_associated {a b : A} {da db : ι} (ha : a ∈ 𝒜 da)
-    (hb : b ∈ 𝒜 db) (hb0 : b ≠ 0) (h : Associated b a) :
-    da - db ∈ homogeneousUnitDegrees 𝒜 := by
-  obtain ⟨u, rfl⟩ := h
-  have hu : (u : A) ∈ 𝒜 (da - db) :=
-    mem_of_mul_mem_add_of_isLeftRegular 𝒜 hb (isRegular_iff_ne_zero.mpr hb0).left
-      (by rwa [add_sub_cancel])
-  exact mem_homogeneousUnitDegrees_of_mem hu
-
 /-- **Homogeneous unit degrees away from a homogeneous prime.** In a graded domain `(A, 𝒜)`,
 localizing away from a homogeneous prime `f ∈ 𝒜 e` adjoins `ℤ • e` to `homogeneousUnitDegrees 𝒜`. -/
 theorem homogeneousUnitDegrees_awayGrading_of_prime {f : A} {e : ι} (hf : f ∈ 𝒜 e)
@@ -169,12 +137,12 @@ theorem homogeneousUnitDegrees_awayGrading_of_prime {f : A} {e : ι} (hf : f ∈
     homogeneousUnitDegrees (awayGrading 𝒜 hf) =
       homogeneousUnitDegrees 𝒜 ⊔ AddSubgroup.zmultiples e := by
   refine le_antisymm (homogeneousUnitDegrees_le_iff.mpr fun v d hv ↦ ?_)
-    (sup_le (homogeneousUnitDegrees_le_awayGrading hf)
+    (sup_le (homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading hf)
       (zmultiples_le_homogeneousUnitDegrees_awayGrading hf))
   obtain ⟨n, a, ha, hv_eq⟩ := mem_awayGrading_iff.mp hv
   -- In a domain, `a` becoming a unit away from the prime `f` means `a` is associated to `f ^ k`.
   obtain ⟨k, hak⟩ := (hprime.isUnit_algebraMap_away_iff (S := Localization.Away f)).mp
-    (isUnit_algebraMap_of_eq_mk hv_eq)
+    (Localization.isUnit_mk_iff.mp (hv_eq ▸ v.isUnit))
   have hfk_mem : f ^ k ∈ 𝒜 (k • e) := by simpa using SetLike.pow_mem_graded k hf
   have hsub : (d + n • e) - k • e ∈ homogeneousUnitDegrees 𝒜 :=
     sub_mem_homogeneousUnitDegrees_of_associated ha hfk_mem (pow_ne_zero k hprime.ne_zero) hak.symm
@@ -202,12 +170,12 @@ theorem homogeneousUnitDegrees_awayGrading_prod_primes {J : Type*} {s : Finset J
     homogeneousUnitDegrees (awayGrading 𝒜 hf) =
       homogeneousUnitDegrees 𝒜 ⊔ AddSubgroup.closure (d '' (s : Set J)) := by
   refine le_antisymm (homogeneousUnitDegrees_le_iff.mpr fun v c hv ↦ ?_)
-    (sup_le (homogeneousUnitDegrees_le_awayGrading hf) ?_)
+    (sup_le (homogeneousUnitDegrees_le_homogeneousUnitDegrees_awayGrading hf) ?_)
   · obtain ⟨n, a, ha, hv_eq⟩ := mem_awayGrading_iff.mp hv
     obtain ⟨m, ham⟩ :=
       (s.isUnit_algebraMap_away_prod_primes_iff
         (S := Localization.Away (∏ j ∈ s, p j)) hp_prime).mp
-        (isUnit_algebraMap_of_eq_mk hv_eq)
+        (Localization.isUnit_mk_iff.mp (hv_eq ▸ v.isUnit))
     have hprod_ne : ∏ j ∈ s, p j ≠ 0 :=
       Finset.prod_ne_zero_iff.mpr fun j hj ↦ (hp_prime j hj).ne_zero
     have he_eq : e = ∑ j ∈ s, d j :=
@@ -265,6 +233,18 @@ theorem shiftClassGroupAwayPrimeEquiv_mk {f : A} {e : ℤ} (hf : f ∈ 𝒜 e) (
   -- Both quotient equivalences are induced by maps on representatives, and the second is the
   -- canonical cast `ℤ → ZMod |e|`; Mathlib states no lemma evaluating them on a class.
   rfl
+
+@[simp]
+theorem shiftClassGroupAwayPrimeEquiv_symm_intCast {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
+    (hprime : Prime f) (hbot : homogeneousUnitDegrees 𝒜 = ⊥) (d : ℤ) :
+    (shiftClassGroupAwayPrimeEquiv hf hprime hbot).symm d = QuotientAddGroup.mk d := by
+  rw [AddEquiv.symm_apply_eq, shiftClassGroupAwayPrimeEquiv_mk]
+
+theorem shiftClassGroupAwayPrimeEquiv_symm_apply {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
+    (hprime : Prime f) (hbot : homogeneousUnitDegrees 𝒜 = ⊥) (x : ZMod e.natAbs) :
+    (shiftClassGroupAwayPrimeEquiv hf hprime hbot).symm x =
+      QuotientAddGroup.mk (ZMod.cast x : ℤ) := by
+  rw [AddEquiv.symm_apply_eq, shiftClassGroupAwayPrimeEquiv_mk, ZMod.intCast_zmod_cast]
 
 end IntShiftClass
 

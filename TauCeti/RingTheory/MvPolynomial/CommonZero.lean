@@ -125,9 +125,9 @@ theorem exists_ne_zero_aeval_mul_eq_zero_and_aeval_pderiv_eq_zero (hσ : 2 < Nat
 
 end MvPolynomial
 
-namespace TauCeti
-
 open MvPolynomial
+
+namespace TauCeti
 
 variable {n d : ℕ} {k K : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K]
 

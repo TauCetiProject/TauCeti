@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Associated
+public import TauCeti.Algebra.GroupWithZero.Associated
 
 /-!
 # Divisors of products of prime elements
 
-In a cancellative commutative monoid with zero, Mathlib's `dvd_prime_pow` characterizes the
-divisors of a power `p ^ n` of a prime element `p` without assuming unique factorization: every
-divisor of `p ^ n` is associated to `p ^ i` for some `i ≤ n`.
+In a cancellative commutative monoid with zero, Mathlib's `dvd_prime_pow` and
+`Prime.exists_associated_pow_mul_of_dvd_pow_mul` characterize the divisors of `p ^ n` and
+`p ^ n * a` for a prime element `p` without assuming unique factorization.
 
 This file extends that characterization to finite products of prime elements and their powers:
 every divisor of a multiset product of primes is associated to the product of a submultiset, every
@@ -22,8 +23,6 @@ to association of the product.
 
 ## Main results
 
-* `Prime.exists_associated_pow_mul_of_dvd_pow_mul`: if `x ∣ p ^ n * a` for a prime `p`, then `x` is
-  associated to `p ^ i * y` for some `i ≤ n` and `y ∣ a`.
 * `Multiset.dvd_prod_primes_iff`: `x ∣ s.prod` for a multiset `s` of primes if and only if `x` is
   associated to `t.prod` for some `t ≤ s`.
 * `Finset.dvd_prod_pow_primes_iff` and `Finset.dvd_prod_primes_pow_iff`: `x` divides
@@ -36,30 +35,6 @@ to association of the product.
 public section
 
 assert_not_exists Field
-
-namespace Prime
-
-variable {M₀ : Type*} [CommMonoidWithZero M₀] [IsCancelMulZero M₀]
-
-/-- In a cancellative commutative monoid with zero, a divisor of `p ^ n * a` with `p` prime splits
-up to association into a power `p ^ i` (`i ≤ n`) and a divisor of `a`. -/
-theorem exists_associated_pow_mul_of_dvd_pow_mul {p : M₀} (hp : Prime p) {n : ℕ} {a x : M₀}
-    (hx : x ∣ p ^ n * a) : ∃ i ≤ n, ∃ y, y ∣ a ∧ Associated x (p ^ i * y) := by
-  induction n generalizing x with
-  | zero =>
-    rw [pow_zero, one_mul] at hx
-    exact ⟨0, le_rfl, x, hx, by simp⟩
-  | succ n ih =>
-    rw [pow_succ', mul_assoc] at hx
-    rcases hp.left_dvd_or_dvd_right_of_dvd_mul hx with ⟨z, rfl⟩ | hx'
-    · rw [mul_dvd_mul_iff_left hp.ne_zero] at hx
-      obtain ⟨i, hi, y, hy, hz⟩ := ih hx
-      refine ⟨i + 1, Nat.succ_le_succ hi, y, hy, (hz.mul_left p).trans ?_⟩
-      rw [pow_succ', mul_assoc]
-    · obtain ⟨i, hi, y, hy, hxy⟩ := ih hx'
-      exact ⟨i, Nat.le_succ_of_le hi, y, hy, hxy⟩
-
-end Prime
 
 namespace Multiset
 

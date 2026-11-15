@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Units.Opposite
+public import Mathlib.Algebra.GroupWithZero.Associated
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
@@ -46,6 +47,10 @@ grading graded-isomorphic to a shift has such a generator.
   the shift `A(d)` if and only if it has a unit in degree `-d`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
+* `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular` and
+  `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements (with a
+  left-regular or nonzero left-cancellative factor) have degrees differing by an element of
+  `homogeneousUnitDegrees 𝒜`.
 
 The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
 `TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
@@ -229,6 +234,27 @@ theorem ShiftClassGroup.mk_eq_mk_iff {d e : ι} :
     (d : ShiftClassGroup 𝒜) = e ↔ ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ 𝒜 (n + e) ↔ x ∈ 𝒜 (n + d) := by
   rw [QuotientAddGroup.eq, ← sub_mem_homogeneousUnitDegrees_iff, ← neg_mem_iff, neg_add_rev,
     neg_neg, neg_add_eq_sub]
+
+variable {𝒜}
+
+/-- In a ring graded by an additive commutative group, if a left-regular homogeneous element
+`b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then `da - db ∈ homogeneousUnitDegrees 𝒜`: the unit
+cofactor on the right is homogeneous of degree `da - db`. -/
+theorem sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular {a b : A} {da db : ι}
+    (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb_reg : IsLeftRegular b) (h : Associated b a) :
+    da - db ∈ homogeneousUnitDegrees 𝒜 := by
+  obtain ⟨u, rfl⟩ := h
+  exact mem_homogeneousUnitDegrees_of_mem <|
+    GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hb hb_reg (by rwa [add_sub_cancel])
+
+/-- In a left-cancellative ring with zero graded by an additive commutative group, if a nonzero
+homogeneous element `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then
+`da - db ∈ homogeneousUnitDegrees 𝒜`. -/
+theorem sub_mem_homogeneousUnitDegrees_of_associated [IsLeftCancelMulZero A] {a b : A} {da db : ι}
+    (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb0 : b ≠ 0) (h : Associated b a) :
+    da - db ∈ homogeneousUnitDegrees 𝒜 :=
+  sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular ha hb
+    (fun _ _ ↦ mul_left_cancel₀ hb0) h
 
 end AddCommGroup
 
