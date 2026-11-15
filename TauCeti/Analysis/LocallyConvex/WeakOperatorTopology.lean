@@ -55,16 +55,22 @@ theorem continuous_ofPointwiseConvergenceCLM :
 
 /-- A set of operators closed in the weak operator topology is closed in the topology of
 pointwise convergence (the strong operator topology). -/
-theorem isClosed_image_toPointwiseConvergenceCLM [ContinuousSMul 𝕜₁ E] {s : Set (E →SL[σ] F)}
-    (hs : IsClosed (ofCLM '' s)) :
+theorem isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM [ContinuousSMul 𝕜₁ E]
+    {s : Set (E →SL[σ] F)} (hs : IsClosed (ofCLM '' s)) :
     IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) := by
+  -- `toPointwiseConvergenceCLM` and the coercion `E →SLₚₜ[σ] F → E →SL[σ] F` used in
+  -- `continuous_ofPointwiseConvergenceCLM` are both the identity on underlying operators, so the
+  -- image along the former is the preimage of `ofCLM '' s` along the continuous identity.
   convert hs.preimage continuous_ofPointwiseConvergenceCLM using 1
   ext T
+  simp only [Set.mem_image, Set.mem_preimage]
   constructor
   · rintro ⟨a, ha, rfl⟩
-    exact ⟨a, ha, rfl⟩
+    exact ⟨a, ha, by rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]⟩
   · rintro ⟨a, ha, h⟩
-    exact ⟨a, ha, ofCLM_injective h⟩
+    refine ⟨a, ha, ?_⟩
+    rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
+    exact ofCLM_injective h
 
 end ContinuousLinearMapWOT
 
