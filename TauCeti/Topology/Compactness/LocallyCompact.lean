@@ -28,8 +28,8 @@ topological embedding on an open neighbourhood of any compact set
 
 In a locally compact Hausdorff space, let `q` be continuous, above `a` off a compact set `Z`, and
 such that every point is joined to `Z` by a preconnected set on which `q` does not increase. Then
-the sublevels of `q` just above `a` lie in any given open neighbourhood of `Z`, and their closed
-versions are compact (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
+for each open neighbourhood `U` of `Z`, the sublevels of `q` just above `a` lie in `U`, and their
+closed versions are compact (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
 -/
 
 public section
@@ -51,10 +51,10 @@ theorem locallyCompactSpace_of_forall_exists_mem_nhds {X : Type*} [TopologicalSp
     hKc.image continuous_subtype_val⟩
 
 /-- Let `q` be a continuous function which is above `a` off a compact set `Z`, and suppose every
-point `x` lies in a preconnected set meeting `Z` on which `q ≤ q x`. Then for some `m > a` the
-sublevel `{q < m}` lies in any given open neighbourhood `U` of `Z`, and the closed sublevels
-`{q ≤ δ}`, `δ < m`, are compact: they lie in a compact neighbourhood of `Z` inside `U`, on whose
-boundary `q ≥ m`. -/
+point `x` lies in a preconnected set meeting `Z` on which `q ≤ q x`. Then for every open
+neighbourhood `U` of `Z` there is `m > a` such that the sublevel `{q < m}` lies in `U` and the
+closed sublevels `{q ≤ δ}`, `δ < m`, are compact: they lie in a compact neighbourhood of `Z`
+inside `U`, on whose boundary `q ≥ m`. -/
 theorem exists_gt_setOf_lt_subset_and_isCompact {X α : Type*} [TopologicalSpace X]
     [LocallyCompactSpace X] [T2Space X] [LinearOrder α] [TopologicalSpace α]
     [OrderClosedTopology α] [NoMaxOrder α] {Z U : Set X} (hZ : IsCompact Z) (hU : IsOpen U)
