@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.SmulLeft
+import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
@@ -36,6 +39,11 @@ only depends on the cutoff near the support of `T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
+* `Distribution.cutoffTempered_smulLeftCLM`: cutting off `g T`, for a smooth real function `g`, by
+  `φ` is cutting off `T` by `g φ`.
+* `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `ψ = 1` on the support of `φ`,
+  then `φ ∂^m (ψ T) = φ ∂^m T`. This is how a differential operator applied to the tempered
+  distribution `ψ T` is compared with the cut-off of the differential operator applied to `T`.
 
 ## References
 
@@ -47,7 +55,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set TopologicalSpace TestFunction MeasureTheory
+open Complex Filter Set TopologicalSpace TestFunction MeasureTheory LineDeriv
 open scoped Distributions Topology SchwartzMap ContDiff
 
 namespace Distribution
@@ -172,6 +180,57 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
     T.cutoffTempered (c • φ) = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
+
+/-- The cut-off of a finite sum of distributions is the sum of their cut-offs. -/
+theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (∑ i ∈ s, T i).cutoffTempered φ = ∑ i ∈ s, (T i).cutoffTempered φ :=
+  map_sum (AddMonoidHom.mk' (fun S : 𝓓'(Ω, ℂ) ↦ S.cutoffTempered φ)
+    fun S S' ↦ cutoffTempered_add S S' φ) T s
+
+/-- Cutting off `g T` by `φ`, for a smooth real function `g`, is cutting off `T` by the test
+function `g φ`. -/
+theorem cutoffTempered_smulLeftCLM {g : E → ℝ} (hg : ContDiff ℝ ∞ g) (T : 𝓓'(Ω, ℂ))
+    (φ : 𝓓(Ω, ℂ)) :
+    (Distribution.smulLeftCLM hg T).cutoffTempered φ =
+      T.cutoffTempered (TestFunction.smulLeftCLM hg φ) := by
+  ext ψ
+  rw [cutoffTempered_def, complexPairing_smulLeftCLM]
+  refine (cutoffTempered_apply T _ fun x ↦ ?_).symm
+  simp only [TestFunction.smulLeftCLM_apply, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
+    Complex.real_smul]
+  ring
+
+/-- **Derivatives of a cut-off distribution where the cutoff is `1`.** If `ψ = 1` on the support of
+`φ`, then multiplying a derivative `∂^m (ψ T)` of the tempered distribution `ψ T` by `φ` gives the
+cut-off `φ ∂^m T` of the derivative of `T`: near the support of `φ`, the derivatives of `ψ` do not
+contribute. -/
+theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
+    (h : EqOn (ψ : E → ℂ) 1 (tsupport φ)) {n : ℕ} (m : Fin n → E) :
+    TemperedDistribution.smulLeftCLM ℂ φ (∂^{m} (T.cutoffTempered ψ)) =
+      (∂^{m} T).cutoffTempered φ := by
+  ext f
+  -- The test function `φ f`, whose derivatives are those of the Schwartz function `φ f`.
+  set χ : 𝓓(Ω, ℂ) := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (f.smooth ⊤) φ
+  have hχ : ∀ x, χ x = φ x * f x := fun x ↦ by simp [χ, mul_comm]
+  have hφ : (φ : E → ℂ).HasTemperateGrowth :=
+    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  have hχf : (χ : E → ℂ) = SchwartzMap.smulLeftCLM ℂ (φ : E → ℂ) f := by
+    ext x
+    rw [hχ, SchwartzMap.smulLeftCLM_apply_apply hφ, smul_eq_mul]
+  set D := ∂^{m ∘ Fin.rev} χ
+  have hD := TestFunction.coe_iteratedLineDerivOp_eq_of_coe_eq hχf (m ∘ Fin.rev)
+  rw [TemperedDistribution.smulLeftCLM_apply_apply,
+    TemperedDistribution.iteratedLineDerivOp_apply_apply, cutoffTempered_apply (∂^{m} T) φ hχ,
+    complexPairing_iteratedLineDerivOp, smul_eq_mul]
+  congr 1
+  refine cutoffTempered_apply T ψ fun x ↦ ?_
+  rw [← congrFun hD x]
+  by_cases hx : x ∈ tsupport φ
+  · rw [h hx, Pi.one_apply, one_mul]
+  · have hD0 : x ∉ tsupport D := fun hxD ↦ hx <|
+      (TestFunction.tsupport_iteratedLineDerivOp_subset χ _).trans
+        (by simpa [χ] using tsupport_mul_subset_left (f := (φ : E → ℂ)) (g := fun x ↦ f x)) hxD
+    rw [image_eq_zero_of_notMem_tsupport hD0, mul_zero]
 
 end Cutoff
 
