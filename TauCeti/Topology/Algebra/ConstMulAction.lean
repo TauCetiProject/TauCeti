@@ -16,15 +16,17 @@ public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
 
+import TauCeti.Topology.Compactness.Compact
+
 /-!
 # Transfer instances for restricted and properly discontinuous actions
 
 This file records generic instances for actions on a topological space that typeclass search
 cannot otherwise reach, and continuity of maps equal to fixed-element scalar actions.
 A trivial action, fixing every point, is jointly continuous for any topologies.
-A continuous monoid action on a Hausdorff space has closed fixed sets, and a group action with
-continuous orbit maps on a `T₁` space has closed point stabilisers. If every orbit of a group
-action is open, then every orbit is also closed.
+A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
+of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
+point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
@@ -45,6 +47,8 @@ set the orbit projection is an open embedding.
   every invariant subspace.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
+* `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
+  points whose whole orbit lies in an open set form an open set.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
@@ -89,12 +93,28 @@ theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSp
     [T2Space X] [ContinuousConstSMul M X] (g : M) : IsClosed (MulAction.fixedBy X g) :=
   isClosed_eq (continuous_const_smul g) continuous_id
 
+/-- The common fixed set of a monoid acting continuously on a Hausdorff space is closed. -/
+theorem isClosed_fixedPoints_of_continuousConstSMul {M X : Type*} [Monoid M]
+    [MulAction M X] [TopologicalSpace X] [T2Space X] [ContinuousConstSMul M X] :
+    IsClosed (MulAction.fixedPoints M X) := by
+  rw [MulAction.fixed_eq_iInter_fixedBy]
+  exact isClosed_iInter isClosed_fixedBy
+
 /-- The stabilizer of a point is closed when its orbit map `g ↦ g • x` is continuous and points
 are closed: it is the preimage of `{x}` under the orbit map. -/
 theorem isClosed_stabilizer {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace G]
     [TopologicalSpace X] [T1Space X] {x : X} (hx : Continuous fun g : G ↦ g • x) :
     IsClosed (MulAction.stabilizer G x : Set G) :=
   isClosed_singleton.preimage hx
+
+/-- Under a jointly continuous action of a compact space, the points whose whole orbit lies in an
+open set `s` form an open set. For a group action, this set is the largest invariant subset of
+`s`. -/
+theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace G]
+    [CompactSpace G] [TopologicalSpace X] [ContinuousSMul G X] {s : Set X} (hs : IsOpen s) :
+    IsOpen {x : X | ∀ g : G, g • x ∈ s} :=
+  isOpen_forall_prodMk_mem (ι := id) continuous_id
+    (hs.preimage (continuous_snd.smul continuous_fst))
 
 /-- If every orbit of a group action is open, then every orbit is also closed: its complement is
 the union of the other orbits. -/

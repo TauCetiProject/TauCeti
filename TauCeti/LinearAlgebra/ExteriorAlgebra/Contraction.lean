@@ -348,7 +348,7 @@ theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : 
   induction hx using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
   | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
+  | mem_mul m hm i x _ ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
       neg_one_smul]

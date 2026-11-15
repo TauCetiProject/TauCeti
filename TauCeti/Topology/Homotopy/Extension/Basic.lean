@@ -43,6 +43,8 @@ with that property to one that extends homotopies with values in a space in any 
 * `TauCeti.HasHomotopyExtensionProperty.image` and
   `TauCeti.HasHomotopyExtensionProperty.image_of_isClosed`: transport of the property along a
   homeomorphism, inside one universe and, for a closed subset, across universes.
+* `TauCeti.HasHomotopyExtensionProperty.image_of_isEmbedding`: cofibrations compose, the image of
+  a subset with the property under an embedding whose image has the property has it too.
 * `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
   homotopy which retraces it at the points of a subset with the homotopy extension property can
   be replaced by a homotopy relative to that subset.
@@ -286,6 +288,27 @@ theorem HasHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Topologic
       · exact Or.inl h0
       · exact Or.inr (by rw [← hae, e.symm_apply_apply]; exact ha)
     simp [hr' _ hq']
+
+/-- **Cofibrations compose.** If `j : X → X'` is an embedding whose image has the homotopy
+extension property in `X'`, and `A` has the homotopy extension property in `X`, then the image
+`j '' A` has the homotopy extension property in `X'`: a homotopy on `j '' A` is extended first over
+`X`, then from the image of `j` over `X'`. -/
+theorem HasHomotopyExtensionProperty.image_of_isEmbedding {X' : Type u} [TopologicalSpace X']
+    (h : HasHomotopyExtensionProperty A) {j : X → X'} (hj : Topology.IsEmbedding j)
+    (hj' : HasHomotopyExtensionProperty (range j)) :
+    HasHomotopyExtensionProperty (j '' A) := by
+  intro Y _ f H hH
+  obtain ⟨G, hG₀, hG⟩ := h (f.comp ⟨j, hj.continuous⟩)
+    (H.comp ⟨fun q ↦ (q.1, ⟨j q.2, mem_image_of_mem j q.2.2⟩), by fun_prop⟩)
+    fun a ↦ hH ⟨j a, mem_image_of_mem j a.2⟩
+  obtain ⟨G', hG'₀, hG'⟩ := hj' f
+    (G.comp ⟨fun q ↦ (q.1, hj.toHomeomorph.symm q.2), by fun_prop⟩) fun y ↦ by
+      obtain ⟨_, x, rfl⟩ := y
+      simp [hG₀]
+  refine ⟨G', hG'₀, fun t b ↦ ?_⟩
+  obtain ⟨_, a, ha, rfl⟩ := b
+  rw [hG' t ⟨j a, mem_range_self a⟩]
+  simp [hG t ⟨a, ha⟩]
 
 /-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
 `[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/

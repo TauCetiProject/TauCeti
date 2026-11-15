@@ -16,7 +16,10 @@ In an ultrametric seminormed group, `‖x / y‖ ≤ max ‖x‖ ‖y‖`; addit
 `IsUltrametricDist.norm_mul_le_max` and `IsUltrametricDist.norm_add_le_max`. Measured from a
 common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. If
 `‖x - y‖ < ‖x‖` then `‖x‖ = ‖y‖`: an element and a strictly smaller perturbation of it have the
-same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`.
+same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`. Consequently a dense
+subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRange'`, additively
+`IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
+norms.
 
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
@@ -43,7 +46,7 @@ theorem norm_div_le_max (x y : S) : ‖x / y‖ ≤ max ‖x‖ ‖y‖ := by
 /-- The ultrametric inequality for a quotient: `‖x / y‖₊ ≤ max ‖x‖₊ ‖y‖₊`. -/
 @[to_additive /-- The ultrametric inequality for a difference: `‖x - y‖₊ ≤ max ‖x‖₊ ‖y‖₊`. -/]
 theorem nnnorm_div_le_max (x y : S) : ‖x / y‖₊ ≤ max ‖x‖₊ ‖y‖₊ := by
-  simpa [div_eq_mul_inv] using nnnorm_mul_le_max x y⁻¹
+  simpa [div_eq_mul_inv] using nnNorm_mul_le_max x y⁻¹
 
 /-- In an ultrametric group, if `‖x / y‖ < ‖x‖` then `x` and `y` have the same norm. -/
 @[to_additive /-- In an ultrametric additive group, if `‖x - y‖ < ‖x‖` then `x` and `y` have the
@@ -68,6 +71,18 @@ point `y`: `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. -/]
 theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖ := by
   rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
   exact norm_mul_le_max _ _
+
+/-- **A dense subset attains every nonzero norm** of an ultrametric group: if `f` has dense range
+and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some `a`. -/
+@[to_additive exists_norm_eq_of_denseRange /-- **A dense subset attains every nonzero norm** of an
+ultrametric additive group: if `f` has dense range and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some
+`a`. -/]
+theorem exists_norm_eq_of_denseRange' {α : Type*} {f : α → S} (hf : DenseRange f) {y : S}
+    (hy : ‖y‖ ≠ 0) : ∃ a, ‖f a‖ = ‖y‖ := by
+  obtain ⟨a, ha⟩ := hf.exists_dist_lt y ((norm_nonneg' y).lt_of_ne' hy)
+  rw [dist_eq_norm_inv_mul] at ha
+  refine ⟨a, ?_⟩
+  rw [← mul_inv_cancel_left y (f a), norm_mul_eq_max_of_norm_ne_norm ha.ne', max_eq_left ha.le]
 
 section SphericalCompleteness
 
@@ -95,7 +110,6 @@ theorem exists_antitone_closedBall_iInter_eq_empty [TopologicalSpace.SeparableSp
       simpa [step, h, dist_eq_norm_neg_add, ← add_assoc, norm_add_eq_max_of_norm_ne_norm hlt.ne,
         hlt.le] using hc n.lt_succ_self
   let a (n : ℕ) : E := Nat.rec a₀ step n
-  have hsucc (n : ℕ) : a (n + 1) = step n (a n) := rfl
   refine ⟨a, rfl, antitone_nat_of_succ_le fun n ↦ ?_, Set.eq_empty_of_forall_notMem fun b hb ↦ ?_⟩
   · -- the `(n + 1)`-st centre lies in the `n`-th ball, which it therefore also centres
     rw [closedBall_eq_of_mem (mem_closedBall'.mpr (hstep n (a n)).1)]

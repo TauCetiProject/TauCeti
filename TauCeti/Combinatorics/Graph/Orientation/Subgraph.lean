@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Orientation.Indegree
+public import TauCeti.Combinatorics.Graph.Orientation.Walk
 public import TauCeti.Combinatorics.Graph.Union
 
 /-!
@@ -16,6 +17,9 @@ chosen tail and head, which are also its ends in the subgraph. Conversely, orien
 compatible graphs combine into an orientation of their union, taking the direction of a shared
 edge from the first orientation. When the edge sets are disjoint, restricting the combined
 orientation recovers both inputs, so orientations of the union are exactly pairs of orientations.
+A walk in a subgraph follows the restricted orientation exactly when its image in the larger
+graph follows the original orientation. Consequently every directed walk of a restricted
+orientation lifts to a directed walk of the original orientation.
 
 Restriction keeps the head of every remaining edge. Hence deleting a set of edges lowers the
 indegree of a vertex by the number of deleted edges with their head there. In a union, a vertex
@@ -25,6 +29,10 @@ for every vertex of a vertex-disjoint union.
 ## Main declarations
 
 * `Graph.Orientation.restrict`: the orientation of a subgraph induced by an orientation.
+* `Graph.Walk.followsOrientation_mapLe_iff`: walks in a subgraph follow the restricted
+  orientation exactly when their images follow the original one.
+* `Graph.Orientation.nonempty_arrowWalk_of_restrict`: directed walks of a restricted orientation
+  lift to directed walks of the original orientation.
 * `Graph.Orientation.union`: the orientation of a compatible union built from two orientations.
 * `Graph.Orientation.unionEquiv`: orientations of an edge-disjoint union are pairs of
   orientations.
@@ -83,6 +91,49 @@ theorem reverse_restrict (o : Orientation G) (h : H ≤ G) :
   ext_of_head fun _ ↦ Subtype.ext <| by simp
 
 end Restrict
+
+end Graph.Orientation
+
+namespace Graph.Walk
+
+variable {V : Type u} {E : Type v} {G H : Graph V E}
+
+/-- A walk in a subgraph follows the restricted orientation exactly when its image in the
+larger graph follows the original orientation. -/
+@[simp]
+theorem followsOrientation_mapLe_iff (h : H ≤ G) {x y : V} (p : H.Walk x y)
+    (o : G.Orientation) :
+    (p.mapLe h).FollowsOrientation o ↔ p.FollowsOrientation (o.restrict h) := by
+  induction p with
+  | nil => simp
+  | @cons x y z e he p ih =>
+      simp only [mapLe_cons, followsOrientation_cons, ih, Orientation.coe_restrict_tail,
+        Orientation.coe_restrict_head]
+
+/-- Restricting a walk to a subgraph and restricting its orientation preserve the property of
+following that orientation. -/
+theorem FollowsOrientation.transfer {x y : V} {o : G.Orientation} {p : G.Walk x y}
+    (hp : p.FollowsOrientation o) (h : H ≤ G) (hedges : ∀ e, e ∈ p.edges → e ∈ E(H)) :
+    (p.transfer h hedges).FollowsOrientation (o.restrict h) := by
+  apply (followsOrientation_mapLe_iff h (p.transfer h hedges) o).mp
+  simpa only [mapLe_transfer] using hp
+
+end Graph.Walk
+
+namespace Graph.Orientation
+
+variable {V : Type u} {E : Type v} {G H K : Graph V E}
+
+/-- A directed walk of a restricted orientation lifts to a directed walk of the original
+orientation. -/
+theorem nonempty_arrowWalk_of_restrict (o : G.Orientation) (h : H ≤ G) {a b : H.vertexSet}
+    (r : TauCeti.ArrowWalk (o.restrict h).Hom a b) :
+    Nonempty (TauCeti.ArrowWalk o.Hom (Set.inclusion h.vertexSet_mono a)
+      (Set.inclusion h.vertexSet_mono b)) := by
+  let w := (o.restrict h).forgetWalk r
+  have hw : (w.mapLe h).FollowsOrientation o :=
+    (Walk.followsOrientation_mapLe_iff h w o).2 ((o.restrict h).followsOrientation_forgetWalk r)
+  exact ⟨(w.mapLe h).toOriented hw (h.vertexSet_mono a.2)⟩
 
 section Union
 

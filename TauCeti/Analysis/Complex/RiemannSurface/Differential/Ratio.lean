@@ -84,7 +84,7 @@ theorem HolomorphicAt.mdifferentiableAt_ratio (hη : η.HolomorphicAt x)
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (ratio η ω) x := by
   have hA : AnalyticAt ℂ (η.coeff (chartAt ℂ x) / ω.coeff (chartAt ℂ x)) (chartAt ℂ x x) :=
     ((holomorphicAt_def η x).1 hη).div ((holomorphicAt_def ω x).1 hω) (coeff_chartAt_ne_zero hx)
-  have h := TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp (chart_mem_maximalAtlas x)
+  have h := TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm (chart_mem_maximalAtlas x)
     ((chartAt ℂ x).map_source (mem_chart_source ℂ x))
     (hA.differentiableAt.congr_of_eventuallyEq ratio_comp_chartAt_symm_eventuallyEq)
   rwa [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)] at h

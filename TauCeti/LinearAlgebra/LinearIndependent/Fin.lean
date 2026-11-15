@@ -35,11 +35,13 @@ namespace TauCeti
 
 /-- A concatenation is independent exactly when its two parts are independent
 and have disjoint spans. -/
-theorem linearIndependent_fin_append [Ring R] [AddCommGroup V] [Module R V]
+theorem linearIndependent_fin_append [Ring R] [AddCommMonoid V] [Module R V]
     {x : Fin p → V} {y : Fin q → V} :
     LinearIndependent R (Fin.append x y) ↔
       LinearIndependent R x ∧ LinearIndependent R y ∧
         Disjoint (span R (range x)) (span R (range y)) := by
+  -- Over a ring, an additive commutative monoid with a module structure is a group.
+  let _ := Module.addCommMonoidToAddCommGroup R (M := V)
   rw [← linearIndependent_equiv finSumFinEquiv]
   -- `erw` unfolds the equivalence coercion to Mathlib's sum eliminator.
   erw [Fin.append_comp_sumElim]
@@ -51,24 +53,29 @@ namespace LinearIndependent
 
 open TauCeti
 
+/-- Restricting the right block of a concatenation along an injection preserves independence. -/
+theorem fin_append_comp_right [Semiring R] [AddCommMonoid V] [Module R V] {s : ℕ}
+    {x : Fin p → V} {y : Fin q → V} {g : Fin s → Fin q} (hg : Function.Injective g)
+    (h : LinearIndependent R (Fin.append x y)) :
+    LinearIndependent R (Fin.append x (y ∘ g)) := by
+  rw [← linearIndependent_equiv' finSumFinEquiv Fin.append_comp_sumElim] at h ⊢
+  simpa only [Sum.elim_comp_map, Function.comp_id] using
+    h.comp (Sum.map id g) (Function.injective_id.sumMap hg)
+
 /-- Removing the last block of an independent three-block concatenation
 preserves independence. -/
-theorem fin_append_left_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
+theorem fin_append_left_append [Semiring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x y) := by
-  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
-  exact linearIndependent_fin_append.mpr ⟨hx, (linearIndependent_fin_append.mp hyz).1,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_left)⟩
+  simpa [Function.comp_def] using h.fin_append_comp_right (Fin.castAdd_injective q r)
 
 /-- Removing the middle block of an independent three-block concatenation
 preserves independence. -/
-theorem fin_append_right_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
+theorem fin_append_right_append [Semiring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x z) := by
-  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
-  exact linearIndependent_fin_append.mpr ⟨hx, (linearIndependent_fin_append.mp hyz).2.1,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_right)⟩
+  simpa [Function.comp_def] using h.fin_append_comp_right (Fin.natAdd_injective r q)
 
 end LinearIndependent

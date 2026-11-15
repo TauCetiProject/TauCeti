@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Basic
 
+import Mathlib.Tactic.Ring
 import Mathlib.Tactic.SplitIfs
 
 /-!
@@ -19,6 +20,8 @@ reassociation and under multiplication between two moduli.
 
 * `Nat.carry_add_carry`: the two ways to associate a three-term sum produce the same total
   number of carries.
+* `Nat.add_eq_mod_add_carry`: for `n = m d`, the carry of `m p + m q` modulo `n` is the carry of
+  `p + q` modulo `d`.
 * `Nat.mul_div_add_mul_div_add_carry`: multiplying between moduli scales the carry, up to
   the integer quotients of the scaled summands.
 -/
@@ -34,6 +37,33 @@ theorem carry_add_carry {n i j k : ℕ} (hi : i < n) (hj : j < n) (hk : k < n) :
       (if n ≤ j + k then 1 else 0) + (if n ≤ i + (j + k) % n then 1 else 0) := by
   simp only [add_mod_eq_ite, mod_eq_of_lt hi, mod_eq_of_lt hj, mod_eq_of_lt hk]
   split_ifs <;> omega
+
+/-- **Carries under scaling.** For `n = m d` and `p, q < d`, the carry of
+`m p + m q` modulo `n` is the carry of `p + q` modulo `d`. -/
+theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hp : p < d)
+    (hq : q < d) :
+    m * p + m * q = (m * p + m * q) % n + n * if d ≤ p + q then 1 else 0 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · obtain rfl : n = 0 := by simpa using hmd.symm
+    simp
+  have hlt : m * p + m * q < 2 * n := calc
+    m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
+    _ < m * (2 * d) := Nat.mul_lt_mul_of_pos_left (by omega) hm
+    _ = 2 * n := by rw [← hmd]; ring
+  have hle (h : d ≤ p + q) : n ≤ m * p + m * q := calc
+    n = m * d := hmd.symm
+    _ ≤ m * (p + q) := Nat.mul_le_mul_left m h
+    _ = m * p + m * q := mul_add _ _ _
+  have hlt' (h : p + q < d) : m * p + m * q < n := calc
+    m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
+    _ < m * d := Nat.mul_lt_mul_of_pos_left h hm
+    _ = n := hmd
+  generalize m * p + m * q = X at *
+  split_ifs with h
+  · rw [Nat.mod_eq_sub_mod (hle h), Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [Nat.mod_eq_of_lt (hlt' (not_le.1 h))]
+    omega
 
 /-- For `i, j < N` and `d N = m n`, the carry after scaling by `d` modulo `n`, together with
 the quotients of the scaled summands, equals the scaled carry modulo `N` plus the quotient

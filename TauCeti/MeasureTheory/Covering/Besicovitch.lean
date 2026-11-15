@@ -75,13 +75,11 @@ sets. -/
 theorem ae_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0)
       (𝓝 (s.indicator 1 x)) := by
-  have hmeas : ∀ x r, μ (s ∩ closedBall x r) = μ (toMeasurable μ s ∩ closedBall x r) :=
-    fun x r => measure_congr (hs.toMeasurable_ae_eq.symm.inter (ae_eq_refl _))
   filter_upwards [Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet μ
     (measurableSet_toMeasurable μ s),
     indicator_ae_eq_of_ae_eq_set (f := (1 : α → ℝ≥0∞)) hs.toMeasurable_ae_eq]
     with x hx hxs
-  simpa only [hmeas, hxs] using hx
+  simpa only [Measure.measure_toMeasurable_inter_of_sfinite measurableSet_closedBall, hxs] using hx
 
 /-- A null-measurable set agrees almost everywhere with its set of density points with
 respect to `μ`, the points at which its proportion of closed balls tends to one. -/
@@ -90,11 +88,9 @@ theorem ae_eq_setOf_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
       (𝓝 1)} := by
   refine eventuallyEqSet_iff.2 ?_
   filter_upwards [hs.ae_tendsto_measure_inter_div] with x hx
-  by_cases hxs : x ∈ s
-  · simp only [indicator_of_mem hxs, Pi.one_apply] at hx
-    exact iff_of_true hxs hx
-  · simp only [indicator_of_notMem hxs] at hx
-    exact iff_of_false hxs fun h => zero_ne_one (tendsto_nhds_unique hx h)
+  -- `x ∈ s` exactly when the limit `s.indicator 1 x` of the proportions is `1`.
+  rw [← indicator_eq_one_iff_mem ℝ≥0∞]
+  exact ⟨fun h => h ▸ hx, tendsto_nhds_unique hx⟩
 
 end NullMeasurableSet
 
@@ -138,6 +134,6 @@ theorem ae_tendsto_average_closedBall (μ : Measure β) [IsLocallyFiniteMeasure 
     (hf : LocallyIntegrable f μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => ⨍ y in closedBall x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
   filter_upwards [(Besicovitch.vitaliFamily μ).ae_tendsto_average hf] with x hx
-  exact hx.comp (Besicovitch.tendsto_filterAt μ x)
+    using hx.comp (Besicovitch.tendsto_filterAt μ x)
 
 end Besicovitch

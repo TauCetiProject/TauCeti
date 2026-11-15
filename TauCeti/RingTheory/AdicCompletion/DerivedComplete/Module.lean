@@ -105,6 +105,15 @@ theorem compLeft_comp_telescope (f : R) (g : M →ₗ[R] N) :
   ext x n
   simp
 
+/-- The telescope map of `f` is bijective on `M` if and only if it is bijective on a module
+linearly equivalent to `M`. -/
+theorem bijective_telescope_iff_of_linearEquiv (e : M ≃ₗ[R] N) (f : R) :
+    Bijective (telescope M f) ↔ Bijective (telescope N f) := by
+  have he : Bijective (e.toLinearMap.compLeft ℕ) :=
+    ⟨e.injective.comp_left, e.surjective.comp_left⟩
+  rw [← Bijective.of_comp_iff' he, ← LinearMap.coe_comp, compLeft_comp_telescope,
+    LinearMap.coe_comp, Bijective.of_comp_iff _ he]
+
 /-- A sequence `z` with `zₖ - f • zₖ₊₁ = cₖ` is determined by its later terms through the partial
 sums `zₖ = ∑_{j < n} fʲ • cₖ₊ⱼ + fⁿ • zₖ₊ₙ`. -/
 theorem eq_sum_range_add_pow_smul_of_telescope_eq {f : R} {z c : ℕ → M}
@@ -163,14 +172,8 @@ theorem of_le (h : IsDerivedComplete I M) (hJ : J ≤ I) : IsDerivedComplete J M
   fun f hf ↦ h f (hJ hf)
 
 /-- Derived completeness is invariant under linear isomorphisms. -/
-theorem of_linearEquiv (h : IsDerivedComplete I M) (e : M ≃ₗ[R] N) : IsDerivedComplete I N := by
-  intro f hf
-  have hc := compLeft_comp_telescope f e.symm.toLinearMap
-  have he : Bijective (e.symm.toLinearMap.compLeft ℕ) :=
-    ⟨e.symm.injective.comp_left, e.symm.surjective.comp_left⟩
-  refine (Bijective.of_comp_iff' he _).1 ?_
-  rw [← LinearMap.coe_comp, hc, LinearMap.coe_comp]
-  exact (h.bijective hf).comp he
+theorem of_linearEquiv (h : IsDerivedComplete I M) (e : M ≃ₗ[R] N) : IsDerivedComplete I N :=
+  fun f hf ↦ (bijective_telescope_iff_of_linearEquiv e f).1 (h.bijective hf)
 
 /-- Kernels of maps between derived complete modules are derived complete. -/
 theorem ker (hM : IsDerivedComplete I M) (hN : IsDerivedComplete I N) (g : M →ₗ[R] N) :

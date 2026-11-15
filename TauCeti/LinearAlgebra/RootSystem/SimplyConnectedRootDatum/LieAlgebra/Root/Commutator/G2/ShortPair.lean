@@ -96,8 +96,8 @@ private theorem g2_short_pair_coefficients
   have hm := g2_short_pair_last_long hi hj hk
     ((g2_root_add_iff i j k).1 hij) ((g2_root_add_iff k j m).1 hkj)
   have h₁ := structureConstant_G2_eq_two_or_eq_neg_two hi hj hk hij
-  have h₂ := structureConstant_G2_eq_three_or_eq_neg_three hi hk hl hik
-  have h₃ := structureConstant_G2_eq_three_or_eq_neg_three hk hj hm hkj
+  have h₂ := structureConstant_G2_eq_three_or_eq_neg_three hk hl hik
+  have h₃ := structureConstant_G2_eq_three_or_eq_neg_three hj hm hkj
   rcases h₁ with h₁ | h₁ <;> rcases h₂ with h₂ | h₂ <;>
     rcases h₃ with h₃ | h₃ <;> simp_all
 

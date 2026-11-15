@@ -75,7 +75,7 @@ theorem contMDiffAt_rightAngleRotation (o : Manifold.Orientation I M (Fin 2))
         fin_cases i
         · exact hs
         · exact hjx)
-    have hscalar := (contMDiffAt_totalSpace.mp heval).2
+    have hscalar := (contMDiffAt_totalSpace_iff.mp heval).2
     convert hscalar using 1
     funext y
     dsimp only [Φ]

@@ -14,14 +14,14 @@ import TauCeti.Probability.Exchangeability.Contractability
 /-!
 # Full exchangeability and path-law bridges
 
-The Layer 0 bridges between finite exchangeability, full exchangeability, and path-law
+The bridges between finite exchangeability, full exchangeability, and path-law
 endomorphisms:
 
 * `exchangeable_iff_fullyExchangeable` — finite exchangeability (invariance under permutations of
   each `Fin n`) is equivalent to full exchangeability (invariance under all permutations of `ℕ`)
   for a process with a.e. measurable coordinates under a finite measure.
 * `FullyExchangeable.measurePreserving_shift` — a fully exchangeable process has a shift-invariant
-  path law, the bridge from symmetry to the Koopman/ergodic lane.
+  path law, the bridge from symmetry to the Koopman/ergodic approach.
 * `fullyExchangeable_iff_forall_map_permReindex_pathLaw` and
   `fullyExchangeable_iff_forall_measurePreserving_permReindex` — full exchangeability is
   equivalently invariance, or measure preservation, of the path law under every time-permutation
@@ -29,11 +29,11 @@ endomorphisms:
 
 These bridges live together because they all identify the process-level symmetry
 `FullyExchangeable μ X` with corresponding path-law invariance statements. They are thin: they
-reuse the Layer 0 API and Mathlib — finite-marginal uniqueness (`FiniteMarginals`), the
-contractability bridge (`Contractability`), generic path-law reindexing, and Mathlib's finite
+reuse the basic exchangeability API and Mathlib — finite-marginal uniqueness (`FiniteMarginals`),
+the contractability bridge (`Contractability`), generic path-law reindexing, and Mathlib's finite
 permutation extension theorem — rather than new measure theory.
 
-These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
+These declarations are adapted from the `cameronfreer/exchangeability` sources pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
 -/
 
@@ -91,7 +91,7 @@ theorem exchangeable_iff_fullyExchangeable {μ : Measure Ω} {X : ℕ → Ω →
     (hX_meas : ∀ i, AEMeasurable (X i) μ) : Exchangeable μ X ↔ FullyExchangeable μ X :=
   ⟨fun h => h.fullyExchangeable hX_meas, fun h => h.exchangeable hX_meas⟩
 
-/-- **A fully exchangeable process has a shift-invariant path law** — the Layer 0 shift-preservation
+/-- **A fully exchangeable process has a shift-invariant path law** — the shift-preservation
 bridge. -/
 theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
     [IsFiniteMeasure μ] (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :

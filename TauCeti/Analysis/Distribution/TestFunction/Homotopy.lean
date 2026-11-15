@@ -292,7 +292,7 @@ theorem tsupport_homotopyPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]
   refine (cylinderHomotopy_congr fun t ht ↦ ?_).trans (congrFun cylinderHomotopy_zero x)
   rw [image_eq_zero_of_notMem_tsupport fun h ↦ hxS ⟨(x, t), ⟨⟨hxΩ, ht⟩, h⟩, rfl⟩,
     Pi.zero_apply]
-  ext v
+  ext _
   simp
 
 /-- **Agreement with the pushforward of the product current**: if `H` is smooth and proper on an
@@ -341,7 +341,7 @@ private theorem pullbackCLM_prodMk_left_cutoffPullback {t : ℝ} (ht : t = 0 ∨
     ext v
     simp [reparam, hσ, Function.comp_def]
   · rw [pullbackCLM_apply_of_notMem _ hx, cutoffPullback_apply_of_notMem hHp ω hx]
-    ext v
+    ext _
     simp
 
 /-- Along `Ω × [0, 1]`, where the cutoff is one, the cut-off pullback commutes with `d`; so the

@@ -106,8 +106,6 @@ theorem ramificationIdx_under_eq_one_iff_inertia_le (P : Ideal B) [P.IsMaximal]
   have : Finite G := IsGaloisGroup.finite G A B
   rw [ramificationIdx_under_eq_relIndex_inertia P H C, Subgroup.relIndex_eq_one]
 
-variable [SMulCommClass G A B]
-
 /-- The ramification index below a translate of `Q` is the relative index of the conjugate
 inertia group. Separability is required only for the selected residue extension at `Q`; the
 group action transports it to every translate. -/

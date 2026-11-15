@@ -100,17 +100,20 @@ theorem envelopeDifferential_tmul_of_mem (n : ℤ) {p : ℤ} {x : A} (hx : x ∈
 factor. The two module elements may be chosen independently; in a Leibniz rule they are an
 element and its differential. -/
 theorem envelopeDifferential_tmul_smul_add {M : Type*} [AddCommGroup M]
-    [Module R M] [Module (A ⊗[R] Aᵐᵒᵖ) M] [IsScalarTower R (A ⊗[R] Aᵐᵒᵖ) M]
+    [Module R M] [Module (A ⊗[R] Aᵐᵒᵖ) M]
     (n : ℤ) {p : ℤ} {x : A} (hx : x ∈ 𝒜 p) (y : A) (z z' : M) :
     envelopeDifferential 𝒜 d n (x ⊗ₜ[R] op y) • z +
         TensorProduct.map σ LinearMap.id (x ⊗ₜ[R] op y) • z' =
       (d x ⊗ₜ[R] op y) • z + negOnePowCast R p • ((x ⊗ₜ[R] op y) • z') +
         negOnePowCast R (p + n) • ((x ⊗ₜ[R] op (d y)) • z) := by
+  have key (e : ℤ) (t : A ⊗[R] Aᵐᵒᵖ) (m : M) :
+      (negOnePowCast R e • t) • m = negOnePowCast R e • (t • m) := by
+    rw [negOnePowCast_eq_intCast, Int.cast_smul_eq_zsmul R _ t, Int.cast_smul_eq_zsmul R _ (t • m),
+      smul_assoc]
   simp only [envelopeDifferential_tmul_of_mem n hx, add_smul,
     TensorProduct.map_tmul, LinearMap.id_apply,
     InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx, one_mul,
-    ← negOnePowCast_eq_intCast, ← TensorProduct.smul_tmul', smul_assoc,
-    add_right_comm]
+    ← negOnePowCast_eq_intCast, ← TensorProduct.smul_tmul', key, add_right_comm]
 
 end Def
 
@@ -179,7 +182,7 @@ omit [SetLike.GradedMul 𝒜] in
 /-- The enveloping differential raises total tensor degree by one whenever the original
 endomorphism does, independently of the degree of its free generator. The bundled grading
 may carry any decomposition of the original homogeneous pieces. -/
-theorem isHomogeneous_envelopeDifferential (G : InternalGrading R A) (hG : G.piece = 𝒜)
+theorem isHomogeneous_envelopeDifferential (G : InternalGrading R A ℤ) (hG : G.piece = 𝒜)
     (hdeg : LinearMap.IsHomogeneous d G.piece G.piece 1) (n : ℤ) :
     LinearMap.IsHomogeneous (envelopeDifferential 𝒜 d n)
       (G.tensorProduct G.opposite).piece (G.tensorProduct G.opposite).piece 1 := by

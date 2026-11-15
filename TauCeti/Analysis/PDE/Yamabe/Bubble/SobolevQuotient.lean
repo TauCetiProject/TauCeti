@@ -78,7 +78,7 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_roundSphereVo
     (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     conformalCoefficient (finrank ℝ E) * ∫ x, ‖fderiv ℝ (bubble t b) x‖ ^ 2 =
       (finrank ℝ E : ℝ) * (finrank ℝ E - 1) * roundSphereVolume (finrank ℝ E) := by
-  rw [conformalCoefficient_mul_integral_norm_fderiv_bubble_sq volume hn ht b,
+  rw [conformalCoefficient_mul_integral_norm_fderiv_bubble_sq volume ht b,
     integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (by omega) hn.ne' ht b]
 
 /-- **The bubbles attain the Yamabe constant of the sphere**: in dimension `n > 2`, for Lebesgue

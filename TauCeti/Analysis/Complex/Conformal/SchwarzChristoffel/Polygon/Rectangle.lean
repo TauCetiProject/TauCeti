@@ -328,7 +328,7 @@ theorem bijOn_sub_schwarzChristoffelPrimitive_div_rectangle (hk0 : 0 < k) (hk1 :
   -- the affine map `u ↦ (m - u) / k` carries the rectangle of
   -- `bijOn_schwarzChristoffelPrimitive_rectangle` onto `(-K, K) × (0, K')`
   refine BijOn.comp (g := fun u => ((w 1 + w 2) / 2 - u) / k)
-    ⟨fun u hu => ?_, fun u _ u' _ h => sub_right_inj.mp ((div_left_inj' hk).mp h),
+    ⟨fun u hu => ?_, fun u _ u' _ h => sub_right_inj.mp ((div_left_inj₀ hk).mp h),
       fun t ht => ⟨(w 1 + w 2) / 2 - k * t, ?_, by simp only; field_simp; ring⟩⟩
     (bijOn_schwarzChristoffelPrimitive_rectangle hk0 hk1 z₀)
   · simp only [mem_reProdIm, mem_Ioo, hm, Complex.div_ofReal_re, Complex.div_ofReal_im,

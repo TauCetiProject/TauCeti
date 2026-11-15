@@ -154,7 +154,7 @@ private theorem exists_linearMap_neg_cartan_and_root :
       (∀ χ : Weight K H L, χ.IsNonZero → ∀ v : L, v ∈ rootSpace H χ →
         ω v ∈ rootSpace H (-χ)) := by
   classical
-  set A : Weight K H L → Submodule K L := fun χ ↦ (rootSpace H χ).toSubmodule with hA
+  set A : Weight K H L → Submodule K L := fun χ ↦ (rootSpace H χ).toSubmodule
   have hbij : Function.Bijective (DirectSum.coeLinearMap A) := isInternal_rootSpace H
   -- The component of the map on the weight space of `χ`.
   set g : ∀ χ : Weight K H L, A χ →ₗ[K] L := fun χ ↦

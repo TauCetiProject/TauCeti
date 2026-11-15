@@ -83,12 +83,12 @@ theorem sum_sq_diag_le_trace_mul_self {ι : Type*} [Fintype ι]
   classical
   simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply]
   apply Finset.sum_le_sum
-  intro i hi
+  intro i _
   have hs : ∀ j, S i j * S j i = S i j ^ 2 := by
     intro j
     rw [hS.apply i j, pow_two]
   simp only [hs]
-  exact Finset.single_le_sum (fun j hj ↦ sq_nonneg (S i j)) (Finset.mem_univ i)
+  exact Finset.single_le_sum (fun j _ ↦ sq_nonneg (S i j)) (Finset.mem_univ i)
 
 /-- Cauchy--Schwarz for the trace of a symmetric matrix, including the
 zero-dimensional case. -/

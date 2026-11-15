@@ -245,7 +245,7 @@ private theorem isNoetherianRing_of_forall_fg {π : K} (hπ1 : ‖π‖ < 1)
   obtain ⟨b, hbI', hb⟩ := Set.not_subset.1 hk
   have hb1 : ‖ι b‖ = 1 := by
     refine (norm_toWashnitzerAlgebra_le_one b).antisymm (not_lt.1 fun hlt ↦ hb ?_)
-    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff (norm_nonneg _)).2
+    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff).2
       fun t ↦ hπ _ ((washnitzerAlgebra.norm_coeff_le _ t).trans_lt hlt))
   rw [hIk]
   exact (Submodule.fg_span_singleton _).mul (h _ b hbI' hb1)

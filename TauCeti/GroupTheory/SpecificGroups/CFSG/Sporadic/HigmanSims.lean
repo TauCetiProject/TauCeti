@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Higman--Sims group
 
-This file carries the `HS` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation of
-the Higman--Sims group on its standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
-together with the source, the generator convention, transcription notes, and the expected counts.
+This file carries the `HS` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation of the Higman--Sims group on its standard generators `a` and `b` as a
+`TauCeti.GroupPresentation`, together with the source, the generator convention, transcription
+notes, and the expected counts.
 
 Writing `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` for the four syllables that occur, the
 thirteen transcribed relators are
@@ -76,7 +76,7 @@ and `R3`, says they are redundant but useful, and keeps them inside the construc
 therefore correctly retains them. The rendered presentation page omits those three and swaps the
 display order of `[a,bab]³` and `[a,b²]⁶`, while the row deliberately follows the raw Magma order.
 This comparison was performed from the pinned source bytes independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -101,7 +101,7 @@ the pair therefore generates the pinned group of order `44352000`.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `6820d1571023e66bfff5a2fac256bd6d6ccb7e38bffd5f86b56db6ee1e17f6f2`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

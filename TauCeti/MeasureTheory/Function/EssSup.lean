@@ -23,6 +23,10 @@ This identifies essential bounds on continuous observables, such as distance fro
 point, with geometric bounds on the support. Lower semicontinuity is important: an upward
 change at a single null point need not affect the essential supremum.
 
+An almost everywhere bound on the absolute value of a real function, with respect to a measure
+whose almost-everywhere filter is nontrivial, is nonnegative (`TauCeti.nonneg_of_ae_abs_le`), and
+so is one on a set of nonzero measure (`TauCeti.nonneg_of_ae_restrict_abs_le`).
+
 The file also records two facts about the essential oscillation `essSup f μ - essInf f μ` of a
 real function: a function with values in an interval of length `L` has essential oscillation at
 most `L` (`TauCeti.essSup_sub_essInf_le`), and the essential oscillation of an essentially
@@ -58,6 +62,20 @@ section Oscillation
 
 variable {α : Type*} [MeasurableSpace α] {ν : Measure α}
 
+/-- An almost everywhere bound on the absolute value of a real function is nonnegative, as long as
+the measure is nonzero. -/
+theorem nonneg_of_ae_abs_le [(ae ν).NeBot] {g : α → ℝ} {W : ℝ} (h : ∀ᵐ x ∂ν, |g x| ≤ W) :
+    0 ≤ W := by
+  obtain ⟨x, hx⟩ := h.exists
+  exact (abs_nonneg _).trans hx
+
+/-- An almost everywhere bound on the absolute value of a real function on a set of nonzero
+measure is nonnegative. -/
+theorem nonneg_of_ae_restrict_abs_le {s : Set α} (hs : ν s ≠ 0) {g : α → ℝ} {W : ℝ}
+    (h : ∀ᵐ x ∂ν.restrict s, |g x| ≤ W) : 0 ≤ W :=
+  have : (ae (ν.restrict s)).NeBot := ae_restrict_neBot.2 hs
+  nonneg_of_ae_abs_le h
+
 /-- A real function taking values almost everywhere in an interval of length `L` has essential
 oscillation at most `L`. -/
 theorem essSup_sub_essInf_le [(ae ν).NeBot] {f : α → ℝ} {m L : ℝ}
@@ -68,16 +86,28 @@ theorem essSup_sub_essInf_le [(ae ν).NeBot] {f : α → ℝ} {m L : ℝ}
     (Filter.isCoboundedUnder_ge_of_eventually_le _ (hf.mono fun _ hx => hx.2))
   linarith
 
+/-- Over a measure with `ae ν = ⊥`, the essential oscillation of a real function is `0`. -/
+theorem essSup_sub_essInf_of_ae_eq_bot {f : α → ℝ} (h : ae ν = ⊥) :
+    essSup f ν - essInf f ν = 0 := by
+  simp [essSup, essInf, h, Filter.limsup_eq, Filter.liminf_eq]
+
 /-- The essential oscillation of a real function that is essentially bounded with respect to `ν'`
 does not increase when `ν'` is replaced by a measure `ν ≪ ν'`, for example by its restriction to
-a smaller set, provided that `ν` is nonzero. -/
-theorem essSup_sub_essInf_mono_measure [(ae ν).NeBot] {ν' : Measure α} {f : α → ℝ} (hν : ν ≪ ν')
+a smaller set. -/
+theorem essSup_sub_essInf_mono_measure {ν' : Measure α} {f : α → ℝ} (hν : ν ≪ ν')
     (hf₁ : Filter.IsBoundedUnder (· ≤ ·) (ae ν') f)
     (hf₂ : Filter.IsBoundedUnder (· ≥ ·) (ae ν') f) :
     essSup f ν - essInf f ν ≤ essSup f ν' - essInf f ν' := by
-  refine essSup_sub_essInf_le (m := essInf f ν') (hν.ae_le ?_)
-  filter_upwards [ae_le_essSup hf₁, ae_essInf_le hf₂] with x hx₁ hx₂
-  exact ⟨hx₂, by linarith⟩
+  by_cases hne : (ae ν).NeBot
+  · refine essSup_sub_essInf_le (m := essInf f ν') (hν.ae_le ?_)
+    filter_upwards [ae_le_essSup hf₁, ae_essInf_le hf₂] with x hx₁ hx₂
+    exact ⟨hx₂, by linarith⟩
+  · rw [Filter.not_neBot] at hne
+    rw [essSup_sub_essInf_of_ae_eq_bot hne, sub_nonneg]
+    by_cases hne' : (ae ν').NeBot
+    · exact Filter.liminf_le_limsup hf₁ hf₂
+    · rw [Filter.not_neBot] at hne'
+      exact (sub_eq_zero.1 (essSup_sub_essInf_of_ae_eq_bot (f := f) hne')).ge
 
 /-- Let `f` be a function with values in a densely ordered conditionally complete linear order
 with a first-countable order topology, such as `ℝ`. If `f` is not almost everywhere at most `k`

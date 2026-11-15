@@ -36,7 +36,7 @@ theorem finset_sup_of_inf_closed {α : Type*} [DistribLattice α] [OrderBot α]
       ∀ U ∈ B, P (U ⊓ s.sup id) := by
     induction s using Finset.induction_on with
     | empty => simpa using fun U (_ : U ∈ B) ↦ hbot
-    | @insert V s hVs ih =>
+    | @insert V s _ ih =>
       intro U hU
       have hV := hs V (Finset.mem_insert_self V s)
       have hs' : ∀ W ∈ s, W ∈ B := fun W hW ↦ hs W (Finset.mem_insert_of_mem hW)
@@ -46,7 +46,7 @@ theorem finset_sup_of_inf_closed {α : Type*} [DistribLattice α] [OrderBot α]
         (hB_inf hU hV)
   induction s using Finset.induction_on with
   | empty => simpa using hbot
-  | @insert V s hVs ih =>
+  | @insert V s _ ih =>
     have hV := hs V (Finset.mem_insert_self V s)
     have hs' : ∀ W ∈ s, W ∈ B := fun W hW ↦ hs W (Finset.mem_insert_of_mem hW)
     simpa only [Finset.sup_insert, id_eq] using

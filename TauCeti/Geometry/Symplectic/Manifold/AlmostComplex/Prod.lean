@@ -379,20 +379,15 @@ theorem tames_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
   rw [SmoothTwoForm.tames_iff]
   intro p v hv
   -- Vertical tameness at `p` makes the fibre form a linear symplectic form.
-  have hτalt := SmoothForm.isAlt_bilinFormAt τ p.2
-  let ωτ : SymplecticForm (TangentSpace I' p.2) :=
-    { toBilinForm := τ.bilinFormAt p.2
-      isAlt := hτalt
-      nondegenerate := hτalt.isRefl.nondegenerate_iff_separatingLeft.2 fun w hw ↦ by
-        by_contra hw0
-        exact (hτ p w hw0).ne' (by simpa only [SmoothForm.bilinFormAt_apply] using hw (K p w)) }
-  have hωτ : ωτ.Tames (K p) := fun w hw ↦ by
-    simpa only [ωτ, SmoothForm.bilinFormAt_apply] using hτ p w hw
+  have hτK : ∀ w, w ≠ 0 → 0 < τ.bilinFormAt p.2 w (K p w) := fun w hw ↦ by
+    simpa only [SmoothForm.bilinFormAt_apply] using hτ p w hw
+  let ωτ := SymplecticForm.ofTames _ (SmoothForm.isAlt_bilinFormAt τ p.2) hτK
+  have hωτ : ωτ.Tames (K p) := SymplecticForm.tames_ofTames _ hτK
   have h := SymplecticForm.prod_tames (hσ.isNondegenerate.tames_iff.1 hσ p.1) hωτ
     (Manifold.tangentSpaceProdEquiv p v) ((Manifold.tangentSpaceProdEquiv p).map_ne_zero_iff.2 hv)
   rw [SymplecticForm.prod_apply_prod_self] at h
   rw [eval₂_prod_prodFamily]
-  simpa only [ωτ, SmoothForm.bilinFormAt_apply,
+  simpa only [ωτ, SymplecticForm.ofTames_apply, SmoothForm.bilinFormAt_apply,
     SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply,
     SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using h
 

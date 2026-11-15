@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Change of variables: pushforward bounds, `Lᵖ` bounds and affine invariance of set integrals
@@ -24,7 +25,9 @@ on `s` with `c > 0`, then `f` pushes `μ` on `s` forward to at most `c⁻¹ μ` 
 
 For `f` differentiable on an open set `s` and mapping it into `t`, the same bound holds with the
 Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
-(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`).
+(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover the derivative is
+invertible on `s`, then almost-everywhere properties on `t` pull back along `f` to almost-everywhere
+properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
 
 Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
@@ -38,7 +41,7 @@ Such constants exist on every compact set on which a `C¹` map has invertible de
 injective and with invertible derivative on an open set preserves local integrability
 (`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`).
 
-A continuous affine map `T` carrying a measurable set `s` of finite measure onto itself preserves
+A continuous affine map `T` carrying a set `s` of finite measure onto itself preserves
 integrals over `s`. When `s` is not null, the linear part of `T` has determinant `±1`, because the
 image of `s` has `|det|` times the measure of `s`, so the change of variables formula has no
 Jacobian factor
@@ -51,6 +54,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
+* `MeasureTheory.ae_restrict_comp_of_differentiableOn`: almost-everywhere properties pull back
+  along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact
   set.
 * `MeasureTheory.eLpNorm_comp_restrict_le`, `MeasureTheory.eLpNorm_comp_fderiv_restrict_le`: the
@@ -116,6 +121,28 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
     (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict t :=
   (map_restrict_le_smul_restrict_image_of_differentiableOn μ hs hf hinj subset_rfl
     hs.measurableSet hc hdet).trans (by gcongr; exact hmaps.image_subset)
+
+/-- **Null sets pull back along a map with invertible derivative.** If `f` is injective and
+differentiable on an open set `s`, with invertible derivative there, and maps `s` into `t`, then a
+property holding `μ`-almost everywhere on `t` holds at `f x` for `μ`-almost every `x ∈ s`: the
+pushforward of `|det f'| μ` on `s` is `μ` on `f '' s`, and the density is positive. -/
+theorem ae_restrict_comp_of_differentiableOn {P : E → Prop} (hs : IsOpen s)
+    (hf : DifferentiableOn ℝ f s) (hinj : InjOn f s) (hdet : ∀ x ∈ s, (fderiv ℝ f x).det ≠ 0)
+    (hmaps : MapsTo f s t) (h : ∀ᵐ y ∂μ.restrict t, P y) : ∀ᵐ x ∂μ.restrict s, P (f x) := by
+  have hf' : ∀ x ∈ s, HasFDerivWithinAt f (fderiv ℝ f x) s x := fun x hx =>
+    ((hf x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt
+  have himage : ∀ᵐ y ∂μ.restrict (f '' s), P y :=
+    ae_restrict_of_ae_restrict_of_subset hmaps.image_subset h
+  rw [← map_withDensity_abs_det_fderiv_eq_addHaar μ hs.measurableSet.nullMeasurableSet hf'
+    hinj] at himage
+  have hdens := aemeasurable_ofReal_abs_det_fderivWithin μ hs.measurableSet hf'
+  have hfm : AEMeasurable f ((μ.restrict s).withDensity
+      fun x => ENNReal.ofReal |(fderiv ℝ f x).det|) :=
+    (hf.continuousOn.aemeasurable hs.measurableSet).mono_ac
+      (withDensity_absolutelyContinuous _ _)
+  refine (withDensity_absolutelyContinuous' hdens ?_).ae_le (ae_of_ae_map hfm himage)
+  filter_upwards [self_mem_ae_restrict hs.measurableSet] with x hx
+  simpa using hdet x hx
 
 /-! ### Jacobian bounds on compact sets and `Lᵖ` bounds for precomposition -/
 
@@ -274,9 +301,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
 
 /-- **Integrals over a set are invariant under an affine self-map of it.** If a continuous affine
-map `T` carries a measurable set `s` of finite measure onto itself, then
+map `T` carries a set `s` of finite measure onto itself, then
 `∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ` for every `g`. -/
-theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s) (hμ : μ s ≠ ∞)
+theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hμ : μ s ≠ ∞)
     (hT : T '' s = s) (g : E → F) :
     ∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ := by
   -- On a null set both integrals vanish.
@@ -286,17 +313,19 @@ theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s
   -- A singular linear part would collapse `s` to a null set.
   have hdet : T.contLinear.det ≠ 0 := fun h ↦
     h₀ (hT ▸ addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ hd fun _ _ ↦ h)
-  have hinj : InjOn T s := (T.toAffineMap.linear_injective_iff.1
-    ((Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet.isUnit)).1).injOn
+  have hinj : Function.Injective T := T.toAffineMap.linear_injective_iff.1
+    ((Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet.isUnit)).1
+  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := T.decomp
   -- Comparing the measures of `s` and of its image `T '' s = s` forces `|det| = 1`.
   have habs : |T.contLinear.det| = 1 := by
-    have h := lintegral_abs_det_fderiv_eq_addHaar_image μ hs hd hinj
-    rw [hT, setLIntegral_const] at h
-    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ hμ).1 h)
-  calc ∫ x in s, g (T x) ∂μ = ∫ x in s, |T.contLinear.det| • g (T x) ∂μ := by
-        simp [habs]
-    _ = ∫ x in T '' s, g x ∂μ :=
-        (integral_image_eq_integral_abs_det_fderiv_smul μ hs hd hinj g).symm
-    _ = ∫ x in s, g x ∂μ := by rw [hT]
+    have h : μ (T '' s) = ENNReal.ofReal |T.contLinear.det| * μ s := by
+      rw [hT0, Set.image_comp, Set.image_add_right, measure_preimage_add_right]
+      exact Measure.addHaar_image_continuousLinearMap μ _ s
+    rw [hT] at h
+    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ hμ).1 h.symm)
+  -- Hence `T` preserves `μ`, and it is a measurable embedding.
+  have hmp := measurePreserving_of_abs_det_eq_one μ T habs
+  have hpre : T ⁻¹' s = s := by simpa [hT] using hinj.preimage_image s
+  rw [← hmp.setIntegral_preimage_emb (T.continuous.measurableEmbedding hinj) g s, hpre]
 
 end ContinuousAffineMap
