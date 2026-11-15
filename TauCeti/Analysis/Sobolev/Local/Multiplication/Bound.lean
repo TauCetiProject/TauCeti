@@ -58,10 +58,9 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 omit [FiniteDimensional ℝ G] in
 /-- To bound a size `L` of the product `B(f, g)` on `V` by
-`C ‖B‖ ‖f‖_{W^{k,p}(S)} ‖g‖_{W^{l,q}(T)}` for nonzero `C` and `V ⊆ S ∩ T`, it suffices to treat
-factors of finite norm, provided `L` vanishes when the product vanishes almost everywhere on `V`:
-if `B = 0` or a factor has zero norm the product vanishes, and otherwise an infinite norm makes
-the right side infinite. -/
+`C ‖B‖ ‖f‖_{W^{k,p}(S)} ‖g‖_{W^{l,q}(T)}` for nonzero `p`, `q` and `C` and `V ⊆ S ∩ T`, it
+suffices to treat factors of finite norm, provided `L` vanishes when the product vanishes almost
+everywhere on `V`. -/
 theorem le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le {p q : ℝ≥0∞} (hp : p ≠ 0) (hq : q ≠ 0)
     {V S T : Set ℂ} (hVS : V ⊆ S) (hVT : V ⊆ T) {k l : ℕ} {C : ℝ≥0} (hC : C ≠ 0)
     {B : F →L[ℝ] G →L[ℝ] H} {f : ℂ → F} {g : ℂ → G} {L : ℝ≥0∞}

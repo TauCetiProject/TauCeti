@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound
-import TauCeti.Data.ENNReal.Mul
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
