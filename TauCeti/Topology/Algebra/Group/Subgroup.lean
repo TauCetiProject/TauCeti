@@ -338,7 +338,8 @@ theorem isClosed_normalizer {s : Set G} (hs : IsClosed s) :
   have hnorm : (normalizer s : Set G) =
       (⋂ h ∈ s, (fun g => g * h * g⁻¹) ⁻¹' s) ∩ ⋂ h ∈ s, (fun g => g⁻¹ * h * g) ⁻¹' s := by
     ext g
-    simp only [SetLike.mem_coe, Set.mem_inter_iff, Set.mem_iInter, Set.mem_preimage]
+    simp only [SetLike.mem_coe, mem_set_normalizer_iff, Set.mem_inter_iff, Set.mem_iInter,
+      Set.mem_preimage]
     refine ⟨fun hg => ⟨fun h hh => (hg h).mp hh, fun h hh => ?_⟩,
       fun hg h => ⟨hg.1 h, fun hh => ?_⟩⟩
     · rw [hg]
