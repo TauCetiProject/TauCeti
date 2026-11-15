@@ -17,7 +17,6 @@ Over every field, the numbered root subgroups and weight torus generate a geomet
 connected closed subgroup. Each generator is an affine line or split torus, hence geometrically
 connected. The common-kernel criterion transfers this property to their generated subgroup.
 
-This supplies one generated-carrier property for Layer 9B of the ReductiveGroups roadmap.
 Smoothness, reductivity and identification with a pinned group require separate arguments.
 
 The proof uses `TauCeti.Algebra.AlgebraicGroup.Connected.Generated` and the existing additive

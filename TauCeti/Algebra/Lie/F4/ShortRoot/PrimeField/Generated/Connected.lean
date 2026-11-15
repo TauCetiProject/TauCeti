@@ -22,9 +22,8 @@ generated coordinate algebra is the common-kernel quotient over that field. Exis
 isomorphisms identify each generator codomain with an affine line or split torus. Both are
 geometrically connected, so the shared common-kernel criterion applies directly.
 
-The prime-field carrier corollary below follows from this result. Geometric connectedness is
-one carrier property for Layer 9B of the ReductiveGroups roadmap; identification with a pinned
-group requires a separate argument.
+The prime-field carrier corollary below follows from this result. Identification of the
+carrier with a pinned group requires a separate argument.
 
 The general criterion is in `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`.
 -/
