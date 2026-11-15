@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Fintype.Defs
 
 /-!
 # Anchor profiles and common-neighbor counts for invariant binary relations
