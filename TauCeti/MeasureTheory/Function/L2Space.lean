@@ -12,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPartSq
 
 /-!
@@ -338,5 +339,46 @@ theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
     (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
   exact (Submodule.mem_orthogonal _ f).mp hf _
     (Submodule.subset_span ⟨s, hs, rfl⟩)
+
+/-- Initial-interval indicators have dense real linear span in `L²` for a Borel measure
+finite on initial intervals of a second-countable linearly ordered space. -/
+theorem topologicalClosure_span_indicatorConstLp_Iic_eq_top
+    {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [SecondCountableTopology α]
+    [LinearOrder α] [OrderTopology α] [BorelSpace α] {μ : Measure α}
+    (hμ : ∀ a, μ (Set.Iic a) ≠ ∞) :
+    (Submodule.span ℝ (Set.range fun a : α ↦
+      indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ))).topologicalClosure = ⊤ := by
+  classical
+  cases isEmpty_or_nonempty α
+  · apply top_unique
+    intro f _
+    have hf : f = 0 := Lp.ext (Filter.Eventually.of_forall (fun a ↦ isEmptyElim a))
+    rw [hf]
+    exact Submodule.zero_mem _
+  have hgen : ‹MeasurableSpace α› =
+      MeasurableSpace.generateFrom (Set.range Set.Iic) :=
+    (BorelSpace.measurable_eq (α := α)).trans (borel_eq_generateFrom_Iic α)
+  have hcover : IsCountablySpanning (Set.range (Set.Iic : α → Set α)) := by
+    obtain ⟨u, hu⟩ := Filter.exists_seq_tendsto (Filter.atTop : Filter α)
+    refine ⟨fun n ↦ Set.Iic (u n), fun n ↦ Set.mem_range_self _, ?_⟩
+    ext a
+    simp only [Set.mem_iUnion, Set.mem_Iic, Set.mem_univ, iff_true]
+    exact (hu.eventually (Filter.eventually_ge_atTop a)).exists
+  have hfin : ∀ s ∈ Set.range Set.Iic, μ s ≠ ∞ := by
+    rintro _ ⟨a, rfl⟩
+    exact hμ a
+  have hdense := topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    hgen isPiSystem_Iic hcover hfin
+  have hset : {g : Lp ℝ 2 μ | ∃ (s : Set α) (hs : s ∈ Set.range Set.Iic),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (hfin s hs) 1} = Set.range (fun a : α ↦
+        indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ)) := by
+    ext g
+    constructor
+    · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+      exact Set.mem_range_self a
+    · rintro ⟨a, rfl⟩
+      exact ⟨Set.Iic a, Set.mem_range_self a, rfl⟩
+  rwa [hset] at hdense
 
 end TauCeti
