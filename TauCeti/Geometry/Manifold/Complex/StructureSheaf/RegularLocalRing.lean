@@ -114,7 +114,7 @@ namespace OpenPartialHomeomorph
 open TauCeti TauCeti.holomorphicStructureSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {X : Type} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) 1 X]
+  {X : Type} [TopologicalSpace X] [ChartedSpace E X]
 
 /-- Centered coordinates of a holomorphic chart, in any ordered basis, form a regular sequence
 in the holomorphic local ring. In particular each coordinate is a non-zero-divisor after
@@ -125,10 +125,16 @@ theorem isRegular_ofFn_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorp
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
       (List.ofFn fun i ↦ e.holomorphicLinearCoordinateGerm he x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
+  let σ := e.holomorphicStalkEquivModelSpace he x hx b.equivFun.toContinuousLinearEquiv
+  let := IsRegularLocalRing.of_ringEquiv σ.symm
+  have hspan :
+      (maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)).spanFinrank = n := by
+    rw [← Ideal.spanFinrank_map_eq_of_ringEquiv σ, map_ringEquiv_maximalIdeal,
+      spanFinrank_maximalIdeal_stalk]
+    simp
   apply TauCeti.IsRegularLocalRing.isRegular_of_ofList_eq_maximalIdeal
   · rw [Ideal.ofList_ofFn, maximalIdeal_stalk]
     exact (e.ker_eval_eq_span_holomorphicLinearCoordinateGerm he b hx).symm
-  · simp only [List.length_ofFn, spanFinrank_maximalIdeal_stalk]
-    simpa only [Fintype.card_fin] using (Module.finrank_eq_card_basis b).symm.le
+  · simp only [List.length_ofFn, hspan, le_refl]
 
 end OpenPartialHomeomorph

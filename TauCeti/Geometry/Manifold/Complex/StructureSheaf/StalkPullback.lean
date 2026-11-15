@@ -16,9 +16,11 @@ public import TauCeti.Order.Filter.Germ
 near the chosen point. Unlike the sheaf morphism `stalkPrecomp`, this requires no globally
 holomorphic extension of the map. Equality, evaluation and composition are characterized
 through the injective comparison with function germs. The two pullbacks agree when both apply.
-Pullback along a map with a local analytic inverse, such as a chart, is bijective
-(`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
-(`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
+Pullback along a map with a local analytic inverse, such as a chart, is an equivalence
+(`stalkPullbackEquiv`), with evaluation and function-germ laws in both directions.
+It is in particular bijective (`stalkPullback_bijective`), as is pullback along a continuous
+linear equivalence (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart
+followed by one
 (`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
 of its model.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
@@ -171,7 +173,180 @@ theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), Cont
   filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
   simpa [hy] using hy0
 
-variable [I.Boundaryless] [IsManifold I ω X] {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+section LocalInverse
+
+variable {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), ContMDiffAt J I ω g y)
+  (hgf : ∀ᶠ x in 𝓝 a, g (f x) = x) (hfg : ∀ᶠ y in 𝓝 (f a), f (g y) = y)
+
+/-- Pullback along a locally invertible analytic map is an equivalence of holomorphic stalks.
+Only analyticity near the base points and the local inverse laws are required. -/
+def stalkPullbackEquiv :
+    (holomorphicStructureSheaf J Y).presheaf.stalk (f a) ≃+*
+      (holomorphicStructureSheaf I X).presheaf.stalk a :=
+  RingEquiv.ofBijective _ (stalkPullback_bijective hf hg hgf hfg)
+
+/-- The local analytic equivalence acts by pullback. -/
+theorem stalkPullbackEquiv_apply
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f a)) :
+    stalkPullbackEquiv hf hg hgf hfg s = stalkPullback hf s := (rfl)
+
+/-- Local analytic equivalence preserves evaluation. -/
+@[simp]
+theorem eval_stalkPullbackEquiv
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f a)) :
+    eval I X a (stalkPullbackEquiv hf hg hgf hfg s) = eval J Y (f a) s :=
+  eval_stalkPullback hf s
+
+/-- Inverse local analytic equivalence preserves evaluation. -/
+@[simp]
+theorem eval_stalkPullbackEquiv_symm
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk a) :
+    eval J Y (f a) ((stalkPullbackEquiv hf hg hgf hfg).symm s) = eval I X a s := by
+  rw [← eval_stalkPullbackEquiv hf hg hgf hfg, RingEquiv.apply_symm_apply]
+
+/-- On function germs, local analytic equivalence is composition with the map. -/
+@[simp]
+theorem toFilterGerm_stalkPullbackEquiv
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f a)) :
+    toFilterGerm I X a (𝓝 a) le_rfl (stalkPullbackEquiv hf hg hgf hfg s) =
+      (toFilterGerm J Y (f a) (𝓝 (f a)) le_rfl s).compTendsto f
+        hf.self_of_nhds.continuousAt.tendsto :=
+  toFilterGerm_stalkPullback hf s
+
+/-- On function germs, inverse local analytic equivalence is composition with the local
+inverse. -/
+@[simp]
+theorem toFilterGerm_stalkPullbackEquiv_symm
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk a) :
+    toFilterGerm J Y (f a) (𝓝 (f a)) le_rfl ((stalkPullbackEquiv hf hg hgf hfg).symm s) =
+      (toFilterGerm I X a (𝓝 a) le_rfl s).compTendsto g
+        (by simpa only [hgf.self_of_nhds] using hg.self_of_nhds.continuousAt.tendsto) := by
+  have h := toFilterGerm_stalkPullbackEquiv hf hg hgf hfg
+    ((stalkPullbackEquiv hf hg hgf hfg).symm s)
+  rw [RingEquiv.apply_symm_apply] at h
+  rw [h]
+  generalize toFilterGerm J Y _ _ _ ((stalkPullbackEquiv hf hg hgf hfg).symm s) = t
+  refine Germ.inductionOn t fun u ↦ ?_
+  rw [Germ.coe_compTendsto, Germ.coe_compTendsto, Germ.coe_eq]
+  exact hfg.mono fun y hy ↦ congrArg u hy.symm
+
+end LocalInverse
+
+end TauCeti.holomorphicStructureSheaf
+
+namespace OpenPartialHomeomorph
+
+open TauCeti TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- An analytic chart identifies a holomorphic stalk with a stalk on any linearly equivalent
+model space. No global manifold instance is required. -/
+def holomorphicStalkEquivModelSpace (c : OpenPartialHomeomorph X H)
+    (hc : c ∈ IsManifold.maximalAtlas I ω X) (x : X) (hx : x ∈ c.source)
+    (e : E ≃L[ℂ] V) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+*
+      (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (c.extend I x)) := by
+  have hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℂ, V) ω (e ∘ c.extend I) y :=
+    (c.open_source.eventually_mem hx).mono fun y hy ↦
+      e.contDiff.contMDiff.contMDiffAt.comp y (c.contMDiffAt_extend hc hy)
+  have hmem : ∀ᶠ z in 𝓝 (e (c.extend I x)), e.symm z ∈ (c.extend I).target := by
+    have h := e.symm.continuous.tendsto (e (c.extend I x))
+    rw [e.symm_apply_apply] at h
+    exact h.eventually (c.isOpen_extend_target.mem_nhds
+      ((c.extend I).map_source (by simpa only [c.extend_source] using hx)))
+  refine (stalkPullbackEquiv hf (g := (c.extend I).symm ∘ e.symm) ?_ ?_ ?_).symm
+  · filter_upwards [hmem] with z hz
+    exact ((contMDiffOn_extend_symm hc).contMDiffAt (by
+      rw [← c.extend_target']
+      exact c.isOpen_extend_target.mem_nhds hz)).comp z
+        e.symm.contDiff.contMDiff.contMDiffAt
+  · filter_upwards [c.open_source.eventually_mem hx] with y hy
+    simp only [Function.comp_apply, e.symm_apply_apply, c.extend_left_inv hy]
+  · filter_upwards [hmem] with z hz
+    simp only [Function.comp_apply, (c.extend I).right_inv hz, e.apply_symm_apply]
+
+variable (c : OpenPartialHomeomorph X H) (hc : c ∈ IsManifold.maximalAtlas I ω X)
+  (x : X) (hx : x ∈ c.source) (e : E ≃L[ℂ] V)
+
+/-- Inverse chart comparison is pullback along the extended chart followed by `e`. -/
+theorem holomorphicStalkEquivModelSpace_symm_apply
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (c.extend I x))) :
+    (c.holomorphicStalkEquivModelSpace hc x hx e).symm s =
+      stalkPullback (J := 𝓘(ℂ, V)) (f := e ∘ c.extend I) (a := x)
+        ((c.open_source.eventually_mem hx).mono fun y hy ↦
+          e.contDiff.contMDiff.contMDiffAt.comp y (c.contMDiffAt_extend hc hy)) s := (rfl)
+
+-- Normalize chart comparison before simp expands the extended chart in the stalk's base point.
+/-- Inverse chart comparison cancels chart comparison. -/
+@[simp↓]
+theorem holomorphicStalkEquivModelSpace_symm_apply_apply
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (c.holomorphicStalkEquivModelSpace hc x hx e).symm
+      (c.holomorphicStalkEquivModelSpace hc x hx e s) = s :=
+  (c.holomorphicStalkEquivModelSpace hc x hx e).symm_apply_apply s
+
+/-- Chart comparison cancels inverse chart comparison. -/
+@[simp↓]
+theorem holomorphicStalkEquivModelSpace_apply_symm_apply
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (c.extend I x))) :
+    c.holomorphicStalkEquivModelSpace hc x hx e
+      ((c.holomorphicStalkEquivModelSpace hc x hx e).symm s) = s :=
+  (c.holomorphicStalkEquivModelSpace hc x hx e).apply_symm_apply s
+
+/-- Inverse chart comparison preserves evaluation. -/
+@[simp↓]
+theorem eval_holomorphicStalkEquivModelSpace_symm
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (c.extend I x))) :
+    eval I X x ((c.holomorphicStalkEquivModelSpace hc x hx e).symm s) =
+      eval 𝓘(ℂ, V) V (e (c.extend I x)) s := by
+  simp only [c.holomorphicStalkEquivModelSpace_symm_apply, eval_stalkPullback,
+    Function.comp_apply]
+
+/-- Chart comparison preserves evaluation. -/
+@[simp↓]
+theorem eval_holomorphicStalkEquivModelSpace
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    eval 𝓘(ℂ, V) V (e (c.extend I x)) (c.holomorphicStalkEquivModelSpace hc x hx e s) =
+      eval I X x s := by
+  rw [← c.eval_holomorphicStalkEquivModelSpace_symm hc x hx e, RingEquiv.symm_apply_apply]
+
+/-- On function germs, inverse chart comparison is composition with the chart and `e`. -/
+@[simp↓]
+theorem toFilterGerm_holomorphicStalkEquivModelSpace_symm
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (c.extend I x))) :
+    toFilterGerm I X x (𝓝 x) le_rfl ((c.holomorphicStalkEquivModelSpace hc x hx e).symm s) =
+      (toFilterGerm 𝓘(ℂ, V) V (e (c.extend I x)) (𝓝 (e (c.extend I x))) le_rfl s).compTendsto
+        (e ∘ c.extend I) (e.continuous.continuousAt.comp (c.continuousAt_extend hx)).tendsto := by
+  simp only [c.holomorphicStalkEquivModelSpace_symm_apply, toFilterGerm_stalkPullback,
+    Function.comp_apply]
+
+/-- On function germs, chart comparison is composition with the inverse chart and `e.symm`. -/
+@[simp↓]
+theorem toFilterGerm_holomorphicStalkEquivModelSpace
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    toFilterGerm 𝓘(ℂ, V) V (e (c.extend I x)) (𝓝 (e (c.extend I x))) le_rfl
+        (c.holomorphicStalkEquivModelSpace hc x hx e s) =
+      (toFilterGerm I X x (𝓝 x) le_rfl s).compTendsto ((c.extend I).symm ∘ e.symm)
+        (by
+          have he := e.symm.continuous.tendsto (e (c.extend I x))
+          rw [e.symm_apply_apply] at he
+          simpa only [c.extend_left_inv hx] using
+            (c.continuousAt_extend_symm hx).tendsto.comp he) := by
+  exact toFilterGerm_stalkPullbackEquiv_symm (I := I) (J := 𝓘(ℂ, V))
+    (f := e ∘ c.extend I) (g := (c.extend I).symm ∘ e.symm) (a := x) _ _ _ _ s
+
+end OpenPartialHomeomorph
+
+namespace TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I ω X]
+  {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
 /-- Pullback along the extended chart at `x`, followed by a continuous linear equivalence `e` of
 the model onto a complex normed space `V`, is bijective on holomorphic stalks. The equivalence
@@ -179,20 +354,9 @@ lets the model stalk live in `Type` even when the model space `E` does not. -/
 theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
     Function.Bijective (stalkPullback (J := 𝓘(ℂ, V)) (f := e ∘ extChartAt I x) (a := x)
       (((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
-        e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy))) := by
-  have hmem : ∀ᶠ z in 𝓝 (e (extChartAt I x x)), e.symm z ∈ (extChartAt I x).target := by
-    have h := e.symm.continuous.tendsto (e (extChartAt I x x))
-    rw [e.symm_apply_apply] at h
-    exact h.eventually (extChartAt_target_mem_nhds x)
-  refine stalkPullback_bijective _ (g := (extChartAt I x).symm ∘ e.symm) ?_ ?_ ?_
-  · filter_upwards [hmem] with z hz
-    exact ((contMDiffOn_extChartAt_symm (n := ω) x).contMDiffAt
-      (extChartAt_target_mem_nhds' hz)).comp z e.symm.contDiff.contMDiff.contMDiffAt
-  · filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
-    simpa using (extChartAt I x).left_inv hy
-  · filter_upwards [hmem] with z hz
-    simp only [Function.comp_apply, (extChartAt I x).right_inv hz,
-      ContinuousLinearEquiv.apply_symm_apply]
+        e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy))) :=
+  ((chartAt H x).holomorphicStalkEquivModelSpace (IsManifold.chart_mem_maximalAtlas x)
+    x (mem_chart_source H x) e).symm.bijective
 
 /-- Chart comparison of a holomorphic stalk with a stalk on a chosen linearly equivalent
 model space. The choice of `V : Type` also covers higher-universe manifold models. -/
@@ -200,7 +364,8 @@ def stalkEquivModelSpace
     (x : X) (e : E ≃L[ℂ] V) :
     (holomorphicStructureSheaf I X).presheaf.stalk x ≃+*
       (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (extChartAt I x x)) :=
-  (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e)).symm
+  (chartAt H x).holomorphicStalkEquivModelSpace (IsManifold.chart_mem_maximalAtlas x)
+    x (mem_chart_source H x) e
 
 /-- The inverse chart comparison is pullback along the chart followed by `e`. -/
 theorem stalkEquivModelSpace_symm_apply
@@ -267,16 +432,8 @@ theorem toFilterGerm_stalkEquivModelSpace
           rw [e.symm_apply_apply] at he
           simpa only [extChartAt_to_inv] using
             (continuousAt_extChartAt_symm x).tendsto.comp he) := by
-  have h := toFilterGerm_stalkEquivModelSpace_symm x e (stalkEquivModelSpace x e s)
-  rw [stalkEquivModelSpace_symm_apply_apply] at h
-  rw [h]
-  generalize toFilterGerm 𝓘(ℂ, V) V _ _ _ (stalkEquivModelSpace x e s) = t
-  refine Germ.inductionOn t fun u ↦ ?_
-  rw [Germ.coe_compTendsto, Germ.coe_compTendsto, Germ.coe_eq]
-  have he := e.symm.continuous.tendsto (e (extChartAt I x x))
-  rw [e.symm_apply_apply] at he
-  filter_upwards [he.eventually (extChartAt_target_mem_nhds x)] with z hz
-  simp only [Function.comp_apply, (extChartAt I x).right_inv hz, e.apply_symm_apply]
+  exact (chartAt H x).toFilterGerm_holomorphicStalkEquivModelSpace
+    (IsManifold.chart_mem_maximalAtlas x) x (mem_chart_source H x) e s
 
 end TauCeti.holomorphicStructureSheaf
 
