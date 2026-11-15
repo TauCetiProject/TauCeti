@@ -288,12 +288,11 @@ theorem naiveHeight_mul_add_div_mul_add_le (x : F) {a b c d : ℤ} (hdet : a * d
   have hdvd : primitiveMinpoly y ∣ Q := (primitiveMinpoly_dvd_iff (halg_iff.mpr hx)).mpr hyQ
   have hQdeg : Q.natDegree ≤ P.natDegree := (isHomogeneous_homogenize P).natDegree_aeval_le
     fun i ↦ by fin_cases i <;> exact natDegree_linear_le
-  have hl1 (u v : ℤ) : (C u * X + C v).l1Norm ≤ |(u : ℝ)| + |(v : ℝ)| :=
-    (l1Norm_add_le (C u * X) (C v)).trans_eq
-      (by rw [← pow_one X, l1Norm_mul_X_pow, l1Norm_C, l1Norm_C, Int.norm_eq_abs, Int.norm_eq_abs])
   have hg : g₁.l1Norm + g₂.l1Norm ≤ S := by
-    have h₁ := hl1 d (-b); have h₂ := hl1 (-c) a
-    rw [Int.cast_neg, abs_neg] at h₁ h₂; linarith
+    have h₁ := l1Norm_C_mul_X_add_C_le d (-b)
+    have h₂ := l1Norm_C_mul_X_add_C_le (-c) a
+    simp only [Int.norm_eq_abs, Int.cast_neg, abs_neg] at h₁ h₂
+    linarith
   have hQsup : Q.supNorm ≤ P.supNorm * S ^ P.natDegree :=
     ((supNorm_le_l1Norm Q).trans (l1Norm_aeval_homogenize_le P P.natDegree g₁ g₂)).trans
       (mul_le_mul_of_nonneg_left

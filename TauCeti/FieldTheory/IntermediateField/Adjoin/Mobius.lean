@@ -50,16 +50,9 @@ theorem adjoin_simple_mul_add_div_mul_add (x : L) {a b c d : K} (hdet : a * d - 
   set y : L := (algebraMap K L a * x + algebraMap K L b) /
     (algebraMap K L c * x + algebraMap K L d)
   by_cases hx : algebraMap K L c * x + algebraMap K L d = 0
-  · have hc : c ≠ 0 := by
-      rintro rfl
-      have hd : d = 0 := (algebraMap K L).injective (by simpa using hx)
-      exact hdet (by simp [hd])
-    have hxK : x = algebraMap K L (-d / c) := by
-      have hcL : algebraMap K L c ≠ 0 := (map_ne_zero (algebraMap K L)).mpr hc
-      rw [map_div₀, map_neg, eq_div_iff hcL]
-      linear_combination hx
-    have hy0 : y = 0 := by simp [y, hx]
-    rw [hy0, hxK, adjoin_simple_eq_bot_iff.mpr (zero_mem ⊥),
+  · have hy0 : y = 0 := by simp [y, hx]
+    rw [hy0, TauCeti.eq_map_neg_div_of_map_mul_add_map_eq_zero (algebraMap K L) hdet hx,
+      adjoin_simple_eq_bot_iff.mpr (zero_mem ⊥),
       adjoin_simple_eq_bot_iff.mpr (algebraMap_mem ⊥ _)]
   · have hdetL : algebraMap K L a * algebraMap K L d -
         algebraMap K L b * algebraMap K L c ≠ 0 := by
@@ -83,21 +76,20 @@ namespace TauCeti
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
+/-- If `K⟮x⟯ = K⟮y⟯` and `y` is integral over `K`, then `x` is integral over `K`. -/
+private theorem isIntegral_of_adjoin_simple_eq {x y : L} (hadj : K⟮x⟯ = K⟮y⟯)
+    (hy : IsIntegral K y) : IsIntegral K x := by
+  have : FiniteDimensional K K⟮x⟯ := hadj ▸ IntermediateField.adjoin.finiteDimensional hy
+  simpa using (IsIntegral.of_finite K (IntermediateField.AdjoinSimple.gen K x)).map
+    (IntermediateField.val K⟮x⟯)
+
 /-- Integrality over a base field `K` is invariant under nonsingular `K`-rational Möbius
 transformations, including at the pole. -/
 theorem isIntegral_mul_add_div_mul_add_iff (x : L) {a b c d : K} (hdet : a * d - b * c ≠ 0) :
     IsIntegral K ((algebraMap K L a * x + algebraMap K L b) /
       (algebraMap K L c * x + algebraMap K L d)) ↔ IsIntegral K x := by
   have hadj := TauCeti.IntermediateField.adjoin_simple_mul_add_div_mul_add x hdet
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have : FiniteDimensional K K⟮x⟯ := hadj ▸ IntermediateField.adjoin.finiteDimensional h
-    simpa using (IsIntegral.of_finite K (IntermediateField.AdjoinSimple.gen K x)).map
-      (IntermediateField.val K⟮x⟯)
-  · set y := (algebraMap K L a * x + algebraMap K L b) /
-      (algebraMap K L c * x + algebraMap K L d)
-    have : FiniteDimensional K K⟮y⟯ := hadj.symm ▸ IntermediateField.adjoin.finiteDimensional h
-    simpa using (IsIntegral.of_finite K (IntermediateField.AdjoinSimple.gen K y)).map
-      (IntermediateField.val K⟮y⟯)
+  exact ⟨isIntegral_of_adjoin_simple_eq hadj.symm, isIntegral_of_adjoin_simple_eq hadj⟩
 
 /-- Algebraicity over a base field `K` is invariant under nonsingular `K`-rational Möbius
 transformations, including at the pole. -/

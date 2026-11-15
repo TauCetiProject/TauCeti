@@ -92,13 +92,9 @@ theorem prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric
         mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two natDegree_map_le)
           (supNorm_nonneg _)
 
-/-- Binary Gelfond bound for complex polynomials: `‖p‖∞ ‖q‖∞ ≤ 2 ^ deg(p q) ‖p q‖∞`. -/
-theorem mul_supNorm_le_two_pow_mul_supNorm_mul (p q : ℂ[X]) :
-    p.supNorm * q.supNorm ≤ 2 ^ (p * q).natDegree * (p * q).supNorm := by
-  simpa [Fin.prod_univ_two] using prod_supNorm_le_two_pow_mul_supNorm_prod Finset.univ ![p, q]
-
 /-- Binary Gelfond bound over any seminormed commutative ring admitting a norm-preserving ring
-homomorphism into `ℂ` (such as `ℤ` or `ℝ` via `Int.castRingHom ℂ` or `Complex.ofRealHom`). -/
+homomorphism into `ℂ` (such as `ℂ`, `ℝ`, or `ℤ` via `RingHom.id ℂ`, `Complex.ofRealHom`, or
+`Int.castRingHom ℂ`): `‖p‖∞ ‖q‖∞ ≤ 2 ^ deg(p q) ‖p q‖∞`. -/
 theorem mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric
     {R : Type*} [SeminormedCommRing R] (φ : R →+* ℂ) [RingHomIsometric φ] (p q : R[X]) :
     p.supNorm * q.supNorm ≤ 2 ^ (p * q).natDegree * (p * q).supNorm := by
@@ -122,30 +118,31 @@ theorem supNorm_le_two_pow_mul_supNorm_of_dvd {p q : ℤ[X]} (hdvd : p ∣ q) (h
 and `2 * 2 > 3`. -/
 example : ((2 * X + 1) * (X - 2) : ℤ[X]).supNorm = 3 ∧ (2 * X + 1 : ℤ[X]).supNorm = 2 ∧
     (X - 2 : ℤ[X]).supNorm = 2 := by
-  have hsup {p : ℤ[X]} {B : ℝ} (hle : ∀ i, ‖p.coeff i‖ ≤ B)
-      (heq : ∃ i, ‖p.coeff i‖ = B) : p.supNorm = B := by
-    obtain ⟨j, hj⟩ := p.exists_eq_supNorm
-    obtain ⟨i, hi⟩ := heq
-    exact le_antisymm (hj ▸ hle j) (hi ▸ p.le_supNorm i)
-  have hprod : ((2 * X + 1) * (X - 2) : ℤ[X]) = 2 * X ^ 2 - 3 * X - 2 := by ring
-  refine ⟨?_, ?_, ?_⟩
-  · rw [hprod]
-    refine hsup (fun i ↦ ?_) ⟨1, ?_⟩
-    · simp only [← map_ofNat C, coeff_sub, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C,
-        Int.norm_eq_abs]
-      split_ifs <;> norm_num; omega
-    · simp only [← map_ofNat C, coeff_sub, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C,
-        Int.norm_eq_abs]
-      norm_num
-  · refine hsup (fun i ↦ ?_) ⟨1, ?_⟩
-    · simp only [← C_1, ← map_ofNat C, coeff_add, coeff_C_mul, coeff_X, coeff_C, Int.norm_eq_abs]
-      split_ifs <;> norm_num; omega
-    · simp only [← C_1, ← map_ofNat C, coeff_add, coeff_C_mul, coeff_X, coeff_C, Int.norm_eq_abs]
-      norm_num
-  · refine hsup (fun i ↦ ?_) ⟨0, ?_⟩
-    · simp only [← map_ofNat C, coeff_sub, coeff_X, coeff_C, Int.norm_eq_abs]
-      split_ifs <;> norm_num
-    · simp only [← map_ofNat C, coeff_sub, coeff_X, coeff_C, Int.norm_eq_abs]
-      norm_num
+  have hquad (a b c : ℤ) : (C a * X ^ 2 + C b * X + C c).supNorm =
+      max (max |(a : ℝ)| |(b : ℝ)|) |(c : ℝ)| := by
+    set p : ℤ[X] := C a * X ^ 2 + C b * X + C c
+    have hcoeff (i : ℕ) :
+        p.coeff i = if i = 2 then a else if i = 1 then b else if i = 0 then c else 0 := by
+      simp only [p, coeff_add, coeff_C_mul, coeff_X_pow, coeff_X, coeff_C, mul_ite, mul_one,
+        mul_zero]
+      split_ifs <;> omega
+    have hle (i : ℕ) : ‖p.coeff i‖ ≤ max (max |(a : ℝ)| |(b : ℝ)|) |(c : ℝ)| := by
+      rw [hcoeff, Int.norm_eq_abs]
+      split_ifs <;> simp [le_max_iff]
+    obtain ⟨i, hi⟩ := p.exists_eq_supNorm
+    have hub (j : ℕ) : |(p.coeff j : ℝ)| ≤ p.supNorm := by
+      simpa only [Int.norm_eq_abs] using p.le_supNorm j
+    refine le_antisymm (hi ▸ hle i) (max_le (max_le ?_ ?_) ?_)
+    · simpa [hcoeff] using hub 2
+    · simpa [hcoeff] using hub 1
+    · simpa [hcoeff] using hub 0
+  have h₁ : ((2 * X + 1) * (X - 2) : ℤ[X]) = C 2 * X ^ 2 + C (-3) * X + C (-2) := by
+    simp only [map_ofNat, map_neg]; ring
+  have h₂ : (2 * X + 1 : ℤ[X]) = C 0 * X ^ 2 + C 2 * X + C 1 := by
+    simp only [map_zero, map_ofNat, map_one]; ring
+  have h₃ : (X - 2 : ℤ[X]) = C 0 * X ^ 2 + C 1 * X + C (-2) := by
+    simp only [map_zero, map_one, map_neg, map_ofNat]; ring
+  rw [h₁, h₂, h₃, hquad, hquad, hquad]
+  norm_num
 
 end Polynomial
