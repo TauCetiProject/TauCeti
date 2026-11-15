@@ -111,7 +111,7 @@ omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- The determinant line of a Fredholm operator is a line. -/
 @[simp]
 theorem finrank_eq_one : finrank 𝕜 (FredholmDetLine 𝕜 E F T) = 1 :=
-  (linearEquiv T).finrank_eq.trans T.2.finrank_detLine
+  (linearEquiv T).finrank_eq.trans (LinearMap.finrank_detLine _)
 
 variable {Λ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]

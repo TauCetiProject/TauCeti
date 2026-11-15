@@ -47,8 +47,8 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
 ## Main results
 
 * `TauCeti.FiniteBundleAtlas.coord_prod`, `TauCeti.FiniteBundleAtlas.coord_hom`,
-  `TauCeti.FiniteBundleAtlas.coord_hom_apply`: the chart readings of sections of the derived
-  bundles.
+  `TauCeti.FiniteBundleAtlas.coord_hom_apply`, `TauCeti.FiniteBundleAtlas.coord_tangentHom`: the
+  chart readings of sections of the derived bundles.
 -/
 
 public section
@@ -221,6 +221,15 @@ one-forms on the charts of a finite bundle atlas of `V`. -/
 abbrev tangentHom :
     FiniteBundleAtlas E M (E →L[ℝ] F) (fun x ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) :=
   A.tangent.hom A.closure_dom_subset_baseSet
+
+/-- A `V`-valued one-form read in a chart of `A.tangentHom` is its value at the corresponding point
+of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the centre
+of the chart. -/
+theorem coord_tangentHom (i : Fin A.n) (ω : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) (y : E) :
+    A.tangentHom.coord i ω y =
+      ContinuousLinearMap.inCoordinates E (TangentSpace 𝓘(ℝ, E)) F V (A.center i)
+        ((A.chart i).symm y) (A.center i) ((A.chart i).symm y) (ω ((A.chart i).symm y)) :=
+  A.tangent.coord_hom A.closure_dom_subset_baseSet i ω y
 
 /-- On the image of a chart, applying the chart reading of a `V`-valued one-form `ω` to the chart
 reading of a vector field `v` gives the chart reading of the section `x ↦ ω x (v x)` of `V`. -/
