@@ -35,7 +35,7 @@ def cylinderMetric : ContMDiffRiemannianMetric IP ∞ P (fun p : U ↦ TangentSp
     (fun _ ↦ contDiffAt_id) (fun _ ↦ one_ne_zero)
     (fun p ↦ by simp [profileSpeedSq_def])
 
-/-- The first fundamental form of the cylinder is the metric of its unrolled plane. -/
+/-- The cylinder metric is the revolution metric of the constant-radius profile. -/
 theorem cylinderMetric_inner (p : U) (w z : TangentSpace IP p) :
     cylinderMetric.inner p w z = metric (fun _ ↦ 1) id p.val
       (NormedSpace.fromTangentSpace p.val (tangentSpaceOpenEquiv (I := IP) p w))

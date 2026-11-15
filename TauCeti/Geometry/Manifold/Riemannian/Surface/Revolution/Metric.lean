@@ -16,6 +16,15 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 The metric in the original profile parameter is `f² du² + (f'² + g'²) dv²`.
 The formulas below compute the native Christoffel symbols from this metric,
 including the meridional coefficient for a profile not parametrized by arclength.
+
+Ported from Yangyang Li's formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/tree/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Revolution).
+
+## References
+
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*,
+  [electronic edition](https://academicweb.nd.edu/~lnicolae/Lectures.pdf),
+  Example 5.1.16 and Theorem 5.1.17, pp. 211–212.
 -/
 
 public noncomputable section
@@ -114,9 +123,9 @@ theorem christoffelSecondKind_metric {f g : ℝ → ℝ} {p : ℝ × ℝ}
   apply Prod.ext
   · rw [div_mul_eq_mul_div, eq_div_iff hr]
     apply mul_left_cancel₀ hr
-    nlinarith [h₁]
+    linear_combination h₁
   · apply mul_left_cancel₀ hs
     field_simp [hs]
-    nlinarith [h₂]
+    linear_combination h₂
 
 end TauCeti.SurfaceOfRevolution

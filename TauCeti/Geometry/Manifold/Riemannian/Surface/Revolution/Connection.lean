@@ -29,16 +29,13 @@ open TauCeti.Manifold
 local notation "P" => ℝ × ℝ
 local notation "IP" => 𝓘(ℝ, P)
 
-/-- Every inherited chart on an open coordinate domain reads off the ambient coordinates. -/
-theorem extChartAt_apply (U : Opens P) (p q : U) : extChartAt IP p q = q.val := by
-  simp [extChartAt, Opens.chartAt_eq]
-
 section NativeMetric
 
 variable {f g : ℝ → ℝ} {U : Opens P}
   [RiemannianBundle (fun p : U ↦ TangentSpace IP p)]
   [IsContMDiffRiemannianBundle IP ∞ P (fun p : U ↦ TangentSpace IP p)]
 
+-- This smooth-to-C¹ instance is local: importing this module does not export it.
 local instance (priority := 10000) :
     IsContMDiffRiemannianBundle IP 1 P (fun p : U ↦ TangentSpace IP p) :=
   IsContMDiffRiemannianBundle.of_le (n := ∞) (by norm_num)
@@ -54,12 +51,12 @@ private theorem chartMetric_eventuallyEq
   let c := extChartAt IP p
   have hsource : p ∈ c.source := mem_extChartAt_source p
   have htarget : p.val ∈ c.target := by
-    simpa only [c, extChartAt_apply] using c.map_source hsource
+    simpa only [c, Opens.extChartAt_opens_apply] using c.map_source hsource
   have hinv : Tendsto c.symm (𝓝 p.val) (𝓝 p) := by
     have ht := ((contMDiffOn_extChartAt_symm (n := ∞) p p.val htarget).contMDiffAt
       ((isOpen_extChartAt_target p).mem_nhds htarget)).continuousAt
     have hval : (extChartAt IP p).symm p.val = p := by
-      rw [← extChartAt_apply U p p]
+      rw [← Opens.extChartAt_opens_apply (𝕜 := ℝ) U p p]
       exact c.left_inv hsource
     simpa only [hval] using ht.tendsto
   filter_upwards [hinv.eventually
@@ -73,7 +70,7 @@ private theorem chartMetric_eventuallyEq
       (Manifold.ContMDiffNondegenerateMetric.ofRiemannianBundle IP U) hz,
     Manifold.ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, hmetric]
   have hzval : ((c.symm z : U) : P) = z := by
-    simpa only [c, extChartAt_apply] using c.right_inv hz
+    simpa only [c, Opens.extChartAt_opens_apply] using c.right_inv hz
   have hb : c.symm z ∈ (trivializationAt P (TangentSpace IP : U → Type _) p).baseSet := by
     simpa only [c, extChartAt_source, TangentBundle.trivializationAt_baseSet] using c.map_target hz
   rw [← (trivializationAt P (TangentSpace IP : U → Type _) p).symmL_apply
@@ -84,6 +81,7 @@ private theorem chartMetric_eventuallyEq
   have hid (a b r : P) : NormedSpace.fromTangentSpace b
       ((trivializationAt P (TangentSpace IP) a).symmL ℝ b r) = r := by
     rw [TangentBundle.symmL_model_space]
+    -- On the model space, fromTangentSpace and the identity linear map reduce to identity.
     rfl
   rw [hid, hid, hzval]
 
@@ -102,7 +100,7 @@ theorem christoffelMap_eq
   have hLC :=
     ContMDiffNondegenerateMetric.isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection IP U
   rw [hLC.christoffelMap_apply_eq_christoffelSecondKind (Module.finBasis ℝ P)
-    (mem_extChartAt_source p) (by simp) w z, extChartAt_apply]
+    (mem_extChartAt_source p) (by simp) w z, Opens.extChartAt_opens_apply]
   have heq := chartMetric_eventuallyEq hmetric p
   rw [Manifold.christoffelSecondKind_def, Manifold.christoffelSecondKind_def,
     heq.eq_of_nhds, heq.fderiv_eq]
@@ -126,7 +124,7 @@ theorem isGeodesicCurveOn_iff_coordinateEquation
   apply forall₂_congr
   intro t ht
   have hchart : (extChartAt IP (γ t) ∘ γ) = fun r ↦ (γ r).val :=
-    funext fun r ↦ extChartAt_apply U (γ t) (γ r)
+    funext fun r ↦ Opens.extChartAt_opens_apply U (γ t) (γ r)
   have hd : derivWithin (fun r ↦ (γ r).val) s =ᶠ[𝓝 t]
       deriv (fun r ↦ (γ r).val) := by
     filter_upwards [hs.mem_nhds ht] with r hr using derivWithin_of_isOpen hs hr

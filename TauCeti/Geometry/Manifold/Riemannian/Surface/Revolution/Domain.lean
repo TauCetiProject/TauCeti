@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 /-!
 # The induced Riemannian metric on an open revolution parameter domain
 
-A regular profile of positive radius determines a genuine smooth Riemannian metric on every
+A regular profile of nonzero radius determines a genuine smooth Riemannian metric on every
 open coordinate domain where it is regular. The profile need only be smooth on that domain;
 no global regularity, injectivity of the parametrization or completeness is required.
 -/

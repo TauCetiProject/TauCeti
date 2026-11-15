@@ -17,6 +17,15 @@ Rotating a plane profile `(f(v), g(v))` about the vertical axis gives the parame
 coefficients `f(v)²` and `f'(v)² + g'(v)²`. The differential is injective wherever the radius
 is nonzero and the profile velocity is nonzero. All differential statements are local in
 the profile parameter; neither completeness nor an invertible height function is assumed.
+
+Ported from Yangyang Li's formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/tree/b442a9f3077a4be3823b712ec92b2335dd34e771/ForTauCeti/Geometry/Manifold/Riemannian/Surface/Revolution).
+
+## References
+
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*,
+  [electronic edition](https://academicweb.nd.edu/~lnicolae/Lectures.pdf),
+  Example 5.1.16 and Theorem 5.1.17, pp. 211–212.
 -/
 
 public noncomputable section
@@ -74,13 +83,13 @@ theorem fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
   have h := (((hf'.mul hc).smul_const (EuclideanSpace.basisFun (Fin 3) ℝ 0)).add
     ((hf'.mul hs).smul_const (EuclideanSpace.basisFun (Fin 3) ℝ 1))).add
       (hg'.smul_const (EuclideanSpace.basisFun (Fin 3) ℝ 2))
-  have h' : HasFDerivAt (parametrization f g) _ p := h
+  have h' := h.congr_of_eventuallyEq (Filter.Eventually.of_forall (parametrization_def f g))
   rw [h'.fderiv]
   simp only [add_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.comp_apply, smul_apply,
     ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
     ContinuousLinearMap.toSpanSingleton_apply, Function.comp_apply, smul_eq_mul]
-  congr 2 <;> ring_nf
+  module
 
 /-- The first fundamental form in arbitrary profile coordinates. -/
 theorem inner_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
@@ -98,7 +107,7 @@ theorem inner_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
     (f p.2 ^ 2 * w.1 * z.1 + deriv f p.2 ^ 2 * w.2 * z.2) *
       Real.sin_sq_add_cos_sq p.1
 
-/-- A surface of revolution is smooth wherever both generating functions are smooth. -/
+/-- The parametrization is `C^n` whenever both generating functions are `C^n`. -/
 theorem contDiff_parametrization {f g : ℝ → ℝ} {n : ℕ∞ω}
     (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g) :
     ContDiff ℝ n (parametrization f g) := by
@@ -114,7 +123,7 @@ theorem contDiffAt_parametrization {f g : ℝ → ℝ} {n : ℕ∞ω} {p : ℝ �
 
 /-- The first fundamental form is positive on every nonzero coordinate vector at a regular
 profile point of nonzero radius. -/
-theorem firstFundamentalForm_pos {f g : ℝ → ℝ} {v : ℝ}
+theorem sq_mul_sq_add_profileSpeedSq_mul_sq_pos {f g : ℝ → ℝ} {v : ℝ}
     (hf : f v ≠ 0) (hfg : 0 < profileSpeedSq f g v) {w : ℝ × ℝ} (hw : w ≠ 0) :
     0 < f v ^ 2 * w.1 ^ 2 + profileSpeedSq f g v * w.2 ^ 2 := by
   have hr : 0 < f v ^ 2 := sq_pos_of_ne_zero hf
@@ -135,10 +144,10 @@ theorem injective_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
   intro w z hwz
   apply sub_eq_zero.mp
   by_contra hne
-  have hpos := firstFundamentalForm_pos hr hfg hne
+  have hpos := sq_mul_sq_add_profileSpeedSq_mul_sq_pos hr hfg hne
   have hinner := inner_fderiv_parametrization hf hg (w - z) (w - z)
   rw [map_sub, hwz, sub_self] at hinner
   simp only [inner_zero_left] at hinner
-  nlinarith [hinner]
+  linarith [hinner]
 
 end TauCeti.SurfaceOfRevolution
