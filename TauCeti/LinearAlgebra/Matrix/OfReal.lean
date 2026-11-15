@@ -25,6 +25,8 @@ and it is positive definite when `Mᴴ M` is, in particular when `M` has indepen
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
+* `Matrix.conjTranspose_mul_self_map_ofReal_add_I_smul`: the Gram matrix of `P + i Q` for real
+  matrices `P` and `Q`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
   definite.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
@@ -64,6 +66,18 @@ theorem map_re_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M 
   exact ((map_algebraMap_mul Complex.reLm Nᵀ _).trans
     (congrArg (Nᵀ * ·) (map_mul_algebraMap Complex.reLm N (Mᴴ * M)))).trans
       (Matrix.mul_assoc _ _ _).symm
+
+/-- The Gram matrix of the complex matrix `P + i Q`, with `P` and `Q` real, is
+`(Pᵀ P + Qᵀ Q) + i (Pᵀ Q - Qᵀ P)`. -/
+theorem conjTranspose_mul_self_map_ofReal_add_I_smul [Fintype m] (P Q : Matrix m n ℝ) :
+    (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map (↑))ᴴ * (P.map (↑) + Complex.I • Q.map (↑)) =
+      (Pᵀ * P + Qᵀ * Q).map (↑) + Complex.I • (Pᵀ * Q - Qᵀ * P).map (↑) := by
+  refine Matrix.ext fun i j => ?_
+  rw [Matrix.mul_apply]
+  apply Complex.ext
+  · simp [Complex.re_sum, Finset.sum_add_distrib, Complex.mul_re, Matrix.mul_apply]
+  · simp [Complex.im_sum, Complex.mul_im, Matrix.mul_apply, ← sub_eq_add_neg,
+      Finset.sum_sub_distrib]
 
 /-- The real part of a positive definite complex matrix is positive definite. -/
 theorem PosDef.map_re [Finite n] {K : Matrix n n ℂ} (hK : K.PosDef) :
