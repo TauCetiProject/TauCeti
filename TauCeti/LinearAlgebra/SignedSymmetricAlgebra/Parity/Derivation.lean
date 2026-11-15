@@ -38,6 +38,8 @@ instantiations of the general signed-Leibniz and lower-triangular `2 × 2` matri
 
 ## Main results
 
+* `TauCeti.ParitySignedSym.apply_map_eq_map_apply_of_leibniz`: a parity-graded algebra map out of
+  `ParitySignedSym G` intertwines parity signed Leibniz maps as soon as it does so on generators.
 * `TauCeti.ParitySignedSym.liftDerivation_mul` and
   `TauCeti.ParitySignedSym.isHomogeneous_liftDerivation`: the parity Leibniz rule and odd degree
   law.
@@ -69,6 +71,22 @@ variable {V : Type v} [AddCommGroup V] [Module R V]
 namespace ParitySignedSym
 
 variable {G : InternalGrading R V (ZMod 2)}
+
+/-- A parity-graded algebra map out of `ParitySignedSym G` intertwines parity signed Leibniz maps
+if it does so on all generators. Neither parity-shift nor square-zero hypotheses are needed. -/
+theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
+    {𝒜 : ZMod 2 → Submodule R A} [GradedAlgebra 𝒜]
+    {dV : ParitySignedSym G →ₗ[R] ParitySignedSym G}
+    (hV : ∀ {i : ZMod 2} {a : ParitySignedSym G}, a ∈ paritySignedSymPiece G i →
+      ∀ b, dV (a * b) = dV a * b + ((-1 : ℤˣ) ^ i) • (a * dV b))
+    {d : A →ₗ[R] A}
+    (hd : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i →
+      ∀ b, d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
+    (f : paritySignedSymPiece G →ₐᵍ[R] 𝒜)
+    (hgen : ∀ x, d (f (generator G x)) = f (dV (generator G x)))
+    (a : ParitySignedSym G) : d (f a) = f (dV a) :=
+  apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top
+    (𝒜 := paritySignedSymPiece G) (ℬ := 𝒜) hV hd f f.map_mem (adjoin_range_generator G) hgen a
 
 section Lift
 
@@ -207,22 +225,13 @@ theorem parityEquiv_liftDerivation {δ : V →ₗ[R] SignedSym G}
     (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1) (a : SignedSym G) :
     parityEquiv G (liftDerivation δ hδ a) =
       ParitySignedSym.liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ)
-        (isHomogeneous_parityEquiv_comp hδ) (parityEquiv G a) := by
-  let d' : ParitySignedSym G.parity →ₗ[R] ParitySignedSym G.parity :=
-    (parityEquiv G).toLinearMap ∘ₗ liftDerivation δ hδ ∘ₗ (parityEquiv G).symm.toLinearMap
-  have hd' : d' = ParitySignedSym.liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ)
-      (isHomogeneous_parityEquiv_comp hδ) := by
-    refine ParitySignedSym.eq_liftDerivation (isHomogeneous_parityEquiv_comp hδ)
-      (fun {i b} hb c => ?_) fun x => ?_
-    · have hb' : (parityEquiv G).symm b ∈ parityGrading (signedSymPiece G) i :=
-        (mem_parityGrading_parityEquiv_symm_iff G).2 hb
-      have hl := leibniz_parityGrading_of_leibniz (liftDerivation_mul hδ) hb'
-        ((parityEquiv G).symm c)
-      simpa only [d', LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, map_add,
-        Units.smul_def, map_zsmul, AlgEquiv.apply_symm_apply] using congrArg (parityEquiv G) hl
-    · simp [d']
-  simpa only [d', LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    AlgEquiv.symm_apply_apply] using LinearMap.congr_fun hd' (parityEquiv G a)
+        (isHomogeneous_parityEquiv_comp hδ) (parityEquiv G a) :=
+  (apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top
+    (𝒜 := parityGrading (signedSymPiece G)) (ℬ := paritySignedSymPiece G.parity)
+    (leibniz_parityGrading_of_leibniz (liftDerivation_mul hδ))
+    (ParitySignedSym.liftDerivation_mul (isHomogeneous_parityEquiv_comp hδ))
+    (parityEquiv G) (fun ha => (mem_paritySignedSymPiece_parityEquiv_iff G).2 ha)
+    (adjoin_range_generator G) (fun x => by simp) a).symm
 
 /-- The inverse of `SignedSym.parityEquiv G` intertwines `ParitySignedSym.liftDerivation` with
 `SignedSym.liftDerivation`. -/

@@ -38,6 +38,8 @@ as `a + ε d a` in the dual numbers over `A(V)` with one odd generator `ε`.
 
 ## Main results
 
+* `TauCeti.SignedSym.apply_map_eq_map_apply_of_leibniz`: a graded algebra map out of `A(V)`
+  intertwines signed Leibniz maps as soon as it does so on generators.
 * `TauCeti.SignedSym.liftDerivation_mul`: the signed Leibniz rule.
 * `TauCeti.SignedSym.isHomogeneous_liftDerivation`: the extension raises degree by one.
 * `TauCeti.SignedSym.eq_liftDerivation` and `TauCeti.SignedSym.existsUnique_odd_extension`:
@@ -62,6 +64,22 @@ universe u v
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 variable {G : InternalGrading R V ℤ}
+
+/-- A graded algebra map out of `A(V)` intertwines signed Leibniz maps if it does so on
+all generators. Neither degree-shift nor square-zero hypotheses are needed. -/
+theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
+    {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+    {dV : SignedSym G →ₗ[R] SignedSym G}
+    (hV : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p →
+      ∀ b, dV (a * b) = dV a * b + p.negOnePow • (a * dV b))
+    {d : A →ₗ[R] A}
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p →
+      ∀ b, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (f : signedSymPiece G →ₐᵍ[R] 𝒜)
+    (hgen : ∀ x, d (f (generator G x)) = f (dV (generator G x)))
+    (a : SignedSym G) : d (f a) = f (dV a) :=
+  apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_range_eq_top
+    (𝒜 := signedSymPiece G) (ℬ := 𝒜) hV hd f f.map_mem (adjoin_range_generator G) hgen a
 
 section Lift
 
