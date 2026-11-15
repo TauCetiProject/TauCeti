@@ -224,7 +224,6 @@ theorem homEquiv_apply (P : GroupPresentation) {G : Type*} [_root_.Group G]
   rfl
 
 /-- Each transcribed relator evaluates to one on the canonical generators. -/
-@[simp]
 theorem eval_of_eq_one (P : GroupPresentation) (t : Relator (Fin P.generatorCount))
     (ht : t ∈ P.transcribed) :
     t.eval (PresentedGroup.of : Fin P.generatorCount → P.Group) = 1 := by
