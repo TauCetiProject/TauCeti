@@ -170,6 +170,10 @@ theorem isRhombusConcave_def [Preorder R] (f : Vertex n → R) :
     IsRhombusConcave f ↔ ∀ ⦃a b c d : Vertex n⦄, IsRhombus a b c d → f b + f d ≤ f a + f c :=
   Iff.rfl
 
+/-- Rhombus concavity is preserved by precomposition with the clockwise rotation. -/
+theorem IsRhombusConcave.comp_rotate [Preorder R] {f : Vertex n → R} (hf : IsRhombusConcave f) :
+    IsRhombusConcave (fun p => f p.rotate) := fun _ _ _ _ hr => hf hr.rotate
+
 instance [Preorder R] [DecidableRel (· ≤ · : R → R → Prop)] (f : Vertex n → R) :
     Decidable (IsRhombusConcave f) :=
   decidable_of_iff _ (isRhombusConcave_def f).symm
@@ -655,16 +659,15 @@ theorem antitone_boundaryLinear_zero_of_isRhombusConcave [IsOrderedAddMonoid R]
 every side `s : Fin 3`, the successive clockwise edge differences `h.boundary s` decrease weakly. -/
 theorem boundary_antitone [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
     Antitone (h.boundary s) := by
-  have hrot {f : Vertex n → R} (hf : IsRhombusConcave f) :
-      IsRhombusConcave (fun p => f p.rotate) := fun _ _ _ _ hr => hf hr.rotate
   fin_cases s
   · exact antitone_boundaryLinear_zero_of_isRhombusConcave h.isRhombusConcave
   · have heq : h.boundary 1 = boundaryLinear ℤ n R (fun p => h p.rotate) 0 := by
       ext i; simp [boundary_apply, Vertex.rotate_edgePoint]
-    exact heq ▸ antitone_boundaryLinear_zero_of_isRhombusConcave (hrot h.isRhombusConcave)
+    exact heq ▸ antitone_boundaryLinear_zero_of_isRhombusConcave h.isRhombusConcave.comp_rotate
   · have heq : h.boundary 2 = boundaryLinear ℤ n R (fun p => h p.rotate.rotate) 0 := by
       ext i; simp [boundary_apply, Vertex.rotate_edgePoint]
-    exact heq ▸ antitone_boundaryLinear_zero_of_isRhombusConcave (hrot (hrot h.isRhombusConcave))
+    exact heq ▸ antitone_boundaryLinear_zero_of_isRhombusConcave
+      h.isRhombusConcave.comp_rotate.comp_rotate
 
 end HiveBoundary
 
