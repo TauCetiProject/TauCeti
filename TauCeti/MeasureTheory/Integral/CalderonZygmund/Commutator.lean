@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
 import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
 
 /-!
-# The sharp maximal function of a commutator with a function of bounded mean oscillation
+# Commutators with functions of bounded mean oscillation: the Coifman–Rochberg–Weiss theorem
 
 Let `T` be a singular integral operator on `ℝⁿ = ι → ℝ`, `n ≥ 1`, and let `b` have bounded mean
 oscillation. The **commutator** of `T` with multiplication by `b` is
@@ -618,6 +618,7 @@ private theorem exists_eLpNorm_smul_sub_le_of_memLp {F : Type*} [NormedAddCommGr
             | exact hmono (fun y => eNorm_le_iff_norm_le.2 (by simp [hu])) x
       _ = _ := by push_cast; ring
   have key := eLpNorm_le_mul_eLpNorm_of_sharpMaximalFunction_le (by linarith) (by linarith) hqp hΦ
+    (ENNReal.one_le_ofReal.2 (by linarith)) le_rfl
     ((Lp.aestronglyMeasurable _).norm.add (Lp.aestronglyMeasurable _).norm) hpt
   -- `‖u‖_p ≤ ‖T f‖_p + ‖f‖_p ≤ (A + 1) ‖f‖_p`.
   have hu_le :
@@ -653,28 +654,21 @@ private theorem smul_sub_ae_eq_zero_of_ae_eq_const {F : Type*} [NormedAddCommGro
   simp only [hgc, map_smul, hy, hy', Pi.smul_apply, sub_self, Pi.zero_apply]
 
 omit [Nonempty ι] in
-/-- If `b` is bounded and `f ∈ Lᵖ`, the commutator `b T f - T (b f)` lies in `Lᵖ`. -/
-private theorem memLp_smul_sub_of_abs_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+/-- If `b ∈ L^∞` and `f ∈ Lᵖ`, the commutator `b T f - T (b f)` lies in `Lᵖ`. -/
+private theorem memLp_smul_sub_of_memLp_top {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume) {p : ℝ≥0∞} {A : ℝ≥0}
     (hTp : ∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
       eLpNorm (T h) p volume ≤ A * eLpNorm h p volume)
-    {b : (ι → ℝ) → ℝ} (hb : AEStronglyMeasurable b volume) {k : ℝ} (hbk : ∀ y, |b y| ≤ k)
+    {b : (ι → ℝ) → ℝ} (hb : MemLp b ∞ volume)
     (f g : Lp E 2 (volume : Measure (ι → ℝ))) (hg : g =ᵐ[volume] (fun y => b y • f y))
     (hf : eLpNorm f p volume ≠ ∞) :
     MemLp (fun y => b y • T f y - T g y) p volume := by
   have hT (h : Lp E 2 (volume : Measure (ι → ℝ))) (hh : eLpNorm h p volume ≠ ∞) :
       MemLp (T h) p volume :=
     (hTp h).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hh.lt_top)
-  have hgp : eLpNorm g p volume ≠ ∞ := by
-    rw [eLpNorm_congr_ae hg]
-    exact (MemLp.of_le_mul (f := fun y => b y • f y) (lt_top_iff_ne_top.2 hf)
-      (hb.smul (Lp.aestronglyMeasurable f)) (.of_forall fun y => by
-        rw [norm_smul, Real.norm_eq_abs]
-        exact mul_le_mul_of_nonneg_right (hbk y) (norm_nonneg _))).eLpNorm_ne_top
-  exact ((hT f hf).of_le_mul (f := fun y => b y • T f y) (hb.smul (Lp.aestronglyMeasurable _))
-    (.of_forall fun y => by
-      rw [norm_smul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_right (hbk y) (norm_nonneg _))).sub (hT g hgp)
+  have hgp : MemLp g p volume :=
+    (hb.smul (hf.lt_top : MemLp f p volume)).ae_eq hg.symm
+  exact (hb.smul (hT f hf)).sub (hT g hgp.eLpNorm_ne_top)
 
 omit [Nonempty ι] in
 /-- Let `g_k ∈ L²` be the products `b_k f` of `f ∈ L²` with the clippings
@@ -755,6 +749,7 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*} [NormedAd
       (.of_forall fun y => congrArg b (Subsingleton.elim _ _)) f g hg), eLpNorm_zero]
     exact zero_le
   obtain ⟨C₁, hC₁⟩ := exists_eLpNorm_smul_sub_le_of_memLp (ι := ι) (E := E) (F := F) hs hsp A C₀ hδ
+  -- The `+ 1` keeps `C ≠ 0`, so that `C M ‖f‖_p = ∞` when `M ≠ 0` and `f ∉ Lᵖ`.
   refine ⟨2 * C₁ + 1, fun T K hKm hK hrep hTs hTp b M hb hM f g hg => ?_⟩
   have hbm := hb.aestronglyMeasurable
   -- If `‖b‖_{BMO} = 0`, then `b` is a.e. a constant `c` and `[b, T] f = c T f - T (c f) = 0`.
@@ -771,19 +766,14 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*} [NormedAd
   set bk : ℕ → (ι → ℝ) → ℝ := fun k y => max (-(k : ℝ)) (min (k : ℝ) (b y))
   have hbkm (k : ℕ) : AEStronglyMeasurable (bk k) volume :=
     (continuous_const.max (continuous_const.min continuous_id)).comp_aestronglyMeasurable hbm
-  have hbk (k : ℕ) (y : ι → ℝ) : |bk k y| ≤ k :=
-    (abs_max_min_le _ _).trans_eq (abs_of_nonneg k.cast_nonneg)
   have hmem (k : ℕ) : MemLp (fun y => bk k y • f y) 2 volume :=
-    (Lp.memLp f).of_le_mul (c := k) ((hbkm k).smul (Lp.aestronglyMeasurable f))
-      (.of_forall fun y => by
-        rw [norm_smul, Real.norm_eq_abs]
-        exact mul_le_mul_of_nonneg_right (hbk k y) (norm_nonneg _))
+    (hbm.memLp_top_max_min k).smul (Lp.memLp f)
   set gk : ℕ → Lp E 2 (volume : Measure (ι → ℝ)) := fun k => (hmem k).toLp _
   have hgk (k : ℕ) : gk k =ᵐ[volume] fun y => bk k y • f y := (hmem k).coeFn_toLp
   have hbound (k : ℕ) : eLpNorm (fun y => bk k y • T f y - T (gk k) y) (ENNReal.ofReal p) volume ≤
       C₁ * ↑(2 * M) * eLpNorm f (ENNReal.ofReal p) volume := by
     refine hC₁ T hKm hK hrep hTs hTp ?_ ?_ f (gk k) (hgk k)
-      (memLp_smul_sub_of_abs_le T hTp (hbkm k) (hbk k) f (gk k) (hgk k) hf)
+      (memLp_smul_sub_of_memLp_top T hTp (hbm.memLp_top_max_min k) f (gk k) (hgk k) hf)
     · exact hb.mono (hbkm k) (.of_forall fun y => by
         simpa only [Real.norm_eq_abs] using abs_max_min_le_abs k.cast_nonneg (b y))
     · refine (bmoSeminorm_max_min_le hbm k).trans ?_
@@ -799,10 +789,7 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*} [NormedAd
           ((hbm.smul (Lp.aestronglyMeasurable _)).sub (Lp.aestronglyMeasurable _)) hlim
     _ ≤ C₁ * ↑(2 * M) * eLpNorm f (ENNReal.ofReal p) volume :=
         liminf_le_of_frequently_le' (.of_forall fun i => hbound _)
-    _ ≤ ↑(2 * C₁ + 1) * M * eLpNorm f (ENNReal.ofReal p) volume := by
-        refine mul_le_mul' ?_ le_rfl
-        push_cast
-        calc (C₁ : ℝ≥0∞) * (2 * M) = 2 * C₁ * M := by ring
-          _ ≤ (2 * C₁ + 1) * M := by gcongr; exact le_self_add
+    _ = ↑(2 * C₁) * M * eLpNorm f (ENNReal.ofReal p) volume := by push_cast; ring
+    _ ≤ ↑(2 * C₁ + 1) * M * eLpNorm f (ENNReal.ofReal p) volume := by gcongr; exact le_self_add
 
 end TauCeti

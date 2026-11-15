@@ -725,13 +725,14 @@ theorem lintegral_enorm_rpow_le_of_sharpMaximalFunction_le [Nonempty ι] {G : Ty
         gcongr
 
 /-- **Integrating a sharp function estimate**, in terms of `Lᵖ` seminorms. Let `1 < p < ∞` and
-`0 < q < p`, and let `f ∈ Lᵖ` on `ℝⁿ = ι → ℝ`, `n ≥ 1`. If
+`0 < q < p`, and let `f ∈ L^p₀` on `ℝⁿ = ι → ℝ`, `n ≥ 1`, for some `1 ≤ p₀ ≤ p`. If
 `f^# x ≤ c (M(‖g‖^q) x)^{1/q}` at every point `x`, then `‖f‖_p ≤ (C₀ C₁)^{1/p} c ‖g‖_p`, with the
 constants `C₀` and `C₁` of `TauCeti.lintegral_enorm_rpow_le_of_sharpMaximalFunction_le`. -/
 theorem eLpNorm_le_mul_eLpNorm_of_sharpMaximalFunction_le [Nonempty ι] {G : Type*}
     [NormedAddCommGroup G] {f : (ι → ℝ) → F} {g : (ι → ℝ) → G} {p q : ℝ} (hp : 1 < p)
-    (hq : 0 < q) (hqp : q < p) (hf : MemLp f (ENNReal.ofReal p)) (hg : AEStronglyMeasurable g)
-    {c : ℝ≥0∞} (h : ∀ x, sharpMaximalFunction volume f x ≤
+    (hq : 0 < q) (hqp : q < p) {p₀ : ℝ≥0∞} (hf : MemLp f p₀) (hp₀ : 1 ≤ p₀)
+    (hp₀p : p₀ ≤ ENNReal.ofReal p) (hg : AEStronglyMeasurable g) {c : ℝ≥0∞}
+    (h : ∀ x, sharpMaximalFunction volume f x ≤
       c * maximalFunction volume (fun y => ‖g y‖ₑ ^ q) x ^ q⁻¹) :
     eLpNorm f (ENNReal.ofReal p) ≤
       (ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) *
@@ -739,11 +740,14 @@ theorem eLpNorm_le_mul_eLpNorm_of_sharpMaximalFunction_le [Nonempty ι] {G : Typ
         eLpNorm g (ENNReal.ofReal p) := by
   have hp0 : 0 < p := zero_lt_one.trans hp
   have hp0' : ENNReal.ofReal p ≠ 0 := by simpa using hp0
-  have hfp : ∫⁻ x, ‖f x‖ₑ ^ p ≠ ∞ := by
-    simpa [ENNReal.toReal_ofReal hp0.le] using
-      (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0' ENNReal.ofReal_ne_top hf).ne
+  have hp₀_top : p₀ ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hp₀p
+  have hfp₀ : ∫⁻ x, ‖f x‖ₑ ^ p₀.toReal ≠ ∞ :=
+    (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp₀).ne' hp₀_top
+      hf.eLpNorm_lt_top).ne
   have key := lintegral_enorm_rpow_le_of_sharpMaximalFunction_le hf.aestronglyMeasurable
-    hg.eNorm hp.le le_rfl hp hq hqp hfp h
+    hg.eNorm (by simpa using ENNReal.toReal_mono hp₀_top hp₀)
+    ((ENNReal.toReal_mono ENNReal.ofReal_ne_top hp₀p).trans_eq (ENNReal.toReal_ofReal hp0.le))
+    hp hq hqp hfp₀ h
   rw [mul_right_comm _ (c ^ p)] at key
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0' ENNReal.ofReal_ne_top hf.aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0' ENNReal.ofReal_ne_top hg,
