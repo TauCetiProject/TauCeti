@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Quantization
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
@@ -248,8 +249,7 @@ private theorem coordinateDeriv_fst_cutoffCoeff (b : Symbol n V W m) (s : ℝ) (
   rw [coordinateDeriv_fst_eq_fderiv (f := cutoffCoeff χ b s) (p := (x, ξ)) hd, hf]
   simp only [PiLp.ofLp_single, Pi.single_apply, ite_smul, one_smul, zero_smul,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true, PiLp.zero_apply, Finset.sum_const_zero,
-    add_zero]
-  rfl
+    add_zero, cutoffCoeff]
 
 /-- The derivative `∂_{ξ_j} c_s` is the coefficient built from `∂_{ξ_j} b`. -/
 private theorem coordinateDeriv_snd_cutoffCoeff (b : Symbol n V W m) (s : ℝ) (j : Fin n)
@@ -260,8 +260,7 @@ private theorem coordinateDeriv_snd_cutoffCoeff (b : Symbol n V W m) (s : ℝ) (
   rw [coordinateDeriv_snd_eq_fderiv (f := cutoffCoeff χ b s) (p := (x, ξ)) hd, hf]
   simp only [PiLp.ofLp_single, Pi.single_apply, ite_smul, one_smul, zero_smul,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true, PiLp.zero_apply, Finset.sum_const_zero,
-    zero_add]
-  rfl
+    zero_add, cutoffCoeff]
 
 private theorem contDiff_cutoffCoeff (s : ℝ) :
     ∀ (k : ℕ) {m : ℝ} (b : Symbol n V W m), ContDiff ℝ k (cutoffCoeff χ b s)
@@ -361,12 +360,17 @@ theorem coefficient_kernelCutoff (b : Symbol n V W m) (x ξ : CoordinateSpace n)
     (kernelCutoff χ b).coefficient (x, ξ) = ∫ θ, 𝓕 χ θ • b.coefficient (x, ξ - (2 * π) • θ) :=
   (rfl)
 
+private theorem coefficient_kernelCutoff_eq_cutoffCoeff (b : Symbol n V W m) :
+    (kernelCutoff χ b).coefficient = cutoffCoeff χ b (2 * π) :=
+  (rfl)
+
 /-- Position derivatives commute with the kernel cutoff. -/
 theorem spatialDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
     spatialDeriv j (kernelCutoff χ b) = kernelCutoff χ (spatialDeriv j b) := by
   ext1
   funext ⟨x, ξ⟩
-  rw [coefficient_spatialDeriv]
+  rw [coefficient_spatialDeriv, coefficient_kernelCutoff_eq_cutoffCoeff,
+    coefficient_kernelCutoff_eq_cutoffCoeff]
   exact coordinateDeriv_fst_cutoffCoeff χ b (2 * π) j x ξ
 
 /-- Frequency derivatives commute with the kernel cutoff. -/
@@ -374,7 +378,8 @@ theorem frequencyDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
     frequencyDeriv j (kernelCutoff χ b) = kernelCutoff χ (frequencyDeriv j b) := by
   ext1
   funext ⟨x, ξ⟩
-  rw [coefficient_frequencyDeriv]
+  rw [coefficient_frequencyDeriv, coefficient_kernelCutoff_eq_cutoffCoeff,
+    coefficient_kernelCutoff_eq_cutoffCoeff]
   exact coordinateDeriv_snd_cutoffCoeff χ b (2 * π) j x ξ
 
 /-- The kernel cutoff of a symbol vanishing at the positions outside a compact set vanishes there
@@ -408,13 +413,8 @@ private theorem coe_reflectAt (x : CoordinateSpace n) : ⇑(reflectAt χ x) = fu
 /-- The Fourier transform of `y ↦ χ(x - y)` is `t ↦ exp(-2πi ⟪x, t⟫) 𝓕χ(-t)`. -/
 private theorem fourier_reflectAt (x t : CoordinateSpace n) :
     𝓕 (reflectAt χ x) t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
-  rw [SchwartzMap.fourier_coe, coe_reflectAt, Real.fourier_eq, SchwartzMap.fourier_coe,
-    Real.fourier_eq, ← integral_const_mul,
-    ← integral_sub_left_eq_self (fun z ↦ (𝐞 (-⟪x, t⟫) : ℂ) * (𝐞 (-⟪z, -t⟫) • χ z)) volume x]
-  refine integral_congr_ae (.of_forall fun y ↦ ?_)
-  simp only [Circle.smul_def, smul_eq_mul, inner_sub_left, inner_neg_right,
-    neg_neg, ← mul_assoc, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-  ring_nf
+  rw [reflectAt, SchwartzMap.fourier_compSubConstCLM_apply,
+    SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_neg_apply, Circle.smul_def, smul_eq_mul]
 
 /-- The double integrand of the quantization of the kernel cutoff, after inserting the
 convolution formula for `𝓕(χ(x - ·) u)`, is integrable in both frequencies. -/
@@ -424,7 +424,7 @@ private theorem integrable_cutoffQuantizeIntegrand (b : Symbol n V W m)
       𝓕 χ (q.2 - q.1) • b.coefficient (x, (2 * π) • q.1) (𝓕 u q.2)) (volume.prod volume) := by
   obtain ⟨C, hC0, hC⟩ := b.exists_bound_coefficient_slice x
   set χ' := SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) (𝓕 χ)
-  have hχ' : ∀ θ, χ' θ = 𝓕 χ (-θ) := fun θ ↦ rfl
+  have hχ' : ∀ θ, χ' θ = 𝓕 χ (-θ) := fun θ ↦ by simp [χ']
   have hh : Integrable fun η : CoordinateSpace n ↦ (1 + ‖(2 * π) • η‖ ^ 2) ^ (m / 2) * ‖𝓕 u η‖ :=
     (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m
   have hk : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) * ‖χ' θ‖ :=
@@ -607,15 +607,6 @@ private theorem hasDerivAt_cutoffIntegrand (ψ : 𝓢(CoordinateSpace n, ℂ)) (
   simp only [scaleFactor]
   field_simp
 
-/-- A Schwartz function that is constant near `0` has partial derivatives vanishing near `0`. -/
-private theorem schwartzPartial_eventuallyEq_zero {ψ : 𝓢(CoordinateSpace n, ℂ)}
-    (hψ : ⇑ψ =ᶠ[𝓝 0] fun _ ↦ ψ 0) (j : Fin n) :
-    ⇑(schwartzPartial ψ j) =ᶠ[𝓝 0] fun _ ↦ 0 := by
-  filter_upwards [hψ.eventually_nhds] with y hy
-  rw [schwartzPartial, SchwartzMap.lineDerivOp_apply_eq_fderiv,
-    Filter.EventuallyEq.fderiv_eq (f := fun _ ↦ ψ 0) hy,
-    fderiv_const_apply, zero_apply]
-
 /-- The derivative in the scale `s` of `c_s` is `-(2πi)⁻¹ ∑ⱼ` of the coefficients built from
 `∂ⱼψ` and `∂_{ξ_j} b`. -/
 private theorem hasDerivAt_cutoffCoeff (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n V W m)
@@ -708,12 +699,15 @@ private theorem exists_norm_cutoffCoeff_sub_le (N : ℕ) :
     -- The derivative in `s` involves `∂ⱼψ`, which vanishes near `0`, and `∂_{ξ_j} b`, of order
     -- `m - 1`; the induction hypothesis bounds it, and `c_0 - ψ(0) b = 0`.
     intro m b ψ hψ K hK
+    have hψj : ∀ j, ⇑(schwartzPartial ψ j) =ᶠ[𝓝 0] fun _ ↦ 0 := fun j ↦ by
+      rw [schwartzPartial]
+      exact SchwartzMap.lineDerivOp_eventuallyEq_zero hψ _
     have hψ' : ∀ j, ⇑(schwartzPartial ψ j) =ᶠ[𝓝 0]
         fun _ ↦ (schwartzPartial ψ j) 0 := fun j ↦ by
-      have h := schwartzPartial_eventuallyEq_zero hψ j
-      rwa [h.eq_of_nhds]
+      rw [(hψj j).eq_of_nhds]
+      exact hψj j
     have hψ0 : ∀ j, (schwartzPartial ψ j) 0 = 0 := fun j ↦
-      (schwartzPartial_eventuallyEq_zero hψ j).eq_of_nhds
+      (hψj j).eq_of_nhds
     choose C hC0 hC using fun j ↦ ih (frequencyDeriv j b) _ (hψ' j) hK
     refine ⟨2 * π * (‖scaleFactor‖ * ∑ j, C j), mul_nonneg Real.two_pi_pos.le
       (mul_nonneg (norm_nonneg _) (Finset.sum_nonneg fun j _ ↦ hC0 j)), fun s hs x hx ξ ↦ ?_⟩
@@ -766,8 +760,7 @@ theorem isSmoothing_kernelCutoff_sub (hχ : ⇑χ =ᶠ[𝓝 0] 1) (b : Symbol n 
       cutoffCoeff χ b' (2 * π) (x, ξ) - b'.coefficient (x, ξ) := by
     rw [coefficient_sub, sub_eq_add_neg, mixedDeriv_add (a := (kernelCutoff χ b).coefficient)
       (b := -b.coefficient) (kernelCutoff χ b).contDiff_coefficient b.contDiff_coefficient.neg,
-      mixedDeriv_neg, ← sub_eq_add_neg, ← hb, ← hc]
-    rfl
+      mixedDeriv_neg, ← sub_eq_add_neg, ← hb, ← hc, coefficient_kernelCutoff_eq_cutoffCoeff]
   have h := hC (2 * π) ⟨Real.two_pi_pos.le, le_rfl⟩ x hx ξ
   rw [h0, one_smul] at h
   rw [hd]
