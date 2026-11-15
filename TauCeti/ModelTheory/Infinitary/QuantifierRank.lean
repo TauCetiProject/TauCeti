@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Reindex
+public import Mathlib.SetTheory.Cardinal.Aleph
 public import Mathlib.SetTheory.Ordinal.Family
+import Mathlib.SetTheory.Cardinal.Regular
 -- Non-public: `TauCeti.Ordinal.lift_iSup` moves the lift through a supremum of ranks.
 import TauCeti.SetTheory.Ordinal.Family
 
@@ -37,6 +39,8 @@ and `⊥` have rank `0`; this includes an empty source carrier, where every bran
   depend on the carrier, up to `Ordinal.lift`.
 * `FirstOrder.Language.BoundedFormulaInf.qrank_toInf_lt_omega0`: the rank of a finitary formula is
   finite.
+* `FirstOrder.Language.BoundedFormulaInf.qrank_lt_omega_one`: the rank of an infinitary formula
+  with countable branching is countable.
 
 ## References
 
@@ -235,6 +239,24 @@ theorem qrank_toInf_lt_omega0 : ∀ {n} (φ : L.BoundedFormula α n),
     simpa only [BoundedFormula.toInf_all, qrank_all] using Ordinal.isSuccLimit_omega0.succ_lt ih
 
 end Finitary
+
+section Countable
+
+/-- **The rank of an infinitary formula with countable branching is countable.** In particular,
+every `L_{ω₁ω}` formula has quantifier rank below `ω₁`. -/
+theorem qrank_lt_omega_one [Countable ι] : ∀ {n} (φ : L.BoundedFormulaInf ι α n),
+    φ.qrank < Ordinal.omega 1 := by
+  intro n φ
+  induction φ with
+  | falsum => simp [Ordinal.omega_pos 1]
+  | equal t₁ t₂ => simp [Ordinal.omega_pos 1]
+  | rel R ts => simp [Ordinal.omega_pos 1]
+  | imp φ ψ ihφ ihψ => simpa only [qrank_imp] using max_lt ihφ ihψ
+  | all φ ih => simpa only [qrank_all] using (Cardinal.isSuccLimit_omega 1).succ_lt ih
+  | iSup φs ih => simpa only [qrank_iSup] using Ordinal.iSup_lt_omega_one ih
+  | iInf φs ih => simpa only [qrank_iInf] using Ordinal.iSup_lt_omega_one ih
+
+end Countable
 
 end BoundedFormulaInf
 
