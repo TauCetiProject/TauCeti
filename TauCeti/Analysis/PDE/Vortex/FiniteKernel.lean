@@ -73,14 +73,6 @@ open scoped ENNReal Topology
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-private theorem memLp_of_mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ gaugeFixedKernel x) : MemLp y 2 :=
-  (mem_gaugeFixedKernel.1 hy).2.1
-
-private theorem continuous_of_mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ gaugeFixedKernel x) : Continuous y :=
-  (mem_gaugeFixedKernel.1 hy).1.continuous
-
 /-! ### The estimate at infinity -/
 
 /-- The exterior estimate extends from compactly supported variations to the product `χ y` of a
