@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
-public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Data.Finset.Image
 public import TauCeti.Data.Set.Function
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
@@ -115,8 +114,6 @@ spanning the matched subalgebra are generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul_of_mem_matchedSubalgebra`,
   `TauCeti.StrandsAlgebra.mul_matchedOne_of_mem_matchedSubalgebra`: `∑ₛ I(s)` is a two-sided unit
   for the matched subalgebra.
-* `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`: the `I(s)` form a complete
-  family of orthogonal idempotents of the matched subalgebra.
 * `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_matchedDifferential`: over a ring of characteristic
   two, the matched subalgebra is an ungraded differential algebra.
 * `TauCeti.StrandsAlgebra.repr_horizontalCompletion_apply`: the coefficients of `a(ρ, h)`.
@@ -126,8 +123,8 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
-* `TauCeti.StrandsAlgebra.repr_matchedIdem_mul_apply`,
-  `TauCeti.StrandsAlgebra.repr_mul_matchedIdem_apply`: the coefficients of `I(s) x` and `x I(s)`.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_apply_idOn`: the coefficient of `I(s)` at the identity
+  diagram of a set of points over `s` is `1`.
 * `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
   value at the identity diagrams of any two sets of points over the same pairs.
 
@@ -594,6 +591,19 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   simp only [matchedChoices, mem_filter, mem_univ, true_and]
   refine and_congr_right fun hU ↦ ?_
   rw [← card_image_iff, hU, eq_comm]
+
+omit [LinearOrder α] in
+/-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
+`M`. -/
+@[simp]
+theorem matchedChoices_nonempty_iff {h : Finset β} :
+    (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
+  refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
+    fun hh ↦ ?_⟩
+  classical
+  obtain ⟨u, -, hu, hus⟩ :=
+    exists_subset_injOn_image_eq_of_surjOn Set.univ h fun b hb ↦ by simpa using hh hb
+  exact ⟨u, mem_matchedChoices.2 ⟨hus, hu⟩⟩
 
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
@@ -1269,58 +1279,6 @@ section IdemIdOn
 
 variable [DecidableEq β] {M : α → β} {s : Finset β}
 
-/-- Multiplying a basis element `φ` on the left by `I(s)` keeps it when its starting points lie
-over the pairs of `s`, one over each, and gives zero otherwise. -/
-theorem matchedIdem_mul_of (φ : StrandDiagram α) :
-    matchedIdem R M s * of φ = if φ.source ∈ matchedChoices M s then of φ else 0 := by
-  simp only [matchedIdem_def, sum_mul, idem_mul_of, sum_ite_eq', mem_filter, mem_univ, true_and]
-  refine if_congr ?_ rfl rfl
-  rw [mem_matchedChoices]
-  exact and_congr_right fun h ↦ by rw [← card_image_iff, h, eq_comm]
-
-/-- The coefficients of `I(s) x` are those of `x` at the diagrams whose starting points lie over
-the pairs of `s`, one over each, and zero elsewhere. -/
-theorem repr_matchedIdem_mul_apply (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
-    (basis R α).repr (matchedIdem R M s * x) φ =
-      if φ.source ∈ matchedChoices M s then (basis R α).repr x φ else 0 := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy =>
-    rw [mul_add, map_add, Finsupp.add_apply, hx, hy, map_add, Finsupp.add_apply]
-    split_ifs <;> simp
-  | smul_of r ψ =>
-    rw [mul_smul_comm, matchedIdem_mul_of]
-    by_cases hψφ : ψ = φ
-    · subst hψφ
-      split_ifs <;> simp
-    · split_ifs <;> simp [hψφ]
-
-/-- Multiplying a basis element `φ` on the right by `I(s)` keeps it when its end points lie over
-the pairs of `s`, one over each, and gives zero otherwise. -/
-theorem of_mul_matchedIdem (φ : StrandDiagram α) :
-    of φ * matchedIdem R M s = if φ.target ∈ matchedChoices M s then of φ else 0 := by
-  simp only [matchedIdem_def, mul_sum, of_mul_idem, sum_ite_eq, mem_filter, mem_univ, true_and]
-  refine if_congr ?_ rfl rfl
-  rw [mem_matchedChoices]
-  exact and_congr_right fun h ↦ by rw [← card_image_iff, h, eq_comm]
-
-/-- The coefficients of `x I(s)` are those of `x` at the diagrams whose end points lie over the
-pairs of `s`, one over each, and zero elsewhere. -/
-theorem repr_mul_matchedIdem_apply (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
-    (basis R α).repr (x * matchedIdem R M s) φ =
-      if φ.target ∈ matchedChoices M s then (basis R α).repr x φ else 0 := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy =>
-    rw [add_mul, map_add, Finsupp.add_apply, hx, hy, map_add, Finsupp.add_apply]
-    split_ifs <;> simp
-  | smul_of r ψ =>
-    rw [smul_mul_assoc, of_mul_matchedIdem]
-    by_cases hψφ : ψ = φ
-    · subst hψφ
-      split_ifs <;> simp
-    · split_ifs <;> simp [hψφ]
-
 /-- The coefficient of `I(s)` at the identity diagram of a set `S` of points over `s` is `1`. -/
 @[simp]
 theorem repr_matchedIdem_apply_idOn {S : Finset α} (hS : S ∈ matchedChoices M s) :
@@ -1338,13 +1296,6 @@ theorem repr_apply_idOn_eq {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgeb
   refine repr_eq_of_matchedSetoid hx ?_
   simpa [idOn_addHorizontal] using
     (isMatchedGenerator_idOn_empty M s).matchedSetoid_addHorizontal hS hT
-
-omit [LinearOrder α] in
-/-- There is a set of points over a set `s` of pairs: choose one point over each pair. -/
-theorem exists_mem_matchedChoices (hs : s ⊆ univ.image M) : ∃ S, S ∈ matchedChoices M s := by
-  obtain ⟨S, -, hinj, himage⟩ := exists_subset_injOn_image_eq_of_surjOn (f := M) Set.univ s
-    fun b hb ↦ by simpa using hs hb
-  exact ⟨S, mem_matchedChoices.2 ⟨himage, hinj⟩⟩
 
 end IdemIdOn
 
@@ -1440,19 +1391,6 @@ instance {R : Type*} [CommRing R] : Ring (matchedSubalgebra R M) where
 
 instance : Algebra R (matchedSubalgebra R M) :=
   Algebra.ofModule smul_mul_assoc mul_smul_comm
-
-/-- The idempotents `I(s)` over the sets `s` of matched pairs form a **complete family of
-orthogonal idempotents** of the matched subalgebra: they are pairwise orthogonal and sum to its
-unit. -/
-theorem completeOrthogonalIdempotents_matchedIdem :
-    CompleteOrthogonalIdempotents fun s : (univ.image M).powerset ↦
-      (⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩ : matchedSubalgebra R M) := by
-  refine CompleteOrthogonalIdempotents.iff_ortho_complete.2 ⟨fun s t hst ↦ ?_, ?_⟩
-  · refine Subtype.ext ?_
-    simp [Subtype.coe_ne_coe.2 hst]
-  · refine Subtype.ext ?_
-    simp only [AddSubmonoidClass.coe_finsetSum, coe_matchedSubalgebra_one, matchedOne_def]
-    exact sum_coe_sort _ fun s ↦ matchedIdem R M s
 
 end SubalgebraUnit
 
