@@ -25,19 +25,19 @@ from `FiniteRankAtlas.chartBaseSet`), with block-diagonal coordinate changes con
 `TauCeti.splitCoords` (`splitCoords_whitneyCharts_coordChange`,
 `whitneyCharts_coordChange_splitCoords_symm`, `whitneyCharts_coordChange_of_not_rank_eq`).
 
-`whitneySumTotalSpaceHomeomorph` identifies `TotalSpace Unit (whitneySum A D).Fiber` with
-Mathlib's native direct-sum bundle `TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber)`, over the
-identity of `X` and by `whitneySumFiberEquiv` (`TauCeti.splitCoords`) on every fibre. This yields
-the two-component continuity characterizations `continuous_mk_whitneySum_iff` and
-`continuous_whitneySum_iff`. No compactness, separation, nonemptiness, bounded-rank, or
-scalar-completeness hypothesis is required.
+`whitneySumTotalSpaceHomeomorph` identifies `TotalSpace Unit (whitneySum A D).Fiber` with the
+fibrewise-product `Bundle.TotalSpace` `TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber)` equipped with
+`FiberBundle.Prod.topologicalSpace`, over the identity of `X` and by `whitneySumFiberEquiv`
+(`TauCeti.splitCoords`) on every fibre. This yields the two-component continuity characterizations
+`continuous_mk_whitneySum_iff` and `continuous_whitneySum_iff`. No compactness, separation,
+nonemptiness, bounded-rank, or scalar-completeness hypothesis is required.
 
-The block-coordinate construction and direct-sum bundle (`×ᵇ`) comparison parallel the
+The block-coordinate construction and fibrewise-product (`×ᵇ`) comparison parallel the
 constant-rank development for `TauCeti.FiniteRankBundleCore` in
 `TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`, lifting coordinate splitting along
-`TauCeti.splitCoords` and Mathlib's `FiberBundle.Prod` topology to variable-rank atlases.
-Categorical biproducts, universal-property pairing/copairing, and coherence isomorphisms are
-developed in `TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Biproduct`.
+`TauCeti.splitCoords` and Mathlib's `FiberBundle.Prod.topologicalSpace` to variable-rank atlases.
+Categorical binary biproducts and the trivial-atlas sum isomorphism are developed in
+`TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Biproduct`.
 
 ## References
 
@@ -311,11 +311,11 @@ def whitneySumFiberEquiv (A D : FiniteRankAtlas 𝕜 X) (x : X) :
     (whitneySum A D).Fiber x ≃L[𝕜] (A.Fiber ×ᵇ D.Fiber) x :=
   splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)
 
-@[simp] theorem whitneySumFiberEquiv_apply (A D : FiniteRankAtlas 𝕜 X) (x : X)
+theorem whitneySumFiberEquiv_apply (A D : FiniteRankAtlas 𝕜 X) (x : X)
     (v : (whitneySum A D).Fiber x) :
     whitneySumFiberEquiv A D x v = splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x) v := (rfl)
 
-@[simp] theorem whitneySumFiberEquiv_symm_apply (A D : FiniteRankAtlas 𝕜 X) (x : X)
+theorem whitneySumFiberEquiv_symm_apply (A D : FiniteRankAtlas 𝕜 X) (x : X)
     (w : (A.Fiber ×ᵇ D.Fiber) x) :
     (whitneySumFiberEquiv A D x).symm w =
       (splitCoords (𝕜 := 𝕜) (A.rank x) (D.rank x)).symm w := (rfl)
@@ -432,9 +432,10 @@ theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y] {A D : Fin
         (D.isOpenEmbedding_stratum d).isInducing.continuous_iff)
   · exact ⟨fun h => absurd (hb_iff h) hb, fun h => absurd (A.continuous_proj.comp h.1) hb⟩
 
-/-- The reconstructed total space of `whitneySum A D` is homeomorphic to Mathlib's native
-direct-sum bundle `A.Fiber ×ᵇ D.Fiber`, over the identity of `X` and by `whitneySumFiberEquiv`
-on each fibre. -/
+/-- The reconstructed total space `TotalSpace Unit (whitneySum A D).Fiber` is homeomorphic to the
+fibrewise-product total space `TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber)` equipped with
+`FiberBundle.Prod.topologicalSpace`, over the identity of `X` and by `whitneySumFiberEquiv` on each
+fibre. -/
 def whitneySumTotalSpaceHomeomorph (A D : FiniteRankAtlas 𝕜 X) :
     TotalSpace Unit (whitneySum A D).Fiber ≃ₜ
       TotalSpace (Unit × Unit) (A.Fiber ×ᵇ D.Fiber) where
