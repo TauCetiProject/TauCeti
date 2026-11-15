@@ -10,12 +10,13 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 /-!
 # Real and complex inner product compatibility and real-span isotropy
 
-Let `E` be a seminormed group carrying both a complex inner product and a real inner product for the
-same norm. Because both inner products satisfy the norm-square identity on `(E, +, ‖·‖)`,
-polarization forces `⟪x, y⟫_ℝ = Re ⟪x, y⟫_ℂ` (`TauCeti.real_inner_eq_re_inner_complex`) without any
-separate compatibility hypothesis. This applies simultaneously to `InnerProductSpace.complexToReal`
-and to spaces such as `EuclideanSpace ℂ ι` whose coordinatewise real inner product is only
-propositionally equal to `Re ⟪·, ·⟫_ℂ`.
+Let `E` be a seminormed group carrying both an `RCLike` inner product over `𝕜` (in particular `ℂ`)
+and a real inner product for the same norm. Because both inner products satisfy the norm-square
+identity on `(E, +, ‖·‖)`, polarization forces `⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜`
+(`TauCeti.inner_real_eq_re_inner`) without any separate compatibility hypothesis. This applies
+simultaneously to `InnerProductSpace.rclikeToReal` (and `InnerProductSpace.complexToReal`) and to
+spaces such as `EuclideanSpace ℂ ι` whose coordinatewise real inner product is only propositionally
+equal to `Re ⟪·, ·⟫_ℂ`.
 
 On any complex inner product space, Hermitian symmetry gives `Im ⟪x, x⟫_ℂ = 0`, so pairwise
 vanishing of `Im ⟪·, ·⟫_ℂ` on a generating set `s` extends by `ℝ`-bilinearity to all pairs in
@@ -26,8 +27,8 @@ ambient real dimension.
 
 ## Main results
 
-* `TauCeti.real_inner_eq_re_inner_complex`: `⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re` whenever both inner products
-  share the same seminormed group structure.
+* `TauCeti.inner_real_eq_re_inner`: `⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜` whenever a `𝕜`-inner product
+  (for `[RCLike 𝕜]`) and a real inner product share the same seminormed group structure.
 * `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ` vanishes for distinct elements of
   `s`, then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
 -/
@@ -38,14 +39,13 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
-/-- On any seminormed space carrying both a complex and a real inner product for the same norm, the
-real inner product equals the real part of the complex inner product. -/
-theorem real_inner_eq_re_inner_complex {E : Type*} [SeminormedAddCommGroup E]
-    [InnerProductSpace ℂ E] [InnerProductSpace ℝ E] (x y : E) :
-    ⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re := by
-  have h := norm_add_sq (𝕜 := ℂ) x y
-  rw [RCLike.re_to_complex] at h
-  linarith [norm_add_sq_real x y]
+/-- On any seminormed space carrying both a `𝕜`-inner product (for an `RCLike` field `𝕜`) and a
+real inner product for the same norm, the real inner product equals the real part of the
+`𝕜`-inner product. -/
+theorem inner_real_eq_re_inner (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [InnerProductSpace ℝ E] (x y : E) :
+    ⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜 := by
+  linarith [norm_add_sq (𝕜 := 𝕜) x y, norm_add_sq_real x y]
 
 end TauCeti
 

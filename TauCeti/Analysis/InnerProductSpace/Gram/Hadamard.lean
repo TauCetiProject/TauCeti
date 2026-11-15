@@ -39,6 +39,8 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
 
 ## Main results
 
+* `OrthonormalBasis.norm_det_eq`: `‖b.toBasis.det v‖` is independent of the choice of orthonormal
+  basis `b`.
 * `OrthonormalBasis.norm_det_le_prod_norm`, `OrthonormalBasis.norm_det_eq_prod_norm_iff`:
   Hadamard's inequality for the coordinate determinant in an orthonormal basis, and its equality
   case (some vector is zero or the vectors are pairwise orthogonal). For vectors in the closed unit
@@ -83,6 +85,13 @@ variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductS
 
 namespace OrthonormalBasis
 
+/-- The norm of the coordinate determinant of a family `v` is independent of the choice of
+orthonormal basis. -/
+theorem norm_det_eq (b c : OrthonormalBasis ι 𝕜 E) (v : ι → E) :
+    ‖b.toBasis.det v‖ = ‖c.toBasis.det v‖ := by
+  rw [b.toBasis.det.eq_smul_basis_det c.toBasis, smul_apply, smul_eq_mul,
+    norm_mul, c.coe_toBasis, b.det_to_matrix_orthonormalBasis c, one_mul]
+
 /-- Hadamard's inequality in `Fin n`-indexed coordinates, the case where the Gram–Schmidt
 orthonormal basis is available directly. -/
 private theorem norm_det_le_prod_norm_fin {n : ℕ} (b : OrthonormalBasis (Fin n) 𝕜 E)
@@ -90,10 +99,7 @@ private theorem norm_det_le_prod_norm_fin {n : ℕ} (b : OrthonormalBasis (Fin n
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
   have h : finrank 𝕜 E = Fintype.card (Fin n) := finrank_eq_card_basis b.toBasis
   set e := InnerProductSpace.gramSchmidtOrthonormalBasis h v
-  have hdet : b.toBasis.det v = b.toBasis.det e * e.toBasis.det v := by
-    simpa using congrFun (congrArg DFunLike.coe (b.toBasis.det.eq_smul_basis_det e.toBasis)) v
-  rw [hdet, norm_mul, b.det_to_matrix_orthonormalBasis e, one_mul,
-    InnerProductSpace.gramSchmidtOrthonormalBasis_det, norm_prod]
+  rw [b.norm_det_eq e, InnerProductSpace.gramSchmidtOrthonormalBasis_det, norm_prod]
   gcongr with i
   simpa [e.norm_eq_one i] using norm_inner_le_norm (𝕜 := 𝕜) (e i) (v i)
 
@@ -129,10 +135,7 @@ private theorem pairwise_inner_eq_zero_of_norm_det_eq_prod_norm_fin {n : ℕ}
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
   have h : finrank 𝕜 E = Fintype.card (Fin n) := finrank_eq_card_basis b.toBasis
   set e := InnerProductSpace.gramSchmidtOrthonormalBasis h v
-  have hdet : b.toBasis.det v = b.toBasis.det e * e.toBasis.det v := by
-    simpa using congrFun (congrArg DFunLike.coe (b.toBasis.det.eq_smul_basis_det e.toBasis)) v
-  rw [hdet, norm_mul, b.det_to_matrix_orthonormalBasis e, one_mul,
-    InnerProductSpace.gramSchmidtOrthonormalBasis_det, norm_prod] at heq
+  rw [b.norm_det_eq e, InnerProductSpace.gramSchmidtOrthonormalBasis_det, norm_prod] at heq
   have hle (i : Fin n) : ‖⟪e i, v i⟫_𝕜‖ ≤ ‖v i‖ := by
     simpa [e.norm_eq_one i] using norm_inner_le_norm (𝕜 := 𝕜) (e i) (v i)
   have hprod_ne : ∏ i, ‖⟪e i, v i⟫_𝕜‖ ≠ 0 := by

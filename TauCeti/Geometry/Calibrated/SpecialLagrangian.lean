@@ -109,11 +109,12 @@ theorem standardComplexVolume_eq_det_basisFun (n : ℕ)
 matrix of its row coordinates. -/
 theorem standardComplexVolume_apply (n : ℕ) (v : Fin n → EuclideanSpace ℂ (Fin n)) :
     standardComplexVolume n v = (Matrix.of fun i j ↦ v i j).det := by
-  have hv : v = fun i ↦ WithLp.toLp 2 (fun j ↦ v i j) := by
-    ext i j; rfl
-  rw [standardComplexVolume_eq_det_basisFun]
-  conv_lhs => rw [hv]
-  exact Matrix.basisFun_toBasis_det_toLp (Matrix.of fun i j ↦ v i j)
+  rw [standardComplexVolume_eq_det_basisFun, ← Matrix.basisFun_toBasis_det_toLp]
+  refine congrArg _ (funext fun i ↦ ?_)
+  have h : (v i).ofLp = Matrix.of (fun i j ↦ v i j) i := by
+    funext j
+    rw [Matrix.of_apply]
+  rw [← h, WithLp.toLp_ofLp]
 
 /-- On the standard complex orthonormal basis of `ℂⁿ`, the complex volume form evaluates to `1`. -/
 @[simp]
@@ -232,8 +233,8 @@ def standardSpecialLagrangianForm (n : ℕ) (θ : ℝ) :
 theorem standardSpecialLagrangianForm_apply (n : ℕ) (θ : ℝ)
     (v : Fin n → EuclideanSpace ℂ (Fin n)) :
     standardSpecialLagrangianForm n θ v =
-      (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re :=
-  (rfl)
+      (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re := by
+  simp [standardSpecialLagrangianForm]
 
 /-- Trigonometric expansion `φ_θ v = cos θ Re(Ω v) + sin θ Im(Ω v)`. -/
 theorem standardSpecialLagrangianForm_apply_eq_cos_mul_re_add_sin_mul_im (n : ℕ) (θ : ℝ)
@@ -340,8 +341,9 @@ theorem abs_standardSpecialLagrangianForm_apply_le_norm_standardComplexVolume (n
     |standardSpecialLagrangianForm n θ v| ≤ ‖standardComplexVolume n v‖ := by
   have hnorm : ‖Complex.exp (-(θ : ℂ) * Complex.I)‖ = 1 := by
     simpa using Complex.norm_exp_ofReal_mul_I (-θ)
+  rw [standardSpecialLagrangianForm_apply]
   calc
-    |standardSpecialLagrangianForm n θ v|
+    |(Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re|
       ≤ ‖Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v‖ :=
         Complex.abs_re_le_norm _
     _ = ‖standardComplexVolume n v‖ := by rw [norm_mul, hnorm, one_mul]
@@ -423,10 +425,10 @@ theorem norm_standardSpecialLagrangianForm_succ (n : ℕ) (θ : ℝ) :
 
 /-! ### Characterization of special Lagrangian frames and planes -/
 
-/-- For an `n`-tuple `v` in `ℂⁿ` of vectors of norm at most `1`, `φ_θ v = 1` if and only if its
-complex determinant `Ω v` equals `e^(iθ)`. Holds in every dimension `n`, including `n = 0`. -/
+/-- For an `n`-tuple `v` in `ℂⁿ` with `‖Ω v‖ ≤ 1`, `φ_θ v = 1` if and only if its complex
+determinant `Ω v` equals `e^(iθ)`. Holds in every dimension `n`, including `n = 0`. -/
 theorem standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq (n : ℕ) (θ : ℝ)
-    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : ∀ i, ‖v i‖ ≤ 1) :
+    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : ‖standardComplexVolume n v‖ ≤ 1) :
     standardSpecialLagrangianForm n θ v = 1 ↔
       standardComplexVolume n v = Complex.exp ((θ : ℂ) * Complex.I) := by
   set z : ℂ := Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v
@@ -444,7 +446,7 @@ theorem standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq 
         simpa using Complex.norm_exp_ofReal_mul_I (-θ)
       dsimp only [z]
       rw [norm_mul, hnorm, one_mul]
-      exact norm_standardComplexVolume_apply_le_one n hv
+      exact hv
     have hre' : z.re = 1 := by simpa [standardSpecialLagrangianForm_apply, z] using hre
     have hz : z = 1 := by
       simpa [hre'] using (RCLike.re_eq_self_of_le (K := ℂ) (hnorm_z.trans_eq hre'.symm)).symm
@@ -473,7 +475,7 @@ theorem specialLagrangianFrame_iff (n : ℕ) (θ : ℝ)
   refine ⟨fun h1 ↦ ?_, fun ⟨hlag, him, hpos⟩ ↦ ?_⟩
   · have hΩ :=
       (standardSpecialLagrangianForm_apply_eq_one_iff_standardComplexVolume_eq n θ
-        fun i ↦ (hv.1 i).le).mp h1
+        (norm_standardComplexVolume_apply_le_one n fun i ↦ (hv.1 i).le)).mp h1
     have hnorm_Ω : ‖standardComplexVolume n v‖ = 1 := by
       rw [hΩ]
       exact Complex.norm_exp_ofReal_mul_I θ

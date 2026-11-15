@@ -11,12 +11,12 @@ import TauCeti.Analysis.InnerProductSpace.Complex
 /-!
 # Real and complex orthonormality on Hermitian inner product spaces
 
-Let `E` be a seminormed group carrying both a complex inner product and a real inner product for the
-same norm. Because `⟪x, y⟫_ℝ = Re ⟪x, y⟫_ℂ` (`TauCeti.real_inner_eq_re_inner_complex`), unit length
-is the same over `ℝ` and over `ℂ`, while `⟪x, y⟫_ℂ = 0` splits into `⟪x, y⟫_ℝ = 0` and
-`Im ⟪x, y⟫_ℂ = 0`.
+Let `E` be a seminormed group carrying both an `RCLike` inner product over `𝕜` (in particular `ℂ`)
+and a real inner product for the same norm. Because `⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜`
+(`TauCeti.inner_real_eq_re_inner`), unit length is the same over `ℝ` and over `𝕜`, while over `ℂ`
+orthogonality `⟪x, y⟫_ℂ = 0` splits into `⟪x, y⟫_ℝ = 0` and `Im ⟪x, y⟫_ℂ = 0`.
 
-Consequently, every `ℂ`-orthonormal family is `ℝ`-orthonormal (`Orthonormal.real`), and an
+Consequently, every `𝕜`-orthonormal family is `ℝ`-orthonormal (`Orthonormal.real`), and an
 `ℝ`-orthonormal family `v` is `ℂ`-orthonormal (unitary) if and only if the imaginary parts of its
 complex inner products vanish (`Orthonormal.complex_iff`). Since `Im ⟪x, x⟫_ℂ = 0` holds
 unconditionally by Hermitian symmetry, the imaginary condition may be written either pairwise for
@@ -24,7 +24,7 @@ unconditionally by Hermitian symmetry, the imaginary condition may be written ei
 
 ## Main results
 
-* `Orthonormal.real`: every `ℂ`-orthonormal family is `ℝ`-orthonormal.
+* `Orthonormal.real`: every `𝕜`-orthonormal family (for `[RCLike 𝕜]`) is `ℝ`-orthonormal.
 * `Orthonormal.complex_iff`, `Orthonormal.complex_iff_forall_im_inner_eq_zero`: an `ℝ`-orthonormal
   family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` (pairwise for `i ≠ j`, or for all
   `i, j`).
@@ -36,13 +36,17 @@ open scoped InnerProductSpace
 
 namespace Orthonormal
 
-variable {E ι : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
-
-/-- Every `ℂ`-orthonormal family is `ℝ`-orthonormal. -/
-theorem real {v : ι → E} (hv : Orthonormal ℂ v) : Orthonormal ℝ v :=
+/-- Every `𝕜`-orthonormal family (over an `RCLike` field `𝕜`, in particular `ℂ`) is
+`ℝ`-orthonormal for any real inner product sharing the same norm. -/
+theorem real {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [InnerProductSpace ℝ E] {v : ι → E} (hv : Orthonormal 𝕜 v) : Orthonormal ℝ v :=
   ⟨hv.1, fun {_ _} hij ↦ by
     dsimp only
-    rw [TauCeti.real_inner_eq_re_inner_complex, hv.2 hij, Complex.zero_re]⟩
+    rw [TauCeti.inner_real_eq_re_inner 𝕜, hv.2 hij, map_zero]⟩
+
+section Complex
+
+variable {E ι : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
 
 /-- An `ℝ`-orthonormal family is `ℂ`-orthonormal if and only if the off-diagonal imaginary parts
 `Im ⟪v i, v j⟫_ℂ` vanish. -/
@@ -52,7 +56,7 @@ theorem complex_iff {v : ι → E} (hv : Orthonormal ℝ v) :
     fun him ↦ ⟨hv.1, fun {_ _} hij ↦ ?_⟩⟩
   dsimp only
   apply Complex.ext
-  · rw [← TauCeti.real_inner_eq_re_inner_complex, hv.2 hij, Complex.zero_re]
+  · rw [← RCLike.re_to_complex, ← TauCeti.inner_real_eq_re_inner ℂ, hv.2 hij, Complex.zero_re]
   · rw [him hij, Complex.zero_im]
 
 /-- An `ℝ`-orthonormal family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` for all
@@ -64,5 +68,7 @@ theorem complex_iff_forall_im_inner_eq_zero {v : ι → E} (hv : Orthonormal ℝ
   by_cases hij : i = j
   · subst hij; exact inner_self_im (𝕜 := ℂ) (v i)
   · exact hp hij
+
+end Complex
 
 end Orthonormal

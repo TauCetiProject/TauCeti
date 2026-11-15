@@ -240,13 +240,13 @@ theorem exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul {v : Fin n → E}
   let w : Fin n → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
   have hdim : Module.finrank ℝ W = Fintype.card (Fin n) := finrank_span_eq_card hv
   let e : OrthonormalBasis (Fin n) ℝ W := InnerProductSpace.gramSchmidtOrthonormalBasis hdim w
-  let u : Fin n → E := fun i ↦ (e i : E)
-  have hu_orth : Orthonormal ℝ u := e.orthonormal.comp_linearIsometry W.subtypeₗᵢ
+  let u : Fin n → E := W.subtype ∘ e
+  have hu_orth : Orthonormal ℝ u := by
+    simpa only [u, Submodule.coe_subtypeₗᵢ] using e.orthonormal.comp_linearIsometry W.subtypeₗᵢ
   have hspan : Submodule.span ℝ (Set.range u) = W := by
-    have hu_range : Set.range u = W.subtype '' Set.range e.toBasis := by
-      rw [e.coe_toBasis, ← Set.range_comp]
-      rfl
-    rw [hu_range, ← Submodule.map_span, e.toBasis.span_eq, Submodule.map_top, W.range_subtype]
+    dsimp only [u]
+    rw [Set.range_comp, ← e.coe_toBasis, ← Submodule.map_span, e.toBasis.span_eq,
+      Submodule.map_top, W.range_subtype]
   have hdet_nonneg : 0 ≤ e.toBasis.det w := by
     rw [InnerProductSpace.gramSchmidtOrthonormalBasis_det_eq_prod_norm]
     exact Finset.prod_nonneg fun _ _ ↦ norm_nonneg _
