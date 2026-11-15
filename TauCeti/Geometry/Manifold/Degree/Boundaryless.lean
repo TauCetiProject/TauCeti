@@ -19,19 +19,15 @@ constructions — such as the great-circle rotation family `Sᵐ × S¹ → Sᵐ
 product model `(𝓡 m).prod (𝓡 1)` on `ModelProd` — the source manifold `(M, I)` is boundaryless but
 charted on a general model `(E, H, I)` rather than `𝓘(ℝ, F)`.
 
-This file bridges that model gap in two steps:
-
-1. Precomposing any map `f : M → N` with a `C^n` diffeomorphism `Φ : M' ≃ₘ^n⟮I', I⟯ M` (`n ≠ 0`)
-   preserves regular points and regular values (`Diffeomorph.isRegularPoint_comp_right`,
-   `Diffeomorph.isRegularValue_comp_right`), multiplies orientation signs
-   (`Diffeomorph.orientationSign_comp_right`), and leaves `degreeAtRegularValue` and `degree`
-   unchanged when `Φ` preserves orientation (and negates them when `Φ` reverses orientation).
-2. Given a boundaryless `C¹` manifold `(M, I)` and a continuous linear equivalence `L : E ≃L[ℝ] F`,
-   pulling an orientation `o` of `M` back along the inverse of
-   `BoundarylessModel.diffeomorphTransContinuousLinearEquiv I L 1` equips the `F`-charted copy
-   `BoundarylessModel (I.transContinuousLinearEquiv L) M` with an orientation
-   `o.toBoundarylessModel L` having the same signed preimage counts and pushing the fundamental
-   class forward by `degreeAtRegularValue o o' f y • [N]`.
+Given a boundaryless `C¹` manifold `(M, I)` and a continuous linear equivalence `L : E ≃L[ℝ] F`,
+pulling an orientation `o` of `M` back along the inverse of
+`TauCeti.BoundarylessModel.diffeomorphTransContinuousLinearEquiv I L 1` equips the `F`-charted copy
+`BoundarylessModel (I.transContinuousLinearEquiv L) M` with an orientation
+`o.toBoundarylessModel L` having the same regular values and signed preimage counts
+(`Diffeomorph.isRegularValue_comp_right`,
+`Diffeomorph.degreeAtRegularValue_comp_of_isOrientationPreservingAt`,
+`Diffeomorph.degree_comp_of_isOrientationPreservingAt`), and pushing the fundamental class forward
+by `degreeAtRegularValue o o' f y • [N]`.
 
 ## Main definitions
 
@@ -41,16 +37,14 @@ This file bridges that model gap in two steps:
 
 ## Main results
 
-* `Diffeomorph.isRegularPoint_comp_right`, `Diffeomorph.isRegularValue_comp_right`: invariance of
-  regular points and regular values under precomposition by a diffeomorphism.
-* `Diffeomorph.degreeAtRegularValue_comp_of_isOrientationPreservingAt`,
-  `Diffeomorph.degree_comp_of_isOrientationPreservingAt`: invariance of `degreeAtRegularValue` and
-  `degree` under an orientation-preserving diffeomorphism of the source.
-* `TauCeti.Manifold.Orientation.degreeAtRegularValue_toBoundarylessModel`: recharting the source to
-  `BoundarylessModel` preserves `degreeAtRegularValue`.
-* `Manifold.Orientation.mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul`:
-  the signed preimage count at a regular value on `(M, I)` computes the pushforward of the
-  fundamental class of its `F`-modelled copy.
+* `TauCeti.Manifold.Orientation.isRegularValue_toBoundarylessModel`,
+  `TauCeti.Manifold.Orientation.degreeAtRegularValue_toBoundarylessModel`,
+  `TauCeti.Manifold.Orientation.degree_toBoundarylessModel`: recharting the source to
+  `BoundarylessModel` preserves regular values, `degreeAtRegularValue`, and `degree`.
+* `TauCeti.Manifold.Orientation.degree_toBoundarylessModel_toHomologicalOrientation`,
+  `Manifold.Orientation.mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul`:
+  the signed preimage count at a regular value on `(M, I)` computes the homological degree and the
+  pushforward of the fundamental class of its `F`-modelled copy.
 -/
 
 public section
@@ -59,143 +53,6 @@ noncomputable section
 
 open Function Module Set
 open scoped ContDiff Manifold
-
-/-! ### Invariance of regularity and degree under source diffeomorphisms -/
-
-namespace Diffeomorph
-
-section Regularity
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-  [TopologicalSpace M'] [ChartedSpace H' M']
-  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
-  [TopologicalSpace N] [ChartedSpace G N]
-  {n : ℕ∞ω}
-
-/-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points. No manifold
-smoothness or finite-dimensionality assumption is needed. -/
-theorem isRegularPoint_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {x : M'} :
-    TauCeti.IsRegularPoint I' J (f ∘ Φ) x ↔ TauCeti.IsRegularPoint I J f (Φ x) := by
-  refine ⟨fun h ↦ ?_,
-    fun h ↦ h.comp (TauCeti.isRegularPoint_iff.2 (Φ.isInvertible_mfderiv hn).surjective)⟩
-  have hcomp : ((f ∘ Φ) ∘ Φ.symm) = f := funext fun z ↦ congrArg f (Φ.apply_symm_apply z)
-  rw [← hcomp]
-  have hx : TauCeti.IsRegularPoint I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
-    simpa only [Φ.symm_apply_apply] using h
-  exact hx.comp (TauCeti.isRegularPoint_iff.2 (Φ.symm.isInvertible_mfderiv hn).surjective)
-
-/-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular values. -/
-theorem isRegularValue_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {y : N} :
-    TauCeti.IsRegularValue I' J (f ∘ Φ) y ↔ TauCeti.IsRegularValue I J f y := by
-  rw [TauCeti.isRegularValue_iff, TauCeti.isRegularValue_iff]
-  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ (Φ.isRegularPoint_comp_right hn).2 (h (Φ x) hx)⟩
-  have hz' : (f ∘ Φ) (Φ.symm z) = y := by simpa only [comp_apply, Φ.apply_symm_apply] using hz
-  simpa only [Φ.apply_symm_apply] using (Φ.isRegularPoint_comp_right hn).1 (h (Φ.symm z) hz')
-
-end Regularity
-
-section Degree
-
-open TauCeti TauCeti.Manifold.Orientation
-
-variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
-  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {ι : Type*} [Fintype ι] {n : ℕ∞ω}
-
-/-- Precomposing an arbitrary map `f : M → N` with a `C^n` diffeomorphism `Φ` (`n ≠ 0`) multiplies
-the orientation sign by that of `Φ`. Where `f` is not differentiable at `Φ x`, neither `f` nor
-`f ∘ Φ` has invertible derivative, so both sides vanish. -/
-theorem orientationSign_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
-    (o' : Manifold.Orientation I' M' ι) (o : Manifold.Orientation I M ι)
-    (oN : Manifold.Orientation J N ι) (f : M → N) (x : M') :
-    orientationSign o' oN (f ∘ Φ) x =
-      orientationSign o oN f (Φ x) * orientationSign o' o Φ x := by
-  by_cases hf : MDifferentiableAt I J f (Φ x)
-  · exact orientationSign_comp hf (Φ.mdifferentiable hn x)
-  · have hnf : ¬(mfderiv I J f (Φ x)).IsInvertible :=
-      fun hinv ↦ hf (mdifferentiableAt_of_isInvertible_mfderiv hinv)
-    have hncomp : ¬(mfderiv I' J (f ∘ Φ) x).IsInvertible := by
-      intro hinv
-      have hd : MDifferentiableAt I J ((f ∘ Φ) ∘ Φ.symm) (Φ x) := by
-        have hx : MDifferentiableAt I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
-          simpa only [Φ.symm_apply_apply] using mdifferentiableAt_of_isInvertible_mfderiv hinv
-        exact hx.comp (Φ x) (Φ.symm.mdifferentiable hn (Φ x))
-      have heq : (f ∘ Φ) ∘ Φ.symm = f := funext fun z ↦ congrArg f (Φ.apply_symm_apply z)
-      rw [heq] at hd
-      exact hf hd
-    rw [orientationSign_of_not_isInvertible hncomp, orientationSign_of_not_isInvertible hnf,
-      zero_mul]
-
-/-- Precomposing with an orientation-preserving `C^n` diffeomorphism (`n ≠ 0`) leaves
-`degreeAtRegularValue` unchanged at every point of `N`. -/
-theorem degreeAtRegularValue_comp_of_isOrientationPreservingAt (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
-    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
-    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationPreservingAt o' o Φ x)
-    (f : M → N) (y : N) :
-    degreeAtRegularValue o' oN (f ∘ Φ) y = degreeAtRegularValue o oN f y := by
-  rw [degreeAtRegularValue_def, degreeAtRegularValue_def]
-  have hbij : BijOn Φ ((f ∘ Φ) ⁻¹' {y}) (f ⁻¹' {y}) :=
-    ⟨fun _ hx ↦ hx, Φ.injective.injOn,
-      fun z hz ↦ ⟨Φ.symm z, by simpa only [mem_preimage, comp_apply, Φ.apply_symm_apply] using hz,
-        Φ.apply_symm_apply z⟩⟩
-  refine finsum_mem_eq_of_bijOn Φ hbij fun x _ ↦ ?_
-  rw [Φ.orientationSign_comp_right hn o' o oN f x,
-    orientationSign_of_isOrientationPreservingAt (ho x), mul_one]
-
-/-- Precomposing with an orientation-reversing `C^n` diffeomorphism (`n ≠ 0`) negates
-`degreeAtRegularValue` at every point of `N`. -/
-theorem degreeAtRegularValue_comp_of_isOrientationReversingAt (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
-    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
-    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationReversingAt o' o Φ x)
-    (f : M → N) (y : N) :
-    degreeAtRegularValue o' oN (f ∘ Φ) y = -degreeAtRegularValue o oN f y := by
-  have h := Φ.degreeAtRegularValue_comp_of_isOrientationPreservingAt hn (o' := -o') (o := o) oN
-    (fun x ↦ (isOrientationPreservingAt_neg_left o' o Φ x).2 (ho x)) f y
-  rwa [degreeAtRegularValue_neg_left, neg_eq_iff_eq_neg] at h
-
-/-- Precomposing with an orientation-preserving `C^n` diffeomorphism (`n ≠ 0`) preserves
-`degree`. -/
-theorem degree_comp_of_isOrientationPreservingAt (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
-    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
-    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationPreservingAt o' o Φ x)
-    (f : M → N) :
-    degree o' oN (f ∘ Φ) = degree o oN f := by
-  classical
-  rw [degree_def, degree_def]
-  simp_rw [Φ.degreeAtRegularValue_comp_of_isOrientationPreservingAt hn oN ho]
-  have hp : (fun y ↦ IsRegularValue I' J (f ∘ Φ) y) = fun y ↦ IsRegularValue I J f y :=
-    funext fun _ ↦ propext (Φ.isRegularValue_comp_right hn)
-  exact congrArg
-    (fun P : N → Prop ↦ if h : ∃ y, P y then degreeAtRegularValue o oN f h.choose else 0) hp
-
-/-- Precomposing with an orientation-reversing `C^n` diffeomorphism (`n ≠ 0`) negates `degree`. -/
-theorem degree_comp_of_isOrientationReversingAt (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
-    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
-    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationReversingAt o' o Φ x)
-    (f : M → N) :
-    degree o' oN (f ∘ Φ) = -degree o oN f := by
-  have h := Φ.degree_comp_of_isOrientationPreservingAt hn (o' := -o') (o := o) oN
-    (fun x ↦ (isOrientationPreservingAt_neg_left o' o Φ x).2 (ho x)) f
-  rwa [degree_neg_left, neg_eq_iff_eq_neg] at h
-
-end Degree
-
-end Diffeomorph
-
-/-! ### Transporting orientations and degree to `BoundarylessModel` -/
 
 namespace TauCeti.Manifold.Orientation
 

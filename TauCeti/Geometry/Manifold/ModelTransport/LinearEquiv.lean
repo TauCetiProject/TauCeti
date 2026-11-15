@@ -9,12 +9,10 @@ public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
 
 /-!
-# Topological properties and linear model changes for `BoundarylessModel`
+# Linear model changes for `BoundarylessModel`
 
-`TauCeti.BoundarylessModel I M` carries the same underlying type and topology as `M`, so it
-inherits separation, compactness, and connectedness properties from `M`. Combining a continuous
-linear equivalence `L : E ≃L[𝕜] F` of model vector spaces with `BoundarylessModel.diffeomorph`
-produces a canonical diffeomorphism
+Combining a continuous linear equivalence `L : E ≃L[𝕜] F` of model vector spaces with
+`TauCeti.BoundarylessModel.diffeomorph` produces a canonical diffeomorphism
 `BoundarylessModel.diffeomorphTransContinuousLinearEquiv I L n : M ≃ₘ^n⟮I, 𝓘(𝕜, F)⟯ _`
 from any manifold modelled on a boundaryless model `(E, H, I)` onto a self-modelled copy over `F`.
 
@@ -32,40 +30,8 @@ namespace TauCeti.BoundarylessModel
 
 variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [TopologicalSpace H]
-
-section Topology
-
-variable {I : ModelWithCorners 𝕜 E H}
-
-instance [Nonempty M] : Nonempty (BoundarylessModel I M) :=
-  inferInstanceAs (Nonempty M)
-
-variable [TopologicalSpace M]
-
-instance [T2Space M] : T2Space (BoundarylessModel I M) :=
-  inferInstanceAs (T2Space M)
-
-instance [CompactSpace M] : CompactSpace (BoundarylessModel I M) :=
-  inferInstanceAs (CompactSpace M)
-
-instance [PreconnectedSpace M] : PreconnectedSpace (BoundarylessModel I M) :=
-  inferInstanceAs (PreconnectedSpace M)
-
-instance [ConnectedSpace M] : ConnectedSpace (BoundarylessModel I M) :=
-  inferInstanceAs (ConnectedSpace M)
-
-instance [LocallyPathConnectedSpace M] : LocallyPathConnectedSpace (BoundarylessModel I M) :=
-  inferInstanceAs (LocallyPathConnectedSpace M)
-
-instance [PathConnectedSpace M] : PathConnectedSpace (BoundarylessModel I M) :=
-  inferInstanceAs (PathConnectedSpace M)
-
-end Topology
-
-section LinearEquiv
-
-variable (I : ModelWithCorners 𝕜 E H) [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M]
 
 /-- The identity as a `C^n` diffeomorphism from a boundaryless manifold `(M, I)` to its copy
 `BoundarylessModel (I.transContinuousLinearEquiv L) M` modelled directly on the vector space `F`
@@ -92,7 +58,5 @@ theorem coe_diffeomorphTransContinuousLinearEquiv_symm (L : E ≃L[𝕜] F) (n :
   simp only [diffeomorphTransContinuousLinearEquiv, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
     Function.comp_apply, coe_diffeomorph_symm, ContinuousLinearEquiv.toTransContinuousLinearEquiv]
   rfl
-
-end LinearEquiv
 
 end TauCeti.BoundarylessModel

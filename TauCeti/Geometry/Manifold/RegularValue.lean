@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -51,6 +52,8 @@ to manifolds, including manifolds with boundary or corners.
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `Diffeomorph.isRegularPoint_comp_right`, `Diffeomorph.isRegularValue_comp_right`: precomposing
+  with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points and regular values.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -75,7 +78,7 @@ to manifolds, including manifolds with boundary or corners.
 public section
 
 open Function Set
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -400,3 +403,39 @@ theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup
     isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 end TauCeti
+
+namespace Diffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  [TopologicalSpace M'] [ChartedSpace H' M']
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
+  [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω}
+
+/-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points. No manifold
+smoothness or finite-dimensionality assumption is needed. -/
+theorem isRegularPoint_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {x : M'} :
+    TauCeti.IsRegularPoint I' J (f ∘ Φ) x ↔ TauCeti.IsRegularPoint I J f (Φ x) := by
+  refine ⟨fun h ↦ ?_,
+    fun h ↦ h.comp (TauCeti.isRegularPoint_iff.2 (Φ.isInvertible_mfderiv hn).surjective)⟩
+  have hcomp : ((f ∘ Φ) ∘ Φ.symm) = f := funext fun z ↦ congrArg f (Φ.apply_symm_apply z)
+  rw [← hcomp]
+  have hx : TauCeti.IsRegularPoint I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
+    simpa only [Φ.symm_apply_apply] using h
+  exact hx.comp (TauCeti.isRegularPoint_iff.2 (Φ.symm.isInvertible_mfderiv hn).surjective)
+
+/-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular values. -/
+theorem isRegularValue_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {y : N} :
+    TauCeti.IsRegularValue I' J (f ∘ Φ) y ↔ TauCeti.IsRegularValue I J f y := by
+  rw [TauCeti.isRegularValue_iff, TauCeti.isRegularValue_iff]
+  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ (Φ.isRegularPoint_comp_right hn).2 (h (Φ x) hx)⟩
+  have hz' : (f ∘ Φ) (Φ.symm z) = y := by simpa only [comp_apply, Φ.apply_symm_apply] using hz
+  simpa only [Φ.apply_symm_apply] using (Φ.isRegularPoint_comp_right hn).1 (h (Φ.symm z) hz')
+
+end Diffeomorph

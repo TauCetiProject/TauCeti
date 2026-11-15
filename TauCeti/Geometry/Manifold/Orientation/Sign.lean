@@ -36,6 +36,8 @@ a composite of differentiable maps is the product of the signs.
   where `f` preserves orientations, reverses them, or has singular derivative.
 * `TauCeti.Manifold.Orientation.orientationSign_comp`: the orientation sign of a composite of
   differentiable maps is the product of the orientation signs.
+* `Diffeomorph.orientationSign_comp_right`: precomposing an arbitrary map with a `C^n`
+  diffeomorphism (`n ≠ 0`) multiplies the orientation sign.
 * `TauCeti.Manifold.Orientation.orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint`: at a
   regular point the orientation sign is `1` or `-1`.
 * `TauCeti.Manifold.Orientation.eventually_orientationSign_eq`: the orientation sign is constant
@@ -54,7 +56,7 @@ public section
 noncomputable section
 
 open Function
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -232,3 +234,44 @@ theorem orientationSign_congrModel_right {J₁ J₂ : ModelWithCorners ℝ E' H'
 end Manifold.Orientation
 
 end TauCeti
+
+namespace Diffeomorph
+
+open TauCeti TauCeti.Manifold.Orientation
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  {ι : Type*} [Fintype ι] {n : ℕ∞ω}
+
+/-- Precomposing an arbitrary map `f : M → N` with a `C^n` diffeomorphism `Φ` (`n ≠ 0`) multiplies
+the orientation sign by that of `Φ`. Where `f` is not differentiable at `Φ x`, neither `f` nor
+`f ∘ Φ` has invertible derivative, so both sides vanish. -/
+theorem orientationSign_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    (o' : Manifold.Orientation I' M' ι) (o : Manifold.Orientation I M ι)
+    (oN : Manifold.Orientation J N ι) (f : M → N) (x : M') :
+    orientationSign o' oN (f ∘ Φ) x =
+      orientationSign o oN f (Φ x) * orientationSign o' o Φ x := by
+  by_cases hf : MDifferentiableAt I J f (Φ x)
+  · exact orientationSign_comp hf (Φ.mdifferentiable hn x)
+  · have hnf : ¬(mfderiv I J f (Φ x)).IsInvertible :=
+      fun hinv ↦ hf (mdifferentiableAt_of_isInvertible_mfderiv hinv)
+    have hncomp : ¬(mfderiv I' J (f ∘ Φ) x).IsInvertible := by
+      intro hinv
+      have hd : MDifferentiableAt I J ((f ∘ Φ) ∘ Φ.symm) (Φ x) := by
+        have hx : MDifferentiableAt I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
+          simpa only [Φ.symm_apply_apply] using mdifferentiableAt_of_isInvertible_mfderiv hinv
+        exact hx.comp (Φ x) (Φ.symm.mdifferentiable hn (Φ x))
+      have heq : (f ∘ Φ) ∘ Φ.symm = f := funext fun z ↦ congrArg f (Φ.apply_symm_apply z)
+      rw [heq] at hd
+      exact hf hd
+    rw [orientationSign_of_not_isInvertible hncomp, orientationSign_of_not_isInvertible hnf,
+      zero_mul]
+
+end Diffeomorph

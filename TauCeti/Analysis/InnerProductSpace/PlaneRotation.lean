@@ -215,6 +215,7 @@ theorem planeRotation_apply (c : Circle) (x : E) :
     ι.planeRotation c x =
       x + ((c : ℂ).re - 1) • (⟪ι 1, x⟫ • ι 1 + ⟪ι I, x⟫ • ι I) +
         (c : ℂ).im • (⟪ι 1, x⟫ • ι I - ⟪ι I, x⟫ • ι 1) := by
+  rw [planeRotation_apply_eq]
   set z : ℂ := ((c : ℂ) - 1) * planeCoord ι x
   have hz : ι z = z.re • ι 1 + z.im • ι I := by
     have hsplit : z = z.re • (1 : ℂ) + z.im • I := by
@@ -226,7 +227,7 @@ theorem planeRotation_apply (c : Circle) (x : E) :
   have him : z.im = (c : ℂ).im * ⟪ι 1, x⟫ + ((c : ℂ).re - 1) * ⟪ι I, x⟫ := by
     simp [z, planeCoord_apply]
     ring
-  rw [planeRotation_apply_eq, show ((c : ℂ) - 1) * planeCoord ι x = z from rfl, hz, hre, him]
+  rw [hz, hre, him]
   module
 
 /-- As a continuous linear map, `planeRotation ι c` is the identity plus a finite-rank operator
@@ -285,8 +286,9 @@ theorem det_toContinuousLinearMap_planeRotation (c : Circle) :
       ContinuousLinearMap.continuous_det.comp
         (ι.continuous_planeRotation_toContinuousLinearMap.comp Circle.exp.continuous)
     have hd_abs (t : ℝ) : |d t| = 1 := by
-      rw [show d t = LinearMap.det ((ι.planeRotation (Circle.exp t)).toLinearEquiv : E →ₗ[ℝ] E)
-        from rfl, ← LinearMap.normDet_eq_abs_det]
+      simp only [d, ContinuousLinearMap.det,
+        ← LinearIsometryEquiv.toContinuousLinearMap_toLinearIsometry,
+        LinearIsometry.toLinearMap_toContinuousLinearMap, ← LinearMap.normDet_eq_abs_det]
       exact (ι.planeRotation (Circle.exp t)).toLinearIsometry.normDet_eq_one
     have hd0 : d 0 = 1 := by
       simp only [d, Circle.exp_zero, map_one]

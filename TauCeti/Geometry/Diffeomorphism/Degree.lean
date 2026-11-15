@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Degree.Global
 /-!
 # Covering a manifold by diffeomorphisms of prescribed smooth degree
 
-Let `M` be a compact connected `(n + 1)`-dimensional manifold modelled on a real inner product
+Let `M` be a compact preconnected `(n + 1)`-dimensional manifold modelled on a real inner product
 space `F`, and let `φ : P → Diff^k(M)` be a continuous family of `C^k` diffeomorphisms parametrized
 by a compact oriented boundaryless `(n + 1)`-manifold `(P, I)` (possibly modelled on a different
 space `(E, H, I)`, such as a product of spheres). Evaluating `φ` at a base point `x₀ ∈ M` gives the
@@ -127,7 +127,7 @@ variable {E H P F M : Type}
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace P] [ChartedSpace H P] [T2Space P] [CompactSpace P] [IsManifold I ∞ P]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace M] [ChartedSpace F M] [T2Space M] [CompactSpace M] [ConnectedSpace M]
+  [TopologicalSpace M] [ChartedSpace F M] [T2Space M] [CompactSpace M]
   [IsManifold 𝓘(ℝ, F) ∞ M]
   {n : ℕ} (hF : finrank ℝ F = n + 1) (k : ℕ∞ω) [IsManifold 𝓘(ℝ, F) k M]
 
@@ -135,12 +135,14 @@ variable {E H P F M : Type}
 and the evaluation map `p ↦ φ p x₀` is `C^∞`, Sard's theorem supplies a regular value, so `M` is
 `degree oP oM (fun p ↦ φ p x₀)`-covered by `C^k` diffeomorphisms at `x₀`. -/
 theorem Manifold.Orientation.isCoveredByDiffeomorphisms_of_degree
+    [PreconnectedSpace M]
     (oM : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1)))
     (oP : Manifold.Orientation I P (Fin (n + 1)))
     (φ : C(P, M ≃ₘ^k⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ M)) {x₀ : M}
     (hf : ContMDiff I 𝓘(ℝ, F) ∞ fun p ↦ φ p x₀) :
     (oM.toHomologicalOrientation hF).IsCoveredByDiffeomorphisms hF k x₀
       (TauCeti.degree oP oM fun p ↦ φ p x₀) := by
+  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
   have : IsManifold I 1 P := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold 𝓘(ℝ, F) 1 M := IsManifold.of_le (n := ∞) (by simp)
   have hEF : finrank ℝ E = finrank ℝ F := by
@@ -165,6 +167,7 @@ theorem Manifold.Orientation.isCoveredByDiffeomorphisms_of_degree
 
 /-- **Orientation- and basepoint-independent covering via the smooth mapping degree.** -/
 theorem HomologicalOrientation.isCoveredByDiffeomorphisms_of_degree
+    [ConnectedSpace M]
     (o : HomologicalOrientation M F (n + 1))
     (oP : Manifold.Orientation I P (Fin (n + 1)))
     (oM : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1)))

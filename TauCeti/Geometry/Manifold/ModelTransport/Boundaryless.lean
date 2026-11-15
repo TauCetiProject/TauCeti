@@ -21,7 +21,8 @@ normal forms and implicit-function constructions can retain their actual coordin
 
 `OpenPartialHomeomorph.symm_trans_mem_contDiffGroupoid_iff_of_extend` compares coordinate changes
 for any pair of extended charts, independently of model-boundarylessness.
-The carrier also inherits monoid, additive monoid, group and additive group operations.
+The carrier also inherits nonemptiness, separation, compactness, connectedness, path-connectedness,
+and monoid, additive monoid, group and additive group operations.
 `homeomorph_one`, `homeomorph_mul`, `homeomorph_inv` and their `symm` forms give the algebraic
 transport laws; `homeomorph_zero`, `homeomorph_add`, `homeomorph_neg` and their `symm` forms
 are their additive counterparts.
@@ -105,10 +106,30 @@ instance {I : ModelWithCorners 𝕜 E H} {M : Type*} [Monoid M] :
 instance {I : ModelWithCorners 𝕜 E H} {M : Type*} [Group M] :
     Group (BoundarylessModel I M) := inferInstanceAs (Group M)
 
+instance {I : ModelWithCorners 𝕜 E H} {M : Type*} [Nonempty M] :
+    Nonempty (BoundarylessModel I M) := inferInstanceAs (Nonempty M)
+
 variable (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
 
 /-- The model copy inherits the topology of the original manifold. -/
 instance : TopologicalSpace (BoundarylessModel I M) := inferInstanceAs (TopologicalSpace M)
+
+instance [T2Space M] : T2Space (BoundarylessModel I M) := inferInstanceAs (T2Space M)
+
+instance [CompactSpace M] : CompactSpace (BoundarylessModel I M) :=
+  inferInstanceAs (CompactSpace M)
+
+instance [PreconnectedSpace M] : PreconnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (PreconnectedSpace M)
+
+instance [ConnectedSpace M] : ConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (ConnectedSpace M)
+
+instance [LocallyPathConnectedSpace M] : LocallyPathConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (LocallyPathConnectedSpace M)
+
+instance [PathConnectedSpace M] : PathConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (PathConnectedSpace M)
 
 /-- The identity homeomorphism to the copy with vector-space-valued charts. -/
 def homeomorph : M ≃ₜ BoundarylessModel I M where
