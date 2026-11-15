@@ -49,6 +49,9 @@ rationals.
   commensurable with every multiplicative pseudo-uniformiser.
 * `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_map_padicAddValuation`: the rational
   valuation of a multiplicative pseudo-uniformiser of norm `p⁻¹` is `Padic.addValuation`.
+* `Padic.norm_le_zpow_or_zpow_succ_le` and `Padic.norm_le_one_or_natCast_le_norm`: consecutive
+  integer powers of `p` enclose no norms of `ℚ_[p]`; in particular no element of `ℚ_[p]` has norm
+  strictly between `1` and `p`.
 -/
 
 public section
@@ -166,3 +169,26 @@ theorem one_le_padicRealValuation_natCast {n : ℕ} (hn : p ∣ n) :
   exact le_add_of_nonneg_right hk
 
 end TauCeti
+
+namespace Padic
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- **Discrete norm gap on `ℚ_[p]`.** No element of `ℚ_[p]` has norm strictly between `p ^ n` and
+`p ^ (n + 1)`. -/
+theorem norm_le_zpow_or_zpow_succ_le (x : ℚ_[p]) (n : ℤ) :
+    ‖x‖ ≤ (p : ℝ) ^ n ∨ (p : ℝ) ^ (n + 1) ≤ ‖x‖ := by
+  have hp1 : (1 : ℝ) ≤ p := Nat.one_le_cast.mpr (Fact.out : p.Prime).pos
+  rcases eq_or_ne x 0 with rfl | hx
+  · exact Or.inl (by rw [norm_zero]; positivity)
+  rw [Padic.norm_eq_zpow_neg_valuation hx]
+  rcases le_or_gt (-x.valuation) n with hle | hgt
+  · exact Or.inl (zpow_le_zpow_right₀ hp1 hle)
+  · exact Or.inr (zpow_le_zpow_right₀ hp1 (Int.add_one_le_iff.mpr hgt))
+
+/-- No element of `ℚ_[p]` has norm strictly between `1` and `p`. -/
+theorem norm_le_one_or_natCast_le_norm (x : ℚ_[p]) :
+    ‖x‖ ≤ 1 ∨ (p : ℝ) ≤ ‖x‖ := by
+  simpa using norm_le_zpow_or_zpow_succ_le x 0
+
+end Padic

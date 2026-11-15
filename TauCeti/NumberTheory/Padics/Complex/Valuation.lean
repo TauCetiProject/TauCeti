@@ -25,13 +25,16 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 
 On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
 every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
-For example a cube root of `p` has valuation `1 / 3`.
+For example a cube root of `p` has valuation `1 / 3`. Consequently the nonzero norms of `ℂ_[p]` are
+precisely the rational powers `p ^ q` (`q : ℚ`), which are dense in `(0, ∞)`, making `ℂ_[p]` a
+`DenselyNormedField`.
 
 ## Main definitions
 
 * `PadicComplex.pseudoUniformizer`: the multiplicative pseudo-uniformiser `p` of `ℂ_[p]`.
 * `PadicComplex.addValuation`: the additive valuation on `ℂ_[p]` with values in `WithTop ℚ`,
   normalised by `v(p) = 1`.
+* `PadicComplex.denselyNormedField`: `ℂ_[p]` is a densely normed field.
 
 ## Main results
 
@@ -42,6 +45,8 @@ For example a cube root of `p` has valuation `1 / 3`.
 * `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
 * `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.image_norm_ne_zero` and `PadicComplex.range_norm`: the nonzero norms of `ℂ_[p]` are
+  the rational powers of `p`, and all norms are `0` together with the rational powers of `p`.
 
 ## References
 
@@ -154,5 +159,65 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
   | coe q =>
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
+
+variable (p) in
+/-- **Nonzero norms of `ℂ_[p]`**: the norms of the nonzero elements of `ℂ_[p]` are the rational
+powers of `p`. -/
+theorem image_norm_ne_zero :
+    (‖·‖ : ℂ_[p] → ℝ) '' {x : ℂ_[p] | x ≠ 0} = Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ) := by
+  ext r
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    obtain ⟨q, hq⟩ := WithTop.ne_top_iff_exists.mp (show addValuation p x ≠ ⊤ by simpa using hx)
+    exact ⟨-q, by simp [addValuation_eq_coe_iff.mp hq.symm]⟩
+  · rintro ⟨q, rfl⟩
+    obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q)
+    have hx0 : x ≠ 0 := by simpa using (show addValuation p x ≠ ⊤ by simp [hx])
+    exact ⟨x, hx0, by simpa using addValuation_eq_coe_iff.mp hx⟩
+
+variable (p) in
+/-- The set of norms of elements of `ℂ_[p]` consists of `0` together with the rational powers of
+`p`. -/
+theorem range_norm :
+    Set.range (‖·‖ : ℂ_[p] → ℝ) = insert 0 (Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ)) := by
+  rw [← image_norm_ne_zero p]
+  ext r
+  constructor
+  · rintro ⟨x, rfl⟩
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    · exact Or.inr ⟨x, hx, rfl⟩
+  · rintro (rfl | ⟨x, _, rfl⟩)
+    · exact ⟨0, norm_zero⟩
+    · exact ⟨x, rfl⟩
+
+/-- **Norm density of `ℂ_[p]`**: since every rational power of `p` occurs as a norm in `ℂ_[p]`,
+`ℂ_[p]` is a densely normed field. -/
+noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
+  lt_norm_lt r₁ r₂ hr₁ hlt := by
+    have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
+    have hp0 : (0 : ℝ) < p := zero_lt_one.trans hp1
+    have hlogp : 0 < Real.log p := Real.log_pos hp1
+    -- Separate the positive radius `max r₁ (r₂ / 2)` from `r₂` by a rational power of `p`.
+    set r' := max r₁ (r₂ / 2)
+    have hr'0 : 0 < r' := lt_max_of_lt_right (by linarith)
+    have hr'lt : r' < r₂ := max_lt hlt (by linarith)
+    obtain ⟨q, hq₁, hq₂⟩ := exists_rat_btwn
+      (div_lt_div_of_pos_right (Real.log_lt_log hr'0 hr'lt) hlogp)
+    have hpow₁ : r' < (p : ℝ) ^ (q : ℝ) := by
+      rw [← Real.exp_log hr'0, Real.rpow_def_of_pos hp0, Real.exp_lt_exp, mul_comm]
+      exact (div_lt_iff₀ hlogp).mp hq₁
+    have hpow₂ : (p : ℝ) ^ (q : ℝ) < r₂ := by
+      rw [← Real.exp_log (hr'0.trans hr'lt), Real.rpow_def_of_pos hp0, Real.exp_lt_exp, mul_comm]
+      exact (lt_div_iff₀ hlogp).mp hq₂
+    obtain ⟨x, -, hx⟩ : ∃ x : ℂ_[p], x ≠ 0 ∧ ‖x‖ = (p : ℝ) ^ (q : ℝ) :=
+      (image_norm_ne_zero p).symm.subset ⟨q, rfl⟩
+    exact ⟨x, (le_max_left _ _).trans_lt (hx.symm ▸ hpow₁), hx.symm ▸ hpow₂⟩
+
+-- Ensure that the induced `NontriviallyNormedField` agrees definitionally with Mathlib's.
+example :
+    (DenselyNormedField.toNontriviallyNormedField : NontriviallyNormedField ℂ_[p]) =
+      PadicComplex.nontriviallyNormedField p :=
+  rfl
 
 end PadicComplex
