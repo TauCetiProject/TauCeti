@@ -5,11 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
@@ -132,7 +127,8 @@ inequality also needs the genus of the stacked surface, which is not computed.
 ## References
 
 * C. Livingston, *A survey of classical knot concordance*, in *Handbook of Knot Theory* (2005),
-  Section 2, for knot cobordisms in `S³ × [0, 1]` and the four-ball genus.
+  Section 1 for the annulus in `S³ × [0, 1]` that defines concordance and Section 9.5 for the
+  four-ball genus (the survey does not treat cobordisms of higher genus).
 * S. Baader, *Scissor equivalence for torus links*, Bull. Lond. Math. Soc. 44 (2012), 1068–1078,
   for the cobordism distance of oriented links, of which the distance here is the unoriented
   variant.
@@ -143,7 +139,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicTopology Manifold Metric Module Set
+open Manifold Metric Module Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -570,13 +566,44 @@ private theorem isImmersionAt_glueFun (hc : 0 < c)
   exact himm.congr_of_eventuallyEq <| eventuallyEq_of_mem (hU.mem_nhds hx') fun y hy ↦
     (glueFun_of_le_snd C hc hS hy.le).symm
 
+/-- Over the open slab above height `1 - 2 c`, the glued map is the rescaled concordance composed
+with the parameters of the cylinder over `K₁`, hence an embedding. -/
+private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
+    IsEmbedding (glueFun C S hc ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) := by
+  have heq : glueFun C S hc ∘ (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier) =
+      rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
+    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
+  have hP : Continuous (collarParam S ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
+    continuous_iff_continuousAt.2 fun y ↦
+      (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
+  have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
+    K₁.isEmbedding.continuous.prodMap continuous_id
+  have hPK : Prod.map K₁ id ∘ (collarParam S ∘
+      (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) = S.toFun ∘ Subtype.val :=
+    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
+  rw [heq]
+  refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
+  rw [hPK]
+  exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
+
+/-- A point of the surface whose glued image lies above height `1 - 2 c` also lies above height
+`1 - 2 c` in the original surface `S`. -/
+private theorem lt_snd_toFun_of_lt_snd_glueFun (hc : 0 < c) (y : S.carrier)
+    (hy : 1 - 2 * c < (glueFun C S hc y).2) :
+    1 - 2 * c < (S.toFun y).2 := by
+  by_cases hle : (S.toFun y).2 ≤ 1 - c
+  · rwa [glueFun_of_le C hc hle] at hy
+  · linarith
+
 /-- The glued map is a topological embedding: the open slabs below height `1 - c` and above height
 `1 - 2 c` cover `Sⁿ × ℝ`, and over them it is the embedding of `S`, respectively the rescaled
 concordance composed with the parameters of the cylinder over `K₁`. -/
 private theorem isEmbedding_glueFun (hc : 0 < c)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsEmbedding (glueFun C S hc) := by
-  have hΦ := S.isSmoothEmbedding
   have hglue : Continuous (glueFun C S hc) := continuous_iff_continuousAt.2 fun x ↦
     (isImmersionAt_glueFun C hc hS x).continuousAt
   let U : Bool → TopologicalSpace.Opens (sphere (0 : E) 1 × ℝ) := fun b ↦ bif b
@@ -599,41 +626,22 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
       refine ⟨⟨y, ?_⟩, rfl⟩
       have hy' : (glueFun C S hc y).2 < 1 - c := hy
       rwa [glueFun_of_le C hc hle] at hy'
-    · have hy' : 1 - 2 * c < (glueFun C S hc y).2 := hy
-      have hlt : 1 - 2 * c < (S.toFun y).2 := by
-        by_cases hle : (S.toFun y).2 ≤ 1 - c
-        · rwa [glueFun_of_le C hc hle] at hy'
-        · linarith
-      exact ⟨⟨y, hlt⟩, rfl⟩
+    · exact ⟨⟨y, lt_snd_toFun_of_lt_snd_glueFun C hc y hy⟩, rfl⟩
   -- On each slab of the surface the glued map is an embedding.
   · rintro (_ | _)
     · have heq : glueFun C S hc ∘ (Subtype.val : W false → S.carrier) =
           S.toFun ∘ Subtype.val :=
         funext fun y ↦ glueFun_of_le C hc (le_of_lt y.2)
       rw [heq]
-      exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
-    · have heq : glueFun C S hc ∘ (Subtype.val : W true → S.carrier) =
-          rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
-        funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
-      have hP : Continuous (collarParam S ∘ (Subtype.val : W true → S.carrier)) :=
-        continuous_iff_continuousAt.2 fun y ↦
-          (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
-      have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
-        K₁.isEmbedding.continuous.prodMap continuous_id
-      have hPK : Prod.map K₁ id ∘ (collarParam S ∘ (Subtype.val : W true → S.carrier)) =
-          S.toFun ∘ Subtype.val :=
-        funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
-      rw [heq]
-      refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
-      rw [hPK]
-      exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
+      exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
+    · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS
 
 /-- The part of the glued surface over the slab `Sⁿ × [0, 1]` is compact. -/
 private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsCompact {x | (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1} := by
-  -- Gluing in `C` only moves the points of `S` above height `1 - c`, and keeps those above
-  -- height `1` fixed, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
+  -- Gluing in `C` only changes the points of `S` above height `1 - c`, and keeps their heights
+  -- above `1` above `1`, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
   refine S.isCompact_preimage_Icc.of_isClosed_subset (isClosed_Icc.preimage
     (continuous_snd.comp (isEmbedding_glueFun C hc hS).continuous)) fun x hx ↦ ?_
   by_cases hle : (S.toFun x).2 ≤ 1 - c
@@ -875,7 +883,7 @@ theorem cobordismDistance_def :
 theorem cobordismDistance_le_genus (S : KnotCobordism K₀ K₁) : cobordismDistance K₀ K₁ ≤ S.genus :=
   iInf_le _ S
 
-/-- A lower bound for the cobordism distance is a lower bound for the genus of every knot
+/-- A number is at most the cobordism distance exactly when it is at most the genus of every knot
 cobordism. -/
 @[simp]
 theorem le_cobordismDistance_iff {m : ℕ∞} :

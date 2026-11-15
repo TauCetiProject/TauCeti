@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
+public import Mathlib.Order.Filter.CountableSeparatingOn
 
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
@@ -39,7 +42,15 @@ atom while vanishing on every singleton.
   mass;
 * `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an injective measurable map
   into a space whose singletons are measurable preserves the property that singletons have
-  measure zero.
+  measure zero;
+* `MeasureTheory.Measure.IsAtom.measure_ne_top` — an atom on which the measure is σ-finite has
+  finite mass;
+* `MeasureTheory.Measure.IsAtom.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top`,
+  `MeasureTheory.Measure.IsAtom.exists_measure_sdiff_singleton_eq_zero` — a finite-mass atom, in
+  particular an atom on which the measure is σ-finite, of a measure on a countably separated
+  space (such as `ℝ` with its Borel σ-algebra) is concentrated on one of its points;
+* `MeasureTheory.Measure.not_isAtom_of_nullSingletonClass` — a σ-finite measure on a countably
+  separated space with zero mass on every singleton has no atoms.
 -/
 
 public section
@@ -168,3 +179,56 @@ theorem _root_.MeasureTheory.Measure.nullSingletonClass_map_of_injective
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Filter MeasurableSpace
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- An atom on which the measure is σ-finite has finite mass. -/
+theorem IsAtom.measure_ne_top {s : Set X} [SigmaFinite (μ.restrict s)] (hs : μ.IsAtom s) :
+    μ s ≠ ∞ := by
+  obtain ⟨hsm, hpos, hs⟩ := hs
+  obtain ⟨t, ht, hts, ht₀, htop⟩ :=
+    exists_subset_measure_lt_top (μ := μ.restrict s) hsm (by rwa [restrict_apply_self])
+  rw [restrict_apply ht, inter_eq_left.2 hts] at ht₀ htop
+  exact (hs ht hts).resolve_left ht₀.ne' ▸ htop.ne
+
+/-- **Finite-mass atoms are points.** A finite-mass atom of a measure on a countably separated
+measurable space is concentrated on one of its points. -/
+theorem IsAtom.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top [CountablySeparated X]
+    {s : Set X} (hs : μ.IsAtom s) (hfin : μ s ≠ ∞) : ∃ x ∈ s, μ (s \ {x}) = 0 := by
+  rw [isAtom_iff] at hs
+  have hl : ∀ U, MeasurableSet U → U ∈ ae (μ.restrict s) ∨ Uᶜ ∈ ae (μ.restrict s) := by
+    intro U hU
+    rw [mem_ae_iff, mem_ae_iff, compl_compl, restrict_apply hU.compl, restrict_apply hU,
+      ← sdiff_eq_compl_inter]
+    rcases hs.2.2 (hU.inter hs.1) inter_subset_right with h0 | heq
+    · exact Or.inr h0
+    · refine Or.inl ?_
+      have hadd := measure_inter_add_sdiff (μ := μ) s hU
+      rw [inter_comm, heq] at hadd
+      exact (ENNReal.add_right_inj hfin).1 (hadd.trans (add_zero _).symm)
+  have : HasCountableSeparatingOn X MeasurableSet s :=
+    HasCountableSeparatingOn.mono (fun _ h ↦ h) (subset_univ s)
+  obtain ⟨x, hxs, hx⟩ := exists_mem_singleton_mem_of_mem_of_nonempty_of_forall_separating
+    MeasurableSet (ae_restrict_mem hs.1) (nonempty_of_measure_ne_zero hs.2.1.ne') hl
+  refine ⟨x, hxs, ?_⟩
+  rwa [mem_ae_iff, restrict_apply' hs.1, ← sdiff_eq_compl_inter] at hx
+
+/-- **Atoms are points.** An atom of a measure on a countably separated measurable space, on which
+the measure is σ-finite, is concentrated on one of its points. -/
+theorem IsAtom.exists_measure_sdiff_singleton_eq_zero [CountablySeparated X] {s : Set X}
+    [SigmaFinite (μ.restrict s)] (hs : μ.IsAtom s) : ∃ x ∈ s, μ (s \ {x}) = 0 :=
+  hs.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top hs.measure_ne_top
+
+/-- A σ-finite measure on a countably separated measurable space with zero mass on every singleton
+has no atoms. -/
+theorem not_isAtom_of_nullSingletonClass [CountablySeparated X] [SigmaFinite μ]
+    [NullSingletonClass μ] (s : Set X) : ¬ μ.IsAtom s := fun hs ↦ by
+  obtain ⟨x, -, hx⟩ := hs.exists_measure_sdiff_singleton_eq_zero
+  exact (isAtom_iff.1 hs).2.1.ne'
+    (measure_mono_null (subset_sdiff_union s {x}) (measure_union_null hx (measure_singleton x)))
+
+end MeasureTheory.Measure
