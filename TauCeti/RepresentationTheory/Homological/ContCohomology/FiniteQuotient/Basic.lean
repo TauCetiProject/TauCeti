@@ -76,12 +76,12 @@ those quotients, not of this one only, and this file consumes it together with i
 and `_comp` lemmas.
 
 `invariantsInclusion`, `transitionPair` and `finiteLevelTransition` keep their bodies sealed:
-each is characterized by its `_apply_coe`, `_hom_toLinearMap` and functor-law lemmas, and those
-lemmas are proved as `(rfl)`, so no consumer unfolds a body. The three functors are `@[expose]`
-instead, because the *statement* of a functor's `map` lemma does not elaborate with the body
-sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the right-hand side in the type the
-`obj` field reduces to, so without the body the characteristic lemma cannot even be written
-down.
+each is characterized by its `_apply_coe`, `_hom_toLinearMap`, `_eq_map` and functor-law
+lemmas, and those lemmas are proved as `(rfl)`, so no consumer unfolds a body. The three functors
+are `@[expose]` instead, because the *statement* of a functor's `map` lemma does not elaborate
+with the body sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the right-hand side in
+the type the `obj` field reduces to, so without the body the characteristic lemma cannot even be
+written down.
 
 The colimit theorems are separate (`FiniteQuotient/Colimit.lean` for the explicit low-degree
 complex, `FiniteQuotient/AllDegreeColimit.lean` for the canonical object in every degree); the
@@ -222,6 +222,12 @@ noncomputable def finiteLevelTransition (hVU : V ≤ U) (n : ℕ) :
     groupCohomology (A.quotientToInvariants U) n ⟶
       groupCohomology (A.quotientToInvariants V) n :=
   groupCohomology.map (QuotientGroup.mapOfLE hVU) (transitionPair A hVU) n
+
+/-- The transition map is `groupCohomology.map` along the transition pair. -/
+theorem finiteLevelTransition_eq_map (hVU : V ≤ U) (n : ℕ) :
+    finiteLevelTransition A hVU n =
+      groupCohomology.map (QuotientGroup.mapOfLE hVU) (transitionPair A hVU) n :=
+  (rfl)
 
 /-- The first functor law: the transition map from a level to itself is the identity. -/
 @[simp]
