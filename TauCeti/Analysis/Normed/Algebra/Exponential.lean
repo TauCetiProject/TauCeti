@@ -216,8 +216,8 @@ end TauCeti
 namespace IsIdempotentElem
 
 /-- For an idempotent `e` in a normed algebra over `𝕜`, `exp (z • e) = 1 + (exp z - 1) • e`. -/
-theorem exp_smul {𝕜 A : Type*} [RCLike 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] {e : A}
-    (he : IsIdempotentElem e) (z : 𝕜) :
+theorem exp_smul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+    [CompleteSpace 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] {e : A} (he : IsIdempotentElem e) (z : 𝕜) :
     NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e := by
   have he1 : HasSum (fun n : ℕ => (((n + 1)! : 𝕜))⁻¹ • (z • e) ^ (n + 1))
       ((NormedSpace.exp z - 1) • e) :=
