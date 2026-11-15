@@ -43,6 +43,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `TauCeti.conj_chartAt_source` and `TauCeti.comp_conj_chartAt`: the domain of that chart is
   where the extended chart lands in the domain of `c`, and in the model vector space it reads as
   `c ∘ extChartAt I x`.
+* `TauCeti.contDiffAt_extChartAt_comp_extChartAt_symm`: on a boundaryless model, the change
+  between two preferred extended charts is `C^n` on their common domain.
 
 * `OpenPartialHomeomorph.toDiffeomorphSourceTarget`: a maximal-atlas chart as a native C^n
   diffeomorphism between its intrinsic open source and target, including models with corners.
@@ -114,6 +116,17 @@ theorem conj_chartAt_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M] (x : M
       simpa [extChartAt, I.range_eq_univ] using hy'.2
     · intro y _
       simp [extChartAt]
+
+/-- On a boundaryless `C^n` manifold, the change between the preferred extended charts at `x` and
+at `x'` is `C^n` at the `x`-coordinates of every point `y` of their common domain. -/
+theorem contDiffAt_extChartAt_comp_extChartAt_symm [I.Boundaryless] [IsManifold I n M]
+    {x x' y : M} (hy : y ∈ (extChartAt I x).source) (hy' : y ∈ (extChartAt I x').source) :
+    ContDiffAt 𝕜 n (extChartAt I x' ∘ (extChartAt I x).symm) (extChartAt I x y) := by
+  have h := contDiffWithinAt_ext_coord_change (I := I) (n := n) x' x (y := extChartAt I x y)
+    ⟨(extChartAt I x).map_source hy, by
+      rw [Set.mem_preimage, PartialEquiv.symm_symm, (extChartAt I x).left_inv hy]
+      exact hy'⟩
+  rwa [ModelWithCorners.Boundaryless.range_eq_univ, contDiffWithinAt_univ] at h
 
 section ProdMap
 

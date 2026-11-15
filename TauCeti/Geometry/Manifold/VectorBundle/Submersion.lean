@@ -25,7 +25,11 @@ projection, Mathlib's `Bundle.contMDiff_proj`, is recovered from this by
 The preferred charts are computed explicitly over the base set of the trivialization at their
 base point (`Bundle.mem_extChartAt_source_iff`, `Bundle.extChartAt_apply_of_mem_baseSet`,
 `Bundle.extChartAt_symm_apply_of_mem_baseSet` and
-`Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet`). For a vector bundle, the preferred
+`Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet`). A point of the target of a preferred
+chart is the image of a point over that base set
+(`Bundle.proj_extChartAt_symm_mem_baseSet`) with base coordinate and trivialization coordinate
+read off from its two components (`Bundle.extChartAt_proj_extChartAt_symm`,
+`Bundle.trivializationAt_extChartAt_symm_snd`). For a vector bundle, the preferred
 chart at a zero vector sends the zero vectors over that base set to the zero fibre coordinate
 (`Bundle.extChartAt_zeroSection_of_mem_baseSet`, `Bundle.extChartAt_zeroSection_self`).
 
@@ -99,6 +103,30 @@ theorem extChartAt_apply_of_mem_baseSet (p : TotalSpace F V) {x : TotalSpace F V
       (extChartAt IB p.proj x.proj, (trivializationAt F V p.proj x).2) := by
   rw [FiberBundle.extChartAt]
   simp [Trivialization.coe_fst' _ hx]
+
+/-- The inverse of the preferred chart at `p` sends a point of its target to a point over the base
+set of the trivialization at `p.proj`. -/
+theorem proj_extChartAt_symm_mem_baseSet (p : TotalSpace F V) {y : EB × F}
+    (hy : y ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) p).target) :
+    ((extChartAt (IB.prod 𝓘(𝕜, F)) p).symm y).proj ∈ (trivializationAt F V p.proj).baseSet :=
+  ((mem_extChartAt_source_iff p _).1 ((extChartAt (IB.prod 𝓘(𝕜, F)) p).map_target hy)).1
+
+/-- The base point of the inverse image of a point `y` of the target of the preferred chart at `p`
+has coordinate `y.1` in the chart of the base at `p.proj`. -/
+theorem extChartAt_proj_extChartAt_symm (p : TotalSpace F V) {y : EB × F}
+    (hy : y ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) p).target) :
+    extChartAt IB p.proj ((extChartAt (IB.prod 𝓘(𝕜, F)) p).symm y).proj = y.1 := by
+  rw [proj_extChartAt_symm p hy]
+  exact (extChartAt IB p.proj).right_inv (fst_mem_extChartAt_target p hy)
+
+/-- The inverse image of a point `y` of the target of the preferred chart at `p` has fibre
+coordinate `y.2` in the trivialization at `p.proj`. -/
+theorem trivializationAt_extChartAt_symm_snd (p : TotalSpace F V) {y : EB × F}
+    (hy : y ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) p).target) :
+    (trivializationAt F V p.proj ((extChartAt (IB.prod 𝓘(𝕜, F)) p).symm y)).2 = y.2 := by
+  have h := (extChartAt (IB.prod 𝓘(𝕜, F)) p).right_inv hy
+  rw [extChartAt_apply_of_mem_baseSet p (proj_extChartAt_symm_mem_baseSet p hy)] at h
+  exact congrArg Prod.snd h
 
 /-- The inverse of the preferred chart at `p` sends `(y, w)`, with `y` over the base set of the
 trivialization at `p.proj`, to the vector over `(extChartAt IB p.proj).symm y` with fibre

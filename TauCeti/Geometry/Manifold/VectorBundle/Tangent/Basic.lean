@@ -435,7 +435,7 @@ theorem contMDiffAt_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] {
 /-- A point of `TM` in the common domain of the tangent charts at `z` and `q` is sent by the
 change from the chart at `z` to the chart at `q` to the pair consisting of the base coordinate
 change and the fibre coordinate change. -/
-private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : TangentBundle I M)
+theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : TangentBundle I M)
     {a : E × E}
     (ha : a ∈ ((extChartAt I.tangent z).symm ≫ extChartAt I.tangent q).source) :
     extChartAt I.tangent q ((extChartAt I.tangent z).symm a) =

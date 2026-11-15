@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
@@ -14,8 +15,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 On a boundaryless manifold `M` the range of the model `I` is the whole model space, so the change
 `φ = extChartAt I x' ∘ (extChartAt I x).symm` between two preferred extended charts is an
 ordinary `C^n` map near every point of the common domain
-(`TauCeti.Manifold.contDiffAt_extChartAt_comp_extChartAt_symm`), and the derivatives within
-`range I` defining tangent coordinate changes are ordinary derivatives. The preferred charts of
+(`TauCeti.contDiffAt_extChartAt_comp_extChartAt_symm`), and the derivatives within `range I`
+defining tangent coordinate changes are ordinary derivatives
+(`TauCeti.Manifold.tangentCoordChange_eq_fderiv`). The preferred charts of
 the tangent bundle then change by the tangent map of `φ`: a point with coordinates `(q, u)` in the
 chart at `z` has coordinates `(φ q, Dφ_q u)` in the chart at `z'`
 (`TauCeti.Manifold.extChartAt_tangent_extChartAt_symm`), and near such a point a function on `TM`
@@ -40,20 +42,14 @@ namespace TauCeti.Manifold
 
 variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] {M : Type*}
-  [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
 
-/-- On a boundaryless `C^n` manifold, the change between the preferred extended charts at `x` and
-at `x'` is `C^n` at the `x`-coordinates of every point `y` of their common domain. -/
-theorem contDiffAt_extChartAt_comp_extChartAt_symm {n : WithTop ℕ∞} [IsManifold I n M]
-    {x x' y : M} (hy : y ∈ (extChartAt I x).source) (hy' : y ∈ (extChartAt I x').source) :
-    ContDiffAt 𝕜 n (extChartAt I x' ∘ (extChartAt I x).symm) (extChartAt I x y) := by
-  have h := contDiffWithinAt_ext_coord_change (I := I) (n := n) x' x (y := extChartAt I x y)
-    ⟨(extChartAt I x).map_source hy, by
-      rw [mem_preimage, PartialEquiv.symm_symm, (extChartAt I x).left_inv hy]
-      exact hy'⟩
-  rwa [ModelWithCorners.Boundaryless.range_eq_univ, contDiffWithinAt_univ] at h
-
-variable [IsManifold I 1 M]
+/-- On a boundaryless manifold, the tangent coordinate change from the chart at `x` to the chart at
+`y` is the ordinary derivative of the change of extended charts. -/
+theorem tangentCoordChange_eq_fderiv (x y w : M) :
+    tangentCoordChange I x y w =
+      fderiv 𝕜 (extChartAt I y ∘ (extChartAt I x).symm) (extChartAt I x w) := by
+  rw [tangentCoordChange_def, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
 
 /-- **Changes of charts of the tangent bundle.** On a boundaryless manifold, a point of `TM` with
 coordinates `a = (q, u)` in the preferred chart at `z`, lying in the domain of the preferred chart
@@ -65,23 +61,9 @@ theorem extChartAt_tangent_extChartAt_symm (z z' : TangentBundle I M) {a : E × 
     extChartAt I.tangent z' ((extChartAt I.tangent z).symm a) =
       ((extChartAt I z'.proj ∘ (extChartAt I z.proj).symm) a.1,
         fderiv 𝕜 (extChartAt I z'.proj ∘ (extChartAt I z.proj).symm) a.1 a.2) := by
-  set y := (extChartAt I z.proj).symm a.1
-  have hw := (mem_extChartAt_source_iff z _).1 ((extChartAt I.tangent z).map_target ha)
-  rw [proj_extChartAt_symm z ha] at hw
-  -- The point is the vector over `y` with fibre coordinate `a.2` in the trivialization at `z`.
-  have h := extChartAt_symm_apply_of_mem_baseSet z hw.1 a.2
-  rw [Prod.mk.eta] at h
-  rw [h] at ha' ⊢
-  have hw' := (mem_extChartAt_source_iff z' _).1 ha'
-  rw [extChartAt_apply_of_mem_baseSet z' hw'.1]
-  refine Prod.ext rfl ?_
-  dsimp only
-  -- Its fibre coordinate at `z'` is the tangent coordinate change, an ordinary derivative here.
-  rw [← (trivializationAt E (TangentSpace I) z'.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-      hw'.1, ← Trivialization.symmL_apply (R := 𝕜) _ hw.1, continuousLinearMapAt_symmL_coordChange
-      (by simpa [extChartAt_source] using hw.2) (by simpa [extChartAt_source] using hw'.2),
-    tangentCoordChange_def, (extChartAt I z.proj).right_inv (fst_mem_extChartAt_target z ha),
-    ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
+  rw [extChartAt_tangent_symm_trans_eq z z' ⟨ha, ha'⟩, tangentCoordChange_eq_fderiv,
+    (extChartAt I z.proj).right_inv (fst_mem_extChartAt_target z ha)]
+  rfl
 
 /-- Near a point `a` of the chart at `z` whose point of `TM` lies in the chart at `z'`, a function
 on `TM` read in the chart at `z` is the function read in the chart at `z'`, composed with the
@@ -119,8 +101,8 @@ theorem eventually_extChartAt_tangent_eq {γ : 𝕜 → TangentBundle I M} {t : 
 /-- **Second-order curves do not depend on the chart.** Let `γ` be a curve in `TM`, continuous at
 `t`, whose base coordinate in the preferred chart at `z` has derivative its fibre coordinate at
 `t`. Then the same holds in the preferred chart at any `z'` whose domain contains `γ t`, on a
-`C²` boundaryless manifold. -/
-theorem hasDerivAt_extChartAt_tangent_fst [IsManifold I 2 M] {γ : 𝕜 → TangentBundle I M} {t : 𝕜}
+boundaryless manifold. -/
+theorem hasDerivAt_extChartAt_tangent_fst {γ : 𝕜 → TangentBundle I M} {t : 𝕜}
     (hγ : ContinuousAt γ t) {z z' : TangentBundle I M}
     (hz : γ t ∈ (extChartAt I.tangent z).source) (hz' : γ t ∈ (extChartAt I.tangent z').source)
     (hq : HasDerivAt (fun s ↦ (extChartAt I.tangent z (γ s)).1)
@@ -131,11 +113,11 @@ theorem hasDerivAt_extChartAt_tangent_fst [IsManifold I 2 M] {γ : 𝕜 → Tang
   have hc := eventually_extChartAt_tangent_eq hγ hz hz'
   have hb := (mem_extChartAt_source_iff z (γ t)).1 hz
   have hb' := (mem_extChartAt_source_iff z' (γ t)).1 hz'
-  have hψ : ContDiffAt 𝕜 2 ψ (extChartAt I.tangent z (γ t)).1 := by
+  have hψ : ContDiffAt 𝕜 1 ψ (extChartAt I.tangent z (γ t)).1 := by
     rw [extChartAt_apply_of_mem_baseSet z hb.1]
     exact contDiffAt_extChartAt_comp_extChartAt_symm hb.2 hb'.2
   rw [hc.self_of_nhds]
-  exact ((hψ.differentiableAt two_ne_zero).hasFDerivAt.comp_hasDerivAt t hq).congr_of_eventuallyEq
+  exact ((hψ.differentiableAt one_ne_zero).hasFDerivAt.comp_hasDerivAt t hq).congr_of_eventuallyEq
     (hc.mono fun s hs ↦ congrArg Prod.fst hs)
 
 end TauCeti.Manifold

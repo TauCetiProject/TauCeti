@@ -63,17 +63,13 @@ private theorem fderiv_comp_symmL_eq_fderiv_extChartAt_symm (L : TangentBundle I
       (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜
         ((extChartAt I.tangent z₀).symm p).proj =
       fderiv 𝕜 (fun u ↦ L ((extChartAt I.tangent z₀).symm (p.1, u))) p.2 := by
-  set e := trivializationAt E (TangentSpace I) z₀.proj
   set w := (extChartAt I.tangent z₀).symm p
-  have hw : w ∈ (extChartAt I.tangent z₀).source := (extChartAt I.tangent z₀).map_target hp
   have hwp : (extChartAt I z₀.proj).symm p.1 = w.proj := (proj_extChartAt_symm z₀ hp).symm
-  have hb : w.proj ∈ e.baseSet := ((mem_extChartAt_source_iff z₀ w).1 hw).1
-  have hpw : extChartAt I.tangent z₀ w = p := (extChartAt I.tangent z₀).right_inv hp
-  rw [extChartAt_apply_of_mem_baseSet z₀ hb] at hpw
+  have hb := proj_extChartAt_symm_mem_baseSet z₀ hp
   have h := legendreMap_snd_comp_symmL L hb
   rw [legendreMap_snd] at h
   refine h.trans ?_
-  rw [← congrArg Prod.snd hpw]
+  rw [← trivializationAt_extChartAt_symm_snd z₀ hp]
   congr 1
   funext u
   rw [extChartAt_symm_apply_of_mem_baseSet z₀ (hwp ▸ hb) u, hwp, Trivialization.symmL_apply _ hb]
@@ -86,14 +82,9 @@ theorem extChartAt_legendreMap_extChartAt_symm (L : TangentBundle I M → 𝕜) 
         (legendreMap L ((extChartAt I.tangent z₀).symm p)) =
       (p.1, fderiv 𝕜 (fun u ↦ L ((extChartAt I.tangent z₀).symm (p.1, u))) p.2) := by
   set w := (extChartAt I.tangent z₀).symm p
-  have hw : w ∈ (extChartAt I.tangent z₀).source := (extChartAt I.tangent z₀).map_target hp
-  have hb : w.proj ∈ (trivializationAt E (TangentSpace I) z₀.proj).baseSet :=
-    ((mem_extChartAt_source_iff z₀ w).1 hw).1
-  have hpw : extChartAt I.tangent z₀ w = p := (extChartAt I.tangent z₀).right_inv hp
-  rw [extChartAt_apply_of_mem_baseSet z₀ hb] at hpw
-  have hp1 : extChartAt I z₀.proj w.proj = p.1 := congrArg Prod.fst hpw
   rw [CotangentBundle.extChartAt_apply, legendreMap_def L w, legendreMap_def L z₀]
-  exact Prod.ext hp1 (fderiv_comp_symmL_eq_fderiv_extChartAt_symm L z₀ hp)
+  exact Prod.ext (extChartAt_proj_extChartAt_symm z₀ hp)
+    (fderiv_comp_symmL_eq_fderiv_extChartAt_symm L z₀ hp)
 
 /-- **The energy in bundle charts.** In the preferred chart at `z₀`, the energy of `L` is
 `∂_v ℓ(q, v)(v) - ℓ(q, v)`, where `ℓ` is `L` read in that chart. -/
@@ -104,12 +95,10 @@ theorem lagrangianEnergy_extChartAt_symm (L : TangentBundle I M → 𝕜) (z₀ 
         L ((extChartAt I.tangent z₀).symm p) := by
   set e := trivializationAt E (TangentSpace I) z₀.proj
   set w := (extChartAt I.tangent z₀).symm p
-  have hw : w ∈ (extChartAt I.tangent z₀).source := (extChartAt I.tangent z₀).map_target hp
-  have hb : w.proj ∈ e.baseSet := ((mem_extChartAt_source_iff z₀ w).1 hw).1
-  have hpw : extChartAt I.tangent z₀ w = p := (extChartAt I.tangent z₀).right_inv hp
-  rw [extChartAt_apply_of_mem_baseSet z₀ hb] at hpw
+  have hb := proj_extChartAt_symm_mem_baseSet z₀ hp
   have hv : e.symmL 𝕜 w.proj p.2 = w.2 := by
-    rw [← congrArg Prod.snd hpw, Trivialization.symmL_apply _ hb, e.symm_proj_apply w hb]
+    rw [← trivializationAt_extChartAt_symm_snd z₀ hp, Trivialization.symmL_apply _ hb,
+      e.symm_proj_apply w hb]
   have h : fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E w.proj u)) w.2 w.2 =
       fderiv 𝕜 (fun u ↦ L ((extChartAt I.tangent z₀).symm (p.1, u))) p.2 p.2 := by
     have h' : fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E w.proj u)) w.2 (e.symmL 𝕜 w.proj p.2) =

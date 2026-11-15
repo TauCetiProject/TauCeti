@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LagrangianVectorField
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ChartChange
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
@@ -188,7 +189,7 @@ theorem eulerLagrange_extChartAt_of_hasMFDerivAt (hL : ContMDiff I.tangent 𝓘(
   have hz₀b := (mem_extChartAt_source_iff z₀ z₀).1 hz₀
   have hφ : ContDiffAt ℝ 2 φ (c z₀).1 := by
     rw [extChartAt_apply_of_mem_baseSet z hzb.1]
-    exact Manifold.contDiffAt_extChartAt_comp_extChartAt_symm hzb.2 hz₀b.2
+    exact contDiffAt_extChartAt_comp_extChartAt_symm hzb.2 hz₀b.2
   have hq : HasDerivAt (fun s ↦ (c (γ s)).1) (c z₀).2 t :=
     Manifold.hasDerivAt_extChartAt_tangent_fst hγ.continuousAt hz₀ hz hq₀
   refine ⟨hq, ?_⟩
