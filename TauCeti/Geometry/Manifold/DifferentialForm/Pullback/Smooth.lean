@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
@@ -26,10 +27,11 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Along a map smooth on a set of a
 normed space, the within-set pullback of a smooth form is a smooth flat form there
-(`TauCeti.SmoothForm.contDiffOn_mpullbackWithin`). Pullback along a smooth map with a
-smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
-preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
-(`TauCeti.SmoothForm.diffeomorphStabilizer`).
+(`TauCeti.SmoothForm.contDiffOn_mpullbackWithin`). Restriction to an open subset does not change
+the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`). Pullback
+along a smooth map with a smooth right inverse, such as a vector bundle projection, is injective.
+The diffeomorphisms of `M` preserving a smooth form form a subgroup of the diffeomorphism group,
+its stabilizer (`TauCeti.SmoothForm.diffeomorphStabilizer`).
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
 through `x`, a form is `C^m` near `f x` exactly when its pullback along `f` is `C^m` near `x`,
@@ -464,6 +466,11 @@ theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M �
     (β : SmoothForm I'' M'' F k) :
     mpullback f hf (mpullback g hg β) = mpullback f' hf' (mpullback g' hg' β) := by
   simp only [mpullback_mpullback, hcomp]
+
+/-- Restricting a smooth form on `M` to an open subset does not change its value at any point. -/
+theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
+    (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x = σ.1 x :=
+  TauCeti.mpullback_subtype_val_apply σ.1 x
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}

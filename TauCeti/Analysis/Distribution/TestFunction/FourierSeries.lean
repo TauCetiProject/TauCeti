@@ -55,7 +55,7 @@ the resulting double series converge.
 * `ContDiffMapSupportedIn.seminorm_modulate_le`: the polynomial bound on the derivatives of a
   modulated cutoff.
 * `ContDiffMapSupportedIn.exists_seminorm_modulate_le`: a continuous seminorm grows at most
-  polynomially along modulated cutoffs.
+  polynomially along modulated cutoffs, with a degree independent of the cutoff.
 * `ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier`: the Fourier transform of a
   smooth function supported in `K` decays rapidly along a lattice.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
@@ -198,16 +198,18 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
         ring
 
 /-- Every continuous seminorm `q` on `𝓓_{K}(E, F)` grows at most polynomially along the
-modulated cutoffs `χ.modulate w`: there are `C` and `k` with
-`q (χ.modulate w) ≤ C (1 + ‖w‖) ^ k` for every frequency `w`. Applied to `ψ ↦ ‖T ψ‖`, this bounds
-the images of modulated cutoffs under a continuous linear map `T` to a normed space. -/
-theorem exists_seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (q : Seminorm ℂ 𝓓_{K}(E, F))
-    (hq : Continuous q) : ∃ C k, ∀ w : E, q (χ.modulate w) ≤ C * (1 + ‖w‖) ^ k := by
+modulated cutoffs `χ.modulate w`, with a degree independent of the cutoff: there is a `k` such
+that for every `χ` there is a `C` with `q (χ.modulate w) ≤ C (1 + ‖w‖) ^ k` for every frequency
+`w`. Applied to `ψ ↦ ‖T ψ‖`, this bounds the images of modulated cutoffs under a continuous linear
+map `T` to a normed space. -/
+theorem exists_seminorm_modulate_le (q : Seminorm ℂ 𝓓_{K}(E, F)) (hq : Continuous q) :
+    ∃ k : ℕ, ∀ χ : 𝓓_{K}(E, F), ∃ C, ∀ w : E, q (χ.modulate w) ≤ C * (1 + ‖w‖) ^ k := by
   obtain ⟨s, C, -, hC⟩ :=
     Seminorm.bound_of_continuous (ContDiffMapSupportedIn.withSeminorms ℂ E F ⊤ K) q hq
   set k := s.sup id
+  refine ⟨k, fun χ ↦ ?_⟩
   set S := ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ
-  refine ⟨C * (S * (2 * π) ^ k), k, fun w ↦ ?_⟩
+  refine ⟨C * (S * (2 * π) ^ k), fun w ↦ ?_⟩
   have h1 : 1 ≤ 1 + 2 * π * ‖w‖ := by
     have := Real.pi_pos
     nlinarith [norm_nonneg w]
