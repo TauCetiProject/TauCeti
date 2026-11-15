@@ -1,0 +1,757 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Order.Group.Int
+public import Mathlib.Algebra.Order.Monoid.Prod
+public import Mathlib.Order.SuccPred.Int
+public import TauCeti.GroupTheory.InfWord.Mul
+public import TauCeti.GroupTheory.LyndonLength.Basic
+public import TauCeti.Order.SuccPred.Prod
+import TauCeti.Order.SuccPred.Iterate
+
+/-!
+# Cyclic decompositions, subgroups of infinite words, and free Lyndon length functions
+
+Let `Λ` be a discretely ordered abelian group and `X` a set. Over a non-Archimedean `Λ`, the
+partial multiplication `∗` of reduced `Λ`-words is genuinely partial: for an infinitely large
+positive `t ∈ Λ` and distinct letters `a ≠ b`, the common initial segments of `a^t` and the word
+`v` on `[1, t]` that reads `a` on `{1, 2, 3, …}` and `b` elsewhere have lengths `{0, 1, 2, …}`,
+which has no greatest element, so `(a^t)⁻¹ ∗ v` is undefined
+(`TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`).
+
+Nonetheless, many subsets of the reduced `Λ`-words are closed under `∗` and inversion and contain
+the empty word; equipped with `∗`, any such subset `H` (`TauCeti.InfWord.ReducedSubgroup Λ X`) is a
+group. Because the Gromov product `(|u| + |v| - |u⁻¹ ∗ v|) / 2` in such a group is the length of the
+longest common initial segment of `u` and `v`, word length `w ↦ |w|` is always a Lyndon length
+function on `H` satisfying (L4).
+
+To obtain axiom (L5), `|w| < |w ^ 2|` for `w ≠ ε`, one restricts to `CDR(Λ, X)`
+(`TauCeti.InfWord.CDR`), the set of reduced words admitting a *cyclic decomposition*
+`w = c⁻¹ ++ v ++ c` with `v` cyclically reduced (`TauCeti.InfWord.IsCyclicallyReduced`). Every word
+`w ∈ CDR(Λ, X)` has a unique cyclic decomposition (`TauCeti.InfWord.IsCyclicDecomposition.unique`),
+its square `w ∗ w` is defined and equals `c⁻¹ ++ (v ++ v) ++ c`, and for `w ≠ ε` the cyclically
+reduced core `v` is nonempty so `|w| < |w| + |v| = |w ∗ w|`. Consequently, on every subgroup of
+`CDR(Λ, X)`, word length is a free Lyndon length function
+(`TauCeti.InfWord.ReducedSubgroup.isFree_lyndonLength`).
+
+## Main definitions
+
+* `TauCeti.InfWord.IsCyclicallyReduced`: reduced `Λ`-words whose first and last letters do not
+  cancel (`w ++ w` is reduced).
+* `TauCeti.InfWord.IsCyclicDecomposition`: `w = c⁻¹ ++ v ++ c` is reduced with `v` cyclically
+  reduced.
+* `TauCeti.InfWord.CDR`: the set `CDR(Λ, X)` of words admitting a cyclic decomposition.
+* `TauCeti.InfWord.ReducedSubgroup`: subsets of `R(Λ, X)` closed under `empty`, inversion, and the
+  partial product `∗`, equipped with their induced `Group` structure.
+* `TauCeti.InfWord.lyndonLengthOfIsMul`, `TauCeti.InfWord.ReducedSubgroup.lyndonLength`: word length
+  as a `Λ`-valued Lyndon length function.
+* `TauCeti.InfWord.nonArchimedeanWord`: on `[1, t]`, reads `a` at the finite multiples of `succ 0`
+  and `b` elsewhere.
+
+## Main results
+
+* `TauCeti.InfWord.IsCyclicDecomposition.unique`: uniqueness of the cyclic decomposition `(c, v)`.
+* `TauCeti.InfWord.IsCyclicDecomposition.mul_self`: for `w = c⁻¹ ++ v ++ c` in `CDR(Λ, X)`,
+  `w ∗ w = c⁻¹ ++ (v ++ v) ++ c`.
+* `TauCeti.InfWord.isFree_lyndonLengthOfIsMul`,
+  `TauCeti.InfWord.ReducedSubgroup.isFree_lyndonLength`: on any subgroup of `CDR(Λ, X)`, `w ↦ |w|`
+  is a free Lyndon length function.
+* `TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`,
+  `TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_toLex_eq_none`: `(a^t)⁻¹ ∗ v` is undefined
+  when `t` exceeds all finite multiples of `succ 0`, witnessed concretely over `ℤ ×ₗ ℤ`.
+* `TauCeti.InfWord.notMem_CDR_nonArchimedeanWord_append_inv`,
+  `TauCeti.InfWord.notMem_CDR_nonArchimedeanWord_append_inv_toLex`: over a non-Archimedean `Λ`, not
+  every reduced word belongs to `CDR(Λ, X)`.
+
+## References
+
+* A. Myasnikov, V. Remeslennikov, D. Serbin, *Regular free length functions on Lyndon's free
+  `ℤ[t]`-group `F^{ℤ[t]}`*, Contemp. Math. 378 (2005), 37–77, §3.2 (Example 3.5) and §4
+  (Theorem 4.1 and Corollary 4.2).
+* O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Groups with free regular length
+  functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), 2847–2882, §2.3, Theorem 2.
+-/
+
+public section
+
+namespace TauCeti
+
+namespace InfWord
+
+variable {Λ X : Type*}
+
+/-! ### Cyclically reduced infinite words -/
+
+section Preorder
+
+variable [Zero Λ] [Preorder Λ] [SuccOrder Λ] {w : InfWord Λ X}
+
+/-- A `Λ`-word `w` is *cyclically reduced* if it is reduced and, when nonempty, its first letter is
+not the inverse of its last letter. The empty word is cyclically reduced. -/
+def IsCyclicallyReduced (w : InfWord Λ X) : Prop :=
+  w.IsReduced ∧
+    (0 < w.length → w.letter (Order.succ 0) ≠ (w.letter w.length).map (Prod.map id not))
+
+theorem isCyclicallyReduced_iff :
+    w.IsCyclicallyReduced ↔ w.IsReduced ∧
+      (0 < w.length → w.letter (Order.succ 0) ≠ (w.letter w.length).map (Prod.map id not)) :=
+  Iff.rfl
+
+@[grind →]
+theorem IsCyclicallyReduced.isReduced (h : w.IsCyclicallyReduced) : w.IsReduced :=
+  h.1
+
+@[simp]
+theorem isCyclicallyReduced_empty : (empty Λ X).IsCyclicallyReduced :=
+  ⟨isReduced_empty, by simp⟩
+
+end Preorder
+
+section LinearOrder
+
+variable [Zero Λ] [LinearOrder Λ] [SuccOrder Λ]
+
+/-- Every constant word `x^α` is cyclically reduced. -/
+@[simp]
+theorem isCyclicallyReduced_ofFun_const (α : Λ) (x : X × Bool) :
+    (ofFun α fun _ => x).IsCyclicallyReduced := by
+  refine ⟨isReduced_ofFun_const α x, fun h => ?_⟩
+  have hα : 0 < α := by simpa using h
+  have h01 : 0 < Order.succ (0 : Λ) := Order.lt_succ_self_of_lt hα
+  rw [length_ofFun, max_eq_left hα.le,
+    letter_ofFun_of_pos_of_le _ h01 (Order.succ_le_of_lt hα),
+    letter_ofFun_of_pos_of_le _ hα le_rfl]
+  simp [Prod.ext_iff]
+
+end LinearOrder
+
+section Discrete
+
+variable [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] [SuccOrder Λ]
+  {u v w c c₁ c₂ v₁ v₂ : InfWord Λ X}
+
+/-- A word `w` is cyclically reduced if and only if `w ++ w` is reduced. -/
+theorem isCyclicallyReduced_iff_isReduced_append_self :
+    w.IsCyclicallyReduced ↔ (w ++ w).IsReduced := by
+  rw [isCyclicallyReduced_iff, isReduced_append_iff]
+  exact ⟨fun ⟨h₁, h₂⟩ => ⟨h₁, h₁, fun h _ => h₂ h⟩, fun ⟨h₁, _, h₂⟩ => ⟨h₁, fun h => h₂ h h⟩⟩
+
+theorem IsCyclicallyReduced.isReduced_append_self (h : w.IsCyclicallyReduced) :
+    (w ++ w).IsReduced :=
+  isCyclicallyReduced_iff_isReduced_append_self.1 h
+
+@[simp, grind =]
+theorem isCyclicallyReduced_inv : w⁻¹.IsCyclicallyReduced ↔ w.IsCyclicallyReduced := by
+  rw [isCyclicallyReduced_iff_isReduced_append_self, ← inv_append, isReduced_inv,
+    ← isCyclicallyReduced_iff_isReduced_append_self]
+
+theorem IsCyclicallyReduced.inv (h : w.IsCyclicallyReduced) : w⁻¹.IsCyclicallyReduced :=
+  isCyclicallyReduced_inv.2 h
+
+/-- If `w` is cyclically reduced, then `w ++ w` is again cyclically reduced. -/
+theorem IsCyclicallyReduced.append_self (h : w.IsCyclicallyReduced) :
+    (w ++ w).IsCyclicallyReduced := by
+  refine ⟨h.isReduced_append_self, fun hlen => ?_⟩
+  have hw : 0 < w.length := length_pos_iff.2 (by rintro rfl; simp at hlen)
+  rw [letter_append_of_le _ (Order.succ_le_of_lt hw), length_append,
+    letter_append_length_add _ _ hw]
+  exact h.2 hw
+
+theorem IsCyclicallyReduced.isMul_self (h : w.IsCyclicallyReduced) : IsMul w w (w ++ w) :=
+  isMul_append h.isReduced_append_self
+
+theorem IsCyclicallyReduced.mul_self (h : w.IsCyclicallyReduced) :
+    w.mul w = Part.some (w ++ w) :=
+  mul_eq_some_append h.isReduced_append_self
+
+/-! ### Cyclic decompositions and `CDR(Λ, X)` -/
+
+/-- `IsCyclicDecomposition w c v` means that `w` is the reduced concatenation `c⁻¹ ++ v ++ c` with
+`v` cyclically reduced. When `v` is empty, reducedness of `c⁻¹ ++ c` forces `c` and `w` to be empty
+as well. -/
+def IsCyclicDecomposition (w c v : InfWord Λ X) : Prop :=
+  v.IsCyclicallyReduced ∧ w.IsReduced ∧ w = c⁻¹ ++ v ++ c
+
+theorem isCyclicDecomposition_iff :
+    IsCyclicDecomposition w c v ↔ v.IsCyclicallyReduced ∧ w.IsReduced ∧ w = c⁻¹ ++ v ++ c :=
+  Iff.rfl
+
+@[grind →]
+theorem IsCyclicDecomposition.isCyclicallyReduced (h : IsCyclicDecomposition w c v) :
+    v.IsCyclicallyReduced := h.1
+
+@[grind →]
+theorem IsCyclicDecomposition.isReduced (h : IsCyclicDecomposition w c v) : w.IsReduced := h.2.1
+
+theorem IsCyclicDecomposition.eq (h : IsCyclicDecomposition w c v) : w = c⁻¹ ++ v ++ c := h.2.2
+
+/-- In a cyclic decomposition `w = c⁻¹ ++ v ++ c`, `w` is empty if and only if its cyclically
+reduced core `v` is empty. -/
+theorem IsCyclicDecomposition.eq_empty_iff (h : IsCyclicDecomposition w c v) :
+    w = empty Λ X ↔ v = empty Λ X := by
+  refine ⟨fun hw => ?_, fun hv => ?_⟩
+  · exact (append_eq_empty_iff.1 (append_eq_empty_iff.1 (h.eq.symm.trans hw)).1).2
+  · have hred : (c⁻¹ ++ c).IsReduced := by simpa [h.eq, hv] using h.isReduced
+    have hc : c = empty Λ X := isReduced_inv_append_self_iff.1 hred
+    simp [h.eq, hv, hc]
+
+@[simp]
+theorem isCyclicDecomposition_empty_iff :
+    IsCyclicDecomposition (empty Λ X) c v ↔ c = empty Λ X ∧ v = empty Λ X := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have h1 := append_eq_empty_iff.1 h.eq.symm
+    exact ⟨h1.2, (append_eq_empty_iff.1 h1.1).2⟩
+  · rintro ⟨rfl, rfl⟩
+    exact ⟨isCyclicallyReduced_empty, isReduced_empty, by simp⟩
+
+theorem IsCyclicDecomposition.inv (h : IsCyclicDecomposition w c v) :
+    IsCyclicDecomposition w⁻¹ c v⁻¹ :=
+  ⟨h.isCyclicallyReduced.inv, h.isReduced.inv, by rw [h.eq, inv_append, inv_append, inv_inv,
+    append_assoc]⟩
+
+private theorem unique_of_length_le (h₁ : IsCyclicDecomposition w c₁ v₁)
+    (h₂ : IsCyclicDecomposition w c₂ v₂) (hle : c₁.length ≤ c₂.length) :
+    c₁ = c₂ ∧ v₁ = v₂ := by
+  have heq : c₁⁻¹ ++ (v₁ ++ c₁) = c₂⁻¹ ++ (v₂ ++ c₂) := by
+    simpa only [append_assoc] using h₁.eq.symm.trans h₂.eq
+  let d := c₂⁻¹.drop c₁.length
+  have hc₂inv : c₂⁻¹ = c₁⁻¹ ++ d := by
+    have htake : c₂⁻¹.take c₁.length = c₁⁻¹ := by
+      have h := congrArg (take · c₁.length) heq.symm
+      rwa [take_append_of_le_length _ (by simpa using hle),
+        take_append_of_le_length _ (by simp), ← length_inv, take_length] at h
+    exact (htake ▸ c₂⁻¹.take_append_drop c₁.length).symm
+  have hc₂ : c₂ = d⁻¹ ++ c₁ := by simpa using congrArg Inv.inv hc₂inv
+  have hv₁ : v₁ = d ++ v₂ ++ d⁻¹ := by
+    rw [hc₂inv, hc₂, append_assoc c₁⁻¹, ← append_assoc d, ← append_assoc (d ++ v₂),
+      append_right_inj] at heq
+    exact append_left_inj _ |>.1 heq
+  rcases eq_or_ne d (empty Λ X) with hd | hd
+  · refine ⟨?_, ?_⟩
+    · simpa [hd] using hc₂.symm
+    · simpa [hd] using hv₁
+  exfalso
+  have hd0 : 0 < d.length := length_pos_iff.2 hd
+  have hv₁0 : 0 < v₁.length := length_pos_iff.2 (by rw [hv₁]; simp [hd])
+  have hfirst : v₁.letter (Order.succ 0) = d.letter (Order.succ 0) := by
+    rw [hv₁, append_assoc, letter_append_of_le _ (Order.succ_le_of_lt hd0)]
+  have hlast : v₁.letter v₁.length = (d.letter (Order.succ 0)).map (Prod.map id not) := by
+    rw [hv₁, length_append, letter_append_length_add _ _ (by simpa using hd0), length_inv,
+      letter_inv_length]
+  refine h₁.isCyclicallyReduced.2 hv₁0 ?_
+  rw [hfirst, hlast, Option.map_map]
+  simp [Function.comp_def, Prod.map]
+
+/-- The cyclic decomposition `w = c⁻¹ ++ v ++ c` of a word is unique. -/
+theorem IsCyclicDecomposition.unique (h₁ : IsCyclicDecomposition w c₁ v₁)
+    (h₂ : IsCyclicDecomposition w c₂ v₂) : c₁ = c₂ ∧ v₁ = v₂ := by
+  rcases le_total c₁.length c₂.length with hle | hle
+  · exact unique_of_length_le h₁ h₂ hle
+  · exact (unique_of_length_le h₂ h₁ hle).imp Eq.symm Eq.symm
+
+/-- Squaring a cyclic decomposition `w = c⁻¹ ++ v ++ c` doubles its cyclically reduced core,
+yielding the cyclic decomposition `c⁻¹ ++ (v ++ v) ++ c`. -/
+theorem IsCyclicDecomposition.sq (h : IsCyclicDecomposition w c v) :
+    IsCyclicDecomposition (c⁻¹ ++ (v ++ v) ++ c) c (v ++ v) := by
+  rcases eq_or_ne v (empty Λ X) with rfl | hv
+  · obtain rfl := h.eq_empty_iff.2 rfl
+    obtain ⟨rfl, -⟩ := isCyclicDecomposition_empty_iff.1 h
+    simp
+  have hv0 : 0 < v.length := length_pos_iff.2 hv
+  have hcv : (c⁻¹ ++ v).IsReduced := (h.eq ▸ h.isReduced).left_of_append
+  have hcvv : (c⁻¹ ++ v ++ v).IsReduced := by
+    refine isReduced_append_iff.2 ⟨hcv, h.isCyclicallyReduced.isReduced, fun _ _ => ?_⟩
+    rw [length_append, letter_append_length_add _ _ hv0]
+    exact h.isCyclicallyReduced.2 hv0
+  refine ⟨h.isCyclicallyReduced.append_self, ?_, by simp [append_assoc]⟩
+  rw [← append_assoc]
+  refine isReduced_append_iff.2 ⟨hcvv, (h.eq ▸ h.isReduced).right_of_append, fun _ hc0 => ?_⟩
+  have hjoin := (isReduced_append_iff.1 (h.eq ▸ h.isReduced)).2.2
+    (length_pos_iff.2 (by simp [hv])) hc0
+  rw [length_append, letter_append_length_add _ _ hv0] at hjoin
+  rwa [length_append, letter_append_length_add (c⁻¹ ++ v) v hv0]
+
+/-- For `w = c⁻¹ ++ v ++ c` in cyclic decomposition, `w ∗ w` is defined and equals
+`c⁻¹ ++ (v ++ v) ++ c`. -/
+theorem IsCyclicDecomposition.isMul_self (h : IsCyclicDecomposition w c v) :
+    IsMul w w (c⁻¹ ++ (v ++ v) ++ c) := by
+  rw [← mul_eq_some_iff, h.eq]
+  have hred := h.eq ▸ h.isReduced
+  have hred' : (c⁻¹ ++ (v ++ c)).IsReduced := by simpa [append_assoc] using hred
+  have hsq : ((c⁻¹ ++ v) ++ (v ++ c)).IsReduced := by
+    simpa [append_assoc] using h.sq.isReduced
+  nth_rw 2 [append_assoc]
+  rw [append_mul_inv_append_cancel hred hred', mul_eq_some_append hsq]
+  simp [append_assoc]
+
+theorem IsCyclicDecomposition.mul_self (h : IsCyclicDecomposition w c v) :
+    w.mul w = Part.some (c⁻¹ ++ (v ++ v) ++ c) :=
+  mul_eq_some_iff.2 h.isMul_self
+
+variable (Λ X) in
+/-- `CDR(Λ, X)`, the set of reduced `Λ`-words admitting a cyclic decomposition `c⁻¹ ++ v ++ c`
+with `v` cyclically reduced. -/
+def CDR : Set (InfWord Λ X) :=
+  {w | ∃ c v, IsCyclicDecomposition w c v}
+
+theorem mem_CDR_iff : w ∈ CDR Λ X ↔ ∃ c v, IsCyclicDecomposition w c v :=
+  Iff.rfl
+
+@[grind →]
+theorem IsCyclicDecomposition.mem_CDR (h : IsCyclicDecomposition w c v) : w ∈ CDR Λ X :=
+  ⟨c, v, h⟩
+
+@[grind →]
+theorem isReduced_of_mem_CDR (h : w ∈ CDR Λ X) : w.IsReduced :=
+  let ⟨_, _, hd⟩ := h; hd.isReduced
+
+@[simp]
+theorem empty_mem_CDR : empty Λ X ∈ CDR Λ X :=
+  ⟨empty Λ X, empty Λ X, isCyclicDecomposition_empty_iff.2 ⟨rfl, rfl⟩⟩
+
+theorem IsCyclicallyReduced.mem_CDR (h : w.IsCyclicallyReduced) : w ∈ CDR Λ X :=
+  ⟨empty Λ X, w, h, h.isReduced, by simp⟩
+
+@[simp, grind =]
+theorem inv_mem_CDR : w⁻¹ ∈ CDR Λ X ↔ w ∈ CDR Λ X :=
+  ⟨fun ⟨c, v, h⟩ => by simpa using h.inv.mem_CDR, fun ⟨c, v, h⟩ => h.inv.mem_CDR⟩
+
+/-- Every word in `CDR(Λ, X)` has a defined square `w ∗ w` under the partial multiplication. -/
+theorem mul_self_dom_of_mem_CDR (h : w ∈ CDR Λ X) : (w.mul w).Dom := by
+  obtain ⟨c, v, hd⟩ := h
+  exact mul_dom_iff.2 ⟨_, hd.isMul_self⟩
+
+/-- Squaring strictly increases the length of every nonempty word in `CDR(Λ, X)`. -/
+theorem lt_length_of_isMul_self_of_mem_CDR (hw : w ∈ CDR Λ X) (hne : w ≠ empty Λ X)
+    (hm : IsMul w w u) : w.length < u.length := by
+  obtain ⟨c, v, hd⟩ := hw
+  obtain rfl := hd.isMul_self.unique hm
+  have hv0 : 0 < v.length := length_pos_iff.2 (mt hd.eq_empty_iff.2 hne)
+  rw [hd.eq]
+  simp only [length_append, length_inv]
+  grind
+
+/-! ### Subgroups of reduced infinite words -/
+
+variable (Λ X) in
+/-- A *subgroup of reduced `Λ`-words*: a subset of `InfWord Λ X` containing the empty word and
+closed under inversion and the partial multiplication `∗` (so `u ∗ v` is defined for all `u`, `v`
+in the subset, and every member is reduced). Equipped with `∗`, the subtype `↥H` is a group. -/
+structure ReducedSubgroup where
+  /-- The underlying set of words. -/
+  carrier : Set (InfWord Λ X)
+  /-- Closure under `∗`: for `u, v ∈ carrier`, `u ∗ v` is defined and belongs to `carrier`. -/
+  mul_mem' {u v : InfWord Λ X} : u ∈ carrier → v ∈ carrier → ∃ w ∈ carrier, IsMul u v w
+  /-- The empty word belongs to `carrier`. -/
+  empty_mem' : empty Λ X ∈ carrier
+  /-- Closure under inversion. -/
+  inv_mem' {u : InfWord Λ X} : u ∈ carrier → u⁻¹ ∈ carrier
+
+namespace ReducedSubgroup
+
+instance : SetLike (ReducedSubgroup Λ X) (InfWord Λ X) where
+  coe := carrier
+  coe_injective H K h := by cases H; cases K; congr
+
+instance : PartialOrder (ReducedSubgroup Λ X) := .ofSetLike (ReducedSubgroup Λ X)
+
+@[simp]
+theorem mem_carrier {H : ReducedSubgroup Λ X} : w ∈ H.carrier ↔ w ∈ H :=
+  Iff.rfl
+
+@[simp]
+theorem mem_mk {s : Set (InfWord Λ X)} (hmul hempty hinv) :
+    w ∈ (⟨s, hmul, hempty, hinv⟩ : ReducedSubgroup Λ X) ↔ w ∈ s :=
+  Iff.rfl
+
+@[ext]
+theorem ext {H K : ReducedSubgroup Λ X} (h : ∀ w, w ∈ H ↔ w ∈ K) : H = K :=
+  SetLike.ext h
+
+@[simp]
+theorem empty_mem (H : ReducedSubgroup Λ X) : empty Λ X ∈ H :=
+  H.empty_mem'
+
+theorem inv_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) : u⁻¹ ∈ H :=
+  H.inv_mem' hu
+
+theorem mul_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) : ∃ w ∈ H, IsMul u v w :=
+  H.mul_mem' hu hv
+
+theorem isReduced_of_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) : u.IsReduced :=
+  let ⟨_, _, hm⟩ := H.mul_mem hu hu; hm.isReduced_left
+
+@[simp]
+theorem isReduced_coe (H : ReducedSubgroup Λ X) (u : H) : (u : InfWord Λ X).IsReduced :=
+  H.isReduced_of_mem u.2
+
+theorem mul_dom (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) : (u.mul v).Dom :=
+  let ⟨w, _, hm⟩ := H.mul_mem hu hv; mul_dom_iff.2 ⟨w, hm⟩
+
+noncomputable instance (H : ReducedSubgroup Λ X) : Group H where
+  one := ⟨empty Λ X, H.empty_mem⟩
+  inv u := ⟨u.1⁻¹, H.inv_mem u.2⟩
+  mul u v :=
+    ⟨(u.1.mul v.1).get (H.mul_dom u.2 v.2), by
+      obtain ⟨w, hwH, hmul⟩ := H.mul_mem u.2 v.2
+      rwa [(get_mul_eq_iff (H.mul_dom u.2 v.2)).2 hmul]⟩
+  mul_assoc a b c := Subtype.ext <|
+    let hab := isMul_get (H.mul_dom a.2 b.2)
+    let hbc := isMul_get (H.mul_dom b.2 c.2)
+    let hab_c := isMul_get (H.mul_dom (H.mul_dom a.2 b.2 |> fun h =>
+      let ⟨w, hwH, hmul⟩ := H.mul_mem a.2 b.2; (get_mul_eq_iff h).2 hmul ▸ hwH) c.2)
+    let ha_bc := isMul_get (H.mul_dom a.2 (H.mul_dom b.2 c.2 |> fun h =>
+      let ⟨w, hwH, hmul⟩ := H.mul_mem b.2 c.2; (get_mul_eq_iff h).2 hmul ▸ hwH))
+    (hab.assoc_left hbc hab_c).unique ha_bc
+  one_mul a := Subtype.ext <|
+    (isMul_get (H.mul_dom H.empty_mem a.2)).unique (isMul_empty_left (H.isReduced_of_mem a.2))
+  mul_one a := Subtype.ext <|
+    (isMul_get (H.mul_dom a.2 H.empty_mem)).unique (isMul_empty_right (H.isReduced_of_mem a.2))
+  inv_mul_cancel a := Subtype.ext <|
+    (isMul_get (H.mul_dom (H.inv_mem a.2) a.2)).unique (isMul_inv_self (H.isReduced_of_mem a.2))
+
+@[simp]
+theorem coe_one (H : ReducedSubgroup Λ X) : ((1 : H) : InfWord Λ X) = empty Λ X := (rfl)
+
+@[simp]
+theorem coe_inv (H : ReducedSubgroup Λ X) (u : H) :
+    ((u⁻¹ : H) : InfWord Λ X) = (u : InfWord Λ X)⁻¹ :=
+  (rfl)
+
+@[simp]
+theorem isMul_coe_mul (H : ReducedSubgroup Λ X) (u v : H) :
+    IsMul (u : InfWord Λ X) (v : InfWord Λ X) ((u * v : H) : InfWord Λ X) :=
+  isMul_get (H.mul_dom u.2 v.2)
+
+@[simp]
+theorem mul_coe_eq_some (H : ReducedSubgroup Λ X) (u v : H) :
+    (u : InfWord Λ X).mul (v : InfWord Λ X) = Part.some ((u * v : H) : InfWord Λ X) :=
+  mul_eq_some_iff.2 (H.isMul_coe_mul u v)
+
+@[simp]
+theorem coe_eq_empty_iff {H : ReducedSubgroup Λ X} {u : H} :
+    (u : InfWord Λ X) = empty Λ X ↔ u = 1 := by
+  rw [← coe_one, Subtype.ext_iff]
+
+/-- The trivial subgroup `{ε}` of reduced `Λ`-words. -/
+instance : Bot (ReducedSubgroup Λ X) where
+  bot :=
+    { carrier := {empty Λ X}
+      mul_mem' := by rintro _ _ rfl rfl; exact ⟨empty Λ X, rfl, isMul_empty_left isReduced_empty⟩
+      empty_mem' := rfl
+      inv_mem' := by rintro _ rfl; simp }
+
+@[simp]
+theorem coe_bot :
+    ((⊥ : ReducedSubgroup Λ X) : Set (InfWord Λ X)) = {empty Λ X} :=
+  (rfl)
+
+@[simp]
+theorem mem_bot : w ∈ (⊥ : ReducedSubgroup Λ X) ↔ w = empty Λ X :=
+  Iff.rfl
+
+instance : OrderBot (ReducedSubgroup Λ X) where
+  bot_le H _ hw := hw.symm ▸ H.empty_mem
+
+/-- The intersection of two subgroups of reduced words is again a subgroup of reduced words, since
+partial products are unique when defined. -/
+instance : Min (ReducedSubgroup Λ X) where
+  min H K :=
+    { carrier := H ∩ K
+      mul_mem' := fun ⟨huH, huK⟩ ⟨hvH, hvK⟩ => by
+        obtain ⟨w₁, hw₁, hm₁⟩ := H.mul_mem huH hvH
+        obtain ⟨w₂, hw₂, hm₂⟩ := K.mul_mem huK hvK
+        exact ⟨w₁, ⟨hw₁, hm₁.unique hm₂ ▸ hw₂⟩, hm₁⟩
+      empty_mem' := ⟨H.empty_mem, K.empty_mem⟩
+      inv_mem' := fun ⟨huH, huK⟩ => ⟨H.inv_mem huH, K.inv_mem huK⟩ }
+
+@[simp]
+theorem coe_inf (H K : ReducedSubgroup Λ X) :
+    ((H ⊓ K : ReducedSubgroup Λ X) : Set (InfWord Λ X)) = (H : Set (InfWord Λ X)) ∩ K :=
+  (rfl)
+
+@[simp]
+theorem mem_inf {H K : ReducedSubgroup Λ X} : w ∈ H ⊓ K ↔ w ∈ H ∧ w ∈ K :=
+  Iff.rfl
+
+end ReducedSubgroup
+
+/-! ### Word length as a free Lyndon length function -/
+
+section LyndonLength
+
+variable {G : Type*} [Group G]
+
+/-- Any map `f : G → InfWord Λ X` turning group multiplication into the partial product `∗` sends
+`1` to the empty word. -/
+theorem map_one_of_forall_isMul {f : G → InfWord Λ X}
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) : f 1 = empty Λ X := by
+  have h1 : IsMul (f 1) (f 1) (f 1) := by simpa using hf 1 1
+  exact h1.right_cancel (isMul_empty_left h1.isReduced_left)
+
+/-- Any map `f : G → InfWord Λ X` turning group multiplication into `∗` commutes with inversion. -/
+theorem map_inv_of_forall_isMul {f : G → InfWord Λ X}
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) (g : G) : f g⁻¹ = (f g)⁻¹ := by
+  have hmul : IsMul (f g) (f g⁻¹) (empty Λ X) := by
+    simpa [map_one_of_forall_isMul hf] using hf g g⁻¹
+  exact hmul.left_cancel (isMul_self_inv hmul.isReduced_left)
+
+private theorem isGreatest_common_prefix_of_forall_isMul {f : G → InfWord Λ X}
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) (g k : G) :
+    ∃ δ, IsGreatest {β | 0 ≤ β ∧ β ≤ (f g).length ∧ β ≤ (f k).length ∧
+      (f g).take β = (f k).take β} δ ∧
+      (f (g⁻¹ * k)).length + 2 • δ = (f g).length + (f k).length := by
+  have hmul : IsMul (f g)⁻¹ (f k) (f (g⁻¹ * k)) := by
+    simpa [map_inv_of_forall_isMul hf g] using hf g⁻¹ k
+  obtain ⟨δ, hδ⟩ := exists_isGreatest_of_isMul_inv_left hmul
+  exact ⟨δ, hδ, length_add_two_nsmul_eq_of_isMul_inv_left hmul hδ⟩
+
+omit [IsOrderedAddMonoid Λ] [SuccOrder Λ] in
+private theorem min_le_of_isGreatest_common_prefix {u v w : InfWord Λ X} {δ₁ δ₂ δ₃ : Λ}
+    (h₁ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u.take β = v.take β} δ₁)
+    (h₂ : IsGreatest {β | 0 ≤ β ∧ β ≤ v.length ∧ β ≤ w.length ∧ v.take β = w.take β} δ₂)
+    (h₃ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ w.length ∧ u.take β = w.take β} δ₃) :
+    min δ₁ δ₂ ≤ δ₃ := by
+  refine h₃.2 ⟨le_min h₁.1.1 h₂.1.1, (min_le_left _ _).trans h₁.1.2.1,
+    (min_le_right _ _).trans h₂.1.2.2.1, ?_⟩
+  have hu : u.take (min δ₁ δ₂) = v.take (min δ₁ δ₂) := by
+    rw [← min_eq_left (min_le_left δ₁ δ₂), ← take_take, h₁.1.2.2.2, take_take]
+  have hv : v.take (min δ₁ δ₂) = w.take (min δ₁ δ₂) := by
+    rw [← min_eq_left (min_le_right δ₁ δ₂), ← take_take, h₂.1.2.2.2, take_take]
+  exact hu.trans hv
+
+/-- If `f : G → InfWord Λ X` turns multiplication in `G` into the partial product `∗` of reduced
+`Λ`-words, then `g ↦ |f g|` is a `Λ`-valued Lyndon length function on `G`. -/
+def lyndonLengthOfIsMul (f : G → InfWord Λ X)
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) : LyndonLength G Λ where
+  toFun g := (f g).length
+  map_one' := by simp [map_one_of_forall_isMul hf]
+  map_inv' g := by simp [map_inv_of_forall_isMul hf g]
+  eq_of_lt' g k h := by
+    obtain ⟨δ_gk, hgk, egk⟩ := isGreatest_common_prefix_of_forall_isMul hf g k
+    obtain ⟨δ_gh, hgh, egh⟩ := isGreatest_common_prefix_of_forall_isMul hf g h
+    obtain ⟨δ_kh, hkh, ekh⟩ := isGreatest_common_prefix_of_forall_isMul hf k h
+    have hgk_symm : IsGreatest {β | 0 ≤ β ∧ β ≤ (f k).length ∧ β ≤ (f g).length ∧
+        (f k).take β = (f g).take β} δ_gk :=
+      ⟨⟨hgk.1.1, hgk.1.2.2.1, hgk.1.2.1, hgk.1.2.2.2.symm⟩,
+        fun β ⟨h0, h1, h2, h3⟩ => hgk.2 ⟨h0, h2, h1, h3.symm⟩⟩
+    have u1 := min_le_of_isGreatest_common_prefix hgk_symm hgh hkh
+    have u2 := min_le_of_isGreatest_common_prefix hgk hkh hgh
+    intro hlt
+    have hδlt : δ_gh < δ_gk := by grind [two_nsmul]
+    have hδeq : δ_gh = δ_kh := le_antisymm (by grind) (by grind)
+    grind [two_nsmul]
+
+@[simp]
+theorem lyndonLengthOfIsMul_apply (f : G → InfWord Λ X)
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) (g : G) :
+    lyndonLengthOfIsMul f hf g = (f g).length := (rfl)
+
+/-- Every Gromov product of `lyndonLengthOfIsMul f hf` lies in `Λ`: it is the length of the longest
+common initial segment of `f g` and `f k`. -/
+theorem exists_coe_eq_gromovProduct_lyndonLengthOfIsMul (f : G → InfWord Λ X)
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) (g k : G) :
+    ∃ c : Λ, (c : DivisibleHull Λ) = (lyndonLengthOfIsMul f hf).gromovProduct g k := by
+  obtain ⟨δ, _, egk⟩ := isGreatest_common_prefix_of_forall_isMul hf g k
+  exact ⟨δ, (LyndonLength.coe_eq_gromovProduct_iff _).2 (by simp; grind)⟩
+
+/-- If an injective map `f : G → InfWord Λ X` turns multiplication into `∗` and lands in
+`CDR(Λ, X)`, then `g ↦ |f g|` is a free Lyndon length function on `G`. -/
+theorem isFree_lyndonLengthOfIsMul {f : G → InfWord Λ X}
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) (hinj : Function.Injective f)
+    (hCDR : ∀ g, f g ∈ CDR Λ X) : (lyndonLengthOfIsMul f hf).IsFree where
+  exists_coe_eq_gromovProduct := exists_coe_eq_gromovProduct_lyndonLengthOfIsMul f hf
+  lt_map_sq g hg := by
+    have hne : f g ≠ empty Λ X := by
+      rw [← map_one_of_forall_isMul hf]
+      exact hinj.ne hg
+    have hsq : IsMul (f g) (f g) (f (g ^ 2)) := by simpa [sq] using hf g g
+    exact lt_length_of_isMul_self_of_mem_CDR (hCDR g) hne hsq
+
+/-- Word length `w ↦ |w|` on a subgroup `H` of reduced `Λ`-words as a `Λ`-valued Lyndon length
+function. -/
+noncomputable def ReducedSubgroup.lyndonLength (H : ReducedSubgroup Λ X) : LyndonLength H Λ :=
+  lyndonLengthOfIsMul Subtype.val H.isMul_coe_mul
+
+@[simp]
+theorem ReducedSubgroup.lyndonLength_apply (H : ReducedSubgroup Λ X) (u : H) :
+    H.lyndonLength u = (u : InfWord Λ X).length := (rfl)
+
+/-- On any subgroup of `CDR(Λ, X)`, word length `w ↦ |w|` is a free Lyndon length function. -/
+theorem ReducedSubgroup.isFree_lyndonLength {H : ReducedSubgroup Λ X}
+    (hH : (H : Set (InfWord Λ X)) ⊆ CDR Λ X) : H.lyndonLength.IsFree :=
+  isFree_lyndonLengthOfIsMul H.isMul_coe_mul Subtype.val_injective fun u => hH u.2
+
+end LyndonLength
+
+/-! ### Non-Archimedean counterexamples: partiality of `∗` and strictness of `CDR` -/
+
+/-- The `Λ`-word of length `t` that reads `(a, true)` at the nonnegative integer multiples
+`n • succ 0` and `(b, true)` at all other positions of `(0, t]`. -/
+noncomputable def nonArchimedeanWord (t : Λ) (a b : X) : InfWord Λ X :=
+  open Classical in
+  ofFun t fun β => if β ∈ Set.range (· • Order.succ (0 : Λ) : ℕ → Λ) then (a, true) else (b, true)
+
+omit [IsOrderedAddMonoid Λ] in
+@[simp]
+theorem length_nonArchimedeanWord (t : Λ) (a b : X) :
+    (nonArchimedeanWord t a b).length = max t 0 := by
+  simp [nonArchimedeanWord]
+
+omit [IsOrderedAddMonoid Λ] in
+/-- Every letter of `nonArchimedeanWord t a b` has positive sign `true`, so the word is reduced. -/
+@[simp]
+theorem isReduced_nonArchimedeanWord (t : Λ) (a b : X) :
+    (nonArchimedeanWord t a b).IsReduced := by
+  classical
+  refine isReduced_ofFun_iff.2 fun β _ _ h => ?_
+  have := congrArg Prod.snd h
+  split_ifs at this <;> simp at this
+
+private theorem commonPrefix_nonArchimedeanWord_eq_range {t : Λ}
+    (ht : ∀ n : ℕ, n • Order.succ (0 : Λ) < t) {a b : X} (hab : a ≠ b) :
+    {β | 0 ≤ β ∧ β ≤ (ofFun t fun _ => (a, true)).length ∧
+        β ≤ (nonArchimedeanWord t a b).length ∧
+        (ofFun t fun _ => (a, true)).take β = (nonArchimedeanWord t a b).take β} =
+      Set.range (· • Order.succ (0 : Λ) : ℕ → Λ) := by
+  classical
+  have ht0 : 0 < t := by simpa using ht 0
+  ext β
+  simp only [length_ofFun, length_nonArchimedeanWord, max_eq_left ht0.le, Set.mem_ofPred,
+    Set.mem_range]
+  refine ⟨fun ⟨h0, hβt, _, htake⟩ => ?_, ?_⟩
+  · rcases h0.eq_or_lt with rfl | hβ0
+    · exact ⟨0, zero_nsmul _⟩
+    have hlet := take_eq_take_iff_forall_letter_eq.1 htake β le_rfl
+    rw [nonArchimedeanWord, letter_ofFun_of_pos_of_le _ hβ0 hβt,
+      letter_ofFun_of_pos_of_le _ hβ0 hβt, Option.some.injEq] at hlet
+    split_ifs at hlet with hmem
+    · exact hmem
+    · exact absurd (congrArg Prod.fst hlet) hab
+  · rintro ⟨n, rfl⟩
+    have hnt : n • Order.succ (0 : Λ) ≤ t := (ht n).le
+    have h01 : 0 ≤ Order.succ (0 : Λ) := Order.le_succ 0
+    refine ⟨nsmul_nonneg h01 n, hnt, hnt, take_eq_take_iff_forall_letter_eq.2 fun γ hγ => ?_⟩
+    by_cases hγ0 : 0 < γ
+    · have hγm : γ ∈ Set.range (· • Order.succ (0 : Λ) : ℕ → Λ) := by
+        by_contra hne
+        rw [Set.mem_range, not_exists] at hne
+        have hle := Order.succ_iterate_le_of_forall_ne (a := (0 : Λ)) (b := γ) hγ0.le
+          (n := n + 1) fun k _ hk => hne k (by simpa using hk)
+        rw [Order.succ_iterate_zero, succ_nsmul, ← Order.succ_eq_add_succ_zero] at hle
+        exact (Order.lt_succ_self_of_lt (ht n)).not_ge (hle.trans hγ)
+      rw [nonArchimedeanWord, letter_ofFun_of_pos_of_le _ hγ0 (hγ.trans hnt),
+        letter_ofFun_of_pos_of_le _ hγ0 (hγ.trans hnt)]
+      simp [hγm]
+    · rw [letter_eq_none_of_not_pos hγ0, letter_eq_none_of_not_pos hγ0]
+
+/-- When `t` exceeds every finite multiple `n • succ 0` and `a ≠ b`, the partial product
+`(a^t)⁻¹ ∗ nonArchimedeanWord t a b` is undefined: the common initial segment lengths are
+`{n • succ 0 | n : ℕ}`, which has no greatest element. -/
+theorem inv_ofFun_const_mul_nonArchimedeanWord_eq_none {t : Λ}
+    (ht : ∀ n : ℕ, n • Order.succ (0 : Λ) < t) {a b : X} (hab : a ≠ b) :
+    (ofFun t fun _ => (a, true))⁻¹.mul (nonArchimedeanWord t a b) = Part.none := by
+  rw [mul_eq_none_iff, ← not_exists,
+    exists_isMul_inv_left_iff (isReduced_ofFun_const t (a, true))
+      (isReduced_nonArchimedeanWord t a b),
+    commonPrefix_nonArchimedeanWord_eq_range ht hab]
+  rintro ⟨δ, ⟨n, rfl⟩, hmax⟩
+  have h01 : 0 < Order.succ (0 : Λ) := Order.lt_succ_self_of_lt (by simpa using ht 0)
+  have hle : (n + 1) • Order.succ (0 : Λ) ≤ n • Order.succ 0 := hmax ⟨n + 1, rfl⟩
+  rw [succ_nsmul] at hle
+  grind
+
+/-- Concatenating `nonArchimedeanWord t a b` with `(a^t)⁻¹` gives a reduced word when `t` exceeds
+every `n • succ 0` and `a ≠ b`: its first half ends with `(b, true)` at position `t`, while its
+second half begins with `(a, false)`. -/
+theorem isReduced_nonArchimedeanWord_append_inv {t : Λ}
+    (ht : ∀ n : ℕ, n • Order.succ (0 : Λ) < t) {a b : X} (hab : a ≠ b) :
+    (nonArchimedeanWord t a b ++ (ofFun t fun _ => (a, true))⁻¹).IsReduced := by
+  classical
+  have ht0 : 0 < t := by simpa using ht 0
+  refine isReduced_append_iff.2 ⟨isReduced_nonArchimedeanWord t a b,
+    (isReduced_ofFun_const t (a, true)).inv, fun _ _ => ?_⟩
+  have hnotmem : t ∉ Set.range (· • Order.succ (0 : Λ) : ℕ → Λ) := by
+    rintro ⟨n, hn⟩; exact (ht n).ne hn
+  rw [letter_inv_succ_zero, length_ofFun, length_nonArchimedeanWord, max_eq_left ht0.le,
+    letter_ofFun_of_pos_of_le _ ht0 le_rfl, nonArchimedeanWord,
+    letter_ofFun_of_pos_of_le _ ht0 le_rfl]
+  simp [hnotmem, hab]
+
+/-- Over a non-Archimedean `Λ`, `CDR(Λ, X)` is strictly smaller than the set of reduced words: the
+reduced word `nonArchimedeanWord t a b ++ (a^t)⁻¹` has undefined square under `∗`, so it admits no
+cyclic decomposition. -/
+theorem notMem_CDR_nonArchimedeanWord_append_inv {t : Λ}
+    (ht : ∀ n : ℕ, n • Order.succ (0 : Λ) < t) {a b : X} (hab : a ≠ b) :
+    nonArchimedeanWord t a b ++ (ofFun t fun _ => (a, true))⁻¹ ∉ CDR Λ X := by
+  have ht0 : 0 < t := by simpa using ht 0
+  have hred := isReduced_nonArchimedeanWord_append_inv ht hab
+  intro hCDR
+  obtain ⟨δ, hδ⟩ := (exists_isMul_iff hred hred).1 (mul_dom_iff.1 (mul_self_dom_of_mem_CDR hCDR))
+  have hnone : ¬∃ w, IsMul (ofFun t fun _ => (a, true))⁻¹ (nonArchimedeanWord t a b) w :=
+    not_exists.2 (mul_eq_none_iff.1 (inv_ofFun_const_mul_nonArchimedeanWord_eq_none ht hab))
+  rw [exists_isMul_inv_left_iff (isReduced_ofFun_const t (a, true))
+    (isReduced_nonArchimedeanWord t a b)] at hnone
+  refine hnone ⟨δ, ?_⟩
+  convert hδ using 1
+  ext β
+  simp only [Set.mem_ofPred, inv_append, inv_inv, length_append, length_inv, length_ofFun,
+    length_nonArchimedeanWord, max_eq_left ht0.le]
+  refine ⟨fun ⟨h0, hβt, _, htake⟩ => ?_, fun ⟨h0, _, _, htake⟩ => ?_⟩
+  · have hle2 : β ≤ t + t := hβt.trans (le_add_of_nonneg_right ht0.le)
+    refine ⟨h0, hle2, hle2, ?_⟩
+    rw [take_append_of_le_length _ (by simp [ht0.le, hβt]),
+      take_append_of_le_length _ (by simp [ht0.le, hβt]), htake]
+  · by_cases htβ : t ≤ β
+    · exfalso
+      have huv : (ofFun t fun _ => (a, true)).take t = (nonArchimedeanWord t a b).take t := by
+        have h := congrArg (take · t) htake
+        rwa [take_take, take_take, min_eq_left htβ,
+          take_append_of_le_length _ (by simp [ht0.le]),
+          take_append_of_le_length _ (by simp [ht0.le])] at h
+      have hmem : t ∈ Set.range (· • Order.succ (0 : Λ) : ℕ → Λ) := by
+        rw [← commonPrefix_nonArchimedeanWord_eq_range ht hab]
+        exact ⟨ht0.le, by simp [ht0.le], by simp [ht0.le], huv⟩
+      obtain ⟨n, hn⟩ := hmem
+      exact (ht n).ne hn
+    · have hle : β ≤ t := le_of_not_ge htβ
+      refine ⟨h0, hle, hle, ?_⟩
+      rwa [take_append_of_le_length _ (by simp [ht0.le, hle]),
+        take_append_of_le_length _ (by simp [ht0.le, hle])] at htake
+
+end Discrete
+
+private theorem nsmul_succ_zero_lt_toLex_one_zero (n : ℕ) :
+    n • Order.succ (0 : ℤ ×ₗ ℤ) < toLex (1, 0) := by
+  have hnsmul : n • Order.succ (0 : ℤ ×ₗ ℤ) = toLex (0, (n : ℤ)) := by
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      rw [succ_nsmul, ih]
+      apply ofLex.injective
+      simp [Order.succ_eq_add_one]
+  rw [hnsmul]
+  exact Prod.Lex.toLex_lt_toLex.2 (.inl zero_lt_one)
+
+/-- In `InfWord (ℤ ×ₗ ℤ) X` with `t = (1, 0) ≫ (0, 1) = succ 0` and distinct letters `a ≠ b`,
+`(a^t)⁻¹ ∗ nonArchimedeanWord t a b` is undefined even though both factors are reduced: `∗` is
+genuinely partial, so the set of all reduced words does not form a group. -/
+theorem inv_ofFun_const_mul_nonArchimedeanWord_toLex_eq_none {a b : X} (hab : a ≠ b) :
+    let t : ℤ ×ₗ ℤ := toLex (1, 0)
+    (ofFun t fun _ => (a, true))⁻¹.mul (nonArchimedeanWord t a b) = Part.none :=
+  inv_ofFun_const_mul_nonArchimedeanWord_eq_none nsmul_succ_zero_lt_toLex_one_zero hab
+
+/-- In `InfWord (ℤ ×ₗ ℤ) X` with `t = (1, 0)` and distinct letters `a ≠ b`, the reduced word
+`nonArchimedeanWord t a b ++ (a^t)⁻¹` does not belong to `CDR(ℤ ×ₗ ℤ, X)`. -/
+theorem notMem_CDR_nonArchimedeanWord_append_inv_toLex {a b : X} (hab : a ≠ b) :
+    let t : ℤ ×ₗ ℤ := toLex (1, 0)
+    nonArchimedeanWord t a b ++ (ofFun t fun _ => (a, true))⁻¹ ∉ CDR (ℤ ×ₗ ℤ) X :=
+  notMem_CDR_nonArchimedeanWord_append_inv nsmul_succ_zero_lt_toLex_one_zero hab
+
+end InfWord
+
+end TauCeti

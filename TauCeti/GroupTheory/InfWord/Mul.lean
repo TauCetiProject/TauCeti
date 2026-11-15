@@ -67,6 +67,10 @@ function with values in `Λ` on groups of cyclically decomposable words.
 * `TauCeti.InfWord.append_inv_mul_append_cancel`, `TauCeti.InfWord.append_mul_inv_append_cancel`,
   `TauCeti.InfWord.append_mul_eq_mul_append`: the cancellation and reassociation rules above for
   the partial function `TauCeti.InfWord.mul`.
+* `TauCeti.InfWord.ofFun_const_mul_ofFun_const`,
+  `TauCeti.InfWord.ofFun_const_mul_ofFun_const_of_ne`,
+  `TauCeti.InfWord.ofFun_const_mul_ofFun_succ_zero`,
+  `TauCeti.InfWord.map_length_ofFun_const_mul_ofFun_succ_zero_of_ne`: products of powers of letters.
 
 ## References
 
@@ -482,6 +486,44 @@ protected theorem mul_assoc (huv : (u.mul v).Dom) (hvw : (v.mul w).Dom) :
   rw [huv.bind, hvw.bind]
   ext z
   simpa using (isMul_get huv).assoc_iff (isMul_get hvw)
+
+/-- Multiplying two powers of the same letter adds their lengths: `x^α ∗ x^β = x^{α + β}` for
+`α, β ≥ 0`. -/
+theorem ofFun_const_mul_ofFun_const {α β : Λ} (x : X × Bool) (hα : 0 ≤ α) (hβ : 0 ≤ β) :
+    (ofFun α fun _ => x).mul (ofFun β fun _ => x) = Part.some (ofFun (α + β) fun _ => x) := by
+  rw [← ofFun_const_append_ofFun_const x hα hβ]
+  exact mul_eq_some_append (by rw [ofFun_const_append_ofFun_const x hα hβ]; simp)
+
+/-- Multiplying powers of two non-inverse letters concatenates them without cancellation. -/
+theorem ofFun_const_mul_ofFun_const_of_ne {α β : Λ} {x y : X × Bool}
+    (hxy : y ≠ Prod.map id not x) (hα : 0 ≤ α) (hβ : 0 ≤ β) :
+    (ofFun α fun _ => x).mul (ofFun β fun _ => y) =
+      Part.some ((ofFun α fun _ => x) ++ ofFun β fun _ => y) := by
+  refine mul_eq_some_append (isReduced_append_iff.2 ⟨isReduced_ofFun_const α x,
+    isReduced_ofFun_const β y, fun hα' hβ' => ?_⟩)
+  have hα0 : 0 < α := by simpa [hα] using hα'
+  have hβ0 : 0 < β := by simpa [hβ] using hβ'
+  rw [length_ofFun, max_eq_left hα,
+    letter_ofFun_of_pos_of_le _ (Order.lt_succ_self_of_lt hβ0) (Order.succ_le_of_lt hβ0),
+    letter_ofFun_of_pos_of_le _ hα0 le_rfl]
+  simpa using hxy
+
+/-- Right-multiplying `x^t` by the single letter `x` (of length `succ 0`) yields `x^{t + 1}`
+(`Order.succ t`). -/
+theorem ofFun_const_mul_ofFun_succ_zero {t : Λ} (ht : 0 ≤ t) (x : X × Bool) :
+    (ofFun t fun _ => x).mul (ofFun (Order.succ 0) fun _ => x) =
+      Part.some (ofFun (Order.succ t) fun _ => x) := by
+  rw [Order.succ_eq_add_succ_zero t]
+  exact ofFun_const_mul_ofFun_const x ht (Order.le_succ 0)
+
+/-- For non-inverse letters `x` and `y` and `t ≥ 0`, the product `x^t ∗ y` is defined and has length
+`t + 1` (`Order.succ t`). -/
+theorem map_length_ofFun_const_mul_ofFun_succ_zero_of_ne {t : Λ} (ht : 0 ≤ t) {x y : X × Bool}
+    (hxy : y ≠ Prod.map id not x) :
+    ((ofFun t fun _ => x).mul (ofFun (Order.succ 0) fun _ => y)).map length =
+      Part.some (Order.succ t) := by
+  rw [ofFun_const_mul_ofFun_const_of_ne hxy ht (Order.le_succ 0), Order.succ_eq_add_succ_zero t]
+  simp [ht, Order.le_succ (0 : Λ)]
 
 end InfWord
 
