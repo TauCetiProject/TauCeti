@@ -28,10 +28,10 @@ freely; López-Escobar's separate condition on where equality occurs is not part
 here.
 
 The file establishes Lyndon interpolation in arbitrary universes for relational languages of
-arbitrary cardinality (`lyndon_interpolation_relational`), transfers it to arbitrary languages with
-function symbols (`lyndon_interpolation`), deduces the countable-theory form
-(`Theoryω.lyndon_interpolation`), and recovers unsigned Craig interpolation from the two signed
-relation bounds (`craig_of_lyndon_interpolation`).
+arbitrary cardinality (`lyndon_interpolation_relational`), for arbitrary languages with function
+symbols (`lyndon_interpolation`), and for countable theories entailing a sentence
+(`Theoryω.lyndon_interpolation`). Unsigned Craig interpolation in
+`TauCeti.ModelTheory.Interpolation.Craig` is derived from these signed bounds.
 
 ## Main results
 
@@ -42,8 +42,6 @@ relation bounds (`craig_of_lyndon_interpolation`).
   interpolant.
 * `FirstOrder.Language.Theoryω.lyndon_interpolation`: Lyndon interpolation for a countable
   `L_{ω₁ω}` theory `T` entailing a sentence `ψ`.
-* `FirstOrder.Language.craig_of_lyndon_interpolation`: unsigned Craig interpolation recovered from
-  `lyndon_interpolation`.
 
 ## References
 
@@ -52,10 +50,8 @@ relation bounds (`craig_of_lyndon_interpolation`).
 * H. J. Keisler, *Model Theory for Infinitary Logic*, North-Holland, 1971, §4.
 * D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46, Cambridge
   University Press, 2016, §4.2.
-* The proof structure refines the paired-inseparability consistency property of
-  `TauCeti.ModelTheory.Interpolation.Craig` and adapts
-  `InfinitaryLogic/Methods/Interpolation/{LyndonSublanguage,LyndonRelationalize,
-  LyndonArbitrary}.lean` in `cameronfreer/infinitary-logic` at commit
+* Adapted from `InfinitaryLogic/Methods/Interpolation/{Craig,PairedInsepFamily,LyndonSublanguage,
+  LyndonRelationalize,LyndonArbitrary}.lean` in `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`. Divergences from `cameronfreer/infinitary-logic`:
   the signed paired-inseparability consistency property is formulated over `L[[ℕ]]` in arbitrary
   universes without assuming `[L.IsRelational]`, using `Theoryω.SignedInseparable` for
@@ -657,21 +653,6 @@ theorem Theoryω.lyndon_interpolation {T : L.Theoryω} (hT : T.Countable) (ψ : 
     (Theoryω.entails_iff_conjunction_entails hT).2 hTθ, hθψ⟩
   rw [Theoryω.conjunction_def, functionsIn_iInfAlong]
   exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
-
-/-- **Craig interpolation recovered from Lyndon interpolation**: joining the positive and negative
-relation bounds of `lyndon_interpolation` yields the unsigned relation bound of Craig
-interpolation. -/
-theorem craig_of_lyndon_interpolation (φ ψ : L.Sentenceω) (h : φ.Entails ψ) :
-    ∃ θ : L.Sentenceω, θ.functionsIn ⊆ φ.functionsIn ∩ ψ.functionsIn ∧
-      θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn ∧ φ.Entails θ ∧ θ.Entails ψ := by
-  obtain ⟨θ, hfun, hpos, hneg, hφθ, hθψ⟩ := lyndon_interpolation φ ψ h
-  refine ⟨θ, hfun, ?_, hφθ, hθψ⟩
-  rw [← relationsInSigned_union_not true θ]
-  exact Set.union_subset
-    (hpos.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn true φ)
-      (relationsInSigned_subset_relationsIn true ψ)))
-    (hneg.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn false φ)
-      (relationsInSigned_subset_relationsIn false ψ)))
 
 end Lyndon
 
