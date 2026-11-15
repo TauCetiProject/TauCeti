@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Map
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.RepresentationTheory.Rep.HomologicalComplex
 
 /-!

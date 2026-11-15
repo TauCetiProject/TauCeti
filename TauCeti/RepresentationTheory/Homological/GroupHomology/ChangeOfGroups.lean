@@ -28,7 +28,10 @@ No hypothesis on `f` is needed. Restriction along `f` need not preserve projecti
 representations, so `α` is in general not a map of projective resolutions in `Rep k G`; only the
 exactness of the restricted target is used. This computes change-of-group maps with geometric
 resolutions, such as the singular chains of a contractible free `G`-space, without passing
-through the bar resolution.
+through the bar resolution. Specializing to the identity homomorphism shows that any
+augmentation-preserving chain map between two projective resolutions of the trivial representation
+of a fixed group intertwines their `groupHomologyIso` identifications
+(`Rep.groupHomologyIso_hom_comp_homologyMap`).
 
 The proof computes `groupHomologyIso` through comparison maps from the bar resolutions
 (`Rep.groupHomologyIso_hom_eq_homologyMap`), uses that the two composites from the bar
@@ -45,6 +48,9 @@ that on bar coinvariants the change-of-group map is `groupHomology.map`
 
 * `MonoidHom.groupHomologyIso_hom_naturality`, `MonoidHom.groupHomologyIso_inv_naturality`: group
   homology computed by projective resolutions is natural in the group.
+* `Rep.groupHomologyIso_hom_comp_homologyMap`, `Rep.homologyMap_comp_groupHomologyIso_inv`: two
+  projective resolutions of the trivial representation compute group homology compatibly along any
+  augmentation-preserving chain map.
 * `MonoidHom.barCoinvariantsMap_eq_coinvariantsTensorChainMap`: on bar resolutions the chain map
   is the existing change of groups on bar coinvariants.
 * `MonoidHom.homologyMap_coinvariantsTensorChainMap_eq_of_homotopy`: homotopic chain maps induce
@@ -266,10 +272,8 @@ theorem groupHomologyIso_hom_comp_homologyMap (n : ℕ) :
         HomologicalComplex.homologyMap
           ((((coinvariantsTensor k G).obj A).mapHomologicalComplex _).map α) n =
       (groupHomologyIso A n Q).hom := by
-  have h := (MonoidHom.id G).groupHomologyIso_hom_naturality (𝟙 A) P Q α hα n
-  rw [MonoidHom.coinvariantsTensorChainMap_id] at h
-  exact h.symm.trans ((congrArg (· ≫ _) (groupHomology.map_id (A := A) (n := n))).trans
-    (Category.id_comp _))
+  simpa [MonoidHom.coinvariantsTensorChainMap_id] using
+    ((MonoidHom.id G).groupHomologyIso_hom_naturality (𝟙 A) P Q α hα n).symm
 
 include hα in
 /-- Inverse form of `Rep.groupHomologyIso_hom_comp_homologyMap`. -/

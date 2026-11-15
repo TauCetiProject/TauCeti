@@ -142,15 +142,6 @@ end Ring
 
 variable [CommRing k]
 
-/-- In degree `0`, the induced join chain map commutes with the projective-resolution
-augmentations. -/
-@[reassoc]
-theorem universalGSpaceChainMap_f_zero_comp_π (φ : G →* H) :
-    (φ.universalGSpaceChainMap (k := k)).f 0 ≫
-        (Rep.resFunctor φ).map ((universalGSpaceResolution k H).π.f 0) =
-      (universalGSpaceResolution k G).π.f 0 :=
-  φ.universalGSpaceChainMap_f_zero_comp_augmentation
-
 /-- **The join-to-standard comparison is natural in the group.** Relabelling simplices before
 forgetting their indices agrees with first forgetting indices and then relabelling the tuples.
 This is an equality of chain maps in `Rep k G`, with target actions restricted along `φ`. -/
@@ -186,34 +177,34 @@ def universalGSpaceStandardHomotopyEquivInvNaturalityHomotopy (φ : G →* H) :
       ((universalGSpaceStandardHomotopyEquiv k G).inv ≫ φ.universalGSpaceChainMap)
       (φ.standardComplexMap ≫
         ((Rep.resFunctor φ).mapHomologicalComplex _).map
-          (universalGSpaceStandardHomotopyEquiv k H).inv) := by
-  apply φ.homotopyOfCompResAugmentationEq (universalGSpaceResolution k H)
-  -- Unfold the degree-`0` components of the restricted complexes so the augmentation identities
-  -- rewrite directly without carrier-object transports.
-  change ((universalGSpaceStandardHomotopyEquiv k G).inv).f 0 ≫
-      (φ.universalGSpaceChainMap).f 0 ≫
-        (Rep.resFunctor φ).map ((universalGSpaceResolution k H).π.f 0) =
-    (φ.standardComplexMap).f 0 ≫
-      (Rep.resFunctor φ).map (((universalGSpaceStandardHomotopyEquiv k H).inv).f 0) ≫
-        (Rep.resFunctor φ).map ((universalGSpaceResolution k H).π.f 0)
-  rw [universalGSpaceStandardHomotopyEquiv_inv, universalGSpaceStandardHomotopyEquiv_inv,
-    φ.universalGSpaceChainMap_f_zero_comp_π]
-  have hG := (ProjectiveResolution.lift_commutes_zero (𝟙 _)
-    (Rep.standardResolution k G) (universalGSpaceResolution k G)).trans (Category.comp_id _)
-  have hH := (ProjectiveResolution.lift_commutes_zero (𝟙 _)
-    (Rep.standardResolution k H) (universalGSpaceResolution k H)).trans (Category.comp_id _)
-  have hr := (congrArg ((φ.standardComplexMap).f 0 ≫ ·)
-    ((Rep.resFunctor φ).map_comp _ _)).symm.trans
-      (congrArg (fun t ↦ (φ.standardComplexMap).f 0 ≫ (Rep.resFunctor φ).map t) hH)
+          (universalGSpaceStandardHomotopyEquiv k H).inv) :=
   have hstd : (φ.standardComplexMap (k := k)).f 0 ≫
       (Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0) =
         (Rep.standardResolution k G).π.f 0 := by
-    dsimp only [Rep.standardResolution]
+    -- `(Rep.standardResolution k _).π` is `Rep.standardComplex.εToSingle₀ k _` by definition.
+    change (φ.standardComplexMap (k := k)).f 0 ≫
+        (Rep.resFunctor φ).map ((Rep.standardComplex.εToSingle₀ k H).f 0) =
+      (Rep.standardComplex.εToSingle₀ k G).f 0
     rw [standardComplexMap_f, TauCeti.Rep.standardComplex.εToSingle₀_f_zero,
       TauCeti.Rep.standardComplex.εToSingle₀_f_zero]
-    exact ((congrArg (φ.standardComplexHom 0 ≫ ·)
-      (congrArg (Rep.resFunctor φ).map (Category.id_comp _))).trans
-        (φ.standardComplexHom_comp_ε (k := k))).trans (Category.id_comp _).symm
-  exact hG.trans (hr.trans hstd).symm
+    -- `Rep.standardComplex.xIso` is definitionally `Iso.refl _`.
+    change φ.standardComplexHom 0 ≫
+        (Rep.resFunctor φ).map (𝟙 _ ≫ Rep.standardComplex.ε k H) =
+      𝟙 _ ≫ Rep.standardComplex.ε k G
+    rw [Category.id_comp, Category.id_comp]
+    exact φ.standardComplexHom_comp_ε
+  have hjoin : (φ.universalGSpaceChainMap (k := k)).f 0 ≫
+      (Rep.resFunctor φ).map ((universalGSpaceResolution k H).π.f 0) =
+        (universalGSpaceResolution k G).π.f 0 := by
+    rw [universalGSpaceResolution_π, universalGSpaceResolution_π]
+    exact φ.universalGSpaceChainMap_f_zero_comp_augmentation
+  (Homotopy.ofEq (congrArg (· ≫ φ.universalGSpaceChainMap)
+      (universalGSpaceStandardHomotopyEquiv_inv k G))).trans <|
+    (φ.resolutionComparisonHomotopy (Rep.standardResolution k G) (universalGSpaceResolution k G)
+      (Rep.standardResolution k H) (universalGSpaceResolution k H)
+      φ.standardComplexMap hstd φ.universalGSpaceChainMap hjoin).trans <|
+      Homotopy.ofEq (congrArg
+        (fun t ↦ φ.standardComplexMap ≫ ((Rep.resFunctor φ).mapHomologicalComplex _).map t)
+        (universalGSpaceStandardHomotopyEquiv_inv k H).symm)
 
 end MonoidHom
