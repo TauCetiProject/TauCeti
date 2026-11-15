@@ -14,9 +14,10 @@ A stopping time remains a stopping time for a larger filtration. This transports
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
 the stopping-time property.
 
-Stopping preserves right continuity at each time, including when the stopping time is infinite.
-This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
-arguments retain the right continuity of their native stopped stages.
+Stopping preserves right continuity at each time and full path continuity, including when the
+stopping time is infinite. These pathwise facts require no measurability or stopping-time
+hypothesis and let local-martingale and stochastic-integral arguments retain path regularity of
+their stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
@@ -72,6 +73,26 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
         (fun s hs => ?_) ?_
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
+
+/-- Stopping preserves continuity of a path, without any measurability assumption on the random
+time. At an infinite stopping time the path is unchanged. -/
+theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : Continuous (X · ω)) :
+    Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
+  | coe u =>
+    have heq : (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := by
+      ext t
+      rcases le_total t u with htu | hut
+      · rw [MeasureTheory.stoppedProcess_eq_of_le (hτ ▸ WithTop.coe_le_coe.mpr htu),
+          min_eq_left htu]
+      · rw [MeasureTheory.stoppedProcess_eq_of_ge (hτ ▸ WithTop.coe_le_coe.mpr hut),
+          min_eq_right hut]
+        simp [hτ]
+    exact heq ▸ hX.comp (continuous_id.min continuous_const)
 
 namespace MeasureTheory
 

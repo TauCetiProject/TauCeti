@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Probability.Process.Indistinguishable
 
 /-!
-# Continuous processes and time-product almost-everywhere identities
+# Continuous processes and almost-everywhere identities
+
+Modifications with almost surely continuous paths on a separable time space into a Hausdorff
+space are indistinguishable (`ProbabilityTheory.indist_of_ae_continuous`), by intersecting the
+fixed-time full-measure events along a countable dense time set.
 
 A time-product almost-everywhere identity between processes with almost surely continuous
 paths holds simultaneously at all times of a half-open interval. The left endpoint is
@@ -19,13 +24,27 @@ For continuous fields evaluated along a process with a deterministic starting po
 recovers equality of the fields at that point. This is useful when an identity first obtained
 almost everywhere along trajectories must be evaluated at the initial state.
 
-The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
-`Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
+The main inputs are countable dense subsets, Mathlib's product-measure section theorem
+`ae_ae_of_ae_prod`, and `Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure
+dense subset.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory Set
+
+/-- Modifications with almost surely continuous paths on a separable time domain into a
+Hausdorff space are indistinguishable. No measurability of the processes or sigma-finiteness of
+the sample measure is required. -/
+theorem ProbabilityTheory.indist_of_ae_continuous {ι Ω Y : Type*} [TopologicalSpace ι]
+    [TopologicalSpace.SeparableSpace ι] {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [TopologicalSpace Y] [T2Space Y] {X Z : ι → Ω → Y}
+    (hX : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
+    (hZ : ∀ᵐ ω ∂P, Continuous (fun t ↦ Z t ω))
+    (hXZ : ∀ t, X t =ᵐ[P] Z t) : X ≡ᵐ[P] Z := by
+  obtain ⟨D, hD_count, hD_dense⟩ := TopologicalSpace.exists_countable_dense ι
+  filter_upwards [hX, hZ, (ae_ball_iff hD_count).2 fun t _ ↦ hXZ t] with ω hXω hZω hω t
+  exact (isClosed_eq hXω hZω).closure_subset_iff.2 hω (hD_dense t)
 
 namespace TauCeti
 
