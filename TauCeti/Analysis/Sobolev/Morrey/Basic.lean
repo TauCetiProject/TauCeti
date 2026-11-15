@@ -16,6 +16,7 @@ import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -38,7 +39,9 @@ The proof starts from the pointwise potential estimate behind the Poincaré–Wi
 of `u` by the Riesz potential `∫ ‖Du y‖ ‖x - y‖ ^ (1 - n) dy`. For `p > n`, Hölder's inequality
 bounds that potential by `‖Du‖_{Lᵖ}`, because the conjugate power `‖x - y‖ ^ ((1 - n) p')` of
 the kernel is integrable near the pole exactly when `p > n`. Comparing `u x` and `u y` with the
-mean of `u` over a ball containing both points gives the Hölder estimate.
+mean of `u` over a ball containing both points gives the Hölder estimate. Comparing `u x` with
+its mean over the part of a convex domain near `x`, and bounding that mean by Hölder's inequality,
+bounds `u` itself by its `W^{1,p}` norm.
 
 ## Main declarations
 
@@ -48,6 +51,9 @@ mean of `u` over a ball containing both points gives the Hölder estimate.
 * `TauCeti.enorm_sub_setAverage_le_of_starConvex_of_finrank_lt`: the deviation of `u x` from the
   mean of `u` over a subset of a star-convex domain, bounded by `‖Du‖_{Lᵖ}`.
 * `TauCeti.enorm_sub_setAverage_le_of_convex_of_finrank_lt`: the same on a bounded convex domain.
+* `TauCeti.exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv`: the supremum of a `C¹` function on a
+  convex open set is bounded by its `W^{1,p}` norm, with a constant depending only on a lower
+  bound for the measure of the set near each of its points.
 * `TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`: Morrey's inequality on a ball.
 * `TauCeti.enorm_sub_le_of_contDiff_of_finrank_lt`: Morrey's inequality on the whole space.
 * `TauCeti.holderWith_of_contDiff_of_finrank_lt`: a `C¹` function with derivative in `Lᵖ`,
@@ -174,6 +180,69 @@ theorem enorm_sub_setAverage_le_of_convex_of_finrank_lt [CompleteSpace F] (hΩ :
         eLpNorm (fderiv ℝ u) p (μ.restrict Ω) :=
   enorm_sub_setAverage_le_of_starConvex_of_finrank_lt hΩ hu (hΩc.starConvex hx)
     (fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)) hS hS₀ hp
+
+/-- **Morrey's supremum bound.** Let `p ≥ 1` exceed the dimension `n` of the space, and let
+`r : ℝ` and `m ≠ 0`. There is a constant `C`, depending only on `n`, `p`, `μ`, `r` and `m`, such
+that `‖u x‖ ≤ C (‖u‖_{Lᵖ(Ω)} + ‖Du‖_{Lᵖ(Ω)})` whenever `u` is `C¹` on a convex open set `Ω` and
+`x ∈ Ω` satisfies `m ≤ μ (Ω ∩ ball x r)`.
+
+So on a convex open set all of whose intersections with balls of radius `r` about its points have
+measure at least `m`, the supremum of a `C¹` function is bounded by its `W^{1,p}` norm, with a
+constant that does not depend on the size of the set. Long rectangles of fixed width are such
+sets (`TauCeti.one_le_volume_Ioo_prod_Ioo_inter_ball`). -/
+theorem exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 1 ≤ p)
+    (hp : (finrank ℝ E : ℝ≥0) < p) (r : ℝ) {m : ℝ≥0∞} (hm : m ≠ 0) :
+    ∃ C : ℝ≥0, ∀ (Ω : Set E) (u : E → F) (x : E), IsOpen Ω → Convex ℝ Ω → ContDiffOn ℝ 1 u Ω →
+      x ∈ Ω → m ≤ μ (Ω ∩ ball x r) →
+      ‖u x‖ₑ ≤ C * (eLpNorm u p (μ.restrict Ω) + eLpNorm (fderiv ℝ u) p (μ.restrict Ω)) := by
+  set n := finrank ℝ E
+  set A : ℝ≥0∞ := ENNReal.ofReal (r ^ n / n) * ENNReal.ofReal
+    ((n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) * r ^ (1 - n / (p : ℝ)))
+  set C₀ : ℝ≥0∞ := A * m⁻¹ + m ^ (-(p : ℝ)⁻¹)
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp1
+  have hC₀ : C₀ ≠ ∞ := by
+    refine ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      ENNReal.ofReal_ne_top) (ENNReal.inv_ne_top.2 hm), fun h => ?_⟩
+    rcases ENNReal.rpow_eq_top_iff.1 h with h | h
+    · exact hm h.1
+    · linarith [h.2, inv_pos.2 hp0]
+  refine ⟨C₀.toNNReal, fun Ω u x hΩ hΩc hu hx hm' => ?_⟩
+  rw [ENNReal.coe_toNNReal hC₀]
+  set Ω' := Ω ∩ ball x r
+  have hS₀ : μ Ω' ≠ 0 := (pos_iff_ne_zero.2 hm |>.trans_le hm').ne'
+  -- The radius is positive, since `Ω'` is not empty.
+  have hr : 0 < r := by
+    by_contra! h
+    exact hS₀ (by simp [Ω', ball_eq_empty.2 h])
+  have hmono : μ.restrict Ω' ≤ μ.restrict Ω := Measure.restrict_mono inter_subset_left le_rfl
+  -- The deviation of `u x` from the mean of `u` over `Ω'`, by the Morrey potential estimate.
+  have h₁ := enorm_sub_setAverage_le_of_starConvex_of_finrank_lt (hΩ.inter isOpen_ball)
+    (hu.mono inter_subset_left) ((hΩc.inter (convex_ball x r)).starConvex ⟨hx, mem_ball_self hr⟩)
+    (fun _ hy => ball_subset_closedBall hy.2) subset_rfl hS₀ hp
+  -- The mean itself, by Hölder's inequality.
+  have h₂ := enorm_setAverage_le (f := u) (mu := μ) (s := Ω') (p := p) (by exact_mod_cast hp1)
+    ENNReal.coe_ne_top
+  rw [ENNReal.coe_toReal] at h₂
+  have hinv : (μ Ω')⁻¹ ≤ m⁻¹ := ENNReal.inv_le_inv.2 hm'
+  have hpow : μ Ω' ^ (-(p : ℝ)⁻¹) ≤ m ^ (-(p : ℝ)⁻¹) :=
+    by rw [ENNReal.rpow_neg, ENNReal.rpow_neg]
+       exact ENNReal.inv_le_inv.2 (ENNReal.rpow_le_rpow hm' (inv_pos.2 hp0).le)
+  calc ‖u x‖ₑ = ‖(u x - ⨍ y in Ω', u y ∂μ) + ⨍ y in Ω', u y ∂μ‖ₑ := by rw [sub_add_cancel]
+    _ ≤ ‖u x - ⨍ y in Ω', u y ∂μ‖ₑ + ‖⨍ y in Ω', u y ∂μ‖ₑ := eNorm_add_le _ _
+    _ ≤ A * m⁻¹ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω) +
+        m ^ (-(p : ℝ)⁻¹) * eLpNorm u p (μ.restrict Ω) := by
+      gcongr
+      · refine h₁.trans ?_
+        calc _ = A * (μ Ω')⁻¹ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω') := by
+              simp only [A, div_eq_mul_inv]
+              ring
+          _ ≤ _ := by gcongr
+      · exact h₂.trans (by gcongr)
+    _ ≤ C₀ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω) + C₀ * eLpNorm u p (μ.restrict Ω) := by
+      gcongr
+      · exact le_self_add
+      · exact le_add_self
+    _ = C₀ * (eLpNorm u p (μ.restrict Ω) + eLpNorm (fderiv ℝ u) p (μ.restrict Ω)) := by ring
 
 /-- **Morrey's inequality on a ball.** If `u` is `C¹` on `ball z r` and `p` exceeds the dimension
 `n` of the space, then for all `x, y` in the ball, `‖u x - u y‖` is at most
