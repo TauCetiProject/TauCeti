@@ -57,10 +57,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared reporting tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: .
 
       - name: Discover retained intents from this exact original run
@@ -68,6 +68,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_READ_TOKEN: ${{ github.token }}
+          PYTHONPATH: ${{ github.workspace }}
           TAUCETI_GITHUB_READ_ROLE: workflow-read
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
@@ -131,7 +132,7 @@ jobs:
       - name: Prepare scoped CI reporting credentials
         if: steps.intents.outputs.present == 'true'
         id: credentials
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@2e715e060777c57cb634987090139964547b6fc8
         with:
           workflow-token: ${{ github.token }}
           owner: ${{ github.repository_owner }}
@@ -183,13 +184,14 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: TauCetiProject/TauCetiTools
-          ref: a94bf58e6032630c65da1a61a989bfb985ad8cd0
-          sparse-checkout: tauceti_tools/assets/scripts
+          ref: 2e715e060777c57cb634987090139964547b6fc8
+          sparse-checkout: tauceti_tools
           persist-credentials: false
       - name: Recover abandoned PR builds
         env:
           GH_TOKEN: ${{ github.token }}
           GH_READ_TOKEN: ${{ github.token }}
+          PYTHONPATH: ${{ github.workspace }}
           TAUCETI_GITHUB_READ_ROLE: workflow-read
           TAUCETI_GITHUB_WRITE_ROLE: workflow-dispatch
         run: python3 tauceti_tools/assets/scripts/ci_recovery.py --apply
