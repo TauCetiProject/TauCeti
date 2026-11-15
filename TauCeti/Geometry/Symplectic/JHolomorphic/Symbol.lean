@@ -98,7 +98,7 @@ def cauchyRiemannSymbolAntilinear (j : AlmostComplexStructure U)
 
 /-- Forgetting the corestriction recovers the real Cauchy–Riemann symbol. -/
 @[simp]
-theorem cauchyRiemannSymbolAntilinear_apply (j : AlmostComplexStructure U)
+theorem coe_cauchyRiemannSymbolAntilinear_apply (j : AlmostComplexStructure U)
     (J : AlmostComplexStructure V) (ℓ : U →ₗ[ℝ] ℝ) (q : V) :
     (cauchyRiemannSymbolAntilinear j J ℓ q : U →ₗ[ℝ] V) =
       cauchyRiemannSymbol j J ℓ q := (rfl)
@@ -152,7 +152,7 @@ theorem cauchyRiemannSymbolAntilinear_bijective (j : AlmostComplexStructure U)
   constructor
   · intro q r h
     apply hb.1
-    simpa only [cauchyRiemannSymbolAntilinear_apply] using
+    simpa only [coe_cauchyRiemannSymbolAntilinear_apply] using
       congrArg (fun f : U →ₗ[ℝ] V ↦ f v) (congrArg Subtype.val h)
   · intro f
     obtain ⟨q, hq⟩ := hb.2 (f.val v)
@@ -160,10 +160,10 @@ theorem cauchyRiemannSymbolAntilinear_bijective (j : AlmostComplexStructure U)
     -- Antilinear maps on a complex line are determined at any nonzero vector.
     apply LinearMap.ext_on (j.span_pair_eq_top_of_finrank_eq_two hU hv₀)
     rintro w (rfl | rfl)
-    · simpa only [cauchyRiemannSymbolAntilinear_apply] using hq
+    · simpa only [coe_cauchyRiemannSymbolAntilinear_apply] using hq
     · have hs := (isComplexAntilinear_cauchyRiemannSymbol j J ℓ q).apply v
       have hf := (mem_complexAntilinearMaps.1 f.property).apply v
-      simpa only [cauchyRiemannSymbolAntilinear_apply] using
+      simpa only [coe_cauchyRiemannSymbolAntilinear_apply] using
         hs.trans ((congrArg (fun q ↦ -J q) hq).trans hf.symm)
 
 /-- The elliptic real Cauchy–Riemann symbol on a complex line as a linear equivalence.
@@ -209,7 +209,7 @@ theorem cauchyRiemannSymbol_apply_cauchyRiemannSymbolEquiv_symm
     (f : complexAntilinearMaps j.toLinearMap J.toLinearMap) :
     cauchyRiemannSymbol j J ℓ ((cauchyRiemannSymbolEquiv j hU J ℓ hℓ).symm f) =
       (f : U →ₗ[ℝ] V) := by
-  simpa only [cauchyRiemannSymbolAntilinear_apply] using
+  simpa only [coe_cauchyRiemannSymbolAntilinear_apply] using
     congrArg Subtype.val
       (cauchyRiemannSymbolAntilinear_apply_cauchyRiemannSymbolEquiv_symm j hU J ℓ hℓ f)
 
@@ -222,7 +222,7 @@ theorem cauchyRiemannSymbolEquiv_symm_apply (j : AlmostComplexStructure U)
       (ℓ (j v) ^ 2 + ℓ v ^ 2)⁻¹ • (ℓ (j v) • f.val v + ℓ v • J (f.val v)) := by
   have heval := congrArg (fun g : complexAntilinearMaps j.toLinearMap J.toLinearMap ↦ g.val v)
     ((cauchyRiemannSymbolEquiv j hU J ℓ hℓ).apply_symm_apply f)
-  simp only [cauchyRiemannSymbolEquiv_apply, cauchyRiemannSymbolAntilinear_apply] at heval
+  simp only [cauchyRiemannSymbolEquiv_apply, coe_cauchyRiemannSymbolAntilinear_apply] at heval
   rw [← heval]
   exact (leftInverse_cauchyRiemannSymbol_apply j J ℓ v
     (j.sq_apply_add_sq_ne_zero_of_finrank_eq_two hU ℓ hℓ hv) _).symm

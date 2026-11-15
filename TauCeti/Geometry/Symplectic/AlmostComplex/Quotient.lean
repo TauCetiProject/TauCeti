@@ -93,6 +93,40 @@ end TauCeti.AlmostComplexStructure
 
 namespace TauCeti
 
+variable {U V : Type*}
+  [AddCommGroup U] [Module ℝ U] [AddCommGroup V] [Module ℝ V]
+  {j : AlmostComplexStructure U} {J : AlmostComplexStructure V} {f : U →ₗ[ℝ] V}
+
+/-- The range of a complex-linear map is invariant under the target structure. -/
+theorem IsComplexLinearMap.apply_mem_range (hf : IsComplexLinearMap j J f)
+    {v : V} (hv : v ∈ LinearMap.range f) : J v ∈ LinearMap.range f := by
+  obtain ⟨u, rfl⟩ := hv
+  exact ⟨j u, (isComplexLinearMap_iff_apply _ _ _).1 hf u⟩
+
+/-- The almost complex structure on the quotient by the range of a complex-linear map. -/
+def IsComplexLinearMap.quotientRange (hf : IsComplexLinearMap j J f) :
+    AlmostComplexStructure (V ⧸ LinearMap.range f) :=
+  J.quotient (LinearMap.range f) (fun _ hv ↦ hf.apply_mem_range hv)
+
+/-- The range-quotient structure is induced by the target structure on the invariant range. -/
+theorem IsComplexLinearMap.quotientRange_def (hf : IsComplexLinearMap j J f) :
+    hf.quotientRange = J.quotient (LinearMap.range f) (fun _ hv ↦ hf.apply_mem_range hv) :=
+  (rfl)
+
+/-- On a range quotient class the induced structure applies the target structure to a lift. -/
+@[simp]
+theorem IsComplexLinearMap.quotientRange_mk (hf : IsComplexLinearMap j J f) (v : V) :
+    hf.quotientRange (Submodule.Quotient.mk v) = Submodule.Quotient.mk (J v) := by
+  simp only [IsComplexLinearMap.quotientRange_def, AlmostComplexStructure.quotient_mk]
+
+/-- Projection to the range quotient of a complex-linear map is complex-linear. -/
+@[simp]
+theorem IsComplexLinearMap.isComplexLinearMap_quotientRange_mkQ
+    (hf : IsComplexLinearMap j J f) :
+    IsComplexLinearMap J hf.quotientRange (LinearMap.range f).mkQ := by
+  rw [hf.quotientRange_def]
+  exact J.isComplexLinearMap_mkQ _ _
+
 /-- A complex-linear map preserving invariant submodules induces a complex-linear quotient map. -/
 theorem IsComplexLinearMap.mapQ {V W : Type*}
     [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
