@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Datum.Steinberg
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.CharacterMap
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Subgroup
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Steinberg
 import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Steinberg
@@ -22,6 +23,12 @@ point group of the simply connected Chevalley scheme by
 `DynkinType.chevalleyGroup_eq_kostantToralPointsSubgroup`; no additional carrier is defined here.
 
 The map has the prescribed values on both signs of the simple roots and on the weight torus.
+On every root subgroup, `scSteinberg_chevalleyToralRootSubgroupPoints` sends the parameter `u`
+at `α` to `ε u ^ q` at the diagram image of `α`, where `ε` is the sign of the pinned diagram
+action at the source root. At nonsimple roots this sign need not be one. The formula combines
+`DynkinType.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints` with matrix Frobenius
+naturality, without a point-generation assumption.
+
 Its character pullback agrees with the independently defined `GraphTwistedIndex.datumSteinberg`,
 and its twist-order iterate is Frobenius. These statements hold over any commutative value ring
 of the indexed exponential characteristic, in particular over `ValidLieTypeIndex.Closure`.
@@ -33,7 +40,7 @@ whole-point theorems, without reconstructing an action from its values on root s
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapters 10–11.
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 10, Theorem 29, and Chapter 11.
 * R. W. Carter, *Finite Groups of Lie Type*, §§1.15–1.17.
 -/
 
@@ -110,6 +117,46 @@ theorem scSteinberg_rootSubgroup (i : Fin d.1.rank ⊕ Fin d.1.rank) (u : Multip
     MonoidHom.codRestrict_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     d.1.fieldOrder_eq_characteristic_pow] using
     kostantToralSteinberg_kostantRootSubgroupMatrix _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ i u
+
+/-- On every root subgroup, the indexed Steinberg map applies field-order Frobenius to the
+parameter and then the signed diagram action. The sign is indexed on the source root. -/
+@[simp]
+theorem scSteinberg_chevalleyToralRootSubgroupPoints
+    (α : Fin d.1.dynkinType.numRoots) (u : Multiplicative A) :
+    d.scSteinberg A
+      (DynkinType.chevalleyToralRootSubgroupPoints
+        (representation ℚ (d.1.dynkinType.lieAlgebra d.1.dynkinType_valid)
+          (d.1.dynkinType.scModule d.1.dynkinType_valid))
+        (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+        (d.1.dynkinType.kostantForm_apply_mem_scLattice d.1.dynkinType_valid)
+        (d.1.dynkinType.isNilpotent_representation_scModule_rootGenerator d.1.dynkinType_valid)
+        (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+        (d.1.dynkinType.scWeight d.1.dynkinType_valid) α A u) =
+      DynkinType.chevalleyToralRootSubgroupPoints _ _ _ _ _ _
+        (d.1.dynkinType.diagramRootPerm d.1.dynkinType_valid
+          d.diagramPerm_mem_diagramSymmetry α) A
+        (Multiplicative.ofAdd
+          (((d.1.dynkinType.chevalleyDiagramSign d.1.dynkinType_valid
+            d.diagramPerm_mem_diagramSymmetry α : ℤ) : A) *
+            Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  have hγ := congrArg Subtype.val
+    (d.1.dynkinType.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints
+      d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry α A
+        (Multiplicative.toAdd u ^ d.1.characteristic ^ d.1.fieldExponent))
+  simp only [DynkinType.coe_scToralDiagramAutPoints] at hγ
+  have hp := DynkinType.map_iterateFrobenius_chevalleyToralRootSubgroupPoints
+    (representation ℚ (d.1.dynkinType.lieAlgebra d.1.dynkinType_valid)
+      (d.1.dynkinType.scModule d.1.dynkinType_valid))
+    (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+    (d.1.dynkinType.kostantForm_apply_mem_scLattice d.1.dynkinType_valid)
+    (d.1.dynkinType.isNilpotent_representation_scModule_rootGenerator d.1.dynkinType_valid)
+    (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+    (d.1.dynkinType.scWeight d.1.dynkinType_valid)
+    d.1.characteristic d.1.fieldExponent A α u
+  apply Subtype.ext
+  refine (d.coe_scSteinberg A _).trans ?_
+  simpa only [d.1.fieldOrder_eq_characteristic_pow] using
+    (congrArg (fun g => _ * g * _) hp).trans hγ
 
 /-- The character pullback is precisely the native root-datum Steinberg weight map.
 In particular, triality acts contravariantly, rather than by the source-node permutation. -/
