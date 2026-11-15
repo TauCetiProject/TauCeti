@@ -334,12 +334,15 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
 
 end Rescaling
 
-/-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
-at every point. -/
-theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
-    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x := by
-  rw [SmoothForm.isContactForm_iff]
-  refine forall_congr' fun x ↦ ?_
+/-- The contact condition at a point: the covector `α_x` is a contact covector for `dα_x` exactly
+when `α` is a contact form at `x`. -/
+theorem SmoothForm.isContact_degreeOneEquiv_iff_isContactFormAt [IsManifold I 2 M]
+    {α : SmoothForm I M ℝ 1} {x : M} :
+    Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+        ((mextDerivₗ I 1 α).bilinFormAt x) ↔ IsContactFormAt α.1 x := by
+  rw [Module.Dual.isContact_iff_of_isRefl (SmoothForm.isAlt_bilinFormAt _ x).isRefl]
+  simp only [degreeOneEquiv_coe_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt, ne_eq,
+    LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
   constructor
   · rintro ⟨⟨v, hv⟩, h⟩
     refine ⟨fun hz ↦ hv (by rw [hz]; rfl), ?_⟩
@@ -356,6 +359,12 @@ theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
         rfl
       simpa only [hv, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] using hn (v 0)
     · simpa only [RoughForm.mem_ker] using h.nondegenerate
+
+/-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
+at every point. -/
+theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
+    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x :=
+  forall_congr' fun _ ↦ SmoothForm.isContact_degreeOneEquiv_iff_isContactFormAt
 
 end Pointwise
 

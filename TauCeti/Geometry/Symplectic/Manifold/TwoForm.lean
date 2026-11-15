@@ -98,6 +98,12 @@ space is nondegenerate. Closedness is a separate condition. -/
 def IsNondegenerate (form : SmoothTwoForm I M) : Prop :=
   ∀ x, (form.bilinFormAt x).Nondegenerate
 
+/-- Unfolding `TauCeti.SmoothTwoForm.IsNondegenerate`: the bilinear form at every point is
+nondegenerate. -/
+lemma isNondegenerate_def :
+    form.IsNondegenerate ↔ ∀ x, (form.bilinFormAt x).Nondegenerate :=
+  Iff.rfl
+
 /-- Fiberwise nondegeneracy in terms of vectors annihilating every vector on the right. For an
 alternating form this one-sided condition implies the corresponding condition on the other side. -/
 lemma isNondegenerate_iff_separatingLeft :

@@ -70,6 +70,12 @@ cooriented contact structure. In terms of the annihilator line `(ker α)⁰ ⊂ 
 * `TauCeti.SmoothForm.mextDeriv_symplectization_apply`: `d(eᵗ α) = eᵗ (dt ∧ α + dα)`.
 * `TauCeti.SmoothForm.isSymplectic_mextDerivₗ_symplectization_iff`: `d(eᵗ α)` is symplectic exactly
   when `α` is a contact form.
+* `TauCeti.SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff`: pointwise,
+  `d(eᵗ α)` is nondegenerate at `(t, x)` exactly when `α` is a contact form at `x`.
+* `TauCeti.SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_iff_of_mpullback_eq_symplectization`:
+  local models of a symplectization; a map over `M` from `ℝ × M` to a manifold of one dimension
+  more, pulling a one-form `θ` back to `eᵗ β`, identifies nondegeneracy of `dθ` with the contact
+  condition for `β`.
 * `TauCeti.SmoothForm.interior_mextDeriv_symplectization`,
   `TauCeti.SmoothForm.isLiouvilleVectorField_symplectization`: `∂_t` is the Liouville field.
 * `TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`: lifts of conformal maps of
@@ -199,25 +205,124 @@ private theorem bilinFormAt_mextDerivₗ_symplectization (α : SmoothForm I M �
     ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_symm,
     ContinuousLinearEquiv.coe_refl', id_eq]
 
+/-- **The symplectization is symplectic at a point.** At `(t, x)`, the exterior derivative
+`d(eᵗ α)` of the symplectization form is nondegenerate exactly when `α` is a contact form at
+`x`. -/
+theorem nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff {α : SmoothForm I M ℝ 1}
+    (p : ℝ × M) :
+    ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate ↔
+      IsContactFormAt α.1 p.2 := by
+  rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
+    TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
+    ← Module.Dual.isContact_iff_nondegenerate_symplectizationForm,
+    isContact_degreeOneEquiv_iff_isContactFormAt]
+
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the
 symplectization form is nondegenerate exactly when `α` is a contact form. -/
 theorem isNondegenerate_mextDerivₗ_symplectization_iff {α : SmoothForm I M ℝ 1} :
     SmoothTwoForm.IsNondegenerate (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) ↔
       α.IsContactForm := by
-  have key (p : ℝ × M) :
-      (∀ v, (∀ w, SmoothBundleForm.eval₂
-        (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p v w = 0) → v = 0) ↔
-        Module.Dual.IsContact (degreeOneEquiv α p.2 : TangentSpace I p.2 →ₗ[ℝ] ℝ)
-          ((mextDerivₗ I 1 α).bilinFormAt p.2) := by
-    trans ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate
-    · rw [LinearMap.BilinForm.Nondegenerate,
-        (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
-      simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
-    rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
-      TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
-      Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
-  rw [SmoothTwoForm.isNondegenerate_iff_separatingLeft, isContactForm_def]
-  exact ⟨fun h x ↦ (key ((0 : ℝ), x)).1 (h ((0 : ℝ), x)), fun h p ↦ (key p).2 (h p.2)⟩
+  rw [SmoothTwoForm.isNondegenerate_def, isContactForm_iff_forall_isContactFormAt]
+  exact ⟨fun h x ↦ (nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff ((0 : ℝ), x)).1
+    (h ((0 : ℝ), x)), fun h p ↦ (nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff p).2
+    (h p.2)⟩
+
+section LocalModel
+
+variable {G HN : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace HN]
+  {J : ModelWithCorners ℝ G HN} {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
+  [IsManifold J ∞ N]
+
+/-- A map `φ : ℝ × M → N` pulls `dθ` back to `d(eᵗ β)` when it pulls `θ` back to `eᵗ β`, so the
+two bilinear forms at `p` and at `φ p` correspond through the differential of `φ`. -/
+theorem bilinFormAt_mextDerivₗ_symplectization_apply_of_mpullback_eq {θ : SmoothForm J N ℝ 1}
+    {φ : ℝ × M → N} (hφ : ContMDiff (𝓘(ℝ).prod I) J ∞ φ) {β : SmoothForm I M ℝ 1}
+    (hθ : mpullback φ hφ θ = β.symplectization) (p : ℝ × M)
+    (v w : TangentSpace (𝓘(ℝ).prod I) p) :
+    (mextDerivₗ (𝓘(ℝ).prod I) 1 β.symplectization).bilinFormAt p v w =
+      (mextDerivₗ J 1 θ).bilinFormAt (φ p) (mfderiv (𝓘(ℝ).prod I) J φ p v)
+        (mfderiv (𝓘(ℝ).prod I) J φ p w) := by
+  rw [← hθ, mextDerivₗ_mpullback, bilinFormAt_apply, eval₂_mpullback, bilinFormAt_apply]
+
+/-- A map `φ : ℝ × M → N` over `M`, that is `q ∘ φ = Prod.snd` for a differentiable `q : N → M`,
+which pulls a one-form `θ` back to the symplectization form `eᵗ β`, is an immersion at every
+point `(t, x)` with `β_x ≠ 0`: a vector killed by `dφ` has no component along `M`, and `d(eᵗ β)`
+pairs its real component with a vector on which `β_x` does not vanish. -/
+theorem injective_mfderiv_of_mpullback_eq_symplectization {θ : SmoothForm J N ℝ 1}
+    {φ : ℝ × M → N} (hφ : ContMDiff (𝓘(ℝ).prod I) J ∞ φ) {q : N → M}
+    (hq : MDifferentiable J I q) (hqφ : q ∘ φ = Prod.snd) {β : SmoothForm I M ℝ 1}
+    (hθ : mpullback φ hφ θ = β.symplectization) {p : ℝ × M} (hβ : β.1 p.2 ≠ 0) :
+    Function.Injective (mfderiv (𝓘(ℝ).prod I) J φ p) := by
+  obtain ⟨u, hu⟩ := RoughForm.exists_apply_ne_zero hβ
+  rw [injective_iff_map_eq_zero]
+  intro v hv
+  -- Over `M`, the vector `v` has no component along `M`.
+  have h2 : (Manifold.tangentSpaceProdEquiv p v).2 = 0 := by
+    have h := mfderiv_comp_apply p (hq (φ p)) ((hφ p).mdifferentiableAt (by simp)) v
+    rw [hqφ, mfderiv_snd_apply, hv, map_zero] at h
+    rw [Manifold.tangentSpaceProdEquiv_apply]
+    exact h
+  -- Pairing with a vector on which `β` is nonzero kills the real component.
+  have h1 : NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p v).1 = 0 := by
+    have h := bilinFormAt_mextDerivₗ_symplectization_apply_of_mpullback_eq hφ hθ p v
+      ((Manifold.tangentSpaceProdEquiv p).symm (0, u))
+    rw [hv, map_zero, LinearMap.zero_apply, bilinFormAt_apply,
+      eval₂_mextDerivₗ_symplectization, h2, ← bilinFormAt_apply (mextDerivₗ I 1 β),
+      LinearMap.map_zero₂, ContinuousLinearEquiv.apply_symm_apply] at h
+    simpa [hu] using h
+  apply (Manifold.tangentSpaceProdEquiv p).injective
+  rw [ContinuousLinearEquiv.map_zero]
+  exact Prod.ext ((NormedSpace.fromTangentSpace p.1).map_eq_zero_iff.1 h1) h2
+
+/-- **Local models of a symplectization.** Let `θ` be a one-form on a manifold `N` of dimension
+`dim M + 1` and `φ : ℝ × M → N` a smooth map over `M`, that is `q ∘ φ = Prod.snd` for a
+differentiable `q : N → M`, pulling `θ` back to the symplectization form `eᵗ β` of a one-form `β`.
+At a point `p = (t, x)` with `β_x ≠ 0`, the two-form `dθ` is nondegenerate at `φ p` exactly when
+`β` is a contact form at `x`. The differential of `φ` at `p` is an isomorphism
+(`TauCeti.SmoothForm.injective_mfderiv_of_mpullback_eq_symplectization`), which identifies `dθ`
+at `φ p` with `d(eᵗ β)` at `p`. -/
+theorem nondegenerate_bilinFormAt_mextDerivₗ_iff_of_mpullback_eq_symplectization
+    {θ : SmoothForm J N ℝ 1} {φ : ℝ × M → N} (hφ : ContMDiff (𝓘(ℝ).prod I) J ∞ φ)
+    {q : N → M} (hq : MDifferentiable J I q) (hqφ : q ∘ φ = Prod.snd)
+    {β : SmoothForm I M ℝ 1} (hθ : mpullback φ hφ θ = β.symplectization)
+    (hdim : Module.finrank ℝ G = Module.finrank ℝ E + 1) {p : ℝ × M} (hβ : β.1 p.2 ≠ 0) :
+    ((mextDerivₗ J 1 θ).bilinFormAt (φ p)).Nondegenerate ↔ IsContactFormAt β.1 p.2 := by
+  have hLinj := injective_mfderiv_of_mpullback_eq_symplectization hφ hq hqφ hθ hβ
+  have : FiniteDimensional ℝ (TangentSpace J (φ p)) :=
+    have : FiniteDimensional ℝ G := Module.finite_of_finrank_pos (by omega)
+    inferInstanceAs (FiniteDimensional ℝ G)
+  -- `E` is finite-dimensional: `d(q ∘ φ) = d(Prod.snd)` maps onto it through `T_(φ p) N`.
+  have : FiniteDimensional ℝ E := by
+    have hsurj : Function.Surjective (mfderiv J I q (φ p)) := fun w ↦
+      ⟨mfderiv (𝓘(ℝ).prod I) J φ p ((Manifold.tangentSpaceProdEquiv p).symm (0, w)), by
+        rw [← mfderiv_comp_apply p (hq (φ p)) ((hφ p).mdifferentiableAt (by simp)), hqφ,
+          mfderiv_snd_apply, Manifold.tangentSpaceProdEquiv_symm_apply]⟩
+    have : FiniteDimensional ℝ (TangentSpace I (q (φ p))) :=
+      Module.Finite.of_surjective (mfderiv J I q (φ p)).toLinearMap hsurj
+    -- The tangent space of `M` at `q (φ p)` is the model space `E`.
+    exact this
+  have : FiniteDimensional ℝ (TangentSpace (𝓘(ℝ).prod I) p) :=
+    inferInstanceAs (FiniteDimensional ℝ (ℝ × E))
+  have hrank : Module.finrank ℝ (TangentSpace (𝓘(ℝ).prod I) p) =
+      Module.finrank ℝ (TangentSpace J (φ p)) := by
+    -- The tangent spaces are the model spaces `ℝ × E` and `G` by definition.
+    change Module.finrank ℝ (ℝ × E) = Module.finrank ℝ G
+    rw [Module.finrank_prod, Module.finrank_self, hdim, add_comm]
+  -- So the differential is an isomorphism, which identifies the two bilinear forms.
+  let e : TangentSpace (𝓘(ℝ).prod I) p ≃ₗ[ℝ] TangentSpace J (φ p) :=
+    LinearEquiv.ofBijective (mfderiv (𝓘(ℝ).prod I) J φ p).toLinearMap
+      ⟨hLinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).1 hLinj⟩
+  have hBA : (mextDerivₗ (𝓘(ℝ).prod I) 1 β.symplectization).bilinFormAt p =
+      LinearMap.BilinForm.congr e.symm ((mextDerivₗ J 1 θ).bilinFormAt (φ p)) := by
+    refine LinearMap.ext₂ fun v w ↦ ?_
+    rw [bilinFormAt_mextDerivₗ_symplectization_apply_of_mpullback_eq hφ hθ,
+      LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm]
+    -- `e` is `LinearEquiv.ofBijective` of the differential, so it applies as the differential.
+    rfl
+  rw [← LinearMap.BilinForm.nondegenerate_congr_iff e.symm, ← hBA,
+    nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff]
+
+end LocalModel
 
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the
 symplectization form is a symplectic form on `ℝ × M` exactly when `α` is a contact form. -/

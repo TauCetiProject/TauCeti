@@ -281,6 +281,36 @@ theorem IsContMDiffDistribution.exists_isSmoothForm_apply_ne_zero [T2Space M] [I
     · simp [RoughForm.mem_ker.mp ((hαD y hy).2 hv)]
     · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρU h)]
 
+omit [FiniteDimensional ℝ E] in
+/-- **A hyperplane field is defined near a point by a global annihilating one-form.** On a
+Hausdorff manifold, for a smooth distribution `D` of rank `k` with `k + 1 = dim E` and a point `x`,
+some smooth one-form annihilates `D` at every point and, near `x`, vanishes nowhere and has kernel
+exactly `D`. -/
+theorem IsContMDiffDistribution.exists_isSmoothForm_ker_eq [T2Space M] [IsManifold I ∞ M]
+    (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E) (x : M) :
+    ∃ α : RoughForm I M ℝ 1, IsSmoothForm I ∞ α ∧ (∀ y, D y ≤ α.ker y) ∧
+      ∀ᶠ y in 𝓝 x, α y ≠ 0 ∧ α.ker y = D y := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  obtain ⟨U, hU, hxU, α, hα, hαD⟩ := hD.exists_roughForm_ker_eq hk x
+  obtain ⟨ρ, -, hρU⟩ :=
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp (hU.mem_nhds hxU)
+  refine ⟨fun y ↦ ρ y • α y, ?_, fun y v hv ↦ ?_, ?_⟩
+  · rw [isSmoothForm_def]
+    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρU hα
+  · -- Outside `U` the bump function vanishes; inside `U` the kernel of `α` is `D`.
+    rw [RoughForm.mem_ker]
+    by_cases hy : y ∈ U
+    · rw [← (hαD y hy).2, RoughForm.mem_ker] at hv
+      simp [hv]
+    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρU h)]
+  · -- Near `x` the bump function is one, so the form is `α`.
+    filter_upwards [ρ.eventuallyEq_one, hU.mem_nhds hxU] with y hy1 hyU
+    have hyα : ρ y • α y = α y := by simp [hy1]
+    refine ⟨by simpa [hy1] using (hαD y hyU).1, ?_⟩
+    ext v
+    rw [RoughForm.mem_ker, hyα, ← RoughForm.mem_ker, (hαD y hyU).2]
+
 section Local
 
 variable {n : ℕ∞ω} [IsManifold I 1 M]

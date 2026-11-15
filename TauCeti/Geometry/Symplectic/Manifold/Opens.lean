@@ -33,6 +33,29 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {σ : SmoothTwoForm I M}
 
+/-- At a point `x` of an open submanifold `U`, the restriction of a two-form to `U` is
+nondegenerate exactly when the form is nondegenerate at `x`. -/
+theorem nondegenerate_bilinFormAt_mpullback_subtype_val_iff {U : Opens M} (x : U) :
+    ((SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).bilinFormAt
+        x).Nondegenerate ↔ (σ.bilinFormAt (x : M)).Nondegenerate := by
+  let e := (Manifold.tangentSpaceOpenEquiv (I := I) x).toLinearEquiv
+  have h : (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).bilinFormAt x =
+      LinearMap.BilinForm.congr e.symm (σ.bilinFormAt (x : M)) := by
+    refine LinearMap.ext₂ fun v w ↦ ?_
+    simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
+      Manifold.mfderiv_subtype_val, LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm]
+    rfl
+  rw [h, LinearMap.BilinForm.nondegenerate_congr_iff]
+
+/-- The restriction of a two-form to an open submanifold `U` is nondegenerate exactly when the
+form is nondegenerate at every point of `U`. -/
+theorem isNondegenerate_mpullback_subtype_val_iff {U : Opens M} :
+    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) ↔
+      ∀ x ∈ U, (σ.bilinFormAt x).Nondegenerate := by
+  rw [isNondegenerate_def]
+  exact ⟨fun h x hx ↦ (nondegenerate_bilinFormAt_mpullback_subtype_val_iff ⟨x, hx⟩).1 (h _),
+    fun h x ↦ (nondegenerate_bilinFormAt_mpullback_subtype_val_iff x).2 (h x x.2)⟩
+
 /-- A nondegenerate two-form restricts to a nondegenerate form on every open submanifold. -/
 theorem IsNondegenerate.mpullback_subtype_val (hσ : σ.IsNondegenerate) (U : Opens M) :
     IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) := by
