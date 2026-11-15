@@ -27,12 +27,13 @@ complex coordinate of the orthogonal projection of `x` onto the plane. Expanding
 pair `ι 1`, `ι i` exhibits `(ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E` as a continuous
 function of `ι 1`, `ι i` and `c` in the operator-norm topology
 (`Continuous.planeRotation_toContinuousLinearMap`), without any finite-dimensionality assumption.
-Each plane rotation has determinant `1` (`LinearIsometry.det_planeRotation`) and preserves every
-orientation of `E` (`LinearIsometry.orientation_map_planeRotation`). The rotation by `-1` is the
-half-turn of the plane, the reflection across its orthogonal complement
-(`LinearIsometry.planeRotation_neg_one`), and the rotation depends smoothly on the angle and the
-point (`LinearIsometry.contMDiff_planeRotation`). Rotating the plane moves a great circle of the
-unit sphere of `E` along itself; this is how knotted arcs are slid along a great circle and how
+Each plane rotation has determinant `1`
+(`LinearIsometry.det_toContinuousLinearMap_planeRotation`) and preserves every orientation of `E`
+(`LinearIsometry.orientation_map_planeRotation`). The rotation by `-1` is the half-turn of the
+plane, the reflection across its orthogonal complement (`LinearIsometry.planeRotation_neg_one`),
+and the rotation depends smoothly on the angle and the point
+(`LinearIsometry.contMDiff_planeRotation`). Rotating the plane moves a great circle of the unit
+sphere of `E` along itself; this is how knotted arcs are slid along a great circle and how
 great-circle families on a sphere lift to families of rotations.
 
 ## Main definitions
@@ -48,8 +49,9 @@ great-circle families on a sphere lift to families of rotations.
   the plane.
 * `LinearIsometry.planeRotation_apply`: explicit expansion in terms of `ι 1` and `ι i`.
 * `Continuous.planeRotation_toContinuousLinearMap`: operator-norm continuity in the plane and angle.
-* `LinearIsometry.det_planeRotation`, `LinearIsometry.orientation_map_planeRotation`: plane
-  rotations have determinant `1` and preserve orientations.
+* `LinearIsometry.det_toContinuousLinearMap_planeRotation`,
+  `LinearIsometry.orientation_map_planeRotation`: plane rotations have determinant `1` and preserve
+  orientations.
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
 * `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
@@ -308,12 +310,6 @@ theorem det_toContinuousLinearMap_planeRotation (c : Circle) :
     exact hd_one (Complex.arg c)
   · exact LinearMap.det_eq_one_of_not_module_finite (by simpa [FiniteDimensional] using hE) _
 
-/-- **Every plane rotation has determinant `1`** as a linear equivalence. -/
-@[simp]
-theorem det_planeRotation (c : Circle) :
-    LinearMap.det ((ι.planeRotation c).toLinearEquiv : E →ₗ[ℝ] E) = 1 :=
-  ι.det_toContinuousLinearMap_planeRotation c
-
 /-- **Every plane rotation preserves every orientation** of a finite-dimensional real inner product
 space. -/
 @[simp]
@@ -322,8 +318,13 @@ theorem orientation_map_planeRotation {ι' : Type*} [Fintype ι']
     (o : Orientation ℝ E ι') (c : Circle) :
     Orientation.map ι' (ι.planeRotation c).toLinearEquiv o = o := by
   classical
-  exact (o.map_eq_iff_det_pos (ι.planeRotation c).toLinearEquiv hcard).2
-    (by rw [ι.det_planeRotation c]; exact zero_lt_one)
+  have hcoe : ((ι.planeRotation c).toLinearEquiv : E →ₗ[ℝ] E) =
+      (((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
+    ext
+    simp
+  refine (o.map_eq_iff_det_pos (ι.planeRotation c).toLinearEquiv hcard).2 ?_
+  rw [hcoe, ← ContinuousLinearMap.det, ι.det_toContinuousLinearMap_planeRotation c]
+  exact zero_lt_one
 
 /-! ### Plane embeddings from orthonormal pairs -/
 
