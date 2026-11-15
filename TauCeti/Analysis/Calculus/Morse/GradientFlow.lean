@@ -60,8 +60,9 @@ route to Morse homology.
   intervals.
 * `IsIntegralCurveOn.mul_sq_le_sub_of_le_norm_gradient`: a lower bound `κ` on the speed during a
   time interval of length `ℓ` makes `f` drop by at least `ℓ κ²`.
-* `IsIntegralCurveOn.comp_neg_neg_gradient`: reversing time turns a negative gradient
-  trajectory of `f` on `s` into one of `-f` on `-s`.
+* `IsIntegralCurveOn.comp_neg_neg_gradient` and `IsIntegralCurve.comp_neg_neg_gradient`:
+  reversing time turns a negative gradient trajectory of `f` on `s` (or for all time) into one
+  of `-f` on `-s` (or for all time).
 * `IsIntegralCurve.gradient_eq_zero_of_eventually_const_value`: a trajectory on which
   `f` is eventually constant passes through critical points.
 * `IsIntegralCurve.gradient_eq_zero_of_periodic` and
@@ -325,6 +326,13 @@ theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
   funext t
   rw [hconst t]
   exact tendsto_nhds_unique tendsto_const_nhds (htop.congr hconst)
+
+/-- **Time reversal.** Reversing time turns a global negative gradient trajectory of `f` into a
+global negative gradient trajectory of `-f`. -/
+theorem comp_neg_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) :
+    IsIntegralCurve (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) := by
+  rw [← isIntegralCurveOn_univ] at *
+  simpa using hγ.comp_neg_neg_gradient
 
 end IsIntegralCurve
 
