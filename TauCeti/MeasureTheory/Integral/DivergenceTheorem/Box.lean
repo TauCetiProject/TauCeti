@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import TauCeti.Analysis.BoxIntegral.Integrability
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -19,10 +20,11 @@ integration theory.
 
 This file provides the algebraic and geometric calculus of `boxBoundarySum`:
 * vanishing on constant fields and on degenerate boxes with `a k = b k`;
-* scalar multiplication, negation, additivity and face-volume norm bounds;
-* rectangular subdivision additivity (`boxBoundarySum_split`,
-  `boxBoundarySum_split_of_continuousOn`) when a box is split along `x k = t`, with cancellation of
-  the paired internal facets;
+* scalar multiplication, negation, additivity, rescaling to the unit cube
+  (`boxBoundarySum_eq_boxBoundarySum_zero_one`) and face-volume norm bounds;
+* rectangular subdivision additivity (`boxBoundarySum_update_add_boxBoundarySum_update`,
+  `boxBoundarySum_update_add_boxBoundarySum_update_of_continuousOn`) when a box is split along
+  `x k = t`, with cancellation of the paired internal facets;
 * compatibility (`boxBoundarySum_eq_boxIntegral`) with `BoxIntegral.integral` on `Box.face`;
 * `boxBoundarySum_eq_zero_of_hasFDerivAt`, giving vanishing boundary flux for a continuous field
   with pointwise derivatives and zero divergence in the open box, without continuity of the
@@ -75,6 +77,11 @@ theorem boxBoundarySum_zero (a b : Fin (n + 1) → ℝ) :
     boxBoundarySum a b (fun _ _ ↦ (0 : E)) = 0 := by
   simp [boxBoundarySum_def]
 
+@[simp]
+theorem boxBoundarySum_zero' (a b : Fin (n + 1) → ℝ) :
+    boxBoundarySum a b (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 :=
+  boxBoundarySum_zero a b
+
 /-- Constant flux components cancel between opposite faces, without ordering or regularity
 hypotheses on the box. -/
 @[simp]
@@ -97,6 +104,42 @@ theorem boxBoundarySum_eq_zero_of_eq {a b : Fin (n + 1) → ℝ} {k : Fin (n + 1
       rw [Real.volume_Icc_pi]
       exact Finset.prod_eq_zero (Finset.mem_univ r) (by simp [Function.comp_apply, hr, hk])
     rw [setIntegral_measure_zero _ hvol, setIntegral_measure_zero _ hvol, sub_self]
+
+@[simp]
+theorem boxBoundarySum_self (a : Fin (n + 1) → ℝ)
+    (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) :
+    boxBoundarySum a a F = 0 :=
+  boxBoundarySum_eq_zero_of_eq (k := 0) rfl F
+
+/-- Rescaling a closed rectangular box `Set.Icc a b` (`a ≤ b`) to the unit cube `[0, 1]ⁿ⁺¹`
+rewrites `boxBoundarySum a b F` as a unit-cube `boxBoundarySum`, with each `j`-face scaled by its
+`n`-dimensional face volume `∏ r, (b (j.succAbove r) - a (j.succAbove r))`, including on
+degenerate boxes and without continuity, measurability or completeness hypotheses. -/
+theorem boxBoundarySum_eq_boxBoundarySum_zero_one {a b : Fin (n + 1) → ℝ} (hab : a ≤ b)
+    (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) :
+    boxBoundarySum a b F =
+      boxBoundarySum 0 1 fun j u ↦
+        (∏ r : Fin n, (b (j.succAbove r) - a (j.succAbove r))) •
+          F j (fun i ↦ a i + (b i - a i) * u i) := by
+  rw [boxBoundarySum_def, boxBoundarySum_zero_one]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hface : a ∘ j.succAbove ≤ b ∘ j.succAbove := fun r ↦ hab (j.succAbove r)
+  have hfront (x : Fin n → ℝ) :
+      (fun i ↦ a i + (b i - a i) * j.insertNth (α := fun _ ↦ ℝ) 1 x i) =
+        j.insertNth (b j)
+          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * x r) := by
+    ext i
+    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
+  have hback (x : Fin n → ℝ) :
+      (fun i ↦ a i + (b i - a i) * j.insertNth (α := fun _ ↦ ℝ) 0 x i) =
+        j.insertNth (a j)
+          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * x r) := by
+    ext i
+    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
+  simp_rw [integral_smul, hfront, hback]
+  rw [setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface (fun y ↦ F j (j.insertNth (b j) y)),
+    setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface (fun y ↦ F j (j.insertNth (a j) y))]
+  simp only [Function.comp_apply]
 
 /-- Real scalars commute with `boxBoundarySum`, without integrability hypotheses. -/
 theorem boxBoundarySum_smul (a b : Fin (n + 1) → ℝ) (r : ℝ)
@@ -174,8 +217,9 @@ theorem norm_boxBoundarySum_le {a b : Fin (n + 1) → ℝ} (hab : a ≤ b)
 /-- Rectangular subdivision additivity of `boxBoundarySum`: splitting `Set.Icc a b` along
 coordinate `k` at `t ∈ Set.Icc (a k) (b k)` cancels the paired internal facets at `x k = t` and
 splits every transverse face `i ≠ k` into two sub-faces. -/
-theorem boxBoundarySum_split {a b : Fin (n + 1) → ℝ} (k : Fin (n + 1)) {t : ℝ}
-    (ht : t ∈ Icc (a k) (b k)) {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
+theorem boxBoundarySum_update_add_boxBoundarySum_update {a b : Fin (n + 1) → ℝ}
+    (k : Fin (n + 1)) {t : ℝ} (ht : t ∈ Icc (a k) (b k))
+    {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     (hFb : ∀ i, i ≠ k → IntegrableOn (fun x ↦ F i (i.insertNth (b i) x))
       (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)))
     (hFa : ∀ i, i ≠ k → IntegrableOn (fun x ↦ F i (i.insertNth (a i) x))
@@ -184,38 +228,35 @@ theorem boxBoundarySum_split {a b : Fin (n + 1) → ℝ} (k : Fin (n + 1)) {t : 
       boxBoundarySum a b F := by
   simp only [boxBoundarySum_def, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hrem (c : Fin (n + 1) → ℝ) : i.removeNth c = c ∘ i.succAbove :=
+    funext (i.removeNth_apply c)
   by_cases hik : i = k
   · subst hik
     have hcomp (c : Fin (n + 1) → ℝ) : Function.update c i t ∘ i.succAbove = c ∘ i.succAbove := by
-      ext r
-      exact Function.update_of_ne (i.succAbove_ne r) t c
+      simpa only [hrem] using i.removeNth_update t c
     simp only [hcomp, Function.update_self]
     abel
   · obtain ⟨r, hr⟩ := Fin.exists_succAbove_eq (Ne.symm hik)
     have hcomp (c : Fin (n + 1) → ℝ) :
         Function.update c k t ∘ i.succAbove = Function.update (c ∘ i.succAbove) r t := by
-      ext s
-      simp only [Function.comp_apply]
-      by_cases hsr : s = r
-      · subst hsr
-        rw [hr, Function.update_self, Function.update_self]
-      · have hsk : i.succAbove s ≠ k := hr ▸ i.succAbove_right_injective.ne hsr
-        rw [Function.update_of_ne hsk, Function.update_of_ne hsr, Function.comp_apply]
+      simpa only [hrem, hr] using i.removeNth_update_succAbove r t c
     have htr : t ∈ Icc ((a ∘ i.succAbove) r) ((b ∘ i.succAbove) r) := by
       simpa only [Function.comp_apply, hr] using ht
     simp only [Function.update_of_ne hik, hcomp]
     rw [sub_add_sub_comm,
-      setIntegral_Icc_split r htr (f := fun x ↦ F i (i.insertNth (b i) x)) (hFb i hik),
-      setIntegral_Icc_split r htr (f := fun x ↦ F i (i.insertNth (a i) x)) (hFa i hik)]
+      setIntegral_Icc_update_add_setIntegral_Icc_update r htr
+        (f := fun x ↦ F i (i.insertNth (b i) x)) (hFb i hik),
+      setIntegral_Icc_update_add_setIntegral_Icc_update r htr
+        (f := fun x ↦ F i (i.insertNth (a i) x)) (hFa i hik)]
 
 /-- Rectangular subdivision additivity of `boxBoundarySum` for fields continuous on
 `Set.Icc a b`. -/
-theorem boxBoundarySum_split_of_continuousOn {a b : Fin (n + 1) → ℝ} (hab : a ≤ b)
-    (k : Fin (n + 1)) {t : ℝ} (ht : t ∈ Icc (a k) (b k))
+theorem boxBoundarySum_update_add_boxBoundarySum_update_of_continuousOn
+    {a b : Fin (n + 1) → ℝ} (hab : a ≤ b) (k : Fin (n + 1)) {t : ℝ} (ht : t ∈ Icc (a k) (b k))
     {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E} (hF : ∀ i, ContinuousOn (F i) (Icc a b)) :
     boxBoundarySum a (Function.update b k t) F + boxBoundarySum (Function.update a k t) b F =
       boxBoundarySum a b F :=
-  boxBoundarySum_split k ht
+  boxBoundarySum_update_add_boxBoundarySum_update k ht
     (fun i _ ↦ (hF i).integrableOn_insertNth_Icc i (right_mem_Icc.mpr (hab i)))
     (fun i _ ↦ (hF i).integrableOn_insertNth_Icc i (left_mem_Icc.mpr (hab i)))
 

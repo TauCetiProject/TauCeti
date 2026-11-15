@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Box
 public import TauCeti.Topology.Algebra.Module.Determinant
-import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # The divergence theorem on affine parallelepipeds
@@ -91,9 +90,14 @@ theorem affineFluxPullback_refl (j : ι) (u : ι → ℝ) :
 
 @[simp]
 theorem affineFluxPullback_zero :
-    L.affineFluxPullback p (fun _ _ ↦ (0 : E)) = fun _ _ ↦ 0 := by
+    L.affineFluxPullback p (fun _ _ ↦ (0 : E)) = 0 := by
   ext j u
   simp [affineFluxPullback_apply]
+
+@[simp]
+theorem affineFluxPullback_zero' :
+    L.affineFluxPullback p (0 : ι → (ι → ℝ) → E) = 0 :=
+  L.affineFluxPullback_zero p
 
 theorem affineFluxPullback_smul (r : ℝ) :
     L.affineFluxPullback p (fun i x ↦ r • F i x) = fun j u ↦ r • L.affineFluxPullback p F j u := by
@@ -201,6 +205,11 @@ theorem affineFluxBoundary_zero :
     L.affineFluxBoundary p (fun _ _ ↦ (0 : E)) = 0 := by
   simp [affineFluxBoundary_def]
 
+@[simp]
+theorem affineFluxBoundary_zero' :
+    L.affineFluxBoundary p (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 :=
+  L.affineFluxBoundary_zero p
+
 /-- Constant field families have zero cofactor boundary flux, for either sign of `det L`. -/
 @[simp]
 theorem affineFluxBoundary_const (c : Fin (n + 1) → E) :
@@ -303,33 +312,18 @@ theorem affineFluxBoundary_piCongrRight_smulLeft {a b : Fin (n + 1) → ℝ} (ha
     affineFluxBoundary (piCongrRight fun i ↦
         (smulLeft (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) : ℝ ≃L[ℝ] ℝ))
       a F = TauCeti.boxBoundarySum a b F := by
-  rw [affineFluxBoundary_eq_sum, TauCeti.boxBoundarySum_def]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [affineFluxBoundary_def,
+    TauCeti.boxBoundarySum_eq_boxBoundarySum_zero_one fun i ↦ (hab i).le]
+  congr 1
+  ext j u
   have hprod : ∏ i ∈ Finset.univ.erase j, (b i - a i) =
       ∏ r : Fin n, (b (j.succAbove r) - a (j.succAbove r)) := by
     apply mul_left_cancel₀ (sub_ne_zero.mpr (hab j).ne')
     rw [Finset.mul_prod_erase Finset.univ (fun i ↦ b i - a i) (Finset.mem_univ j),
       Fin.prod_univ_succAbove (fun i ↦ b i - a i) j]
-  simp_rw [affineFluxPullback_piCongrRight_smulLeft
-    (fun i ↦ Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) a F j, Units.val_mk0, hprod,
-    integral_smul]
-  have hface : a ∘ j.succAbove ≤ b ∘ j.succAbove := fun r ↦ (hab (j.succAbove r)).le
-  have hfront (x : Fin n → ℝ) :
-      (fun i ↦ a i + (b i - a i) * j.insertNth (α := fun _ ↦ ℝ) 1 x i) =
-        j.insertNth (b j)
-          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * x r) := by
-    ext i
-    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
-  have hback (x : Fin n → ℝ) :
-      (fun i ↦ a i + (b i - a i) * j.insertNth (α := fun _ ↦ ℝ) 0 x i) =
-        j.insertNth (a j)
-          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * x r) := by
-    ext i
-    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
-  simp_rw [hfront, hback]
-  rw [setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface (fun y ↦ F j (j.insertNth (b j) y)),
-    setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface (fun y ↦ F j (j.insertNth (a j) y))]
-  simp only [Function.comp_apply]
+  simpa [Units.val_mk0, hprod] using
+    affineFluxPullback_piCongrRight_smulLeft
+      (fun i ↦ Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) a F j u
 
 end Diagonal
 

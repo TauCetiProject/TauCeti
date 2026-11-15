@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Topology.PiCurry
+import Mathlib.Algebra.Order.Group.Pointwise.Interval
+import Mathlib.Order.Interval.Set.Pi
 
 /-!
 # Continuous linear regrouping of coordinate families
@@ -22,7 +25,10 @@ For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family in
 into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
 `ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
 `ContinuousLinearEquiv.negCoord` negates a single coordinate of a dependent product while leaving
-the remaining coordinates fixed.
+the remaining coordinates fixed; `TauCeti.image_single_add_negCoord_univ_pi`,
+`TauCeti.image_single_add_negCoord_Icc`, and `TauCeti.image_single_add_negCoord_pi_Ioo` record
+its action on product sets and unit cubes, and `TauCeti.image_add_piCongrRight_smulLeft_Icc`
+identifies the image of the unit cube under positive coordinatewise scaling.
 
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
@@ -145,6 +151,19 @@ theorem negCoord_negCoord (k : ι) (x : (i : ι) → Q i) :
   · simp [h]
 
 @[simp]
+theorem negCoord_trans_negCoord (k : ι) :
+    (negCoord R (Q := Q) k).trans (negCoord R k) = .refl R ((i : ι) → Q i) := by
+  ext x i
+  simp
+
+@[simp]
+theorem negCoord_comp_negCoord (k : ι) :
+    (negCoord R (Q := Q) k : ((i : ι) → Q i) → (i : ι) → Q i) ∘
+        (negCoord R k : ((i : ι) → Q i) → (i : ι) → Q i) = id := by
+  ext x
+  simp
+
+@[simp]
 theorem negCoord_single_same (k : ι) (v : Q k) :
     negCoord R (Q := Q) k (Pi.single k v) = Pi.single k (-v) := by
   simp [negCoord]
@@ -159,6 +178,64 @@ end NegCoord
 end ContinuousLinearEquiv
 
 namespace TauCeti
+
+/-- Reflecting the `k`-th coordinate by `t ↦ c - t`, namely `u ↦ Pi.single k c + negCoord R k u`,
+maps a product set `Set.univ.pi s` to the product set with `s k` replaced by `(c - ·) '' s k`. -/
+theorem image_single_add_negCoord_univ_pi {R : Type*} [Semiring R] {ι : Type*} [DecidableEq ι]
+    {Q : ι → Type*} [∀ i, TopologicalSpace (Q i)] [∀ i, AddCommGroup (Q i)]
+    [∀ i, Module R (Q i)] [∀ i, ContinuousNeg (Q i)] (k : ι) (c : Q k) (s : ∀ i, Set (Q i)) :
+    (fun u : (i : ι) → Q i ↦ Pi.single k c + ContinuousLinearEquiv.negCoord R k u) ''
+        Set.univ.pi s =
+      Set.univ.pi (Function.update s k ((fun t ↦ c - t) '' s k)) := by
+  have hmap : (fun u : (i : ι) → Q i ↦ Pi.single k c + ContinuousLinearEquiv.negCoord R k u) =
+      Pi.map (Function.update (fun i ↦ (id : Q i → Q i)) k (fun t ↦ c - t)) := by
+    ext u i
+    rcases eq_or_ne i k with rfl | hik <;> simp [sub_eq_add_neg, *]
+  rw [hmap, Set.piMap_image_univ_pi]
+  refine Set.pi_congr rfl fun i _ ↦ ?_
+  rcases eq_or_ne i k with rfl | hik <;> simp [*]
+
+/-- Reflecting the `k`-th coordinate by `t ↦ 1 - t` maps the closed unit cube `Set.Icc 0 1` in
+`ι → R` onto itself over any ordered ring `R`. -/
+theorem image_single_add_negCoord_Icc {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [TopologicalSpace R] [ContinuousNeg R] {ι : Type*} [DecidableEq ι]
+    (k : ι) :
+    (fun u : ι → R ↦ Pi.single k 1 + ContinuousLinearEquiv.negCoord R k u) ''
+        Set.Icc 0 1 = Set.Icc 0 1 := by
+  rw [← Set.pi_univ_Icc, image_single_add_negCoord_univ_pi]
+  simp
+
+/-- Reflecting the `k`-th coordinate by `t ↦ 1 - t` maps the open unit cube
+`Set.univ.pi fun _ ↦ Set.Ioo 0 1` in `ι → R` onto itself over any ordered ring `R`. -/
+theorem image_single_add_negCoord_pi_Ioo {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [TopologicalSpace R] [ContinuousNeg R] {ι : Type*} [DecidableEq ι]
+    (k : ι) :
+    (fun u : ι → R ↦ Pi.single k 1 + ContinuousLinearEquiv.negCoord R k u) ''
+        Set.univ.pi (fun _ ↦ Set.Ioo 0 1) =
+      Set.univ.pi (fun _ ↦ Set.Ioo 0 1) := by
+  rw [image_single_add_negCoord_univ_pi]
+  simp
+
+/-- Positive coordinatewise scaling from `a` by `b - a` maps the unit cube `Set.Icc 0 1` in
+`ι → K` onto the closed box `Set.Icc a b` over any ordered field `K`. -/
+theorem image_add_piCongrRight_smulLeft_Icc {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] [TopologicalSpace K] [ContinuousConstSMul K K]
+    {ι : Type*} {a b : ι → K} (hab : ∀ i, a i < b i) :
+    (fun u : ι → K ↦ a +
+      ContinuousLinearEquiv.piCongrRight (fun i ↦
+        (ContinuousLinearEquiv.smulLeft
+          (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) : K ≃L[K] K)) u) ''
+        Set.Icc 0 1 = Set.Icc a b := by
+  have hmap : (fun u : ι → K ↦ a +
+      ContinuousLinearEquiv.piCongrRight (fun i ↦
+        (ContinuousLinearEquiv.smulLeft
+          (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hab i).ne')) : K ≃L[K] K)) u) =
+      Pi.map fun i t ↦ (b i - a i) * t + a i := by
+    ext u i
+    simp [add_comm]
+  rw [hmap, ← Set.pi_univ_Icc, Set.piMap_image_univ_pi, ← Set.pi_univ_Icc]
+  refine Set.pi_congr rfl fun i _ ↦ ?_
+  simp [Set.image_affine_Icc' (sub_pos.mpr (hab i))]
 
 /-- Regrouping a family of tuples along a bijection of the sigma index, as a continuous linear
 equivalence. The underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`. -/

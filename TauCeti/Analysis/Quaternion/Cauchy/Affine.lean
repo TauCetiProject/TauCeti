@@ -53,17 +53,21 @@ for `g * eᵢ * f`. Regularity is required only at interior points of the parall
 theorem cauchy_affine_cofactor
     (hg : ContinuousOn g (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : ContinuousOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hgr : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      RightFueterAt g (Quaternion.dq (p + L u)))
-    (hfl : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      LeftFueterAt f (Quaternion.dq (p + L u))) :
+    (hgr : RightFueterOn g (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1))))
+    (hfl : LeftFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     L.affineFluxBoundary p (fun i y ↦
       g (Quaternion.dq y) * Quaternion.dq (Pi.single i 1) * f (Quaternion.dq y)) = 0 := by
+  have hgr' u (hu : u ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
+      RightFueterAt g (Quaternion.dq (p + L u)) :=
+    rightFueterOn_iff.mp hgr _ (mem_image_of_mem _ (mem_image_of_mem _ hu))
+  have hfl' u (hu : u ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
+      LeftFueterAt f (Quaternion.dq (p + L u)) :=
+    leftFueterOn_iff.mp hfl _ (mem_image_of_mem _ (mem_image_of_mem _ hu))
   let G (i : Fin 4) (q : ℍ) :=
     g q * QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i * f q
-  have hd u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) i :
+  have hd u (hu : u ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) i :
       DifferentiableAt ℝ (G i) (Quaternion.dq (p + L u)) :=
-    (((hgr u hu).differentiableAt.mul_const _).mul (hfl u hu).differentiableAt)
+    (((hgr' u hu).differentiableAt.mul_const _).mul (hfl' u hu).differentiableAt)
   simp only [Quaternion.dq_single, one_smul]
   refine L.affineFluxBoundary_eq_zero_of_hasFDerivAt p _
     (F' := fun i y ↦ (fderiv ℝ (G i) (Quaternion.dq y)).comp Quaternion.dq) ?_ ?_ ?_
@@ -75,30 +79,30 @@ theorem cauchy_affine_cofactor
     exact (hd u hu i).hasFDerivAt.comp (p + L u) Quaternion.dq.hasFDerivAt
   · intro u hu
     refine Eq.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-      ((hgr u hu).sum_fderiv_mul_leftFueterAt (hfl u hu))
+      ((hgr' u hu).sum_fderiv_mul_leftFueterAt (hfl' u hu))
     rw [ContinuousLinearMap.comp_apply, Quaternion.dq_single, one_smul]
 
 /-- The left Cauchy theorem on an affine parallelepiped, stated as vanishing cofactor
 boundary flux with the ordered coefficients `eᵢ * f`. -/
 theorem left_cauchy_affine_cofactor
     (hf : ContinuousOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hfl : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      LeftFueterAt f (Quaternion.dq (p + L u))) :
+    (hfl : LeftFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     L.affineFluxBoundary p (fun i y ↦
       Quaternion.dq (Pi.single i 1) * f (Quaternion.dq y)) = 0 := by
   simpa only [one_mul] using cauchy_affine_cofactor L p
-    (g := fun _ ↦ 1) continuousOn_const hf (fun _ _ ↦ rightFueterAt_const _ _) hfl
+    (g := fun _ ↦ 1) continuousOn_const hf
+    (rightFueterOn_iff.mpr fun _ _ ↦ rightFueterAt_const _ _) hfl
 
 /-- The right Cauchy theorem on an affine parallelepiped, stated as vanishing cofactor
 boundary flux with the ordered coefficients `f * eᵢ`. -/
 theorem right_cauchy_affine_cofactor
     (hf : ContinuousOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hfr : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      RightFueterAt f (Quaternion.dq (p + L u))) :
+    (hfr : RightFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     L.affineFluxBoundary p (fun i y ↦
       f (Quaternion.dq y) * Quaternion.dq (Pi.single i 1)) = 0 := by
   simpa only [mul_one] using cauchy_affine_cofactor L p hf
-    (f := fun _ ↦ 1) continuousOn_const hfr (fun _ _ ↦ leftFueterAt_const _ _)
+    (f := fun _ ↦ 1) continuousOn_const hfr
+    (leftFueterOn_iff.mpr fun _ _ ↦ leftFueterAt_const _ _)
 
 /-- The two-sided Cauchy theorem on an affine parallelepiped, stated as vanishing of the
 geometrically parametrized surface integral `rawAffineBoundary` of `g * Dq * f` for a right
@@ -106,10 +110,8 @@ Fueter regular `g` and a left Fueter regular `f`. Both orientations of `L` are a
 theorem cauchy_affine
     (hg : ContinuousOn g (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : ContinuousOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hgr : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      RightFueterAt g (Quaternion.dq (p + L u)))
-    (hfl : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      LeftFueterAt f (Quaternion.dq (p + L u))) :
+    (hgr : RightFueterOn g (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1))))
+    (hfl : LeftFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
         (g (Quaternion.dq x)) (f (Quaternion.dq x))) = 0 := by
@@ -122,31 +124,23 @@ geometrically parametrized surface integral `rawAffineBoundary` of `Dq * f` for 
 Fueter regular `f`. Both orientations of `L` are allowed. -/
 theorem left_cauchy_affine
     (hf : ContinuousOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hfl : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      LeftFueterAt f (Quaternion.dq (p + L u))) :
+    (hfl : LeftFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (Quaternion.dq x))) = 0 := by
-  have hmul : (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (Quaternion.dq x))) =
-      fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ 1 (f (Quaternion.dq x)) :=
-    funext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
-  rw [hmul]
+  simp_rw [← ContinuousLinearMap.mulLeftRight_one_left]
   exact cauchy_affine L p (g := fun _ ↦ 1) continuousOn_const hf
-    (fun _ _ ↦ rightFueterAt_const _ _) hfl
+    (rightFueterOn_iff.mpr fun _ _ ↦ rightFueterAt_const _ _) hfl
 
 /-- The right Cauchy theorem on an affine parallelepiped, stated as vanishing of the
 geometrically parametrized surface integral `rawAffineBoundary` of `f * Dq` for a right
 Fueter regular `f`. Both orientations of `L` are allowed. -/
 theorem right_cauchy_affine
     (hf : ContinuousOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hfr : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      RightFueterAt f (Quaternion.dq (p + L u))) :
+    (hfr : RightFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (f (Quaternion.dq x))) = 0 := by
-  have hmul : (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (f (Quaternion.dq x))) =
-      fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ (f (Quaternion.dq x)) 1 :=
-    funext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
-  rw [hmul]
+  simp_rw [← ContinuousLinearMap.mulLeftRight_one_right]
   exact cauchy_affine L p hf (f := fun _ ↦ 1) continuousOn_const hfr
-    (fun _ _ ↦ leftFueterAt_const _ _)
+    (leftFueterOn_iff.mpr fun _ _ ↦ leftFueterAt_const _ _)
 
 end TauCeti

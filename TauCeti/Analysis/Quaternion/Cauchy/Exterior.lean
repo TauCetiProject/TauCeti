@@ -74,17 +74,13 @@ theorem left_cauchyFueter_affine_cofactor_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
     (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      LeftFueterAt f (dq (p + L u))) :
+    (hf : LeftFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     L.affineFluxBoundary p (fun i x ↦
-      cauchyFueterKernel (dq x) q₀ * dq (Pi.single i 1) * f (dq x)) = 0 := by
-  have hr u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
-      RightFueterAt (fun q ↦ cauchyFueterKernel q q₀) (dq (p + L u)) :=
-    rightFueterOn_iff.mp (rightFueterOn_cauchyFueterKernel hq₀) _
-      (mem_image_of_mem dq (mem_image_of_mem (fun u ↦ p + L u)
-        (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
-  exact cauchy_affine_cofactor L p (f := f) (g := fun q ↦ cauchyFueterKernel q q₀)
-    (continuousOn_cauchyFueterKernel hq₀) hc hr hf
+      cauchyFueterKernel (dq x) q₀ * dq (Pi.single i 1) * f (dq x)) = 0 :=
+  cauchy_affine_cofactor L p (f := f) (g := fun q ↦ cauchyFueterKernel q q₀)
+    (continuousOn_cauchyFueterKernel hq₀) hc
+    ((rightFueterOn_cauchyFueterKernel hq₀).mono
+      (image_mono (image_mono fun _ hu ↦ Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu)))) hf
 
 /-- The right kernel-weighted signed cofactor flux on an affine parallelepiped vanishes
 for an exterior pole. The coefficient is `f * eᵢ * G`, not `G * eᵢ * f`. -/
@@ -92,17 +88,13 @@ theorem right_cauchyFueter_affine_cofactor_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
     (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      RightFueterAt f (dq (p + L u))) :
+    (hf : RightFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     L.affineFluxBoundary p (fun i x ↦
-      f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q₀) = 0 := by
-  have hl u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
-      LeftFueterAt (fun q ↦ cauchyFueterKernel q q₀) (dq (p + L u)) :=
-    leftFueterOn_iff.mp (leftFueterOn_cauchyFueterKernel hq₀) _
-      (mem_image_of_mem dq (mem_image_of_mem (fun u ↦ p + L u)
-        (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
-  exact cauchy_affine_cofactor L p (g := f) (f := fun q ↦ cauchyFueterKernel q q₀)
-    hc (continuousOn_cauchyFueterKernel hq₀) hf hl
+      f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q₀) = 0 :=
+  cauchy_affine_cofactor L p (g := f) (f := fun q ↦ cauchyFueterKernel q q₀) hc
+    (continuousOn_cauchyFueterKernel hq₀) hf
+    ((leftFueterOn_cauchyFueterKernel hq₀).mono
+      (image_mono (image_mono fun _ hu ↦ Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
 
 /-- The left Cauchy–Fueter raw affine boundary integral of `G * Dq * f` vanishes when the
 pole lies outside the closed affine parallelepiped. Both orientations of `L` are allowed. -/
@@ -110,8 +102,7 @@ theorem left_cauchyFueter_affine_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
     (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      LeftFueterAt f (dq (p + L u))) :
+    (hf : LeftFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
         (cauchyFueterKernel (dq x) q₀) (f (dq x))) = 0 := by
@@ -125,8 +116,7 @@ theorem right_cauchyFueter_affine_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
     (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      RightFueterAt f (dq (p + L u))) :
+    (hf : RightFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
         (f (dq x)) (cauchyFueterKernel (dq x) q₀)) = 0 := by

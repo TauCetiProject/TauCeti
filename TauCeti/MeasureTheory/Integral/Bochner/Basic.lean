@@ -85,8 +85,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
-* `TauCeti.setIntegral_Icc_split` splits a Bochner set integral over `Set.Icc a b` in `ι → ℝ`
-  along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
+* `TauCeti.setIntegral_Icc_update_add_setIntegral_Icc_update` splits a Bochner set integral over
+  `Set.Icc a b` in `ι → ℝ` along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
   `[a, b]` has `a ≤ 0 ≤ b`.
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
@@ -263,7 +263,7 @@ namespace TauCeti
 
 /-- Splitting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at
 `t ∈ Set.Icc (a k) (b k)` splits the Bochner set integral of any integrable function. -/
-theorem setIntegral_Icc_split {ι E : Type*} [Fintype ι] [DecidableEq ι]
+theorem setIntegral_Icc_update_add_setIntegral_Icc_update {ι E : Type*} [Fintype ι] [DecidableEq ι]
     [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ι → ℝ} (k : ι) {t : ℝ}
     (ht : t ∈ Set.Icc (a k) (b k)) {f : (ι → ℝ) → E} (hf : IntegrableOn f (Set.Icc a b)) :
     (∫ x in Set.Icc a (Function.update b k t), f x) +

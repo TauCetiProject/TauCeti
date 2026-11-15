@@ -231,11 +231,11 @@ theorem tupleConj_def :
   (rfl)
 
 @[simp]
-theorem tupleConj_zero (x : Fin 4 → ℝ) : tupleConj x 0 = x 0 := by
+theorem tupleConj_apply_zero (x : Fin 4 → ℝ) : tupleConj x 0 = x 0 := by
   simp [tupleConj_def]
 
 @[simp]
-theorem tupleConj_of_ne_zero {i : Fin 4} (hi : i ≠ 0) (x : Fin 4 → ℝ) :
+theorem tupleConj_apply_of_ne_zero {i : Fin 4} (hi : i ≠ 0) (x : Fin 4 → ℝ) :
     tupleConj x i = -x i := by
   simp [tupleConj_def, hi]
 
@@ -259,6 +259,39 @@ theorem tupleConj_tupleConj (x : Fin 4 → ℝ) : tupleConj (tupleConj x) = x :=
   · subst hi
     simp
   · simp [hi]
+
+@[simp]
+theorem tupleConj_trans_tupleConj :
+    tupleConj.trans tupleConj = ContinuousLinearEquiv.refl ℝ (Fin 4 → ℝ) := by
+  ext x i
+  simp
+
+@[simp]
+theorem tupleConj_comp_tupleConj :
+    (tupleConj : (Fin 4 → ℝ) → Fin 4 → ℝ) ∘ (tupleConj : (Fin 4 → ℝ) → Fin 4 → ℝ) = id := by
+  ext x i
+  simp
+
+@[simp]
+theorem tupleConj_single_zero (r : ℝ) :
+    tupleConj (Pi.single 0 r) = Pi.single 0 r := by
+  ext i
+  by_cases hi : i = 0
+  · subst hi
+    simp
+  · simp [hi]
+
+@[simp]
+theorem tupleConj_single_of_ne_zero {i : Fin 4} (hi : i ≠ 0) (r : ℝ) :
+    tupleConj (Pi.single i r) = Pi.single i (-r) := by
+  ext j
+  by_cases hj : j = 0
+  · subst hj
+    simp [hi.symm]
+  · by_cases hji : j = i
+    · subst hji
+      simp [hi]
+    · simp [hj, hji]
 
 /-- Quaternionic conjugation negates the three imaginary axes and fixes the real axis, so it has
 determinant `-1`. -/

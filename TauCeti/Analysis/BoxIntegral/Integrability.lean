@@ -54,16 +54,15 @@ namespace BoxIntegral.Box
 
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- On any slice `x i = c` of a box `I`, the volume `BoxIntegral` over `I.face i` of a function
-continuous along that closed slice equals the Bochner set integral over
-`Set.Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)`. -/
-theorem integral_face_eq_setIntegral_Icc (I : Box (Fin (n + 1))) {f : (Fin (n + 1) → ℝ) → E}
-    {i : Fin (n + 1)} {c : ℝ}
-    (hc : ContinuousOn (fun x ↦ f (i.insertNth c x))
-      (Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)))
+/-- The volume `BoxIntegral` over the coordinate face `I.face i` of a function `f : (Fin n → ℝ) → E`
+continuous on `Set.Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)` equals its Bochner set
+integral over that closed face. -/
+theorem integral_face_eq_setIntegral_Icc (I : Box (Fin (n + 1))) {f : (Fin n → ℝ) → E}
+    {i : Fin (n + 1)}
+    (hc : ContinuousOn f (Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)))
     (l : IntegrationParams) :
-    BoxIntegral.integral (I.face i) l (fun x ↦ f (i.insertNth c x)) BoxAdditiveMap.volume =
-      ∫ x in Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove), f (i.insertNth c x) := by
+    BoxIntegral.integral (I.face i) l f BoxAdditiveMap.volume =
+      ∫ x in Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove), f x := by
   have hl : (I.face i).lower = I.lower ∘ i.succAbove := funext (face_lower I i)
   have hu : (I.face i).upper = I.upper ∘ i.succAbove := funext (face_upper I i)
   rw [← hl, ← hu] at hc

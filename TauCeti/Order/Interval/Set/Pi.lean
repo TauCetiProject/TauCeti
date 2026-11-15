@@ -43,17 +43,18 @@ end Preorder
 
 section LinearOrder
 
-variable {ι : Type*} {π : ι → Type*} [DecidableEq ι] [∀ i, LinearOrder (π i)]
+variable {ι : Type*} {π : ι → Type*} [DecidableEq ι] [∀ j, Preorder (π j)]
 
-/-- Splitting a closed box `Icc a b` along coordinate `i` at `s ∈ Icc (a i) (b i)` decomposes it
-as the union of its lower and upper sub-boxes. -/
-theorem Icc_update_union_Icc_update (a b : ∀ j, π j) (i : ι)
+/-- When the cut coordinate `π i` is linearly ordered, splitting a closed box `Icc a b` along
+coordinate `i` at `s ∈ Icc (a i) (b i)` decomposes it as the union of its lower and upper
+sub-boxes. -/
+theorem Icc_update_union_Icc_update (a b : ∀ j, π j) (i : ι) [Std.IsLinearOrder (π i)]
     {s : π i} (hs : s ∈ Icc (a i) (b i)) :
     Icc a (update b i s) ∪ Icc (update a i s) b = Icc a b := by
   refine Subset.antisymm (union_subset
       (Icc_subset_Icc le_rfl (update_le_iff.2 ⟨hs.2, fun _ _ ↦ le_rfl⟩))
       (Icc_subset_Icc (le_update_iff.2 ⟨hs.1, fun _ _ ↦ le_rfl⟩) le_rfl)) fun x hx ↦ ?_
-  rcases le_total (x i) s with hxs | hsx
+  rcases Std.Total.total (r := (· ≤ ·)) (x i) s with hxs | hsx
   · exact Or.inl (mem_Icc_update_right hx hxs)
   · exact Or.inr (mem_Icc_update_left hx hsx)
 

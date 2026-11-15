@@ -237,13 +237,7 @@ theorem det_negCoord [Finite ι] [DecidableEq ι] {N : ι → Type*}
 theorem det_negCoord_ring [Finite ι] [DecidableEq ι] [TopologicalSpace R] [ContinuousNeg R]
     (k : ι) :
     LinearMap.det (negCoord R (Q := fun _ : ι ↦ R) k : (ι → R) →ₗ[R] ι → R) = -1 := by
-  cases nonempty_fintype ι
-  rw [negCoord_def, det_piCongrRight, Finset.prod_eq_single k]
-  · simp
-  · intro i _ hik
-    simp [hik]
-  · intro hk
-    exact absurd (Finset.mem_univ k) hk
+  rw [det_negCoord, CommSemiring.finrank_self, pow_one]
 
 end PiDet
 

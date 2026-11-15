@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.Basic
+public import TauCeti.Analysis.Normed.Operator.Mul
 public import TauCeti.Analysis.Quaternion.Forms
 public import TauCeti.MeasureTheory.Integral.Bochner.Star
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Affine
@@ -35,13 +36,19 @@ This file develops the geometric and reparametrization calculus of `rawAffineBou
 * coordinate reflection `negCoord ℝ k` (`rawAffineBoundary_comp_negCoord`), quaternionic
   conjugation `tupleConj` (`rawAffineBoundary_tupleConj_comp`), and their composition preserving
   the orientation of `u ↦ p + L u` (`rawAffineBoundary_tupleConj_comp_negCoord`,
-  `star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight`), which exchanges left and right
-  ordered integrands;
-* rectangular subdivision additivity (`rawAffineBoundary_split`,
-  `rawAffineBoundary_split_of_continuousOn`) along `u k = t`;
+  `star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight`, and its one-sided specializations
+  `star_rawAffineBoundary_tupleConj_comp_negCoord_mul_flip` and
+  `star_rawAffineBoundary_tupleConj_comp_negCoord_mul`), which exchanges left and right ordered
+  integrands;
+* rectangular subdivision additivity
+  (`rawAffineBoundary_comp_piMap_update_add_rawAffineBoundary_comp_piMap_update`,
+  `rawAffineBoundary_comp_piMap_update_add_rawAffineBoundary_comp_piMap_update_of_continuousOn`)
+  along `u k = t`;
 * compatibility with `ContinuousLinearEquiv.affineFluxBoundary` for invertible `L`, with
-  `TauCeti.boxBoundarySum a b` on axis-aligned boxes `a ≤ b` (`rawAffineBoundary_piMap_smul_id`),
-  and with `BoxIntegral.integral` (`rawAffineBoundary_eq_boxIntegral`).
+  `TauCeti.boxBoundarySum a b` on axis-aligned boxes `a ≤ b` (`rawAffineBoundary_piMap_smul_id`,
+  `rawAffineBoundary_piMap_smul_id_mulLeftRight`, `rawAffineBoundary_piMap_smul_id_mul_flip`,
+  `rawAffineBoundary_piMap_smul_id_mul`), and with `BoxIntegral.integral`
+  (`rawAffineBoundary_eq_boxIntegral`).
 
 ## References
 
@@ -170,6 +177,11 @@ theorem affineFaceNormal_eq_zero (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
   rw [ContinuousAlternatingMap.coe_toAlternatingMap] at hz
   rw [affineFaceNormal_eq, hz, smul_zero]
 
+@[simp]
+theorem affineFaceNormal_zero (j : Fin 4) :
+    affineFaceNormal 0 j = 0 :=
+  affineFaceNormal_eq_zero 0 j fun hli ↦ hli.ne_zero 0 (zero_apply _)
+
 /-- Any parametrized face integral vanishes when the three face tangent vectors of `L` are linearly
 dependent, without continuity or integrability assumptions on `B`. -/
 theorem integral_affineFace_eq_zero (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
@@ -227,35 +239,25 @@ theorem rawAffineBoundary_comp_piMap_smul_id (L : (Fin 4 → ℝ) →L[ℝ] (Fin
         (L.comp (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ))
         (p + L a) B =
       TauCeti.boxBoundarySum a b (fun j x ↦ B (p + L x) (affineFaceNormal L j)) := by
-  rw [rawAffineBoundary_eq, TauCeti.boxBoundarySum_def]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [affineFaceNormal_comp_piMap_smul_id]
-  have hface : a ∘ j.succAbove ≤ b ∘ j.succAbove := fun r ↦ hab (j.succAbove r)
-  have hfront (u : Fin 3 → ℝ) :
-      a + (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ)
-          (j.insertNth 1 u) =
-        j.insertNth (b j)
-          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * u r) := by
+  rw [rawAffineBoundary_eq_boxBoundarySum,
+    TauCeti.boxBoundarySum_eq_boxBoundarySum_zero_one hab]
+  congr 1
+  ext j u
+  have hpt : a + (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ) u =
+      fun i ↦ a i + (b i - a i) * u i := by
     ext i
-    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
-  have hback (u : Fin 3 → ℝ) :
-      a + (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ)
-          (j.insertNth 0 u) =
-        j.insertNth (a j)
-          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * u r) := by
-    ext i
-    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
-  simp only [comp_apply, add_assoc, ← map_add, hfront, hback, map_smul, integral_smul]
-  rw [setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface
-      (fun y ↦ B (p + L (j.insertNth (b j) y)) (affineFaceNormal L j)),
-    setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface
-      (fun y ↦ B (p + L (j.insertNth (a j) y)) (affineFaceNormal L j))]
-  simp only [Function.comp_apply]
+    simp
+  rw [affineFaceNormal_comp_piMap_smul_id, comp_apply, add_assoc, ← map_add, hpt, map_smul]
 
 @[simp]
 theorem rawAffineBoundary_zero (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) :
     rawAffineBoundary L p (fun _ ↦ (0 : ℍ →L[ℝ] E)) = 0 := by
   simp [rawAffineBoundary_eq]
+
+@[simp]
+theorem rawAffineBoundary_zero' (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) :
+    rawAffineBoundary L p (0 : (Fin 4 → ℝ) → ℍ →L[ℝ] E) = 0 :=
+  rawAffineBoundary_zero L p
 
 /-- Constant coefficients have zero boundary integral: opposite faces cancel, including
 for singular affine maps. -/
@@ -284,6 +286,11 @@ theorem rawAffineBoundary_eq_zero_of_apply_single_eq_zero {L : (Fin 4 → ℝ) �
     have hzero : affineFaceNormal L j = 0 :=
       affineFaceNormal_eq_zero L j fun hli ↦ hli.ne_zero r (by simp [hr, hk])
     simp [hzero]
+
+@[simp]
+theorem rawAffineBoundary_zero_left (p : Fin 4 → ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
+    rawAffineBoundary 0 p B = 0 :=
+  rawAffineBoundary_eq_zero_of_apply_single_eq_zero (k := 0) (by simp) p B
 
 /-- Continuity of the coefficient on the affine cube ensures integrability on each face. -/
 theorem integrableOn_affineFace (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
@@ -380,7 +387,7 @@ private theorem setIntegral_affineFace_comp_negCoord_transverse
     · simp
     · simp [hsr]
   simp_rw [add_assoc, ← map_add, hpt, map_neg, integral_neg, neg_inj]
-  exact ContinuousLinearEquiv.setIntegral_Icc_single_add_negCoord r
+  exact MeasureTheory.setIntegral_Icc_single_add_negCoord r
     (fun u ↦ B (p + L (j.insertNth c u)) (affineFaceNormal L j))
 
 /-- Reflecting the `k`-th parameter coordinate `u k ↦ 1 - u k` negates `rawAffineBoundary`: the
@@ -482,10 +489,39 @@ theorem star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight
     simp [mul_assoc]
   simp only [hmul]
 
+/-- One-sided specialization of
+`ContinuousLinearMap.star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight`: under
+orientation-preserving quaternionic reflection, the left-ordered boundary integral of
+`Dq * star (f (star q))` conjugates to the right-ordered boundary integral of `f q * Dq`. -/
+theorem star_rawAffineBoundary_tupleConj_comp_negCoord_mul_flip
+    (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) (k : Fin 4) (f : ℍ → ℍ) :
+    star (rawAffineBoundary
+        ((tupleConj.toContinuousLinearMap.comp L).comp
+          (ContinuousLinearEquiv.negCoord ℝ (Q := fun _ : Fin 4 ↦ ℝ) k).toContinuousLinearMap)
+        (tupleConj (p + L (Pi.single k 1)))
+        (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (star (f (star (dq x)))))) =
+      rawAffineBoundary L p (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (f (dq x))) := by
+  simpa using star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight L p k (fun _ ↦ 1) f
+
+/-- One-sided specialization of
+`ContinuousLinearMap.star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight`: under
+orientation-preserving quaternionic reflection, the right-ordered boundary integral of
+`star (f (star q)) * Dq` conjugates to the left-ordered boundary integral of `Dq * f q`. -/
+theorem star_rawAffineBoundary_tupleConj_comp_negCoord_mul
+    (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) (k : Fin 4) (f : ℍ → ℍ) :
+    star (rawAffineBoundary
+        ((tupleConj.toContinuousLinearMap.comp L).comp
+          (ContinuousLinearEquiv.negCoord ℝ (Q := fun _ : Fin 4 ↦ ℝ) k).toContinuousLinearMap)
+        (tupleConj (p + L (Pi.single k 1)))
+        (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (star (f (star (dq x)))))) =
+      rawAffineBoundary L p (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (dq x))) := by
+  simpa using star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight L p k f (fun _ ↦ 1)
+
 /-- Rectangular subdivision additivity of `rawAffineBoundary`: splitting `[0, 1]⁴` along coordinate
 `k` at `t ∈ Set.Icc 0 1` cancels the two opposite internal facets at `u k = t` and splits every
 transverse face `j ≠ k` into two sub-faces. -/
-theorem rawAffineBoundary_split (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
+theorem rawAffineBoundary_comp_piMap_update_add_rawAffineBoundary_comp_piMap_update
+    (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
     (k : Fin 4) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E}
     (hB₁ : ∀ j : Fin 4, j ≠ k → IntegrableOn
       (fun u ↦ B (p + L (j.insertNth 1 u)) (affineFaceNormal L j)) (Icc (0 : Fin 3 → ℝ) 1))
@@ -518,14 +554,14 @@ theorem rawAffineBoundary_split (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) 
   simp_rw [hsub₀, map_zero, add_zero] at hlow
   simp_rw [hsub₁] at hupp
   rw [← hsingle, hlow, hupp, rawAffineBoundary_eq_boxBoundarySum]
-  exact TauCeti.boxBoundarySum_split k (by simpa using ht)
+  exact TauCeti.boxBoundarySum_update_add_boxBoundarySum_update k (by simpa using ht)
     (fun j hjk ↦ by simpa only [Function.comp_def, Pi.zero_def, Pi.one_def] using hB₁ j hjk)
     (fun j hjk ↦ by simpa only [Function.comp_def, Pi.zero_def, Pi.one_def] using hB₀ j hjk)
 
 /-- Rectangular subdivision additivity of `rawAffineBoundary` for coefficients continuous on the
 closed affine parallelepiped `(fun u ↦ p + L u) '' Set.Icc 0 1`. -/
-theorem rawAffineBoundary_split_of_continuousOn (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
-    (p : Fin 4 → ℝ) (k : Fin 4) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+theorem rawAffineBoundary_comp_piMap_update_add_rawAffineBoundary_comp_piMap_update_of_continuousOn
+    (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) (k : Fin 4) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
     {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} (hB : ContinuousOn B ((fun u ↦ p + L u) '' Icc 0 1)) :
     rawAffineBoundary
         (L.comp (ContinuousLinearMap.piMap fun i ↦
@@ -535,7 +571,7 @@ theorem rawAffineBoundary_split_of_continuousOn (L : (Fin 4 → ℝ) →L[ℝ] (
           Function.update (1 : Fin 4 → ℝ) k (1 - t) i • ContinuousLinearMap.id ℝ ℝ))
         (p + L (Pi.single k t)) B =
       rawAffineBoundary L p B :=
-  rawAffineBoundary_split L p k ht
+  rawAffineBoundary_comp_piMap_update_add_rawAffineBoundary_comp_piMap_update L p k ht
     (fun j _ ↦ integrableOn_affineFace L p hB j (by simp))
     (fun j _ ↦ integrableOn_affineFace L p hB j (by simp))
 
@@ -560,8 +596,7 @@ theorem integral_affineFace_eq_boxIntegral [CompleteSpace E]
       (Icc (I.lower ∘ j.succAbove) (I.upper ∘ j.succAbove)) := by
     simpa only [I, Function.comp_def, Pi.zero_def, Pi.one_def] using hcont
   simpa only [I, Function.comp_def, Pi.zero_def, Pi.one_def] using
-    (I.integral_face_eq_setIntegral_Icc
-      (f := fun x ↦ B (p + L x) (affineFaceNormal L j)) hface l).symm
+    (I.integral_face_eq_setIntegral_Icc hface l).symm
 
 /-- For a Banach-valued coefficient `B` continuous along each closed front and back face of
 `(fun u ↦ p + L u) '' Icc 0 1`, `rawAffineBoundary L p B` equals the front-minus-back sum of
@@ -636,5 +671,25 @@ theorem rawAffineBoundary_piMap_smul_id_mulLeftRight {a b : Fin 4 → ℝ} (hab 
       TauCeti.boxBoundarySum a b (fun i x ↦ g (dq x) * dq (Pi.single i 1) * f (dq x)) := by
   rw [rawAffineBoundary_piMap_smul_id hab]
   simp only [mulLeftRight_apply]
+
+/-- Left-ordered specialization of `rawAffineBoundary_piMap_smul_id_mulLeftRight`: on an
+axis-aligned closed box `Set.Icc a b` (`a ≤ b`), the raw affine boundary integral of `Dq * f`
+matches `TauCeti.boxBoundarySum a b` of `eᵢ * f`. -/
+theorem rawAffineBoundary_piMap_smul_id_mul_flip {a b : Fin 4 → ℝ} (hab : a ≤ b) (f : ℍ → ℍ) :
+    rawAffineBoundary
+        (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ) a
+        (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (dq x))) =
+      TauCeti.boxBoundarySum a b (fun i x ↦ dq (Pi.single i 1) * f (dq x)) := by
+  simpa using rawAffineBoundary_piMap_smul_id_mulLeftRight hab (fun _ ↦ 1) f
+
+/-- Right-ordered specialization of `rawAffineBoundary_piMap_smul_id_mulLeftRight`: on an
+axis-aligned closed box `Set.Icc a b` (`a ≤ b`), the raw affine boundary integral of `f * Dq`
+matches `TauCeti.boxBoundarySum a b` of `f * eᵢ`. -/
+theorem rawAffineBoundary_piMap_smul_id_mul {a b : Fin 4 → ℝ} (hab : a ≤ b) (f : ℍ → ℍ) :
+    rawAffineBoundary
+        (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ) a
+        (fun x ↦ ContinuousLinearMap.mul ℝ ℍ (f (dq x))) =
+      TauCeti.boxBoundarySum a b (fun i x ↦ f (dq x) * dq (Pi.single i 1)) := by
+  simpa using rawAffineBoundary_piMap_smul_id_mulLeftRight hab f (fun _ ↦ 1)
 
 end ContinuousLinearMap
