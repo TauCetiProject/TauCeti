@@ -37,9 +37,9 @@ the unit interval as `TauCeti.isJordanCurve_range_of_eq_or_eq_endpoints`.
 
 public section
 
-namespace TauCeti
-
 open Set
+
+namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] {C : Set X} {γ : ℝ → X} {a b : ℝ}
 
