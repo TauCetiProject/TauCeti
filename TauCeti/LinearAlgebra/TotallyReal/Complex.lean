@@ -31,7 +31,9 @@ conjugate-linear involution.
 * `TauCeti.IsTotallyReal.linearIndependent_complex`: real-linearly independent vectors of a
   totally real subspace are complex-linearly independent.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
-  as a complex basis of the ambient space.
+  as a complex basis of the ambient space, in which the vectors of the subspace are exactly those
+  with real coordinates
+  (`TauCeti.IsMaximalTotallyReal.mem_iff_forall_complexBasis_repr_im_eq_zero`).
 * `TauCeti.IsMaximalTotallyReal.det_eq_det_restrict`: a complex-linear map preserving a maximal
   totally real subspace has the same (real) determinant as its restriction.
 * `TauCeti.IsMaximalTotallyReal.exists_linearEquiv_map_eq`: complex-linear automorphisms act
@@ -312,6 +314,18 @@ theorem complexBasis_repr_coe {ι : Type*} (b : Basis ι ℝ L) (x : L) (i : ι)
       rw [complexBasis_apply] at hj
       simp [hj]
   simpa using DFunLike.congr_fun (LinearMap.congr_fun h x) i
+
+/-- A vector lies in `L` exactly when all its complex coordinates in `complexBasis b` are real. -/
+theorem mem_iff_forall_complexBasis_repr_im_eq_zero {ι : Type*} (b : Basis ι ℝ L) {x : E} :
+    x ∈ L ↔ ∀ i, ((hL.complexBasis b).repr x i).im = 0 := by
+  refine ⟨fun hx i => by simpa using congrArg Complex.im (hL.complexBasis_repr_coe b ⟨x, hx⟩ i),
+    fun hx => ?_⟩
+  -- the vector of `L` with the real parts as coordinates has the same complex coordinates as `x`
+  let y : L := b.repr.symm (((hL.complexBasis b).repr x).mapRange Complex.re Complex.zero_re)
+  have hy : (y : E) = x := (hL.complexBasis b).repr.injective <| Finsupp.ext fun i => by
+    rw [complexBasis_repr_coe, LinearEquiv.apply_symm_apply, Finsupp.mapRange_apply]
+    exact Complex.ext rfl (by simp [hx i])
+  exact hy ▸ y.2
 
 /-- A complex-linear automorphism maps maximal totally real subspaces to maximal totally real
 subspaces. -/
