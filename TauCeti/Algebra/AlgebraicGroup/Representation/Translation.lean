@@ -9,18 +9,15 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 
 /-!
-# Right translation of comultiplication and matrix coefficients
+# Right translation of matrix coefficients
 
 For a commutative Hopf algebra `H` over a commutative ring `R`, pullback along right translation by
-a rational point `u : WithConv (H →ₐ[R] R)` is left `H`-colinear for the regular comultiplication
-of `H`, and transforms the matrix coefficient of a vector in a right `H`-comodule by acting on that
-vector via `TauCeti.Comodule.basePointsRepresentation`. No reducedness, finite-type, or field
-assumptions are needed.
+a rational point `g : WithConv (H →ₐ[R] R)` transforms the matrix coefficient of a vector in a right
+`H`-comodule by acting on that vector via `TauCeti.Comodule.basePointsRepresentation`. No
+reducedness, finite-type, or field assumptions are needed.
 
 ## Main declarations
 
-* `TauCeti.HopfAlgebra.comul_rightTranslationAlgHom`: right translation commutes with
-  comultiplication in the second tensor factor.
 * `TauCeti.Comodule.rightTranslationAlgHom_matrixCoefficient`: right-translating a matrix
   coefficient as an algebra endomorphism acts on the vector via `basePointsRepresentation`.
 * `TauCeti.Comodule.rightTranslationAlgEquiv_matrixCoefficient`: right-translating a matrix
@@ -36,46 +33,6 @@ public section
 
 open scoped TensorProduct
 open WithConv
-
-namespace TauCeti.HopfAlgebra
-
-universe u v
-
-variable {R : Type u} [CommRing R] {H : Type v} [CommRing H] [_root_.HopfAlgebra R H]
-
-/-- Right translation by a base-valued point is left `H`-colinear for the regular
-comultiplication: `Δ(R_u x) = (id ⊗ R_u)(Δ x)`. -/
-theorem comul_rightTranslationAlgHom (u : WithConv (H →ₐ[R] R)) (x : H) :
-    Coalgebra.comul (R := R) (rightTranslationAlgHom u x) =
-      (rightTranslationAlgHom u).toLinearMap.lTensor H (Coalgebra.comul (R := R) x) := by
-  let f : H →ₗ[R] R := u.ofConv.toLinearMap
-  let E : (H ⊗[R] H) ⊗[R] H →ₗ[R] H ⊗[R] H :=
-    (TensorProduct.rid R (H ⊗[R] H)).toLinearMap ∘ₗ TensorProduct.map LinearMap.id f
-  have hleft (z : H ⊗[R] H) :
-      E (TensorProduct.map (Coalgebra.comul (R := R) (A := H)) LinearMap.id z) =
-        Coalgebra.comul (R := R) (TensorProduct.rid R H (TensorProduct.map LinearMap.id f z)) := by
-    induction z using TensorProduct.inductionOn with
-    | tmul a b => simp [E]
-    | add y w hy hw => simp [hy, hw]
-  have hright (z : H ⊗[R] H) :
-      E ((TensorProduct.assoc R H H H).symm
-          (TensorProduct.map LinearMap.id (Coalgebra.comul (R := R) (A := H)) z)) =
-        (rightTranslationAlgHom u).toLinearMap.lTensor H z := by
-    induction z using TensorProduct.inductionOn with
-    | tmul a b =>
-      simp only [TensorProduct.map_tmul, LinearMap.id_apply, LinearMap.lTensor_tmul,
-        AlgHom.toLinearMap_apply, rightTranslationAlgHom_apply]
-      induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn with
-      | tmul b₁ b₂ => simp [E, f, TensorProduct.tmul_smul]
-      | add y w hy hw => simp [TensorProduct.tmul_add, hy, hw]
-    | add y w hy hw => simp [hy, hw]
-  have hcoassoc := congrArg E
-    (LinearMap.congr_fun (Coalgebra.coassoc_symm (R := R) (A := H)) x)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearMap.rTensor_def, LinearMap.lTensor_def] at hcoassoc
-  rw [rightTranslationAlgHom_apply, ← hleft, ← hcoassoc, hright]
-
-end TauCeti.HopfAlgebra
 
 namespace TauCeti.Comodule
 

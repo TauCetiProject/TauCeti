@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.ColinearSection
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Exact
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Injective
 
 /-!
@@ -36,6 +38,8 @@ equivalent in characteristic zero.
   and reflected by every field extension.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty.of_injective`: the property descends along
   injective coordinate morphisms.
+* `TauCeti.linearlyReductiveCommHopfAlgProperty.of_colinear_section`: the property descends along
+  morphisms admitting a unital left-colinear linear map.
 * `TauCeti.LinearlyReductiveCommHopfAlgCat`: the corresponding full subcategory.
 
 ## References
@@ -51,7 +55,7 @@ public section
 namespace TauCeti
 
 open CategoryTheory
-open scoped MonoidAlgebra
+open scoped MonoidAlgebra TensorProduct
 
 universe u v w
 
@@ -123,6 +127,21 @@ theorem linearlyReductiveCommHopfAlgProperty.of_injective {k : Type u} [Field k]
   (linearlyReductiveCommHopfAlgProperty_iff k H).2
     (Coalgebra.IsLinearlyReductive.of_injective f.hom.toCoalgHom hf
       ((linearlyReductiveCommHopfAlgProperty_iff k K).1 hK))
+
+/-- Linear reductivity descends along a morphism of commutative Hopf algebras over a field `k`
+admitting a unital `k`-linear map `σ` that intertwines `(q ⊗ id) ∘ Δ_C ∘ σ = (id ⊗ σ) ∘ Δ_D`. -/
+theorem linearlyReductiveCommHopfAlgProperty.of_colinear_section {k : Type u} [Field k]
+    {C D : CommHopfAlgCat.{v} k}
+    (q : C ⟶ D) (σ : D →ₗ[k] C) (hσ1 : σ 1 = 1)
+    (hσ : ∀ x : D,
+      ((q.hom.toCoalgHom : C →ₗ[k] D).rTensor C) (Coalgebra.comul (R := k) (σ x)) =
+        σ.lTensor D (Coalgebra.comul (R := k) x))
+    (hC : linearlyReductiveCommHopfAlgProperty k C) :
+    linearlyReductiveCommHopfAlgProperty k D := by
+  rw [linearlyReductiveCommHopfAlgProperty_iff] at hC ⊢
+  rw [Coalgebra.isLinearlyReductive_iff_forall_fixedMap_surjective_of_surjective]
+  intro M N f hf
+  exact Comodule.Hom.fixedMap_surjective_of_colinear_section q.hom σ hσ1 hσ hC f.hom hf
 
 /-- The category of linearly reductive commutative Hopf algebras over a field. -/
 abbrev LinearlyReductiveCommHopfAlgCat (k : Type u) [Field k] :=

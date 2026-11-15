@@ -16,10 +16,8 @@ import TauCeti.Algebra.AlgebraicGroup.Reductive.CompleteReducibility
 import TauCeti.Algebra.AlgebraicGroup.Representation.Coinvariants
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Hom
 import TauCeti.Algebra.AlgebraicGroup.Representation.Translation
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.ColinearSection
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Exact
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Fixed
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Weight
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -44,8 +42,6 @@ characteristic zero and in positive characteristic.
 
 ## Main declarations
 
-* `TauCeti.linearlyReductiveCommHopfAlgProperty.of_colinear_section`: linear reductivity descends
-  along a morphism of commutative Hopf algebras admitting a unital left-colinear linear section.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty.natCast_card_connectedComponents_ne_zero`: over an
   algebraically closed field, the number of connected components of a linearly reductive
   finite-type affine group is nonzero in `k`.
@@ -75,22 +71,7 @@ open CategoryTheory WithConv
 
 namespace TauCeti
 
-universe u v
-
-/-- Linear reductivity descends along a morphism of commutative Hopf algebras over a field `k`
-admitting a unital `k`-linear map `σ` that intertwines `(q ⊗ id) ∘ Δ_C ∘ σ = (id ⊗ σ) ∘ Δ_D`. -/
-theorem linearlyReductiveCommHopfAlgProperty.of_colinear_section {k : Type u} [Field k]
-    {C D : CommHopfAlgCat.{v} k}
-    (q : C ⟶ D) (σ : D →ₗ[k] C) (hσ1 : σ 1 = 1)
-    (hσ : ∀ x : D,
-      ((q.hom.toCoalgHom : C →ₗ[k] D).rTensor C) (Coalgebra.comul (R := k) (σ x)) =
-        σ.lTensor D (Coalgebra.comul (R := k) x))
-    (hC : linearlyReductiveCommHopfAlgProperty k C) :
-    linearlyReductiveCommHopfAlgProperty k D := by
-  rw [linearlyReductiveCommHopfAlgProperty_iff] at hC ⊢
-  rw [Coalgebra.isLinearlyReductive_iff_forall_fixedMap_surjective_of_surjective]
-  intro M N f hf
-  exact Comodule.Hom.fixedMap_surjective_of_colinear_section q.hom σ hσ1 hσ hC f.hom hf
+universe u
 
 section IsAlgClosed
 

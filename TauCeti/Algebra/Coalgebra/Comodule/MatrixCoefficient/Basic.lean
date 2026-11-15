@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.Coalgebra.CoassocSimps
 public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Matrix coefficients of comodules
@@ -30,6 +32,9 @@ coefficients and their antipode images.
 * `TauCeti.Comodule.matrixCoefficientBilinear`: bilinearity in the functional and vector.
 * `TauCeti.Comodule.matrixCoefficientTensor`: the induced linear map
   `Module.Dual R M ⊗[R] M →ₗ[R] C`.
+* `TauCeti.Comodule.matrixCoefficient_of_coact_eq_tmul` and
+  `TauCeti.Comodule.coact_eq_tmul_iff_forall_matrixCoefficient`: pure-tensor coactions yield
+  scalar-multiple matrix coefficients, and over a projective module are detected by them.
 
 ## Implementation notes
 
@@ -208,6 +213,32 @@ theorem matrixCoefficient_counit_self (c : C) :
     matrixCoefficient (R := R) (C := C) (M := C) (Coalgebra.counit (R := R) (A := C)) c = c := by
   simpa [matrixCoefficient_def, LinearMap.rTensor] using
     congrArg (TensorProduct.lid R C) (Coalgebra.rTensor_counit_comul (R := R) (A := C) c)
+
+/-- If the coaction of `m` is the pure tensor `m ⊗ x`, then each matrix coefficient of `m` is the
+corresponding scalar multiple of `x`. -/
+theorem matrixCoefficient_of_coact_eq_tmul {m : M} {x : C}
+    (hm : coact (R := R) (C := C) m = m ⊗ₜ[R] x) (φ : Module.Dual R M) :
+    matrixCoefficient (R := R) (C := C) φ m = φ m • x := by
+  rw [matrixCoefficient_def, hm]
+  simp
+
+/-- In a projective comodule over a commutative semiring, the coaction of `m` equals `m ⊗ x` if and
+only if each matrix coefficient of `m` is the corresponding scalar multiple of `x`. -/
+theorem coact_eq_tmul_iff_forall_matrixCoefficient [Module.Projective R M] {m : M} {x : C} :
+    coact (R := R) (C := C) m = m ⊗ₜ[R] x ↔
+      ∀ φ : Module.Dual R M, matrixCoefficient (R := R) (C := C) φ m = φ m • x := by
+  refine ⟨matrixCoefficient_of_coact_eq_tmul, fun h ↦ ?_⟩
+  have hcontract (φ : Module.Dual R M) (z : M ⊗[R] C) :
+      LinearMap.tensorComponent φ (TensorProduct.comm R M C z) =
+        TensorProduct.lid R C (TensorProduct.map φ LinearMap.id z) := by
+    induction z using TensorProduct.inductionOn with
+    | tmul v a => simp
+    | add y w hy hw => simp [hy, hw]
+  apply (TensorProduct.comm R M C).injective
+  apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
+  intro φ
+  rw [hcontract, ← matrixCoefficient_def, h φ, TensorProduct.comm_tmul,
+    LinearMap.tensorComponent_tmul]
 
 section GroupLike
 

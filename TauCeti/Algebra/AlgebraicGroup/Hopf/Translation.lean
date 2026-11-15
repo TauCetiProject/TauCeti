@@ -26,6 +26,8 @@ action laws, and identifies its action on the prime spectrum.
 ## Main declarations
 
 * `TauCeti.HopfAlgebra.rightTranslationAlgHom`: pullback by right translation by a point.
+* `TauCeti.HopfAlgebra.comul_rightTranslationAlgHom`: right translation commutes with
+  comultiplication in the second tensor factor.
 * `TauCeti.HopfAlgebra.rightTranslationAlgEquiv`: right translation as an algebra automorphism.
 * `TauCeti.HopfAlgebra.rightTranslationAlgEquiv_mul` and
   `TauCeti.HopfAlgebra.rightTranslationAlgHom_mul`: right translation respects the convolution
@@ -73,6 +75,21 @@ theorem rightTranslationAlgHom_apply (g : WithConv (H →ₐ[k] k)) (x : H) :
   induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add z w hz hw => simp [hz, hw]
   | tmul z w => simp [Algebra.smul_def, mul_comm]
+
+/-- Right translation by a base-valued point is left `H`-colinear for the regular
+comultiplication: `Δ(R_g x) = (id ⊗ R_g)(Δ x)`. -/
+theorem comul_rightTranslationAlgHom (g : WithConv (H →ₐ[k] k)) (x : H) :
+    Coalgebra.comul (R := k) (rightTranslationAlgHom g x) =
+      (rightTranslationAlgHom g).toLinearMap.lTensor H (Coalgebra.comul (R := k) x) := by
+  have happly (y : H) : rightTranslationAlgHom g y =
+      _root_.LinearMap.tensorComponent g.ofConv.toLinearMap (Coalgebra.comul (R := k) y) := by
+    rw [rightTranslationAlgHom_apply, _root_.LinearMap.tensorComponent_def, LinearMap.comp_apply,
+      LinearMap.lTensor_def, LinearEquiv.coe_coe]
+  have hlin : (rightTranslationAlgHom g).toLinearMap =
+      _root_.LinearMap.tensorComponent g.ofConv.toLinearMap ∘ₗ Coalgebra.comul :=
+    LinearMap.ext happly
+  have h := Comodule.coact_coactComponent (R := k) (C := H) (M := H) g.ofConv.toLinearMap x
+  rwa [Comodule.coactComponent_apply, Comodule.instSelf_coact, ← happly, ← hlin] at h
 
 /-- Composing a point with right translation is convolution by the translating point. -/
 @[simp]

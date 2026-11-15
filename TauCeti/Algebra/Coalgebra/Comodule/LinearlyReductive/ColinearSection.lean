@@ -18,10 +18,11 @@ Let `q : C →ₗc[R] D` be a morphism of coalgebras with `C` flat over `R`. Any
 right `D`-comodule `M` into the induced `C`-comodule `Ind_q M`.
 
 Over a field `k`, when `q : C →ₐc[k] D` is a morphism of bialgebras, `C` is linearly reductive,
-and `σ 1 = 1`, this embedding into induced comodules transfers surjectivity on invariants from `C`
-to `D` for arbitrary right `D`-comodules `M` and `N`. For affine group schemes `H ≤ G`, such a
-unital left `O(H)`-colinear section `O(H) →ₗ[k] O(G)` arises whenever the coset quotient `G / H`
-admits a global section, for instance when `H = G°` over an algebraically closed field.
+and `σ 1 = 1`, this map into induced comodules (which asserts only membership in `Ind_q M`, not
+injectivity) transfers surjectivity on invariants from `C` to `D` for arbitrary right
+`D`-comodules `M` and `N`. For affine group schemes `H ≤ G`, such a unital left `O(H)`-colinear
+linear map `O(H) →ₗ[k] O(G)` arises whenever the coset quotient `G / H` admits a global section,
+for instance when `H = G°` over an algebraically closed field.
 
 ## Main declarations
 
