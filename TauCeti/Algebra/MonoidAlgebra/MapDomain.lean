@@ -26,8 +26,10 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
 
 ## Main results
 
-* `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`: the functor laws, with
-  additive forms `AddMonoidAlgebra.mapDomain_id` and `AddMonoidAlgebra.mapDomain_mapDomain`.
+* `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`,
+  `MonoidAlgebra.mapDomain_map`: the functor laws and commutation with `MonoidAlgebra.map`, with
+  additive forms `AddMonoidAlgebra.mapDomain_id`, `AddMonoidAlgebra.mapDomain_mapDomain`, and
+  `AddMonoidAlgebra.mapDomain_map`.
 * `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective, with
   additive form `AddMonoidAlgebra.mapDomain_surjective`.
 * `MonoidAlgebra.mem_range_mapDomain_iff`: the image of the map induced by an injection consists of
@@ -68,6 +70,17 @@ composite. -/]
 theorem mapDomain_mapDomain (f : M → N) (g : N → O) (x : MonoidAlgebra R M) :
     mapDomain g (mapDomain f x) = mapDomain (g ∘ f) x :=
   ext <| by rw [coeff_mapDomain, coeff_mapDomain, coeff_mapDomain, Finsupp.mapDomain_comp]
+
+/-- Pushing the index type forward along `g` commutes with mapping coefficients along an additive
+homomorphism `f`. -/
+@[to_additive (dont_translate := R S)
+/-- Pushing the index type forward along `g` commutes with mapping coefficients along an additive
+homomorphism `f`. -/]
+theorem mapDomain_map {S : Type*} [Semiring S] (g : M → N) (f : R →+ S) (x : MonoidAlgebra R M) :
+    mapDomain g (map f x) = map f (mapDomain g x) :=
+  ext <| by
+    rw [coeff_mapDomain, coeff_map, coeff_map, coeff_mapDomain]
+    exact Finsupp.mapDomain_mapRange g x.coeff f f.map_zero f.map_add
 
 /-- Pushing the coefficients forward along a surjection is surjective. -/
 @[to_additive

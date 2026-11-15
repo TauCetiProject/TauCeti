@@ -14,11 +14,12 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 /-!
 # Dirac measures and the norm topology
 
-Dirac measures vary continuously in the weak topology. For a compact totally separated domain
-and ultrametric field coefficients, distinct Dirac measures are at operator-norm distance one.
-Over any nontrivially normed field, their distance is at least one, so on an infinite such
-domain the closed unit ball of the continuous dual is not norm compact. This distinguishes the
-strong topology on bounded measures from the weak topology used for integral measures.
+Scalar multiples of a Dirac measure separate scalars, and Dirac measures vary continuously in the
+weak topology. For a compact totally separated domain and ultrametric field coefficients, distinct
+Dirac measures are at operator-norm distance one. Over any nontrivially normed field, their
+distance is at least one, so on an infinite such domain the closed unit ball of the continuous
+dual is not norm compact. This distinguishes the strong topology on bounded measures from the weak
+topology used for integral measures.
 
 All norms below are taken on the continuous dual through `AbstractMeasure.toCLMEquiv`;
 no norm or topology is installed on the abstract measure carrier.
@@ -38,6 +39,12 @@ open scoped AbstractMeasure
 namespace TauCeti.AbstractMeasure
 
 variable {X R K : Type*} [TopologicalSpace X]
+
+/-- Scalar multiples of a Dirac measure are equal if and only if the scalars are equal. -/
+@[simp]
+theorem smul_dirac_inj [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] {a b : R} (x : X) :
+    a • dirac R x = b • dirac R x ↔ a = b :=
+  ⟨fun h ↦ by simpa using congrArg (fun ν : D(X, R) ↦ ν 1) h, fun h ↦ h ▸ rfl⟩
 
 /-- The Dirac map is continuous for the weak topology of test-function evaluations. -/
 theorem continuous_dirac_weak [NormedCommRing R] :
