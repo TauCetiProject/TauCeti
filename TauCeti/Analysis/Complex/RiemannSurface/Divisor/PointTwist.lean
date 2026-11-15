@@ -138,8 +138,8 @@ theorem pointTwistCoefficient_eq_apply {x : U} (hD : D x.1 = -1)
       toChartGerm (D + WeilDivisor.ofPoint x.1) U x f = meromorphicGerms.mk _ hm := by
     apply Subtype.ext
     rw [Subring.coe_mul, meromorphicGerms.coe_inv, meromorphicGerms.coe_coordinate,
-      coe_toChartGerm, meromorphicGerms.coe_mk, ← Germ.coe_inv, ← Germ.coe_mul, inv_mul_eq_div]
-    rfl
+      coe_toChartGerm, meromorphicGerms.coe_mk, ← Germ.coe_inv, ← Germ.coe_mul, inv_mul_eq_div,
+      Pi.div_def]
   have he : -(-D x.1 - 1) - 1 = (-1 : ℤ) := by omega
   rw [pointTwistCoefficient_apply, meromorphicGerms.coeff_apply]
   simp only [he, zpow_neg_one]
@@ -149,7 +149,6 @@ theorem pointTwistCoefficient_eq_apply {x : U} (hD : D x.1 = -1)
     div_one] at hres
   rw [hres, Function.comp_apply, (chartAt ℂ x.1).left_inv (mem_chart_source ℂ x.1)]
   exact Subtype.val_injective.extend_apply _ _ x
-
 
 /-- A section from the old divisor has zero newly permitted coefficient. -/
 private theorem pointTwistCoefficient_mapOfLE (D : WeilDivisor X) (U : Opens X) (x : U)

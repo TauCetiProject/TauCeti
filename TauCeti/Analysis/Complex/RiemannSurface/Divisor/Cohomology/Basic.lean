@@ -126,23 +126,18 @@ theorem pointTwistGlobalCoefficient_eq_apply (hD : D x = -1)
     pointTwistGlobalCoefficient D x f = (divisorSheafSectionsEquiv _ ⊤ f).1 ⟨x, trivial⟩ :=
   divisorSections.pointTwistCoefficient_eq_apply (x := ⟨x, trivial⟩) hD _
 
+variable [IsManifold 𝓘(ℂ) 1 X]
+
 /-- At a twist of `-[x]`, every scalar is the newly permitted coefficient of a global section of
 `𝒪(-[x] + [x])`. -/
 theorem pointTwistGlobalCoefficient_neg_ofPoint_surjective :
     Function.Surjective (pointTwistGlobalCoefficient (-WeilDivisor.ofPoint x) x) := fun c ↦
   ⟨(divisorSheafSectionsEquiv _ ⊤).symm ⟨(fun _ : X ↦ c) ∘ Subtype.val,
-      comp_val_mem_divisorSections fun y _ ↦
-        have hy : (-WeilDivisor.ofPoint x + WeilDivisor.ofPoint x) y = 0 := by simp
-        { meromorphicAt := meromorphicAt_const c y
-          neg_le_meromorphicOrderAt := by
-            simpa [hy] using meromorphicOrderAt_nonneg_of_continuousAt continuousAt_const
-          contMDiffAt := fun _ ↦ contMDiffAt_const
-          apply_eq_zero := fun h ↦ absurd hy h.ne' }⟩, by
+      comp_val_mem_divisorSections fun _ _ ↦
+        (isDivisorSectionAt_iff_of_eq_zero (by simp)).2 contMDiffAt_const⟩, by
     have h₁ : (WeilDivisor.ofPoint x) x = 1 := WeilDivisor.coeff_ofPoint_self x
     rw [pointTwistGlobalCoefficient_eq_apply (by simp [h₁]), LinearEquiv.apply_symm_apply]
     rfl⟩
-
-variable [IsManifold 𝓘(ℂ) 1 X]
 
 open Classical in
 private theorem displayedPointTwist_shortExact :
