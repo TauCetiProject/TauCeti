@@ -18,7 +18,9 @@ limit over presentations, has this property naturally in `V`: it is the pointwis
 extension of its restriction to the rational opens (`rationalOpensFunctor`). Since the rational
 opens form a basis, a right Kan extension along their inclusion of a sheaf for the restricted
 topology is a sheaf, so the sheaf condition on `Spa(A, A⁺)` reduces to the rational opens, as in
-the proof of Wedhorn's Proposition A.4.
+the proof of Wedhorn's Proposition A.4. Since intersections of rational opens are rational, the
+sheaf condition on the rational opens is in turn the gluing condition for covers of rational opens
+by rational opens.
 
 ## Main definitions
 
@@ -34,6 +36,8 @@ the proof of Wedhorn's Proposition A.4.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheaf_rational` :
   `presentationLimitPresheaf` is a sheaf once its restriction to the rational opens is a sheaf for
   the restricted topology.
+* `TauCeti.ValuationSpectrum.isSheaf_rational_comp_of_isSheafFor_ofArrows` : gluing along rational
+  covers of rational opens is the sheaf condition on the basis of rational opens.
 
 ## References
 
@@ -48,7 +52,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace TauCeti.Huber
 
-universe v
+universe v w
 
 namespace TauCeti.ValuationSpectrum
 
@@ -223,5 +227,56 @@ theorem isSheaf_presentationLimitPresheaf_of_isSheaf_rational (h : Presheaf.IsSh
   TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology (X := TopCat.of ↥(spa Aplus))
     _ _ (isBasis_spaRationalOpens Aplus)
     (isAdapted_presentationLimitPresheaf (P := P) (Aplus := Aplus)) h
+
+variable (P) in
+/-- **The sheaf condition on the rational basis.** Let `G` be a functor from complete separated
+topological rings into types. If the presentation-limit presheaf followed by `G` satisfies the
+sheaf condition for every cover of a rational open by rational opens, then its restriction to the
+rational opens is a sheaf for the topology restricted from `Spa(A, A⁺)`. Intersections of
+rational opens are rational, which is what lets compatibility on the basis stand in for
+compatibility on pairwise intersections. -/
+theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
+    (G : TopCommRingCat.isCompleteSeparated.{v}.FullSubcategory ⥤ Type w)
+    (hrat : ∀ {W : Opens ↥(spa Aplus)} {ι : Type v} {U : ι → Opens ↥(spa Aplus)},
+      W ∈ spaRationalOpens Aplus → (∀ i, U i ∈ spaRationalOpens Aplus) → ∀ hcov : ⨆ i, U i = W,
+      (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
+        (presentationLimitPresheaf P Aplus ⋙ G)) :
+    Presieve.IsSheaf
+      ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
+      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) := by
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  intro W S hS
+  obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
+  rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
+  have hcov : ⨆ i, (U i).1 = W.1 := by
+    apply le_antisymm (iSup_le fun i ↦ (π i).hom.le)
+    intro x hx
+    obtain ⟨V, f, hf, hxV⟩ := hS x hx
+    obtain ⟨V', g, f', hf', rfl⟩ := hf
+    obtain ⟨i⟩ := hf'
+    exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
+  have hrat := hrat W.2 (fun i ↦ (U i).2) hcov
+  have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
+      homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov) := Subsingleton.elim _ _
+  rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
+  rw [Presieve.isSheafFor_arrows_iff] at hrat
+  intro x hx
+  -- Intersections of rational opens are rational, so compatibility on the basis supplies the
+  -- pairwise-intersection compatibility required in the ambient category of opens.
+  have hcompat : Presieve.Arrows.Compatible (presentationLimitPresheaf P Aplus ⋙ G)
+      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov)) x := by
+    apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
+    intro i j
+    let V : spaRationalOpens Aplus :=
+      ⟨(U i).1 ⊓ (U j).1, inf_mem_spaRationalOpens (U i).2 (U j).2⟩
+    exact hx i j V (InducedCategory.homMk (homOfLE inf_le_left))
+      (InducedCategory.homMk (homOfLE inf_le_right)) (Subsingleton.elim _ _)
+  obtain ⟨a, ha, hu⟩ := hrat x hcompat
+  refine ⟨a, ?_, ?_⟩
+  · intro i
+    simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using ha i
+  · intro b hb
+    exact hu b fun i ↦ by
+      simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using hb i
 
 end TauCeti.ValuationSpectrum
