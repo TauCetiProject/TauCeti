@@ -36,7 +36,8 @@ exterior values are unrestricted.
 * `Differentiable.isBigO_of_cexp_isBigO`: polynomial growth of an entire logarithm.
 * `Complex.norm_deriv_le_of_forall_mem_ball_re_le`: the derivative bound from a one-sided
   real-part bound.
-* `Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul`: the estimate from a relative norm bound.
+* `Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul`: the estimate from a relative
+  norm bound.
 -/
 
 public section
