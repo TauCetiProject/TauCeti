@@ -16,13 +16,14 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 # Invertibility on incompressible vectors via column distances
 
 If a linear combination with incompressible unit coefficients is small, many columns are close
-to the spans of the remaining columns. Averaging the indicators of these distance events gives
-a probability bound with no loss of a factor equal to the number of columns. The columns may
-be dependent and need not have the same law.
+to the spans of the remaining columns. The bad-event measure is bounded by the sum of the
+column-distance measures divided by `k + 1`. When `k` is proportional to the number of columns,
+this avoids the column-count factor of a union bound. The columns may be dependent and need
+not have the same law.
 
 We work with finite families in a normed space, so the result applies to rectangular real or
-complex matrices. The threshold is `ε ρ / √n` for the unnormalized matrix. The exact integer
-sparsity bound gives denominator `k + 1` in the probability estimate.
+complex matrices. The threshold is `ε ρ / √n` for the unnormalized matrix, where
+`n = Fintype.card ι` is the number of columns.
 
 ## References
 
@@ -40,7 +41,7 @@ variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpa
 
 /-- A small linear combination with incompressible coefficients forces more than `k` column
 distances to be small. The threshold `a` may be any nonnegative number with `n a² ≤ ρ²`. -/
-theorem IsIncompressibleVector.lt_card_filter_infDist_span_other
+theorem IsIncompressibleVector.lt_card_filter_infDist_span_range_ne
     {k : ℕ} {ρ a ε : ℝ} {x : EuclideanSpace 𝕜 ι} (hx : IsIncompressibleVector k ρ x)
     (hρ : 0 ≤ ρ) (ha : 0 ≤ a) (haρ : (Fintype.card ι : ℝ) * a ^ 2 ≤ ρ ^ 2)
     (v : ι → E) (hv : ‖∑ i, x i • v i‖ < a * ε) :
@@ -50,7 +51,7 @@ theorem IsIncompressibleVector.lt_card_filter_infDist_span_other
   apply Finset.card_le_card
   intro i hi
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
-  have hd := norm_mul_infDist_span_other_le v (fun j ↦ x j) i
+  have hd := norm_mul_infDist_span_range_ne_le v (fun j ↦ x j) i
   have he : 0 < ε := by nlinarith [norm_nonneg (∑ j, x j • v j)]
   by_contra h
   have hεd : ε ≤ infDist (v i)
@@ -60,7 +61,7 @@ theorem IsIncompressibleVector.lt_card_filter_infDist_span_other
 
 /-- Having a small linear combination with incompressible unit coefficients is an open
 condition on the column family, so this event is measurable for a random matrix. -/
-theorem isOpen_exists_incompressible_norm_sum_lt (k : ℕ) (ρ t : ℝ) :
+theorem isOpen_exists_isIncompressibleVector_norm_sum_lt (k : ℕ) (ρ t : ℝ) :
     IsOpen {v : ι → E | ∃ x : EuclideanSpace 𝕜 ι,
       IsIncompressibleVector k ρ x ∧ ‖∑ i, x i • v i‖ < t} := by
   simp only [Set.ofPred_exists]
@@ -76,9 +77,10 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
 
 /-- **Invertibility via distance.** The probability of a small linear combination with
-incompressible unit coefficients is controlled by the average column-distance probabilities.
+incompressible unit coefficients is bounded by the sum of the column-distance measures divided
+by `k + 1`.
 This holds for finite measures and arbitrary dependent columns; `a` records the normalization. -/
-theorem measureReal_exists_incompressible_norm_sum_lt_le
+theorem measureReal_exists_isIncompressibleVector_norm_sum_lt_le
     {k : ℕ} {ρ a ε : ℝ} (hρ : 0 ≤ ρ) (ha : 0 ≤ a)
     (haρ : (Fintype.card ι : ℝ) * a ^ 2 ≤ ρ ^ 2)
     {v : Ω → ι → E} (hv : AEMeasurable v P) :
@@ -110,7 +112,7 @@ theorem measureReal_exists_incompressible_norm_sum_lt_le
   have hsub : {ω | ∃ x : EuclideanSpace 𝕜 ι, IsIncompressibleVector k ρ x ∧
       ‖∑ i, x i • v ω i‖ < a * ε} ⊆ {ω | (k + 1 : ℝ) ≤ f ω} := by
     rintro ω ⟨x, hx, hsmall⟩
-    have hcard := hx.lt_card_filter_infDist_span_other hρ ha haρ (v ω) hsmall
+    have hcard := hx.lt_card_filter_infDist_span_range_ne hρ ha haρ (v ω) hsmall
     have hcount : f ω = ((univ.filter fun i ↦ D i (v ω) < ε).card : ℝ) := by
       simp [f]
     rw [Set.mem_ofPred_eq, hcount]
@@ -127,14 +129,14 @@ theorem measureReal_exists_incompressible_norm_sum_lt_le
 
 /-- The usual `ε ρ / √n` normalization of invertibility via distance, valid also for an empty
 column type. In that case there are no unit coefficient vectors and both sides vanish. -/
-theorem measureReal_exists_incompressible_norm_sum_lt_sqrt_le
+theorem measureReal_exists_isIncompressibleVector_norm_sum_lt_div_sqrt_mul_le
     {k : ℕ} {ρ ε : ℝ} (hρ : 0 ≤ ρ) {v : Ω → ι → E} (hv : AEMeasurable v P) :
     P.real {ω | ∃ x : EuclideanSpace 𝕜 ι, IsIncompressibleVector k ρ x ∧
         ‖∑ i, x i • v ω i‖ < ρ / Real.sqrt (Fintype.card ι) * ε} ≤
       (∑ i, P.real {ω | infDist (v ω i)
         (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v ω j) : Set E) < ε}) /
         (k + 1 : ℝ) := by
-  apply measureReal_exists_incompressible_norm_sum_lt_le hρ (by positivity) _ hv
+  apply measureReal_exists_isIncompressibleVector_norm_sum_lt_le hρ (by positivity) _ hv
   by_cases hn : Fintype.card ι = 0
   · simp [hn, sq_nonneg]
   · have hnp : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Nat.pos_of_ne_zero hn
@@ -144,7 +146,7 @@ theorem measureReal_exists_incompressible_norm_sum_lt_sqrt_le
 /-- The matrix form of invertibility via distance for rectangular real or complex matrices.
 The distances are Euclidean distances between columns and the spans of the other columns;
 `A` is the unnormalized matrix, and no independence assumptions are needed. -/
-theorem measureReal_exists_incompressible_norm_toEuclideanLin_lt_le
+theorem measureReal_exists_isIncompressibleVector_norm_toEuclideanLin_lt_le
     {κ : Type*} [Fintype κ] [DecidableEq ι]
     {k : ℕ} {ρ ε : ℝ} (hρ : 0 ≤ ρ)
     {A : Ω → Matrix κ ι 𝕜} (hA : AEMeasurable A P) :
@@ -161,7 +163,7 @@ theorem measureReal_exists_incompressible_norm_toEuclideanLin_lt_le
         Matrix.toEuclideanLin (A ω) x := by
     ext r
     simp [Matrix.toEuclideanLin, Matrix.toLpLin_apply, Matrix.mulVec, dotProduct, mul_comm]
-  simpa only [hsum] using measureReal_exists_incompressible_norm_sum_lt_sqrt_le
+  simpa only [hsum] using measureReal_exists_isIncompressibleVector_norm_sum_lt_div_sqrt_mul_le
     (𝕜 := 𝕜) (k := k) (ε := ε) hρ hv
 
 end TauCeti

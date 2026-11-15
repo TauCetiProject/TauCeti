@@ -14,8 +14,8 @@ public import Mathlib.Topology.Semicontinuity.Basic
 
 Distance to the span of a finite family is the infimum of the errors of its linear combinations.
 As the family and the point vary, this distance is upper semicontinuous, hence measurable.
-Continuity need not hold when the rank drops. Quotient norms also bound the distance of one
-member from the span of the others by the norm of any linear combination containing it.
+Continuity need not hold when the rank drops. For any finite linear combination, `‖c i‖` times
+the distance of `v i` from the span of the remaining vectors is bounded by `‖∑ j, c j • v j‖`.
 -/
 
 public section
@@ -57,9 +57,10 @@ theorem upperSemicontinuous_infDist_span_range [Finite ι] {α : Type*} [Topolog
   intro c
   exact (hx.sub (continuous_finsetSum _ fun i _ ↦ (hv i).const_smul (c i))).norm.upperSemicontinuous
 
-/-- A coefficient times the distance of its vector from the span of the remaining vectors is
-bounded by the norm of the full linear combination. No independence or closedness is needed. -/
-theorem norm_mul_infDist_span_other_le (v : ι → E) (c : ι → 𝕜) (i : ι) :
+/-- The norm of a coefficient times the distance of its vector from the span of the remaining
+vectors is bounded by the norm of the full linear combination. No independence or closedness is
+needed. -/
+theorem norm_mul_infDist_span_range_ne_le (v : ι → E) (c : ι → 𝕜) (i : ι) :
     ‖c i‖ * infDist (v i)
       (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v j) : Set E) ≤
       ‖∑ j, c j • v j‖ := by

@@ -12,10 +12,11 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 A unit vector is compressible if it is within a prescribed distance of a vector supported on
 at most `k` coordinates. The approximating sparse vector need not be a unit vector.
-Incompressibility is characterized by the squared mass outside every set of `k` coordinates.
-It forces many coordinates to be large, and a positive proportion to lie between two explicit
-thresholds. These facts reduce lower bounds for a matrix on incompressible vectors to distances
-of columns from the spans of the other columns.
+For `0 ≤ ρ`, incompressibility is characterized by the squared mass outside every set of at most
+`k` coordinates. It forces more than `(k + 1) ρ² / 2` coordinates to have norms between
+`ρ / √(2n)` and `1 / √(k + 1)`, where `n` is the number of coordinates. These facts reduce lower
+bounds for a matrix on incompressible vectors to distances of columns from the spans of the
+other columns.
 
 ## References
 
@@ -50,8 +51,41 @@ theorem isCompressibleVector_iff :
       ∃ y : EuclideanSpace 𝕜 ι, (∀ i ∉ s, y i = 0) ∧ ‖x - y‖ ≤ ρ := (Iff.rfl)
 
 /-- Incompressibility is equivalent to unit norm and failure of compressibility. -/
-theorem isIncompressibleVector_iff :
+@[grind =] theorem isIncompressibleVector_iff :
     IsIncompressibleVector k ρ x ↔ ‖x‖ = 1 ∧ ¬IsCompressibleVector k ρ x := (Iff.rfl)
+
+/-- A compressible vector has unit norm. -/
+@[grind →] theorem IsCompressibleVector.norm_eq_one (hx : IsCompressibleVector k ρ x) :
+    ‖x‖ = 1 := hx.1
+
+/-- An incompressible vector has unit norm. -/
+@[grind →] theorem IsIncompressibleVector.norm_eq_one (hx : IsIncompressibleVector k ρ x) :
+    ‖x‖ = 1 := hx.1
+
+/-- An incompressible vector is not compressible at the same parameters. -/
+theorem IsIncompressibleVector.not_isCompressibleVector (hx : IsIncompressibleVector k ρ x) :
+    ¬IsCompressibleVector k ρ x := hx.2
+
+/-- A compressible vector is not incompressible at the same parameters. -/
+theorem IsCompressibleVector.not_isIncompressibleVector (hx : IsCompressibleVector k ρ x) :
+    ¬IsIncompressibleVector k ρ x := fun hi ↦ hi.2 hx
+
+/-- Compressibility and incompressibility are disjoint. -/
+@[simp] theorem not_isCompressibleVector_and_isIncompressibleVector :
+    ¬(IsCompressibleVector k ρ x ∧ IsIncompressibleVector k ρ x) :=
+  fun ⟨hc, hi⟩ ↦ hi.not_isCompressibleVector hc
+
+/-- The zero vector is not compressible because it is not a unit vector. -/
+@[simp] theorem not_isCompressibleVector_zero :
+    ¬IsCompressibleVector k ρ (0 : EuclideanSpace 𝕜 ι) := by
+  intro hx
+  simpa using hx.norm_eq_one
+
+/-- The zero vector is not incompressible because it is not a unit vector. -/
+@[simp] theorem not_isIncompressibleVector_zero :
+    ¬IsIncompressibleVector k ρ (0 : EuclideanSpace 𝕜 ι) := by
+  intro hx
+  simpa using hx.norm_eq_one
 
 /-- Compressible and incompressible vectors partition the unit sphere. -/
 @[simp] theorem isCompressibleVector_or_isIncompressibleVector_iff :
@@ -111,7 +145,7 @@ theorem isIncompressibleVector_iff_sum_compl_gt [DecidableEq ι] (hρ : 0 ≤ ρ
 
 /-- At radius zero, compressibility means that the unit vector itself has at most `k` nonzero
 coordinates. -/
-@[simp] theorem isCompressibleVector_zero_iff :
+theorem isCompressibleVector_zero_iff :
     IsCompressibleVector k 0 x ↔ ‖x‖ = 1 ∧ ∃ s : Finset ι, s.card ≤ k ∧ ∀ i ∉ s, x i = 0 := by
   constructor
   · rintro ⟨hn, s, hs, y, hy, hd⟩
@@ -120,6 +154,34 @@ coordinates. -/
   · rintro ⟨hn, s, hs, hx⟩
     exact ⟨hn, s, hs, x, hx, by simp⟩
 
+/-- At radius zero, an incompressible unit vector has more than `k` nonzero coordinates. -/
+theorem isIncompressibleVector_zero_iff :
+    IsIncompressibleVector k 0 x ↔ ‖x‖ = 1 ∧
+      ∀ s : Finset ι, s.card ≤ k → ∃ i ∉ s, x i ≠ 0 := by
+  rw [isIncompressibleVector_iff, isCompressibleVector_zero_iff]
+  push Not
+  tauto
+
+/-- With zero sparsity budget, a unit vector is compressible exactly at radii at least one. -/
+theorem isCompressibleVector_zero_left_iff :
+    IsCompressibleVector 0 ρ x ↔ ‖x‖ = 1 ∧ 1 ≤ ρ := by
+  constructor
+  · rintro ⟨hn, s, hs, y, hy, hd⟩
+    have hs : s = ∅ := Finset.card_eq_zero.mp (by omega)
+    have hy : y = 0 := by
+      ext i
+      exact hy i (by simp [hs])
+    simpa [hy, hn] using And.intro hn hd
+  · rintro ⟨hn, hρ⟩
+    exact ⟨hn, ∅, by simp, 0, by simp, by simpa [hn] using hρ⟩
+
+/-- With zero sparsity budget, a unit vector is incompressible exactly at radii below one. -/
+theorem isIncompressibleVector_zero_left_iff :
+    IsIncompressibleVector 0 ρ x ↔ ‖x‖ = 1 ∧ ρ < 1 := by
+  rw [isIncompressibleVector_iff, isCompressibleVector_zero_left_iff]
+  simp only [not_and, not_le]
+  tauto
+
 /-- If all coordinates are allowed, every unit vector is compressible at any nonnegative
 radius. -/
 theorem isCompressibleVector_of_card_le (hn : ‖x‖ = 1) (hk : Fintype.card ι ≤ k) (hρ : 0 ≤ ρ) :
@@ -127,11 +189,21 @@ theorem isCompressibleVector_of_card_le (hn : ‖x‖ = 1) (hk : Fintype.card ι
   classical
   exact ⟨hn, univ, by simpa using hk, x, by simp, by simpa using hρ⟩
 
+/-- Allowing all coordinates rules out incompressibility at nonnegative radii. -/
+theorem not_isIncompressibleVector_of_card_le (hk : Fintype.card ι ≤ k) (hρ : 0 ≤ ρ) :
+    ¬IsIncompressibleVector k ρ x :=
+  fun hx ↦ hx.not_isCompressibleVector (isCompressibleVector_of_card_le hx.norm_eq_one hk hρ)
+
 /-- Radius at least one makes every unit vector compressible, even with zero allowed
 coordinates. -/
 theorem isCompressibleVector_of_one_le (hn : ‖x‖ = 1) (hρ : 1 ≤ ρ) :
     IsCompressibleVector k ρ x :=
   ⟨hn, ∅, by simp, 0, by simp, by simpa [hn] using hρ⟩
+
+/-- Radii at least one rule out incompressibility at every sparsity budget. -/
+theorem not_isIncompressibleVector_of_one_le (hρ : 1 ≤ ρ) :
+    ¬IsIncompressibleVector k ρ x :=
+  fun hx ↦ hx.not_isCompressibleVector (isCompressibleVector_of_one_le hx.norm_eq_one hρ)
 
 /-- More than `k` coordinates of an incompressible vector exceed a threshold whose total
 squared mass is at most `ρ²`. -/
@@ -185,40 +257,41 @@ theorem IsIncompressibleVector.lt_sum_filter_norm (hx : IsIncompressibleVector k
       _ = _ := by rw [sum_add_distrib]; simp [sum_filter]
   linarith
 
-/-- An incompressible vector has more than `k ρ² / 2` coordinates with norms between
-`ρ / √(2n)` and `1 / √k`. This is the spread lemma of Rudelson–Vershynin. -/
-theorem IsIncompressibleVector.exists_spread (hx : IsIncompressibleVector k ρ x)
-    (hρ : 0 ≤ ρ) (hk : 0 < k) :
-    ∃ s : Finset ι, (k : ℝ) * ρ ^ 2 / 2 < (s.card : ℝ) ∧
+/-- An incompressible vector has more than `(k + 1) ρ² / 2` coordinates with norms between
+`ρ / √(2n)` and `1 / √(k + 1)`, where `n` is the number of coordinates.
+This is the spread lemma of Rudelson–Vershynin, including zero sparsity. -/
+theorem IsIncompressibleVector.exists_finset_lt_card_and_forall_norm
+    (hx : IsIncompressibleVector k ρ x) (hρ : 0 ≤ ρ) :
+    ∃ s : Finset ι, (k + 1 : ℝ) * ρ ^ 2 / 2 < (s.card : ℝ) ∧
       ∀ i ∈ s, ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-        ‖x i‖ ≤ 1 / Real.sqrt k := by
+        ‖x i‖ ≤ 1 / Real.sqrt (k + 1) := by
   classical
   refine ⟨univ.filter (fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-    ‖x i‖ ≤ 1 / Real.sqrt k), ?_, fun i hi ↦ (mem_filter.mp hi).2⟩
+    ‖x i‖ ≤ 1 / Real.sqrt (k + 1)), ?_, fun i hi ↦ (mem_filter.mp hi).2⟩
   -- A unit vector has at most k coordinates above the upper threshold.
-  have hkp : (0 : ℝ) < k := by exact_mod_cast hk
+  have hkp : (0 : ℝ) < k + 1 := by positivity
   have hn : 0 < Fintype.card ι := by
     by_contra h
     have : IsEmpty ι := Fintype.card_eq_zero_iff.mp (by omega)
     have : x = 0 := Subsingleton.elim _ _
     simpa [this] using hx.1
-  have hsqrt : (Real.sqrt (k : ℝ)) ^ 2 = k := Real.sq_sqrt hkp.le
-  have hlarge : (univ.filter fun i ↦ 1 / Real.sqrt k < ‖x i‖).card ≤ k := by
+  have hsqrt : (Real.sqrt (k + 1 : ℝ)) ^ 2 = k + 1 := Real.sq_sqrt hkp.le
+  have hlarge : (univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖).card ≤ k := by
     by_contra h
-    let s := univ.filter fun i ↦ 1 / Real.sqrt k < ‖x i‖
-    have hcard : k < s.card := Nat.lt_of_not_ge h
-    have hsum : (s.card : ℝ) * (1 / (k : ℝ)) ≤ ∑ i ∈ s, ‖x i‖ ^ 2 := by
+    let s := univ.filter fun i ↦ 1 / Real.sqrt (k + 1) < ‖x i‖
+    have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
+    have hsum : (s.card : ℝ) * (1 / (k + 1 : ℝ)) < ∑ i ∈ s, ‖x i‖ ^ 2 := by
       calc
-        _ = ∑ _i ∈ s, (1 / Real.sqrt (k : ℝ)) ^ 2 := by
+        _ = ∑ _i ∈ s, (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 := by
           simp [hsqrt]
-        _ ≤ _ := sum_le_sum fun i hi ↦
-          pow_le_pow_left₀ (by positivity) ((mem_filter.mp hi).2.le) 2
+        _ < _ := sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
+          pow_lt_pow_left₀ ((mem_filter.mp hi).2) (by positivity) (by norm_num : 2 ≠ 0)
     have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ 1 := by
       calc _ ≤ ∑ i, ‖x i‖ ^ 2 := sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
            _ = 1 := by rw [← EuclideanSpace.norm_sq_eq, hx.1]; norm_num
-    have : (s.card : ℝ) ≤ k := by nlinarith [(div_le_iff₀ hkp).mp (by
-      simpa [div_eq_mul_inv] using hsum.trans htotal)]
-    exact (by exact_mod_cast hcard : (k : ℝ) < s.card).not_ge this
+    have : (s.card : ℝ) < k + 1 := by nlinarith [(div_lt_iff₀ hkp).mp (by
+      simpa [div_eq_mul_inv] using hsum.trans_le htotal)]
+    exact (by exact_mod_cast hcard : (k + 1 : ℝ) ≤ s.card).not_gt this
   -- Remove the small coordinates from the mass outside those large coordinates.
   have hmass := hx.lt_sum_filter_norm hρ (a := ρ / Real.sqrt (2 * Fintype.card ι))
     hlarge
@@ -227,15 +300,15 @@ theorem IsIncompressibleVector.exists_spread (hx : IsIncompressibleVector k ρ x
     rw [div_pow, Real.sq_sqrt (by positivity)]
     field_simp
   rw [hsmall] at hmass
-  -- Bound each remaining squared coordinate by 1/k to count the spread coordinates.
+  -- Bound each remaining squared coordinate by 1/(k + 1) to count the spread coordinates.
   have hbound :
       ∑ i ∈ univ.filter (fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-        ‖x i‖ ≤ 1 / Real.sqrt k), ‖x i‖ ^ 2 ≤
+        ‖x i‖ ≤ 1 / Real.sqrt (k + 1)), ‖x i‖ ^ 2 ≤
       ((univ.filter fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-        ‖x i‖ ≤ 1 / Real.sqrt k).card : ℝ) / k := by
+        ‖x i‖ ≤ 1 / Real.sqrt (k + 1)).card : ℝ) / (k + 1) := by
     calc
       _ ≤ ∑ _i ∈ univ.filter (fun i ↦ ρ / Real.sqrt (2 * Fintype.card ι) < ‖x i‖ ∧
-          ‖x i‖ ≤ 1 / Real.sqrt k), (1 / Real.sqrt (k : ℝ)) ^ 2 :=
+          ‖x i‖ ≤ 1 / Real.sqrt (k + 1)), (1 / Real.sqrt (k + 1 : ℝ)) ^ 2 :=
         sum_le_sum fun i hi ↦ pow_le_pow_left₀ (norm_nonneg _) (mem_filter.mp hi).2.2 2
       _ = _ := by simp [hsqrt, div_eq_mul_inv]
   have hfinal := (lt_div_iff₀ hkp).mp (hmass.trans_le hbound)
