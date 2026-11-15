@@ -78,6 +78,8 @@ irreducible by.
   algebraically closed field, for an unbundled equivariant endomorphism.
 * `Representation.IsIrreducible.exists_unit_smul_of_intertwines`: two equivariant isomorphisms
   out of an irreducible representation differ by a unit scalar.
+* `Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible`: a reducible semisimple
+  two-dimensional representation splits into two complementary one-dimensional subrepresentations.
 -/
 
 public section
@@ -398,5 +400,26 @@ theorem exists_isIrreducible_subrepresentation [FiniteDimensional k V] [Nontrivi
     ∃ σ : Subrepresentation ρ, σ ≠ ⊥ ∧ σ.toRepresentation.IsIrreducible := by
   obtain ⟨σ, hσ⟩ := exists_isAtom ρ
   exact ⟨σ, hσ.1, isIrreducible_toRepresentation_of_isAtom hσ⟩
+
+/-- **A reducible semisimple two-dimensional representation splits into two invariant lines.** -/
+theorem exists_isCompl_finrank_eq_one_of_not_isIrreducible {ρ : Representation k G V}
+    [ρ.IsSemisimpleRepresentation] (hdim : Module.finrank k V = 2) (hρ : ¬ ρ.IsIrreducible) :
+    ∃ W W' : Subrepresentation ρ,
+      IsCompl W W' ∧ Module.finrank k W.toSubmodule = 1 ∧ Module.finrank k W'.toSubmodule = 1 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (hdim ▸ zero_lt_two)
+  have : FiniteDimensional k V := Module.finite_of_finrank_pos (hdim ▸ zero_lt_two)
+  obtain ⟨W, hW_bot, hW_top⟩ : ∃ W : Subrepresentation ρ, W ≠ ⊥ ∧ W ≠ ⊤ := by
+    by_contra! hall; exact hρ ⟨fun W ↦ or_iff_not_imp_left.mpr (hall W)⟩
+  obtain ⟨W', hWW'⟩ := exists_isCompl W
+  have hW_pos : 0 < Module.finrank k W.toSubmodule := by
+    simpa using Submodule.finrank_lt_finrank_of_lt
+      (Subrepresentation.toSubmodule_lt_toSubmodule.mpr (bot_lt_iff_ne_bot.mpr hW_bot))
+  have hW_lt : Module.finrank k W.toSubmodule < 2 := by
+    simpa [hdim] using Submodule.finrank_lt_finrank_of_lt
+      (Subrepresentation.toSubmodule_lt_toSubmodule.mpr (lt_top_iff_ne_top.mpr hW_top))
+  have hW1 : Module.finrank k W.toSubmodule = 1 := by omega
+  have hsum := (Subrepresentation.equivProdOfIsCompl hWW').toLinearEquiv.finrank_eq
+  rw [hdim, Module.finrank_prod, hW1] at hsum
+  exact ⟨W, W', hWW', hW1, by omega⟩
 
 end Representation

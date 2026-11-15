@@ -366,9 +366,11 @@ noncomputable def isoLeftDualOfEquivDual {V : FDRep k G}
 theorem isoToLinearEquiv_isoLeftDualOfEquivDual {V : FDRep k G}
     (e : _root_.Representation.Equiv V.ρ (Representation.dual V.ρ)) :
     isoToLinearEquiv (isoLeftDualOfEquivDual e) = e.toLinearEquiv := by
-  rw [isoLeftDualOfEquivDual, isoToLinearEquiv_trans, isoToLinearEquiv_toFDRepIso,
-    isoToLinearEquiv_symm, isoToLinearEquiv_leftDualIso]
-  ext x; rfl
+  ext x
+  rw [isoLeftDualOfEquivDual, isoToLinearEquiv_trans, LinearEquiv.trans_apply,
+    isoToLinearEquiv_toFDRepIso, isoToLinearEquiv_symm, LinearEquiv.symm_apply_eq]
+  exact (DFunLike.congr_fun (isoToLinearEquiv_leftDualIso V) (e.toLinearEquiv x)).symm.trans
+    (LinearEquiv.refl_apply (R := k) _)
 
 /-- **Frobenius reciprocity `(V ⊗ X ⟶ Y) ≃ₗ[k] (X ⟶ V ⊗ Y)` along a self-duality of `V`.** -/
 noncomputable def tensorLeftHomLinearEquivOfEquivDual {V : FDRep k G}

@@ -17,16 +17,17 @@ For a representation `ρ : Representation R G V` of a monoid `G` on a free modul
 basis `b : Module.Basis (Fin 2) R V` over a commutative ring `R`, if every element of `G` acts with
 determinant `1`, `b.detBilinForm` is `G`-invariant (`Module.Basis.isInvariantForm_detBilinForm`).
 When `G` is a group, `b.detBilinFormEquivDual` intertwines `ρ` with `ρ.dual`, yielding self-duality
-`Module.Basis.equivDualOfDetEqOne` and `Representation.equivDualOfFinrankEqTwo` over any commutative
-ring, and hence symmetric tensor multiplicities `FDRep.finrank_hom_tensor_comm_of_finrank_eq_two`
-when `|G|` is invertible in a field `k`.
+`Module.Basis.equivDualOfDetEqOne` and `Representation.nonempty_equiv_dual_of_finrank_eq_two` over
+any commutative ring, and hence symmetric tensor multiplicities
+`FDRep.finrank_hom_tensor_comm_of_finrank_eq_two` when `|G|` is invertible in a field `k`.
 
 ## Main definitions and results
 
 * `Module.Basis.isInvariantForm_detBilinForm`: `G`-invariance of `b.detBilinForm` when
   `∀ g, LinearMap.det (ρ g) = 1`.
-* `Module.Basis.equivDualOfDetEqOne` and `Representation.equivDualOfFinrankEqTwo`: self-duality
-  `ρ.Equiv ρ.dual` of a rank-two representation of determinant `1` over a commutative ring.
+* `Module.Basis.equivDualOfDetEqOne` and `Representation.nonempty_equiv_dual_of_finrank_eq_two`:
+  self-duality `ρ.Equiv ρ.dual` of a rank-two representation of determinant `1` over a commutative
+  ring.
 * `FDRep.finrank_hom_tensor_comm_of_finrank_eq_two`: symmetry of `dim_k (X ⟶ V ⊗ Y)` when `|G|` is
   invertible in `k`, `dim_k V = 2`, and `∀ g, det (V.ρ g) = 1`.
 -/
@@ -86,16 +87,16 @@ namespace Representation
 
 /-- **Every rank-two free representation of determinant `1` over a commutative ring is
 self-dual.** -/
-noncomputable def equivDualOfFinrankEqTwo {R : Type u} {G : Type v} {V : Type w}
+theorem nonempty_equiv_dual_of_finrank_eq_two {R : Type u} {G : Type v} {V : Type w}
     [CommRing R] [Group G] [AddCommGroup V] [Module R V] [Module.Free R V]
     (ρ : Representation R G V) (hdim : Module.finrank R V = 2)
-    (hdet : ∀ g : G, LinearMap.det (ρ g) = 1) : ρ.Equiv ρ.dual :=
+    (hdet : ∀ g : G, LinearMap.det (ρ g) = 1) : Nonempty (ρ.Equiv ρ.dual) := by
   have : Nontrivial R := by
     rcases subsingleton_or_nontrivial R with _ | hnt
     · have h1 : Module.finrank R V = 1 := Module.finrank_subsingleton; omega
     · exact hnt
   have : Module.Finite R V := Module.finite_of_finrank_eq_succ hdim
-  (Module.finBasisOfFinrankEq R V hdim).equivDualOfDetEqOne ρ hdet
+  exact ⟨(Module.finBasisOfFinrankEq R V hdim).equivDualOfDetEqOne ρ hdet⟩
 
 end Representation
 
@@ -108,6 +109,6 @@ theorem finrank_hom_tensor_comm_of_finrank_eq_two {k : Type u} {G : Type v} [Fie
     (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1) (X Y : FDRep k G) :
     Module.finrank k (X ⟶ V ⊗ Y) = Module.finrank k (Y ⟶ V ⊗ X) :=
   finrank_hom_tensor_comm_of_equiv_dual
-    ⟨Representation.equivDualOfFinrankEqTwo V.ρ hdim hdet⟩ X Y
+    (Representation.nonempty_equiv_dual_of_finrank_eq_two V.ρ hdim hdet) X Y
 
 end FDRep

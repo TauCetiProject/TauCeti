@@ -192,8 +192,7 @@ theorem exists_isMcKayLabelling {G : Type u} [Group G] [Finite G] [Nontrivial G]
   classical
   have : Invertible (Nat.card G : ℂ) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-  let _ : Fintype (SimpleFDRepClasses ℂ G) :=
-    Fintype.ofEquiv _ (SimpleFDRepClasses.equivFinCardConjClasses ℂ G).symm
+  let _ := Fintype.ofFinite (SimpleFDRepClasses ℂ G)
   have hConn (c : SimpleFDRepClasses ℂ G) :
       Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < mckayMatrix V x y)
         c (SimpleFDRepClasses.trivial ℂ G) := by

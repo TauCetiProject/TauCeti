@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Semisimple.Wedderburn.Blocks
 import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.OfModule
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The Wedderburn blocks of `k[G]` classify its irreducible representations
@@ -49,9 +50,9 @@ the invariance statements it unlocks.
   irreducible models `Zᵢ = TauCeti.irreducibleRepresentation k i`.
 * `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`: the same lookup for simple
   `k[G]`-modules. This is the lookup assigning its class to a simple summand of a representation.
-* `TauCeti.SimpleFDRepClasses.equivFinCardConjClasses` and `TauCeti.card_simpleFDRepClasses`:
-  bijection from `SimpleFDRepClasses k G` onto `Fin (Nat.card (ConjClasses G))` and the resulting
-  cardinality equality.
+* `TauCeti.SimpleFDRepClasses.equivFinCardConjClasses`, `TauCeti.SimpleFDRepClasses.finite`, and
+  `TauCeti.card_simpleFDRepClasses`: bijection from `SimpleFDRepClasses k G` onto
+  `Fin (Nat.card (ConjClasses G))`, finiteness, and the resulting cardinality equality.
 
 ## Implementation notes
 
@@ -282,12 +283,18 @@ theorem SimpleFDRepClasses.equivFinCardConjClasses_mk_eq_iff (X : FDRep k G)
   exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
 
 omit [Finite G] in
+/-- Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has only finitely
+many isomorphism classes of simple objects. -/
+instance SimpleFDRepClasses.finite : Finite (SimpleFDRepClasses k G) :=
+  have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
+  .of_equiv _ (equivFinCardConjClasses k G).symm
+
+omit [Finite G] in
 /-- **Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has as many
 simple isomorphism classes as `G` has conjugacy classes.** -/
 theorem card_simpleFDRepClasses :
     Nat.card (SimpleFDRepClasses k G) = Nat.card (ConjClasses G) := by
-  have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ (isUnit_of_invertible (Nat.card G : k)).ne_zero (by simp [h])
+  have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   exact (Nat.card_congr (SimpleFDRepClasses.equivFinCardConjClasses k G)).trans (Nat.card_fin _)
 
 end Models

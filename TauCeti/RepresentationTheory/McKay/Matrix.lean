@@ -13,6 +13,8 @@ import TauCeti.LinearAlgebra.Determinant.FiniteOrder
 import TauCeti.RepresentationTheory.CharacterTable.Degree
 import TauCeti.RepresentationTheory.Intertwining.DirectSum
 import TauCeti.RepresentationTheory.InvariantForm.Determinant
+import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The McKay matrix and tensor-power multiplicities
@@ -108,29 +110,11 @@ private theorem exists_central_annihilator_of_not_simple [Finite G] [Nontrivial 
     (hV : ¬ Simple V) :
     ∃ (g₀ : G) (c₁ c₂ : k), (∀ h : G, g₀ * h = h * g₀) ∧ c₁ ≠ 1 ∧ c₂ ≠ 1 ∧
       (V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id) = 0 := by
-  have hV_not : ¬ Representation.IsIrreducible V.ρ := fun h ↦ hV (FDRep.simple_of_isIrreducible V)
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (hdim ▸ zero_lt_two)
-  obtain ⟨W, hW_bot, hW_top⟩ : ∃ W : Subrepresentation V.ρ, W ≠ ⊥ ∧ W ≠ ⊤ := by
-    by_contra! hall; exact hV_not ⟨fun W ↦ or_iff_not_imp_left.mpr (hall W)⟩
-  have : Representation.IsSemisimpleRepresentation V.ρ :=
-    (Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule V.ρ).mpr
-      inferInstance
-  obtain ⟨W', hWW'⟩ := exists_isCompl W
+  -- Split `V.ρ` by Maschke into two complementary invariant lines on which `G` acts by scalars.
+  obtain ⟨W, W', hWW', hW1, hW'1⟩ :=
+    Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible hdim
+      (mt (FDRep.simple_iff_isIrreducible V).mpr hV)
   let e := Subrepresentation.equivProdOfIsCompl hWW'
-  have hW_pos : 0 < Module.finrank k W.toSubmodule := by
-    obtain ⟨w, hw, hw0⟩ := (Submodule.ne_bot_iff W.toSubmodule).mp fun h ↦
-      hW_bot (Subrepresentation.toSubmodule_injective
-        (h.trans Subrepresentation.toSubmodule_bot.symm))
-    have : Nontrivial W.toSubmodule := ⟨⟨⟨w, hw⟩, 0, Subtype.coe_ne_coe.mp hw0⟩⟩
-    exact Module.finrank_pos
-  have hW_lt : Module.finrank k W.toSubmodule < 2 := by
-    simpa [hdim] using Submodule.finrank_lt_finrank_of_lt (lt_top_iff_ne_top.mpr fun h ↦
-      hW_top (Subrepresentation.toSubmodule_injective
-        (h.trans Subrepresentation.toSubmodule_top.symm)))
-  have hW1 : Module.finrank k W.toSubmodule = 1 := by omega
-  have hW'1 : Module.finrank k W'.toSubmodule = 1 := by
-    have hsum := e.toLinearEquiv.finrank_eq
-    rw [hdim, Module.finrank_prod, hW1] at hsum; omega
   choose c₁ hc₁ using fun g : G ↦
     (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hW1 (W.toRepresentation g)).exists
   choose c₂ hc₂ using fun g : G ↦
@@ -138,17 +122,15 @@ private theorem exists_central_annihilator_of_not_simple [Finite G] [Nontrivial 
   let eL : V ≃ₗ[k] W.toSubmodule × W'.toSubmodule := e.toLinearEquiv
   have he_apply (g : G) (v : V) : eL (V.ρ g v) = (c₁ g • (eL v).1, c₂ g • (eL v).2) := by
     have h := LinearMap.congr_fun (e.isIntertwining' g) v
-    have hp : (W.toRepresentation.prod W'.toRepresentation) g =
-        LinearMap.prodMap (c₁ g • LinearMap.id) (c₂ g • LinearMap.id) := by
-      rw [← hc₁ g, ← hc₂ g]; rfl
-    simpa [eL, hp] using h
+    exact Prod.ext (by simpa [eL, hc₁ g] using congrArg Prod.fst h)
+      (by simpa [eL, hc₂ g] using congrArg Prod.snd h)
+  -- Read `det (V.ρ g) = 1` across `V ≃ W × W'` to get `c₁ g * c₂ g = 1`, and deduce `G` is abelian
+  -- since `V.ρ` embeds `G` into diagonal matrices.
   have hconj (g : G) :
       (eL : V →ₗ[k] W.toSubmodule × W'.toSubmodule) ∘ₗ V.ρ g ∘ₗ
           (eL.symm : W.toSubmodule × W'.toSubmodule →ₗ[k] V) =
         LinearMap.prodMap (c₁ g • LinearMap.id) (c₂ g • LinearMap.id) :=
-    LinearMap.ext fun p ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-        he_apply, eL.apply_symm_apply]; rfl
+    LinearMap.ext fun p ↦ Prod.ext (by simp [he_apply]) (by simp [he_apply])
   have hdet_prod (g : G) : c₁ g * c₂ g = 1 := by
     have hd : LinearMap.det ((eL : V →ₗ[k] W.toSubmodule × W'.toSubmodule) ∘ₗ V.ρ g ∘ₗ
         (eL.symm : W.toSubmodule × W'.toSubmodule →ₗ[k] V)) = 1 := by
@@ -157,14 +139,13 @@ private theorem exists_central_annihilator_of_not_simple [Finite G] [Nontrivial 
   have hcomm (g h : G) : g * h = h * g :=
     hfaithful <| LinearMap.ext fun v ↦ eL.injective <| by
       simp [map_mul, mul_apply_eq_comp, he_apply, smul_smul, mul_comm]
+  -- Any `g₀ ≠ 1` is central with inverse eigenvalues `c₁ g₀, c₂ g₀ ≠ 1` annihilating `V.ρ g₀`.
   obtain ⟨g₀, hg₀⟩ := exists_ne (1 : G)
   have hne_one : ¬ (c₁ g₀ = 1 ∧ c₂ g₀ = 1) := fun ⟨h1, h2⟩ ↦
     hg₀ <| hfaithful <| by
       rw [map_one]; exact LinearMap.ext fun v ↦ eL.injective (by simp [he_apply, h1, h2])
-  have hc₁_ne : c₁ g₀ ≠ 1 := fun h1 ↦
-    hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
-  have hc₂_ne : c₂ g₀ ≠ 1 := fun h2 ↦
-    hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
+  have hc₁_ne : c₁ g₀ ≠ 1 := fun h1 ↦ hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
+  have hc₂_ne : c₂ g₀ ≠ 1 := fun h2 ↦ hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
   refine ⟨g₀, c₁ g₀, c₂ g₀, fun h ↦ hcomm g₀ h, hc₁_ne, hc₂_ne, LinearMap.ext fun v ↦ ?_⟩
   apply eL.injective
   ext <;> simp [he_apply, smul_sub, smul_smul, mul_comm]
@@ -266,7 +247,8 @@ theorem isSymm_mckayMatrix_of_equiv_dual [Group G] [Invertible (Nat.card G : k)]
 theorem isSymm_mckayMatrix_of_finrank_eq_two [Group G] [Invertible (Nat.card G : k)] {V : FDRep k G}
     (hdim : Module.finrank k V = 2) (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1) :
     (mckayMatrix V).IsSymm :=
-  isSymm_mckayMatrix_of_equiv_dual ⟨_root_.Representation.equivDualOfFinrankEqTwo V.ρ hdim hdet⟩
+  isSymm_mckayMatrix_of_equiv_dual
+    (_root_.Representation.nonempty_equiv_dual_of_finrank_eq_two V.ρ hdim hdet)
 
 /-- **Diagonal vanishing of the McKay matrix** for a faithful two-dimensional representation of
 determinant `1` of a nontrivial finite group over an algebraically closed field of characteristic
@@ -311,8 +293,7 @@ theorem multiplicity_tensor_eq_sum [Fintype (SimpleFDRepClasses k G)] (V W : FDR
     c₁.multiplicity (V ⊗ W) =
       ∑ c₂ : SimpleFDRepClasses k G, mckayMatrix V c₁ c₂ * c₂.multiplicity W := by
   classical
-  have : Finite G :=
-    Nat.finite_of_card_ne_zero fun h ↦ (isUnit_of_invertible (Nat.card G : k)).ne_zero (by simp [h])
+  have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   obtain ⟨eW⟩ := _root_.Representation.nonempty_equiv_directSum_irreducibleRepresentation W.ρ
   let j := SimpleFDRepClasses.equivFinCardConjClasses k G c₁
   have hc₁ : c₁ = (SimpleFDRepClasses.equivFinCardConjClasses k G).symm j :=
@@ -344,8 +325,10 @@ theorem multiplicity_tensor_eq_sum [Fintype (SimpleFDRepClasses k G)] (V W : FDR
     (s := univ) (t := univ) (fun _ ↦ by simp) fun i _ ↦ ?_
   rw [SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm,
     SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, mckayMatrix_apply_mk,
-    hc₁, SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm, mul_comm]
-  rfl
+    hc₁, SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_symm,
+    _root_.Representation.intrinsicMultiplicity_congr
+      (FDRep.tensorEquivTprod V (FDRep.of (irreducibleRepresentation k i))),
+    FDRep.of_ρ', mul_comm]
 
 /-- **Powers of the McKay matrix count tensor-power multiplicities.** -/
 theorem mckayMatrix_pow_apply [Fintype (SimpleFDRepClasses k G)]
