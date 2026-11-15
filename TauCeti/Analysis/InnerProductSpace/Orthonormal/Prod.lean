@@ -61,12 +61,16 @@ namespace QuadraticMap
 /-- When `Q₁`, `Q₂`, and `Q` on `WithLp 2 (V × W)` are each minus the squared norm, `Q` splits
 additively as `Q₁ x.1 + Q₂ x.2`. -/
 theorem apply_prod_eq_add_of_neg_norm_sq {V W : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [AddCommGroup V] [Module ℝ V] [Norm V] [AddCommGroup W] [Module ℝ W] [Norm W]
     {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
     (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (hQ : ∀ x, Q x = -‖x‖ ^ 2) (x : WithLp 2 (V × W)) :
     Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2 := by
-  rw [hQ, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2, WithLp.ofLp_fst, WithLp.ofLp_snd]
+  have hnorm : ‖x‖ ^ 2 = ‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 := by
+    rw [WithLp.prod_norm_eq_of_nat 2 (by norm_cast) x]
+    norm_num
+    rw [← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
+  rw [hQ, hQ₁, hQ₂, hnorm, WithLp.ofLp_fst, WithLp.ofLp_snd]
   ring
 
 end QuadraticMap

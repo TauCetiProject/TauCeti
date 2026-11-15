@@ -13,9 +13,11 @@ public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod
 public import TauCeti.LinearAlgebra.Matrix.Pauli
--- Private: used only inside unexposed definitions and proofs for the 1D Clifford-to-`ℂ` map, the
--- tensor-product formal-adjoint identity, real `star` compatibility on generators, polarized real
--- Clifford relations, and the negative-plane coordinate/quaternion Pauli model.
+-- Private: used only inside unexposed definitions and proofs for orthogonal eigenspaces of
+-- symmetric operators, the 1D Clifford-to-`ℂ` map, the tensor-product formal-adjoint identity,
+-- real `star` compatibility on generators, polarized real Clifford relations, and the
+-- negative-plane coordinate/quaternion Pauli model.
+import Mathlib.Analysis.InnerProductSpace.Spectrum
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Analysis.InnerProductSpace.TensorProduct
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
@@ -40,16 +42,18 @@ Combining skew-Hermiticity with the polarized Clifford anticommutator
 Hermitian identity `⟪c(v) x, c(w) y⟫_ℂ + ⟪c(w) x, c(v) y⟫_ℂ = 2 ⟪v, w⟫_ℝ ⟪x, y⟫_ℂ` and norm scaling
 `‖c(v) x‖ = ‖v‖ ‖x‖` without requiring `V` or `S` to be finite-dimensional.
 
-Extending `ρ` complex-linearly via `AlgHom.cliffordBaseChange ℂ` produces a `ℂ`-algebra
-homomorphism `ρ.cliffordBaseChange ℂ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S`
+Extending `ρ` complex-linearly via `AlgHom.cliffordLiftBaseChange ℂ` produces a `ℂ`-algebra
+homomorphism `ρ.cliffordLiftBaseChange ℂ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S`
 compatible with the conjugate-linear Clifford involution `CliffordAlgebra.conjStar`
-(`AlgHom.inner_cliffordBaseChange_eq_conjStar_iff`), while `ρ` itself respects Clifford conjugation
-`star`. When `V` is oriented of dimension `n`, evaluating `ρ.cliffordBaseChange ℂ` at
-`CliffordAlgebra.complexVolume Q o` (`AlgHom.cliffordBaseChange_complexVolume_eq_prod_map_ι`) gives
-a self-adjoint chirality involution whose `+1` and `-1` eigenspaces
-(`AlgHom.isCompl_eigenspace_cliffordBaseChange_complexVolume`) are orthogonal and, in even
-dimension, exchanged by Clifford multiplication by real vectors
-(`AlgHom.map_ι_mem_eigenspace_cliffordBaseChange_complexVolume_neg`). Moreover, this chirality
+(`AlgHom.inner_cliffordLiftBaseChange_eq_conjStar_iff`), while `ρ` itself respects Clifford
+conjugation `star`. When `V` is oriented of dimension `n`, evaluating `ρ.cliffordLiftBaseChange ℂ`
+at `CliffordAlgebra.complexVolume Q o` (`AlgHom.cliffordLiftBaseChange_complexVolume`,
+`AlgHom.cliffordLiftBaseChange_complexVolume_eq`) gives a symmetric (and in finite dimension
+self-adjoint) involution whose `+1` and `-1` eigenspaces
+(`AlgHom.isCompl_eigenspace_map_complexVolume`) are orthogonal; in even dimension `n = 2ℓ`
+(`AlgHom.cliffordLiftBaseChange_complexVolume_eq_of_eq_two_mul`), they are exchanged by Clifford
+multiplication by real vectors
+(`AlgHom.map_ι_mem_eigenspace_cliffordLiftBaseChange_complexVolume_neg`). Moreover, this chirality
 grading makes the graded tensor product `CliffordAlgebra.complexProdTensor` preserve the geometric
 convention on `WithLp 2 (V × W)`.
 
@@ -69,30 +73,32 @@ Concrete witnesses are given in rank zero, on the real line via `CliffordAlgebra
 
 ## Main results
 
-* `AlgHom.IsGeometricCliffordAction.inner_map_ι_add_swap`,
-  `AlgHom.IsGeometricCliffordAction.norm_map_ι_apply`: polarized inner-product identity and
-  norm-scaling law without finite-dimensionality assumptions.
-* `AlgHom.IsGeometricCliffordAction.inner_cliffordBaseChange_eq_conjStar`,
-  `AlgHom.IsGeometricCliffordAction.adjoint_cliffordBaseChange_eq_conjStar`,
+* `AlgHom.IsGeometricCliffordAction.inner_map_ι_map_ι_add_swap`,
+  `AlgHom.IsGeometricCliffordAction.inner_map_ι_map_ι`,
+  `AlgHom.IsGeometricCliffordAction.norm_map_ι_apply`: polarized inner-product identity, diagonal
+  inner-product scaling, and norm-scaling law without finite-dimensionality assumptions.
+* `AlgHom.IsGeometricCliffordAction.inner_cliffordLiftBaseChange_eq_conjStar`,
+  `AlgHom.IsGeometricCliffordAction.adjoint_cliffordLiftBaseChange_eq_conjStar`,
   `AlgHom.IsGeometricCliffordAction.inner_map_eq_map_star`,
   `AlgHom.IsGeometricCliffordAction.adjoint_map_eq_map_star`: compatibility of
-  `ρ.cliffordBaseChange ℂ` with `CliffordAlgebra.conjStar` and of `ρ` with `star`.
-* `AlgHom.IsGeometricCliffordAction.isSelfAdjoint_cliffordBaseChange_complexVolume`,
-  `AlgHom.IsGeometricCliffordAction.inner_eq_zero_of_mem_eigenspace_complexVolume`: self-adjointness
-  of the chirality operator and orthogonality of the half-spinor eigenspaces.
+  `ρ.cliffordLiftBaseChange ℂ` with `CliffordAlgebra.conjStar` and of `ρ` with `star`.
+* `AlgHom.IsGeometricCliffordAction.isSymmetric_cliffordLiftBaseChange_complexVolume`,
+  `AlgHom.IsGeometricCliffordAction.isSelfAdjoint_cliffordLiftBaseChange_complexVolume`,
+  `AlgHom.IsGeometricCliffordAction.inner_eq_zero_of_mem_eigenspace_complexVolume`: symmetry and
+  self-adjointness of the chirality operator and orthogonality of the half-spinor eigenspaces.
 * `AlgHom.IsGeometricCliffordAction.complexProdTensor`: graded tensor product preservation of the
   geometric convention.
 * `AlgHom.isGeometricCliffordAction_of_subsingleton`,
   `TauCeti.isGeometricCliffordAction_realLineGeometricCliffordAction`,
   `TauCeti.isGeometricCliffordAction_negativePlanePauliAction`,
-  `TauCeti.cliffordBaseChange_complexVolume_negativePlanePauliAction`: concrete rank-zero, 1D, and
-  2D negative-Pauli-plane witnesses.
+  `TauCeti.cliffordLiftBaseChange_complexVolume_negativePlanePauliAction`: concrete rank-zero, 1D,
+  and 2D negative-Pauli-plane witnesses.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §§1 and 5.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds* (2nd ed., 2007), §12.1.1,
-  Definition 12.1.10.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, the chapter on Clifford modules and
+  Dirac operators.
 -/
 
 public section
@@ -118,7 +124,7 @@ inner product space `S`: the quadratic form satisfies `Q v = -⟪v, v⟫_ℝ`, a
 multiplication `ρ (ι Q v)` by every real vector `v` is skew-Hermitian on `S`. -/
 structure IsGeometricCliffordAction (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) : Prop where
   /-- The quadratic form is minus the inner-product square `Q v = -⟪v, v⟫_ℝ`. -/
-  apply_eq_neg_inner_self : ∀ v : V, Q v = -⟪v, v⟫
+  quadraticForm_eq_neg_inner_self : ∀ v : V, Q v = -⟪v, v⟫
   /-- Clifford multiplication by every real vector is skew-Hermitian on `S`. -/
   inner_map_ι_left : ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y)
 
@@ -127,7 +133,7 @@ theorem IsGeometricCliffordAction.of_norm_sq {ρ : CliffordAlgebra Q →ₐ[ℝ]
     (hQ : ∀ v : V, Q v = -‖v‖ ^ 2)
     (hskew : ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y)) :
     ρ.IsGeometricCliffordAction where
-  apply_eq_neg_inner_self v := by rw [hQ, real_inner_self_eq_norm_sq]
+  quadraticForm_eq_neg_inner_self v := by rw [hQ, real_inner_self_eq_norm_sq]
   inner_map_ι_left := hskew
 
 /-- Unfolding characterization of `AlgHom.IsGeometricCliffordAction`. -/
@@ -143,8 +149,8 @@ variable {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} (hρ : ρ.IsGeome
 include hρ
 
 /-- Under the geometric convention, `Q v = -‖v‖²`. -/
-theorem apply_eq_neg_norm_sq (v : V) : Q v = -‖v‖ ^ 2 := by
-  rw [hρ.apply_eq_neg_inner_self, real_inner_self_eq_norm_sq]
+theorem quadraticForm_eq_neg_norm_sq (v : V) : Q v = -‖v‖ ^ 2 := by
+  rw [hρ.quadraticForm_eq_neg_inner_self, real_inner_self_eq_norm_sq]
 
 /-- Moving Clifford multiplication to the left in the inner product introduces a minus sign. -/
 theorem inner_map_ι_right (v : V) (x y : S) :
@@ -165,7 +171,7 @@ theorem adjoint_map_ι [FiniteDimensional ℂ S] (v : V) :
 theorem map_ι_mul_map_ι_add_swap (v w : V) :
     ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) = (-2 * ⟪v, w⟫) • 1 :=
   ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner
-    hρ.apply_eq_neg_norm_sq v w
+    hρ.quadraticForm_eq_neg_norm_sq v w
 
 /-- Pointwise polarized Clifford relation on spinors:
 `c(v) (c(w) x) + c(w) (c(v) x) = (-2 * ⟪v, w⟫_ℝ) • x`. -/
@@ -178,7 +184,7 @@ theorem map_ι_apply_add_swap (v w : V) (x : S) :
 /-- **Polarized Hermitian identity**: combining skew-Hermiticity with the polarized Clifford
 relation gives `⟪c(v) x, c(w) y⟫_ℂ + ⟪c(w) x, c(v) y⟫_ℂ = 2 ⟪v, w⟫_ℝ ⟪x, y⟫_ℂ` without assuming
 finite-dimensionality of `V` or `S`. -/
-theorem inner_map_ι_add_swap (v w : V) (x y : S) :
+theorem inner_map_ι_map_ι_add_swap (v w : V) (x y : S) :
     inner ℂ (ρ (ι Q v) x) (ρ (ι Q w) y) + inner ℂ (ρ (ι Q w) x) (ρ (ι Q v) y) =
       (2 * ⟪v, w⟫ : ℂ) * inner ℂ x y := by
   rw [hρ.inner_map_ι_right w, hρ.inner_map_ι_right v, ← neg_add, ← inner_add_left,
@@ -190,9 +196,9 @@ theorem inner_map_ι_add_swap (v w : V) (x y : S) :
 
 /-- Applying `c(v)` to both arguments multiplies the inner product by `‖v‖²`, without assuming
 finite-dimensionality of `S`. -/
-theorem inner_map_ι_self (v : V) (x y : S) :
+theorem inner_map_ι_map_ι (v : V) (x y : S) :
     inner ℂ (ρ (ι Q v) x) (ρ (ι Q v) y) = (‖v‖ ^ 2 : ℂ) * inner ℂ x y := by
-  have h := hρ.inner_map_ι_add_swap v v x y
+  have h := hρ.inner_map_ι_map_ι_add_swap v v x y
   rw [real_inner_self_eq_norm_sq] at h
   push_cast at h
   linear_combination (1 / 2 : ℂ) * h
@@ -202,7 +208,7 @@ theorem inner_map_ι_self (v : V) (x y : S) :
 theorem norm_map_ι_apply (v : V) (x : S) :
     ‖ρ (ι Q v) x‖ = ‖v‖ * ‖x‖ := by
   refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  have h := congrArg RCLike.re (hρ.inner_map_ι_self v x x)
+  have h := congrArg RCLike.re (hρ.inner_map_ι_map_ι v x x)
   simp only [inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal, RCLike.re_to_complex,
     ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re] at h
   linarith
@@ -215,7 +221,7 @@ theorem isGeometricCliffordAction_iff_adjoint [FiniteDimensional ℂ S]
     {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
     ρ.IsGeometricCliffordAction ↔
       (∀ v : V, Q v = -⟪v, v⟫) ∧ ∀ v : V, (ρ (ι Q v)).adjoint = -ρ (ι Q v) := by
-  refine ⟨fun h ↦ ⟨h.apply_eq_neg_inner_self, h.adjoint_map_ι⟩, fun ⟨hQ, hadj⟩ ↦ ⟨hQ, ?_⟩⟩
+  refine ⟨fun h ↦ ⟨h.quadraticForm_eq_neg_inner_self, h.adjoint_map_ι⟩, fun ⟨hQ, hadj⟩ ↦ ⟨hQ, ?_⟩⟩
   intro v x y
   rw [← LinearMap.adjoint_inner_right, hadj, LinearMap.neg_apply, inner_neg_right]
 
@@ -232,12 +238,12 @@ namespace IsGeometricCliffordAction
 variable {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} (hρ : ρ.IsGeometricCliffordAction)
 include hρ
 
-/-- Under the geometric convention, the complexified action `ρ.cliffordBaseChange ℂ` respects
+/-- Under the geometric convention, the complexified action `ρ.cliffordLiftBaseChange ℂ` respects
 `CliffordAlgebra.conjStar` in the inner product. -/
-theorem inner_cliffordBaseChange_eq_conjStar (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S) :
-    inner ℂ (ρ.cliffordBaseChange ℂ a x) y =
-      inner ℂ x (ρ.cliffordBaseChange ℂ (conjStar Q a) y) :=
-  (ρ.inner_cliffordBaseChange_eq_conjStar_iff.2 hρ.inner_map_ι_left) a x y
+theorem inner_cliffordLiftBaseChange_eq_conjStar (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S) :
+    inner ℂ (ρ.cliffordLiftBaseChange ℂ a x) y =
+      inner ℂ x (ρ.cliffordLiftBaseChange ℂ (conjStar Q a) y) :=
+  (ρ.inner_cliffordLiftBaseChange_eq_conjStar_iff.2 hρ.inner_map_ι_left) a x y
 
 /-- Under the geometric convention, `ρ` respects Clifford conjugation `star` in the inner
 product. -/
@@ -253,34 +259,43 @@ theorem adjoint_map_eq_map_star [FiniteDimensional ℂ S] (a : CliffordAlgebra Q
 
 /-- On a finite-dimensional Hermitian module, the complexification of a geometric Clifford action is
 a `*`-representation for `CliffordAlgebra.conjStar`. -/
-theorem adjoint_cliffordBaseChange_eq_conjStar [FiniteDimensional ℂ S]
+theorem adjoint_cliffordLiftBaseChange_eq_conjStar [FiniteDimensional ℂ S]
     (a : CliffordAlgebra (Q.baseChange ℂ)) :
-    (ρ.cliffordBaseChange ℂ a).adjoint = ρ.cliffordBaseChange ℂ (conjStar Q a) :=
-  (ρ.adjoint_cliffordBaseChange_eq_conjStar_iff.2 hρ.adjoint_map_ι) a
+    (ρ.cliffordLiftBaseChange ℂ a).adjoint = ρ.cliffordLiftBaseChange ℂ (conjStar Q a) :=
+  (ρ.adjoint_cliffordLiftBaseChange_eq_conjStar_iff.2 hρ.adjoint_map_ι) a
 
 end IsGeometricCliffordAction
 
 /-- On a finite-dimensional complex inner product space, `AlgHom.IsGeometricCliffordAction` is
-equivalent to `Q v = -⟪v, v⟫_ℝ` together with `ρ.cliffordBaseChange ℂ` being a `*`-representation
-for `CliffordAlgebra.conjStar`. -/
-theorem isGeometricCliffordAction_iff_adjoint_cliffordBaseChange [FiniteDimensional ℂ S]
+equivalent to `Q v = -⟪v, v⟫_ℝ` together with `ρ.cliffordLiftBaseChange ℂ` being a
+`*`-representation for `CliffordAlgebra.conjStar`. -/
+theorem isGeometricCliffordAction_iff_adjoint_cliffordLiftBaseChange [FiniteDimensional ℂ S]
     {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
     ρ.IsGeometricCliffordAction ↔
       (∀ v : V, Q v = -⟪v, v⟫) ∧
-        ∀ a, (ρ.cliffordBaseChange ℂ a).adjoint = ρ.cliffordBaseChange ℂ (conjStar Q a) := by
-  rw [isGeometricCliffordAction_iff_adjoint, adjoint_cliffordBaseChange_eq_conjStar_iff]
+        ∀ a, (ρ.cliffordLiftBaseChange ℂ a).adjoint =
+          ρ.cliffordLiftBaseChange ℂ (conjStar Q a) := by
+  rw [isGeometricCliffordAction_iff_adjoint, adjoint_cliffordLiftBaseChange_eq_conjStar_iff]
 
-/-- Restricting a complex Clifford algebra map `σ` along `AlgHom.cliffordBaseChangeEquiv` yields a
-geometric Clifford action if and only if `Q v = -⟪v, v⟫_ℝ` and every embedded real generator
-`σ (ι (Q.baseChange ℂ) (1 ⊗ₜ v))` is skew-Hermitian. -/
-theorem isGeometricCliffordAction_cliffordBaseChangeEquiv_symm_iff
+/-- Restricting a complex Clifford algebra map `σ` along `CliffordAlgebra.ofBaseChangeAux ℂ Q`
+yields a geometric Clifford action if and only if `Q v = -⟪v, v⟫_ℝ` and every embedded real
+generator `σ (ι (Q.baseChange ℂ) (1 ⊗ₜ v))` is skew-Hermitian. -/
+theorem isGeometricCliffordAction_restrictScalars_comp_ofBaseChangeAux_iff
     (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) :
-    ((AlgHom.cliffordBaseChangeEquiv ℂ Q (Module.End ℂ S)).symm σ).IsGeometricCliffordAction ↔
+    ((σ.restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)).IsGeometricCliffordAction ↔
       (∀ v : V, Q v = -⟪v, v⟫) ∧
         ∀ (v : V) (x y : S),
           inner ℂ (σ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x) y =
             -inner ℂ x (σ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) y) := by
-  simp [isGeometricCliffordAction_iff]
+  have happ (v : V) :
+      ((σ.restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)) (ι Q v) =
+        σ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) :=
+    (((σ.restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)).cliffordLiftBaseChange_ι_one_tmul
+      v).symm.trans
+      congr($(σ.cliffordLiftBaseChange_comp_ofBaseChangeAux) (ι (Q.baseChange ℂ) (1 ⊗ₜ v)))
+  exact isGeometricCliffordAction_iff.trans <|
+    and_congr_right' <| forall_congr' fun v ↦ forall₂_congr fun x y ↦
+      Eq.to_iff congr(inner ℂ ($(happ v) x) y = -inner ℂ x ($(happ v) y))
 
 end GeometricComplexification
 
@@ -296,33 +311,29 @@ namespace IsGeometricCliffordAction
 variable {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} (hρ : ρ.IsGeometricCliffordAction)
 include hρ
 
-/-- **Self-adjointness of `Γ` in the inner product**: on any geometric Clifford module (without
-assuming finite-dimensionality of `S`), `ρ.cliffordBaseChange ℂ (complexVolume Q o)` is symmetric
-with respect to the complex inner product. -/
-theorem inner_cliffordBaseChange_complexVolume_left (o : Orientation ℝ V (Fin n)) (x y : S) :
-    inner ℂ (ρ.cliffordBaseChange ℂ (complexVolume Q o) x) y =
-      inner ℂ x (ρ.cliffordBaseChange ℂ (complexVolume Q o) y) := by
-  rw [hρ.inner_cliffordBaseChange_eq_conjStar, conjStar_complexVolume]
+/-- **Symmetry of `Γ` in the inner product**: on any geometric Clifford module (without assuming
+finite-dimensionality of `S`), `ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)` is symmetric
+(`LinearMap.IsSymmetric`) with respect to the complex inner product. -/
+theorem isSymmetric_cliffordLiftBaseChange_complexVolume (o : Orientation ℝ V (Fin n)) :
+    LinearMap.IsSymmetric (ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) := fun x y ↦ by
+  rw [hρ.inner_cliffordLiftBaseChange_eq_conjStar, conjStar_complexVolume]
 
 /-- **Self-adjointness of `Γ`**: on any finite-dimensional geometric Clifford module,
-`ρ.cliffordBaseChange ℂ (complexVolume Q o)` is self-adjoint (`IsSelfAdjoint`). -/
-theorem isSelfAdjoint_cliffordBaseChange_complexVolume [FiniteDimensional ℂ S]
+`ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)` is self-adjoint (`IsSelfAdjoint`). -/
+theorem isSelfAdjoint_cliffordLiftBaseChange_complexVolume [FiniteDimensional ℂ S]
     (o : Orientation ℝ V (Fin n)) :
-    IsSelfAdjoint (ρ.cliffordBaseChange ℂ (complexVolume Q o)) := by
-  rw [LinearMap.isSelfAdjoint_iff', hρ.adjoint_cliffordBaseChange_eq_conjStar,
-    conjStar_complexVolume]
+    IsSelfAdjoint (ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) :=
+  (LinearMap.isSymmetric_iff_isSelfAdjoint _).1
+    (hρ.isSymmetric_cliffordLiftBaseChange_complexVolume o)
 
 /-- **Orthogonality of the half-spinor eigenspaces**: on any geometric Clifford module, the `+1`
-and `-1` eigenspaces of `ρ.cliffordBaseChange ℂ (complexVolume Q o)` are orthogonal. -/
+and `-1` eigenspaces of `ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)` are orthogonal. -/
 theorem inner_eq_zero_of_mem_eigenspace_complexVolume (o : Orientation ℝ V (Fin n)) {x y : S}
-    (hx : x ∈ Module.End.eigenspace (ρ.cliffordBaseChange ℂ (complexVolume Q o)) 1)
-    (hy : y ∈ Module.End.eigenspace (ρ.cliffordBaseChange ℂ (complexVolume Q o)) (-1)) :
-    inner ℂ x y = 0 := by
-  rw [Module.End.mem_eigenspace_iff, one_smul] at hx
-  rw [Module.End.mem_eigenspace_iff, neg_one_smul] at hy
-  have h := hρ.inner_cliffordBaseChange_complexVolume_left o x y
-  rw [hx, hy, inner_neg_right] at h
-  linear_combination (1 / 2 : ℂ) * h
+    (hx : x ∈ Module.End.eigenspace (ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) 1)
+    (hy : y ∈ Module.End.eigenspace (ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) (-1)) :
+    inner ℂ x y = 0 :=
+  (hρ.isSymmetric_cliffordLiftBaseChange_complexVolume o).orthogonalFamily_eigenspaces
+    (by norm_num : (1 : ℂ) ≠ -1) ⟨x, hx⟩ ⟨y, hy⟩
 
 end IsGeometricCliffordAction
 
@@ -341,25 +352,25 @@ variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)]
 /-- **Graded tensor product of geometric Clifford actions**: if `ρ₁` is a geometric Clifford action
 of an even-dimensional oriented space `(V, Q)` on `E` and `ρ₂` is a geometric Clifford action of
 `(W, Q₂)` on `F`, then restricting `CliffordAlgebra.complexProdTensor` (graded by the chirality of
-`V`) along `AlgHom.cliffordBaseChangeEquiv` to `CliffordAlgebra Q₁₂` on `WithLp 2 (V × W)` yields a
-geometric Clifford action on `E ⊗[ℂ] F`. -/
+`V`) along `CliffordAlgebra.ofBaseChangeAux ℂ Q₁₂` to `CliffordAlgebra Q₁₂` on `WithLp 2 (V × W)`
+yields a geometric Clifford action on `E ⊗[ℂ] F`. -/
 theorem IsGeometricCliffordAction.complexProdTensor
     {ρ₁ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ E}
     {ρ₂ : CliffordAlgebra Q₂ →ₐ[ℝ] Module.End ℂ F}
     (hρ₁ : ρ₁.IsGeometricCliffordAction) (hρ₂ : ρ₂.IsGeometricCliffordAction)
     (o₁ : Orientation ℝ V (Fin n)) (hn : Even n)
     (hQ₁₂ : ∀ x, Q₁₂ x = -‖x‖ ^ 2) :
-    ((AlgHom.cliffordBaseChangeEquiv ℂ Q₁₂ (Module.End ℂ (E ⊗[ℂ] F))).symm
-      (CliffordAlgebra.complexProdTensor
-        (QuadraticMap.apply_prod_eq_add_of_neg_norm_sq
-          hρ₁.apply_eq_neg_norm_sq hρ₂.apply_eq_neg_norm_sq hQ₁₂)
-        o₁ hρ₁.apply_eq_neg_norm_sq hn (ρ₁.cliffordBaseChange ℂ)
-        (ρ₂.cliffordBaseChange ℂ))).IsGeometricCliffordAction := by
-  refine (isGeometricCliffordAction_cliffordBaseChangeEquiv_symm_iff (Q := Q₁₂) _).2
+    (((CliffordAlgebra.complexProdTensor
+      (QuadraticMap.apply_prod_eq_add_of_neg_norm_sq
+        hρ₁.quadraticForm_eq_neg_norm_sq hρ₂.quadraticForm_eq_neg_norm_sq hQ₁₂)
+      o₁ hρ₁.quadraticForm_eq_neg_norm_sq hn (ρ₁.cliffordLiftBaseChange ℂ)
+      (ρ₂.cliffordLiftBaseChange ℂ)).restrictScalars ℝ).comp
+        (ofBaseChangeAux ℂ Q₁₂)).IsGeometricCliffordAction := by
+  refine (isGeometricCliffordAction_restrictScalars_comp_ofBaseChangeAux_iff (Q := Q₁₂) _).2
     ⟨fun x ↦ by rw [hQ₁₂, real_inner_self_eq_norm_sq], fun x u₁ u₂ ↦ ?_⟩
   obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective 2 x
   simp only [CliffordAlgebra.complexProdTensor_ι_one_tmul_toLp,
-    AlgHom.cliffordBaseChange_ι_one_tmul, LinearMap.add_apply, inner_add_left, inner_add_right,
+    AlgHom.cliffordLiftBaseChange_ι_one_tmul, LinearMap.add_apply, inner_add_left, inner_add_right,
     neg_add]
   congr 1
   · rw [LinearMap.rTensor_def,
@@ -367,8 +378,9 @@ theorem IsGeometricCliffordAction.complexProdTensor
         (fun a a' ↦ by simp [hρ₁.inner_map_ι_left]) (fun _ _ ↦ rfl),
       ← LinearMap.rTensor_def, LinearMap.rTensor_neg, LinearMap.neg_apply, inner_neg_right,
       LinearMap.rTensor_def]
-  · rw [TensorProduct.inner_map_left (f' := ρ₁.cliffordBaseChange ℂ (complexVolume Q o₁))
-        (g' := (-1 : ℂ) • ρ₂ (ι Q₂ w)) (hρ₁.inner_cliffordBaseChange_complexVolume_left o₁)
+  · rw [TensorProduct.inner_map_left (f' := ρ₁.cliffordLiftBaseChange ℂ (complexVolume Q o₁))
+        (g' := (-1 : ℂ) • ρ₂ (ι Q₂ w))
+        (fun a a' ↦ hρ₁.isSymmetric_cliffordLiftBaseChange_complexVolume o₁ a a')
         (fun b b' ↦ by simp [hρ₂.inner_map_ι_left]),
       TensorProduct.map_smul_right, LinearMap.smul_apply, neg_one_smul, inner_neg_right]
 
@@ -385,7 +397,7 @@ theorem isGeometricCliffordAction_of_subsingleton [Subsingleton V]
     {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S]
     (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
     ρ.IsGeometricCliffordAction where
-  apply_eq_neg_inner_self v := by simp [Subsingleton.elim v 0]
+  quadraticForm_eq_neg_inner_self v := by simp [Subsingleton.elim v 0]
   inner_map_ι_left v x y := by simp [Subsingleton.elim v 0]
 
 end SubsingletonWitness
@@ -405,20 +417,20 @@ def realLineGeometricCliffordAction :
 /-- On the real line, a vector `r : ℝ` acts on `ℂ` by `r • (i • 1)`. -/
 @[simp]
 theorem realLineGeometricCliffordAction_ι (r : ℝ) :
-    realLineGeometricCliffordAction (ι (-QuadraticMap.sq (R := ℝ)) r) = r • (Complex.I • 1) :=
-  (congrArg (Algebra.ofId ℂ (Module.End ℂ ℂ)) (CliffordAlgebraComplex.toComplex_ι r)).trans
-    (by rw [Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, Complex.real_smul, mul_smul,
-      Complex.coe_smul])
-
-/-- On the real line, the generator `1 : ℝ` acts on `ℂ` by `i • 1`. -/
-theorem realLineGeometricCliffordAction_ι_one :
-    realLineGeometricCliffordAction (ι (-QuadraticMap.sq (R := ℝ)) 1) = Complex.I • 1 := by
-  simp
+    realLineGeometricCliffordAction (ι (-QuadraticMap.sq (R := ℝ)) r) = r • (Complex.I • 1) := by
+  -- `CliffordAlgebraComplex.Q` is definitionally `-QuadraticMap.sq (R := ℝ)`.
+  have hQ : (((Algebra.ofId ℂ (Module.End ℂ ℂ)).restrictScalars ℝ).comp
+        CliffordAlgebraComplex.toComplex) (ι CliffordAlgebraComplex.Q r) =
+      r • (Complex.I • 1) := by
+    rw [AlgHom.comp_apply, AlgHom.coe_restrictScalars', CliffordAlgebraComplex.toComplex_ι,
+      Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, Complex.real_smul, mul_smul,
+      Complex.coe_smul]
+  exact hQ
 
 /-- `TauCeti.realLineGeometricCliffordAction` satisfies `AlgHom.IsGeometricCliffordAction`. -/
 theorem isGeometricCliffordAction_realLineGeometricCliffordAction :
     realLineGeometricCliffordAction.IsGeometricCliffordAction where
-  apply_eq_neg_inner_self r := by
+  quadraticForm_eq_neg_inner_self r := by
     simp [QuadraticMap.sq_apply, sq]
   inner_map_ι_left r x y := by
     simp only [realLineGeometricCliffordAction_ι, LinearMap.smul_apply, one_apply_eq_self,
@@ -447,14 +459,12 @@ def negativePlanePauliAction (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
 theorem negativePlanePauliAction_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v : EuclideanSpace ℝ (Fin 2)) :
     negativePlanePauliAction hQ (ι Q v) = (Complex.I • pauli ![0, v 1, v 0]).toEuclideanLin := by
   have hv : (EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ v =
-      fun i ↦ v (Fin.cast (zero_add 2) i) := by
+      fun i ↦ v i := by
     ext i
-    rw [OrthonormalBasis.isometryEquivRealCliffordForm_apply, EuclideanSpace.basisFun_repr]
-  simp only [negativePlanePauliAction, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
-    AlgEquiv.toAlgHom_apply, StarAlgHom.coe_toAlgHom, equivOfIsometry_apply, map_apply_ι,
-    QuadraticMap.IsometryEquiv.toIsometry_apply,
+    rw [OrthonormalBasis.isometryEquivRealCliffordForm_apply, EuclideanSpace.basisFun_repr,
+      Fin.cast_eq_self]
+  simp [-realCliffordZeroTwoEquivQuaternion_ι, negativePlanePauliAction, Matrix.toLpLinAlgEquiv,
     toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι, hv]
-  rfl
 
 /-- `TauCeti.negativePlanePauliAction` satisfies `AlgHom.IsGeometricCliffordAction`. -/
 theorem isGeometricCliffordAction_negativePlanePauliAction (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
@@ -471,32 +481,27 @@ theorem negativePlanePauliAction_ι_single_zero_mul_ι_single_one (hQ : ∀ v, Q
     negativePlanePauliAction hQ (ι Q (EuclideanSpace.single 0 1)) *
         negativePlanePauliAction hQ (ι Q (EuclideanSpace.single 1 1)) =
       (Complex.I • pauli ![1, 0, 0]).toEuclideanLin := by
-  have h0 : (EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ
-      (EuclideanSpace.single 0 1) = Pi.single 0 1 := by
-    rw [← EuclideanSpace.basisFun_apply, OrthonormalBasis.isometryEquivRealCliffordForm_apply_self]
-    rfl
-  have h1 : (EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ
-      (EuclideanSpace.single 1 1) = Pi.single 1 1 := by
-    rw [← EuclideanSpace.basisFun_apply, OrthonormalBasis.isometryEquivRealCliffordForm_apply_self]
-    rfl
+  have hs (i : Fin 2) :
+      (EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ
+        (EuclideanSpace.single i 1) = Pi.single i 1 := by
+    rw [← EuclideanSpace.basisFun_apply, OrthonormalBasis.isometryEquivRealCliffordForm_apply_self,
+      Fin.cast_eq_self]
   rw [← map_mul]
-  simp only [negativePlanePauliAction, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
-    AlgEquiv.toAlgHom_apply, StarAlgHom.coe_toAlgHom, equivOfIsometry_apply]
-  rw [map_mul (CliffordAlgebra.map _), map_apply_ι, map_apply_ι,
-    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.toIsometry_apply,
-    h0, h1, toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι_mul_ι]
-  rfl
+  simp [-map_mul, negativePlanePauliAction, Matrix.toLpLinAlgEquiv,
+    map_mul (CliffordAlgebra.map _), hs, toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι_mul_ι]
 
 /-- **Chirality on the negative Pauli plane**: for the standard orientation of
 `EuclideanSpace ℝ (Fin 2)`, the chirality operator of `TauCeti.negativePlanePauliAction` is
 `(-σ₁).toEuclideanLin` (`-X`). -/
-theorem cliffordBaseChange_complexVolume_negativePlanePauliAction (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    (negativePlanePauliAction hQ).cliffordBaseChange ℂ
+theorem cliffordLiftBaseChange_complexVolume_negativePlanePauliAction
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    (negativePlanePauliAction hQ).cliffordLiftBaseChange ℂ
         (complexVolume Q (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation) =
       (-pauli ![1, 0, 0]).toEuclideanLin := by
   have hlist : List.finRange 2 = [0, 1] := rfl
-  rw [(negativePlanePauliAction hQ).cliffordBaseChange_complexVolume_eq_prod_map_ι _
-    (EuclideanSpace.basisFun (Fin 2) ℝ) rfl hQ (ℓ := 1) rfl, hlist]
+  rw [(negativePlanePauliAction hQ).cliffordLiftBaseChange_complexVolume_eq_of_eq_two_mul _
+    (EuclideanSpace.basisFun (Fin 2) ℝ) rfl
+    ((EuclideanSpace.basisFun (Fin 2) ℝ).isOrthoᵢ_associated hQ) (ℓ := 1) rfl, hlist]
   simp only [pow_one, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
     EuclideanSpace.basisFun_apply, negativePlanePauliAction_ι_single_zero_mul_ι_single_one hQ,
     ← map_smul, smul_smul, Complex.I_mul_I, neg_one_smul]

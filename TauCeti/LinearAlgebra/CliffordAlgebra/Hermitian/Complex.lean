@@ -14,10 +14,11 @@ public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 On the complexification of a real Clifford algebra, the adjoint relevant to Hermitian
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
-adjoint on the whole algebra (`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`, and for scalar
-extensions `ρ.cliffordBaseChange ℂ` of real Clifford algebra maps,
-`AlgHom.inner_cliffordBaseChange_eq_conjStar_iff` and
-`AlgHom.adjoint_cliffordBaseChange_eq_conjStar_iff`).
+adjoint on the whole algebra (`CliffordAlgebra.sesqForm_map_eq_map_conjStar_iff` and
+`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`, and for scalar extensions
+`ρ.cliffordLiftBaseChange ℂ` of real Clifford algebra maps,
+`AlgHom.inner_cliffordLiftBaseChange_eq_conjStar_iff` and
+`AlgHom.adjoint_cliffordLiftBaseChange_eq_conjStar_iff`).
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -74,6 +75,17 @@ theorem sesqForm_map_eq_map_conjStar (H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ)
   | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
   | mul a b ha hb =>
     simp only [map_mul, mul_apply_eq_comp, conjStar_mul, ha, hb]
+
+/-- Compatibility of a sesquilinear form with `CliffordAlgebra.conjStar` on the whole complexified
+Clifford algebra is equivalent to skew-adjointness of the real generators. -/
+theorem sesqForm_map_eq_map_conjStar_iff (H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ) :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        H (ρ a x) y = H x (ρ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S),
+        H (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x) y =
+          -H x (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) y) :=
+  ⟨fun h v x y ↦ by simpa [conjStar_ι_tmul] using h (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y,
+    sesqForm_map_eq_map_conjStar ρ H⟩
 
 end SesquilinearForm
 
@@ -179,27 +191,26 @@ variable {V S : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
   [NormedAddCommGroup S] [InnerProductSpace ℂ S]
 
 /-- For a real Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S`, its
-complex-linear extension `ρ.cliffordBaseChange ℂ` is compatible with `CliffordAlgebra.conjStar`
-for the inner product if and only if every real generator `ρ (ι Q v)` is skew-Hermitian. -/
-theorem inner_cliffordBaseChange_eq_conjStar_iff
+complex-linear extension `ρ.cliffordLiftBaseChange ℂ` is compatible with
+`CliffordAlgebra.conjStar` for the inner product if and only if every real generator `ρ (ι Q v)` is
+skew-Hermitian. -/
+theorem inner_cliffordLiftBaseChange_eq_conjStar_iff
     (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
     (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
-        inner ℂ (ρ.cliffordBaseChange ℂ a x) y =
-          inner ℂ x (ρ.cliffordBaseChange ℂ (conjStar Q a) y)) ↔
+        inner ℂ (ρ.cliffordLiftBaseChange ℂ a x) y =
+          inner ℂ x (ρ.cliffordLiftBaseChange ℂ (conjStar Q a) y)) ↔
       ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
-  refine ⟨fun h v x y ↦ ?_, fun h a x y ↦ ?_⟩
-  · have hv := h (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y
-    simpa [conjStar_ι_tmul] using hv
-  · exact sesqForm_map_eq_map_conjStar (ρ.cliffordBaseChange ℂ) (innerₛₗ ℂ)
-      (fun v x y ↦ by simpa [innerₛₗ_apply_apply] using h v x y) a x y
+  simpa [innerₛₗ_apply_apply] using
+    CliffordAlgebra.sesqForm_map_eq_map_conjStar_iff (ρ.cliffordLiftBaseChange ℂ) (innerₛₗ ℂ)
 
-/-- On a finite-dimensional complex inner product space, `ρ.cliffordBaseChange ℂ` is a
+/-- On a finite-dimensional complex inner product space, `ρ.cliffordLiftBaseChange ℂ` is a
 `*`-representation for `CliffordAlgebra.conjStar` if and only if every real generator `ρ (ι Q v)`
 is skew-adjoint. -/
-theorem adjoint_cliffordBaseChange_eq_conjStar_iff [FiniteDimensional ℂ S]
+theorem adjoint_cliffordLiftBaseChange_eq_conjStar_iff [FiniteDimensional ℂ S]
     (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
     (∀ a : CliffordAlgebra (Q.baseChange ℂ),
-        (ρ.cliffordBaseChange ℂ a).adjoint = ρ.cliffordBaseChange ℂ (conjStar Q a)) ↔
+        (ρ.cliffordLiftBaseChange ℂ a).adjoint =
+          ρ.cliffordLiftBaseChange ℂ (conjStar Q a)) ↔
       ∀ v : V, (ρ (ι Q v)).adjoint = -ρ (ι Q v) := by
   rw [CliffordAlgebra.adjoint_map_eq_map_conjStar_iff]
   simp

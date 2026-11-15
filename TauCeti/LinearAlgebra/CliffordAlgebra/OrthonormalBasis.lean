@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
@@ -149,6 +148,18 @@ theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inne
   rw [ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap,
     QuadraticMap.polar_eq_neg_two_inner hQ]
 
+/-- **2-plane rotation invariance**: rotating an orthonormal pair `(e₁, e₂)` by angle `θ` preserves
+the oriented Clifford product `c(e₁) c(e₂)` when `Q v = -‖v‖²`. -/
+theorem map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
+    (h12 : ⟪e₁, e₂⟫ = 0) (θ : ℝ) :
+    ρ (ι Q (Real.cos θ • e₁ + Real.sin θ • e₂)) *
+        ρ (ι Q (-Real.sin θ • e₁ + Real.cos θ • e₂)) =
+      ρ (ι Q e₁) * ρ (ι Q e₂) := by
+  rw [← map_mul ρ, ι_smul_add_smul_mul_ι_neg_smul_add_smul
+    (by rw [hQ, hQ, he₁, he₂]) ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
+    Real.cos_sq_add_sin_sq, one_smul, map_mul ρ]
+
 end Semiring
 
 section Ring
@@ -160,9 +171,8 @@ variable {B : Type*} [Ring B] [Algebra ℝ B] (ρ : CliffordAlgebra Q →ₐ[ℝ
 theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_of_inner_eq_zero
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) {v w : V} (hvw : ⟪v, w⟫ = 0) :
     ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
-  refine eq_neg_of_add_eq_zero_left ?_
-  rw [ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner hQ, hvw, mul_zero,
-    zero_smul]
+  rw [← map_mul ρ, ← map_mul ρ, ← map_neg ρ,
+    ι_mul_ι_comm_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 hvw)]
 
 /-- A unit vector acts by a square root of `-1` when `Q v = -‖v‖²`. -/
 theorem map_cliffordAlgebraι_sq_of_norm_eq_one (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e : V}
@@ -176,44 +186,10 @@ theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_sq_of_orthonormal
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
     (h12 : ⟪e₁, e₂⟫ = 0) :
     (ρ (ι Q e₁) * ρ (ι Q e₂)) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 := by
-  calc
-    (ρ (ι Q e₁) * ρ (ι Q e₂)) * (ρ (ι Q e₁) * ρ (ι Q e₂))
-      = ρ (ι Q e₁) * (ρ (ι Q e₂) * ρ (ι Q e₁)) * ρ (ι Q e₂) := by simp only [mul_assoc]
-    _ = -(ρ (ι Q e₁) * ρ (ι Q e₁) * (ρ (ι Q e₂) * ρ (ι Q e₂))) := by
-        rw [ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_of_inner_eq_zero hQ
-          (by rw [real_inner_comm, h12])]
-        simp only [mul_neg, neg_mul, mul_assoc]
-    _ = -1 := by
-        rw [ρ.map_cliffordAlgebraι_sq_of_norm_eq_one hQ he₁,
-          ρ.map_cliffordAlgebraι_sq_of_norm_eq_one hQ he₂, neg_mul_neg, one_mul]
-
-/-- **2-plane rotation invariance**: rotating an orthonormal pair `(e₁, e₂)` by angle `θ` preserves
-the oriented Clifford product `c(e₁) c(e₂)` when `Q v = -‖v‖²`. -/
-theorem map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
-    (h12 : ⟪e₁, e₂⟫ = 0) (θ : ℝ) :
-    ρ (ι Q (Real.cos θ • e₁ + Real.sin θ • e₂)) *
-        ρ (ι Q (-Real.sin θ • e₁ + Real.cos θ • e₂)) =
-      ρ (ι Q e₁) * ρ (ι Q e₂) := by
-  have he₁_sq := ρ.map_cliffordAlgebraι_sq_of_norm_eq_one hQ he₁
-  have he₂_sq := ρ.map_cliffordAlgebraι_sq_of_norm_eq_one hQ he₂
-  have h21 : ρ (ι Q e₂) * ρ (ι Q e₁) = -(ρ (ι Q e₁) * ρ (ι Q e₂)) :=
-    ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_of_inner_eq_zero hQ
-      (by rw [real_inner_comm, h12])
-  simp only [neg_smul, map_add, map_neg, map_smul, add_mul, mul_add, mul_neg,
-    smul_mul_assoc, mul_smul_comm, smul_neg, he₁_sq, he₂_sq, h21]
-  simp only [smul_add, smul_neg, neg_add_rev, neg_neg, smul_smul]
-  calc
-    (Real.sin θ * Real.sin θ) • (ρ (ι Q e₁) * ρ (ι Q e₂)) + (Real.sin θ * Real.cos θ) • (1 : B) +
-        ((Real.cos θ * Real.cos θ) • (ρ (ι Q e₁) * ρ (ι Q e₂)) +
-          -((Real.cos θ * Real.sin θ) • (1 : B)))
-      = ((Real.sin θ * Real.cos θ) • (1 : B) - (Real.cos θ * Real.sin θ) • (1 : B)) +
-          (Real.cos θ ^ 2 + Real.sin θ ^ 2) • (ρ (ι Q e₁) * ρ (ι Q e₂)) := by
-        rw [add_smul, sq, sq, sub_eq_add_neg]
-        abel
-    _ = ρ (ι Q e₁) * ρ (ι Q e₂) := by
-        rw [mul_comm (Real.sin θ) (Real.cos θ), sub_self, zero_add, Real.cos_sq_add_sin_sq,
-          one_smul]
+  rw [← map_mul ρ, ← map_mul ρ,
+    ι_mul_ι_mul_self_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
+    map_neg, AlgHom.commutes, hQ, hQ, he₁, he₂]
+  simp
 
 end Ring
 

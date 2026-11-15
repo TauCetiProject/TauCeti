@@ -88,10 +88,12 @@ orientation-reversing isometry exchanges the labels.
   `2 ^ (n / 2 - 1)`.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap`: in positive
   dimension, given a spinor module, `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
-* `AlgHom.isCompl_eigenspace_cliffordBaseChange_complexVolume` and
-  `AlgHom.map_ι_mem_eigenspace_cliffordBaseChange_complexVolume_neg`: `±1`-eigenspace splitting and
-  vector exchange stated directly for the scalar extension `ρ.cliffordBaseChange ℂ` of a real
-  Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S`.
+* `AlgHom.isCompl_eigenspace_map_complexVolume`,
+  `AlgHom.map_mem_eigenspace_map_complexVolume_neg_of_mem_odd`, and
+  `AlgHom.map_ι_mem_eigenspace_cliffordLiftBaseChange_complexVolume_neg`: `±1`-eigenspace splitting
+  and odd-element / real-vector eigenspace exchange stated directly for `ℂ`-algebra maps
+  `σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S` and scalar extensions
+  `ρ.cliffordLiftBaseChange ℂ`.
 
 ## References
 
@@ -358,60 +360,64 @@ section AnyDim
 
 variable {n : ℕ} [Fact (finrank ℝ V = n)]
 
-/-- **Chirality splitting for a real Clifford algebra map**: when `Q v = -‖v‖²`, any complex module
-`S` carrying `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S` splits as the internal direct sum of the
-`+1` and `-1` eigenspaces of `ρ.cliffordBaseChange ℂ (complexVolume Q o)`. When `S` is equipped with
-`Module.compHom S (ρ.cliffordBaseChange ℂ).toRingHom` together with the compatible
-`IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S` instance, these coincide definitionally with
-the `±1` eigenspaces of `Algebra.lsmul ℂ ℂ S (complexVolume Q o)`. -/
-theorem isCompl_eigenspace_cliffordBaseChange_complexVolume {S : Type*} [AddCommGroup S]
-    [Module ℂ S] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) (o : Orientation ℝ V (Fin n))
+/-- **Chirality splitting for a complexified Clifford algebra map**: when `Q v = -‖v‖²`, any
+complex module `S` carrying `σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S` splits as
+the internal direct sum of the `+1` and `-1` eigenspaces of `σ (complexVolume Q o)`. -/
+theorem isCompl_eigenspace_map_complexVolume {S : Type*} [AddCommGroup S] [Module ℂ S]
+    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) (o : Orientation ℝ V (Fin n))
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    IsCompl (Module.End.eigenspace (ρ.cliffordBaseChange ℂ (complexVolume Q o)) 1)
-      (Module.End.eigenspace (ρ.cliffordBaseChange ℂ (complexVolume Q o)) (-1)) :=
+    IsCompl (Module.End.eigenspace (σ (complexVolume Q o)) 1)
+      (Module.End.eigenspace (σ (complexVolume Q o)) (-1)) :=
   TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit fun s ↦ by
-    rw [← mul_apply_eq_comp, ρ.cliffordBaseChange_complexVolume_mul_self o hQ, one_apply_eq_self]
+    rw [← mul_apply_eq_comp, σ.map_complexVolume_mul_self o hQ, one_apply_eq_self]
+
+/-- In even dimension, an odd element of `CliffordAlgebra (Q.baseChange ℂ)` maps the `μ`-eigenspace
+of `σ (complexVolume Q o)` into its `-μ`-eigenspace. -/
+theorem map_mem_eigenspace_map_complexVolume_neg_of_mem_odd {S : Type*} [AddCommGroup S]
+    [Module ℂ S] (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
+    (o : Orientation ℝ V (Fin n)) (hn : Even n) {x : CliffordAlgebra (Q.baseChange ℂ)}
+    (hx : x ∈ evenOdd (Q.baseChange ℂ) 1) {μ : ℂ} {s : S}
+    (hs : s ∈ Module.End.eigenspace (σ (complexVolume Q o)) μ) :
+    σ x s ∈ Module.End.eigenspace (σ (complexVolume Q o)) (-μ) :=
+  Module.End.mapsTo_genEigenspace_neg_of_anticommute
+    (by rw [← map_mul, ← map_mul, ← map_add, complexVolume_mul_of_mem_odd o hn hx,
+      neg_add_cancel, map_zero]) μ 1 hs
 
 /-- In even dimension, Clifford multiplication by any real vector `v` maps the `μ`-eigenspace of
-`ρ.cliffordBaseChange ℂ (complexVolume Q o)` into its `-μ`-eigenspace; in particular it exchanges
-`S⁺` (`μ = 1`) and `S⁻` (`μ = -1`). -/
-theorem map_ι_mem_eigenspace_cliffordBaseChange_complexVolume_neg {S : Type*} [AddCommGroup S]
+`ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)` into its `-μ`-eigenspace; in particular it
+exchanges `S⁺` (`μ = 1`) and `S⁻` (`μ = -1`). -/
+theorem map_ι_mem_eigenspace_cliffordLiftBaseChange_complexVolume_neg {S : Type*} [AddCommGroup S]
     [Module ℂ S] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) (o : Orientation ℝ V (Fin n))
     (hn : Even n) {μ : ℂ} {s : S}
-    (hs : s ∈ Module.End.eigenspace (ρ.cliffordBaseChange ℂ (complexVolume Q o)) μ) (v : V) :
-    ρ (ι Q v) s ∈ Module.End.eigenspace (ρ.cliffordBaseChange ℂ (complexVolume Q o)) (-μ) := by
-  rw [Module.End.mem_eigenspace_iff] at hs ⊢
-  have hanti := LinearMap.congr_fun (ρ.cliffordBaseChange_complexVolume_mul_map_ι o hn v) s
-  simpa only [mul_apply_eq_comp, LinearMap.neg_apply, hs, map_smul, neg_smul] using hanti
+    (hs : s ∈ Module.End.eigenspace (ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) μ) (v : V) :
+    ρ (ι Q v) s ∈
+      Module.End.eigenspace (ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) (-μ) := by
+  rw [← ρ.cliffordLiftBaseChange_ι_one_tmul (A := ℂ) v]
+  exact (ρ.cliffordLiftBaseChange ℂ).map_mem_eigenspace_map_complexVolume_neg_of_mem_odd o hn
+    (ι_mem_evenOdd_one _ _) hs
 
 end AnyDim
 
-/-- In rank zero, the `+1`-eigenspace of `ρ.cliffordBaseChange ℂ` for the positive orientation is
-the whole space `⊤`. -/
-theorem eigenspace_cliffordBaseChange_complexVolume_positiveOrientation_one
+/-- In rank zero, the `+1`-eigenspace of `σ (complexVolume Q positiveOrientation)` is the whole
+space `⊤`. -/
+theorem eigenspace_map_complexVolume_positiveOrientation_one
     [Fact (finrank ℝ V = 0)] {S : Type*} [AddCommGroup S] [Module ℂ S]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) :
     Module.End.eigenspace
-      (ρ.cliffordBaseChange ℂ
-        (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))) 1 = ⊤ := by
-  rw [cliffordBaseChange_complexVolume_positiveOrientation, eq_top_iff]
+      (σ (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))) 1 = ⊤ := by
+  rw [complexVolume_positiveOrientation, map_one, eq_top_iff]
   intro s _
   simp
 
-/-- In rank zero, the `-1`-eigenspace of `ρ.cliffordBaseChange ℂ` for the positive orientation is
-`⊥`. -/
-theorem eigenspace_cliffordBaseChange_complexVolume_positiveOrientation_neg_one
+/-- In rank zero, the `-1`-eigenspace of `σ (complexVolume Q positiveOrientation)` is `⊥`. -/
+theorem eigenspace_map_complexVolume_positiveOrientation_neg_one
     [Fact (finrank ℝ V = 0)] {S : Type*} [AddCommGroup S] [Module ℂ S]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) :
     Module.End.eigenspace
-      (ρ.cliffordBaseChange ℂ
-        (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))) (-1) = ⊥ := by
-  rw [cliffordBaseChange_complexVolume_positiveOrientation, eq_bot_iff]
-  intro s hs
-  rw [Module.End.mem_eigenspace_iff, one_apply_eq_self, neg_one_smul] at hs
-  rw [Submodule.mem_bot]
-  calc
-    s = (2⁻¹ : ℂ) • (2 : ℂ) • s := by rw [inv_smul_smul₀ two_ne_zero]
-    _ = 0 := by rw [two_smul, add_eq_zero_iff_eq_neg.2 hs, smul_zero]
+      (σ (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))) (-1) = ⊥ := by
+  let Γ := σ (complexVolume Q (positiveOrientation : Orientation ℝ V (Fin 0)))
+  have h : Disjoint (Module.End.eigenspace Γ 1) (Module.End.eigenspace Γ (-1)) :=
+    Γ.eigenspaces_iSupIndep.pairwiseDisjoint (by norm_num : (1 : ℂ) ≠ -1)
+  rwa [σ.eigenspace_map_complexVolume_positiveOrientation_one, top_disjoint] at h
 
 end AlgHom
