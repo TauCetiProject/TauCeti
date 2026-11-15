@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.OfReal
+public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 
 /-!
 # The localization axiom for the Maslov index of paths
@@ -48,6 +49,8 @@ The general case reduces to it in three steps.
 
 ## Main results
 
+* `Matrix.UnitaryGroup.souriau_eq_of_realImage_eq`: unitary frames of the same real subspace have
+  the same Souriau map.
 * `Matrix.UnitaryGroup.souriau_eq_cayley_of_coe_eq_mul`: the frames `(1 + i A) M` of the graph
   of `A` have Souriau map `cayley A`.
 * `Matrix.UnitaryGroup.maslovIndex_eq_signature_sub_of_souriau_eq_cayley`: the localization
@@ -71,6 +74,26 @@ namespace Matrix
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 namespace UnitaryGroup
+
+/-! ### Frames of the same real subspace -/
+
+/-- Two unitary frames of the same real subspace have the same Souriau map: they differ by a real
+orthogonal matrix. -/
+theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
+    (h : (U : Matrix n n ℂ).realImage = (V : Matrix n n ℂ).realImage) : souriau U = souriau V := by
+  have hre (W : unitaryGroup n ℂ) :
+      (((Unitary.toUnits W : GL n ℂ) : Matrix n n ℂ)ᴴ * Unitary.toUnits W).map Complex.re = 1 := by
+    rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose, mem_unitaryGroup_iff'.1 W.2,
+      Matrix.map_one _ (by simp) (by simp)]
+  obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
+    (M := Unitary.toUnits U) (M' := Unitary.toUnits V) (by simpa using h) (hre U) (hre V)
+  have hOu := map_ofReal_mem_unitaryGroup hO
+  have hVO' : V = U * ⟨_, hOu⟩ := Subtype.ext (by simpa using hVO)
+  rw [hVO', souriau_mul_of_mul_transpose_eq_one]
+  -- `O` is real, so the unitarity of `O` gives `O Oᵀ = 1`.
+  have hOu' := mem_unitaryGroup_iff.1 hOu
+  rwa [star_eq_conjTranspose, ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
+    conjTranspose_eq_transpose_of_trivial, transpose_map] at hOu'
 
 /-! ### Real symmetric matrices -/
 

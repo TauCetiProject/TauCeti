@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 public import TauCeti.Topology.Algebra.Matrix.Realify
 public import TauCeti.Topology.Algebra.SymplecticGroup
@@ -27,15 +28,14 @@ span of the **diagonal graph frame** `(1 + A) + i J (1 - A)` (`Matrix.diagonalGr
 span which meets `ℝ^{n ⊕ n}` exactly in the image of the fixed points of `A`. For a symplectic `A`,
 the Gram matrix of this frame is the real matrix `2 (1 + Aᵀ A)`
 (`Matrix.conjTranspose_diagonalGraphFrame_mul_self`), so its real span is Lagrangian and its real
-orthonormalization is a unitary frame of it (`TauCeti.GLSymplectic.diagonalFrame`), continuous in
-`A`.
+orthonormalization is a unitary frame of it (`TauCeti.GLSymplectic.diagonalGraphUnitaryFrame`),
+continuous in `A`.
 
 The **Conley–Zehnder index** of a path `γ` of symplectic matrices
 (`TauCeti.GLSymplectic.conleyZehnderIndex`) is minus the Maslov index, relative to `ℝ^{n ⊕ n}`,
 of this path of unitary frames (`Matrix.UnitaryGroup.maslovIndex`), that is, minus the
-Robbin–Salamon index of the path of graphs relative to the diagonal. It counts the eigenvalue `1`
-crossings of `γ t`, an endpoint at which `γ t` has the eigenvalue `1` counting one half. It does not
-depend on the choice of unitary frames
+Robbin–Salamon index of the path of graphs relative to the diagonal. It does not depend on the
+choice of unitary frames
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`)
 and has the formal properties of the Robbin–Salamon index:
 
@@ -65,7 +65,7 @@ index `μ_RS` of the path of graphs relative to the diagonal.
 
 * `Matrix.diagonalGraphFrame`: the frame `(1 + A) + i J (1 - A)` of the diagonal graph of `A`.
 * `Matrix.symplecticCayley`: the symmetric matrix `J (1 - A) (1 + A)⁻¹`.
-* `TauCeti.GLSymplectic.diagonalFrame`: the unitary frame of the diagonal graph.
+* `TauCeti.GLSymplectic.diagonalGraphUnitaryFrame`: the unitary frame of the diagonal graph.
 * `TauCeti.GLSymplectic.conleyZehnderIndex`: the Conley–Zehnder index of a symplectic path.
 
 ## References
@@ -96,6 +96,11 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 `(z, w) ↦ (z + w) + i J (z - w)`, which carries the diagonal to the real points. -/
 def diagonalGraphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ :=
   (1 + A).map (↑) + Complex.I • (J n ℝ * (1 - A)).map (↑)
+
+/-- The defining equation of the diagonal graph frame. -/
+theorem diagonalGraphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalGraphFrame A = (1 + A).map (↑) + Complex.I • (J n ℝ * (1 - A)).map (↑) :=
+  (rfl)
 
 /-- The diagonal graph frame depends continuously on the matrix. -/
 theorem continuous_diagonalGraphFrame :
@@ -156,6 +161,16 @@ is its graph `{y + i B y}` (`Matrix.diagonalGraphFrame_eq_mul`). -/
 def symplecticCayley (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
   J n ℝ * (1 - A) * (1 + A)⁻¹
 
+/-- The defining equation of the symplectic Cayley form, valid for every matrix `A`. -/
+theorem symplecticCayley_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    symplecticCayley A = J n ℝ * (1 - A) * (1 + A)⁻¹ :=
+  (rfl)
+
+/-- When `1 + A` is not invertible, the symplectic Cayley form of `A` is `0`. -/
+theorem symplecticCayley_of_not_isUnit {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : ¬IsUnit (1 + A).det) :
+    symplecticCayley A = 0 := by
+  rw [symplecticCayley, nonsing_inv_apply_not_isUnit _ h, Matrix.mul_zero]
+
 /-- The defining equation of the symplectic Cayley form: `B (1 + A) = J (1 - A)`. -/
 theorem symplecticCayley_mul_one_add {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : IsUnit (1 + A).det) :
     symplecticCayley A * (1 + A) = J n ℝ * (1 - A) := by
@@ -182,7 +197,7 @@ theorem isHermitian_symplecticCayley {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hA : A ∈ symplecticGroup n ℝ) : (symplecticCayley A).IsHermitian := by
   by_cases h : IsUnit (1 + A).det
   swap
-  · rw [symplecticCayley, nonsing_inv_apply_not_isUnit _ h, Matrix.mul_zero]
+  · rw [symplecticCayley_of_not_isUnit h]
     exact isHermitian_zero
   have hP : IsUnit (1 + A) := (isUnit_iff_isUnit_det _).2 h
   have hPT : IsUnit (1 + A)ᵀ := (isUnit_iff_isUnit_det _).2 (by rwa [det_transpose])
@@ -202,30 +217,6 @@ theorem diagonalGraphFrame_eq_mul {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : IsUn
   exact congrArg _ (congrArg _ (Matrix.map_mul (f := Complex.ofRealHom)))
 
 end Matrix
-
-namespace Matrix.UnitaryGroup
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- Two unitary frames of the same real subspace have the same Souriau map: they differ by a real
-orthogonal matrix. -/
-theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
-    (h : (U : Matrix n n ℂ).realImage = (V : Matrix n n ℂ).realImage) : souriau U = souriau V := by
-  have hre (W : unitaryGroup n ℂ) :
-      (((Unitary.toUnits W : GL n ℂ) : Matrix n n ℂ)ᴴ * Unitary.toUnits W).map Complex.re = 1 := by
-    rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose, mem_unitaryGroup_iff'.1 W.2,
-      Matrix.map_one _ (by simp) (by simp)]
-  obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
-    (M := Unitary.toUnits U) (M' := Unitary.toUnits V) (by simpa using h) (hre U) (hre V)
-  have hOu := map_ofReal_mem_unitaryGroup hO
-  have hVO' : V = U * ⟨_, hOu⟩ := Subtype.ext (by simpa using hVO)
-  have hOO : O * Oᵀ = 1 := by
-    simpa [star_eq_conjTranspose] using (mem_orthogonalGroup_iff n ℝ).1 hO
-  rw [hVO', souriau_mul_of_mul_transpose_eq_one]
-  rw [Subtype.coe_mk, ← transpose_map]
-  exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hOO).trans (map_one _))
-
-end Matrix.UnitaryGroup
 
 namespace TauCeti.GLSymplectic
 
@@ -253,9 +244,9 @@ private theorem continuous_diagonalGraphFrameUnit :
 
 /-- The **unitary frame of the diagonal graph** of a symplectic matrix `A`: the real
 orthonormalization of the diagonal graph frame `(1 + A) + i J (1 - A)`. Its real span is the
-image of the graph of `A` (`TauCeti.GLSymplectic.realImage_diagonalFrame`), and it depends
-continuously on `A` (`TauCeti.GLSymplectic.continuous_diagonalFrame`). -/
-def diagonalFrame (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) ℂ :=
+image of the graph of `A` (`TauCeti.GLSymplectic.realImage_diagonalGraphUnitaryFrame`), and it
+depends continuously on `A` (`TauCeti.GLSymplectic.continuous_diagonalGraphUnitaryFrame`). -/
+def diagonalGraphUnitaryFrame (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) ℂ :=
   ⟨GeneralLinearGroup.realOrthonormalize (diagonalGraphFrameUnit A),
     GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup <| by
       rw [coe_diagonalGraphFrameUnit,
@@ -266,15 +257,15 @@ def diagonalFrame (A : GLSymplectic n ℝ) : unitaryGroup (n ⊕ n) ℂ :=
 /-- The unitary frame of the diagonal graph spans the same real subspace as the diagonal graph
 frame. -/
 @[simp]
-theorem realImage_diagonalFrame (A : GLSymplectic n ℝ) :
-    (diagonalFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
+theorem realImage_diagonalGraphUnitaryFrame (A : GLSymplectic n ℝ) :
+    (diagonalGraphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
       (diagonalGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage := by
-  rw [diagonalFrame, Subtype.coe_mk, GeneralLinearGroup.realImage_realOrthonormalize,
+  rw [diagonalGraphUnitaryFrame, Subtype.coe_mk, GeneralLinearGroup.realImage_realOrthonormalize,
     coe_diagonalGraphFrameUnit]
 
 /-- The unitary frame of the diagonal graph depends continuously on the symplectic matrix. -/
-theorem continuous_diagonalFrame :
-    Continuous (diagonalFrame : GLSymplectic n ℝ → unitaryGroup (n ⊕ n) ℂ) :=
+theorem continuous_diagonalGraphUnitaryFrame :
+    Continuous (diagonalGraphUnitaryFrame : GLSymplectic n ℝ → unitaryGroup (n ⊕ n) ℂ) :=
   Continuous.subtype_mk (Units.continuous_val.comp
     (GeneralLinearGroup.continuous_realOrthonormalize continuous_diagonalGraphFrameUnit)) _
 
@@ -282,32 +273,31 @@ theorem continuous_diagonalFrame :
 form.** When `1 + A` is invertible, the diagonal graph of `A` is the graph `{y + i B y}` of the
 symmetric matrix `B = J (1 - A) (1 + A)⁻¹`, so its unitary frames have Souriau map the Cayley
 transform `(1 + i B) (1 - i B)⁻¹`. -/
-theorem souriau_diagonalFrame {A : GLSymplectic n ℝ}
+theorem souriau_diagonalGraphUnitaryFrame {A : GLSymplectic n ℝ}
     (h : IsUnit (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) :
-    (souriau (diagonalFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+    (souriau (diagonalGraphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
       cayley ((symplecticCayley ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map (↑)) := by
   refine souriau_eq_cayley_of_coe_eq_mul
     (isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 A.2))
     (M := (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) *
       (((diagonalGraphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ *
         diagonalGraphFrameUnit A).map Complex.re ^ (-(1 / 2) : ℝ))) ?_
-  rw [diagonalFrame, Subtype.coe_mk, GeneralLinearGroup.coe_realOrthonormalize,
+  rw [diagonalGraphUnitaryFrame, Subtype.coe_mk, GeneralLinearGroup.coe_realOrthonormalize,
     coe_diagonalGraphFrameUnit, diagonalGraphFrame_eq_mul h, Matrix.mul_assoc]
-  exact congrArg _ (map_mul Complex.ofRealHom.mapMatrix _ _).symm
+  exact congrArg _ (Matrix.map_mul (f := Complex.ofRealHom)).symm
 
 /-! ### The Conley–Zehnder index -/
 
 /-- The **Conley–Zehnder index** of a path `γ` of symplectic matrices: minus the Maslov index,
 relative to `ℝ^{n ⊕ n}`, of the unitary frames of its diagonal graphs. This is minus the
-Robbin–Salamon index of the path of graphs `Γ(γ t)` relative to the diagonal; it counts the
-crossings of the eigenvalue `1`, an endpoint with the eigenvalue `1` counting one half. -/
+Robbin–Salamon index of the path of graphs `Γ(γ t)` relative to the diagonal. -/
 def conleyZehnderIndex {A B : GLSymplectic n ℝ} (γ : Path A B) : ℝ :=
-  -maslovIndex (γ.map continuous_diagonalFrame)
+  -maslovIndex (γ.map continuous_diagonalGraphUnitaryFrame)
 
 /-- The Conley–Zehnder index is minus the Maslov index of the path of unitary frames of the
 diagonal graphs. -/
 theorem conleyZehnderIndex_def {A B : GLSymplectic n ℝ} (γ : Path A B) :
-    conleyZehnderIndex γ = -maslovIndex (γ.map continuous_diagonalFrame) :=
+    conleyZehnderIndex γ = -maslovIndex (γ.map continuous_diagonalGraphUnitaryFrame) :=
   (rfl)
 
 /-- **Independence of the frames.** The Conley–Zehnder index is minus the Maslov index of every
@@ -318,20 +308,21 @@ theorem conleyZehnderIndex_eq_neg_maslovIndex {A B : GLSymplectic n ℝ} (γ : P
       (diagonalGraphFrame ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage) :
     conleyZehnderIndex γ = -maslovIndex δ := by
   rw [conleyZehnderIndex, maslovIndex_eq_of_souriau_eq _ δ fun t =>
-    souriau_eq_of_realImage_eq ((realImage_diagonalFrame (γ t)).trans (hδ t).symm)]
+    souriau_eq_of_realImage_eq ((realImage_diagonalGraphUnitaryFrame (γ t)).trans (hδ t).symm)]
 
 /-- **Homotopy invariance.** Paths of symplectic matrices that are homotopic relative to their
 endpoints have the same Conley–Zehnder index. -/
 theorem conleyZehnderIndex_eq_of_homotopic {A B : GLSymplectic n ℝ} {γ₀ γ₁ : Path A B}
     (h : γ₀.Homotopic γ₁) : conleyZehnderIndex γ₀ = conleyZehnderIndex γ₁ := by
   rw [conleyZehnderIndex, conleyZehnderIndex,
-    maslovIndex_eq_of_homotopic (h.map ⟨_, continuous_diagonalFrame⟩)]
+    maslovIndex_eq_of_homotopic (h.map ⟨_, continuous_diagonalGraphUnitaryFrame⟩)]
 
 /-- The constant path has Conley–Zehnder index zero. -/
 @[simp]
 theorem conleyZehnderIndex_refl (A : GLSymplectic n ℝ) : conleyZehnderIndex (Path.refl A) = 0 := by
-  rw [conleyZehnderIndex, maslovIndex_eq_of_souriau_eq ((Path.refl A).map continuous_diagonalFrame)
-    (Path.refl (diagonalFrame A)) fun _ => by simp, maslovIndex_refl, neg_zero]
+  rw [conleyZehnderIndex,
+    maslovIndex_eq_of_souriau_eq ((Path.refl A).map continuous_diagonalGraphUnitaryFrame)
+      (Path.refl (diagonalGraphUnitaryFrame A)) fun _ => by simp, maslovIndex_refl, neg_zero]
 
 /-- **Catenation.** The Conley–Zehnder index of a concatenation of paths is the sum of their
 indices. -/
@@ -366,61 +357,24 @@ theorem conleyZehnderIndex_eq_neg_signature_sub {A B : GLSymplectic n ℝ} (γ :
     exact continuous_iff_continuousAt.2 fun t =>
       (continuous_const.mul (continuous_const.sub hγ)).continuousAt.mul
         ((continuous_const.add hγ).continuousAt.matrix_inv (h t).ne_zero)
-  have hloc := maslovIndex_eq_signature_sub_of_souriau_eq_cayley (γ.map continuous_diagonalFrame)
-    hc (fun t => isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 (γ t).2))
-    fun t => souriau_diagonalFrame (h t)
+  have hloc := maslovIndex_eq_signature_sub_of_souriau_eq_cayley
+    (γ.map continuous_diagonalGraphUnitaryFrame) hc
+    (fun t => isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 (γ t).2))
+    fun t => souriau_diagonalGraphUnitaryFrame (h t)
   rw [conleyZehnderIndex, hloc, γ.source, γ.target]
 
 /-! ### Normalization -/
-
-/-- For `|φ| < π`, `tan (φ / 2) (1 + e^{i φ}) = i (1 - e^{i φ})`: the rotation by `φ` has
-symplectic Cayley form `tan (φ / 2)`. -/
-private theorem tan_half_mul_one_add_exp {φ : ℝ} (hφ : |φ| < π) :
-    (Real.tan (φ / 2) : ℂ) * (1 + Complex.exp (φ * Complex.I)) =
-      Complex.I * (1 - Complex.exp (φ * Complex.I)) := by
-  have hc : 0 < Real.cos (φ / 2) :=
-    Real.cos_pos_of_mem_Ioo ⟨by linarith [neg_abs_le φ], by linarith [le_abs_self φ]⟩
-  have hφ2 : φ = 2 * (φ / 2) := by ring
-  apply Complex.ext <;>
-  · simp only [Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.sub_re,
-      Complex.sub_im, Complex.one_re, Complex.one_im, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
-    rw [hφ2, Real.cos_two_mul, Real.sin_two_mul, Real.tan_eq_sin_div_cos]
-    field_simp
-    nlinarith [Real.sin_sq_add_cos_sq (φ / 2)]
-
-/-- For `|φ| < π`, `1 + e^{i φ} ≠ 0`. -/
-private theorem one_add_exp_ne_zero {φ : ℝ} (hφ : |φ| < π) :
-    1 + Complex.exp (φ * Complex.I) ≠ 0 := by
-  intro h
-  have := tan_half_mul_one_add_exp hφ
-  rw [h, mul_zero, eq_comm, mul_eq_zero, sub_eq_zero] at this
-  rcases this with h' | h'
-  · exact Complex.I_ne_zero h'
-  · rw [← h'] at h
-    norm_num at h
-
-/-- For `|φ| < π`, `tan (φ / 2)` has the sign of `φ`. -/
-private theorem sign_tan_half {φ : ℝ} (hφ : |φ| < π) :
-    (if 0 < Real.tan (φ / 2) then 1 else if Real.tan (φ / 2) < 0 then -1 else 0 : ℝ) =
-      Real.sign φ := by
-  rcases lt_trichotomy φ 0 with hn | hz | hp
-  · have := Real.tan_neg_of_neg_of_pi_div_two_lt (x := φ / 2) (by linarith)
-      (by linarith [neg_abs_le φ])
-    simp [Real.sign_of_neg hn, this, this.not_gt]
-  · simp [hz]
-  · have := Real.tan_pos_of_pos_of_lt_pi_div_two (x := φ / 2) (by linarith)
-      (by linarith [le_abs_self φ])
-    simp [Real.sign_of_pos hp, this]
 
 /-- `1 + R` is invertible for the realified diagonal rotation `R = diag (e^{i φ_j})`, `|φ_j| < π`:
 it is the realification of `diag (1 + e^{i φ_j})`. -/
 private theorem isUnit_det_one_add_realify_diagonal_exp {φ : n → ℝ} (hφ : ∀ j, |φ j| < π) :
     IsUnit (1 + (diagonal fun j => Complex.exp (φ j * Complex.I)).realify).det := by
-  rw [← realify_one (𝕜 := ℂ), ← realify_add, ← diagonal_one, diagonal_add, det_realify,
-    det_diagonal, isUnit_iff_ne_zero, RCLike.normSq_eq_def', ne_eq, pow_eq_zero_iff two_ne_zero,
-    norm_eq_zero]
-  exact Finset.prod_ne_zero_iff.2 fun j _ => one_add_exp_ne_zero (hφ j)
+  have h : 1 + (diagonal fun j => Complex.exp (φ j * Complex.I)).realify =
+      (diagonal fun j => 1 + Complex.exp (φ j * Complex.I)).realify := by
+    simp [← diagonal_add]
+  rw [h, det_realify, det_diagonal, isUnit_iff_ne_zero]
+  simpa [Finset.prod_ne_zero_iff] using fun j =>
+    one_add_exp_ofReal_mul_I_ne_zero (abs_lt.1 (hφ j)).1 (abs_lt.1 (hφ j)).2
 
 /-- The symplectic Cayley form of the realified diagonal rotation `diag (e^{i φ_j})`, `|φ_j| < π`,
 is the realification of `diag (tan (φ_j / 2))`. -/
@@ -429,15 +383,19 @@ private theorem symplecticCayley_realify_diagonal_exp {φ : n → ℝ} (hφ : �
       fromBlocks (diagonal fun j => Real.tan (φ j / 2)) 0 0
         (diagonal fun j => Real.tan (φ j / 2)) := by
   refine (eq_symplecticCayley_of_mul_one_add ?_).symm
-  rw [← realify_map_ofReal (𝕜 := ℂ), diagonal_map (by simp), ← realify_I_smul_one (n := n),
-    ← realify_one (𝕜 := ℂ), sub_eq_add_neg, ← realify_neg, ← realify_add, ← realify_add,
-    ← realify_mul, ← realify_mul]
-  congr 1
-  ext i k
-  by_cases hik : i = k
-  · subst hik
-    simpa [sub_eq_add_neg] using tan_half_mul_one_add_exp (hφ i)
-  · simp [hik]
+  -- This is the realification of `diag (tan (φ_j / 2)) (1 + R) = i (1 - R)`.
+  have h : (diagonal fun j => Real.tan (φ j / 2)).map (algebraMap ℝ ℂ) *
+      (1 + diagonal fun j => Complex.exp (φ j * Complex.I)) =
+        Complex.I • 1 * (1 + -diagonal fun j => Complex.exp (φ j * Complex.I)) := by
+    ext i k
+    by_cases hik : i = k
+    · subst hik
+      obtain ⟨h₀, h₁⟩ := abs_lt.1 (hφ i)
+      simpa [sub_eq_add_neg] using
+        tan_half_mul_one_add_exp (cos_pos_of_mem_Ioo ⟨by linarith, by linarith⟩).ne'
+    · simp [hik]
+  simpa only [realify_mul, realify_add, realify_neg, realify_one, realify_I_smul_one,
+    realify_map_ofReal, sub_eq_add_neg] using congrArg realify h
 
 /-- The signature of the symplectic Cayley form of the realified diagonal rotation
 `diag (e^{i φ_j})`, `|φ_j| < π`, is `2 ∑ⱼ sign φⱼ`. -/
@@ -448,7 +406,13 @@ private theorem signature_symplecticCayley_realify_diagonal_exp {φ : n → ℝ}
   rw [symplecticCayley_realify_diagonal_exp hφ, signature_fromBlocks_zero, signature_diagonal,
     ← two_mul]
   push_cast
-  exact congrArg _ (Finset.sum_congr rfl fun j _ => sign_tan_half (hφ j))
+  refine congrArg _ (Finset.sum_congr rfl fun j _ => ?_)
+  -- `tan (φ_j / 2)` has the sign of `φ_j`.
+  rw [← sign_tan_half (abs_lt.1 (hφ j)).1 (abs_lt.1 (hφ j)).2]
+  rcases lt_trichotomy (Real.tan (φ j / 2)) 0 with h | h | h
+  · simp [h, h.not_gt, Real.sign_of_neg]
+  · simp [h]
+  · simp [h, Real.sign_of_pos]
 
 /-- **Normalization by rotations.** Let `θ : n → ℝ` with `|θ j| < π`, and let `γ` be a path of
 symplectic matrices whose value at time `t` is the realification of the diagonal unitary matrix

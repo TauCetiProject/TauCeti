@@ -142,7 +142,7 @@ theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ}
     (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
   have hmap (X Y : Matrix n n ℝ) :
       (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-    map_mul Complex.ofRealHom.mapMatrix X Y
+    Matrix.map_mul (f := Complex.ofRealHom)
   have hG : (M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ) =
       (((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.re).map ((↑) : ℝ → ℂ) :=
     Matrix.ext fun i j => Complex.ext (by simp) (by simpa using congrFun (congrFun hM i) j)
