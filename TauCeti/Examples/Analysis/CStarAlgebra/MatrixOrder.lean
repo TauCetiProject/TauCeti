@@ -70,6 +70,17 @@ theorem isStarProjection_averagingProjection : IsStarProjection averagingProject
     fin_cases i <;> fin_cases j <;>
       norm_num [averagingProjection, CStarMatrix.star_apply]
 
+/-- Every real diagonal `2 × 2` matrix is self-adjoint in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
+@[simp, aesop safe apply (rule_sets := [CStarAlgebra])]
+theorem isSelfAdjoint_diagonal (s t : ℝ) : IsSelfAdjoint (diagonal s t) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [CStarMatrix.star_apply]
+
+/-- The averaging projection is self-adjoint. -/
+@[simp, aesop safe apply (rule_sets := [CStarAlgebra])]
+theorem isSelfAdjoint_averagingProjection : IsSelfAdjoint averagingProjection :=
+  isStarProjection_averagingProjection.isSelfAdjoint
+
 /-- The positive part of the flip is the averaging projection, rather than the identity. -/
 @[simp]
 theorem posPart_flip : flip⁺ = averagingProjection := by

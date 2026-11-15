@@ -38,6 +38,8 @@ Hilbert C⋆-module.
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
+* `CStarMatrix.continuous_apply`: evaluation at any entry `(i, j)` is continuous on
+  `CStarMatrix m n A`.
 
 ## References
 
@@ -170,5 +172,11 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   rw [← star_mul_self_eq_zero, hN.star_eq]
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
+
+/-- Evaluation at any entry `(i, j)` is continuous on `CStarMatrix m n A`. -/
+@[continuity]
+theorem continuous_apply {m n A : Type*} [NonUnitalCStarAlgebra A] (i : m) (j : n) :
+    Continuous fun x : CStarMatrix m n A ↦ x i j :=
+  (_root_.continuous_apply_apply i j).comp (ofMatrixL (m := m) (n := n) (A := A)).symm.continuous
 
 end CStarMatrix
