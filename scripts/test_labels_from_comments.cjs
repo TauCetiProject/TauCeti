@@ -11,14 +11,15 @@ const scripts = [...workflow.matchAll(/^          script: \|\n((?:            .*
 assert.equal(scripts.length, 2);
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 const parse = new AsyncFunction('context', 'core', scripts[0]);
-const apply = new AsyncFunction('context', 'github', 'process', scripts[1]);
+const apply = new AsyncFunction('context', 'github', 'process', 'core', scripts[1]);
 const issue = { owner: 'TauCetiProject', repo: 'test-repo', number: 123 };
 // Evaluate the actual job condition with Actions' case-insensitive contains semantics.
 const jobCondition = workflow.match(/^    if: >-\n((?:      .*\n)+)/m)[1];
 const admit = new Function('github', 'contains', `return (${jobCondition});`);
 const repository = workflow.match(/github.repository == '([^']+)'/)[1];
-const needsRunner = (body, repo = repository) => admit({
-  repository: repo, event: { comment: { body } },
+const needsRunner = (body, repo = repository, commenter = 1, author = 1, isPR = true) => admit({
+  repository: repo, event: { comment: { body, user: { id: commenter } },
+    issue: { user: { id: author }, pull_request: isPR ? {} : null } },
 }, (value, search) => value.toLowerCase().includes(search.toLowerCase()));
 
 async function commands(body) {
@@ -32,7 +33,7 @@ async function commands(body) {
   return output;
 }
 
-async function execute(body, initial = [], failure) {
+async function execute(body, initial = [], failure, options = {}) {
   const labels = new Set(initial);
   const calls = [];
   const check = args => {
@@ -41,7 +42,15 @@ async function execute(body, initial = [], failure) {
     calls.push(args);
     if (failure) throw Object.assign(new Error('API failure'), { status: failure });
   };
-  const github = { rest: { issues: {
+  const head = 'a'.repeat(40);
+  const payload = { comment: { node_id: 'COMMENT', user: { id: options.commenter ?? 1 } },
+    issue: { pull_request: options.isPR === false ? null : {} } };
+  const initialPull = { user: { id: options.author ?? 1 }, state: options.state ?? 'open', head: { sha: head } };
+  let pullReads = 0, pageReads = 0;
+  const github = { rest: { pulls: { get: async () => {
+    pullReads++;
+    return { data: pullReads === 1 ? initialPull : { ...initialPull, ...options.freshPull } };
+  } }, issues: {
     addLabels: async args => {
       check(args);
       args.labels.forEach(label => labels.add(label));
@@ -50,9 +59,21 @@ async function execute(body, initial = [], failure) {
       check(args);
       if (!labels.delete(args.name)) throw Object.assign(new Error('absent'), { status: 404 });
     },
-  } } };
-  await apply({ issue }, github, { env: { LABEL_COMMANDS: JSON.stringify(await commands(body)) } });
-  return { labels, calls };
+  } }, graphql: async (query, variables) => {
+    assert.equal(variables.number, issue.number);
+    const pages = options.pages ?? [[
+      { __typename: 'PullRequestCommit', commit: { oid: head } },
+      { __typename: 'IssueComment', id: 'COMMENT' },
+    ]];
+    const index = pageReads++;
+    assert.equal(variables.before, index === 0 ? null : `page-${index}`);
+    return { repository: { pullRequest: {
+      headRefOid: options.timelineHead ?? head,
+      timelineItems: { nodes: pages[index], pageInfo: { hasPreviousPage: index + 1 < pages.length, startCursor: `page-${index + 1}` } },
+    } } };
+  } };
+  await apply({ issue, payload }, github, { env: { LABEL_COMMANDS: JSON.stringify(await commands(body)) } }, { info: () => {} });
+  return { labels, calls, pullReads, pageReads };
 }
 
 test('exact standalone commands accept whitespace, CRLF, and multiword labels', async () => {
@@ -145,5 +166,69 @@ test('broad admission never relaxes the exact command parser', async () => {
   for (const body of ['Please add documentation.', 'DONT-REPAIR-IN-QUEUE', '> enhancement']) {
     assert.equal(needsRunner(body), true);
     assert.deepEqual(await commands(body), []);
+  }
+});
+
+
+test('self-tested author commands admit only PR authors before runner allocation', () => {
+  assert.equal(needsRunner('self-tested'), true);
+  assert.equal(needsRunner('-self-tested'), true);
+  assert.equal(needsRunner('self-tested', repository, 2, 1), false);
+  assert.equal(needsRunner('self-tested', repository, 1, 1, false), false);
+});
+
+test('PR authors can attest and withdraw self-tested without label permissions', async () => {
+  const added = await execute('self-tested');
+  assert.deepEqual([...added.labels], ['self-tested']);
+  assert.equal(added.pullReads, 2);
+  const removed = await execute('-self-tested', ['self-tested']);
+  assert.equal(removed.labels.size, 0);
+  assert.equal(removed.pageReads, 0);
+});
+
+test('self-tested authorization is enforced even when an ordinary label admits the job', async () => {
+  for (const command of ['self-tested', '-self-tested']) {
+    const result = await execute(`enhancement\n${command}`, [], undefined, { commenter: 2 });
+    assert.deepEqual([...result.labels], ['enhancement']);
+    assert.equal(result.calls.length, 1);
+  }
+  const issueResult = await execute('self-tested', [], undefined, { isPR: false });
+  assert.equal(issueResult.calls.length, 0);
+});
+
+test('a comment before the current head or a force push never attests the new head', async () => {
+  for (const event of [
+    { __typename: 'PullRequestCommit', commit: { oid: 'a'.repeat(40) } },
+    { __typename: 'HeadRefForcePushedEvent', afterCommit: { oid: 'a'.repeat(40) } },
+  ]) {
+    const result = await execute('self-tested', [], undefined, { pages: [[
+      { __typename: 'IssueComment', id: 'COMMENT' }, event,
+    ]] });
+    assert.equal(result.calls.length, 0);
+  }
+});
+
+test('head binding follows paginated timeline order and exact comment identity', async () => {
+  const options = { pages: [
+    [{ __typename: 'IssueComment', id: 'COMMENT' }],
+    [{ __typename: 'PullRequestCommit', commit: { oid: 'a'.repeat(40) } }],
+  ] };
+  const result = await execute('self-tested', [], undefined, options);
+  assert.deepEqual([...result.labels], ['self-tested']);
+  assert.equal(result.pageReads, 2);
+  const other = await execute('self-tested', [], undefined, { pages: [[
+    { __typename: 'PullRequestCommit', commit: { oid: 'a'.repeat(40) } },
+    { __typename: 'IssueComment', id: 'OTHER-COMMENT' },
+  ]] });
+  assert.equal(other.calls.length, 0);
+});
+
+test('closed PRs and racing heads cannot receive a self-tested attestation', async () => {
+  for (const options of [
+    { state: 'closed' }, { timelineHead: 'b'.repeat(40) },
+    { freshPull: { state: 'closed' } }, { freshPull: { head: { sha: 'b'.repeat(40) } } },
+  ]) {
+    const result = await execute('self-tested', [], undefined, options);
+    assert.equal(result.calls.length, 0);
   }
 });
