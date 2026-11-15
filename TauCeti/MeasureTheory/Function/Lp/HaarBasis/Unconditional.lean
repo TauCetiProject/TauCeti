@@ -238,17 +238,16 @@ private theorem sum_smul_dyadicProj_sub_ae_eq {p : ℝ≥0∞} [Fact (1 ≤ p)] 
     (ε : ℕ → ℝ) (f : Lp ℝ p (volume : Measure I)) :
     (∑ n ∈ Finset.range N, ε n • (dyadicProj ℝ p (n + 1) f - dyadicProj ℝ p n f)) =ᵐ[volume]
       fun x => transformCell f ε (dyadicAtom N x) := by
-  have hfint : Integrable f := (Lp.memLp f).integrable Fact.out
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN.ne'
   induction k with
   | zero =>
     simp only [zero_add, Finset.range_one, Finset.sum_singleton, dyadicProj_zero, zero_apply,
       sub_zero]
-    filter_upwards [Lp.coeFn_smul (ε 0) (dyadicProj ℝ p 1 f), dyadicProj_ae_eq one_ne_zero f,
-      condExp_dyadicFiltration_ae_eq 1 hfint] with x hsmul hproj hcond
+    filter_upwards [Lp.coeFn_smul (ε 0) (dyadicProj ℝ p 1 f),
+      dyadicProj_ae_eq_setAverage one_ne_zero f] with x hsmul hproj
     obtain ⟨h1, h2⟩ := dyadicAtom_mem_Ico one_pos x
     have hatom : dyadicAtom 1 x = 1 := by omega
-    rw [hsmul, Pi.smul_apply, smul_eq_mul, hproj, hcond, hatom, transformCell_one]
+    rw [hsmul, Pi.smul_apply, smul_eq_mul, hproj, hatom, transformCell_one]
   | succ k ih =>
     set M := k + 1
     have hM : 0 < M := Nat.succ_pos k
@@ -257,14 +256,11 @@ private theorem sum_smul_dyadicProj_sub_ae_eq {p : ℝ≥0∞} [Fact (1 ≤ p)] 
     let Δ := dyadicProj ℝ p (M + 1) f - dyadicProj ℝ p M f
     filter_upwards [Lp.coeFn_add S (ε M • Δ), ih hM, Lp.coeFn_smul (ε M) Δ,
       Lp.coeFn_sub (dyadicProj ℝ p (M + 1) f) (dyadicProj ℝ p M f),
-      dyadicProj_ae_eq (Nat.succ_ne_zero M) f,
-      condExp_dyadicFiltration_ae_eq (M + 1) hfint,
-      dyadicProj_ae_eq hM.ne' f,
-      condExp_dyadicFiltration_ae_eq M hfint]
-      with x hadd hS hsmul hsub hp1 hc1 hp0 hc0
+      dyadicProj_ae_eq_setAverage (Nat.succ_ne_zero M) f,
+      dyadicProj_ae_eq_setAverage hM.ne' f]
+      with x hadd hS hsmul hsub hp1 hp0
     have hS' : S x = transformCell f ε (dyadicAtom M x) := hS
-    rw [hadd, Pi.add_apply, hS', hsmul, Pi.smul_apply, smul_eq_mul, hsub, Pi.sub_apply,
-      hp1, hc1, hp0, hc0]
+    rw [hadd, Pi.add_apply, hS', hsmul, Pi.smul_apply, smul_eq_mul, hsub, Pi.sub_apply, hp1, hp0]
     rcases lt_or_ge (dyadicAtom (M + 1) x) (2 * M) with hlt | hge
     · rw [dyadicAtom_eq_of_lt_two_mul hlt, sub_self, mul_zero, add_zero]
     · rw [transformCell_of_two_le f ε (m := dyadicAtom (M + 1) x) (by omega),
@@ -381,8 +377,7 @@ theorem norm_sum_smul_dyadicProj_sub_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ 
     norm_rpow_eq_sum_dyadicAtom hp hN (sum_smul_dyadicProj_sub_ae_eq hN ε f)
   have hPr : ‖P‖ ^ r =
       ∑ m ∈ Finset.Ico N (2 * N), volume.real (dyadicCell m) * |⨍ y in dyadicCell m, f y| ^ r :=
-    norm_rpow_eq_sum_dyadicAtom hp hN
-      ((dyadicProj_ae_eq hN.ne' f).trans (condExp_dyadicFiltration_ae_eq N hfint))
+    norm_rpow_eq_sum_dyadicAtom hp hN (dyadicProj_ae_eq_setAverage hN.ne' f)
   set c := (r - 1) ^ (r - 1) / r ^ (r - 2)
   have hc_pos : 0 ≤ c :=
     div_nonneg (Real.rpow_nonneg hr1.le _) (Real.rpow_nonneg hr0.le _)
@@ -601,13 +596,10 @@ projection constant of `unconditionalHaarBasis ℝ p hp1 hp` is at most
 theorem unconditionalHaarBasis_real_nnNormProjBound_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp1 : 1 < p)
     (hp : p ≠ ∞) :
     ((unconditionalHaarBasis ℝ p hp1 hp).nnNormProjBound : ℝ) ≤
-      max p.toReal (p.toReal / (p.toReal - 1)) - 1 := by
-  set C := max p.toReal (p.toReal / (p.toReal - 1)) - 1
-  have hC0 : 0 ≤ C := by linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp]
-  exact (Real.le_toNNReal_iff_coe_le hC0).1
-    ((unconditionalHaarBasis ℝ p hp1 hp).nnNormProjBound_le fun A => by
-      rw [Real.coe_toNNReal C hC0, unconditionalHaarBasis_proj]
-      exact norm_proj_haarBasis_real_le hp1 hp A)
+      max p.toReal (p.toReal / (p.toReal - 1)) - 1 :=
+  (unconditionalHaarBasis ℝ p hp1 hp).coe_nnNormProjBound_le fun A => by
+    rw [unconditionalHaarBasis_proj]
+    exact norm_proj_haarBasis_real_le hp1 hp A
 
 /-- **Unconditional basis constant of the Haar basis over `𝕜`.** For `1 < p < ∞`, the unconditional
 projection constant of `unconditionalHaarBasis 𝕜 p hp1 hp` is at most
@@ -615,13 +607,10 @@ projection constant of `unconditionalHaarBasis 𝕜 p hp1 hp` is at most
 theorem unconditionalHaarBasis_nnNormProjBound_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (hp1 : 1 < p) (hp : p ≠ ∞) :
     ((unconditionalHaarBasis 𝕜 p hp1 hp).nnNormProjBound : ℝ) ≤
-      2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) := by
-  set C := 2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1)
-  have hC0 : 0 ≤ C := by linarith [ENNReal.two_le_max_toReal_div_toReal_sub_one hp1 hp]
-  exact (Real.le_toNNReal_iff_coe_le hC0).1
-    ((unconditionalHaarBasis 𝕜 p hp1 hp).nnNormProjBound_le fun A => by
-      rw [Real.coe_toNNReal C hC0, unconditionalHaarBasis_proj]
-      exact norm_proj_haarBasis_le hp1 hp A)
+      2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) :=
+  (unconditionalHaarBasis 𝕜 p hp1 hp).coe_nnNormProjBound_le fun A => by
+    rw [unconditionalHaarBasis_proj]
+    exact norm_proj_haarBasis_le hp1 hp A
 
 /-- On `L²([0, 1]; 𝕜)`, the unconditional basis constant of the Haar basis is at most `1`. -/
 theorem unconditionalHaarBasis_two_nnNormProjBound_le_one {𝕜 : Type*} [RCLike 𝕜] :

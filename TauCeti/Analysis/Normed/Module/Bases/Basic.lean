@@ -171,6 +171,13 @@ theorem nnNormProjBound_le {C : NNReal} (hC : ∀ n : ℕ, ‖b.proj n‖ ≤ C)
     b.nnNormProjBound ≤ C :=
   ciSup_le fun n ↦ by exact_mod_cast hC n
 
+/-- A real uniform bound on the initial projections bounds the basis constant of a classical
+Schauder basis. -/
+theorem coe_nnNormProjBound_le {C : ℝ} (hC : ∀ n : ℕ, ‖b.proj n‖ ≤ C) :
+    (b.nnNormProjBound : ℝ) ≤ C := by
+  lift C to NNReal using (norm_nonneg (b.proj 0)).trans (hC 0)
+  exact NNReal.coe_le_coe.2 (b.nnNormProjBound_le hC)
+
 end SchauderBasis
 
 namespace UnconditionalSchauderBasis
@@ -185,6 +192,13 @@ basis. -/
 theorem nnNormProjBound_le {C : NNReal} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C) :
     b.nnNormProjBound ≤ C :=
   ciSup_le fun A ↦ by exact_mod_cast hC A
+
+/-- A real uniform bound on the finite projections bounds the basis constant of an unconditional
+basis. -/
+theorem coe_nnNormProjBound_le {C : ℝ} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C) :
+    (b.nnNormProjBound : ℝ) ≤ C := by
+  lift C to NNReal using (norm_nonneg (b.proj ∅)).trans (hC ∅)
+  exact NNReal.coe_le_coe.2 (b.nnNormProjBound_le hC)
 
 end General
 

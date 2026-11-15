@@ -238,6 +238,17 @@ theorem volume_dyadicCell {n : ℕ} (hn : 0 < n) :
   have := Nat.pow_log_le_self 2 hn.ne'
   rw [dyadicCell_eq_preimage_cellIdx hn, volume_preimage_cellIdx (by rw [pow_succ] at *; omega)]
 
+/-- A positively numbered dyadic cell has nonzero volume. -/
+theorem volume_dyadicCell_ne_zero {n : ℕ} (hn : 0 < n) : volume (dyadicCell n) ≠ 0 := by
+  rw [volume_dyadicCell hn]
+  exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _)
+
+/-- A positively numbered dyadic cell has real volume `2 ^ (-k)`, where `k` is its level. -/
+theorem volume_real_dyadicCell {n : ℕ} (hn : 0 < n) :
+    volume.real (dyadicCell n) = (2 ^ Nat.log 2 n : ℝ)⁻¹ := by
+  rw [Measure.real, volume_dyadicCell hn, ENNReal.toReal_inv, ENNReal.toReal_natCast,
+    Nat.cast_pow, Nat.cast_ofNat]
+
 /-- A positively numbered dyadic cell lies in the cell numbered by half its number. -/
 theorem mem_dyadicCell_div_two {n : ℕ} {x : I} (hn : 2 ≤ n) (hx : x ∈ dyadicCell n) :
     x ∈ dyadicCell (n / 2) := by

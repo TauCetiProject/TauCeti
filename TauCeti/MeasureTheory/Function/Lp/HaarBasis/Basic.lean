@@ -160,6 +160,34 @@ theorem integral_haarFun_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     integral_indicator (measurableSet_dyadicCell _),
     integral_indicator (measurableSet_dyadicCell _)]
 
+/-- For `0 < n`, the difference between the averages of `g` on the left half `dyadicCell (2 * n)`
+and on `dyadicCell n` is `2 ^ Nat.log 2 n` times the integral of `hₙ • g`. -/
+theorem setAverage_dyadicCell_two_mul_sub_setAverage {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hn : 0 < n) {g : I → E} (hg : IntegrableOn g (dyadicCell n)) :
+    (⨍ y in dyadicCell (2 * n), g y) - ⨍ y in dyadicCell n, g y =
+      (2 ^ Nat.log 2 n : ℝ) • ∫ x, haarFun n x • g x := by
+  have hvol (e : ℕ) (he : e < 2) :
+      (volume.real (dyadicCell (2 * n + e)))⁻¹ = 2 * (2 ^ Nat.log 2 n : ℝ) := by
+    rw [volume_real_dyadicCell_two_mul_add hn he, volume_real_dyadicCell hn, inv_div,
+      div_inv_eq_mul]
+  have hv0 : (volume.real (dyadicCell (2 * n)))⁻¹ = 2 * (2 ^ Nat.log 2 n : ℝ) := by
+    simpa using hvol 0 two_pos
+  have hsub (u v : E) : u - (2⁻¹ : ℝ) • (u + v) = (2⁻¹ : ℝ) • (u - v) := by
+    rw [smul_add, smul_sub, sub_add_eq_sub_sub]
+    congr 1
+    rw [sub_eq_iff_eq_add, ← add_smul]
+    norm_num
+  calc (⨍ y in dyadicCell (2 * n), g y) - ⨍ y in dyadicCell n, g y
+      = (2⁻¹ : ℝ) • ((⨍ y in dyadicCell (2 * n), g y) - ⨍ y in dyadicCell (2 * n + 1), g y) := by
+        rw [setAverage_dyadicCell_eq_half_smul_add hg hn, hsub]
+    _ = (2⁻¹ : ℝ) • (2 * (2 ^ Nat.log 2 n : ℝ)) •
+          ((∫ y in dyadicCell (2 * n), g y) - ∫ y in dyadicCell (2 * n + 1), g y) := by
+        rw [setAverage_eq, setAverage_eq, hv0, hvol 1 one_lt_two, ← smul_sub]
+    _ = (2 ^ Nat.log 2 n : ℝ) • ∫ x, haarFun n x • g x := by
+        rw [integral_haarFun_smul hn hg, smul_smul]
+        congr 1
+        ring
+
 /-- **The Haar functions are martingale differences.** For `0 < n`, the Haar function `hₙ` has
 conditional expectation zero given the dyadic filtration at step `n`: it is supported in the atom
 numbered `n` of that σ-algebra, with integral zero there. -/
@@ -219,6 +247,13 @@ theorem dyadicProj_ae_eq_of_ae_eq {N : ℕ} (hN : N ≠ 0) {f : Lp 𝕜 p (volum
     {g : I → 𝕜} (hfg : f =ᵐ[volume] g) :
     dyadicProj 𝕜 p N f =ᵐ[volume] volume[g | dyadicFiltration N] :=
   (dyadicProj_ae_eq hN f).trans (condExp_congr_ae hfg)
+
+/-- For `N ≠ 0`, the dyadic averaging projection of `f` is a.e. the average of `f` over the atom
+`dyadicCell (dyadicAtom N x)` containing `x`. -/
+theorem dyadicProj_ae_eq_setAverage {N : ℕ} (hN : N ≠ 0) (f : Lp 𝕜 p (volume : Measure I)) :
+    dyadicProj 𝕜 p N f =ᵐ[volume] fun x => ⨍ y in dyadicCell (dyadicAtom N x), f y :=
+  (dyadicProj_ae_eq hN f).trans
+    (condExp_dyadicFiltration_ae_eq N ((Lp.memLp f).integrable Fact.out))
 
 variable (𝕜 p) in
 /-- The dyadic averaging projections are contractions. -/
@@ -330,10 +365,8 @@ private theorem haarFun_toLp_ne_zero (n : ℕ) :
   · obtain ⟨x, hx⟩ := h0'.exists
     simp at hx
   · -- `hₙ` is `1` on the dyadic cell numbered `2 * n`, which has positive volume.
-    have hnull : volume (dyadicCell (2 * n)) = 0 :=
-      measure_mono_null (fun x hx => by simp [haarFun_eq_one hn hx]) (ae_iff.1 h0')
-    rw [volume_dyadicCell (by omega)] at hnull
-    exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _) hnull
+    exact volume_dyadicCell_ne_zero (Nat.mul_pos two_pos hn)
+      (measure_mono_null (fun x hx => by simp [haarFun_eq_one hn hx]) (ae_iff.1 h0'))
 
 private theorem linearIndependent_haarFun_toLp (N : ℕ) :
     LinearIndependent 𝕜 fun i : Fin N =>
@@ -360,17 +393,16 @@ theorem dyadicProj_eq_sum {N : ℕ} (hN : 0 < N) (f : Lp 𝕜 p (volume : Measur
       indicatorConstLp p (measurableSet_dyadicCell n) (measure_ne_top _ _) (1 : 𝕜)) =ᵐ[volume]
       (⨍ y in dyadicCell n, f y) • (dyadicCell n).indicator fun _ => (1 : 𝕜) :=
     (Lp.coeFn_smul _ _).trans (indicatorConstLp_coeFn.const_smul _)
-  filter_upwards [dyadicProj_ae_eq hN.ne' f,
-    condExp_dyadicFiltration_ae_eq N ((Lp.memLp f).integrable Fact.out),
+  filter_upwards [dyadicProj_ae_eq_setAverage hN.ne' f,
     Lp.coeFn_finsetSum (Finset.Ico N (2 * N)) fun n => (⨍ y in dyadicCell n, f y) •
       indicatorConstLp p (measurableSet_dyadicCell n) (measure_ne_top _ _) (1 : 𝕜),
-    ae_all_iff.2 hv] with x h1 h2 h3 h4
+    ae_all_iff.2 hv] with x h1 h2 h3
   have hx := dyadicAtom_mem_Ico hN x
-  rw [h1, h2, h3, Finset.sum_apply, Finset.sum_eq_single_of_mem (dyadicAtom N x)
-    (Finset.mem_Ico.2 hx), h4]
+  rw [h1, h2, Finset.sum_apply, Finset.sum_eq_single_of_mem (dyadicAtom N x)
+    (Finset.mem_Ico.2 hx), h3]
   · simp [Set.indicator_of_mem (mem_dyadicCell_dyadicAtom N x)]
   · intro n hn hnx
-    rw [h4, Pi.smul_apply, Set.indicator_of_notMem fun hc =>
+    rw [h3, Pi.smul_apply, Set.indicator_of_notMem fun hc =>
       hnx ((dyadicAtom_eq_iff (Finset.mem_Ico.1 hn)).2 hc).symm, smul_zero]
 
 variable (𝕜 p) in
@@ -445,7 +477,6 @@ theorem coord_smul_haarBasis (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume :
 `k = Nat.log 2 n` is the dyadic level of `n` (`0` for `n = 0`). -/
 theorem haarBasis_coord_apply (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume : Measure I)) :
     (haarBasis 𝕜 p hp).coord n f = (2 ^ Nat.log 2 n : ℝ) • ∫ x, haarFun n x • f x := by
-  have hf : Integrable f := (Lp.memLp f).integrable Fact.out
   set c := (haarBasis 𝕜 p hp).coord n f
   have hdiff := coord_smul_haarBasis hp n f
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -462,43 +493,27 @@ theorem haarBasis_coord_apply (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume 
     simpa [c] using hint
   · -- Evaluate the martingale difference identity at an a.e. point of the left half
     -- `dyadicCell (2 * n)`, where `hₙ = 1` and the conditional expectations are cell averages.
-    have hvol_ne : volume (dyadicCell (2 * n)) ≠ 0 := by
-      rw [volume_dyadicCell (by omega)]
-      exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _)
     have hae : ∀ᵐ x ∂(volume : Measure I), x ∈ dyadicCell (2 * n) →
         c = (⨍ y in dyadicCell (2 * n), f y) - ⨍ y in dyadicCell n, f y := by
       filter_upwards [Lp.coeFn_smul c (haarBasis 𝕜 p hp n), coeFn_haarBasis (𝕜 := 𝕜) hp n,
         Lp.coeFn_sub (dyadicProj 𝕜 p (n + 1) f) (dyadicProj 𝕜 p n f),
-        dyadicProj_ae_eq n.succ_ne_zero f, condExp_dyadicFiltration_ae_eq (n + 1) hf,
-        dyadicProj_ae_eq hn.ne' f, condExp_dyadicFiltration_ae_eq n hf]
-        with x hsmul hbasis hsub hp1 hc1 hp0 hc0 hx
+        dyadicProj_ae_eq_setAverage n.succ_ne_zero f, dyadicProj_ae_eq_setAverage hn.ne' f]
+        with x hsmul hbasis hsub hp1 hp0 hx
       have hl : (c • haarBasis 𝕜 p hp n) x = c := by
         rw [hsmul, Pi.smul_apply, hbasis, haarFun_eq_one hn hx, RCLike.ofReal_one, smul_eq_mul,
           mul_one]
       have hr : (dyadicProj 𝕜 p (n + 1) f - dyadicProj 𝕜 p n f) x =
           (⨍ y in dyadicCell (2 * n), f y) - ⨍ y in dyadicCell n, f y := by
-        rw [hsub, Pi.sub_apply, hp1, hc1, hp0, hc0,
+        rw [hsub, Pi.sub_apply, hp1, hp0,
           (dyadicAtom_eq_iff ⟨by omega, by omega⟩).2 hx,
           (dyadicAtom_eq_iff ⟨le_rfl, by omega⟩).2
             (mem_dyadicCell_of_mem_two_mul_add hn two_pos hx)]
       rw [← hl, congrArg (fun g : Lp 𝕜 p (volume : Measure I) => g x) hdiff, hr]
-    obtain ⟨x, hx, hc⟩ := ((frequently_ae_mem_iff.2 hvol_ne).and_eventually hae).exists
-    have hsub {u v : 𝕜} : u - (2⁻¹ : ℝ) • (u + v) = (2⁻¹ : ℝ) • (u - v) := by
-      simp only [RCLike.real_smul_eq_coe_mul, RCLike.ofReal_inv, RCLike.ofReal_ofNat]
-      ring
-    have hvol (e : ℕ) (he : e < 2) :
-        volume.real (dyadicCell (2 * n + e)) = (2 * 2 ^ Nat.log 2 n : ℝ)⁻¹ := by
-      rw [volume_real_dyadicCell_two_mul_add hn he, Measure.real, volume_dyadicCell hn]
-      push_cast
-      rw [ENNReal.toReal_inv, ENNReal.toReal_pow, ENNReal.toReal_ofNat]
-      ring
-    have hv0 : volume.real (dyadicCell (2 * n)) = (2 * 2 ^ Nat.log 2 n : ℝ)⁻¹ := by
-      simpa using hvol 0 two_pos
-    rw [hc hx, setAverage_dyadicCell_eq_half_smul_add hf.integrableOn hn, hsub,
-      setAverage_eq, setAverage_eq, hv0, hvol 1 one_lt_two, inv_inv, ← smul_sub, smul_smul,
-      integral_haarFun_smul hn hf.integrableOn]
-    congr 1
-    ring
+    obtain ⟨x, hx, hc⟩ :=
+      ((frequently_ae_mem_iff.2 (volume_dyadicCell_ne_zero (Nat.mul_pos two_pos hn))).and_eventually
+        hae).exists
+    exact (hc hx).trans (setAverage_dyadicCell_two_mul_sub_setAverage hn
+      ((Lp.memLp f).integrable Fact.out).integrableOn)
 
 /-- The Haar basis is monotone: its basis constant is at most `1`. -/
 theorem haarBasis_nnNormProjBound_le_one (hp : p ≠ ∞) :
