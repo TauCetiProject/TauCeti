@@ -238,13 +238,11 @@ theorem livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (σ : C(E, E')) 
       LivesOverFundamentalClass R p b α := by
   refine ⟨fun hα ↦ hα.of_homologyMap R σ h, fun hα ↦ ?_⟩
   -- `τ_* σ_* α = α`, so `α` is the image of `σ_* α` under a map over `M`.
-  have key : LivesOverFundamentalClass R p b
-      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom τ)) R k).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k).hom α)) := by
-    rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp,
-      hτ, TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id]
-    exact hα
-  exact key.of_homologyMap R τ h'
+  have key : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom τ)) R k).hom
+      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k).hom α) = α := by
+    simp [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
+      ← TopCat.ofHom_comp, hτ]
+  exact LivesOverFundamentalClass.of_homologyMap R τ h' (by rwa [key])
 
 /-- **Living over the fundamental class does not depend on the coefficients up to
 isomorphism.** For an isomorphism `φ : R ≅ R'` of coefficient modules, the image of
