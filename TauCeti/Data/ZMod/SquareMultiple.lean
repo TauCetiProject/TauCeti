@@ -15,10 +15,10 @@ A residue `x` is congruent to `y z²` modulo a nonzero `n` for some residue `z` 
 so modulo every nontrivial prime power dividing `n`. The residues found modulo the coprime
 prime-power factors of `n` glue by the Chinese remainder theorem.
 
-This is the form in which square classes of residues are compared: for instance, for `s ≠ 0` and
-`c, c'` coprime to `s`, binary lattices with norm forms `c₀ (sxy + cy²)` and `c₀ (sxy + c'y²)` lie
-in one genus exactly when `c'` is a square multiple of `c` modulo `s`, and the local computation
-produces this congruence one prime power at a time.
+This is the form in which square classes of residues are compared: for instance, for `s ≠ 0`,
+`c₀ ≠ 0`, and `c, c'` coprime to `s`, binary lattices with norm forms `c₀ (sxy + cy²)` and
+`c₀ (sxy + c'y²)` lie in one genus exactly when `c'` is a square multiple of `c` modulo `s`, and
+the local computation produces this congruence one prime power at a time.
 
 ## Main results
 
