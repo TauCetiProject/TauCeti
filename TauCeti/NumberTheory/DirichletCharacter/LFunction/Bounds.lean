@@ -21,9 +21,9 @@ on the level. For a primitive character the level is its conductor.
 
 At `s = 1` the same integral is `∫_{t > 1} S(t) / t²`, where `S(t)` is the sum of `χ k` over
 `1 ≤ k ≤ t`. Using `‖S(t)‖ ≤ t` on `(1, N]` and `‖S(t)‖ ≤ N` beyond gives
-`‖L(1, χ)‖ ≤ 1 + log N`. No primitivity is assumed, so this bound also holds for imprimitive
-characters such as the product of two characters taken at the least common multiple of their
-levels.
+`‖L(1, χ)‖ ≤ 1 + log N`, and hence `‖L(1, χ)‖ ≤ (1 + 1 / ε) N ^ ε` for every `ε > 0`. No
+primitivity is assumed, so these bounds also hold for imprimitive characters such as the product of
+two characters taken at the least common multiple of their levels.
 
 The function being bounded is the native analytic continuation, not the Dirichlet series
 (which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
@@ -136,5 +136,17 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
         (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN)),
         Set.Ioc_union_Ioi_eq_Ioi hN]
     _ ≤ 1 + Real.log N := by linarith
+
+/-- For a nonprincipal character of positive level `N` and any `ε > 0`, the logarithmic bound at
+`s = 1` implies the power bound `‖L(1, χ)‖ ≤ (1 + 1 / ε) N ^ ε`. Primitivity is not assumed. -/
+theorem norm_LFunction_one_le_mul_rpow (hχ : χ ≠ 1) {ε : ℝ} (hε : 0 < ε) :
+    ‖χ.LFunction 1‖ ≤ (1 + 1 / ε) * (N : ℝ) ^ ε := by
+  have h1 : (1 : ℝ) ≤ (N : ℝ) ^ ε :=
+    Real.one_le_rpow (Nat.one_le_cast.mpr NeZero.one_le) hε.le
+  have hlog : Real.log N ≤ (N : ℝ) ^ ε / ε := Real.log_le_rpow_div (Nat.cast_nonneg N) hε
+  calc
+    ‖χ.LFunction 1‖ ≤ 1 + Real.log N := χ.norm_LFunction_one_le_one_add_log hχ
+    _ ≤ (N : ℝ) ^ ε + (N : ℝ) ^ ε / ε := add_le_add h1 hlog
+    _ = (1 + 1 / ε) * (N : ℝ) ^ ε := by ring
 
 end DirichletCharacter

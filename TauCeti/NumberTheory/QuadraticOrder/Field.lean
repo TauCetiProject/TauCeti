@@ -19,10 +19,12 @@ For a nonsquare integer `D ≡ 0, 1 mod 4`, the rational quadratic algebra is a 
 The subalgebra `ℤ[(D + √D)/2]` constructed in `QuadraticOrder/Basic` is therefore an actual
 `GlobalNumberFields.NumberFieldOrder`, of discriminant `D`.
 
-This order is maximal exactly when `D` is a fundamental discriminant. For a fundamental
-`D`, the supplier's discriminant/index formula and Stickelberger's congruence force index one.
-If `D` is not fundamental, a proper square factor `D = p²e` with `e ≡ 0, 1 mod 4` supplies
-the integral element `(e + √D/p)/2` outside the order.
+This order is maximal exactly when `D` is a fundamental discriminant; in particular, for a
+nonsquare fundamental discriminant `D`, the field discriminant of `QuadraticAlgebra ℚ D 0` is `D`
+(`QuadraticAlgebra.discr_eq_of_isFundamentalDiscr`). For a fundamental `D`, the supplier's
+discriminant/index formula and Stickelberger's congruence force index one. If `D` is not
+fundamental, a proper square factor `D = p²e` with `e ≡ 0, 1 mod 4` supplies the integral element
+`(e + √D/p)/2` outside the order.
 
 ## References
 
@@ -137,4 +139,16 @@ theorem toSubalgebra_eq_integralClosure_iff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 
 
 end TauCeti.QuadraticOrder
 
+namespace QuadraticAlgebra
 
+/-- For a nonsquare fundamental discriminant `D`, the field discriminant of the rational quadratic
+model `QuadraticAlgebra ℚ D 0` is `D` itself. -/
+theorem discr_eq_of_isFundamentalDiscr {D : ℤ} [Fact (¬ IsSquare D)]
+    (hD : Int.IsFundamentalDiscr D) :
+    NumberField.discr (QuadraticAlgebra ℚ (D : ℚ) 0) = D := by
+  have hmax := (TauCeti.QuadraticOrder.numberFieldOrder_eq_maximal_iff D
+    hD.emod_four_eq_zero_or_one).mpr hD
+  simpa [TauCeti.QuadraticOrder.numberFieldOrder_discr] using
+    ((TauCeti.GlobalNumberFields.NumberFieldOrder.discr_eq_discr_iff _).mpr hmax).symm
+
+end QuadraticAlgebra
