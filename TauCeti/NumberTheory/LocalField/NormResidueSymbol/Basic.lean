@@ -187,6 +187,36 @@ theorem normResidueSymbol_pow_right (a b : Kˣ) (k : ℕ) :
   | zero => simp
   | succ k ih => rw [pow_succ, normResidueSymbol_mul_right, ih, pow_succ]
 
+/-- Inversion in the Artin argument inverts the symbol. -/
+@[simp]
+theorem normResidueSymbol_inv_left (a b : Kˣ) :
+    normResidueSymbol K n a⁻¹ b = (normResidueSymbol K n a b)⁻¹ := by
+  rw [normResidueSymbol, map_inv]
+  exact map_inv (symbolCharacterAb K n b) _
+
+/-- Inversion in the radical argument inverts the symbol. -/
+@[simp]
+theorem normResidueSymbol_inv_right (a b : Kˣ) :
+    normResidueSymbol K n a b⁻¹ = (normResidueSymbol K n a b)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← normResidueSymbol_mul_right, inv_mul_cancel, normResidueSymbol_one_right]
+
+/-- Integer powers in the Artin argument become integer powers of the symbol. -/
+theorem normResidueSymbol_zpow_left (a b : Kˣ) (k : ℤ) :
+    normResidueSymbol K n (a ^ k) b = normResidueSymbol K n a b ^ k := by
+  rw [normResidueSymbol, map_zpow]
+  exact map_zpow (symbolCharacterAb K n b) _ _
+
+/-- Integer powers in the radical argument become integer powers of the symbol. -/
+theorem normResidueSymbol_zpow_right (a b : Kˣ) (k : ℤ) :
+    normResidueSymbol K n a (b ^ k) = normResidueSymbol K n a b ^ k := by
+  cases k with
+  | ofNat k =>
+    simp only [Int.ofNat_eq_natCast, zpow_natCast]
+    exact normResidueSymbol_pow_right a b k
+  | negSucc k =>
+    simp only [zpow_negSucc, normResidueSymbol_inv_right, normResidueSymbol_pow_right]
+
 /-- An `n`-th power in the Artin argument pairs trivially with every radical. -/
 @[simp]
 theorem normResidueSymbol_pow_left_eq_one (a b : Kˣ) :
