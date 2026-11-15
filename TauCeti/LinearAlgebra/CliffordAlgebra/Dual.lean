@@ -96,6 +96,24 @@ theorem cliffordReverseDual_unique (ρ : CliffordAlgebra Q →ₐ[R] Module.End 
   intro v
   exact (hσ v).trans (cliffordReverseDual_ι ρ v).symm
 
+/-- Pulling back a Clifford action along a quadratic isometry commutes with passing to the reverse
+dual. -/
+@[simp]
+theorem cliffordReverseDual_comp_map {V' : Type*} [AddCommGroup V'] [Module R V']
+    {Q' : QuadraticForm R V'} (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S) (f : Q' →qᵢ Q) :
+    cliffordReverseDual (ρ.comp (map f)) = (cliffordReverseDual ρ).comp (map f) :=
+  (cliffordReverseDual_unique _ _ fun _ ↦ by simp).symm
+
+/-- Pulling back a Clifford action along an isometric equivalence commutes with passing to the
+reverse dual. -/
+@[simp]
+theorem cliffordReverseDual_comp_equivOfIsometry {V' : Type*} [AddCommGroup V'] [Module R V']
+    {Q' : QuadraticForm R V'} (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S)
+    (e : Q'.IsometryEquiv Q) :
+    cliffordReverseDual (ρ.comp (equivOfIsometry e).toAlgHom) =
+      (cliffordReverseDual ρ).comp (equivOfIsometry e).toAlgHom :=
+  cliffordReverseDual_comp_map ρ e.toIsometry
+
 /-- Transposition sends a Clifford intertwiner to an intertwiner in the opposite direction. -/
 theorem cliffordReverseDual_comp_dualMap
     (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S)

@@ -185,6 +185,13 @@ theorem map_complexVolume (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v
 
 end Naturality
 
+/-- Casting the index type of the orientation along `n = n'` leaves `Γ` unchanged. -/
+@[simp]
+theorem complexVolume_reindex_finCongr {n' : ℕ} [Fact (finrank ℝ V = n')] (h : n = n') :
+    complexVolume Q (Orientation.reindex ℝ V (finCongr h) o) = complexVolume Q o := by
+  subst h
+  simp [finCongr_refl, Orientation.reindex_refl]
+
 /-- The grade involution multiplies `Γ` by `(-1) ^ n`. -/
 @[simp]
 theorem involute_complexVolume :
