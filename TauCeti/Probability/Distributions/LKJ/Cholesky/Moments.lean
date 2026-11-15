@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Matrix.PartialCorrelation.Powers
 public import TauCeti.Probability.Distributions.Beta.Symmetric
 
 /-!
-# Moments of partial-correlation Cholesky factors
+# Moments of partial-correlation Cholesky and Gram matrices
 
 Products of natural powers of lower-triangular entries of the partial-correlation Cholesky factor
 split into one-dimensional factors. Each partial correlation contributes a natural coordinate
@@ -18,8 +18,10 @@ symmetric Beta laws with positive shapes, all joint monomials are integrable. A 
 joint moment is a finite product of Beta quotients when every coordinate power is even, and it
 vanishes when any coordinate power is odd.
 
-These joint moments are the building blocks for mixed moments of LKJ correlation matrices: after
-expanding `R = L Lᵀ`, each summand is a product of powers of Cholesky entries.
+Expanding `partialCorrelationGram z = L Lᵀ` therefore proves integrability
+(`integrable_prod_pow_partialCorrelationGram_pi_betaMeasure`) and evaluates every natural mixed
+entry moment of the resulting correlation Gram matrix as a finite multinomial sum of products of
+Beta quotients (`integral_prod_pow_partialCorrelationGram_pi_betaMeasure`).
 
 ## References
 
@@ -179,5 +181,41 @@ theorem integral_pow_partialCorrelationCholesky_pi_betaMeasure
     simp
   · have hik : i < k := lt_of_not_ge hki
     simp [partialCorrelationCholesky_apply_of_lt _ hik, hn]
+
+/-- Every joint natural monomial in entries of the correlation Gram matrix built from independent
+centered symmetric Beta partial correlations is integrable. -/
+theorem integrable_prod_pow_partialCorrelationGram_pi_betaMeasure
+    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij)
+    (n : Fin p × Fin p → ℕ) :
+    Integrable (fun z ↦ ∏ q, partialCorrelationGram z q.1 q.2 ^ n q)
+      (Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) := by
+  simp_rw [prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky]
+  exact integrable_finsetSum _ fun c _ ↦
+    (integrable_prod_pow_partialCorrelationCholesky_pi_betaMeasure ha
+      (gramMonomialExponent c)).const_mul _
+
+/-- **Mixed entry moments of partial-correlation Gram matrices.** Under independent centered
+symmetric Beta laws with positive shapes `a`, every natural monomial in the entries of
+`partialCorrelationGram z` integrates to a finite multinomial sum of products of Beta quotients. -/
+theorem integral_prod_pow_partialCorrelationGram_pi_betaMeasure
+    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij)
+    (n : Fin p × Fin p → ℕ) :
+    ∫ z, ∏ q, partialCorrelationGram z q.1 q.2 ^ n q
+      ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) =
+      ∑ c ∈ Fintype.piFinset (fun q ↦ (Finset.Iic (min q.1 q.2)).piAntidiag (n q)),
+        (∏ q, (Nat.multinomial (Finset.Iic (min q.1 q.2)) (c q) : ℝ)) *
+          ∏ ij, if Even (gramMonomialExponent c ij.1) then
+            beta (((gramMonomialExponent c ij.1 : ℝ) + 1) / 2)
+                (a ij + partialCorrelationCholeskyMonomialResidualPower
+                  (gramMonomialExponent c) ij) /
+              beta (1 / 2) (a ij)
+          else 0 := by
+  simp_rw [prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky]
+  rw [integral_finsetSum _ fun c _ ↦
+    (integrable_prod_pow_partialCorrelationCholesky_pi_betaMeasure ha
+      (gramMonomialExponent c)).const_mul _]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  rw [integral_const_mul, integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure ha,
+    ite_eq_left fun q hq ↦ le_of_gramMonomialExponent_ne_zero hc hq]
 
 end TauCeti.Probability

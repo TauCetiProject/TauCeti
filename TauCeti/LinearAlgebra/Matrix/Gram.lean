@@ -9,17 +9,28 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Nat.Choose.Multinomial
+public import Mathlib.Order.Interval.Finset.Defs
+import TauCeti.Algebra.Order.Antidiag.Pi
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.Ring
 
 /-!
-# Gram forms, matrix reflection and Gram determinants
+# Gram forms, matrix reflection, Gram determinants, and Gram monomials
 
 This file records the basic symmetry and quadratic-form preservation identities for the bilinear
-and quadratic forms attached to a symmetric matrix, and the basic facts about the Gram
-determinant `det (A * Aᵀ)` of the rows of a matrix `A`.
+and quadratic forms attached to a symmetric matrix, the basic facts about the Gram determinant
+`det (A * Aᵀ)` of the rows of a matrix `A`, and the multinomial expansion of entrywise monomials
+`∏ q, (A * Aᵀ) q.1 q.2 ^ d q` in terms of monomials in the entries of `A`.
+
+## Main definitions
+
+* `TauCeti.gramMonomialExponent`: the exponent of `A p.1 p.2` collected from a family of column
+  compositions `c : m × m → n → ℕ` when expanding a monomial in the entries of `A * Aᵀ`.
 
 ## Main results
 
@@ -31,13 +42,23 @@ determinant `det (A * Aᵀ)` of the rows of a matrix `A`.
   of `A`.
 * `Matrix.det_mul_transpose_ne_zero_iff`: over a linearly ordered commutative ring, the Gram
   determinant `det (A * Aᵀ)` is nonzero exactly when the rows of `A` are linearly independent.
+* `Matrix.prod_pow_mul_transpose_apply_of_support` and `Matrix.prod_pow_mul_transpose_apply`:
+  multinomial expansion of an entrywise monomial in `A * Aᵀ` into monomials in `A`.
+* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic` and
+  `Matrix.IsLowerTriangular.prod_pow_mul_transpose_apply`: for a lower-triangular matrix `A`, each
+  entry `(A * Aᵀ) i j` sums over `Finset.Iic (min i j)` and every resulting factor monomial is
+  supported on or below the diagonal (`TauCeti.le_of_gramMonomialExponent_ne_zero`).
 -/
 
 public section
 
+open scoped BigOperators
+
 namespace TauCeti
 
 open _root_.Matrix
+
+section BilinearForm
 
 variable {n : Type*} [Fintype n]
 
@@ -60,9 +81,130 @@ theorem reflect_vecMul_dotProduct_self (hM : M.IsSymm) {u : n → R} (hu : (u �
     dotProduct_smul, smul_eq_mul, hu, vecMul_dotProduct_comm hM u v]
   ring
 
+end BilinearForm
+
+section GramMonomialExponent
+
+variable {m k : Type*} [Fintype m]
+
+/-- The combined exponent of `A p.1 p.2` arising from a family of column compositions
+`c : m × m → k → ℕ` in the multinomial expansion of a monomial in the entries of `A * Aᵀ`. Each
+summand `A i r * A j r` contributes `c (i, j) r` to the left factor `A i r` and `c (i, j) r` to the
+right factor `A j r`. -/
+def gramMonomialExponent (c : m × m → k → ℕ) (p : m × k) : ℕ :=
+  (∑ j, c (p.1, j) p.2) + ∑ i, c (i, p.1) p.2
+
+/-- The defining formula for `TauCeti.gramMonomialExponent`. -/
+theorem gramMonomialExponent_def (c : m × m → k → ℕ) (p : m × k) :
+    gramMonomialExponent c p = (∑ j, c (p.1, j) p.2) + ∑ i, c (i, p.1) p.2 :=
+  (rfl)
+
+/-- The defining formula for `TauCeti.gramMonomialExponent` on an explicit pair `(i, r)`. -/
+theorem gramMonomialExponent_mk (c : m × m → k → ℕ) (i : m) (r : k) :
+    gramMonomialExponent c (i, r) = (∑ j, c (i, j) r) + ∑ j, c (j, i) r :=
+  (rfl)
+
+/-- The zero composition family yields zero factor exponents. -/
+@[simp]
+theorem gramMonomialExponent_zero (p : m × k) :
+    gramMonomialExponent (0 : m × m → k → ℕ) p = 0 := by
+  simp [gramMonomialExponent_def]
+
+/-- Factor exponents in a Gram monomial expansion are additive in the composition family. -/
+@[simp]
+theorem gramMonomialExponent_add (c₁ c₂ : m × m → k → ℕ) (p : m × k) :
+    gramMonomialExponent (c₁ + c₂) p =
+      gramMonomialExponent c₁ p + gramMonomialExponent c₂ p := by
+  simp only [gramMonomialExponent_def, Pi.add_apply, Finset.sum_add_distrib]
+  omega
+
+/-- Factor exponents commute with finite sums of composition families. -/
+@[simp]
+theorem gramMonomialExponent_sum {ι : Type*} (s : Finset ι) (c : ι → m × m → k → ℕ)
+    (p : m × k) :
+    gramMonomialExponent (∑ x ∈ s, c x) p = ∑ x ∈ s, gramMonomialExponent (c x) p := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert x s hxs ih => simp [hxs, ih]
+
+/-- The factor exponents contributed by a composition supported at a single matrix position `q`. -/
+@[simp]
+theorem gramMonomialExponent_single [DecidableEq m] (q : m × m) (f : k → ℕ) (p : m × k) :
+    gramMonomialExponent (Pi.single q f) p =
+      (if p.1 = q.1 then f p.2 else 0) + (if p.1 = q.2 then f p.2 else 0) := by
+  rw [gramMonomialExponent_def]
+  congr 1
+  · by_cases h1 : p.1 = q.1
+    · rw [ite_eq_left h1, Fintype.sum_eq_single q.2]
+      · have hq : (p.1, q.2) = q := Prod.ext h1 rfl
+        simp [hq]
+      · intro j hj
+        have hne : (p.1, j) ≠ q := fun h ↦ hj (congrArg Prod.snd h)
+        simp [Pi.single_eq_of_ne hne]
+    · rw [ite_eq_right h1]
+      apply Finset.sum_eq_zero
+      intro j _
+      have hne : (p.1, j) ≠ q := fun h ↦ h1 (congrArg Prod.fst h)
+      simp [Pi.single_eq_of_ne hne]
+  · by_cases h2 : p.1 = q.2
+    · rw [ite_eq_left h2, Fintype.sum_eq_single q.1]
+      · have hq : (q.1, p.1) = q := Prod.ext rfl h2
+        simp [hq]
+      · intro i hi
+        have hne : (i, p.1) ≠ q := fun h ↦ hi (congrArg Prod.fst h)
+        simp [Pi.single_eq_of_ne hne]
+    · rw [ite_eq_right h2]
+      apply Finset.sum_eq_zero
+      intro i _
+      have hne : (i, p.1) ≠ q := fun h ↦ h2 (congrArg Prod.snd h)
+      simp [Pi.single_eq_of_ne hne]
+
+/-- Swapping the two row indices of a composition family preserves the resulting factor
+exponents. -/
+theorem gramMonomialExponent_swap (c : m × m → k → ℕ) (p : m × k) :
+    gramMonomialExponent (fun q ↦ c q.swap) p = gramMonomialExponent c p := by
+  simp only [gramMonomialExponent_def, Prod.swap_prod_mk]
+  exact Nat.add_comm _ _
+
+/-- Summing `gramMonomialExponent c` over all factor entries yields twice the total weight of `c`,
+reflecting that every entry of `A * Aᵀ` is quadratic in `A`. -/
+theorem sum_gramMonomialExponent [Fintype k] (c : m × m → k → ℕ) :
+    (∑ p : m × k, gramMonomialExponent c p) = 2 * ∑ q : m × m, ∑ r : k, c q r := by
+  simp only [gramMonomialExponent_def, Finset.sum_add_distrib, two_mul]
+  have h1 : (∑ x : m × k, ∑ j : m, c (x.1, j) x.2) = ∑ q : m × m, ∑ r : k, c q r := by
+    rw [Fintype.sum_prod_type, Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    dsimp only
+    exact Finset.sum_comm
+  have h2 : (∑ x : m × k, ∑ i : m, c (i, x.1) x.2) = ∑ q : m × m, ∑ r : k, c q r := by
+    rw [Fintype.sum_prod_type, Fintype.sum_prod_type]
+    dsimp only
+    refine (Finset.sum_congr rfl fun j _ ↦ Finset.sum_comm).trans Finset.sum_comm
+  rw [h1, h2]
+
+/-- When each composition `c q` is supported on `Finset.Iic (min q.1 q.2)`, every nonzero exponent
+in `gramMonomialExponent c` lies on or below the diagonal. -/
+theorem le_of_gramMonomialExponent_ne_zero [LinearOrder m] [LocallyFiniteOrderBot m]
+    {d : m × m → ℕ} {c : m × m → m → ℕ}
+    (hc : c ∈ Fintype.piFinset fun q : m × m ↦ (Finset.Iic (min q.1 q.2)).piAntidiag (d q))
+    {p : m × m} (hp : gramMonomialExponent c p ≠ 0) : p.2 ≤ p.1 := by
+  rw [gramMonomialExponent_def, ne_eq, Nat.add_eq_zero_iff, not_and_or] at hp
+  rcases hp with hp | hp
+  · obtain ⟨j, _, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero hp
+    have hmem := (Finset.mem_piAntidiag.1 (Fintype.mem_piFinset.1 hc (p.1, j))).2 p.2 hj
+    exact (Finset.mem_Iic.1 hmem).trans (min_le_left _ _)
+  · obtain ⟨i, _, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero hp
+    have hmem := (Finset.mem_piAntidiag.1 (Fintype.mem_piFinset.1 hc (i, p.1))).2 p.2 hi
+    exact (Finset.mem_Iic.1 hmem).trans (min_le_right _ _)
+
+end GramMonomialExponent
+
 end TauCeti
 
 namespace Matrix
+
+section Rectangular
 
 variable {m n R : Type*} [Fintype m] [DecidableEq m] [Fintype n]
 
@@ -85,5 +227,104 @@ theorem det_mul_transpose_ne_zero_iff [CommRing R] [LinearOrder R] [IsStrictOrde
     injective_iff_map_eq_zero]
   simp only [key, vecMulLinear_apply]
   grind
+
+private theorem prod_mul_pow_eq_prod_pow_gramMonomialExponent {m k R : Type*}
+    [Fintype m] [Fintype k] [CommMonoid R] (A : Matrix m k R) (c : m × m → k → ℕ) :
+    (∏ q : m × m, ∏ r : k, (A q.1 r * A q.2 r) ^ c q r) =
+      ∏ p : m × k, A p.1 p.2 ^ TauCeti.gramMonomialExponent c p := by
+  simp_rw [mul_pow, Finset.prod_mul_distrib]
+  have hleft :
+      (∏ q : m × m, ∏ r : k, A q.1 r ^ c q r) =
+        ∏ p : m × k, A p.1 p.2 ^ (∑ j : m, c (p.1, j) p.2) := by
+    rw [Fintype.prod_prod_type, Fintype.prod_prod_type]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    rw [Finset.prod_comm]
+    refine Finset.prod_congr rfl fun r _ ↦ ?_
+    dsimp only
+    exact Finset.prod_pow_eq_pow_sum _ _ _
+  have hright :
+      (∏ q : m × m, ∏ r : k, A q.2 r ^ c q r) =
+        ∏ p : m × k, A p.1 p.2 ^ (∑ i : m, c (i, p.1) p.2) := by
+    rw [Fintype.prod_prod_type, Finset.prod_comm, Fintype.prod_prod_type]
+    refine Finset.prod_congr rfl fun j _ ↦ ?_
+    rw [Finset.prod_comm]
+    refine Finset.prod_congr rfl fun r _ ↦ ?_
+    dsimp only
+    exact Finset.prod_pow_eq_pow_sum _ _ _
+  rw [hleft, hright, ← Finset.prod_mul_distrib]
+  exact Finset.prod_congr rfl fun p _ ↦ (pow_add (A p.1 p.2) _ _).symm
+
+/-- **Multinomial expansion of a Gram entry monomial with restricted column supports.** If for
+every pair `q = (i, j)`, the column products `A i r * A j r` vanish outside `s q`, then
+`∏ q, (A * Aᵀ) q.1 q.2 ^ d q` expands into a sum over composition families in `(s q).piAntidiag`
+of multinomial weights times monomials in the entries of `A`. -/
+theorem prod_pow_mul_transpose_apply_of_support [DecidableEq n] [CommSemiring R]
+    (A : Matrix m n R) (d : m × m → ℕ) (s : m × m → Finset n)
+    (hs : ∀ q : m × m, ∀ r ∉ s q, A q.1 r * A q.2 r = 0) :
+    (∏ q : m × m, (A * Aᵀ) q.1 q.2 ^ d q) =
+      ∑ c ∈ Fintype.piFinset (fun q ↦ (s q).piAntidiag (d q)),
+        (∏ q, (Nat.multinomial (s q) (c q) : R)) *
+          ∏ p : m × n, A p.1 p.2 ^ TauCeti.gramMonomialExponent c p := by
+  have hentry (q : m × m) :
+      (A * Aᵀ) q.1 q.2 ^ d q =
+        ∑ f ∈ (s q).piAntidiag (d q),
+          (Nat.multinomial (s q) f : R) * ∏ r : n, (A q.1 r * A q.2 r) ^ f r := by
+    have hsum : (A * Aᵀ) q.1 q.2 = ∑ r ∈ s q, A q.1 r * A q.2 r := by
+      rw [Matrix.mul_apply]
+      simp only [transpose_apply]
+      exact (Finset.sum_subset (Finset.subset_univ (s q)) fun r _ hr ↦ hs q r hr).symm
+    rw [hsum, Finset.sum_pow_eq_sum_piAntidiag]
+    refine Finset.sum_congr rfl fun f hf ↦ congrArg ((Nat.multinomial (s q) f : R) * ·) ?_
+    refine Finset.prod_subset (Finset.subset_univ (s q)) fun r _ hr ↦ ?_
+    rw [Finset.eq_zero_of_notMem_of_mem_piAntidiag hr hf, pow_zero]
+  simp_rw [hentry]
+  rw [Finset.prod_univ_sum]
+  refine Finset.sum_congr rfl fun c _ ↦ ?_
+  rw [Finset.prod_mul_distrib, prod_mul_pow_eq_prod_pow_gramMonomialExponent]
+
+/-- **Multinomial expansion of a Gram entry monomial.** Every natural monomial in the entries of
+`A * Aᵀ` expands into a weighted sum of natural monomials in the entries of `A`. -/
+theorem prod_pow_mul_transpose_apply [DecidableEq n] [CommSemiring R]
+    (A : Matrix m n R) (d : m × m → ℕ) :
+    (∏ q : m × m, (A * Aᵀ) q.1 q.2 ^ d q) =
+      ∑ c ∈ Fintype.piFinset (fun q ↦ Finset.univ.piAntidiag (d q)),
+        (∏ q, (Nat.multinomial Finset.univ (c q) : R)) *
+          ∏ p : m × n, A p.1 p.2 ^ TauCeti.gramMonomialExponent c p :=
+  A.prod_pow_mul_transpose_apply_of_support d (fun _ ↦ Finset.univ) fun _ _ hr ↦
+    (hr (Finset.mem_univ _)).elim
+
+end Rectangular
+
+private theorem IsLowerTriangular.mul_apply_eq_zero_of_notMem_Iic {k R : Type*} [LinearOrder k]
+    [LocallyFiniteOrderBot k] [MulZeroClass R] {A : Matrix k k R} (hA : A.IsLowerTriangular)
+    {i j r : k} (hr : r ∉ Finset.Iic (min i j)) : A i r * A j r = 0 := by
+  rw [Finset.mem_Iic, le_min_iff, not_and_or, not_le, not_le] at hr
+  rcases hr with hr | hr
+  · rw [hA hr, zero_mul]
+  · rw [hA hr, mul_zero]
+
+/-- For a lower-triangular matrix `A`, the `(i, j)` entry of `A * Aᵀ` sums only over columns up to
+`min i j`. -/
+theorem IsLowerTriangular.mul_transpose_apply_eq_sum_Iic {k R : Type*} [Fintype k] [LinearOrder k]
+    [LocallyFiniteOrderBot k] [NonUnitalNonAssocSemiring R] {A : Matrix k k R}
+    (hA : A.IsLowerTriangular) (i j : k) :
+    (A * Aᵀ) i j = ∑ r ∈ Finset.Iic (min i j), A i r * A j r := by
+  rw [Matrix.mul_apply]
+  simp only [transpose_apply]
+  exact (Finset.sum_subset (Finset.subset_univ _) fun _ _ ↦
+    hA.mul_apply_eq_zero_of_notMem_Iic).symm
+
+/-- **Multinomial expansion of a lower-triangular Gram monomial.** When `A` is lower triangular,
+each entry `(A * Aᵀ) i j` uses only columns in `Finset.Iic (min i j)`, so every resulting monomial
+in `A` is supported on or below the diagonal (`TauCeti.le_of_gramMonomialExponent_ne_zero`). -/
+theorem IsLowerTriangular.prod_pow_mul_transpose_apply {k R : Type*} [Fintype k] [LinearOrder k]
+    [LocallyFiniteOrderBot k] [CommSemiring R] {A : Matrix k k R}
+    (hA : A.IsLowerTriangular) (d : k × k → ℕ) :
+    (∏ q : k × k, (A * Aᵀ) q.1 q.2 ^ d q) =
+      ∑ c ∈ Fintype.piFinset (fun q ↦ (Finset.Iic (min q.1 q.2)).piAntidiag (d q)),
+        (∏ q, (Nat.multinomial (Finset.Iic (min q.1 q.2)) (c q) : R)) *
+          ∏ p : k × k, A p.1 p.2 ^ TauCeti.gramMonomialExponent c p :=
+  A.prod_pow_mul_transpose_apply_of_support d (fun q ↦ Finset.Iic (min q.1 q.2)) fun _ _ ↦
+    hA.mul_apply_eq_zero_of_notMem_Iic
 
 end Matrix

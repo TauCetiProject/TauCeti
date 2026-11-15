@@ -6,14 +6,25 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
+public import TauCeti.LinearAlgebra.Matrix.Gram
+public import Mathlib.Order.Interval.Finset.Fin
 
 /-!
-# Powers of partial-correlation Cholesky entries
+# Powers of partial-correlation Cholesky and Gram entries
 
 On the closed partial-correlation cube, natural powers and joint monomials of lower-triangular
-entries of the partial-correlation Cholesky factor split into coordinate and residual powers of
-the individual partial correlations. This file records the deterministic factorization used by
-moment calculations.
+entries of the partial-correlation Cholesky factor split into coordinate powers and nonnegative
+half-integer residual powers of the individual partial correlations
+(`partialCorrelationCholeskyMonomialResidualPower_eq_natCast_div_two`). Expanding `R = L Lᵀ` via
+`Matrix.IsLowerTriangular.prod_pow_mul_transpose_apply` expresses every natural monomial in the
+entries of `partialCorrelationGram z` as a finite multinomial sum of lower-triangular Cholesky
+monomials (`prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky`) and hence,
+on the closed cube, as a sum of coordinatewise products (`prod_pow_partialCorrelationGram_eq_sum`).
+
+## References
+
+* D. Lewandowski, D. Kurowicka, H. Joe, *Generating random correlation matrices based on vines
+  and extended onion method*, J. Multivariate Anal. 100 (2009), 1989–2001.
 -/
 
 public section
@@ -418,5 +429,51 @@ theorem prod_pow_partialCorrelationCholesky_eq_prod
         (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij)))
         (fun q _ ↦ partialCorrelationCholeskyEntryResidualPower_nonneg
           q.1 q.2 (m q) ij)).symm
+
+/-- Every Cholesky-monomial residual exponent is a nonnegative half-integer: the natural sum of
+the powers strictly to the right in the same row, divided by two. -/
+theorem partialCorrelationCholeskyMonomialResidualPower_eq_natCast_div_two
+    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyMonomialResidualPower m ij =
+      ((∑ k ∈ Finset.Ioi ij.1.2, m (ij.1.1, k) : ℕ) : ℝ) / 2 := by
+  rw [partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi, Nat.cast_sum, Finset.sum_div]
+
+/-- An entry of `partialCorrelationGram z` is the sum of triangular column products up to
+`min i j`. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic (min i j),
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def]
+  exact (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic i j
+
+/-- Every natural monomial in the entries of `partialCorrelationGram z` expands into a multinomial
+sum of lower-triangular monomials in `partialCorrelationCholesky z`. -/
+theorem prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky
+    (z : strictLowerTriangle p → ℝ) (n : Fin p × Fin p → ℕ) :
+    (∏ q, partialCorrelationGram z q.1 q.2 ^ n q) =
+      ∑ c ∈ Fintype.piFinset (fun q ↦ (Finset.Iic (min q.1 q.2)).piAntidiag (n q)),
+        (∏ q, (Nat.multinomial (Finset.Iic (min q.1 q.2)) (c q) : ℝ)) *
+          ∏ q, partialCorrelationCholesky z q.1 q.2 ^ gramMonomialExponent c q := by
+  simp_rw [partialCorrelationGram_def]
+  exact (isLowerTriangular_partialCorrelationCholesky z).prod_pow_mul_transpose_apply n
+
+/-- On the closed partial-correlation cube, every natural monomial in the entries of
+`partialCorrelationGram z` expands into a finite multinomial sum of products of natural powers of
+`z ij` and nonnegative half-integer powers of `1 - z ij ^ 2`. -/
+theorem prod_pow_partialCorrelationGram_eq_sum
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| ≤ 1)
+    (n : Fin p × Fin p → ℕ) :
+    (∏ q, partialCorrelationGram z q.1 q.2 ^ n q) =
+      ∑ c ∈ Fintype.piFinset (fun q ↦ (Finset.Iic (min q.1 q.2)).piAntidiag (n q)),
+        (∏ q, (Nat.multinomial (Finset.Iic (min q.1 q.2)) (c q) : ℝ)) *
+          ∏ ij, z ij ^ gramMonomialExponent c ij.1 *
+            (1 - z ij ^ 2) ^
+              partialCorrelationCholeskyMonomialResidualPower (gramMonomialExponent c) ij := by
+  rw [prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky]
+  refine Finset.sum_congr rfl fun c hc ↦ congrArg (_ * ·) ?_
+  exact prod_pow_partialCorrelationCholesky_eq_prod hz (gramMonomialExponent c) fun q hq ↦
+    le_of_gramMonomialExponent_ne_zero hc hq
 
 end TauCeti
