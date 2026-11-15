@@ -42,7 +42,8 @@ degree-`m` end framing. If its section also satisfies the holomorphicity rows `â
 at a plane vortex, its weak `LÂ²` kernel is finite-dimensional of real dimension `2m`
 (`TauCeti.Vortex.finiteDimensional_weakGaugeFixedKernel`,
 `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul`). This is the kernel in Taubes's
-computation of the real index `2m` of the linearized vortex operator, whose cokernel vanishes
+computation of the real index `2m` of the linearized vortex operator. At a plane vortex, a field
+satisfying the full vortex equation, the cokernel of that operator also vanishes
 (`TauCeti.Vortex.exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq`).
 
 ## Main definitions

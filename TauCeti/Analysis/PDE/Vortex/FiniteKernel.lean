@@ -361,12 +361,6 @@ private theorem integral_norm_sq_le_abs_mul_integral_norm_sq_smul {ρ C : ℝ}
   exact (hC y hy).trans ((mul_le_mul_of_nonneg_right (le_abs_self C) hball0).trans
     (mul_le_mul_of_nonneg_left hball (abs_nonneg C)))
 
-private theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
-    ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
-  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
-    (memLp_of_mem_gaugeFixedKernel y.2).eLpNorm_two_eq_ofReal_sqrt_integral,
-    ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
-
 /-- **The smooth `L²` kernel of the gauge-fixed vortex operator is finite-dimensional.** For a
 `C¹` plane vortex with `|α| → 1` and `∇₁ α → 0` at infinity, the `C²` square-integrable solutions
 of `L_x y = 0` form a finite-dimensional real vector space. -/

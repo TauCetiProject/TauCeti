@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -61,7 +62,7 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
 * `gaugeFixedKernel x`: the kernel of `L_x` on `C²` square-integrable variations, a real
   subspace. Its elements are continuous, so taking `L²` classes embeds it in `L²(ℂ; ℝ⁴)`
-  (`gaugeFixedKernelToLp`, `gaugeFixedKernelToLp_injective`).
+  (`gaugeFixedKernelToLp`, `gaugeFixedKernelToLp_injective`, `norm_gaugeFixedKernelToLp`).
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
@@ -998,6 +999,14 @@ theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
 theorem coeFn_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
     gaugeFixedKernelToLp x y =ᵐ[volume] y :=
   (mem_gaugeFixedKernel.1 y.2).2.1.coeFn_toLp
+
+/-- The `L²` norm of the class of a kernel element is the square root of the integral of its
+squared pointwise norm. -/
+theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
+    ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
+  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
+    (mem_gaugeFixedKernel.1 y.2).2.1.eLpNorm_two_eq_ofReal_sqrt_integral,
+    ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
 
 /-- Elements of `gaugeFixedKernel x` are continuous, so they are determined by their `L²`
 classes. -/
