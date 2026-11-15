@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.Semisimple.Multiplicity
 Let `N` be a normal subgroup of `G` and let `ρ` be an irreducible representation of `G` on `V`.
 Restricting `ρ` to `N` breaks it into irreducible constituents, and
 `TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean` identifies *which* constituents
-occur: they are the translates `TauCeti.Representation.conjSubrep ρ g σ` of any one of them, so they
+occur: they are the translates `Representation.conjSubrep ρ g σ` of any one of them, so they
 form a single `G`-orbit.  This file supplies the other half of Clifford's theorem: they all have hom
 spaces of **one common dimension**, which over a splitting field is their common multiplicity.
 
@@ -29,7 +29,7 @@ compares two such dimensions for two constituents of the *same* restriction, and
 a transport statement rather than a counting one: it needs no decomposition of the restriction, no
 algebraically closed field and no finiteness, so no such hypothesis is imposed, and the statements
 say only that the dimensions agree.  Whenever `ρ` is irreducible and `V` is finite-dimensional the
-restriction is semisimple (`TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`), so
+restriction is semisimple (`Representation.isSemisimpleRepresentation_comp_subtype`), so
 there is a decomposition to count there; if in addition `k` splits the constituents, the common
 dimension produced below is literally the classical multiplicity `e`.
 
@@ -49,7 +49,7 @@ Combining the transport with the single-orbit theorem gives the common dimension
 `N`-stable subspaces are translates of one another up to isomorphism, so their hom spaces have equal
 dimension.  The same argument on the subspaces themselves, where the twist is invisible because only
 the `k`-action is retained, shows that all the constituents have the same **dimension** as well;
-there it is `TauCeti.Representation.conjSubrepEquiv` from `Clifford/Basic.lean` that does the work.
+there it is `Representation.conjSubrepEquiv` from `Clifford/Basic.lean` that does the work.
 
 The decomposition of the restriction itself, into `e` copies of each conjugate of one constituent
 indexed by the cosets of its inertia group, is not proved here: it is `FDRep.clifford_restrict_iso`
@@ -114,7 +114,6 @@ open TauCeti
 
 namespace Representation
 
-open TauCeti.Representation
 open MonoidAlgebra (conjNormalAlgAut conjNormalAlgAut_single)
 
 section Translate
@@ -127,20 +126,20 @@ map of `k`-modules it is an isomorphism, with inverse translation by `ρ g⁻¹`
 `k[N]`-linear, only semilinear over `MonoidAlgebra.conjNormalAlgAut k k N g`
 (`Representation.asModuleConjEquiv_smul`). -/
 noncomputable def asModuleConjEquiv (g : G) :
-    _root_.Representation.asModule (ρ.comp N.subtype) ≃ₗ[k]
-      _root_.Representation.asModule (ρ.comp N.subtype) where
+    Representation.asModule (ρ.comp N.subtype) ≃ₗ[k]
+      Representation.asModule (ρ.comp N.subtype) where
   toFun v := ρ g v
   map_add' x y := map_add (ρ g) x y
   map_smul' c x := map_smul (ρ g) c x
   invFun v := ρ g⁻¹ v
-  left_inv v := _root_.Representation.inv_self_apply ρ g v
-  right_inv v := _root_.Representation.self_inv_apply ρ g v
+  left_inv v := ρ.inv_self_apply g v
+  right_inv v := ρ.self_inv_apply g v
 
 omit [N.Normal] in
 /-- Translation is given by `ρ g`.  Not a `simp` lemma: rewriting with it moves a term off the
 type synonym `Representation.asModule`, where the `k[N]`-action lives. -/
 theorem asModuleConjEquiv_apply (g : G)
-    (v : _root_.Representation.asModule (ρ.comp N.subtype)) :
+    (v : Representation.asModule (ρ.comp N.subtype)) :
     asModuleConjEquiv ρ (N := N) g v = ρ g v :=
   (rfl)
 
@@ -158,7 +157,7 @@ basis to all of `k[N]` by linearity.  It is the reason a single translation does
 `k[N]`-linear maps, and the reason a conjugate pair of translations does. -/
 @[simp]
 theorem asModuleConjEquiv_smul (g : G) (a : k[N])
-    (v : _root_.Representation.asModule (ρ.comp N.subtype)) :
+    (v : Representation.asModule (ρ.comp N.subtype)) :
     asModuleConjEquiv ρ (N := N) g (a • v)
       = conjNormalAlgAut k k N g a • asModuleConjEquiv ρ (N := N) g v := by
   -- `apply_conjNormal_inv` read in the other direction: acting by `n` and then by `g` is acting by
@@ -173,8 +172,8 @@ theorem asModuleConjEquiv_smul (g : G) (a : k[N])
   | single n c =>
     -- After `single_smul` both sides read on `V` again, through `ρ.asModuleEquiv`, which is
     -- `LinearEquiv.refl` and so disappears definitionally; there is no lemma to rewrite it away.
-    rw [conjNormalAlgAut_single, asModuleConjEquiv_apply, _root_.Representation.single_smul,
-      _root_.Representation.single_smul, map_smul]
+    rw [conjNormalAlgAut_single, asModuleConjEquiv_apply, Representation.single_smul,
+      Representation.single_smul, map_smul]
     exact congrArg (fun w => c • w) (hconj n _)
 
 end Translate
@@ -203,7 +202,7 @@ omit [N.Normal] in
 /-- The underlying vector of a translated vector. -/
 @[simp]
 theorem coe_conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : σ.asSubmodule) :
-    (conjSubrepMap ρ g h x : _root_.Representation.asModule (ρ.comp N.subtype))
+    (conjSubrepMap ρ g h x : Representation.asModule (ρ.comp N.subtype))
       = asModuleConjEquiv ρ g x.1 :=
   (rfl)
 
@@ -233,7 +232,7 @@ omit [N.Normal] in
 theorem conjSubrepMap_inv_self_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
     (h' : ∀ v ∈ τ, ρ g⁻¹ v ∈ σ) (x : σ.asSubmodule) :
     conjSubrepMap ρ g⁻¹ h' (conjSubrepMap ρ g h x) = x :=
-  Subtype.ext (_root_.Representation.inv_self_apply ρ g _)
+  Subtype.ext (ρ.inv_self_apply g _)
 
 omit [N.Normal] in
 /-- Translating back and translating is the identity on `τ`. -/
@@ -241,7 +240,7 @@ omit [N.Normal] in
 theorem conjSubrepMap_self_inv_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
     (h' : ∀ v ∈ τ, ρ g⁻¹ v ∈ σ) (y : τ.asSubmodule) :
     conjSubrepMap ρ g h (conjSubrepMap ρ g⁻¹ h' y) = y :=
-  Subtype.ext (_root_.Representation.self_inv_apply ρ g _)
+  Subtype.ext (ρ.self_inv_apply g _)
 
 variable (ρ) in
 /-- **Transporting a hom space along a translation.**  Precomposing with translation by `ρ g` and
@@ -250,8 +249,8 @@ postcomposing with translation back by `ρ g⁻¹` turns a `k[N]`-linear map out
 `conjNormalAlgAut g` and `conjNormalAlgAut g⁻¹`, which cancel, so the composite is `k[N]`-linear
 again. -/
 noncomputable def conjHom (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
-    (f : τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :
-    σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype) where
+    (f : τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :
+    σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype) where
   toFun x := asModuleConjEquiv ρ g⁻¹ (f (conjSubrepMap ρ g h x))
   map_add' x y := by simp
   map_smul' a x := by simp
@@ -259,7 +258,7 @@ noncomputable def conjHom (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
 /-- Evaluation of a transported map. -/
 @[simp]
 theorem conjHom_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
-    (f : τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype))
+    (f : τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype))
     (x : σ.asSubmodule) :
     conjHom ρ g h f x = asModuleConjEquiv ρ g⁻¹ (f (conjSubrepMap ρ g h x)) :=
   (rfl)
@@ -267,8 +266,8 @@ theorem conjHom_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
 variable (ρ) in
 /-- `Representation.conjHom` bundled as a `k`-linear map of hom spaces. -/
 noncomputable def conjHomₗ (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) :
-    (τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) →ₗ[k]
-      (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) where
+    (τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) →ₗ[k]
+      (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) where
   toFun := conjHom ρ g h
   map_add' f₁ f₂ := LinearMap.ext fun x => by
     simp only [conjHom_apply, LinearMap.add_apply, map_add]
@@ -278,7 +277,7 @@ noncomputable def conjHomₗ (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) :
 /-- The bundled transport is the unbundled one. -/
 @[simp]
 theorem conjHomₗ_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ)
-    (f : τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :
+    (f : τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :
     conjHomₗ ρ g h f = conjHom ρ g h f :=
   (rfl)
 
@@ -287,29 +286,29 @@ variable (ρ) in
 identifies the space of `k[N]`-linear maps out of `τ` with the space of `k[N]`-linear maps out of
 `σ`, with inverse the transport along translation by `ρ g⁻¹`. -/
 noncomputable def conjHomEquiv (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (h' : ∀ v ∈ τ, ρ g⁻¹ v ∈ σ) :
-    (τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) ≃ₗ[k]
-      (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :=
+    (τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) ≃ₗ[k]
+      (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :=
   LinearEquiv.ofLinearMap (conjHomₗ ρ g h) (conjHomₗ ρ g⁻¹ h')
     (LinearMap.ext fun f => LinearMap.ext fun x => by
       simp only [LinearMap.comp_apply, conjHomₗ_apply, LinearMap.id_apply, conjHom_apply, inv_inv,
         conjSubrepMap_inv_self_apply]
-      exact _root_.Representation.inv_self_apply ρ g _)
+      exact ρ.inv_self_apply g _)
     (LinearMap.ext fun f => LinearMap.ext fun y => by
       simp only [LinearMap.comp_apply, conjHomₗ_apply, LinearMap.id_apply, conjHom_apply, inv_inv,
         conjSubrepMap_self_inv_apply]
-      exact _root_.Representation.self_inv_apply ρ g _)
+      exact ρ.self_inv_apply g _)
 
 /-- Evaluation of the transport isomorphism. -/
 @[simp]
 theorem conjHomEquiv_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (h' : ∀ v ∈ τ, ρ g⁻¹ v ∈ σ)
-    (f : τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :
+    (f : τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :
     conjHomEquiv ρ g h h' f = conjHom ρ g h f :=
   (rfl)
 
 /-- The inverse of the transport isomorphism is the transport along translation by `ρ g⁻¹`. -/
 @[simp]
 theorem conjHomEquiv_symm_apply (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (h' : ∀ v ∈ τ, ρ g⁻¹ v ∈ σ)
-    (f : σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :
+    (f : σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :
     (conjHomEquiv ρ g h h').symm f = conjHom ρ g⁻¹ h' f :=
   (rfl)
 
@@ -329,15 +328,15 @@ constituent, and the statement then says that a translate occurs with the same m
 theorem finrank_linearMap_conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
     Module.finrank k
         ((conjSubrep ρ g σ).asSubmodule →ₗ[k[N]]
-          _root_.Representation.asModule (ρ.comp N.subtype))
+          Representation.asModule (ρ.comp N.subtype))
       = Module.finrank k
-        (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :=
+        (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :=
   (conjHomEquiv ρ g
-    (fun _ hv => mem_conjSubrep_iff.mpr (by rwa [_root_.Representation.inv_self_apply]))
+    (fun _ hv => mem_conjSubrep_iff.mpr (by rwa [Representation.inv_self_apply]))
     (fun _ hv => mem_conjSubrep_iff.mp hv)).finrank_eq
 
 /-- **A translate has the same dimension.**  This is the `k`-linear content of
-`TauCeti.Representation.conjSubrepEquiv`, whose underlying map is again translation by `ρ g`. -/
+`Representation.conjSubrepEquiv`, whose underlying map is again translation by `ρ g`. -/
 @[simp]
 theorem finrank_asSubmodule_conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
     Module.finrank k ↥(conjSubrep ρ g σ).asSubmodule = Module.finrank k ↥σ.asSubmodule :=
@@ -363,14 +362,14 @@ restriction with the same multiplicity.  By the single-orbit theorem the submodu
 a translate of the subspace, and a translate transports. -/
 theorem finrank_linearMap_eq_of_isAtom [ρ.IsIrreducible]
     {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ)
-    (T : Submodule k[N] (_root_.Representation.asModule (ρ.comp N.subtype)))
+    (T : Submodule k[N] (Representation.asModule (ρ.comp N.subtype)))
     [IsSimpleModule k[N] T] :
-    Module.finrank k (T →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype))
+    Module.finrank k (T →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype))
       = Module.finrank k
-        (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) := by
+        (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) := by
   obtain ⟨g, ⟨e⟩⟩ := exists_nonempty_linearEquiv_asSubmodule_conjSubrep ρ hσ T
   rw [(LinearEquiv.congrLeft
-      (_root_.Representation.asModule (ρ.comp N.subtype)) k e).finrank_eq,
+      (Representation.asModule (ρ.comp N.subtype)) k e).finrank_eq,
     finrank_linearMap_conjSubrep]
 
 /-- **Clifford's theorem, multiplicity form, for two minimal subspaces.**  The hom spaces of any
@@ -379,9 +378,9 @@ splitting field this says that the two constituents occur in the restriction wit
 multiplicity. -/
 theorem finrank_linearMap_eq_of_isAtom_of_isAtom [ρ.IsIrreducible]
     {σ τ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) (hτ : IsAtom τ) :
-    Module.finrank k (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype))
+    Module.finrank k (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype))
       = Module.finrank k
-        (τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) :=
+        (τ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) :=
   have := Subrepresentation.isSimpleModule_asSubmodule_iff.mpr hσ
   finrank_linearMap_eq_of_isAtom ρ hτ σ.asSubmodule
 
@@ -401,7 +400,7 @@ field it says that the constituent occurs with positive multiplicity. -/
 theorem finrank_linearMap_pos [FiniteDimensional k V] {σ : Subrepresentation (ρ.comp N.subtype)}
     (hσ : σ ≠ ⊥) :
     0 < Module.finrank k
-      (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) := by
+      (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) := by
   refine finrank_linearMap_pos_of_ne_bot fun hc => hσ ?_
   -- `asSubmodule` is the order isomorphism `subrepresentationSubmoduleOrderIso`, so it
   -- reflects `⊥`.
@@ -413,12 +412,12 @@ theorem finrank_linearMap_pos [FiniteDimensional k V] {σ : Subrepresentation (�
 /-- **Clifford's theorem, the common multiplicity.**  For a finite-dimensional irreducible `ρ`
 there is a positive natural number `e` such that the hom space of every irreducible
 `N`-constituent of the restriction has dimension `e`.  The restriction is semisimple
-(`TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`), so over a splitting field this
+(`Representation.isSemisimpleRepresentation_comp_subtype`), so over a splitting field this
 `e` is the `e` of the classical decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V`. -/
 theorem exists_forall_finrank_linearMap_eq [ρ.IsIrreducible] [FiniteDimensional k V] :
     ∃ e : ℕ, 0 < e ∧ ∀ σ : Subrepresentation (ρ.comp N.subtype), IsAtom σ →
       Module.finrank k
-        (σ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) = e := by
+        (σ.asSubmodule →ₗ[k[N]] Representation.asModule (ρ.comp N.subtype)) = e := by
   obtain ⟨σ₀, hσ₀, -⟩ := exists_isAtom_forall_nonempty_linearEquiv_conjSubrep ρ (N := N)
   exact ⟨_, finrank_linearMap_pos ρ hσ₀.1,
     fun σ hσ => finrank_linearMap_eq_of_isAtom_of_isAtom ρ hσ hσ₀⟩

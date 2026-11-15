@@ -287,7 +287,7 @@ subgroup is even open, and `InfiniteGalois.fixingSubgroup_isClosed` is the case 
 `M / K`. Algebraicity of `E / K` alone suffices — nothing is asked of `M / K`, so `E` may be an
 algebraic subfield of a transcendental extension, and over an algebraic `M / K` the hypothesis is
 supplied by `IntermediateField.isAlgebraic_tower_bot`. The suffix names that hypothesis, as
-`MulAction.stabilizer_isOpen_of_isIntegral` does. -/
+`stabilizer_isOpen_of_isIntegral` does. -/
 theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     [Algebra.IsAlgebraic K E] : IsClosed (E.fixingSubgroup : Set (M ≃ₐ[K] M)) := by
   have hE : E = ⨆ x : E, K⟮(x : M)⟯ := by
@@ -495,6 +495,20 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
     simpa [MulAut.conj_apply] using congrArg σ.symm hx
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
     simpa [MulAut.conj_apply] using congrArg σ (hy h hh)
+
+/-- **Artin's equality for fixed fields, without finiteness of `M / K`**: the degree of `M` over
+the fixed field of a subgroup `H` of `Gal(M/K)` is the order of `H`. For infinite `H` both sides
+are `0`. -/
+theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
+    Module.finrank (fixedField H) M = Nat.card H := by
+  by_cases hH : Finite H
+  · have := Fintype.ofFinite H
+    rw [Nat.card_eq_fintype_card]
+    exact FixedPoints.finrank_eq_card H M
+  · have := not_finite_iff_infinite.mp hH
+    rw [Nat.card_eq_zero_of_infinite]
+    exact Module.finrank_of_not_finite fun hfin ↦
+      hH (IntermediateField.finite_of_finiteDimensional_fixedField H)
 
 end Subgroup
 

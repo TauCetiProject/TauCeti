@@ -43,10 +43,10 @@ variable {R : Type*} [CommRing R]
 -- `Polynomial.Monic.quotient_isIntegral` (`Mathlib/RingTheory/IntegralClosure/IsIntegralClosure/
 -- Basic`); the proof here is different, transporting `Polynomial.adjoin_X` along the quotient map.
 lemma adjoin_quotient_mk_X_eq_top (I : Ideal R[X]) :
-    Algebra.adjoin R {Ideal.Quotient.mk I X} = ⊤ := by
-  rw [← Ideal.Quotient.mkₐ_eq_mk R, ← Set.image_singleton, ← AlgHom.map_adjoin, adjoin_X,
+    Algebra.adjoin R {Quotient.mk I X} = ⊤ := by
+  rw [← Quotient.mkₐ_eq_mk R, ← Set.image_singleton, ← AlgHom.map_adjoin, adjoin_X,
     Algebra.map_top, AlgHom.range_eq_top]
-  exact Ideal.Quotient.mkₐ_surjective R I
+  exact Quotient.mkₐ_surjective R I
 
 variable [Nontrivial R]
 
@@ -57,28 +57,28 @@ needed; in particular this applies to finite free quotients of rank `n`. -/
 theorem existsUnique_monic_span_of_flat_quotient (I : Ideal R[X]) [Module.Finite R (R[X] ⧸ I)]
     [Module.Flat R (R[X] ⧸ I)] {n : ℕ}
     (hn : ∀ p : PrimeSpectrum R, p.asIdeal.IsMaximal → Module.rankAtStalk (R[X] ⧸ I) p = n) :
-    ∃! p : R[X], p.Monic ∧ p.natDegree = n ∧ Ideal.span {p} = I := by
+    ∃! p : R[X], p.Monic ∧ p.natDegree = n ∧ span {p} = I := by
   have := TauCeti.Module.free_of_adjoin_eq_top I.adjoin_quotient_mk_X_eq_top hn
-  obtain ⟨P, hP⟩ := Ideal.exists_maximal R
+  obtain ⟨P, hP⟩ := exists_maximal R
   have hrank : Module.finrank R (R[X] ⧸ I) = n := by
     simpa using hn ⟨P, hP.isPrime⟩ hP
-  let x := Ideal.Quotient.mk I (X : R[X])
-  have he : aeval x = Ideal.Quotient.mkₐ R I := by
+  let x := Quotient.mk I (X : R[X])
+  have he : aeval x = Quotient.mkₐ R I := by
     ext
     simp [x]
   have hx : Algebra.adjoin R {x} = ⊤ := I.adjoin_quotient_mk_X_eq_top
   let h := IsAdjoinRootMonic.mkOfAdjoinEqTop' hx
-  have hspan : Ideal.span {minpoly R x} = I := by
+  have hspan : span {minpoly R x} = I := by
     rw [← h.ker_map]
     ext q
     rw [RingHom.mem_ker]
     simp only [h, IsAdjoinRootMonic.mkOfAdjoinEqTop'_map, he,
-      Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+      Quotient.mkₐ_eq_mk, Quotient.eq_zero_iff_mem]
   refine ⟨minpoly R x, ⟨h.monic, h.finrank.symm.trans hrank, hspan⟩, ?_⟩
   rintro q ⟨hq, hdeg, hqI⟩
   apply eq_of_monic_of_dvd_of_natDegree_le h.monic hq
-  · rw [← Ideal.mem_span_singleton, hspan, ← hqI]
-    exact Ideal.subset_span (Set.mem_singleton q)
+  · rw [← mem_span_singleton, hspan, ← hqI]
+    exact subset_span (Set.mem_singleton q)
   · rw [hdeg, ← hrank, h.finrank]
 
 end Ideal
