@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearMap
 
 /-!
 # `n`-positive maps and the Kadison–Schwarz inequality
@@ -38,8 +39,8 @@ with unital domain is `‖φ 1‖`.
 * `TauCeti.IsNPositive.mono`: an `n`-positive map is `m`-positive for `m ≤ n`, and
   `TauCeti.isNPositive_one_iff`: `1`-positivity is positivity.
 * `TauCeti.IsNPositive.toPositiveLinearMap`: an `n`-positive map with `0 < n` is positive.
-* `PositiveLinearMap.eq_zero_of_map_one_eq_zero`: a positive map on a unital C⋆-algebra that
-  vanishes at `1` is zero.
+* `TauCeti.IsNPositive.eq_zero_of_map_one_eq_zero`: an `n`-positive map with `0 < n` on a unital
+  C⋆-algebra that vanishes at `1` is zero.
 * `TauCeti.IsNPositive.star_map_mul_map_le`: the Kadison–Schwarz inequality
   `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)` for `2`-positive maps, and
   `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one` for unital ones.
@@ -151,14 +152,17 @@ theorem IsNPositive.add {n : ℕ} {φ ψ : A →ₗ[ℂ] B} (hφ : IsNPositive n
 theorem IsNPositive.comp [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C] {n : ℕ}
     {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (hψ : IsNPositive n ψ) (hφ : IsNPositive n φ) :
     IsNPositive n (ψ ∘ₗ φ) := fun M hM => by
-  simpa only [LinearMap.coe_comp, CStarMatrix.map_comp] using hψ _ (hφ M hM)
+  have h : M.map ⇑(ψ ∘ₗ φ) = (M.map φ).map ψ := CStarMatrix.ext fun _ _ => by simp
+  rw [h]
+  exact hψ _ (hφ M hM)
 
 /-- An `n`-positive map is `m`-positive for every `m ≤ n`. -/
 theorem IsNPositive.mono {m n : ℕ} {φ : A →ₗ[ℂ] B} (hmn : m ≤ n) (hφ : IsNPositive n φ) :
     IsNPositive m φ := fun M hM => by
   -- Pad `M` with zeros to an `n × n` matrix, apply `φ`, and restrict back.
   have hf := Fin.castLE_injective hmn
-  convert CStarMatrix.submatrix_nonneg hf (hφ _ (CStarMatrix.extend_nonneg hf hM)) using 1
+  convert CStarMatrix.submatrix_nonneg (Fin.castLE hmn) (hφ _ (CStarMatrix.extend_nonneg hf hM))
+    using 1
   ext i j
   simp [hf.extend_apply]
 
@@ -214,22 +218,6 @@ theorem _root_.PositiveLinearMap.isNPositive_one (φ : A →ₚ[ℂ] B) :
   isNPositive_one_iff.mpr fun _ ha => φ.map_nonneg ha
 
 end NonUnital
-
-end TauCeti
-
-/-- A positive map on a unital C⋆-algebra that vanishes at `1` is zero. -/
-theorem PositiveLinearMap.eq_zero_of_map_one_eq_zero {A B : Type*} [CStarAlgebra A]
-    [PartialOrder A] [StarOrderedRing A] [AddCommMonoid B] [PartialOrder B] [Module ℂ B]
-    (ψ : A →ₚ[ℂ] B) (h1 : ψ 1 = 0) : ψ = 0 := by
-  refine PositiveLinearMap.toLinearMap_injective <|
-    LinearMap.ext_on (CStarAlgebra.span_nonneg (A := A)) fun a (ha : 0 ≤ a) => ?_
-  refine le_antisymm ?_ (ψ.map_nonneg ha)
-  calc ψ a ≤ ψ (algebraMap ℝ A ‖a‖) := ψ.monotone (ha.isSelfAdjoint.le_algebraMap_norm_self)
-    _ = 0 := by
-      rw [IsScalarTower.algebraMap_apply ℝ ℂ A, Algebra.algebraMap_eq_smul_one, map_smul, h1,
-        smul_zero]
-
-namespace TauCeti
 
 section UnitalDomain
 
