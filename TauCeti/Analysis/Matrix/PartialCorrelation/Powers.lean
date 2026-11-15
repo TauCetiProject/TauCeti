@@ -438,16 +438,6 @@ theorem partialCorrelationCholeskyMonomialResidualPower_eq_natCast_div_two
       ((∑ k ∈ Finset.Ioi ij.1.2, m (ij.1.1, k) : ℕ) : ℝ) / 2 := by
   rw [partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi, Nat.cast_sum, Finset.sum_div]
 
-/-- An entry of `partialCorrelationGram z` is the sum of triangular column products up to
-`min i j`. -/
-theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
-    (i j : Fin p) :
-    partialCorrelationGram z i j =
-      ∑ k ∈ Finset.Iic (min i j),
-        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
-  rw [partialCorrelationGram_def]
-  exact (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic i j
-
 /-- Every natural monomial in the entries of `partialCorrelationGram z` expands into a multinomial
 sum of lower-triangular monomials in `partialCorrelationCholesky z`. -/
 theorem prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky

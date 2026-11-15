@@ -16,10 +16,11 @@ public import Mathlib.Order.Interval.Finset.Defs
 /-!
 # Sums and products over pairs
 
-A sum of `F : l × l → M` over all ordered pairs, for `l` a finite linear order, can be folded onto
-the increasing pairs by adding each term to its transpose. When `F` vanishes on the diagonal the
-diagonal contributes nothing and the fold is exact, which is
-`TauCeti.sum_univ_prod_eq_sum_lt_add_swap`.
+A product or sum of `F : l × l → M` over all ordered pairs, for `l` a finite linear order, can be
+folded onto the increasing pairs by combining each term with its transpose. When `F` is trivial on
+the diagonal the diagonal contributes nothing and the fold is exact, which is
+`TauCeti.prod_univ_prod_eq_prod_lt_mul_swap` (additively,
+`TauCeti.sum_univ_prod_eq_sum_lt_add_swap`).
 
 This is the shape a sum indexed by unordered pairs takes once the linear order is used to name each
 pair by its increasing representative. It is what lets an antisymmetric summand, for which the two
@@ -37,8 +38,9 @@ sign of the permutation.
   coordinate sum `d < n`, as a sum over the antidiagonal `antidiagonal d` in `ℕ × ℕ`.
 * `TauCeti.sum_symmetric_pairs`: a symmetric double sum is its diagonal plus twice the sum
   over strictly increasing pairs.
-* `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
-  on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.prod_univ_prod_eq_prod_lt_mul_swap` and `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a
+  product or sum over all ordered pairs of a function trivial on the diagonal, folded onto the
+  increasing pairs by combining each term with its transpose.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
@@ -259,26 +261,30 @@ theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A �
         hmul_right, mul_pow, hchoose, pow_add, Nat.add_sub_cancel, pow_succ]
       ac_rfl
 
-/-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on the
-diagonal sums over `l × l` to the sum over the increasing pairs of its value together with its
-value at the transposed pair. -/
-theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l] {M : Type*}
-    [AddCommMonoid M] (F : l × l → M) (hdiag : ∀ a, F (a, a) = 0) :
-    ∑ ij : l × l, F ij =
-      ∑ ij ∈ {ij : l × l | ij.1 < ij.2}, (F ij + F ij.swap) := by
+/-- **A product over all ordered pairs, folded onto the increasing ones.** A function equal to one
+on the diagonal multiplies over `l × l` to the product over the increasing pairs of its value times
+its value at the transposed pair. -/
+@[to_additive sum_univ_prod_eq_sum_lt_add_swap
+  /-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on
+  the diagonal sums over `l × l` to the sum over the increasing pairs of its value together with
+  its value at the transposed pair. -/]
+theorem prod_univ_prod_eq_prod_lt_mul_swap {l : Type*} [Fintype l] [LinearOrder l] {M : Type*}
+    [CommMonoid M] (F : l × l → M) (hdiag : ∀ a, F (a, a) = 1) :
+    ∏ ij : l × l, F ij =
+      ∏ ij ∈ {ij : l × l | ij.1 < ij.2}, (F ij * F ij.swap) := by
   classical
-  have hswap : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
-      ∑ ij ∈ {ij : l × l | ij.1 < ij.2}, F ij.swap :=
-    Finset.sum_nbij' (i := Prod.swap) (j := Prod.swap) (by simp) (by simp) (by simp) (by simp)
+  have hswap : ∏ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
+      ∏ ij ∈ {ij : l × l | ij.1 < ij.2}, F ij.swap :=
+    Finset.prod_nbij' (i := Prod.swap) (j := Prod.swap) (by simp) (by simp) (by simp) (by simp)
       (by simp)
-  have hnot : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
-      ∑ ij ∈ {ij : l × l | ¬ ij.1 < ij.2}, F ij := by
-    refine sum_subset (fun ij ↦ by simpa using le_of_lt) ?_
+  have hnot : ∏ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
+      ∏ ij ∈ {ij : l × l | ¬ ij.1 < ij.2}, F ij := by
+    refine prod_subset (fun ij ↦ by simpa using le_of_lt) ?_
     rintro ⟨a, b⟩ h h'
     obtain rfl : a = b := by simp_all [le_antisymm_iff]
     exact hdiag a
-  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
-    ← hnot, hswap, Finset.sum_add_distrib]
+  rw [← Finset.prod_filter_mul_prod_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
+    ← hnot, hswap, Finset.prod_mul_distrib]
 
 /-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
 theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]

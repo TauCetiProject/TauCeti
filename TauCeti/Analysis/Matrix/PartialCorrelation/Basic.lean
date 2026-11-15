@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Algebra.Order.Star.Real
+import TauCeti.Algebra.BigOperators.Finset.Pairs
+import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.Algebra.Order.BigOperators.Sum.IioIci
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -94,6 +96,20 @@ theorem strictLowerTriangle.exists_index_ne_ne_of_ne {ij kl : strictLowerTriangl
     all_goals intro h'
     all_goals first | exact hp (Prod.ext h h') | omega
   · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
+
+/-- For a symmetric `p × p` matrix `M` with ones on the diagonal, any ordered-pair entry monomial
+folds onto `TauCeti.strictLowerTriangle p` with combined exponents `m ij.1 + m ij.1.swap`. -/
+theorem _root_.Matrix.IsSymm.prod_pow_apply_eq_prod_strictLowerTriangle {α : Type*} [CommMonoid α]
+    {M : Matrix (Fin p) (Fin p) α} (hM : M.IsSymm) (hdiag : ∀ i, M i i = 1)
+    (m : Fin p × Fin p → ℕ) :
+    (∏ ij : Fin p × Fin p, M ij.1 ij.2 ^ m ij) =
+      ∏ ij : strictLowerTriangle p, M ij.1.1 ij.1.2 ^ (m ij.1 + m ij.1.swap) := by
+  rw [prod_univ_prod_eq_prod_lt_mul_swap (fun ij ↦ M ij.1 ij.2 ^ m ij)
+    (fun i ↦ by rw [hdiag, one_pow]), Finset.prod_subtype (p := fun ij ↦ ij.1 < ij.2) _ (by simp)]
+  refine Fintype.prod_equiv (M := α) ((Equiv.prodComm (Fin p) (Fin p)).subtypeEquiv
+    (p := fun ij ↦ ij.1 < ij.2) (q := fun ij ↦ ij.2 < ij.1)
+    (fun _ ↦ by rw [Equiv.prodComm_apply]; rfl)) _ _ fun ij ↦ ?_
+  simp [hM.apply ij.1.1 ij.1.2, ← pow_add, add_comm (m ij.1.swap)]
 
 private def partialCorrelationRow (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
   if h : j < i then z ⟨(i, j), h⟩ else 0
@@ -207,6 +223,16 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
   intro k _ hk
   simp only [Finset.mem_Iic, not_le] at hk
   rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
+
+/-- An entry of `partialCorrelationGram z` is the sum of triangular column products up to
+`min i j`. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic (min i j),
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def]
+  exact (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic i j
 
 /-- The first column of the Gram matrix consists of the first-column partial correlations. -/
 theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)

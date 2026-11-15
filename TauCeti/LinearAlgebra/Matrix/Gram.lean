@@ -42,8 +42,10 @@ and quadratic forms attached to a symmetric matrix, the basic facts about the Gr
   of `A`.
 * `Matrix.det_mul_transpose_ne_zero_iff`: over a linearly ordered commutative ring, the Gram
   determinant `det (A * Aᵀ)` is nonzero exactly when the rows of `A` are linearly independent.
-* `Matrix.prod_pow_mul_transpose_apply_of_support` and `Matrix.prod_pow_mul_transpose_apply`:
-  multinomial expansion of an entrywise monomial in `A * Aᵀ` into monomials in `A`.
+* `Matrix.prod_mul_pow_eq_prod_pow_gramMonomialExponent`,
+  `Matrix.prod_pow_mul_transpose_apply_of_support`, and `Matrix.prod_pow_mul_transpose_apply`:
+  regrouping column-pair products by `TauCeti.gramMonomialExponent` and expanding an entrywise
+  monomial in `A * Aᵀ` into monomials in `A`.
 * `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic` and
   `Matrix.IsLowerTriangular.prod_pow_mul_transpose_apply`: for a lower-triangular matrix `A`, each
   entry `(A * Aᵀ) i j` sums over `Finset.Iic (min i j)` and every resulting factor monomial is
@@ -106,66 +108,80 @@ theorem gramMonomialExponent_mk (c : m × m → k → ℕ) (i : m) (r : k) :
 
 /-- The zero composition family yields zero factor exponents. -/
 @[simp]
-theorem gramMonomialExponent_zero (p : m × k) :
-    gramMonomialExponent (0 : m × m → k → ℕ) p = 0 := by
+theorem gramMonomialExponent_zero :
+    gramMonomialExponent (0 : m × m → k → ℕ) = 0 := by
+  ext p
   simp [gramMonomialExponent_def]
 
 /-- Factor exponents in a Gram monomial expansion are additive in the composition family. -/
 @[simp]
-theorem gramMonomialExponent_add (c₁ c₂ : m × m → k → ℕ) (p : m × k) :
-    gramMonomialExponent (c₁ + c₂) p =
-      gramMonomialExponent c₁ p + gramMonomialExponent c₂ p := by
+theorem gramMonomialExponent_add (c₁ c₂ : m × m → k → ℕ) :
+    gramMonomialExponent (c₁ + c₂) =
+      gramMonomialExponent c₁ + gramMonomialExponent c₂ := by
+  ext p
   simp only [gramMonomialExponent_def, Pi.add_apply, Finset.sum_add_distrib]
   omega
 
+/-- Factor exponents in a Gram monomial expansion commute with natural scalar multiplication. -/
+theorem gramMonomialExponent_nsmul (n : ℕ) (c : m × m → k → ℕ) :
+    gramMonomialExponent (n • c) = n • gramMonomialExponent c := by
+  ext p
+  simp [gramMonomialExponent_def, Finset.mul_sum, mul_add]
+
+/-- Factor exponents in a Gram monomial expansion commute with multiplication by a cast natural
+number (the `simp` normal form of `n • c`). -/
+@[simp]
+theorem gramMonomialExponent_natCast_mul (n : ℕ) (c : m × m → k → ℕ) :
+    gramMonomialExponent ((n : m × m → k → ℕ) * c) =
+      (n : m × k → ℕ) * gramMonomialExponent c := by
+  simpa only [nsmul_eq_mul] using gramMonomialExponent_nsmul n c
+
 /-- Factor exponents commute with finite sums of composition families. -/
 @[simp]
-theorem gramMonomialExponent_sum {ι : Type*} (s : Finset ι) (c : ι → m × m → k → ℕ)
-    (p : m × k) :
-    gramMonomialExponent (∑ x ∈ s, c x) p = ∑ x ∈ s, gramMonomialExponent (c x) p := by
+theorem gramMonomialExponent_sum {ι : Type*} (s : Finset ι) (c : ι → m × m → k → ℕ) :
+    gramMonomialExponent (∑ x ∈ s, c x) = ∑ x ∈ s, gramMonomialExponent (c x) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
   | @insert x s hxs ih => simp [hxs, ih]
+
+/-- Pointwise evaluation of `TauCeti.gramMonomialExponent` on a finite sum of composition
+families. -/
+theorem gramMonomialExponent_sum_apply {ι : Type*} (s : Finset ι) (c : ι → m × m → k → ℕ)
+    (p : m × k) :
+    gramMonomialExponent (∑ x ∈ s, c x) p = ∑ x ∈ s, gramMonomialExponent (c x) p := by
+  rw [gramMonomialExponent_sum, Finset.sum_apply]
 
 /-- The factor exponents contributed by a composition supported at a single matrix position `q`. -/
 @[simp]
 theorem gramMonomialExponent_single [DecidableEq m] (q : m × m) (f : k → ℕ) (p : m × k) :
     gramMonomialExponent (Pi.single q f) p =
       (if p.1 = q.1 then f p.2 else 0) + (if p.1 = q.2 then f p.2 else 0) := by
-  rw [gramMonomialExponent_def]
-  congr 1
-  · by_cases h1 : p.1 = q.1
-    · rw [ite_eq_left h1, Fintype.sum_eq_single q.2]
-      · have hq : (p.1, q.2) = q := Prod.ext h1 rfl
-        simp [hq]
-      · intro j hj
-        have hne : (p.1, j) ≠ q := fun h ↦ hj (congrArg Prod.snd h)
-        simp [Pi.single_eq_of_ne hne]
-    · rw [ite_eq_right h1]
-      apply Finset.sum_eq_zero
-      intro j _
-      have hne : (p.1, j) ≠ q := fun h ↦ h1 (congrArg Prod.fst h)
-      simp [Pi.single_eq_of_ne hne]
-  · by_cases h2 : p.1 = q.2
-    · rw [ite_eq_left h2, Fintype.sum_eq_single q.1]
-      · have hq : (q.1, p.1) = q := Prod.ext rfl h2
-        simp [hq]
-      · intro i hi
-        have hne : (i, p.1) ≠ q := fun h ↦ hi (congrArg Prod.fst h)
-        simp [Pi.single_eq_of_ne hne]
-    · rw [ite_eq_right h2]
-      apply Finset.sum_eq_zero
-      intro i _
-      have hne : (i, p.1) ≠ q := fun h ↦ h2 (congrArg Prod.snd h)
-      simp [Pi.single_eq_of_ne hne]
+  simp [gramMonomialExponent_def, Pi.single_apply, ite_apply, Prod.ext_iff, ite_and]
 
 /-- Swapping the two row indices of a composition family preserves the resulting factor
 exponents. -/
-theorem gramMonomialExponent_swap (c : m × m → k → ℕ) (p : m × k) :
-    gramMonomialExponent (fun q ↦ c q.swap) p = gramMonomialExponent c p := by
+@[simp]
+theorem gramMonomialExponent_swap (c : m × m → k → ℕ) :
+    gramMonomialExponent (fun q ↦ c q.swap) = gramMonomialExponent c := by
+  ext p
   simp only [gramMonomialExponent_def, Prod.swap_prod_mk]
   exact Nat.add_comm _ _
+
+/-- The factor exponent `gramMonomialExponent c p` vanishes if and only if every composition entry
+in column `p.2` involving row `p.1` vanishes. -/
+@[simp]
+theorem gramMonomialExponent_apply_eq_zero_iff (c : m × m → k → ℕ) (p : m × k) :
+    gramMonomialExponent c p = 0 ↔ (∀ j, c (p.1, j) p.2 = 0) ∧ ∀ i, c (i, p.1) p.2 = 0 := by
+  simp [gramMonomialExponent_def]
+
+/-- The factor exponent family `gramMonomialExponent c` vanishes if and only if `c = 0`. -/
+@[simp]
+theorem gramMonomialExponent_eq_zero_iff (c : m × m → k → ℕ) :
+    gramMonomialExponent c = 0 ↔ c = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  ext q r
+  exact ((gramMonomialExponent_apply_eq_zero_iff c (q.1, r)).1 (congrFun h (q.1, r))).1 q.2
 
 /-- Summing `gramMonomialExponent c` over all factor entries yields twice the total weight of `c`,
 reflecting that every entry of `A * Aᵀ` is quadratic in `A`. -/
@@ -204,31 +220,9 @@ end TauCeti
 
 namespace Matrix
 
-section Rectangular
-
-variable {m n R : Type*} [Fintype m] [DecidableEq m] [Fintype n]
-
-/-- The Gram determinant of the rows of `B * A` is `det B ^ 2` times that of `A`. -/
-theorem det_mul_transpose_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R) :
-    (B * A * (B * A)ᵀ).det = B.det ^ 2 * (A * Aᵀ).det := by
-  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
-  ring
-
-/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of
-`A` is nonzero exactly when the rows are linearly independent. -/
-theorem det_mul_transpose_ne_zero_iff [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-    {A : Matrix m n R} : (A * Aᵀ).det ≠ 0 ↔ LinearIndependent R A.row := by
-  have key (v : m → R) : v ᵥ* (A * Aᵀ) = 0 ↔ v ᵥ* A = 0 := by
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [← vecMul_vecMul, h, zero_vecMul]⟩
-    have := congr($h ⬝ᵥ v)
-    rw [← vecMul_vecMul, ← dotProduct_mulVec, mulVec_transpose] at this
-    simpa using this
-  rw [← vecMul_injective_iff, Ne, ← exists_vecMul_eq_zero_iff, ← coe_vecMulLinear,
-    injective_iff_map_eq_zero]
-  simp only [key, vecMulLinear_apply]
-  grind
-
-private theorem prod_mul_pow_eq_prod_pow_gramMonomialExponent {m k R : Type*}
+/-- Regrouping a product of powers of column-pair products `(A q.1 r * A q.2 r) ^ c q r` collects
+the exponent `TauCeti.gramMonomialExponent c p` on each matrix entry `A p.1 p.2`. -/
+theorem prod_mul_pow_eq_prod_pow_gramMonomialExponent {m k R : Type*}
     [Fintype m] [Fintype k] [CommMonoid R] (A : Matrix m k R) (c : m × m → k → ℕ) :
     (∏ q : m × m, ∏ r : k, (A q.1 r * A q.2 r) ^ c q r) =
       ∏ p : m × k, A p.1 p.2 ^ TauCeti.gramMonomialExponent c p := by
@@ -253,6 +247,30 @@ private theorem prod_mul_pow_eq_prod_pow_gramMonomialExponent {m k R : Type*}
     exact Finset.prod_pow_eq_pow_sum _ _ _
   rw [hleft, hright, ← Finset.prod_mul_distrib]
   exact Finset.prod_congr rfl fun p _ ↦ (pow_add (A p.1 p.2) _ _).symm
+
+section Rectangular
+
+variable {m n R : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+
+/-- The Gram determinant of the rows of `B * A` is `det B ^ 2` times that of `A`. -/
+theorem det_mul_transpose_mul_left [CommRing R] (B : Matrix m m R) (A : Matrix m n R) :
+    (B * A * (B * A)ᵀ).det = B.det ^ 2 * (A * Aᵀ).det := by
+  rw [transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc A, det_mul, det_mul, det_transpose]
+  ring
+
+/-- Over a linearly ordered commutative ring, the Gram determinant `det (A * Aᵀ)` of the rows of
+`A` is nonzero exactly when the rows are linearly independent. -/
+theorem det_mul_transpose_ne_zero_iff [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+    {A : Matrix m n R} : (A * Aᵀ).det ≠ 0 ↔ LinearIndependent R A.row := by
+  have key (v : m → R) : v ᵥ* (A * Aᵀ) = 0 ↔ v ᵥ* A = 0 := by
+    refine ⟨fun h ↦ ?_, fun h ↦ by rw [← vecMul_vecMul, h, zero_vecMul]⟩
+    have := congr($h ⬝ᵥ v)
+    rw [← vecMul_vecMul, ← dotProduct_mulVec, mulVec_transpose] at this
+    simpa using this
+  rw [← vecMul_injective_iff, Ne, ← exists_vecMul_eq_zero_iff, ← coe_vecMulLinear,
+    injective_iff_map_eq_zero]
+  simp only [key, vecMulLinear_apply]
+  grind
 
 /-- **Multinomial expansion of a Gram entry monomial with restricted column supports.** If for
 every pair `q = (i, j)`, the column products `A i r * A j r` vanish outside `s q`, then
