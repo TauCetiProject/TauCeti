@@ -287,8 +287,7 @@ theorem exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero {r : ℕ∞} (hr : 1 �
   -- The primitive is the integral from a base point chosen in each path component.
   obtain ⟨b, hb, hbj⟩ := exists_pathComponent_representative (X := M)
   set f : M → F := fun y ↦ pathClassIntegral φ (.mk (hb y).somePath)
-  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
-    (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
+  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const (f := f) fun x ↦ ?_
   -- Near `x`, `f` differs by a constant from a local primitive `g` of `φ`.
   obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
   refine ⟨g, f x - g x, hg.contMDiffAt, ?_, hgU.mextDeriv_eq x hxU⟩

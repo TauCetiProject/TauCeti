@@ -414,19 +414,13 @@ noncomputable def skewZigzagQuotientGaugeEquiv (c c' : SkewZigzagParameter k G)
   AlgEquiv.ofAlgHom (skewZigzagQuotientRescaleHom k G c c' u hc)
     (skewZigzagQuotientRescaleHom k G c' c (fun _ _ e => (u e)⁻¹) (by rw [hc, gauge_gauge_inv]))
     (Ideal.Quotient.algHom_ext k (AlgHom.ext fun x => by
-      have hux : rescale (fun _ _ e => ((u e : kˣ) : k))
-          (rescale (fun _ _ e => (((u e)⁻¹ : kˣ) : k)) x) = x := by
-        exact rescale_rescale_of_mul_eq_one _ _ (fun _ _ e => by
-          rw [← Units.val_mul, mul_inv_cancel, Units.val_one]) x
       simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← skewZigzagMk_apply,
-        skewZigzagQuotientRescaleHom_skewZigzagMk, AlgHom.id_apply, hux]))
+        skewZigzagQuotientRescaleHom_skewZigzagMk, AlgHom.id_apply,
+        rescale_rescale_of_mul_eq_one _ _ (fun _ _ e => Units.mul_inv (u e)) x]))
     (Ideal.Quotient.algHom_ext k (AlgHom.ext fun x => by
-      have hux : rescale (fun _ _ e => (((u e)⁻¹ : kˣ) : k))
-          (rescale (fun _ _ e => ((u e : kˣ) : k)) x) = x := by
-        exact rescale_rescale_of_mul_eq_one _ _ (fun _ _ e => by
-          rw [← Units.val_mul, inv_mul_cancel, Units.val_one]) x
       simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← skewZigzagMk_apply,
-        skewZigzagQuotientRescaleHom_skewZigzagMk, AlgHom.id_apply, hux]))
+        skewZigzagQuotientRescaleHom_skewZigzagMk, AlgHom.id_apply,
+        rescale_rescale_of_mul_eq_one _ _ (fun _ _ e => Units.inv_mul (u e)) x]))
 
 /-- **The gauge isomorphism is the arrow rescaling**: on an arbitrary quotient representative it
 rescales and then takes the class in the gauged quotient. -/
