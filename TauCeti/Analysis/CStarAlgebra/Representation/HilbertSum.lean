@@ -72,8 +72,42 @@ theorem hilbertSum_apply_eq_mapCLM (π : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[�
 @[simp]
 theorem hilbertSum_apply_apply (π : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i)) (a : A) (x : lp H 2)
     (i : ι) :
-    hilbertSum π a x i = π i a (x i) :=
-  (rfl)
+    hilbertSum π a x i = π i a (x i) := by
+  simp [hilbertSum_apply_eq_mapCLM]
+
+/-- `hilbertSum` is injective as a map on families of representations. -/
+theorem hilbertSum_injective :
+    Function.Injective
+      (hilbertSum : (∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i)) → A →⋆ₙₐ[ℂ] (lp H 2 →L[ℂ] lp H 2)) := by
+  intro π₁ π₂ h
+  funext i
+  refine NonUnitalStarAlgHom.ext fun a => ?_
+  have ha : hilbertSum π₁ a = hilbertSum π₂ a := congr($h a)
+  rw [hilbertSum_apply_eq_mapCLM, hilbertSum_apply_eq_mapCLM, lp.mapCLM_inj] at ha
+  exact congrFun ha i
+
+/-- Two families of representations have the same Hilbert direct sum if and only if they are
+equal. -/
+@[simp]
+theorem hilbertSum_inj {π₁ π₂ : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i)} :
+    hilbertSum π₁ = hilbertSum π₂ ↔ π₁ = π₂ :=
+  hilbertSum_injective.eq_iff
+
+/-- The Hilbert direct sum of zero representations is the zero representation. -/
+@[simp]
+theorem hilbertSum_zero :
+    hilbertSum (fun _ => 0 : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i)) = 0 := by
+  ext a x i
+  simp
+
+/-- Precomposing a Hilbert direct sum with a `⋆`-homomorphism is the Hilbert direct sum of the
+precomposed summands. -/
+@[simp]
+theorem hilbertSum_comp {A' : Type*} [NonUnitalCStarAlgebra A']
+    (π : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i)) (f : A' →⋆ₙₐ[ℂ] A) :
+    (hilbertSum π).comp f = hilbertSum fun i => (π i).comp f := by
+  ext a x i
+  simp
 
 /-- Coordinate evaluation intertwines `hilbertSum π a` with `π i a`. -/
 @[simp]
@@ -142,7 +176,7 @@ C⋆-algebra `B`, acting coordinatewise on `lp H 2`. -/
 def hilbertSum (π : ∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] H i)) : B →⋆ₐ[ℂ] (lp H 2 →L[ℂ] lp H 2) :=
   ((NonUnitalStarAlgHom.isNondegenerate_hilbertSum_iff
     (fun i => (π i).toNonUnitalStarAlgHom)).2 fun i =>
-    NonUnitalStarAlgHom.isNondegenerate_of_map_one (map_one (π i))).toStarAlgHom
+    (π i).isNondegenerate_toNonUnitalStarAlgHom).toStarAlgHom
 
 /-- Forgetting the unit of `StarAlgHom.hilbertSum π` gives `NonUnitalStarAlgHom.hilbertSum`. -/
 @[simp]
@@ -164,6 +198,32 @@ theorem hilbertSum_apply_eq_mapCLM (π : ∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] 
 theorem hilbertSum_apply_apply (π : ∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] H i)) (b : B) (x : lp H 2) (i : ι) :
     hilbertSum π b x i = π i b (x i) := by
   simp [hilbertSum]
+
+/-- `StarAlgHom.hilbertSum` is injective as a map on families of unital representations. -/
+theorem hilbertSum_injective :
+    Function.Injective
+      (hilbertSum : (∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] H i)) → B →⋆ₐ[ℂ] (lp H 2 →L[ℂ] lp H 2)) := by
+  intro π₁ π₂ h
+  have h' : (fun i => (π₁ i).toNonUnitalStarAlgHom) = fun i => (π₂ i).toNonUnitalStarAlgHom := by
+    simpa using congrArg StarAlgHom.toNonUnitalStarAlgHom h
+  funext i
+  exact StarAlgHom.ext fun b => by simpa using congr($(congrFun h' i) b)
+
+/-- Two families of unital representations have the same Hilbert direct sum if and only if they
+are equal. -/
+@[simp]
+theorem hilbertSum_inj {π₁ π₂ : ∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] H i)} :
+    hilbertSum π₁ = hilbertSum π₂ ↔ π₁ = π₂ :=
+  hilbertSum_injective.eq_iff
+
+/-- Precomposing a unital Hilbert direct sum with a unital `⋆`-homomorphism is the Hilbert direct
+sum of the precomposed summands. -/
+@[simp]
+theorem hilbertSum_comp {B' : Type*} [CStarAlgebra B']
+    (π : ∀ i, B →⋆ₐ[ℂ] (H i →L[ℂ] H i)) (f : B' →⋆ₐ[ℂ] B) :
+    (hilbertSum π).comp f = hilbertSum fun i => (π i).comp f := by
+  ext b x i
+  simp
 
 /-- Coordinate evaluation intertwines `StarAlgHom.hilbertSum π b` with `π i b`. -/
 @[simp]
@@ -205,3 +265,22 @@ theorem hilbertSum_injective_of_injective (π : ∀ i, B →⋆ₐ[ℂ] (H i →
   (hilbertSum_injective_iff π).2 fun _ h => hi (by rw [h i, map_zero])
 
 end StarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {A ι : Type*} {H : ι → Type*} [NonUnitalCStarAlgebra A]
+  [∀ i, NormedAddCommGroup (H i)] [∀ i, InnerProductSpace ℂ (H i)] [∀ i, CompleteSpace (H i)]
+
+/-- The multiplier extension of a nondegenerate Hilbert direct sum is the unital Hilbert direct
+sum of the summand multiplier extensions. -/
+@[simp]
+theorem multiplierExtension_hilbertSum (π : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i))
+    (h : (hilbertSum π).IsNondegenerate) :
+    (hilbertSum π).multiplierExtension h =
+      StarAlgHom.hilbertSum fun i =>
+        (π i).multiplierExtension ((isNondegenerate_hilbertSum_iff π).1 h i) := by
+  refine StarAlgHom.ext fun m => ((eq_multiplierExtension_iff h).2 fun a => ?_).symm
+  ext x i
+  simp
+
+end NonUnitalStarAlgHom

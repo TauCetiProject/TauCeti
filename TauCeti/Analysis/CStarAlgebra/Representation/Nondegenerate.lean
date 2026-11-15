@@ -133,6 +133,28 @@ theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlg
     hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ :=
   (rfl)
 
+/-- Two nondegenerate representations of a unital C⋆-algebra promote to the same unital
+`StarAlgHom` if and only if they are equal. -/
+@[simp]
+theorem IsNondegenerate.toStarAlgHom_inj {B : Type*} [CStarAlgebra B]
+    {ρ₁ ρ₂ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (h₁ : ρ₁.IsNondegenerate) (h₂ : ρ₂.IsNondegenerate) :
+    h₁.toStarAlgHom = h₂.toStarAlgHom ↔ ρ₁ = ρ₂ :=
+  ⟨fun h => by simpa using congrArg StarAlgHom.toNonUnitalStarAlgHom h, by rintro rfl; rfl⟩
+
+/-- Every unital `⋆`-representation of a unital C⋆-algebra is nondegenerate when viewed as a
+nonunital representation. -/
+@[simp]
+theorem _root_.StarAlgHom.isNondegenerate_toNonUnitalStarAlgHom {B : Type*} [CStarAlgebra B]
+    (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) : π.toNonUnitalStarAlgHom.IsNondegenerate :=
+  isNondegenerate_of_map_one (by simp)
+
+/-- Promoting a unital `⋆`-representation forgotten to `NonUnitalStarAlgHom` recovers it. -/
+@[simp]
+theorem _root_.StarAlgHom.toStarAlgHom_toNonUnitalStarAlgHom {B : Type*} [CStarAlgebra B]
+    (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) (h : π.toNonUnitalStarAlgHom.IsNondegenerate) :
+    h.toStarAlgHom = π :=
+  StarAlgHom.ext fun _ => by simp
+
 /-- For a nondegenerate representation, the vectors `π (m * e) ξ` converge along any eventually
 norm-bounded net `e` with `e * a → a`, and the limit is a bounded operator `T` with
 `T * π a = π (m * a)`. -/

@@ -97,24 +97,32 @@ theorem toLinearMap_toPositiveLinearMap (φ : WeakDual ℂ A) (hφ : ∀ a, 0 �
 /-- Bundling `φ.toPositiveLinearMap hφ` as a continuous positive functional recovers
 `toStrongDual φ`. -/
 @[simp]
-theorem coe_ofClass_toPositiveLinearMap (φ : WeakDual ℂ A) (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) :
+theorem toContinuousLinearMap_ofClass_toPositiveLinearMap (φ : WeakDual ℂ A)
+    (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) :
     (PositiveContinuousLinearMap.ofClass (φ.toPositiveLinearMap hφ) : A →L[ℂ] ℂ) =
       toStrongDual φ := by
-  -- `PositiveLinearMap.mk₀` has no bundled equality lemma; both evaluate as `φ` by definition.
-  ext
-  rfl
+  ext a
+  simp
+
+/-- Two positive functionals define the same `PositiveLinearMap` if and only if they are equal. -/
+@[simp]
+theorem toPositiveLinearMap_inj {φ ψ : WeakDual ℂ A}
+    {hφ : ∀ a, 0 ≤ a → 0 ≤ φ a} {hψ : ∀ a, 0 ≤ a → 0 ≤ ψ a} :
+    φ.toPositiveLinearMap hφ = ψ.toPositiveLinearMap hψ ↔ φ = ψ :=
+  ⟨fun h => DFunLike.ext _ _ fun a => by simpa using DFunLike.congr_fun h a,
+    fun h => by subst h; rfl⟩
 
 /-- A functional on a C⋆-algebra that is nonnegative on nonnegative elements commutes with
 `star`. -/
 theorem map_star_of_map_nonneg (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) (a : A) :
-    φ (star a) = star (φ a) :=
-  map_star (φ.toPositiveLinearMap hφ) a
+    φ (star a) = star (φ a) := by
+  simpa using map_star (φ.toPositiveLinearMap hφ) a
 
 /-- A functional on a C⋆-algebra that is nonnegative on nonnegative elements maps self-adjoint
 elements to self-adjoint (real) scalars. -/
 theorem isSelfAdjoint_apply_of_map_nonneg (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) {a : A}
-    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) :=
-  ha.map (φ.toPositiveLinearMap hφ)
+    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) := by
+  simpa using ha.map (φ.toPositiveLinearMap hφ)
 
 /-- Cauchy–Schwarz inequality for a positive functional in the weak-* dual:
 `‖φ a‖ ^ 2 ≤ ‖φ‖ * ‖φ (star a * a)‖`. -/

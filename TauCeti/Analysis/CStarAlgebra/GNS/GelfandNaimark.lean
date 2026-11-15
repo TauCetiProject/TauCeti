@@ -14,15 +14,15 @@ import TauCeti.Analysis.CStarAlgebra.State.Separation
 /-!
 # The universal GNS representation and the Gelfand–Naimark theorem
 
-Every C⋆-algebra `A`, possibly nonunital and nonseparable, admits an injective (hence isometric,
-with norm-closed range) nondegenerate `⋆`-representation by bounded operators on a complete complex
-Hilbert space in the same universe.
+Every C⋆-algebra `A`, possibly nonunital and nonseparable, admits an injective (hence isometric)
+nondegenerate `⋆`-representation by bounded operators on a complete complex Hilbert space in the
+same universe.
 
 When `A` carries its C⋆-order, `TauCeti.gnsUniversalRepresentation A` is the concrete universal
 representation of `A`: the Hilbert direct sum (`NonUnitalStarAlgHom.hilbertSum`) of the GNS
 representations `PositiveLinearMap.gnsNonUnitalStarAlgHom` over all states `φ : stateSpace A`.
-Combining `PositiveLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom` with state norm attainment
-(`TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero`), this representation is
+Combining `PositiveLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom` with state separation
+(`TauCeti.eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero`), this representation is
 injective (hence isometric) and nondegenerate; when `A` is trivial, its state space is empty and
 the Hilbert direct sum is the zero Hilbert space, on which the zero representation is injective and
 nondegenerate.
@@ -41,7 +41,7 @@ theorems:
 
 * I. M. Gelfand and M. A. Naimark, *On the imbedding of normed rings into the ring of operators in
   Hilbert space*, Mat. Sbornik 12 (1943), 197–213.
-* J. Peterson, *Notes on Operator Algebras*, Theorem 4.1.6 and Corollary 4.1.7, pp. 57–58.
+* J. Peterson, *Notes on von Neumann algebras* (2013), Theorem 4.1.6 and Corollary 4.1.7, pp. 57–58.
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Academic Press, 1990, Theorem 3.4.1.
 -/
 
@@ -61,7 +61,9 @@ section UniversalRepresentation
 variable (A : Type u) [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-- The **universal GNS representation** of a C⋆-algebra `A`: the Hilbert direct sum over all
-states `φ : stateSpace A` of their GNS representations `(StateSpace.toPositiveLinearMap φ).GNS`. -/
+states `φ : stateSpace A` of their GNS representations
+`(StateSpace.toPositiveLinearMap φ).gnsNonUnitalStarAlgHom` on
+`(StateSpace.toPositiveLinearMap φ).GNS`. -/
 def gnsUniversalRepresentation :
     A →⋆ₙₐ[ℂ]
       (lp (fun φ : stateSpace A => (StateSpace.toPositiveLinearMap φ).GNS) 2 →L[ℂ]
@@ -87,6 +89,16 @@ theorem gnsUniversalRepresentation_apply_apply (a : A)
       (StateSpace.toPositiveLinearMap φ).gnsNonUnitalStarAlgHom a (x φ) := by
   simp [gnsUniversalRepresentation]
 
+/-- Coordinate evaluation in state `φ` intertwines `gnsUniversalRepresentation A a` with the GNS
+representation of `φ`. -/
+@[simp]
+theorem evalCLM_comp_gnsUniversalRepresentation_apply (a : A) (φ : stateSpace A) :
+    lp.evalCLM ℂ (fun ψ : stateSpace A => (StateSpace.toPositiveLinearMap ψ).GNS) 2 φ ∘L
+        gnsUniversalRepresentation A a =
+      (StateSpace.toPositiveLinearMap φ).gnsNonUnitalStarAlgHom a ∘L
+        lp.evalCLM ℂ (fun ψ : stateSpace A => (StateSpace.toPositiveLinearMap ψ).GNS) 2 φ := by
+  simp [gnsUniversalRepresentation]
+
 /-- On a single-state coordinate vector `lp.single 2 φ v`, the universal GNS representation acts in
 coordinate `φ` by the GNS representation of `φ`. -/
 @[simp]
@@ -97,23 +109,38 @@ theorem gnsUniversalRepresentation_apply_single [DecidableEq (stateSpace A)] (a 
   simp [gnsUniversalRepresentation]
 
 /-- The universal GNS representation is nondegenerate, even when `A` has no unit or is zero. -/
+@[simp]
 theorem isNondegenerate_gnsUniversalRepresentation :
-    (gnsUniversalRepresentation A).IsNondegenerate :=
-  (NonUnitalStarAlgHom.isNondegenerate_hilbertSum_iff _).2 fun φ =>
-    (StateSpace.toPositiveLinearMap φ).isNondegenerate_gnsNonUnitalStarAlgHom
+    (gnsUniversalRepresentation A).IsNondegenerate := by
+  rw [gnsUniversalRepresentation_def, NonUnitalStarAlgHom.isNondegenerate_hilbertSum_iff]
+  exact fun φ => (StateSpace.toPositiveLinearMap φ).isNondegenerate_gnsNonUnitalStarAlgHom
 
 /-- **Faithfulness of the universal GNS representation.** The direct sum of the GNS
 representations of all states of `A` is injective. -/
 theorem gnsUniversalRepresentation_injective :
     Function.Injective (gnsUniversalRepresentation A) := by
-  refine (NonUnitalStarAlgHom.hilbertSum_injective_iff _).2 fun a ha =>
-    mul_star_self_eq_zero.1 <| eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero
-      fun φ hφ => ?_
+  rw [gnsUniversalRepresentation_def, NonUnitalStarAlgHom.hilbertSum_injective_iff]
+  intro a ha
+  refine mul_star_self_eq_zero.1 <| eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero
+    fun φ hφ => ?_
   let s : stateSpace A := ⟨φ, hφ⟩
   have hact : (StateSpace.toPositiveLinearMap s).toGNS (a * star a) = 0 := by
     simpa [PositiveLinearMap.toGNS_apply] using
       DFunLike.congr_fun (ha s) ((StateSpace.toPositiveLinearMap s).toGNS (star a))
   simpa using ((StateSpace.toPositiveLinearMap s).toGNS_eq_zero_iff (a * star a)).1 hact
+
+/-- Two elements have the same image under `gnsUniversalRepresentation A` if and only if they are
+equal. -/
+@[simp]
+theorem gnsUniversalRepresentation_inj {a b : A} :
+    gnsUniversalRepresentation A a = gnsUniversalRepresentation A b ↔ a = b :=
+  (gnsUniversalRepresentation_injective A).eq_iff
+
+/-- `gnsUniversalRepresentation A a = 0` if and only if `a = 0`. -/
+@[simp]
+theorem gnsUniversalRepresentation_apply_eq_zero_iff (a : A) :
+    gnsUniversalRepresentation A a = 0 ↔ a = 0 :=
+  map_eq_zero_iff _ (gnsUniversalRepresentation_injective A)
 
 /-- The universal GNS representation is an isometry. -/
 theorem isometry_gnsUniversalRepresentation : Isometry (gnsUniversalRepresentation A) :=
