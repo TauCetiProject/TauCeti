@@ -236,6 +236,13 @@ theorem _root_.Submodule.forall_integral_inner_clm_apply_eq_zero_iff {V : Type*}
   simpa using Λ.forall_integral_inner_clm_apply_eq_zero_iff_of_isOpen isOpen_univ
     hJ.continuousOn hη.continuousOn
 
+/-- For the real inner product `InnerProductSpace.complexToReal`, `Re ⟪i x, y⟫ = ⟪y, i x⟫_ℝ`. -/
+private theorem re_inner_I_smul_eq_real_inner_lsmul (x y : E) :
+    letI := InnerProductSpace.complexToReal (G := E)
+    re ⟪I • x, y⟫_ℂ = ⟪y, ContinuousLinearMap.lsmul ℝ ℂ I x⟫_ℝ := by
+  rw [ContinuousLinearMap.lsmul_apply, real_inner_eq_re_inner ℂ, ← RCLike.re_to_complex,
+    inner_re_symm]
+
 /-- **The dual boundary condition for `J = i`.** The boundary term `∫_ℝ Re ⟪i ξ, η⟫` vanishes
 for every smooth compactly supported `ξ` taking values in a real subspace `L` on `ℝ` exactly when
 `Re ⟪i v, η(s)⟫ = 0` for all `v ∈ L` and real `s`, that is, when `η` takes values on `ℝ` in the
@@ -246,10 +253,7 @@ theorem _root_.Submodule.forall_integral_re_inner_I_smul_eq_zero_iff (L : Submod
       ∫ s : ℝ, re ⟪I • ξ s, η s⟫_ℂ = 0) ↔
       ∀ s : ℝ, ∀ v ∈ L, re ⟪I • v, η s⟫_ℂ = 0 := by
   let := InnerProductSpace.complexToReal (G := E)
-  have h (x y : E) : re ⟪I • x, y⟫_ℂ = ⟪y, ContinuousLinearMap.lsmul ℝ ℂ I x⟫_ℝ := by
-    rw [ContinuousLinearMap.lsmul_apply, real_inner_eq_re_inner ℂ, ← RCLike.re_to_complex,
-      inner_re_symm]
-  simp_rw [h]
+  simp_rw [re_inner_I_smul_eq_real_inner_lsmul]
   exact L.forall_integral_inner_clm_apply_eq_zero_iff continuous_const hη
 
 /-- **The dual boundary condition for `F = ℝⁿ`.** On `ℂⁿ`, the boundary term `∫_ℝ Re ⟪i ξ, η⟫`
@@ -284,10 +288,7 @@ theorem integral_re_inner_I_smul_pos (hξ : Continuous ξ) (hξc : HasCompactSup
     (hs₀ : ξ s₀ ≠ 0) (hη : ∀ s : ℝ, η s = I • ξ s) :
     0 < ∫ s : ℝ, re ⟪I • ξ s, η s⟫_ℂ := by
   let := InnerProductSpace.complexToReal (G := E)
-  have h (x y : E) : re ⟪I • x, y⟫_ℂ = ⟪y, ContinuousLinearMap.lsmul ℝ ℂ I x⟫_ℝ := by
-    rw [ContinuousLinearMap.lsmul_apply, real_inner_eq_re_inner ℂ, ← RCLike.re_to_complex,
-      inner_re_symm]
-  simp_rw [h]
+  simp_rw [re_inner_I_smul_eq_real_inner_lsmul]
   exact integral_inner_clm_apply_pos (η := fun s : ℝ ↦ η s) continuous_const
     (hξ.comp continuous_ofReal)
     (hξc.comp_isClosedEmbedding Complex.isometry_ofReal.isClosedEmbedding)

@@ -239,15 +239,18 @@ theorem comp_self_eq_neg_one_and_not_forall_integral_inner_one_clm_apply_eq_zero
     J'.comp J' = -1 ∧ ¬ ∀ ξ : ℂ → ℂ, ContDiff ℝ ∞ ξ → HasCompactSupport ξ →
       (∀ s : ℝ, ξ s ∈ Submodule.span ℝ {(1 : ℂ)}) → ∫ s : ℝ, ⟪(1 : ℂ), J' (ξ s)⟫_ℝ = 0 := by
   intro J'
+  have hre (z : ℂ) : (J' z).re = z.re - z.im := by simp [J', sub_eq_add_neg]
+  have him (z : ℂ) : (J' z).im = 2 * z.re - z.im := by simp [J', sub_eq_add_neg, mul_comm]
   refine ⟨ContinuousLinearMap.ext fun z ↦ Complex.ext ?_ ?_, fun h ↦ ?_⟩
-  · simp [J']
+  · rw [ContinuousLinearMap.comp_apply, hre, hre, him, neg_apply, one_apply_eq_self, neg_re]
     ring
-  · simp [J']
+  · rw [ContinuousLinearMap.comp_apply, him, hre, him, neg_apply, one_apply_eq_self, neg_im]
     ring
   rw [Submodule.forall_integral_inner_clm_apply_eq_zero_iff (J := fun _ ↦ J') (η := fun _ ↦ 1) _
     continuous_const continuous_const] at h
-  have := h 0 1 (Submodule.mem_span_singleton_self 1)
-  simp [J', Complex.inner] at this
+  have h1 : ⟪(1 : ℂ), J' 1⟫_ℝ = 1 := by
+    rw [Complex.inner, (starRingEnd ℂ).map_one, mul_one, hre, one_re, one_im, sub_zero]
+  exact one_ne_zero (h1 ▸ h 0 1 (Submodule.mem_span_singleton_self 1))
 
 end TauCeti
 
