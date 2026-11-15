@@ -59,6 +59,12 @@ open PointedSSet
 
 /-! ### Pointed smash, cotensor, and mapping-space bifunctors -/
 
+-- The six bifunctors in this file carry `@[expose]` (matching `PointedSSet.simplicialTensor` and
+-- `PointedSSet.simplicialCotensor`) so that dependently typed morphisms, adjunctions, and
+-- `PullbackObjObj`/`PushoutObjObj` corners over them share carriers with `levelSmash`,
+-- `levelSmashRight`, `cotensor`, `mappingSpace`, `addBasepoint`, and `forgetBasepoint` in public
+-- signatures without `eqToHom` transports.
+
 /-- The bifunctor `(X, K) ↦ X ∧ K` smashing a symmetric spectrum levelwise with a pointed
 simplicial set. Fixing `X` recovers `levelSmash X`, and fixing `K` recovers `levelSmashRight K`. -/
 @[expose]
@@ -83,22 +89,22 @@ noncomputable def levelSmashBifunctor :
 @[simp]
 lemma levelSmashBifunctor_obj (X : SymmetricSpectrum) :
     levelSmashBifunctor.obj X = levelSmash X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma levelSmashBifunctor_flip_obj (K : PointedSSet.{0}) :
     levelSmashBifunctor.flip.obj K = levelSmashRight K :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma levelSmashBifunctor_map_app {X Y : SymmetricSpectrum} (f : X ⟶ Y) (K : PointedSSet.{0}) :
     (levelSmashBifunctor.map f).app K = (levelSmashRight K).map f :=
-  rfl
+  (rfl)
 
 lemma levelSmashBifunctor_flip_map_app {K L : PointedSSet.{0}} (g : K ⟶ L)
     (X : SymmetricSpectrum) :
     (levelSmashBifunctor.flip.map g).app X = (levelSmash X).map g :=
-  rfl
+  (rfl)
 
 /-- The point-set cotensor bifunctor `(K, E) ↦ E^K`, contravariant in the pointed simplicial set
 `K` and covariant in the symmetric spectrum `E`. -/
@@ -110,53 +116,33 @@ noncomputable def cotensorBifunctor :
 @[simp]
 lemma cotensorBifunctor_obj (K : PointedSSet.{0}ᵒᵖ) :
     cotensorBifunctor.obj K = cotensor K.unop :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma cotensorBifunctor_map_app {K L : PointedSSet.{0}ᵒᵖ} (g : K ⟶ L) (E : SymmetricSpectrum) :
     (cotensorBifunctor.map g).app E = (MonoidalClosed.pre ((free 0).map g.unop)).app E :=
-  rfl
+  (rfl)
 
 /-- The pointed mapping-space bifunctor `(X, Y) ↦ Map(X, Y)` of symmetric spectra, contravariant
 in the source spectrum `X` and covariant in the target spectrum `Y`. Fixing `X` recovers
 `mappingSpace X`, while a map `f : X ⟶ X'` acts by level-zero internal-hom precomposition. -/
 @[expose]
 noncomputable def mappingSpaceBifunctor :
-    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} where
-  obj X := mappingSpace X.unop
-  map {X X'} f :=
-    { app Y := (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y)
-      naturality {Y Y'} g := by
-        -- `mappingSpace X` unfolds to `ihom X ⋙ evaluation 0`.
-        change (evaluation 0).map ((ihom X.unop).map g) ≫
-            (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y') =
-          (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y) ≫
-            (evaluation 0).map ((ihom X'.unop).map g)
-        rw [← (evaluation 0).map_comp, ← (evaluation 0).map_comp,
-          (MonoidalClosed.pre f.unop).naturality g] }
-  map_id X := by
-    apply NatTrans.ext
-    funext Y
-    change (evaluation 0).map ((MonoidalClosed.pre (𝟙 X).unop).app Y) = 𝟙 _
-    simp
-  map_comp {X Y Z} f g := by
-    apply NatTrans.ext
-    funext W
-    change (evaluation 0).map ((MonoidalClosed.pre (f ≫ g).unop).app W) =
-      (evaluation 0).map ((MonoidalClosed.pre f.unop).app W) ≫
-        (evaluation 0).map ((MonoidalClosed.pre g.unop).app W)
-    simp [MonoidalClosed.pre_map]
+    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} :=
+  MonoidalClosed.internalHom ⋙
+    (Functor.whiskeringRight SymmetricSpectrum SymmetricSpectrum PointedSSet.{0}).obj
+      (evaluation 0)
 
 @[simp]
 lemma mappingSpaceBifunctor_obj (X : SymmetricSpectrumᵒᵖ) :
     mappingSpaceBifunctor.obj X = mappingSpace X.unop :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma mappingSpaceBifunctor_map_app {X X' : SymmetricSpectrumᵒᵖ} (f : X ⟶ X')
     (Y : SymmetricSpectrum) :
     (mappingSpaceBifunctor.map f).app Y = (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y) :=
-  rfl
+  (rfl)
 
 /-- The parametrized adjunction `levelSmashBifunctor ⊣₂ mappingSpaceBifunctor`: spectrum maps
 `X ∧ K ⟶ Y` correspond naturally in all three variables to based maps `K ⟶ Map(X, Y)`. -/
@@ -187,7 +173,7 @@ noncomputable def levelSmashMappingSpaceAdjunction₂ :
 `levelSmashMappingSpaceAdjunction X`. -/
 @[simp]
 lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
-    dsimp% levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X :=
+    levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X :=
   (rfl)
 
 /-- The parametrized adjunction `levelSmashBifunctor.flip ⊣₂ cotensorBifunctor`: spectrum maps
@@ -218,7 +204,7 @@ noncomputable def levelSmashCotensorAdjunction₂ :
 `levelSmashCotensorAdjunction K`. -/
 @[simp]
 lemma levelSmashCotensorAdjunction₂_adj (K : PointedSSet.{0}) :
-    dsimp% levelSmashCotensorAdjunction₂.adj K = levelSmashCotensorAdjunction K :=
+    levelSmashCotensorAdjunction₂.adj K = levelSmashCotensorAdjunction K :=
   (rfl)
 
 /-! ### Unpointed simplicial tensor, cotensor, and mapping-space bifunctors -/
@@ -246,41 +232,41 @@ noncomputable def simplicialMappingSpace :
 @[simp]
 lemma simplicialTensor_obj (K : SSet.{0}) :
     simplicialTensor.obj K = levelSmashRight (addBasepoint.obj K) :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma simplicialTensor_map_app {K L : SSet.{0}} (g : K ⟶ L) (X : SymmetricSpectrum) :
     (simplicialTensor.map g).app X = (levelSmash X).map (addBasepoint.map g) :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma simplicialCotensor_obj (K : SSet.{0}ᵒᵖ) :
     simplicialCotensor.obj K = cotensor (addBasepoint.obj K.unop) :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma simplicialCotensor_map_app {K L : SSet.{0}ᵒᵖ} (g : K ⟶ L) (E : SymmetricSpectrum) :
     (simplicialCotensor.map g).app E =
       (MonoidalClosed.pre ((free 0).map (addBasepoint.map g.unop))).app E :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma simplicialMappingSpace_obj_obj (X : SymmetricSpectrumᵒᵖ) (Y : SymmetricSpectrum) :
     (simplicialMappingSpace.obj X).obj Y = ((mappingSpace X.unop).obj Y).right :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma simplicialMappingSpace_obj_map (X : SymmetricSpectrumᵒᵖ) {Y Y' : SymmetricSpectrum}
     (g : Y ⟶ Y') :
     (simplicialMappingSpace.obj X).map g = ((mappingSpace X.unop).map g).right :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma simplicialMappingSpace_map_app {X X' : SymmetricSpectrumᵒᵖ} (f : X ⟶ X')
     (Y : SymmetricSpectrum) :
     (simplicialMappingSpace.map f).app Y =
       ((evaluation 0).map ((MonoidalClosed.pre f.unop).app Y)).right :=
-  rfl
+  (rfl)
 
 /-- For each simplicial set `K`, tensoring a symmetric spectrum with `K` is left adjoint to
 cotensoring by `K`. -/
@@ -290,7 +276,7 @@ noncomputable def simplicialTensorCotensorAdjunction (K : SSet.{0}) :
 
 /-- `simplicialTensorCotensorAdjunction K` is the pointed cotensor adjunction on `K₊`. -/
 lemma simplicialTensorCotensorAdjunction_def (K : SSet.{0}) :
-    dsimp% simplicialTensorCotensorAdjunction K =
+    simplicialTensorCotensorAdjunction K =
       levelSmashCotensorAdjunction (addBasepoint.obj K) :=
   (rfl)
 
