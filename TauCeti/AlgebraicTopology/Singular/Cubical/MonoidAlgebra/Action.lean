@@ -274,6 +274,13 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
 
+/-- A space without points has no nonzero chains. -/
+instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) :=
+  subsingleton_of_forall_eq 0 fun m ↦ by
+    induction m using cubicalChainModule.induction_on with
+    | lof n c => rw [Subsingleton.elim c 0, map_zero]
+    | add m m' hm hm' => rw [hm, hm', add_zero]
+
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
 theorem cubicalChainModuleDesc_lof {N : Type*} [AddCommMonoid N] [Module R N]

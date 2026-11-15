@@ -22,9 +22,10 @@ DG local systems at `c`, natural in `M`,
 (`TauCeti.tensorPathChainConcat`). It is a quasi-isomorphism as soon as `a` and `b` are joined by
 a Moore path (`TauCeti.isQuasiIso_tensorPathChainConcat`): the composite of two changes of
 basepoint is the change along the composite. For `c = a` the target is `M ⊗ C_*(P_{a→a} B)`,
-which is chain homotopy equivalent to `M` over the ground ring
-(`TauCeti.tensorPathChainPoint_tensorPathChainAct`), so the change of basepoint along the paths
-from `b` back to `a` undoes, up to quasi-isomorphism, the change along the paths from `a` to `b`.
+which is a homotopy retract of `M` over the ground ring
+(`TauCeti.tensorPathChainPoint_tensorPathChainAct`). Showing that the paths from `b` back to `a`
+undo the change of basepoint along the paths from `a` to `b` still needs a quasi-isomorphism
+`M ⊗ C_*(P_{a→a} B) ⟶ M` of DG local systems at `a`, which this file does not construct.
 
 Fix Moore paths `δ` from `a` to `b` and `δ'` from `b` to `c`. Both sides are homotopy retracts of
 `M` through the maps `m ⊗ x ↦ m · ρ(x)` appending the reversal of a path: the source through `δ'`
@@ -91,13 +92,7 @@ theorem pathChainToLoopChain_trans_pathChainConcat (δ : MoorePathBetween B a b)
             (NormalizedCubicalChain.crossProduct _ _ R p q σ τ) := by
         rw [NormalizedCubicalChain.map_crossProduct, NormalizedCubicalChain.map_id,
           LinearMap.id_apply]
-      rw [h, ← LinearMap.comp_apply
-          (NormalizedCubicalChain.map R (δ.trans δ').loopAppendHomotopyEquiv.symm.toFun (p + q)),
-        ← NormalizedCubicalChain.map_comp, ← LinearMap.comp_apply
-          (NormalizedCubicalChain.map R (actMap (MoorePathBetween B a b) (MooreLoopSpace B b)) _),
-        ← NormalizedCubicalChain.map_comp, ← LinearMap.comp_apply
-          (NormalizedCubicalChain.map R δ.loopAppendHomotopyEquiv.symm.toFun (p + q)),
-        ← NormalizedCubicalChain.map_comp]
+      simp only [h, NormalizedCubicalChain.map_map]
       refine congrArg (fun F ↦ cubicalChainLof (MooreLoopSpace B a) R (p + q)
         (NormalizedCubicalChain.map R F (p + q) _)) (ContinuousMap.ext fun ⟨x, y⟩ ↦ ?_)
       exact MooreLoopSpace.ext (by simp [MoorePath.trans_assoc])
@@ -220,9 +215,7 @@ theorem isQuasiIso_tensorPathChainConcat
   · -- Without Moore paths from `b` to `c` there are none from `a` to `c` either, so both sides
     -- vanish.
     have : IsEmpty (MoorePathBetween B a c) := ⟨fun γ ↦ isEmptyElim (δ.symm.trans γ)⟩
-    rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
-    exact fun x y _ _ ↦ ⟨0, 0, by rw [map_zero, eq_zero_of_isEmpty_moorePathBetween x],
-      by rw [map_zero, map_zero, add_zero, eq_zero_of_isEmpty_moorePathBetween y]⟩
+    exact DGRightModuleHom.isQuasiIso_of_subsingleton _
   · obtain ⟨δ'⟩ := hc
     -- Both sides are homotopy retracts of `M`: the source through `ρ_{δ'}` and then `ρ_δ`, the
     -- target through `ρ_{δ ⋆ δ'}`, and the composite of changes commutes with these retractions.
