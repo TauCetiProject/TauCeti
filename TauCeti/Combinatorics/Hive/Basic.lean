@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Lattice
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 import Mathlib.Algebra.Order.Ring.Int
@@ -49,14 +50,15 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 * `TauCeti.Hive.barycentricLinear`, `TauCeti.Hive.affine`, `TauCeti.Hive.subtriangle`,
   `TauCeti.Hive.pointedCone`: affine gauge maps, affine hives, subtriangles, and the hive cone.
 * `TauCeti.Hive.boundaryLinear`, `TauCeti.Hive.boundary`, `TauCeti.Hive.boundaryWeight`,
-  `TauCeti.Hive.productBoundary`: clockwise boundary maps.
+  `TauCeti.Hive.productBoundary`, `TauCeti.Hive.cyclicBoundary`: clockwise boundary maps.
 * `TauCeti.Hive.rotate`, `TauCeti.Hive.reflect`: dihedral symmetries of normalized hives.
 * `TauCeti.Hive.counterexampleSeven`, `TauCeti.Hive.exampleTwo`, `TauCeti.Hive.detTwo`: explicit
   rank-`7` and rank-`2` hives.
 
 ## Main results
 
-* `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`.
+* `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`,
+  `TauCeti.Hive.isRhombusConcave_iff_productChart`.
 * `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
 * `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
@@ -263,6 +265,198 @@ theorem ofRhombusConcave_eq_iff {f₁ f₂ : Vertex n → R}
 end Ordered
 
 end Gauge
+
+section ProductChartConcavity
+
+private theorem long_diag_cases {dx dy dz : ℤ} (hsum : dx + dy + dz = 0)
+    (hsq : dx ^ 2 + dy ^ 2 + dz ^ 2 = 6) :
+    (dx = 2 ∧ dy = -1 ∧ dz = -1) ∨ (dx = -2 ∧ dy = 1 ∧ dz = 1) ∨
+      (dx = 1 ∧ dy = -2 ∧ dz = 1) ∨ (dx = -1 ∧ dy = 2 ∧ dz = -1) ∨
+      (dx = 1 ∧ dy = 1 ∧ dz = -2) ∨ (dx = -1 ∧ dy = -1 ∧ dz = 2) := by
+  have hbd {t : ℤ} (ht : t ^ 2 < 9) : -2 ≤ t ∧ t ≤ 2 :=
+    ⟨by by_contra h; have : t ≤ -3 := (by omega); nlinarith,
+      by by_contra h; have : 3 ≤ t := (by omega); nlinarith⟩
+  have hdx := hbd (by linarith [sq_nonneg dy, sq_nonneg dz] : dx ^ 2 < 9)
+  have hdy := hbd (by linarith [sq_nonneg dx, sq_nonneg dz] : dy ^ 2 < 9)
+  have hdz : dz = -dx - dy := by omega
+  subst hdz
+  rcases (by omega : dx = -2 ∨ dx = -1 ∨ dx = 0 ∨ dx = 1 ∨ dx = 2) with
+      rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega : dy = -2 ∨ dy = -1 ∨ dy = 0 ∨ dy = 1 ∨ dy = 2) with
+      rfl | rfl | rfl | rfl | rfl <;>
+    (revert hsq; decide)
+
+private theorem unit_step_split {u₁ u₂ u₃ : ℤ} (hsum : u₁ + u₂ + u₃ = 0)
+    (hsq₁ : u₁ ^ 2 + u₂ ^ 2 + u₃ ^ 2 = 2)
+    (hsq₂ : (2 - u₁) ^ 2 + (-1 - u₂) ^ 2 + (-1 - u₃) ^ 2 = 2) :
+    u₁ = 1 ∧ ((u₂ = 0 ∧ u₃ = -1) ∨ (u₂ = -1 ∧ u₃ = 0)) := by
+  have hu₁ : u₁ = 1 := by linarith
+  subst hu₁
+  have hu₂ : -1 ≤ u₂ ∧ u₂ ≤ 1 :=
+    ⟨by by_contra h; have : u₂ ≤ -2 := (by omega); nlinarith [sq_nonneg u₃],
+      by by_contra h; have : 2 ≤ u₂ := (by omega); nlinarith [sq_nonneg u₃]⟩
+  have hu₃ : u₃ = -1 - u₂ := by omega
+  subst hu₃
+  refine ⟨rfl, ?_⟩
+  rcases (by omega : u₂ = -1 ∨ u₂ = 0 ∨ u₂ = 1) with rfl | rfl | rfl <;> (revert hsq₁; decide)
+
+/-- Coordinate classification of a unit rhombus `(a, b, c, d)` whose long diagonal satisfies
+`(b.x, b.y, b.z) - (d.x, d.y, d.z) = (2, -1, -1)`. The other two long-diagonal orientations reduce
+to this one via `IsRhombus.rotate` and `IsRhombus.swap_opposite`. -/
+private theorem coords_of_isRhombus_dx_two {n : ℕ} {a b c d : Vertex n} (hr : IsRhombus a b c d)
+    (hdx : (b.x : ℤ) - d.x = 2) (hdy : (b.y : ℤ) - d.y = -1) (hdz : (b.z : ℤ) - d.z = -1) :
+    2 ≤ b.x ∧ d.x = b.x - 2 ∧ d.y = b.y + 1 ∧ d.z = b.z + 1 ∧ a.x = b.x - 1 ∧ c.x = b.x - 1 ∧
+      ((a.y = b.y + 1 ∧ a.z = b.z ∧ c.y = b.y ∧ c.z = b.z + 1) ∨
+        (a.y = b.y ∧ a.z = b.z + 1 ∧ c.y = b.y + 1 ∧ c.z = b.z)) := by
+  have ha_sum := a.sum_eq; have hc_sum := c.sum_eq; have hd_sum := d.sum_eq
+  have hmx := hr.midpoint_x; have hmy := hr.midpoint_y
+  have hab := hr.side_ab; rw [Vertex.sqDist_def] at hab
+  have hda := hr.side_da; rw [Vertex.sqDist_comm, Vertex.sqDist_def] at hda
+  rw [show (b.x : ℤ) = d.x + 2 by omega, show (b.y : ℤ) = d.y - 1 by omega,
+    show (b.z : ℤ) = d.z - 1 by omega] at hab
+  obtain ⟨_, ⟨_, _⟩ | ⟨_, _⟩⟩ := unit_step_split
+    (u₁ := (a.x : ℤ) - d.x) (u₂ := (a.y : ℤ) - d.y) (u₃ := (a.z : ℤ) - d.z)
+    (by omega) hda (by linear_combination hab)
+  · exact ⟨by omega, by omega, by omega, by omega, by omega, by omega,
+      Or.inl ⟨by omega, by omega, by omega, by omega⟩⟩
+  · exact ⟨by omega, by omega, by omega, by omega, by omega, by omega,
+      Or.inr ⟨by omega, by omega, by omega, by omega⟩⟩
+
+private theorem le_of_obtuse_pair {V R : Type*} [AddCommGroup R] [Preorder R] {f : V → R}
+    {a b c d p₀ p₁ q₀ q₁ : V} (hle : f q₀ + f q₁ ≤ f p₀ + f p₁) (hb : b = q₀) (hd : d = q₁)
+    (hac : (a = p₀ ∧ c = p₁) ∨ (a = p₁ ∧ c = p₀)) : f b + f d ≤ f a + f c := by
+  subst hb; subst hd
+  rcases hac with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact hle
+  · rwa [add_comm (f a)]
+
+/-- Orientation `(b - d) = (2, -1, -1)`: the rhombus belongs to the remaining chart family. -/
+private theorem le_of_isRhombus_dx_two {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
+    {f : Vertex n → R}
+    (hRem : ∀ ⦃i j : ℕ⦄ (hij : i ≤ j) (hjn : j + 2 ≤ n),
+      f (Vertex.productChart n i j hij (by omega)) +
+          f (Vertex.productChart n (i + 1) (j + 2) (by omega) hjn) ≤
+        f (Vertex.productChart n i (j + 1) (by omega) (by omega)) +
+          f (Vertex.productChart n (i + 1) (j + 1) (by omega) (by omega)))
+    {a b c d : Vertex n} (hr : IsRhombus a b c d)
+    (hdx : (b.x : ℤ) - d.x = 2) (hdy : (b.y : ℤ) - d.y = -1) (hdz : (b.z : ℤ) - d.z = -1) :
+    f b + f d ≤ f a + f c := by
+  have hb_sum := b.sum_eq
+  obtain ⟨_, hdx', _, hdz', hax, hcx, hsplit⟩ := coords_of_isRhombus_dx_two hr hdx hdy hdz
+  have hij : b.z ≤ n - b.x := by omega
+  have hjn : (n - b.x) + 2 ≤ n := by omega
+  refine le_of_obtuse_pair (hRem hij hjn)
+    (Vertex.eq_productChart_of_xz (by omega) rfl)
+    (Vertex.eq_productChart_of_xz (by omega) hdz') ?_
+  rcases hsplit with ⟨_, haz, _, hcz⟩ | ⟨_, haz, _, hcz⟩
+  · exact Or.inl ⟨Vertex.eq_productChart_of_xz (by omega) haz,
+      Vertex.eq_productChart_of_xz (by omega) hcz⟩
+  · exact Or.inr ⟨Vertex.eq_productChart_of_xz (by omega) haz,
+      Vertex.eq_productChart_of_xz (by omega) hcz⟩
+
+/-- Orientation `(b - d) = (1, -2, 1)`: rotated via `hr.swap_opposite.rotate.rotate` to `dx_two`
+and identified with the first Gelfand–Tsetlin interlacing rhombus family. -/
+private theorem le_of_isRhombus_dy_neg_two {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
+    {f : Vertex n → R}
+    (hL : ∀ ⦃i j : ℕ⦄ (hij : i < j) (hjn : j < n),
+      f (Vertex.productChart n (i + 1) j hij hjn.le) +
+          f (Vertex.productChart n i (j + 1) (by omega) hjn) ≤
+        f (Vertex.productChart n i j hij.le hjn.le) +
+          f (Vertex.productChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hjn))
+    {a b c d : Vertex n} (hr : IsRhombus a b c d)
+    (hdx : (b.x : ℤ) - d.x = 1) (hdy : (b.y : ℤ) - d.y = -2) (hdz : (b.z : ℤ) - d.z = 1) :
+    f b + f d ≤ f a + f c := by
+  have hd_sum := d.sum_eq
+  have hcoords := coords_of_isRhombus_dx_two hr.swap_opposite.rotate.rotate
+    (by simp only [Vertex.rotate_x, Vertex.rotate_z]; omega)
+    (by simp only [Vertex.rotate_x, Vertex.rotate_y]; omega)
+    (by simp only [Vertex.rotate_y, Vertex.rotate_z]; omega)
+  simp only [Vertex.rotate_x, Vertex.rotate_y, Vertex.rotate_z] at hcoords
+  obtain ⟨_, _, hbz, _, _, _, hsplit⟩ := hcoords
+  have hij : d.z < n - b.x := by omega
+  have hjn : n - b.x < n := by omega
+  refine le_of_obtuse_pair (hL hij hjn)
+    (Vertex.eq_productChart_of_xz (by omega) hbz)
+    (Vertex.eq_productChart_of_xz (by omega) rfl) ?_
+  rcases hsplit with ⟨hcz, hcx, haz, hax⟩ | ⟨hcz, hcx, haz, hax⟩
+  · exact Or.inl ⟨Vertex.eq_productChart_of_xz (by omega) haz,
+      Vertex.eq_productChart_of_xz (by omega) hcz⟩
+  · exact Or.inr ⟨Vertex.eq_productChart_of_xz (by omega) haz,
+      Vertex.eq_productChart_of_xz (by omega) hcz⟩
+
+/-- Orientation `(b - d) = (1, 1, -2)`: rotated via `hr.swap_opposite.rotate` to `dx_two` and
+identified with the second Gelfand–Tsetlin interlacing rhombus family. -/
+private theorem le_of_isRhombus_dz_neg_two {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
+    {f : Vertex n → R}
+    (hR : ∀ ⦃i j : ℕ⦄ (hij : i < j) (hjn : j < n),
+      f (Vertex.productChart n i j hij.le hjn.le) +
+          f (Vertex.productChart n (i + 2) (j + 1) (by omega) hjn) ≤
+        f (Vertex.productChart n (i + 1) j hij hjn.le) +
+          f (Vertex.productChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hjn))
+    {a b c d : Vertex n} (hr : IsRhombus a b c d)
+    (hdx : (b.x : ℤ) - d.x = 1) (hdy : (b.y : ℤ) - d.y = 1) (hdz : (b.z : ℤ) - d.z = -2) :
+    f b + f d ≤ f a + f c := by
+  have hb_sum := b.sum_eq
+  have hcoords := coords_of_isRhombus_dx_two hr.swap_opposite.rotate
+    (by simp only [Vertex.rotate_x]; omega)
+    (by simp only [Vertex.rotate_y]; omega)
+    (by simp only [Vertex.rotate_z]; omega)
+  simp only [Vertex.rotate_x, Vertex.rotate_y, Vertex.rotate_z] at hcoords
+  obtain ⟨_, hbz, _, _, hcz, haz, hsplit⟩ := hcoords
+  have hij : b.z < n - b.x := by omega
+  have hjn : n - b.x < n := by omega
+  refine le_of_obtuse_pair (hR hij hjn)
+    (Vertex.eq_productChart_of_xz (by omega) rfl)
+    (Vertex.eq_productChart_of_xz (by omega) (by omega)) ?_
+  rcases hsplit with ⟨hcx, _, hax, _⟩ | ⟨hcx, _, hax, _⟩
+  · exact Or.inr ⟨Vertex.eq_productChart_of_xz (by omega) (by omega),
+      Vertex.eq_productChart_of_xz (by omega) (by omega)⟩
+  · exact Or.inl ⟨Vertex.eq_productChart_of_xz (by omega) (by omega),
+      Vertex.eq_productChart_of_xz (by omega) (by omega)⟩
+
+/-- **Product-chart characterization of unit-rhombus concavity**: a function `f : Vertex n → R` is
+rhombus-concave iff it satisfies the two Gelfand–Tsetlin interlacing rhombus families for
+`0 ≤ i < j < n` and the remaining rhombus family for `0 ≤ i ≤ j`, `j + 2 ≤ n`. -/
+theorem isRhombusConcave_iff_productChart {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
+    (f : Vertex n → R) :
+    IsRhombusConcave f ↔
+      (∀ ⦃i j : ℕ⦄ (hij : i < j) (hjn : j < n),
+        f (Vertex.productChart n (i + 1) j hij hjn.le) +
+            f (Vertex.productChart n i (j + 1) (by omega) hjn) ≤
+          f (Vertex.productChart n i j hij.le hjn.le) +
+            f (Vertex.productChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hjn)) ∧
+      (∀ ⦃i j : ℕ⦄ (hij : i < j) (hjn : j < n),
+        f (Vertex.productChart n i j hij.le hjn.le) +
+            f (Vertex.productChart n (i + 2) (j + 1) (by omega) hjn) ≤
+          f (Vertex.productChart n (i + 1) j hij hjn.le) +
+            f (Vertex.productChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hjn)) ∧
+      (∀ ⦃i j : ℕ⦄ (hij : i ≤ j) (hjn : j + 2 ≤ n),
+        f (Vertex.productChart n i j hij (by omega)) +
+            f (Vertex.productChart n (i + 1) (j + 2) (by omega) hjn) ≤
+          f (Vertex.productChart n i (j + 1) (by omega) (by omega)) +
+            f (Vertex.productChart n (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega))) := by
+  rw [isRhombusConcave_def]
+  refine ⟨fun hf => ⟨fun i j hij hjn => hf (isRhombus_productChart_gt_left hij hjn),
+      fun i j hij hjn => hf (isRhombus_productChart_gt_right hij hjn),
+      fun i j hij hjn => hf (isRhombus_productChart_rem hij hjn)⟩,
+    fun ⟨hL, hR, hRem⟩ a b c d hr => ?_⟩
+  have hb_sum := b.sum_eq; have hd_sum := d.sum_eq
+  have hlong := hr.long; rw [Vertex.sqDist_def] at hlong
+  rcases long_diag_cases
+      (dx := (b.x : ℤ) - d.x) (dy := (b.y : ℤ) - d.y) (dz := (b.z : ℤ) - d.z)
+      (by omega) hlong with ⟨hx, hy, hz⟩ | ⟨hx, hy, _⟩ | ⟨hx, hy, hz⟩ |
+        ⟨hx, hy, _⟩ | ⟨hx, hy, hz⟩ | ⟨hx, hy, _⟩
+  · exact le_of_isRhombus_dx_two hRem hr hx hy hz
+  · rw [add_comm (f b), add_comm (f a)]
+    exact le_of_isRhombus_dx_two hRem hr.swap_opposite (by omega) (by omega) (by omega)
+  · exact le_of_isRhombus_dy_neg_two hL hr hx hy hz
+  · rw [add_comm (f b), add_comm (f a)]
+    exact le_of_isRhombus_dy_neg_two hL hr.swap_opposite (by omega) (by omega) (by omega)
+  · exact le_of_isRhombus_dz_neg_two hR hr hx hy hz
+  · rw [add_comm (f b), add_comm (f a)]
+    exact le_of_isRhombus_dz_neg_two hR hr.swap_opposite (by omega) (by omega) (by omega)
+
+end ProductChartConcavity
 
 /-! ### Monoid structure, nonnegative scaling, affine hives, and subtriangle restriction -/
 
@@ -695,6 +889,68 @@ theorem sum_productBoundary_eq_zero_iff (lam μ γ : DominantWeight n) :
       (∑ i, lam.1 i) + (∑ i, μ.1 i) = ∑ i, γ.1 i := by
   simp only [Fin.sum_univ_three, productBoundary_zero, productBoundary_one, productBoundary_two,
     DominantWeight.sum_dual]; omega
+
+/-- The clockwise cyclic boundary `(λ, μ, ν)` counting invariants in `V_λ ⊗ V_μ ⊗ V_ν`. -/
+def cyclicBoundary (lam μ ν : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.1, μ.1, ν.1]
+
+@[simp, grind =]
+theorem cyclicBoundary_zero (lam μ ν : DominantWeight n) : cyclicBoundary lam μ ν 0 = lam.1 := (rfl)
+
+@[simp, grind =]
+theorem cyclicBoundary_one (lam μ ν : DominantWeight n) : cyclicBoundary lam μ ν 1 = μ.1 := (rfl)
+
+@[simp, grind =]
+theorem cyclicBoundary_two (lam μ ν : DominantWeight n) : cyclicBoundary lam μ ν 2 = ν.1 := (rfl)
+
+/-- `cyclicBoundary lam μ ν` agrees with `productBoundary lam μ ν.dual`. -/
+theorem cyclicBoundary_eq_productBoundary_dual (lam μ ν : DominantWeight n) :
+    cyclicBoundary lam μ ν = productBoundary lam μ ν.dual := by
+  ext s i; fin_cases s <;> simp
+
+section ChartBoundary
+
+variable [AddCommGroup R] [PartialOrder R]
+
+theorem apply_productChart_zero_left (h : Hive n R) {j : ℕ} (hjn : j ≤ n) :
+    h (Vertex.productChart n 0 j (Nat.zero_le j) hjn) = prefixSum j (h.boundary 0) := by
+  rw [Vertex.productChart_zero_left, h.apply_edgePoint_zero, prefixSum_def]
+
+theorem apply_productChart_top_right (h : Hive n R) {i : ℕ} (hin : i ≤ n) :
+    h (Vertex.productChart n i n hin le_rfl) =
+      (∑ r : Fin n, h.boundary 0 r) + prefixSum i (h.boundary 1) := by
+  rw [Vertex.productChart_top_right, h.apply_edgePoint_one, prefixSum_def]
+
+theorem apply_productChart_diag (h : Hive n R) {j : ℕ} (hjn : j ≤ n) :
+    h (Vertex.productChart n j j le_rfl hjn) =
+      -∑ r : Fin n with n - j ≤ r.val, h.boundary 2 r := by
+  rw [Vertex.productChart_diag, h.apply_edgePoint_two]
+
+theorem apply_productChart_diag_eq_prefixSum_dual (h : IntegerHive n) {j : ℕ} (hjn : j ≤ n) :
+    h (Vertex.productChart n j j le_rfl hjn) = prefixSum j (h.boundaryWeight 2).dual.1 := by
+  rw [apply_productChart_diag h hjn]
+  have heq : (∑ r : Fin n with n - j ≤ r.val, h.boundary 2 r) =
+      -∑ r : Fin n with n - j ≤ r.val, (h.boundaryWeight 2).dual.1 r.rev := by
+    rw [← Finset.sum_neg_distrib]
+    exact Finset.sum_congr rfl fun r _ => by simp
+  rw [heq, neg_neg, sum_filter_rev_eq_prefixSum]
+
+theorem apply_productChart_zero_left_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hjn : j ≤ n) :
+    h (Vertex.productChart n 0 j (Nat.zero_le j) hjn) = prefixSum j lam.1 := by
+  rw [apply_productChart_zero_left, hb, productBoundary_zero]
+
+theorem apply_productChart_top_right_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {i : ℕ} (hin : i ≤ n) :
+    h (Vertex.productChart n i n hin le_rfl) = (∑ r, lam.1 r) + prefixSum i μ.1 := by
+  rw [apply_productChart_top_right, hb, productBoundary_zero, productBoundary_one]
+
+theorem apply_productChart_diag_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hjn : j ≤ n) :
+    h (Vertex.productChart n j j le_rfl hjn) = prefixSum j γ.1 := by
+  have hd : (h.boundaryWeight 2).dual = γ := by ext r; simp [coe_boundaryWeight, hb]
+  rw [apply_productChart_diag_eq_prefixSum_dual h hjn, hd]
+
+end ChartBoundary
 
 end Boundary
 

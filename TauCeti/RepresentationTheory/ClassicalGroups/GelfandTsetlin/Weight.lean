@@ -16,10 +16,12 @@ import Mathlib.Tactic.Ring
 /-!
 # Row sums and torus weights of Gelfand–Tsetlin patterns
 
-Along the chain `GL 1 ⊂ GL 2 ⊂ ⋯ ⊂ GL n`, the `r`-th diagonal factor of the torus of `GL n` is the
-quotient of the determinant of `GL (r + 1)` by the determinant of `GL r`. On a Gelfand–Tsetlin
-pattern `P : TauCeti.GTPattern n`, the `r`-th coordinate of its torus weight is therefore the
-increment `S_{r + 1} - S_r` between consecutive row sums `S_j = ∑_{i < j} P i j`, with `S_0 = 0`.
+Along the chain `GL 0 ⊂ GL 1 ⊂ ⋯ ⊂ GL n`, the `r`-th diagonal cocharacter
+`t ↦ diag(1, …, 1, t, 1, …, 1)` of the maximal torus of `GL n` is the ratio of the central scalar
+cocharacters of `GL (r + 1)` and `GL r` (in `𝔤𝔩ₙ`, `E_{r, r} = I_{r + 1} - I_r`). Because the
+central scalar cocharacter of `GL j` acts on the constituent indexed by row `j` with weight
+`S_j = ∑_{i < j} P i j` (with `S_0 = 0`), the `r`-th coordinate of the torus weight of a
+Gelfand–Tsetlin pattern `P : TauCeti.GTPattern n` is the increment `S_{r + 1} - S_r`.
 
 This file defines `TauCeti.GTPattern.rowSum` and `TauCeti.GTPattern.rowWeight` for arbitrary
 signed (rational) Gelfand–Tsetlin patterns and develops their algebraic, order-theoretic, and
@@ -63,7 +65,8 @@ tableau properties:
   `TauCeti.GTPattern.rowWeight_mem_Icc`.
 * `TauCeti.GTPattern.dominates_rowWeight_topRow`,
   `TauCeti.GTPattern.topWeight_dominates_of_rowWeight_eq`.
-* `TauCeti.GTPattern.card_topRow_and_rowWeight_succ`,
+* `TauCeti.GTPattern.rowWeight_eq_iff_truncate`,
+  `TauCeti.GTPattern.card_topRow_and_rowWeight_succ`,
   `TauCeti.GTPattern.nonempty_topRow_and_rowWeight_two_iff`,
   `TauCeti.GTPattern.card_topRow_and_rowWeight_two`,
   `TauCeti.GTPattern.card_topRow_and_rowWeight_three`.
@@ -98,12 +101,12 @@ theorem rowSum_def (P : GTPattern n) (j : ℕ) :
     P.rowSum j = ∑ i ∈ range j, P i j :=
   (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem rowSum_zero (P : GTPattern n) : P.rowSum 0 = 0 := by
   simp [rowSum_def]
 
 /-- Rows beyond `n` carry only zero entries, so their row sum vanishes. -/
-@[simp]
+@[simp, grind =]
 theorem rowSum_eq_zero_of_lt (P : GTPattern n) {j : ℕ} (hj : n < j) : P.rowSum j = 0 := by
   rw [rowSum_def]
   exact sum_eq_zero fun i _ => P.entry_eq_zero_of_lt hj
@@ -127,12 +130,13 @@ def rowWeight (P : GTPattern n) : Fin n → ℤ :=
   fun r => P.rowSum (r.val + 1) - P.rowSum r.val
 
 /-- Defining formula for `TauCeti.GTPattern.rowWeight`. -/
+@[grind =]
 theorem rowWeight_apply (P : GTPattern n) (r : Fin n) :
     P.rowWeight r = P.rowSum (r.val + 1) - P.rowSum r.val :=
   (rfl)
 
 /-- Leading partial sums of `P.rowWeight` telescope to `P.rowSum`. -/
-@[simp]
+@[simp, grind =]
 theorem prefixSum_rowWeight (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
     prefixSum j P.rowWeight = P.rowSum j := by
   induction j with
@@ -150,38 +154,31 @@ theorem sum_rowWeight (P : GTPattern n) :
 
 /-! ### Additivity, constant patterns, shifts, and truncation -/
 
-@[simp]
+@[simp, grind =]
 theorem rowSum_zero_pattern (j : ℕ) : (0 : GTPattern n).rowSum j = 0 := by
   simp [rowSum_def, zero_apply]
 
-@[simp]
+@[simp, grind =]
 theorem rowSum_add (P Q : GTPattern n) (j : ℕ) :
     (P + Q).rowSum j = P.rowSum j + Q.rowSum j := by
   simp [rowSum_def, add_apply, sum_add_distrib]
 
-@[simp]
+@[simp, grind =]
 theorem rowSum_nsmul (k : ℕ) (P : GTPattern n) (j : ℕ) :
     (k • P).rowSum j = k • P.rowSum j := by
   simp [rowSum_def, nsmul_apply, mul_sum]
 
-@[simp]
+@[simp, grind =]
 theorem rowWeight_zero : (0 : GTPattern n).rowWeight = 0 := by
   ext r
   simp [rowWeight_apply]
 
-@[simp]
+@[simp, grind =]
 theorem rowWeight_add (P Q : GTPattern n) :
     (P + Q).rowWeight = P.rowWeight + Q.rowWeight := by
   ext r
   simp only [rowWeight_apply, Pi.add_apply, rowSum_add]
   abel
-
-@[simp]
-theorem rowWeight_nsmul (k : ℕ) (P : GTPattern n) :
-    (k • P).rowWeight = k • P.rowWeight := by
-  ext r
-  simp only [rowWeight_apply, Pi.smul_apply, rowSum_nsmul, nsmul_eq_mul]
-  ring
 
 /-- `TauCeti.GTPattern.rowWeight` as an additive monoid homomorphism. -/
 def rowWeightAddMonoidHom (n : ℕ) : GTPattern n →+ (Fin n → ℤ) where
@@ -189,46 +186,50 @@ def rowWeightAddMonoidHom (n : ℕ) : GTPattern n →+ (Fin n → ℤ) where
   map_zero' := rowWeight_zero
   map_add' := rowWeight_add
 
-@[simp]
+@[simp, grind =]
 theorem rowWeightAddMonoidHom_apply (P : GTPattern n) :
     rowWeightAddMonoidHom n P = P.rowWeight :=
   (rfl)
 
+@[simp, grind =]
+theorem rowWeight_nsmul (k : ℕ) (P : GTPattern n) :
+    (k • P).rowWeight = k • P.rowWeight :=
+  map_nsmul (rowWeightAddMonoidHom n) k P
+
+@[simp, grind =]
 theorem rowSum_const (m : ℤ) {j : ℕ} (hj : j ≤ n) :
     (const n m).rowSum j = (j : ℤ) * m := by
   rw [rowSum_def, sum_congr rfl fun i hi => const_apply_of_lt_of_le m (mem_range.mp hi) hj,
     sum_const, card_range, nsmul_eq_mul]
 
-@[simp]
+@[simp, grind =]
 theorem rowWeight_const (m : ℤ) : (const n m).rowWeight = fun _ => m := by
   ext r
   rw [rowWeight_apply, rowSum_const m (by omega), rowSum_const m r.isLt.le,
     Nat.cast_add, Nat.cast_one]
   ring
 
+@[simp, grind =]
 theorem rowSum_shift (P : GTPattern n) (m : ℤ) {j : ℕ} (hj : j ≤ n) :
     (P.shift m).rowSum j = P.rowSum j + (j : ℤ) * m := by
-  rw [rowSum_def, rowSum_def,
-    sum_congr rfl fun i hi => P.shift_apply_of_lt_of_le m (mem_range.mp hi) hj,
-    sum_add_distrib, sum_const, card_range, nsmul_eq_mul]
+  rw [shift_eq_add_const, rowSum_add, rowSum_const m hj]
 
 /-- Shifting every informative entry of a pattern by `m` adds `m` to every coordinate of its torus
 weight. -/
-@[simp]
+@[simp, grind =]
 theorem rowWeight_shift (P : GTPattern n) (m : ℤ) :
     (P.shift m).rowWeight = fun r => P.rowWeight r + m := by
-  ext r
-  rw [rowWeight_apply, rowWeight_apply, P.rowSum_shift m (by omega),
-    P.rowSum_shift m r.isLt.le, Nat.cast_add, Nat.cast_one]
-  ring
+  rw [shift_eq_add_const, rowWeight_add, rowWeight_const]
+  rfl
 
+@[simp, grind =]
 theorem rowSum_truncate (P : GTPattern (n + 1)) {j : ℕ} (hj : j ≤ n) :
     P.truncate.rowSum j = P.rowSum j := by
   rw [rowSum_def, rowSum_def]
   exact sum_congr rfl fun i _ => by simp [hj]
 
 /-- Deleting the top row restricts `rowWeight` to the first `n` coordinates. -/
-@[simp]
+@[simp, grind =]
 theorem rowWeight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
     P.truncate.rowWeight r = P.rowWeight r.castSucc := by
   rw [rowWeight_apply, rowWeight_apply, Fin.val_castSucc,
@@ -236,18 +237,31 @@ theorem rowWeight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
 
 /-- The last weight coordinate of a pattern with `n + 1` rows is the difference between the sums of
 its top two rows. -/
+@[grind =]
 theorem rowWeight_last (P : GTPattern (n + 1)) :
     P.rowWeight (Fin.last n) = (∑ i, P.topRow i) - ∑ i, P.truncate.topRow i := by
   rw [rowWeight_apply, Fin.val_last, P.rowSum_top, ← P.rowSum_truncate le_rfl,
     P.truncate.rowSum_top]
 
-@[simp]
+@[simp, grind =]
+theorem rowSum_extend_of_ne (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow)
+    {j : ℕ} (hj : j ≠ n + 1) :
+    (Q.extend l h).rowSum j = Q.rowSum j := by
+  rw [rowSum_def, rowSum_def]
+  exact sum_congr rfl fun i _ => Q.extend_apply_of_ne l h hj
+
+@[simp, grind =]
+theorem rowSum_extend_top (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow) :
+    (Q.extend l h).rowSum (n + 1) = ∑ i, l i := by
+  rw [(Q.extend l h).rowSum_top, topRow_extend]
+
+@[simp, grind =]
 theorem rowWeight_extend_castSucc (Q : GTPattern n) (l : Fin (n + 1) → ℤ)
     (h : Interlaces l Q.topRow) (r : Fin n) :
     (Q.extend l h).rowWeight r.castSucc = Q.rowWeight r := by
   rw [← rowWeight_truncate, truncate_extend]
 
-@[simp]
+@[simp, grind =]
 theorem rowWeight_extend_last (Q : GTPattern n) (l : Fin (n + 1) → ℤ)
     (h : Interlaces l Q.topRow) :
     (Q.extend l h).rowWeight (Fin.last n) = (∑ i, l i) - ∑ i, Q.topRow i := by
@@ -294,10 +308,8 @@ theorem dominates_rowWeight_topRow (P : GTPattern n) :
     TauCeti.Dominates P.rowWeight P.topRow := by
   rw [TauCeti.dominates_def]
   refine ⟨P.sum_rowWeight.symm, fun k hk => ?_⟩
-  rw [← prefixSum_eq_sum_castLE hk, P.prefixSum_rowWeight hk, rowSum_def]
-  have htop : ∑ j : Fin k, P.topRow (Fin.castLE hk j) = ∑ i ∈ range k, P i n := by
-    simpa [topRow_apply] using Fin.sum_univ_eq_sum_range (fun i => P i n) k
-  rw [htop]
+  rw [← prefixSum_eq_sum_castLE hk, ← prefixSum_eq_sum_castLE hk, P.prefixSum_rowWeight hk,
+    rowSum_def, funext P.topRow_apply, prefixSum_eq_sum_range k (fun i => P i n), min_eq_left hk]
   exact sum_le_sum fun i hi => P.entry_le_entry_of_le (mem_range.mp hi) hk le_rfl
 
 /-- When `P.rowWeight` is dominant, `P.topWeight` dominates it in `DominantWeight.Dominates`. -/
@@ -306,22 +318,15 @@ theorem topWeight_dominates_of_rowWeight_eq (P : GTPattern n) {w : DominantWeigh
   rw [DominantWeight.dominates_def, topWeight_coe, ← hw]
   exact P.dominates_rowWeight_topRow
 
-/-- Finitely many patterns share a prescribed top row together with any further predicate. -/
-instance finite_topRow_eq_and (l : Fin n → ℤ) (p : GTPattern n → Prop) :
-    Finite {P : GTPattern n // P.topRow = l ∧ p P} :=
-  Finite.of_injective
-    (fun P : {P : GTPattern n // P.topRow = l ∧ p P} =>
-      (⟨P.1, P.2.1⟩ : {P : GTPattern n // P.topRow = l}))
-    fun _ _ h => Subtype.ext (Subtype.mk.inj h)
-
 /-! ### Weight-space branching along `GL (n + 1) ↓ GL n` and low-rank weight fibres -/
 
-private theorem rowWeight_eq_iff_truncate {P : GTPattern (n + 1)} {l w : Fin (n + 1) → ℤ}
-    (hP : P.topRow = l) :
+/-- A pattern `P` with `n + 1` rows has torus weight `w` if and only if its truncation has torus
+weight `Fin.init w` and the degree increment between its top two rows equals `w (Fin.last n)`. -/
+theorem rowWeight_eq_iff_truncate (P : GTPattern (n + 1)) (w : Fin (n + 1) → ℤ) :
     P.rowWeight = w ↔
       P.truncate.rowWeight = Fin.init w ∧
-        (∑ i, l i) - (∑ i, P.truncate.topRow i) = w (Fin.last n) := by
-  rw [funext_iff, Fin.forall_fin_succ', funext_iff, P.rowWeight_last, hP]
+        (∑ i, P.topRow i) - (∑ i, P.truncate.topRow i) = w (Fin.last n) := by
+  rw [funext_iff, Fin.forall_fin_succ', funext_iff, P.rowWeight_last]
   refine and_congr_left fun _ => forall_congr' fun r => ?_
   rw [← P.rowWeight_truncate r, Fin.init_def]
 
@@ -335,43 +340,45 @@ def truncateWeightSigmaEquiv (l w : Fin (n + 1) → ℤ) :
           (∑ i, l i) - (∑ i, m.1 i) = w (Fin.last n)} :=
   let e₁ : {P : GTPattern (n + 1) // P.topRow = l ∧ P.rowWeight = w} ≃
       {P : {P : GTPattern (n + 1) // P.topRow = l} // P.1.rowWeight = w} :=
-    { toFun := fun P => ⟨⟨P.1, P.2.1⟩, P.2.2⟩
-      invFun := fun P => ⟨P.1.1, P.1.2, P.2⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
+    (Equiv.subtypeSubtypeEquivSubtypeInter
+      (fun P : GTPattern (n + 1) => P.topRow = l) (fun P => P.rowWeight = w)).symm
   let e₂ : {P : {P : GTPattern (n + 1) // P.topRow = l} // P.1.rowWeight = w} ≃
-      {Q : {Q : GTPattern n // Interlaces l Q.topRow} //
-        Q.1.rowWeight = Fin.init w ∧ (∑ i, l i) - (∑ i, Q.1.topRow i) = w (Fin.last n)} :=
-    Equiv.subtypeEquiv (truncateEquiv l) fun P => by
-      rw [rowWeight_eq_iff_truncate P.2, truncateEquiv_apply_coe]
-  let e₃ : {Q : {Q : GTPattern n // Interlaces l Q.topRow} //
-        Q.1.rowWeight = Fin.init w ∧ (∑ i, l i) - (∑ i, Q.1.topRow i) = w (Fin.last n)} ≃
+      {x : Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)} //
+        x.2.1.rowWeight = Fin.init w ∧ (∑ i, l i) - (∑ i, x.1.1 i) = w (Fin.last n)} :=
+    Equiv.subtypeEquiv (truncateSigmaEquiv l) fun P => by
+      rw [P.1.rowWeight_eq_iff_truncate w, P.2, truncateSigmaEquiv_apply_snd_coe,
+        truncateSigmaEquiv_apply_fst_coe]
+  let e₃ : {x : Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)} //
+        x.2.1.rowWeight = Fin.init w ∧ (∑ i, l i) - (∑ i, x.1.1 i) = w (Fin.last n)} ≃
       Σ m : interlacingFinset l,
         {Q : GTPattern n // Q.topRow = m.1 ∧ Q.rowWeight = Fin.init w ∧
           (∑ i, l i) - (∑ i, m.1 i) = w (Fin.last n)} :=
-    { toFun := fun Q => ⟨⟨Q.1.1.topRow, mem_interlacingFinset.mpr Q.1.2⟩,
-        ⟨Q.1.1, rfl, Q.2.1, Q.2.2⟩⟩
-      invFun := fun x => ⟨⟨x.2.1, by rw [x.2.2.1]; exact mem_interlacingFinset.mp x.1.2⟩,
-        x.2.2.2.1, by rw [x.2.2.1]; exact x.2.2.2.2⟩
-      left_inv := fun _ => rfl
-      right_inv := by
-        rintro ⟨⟨m, hm⟩, ⟨Q, hQ, hw, hd⟩⟩
-        have hm' : Q.topRow = m := hQ
-        subst hm'
-        rfl }
+    { toFun x := ⟨x.1.1, ⟨x.1.2.1, x.1.2.2, x.2.1, x.2.2⟩⟩
+      invFun y := ⟨⟨y.1, ⟨y.2.1, y.2.2.1⟩⟩, y.2.2.2.1, y.2.2.2.2⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
   e₁.trans (e₂.trans e₃)
 
-@[simp]
+@[simp, grind =]
 theorem truncateWeightSigmaEquiv_apply_fst_coe (l w : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l ∧ P.rowWeight = w}) :
-    ((truncateWeightSigmaEquiv l w P).1 : Fin n → ℤ) = P.1.truncate.topRow :=
-  congrArg topRow (truncateEquiv_apply_coe l ⟨P.1, P.2.1⟩)
+    ((truncateWeightSigmaEquiv l w P).1 : Fin n → ℤ) = P.1.truncate.topRow := by
+  simp [truncateWeightSigmaEquiv]
 
-@[simp]
+@[simp, grind =]
 theorem truncateWeightSigmaEquiv_apply_snd_coe (l w : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l ∧ P.rowWeight = w}) :
-    (truncateWeightSigmaEquiv l w P).2.1 = P.1.truncate :=
-  truncateEquiv_apply_coe l ⟨P.1, P.2.1⟩
+    (truncateWeightSigmaEquiv l w P).2.1 = P.1.truncate := by
+  simp [truncateWeightSigmaEquiv, Equiv.coe_subtypeEquiv_eq_map, Subtype.map_def]
+
+@[simp, grind =]
+theorem truncateWeightSigmaEquiv_symm_apply_coe (l w : Fin (n + 1) → ℤ)
+    (x : Σ m : interlacingFinset l,
+      {Q : GTPattern n // Q.topRow = m.1 ∧ Q.rowWeight = Fin.init w ∧
+        (∑ i, l i) - (∑ i, m.1 i) = w (Fin.last n)}) :
+    ((truncateWeightSigmaEquiv l w).symm x).1 =
+      x.2.1.extend l (by rw [x.2.2.1]; exact mem_interlacingFinset.mp x.1.2) := by
+  simp [truncateWeightSigmaEquiv]
 
 /-- **Branching recursion for weight multiplicities**: the number of patterns with `n + 1` rows, top
 row `l`, and weight `w` sums the rank-`n` counts of weight `Fin.init w` over interlacing rows `m`
@@ -404,7 +411,7 @@ theorem card_topRow_and_rowWeight_zero (l w : Fin 0 → ℤ) :
   Nat.card_unique
 
 /-- A one-row pattern's torus weight equals its top row. -/
-@[simp]
+@[simp, grind =]
 theorem rowWeight_eq_topRow_one (P : GTPattern 1) : P.rowWeight = P.topRow := by
   ext i
   fin_cases i
@@ -417,11 +424,8 @@ theorem card_topRow_and_rowWeight_one (l w : Fin 1 → ℤ) :
   · have hlw : l = w := funext fun i => by fin_cases i; exact h
     subst hlw
     rw [ite_eq_left rfl]
-    let P₀ : {P : GTPattern 1 // P.topRow = l} := default
-    refine Nat.card_eq_one_iff_exists.mpr
-      ⟨⟨P₀.1, P₀.2, by rw [rowWeight_eq_topRow_one, P₀.2]⟩, fun Q => Subtype.ext ?_⟩
-    exact congrArg (fun X : {P : GTPattern 1 // P.topRow = l} => X.1)
-      (Subsingleton.elim ⟨Q.1, Q.2.1⟩ P₀)
+    exact (Nat.card_congr (Equiv.subtypeEquivRight fun P => by simp)).trans
+      (card_topRow_one_eq_one l)
   · rw [ite_eq_right h]
     refine Nat.card_eq_zero.mpr (Or.inl ⟨fun ⟨P, htop, hw⟩ => h ?_⟩)
     have h0 := P.rowWeight_eq_topRow_one
@@ -467,13 +471,13 @@ theorem nonempty_topRow_and_rowWeight_two_iff (l w : Fin 2 → ℤ) :
       rw [hQtop]
       exact ⟨hhi, hlo⟩
     refine ⟨⟨Q.extend l hint, topRow_extend _ _ _,
-      (rowWeight_eq_iff_truncate (topRow_extend _ _ _)).mpr ⟨?_, ?_⟩⟩⟩
+      ((Q.extend l hint).rowWeight_eq_iff_truncate w).mpr ⟨?_, ?_⟩⟩⟩
     · ext i
       fin_cases i
       rw [truncate_extend, rowWeight_eq_topRow_one, hQtop, Fin.init_def]
       rfl
-    · rw [truncate_extend, hQtop, Fin.sum_univ_two l, Fin.sum_univ_one]
-      change (l 0 + l 1) - w 0 = w 1
+    · rw [topRow_extend, truncate_extend, hQtop, Fin.sum_univ_two l, Fin.sum_univ_one]
+      simp only [Fin.reduceLast]
       linarith [hsum]
 
 /-- Closed-form count of `GL 2` patterns with top row `l` and torus weight `w`. -/
@@ -495,32 +499,13 @@ theorem card_topRow_and_rowWeight_three (l w : Fin 3 → ℤ) :
       ∑ a ∈ Finset.Icc (l 1) (l 0), ∑ b ∈ Finset.Icc (l 2) (l 1),
         if b ≤ w 0 ∧ w 0 ≤ a ∧ w 0 + w 1 = a + b ∧ (l 0 + l 1 + l 2) - (a + b) = w 2
           then 1 else 0 := by
-  rw [card_topRow_and_rowWeight_succ, Finset.sum_filter, ← Finset.sum_product']
-  refine Finset.sum_nbij' (fun m => (m 0, m 1)) (fun p => ![p.1, p.2]) ?_ ?_ ?_ ?_ ?_
-  · intro m hm
-    rw [mem_interlacingFinset] at hm
-    exact Finset.mem_product.mpr
-      ⟨Finset.mem_Icc.mpr ⟨hm.succ_le 0, hm.le_castSucc 0⟩,
-        Finset.mem_Icc.mpr ⟨hm.succ_le 1, hm.le_castSucc 1⟩⟩
-  · intro p hp
-    obtain ⟨hp₀, hp₁⟩ := Finset.mem_product.mp hp
-    rw [Finset.mem_Icc] at hp₀ hp₁
-    refine mem_interlacingFinset.mpr (interlaces_iff.mpr fun i => ?_)
-    fin_cases i
-    · exact ⟨hp₀.2, hp₀.1⟩
-    · exact ⟨hp₁.2, hp₁.1⟩
-  · intro m _
-    ext i
-    fin_cases i <;> rfl
-  · intro _ _
-    rfl
-  · intro m _
-    rw [card_topRow_and_rowWeight_two, Fin.sum_univ_three l, Fin.sum_univ_two m]
-    change (if (l 0 + l 1 + l 2) - (m 0 + m 1) = w 2 then
-        if m 1 ≤ w 0 ∧ w 0 ≤ m 0 ∧ w 0 + w 1 = m 0 + m 1 then 1 else 0 else 0) = _
-    by_cases h₁ : (l 0 + l 1 + l 2) - (m 0 + m 1) = w 2 <;>
-      by_cases h₂ : m 1 ≤ w 0 ∧ w 0 ≤ m 0 ∧ w 0 + w 1 = m 0 + m 1 <;>
-      simp [h₁, h₂]
+  rw [card_topRow_and_rowWeight_succ, Finset.sum_filter, sum_interlacingFinset_three]
+  refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
+  rw [Fin.sum_univ_three l, card_topRow_and_rowWeight_two, ← ite_and]
+  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Fin.init_def,
+    Fin.castSucc_zero, Fin.castSucc_one, Fin.reduceLast]
+  exact if_congr ⟨fun ⟨h₁, h₂, h₃, h₄⟩ => ⟨h₂, h₃, h₄, h₁⟩,
+    fun ⟨h₂, h₃, h₄, h₁⟩ => ⟨h₁, h₂, h₃, h₄⟩⟩ rfl rfl
 
 /-- In `Sym²(ℂ²)`, the zero-SL₂ weight `(1, 1)` occurs with multiplicity `1`. -/
 theorem card_topRow_two_zero_and_rowWeight_one_one :
@@ -572,7 +557,7 @@ theorem rowSum_toGTPattern (T : SemistandardYoungTableau μ) {n j : ℕ} (hj : j
 
 /-- The `r`-th torus weight coordinate of `T.toGTPattern n` is the entry multiplicity `T.content r`.
 -/
-@[simp]
+@[simp, grind =]
 theorem rowWeight_toGTPattern (T : SemistandardYoungTableau μ) (n : ℕ) (r : Fin n) :
     (T.toGTPattern n).rowWeight r = (T.content r.val : ℤ) := by
   rw [TauCeti.GTPattern.rowWeight_apply, T.rowSum_toGTPattern (by omega),
@@ -583,7 +568,7 @@ end SemistandardYoungTableau
 namespace TauCeti.GTPattern
 
 /-- Under `TauCeti.GTPattern.toTableau`, the content at letter `r < n` equals `P.rowWeight r`. -/
-@[simp]
+@[simp, grind =]
 theorem content_toTableau {n : ℕ} {μ : YoungDiagram} (P : GTPattern n) (hμ : μ.colLen 0 ≤ n)
     (hP : ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)) (r : Fin n) :
     ((P.toTableau hμ hP).content r.val : ℤ) = P.rowWeight r := by
