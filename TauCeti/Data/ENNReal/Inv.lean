@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Basic.ENNReal.Inv
 public import Mathlib.Algebra.Order.Group.Indicator
-import Mathlib.Basic.Real.ConjExponents
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.FieldSimp
 
@@ -44,10 +43,10 @@ is at most `2 b`.
   `ENNReal.inv_add_inv_min_le_one`: reciprocal-sum bounds for `p > 2` and preservation under
   `min q p`.
 * `ENNReal.one_lt_of_ne_top_of_inv_add_inv_le_one`,
-  `ENNReal.exists_two_lt_ne_top_and_inv_add_inv_lt_one`: deducing `1 < q` from `p < ∞` and
-  `p⁻¹ + q⁻¹ ≤ 1`, and constructing a finite `p > 2` with `p⁻¹ + q⁻¹ < 1` from `1 < q`.
-* `ENNReal.coe_inv_add_inv_lt_one_iff`, `ENNReal.coe_inv_add_inv_le_inv_iff`: comparison of `ℝ≥0`
-  reciprocal sums between `ℝ≥0∞` and `ℝ`.
+  `ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one`: deducing `1 < q` from `p < ∞` and
+  `p⁻¹ + q⁻¹ ≤ 1`, and constructing a finite `p > c` with `p⁻¹ + q⁻¹ < 1` from `c < ∞` and `1 < q`.
+* `ENNReal.inv_coe_add_inv_coe_lt_one_iff`, `ENNReal.inv_coe_add_inv_coe_le_inv_coe_iff`:
+  comparison of `ℝ≥0` reciprocal sums between `ℝ≥0∞` and `ℝ≥0`.
 -/
 
 public section
@@ -206,33 +205,34 @@ theorem one_lt_of_ne_top_of_inv_add_inv_le_one {p q : ℝ≥0∞} (hp_top : p �
   refine ENNReal.inv_lt_one.1 ((?_ : q⁻¹ < p⁻¹ + q⁻¹).trans_le hpq)
   simpa only [zero_add] using ENNReal.add_lt_add_right hq_inv_top (ENNReal.inv_pos.2 hp_top)
 
-/-- For any `q > 1` in `ℝ≥0∞` (including `q = ∞`), there exists a finite exponent `p > 2` with
-`1/p + 1/q < 1`: take `p = q.conjExponent + 2`. -/
-theorem exists_two_lt_ne_top_and_inv_add_inv_lt_one {q : ℝ≥0∞} (hq : 1 < q) :
-    ∃ p : ℝ≥0∞, 2 < p ∧ p ≠ ∞ ∧ p⁻¹ + q⁻¹ < 1 := by
-  have : q.HolderConjugate q.conjExponent := .conjExponent hq.le
-  have hlt : q.conjExponent < ∞ := (HolderConjugate.lt_top_iff_one_lt q.conjExponent q).2 hq
-  refine ⟨q.conjExponent + 2, ?_, add_ne_top.2 ⟨hlt.ne, ofNat_ne_top⟩, ?_⟩
-  · simpa only [zero_add] using ENNReal.add_lt_add_right ofNat_ne_top
-      (HolderConjugate.pos q.conjExponent q)
-  · calc (q.conjExponent + 2)⁻¹ + q⁻¹
-      _ < q.conjExponent⁻¹ + q⁻¹ :=
-        ENNReal.add_lt_add_right (inv_ne_top.2 (zero_lt_one.trans hq).ne')
-          (ENNReal.inv_lt_inv.2 (ENNReal.lt_add_right hlt.ne two_ne_zero))
-      _ = 1 := HolderConjugate.inv_add_inv_eq_one q.conjExponent q
+/-- For any finite `c : ℝ≥0∞` and any `q > 1` in `ℝ≥0∞` (including `q = ∞`), there exists a
+finite exponent `p > c` with `1/p + 1/q < 1`: take `p = max (1 - q⁻¹)⁻¹ c + 1`. -/
+theorem exists_gt_ne_top_and_inv_add_inv_lt_one {c q : ℝ≥0∞} (hc : c ≠ ∞) (hq : 1 < q) :
+    ∃ p : ℝ≥0∞, c < p ∧ p ≠ ∞ ∧ p⁻¹ + q⁻¹ < 1 := by
+  have hq_inv_lt : q⁻¹ < 1 := ENNReal.inv_lt_one.2 hq
+  have hsub_ne : 1 - q⁻¹ ≠ 0 := (tsub_pos_of_lt hq_inv_lt).ne'
+  have hm_ne : max (1 - q⁻¹)⁻¹ c ≠ ∞ := max_ne_top (inv_ne_top.2 hsub_ne) hc
+  refine ⟨max (1 - q⁻¹)⁻¹ c + 1, ?_, add_ne_top.2 ⟨hm_ne, one_ne_top⟩, ?_⟩
+  · exact (le_max_right _ _).trans_lt (ENNReal.lt_add_right hm_ne one_ne_zero)
+  · have hlt : (max (1 - q⁻¹)⁻¹ c + 1)⁻¹ < 1 - q⁻¹ := by
+      conv_rhs => rw [← inv_inv (1 - q⁻¹)]
+      exact ENNReal.inv_lt_inv.2
+        ((le_max_left _ _).trans_lt (ENNReal.lt_add_right hm_ne one_ne_zero))
+    calc (max (1 - q⁻¹)⁻¹ c + 1)⁻¹ + q⁻¹
+      _ < (1 - q⁻¹) + q⁻¹ :=
+        ENNReal.add_lt_add_right (ne_top_of_lt (hq_inv_lt.trans one_lt_top)) hlt
+      _ = 1 := tsub_add_cancel_of_le hq_inv_lt.le
 
 /-- For nonzero `a, b : ℝ≥0`, `(a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1` holds if and only if
-`(a : ℝ)⁻¹ + (b : ℝ)⁻¹ < 1`. -/
-theorem coe_inv_add_inv_lt_one_iff {a b : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) :
-    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1 ↔ (a : ℝ)⁻¹ + (b : ℝ)⁻¹ < 1 := by
-  rw [← coe_inv ha, ← coe_inv hb, ← coe_add, ← coe_one, coe_lt_coe, ← NNReal.coe_lt_coe]
-  simp
+`a⁻¹ + b⁻¹ < 1` in `ℝ≥0`. -/
+theorem inv_coe_add_inv_coe_lt_one_iff {a b : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) :
+    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1 ↔ a⁻¹ + b⁻¹ < 1 := by
+  rw [← coe_inv ha, ← coe_inv hb, ← coe_add, ← coe_one, coe_lt_coe]
 
 /-- For nonzero `a, b, c : ℝ≥0`, `(a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹` holds if and only if
-`(a : ℝ)⁻¹ + (b : ℝ)⁻¹ ≤ (c : ℝ)⁻¹`. -/
-theorem coe_inv_add_inv_le_inv_iff {a b c : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) (hc : c ≠ 0) :
-    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹ ↔ (a : ℝ)⁻¹ + (b : ℝ)⁻¹ ≤ (c : ℝ)⁻¹ := by
-  rw [← coe_inv ha, ← coe_inv hb, ← coe_inv hc, ← coe_add, coe_le_coe, ← NNReal.coe_le_coe]
-  simp
+`a⁻¹ + b⁻¹ ≤ c⁻¹` in `ℝ≥0`. -/
+theorem inv_coe_add_inv_coe_le_inv_coe_iff {a b c : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) (hc : c ≠ 0) :
+    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹ ↔ a⁻¹ + b⁻¹ ≤ c⁻¹ := by
+  rw [← coe_inv ha, ← coe_inv hb, ← coe_inv hc, ← coe_add, coe_le_coe]
 
 end ENNReal
