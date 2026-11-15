@@ -106,4 +106,21 @@ lemma toSSet_map_homOfLE_toSSetObjCodRestrict {W : Opens X} (hVW : V ≤ W)
 
 end Opens
 
+section OpensInclusion
+
+variable {Y : Type u} [TopologicalSpace Y]
+
+/-- A singular simplex of an open set `W` belongs to the range of the inclusion of an open set
+`V ≤ W` exactly when its image lies in `V`. -/
+lemma mem_range_toSSet_map_inclusion_iff {V W : Opens Y} (h : V ≤ W) (n : SimplexCategoryᵒᵖ)
+    (σ : (toSSet.obj (of W)).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
+      Set.range ((of W).toSSetObjEquiv n σ) ⊆ Subtype.val ⁻¹' (V : Set Y) := by
+  rw [Subfunctor.range_obj, (IsEmbedding.inclusion h).isInducing.mem_range_toSSet_map_app_iff n σ,
+    ConcreteCategory.hom_ofHom]
+  exact Iff.of_eq (congrArg _ (Set.range_inclusion (SetLike.coe_subset_coe.2 h)))
+
+end OpensInclusion
+
 end TopCat

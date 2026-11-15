@@ -411,6 +411,30 @@ theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Open
   ext x
   simp
 
+/-- For open sets `U ≤ V` of `M`, the smooth singular simplices of `U`, read in `V`, are exactly the
+smooth singular simplices of `V` which come from singular simplices of `U`. -/
+theorem range_smoothSingularSubcomplexMap_inclusion_comp_ι {U V : TopologicalSpace.Opens M}
+    (h : U ≤ V) :
+    SSet.Subcomplex.range
+        (smoothSingularSubcomplexMap (I := I) (J := I) (TopologicalSpace.Opens.inclusion h)
+          (contMDiff_inclusion h) ≫ (smoothSingularSubcomplex I V).ι :
+          (smoothSingularSubcomplex I U : SSet) ⟶ TopCat.toSSet.obj (TopCat.of V)) =
+      smoothSingularSubcomplex I V ⊓ SSet.Subcomplex.range
+        (TopCat.toSSet.map (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion h,
+          continuous_inclusion h⟩)) := by
+  refine le_antisymm (le_inf ?_ ?_) fun k σ ⟨hσ, τ, hτ⟩ ↦ ?_
+  · exact (Subfunctor.range_comp_le _ (smoothSingularSubcomplex I V).ι).trans_eq
+      (Subfunctor.range_ι _)
+  · rw [smoothSingularSubcomplexMap_ι]
+    exact Subfunctor.range_comp_le (smoothSingularSubcomplex I U).ι _
+  · -- A singular simplex of `U` whose image in `V` is smooth is smooth.
+    have hτ' : τ ∈ (smoothSingularSubcomplex I U).obj k := by
+      rw [← smoothSingularSubcomplex_preimage_inclusion h, SSet.Subcomplex.preimage_obj,
+        Set.mem_preimage, hτ]
+      exact hσ
+    -- The image of `τ` as a smooth simplex has underlying singular simplex the image of `τ`.
+    exact ⟨⟨τ, hτ'⟩, hτ⟩
+
 /-- The identity of `M` induces the identity of its smooth singular subcomplex. -/
 @[simp]
 theorem smoothSingularSubcomplexMap_id :
