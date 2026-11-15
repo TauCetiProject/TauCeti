@@ -38,8 +38,9 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `0 ≤ ε`, `0 < K`
-and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`. It also records the
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, the bound `|t / (1 + t²)| ≤ 1 / 2`, and an
+error-budget bound: if `0 ≤ ε`, `0 < K` and `K` dominates `a + b` then
+`ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`. It also records the
 absorption bound `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ N + 2 β e H`,
 `H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, together with the bookkeeping bound
 `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and `P`.
@@ -85,6 +86,7 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
   `(1 - δ) b ≤ a ≤ b` of the denominator with `δ ≤ 1 / 2` and `|x - y| ≤ e`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
+* `TauCeti.abs_div_one_add_sq_le`: `|t / (1 + t ^ 2)| ≤ 1 / 2`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.pow_five_lt_of_mul_div_le`: `ε ^ 5 < g` from `0 < ε`, `ε * n ^ 2 < M`,
   `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`.
@@ -235,6 +237,13 @@ theorem two_mul_div_add_sq_le_mul {α : Type*} [Field α] [LinearOrder α] [IsSt
   rw [div_mul_div_comm, mul_comm r, ← mul_assoc, mul_div_mul_right _ _ hr.ne',
     div_le_div_iff₀ (by positivity) (by positivity)]
   nlinarith [mul_le_mul hρ hρ hr.le (hr.le.trans hρ)]
+
+/-- `t / (1 + t ^ 2)` takes values in `[-1 / 2, 1 / 2]`, since `2 |t| ≤ 1 + t ^ 2`. -/
+theorem abs_div_one_add_sq_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    (t : α) : |t / (1 + t ^ 2)| ≤ 1 / 2 := by
+  have h : (0 : α) < 1 + t ^ 2 := by positivity
+  rw [abs_div, abs_of_pos h, div_le_iff₀ h]
+  nlinarith [sq_nonneg (|t| - 1), sq_abs t]
 
 /-- If `0 ≤ b` and `a ≤ (1 + b)⁻¹`, then `a * b ≤ 1`. -/
 theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α]

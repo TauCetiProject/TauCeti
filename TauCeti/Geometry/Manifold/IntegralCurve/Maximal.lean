@@ -79,6 +79,8 @@ arbitrary initial time is recovered by translating the parameter with
   unbounded on both sides is all of `ℝ`.
 * `Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo`: a maximal curve whose
   forward part is confined to a compact set is defined for all positive time.
+* `maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo`: a maximal curve confined to
+  a compact set on each bounded time window is defined for all time.
 * `maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo`: a maximal curve confined to a
   compact set is defined for all time, and `isMIntegralCurve_maximalIntegralCurve` specializes
   this to a compact manifold: **a `C^1` vector field on a compact manifold is complete**
@@ -505,26 +507,42 @@ theorem Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo [Complete
   obtain ⟨s, hs, hts⟩ := not_bddAbove_iff.mp hup t
   exact ordConnected_maximalIntegralCurveInterval.out h0 hs ⟨ht, hts.le⟩
 
-/-- **A maximal integral curve confined to a compact set is defined for all time.** Neither
-endpoint of the maximal interval can be finite, since the escape lemma would force the curve out of
-the compact set there. -/
+/-- **A maximal integral curve confined to a compact set on each bounded time window is defined
+for all time.** The compact set may grow with the window. Neither endpoint of the maximal interval
+can be finite: the window reaching past that endpoint gives a compact set which, by the escape
+lemma, the curve must leave just before it. -/
+theorem maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo [CompleteSpace E]
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hmem : ∀ T : ℝ, ∃ K : Set M, IsCompact K ∧
+      MapsTo (maximalIntegralCurve v x) (maximalIntegralCurveInterval v x ∩ Icc (-T) T) K) :
+    maximalIntegralCurveInterval v x = univ := by
+  have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
+  have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
+    have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
+    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
+    obtain ⟨K, hK, hKmem⟩ := hmem (sSup (maximalIntegralCurveInterval v x))
+    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hb0)
+      (eventually_notMem_nhdsLT_maximalIntegralCurve hv hlub hK)).exists
+    exact htK (hKmem ⟨hsub ⟨ha.trans ht.1, ht.2⟩, by linarith [ht.1], ht.2.le⟩)
+  have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
+    have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
+    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
+    obtain ⟨K, hK, hKmem⟩ := hmem (-sInf (maximalIntegralCurveInterval v x))
+    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
+      (eventually_notMem_nhdsGT_maximalIntegralCurve hv hglb hK)).exists
+    exact htK (hKmem ⟨hsub ⟨ht.1, ht.2.trans hb⟩, by linarith [ht.1], by linarith [ht.1, ht.2]⟩)
+  exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
+
+/-- **A maximal integral curve confined to a compact set is defined for all time.** This is the
+case of `maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo` where one compact set
+serves every time window. -/
 theorem maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {K : Set M} (hK : IsCompact K)
     (hmem : MapsTo (maximalIntegralCurve v x) (maximalIntegralCurveInterval v x) K) :
-    maximalIntegralCurveInterval v x = univ := by
-  have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
-  have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun hbdd ↦ not_bddAbove_Ici 0
-    (hbdd.mono (Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo hv hK
-      (hmem.mono_left inter_subset_left)))
-  have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
-    have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
-    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
-    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and
-      (mem_of_superset (Ioo_mem_nhdsGT (ha0.trans hb)) hsub)
-      (eventually_notMem_nhdsGT_maximalIntegralCurve hv hglb hK)).exists
-    exact htK (hmem ht)
-  exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
+    maximalIntegralCurveInterval v x = univ :=
+  maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo hv fun _ ↦
+    ⟨K, hK, hmem.mono_left inter_subset_left⟩
 
 /-- **A `C^1` vector field on a compact boundaryless manifold is complete**: its maximal integral
 curve through any point is defined for all time. -/
