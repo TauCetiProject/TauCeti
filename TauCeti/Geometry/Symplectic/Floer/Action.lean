@@ -88,6 +88,8 @@ derivatives.
 
 * `SymplecticForm.hamiltonianAction_add_const`: adding a function `c` of time to the Hamiltonian
   adds `∫₀¹ c` to the action of every loop.
+* `SymplecticForm.hamiltonianAction_comp_neg`: traversing a loop backwards negates its action for
+  the time-reversed Hamiltonian `-H(-t)`.
 * `integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature`:
   the energy of a map over `[a, b] × [0, 1]`, for a perturbation which is `H_a dt` and `H_b dt` on
   the two boundary circles, is the change of action minus the integrated curvature.
