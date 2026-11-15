@@ -8,15 +8,16 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Hamiltonian
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+public import Mathlib.Combinatorics.SimpleGraph.Metric
 
 /-!
-# A finite tree of maximum degree two is a path graph
+# Path graphs and finite trees of maximum degree two
 
 A finite connected graph in which every vertex has at most two neighbours is a path or a cycle, and
-acyclicity leaves the path. This file proves that identification in the form a consumer wants: a
-finite tree of maximum degree two is isomorphic to Mathlib's `SimpleGraph.pathGraph` on as many
-vertices as it has, so its vertices can be numbered `0, …, n - 1` with two of them adjacent exactly
-when their numbers are consecutive.
+acyclicity leaves the path. This file computes the graph distance on `SimpleGraph.pathGraph` and
+proves the tree characterization in the form a consumer wants: a finite tree of maximum degree two
+is isomorphic to `SimpleGraph.pathGraph` on as many vertices as it has, so its vertices can be
+numbered `0, …, n - 1` with two of them adjacent exactly when their numbers are consecutive.
 
 The proof takes a path `p` of greatest length in the graph, which Mathlib's
 `SimpleGraph.exists_isPath_forall_isPath_length_le_length` supplies. Every neighbour of a vertex of
@@ -30,6 +31,8 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
 
 ## Main results
 
+* `TauCeti.edist_pathGraph`, `TauCeti.dist_pathGraph`: the distance between two vertices of
+  `SimpleGraph.pathGraph n` is `|u - v|`.
 * `SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two
   is isomorphic to the path graph on its vertices.
 * `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
@@ -48,7 +51,55 @@ namespace TauCeti
 
 open SimpleGraph
 
-/-! ## Reversing a path graph -/
+/-! ## Distance and reversal on a path graph -/
+
+/-- Upper bound for `edist_pathGraph` when `u ≤ v`. -/
+private lemma edist_pathGraph_le_of_le {n : ℕ} :
+    ∀ (d : ℕ) {u v : Fin n}, u.val + d = v.val → (pathGraph n).edist u v ≤ d
+  | 0, u, v, h => by
+    obtain rfl : u = v := Fin.ext (by omega)
+    simp
+  | d + 1, u, v, h => by
+    let w : Fin n := ⟨u.val + d, by omega⟩
+    have hadj : (pathGraph n).Adj w v := by
+      rw [pathGraph_adj]
+      exact Or.inl (by simp [w]; omega)
+    calc (pathGraph n).edist u v
+        ≤ (pathGraph n).edist u w + (pathGraph n).edist w v := SimpleGraph.edist_triangle
+      _ ≤ d + 1 := add_le_add (edist_pathGraph_le_of_le d rfl)
+          (edist_eq_one_iff_adj.mpr hadj).le
+      _ = (d + 1 : ℕ) := by norm_cast
+
+/-- **Extended distance in a path graph**: the distance between `u` and `v` in `pathGraph n` is
+`|u - v|`. -/
+@[simp]
+theorem edist_pathGraph {n : ℕ} (u v : Fin n) :
+    (pathGraph n).edist u v = ((u.val : ℤ) - v.val).natAbs := by
+  refine le_antisymm ?_ (le_iInf fun p ↦ ?_)
+  · rcases le_total u.val v.val with huv | hvu
+    · refine (edist_pathGraph_le_of_le (v.val - u.val) (by omega)).trans_eq ?_
+      congr 1
+      omega
+    · rw [edist_comm]
+      refine (edist_pathGraph_le_of_le (u.val - v.val) (by omega)).trans_eq ?_
+      congr 1
+      omega
+  · induction p with
+    | nil => simp
+    | @cons a b c hadj q ih =>
+      rw [pathGraph_adj] at hadj
+      rw [Walk.length_cons, Nat.cast_add, Nat.cast_one]
+      have hstep : (((a.val : ℤ) - c.val).natAbs : ℕ∞) ≤
+          (((b.val : ℤ) - c.val).natAbs : ℕ∞) + 1 := by
+        exact_mod_cast (by omega : ((a.val : ℤ) - c.val).natAbs ≤ ((b.val : ℤ) - c.val).natAbs + 1)
+      exact hstep.trans (add_le_add_left ih 1)
+
+/-- **Distance in a path graph**: the natural-number distance between `u` and `v` in `pathGraph n`
+is `|u - v|`. -/
+@[simp]
+theorem dist_pathGraph {n : ℕ} (u v : Fin n) :
+    (pathGraph n).dist u v = ((u.val : ℤ) - v.val).natAbs := by
+  simp [SimpleGraph.dist]
 
 /-- **Reversal is an automorphism of a path graph.** Composing with it reverses a numbering of a
 graph as a path. The body is exported unexposed, so `pathGraphRevIso_apply` is the interface an

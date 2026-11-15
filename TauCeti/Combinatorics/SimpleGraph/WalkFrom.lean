@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Metric
 public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
@@ -27,6 +28,8 @@ decidable subset of a finite function type.
   vertex is adjacent to the old endpoint.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
+* `SimpleGraph.IsWalkFrom.edist_apply_le`: the vertex at position `i` of a walk from `v₀` has
+  extended distance at most `i` from `v₀`.
 -/
 
 public section
@@ -106,5 +109,28 @@ theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]
     exact hs.2 i
+
+/-- The vertex at position `i` of a walk from `v₀` has extended distance at most `i` from `v₀`. -/
+theorem IsWalkFrom.edist_apply_le {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : G.edist v₀ (s i) ≤ i.val := by
+  induction i using Fin.induction with
+  | zero => simp [hs.apply_zero]
+  | succ j ih =>
+    calc G.edist v₀ (s j.succ)
+        ≤ G.edist v₀ (s j.castSucc) + G.edist (s j.castSucc) (s j.succ) :=
+          SimpleGraph.edist_triangle
+      _ ≤ j.val + 1 := add_le_add ih (edist_eq_one_iff_adj.mpr (hs.2 j)).le
+      _ = j.succ.val := by norm_cast
+
+/-- Every vertex along a walk from `v₀` is reachable from `v₀`. -/
+theorem IsWalkFrom.reachable_apply {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : G.Reachable v₀ (s i) :=
+  edist_ne_top_iff_reachable.mp
+    (lt_of_le_of_lt (hs.edist_apply_le i) (ENat.natCast_lt_top _)).ne
+
+/-- The vertex at position `i` of a walk from `v₀` has distance at most `i` from `v₀`. -/
+theorem IsWalkFrom.dist_apply_le {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : G.dist v₀ (s i) ≤ i.val :=
+  Nat.cast_le.mp (natCast_dist_le_edist.trans (hs.edist_apply_le i))
 
 end SimpleGraph
