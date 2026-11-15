@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.Ideal.Cotangent
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.Quotient
+import Mathlib.Algebra.Field.Equiv
 
 /-!
 # The maximal ideal and the cotangent space of a quotient of a local ring
@@ -39,6 +40,13 @@ residue field extension, whose degree is then the rank of a finite free `S`.
 * `TauCeti.IsLocalRing.finrank_residueField_eq_finrank`: if `S` is finite free over `R` and
   `𝔪_R S = 𝔪_S`, the residue field extension has degree `[S : R]`, by Mathlib's
   `IsLocalRing.finrank_quotient_map`.
+* `TauCeti.IsLocalRing.map_maximalIdeal_of_bijective_quotientMap`,
+  `TauCeti.IsLocalRing.radical_map_maximalIdeal_of_bijective_quotientMap`: if `R → S` between local
+  rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then `𝔪_R S = 𝔪_S` (and hence has radical `𝔪_S`),
+  without assuming `R → S` is local.
+* `TauCeti.IsLocalRing.bijective_quotientMap_iff_map_maximalIdeal_eq_and_bijective_residueFieldMap`:
+  for a local homomorphism `R → S`, `R ⧸ 𝔪_R → S ⧸ 𝔪_R S` is bijective if and only if `𝔪_R S = 𝔪_S`
+  and `ResidueField.map (algebraMap R S)` is bijective.
 -/
 
 public section
@@ -201,5 +209,49 @@ theorem finrank_residueField_eq_finrank [Module.Free R S] [Module.Finite R S]
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   rfl
+
+omit [IsLocalHom (algebraMap R S)] in
+/-- If a homomorphism `R → S` of local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then the
+maximal ideal of `R` generates the maximal ideal of `S`; in particular `R → S` is local. -/
+theorem map_maximalIdeal_of_bijective_quotientMap
+    (h : Function.Bijective (Ideal.quotientMap ((maximalIdeal R).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map)) :
+    (maximalIdeal R).map (algebraMap R S) = maximalIdeal S := by
+  let _ : Field (R ⧸ maximalIdeal R) := Ideal.Quotient.field (maximalIdeal R)
+  have hmax : ((maximalIdeal R).map (algebraMap R S)).IsMaximal :=
+    Ideal.Quotient.maximal_ideal_iff_isField_quotient _ |>.mpr <|
+      (RingEquiv.ofBijective _ h).toMulEquiv.isField_congr.mp (Field.toIsField _)
+  exact eq_maximalIdeal hmax
+
+omit [IsLocalHom (algebraMap R S)] in
+/-- If a homomorphism `R → S` of local rings induces a bijection `R ⧸ 𝔪_R → S ⧸ 𝔪_R S`, then the
+closed point of `Spec S` is the only point over the closed point of `Spec R`. -/
+theorem radical_map_maximalIdeal_of_bijective_quotientMap
+    (h : Function.Bijective (Ideal.quotientMap ((maximalIdeal R).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map)) :
+    ((maximalIdeal R).map (algebraMap R S)).radical = maximalIdeal S := by
+  rw [map_maximalIdeal_of_bijective_quotientMap h]
+  exact (maximalIdeal.isMaximal S).isPrime.radical
+
+/-- For a local homomorphism `R → S` of local rings, the induced map `R ⧸ 𝔪_R → S ⧸ 𝔪_R S` is
+bijective if and only if `𝔪_R` generates `𝔪_S` and the induced map on residue fields is
+bijective. -/
+theorem bijective_quotientMap_iff_map_maximalIdeal_eq_and_bijective_residueFieldMap :
+    Function.Bijective (Ideal.quotientMap ((maximalIdeal R).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map) ↔
+      (maximalIdeal R).map (algebraMap R S) = maximalIdeal S ∧
+        Function.Bijective (ResidueField.map (algebraMap R S)) := by
+  have heq (hmap : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+      ⇑(Ideal.quotEquivOfEq hmap) ∘
+        ⇑(Ideal.quotientMap ((maximalIdeal R).map (algebraMap R S))
+          (algebraMap R S) Ideal.le_comap_map) =
+        ⇑(ResidueField.map (algebraMap R S)) := by
+    funext x
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rfl
+  refine ⟨fun h ↦ ?_, fun ⟨hmap, hres⟩ ↦ ?_⟩
+  · have hmap := map_maximalIdeal_of_bijective_quotientMap h
+    exact ⟨hmap, heq hmap ▸ (Ideal.quotEquivOfEq hmap).bijective.comp h⟩
+  · exact (Ideal.quotEquivOfEq hmap).toEquiv.comp_bijective _ |>.mp (heq hmap ▸ hres)
 
 end TauCeti.IsLocalRing

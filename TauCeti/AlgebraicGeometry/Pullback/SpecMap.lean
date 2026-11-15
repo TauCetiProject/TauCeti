@@ -111,6 +111,19 @@ theorem pullbackSpecIsoOfAlgEquiv_hom_left (R B T C : Type u)
         (pullbackSpecIso R T B).hom ≫ Spec.map (CommRingCat.ofHom e.symm.toRingHom) :=
   (rfl)
 
+/-- The inverse underlying map of the affine base-change isomorphism is the spectrum map of the
+algebra equivalence followed by the inverse pullback comparison. -/
+@[simp]
+theorem pullbackSpecIsoOfAlgEquiv_inv_left (R B T C : Type u)
+    [CommRing R] [CommRing B] [CommRing T] [CommRing C]
+    [Algebra R B] [Algebra R T] [Algebra T C]
+    (e : T ⊗[R] B ≃ₐ[T] C) :
+    (pullbackSpecIsoOfAlgEquiv R B T C e).inv.left =
+      Spec.map (CommRingCat.ofHom e.toRingHom) ≫
+        (pullbackSpecIso R T B).inv ≫
+          (pullbackSymmetry (Spec.algebraMap R B) (Spec.algebraMap R T)).inv :=
+  (rfl)
+
 end AlgebraicGeometry
 
 end TauCeti
