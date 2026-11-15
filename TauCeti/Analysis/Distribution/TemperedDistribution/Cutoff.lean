@@ -45,6 +45,8 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
+* `Distribution.cutoffTempered_add`, `Distribution.cutoffTempered_smul`,
+  `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
 * `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
@@ -173,6 +175,13 @@ theorem cutoffTempered_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) 
   ext ψ
   simp only [smul_apply, cutoffTempered_def, complexPairing_smul, smul_eq_mul]
 
+/-- The tempered distribution `φ T` is additive in `T` over finite sums. -/
+@[simp]
+theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (∑ i ∈ s, T i).cutoffTempered φ = ∑ i ∈ s, (T i).cutoffTempered φ :=
+  map_sum (AddMonoidHom.mk' (fun S : 𝓓'(Ω, ℂ) ↦ S.cutoffTempered φ)
+    fun S S' ↦ cutoffTempered_add S S' φ) T s
+
 /-- The tempered distribution `φ T` is additive in the cutoff `φ`. -/
 @[simp]
 theorem cutoffTempered_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ φ' : 𝓓(Ω, ℂ)) :
@@ -218,7 +227,7 @@ theorem lineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (v 
     have hφ : DifferentiableAt ℝ φ x := (φ.contDiff.differentiable (by simp)).differentiableAt
     simp only [TestFunction.lineDerivOp_apply_eq_fderiv, add_apply, bilinLeftCLM_apply,
       ContinuousLinearMap.mul_apply', SchwartzMap.lineDerivOp_apply_eq_fderiv]
-    rw [show (fun y ↦ φ y * ψ y) = (⇑φ * ⇑ψ) from rfl, fderiv_mul hφ ψ.differentiableAt]
+    rw [← Pi.mul_def, fderiv_mul hφ ψ.differentiableAt]
     simp only [add_apply, smul_apply, smul_eq_mul]
     ring
   have hneg : bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) ((-∂_{v} ψ).smooth ⊤) φ =

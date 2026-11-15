@@ -67,8 +67,11 @@ The regularity theorem on `H^r` then gives `φ (χ T) = φ T ∈ H^(s + M)` for 
 * `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id`: on `H^r` the
   quantization of the symbol of a differential operator with compactly supported smooth scalar
   coefficients is that differential operator on tempered distributions.
-* `TauCeti.ClassicalSymbol.IsElliptic.exists_isEllipticAbove`: an elliptic classical symbol whose
-  full symbol outside a compact set repeats its values on that set is elliptic above some radius.
+* `TauCeti.differentialSymbol_filter_smul_id`,
+  `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff`: for scalar coefficients,
+  the top-order differential symbol is `i ^ M` times the principal symbol
+  `TauCeti.constCoeffPrincipalSymbol` of the operator with frozen coefficients, so the classical
+  symbol is elliptic exactly when that principal symbol vanishes at no `ξ ≠ 0` at every position.
 * `Distribution.IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: interior elliptic
   regularity.
 * `Distribution.sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero`,
@@ -87,8 +90,7 @@ public section
 noncomputable section
 
 open Complex Filter LineDeriv MeasureTheory Set TopologicalSpace TestFunction
-open scoped BesselPotentialSpace ContDiff Distributions LineDeriv RealInnerProductSpace
-  SchwartzMap Topology
+open scoped BesselPotentialSpace ContDiff Distributions LineDeriv SchwartzMap Topology
 
 namespace TauCeti
 
@@ -150,35 +152,13 @@ theorem toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id (m : ℕ) (s : Fins
 
 end Sobolev
 
-section Elliptic
-
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
-
-/-- **Elliptic symbols with coefficients constant off a compact set.** An elliptic classical
-symbol whose full symbol at every position outside a compact set `K` is its full symbol at some
-position of `K` is elliptic above a radius independent of the position. -/
-theorem IsElliptic.exists_isEllipticAbove {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hKa : ∀ x ∉ K, ∃ y ∈ K, ∀ ξ, a.toSymbol.coefficient (x, ξ) = a.toSymbol.coefficient (y, ξ)) :
-    ∃ R, a.toSymbol.IsEllipticAbove R := by
-  obtain ⟨R, C, hRC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
-  refine ⟨R, Symbol.isEllipticAbove_iff.2 fun _ _ ↦ ⟨C, fun x _ ξ hξ ↦ ?_⟩⟩
-  by_cases hx : x ∈ K
-  · exact hRC x hx ξ hξ
-  · obtain ⟨y, hy, hxy⟩ := hKa x hx
-    rw [hxy ξ]
-    exact hRC y hy ξ hξ
-
-end Elliptic
-
 end ClassicalSymbol
 
 variable {n : ℕ} {ι : Type*} {t : Finset ι} {k : ι → ℕ} {m : ∀ i, Fin (k i) → CoordinateSpace n}
 
 /-- The top-order part of the differential symbol with scalar coefficients `β i y` is `i ^ M`
 times the principal symbol of the operator with coefficients frozen at `y`. -/
-private theorem differentialSymbol_filter_smul_id (M : ℕ) (β : ι → CoordinateSpace n → ℂ)
+theorem differentialSymbol_filter_smul_id (M : ℕ) (β : ι → CoordinateSpace n → ℂ)
     (y ξ : CoordinateSpace n) :
     differentialSymbol {i ∈ t | k i = M} m (fun i z ↦ β i z • ContinuousLinearMap.id ℂ ℂ)
         (y, ξ) =
@@ -191,6 +171,26 @@ private theorem differentialSymbol_filter_smul_id (M : ℕ) (β : ι → Coordin
   rw [← (Finset.mem_filter.1 hi).2]
   simp only [real_inner_comm]
   ring
+
+/-- **Ellipticity of a scalar differential operator.** The classical symbol of a differential
+operator with scalar coefficients `β i` is elliptic exactly when, at every position `y`, the
+principal symbol of the operator with coefficients frozen at `y` vanishes at no `ξ ≠ 0`. -/
+theorem ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff (M : ℕ)
+    {β : ι → CoordinateSpace n → ℂ}
+    (hβ : ∀ i ∈ t, ContDiff ℝ ∞ fun y ↦ β i y • ContinuousLinearMap.id ℂ ℂ)
+    (hk : ∀ i ∈ t, k i ≤ M) :
+    (ofDifferentialSymbol M t m (fun i y ↦ β i y • ContinuousLinearMap.id ℂ ℂ) hβ hk).IsElliptic ↔
+      ∀ y ξ, ξ ≠ 0 → constCoeffPrincipalSymbol t (fun i ↦ β i y) m M ξ ≠ 0 := by
+  rw [isElliptic_ofDifferentialSymbol_iff]
+  refine forall_congr' fun y ↦ forall_congr' fun ξ ↦ forall_congr' fun _ ↦ ?_
+  rw [differentialSymbol_filter_smul_id]
+  refine ⟨fun ⟨e, he⟩ h0 ↦ ?_, fun h ↦ ?_⟩
+  · -- A multiple `0 • id` of the identity is not an isomorphism of `ℂ`.
+    have he1 := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) he
+    simp [h0] at he1
+  · rw [ContinuousLinearMap.isInvertible_smul_iff
+      (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
+    exact ⟨ContinuousLinearEquiv.refl ℂ ℂ, rfl⟩
 
 open Metric in
 /-- **Freezing the coefficients away from a point.** If the principal symbol of
@@ -222,12 +222,9 @@ private theorem exists_isEllipticAbove_ofDifferentialSymbol {c : ι → ℂ}
   have hb (i : ι) (_ : i ∈ t) :
       ContDiff ℝ ∞ fun y ↦ β i y • ContinuousLinearMap.id ℂ ℂ := (hβ i).smul contDiff_const
   set a := ClassicalSymbol.ofDifferentialSymbol M t m _ hb hk
-  have ha : a.IsElliptic := by
-    refine (ClassicalSymbol.isElliptic_ofDifferentialSymbol_iff M t m _ hb hk).2
-      fun y ξ hξ ↦ ?_
-    rw [differentialSymbol_filter_smul_id, ContinuousLinearMap.isInvertible_smul_iff
-      (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) (hσ _ (hρε y) ξ hξ))]
-    exact ⟨ContinuousLinearEquiv.refl ℂ ℂ, rfl⟩
+  have ha : a.IsElliptic :=
+    (ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff M hb hk).2
+      fun y ξ hξ ↦ hσ _ (hρε y) ξ hξ
   have hρx (y : CoordinateSpace n) (hy : y ∉ closedBall x ε) : ρ y = ρ x := by
     simp [ρ, θ.zero_of_le_dist (le_of_lt (not_le.1 hy))]
   obtain ⟨R, hR⟩ := ha.exists_isEllipticAbove (isCompact_closedBall x ε) fun y hy ↦
@@ -255,17 +252,15 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered
     ∑ i ∈ t, TemperedDistribution.smulLeftCLM ℂ
         (fun x ↦ c i * TestFunction.smulLeftCLM (hg i) ψ x) (∂^{m i} (T.cutoffTempered χ)) =
       (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).cutoffTempered ψ := by
-  have hsum := map_sum (AddMonoidHom.mk' (fun S : 𝓓'(Ω, ℂ) ↦ S.cutoffTempered ψ)
-    fun S S' ↦ cutoffTempered_add S S' ψ) (fun i ↦ c i • smulLeftCLM (hg i) (∂^{m i} T)) t
-  simp only [AddMonoidHom.mk'_apply] at hsum
-  rw [hsum]
+  rw [cutoffTempered_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   set ψi := TestFunction.smulLeftCLM (hg i) ψ
   have hψi : tsupport ψi ⊆ tsupport ψ := by
     rw [show (ψi : CoordinateSpace n → ℂ) = fun x ↦ g i x • ψ x from
       funext (TestFunction.smulLeftCLM_apply (hg i) ψ)]
     exact tsupport_smul_subset_right _ _
-  rw [show (fun x ↦ c i * ψi x) = c i • (ψi : CoordinateSpace n → ℂ) from rfl,
+  rw [show (fun x ↦ c i * ψi x) = c i • (ψi : CoordinateSpace n → ℂ) from
+      funext fun x ↦ (smul_eq_mul _ _).symm,
     TemperedDistribution.smulLeftCLM_smul (ψi.hasCompactSupport.hasTemperateGrowth ψi.contDiff),
     smul_apply,
     smulLeftCLM_iteratedLineDerivOp_cutoffTempered T fun x hx ↦ h x (hψi hx)]
@@ -325,7 +320,8 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
     T.IsLocallySobolevAt (s + M) x := by
   obtain ⟨U, hU, hPU⟩ := hPT.exists_nhds_forall_memSobolev_cutoffTempered
   have hell := eventually_forall_constCoeffPrincipalSymbol_ne_zero (c := fun y i ↦ c i * g i y)
-    (fun i _ ↦ continuous_const.mul (Complex.continuous_ofReal.comp (hg i).continuous)) hσ
+    (fun i _ ↦ (continuous_const.mul
+      (Complex.continuous_ofReal.comp (hg i).continuous)).continuousAt) hσ
   obtain ⟨ε, hε, hεU⟩ :=
     Metric.mem_nhds_iff.1 (inter_mem (inter_mem hU hell) (Ω.isOpen.mem_nhds hPT.mem))
   have hεΩ : ball x ε ⊆ Ω := hεU.trans inter_subset_right
@@ -385,14 +381,8 @@ theorem sobolevSingularSupport_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
     Finset.univ (fun _ ↦ 1) (g := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) (k := fun _ ↦ 2)
     (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun _ _ ξ hξ ↦ ?_) T
   · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, Fin.tail] using h
-  have hsum : ∑ i, ⟪b i, ξ⟫ * ⟪b i, ξ⟫ = ‖ξ‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner ξ ξ]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm]
-  have hval : constCoeffPrincipalSymbol Finset.univ (fun _ ↦ 1 * ((1 : ℝ) : ℂ))
-      (fun i ↦ ![b i, b i]) 2 ξ = ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
-    rw [← hsum]
-    simp [constCoeffPrincipalSymbol_def, Fin.prod_univ_two]
-  rw [hval]
+  simp only [ofReal_one, one_mul]
+  rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
 end Distribution
