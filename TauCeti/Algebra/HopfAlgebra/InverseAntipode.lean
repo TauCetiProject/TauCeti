@@ -19,7 +19,7 @@ duals. No commutativity or star structure is assumed.
 Bijectivity holds in particular when `S²` is an inner automorphism `a ↦ g a g⁻¹`
 (`antipode_bijective_of_antipode_antipode`), as for the group-like element `K⁻¹` of
 `U_q(sl₂)`, and when `S` is involutive, as in a cocommutative Hopf algebra, where
-`inverseAntipode` agrees with `antipode` (`inverseAntipode_eq_of_involutive` and
+`inverseAntipode` agrees with `antipode` (`inverseAntipode_eq_antipode_of_involutive` and
 `inverseAntipode_eq_antipode_of_isCocomm`).
 
 The construction uses Mathlib's `LinearEquiv.ofBijective`. See C. Kassel,
@@ -61,7 +61,7 @@ theorem inverseAntipode_antipode (hS : Function.Bijective (antipode R : H →ₗ
   (LinearEquiv.ofBijective (antipode R) hS).symm_apply_apply a
 
 /-- When the antipode is involutive, its inverse linear map is the antipode itself. -/
-theorem inverseAntipode_eq_of_involutive (h : Function.Involutive (antipode R : H →ₗ[R] H))
+theorem inverseAntipode_eq_antipode_of_involutive (h : Function.Involutive (antipode R : H →ₗ[R] H))
     (hS : Function.Bijective (antipode R : H →ₗ[R] H)) :
     inverseAntipode hS = antipode R := by
   ext a
@@ -72,7 +72,7 @@ theorem inverseAntipode_eq_of_involutive (h : Function.Involutive (antipode R : 
 theorem inverseAntipode_eq_antipode_of_isCocomm [Coalgebra.IsCocomm R H]
     (hS : Function.Bijective (antipode R : H →ₗ[R] H)) :
     inverseAntipode hS = antipode R :=
-  inverseAntipode_eq_of_involutive antipode_involutive_of_isCocomm hS
+  inverseAntipode_eq_antipode_of_involutive antipode_involutive_of_isCocomm hS
 
 /-- The inverse antipode preserves the unit. -/
 @[simp]

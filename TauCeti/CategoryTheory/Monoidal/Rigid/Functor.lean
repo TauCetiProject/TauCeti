@@ -20,13 +20,15 @@ images of those of `(X, Y)`, conjugated by the unit and tensor comparisons of `F
 objects with a left or right dual (`CategoryTheory.Functor.mapHasLeftDual` and
 `CategoryTheory.Functor.mapHasRightDual`).
 
-Since right duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of a right dual of
-`X` is canonically isomorphic to the right dual `(F.obj X)ᘁ` of its image
-(`CategoryTheory.Functor.mapRightDualIso`). These comparisons are natural with respect to adjoint
-mates, are identities for the identity functor, and compose along a composite of functors. They
-are the comparisons against which a monoidal functor between pivotal categories is required to
-preserve the pivotal structure. They are also natural in the functor: a monoidal natural
-transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`.
+Since right and left duals are unique up to unique isomorphism, the images `F.obj Xᘁ` and
+`F.obj (ᘁX)` of duals of `X` are canonically isomorphic to the duals `(F.obj X)ᘁ` and
+`ᘁ(F.obj X)` of its image (`CategoryTheory.Functor.mapRightDualIso` and
+`CategoryTheory.Functor.mapLeftDualIso`). Both comparisons are natural with respect to adjoint
+mates, are identities for the identity functor, and compose along a composite of functors. The
+right-dual comparisons `mapRightDualIso` are those against which a monoidal functor between
+pivotal categories is required to preserve the pivotal structure, and are also natural in the
+functor: a monoidal natural transformation `τ : F ⟶ G` satisfies
+`τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`.
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
 `κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`

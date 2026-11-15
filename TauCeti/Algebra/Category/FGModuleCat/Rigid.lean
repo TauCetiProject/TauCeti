@@ -114,10 +114,11 @@ theorem rightAdjointMate_hom {V W : FGModuleCat.{u} K} (f : V ⟶ W) :
     (rightAdjointMate_comp_evaluation f)
   simp only [hom_hom_comp, LinearMap.comp_apply] at h
   simp only [evaluation_hom_hom, ObjectProperty.whiskerRight_def,
-    ObjectProperty.whiskerLeft_def] at h
-  -- On pure tensors, `rTensor_tmul`, `lTensor_tmul`, `contractLeft_apply`, and `dualMap_apply`
-  -- all hold by definition, while the carrier of `Wᘁ` is `Dual K W` by `FGModuleCatDual_coe`.
-  exact h
+    ObjectProperty.whiskerLeft_def, ObjectProperty.homMk_hom, ModuleCat.hom_whiskerRight,
+    ModuleCat.hom_whiskerLeft] at h
+  -- On pure tensors, `rTensor_tmul`, `lTensor_tmul`, and `contractLeft_apply` all hold by
+  -- definition, while the carrier of `Wᘁ` is `Dual K W` by `FGModuleCatDual_coe`.
+  exact h.trans (LinearMap.dualMap_apply f.hom.hom φ x).symm
 
 /-- A left adjoint mate evaluates a functional by precomposition with the original map. -/
 @[simp]

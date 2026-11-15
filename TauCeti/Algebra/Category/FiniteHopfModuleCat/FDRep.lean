@@ -72,8 +72,8 @@ duals), and finiteness is measured over `k`, as the monoidal structure requires.
 * `FDRep.ofFDRepRightDualEquiv` and `FDRep.ofFDRepLeftDualEquiv`: for a group `G`, the
   `k[G]`-linear identifications of `(ofFDRep k G).obj Vᘁ` and `(ofFDRep k G).obj (ᘁV)` with the
   `S`- and `S⁻¹`-contragredients, computing `mapRightDualIso` and `mapLeftDualIso` together with
-  evaluation and coevaluation (`FDRep.ofFDRep_evaluation`, `FDRep.ofFDRep_coevaluation`,
-  `FDRep.ofFDRep_leftEvaluation`, `FDRep.ofFDRep_leftCoevaluation`).
+  evaluation and coevaluation (`FDRep.ofFDRep_map_evaluation`, `FDRep.ofFDRep_map_coevaluation`,
+  `FDRep.ofFDRep_map_leftEvaluation`, `FDRep.ofFDRep_map_leftCoevaluation`).
 * `TauCeti.FiniteHopfModuleCat.ofFDRep_isPivotal` and
   `TauCeti.FiniteHopfModuleCat.toFDRep_isPivotal`: `equivalenceFDRep k G` is a pivotal equivalence
   for the standard spherical structure of `FDRep k G` and `trivialPivotalCategory k k[G]`.
@@ -574,11 +574,18 @@ private theorem ofFDRepRightDualEquiv_aux (V : FDRep k G) (g : G) (x : (ofFDRep 
   apply (dualEquiv k k[G] ((ofFDRep k G).obj V)).injective
   ext v
   -- Unfold `e` via `he` and apply `dualEquiv_smul_apply` on the right; both sides precompose
-  -- the linear functional `x` with `g⁻¹`.
+  -- the linear functional `x` with `g⁻¹`, with the carrier of `Vᘁ` identified with
+  -- `Module.Dual k V` via `Action.rightDual_v` and `FGModuleCat.FGModuleCatDual_coe`.
   rw [dualEquiv_smul_apply, MonoidAlgebra.antipode_single, _root_.HopfAlgebra.antipode_one,
-    he, he, ofFDRepLinearEquiv_single_smul, FDRep.rightDual_ρ]
+    he, he, ofFDRepLinearEquiv_single_smul]
   let ψ : Module.Dual k V := ofFDRepLinearEquiv (Vᘁ : FDRep k G) x
-  exact congrArg ψ (ofFDRepLinearEquiv_single_smul V g⁻¹ v).symm
+  have hρ : ((Vᘁ : FDRep k G).ρ g (ofFDRepLinearEquiv (Vᘁ : FDRep k G) x) : Module.Dual k V) =
+      Representation.dual V.ρ g ψ :=
+    LinearMap.congr_fun (DFunLike.congr_fun (FDRep.rightDual_ρ V) g) ψ
+  refine (congrArg (fun f : Module.Dual k V => (ofFDRepLinearEquiv V).dualMap f v) hρ).trans ?_
+  refine (?_ : _ = (ofFDRepLinearEquiv V).dualMap ψ (MonoidAlgebra.single g⁻¹ (1 : k) • v))
+  simp only [LinearEquiv.dualMap_apply, Representation.dual_apply, Module.Dual.transpose_apply,
+    LinearMap.comp_apply, ofFDRepLinearEquiv_single_smul]
 
 /-- For a group `G`, the `k[G]`-module attached to the right dual `Vᘁ` of a representation is
 isomorphic to the `S`-contragredient right dual `((ofFDRep k G).obj V)ᘁ`, by the identity map on
@@ -627,12 +634,16 @@ theorem ofFDRep_mapRightDualIso (V : FDRep k G) :
   have hev : (ε_ V Vᘁ).hom.hom.hom = contractLeft k V :=
     (congrArg (fun u : V.Vᘁ ⊗ V.V ⟶ 𝟙_ (FGModuleCat k) => u.hom.hom)
       (Action.evaluation_hom V)).trans (FGModuleCat.evaluation_hom_hom V.V)
-  -- On pure tensors in `FDRep k G`, `contractLeft` evaluates the functional at the vector.
-  exact (LinearMap.congr_fun hev _).trans (contractLeft_apply _ _)
+  -- On pure tensors in `FDRep k G`, `contractLeft` evaluates the functional at the vector, with
+  -- the carrier of `Vᘁ` identified with `Module.Dual k V` via `Action.rightDual_v` and
+  -- `FGModuleCat.FGModuleCatDual_coe`.
+  let ψ : Module.Dual k V := ofFDRepLinearEquiv (Vᘁ : FDRep k G) φ
+  exact ((LinearMap.congr_fun hev _).trans (contractLeft_apply ψ (ofFDRepLinearEquiv V v))).trans
+    (LinearEquiv.dualMap_apply (ofFDRepLinearEquiv V) ψ v).symm
 
 /-- `ofFDRep k G` sends the right-dual evaluation `ε_ V Vᘁ` of `FDRep k G` to `dualEvaluation`,
 conjugated by the tensor and unit comparisons and `ofFDRepRightDualEquiv`. -/
-theorem ofFDRep_evaluation (V : FDRep k G) :
+theorem ofFDRep_map_evaluation (V : FDRep k G) :
     (ofFDRep k G).map (ε_ V Vᘁ) =
       δ (ofFDRep k G) Vᘁ V ≫
         (ofFDRepRightDualEquiv V).toFiniteHopfModuleCatIso.hom ▷ (ofFDRep k G).obj V ≫
@@ -647,7 +658,7 @@ theorem ofFDRep_evaluation (V : FDRep k G) :
 
 /-- `ofFDRep k G` sends the right-dual coevaluation `η_ V Vᘁ` of `FDRep k G` to `dualCoevaluation`,
 conjugated by the unit and tensor comparisons and `ofFDRepRightDualEquiv`. -/
-theorem ofFDRep_coevaluation (V : FDRep k G) :
+theorem ofFDRep_map_coevaluation (V : FDRep k G) :
     (ofFDRep k G).map (η_ V Vᘁ) =
       η (ofFDRep k G) ≫ dualCoevaluation ((ofFDRep k G).obj V) ≫
         (ofFDRep k G).obj V ◁ (ofFDRepRightDualEquiv V).toFiniteHopfModuleCatIso.inv ≫
@@ -673,12 +684,20 @@ private theorem ofFDRepLeftDualEquiv_aux (V : FDRep k G) (g : G) (x : (ofFDRep k
   apply (leftDualEquiv k k[G] ((ofFDRep k G).obj V) antipode_bijective_of_isCocomm).injective
   ext v
   -- Using `S⁻¹ = S` (`inverseAntipode_eq_antipode_of_isCocomm`), the generic `S⁻¹` left dual
-  -- action on `k[G]` reduces to `single g⁻¹ 1`, matching `FDRep.leftDual_ρ`.
+  -- action on `k[G]` reduces to `single g⁻¹ 1`, matching `FDRep.leftDual_ρ`, with the carrier of
+  -- `ᘁV` identified with `Module.Dual k V` via `Action.leftDual_v`, `FGModuleCat.leftDual_eq`, and
+  -- `FGModuleCat.FGModuleCatDual_coe`.
   rw [leftDualEquiv_smul_apply, inverseAntipode_eq_antipode_of_isCocomm,
     MonoidAlgebra.antipode_single, _root_.HopfAlgebra.antipode_one, he, he,
-    ofFDRepLinearEquiv_single_smul, FDRep.leftDual_ρ]
+    ofFDRepLinearEquiv_single_smul]
   let ψ : Module.Dual k V := ofFDRepLinearEquiv (ᘁV : FDRep k G) x
-  exact congrArg ψ (ofFDRepLinearEquiv_single_smul V g⁻¹ v).symm
+  have hρ : ((ᘁV : FDRep k G).ρ g (ofFDRepLinearEquiv (ᘁV : FDRep k G) x) : Module.Dual k V) =
+      Representation.dual V.ρ g ψ :=
+    LinearMap.congr_fun (DFunLike.congr_fun (FDRep.leftDual_ρ V) g) ψ
+  refine (congrArg (fun f : Module.Dual k V => (ofFDRepLinearEquiv V).dualMap f v) hρ).trans ?_
+  refine (?_ : _ = (ofFDRepLinearEquiv V).dualMap ψ (MonoidAlgebra.single g⁻¹ (1 : k) • v))
+  simp only [LinearEquiv.dualMap_apply, Representation.dual_apply, Module.Dual.transpose_apply,
+    LinearMap.comp_apply, ofFDRepLinearEquiv_single_smul]
 
 /-- For a group `G`, the `k[G]`-module attached to the canonical left dual `ᘁV` of `FDRep k G` is
 isomorphic to the generic `S⁻¹`-contragredient `leftDual _ ((ofFDRep k G).obj V)` (using `S⁻¹ = S`),
@@ -737,14 +756,17 @@ theorem ofFDRep_mapLeftDualIso (V : FDRep k G) :
     (leftDualEvaluation_tmul antipode_bijective_of_isCocomm ((ofFDRep k G).obj V) v
       (ofFDRepLeftDualEquiv V φ))
   rw [LinearEquiv.apply_symm_apply, leftDualEquiv_ofFDRepLeftDualEquiv] at hR
+  -- The carrier of `ᘁV` is `Module.Dual k V` by `Action.leftDual_v`, `FGModuleCat.leftDual_eq`, and
+  -- `FGModuleCat.FGModuleCatDual_coe`.
+  let ψ : Module.Dual k V := ofFDRepLinearEquiv (ᘁV : FDRep k G) φ
   exact ((LinearMap.congr_fun hev _).trans
-    (FGModuleCat.leftEvaluation_apply V.V (ofFDRepLinearEquiv V v)
-      (ofFDRepLinearEquiv (ᘁV : FDRep k G) φ))).trans hR.symm
+    (FGModuleCat.leftEvaluation_apply V.V (ofFDRepLinearEquiv V v) ψ)).trans
+    (hR.trans (LinearEquiv.dualMap_apply (ofFDRepLinearEquiv V) ψ v)).symm
 
 /-- `ofFDRep k G` sends the canonical left-dual evaluation `ε_ (ᘁV) V` of `FDRep k G` to the generic
 `S⁻¹` left-dual evaluation `leftDualEvaluation`, conjugated by the tensor and unit comparisons and
 `ofFDRepLeftDualEquiv`. -/
-theorem ofFDRep_leftEvaluation (V : FDRep k G) :
+theorem ofFDRep_map_leftEvaluation (V : FDRep k G) :
     (ofFDRep k G).map (ε_ (ᘁV) V) =
       δ (ofFDRep k G) V (ᘁV) ≫
         (ofFDRep k G).obj V ◁ (ofFDRepLeftDualEquiv V).toFiniteHopfModuleCatIso.hom ≫
@@ -760,7 +782,7 @@ theorem ofFDRep_leftEvaluation (V : FDRep k G) :
 /-- `ofFDRep k G` sends the canonical left-dual coevaluation `η_ (ᘁV) V` of `FDRep k G` to the
 generic `S⁻¹` left-dual coevaluation `leftDualCoevaluation`, conjugated by the unit and tensor
 comparisons and `ofFDRepLeftDualEquiv`. -/
-theorem ofFDRep_leftCoevaluation (V : FDRep k G) :
+theorem ofFDRep_map_leftCoevaluation (V : FDRep k G) :
     (ofFDRep k G).map (η_ (ᘁV) V) =
       η (ofFDRep k G) ≫
         leftDualCoevaluation antipode_bijective_of_isCocomm ((ofFDRep k G).obj V) ≫
@@ -798,11 +820,19 @@ theorem ofFDRep_isPivotal :
   simp only [hom_hom_comp, LinearMap.comp_apply, ofFDRep_mapRightDualIso,
     LinearEquiv.toFiniteHopfModuleCatIso_hom_hom, LinearEquiv.coe_coe,
     dualEquiv_ofFDRepRightDualEquiv, dualEquiv_rightAdjointMate_apply,
-    dualEquiv_pivotalIsoApp_hom_apply, ofFDRepLinearEquiv_ofFDRep_map_apply]
+    dualEquiv_pivotalIsoApp_trivialPivotalCategory_hom_apply, ofFDRepLinearEquiv_ofFDRep_map_apply]
   rw [pivotalIsoApp_eq_drinfeldIso]
-  have hd := FDRep.drinfeldIso_hom_hom_hom_hom V
-  exact LinearMap.congr_fun (LinearMap.congr_fun hd (ofFDRepLinearEquiv V v))
-    (ofFDRepLinearEquiv (Vᘁ : FDRep k G) ψ)
+  -- The carriers of `Vᘁ` and `Vᘁᘁ` are `Module.Dual k V` and `Module.Dual k (Vᘁ)` by
+  -- `Action.rightDual_v` and `FGModuleCat.FGModuleCatDual_coe`.
+  let φ : Module.Dual k V := ofFDRepLinearEquiv (Vᘁ : FDRep k G) ψ
+  let Φ : Module.Dual k (Vᘁ : FDRep k G) := (drinfeldIso V).hom.hom.hom (ofFDRepLinearEquiv V v)
+  refine (LinearEquiv.dualMap_apply (ofFDRepLinearEquiv (Vᘁ : FDRep k G)) Φ ψ).trans ?_
+  have hd : Φ (ofFDRepLinearEquiv (Vᘁ : FDRep k G) ψ) =
+      Module.Dual.eval k V (ofFDRepLinearEquiv V v) φ :=
+    LinearMap.congr_fun (LinearMap.congr_fun (FDRep.drinfeldIso_hom_hom_hom_hom V)
+      (ofFDRepLinearEquiv V v)) φ
+  exact hd.trans ((Module.Dual.eval_apply (R := k) (M := V) (ofFDRepLinearEquiv V v) φ).trans
+    (LinearEquiv.dualMap_apply (ofFDRepLinearEquiv V) φ v).symm)
 
 variable (k G) in
 /-- `toFDRep k G` is a pivotal functor from `FiniteHopfModuleCat k k[G]` (with
@@ -817,9 +847,23 @@ theorem toFDRep_isPivotal :
   have : (equivalenceFDRep k G).functor.IsPivotal := ofFDRep_isPivotal k G
   exact inferInstanceAs (equivalenceFDRep k G).inverse.IsPivotal
 
+/-- `ofFDRep k G` sends the spherical categorical trace of `FDRep k G` to the spherical categorical
+trace of `FiniteHopfModuleCat k k[G]` for `trivialSphericalCategory`. -/
+theorem trace_ofFDRep_map {V : FDRep k G} (f : V ⟶ V) :
+    letI := cocommRigidCategory k k[G]
+    letI := trivialPivotalCategory k k[G]
+    haveI := trivialSphericalCategory k k[G]
+    trace ((ofFDRep k G).map f) =
+      ε (ofFDRep k G) ≫ (ofFDRep k G).map (trace f) ≫ η (ofFDRep k G) := by
+  let := cocommRigidCategory k k[G]
+  let := trivialPivotalCategory k k[G]
+  have := trivialSphericalCategory k k[G]
+  have := ofFDRep_isPivotal k G
+  exact (ofFDRep k G).trace_map f
+
 /-- `toFDRep k G` preserves the spherical categorical trace, identifying `trivialSphericalCategory`
 with the standard spherical structure of `FDRep k G`. -/
-theorem toFDRep_trace {M : FiniteHopfModuleCat k k[G]} (f : M ⟶ M) :
+theorem trace_toFDRep_map {M : FiniteHopfModuleCat k k[G]} (f : M ⟶ M) :
     letI := cocommRigidCategory k k[G]
     letI := trivialPivotalCategory k k[G]
     haveI := trivialSphericalCategory k k[G]
@@ -832,7 +876,7 @@ theorem toFDRep_trace {M : FiniteHopfModuleCat k k[G]} (f : M ⟶ M) :
   exact (toFDRep k G).trace_map f
 
 /-- `toFDRep k G` preserves quantum dimensions. -/
-theorem toFDRep_quantumDim (M : FiniteHopfModuleCat k k[G]) :
+theorem quantumDim_toFDRep_obj (M : FiniteHopfModuleCat k k[G]) :
     letI := cocommRigidCategory k k[G]
     letI := trivialPivotalCategory k k[G]
     haveI := trivialSphericalCategory k k[G]
@@ -849,16 +893,16 @@ end TauCeti.FiniteHopfModuleCat
 namespace FDRep
 
 open Functor.LaxMonoidal Functor.OplaxMonoidal
-open TauCeti (leftDualIsoRightDual trace quantumDim)
+open TauCeti (leftDualIsoRightDual quantumDim)
 open TauCeti.HopfAlgebra (antipode_bijective_of_isCocomm)
 open TauCeti.FiniteHopfModuleCat (ofFDRep cocommRigidCategory trivialPivotalCategory
-  trivialSphericalCategory leftDualIsoDual leftDualIsoRightDual_eq_leftDualIsoDual
+  trivialSphericalCategory leftDualIsoDual leftDualIsoRightDual_trivialPivotalCategory
   ofFDRep_isPivotal)
 
 /-- Under `ofFDRep k G`, the canonical pivotal identification `leftDualIsoRightDual V : ᘁV ≅ Vᘁ` of
 `FDRep k G` corresponds to `leftDualIsoDual` (`S⁻¹ = S`) between the generic `S⁻¹` left dual and the
 `S` right dual of `(ofFDRep k G).obj V`. -/
-theorem ofFDRep_leftDualIsoRightDual (V : FDRep k G) :
+theorem ofFDRep_map_leftDualIsoRightDual_hom_comp_toFiniteHopfModuleCatIso_hom (V : FDRep k G) :
     (ofFDRep k G).map (leftDualIsoRightDual V).hom ≫
         (ofFDRepRightDualEquiv V).toFiniteHopfModuleCatIso.hom =
       (ofFDRepLeftDualEquiv V).toFiniteHopfModuleCatIso.hom ≫
@@ -867,26 +911,12 @@ theorem ofFDRep_leftDualIsoRightDual (V : FDRep k G) :
   let := trivialPivotalCategory k k[G]
   have := ofFDRep_isPivotal k G
   simpa only [ofFDRep_mapRightDualIso, ofFDRep_mapLeftDualIso,
-    leftDualIsoRightDual_eq_leftDualIsoDual] using
+    leftDualIsoRightDual_trivialPivotalCategory] using
     (ofFDRep k G).map_leftDualIsoRightDual_hom_comp_mapRightDualIso_hom V
-
-/-- `ofFDRep k G` sends the spherical categorical trace of `FDRep k G` to the spherical categorical
-trace of `FiniteHopfModuleCat k k[G]` for `trivialSphericalCategory`. -/
-theorem ofFDRep_trace {V : FDRep k G} (f : V ⟶ V) :
-    letI := cocommRigidCategory k k[G]
-    letI := trivialPivotalCategory k k[G]
-    haveI := trivialSphericalCategory k k[G]
-    trace ((ofFDRep k G).map f) =
-      ε (ofFDRep k G) ≫ (ofFDRep k G).map (trace f) ≫ η (ofFDRep k G) := by
-  let := cocommRigidCategory k k[G]
-  let := trivialPivotalCategory k k[G]
-  have := trivialSphericalCategory k k[G]
-  have := ofFDRep_isPivotal k G
-  exact (ofFDRep k G).trace_map f
 
 /-- `ofFDRep k G` sends the quantum dimension of `V` in `FDRep k G` to the quantum dimension of
 `(ofFDRep k G).obj V` in `FiniteHopfModuleCat k k[G]` for `trivialSphericalCategory`. -/
-theorem ofFDRep_quantumDim (V : FDRep k G) :
+theorem quantumDim_ofFDRep_obj (V : FDRep k G) :
     letI := cocommRigidCategory k k[G]
     letI := trivialPivotalCategory k k[G]
     haveI := trivialSphericalCategory k k[G]

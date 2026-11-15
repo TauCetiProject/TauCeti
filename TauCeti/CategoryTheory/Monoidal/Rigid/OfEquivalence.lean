@@ -10,14 +10,15 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.OfEquivalence
 /-!
 # Structure maps of duals pulled back along a monoidal equivalence
 
-Mathlib's `CategoryTheory.hasRightDualOfEquivalence` gives an object `X` of `C` a right dual by
-pulling back the right dual of `F.obj X` along a monoidal equivalence `F : C ⥤ D`. Its evaluation
-and coevaluation are defined as preimages under `F`. This file records their images under `F`:
-the evaluation and coevaluation of `(F.obj X, (F.obj X)ᘁ)`, transported across the counit of the
-equivalence and conjugated by the comparison maps of `F`.
+Mathlib's `CategoryTheory.hasRightDualOfEquivalence` and
+`CategoryTheory.hasLeftDualOfEquivalence` give an object `X` of `C` a right or left dual by pulling
+back the corresponding dual of `F.obj X` along a monoidal equivalence `F : C ⥤ D`. Their
+evaluations and coevaluations are defined as preimages under `F`. This file records their images
+under `F`: the evaluations and coevaluations of `(F.obj X, (F.obj X)ᘁ)` and `(ᘁ(F.obj X), F.obj X)`,
+transported across the counit of the equivalence and conjugated by the comparison maps of `F`.
 
-These identities are how the structure maps of such a dual are computed. For instance, Mathlib
-makes `Action V H` right rigid this way, and its evaluation and coevaluation are computed from
+These identities are how the structure maps of such duals are computed. For instance, Mathlib makes
+`Action V H` right or left rigid this way, and its evaluations and coevaluations are computed from
 them on underlying objects.
 
 ## Main results

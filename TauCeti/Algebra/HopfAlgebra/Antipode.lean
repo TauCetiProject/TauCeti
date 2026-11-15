@@ -50,16 +50,19 @@ comultiplication as a left inverse of comultiplication. Mathlib's
 `LinearMap.comul_right_inv` supplies the matching right inverse, so uniqueness of inverses
 finishes the proof.
 
-The involutivity proof uses `inv_inv` in Mathlib's convolution group on algebra maps. The private
-lemma `ofConv_inv` isolates the single definitional unfolding of `AlgHom.convInv` needed to read
-that group identity as the pointwise equation `S (S x) = x`.
+In the commutative case, the involutivity proof uses `inv_inv` in Mathlib's convolution group on
+algebra maps; the private lemma `ofConv_inv` isolates the single definitional unfolding of
+`AlgHom.convInv` needed to read that group identity as the pointwise equation `S (S x) = x`. In the
+cocommutative case (`antipode_antipode_of_isCocomm`), `S ∘ₗ S` is shown to be a right convolution
+inverse of `S` in `WithConv (C →ₗ[R] C)` and compared with the left convolution inverse `id` via
+`left_inv_eq_right_inv`.
 
 ## References
 
-The anti-coalgebra identity and involutivity in the commutative case are standard; see Sweedler,
-*Hopf Algebras*, Chapter 4, Proposition 4.0.1 for the anti-(co)algebra identity and Proposition
-4.0.6 for involutivity. Mathlib formalizes these results for Hopf objects in a braided monoidal
-category as `CategoryTheory.HopfObj.antipode_comul` and
+The anti-coalgebra identity and involutivity in the commutative or cocommutative case are standard;
+see Sweedler, *Hopf Algebras*, Chapter 4, Proposition 4.0.1 for the anti-(co)algebra identity and
+Proposition 4.0.6 for involutivity. Mathlib formalizes these results for Hopf objects in a braided
+monoidal category as `CategoryTheory.HopfObj.antipode_comul` and
 `CategoryTheory.HopfObj.antipode_antipode`. The proofs below are ring-level analogues, stated for
 `HopfAlgebra R C` and `HopfAlgebra R A` so they apply directly to the bundled ring-theoretic
 antipode APIs.
