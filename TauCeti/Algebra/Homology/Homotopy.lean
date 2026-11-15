@@ -475,30 +475,6 @@ lemma ofHomotopyRetractOfComm_inv (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶
     (e.ofHomotopyRetractOfComm i₂ hK hL hj hr).inv = rL ≫ e.inv ≫ jK :=
   (rfl)
 
-/-- Along the trivial identity retract, `ofHomotopyRetractOfComm` leaves the homotopy inverse
-unchanged. -/
-lemma ofHomotopyRetractOfComm_id_inv (e : HomotopyEquiv K₁ L₁) :
-    (e.ofHomotopyRetractOfComm e.hom
-      (Homotopy.ofEq (Category.id_comp (𝟙 K₁))) (Homotopy.ofEq (Category.id_comp (𝟙 L₁)))
-      (by simp) (by simp)).inv = e.inv := by
-  simp
-
-/-- Along the trivial identity retract, `ofHomotopyRetractOfComm` preserves the operator of
-`homotopyHomInvId` in every bidegree. -/
-lemma ofHomotopyRetractOfComm_id_homotopyHomInvId_hom (e : HomotopyEquiv K₁ L₁) (p q : ι) :
-    (e.ofHomotopyRetractOfComm e.hom
-      (Homotopy.ofEq (Category.id_comp (𝟙 K₁))) (Homotopy.ofEq (Category.id_comp (𝟙 L₁)))
-      (by simp) (by simp)).homotopyHomInvId.hom p q = e.homotopyHomInvId.hom p q := by
-  simp [ofHomotopyRetractOfComm, ofHomotopyRetract]
-
-/-- Along the trivial identity retract, `ofHomotopyRetractOfComm` preserves the operator of
-`homotopyInvHomId` in every bidegree. -/
-lemma ofHomotopyRetractOfComm_id_homotopyInvHomId_hom (e : HomotopyEquiv K₁ L₁) (p q : ι) :
-    (e.ofHomotopyRetractOfComm e.hom
-      (Homotopy.ofEq (Category.id_comp (𝟙 K₁))) (Homotopy.ofEq (Category.id_comp (𝟙 L₁)))
-      (by simp) (by simp)).homotopyInvHomId.hom p q = e.homotopyInvHomId.hom p q := by
-  simp [ofHomotopyRetractOfComm, ofHomotopyRetract]
-
 end Retract
 
 section InverseUniqueness
