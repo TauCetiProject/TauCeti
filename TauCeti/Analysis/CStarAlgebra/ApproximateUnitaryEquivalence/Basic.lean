@@ -147,6 +147,43 @@ theorem injective_iff (h : ApproximatelyUnitarilyEquivalent φ ψ) :
   exact forall_congr' fun a ↦ by rw [← norm_eq_zero (a := φ a),
     ← norm_eq_zero (a := ψ a), h.norm_eq]
 
+section Unital
+
+variable {A : Type*} [CStarAlgebra A] {φ ψ : A →⋆ₙₐ[ℂ] B}
+
+/-- On a unital source, a map approximately unitarily equivalent to a unital map is itself
+unital. -/
+theorem map_one_eq_one_iff (h : ApproximatelyUnitarilyEquivalent φ ψ) :
+    φ 1 = 1 ↔ ψ 1 = 1 := by
+  suffices key : ∀ {φ ψ : A →⋆ₙₐ[ℂ] B}, ApproximatelyUnitarilyEquivalent φ ψ →
+      ψ 1 = 1 → φ 1 = 1 from ⟨key h.symm, key h⟩
+  intro φ ψ h hψ
+  obtain ⟨u, hu⟩ := h {1} 1 one_pos
+  have hlt : ‖1 - φ 1‖ < 1 := by
+    have hu1 := hu 1 (Finset.mem_singleton_self 1)
+    have hn := StarAlgEquiv.norm_map (Unitary.conjStarAlgAut ℂ B u) (φ 1 - 1)
+    rw [map_sub, map_one (Unitary.conjStarAlgAut ℂ B u), Unitary.conjStarAlgAut_apply] at hn
+    rw [hψ] at hu1
+    rwa [norm_sub_rev, ← hn]
+  have hp : IsStarProjection (1 - φ 1) :=
+    IsStarProjection.one_sub ⟨IsIdempotentElem.one.map φ, (IsSelfAdjoint.one A).map φ⟩
+  -- A projection `q` satisfies `‖q‖ = ‖q⋆ q‖ = ‖q‖ ^ 2`, so `‖q‖ < 1` forces `q = 0`.
+  have hsq : ‖1 - φ 1‖ * ‖1 - φ 1‖ = ‖1 - φ 1‖ := by
+    rw [← CStarRing.norm_star_mul_self, hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
+  have hz : ‖1 - φ 1‖ = 0 := by nlinarith [norm_nonneg (1 - φ 1)]
+  exact (sub_eq_zero.mp (norm_eq_zero.mp hz)).symm
+
+/-- If `φ ∘ ρ` is approximately unitarily equivalent to the identity of a unital algebra, then
+`φ` is unital. -/
+theorem map_one_of_comp_id {ρ : B →⋆ₙₐ[ℂ] A}
+    (h : ApproximatelyUnitarilyEquivalent (φ.comp ρ) (NonUnitalStarAlgHom.id ℂ B)) :
+    φ 1 = 1 := by
+  have h1 : φ (ρ 1) = 1 := h.map_one_eq_one_iff.mpr rfl
+  calc φ 1 = φ (ρ 1) * φ 1 := by rw [h1, one_mul]
+    _ = 1 := by rw [← map_mul, mul_one, h1]
+
+end Unital
+
 end ApproximatelyUnitarilyEquivalent
 
 end TauCeti
