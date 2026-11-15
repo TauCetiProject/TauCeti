@@ -15,7 +15,8 @@ The source and target projections of the represented Weierstrass groupoid are th
 of the left and right units of its Hopf algebroid. Inversion exchanges them. This file
 constructs their identity section and inversion isomorphism, and proves that both projections
 are smooth of relative dimension four and surjective, using the arbitrary-coefficient-ring
-results of `TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Smooth.lean`.
+results of `TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Smooth.lean`. On rings, the
+right unit is flat (`TauCeti.WeierstrassHopfAlgebroid.flat_rightUnit`).
 
 These are properties of the affine groupoid; identifying its quotient with a moduli stack
 requires the separate moduli and descent comparisons.
@@ -116,6 +117,15 @@ instance smoothOfRelativeDimension_target : SmoothOfRelativeDimension 4 target :
   rw [← inversion_hom_source]
   simpa only [zero_add] using
     (inferInstance : SmoothOfRelativeDimension (0 + 4) (inversion.hom ≫ source))
+
+/-- The right unit `η_R : ℤ[a₁, ⋯, a₆] →+* Γ`, classifying the target of the universal arrow, is
+a flat ring homomorphism. -/
+theorem flat_rightUnit : rightUnit.Flat := by
+  -- `η_R` is the faithfully flat `η_L` followed by the conjugation, an involution
+  rw [← conjugation_comp_algebraMap]
+  refine RingHom.Flat.comp (RingHom.flat_algebraMap_iff.mpr inferInstance)
+    (RingHom.Flat.of_bijective (Function.Involutive.bijective fun x ↦ ?_))
+  exact RingHom.congr_fun conjugation_comp_conjugation x
 
 /-- The source projection is smooth. -/
 instance smooth_source : Smooth source := SmoothOfRelativeDimension.smooth 4 _
