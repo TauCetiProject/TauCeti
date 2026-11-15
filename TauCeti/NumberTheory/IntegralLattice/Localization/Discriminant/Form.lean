@@ -33,8 +33,8 @@ power of `p`, and a rational number with `p`-power denominator that lies in `ℤ
 (`Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`). So `b_M(x', y') = b_L(x, y)`; the same
 argument applies to the half-norms when the lattices are even.
 
-Lattices in one genus have isometric localizations at every prime and the same order of
-discriminant group, so their discriminant forms are isometric prime by prime, and hence isometric
+Lattices in one genus have isometric localizations at every prime, so their discriminant forms are
+isometric prime by prime, and hence isometric
 (`TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent`). This is the easy
 half of Nikulin's description of the genus of an even lattice by its signature and its
 discriminant quadratic form, Corollary 1.9.4, and of its odd analogue, Corollary 1.16.3, where the

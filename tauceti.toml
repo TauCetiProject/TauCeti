@@ -65,6 +65,8 @@ deployment = "cloudflare"
 [services.fleet]
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
+# Defaults only: NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables
+# control live routing without a source PR; zero cap disables new Namespace work.
 namespace_enabled = true
 namespace_build_cap = 8
 pr_order = ["github", "fleet", "namespace"]

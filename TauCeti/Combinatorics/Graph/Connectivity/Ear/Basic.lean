@@ -132,15 +132,16 @@ theorem endpoints_ne (e : G.Ear H) (he : e.kind = .open) : e.toWalk.1 ≠ e.toWa
 theorem base_vertexSet_nonempty (e : G.Ear H) : V(H).Nonempty :=
   ⟨e.toWalk.1, e.toWalk_fst_mem⟩
 
-/-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
+/-- Ears are equal when they have the same endpoint-indexed walk. -/
 @[ext]
-theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
-    e = f := by
-  cases e <;> cases f <;> simp only [kind, toWalk] at hkind hwalk
+theorem ext (e f : G.Ear H) (hwalk : e.toWalk = f.toWalk) : e = f := by
+  cases e <;> cases f <;> simp only [toWalk] at hwalk
   · cases hwalk
     rfl
-  · contradiction
-  · contradiction
+  · cases hwalk
+    exact absurd rfl ‹_ ≠ _›
+  · cases hwalk
+    exact absurd rfl ‹_ ≠ _›
   · cases hwalk
     rfl
 
@@ -264,8 +265,7 @@ theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
 
 /-- The interiors of an open ear and an oppositely directed path in its base are disjoint. -/
 theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
-    (hp : p.IsPath) (ht : t ∈ V(H))
-    (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
+    (hp : p.IsPath) (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
     {q : H.Walk t s} (hq : q.IsPath) :
     p.support.tail.Disjoint (q.mapLe hHG).support.tail := by
   rw [List.disjoint_left]
@@ -278,8 +278,12 @@ theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
   rw [← q.cons_tail_support] at hqNodup
   have hzs : z ≠ s := fun hzs ↦ (List.nodup_cons.mp hpNodup).1 (hzs ▸ hzp)
   have hzt : z ≠ t := fun hzt ↦ (List.nodup_cons.mp hqNodup).1 (hzt ▸ hzq')
+  have hpos : 0 < q.length := by
+    cases q with
+    | nil => simp at hzq'
+    | cons _ _ _ => simp
   exact hinter z (List.mem_of_mem_tail hzp) hzs hzt
-    (q.support_subset_vertexSet ht z (List.mem_of_mem_tail hzq'))
+    (q.support_subset_vertexSet_of_pos hpos z (List.mem_of_mem_tail hzq'))
 
 /-- Adjoining an ear still gives a subgraph of the ambient graph. -/
 theorem add_le (e : G.Ear H) : e.add ≤ G :=
@@ -366,7 +370,7 @@ theorem exists_isCycle_add_of_mem_edgeSet_toGraph (ear : G.Ear H) (hH : H.Connec
       let qG := q.mapLe hHG
       have hqG : qG.IsPath := (Walk.isPath_mapLe hHG q).mpr hq
       have hv : p.support.tail.Disjoint qG.support.tail :=
-        open_support_tail_disjoint hHG hp ht hinter hq
+        open_support_tail_disjoint hHG hp hinter hq
       have hedisj : p.edges.Disjoint qG.edges := by
         have h := edges_disjoint_of_le_base
           (Ear.open hHG p hp hs ht hst hinter hedges) q
@@ -577,17 +581,24 @@ namespace EarDecomposition
 
 variable {G H : Graph α β}
 
-/-- Ear decompositions are extensional in their stage graphs, initial data, and ears. -/
+/-- Ear decompositions are extensional in their length, initial data, and ears: the stage graphs
+are the bases of the ears together with the final graph. -/
 @[ext]
 theorem ext (d e : G.EarDecomposition H) (hlength : d.length = e.length)
-    (hgraphAfter : HEq d.graphAfter e.graphAfter) (hstart : HEq d.start e.start)
-    (hearAt : HEq d.earAt e.earAt) : d = e := by
-  cases d
-  cases e
+    (hstart : HEq d.start e.start) (hearAt : HEq d.earAt e.earAt) : d = e := by
+  obtain ⟨dl, dg, ds, dea, dfst, dsucc, dlast⟩ := d
+  obtain ⟨el, eg, es, eea, efst, esucc, elast⟩ := e
   cases hlength
-  cases hgraphAfter
+  simp only at hstart hearAt
+  have hearAt' := eq_of_heq hearAt
+  have hg : dg = eg := by
+    funext i
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · exact dlast.trans elast.symm
+    · rw [← dfst j, ← efst j, hearAt']
+  cases hg
   cases hstart
-  cases hearAt
+  cases hearAt'
   rfl
 
 /-- The initial graph of a decomposition. -/

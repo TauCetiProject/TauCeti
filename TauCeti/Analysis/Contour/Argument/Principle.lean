@@ -138,7 +138,7 @@ theorem neg_one_le_meromorphicOrderAt_logDeriv {f : ℂ → ℂ} {z₀ : ℂ} (h
     exact le_top
   obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hne
   obtain ⟨g, hg_an, hg_ne, hgerm⟩ := logDeriv_eventuallyEq_principalPart hf hn.symm
-  have hlogg_an : AnalyticAt ℂ (logDeriv g) z₀ := analyticAt_logDeriv_of_analyticAt hg_an hg_ne
+  have hlogg_an : AnalyticAt ℂ (logDeriv g) z₀ := hg_an.logDeriv hg_ne
   have hinv : MeromorphicAt (fun z : ℂ => (z - z₀)⁻¹) z₀ :=
     ((analyticAt_id.sub analyticAt_const).meromorphicAt).inv
   have hA : MeromorphicAt (fun z => (n : ℂ) * (z - z₀)⁻¹) z₀ :=
@@ -203,24 +203,31 @@ private theorem circleIntegral_principalPart {c : ℂ} {R : ℝ} (hR : 0 ≤ R) 
   ring
 
 /-- Subtracting the principal part cancels every simple pole of `logDeriv F`: if `F` is meromorphic
-on the disc with order `ord z` at each `z ∈ S` and is analytic and non-vanishing off `S`, then
+at the points of `S` in the closed disc, with order `ord z` there, and analytic and non-vanishing
+off `S` in the disc, then
 `logDeriv F − ∑_{s∈S} ord s · (· − s)⁻¹` is pole-free, so its circle integral vanishes. -/
 private theorem circleIntegral_logDeriv_sub_principalPart_eq_zero {F : ℂ → ℂ} {c : ℂ} {R : ℝ}
-    (hR : 0 ≤ R) (S : Finset ℂ) (ord : ℂ → ℤ) (hF_mero : MeromorphicOn F (Metric.closedBall c R))
-    (hord_F : ∀ z ∈ S, meromorphicOrderAt F z = (ord z : WithTop ℤ))
+    (hR : 0 ≤ R) (S : Finset ℂ) (ord : ℂ → ℤ)
+    (hF_mero : ∀ z ∈ S, z ∈ Metric.closedBall c R → MeromorphicAt F z)
+    (hord_F : ∀ z ∈ S, z ∈ Metric.closedBall c R →
+      meromorphicOrderAt F z = (ord z : WithTop ℤ))
     (hoffF : ∀ z ∈ Metric.closedBall c R, z ∉ S → AnalyticAt ℂ F z ∧ F z ≠ 0) :
     circleIntegral (fun z => logDeriv F z - ∑ s ∈ S, (ord s : ℂ) * (z - s)⁻¹) c R = 0 := by
+  have hF : MeromorphicOn F (Metric.closedBall c R) := fun z hz => by
+    by_cases hzS : z ∈ S
+    · exact hF_mero z hzS hz
+    · exact (hoffF z hz hzS).1.meromorphicAt
   have hP_mero : MeromorphicOn (fun z => ∑ s ∈ S, (ord s : ℂ) * (z - s)⁻¹)
       (Metric.closedBall c R) := by
     refine MeromorphicOn.fun_sum fun s _ z _ => ?_
     exact (MeromorphicAt.const (ord s : ℂ) z).mul
       (((MeromorphicAt.id z).sub (MeromorphicAt.const s z)).inv)
-  refine circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR (hF_mero.logDeriv.sub hP_mero) ?_
+  refine circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR (hF.logDeriv.sub hP_mero) ?_
   intro z hz
   by_cases hzS : z ∈ S
-  · have hz_ord : meromorphicOrderAt F z = (ord z : WithTop ℤ) := hord_F z hzS
+  · have hz_ord : meromorphicOrderAt F z = (ord z : WithTop ℤ) := hord_F z hzS hz
     obtain ⟨g, hg_an, hg_ne, hg_germ⟩ :=
-      logDeriv_eventuallyEq_principalPart (hF_mero z hz) hz_ord
+      logDeriv_eventuallyEq_principalPart (hF_mero z hzS hz) hz_ord
     have hA_eq : (fun w => logDeriv F w - ∑ s ∈ S, (ord s : ℂ) * (w - s)⁻¹) =ᶠ[𝓝[≠] z]
         fun w => logDeriv g w - ∑ s ∈ S.erase z, (ord s : ℂ) * (w - s)⁻¹ := by
       filter_upwards [hg_germ] with w hw
@@ -231,56 +238,60 @@ private theorem circleIntegral_logDeriv_sub_principalPart_eq_zero {F : ℂ → �
         analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).inv
           (sub_ne_zero.2 (Ne.symm (Finset.ne_of_mem_erase hs))))
     rw [meromorphicOrderAt_congr hA_eq]
-    exact ((analyticAt_logDeriv_of_analyticAt hg_an hg_ne).sub hrest_an).meromorphicOrderAt_nonneg
+    exact ((hg_an.logDeriv hg_ne).sub hrest_an).meromorphicOrderAt_nonneg
   · have hz_off := hoffF z hz hzS
     have hP_an : AnalyticAt ℂ (fun z => ∑ s ∈ S, (ord s : ℂ) * (z - s)⁻¹) z := by
       refine Finset.analyticAt_fun_sum _ fun s hsS =>
         analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 ?_))
       rintro rfl; exact hzS hsS
-    exact ((analyticAt_logDeriv_of_analyticAt hz_off.1 hz_off.2).sub
+    exact ((hz_off.1.logDeriv hz_off.2).sub
       hP_an).meromorphicOrderAt_nonneg
 
-/-- **The argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R > 0`) with
+/-- **The argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R ≥ 0`) with
 all its nonzero-order points contained in a finite set `S` inside the open disc, with orders `ord`,
 then the contour integral of the logarithmic derivative counts the zeros minus the poles with
 multiplicity:
 `∮_{C(c,R)} f'/f = 2πi · ∑_{z ∈ S} ord z`. -/
-theorem argumentPrinciple {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ) (ord : ℂ → ℤ)
+theorem argumentPrinciple {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 ≤ R) (S : Finset ℂ) (ord : ℂ → ℤ)
     (hf : MeromorphicOn f (Metric.closedBall c R)) (hS : (S : Set ℂ) ⊆ Metric.ball c R)
     (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z ∈ S)
     (hord : ∀ z ∈ S, meromorphicOrderAt f z = (ord z : WithTop ℤ)) :
     circleIntegral (logDeriv f) c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ z ∈ S, (ord z : ℂ)) := by
-  set F := toMeromorphicNFOn f (Metric.closedBall c R) with hF_def
-  have hF_nf : MeromorphicNFOn F (Metric.closedBall c R) := meromorphicNFOn_toMeromorphicNFOn f _
-  have hF_mero : MeromorphicOn F (Metric.closedBall c R) := hF_nf.meromorphicOn
-  have hordF : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt F z = meromorphicOrderAt f z :=
-    fun z hz => meromorphicOrderAt_toMeromorphicNFOn hf hz
-  have hoffF : ∀ z ∈ Metric.closedBall c R, z ∉ S → AnalyticAt ℂ F z ∧ F z ≠ 0 := by
-    intro z hz hzS
-    have h0 : meromorphicOrderAt F z = 0 := by
-      rw [hordF z hz]; by_contra h; exact hzS (hsupp z hz h)
-    exact ⟨(hF_nf hz).meromorphicOrderAt_nonneg_iff_analyticAt.1 h0.symm.le,
-      (hF_nf hz).meromorphicOrderAt_eq_zero_iff.1 h0⟩
-  have hord_F : ∀ z ∈ S, meromorphicOrderAt F z = (ord z : WithTop ℤ) := fun z hzS =>
-    (hordF z (Metric.ball_subset_closedBall (hS (Finset.mem_coe.2 hzS)))).trans (hord z hzS)
-  have hsphere_notS : ∀ z ∈ Metric.sphere c R, z ∉ S := fun z hz hzS => by
-    rw [Metric.mem_sphere] at hz
-    exact absurd hz (ne_of_lt (Metric.mem_ball.1 (hS (Finset.mem_coe.2 hzS))))
-  rw [circleIntegral_logDeriv_toMeromorphicNFOn hR hf, ← hF_def]
-  have hlogF_cont : ContinuousOn (logDeriv F) (Metric.sphere c R) := fun z hz =>
-    (analyticAt_logDeriv_of_analyticAt
-      (hoffF z (sphere_subset_closedBall hz) (hsphere_notS z hz)).1
-      (hoffF z (sphere_subset_closedBall hz) (hsphere_notS z hz)).2).continuousAt.continuousWithinAt
-  have hzs_ne : ∀ z ∈ Metric.sphere c R, ∀ s ∈ S, z ≠ s := by
-    intro z hz s hsS h; subst h; exact absurd hsS (hsphere_notS z hz)
-  have hP_cont : ContinuousOn (fun z => ∑ s ∈ S, (ord s : ℂ) * (z - s)⁻¹) (Metric.sphere c R) :=
-    continuousOn_finsetSum S fun s hsS => continuousOn_const.mul
-      ((continuousOn_id.sub continuousOn_const).inv₀ fun z hz => sub_ne_zero.2 (hzs_ne z hz s hsS))
-  have hsub := (circleIntegral.integral_sub (hlogF_cont.circleIntegrable hR.le)
-    (hP_cont.circleIntegrable hR.le)).symm
-  rw [circleIntegral_logDeriv_sub_principalPart_eq_zero hR.le S ord hF_mero hord_F hoffF,
-    sub_eq_zero] at hsub
-  rw [hsub, circleIntegral_principalPart hR.le S ord hS]
+  rcases hR.eq_or_lt with rfl | hR
+  · have hS0 : S = ∅ := by simpa using hS
+    simp [hS0]
+  · set F := toMeromorphicNFOn f (Metric.closedBall c R) with hF_def
+    have hF_nf : MeromorphicNFOn F (Metric.closedBall c R) := meromorphicNFOn_toMeromorphicNFOn f _
+    have hF_mero : MeromorphicOn F (Metric.closedBall c R) := hF_nf.meromorphicOn
+    have hordF : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt F z = meromorphicOrderAt f z :=
+      fun z hz => meromorphicOrderAt_toMeromorphicNFOn hf hz
+    have hoffF : ∀ z ∈ Metric.closedBall c R, z ∉ S → AnalyticAt ℂ F z ∧ F z ≠ 0 := by
+      intro z hz hzS
+      have h0 : meromorphicOrderAt F z = 0 := by
+        rw [hordF z hz]; by_contra h; exact hzS (hsupp z hz h)
+      exact ⟨(hF_nf hz).meromorphicOrderAt_nonneg_iff_analyticAt.1 h0.symm.le,
+        (hF_nf hz).meromorphicOrderAt_eq_zero_iff.1 h0⟩
+    have hord_F : ∀ z ∈ S, meromorphicOrderAt F z = (ord z : WithTop ℤ) := fun z hzS =>
+      (hordF z (Metric.ball_subset_closedBall (hS (Finset.mem_coe.2 hzS)))).trans (hord z hzS)
+    have hsphere_notS : ∀ z ∈ Metric.sphere c R, z ∉ S := fun z hz hzS => by
+      rw [Metric.mem_sphere] at hz
+      exact absurd hz (ne_of_lt (Metric.mem_ball.1 (hS (Finset.mem_coe.2 hzS))))
+    rw [circleIntegral_logDeriv_toMeromorphicNFOn hR hf, ← hF_def]
+    have hlogF_cont : ContinuousOn (logDeriv F) (Metric.sphere c R) := fun z hz =>
+      let hregular := hoffF z (sphere_subset_closedBall hz) (hsphere_notS z hz)
+      (hregular.1.logDeriv hregular.2).continuousAt.continuousWithinAt
+    have hzs_ne : ∀ z ∈ Metric.sphere c R, ∀ s ∈ S, z ≠ s := by
+      intro z hz s hsS h; subst h; exact absurd hsS (hsphere_notS z hz)
+    have hP_cont : ContinuousOn (fun z => ∑ s ∈ S, (ord s : ℂ) * (z - s)⁻¹) (Metric.sphere c R) :=
+      continuousOn_finsetSum S fun s hsS => continuousOn_const.mul
+        ((continuousOn_id.sub continuousOn_const).inv₀ fun z hz =>
+          sub_ne_zero.2 (hzs_ne z hz s hsS))
+    have hsub := (circleIntegral.integral_sub (hlogF_cont.circleIntegrable hR.le)
+      (hP_cont.circleIntegrable hR.le)).symm
+    rw [circleIntegral_logDeriv_sub_principalPart_eq_zero hR.le S ord (fun z _ hz => hF_mero z hz)
+        (fun z hzS _ => hord_F z hzS) hoffF,
+      sub_eq_zero] at hsub
+    rw [hsub, circleIntegral_principalPart hR.le S ord hS]
 
 /-- **Local argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R > 0`) and
 the centre `c` is the only point of the disc that may have nonzero meromorphic order — every other
@@ -294,7 +305,7 @@ theorem argumentPrinciple_local {f : ℂ → ℂ} {c : ℂ} {R : ℝ} {n : ℤ} 
     (honly : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z = c)
     (hn : meromorphicOrderAt f c = (n : WithTop ℤ)) :
     circleIntegral (logDeriv f) c R = 2 * (Real.pi : ℂ) * Complex.I * (n : ℂ) := by
-  have key := argumentPrinciple hR {c} (fun _ => n) hf
+  have key := argumentPrinciple hR.le {c} (fun _ => n) hf
     (by rw [Finset.coe_singleton, Set.singleton_subset_iff]; exact Metric.mem_ball_self hR)
     (fun z hz hz0 => Finset.mem_singleton.2 (honly z hz hz0))
     (fun z hz => by rw [Finset.mem_singleton.1 hz]; exact hn)

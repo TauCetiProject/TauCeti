@@ -35,7 +35,9 @@ orthogonality and finite-sum identities proved in
 * `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
   `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to each
   `n`-primary component.
-* `TauCeti.FiniteBilinearModule.nonempty_isometry_iff_forall_primaryComponent` and
+* `TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent`,
+  `TauCeti.FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent`,
+  `TauCeti.FiniteBilinearModule.nonempty_isometry_iff_forall_primaryComponent`, and
   `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_forall_primaryComponent`: two modules are
   isometric if and only if their prime-primary components are isometric at every prime.
 
@@ -211,7 +213,7 @@ theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteBilinearModule.{
       Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
   have hcard : Nat.card A = Nat.card B :=
-    TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent fun p hp ↦
+    AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
       Nat.card_congr (h p hp).some.toAddEquiv.toEquiv
   let f p hp := (h p hp).some
   let g := primaryComponentsAddEquiv hcard fun p hp ↦ (f p hp).toAddEquiv
@@ -365,8 +367,8 @@ theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteQuadraticModule.
       Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
   have hcard : Nat.card A = Nat.card B :=
-    TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent fun p hp ↦
-      Nat.card_congr (h p hp).some.toLinearEquiv.toEquiv
+    AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
+      Nat.card_congr (h p hp).some.toLinearEquiv.toAddEquiv.toEquiv
   let f p hp := (h p hp).some
   let g := FiniteBilinearModule.primaryComponentsAddEquiv hcard fun p hp ↦
     (f p hp).toLinearEquiv.toAddEquiv
