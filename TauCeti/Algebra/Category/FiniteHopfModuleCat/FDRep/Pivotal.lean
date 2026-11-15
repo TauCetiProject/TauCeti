@@ -23,9 +23,11 @@ with a suitable group-like element provides. Its right dual of `M` is the contra
 unit `1`, the double dual comparison `m ↦ (φ ↦ φ(m))` is a pivotal structure, the *trivial
 pivot*.
 
-Mathlib's category `FDRep k G` of finite-dimensional representations is rigid with the algebraic
-dual on both sides, and it carries the canonical pivotal structure of a symmetric rigid category,
-whose pivotal isomorphism is the double dual evaluation map. This file shows that the monoidal
+The category `FDRep k G` of finite-dimensional representations is rigid with the algebraic dual
+on both sides, through Mathlib's rigid structures on `Action` over `FGModuleCat k` (the left duals
+of `FGModuleCat k` come from Tau Ceti's `FGModuleCat.leftRigidCategory`). It carries the canonical
+pivotal structure `TauCeti.symmetricPivotalCategory` of a symmetric rigid category, whose pivotal
+isomorphism is the double dual evaluation map. This file shows that the monoidal
 equivalence `equivalenceFDRep k G` matches these structures with the ones above.
 
 * The functor `ofFDRep k G` carries right duals to right duals: its comparison
@@ -173,7 +175,8 @@ theorem isPivotal_ofFDRep :
     dualEquiv_monoidAlgebra_pivotalIsoApp_hom_apply, dualEquiv_ofFDRep_mapRightDualIso_hom_apply,
     ofFDRepLinearEquiv_ofFDRep_map_apply, pivotalIsoApp_eq_drinfeldIso,
     FDRep.drinfeldIso_hom_hom_hom_hom]
-  -- The double dual evaluation map applies the functional to the vector.
-  rfl
+  -- The double dual evaluation map applies the functional to the vector. The carrier of the
+  -- `FDRep` dual `Vᘁ` is definitionally `Module.Dual k V`, but not syntactically.
+  exact Module.Dual.eval_apply (R := k) (M := V.V) _ _
 
 end TauCeti.FiniteHopfModuleCat
