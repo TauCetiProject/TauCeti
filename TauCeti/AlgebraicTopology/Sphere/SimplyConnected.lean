@@ -13,7 +13,6 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
 import Mathlib.Analysis.Convex.Combination
-import TauCeti.AlgebraicTopology.Disk
 
 /-!
 # Spheres are simply connected above rank two
@@ -58,8 +57,8 @@ Rank two is genuinely the boundary: the circle is not simply connected.
   `ContinuousMap.HomotopyEquiv.pathConnectedSpace_of_sphere`,
   `ContinuousMap.HomotopyEquiv.connectedSpace_of_sphere`, and
   `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`: nonemptiness, path-connectedness
-  (`1 ≤ n`), connectedness (`1 ≤ n`), and simple connectivity (`2 ≤ n`) of a space homotopy
-  equivalent to a unit sphere.
+  (`1 < Module.rank ℝ F`), connectedness (`1 < Module.rank ℝ F`), and simple connectivity
+  (`2 < Module.rank ℝ F`) of a space homotopy equivalent to a sphere of nonnegative radius.
 
 ## References
 
@@ -467,40 +466,46 @@ namespace ContinuousMap.HomotopyEquiv
 
 open scoped ContinuousMap
 
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real seminormed space with
+nontrivial topology is nonempty. -/
+theorem nonempty_of_sphere {X : Type*} [TopologicalSpace X]
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F] [NontrivialTopology F]
+    {c : F} {r : ℝ} (e : X ≃ₕ sphere c r) (hr : 0 ≤ r) :
+    Nonempty X := by
+  have : Nonempty (sphere c r) := (NormedSpace.sphere_nonempty.2 hr).to_subtype
+  exact e.symm.nonempty
+
+section Normed
+
 variable {X : Type*} [TopologicalSpace X]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- A space homotopy equivalent to the unit sphere of a nontrivial real normed space is nonempty. -/
-theorem nonempty_of_sphere [Nontrivial F] (e : X ≃ₕ sphere (0 : F) 1) :
-    Nonempty X := by
-  have : Nonempty (sphere (0 : F) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-  exact e.symm.nonempty
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than one is path-connected. -/
+theorem pathConnectedSpace_of_sphere {c : F} {r : ℝ} (e : X ≃ₕ sphere c r)
+    (hF : 1 < Module.rank ℝ F) (hr : 0 ≤ r) :
+    PathConnectedSpace X := by
+  have : PathConnectedSpace (sphere c r) :=
+    isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere hF c hr)
+  exact e.symm.pathConnectedSpace
 
-/-- A space homotopy equivalent to `Sⁿ` for `1 ≤ n` is path-connected. -/
-theorem pathConnectedSpace_of_sphere {n : ℕ} (e : X ≃ₕ sphere (0 : F) 1)
-    (hF : Module.finrank ℝ F = n + 1) (hn : 1 ≤ n) :
-    PathConnectedSpace X :=
-  match n, hn with
-  | _ + 1, _ => (e.topCatSphere hF).symm.pathConnectedSpace
-
-/-- A space homotopy equivalent to `Sⁿ` for `1 ≤ n` is connected. -/
-theorem connectedSpace_of_sphere {n : ℕ} (e : X ≃ₕ sphere (0 : F) 1)
-    (hF : Module.finrank ℝ F = n + 1) (hn : 1 ≤ n) :
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than one is connected. -/
+theorem connectedSpace_of_sphere {c : F} {r : ℝ} (e : X ≃ₕ sphere c r)
+    (hF : 1 < Module.rank ℝ F) (hr : 0 ≤ r) :
     ConnectedSpace X := by
-  have := e.pathConnectedSpace_of_sphere hF hn
+  have := e.pathConnectedSpace_of_sphere hF hr
   infer_instance
 
-/-- A space homotopy equivalent to `Sⁿ` for `2 ≤ n` is simply connected. -/
-theorem simplyConnectedSpace_of_sphere {n : ℕ} (e : X ≃ₕ sphere (0 : F) 1)
-    (hF : Module.finrank ℝ F = n + 1) (hn : 2 ≤ n) :
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than two is simply connected. -/
+theorem simplyConnectedSpace_of_sphere {c : F} {r : ℝ} (e : X ≃ₕ sphere c r)
+    (hF : 2 < Module.rank ℝ F) (hr : 0 ≤ r) :
     SimplyConnectedSpace X := by
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
-  have hrank : 2 < Module.rank ℝ F := by
-    rw [← Module.finrank_eq_rank, hF]
-    exact_mod_cast Nat.succ_lt_succ hn
-  have : SimplyConnectedSpace (sphere (0 : F) 1) :=
-    TauCeti.simplyConnectedSpace_sphere hrank 0 zero_le_one
+  have : SimplyConnectedSpace (sphere c r) := TauCeti.simplyConnectedSpace_sphere hF c hr
   exact e.simplyConnectedSpace
+
+end Normed
 
 end ContinuousMap.HomotopyEquiv
 

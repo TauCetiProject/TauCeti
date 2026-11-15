@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.HasGroupoid
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Compact
 
 import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 import Mathlib.Algebra.Ring.ULift
+import Mathlib.Geometry.Manifold.HasGroupoid
 import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # Top and higher singular homology of noncompact manifolds
@@ -26,7 +27,12 @@ connected component of `M` is compact
 `n`-manifold with nonzero homology in some degree `k ≥ n` is compact
 (`TauCeti.compactSpace_of_not_isZero_singularHomology`). Likewise every proper open subset of a
 preconnected `n`-manifold has vanishing homology in degrees `k ≥ n`
-(`TauCeti.isZero_singularHomology_of_isOpen_ne_univ`).
+(`TauCeti.isZero_singularHomology_of_isOpen_ne_univ`). Consequently, any Hausdorff `n`-manifold
+homotopy equivalent to `Sⁿ` is compact (`ContinuousMap.HomotopyEquiv.compactSpace_of_sphere`) and
+second countable (`ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`), and neither a
+noncompact `n`-manifold nor a proper open subset of a preconnected `n`-manifold can be homotopy
+equivalent to `Sⁿ` (`TauCeti.isEmpty_homotopyEquiv_sphere_of_not_compactSpace`,
+`TauCeti.isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ`).
 
 The proof follows Hatcher's compact-exhaustion argument using local homology along compact sets,
 followed by restriction of scalars to `ULift ℤ` so that `Λ` can live in any universe:
@@ -73,6 +79,13 @@ followed by restriction of scalars to `ULift ℤ` so that `Λ` can live in any u
   `CompactSpace M`.
 * `TauCeti.isZero_singularHomology_of_isOpen_ne_univ`: for preconnected `M` and proper open
   `U ⊂ M`, `Hₖ(U; N) = 0` for `k ≥ n`.
+* `ContinuousMap.HomotopyEquiv.compactSpace_of_sphere` and
+  `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`: any Hausdorff `n`-manifold
+  homotopy equivalent to `Sⁿ` is compact and second countable.
+* `TauCeti.isEmpty_homotopyEquiv_sphere_of_not_compactSpace` and
+  `TauCeti.isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ`: no noncompact Hausdorff `n`-manifold
+  and no proper open subset of a preconnected Hausdorff `n`-manifold is homotopy equivalent to
+  `Sⁿ`.
 
 ## References
 
@@ -84,7 +97,8 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Module Set Topology
+open CategoryTheory Limits Metric Module Set Topology
+open scoped ContinuousMap
 
 universe w
 
@@ -95,34 +109,6 @@ variable {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
 section TopologicalSpace
 
 variable {M : Type w} [TopologicalSpace M]
-
-/-- Pushing forward along `f : X ⟶ Y` in `singularHomologyFunctor` agrees with `SSet.homologyMap`
-under the object identifications `TauCeti.singularHomologyFunctor_obj_obj`. -/
-private lemma singularHomologyFunctor_map_comp_eqToHom {X Y : TopCat.{w}} (f : X ⟶ Y) (k : ℕ) :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map f ≫
-        eqToHom (singularHomologyFunctor_obj_obj N k Y) =
-      eqToHom (singularHomologyFunctor_obj_obj N k X) ≫
-        SSet.homologyMap (TopCat.toSSet.map f) N k := by
-  apply eq_of_heq
-  rw [comp_eqToHom_heq_iff, heq_eqToHom_comp_iff]
-  exact heq_of_eq (singularHomologyFunctor_obj_map N k f)
-
-/-- Every class in `(TopCat.toSSet.obj (TopCat.of M)).homology N k` is pushed forward from a
-compact subset, transporting `TauCeti.exists_isCompact_singularHomologyMap_subtypeVal_eq` along
-`TauCeti.singularHomologyFunctor_obj_obj` and `TauCeti.singularHomologyFunctor_obj_map`. -/
-private lemma exists_isCompact_homologyMap_subtypeVal_eq (k : ℕ)
-    (α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
-    ∃ (K : Set M) (_ : IsCompact K)
-      (αK : ((TopCat.toSSet.obj (TopCat.of K)).homology N k : ModuleCat.{w} Λ)),
-      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal K))) N k αK =
-        α := by
-  have hM := singularHomologyFunctor_obj_obj N k (TopCat.of M)
-  obtain ⟨K, hK, αK, hαK⟩ :=
-    exists_isCompact_singularHomologyMap_subtypeVal_eq N k (eqToHom hM.symm α)
-  refine ⟨K, hK, eqToHom (singularHomologyFunctor_obj_obj N k (TopCat.of K)) αK, ?_⟩
-  rw [← ConcreteCategory.comp_apply, ← singularHomologyFunctor_map_comp_eqToHom,
-    ConcreteCategory.comp_apply, hαK, ← ConcreteCategory.comp_apply, eqToHom_trans,
-    eqToHom_refl, ConcreteCategory.id_apply]
 
 /-- If a homology class `α ∈ Hₖ(M; N)` comes from a subset `U ⊆ W`, it also comes from `W` via a
 class pushed forward from `Subtype.val ⁻¹' U : Set W`. -/
@@ -144,9 +130,8 @@ private lemma exists_homologyMap_preimage_eq_of_subset {U W : Set M} (hUW : U �
       TopCat.ofHom (ContinuousMap.subtypeVal W) = TopCat.ofHom (ContinuousMap.subtypeVal U) := by
     ext; rfl
   refine ⟨SSet.homologyMap (TopCat.toSSet.map jU) N k γU, ?_⟩
-  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp,
-    ← SSet.homologyMap_comp, ← TopCat.toSSet.map_comp, ← TopCat.toSSet.map_comp, hfac]
-  exact hγU
+  rw [← hγU, ← hfac]
+  simp [SSet.homologyMap_comp]
 
 /-- On a space `W` covered by two disjoint open subsets `U'` and `V'`, a class in `Hₖ(W; N)`
 pushed forward from `U'` and also from `V'` is zero: the Mayer–Vietoris map from the direct sum is
@@ -178,9 +163,9 @@ private lemma eq_zero_of_disjoint_isOpen_cover {W : TopCat.{w}} {U' V' : Set W}
   have hbiprod := (ModuleCat.mono_iff_injective _).1 hMV (hMVzero.trans (map_zero _).symm)
   have hδU : δU = 0 := by
     have h := congrArg (biprod.fst : HU ⊞ HV ⟶ HU) hbiprod
-    rw [map_sub, map_zero, ← ConcreteCategory.comp_apply biprod.inl, biprod.inl_fst,
-      ConcreteCategory.id_apply, ← ConcreteCategory.comp_apply biprod.inr, biprod.inr_fst] at h
-    exact sub_eq_zero.1 h
+    rw [map_sub, ← ConcreteCategory.comp_apply biprod.inl, biprod.inl_fst,
+      ← ConcreteCategory.comp_apply biprod.inr, biprod.inr_fst] at h
+    simpa using h
   rw [hδU, map_zero]
 
 /-- If `M ∖ D = U ∪ V` is decomposed into disjoint open subsets `U` and `V` of `M` and
@@ -222,7 +207,12 @@ theorem eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero
       (TopPair.ofSubset (Lᶜ : Set (TopCat.of M))).singularHomologyπ
         (C := ModuleCat.{w} Λ) N k α = 0) :
     α = 0 := by
-  obtain ⟨K, hK, αK, hαK⟩ := exists_isCompact_homologyMap_subtypeVal_eq N k α
+  obtain ⟨K, hK, αK, hαK⟩ := exists_isCompact_singularHomologyMap_subtypeVal_eq (X := M) N k α
+  -- `((singularHomologyFunctor _ k).obj N).obj X` and `.map f` are definitionally
+  -- `(TopCat.toSSet.obj X).homology N k` and `SSet.homologyMap (TopCat.toSSet.map f) N k`.
+  change ((TopCat.toSSet.obj (TopCat.of K)).homology N k : ModuleCat.{w} Λ) at αK
+  change SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal K))) N k αK =
+    α at hαK
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
   have hDc : IsCompact (L \ interior L) := hL.inter_right isOpen_interior.isClosed_compl
   have hUVD : interior L ∪ Lᶜ = (L \ interior L)ᶜ := by
@@ -234,9 +224,8 @@ theorem eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero
     (disjoint_left.2 fun _ hxU hxLc ↦ hxLc (interior_subset hxU)) hUVD (hhigh _ hDc)
     ⟨SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion hKL))) N k αK, ?_⟩
     ⟨β, hβ⟩
-  rw [← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp, ← TopCat.toSSet.map_comp,
-    ← TopCat.ofHom_comp, ContinuousMap.subtypeVal_comp_inclusion]
-  exact hαK
+  rw [← hαK, ← ContinuousMap.subtypeVal_comp_inclusion hKL, TopCat.ofHom_comp]
+  simp [SSet.homologyMap_comp]
 
 end TopologicalSpace
 
@@ -286,7 +275,7 @@ private theorem isZero_singularHomology_top_of_forall_not_isCompact_connectedCom
   rw [singularHomologyFunctor_obj_obj, ModuleCat.isZero_iff_subsingleton]
   refine ⟨fun α β ↦ sub_eq_zero.1 ?_⟩
   let γ := α - β
-  obtain ⟨K, hK, γK, hγK⟩ := exists_isCompact_homologyMap_subtypeVal_eq N' n γ
+  obtain ⟨K, hK, γK, hγK⟩ := exists_isCompact_singularHomologyMap_subtypeVal_eq (X := M) N' n γ
   -- Every point `x` can be joined to a point `x₀ ∉ K` because its closed path component is not
   -- compact, hence not contained in `K`.
   have hloc (x : M) : singularHomologyToLocalHomology N' x n γ = 0 := by
@@ -297,7 +286,7 @@ private theorem isZero_singularHomology_top_of_forall_not_isCompact_connectedCom
       (mem_pathComponent_iff.1 (pathComponent_eq_connectedComponent x ▸ hx₀c)).symm
     refine singularHomologyToLocalHomology_eq_zero_of_joined_aux N' E hjoined ?_
     rw [← hγK]
-    exact singularHomologyToLocalHomology_homologyMap_subtypeVal_eq_zero_of_notMem N' hx₀K γK
+    exact singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem N' hx₀K γK
   refine eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero N'
     (fun D hD ↦ isZero_localHomology_of_isCompact N' hn hD (Nat.lt_succ_self n)) γ fun L hL ↦ ?_
   refine eq_zero_of_forall_localHomologyRestriction_eq_zero N' hn hL _ fun x hx ↦ ?_
@@ -311,36 +300,6 @@ section Manifold
 variable {M : Type w} [TopologicalSpace M] [T2Space M]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
 
-/-- Re-model a space `M` charted on a real normed space `E` of finite dimension `n` onto
-`EuclideanSpace ℝ (ULift.{w} (Fin n))` in the universe `w` of `M`. -/
-@[instance_reducible]
-private def chartedSpaceEuclideanUliftFin {M : Type w} [TopologicalSpace M] {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
-    (hn : finrank ℝ E = n) : ChartedSpace (EuclideanSpace ℝ (ULift.{w} (Fin n))) M :=
-  let L : E ≃L[ℝ] EuclideanSpace ℝ (ULift.{w} (Fin n)) :=
-    ContinuousLinearEquiv.ofFinrankEq (hn.trans (finrank_euclideanSpace_ulift_fin.{w} n).symm)
-  let _ : ChartedSpace (EuclideanSpace ℝ (ULift.{w} (Fin n))) E :=
-    L.toHomeomorph.isOpenEmbedding.singletonChartedSpace
-  ChartedSpace.comp (EuclideanSpace ℝ (ULift.{w} (Fin n))) E M
-
-/-- Restricting scalars along `ULift.{w} ℤ →+* Λ` reflects vanishing of singular homology, reducing
-coefficients over a ring in any universe to `ULift.{w} ℤ : Type w`. -/
-private theorem isZero_singularHomology_of_restrictScalars_ulift_int {X : TopCat.{w}} {k : ℕ}
-    (h : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} (ULift.{w} ℤ)) k).obj
-      ((ModuleCat.restrictScalars.{w}
-        ((Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom)).obj N)).obj X)) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj X) := by
-  let F := ModuleCat.restrictScalars.{w} ((Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom)
-  have : ∀ T : Type w, PreservesColimitsOfShape (Discrete T) F :=
-    fun _ ↦ ⟨fun {K} ↦ ModuleCat.preservesColimit_restrictScalars _ K⟩
-  have hF : IsZero (F.obj
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj X)) :=
-    (Iso.isZero_iff ((Functor.singularHomologyFunctorObjCompIso F N k).app X)).2 h
-  rw [IsZero.iff_id_eq_zero]
-  refine F.map_injective ?_
-  rw [F.map_id, F.map_zero]
-  exact hF.eq_of_src _ _
-
 /-- **Vanishing in local homology transports along paths.** On a Hausdorff boundaryless manifold,
 if `α ∈ Hₖ(M; N)` vanishes in the local homology `Hₖ(M, M ∖ {x}; N)`, then it vanishes in
 `Hₖ(M, M ∖ {y}; N)` for every point `y` in the path component of `x`. -/
@@ -350,7 +309,8 @@ theorem singularHomologyToLocalHomology_eq_zero_of_joined (E : Type*)
     {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
     (hα : singularHomologyToLocalHomology N x k α = 0) :
     singularHomologyToLocalHomology N y k α = 0 := by
-  let _ := chartedSpaceEuclideanUliftFin.{w} (M := M) (rfl : finrank ℝ E = finrank ℝ E)
+  let _ := ChartedSpace.compHomeomorph M (ContinuousLinearEquiv.ofFinrankEq
+    (finrank_euclideanSpace_ulift_fin.{w} (finrank ℝ E)).symm).toHomeomorph
   exact singularHomologyToLocalHomology_eq_zero_of_joined_aux N
     (EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ E)))) hxy hα
 
@@ -360,11 +320,14 @@ Hausdorff space `M` modelled on a real normed space `E` of finite dimension `n`,
 theorem isZero_singularHomology_of_finrank_lt {n k : ℕ} (hn : finrank ℝ E = n) (hk : n < k) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj
       (TopCat.of M)) := by
-  let _ := chartedSpaceEuclideanUliftFin.{w} (M := M) hn
-  refine isZero_singularHomology_of_restrictScalars_ulift_int N ?_
-  exact isZero_singularHomology_of_finrank_lt_aux
-    (E := EuclideanSpace ℝ (ULift.{w} (Fin n))) _
-    (finrank_euclideanSpace_ulift_fin.{w} n) hk
+  let _ := ChartedSpace.compHomeomorph M (ContinuousLinearEquiv.ofFinrankEq
+    (hn.trans (finrank_euclideanSpace_ulift_fin.{w} n).symm)).toHomeomorph
+  let F := ModuleCat.restrictScalars.{w} ((Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom)
+  have : ∀ T : Type w, PreservesColimitsOfShape (Discrete T) F :=
+    fun _ ↦ ⟨fun {K} ↦ ModuleCat.preservesColimit_restrictScalars _ K⟩
+  exact (F.isZero_singularHomology_obj_iff N k (TopCat.of M)).1 <|
+    isZero_singularHomology_of_finrank_lt_aux (E := EuclideanSpace ℝ (ULift.{w} (Fin n))) _
+      (finrank_euclideanSpace_ulift_fin.{w} n) hk
 
 /-- **Top and higher homology vanish when every connected component is noncompact**
 (Hatcher, Proposition 3.29). Let `M` be a Hausdorff space modelled on a real normed space of
@@ -375,11 +338,15 @@ theorem isZero_singularHomology_of_forall_not_isCompact_connectedComponent {n : 
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj
       (TopCat.of M)) := by
   obtain rfl | hk := hk.eq_or_lt
-  · let _ := chartedSpaceEuclideanUliftFin.{w} (M := M) hn
-    refine isZero_singularHomology_of_restrictScalars_ulift_int N ?_
-    exact isZero_singularHomology_top_of_forall_not_isCompact_connectedComponent_aux
-      (E := EuclideanSpace ℝ (ULift.{w} (Fin n))) _
-      (finrank_euclideanSpace_ulift_fin.{w} n) hcomp
+  · let _ := ChartedSpace.compHomeomorph M (ContinuousLinearEquiv.ofFinrankEq
+      (hn.trans (finrank_euclideanSpace_ulift_fin.{w} n).symm)).toHomeomorph
+    let F := ModuleCat.restrictScalars.{w} ((Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom)
+    have : ∀ T : Type w, PreservesColimitsOfShape (Discrete T) F :=
+      fun _ ↦ ⟨fun {K} ↦ ModuleCat.preservesColimit_restrictScalars _ K⟩
+    exact (F.isZero_singularHomology_obj_iff N n (TopCat.of M)).1 <|
+      isZero_singularHomology_top_of_forall_not_isCompact_connectedComponent_aux
+        (E := EuclideanSpace ℝ (ULift.{w} (Fin n))) _
+        (finrank_euclideanSpace_ulift_fin.{w} n) hcomp
   · exact isZero_singularHomology_of_finrank_lt N hn hk
 
 /-- **Top and higher homology of a preconnected noncompact manifold vanish** (Hatcher,
@@ -428,5 +395,79 @@ theorem isZero_singularHomology_of_isOpen_ne_univ [PreconnectedSpace M] {n : ℕ
     exact univ_subset_iff.1 (hUniv ▸ image_subset_iff.2 fun y _ ↦ y.2)
 
 end Manifold
+
+end TauCeti
+
+namespace ContinuousMap.HomotopyEquiv
+
+section Manifold
+
+variable {M : Type w} [TopologicalSpace M] [T2Space M]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **A Hausdorff `n`-manifold homotopy equivalent to `Sⁿ` is compact.** -/
+theorem compactSpace_of_sphere {n : ℕ} (e : M ≃ₕ sphere (0 : F) 1) (hE : finrank ℝ E = n)
+    (hF : finrank ℝ F = n + 1) :
+    CompactSpace M := by
+  rcases n with _ | m
+  · have : Subsingleton E := Module.finrank_zero_iff.1 hE
+    have : DiscreteTopology M := ChartedSpace.discreteTopology E M
+    have : Finite (sphere (0 : F) 1) := TauCeti.finite_sphere_of_finrank_eq_one hF 0 1
+    have : Finite (ZerothHomotopy (sphere (0 : F) 1)) :=
+      Finite.of_surjective _ ZerothHomotopy.mk_surjective
+    have : Finite (ZerothHomotopy M) := Finite.of_equiv _ e.zerothHomotopyCongr.symm
+    have : Finite M :=
+      Finite.of_injective _ ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace
+    exact Finite.compactSpace
+  · have : PathConnectedSpace M := (e.topCatSphere hF).symm.pathConnectedSpace
+    let N : ModuleCat.{w} ℤ := ModuleCat.of ℤ (ULift.{w} ℤ)
+    have hN : ¬ IsZero N := fun h ↦
+      one_ne_zero (α := ULift.{w} ℤ) ((ModuleCat.subsingleton_of_isZero h).elim ⟨1⟩ ⟨0⟩)
+    have hH : ¬ IsZero (((AlgebraicTopology.singularHomologyFunctor
+        (ModuleCat.{w} ℤ) (m + 1)).obj N).obj (TopCat.of M)) :=
+      fun h ↦ hN (h.of_iso (e.singularHomologySphereIso N hF (Nat.succ_pos m)).symm)
+    exact TauCeti.compactSpace_of_not_isZero_singularHomology N hE le_rfl hH
+
+/-- **A Hausdorff `n`-manifold homotopy equivalent to `Sⁿ` is second countable.** -/
+theorem secondCountableTopology_of_sphere {n : ℕ} (e : M ≃ₕ sphere (0 : F) 1)
+    (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) :
+    SecondCountableTopology M := by
+  have := e.compactSpace_of_sphere hE hF
+  exact ChartedSpace.secondCountable_of_sigmaCompact E M
+
+end Manifold
+
+end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti
+
+section Obstructions
+
+/-- **No noncompact Hausdorff `n`-manifold is homotopy equivalent to `Sⁿ`.** -/
+theorem isEmpty_homotopyEquiv_sphere_of_not_compactSpace {M : Type*} [TopologicalSpace M]
+    [T2Space M] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) (hM : ¬ CompactSpace M) :
+    IsEmpty (M ≃ₕ sphere (0 : F) 1) :=
+  ⟨fun e ↦ hM (e.compactSpace_of_sphere hE hF)⟩
+
+/-- **No proper open subset of a preconnected Hausdorff `n`-manifold is homotopy equivalent to
+`Sⁿ`.** -/
+theorem isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ {M : Type*} [TopologicalSpace M] [T2Space M]
+    [PreconnectedSpace M] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {n : ℕ} (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) {U : Set M}
+    (hUo : IsOpen U) (hU : U ≠ univ) :
+    IsEmpty (U ≃ₕ sphere (0 : F) 1) := by
+  refine ⟨fun e ↦ hU ?_⟩
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  have : Nonempty (sphere (0 : F) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  obtain ⟨x⟩ := e.symm.nonempty
+  let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hUo⟩
+  have hUc : IsCompact U := isCompact_iff_compactSpace.2 (e.compactSpace_of_sphere hE hF)
+  exact IsClopen.eq_univ ⟨hUc.isClosed, hUo⟩ ⟨x.1, x.2⟩
+
+end Obstructions
 
 end TauCeti

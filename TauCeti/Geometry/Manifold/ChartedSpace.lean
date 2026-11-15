@@ -38,6 +38,9 @@ charted space, second countability.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
+* `ChartedSpace.compHomeomorph`, `ChartedSpace.compHomeomorph_chartAt`, and
+  `ChartedSpace.compHomeomorph_atlas`: transporting a charted space structure to a homeomorphic
+  model space by postcomposing every chart with `e : H ≃ₜ H'`.
 -/
 
 public section
@@ -137,3 +140,29 @@ theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace
   obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
     fun x ↦ chart_source_mem_nhds H x
   exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
+
+/-- Transport a `ChartedSpace H M` structure to a model space `H'` along a homeomorphism
+`e : H ≃ₜ H'`, postcomposing every chart with `e`. -/
+@[expose, instance_reducible]
+def ChartedSpace.compHomeomorph {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] (e : H ≃ₜ H') : ChartedSpace H' M where
+  atlas := (·.trans e.toOpenPartialHomeomorph) '' atlas H M
+  chartAt x := (chartAt H x).trans e.toOpenPartialHomeomorph
+  mem_chart_source x := by simp [mem_chart_source]
+  chart_mem_atlas x := ⟨chartAt H x, chart_mem_atlas H x, rfl⟩
+
+/-- The preferred chart of `ChartedSpace.compHomeomorph M e` at `x` is the original chart
+postcomposed with `e`. -/
+theorem ChartedSpace.compHomeomorph_chartAt {H H' M : Type*} [TopologicalSpace H]
+    [TopologicalSpace H'] [TopologicalSpace M] [ChartedSpace H M] (e : H ≃ₜ H') (x : M) :
+    (letI := ChartedSpace.compHomeomorph M e; chartAt H' x) =
+      (chartAt H x).trans e.toOpenPartialHomeomorph :=
+  rfl
+
+/-- The atlas of `ChartedSpace.compHomeomorph M e` is the image of `atlas H M` under
+postcomposition with `e`. -/
+theorem ChartedSpace.compHomeomorph_atlas {H H' M : Type*} [TopologicalSpace H]
+    [TopologicalSpace H'] [TopologicalSpace M] [ChartedSpace H M] (e : H ≃ₜ H') :
+    (letI := ChartedSpace.compHomeomorph M e; atlas H' M) =
+      (·.trans e.toOpenPartialHomeomorph) '' atlas H M :=
+  rfl

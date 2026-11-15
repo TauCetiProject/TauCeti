@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
-public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
+public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Topology.Category.TopCat.Subspace
@@ -195,11 +195,6 @@ def isColimitCompactSubsetSingularHomology {C : Type u} [Category.{v} C] [HasCop
     fun K hK ↦ ⟨⟨K, hK⟩, Subtype.range_coe.ge⟩
 
 variable {A : Type*} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {X : Type w} [TopologicalSpace X]
-
-private instance :
-    PreservesColimitsOfShape (TopologicalSpace.Compacts X) (forget (ModuleCat.{w} A)) :=
-  Limits.comp_preservesColimitsOfShape (forget₂ (ModuleCat.{w} A) AddCommGrpCat.{w})
-    (forget AddCommGrpCat.{w})
 
 /-- **Every singular homology class comes from a compact subset.** With coefficients in a module,
 every class in `Hₙ(X; M)` is pushed forward from `Hₙ(K; M)` for some compact `K ⊆ X`. -/

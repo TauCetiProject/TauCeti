@@ -34,7 +34,8 @@ compatibility with composition characterizes the transport
 
 * `TauCeti.localHomology R S k`: the relative singular homology `Hₖ(M, M ∖ S)`.
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
-  induced by the identity of `M`.
+  induced by the identity of `M`, compatible with the relative quotient maps from `Hₖ(M)`
+  (`TauCeti.singularHomologyπ_comp_localHomologyRestriction`).
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, identified
   with the relative quotient map (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`,
@@ -120,6 +121,15 @@ lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T �
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp (𝟙 (TopCat.of M)) (𝟙 (TopCat.of M)) _ _ _).symm
 
+/-- The relative quotient maps `Hₖ(M) ⟶ Hₖ(M, M ∖ T)` commute with restriction along `S ⊆ T`. -/
+@[reassoc, elementwise]
+theorem singularHomologyπ_comp_localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k : ℕ) :
+    (TopPair.ofSubset (Tᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
+        localHomologyRestriction R h k =
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R k :=
+  TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R (X := TopCat.of M)
+    (compl_subset_compl.2 h) k
+
 /-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
 theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
   rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
@@ -171,12 +181,9 @@ quotient morphism from `Hₖ(M; N)` to `Hₖ(M, M ∖ {x}; N)`. -/
 theorem singularHomologyToLocalHomology_eq_singularHomologyπ (x : M) (k : ℕ) :
     singularHomologyToLocalHomology N x k =
       ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ
-        (C := ModuleCat.{w} Λ) N k).hom := by
-  have h := TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id
-    N (X := TopCat.of M) (S := ({x} : Set M)ᶜ) (S' := univᶜ)
-    (compl_subset_compl.2 (subset_univ {x})) k
-  rw [← localHomologyRestriction_def N (subset_univ {x}) k] at h
-  exact congrArg ModuleCat.Hom.hom h
+        (C := ModuleCat.{w} Λ) N k).hom :=
+  congrArg ModuleCat.Hom.hom
+    (singularHomologyπ_comp_localHomologyRestriction N (subset_univ {x}) k)
 
 /-- `TauCeti.singularHomologyToLocalHomology` at `x` agrees pointwise with the relative quotient
 map from `Hₖ(M; N)` to `Hₖ(M, M ∖ {x}; N)`. -/
@@ -194,11 +201,8 @@ theorem localHomologyRestriction_singularHomologyπ_apply {S : Set M} {x : M} (h
     localHomologyRestriction (S := {x}) (T := S) N h k
         ((TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ
           (C := ModuleCat.{w} Λ) N k α) =
-      singularHomologyToLocalHomology N x k α := by
-  have hcomp := TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id
-    N (X := TopCat.of M) (S := ({x} : Set M)ᶜ) (S' := Sᶜ) (compl_subset_compl.2 h) k
-  rw [← localHomologyRestriction_def (S := {x}) (T := S) N h k] at hcomp
-  exact ((ConcreteCategory.comp_apply _ _ _).symm.trans (ConcreteCategory.congr_hom hcomp α)).trans
+      singularHomologyToLocalHomology N x k α :=
+  (singularHomologyπ_comp_localHomologyRestriction_apply N h k α).trans
     (singularHomologyToLocalHomology_apply_eq_singularHomologyπ N x α).symm
 
 private lemma homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero {K : Set M} {x : M}
@@ -208,30 +212,14 @@ private lemma homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero {K : Set M}
         0 := by
   let P := TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))
   let j : TopCat.of K ⟶ P.snd := TopCat.ofHom ⟨fun y ↦ ⟨y.1, fun h ↦ hx (h ▸ y.2)⟩, by fun_prop⟩
-  have hj : TopCat.ofHom (ContinuousMap.subtypeVal K) = j ≫ P.map := by ext; rfl
-  have hcomp : SSet.homologyMap (TopCat.toSSet.map (j ≫ P.map)) N k =
-      SSet.homologyMap (TopCat.toSSet.map j) N k ≫
-        SSet.homologyMap (TopCat.toSSet.map P.map) N k := by
-    rw [TopCat.toSSet.map_comp, SSet.homologyMap_comp]
-  have hzero : SSet.homologyMap (TopCat.toSSet.map (j ≫ P.map)) N k ≫
-      P.singularHomologyπ (C := ModuleCat.{w} Λ) N k = 0 :=
-    (hcomp =≫ P.singularHomologyπ (C := ModuleCat.{w} Λ) N k).trans
-      ((Category.assoc _ _ _).trans
-        (by rw [P.homologyMap_comp_singularHomologyπ, Limits.comp_zero]))
-  exact (congrArg (fun f : TopCat.of K ⟶ P.fst ↦
-    SSet.homologyMap (TopCat.toSSet.map f) N k ≫ P.singularHomologyπ N k) hj).trans hzero
-
-/-- A simplicial homology class pushed forward from a subset `K ⊆ M` vanishes in the local homology
-at every point outside `K`. -/
-theorem singularHomologyToLocalHomology_homologyMap_subtypeVal_eq_zero_of_notMem
-    {K : Set M} {x : M} (hx : x ∉ K) {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of K)).homology N k : ModuleCat.{w} Λ)) :
-    singularHomologyToLocalHomology N x k
-        (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal K))) N k α) =
-      0 :=
-  (singularHomologyToLocalHomology_apply_eq_singularHomologyπ N x _).trans
-    ((ConcreteCategory.comp_apply _ _ _).symm.trans
-      (ConcreteCategory.congr_hom (homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero N hx k) α))
+  have hj : (TopCat.ofHom (ContinuousMap.subtypeVal K) : TopCat.of K ⟶ P.fst) = j ≫ P.map := by
+    ext; rfl
+  -- `P.fst` is definitionally `TopCat.of M`.
+  change SSet.homologyMap (TopCat.toSSet.map (Y := P.fst)
+      (TopCat.ofHom (ContinuousMap.subtypeVal K))) N k ≫
+    P.singularHomologyπ (C := ModuleCat.{w} Λ) N k = 0
+  rw [hj, TopCat.toSSet.map_comp, SSet.homologyMap_comp]
+  exact (Category.assoc _ _ _).trans (by simp)
 
 /-- A class pushed forward from a subset `K ⊆ M` vanishes in the local homology at every point
 outside `K`. -/
@@ -242,12 +230,14 @@ theorem singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem {K : Se
     singularHomologyToLocalHomology N x k
         (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
           (TopCat.ofHom (ContinuousMap.subtypeVal K)) α) = 0 := by
-  refine (singularHomologyToLocalHomology_apply_eq_singularHomologyπ N x _).trans ?_
-  refine (congrArg ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ
-      (C := ModuleCat.{w} Λ) N k)
-    (ConcreteCategory.congr_hom (singularHomologyFunctor_obj_map N k _) α)).trans ?_
-  exact (ConcreteCategory.comp_apply _ _ _).symm.trans
-    (ConcreteCategory.congr_hom (homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero N hx k) α)
+  -- `((singularHomologyFunctor _ k).obj N).obj X` and `.map f` are definitionally
+  -- `(TopCat.toSSet.obj X).homology N k` and `SSet.homologyMap (TopCat.toSSet.map f) N k`.
+  let α' : ((TopCat.toSSet.obj (TopCat.of K)).homology N k : ModuleCat.{w} Λ) := α
+  have h := DFunLike.congr_fun (congrArg ModuleCat.Hom.hom
+    (homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero N hx k)) α'
+  rw [ModuleCat.hom_zero, LinearMap.zero_apply] at h
+  exact (singularHomologyToLocalHomology_apply_eq_singularHomologyπ N x _).trans
+    ((ConcreteCategory.comp_apply _ _ α').symm.trans h)
 
 end SingularHomology
 
