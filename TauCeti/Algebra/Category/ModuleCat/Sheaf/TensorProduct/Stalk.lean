@@ -24,20 +24,8 @@ It is given both for the explicit sheaf `SheafOfModules.tensorProduct R M N` and
 tensor product `M ⊗ N` (`TauCeti.SheafOfModules.monoidalCategory`). The former is the sectionwise
 comparison `PresheafOfModules.tensorStalkComparison`, precomposed with the inverse of
 `PresheafOfModules.sheafificationStalkEquiv` and with the stalk map of `tensorProductIso`; the
-latter transports this identification along `M.tensorUnderlyingIso N` and `tensorProductIso`.
-
-## Main declarations
-
-* `TauCeti.SheafOfModules.tensorStalkComparison` and `TauCeti.SheafOfModules.tensorStalkEquiv`:
-  the comparison and linear equivalence for `tensorProduct R M N`;
-* `TauCeti.SheafOfModules.tensorObjStalkComparison` and
-  `TauCeti.SheafOfModules.tensorObjStalkEquiv`: the comparison and linear equivalence
-  `(M ⊗ N)_x ≃ₗ[R_x] M_x ⊗[R_x] N_x` for the monoidal tensor product `M ⊗ N`;
-* `TauCeti.SheafOfModules.tensorObjStalkComparison_germ_μ_tmul` and
-  `TauCeti.SheafOfModules.tensorObjStalkEquiv_symm_tmul_germ`: explicit formulas on germs of
-  pure tensors via `Functor.LaxMonoidal.μ (SheafOfModules.forget _)`;
-* `TauCeti.SheafOfModules.tensorObjStalkComparison_naturality` and
-  `TauCeti.SheafOfModules.tensorObjStalkEquiv_naturality`: compatibility with `f ⊗ₘ g`.
+latter transports this identification along `M.tensorUnderlyingIso N` and `tensorProductIso`
+(`tensorObjStalkComparison` and `tensorObjStalkEquiv`), commuting with `f ⊗ₘ g` on stalks.
 -/
 
 public section
@@ -268,30 +256,26 @@ theorem tensorStalkEquiv_naturality
   rfl
 
 section Monoidal
+open TopCat.Presheaf
+open _root_.SheafOfModules (stalkMap stalkMap_germ isIso_iff_stalkMap_bijective)
 
-/-- The canonical `R_x`-linear comparison map `(M ⊗ N)_x →ₗ[R_x] M_x ⊗[R_x] N_x` for the
-monoidal tensor product of sheaves of modules, obtained by transporting `tensorStalkComparison`
-along `M.tensorUnderlyingIso N` and `tensorProductIso`. -/
+/-- The canonical `R_x`-linear comparison `(M ⊗ N)_x →ₗ[R_x] M_x ⊗[R_x] N_x` for the monoidal
+tensor product of sheaves of modules. -/
 def tensorObjStalkComparison :
-    ↑(TopCat.Presheaf.stalk (M ⊗ N).val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
-      ↑(TopCat.Presheaf.stalk M.val.presheaf x) ⊗[↑(TopCat.Presheaf.stalk R.obj x)]
-        ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
+    ↑(stalk (M ⊗ N).val.presheaf x) →ₗ[↑(stalk R.obj x)]
+      ↑(stalk M.val.presheaf x) ⊗[↑(stalk R.obj x)] ↑(stalk N.val.presheaf x) :=
   (tensorStalkComparison R M N x).comp
-    (_root_.SheafOfModules.stalkMap
-      ((M.tensorUnderlyingIso N).hom ≫ (tensorProductIso R M N).inv) x)
+    (stalkMap ((M.tensorUnderlyingIso N).hom ≫ (tensorProductIso R M N).inv) x)
 
-/-- On the germ of the image of `m ⊗ₜ n` under the lax monoidal tensor map of `forget`,
+/-- On the germ of the image of `m ⊗ₜ n` under `Functor.LaxMonoidal.μ (forget _)`,
 `tensorObjStalkComparison` evaluates to the pure tensor of the germs of `m` and `n`. -/
-@[simp]
-theorem tensorObjStalkComparison_germ_μ_tmul (U : Opens X) (hx : x ∈ U)
+@[simp] theorem tensorObjStalkComparison_germ_μ_tmul (U : Opens X) (hx : x ∈ U)
     (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
     dsimp% only [PresheafOfModules.presheaf_obj_coe, Functor.id_obj, Functor.comp_obj]
-    (tensorObjStalkComparison R M N x
-        (TopCat.Presheaf.germ (M ⊗ N).val.presheaf U x hx
+    (tensorObjStalkComparison R M N x (germ (M ⊗ N).val.presheaf U x hx
           (((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
             (op U)) (m ⊗ₜ[R.obj.obj (op U)] n))) =
-      TopCat.Presheaf.germ M.val.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R.obj x)]
-        TopCat.Presheaf.germ N.val.presheaf U x hx n) := by
+      germ M.val.presheaf U x hx m ⊗ₜ[↑(stalk R.obj x)] germ N.val.presheaf U x hx n) := by
   let adj := PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
   let F := _root_.SheafOfModules.forget (ringCatSheaf R) ⋙
     PresheafOfModules.restrictScalars (𝟙 (ringCatSheaf R).obj)
@@ -311,53 +295,37 @@ theorem tensorObjStalkComparison_germ_μ_tmul (U : Opens X) (hx : x ∈ U)
       (Iso.inv_hom_id_assoc (M.tensorUnderlyingIso N) (tensorProductIso R M N).inv)
   have h₀ := congrArg (fun k ↦ p.val.app (op U) (k.app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))
     ((_root_.SheafOfModules.sheafificationAdjunction_μ_eq_forget_μ R M N).symm.trans
-      ((Adjunction.rightAdjointLaxMonoidal_μ adj M N).trans
-        (Adjunction.homEquiv_unit adj _ _ _)))
-  have h₁ : p.val.app (op U)
-      (((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app (op U))
-        (m ⊗ₜ[R.obj.obj (op U)] n)) =
-      (tensorProductIso R M N).inv.val.app (op U)
-        ((adj.unit.app (M.val ⊗ N.val)).app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)) :=
-    h₀.trans (congrArg (fun q ↦ q.val.app (op U)
-      ((adj.unit.app (M.val ⊗ N.val)).app (op U) (m ⊗ₜ[R.obj.obj (op U)] n))) hinv)
-  exact (congrArg (tensorStalkComparison R M N x)
-    ((_root_.SheafOfModules.stalkMap_germ p x U hx _).trans
-      (congrArg (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf U x hx) h₁))).trans
+      ((Adjunction.rightAdjointLaxMonoidal_μ adj M N).trans (Adjunction.homEquiv_unit adj _ _ _)))
+  have h₁ := h₀.trans (congrArg (fun q ↦ q.val.app (op U)
+    ((adj.unit.app (M.val ⊗ N.val)).app (op U) (m ⊗ₜ[R.obj.obj (op U)] n))) hinv)
+  exact (congrArg (tensorStalkComparison R M N x) ((stalkMap_germ p x U hx _).trans
+    (congrArg (germ (tensorProduct R M N).val.presheaf U x hx) h₁))).trans
     (tensorStalkComparison_germ_unit_tmul R M N x U hx m n)
 
-/-- The canonical comparison `(M ⊗ N)_x →ₗ[R_x] M_x ⊗[R_x] N_x` is bijective for arbitrary sheaves
-of modules. -/
+/-- `(M ⊗ N)_x →ₗ[R_x] M_x ⊗[R_x] N_x` is bijective for arbitrary sheaves of modules. -/
 theorem tensorObjStalkComparison_bijective :
     Function.Bijective (tensorObjStalkComparison R M N x) :=
   (tensorStalkComparison_bijective R M N x).comp
-    ((_root_.SheafOfModules.isIso_iff_stalkMap_bijective
+    ((isIso_iff_stalkMap_bijective
       ((M.tensorUnderlyingIso N).hom ≫ (tensorProductIso R M N).inv)).mp inferInstance x)
 
-/-- The canonical `R_x`-linear equivalence `(M ⊗ N)_x ≃ₗ[R_x] M_x ⊗[R_x] N_x` identifying the
-stalk of the monoidal tensor product of sheaves of modules with the tensor product of their
-stalks. -/
+/-- The canonical `R_x`-linear equivalence `(M ⊗ N)_x ≃ₗ[R_x] M_x ⊗[R_x] N_x` for the monoidal
+tensor product of sheaves of modules. -/
 def tensorObjStalkEquiv :
-    ↑(TopCat.Presheaf.stalk (M ⊗ N).val.presheaf x) ≃ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
-      ↑(TopCat.Presheaf.stalk M.val.presheaf x) ⊗[↑(TopCat.Presheaf.stalk R.obj x)]
-        ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
+    ↑(stalk (M ⊗ N).val.presheaf x) ≃ₗ[↑(stalk R.obj x)]
+      ↑(stalk M.val.presheaf x) ⊗[↑(stalk R.obj x)] ↑(stalk N.val.presheaf x) :=
   LinearEquiv.ofBijective (tensorObjStalkComparison R M N x)
     (tensorObjStalkComparison_bijective R M N x)
+@[simp] theorem tensorObjStalkEquiv_apply (t : ↑(stalk (M ⊗ N).val.presheaf x)) :
+    tensorObjStalkEquiv R M N x t = tensorObjStalkComparison R M N x t := (rfl)
 
-@[simp]
-theorem tensorObjStalkEquiv_apply (t : ↑(TopCat.Presheaf.stalk (M ⊗ N).val.presheaf x)) :
-    tensorObjStalkEquiv R M N x t = tensorObjStalkComparison R M N x t :=
-  (rfl)
-
-/-- The inverse of `tensorObjStalkEquiv` sends a pure tensor of germs on a common open `U` to the
-germ of the image of `m ⊗ₜ n` under `Functor.LaxMonoidal.μ (SheafOfModules.forget _)`. -/
-@[simp]
-theorem tensorObjStalkEquiv_symm_tmul_germ (U : Opens X) (hx : x ∈ U)
+/-- `(tensorObjStalkEquiv R M N x).symm` sends `germ(m) ⊗ₜ germ(n)` to `germ(μ(m ⊗ₜ n))`. -/
+@[simp] theorem tensorObjStalkEquiv_symm_tmul_germ (U : Opens X) (hx : x ∈ U)
     (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
     dsimp% only [PresheafOfModules.presheaf_obj_coe, Functor.id_obj, Functor.comp_obj]
     ((tensorObjStalkEquiv R M N x).symm
-        (TopCat.Presheaf.germ M.val.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R.obj x)]
-          TopCat.Presheaf.germ N.val.presheaf U x hx n) =
-      TopCat.Presheaf.germ (M ⊗ N).val.presheaf U x hx
+        (germ M.val.presheaf U x hx m ⊗ₜ[↑(stalk R.obj x)] germ N.val.presheaf U x hx n) =
+      germ (M ⊗ N).val.presheaf U x hx
         (((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
           (op U)) (m ⊗ₜ[R.obj.obj (op U)] n))) :=
   (tensorObjStalkEquiv R M N x).symm_apply_eq.mpr
@@ -366,62 +334,38 @@ theorem tensorObjStalkEquiv_symm_tmul_germ (U : Opens X) (hx : x ∈ U)
 /-- Naturality of `tensorObjStalkComparison` with respect to `f ⊗ₘ g`. -/
 theorem tensorObjStalkComparison_naturality
     {M' N' : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ M') (g : N ⟶ N') :
-    (tensorObjStalkComparison R M' N' x).comp (_root_.SheafOfModules.stalkMap (f ⊗ₘ g) x) =
-      (TensorProduct.map (_root_.SheafOfModules.stalkMap f x)
-        (_root_.SheafOfModules.stalkMap g x)).comp (tensorObjStalkComparison R M N x) := by
+    (tensorObjStalkComparison R M' N' x).comp (stalkMap (f ⊗ₘ g) x) =
+      (TensorProduct.map (stalkMap f x) (stalkMap g x)).comp
+        (tensorObjStalkComparison R M N x) := by
   apply (LinearMap.cancel_right (tensorObjStalkEquiv R M N x).symm.surjective).mp
-  apply TensorProduct.ext'
-  intro m n
-  obtain ⟨U, hxU, m₀, rfl⟩ := TopCat.Presheaf.exists_germ_eq M.val.presheaf m
-  obtain ⟨V, hVU, hxV, n₀, rfl⟩ := TopCat.Presheaf.exists_le_germ_eq N.val.presheaf n hxU
+  refine TensorProduct.ext' fun m n ↦ ?_
+  obtain ⟨U, hxU, m₀, rfl⟩ := exists_germ_eq M.val.presheaf m
+  obtain ⟨V, hVU, hxV, n₀, rfl⟩ := exists_le_germ_eq N.val.presheaf n hxU
   let m₁ : M.val.obj (op V) := M.val.map (homOfLE hVU).op m₀
-  let n₁ : N.val.obj (op V) := n₀
-  rw [← TopCat.Presheaf.germ_res_apply M.val.presheaf (homOfLE hVU) x hxV m₀]
-  have hn := congrArg (fun k ↦ k.app (op V) (m₁ ⊗ₜ[R.obj.obj (op V)] n₁))
+  rw [← germ_res_apply M.val.presheaf (homOfLE hVU) x hxV m₀]
+  have hn := congrArg (fun k ↦ k.app (op V) (m₁ ⊗ₜ[R.obj.obj (op V)] n₀))
     (Functor.LaxMonoidal.μ_natural (_root_.SheafOfModules.forget (ringCatSheaf R)) f g)
-  have hL : tensorObjStalkComparison R M' N' x
-      (_root_.SheafOfModules.stalkMap (f ⊗ₘ g) x
-        ((tensorObjStalkEquiv R M N x).symm
-          (TopCat.Presheaf.germ M.val.presheaf V x hxV (M.val.presheaf.map (homOfLE hVU).op m₀) ⊗ₜ
-            TopCat.Presheaf.germ N.val.presheaf V x hxV n₀))) =
-      TopCat.Presheaf.germ M'.val.presheaf V x hxV (f.val.app (op V) m₁) ⊗ₜ
-        TopCat.Presheaf.germ N'.val.presheaf V x hxV (g.val.app (op V) n₁) :=
-    (congrArg (fun t ↦ tensorObjStalkComparison R M' N' x
-      (_root_.SheafOfModules.stalkMap (f ⊗ₘ g) x t))
-      (tensorObjStalkEquiv_symm_tmul_germ R M N x V hxV m₁ n₁)).trans
-      ((congrArg (tensorObjStalkComparison R M' N' x)
-        ((_root_.SheafOfModules.stalkMap_germ (f ⊗ₘ g) x V hxV _).trans
-          (congrArg (TopCat.Presheaf.germ (M' ⊗ N').val.presheaf V x hxV) hn.symm))).trans
-        (tensorObjStalkComparison_germ_μ_tmul R M' N' x V hxV
-          (f.val.app (op V) m₁) (g.val.app (op V) n₁)))
-  have hR : TensorProduct.map (_root_.SheafOfModules.stalkMap f x)
-      (_root_.SheafOfModules.stalkMap g x)
-      (tensorObjStalkComparison R M N x
-        ((tensorObjStalkEquiv R M N x).symm
-          (TopCat.Presheaf.germ M.val.presheaf V x hxV (M.val.presheaf.map (homOfLE hVU).op m₀) ⊗ₜ
-            TopCat.Presheaf.germ N.val.presheaf V x hxV n₀))) =
-      TopCat.Presheaf.germ M'.val.presheaf V x hxV (f.val.app (op V) m₁) ⊗ₜ
-        TopCat.Presheaf.germ N'.val.presheaf V x hxV (g.val.app (op V) n₁) :=
-    (congrArg (TensorProduct.map (_root_.SheafOfModules.stalkMap f x)
-      (_root_.SheafOfModules.stalkMap g x))
+  have hL := (congrArg (fun t ↦ tensorObjStalkComparison R M' N' x (stalkMap (f ⊗ₘ g) x t))
+      (tensorObjStalkEquiv_symm_tmul_germ R M N x V hxV m₁ n₀)).trans
+    ((congrArg (tensorObjStalkComparison R M' N' x)
+      ((stalkMap_germ (f ⊗ₘ g) x V hxV _).trans
+        (congrArg (germ (M' ⊗ N').val.presheaf V x hxV) hn.symm))).trans
+      (tensorObjStalkComparison_germ_μ_tmul R M' N' x V hxV (f.val.app (op V) m₁)
+        (g.val.app (op V) n₀)))
+  have hR := ((congrArg (TensorProduct.map (stalkMap f x) (stalkMap g x))
       ((tensorObjStalkEquiv R M N x).apply_symm_apply _)).trans
-      (congrArg₂ (· ⊗ₜ ·)
-        (_root_.SheafOfModules.stalkMap_germ f x V hxV m₁)
-        (_root_.SheafOfModules.stalkMap_germ g x V hxV n₁))
+      (TensorProduct.map_tmul _ _ _ _)).trans
+    (congrArg₂ (· ⊗ₜ ·) (stalkMap_germ f x V hxV m₁) (stalkMap_germ g x V hxV n₀))
   exact hL.trans hR.symm
 
 /-- Naturality of `tensorObjStalkEquiv` with respect to `f ⊗ₘ g`. -/
 theorem tensorObjStalkEquiv_naturality
     {M' N' : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ M') (g : N ⟶ N') :
-    (tensorObjStalkEquiv R M' N' x).toLinearMap.comp
-        (_root_.SheafOfModules.stalkMap (f ⊗ₘ g) x) =
-      (TensorProduct.map (_root_.SheafOfModules.stalkMap f x)
-        (_root_.SheafOfModules.stalkMap g x)).comp
+    (tensorObjStalkEquiv R M' N' x).toLinearMap.comp (stalkMap (f ⊗ₘ g) x) =
+      (TensorProduct.map (stalkMap f x) (stalkMap g x)).comp
         (tensorObjStalkEquiv R M N x).toLinearMap :=
   tensorObjStalkComparison_naturality R M N x f g
-
 end Monoidal
-
 end SheafOfModules
 
 end
