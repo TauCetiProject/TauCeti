@@ -26,14 +26,17 @@ projective spinor module, composing with Mathlib's `dualTensorHomEquiv` gives th
 identification with `S ⊗ S*`. The dual here is the `A`-linear algebraic dual; in the complex
 case it is not a Hermitian conjugate space.
 
-Clifford multiplication on forms becomes left multiplication on endomorphisms, hence action
-on the first spinor factor; in particular the chiral volume element acts by `Γ_S ⊗ Id`. In even
-negative-metric real dimension, after complexification, exterior parity instead becomes
-conjugation by spinor chirality, hence the tensor product `Γ_S ⊗ Γ_Sᵀ` of chirality and its
+Clifford multiplication on forms becomes left multiplication on endomorphisms
+(`AlgEquiv.cliffordFormsEquivEnd_action`), hence action on the first spinor factor
+(`AlgEquiv.cliffordFormsEquivTensor_action`); in particular the chiral volume element acts by
+`Γ_S ⊗ Id`. In even negative-metric real dimension, after complexification, exterior parity instead
+becomes conjugation by spinor chirality, hence the tensor product `Γ_S ⊗ Γ_Sᵀ` of chirality and its
 transpose. The transpose is the induced dual parity; the chirality of the reverse-dual Clifford
 action has the additional sign `(-1) ^ (dim V / 2)`
-(`AlgHom.cliffordReverseDual_complexVolume_ne_dualMap_iff`). These comparisons include dimension
-zero and both orientations. No Hermitian metric is needed for these algebraic identifications.
+(`AlgHom.cliffordReverseDual_complexVolume_eq_dualMap_iff`,
+`AlgEquiv.cliffordFormsEquivTensor_involute_eq_cliffordReverseDual`). These comparisons include
+dimension zero and both orientations. No Hermitian metric is needed for these algebraic
+identifications.
 
 ## References
 
@@ -104,7 +107,7 @@ theorem cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv [Invertible 
     ρ.cliffordFormsEquivEnd x =
       ρ ((equivExterior (Q.baseChange A)).symm (ExteriorAlgebra.baseChangeEquiv R V A x)) := by
   rw [equivExterior_symm_baseChangeEquiv]
-  rfl
+  simp [cliffordFormsEquivEnd]
 
 /-- The increasing orthogonal wedge maps to the represented ordered Clifford monomial. -/
 theorem cliffordFormsEquivEnd_one_tmul_exteriorAlgebra_eq_prod_map_sort
@@ -246,28 +249,9 @@ variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] [AddCommGroup S] [Module ℂ S]
   {n : ℕ} [Fact (Module.finrank ℝ V = n)] {Q : QuadraticForm ℝ V}
 
-/-- The chiral Clifford action of `complexVolume Q o` on complexified forms corresponds under
-`cliffordFormsEquivEnd` to left multiplication by `ρ (complexVolume Q o)`, in contrast to exterior
-parity (`cliffordFormsEquivEnd_involute`), which conjugates by `ρ (complexVolume Q o)`. -/
-theorem cliffordFormsEquivEnd_action_complexVolume
-    (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
-    ρ.cliffordFormsEquivEnd (baseChangeExteriorAction ℂ Q (complexVolume Q o) x) =
-      ρ (complexVolume Q o) * ρ.cliffordFormsEquivEnd x :=
-  ρ.cliffordFormsEquivEnd_action (complexVolume Q o) x
-
-/-- On spinor tensors `S ⊗[ℂ] Dual ℂ S`, the chiral Clifford action of `complexVolume Q o` is
-`Γ_S ⊗ Id`, acting only on the first spinor factor. -/
-theorem cliffordFormsEquivTensor_action_complexVolume [FiniteDimensional ℂ S]
-    (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
-    ρ.cliffordFormsEquivTensor (baseChangeExteriorAction ℂ Q (complexVolume Q o) x) =
-      TensorProduct.map (ρ (complexVolume Q o)) LinearMap.id
-        (ρ.cliffordFormsEquivTensor x) :=
-  ρ.cliffordFormsEquivTensor_action (complexVolume Q o) x
-
 /-- Exterior parity corresponds to conjugation by spinor chirality. This is different from
-Clifford multiplication by the volume element, which acts only on the left. -/
+Clifford multiplication by the volume element (`AlgEquiv.cliffordFormsEquivEnd_action`), which acts
+only on the left. -/
 theorem cliffordFormsEquivEnd_involute
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
     (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : Even n)
@@ -307,9 +291,7 @@ theorem cliffordFormsEquivTensor_involute_eq_cliffordReverseDual [FiniteDimensio
         TensorProduct.map (ρ (complexVolume Q o))
           (ρ.toAlgHom.cliffordReverseDual (complexVolume Q o))
           (ρ.cliffordFormsEquivTensor x) := by
-  rw [ρ.cliffordFormsEquivTensor_involute o hQ hn x,
-    AlgHom.cliffordReverseDual_complexVolume, TensorProduct.map_smul_right,
-    LinearMap.smul_apply, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
-  rfl
+  rw [ρ.cliffordFormsEquivTensor_involute o hQ hn x]
+  simp [TensorProduct.map_smul_right, smul_smul, ← mul_pow]
 
 end AlgEquiv

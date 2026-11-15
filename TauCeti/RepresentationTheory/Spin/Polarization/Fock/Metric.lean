@@ -53,7 +53,7 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_apply_eq_sesqComplexification`: an orthonormal
   basis of `W` is orthonormal for `h (x, y) = -(1/2) polar Q_ℂ (conj x, y)`, which equals
   `g.sesqComplexification x y` when `Q (v) = -g (v, v)` for symmetric `g`.
-* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti` and
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti_eq_det_polar` and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti_eq_det_sesqComplexification`: the
   Gram-determinant formula `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))` in every degree `p`
   (distinct degrees are orthogonal by
@@ -300,7 +300,7 @@ theorem toLinearMapₛₗ₂_realFockAction_left (a : CliffordAlgebra Q)
 normalized Fock metric evaluates as the `p × p` determinant of the intrinsic polarization pairing
 `h (xᵢ, yⱼ) = -(1/2) polar Q_ℂ (conj xᵢ, yⱼ)`. Distinct exterior degrees are orthogonal by
 `ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`. -/
-theorem toLinearMapₛₗ₂_ιMulti_ιMulti (p : ℕ)
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti_eq_det_polar (p : ℕ)
     (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
         (1 : Matrix (Finset ι) (Finset ι) ℂ)

@@ -56,8 +56,8 @@ normalized Fock actions compare.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`: `⋀^p M` and `⋀^q M` are
   `H`-orthogonal for `p ≠ q`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti`: the Gram-determinant formula
-  `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))`, specialized to degrees `1` and `2` in
-  `ExteriorAlgebra.toLinearMapₛₗ₂_ι_ι` and `ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_two`.
+  `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))`, specialized to degree `1` in
+  `ExteriorAlgebra.toLinearMapₛₗ₂_ι_ι`.
 * `ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti`: `H` is the unique sesquilinear form on `⋀ M`
   with orthogonal exterior degrees and Gram-determinant values on decomposable wedges.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_left`: `H (T_r s) t = H s (T_{star r} t)`.
@@ -212,26 +212,6 @@ theorem toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p �
     · rw [toLinearMapₛₗ₂_ι_mul_left]
       exact ih (fun h ↦ hpq (congrArg (· + 1) h)) (contractLeft_mem_exteriorPower _ ht)
 
-/-- The vacuum is orthogonal to every positive exterior power on the right. -/
-theorem toLinearMapₛₗ₂_one_left_eq_zero_of_mem_exteriorPower {p : ℕ} (hp : p ≠ 0)
-    {t : _root_.ExteriorAlgebra R M} (ht : t ∈ ⋀[R]^p M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-      (1 : Matrix (Finset I) (Finset I) R) 1 t = 0 :=
-  have h1 : (1 : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^0 M := by
-    rw [_root_.ExteriorAlgebra.exteriorPower, pow_zero]
-    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
-  toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower b hp.symm h1 ht
-
-/-- The vacuum is orthogonal to every positive exterior power on the left. -/
-theorem toLinearMapₛₗ₂_one_right_eq_zero_of_mem_exteriorPower {p : ℕ} (hp : p ≠ 0)
-    {s : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-      (1 : Matrix (Finset I) (Finset I) R) s 1 = 0 :=
-  have h1 : (1 : _root_.ExteriorAlgebra R M) ∈ ⋀[R]^0 M := by
-    rw [_root_.ExteriorAlgebra.exteriorPower, pow_zero]
-    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
-  toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower b hp hs h1
-
 /-- **In degree one, the exterior Hermitian form restricts to the Hermitian form on `M`.** -/
 theorem toLinearMapₛₗ₂_ι_ι (x y : M) :
     toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
@@ -264,21 +244,7 @@ theorem toLinearMapₛₗ₂_ιMulti_ιMulti (p : ℕ) (x y : Fin p → M) :
       contractLeft_ιMulti, map_sum, Matrix.det_succ_row_zero]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [map_smul, smul_eq_mul, ih]
-    rfl
-
-/-- **In degree two, the exterior Hermitian form is the `2 × 2` Gram determinant**
-`h (x₀, y₀) h (x₁, y₁) - h (x₀, y₁) h (x₁, y₀)`. -/
-theorem toLinearMapₛₗ₂_ιMulti_two (x₀ x₁ y₀ y₁ : M) :
-    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset I) (Finset I) R)
-        (_root_.ExteriorAlgebra.ιMulti R 2 ![x₀, x₁])
-        (_root_.ExteriorAlgebra.ιMulti R 2 ![y₀, y₁]) =
-      toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x₀ y₀ *
-          toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x₁ y₁ -
-        toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x₀ y₁ *
-          toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x₁ y₀ := by
-  rw [toLinearMapₛₗ₂_ιMulti_ιMulti, Matrix.det_fin_two]
-  simp
+    simp [Matrix.submatrix, Matrix.vecTail, Fin.removeNth]
 
 /-- **Characterization of the exterior Gram metric**: the form making the wedge basis of `b`
 orthonormal is the unique sesquilinear form on `⋀ M` for which distinct exterior powers are

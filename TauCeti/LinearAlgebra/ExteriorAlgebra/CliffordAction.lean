@@ -180,6 +180,28 @@ theorem baseChangeExteriorAction_ι_tmul (w : A) (m : M) (z : A) (x : ExteriorAl
       (w * z) ⊗ₜ exteriorAction Q (ι Q m) x :=
   baseChangeExteriorAction_tmul A Q (toBaseChange_ι A Q w m) z x
 
+/-- `(equivExterior Q).baseChange` intertwines multiplication in `A ⊗[R] CliffordAlgebra Q` with
+`baseChangeExteriorAction`. -/
+private theorem baseChangeExteriorAction_baseChange_equivExterior
+    (a : CliffordAlgebra (Q.baseChange A)) (t : A ⊗[R] CliffordAlgebra Q) :
+    baseChangeExteriorAction A Q a ((equivExterior Q).baseChange R A _ _ t) =
+      (equivExterior Q).baseChange R A _ _ (toBaseChange A Q a * t) := by
+  have key (s : A ⊗[R] CliffordAlgebra Q) :
+      baseChangeExteriorAction A Q (ofBaseChange A Q s)
+          ((equivExterior Q).baseChange R A _ _ t) =
+        (equivExterior Q).baseChange R A _ _ (s * t) := by
+    induction s using TensorProduct.inductionOn with
+    | add s₁ s₂ hs₁ hs₂ => simp only [map_add, LinearMap.add_apply, add_mul, hs₁, hs₂]
+    | tmul w c =>
+      induction t using TensorProduct.inductionOn with
+      | add t₁ t₂ ht₁ ht₂ => simp only [map_add, mul_add, ht₁, ht₂]
+      | tmul z d =>
+        rw [LinearEquiv.baseChange_tmul,
+          baseChangeExteriorAction_tmul A Q (toBaseChange_ofBaseChange A Q _),
+          exteriorAction_equivExterior, Algebra.TensorProduct.tmul_mul_tmul,
+          LinearEquiv.baseChange_tmul]
+  simpa only [ofBaseChange_toBaseChange] using key (toBaseChange A Q a)
+
 section InvertibleTwo
 
 variable [Invertible (2 : A)]
@@ -199,12 +221,8 @@ theorem equivExterior_ofBaseChangeAux (c : CliffordAlgebra Q) :
   have hφ_ι (m : M) : φ (ι 0 m) = ExteriorAlgebra.ι A (1 ⊗ₜ[R] m) :=
     ExteriorAlgebra.baseChangeEquiv_apply R M A 1 m
   have hinv2 : (⅟(2 : A) : A) = algebraMap R A (⅟(2 : R)) := by
-    have h2 : (2 : A) * algebraMap R A (⅟(2 : R)) = 1 := by
-      rw [← map_ofNat (algebraMap R A) 2, ← map_mul, mul_invOf_self, map_one]
-    calc
-      (⅟(2 : A) : A) = ⅟(2 : A) * ((2 : A) * algebraMap R A (⅟(2 : R))) := by rw [h2, mul_one]
-      _ = (⅟(2 : A) * 2) * algebraMap R A (⅟(2 : R)) := (mul_assoc _ _ _).symm
-      _ = algebraMap R A (⅟(2 : R)) := by rw [invOf_mul_self, one_mul]
+    let _ : Invertible (algebraMap R A 2) := Invertible.map (algebraMap R A) 2
+    simpa [map_ofNat] using (map_invOf (algebraMap R A) (2 : R)).symm
   have hB (m m' : M) :
       QuadraticMap.associated (-(Q.baseChange A)) (1 ⊗ₜ[R] m) (1 ⊗ₜ[R] m') =
         algebraMap R A (QuadraticMap.associated (-Q) m m') := by
@@ -231,26 +249,24 @@ theorem equivExterior_ofBaseChangeAux (c : CliffordAlgebra Q) :
     rw [map_mul, ofBaseChangeAux_ι, equivExterior_ι_mul, equivExterior_ι_mul, hx, map_sub,
       map_mul, hφ_ι, hcontract]
 
+private theorem equivExterior_ofBaseChange (t : A ⊗[R] CliffordAlgebra Q) :
+    equivExterior (Q.baseChange A) (ofBaseChange A Q t) =
+      ExteriorAlgebra.baseChangeEquiv R M A ((equivExterior Q).baseChange R A _ _ t) := by
+  induction t using TensorProduct.inductionOn with
+  | add t₁ t₂ ht₁ ht₂ => simp only [map_add, ht₁, ht₂]
+  | tmul z c =>
+    have hof : ofBaseChange A Q (z ⊗ₜ[R] c) = z • ofBaseChangeAux A Q c :=
+      (Algebra.TensorProduct.lift_tmul _ _ _ z c).trans (Algebra.smul_def z _).symm
+    rw [hof, map_smul, equivExterior_ofBaseChangeAux, ← map_smul,
+      TensorProduct.smul_tmul', smul_eq_mul, mul_one, LinearEquiv.baseChange_tmul]
+
 /-- **Compatibility of `equivExterior` with `toBaseChange`** along
 `ExteriorAlgebra.baseChangeEquiv`. -/
 theorem equivExterior_baseChange (a : CliffordAlgebra (Q.baseChange A)) :
     equivExterior (Q.baseChange A) a =
       ExteriorAlgebra.baseChangeEquiv R M A
         ((equivExterior Q).baseChange R A _ _ (toBaseChange A Q a)) := by
-  have key (t : A ⊗[R] CliffordAlgebra Q) :
-      equivExterior (Q.baseChange A) (ofBaseChange A Q t) =
-        ExteriorAlgebra.baseChangeEquiv R M A ((equivExterior Q).baseChange R A _ _ t) := by
-    induction t using TensorProduct.inductionOn with
-    | add t₁ t₂ ht₁ ht₂ => simp only [map_add, ht₁, ht₂]
-    | tmul z c =>
-      have hof : ofBaseChange A Q (z ⊗ₜ[R] c) = z • ofBaseChangeAux A Q c := by
-        rw [← ofBaseChange_toBaseChange A Q (z • ofBaseChangeAux A Q c), map_smul,
-          toBaseChange_ofBaseChangeAux, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      have hz : z ⊗ₜ[R] equivExterior Q c = z • (1 ⊗ₜ[R] equivExterior Q c) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [hof, LinearEquiv.baseChange_tmul, map_smul, hz, map_smul,
-        equivExterior_ofBaseChangeAux]
-  simpa only [ofBaseChange_toBaseChange] using key (toBaseChange A Q a)
+  simpa only [ofBaseChange_toBaseChange] using equivExterior_ofBaseChange A Q (toBaseChange A Q a)
 
 /-- **Inverse Chevalley compatibility** along `ExteriorAlgebra.baseChangeEquiv`. -/
 theorem equivExterior_symm_baseChangeEquiv (x : A ⊗[R] ExteriorAlgebra R M) :
@@ -270,33 +286,9 @@ theorem baseChangeEquiv_baseChangeExteriorAction
     (a : CliffordAlgebra (Q.baseChange A)) (x : A ⊗[R] ExteriorAlgebra R M) :
     ExteriorAlgebra.baseChangeEquiv R M A (baseChangeExteriorAction A Q a x) =
       exteriorAction (Q.baseChange A) a (ExteriorAlgebra.baseChangeEquiv R M A x) := by
-  have key (t : A ⊗[R] CliffordAlgebra Q) (x : A ⊗[R] ExteriorAlgebra R M) :
-      ExteriorAlgebra.baseChangeEquiv R M A
-          (baseChangeExteriorAction A Q (ofBaseChange A Q t) x) =
-        exteriorAction (Q.baseChange A) (ofBaseChange A Q t)
-          (ExteriorAlgebra.baseChangeEquiv R M A x) := by
-    induction t using TensorProduct.inductionOn with
-    | add t₁ t₂ ht₁ ht₂ => simp only [map_add, LinearMap.add_apply, ht₁, ht₂]
-    | tmul w c =>
-      induction x using TensorProduct.inductionOn with
-      | add x₁ x₂ hx₁ hx₂ => simp only [map_add, hx₁, hx₂]
-      | tmul z y =>
-        obtain ⟨d, rfl⟩ := (equivExterior Q).surjective y
-        have hof : ofBaseChange A Q (w ⊗ₜ[R] c) = w • ofBaseChangeAux A Q c := by
-          rw [← ofBaseChange_toBaseChange A Q (w • ofBaseChangeAux A Q c), map_smul,
-            toBaseChange_ofBaseChangeAux, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        have htc : toBaseChange A Q (ofBaseChange A Q (w ⊗ₜ[R] c)) = w ⊗ₜ[R] c :=
-          toBaseChange_ofBaseChange A Q (w ⊗ₜ[R] c)
-        have hzd : z ⊗ₜ[R] equivExterior Q d = z • (1 ⊗ₜ[R] equivExterior Q d) := by
-          rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        have hwzd : (w * z) ⊗ₜ[R] equivExterior Q (c * d) =
-            (w * z) • (1 ⊗ₜ[R] equivExterior Q (c * d)) := by
-          rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        rw [baseChangeExteriorAction_tmul A Q htc, exteriorAction_equivExterior, hwzd, map_smul,
-          ← equivExterior_ofBaseChangeAux A Q (c * d), hzd, map_smul,
-          ← equivExterior_ofBaseChangeAux A Q d, hof, map_smul, exteriorAction_equivExterior,
-          smul_mul_assoc, map_smul, ← map_mul, smul_smul, mul_comm z w]
-  simpa only [ofBaseChange_toBaseChange] using key (toBaseChange A Q a) x
+  obtain ⟨t, rfl⟩ := ((equivExterior Q).baseChange R A _ _).surjective x
+  rw [baseChangeExteriorAction_baseChange_equivExterior, ← equivExterior_ofBaseChange,
+    ← equivExterior_ofBaseChange, exteriorAction_equivExterior, map_mul, ofBaseChange_toBaseChange]
 
 end InvertibleTwo
 

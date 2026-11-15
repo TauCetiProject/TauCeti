@@ -49,10 +49,8 @@ it need not be finite-dimensional or irreducible.
   `μ`-eigenspace of `Γ` on the reverse dual with the dual of the `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of
   `Γ` on `S`, and `AlgHom.finrank_eigenspace_cliffordReverseDual_complexVolume` gives the
   dimension count.
-* `AlgHom.cliffordReverseDual_complexVolume_eq_dualMap_iff` and
-  `AlgHom.cliffordReverseDual_complexVolume_ne_dualMap_iff`: for nontrivial `S` over
-  `Q v = -‖v‖²`, the reverse-dual chirality agrees with (respectively, differs from) `(Γ_S)ᵀ` if
-  and only if `n / 2` is even (respectively, odd).
+* `AlgHom.cliffordReverseDual_complexVolume_eq_dualMap_iff`: for nontrivial `S` over
+  `Q v = -‖v‖²`, the reverse-dual chirality agrees with `(Γ_S)ᵀ` if and only if `n / 2` is even.
 
 ## References
 
@@ -191,13 +189,6 @@ theorem cliffordReverseDual_complexVolume_eq_dualMap_iff [Nontrivial S] :
   simp only [cliffordReverseDual_complexVolume, ho.neg_one_pow, LinearMap.smul_apply,
     LinearMap.dualMap_apply, smul_eq_mul, involutive_complexVolume ρ o hQ s, hφ] at h1
   norm_num at h1
-
-/-- For a nontrivial module over `Q v = -‖v‖²`, the chirality of the reverse dual differs from the
-transpose `(ρ (complexVolume Q o)).dualMap` if and only if `n / 2` is odd. -/
-theorem cliffordReverseDual_complexVolume_ne_dualMap_iff [Nontrivial S] :
-    cliffordReverseDual ρ (complexVolume Q o) ≠ (ρ (complexVolume Q o)).dualMap ↔
-      Odd (n / 2) := by
-  rw [ne_eq, cliffordReverseDual_complexVolume_eq_dualMap_iff ρ o hQ, Nat.not_even_iff_odd]
 
 end Form
 
