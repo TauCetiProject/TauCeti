@@ -58,7 +58,7 @@ theorem mem_checkerboardSpinorSubgroup_iff (hn : Even n)
     (x : (checkerboardLattice n).DiscriminantGroup) :
     x ∈ checkerboardSpinorSubgroup n ↔ x = 0 ∨ x = checkerboardSpinorClass n := by
   rw [checkerboardSpinorSubgroup]
-  exact mem_zmultiples_checkerboardSpinorClass_iff n hn x
+  exact mem_zmultiples_checkerboardSpinorClass_iff_of_even n hn x
 
 /-- The spinor subgroup has order two in even positive rank. -/
 theorem natCard_checkerboardSpinorSubgroup [NeZero n] (hn : Even n) :
