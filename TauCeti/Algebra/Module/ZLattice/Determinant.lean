@@ -36,7 +36,7 @@ group and every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L)` are infinite
 (`ZLattice.infinite_discriminantGroup_span_singleton_of_irrational_sq`,
 `ZLattice.infinite_quotient_smul_dual_inf_of_irrational_sq`) — or trivial without unimodularity, as
 happens precisely when `L^∨ < L` (`ZLattice.dual_lt_iff`), for instance for `L = 2⁻¹ ℤ` with dual
-`2 ℤ` (`ZLattice.dual_lt_span_singleton_iff`). For an integral full lattice of rank
+`2 ℤ` (`ZLattice.dual_span_singleton_lt_self_iff`). For an integral full lattice of rank
 `n` and a natural number `c ≠ 0`, the quotient `L^∨ / cL` of the dual by the scaled lattice
 `cL = (c : ℝ) • L` is finite with `cⁿ |L^∨ / L|` elements.
 
@@ -545,7 +545,7 @@ theorem infinite_discriminantGroup_span_singleton_of_irrational_sq {c : ℝ}
 theorem subsingleton_discriminantGroup_span_singleton_iff {c : ℝ} :
     Subsingleton (DiscriminantGroup (span ℤ {c} : Submodule ℤ ℝ)) ↔
       ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 :=
-  subsingleton_discriminantGroup_iff.trans dual_le_span_singleton_iff
+  subsingleton_discriminantGroup_iff.trans dual_span_singleton_le_self_iff
 
 /-- The discriminant group of `2⁻¹ ℤ ⊆ ℝ` is trivial, since `(2⁻¹ ℤ)^∨ = 2 ℤ ≤ 2⁻¹ ℤ`. -/
 noncomputable instance instUniqueDiscriminantGroupSpanInvTwo :

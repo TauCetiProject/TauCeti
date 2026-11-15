@@ -60,8 +60,8 @@ defined from it.
   dual basis.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
 * `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
-* `ZLattice.dual_le_span_singleton_iff`, `ZLattice.dual_lt_span_singleton_iff`: criteria on
-  `c : ℝ` for `(c ℤ)^∨ ≤ c ℤ` and `(c ℤ)^∨ < c ℤ`.
+* `ZLattice.dual_span_singleton_le_self_iff`, `ZLattice.dual_span_singleton_lt_self_iff`:
+  criteria on `c : ℝ` for `(c ℤ)^∨ ≤ c ℤ` and `(c ℤ)^∨ < c ℤ`.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
@@ -181,7 +181,7 @@ theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
 
 /-- The dual of `c ℤ ⊆ ℝ` is contained in `c ℤ` if and only if `(m : ℝ) * c ^ 2 = 1` for some
 `m : ℤ` (equivalently, `c ≠ 0` and `c⁻² ∈ ℤ`). -/
-theorem dual_le_span_singleton_iff {c : ℝ} :
+theorem dual_span_singleton_le_self_iff {c : ℝ} :
     dual (span ℤ {c} : Submodule ℤ ℝ) ≤ span ℤ {c} ↔
       ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 := by
   rcases eq_or_ne c 0 with rfl | hc
@@ -197,10 +197,10 @@ theorem dual_le_span_singleton_iff {c : ℝ} :
 
 /-- The dual of `c ℤ ⊆ ℝ` is strictly contained in `c ℤ` if and only if `(m : ℝ) * c ^ 2 = 1` for
 some `m : ℤ` and `|c| ≠ 1`. -/
-theorem dual_lt_span_singleton_iff {c : ℝ} :
+theorem dual_span_singleton_lt_self_iff {c : ℝ} :
     dual (span ℤ {c} : Submodule ℤ ℝ) < span ℤ {c} ↔
       (∃ m : ℤ, (m : ℝ) * c ^ 2 = 1) ∧ |c| ≠ 1 := by
-  rw [lt_iff_le_not_ge, dual_le_span_singleton_iff]
+  rw [lt_iff_le_not_ge, dual_span_singleton_le_self_iff]
   refine and_congr_right fun ⟨m, hm⟩ ↦ ?_
   have hc : c ≠ 0 := fun h0 ↦ by simp [h0] at hm
   refine not_congr ?_
@@ -228,7 +228,7 @@ theorem dual_span_inv_two :
 /-- The lattice `2 ℤ ⊆ ℝ` is strictly contained in `2⁻¹ ℤ`. -/
 theorem span_two_lt_span_inv_two :
     (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) < span ℤ {(2⁻¹ : ℝ)} := by
-  rw [← dual_span_inv_two, dual_lt_span_singleton_iff]
+  rw [← dual_span_inv_two, dual_span_singleton_lt_self_iff]
   exact ⟨⟨4, by norm_num⟩, by norm_num⟩
 
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
