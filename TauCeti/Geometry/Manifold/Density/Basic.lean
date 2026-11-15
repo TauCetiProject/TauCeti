@@ -63,6 +63,14 @@ theorem toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M
   have := o.fact_finrank_tangentSpace x
   AlternatingMap.toDensity_apply (φ x).toAlternatingMap (o.orientationAt x) b
 
+/-- The density of a top form on any basis of a tangent space is the relative orientation sign
+times the value of the form on that basis. -/
+theorem toDensity_apply_basis (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
+    (x : M) (b : Basis (Fin m) ℝ (TangentSpace I x)) :
+    φ.toDensity o x b = ((o.orientationAt x).signBasis b : ℝ) * φ x b :=
+  have := o.fact_finrank_tangentSpace x
+  AlternatingMap.toDensity_apply_basis (φ x).toAlternatingMap (o.orientationAt x) b
+
 /-- On a positively oriented basis of a tangent space, the density of a top form is the form
 itself. -/
 @[simp]
@@ -130,6 +138,31 @@ theorem toDensity_neg (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (
     (-φ).toDensity o = -φ.toDensity o := by
   rw [← neg_one_smul ℝ φ, toDensity_smul, neg_one_smul]
 
+/-- The density of a difference of top forms is the difference of their densities. -/
+@[simp]
+theorem toDensity_sub (φ ψ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) :
+    (φ - ψ).toDensity o = φ.toDensity o - ψ.toDensity o := by
+  rw [sub_eq_add_neg, toDensity_add, toDensity_neg, sub_eq_add_neg]
+
+/-- Pointwise scalar multiplication of a top form commutes with `toDensity`. -/
+theorem toDensity_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ m)
+    (o : Manifold.Orientation I M (Fin m)) :
+    toDensity (fun x ↦ f x • φ x) o = fun x ↦ f x • φ.toDensity o x := by
+  funext x
+  have := o.fact_finrank_tangentSpace x
+  simp only [toDensity, ContinuousAlternatingMap.toAlternatingMap_smul,
+    AlternatingMap.toDensity_smul]
+
+/-- At each point, the density of a top form vanishes exactly when the form vanishes there. -/
+@[simp]
+theorem toDensity_apply_eq_zero_iff (φ : RoughForm I M ℝ m)
+    (o : Manifold.Orientation I M (Fin m)) (x : M) :
+    φ.toDensity o x = 0 ↔ φ x = 0 := by
+  have := o.fact_finrank_tangentSpace x
+  rw [toDensity, AlternatingMap.toDensity_eq_zero_iff,
+    ← ContinuousAlternatingMap.toAlternatingMap_zero,
+    ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]
+
 /-- On an oriented manifold, a top form is determined by its density. -/
 theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
     Function.Injective fun φ : RoughForm I M ℝ m ↦ φ.toDensity o := by
@@ -141,6 +174,76 @@ theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
   rw [← Orientation.densityEquiv_apply, ← Orientation.densityEquiv_apply] at hx
   exact ContinuousAlternatingMap.toAlternatingMap_injective
     ((Orientation.densityEquiv (o.orientationAt x)).injective hx)
+
+/-- Taking the absolute value of `φ.toDensity o` at any point and tuple gives `|φ x v|`. -/
+@[simp]
+theorem abs_toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
+    (x : M) (v : Fin m → TangentSpace I x) : |φ.toDensity o x v| = |φ x v| := by
+  have := o.fact_finrank_tangentSpace x
+  exact (AlternatingMap.abs_toDensity_apply (φ x).toAlternatingMap (o.orientationAt x) v).trans
+    (AlternatingMap.absDensity_apply _ _)
+
+section AbsDensity
+
+omit [FiniteDimensional ℝ E] [IsManifold I 1 M]
+variable [Fact (Module.finrank ℝ E = m)]
+
+/-- The orientation-free nonnegative rough density `|φ|` of a top-degree rough form `φ`: at each
+point `x` and tuple `v`, `(φ.absDensity x) v = |φ x v|`. Neither an orientation nor a smooth
+manifold structure is needed. -/
+def absDensity (φ : RoughForm I M ℝ m) : RoughDensity I M m := fun x ↦
+  haveI : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨(tangentSpaceCastModel I x).toLinearEquiv.finrank_eq.trans Fact.out⟩
+  (φ x).toAlternatingMap.absDensity
+
+@[simp]
+theorem absDensity_apply (φ : RoughForm I M ℝ m) (x : M) (v : Fin m → TangentSpace I x) :
+    φ.absDensity x v = |φ x v| := by
+  have : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨(tangentSpaceCastModel I x).toLinearEquiv.finrank_eq.trans Fact.out⟩
+  exact AlternatingMap.absDensity_apply (φ x).toAlternatingMap v
+
+/-- The absolute density of a rough top form is everywhere nonnegative. -/
+theorem absDensity_nonneg (φ : RoughForm I M ℝ m) (x : M) (v : Fin m → TangentSpace I x) :
+    0 ≤ φ.absDensity x v := by
+  rw [absDensity_apply]
+  exact abs_nonneg (φ x v)
+
+@[simp]
+theorem absDensity_zero : (0 : RoughForm I M ℝ m).absDensity = 0 := by
+  funext x
+  ext v
+  simp
+
+@[simp]
+theorem absDensity_neg (φ : RoughForm I M ℝ m) : (-φ).absDensity = φ.absDensity := by
+  funext x
+  ext v
+  simp
+
+/-- Pointwise scalar multiplication of a rough top form multiplies `absDensity` by `|f x|`. -/
+theorem absDensity_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ m) :
+    absDensity (fun x ↦ f x • φ x) = fun x ↦ |f x| • φ.absDensity x := by
+  funext x
+  ext v
+  simp [abs_mul]
+
+/-- Constant scalar multiplication of a rough top form scales `absDensity` by `|c|`. -/
+theorem absDensity_smul (c : ℝ) (φ : RoughForm I M ℝ m) :
+    (c • φ).absDensity = |c| • φ.absDensity :=
+  absDensity_fun_smul (fun _ ↦ c) φ
+
+/-- At each point, `φ.absDensity` vanishes precisely when `φ` vanishes there. -/
+@[simp]
+theorem absDensity_apply_eq_zero_iff (φ : RoughForm I M ℝ m) (x : M) :
+    φ.absDensity x = 0 ↔ φ x = 0 := by
+  have : Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+    ⟨(tangentSpaceCastModel I x).toLinearEquiv.finrank_eq.trans Fact.out⟩
+  rw [absDensity, AlternatingMap.absDensity_eq_zero_iff,
+    ← ContinuousAlternatingMap.toAlternatingMap_zero,
+    ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]
+
+end AbsDensity
 
 end RoughForm
 

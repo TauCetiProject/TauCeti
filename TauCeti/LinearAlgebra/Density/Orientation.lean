@@ -131,6 +131,32 @@ theorem toDensity_neg (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V
     (-φ).toDensity o = -φ.toDensity o := by
   rw [← neg_one_smul ℝ φ, toDensity_smul, neg_one_smul]
 
+/-- The density of a difference of top forms is the difference of their densities. -/
+@[simp]
+theorem toDensity_sub (φ ψ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V (Fin m)) :
+    (φ - ψ).toDensity o = φ.toDensity o - ψ.toDensity o := by
+  rw [sub_eq_add_neg, toDensity_add, toDensity_neg, sub_eq_add_neg]
+
+/-- The density of a top form vanishes exactly when the top form vanishes. -/
+@[simp]
+theorem toDensity_eq_zero_iff (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V (Fin m)) :
+    φ.toDensity o = 0 ↔ φ = 0 := by
+  rw [← (φ.toDensity o).apply_basis_eq_zero_iff (refBasis V m), toDensity_apply_basis,
+    mul_eq_zero, Int.cast_eq_zero]
+  simp [Units.ne_zero, φ.map_basis_eq_zero_iff (refBasis V m)]
+
+/-- Taking the absolute value of `φ.toDensity o` on any tuple recovers `|φ v|`. -/
+@[simp]
+theorem abs_toDensity_apply (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (o : Orientation ℝ V (Fin m))
+    (v : Fin m → V) : |φ.toDensity o v| = φ.absDensity v := by
+  rw [(φ.toDensity o).apply_eq_abs_det_mul (refBasis V m), toDensity_apply_basis, abs_mul,
+    abs_mul, absDensity_apply]
+  have hs : |(o.signBasis (refBasis V m) : ℝ)| = 1 := by
+    rcases Int.units_eq_one_or (o.signBasis (refBasis V m)) with h | h <;> rw [h] <;> simp
+  have hdet := DFunLike.congr_fun (φ.eq_smul_basis_det (refBasis V m)) v
+  simp only [smul_apply, smul_eq_mul] at hdet
+  rw [hs, one_mul, abs_abs, hdet, abs_mul, mul_comm]
+
 end AlternatingMap
 
 namespace Orientation

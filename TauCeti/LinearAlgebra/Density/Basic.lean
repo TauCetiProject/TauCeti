@@ -196,4 +196,141 @@ theorem apply_eq_zero_of_not_linearIndependent (μ : Density V m)
   have hd : b.det v = 0 := b.det.map_linearDependent v hv
   simp [apply_eq_abs_det_mul μ b v, hd]
 
+/-- Pull back a density along a linear endomorphism of the ambient space. -/
+def compLinearMap (μ : Density V m) (f : V →ₗ[ℝ] V) : Density V m where
+  toFun v := μ (f ∘ v)
+  map_comp T v := by
+    -- Reassociate function composition so `μ.comp_apply` sees `f.comp T`.
+    change μ ((f.comp T) ∘ v) = |LinearMap.det T| * μ (f ∘ v)
+    rw [μ.comp_apply, LinearMap.det_comp, abs_mul, μ.comp_apply]
+    ring
+
+@[simp]
+theorem compLinearMap_apply (μ : Density V m) (f : V →ₗ[ℝ] V) (v : Fin m → V) :
+    μ.compLinearMap f v = μ (f ∘ v) := (rfl)
+
+@[simp]
+theorem compLinearMap_id (μ : Density V m) : μ.compLinearMap LinearMap.id = μ := by
+  ext v
+  rfl
+
+/-- Pulling back along a composition of linear endomorphisms pulls back in reverse order. -/
+theorem compLinearMap_comp (μ : Density V m) (f g : V →ₗ[ℝ] V) :
+    μ.compLinearMap (f.comp g) = (μ.compLinearMap f).compLinearMap g := by
+  ext v
+  rfl
+
+@[simp]
+theorem compLinearMap_zero_left (f : V →ₗ[ℝ] V) :
+    (0 : Density V m).compLinearMap f = 0 := by
+  ext v
+  rfl
+
+@[simp]
+theorem compLinearMap_add_left (μ ν : Density V m) (f : V →ₗ[ℝ] V) :
+    (μ + ν).compLinearMap f = μ.compLinearMap f + ν.compLinearMap f := by
+  ext v
+  rfl
+
+@[simp]
+theorem compLinearMap_smul_left (c : ℝ) (μ : Density V m) (f : V →ₗ[ℝ] V) :
+    (c • μ).compLinearMap f = c • μ.compLinearMap f := by
+  ext v
+  rfl
+
+@[simp]
+theorem compLinearMap_neg_left (μ : Density V m) (f : V →ₗ[ℝ] V) :
+    (-μ).compLinearMap f = -μ.compLinearMap f := by
+  ext v
+  rfl
+
+/-- Pull back a density along a linear equivalence between vector spaces. -/
+def compLinearEquiv {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ : Density V m) (e : W ≃ₗ[ℝ] V) : Density W m where
+  toFun w := μ (e ∘ w)
+  map_comp T w := by
+    have hconj : (e : W →ₗ[ℝ] V) ∘ (T ∘ w) =
+        (((e : W →ₗ[ℝ] V) ∘ₗ T ∘ₗ (e.symm : V →ₗ[ℝ] W)) : V →ₗ[ℝ] V) ∘ (e ∘ w) := by
+      ext i
+      simp
+    -- Coerce `e` to a linear map so `hconj` rewrites into an endomorphism of `V`.
+    change μ ((e : W →ₗ[ℝ] V) ∘ (T ∘ w)) = |LinearMap.det T| * μ (e ∘ w)
+    rw [hconj, μ.comp_apply, LinearMap.det_conj]
+
+@[simp]
+theorem compLinearEquiv_apply {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (μ : Density V m) (e : W ≃ₗ[ℝ] V) (w : Fin m → W) :
+    μ.compLinearEquiv e w = μ (e ∘ w) := (rfl)
+
+@[simp]
+theorem compLinearEquiv_refl (μ : Density V m) :
+    μ.compLinearEquiv (LinearEquiv.refl ℝ V) = μ := by
+  ext v
+  rfl
+
+/-- Pulling back along a composition of linear equivalences pulls back in reverse order. -/
+theorem compLinearEquiv_trans {U W : Type*} [AddCommGroup U] [Module ℝ U]
+    [AddCommGroup W] [Module ℝ W] (μ : Density V m) (e₁ : U ≃ₗ[ℝ] W) (e₂ : W ≃ₗ[ℝ] V) :
+    μ.compLinearEquiv (e₁.trans e₂) = (μ.compLinearEquiv e₂).compLinearEquiv e₁ := by
+  ext u
+  rfl
+
 end TauCeti.Density
+
+namespace AlternatingMap
+
+open TauCeti Module
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] {m : ℕ} [Fact (finrank ℝ V = m)]
+
+/-- The orientation-free positive density `|φ|` of a top-degree alternating form `φ`, sending each
+tuple `v` to `|φ v|`. -/
+def absDensity (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) : Density V m where
+  toFun v := |φ v|
+  map_comp T v := by
+    by_cases hm : m = 0
+    · subst hm
+      rw [LinearMap.det_eq_one_of_finrank_eq_zero Fact.out T, abs_one, one_mul,
+        Subsingleton.elim (T ∘ v) v]
+    · have hpos : 0 < finrank ℝ V := (Fact.out : finrank ℝ V = m).symm ▸ Nat.pos_of_ne_zero hm
+      have : FiniteDimensional ℝ V := FiniteDimensional.of_finrank_pos hpos
+      let b : Basis (Fin m) ℝ V := finBasisOfFinrankEq ℝ V Fact.out
+      have h1 := DFunLike.congr_fun (φ.eq_smul_basis_det b) (T ∘ v)
+      have h2 := DFunLike.congr_fun (φ.eq_smul_basis_det b) v
+      simp only [smul_apply, smul_eq_mul, b.det_comp] at h1 h2
+      rw [h1, h2, mul_left_comm, abs_mul]
+
+@[simp]
+theorem absDensity_apply (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (v : Fin m → V) :
+    φ.absDensity v = |φ v| := (rfl)
+
+/-- The absolute density of an alternating form is everywhere nonnegative. -/
+theorem absDensity_nonneg (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) (v : Fin m → V) :
+    0 ≤ φ.absDensity v :=
+  abs_nonneg (φ v)
+
+@[simp]
+theorem absDensity_zero : (0 : V [⋀^Fin m]→ₗ[ℝ] ℝ).absDensity = 0 := by
+  ext v
+  simp
+
+@[simp]
+theorem absDensity_neg (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) : (-φ).absDensity = φ.absDensity := by
+  ext v
+  simp
+
+/-- Scaling an alternating form scales its absolute density by `|c|`. -/
+theorem absDensity_smul (c : ℝ) (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) :
+    (c • φ).absDensity = |c| • φ.absDensity := by
+  ext v
+  simp [abs_mul]
+
+/-- The absolute density of a top-degree alternating form vanishes precisely when the form does. -/
+@[simp]
+theorem absDensity_eq_zero_iff (φ : V [⋀^Fin m]→ₗ[ℝ] ℝ) :
+    φ.absDensity = 0 ↔ φ = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, absDensity_zero]⟩
+  ext v
+  exact abs_eq_zero.mp (DFunLike.congr_fun h v)
+
+end AlternatingMap
