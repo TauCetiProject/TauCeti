@@ -35,7 +35,8 @@ restricted at a fixed radius.
 ## Main definitions
 
 * `PowerSeries.IsEntire`: `f` is restricted at every real radius.
-* `PowerSeries.IsEntire.subring`: the subring of entire series.
+* `PowerSeries.IsEntire.subring`: the subring of entire series, with coefficient algebra structure
+  `PowerSeries.IsEntire.instAlgebraSubring`.
 * `PowerSeries.IsEntire.polynomialHom`: the inclusion of polynomials into that subring.
 
 ## Main results
@@ -245,6 +246,45 @@ noncomputable def IsEntire.polynomialHom : Polynomial R →+* IsEntire.subring R
 theorem IsEntire.coe_polynomialHom (p : Polynomial R) :
     (IsEntire.polynomialHom p : R⟦X⟧) = p :=
   RingHom.codRestrict_apply _ _ _ p
+
+/-- An algebra structure on the coefficients induces one on entire power series through constant
+series. Scalars act as on the ambient formal series, and the coefficient ring need not be
+commutative. -/
+noncomputable instance IsEntire.instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (IsEntire.subring R) where
+  smul s h := ⟨s • (h : R⟦X⟧), by
+    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
+    exact (isEntire_C (algebraMap S R s)).mul h.2⟩
+  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ by
+    rw [PowerSeries.algebraMap_apply]
+    exact isEntire_C _
+  commutes' s h := Subtype.ext <| by
+    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using Algebra.commutes s (h : R⟦X⟧)
+  smul_def' s h := Subtype.ext <| by
+    rw [Subring.coe_mul, RingHom.codRestrict_apply]
+    convert Algebra.smul_def s (h : R⟦X⟧) using 1
+
+/-- A scalar maps to the constant entire series of its image in the coefficient ring. -/
+@[simp]
+theorem IsEntire.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (IsEntire.subring R) s : R⟦X⟧) = C (algebraMap S R s) := by
+  calc
+    _ = algebraMap S R⟦X⟧ s := (rfl)
+    _ = _ := PowerSeries.algebraMap_apply
+
+/-- Scalars act on entire series as on their underlying formal power series. -/
+@[simp]
+theorem IsEntire.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (h : IsEntire.subring R) :
+    ((s • h : IsEntire.subring R) : R⟦X⟧) = s • (h : R⟦X⟧) := (rfl)
+
+/-- Scalar towers on the coefficients induce scalar towers on entire power series. -/
+instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
+    [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (IsEntire.subring R) where
+  smul_assoc s t h := Subtype.ext <| by
+    simp only [IsEntire.coe_smul_subring]
+    exact smul_assoc s t (h : R⟦X⟧)
 
 /-- Over an ultrametric ring, every entire series is restricted at each radius `r`, so the
 subring of entire series lies in the restricted subring at `r`. -/

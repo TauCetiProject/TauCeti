@@ -82,7 +82,7 @@ theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
       (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
 
 /-- Left-multiplying by `uⁿ` decreases the norm by at most `‖u⁻¹‖ⁿ`, including the case `n = 0`. -/
-theorem _root_.Units.norm_le_pow_inv_mul_norm_pow_mul {R : Type*} [SeminormedRing R] (u : Rˣ)
+theorem _root_.Units.norm_le_norm_inv_pow_mul_norm_pow_mul {R : Type*} [SeminormedRing R] (u : Rˣ)
     (n : ℕ) (x : R) :
     ‖x‖ ≤ ‖((u⁻¹ : Rˣ) : R)‖ ^ n * ‖(u : R) ^ n * x‖ := by
   rcases n with _ | n
@@ -96,19 +96,11 @@ theorem _root_.Units.norm_le_pow_inv_mul_norm_pow_mul {R : Type*} [SeminormedRin
           mul_le_mul_of_nonneg_right (norm_pow_le' _ n.succ_pos) (norm_nonneg _)
 
 /-- In a nontrivial normed ring, `1 ≤ ‖u‖ⁿ * ‖u⁻ⁿ‖` for every unit `u` and every `n : ℕ`. -/
-theorem _root_.Units.one_le_pow_norm_mul_norm_zpow_neg {R : Type*} [NormedRing R] [Nontrivial R]
+theorem _root_.Units.one_le_norm_pow_mul_norm_zpow_neg {R : Type*} [NormedRing R] [Nontrivial R]
     (u : Rˣ) (n : ℕ) :
-    1 ≤ ‖(u : R)‖ ^ n * ‖((u ^ (-(n : ℤ)) : Rˣ) : R)‖ := by
-  rcases n with _ | n
-  · simpa using one_le_norm_one R
-  · have hmul : (u : R) ^ (n + 1) * ((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R) = 1 := by
-      rw [← Units.val_pow_eq_pow_val, ← zpow_natCast, ← Units.val_mul, ← zpow_add,
-        add_neg_cancel, zpow_zero, Units.val_one]
-    calc (1 : ℝ) ≤ ‖(1 : R)‖ := one_le_norm_one R
-      _ = ‖(u : R) ^ (n + 1) * ((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R)‖ := congrArg norm hmul.symm
-      _ ≤ ‖(u : R) ^ (n + 1)‖ * ‖((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R)‖ := norm_mul_le _ _
-      _ ≤ ‖(u : R)‖ ^ (n + 1) * ‖((u ^ (-((n + 1 : ℕ) : ℤ)) : Rˣ) : R)‖ :=
-          mul_le_mul_of_nonneg_right (norm_pow_le' (u : R) n.succ_pos) (norm_nonneg _)
+    1 ≤ ‖(u : R)‖ ^ n * ‖((u ^ (-(n : ℤ)) : Rˣ) : R)‖ :=
+  (one_le_norm_one R).trans <| by
+    simpa [zpow_neg, ← inv_pow] using (u⁻¹).norm_le_norm_inv_pow_mul_norm_pow_mul n 1
 
 /-- **Shells for submultiplicative unit powers.** In a nontrivial normed ring, the norms of integer
 powers of a unit `u` with `‖u‖ < 1` visit every open interval `(a, b)` with `0 ≤ a` and
@@ -135,7 +127,7 @@ theorem _root_.Units.exists_lt_norm_zpow_lt {R : Type*} [NormedRing R] [Nontrivi
     (pow_le_pow_of_le_one (norm_nonneg _) hu.le (Nat.le_succ m₂)).trans_lt hm₂
   let z₀ : ℤ := -((m₂ + 1 : ℕ) : ℤ)
   have hφ₀ : a < φ z₀ := by
-    have h1 := u.one_le_pow_norm_mul_norm_zpow_neg (m₂ + 1)
+    have h1 := u.one_le_norm_pow_mul_norm_zpow_neg (m₂ + 1)
     calc a = a * 1 := (mul_one a).symm
       _ ≤ a * (‖(u : R)‖ ^ (m₂ + 1) * φ z₀) := mul_le_mul_of_nonneg_left h1 ha
       _ < a * (a⁻¹ * φ z₀) :=

@@ -14,51 +14,68 @@ public import TauCeti.RingTheory.PowerSeries.GaussFamily
 For an ultrametric normed ring `R` and a positive radius `R₀`, the algebra of series on the
 open disc carries the topology of the Gauss norms at all radii `0 < r < R₀`. Convergence is
 convergence in each of these norms, rather than convergence of individual coefficients.
-The resulting uniform ring is Hausdorff, has a countably generated uniformity (hence is
-metrizable), and is complete when `R` is complete.
+The resulting uniform ring has a countably generated uniformity, is Hausdorff when `0 < R₀` (hence
+is metrizable), and is complete when `R` is complete. Polynomial truncations converge in this
+topology, and coefficient maps are uniformly continuous when `0 < R₀`.
 
 Restriction embeds the algebra into the product of the smaller closed-disc algebras. Its
 image consists of the families with the same formal coefficients at every radius. Along any
-monotone family (in particular, any countable sequence) of radii in `(0, R₀)` tending to `R₀`,
-the open-disc algebra is isomorphic as a ring and as a uniform space to the closed subring of
-compatible restricted series, and both the induced Gauss uniformity and this compatible-series
-description are independent of the chosen sequence. Over a nontrivial ultrametric normed ring
+monotone family indexed by a nonempty directed preorder (in particular, any monotone sequence) of
+radii in `(0, R₀)` tending to `R₀`, the open-disc algebra is isomorphic as a ring and as a uniform
+space to the closed subring of compatible restricted series, and both the induced Gauss uniformity
+(along any cofinal family or sequence tending to `R₀`) and this compatible-series description are
+independent of the chosen family. Over a nontrivial ultrametric normed ring
 with a unit of norm `< 1` (in particular, over any nontrivially normed ultrametric field), no
-single ring seminorm or scalar-bounded additive group seminorm represents this topology when
-`0 < R₀`. These are specializations of the Gauss topology of a family of radii in
-`TauCeti.RingTheory.PowerSeries.GaussFamily`.
+zero-neighborhood is bounded and no single ring seminorm, scalar-bounded additive group seminorm,
+or normable space structure represents this topology when `0 < R₀`. These are specializations of
+the Gauss topology of a family of radii in `TauCeti.RingTheory.PowerSeries.GaussFamily`.
 
 ## Main definitions
 
+* `TauCeti.PowerSeries.OnOpenDisc.restrict`, `TauCeti.PowerSeries.OnOpenDisc.restrictFamily`, and
+  `TauCeti.PowerSeries.OnOpenDisc.restrictSubfamily`: closed-disc restriction to a single smaller
+  positive radius, to all radii in `(0, R₀)` at once, and along a subfamily.
 * `TauCeti.PowerSeries.OnOpenDisc.uniformSpace`: the Gauss uniformity on
   `PowerSeries.OnOpenDisc.subring R R₀`.
-* `TauCeti.PowerSeries.OnOpenDisc.restrictSubfamily`: closed-disc restriction along an arbitrary
-  subfamily of radii in `(0, R₀)`.
 * `TauCeti.PowerSeries.OnOpenDisc.radiusSeq`: the canonical strictly increasing sequence of radii
   `(1 - (n + 2)⁻¹) * R₀` exhausting `(0, R₀)` when `0 < R₀`.
 * `TauCeti.PowerSeries.OnOpenDisc.compatibleRingEquiv` and
   `TauCeti.PowerSeries.OnOpenDisc.compatibleUniformEquiv`: ring and uniform equivalences with the
-  subring of compatible restricted series along any monotone family of radii tending to `R₀`.
+  subring of compatible restricted series along any monotone family (indexed by a nonempty directed
+  preorder) of radii in `(0, R₀)` tending to `R₀`.
 
 ## Main results
 
-* `TauCeti.PowerSeries.OnOpenDisc.tendsto_iff` and
+* `TauCeti.PowerSeries.OnOpenDisc.tendsto_iff`,
+  `TauCeti.PowerSeries.OnOpenDisc.tendsto_iff_of_cofinal_radius`, and
   `TauCeti.PowerSeries.OnOpenDisc.tendsto_iff_of_tendsto`: convergence on the open disc, tested at
-  all radii in `(0, R₀)` or along any family tending to `R₀`.
-* `TauCeti.PowerSeries.OnOpenDisc.uniformSpace_eq_comap_of_tendsto` and
-  `TauCeti.PowerSeries.OnOpenDisc.comap_restrictSubfamily_eq_of_tendsto`: any family of radii in
-  `(0, R₀)` tending to `R₀` induces the open-disc Gauss uniformity, independently of the chosen
-  sequence or family.
+  all radii in `(0, R₀)`, along any cofinal family, or along any family tending to `R₀`.
+* `TauCeti.PowerSeries.OnOpenDisc.tendsto_polynomialHom_trunc`,
+  `TauCeti.PowerSeries.OnOpenDisc.denseRange_polynomialHom`,
+  `TauCeti.PowerSeries.OnOpenDisc.ringHom_ext`, and
+  `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_coeff`: polynomial truncation convergence,
+  density of polynomials, determination of continuous ring homomorphisms, and uniform continuity
+  of coefficients (when `0 < R₀`).
+* `TauCeti.PowerSeries.OnOpenDisc.range_restrictFamily`,
+  `TauCeti.PowerSeries.OnOpenDisc.range_restrictSubfamily_of_cofinal_radius`,
+  `TauCeti.PowerSeries.OnOpenDisc.comap_restrictSubfamily_eq_uniformSpace_of_cofinal_radius`,
+  `TauCeti.PowerSeries.OnOpenDisc.comap_restrictSubfamily_eq_uniformSpace_of_tendsto`, and
+  `TauCeti.PowerSeries.OnOpenDisc.comap_restrictSubfamily_eq_of_cofinal_radius`: the restriction
+  image and sequence-independent induction of the open-disc Gauss uniformity.
 * `TauCeti.PowerSeries.OnOpenDisc.compatibleRingEquiv_symm_eq_iff`: independence of the monotone
-  sequence in the compatible-series description.
-* `TauCeti.PowerSeries.OnOpenDisc.not_exists_ringSeminorm` and
-  `TauCeti.PowerSeries.OnOpenDisc.not_exists_addGroupSeminorm_polynomialHom_C_mul_le`: when
-  `0 < R₀`, no single ring seminorm or scalar-bounded additive group seminorm represents the
-  open-disc Gauss topology over a nontrivial ultrametric normed ring with a unit of norm `< 1`
-  (with field specializations `not_exists_ringSeminorm_of_nontriviallyNormedField` and
-  `not_exists_addGroupSeminorm_polynomialHom_C_mul_le_of_nontriviallyNormedField`).
+  family (indexed by a nonempty directed preorder) in the compatible-series description.
+* `TauCeti.PowerSeries.OnOpenDisc.not_isBounded_of_mem_nhds_zero`,
+  `TauCeti.PowerSeries.OnOpenDisc.not_exists_ringSeminorm_toTopologicalSpace_eq`,
+  `OnOpenDisc.not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_polynomialHom_C_mul_le`,
+  `OnOpenDisc.not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le`, and
+  `TauCeti.PowerSeries.OnOpenDisc.not_isNormableSpace`: when `0 < R₀`, no zero-neighborhood is
+  bounded and no compatible ring seminorm, scalar-bounded additive group seminorm, or normable
+  space structure represents the open-disc Gauss topology over a nontrivial ultrametric normed ring
+  with a unit of norm `< 1` (in particular, over a nontrivially normed ultrametric field).
 * Instances: `IsUniformAddGroup`, `IsTopologicalRing`, `Filter.IsCountablyGenerated` on the
-  uniformity `𝓤 (OnOpenDisc.subring R R₀)`, and (when `0 < R₀`) `T2Space` and `CompleteSpace`.
+  uniformity `𝓤 (OnOpenDisc.subring R R₀)`, `T2Space` when `0 < R₀` (hence `MetrizableSpace`), and
+  over complete coefficients (`[CompleteSpace R]`) `CompleteSpace` on
+  `PowerSeries.OnOpenDisc.subring R R₀`.
 
 ## References
 
@@ -75,6 +92,10 @@ namespace TauCeti.PowerSeries.OnOpenDisc
 -- Supply the positivity witness used by the Gauss-norm instances on each closed disc.
 local instance radius_pos {R₀ : ℝ} (r : Set.Ioo (0 : ℝ) R₀) : Fact (0 < (r : ℝ)) := ⟨r.2.1⟩
 
+-- The radii below a positive boundary form a nonempty family.
+local instance {R₀ : ℝ} [Fact (0 < R₀)] : Nonempty (Set.Ioo (0 : ℝ) R₀) :=
+  Set.nonempty_Ioo_subtype Fact.out
+
 section Radii
 
 variable {R₀ : ℝ}
@@ -85,10 +106,6 @@ theorem cofinal_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀)) :
     ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i :=
   fun r ↦ (hρ.eventually (Ici_mem_nhds r.2.2)).exists
-
-private theorem exists_gt_radius (r : Set.Ioo (0 : ℝ) R₀) :
-    ∃ s : Set.Ioo (0 : ℝ) R₀, (r : ℝ) < s :=
-  ⟨⟨((r : ℝ) + R₀) / 2, by linarith [r.2.1, r.2.2], by linarith [r.2.2]⟩, by linarith [r.2.2]⟩
 
 /-- Canonical strictly increasing sequence of radii `(1 - (n + 2)⁻¹) * R₀` exhausting `(0, R₀)`
 when `0 < R₀`. -/
@@ -203,20 +220,35 @@ theorem restrictSubfamily_injective {ι : Type*} [Nonempty ι] (ρ : ι → Set.
     Function.Injective (restrictSubfamily (R := R) ρ) :=
   GaussFamily.restrictSubfamily_injective _ ρ
 
+/-- Along any cofinal family of radii in `(0, R₀)`, the image of `restrictSubfamily` consists of
+families with index-independent formal coefficients. -/
+theorem range_restrictSubfamily_of_cofinal_radius {ι : Type*} {ρ : ι → Set.Ioo (0 : ℝ) R₀}
+    (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i) :
+    Set.range (restrictSubfamily (R := R) ρ) =
+      {g | ∀ i j : ι, ∀ n : ℕ, coeff n (g i : R⟦X⟧) = coeff n (g j : R⟦X⟧)} :=
+  GaussFamily.range_restrictSubfamily _ (fun r ↦ r.2.1.le) hρ
+
 /-- Along any family of radii in `(0, R₀)` tending to `R₀`, the image of `restrictSubfamily`
 consists of families with index-independent formal coefficients. -/
 theorem range_restrictSubfamily_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀)) :
     Set.range (restrictSubfamily (R := R) ρ) =
       {g | ∀ i j : ι, ∀ n : ℕ, coeff n (g i : R⟦X⟧) = coeff n (g j : R⟦X⟧)} :=
-  GaussFamily.range_restrictSubfamily _ (fun r ↦ r.2.1.le) (cofinal_of_tendsto hρ)
+  range_restrictSubfamily_of_cofinal_radius (cofinal_of_tendsto hρ)
+
+/-- Along any cofinal family of radii in `(0, R₀)`, the image of `restrictSubfamily` is closed in
+the product of closed-disc algebras. -/
+theorem isClosed_range_restrictSubfamily_of_cofinal_radius {ι : Type*}
+    {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i) :
+    IsClosed (Set.range (restrictSubfamily (R := R) ρ)) :=
+  GaussFamily.isClosed_range_restrictSubfamily _ (fun r ↦ r.2.1.le) hρ
 
 /-- Along any family of radii in `(0, R₀)` tending to `R₀`, the image of `restrictSubfamily` is
 closed in the product of closed-disc algebras. -/
 theorem isClosed_range_restrictSubfamily_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀)) :
     IsClosed (Set.range (restrictSubfamily (R := R) ρ)) :=
-  GaussFamily.isClosed_range_restrictSubfamily _ (fun r ↦ r.2.1.le) (cofinal_of_tendsto hρ)
+  isClosed_range_restrictSubfamily_of_cofinal_radius (cofinal_of_tendsto hρ)
 
 /-- The uniformity generated by all smaller positive-radius Gauss norms. -/
 noncomputable instance uniformSpace : UniformSpace (OnOpenDisc.subring R R₀) :=
@@ -227,12 +259,23 @@ theorem isUniformInducing_restrictFamily :
     IsUniformInducing (restrictFamily (R := R) (R₀ := R₀)) :=
   GaussFamily.isUniformInducing_restrictFamily_uniformSpace _
 
+/-- Restriction along any cofinal family of radii in `(0, R₀)` is uniformly inducing. -/
+theorem isUniformInducing_restrictSubfamily_of_cofinal_radius {ι : Type*}
+    {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i) :
+    IsUniformInducing (restrictSubfamily (R := R) ρ) :=
+  GaussFamily.isUniformInducing_restrictSubfamily isUniformInducing_restrictFamily hρ
+
 /-- Restriction along any family of radii in `(0, R₀)` tending to `R₀` is uniformly inducing. -/
 theorem isUniformInducing_restrictSubfamily_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀)) :
     IsUniformInducing (restrictSubfamily (R := R) ρ) :=
-  GaussFamily.isUniformInducing_restrictSubfamily isUniformInducing_restrictFamily
-    (cofinal_of_tendsto hρ)
+  isUniformInducing_restrictSubfamily_of_cofinal_radius (cofinal_of_tendsto hρ)
+
+/-- Restriction along any nonempty cofinal family of radii in `(0, R₀)` is a uniform embedding. -/
+theorem isUniformEmbedding_restrictSubfamily_of_cofinal_radius {ι : Type*} [Nonempty ι]
+    {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i) :
+    IsUniformEmbedding (restrictSubfamily (R := R) ρ) :=
+  GaussFamily.isUniformEmbedding_restrictSubfamily isUniformInducing_restrictFamily hρ
 
 /-- Restriction along any family of radii in `(0, R₀)` tending to `R₀` along a nontrivial filter
 is a uniform embedding. -/
@@ -240,24 +283,35 @@ theorem isUniformEmbedding_restrictSubfamily_of_tendsto {ι : Type*} {l : Filter
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀)) :
     IsUniformEmbedding (restrictSubfamily (R := R) ρ) :=
   have := Filter.nonempty_of_neBot l
-  GaussFamily.isUniformEmbedding_restrictSubfamily isUniformInducing_restrictFamily
-    (cofinal_of_tendsto hρ)
+  isUniformEmbedding_restrictSubfamily_of_cofinal_radius (cofinal_of_tendsto hρ)
 
 /-- Any cofinal family of smaller positive radii induces the open-disc Gauss uniformity. -/
-theorem uniformSpace_eq_comap_of_cofinal_radius {ι : Type*} {ρ : ι → Set.Ioo (0 : ℝ) R₀}
-    (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i) :
+theorem comap_restrictSubfamily_eq_uniformSpace_of_cofinal_radius {ι : Type*}
+    {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i) :
     UniformSpace.comap (restrictSubfamily (R := R) ρ)
       (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ i : ℝ)))) =
       uniformSpace :=
-  GaussFamily.uniformSpace_eq_comap_of_cofinal_radius _ hρ
+  GaussFamily.comap_restrictSubfamily_eq_uniformSpace_of_cofinal_radius _ hρ
 
 /-- Any family of radii in `(0, R₀)` tending to `R₀` induces the open-disc Gauss uniformity. -/
-theorem uniformSpace_eq_comap_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
+theorem comap_restrictSubfamily_eq_uniformSpace_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀)) :
     UniformSpace.comap (restrictSubfamily (R := R) ρ)
       (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ i : ℝ)))) =
       uniformSpace :=
-  uniformSpace_eq_comap_of_cofinal_radius (cofinal_of_tendsto hρ)
+  comap_restrictSubfamily_eq_uniformSpace_of_cofinal_radius (cofinal_of_tendsto hρ)
+
+/-- **Cofinal-family independence of the open-disc Gauss uniformity.** Any two cofinal families of
+radii in `(0, R₀)` induce the exact same uniformity on `OnOpenDisc.subring R R₀`. -/
+theorem comap_restrictSubfamily_eq_of_cofinal_radius {ι₁ ι₂ : Type*}
+    {ρ₁ : ι₁ → Set.Ioo (0 : ℝ) R₀} {ρ₂ : ι₂ → Set.Ioo (0 : ℝ) R₀}
+    (hρ₁ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ₁ i)
+    (hρ₂ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ₂ i) :
+    UniformSpace.comap (restrictSubfamily (R := R) ρ₁)
+      (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ₁ i : ℝ)))) =
+    UniformSpace.comap (restrictSubfamily (R := R) ρ₂)
+      (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ₂ i : ℝ)))) :=
+  GaussFamily.comap_restrictSubfamily_eq _ hρ₁ hρ₂
 
 /-- **Sequence independence of the open-disc Gauss uniformity.** Any two families of radii in
 `(0, R₀)` tending to `R₀` induce the exact same uniformity on `OnOpenDisc.subring R R₀`. -/
@@ -269,7 +323,7 @@ theorem comap_restrictSubfamily_eq_of_tendsto {ι₁ ι₂ : Type*} {l₁ : Filt
       (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ₁ i : ℝ)))) =
     UniformSpace.comap (restrictSubfamily (R := R) ρ₂)
       (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ₂ i : ℝ)))) :=
-  GaussFamily.comap_restrictSubfamily_eq _ (cofinal_of_tendsto hρ₁) (cofinal_of_tendsto hρ₂)
+  comap_restrictSubfamily_eq_of_cofinal_radius (cofinal_of_tendsto hρ₁) (cofinal_of_tendsto hρ₂)
 
 /-- The Gauss uniformity on `OnOpenDisc.subring R R₀` is countably generated (and therefore
 metrizable when `0 < R₀`). -/
@@ -282,9 +336,10 @@ instance : (𝓤 (OnOpenDisc.subring R R₀)).IsCountablyGenerated := by
     exact GaussFamily.isCountablyGenerated_uniformity isUniformInducing_restrictFamily
       (σ := id) fun r ↦ ⟨r, le_rfl⟩
 
-/-- **Projective-limit ring isomorphism for the open disc.** Along any monotone family (in
-particular, any increasing sequence) of radii in `(0, R₀)` tending to `R₀`, the open-disc algebra
-is isomorphic as a ring to the subring of compatible restricted series. -/
+/-- **Projective-limit ring isomorphism for the open disc.** Along any monotone family indexed by a
+nonempty directed preorder (in particular, any monotone sequence) of radii in `(0, R₀)` tending to
+`R₀`, the open-disc algebra is isomorphic as a ring to the subring of compatible restricted
+series. -/
 noncomputable def compatibleRingEquiv {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hmono : Monotone fun i ↦ (ρ i : ℝ))
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop (𝓝 R₀)) :
@@ -304,26 +359,27 @@ theorem coe_compatibleRingEquiv_apply {ι : Type*} [Preorder ι] [IsDirectedOrde
 /-- Restricting the open-disc series reconstructed from a compatible family `g` at stage `i`
 recovers `g i`. -/
 @[simp]
-theorem restrict_symm_compatibleRingEquiv {ι : Type*} [Preorder ι] [IsDirectedOrder ι]
+theorem restrict_compatibleRingEquiv_symm {ι : Type*} [Preorder ι] [IsDirectedOrder ι]
     [Nonempty ι] {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hmono : Monotone fun i ↦ (ρ i : ℝ))
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop (𝓝 R₀))
     (g : GaussFamily.compatibleSubring (R := R) hmono) (i : ι) :
     restrict (ρ i) ((compatibleRingEquiv hmono hρ).symm g) = g.1 i :=
-  GaussFamily.restrict_symm_compatibleRingEquiv _ hmono (cofinal_of_tendsto hρ) g i
+  GaussFamily.restrict_compatibleRingEquiv_symm _ hmono (cofinal_of_tendsto hρ) g i
 
 /-- The underlying formal power series of the open-disc element reconstructed from a compatible
 family `g` agrees with `g i` at every stage `i`. -/
-theorem coe_symm_compatibleRingEquiv {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
+theorem coe_compatibleRingEquiv_symm {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hmono : Monotone fun i ↦ (ρ i : ℝ))
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop (𝓝 R₀))
     (g : GaussFamily.compatibleSubring (R := R) hmono) (i : ι) :
     (((compatibleRingEquiv hmono hρ).symm g : OnOpenDisc.subring R R₀) : R⟦X⟧) =
       (g.1 i : R⟦X⟧) :=
-  GaussFamily.coe_symm_compatibleRingEquiv _ hmono (cofinal_of_tendsto hρ) g i
+  GaussFamily.coe_compatibleRingEquiv_symm _ hmono (cofinal_of_tendsto hρ) g i
 
-/-- **Sequence independence of the compatible-series description.** Compatible restricted-series
-families along any two monotone families of radii in `(0, R₀)` tending to `R₀` define the same
-open-disc series if and only if they have the same underlying formal power series. -/
+/-- **Family independence of the compatible-series description.** Compatible restricted-series
+families along any two monotone families (indexed by nonempty directed preorders) of radii in
+`(0, R₀)` tending to `R₀` define the same open-disc series if and only if they have the same
+underlying formal power series. -/
 theorem compatibleRingEquiv_symm_eq_iff {ι₁ ι₂ : Type*} [Preorder ι₁] [IsDirectedOrder ι₁]
     [Nonempty ι₁] [Preorder ι₂] [IsDirectedOrder ι₂] [Nonempty ι₂]
     {ρ₁ : ι₁ → Set.Ioo (0 : ℝ) R₀} {ρ₂ : ι₂ → Set.Ioo (0 : ℝ) R₀}
@@ -336,10 +392,10 @@ theorem compatibleRingEquiv_symm_eq_iff {ι₁ ι₂ : Type*} [Preorder ι₁] [
   GaussFamily.compatibleRingEquiv_symm_eq_iff _ hmono₁ (cofinal_of_tendsto hρ₁)
     hmono₂ (cofinal_of_tendsto hρ₂) g₁ g₂ i₁ i₂
 
-/-- **Projective-limit uniform equivalence for the open disc.** Along any monotone family (in
-particular, any increasing sequence) of radii in `(0, R₀)` tending to `R₀`, the open-disc algebra
-with its Gauss uniformity is uniformly equivalent to the closed subring of compatible restricted
-series. -/
+/-- **Projective-limit uniform equivalence for the open disc.** Along any monotone family indexed
+by a nonempty directed preorder (in particular, any monotone sequence) of radii in `(0, R₀)` tending
+to `R₀`, the open-disc algebra with its Gauss uniformity is uniformly equivalent to the closed
+subring of compatible restricted series. -/
 noncomputable def compatibleUniformEquiv {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
     {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hmono : Monotone fun i ↦ (ρ i : ℝ))
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop (𝓝 R₀)) :
@@ -440,10 +496,6 @@ theorem ringHom_ext {A : Type*} [Semiring A] [TopologicalSpace A] [T2Space A]
 
 variable [Fact (0 < R₀)]
 
--- The radii below a positive boundary form a nonempty family.
-local instance : Nonempty (Set.Ioo (0 : ℝ) R₀) :=
-  Set.nonempty_Ioo_subtype Fact.out
-
 instance : T2Space (OnOpenDisc.subring R R₀) :=
   GaussFamily.t2Space isUniformInducing_restrictFamily
 
@@ -465,33 +517,38 @@ coefficients. -/
 instance [CompleteSpace R] : CompleteSpace (OnOpenDisc.subring R R₀) :=
   GaussFamily.completeSpace isUniformInducing_restrictFamily
 
+/-- When `0 < R₀`, no zero-neighborhood in `OnOpenDisc.subring R R₀` is bounded in the sense of
+`TauCeti.Huber.IsBounded` over a nontrivial ultrametric normed coefficient ring `R` containing a
+unit of norm `< 1`. -/
+theorem not_isBounded_of_mem_nhds_zero [Nontrivial R] (hu : ∃ u : Rˣ, ‖(u : R)‖ < 1)
+    {U : Set (OnOpenDisc.subring R R₀)} (hU : U ∈ 𝓝 (0 : OnOpenDisc.subring R R₀)) :
+    ¬ TauCeti.Huber.IsBounded U :=
+  GaussFamily.not_isBounded_of_mem_nhds_zero isUniformInducing_restrictFamily exists_gt hu hU
+
 /-- **No single ring seminorm represents the open-disc Gauss topology.** When `0 < R₀` and the
 nontrivial ultrametric normed coefficient ring `R` contains a unit of norm `< 1`, no ring seminorm
 on `OnOpenDisc.subring R R₀` induces its Gauss topology. -/
-theorem not_exists_ringSeminorm [Nontrivial R] (hu : ∃ u : Rˣ, ‖(u : R)‖ < 1) :
+theorem not_exists_ringSeminorm_toTopologicalSpace_eq [Nontrivial R]
+    (hu : ∃ u : Rˣ, ‖(u : R)‖ < 1) :
     ¬ ∃ p : RingSeminorm (OnOpenDisc.subring R R₀),
       p.toSeminormedRing.toUniformSpace.toTopologicalSpace =
         UniformSpace.toTopologicalSpace :=
-  GaussFamily.not_exists_ringSeminorm isUniformInducing_restrictFamily exists_gt_radius hu
+  GaussFamily.not_exists_ringSeminorm_toTopologicalSpace_eq isUniformInducing_restrictFamily
+    exists_gt hu
 
 /-- **No scalar-bounded group seminorm represents the open-disc Gauss topology.** When `0 < R₀`
 and the nontrivial ultrametric normed coefficient ring `R` contains a unit of norm `< 1`, no
 additive group seminorm `p` on `OnOpenDisc.subring R R₀` in which left multiplication by constant
 series is bounded by `C * ‖c‖` induces the Gauss topology. -/
-theorem not_exists_addGroupSeminorm_polynomialHom_C_mul_le [Nontrivial R]
+theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_polynomialHom_C_mul_le [Nontrivial R]
     (hu : ∃ u : Rˣ, ‖(u : R)‖ < 1) :
     ¬ ∃ (p : AddGroupSeminorm (OnOpenDisc.subring R R₀)) (C : ℝ),
       p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace =
         UniformSpace.toTopologicalSpace ∧
       ∀ (c : R) (f : OnOpenDisc.subring R R₀),
-        p (OnOpenDisc.polynomialHom (Polynomial.C c) * f) ≤ C * ‖c‖ * p f := by
-  rintro ⟨p, C, htop, hsmul⟩
-  refine GaussFamily.not_exists_addGroupSeminorm_constHom_mul_le
-    isUniformInducing_restrictFamily exists_gt_radius hu ⟨p, C, htop, fun c f ↦ ?_⟩
-  have hC : GaussFamily.constHom (fun _ ↦ mem_subring_iff_forall_isRestricted) c =
-      OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C c) := Subtype.ext (by simp)
-  rw [hC]
-  exact hsmul c f
+        p (OnOpenDisc.polynomialHom (Polynomial.C c) * f) ≤ C * ‖c‖ * p f :=
+  GaussFamily.not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le
+    isUniformInducing_restrictFamily exists_gt hu (fun _ ↦ by simp)
 
 end NormedRing
 
@@ -499,26 +556,39 @@ section NontriviallyNormedField
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] {R₀ : ℝ} [Fact (0 < R₀)]
 
+/-- Over a nontrivially normed ultrametric field, when `0 < R₀`, no zero-neighborhood in
+`OnOpenDisc.subring K R₀` is bounded in the sense of `TauCeti.Huber.IsBounded`. -/
+theorem not_isBounded_of_mem_nhds_zero_of_nontriviallyNormedField
+    {U : Set (OnOpenDisc.subring K R₀)} (hU : U ∈ 𝓝 (0 : OnOpenDisc.subring K R₀)) :
+    ¬ TauCeti.Huber.IsBounded U :=
+  GaussFamily.not_isBounded_of_mem_nhds_zero_of_nontriviallyNormedField
+    (isUniformInducing_restrictFamily (R := K)) exists_gt hU
+
 /-- Over a nontrivially normed ultrametric field, no single ring seminorm induces the open-disc
 Gauss topology when `0 < R₀`. -/
-theorem not_exists_ringSeminorm_of_nontriviallyNormedField :
+theorem not_exists_ringSeminorm_toTopologicalSpace_eq_of_nontriviallyNormedField :
     ¬ ∃ p : RingSeminorm (OnOpenDisc.subring K R₀),
       p.toSeminormedRing.toUniformSpace.toTopologicalSpace =
         UniformSpace.toTopologicalSpace :=
-  let ⟨x, hx0, hx1⟩ := NormedField.exists_norm_lt_one K
-  not_exists_ringSeminorm ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩
+  GaussFamily.not_exists_ringSeminorm_toTopologicalSpace_eq_of_nontriviallyNormedField
+    (isUniformInducing_restrictFamily (R := K)) exists_gt
 
-/-- Over a nontrivially normed ultrametric field, no additive group seminorm in which left
-multiplication by constants is bounded by `C * ‖c‖` (in particular, no Banach-space norm) induces
-the open-disc Gauss topology when `0 < R₀`. -/
-theorem not_exists_addGroupSeminorm_polynomialHom_C_mul_le_of_nontriviallyNormedField :
+/-- Over a nontrivially normed ultrametric field, when `0 < R₀`, no additive group seminorm in
+which scalar multiplication (equivalently, left multiplication by constant series) is bounded by
+`C * ‖c‖` induces the open-disc Gauss topology. -/
+theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le :
     ¬ ∃ (p : AddGroupSeminorm (OnOpenDisc.subring K R₀)) (C : ℝ),
       p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace =
         UniformSpace.toTopologicalSpace ∧
-      ∀ (c : K) (f : OnOpenDisc.subring K R₀),
-        p (OnOpenDisc.polynomialHom (Polynomial.C c) * f) ≤ C * ‖c‖ * p f :=
-  let ⟨x, hx0, hx1⟩ := NormedField.exists_norm_lt_one K
-  not_exists_addGroupSeminorm_polynomialHom_C_mul_le ⟨Units.mk0 x (norm_pos_iff.mp hx0), hx1⟩
+      ∀ (c : K) (f : OnOpenDisc.subring K R₀), p (c • f) ≤ C * ‖c‖ * p f :=
+  GaussFamily.not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_smul_le
+    (isUniformInducing_restrictFamily (R := K)) exists_gt OnOpenDisc.coe_smul_subring
+
+/-- Over a nontrivially normed ultrametric field `K`, when `0 < R₀`, `OnOpenDisc.subring K R₀` with
+its Gauss topology is not normable as a `K`-vector space. -/
+theorem not_isNormableSpace : ¬ IsNormableSpace K (OnOpenDisc.subring K R₀) :=
+  GaussFamily.not_isNormableSpace (isUniformInducing_restrictFamily (R := K)) exists_gt
+    OnOpenDisc.coe_smul_subring
 
 end NontriviallyNormedField
 
