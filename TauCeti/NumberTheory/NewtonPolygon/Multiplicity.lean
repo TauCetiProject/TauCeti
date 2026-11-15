@@ -19,7 +19,9 @@ When the polygon has a finite face of slope `σ`, the multiplicity is the width 
 (`PowerSeries.newtonSlopeMultiplicity_eq_of_isFiniteFace`). For a polynomial it is the
 multiplicity of `σ` in the finite slope multiset `Polynomial.newtonSlopes`
 (`Polynomial.newtonSlopeMultiplicity_coe`). The substitution `X ↦ c X` shifts every slope by
-the valuation of `c`, with the same multiplicities (`PowerSeries.newtonSlopeMultiplicity_rescale`).
+the valuation of `c`, with the same multiplicities (`PowerSeries.newtonSlopeMultiplicity_rescale`),
+and mapping the coefficients along a valuation-compatible ring homomorphism, such as a valued field
+extension, preserves them (`PowerSeries.newtonSlopeMultiplicity_map`).
 A power `(X - C x) ^ h` has the single slope `-v x`, with multiplicity `h`
 (`PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`).
 
@@ -45,6 +47,8 @@ multiplicities are the slope multiplicities of their Newton polygons.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
+* `PowerSeries.newtonSlopeMultiplicity_map`: valuation-compatible coefficient maps preserve the
+  multiplicities.
 * `PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`: the power `(X - C x) ^ h` has the slope
   `-v x` with multiplicity `h`.
 * `PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`: multiplicities add under multiplication.
@@ -92,6 +96,13 @@ theorem newtonSlopeMultiplicity_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = u - l :=
   hface.ncard_setOf_unitSlope_eq (f.isConvexSeq_newtonPolygon v)
+
+/-- Mapping the coefficients along a ring homomorphism compatible with the valuations preserves
+the multiplicity of every slope. -/
+theorem newtonSlopeMultiplicity_map {S : Type*} [Ring S] (φ : R →+* S)
+    {w : AddValuation S (WithTop ℝ)} (hφ : ∀ x, w (φ x) = v x) (f : R⟦X⟧) (σ : ℝ) :
+    (map φ f).newtonSlopeMultiplicity w σ = f.newtonSlopeMultiplicity v σ := by
+  rw [newtonSlopeMultiplicity_def, newtonSlopeMultiplicity_def, newtonPolygon_map f v φ hφ]
 
 end Ring
 
