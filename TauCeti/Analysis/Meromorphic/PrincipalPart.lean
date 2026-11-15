@@ -157,8 +157,9 @@ theorem eq_zero_of_sum_div_sub_pow_eq [DecidableEq 𝕜] {D : Multiset 𝕜} {c 
   rwa [Finset.sum_eq_single_of_mem (s := Finset.univ.filter fun i : D.ToType ↦ i.1 = a) i₀
     (by simp [a]) fun i hi hne ↦ by
       rw [coeff_C_mul_X_pow, ite_eq_right]
-      refine fun hk ↦ hne (D.coeEmbedding.injective (Prod.ext (Finset.mem_filter.1 hi).2 ?_))
-      simpa using hk.symm,
+      refine fun hk ↦ hne (D.coeEmbedding.injective ?_)
+      simp only [Multiset.coeEmbedding_apply, Prod.mk.injEq]
+      exact ⟨(Finset.mem_filter.1 hi).2, by simpa using hk.symm⟩,
     coeff_C_mul_X_pow, ite_eq_left rfl] at hP
 
 /-- **Principal part splitting of `(z - a)⁻ᴺ h`.** For every function `h` and every `N`, off `a`,
