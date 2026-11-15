@@ -59,6 +59,28 @@ public section
 
 namespace Fin
 
+/-- Exchange an omitted index with zero and reindex the remaining product by `Fin n`. -/
+theorem prod_univ_swap_succ {M : Type*} [CommMonoid M] {n : ℕ}
+    (f : Fin (n + 1) → M) (j : Fin (n + 1)) :
+    (∏ i : Fin n, f (Equiv.swap 0 j i.succ)) =
+      ∏ i ∈ Finset.univ.erase j, f i := by
+  classical
+  refine Finset.prod_bij (fun i _ ↦ Equiv.swap 0 j i.succ) ?_ ?_ ?_ (fun _ _ ↦ rfl)
+  · intro i _
+    simp only [Finset.mem_erase, Finset.mem_univ, and_true]
+    exact fun h ↦ succ_ne_zero i
+      ((Equiv.swap 0 j).injective (h.trans (Equiv.swap_apply_left 0 j).symm))
+  · intro i _ k _ h
+    exact succ_injective _ ((Equiv.swap 0 j).injective h)
+  · intro k hk
+    have hk' : Equiv.swap 0 j k ≠ 0 := by
+      intro h
+      apply (Finset.mem_erase.mp hk).1
+      have := congrArg (Equiv.swap 0 j) h
+      simpa using this
+    obtain ⟨i, hi⟩ := exists_succ_eq_of_ne_zero hk'
+    exact ⟨i, Finset.mem_univ _, by rw [hi]; simp⟩
+
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :

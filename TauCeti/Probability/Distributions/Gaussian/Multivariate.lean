@@ -101,6 +101,18 @@ theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
     ∫ ω, X ω ∂P = m := by
   rw [hX.integral_eq, integral_id_multivariateGaussian]
 
+/-- A multivariate Gaussian is the affine image of independent standard real Gaussians
+under the square root of its covariance parameter. This includes singular and invalid parameters. -/
+theorem multivariateGaussian_eq_map_pi [Fintype ι] [DecidableEq ι]
+    (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
+    multivariateGaussian m S =
+      (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
+        (fun y ↦ m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)
+          ((EuclideanSpace.equiv ι ℝ).symm y)) := by
+  rw [multivariateGaussian, ← map_pi_eq_stdGaussian,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  rfl
+
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its matrix parameter. No hypothesis on that parameter is needed. -/
 theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [DecidableEq ι]

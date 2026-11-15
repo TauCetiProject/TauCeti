@@ -1,295 +1,363 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.MixedMoments
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Moments
+public import TauCeti.Probability.Distributions.Gaussian.MomentRecursion
+public import TauCeti.LinearAlgebra.Matrix.Permanent
+import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Data.Finset.Sum
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
-# Fourth mixed moments of proper complex Gaussian laws
+# Wick's formula for proper complex Gaussian vectors
 
-The fourth centered mixed moment with two coordinates and two conjugated coordinates is the sum
-of the two covariance pairings. This is the proper-complex Wick formula, including singular
-covariance matrices.
+Centered products of proper complex Gaussian coordinates contract only with conjugated
+coordinates. Iterating this recursion gives the permanent of the cross-covariance matrix
+when the two degrees agree; moments of unequal holomorphic and antiholomorphic degree vanish.
+Coordinates may repeat, and the covariance may be singular. The noncentered formula sums over
+partial matchings, multiplying by the means at unpaired positions. `HasLaw` versions apply the
+formulas directly to random vectors on an arbitrary measurable sample space.
 
 ## References
 
 * L. Isserlis, *On a formula for the product-moment coefficient of any order of a normal
   frequency distribution in any number of variables*, Biometrika 12 (1918), 134–139.
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*,
+  Cambridge University Press, 2010, §2.5.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
-open scoped ComplexOrder ENNReal
+open MeasureTheory ProbabilityTheory Finset
+open scoped ComplexOrder ComplexConjugate
 
 namespace TauCeti.Probability
 
-variable {ι : Type*}
+variable {ι α β : Type*} [Fintype ι] [DecidableEq ι]
 
-private theorem integral_four_real_coordinates (m : ι → ℂ) {C : Matrix ι ι ℂ}
-    [Fintype ι] [DecidableEq ι] (hC : C.PosSemidef) (a b c d : ι ⊕ ι) :
-    ∫ z, (complexToRealEuclidean ι z a - complexToRealEuclidean ι m a) *
-        (complexToRealEuclidean ι z b - complexToRealEuclidean ι m b) *
-        (complexToRealEuclidean ι z c - complexToRealEuclidean ι m c) *
-        (complexToRealEuclidean ι z d - complexToRealEuclidean ι m d)
-        ∂properComplexGaussianMeasure m C =
-      complexGaussianRealCovariance C a b * complexGaussianRealCovariance C c d +
-      complexGaussianRealCovariance C a c * complexGaussianRealCovariance C b d +
-      complexGaussianRealCovariance C a d * complexGaussianRealCovariance C b c := by
-  rw [properComplexGaussianMeasure_def,
-    integral_map (by fun_prop) (by fun_prop)]
-  simpa only [ContinuousLinearEquiv.apply_symm_apply] using
-    integral_mul_mul_mul_sub_multivariateGaussian
-      (complexToRealEuclidean ι m)
-      ((posSemidef_complexGaussianRealCovariance_iff C).2 hC) a b c d
+/-- Any finite product of affinely shifted coordinates and their conjugates is
+integrable under a proper complex Gaussian law. -/
+theorem integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+    (m c : ι → ℂ) (C : Matrix ι ι ℂ) (s : Finset α) (t : Finset β)
+    (f : α → ι) (g : β → ι) :
+    Integrable (fun z ↦ (∏ i ∈ s, (z (f i) - c (f i))) *
+      ∏ j ∈ t, star (z (g j) - c (g j))) (properComplexGaussianMeasure m C) := by
+  classical
+  let L : α ⊕ β → (ι → ℂ) →L[ℝ] ℂ := Sum.elim
+    (fun i ↦ ContinuousLinearMap.proj (f i))
+    (fun j ↦ Complex.conjCLE.toContinuousLinearMap.comp (ContinuousLinearMap.proj (g j)))
+  simpa [L, Finset.prod_disjSum, map_sub, sub_eq_add_neg] using
+    IsGaussian.integrable_prod_clm (properComplexGaussianMeasure m C)
+      (s.disjSum t) L (fun i ↦ -L i c)
 
-private def complexGaussianPart (m : ι → ℂ) (i : ι) :
-    Bool → (ι → ℂ) → ℝ :=
-  fun
-  | false, z => (z i).re - (m i).re
-  | true, z => (z i).im - (m i).im
+private theorem integral_clm_mul_prod_sub_properComplexGaussianMeasure
+    (m : ι → ℂ) (C : Matrix ι ι ℂ) [DecidableEq α] (s : Finset α)
+    (L₀ : (ι → ℂ) →L[ℝ] ℂ) (L : α → (ι → ℂ) →L[ℝ] ℂ) :
+    (∫ z, L₀ (z - m) * ∏ i ∈ s, L i (z - m) ∂properComplexGaussianMeasure m C) =
+      ∑ i ∈ s, (∫ z, L₀ (z - m) * L i (z - m) ∂properComplexGaussianMeasure m C) *
+        ∫ z, ∏ j ∈ s.erase i, L j (z - m) ∂properComplexGaussianMeasure m C := by
+  let e := complexToRealEuclidean ι
+  have hpush (F : (ι → ℂ) → ℂ) (hF : Continuous F) :
+      ∫ z, F (z - m) ∂properComplexGaussianMeasure m C =
+        ∫ x, F (e.symm (x - e m))
+          ∂multivariateGaussian (e m) (complexGaussianRealCovariance C) := by
+    rw [properComplexGaussianMeasure_def, integral_map (by fun_prop) (by fun_prop)]
+    simp only [e, map_sub, ContinuousLinearEquiv.symm_apply_apply]
+  rw [hpush (fun z ↦ L₀ z * ∏ i ∈ s, L i z) (by fun_prop)]
+  have hpair (i : α) := hpush (fun z ↦ L₀ z * L i z) (by fun_prop)
+  have hprod (t : Finset α) := hpush (fun z ↦ ∏ i ∈ t, L i z) (by fun_prop)
+  simp_rw [hpair, hprod]
+  exact integral_clm_mul_prod_sub_multivariateGaussian (e m)
+    (complexGaussianRealCovariance C) s (L₀.comp e.symm.toContinuousLinearMap)
+      (fun i ↦ (L i).comp e.symm.toContinuousLinearMap)
 
-private def complexGaussianPartIndex (i : ι) : Bool → ι ⊕ ι :=
-  fun
-  | false => Sum.inl i
-  | true => Sum.inr i
+/-- The complex Gaussian contraction recursion. A distinguished centered coordinate pairs
+with each conjugated coordinate, and has zero contraction with the holomorphic factors. -/
+theorem integral_sub_mul_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+    (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    [DecidableEq β] (s : Finset α) (t : Finset β)
+    (f : α → ι) (g : β → ι) (k : ι) :
+    (∫ z, (z k - m k) * (∏ i ∈ s, (z (f i) - m (f i))) *
+      ∏ j ∈ t, star (z (g j) - m (g j)) ∂properComplexGaussianMeasure m C) =
+      ∑ j ∈ t, C k (g j) * ∫ z, (∏ i ∈ s, (z (f i) - m (f i))) *
+        ∏ l ∈ t.erase j, star (z (g l) - m (g l)) ∂properComplexGaussianMeasure m C := by
+  classical
+  let L : α ⊕ β → (ι → ℂ) →L[ℝ] ℂ := Sum.elim
+    (fun i ↦ ContinuousLinearMap.proj (f i))
+    (fun j ↦ Complex.conjCLE.toContinuousLinearMap.comp (ContinuousLinearMap.proj (g j)))
+  have hp (z : ι → ℂ) (u : Finset (α ⊕ β)) :
+      (∏ i ∈ u, L i (z - m)) =
+        (∏ i ∈ u.toLeft, (z (f i) - m (f i))) *
+          ∏ j ∈ u.toRight, star (z (g j) - m (g j)) := by
+    rw [Finset.prod_sum_eq_prod_toLeft_mul_prod_toRight]
+    rfl
+  have hc (a : α ⊕ β) :
+      (∫ z, (z k - m k) * L a (z - m) ∂properComplexGaussianMeasure m C) =
+        Sum.elim (fun _ ↦ 0) (fun j ↦ C k (g j)) a := by
+    cases a with
+    | inl i => exact integral_mul_sub_properComplexGaussianMeasure m hC k (f i)
+    | inr j => exact integral_mul_conj_sub_properComplexGaussianMeasure m hC k (g j)
+  have h := integral_clm_mul_prod_sub_properComplexGaussianMeasure m C (s.disjSum t)
+    (ContinuousLinearMap.proj k) L
+  simp only [ContinuousLinearMap.proj_apply, Pi.sub_apply, hc, hp, sum_disjSum,
+    Sum.elim_inl, Sum.elim_inr, zero_mul, sum_const_zero, zero_add,
+    toLeft_disjSum, toRight_disjSum] at h
+  simpa [Finset.toLeft_erase_inr, Finset.toRight_erase_inr, mul_assoc] using h
 
-private theorem complexGaussianPart_eq_coordinate (m : ι → ℂ) [Fintype ι]
-    (i : ι) (a : Bool) (z : ι → ℂ) :
-    complexGaussianPart m i a z =
-      complexToRealEuclidean ι z (complexGaussianPartIndex i a) -
-        complexToRealEuclidean ι m (complexGaussianPartIndex i a) := by
-  cases a <;> simp [complexGaussianPart, complexGaussianPartIndex,
-    complexToRealEuclidean_apply]
+/-- A nonempty purely holomorphic centered moment of a proper complex Gaussian vanishes. -/
+theorem integral_prod_sub_properComplexGaussianMeasure_eq_zero
+    (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    (s : Finset α) (hs : s.Nonempty) (f : α → ι) :
+    (∫ z, ∏ i ∈ s, (z (f i) - m (f i)) ∂properComplexGaussianMeasure m C) = 0 := by
+  classical
+  obtain ⟨k, hk⟩ := hs
+  have h := integral_sub_mul_prod_mul_prod_conj_sub_properComplexGaussianMeasure m hC
+    (s.erase k) (∅ : Finset α) f f (f k)
+  simp only [prod_empty, mul_one, sum_empty] at h
+  convert h using 1
+  congr 1
+  funext z
+  exact (mul_prod_erase s (fun i ↦ z (f i) - m (f i)) hk).symm
 
-private def complexGaussianPartCoeff (conjugated : Bool) : Bool → ℂ :=
-  fun
-  | false => 1
-  | true => if conjugated then -Complex.I else Complex.I
+private theorem integral_prod_mul_prod_conj_sub_fin_succ
+    (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef) {n r : ℕ}
+    (f : Fin (n + 1) → ι) (g : Fin (r + 1) → ι) :
+    (∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+      ∂properComplexGaussianMeasure m C) =
+      ∑ j, C (f 0) (g j) * ∫ z, (∏ i : Fin n, (z (f i.succ) - m (f i.succ))) *
+        ∏ l : Fin r, star (z (g (Equiv.swap 0 j l.succ)) -
+          m (g (Equiv.swap 0 j l.succ))) ∂properComplexGaussianMeasure m C := by
+  have h := integral_sub_mul_prod_mul_prod_conj_sub_properComplexGaussianMeasure m hC
+    (univ : Finset (Fin n)) (univ : Finset (Fin (r + 1))) (fun i ↦ f i.succ) g (f 0)
+  simpa only [← Fin.prod_univ_swap_succ, Fin.prod_univ_succ] using h
 
-private def complexGaussianPairing (C : Matrix ι ι ℂ) (i j : ι) (x y : Bool) : ℂ :=
-  ∑ a : Bool, ∑ b : Bool, complexGaussianPartCoeff x a * complexGaussianPartCoeff y b *
-    (complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-      (complexGaussianPartIndex j b) : ℂ)
+private theorem integral_prod_mul_prod_conj_sub_fin_eq_permanent
+    (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (n : ℕ)
+    (f g : Fin n → ι) :
+    (∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+      ∂properComplexGaussianMeasure m C) =
+      (Matrix.of fun i j ↦ C (f j) (g i)).permanent := by
+  induction n with
+  | zero => simp [Matrix.permanent_isEmpty]
+  | succ n ih =>
+    rw [integral_prod_mul_prod_conj_sub_fin_succ m hC, Matrix.permanent_fin_succ]
+    exact sum_congr rfl fun j _ ↦ congrArg (C (f 0) (g j) * ·)
+      (ih (fun i ↦ f i.succ) (fun l ↦ g (Equiv.swap 0 j l.succ)))
 
-private theorem complexGaussianPairing_values (C : Matrix ι ι ℂ) (i j : ι) :
-    complexGaussianPairing C i j false true = C i j ∧
-    complexGaussianPairing C i j true false = star (C i j) ∧
-    complexGaussianPairing C i j false false = 0 ∧
-    complexGaussianPairing C i j true true = 0 := by
-  simp only [complexGaussianPairing, Fintype.sum_bool, complexGaussianPartCoeff,
-    complexGaussianPartIndex, complexGaussianRealCovariance_inl_inl,
-    complexGaussianRealCovariance_inl_inr, complexGaussianRealCovariance_inr_inl,
-    complexGaussianRealCovariance_inr_inr, Bool.false_eq_true, ite_true, ite_false]
-  repeat' constructor
-  all_goals
-    apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]; ring
+private theorem integral_prod_mul_prod_conj_sub_eq_permanent
+    [Fintype α] [DecidableEq α] (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    (f g : α → ι) :
+    (∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+      ∂properComplexGaussianMeasure m C) =
+      (Matrix.of fun i j ↦ C (f j) (g i)).permanent := by
+  let e := Fintype.equivFin α
+  have hp (h : α → ℂ) : ∏ i, h i = ∏ j, h (e.symm j) := (e.symm.prod_comp h).symm
+  calc
+    _ = ∫ z, (∏ i, (z (f (e.symm i)) - m (f (e.symm i)))) *
+        ∏ j, star (z (g (e.symm j)) - m (g (e.symm j)))
+          ∂properComplexGaussianMeasure m C := by simp_rw [hp]
+    _ = ((Matrix.of fun i j ↦ C (f j) (g i)).submatrix e.symm e.symm).permanent :=
+      integral_prod_mul_prod_conj_sub_fin_eq_permanent m hC _ _ _
+    _ = _ := Matrix.permanent_submatrix_equiv _ e.symm
 
-private theorem complexGaussianPairings_factor (C : Matrix ι ι ℂ) (i j k l : ι) :
-    (∑ a : Bool, ∑ b : Bool, ∑ c : Bool, ∑ d : Bool,
-      complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
-        complexGaussianPartCoeff false c * complexGaussianPartCoeff true d *
-          ((complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-              (complexGaussianPartIndex j b) *
-            complexGaussianRealCovariance C (complexGaussianPartIndex k c)
-              (complexGaussianPartIndex l d) +
-            complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-              (complexGaussianPartIndex k c) *
-            complexGaussianRealCovariance C (complexGaussianPartIndex j b)
-              (complexGaussianPartIndex l d) +
-            complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-              (complexGaussianPartIndex l d) *
-            complexGaussianRealCovariance C (complexGaussianPartIndex j b)
-              (complexGaussianPartIndex k c) : ℝ) : ℂ)) =
-      complexGaussianPairing C i j false true * complexGaussianPairing C k l false true +
-      complexGaussianPairing C i k false false * complexGaussianPairing C j l true true +
-      complexGaussianPairing C i l false true * complexGaussianPairing C j k true false := by
-  simp only [complexGaussianPairing, Fintype.sum_bool, Complex.ofReal_add, Complex.ofReal_mul]
-  ring
+private theorem integral_prod_mul_prod_conj_sub_fin_eq_zero
+    (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (n r : ℕ) (hnr : n ≠ r)
+    (f : Fin n → ι) (g : Fin r → ι) :
+    (∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+      ∂properComplexGaussianMeasure m C) = 0 := by
+  induction n generalizing r with
+  | zero =>
+    have hr : (univ : Finset (Fin r)).Nonempty := by
+      exact univ_nonempty_iff.mpr (Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hnr.symm))
+    simp only [Fin.prod_univ_zero, one_mul, ← star_prod, integral_star,
+      integral_prod_sub_properComplexGaussianMeasure_eq_zero m hC univ hr g, star_zero]
+  | succ n ih =>
+    cases r with
+    | zero =>
+      simpa using integral_prod_sub_properComplexGaussianMeasure_eq_zero m hC
+        univ (univ_nonempty) f
+    | succ r =>
+      rw [integral_prod_mul_prod_conj_sub_fin_succ m hC]
+      apply sum_eq_zero
+      intro j _
+      rw [ih r (by omega), mul_zero]
 
-private theorem complexGaussianCoordinate_eq_sum_parts (m : ι → ℂ) (i : ι)
-    (z : ι → ℂ) :
-    z i - m i =
-      ∑ a : Bool, complexGaussianPartCoeff false a *
-        (complexGaussianPart m i a z : ℂ) := by
-  rw [← Complex.re_add_im (z i - m i), Fintype.sum_bool]
-  simp [complexGaussianPartCoeff, complexGaussianPart, Complex.sub_re, Complex.sub_im]
-  ring
+/-- Centered moments with different holomorphic and antiholomorphic degrees vanish.
+The position types may have different cardinalities, and coordinates may repeat. -/
+theorem integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure_eq_zero
+    [Fintype α] [Fintype β] (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    (hαβ : Fintype.card α ≠ Fintype.card β) (f : α → ι) (g : β → ι) :
+    (∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+      ∂properComplexGaussianMeasure m C) = 0 := by
+  let e := Fintype.equivFin α
+  let d := Fintype.equivFin β
+  have hp (h : α → ℂ) : ∏ i, h i = ∏ j, h (e.symm j) := (e.symm.prod_comp h).symm
+  have hq (h : β → ℂ) : ∏ i, h i = ∏ j, h (d.symm j) := (d.symm.prod_comp h).symm
+  simp_rw [hp, hq]
+  exact integral_prod_mul_prod_conj_sub_fin_eq_zero m hC _ _ hαβ _ _
 
-private theorem star_complexGaussianCoordinate_eq_sum_parts (m : ι → ℂ) (i : ι)
-    (z : ι → ℂ) :
-    star (z i - m i) =
-      ∑ a : Bool, complexGaussianPartCoeff true a *
-        (complexGaussianPart m i a z : ℂ) := by
-  rw [complexGaussianCoordinate_eq_sum_parts]
-  simp [complexGaussianPartCoeff, complexGaussianPart,
-    Complex.conj_ofReal, Complex.conj_I]
+/-- **The complex Wick formula.** A centered product of proper complex Gaussian coordinates
+and conjugated coordinates is the sum of covariance products over all bijections between their
+positions. For unequal degrees the sum is empty; for equal degrees it is a permanent.
+The empty moment is one. Singular covariance matrices and repeated coordinates are allowed. -/
+theorem integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+    [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
+    (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    (f : α → ι) (g : β → ι) :
+    (∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+      ∂properComplexGaussianMeasure m C) = ∑ e : α ≃ β, ∏ i, C (f i) (g (e i)) := by
+  classical
+  by_cases h : Fintype.card α = Fintype.card β
+  · let e := Fintype.equivOfCardEq h
+    have hp (z : ι → ℂ) :
+        ∏ j, star (z (g j) - m (g j)) = ∏ i, star (z (g (e i)) - m (g (e i))) :=
+      (e.prod_comp _).symm
+    simp_rw [hp]
+    rw [integral_prod_mul_prod_conj_sub_eq_permanent m hC]
+    unfold Matrix.permanent
+    refine Fintype.sum_equiv (Equiv.equivCongr (Equiv.refl α) e) _ _ fun σ ↦ ?_
+    simp [Equiv.equivCongr]
+  · have : IsEmpty (α ≃ β) := ⟨fun e ↦ h (Fintype.card_congr e)⟩
+    rw [integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure_eq_zero m hC h]
+    simp
 
-private theorem integral_four_complexGaussianParts (m : ι → ℂ) {C : Matrix ι ι ℂ}
-    [Fintype ι] [DecidableEq ι] (hC : C.PosSemidef) (i j k l : ι)
-    (a b c d : Bool) :
-    ∫ z, complexGaussianPart m i a z * complexGaussianPart m j b z *
-        complexGaussianPart m k c z * complexGaussianPart m l d z
-        ∂properComplexGaussianMeasure m C =
-      complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-          (complexGaussianPartIndex j b) *
-        complexGaussianRealCovariance C (complexGaussianPartIndex k c)
-          (complexGaussianPartIndex l d) +
-      complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-          (complexGaussianPartIndex k c) *
-        complexGaussianRealCovariance C (complexGaussianPartIndex j b)
-          (complexGaussianPartIndex l d) +
-      complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-          (complexGaussianPartIndex l d) *
-        complexGaussianRealCovariance C (complexGaussianPartIndex j b)
-          (complexGaussianPartIndex k c) := by
-  simpa only [complexGaussianPart_eq_coordinate] using integral_four_real_coordinates m hC
-    (complexGaussianPartIndex i a) (complexGaussianPartIndex j b)
-    (complexGaussianPartIndex k c) (complexGaussianPartIndex l d)
-
-private def complexGaussianFourthTerm (m : ι → ℂ) (i j k l : ι)
-    (a b c d : Bool) (z : ι → ℂ) : ℂ :=
-  complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
-    complexGaussianPartCoeff false c * complexGaussianPartCoeff true d *
-      ((complexGaussianPart m i a z : ℂ) * complexGaussianPart m j b z *
-        complexGaussianPart m k c z * complexGaussianPart m l d z)
-
-private theorem complexGaussianFourth_eq_sum_parts (m : ι → ℂ) (i j k l : ι)
-    (z : ι → ℂ) :
-    (z i - m i) * star (z j - m j) * (z k - m k) * star (z l - m l) =
-      ∑ a : Bool, ∑ b : Bool, ∑ c : Bool, ∑ d : Bool,
-        complexGaussianFourthTerm m i j k l a b c d z := by
-  rw [complexGaussianCoordinate_eq_sum_parts, star_complexGaussianCoordinate_eq_sum_parts,
-    complexGaussianCoordinate_eq_sum_parts, star_complexGaussianCoordinate_eq_sum_parts]
-  simp_rw [Fintype.sum_bool]
-  simp only [complexGaussianFourthTerm, complexGaussianPartCoeff, complexGaussianPart]
-  ring
-
-private theorem integrable_complexGaussianFourthTerm (m : ι → ℂ) (C : Matrix ι ι ℂ)
-    [Fintype ι] [DecidableEq ι] (i j k l : ι) (a b c d : Bool) :
-    Integrable (fun z ↦ complexGaussianFourthTerm m i j k l a b c d z)
-      (properComplexGaussianMeasure m C) := by
-  let indices : Fin 4 → ι ⊕ ι :=
-    ![complexGaussianPartIndex i a, complexGaussianPartIndex j b,
-      complexGaussianPartIndex k c, complexGaussianPartIndex l d]
-  let L : Fin 4 → StrongDual ℝ (ι → ℂ) := fun q ↦
-    (EuclideanSpace.proj (indices q)).comp (complexToRealEuclidean ι).toContinuousLinearMap
-  have hint := IsGaussian.integrable_prod_dual (properComplexGaussianMeasure m C)
-    (Finset.univ : Finset (Fin 4)) L (fun q ↦ -L q m)
-  have hcast := Complex.ofRealCLM.integrable_comp hint
-  simp only [complexGaussianFourthTerm, complexGaussianPart_eq_coordinate]
-  simpa [complexGaussianFourthTerm, L, indices, Fin.prod_univ_succ,
-    complexToRealEuclidean_apply, sub_eq_add_neg, Complex.ofReal_mul, mul_assoc] using
-    hcast.const_mul
-    (complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
-      complexGaussianPartCoeff false c * complexGaussianPartCoeff true d)
-
-/-- The fourth centered complex coordinate product is integrable, for any covariance matrix. -/
-theorem integrable_mul_conj_mul_conj_sub_properComplexGaussianMeasure
-    (m : ι → ℂ) (C : Matrix ι ι ℂ) [Fintype ι] [DecidableEq ι] (i j k l : ι) :
-    Integrable (fun z ↦ (z i - m i) * star (z j - m j) *
-      (z k - m k) * star (z l - m l)) (properComplexGaussianMeasure m C) := by
-  simp_rw [complexGaussianFourth_eq_sum_parts]
-  exact integrable_finsetSum _ (fun a _ ↦ integrable_finsetSum _ (fun b _ ↦
-    integrable_finsetSum _ (fun c _ ↦ integrable_finsetSum _ (fun d _ ↦
-      integrable_complexGaussianFourthTerm m C i j k l a b c d))))
-
-private theorem integral_complexGaussianFourthTerm (m : ι → ℂ) {C : Matrix ι ι ℂ}
-    [Fintype ι] [DecidableEq ι] (hC : C.PosSemidef) (i j k l : ι)
-    (a b c d : Bool) :
-    ∫ z, complexGaussianFourthTerm m i j k l a b c d z
-        ∂properComplexGaussianMeasure m C =
-      complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
-        complexGaussianPartCoeff false c * complexGaussianPartCoeff true d *
-          (complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-              (complexGaussianPartIndex j b) *
-            complexGaussianRealCovariance C (complexGaussianPartIndex k c)
-              (complexGaussianPartIndex l d) +
-            complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-              (complexGaussianPartIndex k c) *
-            complexGaussianRealCovariance C (complexGaussianPartIndex j b)
-              (complexGaussianPartIndex l d) +
-            complexGaussianRealCovariance C (complexGaussianPartIndex i a)
-              (complexGaussianPartIndex l d) *
-            complexGaussianRealCovariance C (complexGaussianPartIndex j b)
-              (complexGaussianPartIndex k c)) := by
-  let f : (ι → ℂ) → ℝ := fun z ↦
-    complexGaussianPart m i a z * complexGaussianPart m j b z *
-      complexGaussianPart m k c z * complexGaussianPart m l d z
-  have hcast (z : ι → ℂ) :
-      (complexGaussianPart m i a z : ℂ) * complexGaussianPart m j b z *
-          complexGaussianPart m k c z * complexGaussianPart m l d z =
-        (f z : ℂ) := by
-    simp only [f, Complex.ofReal_mul]
-  simp only [complexGaussianFourthTerm]
-  simp_rw [hcast]
+/-- The noncentered complex Wick formula. Choose the positions contracted by covariance,
+pair those positions bijectively, and multiply by the means at all remaining positions. -/
+theorem integral_prod_mul_prod_conj_properComplexGaussianMeasure
+    [DecidableEq α] [DecidableEq β] (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    (s : Finset α) (t : Finset β) (f : α → ι) (g : β → ι) :
+    (∫ z, (∏ i ∈ s, z (f i)) * ∏ j ∈ t, star (z (g j))
+      ∂properComplexGaussianMeasure m C) =
+      ∑ p ∈ s.powerset, ∑ q ∈ t.powerset,
+        ((∏ i ∈ s \ p, m (f i)) * ∏ j ∈ t \ q, star (m (g j))) *
+          ∑ e : p ≃ q, ∏ i : p, C (f i) (g (e i)) := by
+  have hterm (p : Finset α) (q : Finset β) :=
+    integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure m m C p q f g
+  have hexpand (z : ι → ℂ) :
+      (∏ i ∈ s, z (f i)) * (∏ j ∈ t, star (z (g j))) =
+        ∑ p ∈ s.powerset, ∑ q ∈ t.powerset,
+          ((∏ i ∈ s \ p, m (f i)) * ∏ j ∈ t \ q, star (m (g j))) *
+            ((∏ i ∈ p, (z (f i) - m (f i))) *
+              ∏ j ∈ q, star (z (g j) - m (g j))) := by
+    have hs := prod_add (fun i ↦ z (f i) - m (f i)) (fun i ↦ m (f i)) s
+    have ht := prod_add (fun j ↦ star (z (g j) - m (g j))) (fun j ↦ star (m (g j))) t
+    simp only [sub_add_cancel] at hs
+    simp only [star_sub, sub_add_cancel] at ht
+    rw [hs, ht, sum_mul]
+    apply sum_congr rfl
+    intro p _
+    rw [mul_sum]
+    apply sum_congr rfl
+    intro q _
+    simp only [star_sub]
+    ring
+  simp_rw [hexpand]
+  rw [integral_finsetSum _ (fun p _ ↦ integrable_finsetSum _
+    (fun q _ ↦ (hterm p q).const_mul _))]
+  apply sum_congr rfl
+  intro p _
+  rw [integral_finsetSum _ (fun q _ ↦ (hterm p q).const_mul _)]
+  apply sum_congr rfl
+  intro q _
   rw [integral_const_mul]
-  apply congrArg (fun x : ℂ ↦
-    (complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
-      complexGaussianPartCoeff false c * complexGaussianPartCoeff true d) * x)
-  calc
-    _ = ((∫ z, f z ∂properComplexGaussianMeasure m C : ℝ) : ℂ) := by
-      exact _root_.integral_ofReal
-    _ = _ := congrArg Complex.ofReal
-      (integral_four_complexGaussianParts m hC i j k l a b c d)
-    _ = _ := by
-      simp only [Complex.ofReal_add, Complex.ofReal_mul]
+  congr 1
+  have hp (z : ι → ℂ) := p.prod_attach (fun i ↦ z (f i) - m (f i))
+  have hq (z : ι → ℂ) := q.prod_attach (fun j ↦ star (z (g j) - m (g j)))
+  have h := integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure m hC
+    (fun i : p ↦ f i) (fun j : q ↦ g j)
+  simpa only [univ_eq_attach, hp, hq] using h
 
-/-- The fourth centered mixed moment of a proper complex Gaussian is the sum of its two
-covariance pairings. Equivalently, for covariance `C`,
+/-- Products of squared moduli of centered coordinates have moments equal to the permanent
+of their covariance submatrix, including repeated coordinates. -/
+theorem integral_prod_norm_sq_sub_properComplexGaussianMeasure
+    [Fintype α] [DecidableEq α] (m : ι → ℂ) {C : Matrix ι ι ℂ} (hC : C.PosSemidef)
+    (f : α → ι) :
+    (∫ z, ∏ i, (‖z (f i) - m (f i)‖ ^ 2 : ℂ) ∂properComplexGaussianMeasure m C) =
+      (C.submatrix f f).permanent := by
+  have hp (z : ι → ℂ) :
+      (∏ i, (‖z (f i) - m (f i)‖ ^ 2 : ℂ)) =
+        (∏ i, (z (f i) - m (f i))) * ∏ i, star (z (f i) - m (f i)) := by
+    rw [← prod_mul_distrib]
+    apply prod_congr rfl
+    intro i _
+    rw [Complex.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.ofReal_pow]
+  simp_rw [hp]
+  rw [integral_prod_mul_prod_conj_sub_eq_permanent m hC]
+  exact Matrix.permanent_transpose (C.submatrix f f)
 
-`E[(Zᵢ-mᵢ) * conj (Zⱼ-mⱼ) * (Zₖ-mₖ) * conj (Zₗ-mₗ)] =
-  Cᵢⱼ * Cₖₗ + Cᵢₗ * Cₖⱼ`.
-
-The identity includes singular covariance matrices. -/
-theorem integral_mul_conj_mul_conj_sub_properComplexGaussianMeasure
-    (m : ι → ℂ) [Fintype ι] [DecidableEq ι] {C : Matrix ι ι ℂ}
-    (hC : C.PosSemidef) (i j k l : ι) :
-    ∫ z, (z i - m i) * star (z j - m j) * (z k - m k) * star (z l - m l)
-        ∂properComplexGaussianMeasure m C =
-      C i j * C k l + C i l * C k j := by
-  let T := complexGaussianFourthTerm m i j k l
-  have hterm (a b c d : Bool) :
-      Integrable (fun z ↦ T a b c d z) (properComplexGaussianMeasure m C) := by
-    exact integrable_complexGaussianFourthTerm m C i j k l a b c d
-  have hsumD (a b c : Bool) :
-      Integrable (fun z ↦ ∑ d : Bool, T a b c d z) (properComplexGaussianMeasure m C) :=
-    integrable_finsetSum _ (fun d _ ↦ hterm a b c d)
-  have hsumC (a b : Bool) :
-      Integrable (fun z ↦ ∑ c : Bool, ∑ d : Bool, T a b c d z)
-        (properComplexGaussianMeasure m C) :=
-    integrable_finsetSum _ (fun c _ ↦ hsumD a b c)
-  have hsumB (a : Bool) :
-      Integrable (fun z ↦ ∑ b : Bool, ∑ c : Bool, ∑ d : Bool, T a b c d z)
-        (properComplexGaussianMeasure m C) :=
-    integrable_finsetSum _ (fun b _ ↦ hsumC a b)
-  calc
-    _ = ∫ z, ∑ a : Bool, ∑ b : Bool, ∑ c : Bool, ∑ d : Bool,
-        T a b c d z ∂properComplexGaussianMeasure m C := by
-          congr 1
-          funext z
-          exact complexGaussianFourth_eq_sum_parts m i j k l z
-    _ = ∑ a : Bool, ∑ b : Bool, ∑ c : Bool, ∑ d : Bool,
-        ∫ z, T a b c d z ∂properComplexGaussianMeasure m C := by
-          rw [integral_finsetSum _ (fun a _ ↦ hsumB a)]
-          simp_rw [integral_finsetSum _ (fun b _ ↦ hsumC _ b)]
-          simp_rw [integral_finsetSum _ (fun c _ ↦ hsumD _ _ c)]
-          simp_rw [integral_finsetSum _ (fun d _ ↦ hterm _ _ _ d)]
-    _ = C i j * C k l + C i l * C k j := by
-          simp_rw [T, integral_complexGaussianFourthTerm m hC]
-          have hfactor := complexGaussianPairings_factor C i j k l
-          simp only [Complex.ofReal_add, Complex.ofReal_mul] at hfactor
-          rw [hfactor]
-          simp only [(complexGaussianPairing_values C _ _).1,
-            (complexGaussianPairing_values C _ _).2.1,
-            (complexGaussianPairing_values C _ _).2.2.1,
-            (complexGaussianPairing_values C _ _).2.2.2, zero_mul, add_zero]
-          rw [(hC.isHermitian.apply j k).symm, star_star]
+/-- Mixed moments of a standard circular complex Gaussian: equal degrees give a factorial,
+and unequal degrees give zero. In particular its holomorphic moments of positive degree vanish. -/
+@[simp]
+theorem integral_pow_mul_conj_pow_properComplexGaussianScalar (n r : ℕ) :
+    (∫ z, z ^ n * conj z ^ r ∂properComplexGaussianScalar) =
+      if n = r then (n.factorial : ℂ) else 0 := by
+  rw [properComplexGaussianScalar_def,
+    integral_map (measurable_pi_apply ()).aemeasurable (by fun_prop)]
+  split_ifs with h
+  · subst r
+    simpa [Matrix.permanent, Fintype.card_perm] using
+      integral_prod_mul_prod_conj_sub_fin_eq_permanent (fun _ : Unit ↦ (0 : ℂ))
+        (Matrix.PosSemidef.one : (1 : Matrix Unit Unit ℂ).PosSemidef) n
+        (fun _ ↦ ()) (fun _ ↦ ())
+  · simpa using integral_prod_mul_prod_conj_sub_fin_eq_zero (fun _ : Unit ↦ (0 : ℂ))
+      (Matrix.PosSemidef.one : (1 : Matrix Unit Unit ℂ).PosSemidef) n r h
+      (fun _ ↦ ()) (fun _ ↦ ())
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+open scoped ComplexOrder
+
+variable {Ω ι α β : Type*} [MeasurableSpace Ω] [Fintype ι] [DecidableEq ι]
+  {P : Measure Ω} {Z : Ω → ι → ℂ} {m : ι → ℂ} {C : Matrix ι ι ℂ}
+
+/-- Affinely shifted coordinate products and their conjugates are integrable for a random
+vector with a proper complex Gaussian law, on any underlying sample space. -/
+theorem integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+    (hZ : HasLaw Z (properComplexGaussianMeasure m C) P) (c : ι → ℂ)
+    (s : Finset α) (t : Finset β) (f : α → ι) (g : β → ι) :
+    Integrable (fun ω ↦ (∏ i ∈ s, (Z ω (f i) - c (f i))) *
+      ∏ j ∈ t, star (Z ω (g j) - c (g j))) P :=
+  hZ.integrable_comp
+    (TauCeti.Probability.integrable_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+      m c C s t f g)
+
+/-- The complex Wick formula for a random vector with a proper complex Gaussian law.
+The bijections pair holomorphic with antiholomorphic positions, including repeated coordinates. -/
+theorem integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+    [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
+    (hZ : HasLaw Z (properComplexGaussianMeasure m C) P) (hC : C.PosSemidef)
+    (f : α → ι) (g : β → ι) :
+    (∫ ω, (∏ i, (Z ω (f i) - m (f i))) * ∏ j, star (Z ω (g j) - m (g j)) ∂P) =
+      ∑ e : α ≃ β, ∏ i, C (f i) (g (e i)) := by
+  calc
+    _ = ∫ z, (∏ i, (z (f i) - m (f i))) * ∏ j, star (z (g j) - m (g j))
+        ∂properComplexGaussianMeasure m C := hZ.integral_comp (by fun_prop)
+    _ = _ := TauCeti.Probability.integral_prod_mul_prod_conj_sub_properComplexGaussianMeasure
+      m hC f g
+
+/-- The noncentered Wick formula for a proper complex Gaussian random vector. Every partial
+matching contributes its covariance product times the means at the unpaired positions. -/
+theorem integral_prod_mul_prod_conj_properComplexGaussianMeasure
+    [DecidableEq α] [DecidableEq β]
+    (hZ : HasLaw Z (properComplexGaussianMeasure m C) P) (hC : C.PosSemidef)
+    (s : Finset α) (t : Finset β) (f : α → ι) (g : β → ι) :
+    (∫ ω, (∏ i ∈ s, Z ω (f i)) * ∏ j ∈ t, star (Z ω (g j)) ∂P) =
+      ∑ p ∈ s.powerset, ∑ q ∈ t.powerset,
+        ((∏ i ∈ s \ p, m (f i)) * ∏ j ∈ t \ q, star (m (g j))) *
+          ∑ e : p ≃ q, ∏ i : p, C (f i) (g (e i)) := by
+  calc
+    _ = ∫ z, (∏ i ∈ s, z (f i)) * ∏ j ∈ t, star (z (g j))
+        ∂properComplexGaussianMeasure m C := hZ.integral_comp (by fun_prop)
+    _ = _ := TauCeti.Probability.integral_prod_mul_prod_conj_properComplexGaussianMeasure
+      m hC s t f g
+
+end ProbabilityTheory.HasLaw
