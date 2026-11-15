@@ -102,9 +102,7 @@ functions vanishing at `x : X` is maximal. Unlike
 instance instIsMaximalIdealOfSetComplSingleton {X R : Type*} [TopologicalSpace X]
     [DivisionRing R] [TopologicalSpace R] [IsTopologicalSemiring R] (x : X) :
     (idealOfSet R ({x}ᶜ : Set X)).IsMaximal := by
-  have hneg : (fun r : R ↦ -r) = ((-1 : R) * ·) := funext fun r ↦ (neg_one_mul r).symm
-  have : ContinuousNeg R := ⟨hneg ▸ continuous_const.mul continuous_id⟩
-  have : IsTopologicalRing R := {}
+  have := IsTopologicalSemiring.toIsTopologicalRing (R := R) inferInstance
   let ev : C(X, R) →+* R := (Pi.evalRingHom (fun _ ↦ R) x).comp coeFnRingHom
   have hker : RingHom.ker ev = idealOfSet R ({x}ᶜ : Set X) := by
     ext f

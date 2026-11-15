@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Operator.Mul
 
@@ -14,7 +15,9 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 This file identifies the underlying linear maps of bounded left and right multiplication,
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
-It also records the norm of a difference of scalar-to-vector maps.
+It also records the norm of a difference of scalar-to-vector maps, and shows that in a
+seminormed star algebra with an isometric involution, conjugating by `star` identifies the
+operator norm of `c • id + R_a` with that of `star c • id + L_{star a}`.
 For unital algebras we also bundle the left regular representation as a unital algebra
 homomorphism and give its inverse norm bound without assuming that the identity has norm one.
 Finally, exponentiating bounded left or right multiplication by `x` gives multiplication by
@@ -53,6 +56,28 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
     ((mul 𝕜 R).flip x).toLinearMap = LinearMap.mulRight 𝕜 x := by
   ext y
   simp
+
+/-- Conjugating by an isometric involution identifies the operator norm of `c • id + R_a`
+with that of `star c • id + L_{star a}`. -/
+theorem norm_smul_id_add_mul_flip [Star 𝕜] [StarRing R] [NormedStarGroup R] [StarModule 𝕜 R]
+    (c : 𝕜) (a : R) :
+    ‖c • ContinuousLinearMap.id 𝕜 R + (mul 𝕜 R).flip a‖ =
+      ‖star c • ContinuousLinearMap.id 𝕜 R + mul 𝕜 R (star a)‖ := by
+  have hconj (x : R) :
+      star ((c • ContinuousLinearMap.id 𝕜 R + (mul 𝕜 R).flip a) (star x)) =
+        (star c • ContinuousLinearMap.id 𝕜 R + mul 𝕜 R (star a)) x := by
+    simp [star_add, star_smul, star_mul]
+  refine le_antisymm ?_ ?_
+  · refine opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
+    have hx := hconj (star x)
+    rw [star_star] at hx
+    rw [← norm_star, hx]
+    simpa [norm_star] using
+      (star c • ContinuousLinearMap.id 𝕜 R + mul 𝕜 R (star a)).le_opNorm (star x)
+  · refine opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
+    rw [← hconj x, norm_star]
+    simpa [norm_star] using
+      (c • ContinuousLinearMap.id 𝕜 R + (mul 𝕜 R).flip a).le_opNorm (star x)
 
 /-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
 bounded endomorphism ring are subsingletons. -/

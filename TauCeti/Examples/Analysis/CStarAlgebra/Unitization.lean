@@ -103,11 +103,10 @@ theorem isMaximal_maximalIdealZero : maximalIdealZero.IsMaximal := by
 theorem closure_span_coord_eq_maximalIdealZero :
     (Ideal.span ({coord} : Set C(unitInterval, ℂ))).closure = maximalIdealZero := by
   rw [ContinuousMap.closure_span_singleton_eq_idealOfSet, maximalIdealZero_eq_idealOfSet]
-  congr 1
-  ext t
-  change coord t ≠ 0 ↔ t ≠ 0
-  rw [coord_apply, ne_eq, Complex.ofReal_eq_zero, ne_eq, Subtype.ext_iff]
-  rfl
+  refine congrArg (ContinuousMap.idealOfSet ℂ) (Set.ext fun t ↦ ?_)
+  simp only [Set.mem_ofPred_eq, coord_apply, ne_eq, Complex.ofReal_eq_zero,
+    Set.mem_compl_iff, Set.mem_singleton_iff]
+  exact not_congr ⟨fun h ↦ Subtype.ext h, fun h ↦ by simp [h]⟩
 
 theorem sqrtCoord_mem_maximalIdealZero : sqrtCoord ∈ maximalIdealZero := by
   simp
@@ -141,15 +140,14 @@ theorem sqrtCoord_notMem_span_coord :
   have hMpos : 0 < M := zero_lt_one.trans_le hM1
   have ht_mem : M⁻¹ ^ 2 ∈ Set.Icc (0 : ℝ) 1 :=
     ⟨by positivity, sq_le_one_iff₀ (by positivity) |>.mpr (inv_le_one_of_one_le₀ hM1)⟩
-  let t : unitInterval := ⟨M⁻¹ ^ 2, ht_mem⟩
-  have ht_pos : 0 < (t : ℝ) := sq_pos_of_pos (inv_pos.mpr hMpos)
+  have ht_pos : 0 < ((⟨M⁻¹ ^ 2, ht_mem⟩ : unitInterval) : ℝ) := by
+    simp only [inv_pos, hMpos, sq_pos_of_pos]
   have hgt := apply_eq_inv_sqrt_of_coord_mul_eq_sqrtCoord hg ht_pos
-  have hsqrt : (Real.sqrt (t : ℝ))⁻¹ = M := by
-    change (Real.sqrt (M⁻¹ ^ 2))⁻¹ = M
-    rw [Real.sqrt_sq (by positivity), inv_inv]
-  have hnorm : M = ‖g t‖ := by
+  have hsqrt : (Real.sqrt ((⟨M⁻¹ ^ 2, ht_mem⟩ : unitInterval) : ℝ))⁻¹ = M := by
+    simp only [Real.sqrt_sq (inv_nonneg.mpr hMpos.le), inv_inv]
+  have hnorm : M = ‖g ⟨M⁻¹ ^ 2, ht_mem⟩‖ := by
     rw [hgt, hsqrt, Complex.norm_real, Real.norm_of_nonneg hMpos.le]
-  linarith [le_max_right 1 (‖g‖ + 1), hnorm, g.norm_coe_le_norm t]
+  linarith [le_max_right 1 (‖g‖ + 1), hnorm, g.norm_coe_le_norm ⟨M⁻¹ ^ 2, ht_mem⟩]
 
 /-- The principal ideal `Ideal.span {coord}` is strictly contained in its closure
 `maximalIdealZero`, so `Ideal.span {coord}` is not closed in `C(unitInterval, ℂ)`. -/
@@ -196,15 +194,15 @@ theorem norm_coord_mul_truncInvSqrt_sub_sqrtCoord_le {n : ℕ} (hn : 1 ≤ n) :
     ‖coord * truncInvSqrt n - sqrtCoord‖ ≤ 1 / (n : ℝ) := by
   have hn_pos : 0 < (n : ℝ) := Nat.cast_pos.mpr hn
   refine (ContinuousMap.norm_le _ (by positivity)).mpr fun t ↦ ?_
-  set s : ℝ := Real.sqrt (t : ℝ)
+  set s : ℝ := Real.sqrt (t : ℝ) with hs_def
   have hs_nonneg : 0 ≤ s := Real.sqrt_nonneg _
   have hs_sq : s * s = (t : ℝ) := Real.mul_self_sqrt t.2.1
   have hval : (coord * truncInvSqrt n - sqrtCoord) t =
       (((s * s * ((n : ℝ) / max 1 ((n : ℝ) * s)) - s) : ℝ) : ℂ) := by
-    change (((t : ℝ) : ℂ) * (((n : ℝ) / max 1 ((n : ℝ) * s) : ℝ) : ℂ) - (s : ℂ)) = _
-    rw [← hs_sq]
+    rw [ContinuousMap.sub_apply, ContinuousMap.mul_apply, coord_apply, truncInvSqrt_apply,
+      sqrtCoord_apply, ← hs_def, ← hs_sq]
     push_cast
-    rfl
+    ring
   rw [hval, Complex.norm_real, Real.norm_eq_abs]
   rcases le_or_gt 1 ((n : ℝ) * s) with h | h
   · have hs_ne : s ≠ 0 := fun hs0 ↦ by linarith [mul_eq_zero_of_right (n : ℝ) hs0]
@@ -302,8 +300,8 @@ theorem norm_lift_Lmul_one_sub_coordIoc :
       abs_le.mpr ⟨by linarith [x.2.2], by linarith [x.2.1]⟩
     calc
       ‖(T f).toBCF x‖ = |1 - (x : ℝ)| * ‖f x‖ := by
-        change ‖(T f) x‖ = _
-        rw [hfx, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+        rw [ZeroAtInftyContinuousMap.toBCF_apply, hfx, norm_mul, Complex.norm_real,
+          Real.norm_eq_abs]
       _ ≤ 1 * ‖f‖ :=
         mul_le_mul h1x (BoundedContinuousFunction.norm_coe_le_norm f.toBCF x) (norm_nonneg _)
           zero_le_one
@@ -333,11 +331,8 @@ theorem unitInterval_leftAction_collapse :
   refine ⟨hker, ?_⟩
   have hfst : ‖((1 : Unitization ℂ C(unitInterval, ℂ)) - (1 : C(unitInterval, ℂ))).fst‖ = 1 := by
     simp
-  have hop :
-      algebraMap ℂ (C(unitInterval, ℂ) →L[ℂ] C(unitInterval, ℂ))
-          ((1 : Unitization ℂ C(unitInterval, ℂ)) - (1 : C(unitInterval, ℂ))).fst +
-        mul ℂ C(unitInterval, ℂ)
-          ((1 : Unitization ℂ C(unitInterval, ℂ)) - (1 : C(unitInterval, ℂ))).snd = 0 := hker
+  have hop := hker
+  rw [Unitization.lift_apply, NonUnitalAlgHom.toAlgHom_apply, NonUnitalAlgHom.coe_Lmul] at hop
   rw [Unitization.norm_eq_sup, hfst, hop, norm_zero, max_eq_left zero_le_one]
 
 /-! ### 3. Zero C⋆-algebra `C(Empty, ℂ)` -/
@@ -349,6 +344,6 @@ theorem empty_unitization_contrast (z : ℂ) :
     Subsingleton (Unitization.LeftAction ℂ C(Empty, ℂ)) ∧
       Unitization.lift (NonUnitalAlgHom.Lmul ℂ C(Empty, ℂ)) (Unitization.inl z) = 0 ∧
       ‖(Unitization.inl z : Unitization ℂ C(Empty, ℂ))‖ = ‖z‖ :=
-  ⟨inferInstance, Unitization.lift_Lmul_apply_eq_zero _, by simp [Unitization.norm_eq_norm_fst]⟩
+  ⟨inferInstance, Unitization.lift_Lmul_eq_zero _, by simp [Unitization.norm_eq_norm_fst]⟩
 
 end TauCeti.UnitizationExample

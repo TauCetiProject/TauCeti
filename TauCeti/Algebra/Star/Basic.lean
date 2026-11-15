@@ -74,12 +74,12 @@ theorem exists_left_identity_iff {A : Type*} [Mul A] [StarMul A] :
 therefore a two-sided identity. -/
 theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
     (∃ e : A, ∀ b : A, b * e = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
-  refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).2⟩⟩
-  rintro ⟨e, hright⟩
-  have hleft (b : A) : star e * b = b := by
-    simpa only [star_mul, star_star] using congrArg star (hright (star b))
-  have heStar : e = star e := (hleft e).symm.trans (hright (star e))
-  exact ⟨e, fun b ↦ ⟨heStar ▸ hleft b, hright b⟩⟩
+  refine ⟨fun ⟨e, he⟩ ↦ ?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).2⟩⟩
+  obtain ⟨e', he'⟩ := (exists_left_identity_iff (A := Aᵐᵒᵖ)).mp
+    ⟨MulOpposite.op e, fun b ↦ MulOpposite.unop_injective (he b.unop)⟩
+  exact ⟨e'.unop, fun b ↦
+    ⟨MulOpposite.op_injective (he' (MulOpposite.op b)).2,
+      MulOpposite.op_injective (he' (MulOpposite.op b)).1⟩⟩
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
