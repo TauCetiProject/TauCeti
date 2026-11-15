@@ -23,11 +23,11 @@ plane pointwise. These extensions form a homomorphism
 `LinearIsometry.ofOrthonormalPair : ℂ →ₗᵢ[ℝ] E`, `w ↦ Re w • u + Im w • v`.
 
 Explicitly, `planeRotation ι c x = x + ι ((c - 1) w)`, where `w = ⟪ι 1, x⟫ + ⟪ι i, x⟫ i` is the
-complex coordinate of the orthogonal projection of `x` onto the plane. Expanding in the orthonormal
-pair `ι 1`, `ι i` exhibits `(ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E` as a continuous
-function of `ι 1`, `ι i` and `c` in the operator-norm topology
-(`Continuous.planeRotation_toContinuousLinearMap`), without any finite-dimensionality assumption.
-Each plane rotation has determinant `1`
+complex coordinate of the orthogonal projection of `x` onto the plane
+(`LinearIsometry.planeRotation_apply`, `LinearIsometry.toContinuousLinearMap_planeRotation`). The
+rotation `(ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E` depends continuously on the plane
+and angle in the operator-norm topology (`Continuous.planeRotation`), without any
+finite-dimensionality assumption. Each plane rotation has determinant `1`
 (`LinearIsometry.det_toContinuousLinearMap_planeRotation`,
 `LinearIsometry.linearEquiv_det_planeRotation`) and preserves every orientation of `E`
 (`LinearIsometry.orientation_map_planeRotation`). The rotation by `-1` is the half-turn of the
@@ -49,7 +49,7 @@ great-circle families on a sphere lift to families of rotations.
 * `LinearIsometry.planeRotation_apply_of_mem_orthogonal`: it fixes the orthogonal complement of
   the plane.
 * `LinearIsometry.planeRotation_apply`: explicit expansion in terms of `ι 1` and `ι i`.
-* `Continuous.planeRotation_toContinuousLinearMap`: operator-norm continuity in the plane and angle.
+* `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle.
 * `LinearIsometry.det_toContinuousLinearMap_planeRotation`,
   `LinearIsometry.linearEquiv_det_planeRotation`,
   `LinearIsometry.orientation_map_planeRotation`: plane rotations have determinant `1` and preserve
@@ -212,7 +212,31 @@ theorem contMDiff_planeRotation {m : ℕ∞ω} :
     contDiff_mul.contMDiff.comp ((hc.sub contMDiff_const).prodMk_space hw)
   exact hx.add (ι.toContinuousLinearMap.contDiff.contMDiff.comp hmul)
 
-/-! ### Explicit operator formula, continuity, and determinant -/
+/-- **The rotation depends continuously on the plane and the angle**: for a family of planes
+`ι x` depending continuously on `x`, in the operator norm, and a continuous family of points `c x`
+of the unit circle, the rotation `planeRotation (ι x) (c x)` depends continuously on `x` in the
+operator norm. -/
+theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X → ℂ →ₗᵢ[ℝ] E}
+    {c : X → Circle} (hι : Continuous fun x ↦ (ι x).toContinuousLinearMap) (hc : Continuous c) :
+    Continuous fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
+  -- The coordinate `planeCoord (ι x)` pairs a vector with the images `ι x 1` and `ι x I`.
+  have hinner (w a : ℂ) : Continuous fun x ↦ (innerSL ℝ (ι x w)).smulRight a := by
+    have hw : Continuous fun x ↦ ι x w := by
+      simpa only [coe_toContinuousLinearMap] using hι.clm_apply continuous_const
+    exact ((ContinuousLinearMap.smulRightL ℝ E ℂ).continuous.comp
+      ((innerSL ℝ).continuous.comp hw)).clm_apply continuous_const
+  have hcoord : Continuous fun x ↦ planeCoord (ι x) := by
+    unfold planeCoord
+    exact (hinner 1 1).add (hinner I I)
+  have hmul : Continuous fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
+    (ContinuousLinearMap.mul ℝ ℂ).continuous.comp
+      ((continuous_subtype_val.comp hc).sub continuous_const)
+  refine ((continuous_const (y := ContinuousLinearMap.id ℝ E)).add
+    (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
+  ext y
+  simp [planeRotation_apply_eq, sub_mul]
+
+/-! ### Explicit operator formula and determinant -/
 
 /-- **Explicit expansion of a plane rotation** in the orthonormal pair `ι 1`, `ι i`. -/
 theorem planeRotation_apply (c : Circle) (x : E) :
@@ -246,37 +270,6 @@ theorem toContinuousLinearMap_planeRotation (c : Circle) :
   ext x
   simp [planeRotation_apply]
 
-/-- **Operator-norm continuity of plane rotations** in both the embedded plane and the angle. No
-finite-dimensionality of `E` is needed. -/
-theorem _root_.Continuous.planeRotation_toContinuousLinearMap {X : Type*} [TopologicalSpace X]
-    {ι : X → ℂ →ₗᵢ[ℝ] E} {c : X → Circle}
-    (h₁ : Continuous fun x ↦ ι x 1) (hI : Continuous fun x ↦ ι x I) (hc : Continuous c) :
-    Continuous fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
-  have hpair {a b : X → E} (ha : Continuous a) (hb : Continuous b) :
-      Continuous fun x ↦ (innerSL ℝ (a x)).smulRight (b x) :=
-    ((ContinuousLinearMap.smulRightL ℝ E E).continuous.comp
-      ((innerSL ℝ).continuous.comp ha)).clm_apply hb
-  have hre : Continuous fun x ↦ ((c x : ℂ).re - 1) :=
-    (Complex.continuous_re.comp (continuous_subtype_val.comp hc)).sub continuous_const
-  have him : Continuous fun x ↦ (c x : ℂ).im :=
-    Complex.continuous_im.comp (continuous_subtype_val.comp hc)
-  have heq : (fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E)) =
-      fun x ↦ ContinuousLinearMap.id ℝ E +
-        ((c x : ℂ).re - 1) • ((innerSL ℝ (ι x 1)).smulRight (ι x 1) +
-          (innerSL ℝ (ι x I)).smulRight (ι x I)) +
-        (c x : ℂ).im • ((innerSL ℝ (ι x 1)).smulRight (ι x I) -
-          (innerSL ℝ (ι x I)).smulRight (ι x 1)) :=
-    funext fun x ↦ (ι x).toContinuousLinearMap_planeRotation (c x)
-  rw [heq]
-  exact (continuous_const.add (hre.smul ((hpair h₁ h₁).add (hpair hI hI)))).add
-    (him.smul ((hpair h₁ hI).sub (hpair hI h₁)))
-
-/-- For a fixed plane `ι`, `c ↦ planeRotation ι c` is continuous into `E →L[ℝ] E` with the
-operator-norm topology. -/
-theorem continuous_planeRotation_toContinuousLinearMap :
-    Continuous fun c : Circle ↦ ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E) :=
-  continuous_const.planeRotation_toContinuousLinearMap continuous_const continuous_id
-
 private theorem coe_toContinuousLinearEquiv_toLinearMap (e : E ≃ₗᵢ[ℝ] E) :
     ((e.toContinuousLinearEquiv : E →L[ℝ] E) : E →ₗ[ℝ] E) = (e.toLinearEquiv : E →ₗ[ℝ] E) := by
   ext
@@ -289,7 +282,7 @@ theorem det_toContinuousLinearMap_planeRotation (c : Circle) :
     ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E).det = 1 := by
   let d : Circle → ℝ := fun z ↦ ((ι.planeRotation z).toContinuousLinearEquiv : E →L[ℝ] E).det
   have hd_cont : Continuous d :=
-    ContinuousLinearMap.continuous_det.comp ι.continuous_planeRotation_toContinuousLinearMap
+    ContinuousLinearMap.continuous_det.comp (continuous_const.planeRotation continuous_id)
   have hd_mem (z : Circle) : d z ∈ ({1, -1} : Set ℝ) := by
     refine (abs_eq zero_le_one).1 ?_
     simpa only [d, ContinuousLinearMap.det, coe_toContinuousLinearEquiv_toLinearMap] using
