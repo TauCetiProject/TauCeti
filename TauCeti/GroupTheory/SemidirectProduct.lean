@@ -25,6 +25,8 @@ An invariant normal subgroup of the first factor is normal in the full semidirec
   multiplication homomorphism is `H ⊔ K`.
 * `SemidirectProduct.ker_rightHom_sup_range_inr`: the kernel of the projection to the acting group
   and the acting group generate the semidirect product.
+* `SemidirectProduct.infinite_range_inl`: the image of the normal factor is infinite whenever the
+  normal factor is infinite.
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   exactly when the two maps agree on the intersection.
@@ -84,6 +86,13 @@ theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →
   refine top_unique fun x _ ↦ ?_
   rw [← inl_left_mul_inr_right x]
   exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
+
+/-- If `N` is infinite, then the image of `SemidirectProduct.inl` in `N ⋊[φ] Q` is infinite. -/
+theorem infinite_range_inl {N Q : Type*} [Group N] [Infinite N] [Group Q] {φ : Q →* MulAut N} :
+    Infinite (inl : N →* N ⋊[φ] Q).range :=
+  (Equiv.ofBijective (inl : N →* N ⋊[φ] Q).rangeRestrict
+    ⟨fun _ _ h ↦ inl_injective (congrArg Subtype.val h),
+      MonoidHom.rangeRestrict_surjective _⟩).infinite_iff.mp ‹_›
 
 variable {D : Type*} [Group D]
 variable (hLE : K ≤ Subgroup.normalizer (H : Set G))
