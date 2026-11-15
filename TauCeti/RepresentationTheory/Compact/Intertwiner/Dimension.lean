@@ -70,14 +70,12 @@ section Counting
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [FiniteDimensional 𝕜 W]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
   (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
   (hπ : Continuous π) (hρ : Continuous ρ)
 
 include hπ hρ
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- The integral of the character of the Hom representation is the integral of the product of
 characters. This is the pointwise character identity `ContRepresentation.character_linHom` under
 the integral sign, and is what both theorems below rewrite along. -/
@@ -86,7 +84,6 @@ private theorem integral_character_linHom :
       = ∫ g, character π hπ g⁻¹ * character ρ hρ g ∂haarProb G := by
   simp_rw [character_linHom π ρ hπ hρ]
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The character integral counts the intertwiners**:
 `∫ g, χ_π(g⁻¹) · χ_ρ(g) ∂(haarProb G) = dim Hom_G(V, W)`.
 
@@ -99,7 +96,6 @@ theorem integral_character_mul_eq_finrank_contIntertwiningMap :
     integral_character_eq_finrank_invariants _ (continuous_linHom π ρ hπ hρ),
     (invariantsEquivContIntertwiningMap π ρ).finrank_eq]
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The character integral vanishes exactly when there is no nonzero intertwiner.** This is the
 hypothesis under which the second Schur orthogonality relation
 (`ContRepresentation.schur_orthogonality_distinct`) is stated, now detected by the
@@ -121,14 +117,12 @@ section Unitary
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [FiniteDimensional 𝕜 W]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
   (π : ContRepresentation 𝕜 G V) (ρ : ContRepresentation 𝕜 G W)
   (hπ : Continuous π) (hρ : Continuous ρ)
 
 include hπ hρ
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The `L²` pairing of the characters counts the intertwiners.** For a unitary `π` the character
 at an inverse is the conjugate of the character, so the integrand of
 `ContRepresentation.integral_character_mul_eq_finrank_contIntertwiningMap` is
@@ -139,7 +133,6 @@ theorem integral_star_character_mul_eq_finrank_contIntertwiningMap (hunitary : I
   rw [← integral_character_mul_eq_finrank_contIntertwiningMap π ρ hπ hρ]
   simp_rw [character_apply_inv π hπ hunitary]
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The `L²` inner product of the two characters is the dimension of the space of intertwiners.**
 This is the compact-group form of Mathlib's `FDRep.scalar_product_char_eq_finrank_equivariant`, and
 the quantitative statement of which the two character orthogonality relations are the irreducible

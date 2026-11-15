@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Line
+public import TauCeti.Combinatorics.Quiver.Vertices
 public import TauCeti.GroupTheory.LambdaTree.GromovProduct
 public import Mathlib.Data.List.GetD
 
@@ -224,8 +225,8 @@ theorem IsAcyclic.isTree_pathMetric [Nonempty Γ.V] (hΓ : Γ.IsAcyclic) (h : Γ
     have hpq : Path.IsReduced Γ (p.comp q) := by
       refine (Path.isReduced_comp_iff Γ p q).2 ⟨hp', hq', fun e he f hf hfe => ?_⟩
       have hsrc : Γ.src e ∈ {v | v ∈ p.vertices} ∩ {v | v ∈ q.vertices} := by
-        refine ⟨Path.src_mem_vertices_of_mem_darts (List.mem_of_mem_getLast? he), ?_⟩
-        have htf := Path.tgt_mem_vertices_of_mem_darts (List.mem_of_mem_head? hf)
+        refine ⟨Path.src_mem_vertices_of_mem_darts Γ p (List.mem_of_mem_getLast? he), ?_⟩
+        have htf := Path.tgt_mem_vertices_of_mem_darts Γ q (List.mem_of_mem_head? hf)
         rwa [hfe, tgt_rev] at htf
       have hsy : Γ.src e = y := mem_singleton_iff.1 (hστ ▸ hsrc)
       exact hΓ.src_ne_tgt e (hsy.trans (Path.tgt_eq_of_mem_getLast?_darts Γ p he).symm)

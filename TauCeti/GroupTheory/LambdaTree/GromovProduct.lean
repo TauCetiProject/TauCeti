@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.LambdaTree.Basic
+public import TauCeti.GroupTheory.LambdaTree.ZeroHyperbolic
 
 /-!
 # Branch points and Gromov products in `Λ`-trees
@@ -28,12 +28,11 @@ only if `d x u + d u y = d x y`, a point of `[x, y]` is determined by its distan
 distance between `u₁ ∈ [v, x]` and `u₂ ∈ [v, y]` is expressed in terms of their distances to `v`
 and `(x · y)_v`.
 
-Conversely, by Chiswell's characterisation of `Λ`-trees, a nonempty geodesic `Λ`-metric space is a
-`Λ`-tree as soon as, at a single base point `v₀`, the quantities `d v₀ x + d v₀ y - d x y` are
-even and satisfy `0`-hyperbolicity. Passing from one base point to all points gives the four-point
-`0`-hyperbolicity inequality `d x y + d z w ≤ max (d x z + d y w) (d x w + d y z)`, which forces
-every geodesic segment from `x` to `y` to coincide with `{u | d x u + d u y = d x y}` and yields
-axioms (T2) and (T3).
+Passing from Gromov products to distances gives the four-point `0`-hyperbolicity inequality
+`d x y + d z w ≤ max (d x z + d y w) (d x w + d y z)`. Conversely, combining the four-point
+inequality with the single-base-point criterion `TauCeti.LambdaMetric.IsGeodesic.isTree` shows that
+a nonempty geodesic `Λ`-metric space whose Gromov products lie in `Λ` is a `Λ`-tree if and only if
+it satisfies the four-point inequality (`TauCeti.LambdaMetric.isTree_iff_four_point`).
 
 ## Main results
 
@@ -50,9 +49,9 @@ axioms (T2) and (T3).
   `u₂ ∈ [v, y]`.
 * `TauCeti.LambdaMetric.IsTree.min_dist_add_dist_sub_dist_le`,
   `TauCeti.LambdaMetric.IsTree.four_point`: `Λ`-trees are `0`-hyperbolic.
-* `TauCeti.LambdaMetric.isTree_of_min_dist_add_dist_sub_dist_le`,
-  `TauCeti.LambdaMetric.isTree_iff_four_point`: a nonempty geodesic `Λ`-metric space is a `Λ`-tree
-  if and only if its Gromov products lie in `Λ` and are `0`-hyperbolic.
+* `TauCeti.LambdaMetric.isTree_of_four_point`, `TauCeti.LambdaMetric.isTree_iff_four_point`:
+  a nonempty geodesic `Λ`-metric space whose Gromov products lie in `Λ` is a `Λ`-tree if and only
+  if it satisfies the four-point `0`-hyperbolicity inequality.
 
 ## References
 
@@ -264,17 +263,7 @@ theorem four_point (x y z w : X) :
 
 end IsTree
 
-/-! ### Characterisation of `Λ`-trees by `0`-hyperbolicity -/
-
-/-- If `d v₀ x + d v₀ y - d x y` is even for a single base point `v₀` and all `x, y`, then
-`d v x + d v y - d x y` is even for every base point `v`. -/
-theorem even_dist_add_dist_sub_dist_of_base {v₀ : X}
-    (heven : ∀ x y : X, Even (d v₀ x + d v₀ y - d x y)) (v x y : X) :
-    Even (d v x + d v y - d x y) := by
-  obtain ⟨a, ha⟩ := heven x y
-  obtain ⟨b, hb⟩ := heven v x
-  obtain ⟨c, hc⟩ := heven v y
-  exact ⟨d v₀ v + a - b - c, by grind⟩
+/-! ### Characterisation of `Λ`-trees by four-point `0`-hyperbolicity -/
 
 /-- `0`-hyperbolicity of the Gromov products at a single base point `v₀` implies the four-point
 `0`-hyperbolicity inequality everywhere (Chiswell, Lemma 1.2.5). -/
@@ -292,157 +281,17 @@ theorem four_point_of_min_dist_add_dist_sub_dist_le {v₀ : X}
   rw [d.symm z x] at h₃
   grind
 
-/-- In a four-point `0`-hyperbolic `Λ`-metric space, every segment from `x` to `y` is the set of
-points satisfying the triangle equality `d x u + d u y = d x y`. -/
-private theorem eq_setOf_dist_add_dist_of_four_point
-    (hfour : ∀ x y z w : X, d x y + d z w ≤ max (d x z + d y w) (d x w + d y z))
-    {σ : Set X} {x y : X} (hσ : d.IsSegment σ x y) :
-    σ = {u : X | d x u + d u y = d x y} := by
-  refine Subset.antisymm (fun u hu => hσ.dist_add_dist hu) fun u (hu : d x u + d u y = d x y) => ?_
-  -- `σ` contains a point `w` at distance `d x u` from `x`; four-point `0`-hyperbolicity applied
-  -- to `u, w, x, y` forces `d u w = 0`.
-  obtain ⟨w, hw, hxw⟩ := hσ.exists_dist_eq hσ.left_mem hσ.right_mem (d.nonneg x u)
-    (hu ▸ le_add_of_nonneg_right (d.nonneg u y))
-  have hwy := hσ.dist_add_dist hw
-  have h₄ := hfour u w x y
-  rw [d.symm u x, d.symm w x] at h₄
-  clear hfour
-  have huw : d u w = 0 := by grind [d.nonneg u w]
-  exact d.eq_zero_iff.1 huw ▸ hw
-
-/-- Axiom (T3) for a geodesic four-point `0`-hyperbolic `Λ`-metric space whose doubled Gromov
-products are even. -/
-private theorem exists_isSegment_inter_of_four_point (hgeo : d.IsGeodesic)
-    (heven : ∀ v x y : X, Even (d v x + d v y - d x y))
-    (hfour : ∀ x y z w : X, d x y + d z w ≤ max (d x z + d y w) (d x w + d y z))
-    {σ τ : Set X} {x y z : X} (hσ : d.IsSegment σ x y) (hτ : d.IsSegment τ x z) :
-    ∃ p q, d.IsSegment (σ ∩ τ) p q := by
-  obtain ⟨c, hc⟩ := heven x y z
-  have hc₀ : 0 ≤ c := by
-    have htri := d.triangle y x z
-    rw [d.symm y x] at htri
-    clear hfour heven
-    grind
-  have hcy : c ≤ d x y := by
-    have htri := d.triangle x y z
-    clear hfour heven
-    grind
-  obtain ⟨w, hwσ, hxw⟩ := hσ.exists_dist_eq hσ.left_mem hσ.right_mem hc₀ hcy
-  obtain ⟨ρ, hρ⟩ := d.isGeodesic_iff.1 hgeo x w
-  -- Four-point `0`-hyperbolicity for `w, z, x, y` places `w` on `[x, z]`, so `σ ∩ τ = [x, w]`.
-  have hwτ : d x w + d w z = d x z := by
-    have hwy := hσ.dist_add_dist hwσ
-    have h₄ := hfour w z x y
-    have htri := d.triangle x w z
-    rw [d.symm w x, d.symm z y, d.symm z x] at h₄
-    clear hfour heven
-    grind
-  refine ⟨x, w, ?_⟩
-  suffices h : σ ∩ τ = ρ from h ▸ hρ
-  rw [eq_setOf_dist_add_dist_of_four_point hfour hσ,
-    eq_setOf_dist_add_dist_of_four_point hfour hτ,
-    eq_setOf_dist_add_dist_of_four_point hfour hρ]
-  ext u
-  simp only [mem_inter_iff, mem_ofPred_eq]
-  refine ⟨fun ⟨huy, _⟩ => ?_, fun huw => ?_⟩
-  · have huσ : u ∈ σ := by
-      rw [eq_setOf_dist_add_dist_of_four_point hfour hσ]
-      exact huy
-    have hxu : d x u ≤ d x w := by
-      have htri := d.triangle y u z
-      rw [d.symm y u] at htri
-      clear hfour heven
-      grind
-    rw [hσ.dist_eq_abs_sub huσ hwσ, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hxu), add_sub_cancel]
-  · have hwy := hσ.dist_add_dist hwσ
-    have h₁ := d.triangle x u y
-    have h₂ := d.triangle u w y
-    have h₃ := d.triangle x u z
-    have h₄ := d.triangle u w z
-    clear hfour heven
-    exact ⟨by grind, by grind⟩
-
-/-- Axiom (T2) for a geodesic four-point `0`-hyperbolic `Λ`-metric space whose doubled Gromov
-products are even. -/
-private theorem exists_isSegment_union_of_four_point (hgeo : d.IsGeodesic)
-    (heven : ∀ v x y : X, Even (d v x + d v y - d x y))
-    (hfour : ∀ x y z w : X, d x y + d z w ≤ max (d x z + d y w) (d x w + d y z))
-    {σ τ : Set X} {x y z : X} (hσ : d.IsSegment σ x y) (hτ : d.IsSegment τ y z)
-    (hστ : σ ∩ τ = {y}) : ∃ p q, d.IsSegment (σ ∪ τ) p q := by
-  obtain ⟨ρ, hρ⟩ := d.isGeodesic_iff.1 hgeo x z
-  -- The intersection `σ ∩ τ = {y}` forces `(x · z)_y = 0`, so `y` lies between `x` and `z`.
-  obtain ⟨c, hc⟩ := heven y x z
-  have hxyz : d x y + d y z = d x z := by
-    have hcy : c ≤ d y x := by
-      have htri := d.triangle y x z
-      clear hfour heven
-      grind
-    have hcpos : 0 ≤ c := by
-      have htri := d.triangle x y z
-      rw [d.symm x y] at htri
-      clear hfour heven
-      grind
-    obtain ⟨w, hwσ, hyw⟩ := hσ.symm.exists_dist_eq hσ.symm.left_mem hσ.symm.right_mem hcpos hcy
-    have hwτ : w ∈ τ := by
-      rw [eq_setOf_dist_add_dist_of_four_point hfour hτ]
-      have hwx := hσ.symm.dist_add_dist hwσ
-      have h₄ := hfour w z y x
-      have htri := d.triangle y w z
-      rw [d.symm w y, d.symm z x, d.symm z y] at h₄
-      clear hfour heven
-      grind
-    have hwy : w = y := mem_singleton_iff.1 (hστ ▸ ⟨hwσ, hwτ⟩)
-    rw [← hyw, hwy, d.refl, add_zero, d.symm y x] at hc
-    clear hfour heven
-    grind
-  refine ⟨x, z, ?_⟩
-  suffices h : σ ∪ τ = ρ from h ▸ hρ
-  rw [eq_setOf_dist_add_dist_of_four_point hfour hσ,
-    eq_setOf_dist_add_dist_of_four_point hfour hτ,
-    eq_setOf_dist_add_dist_of_four_point hfour hρ]
-  ext u
-  simp only [mem_union, mem_ofPred_eq]
-  refine ⟨?_, fun huxz => ?_⟩
-  · rintro (huxy | hyuz)
-    · have h₁ := d.triangle x u z
-      have h₂ := d.triangle u y z
-      clear hfour heven
-      grind
-    · have h₁ := d.triangle x u z
-      have h₂ := d.triangle x y u
-      clear hfour heven
-      grind
-  · have h₄ := hfour u y x z
-    rw [d.symm u x, d.symm y x] at h₄
-    rcases le_max_iff.1 h₄ with h₁ | h₂
-    · have htri := d.triangle y u z
-      clear hfour heven
-      exact .inr (by rw [d.symm y u] at htri ⊢; grind)
-    · have htri := d.triangle x u y
-      clear hfour heven
-      exact .inl (by grind)
-
 /-- A nonempty geodesic `Λ`-metric space whose doubled Gromov products are even and which satisfies
 the four-point `0`-hyperbolicity inequality is a `Λ`-tree (Chiswell, Theorem 2.1.6). -/
 theorem isTree_of_four_point [Nonempty X] (hgeo : d.IsGeodesic)
     (heven : ∀ v x y : X, Even (d v x + d v y - d x y))
     (hfour : ∀ x y z w : X, d x y + d z w ≤ max (d x z + d y w) (d x w + d y z)) :
-    d.IsTree where
-  nonempty := ‹_›
-  isGeodesic := hgeo
-  exists_isSegment_inter := exists_isSegment_inter_of_four_point hgeo heven hfour
-  exists_isSegment_union := exists_isSegment_union_of_four_point hgeo heven hfour
-
-/-- A geodesic `Λ`-metric space with a base point `v₀` at which the doubled Gromov products are
-even and `0`-hyperbolic is a `Λ`-tree (Chiswell, Theorem 2.1.6). -/
-theorem isTree_of_min_dist_add_dist_sub_dist_le (v₀ : X) (hgeo : d.IsGeodesic)
-    (heven : ∀ x y : X, Even (d v₀ x + d v₀ y - d x y))
-    (hhyp : ∀ x y z : X,
-      min (d v₀ x + d v₀ y - d x y) (d v₀ y + d v₀ z - d y z) ≤ d v₀ x + d v₀ z - d x z) :
-    d.IsTree :=
-  have : Nonempty X := ⟨v₀⟩
-  isTree_of_four_point hgeo (even_dist_add_dist_sub_dist_of_base heven)
-    (four_point_of_min_dist_add_dist_sub_dist_le hhyp)
+    d.IsTree := by
+  obtain ⟨v⟩ := ‹Nonempty X›
+  refine hgeo.isTree v (heven v) fun x y z => ?_
+  have h := hfour x z y v
+  rw [d.symm x v, d.symm y v, d.symm z v, d.symm z y] at h
+  grind
 
 /-- A `Λ`-metric space is a `Λ`-tree if and only if it is nonempty and geodesic, its doubled Gromov
 products are even, and it satisfies the four-point `0`-hyperbolicity inequality. -/

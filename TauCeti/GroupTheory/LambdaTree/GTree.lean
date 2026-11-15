@@ -51,8 +51,8 @@ Cayley tree (`TauCeti.GTree.basedLength_cayleyBaseVertex`,
   `TauCeti.LambdaMetric.IsTree.toGTreeDartEquiv`.
 * `TauCeti.LyndonLength.IsFree.chiswellGTree`: the Chiswell `G`-tree of a free `ℤ`-valued Lyndon
   length function, with coordinates `TauCeti.LyndonLength.IsFree.chiswellGTreeVertexEquiv` and
-  `TauCeti.LyndonLength.IsFree.chiswellGTreeDartEquiv`, and base vertex
-  `TauCeti.LyndonLength.IsFree.chiswellGTreeBase`.
+  `TauCeti.LyndonLength.IsFree.chiswellGTreeDartEquiv`, and root vertex
+  `TauCeti.LyndonLength.IsFree.chiswellGTreeRoot`.
 
 ## Main results
 
@@ -403,34 +403,34 @@ variable {G : Type u} [Group G] {l : LyndonLength G ℤ} (hl : l.IsFree)
 
 /-- The Chiswell `G`-tree attached to a free `ℤ`-valued Lyndon length function on `G`. Use
 `IsFree.chiswellGTreeVertexEquiv` and `IsFree.chiswellGTreeDartEquiv` to pass between the `G`-tree
-and `l.Chiswell`. -/
+and `l.ChiswellTree`. -/
 noncomputable def IsFree.chiswellGTree : GTree.{u, u} G :=
   (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTree
     l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswell_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
 
-/-- The vertices of `hl.chiswellGTree` are identified with `l.Chiswell`. -/
-noncomputable def IsFree.chiswellGTreeVertexEquiv : hl.chiswellGTree.V ≃ l.Chiswell :=
+/-- The vertices of `hl.chiswellGTree` are identified with `l.ChiswellTree`. -/
+noncomputable def IsFree.chiswellGTreeVertexEquiv : hl.chiswellGTree.V ≃ l.ChiswellTree :=
   (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeVertexEquiv
     l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswell_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
 
-/-- The darts of `hl.chiswellGTree` are identified with ordered pairs in `l.Chiswell` at unit
+/-- The darts of `hl.chiswellGTree` are identified with ordered pairs in `l.ChiswellTree` at unit
 distance. -/
 noncomputable def IsFree.chiswellGTreeDartEquiv :
-    hl.chiswellGTree.E ≃ { p : l.Chiswell × l.Chiswell // l.chiswellMetric p.1 p.2 = 1 } :=
+    hl.chiswellGTree.E ≃ { p : l.ChiswellTree × l.ChiswellTree // l.chiswellMetric p.1 p.2 = 1 } :=
   (l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).toGTreeDartEquiv
     l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswell_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
 
-/-- The base vertex of `hl.chiswellGTree` corresponding to `l.chiswellBase`. -/
-noncomputable def IsFree.chiswellGTreeBase : hl.chiswellGTree.V :=
-  hl.chiswellGTreeVertexEquiv.symm l.chiswellBase
+/-- The root vertex of `hl.chiswellGTree` corresponding to `ChiswellTree.root l`. -/
+noncomputable def IsFree.chiswellGTreeRoot : hl.chiswellGTree.V :=
+  hl.chiswellGTreeVertexEquiv.symm (ChiswellTree.root l)
 
 @[simp]
-theorem IsFree.chiswellGTreeVertexEquiv_chiswellGTreeBase :
-    hl.chiswellGTreeVertexEquiv hl.chiswellGTreeBase = l.chiswellBase :=
-  hl.chiswellGTreeVertexEquiv.apply_symm_apply l.chiswellBase
+theorem IsFree.chiswellGTreeVertexEquiv_chiswellGTreeRoot :
+    hl.chiswellGTreeVertexEquiv hl.chiswellGTreeRoot = ChiswellTree.root l :=
+  hl.chiswellGTreeVertexEquiv.apply_symm_apply (ChiswellTree.root l)
 
 @[simp]
 theorem IsFree.chiswellGTreeVertexEquiv_src (e : hl.chiswellGTree.E) :
@@ -458,7 +458,7 @@ theorem IsFree.chiswellGTreeVertexEquiv_smul (g : G) (v : hl.chiswellGTree.V) :
     l.isIsometricAction_chiswellMetric _ g v
 
 @[simp]
-theorem IsFree.chiswellGTreeVertexEquiv_symm_smul (g : G) (x : l.Chiswell) :
+theorem IsFree.chiswellGTreeVertexEquiv_symm_smul (g : G) (x : l.ChiswellTree) :
     g • hl.chiswellGTreeVertexEquiv.symm x = hl.chiswellGTreeVertexEquiv.symm (g • x) :=
   hl.chiswellGTreeVertexEquiv.injective (by simp)
 
@@ -484,7 +484,7 @@ theorem IsFree.chiswellGTree_isHyperbolic_iff {g : G} :
   refine ⟨GTree.IsHyperbolic.ne_one, fun hg => ?_⟩
   rw [IsFree.chiswellGTree, LambdaMetric.IsTree.toGTree_isHyperbolic_iff]
   exact LambdaMetric.isFreeAction_iff.1
-    ((l.isFreeAction_chiswell_iff hl.exists_coe_eq_gromovProduct).2 hl) g hg
+    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl) g hg
 
 /-- On `hl.chiswellGTree`, an element of `G` is elliptic if and only if it is `1`. -/
 @[simp]
@@ -492,15 +492,15 @@ theorem IsFree.chiswellGTree_isElliptic_iff {g : G} :
     hl.chiswellGTree.IsElliptic g ↔ g = 1 := by
   rw [← hl.chiswellGTree.not_isHyperbolic_iff, hl.chiswellGTree_isHyperbolic_iff, not_not]
 
-/-- The based length function of `hl.chiswellGTree` at `hl.chiswellGTreeBase` recovers `l`. -/
+/-- The based length function of `hl.chiswellGTree` at `hl.chiswellGTreeRoot` recovers `l`. -/
 @[simp]
 theorem IsFree.basedLength_chiswellGTree :
     hl.chiswellGTree.isTree_pathMetric.basedLength hl.chiswellGTree.isIsometricAction_pathMetric
-      hl.chiswellGTreeBase = l :=
+      hl.chiswellGTreeRoot = l :=
   ((l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct).basedLength_toGTree
     l.isIsometricAction_chiswellMetric
-    ((l.isFreeAction_chiswell_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
-    l.chiswellBase).trans l.basedLength_chiswellBase
+    ((l.isFreeAction_chiswellTree_iff hl.exists_coe_eq_gromovProduct).2 hl).not_isInversion
+    (ChiswellTree.root l)).trans l.basedLength_chiswellTree_root
 
 end ChiswellGTree
 

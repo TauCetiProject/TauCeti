@@ -227,15 +227,6 @@ theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
       (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v :=
   TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
-/-- A Cartan generator acts diagonally on every standard-module vector with the recorded
-coordinate weight. -/
-theorem rep_cartanGenerator_apply_apply (i : Fin (n + 1))
-    (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
-    (a : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator n i)) v a =
-      (weight n a i : ℚ) * v a := by
-  rw [rep_ι_apply, val_cartanGenerator, cartanGeneratorMatrix, mulVec_diagonal]
-
 /-- The source coordinate of a numbered root generator: the coordinate on whose basis vector the
 generator is nonzero with coefficient one. -/
 def rootSource : Fin (n + 1) ⊕ Fin (n + 1) → Fin (n + 1) ⊕ Fin (n + 1)

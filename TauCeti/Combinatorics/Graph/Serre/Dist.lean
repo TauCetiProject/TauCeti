@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Combinatorics.Quiver.Symmetric
+public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Order.Lattice.Nat
 
 /-!
