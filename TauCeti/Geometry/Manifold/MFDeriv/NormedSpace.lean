@@ -51,6 +51,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
+* `TauCeti.mvfderiv_eq_fderivWithin_extChartAt_target`: the derivative at `x` of a map
+  differentiable at `x` is the derivative of its coordinate expression within the extended chart
+  target.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
 * `TauCeti.injective_mvfderiv_iff`:
@@ -125,6 +128,17 @@ theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
   simp only [mvfderiv, mfderiv_extChartAt_eq_id]
   -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
+
+/-- The derivative at `x` of a vector-valued map differentiable at `x` is the derivative within the
+extended chart target of its coordinate expression. -/
+theorem mvfderiv_eq_fderivWithin_extChartAt_target {f : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) :
+    mvfderiv I f x = fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x).target
+      (extChartAt I x x) := by
+  rw [hf.mvfderiv, fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin x)
+    I.uniqueDiffWithinAt_image (hf.differentiableWithinAt_writtenInExtChartAt.mono
+      (extChartAt_target_subset_range x)), writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, Function.id_comp]
 
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
 spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/

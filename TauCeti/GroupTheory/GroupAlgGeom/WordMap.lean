@@ -106,7 +106,7 @@ variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y)) (U : Set (GX G Z)
 /-- Every coefficient-preserving coordinate-group homomorphism is represented by a tuple of
 coefficient words, whose word map carries source solutions to target solutions. -/
 theorem exists_wordMap_representation (φ : GHom (coeff ι T) (coeff ι S)) :
-    ∃ w : Y → GX G X, ∃ hw : MapsToWordMap ι S T w,
+    ∃ w : Y → GX G X, ∃ hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T),
       homOfMapsToWordMap ι S T w hw = φ := by
   classical
   have hsurj : ∀ y : Y, ∃ w : GX G X,
@@ -114,8 +114,7 @@ theorem exists_wordMap_representation (φ : GHom (coeff ι T) (coeff ι S)) :
     intro y
     exact QuotientGroup.mk_surjective _
   choose w hw using hsurj
-  have hmap : MapsToWordMap ι S T w := by
-    rw [mapsToWordMap_iff]
+  have hmap : Set.MapsTo (wordMap ι w) (V ι S) (V ι T) := by
     intro v hv
     let ψ : GHom (coeff ι T) ι := (evalGHom v hv).comp φ
     have hcoords : wordMap ι w v = (homEquiv ι T ψ : Y → H) := by
@@ -134,7 +133,8 @@ theorem exists_wordMap_representation (φ : GHom (coeff ι T) (coeff ι S)) :
 /-- Two representing tuples induce the same coordinate-group homomorphism exactly when they
 give the same function on the source algebraic set. -/
 theorem homOfMapsToWordMap_eq_iff (w w' : Y → GX G X)
-    (hw : MapsToWordMap ι S T w) (hw' : MapsToWordMap ι S T w') :
+    (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T))
+    (hw' : Set.MapsTo (wordMap ι w') (V ι S) (V ι T)) :
     homOfMapsToWordMap ι S T w hw = homOfMapsToWordMap ι S T w' hw' ↔
       ∀ v ∈ V ι S, wordMap ι w v = wordMap ι w' v := by
   constructor
@@ -197,7 +197,8 @@ theorem comap_comp (φ : GHom (coeff ι T) (coeff ι S)) (ψ : GHom (coeff ι U)
 
 /-- On a word map, `comap` of the induced homomorphism is that word map. -/
 @[simp]
-theorem comap_homOfMapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) (v : V ι S) :
+theorem comap_homOfMapsToWordMap (w : Y → GX G X) (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T))
+    (v : V ι S) :
     (comap (homOfMapsToWordMap ι S T w hw) v : Y → H) = wordMap ι w v :=
   homEquiv_comp_homOfMapsToWordMap ι S T w hw v
 
@@ -220,7 +221,7 @@ homomorphisms `Γ(T) → Γ(S)`. -/
 theorem isWordMap_iff_exists_comap_eq {f : V ι S → V ι T} :
     IsWordMap f ↔ ∃ φ : GHom (coeff ι T) (coeff ι S), comap φ = f := by
   refine ⟨fun ⟨w, hf⟩ => ?_, fun ⟨φ, hφ⟩ => hφ ▸ isWordMap_comap φ⟩
-  have hw : MapsToWordMap ι S T w := (mapsToWordMap_iff ι S T w).2 fun v hv => by
+  have hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T) := fun v hv => by
     rw [← hf ⟨v, hv⟩]
     exact (f ⟨v, hv⟩).2
   exact ⟨homOfMapsToWordMap ι S T w hw, funext fun v =>

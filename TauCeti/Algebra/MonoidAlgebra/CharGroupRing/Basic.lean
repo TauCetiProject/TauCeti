@@ -93,7 +93,7 @@ noncomputable abbrev MonoidHom.charEval (ψ : G →* Oˣ) : MonoidAlgebra O G �
 /-- The trivial character evaluates by the coefficient-sum augmentation. -/
 @[simp]
 theorem MonoidAlgebra.charEval_one_apply (x : MonoidAlgebra O G) :
-    (1 : G →* Oˣ).charEval x = TauCeti.MonoidAlgebra.augmentation O G x := by
+    (1 : G →* Oˣ).charEval x = MonoidAlgebra.augmentation O G x := by
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy => rw [map_add, map_add, hx, hy]
@@ -105,7 +105,7 @@ namespace MonoidHom
 augmentation. -/
 theorem charEval_one :
     ((1 : G →* Oˣ).charEval : MonoidAlgebra O G →+* O) =
-      TauCeti.MonoidAlgebra.augmentation O G :=
+      MonoidAlgebra.augmentation O G :=
   RingHom.ext MonoidAlgebra.charEval_one_apply
 
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
