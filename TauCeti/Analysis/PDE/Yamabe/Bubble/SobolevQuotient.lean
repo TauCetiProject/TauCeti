@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Energy
-public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
+public import TauCeti.Analysis.PDE.Yamabe.Sphere.Constant
 
 /-!
 # The Sobolev quotient of the Yamabe bubbles

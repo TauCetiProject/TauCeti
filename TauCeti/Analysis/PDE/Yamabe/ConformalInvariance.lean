@@ -47,6 +47,10 @@ two metric instances are ever installed on one carrier at once.
 
 In the namespace `Bundle.ContMDiffRiemannianMetric`, for dot notation on the metric `g`:
 
+* `yamabeQuotient_eq_of_riemannianBundle_eq`: transports `yamabeQuotient` along an equality of
+  installed fibre metrics.
+* `yamabeQuotient_rescale_const`: `Q_{c g}(u) = Q_g(u)` for a positive constant `c`, in every
+  dimension and without regularity or boundary assumptions.
 * `yamabeQuotient_rescale`: `Q_ĝ(v) = Q_g(u v)`.
 * `yamabeQuotient_eq_rescale_inv_mul`: for a positive smooth `u`, `Q_g(w) = Q_ĝ(w / u)`.
 * `yamabeQuotient_eq_integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow`:
@@ -107,6 +111,123 @@ private theorem yamabeQuotient_eq_withMetric
     instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
   simp only [g.scalarCurvature_def]
   exact yamabeQuotient_def I u
+
+omit [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  [I.Boundaryless] in
+/-- Multiplying a smooth metric by a positive constant `c` multiplies `‖mgradient I u y‖²` by
+`c⁻¹`, without regularity assumptions on `u`. -/
+private theorem norm_sq_mgradient_rescale_const [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c)
+    (u : M → ℝ) (y : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+       ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+     ‖mgradient I u y‖ ^ 2) =
+      c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        ‖mgradient I u y‖ ^ 2) := by
+  set v₀ : TangentSpace I y :=
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    mgradient I u y
+  have hgrad : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      mgradient I u y) = c⁻¹ • v₀ := g.mgradient_rescale_const hc u y
+  have hsq₀ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      ‖v₀‖ ^ 2) = g.inner y v₀ v₀ := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    rw [← real_inner_self_eq_norm_sq, inner_riemannianBundle]
+  rw [hsq₀]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
+  rw [← real_inner_self_eq_norm_sq, inner_riemannianBundle, hgrad, rescale_inner]
+  simp only [map_smul, smul_apply, smul_eq_mul]
+  field_simp
+
+omit [I.Boundaryless] in
+/-- If the installed fibre metric is `g`, its Yamabe quotient is `yamabeQuotient I u`. This
+transports the Yamabe quotient along an equality of fibre metrics, such as
+`toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent arguments. -/
+theorem yamabeQuotient_eq_of_riemannianBundle_eq
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (u : M → ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+     letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+       instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric;
+     yamabeQuotient I u) = yamabeQuotient I u := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
+
+omit [I.Boundaryless] in
+/-- **Homothety invariance of the Yamabe quotient.** Multiplying a smooth metric `g` by a positive
+constant `c` leaves the Yamabe quotient `Q_{c g}(u) = Q_g(u)` unchanged in every dimension, without
+regularity or boundary assumptions. -/
+theorem yamabeQuotient_rescale_const
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c)
+    (u : M → ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+       ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+     letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+       instIsContinuousRiemannianBundle
+         (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toContinuousRiemannianMetric;
+     yamabeQuotient I u) =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+       letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+         instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric;
+       yamabeQuotient I u) := by
+  rw [yamabeQuotient_eq_withMetric, yamabeQuotient_eq_withMetric]
+  rcases eq_or_ne (finrank ℝ E) 0 with hd | hd
+  · have : Subsingleton E := (finrank_eq_zero_iff_of_free ℝ E).mp hd
+    have hzero (h : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (y : M) :
+        ((letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩;
+          conformalCoefficient (finrank ℝ E) * ‖mgradient I u y‖ ^ 2) +
+          h.scalarCurvature y * u y ^ 2) = 0 := by
+      have : Subsingleton (TangentSpace I y) := inferInstanceAs (Subsingleton E)
+      have hm : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩;
+          ‖mgradient I u y‖ ^ 2) = 0 := by
+        let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩
+        rw [Subsingleton.elim (mgradient I u y) 0]
+        exact sq_eq_zero_iff.2 norm_zero
+      have hs : h.scalarCurvature y = 0 := by
+        let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩
+        rw [h.scalarCurvature_def,
+          CovariantDerivative.scalarCurvature_eq_sum _ y (stdOrthonormalBasis ℝ (TangentSpace I y))]
+        exact Finset.sum_eq_zero fun i _ ↦ by
+          rw [Subsingleton.elim (stdOrthonormalBasis ℝ (TangentSpace I y) i) 0]
+          simp
+      simp [hm, hs]
+    simp only [hzero, integral_zero, zero_div]
+  · have hd' : (finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd
+    rw [WithMetric.integral_riemannianVolume_rescale fun y ↦
+        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+           ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+         conformalCoefficient (finrank ℝ E) * ‖mgradient I u y‖ ^ 2) +
+          (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature y * u y ^ 2,
+      WithMetric.integral_riemannianVolume_rescale fun y ↦
+        |u y| ^ criticalExponent (finrank ℝ E)]
+    have hnum (x : WithMetric g) :
+        c ^ ((finrank ℝ E : ℝ) / 2) •
+          ((letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+              ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+            conformalCoefficient (finrank ℝ E) * ‖mgradient I u x.ofWithMetric‖ ^ 2) +
+            (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature x.ofWithMetric *
+              u x.ofWithMetric ^ 2) =
+          (c ^ ((finrank ℝ E : ℝ) / 2) * c⁻¹) *
+            ((letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) := ⟨g.toRiemannianMetric⟩;
+              conformalCoefficient (finrank ℝ E) * ‖mgradient I u x.ofWithMetric‖ ^ 2) +
+              g.scalarCurvature x.ofWithMetric * u x.ofWithMetric ^ 2) := by
+      rw [smul_eq_mul, norm_sq_mgradient_rescale_const g hc u, g.scalarCurvature_rescale_const hc]
+      ring
+    have hpow : (c ^ ((finrank ℝ E : ℝ) / 2)) ^ (2 / criticalExponent (finrank ℝ E)) =
+        c ^ ((finrank ℝ E : ℝ) / 2) * c⁻¹ := by
+      rw [← Real.rpow_mul hc.le, two_div_criticalExponent,
+        show (finrank ℝ E : ℝ) / 2 * (((finrank ℝ E : ℝ) - 2) / finrank ℝ E) =
+          (finrank ℝ E : ℝ) / 2 + -1 by field_simp; ring,
+        Real.rpow_add hc, Real.rpow_neg_one]
+    simp only [hnum, smul_eq_mul, integral_const_mul]
+    rw [Real.mul_rpow (by positivity) (integral_nonneg fun _ ↦ by positivity), hpow,
+      mul_div_mul_left _ _ (by positivity)]
 
 /-- **Conformal invariance of the Yamabe quotient.** In dimension `n ≠ 2`, let `u` be a positive
 function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric on a manifold without boundary.
