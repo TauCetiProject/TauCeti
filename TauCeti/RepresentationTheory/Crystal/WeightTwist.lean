@@ -153,8 +153,7 @@ end StrictHom
 
 namespace StrictIso
 
-variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
-  {g : NormalCrystal P b B''}
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {g : NormalCrystal P b B''}
 
 /-- Twist the source and target of a strict isomorphism by the same central weight. -/
 def weightTwist (ψ : StrictIso c d) (χ : X)
@@ -171,21 +170,15 @@ theorem weightTwist_apply (ψ : StrictIso c d) (χ : X) (hχ) (x : B) :
 @[simp]
 theorem weightTwist_symm (ψ : StrictIso c d) (χ : X) (hχ) :
     (ψ.weightTwist χ hχ).symm = ψ.symm.weightTwist χ hχ := by
-  ext x
-  apply EquivLike.injective (ψ.weightTwist χ hχ)
-  simp
+  ext x; exact EquivLike.injective (ψ.weightTwist χ hχ) (by simp)
 
 @[simp]
 theorem weightTwist_refl :
-    (StrictIso.refl c).weightTwist χ hχ = StrictIso.refl (c.weightTwist χ hχ) := by
-  ext x
-  simp
+    (StrictIso.refl c).weightTwist χ hχ = StrictIso.refl (c.weightTwist χ hχ) := by ext; simp
 
 @[simp]
 theorem weightTwist_trans (ψ : StrictIso c d) (φ : StrictIso d g) :
-    (ψ.trans φ).weightTwist χ hχ = (ψ.weightTwist χ hχ).trans (φ.weightTwist χ hχ) := by
-  ext x
-  simp
+    (ψ.trans φ).weightTwist χ hχ = (ψ.weightTwist χ hχ).trans (φ.weightTwist χ hχ) := by ext; simp
 
 end StrictIso
 

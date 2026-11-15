@@ -115,8 +115,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
     exact hC i
 
 /-- **Central transport of Lakshmibai–Seshadri paths between shapes differing by a central weight.**
-When `λ + χ = λ'` for a weight `χ` killed by the simple coroots, a Lakshmibai–Seshadri path of
-shape `λ` is, with the same directions and breaks, one of shape `λ'`. -/
+-/
 noncomputable def centralTransportOfEq {lam lam' : M} (χ : M)
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (h : lam + χ = lam') :
     LSPath P b lam ≃ LSPath P b lam' where
@@ -130,13 +129,11 @@ noncomputable def centralTransportOfEq {lam lam' : M} (χ : M)
 @[simp]
 theorem centralTransportOfEq_zero {lam : M}
     (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0) (h : lam + 0 = lam) :
-    centralTransportOfEq (0 : M) h0 h = Equiv.refl (LSPath P b lam) :=
-  (rfl)
+    centralTransportOfEq (0 : M) h0 h = Equiv.refl (LSPath P b lam) := (rfl)
 
 theorem centralTransportOfEq_zero_apply {lam : M}
     (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0) (h : lam + 0 = lam) (π : LSPath P b lam) :
-    centralTransportOfEq (0 : M) h0 h π = π :=
-  (rfl)
+    centralTransportOfEq (0 : M) h0 h π = π := (rfl)
 
 @[simp]
 theorem centralTransportOfEq_trans {lam₁ lam₂ lam₃ χ ψ : M}
@@ -144,8 +141,7 @@ theorem centralTransportOfEq_trans {lam₁ lam₂ lam₃ χ ψ : M}
     (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) (h₂ : lam₂ + ψ = lam₃) :
     (centralTransportOfEq χ hχ h₁).trans (centralTransportOfEq ψ hψ h₂) =
       centralTransportOfEq (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero])
-        (by rw [← add_assoc, h₁, h₂]) :=
-  (rfl)
+        (by rw [← add_assoc, h₁, h₂]) := (rfl)
 
 @[simp]
 theorem centralTransportOfEq_trans_apply {lam₁ lam₂ lam₃ χ ψ : M}
@@ -153,16 +149,14 @@ theorem centralTransportOfEq_trans_apply {lam₁ lam₂ lam₃ χ ψ : M}
     (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) (h₂ : lam₂ + ψ = lam₃) (π : LSPath P b lam₁) :
     centralTransportOfEq ψ hψ h₂ (centralTransportOfEq χ hχ h₁ π) =
       centralTransportOfEq (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero])
-        (by rw [← add_assoc, h₁, h₂]) π :=
-  (rfl)
+        (by rw [← add_assoc, h₁, h₂]) π := (rfl)
 
 @[simp]
 theorem centralTransportOfEq_symm {lam lam' χ : M}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (h : lam + χ = lam') :
     (centralTransportOfEq χ hχ h).symm =
       centralTransportOfEq (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero])
-        (by rw [← h, add_neg_cancel_right]) :=
-  (rfl)
+        (by rw [← h, add_neg_cancel_right]) := (rfl)
 
 variable (χ : M) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) {lam : M}
 
@@ -175,8 +169,7 @@ noncomputable def centralTransport : LSPath P b lam ≃ LSPath P b (lam + χ) :=
   centralTransportOfEq χ hχ rfl
 
 theorem centralTransport_eq_centralTransportOfEq :
-    centralTransport (P := P) (b := b) (lam := lam) χ hχ = centralTransportOfEq χ hχ rfl :=
-  (rfl)
+    centralTransport (P := P) (b := b) (lam := lam) χ hχ = centralTransportOfEq χ hχ rfl := (rfl)
 
 variable (π : LSPath P b lam)
 
@@ -204,29 +197,25 @@ theorem duration_centralTransport (j : Fin ((centralTransport χ hχ π).length 
 
 @[simp]
 theorem length_centralTransport_symm (π : LSPath P b (lam + χ)) :
-    ((centralTransport χ hχ).symm π).length = π.length :=
-  (rfl)
+    ((centralTransport χ hχ).symm π).length = π.length := (rfl)
 
 @[simp]
 theorem dir_centralTransport_symm (π : LSPath P b (lam + χ))
     (j : Fin (((centralTransport χ hχ).symm π).length + 1)) :
     (((centralTransport χ hχ).symm π).dir j).1 =
-      (π.dir (j.cast (by rw [length_centralTransport_symm]))).1 :=
-  (rfl)
+      (π.dir (j.cast (by rw [length_centralTransport_symm]))).1 := (rfl)
 
 @[simp]
 theorem time_centralTransport_symm (π : LSPath P b (lam + χ))
     (k : Fin (((centralTransport χ hχ).symm π).length + 2)) :
     ((centralTransport χ hχ).symm π).time k =
-      π.time (k.cast (by rw [length_centralTransport_symm])) :=
-  (rfl)
+      π.time (k.cast (by rw [length_centralTransport_symm])) := (rfl)
 
 @[simp]
 theorem duration_centralTransport_symm (π : LSPath P b (lam + χ))
     (j : Fin (((centralTransport χ hχ).symm π).length + 1)) :
     ((centralTransport χ hχ).symm π).duration j =
-      π.duration (j.cast (by rw [length_centralTransport_symm])) := by
-  simp [duration_def]
+      π.duration (j.cast (by rw [length_centralTransport_symm])) := by simp [duration_def]
 
 variable (lam) in
 /-- The central transport of the straight path of shape `λ` is the straight path of shape
@@ -246,9 +235,8 @@ theorem centralTransport_straight : centralTransport χ hχ (straight lam) = str
 
 @[simp]
 theorem centralTransportOfEq_straight {lam' : M} (h : lam + χ = lam') :
-    centralTransportOfEq χ hχ h (straight lam) = straight lam' := by
-  subst h
-  exact centralTransport_straight χ hχ lam
+    centralTransportOfEq χ hχ h (straight lam) = straight lam' :=
+  h ▸ centralTransport_straight χ hχ lam
 
 variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
@@ -262,16 +250,13 @@ theorem timed_centralTransport :
     (centralTransport χ hχ π).timed 𝕜 f = PLPath.shiftTimed (f χ) (π.timed 𝕜 f) := by
   rw [timed_def, timed_def, PLPath.shiftTimed_def, List.map_ofFn,
     List.ofFn_congr (congrArg (· + 1) (length_centralTransport χ hχ π))]
-  congr 1
-  funext j
-  simp [smul_eq_self_of_forall_coroot'_eq_zero b hχ, smul_add]
+  congr 1; funext j; simp [smul_eq_self_of_forall_coroot'_eq_zero b hχ, smul_add]
 
 omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem timed_centralTransportOfEq {lam' : M} (h : lam + χ = lam') :
-    (centralTransportOfEq χ hχ h π).timed 𝕜 f = PLPath.shiftTimed (f χ) (π.timed 𝕜 f) := by
-  subst h
-  exact timed_centralTransport χ hχ π 𝕜 f
+    (centralTransportOfEq χ hχ h π).timed 𝕜 f = PLPath.shiftTimed (f χ) (π.timed 𝕜 f) :=
+  h ▸ timed_centralTransport χ hχ π 𝕜 f
 
 /-- The realized path of the central transport is presented by adding `t ↦ t χ` to the
 presentation by directions and breaks. -/
@@ -289,9 +274,8 @@ theorem endpoint_toPLPath_centralTransport :
 
 @[simp]
 theorem endpoint_toPLPath_centralTransportOfEq {lam' : M} (h : lam + χ = lam') :
-    ((centralTransportOfEq χ hχ h π).toPLPath 𝕜 f).endpoint = (π.toPLPath 𝕜 f).endpoint + f χ := by
-  subst h
-  exact endpoint_toPLPath_centralTransport χ hχ π 𝕜 f
+    ((centralTransportOfEq χ hχ h π).toPLPath 𝕜 f).endpoint = (π.toPLPath 𝕜 f).endpoint + f χ :=
+  h ▸ endpoint_toPLPath_centralTransport χ hχ π 𝕜 f
 
 /-- A linear form killing `χ` has the same minimum height on an LS path and on its central
 transport. This applies to the simple coroots, whose minimum heights govern the root operators. -/
@@ -304,9 +288,8 @@ theorem minHeight_toPLPath_centralTransport {g : Module.Dual 𝕜 V} (hg : g (f 
 @[simp]
 theorem minHeight_toPLPath_centralTransportOfEq {lam' : M} (h : lam + χ = lam')
     {g : Module.Dual 𝕜 V} (hg : g (f χ) = 0) :
-    ((centralTransportOfEq χ hχ h π).toPLPath 𝕜 f).minHeight g = (π.toPLPath 𝕜 f).minHeight g := by
-  subst h
-  exact minHeight_toPLPath_centralTransport χ hχ π 𝕜 f hg
+    ((centralTransportOfEq χ hχ h π).toPLPath 𝕜 f).minHeight g = (π.toPLPath 𝕜 f).minHeight g :=
+  h ▸ minHeight_toPLPath_centralTransport χ hχ π 𝕜 f hg
 
 /-- **The central transport is the central shift of the realized path.** For dominant `λ`, a
 realization `f` injective on `W λ` and a realized orbit with no two distinct points on a common ray,
@@ -322,9 +305,7 @@ theorem toPLPath_centralTransport (hlam : lam ∈ dominantChamber P b)
   rw [toPLPath_centralTransport_eq_ofSegments, toPLPath_def,
     PLPath.shiftDistinguished_ofSegments (π.isDistinguished_timed 𝕜 f hlam hf) hS]
 
-/-- When linear forms on `V` realize the simple coroots, the central transport of an LS path of
-dominant shape `λ` acts on its realized path as `TauCeti.PLPath.shiftDistinguished` along the
-realized orbit `W λ`. -/
+/-- Under simple-coroot realizations, central transport acts as `PLPath.shiftDistinguished`. -/
 theorem toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamber P b)
     {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) :
@@ -339,9 +320,8 @@ theorem toPLPath_centralTransportOfEq_of_coroot' {lam' : M} (h : lam + χ = lam'
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) :
     (centralTransportOfEq χ hχ h π).toPLPath 𝕜 f =
       PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
-        (π.toPLPath 𝕜 f) := by
-  subst h
-  exact toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF
+        (π.toPLPath 𝕜 f) :=
+  h ▸ toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF
 
 /-- **Lowering commutes with central transport of realized LS paths.** -/
 theorem lower_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamber P b)
@@ -352,10 +332,9 @@ theorem lower_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamb
         (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
   have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.1 (hF i) lam
   rw [MulAction.orbit, ← Set.range_comp] at hS
-  have hFχ : F i (f χ) = 0 := by rw [hF i χ, hχ i.1 i.2, Int.cast_zero]
   rw [toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF]
   exact PLPath.lower_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS
-    (pairwise_not_sameRay_range_smul hF lam) hFχ
+    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.1 i.2, Int.cast_zero])
 
 /-- **Raising commutes with central transport of realized LS paths.** -/
 theorem raise_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamber P b)
@@ -366,28 +345,25 @@ theorem raise_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamb
         (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
   have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.1 (hF i) lam
   rw [MulAction.orbit, ← Set.range_comp] at hS
-  have hFχ : F i (f χ) = 0 := by rw [hF i χ, hχ i.1 i.2, Int.cast_zero]
   rw [toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF]
   exact PLPath.raise_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS
-    (pairwise_not_sameRay_range_smul hF lam) hFχ
+    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.1 i.2, Int.cast_zero])
 
 theorem lower_toPLPath_centralTransportOfEq_of_coroot' {lam' : M} (h : lam + χ = lam')
     (hlam : lam ∈ dominantChamber P b) {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) (i : b.support) :
     PLPath.lower (F i) (f (P.root i)) ((centralTransportOfEq χ hχ h π).toPLPath 𝕜 f) =
       (PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f)).map
-        (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
-  subst h
-  exact lower_toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF i
+        (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) :=
+  h ▸ lower_toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF i
 
 theorem raise_toPLPath_centralTransportOfEq_of_coroot' {lam' : M} (h : lam + χ = lam')
     (hlam : lam ∈ dominantChamber P b) {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) (i : b.support) :
     PLPath.raise (F i) (f (P.root i)) ((centralTransportOfEq χ hχ h π).toPLPath 𝕜 f) =
       (PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f)).map
-        (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
-  subst h
-  exact raise_toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF i
+        (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) :=
+  h ▸ raise_toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF i
 
 /-- **Central transports compose additively** on realized paths: transporting by `χ` and then by
 `ψ` gives the same path as transporting by `χ + ψ`. -/
@@ -411,8 +387,7 @@ theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
     (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π).toPLPath 𝕜 f =
       ((centralTransport χ hχ).symm π).toPLPath 𝕜 f := by
   conv_lhs => rw [← (centralTransport χ hχ).apply_symm_apply π]
-  rw [toPLPath_centralTransport_centralTransport]
-  simp [toPLPath_def, PLPath.shiftTimed_zero]
+  rw [toPLPath_centralTransport_centralTransport]; simp [toPLPath_def, PLPath.shiftTimed_zero]
 
 end LSPath
 

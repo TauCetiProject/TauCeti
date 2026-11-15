@@ -94,38 +94,29 @@ theorem timed_injective (hlam : lam ∈ dominantChamber P b)
       subst time'
       rfl
 
-/-- Whenever linear forms on `V` agree with the simple coroots on the weight lattice, `f` is
-injective on every Weyl orbit `W λ`: the Weyl group acts compatibly on `f '' W λ` through
-reflections along those forms, and each orbit meets the closed dominant chamber in a single point,
-detected by the simple coroots. -/
+/-- When linear forms on `V` agree with the simple coroots, `f` is injective on every Weyl orbit
+`W λ`. -/
 theorem injOn_range_smul_of_coroot' {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) (lam : M) :
     Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam) := by
   have := P.flip_isReduced
   have := P.finite_weylGroup_of_base b
-  have hsmul : ∀ (w : P.weylGroup) {x y : M}, f x = f y → f (w • x) = f (w • y) := by
-    intro w
+  have hsmul (w : P.weylGroup) {x y : M} (hxy : f x = f y) : f (w • x) = f (w • y) := by
     obtain ⟨ω, rfl⟩ := (weylCoxeterSystem P b).wordProd_surjective w
-    induction ω with
-    | nil => simp
+    induction ω generalizing x y with
+    | nil => simpa using hxy
     | cons i ω ih =>
-      intro x y hxy
       rw [(weylCoxeterSystem P b).wordProd_cons, simple_mul_smul_eq_reflection,
         simple_mul_smul_eq_reflection, P.map_reflection_eq_preReflection _ (hF i),
         P.map_reflection_eq_preReflection _ (hF i), ih hxy]
   rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ h₁₂
   obtain ⟨w, hw⟩ := exists_mem_dominantChamber_of_finite_weylGroup P b (w₁ • lam)
-  have hw' := hsmul w h₁₂
-  have hw₂ : w • (w₂ • lam) ∈ dominantChamber P b := by
-    rw [mem_dominantChamber] at hw ⊢
-    intro i hi
+  have hw₂ : w • (w₂ • lam) ∈ dominantChamber P b := (mem_dominantChamber P b _).mpr fun i hi ↦ by
     have hpair : (P.coroot' i (w • (w₁ • lam)) : 𝕜) = (P.coroot' i (w • (w₂ • lam)) : 𝕜) := by
-      rw [← hF ⟨i, hi⟩, ← hF ⟨i, hi⟩, hw']
-    exact (Int.cast_injective hpair).symm ▸ hw i hi
-  have heq : w • (w₁ • lam) = w • (w₂ • lam) :=
-    subsingleton_orbit_inter_dominantChamber P b lam
-      ⟨⟨w * w₁, mul_smul w w₁ lam⟩, hw⟩ ⟨⟨w * w₂, mul_smul w w₂ lam⟩, hw₂⟩
-  simpa using congrArg (w⁻¹ • ·) heq
+      rw [← hF ⟨i, hi⟩, ← hF ⟨i, hi⟩, hsmul w h₁₂]
+    exact (Int.cast_injective hpair).symm ▸ (mem_dominantChamber P b _).mp hw i hi
+  simpa using congrArg (w⁻¹ • ·) (subsingleton_orbit_inter_dominantChamber P b lam
+    ⟨⟨w * w₁, mul_smul w w₁ lam⟩, hw⟩ ⟨⟨w * w₂, mul_smul w w₂ lam⟩, hw₂⟩)
 
 end Timed
 
@@ -154,27 +145,20 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
 
-/-- Whenever linear forms on `V` agree with the simple coroots on the weight lattice, no two
-distinct realized orbit weights lie on the same ray: the simple reflections generate the finite
-Weyl group and act on `V` by linear reflections along those forms. -/
+/-- When linear forms on `V` agree with the simple coroots, no two distinct realized orbit weights
+lie on the same ray. -/
 theorem pairwise_not_sameRay_range_smul {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) (lam : M) :
     (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
   have := P.finite_weylGroup_of_base b
   have hgen : Subgroup.closure (weylGroup.ofIdx P '' b.support) = ⊤ := by
-    convert (weylCoxeterSystem P b).subgroupClosure_range_simple using 2
-    ext w
-    simp
-  have himg : (Set.range fun w : P.weylGroup ↦ f (w • lam)) =
-      f '' MulAction.orbit P.weylGroup lam := by
-    ext v
-    simp [MulAction.mem_orbit_iff]
-  rw [himg]
+    convert (weylCoxeterSystem P b).subgroupClosure_range_simple using 2; ext; simp
+  rw [show (Set.range fun w : P.weylGroup ↦ f (w • lam)) = f '' MulAction.orbit P.weylGroup lam by
+    ext; simp [MulAction.mem_orbit_iff]]
   exact P.pairwise_not_sameRay_image_orbit_weylGroup_of_closure_eq_top hgen hF lam
 
 /-- When linear forms on `V` realize the simple coroots, the unparametrized piecewise-linear path
-determines the LS encoding of dominant shape without any separate orbit-injectivity or
-ray-separation hypothesis. -/
+determines the LS encoding of dominant shape. -/
 theorem toPLPath_injective_of_coroot' (hlam : lam ∈ dominantChamber P b)
     {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) :
@@ -182,8 +166,6 @@ theorem toPLPath_injective_of_coroot' (hlam : lam ∈ dominantChamber P b)
   toPLPath_injective hlam (injOn_range_smul_of_coroot' hF lam)
     (pairwise_not_sameRay_range_smul hF lam)
 
-/-- Equality of realized LS paths of dominant shape is equality of encodings whenever linear forms
-realize the simple coroots. -/
 theorem toPLPath_inj_of_coroot' (hlam : lam ∈ dominantChamber P b)
     {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) {π π' : LSPath P b lam} :

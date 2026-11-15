@@ -128,9 +128,7 @@ theorem StrictHom.eWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : Normal
     d.eWord w (ψ x) = (c.eWord w x).map ψ := by
   induction w generalizing x with
   | nil => simp
-  | cons i w ih =>
-    rw [eWord_cons, eWord_cons, ψ.e_apply]
-    cases c.e i x <;> simp [ih]
+  | cons i w ih => rw [eWord_cons, eWord_cons, ψ.e_apply]; cases c.e i x <;> simp [ih]
 
 @[simp]
 theorem StrictHom.fWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
@@ -138,20 +136,16 @@ theorem StrictHom.fWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : Normal
     d.fWord w (ψ x) = (c.fWord w x).map ψ := by
   induction w generalizing x with
   | nil => simp
-  | cons i w ih =>
-    rw [fWord_cons, fWord_cons, ψ.f_apply]
-    cases c.f i x <;> simp [ih]
+  | cons i w ih => rw [fWord_cons, fWord_cons, ψ.f_apply]; cases c.f i x <;> simp [ih]
 
 @[simp]
 theorem StrictIso.eWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
-    (ψ : StrictIso c d) (w : List b.support) (x : B) :
-    d.eWord w (ψ x) = (c.eWord w x).map ψ := by
+    (ψ : StrictIso c d) (w : List b.support) (x : B) : d.eWord w (ψ x) = (c.eWord w x).map ψ := by
   simpa using ψ.toStrictHom.eWord_apply w x
 
 @[simp]
 theorem StrictIso.fWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
-    (ψ : StrictIso c d) (w : List b.support) (x : B) :
-    d.fWord w (ψ x) = (c.fWord w x).map ψ := by
+    (ψ : StrictIso c d) (w : List b.support) (x : B) : d.fWord w (ψ x) = (c.fWord w x).map ψ := by
   simpa using ψ.toStrictHom.fWord_apply w x
 
 end TauCeti.NormalCrystal
