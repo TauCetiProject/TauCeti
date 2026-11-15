@@ -77,8 +77,8 @@ product of finite free modules is the product of the component determinants. -/
 theorem det_piMap {ι : Type*} [Fintype ι] {N : ι → Type*}
     [∀ i, TopologicalSpace (N i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
     [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)] (f : ∀ i, N i →L[R] N i) :
-    (piMap f).det = ∏ i, (f i).det :=
-  LinearMap.det_piMap fun i ↦ (f i : N i →ₗ[R] N i)
+    (piMap f).det = ∏ i, (f i).det := by
+  rw [det, coe_piMap, LinearMap.det_piMap]
 
 section RCLike
 
@@ -203,8 +203,12 @@ theorem det_piCongrRight [Fintype ι] {N : ι → Type*}
     [∀ i, TopologicalSpace (N i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
     [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)] (e : ∀ i, N i ≃L[R] N i) :
     LinearMap.det (piCongrRight e : ((i : ι) → N i) →ₗ[R] (i : ι) → N i) =
-      ∏ i, LinearMap.det (e i : N i →ₗ[R] N i) :=
-  LinearMap.det_piMap fun i ↦ (e i : N i →ₗ[R] N i)
+      ∏ i, LinearMap.det (e i : N i →ₗ[R] N i) := by
+  have h : (piCongrRight e : ((i : ι) → N i) →ₗ[R] (i : ι) → N i) =
+      LinearMap.piMap fun i ↦ (e i : N i →ₗ[R] N i) := by
+    ext x i
+    simp
+  rw [h, LinearMap.det_piMap]
 
 /-- Negating the `k`-th factor of a finite dependent product has determinant
 `(-1) ^ finrank R (N k)`. -/
@@ -223,7 +227,8 @@ theorem det_negCoord [Finite ι] [DecidableEq ι] {N : ι → Type*}
       LinearMap.det_id, mul_one]
   · intro i _ hik
     rw [Function.update_of_ne hik]
-    exact LinearMap.det_id
+    have hid : (ContinuousLinearEquiv.refl R (N i) : N i →ₗ[R] N i) = LinearMap.id := by ext; simp
+    rw [hid, LinearMap.det_id]
   · intro hk
     exact absurd (Finset.mem_univ k) hk
 
@@ -236,8 +241,7 @@ theorem det_negCoord_ring [Finite ι] [DecidableEq ι] [TopologicalSpace R] [Con
   rw [negCoord_def, det_piCongrRight, Finset.prod_eq_single k]
   · simp
   · intro i _ hik
-    rw [Function.update_of_ne hik]
-    exact LinearMap.det_id
+    simp [hik]
   · intro hk
     exact absurd (Finset.mem_univ k) hk
 

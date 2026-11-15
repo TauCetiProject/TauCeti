@@ -15,6 +15,8 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.Order.Interval.Set.Pi
 import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
@@ -83,6 +85,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `TauCeti.setIntegral_Icc_split` splits a Bochner set integral over `Set.Icc a b` in `ι → ℝ`
+  along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
   `[a, b]` has `a ≤ 0 ≤ b`.
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
@@ -256,6 +260,22 @@ theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multis
 end Multiset
 
 namespace TauCeti
+
+/-- Splitting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at
+`t ∈ Set.Icc (a k) (b k)` splits the Bochner set integral of any integrable function. -/
+theorem setIntegral_Icc_split {ι E : Type*} [Fintype ι] [DecidableEq ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ι → ℝ} (k : ι) {t : ℝ}
+    (ht : t ∈ Set.Icc (a k) (b k)) {f : (ι → ℝ) → E} (hf : IntegrableOn f (Set.Icc a b)) :
+    (∫ x in Set.Icc a (Function.update b k t), f x) +
+        ∫ x in Set.Icc (Function.update a k t) b, f x =
+      ∫ x in Set.Icc a b, f x := by
+  have hunion := Set.Icc_update_union_Icc_update a b k ht
+  have hf₁ : IntegrableOn f (Set.Icc a (Function.update b k t)) :=
+    hf.mono_set (hunion ▸ Set.subset_union_left)
+  have hf₂ : IntegrableOn f (Set.Icc (Function.update a k t) b) :=
+    hf.mono_set (hunion ▸ Set.subset_union_right)
+  rw [← setIntegral_union₀ (aeDisjoint_Icc_update a b k t)
+    measurableSet_Icc.nullMeasurableSet hf₁ hf₂, hunion]
 
 namespace MeasureTheory
 

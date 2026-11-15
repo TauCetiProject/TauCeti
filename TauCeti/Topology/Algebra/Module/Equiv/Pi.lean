@@ -89,6 +89,7 @@ of its image in that coordinate. -/
 theorem piCongrRight_single (e : ∀ i, N i ≃L[R] P i) (i : ι) (x : N i) :
     piCongrRight e (Pi.single i x) = Pi.single i (e i x) := by
   funext j
+  rw [piCongrRight_apply]
   exact Pi.apply_single (fun i ↦ e i) (fun _ ↦ map_zero _) i x j
 
 variable (R) {Q : ι → Type*} [∀ i, TopologicalSpace (Q i)] [∀ i, AddCommGroup (Q i)]

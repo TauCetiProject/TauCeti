@@ -73,53 +73,49 @@ when the pole is outside its closure. Both orientations of the affine chart are 
 theorem left_cauchyFueter_affine_cofactor_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
-    (hc : ContinuousOn (fun x ↦ f (dq x)) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
       LeftFueterAt f (dq (p + L u))) :
-    boxBoundarySum 0 1 (L.affineFluxPullback p (fun i x ↦
-      cauchyFueterKernel (dq x) q₀ * dq (Pi.single i 1) * f (dq x))) = 0 := by
-  have hK := continuousOn_cauchyFueterKernel hq₀
+    L.affineFluxBoundary p (fun i x ↦
+      cauchyFueterKernel (dq x) q₀ * dq (Pi.single i 1) * f (dq x)) = 0 := by
   have hr u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
       RightFueterAt (fun q ↦ cauchyFueterKernel q q₀) (dq (p + L u)) :=
     rightFueterOn_iff.mp (rightFueterOn_cauchyFueterKernel hq₀) _
       (mem_image_of_mem dq (mem_image_of_mem (fun u ↦ p + L u)
         (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
-  rw [boxBoundarySum_zero_one]
-  simpa only [dq_single, one_smul] using cauchy_affine_cofactor L p
-      (hK.comp dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx)) hc hr hf
+  exact cauchy_affine_cofactor L p (f := f) (g := fun q ↦ cauchyFueterKernel q q₀)
+    (continuousOn_cauchyFueterKernel hq₀) hc hr hf
 
 /-- The right kernel-weighted signed cofactor flux on an affine parallelepiped vanishes
 for an exterior pole. The coefficient is `f * eᵢ * G`, not `G * eᵢ * f`. -/
 theorem right_cauchyFueter_affine_cofactor_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
-    (hc : ContinuousOn (fun x ↦ f (dq x)) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
       RightFueterAt f (dq (p + L u))) :
-    boxBoundarySum 0 1 (L.affineFluxPullback p (fun i x ↦
-      f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q₀)) = 0 := by
-  have hK := continuousOn_cauchyFueterKernel hq₀
+    L.affineFluxBoundary p (fun i x ↦
+      f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q₀) = 0 := by
   have hl u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
       LeftFueterAt (fun q ↦ cauchyFueterKernel q q₀) (dq (p + L u)) :=
     leftFueterOn_iff.mp (leftFueterOn_cauchyFueterKernel hq₀) _
       (mem_image_of_mem dq (mem_image_of_mem (fun u ↦ p + L u)
         (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
-  rw [boxBoundarySum_zero_one]
-  simpa only [dq_single, one_smul] using cauchy_affine_cofactor L p hc
-      (hK.comp dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx)) hf hl
+  exact cauchy_affine_cofactor L p (g := f) (f := fun q ↦ cauchyFueterKernel q q₀)
+    hc (continuousOn_cauchyFueterKernel hq₀) hf hl
 
 /-- The left Cauchy–Fueter raw affine boundary integral of `G * Dq * f` vanishes when the
 pole lies outside the closed affine parallelepiped. Both orientations of `L` are allowed. -/
 theorem left_cauchyFueter_affine_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
-    (hc : ContinuousOn (fun x ↦ f (dq x)) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
       LeftFueterAt f (dq (p + L u))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
         (cauchyFueterKernel (dq x) q₀) (f (dq x))) = 0 := by
-  rw [L.rawAffineBoundary_eq_cofactor, ← boxBoundarySum_zero_one]
+  rw [L.rawAffineBoundary_eq_affineFluxBoundary]
   simpa only [ContinuousLinearMap.mulLeftRight_apply] using
     left_cauchyFueter_affine_cofactor_of_notMem hq₀ hc hf
 
@@ -128,13 +124,13 @@ pole lies outside the closed affine parallelepiped. Both orientations of `L` are
 theorem right_cauchyFueter_affine_of_notMem
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p : Fin 4 → ℝ} {f : ℍ → ℍ} {q₀ : ℍ}
     (hq₀ : q₀ ∉ dq '' ((fun u ↦ p + L u) '' Icc 0 1))
-    (hc : ContinuousOn (fun x ↦ f (dq x)) ((fun u ↦ p + L u) '' Icc 0 1))
+    (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
       RightFueterAt f (dq (p + L u))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
         (f (dq x)) (cauchyFueterKernel (dq x) q₀)) = 0 := by
-  rw [L.rawAffineBoundary_eq_cofactor, ← boxBoundarySum_zero_one]
+  rw [L.rawAffineBoundary_eq_affineFluxBoundary]
   simpa only [ContinuousLinearMap.mulLeftRight_apply] using
     right_cauchyFueter_affine_cofactor_of_notMem hq₀ hc hf
 

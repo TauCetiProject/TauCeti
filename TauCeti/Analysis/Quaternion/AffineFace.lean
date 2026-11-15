@@ -27,16 +27,16 @@ The coefficient `B x` is real-linear in the quaternionic surface element. In par
 The codomain may be any real normed space.
 
 This file develops the geometric and reparametrization calculus of `rawAffineBoundary`:
-* `TauCeti.Quaternion.norm_Dq_sq` and `ContinuousLinearMap.norm_affineFaceNormal_sq`: the squared
-  norm of `affineFaceNormal L j` is the `3 × 3` Gram determinant of the three face tangent vectors,
-  matching the 3-dimensional surface-area Jacobian of the `j`-face;
+* `ContinuousLinearMap.norm_affineFaceNormal_sq`: the squared norm of `affineFaceNormal L j` is the
+  `3 × 3` Gram determinant of the three face tangent vectors, matching the 3-dimensional
+  surface-area Jacobian of the `j`-face;
 * degenerate-face and degenerate-direction vanishing (`integral_affineFace_eq_zero`,
   `rawAffineBoundary_eq_zero_of_apply_single_eq_zero`), plus face and boundary norm bounds;
 * coordinate reflection `negCoord ℝ k` (`rawAffineBoundary_comp_negCoord`), quaternionic
-  conjugation `tupleConj` (`rawAffineBoundary_tupleConj_comp`), and their orientation-preserving
-  composition (`rawAffineBoundary_tupleConj_comp_negCoord`,
-  `star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight`) exchanging left and right ordered
-  integrands;
+  conjugation `tupleConj` (`rawAffineBoundary_tupleConj_comp`), and their composition preserving
+  the orientation of `u ↦ p + L u` (`rawAffineBoundary_tupleConj_comp_negCoord`,
+  `star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight`), which exchanges left and right
+  ordered integrands;
 * rectangular subdivision additivity (`rawAffineBoundary_split`,
   `rawAffineBoundary_split_of_continuousOn`) along `u k = t`;
 * compatibility with `ContinuousLinearEquiv.affineFluxBoundary` for invertible `L`, with
@@ -56,70 +56,6 @@ public section
 
 open MeasureTheory Set TauCeti.Quaternion
 open scoped Quaternion RealInnerProductSpace ENNReal
-
-namespace TauCeti.Quaternion
-
-/-- The squared Euclidean norm of `Dq v` equals the `3 × 3` Gram determinant of the three tangent
-vectors `dq (v 0), dq (v 1), dq (v 2)` in `ℍ`, i.e. the squared 3-dimensional volume of the
-parallelepiped they span. -/
-theorem norm_Dq_sq (v : Fin 3 → Fin 4 → ℝ) :
-    ‖Dq v‖ ^ 2 = (Matrix.of fun r s : Fin 3 ↦ ⟪dq (v r), dq (v s)⟫).det := by
-  rw [sq, ← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
-  simp only [re_Dq, imI_Dq, imJ_Dq, imK_Dq, minorForm_apply, Matrix.det_fin_three,
-    Matrix.of_apply, _root_.Quaternion.inner_def, Fin.succAbove]
-  norm_num
-  ring
-
-/-- Quaternionic conjugation in real coordinates `(t, x, y, z) ↦ (t, -x, -y, -z)`, as a continuous
-linear equivalence of `Fin 4 → ℝ`. -/
-def tupleConj : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ) :=
-  ContinuousLinearEquiv.piCongrRight
-    (Function.update (fun _ : Fin 4 ↦ ContinuousLinearEquiv.neg ℝ) 0
-      (ContinuousLinearEquiv.refl ℝ ℝ))
-
-theorem tupleConj_def :
-    tupleConj = ContinuousLinearEquiv.piCongrRight
-      (Function.update (fun _ : Fin 4 ↦ ContinuousLinearEquiv.neg ℝ) 0
-        (ContinuousLinearEquiv.refl ℝ ℝ)) :=
-  (rfl)
-
-@[simp]
-theorem tupleConj_zero (x : Fin 4 → ℝ) : tupleConj x 0 = x 0 := by
-  simp [tupleConj_def]
-
-@[simp]
-theorem tupleConj_of_ne_zero {i : Fin 4} (hi : i ≠ 0) (x : Fin 4 → ℝ) :
-    tupleConj x i = -x i := by
-  simp [tupleConj_def, hi]
-
-/-- `dq` intertwines `tupleConj` with quaternion conjugation `star`. -/
-@[simp]
-theorem dq_tupleConj (x : Fin 4 → ℝ) : dq (tupleConj x) = star (dq x) := by
-  ext <;> simp [tupleConj_def]
-
-@[simp]
-theorem symm_tupleConj : tupleConj.symm = tupleConj := by
-  ext x i
-  by_cases hi : i = 0
-  · subst hi
-    simp [tupleConj_def]
-  · simp [tupleConj_def, hi]
-
-@[simp]
-theorem tupleConj_tupleConj (x : Fin 4 → ℝ) : tupleConj (tupleConj x) = x := by
-  ext i
-  by_cases hi : i = 0
-  · subst hi
-    simp
-  · simp [hi]
-
-/-- Quaternionic conjugation negates the three imaginary axes and fixes the real axis, so it has
-determinant `-1`. -/
-@[simp]
-theorem det_tupleConj : LinearMap.det (tupleConj : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ) = -1 := by
-  simp [tupleConj_def, ContinuousLinearEquiv.det_piCongrRight, Fin.prod_univ_four]
-
-end TauCeti.Quaternion
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -146,7 +82,6 @@ theorem affineFaceNormal_id (j : Fin 4) :
 
 /-- The orientation sign `(-1) ^ j` has unit modulus, so `‖affineFaceNormal L j‖` is the norm of
 `Dq` on the three tangent vectors of the `j`-face. -/
-@[simp]
 theorem norm_affineFaceNormal (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (j : Fin 4) :
     ‖affineFaceNormal L j‖ = ‖Dq (fun r ↦ L (Pi.single (j.succAbove r) 1))‖ := by
   simp [affineFaceNormal_eq, norm_smul]
@@ -156,8 +91,7 @@ tangent vectors of the `j`-face, i.e. the squared 3-dimensional surface-area Jac
 face. -/
 theorem norm_affineFaceNormal_sq (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (j : Fin 4) :
     ‖affineFaceNormal L j‖ ^ 2 =
-      (Matrix.of fun r s : Fin 3 ↦
-        ⟪dq (L (Pi.single (j.succAbove r) 1)), dq (L (Pi.single (j.succAbove s) 1))⟫).det := by
+      (Matrix.gram ℝ fun r ↦ dq (L (Pi.single (j.succAbove r) 1))).det := by
   rw [norm_affineFaceNormal, norm_Dq_sq]
 
 /-- Precomposing `L` with a diagonal scaling `diag d` multiplies the `j`-th face normal by the
@@ -182,6 +116,35 @@ theorem affineFaceNormal_comp_piMap_smul_id (L : (Fin 4 → ℝ) →L[ℝ] (Fin 
     rw [hsingle, map_smul]
   simp only [affineFaceNormal_eq, comp_apply, hvec]
   rw [Dq.map_smul_univ, smul_comm]
+
+/-- Scaling coordinate `j` by `s` while fixing the remaining three coordinates leaves
+`affineFaceNormal L j` unchanged. -/
+theorem affineFaceNormal_comp_piMap_update_one_same (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
+    (j : Fin 4) (s : ℝ) :
+    affineFaceNormal (L.comp (ContinuousLinearMap.piMap fun i ↦
+      Function.update (1 : Fin 4 → ℝ) j s i • ContinuousLinearMap.id ℝ ℝ)) j =
+      affineFaceNormal L j := by
+  rw [affineFaceNormal_comp_piMap_smul_id]
+  have hprod : ∏ r : Fin 3, Function.update (1 : Fin 4 → ℝ) j s (j.succAbove r) = 1 :=
+    Finset.prod_eq_one fun r _ ↦ by simp
+  rw [hprod, one_smul]
+
+/-- Scaling a transverse coordinate `k ≠ j` by `s` while fixing the remaining three coordinates
+multiplies `affineFaceNormal L j` by `s`. -/
+theorem affineFaceNormal_comp_piMap_update_one_of_ne (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
+    {j k : Fin 4} (hjk : j ≠ k) (s : ℝ) :
+    affineFaceNormal (L.comp (ContinuousLinearMap.piMap fun i ↦
+      Function.update (1 : Fin 4 → ℝ) k s i • ContinuousLinearMap.id ℝ ℝ)) j =
+      s • affineFaceNormal L j := by
+  obtain ⟨r, hr⟩ := Fin.exists_succAbove_eq (Ne.symm hjk)
+  rw [affineFaceNormal_comp_piMap_smul_id]
+  have hprod : ∏ q : Fin 3, Function.update (1 : Fin 4 → ℝ) k s (j.succAbove q) = s := by
+    rw [Finset.prod_eq_single r]
+    · simp [hr]
+    · intro q _ hqr
+      simp [Function.update_of_ne (hr ▸ j.succAbove_right_injective.ne hqr)]
+    · exact fun hr' ↦ absurd (Finset.mem_univ r) hr'
+  rw [hprod]
 
 /-- For a diagonal linear map `diag d`, the `j`-th face normal is `(∏ r, d (j.succAbove r))` times
 the `j`-th quaternion unit `1, i, j, k`. -/
@@ -245,6 +208,49 @@ theorem rawAffineBoundary_eq (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
       ((∫ u in Icc (0 : Fin 3 → ℝ) 1, B (p + L (j.insertNth 1 u)) (affineFaceNormal L j)) -
         ∫ u in Icc (0 : Fin 3 → ℝ) 1, B (p + L (j.insertNth 0 u)) (affineFaceNormal L j)) :=
   (rfl)
+
+/-- `rawAffineBoundary L p B` is the unit-cube `TauCeti.boxBoundarySum 0 1` of the face-normal
+integrands `x ↦ B (p + L x) (affineFaceNormal L j)`. -/
+theorem rawAffineBoundary_eq_boxBoundarySum (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
+    (p : Fin 4 → ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
+    rawAffineBoundary L p B =
+      TauCeti.boxBoundarySum 0 1 (fun j x ↦ B (p + L x) (affineFaceNormal L j)) := by
+  rw [rawAffineBoundary_eq, TauCeti.boxBoundarySum_zero_one]
+
+/-- Precomposing an affine chart `u ↦ p + L u` with the closed-box scaling `u ↦ a + diag(b - a) u`
+(`a ≤ b`, including degenerate boxes) identifies `rawAffineBoundary` with `TauCeti.boxBoundarySum`
+on `Set.Icc a b` of `x ↦ B (p + L x) (affineFaceNormal L j)`, without continuity or completeness
+hypotheses. -/
+theorem rawAffineBoundary_comp_piMap_smul_id (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
+    (p : Fin 4 → ℝ) {a b : Fin 4 → ℝ} (hab : a ≤ b) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
+    rawAffineBoundary
+        (L.comp (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ))
+        (p + L a) B =
+      TauCeti.boxBoundarySum a b (fun j x ↦ B (p + L x) (affineFaceNormal L j)) := by
+  rw [rawAffineBoundary_eq, TauCeti.boxBoundarySum_def]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [affineFaceNormal_comp_piMap_smul_id]
+  have hface : a ∘ j.succAbove ≤ b ∘ j.succAbove := fun r ↦ hab (j.succAbove r)
+  have hfront (u : Fin 3 → ℝ) :
+      a + (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ)
+          (j.insertNth 1 u) =
+        j.insertNth (b j)
+          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * u r) := by
+    ext i
+    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
+  have hback (u : Fin 3 → ℝ) :
+      a + (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ)
+          (j.insertNth 0 u) =
+        j.insertNth (a j)
+          (fun r ↦ a (j.succAbove r) + (b (j.succAbove r) - a (j.succAbove r)) * u r) := by
+    ext i
+    exact j.succAboveCases (by simp) (fun r ↦ by simp) i
+  simp only [comp_apply, add_assoc, ← map_add, hfront, hback, map_smul, integral_smul]
+  rw [setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface
+      (fun y ↦ B (p + L (j.insertNth (b j) y)) (affineFaceNormal L j)),
+    setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one hface
+      (fun y ↦ B (p + L (j.insertNth (a j) y)) (affineFaceNormal L j))]
+  simp only [Function.comp_apply]
 
 @[simp]
 theorem rawAffineBoundary_zero (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) :
@@ -335,27 +341,22 @@ theorem rawAffineBoundary_neg (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p
     rawAffineBoundary L p (fun x ↦ -B x) = -rawAffineBoundary L p B := by
   simpa using rawAffineBoundary_smul L p B (-1 : ℝ)
 
-/-- Norm bound on `rawAffineBoundary L p B` from a uniform operator-norm bound `M` on `B` over the
-closed affine image `(fun u ↦ p + L u) '' Icc 0 1`. -/
+/-- Norm bound on `rawAffineBoundary L p B` from a uniform operator-norm bound `M` on `B` along the
+front and back faces `(fun u : Fin 3 → ℝ ↦ p + L (j.insertNth c u)) '' Icc 0 1` (`c = 1` and
+`c = 0`). -/
 theorem norm_rawAffineBoundary_le (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ)
     {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} {M : ℝ}
-    (hB : ∀ u ∈ Icc (0 : Fin 4 → ℝ) 1, ‖B (p + L u)‖ ≤ M) :
+    (hB₁ : ∀ j : Fin 4, ∀ u ∈ Icc (0 : Fin 3 → ℝ) 1, ‖B (p + L (j.insertNth 1 u))‖ ≤ M)
+    (hB₀ : ∀ j : Fin 4, ∀ u ∈ Icc (0 : Fin 3 → ℝ) 1, ‖B (p + L (j.insertNth 0 u))‖ ≤ M) :
     ‖rawAffineBoundary L p B‖ ≤ 2 * M * ∑ j : Fin 4, ‖affineFaceNormal L j‖ := by
-  rw [rawAffineBoundary_eq]
-  refine (norm_sum_le _ _).trans ?_
-  calc
-    ∑ j : Fin 4,
-        ‖(∫ u in Icc (0 : Fin 3 → ℝ) 1, B (p + L (j.insertNth 1 u)) (affineFaceNormal L j)) -
-          ∫ u in Icc (0 : Fin 3 → ℝ) 1, B (p + L (j.insertNth 0 u)) (affineFaceNormal L j)‖
-      ≤ ∑ j : Fin 4, (M * ‖affineFaceNormal L j‖ + M * ‖affineFaceNormal L j‖) := by
-        refine Finset.sum_le_sum fun j _ ↦ norm_sub_le_of_le ?_ ?_
-        · exact norm_integral_affineFace_le L p fun u hu ↦
-            hB _ (Fin.insertNth_mem_Icc.mpr ⟨by simp, hu⟩)
-        · exact norm_integral_affineFace_le L p fun u hu ↦
-            hB _ (Fin.insertNth_mem_Icc.mpr ⟨by simp, hu⟩)
-    _ = 2 * M * ∑ j : Fin 4, ‖affineFaceNormal L j‖ := by
-        rw [Finset.mul_sum]
-        exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  rw [rawAffineBoundary_eq_boxBoundarySum]
+  refine (TauCeti.norm_boxBoundarySum_le (M := fun j ↦ M * ‖affineFaceNormal L j‖) zero_le_one
+    (fun j u hu ↦ ?_) (fun j u hu ↦ ?_)).trans_eq ?_
+  · exact (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
+      (hB₁ j u (by simpa using hu)) (norm_nonneg _))
+  · exact (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
+      (hB₀ j u (by simpa using hu)) (norm_nonneg _))
+  · simp [Finset.mul_sum, mul_assoc]
 
 /-- Reflecting coordinate `k = j.succAbove r` on a transverse face `j ≠ k` reflects the `r`-th
 unit 3-cube parameter and negates the face integral against `-affineFaceNormal L j`. -/
@@ -382,10 +383,9 @@ private theorem setIntegral_affineFace_comp_negCoord_transverse
   exact ContinuousLinearEquiv.setIntegral_Icc_single_add_negCoord r
     (fun u ↦ B (p + L (j.insertNth c u)) (affineFaceNormal L j))
 
-/-- Reflecting the `k`-th parameter coordinate `u k ↦ 1 - u k` (for `k = 0`,
-`ρ (u₀, u₁, u₂, u₃) = (1 - u₀, u₁, u₂, u₃)`) negates `rawAffineBoundary`: the front and back
-`k`-faces swap with the same `affineFaceNormal`, while every transverse face `j ≠ k` has its
-`affineFaceNormal` negated and its unit 3-cube parameter reflected along one coordinate. -/
+/-- Reflecting the `k`-th parameter coordinate `u k ↦ 1 - u k` negates `rawAffineBoundary`: the
+front and back `k`-faces swap with the same `affineFaceNormal`, while every transverse face `j ≠ k`
+has its `affineFaceNormal` negated and its unit 3-cube parameter reflected along one coordinate. -/
 theorem rawAffineBoundary_comp_negCoord (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
     (p : Fin 4 → ℝ) (k : Fin 4) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
     rawAffineBoundary
@@ -405,10 +405,7 @@ theorem rawAffineBoundary_comp_negCoord (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 �
   by_cases hjk : j = k
   · subst hjk
     have hnorm : affineFaceNormal (L.comp ρ.toContinuousLinearMap) j = affineFaceNormal L j := by
-      rw [hρ_pi, affineFaceNormal_comp_piMap_smul_id]
-      have hprod : ∏ r : Fin 3, Function.update (1 : Fin 4 → ℝ) j (-1) (j.succAbove r) = 1 :=
-        Finset.prod_eq_one fun r _ ↦ by simp
-      rw [hprod, one_smul]
+      rw [hρ_pi, affineFaceNormal_comp_piMap_update_one_same]
     have h1 (u : Fin 3 → ℝ) : Pi.single j (1 : ℝ) + ρ (j.insertNth 1 u) = j.insertNth 0 u := by
       ext i
       exact j.succAboveCases (by simp [ρ]) (fun r ↦ by simp [ρ, j.succAbove_ne r]) i
@@ -419,14 +416,7 @@ theorem rawAffineBoundary_comp_negCoord (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 �
       neg_sub]
   · obtain ⟨r, hr⟩ := Fin.exists_succAbove_eq (Ne.symm hjk)
     have hnorm : affineFaceNormal (L.comp ρ.toContinuousLinearMap) j = -affineFaceNormal L j := by
-      rw [hρ_pi, affineFaceNormal_comp_piMap_smul_id]
-      have hprod : ∏ s : Fin 3, Function.update (1 : Fin 4 → ℝ) k (-1) (j.succAbove s) = -1 := by
-        rw [Finset.prod_eq_single r]
-        · simp [hr]
-        · intro s _ hsr
-          simp [Function.update_of_ne (hr ▸ j.succAbove_right_injective.ne hsr)]
-        · exact fun hr' ↦ absurd (Finset.mem_univ r) hr'
-      rw [hprod, neg_one_smul]
+      rw [hρ_pi, affineFaceNormal_comp_piMap_update_one_of_ne L hjk, neg_one_smul]
     simp only [hnorm, comp_apply, ContinuousLinearEquiv.coe_coe, ρ,
       setIntegral_affineFace_comp_negCoord_transverse L p hr B]
     abel
@@ -450,8 +440,8 @@ theorem rawAffineBoundary_tupleConj_comp (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 �
   simp only [hfun]
 
 /-- Combining quaternionic conjugation `tupleConj` in the target with single-coordinate reflection
-`negCoord ℝ k` in the parameters is orientation-preserving and cancels the two minus signs in
-`rawAffineBoundary`. -/
+`u k ↦ 1 - u k` (`negCoord ℝ k`) in the parameters preserves the orientation of `u ↦ p + L u` and
+cancels the two minus signs in `rawAffineBoundary`. -/
 theorem rawAffineBoundary_tupleConj_comp_negCoord (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
     (p : Fin 4 → ℝ) (k : Fin 4) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
     rawAffineBoundary
@@ -461,14 +451,15 @@ theorem rawAffineBoundary_tupleConj_comp_negCoord (L : (Fin 4 → ℝ) →L[ℝ]
       rawAffineBoundary L p
         (fun x ↦ (B (tupleConj x)).comp (starL' ℝ : ℍ ≃L[ℝ] ℍ).toContinuousLinearMap) := by
   have hp : tupleConj (p + L (Pi.single k 1)) =
-      tupleConj p + (tupleConj.toContinuousLinearMap.comp L) (Pi.single k 1) :=
-    map_add tupleConj p _
+      tupleConj p + (tupleConj.toContinuousLinearMap.comp L) (Pi.single k 1) := by
+    simp
   rw [hp, rawAffineBoundary_comp_negCoord, rawAffineBoundary_tupleConj_comp, neg_neg]
 
-/-- Conjugating `rawAffineBoundary` on the orientation-preserving reflected chart `σ ∘ A ∘ ρ`
-exchanges the ordered integrand `star (f (star q)) * Dq * star (g (star q))` with `g q * Dq * f q`,
-turning left-sided Cauchy integrands into right-sided ones and vice versa without regularity
-hypotheses. -/
+/-- Applying `star` to `rawAffineBoundary` after composing `u ↦ p + L u` with quaternionic
+conjugation `tupleConj` in the target and coordinate reflection `u k ↦ 1 - u k` in the parameters
+(a combined transformation that preserves the orientation of `u ↦ p + L u`) exchanges the ordered
+integrand `star (f (star q)) * Dq * star (g (star q))` with `g q * Dq * f q`, turning left-sided
+Cauchy integrands into right-sided ones and vice versa without regularity hypotheses. -/
 theorem star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight
     (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) (k : Fin 4) (f g : ℍ → ℍ) :
     star (rawAffineBoundary
@@ -491,69 +482,6 @@ theorem star_rawAffineBoundary_tupleConj_comp_negCoord_mulLeftRight
     simp [mul_assoc]
   simp only [hmul]
 
-/-- Splitting a single transverse face `j ≠ k` (`j.succAbove r = k`) along coordinate `k` at
-`t ∈ Set.Icc 0 1` decomposes the parametrized face integral into the sum of the two sub-face
-integrals, including at the endpoints `t = 0` and `t = 1`. -/
-private theorem setIntegral_affineFace_split_transverse (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ))
-    (p : Fin 4 → ℝ) {j k : Fin 4} {r : Fin 3} (hr : j.succAbove r = k)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} (c : ℝ)
-    (hint : IntegrableOn (fun u ↦ B (p + L (j.insertNth c u)) (affineFaceNormal L j))
-      (Icc (0 : Fin 3 → ℝ) 1)) :
-    (∫ u in Icc (0 : Fin 3 → ℝ) 1,
-        B (p + L ((ContinuousLinearMap.piMap fun i ↦
-            Function.update (1 : Fin 4 → ℝ) k t i • ContinuousLinearMap.id ℝ ℝ)
-          (j.insertNth c u))) (t • affineFaceNormal L j)) +
-      ∫ u in Icc (0 : Fin 3 → ℝ) 1,
-        B (p + L (Pi.single k t) + L ((ContinuousLinearMap.piMap fun i ↦
-            Function.update (1 : Fin 4 → ℝ) k (1 - t) i • ContinuousLinearMap.id ℝ ℝ)
-          (j.insertNth c u))) ((1 - t) • affineFaceNormal L j) =
-      ∫ u in Icc (0 : Fin 3 → ℝ) 1, B (p + L (j.insertNth c u)) (affineFaceNormal L j) := by
-  subst hr
-  let S (s : ℝ) : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ) :=
-    ContinuousLinearMap.piMap fun i ↦
-      Function.update (1 : Fin 4 → ℝ) (j.succAbove r) s i • ContinuousLinearMap.id ℝ ℝ
-  have ha₀ : (0 : Fin 3 → ℝ) ≤ Function.update (1 : Fin 3 → ℝ) r t := fun q ↦ by
-    rcases eq_or_ne q r with rfl | hqr
-    · simpa using ht.1
-    · simp [hqr]
-  have hb₁ : Function.update (0 : Fin 3 → ℝ) r t ≤ (1 : Fin 3 → ℝ) := fun q ↦ by
-    rcases eq_or_ne q r with rfl | hqr
-    · simpa using ht.2
-    · simp [hqr]
-  have hp₀ : ∏ q : Fin 3, (Function.update (1 : Fin 3 → ℝ) r t q - (0 : Fin 3 → ℝ) q) = t := by
-    rw [Finset.prod_eq_single r]
-    · simp
-    · intro q _ hqr; simp [hqr]
-    · exact fun hr' ↦ absurd (Finset.mem_univ r) hr'
-  have hp₁ : ∏ q : Fin 3, ((1 : Fin 3 → ℝ) q - Function.update (0 : Fin 3 → ℝ) r t q) = 1 - t := by
-    rw [Finset.prod_eq_single r]
-    · simp
-    · intro q _ hqr; simp [hqr]
-    · exact fun hr' ↦ absurd (Finset.mem_univ r) hr'
-  have hlow_pt (u : Fin 3 → ℝ) :
-      S t (j.insertNth c u) = j.insertNth c (fun q ↦ (0 : Fin 3 → ℝ) q +
-        (Function.update (1 : Fin 3 → ℝ) r t q - (0 : Fin 3 → ℝ) q) * u q) := by
-    ext i
-    refine j.succAboveCases (by simp [S, j.ne_succAbove r]) (fun q ↦ ?_) i
-    rcases eq_or_ne q r with rfl | hqr <;> simp [S, *]
-  have hupp_pt (u : Fin 3 → ℝ) :
-      Pi.single (j.succAbove r) t + S (1 - t) (j.insertNth c u) = j.insertNth c
-        (fun q ↦ Function.update (0 : Fin 3 → ℝ) r t q +
-          ((1 : Fin 3 → ℝ) q - Function.update (0 : Fin 3 → ℝ) r t q) * u q) := by
-    ext i
-    refine j.succAboveCases (by simp [S, j.ne_succAbove r]) (fun q ↦ ?_) i
-    rcases eq_or_ne q r with rfl | hqr <;> simp [S, *]
-  have hI₀ := setIntegral_Icc_eq_smul_integral_unitCube ha₀
-    (fun w ↦ B (p + L (j.insertNth c w)) (affineFaceNormal L j))
-  have hI₁ := setIntegral_Icc_eq_smul_integral_unitCube hb₁
-    (fun w ↦ B (p + L (j.insertNth c w)) (affineFaceNormal L j))
-  rw [hp₀] at hI₀
-  rw [hp₁] at hI₁
-  dsimp only [S] at hlow_pt hupp_pt
-  simp_rw [map_smul, integral_smul, add_assoc, ← map_add, hlow_pt, hupp_pt]
-  rw [← hI₀, ← hI₁]
-  exact TauCeti.setIntegral_Icc_split r ht hint
-
 /-- Rectangular subdivision additivity of `rawAffineBoundary`: splitting `[0, 1]⁴` along coordinate
 `k` at `t ∈ Set.Icc 0 1` cancels the two opposite internal facets at `u k = t` and splits every
 transverse face `j ≠ k` into two sub-faces. -/
@@ -564,56 +492,35 @@ theorem rawAffineBoundary_split (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) 
     (hB₀ : ∀ j : Fin 4, j ≠ k → IntegrableOn
       (fun u ↦ B (p + L (j.insertNth 0 u)) (affineFaceNormal L j)) (Icc (0 : Fin 3 → ℝ) 1)) :
     rawAffineBoundary
-        (L.comp (ContinuousLinearMap.piMap
-          (Function.update (fun _ ↦ ContinuousLinearMap.id ℝ ℝ) k
-            (t • ContinuousLinearMap.id ℝ ℝ)))) p B +
+        (L.comp (ContinuousLinearMap.piMap fun i ↦
+          Function.update (1 : Fin 4 → ℝ) k t i • ContinuousLinearMap.id ℝ ℝ)) p B +
       rawAffineBoundary
-        (L.comp (ContinuousLinearMap.piMap
-          (Function.update (fun _ ↦ ContinuousLinearMap.id ℝ ℝ) k
-            ((1 - t) • ContinuousLinearMap.id ℝ ℝ)))) (p + L (Pi.single k t)) B =
+        (L.comp (ContinuousLinearMap.piMap fun i ↦
+          Function.update (1 : Fin 4 → ℝ) k (1 - t) i • ContinuousLinearMap.id ℝ ℝ))
+        (p + L (Pi.single k t)) B =
       rawAffineBoundary L p B := by
-  let S (s : ℝ) : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ) :=
-    ContinuousLinearMap.piMap fun i ↦
-      Function.update (1 : Fin 4 → ℝ) k s i • ContinuousLinearMap.id ℝ ℝ
-  have hS (s : ℝ) : ContinuousLinearMap.piMap
-      (Function.update (fun _ ↦ ContinuousLinearMap.id ℝ ℝ) k
-        (s • ContinuousLinearMap.id ℝ ℝ)) = S s := by
-    ext x i
-    rcases eq_or_ne i k with rfl | hik <;> simp [S, *]
-  rw [hS t, hS (1 - t), rawAffineBoundary_eq, rawAffineBoundary_eq, rawAffineBoundary_eq,
-    ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  by_cases hjk : j = k
-  · subst hjk
-    have hnorm (s : ℝ) : affineFaceNormal (L.comp (S s)) j = affineFaceNormal L j := by
-      rw [affineFaceNormal_comp_piMap_smul_id]
-      have hp : ∏ r : Fin 3, Function.update (1 : Fin 4 → ℝ) j s (j.succAbove r) = 1 :=
-        Finset.prod_eq_one fun r _ ↦ by simp
-      rw [hp, one_smul]
-    have hlow (c : ℝ) (u : Fin 3 → ℝ) : S t (j.insertNth c u) = j.insertNth (t * c) u := by
-      ext i
-      exact j.succAboveCases (by simp [S]) (fun r ↦ by simp [S, j.succAbove_ne r]) i
-    have hupp (c : ℝ) (u : Fin 3 → ℝ) :
-        Pi.single j t + S (1 - t) (j.insertNth c u) = j.insertNth (t + (1 - t) * c) u := by
-      ext i
-      exact j.succAboveCases (by simp [S]) (fun r ↦ by simp [S, j.succAbove_ne r]) i
-    simp only [hnorm, comp_apply, add_assoc, ← map_add, hlow, hupp, mul_one, mul_zero, add_zero,
-      add_sub_cancel]
-    abel
-  · obtain ⟨r, hr⟩ := Fin.exists_succAbove_eq (Ne.symm hjk)
-    have hnorm (s : ℝ) : affineFaceNormal (L.comp (S s)) j = s • affineFaceNormal L j := by
-      rw [affineFaceNormal_comp_piMap_smul_id]
-      have hp : ∏ q : Fin 3, Function.update (1 : Fin 4 → ℝ) k s (j.succAbove q) = s := by
-        rw [Finset.prod_eq_single r]
-        · simp [hr]
-        · intro q _ hqr
-          simp [Function.update_of_ne (hr ▸ j.succAbove_right_injective.ne hqr)]
-        · exact fun hr' ↦ absurd (Finset.mem_univ r) hr'
-      rw [hp]
-    simp only [hnorm, comp_apply]
-    rw [sub_add_sub_comm,
-      setIntegral_affineFace_split_transverse L p hr ht 1 (hB₁ j hjk),
-      setIntegral_affineFace_split_transverse L p hr ht 0 (hB₀ j hjk)]
+  have hab₀ : (0 : Fin 4 → ℝ) ≤ Function.update (1 : Fin 4 → ℝ) k t :=
+    le_update_iff.mpr ⟨ht.1, fun _ _ ↦ zero_le_one⟩
+  have hab₁ : Function.update (0 : Fin 4 → ℝ) k t ≤ (1 : Fin 4 → ℝ) :=
+    update_le_iff.mpr ⟨ht.2, fun _ _ ↦ zero_le_one⟩
+  have hlow := rawAffineBoundary_comp_piMap_smul_id L p hab₀ B
+  have hupp := rawAffineBoundary_comp_piMap_smul_id L p hab₁ B
+  have hsub₀ (i : Fin 4) :
+      Function.update (1 : Fin 4 → ℝ) k t i - (0 : Fin 4 → ℝ) i =
+        Function.update (1 : Fin 4 → ℝ) k t i := sub_zero _
+  have hsub₁ (i : Fin 4) :
+      (1 : Fin 4 → ℝ) i - Function.update (0 : Fin 4 → ℝ) k t i =
+        Function.update (1 : Fin 4 → ℝ) k (1 - t) i := by
+    rcases eq_or_ne i k with rfl | hik <;> simp [*]
+  have hsingle : Function.update (0 : Fin 4 → ℝ) k t = Pi.single k t := by
+    ext i
+    rcases eq_or_ne i k with rfl | hik <;> simp [*]
+  simp_rw [hsub₀, map_zero, add_zero] at hlow
+  simp_rw [hsub₁] at hupp
+  rw [← hsingle, hlow, hupp, rawAffineBoundary_eq_boxBoundarySum]
+  exact TauCeti.boxBoundarySum_split k (by simpa using ht)
+    (fun j hjk ↦ by simpa only [Function.comp_def, Pi.zero_def, Pi.one_def] using hB₁ j hjk)
+    (fun j hjk ↦ by simpa only [Function.comp_def, Pi.zero_def, Pi.one_def] using hB₀ j hjk)
 
 /-- Rectangular subdivision additivity of `rawAffineBoundary` for coefficients continuous on the
 closed affine parallelepiped `(fun u ↦ p + L u) '' Set.Icc 0 1`. -/
@@ -621,40 +528,49 @@ theorem rawAffineBoundary_split_of_continuousOn (L : (Fin 4 → ℝ) →L[ℝ] (
     (p : Fin 4 → ℝ) (k : Fin 4) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
     {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} (hB : ContinuousOn B ((fun u ↦ p + L u) '' Icc 0 1)) :
     rawAffineBoundary
-        (L.comp (ContinuousLinearMap.piMap
-          (Function.update (fun _ ↦ ContinuousLinearMap.id ℝ ℝ) k
-            (t • ContinuousLinearMap.id ℝ ℝ)))) p B +
+        (L.comp (ContinuousLinearMap.piMap fun i ↦
+          Function.update (1 : Fin 4 → ℝ) k t i • ContinuousLinearMap.id ℝ ℝ)) p B +
       rawAffineBoundary
-        (L.comp (ContinuousLinearMap.piMap
-          (Function.update (fun _ ↦ ContinuousLinearMap.id ℝ ℝ) k
-            ((1 - t) • ContinuousLinearMap.id ℝ ℝ)))) (p + L (Pi.single k t)) B =
+        (L.comp (ContinuousLinearMap.piMap fun i ↦
+          Function.update (1 : Fin 4 → ℝ) k (1 - t) i • ContinuousLinearMap.id ℝ ℝ))
+        (p + L (Pi.single k t)) B =
       rawAffineBoundary L p B :=
   rawAffineBoundary_split L p k ht
     (fun j _ ↦ integrableOn_affineFace L p hB j (by simp))
     (fun j _ ↦ integrableOn_affineFace L p hB j (by simp))
 
-/-- For a Banach-valued coefficient `B` continuous on the closed affine image of `[0, 1]⁴`, each
-parametrized Bochner face integral equals the native `BoxIntegral.integral` over the `j`-th face
-of the unit 4-box `[0, 1]⁴` for any `BoxIntegral.IntegrationParams`. -/
+/-- For a Banach-valued coefficient `B` continuous along a single affine slice
+`(fun u : Fin 3 → ℝ ↦ p + L (j.insertNth c u)) '' Icc 0 1`, the parametrized Bochner face integral
+equals the native `BoxIntegral.integral` over the `j`-th face of the unit 4-box `[0, 1]⁴` for any
+`BoxIntegral.IntegrationParams`. -/
 theorem integral_affineFace_eq_boxIntegral [CompleteSpace E]
     (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E}
-    (hB : ContinuousOn B ((fun u ↦ p + L u) '' Icc 0 1)) (j : Fin 4) {c : ℝ}
-    (hc : c ∈ Icc (0 : ℝ) 1) (l : BoxIntegral.IntegrationParams) :
+    {j : Fin 4} {c : ℝ}
+    (hB : ContinuousOn B ((fun u : Fin 3 → ℝ ↦ p + L (j.insertNth c u)) '' Icc 0 1))
+    (l : BoxIntegral.IntegrationParams) :
     ∫ u in Icc (0 : Fin 3 → ℝ) 1, B (p + L (j.insertNth c u)) (affineFaceNormal L j) =
       BoxIntegral.integral ((BoxIntegral.Box.mk (0 : Fin 4 → ℝ) 1 fun _ ↦ zero_lt_one).face j) l
         (fun u ↦ B (p + L (j.insertNth c u)) (affineFaceNormal L j))
         BoxIntegral.BoxAdditiveMap.volume := by
   let I : BoxIntegral.Box (Fin 4) := BoxIntegral.Box.mk 0 1 fun _ ↦ zero_lt_one
-  have hcont : ContinuousOn (fun x ↦ B (p + L x) (affineFaceNormal L j)) (Icc I.lower I.upper) :=
+  have hcont : ContinuousOn (fun u : Fin 3 → ℝ ↦ B (p + L (j.insertNth c u)) (affineFaceNormal L j))
+      (Icc (0 : Fin 3 → ℝ) 1) :=
     (hB.comp (by fun_prop) (mapsTo_image _ _)).clm_apply continuousOn_const
-  exact (I.integral_face_eq_setIntegral_Icc hcont j hc l).symm
+  have hface : ContinuousOn (fun u ↦ B (p + L (j.insertNth c u)) (affineFaceNormal L j))
+      (Icc (I.lower ∘ j.succAbove) (I.upper ∘ j.succAbove)) := by
+    simpa only [I, Function.comp_def, Pi.zero_def, Pi.one_def] using hcont
+  simpa only [I, Function.comp_def, Pi.zero_def, Pi.one_def] using
+    (I.integral_face_eq_setIntegral_Icc
+      (f := fun x ↦ B (p + L x) (affineFaceNormal L j)) hface l).symm
 
-/-- For a Banach-valued coefficient `B` continuous on the closed affine image of `[0, 1]⁴`,
-`rawAffineBoundary L p B` equals the front-minus-back sum of `BoxIntegral.integral` over the
-coordinate faces of the unit 4-box `[0, 1]⁴`. -/
+/-- For a Banach-valued coefficient `B` continuous along each closed front and back face of
+`(fun u ↦ p + L u) '' Icc 0 1`, `rawAffineBoundary L p B` equals the front-minus-back sum of
+`BoxIntegral.integral` over the coordinate faces of the unit 4-box `[0, 1]⁴`. -/
 theorem rawAffineBoundary_eq_boxIntegral [CompleteSpace E]
     (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E}
-    (hB : ContinuousOn B ((fun u ↦ p + L u) '' Icc 0 1)) (l : BoxIntegral.IntegrationParams) :
+    (hB₁ : ∀ j : Fin 4, ContinuousOn B ((fun u : Fin 3 → ℝ ↦ p + L (j.insertNth 1 u)) '' Icc 0 1))
+    (hB₀ : ∀ j : Fin 4, ContinuousOn B ((fun u : Fin 3 → ℝ ↦ p + L (j.insertNth 0 u)) '' Icc 0 1))
+    (l : BoxIntegral.IntegrationParams) :
     rawAffineBoundary L p B =
       ∑ j : Fin 4,
         (BoxIntegral.integral ((BoxIntegral.Box.mk (0 : Fin 4 → ℝ) 1 fun _ ↦ zero_lt_one).face j) l
@@ -665,8 +581,8 @@ theorem rawAffineBoundary_eq_boxIntegral [CompleteSpace E]
             BoxIntegral.BoxAdditiveMap.volume) := by
   rw [rawAffineBoundary_eq]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [integral_affineFace_eq_boxIntegral L p hB j (by simp) l,
-    integral_affineFace_eq_boxIntegral L p hB j (by simp) l]
+  rw [integral_affineFace_eq_boxIntegral L p (hB₁ j) l,
+    integral_affineFace_eq_boxIntegral L p (hB₀ j) l]
 
 end ContinuousLinearMap
 
@@ -686,26 +602,14 @@ theorem affineFaceNormal_cofactor (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)
   rw [pi_eq_sum_univ' (fun i ↦ L.symm (Pi.single i 1) j)]
   simp only [_root_.map_sum, _root_.map_smul]
 
-/-- The actual affine face integral of the ordered surface form equals the cofactor
-boundary sum used by the affine divergence theorem, for either sign of the determinant. -/
-theorem rawAffineBoundary_eq_cofactor (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ))
-    (p : Fin 4 → ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
-    rawAffineBoundary L.toContinuousLinearMap p B =
-      ∑ j : Fin 4,
-        ((∫ u in Icc (0 : Fin 3 → ℝ) 1,
-            L.affineFluxPullback p (fun i x ↦ B x (dq (Pi.single i 1))) j (j.insertNth 1 u)) -
-          ∫ u in Icc (0 : Fin 3 → ℝ) 1,
-            L.affineFluxPullback p (fun i x ↦ B x (dq (Pi.single i 1))) j (j.insertNth 0 u)) := by
-  simp only [rawAffineBoundary_eq, ContinuousLinearEquiv.coe_coe]
-  simp_rw [affineFaceNormal_cofactor L p B]
-
 /-- `rawAffineBoundary` on an invertible affine chart equals `L.affineFluxBoundary` of its four
 coordinate fluxes, for either sign of `det L`. -/
 theorem rawAffineBoundary_eq_affineFluxBoundary (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ))
     (p : Fin 4 → ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
     rawAffineBoundary L.toContinuousLinearMap p B =
       L.affineFluxBoundary p (fun i x ↦ B x (dq (Pi.single i 1))) := by
-  rw [L.rawAffineBoundary_eq_cofactor, L.affineFluxBoundary_eq_sum]
+  rw [rawAffineBoundary_eq, L.affineFluxBoundary_eq_sum]
+  simp_rw [ContinuousLinearEquiv.coe_coe, affineFaceNormal_cofactor L p B]
 
 end ContinuousLinearEquiv
 
@@ -719,27 +623,7 @@ theorem rawAffineBoundary_piMap_smul_id {a b : Fin 4 → ℝ} (hab : a ≤ b)
     rawAffineBoundary
         (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ) a B =
       TauCeti.boxBoundarySum a b (fun i x ↦ B x (dq (Pi.single i 1))) := by
-  by_cases hdeg : ∃ k, a k = b k
-  · obtain ⟨k, hk⟩ := hdeg
-    have hzero : (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ)
-        (Pi.single k 1) = 0 := by
-      ext i
-      rcases eq_or_ne i k with rfl | hik
-      · simp [hk]
-      · simp [hik]
-    rw [rawAffineBoundary_eq_zero_of_apply_single_eq_zero hzero,
-      TauCeti.boxBoundarySum_eq_zero_of_eq hk]
-  · push Not at hdeg
-    have hlt : ∀ i, a i < b i := fun i ↦ (hab i).lt_of_ne (hdeg i)
-    let L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ) := ContinuousLinearEquiv.piCongrRight fun i ↦
-      (ContinuousLinearEquiv.smulLeft
-        (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hlt i).ne')) : ℝ ≃L[ℝ] ℝ)
-    have hL : L.toContinuousLinearMap =
-        ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ := by
-      ext x i
-      simp [L]
-    rw [← hL, L.rawAffineBoundary_eq_affineFluxBoundary,
-      ContinuousLinearEquiv.affineFluxBoundary_piCongrRight_smulLeft hlt]
+  simpa using rawAffineBoundary_comp_piMap_smul_id (ContinuousLinearMap.id ℝ (Fin 4 → ℝ)) 0 hab B
 
 /-- Specialization of `rawAffineBoundary_piMap_smul_id` to the two-sided ordered quaternionic
 product `g (dq x) * Dq * f (dq x)`, matching the `TauCeti.boxBoundarySum` integrand of the box
@@ -749,7 +633,8 @@ theorem rawAffineBoundary_piMap_smul_id_mulLeftRight {a b : Fin 4 → ℝ} (hab 
     rawAffineBoundary
         (ContinuousLinearMap.piMap fun i ↦ (b i - a i) • ContinuousLinearMap.id ℝ ℝ) a
         (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ (g (dq x)) (f (dq x))) =
-      TauCeti.boxBoundarySum a b (fun i x ↦ g (dq x) * dq (Pi.single i 1) * f (dq x)) :=
-  rawAffineBoundary_piMap_smul_id hab _
+      TauCeti.boxBoundarySum a b (fun i x ↦ g (dq x) * dq (Pi.single i 1) * f (dq x)) := by
+  rw [rawAffineBoundary_piMap_smul_id hab]
+  simp only [mulLeftRight_apply]
 
 end ContinuousLinearMap

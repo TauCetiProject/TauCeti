@@ -23,7 +23,7 @@ public section
 
 open BoxIntegral MeasureTheory Set
 
-namespace MeasureTheory
+section Box
 
 universe u v
 
@@ -44,26 +44,29 @@ theorem ContinuousOn.boxIntegral_volume_eq_setIntegral_Icc {f : (ι → ℝ) →
     {I : Box ι} (hc : ContinuousOn f (Icc I.lower I.upper)) (l : IntegrationParams) :
     BoxIntegral.integral.{u, v, v} I l f BoxAdditiveMap.volume =
       ∫ x in Icc I.lower I.upper, f x := by
-  have hc' : ContinuousOn f (Box.Icc I) := hc
-  rw [BoxAdditiveMap.volume, hc'.boxIntegral_eq_setIntegral volume l,
+  rw [← Box.Icc_def] at hc
+  rw [BoxAdditiveMap.volume, hc.boxIntegral_eq_setIntegral volume l,
     setIntegral_congr_set I.coe_ae_eq_Icc, Box.Icc_def]
 
-end MeasureTheory
+end Box
 
 namespace BoxIntegral.Box
 
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- On any slice `x i = c` (`c ∈ Set.Icc (I.lower i) (I.upper i)`) of a box `I`, the volume
-`BoxIntegral` over `I.face i` of a function continuous on `Set.Icc I.lower I.upper` equals the
-Bochner set integral over `Set.Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)`. -/
+/-- On any slice `x i = c` of a box `I`, the volume `BoxIntegral` over `I.face i` of a function
+continuous along that closed slice equals the Bochner set integral over
+`Set.Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)`. -/
 theorem integral_face_eq_setIntegral_Icc (I : Box (Fin (n + 1))) {f : (Fin (n + 1) → ℝ) → E}
-    (hc : ContinuousOn f (Icc I.lower I.upper)) (i : Fin (n + 1)) {c : ℝ}
-    (hx : c ∈ Icc (I.lower i) (I.upper i)) (l : IntegrationParams) :
+    {i : Fin (n + 1)} {c : ℝ}
+    (hc : ContinuousOn (fun x ↦ f (i.insertNth c x))
+      (Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove)))
+    (l : IntegrationParams) :
     BoxIntegral.integral (I.face i) l (fun x ↦ f (i.insertNth c x)) BoxAdditiveMap.volume =
       ∫ x in Icc (I.lower ∘ i.succAbove) (I.upper ∘ i.succAbove), f (i.insertNth c x) := by
-  have hface : ContinuousOn (fun x ↦ f (i.insertNth c x)) (Icc (I.face i).lower (I.face i).upper) :=
-    I.continuousOn_face_Icc hc hx
-  exact hface.boxIntegral_volume_eq_setIntegral_Icc l
+  have hl : (I.face i).lower = I.lower ∘ i.succAbove := funext (face_lower I i)
+  have hu : (I.face i).upper = I.upper ∘ i.succAbove := funext (face_upper I i)
+  rw [← hl, ← hu] at hc
+  simpa only [hl, hu] using hc.boxIntegral_volume_eq_setIntegral_Icc l
 
 end BoxIntegral.Box

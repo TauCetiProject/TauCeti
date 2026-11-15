@@ -28,6 +28,10 @@ preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 
 The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
 their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
+
+Cutting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at `t` produces two almost-
+everywhere disjoint sub-boxes (`TauCeti.aeDisjoint_Icc_update`), as their intersection lies in a
+coordinate hyperplane of measure zero.
 -/
 
 public section
@@ -96,6 +100,20 @@ theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
+
+/-- The two sub-boxes obtained by splitting `Set.Icc a b` along coordinate `k` at `t` meet in the
+hyperplane slice `x k = t` of Lebesgue measure zero, hence are almost-everywhere disjoint. -/
+theorem aeDisjoint_Icc_update {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (a b : ι → ℝ) (k : ι) (t : ℝ) :
+    AEDisjoint volume (Icc a (Function.update b k t)) (Icc (Function.update a k t) b) := by
+  have hsub : Icc a (Function.update b k t) ∩ Icc (Function.update a k t) b ⊆
+      Icc (Function.update a k t) (Function.update b k t) := by
+    rintro x ⟨⟨_, hx₁⟩, ⟨hx₂, _⟩⟩
+    exact ⟨hx₂, hx₁⟩
+  have hzero : volume (Icc (Function.update a k t) (Function.update b k t)) = 0 := by
+    rw [Real.volume_Icc_pi]
+    exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp)
+  exact measure_mono_null hsub hzero
 
 end TauCeti
 

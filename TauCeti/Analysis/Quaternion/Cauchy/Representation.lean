@@ -73,7 +73,7 @@ private theorem affineFlux_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε) {q�
     hfc (isCompact_Icc.image (continuous_const.add L.continuous))
   -- Transport integrability to the parameter cube before applying the cofactor theorem.
   have hip := (L.integrableOn_image_affine_iff p _ (Icc 0 1) volume).mp hi
-  have h := L.integral_divergence_affineFluxPullback p
+  have h := L.integral_divergence_eq_affineFluxBoundary p
     (fun i x ↦ cauchyFueterCutoffField ε q₀ (F i) (dq x)) D ∅ countable_empty
     (fun i ↦ (continuousOn_cauchyFueterCutoffField ε (hF i)).comp
       dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx))
@@ -82,7 +82,7 @@ private theorem affineFlux_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε) {q�
     (hip.congr hae.symm)
   rw [integral_congr_ae hae] at h
   rw [L.integral_image_affine p _ (Icc 0 1) volume, abs_of_pos hL, integral_smul]
-  simpa only [boxBoundarySum_zero_one] using h.symm
+  simpa only [L.affineFluxBoundary_def] using h.symm
 
 /-- The signed cofactor flux of the cut-off left field is its density integral over the
 physical parallelepiped when the affine chart has positive determinant. -/
@@ -226,14 +226,14 @@ theorem left_cauchyFueter_affine_cofactor
     (hf : ∀ u ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
       dq (p + L u) ≠ dq x₀ → LeftFueterAt f (dq (p + L u)))
     (hx₀ : L.symm (x₀ - p) ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
-    f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • boxBoundarySum 0 1
-      (L.affineFluxPullback p (fun i x ↦
-        cauchyFueterKernel (dq x) (dq x₀) * dq (Pi.single i 1) * f (dq x))) := by
+    f (dq x₀) = (1 / (2 * Real.pi ^ 2)) •
+      L.affineFluxBoundary p (fun i x ↦
+        cauchyFueterKernel (dq x) (dq x₀) * dq (Pi.single i 1) * f (dq x)) := by
   have heq := tendsto_nhds_unique
     ((tendsto_affineFlux_cauchyFueterCutoffField_left hL hc hf hx₀).congr'
       (eventually_affineFlux_cauchyFueterCutoffField _ hx₀)) tendsto_const_nhds
   have hm : (2 * Real.pi ^ 2 : ℝ) ≠ 0 := by positivity
-  rw [← heq, smul_smul, one_div, inv_mul_cancel₀ hm, one_smul]
+  rw [L.affineFluxBoundary_def, ← heq, smul_smul, one_div, inv_mul_cancel₀ hm, one_smul]
 
 /-- The right Cauchy–Fueter representation in positive affine cofactor coordinates.
 The pole lies in the open parameter cube; the three factors retain the order `f * eᵢ * G`. -/
@@ -243,14 +243,14 @@ theorem right_cauchyFueter_affine_cofactor
     (hf : ∀ u ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
       dq (p + L u) ≠ dq x₀ → RightFueterAt f (dq (p + L u)))
     (hx₀ : L.symm (x₀ - p) ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
-    f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • boxBoundarySum 0 1
-      (L.affineFluxPullback p (fun i x ↦
-        f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) (dq x₀))) := by
+    f (dq x₀) = (1 / (2 * Real.pi ^ 2)) •
+      L.affineFluxBoundary p (fun i x ↦
+        f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) (dq x₀)) := by
   have heq := tendsto_nhds_unique
     ((tendsto_affineFlux_cauchyFueterCutoffField_right hL hc hf hx₀).congr'
       (eventually_affineFlux_cauchyFueterCutoffField _ hx₀)) tendsto_const_nhds
   have hm : (2 * Real.pi ^ 2 : ℝ) ≠ 0 := by positivity
-  rw [← heq, smul_smul, one_div, inv_mul_cancel₀ hm, one_smul]
+  rw [L.affineFluxBoundary_def, ← heq, smul_smul, one_div, inv_mul_cancel₀ hm, one_smul]
 
 /-- The left Cauchy–Fueter formula as the actual affine face integral of `G * Dq * f`,
 with outward orientation and normalization `1 / (2π²)`. -/
@@ -264,7 +264,7 @@ theorem left_cauchyFueter_affine
       ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
         (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
           (cauchyFueterKernel (dq x) (dq x₀)) (f (dq x))) := by
-  rw [L.rawAffineBoundary_eq_cofactor, ← boxBoundarySum_zero_one]
+  rw [L.rawAffineBoundary_eq_affineFluxBoundary]
   simpa only [ContinuousLinearMap.mulLeftRight_apply] using
     left_cauchyFueter_affine_cofactor hL hc hf hx₀
 
@@ -281,7 +281,7 @@ theorem right_cauchyFueter_affine
       ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
         (fun x ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ
           (f (dq x)) (cauchyFueterKernel (dq x) (dq x₀))) := by
-  rw [L.rawAffineBoundary_eq_cofactor, ← boxBoundarySum_zero_one]
+  rw [L.rawAffineBoundary_eq_affineFluxBoundary]
   simpa only [ContinuousLinearMap.mulLeftRight_apply] using
     right_cauchyFueter_affine_cofactor hL hc hf hx₀
 
