@@ -34,9 +34,13 @@ function of the source over the arrows `Quiver.Costar x` with target `x`
 
 ## Main declarations
 
-* `Quiver.Total.comp`: the composite of two composable total arrows of a category.
-* `Quiver.Total.comp_inv_comp`, `Quiver.Total.inv_comp_comp`: in a groupoid, composing with an
-  arrow and with its inverse cancel.
+* `Quiver.Total.comp`: the composite of two composable total arrows of a category, associative via
+  `Quiver.Total.comp_assoc` with unit laws `Quiver.Total.id_comp` and `Quiver.Total.comp_id`.
+* `Quiver.Total.left_surjective`, `Quiver.Total.right_surjective`: source and target on total
+  arrows of a category are surjective, split by identity arrows.
+* `Quiver.Total.comp_inv_comp`, `Quiver.Total.inv_comp_comp`, `Quiver.Total.comp_inv_self`,
+  `Quiver.Total.inv_self_comp`, `Quiver.Total.inv_comp_eq`: inverse cancellation and contravariance
+  of inversion for total arrows of a groupoid.
 -/
 
 public section
@@ -80,6 +84,16 @@ theorem finsum_mem_preimage_left_singleton {M : Type*} [AddCommMonoid M]
 end Quiver
 
 variable {C : Type*} [Category C]
+
+/-- In a category, the source projection `Quiver.Total.left` is surjective, split by identity
+arrows. -/
+theorem left_surjective : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+  fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+
+/-- In a category, the target projection `Quiver.Total.right` is surjective, split by identity
+arrows. -/
+theorem right_surjective : Function.Surjective (Quiver.Total.right : Quiver.Total C → C) :=
+  fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
 
 /-- The sum of a function of the target over the total arrows with source `x` only depends on the
 isomorphism class of `x`: an isomorphism `x ≅ y` identifies the arrows out of `x` with those out
@@ -142,9 +156,56 @@ theorem mk_homOfEq_comp_homOfEq (a b : Quiver.Total C) {y z w : C} (hy : a.left 
   subst hy hz hz' hw
   simp
 
+/-- Composition of total arrows is associative, irrespective of the composability proofs. -/
+theorem comp_assoc (a b c : Quiver.Total C) (hab : a.right = b.left) (hbc : b.right = c.left)
+    (habc₁ : (a.comp b hab).right = c.left) (habc₂ : a.right = (b.comp c hbc).left) :
+    (a.comp b hab).comp c habc₁ = a.comp (b.comp c hbc) habc₂ := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  obtain ⟨z', w, k⟩ := c
+  dsimp only at hab hbc
+  subst hab hbc
+  simp [comp_def]
+
+/-- Precomposing a total arrow with the identity arrow at its source leaves it unchanged. -/
+@[simp]
+theorem id_comp (a : Quiver.Total C) {x : C}
+    (h : (⟨x, x, 𝟙 x⟩ : Quiver.Total C).right = a.left) :
+    (⟨x, x, 𝟙 x⟩ : Quiver.Total C).comp a h = a := by
+  obtain ⟨x', y, f⟩ := a
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- Postcomposing a total arrow with the identity arrow at its target leaves it unchanged. -/
+@[simp]
+theorem comp_id (a : Quiver.Total C) {y : C}
+    (h : a.right = (⟨y, y, 𝟙 y⟩ : Quiver.Total C).left) :
+    a.comp ⟨y, y, 𝟙 y⟩ h = a := by
+  obtain ⟨x, y', f⟩ := a
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
 section IsGroupoid
 
 variable [IsGroupoid C]
+
+/-- Composing a total arrow with its inverse gives the identity arrow at its source. -/
+@[simp]
+theorem comp_inv_self (a : Quiver.Total C)
+    (h : a.right = (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).left) :
+    a.comp ⟨a.right, a.left, inv a.hom⟩ h = ⟨a.left, a.left, 𝟙 a.left⟩ := by
+  obtain ⟨x, y, f⟩ := a
+  simp [comp_def]
+
+/-- Composing the inverse of a total arrow with the arrow gives the identity arrow at its target. -/
+@[simp]
+theorem inv_self_comp (a : Quiver.Total C)
+    (h : (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).right = a.left) :
+    (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp a h = ⟨a.right, a.right, 𝟙 a.right⟩ := by
+  obtain ⟨x, y, f⟩ := a
+  simp [comp_def]
 
 /-- Following `a` by the composite of its inverse with `c` gives back `c`. -/
 theorem comp_inv_comp (a c : Quiver.Total C) (h : a.left = c.left)
@@ -165,6 +226,39 @@ theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
   dsimp only at h
   subst h
   simp [comp_def]
+
+/-- Postcomposing `a ≫ b` with the inverse of `b` recovers `a`. -/
+theorem comp_inv_cancel_right (a b : Quiver.Total C) (h : a.right = b.left)
+    (h' : (a.comp b h).right = (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).left) :
+    (a.comp b h).comp ⟨b.right, b.left, inv b.hom⟩ h' = a := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- Postcomposing `a ≫ b⁻¹` with `b` recovers `a`. -/
+theorem inv_comp_cancel_right (a b : Quiver.Total C) (h : a.right = b.right)
+    (h' : (a.comp ⟨b.right, b.left, inv b.hom⟩ h).right = b.left) :
+    (a.comp ⟨b.right, b.left, inv b.hom⟩ h).comp b h' = a := by
+  obtain ⟨x, z, f⟩ := a
+  obtain ⟨y, z', g⟩ := b
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- Inverting a composite of total arrows reverses their order and inverts each arrow. -/
+theorem inv_comp_eq (a b : Quiver.Total C) (h : a.right = b.left)
+    (h' : (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).right =
+      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).left) :
+    (⟨(a.comp b h).right, (a.comp b h).left, inv (a.comp b h).hom⟩ : Quiver.Total C) =
+      (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).comp ⟨a.right, a.left, inv a.hom⟩ h' := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  dsimp only at h
+  subst h
+  rw [mk_comp_mk]
+  simp
 
 end IsGroupoid
 
