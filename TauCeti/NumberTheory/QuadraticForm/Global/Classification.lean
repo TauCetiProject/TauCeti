@@ -295,7 +295,7 @@ theorem globalInvariants_eq_iff (hL : I.IsLocalRealization U R) (hQ : Q.Nondegen
     simpa using (hv (Classical.arbitrary _)).1
   have hQd : (Q.globalInvariants hQ).discr = I.discr := by
     rw [QuadraticForm.globalInvariants_discr]
-    refine squareClassMap_adicCompletion_eq_iff.mp fun v => ?_
+    refine forall_squareClassMap_adicCompletion_eq_iff.mp fun v => ?_
     rw [(hv v).2.1, hL.discr_finite, GlobalFormInvariants.discrAtFinitePlace_def]
   refine GlobalFormInvariants.ext (by simpa using hQr) hQd (funext fun v => ?_)
     (funext fun w => ?_)

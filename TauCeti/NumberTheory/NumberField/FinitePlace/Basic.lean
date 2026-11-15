@@ -11,8 +11,8 @@ public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
@@ -82,10 +82,9 @@ instance [NumberField K] : Nonempty (HeightOneSpectrum (𝓞 K)) :=
   ⟨(HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
     (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))⟩
 
-/-- A number field has infinitely many height-one primes: every rational prime lies under one. -/
-instance [NumberField K] : Infinite (HeightOneSpectrum (𝓞 K)) :=
-  letI : Infinite (HeightOneSpectrum ℤ) :=
-    Infinite.of_surjective _ Rat.HeightOneSpectrum.primesEquiv.surjective
+/-- The ring of integers of a field of characteristic zero has infinitely many height-one primes:
+every rational prime lies under one. -/
+instance [CharZero K] : Infinite (HeightOneSpectrum (𝓞 K)) :=
   Infinite.of_surjective (HeightOneSpectrum.under ℤ) (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
 
 /-- A number field has infinitely many finite places. -/

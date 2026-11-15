@@ -37,11 +37,11 @@ universe:
 
 ## Main results
 
-* `TauCeti.isSquare_of_isSquare_unitAtFinitePlace_of_notMem`: the global square theorem for `Kˣ`
+* `Units.isSquare_of_isSquare_unitAtFinitePlace_of_notMem`: the global square theorem for `Kˣ`
   with a finite exceptional set `S` of finite places.
-* `TauCeti.isSquare_iff_forall_isSquare_unitAtFinitePlace`: a unit of `K` is a square iff its
+* `Units.isSquare_iff_forall_isSquare_unitAtFinitePlace`: a unit of `K` is a square iff its
   localization at every finite place is a square.
-* `TauCeti.infinite_setOf_not_isSquare_unitAtFinitePlace_iff`: a unit of `K` is a nonsquare iff it
+* `Units.infinite_setOf_not_isSquare_unitAtFinitePlace_iff`: a unit of `K` is a nonsquare iff it
   is a nonsquare at infinitely many finite places.
 * `TauCeti.isSquare_of_isSquare_algebraMap_adicCompletion_of_notMem`,
   `TauCeti.isSquare_iff_forall_isSquare_algebraMap_adicCompletion`,
@@ -49,8 +49,9 @@ universe:
   for arbitrary elements of `K`.
 * `TauCeti.eq_zero_of_squareClassMap_adicCompletion_eq_zero_of_notMem`,
   `TauCeti.eq_of_squareClassMap_adicCompletion_eq_of_notMem`,
-  `TauCeti.squareClassMap_adicCompletion_eq_iff`,
-  `TauCeti.injective_squareClassMap_adicCompletion`: local-to-global triviality, equality, and
+  `TauCeti.forall_squareClassMap_adicCompletion_eq_zero_iff`,
+  `TauCeti.forall_squareClassMap_adicCompletion_eq_iff`,
+  `TauCeti.squareClassMap_adicCompletion_injective`: local-to-global triviality, equality, and
   injectivity on `SquareClassGroup K`.
 
 ## References
@@ -72,11 +73,11 @@ contradicting the first inequality `[E : K₀] ≤ [C_{K₀} : N(C_E)]`
 
 public section
 
-open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField TauCeti
 
 universe u
 
-namespace TauCeti
+namespace Units
 
 /-- The global square theorem for number fields in `Type`: a unit that is a square in `K_v` at
 every finite place outside `S` is a square in `K`. -/
@@ -144,7 +145,7 @@ square. -/
 theorem isSquare_iff_forall_isSquare_unitAtFinitePlace (a : Kˣ) :
     IsSquare a ↔ ∀ v : HeightOneSpectrum (𝓞 K), IsSquare (v.unitAtFinitePlace a) :=
   ⟨fun ha v ↦ ha.map v.unitAtFinitePlace,
-    fun h ↦ isSquare_of_isSquare_unitAtFinitePlace_of_notMem a ∅ fun v _ ↦ h v⟩
+    fun h ↦ a.isSquare_of_isSquare_unitAtFinitePlace_of_notMem ∅ fun v _ ↦ h v⟩
 
 /-- A unit of a number field fails to be a square at infinitely many finite places if and only if
 it is not a global square. -/
@@ -155,8 +156,14 @@ theorem infinite_setOf_not_isSquare_unitAtFinitePlace_iff (a : Kˣ) :
   · obtain ⟨v, hv⟩ := hinf.nonempty
     exact hv (ha.map v.unitAtFinitePlace)
   · classical
-    exact isSquare_of_isSquare_unitAtFinitePlace_of_notMem a hfin.toFinset fun v hv ↦
+    exact a.isSquare_of_isSquare_unitAtFinitePlace_of_notMem hfin.toFinset fun v hv ↦
       by_contra fun hns ↦ hv (hfin.mem_toFinset.mpr hns)
+
+end Units
+
+namespace TauCeti
+
+variable {K : Type u} [Field K] [NumberField K]
 
 /-! ### Field elements -/
 
@@ -169,7 +176,7 @@ theorem isSquare_of_isSquare_algebraMap_adicCompletion_of_notMem
   by_cases hx : x = 0
   · exact hx ▸ IsSquare.zero
   · rw [← Units.val_mk0 hx, Units.isSquare_coe_iff]
-    refine isSquare_of_isSquare_unitAtFinitePlace_of_notMem (Units.mk0 x hx) S fun v hv ↦ ?_
+    refine (Units.mk0 x hx).isSquare_of_isSquare_unitAtFinitePlace_of_notMem S fun v hv ↦ ?_
     rw [← Units.isSquare_coe_iff, v.unitAtFinitePlace_apply, Units.val_mk0]
     exact h v hv
 
@@ -205,7 +212,7 @@ theorem eq_zero_of_squareClassMap_adicCompletion_eq_zero_of_notMem
   let a : Kˣ := Additive.toMul (Quotient.out c)
   have ha : squareClass a = c := squareClass_toMul_out c
   rw [← ha, squareClass_eq_zero_iff]
-  refine isSquare_of_isSquare_unitAtFinitePlace_of_notMem a S fun v hv ↦ ?_
+  refine a.isSquare_of_isSquare_unitAtFinitePlace_of_notMem S fun v hv ↦ ?_
   rw [← squareClass_eq_zero_iff, v.squareClass_unitAtFinitePlace, ha]
   exact h v hv
 
@@ -222,9 +229,18 @@ theorem eq_of_squareClassMap_adicCompletion_eq_of_notMem
   rw [map_sub, sub_eq_zero]
   exact h v hv
 
+/-- A global square class maps to zero at every finite place if and only if it is zero. -/
+@[simp]
+theorem forall_squareClassMap_adicCompletion_eq_zero_iff {c : SquareClassGroup K} :
+    (∀ v : HeightOneSpectrum (𝓞 K),
+        (algebraMap K (v.adicCompletion K)).squareClassMap c = 0) ↔
+      c = 0 :=
+  ⟨fun h ↦ eq_zero_of_squareClassMap_adicCompletion_eq_zero_of_notMem ∅ fun v _ ↦ h v,
+    fun h _ ↦ h ▸ map_zero _⟩
+
 /-- Two global square classes agree at every finite place if and only if they are equal. -/
 @[simp]
-theorem squareClassMap_adicCompletion_eq_iff {c₁ c₂ : SquareClassGroup K} :
+theorem forall_squareClassMap_adicCompletion_eq_iff {c₁ c₂ : SquareClassGroup K} :
     (∀ v : HeightOneSpectrum (𝓞 K),
         (algebraMap K (v.adicCompletion K)).squareClassMap c₁ =
           (algebraMap K (v.adicCompletion K)).squareClassMap c₂) ↔
@@ -234,10 +250,10 @@ theorem squareClassMap_adicCompletion_eq_iff {c₁ c₂ : SquareClassGroup K} :
 
 /-- The global-to-local map from `SquareClassGroup K` to the product of the local square-class
 groups across all finite places is injective. -/
-theorem injective_squareClassMap_adicCompletion :
+theorem squareClassMap_adicCompletion_injective :
     Function.Injective
       (fun (c : SquareClassGroup K) (v : HeightOneSpectrum (𝓞 K)) ↦
         (algebraMap K (v.adicCompletion K)).squareClassMap c) :=
-  fun _ _ h ↦ squareClassMap_adicCompletion_eq_iff.mp (congrFun h)
+  fun _ _ h ↦ forall_squareClassMap_adicCompletion_eq_iff.mp (congrFun h)
 
 end TauCeti
