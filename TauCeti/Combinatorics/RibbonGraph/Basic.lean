@@ -672,9 +672,51 @@ instance : Group Γ.Aut where
 @[simp] theorem Aut.inv_edge {Γ : BipartiteRibbonGraph.{u}} (f : Γ.Aut) :
     f⁻¹.edge = f.edge⁻¹ := (rfl)
 
-/-! ### Universe lifting -/
-
 universe v
+
+/-- Isomorphisms between finite bipartite ribbon graphs form a finite type. -/
+instance {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}} : Finite (Γ.Iso Δ) :=
+  Finite.of_injective Iso.edge fun _ _ ↦ Iso.ext
+
+/-- Conjugation by an isomorphism of ribbon graphs identifies their automorphism groups. -/
+def Iso.autMulEquiv {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ) :
+    Γ.Aut ≃* Δ.Aut where
+  toFun f := φ.symm.trans (f.trans φ)
+  invFun g := φ.trans (g.trans φ.symm)
+  left_inv f := by ext e; simp
+  right_inv g := by ext e; simp
+  map_mul' f₁ f₂ := by ext e; simp
+
+/-- Conjugating an automorphism by an isomorphism conjugates its edge permutation. -/
+@[simp] theorem Iso.autMulEquiv_apply_edge {Γ : BipartiteRibbonGraph.{u}}
+    {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ) (f : Γ.Aut) :
+    (φ.autMulEquiv f).edge = φ.edge.permCongr f.edge :=
+  Equiv.ext fun _ ↦ rfl
+
+/-- The inverse of `Iso.autMulEquiv` conjugates edge permutations by `φ.edge.symm`. -/
+@[simp] theorem Iso.autMulEquiv_symm_apply_edge {Γ : BipartiteRibbonGraph.{u}}
+    {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ) (g : Δ.Aut) :
+    (φ.autMulEquiv.symm g).edge = φ.edge.symm.permCongr g.edge :=
+  Equiv.ext fun _ ↦ rfl
+
+/-- Isomorphic bipartite ribbon graphs have automorphism groups of the same cardinality. -/
+theorem Iso.natCard_aut_eq {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
+    (φ : Γ.Iso Δ) : Nat.card Γ.Aut = Nat.card Δ.Aut :=
+  Nat.card_congr φ.autMulEquiv.toEquiv
+
+/-- Automorphisms of a bipartite ribbon graph act on its edges by evaluation. -/
+instance : SMul Γ.Aut Γ.E := ⟨fun f e ↦ f.edge e⟩
+
+/-- An automorphism acts on an edge by applying its underlying edge bijection. -/
+@[simp] theorem Aut.smul_def {Γ : BipartiteRibbonGraph.{u}} (f : Γ.Aut) (e : Γ.E) :
+    f • e = f.edge e := (rfl)
+
+/-- The action of `Γ.Aut` on `Γ.E` is a multiplicative group action. -/
+instance : MulAction Γ.Aut Γ.E where
+  one_smul _ := by rw [Aut.smul_def, Aut.one_edge]; rfl
+  mul_smul _ _ _ := by rw [Aut.smul_def, Aut.smul_def, Aut.smul_def, Aut.mul_edge]; rfl
+
+/-! ### Universe lifting -/
 
 /-- The copy of a ribbon graph in a higher universe, with edges and vertices of both colours
 wrapped in `ULift`. -/

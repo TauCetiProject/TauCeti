@@ -527,6 +527,19 @@ theorem fullCycleType_eq_map_card_filter {γ : Type*}
     ← map_card_filter_image_not_eq_replicate σ m hm, ← Multiset.map_add, Finset.filter_val,
     Finset.filter_val, Multiset.filter_add_not]
 
+/-- If a surjection `q : α → γ` onto a finite type has the orbits of `σ` as its fibres and
+`d c = Fintype.card {x : α // q x = c}`, then `fullCycleType σ` is the multiset of values of `d`. -/
+theorem fullCycleType_eq_map_degree {γ : Type*} [Fintype γ] [DecidableEq γ]
+    (σ : Equiv.Perm α) (q : α → γ) (hq : Function.Surjective q)
+    (hm : ∀ x y, σ.SameCycle x y ↔ q x = q y) (d : γ → ℕ)
+    (hd : ∀ c, d c = Fintype.card {x : α // q x = c}) :
+    fullCycleType σ = (Finset.univ : Finset γ).val.map d := by
+  rw [fullCycleType_eq_map_card_filter σ q hm]
+  refine Multiset.map_congr (congrArg Finset.val (by convert Finset.image_univ_of_surjective hq))
+    fun c _ => ?_
+  rw [hd c, Fintype.card_subtype]
+  exact congrArg Finset.card (Finset.filter_congr_decidable _ _ _)
+
 open scoped Classical in
 /-- If `σ` preserves the fibres of `π : α → ι`, then the full cycle type of `σ` is the sum, over
 the fibres, of the full cycle types of the restrictions of `σ` to them. -/

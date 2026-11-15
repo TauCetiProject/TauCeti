@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.Regular
 public import TauCeti.Combinatorics.RibbonGraph.OfPermutationTriple
 public import TauCeti.Combinatorics.RibbonGraph.ToPermutationTriple
 
@@ -27,8 +28,10 @@ permutation triples, automorphisms included.
   `TauCeti.PermutationTriple.nonempty_iso_ribbonGraph_iff` is the same statement read on triples.
 * `TauCeti.BipartiteRibbonGraph.isoClassEquiv`: the resulting bijection between isomorphism
   classes of ribbon graphs with `n` edges and `TauCeti.PermutationTriple.IsoClass n`.
-* `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup`: the automorphism group of a numbered
-  graph is the automorphism group of its triple.
+* `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup`,
+  `TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut`, and
+  `TauCeti.BipartiteRibbonGraph.IsRegular`: the automorphism group and regularity of a numbered
+  graph match those of its triple.
 
 Connectedness matches on the two sides
 (`TauCeti.BipartiteRibbonGraph.isConnected_toPermutationTriple` and
@@ -227,6 +230,82 @@ theorem autEquivAutomorphismGroup_symm_apply_edge (ν : Γ.E ≃ Fin n)
     (τ : (Γ.toPermutationTriple ν).automorphismGroup) :
     ((Γ.autEquivAutomorphismGroup ν).symm τ).edge = ν.symm.permCongr τ :=
   Iso.ofEdge_edge _ _ _
+
+/-- Numbering the edges of a ribbon graph preserves the cardinality of its automorphism group. -/
+@[simp] theorem natCard_automorphismGroup_toPermutationTriple (ν : Γ.E ≃ Fin n) :
+    Nat.card (Γ.toPermutationTriple ν).automorphismGroup = Nat.card Γ.Aut :=
+  (Nat.card_congr (Γ.autEquivAutomorphismGroup ν).toEquiv).symm
+
+/-- Canonical isomorphism between `t.automorphismGroup` and `t.ribbonGraph.Aut`. -/
+noncomputable def _root_.TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut
+    (t : PermutationTriple n) : t.automorphismGroup ≃* t.ribbonGraph.Aut :=
+  (MulEquiv.subgroupCongr
+      (congrArg PermutationTriple.automorphismGroup t.toPermutationTriple_ribbonGraph.symm)).trans
+    (t.ribbonGraph.autEquivAutomorphismGroup (Equiv.refl (Fin n))).symm
+
+/-- On edges (`Fin n`), `automorphismGroupMulEquivRibbonGraphAut` is the underlying permutation. -/
+@[simp] theorem _root_.TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut_edge
+    (t : PermutationTriple n) (τ : t.automorphismGroup) :
+    (t.automorphismGroupMulEquivRibbonGraphAut τ).edge = (τ : Perm (Fin n)) :=
+  (t.ribbonGraph.autEquivAutomorphismGroup_symm_apply_edge (Equiv.refl (Fin n)) _).trans
+    (Equiv.ext fun _ ↦ rfl)
+
+/-- The inverse of `automorphismGroupMulEquivRibbonGraphAut` sends `f` to `f.edge`. -/
+@[simp]
+theorem _root_.TauCeti.PermutationTriple.coe_automorphismGroupMulEquivRibbonGraphAut_symm_apply
+    (t : PermutationTriple n) (f : t.ribbonGraph.Aut) :
+    (t.automorphismGroupMulEquivRibbonGraphAut.symm f : Perm (Fin n)) = f.edge :=
+  Equiv.ext fun _ ↦ rfl
+
+/-- Passing from a triple to its ribbon graph preserves the automorphism-group order. -/
+@[simp] theorem _root_.TauCeti.PermutationTriple.natCard_aut_ribbonGraph (t : PermutationTriple n) :
+    Nat.card t.ribbonGraph.Aut = Nat.card t.automorphismGroup :=
+  (Nat.card_congr t.automorphismGroupMulEquivRibbonGraphAut.toEquiv).symm
+
+/-! ### Regularity -/
+
+/-- A ribbon graph is *regular* when it is connected and `Γ.Aut` acts transitively on `Γ.E`. -/
+def IsRegular : Prop :=
+  Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E
+
+/-- Unfold `BipartiteRibbonGraph.IsRegular` into connectedness and edge-transitivity. -/
+theorem isRegular_iff {Γ : BipartiteRibbonGraph.{u}} :
+    Γ.IsRegular ↔ Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E := Iff.rfl
+
+/-- Every regular bipartite ribbon graph is connected. -/
+theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) : Γ.IsConnected :=
+  hΓ.1
+
+/-- Numbering the edges of a bipartite ribbon graph preserves regularity. -/
+@[simp] theorem isRegular_toPermutationTriple (ν : Γ.E ≃ Fin n) :
+    (Γ.toPermutationTriple ν).IsRegular ↔ Γ.IsRegular := by
+  let φ : Γ.E →ₑ[Γ.autEquivAutomorphismGroup ν] Fin n :=
+    { toFun := ν, map_smul' := fun f e ↦ by
+        rw [Aut.smul_def, Subgroup.smul_def, Perm.smul_def, coe_autEquivAutomorphismGroup_apply,
+          Equiv.permCongr_apply, ν.symm_apply_apply] }
+  rw [PermutationTriple.isRegular_iff, isRegular_iff]
+  exact and_congr (Γ.isConnected_toPermutationTriple ν)
+    (MulAction.isPretransitive_congr (f := φ)
+      (Γ.autEquivAutomorphismGroup ν).surjective ν.bijective).symm
+
+/-- Passing from a permutation triple to its ribbon graph preserves regularity. -/
+@[simp] theorem _root_.TauCeti.PermutationTriple.isRegular_ribbonGraph (t : PermutationTriple n) :
+    t.ribbonGraph.IsRegular ↔ t.IsRegular := by
+  rw [← t.ribbonGraph.isRegular_toPermutationTriple (Equiv.refl (Fin n)),
+    t.toPermutationTriple_ribbonGraph]
+
+/-- `Γ` is regular iff it is connected and `Nat.card Γ.Aut = Fintype.card Γ.E`. -/
+theorem isRegular_iff_natCard_aut :
+    Γ.IsRegular ↔ Γ.IsConnected ∧ Nat.card Γ.Aut = Fintype.card Γ.E := by
+  let ν := Fintype.equivFin Γ.E
+  rw [← Γ.isRegular_toPermutationTriple ν, PermutationTriple.isRegular_iff_card_automorphismGroup,
+    Γ.isConnected_toPermutationTriple ν, Γ.natCard_automorphismGroup_toPermutationTriple ν]
+
+/-- Regularity of bipartite ribbon graphs is invariant under isomorphism. -/
+theorem Iso.isRegular_iff {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
+    (φ : Γ.Iso Δ) : Γ.IsRegular ↔ Δ.IsRegular := by
+  rw [isRegular_iff_natCard_aut, isRegular_iff_natCard_aut, φ.isConnected_iff, φ.natCard_aut_eq,
+    Fintype.card_congr φ.edge]
 
 end BipartiteRibbonGraph
 

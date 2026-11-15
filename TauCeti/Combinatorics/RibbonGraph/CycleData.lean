@@ -23,6 +23,11 @@ entries equal `fullCycleType` of `rotB`, `rotW`, and `facePerm`, so edge numberi
 * `TauCeti.BipartiteRibbonGraph.fullCycleType_rotB`, `fullCycleType_rotW`, `fullCycleType_facePerm`.
 * `TauCeti.BipartiteRibbonGraph.cycleData_toPermutationTriple`,
   `PermutationTriple.cycleData_ribbonGraph`, `BipartiteRibbonGraph.Iso.cycleData_eq`.
+
+## References
+
+* S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
+  Mathematical Sciences 141, Springer 2004, §1.3 and §1.5.
 -/
 
 open Equiv Equiv.Perm
@@ -67,40 +72,29 @@ theorem sum_faceDegree : ∑ f, Γ.faceDegree f = Fintype.card Γ.E := by
 
 /-! ### Full cycle types of rotations and the face permutation -/
 
-private theorem fullCycleType_eq_map_degree {α : Type*} [Fintype α] [DecidableEq α]
-    (σ : Perm Γ.E) (q : Γ.E → α) (hq : Function.Surjective q)
-    (hm : ∀ x y, σ.SameCycle x y ↔ q x = q y) (d : α → ℕ)
-    (hd : ∀ a, d a = Fintype.card {e : Γ.E // q e = a}) :
-    fullCycleType σ = (Finset.univ : Finset α).val.map d := by
-  rw [fullCycleType_eq_map_card_filter σ q hm]
-  refine Multiset.map_congr (congrArg Finset.val (by convert Finset.image_univ_of_surjective hq))
-    fun a _ => ?_
-  rw [hd a, Fintype.card_subtype]
-  exact congrArg Finset.card (Finset.filter_congr_decidable _ _ _)
-
 /-- The full cycle type of the black rotation is the multiset of black vertex degrees. -/
 theorem fullCycleType_rotB :
     fullCycleType Γ.rotB = (Finset.univ : Finset Γ.B).val.map Γ.blackDegree :=
-  Γ.fullCycleType_eq_map_degree Γ.rotB Γ.blackEnd Γ.blackEnd_surjective
+  Γ.rotB.fullCycleType_eq_map_degree Γ.blackEnd Γ.blackEnd_surjective
     (fun _ _ => Γ.blackEnd_eq_blackEnd_iff.symm) Γ.blackDegree Γ.blackDegree_def
 
 /-- The full cycle type of the white rotation is the multiset of white vertex degrees. -/
 theorem fullCycleType_rotW :
     fullCycleType Γ.rotW = (Finset.univ : Finset Γ.W).val.map Γ.whiteDegree :=
-  Γ.fullCycleType_eq_map_degree Γ.rotW Γ.whiteEnd Γ.whiteEnd_surjective
+  Γ.rotW.fullCycleType_eq_map_degree Γ.whiteEnd Γ.whiteEnd_surjective
     (fun _ _ => Γ.whiteEnd_eq_whiteEnd_iff.symm) Γ.whiteDegree Γ.whiteDegree_def
 
 /-- The full cycle type of the face permutation is the multiset of face degrees. -/
 theorem fullCycleType_facePerm :
     fullCycleType Γ.facePerm = (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree :=
-  Γ.fullCycleType_eq_map_degree Γ.facePerm (fun e => (Quotient.mk'' e : Γ.Face))
+  Γ.facePerm.fullCycleType_eq_map_degree (fun e => (Quotient.mk'' e : Γ.Face))
     Quotient.mk''_surjective (fun _ _ => (Quotient.eq'' (s₁ := SameCycle.setoid Γ.facePerm)).symm)
     Γ.faceDegree Γ.faceDegree_def
 
 /-! ### Cycle data of a bipartite ribbon graph -/
 
 /-- The ordered triple of black-vertex, white-vertex, and face degree partitions of `Γ`. -/
-@[expose] def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
+def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
   ((Finset.univ : Finset Γ.B).val.map Γ.blackDegree,
     (Finset.univ : Finset Γ.W).val.map Γ.whiteDegree,
     (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree)

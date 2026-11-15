@@ -14,23 +14,20 @@ import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Deck
 # Analytic Riemann existence for three-point covers and dessins d'enfants
 
 This file assembles the four-way equivalence of degree-`n` isomorphism classes across:
-1. `Quotient (AnalyticBelyiPair.isoSetoid.{0} n)`: analytic Belyi pairs over `OnePoint ℂ`;
-2. `TopBranchedCover.IsoClass.{0} n`: topological branched covers over `{0, 1, ∞}`;
-3. `ConnectedIsoClass n`: connected permutation triples `(σ0, σ1, σinf)` with `σinf * σ1 * σ0 = 1`;
-4. `Quotient (BipartiteRibbonGraph.connectedIsoSetoid.{u} n)`: connected bipartite ribbon graphs
-   (dessins d'enfants) with `n` edges in any universe `u`.
+1. `Quotient (AnalyticBelyiPair.isoSetoid.{0} n)` (analytic Belyi pairs over `OnePoint ℂ`);
+2. `TopBranchedCover.IsoClass.{0} n` (topological branched covers over `{0, 1, ∞}`);
+3. `ConnectedIsoClass n` (connected permutation triples `(σ0, σ1, σinf)` with `σinf * σ1 * σ0 = 1`);
+4. `Quotient (BipartiteRibbonGraph.connectedIsoSetoid.{u} n)` (connected bipartite ribbon graphs /
+   dessins d'enfants with `n` edges in any universe `u`).
 
-All six pairwise equivalences commute, are empty in degree `0` and unique in degree `1`, and match:
-* **Ramification, cycle, and degree partitions** (`isoClassRamificationPartitions`,
-  `TopBranchedCover.IsoClass.ramificationPartitions`, `ConnectedIsoClass.cycleData`,
-  `BipartiteRibbonGraph.connectedCycleData`);
-* **Euler characteristic and genus** (`isoClassEulerChar`, `isoClassGenus`,
-  `TopBranchedCover.IsoClass.eulerChar`, `TopBranchedCover.IsoClass.genus`,
-  `ConnectedIsoClass.eulerChar`, `ConnectedIsoClass.genus`, `connectedEulerChar`, `connectedGenus`);
-* **Automorphism groups, deck groups, orders, and regularity** (`P.Iso P`, `deck P.β`, `deck X.π`,
-  `t.automorphismGroup`, `Γ.Aut`, and the four `IsRegular` predicates), together with
-  representative-level dessin realisation (`exists_iso_of_connectedRibbonGraph`,
-  `nonempty_iso_iff_nonempty_ribbonGraph_iso`).
+All six pairwise equivalences commute, are empty in degree `0` and unique in degree `1`, and match
+ramification/cycle/degree partitions (`isoClassRamificationPartitions`, `ramificationPartitions`,
+`ConnectedIsoClass.cycleData`, `connectedCycleData`), Euler characteristic and genus
+(`isoClassEulerChar`, `isoClassGenus`, `TopBranchedCover.IsoClass.eulerChar`,
+`TopBranchedCover.IsoClass.genus`, `ConnectedIsoClass.eulerChar`, `ConnectedIsoClass.genus`,
+`connectedEulerChar`, `connectedGenus`), and automorphism/deck groups, orders, regularity, and
+representative-level dessin realisation (`exists_iso_of_connectedRibbonGraph`,
+`nonempty_iso_iff_nonempty_ribbonGraph_iso`).
 
 ## References
 
@@ -50,23 +47,7 @@ namespace TauCeti
 
 open ThricePuncturedSphere RiemannSurface
 
-universe u v
-
-/-! ### Degree zero and degree one across the analytic and topological carriers -/
-
-/-- No analytic Belyi pair has degree zero. -/
-instance : IsEmpty {P : AnalyticBelyiPair.{u} // degree P.β = 0} :=
-  ⟨fun P ↦ (degree_pos P.1.β).ne' P.2⟩
-
-/-- There are no isomorphism classes of analytic Belyi pairs of degree zero. -/
-instance : IsEmpty (Quotient (AnalyticBelyiPair.isoSetoid.{u} 0)) := ⟨Quotient.ind isEmptyElim⟩
-
-/-- No topological branched cover has degree zero. -/
-instance : IsEmpty (TopBranchedCover.{u} 0) := ⟨fun X ↦ X.ne_zero rfl⟩
-
-/-- There are no isomorphism classes of topological branched covers of degree zero. -/
-instance : IsEmpty (TopBranchedCover.IsoClass.{u} 0) :=
-  ⟨fun c ↦ (TopBranchedCover.IsoClass.mk_surjective c).elim fun X _ ↦ isEmptyElim X⟩
+universe u
 
 /-! ### The four-way classification equivalences -/
 
@@ -113,6 +94,13 @@ theorem equivConnectedIsoClass_mk {n : ℕ} (X : TopBranchedCover.{0} n)
 def equivConnectedRibbonGraph (n : ℕ) :
     IsoClass.{0} n ≃ Quotient (BipartiteRibbonGraph.connectedIsoSetoid.{u} n) :=
   (equivConnectedIsoClass n).trans (BipartiteRibbonGraph.connectedIsoClassEquiv.{u} n).symm
+
+/-- Composing `equivConnectedRibbonGraph` with `connectedIsoClassEquiv` recovers
+`equivConnectedIsoClass`. -/
+@[simp] theorem connectedIsoClassEquiv_equivConnectedRibbonGraph {n : ℕ} (c : IsoClass.{0} n) :
+    BipartiteRibbonGraph.connectedIsoClassEquiv.{u} n (equivConnectedRibbonGraph.{u} n c) =
+      equivConnectedIsoClass n c := by
+  simp [equivConnectedRibbonGraph]
 
 /-- Up to isomorphism there is a unique topological branched cover of degree one. -/
 instance : Unique (IsoClass.{0} 1) := (equivConnectedIsoClass 1).unique
@@ -270,37 +258,19 @@ end AnalyticBelyiPair
 
 namespace TopBranchedCover
 
-/-- The ordered triple of ramification partitions of `X` over `0`, `1` and `∞`. -/
-def ramificationPartitions {n : ℕ} (X : TopBranchedCover.{u} n) :
-    Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  ((X.ramificationPartition ((0 : ℂ) : OnePoint ℂ)).parts,
-    (X.ramificationPartition ((1 : ℂ) : OnePoint ℂ)).parts,
-    (X.ramificationPartition (∞ : OnePoint ℂ)).parts)
-
-/-- Isomorphic branched covers have the same ramification partitions over `0`, `1` and `∞`. -/
-theorem Iso.ramificationPartitions_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
-    X.ramificationPartitions = Y.ramificationPartitions := by
-  simp only [ramificationPartitions, ι.ramificationPartition_eq]
-
 /-- On `TopBranchedCover.{0} n`, `ramificationPartitions` equals `cycleData` of the monodromy. -/
 theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
-    X.ramificationPartitions = (X.isCoveringMap_restrict.monodromyTriple ν).cycleData :=
-  Prod.ext (by rw [ramificationPartitions, X.parts_ramificationPartition_zero ν, fullCycleType_def,
-      PermutationTriple.cycleData_σ0]) <|
-  Prod.ext (by rw [ramificationPartitions, X.parts_ramificationPartition_one ν, fullCycleType_def,
-      PermutationTriple.cycleData_σ1])
-    (by rw [ramificationPartitions, X.parts_ramificationPartition_inf ν, fullCycleType_def,
-      PermutationTriple.cycleData_σinf])
-
-/-- The ordered triple of ramification partitions over `0`, `1` and `∞` on `IsoClass`. -/
-def IsoClass.ramificationPartitions {n : ℕ} (c : IsoClass.{u} n) :
-    Multiset ℕ × Multiset ℕ × Multiset ℕ := (surjInv mk_surjective c).ramificationPartitions
-
-/-- Evaluating `IsoClass.ramificationPartitions` on `.mk X` recovers `X.ramificationPartitions`. -/
-@[simp] theorem IsoClass.ramificationPartitions_mk {n : ℕ} (X : TopBranchedCover.{u} n) :
-    (IsoClass.mk X).ramificationPartitions = X.ramificationPartitions :=
-  (mk_eq_mk_iff.1 (surjInv_eq mk_surjective (.mk X))).some.ramificationPartitions_eq
+    X.ramificationPartitions = (X.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  rw [X.ramificationPartitions_def]
+  exact Prod.ext
+    (by rw [X.parts_ramificationPartition_zero ν, fullCycleType_def,
+      PermutationTriple.cycleData_σ0])
+    (Prod.ext
+      (by rw [X.parts_ramificationPartition_one ν, fullCycleType_def,
+        PermutationTriple.cycleData_σ1])
+      (by rw [X.parts_ramificationPartition_inf ν, fullCycleType_def,
+        PermutationTriple.cycleData_σinf]))
 
 /-- `IsoClass.equivConnectedIsoClass` matches `ramificationPartitions` with `cycleData`. -/
 @[simp] theorem IsoClass.cycleData_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
@@ -314,9 +284,7 @@ def IsoClass.ramificationPartitions {n : ℕ} (c : IsoClass.{u} n) :
 @[simp] theorem IsoClass.connectedCycleData_equivConnectedRibbonGraph {n : ℕ} (c : IsoClass.{0} n) :
     BipartiteRibbonGraph.connectedCycleData n (equivConnectedRibbonGraph.{u} n c) =
       c.ramificationPartitions := by
-  rw [equivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.cycleData_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    cycleData_equivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.cycleData_connectedIsoClassEquiv]; simp
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the Euler characteristic. -/
 @[simp] theorem IsoClass.eulerChar_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
@@ -338,16 +306,12 @@ def IsoClass.ramificationPartitions {n : ℕ} (c : IsoClass.{u} n) :
 @[simp] theorem IsoClass.connectedEulerChar_equivConnectedRibbonGraph {n : ℕ} (c : IsoClass.{0} n) :
     BipartiteRibbonGraph.connectedEulerChar n (equivConnectedRibbonGraph.{u} n c) =
       c.eulerChar := by
-  rw [equivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.eulerChar_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    eulerChar_equivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.eulerChar_connectedIsoClassEquiv]; simp
 
 /-- `IsoClass.equivConnectedRibbonGraph` preserves the genus. -/
 @[simp] theorem IsoClass.connectedGenus_equivConnectedRibbonGraph {n : ℕ} (c : IsoClass.{0} n) :
     BipartiteRibbonGraph.connectedGenus n (equivConnectedRibbonGraph.{u} n c) = c.genus := by
-  rw [equivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.genus_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    genus_equivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.genus_connectedIsoClassEquiv]; simp
 
 end TopBranchedCover
 
@@ -360,11 +324,17 @@ def ramificationPartitions (P : AnalyticBelyiPair.{u}) :
     (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
     (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β))
 
+/-- Unfold `AnalyticBelyiPair.ramificationPartitions` into its `0`, `1` and `∞` components. -/
+theorem ramificationPartitions_def (P : AnalyticBelyiPair.{u}) : P.ramificationPartitions =
+    ((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
+      (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
+      (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β)) := (rfl)
+
 /-- `P.toTopBranchedCover h` has the same ramification partitions as `P`. -/
 @[simp] theorem ramificationPartitions_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
     (h : degree P.β = n) :
     (P.toTopBranchedCover h).ramificationPartitions = P.ramificationPartitions := by
-  simp only [TopBranchedCover.ramificationPartitions, ramificationPartitions,
+  simp only [TopBranchedCover.ramificationPartitions_def, ramificationPartitions_def,
     P.parts_ramificationPartition_toTopBranchedCover h]
 
 /-- Isomorphic analytic Belyi pairs have the same ramification partitions over `0`, `1` and `∞`. -/
@@ -377,13 +347,13 @@ theorem Iso.ramificationPartitions_eq {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q
 /-- On `AnalyticBelyiPair.{0}`, `ramificationPartitions` equals `cycleData` of the monodromy. -/
 theorem ramificationPartitions_eq_cycleData_monodromyTriple (P : AnalyticBelyiPair.{0}) {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
-    P.ramificationPartitions = (P.isCoveringMap_restrict.monodromyTriple ν).cycleData :=
-  Prod.ext (by rw [ramificationPartitions, P.map_localMultiplicity_fiber_zero ν, fullCycleType_def,
-      PermutationTriple.cycleData_σ0]) <|
-  Prod.ext (by rw [ramificationPartitions, P.map_localMultiplicity_fiber_one ν, fullCycleType_def,
-      PermutationTriple.cycleData_σ1])
-    (by rw [ramificationPartitions, P.map_localMultiplicity_fiber_inf ν, fullCycleType_def,
-      PermutationTriple.cycleData_σinf])
+    P.ramificationPartitions = (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  let h := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  rw [← P.ramificationPartitions_toTopBranchedCover h]
+  obtain ⟨νT⟩ := (P.toTopBranchedCover h).nonempty_restrict_preimage_singleton_equiv basePt
+  exact ((P.toTopBranchedCover h).ramificationPartitions_eq_cycleData_monodromyTriple νT).trans
+    (PermutationTriple.cycleData_eq_of_equivalent (PermutationTriple.IsoClass.mk_eq_mk_iff.1
+      (P.isoClass_monodromyTriple_toTopBranchedCover h ν νT)))
 
 /-- The ordered triple of ramification partitions over `0`, `1` and `∞` on `isoSetoid`. -/
 def isoClassRamificationPartitions (n : ℕ) :
@@ -415,27 +385,21 @@ def isoClassRamificationPartitions (n : ℕ) :
     (P : Quotient (isoSetoid.{0} n)) :
     BipartiteRibbonGraph.connectedCycleData n (isoClassEquivConnectedRibbonGraph.{u} n P) =
       isoClassRamificationPartitions n P := by
-  rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.cycleData_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    cycleData_isoClassEquivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.cycleData_connectedIsoClassEquiv]; simp
 
 /-- `isoClassEquivConnectedRibbonGraph` matches the topological and dessin Euler characteristics. -/
 @[simp] theorem connectedEulerChar_isoClassEquivConnectedRibbonGraph {n : ℕ}
     (P : Quotient (isoSetoid.{0} n)) :
     BipartiteRibbonGraph.connectedEulerChar n (isoClassEquivConnectedRibbonGraph.{u} n P) =
       isoClassEulerChar n P := by
-  rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.eulerChar_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    eulerChar_isoClassEquivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.eulerChar_connectedIsoClassEquiv]; simp
 
 /-- `isoClassEquivConnectedRibbonGraph` matches the topological genus with the dessin genus. -/
 @[simp] theorem connectedGenus_isoClassEquivConnectedRibbonGraph {n : ℕ}
     (P : Quotient (isoSetoid.{0} n)) :
     BipartiteRibbonGraph.connectedGenus n (isoClassEquivConnectedRibbonGraph.{u} n P) =
       isoClassGenus n P := by
-  rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.genus_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    genus_isoClassEquivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.genus_connectedIsoClassEquiv]; simp
 
 end AnalyticBelyiPair
 
@@ -443,19 +407,30 @@ end AnalyticBelyiPair
 
 namespace TopBranchedCover
 
-/-- Conjugation by an isomorphism of topological branched covers identifies their deck groups. -/
-def Iso.deckMulEquiv {n : ℕ} {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
-    deck X.π ≃* deck Y.π := Deck.conjMulEquiv ι.toHomeomorph ι.π_apply
-
-/-- Isomorphic topological branched covers have deck groups of the same cardinality. -/
-theorem Iso.natCard_deck_eq {n : ℕ} {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
-    Nat.card (deck X.π) = Nat.card (deck Y.π) := Nat.card_congr ι.deckMulEquiv.toEquiv
-
 /-- **The deck group of `X` is the automorphism group of its monodromy triple.** -/
 def deckMulEquivAutomorphismGroup {n : ℕ} (X : TopBranchedCover.{u} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     deck X.π ≃* (X.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup :=
   X.deckMulEquivDeckRestrict.trans (X.isCoveringMap_restrict.deckMulEquivAutomorphismGroup ν)
+
+/-- `deckMulEquivAutomorphismGroup` sends `φ` to the permutation it induces on the numbered fibre
+over `1/2`. -/
+@[simp] theorem coe_deckMulEquivAutomorphismGroup_apply {n : ℕ} (X : TopBranchedCover.{u} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) (φ : deck X.π) (i : Fin n) :
+    (X.deckMulEquivAutomorphismGroup ν φ : Perm (Fin n)) i = ν (φ • ν.symm i) := by
+  refine (IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply _ ν
+    (X.deckMulEquivDeckRestrict φ) i).trans (congrArg ν (Subtype.ext (Subtype.ext ?_)))
+  exact (congrArg Subtype.val (deck.fiber_smul_coe _ (ν.symm i))).trans <|
+    (X.coe_deckMulEquivDeckRestrict_apply φ _).trans
+      (X.coe_deck_smul_restrictFiber basePt φ (ν.symm i)).symm
+
+/-- The deck transformation attached to `τ` sends the sheet labelled `i` to that labelled `τ i`. -/
+@[simp] theorem deckMulEquivAutomorphismGroup_symm_smul {n : ℕ} (X : TopBranchedCover.{u} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n)
+    (τ : (X.isCoveringMap_restrict.monodromyTriple ν).automorphismGroup) (i : Fin n) :
+    (X.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i = ν.symm ((τ : Perm (Fin n)) i) := by
+  rw [← ν.symm_apply_apply ((X.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i),
+    ← coe_deckMulEquivAutomorphismGroup_apply, MulEquiv.apply_symm_apply]
 
 /-- **The deck group of `X` is the automorphism group of the ribbon graph of its monodromy.** -/
 def deckMulEquivRibbonGraphAut {n : ℕ} (X : TopBranchedCover.{u} n)
@@ -464,12 +439,24 @@ def deckMulEquivRibbonGraphAut {n : ℕ} (X : TopBranchedCover.{u} n)
   (X.deckMulEquivAutomorphismGroup ν).trans
     (X.isCoveringMap_restrict.monodromyTriple ν).automorphismGroupMulEquivRibbonGraphAut
 
-/-- A degree-`n` topological branched cover is *regular* when its deck group has order `n`. -/
-def IsRegular {n : ℕ} (X : TopBranchedCover.{u} n) : Prop := Nat.card (deck X.π) = n
+/-- On edges (`Fin n`), `deckMulEquivRibbonGraphAut` acts by the induced permutation on the fibre
+over `1/2`. -/
+@[simp] theorem deckMulEquivRibbonGraphAut_apply_edge {n : ℕ} (X : TopBranchedCover.{u} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) (φ : deck X.π) (i : Fin n) :
+    (X.deckMulEquivRibbonGraphAut ν φ).edge i = ν (φ • ν.symm i) :=
+  (Equiv.congr_fun (PermutationTriple.automorphismGroupMulEquivRibbonGraphAut_edge _ _) i).trans
+    (X.coe_deckMulEquivAutomorphismGroup_apply ν φ i)
 
-/-- Unfold `TopBranchedCover.IsRegular` to `Nat.card (deck X.π) = n`. -/
-theorem isRegular_iff {n : ℕ} {X : TopBranchedCover.{u} n} :
-    X.IsRegular ↔ Nat.card (deck X.π) = n := Iff.rfl
+/-- The deck transformation attached to a ribbon-graph automorphism `f` sends `ν.symm i` to
+`ν.symm (f.edge i)`. -/
+@[simp] theorem deckMulEquivRibbonGraphAut_symm_smul {n : ℕ} (X : TopBranchedCover.{u} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n)
+    (f : (X.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut) (i : Fin n) :
+    (X.deckMulEquivRibbonGraphAut ν).symm f • ν.symm i = ν.symm (f.edge i) := by
+  rw [deckMulEquivRibbonGraphAut, MulEquiv.symm_trans_apply,
+    X.deckMulEquivAutomorphismGroup_symm_smul]
+  exact congrArg ν.symm (Equiv.congr_fun
+    (PermutationTriple.coe_automorphismGroupMulEquivRibbonGraphAut_symm_apply _ f) i)
 
 /-- `X` is regular if and only if its monodromy triple is regular. -/
 theorem isRegular_iff_monodromyTriple {n : ℕ} {X : TopBranchedCover.{u} n}
@@ -478,28 +465,6 @@ theorem isRegular_iff_monodromyTriple {n : ℕ} {X : TopBranchedCover.{u} n}
   rw [isRegular_iff, PermutationTriple.isRegular_iff_card_automorphismGroup,
     and_iff_right (X.isCoveringMap_restrict.isConnected_monodromyTriple ν),
     Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv]
-
-/-- Regularity of topological branched covers is invariant under isomorphism. -/
-theorem Iso.isRegular_iff {n : ℕ} {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
-    X.IsRegular ↔ Y.IsRegular := by
-  rw [TopBranchedCover.isRegular_iff, TopBranchedCover.isRegular_iff, ι.natCard_deck_eq]
-
-/-- The order of the deck group of an isomorphism class of topological branched covers. -/
-def IsoClass.natCardDeck {n : ℕ} (c : IsoClass.{u} n) : ℕ :=
-  Nat.card (deck (surjInv mk_surjective c).π)
-
-/-- Evaluating `IsoClass.natCardDeck` on `.mk X` gives `Nat.card (deck X.π)`. -/
-@[simp] theorem IsoClass.natCardDeck_mk {n : ℕ} (X : TopBranchedCover.{u} n) :
-    (IsoClass.mk X).natCardDeck = Nat.card (deck X.π) :=
-  (mk_eq_mk_iff.1 (surjInv_eq mk_surjective (.mk X))).some.natCard_deck_eq
-
-/-- Regularity on isomorphism classes of topological branched covers. -/
-def IsoClass.IsRegular {n : ℕ} (c : IsoClass.{u} n) : Prop := (surjInv mk_surjective c).IsRegular
-
-/-- Evaluating `IsoClass.IsRegular` on `.mk X` recovers `X.IsRegular`. -/
-@[simp] theorem IsoClass.isRegular_mk {n : ℕ} (X : TopBranchedCover.{u} n) :
-    (IsoClass.mk X).IsRegular ↔ X.IsRegular :=
-  (mk_eq_mk_iff.1 (surjInv_eq mk_surjective (.mk X))).some.isRegular_iff
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the order of the deck/automorphism group. -/
 @[simp] theorem IsoClass.natCardAutomorphismGroup_equivConnectedIsoClass {n : ℕ}
@@ -523,39 +488,18 @@ def IsoClass.IsRegular {n : ℕ} (c : IsoClass.{u} n) : Prop := (surjInv mk_surj
     (c : IsoClass.{0} n) :
     BipartiteRibbonGraph.connectedNatCardAut n (equivConnectedRibbonGraph.{u} n c) =
       c.natCardDeck := by
-  rw [equivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.natCardAutomorphismGroup_connectedIsoClassEquiv,
-    Equiv.apply_symm_apply, natCardAutomorphismGroup_equivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.natCardAutomorphismGroup_connectedIsoClassEquiv]; simp
 
 /-- `IsoClass.equivConnectedRibbonGraph` preserves regularity. -/
 @[simp] theorem IsoClass.connectedIsRegular_equivConnectedRibbonGraph {n : ℕ}
     (c : IsoClass.{0} n) :
     BipartiteRibbonGraph.ConnectedIsRegular n (equivConnectedRibbonGraph.{u} n c) ↔
       c.IsRegular := by
-  rw [equivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.isRegular_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    isRegular_equivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.isRegular_connectedIsoClassEquiv]; simp
 
 end TopBranchedCover
 
 namespace AnalyticBelyiPair
-
-/-- Conjugation by `e : P.Iso Q` identifies the automorphism groups `P.Iso P` and `Q.Iso Q`. -/
-def Iso.autMulEquiv {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) : P.Iso P ≃* Q.Iso Q where
-  toFun f := e.symm.trans (f.trans e)
-  invFun g := e.trans (g.trans e.symm)
-  left_inv _ := Iso.ext fun _ ↦ by simp
-  right_inv _ := Iso.ext fun _ ↦ by simp
-  map_mul' _ _ := Iso.ext fun _ ↦ by simp
-
-/-- Isomorphic analytic Belyi pairs have automorphism groups of the same cardinality. -/
-theorem Iso.natCard_iso_eq {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) :
-    Nat.card (P.Iso P) = Nat.card (Q.Iso Q) := Nat.card_congr e.autMulEquiv.toEquiv
-
-/-- Canonical isomorphism between `P.Iso P` and `deck (P.toTopBranchedCover h).π`. -/
-def isoMulEquivDeckToTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ} (h : degree P.β = n) :
-    P.Iso P ≃* deck (P.toTopBranchedCover h).π :=
-  P.isoMulEquivDeck.trans (Deck.conjMulEquiv (Homeomorph.refl P.X) (P.toTopBranchedCover_π_apply h))
 
 /-- **The automorphism group of `P` is the automorphism group of its dessin.** -/
 def isoMulEquivRibbonGraphAut (P : AnalyticBelyiPair.{u}) {n : ℕ}
@@ -564,52 +508,51 @@ def isoMulEquivRibbonGraphAut (P : AnalyticBelyiPair.{u}) {n : ℕ}
   (P.isoMulEquivAutomorphismGroup ν).trans
     (P.isCoveringMap_restrict.monodromyTriple ν).automorphismGroupMulEquivRibbonGraphAut
 
+/-- On edges (`Fin n`), `isoMulEquivRibbonGraphAut` sends `i` to `ν (e • ν.symm i)`. -/
+@[simp] theorem isoMulEquivRibbonGraphAut_apply_edge (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) (e : P.Iso P) (i : Fin n) :
+    (P.isoMulEquivRibbonGraphAut ν e).edge i = ν (e • ν.symm i) :=
+  (Equiv.congr_fun (PermutationTriple.automorphismGroupMulEquivRibbonGraphAut_edge _ _) i).trans
+    (P.coe_isoMulEquivAutomorphismGroup_apply ν e i)
+
+/-- The automorphism of `P` attached to `f` sends `ν.symm i` to `ν.symm (f.edge i)`. -/
+@[simp] theorem isoMulEquivRibbonGraphAut_symm_smul (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
+    (f : (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut) (i : Fin n) :
+    (P.isoMulEquivRibbonGraphAut ν).symm f • ν.symm i = ν.symm (f.edge i) := by
+  rw [isoMulEquivRibbonGraphAut, MulEquiv.symm_trans_apply,
+    P.isoMulEquivAutomorphismGroup_symm_smul]
+  exact congrArg ν.symm (Equiv.congr_fun
+    (PermutationTriple.coe_automorphismGroupMulEquivRibbonGraphAut_symm_apply _ f) i)
+
 /-- **The deck group of `P.β` is the automorphism group of its dessin.** -/
 def deckMulEquivRibbonGraphAut (P : AnalyticBelyiPair.{u}) {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
     deck P.β ≃* (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut :=
   P.isoMulEquivDeck.symm.trans (P.isoMulEquivRibbonGraphAut ν)
 
-/-- If `(Γ, μ)` has the same permutation triple as `(P, ν)`, then `P.Iso P ≃* Γ.Aut`. -/
-def isoMulEquivAutOfMonodromyTripleEq (P : AnalyticBelyiPair.{u}) {n : ℕ}
-    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) {Γ : BipartiteRibbonGraph.{v}} (μ : Γ.E ≃ Fin n)
-    (h : Γ.toPermutationTriple μ = P.isCoveringMap_restrict.monodromyTriple ν) :
-    P.Iso P ≃* Γ.Aut :=
-  (P.isoMulEquivAutomorphismGroup ν).trans <|
-    (MulEquiv.subgroupCongr (congrArg PermutationTriple.automorphismGroup h.symm)).trans
-      (Γ.autEquivAutomorphismGroup μ).symm
+/-- On edges (`Fin n`), `deckMulEquivRibbonGraphAut` acts via `isoMulEquivDeck.symm` on the fibre
+over `1/2`. -/
+@[simp] theorem deckMulEquivRibbonGraphAut_apply_edge (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) (φ : deck P.β) (i : Fin n) :
+    (P.deckMulEquivRibbonGraphAut ν φ).edge i = ν (P.isoMulEquivDeck.symm φ • ν.symm i) :=
+  P.isoMulEquivRibbonGraphAut_apply_edge ν (P.isoMulEquivDeck.symm φ) i
 
-/-- An analytic Belyi pair is *regular* (or *Galois*) when `Nat.card (P.Iso P) = degree P.β`. -/
-def IsRegular (P : AnalyticBelyiPair.{u}) : Prop := Nat.card (P.Iso P) = degree P.β
-
-/-- Unfold `AnalyticBelyiPair.IsRegular` to `Nat.card (P.Iso P) = degree P.β`. -/
-theorem isRegular_iff {P : AnalyticBelyiPair.{u}} :
-    P.IsRegular ↔ Nat.card (P.Iso P) = degree P.β := Iff.rfl
-
-/-- `P` is regular if and only if its monodromy triple is regular. -/
-theorem isRegular_iff_monodromyTriple {P : AnalyticBelyiPair.{u}} {n : ℕ}
-    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
-    P.IsRegular ↔ (P.isCoveringMap_restrict.monodromyTriple ν).IsRegular := by
-  rw [isRegular_iff, P.degree_β_eq_of_restrict_preimage_singleton_equiv ν,
-    isRegular_monodromyTriple_iff_natCard_iso]
+/-- The deck transformation of `P.β` attached to `f` sends `ν.symm i` to `ν.symm (f.edge i)`. -/
+@[simp] theorem coe_deckMulEquivRibbonGraphAut_symm_apply (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
+    (f : (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut) (i : Fin n) :
+    ((P.deckMulEquivRibbonGraphAut ν).symm f : P.X ≃ₜ P.X) (ν.symm i) =
+      (ν.symm (f.edge i) : P.X) := by
+  rw [deckMulEquivRibbonGraphAut, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
+    congrFun (P.coe_isoMulEquivDeck_apply _) _, ← Iso.coe_smul basePt _ (ν.symm i),
+    P.isoMulEquivRibbonGraphAut_symm_smul ν f i]
 
 /-- `P` is regular if and only if the ribbon graph of its monodromy triple is regular. -/
 theorem isRegular_iff_ribbonGraph {P : AnalyticBelyiPair.{u}} {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
     P.IsRegular ↔ (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.IsRegular := by
   rw [isRegular_iff_monodromyTriple ν, PermutationTriple.isRegular_ribbonGraph]
-
-/-- Passing to the underlying topological branched cover preserves regularity. -/
-@[simp] theorem isRegular_toTopBranchedCover {P : AnalyticBelyiPair.{u}} {n : ℕ}
-    (h : degree P.β = n) : (P.toTopBranchedCover h).IsRegular ↔ P.IsRegular := by
-  rw [TopBranchedCover.isRegular_iff, isRegular_iff, h,
-    Nat.card_congr (P.isoMulEquivDeckToTopBranchedCover h).toEquiv]
-
-/-- Regularity of analytic Belyi pairs is invariant under isomorphism. -/
-theorem Iso.isRegular_iff {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) :
-    P.IsRegular ↔ Q.IsRegular := by
-  rw [AnalyticBelyiPair.isRegular_iff, AnalyticBelyiPair.isRegular_iff, e.natCard_iso_eq,
-    e.degree_eq]
 
 /-- The order of the automorphism group of an isomorphism class of analytic Belyi pairs. -/
 def isoClassNatCardAut (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
@@ -662,18 +605,14 @@ def IsoClassIsRegular (n : ℕ) : Quotient (isoSetoid.{u} n) → Prop :=
     (P : Quotient (isoSetoid.{0} n)) :
     BipartiteRibbonGraph.connectedNatCardAut n (isoClassEquivConnectedRibbonGraph.{u} n P) =
       isoClassNatCardAut n P := by
-  rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.natCardAutomorphismGroup_connectedIsoClassEquiv,
-    Equiv.apply_symm_apply, natCardAutomorphismGroup_isoClassEquivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.natCardAutomorphismGroup_connectedIsoClassEquiv]; simp
 
 /-- `isoClassEquivConnectedRibbonGraph` matches `IsoClassIsRegular` with `ConnectedIsRegular`. -/
 @[simp] theorem connectedIsRegular_isoClassEquivConnectedRibbonGraph {n : ℕ}
     (P : Quotient (isoSetoid.{0} n)) :
     BipartiteRibbonGraph.ConnectedIsRegular n (isoClassEquivConnectedRibbonGraph.{u} n P) ↔
       IsoClassIsRegular n P := by
-  rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply,
-    ← BipartiteRibbonGraph.isRegular_connectedIsoClassEquiv, Equiv.apply_symm_apply,
-    isRegular_isoClassEquivConnectedIsoClass]
+  rw [← BipartiteRibbonGraph.isRegular_connectedIsoClassEquiv]; simp
 
 end AnalyticBelyiPair
 

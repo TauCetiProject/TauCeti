@@ -98,6 +98,14 @@ theorem coe_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) :
     ((τ • t : ConnectedTriple n) : PermutationTriple n) = τ • (t : PermutationTriple n) :=
   (rfl)
 
+/-- No connected permutation triple has degree zero. -/
+instance : IsEmpty (ConnectedTriple 0) := ⟨fun t => t.2.ne_zero rfl⟩
+
+/-- There is a unique connected permutation triple of degree one. -/
+instance : Unique (ConnectedTriple 1) where
+  default := ⟨1, PermutationTriple.isConnected_iff.2 ⟨one_ne_zero, inferInstance⟩⟩
+  uniq t := Subtype.ext (Subsingleton.elim t.1 1)
+
 end ConnectedTriple
 
 /-- Isomorphism classes of connected permutation triples of degree `n`. -/
@@ -197,6 +205,18 @@ instance : DecidableEq (ConnectedIsoClass n) := fun c c' =>
       mk_eq_mk_iff_equivalent.symm
 
 instance : Fintype (ConnectedIsoClass n) := Fintype.ofSurjective mk mk_surjective
+
+/-- There are no connected isomorphism classes of permutation triples in degree zero. -/
+instance : IsEmpty (ConnectedIsoClass 0) := ⟨Quotient.ind isEmptyElim⟩
+
+/-- Up to simultaneous relabeling there is a unique connected permutation triple of degree one. -/
+instance : Unique (ConnectedIsoClass 1) where
+  default := mk default
+  uniq := Quotient.ind fun t => congrArg mk (Subsingleton.elim t default)
+
+/-- Every degree admitting a connected isomorphism class is nonzero. -/
+theorem ne_zero (c : ConnectedIsoClass n) : n ≠ 0 :=
+  Quotient.ind (motive := fun _ => n ≠ 0) (fun t => t.2.ne_zero) c
 
 /-! ### The connected triples of a class, as a finset -/
 

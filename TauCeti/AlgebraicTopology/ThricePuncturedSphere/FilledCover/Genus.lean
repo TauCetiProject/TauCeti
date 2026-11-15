@@ -19,20 +19,12 @@ import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 
 Every compact Riemann surface has finite CW type (`TauCeti.ComplexManifold.instFiniteCWType`), so
 every analytic Belyi pair `P` has a finite-CW Euler characteristic `eulerChar P.X` and topological
-genus `RiemannSurface.genus P.X`. This file establishes their isomorphism invariance, computes them
-on sphere examples and degree-one pairs in every universe, and identifies them in `Type 0` with the
-combinatorial Euler characteristic and genus of the monodromy triple of `P`:
-
-1. **Three-fibre decomposition** (`ramificationDegree_β_eq_sum_three_fibers`): `ramificationDegree`
-   of `P.β` splits as the sum of `localMultiplicity P.β x - 1` over the fibres above `0`, `1`, `∞`.
-2. **Monodromy and filled points** (`natCast_ramificationDegree_toAnalyticBelyiPair`):
-   the fibre cardinalities over `0`, `1`, `∞` are the cycle counts of `σ0`, `σ1`, `σinf`, giving
-   `ramificationDegree P.β = 2 * degree P.β - χ(t) = ∑ (FilledCover.degree p i - 1)`.
-3. **Topological Euler characteristic and genus** (`eulerChar_X_eq_eulerChar_monodromyTriple`,
-   `genus_X_eq_genus_monodromyTriple`, `two_mul_genus_X_sub_two_eq`): combining with
-   `FiniteHolomorphicMap.eulerChar_eq_two_mul_degree_sub_ramificationDegree` yields `χ(P.X) = χ(t)`,
-   `genus P.X = t.genus`, `χ(P.X) = 2 - 2 g(P.X)`, and genus-form Riemann–Hurwitz, and transfers
-   `FiniteCWType`, `eulerChar`, and `genus` to `TopBranchedCover.{0} n`.
+genus `RiemannSurface.genus P.X`. This file proves their isomorphism invariance, computes them on
+sphere examples and degree-one pairs in every universe, splits `ramificationDegree P.β` across the
+fibres over `0`, `1`, `∞` (`ramificationDegree_β_eq_sum_three_fibers`), reconciles it with
+`FilledCover.degree` (`natCast_ramificationDegree_toAnalyticBelyiPair`), and identifies `eulerChar`
+and `genus` in `Type 0` with the monodromy triple (`eulerChar_X_eq_eulerChar_monodromyTriple`,
+`genus_X_eq_genus_monodromyTriple`, `two_mul_genus_X_sub_two_eq`) and on `TopBranchedCover.{0} n`.
 
 ## References
 
@@ -51,15 +43,6 @@ namespace TauCeti
 open ThricePuncturedSphere RiemannSurface
 
 universe u
-
-/-! ### Cardinality of the marked set -/
-
-/-- The set `marked = {0, 1, ∞}` of marked points on the Riemann sphere has cardinality `3`. -/
-@[simp] theorem ThricePuncturedSphere.ncard_marked : marked.ncard = 3 := by
-  have hmarked : marked =
-      insert ((0 : ℂ) : OnePoint ℂ) (insert ((1 : ℂ) : OnePoint ℂ) {(∞ : OnePoint ℂ)}) :=
-    Set.ext fun _ ↦ by simp [mem_marked]
-  rw [hmarked, ncard_insert_of_notMem (by simp), ncard_insert_of_notMem (by simp), ncard_singleton]
 
 namespace AnalyticBelyiPair
 
@@ -163,17 +146,39 @@ theorem ramificationDegree_β_eq_sum_three_fibers (P : AnalyticBelyiPair.{u}) :
 
 /-! ### Monodromy cycle counts, Euler characteristic, and genus in `Type 0` -/
 
-section TypeZero
-
-variable (P : AnalyticBelyiPair.{0}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
-
-private theorem card_finite_fiber_eq_orbitCount {P : AnalyticBelyiPair.{0}} {y : OnePoint ℂ}
+/-- If the local multiplicities of `P.β` on the fibre over `y` match `fullCycleType σ`, then the
+fibre finset has cardinality `orbitCount σ`. -/
+theorem card_finite_fiber_eq_orbitCount {P : AnalyticBelyiPair.{u}} {n : ℕ} {y : OnePoint ℂ}
     {σ : Equiv.Perm (Fin n)}
     (h : (P.β.finite_fiber y).toFinset.val.map (localMultiplicity P.β) = fullCycleType σ) :
     (P.β.finite_fiber y).toFinset.card = orbitCount σ := by
   have hc := congrArg Multiset.card h
   rwa [Multiset.card_map, Finset.card_val, fullCycleType_def,
     ← orbitCount_eq_card_parts_partition] at hc
+
+/-- If the local multiplicities of `P.β` on the fibre over `y` match `fullCycleType σ`, then
+`(P.β ⁻¹' {y}).ncard` equals `orbitCount σ`. -/
+theorem ncard_preimage_singleton_eq_orbitCount {P : AnalyticBelyiPair.{u}} {n : ℕ} {y : OnePoint ℂ}
+    {σ : Equiv.Perm (Fin n)}
+    (h : (P.β.finite_fiber y).toFinset.val.map (localMultiplicity P.β) = fullCycleType σ) :
+    (P.β ⁻¹' {y}).ncard = orbitCount σ :=
+  (ncard_eq_toFinset_card _ (P.β.finite_fiber y)).trans (card_finite_fiber_eq_orbitCount h)
+
+/-- If the local multiplicities of `P.β` on the fibre over `y` match `fullCycleType σ`, then the
+local ramification indices `e_x - 1` on that fibre sum to `n - orbitCount σ`. -/
+theorem sum_localMultiplicity_sub_one_fiber_eq {P : AnalyticBelyiPair.{u}} {n : ℕ} {y : OnePoint ℂ}
+    {σ : Equiv.Perm (Fin n)}
+    (h : (P.β.finite_fiber y).toFinset.val.map (localMultiplicity P.β) = fullCycleType σ) :
+    ∑ x ∈ (P.β.finite_fiber y).toFinset, (localMultiplicity P.β x - 1) = n - orbitCount σ := by
+  have hdeg : degree P.β = n := by
+    simpa [← degree_eq_fiber_sum P.β y, Finset.sum_eq_multiset_sum, sum_fullCycleType] using
+      congrArg Multiset.sum h
+  have hcard := card_fiber_add_sum_localMultiplicity_sub_one P.β y
+  rw [card_finite_fiber_eq_orbitCount h, hdeg] at hcard; omega
+
+section TypeZero
+
+variable (P : AnalyticBelyiPair.{0}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
 
 /-- The number of points of `P.X` over `0` is `orbitCount σ0` of the monodromy triple. -/
 theorem card_finite_fiber_zero :
@@ -197,19 +202,19 @@ theorem card_finite_fiber_inf :
 theorem ncard_preimage_singleton_zero :
     (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard =
       orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
-  (ncard_eq_toFinset_card _ (P.β.finite_fiber _)).trans (P.card_finite_fiber_zero ν)
+  ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν)
 
 /-- The `Set.ncard` of the fibre of `P.β` over `1` is `orbitCount σ1`. -/
 theorem ncard_preimage_singleton_one :
     (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard =
       orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
-  (ncard_eq_toFinset_card _ (P.β.finite_fiber _)).trans (P.card_finite_fiber_one ν)
+  ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_one ν)
 
 /-- The `Set.ncard` of the fibre of `P.β` over `∞` is `orbitCount σinf`. -/
 theorem ncard_preimage_singleton_inf :
     (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard =
       orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
-  (ncard_eq_toFinset_card _ (P.β.finite_fiber _)).trans (P.card_finite_fiber_inf ν)
+  ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)
 
 /-- `(P.β ⁻¹' marked).ncard` equals `orbitCount σ0 + orbitCount σ1 + orbitCount σinf`. -/
 theorem ncard_preimage_marked_eq_orbitCount :
@@ -223,23 +228,20 @@ theorem ncard_preimage_marked_eq_orbitCount :
 /-- Over `0`, the local ramification indices `e_x - 1` sum to `n - orbitCount σ0`. -/
 theorem sum_localMultiplicity_sub_one_fiber_zero :
     ∑ x ∈ (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1) =
-      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 := by
-  have h := card_fiber_add_sum_localMultiplicity_sub_one P.β ((0 : ℂ) : OnePoint ℂ)
-  rw [P.card_finite_fiber_zero ν, P.degree_β_eq_of_restrict_preimage_singleton_equiv ν] at h; omega
+      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 :=
+  sum_localMultiplicity_sub_one_fiber_eq (P.map_localMultiplicity_fiber_zero ν)
 
 /-- Over `1`, the local ramification indices `e_x - 1` sum to `n - orbitCount σ1`. -/
 theorem sum_localMultiplicity_sub_one_fiber_one :
     ∑ x ∈ (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1) =
-      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 := by
-  have h := card_fiber_add_sum_localMultiplicity_sub_one P.β ((1 : ℂ) : OnePoint ℂ)
-  rw [P.card_finite_fiber_one ν, P.degree_β_eq_of_restrict_preimage_singleton_equiv ν] at h; omega
+      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 :=
+  sum_localMultiplicity_sub_one_fiber_eq (P.map_localMultiplicity_fiber_one ν)
 
 /-- Over `∞`, the local ramification indices `e_x - 1` sum to `n - orbitCount σinf`. -/
 theorem sum_localMultiplicity_sub_one_fiber_inf :
     ∑ x ∈ (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset, (localMultiplicity P.β x - 1) =
-      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
-  have h := card_fiber_add_sum_localMultiplicity_sub_one P.β (∞ : OnePoint ℂ)
-  rw [P.card_finite_fiber_inf ν, P.degree_β_eq_of_restrict_preimage_singleton_equiv ν] at h; omega
+      n - orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf :=
+  sum_localMultiplicity_sub_one_fiber_eq (P.map_localMultiplicity_fiber_inf ν)
 
 /-- **Total ramification from monodromy**: `ramificationDegree P.β = 2 * degree P.β - χ(t)`. -/
 theorem natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar :
@@ -390,40 +392,48 @@ theorem eulerChar_Z_eq_two_sub_two_mul_genus {n : ℕ} (X : TopBranchedCover.{0}
   exact (X.isCoveringMap_restrict.isConnected_monodromyTriple ν).two_sub_two_mul_genus.symm
 
 /-- The Euler characteristic of an isomorphism class of topological branched covers. -/
-def IsoClass.eulerChar {n : ℕ} (c : IsoClass.{0} n) : ℤ :=
-  TauCeti.eulerChar (surjInv mk_surjective c).Z
+def IsoClass.eulerChar {n : ℕ} : IsoClass.{0} n → ℤ :=
+  IsoClass.lift (fun X ↦ TauCeti.eulerChar X.Z) fun _ _ ⟨ι⟩ ↦ ι.eulerChar_eq
 
 /-- On the class of `X`, `IsoClass.eulerChar` evaluates to `eulerChar X.Z`. -/
 @[simp] theorem IsoClass.eulerChar_mk {n : ℕ} (X : TopBranchedCover.{0} n) :
     (IsoClass.mk X).eulerChar = TauCeti.eulerChar X.Z :=
-  (mk_eq_mk_iff.1 (surjInv_eq mk_surjective (.mk X))).some.eulerChar_eq
+  IsoClass.lift_mk _ _ X
 
 /-- The topological genus of an isomorphism class of topological branched covers. -/
-def IsoClass.genus {n : ℕ} (c : IsoClass.{0} n) : ℕ :=
-  RiemannSurface.genus (surjInv mk_surjective c).Z
+def IsoClass.genus {n : ℕ} : IsoClass.{0} n → ℕ :=
+  IsoClass.lift (fun X ↦ RiemannSurface.genus X.Z) fun _ _ ⟨ι⟩ ↦ ι.genus_eq
 
 /-- On the class of `X`, `IsoClass.genus` evaluates to `genus X.Z`. -/
 @[simp] theorem IsoClass.genus_mk {n : ℕ} (X : TopBranchedCover.{0} n) :
     (IsoClass.mk X).genus = RiemannSurface.genus X.Z :=
-  (mk_eq_mk_iff.1 (surjInv_eq mk_surjective (.mk X))).some.genus_eq
+  IsoClass.lift_mk _ _ X
 
 end TopBranchedCover
 
 namespace AnalyticBelyiPair
 
+/-- Forgetting the complex structure preserves the Euler characteristic. -/
+@[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (h : degree P.β = n) : eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
+  -- `(P.toTopBranchedCover h).Z` is `P.X`; `Homeomorph.refl` reconciles the `FiniteCWType`
+  -- instances without assuming definitional equality.
+  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).eulerChar_eq
+
+/-- Forgetting the complex structure preserves the topological genus. -/
+@[simp] theorem genus_toTopBranchedCover (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (h : degree P.β = n) : genus (P.toTopBranchedCover h).Z = genus P.X :=
+  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).toHomotopyEquiv.genus_eq
+
 /-- Passing to the underlying topological branched cover preserves the Euler characteristic. -/
 @[simp] theorem eulerChar_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (toTopBranchedCoverIsoClass n P).eulerChar = isoClassEulerChar n P :=
-  Quotient.inductionOn P fun P ↦ by
-    rw [toTopBranchedCoverIsoClass_mk, TopBranchedCover.IsoClass.eulerChar_mk,
-      isoClassEulerChar_mk]; rfl
+  Quotient.inductionOn P fun _ ↦ by simp
 
 /-- Passing to the underlying topological branched cover preserves the topological genus. -/
 @[simp] theorem genus_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (toTopBranchedCoverIsoClass n P).genus = isoClassGenus n P :=
-  Quotient.inductionOn P fun P ↦ by
-    rw [toTopBranchedCoverIsoClass_mk, TopBranchedCover.IsoClass.genus_mk,
-      isoClassGenus_mk]; rfl
+  Quotient.inductionOn P fun _ ↦ by simp
 
 end AnalyticBelyiPair
 

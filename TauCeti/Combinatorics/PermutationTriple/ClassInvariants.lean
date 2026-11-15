@@ -17,8 +17,7 @@ Simultaneous relabeling of the sheets preserves the cycle partitions, cycle coun
 characteristic, combinatorial genus, automorphism-group order, and regularity of a permutation
 triple. This file descends each invariant to `TauCeti.PermutationTriple.IsoClass` and restricts
 them along `TauCeti.ConnectedIsoClass.forget` to `TauCeti.ConnectedIsoClass`, where `χ ≤ 2`,
-`2 - 2 g = χ`, `|Aut| ∣ n`, and regularity is equivalent to `|Aut| = n`. We also record the
-degree-`0` `IsEmpty` and degree-`1` `Unique` instances on connected carriers.
+`2 - 2 g = χ`, `|Aut| ∣ n`, and regularity is equivalent to `|Aut| = n`.
 
 ## Main definitions and results
 
@@ -34,21 +33,9 @@ public section
 
 namespace TauCeti
 
-namespace PermutationTriple
+namespace PermutationTriple.IsoClass
 
 variable {n : ℕ}
-
-/-- Relabeling the sheets conjugates the automorphism group, preserving its cardinality. -/
-@[simp] theorem natCard_automorphismGroup_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
-    Nat.card (τ • t).automorphismGroup = Nat.card t.automorphismGroup :=
-  (automorphismGroup_smul τ t).symm ▸ Subgroup.card_map_of_injective (MulAut.conj τ).injective
-
-/-- Isomorphic permutation triples have automorphism groups of the same cardinality. -/
-theorem natCard_automorphismGroup_eq_of_equivalent {t t' : PermutationTriple n}
-    (h : Equivalent t t') : Nat.card t.automorphismGroup = Nat.card t'.automorphismGroup := by
-  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h; simp
-
-namespace IsoClass
 
 /-- The ordered full cycle partitions `(λ₀, λ₁, λ∞)` of an isomorphism class of triples. -/
 def cycleData : IsoClass n → Multiset ℕ × Multiset ℕ × Multiset ℕ :=
@@ -137,35 +124,11 @@ def IsRegular : IsoClass n → Prop :=
 theorem IsRegular.isConnected {c : IsoClass n} (hc : c.IsRegular) : c.IsConnected := by
   obtain ⟨t, rfl⟩ := mk_surjective c; exact (isConnected_mk t).2 ((isRegular_mk t).1 hc).isConnected
 
-end IsoClass
-
-end PermutationTriple
-
-/-! ### Degree zero and degree one for connected triples -/
-
-/-- No connected permutation triple has degree zero. -/
-instance : IsEmpty (ConnectedTriple 0) := ⟨fun t => t.2.ne_zero rfl⟩
-
-/-- There are no connected isomorphism classes of permutation triples in degree zero. -/
-instance : IsEmpty (ConnectedIsoClass 0) := ⟨Quotient.ind isEmptyElim⟩
-
-/-- There is a unique connected permutation triple of degree one. -/
-instance : Unique (ConnectedTriple 1) where
-  default := ⟨1, PermutationTriple.isConnected_iff.2 ⟨one_ne_zero, inferInstance⟩⟩
-  uniq t := Subtype.ext (Subsingleton.elim t.1 1)
-
-/-- Up to simultaneous relabeling there is a unique connected permutation triple of degree one. -/
-instance : Unique (ConnectedIsoClass 1) where
-  default := ConnectedIsoClass.mk default
-  uniq := Quotient.ind fun t => congrArg ConnectedIsoClass.mk (Subsingleton.elim t default)
+end PermutationTriple.IsoClass
 
 namespace ConnectedIsoClass
 
 variable {n : ℕ}
-
-/-- Every degree admitting a connected isomorphism class is nonzero. -/
-theorem ne_zero (c : ConnectedIsoClass n) : n ≠ 0 :=
-  Quotient.ind (motive := fun _ => n ≠ 0) (fun t => t.2.ne_zero) c
 
 /-- The ordered full cycle partitions `(λ₀, λ₁, λ∞)` of a connected isomorphism class. -/
 def cycleData (c : ConnectedIsoClass n) : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
