@@ -168,11 +168,10 @@ and only if `⟪b i, y⟫ = c i * ⟪b i, x⟫` for every `i`; in that case `x` 
 domain. -/
 theorem mem_graph_diagonalPMap_iff {x y : E} :
     (x, y) ∈ (b.diagonalPMap c).graph ↔ ∀ i, ⟪b i, y⟫_𝕜 = c i * ⟪b i, x⟫_𝕜 := by
-  rw [mem_graph_iff]
   constructor
-  · rintro ⟨x', hx, hy⟩
-    simp only at hx hy
-    subst hx hy
+  · intro hp
+    obtain ⟨x', hx'⟩ := (mem_graph_iff' _).1 hp
+    obtain ⟨rfl, rfl⟩ := Prod.mk_inj.1 hx'
     exact (b.diagonalPMap_apply_eq_iff c x').1 rfl
   · intro h
     have hx : x ∈ (b.diagonalPMap c).domain := by
@@ -180,7 +179,7 @@ theorem mem_graph_diagonalPMap_iff {x y : E} :
         funext fun i ↦ by rw [b.repr_apply_apply, h]
       rw [mem_diagonalPMap_domain_iff_memℓp, hf]
       exact lp.memℓp _
-    exact ⟨⟨x, hx⟩, rfl, (b.diagonalPMap_apply_eq_iff c ⟨x, hx⟩).2 h⟩
+    exact (mem_graph_iff _).2 ⟨⟨x, hx⟩, rfl, (b.diagonalPMap_apply_eq_iff c ⟨x, hx⟩).2 h⟩
 
 /-- **Basis expansion of a diagonal operator.** `b.diagonalPMap c x = ∑ᵢ (c i * ⟪b i, x⟫) • b i`. -/
 theorem hasSum_diagonalPMap_apply (x : (b.diagonalPMap c).domain) :
@@ -217,10 +216,8 @@ theorem le_diagonalPMap_iff {T : E →ₗ.[𝕜] E} :
     T ≤ b.diagonalPMap c ↔ ∀ (x : T.domain) (i : ι), ⟪b i, T x⟫_𝕜 = c i * ⟪b i, (x : E)⟫_𝕜 := by
   refine ⟨fun h x i ↦ by rw [apply_comp_inclusion h x, inner_diagonalPMap_apply,
     Submodule.coe_inclusion], fun h ↦ le_of_le_graph ?_⟩
-  rintro ⟨x, y⟩ hp
-  obtain ⟨x', hx, hy⟩ := (mem_graph_iff T).1 hp
-  simp only at hx hy
-  subst hx hy
+  intro p hp
+  obtain ⟨x', rfl⟩ := (mem_graph_iff' T).1 hp
   exact (b.mem_graph_diagonalPMap_iff c).2 (h x')
 
 /-- The domain of a diagonal operator contains the span of the Hilbert basis. -/
@@ -305,14 +302,15 @@ theorem adjoint_diagonalPMap : (b.diagonalPMap c)† = b.diagonalPMap (star c) :
     rintro ⟨y', hy, hz⟩ i
     have h := adjoint_isFormalAdjoint hdense y' ⟨b i, b.self_mem_diagonalPMap_domain c i⟩
     rw [diagonalPMap_apply_self, inner_smul_right, hz, hy] at h
-    rw [← inner_conj_symm, h, map_mul, inner_conj_symm, Pi.star_apply, RCLike.star_def]
+    simpa [RCLike.star_def] using congrArg (starRingEnd 𝕜) h
   · -- Conversely, Parseval's identity shows that `z` represents `x ↦ ⟪y, b.diagonalPMap c x⟫`.
     intro h
     have key (x : (b.diagonalPMap c).domain) : ⟪z, (x : E)⟫_𝕜 = ⟪y, b.diagonalPMap c x⟫_𝕜 := by
       rw [← b.tsum_inner_mul_inner z, ← b.tsum_inner_mul_inner y]
       refine tsum_congr fun i ↦ ?_
-      rw [inner_diagonalPMap_apply, ← inner_conj_symm z, h, Pi.star_apply, RCLike.star_def,
-        map_mul, RCLike.conj_conj, inner_conj_symm]
+      have hz : ⟪z, b i⟫_𝕜 = c i * ⟪y, b i⟫_𝕜 := by
+        simpa [RCLike.star_def] using congrArg (starRingEnd 𝕜) (h i)
+      rw [inner_diagonalPMap_apply, hz]
       ring
     have hy : y ∈ (b.diagonalPMap c)†.domain := mem_adjoint_domain_of_exists y ⟨z, key⟩
     exact ⟨⟨y, hy⟩, rfl, adjoint_apply_eq hdense _ key⟩
@@ -363,10 +361,8 @@ the domain of `A`, and their images converge to `b.diagonalPMap c x`. -/
 theorem IsClosed.diagonalPMap_le (hcl : A.IsClosed) {c : ι → 𝕜}
     (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = c i • b i) : b.diagonalPMap c ≤ A := by
   refine le_of_le_graph ?_
-  rintro ⟨x, y⟩ hp
-  obtain ⟨x', hx, hy⟩ := (mem_graph_iff _).1 hp
-  simp only at hx hy
-  subst hx hy
+  intro p hp
+  obtain ⟨x', rfl⟩ := (mem_graph_iff' _).1 hp
   have hsum : HasSum (fun i ↦ ⟪b i, (x' : E)⟫_𝕜 • ((b i, c i • b i) : E × E))
       ((x' : E), b.diagonalPMap c x') := by
     refine ((b.hasSum_repr (x' : E)).prodMk (b.hasSum_diagonalPMap_apply c x')).congr_fun
