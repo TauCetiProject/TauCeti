@@ -80,6 +80,8 @@ instance isIso_toSSet_map_generatedByCounit (X : TopCat.{u}) :
     (CategoryTheory.isIso_iff_bijective _).2 (by
       have h := bijective_toSSet_map_generatedByCounit_app G X n
       rw [← GeneratedByTopCat.adjCounit_app_hom] at h
+      -- The composite functor's object is definitionally `of (WithGeneratedByTopology G X)`,
+      -- so `ofHom_hom` identifies the two counit morphisms.
       exact h)
   exact NatIso.isIso_of_isIso_app _
 
@@ -100,11 +102,39 @@ theorem toSSetGeneratedByIso_hom_app (X : TopCat.{u}) :
   (rfl)
 
 /-- The inverse singular-set comparison is the inverse of the counit-induced map. -/
-@[simp]
 theorem toSSetGeneratedByIso_inv_app (X : TopCat.{u}) :
     (toSSetGeneratedByIso G).inv.app X =
       inv (toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)) :=
   (rfl)
+
+/-- The counit-induced singular-set map cancels the inverse comparison. -/
+-- Naturality already rewrites this left-hand side, so the cancellation is rewrite-only.
+@[reassoc]
+theorem toSSet_map_adjCounit_toSSetGeneratedByIso_inv_app (X : TopCat.{u}) :
+    dsimp% (toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X) ≫
+        (toSSetGeneratedByIso G).inv.app X = 𝟙 _) := by
+  rw [← toSSetGeneratedByIso_hom_app]
+  exact (toSSetGeneratedByIso G).hom_inv_id_app X
+
+/-- The inverse singular-set comparison cancels the counit-induced map. -/
+@[reassoc (attr := simp)]
+theorem toSSetGeneratedByIso_inv_app_toSSet_map_adjCounit (X : TopCat.{u}) :
+    dsimp% ((toSSetGeneratedByIso G).inv.app X ≫
+        toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X) = 𝟙 _) := by
+  rw [← toSSetGeneratedByIso_hom_app]
+  exact (toSSetGeneratedByIso G).inv_hom_id_app X
+
+/-- Postcomposing a lifted singular simplex with the counit recovers the original simplex. -/
+theorem adjCounit_comp_toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app
+    (X : TopCat.{u}) (n : SimplexCategoryᵒᵖ) (σ : (toSSet.obj X).obj n) :
+    ((GeneratedByTopCat.adjCounit (X := G)).app X).hom.comp
+        (toSSetObjEquiv _ n (((toSSetGeneratedByIso G).inv.app X).app n σ)) =
+      toSSetObjEquiv X n σ := by
+  have h : ((toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)).app n)
+      ((((toSSetGeneratedByIso G).inv.app X).app n) σ) = σ := by
+    simpa only [Iso.app_hom, Iso.app_inv, toSSetGeneratedByIso_hom_app] using
+      ((((toSSetGeneratedByIso G).app X).app n).inv_hom_id_apply σ)
+  simpa only [toSSetObjEquiv_toSSet_map_app] using congrArg (toSSetObjEquiv X n) h
 
 /-- The inverse singular-set comparison lifts precisely the same continuous simplex to the
 refined topology. -/
@@ -117,13 +147,9 @@ theorem toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app (X : TopCat.{u}) (n : Si
   -- The composite functor's object has carrier `WithGeneratedByTopology G X` definitionally.
   let f : C(StdSimplex ℝ (Fin (n.unop.len + 1)), WithGeneratedByTopology G X) :=
     toSSetObjEquiv _ n (((toSSetGeneratedByIso G).inv.app X).app n σ)
-  have h : ((toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)).app n)
-      ((((toSSetGeneratedByIso G).inv.app X).app n) σ) = σ :=
-    ((((toSSetGeneratedByIso G).app X).app n).inv_hom_id_apply σ)
-  have hc := congrArg (toSSetObjEquiv X n) h
-  rw [toSSetObjEquiv_toSSet_map_app] at hc
   have hf : (WithGeneratedByTopology.counit G X).comp f = toSSetObjEquiv X n σ := by
-    rwa [← GeneratedByTopCat.adjCounit_app_hom]
+    rw [← GeneratedByTopCat.adjCounit_app_hom]
+    exact adjCounit_comp_toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app G X n σ
   exact (ContinuousMap.toGeneratedBy_equiv_comp f).symm.trans
     (congrArg (fun τ : C(StdSimplex ℝ (Fin (n.unop.len + 1)), X) ↦ τ.toGeneratedBy G) hf)
 
@@ -134,12 +160,8 @@ theorem adjCounit_toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app (X : TopCat.{u
     ((GeneratedByTopCat.adjCounit (X := G)).app X)
         (toSSetObjEquiv _ n (((toSSetGeneratedByIso G).inv.app X).app n σ) z) =
       toSSetObjEquiv X n σ z := by
-  have h : ((toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)).app n)
-      ((((toSSetGeneratedByIso G).inv.app X).app n) σ) = σ :=
-    ((((toSSetGeneratedByIso G).app X).app n).inv_hom_id_apply σ)
-  have hc := congrArg (toSSetObjEquiv X n) h
-  rw [toSSetObjEquiv_toSSet_map_app] at hc
-  exact ContinuousMap.congr_fun hc z
+  exact ContinuousMap.congr_fun
+    (adjCounit_comp_toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app G X n σ) z
 
 -- Exercise compact generation with independent test-space and target universes.
 example (X : TopCat.{u}) :
@@ -172,28 +194,58 @@ def singularChainComplexFunctorGeneratedByIso :
   Functor.isoWhiskerRight (TopCat.toSSetGeneratedByIso G) ((SSet.chainComplexFunctor C).obj R)
 
 /-- The forward chain comparison is the singular chain map of the counit. -/
+@[simp]
 theorem singularChainComplexFunctorGeneratedByIso_hom_app (X : TopCat.{u}) :
     (singularChainComplexFunctorGeneratedByIso G R).hom.app X =
-      ((AlgebraicTopology.singularChainComplexFunctor C).obj R).map
-        ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
-  (rfl)
+      SSet.chainComplexMap (TopCat.toSSet.map
+        ((GeneratedByTopCat.adjCounit (X := G)).app X)) R := by
+  simp [singularChainComplexFunctorGeneratedByIso,
+    AlgebraicTopology.singularChainComplexFunctor, SSet.chainComplexMap]
 
 /-- The inverse chain comparison is induced by the inverse singular-set comparison. -/
+@[simp]
 theorem singularChainComplexFunctorGeneratedByIso_inv_app (X : TopCat.{u}) :
     (singularChainComplexFunctorGeneratedByIso G R).inv.app X =
       SSet.chainComplexMap ((TopCat.toSSetGeneratedByIso G).inv.app X) R :=
   (rfl)
 
+/-- The counit-induced chain map cancels the lifted inverse chain map. -/
+-- Naturality of the inverse comparison already rewrites this left-hand side.
+@[reassoc]
+theorem chainComplexMap_adjCounit_chainComplexMap_toSSetGeneratedByIso_inv_app
+    (X : TopCat.{u}) :
+    dsimp% (SSet.chainComplexMap (TopCat.toSSet.map
+        ((GeneratedByTopCat.adjCounit (X := G)).app X)) R ≫
+        SSet.chainComplexMap ((TopCat.toSSetGeneratedByIso G).inv.app X) R = 𝟙 _) := by
+  rw [← singularChainComplexFunctorGeneratedByIso_hom_app,
+    ← singularChainComplexFunctorGeneratedByIso_inv_app]
+  exact (singularChainComplexFunctorGeneratedByIso G R).hom_inv_id_app X
+
+/-- The lifted inverse chain map cancels the counit-induced chain map. -/
+@[reassoc (attr := simp)]
+theorem chainComplexMap_toSSetGeneratedByIso_inv_app_chainComplexMap_adjCounit
+    (X : TopCat.{u}) :
+    dsimp% (SSet.chainComplexMap ((TopCat.toSSetGeneratedByIso G).inv.app X) R ≫
+        SSet.chainComplexMap (TopCat.toSSet.map
+          ((GeneratedByTopCat.adjCounit (X := G)).app X)) R = 𝟙 _) := by
+  rw [← singularChainComplexFunctorGeneratedByIso_hom_app,
+    ← singularChainComplexFunctorGeneratedByIso_inv_app]
+  exact (singularChainComplexFunctorGeneratedByIso G R).inv_hom_id_app X
+
 /-- On each singular-chain summand, the inverse comparison is induced by lifting its simplex
 to the generated topology. -/
+@[reassoc]
 theorem ιChainComplex_singularChainComplexFunctorGeneratedByIso_inv_app_f
     (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSSet.obj X).obj (Opposite.op ⦋n⦌)) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫
+    dsimp% [AlgebraicTopology.singularChainComplexFunctor]
+      ((TopCat.toSSet.obj X).ιChainComplex σ ≫
         ((singularChainComplexFunctorGeneratedByIso G R).inv.app X).f n =
       (TopCat.toSSet.obj ((TopCat.toGeneratedByTopCat (X := G) ⋙
         GeneratedByTopCat.toTopCat).obj X)).ιChainComplex
-          ((((TopCat.toSSetGeneratedByIso G).inv.app X).app (Opposite.op ⦋n⦌)) σ) :=
-  SSet.ι_chainComplexMap_f _ _ _ R σ
+          ((((TopCat.toSSetGeneratedByIso G).inv.app X).app (Opposite.op ⦋n⦌)) σ)) := by
+  rw [singularChainComplexFunctorGeneratedByIso_inv_app]
+  -- Singular chains on `X` are definitionally `(TopCat.toSSet.obj X).chainComplex R`.
+  exact SSet.ι_chainComplexMap_f _ _ _ R σ
 
 -- The coefficient morphism universe is also independent of both space universes.
 example (X : TopCat.{u}) :
