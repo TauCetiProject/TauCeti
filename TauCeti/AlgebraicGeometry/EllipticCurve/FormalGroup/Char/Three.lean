@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
+import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Tactic.ReduceModChar
 
 /-!
 # Height two in characteristic three
 
 For an elliptic Weierstrass curve over a field of characteristic three, the formal group has
-height two exactly when `b₂ = 0`, equivalently when the curve is supersingular. The computation
+height two exactly when `b₂ = 0`
+(`WeierstrassCurve.height_formalGroup_eq_two_iff_b₂_eq_zero_of_char_three`). The computation
 uses the tangent in the coordinates `T = -x/y`, `w = -1/y`: when `b₂ = 0`, its third intersection
 parameter differs from `T` first in degree nine. This works for a general Weierstrass equation,
 without completing the square or changing its coordinates. Over any commutative ring of
@@ -190,20 +192,6 @@ theorem height_formalGroup_eq_two_iff_b₂_eq_zero_of_char_three :
     · intro i hi
       simpa [ne_of_lt hi] using
         W.coeff_nsmulSeries_three_formalGroup_of_char_three hb hi.le
-
-/-- In characteristic three, an elliptic curve has formal-group height one or two. -/
-theorem height_formalGroup_eq_one_or_eq_two_of_char_three :
-    (formalGroup W).height 3 = 1 ∨ (formalGroup W).height 3 = 2 := by
-  by_cases hb : W.b₂ = 0
-  · exact Or.inr (W.height_formalGroup_eq_two_iff_b₂_eq_zero_of_char_three.mpr hb)
-  · exact Or.inl (W.height_formalGroup_eq_one_iff_b₂_ne_zero_of_char_three.mpr hb)
-
-/-- In characteristic three, an elliptic curve is supersingular exactly when its formal group
-has height two. -/
-theorem isSupersingular_iff_height_formalGroup_eq_two_of_char_three :
-    W.IsSupersingular 3 ↔ (formalGroup W).height 3 = 2 := by
-  rw [isSupersingular_iff_j_eq_zero_of_char_three, j_eq_zero_iff_of_char_three,
-    height_formalGroup_eq_two_iff_b₂_eq_zero_of_char_three]
 
 end Field
 

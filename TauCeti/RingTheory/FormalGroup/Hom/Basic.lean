@@ -576,6 +576,29 @@ theorem comp_applyPoint (g : FormalGroupHom G H) (f : FormalGroupHom F G) {σ : 
   simp only [applyPoint_val, comp_toPowerSeries,
     PowerSeries.subst_comp_subst_apply f.hasSubst x.prop]
 
+/-- The zero homomorphism between formal group laws has underlying series `0`. -/
+noncomputable instance : Zero (FormalGroupHom F G) where
+  zero := ofHomDefectEqZero PowerSeries.constantCoeff_zero FormalGroup.homDefect_zero
+
+@[simp]
+theorem zero_toPowerSeries : (0 : FormalGroupHom F G).toPowerSeries = 0 := (rfl)
+
+@[simp]
+theorem zero_comp (f : FormalGroupHom F G) : (0 : FormalGroupHom G H).comp f = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem comp_zero (g : FormalGroupHom G H) : g.comp (0 : FormalGroupHom F G) = 0 := by
+  ext
+  simp [PowerSeries.subst_zero_of_constantCoeff_zero g.zero_constantCoeff]
+
+@[simp]
+theorem zero_applyPoint {σ : Type*} (x : F.Point σ) :
+    (0 : FormalGroupHom F G).applyPoint x = 0 := by
+  apply Subtype.ext
+  simp
+
 end FormalGroupHom
 
 /-- An isomorphism of formal group laws with specified mutually inverse homomorphisms.

@@ -18,8 +18,9 @@ import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Expansion
 # The invariant differential and separability on formal series of isogenies
 
 Expanding rational functions at infinity in the local parameter `z = -x/y` sends the invariant
-differential `ω = dx / (2y + a₁x + a₃)` of a Weierstrass curve `W` to the normalised invariant
-differential `P(X) dX` of its formal group law `Ê`:
+differential `ω = dx / (2y + a₁x + a₃)` of a Weierstrass curve `W`, when `2y + a₁x + a₃ ≠ 0` (in
+particular, for any elliptic curve `W`), to the normalised invariant differential `P(X) dX` of its
+formal group law `Ê`:
 `(e(2y + a₁x + a₃))⁻¹ · d/dX (e x) = P(X)` in `K⸨X⸩`.
 
 Along an isogeny `φ : W₁ → W₂` of elliptic curves, combining this expansion with the constancy of
@@ -35,9 +36,6 @@ vanishing of `φ.formalSeries` is the inseparable degree of `φ` (Silverman IV.7
 
 ## Main results
 
-* `WeierstrassCurve.functionFieldLaurentExpansion_genericX_eq_div` and
-  `WeierstrassCurve.functionFieldLaurentExpansion_genericY_eq_div`: Laurent expansions
-  `x ↦ X / w(X)` and `y ↦ -1 / w(X)` at infinity.
 * `WeierstrassCurve.inv_functionFieldLaurentExpansion_invariantDifferentialDenom_mul_derivative`:
   the Laurent expansion of `dx / (2y + a₁x + a₃)` at infinity is
   `(formalGroup W).invariantDifferential` (with an `of_ne_zero` version avoiding ellipticity).
@@ -66,28 +64,6 @@ open scoped LaurentSeries PowerSeries
 namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K)
-
-/-- Under the Laurent expansion at infinity in `z = -x/y`, the generic abscissa expands as
-`X / w(X)` where `w(X) = e(-1/y)`. -/
-theorem functionFieldLaurentExpansion_genericX_eq_div :
-    W.functionFieldLaurentExpansion W.toAffine.genericX =
-      ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) / (formalW W : K⸨X⸩) := by
-  have hy : W.functionFieldLaurentExpansion W.toAffine.genericY ≠ 0 :=
-    (map_ne_zero_iff _ W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
-  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
-    simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
-  have hparam := W.functionFieldLaurentExpansion_neg_genericX_div_genericY
-  rw [map_div₀, map_neg] at hparam
-  rw [hw, ← hparam]
-  field_simp
-
-/-- Under the Laurent expansion at infinity in `z = -x/y`, the generic ordinate expands as
-`-1 / w(X)` where `w(X) = e(-1/y)`. -/
-theorem functionFieldLaurentExpansion_genericY_eq_div :
-    W.functionFieldLaurentExpansion W.toAffine.genericY = -1 / (formalW W : K⸨X⸩) := by
-  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
-    simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
-  rw [hw, neg_div, div_neg, neg_neg, one_div, inv_inv]
 
 /-- The formal denominator `1 - a₁X - a₂X² - 2a₃w - 2a₄Xw - 3a₆w²` coerced to `K⸨X⸩`. -/
 private theorem coe_formalInvariantDifferentialDenom :
@@ -142,12 +118,7 @@ theorem inv_functionFieldLaurentExpansion_invariantDifferentialDenom_mul_derivat
     have hdiv : 2 * (-1 / w) + algebraMap K K⸨X⸩ W.a₁ * (q / w) +
         algebraMap K K⸨X⸩ W.a₃ =
         (-2 + algebraMap K K⸨X⸩ W.a₁ * q + algebraMap K K⸨X⸩ W.a₃ * w) / w := by
-      have hw0 : w ≠ 0 := by
-        dsimp only [w]
-        rw [← W.functionFieldLaurentExpansion_neg_inv_genericY]
-        exact (map_ne_zero_iff W.functionFieldLaurentExpansion
-          W.functionFieldLaurentExpansion.injective).mpr
-            (neg_ne_zero.mpr (inv_ne_zero W.toAffine.genericY_ne_zero))
+      have hw0 : w ≠ 0 := (map_ne_zero_iff _ ofPowerSeries_injective).mpr W.formalW_ne_zero
       field_simp
     rw [hdiv, hu0, zero_div]
   -- Apply implicit differentiation for `q / w` along `laurentSeriesDerivation`.

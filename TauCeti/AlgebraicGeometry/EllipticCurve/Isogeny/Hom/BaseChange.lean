@@ -41,6 +41,8 @@ and the identification of morphisms with their tautological points in `Isogeny.H
 * `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
   base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
   for an automorphism of `L` over `F` this is Galois equivariance.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_genericPoint`: base-changing `h` to `F(W₁)` and
+  evaluating on `W₁.genericPoint` recovers `h.tautologicalPoint`.
 
 ## References
 
@@ -295,6 +297,38 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
   · rw [map_map]
     exact congr_arg_heq (fun g ↦ h.map g) σ.comp_algebraMap
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
+
+omit [DecidableEq F] in
+/-- **Base-changing a morphism `h : Hom W₁ W₂` to `F(W₁)` and applying `pointMap` to
+`W₁.genericPoint` recovers `h.tautologicalPoint`.** -/
+@[simp]
+theorem pointMap_map_algebraMap_genericPoint (h : Hom W₁ W₂) :
+    (h.map (algebraMap F W₁.FunctionField)).pointMap W₁.genericPoint =
+      h.tautologicalPoint := by
+  let P : (W₁.map (algebraMap F W₁.FunctionField)).Point := W₁.genericPoint
+  have hns : (W₁.map (algebraMap F W₁.FunctionField)).Nonsingular W₁.genericX W₁.genericY :=
+    nonsingular_genericX_genericY W₁
+  have hP : P = Point.some W₁.genericX W₁.genericY hns := genericPoint_eq_some W₁
+  rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
+  · have h0 : ((0 : Hom W₁ W₂).map (algebraMap F W₁.FunctionField)).pointMap P = 0 := by
+      rw [zero_map, zero_pointMap]
+    exact h0.trans tautologicalPoint_zero.symm
+  let Q : (W₂.map (algebraMap F W₁.FunctionField)).Point := φ.pullback.tautologicalPoint
+  have hQ0 : Q ≠ 0 := CoordinatePullback.tautologicalPoint_ne_zero φ.pullback
+  have hφ : ((ofIsogeny φ).map (algebraMap F W₁.FunctionField)).pointMap P = Q := by
+    rw [ofIsogeny_map, pointMap_eq_iff, tautologicalPoint_ofIsogeny,
+      ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero (φ.map _).pullback),
+      ← Point.some_coords hQ0, hP, coe_pointEquivDegreeOnePlace_some,
+      Point.equivBaseChangeSelf_some, some_sub_baseChange_mem_polePoints_iff]
+    have hxQ : Q.xCoord = φ.pullback.tautologicalPoint.xCoord := rfl
+    have hyQ : Q.yCoord = φ.pullback.tautologicalPoint.yCoord := rfl
+    rw [hxQ, hyQ]
+    simp only [CoordinatePullback.xCoord_tautologicalPoint,
+      CoordinatePullback.yCoord_tautologicalPoint, Isogeny.map_pullback,
+      CoordinatePullback.map_of_X, CoordinatePullback.map_root]
+    exact ⟨W₁.valuation_pointPlace_functionFieldMap_sub_lt_one hns.1 _,
+      W₁.valuation_pointPlace_functionFieldMap_sub_lt_one hns.1 _⟩
+  exact hφ.trans (tautologicalPoint_ofIsogeny φ).symm
 
 end PointMap
 

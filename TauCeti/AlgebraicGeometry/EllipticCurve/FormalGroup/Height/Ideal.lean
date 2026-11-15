@@ -7,10 +7,13 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.Ideal.Maximal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # The Hasse invariant as Landweber's `v₁` for Weierstrass formal groups
@@ -27,7 +30,10 @@ Hasse invariant: `I₂(Ê) = (p, v₁) = (p, A)` (`WeierstrassCurve.heightIdeal_
 So `R ⧸ (p, A)` is the universal quotient of `R` over which `[p]_Ê` vanishes to order `p²`, the
 height-at-least-two locus of `W`, and Landweber's conditions in heights `0` and `1`, that `p`
 acts injectively on `R` and `v₁` on `R ⧸ p`, may be tested on `A` instead of `v₁`
-(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_nsmulSeries_iff`).
+(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_nsmulSeries_iff`). When `W` is an elliptic curve
+over `R`, passing to residue fields at maximal ideals shows `I_n(Ê) = ⊤` for all `n ≥ 3`
+(`WeierstrassCurve.heightIdeal_formalGroup_eq_top`), so Landweber's `v₂` is a unit modulo `I₂(Ê)`
+(`WeierstrassCurve.isUnit_mk_coeff_sq_nsmulSeries_formalGroup`).
 
 On the nodal multiplicative locus the Hasse invariant is a unit modulo `p`. The Tate curve over
 `ℤ⟦q⟧`, the formal neighbourhood of the cusp, has formal group isomorphic to the multiplicative
@@ -54,6 +60,9 @@ conditions in heights `0` and `1` for the formal group of the universal curve.
   when the Hasse invariant is a unit modulo `p`.
 * `WeierstrassCurve.isWeaklyRegular_natCast_coeff_nsmulSeries_iff`: `(p, v₁)` is weakly regular
   exactly when `(p, A)` is.
+* `WeierstrassCurve.heightIdeal_formalGroup_eq_top` and
+  `WeierstrassCurve.isUnit_mk_coeff_sq_nsmulSeries_formalGroup`: for an elliptic curve over any
+  commutative ring, `I_n(Ê) = ⊤` for `n ≥ 3` and Landweber's `v₂` is a unit in `R ⧸ I₂(Ê)`.
 * `TauCeti.heightIdeal_formalGroup_map_tateCurve_eq_top` and
   `TauCeti.isUnit_mk_coeff_invariantDifferential_formalGroup_map_tateCurve`: on every
   specialization of the Tate curve, `I_n = R` for `n ≥ 2` and the Hasse invariant is a unit
@@ -121,6 +130,40 @@ theorem isWeaklyRegular_natCast_coeff_nsmulSeries_iff (hp : p.Prime) (M : Type*)
   rw [isWeaklyRegular_cons_iff', isWeaklyRegular_cons_iff', List.map_singleton,
     List.map_singleton, Ideal.Quotient.eq.mpr (Ideal.mem_span_singleton.mpr
       (W.natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferential hp))]
+
+/-- **Termination of the Landweber height tower for elliptic curves**: for an elliptic curve `W`
+over any commutative ring `R`, every prime `p`, and every `n ≥ 3`, the `n`-th height ideal
+`I_n(formalGroup W)` is the unit ideal. -/
+theorem heightIdeal_formalGroup_eq_top [W.IsElliptic] (hp : p.Prime) {n : ℕ} (hn : 3 ≤ n) :
+    (formalGroup W).heightIdeal p n = ⊤ := by
+  by_contra hne
+  obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal _ hne
+  let _ : Field (R ⧸ 𝔪) := @Ideal.Quotient.field R _ 𝔪 h𝔪
+  have : Fact p.Prime := ⟨hp⟩
+  have hp𝔪 : (p : R) ∈ 𝔪 := by
+    have h1 : (formalGroup W).heightIdeal p 1 ≤ 𝔪 :=
+      ((formalGroup W).heightIdeal_mono (by omega : 1 ≤ n)).trans hle
+    rwa [(formalGroup W).heightIdeal_one hp, Ideal.span_singleton_le_iff_mem] at h1
+  have : CharP (R ⧸ 𝔪) p := (CharP.charP_iff_prime_eq_zero hp).mpr <| by
+    rwa [← map_natCast (Ideal.Quotient.mk 𝔪), Ideal.Quotient.eq_zero_iff_mem]
+  have hbot : (formalGroup (W.map (Ideal.Quotient.mk 𝔪))).heightIdeal p n = ⊥ := by
+    rw [W.map_formalGroup, ← FormalGroup.map_heightIdeal, Ideal.map_eq_bot_iff_le_ker,
+      Ideal.mk_ker]
+    exact hle
+  have hge : (n : ℕ∞) ≤ (formalGroup (W.map (Ideal.Quotient.mk 𝔪))).height p :=
+    ((formalGroup (W.map (Ideal.Quotient.mk 𝔪))).heightIdeal_eq_bot_iff_le_height).mp hbot
+  have hle2 := (W.map (Ideal.Quotient.mk 𝔪)).height_formalGroup_le_two (p := p)
+  have h32 : (3 : ℕ∞) ≤ 2 := (Nat.cast_le.mpr hn).trans (hge.trans hle2)
+  exact absurd h32 (by decide)
+
+/-- **Landweber's `v₂` is a unit modulo `I₂` for every elliptic curve**: over any commutative
+ring `R` and for any prime `p`, the image of `coeff (p ^ 2) ((formalGroup W).nsmulSeries p)` in
+`R ⧸ (formalGroup W).heightIdeal p 2` is a unit. -/
+theorem isUnit_mk_coeff_sq_nsmulSeries_formalGroup [W.IsElliptic] (hp : p.Prime) :
+    IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
+      (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) := by
+  rw [Ideal.Quotient.isUnit_mk_iff, sup_comm, ← (formalGroup W).heightIdeal_succ hp 2]
+  exact W.heightIdeal_formalGroup_eq_top hp le_rfl
 
 end WeierstrassCurve
 

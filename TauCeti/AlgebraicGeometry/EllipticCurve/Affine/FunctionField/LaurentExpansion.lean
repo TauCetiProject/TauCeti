@@ -93,6 +93,27 @@ theorem functionFieldLaurentExpansion_neg_genericX_div_genericY :
     exact W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
   rw [map_div₀, map_neg, hx, neg_neg, mul_div_cancel_right₀ _ hy]
 
+/-- Under the Laurent expansion at infinity in `z = -x/y`, the generic abscissa expands as
+`X / w(X)` where `w(X) = e(-1/y)`. -/
+theorem functionFieldLaurentExpansion_genericX_eq_div :
+    W.functionFieldLaurentExpansion W.toAffine.genericX =
+      ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) / (formalW W : K⸨X⸩) := by
+  have hy := W.functionFieldLaurentExpansion_genericY_ne_zero
+  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
+    simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
+  have hparam := W.functionFieldLaurentExpansion_neg_genericX_div_genericY
+  rw [map_div₀, map_neg] at hparam
+  rw [hw, ← hparam]
+  field_simp
+
+/-- Under the Laurent expansion at infinity in `z = -x/y`, the generic ordinate expands as
+`-1 / w(X)` where `w(X) = e(-1/y)`. -/
+theorem functionFieldLaurentExpansion_genericY_eq_div :
+    W.functionFieldLaurentExpansion W.toAffine.genericY = -1 / (formalW W : K⸨X⸩) := by
+  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
+    simpa only [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
+  rw [hw, neg_div, div_neg, neg_neg, one_div, inv_inv]
+
 /-- Laurent expansion in `z = -x/y` preserves the normalized valuation at infinity. -/
 @[simp]
 theorem valuation_functionFieldLaurentExpansion (f : W.toAffine.FunctionField) :

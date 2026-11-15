@@ -67,8 +67,9 @@ equation at the substituted parameter rather than at `z`.
 * `WeierstrassCurve.formalWCoeff_recurrence`: the coefficientwise recurrence — each coefficient
   of `w(z)` above the leading one, from the strictly earlier ones. This is the form to compute
   with; the strong recursion behind `formalWCoeff` is an implementation detail.
-* `WeierstrassCurve.formalWCoeff_zero`, `_one`, `_two`, `_three` and
-  `WeierstrassCurve.formalWCoeff_eq_zero_of_lt`: the series begins `w(z) = z ^ 3 + ⋯`.
+* `WeierstrassCurve.formalWCoeff_zero`, `_one`, `_two`, `_three`,
+  `WeierstrassCurve.formalWCoeff_eq_zero_of_lt`, and `WeierstrassCurve.formalW_ne_zero`: the
+  series begins `w(z) = z ^ 3 + ⋯`, so it is nonzero over a nontrivial semiring.
 * `WeierstrassCurve.formalW_eq_X_pow_mul_formalU`: `w(z) = z ^ 3 * u(z)`, where
   `WeierstrassCurve.constantCoeff_formalU` gives `u(0) = 1`. Over a `CommRing` that makes `u(z)`
   a unit; at the `CommSemiring` generality of that section it does not.
@@ -251,6 +252,11 @@ theorem formalW_eq_X_pow_mul_formalU : formalW W = PowerSeries.X ^ 3 * formalU W
   split_ifs with h
   · rw [coeff_formalU, formalUCoeff_apply, Nat.sub_add_cancel h]
   · exact formalWCoeff_eq_zero_of_lt W (by omega)
+
+/-- Over a nontrivial semiring, the `w`-expansion `w(z) = z ^ 3 + ⋯` is nonzero. -/
+theorem formalW_ne_zero [Nontrivial R] : formalW W ≠ 0 := by
+  intro h
+  simpa [h] using coeff_formalW W 3
 
 /-! ### The `w`-equation -/
 

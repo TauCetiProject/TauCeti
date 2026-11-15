@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -27,8 +28,9 @@ Mathlib substitutes a power series `b` with nilpotent constant coefficient into 
 
 Over a ring without zero divisors, substituting a series `φ` of zero constant coefficient
 multiplies orders: `ord (f (φ)) = ord φ * ord f`. Mathlib records only the inequality
-`PowerSeries.le_order_subst`. The equality shows that substitution of a nonzero such `φ` is
-injective, which is what extends it to Laurent series by passing to fraction fields. Injectivity
+`PowerSeries.le_order_subst`. For any nonzero, possibly multivariate series `φ` of zero constant
+coefficient, substitution into `R⟦X⟧` has trivial kernel, which extends substitution to Laurent
+series by passing to fraction fields. Injectivity
 of polynomial evaluation means such a `φ` is transcendental; over a field `K` it follows that the
 power series algebraic over `K` are the constants.
 
@@ -79,9 +81,9 @@ of a completed group algebra attached to two topological generators.
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
-* `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
-  has trivial kernel.
-* `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
+* `PowerSeries.subst_eq_zero_iff`, `PowerSeries.subst_ne_zero`: substitution of a nonzero
+  (possibly multivariate) series `φ` of zero constant coefficient into `R⟦X⟧` has trivial kernel.
+* `PowerSeries.toNat_order_ne_zero`: such a univariate `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
 * `PowerSeries.isIntegrallyClosedIn`: a field `K` is integrally closed in `K⟦X⟧`.
@@ -248,13 +250,27 @@ theorem order_subst (hφ : constantCoeff φ = 0) (f : R⟦X⟧) :
   rw [subst_mul ha, subst_pow ha, subst_X ha, order_mul, order_pow, hg, add_zero, nsmul_eq_mul,
     coe_toNat_order hf, mul_comm]
 
-/-- Substituting a nonzero power series `φ` of zero constant coefficient sends only `0` to `0`. -/
-theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} :
-    (f.subst φ : R⟦X⟧) = 0 ↔ f = 0 := by
-  have h₀ := order_ne_zero_iff_constCoeff_eq_zero.mpr hφ
-  have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
-  rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
-  exact WithTop.mul_eq_top_iff.trans (by tauto)
+/-- Substituting a nonzero (possibly multivariate) power series `φ` of zero constant coefficient
+into `R⟦X⟧` sends only `0` to `0`. -/
+theorem subst_eq_zero_iff {σ : Type*} {φ : MvPowerSeries σ R}
+    (hφ : MvPowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} :
+    f.subst φ = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ by_contra fun hf ↦ ?_, fun h ↦ by simp [h]⟩
+  have hs : HasSubst φ := .of_constantCoeff_zero hφ
+  rw [← X_pow_order_mul_divXPowOrder (f := f), subst_mul hs, subst_pow hs, subst_X hs] at h
+  rcases mul_eq_zero.mp h with hpow | hdiv
+  · exact pow_ne_zero _ hφ₀ hpow
+  · have hc := congrArg MvPowerSeries.constantCoeff hdiv
+    rw [map_zero, constantCoeff_subst_of_constantCoeff_zero hφ,
+      Algebra.algebraMap_self_apply] at hc
+    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf hc
+
+/-- Substituting a nonzero (possibly multivariate) power series `φ` of zero constant coefficient
+into a nonzero univariate power series yields a nonzero series. -/
+theorem subst_ne_zero {σ : Type*} {φ : MvPowerSeries σ R}
+    (hφ : MvPowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} (hf : f ≠ 0) :
+    f.subst φ ≠ 0 :=
+  (subst_eq_zero_iff hφ hφ₀).not.mpr hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/

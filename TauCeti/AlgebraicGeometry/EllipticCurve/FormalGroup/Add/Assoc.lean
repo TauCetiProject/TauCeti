@@ -34,8 +34,9 @@ supplies one; `map_specialize` carries the conclusion to every `W` over every co
 * `WeierstrassCurve.thetaPoint_add_of_subst_separates` : the chord addition of parametrized
   points, `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))` on the curve `WeierstrassCurve.fracCurve` over a fraction
   field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported, with
-  the parametrized point `WeierstrassCurve.thetaPoint` and its coordinates
-  (`WeierstrassCurve.thetaPoint_eq_some`), because it is also how the addition series is compared
+  the parametrized point `WeierstrassCurve.thetaPoint`, its coordinates
+  (`WeierstrassCurve.thetaPoint_eq_some`), and its injectivity (`WeierstrassCurve.thetaPoint_inj`),
+  because it is also how the addition series is compared
   with other descriptions of the group law of `W`, such as the projective addition laws.
 
 ## Provenance
@@ -506,7 +507,7 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 
 The `y`-coordinate `-1 / w(q)` already pins down `w(q)`, and the `x`-coordinate `q / w(q)` then
 pins down `q`. -/
-private theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (h : W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0) : q₁ = q₂ := by

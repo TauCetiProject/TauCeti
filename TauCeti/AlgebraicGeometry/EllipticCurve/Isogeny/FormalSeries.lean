@@ -18,7 +18,8 @@ with zero constant coefficient. It is nonzero, including for inseparable isogeni
 
 `Isogeny.formalSeries` is this actual expansion, characterized by
 `Isogeny.coe_formalSeries`. Pullback of every rational function is Laurent substitution
-by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), and identity and
+by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), so an isogeny is
+determined by its formal series (`Isogeny.formalSeries_injective`), and identity and
 composition induce identity and composition of series. This supplies the local action
 from the actual function-field map, without assuming a formal-group homomorphism or a
 convergence theorem.
@@ -166,5 +167,21 @@ theorem formalSeries_comp {W₃ : WeierstrassCurve K}
   rw [coe_formalSeries, comp_fieldPullback, AlgHom.comp_apply,
     φ.functionFieldLaurentExpansion_fieldPullback,
     ← ψ.coe_formalSeries, LaurentSeries.substAlgHom_coe]
+
+/-- An isogeny is uniquely determined by its formal power series at infinity. -/
+theorem formalSeries_injective :
+    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
+  intro φ ψ h
+  refine Isogeny.ext <| AlgHom.ext fun z ↦ W₁.functionFieldLaurentExpansion.toRingHom.injective ?_
+  rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← φ.fieldPullback_algebraMap,
+    ← ψ.fieldPullback_algebraMap, φ.functionFieldLaurentExpansion_fieldPullback,
+    ψ.functionFieldLaurentExpansion_fieldPullback]
+  exact congrFun (congrArg DFunLike.coe (by congr 1)) _
+
+/-- Two isogenies have the same formal power series at infinity if and only if they are equal. -/
+@[simp]
+theorem formalSeries_inj {φ ψ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ.formalSeries = ψ.formalSeries ↔ φ = ψ :=
+  formalSeries_injective.eq_iff
 
 end TauCeti.Isogeny
