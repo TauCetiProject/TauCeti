@@ -16,7 +16,10 @@ homotopy from the retraction `v ↦ 0_(π v)` of a real vector bundle onto its z
 identity. It fixes the zero section at all times and is smooth on the cylinder `V × [0, 1]`
 (`TauCeti.contMDiff_vectorBundleFiberScaling`). Since it is constant in time along the zero
 section, its derivative kills the time direction there
-(`TauCeti.mfderiv_vectorBundleFiberScaling_zeroSection_time`).
+(`TauCeti.mfderiv_vectorBundleFiberScaling_zeroSection_time`). In the preferred chart at any point
+of the total space, whose coordinates are a base coordinate and a fibre coordinate, scaling a
+vector by `t` scales its fibre coordinate by `t` (`FiberBundle.extChartAt_symm_smul_snd`), so that
+fibre scaling is read in such a chart as the flat map `((y₁, y₂), t) ↦ (y₁, t • y₂)`.
 
 The time is the last factor, as in the cylinder `M × [0, 1]` of the homotopy operator on
 differential forms.
@@ -88,5 +91,25 @@ theorem mfderiv_vectorBundleFiberScaling_zeroSection_time (b : B) (t : Icc (0 : 
     funext fun z ↦ vectorBundleFiberScaling_zeroSection b z
   rw [hconst, mfderiv_const]
   exact (add_zero _).trans (ContinuousLinearMap.map_zero _)
+
+/-- In the preferred chart at a point of the total space of a vector bundle, multiplying the
+fibre coordinate by `t` multiplies the vector by `t`: the point with coordinates `(y₁, t • y₂)`
+is `t` times the point with coordinates `(y₁, y₂)`. -/
+theorem _root_.FiberBundle.extChartAt_symm_smul_snd (v : TotalSpace FV V) {y : EB × FV}
+    (hy : y ∈ (extChartAt (IB.prod 𝓘(ℝ, FV)) v).target) (t : ℝ) :
+    (extChartAt (IB.prod 𝓘(ℝ, FV)) v).symm (y.1, t • y.2) =
+      ⟨((extChartAt (IB.prod 𝓘(ℝ, FV)) v).symm y).proj,
+        t • ((extChartAt (IB.prod 𝓘(ℝ, FV)) v).symm y).2⟩ := by
+  rw [FiberBundle.extChartAt_target] at hy
+  set e := trivializationAt FV V v.proj
+  set p := (extChartAt IB v.proj).symm y.1
+  have hp : p ∈ e.baseSet := hy.1.2
+  -- Over a point of the base set, the inverse trivialization sends `(p, w)` into the fibre at `p`.
+  have hc (w : FV) : (extChartAt (IB.prod 𝓘(ℝ, FV)) v).symm (y.1, w) = ⟨p, e.symm p w⟩ := by
+    rw [FiberBundle.extChartAt]
+    exact (e.toPretrivialization.mk_symm hp w).symm
+  -- The second rewrite reads `y` as `(y.1, y.2)`.
+  rw [hc, hc, ← Trivialization.symmL_apply (R := ℝ) e hp, map_smul,
+    Trivialization.symmL_apply (R := ℝ) e hp]
 
 end TauCeti

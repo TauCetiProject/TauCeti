@@ -12,8 +12,9 @@ import Mathlib.Analysis.Calculus.TangentCone.Prod
 /-!
 # Relative Poincaré primitives by fiber scaling
 
-On a product `E × N`, scale only the normal coordinate: `H((q, p), t) = (q, t • p)`.
-Integrating the time contraction of `H*ω` gives `fiberwisePoincareHomotopy ω`.
+On a product `E × N`, scale only the normal coordinate: `H((q, p), t) = (q, t • p)`
+(`TauCeti.fiberScaling`). Integrating the time contraction of `H*ω`
+(`TauCeti.fiberScalingPullback`) gives `fiberwisePoincareHomotopy ω`.
 This form vanishes as a full ambient tensor at every `(q, 0)`, even if `ω` does not.
 For a closed form on an open set stable under this scaling, its exterior derivative is
 `ω - r*ω`, where `r(q, p) = (q, 0)`. Thus vanishing of the restriction of `ω` to the zero
@@ -45,23 +46,43 @@ variable {E N F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup N] [NormedSpace ℝ N]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-private def fiberScaling (z : (E × N) × ℝ) : E × N := (z.1.1, z.2 • z.1.2)
+/-- Scaling the normal coordinate, `((q, p), t) ↦ (q, t • p)`: the homotopy along which
+`TauCeti.fiberwisePoincareHomotopy` integrates. -/
+def fiberScaling (z : (E × N) × ℝ) : E × N := (z.1.1, z.2 • z.1.2)
 
-private theorem contDiff_fiberScaling {r : WithTop ℕ∞} :
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Scaling the normal coordinate keeps the base coordinate and multiplies the normal one. -/
+theorem fiberScaling_apply (z : (E × N) × ℝ) : fiberScaling z = (z.1.1, z.2 • z.1.2) :=
+  (rfl)
+
+/-- Scaling the normal coordinate is smooth. -/
+theorem contDiff_fiberScaling {r : WithTop ℕ∞} :
     ContDiff ℝ r (fiberScaling (E := E) (N := N)) :=
   contDiff_fst.fst.prodMk (contDiff_snd.smul contDiff_fst.snd)
 
-private theorem fderiv_fiberScaling_apply (z v : (E × N) × ℝ) :
+/-- The derivative of scaling the normal coordinate at `((q, p), t)` sends `((v, w), τ)` to
+`(v, t • w + τ • p)`. -/
+theorem fderiv_fiberScaling_apply (z v : (E × N) × ℝ) :
     fderiv ℝ fiberScaling z v = (v.1.1, z.2 • v.1.2 + v.2 • z.1.2) := by
   unfold fiberScaling
   have h0 := hasFDerivAt_id (𝕜 := ℝ) z
   have h := h0.fst.fst.prodMk (h0.snd.smul h0.fst.snd)
   simpa [Pi.smul_apply] using DFunLike.congr_fun h.fderiv v
 
-private def fiberScalingPullback
+/-- The pullback of a form on `E × N` to the flat cylinder `(E × N) × ℝ` along
+`TauCeti.fiberScaling`. -/
+def fiberScalingPullback
     (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
     (E × N) × ℝ → ((E × N) × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F :=
   fun z ↦ (ω (fiberScaling z)).compContinuousLinearMap (fderiv ℝ fiberScaling z)
+
+/-- The pullback along fibre scaling evaluates the form at the scaled point, on the images of the
+vectors under the derivative of fibre scaling. -/
+theorem fiberScalingPullback_apply (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F)
+    (z : (E × N) × ℝ) :
+    fiberScalingPullback ω z =
+      (ω (fiberScaling z)).compContinuousLinearMap (fderiv ℝ fiberScaling z) :=
+  (rfl)
 
 /-- Integrate the time contraction of the pullback by `(q, p, t) ↦ (q, t • p)`.
 This relative Poincaré operator fixes the base and contracts the normal coordinate. -/
@@ -69,6 +90,13 @@ def fiberwisePoincareHomotopy
     (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
     E × N → (E × N) [⋀^Fin k]→L[ℝ] F :=
   cylinderHomotopy (fiberScalingPullback ω)
+
+/-- The flat relative Poincaré operator is the cylinder homotopy operator of the pullback along
+fibre scaling. -/
+theorem fiberwisePoincareHomotopy_eq_cylinderHomotopy
+    (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
+    fiberwisePoincareHomotopy ω = cylinderHomotopy (fiberScalingPullback ω) :=
+  (rfl)
 
 /-- The relative primitive evaluated as an integral of ambient alternating tensors.
 The remaining arguments are transformed by `(v, w) ↦ (v, t • w)`. -/

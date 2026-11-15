@@ -18,8 +18,10 @@ property. Every closed `C^r` form `η` of positive degree on `N`, with `r ≥ 1`
 zero along `f` becomes exact on restriction to `W`, with a `C^r` primitive vanishing along the
 image of `f` as a full ambient tensor
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). The ambient form `η` itself
-need not vanish along the image of `f`, only its pullback `f^* η` does. The neighbourhood `W`
-is chosen before the form, so it serves every such form of every degree at once.
+need not vanish along the image of `f`, only its pullback `f^* η` does. At every point `f x` at
+which `η` does vanish as a full ambient tensor, the primitive moreover has zero first jet: its
+coordinate expression in the preferred chart at `f x` has derivative zero there. The neighbourhood
+`W` is chosen before the form, so it serves every such form of every degree at once.
 
 The neighbourhood `W` is a tubular neighbourhood: by the tubular neighbourhood theorem
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_normalBundle_subset`) it is the image of a
@@ -59,7 +61,9 @@ variable {E V H G M N : Type*}
 the image of a smooth embedding `f : M → N` contains an open neighbourhood `W` of that image with
 the following property. Every closed `C^r` form `η` of positive degree on `N`, with `1 ≤ r` and
 `f^* η = 0`, restricts on `W` to the exterior derivative of a `C^r` form `β` that vanishes at
-every point of the image of `f` as a full ambient tensor. -/
+every point of the image of `f` as a full ambient tensor. Moreover `β` has zero first jet at every
+point `f x` at which `η` vanishes as a full ambient tensor: its coordinate expression in the
+preferred chart there has derivative zero. -/
 theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N) {O : Set N}
     (hO : IsOpen O) (hfO : range f ⊆ O) :
     ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧ ∃ hfW : range f ⊆ W,
@@ -67,7 +71,12 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
         mextDeriv η = 0 → mpullback I J f η = 0 →
         ∃ β : RoughForm J W F k, IsSmoothForm J r β ∧
           mextDeriv β = mpullback J J (Subtype.val : W → N) η ∧
-          ∀ x, β ⟨f x, hfW (mem_range_self x)⟩ = 0 := by
+          (∀ x, β ⟨f x, hfW (mem_range_self x)⟩ = 0) ∧
+          ∀ x, η (f x) = 0 →
+            HasFDerivWithinAt (β.inChartAt ⟨f x, hfW (mem_range_self x)⟩)
+              (0 : V →L[ℝ] V [⋀^Fin k]→L[ℝ] F) (range J)
+              (extChartAt J (⟨f x, hfW (mem_range_self x)⟩ : W)
+                ⟨f x, hfW (mem_range_self x)⟩) := by
   let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
   have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E := by simp [P]
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
@@ -94,13 +103,17 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
       (mpullback J J (Subtype.val : W → N) η) = 0 := by
     rw [← mpullback_comp ((Φ.contMDiff.comp (contMDiff_zeroSection ℝ _)).mdifferentiable
       (by simp)) (hval.mdifferentiable (by simp)), hcomp, hi]
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_relative_primitive hr
+  obtain ⟨β, hβ, hdβ, hβ₀, hjet⟩ := Φ.exists_isSmoothForm_relative_primitive hr
     (by exact_mod_cast (le_top : r + 1 ≤ ⊤)) hηW hclosedW hiW
-  refine ⟨β, hβ, hdβ, fun x ↦ ?_⟩
   -- The point `f x` of `W` is the image under `Φ` of the zero vector over `x`.
-  have hx : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
+  have hx (x : M) : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
     Subtype.ext (hΦ x).symm
-  rw [hx]
-  exact hβ₀ x
+  refine ⟨β, hβ, hdβ, fun x ↦ ?_, fun x hηx ↦ ?_⟩
+  · rw [hx]
+    exact hβ₀ x
+  · rw [hx]
+    refine hjet x ?_
+    rw [← hx]
+    exact mpullback_apply_eq_zero hηx
 
 end TauCeti.SmoothEmbedding

@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
+public import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -64,6 +64,8 @@ the unit tangent vector at every time.
   a map `g` with invertible derivatives.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`: the same for a continuous form
   and an arbitrary differentiable map `g`.
+* `TauCeti.inChartAt_homotopyOperator`: in the chart at `x₀`, `h φ` is the flat cylinder homotopy
+  operator of the pullback of `φ` along the cylinder chart `TauCeti.cylinderChart`.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
   identity `d (h φ) + h (d φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
@@ -248,10 +250,12 @@ theorem homotopyOperator_mpullback_prodMap_id {E' H' M' : Type*} [NormedAddCommG
 
 /-- The map `(y, t) ↦ ((extChartAt I x₀).symm y, projIcc 0 1 t)` from a flat cylinder into
 `M × [0, 1]`, along which forms on `M × [0, 1]` are read in the chart at `x₀`. -/
-private def cylinderChart (I : ModelWithCorners ℝ E H) (x₀ : M) : E × ℝ → M × Icc (0 : ℝ) 1 :=
+def cylinderChart (I : ModelWithCorners ℝ E H) (x₀ : M) : E × ℝ → M × Icc (0 : ℝ) 1 :=
   Prod.map (extChartAt I x₀).symm (projIcc 0 1 zero_le_one)
 
-private theorem cylinderChart_apply (x₀ : M) (p : E × ℝ) :
+/-- The cylinder chart sends `(y, t)` to the point of the chart at `x₀` with coordinate `y`, at
+the time `t` projected to `[0, 1]`. -/
+theorem cylinderChart_apply (x₀ : M) (p : E × ℝ) :
     cylinderChart I x₀ p = ((extChartAt I x₀).symm p.1, projIcc 0 1 zero_le_one p.2) :=
   (rfl)
 
@@ -324,8 +328,9 @@ private theorem continuousAlternatingMapCongrLeft_homotopyIntegrand [IsManifold 
   exact congrArg _ (mfderivWithin_extChartAt_symm_of_subset x₀ hs hy (hsu _ hy)).symm
 
 /-- In the chart at `x₀`, the homotopy operator is the flat cylinder homotopy operator of the
-pullback of the form to the flat cylinder over `s`. -/
-private theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Set E}
+pullback of the form to the flat cylinder over `s`, for every subset `s` of the chart target with
+unique derivatives. -/
+theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Set E}
     (hs : s ⊆ (extChartAt I x₀).target) (hsu : UniqueDiffOn ℝ s)
     (ψ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) {y : E} (hy : y ∈ s) :
     (homotopyOperator ψ).inChartAt x₀ y =
@@ -356,7 +361,7 @@ private theorem inChartAt_homotopyOperator [IsManifold I 1 M] (x₀ : M) {s : Se
         exact continuousAlternatingMapCongrLeft_homotopyIntegrand x₀ hs hsu ψ hy ht hD'
 
 /-- The cylinder chart over a subset of the chart target is as smooth as the manifold. -/
-private theorem contMDiffOn_cylinderChart {n : WithTop ℕ∞} [IsManifold I n M] (x₀ : M) {s : Set E}
+theorem contMDiffOn_cylinderChart {n : WithTop ℕ∞} [IsManifold I n M] (x₀ : M) {s : Set E}
     (hs : s ⊆ (extChartAt I x₀).target) :
     ContMDiffOn 𝓘(ℝ, E × ℝ) (I.prod (𝓡∂ 1)) n (cylinderChart I x₀) (s ×ˢ Icc 0 1) := by
   rw [cylinderChart, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]

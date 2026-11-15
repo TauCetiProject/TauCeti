@@ -367,7 +367,7 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
   -- `f(Q)`, vanishing along `f(Q)`.
   obtain ⟨W, -, hfW, hprim⟩ := f.exists_isSmoothForm_relative_primitive (F := ℝ) isOpen_univ
     (subset_univ _)
-  obtain ⟨βW, hβW, hdβW, hβW0⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
+  obtain ⟨βW, hβW, hdβW, hβW0, -⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
     ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) (funext fun q ↦ by
       ext v
       simp only [mpullback_apply, hη q, ContinuousAlternatingMap.coe_zero, Pi.zero_apply])
