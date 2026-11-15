@@ -45,6 +45,10 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_map_algebraMap_eq_realComponent` and
+  `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_map_algebraMap_eq_complexComponent`:
+  evaluating an infinite component on a global unit transports to `realComponent` or
+  `complexComponent`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_eq_iff`: the infinity type is the
   unique continuous infinity type whose parameters describe every real and complex component.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_neg_one_eq_one_iff`: a Hecke
@@ -160,6 +164,34 @@ theorem complexComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K
     χ.complexComponent w z = χ.infiniteComponent w.1
       ((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).symm z) :=
   (rfl)
+
+/-- Evaluating the component of `χ` at a real place `w` on a global unit `x : Kˣ` agrees with
+evaluating `χ.realComponent w` on the image of `x` under `embedding_of_isReal w.2`. -/
+theorem infiniteComponent_map_algebraMap_eq_realComponent (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) (x : Kˣ) :
+    χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
+      χ.realComponent w (Units.map (InfinitePlace.embedding_of_isReal w.2).toMonoidHom x) := by
+  rw [realComponent_apply]
+  congr 1
+  apply (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).injective
+  rw [ContinuousMulEquiv.apply_symm_apply]
+  apply Units.ext
+  exact (continuousMulEquivRealOfIsReal_apply w.2 _).trans
+    (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
+
+/-- Evaluating the component of `χ` at a complex place `w` on a global unit `x : Kˣ` agrees with
+evaluating `χ.complexComponent w` on the image of `x` under `w.1.embedding`. -/
+theorem infiniteComponent_map_algebraMap_eq_complexComponent (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) (x : Kˣ) :
+    χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
+      χ.complexComponent w (Units.map w.1.embedding.toMonoidHom x) := by
+  rw [complexComponent_apply]
+  congr 1
+  apply (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).injective
+  rw [ContinuousMulEquiv.apply_symm_apply]
+  apply Units.ext
+  exact (continuousMulEquivComplexOfIsComplex_apply w.2 _).trans
+    (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
 
 /-- The trivial Hecke character has trivial real components. -/
 @[simp]

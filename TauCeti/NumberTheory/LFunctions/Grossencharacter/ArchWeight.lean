@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.HarmonicFactor
-public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
-import Mathlib.MeasureTheory.Integral.Pi
-import TauCeti.Analysis.MellinTransform
+public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 
 /-!
 # The archimedean weight and weighted gamma integral of a Grossencharacter
@@ -75,6 +75,7 @@ public section
 noncomputable section
 
 open Complex MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+  TauCeti.NumberField.mixedEmbedding
 open scoped Real
 
 namespace TauCeti.LFunctions.Grossencharacter
@@ -124,15 +125,22 @@ theorem archWeight_ofRayClassCharacter_of_infinitePart_eq_empty (h𝔪 : 𝔪.in
   archWeight_of_harmonicDegree_eq_zero
     (harmonicDegree_ofRayClassCharacter_of_infinitePart_eq_empty h𝔪 η) y
 
+/-- At the trivial modulus, every ray class character has constant weight `1`. -/
 @[simp]
-theorem archWeight_ofRayClassCharacter_one (η : RayClassCharacter (Modulus.one K))
+theorem archWeight_ofRayClassCharacter_of_modulus_one (η : RayClassCharacter (Modulus.one K))
     (y : realSpace K) : (ofRayClassCharacter η).archWeight y = 1 :=
-  archWeight_of_harmonicDegree_eq_zero (harmonicDegree_ofRayClassCharacter_one η) y
+  archWeight_of_harmonicDegree_eq_zero (harmonicDegree_ofRayClassCharacter_of_modulus_one η) y
 
 /-- Any presentation of the trivial Hecke character has `archWeight` identically `1`. -/
 theorem archWeight_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
     (hχ : χ.toHeckeCharacter = 1) (y : realSpace K) : χ.archWeight y = 1 :=
   archWeight_of_harmonicDegree_eq_zero (harmonicDegree_of_toHeckeCharacter_eq_one hχ) y
+
+/-- The trivial ray class character at any modulus has constant weight `1`. -/
+@[simp]
+theorem archWeight_ofRayClassCharacter_one (y : realSpace K) :
+    (ofRayClassCharacter (1 : RayClassCharacter 𝔪)).archWeight y = 1 :=
+  archWeight_of_toHeckeCharacter_eq_one (by simp) y
 
 /-- On nonnegative parameters, `archWeight y` is `∏_w √(y_w) ^ P_w`. -/
 theorem archWeight_eq_prod_sqrt_pow (χ : Grossencharacter K 𝔪) {y : realSpace K}
@@ -181,20 +189,26 @@ theorem archWeight_inv (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy : �
 /-- Multiplying `archWeight y` by the Hecke-lemma factor `∏_w y_w ^ (-P_w)` gives
 `archWeight y⁻¹` (Neukirch VII (8.5)). -/
 theorem archWeight_mul_prod_inv_pow (χ : Grossencharacter K 𝔪) {y : realSpace K}
-    (hy : ∀ w, 0 < y w) :
+    (hy : ∀ w, 0 ≤ y w) :
     χ.archWeight y * (∏ w : InfinitePlace K, (y w)⁻¹ ^ χ.harmonicExponent w) =
       χ.archWeight y⁻¹ := by
   rw [archWeight_apply, archWeight_apply, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun w _ ↦ ?_
-  have h1 : (y w)⁻¹ ^ χ.harmonicExponent w =
-      ((y w)⁻¹ ^ ((χ.harmonicExponent w : ℝ) / 2)) ^ 2 := by
-    rw [Real.rpow_div_two_sq (inv_nonneg.mpr (hy w).le), Real.rpow_natCast]
-  have h2 :
-      y w ^ ((χ.harmonicExponent w : ℝ) / 2) *
-        (y w)⁻¹ ^ ((χ.harmonicExponent w : ℝ) / 2) = 1 := by
-    rw [← Real.mul_rpow (hy w).le (inv_nonneg.mpr (hy w).le), mul_inv_cancel₀ (hy w).ne',
-      Real.one_rpow]
-  rw [Pi.inv_apply, h1, sq, ← mul_assoc, h2, one_mul]
+  rcases (hy w).eq_or_lt with hy0 | hypos
+  · rw [Pi.inv_apply, ← hy0, inv_zero]
+    rcases Nat.eq_zero_or_pos (χ.harmonicExponent w) with hp | hp
+    · simp [hp]
+    · have hp' : ((χ.harmonicExponent w : ℝ) / 2) ≠ 0 := by positivity
+      rw [Real.zero_rpow hp', zero_mul]
+  · have h1 : (y w)⁻¹ ^ χ.harmonicExponent w =
+        ((y w)⁻¹ ^ ((χ.harmonicExponent w : ℝ) / 2)) ^ 2 := by
+      rw [Real.rpow_div_two_sq (inv_nonneg.mpr hypos.le), Real.rpow_natCast]
+    have h2 :
+        y w ^ ((χ.harmonicExponent w : ℝ) / 2) *
+          (y w)⁻¹ ^ ((χ.harmonicExponent w : ℝ) / 2) = 1 := by
+      rw [← Real.mul_rpow hypos.le (inv_nonneg.mpr hypos.le), mul_inv_cancel₀ hypos.ne',
+        Real.one_rpow]
+    rw [Pi.inv_apply, h1, sq, ← mul_assoc, h2, one_mul]
 
 /-- **Unit scaling of `archWeight`** (Neukirch VII (8.2)): `unitScale u` multiplies `archWeight`
 by `∏_w |u|_w ^ P_w`. -/
@@ -223,38 +237,25 @@ theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K)
     ring
   rw [hsplit]
   congr 1
-  rcases ht.eq_or_lt with rfl | ht
-  · by_cases hdeg : χ.harmonicDegree = 0
-    · have hw := χ.harmonicDegree_eq_zero_iff.mp hdeg
-      simp [hdeg, hw]
-    · have hfin : 0 < Module.finrank ℚ K := Module.finrank_pos
-      have hden : (0 : ℝ) < 2 * Module.finrank ℚ K := by positivity
-      obtain ⟨w, hw⟩ : ∃ w, χ.harmonicExponent w ≠ 0 := by
-        contrapose! hdeg
-        exact χ.harmonicDegree_eq_zero_iff.mpr hdeg
-      have hw' : ((χ.harmonicExponent w : ℝ) / (2 * Module.finrank ℚ K)) ≠ 0 :=
-        (div_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hw)) hden).ne'
-      have hdeg' : ((χ.harmonicDegree : ℝ) / (2 * Module.finrank ℚ K)) ≠ 0 :=
-        (div_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hdeg)) hden).ne'
-      rw [Finset.prod_eq_zero (Finset.mem_univ w) (Real.zero_rpow hw'), Real.zero_rpow hdeg']
-  · rw [← Real.rpow_sum_of_pos ht, ← Finset.sum_div, ← Nat.cast_sum, ← harmonicDegree_def]
+  rw [← Real.rpow_sum_of_nonneg ht fun _ _ ↦ by positivity, ← Finset.sum_div, ← Nat.cast_sum,
+    ← harmonicDegree_def]
 
 /-! ### The weighted archimedean gamma integral -/
 
 /-- When `0 < s.re`, the shifted real part `(mult w : ℝ) * s.re + P_w` is positive at every
 infinite place `w`. -/
-theorem mul_re_add_harmonicExponent_pos (χ : Grossencharacter K 𝔪) {s : ℂ} (hs : 0 < s.re)
+theorem mult_mul_re_add_harmonicExponent_pos (χ : Grossencharacter K 𝔪) {s : ℂ} (hs : 0 < s.re)
     (w : InfinitePlace K) :
     0 < (mult w : ℝ) * s.re + χ.harmonicExponent w := by
   have hm : (0 : ℝ) < mult w := Nat.cast_pos.mpr (Nat.pos_of_ne_zero mult_ne_zero)
   positivity
 
-private theorem archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod (χ : Grossencharacter K 𝔪)
+private theorem archWeight_mul_archGaussian_mul_archNorm_cpow_eq (χ : Grossencharacter K 𝔪)
     {y : realSpace K} (hy : ∀ w, 0 < y w) (x : mixedSpace K) (s : ℂ) :
     (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) =
-      ∏ w : InfinitePlace K,
-        (y w : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2) *
-          (Real.exp (-(π * normAtPlace w x ^ 2 * y w)) : ℂ) := by
+      (∏ w : InfinitePlace K,
+        (y w : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2)) *
+        archGaussian y x := by
   have hw : (χ.archWeight y : ℂ) =
       ∏ w : InfinitePlace K, (y w : ℂ) ^ ((χ.harmonicExponent w : ℂ) / 2) := by
     rw [archWeight_apply, ofReal_prod]
@@ -264,17 +265,12 @@ private theorem archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod (χ : Gros
     rfl
   have hn : (archNorm y : ℂ) ^ (s / 2) =
       ∏ w : InfinitePlace K, (y w : ℂ) ^ ((mult w : ℂ) * (s / 2)) := by
-    rw [archNorm_apply, ofReal_prod_pow_mult_cpow fun w ↦ (hy w).le]
-  have hg : archGaussian y x =
-      ∏ w : InfinitePlace K, (Real.exp (-(π * normAtPlace w x ^ 2 * y w)) : ℂ) := by
-    rw [archGaussian_apply, Finset.mul_sum, Real.exp_sum, ofReal_prod]
-    refine Finset.prod_congr rfl fun w _ ↦ ?_
-    congr 2
-    ring
-  rw [hw, hg, hn, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+    rw [archNorm_apply, TauCeti.ofReal_prod_pow_cpow _ fun w _ ↦ (hy w).le]
+  rw [mul_right_comm, hw, hn, ← Finset.prod_mul_distrib]
+  congr 1
   refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [mul_right_comm, ← cpow_add _ _ (ofReal_ne_zero.mpr (hy w).ne')]
-  congr 2
+  rw [← cpow_add _ _ (ofReal_ne_zero.mpr (hy w).ne')]
+  congr 1
   ring
 
 open scoped Classical in
@@ -287,36 +283,8 @@ theorem prod_Gammaℝ_mult_mul_add_harmonicExponent (χ : Grossencharacter K �
           ((∑ w : {w : InfinitePlace K // w.IsComplex}, (χ.harmonicExponent w.1 : ℂ)) / 2) *
         ((∏ w : {w : InfinitePlace K // w.IsReal}, Gammaℝ (s + χ.harmonicExponent w.1)) *
           ∏ w : {w : InfinitePlace K // w.IsComplex},
-            Gammaℂ (s + (χ.harmonicExponent w.1 : ℂ) / 2)) := by
-  have hreal :
-      (∏ w : {w : InfinitePlace K // w.IsReal},
-        Gammaℝ ((mult w.1 : ℂ) * s + χ.harmonicExponent w.1)) =
-      ∏ w : {w : InfinitePlace K // w.IsReal}, Gammaℝ (s + χ.harmonicExponent w.1) := by
-    refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [mult_isReal w, Nat.cast_one, one_mul]
-  have hcomplex :
-      (∏ w : {w : InfinitePlace K // w.IsComplex},
-        Gammaℝ ((mult w.1 : ℂ) * s + χ.harmonicExponent w.1)) =
-      ((2 : ℂ) ^ (s - 1)) ^ nrComplexPlaces K *
-        (2 : ℂ) ^
-          ((∑ w : {w : InfinitePlace K // w.IsComplex}, (χ.harmonicExponent w.1 : ℂ)) / 2) *
-        ∏ w : {w : InfinitePlace K // w.IsComplex},
-          Gammaℂ (s + (χ.harmonicExponent w.1 : ℂ) / 2) := by
-    have hstep (w : {w : InfinitePlace K // w.IsComplex}) :
-        Gammaℝ ((mult w.1 : ℂ) * s + χ.harmonicExponent w.1) =
-          (2 : ℂ) ^ (s - 1) * (2 : ℂ) ^ ((χ.harmonicExponent w.1 : ℂ) / 2) *
-            Gammaℂ (s + (χ.harmonicExponent w.1 : ℂ) / 2) := by
-      have harg : (mult w.1 : ℂ) * s + χ.harmonicExponent w.1 =
-          2 * (s + (χ.harmonicExponent w.1 : ℂ) / 2) := by
-        rw [mult_isComplex w, Nat.cast_ofNat]
-        ring
-      have hexp : s + (χ.harmonicExponent w.1 : ℂ) / 2 - 1 =
-          (s - 1) + (χ.harmonicExponent w.1 : ℂ) / 2 := by ring
-      rw [harg, Gammaℝ_two_mul, hexp, cpow_add _ _ two_ne_zero]
-    simp_rw [hstep, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
-      ← TauCeti.cpow_sum two_ne_zero, ← Finset.sum_div]
-  rw [prod_eq_prod_mul_prod, hreal, hcomplex]
-  ring
+            Gammaℂ (s + (χ.harmonicExponent w.1 : ℂ) / 2)) :=
+  prod_Gammaℝ_mult_mul_add s fun w ↦ (χ.harmonicExponent w : ℂ)
 
 /-- For `x` of nonzero norm and `s` with `0 < mult w * s.re + P_w` at every infinite place `w`,
 the weighted archimedean Gaussian `(χ.archWeight y : ℂ) * archGaussian y x * N(y)^(s/2)` is
@@ -326,15 +294,11 @@ theorem integrable_archWeight_mul_archGaussian_mul_archNorm_cpow {χ : Grossench
     (hs : ∀ w, 0 < (mult w : ℝ) * s.re + χ.harmonicExponent w) :
     Integrable (fun y ↦ (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2))
       (archHaar K) := by
-  have ha := normAtPlace_pos_of_norm_ne_zero hx
   have hz (w : InfinitePlace K) : 0 < ((mult w : ℂ) * s + χ.harmonicExponent w).re := by
     simpa using hs w
-  have hint := Integrable.fintype_prod (μ := fun _ : InfinitePlace K ↦ multHaar)
-    fun w ↦ integrable_cpow_div_two_mul_exp_neg_multHaar (ha w) (hz w)
-  rw [← archHaar_def] at hint
-  refine hint.congr ?_
+  refine (integrable_prod_cpow_div_two_mul_archGaussian hx hz).congr ?_
   filter_upwards [ae_archHaar_pos] with y hy
-  exact (χ.archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod hy x s).symm
+  exact (χ.archWeight_mul_archGaussian_mul_archNorm_cpow_eq hy x s).symm
 
 /-- **The weighted archimedean gamma integral** in `Γ_ℝ`-product form: for `x` of nonzero norm and
 `∀ w, 0 < mult w * s.re + P_w`,
@@ -350,46 +314,30 @@ theorem integral_archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod_Gammaℝ
   have ha := normAtPlace_pos_of_norm_ne_zero hx
   have hz (w : InfinitePlace K) : 0 < ((mult w : ℂ) * s + χ.harmonicExponent w).re := by
     simpa using hs w
+  have heq :
+      ∫ y, (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K =
+        ∫ y, (∏ w : InfinitePlace K,
+            (y w : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2)) *
+            archGaussian y x ∂archHaar K := by
+    refine integral_congr_ae ?_
+    filter_upwards [ae_archHaar_pos] with y hy
+    exact χ.archWeight_mul_archGaussian_mul_archNorm_cpow_eq hy x s
   have hnorm_s : (mixedEmbedding.norm x : ℂ) ^ (-s) =
       ∏ w : InfinitePlace K, (normAtPlace w x : ℂ) ^ ((mult w : ℂ) * (-s)) := by
-    rw [mixedEmbedding.norm_apply, ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
+    rw [mixedEmbedding.norm_apply, TauCeti.ofReal_prod_pow_cpow _ fun w _ ↦ (ha w).le]
   have hnorm_p :
       ((∏ w : InfinitePlace K, normAtPlace w x ^ χ.harmonicExponent w : ℝ) : ℂ)⁻¹ =
         ∏ w : InfinitePlace K, (normAtPlace w x : ℂ) ^ (-(χ.harmonicExponent w : ℂ)) := by
     rw [ofReal_prod, ← Finset.prod_inv_distrib]
     refine Finset.prod_congr rfl fun w _ ↦ ?_
     rw [ofReal_pow, cpow_neg, cpow_natCast]
-  have hnorm_ps :
-      (∏ w : InfinitePlace K,
-        (normAtPlace w x : ℂ) ^ (-((mult w : ℂ) * s + χ.harmonicExponent w))) =
-        ((∏ w : InfinitePlace K, normAtPlace w x ^ χ.harmonicExponent w : ℝ) : ℂ)⁻¹ *
-          (mixedEmbedding.norm x : ℂ) ^ (-s) := by
-    rw [hnorm_p, hnorm_s, ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [← cpow_add _ _ (ofReal_ne_zero.mpr (ha w).ne')]
-    congr 1
-    ring
-  calc ∫ y, (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K
-      = ∫ y, ∏ w : InfinitePlace K,
-          (y w : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2) *
-            (Real.exp (-(π * normAtPlace w x ^ 2 * y w)) : ℂ) ∂archHaar K := by
-        refine integral_congr_ae ?_
-        filter_upwards [ae_archHaar_pos] with y hy
-        exact χ.archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod hy x s
-    _ = ∏ w : InfinitePlace K,
-          ∫ t, (t : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2) *
-            (Real.exp (-(π * normAtPlace w x ^ 2 * t)) : ℂ) ∂multHaar := by
-        rw [archHaar_def]
-        exact integral_fintype_prod_eq_prod (fun w (t : ℝ) ↦
-          (t : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2) *
-            (Real.exp (-(π * normAtPlace w x ^ 2 * t)) : ℂ))
-    _ = ∏ w : InfinitePlace K,
-          Gammaℝ ((mult w : ℂ) * s + χ.harmonicExponent w) *
-            (normAtPlace w x : ℂ) ^ (-((mult w : ℂ) * s + χ.harmonicExponent w)) := by
-        exact Finset.prod_congr rfl fun w _ ↦
-          integral_cpow_div_two_mul_exp_neg_multHaar (ha w) (hz w)
-    _ = _ := by
-        rw [Finset.prod_mul_distrib, hnorm_ps, mul_assoc]
+  rw [heq, integral_prod_cpow_div_two_mul_archGaussian hx hz, mul_assoc]
+  congr 1
+  rw [hnorm_p, hnorm_s, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  rw [← cpow_add _ _ (ofReal_ne_zero.mpr (ha w).ne')]
+  congr 1
+  ring
 
 open scoped Classical in
 /-- **The weighted archimedean gamma integral** of a Grossencharacter in Deligne `Γ_ℝ` and `Γ_ℂ`

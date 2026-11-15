@@ -19,8 +19,9 @@ For a parameter `y` with one positive coordinate per infinite place, the archime
 
 where `N(y) = archNorm y = ∏ w, y w ^ mult w` (`mixedFourier_archGaussian`). At `y = 1` this is the
 self-duality of `exp (-π ‖x‖²)` in Mathlib's Euclidean model of the mixed space
-(`mixedFourier_archGaussian_one`); the general case follows from the coordinatewise substitution
-`x ↦ √y * x`, whose Jacobian is `N(y)^(1/2)` because a complex coordinate is two real ones.
+(`mixedFourier_archGaussian_one`); the general case follows from the coordinatewise dilation law
+`mixedFourier_comp_archGaussianDilation` along `x ↦ √y * x`, whose Jacobian is `N(y)^(1/2)` because
+a complex coordinate is two real ones.
 
 Poisson summation over a full lattice `L` of the mixed space then gives the transformation law of
 its theta series (`latticeTheta_inv`),
@@ -72,13 +73,14 @@ theorem mixedFourier_archGaussian_one (ξ : mixedSpace K) :
   congr 1
   field_simp
 
-/-- **The Fourier transform of the archimedean Gaussian**,
-`𝓕 (archGaussian y) = N(y)^(-1/2) • archGaussian y⁻¹`, with `N(y) = archNorm y`. In
-`archNorm y = ∏ w, y w ^ mult w` a complex place counts twice, as a complex coordinate is two real
-ones, even though the Gaussian itself counts a complex coordinate once. -/
-theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : mixedSpace K) :
-    mixedFourier K (archGaussian y) ξ =
-      (((√(archNorm y))⁻¹ : ℝ) : ℂ) * archGaussian y⁻¹ ξ := by
+/-- **Parameter dilation for `mixedFourier`**: precomposing `f` with the square-root dilation
+`archGaussianDilation y hy` multiplies its Fourier transform by `N(y)^(-1/2)` and evaluates at the
+inverse dilation `archGaussianDilation y⁻¹ _ ξ`. -/
+theorem mixedFourier_comp_archGaussianDilation (f : mixedSpace K → ℂ) (y : realSpace K)
+    (hy : ∀ w, 0 < y w) (ξ : mixedSpace K) :
+    mixedFourier K (fun x ↦ f (archGaussianDilation y hy x)) ξ =
+      (((√(archNorm y))⁻¹ : ℝ) : ℂ) *
+        mixedFourier K f (archGaussianDilation y⁻¹ (fun w ↦ inv_pos.mpr (hy w)) ξ) := by
   classical
   have hy' : ∀ w, 0 < y⁻¹ w := fun w ↦ inv_pos.mpr (hy w)
   set c : mixedSpace K := mixedSpaceOfRealSpace fun w ↦ √(y w)
@@ -87,20 +89,29 @@ theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : 
     ext w <;> simp [c, c', mixedSpaceOfRealSpace_apply, (Real.sqrt_pos.mpr (hy _)).ne']
   have hc : mixedEmbedding.norm c = √(archNorm y) :=
     norm_mixedSpaceOfRealSpace_sqrt fun w ↦ (hy w).le
-  have hc0 : mixedEmbedding.norm c ≠ 0 := by
-    rw [hc]
-    exact (Real.sqrt_pos.mpr (archNorm_pos hy)).ne'
-  -- Substitute `x ↦ c * x`: the pairing becomes `mixedInner (c * x) (c' * ξ)` since `c * c' = 1`,
-  -- and the Gaussian becomes the Gaussian at the parameter `1`.
-  have hint (x : mixedSpace K) : 𝐞 (-mixedInner K x ξ) • archGaussian y x =
-      𝐞 (-mixedInner K (c * x) (c' * ξ)) • archGaussian 1 (c * x) := by
+  have hc0 : mixedEmbedding.norm c ≠ 0 := hc ▸ (Real.sqrt_pos.mpr (archNorm_pos hy)).ne'
+  -- Substitute `x ↦ c * x`: the pairing becomes `mixedInner (c * x) (c' * ξ)` since `c * c' = 1`.
+  have hint (x : mixedSpace K) :
+      𝐞 (-mixedInner K x ξ) • f (archGaussianDilation y hy x) =
+        𝐞 (-mixedInner K (c * x) (c' * ξ)) • f (c * x) := by
     rw [mixedInner_mixedSpaceOfRealSpace_mul, ← mul_assoc, hcc', one_mul,
-      ← archGaussian_one_archGaussianDilation y hy, archGaussianDilation_apply]
+      archGaussianDilation_apply]
   rw [mixedFourier_apply]
   simp_rw [hint]
-  rw [integral_comp_mul_left (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • archGaussian 1 z) hc0,
-    ← mixedFourier_apply, mixedFourier_archGaussian_one, ← archGaussianDilation_apply y⁻¹ hy',
-    archGaussian_one_archGaussianDilation, hc, Complex.real_smul]
+  rw [integral_comp_mul_left (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • f z) hc0,
+    ← mixedFourier_apply, ← archGaussianDilation_apply y⁻¹ hy', hc, Complex.real_smul]
+
+/-- **The Fourier transform of the archimedean Gaussian**,
+`𝓕 (archGaussian y) = N(y)^(-1/2) • archGaussian y⁻¹`, with `N(y) = archNorm y`. In
+`archNorm y = ∏ w, y w ^ mult w` a complex place counts twice, as a complex coordinate is two real
+ones, even though the Gaussian itself counts a complex coordinate once. -/
+theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : mixedSpace K) :
+    mixedFourier K (archGaussian y) ξ =
+      (((√(archNorm y))⁻¹ : ℝ) : ℂ) * archGaussian y⁻¹ ξ := by
+  have hf : archGaussian y = fun x ↦ archGaussian 1 (archGaussianDilation y hy x) :=
+    funext fun x ↦ (archGaussian_one_archGaussianDilation y hy x).symm
+  rw [hf, mixedFourier_comp_archGaussianDilation, mixedFourier_archGaussian_one,
+    archGaussian_one_archGaussianDilation]
 
 open scoped Classical in
 /-- **The theta transformation with one parameter per infinite place**, Neukirch VII (3.6) on the

@@ -43,6 +43,8 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_mixedDiag`:
   `normAtPlace w (mixedDiag K g) = w (g w)`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_le_norm`: `normAtPlace w x ≤ ‖x‖`.
+* `TauCeti.NumberField.mixedEmbedding.normAtPlace_pos_of_norm_ne_zero`: `0 < normAtPlace w x`
+  whenever `mixedEmbedding.norm x ≠ 0`.
 * `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
   `TauCeti.NumberField.mixedEmbedding.mixedEmbedding_integerLatticeEquiv_symm`: coercing
@@ -110,6 +112,13 @@ theorem normAtPlace_le_norm [NumberField K] (w : InfinitePlace K) (x : mixedSpac
     normAtPlace w x ≤ ‖x‖ := by
   rw [norm_eq_sup'_normAtPlace]
   exact Finset.le_sup' (fun u ↦ normAtPlace u x) (Finset.mem_univ w)
+
+/-- The placewise norms `normAtPlace w x` of a point of nonzero norm are positive at every
+infinite place `w`. -/
+theorem normAtPlace_pos_of_norm_ne_zero [NumberField K] {x : mixedSpace K}
+    (hx : mixedEmbedding.norm x ≠ 0) (w : InfinitePlace K) :
+    0 < normAtPlace w x :=
+  (normAtPlace_nonneg w x).lt_of_ne' (mixedEmbedding.norm_ne_zero_iff.mp hx w)
 
 /-- The `ℤ`-linear equivalence `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by
 `mixedEmbedding K`. -/

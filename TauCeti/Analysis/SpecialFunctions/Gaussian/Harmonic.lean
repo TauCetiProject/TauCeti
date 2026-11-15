@@ -182,13 +182,11 @@ theorem fourier_inner_mul_cexp_neg_mul_norm_sq {V : Type*} [NormedAddCommGroup V
   have hb0 : b ≠ 0 := fun h ↦ by simp [h] at hb
   have h2b0 : -2 * b ≠ 0 := mul_ne_zero (by norm_num) hb0
   have hpb0 : (π : ℂ) / b ≠ 0 := div_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero) hb0
-  have h := congrArg (fun f : 𝓢(V, ℂ) ↦ f ξ)
-    (SchwartzMap.fourier_lineDerivOp_eq (SchwartzMap.gaussian hb : 𝓢(V, ℂ)) v)
-  rw [SchwartzMap.lineDerivOp_gaussian, FourierTransform.fourier_smul, smul_apply, smul_apply,
-    SchwartzMap.smulLeftCLM_apply_apply (Function.hasTemperateGrowth_inner_left v),
-    SchwartzMap.fourier_coe, SchwartzMap.fourier_coe,
+  have h := SchwartzMap.fourier_lineDerivOp_apply (SchwartzMap.gaussian hb : 𝓢(V, ℂ)) v ξ
+  rw [SchwartzMap.lineDerivOp_gaussian, FourierTransform.fourier_smul] at h
+  simp only [smul_apply, smul_eq_mul, SchwartzMap.fourier_coe,
     funext (SchwartzMap.innerMulGaussian_apply hb v), SchwartzMap.coe_gaussian,
-    fourier_gaussian_innerProductSpace hb, Complex.real_smul, smul_eq_mul, smul_eq_mul] at h
+    fourier_gaussian_innerProductSpace hb] at h
   apply mul_left_cancel₀ h2b0
   rw [h, cpow_add _ _ hpb0, cpow_one]
   field_simp
