@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Uniform
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -23,9 +24,21 @@ For real normed spaces, positivity at every positive separation is equivalent to
 `UniformConvexSpace`. Linear isometric embeddings can only decrease the modulus when
 passing to the ambient space; isometric equivalences preserve it.
 
+A space satisfying the two-point inequality
+
+`‖x‖ ^ 2 + c * ‖y‖ ^ 2 ≤ (‖x + y‖ ^ 2 + ‖x - y‖ ^ 2) / 2`
+
+for all `x`, `y` has modulus at least `1 - √(1 - c * ε ^ 2 / 4)`
+(`one_sub_sqrt_le_modulusOfConvexity`), hence at least the quadratic `c * ε ^ 2 / 8`
+(`mul_sq_div_eight_le_modulusOfConvexity`). Inner product spaces satisfy it with `c = 1`, by the
+parallelogram law, and the Ball–Carlen–Lieb inequality gives it for `Lᵖ`, `1 < p ≤ 2`, with
+`c = p - 1`.
+
 ## References
 
 * R. E. Megginson, *An Introduction to Banach Space Theory*, §5.2.
+* K. Ball, E. A. Carlen and E. H. Lieb, *Sharp uniform convexity and smoothness inequalities for
+  trace norms*, Invent. Math. 115 (1994), 463–482.
 -/
 
 public section
@@ -106,6 +119,38 @@ theorem modulusOfConvexity_eq_one_of_subsingleton [Subsingleton E] (ε : ℝ) :
   refine le_antisymm (modulusOfConvexity_le_one E ε) ((le_modulusOfConvexity_iff E).2 ?_)
   refine ⟨le_rfl, fun x y _ _ _ ↦ ?_⟩
   simp [Subsingleton.elim x 0, Subsingleton.elim y 0]
+
+/-- The two-point inequality `‖x‖ ^ 2 + c * ‖y‖ ^ 2 ≤ (‖x + y‖ ^ 2 + ‖x - y‖ ^ 2) / 2` bounds the
+modulus of convexity below by `1 - √(1 - c * ε ^ 2 / 4)`. -/
+theorem one_sub_sqrt_le_modulusOfConvexity {c ε : ℝ}
+    (h : ∀ x y : E, ‖x‖ ^ 2 + c * ‖y‖ ^ 2 ≤ (‖x + y‖ ^ 2 + ‖x - y‖ ^ 2) / 2) (hε : 0 ≤ ε) :
+    1 - √(1 - c * ε ^ 2 / 4) ≤ modulusOfConvexity E ε := by
+  refine (le_modulusOfConvexity_iff E).2
+    ⟨by linarith [Real.sqrt_nonneg (1 - c * ε ^ 2 / 4)], fun u v hu hv huv ↦ ?_⟩
+  -- Apply the inequality to the half-sum and half-difference, scaled by two.
+  have huv' := h (u + v) (u - v)
+  rw [show u + v + (u - v) = u + u by abel, show u + v - (u - v) = v + v by abel] at huv'
+  have hu2 : ‖u + u‖ ≤ 2 := (norm_add_le u u).trans (by linarith)
+  have hv2 : ‖v + v‖ ≤ 2 := (norm_add_le v v).trans (by linarith)
+  have hs : ‖u + v‖ / 2 ≤ √(1 - c * ε ^ 2 / 4) := by
+    refine Real.le_sqrt_of_sq_le ?_
+    rcases le_or_gt 0 c with hc | hc
+    · have : c * ε ^ 2 ≤ c * ‖u - v‖ ^ 2 :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hε huv 2) hc
+      nlinarith [norm_nonneg (u + u), norm_nonneg (v + v)]
+    · have : ‖u + v‖ ≤ 2 := (norm_add_le u v).trans (by linarith)
+      nlinarith [norm_nonneg (u + v)]
+  linarith
+
+/-- The two-point inequality `‖x‖ ^ 2 + c * ‖y‖ ^ 2 ≤ (‖x + y‖ ^ 2 + ‖x - y‖ ^ 2) / 2` bounds the
+modulus of convexity below by the quadratic `c * ε ^ 2 / 8`, as long as `c * ε ^ 2 ≤ 4`. -/
+theorem mul_sq_div_eight_le_modulusOfConvexity {c ε : ℝ}
+    (h : ∀ x y : E, ‖x‖ ^ 2 + c * ‖y‖ ^ 2 ≤ (‖x + y‖ ^ 2 + ‖x - y‖ ^ 2) / 2) (hε : 0 ≤ ε)
+    (hcε : c * ε ^ 2 ≤ 4) : c * ε ^ 2 / 8 ≤ modulusOfConvexity E ε := by
+  refine le_trans ?_ (one_sub_sqrt_le_modulusOfConvexity E h hε)
+  have : √(1 - c * ε ^ 2 / 4) ≤ 1 - c * ε ^ 2 / 8 :=
+    Real.sqrt_le_iff.2 ⟨by linarith, by nlinarith [sq_nonneg (c * ε ^ 2)]⟩
+  linarith
 
 variable [NormedSpace ℝ E]
 

@@ -16,7 +16,8 @@ For a continuous linear functional `f` on a seminormed space over `RCLike` scala
 `0 ≤ r`, every upper bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`.
 Hahn–Banach separation arguments use this to turn a separating real-part bound on a ball into a
 bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f‖` the real part of
-`f` exceeds `r * ‖x‖` at some point `x`.
+`f` exceeds `r * ‖x‖` at some point `x`, and for `r < ‖f‖` it exceeds `r` at some point of the
+closed unit ball, so that `‖f‖` is the supremum of `re ∘ f` on the closed unit ball.
 
 ## Main results
 
@@ -24,6 +25,8 @@ bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f�
   ball of nonnegative radius bounds its value at the centre plus the radius times its norm.
 * `StrongDual.exists_mul_norm_lt_re_apply`: for `0 ≤ r < ‖f‖`, the real part of `f` exceeds
   `r * ‖x‖` at some point `x`.
+* `StrongDual.exists_lt_re_apply_of_lt_norm`: for `r < ‖f‖`, the real part of `f` exceeds `r` at
+  some point of the closed unit ball.
 -/
 
 public section
@@ -66,5 +69,21 @@ theorem exists_mul_norm_lt_re_apply (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0
   refine ⟨a • x, ?_⟩
   rw [map_smul, smul_eq_mul, ← hax, ofReal_re, norm_smul, ha, one_mul]
   exact hx
+
+/-- If `r < ‖f‖`, then the real part of `f` exceeds `r` at some point of the closed unit ball. -/
+theorem exists_lt_re_apply_of_lt_norm (f : StrongDual 𝕜 E) {r : ℝ} (hr : r < ‖f‖) :
+    ∃ x, ‖x‖ ≤ 1 ∧ r < re (f x) := by
+  rcases lt_or_ge r 0 with hr₀ | hr₀
+  · exact ⟨0, by simp, by simpa using hr₀⟩
+  obtain ⟨x, hx⟩ := f.exists_mul_norm_lt_re_apply hr₀ hr
+  have hx₀ : 0 < ‖x‖ := by
+    refine (norm_nonneg x).lt_of_ne' fun h ↦ ?_
+    have := (re_le_norm (f x)).trans (f.le_opNorm x)
+    rw [h, mul_zero] at this hx
+    linarith
+  -- Normalize `x` to the unit sphere.
+  refine ⟨((‖x‖⁻¹ : ℝ) : 𝕜) • x, ?_, ?_⟩
+  · rw [norm_smul, norm_ofReal, abs_inv, abs_norm, inv_mul_cancel₀ hx₀.ne']
+  · rwa [map_smul, smul_eq_mul, re_ofReal_mul, ← div_eq_inv_mul, lt_div_iff₀ hx₀]
 
 end StrongDual
