@@ -561,7 +561,8 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation [T2Space M]
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   rw [show (⋃ a, Θ a '' h.negativeDiscBundle hn P g.toRiemannianMetric ε) =
-    Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from iSup_unique _] at hr
+    Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from
+      Set.ext fun _ ↦ by simp only [mem_iUnion, Unique.exists_iff]] at hr
   exact ⟨hsrc (), hr⟩
 
 end IsNondegenerateCriticalSubmanifold
@@ -630,10 +631,8 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
                 (g a).toRiemannianMetric ε}) := by
   have := h.finite
   have (a : ι) : Nonempty (S a) := h.nonempty a
-  have (a : ι) : CompactSpace (S a) := isCompact_univ_iff.1 <|
-    (i a).isEmbedding.isInducing.isCompact_iff.2 (by
-      rw [image_univ]
-      exact (h.isClosed_range a).isCompact)
+  have (a : ι) : CompactSpace (S a) :=
+    (Topology.IsClosedEmbedding.mk (i a).isEmbedding (h.isClosed_range a)).compactSpace
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     SmoothEmbedding.exists_sublevel_union_iUnion_negativeDiscBundle_deformation
       (ι := {a // ∀ s, f (i a s) = c}) (S := fun a ↦ S a) (P := fun a ↦ P a) (J := fun a ↦ J a)
