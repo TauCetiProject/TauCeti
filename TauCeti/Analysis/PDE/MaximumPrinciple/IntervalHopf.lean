@@ -178,7 +178,8 @@ theorem zero : IsIntervalWeakSupersolution a b c d (0 : W1p volume ⟨Ioo x₀ x
   refine ⟨integrableOn_zero.congr_fun_ae ?_, (integral_zero ℝ ℝ).ge.trans_eq
     (integral_congr_ae ?_)⟩ <;>
   · filter_upwards [hv, hg] with y h₁ h₂
-    simp [h₁, h₂]
+    rw [h₁, h₂]
+    simp
 
 /-- A nonnegative multiple of a weak supersolution is a weak supersolution. -/
 theorem smul (h : IsIntervalWeakSupersolution a b c d u) {r : ℝ} (hr : 0 ≤ r) :

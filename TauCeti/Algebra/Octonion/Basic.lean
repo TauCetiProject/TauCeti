@@ -96,7 +96,8 @@ nothing more.
   imaginary octonions are an irreducible representation of `Der 𝕆`
   (`TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule`, in
   `TauCeti/Algebra/Octonion/Fundamental.lean`), so there they are its `7`-dimensional fundamental
-  representation; only the isomorphism of `Der 𝕆` with `LieAlgebra.g₂` still waits.
+  representation. In characteristic zero `Der 𝕆` is isomorphic to the split `LieAlgebra.g₂`
+  (`TauCeti.Octonion.g₂EquivDerivationLieAlgebra`, in `TauCeti/Algebra/Octonion/G2.lean`).
 
 ## Implementation notes
 
@@ -825,8 +826,8 @@ example :
 (`TauCeti.Octonion.finrank_imaginary`) and, over a field in which `2` is nonzero, an irreducible
 representation of `G₂ = Der 𝕆` by `TauCeti.Octonion.isIrreducible_imaginaryLieSubmodule` -- where
 `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`, of rank `14` by
-`TauCeti.Octonion.finrank_derivationLieAlgebra`. The isomorphism of `Der 𝕆` with `LieAlgebra.g₂` is
-not proved in the repository.
+`TauCeti.Octonion.finrank_derivationLieAlgebra`, and isomorphic in characteristic zero to the split
+`LieAlgebra.g₂` by `TauCeti.Octonion.g₂EquivDerivationLieAlgebra`.
 -/
 def imaginary (R : Type*) [CommRing R] : Submodule R (Octonion R) := LinearMap.ker trace
 

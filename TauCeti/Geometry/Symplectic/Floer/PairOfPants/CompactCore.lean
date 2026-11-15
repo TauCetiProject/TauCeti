@@ -34,6 +34,9 @@ symplectic vector space target is its specialization to the constant form
 * `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le`: for a
   single perturbation supported in the core, on any manifold target, the curvature allowance of
   the sum is at most `B₀ + B₁ + B_∞` plus the curvature allowance of the core perturbation.
+* `SmoothTwoForm.IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_add`:
+  for a manifold target, the curvature of the sum is integrable over `S` along every map
+  continuous on `S`.
 * `exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le`, in the namespace
   `SmoothTwoForm.IsNondegenerate` for a manifold target and in `SymplecticForm` for a vector-space
   target: the uniform bound for a compact family of core perturbations.
@@ -90,6 +93,37 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le
 variable [FiniteDimensional ℝ E]
   {E' G' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace G']
   {J : ModelWithCorners ℝ E' G'} [TopologicalSpace N] [ChartedSpace G' N] [IsManifold J 1 N]
+
+/-- The curvature of the pair-of-pants perturbation plus a `C¹` perturbation supported in a compact
+set `D` of the core is integrable over `S` along every map continuous on `S`, for a
+finite-dimensional manifold target with a nondegenerate two-form. As in
+`SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le`, the open set
+`U` lies in the zero region of the canonical datum and contains `D`. -/
+theorem IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_add
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {δs δt : ℝ × ℝ → M → ℝ}
+    (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
+    (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u thricePuncturedSphereReal) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs z x)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
+          δt z x) z (u z)) thricePuncturedSphereReal := by
+  -- `D` lies in `S`, and the canonical datum vanishes near `D`, so the curvature splits.
+  have hDS : D ⊆ thricePuncturedSphereReal := (hDU.trans (subset_preimage_truncation_of_isOpen hU
+    hcore)).trans (preimage_truncation_subset_thricePuncturedSphereReal 1)
+  have hzero (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ U) :
+      (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) = 0 := by
+    funext x
+    simp [pairOfPantsPerturbation_eq_zero_of_forall_le (hcore z hz) x]
+  simp only [ω.hamiltonianCurvature_add_of_eq_zero_on hD.isClosed hU hDU (hzero 1)
+    (hzero Complex.I) hs ht]
+  exact (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu).add
+    (hω.integrable_hamiltonianCurvature_of_isCompact hδs hδt hD hs ht (hu.mono hDS)).integrableOn
 
 /-- Independent `C¹` core variations preserve a uniform integrated curvature bound for the
 pair of pants with a finite-dimensional manifold target carrying a nondegenerate two-form. The
