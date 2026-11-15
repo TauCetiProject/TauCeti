@@ -488,6 +488,20 @@ theorem op_lof_smul_cubicalChainModuleLof {p q : ℕ} (c : NormalizedCubicalChai
       cubicalChainModuleLof Y G R (p + q) (act Y G R p q c a) :=
   cubicalChainActBilin_lof_lof c a
 
+/-- **The action on a point chain**: a chain of `G` acts on the point chain of `y` as its
+push-forward along the orbit map `g ↦ y · g`. -/
+theorem op_smul_cubicalChainModuleLof_point (y : Y) (a : normalizedCubicalChainAlgebra G R) :
+    op a • cubicalChainModuleLof Y G R 0 (ofCube Y R (SingularCube.point y)) =
+      (cubicalChainModuleEquiv Y G R).symm (cubicalChainSumMap R
+        ((actMap Y G).comp ((ContinuousMap.const G y).prodMk (ContinuousMap.id G))) a) := by
+  induction a using DirectSum.induction_on with
+  | zero => rw [op_zero, zero_smul, map_zero, map_zero]
+  | add a a' ha ha' => rw [MulOpposite.op_add, add_smul, ha, ha', map_add, map_add]
+  | of q z =>
+    rw [← DirectSum.lof_eq_of R, op_lof_smul_cubicalChainModuleLof, cubicalChainSumMap_lof,
+      cubicalChainModuleEquiv_symm_lof, act_def, ← cubicalChainModuleLof_cast (Nat.zero_add q),
+      ← map_cast, crossProduct_point_left, NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+
 /-- The ground ring and the chains of `G` act compatibly: `(r • a)` acts as `r` times the action of
 `a`, since the action is bilinear. -/
 instance : IsScalarTower R (normalizedCubicalChainAlgebra G R)ᵐᵒᵖ (cubicalChainModule Y G R) where

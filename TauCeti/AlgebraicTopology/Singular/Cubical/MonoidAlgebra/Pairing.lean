@@ -47,6 +47,9 @@ operations of the chain systems of trajectory spaces in Morse theory.
 * `TauCeti.cubicalChainPairing_smul_left`, `TauCeti.cubicalChainPairing_op_smul_right`: the
   pairing of an equivariant map is equivariant.
 * `TauCeti.cubicalChainTensorHom_tmul`: the induced morphism is the pairing on pure tensors.
+* `TauCeti.cubicalChainPairing_point_left`: pairing with a point chain is a push-forward.
+* `TauCeti.cubicalChainModuleLinearMap_cubicalChainPairing`: a pushed-forward pairing is a pairing.
+* `TauCeti.cubicalChainSumMap_smul`: acting by a pushed-forward chain is a pairing.
 * `TauCeti.cubicalChainDifferential_cubicalChainSumPairing`,
   `TauCeti.cubicalChainSumPairing_assoc`, `TauCeti.cubicalChainSumPairing_mulMap`: the Leibniz
   rule, associativity, and the Pontryagin product.
@@ -365,6 +368,67 @@ theorem cubicalChainTensorHom_tmul (f : C(X × Y, Z))
     (N := cubicalChainBimoduleDG H Y K R) (P := cubicalChainBimoduleDG G Z K R) _ _ _ _ _ _ m n
 
 end TensorHom
+
+section PushForward
+
+/-! ### Pairings with points and push-forwards -/
+
+universe u
+
+variable {H K : Type*} {X Y Z W : Type u} [TopologicalSpace X] [TopologicalSpace Y]
+  [TopologicalSpace Z] [TopologicalSpace W] {R : Type*} [CommRing R]
+
+/-- **Pairing with a point is a push-forward**: the pairing of the point chain of `x` with a
+chain is its push-forward along `f (x, ·)`. -/
+theorem cubicalChainPairing_point_left (f : C(X × Y, Z)) (x : X)
+    (n : cubicalChainModule Y K R) :
+    cubicalChainPairing H K R f
+        (cubicalChainModuleLof X H R 0 (ofCube X R (SingularCube.point x))) n =
+      cubicalChainModuleLinearMap R
+        (f.comp ((ContinuousMap.const Y x).prodMk (ContinuousMap.id Y))) n := by
+  induction n using cubicalChainModule.induction_on with
+  | add n n' hn hn' => rw [map_add, map_add, hn, hn']
+  | lof q c =>
+    rw [cubicalChainPairing_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add q), ← map_cast,
+      crossProduct_point_left, cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp,
+      LinearMap.comp_apply]
+
+/-- **Push-forward of a pairing**: pushing the pairing of `f` forward along `g` gives the pairing
+of `g ∘ f`. -/
+theorem cubicalChainModuleLinearMap_cubicalChainPairing (f : C(X × Y, Z)) (g : C(Z, W))
+    (m : cubicalChainModule X H R) (n : cubicalChainModule Y K R) :
+    cubicalChainModuleLinearMap R g (cubicalChainPairing H K R f m n) =
+      cubicalChainPairing H K R (g.comp f) m n := by
+  induction m using cubicalChainModule.induction_on with
+  | add m m' hm hm' =>
+    rw [map_add, LinearMap.add_apply, map_add, hm, hm', map_add, LinearMap.add_apply]
+  | lof p c =>
+    induction n using cubicalChainModule.induction_on with
+    | add n n' hn hn' => rw [map_add, map_add, hn, hn', map_add]
+    | lof q c' =>
+      rw [cubicalChainPairing_lof_lof, cubicalChainPairing_lof_lof,
+        cubicalChainModuleLinearMap_lof, ← LinearMap.comp_apply (map R g _),
+        ← NormalizedCubicalChain.map_comp]
+
+/-- **Acting by a push-forward is a pairing**: the push-forward of a chain `m` along `f : X → G`
+acts on a chain `n` as the pairing of `m` and `n` along `(x, y) ↦ f x • y`. -/
+theorem cubicalChainSumMap_smul {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
+    [MulAction G Y] [ContinuousSMul G Y] (f : C(X, G))
+    (m : cubicalChainModule X H R) (n : cubicalChainModule Y K R) :
+    cubicalChainSumMap R f (cubicalChainModuleEquiv X H R m) • n =
+      cubicalChainPairing H K R ((leftActMap G Y).comp (f.prodMap (ContinuousMap.id Y))) m n := by
+  induction m using cubicalChainModule.induction_on with
+  | add m m' hm hm' => rw [map_add, map_add, add_smul, hm, hm', map_add, LinearMap.add_apply]
+  | lof p c =>
+    induction n using cubicalChainModule.induction_on with
+    | add n n' hn hn' => rw [smul_add, hn, hn', map_add]
+    | lof q c' =>
+      rw [cubicalChainModuleEquiv_lof, cubicalChainSumMap_lof, lof_smul_cubicalChainModuleLof,
+        cubicalChainPairing_lof_lof, leftAct_def, NormalizedCubicalChain.map_comp,
+      LinearMap.comp_apply,
+        map_crossProduct, NormalizedCubicalChain.map_id, LinearMap.id_apply]
+
+end PushForward
 
 section SumPairing
 
