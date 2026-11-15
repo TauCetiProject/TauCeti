@@ -29,6 +29,7 @@ three-cycle identifies `Multiplicative (ZMod 3)` with `A₃`.
 
 * `TauCeti.coe_alternatingGroupFinThreeZModMulEquiv`: the image of `r` is the permutation
   `(0 1 2) ^ r`.
+* `TauCeti.isMulCommutative_alternatingGroup_fin_three`: `A₃` is commutative, as an instance.
 -/
 
 public section
@@ -36,6 +37,11 @@ public section
 namespace TauCeti
 
 open Equiv
+
+/-- **`A₃` is commutative**, as is every alternating group on at most three points. -/
+instance isMulCommutative_alternatingGroup_fin_three :
+    IsMulCommutative (alternatingGroup (Fin 3)) :=
+  alternatingGroup.isMulCommutative_of_card_le_three (by simp)
 
 /-- **`A₃` is cyclic of order three**: the powers of the three-cycle `(0 1 2)` identify
 `Multiplicative (ZMod 3)` with the alternating subgroup of `Equiv.Perm (Fin 3)`, which has prime
