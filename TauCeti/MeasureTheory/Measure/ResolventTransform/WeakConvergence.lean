@@ -53,8 +53,8 @@ are proved.
   convergence of the transforms on the upper half-plane.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_resolventTransform_of_subset_closure`:
   convergence on a set whose closure contains the upper half-plane suffices.
-* `MeasureTheory.ProbabilityMeasure.isEmbedding_resolventTransform`: transforms on a countable
-  determining set induce the weak topology.
+* `MeasureTheory.ProbabilityMeasure.isEmbedding_resolventTransform`: transforms on any set of
+  nonreal points whose closure contains the upper half-plane induce the weak topology.
 * `MeasureTheory.ProbabilityMeasure.ae_tendsto_of_ae_tendsto_resolventTransform`: the almost
   sure version for random probability measures.
 

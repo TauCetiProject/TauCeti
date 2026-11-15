@@ -13,25 +13,32 @@ public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.ConvergenceInMeas
 
 Random probability measures on the real line converge weakly in probability to a deterministic
 law exactly when their resolvent transforms converge in probability at each point of the upper
-half-plane. A countable dense subset of that half-plane suffices. The sample spaces may vary
-with the index; no joint realization or independence across sizes is needed.
+half-plane. Any set of nonreal points whose closure contains the upper half-plane suffices;
+countability is not required, and lower-half-plane points are allowed. The sample spaces may
+vary with the index; no joint realization or independence across sizes is needed.
 
-The proof identifies the weak topology with the topology induced by the resolvent tests on a
-countable determining set. Each weak neighborhood therefore contains a neighborhood specified
-by finitely many resolvent tests. A finite union bound transfers convergence in probability.
+The proof uses `MeasureTheory.ProbabilityMeasure.isEmbedding_resolventTransform` from
+`TauCeti.MeasureTheory.Measure.ResolventTransform.WeakConvergence` to identify the weak topology
+with the topology induced by the resolvent tests on such a determining set. Each weak
+neighborhood therefore contains a neighborhood specified by finitely many resolvent tests.
+A finite union bound transfers convergence in probability.
 This also identifies the criterion with convergence in probability of every real bounded
 continuous test integral, rather than convergence of the expected random measure.
 
 ## Main results
 
-* `MeasureTheory.ProbabilityMeasure.isEmbedding_resolventTransform`: resolvent transforms on a
-  countable dense subset of the upper half-plane embed the space of probability measures.
 * `MeasureTheory.ProbabilityMeasure.tendsto_measure_notMem_nhds_iff_resolventTransform`:
   the neighborhood criterion, allowing varying measure spaces and arbitrary filters.
 * `MeasureTheory.ProbabilityMeasure.tendsto_measure_integral_iff_resolventTransform`:
   the equivalence with bounded continuous test integrals on varying spaces.
-* `ProbabilityMeasure.forall_tendstoInMeasure_integral_iff_resolventTransform`:
+* `MeasureTheory.ProbabilityMeasure.forall_tendstoInMeasure_integral_iff_resolventTransform`:
   the same equivalence in Mathlib's `TendstoInMeasure` on a fixed space.
+
+The corresponding determining-set versions in `MeasureTheory.ProbabilityMeasure` are
+`tendsto_measure_notMem_nhds_iff_resolventTransform_of_subset_closure`,
+`tendsto_measure_integral_iff_resolventTransform_of_subset_closure`, and
+`forall_tendstoInMeasure_integral_iff_resolventTransform_of_subset_closure`.
+Each requires nonreal test points whose closure contains the upper half-plane.
 
 The statements use outer measures, so no measurability assumptions on the random measures
 are necessary. They apply in particular to measurable empirical spectral measures. The limit
