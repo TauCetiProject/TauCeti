@@ -159,11 +159,7 @@ lemma isSelfAdjoint_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
 lemma proj_apply_proj (P : ProjValMeasure X H) (B : Set X)
     (hB : MeasurableSet B) (v : H) :
     P.proj B hB (P.proj B hB v) = P.proj B hB v := by
-  calc
-    P.proj B hB (P.proj B hB v) =
-        (P.proj B hB * P.proj B hB) v :=
-      (mul_apply_eq_comp (P.proj B hB) (P.proj B hB) v).symm
-    _ = P.proj B hB v := by rw [P.proj_idem B hB]
+  rw [← mul_apply_eq_comp, P.proj_idem]
 
 /-- A measurable projection has the same matrix element when applied in both arguments. -/
 lemma inner_proj_eq_inner_proj_proj (P : ProjValMeasure X H)
