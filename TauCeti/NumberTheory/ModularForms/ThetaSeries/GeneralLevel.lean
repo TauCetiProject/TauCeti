@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ModularForms.ThetaSeries.LevelOne
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.PositiveOdd.Slash
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
 # The Hecke–Schoeneberg theorem
@@ -126,7 +125,7 @@ noncomputable def thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k) 
   toFun := thetaSeries L
   slash_action_eq' A hA := by
     obtain ⟨A, hA, rfl⟩ := hA
-    rw [← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
+    rw [← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
       hL.thetaSeries_slash_of_mem_Gamma0 hk (CongruenceSubgroup.Gamma1_in_Gamma0 _ hA)]
     have hd := (CongruenceSubgroup.mem_Gamma1_iff.mp hA).2
     rw [hd, map_one, one_smul]
@@ -147,7 +146,7 @@ theorem thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finrank ℝ 
   intro A
   simpa only [coe_thetaFormOfLevel, MulChar.coe_equivToUnitHom,
     MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
     hL.thetaSeries_slash_of_mem_Gamma0 hk A.property
 
 /-- The coefficients of the theta form in `q = exp (2 π i τ)` are representation numbers. -/
@@ -222,7 +221,7 @@ theorem mcast_thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finran
     CongruenceSubgroup.isCoprime_apply_one_one_of_mem_Gamma0 A.property
   simpa only [ModularForm.coe_mcast, coe_thetaFormOfLevel, MulChar.coe_equivToUnitHom,
     MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← hχ _ haN] using
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← hχ _ haN] using
     hL.thetaSeries_slash_eq_kroneckerSym_smul_of_mem_Gamma0 hk hA
 
 /-! ### Uniqueness of the nebentypus and trivial-character `Γ₀(level L)` forms -/
@@ -266,9 +265,9 @@ theorem IsEven.thetaSeries_slash_of_mem_Gamma0_eq_self_iff (hL : IsEven L)
   refine ⟨fun h γ hγ ↦ ?_, fun h A hA ↦ ?_⟩
   · obtain ⟨A, hA, rfl⟩ := hγ
     simpa only [coe_thetaFormOfLevel, ModularForm.SL_slash,
-      TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using h A hA
+      Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using h A hA
   · simpa only [coe_thetaFormOfLevel, ModularForm.SL_slash,
-      TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
+      Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
       h (mapGL ℝ A) (Subgroup.mem_map_of_mem _ hA)
 
 /-- When the quadratic theta character of an even full lattice of rank `2k` is trivial, its theta

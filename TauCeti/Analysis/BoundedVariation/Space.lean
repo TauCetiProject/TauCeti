@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 
 /-!
 # The Banach space of functions of bounded variation
