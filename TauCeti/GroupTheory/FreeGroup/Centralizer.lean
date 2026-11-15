@@ -180,6 +180,17 @@ variable [DecidableEq α]
 
 open reduceCyclically
 
+/-- The reduced word of `u ^ (j + d)` for `j + d ≠ 0`: the conjugator `c`, then `j` and `d`
+copies of the cyclic reduction `v`, then `c⁻¹`. -/
+private theorem toWord_pow_add (u : FreeGroup α) {j d : ℕ} (h : j + d ≠ 0) :
+    (u ^ (j + d)).toWord = conjugator u.toWord ++
+      ((List.replicate j (reduceCyclically u.toWord)).flatten ++
+        ((List.replicate d (reduceCyclically u.toWord)).flatten ++
+          invRev (conjugator u.toWord))) := by
+  simp only [toWord_pow, reduce_flatten_replicate isReduced_toWord, h, ↓reduceIte]
+  rw [List.replicate_add, List.flatten_append]
+  simp only [List.append_assoc]
+
 /-- Reading `j` more periods of the reduced word of `u ^ m`, past the conjugator, multiplies on
 the left by `u ^ j`. -/
 private theorem mk_take_toWord_pow_add {u : FreeGroup α} (hu : u ≠ 1) {n j m : ℕ}
@@ -194,14 +205,7 @@ private theorem mk_take_toWord_pow_add {u : FreeGroup α} (hu : u ≠ 1) {n j m 
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hc
   obtain ⟨d, rfl⟩ : ∃ d, m = j + d :=
     Nat.exists_eq_add_of_le (Nat.le_of_mul_le_mul_right (by nlinarith) hv)
-  have hw : (u ^ (j + d)).toWord = conjugator u.toWord ++
-      ((List.replicate j (reduceCyclically u.toWord)).flatten ++
-        ((List.replicate d (reduceCyclically u.toWord)).flatten ++
-          invRev (conjugator u.toWord))) := by
-    simp only [toWord_pow, reduce_flatten_replicate isReduced_toWord,
-      show j + d ≠ 0 by omega, ↓reduceIte]
-    rw [List.replicate_add, List.flatten_append]
-    simp only [List.append_assoc]
+  have hw := toWord_pow_add u (show j + d ≠ 0 by omega)
   have hu' : u = mk (conjugator u.toWord) * mk (reduceCyclically u.toWord) *
       (mk (conjugator u.toWord))⁻¹ := by
     rw [inv_mk, mul_mk, mul_mk, conj_conjugator_reduceCyclically, mk_toWord]
