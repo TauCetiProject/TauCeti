@@ -71,6 +71,8 @@ both its tempered distribution and this `Lᵖ` data.
   not depend on the bump function; the identity on tempered distributions is an isomorphism of
   normed spaces between the Besov spaces built from two bump functions.
 * `TauCeti.BesovSpace.continuous_block`: each block depends continuously on the element.
+* `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block`: for `q < ∞` the weighted blocks vanish at high
+  frequency.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero`: an `Lᵖ`
   function whose blocks vanish from some index on lies in `B^s_{p,∞}`.
 * `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
@@ -575,6 +577,17 @@ theorem hasSum_norm (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
   have h := lp.hasSum_norm (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)
     u.weightedBlocks
   simpa only [norm_weightedBlocks_apply, norm_weightedBlocks] using h
+
+open Filter Topology in
+/-- For `q < ∞` the weighted blocks vanish at high frequency: `2^{js} ‖Δⱼ u‖_p → 0`, since their
+`q`-th powers are summable. -/
+theorem tendsto_rpow_mul_norm_block (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
+    Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) := by
+  have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
+  have h := ((hasSum_norm hq u).summable.tendsto_atTop_zero).rpow_const
+    (p := q.toReal⁻¹) (Or.inr (inv_nonneg.2 hq0.le))
+  rw [Real.zero_rpow (inv_ne_zero hq0.ne')] at h
+  exact h.congr fun j ↦ Real.rpow_rpow_inv (by positivity) hq0.ne'
 
 /-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
 theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :

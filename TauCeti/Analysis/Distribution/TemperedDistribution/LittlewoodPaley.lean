@@ -614,13 +614,11 @@ theorem exists_sum_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] {p : �
       ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
   have hc : ((2 : ℝ) ^ N)⁻¹ ≠ 0 := by positivity
-  -- The symbol `φ (2^{-N} ·)` is smooth and compactly supported, hence a Schwartz function.
-  have hσ : HasCompactSupport fun ξ : E ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) :=
-    (φ.hasCompactSupport.comp_smul hc).comp_left Complex.ofReal_zero
-  set σ : 𝓢(E, ℂ) := hσ.toSchwartzMap
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
-  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  -- The symbol `φ (2^{-N} ·) = ∑_{j ≤ N} ψⱼ` is a sum of the Schwartz pieces of the partition.
+  set σ : 𝓢(E, ℂ) := ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaleySchwartz j
+  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
+    ext ξ
+    simp [σ, ← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
   obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   rw [hσ_coe] at hg hgf
   refine ⟨g, ?_, ?_⟩
