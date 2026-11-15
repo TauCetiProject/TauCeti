@@ -14,7 +14,6 @@ import TauCeti.RepresentationTheory.CharacterTable.Degree
 import TauCeti.RepresentationTheory.Intertwining.DirectSum
 import TauCeti.RepresentationTheory.InvariantForm.Determinant
 import TauCeti.RepresentationTheory.Irreducible
-import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The McKay matrix and tensor-power multiplicities
@@ -293,7 +292,6 @@ theorem multiplicity_tensor_eq_sum [Fintype (SimpleFDRepClasses k G)] (V W : FDR
     c₁.multiplicity (V ⊗ W) =
       ∑ c₂ : SimpleFDRepClasses k G, mckayMatrix V c₁ c₂ * c₂.multiplicity W := by
   classical
-  have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   obtain ⟨eW⟩ := _root_.Representation.nonempty_equiv_directSum_irreducibleRepresentation W.ρ
   let j := SimpleFDRepClasses.equivFinCardConjClasses k G c₁
   have hc₁ : c₁ = (SimpleFDRepClasses.equivFinCardConjClasses k G).symm j :=

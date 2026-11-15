@@ -229,6 +229,13 @@ theorem existsUnique_nonempty_linearEquiv_irreducibleRepresentation (N : Type w)
   rw [Representation.nonempty_equiv_iff]
   exact ⟨fun ⟨e⟩ ↦ ⟨eN ≪≫ₗ e⟩, fun ⟨e⟩ ↦ ⟨eN.symm ≪≫ₗ e⟩⟩
 
+end Models
+
+section SimpleFDRepClasses
+
+variable (k : Type u) (G : Type v) [Field k] [IsAlgClosed k] [Group G]
+  [Invertible (Nat.card G : k)]
+
 /-- **The isomorphism classes of simple objects of `FDRep k G` are indexed by the rows of the
 character table**: over an algebraically closed field in which `|G|` is invertible, sending each
 row `i` to the class of `FDRep.of (irreducibleRepresentation k i)` is a bijection, inverted here so
@@ -244,6 +251,7 @@ noncomputable def SimpleFDRepClasses.equivFinCardConjClasses :
           (pairwise_isEmpty_equiv_irreducibleRepresentation k)] at hij
       exact hij,
      fun c ↦ by
+      have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
       induction c using SimpleFDRepClasses.ind with
       | h X hX =>
         have : _root_.Representation.IsIrreducible X.ρ := FDRep.isIrreducible_of_simple X
@@ -282,21 +290,17 @@ theorem SimpleFDRepClasses.equivFinCardConjClasses_mk_eq_iff (X : FDRep k G)
     SimpleFDRepClasses.mk_eq_mk_iff, nonempty_fdRepIso_iff, FDRep.of_ρ']
   exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
 
-omit [Finite G] in
 /-- Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has only finitely
 many isomorphism classes of simple objects. -/
 instance SimpleFDRepClasses.finite : Finite (SimpleFDRepClasses k G) :=
-  have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   .of_equiv _ (equivFinCardConjClasses k G).symm
 
-omit [Finite G] in
 /-- **Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has as many
 simple isomorphism classes as `G` has conjugacy classes.** -/
 theorem card_simpleFDRepClasses :
-    Nat.card (SimpleFDRepClasses k G) = Nat.card (ConjClasses G) := by
-  have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
-  exact (Nat.card_congr (SimpleFDRepClasses.equivFinCardConjClasses k G)).trans (Nat.card_fin _)
+    Nat.card (SimpleFDRepClasses k G) = Nat.card (ConjClasses G) :=
+  (Nat.card_congr (SimpleFDRepClasses.equivFinCardConjClasses k G)).trans (Nat.card_fin _)
 
-end Models
+end SimpleFDRepClasses
 
 end TauCeti

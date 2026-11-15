@@ -94,7 +94,7 @@ namespace Representation
 
 open TauCeti
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
   [Invertible (Nat.card G : k)]
 variable {V : Type w} [AddCommGroup V] [Module k V] (ρ : Representation k G V)
 
@@ -210,6 +210,7 @@ theorem nonempty_regrouping [FiniteDimensional k V] :
       Π₀ i, Fin (ρ.intrinsicMultiplicity i) → (irreducibleRepresentation k i).asModule) := by
   classical
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Module.Finite k[G] ρ.asModule := .of_restrictScalars_finite k k[G] ρ.asModule
   -- Decompose `ρ` into simple submodules and identify each with a model.
   obtain ⟨n, S, e, hS⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp k[G] ρ.asModule
@@ -277,6 +278,7 @@ theorem finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree [FiniteDimensio
 coefficients written as intrinsic multiplicities, for carriers in any universe. -/
 theorem character_eq_sum_intrinsicMultiplicity_nsmul [FiniteDimensional k V] :
     ρ.character = ∑ i, ρ.intrinsicMultiplicity i • irreducibleCharacter k i := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Fintype G := Fintype.ofFinite G
   funext g
   have h := ClassFunction.apply_eq_sum_characterPairing_mul_character
@@ -299,6 +301,7 @@ theorem character_eq_iff_forall_intrinsicMultiplicity_modEq (p : ℕ) [CharP k p
     (σ : Representation k G W) :
     ρ.character = σ.character ↔
       ∀ i, ρ.intrinsicMultiplicity i ≡ σ.intrinsicMultiplicity i [MOD p] := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Fintype G := Fintype.ofFinite G
   refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
   · rw [← CharP.natCast_eq_natCast k p,
@@ -317,6 +320,7 @@ representation `k[G]` with multiplicity its degree, in every characteristic not 
 theorem intrinsicMultiplicity_leftRegular (i : Fin (Nat.card (ConjClasses G))) :
     (leftRegular k G).intrinsicMultiplicity i = characterDegree k i := by
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [intrinsicMultiplicity_def, finrank_intertwiningMap_comm,
     (leftRegularMapEquiv (irreducibleRepresentation k i)).finrank_eq, finrank_fin_fun]
 
@@ -329,14 +333,11 @@ theorem _root_.TauCeti.SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_s
   rw [SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.multiplicity_mk,
     FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom]
 
-omit [Finite G] in
 /-- **Dimension decomposition into simple classes.** Every `W : FDRep k G` has dimension
 `∑ c, c.multiplicity W * c.finrank`. -/
 theorem _root_.TauCeti.finrank_eq_sum_multiplicity_mul_finrank
     [Fintype (SimpleFDRepClasses k G)] (W : FDRep k G) :
     finrank k W = ∑ c : SimpleFDRepClasses k G, c.multiplicity W * c.finrank := by
-  have : Finite G :=
-    TauCeti.finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree W.ρ]
   refine Finset.sum_equiv (SimpleFDRepClasses.equivFinCardConjClasses k G).symm
     (s := Finset.univ) (t := Finset.univ) (fun _ ↦ by simp) fun i _ ↦ ?_
