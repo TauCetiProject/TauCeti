@@ -71,33 +71,37 @@ public section
 open scoped unitInterval Topology Topology.Homotopy
 open Topology.Homotopy
 
-namespace HomotopyGroup
+section
+
+open HomotopyGroup
 
 variable {M N X : Type*} [TopologicalSpace X] {x : X}
+
+namespace HomotopyGroup
 
 /-! ### Reindexing the cube directions -/
 
 /-- An equivalence `M ≃ N` of index types reindexes the cube directions, and so identifies the
 homotopy groups indexed by `M` and by `N`. -/
 def congrEquiv (e : M ≃ N) : HomotopyGroup M X x ≃ HomotopyGroup N X x :=
-  Quotient.congr (_root_.GenLoop.congr x e).toEquiv fun _ _ =>
+  Quotient.congr (GenLoop.congr x e).toEquiv fun _ _ =>
     (Homeomorph.genLoopHomotopic_iff _).symm
 
 @[simp]
 theorem congrEquiv_mk (e : M ≃ N) (p : Ω^ M X x) :
-    congrEquiv e (⟦p⟧ : HomotopyGroup M X x) = ⟦_root_.GenLoop.congr x e p⟧ :=
+    congrEquiv e (⟦p⟧ : HomotopyGroup M X x) = ⟦GenLoop.congr x e p⟧ :=
   by rw [congrEquiv.eq_1]; rfl
 
 @[simp]
 theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
-    (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦_root_.GenLoop.congr x e.symm q⟧ :=
+    (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦GenLoop.congr x e.symm q⟧ :=
   by rw [congrEquiv.eq_1]; rfl
 
 /-- Reindexing the cube directions sends the trivial class to the trivial class. -/
 theorem congrEquiv_const (e : M ≃ N) :
-    congrEquiv e (⟦_root_.GenLoop.const⟧ : HomotopyGroup M X x) = ⟦_root_.GenLoop.const⟧ := by
+    congrEquiv e (⟦GenLoop.const⟧ : HomotopyGroup M X x) = ⟦GenLoop.const⟧ := by
   rw [congrEquiv_mk]
-  exact congrArg _ (_root_.GenLoop.ext _ _ fun _ => rfl)
+  exact congrArg _ (GenLoop.ext _ _ fun _ => rfl)
 
 /-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
 @[simp]
@@ -107,8 +111,8 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
   induction a using Quotient.inductionOn
   rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
   -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
-  refine congrArg _ (_root_.GenLoop.ext _ _ fun t => ?_)
-  simp only [_root_.GenLoop.congr_apply, _root_.GenLoop.map_apply]
+  refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
+  simp only [GenLoop.congr_apply, GenLoop.map_apply]
 
 /-- The map induced on the homotopy group indexed by `M` is the map induced on the group indexed
 by `N`, conjugated by the reindexing `e : M ≃ N` of the cube directions. -/
@@ -135,9 +139,9 @@ def congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M] (e : M ≃ N) :
   { toEquiv := congrEquiv e
     map_mul' := fun a b => Quotient.inductionOn₂ a b fun p q => by
       simp only [Equiv.toFun_as_coe,
-        _root_.HomotopyGroup.mul_spec (i := Classical.arbitrary M), congrEquiv_mk,
+        mul_spec (i := Classical.arbitrary M), congrEquiv_mk,
         GenLoop.congr_transAt]
-      exact (_root_.HomotopyGroup.mul_spec (i := e (Classical.arbitrary M))).symm }
+      exact (mul_spec (i := e (Classical.arbitrary M))).symm }
 
 @[simp]
 theorem congrMulEquiv_apply [DecidableEq M] [DecidableEq N] [Nonempty M]
@@ -155,7 +159,7 @@ theorem congrMulEquiv_symm_apply [DecidableEq M] [DecidableEq N] [Nonempty M]
 theorem congrMulEquiv_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
     (e : M ≃ N) (p : Ω^ M X x) :
     congrMulEquiv e (⟦p⟧ : HomotopyGroup M X x) =
-      ⟦_root_.GenLoop.congr x e p⟧ :=
+      ⟦GenLoop.congr x e p⟧ :=
   (congrMulEquiv_apply e _).trans (congrEquiv_mk e p)
 
 @[simp]
@@ -163,12 +167,14 @@ theorem congrMulEquiv_symm_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
     (e : M ≃ N) (q : Ω^ N X x) :
     letI : Nonempty N := e.nonempty_congr.mp ‹_›
     (congrMulEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) =
-      ⟦_root_.GenLoop.congr x e.symm q⟧ :=
+      ⟦GenLoop.congr x e.symm q⟧ :=
   (congrMulEquiv_symm_apply e _).trans (congrEquiv_symm_mk e q)
+
+end HomotopyGroup
 
 /-- In positive dimensions, reindexing the cube directions commutes with the maps induced by
 based continuous maps. -/
-theorem _root_.ContinuousMap.map_congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M]
+theorem ContinuousMap.map_congrMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M]
     {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (e : M ≃ N)
     (a : HomotopyGroup M X x) :
     map f hf (congrMulEquiv e a) = congrMulEquiv e (map f hf a) := by
@@ -176,6 +182,8 @@ theorem _root_.ContinuousMap.map_congrMulEquiv [DecidableEq M] [DecidableEq N] [
   exact map_congrEquiv f hf e a
 
 /-! ### Homotopy groups as path components of the loop space -/
+
+namespace HomotopyGroup
 
 /-- **The homotopy group `π_N(X, x)` is the set of path components of the space of
 `N`-dimensional generalized loops.** This is `GenLoop.homotopic_iff_joined` read on the
@@ -195,17 +203,19 @@ theorem zerothHomotopyEquiv_symm_mk (p : Ω^ N X x) :
       (⟦p⟧ : ZerothHomotopy (Ω^ N X x)) :=
   by rw [zerothHomotopyEquiv.eq_1]; rfl
 
+end HomotopyGroup
+
 /-- Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` evaluates a zero-dimensional
 generalized loop at the unique point of the cube. -/
 @[simp]
-theorem _root_.genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
+theorem genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
     genLoopHomeoOfIsEmpty N x p = p 0 :=
   rfl
 
 /-- The inverse of Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` sends a point to the
 constant zero-dimensional generalized loop at it. -/
 @[simp]
-theorem _root_.genLoopHomeoOfIsEmpty_symm_apply [IsEmpty N] (c : X) (t : I^N) :
+theorem genLoopHomeoOfIsEmpty_symm_apply [IsEmpty N] (c : X) (t : I^N) :
     (genLoopHomeoOfIsEmpty N x).symm c t = c :=
   rfl
 
@@ -213,14 +223,14 @@ theorem _root_.genLoopHomeoOfIsEmpty_symm_apply [IsEmpty N] (c : X) (t : I^N) :
 components of `X` sends the class of a zero-dimensional generalized loop to the path component of
 its value. -/
 @[simp]
-theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^ N X x) :
+theorem homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^ N X x) :
     homotopyGroupEquivZerothHomotopyOfIsEmpty N x (⟦p⟧ : HomotopyGroup N X x) =
       ZerothHomotopy.mk (p 0) :=
   rfl
 
 /-- The image under a based map of the class of a zero-dimensional generalized loop is the path
 component of the image of its value. -/
-theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y : Type*}
+theorem homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y : Type*}
     [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
     homotopyGroupEquivZerothHomotopyOfIsEmpty N y (map f hf (⟦p⟧ : HomotopyGroup N X x)) =
       ZerothHomotopy.mk (f (p 0)) := by
@@ -228,7 +238,7 @@ theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y :
 
 /-- **Classes of zero-dimensional generalized loops are path components.** Two such loops have
 the same class exactly when their values are joined by a path. -/
-theorem mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
+theorem HomotopyGroup.mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
     (⟦p⟧ : HomotopyGroup N X x) = ⟦q⟧ ↔ Joined (p 0) (q 0) := by
   refine (homotopyGroupEquivZerothHomotopyOfIsEmpty N x).apply_eq_iff_eq.symm.trans ?_
   rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
@@ -237,15 +247,17 @@ theorem mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
 homeomorphism `GenLoop.homeomorphOfUnique` onto Mathlib's loop space `Ω X x`. -/
-theorem _root_.Path.joined_iff_homotopic {p q : Ω X x} : Joined p q ↔ p.Homotopic q := by
+theorem Path.joined_iff_homotopic {p q : Ω X x} : Joined p q ↔ p.Homotopic q := by
   set φ := GenLoop.homeomorphOfUnique (X := X) (x := x) (Fin 1)
   have hcoe : ∀ r : Ω^ (Fin 1) X x, genLoopEquivOfUnique (Fin 1) r = φ r := fun r =>
     Path.ext (funext fun t => (GenLoop.homeomorphOfUnique_apply (Fin 1) r t).symm)
-  have key : _root_.GenLoop.Homotopic (φ.symm p) (φ.symm q) ↔ Joined p q := by
+  have key : GenLoop.Homotopic (φ.symm p) (φ.symm q) ↔ Joined p q := by
     rw [GenLoop.homotopic_iff_joined]
     exact ⟨fun h => by simpa using h.map φ.continuous, fun h => h.map φ.symm.continuous⟩
   rw [← key, ← GenLoop.homotopic_genLoopEquivOfUnique_iff, hcoe, hcoe,
     Homeomorph.apply_symm_apply, Homeomorph.apply_symm_apply]
+
+namespace HomotopyGroup
 
 /-- **The path components of Mathlib's loop space `Ω X x` are the fundamental group of `X`
 at `x`**: the degree-zero case of the loop-space shift. Both sides are quotients of `Ω X x`, by
@@ -276,45 +288,45 @@ theorem zerothHomotopyLoopSpaceEquivFundamentalGroup_symm_mk (p : Ω X x) :
 of `N`-dimensional generalized loops, based at the constant loop, with the homotopy group of `X`
 indexed by `M ⊕ N`. -/
 def loopSpaceEquiv :
-    HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const ≃ HomotopyGroup (M ⊕ N) X x :=
-  Quotient.congr (_root_.GenLoop.genLoopGenLoopEquiv x).toEquiv fun _ _ =>
+    HomotopyGroup M (Ω^ N X x) GenLoop.const ≃ HomotopyGroup (M ⊕ N) X x :=
+  Quotient.congr (GenLoop.genLoopGenLoopEquiv x).toEquiv fun _ _ =>
     (Homeomorph.genLoopHomotopic_iff _).symm
 
 @[simp]
-theorem loopSpaceEquiv_mk (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
-    loopSpaceEquiv (⟦p⟧ : HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const) =
-      ⟦_root_.GenLoop.genLoopGenLoopEquiv x p⟧ :=
+theorem loopSpaceEquiv_mk (p : Ω^ M (Ω^ N X x) GenLoop.const) :
+    loopSpaceEquiv (⟦p⟧ : HomotopyGroup M (Ω^ N X x) GenLoop.const) =
+      ⟦GenLoop.genLoopGenLoopEquiv x p⟧ :=
   by rw [loopSpaceEquiv.eq_1]; rfl
 
 @[simp]
 theorem loopSpaceEquiv_symm_mk (q : Ω^ (M ⊕ N) X x) :
     loopSpaceEquiv.symm (⟦q⟧ : HomotopyGroup (M ⊕ N) X x) =
-      ⟦(_root_.GenLoop.genLoopGenLoopEquiv x).symm q⟧ :=
+      ⟦(GenLoop.genLoopGenLoopEquiv x).symm q⟧ :=
   by rw [loopSpaceEquiv.eq_1]; rfl
 
 /-- **The loop-space shift is an isomorphism of groups** in positive dimensions:
 `π_M (Ω^ N X x) ≃* π_(M ⊕ N) X x`. -/
 def loopSpaceMulEquiv [DecidableEq M] [DecidableEq N] [Nonempty M] :
-    HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const ≃* HomotopyGroup (M ⊕ N) X x where
+    HomotopyGroup M (Ω^ N X x) GenLoop.const ≃* HomotopyGroup (M ⊕ N) X x where
   toEquiv := loopSpaceEquiv
   map_mul' a b := Quotient.inductionOn₂ a b fun p q => by
     simp only [Equiv.toFun_as_coe,
-      _root_.HomotopyGroup.mul_spec (i := Classical.arbitrary M), loopSpaceEquiv_mk,
+      mul_spec (i := Classical.arbitrary M), loopSpaceEquiv_mk,
       GenLoop.genLoopGenLoopEquiv_transAt]
-    exact (_root_.HomotopyGroup.mul_spec (i := Sum.inl (Classical.arbitrary M))).symm
+    exact (mul_spec (i := Sum.inl (Classical.arbitrary M))).symm
 
 @[simp]
 theorem loopSpaceMulEquiv_apply [DecidableEq M] [DecidableEq N] [Nonempty M]
-    (a : HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const) :
+    (a : HomotopyGroup M (Ω^ N X x) GenLoop.const) :
     loopSpaceMulEquiv a = loopSpaceEquiv a :=
   by rw [loopSpaceMulEquiv.eq_1]; rfl
 
 @[simp]
 theorem loopSpaceMulEquiv_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
-    (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) :
+    (p : Ω^ M (Ω^ N X x) GenLoop.const) :
     loopSpaceMulEquiv
-        (⟦p⟧ : HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const) =
-      ⟦_root_.GenLoop.genLoopGenLoopEquiv x p⟧ :=
+        (⟦p⟧ : HomotopyGroup M (Ω^ N X x) GenLoop.const) =
+      ⟦GenLoop.genLoopGenLoopEquiv x p⟧ :=
   (loopSpaceMulEquiv_apply _).trans (loopSpaceEquiv_mk p)
 
 @[simp]
@@ -327,32 +339,32 @@ theorem loopSpaceMulEquiv_symm_apply [DecidableEq M] [DecidableEq N] [Nonempty M
 theorem loopSpaceMulEquiv_symm_mk [DecidableEq M] [DecidableEq N] [Nonempty M]
     (q : Ω^ (M ⊕ N) X x) :
     loopSpaceMulEquiv.symm (⟦q⟧ : HomotopyGroup (M ⊕ N) X x) =
-      ⟦(_root_.GenLoop.genLoopGenLoopEquiv x).symm q⟧ :=
+      ⟦(GenLoop.genLoopGenLoopEquiv x).symm q⟧ :=
   (loopSpaceMulEquiv_symm_apply _).trans (loopSpaceEquiv_symm_mk q)
 
 /-- The loop-space shift in the `π_n` notation: `π_(m + 1)` of the space of `n`-dimensional
 generalized loops is `π_(m + 1 + n)` of the space itself. -/
 noncomputable def piLoopSpaceMulEquiv (m n : ℕ) :
-    π_ (m + 1) (Ω^ (Fin n) X x) _root_.GenLoop.const ≃* π_ (m + 1 + n) X x :=
+    π_ (m + 1) (Ω^ (Fin n) X x) GenLoop.const ≃* π_ (m + 1 + n) X x :=
   loopSpaceMulEquiv.trans (congrMulEquiv finSumFinEquiv)
 
 @[simp]
 theorem piLoopSpaceMulEquiv_apply (m n : ℕ)
-    (a : π_ (m + 1) (Ω^ (Fin n) X x) _root_.GenLoop.const) :
+    (a : π_ (m + 1) (Ω^ (Fin n) X x) GenLoop.const) :
     piLoopSpaceMulEquiv m n a = congrMulEquiv finSumFinEquiv (loopSpaceMulEquiv a) :=
   by rw [piLoopSpaceMulEquiv.eq_1]; rfl
 
 @[simp]
 theorem piLoopSpaceMulEquiv_mk (m n : ℕ)
-    (p : Ω^ (Fin (m + 1)) (Ω^ (Fin n) X x) _root_.GenLoop.const) :
+    (p : Ω^ (Fin (m + 1)) (Ω^ (Fin n) X x) GenLoop.const) :
     piLoopSpaceMulEquiv m n
-        (⟦p⟧ : π_ (m + 1) (Ω^ (Fin n) X x) _root_.GenLoop.const) =
-      ⟦_root_.GenLoop.congr x finSumFinEquiv
-        (_root_.GenLoop.genLoopGenLoopEquiv x p)⟧ :=
+        (⟦p⟧ : π_ (m + 1) (Ω^ (Fin n) X x) GenLoop.const) =
+      ⟦GenLoop.congr x finSumFinEquiv
+        (GenLoop.genLoopGenLoopEquiv x p)⟧ :=
   (piLoopSpaceMulEquiv_apply m n _).trans <|
     (congrArg (fun a : HomotopyGroup (Fin (m + 1) ⊕ Fin n) X x => congrMulEquiv finSumFinEquiv a)
       (loopSpaceMulEquiv_mk p)).trans
-        (congrMulEquiv_mk finSumFinEquiv (_root_.GenLoop.genLoopGenLoopEquiv x p))
+        (congrMulEquiv_mk finSumFinEquiv (GenLoop.genLoopGenLoopEquiv x p))
 
 @[simp]
 theorem piLoopSpaceMulEquiv_symm_apply (m n : ℕ) (b : π_ (m + 1 + n) X x) :
@@ -363,8 +375,8 @@ theorem piLoopSpaceMulEquiv_symm_apply (m n : ℕ) (b : π_ (m + 1 + n) X x) :
 @[simp]
 theorem piLoopSpaceMulEquiv_symm_mk (m n : ℕ) (q : Ω^ (Fin (m + 1 + n)) X x) :
     (piLoopSpaceMulEquiv m n).symm (⟦q⟧ : π_ (m + 1 + n) X x) =
-      ⟦(_root_.GenLoop.genLoopGenLoopEquiv x).symm
-        (_root_.GenLoop.congr x finSumFinEquiv.symm q)⟧ :=
+      ⟦(GenLoop.genLoopGenLoopEquiv x).symm
+        (GenLoop.congr x finSumFinEquiv.symm q)⟧ :=
   (piLoopSpaceMulEquiv_symm_apply m n _).trans <|
     (congrArg (fun a : HomotopyGroup (Fin (m + 1) ⊕ Fin n) X x => loopSpaceMulEquiv.symm a)
       (congrMulEquiv_symm_mk finSumFinEquiv q)).trans
@@ -389,15 +401,15 @@ theorem pathLoopSpaceMulEquiv_apply (m : ℕ) (a : π_ (m + 1) (Ω X x) (Path.re
 theorem pathLoopSpaceMulEquiv_mk (m : ℕ)
     (p : Ω^ (Fin (m + 1)) (Ω X x) (Path.refl x)) :
     pathLoopSpaceMulEquiv m (⟦p⟧ : π_ (m + 1) (Ω X x) (Path.refl x)) =
-      ⟦_root_.GenLoop.congr x finSumFinEquiv
-        (_root_.GenLoop.genLoopGenLoopEquiv x
-          (_root_.GenLoop.map
+      ⟦GenLoop.congr x finSumFinEquiv
+        (GenLoop.genLoopGenLoopEquiv x
+          (GenLoop.map
             ⟨(GenLoop.homeomorphOfUnique (Fin 1)).symm,
               (GenLoop.homeomorphOfUnique (Fin 1)).symm.continuous⟩
             ((GenLoop.homeomorphOfUnique (Fin 1)).symm_apply_eq.mpr
               (GenLoop.homeomorphOfUnique_const (Fin 1)).symm) p))⟧ :=
   (pathLoopSpaceMulEquiv_apply m _).trans <|
-    (congrArg (fun a : HomotopyGroup (Fin (m + 1)) (Ω^ (Fin 1) X x) _root_.GenLoop.const =>
+    (congrArg (fun a : HomotopyGroup (Fin (m + 1)) (Ω^ (Fin 1) X x) GenLoop.const =>
         piLoopSpaceMulEquiv m 1 a)
       ((homeomorphMulEquivOfEq_symm_apply _ _ _).trans (map_mk _ _ p))).trans
         (piLoopSpaceMulEquiv_mk m 1 _)
@@ -412,13 +424,13 @@ theorem pathLoopSpaceMulEquiv_symm_apply (m : ℕ) (b : π_ (m + 2) X x) :
 @[simp]
 theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
     (pathLoopSpaceMulEquiv m).symm (⟦q⟧ : π_ (m + 2) X x) =
-      ⟦_root_.GenLoop.map
+      ⟦GenLoop.map
         ⟨GenLoop.homeomorphOfUnique (Fin 1), (GenLoop.homeomorphOfUnique (Fin 1)).continuous⟩
         (GenLoop.homeomorphOfUnique_const (Fin 1))
-        ((_root_.GenLoop.genLoopGenLoopEquiv x).symm
-          (_root_.GenLoop.congr x finSumFinEquiv.symm q))⟧ :=
+        ((GenLoop.genLoopGenLoopEquiv x).symm
+          (GenLoop.congr x finSumFinEquiv.symm q))⟧ :=
   (pathLoopSpaceMulEquiv_symm_apply m _).trans <|
-    (congrArg (fun a : HomotopyGroup (Fin (m + 1)) (Ω^ (Fin 1) X x) _root_.GenLoop.const =>
+    (congrArg (fun a : HomotopyGroup (Fin (m + 1)) (Ω^ (Fin 1) X x) GenLoop.const =>
         homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
           (GenLoop.homeomorphOfUnique_const (Fin 1)) a)
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
@@ -452,11 +464,13 @@ theorem fundamentalGroupLoopSpaceMulEquiv_apply (a : FundamentalGroup (Ω X x) (
       pathLoopSpaceMulEquiv 0 (pi1MulEquivFundamentalGroup.symm a) :=
   by rw [fundamentalGroupLoopSpaceMulEquiv.eq_1]; rfl
 
+end HomotopyGroup
+
 /-- The square `(s, t) ↦ β s t` of a double loop `β`, a loop at the constant loop in the loop
 space `Ω X x`. It sends the boundary of the square to `x`, and it represents the image of the
 class of `β` under `fundamentalGroupLoopSpaceMulEquiv`
 (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`). -/
-def _root_.GenLoop.fromDoubleLoop (β : Ω (Ω X x) (Path.refl x)) : Ω^ (Fin 2) X x where
+def GenLoop.fromDoubleLoop (β : Ω (Ω X x) (Path.refl x)) : Ω^ (Fin 2) X x where
   val := ⟨fun z => β (z 0) (z 1),
     (Path.continuous_uncurry_iff.2 β.continuous).comp
       (((continuous_apply 0).prodMk (continuous_apply 1) :
@@ -465,14 +479,15 @@ def _root_.GenLoop.fromDoubleLoop (β : Ω (Ω X x) (Path.refl x)) : Ω^ (Fin 2)
     rintro z ⟨i, hi | hi⟩ <;> fin_cases i <;> simp_all
 
 @[simp]
-theorem _root_.GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z : I^(Fin 2)) :
+theorem GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z : I^(Fin 2)) :
     GenLoop.fromDoubleLoop β z = β (z 0) (z 1) :=
   (rfl)
 
 /-- `fundamentalGroupLoopSpaceMulEquiv` sends the class of a double loop to the class of its
 square. -/
 @[simp]
-theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.refl x)) :
+theorem HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk
+    (β : Ω (Ω X x) (Path.refl x)) :
     fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
       ⟦GenLoop.fromDoubleLoop β⟧ := by
   -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
@@ -493,9 +508,9 @@ variable {Y : Type*} [TopologicalSpace Y] {y : Y}
 
 /-- The shift `loopSpaceEquiv` is natural: it commutes with the maps induced on homotopy sets by a
 based map `f` and by any map `F` of cube-loop spaces that postcomposes with `f`. -/
-theorem _root_.ContinuousMap.loopSpaceEquiv_map (f : C(X, Y)) (hf : f x = y)
+theorem ContinuousMap.loopSpaceEquiv_map (f : C(X, Y)) (hf : f x = y)
     (F : C(Ω^ N X x, Ω^ N Y y)) (hFf : ∀ γ t, F γ t = f (γ t))
-    (a : HomotopyGroup M (Ω^ N X x) _root_.GenLoop.const) :
+    (a : HomotopyGroup M (Ω^ N X x) GenLoop.const) :
     loopSpaceEquiv (map F (GenLoop.ext _ _ fun t => (hFf _ t).trans hf) a) =
       map f hf (loopSpaceEquiv a) := by
   induction a using Quotient.inductionOn with
@@ -506,9 +521,9 @@ theorem _root_.ContinuousMap.loopSpaceEquiv_map (f : C(X, Y)) (hf : f x = y)
 
 /-- The `π_n` form of the shift is natural, for any map `F` of cube-loop spaces that postcomposes
 with `f`. -/
-theorem _root_.ContinuousMap.piLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y) (m n : ℕ)
+theorem ContinuousMap.piLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y) (m n : ℕ)
     (F : C(Ω^ (Fin n) X x, Ω^ (Fin n) Y y)) (hFf : ∀ γ t, F γ t = f (γ t))
-    (a : π_ (m + 1) (Ω^ (Fin n) X x) _root_.GenLoop.const) :
+    (a : π_ (m + 1) (Ω^ (Fin n) X x) GenLoop.const) :
     piLoopSpaceMulEquiv m n (map F (GenLoop.ext _ _ fun t => (hFf _ t).trans hf) a) =
       map f hf (piLoopSpaceMulEquiv m n a) := by
   rw [piLoopSpaceMulEquiv_apply, piLoopSpaceMulEquiv_apply, loopSpaceMulEquiv_apply,
@@ -518,7 +533,7 @@ theorem _root_.ContinuousMap.piLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y
 
 /-- The shift `pathLoopSpaceMulEquiv` is natural: it commutes with the maps induced on homotopy
 groups by a based map `f` and by any map `F` of loop spaces that postcomposes loops with `f`. -/
-theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y)
+theorem ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y)
     (F : C(Ω X x, Ω Y y)) (hFf : ∀ γ t, F γ t = f (γ t)) (m : ℕ)
     (a : π_ (m + 1) (Ω X x) (Path.refl x)) :
     pathLoopSpaceMulEquiv m (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
@@ -526,13 +541,13 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
   -- the loop space `Ω X x` is `Ω^ (Fin 1) X x` through `homeomorphOfUnique`, under which `F`
   -- becomes the postcomposition with `f` on cube loops
   let F' : C(Ω^ (Fin 1) X x, Ω^ (Fin 1) Y y) :=
-    ⟨_root_.GenLoop.map f hf, _root_.GenLoop.continuous_map f hf⟩
+    ⟨GenLoop.map f hf, GenLoop.continuous_map f hf⟩
   rw [pathLoopSpaceMulEquiv_apply, pathLoopSpaceMulEquiv_apply]
   have key : (homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
       (GenLoop.homeomorphOfUnique_const (Fin 1))).symm
         (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) a) =
-      map (y := (_root_.GenLoop.const : Ω^ (Fin 1) Y y)) F'
-        (_root_.GenLoop.map_const f hf)
+      map (y := (GenLoop.const : Ω^ (Fin 1) Y y)) F'
+        (GenLoop.map_const f hf)
         ((homeomorphMulEquivOfEq (N := Fin (m + 1)) (GenLoop.homeomorphOfUnique (Fin 1))
           (GenLoop.homeomorphOfUnique_const (Fin 1))).symm a) := by
     induction a using Quotient.inductionOn with
@@ -540,11 +555,11 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
       refine congrArg (Quotient.mk _) (GenLoop.ext _ _ fun t => GenLoop.ext _ _ fun s => ?_)
       simp [F', hFf]
   rw [key]
-  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun p t => _root_.GenLoop.map_apply f hf p t) _
+  exact f.piLoopSpaceMulEquiv_map hf m 1 F' (fun p t => GenLoop.map_apply f hf p t) _
 
 end Natural
 
-end HomotopyGroup
+end
 
 namespace TauCeti
 
