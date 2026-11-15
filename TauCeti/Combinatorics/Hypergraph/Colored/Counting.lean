@@ -47,6 +47,7 @@ variable {κ : Type*}
 /-- The pattern with `k` labeled vertices and constant triple color `c`. -/
 def const (k : ℕ) (c : κ) : FiniteColored3Pattern κ := ⟨k, Colored3Graph.const c⟩
 
+/-- Unfolds `const`: the constant pattern consists of `k` vertices with every triple colored `c`. -/
 theorem const_def (k : ℕ) (c : κ) : const k c = ⟨k, Colored3Graph.const c⟩ := (rfl)
 
 @[simp]
