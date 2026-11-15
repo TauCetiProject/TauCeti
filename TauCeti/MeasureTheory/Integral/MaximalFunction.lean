@@ -621,6 +621,23 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
 
+/-- **The maximal inequality for `(M(‖h‖^q))^{1/q}`.** For `0 < q < p`, the strong type
+`(p / q, p / q)` bound applied to `‖h‖^q` gives
+
+`∫⁻ ((M(‖h‖^q))^{1/q})^p ∂μ ≤ maximalFunctionConst n (p / q) * ∫⁻ ‖h‖ₑ ^ p ∂μ`.
+
+Here `(M(‖h‖^q))^{1/q}` is the supremum of the `Lᵠ` averages of `h` over the balls centred at a
+point, and the estimate says that it is bounded on `Lᵖ` for `q < p`. -/
+theorem lintegral_maximalFunction_rpow_inv_rpow_le (μ : Measure E) [μ.IsAddHaarMeasure]
+    {h : E → F} (hh : AEMeasurable (fun x => ‖h x‖ₑ) μ) {q p : ℝ} (hq : 0 < q) (hqp : q < p) :
+    ∫⁻ x, (maximalFunction μ (fun y => ‖h y‖ₑ ^ q) x ^ q⁻¹) ^ p ∂μ ≤
+      maximalFunctionConst (finrank ℝ E) (p / q) * ∫⁻ x, ‖h x‖ₑ ^ p ∂μ := by
+  have hm : AEMeasurable (fun x => ‖‖h x‖ₑ ^ q‖ₑ) μ := by
+    simpa only [eNorm_eq_self] using hh.pow_const q
+  have := lintegral_rpow_maximalFunction_le μ hm ((one_lt_div hq).2 hqp)
+  simp_rw [eNorm_eq_self, ← ENNReal.rpow_mul, mul_div_cancel₀ _ hq.ne'] at this
+  simpa only [← ENNReal.rpow_mul, inv_mul_eq_div] using this
+
 /- The integration step below follows the corresponding helper of
 https://github.com/TauCetiProject/TauCeti/pull/33788. -/
 /-- Integrating a pointwise bound of `g²` by three maximal functions, the integration step of

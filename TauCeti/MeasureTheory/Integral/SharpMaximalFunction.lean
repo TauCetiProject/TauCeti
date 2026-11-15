@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Semicontinuity.Defs
+public import TauCeti.MeasureTheory.Integral.MaximalFunction
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
@@ -684,6 +685,73 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
   simpa only [eNorm_eq_self] using
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf.aestronglyMeasurable hp₀r
       (ENNReal.toReal_mono hp_top hp₀p) hpr hfp₀
+
+/-- **Integrating a sharp function estimate.** Let `1 < p < ∞` and `0 < q < p`, and let `f` on
+`ℝⁿ = ι → ℝ`, `n ≥ 1`, be a.e. strongly measurable with `∫ ‖f‖ ^ p₀ < ∞` for some `1 ≤ p₀ ≤ p`.
+If the sharp maximal function of `f` is controlled by the `Lᵠ` maximal function of `g`,
+
+`f^# x ≤ c (M(‖g‖^q) x)^{1/q}` at every point `x`,
+
+then `∫ ‖f‖^p ≤ C₀ c^p C₁ ∫ ‖g‖^p`, with `C₀ = 2^(p + 1) 2^((p + 2n + 2) p)` the constant of the
+Fefferman–Stein inequality `TauCeti.lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow`
+and `C₁ = maximalFunctionConst n (p / q)` that of the maximal inequality in `L^{p/q}`. This is how
+pointwise sharp function estimates for singular integrals and their commutators become `Lᵖ`
+bounds. -/
+theorem lintegral_enorm_rpow_le_of_sharpMaximalFunction_le [Nonempty ι] {G : Type*} [ENorm G]
+    {f : (ι → ℝ) → F} (hf : AEStronglyMeasurable f) {g : (ι → ℝ) → G}
+    (hg : AEMeasurable (fun x => ‖g x‖ₑ)) {p₀ p q : ℝ} (hp₀ : 1 ≤ p₀) (hp₀p : p₀ ≤ p)
+    (hp : 1 < p) (hq : 0 < q) (hqp : q < p) (hfp₀ : ∫⁻ x, ‖f x‖ₑ ^ p₀ ≠ ∞) {c : ℝ≥0∞}
+    (h : ∀ x, sharpMaximalFunction volume f x ≤
+      c * maximalFunction volume (fun y => ‖g y‖ₑ ^ q) x ^ q⁻¹) :
+    ∫⁻ x, ‖f x‖ₑ ^ p ≤
+      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) * c ^ p *
+        maximalFunctionConst (Fintype.card ι) (p / q) * ∫⁻ x, ‖g x‖ₑ ^ p := by
+  have hp0 : 0 ≤ p := zero_le_one.trans hp.le
+  have hM := lintegral_maximalFunction_rpow_inv_rpow_le volume hg hq hqp
+  rw [finrank_fintype_fun_eq_card] at hM
+  calc ∫⁻ x, ‖f x‖ₑ ^ p
+      ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) *
+          ∫⁻ x, sharpMaximalFunction volume f x ^ p :=
+        lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf hp₀ hp₀p hp hfp₀
+    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) *
+          ∫⁻ x, c ^ p * (maximalFunction volume (fun y => ‖g y‖ₑ ^ q) x ^ q⁻¹) ^ p := by
+        gcongr with x
+        rw [← ENNReal.mul_rpow_of_nonneg _ _ hp0]
+        gcongr
+        exact h x
+    _ ≤ _ := by
+        rw [lintegral_const_mul _ (((measurable_maximalFunction volume _).pow_const _).pow_const _),
+          mul_assoc _ (c ^ p), mul_assoc _ _ (∫⁻ x, ‖g x‖ₑ ^ p), mul_assoc]
+        gcongr
+
+/-- **Integrating a sharp function estimate**, in terms of `Lᵖ` seminorms. Let `1 < p < ∞` and
+`0 < q < p`, and let `f ∈ Lᵖ` on `ℝⁿ = ι → ℝ`, `n ≥ 1`. If
+`f^# x ≤ c (M(‖g‖^q) x)^{1/q}` at every point `x`, then `‖f‖_p ≤ (C₀ C₁)^{1/p} c ‖g‖_p`, with the
+constants `C₀` and `C₁` of `TauCeti.lintegral_enorm_rpow_le_of_sharpMaximalFunction_le`. -/
+theorem eLpNorm_le_mul_eLpNorm_of_sharpMaximalFunction_le [Nonempty ι] {G : Type*}
+    [NormedAddCommGroup G] {f : (ι → ℝ) → F} {g : (ι → ℝ) → G} {p q : ℝ} (hp : 1 < p)
+    (hq : 0 < q) (hqp : q < p) (hf : MemLp f (ENNReal.ofReal p)) (hg : AEStronglyMeasurable g)
+    {c : ℝ≥0∞} (h : ∀ x, sharpMaximalFunction volume f x ≤
+      c * maximalFunction volume (fun y => ‖g y‖ₑ ^ q) x ^ q⁻¹) :
+    eLpNorm f (ENNReal.ofReal p) ≤
+      (ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) *
+        maximalFunctionConst (Fintype.card ι) (p / q)) ^ p⁻¹ * c *
+        eLpNorm g (ENNReal.ofReal p) := by
+  have hp0 : 0 < p := zero_lt_one.trans hp
+  have hp0' : ENNReal.ofReal p ≠ 0 := by simpa using hp0
+  have hfp : ∫⁻ x, ‖f x‖ₑ ^ p ≠ ∞ := by
+    simpa [ENNReal.toReal_ofReal hp0.le] using
+      (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0' ENNReal.ofReal_ne_top hf).ne
+  have key := lintegral_enorm_rpow_le_of_sharpMaximalFunction_le hf.aestronglyMeasurable
+    hg.eNorm hp.le le_rfl hp hq hqp hfp h
+  rw [mul_right_comm _ (c ^ p)] at key
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0' ENNReal.ofReal_ne_top hf.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0' ENNReal.ofReal_ne_top hg,
+    ENNReal.toReal_ofReal hp0.le]
+  refine (ENNReal.rpow_le_rpow key (by positivity)).trans_eq ?_
+  rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
+    ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
+    mul_one_div_cancel hp0.ne', ENNReal.rpow_one, one_div]
 
 end FeffermanStein
 
