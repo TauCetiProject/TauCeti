@@ -49,7 +49,7 @@ coprime products. -/
 structure IsAdditive {A : Type*} [Zero A] [Add A] (f : ArithmeticFunction A) : Prop
     extends IsAdditiveOnCoprime f where
   /-- The value at one vanishes. -/
-  map_one : f 1 = 0
+  @[simp] map_one : f 1 = 0
 
 /-- Left cancellation forces the value at one to vanish, so the coprime-product law is normalized.
 No associativity or commutativity of addition is needed. -/
@@ -68,15 +68,10 @@ theorem IsAdditive.isMultiplicative_of_eq_monoidHom {A R : Type*} [AddZeroClass 
     (φ : Multiplicative A →* R) {g : ArithmeticFunction R}
     (hg : ∀ n : ℕ, n ≠ 0 → g n = φ (Multiplicative.ofAdd (f n))) :
     g.IsMultiplicative := by
-  refine ⟨?_, ?_⟩
+  refine IsMultiplicative.iff_ne_zero.2 ⟨?_, ?_⟩
   · simpa [hf.map_one] using hg 1 one_ne_zero
-  intro m n hmn
-  by_cases hm : m = 0
-  · simp [hm]
-  by_cases hn : n = 0
-  · simp [hn]
-  rw [hg (m * n) (mul_ne_zero hm hn), hf.map_mul hm hn hmn]
-  exact (map_mul φ (Multiplicative.ofAdd (f m)) (Multiplicative.ofAdd (f n))).trans
-    (congrArg₂ (fun a b : R ↦ a * b) (hg m hm).symm (hg n hn).symm)
+  intro m n hm hn hmn
+  rw [hg (m * n) (mul_ne_zero hm hn), hf.map_mul hm hn hmn,
+    Multiplicative.ofAdd_add, map_mul, hg m hm, hg n hn]
 
 end ArithmeticFunction
