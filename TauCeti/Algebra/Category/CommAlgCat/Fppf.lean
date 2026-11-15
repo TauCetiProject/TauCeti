@@ -15,6 +15,7 @@ import Mathlib.CategoryTheory.Sites.SheafOfTypes
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
 import Mathlib.RingTheory.FiniteStability
+import TauCeti.AlgebraicGeometry.Sites.Fpqc
 
 /-!
 # The affine fppf site
@@ -43,8 +44,6 @@ points is fppf locally surjective is surjective, because fppf covers are jointly
   points is a morphism of schemes over `Spec R`.
 * `TauCeti.CommAlgCat.surjective_of_isLocallySurjective_pointsSheafFunctor_map`: a morphism
   inducing a locally surjective map of fppf sheaves of points is surjective.
-* `AlgebraicGeometry.Scheme.exists_mem_range_of_mem_fppfTopology`: fppf covering sieves of a
-  scheme are jointly surjective.
 * `TauCeti.CommAlgCat.generate_singleton_op_mem_fppfTopology`: a faithfully flat, finitely
   presented algebra map is an affine fppf cover.
 * `AlgHom.exists_faithfullyFlat_lift`: points lift along a faithfully flat, finitely presented
@@ -55,24 +54,6 @@ public section
 
 open CategoryTheory AlgebraicGeometry Opposite
 open scoped TensorProduct
-
-namespace AlgebraicGeometry.Scheme
-
-universe u
-
-/-- **Fppf covers are jointly surjective.** Every point of a scheme lies in the image of some
-member of any fppf covering sieve. -/
-theorem exists_mem_range_of_mem_fppfTopology {T : Scheme.{u}} {S : Sieve T}
-    (hS : S ∈ fppfTopology T) (t : T) :
-    ∃ (Y : Scheme.{u}) (g : Y ⟶ T), S g ∧ t ∈ Set.range g := by
-  have : fppfPrecoverage.HasIsos := ⟨fun f _ ↦ f.singleton_mem_fppfPrecoverage⟩
-  rw [Precoverage.mem_toGrothendieck_iff_of_isStableUnderComposition] at hS
-  obtain ⟨R, ⟨hsurj, -⟩, hRS⟩ := hS
-  obtain ⟨_, _, hg, ht⟩ := hsurj t
-  cases hg with
-  | @of Y g hg => exact ⟨Y, g, hRS Y g hg, ht⟩
-
-end AlgebraicGeometry.Scheme
 
 namespace TauCeti
 
@@ -249,8 +230,7 @@ instance : (pointsSheafFunctor R).Faithful := (fullyFaithfulPointsSheafFunctor R
 variable {R} in
 /-- **Locally surjective maps of points come from surjective morphisms.** If a morphism of
 schemes over `Spec R` induces an fppf locally surjective map of sheaves of points, then it is
-surjective. A point `y` of the target is the image of the closed point of its residue field, and
-that `R`-valued point lifts after an fppf extension of the residue field. -/
+surjective. -/
 theorem surjective_of_isLocallySurjective_pointsSheafFunctor_map
     {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
     [Sheaf.IsLocallySurjective ((pointsSheafFunctor R).map f)] : Surjective f.left := by
@@ -259,7 +239,9 @@ theorem surjective_of_isLocallySurjective_pointsSheafFunctor_map
   let _ : (AlgebraicGeometry.algSpec (CommRingCat.of R)).Faithful :=
     (AlgebraicGeometry.algSpec.fullyFaithful (R := CommRingCat.of R)).faithful
   refine ⟨fun y ↦ ?_⟩
-  -- The residue field of `y`, as an `R`-algebra through the structure morphism of `Y`.
+  -- The point `y` is the image of the closed point of its residue field `κ(y)`, so it suffices
+  -- to lift the `κ(y)`-valued point of `Y` given by `Spec κ(y) ⟶ Y` to `X` after an fppf
+  -- extension of `κ(y)`. First make `κ(y)` an `R`-algebra through the structure morphism of `Y`.
   let p := Y.left.fromSpecResidueField y
   let φ : CommRingCat.of R ⟶ Y.left.residueField y := Spec.preimage (p ≫ Y.hom)
   let _ : Algebra R (Y.left.residueField y) := φ.hom.toAlgebra
