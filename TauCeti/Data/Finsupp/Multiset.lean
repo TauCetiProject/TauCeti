@@ -29,6 +29,7 @@ which it takes each value.
   these letter counts sum to the number of indices and are nonzero exactly at the values of `f`.
 * `Finsupp.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
   exponent vectors of total degree `n`.
+* `Multiset.toFinsupp_replicate`: `toFinsupp (replicate k i) = single i k`.
 
 The same unit steps summed along a list, with coefficients in any additive commutative monoid
 with one, count the occurrences of each letter; in characteristic zero these counts determine a
@@ -100,6 +101,18 @@ theorem exists_sum_single_eq_iff {α : Type*} {n : ℕ} (l : α →₀ ℕ) :
       ← List.ofFn_congr hL (toMultiset l).toList.get, List.ofFn_get, Multiset.coe_toList]
 
 end Finsupp
+
+namespace Multiset
+
+/-- The finitely supported function of `k` copies of `i` is `single i k`. -/
+@[simp]
+theorem toFinsupp_replicate {α : Type*} (k : ℕ) (i : α) :
+    toFinsupp (replicate k i) = Finsupp.single i k := by
+  classical
+  ext a
+  rw [toFinsupp_apply, count_replicate, Finsupp.single_apply]
+
+end Multiset
 
 namespace List
 
