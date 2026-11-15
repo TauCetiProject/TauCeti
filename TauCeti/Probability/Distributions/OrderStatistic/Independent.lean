@@ -14,9 +14,10 @@ import TauCeti.Probability.Independence.Lattice
 # Order statistics of independent, non-identically distributed variables
 
 For any linear order, pushing a tuple measure forward along `orderStatistic 0` or
-`orderStatistic (Fin.last n)` coincides with pushing it forward along the coordinatewise minimum or
-maximum, and for independent coordinates in a measurable semilattice the extreme order statistics
-have those product-pushforward laws.
+`orderStatistic (Fin.last n)` coincides with pushing it forward along the coordinatewise minimum
+or maximum; for independent coordinates in a linear order with measurable binary infimum
+(`MeasurableInf₂ α`) or supremum (`MeasurableSup₂ α`), the extreme order statistics have the
+corresponding product-pushforward laws.
 
 For independent real coordinates with distribution functions `Fᵢ`, the number of coordinates
 at most `t` has Poisson-binomial success probabilities `Fᵢ(t)`. The order statistic at position
@@ -28,10 +29,12 @@ These formulas retain repeated values and atoms, and allow probabilities zero an
 
 ## Main results
 
-* `TauCeti.Probability.map_orderStatistic_zero`, `TauCeti.Probability.map_orderStatistic_last`,
-  `TauCeti.Probability.hasLaw_orderStatistic_zero_indep`,
-  `TauCeti.Probability.hasLaw_orderStatistic_last_indep` — pushforward and `HasLaw` bridges between
+* `TauCeti.Probability.map_orderStatistic_zero`,
+  `TauCeti.Probability.map_orderStatistic_last` — pushforward bridges between
   `orderStatistic 0` / `orderStatistic (Fin.last n)` and finite sample minima / maxima;
+* `TauCeti.Probability.hasLaw_orderStatistic_zero_indep`,
+  `TauCeti.Probability.hasLaw_orderStatistic_last_indep` — product-pushforward laws for extreme
+  order statistics of independent coordinates;
 * `TauCeti.Probability.cdf_map_orderStatistic_pi_eq_poissonBinomial`,
   `TauCeti.Probability.cdf_map_orderStatistic_pi_eq_sum`,
   `TauCeti.Probability.measureReal_setOf_orderStatistic_le_indep` — Poisson-binomial tail and sum
