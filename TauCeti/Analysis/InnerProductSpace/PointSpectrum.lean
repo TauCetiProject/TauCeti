@@ -405,18 +405,14 @@ section RealSMul
 
 variable [Module ℝ E] [IsScalarTower ℝ 𝕜 E]
 
-private theorem real_smul_id_eq_ofReal_smul_id (c : ℝ) :
-    c • (LinearMap.id : Module.End 𝕜 E) = (c : 𝕜) • LinearMap.id := by
-  ext x
-  exact RCLike.real_smul_eq_coe_smul (K := 𝕜) c x
-
 /-- Shifting an endomorphism by a real scalar `c`, acting through the real scalar action, shifts
 its point-spectral subspaces: the point-spectral subspace of `A - c • id` selected by `Ω` is that
 of `A` selected by `Ω + c`. -/
 @[simp]
 theorem pointSpectralSubspace_sub_smul_id (c : ℝ) :
     (A - c • LinearMap.id).pointSpectralSubspace Ω = A.pointSpectralSubspace ((· - c) ⁻¹' Ω) := by
-  rw [real_smul_id_eq_ofReal_smul_id, pointSpectralSubspace_sub_ofReal_smul_id]
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) _ LinearMap.id,
+    pointSpectralSubspace_sub_ofReal_smul_id]
 
 /-- Shifting an endomorphism by a real scalar `c`, acting through the real scalar action, shifts
 its point-spectral subspaces: the point-spectral subspace of `A + c • id` selected by `Ω` is that
@@ -424,7 +420,8 @@ of `A` selected by `Ω - c`. -/
 @[simp]
 theorem pointSpectralSubspace_add_smul_id (c : ℝ) :
     (A + c • LinearMap.id).pointSpectralSubspace Ω = A.pointSpectralSubspace ((· + c) ⁻¹' Ω) := by
-  rw [real_smul_id_eq_ofReal_smul_id, pointSpectralSubspace_add_ofReal_smul_id]
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) _ LinearMap.id,
+    pointSpectralSubspace_add_ofReal_smul_id]
 
 /-- A real scalar operator `ρ • id`, acting through the real scalar action, has the single
 eigenvalue `ρ`: its point-spectral subspace selected by `Ω` is everything if `ρ ∈ Ω` and zero
@@ -432,7 +429,8 @@ otherwise. -/
 @[simp]
 theorem pointSpectralSubspace_smul_id (ρ : ℝ) [Decidable (ρ ∈ Ω)] :
     (ρ • LinearMap.id : Module.End 𝕜 E).pointSpectralSubspace Ω = if ρ ∈ Ω then ⊤ else ⊥ := by
-  rw [real_smul_id_eq_ofReal_smul_id, pointSpectralSubspace_ofReal_smul_id]
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) _ LinearMap.id,
+    pointSpectralSubspace_ofReal_smul_id]
 
 end RealSMul
 

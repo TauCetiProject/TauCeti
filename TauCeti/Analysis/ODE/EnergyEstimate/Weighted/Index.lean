@@ -90,12 +90,6 @@ namespace TauCeti.WeakDerivStep
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E} {Aminus Aplus : E →L[ℝ] E}
 
-omit [FiniteDimensional ℝ E] in
-/-- Shifting a symmetric operator by a real scalar keeps it symmetric. -/
-private theorem isSymmetric_sub_smul_id {B : E →L[ℝ] E} (hB : (B : E →ₗ[ℝ] E).IsSymmetric)
-    (δ : ℝ) : ((B - δ • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
-  simpa using hB.sub (LinearMap.IsSymmetric.id.smul (conj_trivial δ))
-
 /-- **The trajectory operator on exponentially weighted spaces is Fredholm exactly when the weight
 slopes are not eigenvalues of the limits.** Let `A` be a continuous family of operators on a
 finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c` be a
@@ -121,7 +115,7 @@ theorem isFredholm_trajectoryOperator_sub_smul_id_iff
     rw [Module.End.hasEigenvalue_iff, not_not, Module.End.eigenspace_def, LinearMap.ker_eq_bot]
     rfl
   rw [isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
-      (isSymmetric_sub_smul_id hsymminus δminus) (isSymmetric_sub_smul_id hsymplus δplus)
+      (hsymminus.sub_smul_id (conj_trivial δminus)) (hsymplus.sub_smul_id (conj_trivial δplus))
       (hbot.sub (hcbot.smul tendsto_const_nhds)) (htop.sub (hctop.smul tendsto_const_nhds)) AL hAL,
     hinj, hinj]
 
@@ -168,8 +162,8 @@ theorem index_trajectoryOperator_sub_smul_id
   obtain ⟨αminus, hαminus, hminus⟩ := hbelow Aminus δminus hδminus
   obtain ⟨αplus, hαplus, hplus⟩ := hbelow Aplus δplus hδplus
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-      (hA.sub (hc.smul continuous_const)) (isSymmetric_sub_smul_id hsymminus δminus)
-      (isSymmetric_sub_smul_id hsymplus δplus)
+      (hA.sub (hc.smul continuous_const)) (hsymminus.sub_smul_id (conj_trivial δminus))
+      (hsymplus.sub_smul_id (conj_trivial δplus))
       (lt_min hαminus hαplus)
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hminus v))
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hplus v))
