@@ -67,7 +67,7 @@ theorem exists_connected_etale_sequence (G : Type v) [CommGroup G] [Finite G] :
     let : Fact p.Prime := ⟨hprime⟩
     let P : Sylow p G := default
     obtain ⟨S, hS⟩ := Subgroup.exists_right_complement'_of_coprime P.card_coprime_index
-    refine ⟨S, P.isPGroup'.of_equiv hS.QuotientMulEquiv.symm, ?_⟩
+    refine ⟨S, P.isPGroup.of_equiv hS.QuotientMulEquiv.symm, ?_⟩
     apply isUnit_iff_ne_zero.mpr
     intro hzero
     apply P.not_dvd_index
