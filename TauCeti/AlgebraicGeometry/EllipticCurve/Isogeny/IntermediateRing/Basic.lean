@@ -78,12 +78,10 @@ Silverman, *The Arithmetic of Elliptic Curves*, II.2.
 
 ## Provenance
 
-⚠ *mathlib-track*. D. Angdinata's shared isogeny development carries the `IntermediateRing`, and
-builds `pushClass` from it by ideal extension and relative norm (`ClassGroup.extendedRelNormHom`)
-on the way to `toPointHom`; the two embeddings added here are what that relative-norm step
-requires of the intermediate ring, since ideal extension along a non-injective map loses the
-information the class-group route needs. The siblings `Finite.lean`, `Dedekind.lean`,
-`IntegrallyClosed.lean`, and `Rank.lean` carry the same flag for the same object.
+D. Angdinata's isogeny development carries the `IntermediateRing`, and builds `pushClass` from it
+by ideal extension and relative norm (`ClassGroup.extendedRelNormHom`) on the way to `toPointHom`;
+the two embeddings added here are what that relative-norm step requires of the intermediate ring,
+since ideal extension along a non-injective map loses the information the class-group route needs.
 
 The choice of object is taken from the AINTLIB project (`github.com/CBirkbeck/AINTLIB`, at
 revision `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache 2.0 per the source file's header, by

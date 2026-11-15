@@ -137,7 +137,7 @@ example (a : 𝔸.vertexGroup v₀) (ha : a ≠ 1) (b : 𝔸.AlternatingPath v�
     fin_cases i
     · exact AlternatingPath.single.inj hi ▸ Subgroup.subset_closure rfl
     · exact AlternatingPath.single.inj hi ▸ pow_mem (Subgroup.subset_closure rfl) 2
-    · exact absurd (AlternatingPath.length_eq_zero_iff.2 ⟨g, hi⟩) hb
+    · exact absurd ((congrArg AlternatingPath.length hi).trans (AlternatingPath.length_single g)) hb
   have h₁ : Group.rank (wedgeGroup ![.single a, .single (a ^ 2), b]) ≤ 1 :=
     (Subgroup.rank_congr hK).trans_le (Subgroup.rank_closure_finset_le_card {a})
   have : Nontrivial (wedgeGroup ![.single a, .single (a ^ 2), b]) :=
