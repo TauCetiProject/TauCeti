@@ -84,7 +84,7 @@ theorem localMass_comp_smulLeftCLM_le (T : 𝓕) (hf : ContDiff ℝ n f)
     localMass (T ∘ smulLeftCLM hf) U ≤ c * localMass T U :=
   localMass_comp_le_of_enorm_apply_le T
     (fun ψ => (tsupport_smulLeftCLM_subset hf ψ).trans inter_subset_right)
-    (fun ψ x => by simp [enorm_smul]) hfc
+    (fun ψ x => by simp [eNorm_smul]) hfc
 
 /-- **Mass of a smooth multiple.** If `|f| ≤ c` on `Ω`, then `M(fT) ≤ c M(T)`. -/
 theorem mass_comp_smulLeftCLM_le (T : 𝓕) (hf : ContDiff ℝ n f) (hfc : ∀ x ∈ Ω, ‖f x‖ₑ ≤ c) :

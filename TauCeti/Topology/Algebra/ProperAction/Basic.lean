@@ -33,11 +33,11 @@ proper.** This is not an instance, since `ProperVAdd` itself provides `Continuou
 theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] [CompactSpace G]
     [MulAction G X] [TopologicalSpace X] [T2Space X] [ContinuousSMul G X] : ProperSMul G X :=
   properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 _ _ hxx ↦ by
-    obtain ⟨g, -, hg⟩ := isCompact_univ.ultrafilter_le_nhds (𝒰.map Prod.fst) (by simp)
-    -- `Tendsto Prod.fst 𝒰 (𝓝 g)` is by definition `map Prod.fst 𝒰 ≤ 𝓝 g`.
-    rw [Ultrafilter.coe_map] at hg
-    change Filter.Tendsto (Prod.fst : G × X → G) 𝒰 (nhds g) at hg
-    exact ⟨g, tendsto_nhds_unique (hg.smul ((continuous_snd.tendsto _).comp hxx))
+    -- In the compact space `G` the ultrafilter `𝒰.map Prod.fst` converges to its limit.
+    have hg : Filter.Tendsto Prod.fst (𝒰 : Filter (G × X)) (nhds (𝒰.map Prod.fst).lim) := by
+      rw [Filter.Tendsto, ← Ultrafilter.coe_map]
+      exact (𝒰.map Prod.fst).le_nhds_lim
+    exact ⟨_, tendsto_nhds_unique (hg.smul ((continuous_snd.tendsto _).comp hxx))
       ((continuous_fst.tendsto _).comp hxx), hg⟩⟩
 
 end TauCeti

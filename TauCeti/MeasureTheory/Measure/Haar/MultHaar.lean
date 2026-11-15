@@ -259,16 +259,16 @@ theorem ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar {b c μ : ℝ} {q : �
     refine (ENNReal.ofReal_pos.2 hL).ne' ?_
     rw [← multHaar_Ico_mul_rpow hb.le hc (μ * j) μ]
     refine measure_mono_null (fun r hr ↦ ?_) hnull
-    simp only [enorm_eq_self, not_lt]
+    simp only [eNorm_eq_self, not_lt]
     exact h j r hr
   · -- finite `q`: integrate `g j ^ q ≤ ‖f‖ ^ q` over the intervals
     have hr : 0 < q.toReal := ENNReal.toReal_pos hq hq_top
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq hq_top .of_discrete, lintegral_count,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hq hq_top hf, one_div,
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq hq_top .of_discrete, lintegral_count,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hq hq_top hf, one_div,
       ← ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr.le)]
     refine ENNReal.rpow_le_rpow (ofReal_mul_tsum_le_lintegral_multHaar hb.le hc fun j r hr' ↦ ?_)
       (inv_nonneg.2 hr.le)
-    simp only [enorm_eq_self]
+    simp only [eNorm_eq_self]
     exact ENNReal.rpow_le_rpow (h j r hr') hr.le
 
 end GeometricIntervals

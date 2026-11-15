@@ -68,7 +68,7 @@ theorem finsum_fin_three {A : Type*} [AddCommMonoid A]
     have ha := TauCeti.card_alternatingGroup_fin_three
     refine ⟨?_, ?_, ?_⟩ <;> intro h <;>
       have _ := congrArg (fun H : Subgroup (Equiv.Perm (Fin 3)) ↦ Nat.card H) h <;>
-      simp_all only [Subgroup.card_bot, Subgroup.card_top] <;> omega
+      simp_all only [card_bot, card_top] <;> omega
   have hstab : Function.Injective
       (fun a : Fin 3 ↦ MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
     intro a b hab
@@ -84,7 +84,7 @@ theorem finsum_fin_three {A : Type*} [AddCommMonoid A]
     have ha := TauCeti.card_alternatingGroup_fin_three
     constructor <;> intro h <;>
       have _ := congrArg (fun H : Subgroup (Equiv.Perm (Fin 3)) ↦ Nat.card H) h <;>
-      simp_all only [Subgroup.card_bot, Subgroup.card_top] <;> omega
+      simp_all only [card_bot, card_top] <;> omega
   have huniv : (Finset.univ : Finset (Subgroup (Equiv.Perm (Fin 3)))) =
       {⊥, MulAction.stabilizer (Equiv.Perm (Fin 3)) (0 : Fin 3),
         MulAction.stabilizer (Equiv.Perm (Fin 3)) (1 : Fin 3),

@@ -73,7 +73,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
   [CompactSpace G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **A finite-dimensional continuous representation of a compact group is conjugate to a unitary
 one.** There is a continuous linear automorphism `e` of the carrier for which the transported

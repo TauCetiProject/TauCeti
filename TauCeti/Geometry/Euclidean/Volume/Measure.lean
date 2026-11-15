@@ -17,11 +17,17 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
 Mathlib's Euclidean Hausdorff measure `μHE[d]` is the raw Hausdorff measure `μH[d]` rescaled by
 the constant that makes it agree with Lebesgue measure on `d`-dimensional Euclidean space. This
 constant is positive and finite, so the two normalizations have the same null sets and the same
-sets of finite measure; statements of either kind may be proved with either normalization.
-In dimension zero, Hausdorff measure is counting measure
-(`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the normalizing constant is `1`,
-because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence `μHE[1] = μH[1]` on every
-extended metric space, so length statements may be proved with either normalization.
+sets of finite measure, and lower Lebesgue integrals pull out this finite scalar factor
+(`TauCeti.lintegral_euclideanHausdorffMeasure`); statements of either kind may be proved with
+either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite-dimensional real
+inner product space `E` and Hausdorff measure decreases with the dimension parameter, every
+Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ E`
+(`TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero`,
+`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`). In dimension zero, Hausdorff
+measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
+normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
+`μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
+normalization.
 
 In every dimension `k` the normalizing constant is `ω_k / 2 ^ k`, where `ω_k` is the volume of the
 unit ball of `EuclideanSpace ℝ (Fin k)`: `μHE[k] = (ω_k / 2 ^ k) • μH[k]` on every extended metric
@@ -104,6 +110,41 @@ theorem euclideanHausdorffMeasure_one {X : Type*} [EMetricSpace X] [MeasurableSp
   rw [euclideanHausdorffMeasure_def, hc, one_smul, Nat.cast_one]
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open Measure in
+/-- Integrating `μHE[k] (g y)` pulls out the finite Euclidean normalization factor
+`addHaarScalarFactor volume μH[k]` in front of `∫⁻ y, μH[k] (g y)`. -/
+theorem lintegral_euclideanHausdorffMeasure {α X : Type*} [MeasurableSpace α] {μ : Measure α}
+    [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] (k : ℕ) (g : α → Set X) :
+    ∫⁻ y, μHE[k] (g y) ∂μ =
+      (addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin k))) μH[(k : ℝ)] : ℝ≥0∞) *
+        ∫⁻ y, μH[(k : ℝ)] (g y) ∂μ := by
+  rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+  refine lintegral_congr fun y ↦ ?_
+  rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
+
+/-- A Lebesgue-null subset of a finite-dimensional real inner product space `E` is `μH[d]`-null in
+every dimension `d ≥ finrank ℝ E`. -/
+theorem hausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {s : Set E} (hs : volume s = 0) {d : ℝ} (hd : (finrank ℝ E : ℝ) ≤ d) :
+    μH[d] s = 0 := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    Measure.euclideanHausdorffMeasure_eq_zero_iff] at hs
+  exact nonpos_iff_eq_zero.1 ((Measure.hausdorffMeasure_mono hd s).trans hs.le)
+
+/-- A Lebesgue-null subset of a finite-dimensional real inner product space `E` is `μHE[d]`-null in
+every dimension `d ≥ finrank ℝ E`. -/
+theorem euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {s : Set E} (hs : volume s = 0) {d : ℕ} (hd : finrank ℝ E ≤ d) :
+    μHE[d] s = 0 :=
+  Measure.euclideanHausdorffMeasure_eq_zero_iff.2
+    (hausdorffMeasure_eq_zero_of_volume_eq_zero hs (Nat.cast_le.2 hd))
+
+end TauCeti
 
 section Normalization
 

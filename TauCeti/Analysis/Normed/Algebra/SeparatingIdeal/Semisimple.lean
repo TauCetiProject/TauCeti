@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Idempotent
 public import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Radical
 public import TauCeti.RingTheory.Jacobson.NonUnital
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Analysis.Normed.Algebra.Jacobson
 import TauCeti.RingTheory.Idempotents.Algebraic
 
@@ -79,19 +80,13 @@ theorem continuous_of_surjective_of_nonUnitalJacobson_eq_bot {B : Type*}
   let eA := WithLp.unitizationAlgEquiv (𝕜 := ℂ) (A := A) ℂ
   let eB := WithLp.unitizationAlgEquiv (𝕜 := ℂ) (A := B) ℂ
   let Θ : WithLp 1 (Unitization ℂ A) →ₐ[ℂ] WithLp 1 (Unitization ℂ B) :=
-    (eB.symm : Unitization ℂ B →ₐ[ℂ] _).comp
-      ((Unitization.lift ((Unitization.inrNonUnitalAlgHom ℂ B).comp θ)).comp eA)
+    (eB.symm : Unitization ℂ B →ₐ[ℂ] _).comp ((Unitization.map θ).comp eA)
   have hΘ (a : A) :
       Θ (WithLp.toLp 1 (a : Unitization ℂ A)) = WithLp.toLp 1 (θ a : Unitization ℂ B) := by
     simp [Θ, eA, eB]
   have hΘs : Function.Surjective Θ := by
-    intro y
-    obtain ⟨a, ha⟩ := hθ (WithLp.ofLp y).snd
-    refine ⟨algebraMap ℂ _ (WithLp.ofLp y).fst + WithLp.toLp 1 (a : Unitization ℂ A), ?_⟩
-    rw [map_add, AlgHom.commutes, hΘ, ha]
-    apply WithLp.ofLp_injective
-    simpa [WithLp.unitization_algebraMap, Unitization.algebraMap_eq_inl] using
-      Unitization.inl_fst_add_inr_snd_eq (WithLp.ofLp y)
+    simpa only [Θ, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom] using
+      eB.symm.surjective.comp ((Unitization.map_surjective hθ).comp eA.surjective)
   have hc := Θ.toNonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot hΘs
     ((TauCeti.jacobson_withLp_unitization_eq_bot_iff ℂ B).2 hB)
   refine (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := B)).comp_continuous_iff.1 ?_
@@ -120,11 +115,8 @@ variable {A B : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 zero Jacobson radical, not assumed continuous, is a homeomorphism. The inverse is continuous by
 the open mapping theorem. -/
 theorem isHomeomorph_of_jacobson_eq_bot (e : A ≃ₐ[ℂ] B) (hB : Ring.jacobson B = ⊥) :
-    IsHomeomorph e := by
-  have hc : Continuous e :=
-    (e : A →ₐ[ℂ] B).toNonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot e.surjective hB
-  let f : A ≃L[ℂ] B := .ofBijective ⟨e.toLinearMap, hc⟩
-    (LinearMap.ker_eq_bot.2 e.injective) (LinearMap.range_eq_top.2 e.surjective)
-  exact f.toHomeomorph.isHomeomorph
+    IsHomeomorph e :=
+  (e : A →ₐ[ℂ] B).toNonUnitalAlgHom.isHomeomorph_of_bijective_of_nonUnitalJacobson_eq_bot
+    e.bijective (TauCeti.nonUnitalJacobson_eq_bot_iff.2 hB)
 
 end AlgEquiv

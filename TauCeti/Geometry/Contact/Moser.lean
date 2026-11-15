@@ -103,7 +103,7 @@ theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ 
   -- The coefficient `β(R_α)`, read in the trivial line bundle.
   have hβR : ContMDiffAt J 𝓘(ℝ) n
       (fun m ↦ (β m).1 (b m) ![(α m).reebVectorField (b m)]) m₀ := by
-    have h := (contMDiffAt_totalSpace.1
+    have h := (contMDiffAt_totalSpace_iff.1
       (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ₁ hR)).2
     simpa [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] using h
   have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))

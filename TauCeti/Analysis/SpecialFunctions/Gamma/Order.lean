@@ -15,8 +15,9 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 # Exact orders of Gamma and the archimedean factors
 
 The entire reciprocal of `Complex.Gamma` has a simple zero at each nonpositive integer,
-with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point
-and has order zero everywhere else. Deligne's factors inherit exactly the pole lattices
+with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point, with
+residue `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`), and has order zero everywhere
+else. Deligne's factors inherit exactly the pole lattices
 `-2n` and `-n`. Their meromorphic orders are nonpositive: none has a zero as a meromorphic germ.
 
 The total values at poles are zero by Mathlib's convention. The zero-order characterizations
@@ -62,6 +63,18 @@ theorem hasDerivAt_inv_Gamma_neg_nat (n : ℕ) :
     convert hd using 1
     simp only [Nat.factorial_succ, pow_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     ring
+
+/-- **The residue of `Γ` at `−n`**: `(a + n) Γ(a) → (−1)ⁿ/n!` as `a → −n`. -/
+theorem tendsto_add_natCast_mul_Gamma (n : ℕ) :
+    Tendsto (fun a : ℂ ↦ (a + n) * Gamma a) (𝓝[≠] (-(n : ℂ)))
+      (𝓝 ((-1) ^ n / (n.factorial : ℂ))) := by
+  have hd : (-1 : ℂ) ^ n * n.factorial ≠ 0 :=
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n))
+  have hlim : ((-1 : ℂ) ^ n * n.factorial)⁻¹ = (-1) ^ n / (n.factorial : ℂ) := by
+    rw [mul_inv, ← inv_pow, inv_neg, inv_one, div_eq_mul_inv]
+  rw [← hlim]
+  refine ((hasDerivAt_inv_Gamma_neg_nat n).tendsto_slope.inv₀ hd).congr fun a ↦ ?_
+  simp [slope_def_field, Gamma_neg_nat_eq_zero]
 
 /-- The entire reciprocal Gamma function has a simple zero at each nonpositive integer. -/
 @[simp]

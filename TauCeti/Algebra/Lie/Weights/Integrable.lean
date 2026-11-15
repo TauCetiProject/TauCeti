@@ -51,7 +51,7 @@ is a finite-dimensional module over that triple: the raising and lowering vector
 
 An eigenvector for `-m` inside `W` has to lie in the summand `M_{-m α + χ} ⊓ N`, because `α^∨` acts
 on the summand `M_{k α + χ} ⊓ N` by `2 k + m` and these scalars are distinct
-(`TauCeti.biSup_inf_eigenspace_eq_self`). That summand is therefore nonzero, and
+(`Module.End.biSup_inf_genEigenspace_eq_of_mem`). That summand is therefore nonzero, and
 `-m α + χ = χ - χ(α^∨) α` is the reflection of `χ`.
 
 ## Main results
@@ -142,7 +142,7 @@ private theorem genWeightSpace_neg_zsmul_add_ne_bot (P : ℤ → Submodule K M) 
     intro k k' hkk'
     have : (2 : K) * k = 2 * k' := by simpa only [add_right_inj] using hkk'
     exact_mod_cast mul_left_cancel₀ (two_ne_zero (α := K)) this
-  have hloc := biSup_inf_eigenspace_eq_self (s := (Set.univ : Set ℤ)) _ P
+  have hloc := Module.End.biSup_inf_genEigenspace_eq_of_mem (s := (Set.univ : Set ℤ)) _ P
     (fun k ↦ χ (IsKilling.coroot α) + 2 * k) (fun j _ ↦ hPeig j) (Set.mem_univ (-m))
     fun j _ hj hcon ↦ hj (hginj hcon)
   have huP : u ∈ P (-m) := by

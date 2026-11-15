@@ -42,6 +42,8 @@ statements about `Sym.pi A` as a subspace of the topological symmetric power are
   `Sym.pi_nonempty_iff` recording when it is inhabited.
 * `Sym.mem_pi_iff` and `Sym.mem_pi_iff_card_filter`: membership, either through an
   ordered presentation or as "exactly one point in each member".
+* `Sym.range_ofFn_map`: ordered tuples mapped pointwise by maps `f i` present exactly the tuples
+  in `Sym.pi` of the ranges.
 * `Sym.disjoint_basepointDivisor_pi`: tuples through a point outside every member
   of the family do not meet `Sym.pi A`.
 * `Sym.ofFn_subtypeVal_injective` and `Sym.piEquiv`: for a pairwise disjoint
@@ -128,6 +130,14 @@ from ordered tuples. -/
 theorem pi_eq_image_univ_pi (A : Fin n → Set α) : pi A = ofFn '' Set.univ.pi A := by
   ext s
   simp [mem_pi_iff, Set.mem_image]
+
+/-- The unordered tuples presented by ordered tuples mapped pointwise by maps `f i` are those with
+one point in the range of each `f i`. -/
+theorem range_ofFn_map {X : Fin n → Type*} (f : ∀ i, X i → α) :
+    Set.range (fun x : ∀ i, X i => ofFn fun i => f i (x i)) = pi fun i => Set.range (f i) := by
+  -- The map is `ofFn ∘ Pi.map f`, whose range is the image of the range of `Pi.map f`.
+  rw [pi_eq_image_univ_pi, ← Set.range_piMap, ← Set.range_comp]
+  rfl
 
 /-- The unordered tuples containing a point `a` that lies in no member of the family are disjoint
 from `Sym.pi A`. For a basepoint `z` of a Heegaard diagram, chosen off the attaching curves,

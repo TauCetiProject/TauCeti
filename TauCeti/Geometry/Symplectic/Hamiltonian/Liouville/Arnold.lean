@@ -159,7 +159,7 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
           Fintype.linearCombination_apply]
     have := LinearMap.injective_coprod_linearCombination
       (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) dF.toLinearMap
-      (fun i ↦ (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
+      (fun i ↦ (TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
         fun j ↦ hcomm j i x') hdFs (S := S.toLinearMap)
     have h2 : Injective L.toLinearMap := by rw [hLeq]; exact this
     exact h2

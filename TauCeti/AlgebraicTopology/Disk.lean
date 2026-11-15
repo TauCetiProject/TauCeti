@@ -104,6 +104,11 @@ instance t3Space_disk (n : ℕ) : T3Space (TopCat.disk.{u} n) :=
   -- ball; instance synthesis does not unfold the `TopCat.disk` wrapper on its own.
   inferInstanceAs (T3Space (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
+/-- The `n`-dimensional disk is compact, being homeomorphic to a closed ball in Euclidean space. -/
+instance compactSpace_disk (n : ℕ) : CompactSpace (TopCat.disk.{u} n) :=
+  -- As for `TauCeti.TopCat.t3Space_disk`, the carrier is the lift of the metric closed ball.
+  inferInstanceAs (CompactSpace (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding, being an
 injective map from a compact space to a Hausdorff one. -/
 theorem isClosedEmbedding_diskBoundaryInclusion (n : ℕ) :

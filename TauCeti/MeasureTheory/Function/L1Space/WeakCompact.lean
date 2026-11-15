@@ -13,6 +13,7 @@ import TauCeti.Analysis.Normed.Module.WeakSpace.Approximation
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.MeasureTheory.Function.L1Space.HasFiniteIntegral
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -98,7 +99,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   refine TauCeti.isCompact_closure_toWeakSpace_of_forall_exists_isCompact fun ε hε ↦ ?_
   obtain ⟨C, hC⟩ := hA.spec one_ne_zero ENNReal.one_ne_top (ENNReal.ofReal_pos.2 hε)
   set R : ℝ := measureUnivNNReal μ ^ (2 : ℝ≥0∞).toReal⁻¹ * C
-  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Measure.LpToL1CLM μ 2
+  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Lp.ofExponentLEL 𝕜 𝕜 one_le_two
   refine ⟨ι '' closedBall 0 R, ?_, fun f hf ↦ ?_⟩
   · -- The image of a ball of the reflexive space `L²` is weakly compact.
     have hcomp : toWeakSpace 𝕜 (Lp 𝕜 1 μ) ∘ ι = WeakSpace.map ι ∘ toWeakSpace 𝕜 (Lp 𝕜 2 μ) :=
@@ -110,7 +111,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   · -- The truncation of `f` at level `C` is bounded by `C`, hence lies in this ball.
     set s := {x | C ≤ ‖(f : α → 𝕜) x‖₊}
     have hs : MeasurableSet s :=
-      measurableSet_le measurable_const (Lp.stronglyMeasurable f).measurable.nnnorm
+      measurableSet_le measurable_const (Lp.stronglyMeasurable f).measurable.nnNorm
     set g := sᶜ.indicator (f : α → 𝕜)
     have hgC (x : α) : ‖g x‖ ≤ C := by
       by_cases hx : x ∈ s
@@ -124,9 +125,8 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
     · rw [mem_closedBall_zero_iff]
       exact Lp.norm_le_of_ae_bound C.coe_nonneg (hg.coeFn_toLp.mono fun x hx ↦ hx ▸ hgC x)
     · have hae : ⇑(f - ι (hg.toLp g)) =ᵐ[μ] s.indicator f := by
-        filter_upwards [Lp.coeFn_sub f (ι (hg.toLp g)),
-          Measure.LpToL1CLM_coeFn (𝕜 := 𝕜) μ 2 (hg.toLp g), hg.coeFn_toLp] with x h₁ h₂ h₃
-        rw [h₁, Pi.sub_apply, h₂, h₃]
+        filter_upwards [Lp.coeFn_sub f (ι (hg.toLp g)), hg.coeFn_toLp] with x h₁ h₃
+        simp only [h₁, Pi.sub_apply, ι, Lp.coeFn_ofExponentLEL, h₃]
         simp [g, indicator_compl]
       rw [Lp.norm_def, eLpNorm_congr_ae hae]
       exact ENNReal.toReal_le_of_le_ofReal hε.le (hC ⟨f, hf⟩)
@@ -141,8 +141,8 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   swap
   · -- Weakly compact sets are bounded.
     obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA.isBounded_toWeakSpace_preimage
-    refine ⟨R.toNNReal, fun f ↦ ?_⟩
-    rw [← Lp.enorm_def, ← ofReal_norm]
+    refine lt_of_le_of_lt (iSup_le fun f ↦ ?_) (ENNReal.ofReal_lt_top (r := R))
+    rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal
       (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.2)))
   by_contra hne
@@ -161,7 +161,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       fun n ↦ ?_
     simpa only [s, measure_toMeasurable] using ht n
   have hbig (n : ℕ) : ε < ∫⁻ x in s n, ‖(i n : α → 𝕜) x‖ₑ ∂μ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict]
+    rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _).restrict]
     exact (hit n).trans_le
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_toMeasurable _ _) le_rfl))
   -- By Šmulian's theorem, a subsequence converges weakly.
@@ -217,14 +217,14 @@ closure exactly when it is norm bounded and uniformly integrable. -/
 theorem isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable {A : Set (Lp 𝕜 1 μ)} :
     IsCompact (closure (toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A)) ↔
       IsBounded A ∧ UnifIntegrable (fun f : A ↦ (f : α → 𝕜)) 1 μ := by
-  rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable, UniformIntegrable, and_comm]
-  refine and_congr_left' ⟨fun ⟨C, hC⟩ ↦ ?_, fun hA ↦ ?_⟩
-  · refine isBounded_iff_forall_norm_le.2 ⟨C, fun f hf ↦ ?_⟩
-    rw [Lp.norm_def]
-    exact ENNReal.toReal_le_of_le_ofReal C.coe_nonneg (by simpa using hC ⟨f, hf⟩)
+  rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable]
+  refine ⟨fun h ↦ ⟨isBounded_iff_forall_norm_le.2
+    ⟨(⨆ f : A, eLpNorm (f : α → 𝕜) 1 μ).toReal, fun f hf ↦ ?_⟩, h.1⟩, fun ⟨hA, hui⟩ ↦ ?_⟩
+  · rw [Lp.norm_def]
+    exact ENNReal.toReal_mono h.2.ne (le_iSup (fun f : A ↦ eLpNorm (f : α → 𝕜) 1 μ) ⟨f, hf⟩)
   · obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA
-    refine ⟨R.toNNReal, fun f ↦ ?_⟩
-    rw [← Lp.enorm_def, ← ofReal_norm]
+    refine ⟨hui, lt_of_le_of_lt (iSup_le fun f ↦ ?_) (ENNReal.ofReal_lt_top (r := R))⟩
+    rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hR f f.2)
 
 /-- **Dunford–Pettis theorem**, classical form. For a finite measure, a subset `A` of scalar `L¹`
@@ -241,8 +241,8 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_forall_setIntegral_le
   -- On a measurable set, the restricted `L¹` seminorm is the integral of the norm.
   have heq (f : Lp 𝕜 1 μ) (s : Set α) :
       eLpNorm (f : α → 𝕜) 1 (μ.restrict s) = ENNReal.ofReal (∫ x in s, ‖(f : α → 𝕜) x‖ ∂μ) := by
-    rw [eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f).restrict,
-      ofReal_integral_norm_eq_lintegral_enorm (L1.integrable_coeFn f).integrableOn]
+    rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f).restrict,
+      ofReal_integral_norm_eq_lintegral_eNorm (L1.integrable_coeFn f).integrableOn]
   rw [unifIntegrable_iff']
   constructor
   · intro hA ε hε

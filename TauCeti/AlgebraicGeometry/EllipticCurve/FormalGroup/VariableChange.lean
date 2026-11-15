@@ -314,18 +314,17 @@ variable {R : Type*} [CommRing R]
 derivative of `x'`, the curve morphism scales `x` by `U²` and `2y + a₁x + a₃` by `U³`, and `G₁⁻¹Ψ`,
 `G₂⁻¹` are the two expressions of the invariant differential, then `G₁ = UΨG₂`. -/
 private theorem eq_mul_mul_of_inv_mul_eq {F : Type*} [Field F] {δ P G₁ G₂ Ψ U : F} (hU : U ≠ 0)
-    (hG₁ : G₁ ≠ 0) (hG₂ : G₂ ≠ 0) (e₁ : (U ^ 3 * P)⁻¹ * (U ^ 2 * δ) = G₁⁻¹ * Ψ)
+    (hG₂ : G₂ ≠ 0) (e₁ : (U ^ 3 * P)⁻¹ * (U ^ 2 * δ) = G₁⁻¹ * Ψ)
     (e₂ : P⁻¹ * δ = G₂⁻¹) :
     G₁ = U * Ψ * G₂ := by
-  have hP0 : P ≠ 0 := by
+  have h : G₁⁻¹ * Ψ = U⁻¹ * G₂⁻¹ := by
+    rw [← e₁, ← e₂, mul_inv]
+    field_simp
+  have hG₁ : G₁ ≠ 0 := by
     rintro rfl
-    exact hG₂ (inv_eq_zero.1 (by simpa using e₂.symm))
-  field_simp at e₁ e₂
-  have hδ : δ ≠ 0 := by
-    rintro rfl
-    exact hP0 (by simpa using e₂.symm)
-  refine mul_left_cancel₀ hδ ?_
-  linear_combination e₁ - U * Ψ * e₂
+    simp [hU, hG₂] at h
+  field_simp at h
+  linear_combination -h
 
 section Domain
 
@@ -335,6 +334,36 @@ variable [IsDomain R]
 because `inv_mul_derivation_div_subst_formalW` is stated for multivariable series rings. -/
 local notation "K" => FractionRing (MvPowerSeries Unit R)
 local notation "ι" => algebraMap (MvPowerSeries Unit R) (FractionRing (MvPowerSeries Unit R))
+
+/-- The curve morphism `(x, y) ↦ (u²x + r, u³y + su²x + t)` maps the point with parameter `z` on
+`C • W` to the point with parameter `ψ(z)` on `W`: in the fraction field `K` of the series ring,
+the coordinates `(ψ / w_W(ψ), -1 / w_W(ψ))` are `(u²x' + r, u³y' + su²x' + t)` for
+`(x', y') = (z / w_{C • W}(z), -1 / w_{C • W}(z))`. -/
+private theorem coords_subst_formalCoordinate_formalW (C : VariableChange R)
+    (W : WeierstrassCurve R) :
+    ι (C.formalCoordinate W).toPowerSeries /
+        ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
+      algebraMap R K (C.u : R) ^ 2 * (ι X / ι (formalW (C • W))) + algebraMap R K C.r ∧
+    -1 / ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
+      algebraMap R K (C.u : R) ^ 3 * (-1 / ι (formalW (C • W))) +
+        algebraMap R K (C.u : R) ^ 2 * algebraMap R K C.s * (ι X / ι (formalW (C • W))) +
+        algebraMap R K C.t := by
+  have hC (c : R) : ι (PowerSeries.C c) = algebraMap R K c := by
+    rw [← PowerSeries.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+  have hDe := congrArg ι (mul_invOfUnit (C.formalDenom W) (C.u ^ 3) (by simp))
+  rw [map_mul, map_one] at hDe
+  nth_rw 1 [formalDenom_def] at hDe
+  simp only [map_sub, map_mul, map_pow, hC] at hDe
+  have ha0 : ι (formalW (C • W)) ≠ 0 := by
+    simpa [X_subst] using
+      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
+  have he0 := right_ne_zero_of_mul_eq_one hDe
+  rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
+  simp only [map_mul, map_add, map_pow, hC]
+  constructor
+  · field_simp
+  · field_simp
+    linear_combination hDe
 
 /-- Over a domain in which `2 ≠ 0`, the transition transforms the denominator of the invariant
 differential by `G_W(ψ(z)) = u ψ'(z) G_{C • W}(z)`. Both sides are read at the points with
@@ -360,32 +389,8 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
   have e₂ := (C • W).inv_mul_derivation_div_subst_formalW h2 D constantCoeff_X
   rw [X_subst, X_subst, hD, derivative_X, map_one, mul_one] at e₂
   rw [hD] at e₁
-  -- the coordinates `x = u²x' + r` and `y = u³y' + su²x' + t` of the first point in `K`
-  have hDen : ι (C.formalDenom W) = algebraMap R K (C.u : R) ^ 3 -
-      algebraMap R K C.s * algebraMap R K (C.u : R) ^ 2 * ι X -
-      algebraMap R K C.t * ι (formalW (C • W)) := by
-    rw [formalDenom_def]
-    simp only [map_sub, map_mul, map_pow, hC]
-  have hDe := congrArg ι (mul_invOfUnit (C.formalDenom W) (C.u ^ 3) (by simp))
-  rw [map_mul, map_one, hDen] at hDe
-  have ha0 : ι (formalW (C • W)) ≠ 0 := by
-    simpa [X_subst] using
-      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
-  have he0 := right_ne_zero_of_mul_eq_one hDe
-  have hx : ι (C.formalCoordinate W).toPowerSeries /
-      ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
-      algebraMap R K (C.u : R) ^ 2 * (ι X / ι (formalW (C • W))) + algebraMap R K C.r := by
-    rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
-    simp only [map_mul, map_add, map_pow, hC]
-    field_simp
-  have hy : -1 / ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
-      algebraMap R K (C.u : R) ^ 3 * (-1 / ι (formalW (C • W))) +
-        algebraMap R K (C.u : R) ^ 2 * algebraMap R K C.s * (ι X / ι (formalW (C • W))) +
-        algebraMap R K C.t := by
-    rw [subst_formalCoordinate_formalW, map_mul]
-    field_simp
-    linear_combination hDe
-  -- `2y + a₁x + a₃` scales by `u³` under the change of variables
+  -- the first point is the image of the second, and `2y + a₁x + a₃` scales by `u³`
+  obtain ⟨hx, hy⟩ := coords_subst_formalCoordinate_formalW C W
   have hP := Affine.variableChange_evalEval_polynomialY (W.baseChange K) (C.map (algebraMap R K))
     (ι X / ι (formalW (C • W))) (-1 / ι (formalW (C • W)))
   simp only [WeierstrassCurve.baseChange, map_variableChange, map_u, Units.coe_map,
@@ -395,16 +400,11 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
   rw [hP] at e₁
   simp only [map_add, Derivation.leibniz, Derivation.leibniz_pow, hDc, mul_zero, smul_zero,
     add_zero, smul_eq_mul] at e₁
-  have hG₁ : ι (subst (C.formalCoordinate W).toPowerSeries
-      W.formalInvariantDifferentialDenom) ≠ 0 :=
-    (map_ne_zero_iff _ hinj).2 fun h ↦ by
-      simpa [(C.formalCoordinate W).constantCoeff_subst_toPowerSeries] using
-        congrArg constantCoeff h
   have hG₂ : ι (C • W).formalInvariantDifferentialDenom ≠ 0 :=
     (map_ne_zero_iff _ hinj).2 fun h ↦ by simpa using congrArg constantCoeff h
   apply hinj
   rw [map_mul, map_mul, hC]
-  exact eq_mul_mul_of_inv_mul_eq (C.u.isUnit.map (algebraMap R K)).ne_zero hG₁ hG₂ e₁ e₂
+  exact eq_mul_mul_of_inv_mul_eq (C.u.isUnit.map (algebraMap R K)).ne_zero hG₂ e₁ e₂
 
 end Domain
 

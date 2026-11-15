@@ -39,6 +39,8 @@ for every finite dominant morphism `g : C' ⟶ C` from an integral scheme,
 
 * `LineBundleClass.eulerDegree_pullback_of_finrank_eq`: `deg (g^* L) = n · deg L` for a finite flat
   morphism `g` of constant rank `n` onto an integral proper curve.
+* `LineBundleClass.eulerDegree_pullback_eq_finrank_functionField_mul`: the finite flat dominant
+  case, with the multiplier expressed as the degree of the function-field extension.
 * `LineBundleClass.eulerDegree_pullback_of_isDominant`: `deg (g^* L) = [K(C') : K(C)] · deg L` for
   a finite dominant morphism of integral curves whose target has valuation rings as local rings.
 
@@ -152,6 +154,17 @@ theorem eulerDegree_pullback_of_finrank_eq [Flat g] {n : ℕ} (hg : ∀ x, g.fin
     ring
   rw [ha, hdeg', hdeg]
   ring
+
+/-- **The degree under pullback is multiplied by the degree of the function-field extension.**
+Let `g : C' ⟶ C` be a finite flat dominant morphism of integral schemes over `k`, where `C` is
+proper over `k` with fibres of dimension at most one, and the structure sheaves of `C'` and `C`
+have finite-dimensional `H⁰` and `H¹`. Then `deg g^* L = [K(C') : g^* K(C)] · deg L` for every line
+bundle `L` on `C`. -/
+theorem eulerDegree_pullback_eq_finrank_functionField_mul [Flat g] [IsIntegral C'] [IsDominant g]
+    (a : LineBundleClass C) :
+    eulerDegree k (pullback g a) =
+      Module.finrank g.functionFieldMap.hom.fieldRange C'.functionField * eulerDegree k a :=
+  eulerDegree_pullback_of_finrank_eq k g g.finrank_eq_finrank_fieldRange_functionFieldMap a
 
 /-- **The degree of a pullback along a finite dominant morphism.** Let `C` be as in
 `LineBundleClass.eulerDegree_pullback_of_finrank_eq`, with all local rings valuation rings, as for
