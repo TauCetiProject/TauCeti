@@ -68,6 +68,9 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
   standard parabolic subgroup is spelled by an alternating word of its own length.**
 * `CoxeterSystem.wordProd_alternatingWord_eq_comm_iff`: the two alternating words of length `m`
   have the same product exactly when `(s i * s i') ^ m = 1`.
+* `CoxeterSystem.wordProd_alternatingWord_eq_and_length_lt_of_mem_parabolic_pair`: an element of
+  `cs.parabolic {i, i'}` without `i` as a right descent is spelled by `alternatingWord i i' (ℓ w)`
+  and has length strictly below `M i i'` whenever `M i i' ≠ 0`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_mul_pow`: more precisely, they differ by the factor
   `(s i * s i') ^ m`.
 * `CoxeterSystem.wordProd_alternatingWord_add_two_mul`: the products of the alternating words
@@ -197,6 +200,28 @@ subgroup. -/
 theorem wordProd_alternatingWord_eq_comm_iff (i i' : B) (m : ℕ) :
     π (alternatingWord i i' m) = π (alternatingWord i' i m) ↔ (s i * s i') ^ m = 1 := by
   rw [cs.wordProd_alternatingWord_eq_mul_pow, mul_eq_left]
+
+/-- **Every element of `cs.parabolic {i, i'}` without `i` as a right descent is spelled by
+`alternatingWord i i' (ℓ w)` and has length strictly below `M i i'` whenever `M i i' ≠ 0`.** -/
+theorem wordProd_alternatingWord_eq_and_length_lt_of_mem_parabolic_pair {i i' : B} {w : W}
+    (hw : w ∈ cs.parabolic {i, i'}) (hwi : ¬ cs.IsRightDescent w i) :
+    π (alternatingWord i i' (ℓ w)) = w ∧ (M i i' = 0 ∨ ℓ w < M i i') := by
+  have hlen := cs.not_isRightDescent_iff.mp hwi
+  have hword : π (alternatingWord i i' (ℓ w)) = w := by
+    refine (cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair hw).elim id fun h ↦ ?_
+    rcases hk : ℓ w with - | k
+    · simp [cs.length_eq_zero_iff.mp hk, alternatingWord]
+    · rw [hk, alternatingWord_succ, cs.wordProd_concat] at h
+      have hle := cs.length_wordProd_le (alternatingWord i i' k)
+      rw [length_alternatingWord] at hle
+      rw [← h, cs.simple_mul_simple_cancel_right, h] at hlen
+      omega
+  have hred : cs.IsReduced (alternatingWord i' i (ℓ w + 1)) := by
+    rw [IsReduced, alternatingWord_succ, cs.wordProd_concat, hword, hlen, List.concat_eq_append,
+      List.length_append, length_alternatingWord, List.length_singleton]
+  refine ⟨hword, or_iff_not_imp_left.mpr fun hm0 ↦ not_le.mp fun hge ↦ ?_⟩
+  rw [← M.symmetric i' i] at hm0 hge
+  exact cs.not_isReduced_alternatingWord i' i hm0 (by omega) hred
 
 /-- **The products of the alternating words repeat with period twice the order of the rotation
 `s i * s i'`.** Only `(s i * s i') ^ n = 1` is used, so the period may be read off any exponent
