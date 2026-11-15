@@ -18,11 +18,12 @@ The differentials of a diffeomorphism and its inverse undo each other, and the d
 diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
-assumptions, and the tangent images of a map, the ranges of its differentials, are unchanged by
-precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
-These facts support inverse isometries and transport of curve differentiability through
-diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
-diffeomorphism is also characterized, for composition with partial coordinates.
+assumptions, injectivity of the differential is preserved by precomposition, and the tangent
+images of a map, the ranges of its differentials, are unchanged by precomposition with a
+diffeomorphism and are mapped by the differential under postcomposition.
+These facts support inverse isometries, calibrated immersions, and transport of curve
+differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
+a partial diffeomorphism is also characterized, for composition with partial coordinates.
 -/
 
 public section
@@ -200,6 +201,17 @@ theorem range_mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
   rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top]
   exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
+
+/-- Precomposition with a diffeomorphism preserves injectivity of the differential at the
+corresponding point. No differentiability of `f` is assumed. -/
+theorem mfderiv_comp_diffeomorph_injective_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {f : N → P}
+    {x : M} :
+    Function.Injective (mfderiv I K (f ∘ h) x) ↔ Function.Injective (mfderiv J K f (h x)) := by
+  rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.coe_comp]
+  refine ⟨fun hge a₁ a₂ ha ↦ ?_, fun hf ↦ hf.comp (h.isInvertible_mfderiv hn).injective⟩
+  obtain ⟨u₁, rfl⟩ := (h.isInvertible_mfderiv hn).surjective a₁
+  obtain ⟨u₂, rfl⟩ := (h.isInvertible_mfderiv hn).surjective a₂
+  exact congrArg _ (hge ha)
 
 end TangentImage
 

@@ -168,6 +168,42 @@ theorem integrableTopForm_riemannianVolumeForm_iff_compactSpace :
     (by simp [h.isCompact_univ])
     (Module.finBasisOfFinrankEq ℝ E (by simpa using o.card_eq.symm))
 
+/-- For an orientation lift `l` whose model orientation agrees with the reindexed standard basis
+`b = (Module.finBasis ℝ E).reindex σ`, integrating the signed coordinate coefficient of
+`riemannianVolumeForm (Orientation.mk l)` over the chart image of any measurable subset `s` of the
+preferred chart source at `α` recovers `(riemannianVolume I M).real s`. -/
+private theorem setIntegral_signedInChartAt_riemannianVolumeForm
+    [LindelofSpace M] [MeasurableSpace M] [BorelSpace M] [MeasurableSpace E] [BorelSpace E]
+    (σ : Fin (Module.finrank ℝ E) ≃ Fin m) (l : Manifold.OrientationLift I M (Fin m))
+    (hl : l.modelOrientation = ((Module.finBasis ℝ E).reindex σ).orientation)
+    {α : M} {s : Set M} (hs : s ⊆ (extChartAt I α).source) (hs_meas : MeasurableSet s) :
+    ∫ y in (extChartAt I α) '' s,
+      (riemannianVolumeForm (Manifold.Orientation.mk l)).signedInChartAt
+        ((Module.finBasis ℝ E).reindex σ) α (fun x ↦ l.signAt α x) y
+        ∂((Module.finBasis ℝ E).reindex σ).addHaar =
+      (riemannianVolume I M).real s := by
+  have hm : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
+  cases hm
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  have hs_chart : s ⊆ (chartAt H α).source := by rwa [← extChartAt_source (I := I)]
+  calc ∫ y in (extChartAt I α) '' s,
+        (riemannianVolumeForm (Manifold.Orientation.mk l)).signedInChartAt
+          ((Module.finBasis ℝ E).reindex σ) α (fun x ↦ l.signAt α x) y
+          ∂((Module.finBasis ℝ E).reindex σ).addHaar
+      = ∫ y in (extChartAt I α) '' s,
+          chartVolumeDensity (I := I) α ((extChartAt I α).symm y) • (1 : ℝ)
+            ∂(Module.finBasis ℝ E).addHaar := by
+        rw [Module.Basis.addHaar_reindex]
+        refine setIntegral_congr_fun (hs_meas.image_extChartAt α hs) fun y hy ↦ ?_
+        rcases hy with ⟨x, hx, rfl⟩
+        rw [signedInChartAt_riemannianVolumeForm_eq σ l hl,
+          ite_eq_left ((extChartAt I α).map_source (hs hx)), smul_eq_mul, mul_one]
+    _ = ∫ _ in s, (1 : ℝ) ∂riemannianVolume I M :=
+        (setIntegral_riemannianVolume_of_subset hs_chart hs_meas (fun _ : M ↦ (1 : ℝ))).symm
+    _ = (riemannianVolume I M).real s := by
+        rw [setIntegral_const, smul_eq_mul, mul_one]
+
 /-- **The integral of the Riemannian volume form equals the total Riemannian volume** on a compact
 oriented Riemannian manifold, in every dimension `m : ℕ`. -/
 theorem integralTopForm_riemannianVolumeForm_eq_riemannianTotalVolume
@@ -201,34 +237,9 @@ theorem integralTopForm_riemannianVolumeForm_eq_riemannianTotalVolume
       rw [Finset.sup_set_eq_biUnion]
       exact isOpen_biUnion fun j _ ↦ hu j
     exact (hu i).measurableSet.diff ho.measurableSet
-  have hpiece : ∀ i,
-      ∫ y in (extChartAt I (α i)) '' disjointed u i,
-        (riemannianVolumeForm (Manifold.Orientation.mk l)).signedInChartAt b (α i)
-          (fun x ↦ l.signAt (α i) x) y ∂b.addHaar =
-      (riemannianVolume I M).real (disjointed u i) := fun i ↦ by
-    have hsub_ext : disjointed u i ⊆ (extChartAt I (α i)).source :=
-      (disjointed_subset u i).trans (hs i)
-    have hsub_chart : disjointed u i ⊆ (chartAt H (α i)).source := by
-      rwa [← extChartAt_source (I := I)]
-    calc ∫ y in (extChartAt I (α i)) '' disjointed u i,
-          (riemannianVolumeForm (Manifold.Orientation.mk l)).signedInChartAt b (α i)
-            (fun x ↦ l.signAt (α i) x) y ∂b.addHaar
-        = ∫ y in (extChartAt I (α i)) '' disjointed u i,
-            chartVolumeDensity (I := I) (α i) ((extChartAt I (α i)).symm y) • (1 : ℝ)
-              ∂(Module.finBasis ℝ E).addHaar := by
-          rw [show b.addHaar = (Module.finBasis ℝ E).addHaar from
-            Module.Basis.addHaar_reindex _ _]
-          refine setIntegral_congr_fun ((hs_meas i).image_extChartAt (α i) hsub_ext) fun y hy ↦ ?_
-          rcases hy with ⟨x, hx, rfl⟩
-          rw [signedInChartAt_riemannianVolumeForm_eq σ l hl,
-            ite_eq_left ((extChartAt I (α i)).map_source (hsub_ext hx)), smul_eq_mul, mul_one]
-      _ = ∫ _ in disjointed u i, (1 : ℝ) ∂riemannianVolume I M :=
-          (setIntegral_riemannianVolume_of_subset hsub_chart (hs_meas i)
-            (fun _ : M ↦ (1 : ℝ))).symm
-      _ = (riemannianVolume I M).real (disjointed u i) := by
-          rw [setIntegral_const, smul_eq_mul, mul_one]
-  simp_rw [hpiece]
-  rw [← measureReal_iUnion_fintype (disjoint_disjointed u) hs_meas, iUnion_disjointed,
+  rw [Finset.sum_congr rfl fun i _ ↦ setIntegral_signedInChartAt_riemannianVolumeForm σ l hl
+    ((disjointed_subset u i).trans (hs i)) (hs_meas i),
+    ← measureReal_iUnion_fintype (disjoint_disjointed u) hs_meas, iUnion_disjointed,
     Subset.antisymm (subset_univ _) hcov, riemannianTotalVolume_def]
 
 /-- On a nonempty compact oriented Riemannian manifold of any dimension `m : ℕ`, the integral of the

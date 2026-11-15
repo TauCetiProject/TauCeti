@@ -28,9 +28,12 @@ comass at most `1` satisfies the pointwise calibration inequalities
 
 On a compact source `N` (`[CompactSpace N]`, which is already equivalent to
 `IntegrableTopForm (riemannianVolumeForm o)` under `integralTopForm`'s compact-support convention),
-integrating yields `∫_N f^* φ ≤ Vol(f)` whenever `f^* φ` is integrable
-(`TauCeti.integralTopForm_mpullback_le_immersionVolume_of_integrable`), and in particular whenever
-`φ` is continuous (`IsSmoothForm I 0 φ`), with equality if and only if `f` is calibrated by `φ`
+integrating yields `∫_N f^* φ ≤ Vol(f)` and `|∫_N f^* φ| ≤ Vol(f)` for every rough `k`-form `φ` of
+pointwise comass at most `1` (`TauCeti.integralTopForm_mpullback_le_immersionVolume`,
+`TauCeti.abs_integralTopForm_mpullback_le_immersionVolume`; when `f^* φ` is not integrable, the
+left-hand side evaluates to `0` by `integralTopForm`'s fallback and the inequality holds by
+nonnegativity of `immersionVolume`). When `φ` is continuous (`IsSmoothForm I 0 φ`), equality holds
+if and only if `f` is calibrated by `φ`
 (`TauCeti.integralTopForm_mpullback_eq_immersionVolume_iff_isCalibratedImmersion`). Positive degree
 uses positivity of top-form integration (`TauCeti.integralTopForm_nonneg`,
 `TauCeti.integralTopForm_pos`), while degree zero evaluates directly as a finite signed sum
@@ -52,9 +55,7 @@ sources to Harvey–Lawson's homological volume-minimization theorem (whereas on
   `TauCeti.abs_mpullback_apply_le_riemannianVolumeForm`, and
   `TauCeti.mpullback_apply_le_riemannianVolumeForm`: pointwise calibration inequalities in every
   degree `k : ℕ`.
-* `TauCeti.integralTopForm_mpullback_le_immersionVolume_of_integrable`,
-  `TauCeti.abs_integralTopForm_mpullback_le_immersionVolume_of_integrable`,
-  `TauCeti.integralTopForm_mpullback_le_immersionVolume`, and
+* `TauCeti.integralTopForm_mpullback_le_immersionVolume` and
   `TauCeti.abs_integralTopForm_mpullback_le_immersionVolume`: integrated calibration inequalities on
   compact sources.
 * `TauCeti.integralTopForm_mpullback_eq_immersionVolume_iff_isCalibratedImmersion`: equality in the
@@ -197,92 +198,61 @@ private theorem zeroDim_summand_le
   · rw [hs, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
     exact (neg_le_abs _).trans hbdd
 
-/-- **Integrated calibration inequality** for an integrable pullback on a compact source: if `φ` has
-pointwise comass at most `1` for `g` and `f^* φ` is integrable on the compact source `N`, then
-`∫_N f^* φ ≤ Vol(f)`. -/
-theorem integralTopForm_mpullback_le_immersionVolume_of_integrable [CompactSpace N] {k : ℕ}
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {φ : RoughForm I M ℝ k}
-    (hcomass : ∀ y (v : Fin k → TangentSpace I y),
-      (∀ i j, g.inner y (v i) (v j) = if i = j then 1 else 0) → |φ y v| ≤ 1)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k))
-    (hφi : IntegrableTopForm (mpullback I' I f φ)) :
-    integralTopForm o (mpullback I' I f φ) ≤ immersionVolume g f hf hinj o := by
-  let : RiemannianBundle (fun y : N ↦ TangentSpace I' y) :=
-    ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
-  have : IsContinuousRiemannianBundle E' (fun y : N ↦ TangentSpace I' y) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I') (n := ∞)
-  rw [immersionVolume_def]
-  rcases k with - | k
-  · have hcard : Module.finrank ℝ E' = 0 := by simpa using o.card_eq.symm
-    have : Subsingleton E' := Module.finrank_zero_iff.mp hcard
-    have : DiscreteTopology N := discreteTopology_of_zeroDim I'
-    have : Finite N := finite_of_compact_of_discrete
-    let : Fintype N := Fintype.ofFinite N
-    let b := Module.finBasisOfFinrankEq ℝ E' hcard
-    rw [integralTopForm_finite_zeroDim o b, integralTopForm_finite_zeroDim o b]
-    exact Finset.sum_le_sum fun x _ ↦ zeroDim_summand_le g hcomass f hf hinj o b x
-  · have hvi : IntegrableTopForm (riemannianVolumeForm o) :=
-      (integrableTopForm_riemannianVolumeForm_iff_compactSpace o).2 inferInstance
-    have hnonneg : 0 ≤ integralTopForm o (riemannianVolumeForm o - mpullback I' I f φ) :=
-      integralTopForm_nonneg o fun x c hc ↦ by
-        rw [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, sub_nonneg]
-        exact mpullback_apply_le_riemannianVolumeForm g hcomass f hf hinj o x c hc
-    rw [sub_eq_add_neg, integralTopForm_add_of_integrable o hvi hφi.neg,
-      ← neg_one_smul ℝ (mpullback I' I f φ), integralTopForm_smul, neg_one_mul,
-      ← sub_eq_add_neg, sub_nonneg] at hnonneg
-    exact hnonneg
-
-/-- Absolute integrated calibration inequality for an integrable pullback on a compact source:
-`|∫_N f^* φ| ≤ Vol(f)`. -/
-theorem abs_integralTopForm_mpullback_le_immersionVolume_of_integrable [CompactSpace N] {k : ℕ}
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {φ : RoughForm I M ℝ k}
-    (hcomass : ∀ y (v : Fin k → TangentSpace I y),
-      (∀ i j, g.inner y (v i) (v j) = if i = j then 1 else 0) → |φ y v| ≤ 1)
-    (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
-    (o : Manifold.Orientation I' N (Fin k))
-    (hφi : IntegrableTopForm (mpullback I' I f φ)) :
-    |integralTopForm o (mpullback I' I f φ)| ≤ immersionVolume g f hf hinj o := by
-  have hmp : mpullback I' I f (-φ) = (-1 : ℝ) • mpullback I' I f φ := by
-    rw [← neg_one_smul ℝ φ, mpullback_smul]
-  refine abs_le.2 ⟨?_,
-    integralTopForm_mpullback_le_immersionVolume_of_integrable g hcomass f hf hinj o hφi⟩
-  have hneg := integralTopForm_mpullback_le_immersionVolume_of_integrable g
-    (φ := -φ) (fun y v hv ↦ by simpa [abs_neg] using hcomass y v hv) f hf hinj o
-    (hmp ▸ neg_one_smul ℝ (mpullback I' I f φ) ▸ hφi.neg)
-  rw [hmp, integralTopForm_smul, neg_one_mul] at hneg
-  linarith
-
-/-- **Integrated calibration inequality** on a compact source: if `φ` is continuous with
-pointwise comass at most `1` for `g`, then `∫_N f^* φ ≤ Vol(f)`. -/
+/-- **Integrated calibration inequality** on a compact source: if `φ` has pointwise comass at most
+`1` for `g`, then `∫_N f^* φ ≤ Vol(f)`. When `f^* φ` is not integrable, the left-hand side
+evaluates to `0` and the inequality holds by nonnegativity of `immersionVolume`. -/
 theorem integralTopForm_mpullback_le_immersionVolume [CompactSpace N] {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
+    {φ : RoughForm I M ℝ k}
     (hcomass : ∀ y (v : Fin k → TangentSpace I y),
       (∀ i j, g.inner y (v i) (v j) = if i = j then 1 else 0) → |φ y v| ≤ 1)
     (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (o : Manifold.Orientation I' N (Fin k)) :
-    integralTopForm o (mpullback I' I f φ) ≤ immersionVolume g f hf hinj o :=
-  integralTopForm_mpullback_le_immersionVolume_of_integrable g hcomass f hf hinj o
-    ((hφ.mpullback (by simpa using hf.of_le (by simp))).integrableTopForm
-      (isClosed_tsupport _).isCompact
-      (Module.finBasisOfFinrankEq ℝ E' (by simpa using o.card_eq.symm)))
+    integralTopForm o (mpullback I' I f φ) ≤ immersionVolume g f hf hinj o := by
+  by_cases hφi : IntegrableTopForm (mpullback I' I f φ)
+  · let : RiemannianBundle (fun y : N ↦ TangentSpace I' y) :=
+      ⟨(g.pullback f (by simpa using hf) hinj).toRiemannianMetric⟩
+    have : IsContinuousRiemannianBundle E' (fun y : N ↦ TangentSpace I' y) :=
+      IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I') (n := ∞)
+    rw [immersionVolume_def]
+    rcases k with - | k
+    · have hcard : Module.finrank ℝ E' = 0 := by simpa using o.card_eq.symm
+      have : Subsingleton E' := Module.finrank_zero_iff.mp hcard
+      have : DiscreteTopology N := discreteTopology_of_zeroDim I'
+      have : Finite N := finite_of_compact_of_discrete
+      let : Fintype N := Fintype.ofFinite N
+      let b := Module.finBasisOfFinrankEq ℝ E' hcard
+      rw [integralTopForm_finite_zeroDim o b, integralTopForm_finite_zeroDim o b]
+      exact Finset.sum_le_sum fun x _ ↦ zeroDim_summand_le g hcomass f hf hinj o b x
+    · have hvi : IntegrableTopForm (riemannianVolumeForm o) :=
+        (integrableTopForm_riemannianVolumeForm_iff_compactSpace o).2 inferInstance
+      have hnonneg : 0 ≤ integralTopForm o (riemannianVolumeForm o - mpullback I' I f φ) :=
+        integralTopForm_nonneg o fun x c hc ↦ by
+          rw [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, sub_nonneg]
+          exact mpullback_apply_le_riemannianVolumeForm g hcomass f hf hinj o x c hc
+      rw [sub_eq_add_neg, integralTopForm_add_of_integrable o hvi hφi.neg,
+        ← neg_one_smul ℝ (mpullback I' I f φ), integralTopForm_smul, neg_one_mul,
+        ← sub_eq_add_neg, sub_nonneg] at hnonneg
+      exact hnonneg
+  · rw [integralTopForm_eq_zero_of_not_integrable o _ hφi]
+    exact immersionVolume_nonneg g f hf hinj o
 
-/-- Absolute integrated calibration inequality on a compact source: `|∫_N f^* φ| ≤ Vol(f)`. -/
+/-- Absolute integrated calibration inequality on a compact source: if `φ` has pointwise comass at
+most `1` for `g`, then `|∫_N f^* φ| ≤ Vol(f)`. When `f^* φ` is not integrable, the left-hand side
+evaluates to `0` and the inequality holds by nonnegativity of `immersionVolume`. -/
 theorem abs_integralTopForm_mpullback_le_immersionVolume [CompactSpace N] {k : ℕ}
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
+    {φ : RoughForm I M ℝ k}
     (hcomass : ∀ y (v : Fin k → TangentSpace I y),
       (∀ i j, g.inner y (v i) (v j) = if i = j then 1 else 0) → |φ y v| ≤ 1)
     (f : N → M) (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (o : Manifold.Orientation I' N (Fin k)) :
-    |integralTopForm o (mpullback I' I f φ)| ≤ immersionVolume g f hf hinj o :=
-  abs_integralTopForm_mpullback_le_immersionVolume_of_integrable g hcomass f hf hinj o
-    ((hφ.mpullback (by simpa using hf.of_le (by simp))).integrableTopForm
-      (isClosed_tsupport _).isCompact
-      (Module.finBasisOfFinrankEq ℝ E' (by simpa using o.card_eq.symm)))
+    |integralTopForm o (mpullback I' I f φ)| ≤ immersionVolume g f hf hinj o := by
+  refine abs_le.2 ⟨?_, integralTopForm_mpullback_le_immersionVolume g hcomass f hf hinj o⟩
+  have hneg := integralTopForm_mpullback_le_immersionVolume g
+    (φ := -φ) (fun y v hv ↦ by simpa [abs_neg] using hcomass y v hv) f hf hinj o
+  rw [← neg_one_smul ℝ φ, mpullback_smul, integralTopForm_smul, neg_one_mul] at hneg
+  linarith
 
 /-- **Equality case of the integrated calibration inequality** on a compact source: for a continuous
 `k`-form `φ` of pointwise comass at most `1` for `g`, `∫_N f^* φ = Vol(f)` holds if and only if the
@@ -402,8 +372,7 @@ theorem immersionVolume_le_of_isCalibratedImmersion {k : ℕ} [CompactSpace N']
     _ = integralTopForm o' (mpullback I'' I f' φ) :=
         hhom φ hφ.isSmoothForm hφ.mextDeriv_eq_zero
     _ ≤ immersionVolume g f' hf' hinj' o' :=
-        integralTopForm_mpullback_le_immersionVolume g (hφ.isSmoothForm.of_le (by simp))
-          hφ.abs_apply_le_one f' hf' hinj' o'
+        integralTopForm_mpullback_le_immersionVolume g hφ.abs_apply_le_one f' hf' hinj' o'
 
 /-- **Equality case of the fundamental theorem of calibrations**: under equal `integralTopForm`
 periods on smooth closed `k`-forms for a calibrated immersion `f : N → M` and a compact oriented
