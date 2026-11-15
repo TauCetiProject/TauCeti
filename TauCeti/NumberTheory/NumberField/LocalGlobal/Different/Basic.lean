@@ -99,14 +99,7 @@ private theorem trace_integralSemilocalToField_mul_mem {d : L}
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
         (integralSemilocalToField L v t * (1 ⊗ₜ d)) ∈
       (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)).range := by
-  have : IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
-    ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
-  have heq : integralSemilocalToField L v t =
-      baseChangeOfTower (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L t := by
-    induction t using TensorProduct.inductionOn with
-    | tmul => simp
-    | add _ _ hx hy => simp [hx, hy]
-  rw [heq]
+  rw [integralSemilocalToField_eq_baseChangeOfTower]
   exact trace_baseChangeOfTower_mul_mem hd t
 
 -- The first inclusion uses the integral semilocal decomposition to lift an element of `𝒪_w` in

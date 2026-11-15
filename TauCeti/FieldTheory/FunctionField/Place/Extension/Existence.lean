@@ -130,11 +130,8 @@ omit [Algebra.IsIntegral F F'] in
 /-- Constants of `F'` are integral over the valuation ring of every place of `F / k`: they are
 integral over `k`, which lies in `𝒪_P`. -/
 theorem isIntegral_integers_algebraMap (P : Place k F) (c : k') :
-    IsIntegral P.integers (algebraMap k' F' c) := by
-  have : IsScalarTower k P.integers F' :=
-    .of_algebraMap_eq fun c ↦ IsScalarTower.algebraMap_apply k F F' c
-  exact ((Algebra.IsIntegral.isIntegral (R := k) c).map
-    (IsScalarTower.toAlgHom k k' F')).tower_top
+    IsIntegral P.integers (algebraMap k' F' c) :=
+  algebraMap_mem_integralClosure F' P c
 
 /-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`**
 (Stichtenoth, Section III.2): an element of `F'` is integral over the valuation ring of a place

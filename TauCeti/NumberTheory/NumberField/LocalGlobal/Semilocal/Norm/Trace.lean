@@ -59,8 +59,6 @@ theorem trace_integralSemilocalToField_tmul_mul
         (integralSemilocalToField L v (a ⊗ₜ x) * (1 ⊗ₜ d)) =
       (a : v.adicCompletion K) *
         algebraMap K (v.adicCompletion K) (Algebra.trace K L ((x : L) * d)) := by
-  have : IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
-    ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
   simpa using
     Algebra.trace_baseChangeOfTower_tmul_mul (R := 𝒪 K) (K := K)
       (A := v.adicCompletion K) a x d

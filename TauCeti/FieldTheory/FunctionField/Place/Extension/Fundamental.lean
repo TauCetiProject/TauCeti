@@ -82,27 +82,9 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-private theorem isScalarTower_constants_integers_extension (P : Place k F) :
-    IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-  rw [IsScalarTower.algebraMap_apply P.integers F F',
-    ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-
 variable [Algebra.IsIntegral k k']
 
-/-- The integral closure `𝒪'_P` of `𝒪_P` in `F'` contains `k'` because `k'` is integral over
-`k ⊆ 𝒪_P`. -/
-@[instance_reducible]
-private noncomputable def algebraConstantsIntegralClosure (P : Place k F) :
-    Algebra k' (integralClosure P.integers F') :=
-  haveI := isScalarTower_constants_integers_extension (F' := F') P
-  ((algebraMap k' F').codRestrict (integralClosure P.integers F') fun c ↦
-    (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top).toAlgebra
-
-private theorem isScalarTower_constants_integralClosure (P : Place k F) :
-    letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
-    IsScalarTower k' (integralClosure P.integers F') F' :=
-  letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
-  .of_algebraMap_eq fun _ ↦ rfl
+attribute [local instance] algebraConstantsIntegralClosure isScalarTower_constants_integralClosure
 
 variable [FiniteDimensional F F']
 
@@ -124,9 +106,6 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional
   have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
     rw [ValuationSubring.algebraMap_apply]
     exact r.2
-  have := isScalarTower_constants_integers_extension (F' := F') P
-  let _ : Algebra k' S := algebraConstantsIntegralClosure P
-  have : IsScalarTower k' S F' := isScalarTower_constants_integralClosure P
   obtain ⟨s, rfl⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one (R := S) F' x fun 𝔓 ↦ by
     have := 𝔓.isMaximal
     have hmax₁ : (𝔓.asIdeal.under P.integers).IsMaximal :=
@@ -162,10 +141,6 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable [Algebr
   have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
     rw [ValuationSubring.algebraMap_apply]
     exact r.2
-  have := isScalarTower_constants_integers_extension (F' := F') P
-  let _ : Algebra k' (integralClosure P.integers F') := algebraConstantsIntegralClosure P
-  have : IsScalarTower k' (integralClosure P.integers F') F' :=
-    isScalarTower_constants_integralClosure P
   -- `P` is the place of the maximal ideal of `𝒪_P`, so the affine-model identity applies to it.
   refine sum_ramificationIdx_mul_relativeDegree_eq_finrank (S := integralClosure P.integers F')
     k F (P.center hR) fun P' ↦ ?_

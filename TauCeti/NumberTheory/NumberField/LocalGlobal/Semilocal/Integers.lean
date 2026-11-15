@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Compact
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegralClosure
-import TauCeti.RingTheory.IsTensorProduct.BaseChange
+public import TauCeti.RingTheory.IsTensorProduct.BaseChange
 
 /-!
 # The integral semi-local decomposition of a number field
@@ -38,6 +38,8 @@ the latter because it is a finitely generated submodule over the compact ring `�
 
 ## Main results
 
+* `TauCeti.integralSemilocalToField_eq_baseChangeOfTower`: `integralSemilocalToField` is
+  `TauCeti.baseChangeOfTower` for `(𝒪 K, K, 𝒪_v, K_v, 𝒪 L, L)`.
 * `TauCeti.integralSemilocalEquiv_tmul`: the value of the equivalence on pure tensors.
 * `TauCeti.integralSemilocalEquiv_fieldCompatibility`: after inclusion into the completions, the
   integral equivalence agrees with `semilocalEquiv`.
@@ -135,7 +137,7 @@ theorem integralSemilocalHom_surjective : Function.Surjective (integralSemilocal
     (denseRange_algebraMap_integers_pi_liesOver L v y)
 
 omit [Field L] [NumberField L] [Algebra K L] in
-local instance (v : HeightOneSpectrum (𝒪 K)) :
+instance isScalarTower_ringOfIntegers_adicCompletionIntegers (v : HeightOneSpectrum (𝒪 K)) :
     IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
   ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
 
@@ -144,6 +146,14 @@ def integralSemilocalToField :
     v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
       v.adicCompletion K ⊗[K] L :=
   baseChangeOfTower (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L
+
+omit [NumberField L] in
+/-- `TauCeti.integralSemilocalToField` is `TauCeti.baseChangeOfTower` for
+`(𝒪 K, K, 𝒪_v, K_v, 𝒪 L, L)`. -/
+theorem integralSemilocalToField_eq_baseChangeOfTower :
+    integralSemilocalToField L v =
+      baseChangeOfTower (𝒪 K) K (v.adicCompletionIntegers K) (v.adicCompletion K) (𝒪 L) L :=
+  (rfl)
 
 variable {L v}
 

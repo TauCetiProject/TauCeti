@@ -143,6 +143,15 @@ theorem algebraMap_completionExtensionAlgebra :
     algebraMap P.Completion P'.Completion = P.completionExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
 
+/-- Through the completed extension, the embedding of `F'` in its completion is semilinear over
+the embedding of `F` in its completion. -/
+theorem completionEmbedding_smul (c : F) (y : F') :
+    letI := P.completionExtensionAlgebra P' hP
+    P'.completionEmbedding (c • y) = P.completionEmbedding c • P'.completionEmbedding y := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, algebraMap_completionExtensionAlgebra,
+    completionExtension_completionEmbedding]
+
 /-- The extended embedding respects the original embeddings of the constant fields. -/
 theorem completionExtension_algebraMap (c : k) :
     P.completionExtension P' hP (algebraMap k P.Completion c) =

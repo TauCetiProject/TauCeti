@@ -50,9 +50,13 @@ to the canonical fraction fields used by Mathlib's different API.
 
 * `TauCeti.Place.constantsEquiv`: the places of `F' / k` are the places of `F' / k'`, for `k'`
   integral over `k`; enlarging the constants by an algebraic extension changes nothing.
-* `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
-  action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
-  with `attribute [local instance 10]`.
+* `TauCeti.Place.algebraIntegersExtension`, `TauCeti.Place.isScalarTowerIntegersExtension`, and
+  `TauCeti.Place.isScalarTower_constants_integersExtension`: the action of the valuation ring of a
+  place of `F / k` on an `F`-algebra `F'` and its scalar towers, to be installed with
+  `attribute [local instance 10]`.
+* `TauCeti.Place.algebraConstantsIntegralClosure` and
+  `TauCeti.Place.isScalarTower_constants_integralClosure`: the action of an integral constant
+  extension `k'` on the local integral closure `𝒪'_P`, to be installed locally when needed.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
@@ -180,6 +184,12 @@ theorem isScalarTowerIntegersExtension : IsScalarTower (P.integers) F F' :=
 
 attribute [local instance 10] isScalarTowerIntegersExtension
 
+/-- The constant-field action on `F'` factors through `TauCeti.Place.algebraIntegersExtension`. -/
+theorem isScalarTower_constants_integersExtension [Algebra k F'] [IsScalarTower k F F'] :
+    IsScalarTower k (P.integers) F' := .of_algebraMap_eq fun c ↦ by
+  rw [IsScalarTower.algebraMap_apply (P.integers) F F',
+    ← IsScalarTower.algebraMap_apply k (P.integers) F, ← IsScalarTower.algebraMap_apply k F F']
+
 /-- An `F`-algebra is torsion-free over the valuation ring of a place of `F / k`. -/
 instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
   Module.IsTorsionFree.trans F
@@ -217,6 +227,40 @@ section LocalIntegralClosure
 variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+section Constants
+
+variable [Algebra.IsIntegral k k']
+
+/-- Constants of `F' / k'` are integral over `𝒪_P` (hence lie in the local model `𝒪'_P`), since
+`k'` is integral over `k ⊆ 𝒪_P`. -/
+theorem algebraMap_mem_integralClosure (c : k') :
+    algebraMap k' F' c ∈ integralClosure (P.integers) F' := by
+  have := isScalarTower_constants_integersExtension F' P
+  exact (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+
+variable (k')
+
+/-- **The enlarged constant field `k'` acts on the local model `𝒪'_P`**, since `k'` is integral
+over `k ⊆ 𝒪_P`.
+
+This is not a global instance: it depends on `TauCeti.Place.algebraIntegersExtension` and, for
+`k' = k`, would compete with the `k`-algebra structure through `𝒪_P`. Install it locally together
+with `TauCeti.Place.isScalarTower_constants_integralClosure`. -/
+@[instance_reducible]
+noncomputable def algebraConstantsIntegralClosure :
+    Algebra k' (integralClosure (P.integers) F') :=
+  ((algebraMap k' F').codRestrict (integralClosure (P.integers) F')
+    (algebraMap_mem_integralClosure F' P)).toAlgebra
+
+attribute [local instance] algebraConstantsIntegralClosure in
+/-- The action of `TauCeti.Place.algebraConstantsIntegralClosure` on `𝒪'_P` is compatible with
+`F'`. -/
+theorem isScalarTower_constants_integralClosure :
+    IsScalarTower k' (integralClosure (P.integers) F') F' :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+end Constants
 
 variable [FiniteDimensional F F']
 
