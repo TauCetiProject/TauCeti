@@ -338,6 +338,92 @@ open Polynomial
 
 variable {ι : Type*} [Fintype ι]
 
+/-- **The linear coefficient near the roots.** If `‖z - a j‖ ≤ r` for every `j`, then
+`‖P'(z)‖ ≤ n r ^ (n - 1)` for `P = ∏ i, (X - a i)`, with `n` the number of roots, so the two terms
+of the linear coefficient are at most `2 (n r ^ (n - 1))² + 1` in total. -/
+private theorem linearCoeff_le_of_norm_sub_le [DecidableEq ι] {a : ι → ℂ} {z : ℂ} {r : ℝ}
+    (hfac : ∀ j, ‖z - a j‖ ≤ r) :
+    2 * ‖∑ i, ∏ j ∈ Finset.univ.erase i, (z - a j)‖ ^ 2 / (1 + ‖∏ i, (z - a i)‖ ^ 2) ^ 2 +
+        (1 + ‖∏ i, (z - a i)‖ ^ 2)⁻¹ / 8 ≤
+      2 * ((Fintype.card ι : ℝ) * r ^ (Fintype.card ι - 1)) ^ 2 + 1 := by
+  set n := Fintype.card ι
+  set p := ∏ i, (z - a i)
+  set q := ∑ i, ∏ j ∈ Finset.univ.erase i, (z - a j)
+  have hq : ‖q‖ ≤ n * r ^ (n - 1) := by
+    refine (norm_sum_le _ _).trans ?_
+    calc ∑ i, ‖∏ j ∈ Finset.univ.erase i, (z - a j)‖
+        ≤ ∑ _i : ι, r ^ (n - 1) := by
+          refine Finset.sum_le_sum fun i _ ↦ ?_
+          rw [norm_prod]
+          calc ∏ j ∈ Finset.univ.erase i, ‖z - a j‖
+              ≤ ∏ _j ∈ Finset.univ.erase i, r :=
+                Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ hfac j
+            _ = r ^ (n - 1) := by
+              rw [Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ _),
+                Finset.card_univ]
+      _ = n * r ^ (n - 1) := by simp [n]
+  have h1 : 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 ≤ 2 * ((n : ℝ) * r ^ (n - 1)) ^ 2 := by
+    have hpp : 1 ≤ (1 + ‖p‖ ^ 2) ^ 2 := one_le_pow₀ (by nlinarith [sq_nonneg ‖p‖])
+    rw [div_le_iff₀ (by positivity)]
+    have : ‖q‖ ^ 2 ≤ ((n : ℝ) * r ^ (n - 1)) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hq 2
+    nlinarith [sq_nonneg ‖q‖]
+  have h2 : (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ 1 := by
+    have : (1 + ‖p‖ ^ 2)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg ‖p‖])
+    linarith
+  linarith
+
+/-- **The linear coefficient far from the roots.** If `‖a j‖ ≤ ρ` for every `j` and
+`‖z‖ ≥ 2 ρ + 2`, then `‖P(z)‖ ≥ ‖z‖ / 2 ≥ 1` and `‖P'(z)‖ ≤ 2 n ‖P(z)‖ / ‖z‖` for
+`P = ∏ i, (X - a i)`, with `n` the number of roots, so the two terms of the linear coefficient are
+at most `4 (8 n² + 1) / (1 + ‖z‖)²` in total. -/
+private theorem linearCoeff_le_of_le_norm [Nonempty ι] [DecidableEq ι] {a : ι → ℂ} {ρ : ℝ}
+    (hρ : 0 ≤ ρ) (ha : ∀ i, ‖a i‖ ≤ ρ) {z : ℂ} (hz : 2 * ρ + 2 ≤ ‖z‖) :
+    2 * ‖∑ i, ∏ j ∈ Finset.univ.erase i, (z - a j)‖ ^ 2 / (1 + ‖∏ i, (z - a i)‖ ^ 2) ^ 2 +
+        (1 + ‖∏ i, (z - a i)‖ ^ 2)⁻¹ / 8 ≤
+      4 * (8 * (Fintype.card ι : ℝ) ^ 2 + 1) / (1 + ‖z‖) ^ 2 := by
+  set n := Fintype.card ι
+  have hn : 1 ≤ n := Fintype.card_pos
+  set p := ∏ i, (z - a i)
+  set q := ∑ i, ∏ j ∈ Finset.univ.erase i, (z - a j)
+  have hzpos : 0 < ‖z‖ := by linarith
+  have hfac (j : ι) : ‖z‖ / 2 ≤ ‖z - a j‖ := by
+    have := norm_sub_norm_le z (a j)
+    linarith [ha j]
+  have hp : ‖z‖ / 2 ≤ ‖p‖ := by
+    rw [norm_prod]
+    calc ‖z‖ / 2 ≤ (‖z‖ / 2) ^ n := le_self_pow₀ (by linarith) (by omega)
+      _ = ∏ _j : ι, ‖z‖ / 2 := by rw [Finset.prod_const, Finset.card_univ]
+      _ ≤ ∏ j, ‖z - a j‖ :=
+        Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun j _ ↦ hfac j
+  have hppos : 0 < ‖p‖ := lt_of_lt_of_le (by positivity) hp
+  have hq : ‖q‖ ≤ n * (2 * ‖p‖ / ‖z‖) := by
+    refine (norm_sum_le _ _).trans ?_
+    calc ∑ i, ‖∏ j ∈ Finset.univ.erase i, (z - a j)‖ ≤ ∑ _i : ι, 2 * ‖p‖ / ‖z‖ := by
+          refine Finset.sum_le_sum fun i _ ↦ ?_
+          have hmul : ‖z - a i‖ * ‖∏ j ∈ Finset.univ.erase i, (z - a j)‖ = ‖p‖ := by
+            rw [← norm_mul, Finset.mul_prod_erase _ (fun j ↦ z - a j) (Finset.mem_univ i)]
+          rw [le_div_iff₀ hzpos]
+          nlinarith [hfac i, norm_nonneg (∏ j ∈ Finset.univ.erase i, (z - a j))]
+      _ = n * (2 * ‖p‖ / ‖z‖) := by simp [n]
+  have hz2 : (1 + ‖z‖) ^ 2 ≤ 4 * ‖z‖ ^ 2 := by nlinarith
+  have h1 : 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 ≤ 8 * (n : ℝ) ^ 2 / ‖z‖ ^ 2 := by
+    have hq2 : ‖q‖ ^ 2 ≤ 4 * (n : ℝ) ^ 2 * ‖p‖ ^ 2 / ‖z‖ ^ 2 := by
+      calc ‖q‖ ^ 2 ≤ (n * (2 * ‖p‖ / ‖z‖)) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hq 2
+        _ = 4 * (n : ℝ) ^ 2 * ‖p‖ ^ 2 / ‖z‖ ^ 2 := by field_simp; ring
+    have hpp : ‖p‖ ^ 2 ≤ (1 + ‖p‖ ^ 2) ^ 2 := by nlinarith [sq_nonneg ‖p‖]
+    rw [div_le_div_iff₀ (by positivity) (by positivity)]
+    rw [le_div_iff₀ (by positivity)] at hq2
+    nlinarith [sq_nonneg (n : ℝ), sq_nonneg ‖z‖]
+  have h2 : (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ 1 / ‖z‖ ^ 2 := by
+    have : ‖z‖ ^ 2 ≤ 8 * (1 + ‖p‖ ^ 2) := by nlinarith
+    rw [inv_div_left, ← one_div]
+    exact one_div_le_one_div_of_le (by positivity) this
+  calc 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 + (1 + ‖p‖ ^ 2)⁻¹ / 8
+      ≤ (8 * (n : ℝ) ^ 2 + 1) / ‖z‖ ^ 2 := by rw [add_div]; linarith
+    _ ≤ 4 * (8 * (n : ℝ) ^ 2 + 1) / (1 + ‖z‖) ^ 2 := by
+        rw [div_le_div_iff₀ (by positivity) (by positivity)]
+        nlinarith [sq_nonneg (n : ℝ)]
+
 /-- **Uniform decay of the linear coefficient.** For roots in a fixed disc, the coefficient
 `2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional of
 `P = ∏ i, (X - a i)` is bounded by `K (1 + ‖z‖)⁻²`, with `K` independent of the roots. -/
@@ -348,7 +434,6 @@ private theorem exists_abs_linearCoeff_le [Nonempty ι] (ρ : ℝ) (hρ : 0 ≤ 
         (1 + ‖(∏ i, (X - C (a i))).eval z‖ ^ 2)⁻¹ / 8| ≤ K / (1 + ‖z‖) ^ 2 := by
   classical
   set n := Fintype.card ι
-  have hn : 1 ≤ n := Fintype.card_pos
   set R := 2 * ρ + 2
   set K₁ := 2 * ((n : ℝ) * (R + ρ) ^ (n - 1)) ^ 2 + 1
   refine ⟨4 * (8 * (n : ℝ) ^ 2 + 1) + K₁ * (1 + R) ^ 2, by positivity, fun a ha z ↦ ?_⟩
@@ -365,88 +450,49 @@ private theorem exists_abs_linearCoeff_le [Nonempty ι] (ρ : ℝ) (hρ : 0 ≤ 
       have : 0 ≤ (1 + ‖p‖ ^ 2)⁻¹ / 8 := by positivity
       linarith
   refine habs.trans ?_
-  have hz1 : 0 < 1 + ‖z‖ := by positivity
   rcases lt_or_ge ‖z‖ R with hzR | hzR
-  · -- Inside the disc of radius `R` everything is bounded.
-    have hfac (j : ι) : ‖z - a j‖ ≤ R + ρ :=
-      (norm_sub_le _ _).trans (add_le_add hzR.le (ha j))
-    have hq : ‖q‖ ≤ n * (R + ρ) ^ (n - 1) := by
-      refine (norm_sum_le _ _).trans ?_
-      calc ∑ i, ‖∏ j ∈ Finset.univ.erase i, (z - a j)‖
-          ≤ ∑ _i : ι, (R + ρ) ^ (n - 1) := by
-            refine Finset.sum_le_sum fun i _ ↦ ?_
-            rw [norm_prod]
-            calc ∏ j ∈ Finset.univ.erase i, ‖z - a j‖
-                ≤ ∏ _j ∈ Finset.univ.erase i, (R + ρ) :=
-                  Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ hfac j
-              _ = (R + ρ) ^ (n - 1) := by
-                rw [Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ _),
-                  Finset.card_univ]
-        _ = n * (R + ρ) ^ (n - 1) := by simp [n]
-    have h1 : 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 ≤ 2 * ((n : ℝ) * (R + ρ) ^ (n - 1)) ^ 2 := by
-      have hpp : 1 ≤ (1 + ‖p‖ ^ 2) ^ 2 := one_le_pow₀ (by nlinarith [sq_nonneg ‖p‖])
-      rw [div_le_iff₀ (by positivity)]
-      have : ‖q‖ ^ 2 ≤ ((n : ℝ) * (R + ρ) ^ (n - 1)) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) hq 2
-      nlinarith [sq_nonneg ‖q‖]
-    have h2 : (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ 1 := by
-      have : (1 + ‖p‖ ^ 2)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg ‖p‖])
-      linarith
+  · -- Inside the disc of radius `R`, every factor `z - a j` has norm at most `R + ρ`.
+    have hz1 : 0 < 1 + ‖z‖ := by positivity
     have h3 : K₁ ≤ K₁ * (1 + R) ^ 2 / (1 + ‖z‖) ^ 2 := by
       rw [le_div_iff₀ (by positivity)]
       have : (1 + ‖z‖) ^ 2 ≤ (1 + R) ^ 2 := pow_le_pow_left₀ hz1.le (by linarith) 2
       have : 0 ≤ K₁ := by positivity
       nlinarith
-    calc 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 + (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ K₁ := by
-          simp only [K₁]; linarith
+    calc 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 + (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ K₁ :=
+          linearCoeff_le_of_norm_sub_le fun j ↦ (norm_sub_le _ _).trans (add_le_add hzR.le (ha j))
       _ ≤ K₁ * (1 + R) ^ 2 / (1 + ‖z‖) ^ 2 := h3
       _ ≤ _ := by
           gcongr
           have : 0 ≤ 4 * (8 * (n : ℝ) ^ 2 + 1) := by positivity
           linarith
-  · -- Outside it, `‖p‖ ≥ ‖z‖ / 2 ≥ 1` and `‖q‖ ≤ 2 n ‖p‖ / ‖z‖`.
-    have hzpos : 0 < ‖z‖ := by linarith
-    have hfac (j : ι) : ‖z‖ / 2 ≤ ‖z - a j‖ := by
-      have := norm_sub_norm_le z (a j)
-      linarith [ha j]
-    have hp : ‖z‖ / 2 ≤ ‖p‖ := by
-      rw [norm_prod]
-      calc ‖z‖ / 2 ≤ (‖z‖ / 2) ^ n := le_self_pow₀ (by linarith) (by omega)
-        _ = ∏ _j : ι, ‖z‖ / 2 := by rw [Finset.prod_const, Finset.card_univ]
-        _ ≤ ∏ j, ‖z - a j‖ :=
-          Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun j _ ↦ hfac j
-    have hppos : 0 < ‖p‖ := lt_of_lt_of_le (by positivity) hp
-    have hq : ‖q‖ ≤ n * (2 * ‖p‖ / ‖z‖) := by
-      refine (norm_sum_le _ _).trans ?_
-      calc ∑ i, ‖∏ j ∈ Finset.univ.erase i, (z - a j)‖ ≤ ∑ _i : ι, 2 * ‖p‖ / ‖z‖ := by
-            refine Finset.sum_le_sum fun i _ ↦ ?_
-            have hmul : ‖z - a i‖ * ‖∏ j ∈ Finset.univ.erase i, (z - a j)‖ = ‖p‖ := by
-              rw [← norm_mul, Finset.mul_prod_erase _ (fun j ↦ z - a j) (Finset.mem_univ i)]
-            rw [le_div_iff₀ hzpos]
-            nlinarith [hfac i, norm_nonneg (∏ j ∈ Finset.univ.erase i, (z - a j))]
-        _ = n * (2 * ‖p‖ / ‖z‖) := by simp [n]
-    have hz2 : (1 + ‖z‖) ^ 2 ≤ 4 * ‖z‖ ^ 2 := by nlinarith
-    have h1 : 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 ≤ 8 * (n : ℝ) ^ 2 / ‖z‖ ^ 2 := by
-      have hq2 : ‖q‖ ^ 2 ≤ 4 * (n : ℝ) ^ 2 * ‖p‖ ^ 2 / ‖z‖ ^ 2 := by
-        calc ‖q‖ ^ 2 ≤ (n * (2 * ‖p‖ / ‖z‖)) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hq 2
-          _ = 4 * (n : ℝ) ^ 2 * ‖p‖ ^ 2 / ‖z‖ ^ 2 := by field_simp; ring
-      have hpp : ‖p‖ ^ 2 ≤ (1 + ‖p‖ ^ 2) ^ 2 := by nlinarith [sq_nonneg ‖p‖]
-      rw [div_le_div_iff₀ (by positivity) (by positivity)]
-      rw [le_div_iff₀ (by positivity)] at hq2
-      nlinarith [sq_nonneg (n : ℝ), sq_nonneg ‖z‖]
-    have h2 : (1 + ‖p‖ ^ 2)⁻¹ / 8 ≤ 1 / ‖z‖ ^ 2 := by
-      have : ‖z‖ ^ 2 ≤ 8 * (1 + ‖p‖ ^ 2) := by nlinarith
-      rw [inv_div_left, ← one_div]
-      exact one_div_le_one_div_of_le (by positivity) this
-    calc 2 * ‖q‖ ^ 2 / (1 + ‖p‖ ^ 2) ^ 2 + (1 + ‖p‖ ^ 2)⁻¹ / 8
-        ≤ (8 * (n : ℝ) ^ 2 + 1) / ‖z‖ ^ 2 := by rw [add_div]; linarith
-      _ ≤ 4 * (8 * (n : ℝ) ^ 2 + 1) / (1 + ‖z‖) ^ 2 := by
-          rw [div_le_div_iff₀ (by positivity) (by positivity)]
-          nlinarith [sq_nonneg (n : ℝ)]
-      _ ≤ _ := by
-          gcongr
-          have : 0 ≤ K₁ * (1 + R) ^ 2 := by positivity
-          linarith
+  · -- Outside it, the coefficient decays like `‖z‖⁻²`.
+    refine (linearCoeff_le_of_le_norm hρ ha hzR).trans ?_
+    gcongr
+    have : 0 ≤ K₁ * (1 + R) ^ 2 := by positivity
+    linarith
+
+/-- **Domination of the difference of two sources.** If the linear coefficients of `P` and `Q`
+are both bounded by `b` at `z`, then `|S_Q(w) - S_P(w)| ≤ |exp (2w) - 1| / 8 + 2 b` at `z`: the
+weights `h_P` and `h_Q` lie in `[0, 1]`, so their difference has absolute value at most one. -/
+private theorem abs_reducedSource_sub_le {Q : Polynomial ℂ} (W : ℂ → ℝ) (z : ℂ) {b : ℝ}
+    (hP : |2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8| ≤ b)
+    (hQ : |2 * ‖Q.derivative.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) ^ 2 -
+      (1 + ‖Q.eval z‖ ^ 2)⁻¹ / 8| ≤ b) :
+    |reducedSource Q W z - reducedSource P W z| ≤ |Real.exp (2 * W z) - 1| / 8 + 2 * b := by
+  rw [reducedSource_eq_add, reducedSource_eq_add]
+  have h1 : |backgroundWeight (Q.eval ·) z * (Real.exp (2 * W z) - 1) / 8 -
+      backgroundWeight (P.eval ·) z * (Real.exp (2 * W z) - 1) / 8| ≤
+        |Real.exp (2 * W z) - 1| / 8 := by
+    rw [← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 8)]
+    exact div_le_div_of_nonneg_right (mul_le_of_le_one_left (abs_nonneg _)
+      (abs_sub_le_of_nonneg_of_le (backgroundWeight_nonneg _ z)
+        (backgroundWeight_lt_one _ z).le (backgroundWeight_nonneg _ z)
+        (backgroundWeight_lt_one _ z).le)) (by norm_num)
+  have h1' := abs_le.1 h1
+  have hP' := abs_le.1 hP
+  have hQ' := abs_le.1 hQ
+  exact abs_le.2 ⟨by linarith, by linarith⟩
 
 /-- **Convergence of the sources.** For a fixed `w ∈ H¹(ℂ)`, the source of the reduced equation of
 `∏ i, (X - a i)` at `w` converges in `L²` as the roots `a` converge: the coefficients converge
@@ -477,32 +523,10 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
   · -- The uniform bound, for roots within distance one of `a₀`.
     filter_upwards [Metric.ball_mem_nhds a₀ one_pos] with a ha
     refine ae_of_all _ fun z ↦ ?_
-    have hroots (b : ι → ℂ) (hb : dist b a₀ < 1) (i : ι) : ‖b i‖ ≤ ‖a₀‖ + 1 := by
-      have h1 : ‖b i - a₀ i‖ ≤ ‖b - a₀‖ := norm_le_pi_norm (b - a₀) i
-      have h2 : ‖a₀ i‖ ≤ ‖a₀‖ := norm_le_pi_norm a₀ i
-      rw [dist_eq_norm] at hb
-      have := norm_le_insert' (b i) (a₀ i)
-      linarith
-    have hb := hKb a (hroots a ha) z
-    have hb₀ := hKb a₀ (hroots a₀ (dist_self a₀ ▸ one_pos)) z
-    have hdiff : |reducedSource (∏ i, (X - C (a i))) W z -
-        reducedSource (∏ i, (X - C (a₀ i))) W z| ≤
-        |Real.exp (2 * W z) - 1| / 8 + 2 * (K / (1 + ‖z‖) ^ 2) := by
-      rw [reducedSource_eq_add, reducedSource_eq_add]
-      -- The weights lie in `[0, 1]`, so their difference has absolute value at most one.
-      set x := backgroundWeight (Polynomial.eval · (∏ i, (X - C (a i)))) z
-      set y := backgroundWeight (Polynomial.eval · (∏ i, (X - C (a₀ i)))) z
-      set e := Real.exp (2 * W z) - 1
-      have h1 : |x * e / 8 - y * e / 8| ≤ |e| / 8 := by
-        rw [← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 8)]
-        exact div_le_div_of_nonneg_right (mul_le_of_le_one_left (abs_nonneg _)
-          (abs_sub_le_of_nonneg_of_le (backgroundWeight_nonneg _ z)
-            (backgroundWeight_lt_one _ z).le (backgroundWeight_nonneg _ z)
-            (backgroundWeight_lt_one _ z).le)) (by norm_num)
-      have h1' := abs_le.1 h1
-      have hb' := abs_le.1 hb
-      have hb₀' := abs_le.1 hb₀
-      exact abs_le.2 ⟨by linarith, by linarith⟩
+    have hroots (b : ι → ℂ) (hb : dist b a₀ < 1) (i : ι) : ‖b i‖ ≤ ‖a₀‖ + 1 :=
+      (norm_le_pi_norm b i).trans (norm_le_of_mem_closedBall (ball_subset_closedBall hb))
+    have hdiff := abs_reducedSource_sub_le W z (hKb a₀ (hroots a₀ (dist_self a₀ ▸ one_pos)) z)
+      (hKb a (hroots a ha) z)
     have hz4 : (1 + ‖z‖) ^ (-4 : ℝ) = ((1 + ‖z‖) ^ 2)⁻¹ ^ 2 := by
       rw [Real.rpow_neg (by positivity), ← inv_pow, ← pow_mul]
       norm_num
@@ -529,6 +553,15 @@ private theorem tendsto_integral_reducedSource_sub_sq [Nonempty ι]
 end Roots
 
 /-! ### Convergence of minimizers -/
+
+/-- The conclusion of `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two` on `ℂ` for the
+constant `C₀`: `‖v‖₂² ≤ 2 k ∫_{sᶜ} (√(1 + v²) - 1) + k² |s|` with `k = 2 + C₀ ‖∇v‖₂`, for every
+`v ∈ H¹(ℂ)` and every measurable set `s` of finite measure. -/
+private def PlanarEstimate (C₀ : ℝ) : Prop :=
+  ∀ v : W1p (volume : Measure ℂ) ⊤ 2, ∀ s : Set ℂ, MeasurableSet s → volume s ≠ ∞ →
+    ‖W1p.value v‖ ^ 2 ≤
+      2 * (2 + C₀ * ‖W1p.gradient v‖) * (∫ z in sᶜ, (√(1 + W1p.value v z ^ 2) - 1)) +
+        (2 + C₀ * ‖W1p.gradient v‖) ^ 2 * volume.real s
 
 /-- The stability inequality with the `L²` distance of the sources bounded by `τ`: by the
 Cauchy–Schwarz inequality, `‖∇d‖₂² / 2 + E / 16 ≤ τ ‖d‖₂` for `d = u - w`. -/
@@ -571,10 +604,7 @@ private theorem norm_value_sub_sq_le {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
     (hQ : 0 < Q.natDegree) {w u : W1p (volume : Measure ℂ) ⊤ 2}
     (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v)
     (hu : sobolevReducedFunctional Q u ≤ sobolevReducedFunctional Q w) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hpl : ∀ v : W1p (volume : Measure ℂ) ⊤ 2, ∀ s : Set ℂ, MeasurableSet s → volume s ≠ ∞ →
-      ‖W1p.value v‖ ^ 2 ≤
-        2 * (2 + C₀ * ‖W1p.gradient v‖) * (∫ z in sᶜ, (√(1 + W1p.value v z ^ 2) - 1)) +
-          (2 + C₀ * ‖W1p.gradient v‖) ^ 2 * volume.real s)
+    (hpl : PlanarEstimate C₀)
     {δ M η : ℝ} (hδ : 0 < δ) (hM : 0 < M)
     (hη : volume {z | ‖Q.eval z‖ < δ} ≤ ENNReal.ofReal η) (hη0 : 0 ≤ η) :
     ‖W1p.value (u - w)‖ ^ 2 ≤
@@ -668,10 +698,7 @@ arithmetic-geometric mean inequality turns these into `3 X² / 4 ≤ a X + 8 S`.
 private theorem exists_norm_value_sub_le (hP : 0 < P.natDegree)
     {w : W1p (volume : Measure ℂ) ⊤ 2}
     (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hpl : ∀ v : W1p (volume : Measure ℂ) ⊤ 2, ∀ s : Set ℂ, MeasurableSet s → volume s ≠ ∞ →
-      ‖W1p.value v‖ ^ 2 ≤
-        2 * (2 + C₀ * ‖W1p.gradient v‖) * (∫ z in sᶜ, (√(1 + W1p.value v z ^ 2) - 1)) +
-          (2 + C₀ * ‖W1p.gradient v‖) ^ 2 * volume.real s)
+    (hpl : PlanarEstimate C₀)
     {δ : ℝ} (hδ : 0 < δ) :
     ∃ B, 0 ≤ B ∧ ∀ {Q : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}, 0 < Q.natDegree →
       sobolevReducedFunctional Q u ≤ sobolevReducedFunctional Q w →
@@ -730,10 +757,7 @@ private theorem sq_norm_sub_le {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
     (hQ : 0 < Q.natDegree) {w u : W1p (volume : Measure ℂ) ⊤ 2}
     (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v)
     (hu : sobolevReducedFunctional Q u ≤ sobolevReducedFunctional Q w) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hpl : ∀ v : W1p (volume : Measure ℂ) ⊤ 2, ∀ s : Set ℂ, MeasurableSet s → volume s ≠ ∞ →
-      ‖W1p.value v‖ ^ 2 ≤
-        2 * (2 + C₀ * ‖W1p.gradient v‖) * (∫ z in sᶜ, (√(1 + W1p.value v z ^ 2) - 1)) +
-          (2 + C₀ * ‖W1p.gradient v‖) ^ 2 * volume.real s)
+    (hpl : PlanarEstimate C₀)
     {δ M θ τ B : ℝ} (hδ : 0 < δ) (hM : 0 < M)
     (hθ : volume {z | ‖Q.eval z‖ < δ} ≤ ENNReal.ofReal θ) (hθ0 : 0 ≤ θ) (hτ : 0 ≤ τ)
     (hR : ∫ z, (reducedSource Q (W1p.value w) z - reducedSource P (W1p.value w) z) ^ 2 ≤ τ ^ 2)
@@ -775,9 +799,9 @@ private theorem sq_norm_sub_le {Q : Polynomial ℂ} (hP : 0 < P.natDegree)
   nlinarith
 
 /-- **Convergence of minimizers.** Let `w` minimize Taubes's functional `I_P`, and let `u x`
-satisfy `I_(Q x)(u x) ≤ I_(Q x)(w)` along a filter. If the sources `S_(Q x)(w)` converge to
-`S_P(w)` in `L²` and the sublevel sets `{‖Q x‖ < δ}` have measure tending to zero with `δ`,
-uniformly in `x`, then `u x → w` in `H¹(ℂ)`.
+eventually satisfy `I_(Q x)(u x) ≤ I_(Q x)(w)` along a filter. If the sources `S_(Q x)(w)`
+converge to `S_P(w)` in `L²` and, for every `η > 0`, some `δ > 0` makes the sublevel sets
+`{‖Q x‖ < δ}` eventually of measure at most `η`, then `u x → w` in `H¹(ℂ)`.
 
 By `TauCeti.Vortex.norm_gradient_sub_sq_div_two_add_integral_div_sixteen_le` and the
 Cauchy–Schwarz inequality, `d = u x - w` satisfies `‖∇d‖₂² / 2 + E / 16 ≤ τ ‖d‖₂`, where `τ` is
@@ -789,11 +813,11 @@ theorem tendsto_of_forall_sobolevReducedFunctional_le {X : Type*} {l : Filter X}
     (hP : 0 < P.natDegree) {w : W1p (volume : Measure ℂ) ⊤ 2}
     (hw : ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v)
     {Q : X → Polynomial ℂ} {u : X → W1p (volume : Measure ℂ) ⊤ 2}
-    (hQ : ∀ x, 0 < (Q x).natDegree)
-    (hu : ∀ x, sobolevReducedFunctional (Q x) (u x) ≤ sobolevReducedFunctional (Q x) w)
+    (hQ : ∀ᶠ x in l, 0 < (Q x).natDegree)
+    (hu : ∀ᶠ x in l, sobolevReducedFunctional (Q x) (u x) ≤ sobolevReducedFunctional (Q x) w)
     (hres : Tendsto (fun x ↦ ∫ z, (reducedSource (Q x) (W1p.value w) z -
       reducedSource P (W1p.value w) z) ^ 2) l (𝓝 0))
-    (hlev : ∀ η > 0, ∃ δ > 0, ∀ x, volume {z | ‖(Q x).eval z‖ < δ} ≤ ENNReal.ofReal η) :
+    (hlev : ∀ η > 0, ∃ δ > 0, ∀ᶠ x in l, volume {z | ‖(Q x).eval z‖ < δ} ≤ ENNReal.ofReal η) :
     Tendsto u l (𝓝 w) := by
   obtain ⟨C₀, hC₀, hpl⟩ :=
     W1p.exists_norm_value_sq_le_of_finrank_eq_two (volume : Measure ℂ) Complex.finrank_real_complex
@@ -826,9 +850,10 @@ theorem tendsto_of_forall_sobolevReducedFunctional_le {X : Type*} {l : Filter X}
     · have h : τ ≤ η ^ 2 / (4 * a + 1) := min_le_right _ _
       rw [le_div_iff₀ (by positivity)] at h
       nlinarith
-  filter_upwards [(tendsto_order.1 hres).2 (τ ^ 2) (by positivity)] with x hx
-  have hXB := hbound (hQ x) (hu x) (hδ₁b x) (hx.le.trans (pow_le_one₀ hτ.le hτ1))
-  have hsq := sq_norm_sub_le hP (hQ x) hw (hu x) hC₀ hpl hδ (M := M) (by linarith) (hδb x)
+  filter_upwards [(tendsto_order.1 hres).2 (τ ^ 2) (by positivity), hQ, hu, hδ₁b, hδb]
+    with x hx hQx hux hδ₁x hδx
+  have hXB := hbound hQx hux hδ₁x (hx.le.trans (pow_le_one₀ hτ.le hτ1))
+  have hsq := sq_norm_sub_le hP hQx hw hux hC₀ hpl hδ (M := M) (by linarith) hδx
     (by positivity) hτ.le hx.le hXB hτC
   rw [dist_eq_norm, ← sq_lt_sq₀ (norm_nonneg _) hη.le]
   have h96 : 96 * τ * B / κ + 2 * τ * B = τ * (96 * B / κ + 2 * B) := by ring
@@ -855,8 +880,10 @@ theorem continuous_of_forall_sobolevReducedFunctional_le {ι : Type*} [Fintype �
   classical
   refine continuous_iff_continuousAt.2 fun a₀ ↦ ?_
   exact tendsto_of_forall_sobolevReducedFunctional_le
-    (Polynomial.natDegree_prod_X_sub_C_pos a₀) (hu a₀) Polynomial.natDegree_prod_X_sub_C_pos
-    (fun a ↦ hu a (u a₀)) (tendsto_integral_reducedSource_sub_sq (u a₀) a₀)
-    fun _ hη ↦ exists_volume_setOf_norm_eval_prod_lt_le hη
+    (Polynomial.natDegree_prod_X_sub_C_pos a₀) (hu a₀)
+    (Eventually.of_forall Polynomial.natDegree_prod_X_sub_C_pos)
+    (Eventually.of_forall fun a ↦ hu a (u a₀)) (tendsto_integral_reducedSource_sub_sq (u a₀) a₀)
+    fun _ hη ↦ (exists_volume_setOf_norm_eval_prod_lt_le hη).imp fun _ ⟨hδ, h⟩ ↦
+      ⟨hδ, Eventually.of_forall h⟩
 
 end TauCeti.Vortex
