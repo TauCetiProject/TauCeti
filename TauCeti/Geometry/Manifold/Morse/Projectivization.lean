@@ -69,6 +69,9 @@ block of the same sign to its inertia.
   two of them have the same index.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
   standard weights, `[eₖ]` has index `2 * k`.
+* `TauCeti.isCriticalBandCut_projectiveMomentFunction_natCast`: with the standard weights, the
+  values `q - 1 / 2` cut the moment function into critical bands, each containing at most the
+  critical point `[e_q]`.
 
 ## References
 
@@ -382,6 +385,21 @@ theorem projectiveMomentFunction_mk_single (w : Fin (n + 1) → ℝ) (k : Fin (n
   rw [← affineChart_symm_zero, ← comp_apply (f := projectiveMomentFunction 𝕜 w),
     projectiveMomentFunction_comp_affineChart_symm, model_zero]
 
+/-- The moment function takes its values between any lower and upper bounds of the weights. -/
+theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} {a b : ℝ} (ha : ∀ i, a ≤ w i)
+    (hb : ∀ i, w i ≤ b) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w x ∈ Icc a b := by
+  induction x using Projectivization.ind with
+  | h v hv =>
+    rw [projectiveMomentFunction_mk]
+    obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
+      Finset.sum_pos' (fun j _ ↦ by positivity)
+        ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
+    rw [mem_Icc, le_div_iff₀ hpos, div_le_iff₀ hpos, Finset.mul_sum, Finset.mul_sum]
+    exact ⟨Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (ha i) (by positivity),
+      Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hb i) (by positivity)⟩
+
 private theorem projectiveMomentFunction_comp_extend_symm (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     projectiveMomentFunction 𝕜 w ∘ ((affineOpenPartialHomeomorph k).extend 𝓘(ℝ, Fin n → 𝕜)).symm =
       model 𝕜 (w k) (w ∘ k.succAbove) := by
@@ -620,6 +638,48 @@ theorem manifoldMorseIndex_projectiveMomentFunction_natCast (k : Fin (n + 1)) :
     ext i
     simp only [mem_ofPred_eq, Nat.cast_lt, Finset.coe_Iio, mem_Iio, Fin.lt_def]
   rw [hset, ncard_coe_finset, Fin.card_Iio]
+
+/-- A critical point of the moment function with the standard weights `w i = i` whose value lies
+in `[q - 1 / 2, q + 1 / 2]` is the coordinate point `[e_q]`, of value `q`. -/
+theorem exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast
+    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ)))
+    {q : ℤ} (hq : projectiveMomentFunction 𝕜 (fun i ↦ ((i : ℕ) : ℝ)) x ∈
+      Icc ((q : ℝ) - 1 / 2) (((q + 1 : ℤ) : ℝ) - 1 / 2)) :
+    ∃ k : Fin (n + 1), x = mk 𝕜 (Pi.single k 1) (by simp) ∧ ((k : ℕ) : ℤ) = q := by
+  have hw : Injective fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
+    Nat.cast_injective.comp Fin.val_injective
+  rw [criticalPoints_projectiveMomentFunction hw] at hx
+  obtain ⟨k, rfl⟩ := hx
+  refine ⟨k, rfl, ?_⟩
+  rw [projectiveMomentFunction_mk_single] at hq
+  push_cast at hq
+  have h₁ : (((k : ℕ) : ℤ) - q : ℤ) < 1 := by
+    rw [← Int.cast_lt (R := ℝ)]
+    push_cast
+    linarith [hq.2]
+  have h₂ : (-1 : ℤ) < ((k : ℕ) : ℤ) - q := by
+    rw [← Int.cast_lt (R := ℝ)]
+    push_cast
+    linarith [hq.1]
+  lia
+
+/-- **The critical bands of the standard moment function.** The values `q - 1 / 2`, `q ∈ ℤ`, cut
+the moment function `[v] ↦ (∑ i, i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2` on `ℙ 𝕜 (Fin (n + 1) → 𝕜)` into
+critical bands: the band `f⁻¹[q - 1 / 2, q + 1 / 2]` contains no critical value other than `q`,
+which is the value of the coordinate point `[e_q]` when `0 ≤ q ≤ n`. -/
+theorem isCriticalBandCut_projectiveMomentFunction_natCast :
+    IsCriticalBandCut 𝓘(ℝ, Fin n → 𝕜)
+      (projectiveMomentFunction 𝕜 fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))
+      fun q : ℤ ↦ (q : ℝ) - 1 / 2 := by
+  refine ⟨fun q ↦ ⟨(isClosed_Icc.preimage
+    (contMDiff_projectiveMomentFunction (𝕜 := 𝕜) _ (r := 0)).continuous).isCompact, q, ?_, ?_⟩⟩
+  · constructor <;> push_cast <;> linarith
+  · intro x hx hfx
+    obtain ⟨k, rfl, hk⟩ :=
+      exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast hx hfx
+    rw [projectiveMomentFunction_mk_single, ← hk]
+    norm_cast
 
 /-- **The Morse index on complex projective space.** For the moment function
 `[z] ↦ (∑ j, j * ‖z j‖ ^ 2) / ∑ j, ‖z j‖ ^ 2` on `ℂℙⁿ`, the coordinate point `[eₖ]` has Morse

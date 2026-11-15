@@ -20,9 +20,9 @@ The standard moment function `f[v] = (∑ i, i * v i ^ 2) / ∑ i, v i ^ 2` on
 bands (`TauCeti.isCriticalBandCut_projectiveMomentFunction_natCast`), each containing at most one
 critical point, and the sublevels `X q = {f ≤ q - 1 / 2}` form its critical-band filtration. This
 file computes the beginning of the spectral sequence of that filtration
-(`TauCeti.realProjSpaceSpectralSequence`), in the convention of
+(`TauCeti.realProjectiveSpaceSpectralSequence`), in the convention of
 `TauCeti.filteredSpaceSpectralSequence`: the first page, numbered `2`, has at `(p, q)` the
-relative homology `Hₙ(X (q + 1), X q)` of the `q`th band, `p + q = -n`.
+relative homology `Hₘ(X (q + 1), X q)` of the `q`th band, `p + q = -m`.
 
 * **The first page.** It is the coefficient object at `(-2q, q)` for `0 ≤ q ≤ n`, one copy for the
   critical point `[e_q]` of index `q`, and zero elsewhere.
@@ -46,18 +46,17 @@ since `H₂(X 3, X 1) = H₂(ℝℙ²) = 0`, and its cokernel is `H₁(X 3, X 1)
 
 ## Main declarations
 
-* `TauCeti.isCriticalBandCut_projectiveMomentFunction_natCast`: the values `q - 1 / 2` cut the
-  standard moment function on `ℝℙⁿ` into critical bands.
-* `TauCeti.realProjSpaceSpectralSequence`: the spectral sequence of this critical-band filtration.
-* `TauCeti.nonempty_realProjSpaceSpectralSequence_page_two_X_iso` and
-  `TauCeti.isZero_realProjSpaceSpectralSequence_page_two_X`: its first page.
-* `TauCeti.exists_linearEquiv_realProjSpaceSpectralSequence_page_two_d_two_mul` and
-  `TauCeti.realProjSpaceSpectralSequence_page_two_d_eq_zero`: the first differentials of `ℝℙ²`
+* `TauCeti.realProjectiveSpaceSpectralSequence`: the spectral sequence of this critical-band
+  filtration.
+* `TauCeti.nonempty_realProjectiveSpaceSpectralSequence_page_two_X_iso` and
+  `TauCeti.isZero_realProjectiveSpaceSpectralSequence_page_two_X`: its first page.
+* `TauCeti.exists_linearEquiv_realProjectiveSpaceSpectralSequence_page_two_d_two_mul` and
+  `TauCeti.realProjectiveSpaceSpectralSequence_page_two_d_eq_zero`: the first differentials of `ℝℙ²`
   with integer coefficients.
-* `TauCeti.isZero_realProjSpaceSpectralSequence_page_three_X_neg_four_two`,
-  `TauCeti.nonempty_linearEquiv_realProjSpaceSpectralSequence_page_three_X_neg_two_one` and
-  `TauCeti.nonempty_linearEquiv_realProjSpaceSpectralSequence_page_three_X_zero_zero`: its second
-  page.
+* `TauCeti.isZero_realProjectiveSpaceSpectralSequence_page_three_X_neg_four_two`,
+  `TauCeti.nonempty_linearEquiv_realProjectiveSpaceSpectralSequence_page_three_X_neg_two_one` and
+  `TauCeti.nonempty_linearEquiv_realProjectiveSpaceSpectralSequence_page_three_X_zero_zero`: its
+  second page.
 
 ## References
 
@@ -82,67 +81,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-! ### The critical bands of the standard moment function -/
-
-/-- The standard moment function `[v] ↦ (∑ i, i * v i ^ 2) / ∑ i, v i ^ 2` on `ℝℙⁿ` takes its
-values in `[0, n]`. -/
-private theorem projectiveMomentFunction_natCast_mem_Icc (x : ℙ ℝ (Fin (n + 1) → ℝ)) :
-    projectiveMomentFunction ℝ (fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x ∈ Icc (0 : ℝ) n := by
-  induction x using Projectivization.ind with
-  | h v hv =>
-    rw [projectiveMomentFunction_mk]
-    obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
-      Finset.sum_pos' (fun j _ ↦ by positivity)
-        ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
-    refine ⟨div_nonneg (Finset.sum_nonneg fun i _ ↦ by positivity) hpos.le, ?_⟩
-    rw [div_le_iff₀ hpos, Finset.mul_sum]
-    refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (by positivity)
-    exact_mod_cast Nat.lt_succ_iff.1 i.2
-
-/-- The standard weights `i ↦ i` are pairwise distinct. -/
-private theorem injective_natCast_fin : Function.Injective fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
-  Nat.cast_injective.comp Fin.val_injective
-
-/-- A critical point of the standard moment function on `ℝℙⁿ` with value in
-`[q - 1 / 2, q + 1 / 2]` is the coordinate point `[e_q]`, of value `q`. -/
-private theorem exists_eq_mk_single_of_mem_criticalPoints {x : ℙ ℝ (Fin (n + 1) → ℝ)}
-    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))) {q : ℤ}
-    (hq : projectiveMomentFunction ℝ (fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x ∈
-      Icc ((q : ℝ) - 1 / 2) (((q + 1 : ℤ) : ℝ) - 1 / 2)) :
-    ∃ k : Fin (n + 1), x = mk ℝ (Pi.single k 1) (by simp) ∧ ((k : ℕ) : ℤ) = q := by
-  rw [criticalPoints_projectiveMomentFunction injective_natCast_fin] at hx
-  obtain ⟨k, rfl⟩ := hx
-  refine ⟨k, rfl, ?_⟩
-  rw [projectiveMomentFunction_mk_single] at hq
-  push_cast at hq
-  have h₁ : (((k : ℕ) : ℤ) - q : ℤ) < 1 := by
-    rw [← Int.cast_lt (R := ℝ)]
-    push_cast
-    linarith [hq.2]
-  have h₂ : (-1 : ℤ) < ((k : ℕ) : ℤ) - q := by
-    rw [← Int.cast_lt (R := ℝ)]
-    push_cast
-    linarith [hq.1]
-  lia
-
-/-- **The critical bands of the standard moment function on `ℝℙⁿ`.** The values `q - 1 / 2`,
-`q ∈ ℤ`, cut the standard moment function `[v] ↦ (∑ i, i * v i ^ 2) / ∑ i, v i ^ 2` into critical
-bands: the band `f⁻¹[q - 1 / 2, q + 1 / 2]` contains no critical value other than `q`, which is
-the value of the coordinate point `[e_q]` when `0 ≤ q ≤ n`. -/
-theorem isCriticalBandCut_projectiveMomentFunction_natCast :
-    IsCriticalBandCut 𝓘(ℝ, Fin n → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))
-      fun q : ℤ ↦ (q : ℝ) - 1 / 2 := by
-  refine ⟨fun q ↦ ⟨(isClosed_Icc.preimage
-    (contMDiff_projectiveMomentFunction (𝕜 := ℝ) _ (r := 0)).continuous).isCompact, q, ?_, ?_⟩⟩
-  · constructor <;> push_cast <;> linarith
-  · intro x hx hfx
-    obtain ⟨k, rfl, hk⟩ := exists_eq_mk_single_of_mem_criticalPoints hx hfx
-    rw [projectiveMomentFunction_mk_single, ← hk]
-    norm_cast
-
 /-! ### The first page -/
 
 variable {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{0} A] (R : A)
@@ -152,19 +90,20 @@ variable (n) in
 coefficients in `R`: the spectral sequence of a filtered space
 (`TauCeti.filteredSpaceSpectralSequence`) for the sublevels `{f ≤ q - 1 / 2}`, `q ∈ ℤ`, of the
 standard moment function `f[v] = (∑ i, i * v i ^ 2) / ∑ i, v i ^ 2`. -/
-abbrev realProjSpaceSpectralSequence :=
+abbrev realProjectiveSpaceSpectralSequence :=
   filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin (n + 1) → ℝ))) R
     ((sublevel_mono (projectiveMomentFunction ℝ fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))).comp
-      (isCriticalBandCut_projectiveMomentFunction_natCast (n := n)).monotone)
+      (isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := n)).monotone)
 
 /-- **The first page of the critical-band spectral sequence of `ℝℙⁿ`.** For `0 ≤ q ≤ n`, the
-object at `(-2q, q)` on the first page (numbered `2`) of `TauCeti.realProjSpaceSpectralSequence` is
-the coefficient object `R`, one copy for the critical point `[e_q]` of index `q` in the `q`th
-band. -/
-theorem nonempty_realProjSpaceSpectralSequence_page_two_X_iso {q : ℕ} (hq : q ≤ n) :
-    Nonempty (((realProjSpaceSpectralSequence n R).page 2).X (-(2 * q : ℕ), q) ≅ R) := by
-  have hf := isMorse_projectiveMomentFunction (𝕜 := ℝ) (injective_natCast_fin (n := n))
-  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (n := n)
+object at `(-2q, q)` on the first page (numbered `2`) of
+`TauCeti.realProjectiveSpaceSpectralSequence` is the coefficient object `R`, one copy for the
+critical point `[e_q]` of index `q` in the `q`th band. -/
+theorem nonempty_realProjectiveSpaceSpectralSequence_page_two_X_iso {q : ℕ} (hq : q ≤ n) :
+    Nonempty (((realProjectiveSpaceSpectralSequence n R).page 2).X (-(2 * q : ℕ), q) ≅ R) := by
+  have hf := isMorse_projectiveMomentFunction (𝕜 := ℝ)
+    (w := fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) (Nat.cast_injective.comp Fin.val_injective)
+  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := n)
   obtain ⟨e⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha.monotone
     (ha.isCriticalBand q) (-(2 * q : ℕ), q) rfl q (by push_cast; ring)
   -- The only critical point of the `q`th band is `[e_q]`, of index `q`.
@@ -176,26 +115,30 @@ theorem nonempty_realProjSpaceSpectralSequence_page_two_X_iso {q : ℕ} (hq : q 
     ⟨⟨⟨⟨mk ℝ (Pi.single ⟨q, Nat.lt_succ_of_le hq⟩ 1) (by simp),
       mk_single_mem_criticalPoints_projectiveMomentFunction _ _, ?_⟩, hidx _⟩⟩, fun y ↦ ?_⟩ _⟩
   · obtain ⟨⟨x, hx, hxq⟩, -⟩ := y
-    obtain ⟨k, rfl, hk⟩ := exists_eq_mk_single_of_mem_criticalPoints hx (Ioc_subset_Icc_self hxq)
+    obtain ⟨k, rfl, hk⟩ :=
+      exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast hx
+        (Ioc_subset_Icc_self hxq)
     obtain rfl : k = ⟨q, Nat.lt_succ_of_le hq⟩ := Fin.ext (by exact_mod_cast hk)
     rfl
   · rw [mem_preimage, projectiveMomentFunction_mk_single]
     constructor <;> push_cast <;> linarith
 
 /-- **The first page of the critical-band spectral sequence of `ℝℙⁿ` vanishes elsewhere.** The
-object at `(p, q)` on the first page (numbered `2`) of `TauCeti.realProjSpaceSpectralSequence` is
-zero unless `p = -2q` and `0 ≤ q ≤ n`. -/
-theorem isZero_realProjSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ)
+object at `(p, q)` on the first page (numbered `2`) of
+`TauCeti.realProjectiveSpaceSpectralSequence` is zero unless `p = -2q` and `0 ≤ q ≤ n`. -/
+theorem isZero_realProjectiveSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ)
     (hpq : ¬(pq.1 = -2 * pq.2 ∧ 0 ≤ pq.2 ∧ pq.2 ≤ n)) :
-    IsZero (((realProjSpaceSpectralSequence n R).page 2).X pq) := by
-  have hf := isMorse_projectiveMomentFunction (𝕜 := ℝ) (injective_natCast_fin (n := n))
-  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (n := n)
+    IsZero (((realProjectiveSpaceSpectralSequence n R).page 2).X pq) := by
+  have hf := isMorse_projectiveMomentFunction (𝕜 := ℝ)
+    (w := fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) (Nat.cast_injective.comp Fin.val_injective)
+  have ha := isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := n)
   rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hle
   · exact isZero_filteredSpaceSpectralSequence_page_two_X R _ pq hpos
   obtain ⟨m, hm⟩ := Int.exists_eq_neg_ofNat hle
   refine hf.isZero_filteredSpaceSpectralSequence_page_two_X R ha.monotone (ha.isCriticalBand _) pq
     rfl m hm fun x hx hxq hxm ↦ hpq ?_
-  obtain ⟨k, rfl, hk⟩ := exists_eq_mk_single_of_mem_criticalPoints hx (Ioc_subset_Icc_self hxq)
+  obtain ⟨k, rfl, hk⟩ := exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast
+    hx (Ioc_subset_Icc_self hxq)
   rw [manifoldMorseIndex_projectiveMomentFunction_natCast, Module.finrank_self, one_mul] at hxm
   have hkn := k.2
   lia
@@ -210,14 +153,15 @@ private abbrev rp2Sublevel : ℤ → Set (TopCat.of (ℙ ℝ (Fin 3 → ℝ))) :
     fun q : ℤ ↦ (q : ℝ) - 1 / 2
 
 private theorem monotone_rp2Sublevel : Monotone rp2Sublevel :=
-  (sublevel_mono _).comp (isCriticalBandCut_projectiveMomentFunction_natCast (n := 2)).monotone
+  (sublevel_mono _).comp
+    (isCriticalBandCut_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := 2)).monotone
 
 /-- The relative homology `Hₘ(X i, X j; ℤ)` of two stages of the sublevel filtration of `ℝℙ²`. -/
 private abbrev rp2H (j i : ℤ) (h : j ≤ i) (m : ℕ) : ModuleCat.{0} ℤ :=
   (TopPair.ofInclusion (monotone_rp2Sublevel h)).singularHomology (ModuleCat.of ℤ ℤ) m
 
 /-- The spectral sequence of the sublevel filtration of `ℝℙ²`, with integer coefficients. -/
-private abbrev rp2E := realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)
+private abbrev rp2E := realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)
 
 /-- The first page of `rp2E` at `(p, q)` is `Hₘ(X (q + 1), X q; ℤ)`, `p + q = -m`. -/
 private def rp2FirstPageIso (p q : ℤ) (m : ℕ) (h : p + q = -m) :
@@ -227,13 +171,13 @@ private def rp2FirstPageIso (p q : ℤ) (m : ℕ) (h : p + q = -m) :
 
 private theorem nonempty_rp2H_linearEquiv (q : ℕ) (hq : q ≤ 2) :
     Nonempty (rp2H q (q + 1) (by lia) q ≃ₗ[ℤ] ℤ) := by
-  obtain ⟨e⟩ := nonempty_realProjSpaceSpectralSequence_page_two_X_iso
+  obtain ⟨e⟩ := nonempty_realProjectiveSpaceSpectralSequence_page_two_X_iso
     (n := 2) (ModuleCat.of ℤ ℤ) hq
   exact ⟨((rp2FirstPageIso _ _ q (by push_cast; ring)).symm ≪≫ e).toLinearEquiv⟩
 
 private theorem isZero_rp2H (q : ℤ) (m : ℕ) (h : ¬(m = q ∧ 0 ≤ q ∧ q ≤ 2)) :
     IsZero (rp2H q (q + 1) (by lia) m) :=
-  (isZero_realProjSpaceSpectralSequence_page_two_X (n := 2)
+  (isZero_realProjectiveSpaceSpectralSequence_page_two_X (n := 2)
     (ModuleCat.of ℤ ℤ) (-m - q, q) (by push_cast; lia)).of_iso
       (rp2FirstPageIso (-m - q) q m (by ring)).symm
 
@@ -241,14 +185,16 @@ private theorem isZero_rp2H (q : ℤ) (m : ℕ) (h : ¬(m = q ∧ 0 ≤ q ∧ q 
 private def rp2HomologyIso (m : ℕ) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).obj
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin 3 → ℝ))) ≅ rp2H 0 3 (by norm_num) m :=
+  have hf (x : ℙ ℝ (Fin 3 → ℝ)) := projectiveMomentFunction_mem_Icc (a := 0) (b := 2)
+    (fun i : Fin 3 ↦ Nat.cast_nonneg (i : ℕ)) (fun i ↦ by exact_mod_cast Nat.lt_succ_iff.1 i.2) x
   singularHomologyIsoSublevelPair (f := projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ))
     (a := ((0 : ℤ) : ℝ) - 1 / 2) (b := ((3 : ℤ) : ℝ) - 1 / 2) (by norm_num)
     (fun x ↦ by
-      have := (projectiveMomentFunction_natCast_mem_Icc (n := 2) x).1
+      have := (hf x).1
       push_cast at this ⊢
       linarith)
     (fun x ↦ by
-      have := (projectiveMomentFunction_natCast_mem_Icc (n := 2) x).2
+      have := (hf x).2
       push_cast at this ⊢
       linarith)
     _ m
@@ -313,9 +259,13 @@ private theorem rp2_singularHomologyδ_one_zero_eq_zero :
     rp2T₀₁₃.singularHomologyδ (ModuleCat.of ℤ ℤ) 1 0
   have hu : δ.hom (Φ₂.symm 1) ≠ 0 := fun h ↦ Φ₂.symm.map_ne_zero_iff.2 one_ne_zero
     (injective_rp2_singularHomologyδ (h.trans (map_zero _).symm))
-  have h : (ι ≫ δ').hom = 0 := Φ₁.linearMap_eq_zero_of_apply_eq_zero Φ₀ (ι ≫ δ').hom hu (by
+  have : Module.IsTorsionFree ℤ
+      ((TopTriple.innerPair.obj rp2T₀₁₃).singularHomology (ModuleCat.of ℤ ℤ) 0 : ModuleCat ℤ) :=
+    Φ₀.injective.moduleIsTorsionFree _ Φ₀.map_smul
+  have h : (ι ≫ δ').hom = 0 := Φ₁.linearMap_eq_zero_of_apply_eq_zero (ι ≫ δ').hom hu (by
     have h0 : δ ≫ ι = 0 := rp2T₁₂₃.singularHomologyδ_comp _ 2 1
-    calc (ι ≫ δ').hom (δ.hom (Φ₂.symm 1)) = ((δ ≫ ι) ≫ δ').hom (Φ₂.symm 1) := rfl
+    calc (ι ≫ δ').hom (δ.hom (Φ₂.symm 1)) = ((δ ≫ ι) ≫ δ').hom (Φ₂.symm 1) := by
+          simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
       _ = 0 := by rw [h0, zero_comp, ModuleCat.hom_zero, LinearMap.zero_apply])
   have : Epi ι := by
     rw [ModuleCat.epi_iff_surjective]
@@ -359,10 +309,7 @@ private theorem exists_rp2_singularHomologyδ :
   -- `δ` is multiplication by `m = Φ₁ (δ (Φ₂.symm 1))` in the two copies of `ℤ`.
   set m := Φ₁ (δ.hom (Φ₂.symm 1))
   have hm (x) : Φ₁ (δ.hom x) = m * Φ₂ x := by
-    have h := (Φ₁.toLinearMap ∘ₗ δ.hom ∘ₗ Φ₂.symm.toLinearMap).map_smul (Φ₂ x) 1
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, smul_eq_mul, mul_one,
-      LinearEquiv.symm_apply_apply] at h
-    rw [h]
+    rw [Φ₂.linearMap_apply_eq_smul δ.hom x, Φ₁.map_smul, smul_eq_mul]
     exact mul_comm _ _
   -- `m` divides `2`, since twice the generator of `H₁(X 2, X 1)` dies in `H₁(X 3, X 1) ≅ ℤ/2`.
   have hdvd : m ∣ 2 := by
@@ -390,7 +337,8 @@ private theorem exists_rp2_singularHomologyδ :
   rcases hm2 with h | h
   · exact ⟨Φ₂, Φ₁, fun x ↦ by rw [hm, h]⟩
   · refine ⟨Φ₂.trans (LinearEquiv.neg ℤ), Φ₁, fun x ↦ ?_⟩
-    rw [LinearEquiv.trans_apply, LinearEquiv.coe_neg, Pi.neg_apply, id, hm, h, mul_neg, neg_mul]
+    rw [LinearEquiv.trans_apply, hm, h]
+    simp
 
 end Integral
 
@@ -416,15 +364,15 @@ private theorem rp2E_page_two_d_neg_four_two :
 
 /-- **The first differential of `ℝℙ²` is multiplication by `2`.** With integer coefficients, the
 objects at `(-4, 2)` and `(-2, 1)` on the first page (numbered `2`) of
-`TauCeti.realProjSpaceSpectralSequence` for `ℝℙ²` are copies of `ℤ`, and in suitable
+`TauCeti.realProjectiveSpaceSpectralSequence` for `ℝℙ²` are copies of `ℤ`, and in suitable
 identifications with `ℤ` the differential `(-4, 2) ⟶ (-2, 1)` between them is multiplication by
 `2`. -/
-theorem exists_linearEquiv_realProjSpaceSpectralSequence_page_two_d_two_mul :
-    ∃ (e₂ : (((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-4, 2) :
+theorem exists_linearEquiv_realProjectiveSpaceSpectralSequence_page_two_d_two_mul :
+    ∃ (e₂ : (((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-4, 2) :
         ModuleCat ℤ) ≃ₗ[ℤ] ℤ)
-      (e₁ : (((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-2, 1) :
+      (e₁ : (((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-2, 1) :
         ModuleCat ℤ) ≃ₗ[ℤ] ℤ),
-      ∀ x, e₁ ((((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d
+      ∀ x, e₁ ((((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d
         (-4, 2) (-2, 1)).hom x) = 2 * e₂ x := by
   obtain ⟨Φ₂, Φ₁, hΦ⟩ := exists_rp2_singularHomologyδ
   let ε₂ := (rp2FirstPageIso (-4) 2 2 (by norm_num)).toLinearEquiv
@@ -446,39 +394,41 @@ theorem exists_linearEquiv_realProjSpaceSpectralSequence_page_two_d_two_mul :
 
 /-- **The first differential of `ℝℙ²` out of the saddle vanishes.** With integer coefficients, the
 differential `(-2, 1) ⟶ (0, 0)` on the first page (numbered `2`) of
-`TauCeti.realProjSpaceSpectralSequence` for `ℝℙ²` is zero. -/
-theorem realProjSpaceSpectralSequence_page_two_d_eq_zero :
-    ((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d (-2, 1) (0, 0) = 0 := by
+`TauCeti.realProjectiveSpaceSpectralSequence` for `ℝℙ²` is zero. -/
+theorem realProjectiveSpaceSpectralSequence_page_two_d_eq_zero :
+    ((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d (-2, 1) (0, 0) = 0 := by
   -- The composite with the injective differential `(-4, 2) ⟶ (-2, 1)` vanishes, and the source and
   -- target are copies of `ℤ`.
-  obtain ⟨e₂, e₁, he⟩ := exists_linearEquiv_realProjSpaceSpectralSequence_page_two_d_two_mul
-  obtain ⟨e₀⟩ := nonempty_realProjSpaceSpectralSequence_page_two_X_iso (n := 2)
+  obtain ⟨e₂, e₁, he⟩ := exists_linearEquiv_realProjectiveSpaceSpectralSequence_page_two_d_two_mul
+  obtain ⟨e₀⟩ := nonempty_realProjectiveSpaceSpectralSequence_page_two_X_iso (n := 2)
     (ModuleCat.of ℤ ℤ) (q := 0) (Nat.zero_le _)
   have hu : ((rp2E.page 2).d (-4, 2) (-2, 1)).hom (e₂.symm 1) ≠ 0 := fun h ↦ by
     have := he (e₂.symm 1)
     rw [h, map_zero, LinearEquiv.apply_symm_apply] at this
     norm_num at this
-  refine ModuleCat.hom_ext (e₁.linearMap_eq_zero_of_apply_eq_zero e₀.toLinearEquiv _ hu ?_)
+  have : Module.IsTorsionFree ℤ ((rp2E.page 2).X (0, 0) : ModuleCat ℤ) :=
+    e₀.toLinearEquiv.injective.moduleIsTorsionFree _ e₀.toLinearEquiv.map_smul
+  refine ModuleCat.hom_ext (e₁.linearMap_eq_zero_of_apply_eq_zero _ hu ?_)
   have h := congrArg (fun φ ↦ φ.hom (e₂.symm 1)) ((rp2E.page 2).d_comp_d (-4, 2) (-2, 1) (0, 0))
   rwa [ModuleCat.hom_zero, LinearMap.zero_apply] at h
 
 /-- The first differential `(-4, 2) ⟶ (-2, 1)` of `rp2E` is injective. -/
 private theorem injective_rp2E_page_two_d :
     Function.Injective ((rp2E.page 2).d (-4, 2) (-2, 1)).hom := by
-  obtain ⟨e₂, e₁, he⟩ := exists_linearEquiv_realProjSpaceSpectralSequence_page_two_d_two_mul
+  obtain ⟨e₂, e₁, he⟩ := exists_linearEquiv_realProjectiveSpaceSpectralSequence_page_two_d_two_mul
   intro x y hxy
   have h := he x
   rw [hxy, he y] at h
   exact e₂.injective (by lia)
 
 /-- **The second page of `ℝℙ²` vanishes in degree `2`.** With integer coefficients, the object at
-`(-4, 2)` on the second page (numbered `3`) of `TauCeti.realProjSpaceSpectralSequence` for `ℝℙ²` is
-zero. -/
-theorem isZero_realProjSpaceSpectralSequence_page_three_X_neg_four_two :
-    IsZero (((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-4, 2)) := by
+`(-4, 2)` on the second page (numbered `3`) of `TauCeti.realProjectiveSpaceSpectralSequence` for
+`ℝℙ²` is zero. -/
+theorem isZero_realProjectiveSpaceSpectralSequence_page_three_X_neg_four_two :
+    IsZero (((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-4, 2)) := by
   -- The first differential out of `(-4, 2)` is injective, and nothing maps into `(-4, 2)`.
   have hzero : IsZero ((rp2E.page 2).X (-6, 3)) :=
-    isZero_realProjSpaceSpectralSequence_page_two_X (n := 2) _ (-6, 3) (by norm_num)
+    isZero_realProjectiveSpaceSpectralSequence_page_two_X (n := 2) _ (-6, 3) (by norm_num)
   have hmono : Mono ((rp2E.page 2).d (-4, 2) (-2, 1)) :=
     (ModuleCat.mono_iff_injective _).2 injective_rp2E_page_two_d
   have hexact : (rp2E.page 2).ExactAt (-4, 2) := by
@@ -489,18 +439,18 @@ theorem isZero_realProjSpaceSpectralSequence_page_three_X_neg_four_two :
     (rp2E.iso 2 3 (-4, 2)).symm
 
 /-- **The second page of `ℝℙ²` is `ℤ/2` in degree `1`.** With integer coefficients, the object at
-`(-2, 1)` on the second page (numbered `3`) of `TauCeti.realProjSpaceSpectralSequence` for `ℝℙ²` is
-`ℤ/2`, while on the first page it is `ℤ`
-(`TauCeti.nonempty_realProjSpaceSpectralSequence_page_two_X_iso`). -/
-theorem nonempty_linearEquiv_realProjSpaceSpectralSequence_page_three_X_neg_two_one :
-    Nonempty ((((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-2, 1) :
+`(-2, 1)` on the second page (numbered `3`) of `TauCeti.realProjectiveSpaceSpectralSequence` for
+`ℝℙ²` is `ℤ/2`, while on the first page it is `ℤ`
+(`TauCeti.nonempty_realProjectiveSpaceSpectralSequence_page_two_X_iso`). -/
+theorem nonempty_linearEquiv_realProjectiveSpaceSpectralSequence_page_three_X_neg_two_one :
+    Nonempty ((((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-2, 1) :
       ModuleCat ℤ) ≃ₗ[ℤ] ZMod 2) := by
-  obtain ⟨e₂, e₁, he⟩ := exists_linearEquiv_realProjSpaceSpectralSequence_page_two_d_two_mul
+  obtain ⟨e₂, e₁, he⟩ := exists_linearEquiv_realProjectiveSpaceSpectralSequence_page_two_d_two_mul
   -- The second page at `(-2, 1)` is the cokernel of `d : (-4, 2) ⟶ (-2, 1)`, since the first
   -- differential out of `(-2, 1)` vanishes.
   let i₁ : (rp2E.page 2).homology (-2, 1) ≅ (rp2E.page 2).opcycles (-2, 1) :=
     (rp2E.page 2).isoHomologyι (-2, 1) (0, 0) (next_page_two (by norm_num))
-      realProjSpaceSpectralSequence_page_two_d_eq_zero
+      realProjectiveSpaceSpectralSequence_page_two_d_eq_zero
   let i₂ : (rp2E.page 2).opcycles (-2, 1) ≅ cokernel ((rp2E.page 2).d (-4, 2) (-2, 1)) :=
     ((rp2E.page 2).opcyclesIsCokernel (-4, 2) (-2, 1)
       (prev_page_two (by norm_num))).coconePointUniqueUpToIso (colimit.isColimit _)
@@ -525,19 +475,19 @@ theorem nonempty_linearEquiv_realProjSpaceSpectralSequence_page_three_X_neg_two_
       Submodule.quotEquivOfEq _ _ hker ≪≫ₗ φ.quotKerEquivOfSurjective hsurj⟩
 
 /-- **The second page of `ℝℙ²` is `ℤ` in degree `0`.** With integer coefficients, the object at
-`(0, 0)` on the second page (numbered `3`) of `TauCeti.realProjSpaceSpectralSequence` for `ℝℙ²` is
-`ℤ`. -/
-theorem nonempty_linearEquiv_realProjSpaceSpectralSequence_page_three_X_zero_zero :
-    Nonempty ((((realProjSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (0, 0) :
+`(0, 0)` on the second page (numbered `3`) of `TauCeti.realProjectiveSpaceSpectralSequence` for
+`ℝℙ²` is `ℤ`. -/
+theorem nonempty_linearEquiv_realProjectiveSpaceSpectralSequence_page_three_X_zero_zero :
+    Nonempty ((((realProjectiveSpaceSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (0, 0) :
       ModuleCat ℤ) ≃ₗ[ℤ] ℤ) := by
   -- Both first differentials at `(0, 0)` vanish.
-  obtain ⟨e₀⟩ := nonempty_realProjSpaceSpectralSequence_page_two_X_iso (n := 2)
+  obtain ⟨e₀⟩ := nonempty_realProjectiveSpaceSpectralSequence_page_two_X_iso (n := 2)
     (ModuleCat.of ℤ ℤ) (q := 0) (Nat.zero_le _)
   have hzero : IsZero ((rp2E.page 2).X (2, -1)) :=
-    isZero_realProjSpaceSpectralSequence_page_two_X (n := 2) _ (2, -1) (by norm_num)
+    isZero_realProjectiveSpaceSpectralSequence_page_two_X (n := 2) _ (2, -1) (by norm_num)
   exact ⟨((rp2E.iso 2 3 (0, 0)).symm ≪≫
     ((rp2E.page 2).isoHomologyπ (-2, 1) (0, 0) (prev_page_two (by norm_num))
-      realProjSpaceSpectralSequence_page_two_d_eq_zero).symm ≪≫
+      realProjectiveSpaceSpectralSequence_page_two_d_eq_zero).symm ≪≫
     (rp2E.page 2).iCyclesIso (0, 0) (2, -1) (next_page_two (by norm_num))
       (hzero.eq_of_tgt _ _) ≪≫ e₀).toLinearEquiv⟩
 

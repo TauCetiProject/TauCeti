@@ -21,9 +21,9 @@ Conversely, a linear functional `Ψ` on a module `N ≃ₗ[K] K` taking the valu
 a generator: `Ψ` factors through the isomorphism as multiplication by `Ψ (e⁻¹ 1)`, so `e x` is a
 unit of `K` and `a ↦ a • x` is bijective.
 
-In the same way, a linear map between two modules isomorphic to `K` is, read in the two copies of
-`K`, multiplication by its value at `1`. When `K` has no zero divisors it therefore vanishes as
-soon as it vanishes at a single nonzero element.
+In the same way, a linear map `g` out of a module `M ≃ₗ[K] K` is determined by its value at the
+preimage of `1`: it sends `x` to `e x • g (e⁻¹ 1)`. When `K` is cancellative and the target is
+torsion-free, `g` therefore vanishes as soon as it vanishes at a single nonzero element.
 
 ## Main results
 
@@ -36,8 +36,11 @@ soon as it vanishes at a single nonzero element.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
   element on which a linear functional takes the value `1` is carried to a unit, and generates
   freely.
-* `LinearEquiv.linearMap_eq_zero_of_apply_eq_zero`: over a semiring without zero divisors, a
-  linear map between modules isomorphic to the base ring vanishing at a nonzero element is zero.
+* `LinearEquiv.linearMap_apply_eq_smul`: a linear map out of a module isomorphic to the base ring
+  is determined by its value at the preimage of `1`.
+* `LinearEquiv.linearMap_eq_zero_of_apply_eq_zero`: over a cancellative semiring, a linear map from
+  a module isomorphic to the base ring to a torsion-free module vanishing at a nonzero element is
+  zero.
 -/
 
 public section
@@ -91,23 +94,22 @@ theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMo
   funext a
   simp [← smul_eq_mul]
 
-/-- **A linear map between modules isomorphic to the base ring is determined by one nonzero
-value.** Let `K` be a semiring without zero divisors and `e : M ≃ₗ[K] K`, `e' : N ≃ₗ[K] K`. If a
-linear map `g : M →ₗ[K] N` vanishes at some nonzero `u`, then `g = 0`: read in the two copies of
-`K`, `g` is left multiplication by its value at `1`, and `e u ≠ 0`. -/
-theorem linearMap_eq_zero_of_apply_eq_zero {K M N : Type*} [Semiring K] [NoZeroDivisors K]
-    [AddCommMonoid M] [Module K M] [AddCommMonoid N] [Module K N] (e : M ≃ₗ[K] K)
-    (e' : N ≃ₗ[K] K) (g : M →ₗ[K] N) {u : M} (hu : u ≠ 0) (hg : g u = 0) : g = 0 := by
-  set L : K →ₗ[K] K := e'.toLinearMap ∘ₗ g ∘ₗ e.symm.toLinearMap
-  have hL (k : K) : L k = k * L 1 := by simpa using L.map_smul k 1
-  have h1 : L 1 = 0 := by
-    have h := hL (e u)
-    simp only [L, LinearMap.comp_apply, coe_coe, symm_apply_apply, hg, map_zero] at h
-    exact (mul_eq_zero.1 h.symm).resolve_left (e.map_ne_zero_iff.2 hu)
-  ext y
-  have h := hL (e y)
-  simp only [L, LinearMap.comp_apply, coe_coe, symm_apply_apply, h1, mul_zero,
-    map_eq_zero_iff] at h
-  exact h
+/-- **A linear map out of a module isomorphic to the base ring is determined by one value.** For
+`e : M ≃ₗ[K] K`, a linear map `g : M →ₗ[K] N` sends `x` to `e x • g (e.symm 1)`. -/
+theorem linearMap_apply_eq_smul {K M N : Type*} [Semiring K] [AddCommMonoid M] [Module K M]
+    [AddCommMonoid N] [Module K N] (e : M ≃ₗ[K] K) (g : M →ₗ[K] N) (x : M) :
+    g x = e x • g (e.symm 1) := by
+  simpa using congrArg g (e.symm.map_smul (e x) 1)
+
+/-- **A linear map out of a module isomorphic to the base ring vanishing at a nonzero element is
+zero.** Let `K` be a semiring with cancellation by nonzero elements, `e : M ≃ₗ[K] K`, and `N` a
+torsion-free `K`-module. If a linear map `g : M →ₗ[K] N` vanishes at some nonzero `u`, then
+`g = 0`. -/
+theorem linearMap_eq_zero_of_apply_eq_zero {K M N : Type*} [Semiring K] [IsCancelMulZero K]
+    [AddCommMonoid M] [Module K M] [AddCommMonoid N] [Module K N] [Module.IsTorsionFree K N]
+    (e : M ≃ₗ[K] K) (g : M →ₗ[K] N) {u : M} (hu : u ≠ 0) (hg : g u = 0) : g = 0 := by
+  rw [e.linearMap_apply_eq_smul g u, smul_eq_zero_iff_right (e.map_ne_zero_iff.2 hu)] at hg
+  ext x
+  rw [e.linearMap_apply_eq_smul g x, hg, smul_zero, LinearMap.zero_apply]
 
 end LinearEquiv
