@@ -584,6 +584,28 @@ theorem norm_sectionValue_framedGaugeGroup_smul (u : framedGaugeGroup)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ‖sectionValue (u • x) z‖ = ‖sectionValue x z‖ :=
   norm_sectionValue_gaugeTransform u.val x z
 
+/-- If the section of `x` at `z` is `c` times the gauge `u`, then the gauge transformation by
+`u⁻¹` has the section `c` there. -/
+theorem sectionValue_gaugeTransform_inv_eq {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z c : ℂ} (h : sectionValue x z = c * u z) :
+    sectionValue (gaugeTransform u⁻¹ x) z = c := by
+  rw [sectionValue_gaugeTransform, Pi.inv_apply, h, mul_left_comm, ← Circle.coe_mul,
+    inv_mul_cancel, Circle.coe_one, mul_one]
+
+/-- A gauge `u` with `α = |α| u` near `z`, where the section `α` of `x` is differentiable and
+nonzero, is differentiable at `z`: near `z` it is `α / |α|`. -/
+theorem differentiableAt_coe_of_sectionValue_eq_norm_mul {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (hα : sectionValue x z ≠ 0)
+    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * u w) :
+    DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z := by
+  have hs := differentiableAt_sectionValue hp hq
+  have hn : DifferentiableAt ℝ (fun w ↦ ((‖sectionValue x w‖ : ℝ) : ℂ)) z :=
+    ofRealCLM.differentiableAt.comp z (hs.norm ℝ hα)
+  refine (hs.fun_mul (hn.inv (by simpa using hα))).congr_of_eventuallyEq ?_
+  filter_upwards [hphase, hs.continuousAt.eventually_ne hα] with w hw hw0
+  rw [Pi.inv_apply, ← div_eq_mul_inv, eq_div_iff (by simpa using hw0), mul_comm, ← hw]
+
 /-- **A gauge relates two fields exactly when it matches their connections and sections.** The
 logarithmic derivative `Im (u⁻¹ du)` is the connection difference
 `(b₁ - b₁') ds + (b₂ - b₂') dt`, and `u` carries the section `α` of `x` to that of `y`. -/
@@ -624,6 +646,26 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     Matrix.cons_val_zero, Matrix.cons_val_one, ofReal_add, ofReal_sub, ofReal_mul,
     fderiv_coe_eq_mul_gaugeForm, hg]
   ring
+
+/-- **Gauge covariance of the holomorphicity rows.** The complex defect `E₁ + i E₂` of the rows
+`∂bar_a α = 0` is multiplied by the gauge, like the section. Unlike
+`TauCeti.Vortex.equation_gaugeTransform`, this needs only a gauge differentiable at `z`. -/
+theorem equation_gaugeTransform_one_add_two_mul_I {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    (equation (gaugeTransform u x) z 1 : ℂ) + (equation (gaugeTransform u x) z 2 : ℂ) * I =
+      (u z : ℂ) * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I) := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
+  have hp' : DifferentiableAt ℝ (fun w ↦ gaugeTransform u x w 2) z := by
+    simpa [gaugeTransform_apply] using (hr.fun_mul hp).fun_sub (hi.fun_mul hq)
+  have hq' : DifferentiableAt ℝ (fun w ↦ gaugeTransform u x w 3) z := by
+    simpa [gaugeTransform_apply] using (hi.fun_mul hp).fun_add (hr.fun_mul hq)
+  have h := covariantDerivative_one_add_I_mul_covariantDerivative_I hp' hq'
+  rw [covariantDerivative_gaugeTransform hu hp hq, covariantDerivative_gaugeTransform hu hp hq]
+    at h
+  linear_combination (-h + (u z : ℂ) * covariantDerivative_one_add_I_mul_covariantDerivative_I
+    hp hq) / 2
 
 /-- Curvature is unchanged by `C²` gauge transformations. -/
 @[simp]
