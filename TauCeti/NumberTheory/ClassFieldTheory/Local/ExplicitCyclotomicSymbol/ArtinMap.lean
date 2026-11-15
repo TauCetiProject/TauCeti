@@ -13,6 +13,7 @@ import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Norm
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.LocalField.Norm.Basic
+import TauCeti.NumberTheory.LocalField.Rigidity
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -30,11 +31,14 @@ inverse of the unit part:
 ```
 
 and for a finite extension `F/ℚ_p` the Artin symbol of a unit `u` of the valuation ring of `F`
-(`v(u) = 1`) has cyclotomic character `N_{F/ℚ_p}(u)⁻¹`. This is the cyclotomic normalization of
-local class field theory, with the arithmetic Frobenius convention. On the roots of unity of
-`p`-power order it identifies the Artin map with the explicit local symbols `cyclotomicSymbol`,
-which act there through `u⁻¹` as well (`TauCeti.unitsMap_cyclotomicSymbol_primePow`), so the
-product formula for those explicit symbols becomes a statement about Artin symbols.
+(`v(u) = 1`) has cyclotomic character `N_{F/ℚ_p}(u)⁻¹`. Compatibility of the valuation of `F` with
+that of `ℚ_p` (`ValuativeExtension ℚ_[p] F`) is supplied automatically by discrete-valuation
+rigidity (`ValuativeExtension.of_isAlgebraic`), so no compatibility hypothesis is needed. This is
+the cyclotomic normalization of local class field theory, with the arithmetic Frobenius convention.
+On the roots of unity of `p`-power order it identifies the Artin map with the explicit local
+symbols `cyclotomicSymbol`, which act there through `u⁻¹` as well
+(`TauCeti.unitsMap_cyclotomicSymbol_primePow`), so the product formula for those explicit symbols
+becomes a statement about Artin symbols.
 
 The proof uses no Lubin–Tate theory. It compares, at each finite level `pⁿ`, a representative of
 the Artin symbol of a uniformizer `p u` with an automorphism acting through the explicit symbol
@@ -303,14 +307,17 @@ of `u`:
 ```text
 χ_cyc (Art_F u) = N_{F/ℚ_p}(u)⁻¹.
 ```
--/
+
+No `ValuativeExtension ℚ_[p] F` hypothesis is needed: valuation compatibility is automatic for
+algebraic extensions of `ℚ_p` (`ValuativeExtension.of_isAlgebraic`). -/
 theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRel F]
     [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
-    [FiniteDimensional ℚ_[p] F] [ValuativeExtension ℚ_[p] F] (u : Fˣ)
+    [FiniteDimensional ℚ_[p] F] (u : Fˣ)
     (hu : ValuativeRel.valuation F (u : F) = 1) (σ : Field.absoluteGaloisGroup F)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = artinMap F u) :
     Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (localCyclotomicCharacter p F σ) =
       (Units.map (Algebra.norm ℚ_[p] : F →* ℚ_[p]) u)⁻¹ := by
+  have : ValuativeExtension ℚ_[p] F := .of_isAlgebraic ℚ_[p] F
   -- Instance search does not find `Nontrivial ℚ_[p]` within its budget, so it is supplied from
   -- the field structure.
   have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
@@ -428,8 +435,8 @@ theorem localArtinMap_Q2_neg_three (L : Type*) [Field L] [Algebra ℚ_[2] L]
 
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Algebra ℚ_[p] K] [FiniteDimensional ℚ_[p] K]
-  [ValuativeExtension ℚ_[p] K]
 
+variable [ValuativeExtension ℚ_[p] K] in
 /-- If `σ` represents the arithmetic Artin symbol of a uniformizer `ϖ` of `K`, then
 `χ_cyc(σ) · N_{K/ℚ_p}(ϖ) = p ^ f(K/ℚ_p)` in `ℚ_pˣ`. -/
 theorem localCyclotomicCharacter_artinMap_uniformizer (ϖ : Kˣ)
@@ -491,6 +498,7 @@ theorem map_unitFiltration_zero_artinMap_eq_comap_map_normUnits :
       (fun _ _ h ↦ PadicInt.coe_inj.mp h) ?_⟩
     rw [map_inv, map_inv, key hu, inv_inv, huv]
 
+variable [ValuativeExtension ℚ_[p] K] in
 /-- **The image of the cyclotomic character, from unit norms and a uniformizer.** Let `K/ℚ_p` be
 finite with inertia degree `f`, let `ϖ` be a uniformizer of `K`, and let `w ∈ ℤ_pˣ` be the unit
 with `w · N_{K/ℚ_p}(ϖ) = p ^ f`; it is the cyclotomic character of the Artin symbol of `ϖ`
