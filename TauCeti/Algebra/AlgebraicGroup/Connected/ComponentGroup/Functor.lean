@@ -27,6 +27,8 @@ it does not assert exactness at the middle term or injectivity at the left term.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 6.7 and 14.
+* `mapComponentGroupMulEquiv` is adapted from the closed Tau Ceti pull request
+  https://github.com/TauCetiProject/TauCeti/pull/24762.
 
 The construction uses `Continuous.connectedComponentsMap`, the component-group structure
 from `componentGroupPointsMulEquivConnectedComponents`, and the rational point-lifting theorem
@@ -127,27 +129,6 @@ theorem mapComponentGroup_comp (f : H ⟶ K) (g : K ⟶ L) :
   simp only [ObjectProperty.FullSubcategory.comp_hom, _root_.CommHopfAlgCat.hom_comp,
     BialgHom.mapDomain_comp, MonoidHom.comp_apply]
 
-/-- Isomorphic affine groups have isomorphic component groups. Coordinate arrows reverse, so
-`e : H ≅ K` induces an equivalence from the components of `Spec K` to those of `Spec H`. -/
-noncomputable def mapComponentGroupMulEquiv (e : H ≅ K) :
-    ConnectedComponents (PrimeSpectrum K) ≃* ConnectedComponents (PrimeSpectrum H) :=
-  MonoidHom.toMulEquiv (mapComponentGroup e.hom) (mapComponentGroup e.inv)
-    (by rw [← mapComponentGroup_comp, e.inv_hom_id, mapComponentGroup_id])
-    (by rw [← mapComponentGroup_comp, e.hom_inv_id, mapComponentGroup_id])
-
-/-- The equivalence of component groups induced by an isomorphism is the induced map. -/
-@[simp]
-theorem mapComponentGroupMulEquiv_apply (e : H ≅ K) (C : ConnectedComponents (PrimeSpectrum K)) :
-    mapComponentGroupMulEquiv e C = mapComponentGroup e.hom C :=
-  (rfl)
-
-/-- The inverse equivalence is induced by the inverse isomorphism. -/
-@[simp]
-theorem mapComponentGroupMulEquiv_symm_apply (e : H ≅ K)
-    (C : ConnectedComponents (PrimeSpectrum H)) :
-    (mapComponentGroupMulEquiv e).symm C = mapComponentGroup e.inv C :=
-  (rfl)
-
 /-- The component group, contravariantly functorial in finite-type coordinate Hopf algebras. -/
 noncomputable def componentGroupFunctor :
     (FiniteTypeCommHopfAlgCat.{u, u} k)ᵒᵖ ⥤ GrpCat.{u} where
@@ -173,6 +154,25 @@ theorem componentGroupFunctor_obj (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
 theorem componentGroupFunctor_map (f : H ⟶ K) :
     (componentGroupFunctor (k := k)).map f.op ≫ eqToHom (componentGroupFunctor_obj H) =
       eqToHom (componentGroupFunctor_obj K) ≫ GrpCat.ofHom (mapComponentGroup f) :=
+  (rfl)
+
+/-- Isomorphic affine groups have isomorphic component groups. Coordinate arrows reverse, so
+`e : H ≅ K` induces an equivalence from the components of `Spec K` to those of `Spec H`. -/
+noncomputable def mapComponentGroupMulEquiv (e : H ≅ K) :
+    ConnectedComponents (PrimeSpectrum K) ≃* ConnectedComponents (PrimeSpectrum H) :=
+  ((componentGroupFunctor (k := k)).mapIso e.op).groupIsoToMulEquiv
+
+/-- The equivalence of component groups induced by an isomorphism is the induced map. -/
+@[simp]
+theorem mapComponentGroupMulEquiv_apply (e : H ≅ K) (C : ConnectedComponents (PrimeSpectrum K)) :
+    mapComponentGroupMulEquiv e C = mapComponentGroup e.hom C :=
+  (rfl)
+
+/-- The inverse equivalence is induced by the inverse isomorphism. -/
+@[simp]
+theorem mapComponentGroupMulEquiv_symm_apply (e : H ≅ K)
+    (C : ConnectedComponents (PrimeSpectrum H)) :
+    (mapComponentGroupMulEquiv e).symm C = mapComponentGroup e.inv C :=
   (rfl)
 
 /-- An injective coordinate morphism of finite-type affine groups is surjective on component

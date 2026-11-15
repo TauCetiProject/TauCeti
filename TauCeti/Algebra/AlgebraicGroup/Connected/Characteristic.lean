@@ -22,6 +22,8 @@ of conjugate closed subgroups.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
+* The isomorphism form `HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff` is adapted
+  from the closed Tau Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/24762.
 -/
 
 public section

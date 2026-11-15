@@ -32,6 +32,8 @@ transport.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Section 5.
+* This file is adapted from the closed Tau Ceti pull request
+  https://github.com/TauCetiProject/TauCeti/pull/24762.
 -/
 
 public section

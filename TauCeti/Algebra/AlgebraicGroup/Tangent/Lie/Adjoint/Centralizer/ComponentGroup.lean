@@ -52,6 +52,8 @@ In the theory of nilpotent orbits these are the centralizer data attached to a n
 * D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*,
   Van Nostrand Reinhold, 1993, §§1.3 and 6.1.
 * J. S. Milne, *Algebraic Groups* (2017), Section 5 and Chapter 10.
+* The identity-component centralizer lemmas are adapted from the closed Tau Ceti pull request
+  https://github.com/TauCetiProject/TauCeti/pull/24762.
 -/
 
 public section

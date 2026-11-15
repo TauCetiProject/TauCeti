@@ -31,6 +31,8 @@ algebraically closed field; no connectedness of the ambient group is required.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Chapter 10.
+* The conjugation law `HopfIdeal.identityComponent_conjugate` is adapted from the closed
+  Tau Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/24762.
 * The construction uses `CommHopfAlgCat.Hom.quotientIsoOfSurjective`; normality uses
   `HopfIdeal.IsNormal.comapOfSurjective_of_forall_iso`; conjugation uses
   `HopfIdeal.quotientConjugationEquiv`.
