@@ -51,8 +51,9 @@ times the inner product.
 * `TauCeti.Probability.uniformBallMeasure_absolutelyContinuous`: for nonzero radius it is
   absolutely continuous with respect to Lebesgue measure.
 * `TauCeti.Probability.uniformBallMeasure_eq_withDensity`,
-  `TauCeti.Probability.rnDeriv_uniformBallMeasure`: for nonzero radius, its density against
-  Lebesgue measure.
+  `TauCeti.Probability.rnDeriv_uniformBallMeasure`,
+  `TauCeti.Probability.pdf_eq_uniformPDF_of_hasLaw_uniformBallMeasure`: for nonzero radius, its
+  density against Lebesgue measure.
 * `TauCeti.Probability.map_const_add_uniformBallMeasure`,
   `TauCeti.Probability.map_const_smul_uniformBallMeasure`,
   `LinearIsometryEquiv.map_uniformBallMeasure`: transport by translations, dilations and
@@ -206,6 +207,14 @@ theorem isUniform_of_hasLaw_uniformBallMeasure (hr : r ≠ 0)
 theorem hasPDF_of_hasLaw_uniformBallMeasure (hr : r ≠ 0)
     (hX : HasLaw X (uniformBallMeasure c r) P) : HasPDF X P :=
   hasPDF_of_hasLaw_withDensity (measurable_uniformPDF measurableSet_ball volume).aemeasurable
+    (by rwa [uniformBallMeasure_eq_withDensity hr] at hX)
+
+/-- The canonical density of a random vector with the uniform law on a nonzero-radius ball is
+Mathlib's uniform density on that ball. -/
+theorem pdf_eq_uniformPDF_of_hasLaw_uniformBallMeasure (hr : r ≠ 0)
+    (hX : HasLaw X (uniformBallMeasure c r) P) :
+    pdf X P =ᵐ[volume] fun x ↦ pdf.uniformPDF (ball c r) x volume :=
+  pdf_eq_of_hasLaw_withDensity (measurable_uniformPDF measurableSet_ball volume).aemeasurable
     (by rwa [uniformBallMeasure_eq_withDensity hr] at hX)
 
 end Density
