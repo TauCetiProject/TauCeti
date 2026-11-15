@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Endomorphism
-public import TauCeti.Combinatorics.PlanarMatching.Associativity
+public import TauCeti.Combinatorics.PlanarMatching.Factorization
 
 /-!
 # The Temperley–Lieb diagram category
@@ -25,14 +25,26 @@ The circles are kept as data rather than evaluated: a closed circle is the nontr
 circle. Keeping the count, rather than evaluating each circle at a loop value `δ`, is what lets
 the linearization at every `δ` factor through this one category.
 
+Vertical reflection organizes into a strict contravariant involution functor
+`TLDiagCat.verticalReflectFunctor : TLDiagCatᵒᵖ ⥤ TLDiagCat`. Monomorphisms and epimorphisms are
+the string-injective and string-surjective diagrams (`TLDiagCat.mono_iff_stringInjective`,
+`TLDiagCat.epi_iff_stringSurjective`), every morphism factors uniquely into an epimorphism followed
+by a circle-free monomorphism (`TLDiagCat.existsUnique_epi_mono_factorization`), and the only
+isomorphisms are identities (`TLDiagCat.isIso_iff_eqToHom`). In particular, `TLDiagCat.circle` is
+both monic and epic without being an isomorphism, so `TLDiagCat` is not balanced.
+
 ## Main definitions
 
-* `TauCeti.TLDiagCat`: the Temperley–Lieb diagram category, with objects `TLDiagCat.of n`.
+* `TauCeti.TLDiagCat`: the Temperley–Lieb diagram category, with objects `TauCeti.TLDiagCat.of n`.
 * `TauCeti.TLDiagCat.homEquiv`: morphisms `X ⟶ Y` are Temperley–Lieb diagrams `X.as → Y.as`.
 * `TauCeti.TLDiagCat.cup`, `TauCeti.TLDiagCat.cap`, `TauCeti.TLDiagCat.circle`: the cup
   `of 0 ⟶ of 2`, the cap `of 2 ⟶ of 0` and the closed circle `of 0 ⟶ of 0`.
 * `TauCeti.TLDiagCat.endZeroMulEquiv`: the endomorphism monoid of `of 0` is the free monoid on
   the circle, `End (of 0) ≃* Multiplicative ℕ`, by counting circles.
+* `TauCeti.TLDiagCat.verticalReflectFunctor`: the contravariant vertical-reflection functor
+  `TLDiagCatᵒᵖ ⥤ TLDiagCat`.
+* `TauCeti.TLDiagCat.Hom.surjection`, `TauCeti.TLDiagCat.Hom.injection`: the canonical epic and
+  circle-free monic factors of a morphism `f : X ⟶ Y` through `of f.diagram.through`.
 
 ## Main results
 
@@ -43,6 +55,12 @@ the linearization at every `δ` factor through this one category.
   circle.
 * `TauCeti.TLDiagCat.nonempty_hom_iff`: there is a morphism `X ⟶ Y` exactly when the total
   number of boundary points of `X` and `Y` is even.
+* `TauCeti.TLDiagCat.mono_iff_stringInjective`, `TauCeti.TLDiagCat.epi_iff_stringSurjective`:
+  characterizations of monomorphisms and epimorphisms by through strands.
+* `TauCeti.TLDiagCat.isIso_iff_eqToHom`, `TauCeti.TLDiagCat.isIso_end_iff`: the only isomorphisms
+  in `TLDiagCat` are identities.
+* `TauCeti.TLDiagCat.existsUnique_epi_mono_factorization`: unique factorization of every morphism
+  as an epimorphism followed by a circle-free monomorphism.
 
 ## References
 
@@ -208,6 +226,142 @@ theorem diagram_circle_pow (k : ℕ) :
     ((End.of circle) ^ k).asHom.diagram = ⟨PlanarMatching.nested 0, k⟩ := by
   rw [diagram_eq_of_zero]
   simpa using congrArg Multiplicative.toAdd (map_pow endZeroMulEquiv (.of circle) k)
+
+/-! ### Contravariant vertical reflection -/
+
+/-- **Vertical reflection as a contravariant functor** on the Temperley–Lieb diagram category:
+it fixes every object `of n` and turns each diagram `X ⟶ Y` upside down into `Y ⟶ X`. -/
+@[expose] def verticalReflectFunctor : TLDiagCatᵒᵖ ⥤ TLDiagCat where
+  obj X := X.unop
+  map f := Hom.mk (TLDiagram.verticalReflect _ _ f.unop.diagram)
+  map_id X := hom_ext (TLDiagram.verticalReflect_id X.unop.as)
+  map_comp f g := hom_ext (TLDiagram.verticalReflect_comp g.unop.diagram f.unop.diagram)
+
+@[simp]
+theorem verticalReflectFunctor_obj (X : TLDiagCatᵒᵖ) :
+    verticalReflectFunctor.obj X = X.unop := (rfl)
+
+@[simp]
+theorem diagram_verticalReflectFunctor_map {X Y : TLDiagCatᵒᵖ} (f : X ⟶ Y) :
+    (verticalReflectFunctor.map f).diagram =
+      TLDiagram.verticalReflect Y.unop.as X.unop.as f.unop.diagram := (rfl)
+
+/-- Applying `verticalReflectFunctor` twice recovers the identity functor on `TLDiagCat`. -/
+@[simp]
+theorem verticalReflectFunctor_rightOp_comp :
+    verticalReflectFunctor.rightOp ⋙ verticalReflectFunctor = 𝟭 TLDiagCat :=
+  CategoryTheory.Functor.hext (fun _ => rfl) fun _ _ f =>
+    heq_of_eq (hom_ext (TLDiagram.verticalReflect_verticalReflect f.diagram))
+
+/-! ### Monomorphisms, epimorphisms, and isomorphisms -/
+
+/-- **Characterization of monomorphisms in `TLDiagCat`**: a morphism `f : X ⟶ Y` is monic if and
+only if its underlying diagram is string-injective (`f.diagram.through = X.as`), i.e. all bottom
+boundary points lie on through strands. -/
+theorem mono_iff_stringInjective (f : X ⟶ Y) : Mono f ↔ f.diagram.StringInjective :=
+  ⟨fun _ => TLDiagram.stringInjective_iff_comp_injective.mpr fun _ g₁ g₂ h =>
+      Hom.mk.inj ((cancel_mono f).mp (hom_ext (f := Hom.mk g₁ ≫ f) (g := Hom.mk g₂ ≫ f) h)),
+    fun hf => ⟨fun _ _ h => hom_ext (hf.eq_of_comp_eq (congrArg Hom.diagram h))⟩⟩
+
+/-- **Characterization of epimorphisms in `TLDiagCat`**: a morphism `f : X ⟶ Y` is epic if and
+only if its underlying diagram is string-surjective (`f.diagram.through = Y.as`), i.e. all top
+boundary points lie on through strands. -/
+theorem epi_iff_stringSurjective (f : X ⟶ Y) : Epi f ↔ f.diagram.StringSurjective :=
+  ⟨fun _ => TLDiagram.stringSurjective_iff_comp_injective.mpr fun _ g₁ g₂ h =>
+      Hom.mk.inj ((cancel_epi f).mp (hom_ext (f := f ≫ Hom.mk g₁) (g := f ≫ Hom.mk g₂) h)),
+    fun hf => ⟨fun _ _ h => hom_ext (hf.eq_of_comp_eq (congrArg Hom.diagram h))⟩⟩
+
+instance : Mono cup := (mono_iff_stringInjective cup).mpr TLDiagram.stringInjective_cup
+
+instance : Epi cap := (epi_iff_stringSurjective cap).mpr TLDiagram.stringSurjective_cap
+
+instance : Mono circle :=
+  (mono_iff_stringInjective circle).mpr (by simp [TLDiagram.stringInjective_iff])
+
+instance : Epi circle :=
+  (epi_iff_stringSurjective circle).mpr (by simp [TLDiagram.stringSurjective_iff])
+
+/-- **Characterization of isomorphisms in `TLDiagCat`**: a morphism `f : X ⟶ Y` is an isomorphism
+if and only if `X = Y` and `f` is the identity (`eqToHom`). In particular, `TLDiagCat` is skeletal
+and every object has trivial automorphism group. -/
+theorem isIso_iff_eqToHom (f : X ⟶ Y) : IsIso f ↔ ∃ h : X = Y, f = eqToHom h := by
+  refine ⟨fun ⟨g, hfg, hgf⟩ => ?_, ?_⟩
+  · have hXY : X = Y := TLDiagCat.ext <|
+      TLDiagram.eq_of_comp_eq_id (congrArg Hom.diagram hfg) (congrArg Hom.diagram hgf)
+    subst hXY
+    refine ⟨rfl, ?_⟩
+    rw [eqToHom_refl]
+    exact hom_ext (TLDiagram.eq_id_of_comp_eq_id (congrArg Hom.diagram hfg))
+  · rintro ⟨rfl, rfl⟩
+    rw [eqToHom_refl]
+    infer_instance
+
+/-- An endomorphism of `TLDiagCat` is an isomorphism if and only if it is the identity. -/
+@[simp]
+theorem isIso_end_iff (f : X ⟶ X) : IsIso f ↔ f = 𝟙 X := by
+  simp [isIso_iff_eqToHom]
+
+instance (X : TLDiagCat) : Unique (Aut X) where
+  default := 1
+  uniq e := Aut.ext (Iso.ext ((isIso_end_iff e.asIso.hom).mp inferInstance))
+
+/-- The closed circle `of 0 ⟶ of 0` is not an isomorphism, even though it is both monic and epic:
+`TLDiagCat` is not a balanced category. -/
+theorem not_isIso_circle : ¬ IsIso circle := by
+  rw [isIso_end_iff]
+  intro h
+  have hc := congrArg (fun f : of 0 ⟶ of 0 => f.diagram.circles) h
+  simp at hc
+
+/-! ### Categorical through-strand factorization -/
+
+/-- The canonical **epimorphic factor** `X ⟶ of f.diagram.through` of a morphism `f : X ⟶ Y`,
+retaining the bottom caps and closed circles of `f`. -/
+def Hom.surjection (f : X ⟶ Y) : X ⟶ of f.diagram.through :=
+  Hom.mk f.diagram.surjection
+
+/-- The canonical **circle-free monomorphic factor** `of f.diagram.through ⟶ Y` of a morphism
+`f : X ⟶ Y`, retaining the top cups of `f`. -/
+def Hom.injection (f : X ⟶ Y) : of f.diagram.through ⟶ Y :=
+  Hom.mk f.diagram.injection
+
+@[simp]
+theorem diagram_surjection (f : X ⟶ Y) :
+    f.surjection.diagram = f.diagram.surjection := (rfl)
+
+@[simp]
+theorem diagram_injection (f : X ⟶ Y) :
+    f.injection.diagram = f.diagram.injection := (rfl)
+
+instance (f : X ⟶ Y) : Epi f.surjection :=
+  (epi_iff_stringSurjective _).mpr f.diagram.stringSurjective_surjection
+
+instance (f : X ⟶ Y) : Mono f.injection :=
+  (mono_iff_stringInjective _).mpr f.diagram.stringInjective_injection
+
+/-- Every morphism of `TLDiagCat` is the composite of its canonical surjection and injection. -/
+@[reassoc (attr := simp)]
+theorem surjection_comp_injection (f : X ⟶ Y) : f.surjection ≫ f.injection = f :=
+  hom_ext f.diagram.surjection_comp_injection
+
+/-- **Unique epi-mono factorization in `TLDiagCat`.** Every morphism `f : X ⟶ Y` factors through a
+unique intermediate object `Z` as an epimorphism `s : X ⟶ Z` followed by a circle-free
+monomorphism `i : Z ⟶ Y`, namely `Z = of f.diagram.through`, `s = f.surjection`, and
+`i = f.injection`. -/
+theorem existsUnique_epi_mono_factorization (f : X ⟶ Y) :
+    ∃! p : Σ Z : TLDiagCat, (X ⟶ Z) × (Z ⟶ Y),
+      Epi p.2.1 ∧ Mono p.2.2 ∧ p.2.2.diagram.circles = 0 ∧ p.2.1 ≫ p.2.2 = f := by
+  refine ⟨⟨of f.diagram.through, f.surjection, f.injection⟩,
+    ⟨inferInstance, inferInstance, f.diagram.circles_injection, surjection_comp_injection f⟩, ?_⟩
+  rintro ⟨⟨k⟩, s, i⟩ ⟨hs, hi, hc, hcomp⟩
+  have hsd := (epi_iff_stringSurjective s).mp hs
+  have hid := (mono_iff_stringInjective i).mp hi
+  have hk : k = f.diagram.through :=
+    TLDiagram.through_eq_of_comp_eq hsd hid (congrArg Hom.diagram hcomp)
+  subst hk
+  obtain ⟨h₁, h₂⟩ := TLDiagram.eq_surjection_and_eq_injection_of_comp_eq hc
+    (congrArg Hom.diagram hcomp)
+  exact Sigma.ext rfl (heq_of_eq (Prod.ext (hom_ext h₁) (hom_ext h₂)))
 
 end TLDiagCat
 
