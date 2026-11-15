@@ -51,6 +51,8 @@ to manifolds, including manifolds with boundary or corners.
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `TauCeti.IsRegularPoint.of_comp`: if a composite of differentiable maps is regular at a point,
+  the outer map is regular at the image point.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -261,6 +263,16 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
       (mfderiv K I g p).range.map (mfderiv I J f (g p)).toLinearMap = ⊤ := by
   rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
     ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
+
+/-- If a composite `f ∘ g` of differentiable maps is regular at `p`, then `f` is regular at `g p`.
+Differentiability of `f` at `g p` cannot be dropped: `f` can fail to be differentiable along the
+directions transverse to `range g` (making `mfderiv I J f (g p) = 0`) even when `f ∘ g` is smooth
+and regular. -/
+theorem IsRegularPoint.of_comp (hfd : MDifferentiableAt I J f (g p))
+    (hgd : MDifferentiableAt K I g p) (hfg : IsRegularPoint K J (f ∘ g) p) :
+    IsRegularPoint I J f (g p) := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd] at hfg
+  exact isRegularPoint_iff.2 (Function.Surjective.of_comp hfg)
 
 end Composition
 
