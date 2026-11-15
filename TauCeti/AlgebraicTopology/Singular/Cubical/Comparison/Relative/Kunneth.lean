@@ -69,6 +69,8 @@ product with the chain in the second factor.
   `H_q(Y; k) ≃ₗ[k] Hₘ₊₁₊q(Iᵐ⁺¹ × Y, ∂Iᵐ⁺¹ × Y; k)`, `x ↦ [Iᵐ⁺¹] × x`.
 * `TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv`: the isomorphism
   `H_q(Y; k) ≃ₗ[k] H_{q+m+1}(Y × Iᵐ⁺¹, Y × ∂Iᵐ⁺¹; k)`, `x ↦ x × [Iᵐ⁺¹]`.
+* `TauCeti.cubeBoundaryPairProdLeftIso`: the pair `Y × (Iᵐ, ∂Iᵐ)` is the pair of `Y × Iᵐ` over the
+  preimage of `∂Iᵐ` under the projection to the cube.
 
 ## References
 
@@ -82,6 +84,7 @@ public section
 noncomputable section
 
 open CategoryTheory MonoidalCategory Limits HomologicalComplex TauCeti
+open scoped unitInterval
 
 universe u
 
@@ -206,23 +209,6 @@ namespace TauCeti
 
 variable (k : Type) [CommRing k] (X : TopCat.{0}) (m : ℕ)
 
-/-- Since the relative homology of the cube pair `(Iᵐ⁺¹, ∂Iᵐ⁺¹)` vanishes outside degree `m + 1`,
-the summand `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⊗ H_q(X)` is all of the degree `m + 1 + q` part of the tensor
-product of the homologies. -/
-private lemma isIso_ιTensorObj_cubeBoundaryPair (q : ℕ) :
-    IsIso (GradedObject.Monoidal.ιTensorObj
-      (fun p ↦ ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology p)
-      (fun q ↦ ((normalizedCubicalChainComplex k).obj X).homology q) (m + 1) q (m + 1 + q) rfl) :=
-  ⟨GradedObject.Monoidal.tensorObjDesc fun p q' h ↦
-      if hp : p = m + 1 then eqToHom (by rw [hp, show q' = q by omega]) else 0,
-    by simp, GradedObject.Monoidal.tensorObj_ext _ _ fun p q' h ↦ by
-      by_cases hp : p = m + 1
-      · obtain rfl := hp
-        obtain rfl : q' = q := by omega
-        simp
-      · exact ((tensorRight _).map_isZero
-          (isZero_cubicalHomology_cubeBoundaryPair_of_ne k hp)).eq_of_src _ _⟩
-
 /-- **The relative homology of the product of the cube pair with a space**: taking the cross
 product with the fundamental cycle `[Iᵐ⁺¹]` is an isomorphism
 `H_q(X; k) ≃ₗ[k] Hₘ₊₁₊q(Iᵐ⁺¹ × X, ∂Iᵐ⁺¹ × X; k)`, over every commutative ring `k`
@@ -231,7 +217,12 @@ product with the fundamental cycle `[Iᵐ⁺¹]` is an isomorphism
 def cubicalHomologyCubeBoundaryPairProdRightEquiv (q : ℕ) :
     ((normalizedCubicalChainComplex k).obj X).homology q ≃ₗ[k]
       (((cubeBoundaryPair.{0} (m + 1)).prodRight X).cubicalChainComplex k).homology (m + 1 + q) :=
-  have := isIso_ιTensorObj_cubeBoundaryPair k X m q
+  -- the relative homology of the cube pair vanishes outside degree `m + 1`, so the summand
+  -- `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⊗ H_q(X)` is all of the degree `m + 1 + q` part
+  have := GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left
+    (fun p ↦ ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology p)
+    (fun q ↦ ((normalizedCubicalChainComplex k).obj X).homology q)
+    (fun _ ↦ isZero_cubicalHomology_cubeBoundaryPair_of_ne k) q (m + 1 + q) rfl
   have := (cubeBoundaryPair.{0} (m + 1)).isIso_cubicalHomologyKunneth k X (m + 1 + q)
   (TensorProduct.lid k _).symm ≪≫ₗ
     TensorProduct.congr (cubicalHomologyCubeBoundaryPairEquiv k m) (LinearEquiv.refl k _) ≪≫ₗ
@@ -283,24 +274,6 @@ theorem cubicalHomologyCubeBoundaryPairProdRightEquiv_homologyπ (q : ℕ)
 
 /-! ### The product of a space with the cube pair -/
 
-/-- Since the relative homology of the cube pair `(Iᵐ⁺¹, ∂Iᵐ⁺¹)` vanishes outside degree `m + 1`,
-the summand `H_q(X) ⊗ Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹)` is all of the degree `q + (m + 1)` part of the tensor
-product of the homologies. -/
-private lemma isIso_ιTensorObj_prod_cubeBoundaryPair (q : ℕ) :
-    IsIso (GradedObject.Monoidal.ιTensorObj
-      (fun p ↦ ((normalizedCubicalChainComplex k).obj X).homology p)
-      (fun p ↦ ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology p)
-        q (m + 1) (q + (m + 1)) rfl) :=
-  ⟨GradedObject.Monoidal.tensorObjDesc fun p p' h ↦
-      if hp : p' = m + 1 then eqToHom (by rw [hp, show p = q by omega]) else 0,
-    by simp, GradedObject.Monoidal.tensorObj_ext _ _ fun p p' h ↦ by
-      by_cases hp : p' = m + 1
-      · obtain rfl := hp
-        obtain rfl : p = q := by omega
-        simp
-      · exact ((tensorLeft _).map_isZero
-          (isZero_cubicalHomology_cubeBoundaryPair_of_ne k hp)).eq_of_src _ _⟩
-
 /-- **The relative homology of the product of a space with the cube pair**: taking the cross
 product with the fundamental cycle `[Iᵐ⁺¹]` on the right is an isomorphism
 `H_q(X; k) ≃ₗ[k] H_{q+m+1}(X × Iᵐ⁺¹, X × ∂Iᵐ⁺¹; k)`, over every commutative ring `k`
@@ -309,7 +282,12 @@ product with the fundamental cycle `[Iᵐ⁺¹]` on the right is an isomorphism
 def cubicalHomologyCubeBoundaryPairProdLeftEquiv (q : ℕ) :
     ((normalizedCubicalChainComplex k).obj X).homology q ≃ₗ[k]
       (((cubeBoundaryPair.{0} (m + 1)).prodLeft X).cubicalChainComplex k).homology (q + (m + 1)) :=
-  have := isIso_ιTensorObj_prod_cubeBoundaryPair k X m q
+  -- the relative homology of the cube pair vanishes outside degree `m + 1`, so the summand
+  -- `H_q(X) ⊗ Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹)` is all of the degree `q + (m + 1)` part
+  have := GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_right
+    (fun p ↦ ((normalizedCubicalChainComplex k).obj X).homology p)
+    (fun p ↦ ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology p)
+    (fun _ ↦ isZero_cubicalHomology_cubeBoundaryPair_of_ne k) q (q + (m + 1)) rfl
   have := isIso_cubicalHomologyKunnethRel_of_projective k X (cubeBoundaryPair.{0} (m + 1))
     (q + (m + 1))
   (TensorProduct.rid k _).symm ≪≫ₗ
@@ -358,5 +336,39 @@ theorem cubicalHomologyCubeBoundaryPairProdLeftEquiv_homologyπ (q : ℕ)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
     ModuleCat.MonoidalCategory.tensorHom_tmul] at h
   exact h
+
+
+/-! ### The product of a space with the cube pair as a pair over the cube -/
+
+/-- The pair `Y × (Iᵐ, ∂Iᵐ)`, whose cube is lifted to the universe of `Y`, is the pair of
+`Y × Iᵐ` over the boundary of the cube, the preimage of `∂Iᵐ` under the projection
+`Y × Iᵐ → Iᵐ`. This identifies `TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv` with the
+relative homology of a space over the cube restricted to the boundary. -/
+@[expose] def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) (m : ℕ) :
+    (cubeBoundaryPair.{u} m).prodLeft Y ≅
+      TopPair.ofSubset (X := TopCat.of (Y × (Fin m → I)))
+        (ContinuousMap.snd ⁻¹' Cube.boundary (Fin m)) where
+  hom := TopPair.ofHom
+    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.down, continuous_uliftDown⟩))
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1.down), x.2.2⟩, by fun_prop⟩) rfl
+  inv := TopPair.ofHom
+    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.up, continuous_uliftUp⟩))
+    (TopCat.ofHom ⟨fun x ↦ (x.1.1, ⟨ULift.up x.1.2, x.2⟩), by fun_prop⟩) rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- `TauCeti.cubeBoundaryPairProdLeftIso` lowers the cube coordinate out of `ULift`. -/
+@[simp]
+theorem cubeBoundaryPairProdLeftIso_hom_fst_apply (Y : TopCat.{u}) (m : ℕ)
+    (z : Y × ULift.{u} (Fin m → I)) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).hom z = (z.1, z.2.down) :=
+  rfl
+
+/-- The inverse of `TauCeti.cubeBoundaryPairProdLeftIso` lifts the cube coordinate to `ULift`. -/
+@[simp]
+theorem cubeBoundaryPairProdLeftIso_inv_fst_apply (Y : TopCat.{u}) (m : ℕ)
+    (z : Y × (Fin m → I)) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).inv z = (z.1, ULift.up z.2) :=
+  rfl
 
 end TauCeti

@@ -87,28 +87,13 @@ private theorem loopFiberHomotopyEquiv_toFun_apply
   rw [← trivializationMap_mul, mul_one]
   simp [loopFiberHomotopyEquiv, Prod.swap]
 
-/-- The pair `Ω_b X × (Iᵐ⁺¹, ∂Iᵐ⁺¹)`, whose cube is lifted to a universe, is the pair over the
-boundary of the cube of the projection `Ω_b X × Iᵐ⁺¹ → Iᵐ⁺¹`. -/
-private def cubeBoundaryPairProdLeftIso :
-    (cubeBoundaryPair.{0} (m + 1)).prodLeft (TopCat.of (MooreLoopSpace X b)) ≅
-      TopPair.ofSubset (X := TopCat.of (MooreLoopSpace X b × (Fin (m + 1) → I)))
-        (ContinuousMap.snd ⁻¹' Cube.boundary (Fin (m + 1))) where
-  hom := TopPair.ofHom
-    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.down, continuous_uliftDown⟩))
-    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1.down), x.2.2⟩, by fun_prop⟩) rfl
-  inv := TopPair.ofHom
-    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.up, continuous_uliftUp⟩))
-    (TopCat.ofHom ⟨fun x ↦ (x.1.1, ⟨ULift.up x.1.2, x.2⟩), by fun_prop⟩) rfl
-  hom_inv_id := by ext : 2 <;> rfl
-  inv_hom_id := by ext : 2 <;> rfl
-
 /-- The map of pairs `Ω_b X × (Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ (f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹})`,
 `(ω, d) ↦ ω · (d, τ d)`. -/
 private def smulSectionPairMap :
     (cubeBoundaryPair.{0} (m + 1)).prodLeft (TopCat.of (MooreLoopSpace X b)) ⟶
       TopPair.ofSubset (X := TopCat.of (MoorePathPullback f b))
         (proj f b ⁻¹' Cube.boundary (Fin (m + 1))) :=
-  cubeBoundaryPairProdLeftIso.hom ≫
+  (cubeBoundaryPairProdLeftIso (TopCat.of (MooreLoopSpace X b)) (m + 1)).hom ≫
     (loopFiberHomotopyEquiv τ h₀ h₁).preimagePairMap (Cube.boundary (Fin (m + 1)))
 
 private theorem smulSectionPairMap_fst_apply
@@ -181,7 +166,8 @@ private theorem map_crossProduct_upCube {q : ℕ}
       NormalizedCubicalChain.map k g (m + 1)
         (NormalizedCubicalChain.ofCube _ k (upCube.{0} (m + 1))) := by
     rw [NormalizedCubicalChain.map_ofCube]
-    rfl
+    -- `g` precomposed with `ULift.up` is `sectionCube τ h₀ h₁`, by the eta rule for `ULift`
+    exact congrArg _ (ContinuousMap.ext fun _ ↦ rfl)
   have hx : NormalizedCubicalChain.crossProduct _ _ k q (m + 1) a
       (NormalizedCubicalChain.map k g (m + 1)
         (NormalizedCubicalChain.ofCube _ k (upCube.{0} (m + 1)))) =
@@ -238,10 +224,18 @@ theorem isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv (q : ℕ)
             (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles q z))
           (NormalizedCubicalChain.ofCube _ k (upCube.{0} (m + 1)))))
     simp only [comp_f, ModuleCat.hom_comp] at h₃
-    -- `erw`: the goal applies the cycle maps through `ConcreteCategory.hom`, while `h`, `h₂` and
-    -- `h₃` are stated through `ModuleCat.Hom.hom`, and `TopPair.cubicalChainOfCube` unfolds to the
-    -- projection of the cube only up to the identity `normalizedCubicalChainComplexXEquiv`
-    erw [h, iCycles_cubeBoundaryPairCycle, TopPair.cubicalChainOfCube_def, h₂, h₃]
+    -- the fundamental cycle of the cube pair is the class of the identity cube
+    rw [(iCycles_cubeBoundaryPairCycle k m).trans ((TopPair.cubicalChainOfCube_def k _).trans
+      (congrArg _ (normalizedCubicalChainComplexXEquiv_symm_apply _ _ _)))] at h
+    -- chain `h`, `h₂` and `h₃` by transitivity rather than rewriting with them: `h` names the
+    -- cycles of the tensor product through `HomologicalComplex.tensorObj` and the goal through
+    -- the monoidal `tensorObj`, which agree only after unfolding
+    refine Eq.trans ?_ ((congrArg (fun y ↦
+      ((TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)).f (q + (m + 1))).hom
+        (((cubicalCrossProductRel k _ (cubeBoundaryPair.{0} (m + 1))).f (q + (m + 1))).hom y))
+      h).trans ((congrArg
+        ((TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)).f (q + (m + 1))).hom
+        h₂).trans h₃)).symm
     refine (congrArg _ ?_).trans (LinearMap.comp_apply _ _ _).symm
     rw [NormalizedCubicalChain.cast_rfl]
     exact (map_crossProduct_upCube τ h₀ h₁ k _).symm
