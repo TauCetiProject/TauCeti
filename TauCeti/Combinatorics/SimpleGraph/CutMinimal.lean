@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
-public import TauCeti.Combinatorics.SimpleGraph.Finite
+public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
 public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
 public import TauCeti.Data.Finset.Basic
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
@@ -22,15 +22,14 @@ Equivalently, toggling all pairs across any cut cannot decrease its edge count.
 This is the graph-theoretic minimality condition for binary cochains: a binary gauge
 changes the edge set by symmetric difference with a cut.
 
-On any finite vertex type, minimizing `#(G ∆ (⊤ : SimpleGraph V).between s sᶜ).edgeFinset` over
-`s : Finset V` switches `G` to a cut-minimal graph
+On any finite vertex type, every graph can be switched by a finset cut to a cut-minimal graph
 (`exists_finset_isCutMinimal_symmDiff_top_between`). Conversely, the only cut-minimal
 complete-graph cut is `⊥` (`isCutMinimal_top_between_iff`), while a single edge
 `SimpleGraph.edge u v` (`u ≠ v`) is cut-minimal precisely when a third vertex exists
 (`isCutMinimal_edge_iff`). Evaluating cut-minimality on singleton cuts bounds every vertex degree
 by `2 * G.degree v ≤ Fintype.card V - 1` (`IsCutMinimal.two_mul_degree_le`). On at most four
 vertices, every cut-minimal graph therefore has maximum degree at most `1`, at most two edges, no
-`3`-clique, and `(Fintype.card V - 2) * #G.edgeFinset` odd-edge ordered triples.
+`3`-clique, and `(Fintype.card V - 2) * #G.edgeFinset` odd triangles.
 
 The cut-minimality convention follows D. N. Kozlov, *The first Cheeger constant of a
 simplex*, arXiv:1610.07136v2, Section 2. The characterizations here isolate isomorphism
@@ -46,12 +45,13 @@ or coefficient group.
   and degree counts across cuts.
 * `SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff`,
   `SimpleGraph.exists_finset_isCutMinimal_symmDiff_top_between`: switching any cut does not
-  decrease the edge count, and minimizing switched edge count produces a cut-minimal switching.
+  decrease the edge count, and every graph on a finite vertex type admits a cut-minimal finset
+  switching.
 * `SimpleGraph.isCutMinimal_top_between_iff`, `SimpleGraph.isCutMinimal_edge_iff`: cut-minimality
   of complete-graph cuts and single-edge graphs.
 * `SimpleGraph.IsCutMinimal.two_mul_degree_le`,
-  `SimpleGraph.IsCutMinimal.card_filter_lt_triple_xor_of_card_le_four`: singleton-cut degree bound
-  and four-vertex cut-minimal odd-edge triple count.
+  `SimpleGraph.IsCutMinimal.card_oddTriangleFinset_of_card_le_four`: singleton-cut degree bound
+  and four-vertex cut-minimal odd-triangle count.
 -/
 
 public section
@@ -250,8 +250,8 @@ theorem isCutMinimal_edge_iff (u v : V) :
           · exact hxor h'.symm
       simp [hempty]
 
-/-- At every vertex of a cut-minimal graph, at most as many incident pairs are edges as non-edges.
-This holds without finiteness assumptions by testing the singleton cut `({v}, {v}ᶜ)`. -/
+/-- At every vertex of a cut-minimal graph, at most as many incident pairs are edges as non-edges,
+without finiteness assumptions. -/
 theorem IsCutMinimal.encard_incidenceSet_le {G : SimpleGraph V} (hG : G.IsCutMinimal) (v : V) :
     (G.incidenceSet v).encard ≤ (Gᶜ.incidenceSet v).encard := by
   simpa [top_between_sdiff_eq_compl_between] using hG {v}
@@ -288,8 +288,8 @@ theorem IsCutMinimal.card_edgeFinset_le_symmDiff_top_between {G : SimpleGraph V}
 
 /-- On a finite vertex type, cut-minimality is equivalent to non-decreasing edge count across all
 finset cuts. -/
-theorem isCutMinimal_iff_forall_finset [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj] :
+theorem isCutMinimal_iff_forall_finset_card_edgeFinset_le_symmDiff_top_between
+    [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj] :
     G.IsCutMinimal ↔
       ∀ s : Finset V,
         #G.edgeFinset ≤ #(G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).edgeFinset := by
@@ -297,14 +297,13 @@ theorem isCutMinimal_iff_forall_finset [Fintype V] [DecidableEq V]
   refine ⟨fun h s ↦ by rw [edgeFinset_symmDiff]; exact h s, fun h S _ ↦ ?_⟩
   have heq : (G ∆ (⊤ : SimpleGraph V).between (S.toFinset : Set V)
       (S.toFinset : Set V)ᶜ).edgeFinset =
-      G.edgeFinset ∆ ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset :=
-    coe_injective <| by
-      rw [coe_edgeFinset, coe_symmDiff, coe_edgeFinset, coe_edgeFinset, Set.coe_toFinset,
-        edgeSet_symmDiff]
+      G.edgeFinset ∆ ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
+    rw [edgeFinset_symmDiff]
+    congr 1
+    exact edgeFinset_inj.mpr (by simp)
   exact heq ▸ h S.toFinset
 
-/-- Every graph on a finite vertex type can be switched by a finset cut to a cut-minimal graph:
-choose a finset cut minimizing the switched edge count. -/
+/-- Every graph on a finite vertex type can be switched by a finset cut to a cut-minimal graph. -/
 theorem exists_finset_isCutMinimal_symmDiff_top_between [Finite V] (G : SimpleGraph V) :
     ∃ s : Finset V, (G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).IsCutMinimal := by
   classical
@@ -312,13 +311,13 @@ theorem exists_finset_isCutMinimal_symmDiff_top_between [Finite V] (G : SimpleGr
   obtain ⟨s, -, hmin⟩ := Finset.exists_min_image Finset.univ
     (fun s : Finset V ↦ #(G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).edgeFinset)
     Finset.univ_nonempty
-  refine ⟨s, (isCutMinimal_iff_forall_finset _).mpr fun t ↦ ?_⟩
+  refine ⟨s, (isCutMinimal_iff_forall_finset_card_edgeFinset_le_symmDiff_top_between _).mpr
+    fun t ↦ ?_⟩
   have heq : (G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ ∆
       (⊤ : SimpleGraph V).between (t : Set V) (t : Set V)ᶜ).edgeFinset =
       (G ∆ (⊤ : SimpleGraph V).between ((s ∆ t : Finset V) : Set V)
         ((s ∆ t : Finset V) : Set V)ᶜ).edgeFinset :=
-    coe_injective <| by
-      rw [coe_edgeFinset, coe_edgeFinset, Finset.coe_symmDiff, symmDiff_top_between_symmDiff]
+    edgeFinset_inj.mpr (by rw [Finset.coe_symmDiff, symmDiff_top_between_symmDiff])
   exact heq.symm ▸ hmin (s ∆ t) (Finset.mem_univ _)
 
 /-- On at least three vertices, every single-edge graph `SimpleGraph.edge u v` is cut-minimal. -/
@@ -368,13 +367,29 @@ theorem IsCutMinimal.degree_le_one_of_card_le_four [Fintype V] {G : SimpleGraph 
   have := hG.two_mul_degree_le v
   omega
 
+/-- On at most two vertices, every cut-minimal graph is edgeless. -/
+theorem IsCutMinimal.edgeFinset_eq_empty_of_card_le_two [Fintype V] {G : SimpleGraph V}
+    [Fintype G.edgeSet] (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 2) :
+    G.edgeFinset = ∅ := by
+  classical
+  have hcard : #G.edgeFinset = #(@edgeFinset _ G G.fintypeEdgeSet) :=
+    congrArg card ((@edgeFinset_inj _ G G _ G.fintypeEdgeSet).mpr rfl)
+  apply Finset.card_eq_zero.mp
+  rw [hcard]
+  have hsum : ∑ v : V, G.degree v = 0 :=
+    Finset.sum_eq_zero fun v _ ↦ by
+      have := hG.two_mul_degree_le v
+      omega
+  have h2 := G.sum_degrees_eq_twice_card_edges
+  omega
+
 /-- On at most four vertices, a cut-minimal graph has at most two edges. -/
 theorem IsCutMinimal.card_edgeFinset_le_two_of_card_le_four [Fintype V] {G : SimpleGraph V}
     [Fintype G.edgeSet] (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 4) :
     #G.edgeFinset ≤ 2 := by
   classical
-  have hcard : #G.edgeFinset = #(@edgeFinset _ G (fintypeEdgeSet G)) := by
-    congr!
+  have hcard : #G.edgeFinset = #(@edgeFinset _ G G.fintypeEdgeSet) :=
+    congrArg card ((@edgeFinset_inj _ G G _ G.fintypeEdgeSet).mpr rfl)
   rw [hcard]
   have hsum : ∑ v : V, G.degree v ≤ 4 :=
     (Finset.sum_le_sum fun v _ ↦ hG.degree_le_one_of_card_le_four hV v).trans (by simp [hV])
@@ -386,27 +401,15 @@ theorem IsCutMinimal.cliqueFree_three_of_card_le_four [Fintype V] {G : SimpleGra
     (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 4) :
     G.CliqueFree 3 := by
   classical
-  intro t ht
-  have hcard := ht.card_eq
-  obtain ⟨v, hv⟩ := Finset.card_pos.mp (by omega : 0 < #t)
-  have hsub : t.erase v ⊆ G.neighborFinset v := fun w hw ↦ by
-    rw [Finset.mem_erase] at hw
-    exact (G.mem_neighborFinset v w).mpr (ht.isClique hv hw.2 hw.1.symm)
-  have hle : #(t.erase v) ≤ G.degree v :=
-    G.card_neighborFinset_eq_degree v ▸ Finset.card_le_card hsub
-  have hdeg := hG.degree_le_one_of_card_le_four hV v
-  rw [Finset.card_erase_of_mem hv, hcard] at hle
-  omega
+  exact G.cliqueFree_three_of_degree_le_one fun v ↦ hG.degree_le_one_of_card_le_four hV v
 
-/-- On a linearly ordered vertex type of size at most four, a cut-minimal graph spans an odd number
-of edges on `(Fintype.card V - 2) * #G.edgeFinset` strictly increasing vertex triples. -/
-theorem IsCutMinimal.card_filter_lt_triple_xor_of_card_le_four [Fintype V] [LinearOrder V]
+/-- On a vertex type of size at most four, a cut-minimal graph has
+`(Fintype.card V - 2) * #G.edgeFinset` odd triangles. -/
+theorem IsCutMinimal.card_oddTriangleFinset_of_card_le_four [Fintype V] [DecidableEq V]
     {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype G.edgeSet]
     (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 4) :
-    #{p : V × V × V | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
-      Xor (G.Adj p.1 p.2.1) (Xor (G.Adj p.2.1 p.2.2) (G.Adj p.2.2 p.1))} =
-      (Fintype.card V - 2) * #G.edgeFinset :=
-  G.card_filter_lt_triple_xor_of_degree_le_one fun v ↦ hG.degree_le_one_of_card_le_four hV v
+    #G.oddTriangleFinset = (Fintype.card V - 2) * #G.edgeFinset :=
+  G.card_oddTriangleFinset_of_degree_le_one fun v ↦ hG.degree_le_one_of_card_le_four hV v
 
 end Switching
 

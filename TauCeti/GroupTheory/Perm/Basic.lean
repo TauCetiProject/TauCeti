@@ -60,8 +60,9 @@ with `σ` off the pair (`Function.Involutive.swap_mul`,
 (`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
 infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
 finite type sends as many points into a set as out of it
-(`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a natural-number valued
-function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
+(`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and
+every transposition squares to the identity (`Equiv.Perm.IsSwap.mul_self`).
 -/
 
 public section
@@ -791,3 +792,13 @@ theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
   rw [mul_assoc, Equiv.mul_swap_eq_swap_mul, hσ a, Equiv.swap_comm, Equiv.swap_mul_self_mul]
 
 end Function.Involutive
+
+namespace Equiv.Perm
+
+/-- Every transposition squares to the identity. -/
+theorem IsSwap.mul_self {α : Type*} [DecidableEq α] {t : Perm α} (ht : t.IsSwap) :
+    t * t = 1 := by
+  obtain ⟨a, b, _, rfl⟩ := ht
+  simp
+
+end Equiv.Perm
