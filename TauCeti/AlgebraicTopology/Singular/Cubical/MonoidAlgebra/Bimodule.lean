@@ -109,8 +109,9 @@ theorem leftAct_ofCube_point (g : G) (y : Y) :
     leftAct G Y R 0 0 (ofCube G R (SingularCube.point g)) (ofCube Y R (SingularCube.point y)) =
       ofCube Y R (SingularCube.point (g • y)) := by
   rw [leftAct_ofCube, SingularCube.eq_point ((leftActMap G Y).comp _), ContinuousMap.comp_apply,
-    SingularCube.crossProduct_apply, leftActMap_apply, SingularCube.point_apply,
-    SingularCube.point_apply]
+    SingularCube.crossProduct_apply]
+  -- `simp` does not apply `crossProduct_apply` to cubes of dimension `0 + 0`.
+  simp
 
 /-- **The Leibniz rule for the left action**: for `a` of degree `p + 1` and `c` of degree `q + 1`,
 `∂ (a · c) = ∂ a · c + (-1) ^ (p + 1) • (a · ∂ c)`, in degree `p + q + 1`. -/
