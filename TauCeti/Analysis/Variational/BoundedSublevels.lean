@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Algebra.Order.Group.Pointwise.Bounds
 
 /-!
@@ -13,9 +14,10 @@ public import Mathlib.Algebra.Order.Group.Pointwise.Bounds
 
 `HasBoundedSublevelsOn E S` is the boundedness condition used to obtain compactness in the
 direct method: every sublevel of the ordered-valued energy `E`, relative to the admissible set `S`,
-is bounded. It is stable under restriction, increasing the energy, positive scaling, and
-addition of an energy bounded below. In a pseudometric space it is equivalent to boundedness
-of every admissible sequence whose energies are bounded above.
+is bounded. It is stable under restriction, intersection, union, increasing the energy, positive
+scaling, addition of an energy bounded below, affine translation, and change of variable by a
+continuous linear equivalence. In a pseudometric space it is equivalent to boundedness of every
+admissible sequence whose energies are bounded above.
 -/
 
 public section
@@ -62,7 +64,7 @@ theorem hasBoundedSublevelsOn_iff_tendsto {X β : Type*} [Bornology X]
 
 namespace HasBoundedSublevelsOn
 
-variable {X β : Type*} [Bornology X] {E F : X → β} {S T : Set X}
+variable {X Y β : Type*} [Bornology X] [Bornology Y] {E F : X → β} {S T : Set X}
 
 /-- Each relative sublevel of an energy with bounded sublevels is bounded. -/
 theorem isBounded_sublevel [LE β] (h : HasBoundedSublevelsOn E S) (b : β) :
@@ -73,6 +75,34 @@ theorem isBounded_sublevel [LE β] (h : HasBoundedSublevelsOn E S) (b : β) :
 theorem mono [LE β] (h : HasBoundedSublevelsOn E S) (hTS : T ⊆ S) :
     HasBoundedSublevelsOn E T :=
   fun b ↦ (h b).subset fun _ hx ↦ ⟨hTS hx.1, hx.2⟩
+
+/-- Bounded sublevels are preserved upon intersecting the admissible set on the right. -/
+theorem inter_left [LE β] (h : HasBoundedSublevelsOn E S) (T : Set X) :
+    HasBoundedSublevelsOn E (S ∩ T) :=
+  h.mono inter_subset_left
+
+/-- Bounded sublevels are preserved upon intersecting the admissible set on the left. -/
+theorem inter_right [LE β] (h : HasBoundedSublevelsOn E T) (S : Set X) :
+    HasBoundedSublevelsOn E (S ∩ T) :=
+  h.mono inter_subset_right
+
+/-- Precomposing an energy with a map that sends cobounded sets to cobounded sets preserves
+bounded sublevels along any set mapped into `S`. -/
+theorem comp_of_tendsto_cobounded [LE β] (h : HasBoundedSublevelsOn E S) {f : Y → X} {U : Set Y}
+    (hf : Tendsto f (cobounded Y) (cobounded X)) (hUS : MapsTo f U S) :
+    HasBoundedSublevelsOn (E ∘ f) U := by
+  intro b
+  have hpre : IsBounded (f ⁻¹' {x ∈ S | E x ≤ b}) := by
+    rw [isBounded_def, ← preimage_compl]
+    exact hf (isBounded_def.mp (h b))
+  exact hpre.subset fun y hy ↦ ⟨hUS hy.1, hy.2⟩
+
+/-- Precomposing an energy with a map sending cobounded sets to cobounded sets preserves bounded
+sublevels on `f ⁻¹' S`. -/
+theorem preimage_of_tendsto_cobounded [LE β] (h : HasBoundedSublevelsOn E S) {f : Y → X}
+    (hf : Tendsto f (cobounded Y) (cobounded X)) :
+    HasBoundedSublevelsOn (E ∘ f) (f ⁻¹' S) :=
+  h.comp_of_tendsto_cobounded hf (mapsTo_preimage f S)
 
 /-- Increasing an energy preserves bounded sublevels. -/
 theorem of_le [Preorder β] (h : HasBoundedSublevelsOn E S) (hEF : ∀ x ∈ S, E x ≤ F x) :
@@ -144,7 +174,7 @@ end HasBoundedSublevelsOn
 
 section NormalForms
 
-variable {X β : Type*} [Bornology X] {E : X → β} {S T : Set X}
+variable {X Y β : Type*} [Bornology X] [Bornology Y] {E : X → β} {S T : Set X}
 
 /-- The empty set has bounded sublevels for every energy. -/
 @[simp] theorem hasBoundedSublevelsOn_empty [LE β] : HasBoundedSublevelsOn E ∅ :=
@@ -165,6 +195,15 @@ variable {X β : Type*} [Bornology X] {E : X → β} {S T : Set X}
     HasBoundedSublevelsOn E (insert x S) ↔ HasBoundedSublevelsOn E S := by
   rw [← singleton_union, hasBoundedSublevelsOn_union]
   simp
+
+/-- A bijection that preserves coboundedness in both directions preserves bounded sublevels. -/
+theorem hasBoundedSublevelsOn_comp_equiv_iff [LE β] (e : Y ≃ X)
+    (he : Tendsto e (cobounded Y) (cobounded X))
+    (hesymm : Tendsto e.symm (cobounded X) (cobounded Y)) :
+    HasBoundedSublevelsOn (E ∘ e) (e ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.preimage_of_tendsto_cobounded he⟩
+  have h' := h.preimage_of_tendsto_cobounded hesymm
+  simpa only [Function.comp_def, Equiv.apply_symm_apply, e.symm_preimage_preimage] using h'
 
 /-- A constant energy has bounded sublevels exactly on bounded sets. -/
 @[simp] theorem hasBoundedSublevelsOn_const_iff [Preorder β] (c : β) :
@@ -218,12 +257,21 @@ end NormalForms
 
 section PseudoMetric
 
-variable {V β : Type*} [PseudoMetricSpace V] [Preorder β] {E : V → β} {S : Set V}
+variable {V W β : Type*} [PseudoMetricSpace V] [PseudoMetricSpace W]
+
+/-- Precomposing with an antilipschitz map preserves bounded sublevels along any set mapped into
+`S`. -/
+theorem HasBoundedSublevelsOn.comp_antilipschitzWith [LE β] {E : V → β} {S : Set V}
+    (h : HasBoundedSublevelsOn E S) {f : W → V} {U : Set W} {K : NNReal}
+    (hf : AntilipschitzWith K f) (hUS : MapsTo f U S) :
+    HasBoundedSublevelsOn (E ∘ f) U :=
+  h.comp_of_tendsto_cobounded hf.tendsto_cobounded hUS
 
 /-- Bounded sublevels are equivalent to boundedness of every admissible sequence with
 bounded-above energies. -/
-theorem hasBoundedSublevelsOn_iff_seq : HasBoundedSublevelsOn E S ↔
-    ∀ u : ℕ → V, (∀ n, u n ∈ S) → BddAbove (range (E ∘ u)) → IsBounded (range u) := by
+theorem hasBoundedSublevelsOn_iff_seq [Preorder β] {E : V → β} {S : Set V} :
+    HasBoundedSublevelsOn E S ↔
+      ∀ u : ℕ → V, (∀ n, u n ∈ S) → BddAbove (range (E ∘ u)) → IsBounded (range u) := by
   classical
   refine ⟨fun h _ hu hE ↦ h.isBounded_range hu hE, fun h b ↦ ?_⟩
   by_contra hb
@@ -262,5 +310,51 @@ theorem hasBoundedSublevelsOn_iff_forall_exists_le_of_le_norm :
     ⟨b, fun _ _ hx ↦ hx⟩
 
 end Seminormed
+
+section Transformations
+
+variable {V W β : Type*} [LE β]
+
+/-- Left translation in a seminormed additive group preserves bounded sublevels on the
+translated admissible set. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_add_left_iff [SeminormedAddGroup V]
+    {E : V → β} {S : Set V} (v : V) :
+    HasBoundedSublevelsOn (fun x ↦ E (v + x)) ((v + ·) ⁻¹' S) ↔ HasBoundedSublevelsOn E S :=
+  hasBoundedSublevelsOn_comp_equiv_iff (Equiv.addLeft v)
+    (isometry_add_left v).antilipschitzWith.tendsto_cobounded
+    (by simpa only [Equiv.addLeft_symm, Equiv.coe_addLeft] using
+      (isometry_add_left (-v)).antilipschitzWith.tendsto_cobounded)
+
+/-- Right translation in a seminormed commutative additive group preserves bounded sublevels on
+the translated admissible set. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_add_right_iff [SeminormedAddCommGroup V]
+    {E : V → β} {S : Set V} (v : V) :
+    HasBoundedSublevelsOn (fun x ↦ E (x + v)) ((· + v) ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
+  simpa only [add_comm] using hasBoundedSublevelsOn_comp_add_left_iff (E := E) (S := S) v
+
+/-- Right subtraction of a fixed vector in a seminormed commutative additive group preserves
+bounded sublevels on the translated admissible set. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_sub_right_iff [SeminormedAddCommGroup V]
+    {E : V → β} {S : Set V} (v : V) :
+    HasBoundedSublevelsOn (fun x ↦ E (x - v)) ((· - v) ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
+  simpa only [sub_eq_add_neg] using
+    hasBoundedSublevelsOn_comp_add_right_iff (E := E) (S := S) (-v)
+
+/-- Change of variable by a continuous semilinear equivalence preserves bounded sublevels. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_continuousLinearEquiv_iff
+    {𝕜₁ 𝕜₂ : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+    {σ₁₂ : 𝕜₁ →+* 𝕜₂} {σ₂₁ : 𝕜₂ →+* 𝕜₁} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    [RingHomIsometric σ₁₂] [RingHomIsometric σ₂₁]
+    [SeminormedAddCommGroup V] [SeminormedAddCommGroup W]
+    [NormedSpace 𝕜₁ W] [NormedSpace 𝕜₂ V]
+    {E : V → β} {S : Set V} (e : W ≃SL[σ₁₂] V) :
+    HasBoundedSublevelsOn (E ∘ e) (e ⁻¹' S) ↔ HasBoundedSublevelsOn E S :=
+  hasBoundedSublevelsOn_comp_equiv_iff e.toLinearEquiv.toEquiv
+    ((((e.symm : V →SL[σ₂₁] W).lipschitzWith_of_opNorm_le
+      (K := ‖(e.symm : V →SL[σ₂₁] W)‖₊) le_rfl).to_rightInverse e.left_inv).tendsto_cobounded)
+    ((((e : W →SL[σ₁₂] V).lipschitzWith_of_opNorm_le
+      (K := ‖(e : W →SL[σ₁₂] V)‖₊) le_rfl).to_rightInverse e.right_inv).tendsto_cobounded)
+
+end Transformations
 
 end TauCeti
