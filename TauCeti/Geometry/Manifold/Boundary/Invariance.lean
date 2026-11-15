@@ -9,21 +9,35 @@ public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 
 /-!
-# Half-space charts send frontier points to the boundary hyperplane
+# Topological invariance of the boundary of a manifold
 
-Let `A` be a subset of a finite-dimensional real normed space `E`, and let `φ` be a homeomorphism
-from an open subset of `A` onto an open subset of the half-space model `EuclideanHalfSpace m × V`,
-where `m + dim V = dim E`. A point `y` of the source of `φ` which is not an interior point of `A`
-in `E` is sent to the boundary hyperplane: the zeroth coordinate of `φ y` vanishes
-(`OpenPartialHomeomorph.coe_fst_apply_zero_eq_zero_of_notMem_interior`).
+Mathlib defines the interior and boundary points of a manifold with corners through the preferred
+chart at each point, and proves that every other chart detects them only for `C¹` manifolds
+(`ModelWithCorners.isInteriorPoint_iff_of_mem_atlas`), by a derivative argument. This file proves
+the same chart independence for topological manifolds modelled on a finite-dimensional real space,
+by invariance of domain (`IsOpen.image_of_continuousOn_of_injOn`). So the boundary of a manifold
+whose transition maps are merely continuous, for instance PL, can be read off in any chart.
 
-This is the topological invariance of the boundary of the half-space, in the form needed when an
-arbitrary chart of a subset with nonempty frontier, such as a closed ball, takes values in a
-half-space model. Otherwise `φ.symm`, restricted to the open set of points of the target with
-positive zeroth coordinate, would be a continuous injection of an open subset of
-`ℝᵐ × V` into `E` whose image contains `y` and lies in `A`. By invariance of domain
-(`IsOpen.image_of_continuousOn_of_injOn`) that image is open in `E`, so `y` would be an interior
-point of `A`.
+* `ContinuousOn.isInteriorPoint_of_injOn`: a continuous map injective on an open neighbourhood of
+  an interior point, between manifolds modelled on spaces of the same finite dimension, sends it
+  to an interior point.
+* `ModelWithCorners.isInteriorPoint_iff_mem_interior_range_of_finiteDimensional` and
+  `ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`: any chart
+  around a point, in the atlas or not, detects whether it is an interior or a boundary point.
+* `ModelWithCorners.isOpen_interior_of_finiteDimensional`,
+  `ModelWithCorners.isClosed_boundary_of_finiteDimensional`: the interior is open and the boundary
+  is closed.
+
+In the same way, let `A` be a subset of a finite-dimensional real normed space `E`, and let `φ` be
+a homeomorphism from an open subset of `A` onto an open subset of the half-space model
+`EuclideanHalfSpace m × V`, where `m + dim V = dim E`. A point `y` of the source of `φ` which is not
+an interior point of `A` in `E` is sent to the boundary hyperplane: the zeroth coordinate of `φ y`
+vanishes (`OpenPartialHomeomorph.coe_fst_apply_zero_eq_zero_of_notMem_interior`). This is the form
+needed when an arbitrary chart of a subset with nonempty frontier, such as a closed ball, takes
+values in a half-space model. Otherwise `φ.symm`, restricted to the open set of points of the
+target with positive zeroth coordinate, would be a continuous injection of an open subset of
+`ℝᵐ × V` into `E` whose image contains `y` and lies in `A`. By invariance of domain that image is
+open in `E`, so `y` would be an interior point of `A`.
 
 ## References
 
@@ -88,3 +102,103 @@ theorem coe_fst_apply_zero_eq_zero_of_notMem_interior
   exact (φ.symm (j p)).2
 
 end OpenPartialHomeomorph
+
+section ChartIndependence
+
+variable {E H E' H' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} {M N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- **Invariance of interior points.** Let `M` and `N` be charted spaces modelled with corners on
+real normed spaces of the same finite dimension. A map `f : M → N` which is continuous and
+injective on an open neighbourhood of an interior point `x` of `M` sends `x` to an interior point
+of `N`. -/
+theorem ContinuousOn.isInteriorPoint_of_injOn [FiniteDimensional ℝ E']
+    (hEE' : finrank ℝ E = finrank ℝ E') {f : M → N} {U : Set M} (hf : ContinuousOn f U)
+    (hU : IsOpen U) (hinj : InjOn f U) {x : M} (hxU : x ∈ U) (hx : I.IsInteriorPoint x) :
+    I'.IsInteriorPoint (f x) := by
+  set c := chartAt H x
+  set d := chartAt H' (f x)
+  -- Read `f` in the model spaces, on the open set `W` of interior coordinates of the points of
+  -- `U` that `f` carries into the source of `d`.
+  set V := U ∩ f ⁻¹' d.source
+  have hV : IsOpen V := hf.isOpen_inter_preimage hU d.open_source
+  set W : Set E := interior (range I) ∩ I.symm ⁻¹' (c.target ∩ c.symm ⁻¹' V)
+  have hW : IsOpen W :=
+    isOpen_interior.inter (I.continuous_symm.isOpen_preimage _ (c.isOpen_inter_preimage_symm hV))
+  set g : E → E' := I' ∘ d ∘ f ∘ c.symm ∘ I.symm
+  have hg : ContinuousOn g W :=
+    I'.continuous.comp_continuousOn <| d.continuousOn.comp
+      ((hf.mono inter_subset_left).comp
+        (c.continuousOn_symm.comp I.continuous_symm.continuousOn fun _ hy => hy.2.1)
+        fun _ hy => hy.2.2)
+      fun _ hy => hy.2.2.2
+  have hginj : InjOn g W := by
+    intro y hy z hz hyz
+    have h₁ := hinj hy.2.2.1 hz.2.2.1
+      (d.injOn hy.2.2.2 hz.2.2.2 (I'.injective hyz))
+    have h₂ := c.symm.injOn (c.symm_source ▸ hy.2.1) (c.symm_source ▸ hz.2.1) h₁
+    rw [← I.right_inv (interior_subset hy.1), ← I.right_inv (interior_subset hz.1)]
+    exact congrArg I h₂
+  -- By invariance of domain `g '' W` is open; it lies in `range I'`, hence in its interior.
+  have hgW : g '' W ⊆ interior (range I') :=
+    interior_maximal (image_subset_iff.2 fun _ _ => mem_range_self _)
+      (hW.image_of_continuousOn_of_injOn hg hginj hEE')
+  have hxW : I (c x) ∈ W := by
+    have hxV : x ∈ V := ⟨hxU, mem_chart_source H' (f x)⟩
+    refine ⟨hx, by simp [c, mem_chart_source], ?_⟩
+    simpa [c, mem_chart_source] using hxV
+  have := hgW (mem_image_of_mem g hxW)
+  simpa [ModelWithCorners.IsInteriorPoint, g, c, d, mem_chart_source] using this
+
+namespace ModelWithCorners
+
+/-- On a model space, a point is an interior point exactly when the model sends it into the
+interior of its range. -/
+private theorem isInteriorPoint_iff_mem_interior_range_self {z : H} :
+    I.IsInteriorPoint z ↔ I z ∈ interior (range I) := by
+  rw [IsInteriorPoint, extChartAt_self_apply]
+
+/-- **Chart independence of interior points.** On a charted space modelled with corners on a
+finite-dimensional real space, every chart around `x`, in the atlas or not, detects whether `x` is
+an interior point: exactly when it reads `x` in the interior of the range of the model. -/
+theorem isInteriorPoint_iff_mem_interior_range_of_finiteDimensional [FiniteDimensional ℝ E]
+    {e : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) :
+    I.IsInteriorPoint x ↔ I (e x) ∈ interior (range I) := by
+  rw [← isInteriorPoint_iff_mem_interior_range_self]
+  refine ⟨fun h => e.continuousOn.isInteriorPoint_of_injOn rfl e.open_source e.injOn hx h,
+    fun h => ?_⟩
+  simpa [e.left_inv hx] using
+    e.continuousOn_symm.isInteriorPoint_of_injOn (I' := I) rfl e.open_target e.symm.injOn
+      (e.map_source hx) h
+
+/-- **Chart independence of boundary points.** On a charted space modelled with corners on a
+finite-dimensional real space, every chart around `x`, in the atlas or not, detects whether `x` is
+a boundary point: exactly when it reads `x` in the frontier of the range of the model. -/
+theorem isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional [FiniteDimensional ℝ E]
+    {e : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) :
+    I.IsBoundaryPoint x ↔ I (e x) ∈ frontier (range I) := by
+  rw [I.isBoundaryPoint_iff_not_isInteriorPoint,
+    isInteriorPoint_iff_mem_interior_range_of_finiteDimensional hx, I.isClosed_range.frontier_eq]
+  simp
+
+variable (I M)
+
+/-- The interior of a charted space modelled with corners on a finite-dimensional real space is
+open. -/
+theorem isOpen_interior_of_finiteDimensional [FiniteDimensional ℝ E] : IsOpen (I.interior M) := by
+  refine isOpen_iff_forall_mem_open.2 fun x hx => ⟨_, fun y hy => ?_,
+    isOpen_extChartAt_preimage (I := I) x isOpen_interior, mem_chart_source H x, hx⟩
+  exact (isInteriorPoint_iff_mem_interior_range_of_finiteDimensional hy.1).2 (by simpa using hy.2)
+
+/-- The boundary of a charted space modelled with corners on a finite-dimensional real space is
+closed. -/
+theorem isClosed_boundary_of_finiteDimensional [FiniteDimensional ℝ E] :
+    IsClosed (I.boundary M) := by
+  rw [← I.compl_interior, isClosed_compl_iff]
+  exact isOpen_interior_of_finiteDimensional I M
+
+end ModelWithCorners
+
+end ChartIndependence
