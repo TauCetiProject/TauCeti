@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
 # The Weierstrass `ζ` function
@@ -18,11 +18,11 @@ For a pair of periods `L` with lattice `Λ`, the Weierstrass `ζ` function is
 since its terms are `z² / (l² (z - l)) = O(|l|⁻³)`. It is holomorphic away from `Λ` with
 `ζ' = -℘`, and it is odd.
 
-Unlike `℘`, the function `ζ` is not periodic: it is *quasi-periodic*. Since `ζ(z + l) - ζ(z)` has
-derivative `℘(z) - ℘(z + l) = 0` on the connected open set `ℂ ∖ Λ`, it is a constant `η(l)`, the
-quasi-period of `l` (`PeriodPair.quasiPeriod`), and `η : Λ → ℂ` is additive. At a lattice point
-`l`, a pole of `ζ`, the defining series takes the value `η(l)`, so the quasi-periodicity holds at
-every `z`, and, as `ζ` is odd, `η(l) = 2 ζ(l / 2)` for every `l ∈ Λ`.
+Unlike `℘`, the function `ζ` is not `Λ`-periodic (not doubly periodic): it is *quasi-periodic*.
+Since `ζ(z + l) - ζ(z)` has derivative `℘(z) - ℘(z + l) = 0` on the connected open set `ℂ ∖ Λ`, it
+is a constant `η(l)`, the quasi-period of `l` (`PeriodPair.quasiPeriod`), and `η : Λ → ℂ` is
+additive. At a lattice point `l`, a pole of `ζ`, the defining series takes the value `η(l)`, so the
+quasi-periodicity holds at every `z`, and, as `ζ` is odd, `η(l) = 2 ζ(l / 2)` for every `l ∈ Λ`.
 
 The values of `ζ` at the `N`-division points of `ℤ z + ℤ`, corrected by the quasi-periods so as
 to depend only on the division point modulo the lattice, are the building blocks of the weight-one
@@ -122,25 +122,15 @@ private lemma hasDerivAt_weierstrassZeta_term {l z : ℂ} (hz : z ≠ l) :
 /-- **`ζ' = -℘`** away from the lattice. -/
 theorem hasDerivAt_weierstrassZeta {z : ℂ} (hz : z ∉ L.lattice) :
     HasDerivAt L.weierstrassZeta (-℘[L] z) z := by
-  have hU : IsOpen (L.lattice : Set ℂ)ᶜ := L.isClosed_lattice.isOpen_compl
-  have hterm (l : L.lattice) {w : ℂ} (hw : w ∉ L.lattice) : w ≠ l := fun h ↦ hw (h ▸ l.2)
-  -- the partial sums of the series and their derivatives
-  let F (s : Finset L.lattice) (w : ℂ) : ℂ := ∑ l ∈ s, (1 / (w - l) + 1 / (l : ℂ) + w / l ^ 2)
-  have hF (s : Finset L.lattice) {w : ℂ} (hw : w ∉ L.lattice) :
-      HasDerivAt (F s) (∑ l ∈ s, -(1 / (w - (l : ℂ)) ^ 2 - 1 / (l : ℂ) ^ 2)) w :=
-    HasDerivAt.fun_sum fun l _ ↦ hasDerivAt_weierstrassZeta_term (hterm l hw)
-  have hdiff (s : Finset L.lattice) : DifferentiableOn ℂ (F s) (L.lattice : Set ℂ)ᶜ :=
-    fun w hw ↦ (hF s hw).differentiableAt.differentiableWithinAt
-  have hζ := L.hasSumLocallyUniformly_weierstrassZeta.tendstoLocallyUniformlyOn
-    (s := (L.lattice : Set ℂ)ᶜ)
-  -- the derivatives of the partial sums tend to `ζ'(z)`, and they are the partial sums of `-℘`
-  have hD := (hζ.deriv (.of_forall hdiff) hU).tendsto_at hz
-  have hP : Tendsto (fun s ↦ deriv (F s) z) atTop (𝓝 (-℘[L] z)) := by
-    refine Tendsto.congr (fun s ↦ ((hF s hz).deriv).symm) ?_
-    exact (L.hasSum_weierstrassP z).neg
-  rw [← tendsto_nhds_unique hD hP]
-  exact ((hζ.differentiableOn (.of_forall hdiff) hU) z hz).differentiableAt
-    (hU.mem_nhds hz) |>.hasDerivAt
+  refine hasDerivAt_of_tendstoLocallyUniformlyOn
+    L.isClosed_lattice.isOpen_compl
+    (L.hasSumLocallyUniformly_weierstrassP.tendstoLocallyUniformlyOn.neg)
+    (.of_forall fun s w hw ↦ ?_)
+    (fun w _ ↦ L.hasSum_weierstrassZeta w) hz
+  simpa only [Pi.neg_apply, Finset.sum_neg_distrib] using
+    (HasDerivAt.fun_sum fun (l : L.lattice) (_ : l ∈ s) ↦
+      hasDerivAt_weierstrassZeta_term
+        (l := (l : ℂ)) (z := w) (fun h ↦ hw (h ▸ l.2)))
 
 /-- `ζ` is holomorphic away from the lattice. -/
 theorem differentiableOn_weierstrassZeta :

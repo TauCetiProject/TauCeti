@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
-public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Bidual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Pullback
-public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Pullback
 
 /-!
 # The geometric total space of a vector bundle
@@ -214,7 +212,6 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
       ((Scheme.Modules.pullback T.hom).map a.hom)))
   exact (Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ _) hinv).trans (Category.assoc _ _ _))
-
 
 section BaseChange
 

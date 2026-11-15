@@ -112,7 +112,7 @@ def listMinHeight : List V → 𝕜
   | [] => 0
   | v :: l => min 0 (f v + listMinHeight l)
 
-variable {f} {v w : V} {l l₁ l₂ : List V}
+variable {f}
 
 @[simp]
 theorem listMinHeight_nil : listMinHeight f ([] : List V) = 0 :=
@@ -232,7 +232,7 @@ variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 section MinHeight
 
-variable {f : Dual 𝕜 V} {l l₁ l₂ : List V}
+variable {f : Dual 𝕜 V} {l₁ l₂ : List V}
 
 theorem listMinHeight_consMerge (v : V) (l : List V) :
     listMinHeight f (consMerge 𝕜 v l) = listMinHeight f (v :: l) := by
@@ -303,12 +303,15 @@ theorem minHeight_le_apply_endpoint (p : PLPath 𝕜 V) : p.minHeight f ≤ f p.
   rw [minHeight_def, endpoint_def]
   exact listMinHeight_le_apply_sum _
 
+/-- The minimal height of a concatenation `p * q` is the smaller of the minimal height of `p` and
+the endpoint height of `p` plus the minimal height of `q`. -/
 @[simp]
 theorem minHeight_mul (p q : PLPath 𝕜 V) :
     (p * q).minHeight f = min (p.minHeight f) (f p.endpoint + q.minHeight f) := by
   rw [← ofSegments_segments p, ← ofSegments_segments q, ← ofSegments_append]
   simp only [minHeight_ofSegments, endpoint_ofSegments, listMinHeight_append]
 
+/-- The minimal height of the reversed path is its minimal height minus its endpoint height. -/
 @[simp]
 theorem minHeight_reverse (p : PLPath 𝕜 V) :
     p.reverse.minHeight f = p.minHeight f - f p.endpoint := by
