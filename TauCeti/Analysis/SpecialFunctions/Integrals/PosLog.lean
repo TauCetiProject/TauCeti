@@ -11,7 +11,6 @@ import Mathlib.MeasureTheory.Integral.IntervalAverage
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
-import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
 # Dyadic integral bounds for the positive logarithm
