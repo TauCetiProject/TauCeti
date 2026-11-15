@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BaseChange
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 public import TauCeti.KnotTheory.Markov.Basic
+import TauCeti.RingTheory.AdjoinRoot.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -21,8 +24,10 @@ algebra. The positive and negative stabilization constants are respectively `z` 
 
 is unchanged by both stabilizations and conjugation. Here `γ_n` is the canonical braid
 representation in the universal Hecke algebra, not a tensor representation. The construction
-works over a commutative ring once the normalization parameters have been chosen; it does not
-assert that the required square roots exist in that ring.
+works over any commutative ring once the normalization parameters have been chosen; when the two
+stabilization constants `a = z` and `b = z - (q - q⁻¹)` are units of `R`, adjoining a square root
+of `b * a⁻¹` via `AdjoinRoot (X ^ 2 - C (b * a⁻¹))` produces a faithful commutative `R`-algebra
+extension in which `l ^ 2 = b * a⁻¹` and `C = (l * a)⁻¹` solve both normalization equations.
 
 `MarkovBraid.heckeTrace` is this normalized expression, and `heckeBraidInvariant` is its descent
 to the quotient by ordinary unframed Markov equivalence. The unknot value is one, the
@@ -35,6 +40,10 @@ to the quotient by ordinary unframed Markov equivalence. The unknot value is one
   `TauCeti.MarkovBraid.heckeTrace_one_strand`: the split-unknot factor and unknot value.
 * `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
+* `TauCeti.MarkovBraid.heckeTrace_map`: compatibility of `heckeTrace` with change of coefficients.
+* `TauCeti.MarkovEquiv.heckeTrace_eq_of_sq_eq` and
+  `TauCeti.adjoinRoot_sq_heckeTrace_normalization`: Markov invariance from a square root of
+  `b * a⁻¹`, and the faithful quadratic `AdjoinRoot` extension supplying that root.
 
 ## References
 
@@ -180,6 +189,20 @@ theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n
   have h := τ.heckeTrace_skein_of_eq_zero C l i hrel b c
   simpa only [one_mul, neg_one_mul, neg_mul, ← sub_eq_add_neg, sub_eq_zero] using h
 
+/-- **Change of coefficients for the normalized Hecke trace.** If a functional `τ'` on an
+`R`-algebra extension `S` restricts along `InfiniteTypeAHeckeAlgebra.map` to `algebraMap R S ∘ τ`,
+then `heckeTrace` commutes with `algebraMap R S`. In particular this applies to `ocneanuTrace` by
+`InfiniteTypeAHeckeAlgebra.ocneanuTrace_map`. -/
+theorem heckeTrace_map {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
+    (hq : algebraMap R S q = q') {τ' : InfiniteTypeAHeckeAlgebra S q' →ₗ[S] S}
+    (hτ : ∀ x, τ' (InfiniteTypeAHeckeAlgebra.map hq x) = algebraMap R S (τ x))
+    (β : MarkovBraid) (C : R) (l : Rˣ) :
+    β.heckeTrace τ' (algebraMap R S C) (Units.map (algebraMap R S).toMonoidHom l) =
+      algebraMap R S (β.heckeTrace τ C l) := by
+  rw [heckeTrace_def, heckeTrace_def, ← InfiniteTypeAHeckeAlgebra.map_braidHom hq, hτ,
+    ← map_zpow (Units.map (algebraMap R S).toMonoidHom) l]
+  simp only [map_mul, map_pow, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+
 end MarkovBraid
 
 /-- Every generating Markov move preserves the normalized universal Hecke trace. -/
@@ -215,5 +238,73 @@ theorem heckeBraidInvariant_mk (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (hpos : C * (l : R) * z = 1)
     (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) (β : MarkovBraid) :
     heckeBraidInvariant hτ C l hpos hneg (Quot.mk MarkovEquiv β) = β.heckeTrace τ C l := (rfl)
+
+private theorem pos_eq_one_of_val_eq (ua l : Rˣ) (ha : (ua : R) = z) :
+    (↑(l * ua)⁻¹ : R) * (l : R) * z = 1 := by
+  rw [← ha, mul_assoc, ← Units.val_mul, Units.inv_mul]
+
+private theorem neg_eq_one_of_sq_eq (ua ub l : Rˣ) (hb : (ub : R) = z - ((q : R) - ↑q⁻¹))
+    (hl : l ^ 2 = ub * ua⁻¹) :
+    (↑(l * ua)⁻¹ : R) * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1 := by
+  have hub : ub = l ^ 2 * ua := by rw [hl, inv_mul_cancel_right]
+  rw [← hb, hub]
+  simp only [sq, mul_inv_rev, Units.val_mul]
+  calc
+    (↑ua⁻¹ : R) * ↑l⁻¹ * ↑l⁻¹ * ((l : R) * (l : R) * (ua : R)) =
+      (↑ua⁻¹ : R) * ((↑l⁻¹ : R) * ((↑l⁻¹ : R) * (l : R)) * (l : R)) * (ua : R) := by ring
+    _ = 1 := by simp
+
+/-- When the positive and negative stabilization constants `a = z` and `b = z - (q - q⁻¹)` are
+units `ua, ub : Rˣ` and `l ^ 2 = ub * ua⁻¹`, taking `C = (l * ua)⁻¹` makes `heckeTrace` Markov
+invariant. -/
+theorem MarkovEquiv.heckeTrace_eq_of_sq_eq {β γ : MarkovBraid} (h : MarkovEquiv β γ)
+    (hτ : IsMarkovTrace z τ) (ua ub l : Rˣ) (ha : (ua : R) = z)
+    (hb : (ub : R) = z - ((q : R) - ↑q⁻¹)) (hl : l ^ 2 = ub * ua⁻¹) :
+    β.heckeTrace τ ↑(l * ua)⁻¹ l = γ.heckeTrace τ ↑(l * ua)⁻¹ l :=
+  h.heckeTrace_eq hτ ↑(l * ua)⁻¹ l (pos_eq_one_of_val_eq ua l ha)
+    (neg_eq_one_of_sq_eq ua ub l hb hl)
+
+/-- **Quadratic coefficient extension for the normalization roots.** When the positive and negative
+stabilization constants `a = z` and `b = z - (q - q⁻¹)` are units `ua, ub : Rˣ`, adjoining a root
+of `X ^ 2 - C (ub * ua⁻¹)` yields a faithful commutative `R`-algebra extension containing a unit
+`l` (namely `AdjoinRoot.root _`) with `l ^ 2 = ub * ua⁻¹`, so `C = (l * ua)⁻¹` satisfies both
+Markov stabilization equations over the extension. -/
+theorem adjoinRoot_sq_heckeTrace_normalization (ua ub : Rˣ) (ha : (ua : R) = z)
+    (hb : (ub : R) = z - ((q : R) - ↑q⁻¹)) :
+    let S := AdjoinRoot (Polynomial.X ^ 2 - Polynomial.C (↑(ub * ua⁻¹) : R))
+    let q' : Sˣ := Units.map (algebraMap R S).toMonoidHom q
+    let ua' : Sˣ := Units.map (algebraMap R S).toMonoidHom ua
+    let ub' : Sˣ := Units.map (algebraMap R S).toMonoidHom ub
+    Function.Injective (algebraMap R S) ∧
+      ∃ l : Sˣ,
+        (l : S) = AdjoinRoot.root _ ∧
+        l ^ 2 = ub' * ua'⁻¹ ∧
+        (((l * ua')⁻¹ : Sˣ) : S) * (l : S) * algebraMap R S z = 1 ∧
+        (((l * ua')⁻¹ : Sˣ) : S) * ((l⁻¹ : Sˣ) : S) *
+          (algebraMap R S z - ((q' : S) - ((q'⁻¹ : Sˣ) : S))) = 1 := by
+  dsimp only
+  let S := AdjoinRoot (Polynomial.X ^ 2 - Polynomial.C (↑(ub * ua⁻¹) : R))
+  let φ : R →* S := (algebraMap R S).toMonoidHom
+  refine ⟨?_, ?_⟩
+  · rcases subsingleton_or_nontrivial R with _ | _
+    · exact Function.injective_of_subsingleton _
+    · exact AdjoinRoot.of.injective_of_monic_of_degree_pos
+        (Polynomial.monic_X_pow_sub_C _ two_ne_zero)
+        (by rw [Polynomial.degree_X_pow_sub_C (by positivity)]; exact zero_lt_two)
+  · obtain ⟨l, hl⟩ := AdjoinRoot.isUnit_root_X_pow_sub_C (ub * ua⁻¹).isUnit two_ne_zero
+    have hlsq : l ^ 2 = Units.map φ ub * (Units.map φ ua)⁻¹ := by
+      rw [← map_inv, ← map_mul]
+      ext
+      dsimp only [S, φ]
+      rw [Units.val_pow_eq_pow_val, hl, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+        MonoidHom.coe_ofClass, AdjoinRoot.algebraMap_eq]
+      exact AdjoinRoot.root_X_pow_sub_C_pow 2 (↑(ub * ua⁻¹) : R)
+    refine ⟨l, hl, hlsq, pos_eq_one_of_val_eq (Units.map φ ua) l ?_,
+      neg_eq_one_of_sq_eq (Units.map φ ua) (Units.map φ ub) l ?_ hlsq⟩
+    · simp only [Units.coe_map, φ, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, ha]
+      rfl
+    · simp only [Units.coe_map, Units.coe_map_inv, φ, RingHom.toMonoidHom_eq_coe,
+        MonoidHom.coe_ofClass, hb, map_sub]
+      rfl
 
 end TauCeti
