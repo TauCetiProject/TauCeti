@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
@@ -72,6 +73,10 @@ notation on the structure morphism.
   the special fibre lies on an irreducible component of it;
 * `AlgebraicGeometry.Scheme.Hom.biUnion_closure_eq_preimage_closedPoint`: the special fibre is
   the union of its irreducible components;
+* `AlgebraicGeometry.Scheme.Hom.preimage_closedPoint_nonempty`, `TauCeti.nonempty_specialFiber`,
+  and `AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`: when `X` is nonempty and
+  universally closed over `R`, the special fibre is nonempty and, when `X` is integral and locally
+  Noetherian with generic point outside the special fibre, has at least one irreducible component;
 * `AlgebraicGeometry.Scheme.Hom.finite_setOf_base_eq_closedPoint`: the special fibre of a
   Noetherian integral scheme has finitely many irreducible components;
 * `AlgebraicGeometry.Scheme.Hom.ord_germToFunctionField_appTop_pos_iff`: the order of the
@@ -151,6 +156,27 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint {x : 
     (hx : toBase x ≠ closedPoint R) {π : R} (hπ : maximalIdeal R = Ideal.span {π}) : π ≠ 0 :=
   fun h ↦ toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hx
     (by rw [hπ, h, Ideal.span_singleton_eq_bot])
+
+variable {R} in
+/-- The preimage of the closed point under a universally closed morphism from a nonempty scheme
+over a local ring is nonempty: the image of `X` is closed and nonempty, and every point of `Spec R`
+specializes to the closed point. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_closedPoint_nonempty
+    [UniversallyClosed toBase] [Nonempty X] :
+    (toBase ⁻¹' {closedPoint R}).Nonempty := by
+  obtain ⟨x⟩ : Nonempty X := inferInstance
+  have hmem : closedPoint R ∈ closure (Set.range toBase) :=
+    closure_mono (Set.singleton_subset_iff.mpr (Set.mem_range_self x))
+      (specializes_iff_mem_closure.mp (specializes_closedPoint (toBase x)))
+  rw [(toBase.isClosedMap.isClosed_range).closure_eq] at hmem
+  rcases hmem with ⟨y, hy⟩
+  exact ⟨y, hy⟩
+
+/-- The special fibre of a nonempty scheme universally closed over a local ring is nonempty. -/
+theorem nonempty_specialFiber [UniversallyClosed toBase] [Nonempty X] :
+    Nonempty (specialFiber R toBase).left := by
+  rw [← Set.range_nonempty_iff_nonempty (f := specialFiberι R toBase), range_specialFiberι]
+  exact toBase.preimage_closedPoint_nonempty
 
 end LocalRing
 
@@ -265,6 +291,18 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.biUnion_closure_eq_preimage_closedPo
   obtain ⟨y, hy, hyx⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
   obtain ⟨hy', hcod⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
   exact Set.mem_biUnion (x := ⟨y, hcod⟩) hy' (specializes_iff_mem_closure.mp hyx)
+
+/-- For an integral locally Noetherian scheme universally closed over a local ring of dimension at
+most one, whose generic point does not lie in the special fibre, the special fibre has at least one
+irreducible component: some codimension-one point of `X` lies over the closed point. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint
+    [UniversallyClosed toBase] (hη : toBase (genericPoint X) ≠ closedPoint R) :
+    {x : CodimensionOnePoint X | toBase x = closedPoint R}.Nonempty := by
+  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
+  obtain ⟨x, hx⟩ := toBase.preimage_closedPoint_nonempty
+  obtain ⟨y, hy, -⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
+  obtain ⟨hy', hcod⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
+  exact ⟨⟨y, hcod⟩, hy'⟩
 
 /-- At a codimension-one point of `X`, the order of vanishing of the pullback of a nonzero
 element `π` of the maximal ideal is positive exactly when the point lies in the special fibre.

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Fibers
 
 /-!
@@ -64,6 +65,13 @@ variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
 attribute [instance] Model.flat Model.locallyOfFinitePresentation Model.quasiCompact
   Model.quasiSeparated
+
+/-- The total space of a model over a discrete valuation ring is a Noetherian scheme, being
+locally of finite presentation and quasi-compact over a Noetherian affine base. -/
+instance isNoetherian_total (M : Model R K C toK) : IsNoetherian M.total :=
+  (AlgebraicGeometry.isNoetherian_iff M.total).mpr
+    ⟨LocallyOfFiniteType.isLocallyNoetherian M.toBase,
+      QuasiCompact.compactSpace_of_compactSpace M.toBase⟩
 
 /-- Properness of the structure morphism is an additional property of a model. -/
 abbrev IsProper (M : Model R K C toK) : Prop :=

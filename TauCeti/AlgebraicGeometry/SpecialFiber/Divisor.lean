@@ -19,7 +19,9 @@ uniformizer, these coefficients are the component multiplicities of the scheme-t
 special fibre.
 
 The support and positivity facts come from `SpecialFiber.Components`; the sum uses the existing
-finite-sum API for Weil divisors. This is the divisor calculation in the
+finite-sum API for Weil divisors. Associated elements and nonzerodivisor generators of the same
+principal ideal define the same multiplicities (`specialFiberMultiplicity_congr_of_associated`,
+`specialFiberMultiplicity_eq_of_span_eq`). This is the divisor calculation in the
 [Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y).
 -/
 
@@ -54,6 +56,47 @@ theorem specialFiberMultiplicity_coe
         (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x := by
   rw [Scheme.Hom.specialFiberMultiplicity]
   exact Int.toNat_of_nonneg (Scheme.ord_germToFunctionField_nonneg _ trivial)
+
+omit [IsLocalRing R] [Ring.DimensionLEOne R] in
+/-- Associated elements of the base ring define the same special-fibre multiplicities: multiplying
+`π` by a unit multiplies its pullback by a global unit on `X`, which has order zero at every
+codimension-one point. -/
+theorem specialFiberMultiplicity_congr_of_associated {π π' : R} (h : Associated π π')
+    (x : CodimensionOnePoint X) :
+    toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
+  apply Nat.cast_injective (R := ℤ)
+  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe]
+  obtain ⟨u, rfl⟩ := h
+  let f := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)
+  let g := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv ↑u)
+  change X.ord (X.germToFunctionField ⊤ f) x =
+    X.ord (X.germToFunctionField ⊤ (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv (π * ↑u)))) x
+  rw [map_mul, map_mul, map_mul]
+  rcases eq_or_ne (X.germToFunctionField ⊤ f) 0 with hf0 | hf0
+  · rw [hf0, zero_mul]
+  have hg_unit : IsUnit g :=
+    u.isUnit.map (toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom)
+  have hg0 : X.germToFunctionField ⊤ g ≠ 0 :=
+    (hg_unit.map (X.germToFunctionField ⊤).hom).ne_zero
+  have hord_g : X.ord (X.germToFunctionField ⊤ g) x = 0 :=
+    (Scheme.ord_germToFunctionField_eq_zero_iff hg_unit.ne_zero trivial x.property).mpr
+      (by rw [X.basicOpen_of_isUnit hg_unit]; trivial)
+  rw [X.ord_mul hf0 hg0, hord_g, add_zero]
+
+omit [IsLocalRing R] [Ring.DimensionLEOne R] in
+/-- Two generators of the same principal ideal of `R`, at least one of which is a nonzerodivisor,
+define the same special-fibre multiplicities. -/
+theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
+    (hspan : Ideal.span {π} = Ideal.span {π'}) (hreg : IsSMulRegular R π)
+    (x : CodimensionOnePoint X) :
+    toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
+  have h1 : π' ∈ Ideal.span {π} := hspan ▸ Ideal.mem_span_singleton_self π'
+  have h2 : π ∈ Ideal.span {π'} := hspan.symm ▸ Ideal.mem_span_singleton_self π
+  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton.mp h1
+  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton.mp h2
+  have hab : (1 : R) = a * b := hreg (by linear_combination hb)
+  have hu : IsUnit a := IsUnit.of_mul_eq_one b hab.symm
+  exact toBase.specialFiberMultiplicity_congr_of_associated ⟨hu.unit, rfl⟩ x
 
 /-- At a codimension-one point of the special fibre, the pullback of a nonzero element of the
 maximal ideal has positive multiplicity. -/
