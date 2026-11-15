@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -36,8 +35,8 @@ covers are stated against, and the reflections are the generators into which the
 theorem `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq` factors an orthogonal
 automorphism. The structural declarations and reflections
 defined using an invertible norm hold over an arbitrary commutative ring. The coefficient-spelling
-lemmas assume a field, and the second spelling also requires `2 ≠ 0`. The equal-norm dichotomy,
-Witt transitivity and the fixed-subspace correction assume a field in which `2` is nonzero. The
+lemmas assume a field, and the second spelling also requires `2 ≠ 0`. The equal-norm dichotomy
+and Witt transitivity assume a field in which `2` is nonzero. The
 characteristic restriction is not incidental: in characteristic two `polar Q v v = 2 • Q v`
 vanishes, so `v` lies in the kernel of `polar Q v`, `reflection Q v` fixes `v`, and it is not a
 reflection in a complement of `v`. Over a field it is a transvection when `polar Q v ≠ 0` and the
@@ -146,8 +145,8 @@ subtraction in `M` and `N`, since `QuadraticMap.polar` is stated for `[AddCommGr
 additive group over a `CommRing`, and the
 reflections need to divide by `Q v` and so are stated for a `QuadraticForm R M`, that is, for
 `N = R`. The `ReflectionField` section divides by `Q v` over a field; its second coefficient
-spelling also assumes `2 ≠ 0`. The fixed-subspace correction assumes a field and `2 ≠ 0`; the
-closing Cartan--Dieudonne dichotomy assumes a field, a nonzero common quadratic value, and `2 ≠ 0`.
+spelling also assumes `2 ≠ 0`. The closing Cartan--Dieudonne dichotomy assumes a field, a nonzero
+common quadratic value, and `2 ≠ 0`.
 The determinant's square needs a separating polar form on a finite free module over a domain, and
 its range and index a nondegenerate form on a nonzero finite-dimensional space over a field in
 which `2 ≠ 0`.
@@ -1282,7 +1281,6 @@ in this branch consists of two equal reflections. -/
 theorem reflectionTransport_self (x : V) (hx : Q x ≠ 0) :
     Q.reflectionTransport x x rfl hx = 1 := by
   let := (isUnit_iff_ne_zero.mpr hx).invertible
-  let : Invertible (2 : K) := (isUnit_iff_ne_zero.mpr two_ne_zero).invertible
   let : Invertible (Q (x + x)) := by
     apply (isUnit_iff_ne_zero.mpr ?_).invertible
     simpa only [← two_smul K x, Q.map_smul, smul_eq_mul] using
