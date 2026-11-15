@@ -53,9 +53,10 @@ the Poincaré–Birkhoff theorem, to the standard area form. It needs the conjug
 differentiable; smoothness of the inverse of `Φ` is not proved here.
 
 All derivatives are taken within the closed strip, where they are unique; only the values of `ρ` on
-the strip enter. The vertical integral is rewritten as `y ∫₀¹ ρ(x, y t) dt`, an integral over a
-fixed compact parameter interval, so that its smoothness up to the boundary of the strip follows
-from `Convex.contDiffOn_integral_smul_of_contDiffOn`.
+the strip enter (`TauCeti.stripColumnMass_congr`, `TauCeti.stripMass_congr`,
+`TauCeti.stripNormalizedAngle_congr`, `TauCeti.eqOn_stripNormalization`). Smoothness up to the
+boundary of the strip comes from `Convex.contDiffOn_integral_smul_of_contDiffOn` for the column
+mass and from `Convex.contDiffOn_parametric_primitive` for the vertical primitive.
 
 ## Main definitions
 
@@ -100,7 +101,7 @@ def unitStrip : Set (ℝ × ℝ) := univ ×ˢ Icc 0 1
 theorem unitStrip_def : unitStrip = univ ×ˢ Icc (0 : ℝ) 1 :=
   (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem mem_unitStrip {p : ℝ × ℝ} : p ∈ unitStrip ↔ p.2 ∈ Icc (0 : ℝ) 1 := by
   simp [unitStrip]
 
@@ -154,7 +155,7 @@ theorem stripNormalization_def (p : ℝ × ℝ) :
       (stripNormalizedAngle ρ p.1, (∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) / stripColumnMass ρ p.1) :=
   (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem stripNormalization_fst (p : ℝ × ℝ) :
     (stripNormalization ρ p).1 = stripNormalizedAngle ρ p.1 :=
   (rfl)
@@ -170,7 +171,7 @@ theorem stripColumnMass_one : stripColumnMass (1 : ℝ × ℝ → ℝ) = 1 := by
   simp [stripColumnMass_def]
 
 /-- The constant density `1` gives the fundamental domain mass `1`. -/
-@[simp]
+@[simp, grind =]
 theorem stripMass_one : stripMass (1 : ℝ × ℝ → ℝ) = 1 := by
   simp [stripMass_def]
 
@@ -216,15 +217,34 @@ theorem stripMass_pos (hρ : ContinuousOn ρ unitStrip) (hpos : ∀ p ∈ unitSt
   intervalIntegral_pos_of_pos_on ((continuous_stripColumnMass hρ).intervalIntegrable 0 1)
     (fun x _ ↦ stripColumnMass_pos hρ hpos x) zero_lt_one
 
+/-- The column masses of a density depend only on its values on the strip. -/
+theorem stripColumnMass_congr {ρ₁ ρ₂ : ℝ × ℝ → ℝ} (h : EqOn ρ₁ ρ₂ unitStrip) :
+    stripColumnMass ρ₁ = stripColumnMass ρ₂ :=
+  funext fun x ↦ integral_congr fun r hr ↦ h (mem_unitStrip.2 (by simpa using hr))
+
+/-- The fundamental domain mass of a density depends only on its values on the strip. -/
+theorem stripMass_congr {ρ₁ ρ₂ : ℝ × ℝ → ℝ} (h : EqOn ρ₁ ρ₂ unitStrip) :
+    stripMass ρ₁ = stripMass ρ₂ := by
+  rw [stripMass_def, stripMass_def, stripColumnMass_congr h]
+
 /-! ### The first coordinate -/
 
-@[simp]
+@[simp, grind =]
 theorem stripNormalizedAngle_zero : stripNormalizedAngle ρ 0 = 0 := by
   simp [stripNormalizedAngle_def]
 
 /-- For a density giving the fundamental domain nonzero mass, `u(1) = 1`. -/
+@[grind =]
 theorem stripNormalizedAngle_one (h : stripMass ρ ≠ 0) : stripNormalizedAngle ρ 1 = 1 := by
   rw [stripNormalizedAngle_def, ← stripMass_def, div_self h]
+
+/-- The first coordinate of the normalization depends only on the values of the density on the
+strip. -/
+theorem stripNormalizedAngle_congr {ρ₁ ρ₂ : ℝ × ℝ → ℝ} (h : EqOn ρ₁ ρ₂ unitStrip) :
+    stripNormalizedAngle ρ₁ = stripNormalizedAngle ρ₂ :=
+  funext fun x ↦ by
+    rw [stripNormalizedAngle_def, stripNormalizedAngle_def, stripColumnMass_congr h,
+      stripMass_congr h]
 
 /-- The first coordinate of the normalization of the constant density `1` is the identity. -/
 @[simp]
@@ -283,17 +303,17 @@ theorem stripNormalizedAngle_surjective (hρ : ContinuousOn ρ unitStrip)
 /-! ### The second coordinate -/
 
 /-- The normalization maps the lower boundary line of the strip to itself. -/
-@[simp]
+@[simp, grind =]
 theorem stripNormalization_mk_zero (x : ℝ) :
     stripNormalization ρ (x, 0) = (stripNormalizedAngle ρ x, 0) := by
   simp [stripNormalization]
 
-/-- For a density continuous and positive on the strip the normalization maps the upper boundary
+/-- Over a point `x` where the column mass is nonzero, the normalization maps the upper boundary
 line of the strip to itself. -/
-theorem stripNormalization_mk_one (hρ : ContinuousOn ρ unitStrip)
-    (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (x : ℝ) :
+@[grind =]
+theorem stripNormalization_mk_one {x : ℝ} (h : stripColumnMass ρ x ≠ 0) :
     stripNormalization ρ (x, 1) = (stripNormalizedAngle ρ x, 1) :=
-  Prod.ext rfl (div_self (stripColumnMass_pos hρ hpos x).ne')
+  Prod.ext rfl (div_self h)
 
 /-- On each vertical segment of the strip, the second coordinate of the normalization is strictly
 increasing. -/
@@ -327,7 +347,8 @@ theorem bijOn_stripNormalization_snd (hρ : ContinuousOn ρ unitStrip)
   have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
   have hv0 : (stripNormalization ρ (x, 0)).2 = 0 := by rw [stripNormalization_mk_zero]
-  have hv1 : (stripNormalization ρ (x, 1)).2 = 1 := by rw [stripNormalization_mk_one hρ hpos]
+  have hv1 : (stripNormalization ρ (x, 1)).2 = 1 := by
+    rw [stripNormalization_mk_one (stripColumnMass_pos hρ hpos x).ne']
   refine ⟨fun y hy ↦ ⟨?_, ?_⟩, hmono.injOn, ?_⟩
   · exact hv0 ▸ hmono.monotoneOn h0 hy hy.1
   · exact hv1 ▸ hmono.monotoneOn hy h1 hy.2
@@ -359,6 +380,16 @@ theorem bijOn_stripNormalization (hρ : ContinuousOn ρ unitStrip)
     obtain ⟨x, rfl⟩ := stripNormalizedAngle_surjective hρ hpos hper u
     obtain ⟨y, hy, hyv⟩ := (bijOn_stripNormalization_snd hρ hpos x).surjOn (mem_unitStrip.1 hq)
     exact ⟨(x, y), mem_unitStrip.2 hy, Prod.ext rfl hyv⟩
+
+/-- On the strip, the normalization depends only on the values of the density on the strip. -/
+theorem eqOn_stripNormalization {ρ₁ ρ₂ : ℝ × ℝ → ℝ} (h : EqOn ρ₁ ρ₂ unitStrip) :
+    EqOn (stripNormalization ρ₁) (stripNormalization ρ₂) unitStrip := by
+  intro p hp
+  refine Prod.ext (by simp only [stripNormalization_fst, stripNormalizedAngle_congr h]) ?_
+  simp only [stripNormalization_snd, stripColumnMass_congr h]
+  congr 1
+  exact integral_congr fun r hr ↦ h (mem_unitStrip.2
+    (uIcc_subset_Icc ⟨le_rfl, zero_le_one⟩ (mem_unitStrip.1 hp) hr))
 
 /-- **The normalization commutes with the deck translation** `(x, y) ↦ (x + 1, y)` of the strip. -/
 theorem stripNormalization_add_one (hρ : ContinuousOn ρ unitStrip)
@@ -400,29 +431,12 @@ theorem stripNormalization_one_add_snd (p : ℝ × ℝ) :
 
 /-! ### Smoothness -/
 
-/-- The vertical primitive `(x, y) ↦ ∫₀ʸ ρ(x, r) dr` of a `C^n` density is `C^n` on the strip. -/
-private theorem contDiffOn_integral_comp_mk_left {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip) :
-    ContDiffOn ℝ n (fun p : ℝ × ℝ ↦ ∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) unitStrip := by
-  have hW : UniqueDiffOn ℝ (unitStrip ×ˢ Icc (0 : ℝ) 1) :=
-    uniqueDiffOn_unitStrip.prod (uniqueDiffOn_Icc zero_lt_one)
-  have hmaps : MapsTo (fun q : (ℝ × ℝ) × ℝ ↦ (q.1.1, q.1.2 * q.2)) (unitStrip ×ˢ Icc (0 : ℝ) 1)
-      unitStrip := by
-    rintro ⟨⟨x, y⟩, t⟩ ⟨hy, ht⟩
-    simp only [mem_unitStrip, mem_Icc] at hy ht ⊢
-    exact ⟨mul_nonneg hy.1 ht.1, (mul_le_of_le_one_right hy.1 ht.2).trans hy.2⟩
-  have hF : ContDiffOn ℝ n (fun q : (ℝ × ℝ) × ℝ ↦ q.1.2 * ρ (q.1.1, q.1.2 * q.2))
-      (unitStrip ×ˢ Icc (0 : ℝ) 1) :=
-    (contDiff_fst.snd.contDiffOn).mul (hρ.comp (by fun_prop) hmaps)
-  refine (convex_unitStrip.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
-    (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtype_val uniqueDiffOn_unitStrip hW
-    hF fun p hp t ↦ ⟨hp, t.2⟩).congr fun p _ ↦ ?_
-  simp [intervalIntegral_zero_eq_integral_unitInterval_smul fun r ↦ ρ (p.1, r)]
-
 /-- **The normalization is as smooth as the density**, up to the boundary of the strip. -/
 theorem contDiffOn_stripNormalization {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) : ContDiffOn ℝ n (stripNormalization ρ) unitStrip :=
   (((contDiff_stripNormalizedAngle hρ).of_le le_self_add).comp contDiff_fst).contDiffOn.prodMk
-    ((contDiffOn_integral_comp_mk_left hρ).div
+    ((convex_univ.contDiffOn_parametric_primitive (convex_Icc 0 1) uniqueDiffOn_univ
+      ⟨le_rfl, zero_le_one⟩ hρ).div
       ((contDiff_stripColumnMass hρ).comp contDiff_fst).contDiffOn
       fun p _ ↦ (stripColumnMass_pos hρ.continuousOn hpos p.1).ne')
 
