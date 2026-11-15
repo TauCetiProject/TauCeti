@@ -81,4 +81,24 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
 
+/-- An isogeny of degree one induces a bijection on rational points, with inverse given by its
+dual. -/
+theorem bijective_pointMapHom_of_degree_eq_one [DecidableEq F] {φ : Isogeny W₁ W₂}
+    (hφ : φ.degree = 1) : Function.Bijective (Hom.ofIsogeny φ).pointMapHom := by
+  have hd : (Hom.ofIsogeny φ).degree = 1 := by rwa [Hom.degree_ofIsogeny]
+  refine ⟨fun P Q hPQ ↦ ?_, fun Q ↦ ⟨(Hom.ofIsogeny φ).dual.pointMap Q, ?_⟩⟩
+  · have h := congrArg (Hom.ofIsogeny φ).dual.pointMap hPQ
+    simpa only [Hom.pointMapHom_apply, Hom.dual_pointMap_pointMap, hd, one_smul] using h
+  · simp only [Hom.pointMapHom_apply, Hom.pointMap_dual_pointMap, hd, one_smul]
+
+/-- An isogeny of degree one has Kummer ratio one over every field. -/
+theorem kummerRatio_eq_one_of_degree_eq_one {φ : Isogeny W₁ W₂} (hφ : φ.degree = 1) :
+    φ.kummerRatio = 1 := by
+  classical
+  obtain ⟨hinj, hsurj⟩ := bijective_pointMapHom_of_degree_eq_one hφ
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ := AddMonoidHom.range_eq_top.mpr hsurj
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    eq_bot_iff.mpr fun P hP ↦ hinj (hP.trans (map_zero _).symm)
+  simp [kummerRatio_def, hrange, hker]
+
 end TauCeti.Isogeny

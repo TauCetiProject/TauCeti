@@ -65,6 +65,29 @@ theorem tamagawaNumber_def : E.tamagawaNumber v =
   classical
   rfl
 
+omit v [IsDiscreteValuationRing v.valuationSubring] in
+/-- Equivalent valuations define the same Tamagawa number, since both minimal equations and
+nonsingular reduction depend only on the valuation ring. -/
+theorem tamagawaNumber_congr {v : Valuation F Γ₀} {Γ₀' : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀'] {v' : Valuation F Γ₀'}
+    [IsDiscreteValuationRing v.valuationSubring] [IsDiscreteValuationRing v'.valuationSubring]
+    (h : v.IsEquiv v') : E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hA := (Valuation.isEquiv_iff_valuationSubring v v').1 h
+  have key (A B : ValuationSubring F) (hAB : A = B)
+      [IsDiscreteValuationRing A] [IsDiscreteValuationRing B] :
+      E.minimal A = E.minimal B ∧ IsIntegral B (E.minimal A) := by
+    subst hAB
+    exact ⟨rfl, inferInstance⟩
+  obtain ⟨hmin, _⟩ := key _ _ hA
+  have hns (W₁ W₂ : WeierstrassCurve F) (hW : W₁ = W₂)
+      [IsIntegral v'.valuationSubring W₁] [IsIntegral v'.valuationSubring W₂] :
+      (W₁.toAffine.nonsingularReduction v').index =
+        (W₂.toAffine.nonsingularReduction v').index := by
+    subst hW
+    rfl
+  rw [tamagawaNumber_def, tamagawaNumber_def, Affine.nonsingularReduction_congr v h, hns _ _ hmin]
+
 variable [E.IsElliptic]
 
 /-- Every isomorphic minimal equation computes the same Tamagawa number.
