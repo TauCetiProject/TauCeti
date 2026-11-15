@@ -15,11 +15,12 @@ import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Binomial
 
 /-!
-# Descending Pochhammer polynomials
+# Pochhammer polynomials
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
 over general rings, together with their sums over integer intervals and their forward
-differences.
+differences, as well as evaluations of ascending Pochhammer polynomials `ascPochhammer R m` at
+nonpositive integers.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -60,10 +61,13 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
-* `TauCeti.neg_one_pow_mul_ascPochhammer_eval_neg_natCast` and
+* `TauCeti.ascPochhammer_eval_neg_natCast`,
+  `TauCeti.ascPochhammer_eval_neg_natCast_div_factorial`,
+  `TauCeti.neg_one_pow_mul_ascPochhammer_eval_neg_natCast`, and
   `TauCeti.neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial`: at a nonpositive integer
-  `-n`, `(-1) ^ m * (ascPochhammer R m).eval (-n)` equals `n.descFactorial m` in any ring, and
-  dividing by `m!` over a characteristic-zero division ring gives `n.choose m`.
+  `-n`, `(ascPochhammer R m).eval (-n)` equals `(-1) ^ m * n.descFactorial m` in any ring (so
+  multiplying by `(-1) ^ m` gives `n.descFactorial m`), and dividing by `m!` over a
+  characteristic-zero division ring gives `(-1) ^ m * n.choose m` (respectively `n.choose m`).
 -/
 
 public section
@@ -319,12 +323,27 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
 
 /-! ### Ascending Pochhammer polynomials at nonpositive integers -/
 
+/-- At a nonpositive integer `-n`, the ascending Pochhammer polynomial
+`(ascPochhammer R m).eval (-n)` equals `(-1) ^ m * n.descFactorial m` in any ring (and `0` for
+`m > n`). -/
+theorem ascPochhammer_eval_neg_natCast {R : Type*} [Ring R] (n m : ℕ) :
+    (ascPochhammer R m).eval (-(n : R)) = (-1 : R) ^ m * (n.descFactorial m : R) := by
+  rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial]
+
 /-- At a nonpositive integer `-n`, multiplying `(ascPochhammer R m).eval (-n)` by `(-1) ^ m` gives
 the descending factorial `n.descFactorial m` in any ring (and `0` for `m > n`). -/
 theorem neg_one_pow_mul_ascPochhammer_eval_neg_natCast {R : Type*} [Ring R] (n m : ℕ) :
     (-1 : R) ^ m * (ascPochhammer R m).eval (-(n : R)) = (n.descFactorial m : R) := by
-  rw [ascPochhammer_eval_neg_eq_descPochhammer, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
-    neg_one_sq, one_pow, one_mul, descPochhammer_eval_eq_descFactorial]
+  rw [ascPochhammer_eval_neg_natCast, ← mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq,
+    one_pow, one_mul]
+
+/-- Over a division ring of characteristic zero, `(ascPochhammer K m).eval (-n) / m!` at a
+nonpositive integer `-n` equals `(-1) ^ m * n.choose m` (including `0` for `m > n`). -/
+theorem ascPochhammer_eval_neg_natCast_div_factorial
+    {K : Type*} [DivisionRing K] [CharZero K] (n m : ℕ) :
+    (ascPochhammer K m).eval (-(n : K)) / (m.factorial : K) = (-1 : K) ^ m * (n.choose m : K) := by
+  rw [ascPochhammer_eval_neg_natCast, mul_div_assoc, ← descPochhammer_eval_eq_descFactorial,
+    ← Nat.cast_choose_eq_descPochhammer_div]
 
 /-- Over a division ring of characteristic zero, the normalized ascending Pochhammer coefficient
 `(-1) ^ m * (-n)_m / m!` at a nonpositive integer `-n` equals the binomial coefficient `n.choose m`
@@ -332,7 +351,7 @@ theorem neg_one_pow_mul_ascPochhammer_eval_neg_natCast {R : Type*} [Ring R] (n m
 theorem neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial
     {K : Type*} [DivisionRing K] [CharZero K] (n m : ℕ) :
     (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m.factorial : K) = (n.choose m : K) := by
-  rw [neg_one_pow_mul_ascPochhammer_eval_neg_natCast, ← descPochhammer_eval_eq_descFactorial,
-    ← Nat.cast_choose_eq_descPochhammer_div]
+  rw [mul_div_assoc, ascPochhammer_eval_neg_natCast_div_factorial, ← mul_assoc, ← pow_add,
+    ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
 
 end TauCeti

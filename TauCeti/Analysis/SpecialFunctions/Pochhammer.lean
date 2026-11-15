@@ -32,8 +32,9 @@ reduction for terminating hypergeometric, binomial, and orthogonal-polynomial ad
   `TauCeti.hasSum_ascPochhammer_eval_neg_natCast_mul`: unconditional `HasSum` to the
   `Finset.range (n + 1)` sum for `m ↦ (-n)_m * f m`.
 * `TauCeti.hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul_of_eq_on_le`,
-  `TauCeti.hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul`, and
-  `TauCeti.hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_div_pow_of_eq_on_le`:
+  `TauCeti.hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul`,
+  `TauCeti.hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_div_pow_of_eq_on_le`,
+  and `TauCeti.hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_div_pow`:
   over a characteristic-zero division ring (or field for the homogeneous `(s / c) ^ m` form),
   unconditional `HasSum` of terminating normalized Pochhammer series to finite binomial sums.
 * `TauCeti.summable_norm_ascPochhammer_eval_neg_natCast_mul` and
@@ -89,17 +90,16 @@ theorem hasSum_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul_
     HasSum (fun m : ℕ =>
       (-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) * f m)
       (∑ m ∈ Finset.range (n + 1), (n.choose m : K) * g m) := by
-  simp_rw [neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial]
-  have hfin : HasSum (fun m : ℕ => (n.choose m : K) * f m)
-      (∑ m ∈ Finset.range (n + 1), (n.choose m : K) * f m) := by
-    refine hasSum_sum_of_ne_finset_zero fun m hm => ?_
-    have hlt : n < m :=
-      Nat.lt_of_not_ge fun hle => hm (Finset.mem_range.mpr (Nat.lt_succ_of_le hle))
-    rw [Nat.choose_eq_zero_of_lt hlt, Nat.cast_zero, zero_mul]
-  refine Eq.mp ?_ hfin
+  have h := hasSum_ascPochhammer_eval_neg_natCast_mul_of_eq_on_le n
+    (f := fun m => (-1 : K) ^ m / (m ! : K) * f m)
+    (g := fun m => (-1 : K) ^ m / (m ! : K) * g m) fun m hm => by rw [hfg m hm]
+  refine Eq.mp ?_ h
   congr 1
-  refine Finset.sum_congr rfl fun m hm => ?_
-  rw [hfg m (Nat.lt_succ_iff.mp (Finset.mem_range.mp hm))]
+  · ext m
+    rw [← mul_assoc, ← mul_div_assoc, ← ((Commute.neg_one_left _).pow_left m).eq]
+  · refine Finset.sum_congr rfl fun m _ => ?_
+    rw [← mul_assoc, ← mul_div_assoc, ← ((Commute.neg_one_left _).pow_left m).eq,
+      neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial]
 
 /-- Over a division ring of characteristic zero, the terminating normalized Pochhammer series
 `m ↦ ((-1) ^ m * (-n)_m / m!) * f m` sums unconditionally to
@@ -159,10 +159,9 @@ theorem summable_norm_ascPochhammer_eval_neg_natCast_mul
 theorem summable_norm_neg_one_pow_mul_ascPochhammer_eval_neg_natCast_div_factorial_mul
     {K : Type*} [NormedDivisionRing K] (n : ℕ) (f : ℕ → K) :
     Summable fun m : ℕ =>
-      ‖(-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) * f m‖ := by
-  refine summable_of_ne_finset_zero (s := Finset.range (n + 1)) fun m hm => ?_
-  have hlt : n < m :=
-    Nat.lt_of_not_ge fun hle => hm (Finset.mem_range.mpr (Nat.lt_succ_of_le hle))
-  rw [ascPochhammer_eval_neg_natCast_of_lt hlt, mul_zero, zero_div, zero_mul, norm_zero]
+      ‖(-1 : K) ^ m * (ascPochhammer K m).eval (-(n : K)) / (m ! : K) * f m‖ :=
+  (summable_norm_ascPochhammer_eval_neg_natCast_mul n
+    fun m => (-1 : K) ^ m / (m ! : K) * f m).congr fun m => congr_arg norm <| by
+      rw [← mul_assoc, ← mul_div_assoc, ← ((Commute.neg_one_left _).pow_left m).eq]
 
 end TauCeti
