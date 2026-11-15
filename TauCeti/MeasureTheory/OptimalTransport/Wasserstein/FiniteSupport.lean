@@ -157,24 +157,11 @@ theorem wassersteinEDist_sum_smul_dirac_le
       ∑ x ∈ s, c x • Measure.dirac x =
         c x₀ • Measure.dirac x₀ + ∑ y ∈ s.erase x₀, c y • Measure.dirac y := fun c ↦
     (Finset.add_sum_erase _ (fun x ↦ c x • Measure.dirac x) hx₀).symm
+  have hzero : a x₀ - b x₀ = 0 :=
+    tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le hx₀ hsum.symm hfin hab)
   have hbx₀ : b x₀ = a x₀ + ∑ y ∈ s.erase x₀, (a y - b y) := by
-    have hfin' : ∑ y ∈ s.erase x₀, b y ≠ ∞ :=
-      ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun y hy ↦
-        hfin y (Finset.mem_of_mem_erase hy) (Finset.ne_of_mem_erase hy))
-        (Finset.sum_le_sum hab')
-    have hsplit' : ∑ y ∈ s.erase x₀, a y
-        = ∑ y ∈ s.erase x₀, b y + ∑ y ∈ s.erase x₀, (a y - b y) := by
-      rw [← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun y hy ↦ (add_tsub_cancel_of_le (hab' y hy)).symm
-    have hs' : ∑ y ∈ s.erase x₀, b y + b x₀
-        = ∑ y ∈ s.erase x₀, b y + (a x₀ + ∑ y ∈ s.erase x₀, (a y - b y)) := by
-      rw [← Finset.add_sum_erase _ b hx₀, ← Finset.add_sum_erase _ a hx₀] at hsum
-      rw [hsplit'] at hsum
-      calc ∑ y ∈ s.erase x₀, b y + b x₀ = b x₀ + ∑ x ∈ s.erase x₀, b x := by ring
-        _ = a x₀ + (∑ y ∈ s.erase x₀, b y + ∑ y ∈ s.erase x₀, (a y - b y)) := hsum
-        _ = ∑ y ∈ s.erase x₀, b y + (a x₀ + ∑ y ∈ s.erase x₀, (a y - b y)) := by ring
-    exact (ENNReal.add_right_inj hfin').1 hs'
-  have hzero : a x₀ - b x₀ = 0 := tsub_eq_zero_of_le (hbx₀ ▸ le_self_add)
+    rw [← add_sum_tsub_eq_of_forall_ne_le hx₀ hsum.symm hfin hab, ← Finset.add_sum_erase _ _ hx₀,
+      hzero, zero_add]
   have hexcess : ∑ y ∈ s, (a y - b y) • Measure.dirac y
       = ∑ y ∈ s.erase x₀, (a y - b y) • Measure.dirac y := by
     rw [hsplit (fun y ↦ a y - b y), hzero, zero_smul, zero_add]

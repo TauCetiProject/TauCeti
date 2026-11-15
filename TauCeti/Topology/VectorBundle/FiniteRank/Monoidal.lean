@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Tensor
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
@@ -29,12 +28,13 @@ maps, so it defines an isomorphism of cores by `FiniteRankBundleCore.constIso`. 
 intertwining relations, applied to the fibre maps of bundle morphisms, give naturality, and the
 coherence laws hold fibrewise as identities between coordinate permutations.
 
-Pullback along a continuous base map commutes strictly with tensor products (`pullback_tensor`,
-`pullbackMap_tensorHom`), making `pullbackFunctor f` a braided monoidal functor. Together with
-the Whitney biproducts of `TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`, this gives a
-symmetric monoidal preadditive category with binary biproducts whose base-change functors induce
-ring homomorphisms on `TauCeti.SplitK0` via `TauCeti.SplitK0.mapRingHom`. The base is arbitrary,
-and the scalar field need not be complete.
+Pullback along a continuous base map commutes strictly with the monoidal tensor product and unit
+(`pullback_tensorObj`, `pullback_tensorUnit`), making `pullbackFunctor f` a braided monoidal
+functor (`pullbackCoreMonoidal`). Together with the Whitney biproducts of
+`TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`, this gives a symmetric monoidal preadditive
+category with binary biproducts whose base-change functors induce ring homomorphisms on
+`TauCeti.SplitK0` via `TauCeti.SplitK0.mapRingHom`. The base is arbitrary, and the scalar field
+need not be complete.
 
 For the tensor product of vector bundles and its transition functions see Milnor–Stasheff,
 *Characteristic Classes*, §3, and Atiyah, *K-Theory*, §1.2.
@@ -214,10 +214,6 @@ section Pullback
 
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- Pulling back commutes strictly with tensor products of cores. -/
-@[simp] theorem pullback_tensor (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    (tensor A D).pullback f = tensor (A.pullback f) (D.pullback f) := (rfl)
-
 /-- Pulling back commutes strictly with the monoidal tensor product of cores. -/
 @[simp] theorem pullback_tensorObj (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (A ⊗ D).pullback f = A.pullback f ⊗ D.pullback f := (rfl)
@@ -225,15 +221,6 @@ variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X] 
 /-- Pulling back commutes strictly with the monoidal tensor unit. -/
 @[simp] theorem pullback_tensorUnit (f : C(X, Y)) :
     (𝟙_ (FiniteRankBundleCore 𝕜 Y)).pullback f = 𝟙_ (FiniteRankBundleCore 𝕜 X) := (rfl)
-
-/-- Pulling back commutes with tensor products of bundle maps. -/
-@[simp] theorem pullbackMap_tensorHom {A A' D D' : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ A') (b : D ⟶ D') (f : C(X, Y)) :
-    pullbackMap (tensorHom a b) f = tensorHom (pullbackMap a f) (pullbackMap b f) :=
-  hom_ext fun x ↦ (fiberMap_pullbackMap (tensorHom a b) f x).trans <|
-    (fiberMap_tensorHom a b (f x)).trans <| by
-      rw [← fiberMap_pullbackMap a f x, ← fiberMap_pullbackMap b f x]
-      exact (fiberMap_tensorHom (pullbackMap a f) (pullbackMap b f) x).symm
 
 /-- Strict monoidal core structure on `pullbackFunctor f`, whose unit and tensorator are
 identities because `pullback_tensorUnit` and `pullback_tensorObj` hold definitionally. -/
