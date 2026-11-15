@@ -37,6 +37,15 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 * `TauCeti.homogeneousCyclotomic_zero`, `_one`, `_two`, `_three`, `_six`, `_prime`,
   `_prime_pow`: closed forms, including `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` and
   `Φ_{p ^ (e + 1)}(a, b) = Φ_p(a ^ p ^ e, b ^ p ^ e)` for a prime `p`.
+* `TauCeti.ne_zero_of_dvd_homogeneousCyclotomic`: a nonunit divides `Φ_n(a, b)` only if `n ≠ 0`.
+* `TauCeti.homogeneousCyclotomic_mul_prime_of_dvd`,
+  `TauCeti.homogeneousCyclotomic_mul_prime_mul_homogeneousCyclotomic`: for a prime `p`,
+  `Φ_{n p}(a, b) = Φ_n(a ^ p, b ^ p)` if `p ∣ n`, and `Φ_{n p}(a, b) Φ_n(a, b) = Φ_n(a ^ p, b ^ p)`
+  if `p ∤ n`.
+* `TauCeti.homogeneousCyclotomic_prime_pow_mul`,
+  `TauCeti.homogeneousCyclotomic_prime_pow_mul_mul_homogeneousCyclotomic`: the iterated forms
+  `Φ_{p ^ (e + 1) m}(a, b) = Φ_{p m}(A, B)` and, for `p ∤ m`,
+  `Φ_{p ^ (e + 1) m}(a, b) Φ_m(A, B) = Φ_m(A ^ p, B ^ p)`, with `A = a ^ p ^ e`, `B = b ^ p ^ e`.
 * `TauCeti.homogeneousCyclotomic_comm`: `Φ_n(b, a) = Φ_n(a, b)` for `n ≠ 1`.
 * `TauCeti.homogeneousCyclotomic_one_anticomm`: `Φ_1(b, a) = -Φ_1(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero_right`, `TauCeti.homogeneousCyclotomic_zero_left`:
@@ -52,10 +61,10 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 
 * [G. D. Birkhoff and H. S. Vandiver, *On the integral divisors of `a ^ n - b ^ n`*,
   Ann. of Math. (2) 5 (1904), 173–180], p. 176, the primitive factor `F(n)`.
-* [Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023)], Definition 2.4 and
-  Corollary 2.6.
+* [Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023)], Definition 2.4,
+  Corollary 2.6, Lemma 2.9 and Corollary 2.10 (the expansion identities).
 * [M. Roitman, *On Zsigmondy primes*, Proc. Amer. Math. Soc. 125 (1997), 1913–1919], p. 1913,
-  positivity of cyclotomic values.
+  positivity of cyclotomic values; p. 1914, proof of Lemma 1, the iterated expansion at `b = 1`.
 -/
 
 public section
@@ -125,9 +134,74 @@ theorem _root_.Int.cast_homogeneousCyclotomic (n : ℕ) (a b : ℤ) :
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
     homogeneousCyclotomic n (c * a) (c * b) = c ^ n.totient * homogeneousCyclotomic n a b := by
-  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← smul_eq_mul (c ^ _),
+  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def,
     ← (isHomogeneous_homogenize _).eval_smul]
   simp [Matrix.smul_cons]
+
+/-! ### Expansion identities -/
+
+/-- For a prime `p` dividing `n`, `Φ_{n p}(a, b) = Φ_n(a ^ p, b ^ p)`. -/
+theorem homogeneousCyclotomic_mul_prime_of_dvd {p n : ℕ} (hp : p.Prime) (hpn : p ∣ n)
+    (a b : R) :
+    homogeneousCyclotomic (n * p) a b = homogeneousCyclotomic n (a ^ p) (b ^ p) := by
+  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def,
+    ← cyclotomic_expand_eq_cyclotomic hp hpn, mul_comm n, Nat.totient_mul_of_dvd hpn,
+    homogenize_expand hp.ne_zero, MvPolynomial.eval_expand]
+  congr 2
+  ext i
+  fin_cases i <;> simp
+
+/-- For a prime `p` not dividing `n`, `Φ_{n p}(a, b) Φ_n(a, b) = Φ_n(a ^ p, b ^ p)`. -/
+theorem homogeneousCyclotomic_mul_prime_mul_homogeneousCyclotomic {p n : ℕ} (hp : p.Prime)
+    (hpn : ¬p ∣ n) (a b : R) :
+    homogeneousCyclotomic (n * p) a b * homogeneousCyclotomic n a b =
+      homogeneousCyclotomic n (a ^ p) (b ^ p) := by
+  have hdeg : (n * p).totient + n.totient = p * n.totient := by
+    rw [mul_comm n, Nat.totient_mul_of_prime_of_not_dvd hp hpn, ← Nat.succ_mul,
+      Nat.succ_eq_add_one, Nat.sub_add_cancel hp.one_le]
+  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← map_mul,
+    ← homogenize_mul _ _ natDegree_cyclotomic_le natDegree_cyclotomic_le, hdeg,
+    ← cyclotomic_expand_eq_cyclotomic_mul hp hpn, homogenize_expand hp.ne_zero,
+    MvPolynomial.eval_expand]
+  congr 2
+  ext i
+  fin_cases i <;> simp
+
+/-- For a prime `p`, `Φ_{p ^ (e + 1) m}(a, b) = Φ_{p m}(a ^ p ^ e, b ^ p ^ e)`: the factor `p ^ e`
+of the index is traded for raising both arguments to the power `p ^ e`. No condition on `m` is
+needed. -/
+theorem homogeneousCyclotomic_prime_pow_mul {p : ℕ} (hp : p.Prime) (e m : ℕ) (a b : R) :
+    homogeneousCyclotomic (p ^ (e + 1) * m) a b =
+      homogeneousCyclotomic (p * m) (a ^ p ^ e) (b ^ p ^ e) := by
+  induction e generalizing a b with
+  | zero => simp
+  | succ e ih =>
+    rw [pow_succ, mul_right_comm, homogeneousCyclotomic_mul_prime_of_dvd hp
+      (dvd_mul_of_dvd_left (dvd_pow_self p e.succ_ne_zero) m), ih, ← pow_mul, ← pow_mul,
+      ← pow_succ']
+
+/-- For a prime `p` not dividing `m`,
+`Φ_{p ^ (e + 1) m}(a, b) Φ_m(A, B) = Φ_m(A ^ p, B ^ p)` with `A = a ^ p ^ e` and
+`B = b ^ p ^ e`. -/
+theorem homogeneousCyclotomic_prime_pow_mul_mul_homogeneousCyclotomic {p m : ℕ} (hp : p.Prime)
+    (hpm : ¬p ∣ m) (e : ℕ) (a b : R) :
+    homogeneousCyclotomic (p ^ (e + 1) * m) a b *
+        homogeneousCyclotomic m (a ^ p ^ e) (b ^ p ^ e) =
+      homogeneousCyclotomic m (a ^ p ^ (e + 1)) (b ^ p ^ (e + 1)) := by
+  rw [homogeneousCyclotomic_prime_pow_mul hp, mul_comm p,
+    homogeneousCyclotomic_mul_prime_mul_homogeneousCyclotomic hp hpm, ← pow_mul, ← pow_mul,
+    ← pow_succ]
+
+/-- For a prime `p` not dividing `m`, in a field,
+`Φ_{p ^ (e + 1) m}(a, b) = Φ_m(A ^ p, B ^ p) / Φ_m(A, B)` with `A = a ^ p ^ e` and
+`B = b ^ p ^ e`, provided `Φ_m(A, B) ≠ 0`. -/
+theorem homogeneousCyclotomic_prime_pow_mul_eq_div {K : Type*} [Field K] {p m : ℕ}
+    (hp : p.Prime) (hpm : ¬p ∣ m) (e : ℕ) {a b : K}
+    (h : homogeneousCyclotomic m (a ^ p ^ e) (b ^ p ^ e) ≠ 0) :
+    homogeneousCyclotomic (p ^ (e + 1) * m) a b =
+      homogeneousCyclotomic m (a ^ p ^ (e + 1)) (b ^ p ^ (e + 1)) /
+        homogeneousCyclotomic m (a ^ p ^ e) (b ^ p ^ e) :=
+  eq_div_of_mul_eq h (homogeneousCyclotomic_prime_pow_mul_mul_homogeneousCyclotomic hp hpm e a b)
 
 /-! ### Closed forms -/
 
@@ -135,6 +209,12 @@ theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
 @[simp]
 theorem homogeneousCyclotomic_zero (a b : R) : homogeneousCyclotomic 0 a b = 1 := by
   simp [homogeneousCyclotomic_def]
+
+/-- A nonunit dividing `Φ_n(a, b)` forces `n ≠ 0`, since `Φ_0(a, b) = 1`. -/
+theorem ne_zero_of_dvd_homogeneousCyclotomic {d a b : R} {n : ℕ} (hd : ¬IsUnit d)
+    (h : d ∣ homogeneousCyclotomic n a b) : n ≠ 0 := by
+  rintro rfl
+  exact hd (isUnit_of_dvd_one (by simpa only [homogeneousCyclotomic_zero] using h))
 
 /-- `Φ_1(a, b) = a - b`. -/
 @[simp]
@@ -170,8 +250,7 @@ theorem homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) (a b : R) :
 /-- For a prime `p`, `Φ_{p ^ (e + 1)}(a, b) = Φ_p(a ^ p ^ e, b ^ p ^ e)`. -/
 theorem homogeneousCyclotomic_prime_pow {p : ℕ} (hp : p.Prime) (e : ℕ) (a b : R) :
     homogeneousCyclotomic (p ^ (e + 1)) a b = homogeneousCyclotomic p (a ^ p ^ e) (b ^ p ^ e) := by
-  rw [homogeneousCyclotomic_prime hp, homogeneousCyclotomic_def,
-    cyclotomic_prime_pow_eq_geom_sum hp, Nat.totient_prime_pow_succ hp, eval_homogenize_geom_sum]
+  simpa using homogeneousCyclotomic_prime_pow_mul hp e 1 a b
 
 /-! ### Symmetry and values at zero -/
 
@@ -216,7 +295,9 @@ empty while `a ^ 0 - b ^ 0 = 0`. -/
 theorem prod_homogeneousCyclotomic_eq_pow_sub_pow {n : ℕ} (hn : 0 < n) (a b : R) :
     ∏ d ∈ n.divisors, homogeneousCyclotomic d a b = a ^ n - b ^ n := by
   simp_rw [homogeneousCyclotomic_def]
-  rw [← map_prod, ← homogenize_finsetProd fun d _ => natDegree_cyclotomic_le, Nat.sum_totient,
+  rw [← map_prod, ← homogenize_finsetProd (s := n.divisors)
+      (p := fun d ↦ cyclotomic d R) (n := Nat.totient) (fun d _ ↦ natDegree_cyclotomic_le),
+    Nat.sum_totient,
     prod_cyclotomic_eq_X_pow_sub_one hn, homogenize_sub, homogenize_X_pow le_rfl, homogenize_one]
   simp
 

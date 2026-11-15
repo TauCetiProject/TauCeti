@@ -232,7 +232,7 @@ theorem coeff_aeval_monomialCurve (a : σ → R) (c : σ → ℕ) (p : MvPolynom
       ∑ m ∈ (taylor a p).support with weight c m = k, (taylor a p).coeff m := by
   conv_lhs => rw [aeval_monomialCurve, (taylor a p).as_sum, map_sum]
   simp only [aeval_X_pow_left_monomial, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial,
-    Finset.sum_ite, Finset.sum_const_zero, add_zero]
+    Finsupp.single_apply, Finset.sum_filter]
 
 /-- Substituting the monomial curve into the coefficient-mapped rotated polynomial and evaluating at
 the distinguished variable is the same as substituting the curve into the coefficients of `p`.

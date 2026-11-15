@@ -172,15 +172,15 @@ theorem cotangentThirdKindChart_symm_apply (y : StrongDual ℝ V × W) :
   simp [cotangentThirdKindChart, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm]
 
 /-- The inverse chart is `C^n` at the distinguished mixed-coordinate point for
-`C^(n+1)` input and `n ≠ 0`, including smooth input. -/
+`C^(n+1)` input, including smooth input. -/
 theorem contDiffAt_cotangentThirdKindChart_symm {n : WithTop ℕ∞}
-    (hSn : ContDiffAt ℝ (n + 1) S x₀) (hn : n ≠ 0) :
+    (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentThirdKindChart hS hM).symm
       (cotangentThirdKindProjection S x₀) := by
   have hb := contDiffAt_cotangentLegendreChart_symm
     (contDiffAt_cotangentGeneratingReverse hS)
     (isInvertible_cotangentLegendreHessian_reverse hM)
-    (contDiffAt_cotangentGeneratingReverse hSn) hn
+    (contDiffAt_cotangentGeneratingReverse hSn)
   rw [cotangentLegendreProjection_reverse S x₀] at hb
   have hdef := funext (cotangentThirdKindChart_symm_apply hS hM)
   rw [hdef]
@@ -220,16 +220,16 @@ private theorem thirdKindLegendre_eq_neg_partialLegendre :
   simp [sub_eq_add_neg, add_comm]
 
 /-- The partial Legendre transform is `C^n` at the distinguished mixed-coordinate point
-for `C^(n+1)` input and `n ≠ 0`. -/
+for `C^(n+1)` input. -/
 theorem contDiffAt_cotangentThirdKindLegendre {n : WithTop ℕ∞}
-    (hSn : ContDiffAt ℝ (n + 1) S x₀) (hn : n ≠ 0) :
+    (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentThirdKindLegendre hS hM)
       (cotangentThirdKindProjection S x₀) := by
   rw [thirdKindLegendre_eq_neg_partialLegendre]
   have hf := contDiffAt_cotangentPartialLegendre
     (contDiffAt_cotangentGeneratingReverse hS)
     (isInvertible_cotangentLegendreHessian_reverse hM)
-    (contDiffAt_cotangentGeneratingReverse hSn) hn
+    (contDiffAt_cotangentGeneratingReverse hSn)
   rw [cotangentLegendreProjection_reverse S x₀] at hf
   exact (hf.comp _
     (ContinuousLinearEquiv.prodComm ℝ (StrongDual ℝ V) W).contDiff.contDiffAt).neg

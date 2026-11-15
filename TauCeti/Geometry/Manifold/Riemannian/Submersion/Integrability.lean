@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill
+public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
 import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 

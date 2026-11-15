@@ -77,6 +77,7 @@ public section
 
 open Filter MeasureTheory Set
 open scoped ComplexOrder Topology
+open scoped Pointwise
 
 namespace TauCeti
 

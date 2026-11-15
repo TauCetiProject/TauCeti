@@ -21,11 +21,6 @@ developed in subsequent files.
 
 * `TauCeti.Lie.conjDiffeomorph`: conjugation by `g` as a smooth diffeomorphism.
 * `TauCeti.Lie.conj`: the conjugation homomorphism into smooth self-diffeomorphisms.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section

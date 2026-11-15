@@ -36,6 +36,17 @@ nonzero torsion class `t ∈ H²(Y; ℤ)` and the generator `u ∈ H¹(S¹; ℤ)
 lie in a single degree, which gives the sharper
 `TopCat.mem_range_singularCohomologyMap_snd_sphere_of_injective`.
 
+Applied to the coefficient map `r • 𝟙 : M ⟶ M`, which acts on cohomology as multiplication by `r`
+(`ChainComplex.linearYonedaObjMap_smul`), the descent says that in degrees `n ≤ 2` a class
+`φ` with `r • φ` pulled back from `Y` is pulled back from `Y`, as soon as `r` is `M`-regular
+(`TopCat.mem_range_singularCohomologyMap_snd_of_smul_mem`). Hence if `ψ` is pulled back from
+`Y` and the image of `ψ + r • φ` under an injective coefficient map is pulled back from `Y`, so
+is `φ` (`TopCat.mem_range_singularCohomologyMap_snd_of_add_smul_mem_of_injective`). On `S¹ × Y`, a
+`Spinᶜ` structure `s₀ ⊗ E` twisted by a Hermitian line `E` from a reference `s₀` pulled back from
+`Y` has determinant class `l = l₀ + 2 c₁(E)` with `l₀` pulled back from `Y`. If the real class of
+`l` is pulled back from `Y`, then the integral class `c₁(E)` is pulled back from `Y`, two-torsion
+included.
+
 ## Main results
 
 * `TopCat.mem_range_singularCohomologyMap_snd_of_injective`: descent along a coefficient map
@@ -44,6 +55,11 @@ lie in a single degree, which gives the sharper
   coefficient map when `Hⱼ(Y; k)` is projective for `j + 2 ≤ n`.
 * `TopCat.mem_range_singularCohomologyMap_snd_of_le_two`: descent along an injective coefficient
   map in degrees `n ≤ 2`, for every space `Y`.
+* `TopCat.mem_range_singularCohomologyMap_snd_of_smul_mem`: in degrees `n ≤ 2`, a class whose
+  multiple by an `M`-regular scalar is pulled back is itself pulled back.
+* `TopCat.mem_range_singularCohomologyMap_snd_of_add_smul_mem_of_injective`: if `ψ` is pulled back
+  and the image of `ψ + r • φ` under an injective coefficient map is pulled back, then `φ` is
+  pulled back.
 
 ## References
 
@@ -127,5 +143,46 @@ theorem mem_range_singularCohomologyMap_snd_of_le_two {n : ℕ} (hn : n ≤ 2) (
     -- only `H₀(Y; k)` is involved, and it is free
     obtain rfl : j = 0 := by omega
     exact ModuleCat.projective_of_free (Module.Free.chooseBasis k _)) φ hφ
+
+/-- **Classes of degree at most two whose multiples are pulled back**: let `X` be path-connected
+with projective singular homology `Hₚ(X; k)`, and let `r` be `M`-regular, that is,
+`r • · : M → M` injective. If `n ≤ 2` and `r • φ` is pulled back from `Y` for
+`φ ∈ Hⁿ(X × Y; M)`, then so is `φ`. For `X = S¹`, `M = ℤ` and `r = 2`: an integral class of
+`H²(S¹ × Y)` whose double is pulled back from `Y` is itself pulled back, two-torsion included,
+because the cross quotient `H¹(Y; ℤ)` has no two-torsion. -/
+theorem mem_range_singularCohomologyMap_snd_of_smul_mem {n : ℕ} (hn : n ≤ 2) {r : k}
+    (hr : IsSMulRegular M r)
+    {φ : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n}
+    (hφ : r • φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k))
+      (k := k) (M := M) (CartesianMonoidalCategory.snd X Y) n).hom) :
+    φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+        (M := M) (CartesianMonoidalCategory.snd X Y) n).hom := by
+  refine mem_range_singularCohomologyMap_snd_of_le_two X Y hn (r • 𝟙 M) hr φ ?_
+  -- the coefficient map `r • 𝟙` acts on cohomology as multiplication by `r`
+  rwa [ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id,
+    HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id]
+
+/-- **A class is pulled back if a pulled-back class plus a multiple of it is pulled back after a
+change of coefficients**: let `X` be path-connected with projective singular homology
+`Hₚ(X; k)`, let `r` be `M`-regular, let `g : M ⟶ M'` be injective, and let `n ≤ 2`. If
+`ψ ∈ Hⁿ(X × Y; M)` is pulled back from `Y`, and the image of `ψ + r • φ` in `Hⁿ(X × Y; M')` is
+pulled back from `Y`, then `φ` is pulled back from `Y`. For `X = S¹`, `g : ℤ ⟶ ℝ` and `r = 2`:
+if the real determinant class `l = l₀ + 2 c₁(E)` of a `Spinᶜ` structure `s₀ ⊗ E` on `S¹ × Y`,
+with `l₀` pulled back from `Y`, is pulled back from `Y`, then the integral class `c₁(E)` is
+pulled back from `Y`, two-torsion included. -/
+theorem mem_range_singularCohomologyMap_snd_of_add_smul_mem_of_injective {n : ℕ} (hn : n ≤ 2)
+    {r : k} (hr : IsSMulRegular M r) (g : M ⟶ M') (hg : Function.Injective g)
+    {ψ φ : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n}
+    (hψ : ψ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k))
+      (k := k) (M := M) (CartesianMonoidalCategory.snd X Y) n).hom)
+    (h : homologyMap (((toSSet.obj (X ⊗ Y)).chainComplex
+        (𝟙_ (ModuleCat.{w} k))).linearYonedaObjMap k g) n (ψ + r • φ) ∈
+      LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+        (M := M') (CartesianMonoidalCategory.snd X Y) n).hom) :
+    φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+        (M := M) (CartesianMonoidalCategory.snd X Y) n).hom :=
+  mem_range_singularCohomologyMap_snd_of_smul_mem X Y hn hr (by
+    simpa using Submodule.sub_mem _ (mem_range_singularCohomologyMap_snd_of_le_two X Y hn g hg _ h)
+      hψ)
 
 end TopCat

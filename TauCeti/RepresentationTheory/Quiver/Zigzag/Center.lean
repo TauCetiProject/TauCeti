@@ -96,16 +96,6 @@ theorem mem_center_of_commute_zigzagBasisFun {z : nonisolatedZigzagQuotient k G}
     rw [span_range_zigzagBasisFun_eq_top]
     exact Submodule.mem_top)).eq.symm
 
-/-- A scalar annihilating a member of the vertex, arrow and volume family is zero: that family is
-a basis when no vertex is isolated. -/
-private theorem smul_zigzagBasisFun_eq_zero (hns : ∀ i : V, ∃ j, G.Adj i j)
-    {b : ZigzagBasisIndex G} {c : k} (h : c • zigzagBasisFun k G b = 0) : c = 0 := by
-  have h0 : (zigzagBasis k G hns).repr (c • zigzagBasisFun k G b) = 0 := by
-    rw [h, map_zero]
-  rw [map_smul, ← zigzagBasis_apply k G hns b, Module.Basis.repr_self, Finsupp.smul_single,
-    smul_eq_mul, mul_one] at h0
-  exact Finsupp.single_eq_zero.mp h0
-
 /-! ### The volume classes are central -/
 
 /-- **The volume class of a vertex is central.** The idempotent at its base is a two-sided unit for
@@ -224,12 +214,9 @@ theorem sum_smul_zigzagMk_vertexIdempotent_mem_center [Fintype V] (f : V → k)
       zigzagVolume_mul_sum_smul_vertexIdempotent]
 
 /-- **A combination of vertex idempotents is central exactly when its coefficients are constant
-along the edges.** The converse of
-`TauCeti.sum_smul_zigzagMk_vertexIdempotent_mem_center` needs the arrows to be independent, hence
-the hypothesis that no vertex is isolated. -/
+along the edges.** -/
 @[simp]
-theorem sum_smul_zigzagMk_vertexIdempotent_mem_center_iff [Fintype V]
-    (hns : ∀ i : V, ∃ j, G.Adj i j) (f : V → k) :
+theorem sum_smul_zigzagMk_vertexIdempotent_mem_center_iff [Fintype V] (f : V → k) :
     (∑ i, f i • zigzagMk k G (vertexIdempotent k (vertex G i)))
         ∈ Subalgebra.center k (nonisolatedZigzagQuotient k G)
       ↔ ∀ ⦃i j : V⦄, G.Adj i j → f i = f j := by
@@ -238,10 +225,7 @@ theorem sum_smul_zigzagMk_vertexIdempotent_mem_center_iff [Fintype V]
     (zigzagMk k G (ofArrow (arrow G (⟨(i, j), hij⟩ : G.Dart).adj)))
   rw [sum_smul_vertexIdempotent_mul_ofArrow k G f ⟨(i, j), hij⟩,
     ofArrow_mul_sum_smul_vertexIdempotent k G f ⟨(i, j), hij⟩] at hcomm
-  have hzero : (f i - f j) • zigzagBasisFun k G (.inr (.inl ⟨(i, j), hij⟩)) = 0 := by
-    rw [zigzagBasisFun_inr_inl, sub_smul, sub_eq_zero]
-    exact hcomm
-  exact sub_eq_zero.mp (smul_zigzagBasisFun_eq_zero k G hns hzero)
+  exact zigzagMk_ofArrow_smul_left_injective k G ⟨(i, j), hij⟩ hcomm
 
 /-! ### The diagonal corners of a central element -/
 
@@ -323,10 +307,10 @@ private theorem sum_corner_eq_self [Fintype V] {z : nonisolatedZigzagQuotient k 
 
 /-! ### The centre -/
 
-/-- **The centre of a zigzag algebra.** For a finite simple graph with no isolated vertex, an
+/-- **The centre of the zigzag relation quotient.** For a finite simple graph, an
 element is central exactly when it is the sum of a combination of vertex idempotents whose
 coefficients are constant along the edges and a combination of volume classes. -/
-theorem mem_center_nonisolatedZigzagQuotient_iff [Fintype V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+theorem mem_center_nonisolatedZigzagQuotient_iff [Fintype V]
     {z : nonisolatedZigzagQuotient k G} :
     z ∈ Subalgebra.center k (nonisolatedZigzagQuotient k G) ↔
       ∃ f g : V → k, (∀ ⦃i j : V⦄, G.Adj i j → f i = f j) ∧
@@ -353,7 +337,7 @@ theorem mem_center_nonisolatedZigzagQuotient_iff [Fintype V] (hns : ∀ i : V, �
         ∈ Subalgebra.center k (nonisolatedZigzagQuotient k G) := by
       have := sub_mem hz hvol
       rwa [hzsum, add_sub_cancel_right] at this
-    exact ⟨f, g, (sum_smul_zigzagMk_vertexIdempotent_mem_center_iff k G hns f).mp hidem, hzsum⟩
+    exact ⟨f, g, (sum_smul_zigzagMk_vertexIdempotent_mem_center_iff k G f).mp hidem, hzsum⟩
   · rintro ⟨f, g, hf, rfl⟩
     exact add_mem (sum_smul_zigzagMk_vertexIdempotent_mem_center k G f hf)
       (sum_mem fun i _ => Subalgebra.smul_mem _ (zigzagVolume_mem_center k G i) _)
@@ -401,10 +385,9 @@ theorem zigzagCenterFun_mem_center (o : Option V) :
   | none => rw [zigzagCenterFun_none]; exact one_mem _
   | some i => rw [zigzagCenterFun_some]; exact zigzagVolume_mem_center k G i
 
-/-- **The unit and the volume classes span the centre of a connected zigzag algebra.** The
-coefficients of a central combination of vertex idempotents are constant along the edges, hence
-constant, so that combination is a multiple of `1 = ∑ i, e_i`. -/
-theorem span_range_zigzagCenterFun_eq_center [Nontrivial V] (hconn : G.Preconnected) :
+/-- **The unit and the volume classes span the centre of the zigzag relation quotient of a
+preconnected graph.** -/
+theorem span_range_zigzagCenterFun_eq_center (hconn : G.Preconnected) :
     Submodule.span k (Set.range (zigzagCenterFun k G))
       = Subalgebra.toSubmodule (Subalgebra.center k (nonisolatedZigzagQuotient k G)) := by
   have : Fintype V := Fintype.ofFinite V
@@ -412,9 +395,10 @@ theorem span_range_zigzagCenterFun_eq_center [Nontrivial V] (hconn : G.Preconnec
   · rintro _ ⟨o, rfl⟩
     exact zigzagCenterFun_mem_center k G o
   · intro z hz
-    obtain ⟨f, g, hf, rfl⟩ := (mem_center_nonisolatedZigzagQuotient_iff k G
-      (exists_adj_of_preconnected G hconn)).mp hz
-    obtain ⟨i₀⟩ := (inferInstance : Nonempty V)
+    obtain ⟨f, g, hf, rfl⟩ := (mem_center_nonisolatedZigzagQuotient_iff k G).mp hz
+    rcases isEmpty_or_nonempty V with hV | ⟨⟨i₀⟩⟩
+    · rw [Finset.univ_eq_empty, Finset.sum_empty, Finset.sum_empty, add_zero]
+      exact Submodule.zero_mem _
     have hidem : ∑ i, f i • zigzagMk k G (vertexIdempotent k (vertex G i))
         = f i₀ • (1 : nonisolatedZigzagQuotient k G) := by
       rw [one_eq_sum_zigzagMk_vertexIdempotent k G, Finset.smul_sum]
@@ -521,7 +505,7 @@ its dual-number presentation. -/
 noncomputable def centerZigzagComponentAlgebraSubsingletonLinearEquiv
     (C : G.ConnectedComponent) [Subsingleton C] :
     Subalgebra.center k (zigzagComponentAlgebra k G C) ≃ₗ[k] ULift.{u} (k × k) :=
-  ((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+  ((Subalgebra.centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
     ((Subalgebra.equivOfEq _ _
       (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
         Subalgebra.topEquiv)).toLinearEquiv
@@ -533,11 +517,12 @@ theorem centerZigzagComponentAlgebraSubsingletonLinearEquiv_apply
     centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C x =
       zigzagComponentAlgebraEquivULiftDualNumber k G C x := by
   -- Compute in the dual-number carrier before identifying it with its coordinate pair.
-  have h : (((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+  have h : (((Subalgebra.centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
       ((Subalgebra.equivOfEq _ _
         (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
           Subalgebra.topEquiv)) x : ULift.{u} (DualNumber k)) =
-      zigzagComponentAlgebraEquivULiftDualNumber k G C x := by simp
+      zigzagComponentAlgebraEquivULiftDualNumber k G C x := by
+    simp [Subalgebra.centerCongr_apply_coe _ x]
   exact h
 
 /-- The centre of a component factor of the zigzag algebra is free over the coefficient ring. -/
@@ -551,7 +536,7 @@ instance instFreeCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
       Module.Free.of_basis
         (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected)
     exact Module.Free.of_equiv
-      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+      (Subalgebra.centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     exact Module.Free.of_equiv
       (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
@@ -567,7 +552,7 @@ instance instFiniteCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :
       Module.Finite.of_basis
         (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected)
     exact Module.Finite.equiv
-      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+      (Subalgebra.centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     have : Module.Finite k (ULift.{u} (k × k)) :=
       Module.Finite.equiv (ULift.moduleEquiv (R := k) (M := k × k)).symm
@@ -584,7 +569,8 @@ theorem finrank_center_zigzagComponentAlgebra [Nontrivial k] (C : G.ConnectedCom
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
     let _ : Fintype C := Fintype.ofFinite C
-    rw [(centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).toLinearEquiv.finrank_eq,
+    rw [(Subalgebra.centerCongr
+        (zigzagComponentAlgebraEquivNonisolated k G C)).toLinearEquiv.finrank_eq,
       finrank_center_nonisolatedZigzagQuotient k C.toSimpleGraph
         C.connected_toSimpleGraph.preconnected, Nat.card_eq_fintype_card]
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
@@ -610,7 +596,7 @@ theorem finrank_center_zigzagAlgebra [Nontrivial k] :
   let e : Subalgebra.center k (∀ C : G.ConnectedComponent, (zigzagComponentAlgebra k G C).carrier)
       ≃ₐ[k] ∀ C : G.ConnectedComponent,
         Subalgebra.center k (zigzagComponentAlgebra k G C).carrier := centerPiAlgEquiv
-  rw [(centerCongr (zigzagAlgebraPiAlgEquiv k G)).toLinearEquiv.finrank_eq,
+  rw [(Subalgebra.centerCongr (zigzagAlgebraPiAlgEquiv k G)).toLinearEquiv.finrank_eq,
     e.toLinearEquiv.finrank_eq, Module.finrank_pi_fintype]
   simp_rw [finrank_center_zigzagComponentAlgebra k G]
   rw [Finset.sum_add_distrib, hvertex]

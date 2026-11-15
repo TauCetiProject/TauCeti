@@ -16,7 +16,8 @@ represented by a distinguished palette value, so color-preserving injections pre
 nonedges as well as edges. No finiteness assumption on the vertex type or palette is needed.
 
 Restriction along a vertex embedding is provided by `Colored3Graph.comap`.
-`Colored3Graph.extend` adds vertices using a default color on all new triples.
+`Colored3Graph.extend` adds vertices on top of a background coloring, which colors every new
+triple; padding by one default color is the case of a constant background.
 -/
 
 public section
@@ -52,58 +53,70 @@ theorem color_comap (H : Colored3Graph κ V) (f : W ↪ V)
 @[simp]
 theorem comap_refl (H : Colored3Graph κ V) : H.comap (Function.Embedding.refl V) = H := by
   ext s
-  simp [Set.powersetCard.map]
+  simp
 
 @[simp]
 theorem comap_comap (H : Colored3Graph κ V) (f : W ↪ V) (g : U ↪ W) :
     (H.comap f).comap g = H.comap (g.trans f) := by
   ext s
-  simp [Set.powersetCard.map, Finset.map_map]
+  simp
 
 @[simp]
 theorem comap_const (c : κ) (f : W ↪ V) : (const c).comap f = const c := by
   ext s
   simp
 
-/-- Extend a coloring along a vertex embedding, assigning `c` to triples not wholly in
-its image. -/
-noncomputable def extend (H : Colored3Graph κ V) (f : V ↪ W) (c : κ) : Colored3Graph κ W where
-  color := Function.extend (Set.powersetCard.map 3 f) H.color (fun _ ↦ c)
+/-- Extend a coloring along a vertex embedding on top of a background coloring `B` of the
+larger vertex set: triples in the image keep their original color, and every triple not wholly
+in the image takes its color in `B`. Padding by a single color `c` is the case `B = const c`. -/
+noncomputable def extend (H : Colored3Graph κ V) (f : V ↪ W) (B : Colored3Graph κ W) :
+    Colored3Graph κ W where
+  color := Function.extend (Set.powersetCard.map 3 f) H.color B.color
 
 /-- Extension preserves the color of every original triple. -/
 @[simp]
-theorem color_extend_map (H : Colored3Graph κ V) (f : V ↪ W) (c : κ)
+theorem color_extend_map (H : Colored3Graph κ V) (f : V ↪ W) (B : Colored3Graph κ W)
     (s : Set.powersetCard V 3) :
-    (H.extend f c).color (Set.powersetCard.map 3 f s) = H.color s := by
+    (H.extend f B).color (Set.powersetCard.map 3 f s) = H.color s := by
   simp only [extend]
   exact (Set.powersetCard.map_injective 3 f).extend_apply _ _ s
 
-/-- A triple outside the image of the induced triple map receives the default color. -/
+/-- A triple outside the image of the induced triple map receives its background color. -/
 @[simp]
-theorem color_extend_of_notMem_range (H : Colored3Graph κ V) (f : V ↪ W) (c : κ)
-    (s : Set.powersetCard W 3) (hs : s ∉ Set.range (Set.powersetCard.map 3 f)) :
-    (H.extend f c).color s = c := by
+theorem color_extend_of_notMem_range (H : Colored3Graph κ V) (f : V ↪ W)
+    (B : Colored3Graph κ W) (s : Set.powersetCard W 3)
+    (hs : s ∉ Set.range (Set.powersetCard.map 3 f)) :
+    (H.extend f B).color s = B.color s := by
   simp only [extend]
   exact Function.extend_apply' _ _ _ hs
 
 /-- Restricting an extension to the original vertices recovers the original coloring. -/
 @[simp]
-theorem comap_extend (H : Colored3Graph κ V) (f : V ↪ W) (c : κ) :
-    (H.extend f c).comap f = H := by
+theorem comap_extend (H : Colored3Graph κ V) (f : V ↪ W) (B : Colored3Graph κ W) :
+    (H.extend f B).comap f = H := by
   ext s
   simp
 
 /-- Extending along the identity embedding adds no triples. -/
 @[simp]
-theorem extend_refl (H : Colored3Graph κ V) (c : κ) :
-    H.extend (Function.Embedding.refl V) c = H := by
-  simpa using H.comap_extend (Function.Embedding.refl V) c
+theorem extend_refl (H B : Colored3Graph κ V) :
+    H.extend (Function.Embedding.refl V) B = H := by
+  simpa using H.comap_extend (Function.Embedding.refl V) B
 
-/-- Extending a constant coloring by the same color remains constant. -/
+/-- Extending the restriction of a coloring on top of that same coloring recovers it. -/
 @[simp]
-theorem extend_const (c : κ) (f : V ↪ W) : (const c).extend f c = const c := by
+theorem extend_comap_self (B : Colored3Graph κ W) (f : V ↪ W) : (B.comap f).extend f B = B := by
   ext s
-  simp [extend, const]
+  by_cases hs : s ∈ Set.range (Set.powersetCard.map 3 f)
+  · obtain ⟨t, rfl⟩ := hs
+    simp
+  · exact color_extend_of_notMem_range _ f B s hs
+
+/-- Extending a constant coloring on top of the same constant coloring remains constant. -/
+@[simp]
+theorem extend_const (c : κ) (f : V ↪ W) :
+    (const c : Colored3Graph κ V).extend f (const c) = const c := by
+  simpa only [comap_const] using (const c : Colored3Graph κ W).extend_comap_self f
 
 end Colored3Graph
 

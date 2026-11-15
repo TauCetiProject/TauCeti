@@ -66,8 +66,9 @@ theorem subset_closure_of_ae_le (hs : IsOpen s) (hst : s ≤ᵐ[μ] t) : s ⊆ c
 open sets. The open sets themselves need not be equal. -/
 theorem closure_eq_of_ae_eq (hs : IsOpen s) (ht : IsOpen t) (hst : s =ᵐ[μ] t) :
     closure s = closure t :=
-  Subset.antisymm (closure_minimal (hs.subset_closure_of_ae_le hst.le) isClosed_closure)
-    (closure_minimal (ht.subset_closure_of_ae_le hst.symm.le) isClosed_closure)
+  Subset.antisymm
+    (closure_minimal (hs.subset_closure_of_ae_le (hst.mono fun _ h ↦ h.1)) isClosed_closure)
+    (closure_minimal (ht.subset_closure_of_ae_le (hst.mono fun _ h ↦ h.2)) isClosed_closure)
 
 /-- A continuous function on the closure of an open set `U` is determined by its values at almost
 every point of `U`, for a measure which charges every nonempty open set. -/

@@ -225,7 +225,7 @@ theorem exists_ne_smul_eq_self_of_two_lt_abs_trace {A : SL(2, ℝ)}
     have hroot := quadratic_eq_zero_iff hc hr
     refine ⟨((-(A 1 1 - A 0 0) + r) / (2 * A 1 0) : ℝ), ((-(A 1 1 - A 0 0) - r) / (2 * A 1 0) : ℝ),
       ?_, hfix _ ((hroot _).2 (Or.inl rfl)), hfix _ ((hroot _).2 (Or.inr rfl))⟩
-    rw [Ne, OnePoint.coe_eq_coe, div_left_inj' (mul_ne_zero two_ne_zero hc)]
+    rw [Ne, OnePoint.coe_eq_coe, div_left_inj₀ (mul_ne_zero two_ne_zero hc)]
     intro h'
     exact hr0 (by linarith)
 

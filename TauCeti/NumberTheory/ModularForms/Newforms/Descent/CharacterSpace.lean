@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.ConductorDichotomy
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.Basic
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
 # Descent of a supported form within a character space
@@ -24,8 +25,8 @@ one prime at a time in Miyake's proofs of Lemmas 4.6.7 and 4.6.8.
 * `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_qExpansionSupportedOnDvd`:
   peeling a divisor off a form supported on its multiples.
 * `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd`: a form of level `M`
-  supported on the multiples of any `q ≠ 0` is `V_q` of a form of the same level and
-  nebentypus, on coefficients.
+  supported on the multiples of any `q` is `V_q` of a form of the same level and nebentypus, on
+  coefficients.
 
 ## Provenance
 
@@ -95,13 +96,24 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_qExpansionSu
 /-- **A form supported on the multiples of `q` is `V_q` of a form of the same level.** If
 `F ∈ S_k(Γ₁(M), χ)` has its `q`-expansion supported on the multiples of `q`, then there is
 `G ∈ S_k(Γ₁(M), χ)` with `a_n(F) = a_{n/q}(G)` for `q ∣ n` and `a_n(F) = 0` otherwise. Nothing
-relates `q` to `M`: the descent is carried out at level `q M`, where `q` divides the level, and
-the level `q M / q` it lands at is `M`. -/
-theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd {M q : ℕ} [NeZero M] [NeZero q]
+relates `q` to `M`. For `q ≠ 0` the descent is carried out at level `q M`, where `q` divides the
+level, and lands back at level `q M / q = M`. For `q = 0` the hypotheses force every coefficient of
+`F` to vanish (the constant term of a cusp form is zero), so `G = 0` works. -/
+theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd {M q : ℕ} [NeZero M]
     {χ : (ZMod M)ˣ →* ℂˣ} {F : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
     (hFχ : F ∈ cuspFormCharSpace k χ) (hF : QExpansionSupportedOnDvd q F) :
     ∃ G ∈ cuspFormCharSpace k χ,
       ∀ n, (qExpansion 1 F).coeff n = if q ∣ n then (qExpansion 1 G).coeff (n / q) else 0 := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · -- at `q = 0` the support condition kills every coefficient of `F`, as the constant term of a
+    -- cusp form vanishes, so `G = 0` works
+    refine ⟨0, Submodule.zero_mem _, fun n ↦ ?_⟩
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [CuspFormClass.qExpansion_coeff_zero F one_pos (one_mem_strictPeriods_Gamma1_map M),
+        qExpansion_zero]
+    · simp [PowerSeries.isSupportedOnDvd_iff.mp (qExpansionSupportedOnDvd_iff.mp hF) n
+        (by simpa using hn), qExpansion_zero]
+  have : NeZero q := ⟨hq⟩
   have hMq : M ∣ q * M / q := by rw [Nat.mul_div_cancel_left M (NeZero.pos q)]
   have hqM : q * M / q ∣ M := by rw [Nat.mul_div_cancel_left M (NeZero.pos q)]
   -- read `F` at level `q M` and descend there, to the level `q M / q`

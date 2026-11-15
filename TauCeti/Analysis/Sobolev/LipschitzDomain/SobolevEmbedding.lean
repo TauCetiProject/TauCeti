@@ -144,7 +144,7 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith
   refine ⟨(C * ‖T‖ₑ).toNNReal, fun u => ?_⟩
   have hu : W1p.restrictL le_top (T u) = u := by
     simpa using congrArg (· u) hT
-  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top enorm_ne_top)]
+  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top eNorm_ne_top)]
   calc eLpNorm (W1p.value u) s (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))
       = eLpNorm (W1p.value (W1p.restrictL le_top (T u))) s
           (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) := by rw [hu]

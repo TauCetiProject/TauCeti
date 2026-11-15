@@ -78,7 +78,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteS
 is zero. -/
 theorem forall_hasEigenvalue_eq_zero_iff (hT : IsStarNormal T) (hc : IsCompactOperator T) :
     (∀ μ, HasEigenvalue (T : Module.End ℂ E) μ → μ = 0) ↔ T = 0 := by
-  rw [← nnnorm_eq_zero, ← ENNReal.coe_eq_zero, ← IsStarNormal.spectralRadius_eq_nnnorm T,
+  rw [← nnNorm_eq_zero, ← ENNReal.coe_eq_zero, ← IsStarNormal.spectralRadius_eq_nnNorm T,
     spectralRadius_eq_of_unital, ← not_iff_not, ENNReal.iSup_eq_zero]
   push Not
   apply exists_congr
