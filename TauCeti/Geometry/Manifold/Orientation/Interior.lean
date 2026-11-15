@@ -30,8 +30,10 @@ tangent orientation of `o` at the same point of `M`
   those of `M`.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_manifoldInterior`: the inclusion of the
   interior preserves orientation.
-* `TauCeti.Manifold.Orientation.eq_manifoldInterior_iff`: it is the only orientation of the
-  interior with these tangent orientations.
+* `TauCeti.Manifold.Orientation.eq_manifoldInterior_iff`,
+  `TauCeti.Manifold.Orientation.eq_manifoldInterior_iff_isOrientationPreservingAt`: it is the only
+  orientation of the interior with these tangent orientations, and the only one from which the
+  inclusion preserves orientation.
 
 ## References
 
@@ -74,6 +76,7 @@ theorem orientationAt_manifoldInterior (o : Orientation I M ι) (x : ManifoldInt
   exact (Equiv.ext_iff.mp (_root_.Orientation.map_refl (R := ℝ) (M := E) ι) _).symm.trans h
 
 /-- The inclusion of the interior preserves orientation. -/
+@[simp]
 theorem isOrientationPreservingAt_manifoldInterior (o : Orientation I M ι)
     (x : ManifoldInterior I M) :
     IsOrientationPreservingAt o.manifoldInterior o ManifoldInterior.val x :=
@@ -86,6 +89,13 @@ theorem eq_manifoldInterior_iff {o : Orientation I M ι}
     o' = o.manifoldInterior ↔ ∀ x, o'.orientationAt x = o.orientationAt x.val := by
   refine ⟨fun h x ↦ h ▸ orientationAt_manifoldInterior o x, fun h ↦ ext fun x ↦ ?_⟩
   rw [h x, orientationAt_manifoldInterior]
+
+/-- The orientation of the interior induced by `o` is the only orientation of the interior from
+which the inclusion preserves orientation at every point. -/
+theorem eq_manifoldInterior_iff_isOrientationPreservingAt {o : Orientation I M ι}
+    {o' : Orientation 𝓘(ℝ, E) (ManifoldInterior I M) ι} :
+    o' = o.manifoldInterior ↔ ∀ x, IsOrientationPreservingAt o' o ManifoldInterior.val x :=
+  eq_pullback_iff o _ _ _
 
 /-- The interior of the opposite orientation carries the opposite orientation. -/
 @[simp]

@@ -27,7 +27,8 @@ the extended charts it is the identity: the extended chart of the interior at `x
 extended chart of `M` at `x`, restricted to the interior. So its manifold derivative is the
 identity of `E` (`TauCeti.ManifoldInterior.mfderiv_val`). A map into the interior is `C^n`
 exactly when its composite with the inclusion is
-(`TauCeti.ManifoldInterior.contMDiff_iff_contMDiff_val_comp`). When `M` has no boundary, the
+(`TauCeti.ManifoldInterior.contMDiff_val_comp_iff`, with versions within a set, at a point and on
+a set). When `M` has no boundary, the
 inclusion is a diffeomorphism onto `M` (`TauCeti.ManifoldInterior.diffeomorph`).
 
 Constructions stated for boundaryless manifolds charted by a vector space, such as the local
@@ -51,12 +52,16 @@ apply to the interior of a manifold with boundary or corners, and through the op
   inclusion is an open embedding onto `I.interior M`.
 * `TauCeti.ManifoldInterior.extChartAt_apply`, `TauCeti.ManifoldInterior.extChartAt_source`,
   `TauCeti.ManifoldInterior.extChartAt_target`, `TauCeti.ManifoldInterior.val_extChartAt_symm`:
-  the extended charts of the interior are those of `M`, restricted to the interior.
+  the extended charts of the interior are those of `M`, restricted to the interior; likewise
+  `TauCeti.ManifoldInterior.chartAt_apply`, `TauCeti.ManifoldInterior.chartAt_source`,
+  `TauCeti.ManifoldInterior.chartAt_target` and `TauCeti.ManifoldInterior.val_chartAt_symm` for
+  its charts.
 * `TauCeti.ManifoldInterior.isLocalDiffeomorph_val`: the inclusion is a `C^n` local
   diffeomorphism.
 * `TauCeti.ManifoldInterior.mfderiv_val`: its manifold derivative is the identity of `E`.
-* `TauCeti.ManifoldInterior.contMDiff_iff_contMDiff_val_comp`: maps into the interior are `C^n`
-  exactly when they are as maps into `M`.
+* `TauCeti.ManifoldInterior.contMDiffWithinAt_val_comp_iff`,
+  `TauCeti.ManifoldInterior.contMDiff_val_comp_iff`: maps into the interior are `C^n` exactly when
+  they are as maps into `M`.
 
 ## References
 
@@ -104,13 +109,13 @@ namespace TauCeti
 /-- The **interior of a `C¹` manifold with corners** `M`, charted by the model vector space `E`:
 a copy of the open subset `I.interior M` on which each chart `c` of `M` is replaced by `I ∘ c`.
 It is a manifold without boundary modelled on `E`, as smooth as `M`. -/
--- The instances below are transported along this body under Lean's module system.
-@[expose] def ManifoldInterior : Type _ :=
+def ManifoldInterior : Type _ :=
   BoundarylessModel I (I.interiorOpens M)
 
 namespace ManifoldInterior
 
 /-- The interior carrier has the subspace topology of `I.interior M`. -/
+@[no_expose]
 instance : TopologicalSpace (ManifoldInterior I M) :=
   inferInstanceAs (TopologicalSpace (BoundarylessModel I (I.interiorOpens M)))
 
@@ -118,8 +123,13 @@ instance : TopologicalSpace (ManifoldInterior I M) :=
 instance [T2Space M] : T2Space (ManifoldInterior I M) :=
   inferInstanceAs (T2Space (I.interiorOpens M))
 
+/-- The interior of a second-countable manifold is second-countable. -/
+instance [SecondCountableTopology M] : SecondCountableTopology (ManifoldInterior I M) :=
+  inferInstanceAs (SecondCountableTopology (I.interiorOpens M))
+
 /-- The charts of the interior: the charts of `M`, followed by the model map `I` and restricted
 to the interior. -/
+@[no_expose]
 instance : ChartedSpace E (ManifoldInterior I M) :=
   BoundarylessModel.interiorChartedSpace I (M := I.interiorOpens M)
 
@@ -150,6 +160,18 @@ theorem coe_homeomorph (x : ManifoldInterior I M) : (homeomorph x : M) = x.val :
 @[simp]
 theorem val_mk (x : M) (hx : I.IsInteriorPoint x) : (mk x hx : ManifoldInterior I M).val = x := by
   simp only [mk, val, Homeomorph.apply_symm_apply]
+
+/-- The inverse of the homeomorphism to `I.interior M` sends a point to the point of the interior
+carrier over it. -/
+@[simp]
+theorem val_homeomorph_symm (x : I.interiorOpens M) : (homeomorph.symm x).val = x := by
+  simp only [val, Homeomorph.apply_symm_apply]
+
+/-- The homeomorphism to `I.interior M` sends the point over an interior point `x` to `x`. -/
+@[simp]
+theorem homeomorph_mk (x : M) (hx : I.IsInteriorPoint x) :
+    homeomorph (mk x hx : ManifoldInterior I M) = ⟨x, ModelWithCorners.mem_interiorOpens.2 hx⟩ := by
+  simp only [mk, Homeomorph.apply_symm_apply]
 
 /-- The points of the interior carrier lie over interior points of `M`. -/
 theorem isInteriorPoint_val (x : ManifoldInterior I M) : I.IsInteriorPoint x.val :=
@@ -189,81 +211,94 @@ theorem isOpenEmbedding_val : IsOpenEmbedding (val : ManifoldInterior I M → M)
 theorem continuous_val : Continuous (val : ManifoldInterior I M → M) :=
   isOpenEmbedding_val.continuous
 
+/-- The interior of a locally compact manifold is locally compact. -/
+instance [LocallyCompactSpace M] : LocallyCompactSpace (ManifoldInterior I M) :=
+  isOpenEmbedding_val.locallyCompactSpace
+
 /-! ### The extended charts of the interior -/
 
 attribute [local instance] BoundarylessModel.interiorChartedSpace
 
-/-- The chart of the interior at `x` is the vector-space chart of the open subset `I.interior M`
-built from the chart of `M` at `x`. -/
-private theorem chartAt_eq (x : ManifoldInterior I M) :
-    chartAt E x = BoundarylessModel.interiorChart I (chartAt H (homeomorph x))
-      (chart_mem_atlas H _) :=
-  BoundarylessModel.interiorChartAt_eq I x
-
 /-- The chart of the interior at `x` is the extended chart of `M` at `x`. -/
 @[simp]
 theorem chartAt_apply (x y : ManifoldInterior I M) :
-    chartAt E x y = extChartAt I x.val y.val :=
-  BoundarylessModel.interiorChartAt_apply I (M := I.interiorOpens M) x y
+    chartAt E x y = extChartAt I x.val y.val := by
+  rw [← coe_homeomorph, ← coe_homeomorph, ← (I.interiorOpens M).extChartAt_apply, homeomorph]
+  exact BoundarylessModel.interiorChartAt_apply I x y
 
 /-- The extended chart of the interior at `x` is the extended chart of `M` at `x`. -/
 theorem extChartAt_apply (x y : ManifoldInterior I M) :
     extChartAt 𝓘(𝕜, E) x y = extChartAt I x.val y.val := by
   rw [extChartAt_coe, comp_apply, modelWithCornersSelf_coe, id, chartAt_apply]
 
+/-- The source of the chart of the interior at `x` consists of the interior points in the source
+of the extended chart of `M` at `x`. -/
+@[simp]
+theorem chartAt_source (x : ManifoldInterior I M) :
+    (chartAt E x).source = val ⁻¹' (extChartAt I x.val).source := by
+  have h : chartAt E x =
+      BoundarylessModel.interiorChart I (chartAt H (homeomorph x)) (chart_mem_atlas H _) :=
+    BoundarylessModel.interiorChartAt_eq I x
+  rw [h, BoundarylessModel.interiorChart_source, Opens.chartAt_eq,
+    OpenPartialHomeomorph.subtypeRestr_source, _root_.extChartAt_source, coe_homeomorph,
+    ← preimage_comp]
+  -- This is the definition of `val`, through the definition of `homeomorph`.
+  rfl
+
 /-- The source of the extended chart of the interior at `x` consists of the interior points in the
 source of the extended chart of `M` at `x`. -/
 theorem extChartAt_source (x : ManifoldInterior I M) :
     (extChartAt 𝓘(𝕜, E) x).source = val ⁻¹' (extChartAt I x.val).source := by
-  rw [_root_.extChartAt_source, _root_.extChartAt_source, chartAt_eq,
-    BoundarylessModel.interiorChart_source, Opens.chartAt_eq,
-    OpenPartialHomeomorph.subtypeRestr_source]
-  -- Both sides are the preimage under the definition of `val`, composed through `homeomorph`.
-  rfl
-
-/-- A point lies in the target of the extended chart of the interior at `x` exactly when it lies in
-the range of `I`, its preimage under `I` lies in the target of the chart of `M` at `x`, and the
-corresponding point of `M` is an interior point. -/
-private theorem mem_extChartAt_target_iff (x : ManifoldInterior I M) {v : E} :
-    v ∈ (extChartAt 𝓘(𝕜, E) x).target ↔ v ∈ range I ∧ I.symm v ∈ (chartAt H x.val).target ∧
-      I.IsInteriorPoint ((chartAt H x.val).symm (I.symm v)) := by
-  rw [_root_.extChartAt_target, chartAt_eq, BoundarylessModel.interiorChart_target]
-  simp only [modelWithCornersSelf_coe_symm, preimage_id, modelWithCornersSelf_coe, range_id,
-    inter_univ, mem_inter_iff, mem_preimage, Opens.mem_chartAt_target_iff,
-    ModelWithCorners.mem_interiorOpens]
-  tauto
+  rw [_root_.extChartAt_source, chartAt_source]
 
 /-- The target of the extended chart of the interior at `x` consists of the points of the target
 of the extended chart of `M` at `x` lying in the interior of the range of `I`. -/
 theorem extChartAt_target (x : ManifoldInterior I M) :
     (extChartAt 𝓘(𝕜, E) x).target = (extChartAt I x.val).target ∩ interior (range I) := by
+  have h : extChartAt 𝓘(𝕜, E) x = extChartAt I (homeomorph x) :=
+    BoundarylessModel.interiorExtChartAt_eq I x
+  rw [h, (I.interiorOpens M).extChartAt_target_eq, coe_homeomorph]
   ext v
-  rw [mem_extChartAt_target_iff, _root_.extChartAt_target]
-  simp only [mem_inter_iff, mem_preimage]
+  simp only [mem_inter_iff, mem_preimage, SetLike.mem_coe, ModelWithCorners.mem_interiorOpens]
   -- At a point of the chart target, interiority is read off from the model coordinates.
-  have key (hv : v ∈ range I) (hc : I.symm v ∈ (chartAt H x.val).target) :
-      I.IsInteriorPoint ((chartAt H x.val).symm (I.symm v)) ↔ v ∈ interior (range I) := by
-    rw [TauCeti.ModelWithCorners.isInteriorPoint_iff_mem_interior_range one_ne_zero
-        (IsManifold.chart_mem_maximalAtlas x.val) ((chartAt H x.val).map_target hc),
-      (chartAt H x.val).right_inv hc, I.right_inv hv]
-  exact ⟨fun ⟨hv, hc, hi⟩ ↦ ⟨⟨hc, hv⟩, (key hv hc).1 hi⟩,
-    fun ⟨⟨hc, hv⟩, hi⟩ ↦ ⟨hv, hc, (key hv hc).2 hi⟩⟩
+  refine and_congr_right fun hv ↦ ?_
+  have hs : (extChartAt I x.val).symm v ∈ (chartAt H x.val).source := by
+    simpa only [_root_.extChartAt_source] using (extChartAt I x.val).map_target hv
+  rw [TauCeti.ModelWithCorners.isInteriorPoint_iff_mem_interior_range one_ne_zero
+    (IsManifold.chart_mem_maximalAtlas x.val) hs, ← comp_apply (f := I), ← extChartAt_coe,
+    (extChartAt I x.val).right_inv hv]
 
 /-- The inverse of the extended chart of the interior at `x` is the inverse of the extended chart
 of `M` at `x`, on the target of the former. -/
 theorem val_extChartAt_symm (x : ManifoldInterior I M) {v : E}
     (hv : v ∈ (extChartAt 𝓘(𝕜, E) x).target) :
     ((extChartAt 𝓘(𝕜, E) x).symm v).val = (extChartAt I x.val).symm v := by
-  have h := congrArg Subtype.val
-    (BoundarylessModel.interiorChartAt_symm_apply I (M := I.interiorOpens M) x v)
-  have hc := ((mem_extChartAt_target_iff x).1 hv).2.1
-  rw [extChartAt_coe_symm, extChartAt_coe_symm, comp_apply, modelWithCornersSelf_coe_symm, id,
-    comp_apply]
-  refine h.trans ?_
-  rw [extChartAt_coe_symm, comp_apply]
-  exact (chartAt H x.val).subtypeRestr_symm_apply _
-    (((I.interiorOpens M).mem_chartAt_target_iff (homeomorph x)).2
-      ⟨hc, ((mem_extChartAt_target_iff x).1 hv).2.2⟩)
+  have h : extChartAt 𝓘(𝕜, E) x = extChartAt I (homeomorph x) :=
+    BoundarylessModel.interiorExtChartAt_eq I x
+  have hc : v ∈ (extChartAt I (homeomorph x)).target := by rwa [h] at hv
+  have hs : homeomorph ((chartAt E x).symm v) = (extChartAt I (homeomorph x)).symm v :=
+    BoundarylessModel.interiorChartAt_symm_apply I x v
+  calc ((extChartAt 𝓘(𝕜, E) x).symm v).val = (homeomorph ((chartAt E x).symm v) : M) := by
+        rw [coe_homeomorph, extChartAt_coe_symm, comp_apply, modelWithCornersSelf_coe_symm, id]
+    _ = (extChartAt I (homeomorph x)).symm v := congrArg Subtype.val hs
+    _ = (extChartAt I x.val).symm v := by
+        rw [(I.interiorOpens M).coe_extChartAt_symm_apply (homeomorph x) hc, coe_homeomorph]
+
+/-- The target of the chart of the interior at `x` consists of the points of the target of the
+extended chart of `M` at `x` lying in the interior of the range of `I`. -/
+@[simp]
+theorem chartAt_target (x : ManifoldInterior I M) :
+    (chartAt E x).target = (extChartAt I x.val).target ∩ interior (range I) := by
+  rw [← extChartAt_target, _root_.extChartAt_target, modelWithCornersSelf_coe_symm, preimage_id,
+    modelWithCornersSelf_coe, range_id, inter_univ]
+
+/-- The inverse of the chart of the interior at `x` is the inverse of the extended chart of `M` at
+`x`, on the target of the former. -/
+theorem val_chartAt_symm (x : ManifoldInterior I M) {v : E} (hv : v ∈ (chartAt E x).target) :
+    ((chartAt E x).symm v).val = (extChartAt I x.val).symm v := by
+  rw [chartAt_target, ← extChartAt_target] at hv
+  rw [← val_extChartAt_symm x hv, extChartAt_coe_symm, comp_apply, modelWithCornersSelf_coe_symm,
+    id]
 
 /-! ### Smoothness of the inclusion -/
 
@@ -329,18 +364,62 @@ theorem mfderiv_val (x : ManifoldInterior I M) :
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
   {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω}
 
+/-- A map into the interior is `C^n` within a set at a point exactly when it is as a map
+into `M`. -/
+@[simp]
+theorem contMDiffWithinAt_val_comp_iff {f : N → ManifoldInterior I M} {s : Set N} {x : N} :
+    ContMDiffWithinAt J I n (val ∘ f) s x ↔ ContMDiffWithinAt J 𝓘(𝕜, E) n f s x := by
+  rw [val_eq_comp n, comp_assoc, TauCeti.ContMDiffWithinAt.subtypeVal_comp_iff]
+  exact (opensDiffeomorph I M n).contMDiffWithinAt_diffeomorph_comp_iff le_rfl
+
+/-- A map into the interior is `C^n` at a point exactly when it is as a map into `M`. -/
+@[simp]
+theorem contMDiffAt_val_comp_iff {f : N → ManifoldInterior I M} {x : N} :
+    ContMDiffAt J I n (val ∘ f) x ↔ ContMDiffAt J 𝓘(𝕜, E) n f x := by
+  simp only [← contMDiffWithinAt_univ, contMDiffWithinAt_val_comp_iff]
+
+/-- A map into the interior is `C^n` on a set exactly when it is as a map into `M`. -/
+@[simp]
+theorem contMDiffOn_val_comp_iff {f : N → ManifoldInterior I M} {s : Set N} :
+    ContMDiffOn J I n (val ∘ f) s ↔ ContMDiffOn J 𝓘(𝕜, E) n f s :=
+  forall₂_congr fun _ _ ↦ contMDiffWithinAt_val_comp_iff
+
 /-- A map into the interior is `C^n` exactly when it is `C^n` as a map into `M`. -/
-theorem contMDiff_iff_contMDiff_val_comp {f : N → ManifoldInterior I M} :
-    ContMDiff J 𝓘(𝕜, E) n f ↔ ContMDiff J I n (val ∘ f) := by
-  rw [val_eq_comp n, comp_assoc, TauCeti.ContMDiff.subtypeVal_comp_iff]
-  exact ((opensDiffeomorph I M n).contMDiff_diffeomorph_comp_iff le_rfl).symm
+@[simp]
+theorem contMDiff_val_comp_iff {f : N → ManifoldInterior I M} :
+    ContMDiff J I n (val ∘ f) ↔ ContMDiff J 𝓘(𝕜, E) n f :=
+  forall_congr' fun _ ↦ contMDiffAt_val_comp_iff
+
+/-- A map into `M` with values in the interior is `C^n` within a set at a point as a map into the
+interior exactly when it is as a map into `M`. -/
+@[simp]
+theorem contMDiffWithinAt_mk_iff {f : N → M} (hf : ∀ y, I.IsInteriorPoint (f y)) {s : Set N}
+    {x : N} :
+    ContMDiffWithinAt J 𝓘(𝕜, E) n (fun y ↦ mk (f y) (hf y)) s x ↔
+      ContMDiffWithinAt J I n f s x := by
+  rw [← contMDiffWithinAt_val_comp_iff]
+  simp only [comp_def, val_mk]
+
+/-- A map into `M` with values in the interior is `C^n` at a point as a map into the interior
+exactly when it is as a map into `M`. -/
+@[simp]
+theorem contMDiffAt_mk_iff {f : N → M} (hf : ∀ y, I.IsInteriorPoint (f y)) {x : N} :
+    ContMDiffAt J 𝓘(𝕜, E) n (fun y ↦ mk (f y) (hf y)) x ↔ ContMDiffAt J I n f x :=
+  contMDiffWithinAt_mk_iff hf
+
+/-- A map into `M` with values in the interior is `C^n` on a set as a map into the interior exactly
+when it is as a map into `M`. -/
+@[simp]
+theorem contMDiffOn_mk_iff {f : N → M} (hf : ∀ y, I.IsInteriorPoint (f y)) {s : Set N} :
+    ContMDiffOn J 𝓘(𝕜, E) n (fun y ↦ mk (f y) (hf y)) s ↔ ContMDiffOn J I n f s :=
+  forall₂_congr fun _ _ ↦ contMDiffWithinAt_mk_iff hf
 
 /-- A map into `M` with values in the interior is `C^n` as a map into the interior exactly when
 it is `C^n` as a map into `M`. -/
+@[simp]
 theorem contMDiff_mk_iff {f : N → M} (hf : ∀ y, I.IsInteriorPoint (f y)) :
-    ContMDiff J 𝓘(𝕜, E) n (fun y ↦ mk (f y) (hf y)) ↔ ContMDiff J I n f := by
-  rw [contMDiff_iff_contMDiff_val_comp]
-  exact Iff.of_eq (congrArg _ (funext fun y ↦ val_mk (f y) (hf y)))
+    ContMDiff J 𝓘(𝕜, E) n (fun y ↦ mk (f y) (hf y)) ↔ ContMDiff J I n f :=
+  forall_congr' fun _ ↦ contMDiffAt_mk_iff hf
 
 /-! ### Manifolds without boundary -/
 

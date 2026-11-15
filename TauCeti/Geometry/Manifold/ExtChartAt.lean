@@ -46,11 +46,11 @@ Coordinate changes transport images of subsets of chart overlaps and are injecti
 without differentiability assumptions, and they take values in the range of the model; for a
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
-the manifold. On an open subset, chart targets consist of the points of the ambient chart targets
-whose inverse images lie in the subset, and inverse charts agree through inclusion on the smaller
-target. Near a chart point the inverse charts
-of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
-convex neighbourhood within the model range, inside the chart target, on which flat calculus
+the manifold. On an open subset, inherited extended charts give the ambient coordinates, chart
+targets consist of the points of the ambient chart targets whose inverse images lie in the subset,
+and inverse charts agree through inclusion on the smaller target. Near a chart point the inverse
+charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point
+has a convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
@@ -845,6 +845,12 @@ theorem mem_chartAt_target_iff (U : Opens M) (p : U) {w : H} :
   simp only [chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def,
     OpenPartialHomeomorph.trans_target, openPartialHomeomorphSubtypeCoe_target,
     Set.mem_inter_iff, Set.mem_preimage, SetLike.mem_coe]
+
+/-- An inherited extended chart gives each point of the open subset its ambient coordinates. -/
+theorem extChartAt_apply (U : Opens M) (x y : U) :
+    extChartAt I x y = extChartAt I (x : M) (y : M) := by
+  simp only [extChartAt_coe, Function.comp_apply, chartAt_eq,
+    OpenPartialHomeomorph.subtypeRestr_coe, Set.domRestrict_apply]
 
 /-- An inherited extended chart restricts the ambient target to the points whose inverse
 coordinates lie in the open subset. -/
