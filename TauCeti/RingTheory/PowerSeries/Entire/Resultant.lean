@@ -108,12 +108,6 @@ theorem entireResultant_one_left (F : R⟦X⟧) : entireResultant 1 F = 1 := by
 theorem entireResultant_zero_right (hP : P.Monic) : entireResultant P 0 = 0 ^ P.natDegree := by
   simp [entireResultant_eq_resultant hP]
 
-end TopologicalRing
-
-section Normed
-
-variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {P : R[X]} {F : R⟦X⟧}
-
 /-- **Agreement with the polynomial resultant.** For monic `P` and a polynomial `g`, the entire
 resultant is the resultant of `P` and `g`, read at any degree bound `n` for `g`. -/
 theorem entireResultant_coe (hP : P.Monic) (g : R[X]) {n : ℕ} (hn : g.natDegree ≤ n) :
@@ -131,6 +125,12 @@ theorem entireResultant_one_right (hP : P.Monic) : entireResultant P 1 = 1 := by
 @[simp]
 theorem entireResultant_self (hP : P.Monic) : entireResultant P P = 0 ^ P.natDegree := by
   rw [entireResultant_coe hP P le_rfl, resultant_self]
+
+end TopologicalRing
+
+section Normed
+
+variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {P : R[X]} {F : R⟦X⟧}
 
 /-- **The entire resultant at a split polynomial.** If `P = ∏ i, (X - aᵢ)`, then `Res(P, F)` is the
 product `∏ i, F(aᵢ)` of the values of the entire series `F` at the roots of `P`. The roots may
