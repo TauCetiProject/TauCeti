@@ -77,6 +77,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   self-pairing splits off.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
+* `LinearMap.BilinForm.IsAlt.exists_le_eq_orthogonal`: for an alternating form, every isotropic
+  submodule lies in a submodule equal to its own orthogonal.
 * `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal` and
   `LinearMap.BilinForm.IsAlt.finrank_orthogonal_span_pair_add_two`: a hyperbolic pair of an
   alternating form spans a complement of its orthogonal complement, which has codimension two.
@@ -348,6 +350,26 @@ theorem IsAlt.sup_span_singleton_le_orthogonal {B : LinearMap.BilinForm R M} (hB
     exact hB.isRefl.eq_zero ((mem_orthogonal_iff.mp hv) w hw)
   · apply Submodule.span_le.mpr
     simpa [Submodule.mem_orthogonalBilin_span] using hB v
+
+/-- **Isotropic submodules lie in Lagrangians.** For an alternating form, every isotropic
+submodule `U ≤ Uᗮ` is contained in a submodule `L` equal to its own orthogonal, for instance in
+any maximal isotropic submodule containing `U`. No finiteness or nondegeneracy is needed. -/
+theorem IsAlt.exists_le_eq_orthogonal {B : LinearMap.BilinForm R M} (hB : B.IsAlt)
+    {U : Submodule R M} (hU : U ≤ B.orthogonal U) :
+    ∃ L : Submodule R M, U ≤ L ∧ L = B.orthogonal L := by
+  -- the union of a chain of isotropic submodules is isotropic
+  have hchain (c : Set (Submodule R M)) (hc : c ⊆ {L | L ≤ B.orthogonal L})
+      (hcc : IsChain (· ≤ ·) c) : sSup c ≤ B.orthogonal (sSup c) := by
+    rw [orthogonal, Submodule.orthogonalBilin_sSup]
+    refine sSup_le fun L hL ↦ le_iInf₂ fun L' hL' ↦ ?_
+    rcases hcc.total hL hL' with h | h
+    · exact h.trans (hc hL')
+    · exact (hc hL).trans (orthogonal_le h)
+  obtain ⟨L, hUL, hL⟩ := zorn_le_nonempty₀ {L : Submodule R M | L ≤ B.orthogonal L}
+    (fun c hc hcc _ _ ↦ ⟨sSup c, hchain c hc hcc, fun _ ↦ le_sSup⟩) U hU
+  refine ⟨L, hUL, le_antisymm hL.prop fun v hv ↦ ?_⟩
+  exact hL.le_of_ge (hB.sup_span_singleton_le_orthogonal hL.prop hv) le_sup_left
+    (Submodule.mem_sup_right (Submodule.mem_span_singleton_self v))
 
 /-- For a reflexive form, the restriction to a submodule is nondegenerate exactly when the
 submodule meets its orthogonal complement only in zero. Unlike

@@ -16,6 +16,8 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -90,6 +92,9 @@ Two statements are worth singling out.
   left-separating form on a finite free module is bijective.
 * `TauCeti.BilinForm.IsIsometry.map_orthogonal`: a surjective isometry carries `B`-orthogonal
   complements to `B`-orthogonal complements.
+* `LinearMap.BilinForm.IsAlt.exists_mem_isometryGroup_map_eq`: **Witt's theorem for isotropic
+  subspaces**; the isometry group of a nondegenerate alternating form acts transitively on the
+  isotropic subspaces of each dimension, in any characteristic.
 
 ## Implementation notes
 
@@ -107,6 +112,10 @@ This is the bilinear-form counterpart of `TauCeti.QuadraticMap.orthogonalGroup` 
 quadratic form `Q` over a ring in which `2` is a regular scalar the orthogonal group of `Q` is the
 isometry group of `Q.polarBilin`,
 `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`.
+
+## References
+
+* E. Artin, *Geometric Algebra* (1957), Theorem 3.9, for Witt's theorem on isotropic subspaces.
 -/
 
 public section
@@ -745,5 +754,43 @@ theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
 end BaseChange
 
 end CommRing
+
+section Field
+
+open Submodule
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {B : BilinForm K V}
+
+/-- **Witt's theorem for isotropic subspaces.** The isometry group of a nondegenerate alternating
+form on a finite-dimensional space acts transitively on the isotropic subspaces of each dimension:
+two isotropic subspaces of the same dimension are carried onto each other by an isometry. This
+holds in characteristic two as well. -/
+theorem IsAlt.exists_mem_isometryGroup_map_eq (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    {U U' : Submodule K V} (hU : U ≤ B.orthogonal U) (hU' : U' ≤ B.orthogonal U')
+    (h : finrank K U = finrank K U') :
+    ∃ g ∈ isometryGroup B, U.map (g : V →ₗ[K] V) = U' := by
+  obtain ⟨m, hm⟩ := hB.even_finrank hnd
+  have hr := two_mul_finrank_le_finrank_of_le_orthogonal hnd hU
+  -- symplectic bases whose first isotropic vectors are bases of `U` and of `U'`
+  let e := Module.finBasisOfFinrankEq K U rfl
+  let e' := Module.finBasisOfFinrankEq K U' h.symm
+  have hdim : 2 * (Fintype.card (Fin (finrank K U)) + Fintype.card (Fin (m - finrank K U))) =
+      finrank K V := by
+    simp only [Fintype.card_fin]
+    omega
+  obtain ⟨b, hbJ, hb⟩ := hB.exists_basis_toMatrix_eq_J_inl_inl_eq hnd e hU hdim
+  obtain ⟨b', hb'J, hb'⟩ := hB.exists_basis_toMatrix_eq_J_inl_inl_eq hnd e' hU' hdim
+  let g := b.isometryEquivOfToMatrixEq b' (hbJ.trans hb'J.symm)
+  refine ⟨g.toLinearEquiv, mem_isometryGroup_iff.mpr fun x y ↦ g.map_app y x, ?_⟩
+  have hspan {W : Submodule K V} (c : Basis (Fin (finrank K U)) K W) :
+      span K (Set.range fun i ↦ (c i : V)) = W :=
+    (span_range_subtype_eq_top_iff W fun i ↦ (c i).2).1 c.span_eq
+  rw [← hspan e, ← hspan e', Submodule.map_span, ← Set.range_comp]
+  congr 1
+  ext i
+  simp [g, ← hb, ← hb']
+
+end Field
 
 end LinearMap.BilinForm
