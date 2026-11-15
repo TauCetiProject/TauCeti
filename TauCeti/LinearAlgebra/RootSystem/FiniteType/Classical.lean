@@ -84,10 +84,9 @@ selects the first coordinate of the type `D` fork row.
 
 ## References
 
-This file supplies the classical half of the "finite-type condition" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The coordinate models are the standard
-ones of Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-IV, and of J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, section 12.1.
+The coordinate models are the standard ones of Bourbaki, *Lie Groups and Lie Algebras, Chapters
+4-6*, plates I-IV, and of J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, section 12.1.
 -/
 
 public section
@@ -352,7 +351,7 @@ the chain rows are then triangular on the coordinates below the top. -/
 private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
     Function.Injective (simpleCorootsD k).vecMul := by
   refine (injective_iff_map_eq_zero (simpleCorootsD k).vecMulLinear.toAddMonoidHom).2 fun x hx ↦ ?_
-  set M := simpleCorootsD k with hM
+  set M := simpleCorootsD k
   have hx' : x ᵥ* M = 0 := by
     calc
       x ᵥ* M = M.vecMulLinear x := (Matrix.vecMulLinear_apply M x).symm

@@ -152,7 +152,7 @@ ray-class Artin symbol of the ray class of `c ∈ C_K` is the global Artin symbo
 embedding `ι` of `L` into the separable closure. -/
 theorem of_rayClassArtinMap_rayClassQuotient (ι : L →ₐ[K] SeparableClosure K)
     (c : IdeleClassGroup (𝓞 K) K) :
-    Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
+    Group.Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
       (globalArtinMap K L ι (.ofMul c)).toMul := by
   rw [rayClassArtinMap_rayClassQuotient, of_ideleClassArtinMap K L ι]
 
@@ -183,7 +183,7 @@ theorem rayClassArtinMap_comp_rayClassMk :
       NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois 𝔪.support
         h.isUnramifiedAway := by
   refine eq_artinHomAway_of_globalArtinMap L IsSepClosed.lift 𝔪.support h.isUnramifiedAway _
-    fun I v hv hI ↦ ?_
+    fun I v _ hI ↦ ?_
   rw [MonoidHom.comp_apply, ← rayClassQuotient_primeIdeleClass I hI,
     of_rayClassArtinMap_rayClassQuotient h IsSepClosed.lift, ofMul_toMul]
 

@@ -43,16 +43,10 @@ Chevalley involution, as both automorphisms visibly do on the Serre generators.
 * `TauCeti.GraphTwistedIndex.serreChevalleyInvolution_comm_serreGraphAut`: compatibility with the
   Chevalley involution.
 
-## Roadmap and references
-
-This is a prerequisite for the Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That construction descends diagram automorphisms from
-the Lie algebra through the Kostant integral form to the pinned group scheme. It is consumed by
-milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, which forms graph-twisted Steinberg maps
-and requires `γ² = 1` or `γ³ = 1` together with the displayed simple-root-subgroup equation.
+## References
 
 The conventions follow R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex
-Characters*, §1.15, and the Bourbaki numbering pinned by the root-systems roadmap.
+Characters*, §1.15, and the Bourbaki numbering of the Dynkin diagrams.
 -/
 
 public section

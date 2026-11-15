@@ -205,6 +205,15 @@ lemma ιCompressionOrZero_πCompression (j : ℤ) (r : ZMod n) (hj : (j : ZMod n
     ιCompressionOrZero n K j r ≫ πCompression n K r j = 𝟙 _ := by
   simp [ιCompressionOrZero_eq n K j r hj]
 
+/-- Including the term of degree `i` into the compression and projecting onto the term of a
+different degree `j` gives zero. -/
+@[reassoc]
+lemma ιCompressionOrZero_πCompression_of_ne {i j : ℤ} (r : ZMod n) (hij : i ≠ j) :
+    ιCompressionOrZero n K i r ≫ πCompression n K r j = 0 := by
+  by_cases hi : (i : ZMod n) = r
+  · simp [ιCompressionOrZero_eq n K i r hi, hij]
+  · simp [hi]
+
 /-- The projections onto the summands of degrees `i` and `j = i + 1` intertwine the differentials
 of the compression and of `K`. -/
 @[reassoc]

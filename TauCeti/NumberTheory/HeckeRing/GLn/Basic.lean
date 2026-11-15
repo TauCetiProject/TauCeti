@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.HeckeRing.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DoubleCoset
 
+import Mathlib.Algebra.Ring.Int.Units
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -26,13 +27,14 @@ The file ends with the resulting `IsHeckeTriple` instance, on which the Hecke ri
 `𝕋 Δ SL_n(ℤ) ℤ` of `GL_n` is founded.
 
 Ported from the AINTLIB `LeanModularForms` project
-(`LeanModularForms/HeckeRIngs/GLn/Basic.lean`, Chris Birkbeck), realizing the Layer-2
-substrate of the ModularForms roadmap (the `GL₂` case specializes to the Hecke operators on
-modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHeckeTriple`.
+(`LeanModularForms/HeckeRIngs/GLn/Basic.lean`, Chris Birkbeck); the AINTLIB `HeckePair` bundle
+is replaced by Mathlib's `IsHeckeTriple`.
 
 ## Main definitions
 
 * `SLnZ`: `SL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, via `mapGL ℚ`.
+* `GLnZ`: `GL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, via
+  `Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ)`.
 * `posDetInt`: integral matrices with positive determinant, Shimura's `Δ`.
 * `intMatrix`: the integral matrix underlying an element of `intEntries n`, as a monoid
   homomorphism, characterised by `map_intMatrix` and `intMatrix_eq_iff`.
@@ -40,6 +42,9 @@ modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHecke
 ## Main results
 
 * `SLnZ_le_posDetInt`: `SL_n(ℤ) ≤ Δ`.
+* `SLnZ_eq_GLnZ_inf_glpos`, `commensurable_GLnZ_SLnZ`: `SL_n(ℤ) = GL_n(ℤ) ⊓ GL_n^+(ℚ)` has
+  finite index inside `GL_n(ℤ)`, together with the parity behavior of `-I_n`
+  (`neg_one_mem_SLnZ_iff`, `neg_mem_doubleCoset_SLnZ_iff`, `doubleCoset_neg_GLnZ`).
 * `posDetInt_le_commensurator`: `Δ ≤ commensurator(SL_n(ℤ))` (Shimura's Lemma 3.10).
 * `commensurable_map_SLnZ`: the image of a finite-index subgroup of `SL_n(ℤ)` is commensurable
   with `SL_n(ℤ)` — the step by which each congruence subgroup inherits Lemma 3.10 and so sits
@@ -399,6 +404,149 @@ lemma SLnZ_le_posDetInt : (SLnZ n).toSubmonoid ≤ posDetInt n := by
 lemma SLnZ_le_glpos : SLnZ n ≤ Matrix.GLPos (Fin n) ℚ := fun _ h ↦
   posDetInt_le_glpos n (SLnZ_le_posDetInt n h)
 
+end Pair
+
+section GLnZ
+
+/-- `GL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, embedded entrywise via
+`Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ)`. -/
+noncomputable def GLnZ : Subgroup (GL (Fin n) ℚ) :=
+  (Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) : GL (Fin n) ℤ →* GL (Fin n) ℚ).range
+
+/-- Canonical membership of an integral invertible matrix in `GLnZ n`. -/
+theorem map_intCast_mem_GLnZ (γ : GL (Fin n) ℤ) :
+    Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ ∈ GLnZ n := ⟨γ, rfl⟩
+
+/-- Membership in `GLnZ n` characterised by an integral `GL_n(ℤ)` witness. -/
+@[simp]
+theorem mem_GLnZ_iff {g : GL (Fin n) ℚ} :
+    g ∈ GLnZ n ↔ ∃ γ : GL (Fin n) ℤ, Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ = g :=
+  Iff.rfl
+
+/-- Every element of `GL_n(ℤ)` has integer matrix entries. -/
+theorem hasIntEntries_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) : HasIntEntries n g := by
+  obtain ⟨γ, rfl⟩ := (mem_GLnZ_iff n).mp hg
+  exact (hasIntEntries_iff n).mpr ⟨γ, by ext i j; simp [Matrix.GeneralLinearGroup.map_apply]⟩
+
+/-- `GL_n(ℤ)` lies in the integral-entry submonoid `intEntries n`. -/
+theorem GLnZ_le_intEntries : (GLnZ n).toSubmonoid ≤ intEntries n :=
+  fun _ hg ↦ (mem_intEntries n).mpr (hasIntEntries_of_mem_GLnZ n hg)
+
+/-- Every element of `GL_n(ℤ)` has rational determinant `1` or `-1`. -/
+theorem det_eq_one_or_neg_one_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) :
+    (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨ (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1 := by
+  obtain ⟨γ, rfl⟩ := (mem_GLnZ_iff n).mp hg
+  rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.map_det, Units.coe_map]
+  rcases Int.units_eq_one_or (Matrix.GeneralLinearGroup.det γ) with h | h <;> simp [h]
+
+/-- Inverting an element of `GL_n(ℤ)` preserves its rational determinant (`±1`). -/
+theorem det_inv_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) :
+    (↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ).det = (↑g : Matrix (Fin n) (Fin n) ℚ).det := by
+  rw [← Matrix.GeneralLinearGroup.val_det_apply, map_inv, Units.val_inv_eq_inv_val,
+    Matrix.GeneralLinearGroup.val_det_apply]
+  rcases det_eq_one_or_neg_one_of_mem_GLnZ n hg with h | h <;> simp [h]
+
+/-- Entrywise and determinant characterization of `GL_n(ℤ)` inside `GL_n(ℚ)`: an invertible rational
+matrix belongs to `GL_n(ℤ)` if and only if it has integer entries and determinant `±1`. -/
+theorem mem_GLnZ_iff_hasIntEntries_and_det {g : GL (Fin n) ℚ} :
+    g ∈ GLnZ n ↔ HasIntEntries n g ∧
+      ((↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨ (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1) := by
+  refine ⟨fun hg ↦ ⟨hasIntEntries_of_mem_GLnZ n hg, det_eq_one_or_neg_one_of_mem_GLnZ n hg⟩, ?_⟩
+  rintro ⟨hint, hdet⟩
+  obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp hint
+  rw [hA, ← Int.cast_det] at hdet
+  have hAunit : IsUnit A.det := by
+    rcases hdet with h | h <;> exact (by exact_mod_cast h : A.det = _) ▸ by simp
+  refine (mem_GLnZ_iff n).mpr ⟨Matrix.nonsingInvUnit A hAunit, Units.ext ?_⟩
+  ext i j; simpa [Matrix.GeneralLinearGroup.map_apply, Matrix.nonsingInvUnit] using
+    (congrFun (congrFun hA i) j).symm
+
+/-- `SL_n(ℤ)` is the positive-determinant part of `GL_n(ℤ)`: `SL_n(ℤ) = GL_n(ℤ) ⊓ GL_n^+(ℚ)`. -/
+theorem SLnZ_eq_GLnZ_inf_glpos : SLnZ n = GLnZ n ⊓ Matrix.GLPos (Fin n) ℚ := by
+  ext g; rw [Subgroup.mem_inf]
+  refine ⟨fun hg ↦ ⟨?_, SLnZ_le_glpos n hg⟩, fun ⟨hgZ, hgPos⟩ ↦ ?_⟩
+  · obtain ⟨σ, rfl⟩ := (mem_SLnZ_iff n).mp hg
+    refine (mem_GLnZ_iff n).mpr ⟨σ.toGL, Units.ext ?_⟩
+    rw [mapGL_coe_matrix]; ext i j; simp [algebraMap_int_eq, Matrix.GeneralLinearGroup.map_apply]
+  · rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hgPos
+    have hdet1 := (det_eq_one_or_neg_one_of_mem_GLnZ n hgZ).resolve_right (by linarith)
+    obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp (hasIntEntries_of_mem_GLnZ n hgZ)
+    have hAdet : A.det = 1 := by rw [hA, ← Int.cast_det] at hdet1; exact_mod_cast hdet1
+    let σ : SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
+    refine (mem_SLnZ_iff n).mpr ⟨σ, Units.ext ?_⟩
+    rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe, RingHom.mapMatrix_apply]; rfl
+
+/-- An element of `GL_n(ℤ)` with determinant `1` belongs to `SL_n(ℤ)`. -/
+theorem mem_SLnZ_of_mem_GLnZ_of_det_eq_one {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n)
+    (hdet : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1) : g ∈ SLnZ n := by
+  rw [SLnZ_eq_GLnZ_inf_glpos, Subgroup.mem_inf, Matrix.mem_glpos,
+    Matrix.GeneralLinearGroup.val_det_apply, hdet]
+  exact ⟨hg, one_pos⟩
+
+/-- `SL_n(ℤ)` is a subgroup of `GL_n(ℤ)`. -/
+theorem SLnZ_le_GLnZ : SLnZ n ≤ GLnZ n := SLnZ_eq_GLnZ_inf_glpos n ▸ inf_le_left
+
+/-- `-I_n` belongs to `GL_n(ℤ)` in every rank `n`. -/
+theorem neg_one_mem_GLnZ : (-1 : GL (Fin n) ℚ) ∈ GLnZ n :=
+  (mem_GLnZ_iff n).mpr ⟨-1, Units.ext (by
+    ext i j; by_cases hij : i = j <;> simp [Matrix.GeneralLinearGroup.map_apply, hij])⟩
+
+/-- Negating a matrix leaves its `GL_n(ℤ)`-double coset unchanged (`Rhodes–Shemanske`, §2). -/
+@[simp]
+theorem doubleCoset_neg_GLnZ (g : GL (Fin n) ℚ) :
+    DoubleCoset.doubleCoset (-g) (GLnZ n) (GLnZ n) = DoubleCoset.doubleCoset g (GLnZ n) (GLnZ n) :=
+  DoubleCoset.doubleCoset_neg_of_neg_one_mem_left (neg_one_mem_GLnZ n) g
+
+/-- `-I_n` belongs to `SL_n(ℤ)` if and only if `n` is even. -/
+theorem neg_one_mem_SLnZ_iff : (-1 : GL (Fin n) ℚ) ∈ SLnZ n ↔ Even n := by
+  refine ⟨fun h ↦ ?_, fun hn ↦ ?_⟩
+  · have hdet := det_eq_one_of_mem_SLnZ n h
+    rw [Units.val_neg, Units.val_one, Matrix.det_neg, Fintype.card_fin, Matrix.det_one,
+      mul_one] at hdet
+    exact (neg_one_pow_eq_one_iff_even (by norm_num : (-1 : ℚ) ≠ 1)).mp hdet
+  · have : Fact (Even (Fintype.card (Fin n))) := ⟨by simpa using hn⟩
+    exact (mem_SLnZ_iff n).mpr ⟨-1, mapGL_neg_one⟩
+
+/-- `-g` lies in the `SL_n(ℤ)`-double coset of `g ∈ GL_n(ℚ)` if and only if `n` is even
+(`Rhodes–Shemanske`, §2). -/
+theorem neg_mem_doubleCoset_SLnZ_iff (g : GL (Fin n) ℚ) :
+    -g ∈ DoubleCoset.doubleCoset g (SLnZ n) (SLnZ n) ↔ Even n := by
+  refine ⟨fun hmem ↦ ?_, fun hn ↦ ?_⟩
+  · have hdet := det_eq_of_mem_doubleCoset_SLnZ n hmem
+    rw [Units.val_neg, Matrix.det_neg, Fintype.card_fin] at hdet
+    exact (neg_one_pow_eq_one_iff_even (by norm_num : (-1 : ℚ) ≠ 1)).mp
+      (mul_right_cancel₀ g.det_ne_zero (hdet.trans (one_mul _).symm))
+  · rw [← DoubleCoset.doubleCoset_neg_of_neg_one_mem_left ((neg_one_mem_SLnZ_iff n).mpr hn) g]
+    exact DoubleCoset.mem_doubleCoset_self _ _ _
+
+/-- In even rank `n`, negating a matrix leaves its `SL_n(ℤ)`-double coset unchanged. -/
+theorem doubleCoset_neg_SLnZ_of_even (hn : Even n) (g : GL (Fin n) ℚ) :
+    DoubleCoset.doubleCoset (-g) (SLnZ n) (SLnZ n) = DoubleCoset.doubleCoset g (SLnZ n) (SLnZ n) :=
+  DoubleCoset.doubleCoset_neg_of_neg_one_mem_left ((neg_one_mem_SLnZ_iff n).mpr hn) g
+
+/-- `SL_n(ℤ)` has finite index (at most `2`) inside `GL_n(ℤ)`. -/
+instance finiteIndex_SLnZ_subgroupOf_GLnZ : ((SLnZ n).subgroupOf (GLnZ n)).FiniteIndex := by
+  let φ := (Matrix.GeneralLinearGroup.det.comp (GLnZ n).subtype).rangeRestrict
+  have : Finite (Matrix.GeneralLinearGroup.det.comp (GLnZ n).subtype).range :=
+    ((Set.finite_singleton (1 : ℚˣ)).insert (-1)).subset (by
+      rintro _ ⟨g, rfl⟩
+      simpa [Units.ext_iff, Matrix.GeneralLinearGroup.val_det_apply, or_comm] using
+        det_eq_one_or_neg_one_of_mem_GLnZ n g.2) |>.to_subtype
+  have hker : (SLnZ n).subgroupOf (GLnZ n) = φ.ker := by
+    ext g; rw [Subgroup.mem_subgroupOf, MonoidHom.mem_ker, Subtype.ext_iff, Units.ext_iff]
+    exact ⟨det_eq_one_of_mem_SLnZ n, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n g.2⟩
+  exact hker ▸ Subgroup.finiteIndex_ker φ
+
+/-- `GL_n(ℤ)` and `SL_n(ℤ)` are commensurable in `GL_n(ℚ)`. -/
+theorem commensurable_GLnZ_SLnZ : Subgroup.Commensurable (GLnZ n) (SLnZ n) :=
+  ⟨Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.mpr
+      (by rw [Subgroup.relIndex_eq_one.mpr (SLnZ_le_GLnZ n)]; exact one_ne_zero),
+    Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero.mpr Subgroup.FiniteIndex.index_ne_zero⟩
+
+end GLnZ
+
+section Pair
+
 /-- When `d | (gamma - I)` entry-wise, decompose `gamma = I + d * M`. -/
 private lemma gamma_decompose (d : ℤ) (gamma : Matrix (Fin n) (Fin n) ℤ)
     (hgamma : ∀ i j : Fin n, d ∣ (gamma i j - (1 : Matrix (Fin n) (Fin n) ℤ) i j)) :
@@ -476,11 +624,7 @@ private lemma int_mul_eq (A gamma : Matrix (Fin n) (Fin n) ℤ) (hAdet : A.det �
 private lemma det_ne_zero_of_val_eq (g : GL (Fin n) ℚ) {A : Matrix (Fin n) (Fin n) ℤ}
     (hA : (↑g : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ)) : A.det ≠ 0 := by
   have h := g.det_ne_zero
-  rw [hA] at h
-  have hdetc : (A.map (Int.cast : ℤ → ℚ)).det = (A.det : ℚ) := by
-    simpa [RingHom.mapMatrix_apply] using (RingHom.map_det (Int.castRingHom ℚ) A).symm
-  rw [hdetc, Int.cast_ne_zero] at h
-  exact h
+  rwa [hA, ← Int.cast_det, Int.cast_ne_zero] at h
 
 /-- If `g` has integer matrix `A` and `γ ∈ SL_n(ℤ)` is congruent to the identity modulo
 `|det A|`, then `g⁻¹ γ g` is again in `SL_n(ℤ)`. -/

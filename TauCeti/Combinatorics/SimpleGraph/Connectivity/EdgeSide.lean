@@ -73,6 +73,32 @@ theorem coe_edgeSide :
   ext x
   simp [ConnectedComponent.mem_supp_iff, ConnectedComponent.eq, reachable_comm]
 
+/-- A graph isomorphism carries each fundamental side to the corresponding side. This also
+holds for non-edges and for graphs that are not trees. -/
+@[simp]
+theorem Iso.map_edgeSide {W : Type*} [Fintype W] {H : SimpleGraph W} (e : G ≃g H)
+    (u v : V) : (G.edgeSide u v).map e.toEquiv.toEmbedding = H.edgeSide (e u) (e v) := by
+  classical
+  let d : G.deleteEdges {s(u, v)} ≃g H.deleteEdges {s(e u, e v)} :=
+    { e.toEquiv with
+      map_rel_iff' := by
+        intro x y
+        simp only [deleteEdges_adj, Set.mem_singleton_iff]
+        have heq : s(e x, e y) = s(e u, e v) ↔ s(x, y) = s(u, v) := by
+          simpa only [Sym2.map_mk] using
+            (Sym2.map.injective e.injective).eq_iff (a := s(x, y)) (b := s(u, v))
+        exact and_congr e.map_adj_iff (not_congr heq) }
+  apply Finset.ext
+  intro y
+  constructor
+  · rintro hy
+    obtain ⟨x, hx, rfl⟩ := Finset.mem_map.mp hy
+    exact mem_edgeSide.mpr (d.reachable_iff.mpr (mem_edgeSide.mp hx))
+  · obtain ⟨x, rfl⟩ := e.surjective y
+    intro hx
+    exact Finset.mem_map.mpr ⟨x, mem_edgeSide.mpr
+      (d.reachable_iff.mp (mem_edgeSide.mp hx)), rfl⟩
+
 /-- Each end of an edge lies on its own side. -/
 theorem self_mem_edgeSide (G : SimpleGraph V) (u v : V) : u ∈ G.edgeSide u v :=
   mem_edgeSide.mpr .rfl
@@ -118,7 +144,7 @@ private theorem Adj.mem_edgeSide_or_mem_edgeSide {y z : V} (hyz : G.Adj y z)
 theorem Reachable.mem_edgeSide_or_mem_edgeSide (h : G.Reachable u x) :
     x ∈ G.edgeSide u v ∨ x ∈ G.edgeSide v u := by
   obtain ⟨p⟩ := h
-  suffices key : ∀ {y z : V} (q : G.Walk y z), (y ∈ G.edgeSide u v ∨ y ∈ G.edgeSide v u) →
+  suffices key : ∀ {y z : V} (_ : G.Walk y z), (y ∈ G.edgeSide u v ∨ y ∈ G.edgeSide v u) →
       z ∈ G.edgeSide u v ∨ z ∈ G.edgeSide v u from key p (.inl (self_mem_edgeSide G u v))
   intro y z q
   induction q with

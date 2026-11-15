@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+-- Access the body of `IsLocalDiffeomorphAt` to lower the regularity of its witness.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
 # Constructions of partial diffeomorphisms
@@ -175,6 +177,17 @@ theorem exists_curve_single_axis {x : M}
 end Axis
 
 end PartialDiffeomorph
+
+/-- A `C^n` local diffeomorphism at a point is a `C^m` one, for `m ≤ n`. -/
+theorem IsLocalDiffeomorphAt.of_le {f : M → N} {x : M} (hf : IsLocalDiffeomorphAt I J n f x)
+    (hmn : m ≤ n) : IsLocalDiffeomorphAt I J m f x := by
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  exact ⟨Φ.ofLE hmn, by simpa using hxΦ, by simpa using hfΦ⟩
+
+/-- A `C^n` local diffeomorphism is a `C^m` one, for `m ≤ n`. -/
+theorem IsLocalDiffeomorph.of_le {f : M → N} (hf : IsLocalDiffeomorph I J n f) (hmn : m ≤ n) :
+    IsLocalDiffeomorph I J m f :=
+  fun x ↦ (hf x).of_le hmn
 
 namespace ContinuousLinearEquiv
 

@@ -270,22 +270,22 @@ theorem absolutelyAcyclic_le_iff
     absolutelyAcyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).triangEnvelope_le_iff
 
-/-- The universal property of the coacyclic class: it is contained in every isomorphism-closed
+/-- The universal property of the coacyclic class: it is contained in every
 triangulated subcategory of the curved homotopy category containing all totalizations and closed
 under coproducts indexed by `Type u`. -/
 theorem coacyclic_le_iff
     {Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))}
-    [Q.IsTriangulated] [Q.IsClosedUnderIsomorphisms]
+    [Q.IsTriangulated]
     [∀ J : Type u, Q.IsClosedUnderColimitsOfShape (Discrete J)] :
     coacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).localizingClosure_le_iff
 
 /-- The universal property of the contraacyclic class: it is contained in every
-isomorphism-closed triangulated subcategory of the curved homotopy category containing all
+triangulated subcategory of the curved homotopy category containing all
 totalizations and closed under products indexed by `Type u`. -/
 theorem contraacyclic_le_iff
     {Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))}
-    [Q.IsTriangulated] [Q.IsClosedUnderIsomorphisms]
+    [Q.IsTriangulated]
     [∀ J : Type u, Q.IsClosedUnderLimitsOfShape (Discrete J)] :
     contraacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).colocalizingClosure_le_iff

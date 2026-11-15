@@ -29,11 +29,6 @@ are the orthogonal Lie algebra. It does not choose a basis for an abstract quadr
   squares is twice its diagonal-matrix form.
 * `TauCeti.QuadraticForm.standardSkewAdjointLieEquiv`: the Lie equivalence from the skew-adjoint
   endomorphisms of its polar form to Mathlib's matrix orthogonal Lie algebra.
-
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
-  Representations, Layer 3, "Bivectors as a Lie subalgebra".
 -/
 
 public section

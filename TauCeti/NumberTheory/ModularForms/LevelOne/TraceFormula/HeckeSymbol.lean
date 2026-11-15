@@ -327,7 +327,7 @@ private theorem periodMap_symbol_heckeTCuspLevelOne {k : ℤ} (hk : k = w + 2) (
   have hA (A : FixedDetMatrices.reps (n : ℤ)) := FixedDetMatrices.coe_toGL hn A.1
   -- the period of `Tₙ f` is the sum of the periods of the slashes `f ∣[k] a` along `{∞, 0}`; the
   -- summands are integrable there, being periods of `f` along the geodesics moved by `a`
-  have hsum := cuspIntegral_sum (g := 1) Finset.univ (one_pos.trans_eq Matrix.det_one.symm)
+  have hsum := cuspIntegral_sum (g := 1) Finset.univ
     (F := fun A : FixedDetMatrices.reps (n : ℤ) ↦ periodIntegrand (⇑f ∣[k] toGL hn A.1) P)
     fun A _ ↦ by
       rw [SlashAction.slash_one, ← periodIntegrand_adjugate_slash hk f P (hA A) (hpos A)]

@@ -249,7 +249,7 @@ noncomputable def lieExpMulLieExpMFDerivEquiv
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   let ht : IsTopCompl p q :=
-    IsCompl.isTopCompl_of_isClosed_of_finiteDimensional h p.closed_of_finiteDimensional
+    IsCompl.isTopCompl_of_isClosed_of_finiteDimensional h p.isClosed_of_finiteDimensional
   let eTarget : E ≃L[ℝ]
       TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) :=
     (groupLieAlgebraEquivModelVectorSpace

@@ -9,6 +9,7 @@ public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.Algebra.Module.ProdUnitsHomeomorph
 public import TauCeti.Topology.Compactification.OnePoint.Collapse
 public import TauCeti.Topology.Compactification.OnePoint.Sphere
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # The Pontryagin–Thom collapse of a framed tube
@@ -21,9 +22,12 @@ framed normal bundle with an open neighbourhood of `S`, through an open embeddin
 `c : M → OnePoint ℝᵏ ≅ Sᵏ` sending `τ (x, v)` to `v` and every point outside the tube to `∞`
 (`TauCeti.pontryaginThomCollapse`). It is continuous when `S` is compact and `M` is Hausdorff
 (`TauCeti.continuous_pontryaginThomCollapse`), and the submanifold is the preimage of the origin
-(`TauCeti.IsFramedTube.pontryaginThomCollapse_eq_zero_iff`). Only the topology of the tube is
-used; the ambient space `M` is an arbitrary Hausdorff space, for instance a closed manifold, and
-the fibre `V` an arbitrary topological space with a zero.
+(`TauCeti.IsFramedTube.pontryaginThomCollapse_eq_zero_iff`). Near a point where a map `σ` reads in
+the tube as `τ ∘ g`, the collapse along `σ` is the normal coordinate `Prod.snd ∘ g`, so it is a
+local homeomorphism there as soon as the normal coordinate is
+(`TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`). Only the topology of
+the tube is used; the ambient space `M` is an arbitrary Hausdorff space, for instance a closed
+manifold, and the fibre `V` an arbitrary topological space with a zero.
 
 The collapse is unchanged up to homotopy under isotopy of the tube and homotopy of the framing:
 
@@ -44,6 +48,8 @@ of the tube to `s₀`.
 * `TauCeti.IsFramedTube f τ`: `τ : S × V → M` is an open embedding extending `f` along the zero
   section.
 * `TauCeti.pontryaginThomCollapse τ`: the Pontryagin–Thom collapse `M → OnePoint V`.
+* `TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
+  is a local homeomorphism where the normal coordinate of the map is.
 * `TauCeti.pontryaginThomCollapseMap`: the collapse as a continuous map.
 * `TauCeti.pontryaginThomCollapseMap_homotopic`: isotopic tubes have homotopic collapses.
 * `TauCeti.pontryaginThomSphereMap`: the collapse onto the sphere `Sᵏ`.
@@ -103,7 +109,30 @@ theorem pontryaginThomCollapse_eq_infty_iff (hτ : Injective τ) {m : M} :
 theorem pontryaginThomCollapse_eq_coe_iff (hτ : Injective τ) {m : M} {v : V} :
     pontryaginThomCollapse τ m = v ↔ ∃ x, τ (x, v) = m := by
   rw [pontryaginThomCollapse, onePointCollapse_eq_coe_iff hτ]
-  exact ⟨fun ⟨⟨x, w⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
+  exact ⟨fun ⟨⟨x, _⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
+
+/-- Near a point where a map reads in the tube as `τ ∘ g`, its Pontryagin–Thom collapse is the
+normal coordinate `Prod.snd ∘ g` followed by the inclusion `V → OnePoint V`. -/
+theorem pontryaginThomCollapse_comp_eventuallyEq (hτ : Injective τ) {X : Type*} {l : Filter X}
+    {σ : X → M} {g : X → S × V} (hg : τ ∘ g =ᶠ[l] σ) :
+    pontryaginThomCollapse τ ∘ σ =ᶠ[l] ((↑) : V → OnePoint V) ∘ Prod.snd ∘ g := by
+  filter_upwards [hg] with m hm
+  change pontryaginThomCollapse τ (σ m) = (g m).2
+  rw [← hm]
+  exact pontryaginThomCollapse_apply hτ (g m).1 (g m).2
+
+/-- **The collapse along a map is a local homeomorphism where its normal coordinate is.** If a map
+`σ` reads in the tube as `τ ∘ g` near each point of `s`, and its normal coordinate `Prod.snd ∘ g`
+is a local homeomorphism on `s`, then so is the composite of `σ` with the Pontryagin–Thom
+collapse. -/
+theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp [TopologicalSpace V] {X : Type*}
+    [TopologicalSpace X] (hτ : Injective τ) {σ : X → M} {g : X → S × V} {s : Set X}
+    (hg : ∀ x ∈ s, τ ∘ g =ᶠ[𝓝 x] σ) (hν : IsLocalHomeomorphOn (Prod.snd ∘ g) s) :
+    IsLocalHomeomorphOn (pontryaginThomCollapse τ ∘ σ) s := by
+  have hcoe : IsLocalHomeomorphOn ((↑) : V → OnePoint V) ((Prod.snd ∘ g) '' s) :=
+    OnePoint.isOpenEmbedding_coe.isLocalHomeomorph.isLocalHomeomorphOn.mono (subset_univ _)
+  exact (hcoe.comp hν (mapsTo_image _ _)).congr_of_eventuallyEq fun x hx ↦
+    (pontryaginThomCollapse_comp_eventuallyEq hτ (hg x hx)).symm
 
 namespace IsFramedTube
 

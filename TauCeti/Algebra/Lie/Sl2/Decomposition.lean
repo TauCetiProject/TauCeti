@@ -37,10 +37,6 @@ identifies the resulting summands.
 
 ## References
 
-This closes the complete-reducibility item of Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which asks that every
-finite-dimensional `sl₂`-module be exhibited as a direct sum of the `V(nᵢ)`.
-
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §6.3 and §7.2.
 -/

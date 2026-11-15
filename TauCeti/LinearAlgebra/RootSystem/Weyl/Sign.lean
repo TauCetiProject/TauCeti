@@ -216,17 +216,11 @@ theorem even_ncard_inversions_iff (b₁ b₂ : P.Base) (w : P.weylGroup) :
 
 /-! ### The longest element -/
 
-section IsRootSystem
-
-variable [P.IsRootSystem]
-
 /-- **The longest element has sign `(-1) ^ |Φ⁺|`**: it inverts every positive root, so its
 inversion count is the number of positive roots. -/
 @[simp]
 theorem weylSign_longestElement :
     weylSign P b (longestElement P b) = (-1) ^ (posRoots P b).ncard := by
   rw [weylSign_apply, ncard_inversions_longestElement]
-
-end IsRootSystem
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicInt
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Topology
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
 
@@ -65,11 +65,11 @@ theorem topologicalClosure_closure_basis_zero [IsTopologicalGroup F]
   rwa [Set.range_unique] at h
 
 /-- In a free pro-`p` group of rank one, conjugacy is equality: the group is commutative. -/
-theorem isConj_iff_eq_rank_one [Fact p.Prime] (e : F ≃ₜ* freeProP p (Fin 1)) {y z : F} :
+theorem isConj_iff_eq_rank_one (e : F ≃ₜ* freeProP p (Fin 1)) {y z : F} :
     IsConj y z ↔ y = z := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ IsConj.refl y⟩
   obtain ⟨c, rfl⟩ := isConj_iff.mp h
-  have hc : c * y = y * c := e.injective (by simpa using (freeProP.commute_of_unique _ _).eq)
+  have hc : c * y = y * c := e.injective (by simpa using mul_comm' (e c) (e y))
   rw [hc, mul_inv_cancel_right]
 
 variable [Fact p.Prime] [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F]

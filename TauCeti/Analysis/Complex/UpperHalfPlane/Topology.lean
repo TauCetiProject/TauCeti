@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.AtInfinity
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -44,8 +43,7 @@ A closed rectangle `[a, b] × [c, d]` with `0 < c` lies in `ℍ` and is compact 
 
 The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
 preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
-closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
-`PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
+closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`.
 
 Since `w ↦ re w + exp (im w) i` is a continuous bijection from `ℂ` onto `ℍ`, the complement of a
 countable subset of `ℍ` is path connected and dense, as it is in the plane. Removing countably
@@ -378,7 +376,7 @@ theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb
   refine Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw hw0 =>
     div_ne_zero hb (hne w hw.1 hw.2 hw0)
   have h' := congrArg (·⁻¹) h
-  simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
+  simp only [inv_div, div_left_inj₀ hb, sub_left_inj] at h'
   simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) h'
 
 end TauCeti

@@ -85,7 +85,7 @@ theorem mem_support_annihilator_iff_nontrivial_stalk {x : X} :
   have := M.isLocalizedModule_germₗ ⟨x, hxU⟩ hU
   have hzero : x ∈ X.zeroLocus (U := U) (Module.annihilator Γ(X, U) Γ(M, U)) ↔
       Module.annihilator Γ(X, U) Γ(M, U) ≤ p.asIdeal := by
-    simp [Scheme.mem_zeroLocus_iff, hU.mem_basicOpen_iff_notMem_primeIdealOf hxU, p,
+    simp [Scheme.mem_zeroLocus_iff, hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hxU⟩, p,
       IsConcreteLE.le_iff]
   -- Over `U`, both conditions say that `p` lies in the support of the finite module `Γ(M, U)`,
   -- whose localization at `p` is the stalk `M_x`.

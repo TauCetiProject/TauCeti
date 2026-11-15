@@ -45,7 +45,12 @@ longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punc
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) inside `S`
 (`TauCeti.ThricePuncturedSphere.truncation_subset`) over which integrals of data on `S` are
-taken. In the real coordinates `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
+taken. Bounding them by separate heights `R q` gives the truncation at these heights
+(`TauCeti.ThricePuncturedSphere.truncationAt`), also compact
+(`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end it is
+`S_R` cut short along a circle of that end
+(`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). In the real coordinates
+`ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
 (`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
 (`TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation`,
 `TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation_inter`). The truncations
@@ -625,31 +630,68 @@ theorem cylindricalEndLift_mem_truncation (r : Puncture) {R : ℝ} (hR : 0 < R) 
 theorem truncation_subset (R : ℝ) : truncation R ⊆ {w | w ≠ 0 ∧ w ≠ 1} :=
   fun _ hw => ⟨hw.1, hw.2.1⟩
 
-/-- The truncation is cut out by norm inequalities: it is the closed annulus
-`exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`
-removed. -/
-theorem truncation_eq (R : ℝ) :
-    truncation R = {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖} ∩
-      {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
-        Metric.closedBall 0 (2 * Real.exp (2 * π * R)) := by
-  have he : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
+/-- The truncation of the thrice-punctured sphere `S = ℂ ∖ {0, 1}` at the heights `R q`: the points
+of `S` at which the signed longitudinal coordinate `±s` of each end `q` is at most `R q`. For
+equal heights it is the truncation `S_R` (`truncationAt_const`); with a smaller height on one end
+it is the part of `S_R` cut short along a circle of that end (`truncation_inter_eq_truncationAt`),
+the shape of a pair of pants glued into a larger surface along that end. -/
+def truncationAt (R : Puncture → ℝ) : Set ℂ :=
+  {w | w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R q}
+
+@[simp]
+theorem mem_truncationAt {R : Puncture → ℝ} {w : ℂ} :
+    w ∈ truncationAt R ↔ w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R q :=
+  Iff.rfl
+
+/-- The truncation at equal heights `R` is the truncation `S_R`. -/
+@[simp]
+theorem truncationAt_const (R : ℝ) : truncationAt (fun _ ↦ R) = truncation R := by
   ext w
-  simp only [mem_truncation, Set.mem_inter_iff, Set.mem_ofPred_eq, Metric.mem_closedBall,
+  simp
+
+/-- Cutting the truncation `S_R` along the circle `±s = c` of the end `q`, for `c ≤ R`, gives the
+truncation at the height `c` on `q` and `R` on the other two ends. -/
+theorem truncation_inter_eq_truncationAt (q : Puncture) {c R : ℝ} (hcR : c ≤ R) :
+    truncation R ∩ {w | q.endSign * (q.endCoord w).re ≤ c} =
+      truncationAt (Function.update (fun _ ↦ R) q c) := by
+  ext w
+  simp only [mem_inter_iff, mem_truncation, mem_ofPred_eq, mem_truncationAt]
+  constructor
+  · rintro ⟨⟨h₀, h₁, hR⟩, hc⟩
+    refine ⟨h₀, h₁, fun r ↦ ?_⟩
+    rcases eq_or_ne r q with rfl | hr
+    · simpa using hc
+    · simpa [hr] using hR r
+  · rintro ⟨h₀, h₁, h⟩
+    refine ⟨⟨h₀, h₁, fun r ↦ ?_⟩, by simpa using h q⟩
+    rcases eq_or_ne r q with rfl | hr
+    · exact (by simpa using h r : r.endSign * (r.endCoord w).re ≤ c).trans hcR
+    · simpa [hr] using h r
+
+/-- The truncation at heights `R` is cut out by norm inequalities: it is the closed disc
+`‖w‖ ≤ 2 exp (2π R_∞)` with the open discs of radius `exp (-2π R₀) / 2` about `0` and
+`exp (-2π R₁) / 2` about `1` removed. -/
+theorem truncationAt_eq (R : Puncture → ℝ) :
+    truncationAt R = {w | Real.exp (-(2 * π * R zero)) / 2 ≤ ‖w‖} ∩
+      {w | Real.exp (-(2 * π * R one)) / 2 ≤ ‖w - 1‖} ∩
+        Metric.closedBall 0 (2 * Real.exp (2 * π * R inf)) := by
+  ext w
+  simp only [mem_truncationAt, Set.mem_inter_iff, Set.mem_ofPred_eq, Metric.mem_closedBall,
     dist_zero_right]
   -- The longitudinal coordinates of the three ends, in terms of norms.
-  have h₀ (hw : w ≠ 0) : zero.endSign * (zero.endCoord w).re ≤ R ↔
-      Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ := by
+  have h₀ (hw : w ≠ 0) : zero.endSign * (zero.endCoord w).re ≤ R zero ↔
+      Real.exp (-(2 * π * R zero)) / 2 ≤ ‖w‖ := by
     rw [endSign_zero, one_mul, re_endCoord, endCenter_zero, endScale_zero, sub_zero,
       Real.neg_log_div_le_iff (by simpa using hw) (by positivity), div_le_iff₀ two_pos]
     simp [mul_comm]
-  have h₁ (hw : w ≠ 1) : one.endSign * (one.endCoord w).re ≤ R ↔
-      Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ := by
+  have h₁ (hw : w ≠ 1) : one.endSign * (one.endCoord w).re ≤ R one ↔
+      Real.exp (-(2 * π * R one)) / 2 ≤ ‖w - 1‖ := by
     rw [endSign_one, one_mul, re_endCoord, endCenter_one, endScale_one,
       Real.neg_log_div_le_iff (by simpa [sub_eq_zero] using hw) (by positivity),
       div_le_iff₀ two_pos]
     simp [mul_comm]
-  have h₂ (hw : w ≠ 0) : inf.endSign * (inf.endCoord w).re ≤ R ↔
-      ‖w‖ ≤ 2 * Real.exp (2 * π * R) := by
+  have h₂ (hw : w ≠ 0) : inf.endSign * (inf.endCoord w).re ≤ R inf ↔
+      ‖w‖ ≤ 2 * Real.exp (2 * π * R inf) := by
     rw [endSign_inf, neg_one_mul, re_endCoord, endCenter_inf, endScale_inf, sub_zero,
       neg_div, neg_neg, Real.log_div_le_iff (by simpa using hw) (by positivity)]
     simp only [norm_div, Complex.norm_ofNat]
@@ -661,14 +703,23 @@ theorem truncation_eq (R : ℝ) :
     have hw₀ : w ≠ 0 := by
       rintro rfl
       simp only [norm_zero] at ha
-      linarith
+      linarith [Real.exp_pos (-(2 * π * R zero))]
     have hw₁ : w ≠ 1 := by
       rintro rfl
       simp only [sub_self, norm_zero] at hb
-      linarith
+      linarith [Real.exp_pos (-(2 * π * R one))]
     refine ⟨hw₀, hw₁, fun q => ?_⟩
     cases q
     exacts [(h₀ hw₀).2 ha, (h₁ hw₁).2 hb, (h₂ hw₀).2 hc]
+
+/-- The truncation is cut out by norm inequalities: it is the closed annulus
+`exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`
+removed. -/
+theorem truncation_eq (R : ℝ) :
+    truncation R = {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖} ∩
+      {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
+        Metric.closedBall 0 (2 * Real.exp (2 * π * R)) := by
+  rw [← truncationAt_const, truncationAt_eq]
 
 /-- The points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in the open disc
 `‖w‖ < 2 exp (2π)`: for `R ≥ 0` they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`, and for
@@ -714,12 +765,16 @@ theorem closedBall_sdiff_ball_sdiff_truncation_subset_ball (R : ℝ) :
   rw [truncation_eq] at hwT
   exact hwT ⟨⟨not_lt.1 fun h' => hwb (mem_ball_zero_iff.2 h'), h⟩, hwB⟩
 
-/-- The truncation of the thrice-punctured sphere is compact. -/
-theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
-  rw [truncation_eq]
+/-- The truncation at heights `R` is compact. -/
+theorem isCompact_truncationAt (R : Puncture → ℝ) : IsCompact (truncationAt R) := by
+  rw [truncationAt_eq]
   exact (isCompact_closedBall _ _).inter_left
     ((isClosed_le continuous_const continuous_norm).inter
       (isClosed_le continuous_const (continuous_norm.comp (continuous_id.sub continuous_const))))
+
+/-- The truncation of the thrice-punctured sphere is compact. -/
+theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) :=
+  truncationAt_const R ▸ isCompact_truncationAt fun _ ↦ R
 
 /-- The truncation `S_R` of the thrice-punctured sphere is measurable in the real coordinates. -/
 theorem measurableSet_preimage_truncation (R : ℝ) :

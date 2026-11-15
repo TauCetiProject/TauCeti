@@ -54,7 +54,7 @@ theorem withDensity_normalize (κ : Kernel α β) [∀ a, IsFiniteMeasure (κ a)
     κ.normalize.withDensity (fun a _ ↦ 1 + κ a Set.univ) = κ := by
   have hd : Measurable (Function.uncurry fun a (_ : β) ↦ 1 + κ a Set.univ) :=
     (measurable_const.add (κ.measurable_coe .univ)).comp measurable_fst
-  ext a s hs
+  ext a s _
   rw [Kernel.withDensity_apply' _ hd, MeasureTheory.lintegral_const,
     Measure.restrict_apply_univ, normalize_apply, smul_apply, smul_eq_mul,
     ← mul_assoc, ENNReal.mul_inv_cancel (by simp) (by simp [measure_ne_top]), one_mul]

@@ -63,7 +63,7 @@ theorem posSemidef_fin_two_ofReal_iff (a b c : ℝ) :
   have hH : (!![(a : 𝕜), (b : 𝕜); (b : 𝕜), (c : 𝕜)]).IsHermitian := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [conjTranspose_apply]
-  refine ⟨fun h ↦ ?_, fun ⟨ha, hc, hd⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ ?_, fun ⟨_, _, _⟩ ↦ ?_⟩
   · have ha := h.diag_nonneg (i := 0)
     have hc := h.diag_nonneg (i := 1)
     have hd := h.det_nonneg

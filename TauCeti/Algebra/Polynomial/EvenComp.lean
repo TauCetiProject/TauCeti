@@ -31,7 +31,7 @@ theorem exists_eq_comp_X_sq_of_comp_neg_X_eq {p : R[X]} (hp : p.comp (-X) = p) :
   rw [coeff_expand two_pos]
   split_ifs with hn
   · rw [coeff_contract two_ne_zero, Nat.div_mul_cancel hn]
-  · have hc := congrArg (coeff · n) hp
+  · have hc := congrArg (fun q : R[X] ↦ q.coeff n) hp
     have hneg : (-X : R[X]) = C (-1) * X := by simp
     simp only [hneg, comp_C_mul_X_coeff] at hc
     rw [(Nat.not_even_iff_odd.mp (by rwa [even_iff_two_dvd])).neg_one_pow, mul_neg_one] at hc

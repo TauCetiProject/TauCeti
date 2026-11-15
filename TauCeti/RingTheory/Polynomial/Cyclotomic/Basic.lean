@@ -29,8 +29,9 @@ needed to check that these polynomials annihilate an explicit matrix.
 
 Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
-`Φ_n(X + 1)` is monic of degree `φ(n)`. They are used for the shifted prime-power cyclotomic
-polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`.
+`Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
+`Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
+prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`.
 -/
 
 public section
@@ -96,6 +97,15 @@ theorem natDegree_cyclotomic_comp_X_add_one [Nontrivial R] (n : ℕ) :
 /-- `Φ_n(X + 1)` is monic. -/
 theorem monic_cyclotomic_comp_X_add_one (n : ℕ) : ((cyclotomic n R).comp (X + 1)).Monic := by
   simpa using (cyclotomic.monic n R).comp_X_add_C 1
+
+/-- `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. -/
+theorem cyclotomic_comp_X_add_one_dvd {m n : ℕ} (h : m ∣ n) :
+    (cyclotomic m R).comp (X + 1) ∣ (1 + X) ^ n - 1 := by
+  have hZ : (cyclotomic m ℤ).comp (X + 1) ∣ (1 + X : ℤ[X]) ^ n - 1 := by
+    simpa [add_comm (1 : ℤ[X]) X] using
+      _root_.map_dvd (compRingHom (X + 1 : ℤ[X]))
+        ((cyclotomic.dvd_X_pow_sub_one m ℤ).trans (dvd_pow_sub_one_of_dvd h))
+  simpa [Polynomial.map_comp] using _root_.map_dvd (mapRingHom (Int.castRingHom R)) hZ
 
 end Ring
 

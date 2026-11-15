@@ -351,7 +351,7 @@ theorem exists_mem_level_succ (hF : IsProP p F)
       ((fun i ↦ c i * c' i), d * d') ∈ level hF (basis e) (u : ℤ_[p]) (n + 1) := by
   cases n with
   | zero =>
-    refine ⟨1, 1, fun i ↦ ?_, one_mem _, fun _ ↦ rfl, ?_⟩
+    refine ⟨1, 1, fun _ ↦ ?_, one_mem _, fun _ ↦ rfl, ?_⟩
     · simp [closedLowerCentralSeries_zero]
     · simp
   | succ m =>

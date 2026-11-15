@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Trace.IntegralBasis
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Length
+import TauCeti.RingTheory.Length.Determinant
 
 /-!
 # Discriminants as complementary-module lengths

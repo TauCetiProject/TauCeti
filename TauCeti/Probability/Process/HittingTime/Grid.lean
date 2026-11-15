@@ -82,6 +82,16 @@ theorem gridLevelHit_le_iff :
       have hjk : j ≤ k := by simpa [hh] using hle k hk
       exact (div_le_div_of_nonneg_right (by exact_mod_cast hjk) (by positivity)).trans hkt
 
+/-- The continuous-time closed-level hit precedes every strict grid detection of that level.
+No path regularity or measurability is needed. -/
+theorem hittingAfter_Ici_le_gridLevelHit :
+    hittingAfter X (Ici c) 0 ω ≤ gridLevelHit X c n ω := by
+  cases ht : gridLevelHit X c n ω with
+  | top => exact le_top
+  | coe t =>
+    obtain ⟨k, hkt, hk⟩ := gridLevelHit_le_iff.mp ht.le
+    exact (hittingAfter_le_of_mem bot_le hk.le).trans (WithTop.coe_le_coe.mpr hkt)
+
 /-- The sublevel event of a grid hit is the union of the strict upper-level sample events
 at grid points no later than the given time. -/
 theorem setOf_gridLevelHit_le_eq :

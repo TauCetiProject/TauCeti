@@ -156,7 +156,7 @@ theorem contMDiffWithinAt_symmetricBilinearMaps_section_iff
         (fun x ↦ TotalSpace.mk' (symmetricBilinearMaps 𝕜 F G) x (b x)) s x₀ ↔
       ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) x (b x : V x →L[𝕜] V x →L[𝕜] G)) s x₀ := by
-  rw [contMDiffWithinAt_section, contMDiffWithinAt_section]
+  rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_section_iff]
   have hx₀ := mem_baseSet_trivializationAt F V x₀
   have hev : ∀ᶠ x in 𝓝[s] x₀, x ∈ (trivializationAt F V x₀).baseSet :=
     eventually_nhdsWithin_of_eventually_nhds

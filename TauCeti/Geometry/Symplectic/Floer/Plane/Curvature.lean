@@ -236,7 +236,7 @@ private theorem injOn_realChart (p : PSSPlane) :
 /-- Every point of the plane other than the pole is the image of a point of the band. -/
 private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
     z ∈ realChart p.cylindricalEndLift '' endStrip p := by
-  have hπ := Real.pi_pos
+  have := Real.pi_pos
   refine ⟨Complex.equivRealProdCLM (p.endCoord (Complex.equivRealProdCLM.symm z)),
     ⟨mem_univ _, ?_⟩, ?_⟩
   · have h₁ := Complex.neg_pi_lt_arg (Complex.equivRealProdCLM.symm z)
@@ -302,7 +302,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
         have hHt : DifferentiableAt ℝ (fun t ↦ H t (u (φ z))) z.2 :=
           ((hHs.comp (f := fun t : ℝ ↦ (t, u (φ z))) (contMDiff_id.prodMk contMDiff_const)
             ).contDiff.differentiable one_ne_zero) z.2
-        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.enorm_eq_ofReal_abs]
+        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.eNorm_eq_ofReal_abs]
         simpa [abs_mul, abs_of_nonneg (hψ _), ← ENNReal.ofReal_mul (hψ _)] using
           ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB z.2 (u (φ z))) (hψ _))
     _ = ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (p.endSign * s - 1)) *
@@ -333,8 +333,8 @@ theorem abs_integral_hamiltonianCurvature_pssPlanePerturbation_le (ω : SmoothTw
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)| ≤ B := by
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 (u 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH hHs hB u)
 
 /-! ### The energy identity on the discs of the plane -/
@@ -630,7 +630,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
   -- The band and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a, -1 / 2) : ℝ × ℝ) (b, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) (preimage_endSign_mul_ae_eq p)
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl (preimage_endSign_mul_ae_eq p)
   -- Integrability over the image transfers to the pulled-back densities on the rectangle.
   have hint {g g' : ℝ × ℝ → ℝ} (hg : IntegrableOn g (φ '' s))
       (hg' : ∀ w, g' w = (fderiv ℝ φ w).det * g (φ w)) :
@@ -794,32 +794,14 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
       (norm_lt_of_mem_sdiff_image_endPiece hz)
   have hRD := integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall (p := p) ω hH hHs
     hu.continuous R
-  -- The area density is continuous, hence integrable over the compact disc.
-  have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D := by
-    have h := (ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu stdComplexLineReal
-      stdComplexLineImag
-    simp only [← SmoothBundleForm.eval₂_apply] at h
-    exact h.continuousOn.integrableOn_compact hDc
-  -- By the pointwise identity `E = u^* ω + d(K(u)) - R_K(u)`, the energy density is integrable.
-  have hED : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) D := by
-    have hd (v : ℂ) (e : ℝ × ℝ) : IntegrableOn (fun z ↦ fderiv ℝ
-        (fun w ↦ p.perturbation H (Complex.equivRealProdCLM.symm w) (u w) v) z e) D := by
-      have hK : ContDiff ℝ 1
-          (fun w ↦ p.perturbation H (Complex.equivRealProdCLM.symm w) (u w) v) :=
-        contMDiff_iff_contDiff.mp ((contMDiff_uncurry_perturbation hH hHs v).comp
-          (contMDiff_id.prodMk hu))
-      exact ((hK.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
-        |>.integrableOn_compact hDc
-    refine ((harea.add ((hd Complex.I stdComplexLineReal).sub (hd 1 stdComplexLineImag))).sub
-      hRD).congr_fun (fun z _ ↦ ?_) hDc.isClosed.measurableSet
-    rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-      ((contMDiff_uncurry_perturbation hH hHs 1 _).mdifferentiableAt one_ne_zero)
-      ((contMDiff_uncurry_perturbation hH hHs Complex.I _).mdifferentiableAt one_ne_zero)]
-    rfl
+  -- The area density is continuous, hence integrable over the compact disc, and by the pointwise
+  -- identity `E = u^* ω + d(K(u)) - R_K(u)` so is the energy density.
+  have harea := ω.integrableOn_eval₂_mfderiv isOpen_univ hu.contMDiffOn hDc (subset_univ D)
+    stdComplexLineReal stdComplexLineImag
+  have hED := hω.integrableOn_floerEnergyDensity isOpen_univ hu.contMDiffOn
+    (fun x _ ↦ (contMDiff_uncurry_perturbation hH hHs 1 x).contMDiffWithinAt)
+    (fun x _ ↦ (contMDiff_uncurry_perturbation hH hHs Complex.I x).contMDiffWithinAt) hDc
+    (subset_univ D) hRD
   have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f D) :
       ∫ z in D, f z = (∫ z in A, f z) + ∫ z in D \ A, f z := by
     conv_lhs => rw [← union_sdiff_cancel hAD]

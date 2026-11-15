@@ -55,7 +55,7 @@ theorem isNullSet_iff (I : ModelWithCorners ℝ E H) [MeasurableSpace E] [hE : B
   rfl
 
 /-- The chartwise nullity statement for a null set at a point and Haar measure. -/
-theorem IsNullSet.chartwise {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE : BorelSpace E]
+theorem IsNullSet.chartwise {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [BorelSpace E]
     {s : Set M} (hs : IsNullSet I s) (x : M) (μ : Measure E) [μ.IsAddHaarMeasure] :
     μ (extChartAt I x '' (s ∩ (extChartAt I x).source)) = 0 :=
   (isNullSet_iff I s).1 hs x μ

@@ -17,6 +17,9 @@ For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
 These lemmas evaluate the corresponding indicator sums over `N.divisors`.
 
+`Nat.sum_divisors_filter_dvd` reindexes divisors divisible by a fixed `m ∣ n` as `m` times
+the divisors of `n / m`.
+
 `Nat.sum_divisorsAntidiagonal_ite_dvd` regroups a sum over the factor pairs `(a, b)` of `n`,
 restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
 
@@ -39,6 +42,31 @@ public section
 namespace Nat
 
 variable {M : Type*} [AddCommMonoid M]
+
+/-- The divisors of `n` divisible by `m ∣ n` are `m` times the divisors of `n / m`,
+so a sum over those divisors can be reindexed by division by `m`. -/
+theorem sum_divisors_filter_dvd {m n : ℕ} (h : m ∣ n) (f : ℕ → M) :
+    (∑ d ∈ n.divisors with m ∣ d, f d) = ∑ d ∈ (n / m).divisors, f (m * d) := by
+  classical
+  by_cases hn : n = 0
+  · subst n
+    simp
+  have hm : m ≠ 0 := ne_zero_of_dvd_ne_zero hn h
+  have hq : n / m ≠ 0 := Nat.div_ne_zero_iff.mpr ⟨hm, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) h⟩
+  symm
+  apply Finset.sum_bij (fun d _ ↦ m * d)
+  · intro d hd
+    exact Finset.mem_filter.mpr ⟨Nat.mem_divisors.mpr
+      ⟨(Nat.mul_dvd_mul_left m (Nat.dvd_of_mem_divisors hd)).trans
+        (by rw [Nat.mul_div_cancel' h]), hn⟩, dvd_mul_right _ _⟩
+  · intro a _ b _ hab
+    exact Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hm) hab
+  · intro d hd
+    obtain ⟨hd, hmd⟩ := Finset.mem_filter.mp hd
+    refine ⟨d / m, Nat.mem_divisors.mpr ⟨Nat.div_dvd_div hmd (Nat.dvd_of_mem_divisors hd), hq⟩, ?_⟩
+    exact Nat.mul_div_cancel' hmd
+  · intro d _
+    rfl
 
 /-- The sum over the divisors `d` of `N` of `f d` restricted to `a = N + d`. -/
 theorem sum_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → M) :
@@ -181,7 +209,7 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hmul : a * d = n := by
       have ha2 : 2 * a = |t| - |u| := by dsimp [a]; omega
       have hd2 : 2 * d = |t| + |u| := by dsimp [d]; omega
-      nlinarith
+      nlinarith [hd2]
     refine ⟨(a.toNat, d.toNat), ?_, by omega, by omega⟩
     simpa only [Int.toNat_natCast] using
       prodMk_toNat_mem_divisorsAntidiagonal_toNat ha (by omega) hmul

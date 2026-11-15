@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
-# Closed-ball boxes in the mixed space
+# Closed-ball boxes and the closed unit ball in the mixed space
 
 Mathlib's `NumberField.mixedEmbedding.convexBodyLT` cuts out the open product of balls
 `‖x w‖ < f w` in `mixedSpace K` and computes its volume in `convexBodyLT_volume`.
@@ -24,11 +24,16 @@ negative value at some infinite place. The proof of `volume_setOf_forall_normAtP
 from Mathlib's `NumberField.mixedEmbedding.convexBodyLT_volume` (Xavier Roblot, Apache 2.0),
 replacing `volume_ball` with `volume_closedBall`.
 
+When `f` is the constant radius `r`, the box coincides with `Metric.closedBall (0 : mixedSpace K) r`
+(`TauCeti.NumberField.mixedEmbedding.closedBall_zero_eq_setOf_forall_normAtPlace_le`). Specializing
+`r = 1` and using `2 ≤ π` yields the signature lower bound
+`2 ^ r₁ * 2 ^ r₂ ≤ volume.real (Metric.closedBall (0 : mixedSpace K) 1)`.
+
 ## Main results
 
 * `NumberField.mixedEmbedding.setOf_forall_normAtPlace_le_eq_prod`: the set
-  `{x : mixedSpace K | ∀ w, normAtPlace w x ≤ f w}` is the product of the closed balls of radii
-  `f w` at the real and complex places.
+  `{x : mixedSpace K | ∀ w : InfinitePlace K, normAtPlace w x ≤ f w}` is the product of the closed
+  balls of radii `f w` at the real and complex places.
 * `NumberField.mixedEmbedding.coe_convexBodyLTFactor`: the coercion of `convexBodyLTFactor K` to `ℝ`
   is `2 ^ nrRealPlaces K * π ^ nrComplexPlaces K`.
 * `NumberField.mixedEmbedding.volume_setOf_forall_normAtPlace_le` and
@@ -37,6 +42,11 @@ replacing `volume_ball` with `volume_closedBall`.
   nonnegative `f`.
 * `NumberField.mixedEmbedding.setOf_forall_normAtPlace_le_eq_empty_of_neg`: if `f w < 0` at
   some infinite place `w`, the box is empty.
+* `TauCeti.NumberField.mixedEmbedding.closedBall_zero_eq_setOf_forall_normAtPlace_le`:
+  `Metric.closedBall (0 : mixedSpace K) r` equals `{x | ∀ w, normAtPlace w x ≤ r}`.
+* `TauCeti.NumberField.mixedEmbedding.two_pow_mul_two_pow_le_volume_real_closedBall`:
+  `2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K` is at most
+  `volume.real (Metric.closedBall (0 : mixedSpace K) 1)`.
 -/
 
 public section
@@ -64,7 +74,7 @@ theorem setOf_forall_normAtPlace_le_eq_prod (f : InfinitePlace K → ℝ) :
     · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw
       simpa only [normAtPlace_apply_of_isComplex hwc] using h₂ ⟨w, hwc⟩
 
-/-- If `f w < 0` at some infinite place `w`, the closed-ball box `{x | ∀ w, normAtPlace w x ≤ f w}`
+/-- If `f w < 0` at some infinite place `w`, the closed-ball box `{x | ∀ w, normAtPlace u x ≤ f u}`
 is empty. -/
 theorem setOf_forall_normAtPlace_le_eq_empty_of_neg {f : InfinitePlace K → ℝ}
     {w : InfinitePlace K} (hw : f w < 0) :
@@ -121,3 +131,31 @@ theorem volume_real_setOf_forall_normAtPlace_le {f : InfinitePlace K → ℝ} (h
   exact Finset.prod_congr rfl fun w _ ↦ by rw [ENNReal.toReal_pow, toReal_ofReal (hf w)]
 
 end NumberField.mixedEmbedding
+
+open NumberField.mixedEmbedding
+
+namespace TauCeti.NumberField.mixedEmbedding
+
+open scoped Classical in
+/-- In `mixedSpace K`, the closed ball of radius `r` around `0` is the uniform closed-ball box
+`{x | ∀ w, normAtPlace w x ≤ r}`. -/
+theorem closedBall_zero_eq_setOf_forall_normAtPlace_le {K : Type*} [Field K] [NumberField K]
+    (r : ℝ) :
+    closedBall (0 : mixedSpace K) r =
+      {x : mixedSpace K | ∀ w : InfinitePlace K, normAtPlace w x ≤ r} := by
+  ext x
+  simp [norm_eq_sup'_normAtPlace]
+
+open scoped Classical in
+/-- The real volume of the closed unit ball of `mixedSpace K` is at least `2 ^ r₁ * 2 ^ r₂`,
+where `(r₁, r₂)` is the signature of `K`. -/
+theorem two_pow_mul_two_pow_le_volume_real_closedBall (K : Type*) [Field K] [NumberField K] :
+    (2 : ℝ) ^ nrRealPlaces K * 2 ^ nrComplexPlaces K ≤
+      volume.real (closedBall (0 : mixedSpace K) 1) := by
+  rw [closedBall_zero_eq_setOf_forall_normAtPlace_le,
+    volume_real_setOf_forall_normAtPlace_le fun _ ↦ zero_le_one]
+  simp only [one_pow, Finset.prod_const_one, mul_one]
+  gcongr
+  exact Real.two_le_pi
+
+end TauCeti.NumberField.mixedEmbedding

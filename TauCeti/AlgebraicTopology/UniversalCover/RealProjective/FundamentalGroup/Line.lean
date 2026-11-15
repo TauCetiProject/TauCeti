@@ -25,7 +25,7 @@ at any basepoint `x : RealProjectiveSpace 1`.
 
 For `2 ≤ n`, the fundamental group computation is developed in the sibling module
 `TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic`, yielding
-`π₁(RPⁿ) ≅ ℤˣ` conditional on the simple-connectivity instance for `Sⁿ`.
+`π₁(RPⁿ) ≃* ℤˣ`.
 
 ## Main declarations
 
@@ -37,11 +37,6 @@ For `2 ≤ n`, the fundamental group computation is developed in the sibling mod
   expressing infinitude under the `Nat.card` convention.
 * `TauCeti.RealProjectiveSpace.Line.not_simplyConnectedSpace`: `RP¹` is not simply connected.
 * `TauCeti.RealProjectiveSpace.Line.not_contractibleSpace`: `RP¹` is not contractible.
-
-## References
-
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13, `π₁(RPⁿ)`, by
-closing its `n = 1` case.
 -/
 
 public section

@@ -6,16 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
+public import TauCeti.GroupTheory.GroupAlgGeom.ReducedWord
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import Mathlib.Algebra.Group.Commutator
 import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.Algebra.Group.Commute.Hom
 public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Data.Set.Card
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Order.Lattice.Nat
+import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Quadratic words and standard quadratic equations
@@ -25,24 +28,25 @@ quadratic when every variable occurs in it at most twice, as `x` or as `x⁻¹`.
 are the equations whose solution theory is governed by surfaces: the four standard quadratic
 words below are the relators of orientable and non-orientable surfaces with boundary components
 labelled by coefficients, and [IFT] uses automorphisms of `G[X]` fixing `G` to bring strictly
-quadratic equations into these standard forms. This file neither states nor proves that
-reduction, whose precise form has to account for cyclic reduction and for words conjugate to
-coefficients: for instance the coefficients themselves and their conjugates `x c x⁻¹` are
-strictly quadratic but are not standard.
+quadratic equations into these standard forms. This file does not prove that reduction, whose
+precise form has to account for words conjugate to coefficients: for instance the coefficients
+themselves and their conjugates `x c x⁻¹` are strictly quadratic but are not standard. It proves
+its first step, cyclic reduction relative to `G`: a strictly quadratic word is conjugate to a
+cyclically reduced strictly quadratic word, from which the variables of the conjugator have
+disappeared.
 
 This file defines the number of occurrences of a variable in an element of `G[X]`, quadratic and
 strictly quadratic finite systems, the four types of standard quadratic equations together with
-their atoms, atomic rank, genus and Euler characteristic, and degenerate, commutative and
-general-position solutions.
+their atoms, variables, coefficients, atomic rank, genus, Euler characteristic and the invariant
+`κ(S)` of [IFT], Definition 6, and degenerate, commutative and general-position solutions. It also
+records the standard equation `[x, y] = [a, b]` of genus one and its solutions.
 
-The number of occurrences `occurrences x w` of `x` in `w` is defined as the least number of
-letters `x^{±1}` in an expression of `w` as a product of coefficients and letters `y^{±1}`. By
-the normal form theorem for free products this is the number of occurrences of `x^{±1}` in the
-reduced form of `w`; the definition as a minimum needs no choice of normal form, and it is
-characterized as the largest subadditive function bounded by `1` on `x^{±1}` and vanishing on
-coefficients and on the other variables (`le_occurrences`). Lower bounds come from reduced words
-in the free group `F(X)` obtained by deleting the coefficients
-(`countP_toWord_snd_le_occurrences`).
+The number of occurrences `occurrences x w` of `x` in `w` is the number of letters `x^{±1}` in
+the reduced word of `w` given by the normal form theorem for free products. Reduction cancels
+variable letters in pairs (`exists_occurrences_add_occurrences_eq_add_two_mul`), so this is the
+least number of letters `x^{±1}` in an expression of `w` as a product of coefficients and letters
+`y^{±1}`. It is also characterized as the largest subadditive function bounded by `1` on `x^{±1}`
+and vanishing on coefficients and on the other variables (`le_occurrences`).
 
 Following [IFT], the standard quadratic equations over `G` are, with `[x, y] = x⁻¹ y⁻¹ x y`
 (Mathlib's `⁅x⁻¹, y⁻¹⁆`) and `z⁻¹ c z` the conjugate of a coefficient,
@@ -62,17 +66,39 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
   `TauCeti.GroupAlgGeom.Quadratic.IsStrictlyQuadratic`: every variable occurs in a finite system
   at most twice, respectively zero times or exactly twice.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard G X`: the standard quadratic equations of types
-  (1)–(4), with `Standard.toWord`, `Standard.atoms`, `Standard.atomicRank`, `Standard.genus`,
-  `Standard.IsOrientable` and `Standard.eulerChar`.
+  (1)–(4), with `Standard.toWord`, `Standard.atoms`, `Standard.vars`, `Standard.coeffs`,
+  `Standard.atomicRank`, `Standard.genus`, `Standard.IsOrientable`, `Standard.eulerChar` and
+  `Standard.kappa`.
 * `Standard.IsDegenerate`, `Standard.IsCommutative`, `Standard.IsGeneralPosition`: a point at
   which some atom vanishes, at which consecutive atoms commute, at which no two consecutive atoms
   commute.
+* `TauCeti.GroupAlgGeom.Quadratic.oneCommutatorEquation a b`: the equation `[x, y] = [a, b]` over
+  `G`.
 
 ## Main results
 
 * `TauCeti.GroupAlgGeom.Quadratic.le_occurrences`: the extremal characterization of
   `occurrences`.
+* `TauCeti.GroupAlgGeom.Quadratic.exists_occurrences_add_occurrences_eq_add_two_mul`: occurrences
+  of a variable cancel in pairs in products.
+* `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_le`,
+  `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_eq_zero`: bounds on the occurrence counts in the
+  images under a homomorphism `G[X] → H[Y]`, from those in the images of the generators.
+* `TauCeti.GroupAlgGeom.Quadratic.isQuadratic_map_iff`,
+  `TauCeti.GroupAlgGeom.Quadratic.isStrictlyQuadratic_map_iff`: an injective map transporting
+  occurrence counts along a bijection of the variables preserves (strictly) quadratic systems.
+* `TauCeti.GroupAlgGeom.Quadratic.exists_isCyclicallyReduced_conj`,
+  `TauCeti.GroupAlgGeom.Quadratic.IsStrictlyQuadratic.exists_isCyclicallyReduced_conj`: cyclic
+  reduction relative to `G`, and of strictly quadratic words.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isQuadratic`: standard equations are quadratic.
+* `TauCeti.GroupAlgGeom.Quadratic.isStandard_oneCommutatorEquation`: `[x, y] = [a, b]` is a
+  standard orientable quadratic equation of genus one.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars_add_one`: `κ(S)` is the number of
+  variables of `S`, plus one when the coefficient `d` occurs; it equals `2 - χ(S)`
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`).
+* `TauCeti.GroupAlgGeom.Quadratic.exists_standard_toWord_eq_commutator`: the commutator
+  `x⁻¹ y⁻¹ x y` is a standard quadratic word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
   `[x₁, y₁][x₂, y₂] = 1` is commutative, so this equation has no solution in general position.
 * `TauCeti.GroupAlgGeom.Quadratic.isGeneralPosition_genusThree`: `[x₁, y₁][x₂, y₂][x₃, y₃] = 1`
@@ -82,7 +108,7 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 ## References
 
 * [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
-  290 (2005), §2.7, Definitions 2–5.
+  290 (2005), §2.2 and §2.7, Definitions 2–6 and Lemma 1.
 * [VAR-I] O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
   Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §1.
 -/
@@ -100,75 +126,23 @@ variable {G H X : Type*} [Group G] [Group H]
 
 section Occurrences
 
-/-- The element of `G[X]` spelled by a letter: a coefficient, or a variable `y` or its inverse. -/
-private def letter : G ⊕ X × Bool → GX G X
-  | .inl g => inl g
-  | .inr (y, true) => inr (FreeGroup.of y)
-  | .inr (y, false) => (inr (FreeGroup.of y))⁻¹
+open GX
 
-open Classical in
-/-- The number of letters `x^{±1}` in a spelling. -/
-private noncomputable def spellCount (x : X) (l : List (G ⊕ X × Bool)) : ℕ :=
-  l.countP fun a => a.elim (fun _ => false) (fun p => p.1 = x)
-
-omit [Group G] in
-private theorem spellCount_nil (x : X) : spellCount x ([] : List (G ⊕ X × Bool)) = 0 := by
-  simp [spellCount]
-
-omit [Group G] in
-private theorem spellCount_append (x : X) (l₁ l₂ : List (G ⊕ X × Bool)) :
-    spellCount x (l₁ ++ l₂) = spellCount x l₁ + spellCount x l₂ := by
-  simp [spellCount]
-
-omit [Group G] in
-private theorem spellCount_cons_inl (x : X) (g : G) (l : List (G ⊕ X × Bool)) :
-    spellCount x (.inl g :: l) = spellCount x l := by
-  simp [spellCount]
-
-omit [Group G] in
-private theorem spellCount_cons_inr_self (x : X) (b : Bool) (l : List (G ⊕ X × Bool)) :
-    spellCount x (.inr (x, b) :: l) = spellCount x l + 1 := by
-  simp [spellCount]
-
-omit [Group G] in
-private theorem spellCount_cons_inr_of_ne {x y : X} (h : y ≠ x) (b : Bool)
-    (l : List (G ⊕ X × Bool)) : spellCount x (.inr (y, b) :: l) = spellCount x l := by
-  simp [spellCount, h]
-
-private theorem exists_spelling (w : GX G X) :
-    ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w := by
-  induction w using Monoid.Coprod.induction_on with
-  | inl g => exact ⟨[.inl g], by simp [letter]⟩
-  | inr f =>
-    induction f using FreeGroup.induction_on with
-    | one => exact ⟨[], by simp⟩
-    | of y => exact ⟨[.inr (y, true)], by simp [letter]⟩
-    | inv_of y _ => exact ⟨[.inr (y, false)], by simp [letter]⟩
-    | mul f₁ f₂ h₁ h₂ =>
-      obtain ⟨l₁, hl₁⟩ := h₁
-      obtain ⟨l₂, hl₂⟩ := h₂
-      exact ⟨l₁ ++ l₂, by simp [hl₁, hl₂]⟩
-  | mul u v hu hv =>
-    obtain ⟨l₁, hl₁⟩ := hu
-    obtain ⟨l₂, hl₂⟩ := hv
-    exact ⟨l₁ ++ l₂, by simp [hl₁, hl₂]⟩
-
-/-- The number of occurrences of the variable `x` in `w ∈ G[X]`: the least number of letters
-`x^{±1}` in an expression of `w` as a product of coefficients and letters `y^{±1}`. By the normal
-form theorem for free products this is the number of letters `x^{±1}` in the reduced form of
-`w`. -/
+/-- The number of occurrences of the variable `x` in `w ∈ G[X]`: the number of letters `x^{±1}` in
+the reduced word of `w`. By `GX.countVar_reducedWord_le` it is the least number of letters `x^{±1}`
+in an expression of `w` as a product of coefficients and letters `y^{±1}`. -/
 noncomputable def occurrences (x : X) (w : GX G X) : ℕ :=
-  sInf {n | ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w ∧ spellCount x l = n}
+  countVar x (reducedWord w)
 
-private theorem occurrences_le_spellCount (x : X) {w : GX G X} {l : List (G ⊕ X × Bool)}
-    (h : (l.map letter).prod = w) : occurrences x w ≤ spellCount x l :=
-  Nat.sInf_le ⟨l, h, rfl⟩
+theorem occurrences_eq_countVar_reducedWord (x : X) (w : GX G X) :
+    occurrences x w = countVar x (reducedWord w) :=
+  (rfl)
 
-private theorem exists_spellCount_eq_occurrences (x : X) (w : GX G X) :
-    ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w ∧ spellCount x l = occurrences x w := by
-  obtain ⟨l, hl⟩ := exists_spelling w
-  exact Nat.sInf_mem (s := {n | ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w ∧
-    spellCount x l = n}) ⟨_, l, hl, rfl⟩
+/-- The number of occurrences of `x` in the product of a reduced word is its number of letters
+`x^{±1}`. -/
+theorem _root_.TauCeti.GroupAlgGeom.GX.IsReduced.occurrences_prod {l : List (G ⊕ X × Bool)}
+    (hl : IsReduced l) (x : X) : occurrences x (l.map letter).prod = countVar x l := by
+  rw [occurrences_eq_countVar_reducedWord, hl.reducedWord_prod]
 
 /-- `occurrences x` is the largest subadditive function on `G[X]` vanishing on coefficients and
 on the letters `y^{±1}` with `y ≠ x`, and bounded by `1` on the letters `x^{±1}`. -/
@@ -178,64 +152,52 @@ theorem le_occurrences (x : X) (f : GX G X → ℕ) (hmul : ∀ u v, f (u * v) �
     (hy : ∀ y, y ≠ x → f (inr (FreeGroup.of y)) = 0 ∧ f (inr (FreeGroup.of y))⁻¹ = 0)
     (w : GX G X) :
     f w ≤ occurrences x w := by
-  obtain ⟨l, rfl, hl⟩ := exists_spellCount_eq_occurrences x w
-  rw [← hl]
-  clear hl
+  rw [occurrences_eq_countVar_reducedWord]
+  nth_rw 1 [← prod_reducedWord w]
+  generalize reducedWord w = l
   induction l with
-  | nil => simpa [spellCount_nil] using (hcoeff 1).le
+  | nil => simpa using (hcoeff 1).le
   | cons a l ih =>
     rw [List.map_cons, List.prod_cons]
     refine (hmul _ _).trans ?_
     rcases a with g | ⟨y, b⟩
-    · simpa [letter, hcoeff, spellCount_cons_inl] using ih
+    · simpa [hcoeff] using ih
     · by_cases h : y = x
       · subst h
-        rw [spellCount_cons_inr_self, add_comm (spellCount y l)]
+        rw [countVar_cons_inr_self, add_comm (countVar y l)]
         refine add_le_add ?_ ih
-        cases b <;> simpa [letter]
-      · rw [spellCount_cons_inr_of_ne h]
-        cases b <;> simpa [letter, hy y h] using ih
+        cases b <;> simpa
+      · rw [countVar_cons_inr_of_ne h]
+        cases b <;> simpa [hy y h] using ih
+
+/-- Variables cancel in pairs: `x` occurs in `u` and `v` together as often as in `u * v` plus an
+even number. -/
+theorem exists_occurrences_add_occurrences_eq_add_two_mul (x : X) (u v : GX G X) :
+    ∃ k, occurrences x u + occurrences x v = occurrences x (u * v) + 2 * k := by
+  simpa [occurrences_eq_countVar_reducedWord] using
+    exists_countVar_eq_add_two_mul x (reducedWord u ++ reducedWord v)
 
 theorem occurrences_mul_le (x : X) (u v : GX G X) :
     occurrences x (u * v) ≤ occurrences x u + occurrences x v := by
-  obtain ⟨l₁, hl₁, h₁⟩ := exists_spellCount_eq_occurrences x u
-  obtain ⟨l₂, hl₂, h₂⟩ := exists_spellCount_eq_occurrences x v
-  calc occurrences x (u * v) ≤ spellCount x (l₁ ++ l₂) :=
-        occurrences_le_spellCount x (by simp [hl₁, hl₂])
-    _ = _ := by rw [spellCount_append, h₁, h₂]
+  obtain ⟨k, hk⟩ := exists_occurrences_add_occurrences_eq_add_two_mul x u v
+  omega
 
 @[simp]
-theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 :=
-  Nat.eq_zero_of_le_zero <| (occurrences_le_spellCount x (l := [.inl g]) (by simp [letter])).trans
-    (by simp [spellCount])
+theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 := by
+  by_cases hg : g = 1 <;> simp [occurrences_eq_countVar_reducedWord, hg]
 
 @[simp]
 theorem occurrences_one (x : X) : occurrences x (1 : GX G X) = 0 := by
   simpa using occurrences_inl (G := G) x 1
 
-private theorem occurrences_letter_self_le (x : X) (b : Bool) :
-    occurrences x (letter (G := G) (.inr (x, b))) ≤ 1 :=
-  (occurrences_le_spellCount x (l := [.inr (x, b)]) (by simp)).trans
-    (by simp [spellCount_cons_inr_self, spellCount_nil])
-
-private theorem occurrences_letter_of_ne {x y : X} (h : y ≠ x) (b : Bool) :
-    occurrences x (letter (G := G) (.inr (y, b))) = 0 :=
-  Nat.eq_zero_of_le_zero <| (occurrences_le_spellCount x (l := [.inr (y, b)]) (by simp)).trans
-    (by simp [spellCount_cons_inr_of_ne h, spellCount_nil])
-
-theorem occurrences_inv_le (x : X) (w : GX G X) : occurrences x w⁻¹ ≤ occurrences x w := by
-  refine le_occurrences x (fun u => occurrences x u⁻¹) (fun u v => ?_) (fun g => ?_) ?_ ?_
-    (fun y hy => ⟨?_, ?_⟩) w
-  · simpa using occurrences_mul_le x v⁻¹ u⁻¹ |>.trans_eq (add_comm _ _)
-  · simp [← map_inv]
-  · exact occurrences_letter_self_le (G := G) x false
-  · simpa [letter] using occurrences_letter_self_le (G := G) x true
-  · exact occurrences_letter_of_ne (G := G) hy false
-  · simpa [letter] using occurrences_letter_of_ne (G := G) hy true
+/-- The coefficients are the elements of `G[X]` in which no variable occurs. -/
+theorem mem_range_inl_iff_forall_occurrences_eq_zero {w : GX G X} :
+    w ∈ Set.range (inl : G →* GX G X) ↔ ∀ x, occurrences x w = 0 :=
+  mem_range_inl_iff
 
 @[simp]
-theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w :=
-  (occurrences_inv_le x w).antisymm (by simpa using occurrences_inv_le x w⁻¹)
+theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w := by
+  simp [occurrences_eq_countVar_reducedWord]
 
 theorem occurrences_pow_le (x : X) (w : GX G X) (n : ℕ) :
     occurrences x (w ^ n) ≤ n * occurrences x w := by
@@ -274,7 +236,7 @@ coefficients are deleted, is a lower bound for the number of occurrences of `x` 
 theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
     ((snd w).toWord.countP fun p => p.1 = x) ≤ occurrences x w := by
   refine le_occurrences x (fun u => (snd u).toWord.countP fun p => p.1 = x) (fun u v => ?_)
-    (fun g => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
+    (fun _ => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
   · rw [map_mul, ← List.countP_append]
     exact (FreeGroup.toWord_mul_sublist _ _).countP_le
   · simp [FreeGroup.toWord_inv, FreeGroup.toWord_of, FreeGroup.invRev]
@@ -283,21 +245,57 @@ theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
 
 @[simp]
 theorem occurrences_inr_of_self (x : X) : occurrences x (inr (FreeGroup.of x) : GX G X) = 1 := by
-  classical
-  refine le_antisymm (occurrences_letter_self_le (G := G) x true) ?_
-  simpa [FreeGroup.toWord_of] using
-    countP_toWord_snd_le_occurrences (G := G) x (inr (FreeGroup.of x))
+  simp [occurrences_eq_countVar_reducedWord]
 
 @[simp]
 theorem occurrences_inr_of_of_ne {x y : X} (h : y ≠ x) :
-    occurrences x (inr (FreeGroup.of y) : GX G X) = 0 :=
-  occurrences_letter_of_ne (G := G) h true
+    occurrences x (inr (FreeGroup.of y) : GX G X) = 0 := by
+  simp [occurrences_eq_countVar_reducedWord, h]
 
 theorem occurrences_inr_of [DecidableEq X] (x y : X) :
     occurrences x (inr (FreeGroup.of y) : GX G X) = if y = x then 1 else 0 := by
   split_ifs with h
   · subst h; exact occurrences_inr_of_self y
   · exact occurrences_inr_of_of_ne h
+
+/-- The number of occurrences of `x` in an element `f` of `F(X)` is the number of letters `x^{±1}`
+in the reduced word of `f`. -/
+theorem occurrences_inr [DecidableEq X] (x : X) (f : FreeGroup X) :
+    occurrences x (inr f : GX G X) = f.toWord.countP fun p => p.1 = x := by
+  rw [occurrences_eq_countVar_reducedWord, reducedWord_inr, countVar_map_inr]
+
+/-- A homomorphism `φ : G[X] → H[Y]` does not increase occurrence counts from `x` to `y` when
+`y` does not occur in the images of the coefficients and of the variables other than `x`, and
+occurs at most once in the image of `x`. -/
+theorem occurrences_map_le {Y F : Type*} [FunLike F (GX G X) (GX H Y)]
+    [MonoidHomClass F (GX G X) (GX H Y)] (φ : F) (x : X) (y : Y)
+    (hcoeff : ∀ g, occurrences y (φ (inl g)) = 0)
+    (hx : occurrences y (φ (inr (FreeGroup.of x))) ≤ 1)
+    (hne : ∀ z, z ≠ x → occurrences y (φ (inr (FreeGroup.of z))) = 0) (w : GX G X) :
+    occurrences y (φ w) ≤ occurrences x w :=
+  le_occurrences x (fun u => occurrences y (φ u))
+    (fun u v => by simpa using occurrences_mul_le y (φ u) (φ v)) hcoeff hx (by simpa using hx)
+    (fun z hz => ⟨hne z hz, by simpa using hne z hz⟩) w
+
+/-- A variable `y` occurs in no image under a homomorphism `φ : G[X] → H[Y]` when it occurs
+neither in the images of the coefficients nor in the images of the variables. -/
+theorem occurrences_map_eq_zero {Y F : Type*} [FunLike F (GX G X) (GX H Y)]
+    [MonoidHomClass F (GX G X) (GX H Y)] (φ : F) (y : Y)
+    (hcoeff : ∀ g, occurrences y (φ (inl g)) = 0)
+    (hvar : ∀ x, occurrences y (φ (inr (FreeGroup.of x))) = 0) (w : GX G X) :
+    occurrences y (φ w) = 0 := by
+  have hmul : ∀ u v, occurrences y (φ u) = 0 → occurrences y (φ v) = 0 →
+      occurrences y (φ (u * v)) = 0 := fun u v hu hv =>
+    Nat.eq_zero_of_le_zero <| by simpa [hu, hv] using occurrences_mul_le y (φ u) (φ v)
+  induction w using Monoid.Coprod.induction_on with
+  | inl g => exact hcoeff g
+  | inr f =>
+    induction f using FreeGroup.induction_on with
+    | one => simp
+    | of x => exact hvar x
+    | inv_of x ih => simpa using ih
+    | mul f₁ f₂ h₁ h₂ => simpa using hmul _ _ h₁ h₂
+  | mul u v hu hv => exact hmul u v hu hv
 
 end Occurrences
 
@@ -337,7 +335,76 @@ theorem IsStrictlyQuadratic.isQuadratic {S : Finset (GX G X)} (h : IsStrictlyQua
 theorem IsQuadratic.mono {S T : Finset (GX G X)} (hT : IsQuadratic T) (h : S ⊆ T) :
     IsQuadratic S := fun x => (Finset.sum_le_sum_of_subset h).trans (hT x)
 
+section Map
+
+variable {Y : Type*} {S : Finset (GX G X)} (φ : GX G X ↪ GX H Y) (σ : X ≃ Y)
+
+private theorem sum_occurrences_map
+    (h : ∀ x, ∀ w ∈ S, occurrences (σ x) (φ w) = occurrences x w) (y : Y) :
+    ∑ w ∈ S.map φ, occurrences y w = ∑ w ∈ S, occurrences (σ.symm y) w := by
+  rw [Finset.sum_map]
+  exact Finset.sum_congr rfl fun w hw => by simpa using h (σ.symm y) w hw
+
+/-- An injective map `G[X] → H[Y]` transporting the occurrence counts in the words of a system
+along a bijection of the variables preserves quadratic systems. -/
+theorem isQuadratic_map_iff (h : ∀ x, ∀ w ∈ S, occurrences (σ x) (φ w) = occurrences x w) :
+    IsQuadratic (S.map φ) ↔ IsQuadratic S := by
+  simp only [isQuadratic_iff, sum_occurrences_map φ σ h]
+  exact σ.symm.forall_congr_right (q := fun x => ∑ w ∈ S, occurrences x w ≤ 2)
+
+/-- An injective map `G[X] → H[Y]` transporting the occurrence counts in the words of a system
+along a bijection of the variables preserves strictly quadratic systems. -/
+theorem isStrictlyQuadratic_map_iff
+    (h : ∀ x, ∀ w ∈ S, occurrences (σ x) (φ w) = occurrences x w) :
+    IsStrictlyQuadratic (S.map φ) ↔ IsStrictlyQuadratic S := by
+  simp only [isStrictlyQuadratic_iff, sum_occurrences_map φ σ h]
+  exact σ.symm.forall_congr_right
+    (q := fun x => ∑ w ∈ S, occurrences x w = 0 ∨ ∑ w ∈ S, occurrences x w = 2)
+
+end Map
+
 end IsQuadratic
+
+/-! ### Cyclic reduction -/
+
+section CyclicReduction
+
+open GX
+
+/-- Cyclic reduction relative to `G`: every `w ∈ G[X]` is a conjugate `u l u⁻¹` of the product of
+a cyclically reduced word `l`, and every variable occurs in `w` as often as in `l` plus twice as
+often as in `u`. -/
+theorem exists_isCyclicallyReduced_conj (w : GX G X) :
+    ∃ (u : GX G X) (l : List (G ⊕ X × Bool)), IsCyclicallyReduced l ∧
+      u * (l.map letter).prod * u⁻¹ = w ∧
+      ∀ x, occurrences x w = occurrences x (l.map letter).prod + 2 * occurrences x u := by
+  obtain ⟨u, l, hu, hl, hprod, hcount⟩ := (isReduced_reducedWord w).exists_isCyclicallyReduced
+  refine ⟨(u.map letter).prod, l, hl, by rw [hprod, prod_reducedWord], fun x => ?_⟩
+  rw [occurrences_eq_countVar_reducedWord, hcount, hl.isReduced.occurrences_prod,
+    ((isReduced_reducedWord w).infix hu.isInfix).occurrences_prod]
+
+/-- Cyclic reduction of a strictly quadratic word `w`: it is a conjugate `u l u⁻¹` of the product
+of a cyclically reduced word `l` which is again strictly quadratic. Every variable either occurs in
+`l` as often as in `w` and not in the conjugator `u`, or occurs twice in `w`, once in `u` and not
+in `l`. -/
+theorem IsStrictlyQuadratic.exists_isCyclicallyReduced_conj {w : GX G X}
+    (hw : IsStrictlyQuadratic {w}) :
+    ∃ (u : GX G X) (l : List (G ⊕ X × Bool)), IsCyclicallyReduced l ∧
+      u * (l.map letter).prod * u⁻¹ = w ∧ IsStrictlyQuadratic {(l.map letter).prod} ∧
+      ∀ x, occurrences x (l.map letter).prod = occurrences x w ∧ occurrences x u = 0 ∨
+        occurrences x w = 2 ∧ occurrences x (l.map letter).prod = 0 ∧ occurrences x u = 1 := by
+  obtain ⟨u, l, hl, hprod, hocc⟩ := Quadratic.exists_isCyclicallyReduced_conj w
+  rw [isStrictlyQuadratic_singleton] at hw
+  refine ⟨u, l, hl, hprod, isStrictlyQuadratic_singleton.2 fun x => ?_, fun x => ?_⟩ <;>
+    have := hocc x <;> rcases hw x with h | h <;> omega
+
+/-- For a nontrivial coefficient `a`, the variable `z` occurs exactly twice in the conjugate
+`z⁻¹ a z`. -/
+theorem occurrences_inv_mul_inl_mul_self {a : G} (ha : a ≠ 1) (z : X) :
+    occurrences z ((inr (FreeGroup.of z))⁻¹ * inl a * inr (FreeGroup.of z) : GX G X) = 2 := by
+  simp [occurrences_eq_countVar_reducedWord, reducedWord_inv_mul_inl_mul ha]
+
+end CyclicReduction
 
 /-! ### Standard quadratic equations -/
 
@@ -416,6 +483,28 @@ def eulerChar : Standard G X → ℤ
   | nonorientable n .. => 2 - n
   | nonorientableCoeff n m .. => 2 - n - (m + 1)
 
+/-- The set of variables occurring in a standard quadratic equation. -/
+def vars : Standard G X → Set X
+  | orientable _ _ x y _ => Set.range (Sum.elim x y)
+  | orientableCoeff _ _ _ x y z _ _ _ _ _ => Set.range (Sum.elim (Sum.elim x y) z)
+  | nonorientable _ _ x _ => Set.range x
+  | nonorientableCoeff _ _ _ x z _ _ _ _ _ => Set.range (Sum.elim x z)
+
+/-- The coefficients `d, c₁, …, c_m` of a standard quadratic equation. -/
+def coeffs : Standard G X → List G
+  | orientable .. => []
+  | orientableCoeff _ _ _ _ _ _ _ c _ d _ => d :: List.ofFn c
+  | nonorientable .. => []
+  | nonorientableCoeff _ _ _ _ _ _ c _ d _ => d :: List.ofFn c
+
+/-- The invariant `κ(S)` of a standard quadratic equation: the number of its variables, plus one
+when the coefficient `d` occurs. -/
+def kappa : Standard G X → ℕ
+  | orientable n .. => 2 * n
+  | orientableCoeff n m .. => 2 * n + m + 1
+  | nonorientable n .. => n
+  | nonorientableCoeff n m .. => n + m + 1
+
 section Accessors
 
 variable {n m : ℕ} {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
@@ -467,6 +556,15 @@ theorem constant_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
     (nonorientableCoeff n m hn x z inj c hc d hd).constant = d := (rfl)
 
 theorem toWord_def (S : Standard G X) : S.toWord = S.atoms.prod * inl S.constant := (rfl)
+
+/-- The standard quadratic equation of type (4) with one square and no conjugated coefficient is
+`x² d = 1`. -/
+@[simp]
+theorem toWord_nonorientableCoeff_one_zero {x : Fin 1 → X} {z : Fin 0 → X} {c : Fin 0 → G}
+    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord =
+      inr (FreeGroup.of (x 0)) ^ 2 * inl d := by
+  simp [toWord_def]
 
 theorem atomicRank_def (S : Standard G X) : S.atomicRank = S.atoms.length := (rfl)
 
@@ -546,7 +644,138 @@ theorem eulerChar_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
     (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     (nonorientableCoeff n m hn x z inj c hc d hd).eulerChar = 2 - n - (m + 1) := (rfl)
 
+@[simp]
+theorem vars_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    (orientable (G := G) n hn x y inj).vars = Set.range (Sum.elim x y) := (rfl)
+
+@[simp]
+theorem vars_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff n m hnm x y z inj c hc d hd).vars =
+      Set.range (Sum.elim (Sum.elim x y) z) := (rfl)
+
+@[simp]
+theorem vars_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
+    (nonorientable (G := G) n hn x inj).vars = Set.range x := (rfl)
+
+@[simp]
+theorem vars_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).vars = Set.range (Sum.elim x z) := (rfl)
+
+@[simp]
+theorem coeffs_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    (orientable (G := G) n hn x y inj).coeffs = [] := (rfl)
+
+@[simp]
+theorem coeffs_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff n m hnm x y z inj c hc d hd).coeffs = d :: List.ofFn c := (rfl)
+
+@[simp]
+theorem coeffs_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
+    (nonorientable (G := G) n hn x inj).coeffs = [] := (rfl)
+
+@[simp]
+theorem coeffs_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).coeffs = d :: List.ofFn c := (rfl)
+
+@[simp]
+theorem kappa_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    (orientable (G := G) n hn x y inj).kappa = 2 * n := (rfl)
+
+@[simp]
+theorem kappa_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff n m hnm x y z inj c hc d hd).kappa = 2 * n + m + 1 := (rfl)
+
+@[simp]
+theorem kappa_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective) :
+    (nonorientable (G := G) n hn x inj).kappa = n := (rfl)
+
+@[simp]
+theorem kappa_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
+    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).kappa = n + m + 1 := (rfl)
+
 end Accessors
+
+/-- A standard quadratic equation has positive atomic rank. -/
+theorem atomicRank_pos (S : Standard G X) : 0 < S.atomicRank := by
+  cases S <;> simp <;> lia
+
+/-! ### Variables, coefficients and `κ` -/
+
+section Kappa
+
+variable {S : Standard G X}
+
+/-- The coefficients of a standard quadratic equation are nontrivial. -/
+theorem ne_one_of_mem_coeffs {g : G} (hg : g ∈ S.coeffs) : g ≠ 1 := by
+  cases S <;> simp_all [List.mem_ofFn] <;> grind
+
+@[simp]
+theorem one_notMem_coeffs (S : Standard G X) : (1 : G) ∉ S.coeffs :=
+  fun h => ne_one_of_mem_coeffs h rfl
+
+@[simp]
+theorem coeffs_eq_nil_iff : S.coeffs = [] ↔ S.constant = 1 := by
+  cases S <;> simp_all
+
+@[simp]
+theorem constant_mem_coeffs_iff : S.constant ∈ S.coeffs ↔ S.constant ≠ 1 := by
+  cases S <;> simp_all
+
+theorem finite_vars (S : Standard G X) : S.vars.Finite := by
+  cases S <;> exact Set.finite_range _
+
+instance (S : Standard G X) : Finite S.vars :=
+  S.finite_vars.to_subtype
+
+/-- A standard quadratic equation without the coefficient `d` has `κ(S)` variables. -/
+theorem kappa_eq_ncard_vars (h : S.constant = 1) : S.kappa = S.vars.ncard := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
+
+/-- A standard quadratic equation with the coefficient `d` has `κ(S) - 1` variables. -/
+theorem kappa_eq_ncard_vars_add_one (h : S.constant ≠ 1) : S.kappa = S.vars.ncard + 1 := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
+
+/-- An orientable standard quadratic equation of genus `n` with `r` atoms has `n + r`
+variables. -/
+theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
+    S.vars.ncard = S.genus + S.atomicRank := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, add_assoc]
+
+/-- A non-orientable standard quadratic equation has one variable for each atom. -/
+theorem ncard_vars_of_not_isOrientable (h : ¬S.IsOrientable) : S.vars.ncard = S.atomicRank := by
+  cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective]
+
+/-- The Euler characteristic of a standard quadratic equation is `2 - κ(S)`. -/
+theorem eulerChar_eq_two_sub_kappa (S : Standard G X) : S.eulerChar = 2 - S.kappa := by
+  cases S <;> simp <;> lia
+
+/-- A standard quadratic equation with `κ(S) ≥ 4` has at least two atoms. -/
+theorem two_le_atomicRank_of_four_le_kappa (h : 4 ≤ S.kappa) : 2 ≤ S.atomicRank := by
+  cases S <;> simp_all <;> lia
+
+/-- The values of the atoms of a standard quadratic equation depend only on the values of its
+coefficients and of its variables. -/
+theorem map_eval_atoms_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g ∈ S.coeffs, ι g = ι' g)
+    (hv : ∀ x ∈ S.vars, v x = v' x) : S.atoms.map (eval ι v) = S.atoms.map (eval ι' v') := by
+  refine List.map_congr_left ?_
+  cases S <;> simp_all [or_imp, forall_and, map_commutatorElement]
+
+/-- The value of a standard quadratic equation depends only on the values of its coefficients
+and of its variables. -/
+theorem eval_toWord_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g ∈ S.coeffs, ι g = ι' g)
+    (hv : ∀ x ∈ S.vars, v x = v' x) : eval ι v S.toWord = eval ι' v' S.toWord := by
+  simp only [toWord_def, map_mul, map_list_prod, map_eval_atoms_congr hι hv, eval_inl]
+  by_cases h : S.constant = 1
+  · simp [h]
+  · rw [hι _ (constant_mem_coeffs_iff.2 h)]
+
+end Kappa
 
 /-! ### Standard equations are quadratic -/
 
@@ -612,6 +841,23 @@ theorem isQuadratic (S : Standard G X) : IsQuadratic {S.toWord} := by
     rw [← Finset.mul_sum, ← Finset.mul_sum]
     omega
 
+/-- A variable outside `S.vars` does not occur in the standard quadratic equation `S`. -/
+theorem occurrences_toWord_of_notMem_vars {S : Standard G X} {x : X} (hx : x ∉ S.vars) :
+    occurrences x S.toWord = 0 := by
+  have hcomm (a b : X) (ha : a ≠ x) (hb : b ≠ x) :
+      occurrences x ⁅(inr (FreeGroup.of a) : GX G X)⁻¹, (inr (FreeGroup.of b))⁻¹⁆ = 0 :=
+    Nat.eq_zero_of_le_zero <| (occurrences_commutatorElement_le ..).trans (by simp [ha, hb])
+  have hsq (a : X) (ha : a ≠ x) : occurrences x ((inr (FreeGroup.of a) : GX G X) ^ 2) = 0 :=
+    Nat.eq_zero_of_le_zero <| (occurrences_pow_le ..).trans (by simp [ha])
+  have hconj (a : X) (c : G) (ha : a ≠ x) :
+      occurrences x ((inr (FreeGroup.of a) : GX G X)⁻¹ * inl c * inr (FreeGroup.of a)) = 0 :=
+    Nat.eq_zero_of_le_zero <| (occurrences_conj_le ..).trans (by simp [ha])
+  have hatom : ∀ r ∈ S.atoms, occurrences x r = 0 := by
+    cases S <;> simp_all [or_imp, forall_and]
+  refine Nat.eq_zero_of_le_zero <| (occurrences_mul_le x _ _).trans ?_
+  rw [occurrences_inl, add_zero]
+  exact (occurrences_list_prod_le x _).trans_eq (List.sum_eq_zero (by simpa using hatom))
+
 end IsQuadratic
 
 /-! ### Degenerate, commutative and general-position solutions -/
@@ -660,6 +906,15 @@ theorem IsGeneralPosition.not_isCommutative (h : S.IsGeneralPosition ι v)
   rw [hl, List.isChain_cons_cons] at h ⊢
   exact fun h' => h.1 h'.1
 
+/-- Composing a point with an injective `G`-homomorphism neither creates nor destroys
+commutativity. -/
+theorem isCommutative_comp_iff {K : Type*} [Group K] {ιK : G →* K} (f : GHom ι ιK)
+    (hf : Function.Injective f) : S.IsCommutative ιK (f ∘ v) ↔ S.IsCommutative ι v := by
+  have h : S.atoms.map (eval ιK (f ∘ v)) = (S.atoms.map (eval ι v)).map f := by
+    simp [Function.comp_def]
+  rw [isCommutative_iff, isCommutative_iff, h, List.isChain_map]
+  exact ⟨(·.imp fun _ _ => Commute.of_map hf), (·.imp fun _ _ h => h.map f)⟩
+
 end Solutions
 
 /-! ### Solutions of the commutator equations -/
@@ -668,15 +923,20 @@ section Commutators
 
 variable {n : ℕ} {x y : Fin n → X}
 
-/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
-theorem one_mem_V_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
-    1 ∈ V ι {(orientable n hn x y inj).toWord} := by
+/-- A point at which the two variables of each commutator take commuting values is a solution of
+`∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem mem_V_orientable_of_commute (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective)
+    {v : X → H} (hv : ∀ i, Commute (v (x i)) (v (y i))) :
+    v ∈ V ι {(orientable n hn x y inj).toWord} := by
   simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, constant_orientable, map_one,
     mul_one, map_list_prod, atoms_orientable]
-  exact List.prod_eq_one fun a ha => by
-    obtain ⟨r, hr, rfl⟩ := List.mem_map.1 ha
-    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hr
-    simp [map_commutatorElement]
+  exact List.prod_eq_one <| by
+    simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hv]
+
+/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem one_mem_V_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    1 ∈ V ι {(orientable n hn x y inj).toWord} :=
+  mem_V_orientable_of_commute ι hn inj fun _ => .one_left 1
 
 /-- The trivial solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` is degenerate. -/
 theorem isDegenerate_one_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
@@ -716,9 +976,58 @@ end Commutators
 
 end Standard
 
+/-! ### The equation `[x, y] = [a, b]` -/
+
+section OneCommutator
+
+variable (a b : G)
+
+/-- The equation `[x, y] = [a, b]` over `G`, where `[x, y] = x⁻¹ y⁻¹ x y`: the element
+`[x, y] [a, b]⁻¹` of `G[x, y]`. -/
+def oneCommutatorEquation : GX G (Fin 2) :=
+  ⁅(inr (FreeGroup.of 0) : GX G (Fin 2))⁻¹, (inr (FreeGroup.of 1))⁻¹⁆ * inl ⁅a⁻¹, b⁻¹⁆⁻¹
+
+/-- The left side `[x, y] [a, b]⁻¹` of the equation `[x, y] = [a, b]`. -/
+theorem oneCommutatorEquation_def : oneCommutatorEquation a b =
+    ⁅(inr (FreeGroup.of 0) : GX G (Fin 2))⁻¹, (inr (FreeGroup.of 1))⁻¹⁆ * inl ⁅a⁻¹, b⁻¹⁆⁻¹ := (rfl)
+
+/-- The equation `[x, y] = [a, b]` is a standard orientable quadratic equation of genus one: it
+has a nontrivial constant if `a` and `b` do not commute, and is `[x, y] = 1` otherwise. -/
+theorem isStandard_oneCommutatorEquation :
+    ∃ S : Standard G (Fin 2),
+      S.toWord = oneCommutatorEquation a b ∧ S.IsOrientable ∧ S.genus = 1 := by
+  by_cases hd : ⁅a⁻¹, b⁻¹⁆⁻¹ = 1
+  · exact ⟨.orientable 1 one_pos ![0] ![1] (by decide),
+      by simp [Standard.toWord_def, oneCommutatorEquation_def, hd], by simp, by simp⟩
+  · exact ⟨.orientableCoeff 1 0 one_pos ![0] ![1] Fin.elim0 (by decide) Fin.elim0
+      (fun j => j.elim0) _ hd, by simp [Standard.toWord_def, oneCommutatorEquation_def],
+      by simp, by simp⟩
+
+variable {a b} {ι : G →* H} {v : Fin 2 → H}
+
+/-- The value of the left side of `[x, y] = [a, b]` at a pair. -/
+@[simp]
+theorem eval_oneCommutatorEquation : eval ι v (oneCommutatorEquation a b) =
+    ⁅(v 0)⁻¹, (v 1)⁻¹⁆ * ⁅(ι a)⁻¹, (ι b)⁻¹⁆⁻¹ := by
+  simp [oneCommutatorEquation_def, map_commutatorElement]
+
+/-- The solutions of `[x, y] = [a, b]` are the pairs with the commutator of `(a, b)`. -/
+theorem mem_V_oneCommutatorEquation :
+    v ∈ V ι {oneCommutatorEquation a b} ↔ ⁅(v 0)⁻¹, (v 1)⁻¹⁆ = ⁅(ι a)⁻¹, (ι b)⁻¹⁆ := by
+  simp [mul_eq_one_iff_eq_inv]
+
+end OneCommutator
+
 /-! ### Examples -/
 
 section Examples
+
+/-- The commutator `x⁻¹ y⁻¹ x y` is a standard quadratic word. -/
+theorem exists_standard_toWord_eq_commutator : ∃ S : Standard G (Fin 2),
+    S.toWord = (inr (.of 0))⁻¹ * (inr (.of 1))⁻¹ * inr (.of 0) * inr (.of 1) :=
+  ⟨.orientable 1 one_pos ![0] ![1] ((Function.injective_of_subsingleton _).sumElim
+      (Function.injective_of_subsingleton _) (by simp)), by
+    simp [Standard.toWord_def, commutatorElement_def, mul_assoc]⟩
 
 /-- `x₁² x₂² x₃² = 1` is a standard quadratic equation of type (3), non-orientable of genus `3`,
 with atomic rank `3` and Euler characteristic `-1`. -/
