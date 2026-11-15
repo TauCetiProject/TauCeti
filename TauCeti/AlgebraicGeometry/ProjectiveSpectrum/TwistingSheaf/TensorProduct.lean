@@ -32,6 +32,10 @@ sheafified tensor product follows the Cartier divisor construction in
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso`: the isomorphism
   `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` when the degree-one standard opens cover `Proj A`, with
   `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors.
+* `AlgebraicGeometry.Proj.tensorPowTwistingSheafIso`: the isomorphism `𝒪(1)^{⊗n} ≅ 𝒪(n)` in the
+  monoidal category of `𝒪_{Proj A}`-modules, with its zero and successor cases
+  `AlgebraicGeometry.Proj.tensorPowTwistingSheafIso_zero` and
+  `AlgebraicGeometry.Proj.tensorPowTwistingSheafIso_succ`.
 * `AlgebraicGeometry.Proj.lineBundleClass_twistingSheaf_eq_zpow`: `[𝒪(n)] = [𝒪(1)] ^ n` in the
   group of line-bundle classes.
 
@@ -271,6 +275,34 @@ end twistingSheaf
 
 variable {ι : Type u} (f : ι → A) (hf : ∀ i, f i ∈ 𝒜 1)
   (hcover : ⨆ i, basicOpen 𝒜 (f i) = ⊤)
+
+open MonoidalCategory in
+/-- **`𝒪(1)^{⊗n} ≅ 𝒪(n)`** in the monoidal category of `𝒪_{Proj A}`-modules, when the standard
+opens of degree-one elements cover `Proj A`. It is built from the multiplication isomorphisms
+`𝒪(1) ⊗ 𝒪(n) ≅ 𝒪(1 + n)` (`AlgebraicGeometry.Proj.twistingSheaf.tensorObjIso`). -/
+def tensorPowTwistingSheafIso :
+    (n : ℕ) → TauCeti.tensorPow (twistingSheaf 𝒜 1) n ≅ twistingSheaf 𝒜 n
+  | 0 => unitIsoTwistingSheafZero 𝒜
+  | n + 1 =>
+    whiskerLeftIso (twistingSheaf 𝒜 1) (tensorPowTwistingSheafIso n) ≪≫
+      twistingSheaf.tensorObjIso f hf hcover 1 n ≪≫
+      eqToIso (congrArg (twistingSheaf 𝒜) (by push_cast; ring))
+
+/-- `𝒪(1)^{⊗0} ≅ 𝒪(0)` is the identification of the monoidal unit with `𝒪(0)`. -/
+@[simp]
+theorem tensorPowTwistingSheafIso_zero :
+    tensorPowTwistingSheafIso f hf hcover 0 = unitIsoTwistingSheafZero 𝒜 :=
+  (rfl)
+
+open MonoidalCategory in
+/-- `𝒪(1)^{⊗(n + 1)} ≅ 𝒪(n + 1)` is `𝒪(1)^{⊗n} ≅ 𝒪(n)` tensored on the left with `𝒪(1)`,
+followed by the multiplication isomorphism `𝒪(1) ⊗ 𝒪(n) ≅ 𝒪(1 + n)`. -/
+theorem tensorPowTwistingSheafIso_succ (n : ℕ) :
+    tensorPowTwistingSheafIso f hf hcover (n + 1) =
+      whiskerLeftIso (twistingSheaf 𝒜 1) (tensorPowTwistingSheafIso f hf hcover n) ≪≫
+        twistingSheaf.tensorObjIso f hf hcover 1 n ≪≫
+        eqToIso (congrArg (twistingSheaf 𝒜) (by push_cast; ring)) :=
+  (rfl)
 
 /-- **`𝒪(n) ≅ 𝒪(1)^{⊗ n}`.** If the standard opens of degree-one elements cover `Proj A`, then
 all twisting sheaves are invertible, and the class of `𝒪(n)` in the group of line-bundle classes

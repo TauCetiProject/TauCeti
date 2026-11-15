@@ -24,8 +24,6 @@ where generating sections are produced chart by chart.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.Hom.exists_app_eq_of_mem_span`: over an open `V`, the image of
-  a morphism `φ : F ⟶ M` contains the span of the restrictions of images of global sections.
 * `AlgebraicGeometry.Scheme.Modules.epi_freeHomEquiv_symm_of_span_eq_top`: global sections of a
   quasi-coherent module whose restrictions span the sections over each member of an affine open
   cover generate the module.
@@ -45,26 +43,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 universe u
 
 variable {X : Scheme.{u}}
-
-/-- Over any open `V`, the image of a morphism `φ : F ⟶ M` of `𝒪_X`-modules contains the
-`Γ(V, 𝒪_X)`-span of the restrictions to `V` of the images of global sections of `F`. -/
-theorem Hom.exists_app_eq_of_mem_span {F M : X.Modules} (φ : F ⟶ M) {I : Type*}
-    (g : I → Γ(F, ⊤)) {V : X.Opens} {y : Γ(M, V)} (hy : y ∈ Submodule.span Γ(X, V)
-      (Set.range fun k ↦ M.presheaf.map (homOfLE le_top : V ⟶ ⊤).op (φ.app ⊤ (g k)))) :
-    ∃ z, φ.app V z = y := by
-  induction hy using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨k, rfl⟩ := hy
-    exact ⟨F.presheaf.map (homOfLE le_top : V ⟶ ⊤).op (g k),
-      φ.mapPresheaf.naturality_apply _ _⟩
-  | zero => exact ⟨0, map_zero _⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨a, rfl⟩ := hx
-    obtain ⟨b, rfl⟩ := hy
-    exact ⟨a + b, map_add _ _ _⟩
-  | smul r x _ hx =>
-    obtain ⟨a, rfl⟩ := hx
-    exact ⟨r • a, Hom.app_smul _ _ _⟩
 
 /-- **Global generation from spanning on an affine open cover.** Let `M` be a quasi-coherent
 `𝒪_X`-module and `s` a family of global sections of `M`. If over each member `V i` of an affine

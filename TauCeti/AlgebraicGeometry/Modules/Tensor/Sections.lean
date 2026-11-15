@@ -229,13 +229,6 @@ theorem bijective_tmulRight {U : X.Opens} (e : Γ(L, U))
 
 /-! ### Tensor powers of a section -/
 
-/-- The tensor powers of a quasi-coherent `𝒪_X`-module are quasi-coherent. -/
-instance isQuasicoherent_tensorPow (L : X.Modules) [L.IsQuasicoherent] (n : ℕ) :
-    (tensorPow L n).IsQuasicoherent := by
-  induction n with
-  | zero => exact inferInstanceAs (𝟙_ X.Modules).IsQuasicoherent
-  | succ n ih => exact inferInstanceAs (L ⊗ tensorPow L n).IsQuasicoherent
-
 /-- The tensor powers `eⁿ ∈ Γ(Lⁿ, U)` of a section `e` of `L` over `U`, for the tensor powers
 `Lⁿ = TauCeti.tensorPow L n` nested to the right: `e⁰ = 1` and `eⁿ⁺¹ = e ⊗ eⁿ`. -/
 def tensorPowSection {U : X.Opens} (e : Γ(L, U)) : (n : ℕ) → Γ(tensorPow L n, U)

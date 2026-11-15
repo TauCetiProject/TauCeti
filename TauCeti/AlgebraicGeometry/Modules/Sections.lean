@@ -38,6 +38,8 @@ their restrictions to affine opens (`Scheme.Modules.sections_ext_of_isAffineOpen
 
 Compatible families of sections of `M` are its global sections (`Scheme.Modules.sectionsEquivTop`),
 and so are the morphisms `𝒪_X ⟶ M` out of the structure sheaf (`Scheme.Modules.unitHomEquivTop`).
+Over an open `V`, the image of a morphism `φ : F ⟶ M` contains the span of the restrictions to `V`
+of the images of global sections of `F` (`Scheme.Modules.Hom.exists_app_eq_of_mem_span`).
 -/
 
 public section
@@ -380,6 +382,32 @@ lemma sections_ext_of_isAffineOpen {M : X.Modules} {V : X.Opens} {s t : Γ(M, V)
     s t fun U ↦ h _ U.1.2 U.2
 
 end AffineExt
+
+section Span
+
+variable {X : Scheme.{u}}
+
+/-- Over any open `V`, the image of a morphism `φ : F ⟶ M` of `𝒪_X`-modules contains the
+`Γ(V, 𝒪_X)`-span of the restrictions to `V` of the images of global sections of `F`. -/
+theorem Hom.exists_app_eq_of_mem_span {F M : X.Modules} (φ : F ⟶ M) {I : Type*}
+    (g : I → Γ(F, ⊤)) {V : X.Opens} {y : Γ(M, V)} (hy : y ∈ Submodule.span Γ(X, V)
+      (Set.range fun k ↦ M.presheaf.map (homOfLE le_top : V ⟶ ⊤).op (φ.app ⊤ (g k)))) :
+    ∃ z, φ.app V z = y := by
+  induction hy using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨k, rfl⟩ := hy
+    exact ⟨F.presheaf.map (homOfLE le_top : V ⟶ ⊤).op (g k),
+      φ.mapPresheaf.naturality_apply _ _⟩
+  | zero => exact ⟨0, map_zero _⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨a, rfl⟩ := hx
+    obtain ⟨b, rfl⟩ := hy
+    exact ⟨a + b, map_add _ _ _⟩
+  | smul r x _ hx =>
+    obtain ⟨a, rfl⟩ := hx
+    exact ⟨r • a, Hom.app_smul _ _ _⟩
+
+end Span
 
 section UnitHom
 
