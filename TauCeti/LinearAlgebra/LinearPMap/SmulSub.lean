@@ -17,14 +17,16 @@ linear map from the domain of `A` to `E`.  Bundling it (`LinearPMap.smulSub`) gi
 deficiency shifts and dissipativity, where surjectivity or density of this range is the question.
 Up to sign it is the scalar shift `LinearPMap.subScalar A c = A - c • 1` of
 `TauCeti.LinearAlgebra.LinearPMap.Shift`, regarded as a linear map on the domain
-(`smulSub_apply_eq_neg_subScalar`), so results about the range of either form transfer to the
-other.
+(`smulSub_apply_eq_neg_subScalar`), so results about the kernel or range of either form transfer to
+the other.
 
 ## Main declarations
 
 * `LinearPMap.smulSub`: the bundled shift `x ↦ c • x - A x` on the domain of `A`.
 * `LinearPMap.smulSub_apply` and `LinearPMap.coe_range_smulSub`: its values and its range.
 * `LinearPMap.smulSub_apply_eq_neg_subScalar`: `smulSub c A` is `-(subScalar A c)` pointwise.
+* `LinearPMap.mem_ker_smulSub_iff` and `LinearPMap.ker_smulSub_eq_bot_iff`: kernel equivalence with
+  `subScalar A c`.
 * `LinearPMap.exists_linearMap_inverse_smul_sub`: a bijective shift has a linear two-sided inverse
   `E → E` with values in the domain of `A`.
 -/
@@ -50,6 +52,28 @@ theorem smulSub_apply_eq_neg_subScalar (c : R) (A : E →ₗ.[R] E) (x : A.domai
     A.smulSub c x = -subScalar A c
       ⟨x, (subScalar_domain A c).symm ▸ x.property⟩ := by
   rw [A.smulSub_apply, subScalar_apply, neg_sub]
+
+/-- A domain element lies in the kernel of `A.smulSub c` if and only if its coercion lies in the
+kernel of `A.subScalar c`. -/
+theorem mem_ker_smulSub_iff (c : R) (A : E →ₗ.[R] E) (x : A.domain) :
+    x ∈ LinearMap.ker (A.smulSub c) ↔ (x : E) ∈ (A.subScalar c).ker := by
+  rw [LinearMap.mem_ker, A.smulSub_apply_eq_neg_subScalar c x, neg_eq_zero,
+    ← LinearPMap.coe_mem_ker_iff]
+
+/-- The kernel of `A.smulSub c` is trivial if and only if the kernel of `A.subScalar c` is
+trivial. -/
+theorem ker_smulSub_eq_bot_iff (c : R) (A : E →ₗ.[R] E) :
+    LinearMap.ker (A.smulSub c) = ⊥ ↔ (A.subScalar c).ker = ⊥ := by
+  rw [LinearMap.ker_eq_bot', LinearPMap.ker_eq_bot']
+  constructor
+  · intro h x hx
+    have hx' : A.smulSub c ⟨x, A.subScalar_domain c ▸ x.property⟩ = 0 := by
+      rw [A.smulSub_apply_eq_neg_subScalar, neg_eq_zero]
+      exact hx
+    exact Subtype.ext (by simpa using congrArg Subtype.val (h _ hx'))
+  · intro h x hx
+    rw [A.smulSub_apply_eq_neg_subScalar c x, neg_eq_zero] at hx
+    exact Subtype.ext (by simpa using congrArg Subtype.val (h _ hx))
 
 /-- The range of the bundled shift is the range of the shift. -/
 theorem coe_range_smulSub (c : R) (A : E →ₗ.[R] E) :
