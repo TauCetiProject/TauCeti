@@ -34,6 +34,8 @@ topology. Uniqueness is the localization principle
   after restriction to every member of an open cover are equal.
 * `Distribution.existsUnique_gluing`: compatible continuous linear maps on the members of an open
   cover glue to a unique continuous linear map on the union.
+* `Distribution.existsUnique_gluing_of_isScalarTower`: the glued map of compatible `𝕜`-linear
+  maps is `𝕜`-linear, for instance complex linear on complex test functions.
 
 ## References
 
@@ -184,5 +186,42 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = Ω)
           · simp [image_eq_zero_of_notMem_tsupport hx]
   exact ⟨S, hglue, fun S' hS' ↦
     eq_of_forall_comp_monoCLM_eq hU fun i ↦ (hS' i).trans (hglue i).symm⟩
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜] [NormedSpace 𝕜 F]
+  [IsScalarTower ℝ 𝕜 F] [Module 𝕜 V] [IsScalarTower ℝ 𝕜 V] [ContinuousConstSMul 𝕜 V]
+
+/-- **Gluing of `𝕜`-linear maps.** Let the open sets `U i` cover `Ω`. Continuous `𝕜`-linear maps
+`L i` on tests on `U i` which agree on tests on every overlap `U i ⊓ U j` are the restrictions of a
+unique continuous `𝕜`-linear map on tests on `Ω`. -/
+theorem existsUnique_gluing_of_isScalarTower (hU : ⨆ i, U i = Ω)
+    {L : ∀ i, 𝓓^{n}(U i, F) →L[𝕜] V}
+    (hL : ∀ i j (φ : 𝓓^{n}(U i ⊓ U j, F)), L i (monoCLM 𝕜 φ) = L j (monoCLM 𝕜 φ)) :
+    ∃! S : 𝓓^{n}(Ω, F) →L[𝕜] V, ∀ i, S ∘L monoCLM 𝕜 = L i := by
+  obtain ⟨S, hS, -⟩ := existsUnique_gluing (T := fun i ↦ (L i).restrictScalars ℝ) hU hL
+  have hSL (i : ι) (ψ : 𝓓^{n}(U i, F)) : S (monoCLM 𝕜 ψ) = L i ψ := DFunLike.congr_fun (hS i) ψ
+  -- The real-linear glued map is `𝕜`-linear, since its restrictions `L i` are.
+  have hsmul (c : 𝕜) (φ : 𝓓^{n}(Ω, F)) : S (c • φ) = c • S φ := by
+    -- Multiplication by `c` on tests, as a continuous real-linear map.
+    have hc {W : Opens E} (ψ : 𝓓^{n}(W, F)) :
+        postcompCLM (c • ContinuousLinearMap.id 𝕜 F) ψ = c • ψ :=
+      TestFunction.ext fun _ ↦ by simp
+    have h := eq_of_forall_comp_monoCLM_eq hU
+      (S := S ∘L (postcompCLM (c • ContinuousLinearMap.id 𝕜 F)).restrictScalars ℝ)
+      (S' := (c • ContinuousLinearMap.id 𝕜 V).restrictScalars ℝ ∘L S) fun i ↦ by
+        ext ψ
+        have h := hSL i (c • ψ)
+        rw [map_smul (monoCLM 𝕜), map_smul (L i), ← hSL i ψ] at h
+        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', hc]
+        exact h
+    simpa [hc] using DFunLike.congr_fun h φ
+  let S𝕜 : 𝓓^{n}(Ω, F) →L[𝕜] V :=
+    { toFun := S
+      map_add' := map_add S
+      map_smul' := hsmul
+      cont := S.continuous }
+  refine ⟨S𝕜, fun i ↦ ContinuousLinearMap.ext (hSL i), fun S' hS' ↦ ?_⟩
+  have h := eq_of_forall_comp_monoCLM_eq hU (S := S'.restrictScalars ℝ) (S' := S) fun i ↦
+    ContinuousLinearMap.ext fun ψ ↦ (DFunLike.congr_fun (hS' i) ψ).trans (hSL i ψ).symm
+  exact ContinuousLinearMap.ext fun φ ↦ DFunLike.congr_fun h φ
 
 end Distribution
