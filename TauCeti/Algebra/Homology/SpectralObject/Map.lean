@@ -33,8 +33,8 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
-* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: under the identifications
-  `EIsoH` of `E(𝟙 i, f, 𝟙 j)` with `H(f)`, `EMap φ` is the morphism `φ` on `H(f)`.
+* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
+  identified with `H^n(f)`, `EMap φ` is the component of `φ` at `f`.
 * `CategoryTheory.Abelian.SpectralObject.isIso_of_isIso_hom_app`: a morphism of spectral objects
   which is an isomorphism on every component is an isomorphism. Conversely, the components of an
   isomorphism are isomorphisms (an instance on `φ.hom n`).
@@ -305,24 +305,6 @@ lemma d_EMap :
 
 end Differentials
 
-section EIsoH
-
-/-- Under the identifications `EIsoH` of `E(𝟙 i, f, 𝟙 j)` with `H(f)`, the map `EMap φ` is the
-morphism `φ` on `H(f)`. -/
-@[reassoc]
-lemma EMap_comp_EIsoH_hom {i j : ι} (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁)
-    (hn₂ : n₁ + 1 = n₂) :
-    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
-      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
-  have h : cyclesMapOfHom φ (𝟙 i) f n₁ ≫ (Y.cyclesIsoH f n₁ n₂ hn₂).hom =
-      (X.cyclesIsoH f n₁ n₂ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
-    rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv, X.cyclesIsoH_inv f n₁ n₂ hn₂,
-      Y.cyclesIsoH_inv f n₁ n₂ hn₂, toCycles_cyclesMapOfHom]
-  rw [← cancel_epi (X.πE (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂), πE_EMap_assoc,
-    Y.πE_EIsoH_hom f n₀ n₁ n₂ hn₁ hn₂, X.πE_EIsoH_hom_assoc f n₀ n₁ n₂ hn₁ hn₂, h]
-
-end EIsoH
-
 section IsIso
 
 /-- The components of an isomorphism of spectral objects are isomorphisms. -/
@@ -343,5 +325,23 @@ lemma isIso_of_isIso_hom_app
   exact ⟨ψ, Hom.ext <| funext fun n ↦ by simp [ψ], Hom.ext <| funext fun n ↦ by simp [ψ]⟩
 
 end IsIso
+
+section FirstPage
+
+variable {i₀ i₁ : ι} (f : i₀ ⟶ i₁) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂)
+
+/-- On the objects `E^n(𝟙, f, 𝟙)`, identified with `H^n(f)` by Mathlib's `EIsoH`, the map `EMap`
+induced by a morphism of spectral objects is its component at `f`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom :
+    EMap φ (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  rw [← cancel_epi (X.toCycles (𝟙 i₀) f f (Category.id_comp f) n₁ ≫
+    X.πE (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂)]
+  simp only [Category.assoc, πE_EMap_assoc, πE_EIsoH_hom, πE_EIsoH_hom_assoc,
+    toCycles_cyclesMapOfHom_assoc, cyclesIsoH_inv_hom_id, cyclesIsoH_inv_hom_id_assoc,
+    Category.comp_id]
+
+end FirstPage
 
 end CategoryTheory.Abelian.SpectralObject

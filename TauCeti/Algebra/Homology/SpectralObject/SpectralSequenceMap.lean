@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
-public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
+public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
 public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
@@ -43,10 +43,8 @@ which is functorial in `φ`.
 * An isomorphism of spectral objects induces an isomorphism of spectral sequences (an instance on
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap`), hence on every page and on every
   object of every page.
-* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`, in the namespace
-  `CategoryTheory.Abelian.SpectralObject`: on the first page, under the identifications
-  `spectralSequenceFirstPageXIso` of its objects with objects `H`, the morphism of pages is the
-  morphism `φ` on `H`.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
+  with objects `H^n(f)`, the morphism is the component of `φ`.
 
 ## Implementation notes
 
@@ -309,9 +307,10 @@ section FirstPage
 
 variable [data.HasFirstPageComputation]
 
-/-- **The morphism of spectral sequences on the first page.** Under the identifications
-`spectralSequenceFirstPageXIso` of the objects of the first page with objects `H`, the morphism
-of pages induced by `φ` is the morphism `φ` on `H`. -/
+/-- **The morphism of spectral sequences on the first page.** On the first page, whose objects are
+identified with objects `H^n(f)` of the spectral objects by Mathlib's
+`spectralSequenceFirstPageXIso`, the morphism of spectral sequences induced by `φ` is the
+component of `φ` on `H^n(f)`. -/
 @[reassoc]
 lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) (i₁ i₂ : ι)
     (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
@@ -319,12 +318,12 @@ lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) 
         (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
         (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
-  rw [X.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
-    Y.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
-    Category.assoc, ← EMap_comp_EIsoH_hom]
-  -- The identities `𝟙 i₁` and `𝟙 i₂` are the morphisms `homOfLE` of the recipe `data` only up to
-  -- unfolding, so the square of `EMap` is applied with `exact` rather than `rw`.
-  exact (spectralSequencePageXIso_hom_comp_EMap_assoc ..).symm
+  rw [spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    ← spectralSequencePageXIso_hom_comp_EMap_assoc, Category.assoc]
+  -- The outer indices of the first page are `i₁` and `i₂` themselves, and the morphisms
+  -- `homOfLE` between equal indices are the identities only up to definitional unfolding.
+  exact congrArg (_ ≫ ·) (EMap_comp_EIsoH_hom φ _ _ _ _ _ _)
 
 end FirstPage
 
