@@ -28,6 +28,11 @@ zero sets of a Fredholm section, coincide.
 * `TauCeti.isMorseSmale_iff_forall_surjective_trajectoryOperator`: the negative gradient flow is
   Morse–Smale exactly when the linearized operator along every trajectory between nondegenerate
   critical points is onto.
+* `IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet`:
+  at a nondegenerate critical point itself, its unstable and stable sets are transverse, since the
+  linearized operator along the constant trajectory is invertible.
+* `TauCeti.IsMorseSmale.of_forall_ne`: so the Morse–Smale condition only needs to be checked on
+  trajectories between distinct critical points.
 
 ## References
 
@@ -81,5 +86,44 @@ theorem isMorseSmale_iff_forall_surjective_trajectoryOperator (hfs : ContDiff �
       (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))
     exact (surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff hp hq hfs hf
       hy.1 hy.2 hmem.coeFn_toLp).1 (h hp hq hγ hbot htop _ hmem.coeFn_toLp)
+
+/-- **Transversality at a critical point.** At a nondegenerate critical point `p` of a `C²` function
+with globally Lipschitz gradient, the tangent spaces at `p` of the unstable and of the stable set
+of `p` span `E`: the linearized operator `ξ ↦ ξ' + Hess f(p) ξ` along the constant trajectory at
+`p` is invertible. -/
+theorem IsNondegenerateCriticalPoint.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet
+    {p : E} (hp : IsNondegenerateCriticalPoint f p) (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) p) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) p) p) = ⊤ := by
+  have hfix : ∀ t, negativeGradientFlow f hf t p = p :=
+    (forall_negativeGradientFlow_eq_self_iff f hf p).2 (by simp [gradient, hp.fderiv_eq_zero])
+  have hmem : MemLp (fun _ : ℝ ↦ hessianOperator f p) ∞
+      (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) :=
+    memLp_top_const _
+  have hAL := hmem.coeFn_toLp
+  refine (surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff hp hp hfs hf
+    (Flow.self_mem_unstableSet_iff.2 hfix) (Flow.self_mem_stableSet_iff.2 hfix)
+    (by simpa only [hfix] using hAL)).1 (hp.bijective_trajectoryOperator_hessianOperator hAL).2
+
+/-- **Introduction rule for `IsMorseSmale` from distinct endpoints.** For a `C²` function with
+globally Lipschitz gradient, the Morse–Smale condition holds as soon as the unstable set of `p`
+and the stable set of `q` are transverse at their common points for distinct nondegenerate
+critical points `p ≠ q`: for `p = q` they meet only at `p`, where they are always transverse. -/
+theorem IsMorseSmale.of_forall_ne (hfs : ContDiff ℝ 2 f) {hf : LipschitzWith K (∇ f)}
+    (h : ∀ ⦃p q y : E⦄, IsNondegenerateCriticalPoint f p → IsNondegenerateCriticalPoint f q →
+      p ≠ q → y ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+        Flow.stableSet (negativeGradientFlow f hf) q →
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤) :
+    IsMorseSmale f hf :=
+  .of_forall fun p q y hp hq hy ↦ by
+    rcases eq_or_ne p q with rfl | hpq
+    · -- A point of `W^u(p) ∩ W^s(p)` is `p` itself.
+      have hφ := isNegativeGradient_negativeGradientFlow f hf
+      obtain rfl := hφ.eq_of_mem_unstableSet_inter_stableSet
+        (fun _ ↦ hfs.differentiable (by norm_num) _) hfs.continuous.continuousAt hy
+      exact hp.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet hfs hf
+    · exact h hp hq hpq hy
 
 end TauCeti

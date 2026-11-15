@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
+import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
 
 /-!
 # A Morse–Smale function on the plane
@@ -399,63 +400,6 @@ private theorem orbit_eq_self {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ 
   refine (forall_negativeGradientFlow_eq_self_iff _ _ z).2 ?_ t
   simp [gradient, hz]
 
-/-- **Transversality at a saddle.** At a critical point `q` with `cos (q 0) = 1`, the span of the
-tangent cone of the unstable set lies in the `x`-axis (and is a line), and the tangent cone of the
-stable set contains the vertical direction, so together the two spans are the whole plane. -/
-private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
-    (hq : fderiv ℝ cosAddHalfSq q = 0) (hc : Real.cos (q 0) = 1) :
-    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet Φ q) q) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet Φ q) q) = ⊤ := by
-  have hqc := fderiv_cosAddHalfSq_eq_zero_iff.1 hq
-  have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hq
-  set U := Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet Φ q) q)
-  set K := LinearMap.ker (EuclideanSpace.proj (1 : Fin 2) :
-    EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).toLinearMap
-  have hqu : q ∈ Flow.unstableSet Φ q := Flow.self_mem_unstableSet_iff.2 (orbit_eq_self hq)
-  -- The unstable set lies on the `x`-axis `K`, so `U ≤ K`, and `U` is a line.
-  have hUK : U ≤ K := by
-    refine Submodule.span_le.2 ?_
-    have hsub : Flow.unstableSet Φ q ⊆ (K : Set (EuclideanSpace ℝ (Fin 2))) := fun z hz ↦ by
-      simpa [K] using apply_one_eq_zero_of_mem_unstableSet hqc.2 hz
-    have hKc : IsClosed (K : Set (EuclideanSpace ℝ (Fin 2))) :=
-      (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).isClosed_ker
-    have hqK : q ∈ K := by simpa [K] using hqc.2
-    calc tangentConeAt ℝ (Flow.unstableSet Φ q) q
-        ⊆ tangentConeAt ℝ (K : Set (EuclideanSpace ℝ (Fin 2))) q := tangentConeAt_mono hsub
-      _ = K := Submodule.tangentConeAt_eq K hKc hqK
-  have hUdim : Module.finrank ℝ U = 1 := by
-    rw [hnd.finrank_span_tangentConeAt_unstableSet contDiff_cosAddHalfSq
-      lipschitzWith_gradient_cosAddHalfSq hqu, morseIndex_cosAddHalfSq_of_cos_eq_one hc]
-  -- The vertical direction is tangent to the stable set.
-  have he₁ : e₁ ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet Φ q) q) := by
-    have hq' : q = q 0 • e₀ + (0 : ℝ) • e₁ := by
-      ext i
-      fin_cases i <;> simp [hqc.2]
-    have hmem : ∀ s : ℝ, q 0 • e₀ + s • e₁ ∈ Flow.stableSet Φ q := fun s ↦ by
-      rw [Flow.mem_stableSet]
-      simp only [orbit_vertical hqc.1]
-      have h := (tendsto_const_nhds (x := q 0 • e₀)).add
-        ((Real.tendsto_exp_neg_atTop_nhds_zero.const_mul s).smul_const e₁)
-      rwa [mul_zero, ← hq'] at h
-    have hγ : HasDerivAt (fun s : ℝ ↦ q 0 • e₀ + s • e₁) e₁ 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e₁).const_add (q 0 • e₀)
-    have := hγ.mem_tangentConeAt (S := Flow.stableSet Φ q) (Eventually.of_forall hmem)
-    beta_reduce at this
-    rw [← hq'] at this
-    exact Submodule.subset_span this
-  -- `U` and the vertical line together span the plane.
-  have hinf : U ⊓ ℝ ∙ e₁ = ⊥ := by
-    refine (Submodule.eq_bot_iff _).2 fun v ⟨hvU, hv₁⟩ ↦ ?_
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hv₁
-    have := hUK hvU
-    simp [K] at this
-    simp [this]
-  have hsup : U ⊔ ℝ ∙ e₁ = ⊤ :=
-    Submodule.eq_top_of_disjoint U (ℝ ∙ e₁)
-      (by rw [hUdim, finrank_span_singleton (by simp), finrank_euclideanSpace_fin])
-      (disjoint_iff.2 hinf)
-  exact top_unique (hsup ▸ sup_le_sup_left (Submodule.span_le.2 (by simpa using he₁)) U)
-
 /-- **`cos x + y² / 2` is Morse–Smale.** For all critical points `p` and `q`, the unstable set of
 `p` and the stable set of `q` of its negative-gradient flow are transverse at every common
 point. -/
@@ -482,7 +426,9 @@ theorem isMorseSmale_cosAddHalfSq :
       simp only [orbit_eq_self hq] at hyu
       exact (tendsto_nhds_unique tendsto_const_nhds hyu).symm
     subst hpy
-    exact span_sup_span_eq_top_of_saddle hp hc
+    have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hp
+    exact hnd.span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet
+      contDiff_cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq
   · -- `q` is a minimum: its stable set has full-dimensional tangent spaces.
     have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hq
     have h := hnd.finrank_span_tangentConeAt_stableSet_add_morseIndex contDiff_cosAddHalfSq
