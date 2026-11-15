@@ -36,7 +36,10 @@ row except `A₅⁴ D₄` (`mem_glueSymmetries_of_mem_symmetries`), and they act
 `E₆⁴`, `A₈³`, `A₆⁴`, `D₄⁶`, `A₄⁶`, `A₃⁸`, `A₂¹²` and `A₁²⁴`, and the alternating group on the
 four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the three `A₅` components marked
 in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30301]`, whose
-difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.
+difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  To lift such a
+block permutation one couples it with componentwise root-lattice self-isometries acting
+nontrivially on the glue alphabets (`coupledLatticeIsometry`,
+`coupled_mem_glueSubgroup_iff_of_glueWords`).
 
 ## Main declarations
 
@@ -45,10 +48,16 @@ difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.
   preserves the glue subgroup.
 * `TauCeti.RootfulNiemeierType.mem_glueSymmetries_of_glueWords`: a type-preserving permutation of
   the digit words is a glue symmetry.
-* `TauCeti.RootfulNiemeierType.latticeIsometryHom`: the action of the glue symmetries on `N_r`.
+* `TauCeti.RootfulNiemeierType.latticeIsometryHom`,
+  `TauCeti.RootfulNiemeierType.latticeIsometryHom_injective`: the faithful action of the glue
+  symmetries on `N_r`.
 * `TauCeti.RootfulNiemeierType.mem_glueSymmetries_of_mem_symmetries`,
-  `TauCeti.RootfulNiemeierType.patternIsometryHom`: the indicated symmetries of the table patterns
-  are glue symmetries and act on `N_r`.
+  `TauCeti.RootfulNiemeierType.patternIsometryHom`,
+  `TauCeti.RootfulNiemeierType.patternIsometryHom_injective`: the indicated symmetries of the table
+  patterns are glue symmetries and act faithfully on `N_r`.
+* `TauCeti.RootfulNiemeierType.coupled_mem_glueSubgroup_iff_of_glueWords`,
+  `TauCeti.RootfulNiemeierType.coupledLatticeIsometry`: coupled componentwise root-lattice
+  self-isometries and row permutations preserving the glue subgroup.
 
 ## References
 
@@ -222,6 +231,24 @@ theorem latticeIsometryHom_apply (g : r.glueSymmetries)
           j) :=
   r.glueSymmetryIsometry_apply (inv_mem g.2) x k j
 
+/-- **The glue symmetries of a row act faithfully on `N_r`**: every component has positive rank, so
+distinct component permutations disagree on ambient indicator vectors. -/
+theorem latticeIsometryHom_injective : Function.Injective r.latticeIsometryHom := by
+  rw [injective_iff_map_eq_one]
+  intro g hg
+  apply Subtype.ext
+  apply Equiv.ext
+  intro k
+  have hpos := DynkinType.rank_pos (r.valid_componentType (g.val k))
+  let x : ∀ i, Fin (r.componentType i).rank → ℚ := fun i _ ↦ if i = k then 1 else 0
+  have hx := congrFun (congrFun (DFunLike.congr_fun hg x) (g.val k)) ⟨0, hpos⟩
+  rw [latticeIsometryHom_apply, Isometry.one_apply] at hx
+  dsimp only [x] at hx
+  rw [Subgroup.coe_one, Equiv.Perm.one_apply]
+  by_contra hne
+  rw [Equiv.Perm.inv_def, Equiv.symm_apply_apply, ite_eq_left rfl, ite_eq_right hne] at hx
+  exact one_ne_zero hx
+
 /-! ### The indicated symmetries of the table patterns -/
 
 /-- **The indicated symmetries of the table patterns are glue symmetries.**  For every row other
@@ -275,6 +302,125 @@ theorem patternIsometryHom_apply {r : RootfulNiemeierType} (hr : r ≠ a5FourthD
         (Fin.cast (congrArg rank (r.componentType_apply_of_mem_glueSymmetries
           (inv_mem (mem_glueSymmetries_of_mem_symmetries hr hp g.2)) k)).symm j) :=
   r.latticeIsometryHom_apply _ x k j
+
+/-- **For every row other than `A₅⁴ D₄`, each pattern symmetry group embeds faithfully into the
+isometry group of `N_r`.** -/
+theorem patternIsometryHom_injective {r : RootfulNiemeierType} (hr : r ≠ a5FourthD4)
+    {p : GluePattern} (hp : p ∈ r.gluePatterns) :
+    Function.Injective (patternIsometryHom hr hp) :=
+  r.latticeIsometryHom_injective.comp fun _ _ hab ↦
+    Subtype.ext <| (finCongr (length_eq_of_mem_gluePatterns hp)).permCongrHom.injective <|
+      congrArg Subtype.val hab
+
+/-! ### Coupled componentwise isometries and row permutations -/
+
+/-- **Digit-word criterion for coupled row symmetries.**  If `g` preserves component types and
+`φ k` is an additive automorphism of the glue alphabet of component `k` acting on labels as `δ k`,
+then the coupled glue-word map `w ↦ fun k ↦ φ k (piGlueAlphabetCongr … g hg w k)` preserves
+`r.glueSubgroup` as soon as it maps the finite set `r.glueWords` into itself. -/
+theorem coupled_mem_glueSubgroup_iff_of_glueWords
+    {g : Equiv.Perm (Fin r.components.length)}
+    (hg : ∀ k, r.componentType (g k) = r.componentType k)
+    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) ≃+
+      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
+    (δ : Fin r.components.length → ℕ → ℕ)
+    (hδ : ∀ k (j : Fin (r.componentType k).glueLabelCount),
+      (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm
+        (φ k ((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k) j))).val =
+        δ k j.val)
+    (hwords : ∀ l ∈ r.glueWords,
+      List.ofFn (fun k ↦ δ k (l.getD (g k) 0)) ∈ r.glueWords)
+    (w : r.glueModule) :
+    (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
+      r.glueSubgroup ↔ w ∈ r.glueSubgroup := by
+  let ψ₀ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
+    (hs := r.isSimplyLaced_componentType)
+  let ψ : r.glueModule ≃+ r.glueModule := ψ₀.toAddEquiv.trans (AddEquiv.piCongrRight φ)
+  have hgen : ∀ v ∈ r.glueGenerators, ψ v ∈ r.glueGenerators := by
+    intro v hv
+    rw [mem_glueGenerators_iff, encodeGlueWord_def] at hv ⊢
+    convert hwords _ hv using 1
+    refine congrArg List.ofFn (funext fun k ↦ ?_)
+    have hk : φ k (ψ₀ v k) = φ k ((r.componentType k).glueLabelEquiv
+        (r.isSimplyLaced_componentType k)
+          (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm (ψ₀ v k))) :=
+      congrArg (φ k) (((r.componentType k).glueLabelEquiv
+        (r.isSimplyLaced_componentType k)).apply_symm_apply _).symm
+    -- Unfold `ψ` to `k ↦ φ k (ψ₀ v k)` at component `k`.
+    change (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm
+      (φ k (ψ₀ v k))).val = _
+    rw [hk, hδ k]
+    refine congrArg (δ k) ?_
+    rw [List.getD_eq_getElem?_getD, List.getElem?_ofFn, dite_eq_left (g k).isLt, Option.getD_some,
+      Fin.eta, piGlueAlphabetCongr_apply]
+    exact DynkinType.val_glueLabelEquiv_symm_ofEq (hg k) _ _ _
+  have hle : r.glueSubgroup ≤ r.glueSubgroup.comap (ψ : r.glueModule →+ r.glueModule) := by
+    rw [glueSubgroup_def, AddSubgroup.closure_le]
+    exact fun v hv ↦ AddSubgroup.subset_closure (hgen v hv)
+  have hf_inj : Function.Injective
+      (fun x : r.glueSubgroup ↦ (⟨ψ x.1, hle x.2⟩ : r.glueSubgroup)) :=
+    fun a b h ↦ Subtype.ext (ψ.injective (congrArg Subtype.val h))
+  refine ⟨fun hw ↦ ?_, fun hw ↦ hle hw⟩
+  obtain ⟨⟨v, hv⟩, hv_eq⟩ := Finite.surjective_of_injective hf_inj ⟨ψ w, hw⟩
+  exact ψ.injective (congrArg Subtype.val hv_eq) ▸ hv
+
+/-- **Coupled componentwise root-lattice self-isometries and a type-preserving row permutation
+induce a self-isometry of `r.lattice`** whenever their combined action on glue labels preserves
+`r.glueSubgroup`. -/
+noncomputable def coupledLatticeIsometry
+    {g : Equiv.Perm (Fin r.components.length)}
+    (hg : ∀ k, r.componentType (g k) = r.componentType k)
+    (f : ∀ k, IntegralLattice.Isometry
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k))
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k)))
+    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) →
+      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
+    (hfφ : ∀ k x,
+      (r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+          (r.isSimplyLaced_componentType k) (φ k x) =
+        (f k).discriminantQuadraticIsometry
+          ((r.componentType k).isEven_rootLattice (r.isSimplyLaced_componentType k))
+          ((r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+            (r.isSimplyLaced_componentType k) x))
+    (hH : ∀ w : r.glueModule,
+      (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
+        r.glueSubgroup ↔ w ∈ r.glueSubgroup) :
+    IntegralLattice.Isometry r.lattice r.lattice :=
+  (Isometry.ofEq (lattice_def r)).trans <|
+    (gluedLatticePiOfEqIsometry r.componentType r.isSimplyLaced_componentType r.valid_componentType
+      r.glueSubgroup r.isIsotropic_glueSubgroup r.valid_componentType r.isIsotropic_glueSubgroup
+      g hg f φ hfφ hH).trans
+    (Isometry.ofEq (lattice_def r).symm)
+
+/-- `coupledLatticeIsometry` reads component `k` from position `g k` across `hg k` and applies
+`f k`. -/
+@[simp]
+theorem coupledLatticeIsometry_apply
+    {g : Equiv.Perm (Fin r.components.length)}
+    (hg : ∀ k, r.componentType (g k) = r.componentType k)
+    (f : ∀ k, IntegralLattice.Isometry
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k))
+      ((r.componentType k).rootLattice (r.isSimplyLaced_componentType k)))
+    (φ : ∀ k, (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k) →
+      (r.componentType k).glueAlphabet (r.isSimplyLaced_componentType k))
+    (hfφ : ∀ k x,
+      (r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+          (r.isSimplyLaced_componentType k) (φ k x) =
+        (f k).discriminantQuadraticIsometry
+          ((r.componentType k).isEven_rootLattice (r.isSimplyLaced_componentType k))
+          ((r.componentType k).glueAlphabetIsometry (r.valid_componentType k)
+            (r.isSimplyLaced_componentType k) x))
+    (hH : ∀ w : r.glueModule,
+      (fun k ↦ φ k (piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg w k)) ∈
+        r.glueSubgroup ↔ w ∈ r.glueSubgroup)
+    (x : ∀ i, Fin (r.componentType i).rank → ℚ) (k : Fin r.components.length) :
+    r.coupledLatticeIsometry hg f φ hfφ hH x k =
+      f k ((r.componentType (g k)).rootLatticeIsometryOfEq
+        (r.isSimplyLaced_componentType (g k)) (hg k)
+          (r.isSimplyLaced_componentType k) (x (g k))) := by
+  rw [coupledLatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
+    Isometry.ofEq_apply]
+  exact gluedLatticePiOfEqIsometry_apply _ _ _ _ _ _ _ _ _ _ _ _ _ x k
 
 end RootfulNiemeierType
 
