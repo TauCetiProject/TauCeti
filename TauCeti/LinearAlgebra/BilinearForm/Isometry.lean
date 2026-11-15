@@ -696,7 +696,8 @@ theorem coe_specialIsometryWithinEquiv_apply (g : specialIsometryWithin B) :
       ((g : isometryGroup B) : M ≃ₗ[R] M) := by
   simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
-/-- The inverse of `specialIsometryWithinEquiv` is `specialIsometryToIsometry`. -/
+/-- Followed by the inclusion into `Aut(M, B)`, the inverse of `specialIsometryWithinEquiv` agrees
+with `specialIsometryToIsometry`. -/
 @[simp]
 theorem coe_specialIsometryWithinEquiv_symm_apply (g : specialIsometryGroup B) :
     (((specialIsometryWithinEquiv B).symm g : specialIsometryWithin B) : isometryGroup B) =
