@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +22,8 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`.
+of `TauCeti.ConvolutionDual`, so `rightCointegralsConvEquiv` and `leftCointegralsConvEquiv`
+identify right and left cointegrals with right and left integrals in `ConvolutionDual`.
 
 ## References
 
@@ -178,5 +180,72 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
   rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
   simpa [mul_comm] using heq
+
+section ConvolutionDual
+
+variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+  [Module.Finite R H] [Module.Projective R H]
+
+/-- Under `WithConv.toConv`, right integrals in `ConvolutionDual R H` are precisely right
+cointegrals on `H`. -/
+@[simp]
+theorem toConv_mem_rightIntegral_iff (φ : Module.Dual R H) :
+    WithConv.toConv φ ∈ rightIntegral R (ConvolutionDual R H) ↔ IsRightCointegral φ := by
+  rw [mem_rightIntegral_iff, isRightCointegral_iff_convMul]
+  simp only [ConvolutionDual.counit_apply]
+
+/-- Under `WithConv.toConv`, left integrals in `ConvolutionDual R H` are precisely left
+cointegrals on `H`. -/
+@[simp]
+theorem toConv_mem_leftIntegral_iff (φ : Module.Dual R H) :
+    WithConv.toConv φ ∈ leftIntegral R (ConvolutionDual R H) ↔ IsLeftCointegral φ := by
+  rw [mem_leftIntegral_iff, isLeftCointegral_iff_convMul]
+  simp only [ConvolutionDual.counit_apply]
+
+variable (R H) in
+/-- `WithConv.toConv` restricts to an `R`-linear equivalence between right cointegrals on `H` and
+right integrals in `ConvolutionDual R H`. -/
+noncomputable def rightCointegralsConvEquiv :
+    rightCointegrals R H ≃ₗ[R] rightIntegral R (ConvolutionDual R H) where
+  toFun φ := ⟨WithConv.toConv φ.1,
+    (toConv_mem_rightIntegral_iff φ.1).mpr ((mem_rightCointegrals φ.1).mp φ.2)⟩
+  map_add' φ ψ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_add φ.1 ψ.1)
+  map_smul' r φ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_smul r φ.1)
+  invFun ψ := ⟨ψ.1.ofConv,
+    (mem_rightCointegrals ψ.1.ofConv).mpr ((toConv_mem_rightIntegral_iff ψ.1.ofConv).mp ψ.2)⟩
+  left_inv _ := Subtype.ext rfl
+  right_inv _ := Subtype.ext rfl
+
+variable (R H) in
+/-- `WithConv.toConv` restricts to an `R`-linear equivalence between left cointegrals on `H` and
+left integrals in `ConvolutionDual R H`. -/
+noncomputable def leftCointegralsConvEquiv :
+    leftCointegrals R H ≃ₗ[R] leftIntegral R (ConvolutionDual R H) where
+  toFun φ := ⟨WithConv.toConv φ.1,
+    (toConv_mem_leftIntegral_iff φ.1).mpr ((mem_leftCointegrals φ.1).mp φ.2)⟩
+  map_add' φ ψ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_add φ.1 ψ.1)
+  map_smul' r φ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_smul r φ.1)
+  invFun ψ := ⟨ψ.1.ofConv,
+    (mem_leftCointegrals ψ.1.ofConv).mpr ((toConv_mem_leftIntegral_iff ψ.1.ofConv).mp ψ.2)⟩
+  left_inv _ := Subtype.ext rfl
+  right_inv _ := Subtype.ext rfl
+
+@[simp]
+theorem rightCointegralsConvEquiv_apply (φ : rightCointegrals R H) :
+    (rightCointegralsConvEquiv R H φ : ConvolutionDual R H) = WithConv.toConv φ.1 := (rfl)
+
+@[simp]
+theorem rightCointegralsConvEquiv_symm_apply (ψ : rightIntegral R (ConvolutionDual R H)) :
+    ((rightCointegralsConvEquiv R H).symm ψ : Module.Dual R H) = ψ.1.ofConv := (rfl)
+
+@[simp]
+theorem leftCointegralsConvEquiv_apply (φ : leftCointegrals R H) :
+    (leftCointegralsConvEquiv R H φ : ConvolutionDual R H) = WithConv.toConv φ.1 := (rfl)
+
+@[simp]
+theorem leftCointegralsConvEquiv_symm_apply (ψ : leftIntegral R (ConvolutionDual R H)) :
+    ((leftCointegralsConvEquiv R H).symm ψ : Module.Dual R H) = ψ.1.ofConv := (rfl)
+
+end ConvolutionDual
 
 end TauCeti
