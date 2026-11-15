@@ -11,10 +11,11 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Polynomial.Basic
-import Mathlib.Algebra.Ring.GeomSum
+public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Hermite interpolation
@@ -343,7 +344,7 @@ theorem hermiteBasis_eq_of_dvd_taylor_mul_sub_one [DecidableEq ι] (x : Σ i, Fi
     · subst hi
       have hX : taylor (a x.1) (X - C (a x.1)) = X := by simp [taylor_apply]
       have htf : taylor (a x.1) f = X ^ (x.2 : ℕ) * (taylor (a x.1) Q * h) := by
-        simp only [f, taylor_mul, taylor_pow, hX, taylor_taylor, add_neg_cancel, taylor_zero]
+        simp [f, hX, taylor_taylor]
         ring
       have hdvd' : X ^ m x.1 ∣ taylor (a x.1) f - X ^ (x.2 : ℕ) := by
         conv_lhs => rw [← Nat.add_sub_of_le x.2.isLt.le, pow_add]
@@ -372,56 +373,54 @@ theorem hermiteBasis_of_subsingleton [Subsingleton ι] (x : Σ i, Fin (m i)) :
   simpa [hempty] using hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x hdeg (by simp [hempty])
 
 /-- **Explicit truncated-geometric-series formula for the Hermite basis.** Given inverses `v i` of
-`a x.1 - a i` for `i ≠ x.1`, each shifted linear factor `X + C (a x.1 - a i)` has inverse
-`∑ k < N, v i * (-v i) ^ k * X ^ k` modulo `X ^ N` where `N = m x.1 - x.2`. Truncating the product
-of their `m i`-th powers below degree `N` gives the local factor of `hermiteBasis ha m x`. -/
+`a x.1 - a i` for `i ≠ x.1`, each shifted linear factor `X + C (a x.1 - a i)` has formal power
+series inverse `C (v i) * ∑ k, (-v i) ^ k * X ^ k`. Truncating the product of their `m i`-th powers
+below degree `m x.1 - x.2` via `PowerSeries.trunc` gives the local factor of
+`hermiteBasis ha m x`. -/
 theorem hermiteBasis_eq_prod_mul_pow_mul_taylor [DecidableEq ι] (x : Σ i, Fin (m i)) {v : ι → R}
     (hv : ∀ i, i ≠ x.1 → (a x.1 - a i) * v i = 1) :
     (hermiteBasis ha m x : R[X]) =
       (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ (x.2 : ℕ) *
-        taylor (-a x.1) (∑ d ∈ range (m x.1 - x.2), monomial d
-          ((∏ i ∈ univ.erase x.1,
-            (∑ k ∈ range (m x.1 - x.2), monomial k (v i * (-v i) ^ k)) ^ m i).coeff d)) := by
+        taylor (-a x.1) (PowerSeries.trunc (m x.1 - x.2)
+          (∏ i ∈ univ.erase x.1,
+            (PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k) ^ m i)) := by
   set N : ℕ := m x.1 - x.2
-  set q : ι → R[X] := fun i ↦ ∑ k ∈ range N, monomial k (v i * (-v i) ^ k)
-  set P : R[X] := ∏ i ∈ univ.erase x.1, q i ^ m i
-  set h : R[X] := ∑ d ∈ range N, monomial d (P.coeff d)
-  refine hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x ?_ ?_
-  · rw [degree_lt_iff_coeff_zero _ N]
-    intro k hk
-    rw [finsetSum_coeff]
-    exact sum_eq_zero fun d hd ↦ by simp [((mem_range.1 hd).trans_le hk).ne]
-  · let π : R[X] →+* R[X] ⧸ Ideal.span ({X ^ N} : Set R[X]) := Ideal.Quotient.mk _
-    suffices hπ : π (taylor (a x.1) (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * h) = π 1 by
-      exact Ideal.mem_span_singleton.1 (Ideal.Quotient.eq.1 hπ)
-    have hPh : π h = π P := by
-      symm
-      rw [Ideal.Quotient.eq, Ideal.mem_span_singleton, X_pow_dvd_iff]
-      intro d hd
-      rw [coeff_sub, finsetSum_coeff,
-        sum_eq_single d (fun c _ hcd ↦ by simp [hcd]) (fun hd' ↦ absurd (mem_range.2 hd) hd'),
-        coeff_monomial_same, sub_self]
-    have hq (i : ι) (hi : i ∈ univ.erase x.1) :
-        π (taylor (a x.1) (X - C (a i)) * q i) = 1 := by
-      have hgeom : taylor (a x.1) (X - C (a i)) * q i = 1 - monomial N ((-v i) ^ N) := by
-        have hlin : taylor (a x.1) (X - C (a i)) * C (v i) = 1 - monomial 1 (-v i) := by
-          rw [taylor_apply, sub_comp, X_comp, C_comp, ← C_mul_X_pow_eq_monomial, pow_one, map_neg]
-          calc (X + C (a x.1) - C (a i)) * C (v i)
-              = C (v i) * X + C (a x.1 - a i) * C (v i) := by rw [map_sub]; ring
-            _ = 1 - -C (v i) * X := by rw [← C_mul, hv i (mem_erase.1 hi).1, C_1]; ring
-        have hsum : q i = C (v i) * ∑ k ∈ range N, monomial 1 (-v i) ^ k := by
-          rw [mul_sum]
-          refine sum_congr rfl fun k _ ↦ ?_
-          rw [monomial_pow, one_mul, C_mul_monomial]
-        rw [hsum, ← mul_assoc, hlin, mul_neg_geom_sum, monomial_pow, one_mul]
-      rw [hgeom, map_sub, map_one, ← C_mul_X_pow_eq_monomial,
-        Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 (dvd_mul_left _ _)), sub_zero]
-    have htprod : taylor (a x.1) (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) =
-        ∏ i ∈ univ.erase x.1, taylor (a x.1) ((X - C (a i)) ^ m i) :=
-      map_prod (taylorAlgHom (a x.1)) _ _
-    rw [map_mul, hPh, htprod, ← map_mul, ← prod_mul_distrib, map_prod, map_one]
+  let g : ι → PowerSeries R := fun i ↦ PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k
+  let G : PowerSeries R := ∏ i ∈ univ.erase x.1, g i ^ m i
+  refine hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x (PowerSeries.degree_trunc_lt G N) ?_
+  set Q : R[X] := ∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i
+  have hinv : ((taylor (a x.1) Q : R[X]) : PowerSeries R) * G = 1 := by
+    have htQ : ((taylor (a x.1) Q : R[X]) : PowerSeries R) =
+        ∏ i ∈ univ.erase x.1, ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) ^ m i := by
+      simp only [Q, ← coeToPowerSeries.ringHom_apply, ← taylorAlgHom_apply, map_prod, map_pow]
+    rw [htQ, ← prod_mul_distrib]
     refine prod_eq_one fun i hi ↦ ?_
-    rw [taylor_pow, ← mul_pow, map_pow, hq i hi, one_pow]
+    rw [← mul_pow]
+    have hlin : ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) * PowerSeries.C (v i) =
+        1 - PowerSeries.C (-v i) * PowerSeries.X := by
+      have ht : taylor (a x.1) (X - C (a i)) = X + C (a x.1 - a i) := by
+        simp [taylor_apply, sub_eq_add_neg, add_assoc]
+      rw [ht, Polynomial.coe_add, Polynomial.coe_X, Polynomial.coe_C, add_mul,
+        ← PowerSeries.C.map_mul, hv i (mem_erase.1 hi).1, map_one, map_neg]
+      ring
+    rw [show ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) * g i =
+      (((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) * PowerSeries.C (v i)) *
+        PowerSeries.mk fun k ↦ (-v i) ^ k from (mul_assoc _ _ _).symm,
+      hlin, mul_comm, TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one, one_pow]
+  rw [X_pow_dvd_iff]
+  intro d hd
+  rw [coeff_sub, sub_eq_zero]
+  calc (taylor (a x.1) Q * PowerSeries.trunc N G).coeff d
+      = PowerSeries.coeff d ((taylor (a x.1) Q : PowerSeries R) *
+          (PowerSeries.trunc N G : PowerSeries R)) := by
+          rw [← Polynomial.coeff_coe, Polynomial.coe_mul]
+    _ = (PowerSeries.trunc N ((taylor (a x.1) Q : PowerSeries R) *
+          (PowerSeries.trunc N G : PowerSeries R))).coeff d := by
+          rw [PowerSeries.coeff_trunc, ite_eq_left hd]
+    _ = (PowerSeries.trunc N (1 : PowerSeries R)).coeff d := by
+          rw [PowerSeries.trunc_mul_trunc, hinv]
+    _ = (1 : R[X]).coeff d := by
+          rw [PowerSeries.coeff_trunc, ite_eq_left hd, ← Polynomial.coe_one, Polynomial.coeff_coe]
 
 /-- Scaling a Hermite basis polynomial by an inverse `u` of `(x.2)!` yields Kronecker-delta values
 for the ordinary derivatives `(derivative^[j] _).eval (a i)` of orders `j < m i`. -/
@@ -429,16 +428,13 @@ theorem eval_iterate_derivative_smul_hermiteBasis [DecidableEq ι] (x : Σ i, Fi
     (hu : ((x.2 : ℕ)! : R) * u = 1) (i : ι) {j : ℕ} (hj : j < m i) :
     (derivative^[j] (u • (hermiteBasis ha m x : R[X]))).eval (a i) =
       if i = x.1 ∧ j = x.2 then 1 else 0 := by
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, map_smul, eval_smul, eval_smul,
-    nsmul_eq_mul, smul_eq_mul]
   have hev := eval_hasseDeriv_hermiteBasis ha m x i ⟨j, hj⟩
   by_cases h : i = x.1 ∧ j = x.2
   · rcases h with ⟨rfl, rfl⟩
     have hx : (⟨x.1, ⟨x.2, hj⟩⟩ : Σ i, Fin (m i)) = x := by ext <;> rfl
-    rw [hev, hx]
-    simp [hu]
+    simp [← factorial_smul_hasseDeriv, hev, hx, mul_comm _ u ▸ hu]
   · have hx : x ≠ ⟨i, ⟨j, hj⟩⟩ := fun h' ↦ h ⟨(congr_arg Sigma.fst h').symm, by subst h'; rfl⟩
-    simp [hev, hx, h]
+    simp [← factorial_smul_hasseDeriv, hev, hx, h]
 
 end CommRing
 

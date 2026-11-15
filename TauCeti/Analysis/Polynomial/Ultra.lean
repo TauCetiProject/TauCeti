@@ -12,19 +12,26 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
 # Polynomial bounds over ultrametric rings
 
-Over an ultrametric seminormed ring, the Gauss bound `∀ n, ‖p.coeff n‖ * c ^ n ≤ B` at a
-nonnegative radius `c` is preserved under scalar multiplication
-(`Polynomial.norm_coeff_smul_mul_pow_le`), finite sums (`Polynomial.norm_coeff_sum_mul_pow_le`),
-products (`Polynomial.norm_coeff_mul_mul_pow_le`, `Polynomial.norm_coeff_pow_mul_pow_le`,
-`Polynomial.norm_coeff_prod_mul_pow_le`), Taylor shifts `p(X + r)` by points `r` of `‖r‖ ≤ c`
-(`Polynomial.norm_coeff_taylor_mul_pow_le`), and degree truncation with radius rescaling
-(`Polynomial.norm_coeff_sum_range_monomial_mul_pow_le`), while a linear factor `X - a` with
-`‖a‖ ≤ c` (`Polynomial.norm_coeff_X_sub_C_mul_pow_le`) and a truncated geometric series
-(`Polynomial.norm_coeff_sum_monomial_mul_neg_pow_mul_pow_le`) satisfy explicit weighted bounds.
+Weighted coefficient bounds `‖p.coeff n‖ * c ^ n ≤ B` at a nonnegative radius `c` behave
+predictably under polynomial operations:
+* Over any seminormed ring, left scalar multiplication scales a single-degree bound by `‖a‖`
+  (`Polynomial.norm_coeff_smul_mul_pow_le`), rescaling from `0 < ϱ ≤ B` on a polynomial of natural
+  degree at most `d` multiplies a bound `C` by `(B / ϱ) ^ d`
+  (`Polynomial.norm_coeff_mul_pow_le_of_natDegree_le`), and when `‖1‖ = 1` a linear factor
+  `X - C a` with `‖a‖ ≤ c` has `c`-weighted coefficients bounded by `c`
+  (`Polynomial.norm_coeff_X_sub_C_mul_pow_le`).
+* Over an ultrametric seminormed ring, a common bound `B` is preserved under finite sums
+  (`Polynomial.norm_coeff_sum_mul_pow_le`) and Taylor shifts `p(X + r)` by points `r` with
+  `‖r‖ ≤ c` (`Polynomial.norm_coeff_taylor_mul_pow_le`), while bounds `Bp` and `Bq` multiply to
+  `Bp * Bq` on `p * q` (`Polynomial.norm_coeff_mul_mul_pow_le`), give `B ^ m` on `p ^ m` when
+  `‖1‖ = 1` (`Polynomial.norm_coeff_pow_mul_pow_le`,
+  `Polynomial.norm_coeff_X_sub_C_pow_mul_pow_le`), and give `∏ i ∈ s, B i` on finite products when
+  `R` is commutative with `‖1‖ = 1` (`Polynomial.norm_coeff_prod_mul_pow_le`).
 
 Over an ultrametric seminormed commutative ring with `‖1‖ = 1`, let `p a` be polynomials of
 degree at most one whose constant coefficients have norm at most one and whose linear
@@ -65,14 +72,14 @@ variable {R : Type*} [SeminormedRing R]
 
 /-- Left multiplication of a polynomial by a scalar multiplies a weighted coefficient bound at a
 nonnegative radius `c` by the norm of the scalar. -/
-theorem norm_coeff_smul_mul_pow_le (a : R) {p : R[X]} {c B : ℝ} (hc : 0 ≤ c)
-    (hp : ∀ n, ‖p.coeff n‖ * c ^ n ≤ B) (n : ℕ) :
+theorem norm_coeff_smul_mul_pow_le (a : R) {p : R[X]} {c B : ℝ} (hc : 0 ≤ c) {n : ℕ}
+    (hp : ‖p.coeff n‖ * c ^ n ≤ B) :
     ‖(a • p).coeff n‖ * c ^ n ≤ ‖a‖ * B := by
   rw [AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
   calc ‖a * p.coeff n‖ * c ^ n ≤ ‖a‖ * ‖p.coeff n‖ * c ^ n :=
         mul_le_mul_of_nonneg_right (norm_mul_le _ _) (pow_nonneg hc n)
     _ = ‖a‖ * (‖p.coeff n‖ * c ^ n) := mul_assoc _ _ _
-    _ ≤ ‖a‖ * B := mul_le_mul_of_nonneg_left (hp n) (norm_nonneg a)
+    _ ≤ ‖a‖ * B := mul_le_mul_of_nonneg_left hp (norm_nonneg a)
 
 /-- The `c`-weighted coefficients of `X - C a` are bounded by `c` whenever `‖a‖ ≤ c`. -/
 theorem norm_coeff_X_sub_C_mul_pow_le [NormOneClass R] {a : R} {c : ℝ} (ha : ‖a‖ ≤ c) (n : ℕ) :
@@ -83,59 +90,38 @@ theorem norm_coeff_X_sub_C_mul_pow_le [NormOneClass R] {a : R} {c : ℝ} (ha : �
   · simp [coeff_X]
   · simp [coeff_X, hc]
 
-/-- If `‖v‖ ≤ ϱ⁻¹` with `0 < ϱ`, the `ϱ`-weighted coefficients of the truncated geometric
-polynomial `∑ k ∈ range N, monomial k (v * (-v) ^ k)` are bounded by `‖v‖`. -/
-theorem norm_coeff_sum_monomial_mul_neg_pow_mul_pow_le {v : R} {ϱ : ℝ} (hϱ0 : 0 < ϱ)
-    (hv : ‖v‖ ≤ ϱ⁻¹) (N n : ℕ) :
-    ‖(∑ k ∈ range N, monomial k (v * (-v) ^ k)).coeff n‖ * ϱ ^ n ≤ ‖v‖ := by
-  rw [finsetSum_coeff]
-  by_cases hn : n ∈ range N
-  · rw [sum_eq_single n (fun j _ hjn ↦ by simp [hjn]) (fun hn' ↦ absurd hn hn'),
-      coeff_monomial_same]
-    have hvϱ : ‖v‖ * ϱ ≤ 1 :=
-      (mul_le_mul_of_nonneg_right hv hϱ0.le).trans_eq (inv_mul_cancel₀ hϱ0.ne')
-    calc ‖v * (-v) ^ n‖ * ϱ ^ n
-        ≤ ‖v‖ * ‖-v‖ ^ n * ϱ ^ n :=
-          mul_le_mul_of_nonneg_right (TauCeti.norm_mul_pow_le _ _ _) (by positivity)
-      _ = ‖v‖ * (‖v‖ * ϱ) ^ n := by rw [norm_neg, mul_assoc, ← mul_pow]
-      _ ≤ ‖v‖ * 1 := mul_le_mul_of_nonneg_left (pow_le_one₀ (by positivity) hvϱ) (norm_nonneg _)
-      _ = ‖v‖ := mul_one _
-  · rw [sum_eq_zero fun j hj ↦ by simp [ne_of_mem_of_not_mem hj hn]]
-    simp [norm_nonneg v]
-
-/-- Truncating a polynomial `p` below degree `N` rescales a `ϱ`-weighted coefficient bound `C`
-(`0 < ϱ ≤ B`) to the `B`-weighted bound `C * (B / ϱ) ^ (N - 1)`. -/
-theorem norm_coeff_sum_range_monomial_mul_pow_le {p : R[X]} {ϱ B C : ℝ} (hϱ0 : 0 < ϱ)
-    (hϱB : ϱ ≤ B) (hp : ∀ n, ‖p.coeff n‖ * ϱ ^ n ≤ C) (N n : ℕ) :
-    ‖(∑ d ∈ range N, monomial d (p.coeff d)).coeff n‖ * B ^ n ≤ C * (B / ϱ) ^ (N - 1) := by
-  have hC0 : 0 ≤ C := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hp 0)
+/-- For a polynomial `p` of natural degree at most `d`, a `ϱ`-weighted bound `C` on `p.coeff n`
+(`0 < ϱ ≤ B`) rescales to the `B`-weighted bound `C * (B / ϱ) ^ d`. -/
+theorem norm_coeff_mul_pow_le_of_natDegree_le {p : R[X]} {ϱ B C : ℝ} (hϱ0 : 0 < ϱ)
+    (hϱB : ϱ ≤ B) {d : ℕ} (hd : p.natDegree ≤ d) {n : ℕ} (hp : ‖p.coeff n‖ * ϱ ^ n ≤ C) :
+    ‖p.coeff n‖ * B ^ n ≤ C * (B / ϱ) ^ d := by
+  have hC0 : 0 ≤ C := (mul_nonneg (norm_nonneg _) (pow_nonneg hϱ0.le n)).trans hp
   have hBϱ0 : 0 ≤ B / ϱ := div_nonneg (hϱ0.le.trans hϱB) hϱ0.le
-  rw [finsetSum_coeff]
-  by_cases hn : n ∈ range N
-  · rw [sum_eq_single n (fun j _ hjn ↦ by simp [hjn]) (fun hn' ↦ absurd hn hn'),
-      coeff_monomial_same]
-    have hnle : n ≤ N - 1 := by have := mem_range.1 hn; omega
-    have hBϱ : B ^ n = ϱ ^ n * (B / ϱ) ^ n := by rw [← mul_pow, mul_div_cancel₀ _ hϱ0.ne']
+  by_cases hn : n ≤ d
+  · have hBϱ : B ^ n = ϱ ^ n * (B / ϱ) ^ n := by rw [← mul_pow, mul_div_cancel₀ _ hϱ0.ne']
     rw [hBϱ, ← mul_assoc]
-    exact mul_le_mul (hp n) (pow_le_pow_right₀ ((one_le_div hϱ0).2 hϱB) hnle) (pow_nonneg hBϱ0 n)
-      hC0
-  · rw [sum_eq_zero fun j hj ↦ by simp [ne_of_mem_of_not_mem hj hn]]
-    simp only [norm_zero, zero_mul]
-    exact mul_nonneg hC0 (pow_nonneg hBϱ0 _)
+    exact mul_le_mul hp (pow_le_pow_right₀ ((one_le_div hϱ0).2 hϱB) hn) (pow_nonneg hBϱ0 n) hC0
+  · rw [coeff_eq_zero_of_natDegree_lt (hd.trans_lt (not_le.1 hn)), norm_zero, zero_mul]
+    exact mul_nonneg hC0 (pow_nonneg hBϱ0 d)
 
 variable [IsUltrametricDist R]
 
-/-- Over an ultrametric seminormed ring, a common nonnegative bound on the `c`-weighted
-coefficients of a finite family of polynomials bounds the `c`-weighted coefficients of their
+private theorem norm_sum_mul_le_of_forall_le {ι : Type*} (s : Finset ι) (f : ι → R) {w B : ℝ}
+    (hw : 0 ≤ w) (hB : 0 ≤ B) (hf : ∀ i ∈ s, ‖f i‖ * w ≤ B) :
+    ‖∑ i ∈ s, f i‖ * w ≤ B := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simpa using hB
+  · obtain ⟨i, hi, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hs f
+    exact (mul_le_mul_of_nonneg_right hle hw).trans (hf i hi)
+
+/-- Over an ultrametric seminormed ring, a common nonnegative bound on the `n`-th `c`-weighted
+coefficients of a finite family of polynomials bounds the `n`-th `c`-weighted coefficient of their
 sum. -/
 theorem norm_coeff_sum_mul_pow_le {ι : Type*} (s : Finset ι) (f : ι → R[X]) {c B : ℝ}
-    (hc : 0 ≤ c) (hB : 0 ≤ B) (hf : ∀ i ∈ s, ∀ n, ‖(f i).coeff n‖ * c ^ n ≤ B) (n : ℕ) :
+    (hc : 0 ≤ c) (hB : 0 ≤ B) {n : ℕ} (hf : ∀ i ∈ s, ‖(f i).coeff n‖ * c ^ n ≤ B) :
     ‖(∑ i ∈ s, f i).coeff n‖ * c ^ n ≤ B := by
-  rcases (pow_nonneg hc n).eq_or_lt with hcn | hcn
-  · simpa [← hcn] using hB
-  rw [← le_div_iff₀ hcn, finsetSum_coeff]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (div_nonneg hB hcn.le) fun i hi ↦ ?_
-  exact (le_div_iff₀ hcn).2 (hf i hi n)
+  rw [finsetSum_coeff]
+  exact norm_sum_mul_le_of_forall_le s (fun i ↦ (f i).coeff n) (pow_nonneg hc n) hB hf
 
 /-- Over an ultrametric seminormed ring, bounds `Bp` and `Bq` on the `c`-weighted coefficients of
 `p` and `q` at `c ≥ 0` multiply to bound the `c`-weighted coefficients of `p * q`. -/
@@ -143,19 +129,19 @@ theorem norm_coeff_mul_mul_pow_le {p q : R[X]} {c Bp Bq : ℝ} (hc : 0 ≤ c)
     (hp : ∀ n, ‖p.coeff n‖ * c ^ n ≤ Bp) (hq : ∀ n, ‖q.coeff n‖ * c ^ n ≤ Bq) (n : ℕ) :
     ‖(p * q).coeff n‖ * c ^ n ≤ Bp * Bq := by
   have hBp : 0 ≤ Bp := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hp 0)
-  have hBq : 0 ≤ Bq := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hq 0)
-  rcases (pow_nonneg hc n).eq_or_lt with hcn | hcn
-  · simpa [← hcn] using mul_nonneg hBp hBq
-  rw [← le_div_iff₀ hcn, coeff_mul]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
-    (div_nonneg (mul_nonneg hBp hBq) hcn.le) fun x hx ↦ ?_
-  rw [le_div_iff₀ hcn, ← mem_antidiagonal.1 hx, pow_add]
-  calc ‖p.coeff x.1 * q.coeff x.2‖ * (c ^ x.1 * c ^ x.2)
-      ≤ ‖p.coeff x.1‖ * ‖q.coeff x.2‖ * (c ^ x.1 * c ^ x.2) :=
-        mul_le_mul_of_nonneg_right (norm_mul_le _ _) (by positivity)
-    _ = (‖p.coeff x.1‖ * c ^ x.1) * (‖q.coeff x.2‖ * c ^ x.2) := by ring
-    _ ≤ Bp * Bq :=
-        mul_le_mul (hp x.1) (hq x.2) (mul_nonneg (norm_nonneg _) (pow_nonneg hc _)) hBp
+  have hpf : (p : PowerSeries R).HasGaussNorm norm c :=
+    ⟨Bp, Set.forall_mem_range.2 fun k ↦ by simpa using hp k⟩
+  have hqf : (q : PowerSeries R).HasGaussNorm norm c :=
+    ⟨Bq, Set.forall_mem_range.2 fun k ↦ by simpa using hq k⟩
+  have hp_le : (p : PowerSeries R).gaussNorm norm c ≤ Bp :=
+    (PowerSeries.gaussNorm_eq norm c _).trans_le (ciSup_le fun k ↦ by simpa using hp k)
+  have hq_le : (q : PowerSeries R).gaussNorm norm c ≤ Bq :=
+    (PowerSeries.gaussNorm_eq norm c _).trans_le (ciSup_le fun k ↦ by simpa using hq k)
+  rw [← coeff_coe, Polynomial.coe_mul]
+  exact (PowerSeries.le_gaussNorm norm c _
+    (TauCeti.PowerSeries.hasGaussNorm_mul hc hpf hqf) n).trans
+    ((TauCeti.PowerSeries.gaussNorm_mul_le hc hpf hqf).trans
+      (mul_le_mul hp_le hq_le (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg) hBp))
 
 /-- Over an ultrametric seminormed ring with `‖1‖ = 1`, a bound `B` on the `c`-weighted
 coefficients of `p` at `c ≥ 0` gives the bound `B ^ m` on those of `p ^ m`. -/
@@ -175,22 +161,20 @@ theorem norm_coeff_X_sub_C_pow_mul_pow_le [NormOneClass R] {a : R} {c : ℝ} (ha
 
 /-- **Taylor invariance of ultrametric Gauss bounds.** Over an ultrametric seminormed ring,
 shifting `p` to `taylor r p = p(X + r)` by a point `r` with `‖r‖ ≤ c` preserves any bound on its
-`c`-weighted coefficients: binomial coefficients have norm at most `1`. -/
+`c`-weighted coefficients: natural-number multiples do not increase the norm in an ultrametric
+seminormed ring. -/
 theorem norm_coeff_taylor_mul_pow_le {p : R[X]} {r : R} {c B : ℝ} (hr : ‖r‖ ≤ c)
     (hp : ∀ n, ‖p.coeff n‖ * c ^ n ≤ B) (n : ℕ) :
     ‖(taylor r p).coeff n‖ * c ^ n ≤ B := by
   have hc : 0 ≤ c := (norm_nonneg r).trans hr
   have hB : 0 ≤ B := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hp 0)
-  rcases (pow_nonneg hc n).eq_or_lt with hcn | hcn
-  · simpa [← hcn] using hB
-  rw [coeff_taylor_eq_sum (Nat.lt_succ_self p.natDegree), ← le_div_iff₀ hcn]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (div_nonneg hB hcn.le) fun k _ ↦ ?_
-  rw [le_div_iff₀ hcn]
+  rw [coeff_taylor_eq_sum (Nat.lt_succ_self p.natDegree)]
+  refine norm_sum_mul_le_of_forall_le _ _ (pow_nonneg hc n) hB fun k _ ↦ ?_
   calc ‖(k + n).choose n • (p.coeff (k + n) * r ^ k)‖ * c ^ n
       ≤ ‖p.coeff (k + n) * r ^ k‖ * c ^ n :=
-        mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_nsmul_le _ _) hcn.le
+        mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_nsmul_le _ _) (pow_nonneg hc n)
     _ ≤ ‖p.coeff (k + n)‖ * c ^ k * c ^ n := by
-        refine mul_le_mul_of_nonneg_right ?_ hcn.le
+        refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hc n)
         exact (TauCeti.norm_mul_pow_le _ _ _).trans
           (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg r) hr k) (norm_nonneg _))
     _ = ‖p.coeff (k + n)‖ * c ^ (k + n) := by rw [mul_assoc, ← pow_add]
