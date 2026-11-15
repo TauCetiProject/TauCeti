@@ -129,6 +129,14 @@ theorem latticePoint_sub {ι : Type*} (j j' : ι → ℤ) :
   ext i
   simp
 
+/-- The lattice point with coordinates `j` is the integer combination `∑ i, j i • eᵢ` of the
+standard basis vectors. -/
+theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :
+    latticePoint j = ∑ i, (j i : ℝ) • EuclideanSpace.basisFun ι ℝ i := by
+  classical
+  ext k
+  simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
+
 /-- Only finitely many lattice points lie in a ball. -/
 theorem finite_setOf_norm_latticePoint_lt {ι : Type*} [Fintype ι] (R : ℝ) :
     {j : ι → ℤ | ‖latticePoint j‖ < R}.Finite := by
