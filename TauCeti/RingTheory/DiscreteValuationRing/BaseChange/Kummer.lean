@@ -9,52 +9,51 @@ public import Mathlib.Data.List.TFAE
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.Tactic.TFAE
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Localization
-import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
+import TauCeti.RingTheory.Unramified.Field
 
 /-!
 # Adjoining a root of a uniformizer and the Kummer characterization of tame ramification
 
-Let `A` be a discrete valuation ring with fraction field `K` and uniformizer `π`, and let `L / K`
-be a finite extension.
+This file establishes the Kummer case of Abhyankar's lemma for discrete valuation rings (Stacks,
+Lemma 15.116.4 (0BRM)) and the Kummer characterization of tamely ramified extensions (Stacks, Lemma
+15.116.7 (0EXW)). Together they supply the local Kummer reduction feeding base-change stability of
+tamely ramified DVR extensions in
+`TauCeti.RingTheory.DiscreteValuationRing.BaseChange.TamelyRamified` (Stacks, Lemma 15.116.9
+(0EXY)), tameness of standard tame covers (Stacks, Tag 0EYF), and the full DVR Abhyankar lemma
+(Stacks, Tag 0EYG).
 
-* If `L / K` is separable and unramified with respect to `A`, adjoining any `n`-th root `α` of `π`
-  (`n ≠ 0`) to both fields gives an extension `L(α) / K(α)` unramified with respect to the
-  integral closure of `A` in `K(α)`.
-* More generally, if `L` is tamely ramified with respect to `A` and every maximal ideal of the
-  integral closure of `A` in `L` has ramification index over `A` dividing `n`, then adjoining an
-  `n`-th root `α` of `π` makes `L(α)` unramified with respect to the integral closure of `A` in
-  `K(α)` (the Kummer case of Abhyankar's lemma for discrete valuation rings, Stacks, Lemma 15.116.4
-  (0BRM)). Neither separability of `L / K` nor invertibility of `n` in the residue field of `A` is
-  needed here.
-* For `L / K` finite and separable, `L` is tamely ramified with respect to `A` if and only if there
-  exist `e` invertible in the residue field of `A` and a finite separable extension of
-  `K(π ^ (1 / e))` containing `L` that is unramified with respect to the integral closure of `A` in
-  `K(π ^ (1 / e))`, if and only if there exists `e₀` invertible in the residue field of `A` such
-  that this holds at exponent `e₀ * d` for every `d` invertible in the residue field of `A`
-  (Stacks, Lemma 15.116.7 (0EXW)).
+## Usage notes
+
+* In `IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root`,
+  `IsTamelyRamifiedWRT.exists_isUnramifiedWRT_adjoin_root`, `IsUnramifiedWRT.adjoin_root`, and
+  `IsUnramifiedWRT.exists_adjoin_root`, `L⟮α⟯` carries the `letI`-bound `K⟮α⟯`-algebra structure
+  induced by `TauCeti.IntermediateField.adjoinBaseChange K L α`. Neither `[Algebra.IsSeparable K L]`
+  nor invertibility of `n` in `A ⧸ maximalIdeal A` is required in
+  `IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root`, and neither `[Algebra.IsSeparable K L]` nor
+  `n ≠ 0` is required in `IsUnramifiedWRT.adjoin_root` (the case `n = 0` is vacuous since a
+  uniformizer is not a unit).
+* In `isTamelyRamifiedWRT_tfae` and `isTamelyRamifiedWRT_iff_exists_kummer`, the Kummer base
+  `K(π ^ (1 / e))` is represented as `K⟮β⟯` inside an `L`-overfield `E : Type u` in `L`'s universe.
 
 ## Main results
 
-* `TauCeti.Algebra.IsUnramifiedWRT.adjoin_root` and
-  `TauCeti.Algebra.IsUnramifiedWRT.exists_adjoin_root`: adjoining a root of a uniformizer preserves
-  unramifiedness.
-* `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd`: when `L` is
-  tamely ramified with respect to `A`, the ramification indices of the maximal ideals of the
-  integral closure have a common multiple invertible in the residue field of `A`.
 * `TauCeti.Algebra.IsTamelyRamifiedWRT.isUnramifiedWRT_of_pow_eq_of_irreducible`,
-  `TauCeti.Algebra.IsTamelyRamifiedWRT.adjoin_root`, and
-  `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_adjoin_root`: adjoining an `n`-th root of a
-  uniformizer whose exponent is divisible by every maximal ideal's ramification index kills
-  ramification over the Kummer base.
+  `TauCeti.Algebra.IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root`, and
+  `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_isUnramifiedWRT_adjoin_root`: adjoining an `n`-th
+  root of a uniformizer whose exponent is divisible by every maximal ideal's ramification index
+  makes the extension unramified over the Kummer base.
+* `TauCeti.Algebra.IsUnramifiedWRT.adjoin_root` and
+  `TauCeti.Algebra.IsUnramifiedWRT.exists_adjoin_root`: adjoining any root of a uniformizer
+  preserves unramifiedness.
 * `TauCeti.Algebra.isTamelyRamifiedWRT_tfae` and
   `TauCeti.Algebra.isTamelyRamifiedWRT_iff_exists_kummer`: all three equivalent clauses of the
   Kummer characterization of tame ramification (Stacks, Lemma 15.116.7 (0EXW)).
@@ -75,151 +74,7 @@ open IsLocalRing _root_.IntermediateField
 
 namespace TauCeti.Algebra
 
-section Unramified
-
-variable {A K L Ω : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-  [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
-  [IsScalarTower A K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [Field Ω] [Algebra K Ω] [Algebra L Ω] [Algebra A Ω] [IsScalarTower K L Ω]
-  [IsScalarTower A K Ω]
-
-/-- Adjoining a root of a uniformizer to both fields preserves unramifiedness. The integral
-closure in the new base field is a discrete valuation ring, even for a wild root extraction.
-The algebra structure on `L(α)` is induced by the canonical inclusion `K(α) → L(α)`. -/
-theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
-    (hπ : Irreducible π) {n : ℕ} (hn : n ≠ 0) {α : Ω}
-    (hα : α ^ n = algebraMap A Ω π) :
-    letI := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-    ∃ hDVR : IsDiscreteValuationRing (integralClosure A K⟮α⟯),
-      letI := hDVR
-      IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ := by
-  have : IsScalarTower A L Ω := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A K Ω, IsScalarTower.algebraMap_apply A K L,
-      IsScalarTower.algebraMap_apply K L Ω]
-  let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-  have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮α⟯,
-      IsScalarTower.algebraMap_apply A K Ω] using hα)
-  have hgen : K⟮AdjoinSimple.gen K α⟯ = ⊤ :=
-    _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
-  have := IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-    hπ hαK hgen
-  have hdegree := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hαK hgen
-  have : FiniteDimensional K K⟮α⟯ :=
-    Module.finite_of_finrank_pos (hdegree ▸ Nat.pos_of_ne_zero hn)
-  have : IsFractionRing (integralClosure A K⟮α⟯) K⟮α⟯ :=
-    IsIntegralClosure.isFractionRing_of_finite_extension A K K⟮α⟯ _
-  have : IsScalarTower A K L⟮α⟯ := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A L L⟮α⟯,
-      IsScalarTower.algebraMap_apply K L L⟮α⟯, ← IsScalarTower.algebraMap_apply A K L]
-  have : IsScalarTower A K⟮α⟯ L⟮α⟯ :=
-    IsScalarTower.of_algHom ((TauCeti.IntermediateField.adjoinBaseChange K L α).restrictScalars A)
-  have hint : IsIntegral K α :=
-    (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap (R := A))).tower_top
-  refine ⟨inferInstance, ?_⟩
-  exact h.baseChange (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K L α)
-    (TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K L hint.tower_top)
-
-/-- In an algebraically closed ambient extension, every positive root degree admits an
-unramified extension after adjoining a root of the uniformizer to both fields. In particular,
-one may enlarge a Kummer exponent by any positive multiple. -/
-theorem IsUnramifiedWRT.exists_adjoin_root [IsAlgClosed Ω] (h : IsUnramifiedWRT A L)
-    {π : A} (hπ : Irreducible π) {n : ℕ} (hn : 0 < n) :
-    ∃ α : Ω, α ^ n = algebraMap A Ω π ∧
-      letI := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-      ∃ hDVR : IsDiscreteValuationRing (integralClosure A K⟮α⟯),
-        letI := hDVR
-        IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ := by
-  obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap A Ω π) hn
-  exact ⟨α, hα, h.adjoin_root hπ hn.ne' hα⟩
-
-end Unramified
-
 section TamelyRamified
-
-/-- For a finite extension `L` of the fraction field `K` of a discrete valuation ring `A` that is
-tamely ramified with respect to `A`, there is a natural number invertible in the residue field of
-`A` that is divisible by the ramification index over `A` of every maximal ideal of the integral
-closure of `A` in `L`. -/
-theorem IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd
-    {A L : Type*} (K : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-    [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
-    [IsScalarTower A K L] [FiniteDimensional K L] (h : IsTamelyRamifiedWRT A L) :
-    ∃ e : ℕ, IsUnit (e : A ⧸ maximalIdeal A) ∧
-      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal], P.ramificationIdx A ∣ e := by
-  have : IsDedekindDomain (integralClosure A L) :=
-    TauCeti.integralClosure.isDedekindDomain A K L
-  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
-  refine ⟨∏ Q : (maximalIdeal A).primesOver (integralClosure A L), Q.1.ramificationIdx A, ?_, ?_⟩
-  · rw [Nat.cast_prod]
-    refine Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one fun Q _ ↦ ?_
-    have := Q.2.1
-    have := Q.2.2
-    have : Q.1.IsMaximal := .of_liesOver_isMaximal Q.1 (maximalIdeal A)
-    exact (isTamelyRamifiedWRT_def.mp h Q.1).2
-  · intro P _
-    have hP : P ∈ (maximalIdeal A).primesOver (integralClosure A L) :=
-      ⟨inferInstance, ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩
-    exact Finset.dvd_prod_of_mem _ (Finset.mem_univ (⟨P, hP⟩ : (maximalIdeal A).primesOver _))
-
-/-- If `E` is generated over the fraction field `L` of `B` by an element `β` integral over `L`, and
-`S` is the localization of a domain `B₁` over `B` with fraction field `E`, then every element of `S`
-becomes a polynomial in `β` over `Localization.AtPrime P` after multiplication by a nonzero element
-of `Localization.AtPrime P`. -/
-private theorem exists_mul_mem_adjoin_localizationAtPrime
-    {B L B₁ E : Type*} [CommRing B] [Field L] [Algebra B L] [IsFractionRing B L]
-    [CommRing B₁] [Algebra B B₁] [Field E] [Algebra B E] [Algebra L E]
-    [Algebra B₁ E] [IsScalarTower B L E] [IsScalarTower B B₁ E] [IsFractionRing B₁ E]
-    (P : Ideal B) [P.IsPrime] (Q : Ideal B₁) [Q.IsPrime] [Q.LiesOver P]
-    {b : B₁} (hint : IsIntegral L (algebraMap B₁ E b)) (hgen : L⟮algebraMap B₁ E b⟯ = ⊤) :
-    letI := Localization.AtPrime.algebraOfLiesOver P Q
-    ∀ c : Localization.AtPrime Q, ∃ s : Localization.AtPrime P, s ≠ 0 ∧
-      algebraMap (Localization.AtPrime P) (Localization.AtPrime Q) s * c ∈
-        Algebra.adjoin (Localization.AtPrime P) {algebraMap B₁ (Localization.AtPrime Q) b} := by
-  have : IsDomain B := (IsFractionRing.injective B L).isDomain
-  have : IsDomain B₁ := (IsFractionRing.injective B₁ E).isDomain
-  let := Localization.AtPrime.algebraOfLiesOver P Q
-  let g : Localization.AtPrime Q →+* E :=
-    IsLocalization.map E (M := Q.primeCompl) (T := nonZeroDivisors B₁) (RingHom.id B₁)
-      Q.primeCompl_le_nonZeroDivisors
-  let := g.toAlgebra
-  have : IsScalarTower B₁ (Localization.AtPrime Q) E := .of_algebraMap_eq fun x ↦
-    (IsLocalization.map_eq (M := Q.primeCompl) (T := nonZeroDivisors B₁)
-      (S := Localization.AtPrime Q) (Q := E) (g := RingHom.id B₁)
-      Q.primeCompl_le_nonZeroDivisors x).symm
-  have : IsScalarTower B (Localization.AtPrime Q) E := .of_algebraMap_eq fun x ↦ by
-    rw [IsScalarTower.algebraMap_apply B B₁ E,
-      IsScalarTower.algebraMap_apply B B₁ (Localization.AtPrime Q),
-      IsScalarTower.algebraMap_apply B₁ (Localization.AtPrime Q) E]
-  have := IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
-    Q.primeCompl (Localization.AtPrime Q) E
-  let j : Localization.AtPrime Q →ₐ[B] E := IsScalarTower.toAlgHom B (Localization.AtPrime Q) E
-  have hj_inj : Function.Injective j := IsFractionRing.injective (Localization.AtPrime Q) E
-  have hjb : j (algebraMap B₁ (Localization.AtPrime Q) b) = algebraMap B₁ E b :=
-    (IsScalarTower.algebraMap_apply B₁ (Localization.AtPrime Q) E b).symm
-  have htop : Algebra.adjoin L ({algebraMap B₁ E b} : Set E) = ⊤ := by
-    rw [← adjoin_simple_toSubalgebra_of_isAlgebraic hint.isAlgebraic, hgen, top_toSubalgebra]
-  intro c
-  obtain ⟨t, ht⟩ := multiple_mem_adjoin_of_mem_localization_adjoin
-    (nonZeroDivisors B) L ({algebraMap B₁ E b} : Set E) (j c) (htop ▸ Algebra.mem_top)
-  have ht0 : (t : B) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp t.2
-  refine ⟨algebraMap B (Localization.AtPrime P) t, ?_, ?_⟩
-  · exact (map_ne_zero_iff _ (IsLocalization.injective _ P.primeCompl_le_nonZeroDivisors)).mpr ht0
-  · rw [← IsScalarTower.algebraMap_apply B (Localization.AtPrime P) (Localization.AtPrime Q)]
-    -- Pull `t • j c ∈ B[β]` back from `E` to `Localization.AtPrime Q` along the injection `j`,
-    -- then extend coefficients from `B` to `Localization.AtPrime P`.
-    have hmem : algebraMap B (Localization.AtPrime Q) t * c ∈
-        Algebra.adjoin B ({algebraMap B₁ (Localization.AtPrime Q) b} : Set _) := by
-      rw [← hjb, ← Set.image_singleton, ← AlgHom.map_adjoin] at ht
-      obtain ⟨z, hz, hzc⟩ := ht
-      have hzc' : j z = j (algebraMap B (Localization.AtPrime Q) t * c) := by
-        rw [map_mul, j.commutes, ← Algebra.smul_def, ← Submonoid.smul_def]
-        exact hzc
-      exact hj_inj hzc' ▸ hz
-    exact Algebra.adjoin_le (R := B)
-      (S := (Algebra.adjoin (Localization.AtPrime P)
-        {algebraMap B₁ (Localization.AtPrime Q) b}).restrictScalars B)
-      (Set.singleton_subset_iff.mpr (Algebra.self_mem_adjoin_singleton _ _)) hmem
 
 /-- At a maximal ideal `P` of the Dedekind domain `B` over the discrete valuation ring `A`, the
 localization `B_P` is a discrete valuation ring dominating `A` whose uniformizer `ϖ` satisfies
@@ -243,11 +98,7 @@ private theorem exists_uniformizer_localizationAtPrime_of_tame
         ((mem_maximalIdeal π).mpr hπ.not_isUnit)
   let := IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain B hP_ne
     (Localization.AtPrime P)
-  have : FaithfulSMul A (Localization.AtPrime P) := by
-    rw [faithfulSMul_iff_algebraMap_injective,
-      IsScalarTower.algebraMap_eq A B (Localization.AtPrime P)]
-    exact (IsLocalization.injective (Localization.AtPrime P) P.primeCompl_le_nonZeroDivisors).comp
-      (FaithfulSMul.algebraMap_injective A B)
+  have : FaithfulSMul A (Localization.AtPrime P) := .trans A B _
   let : IsLocalHom (algebraMap A (Localization.AtPrime P)) := ⟨fun a ha ↦ by
     by_contra ha'
     exact (IsLocalization.AtPrime.to_map_mem_maximal_iff (Localization.AtPrime P) P
@@ -258,12 +109,10 @@ private theorem exists_uniformizer_localizationAtPrime_of_tame
     (isUnit_map_iff (IsLocalRing.residue A) _).mp (by rw [map_natCast]; exact he_unit)
   have heBP : IsUnit ((P.ramificationIdx A : ℕ) : Localization.AtPrime P) := by
     simpa using heA.map (algebraMap A (Localization.AtPrime P))
-  -- `B ⧸ P ≃ ResidueField (Localization.AtPrime P)` over `A ⧸ maximalIdeal A = ResidueField A`.
-  let τ :=
-    (IsLocalization.AtPrime.equivQuotMaximalIdeal P (Localization.AtPrime P)).restrictScalars A
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field P
   have hsepBP : Algebra.IsSeparable (ResidueField A) (ResidueField (Localization.AtPrime P)) :=
-    (AlgEquiv.Algebra.isSeparable_iff
-      (τ.extendScalarsOfSurjective (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective)).mp hsep
+    (P.isSeparable_quotient_iff_residueField (R := A)).mp hsep
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (Localization.AtPrime P)
   have hmap_ne : (maximalIdeal A).map (algebraMap A (Localization.AtPrime P)) ≠ ⊥ := by
     intro hbot
@@ -312,11 +161,9 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_irreducible_localizati
   have hsepA₁ : Algebra.IsSeparable (ResidueField A₁) (ResidueField (Localization.AtPrime Q)) :=
     Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField A₁)
       (ResidueField (Localization.AtPrime Q))
-  let σ :=
-    (IsLocalization.AtPrime.equivQuotMaximalIdeal Q (Localization.AtPrime Q)).restrictScalars A₁
-  exact (AlgEquiv.Algebra.isSeparable_iff
-    (σ.extendScalarsOfSurjective
-      (S := A₁ ⧸ maximalIdeal A₁) Ideal.Quotient.mk_surjective)).mpr hsepA₁
+  let := Ideal.Quotient.field (maximalIdeal A₁)
+  let := Ideal.Quotient.field Q
+  exact (Q.isSeparable_quotient_iff_residueField (R := A₁)).mpr hsepA₁
 
 /-- Applying the local Abhyankar model at primes `Q` over `P` in commuting towers `A → A₁ → B₁` and
 `A → B → B₁` when `ϖ₁ ^ (e * d) = π` in `B₁` and `π = u * ϖ ^ e` in `Localization.AtPrime P`. -/
@@ -402,12 +249,10 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_pow_eq
     _root_.integralClosure.isIntegrallyClosedOfFiniteExtension K
   have : IsFractionRing (integralClosure A E) E :=
     IsIntegralClosure.isFractionRing_of_finite_extension A K E _
-  have : FaithfulSMul A (integralClosure A L) :=
-    have := FaithfulSMul.trans A K L
-    .tower_bot A (integralClosure A L) L
-  have : FaithfulSMul (integralClosure A L) (integralClosure A E) :=
-    have := FaithfulSMul.trans (integralClosure A L) L E
-    .tower_bot _ _ E
+  have := FaithfulSMul.trans A K L
+  have : FaithfulSMul A (integralClosure A L) := .tower_bot A (integralClosure A L) L
+  have := FaithfulSMul.trans (integralClosure A L) L E
+  have : FaithfulSMul (integralClosure A L) (integralClosure A E) := .tower_bot _ _ E
   have hα₁A₁ : α₁ ∈ integralClosure A K₁ :=
     IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα₁ ▸ isIntegral_algebraMap)
   have hϖ₁ : Irreducible (⟨α₁, hα₁A₁⟩ : integralClosure A K₁) :=
@@ -416,6 +261,14 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_pow_eq
     algebraMap (integralClosure A K₁) (integralClosure A E) ⟨α₁, hα₁A₁⟩
   have hbE : algebraMap (integralClosure A E) E b = algebraMap K₁ E α₁ :=
     IsScalarTower.algebraMap_apply (integralClosure A K₁) (integralClosure A E) E ⟨α₁, hα₁A₁⟩
+  have hα₁E_int : IsIntegral A (algebraMap K₁ E α₁) :=
+    IsIntegral.of_pow (Nat.pos_of_ne_zero hn) <| by
+      rw [← map_pow, hα₁, ← IsScalarTower.algebraMap_apply A K₁ E]
+      exact isIntegral_algebraMap
+  have htopE : Algebra.adjoin L (algebraMap (integralClosure A E) E '' ({b} : Set _)) = ⊤ := by
+    rw [Set.image_singleton, hbE,
+      ← adjoin_simple_toSubalgebra_of_isAlgebraic hα₁E_int.tower_top.isAlgebraic, hgenL,
+      top_toSubalgebra]
   intro Q _ _
   have : (maximalIdeal (integralClosure A K₁)).LiesOver (maximalIdeal A) :=
     ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
@@ -433,10 +286,16 @@ private theorem ramificationIdx_eq_one_and_isSeparable_of_pow_eq
   have hb_pow : b ^ (P.ramificationIdx A * d) = algebraMap A (integralClosure A E) π :=
     Subtype.ext <| by
       rw [← hd_eq, Subalgebra.coe_pow, Subalgebra.coe_algebraMap,
-        show (b : E) = algebraMap K₁ E α₁ from hbE, ← map_pow, hα₁,
+        ← Subalgebra.algebraMap_apply (integralClosure A E) b, hbE, ← map_pow, hα₁,
         ← IsScalarTower.algebraMap_apply A K₁ E]
-  exact ramificationIdx_eq_one_and_isSeparable_of_tame_liesOver hϖ₁ P Q hϖ hu heBP hd hsepBP hπBP
-    hb_pow (exists_mul_mem_adjoin_localizationAtPrime P Q b.2.tower_top (hbE.symm ▸ hgenL))
+  refine ramificationIdx_eq_one_and_isSeparable_of_tame_liesOver hϖ₁ P Q hϖ hu heBP hd hsepBP hπBP
+    hb_pow fun c ↦ ?_
+  have hcE : algebraMap (Localization.AtPrime Q) E c ∈
+      Algebra.adjoin L (algebraMap (integralClosure A E) E '' ({b} : Set _)) := by
+    rw [htopE]
+    exact Algebra.mem_top
+  simpa only [Set.image_singleton] using
+    TauCeti.Localization.AtPrime.exists_mul_mem_adjoin P Q hcE
 
 /-- **Kummer case of Abhyankar's lemma for discrete valuation rings.** Let `A` be a discrete
 valuation ring with fraction field `K` and uniformizer `π`, and let `L / K` be a finite extension
@@ -452,8 +311,8 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_of_pow_eq_of_irreducible
     [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
     [IsScalarTower A K L] [FiniteDimensional K L]
     [Field K₁] [Algebra A K₁] [Algebra K K₁] [IsScalarTower A K K₁]
-    [Field E] [Algebra A E] [Algebra K E] [Algebra L E] [Algebra K₁ E]
-    [IsScalarTower A K E] [IsScalarTower K L E] [IsScalarTower K K₁ E]
+    [Field E] [Algebra K E] [Algebra L E] [Algebra K₁ E]
+    [IsScalarTower K L E] [IsScalarTower K K₁ E]
     (h : IsTamelyRamifiedWRT A L) {π : A} (hπ : Irreducible π) {n : ℕ}
     {α₁ : K₁} (hα₁ : α₁ ^ n = algebraMap A K₁ π) (hgenK : K⟮α₁⟯ = ⊤)
     (hgenL : L⟮algebraMap K₁ E α₁⟯ = ⊤)
@@ -461,18 +320,16 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_of_pow_eq_of_irreducible
     ∃ hDVR : IsDiscreteValuationRing (integralClosure A K₁),
       letI := hDVR
       IsUnramifiedWRT (integralClosure A K₁) E := by
+  let : Algebra A E := ((algebraMap K E).comp (algebraMap A K)).toAlgebra
+  have : IsScalarTower A K E := .of_algebraMap_eq fun _ ↦ rfl
   have : FaithfulSMul A K₁ := .trans A K K₁
   have hn : n ≠ 0 := _root_.Algebra.ne_zero_of_pow_eq_algebraMap_of_injective
     (FaithfulSMul.algebraMap_injective A K₁) hπ.ne_one hα₁
   have hDVR :=
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
       hπ hα₁ hgenK
-  have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A K E, IsScalarTower.algebraMap_apply A K L,
-      ← IsScalarTower.algebraMap_apply K L E]
-  have : IsScalarTower A K₁ E := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A K E, IsScalarTower.algebraMap_apply A K K₁,
-      ← IsScalarTower.algebraMap_apply K K₁ E]
+  have : IsScalarTower A L E := .to₁₃₄ A K L E
+  have : IsScalarTower A K₁ E := .to₁₃₄ A K K₁ E
   have hintL : IsIntegral L (algebraMap K₁ E α₁) :=
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn)
       (by
@@ -493,12 +350,15 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_of_pow_eq_of_irreducible
   refine ⟨hDVR, (isUnramifiedWRT_iff_of_isIntegralClosure (integralClosure A E)).mpr ?_⟩
   exact ramificationIdx_eq_one_and_isSeparable_of_pow_eq h hπ hn hα₁ hgenK hgenL hdvd
 
-/-- Adjoining an `n`-th root `α` of a uniformizer `π` of `A` to both `K` and `L`, where every
-maximal ideal of `integralClosure A L` has ramification index dividing `n`, produces an extension
-`L(α)` unramified with respect to the integral closure of `A` in `K(α)`. Neither separability of
-`L / K` nor invertibility of `n` in the residue field of `A` is needed. -/
+/-- Let `A` be a discrete valuation ring with fraction field `K`, and let `L / K` be a finite
+extension that is tamely ramified with respect to `A`. Adjoining an `n`-th root `α` of a
+uniformizer `π` of `A` to both `K` and `L`, where every maximal ideal of `integralClosure A L` has
+ramification index dividing `n`, makes `integralClosure A K(α)` a discrete valuation ring with
+respect to which `L(α)` (equipped with the `K(α)`-algebra structure induced by `adjoinBaseChange`)
+is unramified. Neither separability of `L / K` nor invertibility of `n` in the residue field of `A`
+is required. -/
 @[stacks 0BRM "Kummer case, adjoining a root in an ambient field"]
-theorem IsTamelyRamifiedWRT.adjoin_root
+theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root
     {A K L Ω : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
     [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
     [IsScalarTower A K L] [FiniteDimensional K L]
@@ -512,15 +372,12 @@ theorem IsTamelyRamifiedWRT.adjoin_root
       letI := hDVR
       IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ := by
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-  have : IsScalarTower A L Ω := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A K Ω, IsScalarTower.algebraMap_apply A K L,
-      IsScalarTower.algebraMap_apply K L Ω]
-  have : IsScalarTower A K L⟮α⟯ := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A L L⟮α⟯,
-      IsScalarTower.algebraMap_apply K L L⟮α⟯, ← IsScalarTower.algebraMap_apply A K L]
+  have : IsScalarTower A L Ω := .to₁₃₄ A K L Ω
   have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮α⟯,
-      IsScalarTower.algebraMap_apply A K Ω] using hα)
+    (algebraMap K⟮α⟯ Ω).injective <| by
+      rw [map_pow, AdjoinSimple.algebraMap_gen, hα,
+        IsScalarTower.algebraMap_apply A K K⟮α⟯, ← IsScalarTower.algebraMap_apply K K⟮α⟯ Ω,
+        ← IsScalarTower.algebraMap_apply A K Ω]
   have hgenK : K⟮AdjoinSimple.gen K α⟯ = ⊤ :=
     _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   have hgenL : L⟮algebraMap K⟮α⟯ L⟮α⟯ (AdjoinSimple.gen K α)⟯ = ⊤ := by
@@ -528,10 +385,13 @@ theorem IsTamelyRamifiedWRT.adjoin_root
     exact _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   exact h.isUnramifiedWRT_of_pow_eq_of_irreducible hπ hαK hgenK hgenL hdvd
 
-/-- In an algebraically closed ambient field `Ω`, for every positive `n` divisible by the
-ramification indices of all maximal ideals of `integralClosure A L`, there is an `n`-th root `α` of
-the uniformizer `π` making `L(α)` unramified with respect to `integralClosure A K(α)`. -/
-theorem IsTamelyRamifiedWRT.exists_adjoin_root
+/-- Let `A` be a discrete valuation ring with fraction field `K`, and let `L / K` be a finite
+extension tamely ramified with respect to `A` inside an algebraically closed field `Ω`. For every
+positive `n` divisible by the ramification indices of all maximal ideals of `integralClosure A L`,
+there is an `n`-th root `α` of the uniformizer `π` in `Ω` such that `integralClosure A K(α)` is a
+discrete valuation ring and `L(α)` (with its `K(α)`-algebra structure induced by `adjoinBaseChange`)
+is unramified with respect to `integralClosure A K(α)`. -/
+theorem IsTamelyRamifiedWRT.exists_isUnramifiedWRT_adjoin_root
     {A K L Ω : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
     [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
     [IsScalarTower A K L] [FiniteDimensional K L]
@@ -545,9 +405,51 @@ theorem IsTamelyRamifiedWRT.exists_adjoin_root
         letI := hDVR
         IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ := by
   obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap A Ω π) hn
-  exact ⟨α, hα, h.adjoin_root hπ hα hdvd⟩
+  exact ⟨α, hα, h.isUnramifiedWRT_adjoin_root hπ hα hdvd⟩
 
 end TamelyRamified
+
+section Unramified
+
+variable {A K L Ω : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
+  [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
+  [IsScalarTower A K L] [FiniteDimensional K L]
+  [Field Ω] [Algebra K Ω] [Algebra L Ω] [Algebra A Ω] [IsScalarTower K L Ω]
+  [IsScalarTower A K Ω]
+
+/-- For a finite extension `L` of the fraction field `K` of a discrete valuation ring `A` that is
+unramified with respect to `A`, adjoining an `n`-th root `α` of a uniformizer `π` of `A` to both
+fields preserves unramifiedness: `integralClosure A K(α)` is a discrete valuation ring, even for a
+wild root extraction, and `L(α)` (with the `K(α)`-algebra structure induced by `adjoinBaseChange`)
+is unramified with respect to it. Neither separability of `L / K` nor `n ≠ 0` is required. -/
+theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
+    (hπ : Irreducible π) {n : ℕ} {α : Ω}
+    (hα : α ^ n = algebraMap A Ω π) :
+    letI := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
+    ∃ hDVR : IsDiscreteValuationRing (integralClosure A K⟮α⟯),
+      letI := hDVR
+      IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ :=
+  h.isTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root hπ hα fun P _ ↦ by
+    have : P.LiesOver (maximalIdeal A) :=
+      ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩
+    exact (isUnramifiedWRT_def.mp h P).1 ▸ one_dvd n
+
+/-- For a finite extension `L` of the fraction field `K` of a discrete valuation ring `A` that is
+unramified with respect to `A`, inside an algebraically closed ambient extension `Ω`, every positive
+root degree `n` admits an `n`-th root `α` of a uniformizer `π` making `integralClosure A K(α)` a
+discrete valuation ring and `L(α)` (with its `K(α)`-algebra structure via `adjoinBaseChange`)
+unramified with respect to it. -/
+theorem IsUnramifiedWRT.exists_adjoin_root [IsAlgClosed Ω] (h : IsUnramifiedWRT A L)
+    {π : A} (hπ : Irreducible π) {n : ℕ} (hn : 0 < n) :
+    ∃ α : Ω, α ^ n = algebraMap A Ω π ∧
+      letI := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
+      ∃ hDVR : IsDiscreteValuationRing (integralClosure A K⟮α⟯),
+        letI := hDVR
+        IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ := by
+  obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap A Ω π) hn
+  exact ⟨α, hα, h.adjoin_root hπ hα⟩
+
+end Unramified
 
 section KummerCharacterization
 
@@ -567,46 +469,42 @@ private theorem exists_unramified_kummer_of_forall_ramificationIdx_dvd
         FiniteDimensional K⟮β⟯ E ∧ Algebra.IsSeparable K⟮β⟯ E ∧
         IsUnramifiedWRT (integralClosure A K⟮β⟯) E := by
   let Ω : Type u := AlgebraicClosure L
-  have : IsScalarTower A K Ω := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A L Ω, IsScalarTower.algebraMap_apply A K L,
-      ← IsScalarTower.algebraMap_apply K L Ω]
+  have : IsScalarTower A K Ω := .to₁₂₄ A K L Ω
   obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap A Ω π) hn
   let β : L⟮α⟯ := AdjoinSimple.gen L α
-  have : IsScalarTower A K L⟮α⟯ := .of_algebraMap_eq fun a ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply A K Ω a)
+  have : IsScalarTower A K L⟮α⟯ := .to₁₂₄ A K L L⟮α⟯
   have hβ : β ^ n = algebraMap A L⟮α⟯ π :=
-    Subtype.ext (by simpa [β, IsScalarTower.algebraMap_apply A L L⟮α⟯,
-      IsScalarTower.algebraMap_apply A L Ω] using hα)
+    (algebraMap L⟮α⟯ Ω).injective <| by
+      rw [map_pow, AdjoinSimple.algebraMap_gen, hα,
+        IsScalarTower.algebraMap_apply A L L⟮α⟯, ← IsScalarTower.algebraMap_apply L L⟮α⟯ Ω,
+        ← IsScalarTower.algebraMap_apply A L Ω]
   have hβK : AdjoinSimple.gen K β ^ n = algebraMap A K⟮β⟯ π :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮β⟯,
-      IsScalarTower.algebraMap_apply A K L⟮α⟯] using hβ)
+    (algebraMap K⟮β⟯ L⟮α⟯).injective <| by
+      rw [map_pow, AdjoinSimple.algebraMap_gen, hβ,
+        IsScalarTower.algebraMap_apply A K K⟮β⟯, ← IsScalarTower.algebraMap_apply K K⟮β⟯ L⟮α⟯,
+        ← IsScalarTower.algebraMap_apply A K L⟮α⟯]
   have hgenK : K⟮AdjoinSimple.gen K β⟯ = ⊤ :=
     _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top β
-  have hgenL : L⟮algebraMap K⟮β⟯ L⟮α⟯ (AdjoinSimple.gen K β)⟯ = ⊤ :=
-    _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
+  have hgenL : L⟮algebraMap K⟮β⟯ L⟮α⟯ (AdjoinSimple.gen K β)⟯ = ⊤ := by
+    rw [AdjoinSimple.algebraMap_gen]
+    exact _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   obtain ⟨hDVR, hunr⟩ := h.isUnramifiedWRT_of_pow_eq_of_irreducible hπ hβK hgenK hgenL hdvd
   have hintL : IsIntegral L β :=
     IsIntegral.of_pow hn (by rw [hβ, IsScalarTower.algebraMap_apply A K L⟮α⟯,
       IsScalarTower.algebraMap_apply K L L⟮α⟯]; exact isIntegral_algebraMap)
-  -- `K(β) ⊗[K] L` maps onto `L(α)` since `L(α) = L(β)`, making `L(α)` finite separable over `K(β)`.
+  -- `K(β) ⊗[K] L` maps onto `L(β) = L(α)` via `adjoinBaseChangeTensorLift`.
+  let := (TauCeti.IntermediateField.adjoinBaseChange K L β).toAlgebra
+  let ι : L⟮β⟯ →ₐ[K⟮β⟯] L⟮α⟯ :=
+    { (L⟮β⟯).val.toRingHom with
+      commutes' := fun x ↦ by
+        simp [AlgHom.algebraMap_toAlgebra_apply, IntermediateField.algebraMap_apply] }
   let ψ : K⟮β⟯ ⊗[K] L →ₐ[K⟮β⟯] L⟮α⟯ :=
-    Algebra.TensorProduct.lift (Algebra.ofId K⟮β⟯ L⟮α⟯) (IsScalarTower.toAlgHom K L L⟮α⟯)
-      fun _ _ ↦ .all _ _
-  have hψ : Function.Surjective ψ := by
-    have htop : Algebra.adjoin L ({β} : Set L⟮α⟯) = ⊤ := by
-      rw [← adjoin_simple_toSubalgebra_of_isAlgebraic hintL.isAlgebraic,
-        _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α, top_toSubalgebra]
-    intro x
-    let R : Subalgebra L L⟮α⟯ :=
-      { ψ.range.toSubring with algebraMap_mem' := fun l ↦ ⟨1 ⊗ₜ[K] l, by simp [ψ]⟩ }
-    have hβR : β ∈ R := ⟨AdjoinSimple.gen K β ⊗ₜ[K] 1, by simp [ψ]⟩
-    exact (AlgHom.mem_range ψ).mp (Algebra.adjoin_le (Set.singleton_subset_iff.mpr hβR)
-      (htop ▸ Algebra.mem_top : x ∈ Algebra.adjoin L {β}))
-  have : FiniteDimensional K⟮β⟯ L⟮α⟯ := Module.Finite.of_surjective ψ.toLinearMap hψ
-  have : Algebra.FormallyUnramified K L := .of_isSeparable K L
-  have : Algebra.FormallyUnramified K⟮β⟯ L⟮α⟯ := .of_surjective ψ hψ
-  have hsep : Algebra.IsSeparable K⟮β⟯ L⟮α⟯ :=
-    (Algebra.FormallyUnramified.iff_isSeparable _ _).mp ‹_›
+    ι.comp (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K L β)
+  have hι : Function.Surjective ι := fun y ↦
+    ⟨⟨y, (_root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α : L⟮β⟯ = ⊤) ▸ mem_top⟩, rfl⟩
+  have hψ : Function.Surjective ψ :=
+    hι.comp (TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K L hintL)
+  obtain ⟨_, hsep⟩ := ψ.finiteDimensional_and_isSeparable_of_surjective hψ
   exact ⟨L⟮α⟯, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, β, hDVR, hβ, inferInstance, hsep, hunr⟩
 
