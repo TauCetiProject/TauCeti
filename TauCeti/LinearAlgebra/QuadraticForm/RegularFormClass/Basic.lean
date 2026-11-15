@@ -65,6 +65,7 @@ rank is additive.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 * `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
   rank is the rank-one class of its first weight plus the class of the remaining weights.
+* `TauCeti.RegularFormClass.mk_const`: the form `⟨a, …, a⟩` of rank `n` is `n • ⟨a⟩`.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 * `TauCeti.RegularFormClass.exists_eq_add_mk_rankOne` and
   `TauCeti.RegularFormClass.exists_eq_mk_binary_add`: a class of positive rank splits off a line,
@@ -589,6 +590,18 @@ theorem RegularFormClass.mk_succ_eq_mk_rankOne_add {n : ℕ} (w : Fin (n + 1) �
   simp only [RegularFormPresentation.append, Fin.append_left_eq_cons, Function.comp_apply,
     Fin.cast_cast, Fin.cast_eq_self]
   exact (congrFun (Fin.cons_self_tail w) i).symm
+
+/-- The diagonal form `⟨a, …, a⟩` with `n` equal weights is the orthogonal sum of `n` copies
+of the line `⟨a⟩`. -/
+theorem RegularFormClass.mk_const (n : ℕ) (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨n, fun _ => a⟩ =
+      n • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  induction n with
+  | zero =>
+    rw [zero_nsmul, RegularFormClass.zero_def]
+    exact congrArg (Quotient.mk (regularFormSetoid K))
+      (RegularFormPresentation.ext rfl fun i => i.elim0)
+  | succ n ih => rw [RegularFormClass.mk_succ_eq_mk_rankOne_add, ih, succ_nsmul']
 
 /-- Every isometry class of regular forms is built from the zero class by adjoining rank-one
 classes one at a time. This is the induction principle behind every statement proved by

@@ -55,12 +55,12 @@ rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd
 Together with the orthogonal-sum and scaling formulas for the Hasse invariant, these recurrences
 give **Lam's comparison** (Lam V.3.20) in every rank: for a class of rank `n` and discriminant `d`,
 `c(q) = s(q) · [(-1, d)]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`. Since every quaternion symbol is
-`2`-torsion, only the parities of the binomial exponents matter. On a class of rank `2m` with
+`2`-torsion, only the parities of the binomial exponents matter. On the sum of `n` squares,
+whose Hasse invariant and discriminant are trivial, the formula reads
+`c(n⟨1⟩) = [(-1,-1)]^C(n+1,4)`. On a class of rank `2m` with
 trivial signed discriminant, which is a class whose Witt class lies in the square of the
 fundamental ideal, the formula becomes `c(q) = s(q) · [(-1,-1)]^C(m,2)`. Lam (p. 120) cautions
 that the version of this formula published by C. T. C. Wall is incorrect.
-On the sum of `n` squares, whose Hasse invariant and discriminant are trivial, the formula
-reads `c(n⟨1⟩) = [(-1,-1)]^C(n+1,4)`.
 
 On such a class `x` the Clifford invariant is additive: `c(x ⊥ y) = c(x) · c(y)` for every class
 `y`. This follows by induction on the rank of `y` from the two recurrences, since rescaling `x`
@@ -630,17 +630,14 @@ comparison only the constant correction `[(-1,-1)]^C(n+1,4)` survives. -/
 theorem cliffordInvariant_natCast (n : ℕ) :
     cliffordInvariant (n : RegularFormClass K) =
       BrauerGroup.quaternionClass (-1) (-1) ^ (n + 1).choose 4 := by
-  have hd (m : ℕ) : discr (m : RegularFormClass K) = 0 := by
-    rw [← nsmul_one, discr_nsmul, discr_one, nsmul_zero]
-  have hs (m : ℕ) : hasseInvariant (m : RegularFormClass K) = 1 := by
-    induction m with
-    | zero => rw [Nat.cast_zero, hasseInvariant_zero]
-    | succ m ih =>
-      rw [Nat.cast_succ, hasseInvariant_add, ih, hasseInvariant_one, hd, discr_one,
-        BrauerGroup.quaternionClassOnSquareClasses_zero_left, one_mul, one_mul]
-  rw [cliffordInvariant_eq_hasseInvariant_mul, hs, hd,
-    BrauerGroup.quaternionClassOnSquareClasses_zero_right, one_pow, one_mul, one_mul,
-    ← rankHom_apply, map_natCast, Nat.cast_id]
+  simp [cliffordInvariant_eq_hasseInvariant_mul]
+
+/-- **The Clifford invariant of a sum of squares**, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem cliffordInvariant_ofNat (n : ℕ) [n.AtLeastTwo] :
+    cliffordInvariant (ofNat(n) : RegularFormClass K) =
+      BrauerGroup.quaternionClass (-1) (-1) ^ ((ofNat(n) : ℕ) + 1).choose 4 :=
+  cliffordInvariant_natCast n
 
 /-- The hyperbolic plane has trivial Clifford invariant: its Clifford algebra `ℍ[K, 1, -1]` is
 split. -/

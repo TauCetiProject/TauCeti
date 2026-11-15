@@ -33,6 +33,9 @@ of the file tests the first one on `⟨-1,-1,-1⟩`.
   trivial exactly when `n ≡ 0, 1, 2, 7 (mod 8)`.
 * `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_quaternionClass_iff_real`: over `ℝ`,
   `c(n⟨1⟩) = [(-1,-1)]` exactly when `n ≡ 3, 4, 5, 6 (mod 8)`.
+* `TauCeti.RegularFormClass.cliffordInvariant_ofNat_eq_one_iff_real` and
+  `TauCeti.RegularFormClass.cliffordInvariant_ofNat_eq_quaternionClass_iff_real`: the same
+  criteria on numerals `n ≥ 2`.
 
 ## References
 
@@ -80,15 +83,29 @@ theorem cliffordInvariant_natCast_eq_quaternionClass_iff_real (n : ℕ) :
   simp only [Finset.mem_insert, Finset.mem_singleton]
   omega
 
+/-- **The Clifford invariant of a real sum of squares is trivial exactly when
+`n ≡ 0, 1, 2, 7 (mod 8)`**, for a numeral `n ≥ 2`. -/
+theorem cliffordInvariant_ofNat_eq_one_iff_real (n : ℕ) [n.AtLeastTwo] :
+    cliffordInvariant (ofNat(n) : RegularFormClass ℝ) = 1 ↔
+      (ofNat(n) : ℕ) % 8 ∈ ({0, 1, 2, 7} : Finset ℕ) :=
+  cliffordInvariant_natCast_eq_one_iff_real n
+
+/-- **The Clifford invariant of a real sum of squares is the class of `ℍ` exactly when
+`n ≡ 3, 4, 5, 6 (mod 8)`**, for a numeral `n ≥ 2`. -/
+theorem cliffordInvariant_ofNat_eq_quaternionClass_iff_real (n : ℕ) [n.AtLeastTwo] :
+    cliffordInvariant (ofNat(n) : RegularFormClass ℝ) = quaternionClass (-1) (-1) ↔
+      (ofNat(n) : ℕ) % 8 ∈ ({3, 4, 5, 6} : Finset ℕ) :=
+  cliffordInvariant_natCast_eq_quaternionClass_iff_real n
+
 /-! ### Worked examples -/
 
 /-- `⟨1,1,1⟩` has Clifford invariant `[ℍ]`: its even Clifford algebra is `ℍ`. -/
-example : cliffordInvariant ((3 : ℕ) : RegularFormClass ℝ) = quaternionClass (-1) (-1) :=
-  (cliffordInvariant_natCast_eq_quaternionClass_iff_real 3).2 (by decide)
+example : cliffordInvariant (3 : RegularFormClass ℝ) = quaternionClass (-1) (-1) :=
+  (cliffordInvariant_ofNat_eq_quaternionClass_iff_real 3).2 (by decide)
 
 /-- `8⟨1⟩` has trivial Clifford invariant: its Clifford algebra is `M₁₆(ℝ)`. -/
-example : cliffordInvariant ((8 : ℕ) : RegularFormClass ℝ) = 1 :=
-  (cliffordInvariant_natCast_eq_one_iff_real 8).2 (by decide)
+example : cliffordInvariant (8 : RegularFormClass ℝ) = 1 :=
+  (cliffordInvariant_ofNat_eq_one_iff_real 8).2 (by decide)
 
 /-- **The first correction exponent of Lam's comparison.** The even Clifford algebra of
 `⟨-1,-1,-1⟩` over `ℝ` is `ℍ`, so its Clifford invariant is `[ℍ]`. Its Hasse invariant is
