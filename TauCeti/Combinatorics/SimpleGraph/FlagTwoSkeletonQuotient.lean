@@ -31,8 +31,11 @@ of the two-skeleton of the flag complex by `G` is finite.
 * `SimpleGraph.hasFiniteFlagTwoSkeletonQuotient_iff_of_finite_neighborSet`: for a locally finite
   graph on which `G` acts by graph homomorphisms, it holds exactly when a finite set of vertices
   contains a translate of every vertex.
+* `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient.finite_neighborSet`: for a left-cancellative scalar
+  action, it forces every vertex whose orbit map has finite fibres to have finitely many
+  neighbours.
 * `SimpleGraph.not_hasFiniteFlagTwoSkeletonQuotient_top`: it fails for the complete graph on an
-  infinite set with a cancellative scalar action, for instance a free group action.
+  infinite set with a cancellative scalar action, for instance a free action of a group.
 
 ## References
 
@@ -105,7 +108,7 @@ theorem HasFiniteFlagTwoSkeletonQuotient.of_isEmpty [IsEmpty V] :
 
 /-- If `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` holds, then some finite set of vertices
 contains a `G`-translate of every vertex. -/
-theorem HasFiniteFlagTwoSkeletonQuotient.exists_finite_forall_smul_mem
+theorem HasFiniteFlagTwoSkeletonQuotient.exists_finite_forall_exists_smul_mem
     (h : Γ.HasFiniteFlagTwoSkeletonQuotient G) :
     ∃ A : Set V, A.Finite ∧ ∀ a : V, ∃ g : G, g • a ∈ A :=
   h.imp fun _ ↦ And.imp_right fun hA a ↦ (hA a a a (by simp)).imp fun _ ↦ And.left
@@ -123,7 +126,7 @@ theorem hasFiniteFlagTwoSkeletonQuotient_iff_of_finite_neighborSet
     (hfin : ∀ a, (Γ.neighborSet a).Finite)
     (hΓ : ∀ (g : G) (a b : V), Γ.Adj a b → Γ.Adj (g • a) (g • b)) :
     Γ.HasFiniteFlagTwoSkeletonQuotient G ↔ ∃ A : Set V, A.Finite ∧ ∀ a : V, ∃ g : G, g • a ∈ A := by
-  refine ⟨HasFiniteFlagTwoSkeletonQuotient.exists_finite_forall_smul_mem,
+  refine ⟨HasFiniteFlagTwoSkeletonQuotient.exists_finite_forall_exists_smul_mem,
     fun ⟨A, hA, h⟩ ↦ ⟨A ∪ ⋃ a ∈ A, Γ.neighborSet a, hA.union (hA.biUnion fun a _ ↦ hfin a),
       fun a b c habc ↦ ?_⟩⟩
   obtain ⟨g, hg⟩ := h a
@@ -141,29 +144,40 @@ theorem hasFiniteFlagTwoSkeletonQuotient_bot_iff :
       ∃ A : Set V, A.Finite ∧ ∀ a : V, ∃ g : G, g • a ∈ A :=
   hasFiniteFlagTwoSkeletonQuotient_iff_of_finite_neighborSet (by simp) fun _ _ _ h ↦ h.elim
 
+/-- If `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` holds for a left-cancellative scalar action,
+then a vertex `a₀` for which every fibre of the orbit map `g ↦ g • a₀` is finite has finitely many
+neighbours. -/
+theorem HasFiniteFlagTwoSkeletonQuotient.finite_neighborSet [IsLeftCancelSMul G V]
+    (h : Γ.HasFiniteFlagTwoSkeletonQuotient G) {a₀ : V}
+    (ha₀ : ∀ y : V, ((· • a₀ : G → V) ⁻¹' {y}).Finite) : (Γ.neighborSet a₀).Finite := by
+  obtain ⟨A, hA, h⟩ := h
+  -- an edge `{a₀, b}` is moved into `A` by some `g` with `g • a₀ ∈ A`; then `g • b ∈ A`
+  refine ((hA.preimage' fun y _ ↦ ha₀ y).biUnion fun g _ ↦ hA.preimage
+    (Set.injOn_of_injective fun _ _ ↦ IsLeftCancelSMul.left_cancel g _ _)).subset fun b hb ↦ ?_
+  obtain ⟨g, hg₀, hgb, -⟩ := h a₀ b b (by simp [(mem_neighborSet ..).1 hb])
+  exact Set.mem_biUnion hg₀ hgb
+
+/-- If `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` holds for a cancellative scalar action, such
+as a free action of a group, then every vertex has finitely many neighbours. -/
+theorem HasFiniteFlagTwoSkeletonQuotient.finite_neighborSet_of_isCancelSMul [IsCancelSMul G V]
+    (h : Γ.HasFiniteFlagTwoSkeletonQuotient G) (a : V) : (Γ.neighborSet a).Finite :=
+  h.finite_neighborSet fun _ ↦ Set.Subsingleton.finite fun _ hg _ hg' ↦
+    IsCancelSMul.right_cancel _ _ _ (hg.trans hg'.symm)
+
 /-- `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` fails for the complete graph on an infinite
-vertex type with a left-cancellative scalar action of `G` for which `g ↦ g • a₀` is injective for
-some vertex `a₀`. -/
-theorem not_hasFiniteFlagTwoSkeletonQuotient_top_of_injective [IsLeftCancelSMul G V] [Infinite V]
-    {a₀ : V} (ha₀ : Function.Injective (· • a₀ : G → V)) :
-    ¬(⊤ : SimpleGraph V).HasFiniteFlagTwoSkeletonQuotient G := by
-  rintro ⟨A, hA, h⟩
-  choose g hg using fun b : V ↦ h a₀ b b (by simp)
-  have : Finite A := hA.to_subtype
-  -- the edge `{a₀, b}` is translated by `g b` into `A`, and `b` is recovered from
-  -- `(g b • a₀, g b • b)`
-  have : Finite V := Finite.of_injective
-    (fun b ↦ ((⟨g b • a₀, (hg b).1⟩ : A), (⟨g b • b, (hg b).2.1⟩ : A))) fun b c hbc ↦ by
-      simp only [Prod.mk.injEq, Subtype.mk.injEq] at hbc
-      rw [ha₀ hbc.1] at hbc
-      exact IsLeftCancelSMul.left_cancel _ _ _ hbc.2
-  exact not_finite V
+vertex type with a left-cancellative scalar action of `G` for which every fibre of `g ↦ g • a₀` is
+finite for some vertex `a₀`. -/
+theorem not_hasFiniteFlagTwoSkeletonQuotient_top_of_finite_preimage_singleton
+    [IsLeftCancelSMul G V] [Infinite V] {a₀ : V}
+    (ha₀ : ∀ y : V, ((· • a₀ : G → V) ⁻¹' {y}).Finite) :
+    ¬(⊤ : SimpleGraph V).HasFiniteFlagTwoSkeletonQuotient G := fun h ↦
+  (Set.finite_singleton a₀).infinite_compl <| by simpa using h.finite_neighborSet ha₀
 
 /-- `SimpleGraph.HasFiniteFlagTwoSkeletonQuotient` fails for the complete graph on an infinite
 vertex type with a cancellative scalar action of `G`, for instance a free action of a group. -/
 theorem not_hasFiniteFlagTwoSkeletonQuotient_top [IsCancelSMul G V] [Infinite V] :
-    ¬(⊤ : SimpleGraph V).HasFiniteFlagTwoSkeletonQuotient G :=
-  not_hasFiniteFlagTwoSkeletonQuotient_top_of_injective (a₀ := Classical.arbitrary V)
-    fun _ _ ↦ IsCancelSMul.right_cancel _ _ _
+    ¬(⊤ : SimpleGraph V).HasFiniteFlagTwoSkeletonQuotient G := fun h ↦
+  (Set.finite_singleton (Classical.arbitrary V)).infinite_compl <| by
+    simpa using h.finite_neighborSet_of_isCancelSMul (Classical.arbitrary V)
 
 end SimpleGraph
