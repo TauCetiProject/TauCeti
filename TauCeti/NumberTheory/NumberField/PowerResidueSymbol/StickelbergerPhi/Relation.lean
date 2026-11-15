@@ -402,8 +402,10 @@ private theorem powerResidueSymbol_stickelbergerProduct_of_isMaximal (hm : 2 ≤
   have hrhs : powerResidueSymbolIdeal (σ • P) m (Quotient.mk (σ • P) α) =
       σ • powerResidueSymbol P m (Quotient.mk P (σ⁻¹ • α)) := by
     have hα : α = e (σ⁻¹ • α) := by simp [e]
+    have he : MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ = (e : 𝓞 K →+* 𝓞 K) := by
+      ext; simp [e]
     nth_rw 1 [hα]
-    rw [P.pointwise_smul_eq_map_toRingEquiv, ← map_powerResidueSymbolIdeal,
+    rw [P.pointwise_smul_def, he, P.map_coe, ← map_powerResidueSymbolIdeal,
       powerResidueSymbolIdeal_of_isMaximal, MulSemiringAction.toRingEquiv_apply_apply]
   rw [hrhs]
   rcases eq_or_ne (Quotient.mk P (σ⁻¹ • α)) 0 with hx | hx
