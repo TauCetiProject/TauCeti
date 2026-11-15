@@ -77,30 +77,6 @@ private theorem contMDiffOn_uncurry_comp_realChart (hf : ContDiff ℂ 2 f)
   simp only [uncurry_apply_pair, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     comp_apply]
 
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- A datum `P` that is `C¹` on the open set `Ω`, evaluated on a fixed tangent vector `v`, is
-differentiable in the domain point at every point of `Ω`. -/
-private theorem differentiableAt_apply_of_contMDiffOn (hΩ : IsOpen Ω)
-    (hP : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : (ℝ × ℝ) × M ↦ P (Complex.equivRealProdCLM.symm p.1) p.2) (Ω ×ˢ univ))
-    {z : ℝ × ℝ} (hz : z ∈ Ω) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ (fun z ↦ P (Complex.equivRealProdCLM.symm z) x v) z :=
-  (((hP.contMDiffAt ((hΩ.prod isOpen_univ).mem_nhds ⟨hz, mem_univ x⟩)).comp z
-    (contMDiffAt_id.prodMk contMDiffAt_const)).clm_apply
-      contMDiffAt_const).contDiffAt.differentiableAt one_ne_zero
-
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- A datum `P` that is `C¹` on the open set `Ω`, evaluated on a fixed tangent vector `v`, is
-differentiable in the target point at every point of `Ω`. -/
-private theorem mdifferentiableAt_apply_of_contMDiffOn (hΩ : IsOpen Ω)
-    (hP : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : (ℝ × ℝ) × M ↦ P (Complex.equivRealProdCLM.symm p.1) p.2) (Ω ×ˢ univ))
-    {z : ℝ × ℝ} (hz : z ∈ Ω) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ P (Complex.equivRealProdCLM.symm z) y v) x :=
-  (((hP.contMDiffAt ((hΩ.prod isOpen_univ).mem_nhds ⟨hz, mem_univ x⟩)).comp x
-    (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
-      one_ne_zero
-
 /-- The pullback of the datum `P` along the real chart of a holomorphic map `f`, evaluated on a
 tangent vector `v`, is `P` at `f` on `f' v`. -/
 private theorem perturbationPullback_realChart_eq {X : Type*} {P : ℂ → X → ℂ →L[ℝ] ℝ}
@@ -190,8 +166,15 @@ theorem integrableOn_hamiltonianCurvature_image_realChart_Icc_prod_Ico (ω : Smo
   have hφ : ContDiff ℝ 2 φ := TauCeti.Complex.contDiff_realChart hf
   have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
   have hsΩ {w : ℝ × ℝ} (hw : w ∈ s) : φ w ∈ Ω := hfΩ w ⟨hw.1, Ico_subset_Icc_self hw.2⟩
-  have hdom {w : ℝ × ℝ} (hw : w ∈ s) := differentiableAt_apply_of_contMDiffOn hΩ hP (hsΩ hw)
-  have htgt {w : ℝ × ℝ} (hw : w ∈ s) := mdifferentiableAt_apply_of_contMDiffOn hΩ hP (hsΩ hw)
+  have hPw {w : ℝ × ℝ} (hw : w ∈ s) (x : M) :
+      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+        (uncurry fun z x ↦ P (Complex.equivRealProdCLM.symm z) x) (φ w, x) :=
+    hP.contMDiffAt ((hΩ.prod isOpen_univ).mem_nhds ⟨hsΩ hw, mem_univ x⟩)
+  have hdom {w : ℝ × ℝ} (hw : w ∈ s) (x : M) (v : ℂ) :=
+    ((hPw hw x).curry_left.clm_apply (contMDiffAt_const (c := v))).contDiffAt.differentiableAt
+      one_ne_zero
+  have htgt {w : ℝ × ℝ} (hw : w ∈ s) (x : M) (v : ℂ) :=
+    ((hPw hw x).curry_right.clm_apply (contMDiffAt_const (c := v))).mdifferentiableAt one_ne_zero
   rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hmeas
     (fun w _ ↦ (hφ.differentiable (by norm_num) w).hasFDerivAt.hasFDerivWithinAt) hinj]
   refine ((integrableOn_hamiltonianCurvature_comp_realChart_Icc ω hf hfΩ hu hg hG
@@ -320,8 +303,15 @@ theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart_Icc_prod_Ico
   have hsΩ {w : ℝ × ℝ} (hw : w ∈ s) : φ w ∈ Ω := hfΩ w ⟨hw.1, Ico_subset_Icc_self hw.2⟩
   have hud {w : ℝ × ℝ} (hw : w ∈ s) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w) :=
     (hu.contMDiffAt (hΩ.mem_nhds (hsΩ hw))).mdifferentiableAt one_ne_zero
-  have hdom {w : ℝ × ℝ} (hw : w ∈ s) := differentiableAt_apply_of_contMDiffOn hΩ hP (hsΩ hw)
-  have htgt {w : ℝ × ℝ} (hw : w ∈ s) := mdifferentiableAt_apply_of_contMDiffOn hΩ hP (hsΩ hw)
+  have hPw {w : ℝ × ℝ} (hw : w ∈ s) (x : M) :
+      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+        (uncurry fun z x ↦ P (Complex.equivRealProdCLM.symm z) x) (φ w, x) :=
+    hP.contMDiffAt ((hΩ.prod isOpen_univ).mem_nhds ⟨hsΩ hw, mem_univ x⟩)
+  have hdom {w : ℝ × ℝ} (hw : w ∈ s) (x : M) (v : ℂ) :=
+    ((hPw hw x).curry_left.clm_apply (contMDiffAt_const (c := v))).contDiffAt.differentiableAt
+      one_ne_zero
+  have htgt {w : ℝ × ℝ} (hw : w ∈ s) (x : M) (v : ℂ) :=
+    ((hPw hw x).curry_right.clm_apply (contMDiffAt_const (c := v))).mdifferentiableAt one_ne_zero
   -- Change variables to the coordinates of `f`, in each of the three integrals.
   rw [ω.integral_eval₂_mfderiv_stdComplexLine_image hmeas hinj (fun w _ ↦ hφd w)
       (fun w _ ↦ hdet w) (fun w hw ↦ hud hw),

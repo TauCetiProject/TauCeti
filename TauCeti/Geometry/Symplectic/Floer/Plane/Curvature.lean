@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+import TauCeti.Analysis.Complex.RealChart.Periodic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
@@ -796,7 +797,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
     setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ (hpole hz).2,
     hω.integral_floerEnergyDensity_image_endPiece hH hHs hu hR (hED.mono_set hAD)
       (hRD.mono_set hAD),
-    intervalIntegral_realChart_eq_of_periodic (p.periodic_cylindricalEndLift _) hH]
+    TauCeti.Complex.intervalIntegral_realChart_eq_of_periodic (p.periodic_cylindricalEndLift _) hH]
   ring
 
 /-- **The topological energy of a solution bounds its integrated curvature.** If `u` solves the

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+import TauCeti.Analysis.Complex.RealChart.Periodic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
@@ -744,7 +745,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
         ∫ t in (0 : ℝ)..1, H q t (u (Complex.equivRealProdCLM
           (q.cylindricalEndLift (↑(q.endSign * R q) + ↑t * Complex.I)))) := by
     rw [endChart_eq_realChart]
-    exact intervalIntegral_realChart_eq_of_periodic
+    exact TauCeti.Complex.intervalIntegral_realChart_eq_of_periodic
       (q.periodic_cylindricalEndLift (q.endSign * R q)) (hH q) u
   simp only [hbd]
   ring

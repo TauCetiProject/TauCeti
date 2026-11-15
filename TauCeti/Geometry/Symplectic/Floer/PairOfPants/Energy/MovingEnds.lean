@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
 public import TauCeti.Geometry.Symplectic.Floer.Manifold.RealChart
+import TauCeti.Analysis.Complex.RealChart.Periodic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
@@ -496,7 +497,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_inputEndPiece
     (smoothTransition.contDiff.comp (f := fun s : ℝ ↦ s - 1) (by fun_prop)) (hHs i)
     fun z hz x v ↦ puncturedSpherePerturbation_add_mul_cylindricalEndLift_zero_of_mem hH ha hsep
       hout i hz x v,
-    intervalIntegral_realChart_eq_of_periodic (hper R) (hH i)]
+    TauCeti.Complex.intervalIntegral_realChart_eq_of_periodic (hper R) (hH i)]
   simp only [sub_self, smoothTransition.zero, zero_mul, sub_zero]
 
 /-- **The energy identity on the output end piece, for a manifold target.** Over the part
@@ -533,7 +534,8 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_outputEndPiece
     (g := fun s ↦ smoothTransition (-s - 1))
     (smoothTransition.contDiff.comp (f := fun s : ℝ ↦ -s - 1) (by fun_prop)) hHouts
     fun z hz x v ↦ puncturedSpherePerturbation_cylindricalEndLift_inf_of_mem hHout hout hz x v,
-    intervalIntegral_realChart_eq_of_periodic (periodic_cylindricalEndLift inf (-R)) hHout u]
+    TauCeti.Complex.intervalIntegral_realChart_eq_of_periodic (periodic_cylindricalEndLift inf (-R))
+      hHout u]
   simp only [neg_neg, sub_self, smoothTransition.zero, zero_mul, zero_sub]
   ring
 
