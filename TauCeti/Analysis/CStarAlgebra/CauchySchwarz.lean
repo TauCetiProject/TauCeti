@@ -19,9 +19,10 @@ For elements `aₖ, bₖ` of a non-unital C⋆-algebra `D` indexed by a finite s
 
 and its consequence `‖∑ aₖ x bₖ‖² ≤ ‖∑ aₖ aₖ⋆‖ ‖x‖² ‖∑ bₖ⋆ bₖ‖`. The sum `∑ aₖ bₖ` is the inner
 product of the columns `(bₖ⋆)` and `(aₖ)` of the Hilbert `D`-module `C⋆ᵐᵒᵈ(D, ι → D)`, so the
-bound is the Cauchy–Schwarz inequality of that module. Since `D` need not be unital, the
-three-factor bound is not the special case `x = 1` of the two-factor one; it follows by applying
-the two-factor bound to `aₖ x` instead.
+bound is the Cauchy–Schwarz inequality of that module. The three-factor bound follows by applying
+the two-factor bound to `aₖ x` in place of `aₖ`. When `D` is unital, setting `x = 1` in the
+three-factor bound recovers the two-factor one; since `D` need not be unital, the two-factor bound
+is proved first.
 
 ## Main declarations
 
