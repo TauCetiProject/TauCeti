@@ -20,7 +20,7 @@ import Mathlib.RingTheory.Binomial
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
 over general rings, together with their sums over integer intervals and their forward
 differences, and evaluation identities for ascending Pochhammer polynomials `ascPochhammer R n`
-over commutative rings, including the Chu–Vandermonde identity.
+over general rings, and the Chu–Vandermonde identity over commutative rings.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -324,24 +324,30 @@ section Ascending
 variable {R : Type*}
 
 /-- `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`. -/
-theorem ascPochhammer_eval_add [CommSemiring R] (x : R) (k m : ℕ) :
+theorem ascPochhammer_eval_add [Semiring R] (x : R) (k m : ℕ) :
     (ascPochhammer R (k + m)).eval x =
       (ascPochhammer R k).eval x * (ascPochhammer R m).eval (x + k) := by
-  rw [← ascPochhammer_mul, eval_mul, eval_comp, eval_add, eval_X, eval_natCast]
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
+      Nat.cast_add, add_assoc]
 
 /-- `(−n)ₖ = (−1)ᵏ k! C(n, k)`. -/
-theorem ascPochhammer_eval_neg_natCast [CommRing R] (n k : ℕ) :
+theorem ascPochhammer_eval_neg_natCast [Ring R] (n k : ℕ) :
     (ascPochhammer R k).eval (-(n : R)) = (-1) ^ k * k.factorial * n.choose k := by
   rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
-    Nat.descFactorial_eq_factorial_mul_choose]
-  push_cast
-  ring
+    Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, mul_assoc]
 
 /-- `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`. -/
-theorem ascPochhammer_eval_neg_sub_add_one [CommRing R] (b : R) (k : ℕ) :
+theorem ascPochhammer_eval_neg_sub_add_one [Ring R] (b : R) (k : ℕ) :
     (ascPochhammer R k).eval (-b - k + 1) = (-1) ^ k * (ascPochhammer R k).eval b := by
-  rw [show -b - k + 1 = -(b + k - 1) by ring, ascPochhammer_eval_neg_eq_descPochhammer,
-    descPochhammer_eval_eq_ascPochhammer, show b + k - 1 - k + 1 = b by ring]
+  -- `-b - k + 1` is `-r` for `r = b + k - 1`, and the falling factorial of `r` of length `k`
+  -- is the rising factorial from `r - k + 1 = b`.
+  have hneg : -b - k + 1 = -(b + k - 1) := by abel
+  have hshift : b + k - 1 - k + 1 = b := by abel
+  rw [hneg, ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_ascPochhammer,
+    hshift]
 
 /-- **The Chu–Vandermonde identity** in Pochhammer form:
 `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`. It is Mathlib's `Ring.descPochhammer_smeval_add`
@@ -355,12 +361,13 @@ theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R
   have h := Ring.descPochhammer_smeval_add (r := -b) (s := c + n - 1) n (Commute.all _ _)
   rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk] at h
   simp only [hD] at h
-  rw [show -b + (c + n - 1) - n + 1 = c - b by ring] at h
+  have hcb : -b + (c + n - 1) - n + 1 = c - b := by ring
+  rw [hcb] at h
   rw [h]
   refine Finset.sum_congr rfl fun k hk => ?_
   have hk' : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-  rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk',
-    show c + n - 1 - (n - k) + 1 = c + k by ring]
+  have hck : c + (n : R) - 1 - ((n : R) - k) + 1 = c + k := by ring
+  rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
   ring
 
 end Ascending
