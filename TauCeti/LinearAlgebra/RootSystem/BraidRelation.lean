@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Reflection
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 
 /-!
@@ -28,7 +29,8 @@ which express `(r₁r₂)ⁿ` over an arbitrary commutative ring through the Che
 `RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_root` are those formulas for a product of
 two reflections of a root pairing, read as elements of the Weyl group. Substituting `c = 1, 2, 3`,
 that is `t = -1, 0, 1`, makes the two Chebyshev coefficients of the general formula vanish at the
-exponents `3`, `4`, `6`, which gives `g³ = 1`, `g⁴ = 1`, `g⁶ = 1`; the remaining value `c = 0` is
+exponents `3`, `4`, `6`, which gives `g³ = 1`, `g⁴ = 1`, `g⁶ = 1`, the root-pairing case of
+`Module.reflection_mul_reflection_pow_three_eq_one` and its siblings; the remaining value `c = 0` is
 the orthogonal case, already settled in `TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix`, where the
 two reflections commute, and where the order is pinned to `2` only for two distinct simple roots of
 a base.
@@ -146,10 +148,9 @@ theorem pow_three_ofIdx_mul_ofIdx_eq_one
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 3 = 1 := by
   refine RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
-  -- At `t = -1` the coefficients of the two displacement terms are `S₀(t)(S₁(t) + S₀(t)) = 0`
-  -- and `S₁(t)(S₁(t) + S₀(t)) = 0`.
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul P i j 3 x (-1) (by rw [h]; ring)]
-  norm_num [S_zero, S_one]
+  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
+  exact LinearEquiv.congr_fun (Module.reflection_mul_reflection_pow_three_eq_one
+    (P.coroot_root_two i) (P.coroot_root_two j) (by simpa [mul_comm] using h)) x
 
 /-- **The braid relation at Cartan product `2`**: the product of the two reflections has order
 dividing `4`, the `B₂` configuration. -/
@@ -159,9 +160,9 @@ theorem pow_four_ofIdx_mul_ofIdx_eq_one
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 4 = 1 := by
   refine RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
-  -- At `t = 0` both coefficients carry the factor `S₁(t) = t = 0`.
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul P i j 4 x 0 (by rw [h]; ring)]
-  norm_num [S_zero, S_one]
+  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
+  exact LinearEquiv.congr_fun (Module.reflection_mul_reflection_pow_four_eq_one
+    (P.coroot_root_two i) (P.coroot_root_two j) (by simpa [mul_comm] using h)) x
 
 /-- **The braid relation at Cartan product `3`**: the product of the two reflections has order
 dividing `6`, the `G₂` configuration. -/
@@ -171,9 +172,9 @@ theorem pow_six_ofIdx_mul_ofIdx_eq_one
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 6 = 1 := by
   refine RootPairing.weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
-  -- At `t = 1` both coefficients carry the factor `S₂(t) = t² - 1 = 0`.
-  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul P i j 6 x 1 (by rw [h]; ring)]
-  norm_num [S_two]
+  rw [RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq]
+  exact LinearEquiv.congr_fun (Module.reflection_mul_reflection_pow_six_eq_one
+    (P.coroot_root_two i) (P.coroot_root_two j) (by simpa [mul_comm] using h)) x
 
 /-! ## The order is no smaller
 
@@ -256,10 +257,7 @@ theorem orderOf_ofIdx_mul_ofIdx_eq_six
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 3 ≠ 1 := by
     refine RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne P i j 3 ?_
     rw [RootPairing.weylGroup.coroot'_left_pow_smul_root P i j 3 1 (by rw [h]; ring), h]
-    have h₃ : (S R 3).eval (1 : R) = -1 := by
-      have h₃' : S R (3 : ℤ) = Polynomial.X * S R 2 - S R 1 := by simpa using S_add_two R (1 : ℤ)
-      simp [h₃', S_one, S_two]
-    norm_num [h₃, S_two]
+    norm_num [S_three_eval_one, S_two]
   refine orderOf_eq_of_pow_and_pow_div_prime
     (RootPairing.weylGroup.pow_six_ofIdx_mul_ofIdx_eq_one P i j h) fun p hp hpd ↦ ?_
   have hp' : p = 2 ∨ p = 3 := by

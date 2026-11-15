@@ -67,7 +67,9 @@ roots, and there the two simple reflections commute
 ## References
 
 The classification of rank-two crystallographic configurations behind this file is Bourbaki,
-*Lie Groups and Lie Algebras*, Chapters 4--6, Ch. VI, §1.3.
+*Lie Groups and Lie Algebras*, Chapters 4--6, Ch. VI, §1.3. The Coxeter matrix of a generalized
+Cartan matrix, with its infinite entries for Cartan products at least `4`, follows V. G. Kac,
+*Infinite-dimensional Lie algebras*, third edition, Proposition 3.13.
 -/
 
 public section

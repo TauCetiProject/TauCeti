@@ -18,22 +18,29 @@ increase by at least `1` at each step, so `n + 1 ≤ Sₙ(t)`.
 
 The values `Sₙ(t)` are the coefficients of the powers of a product of two reflections whose
 Cartan product is `t + 2`. For `t ≥ 2` the product is a shear or a hyperbolic transformation,
-and the growth proved here shows that it has infinite order.
+and the growth proved here shows that it has infinite order. The file also records the value
+`S₃(1) = -1`, which rules out the order `3` for Cartan product `3`.
 
 ## Main results
 
-* `Polynomial.Chebyshev.eval_S_add_one_le`: `Sₙ(t) + 1 ≤ Sₙ₊₁(t)` for `t ≥ 2` and `n ≥ 0`.
-* `Polynomial.Chebyshev.natCast_add_one_le_eval_S`: `n + 1 ≤ Sₙ(t)` for `t ≥ 2` and `n ≥ 0`.
+* `Polynomial.Chebyshev.S_eval_add_one_le`: `Sₙ(t) + 1 ≤ Sₙ₊₁(t)` for `t ≥ 2` and `n ≥ 0`.
+* `Polynomial.Chebyshev.natCast_add_one_le_S_eval`: `n + 1 ≤ Sₙ(t)` for `t ≥ 2` and `n ≥ 0`.
+* `Polynomial.Chebyshev.S_three_eval_one`: `S₃(1) = -1`.
 -/
 
 public section
 
 namespace Polynomial.Chebyshev
 
+/-- `S₃(1) = -1`: at `t = 1` the values `Sₙ(t)` run through `1, 1, 0, -1`. -/
+theorem S_three_eval_one (R : Type*) [CommRing R] : (S R 3).eval (1 : R) = -1 := by
+  have h : S R (3 : ℤ) = X * S R 2 - S R 1 := by simpa using S_add_two R (1 : ℤ)
+  simp [h, S_one, S_two]
+
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {t : R}
 
 /-- Both growth statements at once, so that the induction can use the positivity of `Sₙ(t)`. -/
-private theorem eval_S_add_one_le_and (ht : 2 ≤ t) (n : ℕ) :
+private theorem S_eval_add_one_le_and (ht : 2 ≤ t) (n : ℕ) :
     (S R n).eval t + 1 ≤ (S R (n + 1)).eval t ∧ (n + 1 : R) ≤ (S R n).eval t := by
   induction n with
   | zero => simp [S_zero, S_one]; linarith
@@ -55,13 +62,13 @@ private theorem eval_S_add_one_le_and (ht : 2 ≤ t) (n : ℕ) :
     constructor <;> linarith
 
 /-- At a point `t ≥ 2` the values `Sₙ(t)` increase by at least `1` at each step. -/
-theorem eval_S_add_one_le (ht : 2 ≤ t) (n : ℕ) :
+theorem S_eval_add_one_le (ht : 2 ≤ t) (n : ℕ) :
     (S R n).eval t + 1 ≤ (S R (n + 1)).eval t :=
-  (eval_S_add_one_le_and ht n).1
+  (S_eval_add_one_le_and ht n).1
 
 /-- At a point `t ≥ 2` the value `Sₙ(t)` is at least its value `n + 1` at `2`. -/
-theorem natCast_add_one_le_eval_S (ht : 2 ≤ t) (n : ℕ) :
+theorem natCast_add_one_le_S_eval (ht : 2 ≤ t) (n : ℕ) :
     (n + 1 : R) ≤ (S R n).eval t :=
-  (eval_S_add_one_le_and ht n).2
+  (S_eval_add_one_le_and ht n).2
 
 end Polynomial.Chebyshev

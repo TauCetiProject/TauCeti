@@ -41,8 +41,8 @@ need not belong to any finite root system.
 
 The iterates of `r₁ r₂` are Mathlib's `Module.reflection_mul_reflection_pow_apply` and
 `Module.reflection_mul_reflection_pow_apply_self`, in terms of the Chebyshev polynomials
-`Polynomial.Chebyshev.S`. The evaluation of their coefficients at `c - 2 = -1, 0, 1` follows the
-root-pairing case in `TauCeti.LinearAlgebra.RootSystem.BraidRelation`.
+`Polynomial.Chebyshev.S`, evaluated here at `c - 2 = -1, 0, 1`. The braid relations of a root
+pairing in `TauCeti.LinearAlgebra.RootSystem.BraidRelation` are derived from these.
 -/
 
 public section
@@ -202,7 +202,7 @@ variable {hf hg}
 
 /-- If a power `(r₁ r₂)ⁿ` of the product of the reflections in two linearly independent vectors
 is trivial, the two coefficients of `(r₁ r₂)ⁿ x` are those of `x`. -/
-private theorem eval_S_eq_of_pow_eq_one (hxy : LinearIndependent R ![x, y]) {n : ℕ}
+private theorem S_eval_eq_of_pow_eq_one (hxy : LinearIndependent R ![x, y]) {n : ℕ}
     (hn : (reflection hf * reflection hg) ^ n = 1) :
     (S R n).eval (f y * g x - 2) + (S R (n - 1)).eval (f y * g x - 2) = 1 ∧
       (S R (n - 1)).eval (f y * g x - 2) * g x = 0 := by
@@ -223,7 +223,7 @@ theorem orderOf_reflection_mul_reflection_eq_two [NeZero (2 : R)]
     (hxy : LinearIndependent R ![x, y]) (hfy : f y = 0) (hgx : g x = 0) :
     orderOf (reflection hf * reflection hg) = 2 := by
   refine orderOf_eq_prime (reflection_mul_reflection_pow_two_eq_one hf hg hfy hgx) fun h1 ↦ ?_
-  have := (eval_S_eq_of_pow_eq_one hxy (n := 1) (by rw [pow_one, h1])).1
+  have := (S_eval_eq_of_pow_eq_one hxy (n := 1) (by rw [pow_one, h1])).1
   norm_num [hfy, S_zero, S_one] at this
   exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
 
@@ -234,7 +234,7 @@ theorem orderOf_reflection_mul_reflection_eq_three [Nontrivial R]
     orderOf (reflection hf * reflection hg) = 3 := by
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   refine orderOf_eq_prime (reflection_mul_reflection_pow_three_eq_one hf hg h) fun h1 ↦ ?_
-  have := (eval_S_eq_of_pow_eq_one hxy (n := 1) (by rw [pow_one, h1])).1
+  have := (S_eval_eq_of_pow_eq_one hxy (n := 1) (by rw [pow_one, h1])).1
   norm_num [h, S_zero, S_one] at this
 
 /-- **At Cartan product `2` the product of the reflections in two linearly independent vectors
@@ -247,34 +247,31 @@ theorem orderOf_reflection_mul_reflection_eq_four [NeZero (2 : R)]
   obtain rfl : p = 2 :=
     (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (hp.dvd_of_dvd_pow (n := 2) hpd)
   intro h2
-  have := (eval_S_eq_of_pow_eq_one hxy (n := 2) h2).1
+  have := (S_eval_eq_of_pow_eq_one hxy (n := 2) h2).1
   norm_num [h, S_one, S_two] at this
   exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
 
 /-- **At Cartan product `3` the product of the reflections in two linearly independent vectors
 has order exactly `6`**, provided `2 ≠ 0` and `g x ≠ 0`. The latter holds automatically when `R`
-has no zero divisors, since `f y * g x = 3` and `3 ≠ 0` then. -/
+has no zero divisors and `3 ≠ 0`, for instance in characteristic zero, since `f y * g x = 3`. -/
 theorem orderOf_reflection_mul_reflection_eq_six [NeZero (2 : R)]
     (hxy : LinearIndependent R ![x, y]) (h : f y * g x = 3) (hgx : g x ≠ 0) :
     orderOf (reflection hf * reflection hg) = 6 := by
   refine orderOf_eq_of_pow_and_pow_div_prime
     (reflection_mul_reflection_pow_six_eq_one hf hg h) fun p hp hpd ↦ ?_
   have hp' : p = 2 ∨ p = 3 := by
-    rcases (Nat.Prime.dvd_mul hp).mp (show p ∣ 2 * 3 from hpd) with h' | h'
+    have hpd' : p ∣ 2 * 3 := by simpa using hpd
+    rcases (Nat.Prime.dvd_mul hp).mp hpd' with h' | h'
     · exact .inl ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp h')
     · exact .inr ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_three).mp h')
   intro hpow
   rcases hp' with rfl | rfl
   · -- `(r₁ r₂)³ = 1` fails on the `x`-coefficient `S₃(1) + S₂(1) = -1`.
-    have := (eval_S_eq_of_pow_eq_one hxy (n := 3) hpow).1
-    have h₃ : (S R 3).eval (1 : R) = -1 := by
-      have h₃' : S R (3 : ℤ) = Polynomial.X * S R 2 - S R 1 := by
-        simpa using S_add_two R (1 : ℤ)
-      simp [h₃', S_one, S_two]
-    norm_num [h, h₃, S_two] at this
+    have := (S_eval_eq_of_pow_eq_one hxy (n := 3) hpow).1
+    norm_num [h, S_three_eval_one, S_two] at this
     exact (two_ne_zero : (2 : R) ≠ 0) (by linear_combination -this)
   · -- `(r₁ r₂)² = 1` fails on the `y`-coefficient `-S₁(1) g x = -g x`.
-    have := (eval_S_eq_of_pow_eq_one hxy (n := 2) hpow).2
+    have := (S_eval_eq_of_pow_eq_one hxy (n := 2) hpow).2
     norm_num [h, S_one] at this
     exact hgx this
 
@@ -286,7 +283,7 @@ theorem orderOf_reflection_mul_reflection_eq_zero [CharZero R]
     (hxy : LinearIndependent R ![x, y]) {c : ℤ} (h : f y * g x = c) (hc : 4 ≤ c) :
     orderOf (reflection hf * reflection hg) = 0 := by
   refine orderOf_eq_zero_iff'.mpr fun n hn hpow ↦ ?_
-  have key := (eval_S_eq_of_pow_eq_one hxy hpow).1
+  have key := (S_eval_eq_of_pow_eq_one hxy hpow).1
   -- Transport the coefficient identity to the integers, where the growth bound applies.
   have hcast (k : ℤ) : (S R k).eval (f y * g x - 2) = (((S ℤ k).eval (c - 2) : ℤ) : R) := by
     rw [h, ← map_S (Int.castRingHom R), Polynomial.eval_map,
@@ -295,8 +292,8 @@ theorem orderOf_reflection_mul_reflection_eq_zero [CharZero R]
   have key' : (S ℤ n).eval (c - 2) + (S ℤ (n - 1)).eval (c - 2) = 1 := by exact_mod_cast key
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   have ht : (2 : ℤ) ≤ c - 2 := by linarith
-  have h₁ := natCast_add_one_le_eval_S ht (m + 1)
-  have h₂ := natCast_add_one_le_eval_S ht m
+  have h₁ := natCast_add_one_le_S_eval ht (m + 1)
+  have h₂ := natCast_add_one_le_S_eval ht m
   push_cast at key' h₁
   rw [add_sub_cancel_right] at key'
   linarith [(Nat.cast_nonneg m : (0 : ℤ) ≤ m)]

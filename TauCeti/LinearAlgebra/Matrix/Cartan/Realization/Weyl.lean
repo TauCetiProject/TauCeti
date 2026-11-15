@@ -46,6 +46,8 @@ Coxeter group on the simple reflections, is Kac's Proposition 3.13 and is not pr
 
 ## Main results
 
+* `TauCeti.CartanRealization.linearIndependent_root_pair`: two distinct simple roots are linearly
+  independent.
 * `TauCeti.CartanRealization.simpleReflection_root`: `sᵢ αⱼ = αⱼ - Aᵢⱼ αᵢ`.
 * `TauCeti.CartanRealization.simpleReflection_apply_simpleCoreflection`: the simple reflections
   preserve the pairing, `(sᵢ λ)(sᵢ h) = λ(h)`.
@@ -83,21 +85,30 @@ section Reflections
 
 variable {A : Matrix I I K} (R : CartanRealization A H) (hA : ∀ i, A i i = 2)
 
+/-- The simple roots at two distinct nodes are linearly independent. -/
+theorem linearIndependent_root_pair {i j : I} (hij : i ≠ j) :
+    LinearIndependent K ![R.root i, R.root j] := by
+  have h := R.root_linearIndependent.comp ![i, j] fun a b hab ↦ by
+    fin_cases a <;> fin_cases b <;> simp_all [hij.symm]
+  convert h using 1
+  ext k
+  fin_cases k <;> simp
+
 include hA in
 /-- A simple coroot pairs to `2` with its simple root, when the matrix has diagonal entries `2`. -/
-theorem root_coroot_self (i : I) : R.root i (R.coroot i) = 2 := by
+theorem root_coroot_two (i : I) : R.root i (R.coroot i) = 2 := by
   rw [root_coroot, hA]
 
 include hA in
 /-- The **simple reflection** `sᵢ λ = λ - λ(hᵢ) αᵢ` of the dual of the realization. -/
 noncomputable def simpleReflection (i : I) : Dual K H ≃ₗ[K] Dual K H :=
   Module.reflection (x := R.root i) (f := Dual.eval K H (R.coroot i))
-    (by rw [Dual.eval_apply, R.root_coroot_self hA])
+    (by rw [Dual.eval_apply, R.root_coroot_two hA])
 
 include hA in
 /-- The **dual simple reflection** `sᵢ h = h - αᵢ(h) hᵢ` of the realization. -/
 noncomputable def simpleCoreflection (i : I) : H ≃ₗ[K] H :=
-  Module.reflection (R.root_coroot_self hA i)
+  Module.reflection (R.root_coroot_two hA i)
 
 theorem simpleReflection_apply (i : I) (lam : Dual K H) :
     R.simpleReflection hA i lam = lam - lam (R.coroot i) • R.root i := by
@@ -114,6 +125,7 @@ theorem simpleReflection_root (i j : I) :
   rw [simpleReflection_apply, root_coroot]
 
 /-- `sᵢ αᵢ = -αᵢ`. -/
+@[simp high]
 theorem simpleReflection_root_self (i : I) :
     R.simpleReflection hA i (R.root i) = -R.root i := by
   rw [simpleReflection_root, hA]
@@ -126,6 +138,7 @@ theorem simpleCoreflection_coroot (i j : I) :
   rw [simpleCoreflection_apply, root_coroot]
 
 /-- `sᵢ hᵢ = -hᵢ`. -/
+@[simp high]
 theorem simpleCoreflection_coroot_self (i : I) :
     R.simpleCoreflection hA i (R.coroot i) = -R.coroot i := by
   rw [simpleCoreflection_coroot, hA]
@@ -144,12 +157,12 @@ theorem simpleCoreflection_mul_self (i : I) :
 
 @[simp]
 theorem simpleReflection_inv (i : I) : (R.simpleReflection hA i)⁻¹ = R.simpleReflection hA i :=
-  inv_eq_of_mul_eq_one_right (R.simpleReflection_mul_self hA i)
+  Module.reflection_inv _
 
 @[simp]
 theorem simpleCoreflection_inv (i : I) :
     (R.simpleCoreflection hA i)⁻¹ = R.simpleCoreflection hA i :=
-  inv_eq_of_mul_eq_one_right (R.simpleCoreflection_mul_self hA i)
+  Module.reflection_inv _
 
 /-- The simple reflection is the transpose of the dual simple reflection:
 `(sᵢ λ)(h) = λ(sᵢ h)`. -/
@@ -265,22 +278,13 @@ private theorem dual_eval_coroot_root (i j : I) :
     Dual.eval K H (R.coroot i) (R.root j) = (A i j : K) := by
   rw [Dual.eval_apply, root_coroot, Matrix.map_apply]
 
-/-- The simple roots at two distinct nodes are linearly independent. -/
-private theorem linearIndependent_root_pair {i j : I} (hij : i ≠ j) :
-    LinearIndependent K ![R.root i, R.root j] := by
-  have h := R.root_linearIndependent.comp ![i, j] fun a b hab ↦ by
-    fin_cases a <;> fin_cases b <;> simp_all [hij.symm]
-  convert h using 1
-  ext k
-  fin_cases k <;> simp
-
 variable [DecidableEq I]
 
-/-- **The Coxeter relations.** If the vanishing entries of the integral matrix `A` come in
-transposed pairs, as for a generalized Cartan matrix, the simple reflections satisfy
+/-- **The Coxeter relations.** If the entries `A i j` and `A j i` of the integral matrix `A`
+vanish together, as for a generalized Cartan matrix, the simple reflections satisfy
 `(sᵢ sⱼ)^mᵢⱼ = 1` for the Coxeter matrix `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A`. -/
-theorem pow_simpleReflection_mul_simpleReflection_eq_one (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
-    (i j : I) :
+theorem pow_simpleReflection_mul_simpleReflection_eq_one {i j : I}
+    (hzero : A i j = 0 ↔ A j i = 0) :
     (R.simpleReflection hA i * R.simpleReflection hA j) ^
       coxeterMatrixOfGeneralizedCartanMatrix A i j = 1 := by
   rcases eq_or_ne i j with rfl | hij
@@ -300,11 +304,11 @@ theorem pow_simpleReflection_mul_simpleReflection_eq_one (hzero : ∀ i j, A i j
       (by simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega), pow_zero]
   obtain h | h | h | h : A i j * A j i = 0 ∨ A i j * A j i = 1 ∨ A i j * A j i = 2 ∨
       A i j * A j i = 3 := by omega
-  · have hij0 : A i j = 0 := (mul_eq_zero.mp h).elim id (hzero i j).mpr
+  · have hij0 : A i j = 0 := (mul_eq_zero.mp h).elim id hzero.mpr
     rw [h, coxeterOrder_zero]
     exact Module.reflection_mul_reflection_pow_two_eq_one _ _
       (by rw [dual_eval_coroot_root, hij0, Int.cast_zero])
-      (by rw [dual_eval_coroot_root, (hzero i j).mp hij0, Int.cast_zero])
+      (by rw [dual_eval_coroot_root, hzero.mp hij0, Int.cast_zero])
   · rw [h, coxeterOrder_one]
     exact Module.reflection_mul_reflection_pow_three_eq_one _ _ (by rw [hc, h, Int.cast_one])
   · rw [h, coxeterOrder_two]
@@ -360,7 +364,8 @@ Weyl group (`TauCeti.CartanRealization.range_coxeterHom`). -/
 noncomputable def coxeterHom (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) :
     (coxeterMatrixOfGeneralizedCartanMatrix A).Group →* (Dual K H ≃ₗ[K] Dual K H) :=
   (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.lift
-    ⟨R.simpleReflection hA, R.pow_simpleReflection_mul_simpleReflection_eq_one hA hzero⟩
+    ⟨R.simpleReflection hA, fun i j ↦
+      R.pow_simpleReflection_mul_simpleReflection_eq_one hA (hzero i j)⟩
 
 variable (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
 
