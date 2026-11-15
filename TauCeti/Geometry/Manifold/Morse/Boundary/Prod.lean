@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Prod
-public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import TauCeti.LinearAlgebra.DirectSum.Finsupp
 
 /-!
 # The mod-two Morse complex of a product manifold
@@ -15,8 +15,9 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 Let `f` be a Morse function on a compact boundaryless manifold `M` and `X` a Morse–Smale
 pseudo-gradient adapted to `f`, and likewise `g`, `Y` on `N`. The separated sum
 `f ∘ Prod.fst + g ∘ Prod.snd` is a Morse function on `M × N`
-(`TauCeti.IsMorse.comp_fst_add_comp_snd`), the product field `(X, Y)` is a pseudo-gradient adapted
-to it (`TauCeti.IsAdaptedPseudoGradient.prod`), and it is Morse–Smale
+(`TauCeti.IsMorse.comp_fst_add_comp_snd_chartedSpaceProd`, for the model `𝓘(ℝ, E × E')` of the
+charts below), the product field `(X, Y)` is a pseudo-gradient adapted to it
+(`TauCeti.IsAdaptedPseudoGradient.prod`), and it is Morse–Smale
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.prod`). This file computes the mod-two Morse
 boundary of these product data: the mod-two Morse complex of `M × N` is the tensor product of the
 mod-two Morse complexes of `M` and of `N`.
@@ -59,12 +60,11 @@ defined.
   components.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundaryCoeff_prod`: the boundary coefficients
   of the product.
-* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_prod_single`: the boundary of a pair
-  of critical points.
 * `TauCeti.morseChainProdEquiv` and
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseChainProdEquiv_comp_morseBoundary`: the Morse
   chains of the product are the tensor product of the Morse chains of the factors, and the mod-two
-  Morse boundary corresponds to `∂ ⊗ 1 + 1 ⊗ ∂`.
+  Morse boundary corresponds to `∂ ⊗ 1 + 1 ⊗ ∂`. This is a chain-level statement; the Künneth
+  formula for Morse homology is not proved here.
 
 ## References
 
@@ -98,14 +98,10 @@ of critical sets, for differentiable `f` and `g`. -/
 noncomputable def criticalPointsCompFstAddCompSndEquiv (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g) :
     criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ≃
-      criticalPoints 𝓘(ℝ, E) f × criticalPoints 𝓘(ℝ, E') g where
-  toFun P :=
-    have h := (criticalPoints_comp_fst_add_comp_snd_chartedSpaceProd hf hg).subset P.2
-    (⟨P.1.1, h.1⟩, ⟨P.1.2, h.2⟩)
-  invFun pq := ⟨(pq.1.1, pq.2.1),
-    (criticalPoints_comp_fst_add_comp_snd_chartedSpaceProd hf hg).superset ⟨pq.1.2, pq.2.2⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+      criticalPoints 𝓘(ℝ, E) f × criticalPoints 𝓘(ℝ, E') g :=
+  (Equiv.subtypeEquivRight fun _ ↦
+    mem_criticalPoints_comp_fst_add_comp_snd_iff_chartedSpaceProd (hf _) (hg _)).trans
+    Equiv.subtypeProdEquivProd
 
 section Equiv
 
@@ -160,34 +156,6 @@ theorem morseChainProdEquiv_single (p : criticalPoints 𝓘(ℝ, E) f)
       Finsupp.single p a ⊗ₜ Finsupp.single q 1 := by
   simp [morseChainProdEquiv, finsuppTensorFinsupp'_symm_single_eq_tmul_single_one]
 
-/-- Pairing a chain of `f` with a fixed critical point of `g` corresponds to its tensor product
-with that critical point. -/
-private theorem morseChainProdEquiv_mapDomain_left (q : criticalPoints 𝓘(ℝ, E') g)
-    (c : criticalPoints 𝓘(ℝ, E) f →₀ R) :
-    morseChainProdEquiv f g R hf hg
-        (Finsupp.mapDomain (fun p' ↦ (criticalPointsCompFstAddCompSndEquiv f g hf hg).symm (p', q))
-          c) =
-      c ⊗ₜ Finsupp.single q 1 := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c₁ c₂ h₁ h₂ => rw [Finsupp.mapDomain_add, map_add, h₁, h₂, TensorProduct.add_tmul]
-  | single p' b => rw [Finsupp.mapDomain_single, morseChainProdEquiv_single]
-
-/-- Pairing a fixed critical point of `f` with a chain of `g` corresponds to its tensor product
-with that critical point. -/
-private theorem morseChainProdEquiv_mapDomain_right (p : criticalPoints 𝓘(ℝ, E) f)
-    (c : criticalPoints 𝓘(ℝ, E') g →₀ R) :
-    morseChainProdEquiv f g R hf hg
-        (Finsupp.mapDomain (fun q' ↦ (criticalPointsCompFstAddCompSndEquiv f g hf hg).symm (p, q'))
-          c) =
-      Finsupp.single p 1 ⊗ₜ c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c₁ c₂ h₁ h₂ => rw [Finsupp.mapDomain_add, map_add, h₁, h₂, TensorProduct.tmul_add]
-  | single q' b =>
-    rw [Finsupp.mapDomain_single, morseChainProdEquiv_single, ← mul_one b, ← smul_eq_mul,
-      ← Finsupp.smul_single, ← Finsupp.smul_single, TensorProduct.smul_tmul]
-
 end Chain
 
 /-! ### Trajectories -/
@@ -205,9 +173,7 @@ are the trajectories of `Y`, on the middle level. -/
 theorem morseTrajectorySlice_prod_left {x : M} (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) (q q' : N) :
     (hX.prod hY).morseTrajectorySlice (x, q) (x, q') =
       (fun y ↦ (x, y)) '' hY.morseTrajectorySlice q q' := by
-  have hxx : x ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x := by
-    have hfix := hX.flow_apply_of_mfderiv_eq_zero (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)
-    exact ⟨Flow.self_mem_unstableSet_iff.2 hfix, Flow.self_mem_stableSet_iff.2 hfix⟩
+  have hxx := hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)
   refine Set.ext fun z ↦ ?_
   -- `simp` does not unfold membership in the slice of the product field, whose tangent spaces are
   -- those of the product model `𝓘(ℝ, E).prod 𝓘(ℝ, E')`; `rw` does.
@@ -227,9 +193,7 @@ are the trajectories of `X`, on the middle level. -/
 theorem morseTrajectorySlice_prod_right {y : N} (hy : y ∈ criticalPoints 𝓘(ℝ, E') g) (p p' : M) :
     (hX.prod hY).morseTrajectorySlice (p, y) (p', y) =
       (fun x ↦ (x, y)) '' hX.morseTrajectorySlice p p' := by
-  have hyy : y ∈ hY.flow.unstableSet y ∩ hY.flow.stableSet y := by
-    have hfix := hY.flow_apply_of_mfderiv_eq_zero (mem_criticalPoints_iff_mfderiv_eq_zero.1 hy)
-    exact ⟨Flow.self_mem_unstableSet_iff.2 hfix, Flow.self_mem_stableSet_iff.2 hfix⟩
+  have hyy := hY.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hy)
   refine Set.ext fun z ↦ ?_
   rw [(hX.prod hY).mem_morseTrajectorySlice]
   simp only [mem_morseTrajectorySlice, hX.unstableSet_prod hY, hX.stableSet_prod hY, mem_prod,
@@ -267,8 +231,7 @@ namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} {hY : IsAdaptedPseudoGradient g Y}
   (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-  (hg : IsMorse 𝓘(ℝ, E') g) (h : (hX.prod hY).IsMorseSmale)
-  (hfg : IsMorse 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd))
+  (hg : IsMorse 𝓘(ℝ, E') g)
 
 open scoped Classical in
 /-- **The boundary coefficients of a product.** The coefficient of `(p', q')` in the mod-two Morse
@@ -276,7 +239,7 @@ boundary of `(p, q)` counts the trajectories of `Y` from `q` to `q'` when `p = p
 trajectories of `X` from `p` to `p'` when `q = q'`; it vanishes when both components differ. -/
 theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
     (q q' : criticalPoints 𝓘(ℝ, E') g) :
-    h.morseBoundaryCoeff hfg
+    (hXs.prod hYs).morseBoundaryCoeff (hf.comp_fst_add_comp_snd_chartedSpaceProd hg)
         ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
           (p, q))
         ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
@@ -284,6 +247,8 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
       (if p = p' then hYs.morseBoundaryCoeff hg q q' else 0) +
         if q = q' then hXs.morseBoundaryCoeff hf p p' else 0 := by
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
+  have h := hXs.prod hYs
+  have hfg := hf.comp_fst_add_comp_snd_chartedSpaceProd hg
   have hindP := manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
     ((hf.contMDiff _).of_le (by norm_num)) ((hg.contMDiff _).of_le (by norm_num))
     (p := e.symm (p, q))
@@ -330,72 +295,25 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
       (fun h ↦ hqq (Subtype.ext h)) hind.le, ncard_empty, Nat.cast_zero]
   simp [hpp, hqq]
 
-/-- **The boundary of a pair of critical points** is `∂ (p, q) = (∂ p, q) + (p, ∂ q)`: the sum of
-the boundary of `p` paired with `q` and of `p` paired with the boundary of `q`. -/
-theorem morseBoundary_prod_single (p : criticalPoints 𝓘(ℝ, E) f)
-    (q : criticalPoints 𝓘(ℝ, E') g) (a : ZMod 2) :
-    h.morseBoundary hfg (Finsupp.single
-        ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
-          (p, q)) a) =
-      Finsupp.mapDomain (fun p' ↦
-          (criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
-            (p', q))
-          (hXs.morseBoundary hf (Finsupp.single p a)) +
-        Finsupp.mapDomain (fun q' ↦
-          (criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
-            (p, q'))
-          (hYs.morseBoundary hg (Finsupp.single q a)) := by
-  classical
-  set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
-  ext Q
-  obtain ⟨⟨p', q'⟩, rfl⟩ := e.symm.surjective Q
-  have hinjL : Injective fun p' ↦ e.symm (p', q) :=
-    e.symm.injective.comp (Prod.mk_left_injective q)
-  have hinjR : Injective fun q' ↦ e.symm (p, q') :=
-    e.symm.injective.comp (Prod.mk_right_injective p)
-  -- Read off each image of `mapDomain`: it is the corresponding coefficient on the range, and `0`
-  -- off it.
-  have hL : Finsupp.mapDomain (fun p' ↦ e.symm (p', q))
-      (hXs.morseBoundary hf (Finsupp.single p a)) (e.symm (p', q')) =
-        if q = q' then a * hXs.morseBoundaryCoeff hf p p' else 0 := by
-    split_ifs with hqq
-    · subst hqq
-      rw [Finsupp.mapDomain_apply_of_injective hinjL, morseBoundary_single_apply]
-    · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
-      rintro ⟨p'', hp''⟩
-      exact hqq (congrArg Prod.snd (e.symm.injective hp''))
-  have hR : Finsupp.mapDomain (fun q' ↦ e.symm (p, q'))
-      (hYs.morseBoundary hg (Finsupp.single q a)) (e.symm (p', q')) =
-        if p = p' then a * hYs.morseBoundaryCoeff hg q q' else 0 := by
-    split_ifs with hpp
-    · subst hpp
-      rw [Finsupp.mapDomain_apply_of_injective hinjR, morseBoundary_single_apply]
-    · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
-      rintro ⟨q'', hq''⟩
-      exact hpp (congrArg Prod.fst (e.symm.injective hq''))
-  rw [Finsupp.add_apply, hL, hR, h.morseBoundary_single_apply hfg,
-    morseBoundaryCoeff_prod hXs hYs hf hg h hfg, mul_add]
-  split_ifs <;> simp [add_comm]
-
-/-- **The Künneth formula for the mod-two Morse complex of a product manifold.** Under the
+/-- **The mod-two Morse complex of a product is the tensor product complex.** Under the
 identification of the mod-two Morse chains of `M × N` with the tensor product of the chains of `M`
-and of `N`, the Morse boundary of the product field `(X, Y)` is `∂ ⊗ 1 + 1 ⊗ ∂`. -/
+and of `N`, the Morse boundary of the product field `(X, Y)` is `∂ ⊗ 1 + 1 ⊗ ∂`. This is a
+chain-level statement: the Künneth formula for the homology of these complexes is not proved
+here. -/
 theorem morseChainProdEquiv_comp_morseBoundary :
     (morseChainProdEquiv f g (ZMod 2) hX.mdifferentiable hY.mdifferentiable).toLinearMap ∘ₗ
-        h.morseBoundary hfg =
+        (hXs.prod hYs).morseBoundary (hf.comp_fst_add_comp_snd_chartedSpaceProd hg) =
       ((hXs.morseBoundary hf).rTensor (criticalPoints 𝓘(ℝ, E') g →₀ ZMod 2) +
           (hYs.morseBoundary hg).lTensor (criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2)) ∘ₗ
         (morseChainProdEquiv f g (ZMod 2) hX.mdifferentiable hY.mdifferentiable).toLinearMap := by
-  refine Finsupp.lhom_ext fun P a ↦ ?_
-  obtain ⟨⟨p, q⟩, rfl⟩ := (criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable
-    hY.mdifferentiable).symm.surjective P
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
-    morseBoundary_prod_single hXs hYs hf hg h hfg, map_add, morseChainProdEquiv_mapDomain_left,
-    morseChainProdEquiv_mapDomain_right, morseChainProdEquiv_single, LinearMap.add_apply,
-    LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
-  congr 1
-  rw [← mul_one a, ← smul_eq_mul, ← Finsupp.smul_single, ← Finsupp.smul_single, map_smul,
-    TensorProduct.smul_tmul]
+  classical
+  refine domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor _ _ _ _
+    fun p p' q q' ↦ ?_
+  -- As in `morseBoundaryCoeff_prod`, `simp` cannot rewrite the boundary of the product field, whose
+  -- tangent spaces are those of the product model; `rw` can.
+  rw [(hXs.prod hYs).morseBoundary_single_apply (hf.comp_fst_add_comp_snd_chartedSpaceProd hg),
+    one_mul, morseBoundaryCoeff_prod hXs hYs hf hg]
+  simp only [morseBoundary_single_apply, one_mul]
 
 end IsMorseSmale
 

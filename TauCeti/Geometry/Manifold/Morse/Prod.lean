@@ -58,6 +58,8 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
   `TauCeti.criticalPoints_comp_fst_add_comp_snd_chartedSpaceProd` and
   `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd`: the critical set and the
   Morse index of the separated sum, in the product charts with values in `E × E'`.
+* `TauCeti.IsMorse.comp_fst_add_comp_snd_chartedSpaceProd`: the separated sum of Morse functions
+  is Morse in these charts.
 * `TauCeti.criticalPoints_comp_snd`: the critical set of a function of the second factor.
 * `TauCeti.manifoldMorseIndex_comp_snd`: its Morse index is that of the function on the second
   factor.
@@ -379,6 +381,14 @@ theorem manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd [FiniteDimensi
   rw [modelWithCornersSelf_prod]
   exact manifoldMorseIndex_comp_fst_add_comp_snd hf.contDiffAt_comp_extChartAt_symm
     hg.contDiffAt_comp_extChartAt_symm
+
+/-- **The separated sum of two Morse functions is a Morse function**, in the product charts with
+values in `E × E'`. -/
+theorem IsMorse.comp_fst_add_comp_snd_chartedSpaceProd (hf : IsMorse 𝓘(ℝ, E) f)
+    (hg : IsMorse 𝓘(ℝ, E') g) :
+    IsMorse 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) := by
+  rw [modelWithCornersSelf_prod]
+  exact hf.comp_fst_add_comp_snd hg
 
 end TauCeti
 
