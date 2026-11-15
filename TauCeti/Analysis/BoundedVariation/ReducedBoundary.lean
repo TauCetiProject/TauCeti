@@ -10,6 +10,8 @@ public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.MeasureTheory.Covering.Besicovitch
 
@@ -64,6 +66,10 @@ proves their basic properties.
   `∂*(s ∩ Ω) = ∂*s` (`TauCeti.reducedBoundary_inter_opens`). When `μ` is an additive
   Haar measure, the complement has the same reduced boundary with the opposite normal
   (`TauCeti.reducedBoundary_compl`, `TauCeti.outerNormal_compl`).
+* The reduced boundary is a Borel set (`TauCeti.measurableSet_reducedBoundary`), and the outer
+  normal extended by zero off `∂*s` is Borel measurable
+  (`TauCeti.measurable_indicator_outerNormal`). Right-continuity of closed balls under decreasing
+  radii reduces the continuous limit `r → 0⁺` to convergence along positive rational radii.
 
 The definition uses closed balls, matching `TauCeti.HasDensityAt`; it does not require `x` to lie
 in the support of `|Dχ_s|`, since a unit limit forces this. When `s` does not have locally finite
@@ -488,5 +494,315 @@ theorem outerNormal_compl [μ.IsAddHaarMeasure] (hx : x ∈ reducedBoundary μ �
   rw [outerNormal]
   simp only [setAverage_polarDensity_compl]
   rw [(tendsto_setAverage_polarDensity hx).neg.limUnder_eq, neg_neg]
+
+/-! ### Borel measurability -/
+
+/-- For each fixed radius `r`, the closed-ball average of the polar density against the perimeter
+measure is a Borel measurable function of the center. -/
+private theorem measurable_setAverage_polarDensity (r : ℝ) :
+    Measurable fun x : E => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+      polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1) := by
+  have := Ω.isOpen.locallyCompactSpace
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set σ := polarDensity μ Ω (s.indicator 1)
+  let U : Set (E × Ω) := {p | dist (p.2 : E) p.1 ≤ r}
+  have hU : MeasurableSet U :=
+    (isClosed_le (continuous_snd.subtype_val.dist continuous_fst) continuous_const).measurableSet
+  have hslice (x : E) : Prod.mk x ⁻¹' U = ((↑) : Ω → E) ⁻¹' closedBall x r := rfl
+  have hmeas_lam : Measurable fun x : E => lam (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+    have h := (measurable_const (a := (1 : ℝ≥0∞)).indicator hU).lintegral_prod_right' (ν := lam)
+    have heq : (fun x : E => lam (((↑) : Ω → E) ⁻¹' closedBall x r)) =
+        fun x => ∫⁻ y : Ω, U.indicator (fun _ => (1 : ℝ≥0∞)) (x, y) ∂lam := by
+      ext x
+      have h1 : (fun y : Ω => U.indicator (fun _ => (1 : ℝ≥0∞)) (x, y)) =
+          (Prod.mk x ⁻¹' U).indicator 1 := by ext y; by_cases hy : (x, y) ∈ U <;> simp [hy]
+      rw [← hslice, ← lintegral_indicator_one (hU.preimage measurable_prodMk_left), ← h1]
+    exact heq ▸ h
+  have hmeas_int : Measurable fun x : E => ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂lam := by
+    have hsm := ((measurable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).comp
+      measurable_snd).indicator hU |>.stronglyMeasurable.integral_prod_right' (ν := lam)
+    have heq : (fun x : E => ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂lam) =
+        fun x => ∫ y : Ω, U.indicator (fun p : E × Ω => σ p.2) (x, y) ∂lam := by
+      ext x
+      have h2 : (fun y : Ω => U.indicator (fun p : E × Ω => σ p.2) (x, y)) =
+          (Prod.mk x ⁻¹' U).indicator σ := by ext y; by_cases hy : (x, y) ∈ U <;> simp [hy]
+      rw [← hslice, ← integral_indicator (hU.preimage measurable_prodMk_left), ← h2]
+    exact heq ▸ hsm.measurable
+  have havg : (fun x : E => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂lam) =
+      fun x => (lam.real (((↑) : Ω → E) ⁻¹' closedBall x r))⁻¹ •
+        ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂lam :=
+    funext fun x => setAverage_eq lam σ _
+  rw [havg]
+  exact (ENNReal.measurable_toReal.comp hmeas_lam).inv.smul hmeas_int
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Pointwise right-continuity of indicators of `((↑) : Ω → E) ⁻¹' closedBall x r` as `q k → r`
+from above. -/
+private theorem tendsto_indicator_preimage_closedBall_of_tendsto_gt {r : ℝ} {q : ℕ → ℝ}
+    (hqr : ∀ k, r < q k) (hq : Tendsto q atTop (𝓝 r)) {F : Type*} [TopologicalSpace F] [Zero F]
+    (g : Ω → F) (y : Ω) :
+    Tendsto (fun k => (((↑) : Ω → E) ⁻¹' closedBall x (q k)).indicator g y) atTop
+      (𝓝 ((((↑) : Ω → E) ⁻¹' closedBall x r).indicator g y)) := by
+  by_cases hy : y ∈ ((↑) : Ω → E) ⁻¹' closedBall x r
+  · simp only [indicator_of_mem hy]
+    exact tendsto_const_nhds.congr fun k =>
+      (indicator_of_mem (preimage_mono (closedBall_subset_closedBall (hqr k).le) hy) g).symm
+  · rw [indicator_of_notMem hy]
+    have hlt : r < dist (y : E) x := not_le.1 hy
+    exact tendsto_const_nhds.congr' ((hq.eventually (gt_mem_nhds hlt)).mono fun k hk =>
+      (indicator_of_notMem (not_le.2 hk) g).symm)
+
+/-- Closed balls are right-continuous in the radius: if `q k → r` from above inside a compact closed
+ball in `Ω` and `|Dχ_s| (closedBall x r) ≠ 0`, the closed-ball averages at `q k` tend to the average
+at `r`. -/
+private theorem tendsto_setAverage_polarDensity_of_tendsto_gt {r R : ℝ}
+    (hRΩ : closedBall x R ⊆ Ω)
+    (h0 : variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) ≠ 0)
+    {q : ℕ → ℝ} (hqr : ∀ k, r < q k) (hqR : ∀ k, q k ≤ R) (hq : Tendsto q atTop (𝓝 r)) :
+    Tendsto (fun k => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (q k),
+        polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1))
+      atTop (𝓝 (⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+        polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1))) := by
+  have := Ω.isOpen.locallyCompactSpace
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set σ := polarDensity μ Ω (s.indicator 1)
+  let S (ρ : ℝ) : Set Ω := ((↑) : Ω → E) ⁻¹' closedBall x ρ
+  have hSR : IsCompact (S R) := Topology.IsInducing.subtypeVal.isCompact_preimage'
+    (isCompact_closedBall x R) (by rwa [Subtype.range_coe])
+  have hSm (ρ : ℝ) : MeasurableSet (S ρ) := isClosed_closedBall.preimage continuous_subtype_val
+    |>.measurableSet
+  have hvol : Tendsto (fun k => lam.real (S (q k))) atTop (𝓝 (lam.real (S r))) := by
+    have hdom := tendsto_integral_of_dominated_convergence (μ := lam)
+      (F := fun k => (S (q k)).indicator (1 : Ω → ℝ)) (f := (S r).indicator (1 : Ω → ℝ))
+      ((S R).indicator (1 : Ω → ℝ))
+      (fun k => aestronglyMeasurable_const.indicator (hSm _))
+      ((integrable_indicator_iff (hSm R)).2 (integrableOn_const hSR.measure_lt_top.ne))
+      (fun k => Eventually.of_forall fun y => by
+        by_cases hy : y ∈ S (q k)
+        · have hyR : y ∈ S R := closedBall_subset_closedBall (hqR k) hy
+          simp [hy, hyR]
+        · rw [indicator_of_notMem hy, norm_zero]
+          exact indicator_nonneg (fun _ _ => zero_le_one) y)
+      (Eventually.of_forall (tendsto_indicator_preimage_closedBall_of_tendsto_gt hqr hq 1))
+    simpa only [integral_indicator_one (hSm _)] using hdom
+  have hint : Tendsto (fun k => ∫ y in S (q k), σ y ∂lam) atTop (𝓝 (∫ y in S r, σ y ∂lam)) := by
+    have hσint : IntegrableOn σ (S R) lam :=
+      locallyIntegrable_polarDensity.integrableOn_isCompact hSR
+    have hdom := tendsto_integral_of_dominated_convergence
+      (F := fun k => (S (q k)).indicator σ) (f := (S r).indicator σ)
+      ((S R).indicator fun y => ‖σ y‖)
+      (fun k => measurable_polarDensity.aestronglyMeasurable.indicator (hSm _))
+      ((integrable_indicator_iff (hSm R)).2 hσint.norm)
+      (fun k => Eventually.of_forall fun y => by
+        by_cases hy : y ∈ S (q k)
+        · have hyR : y ∈ S R := closedBall_subset_closedBall (hqR k) hy
+          simp [hy, hyR]
+        · rw [indicator_of_notMem hy, norm_zero]
+          exact indicator_nonneg (fun _ _ => norm_nonneg _) y)
+      (Eventually.of_forall (tendsto_indicator_preimage_closedBall_of_tendsto_gt hqr hq σ))
+    simpa only [integral_indicator (hSm _)] using hdom
+  have hSr0 : lam.real (S r) ≠ 0 := by
+    have hrR : r ≤ R := (hqr 0).le.trans (hqR 0)
+    rw [measureReal_def]
+    exact ENNReal.toReal_ne_zero.2 ⟨h0,
+      ((measure_mono (preimage_mono (closedBall_subset_closedBall hrR))).trans_lt
+        hSR.measure_lt_top).ne⟩
+  simpa only [setAverage_eq] using (hvol.inv₀ hSr0).smul hint
+
+/-- Convergence of closed-ball polar-density averages to a unit vector `ν` along positive rational
+radii implies convergence along all real radii `r → 0⁺`. -/
+private theorem tendsto_setAverage_polarDensity_of_tendsto_rat (hx : x ∈ Ω) {ν : E} (hν1 : ‖ν‖ = 1)
+    (hq : ∀ ε > 0, ∃ δ > 0, ∀ q : ℚ, 0 < q → (q : ℝ) < δ →
+      dist (⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (q : ℝ),
+        polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)) ν < ε) :
+    Tendsto (fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+        polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1))
+      (𝓝[>] 0) (𝓝 ν) := by
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set A : ℝ → E := fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+    polarDensity μ Ω (s.indicator 1) y ∂lam
+  have hpos (r : ℝ) (hr : 0 < r) : lam (((↑) : Ω → E) ⁻¹' closedBall x r) ≠ 0 := by
+    intro h0
+    obtain ⟨δ, hδ, hδq⟩ := hq 1 zero_lt_one
+    obtain ⟨q, hq0, hqmin⟩ := exists_rat_btwn (lt_min hr hδ)
+    have hqA : A q = 0 := by
+      simp only [A]
+      rw [Measure.restrict_eq_zero.2 (measure_mono_null
+        (preimage_mono (closedBall_subset_closedBall (hqmin.trans_le (min_le_left _ _)).le)) h0),
+        average_zero_measure]
+    have hlt : dist (A q) ν < 1 :=
+      hδq q (by exact_mod_cast hq0) (hqmin.trans_le (min_le_right _ _))
+    simp [hqA, dist_zero_left, hν1] at hlt
+  obtain ⟨R, hR, hRΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hx)
+  refine Metric.tendsto_nhdsWithin_nhds.2 fun ε hε => ?_
+  obtain ⟨δ, hδ, hδq⟩ := hq (ε / 2) (half_pos hε)
+  refine ⟨min (R / 2) (δ / 2), lt_min (half_pos hR) (half_pos hδ), fun r hr0 hrδ => ?_⟩
+  rw [Real.dist_0_eq_abs, abs_of_pos (mem_Ioi.1 hr0)] at hrδ
+  have hchoose (k : ℕ) : ∃ q : ℚ, r < q ∧ (q : ℝ) < min (2 * r) (r + 1 / ((k : ℝ) + 1)) :=
+    exists_rat_btwn (lt_min (by linarith [mem_Ioi.1 hr0]) (lt_add_of_pos_right r (by positivity)))
+  choose q hqr hqlt using hchoose
+  have hqR (k : ℕ) : (q k : ℝ) ≤ R :=
+    ((hqlt k).le.trans (min_le_left _ _)).trans (by linarith [hrδ.trans_le (min_le_left _ _)])
+  have hqlim : Tendsto (fun k => (q k : ℝ)) atTop (𝓝 r) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (by simpa using tendsto_const_nhds.add (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)))
+      (fun k => (hqr k).le) (fun k => (hqlt k).le.trans (min_le_right _ _))
+  have hAlim : Tendsto (fun k => A (q k)) atTop (𝓝 (A r)) :=
+    tendsto_setAverage_polarDensity_of_tendsto_gt hRΩ (hpos r hr0) hqr hqR hqlim
+  have hdist : dist (A r) ν ≤ ε / 2 :=
+    le_of_tendsto (hAlim.dist tendsto_const_nhds) (Eventually.of_forall fun k => (hδq (q k)
+      (by exact_mod_cast (mem_Ioi.1 hr0).trans (hqr k))
+      (lt_of_le_of_lt ((hqlt k).le.trans (min_le_left _ _))
+        (by linarith [hrδ.trans_le (min_le_right _ _)]))).le)
+  exact hdist.trans_lt (half_lt_self hε)
+
+/-- Sufficiency direction of `mem_reducedBoundary_iff_rat`: norm convergence along `1 / (k + 1)` and
+uniform mutual closeness with positive rational radii give `x ∈ reducedBoundary μ Ω s`. -/
+private theorem mem_reducedBoundary_of_rat (hxΩ : x ∈ Ω)
+    (hnorm : Tendsto (fun k : ℕ => ‖⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (1 / ((k : ℝ) + 1)),
+        polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)‖)
+      atTop (𝓝 1))
+    (hc : ∀ j : ℕ, ∃ m : ℕ, ∀ q : ℚ, 0 < q → (q : ℝ) < 1 / ((m : ℝ) + 1) → ∀ k ≥ m,
+      dist (⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (q : ℝ),
+          polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1))
+        (⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (1 / ((k : ℝ) + 1)),
+          polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)) ≤
+        1 / ((j : ℝ) + 1)) :
+    x ∈ reducedBoundary μ Ω s := by
+  set A : ℝ → E := fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+    polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)
+  have hcseq : CauchySeq fun k : ℕ => A (1 / ((k : ℝ) + 1)) := by
+    refine Metric.cauchySeq_iff.2 fun ε hε => ?_
+    obtain ⟨j, hj⟩ := exists_nat_gt (2 / ε)
+    have hjε : 2 / ((j : ℝ) + 1) < ε :=
+      (div_lt_iff₀ (by positivity)).2
+        (by have := (div_lt_iff₀ hε).1 (hj.trans (lt_add_one _)); linarith)
+    obtain ⟨m, hm⟩ := hc j
+    refine ⟨m + 1, fun k₁ hk₁ k₂ hk₂ => ?_⟩
+    let q : ℚ := 1 / ((m : ℚ) + 2)
+    have hq0 : 0 < q := by positivity
+    have hqm : (q : ℝ) < 1 / ((m : ℝ) + 1) := by push_cast [q]; gcongr; linarith
+    have hd1 : dist (A q) (A (1 / ((k₁ : ℝ) + 1))) ≤ 1 / ((j : ℝ) + 1) := hm q hq0 hqm k₁ (by omega)
+    have hd2 : dist (A q) (A (1 / ((k₂ : ℝ) + 1))) ≤ 1 / ((j : ℝ) + 1) := hm q hq0 hqm k₂ (by omega)
+    have hsum : 1 / ((j : ℝ) + 1) + 1 / ((j : ℝ) + 1) = 2 / ((j : ℝ) + 1) := by ring
+    calc dist (A (1 / ((k₁ : ℝ) + 1))) (A (1 / ((k₂ : ℝ) + 1)))
+        ≤ dist (A q) (A (1 / ((k₁ : ℝ) + 1))) + dist (A q) (A (1 / ((k₂ : ℝ) + 1))) :=
+          dist_triangle_left _ _ _
+      _ < ε := by linarith
+  obtain ⟨ν, hν⟩ := cauchySeq_tendsto_of_complete hcseq
+  have hν1 : ‖ν‖ = 1 := tendsto_nhds_unique hν.norm hnorm
+  refine ⟨hxΩ, ν, hν1, tendsto_setAverage_polarDensity_of_tendsto_rat hxΩ hν1 fun ε hε => ?_⟩
+  obtain ⟨j, hj⟩ := exists_nat_gt ε⁻¹
+  have hjε : 1 / ((j : ℝ) + 1) < ε := by
+    simpa using inv_lt_of_inv_lt₀ hε (hj.trans (lt_add_one _))
+  obtain ⟨m, hm⟩ := hc j
+  refine ⟨1 / ((m : ℝ) + 1), by positivity, fun q hq0 hqm => ?_⟩
+  have hle : dist (A q) ν ≤ 1 / ((j : ℝ) + 1) :=
+    le_of_tendsto (tendsto_const_nhds.dist (hν.comp (tendsto_add_atTop_nat m)))
+      (Eventually.of_forall fun k => hm q hq0 hqm (k + m) (Nat.le_add_left m k))
+  exact hle.trans_lt hjε
+
+/-- Countable characterization of `reducedBoundary μ Ω s` via positive rational radii and the
+sequence `r_k = 1 / (k + 1)`. -/
+private theorem mem_reducedBoundary_iff_rat :
+    x ∈ reducedBoundary μ Ω s ↔
+      x ∈ Ω ∧
+      Tendsto (fun k : ℕ => ‖⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (1 / ((k : ℝ) + 1)),
+          polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)‖)
+        atTop (𝓝 1) ∧
+      ∀ j : ℕ, ∃ m : ℕ, ∀ q : ℚ, 0 < q → (q : ℝ) < 1 / ((m : ℝ) + 1) → ∀ k ≥ m,
+        dist (⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (q : ℝ),
+            polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1))
+          (⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (1 / ((k : ℝ) + 1)),
+            polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)) ≤
+          1 / ((j : ℝ) + 1) := by
+  set A : ℝ → E := fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+    polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)
+  have h1k : Tendsto (fun k : ℕ => 1 / ((k : ℝ) + 1)) atTop (𝓝[>] 0) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+      (Eventually.of_forall fun k => mem_Ioi.2 (by positivity))
+  refine ⟨fun ⟨hxΩ, ν, hν1, hν⟩ => ⟨hxΩ, hν1 ▸ (hν.comp h1k).norm, fun j => ?_⟩,
+    fun ⟨hxΩ, hnorm, hc⟩ => mem_reducedBoundary_of_rat hxΩ hnorm hc⟩
+  obtain ⟨δ, hδ, hδball⟩ := Metric.tendsto_nhdsWithin_nhds.1 hν
+    (1 / (2 * ((j : ℝ) + 1))) (by positivity)
+  obtain ⟨m, hm⟩ := exists_nat_gt δ⁻¹
+  have hmδ : 1 / ((m : ℝ) + 1) < δ := by
+    simpa using inv_lt_of_inv_lt₀ hδ (hm.trans (lt_add_one _))
+  refine ⟨m, fun q hq0 hqm k hkm => ?_⟩
+  have hqν : dist (A q) ν < 1 / (2 * ((j : ℝ) + 1)) := by
+    have hqp : (0 : ℝ) < q := by exact_mod_cast hq0
+    exact hδball hqp (by rw [Real.dist_0_eq_abs, abs_of_pos hqp]; exact hqm.trans hmδ)
+  have hkν : dist (A (1 / ((k : ℝ) + 1))) ν < 1 / (2 * ((j : ℝ) + 1)) := by
+    have hkp : 0 < 1 / ((k : ℝ) + 1) := by positivity
+    have hkm' : 1 / ((k : ℝ) + 1) ≤ 1 / ((m : ℝ) + 1) := by gcongr
+    exact hδball hkp (by rw [Real.dist_0_eq_abs, abs_of_pos hkp]; exact hkm'.trans_lt hmδ)
+  calc dist (A q) (A (1 / ((k : ℝ) + 1)))
+      ≤ dist (A q) ν + dist (A (1 / ((k : ℝ) + 1))) ν := dist_triangle_right _ _ ν
+    _ ≤ 1 / ((j : ℝ) + 1) := by
+        have : 1 / (2 * ((j : ℝ) + 1)) + 1 / (2 * ((j : ℝ) + 1)) = 1 / ((j : ℝ) + 1) := by
+          field_simp; ring
+        linarith
+
+/-- **The reduced boundary is a Borel set.** No assumption on the ambient measure `μ` or on `s`
+is needed. -/
+theorem measurableSet_reducedBoundary : MeasurableSet (reducedBoundary μ Ω s) := by
+  set A : ℝ → E → E := fun r x => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+    polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)
+  have hAm (r : ℝ) : Measurable (A r) := measurable_setAverage_polarDensity r
+  have heq : reducedBoundary μ Ω s =
+      (Ω : Set E) ∩
+      (⋂ i : ℕ, ⋃ N : ℕ, ⋂ (k : ℕ) (_ : N ≤ k),
+        {x | dist ‖A (1 / ((k : ℝ) + 1)) x‖ 1 ≤ 1 / ((i : ℝ) + 1)}) ∩
+      (⋂ j : ℕ, ⋃ m : ℕ, ⋂ (q : ℚ) (_ : 0 < q) (_ : (q : ℝ) < 1 / ((m : ℝ) + 1))
+        (k : ℕ) (_ : m ≤ k), {x | dist (A q x) (A (1 / ((k : ℝ) + 1)) x) ≤ 1 / ((j : ℝ) + 1)}) := by
+    ext x
+    rw [mem_reducedBoundary_iff_rat]
+    simp only [mem_inter_iff, SetLike.mem_coe, mem_iInter, mem_iUnion, mem_ofPred_eq, ← and_assoc]
+    refine and_congr_left fun _ => and_congr_right fun _ => ?_
+    rw [Metric.tendsto_atTop]
+    refine ⟨fun h i => ?_, fun h ε hε => ?_⟩
+    · obtain ⟨N, hN⟩ := h (1 / ((i : ℝ) + 1)) (by positivity)
+      exact ⟨N, fun k hk => (hN k hk).le⟩
+    · obtain ⟨i, hi⟩ := exists_nat_gt ε⁻¹
+      have hiε : 1 / ((i : ℝ) + 1) < ε := by
+        simpa using inv_lt_of_inv_lt₀ hε (hi.trans (lt_add_one _))
+      obtain ⟨N, hN⟩ := h i
+      exact ⟨N, fun k hk => (hN k hk).trans_lt hiε⟩
+  rw [heq]
+  refine (Ω.isOpen.measurableSet.inter ?_).inter ?_
+  · exact .iInter fun i => .iUnion fun N => .iInter fun k => .iInter fun _ =>
+      measurableSet_le ((hAm _).norm.dist measurable_const) measurable_const
+  · exact .iInter fun j => .iUnion fun m => .iInter fun q => .iInter fun _ => .iInter fun _ =>
+      .iInter fun k => .iInter fun _ => measurableSet_le ((hAm _).dist (hAm _)) measurable_const
+
+/-- **The outer normal extended by zero off `∂*s` is Borel measurable.** -/
+theorem measurable_indicator_outerNormal :
+    Measurable ((reducedBoundary μ Ω s).indicator (outerNormal μ Ω s)) := by
+  set B := reducedBoundary μ Ω s
+  set A : ℕ → E → E := fun k x => -⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x (1 / ((k : ℝ) + 1)),
+    polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)
+  have h1k : Tendsto (fun k : ℕ => 1 / ((k : ℝ) + 1)) atTop (𝓝[>] 0) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+      (Eventually.of_forall fun k => mem_Ioi.2 (by positivity))
+  refine measurable_of_tendsto_metrizable
+    (f := fun k => B.indicator (A k))
+    (fun k => (measurable_setAverage_polarDensity _).neg.indicator measurableSet_reducedBoundary)
+    (tendsto_pi_nhds.2 fun x => ?_)
+  by_cases hx : x ∈ B
+  · simpa only [B, indicator_of_mem hx, A, neg_neg, Function.comp_def] using
+      ((tendsto_setAverage_polarDensity hx).comp h1k).neg
+  · simp [B, hx]
+
+/-- The restriction of `outerNormal μ Ω s` to `reducedBoundary μ Ω s` is Borel measurable. -/
+theorem measurable_outerNormal_restrict :
+    Measurable fun x : reducedBoundary μ Ω s => outerNormal μ Ω s x := by
+  have h := (measurable_indicator_outerNormal (μ := μ) (Ω := Ω) (s := s)).comp
+    (measurable_subtype_coe : Measurable ((↑) : reducedBoundary μ Ω s → E))
+  have heq : (fun x : reducedBoundary μ Ω s => outerNormal μ Ω s x) =
+      ((reducedBoundary μ Ω s).indicator (outerNormal μ Ω s)) ∘ (↑) :=
+    funext fun x => (indicator_of_mem x.2 _).symm
+  exact heq ▸ h
 
 end TauCeti
