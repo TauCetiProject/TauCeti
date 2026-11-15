@@ -248,6 +248,8 @@ theorem inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two {K : T
   obtain ⟨hp2, hu⟩ := ne_two_and_isUnit_det_map hp
   have hAp : (A.map (Int.castRingHom ℤ_[p]))ᵀ = A.map (Int.castRingHom ℤ_[p]) := by
     rw [← transpose_map, hA]
+  -- the closed form at `m = 0` has character argument `(-1) ^ (0 + 1) * det`, so the
+  -- discriminant `4 * -det A` is first put in the shape `kroneckerSym_eq_quadraticChar` matches
   rw [tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hAp hu.ne_zero)
     (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (m := 0) hp2 hAp hu hn),
     TauCeti.kroneckerChar_natCast, show 4 * -A.det = 4 * ((-1) ^ (0 + 1) * A.det) by ring,
@@ -277,6 +279,7 @@ theorem forall_inv_half_localDensity_eq_iff_isSquare_neg_det_of_card_eq_two {K :
       (((A.map (Int.castRingHom ℤ_[p])).localDensity : K) / 2)⁻¹ =
         (1 - (legendreSym p (-A.det) : K) * (p : K)⁻¹)⁻¹ := by
     have hp2 := ((hgood p).mp hp).1
+    -- write `4 * -det A` as `-det A * 2 ^ 2` so that `kroneckerSym_mul_sq` removes the square
     rw [inv_half_localDensity_eq_inv_one_sub_kroneckerChar_of_card_eq_two hA hdet hn p hp,
       TauCeti.kroneckerChar_natCast, show 4 * -A.det = -A.det * 2 ^ 2 by ring,
       TauCeti.kroneckerSym_mul_sq two_ne_zero ?_, TauCeti.kroneckerSym_eq_legendreSym _ p hp2]
