@@ -238,6 +238,12 @@ theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm
     (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
 
+/-- The Hamiltonian vector field at `x` depends only on the differential of the Hamiltonian at
+`x`. -/
+theorem hamiltonianVectorField_eq_of_mvfderiv_eq {x : M} (h : mvfderiv I f x = mvfderiv I g x) :
+    σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, h]
+
 /-- The Hamiltonian vector field of a constant function vanishes. -/
 @[simp]
 theorem hamiltonianVectorField_const (σ : SmoothTwoForm I M) (c : ℝ) :
@@ -338,9 +344,9 @@ theorem hamiltonianVectorField_comp_eq_of_mvfderiv_eq {F H' B : Type*} [NormedAd
     [ChartedSpace H' B] {p : M → B} {g g' : B → ℝ} {x : M} (hp : MDifferentiableAt I J p x)
     (hg : MDifferentiableAt J 𝓘(ℝ) g (p x)) (hg' : MDifferentiableAt J 𝓘(ℝ) g' (p x))
     (hgg' : mvfderiv J g (p x) = mvfderiv J g' (p x)) :
-    σ.hamiltonianVectorField (g ∘ p) x = σ.hamiltonianVectorField (g' ∘ p) x := by
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_comp x hg hp,
-    mvfderiv_comp x hg' hp, hgg']
+    σ.hamiltonianVectorField (g ∘ p) x = σ.hamiltonianVectorField (g' ∘ p) x :=
+  hamiltonianVectorField_eq_of_mvfderiv_eq <| by
+    rw [mvfderiv_comp x hg hp, mvfderiv_comp x hg' hp, hgg']
 
 /-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C^n` curve `γ`, `n ≥ 1`,
 for `C^n` data, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action

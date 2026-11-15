@@ -43,8 +43,8 @@ back from the base generate the vertical motions:
   pulled-back function is complete
   (`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`).
 
-Over each point `b`, these vertical Hamiltonian flows give the action of `T*_b B` on the fibre
-`π⁻¹(b)` and its period lattice `Λ_b ⊆ T*_b B`
+When moreover `π` is proper and `σ` is closed, over each point `b` these vertical Hamiltonian
+flows give the action of `T*_b B` on the fibre `π⁻¹(b)` and its period lattice `Λ_b ⊆ T*_b B`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianFibration.fiberAction` and
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianFibration.periodLattice`, in
 `TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration`). Assembling the lattices `Λ_b` into
