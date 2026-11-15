@@ -46,9 +46,10 @@ is the passage from the perturbed equation to holomorphic strips between the two
   `J`-invariant form, exactly when `γ'` is the gradient of `H` for `g = ω(·, J ·)`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_comp_fst`: the energy density of a time-independent
   map is `dH(γ(s)) γ'(s)`.
-* `TauCeti.SymplecticForm.floerLinearization_const_eq_zero_iff`: for a constant structure `J`, a
-  section `ξ` is in the kernel of the linearized operator of `K = H dt` along any map `u` exactly
-  when `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`.
+* `TauCeti.SymplecticForm.floerLinearization_const_apply`: for a constant structure `J`, the
+  linearized operator of `K = H dt` along any map `u` is `∂s ξ + J ∂t ξ - J dX_H(u) ξ`.
+* `TauCeti.SymplecticForm.floerLinearization_const_eq_zero_iff`: so a section `ξ` is in its kernel
+  exactly when `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`.
 * `TauCeti.SymplecticForm.floerLinearization_comp_fst_eq_zero_iff`: a time-independent section
   `(s, t) ↦ ζ(s)` is in that kernel exactly when `ζ' = J dX_H(u) ζ`.
 * `TauCeti.isComplexLinearMap_perturbedFDeriv_comp_fst_iff_hasDerivAt`: in the cotangent model,
@@ -145,7 +146,7 @@ theorem floerEnergyDensity_comp_fst (hγ : DifferentiableAt ℝ γ z.1) :
 
 /-- The linearized Floer operator of `K = H dt` with the constant structure `J`, along any map `u`,
 is `∂s ξ + J ∂t ξ - J dX_H(u) ξ`. -/
-private theorem floerLinearization_const_apply (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+theorem floerLinearization_const_apply (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun _ ↦ H) u ξ z =
       fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1)) -

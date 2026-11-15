@@ -175,6 +175,7 @@ theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
 
 /-- A function of the first variable alone has derivative `Df ∘ fst`. No differentiability is
 needed: otherwise both sides are zero. -/
+@[simp]
 theorem fderiv_comp_fst (f : E → G) (z : E × F) :
     fderiv 𝕜 (fun w : E × F ↦ f w.1) z = (fderiv 𝕜 f z.1).comp (ContinuousLinearMap.fst 𝕜 E F) := by
   by_cases hf : DifferentiableAt 𝕜 f z.1
