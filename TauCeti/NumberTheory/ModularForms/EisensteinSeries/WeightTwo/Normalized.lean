@@ -28,9 +28,9 @@ coefficient is `δ_{u = 1} · (-Bₖ,φ / (2k))`.
 The raised series `E₂^{ψ,φ,t}(z) = E₂^{ψ,φ}(t z)`, at any level `N` with `t u v ∣ N`, lies in
 `M₂(N, ψφ)`; it has the same constant coefficient, and at `n = t m > 0` its coefficient is
 `σ₁^{ψ,φ}(m)`, the other positive coefficients being zero. For the trivial pair the weight-two
-series is not modular, and `TauCeti.EisensteinSeries.correctedE2` takes its place; it keeps
-Mathlib's normalization with constant term one, `correctedE2 t = E₂(z) - t E₂(t z)`, so its first
-coefficient is `-24` and its constant term is `1 - t`.
+series is not modular, and for `t > 1` `TauCeti.EisensteinSeries.correctedE2` takes its place;
+Mathlib's `E₂` has constant term one, and `correctedE2 t = E₂(z) - t E₂(t z)` has constant term
+`1 - t` and, for `t > 1`, first coefficient `-24` (for `t = 1` it is `0`).
 
 ## Main definitions
 

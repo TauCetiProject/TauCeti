@@ -35,7 +35,7 @@ its slash action gives the weight-parity sign under translation.
   positive.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
 * `Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
-  belonging to the group at an irregular cusp.
+  belonging to the group when it is irregular at `∞`.
 * `TauCeti.SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem`: a negative
   shift in the group gives translation by the weight-parity sign.
 * `TauCeti.natCast_mem_strictPeriods_conjAct_of_Gamma_le`: a level `N` with `Γ(N) ≤ Γ` is a
