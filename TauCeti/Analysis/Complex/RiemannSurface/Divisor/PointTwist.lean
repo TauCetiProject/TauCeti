@@ -130,24 +130,14 @@ theorem pointTwistCoefficient_eq_apply {x : U} (hD : D x.1 = -1)
       (chartAt ℂ x.1 x.1) := by
     simpa using contMDiffAt_omega_iff_analyticAt.1
       ((isDivisorSectionAt_extend f.2 x).contMDiffAt hx.le)
-  have hm : _root_.MeromorphicAt
-      (fun z ↦ (Subtype.val.extend f.1 (0 : X → ℂ) ∘ (chartAt ℂ x.1).symm) z /
-        (z - chartAt ℂ x.1 x.1)) (chartAt ℂ x.1 x.1) :=
-    hg.meromorphicAt.div (by fun_prop)
-  have hgerm : (meromorphicGerms.coordinate (chartAt ℂ x.1 x.1))⁻¹ *
-      toChartGerm (D + WeilDivisor.ofPoint x.1) U x f = meromorphicGerms.mk _ hm := by
-    apply Subtype.ext
-    rw [Subring.coe_mul, meromorphicGerms.coe_inv, meromorphicGerms.coe_coordinate,
-      coe_toChartGerm, meromorphicGerms.coe_mk, ← Germ.coe_inv, ← Germ.coe_mul, inv_mul_eq_div,
-      Pi.div_def]
+  have hgerm : toChartGerm (D + WeilDivisor.ofPoint x.1) U x f =
+      meromorphicGerms.mk _ hg.meromorphicAt :=
+    Subtype.ext (by rw [coe_toChartGerm, meromorphicGerms.coe_mk])
   have he : -(-D x.1 - 1) - 1 = (-1 : ℤ) := by omega
   rw [pointTwistCoefficient_apply, meromorphicGerms.coeff_apply]
   simp only [he, zpow_neg_one]
-  rw [hgerm, meromorphicGerms.residue_mk]
-  have hres := Contour.residue_div_sub_pow_of_analyticAt hg 0
-  simp only [zero_add, pow_one, iteratedDeriv_zero, Nat.factorial_zero, Nat.cast_one,
-    div_one] at hres
-  rw [hres, Function.comp_apply, (chartAt ℂ x.1).left_inv (mem_chart_source ℂ x.1)]
+  rw [hgerm, meromorphicGerms.residue_coordinate_inv_mul_mk_of_analyticAt hg,
+    Function.comp_apply, (chartAt ℂ x.1).left_inv (mem_chart_source ℂ x.1)]
   exact Subtype.val_injective.extend_apply _ _ x
 
 /-- A section from the old divisor has zero newly permitted coefficient. -/

@@ -24,6 +24,8 @@ assert exactness or any cohomology statement for that sheaf sequence.
 
 * `TauCeti.meromorphicGerms.coeff`: coefficient extraction on an order-filtration step.
 * `TauCeti.meromorphicGerms.ker_coeff`: its kernel is the next step.
+* `TauCeti.meromorphicGerms.residue_coordinate_inv_mul_mk_of_analyticAt`: the coefficient of
+  `(z-a)^0` of an analytic germ is its value at `a`.
 * `TauCeti.meromorphicGerms.orderGEQuotientEquiv`: the quotient is one-dimensional, with
   inverse represented by coordinate monomials.
 
@@ -69,6 +71,19 @@ theorem coeff_monomial (n : ℤ) (c : ℂ) : coeff a n (monomial a n c) = c := b
   rw [coeff_apply, coe_monomial, mul_smul_comm, map_smul,
     ← zpow_add₀ (coordinate_ne_zero a), hexp, zpow_neg_one, residue_coordinate_inv,
     smul_eq_mul, mul_one]
+
+/-- The coefficient of `(z-a)^0` of an analytic germ is its value at `a`: the residue of
+`g/(z-a)` is `g a`. -/
+theorem residue_coordinate_inv_mul_mk_of_analyticAt {g : ℂ → ℂ} (hg : AnalyticAt ℂ g a) :
+    residue a ((coordinate a)⁻¹ * mk g hg.meromorphicAt) = g a := by
+  have hc : coordinate a = mk (fun z ↦ z - a) ((MeromorphicAt.id a).sub (.const a a)) :=
+    Subtype.ext (by rw [coe_coordinate, coe_mk])
+  rw [hc, ← mk_inv, ← mk_mul, residue_mk]
+  have hfun : (fun z ↦ z - a)⁻¹ * g = fun z ↦ g z / (z - a) ^ (0 + 1) := by
+    funext z
+    simp [div_eq_inv_mul]
+  rw [hfun, Contour.residue_div_sub_pow_of_analyticAt hg 0]
+  simp
 
 /-- Every scalar occurs as a coefficient at every integer order bound. -/
 theorem coeff_surjective (a : ℂ) (n : ℤ) : Function.Surjective (coeff a n) :=
