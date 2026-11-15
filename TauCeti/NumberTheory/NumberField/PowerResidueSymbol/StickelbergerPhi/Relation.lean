@@ -417,8 +417,8 @@ theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (B : Ideal (
           (ZMod.val_ne_zero _).mpr (Units.ne_zero _)
         rw [hx0, zero_pow hc0, smul_zero]
     have hBmap : B.map (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ) = σ • B := by
-      -- `RingEquiv.toRingHom` on `MulSemiringAction.toRingEquiv` is `MulSemiringAction.toRingHom`.
-      rw [pointwise_smul_def]; rfl
+      rw [← map_coe, pointwise_smul_def]
+      exact congr_arg (B.map ·) (RingHom.ext fun _ ↦ by simp)
     have hmap := map_powerResidueSymbolIdeal (n := m) B
       (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ) (σ⁻¹ • α)
     rw [MulSemiringAction.toRingEquiv_apply_apply, MulSemiringAction.toRingEquiv_apply_apply,
