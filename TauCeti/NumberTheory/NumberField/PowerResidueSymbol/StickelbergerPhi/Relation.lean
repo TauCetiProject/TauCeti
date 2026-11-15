@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 import Mathlib.RingTheory.Ideal.Int
+import TauCeti.NumberTheory.DedekindDomain.RelNorm
 import TauCeti.NumberTheory.GaussSum.Stickelberger
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
@@ -56,6 +57,8 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 * `Ideal.span_stickelbergerPhi`: `(Φ(A)) = ∏_σ (σ⁻¹ A) ^ c(σ)` for `A` prime to `m`.
 * `Ideal.span_stickelbergerPhi_span_singleton`: `(Φ((α))) = (∏_σ (σ⁻¹ α) ^ c(σ))` for `α` prime
   to `m`.
+* `Ideal.powerResidueSymbolIdeal_stickelbergerProduct`: `(α ^ γ / B)_m = (α / N B)_m` for every
+  ideal `B` and element `α` of `𝓞 K`.
 
 ## References
 
@@ -359,5 +362,60 @@ theorem span_stickelbergerPhi_span_singleton (hm : 2 ≤ m) {α : 𝓞 K}
       span {TauCeti.stickelbergerProduct m α} := by
   rw [TauCeti.stickelbergerProduct_def, span_stickelbergerPhi hm hα, ← prod_span_singleton]
   simp only [smul_closure, Set.smul_set_singleton, span_singleton_pow]
+
+/-- **The residue symbol of the Stickelberger product at an ideal.** In the `m`-th cyclotomic
+field, `m ≥ 2`, for every ideal `B` of `𝓞 K` and every `α ∈ 𝓞 K`,
+`(α ^ γ / B)_m = (α / N B)_m`, where `α ^ γ` is `TauCeti.stickelbergerProduct m α` and the right
+side is taken at the principal ideal `(N B) 𝓞 K`. -/
+theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (B : Ideal (𝓞 K)) (α : 𝓞 K) :
+    powerResidueSymbolIdeal B m (Quotient.mk B (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm B : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm B : 𝓞 K)}) α) := by
+  have : Fact (1 < m) := ⟨hm⟩
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  have hc (σ : Gal(K/ℚ)) : (galEquivZMod m K σ : ZMod m).val ≠ 0 :=
+    fun h ↦ Units.ne_zero _ ((ZMod.val_eq_zero _).mp h)
+  obtain rfl | hB := eq_or_ne B ⊥
+  · -- At the zero ideal both symbols are the trivial character `1`, which detects units of `𝓞 K`.
+    rw [absNorm_bot, Nat.cast_zero, span_singleton_zero]
+    by_cases hα : IsUnit α
+    · have hprod : IsUnit (TauCeti.stickelbergerProduct m α) := by
+        rw [TauCeti.stickelbergerProduct_def]
+        exact IsUnit.prod_univ_iff.mpr fun σ ↦
+          ((hα.map (MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ⁻¹)).pow _)
+      rw [powerResidueSymbolIdeal_bot, MulChar.one_apply (hprod.map _),
+        MulChar.one_apply (hα.map _)]
+    · have hnot {x : 𝓞 K} (hx : ¬ IsUnit x) : ¬ IsCoprime (span {x}) (⊥ : Ideal (𝓞 K)) := by
+        rwa [← zero_eq_bot, isCoprime_zero_right, isUnit_iff, span_singleton_eq_top]
+      have hprod : ¬ IsUnit (TauCeti.stickelbergerProduct m α) := fun hu ↦ hα <| by
+        rw [TauCeti.stickelbergerProduct_def] at hu
+        have h1 := IsUnit.prod_univ_iff.mp hu 1
+        rw [inv_one, one_smul] at h1
+        exact isUnit_of_dvd_unit (dvd_pow_self α (hc 1)) h1
+      rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr (hnot hprod),
+        powerResidueSymbolIdeal_mk_eq_zero_iff.mpr (hnot hα)]
+  -- For `B ≠ ⊥`, Galois equivariance turns each factor `(σ⁻¹ α / B)_m ^ c(σ)` into `(α / σ B)_m`.
+  rw [TauCeti.stickelbergerProduct_def, map_prod, map_prod]
+  have hfactor (σ : Gal(K/ℚ)) :
+      powerResidueSymbolIdeal B m (Quotient.mk B ((σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val)) =
+        powerResidueSymbolIdeal (σ • B) m (Quotient.mk (σ • B) α) := by
+    rw [map_pow, map_pow]
+    have hpow :
+        powerResidueSymbolIdeal B m (Quotient.mk B (σ⁻¹ • α)) ^
+            (galEquivZMod m K σ : ZMod m).val =
+          σ • powerResidueSymbolIdeal B m (Quotient.mk B (σ⁻¹ • α)) := by
+      by_cases hu : IsUnit (Quotient.mk B (σ⁻¹ • α))
+      · exact (galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbolIdeal_pow_eq_one hu)).symm
+      · rw [MulChar.map_nonunit _ hu, zero_pow (hc σ), smul_zero]
+    rw [hpow, ← MulSemiringAction.toRingEquiv_apply_apply Gal(K/ℚ) (𝓞 K) σ,
+      map_powerResidueSymbolIdeal B (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ) (σ⁻¹ • α),
+      MulSemiringAction.toRingEquiv_apply_apply, smul_inv_smul]
+    rfl
+  simp_rw [hfactor]
+  have hσB : ∀ σ ∈ (Finset.univ : Finset Gal(K/ℚ)), σ • B ≠ ⊥ := fun σ _ ↦
+    (map_eq_bot_iff_of_injective
+      (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ).injective).not.mpr hB
+  rw [← powerResidueSymbolIdeal_prod_right Finset.univ (· • B) hσB α,
+    prod_smul_eq_span_absNorm Gal(K/ℚ) B]
 
 end Ideal
