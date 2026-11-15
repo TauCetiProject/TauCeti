@@ -8,11 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -163,14 +161,8 @@ private theorem IsMetricCompatible.covariantDerivative_inner_smul_sub_inner_smul
           (⟪Z x, cov σ x (X x)⟫_ℝ • Y x - ⟪Y x, cov σ x (X x)⟫_ℝ • Z x) := by
   set f₁ : M → ℝ := fun y ↦ ⟪Z y, σ y⟫_ℝ
   set f₂ : M → ℝ := fun y ↦ ⟪Y y, σ y⟫_ℝ
-  -- The bundle argument of `MDifferentiableAt.inner_bundle` is not inferred through
-  -- `TangentSpace`.
-  have hf₁ : MDiffAt f₁ x :=
-    MDifferentiableAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
-      (b := id) hZ hσ
-  have hf₂ : MDiffAt f₂ x :=
-    MDifferentiableAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
-      (b := id) hY hσ
+  have hf₁ : MDiffAt f₁ x := TauCeti.Manifold.mdifferentiableAt_inner hZ hσ
+  have hf₂ : MDiffAt f₂ x := TauCeti.Manifold.mdifferentiableAt_inner hY hσ
   have hd {A B : Π y : M, TangentSpace I y} (hA : MDiffAt (T% A) x) (hB : MDiffAt (T% B) x) :
       mvfderiv I (fun y ↦ ⟪A y, B y⟫_ℝ) x (X x) =
         ⟪cov A x (X x), B x⟫_ℝ + ⟪A x, cov B x (X x)⟫_ℝ :=
@@ -185,48 +177,6 @@ private theorem IsMetricCompatible.covariantDerivative_inner_smul_sub_inner_smul
   module
 
 /-- Let the curvature tensor of a metric-compatible connection have the pointwise
-constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x`, and
-let `κ` be differentiable at `x`. The covariant derivative of the curvature along `X` at `x`,
-`(∇_X R)(Y, Z)σ = ∇_X (R(Y, Z)σ) - R(∇_X Y, Z)σ - R(Y, ∇_X Z)σ - R(Y, Z)(∇_X σ)`,
-is then `dκ(X) (⟨Z, σ⟩ Y - ⟨Y, σ⟩ Z)`. -/
-private theorem IsMetricCompatible.covariantDerivative_curvatureOperator_eq_mvfderiv_smul
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    {κ : M → ℝ} {x : M} (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
-      cov.curvatureTensor y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u))
-    {X Y Z σ : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y))
-    (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ))
-    (hκx : MDifferentiableAt I 𝓘(ℝ) κ x) :
-    cov (curvatureOperator cov Y Z σ) x (X x) -
-        curvatureOperator cov (fun y ↦ cov Y y (X y)) Z σ x -
-          curvatureOperator cov Y (fun y ↦ cov Z y (X y)) σ x -
-            curvatureOperator cov Y Z (fun y ↦ cov σ y (X y)) x =
-      mvfderiv I κ x (X x) • (⟪Z x, σ x⟫_ℝ • Y x - ⟪Y x, σ x⟫_ℝ • Z x) := by
-  set P : Π y : M, TangentSpace I y := fun y ↦ ⟪Z y, σ y⟫_ℝ • Y y - ⟪Y y, σ y⟫_ℝ • Z y
-  have hP : CMDiff ∞ (T% P) := by
-    have hf₁ : CMDiff ∞ fun y ↦ ⟪Z y, σ y⟫_ℝ :=
-      ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id) hZ hσ
-    have hf₂ : CMDiff ∞ fun y ↦ ⟪Y y, σ y⟫_ℝ :=
-      ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id) hY hσ
-    exact (hf₁.smul_section hY).sub_section (hf₂.smul_section hZ)
-  -- The curvature and `κ • P` agree near `x`, so their covariant derivatives agree at `x`.
-  have hR : cov (curvatureOperator cov Y Z σ) x = cov (κ • P) x :=
-    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-      ((cov.contMDiff_curvatureOperator hY hZ hσ).mdifferentiableAt (by simp))
-      (hκx.smul_section (hP.mdifferentiableAt (by simp))) Filter.univ_mem
-      (hκ.mono fun y hy ↦ by rw [← curvatureTensor_apply cov y hY hZ hσ, hy, Pi.smul_apply'])
-  have hκ₀ := hκ.self_of_nhds
-  -- Leibniz splits off `dκ(X)`; the parallel model tensor accounts for the rest.
-  rw [hR, cov.isCovariantDerivativeOnUniv.leibniz (hP.mdifferentiableAt (by simp)) hκx,
-    add_apply, smul_apply,
-    hcov.covariantDerivative_inner_smul_sub_inner_smul X (hY.mdifferentiableAt (by simp))
-      (hZ.mdifferentiableAt (by simp)) (hσ.mdifferentiableAt (by simp)),
-    ← curvatureTensor_apply cov x (cov.contMDiff_apply hX hY) hZ hσ,
-    ← curvatureTensor_apply cov x hY (cov.contMDiff_apply hX hZ) hσ,
-    ← curvatureTensor_apply cov x hY hZ (cov.contMDiff_apply hX hσ), hκ₀, hκ₀, hκ₀]
-  simp only [ContinuousLinearMap.smulRight_apply, P]
-  module
-
-/-- Let the curvature tensor of a metric-compatible connection have the pointwise
 constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` near `x`. If `κ` is
 differentiable at `x`, the covariant derivative of the curvature is
 `(∇_v R)(u, w)s = dκ(v) (⟨w, s⟩ u - ⟨u, s⟩ w)`. -/
@@ -236,12 +186,33 @@ theorem IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul
       cov.curvatureTensor y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u))
     (hκx : MDifferentiableAt I 𝓘(ℝ) κ x) (v u w s : TangentSpace I x) :
     cov.derivCurvatureTensor cov x v u w s = mvfderiv I κ x v • (⟪w, s⟫_ℝ • u - ⟪u, s⟫_ℝ • w) := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
   obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
-  obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E ∞ s
-  rw [derivCurvatureTensor_apply_eq_curvatureOperator cov cov x hX hY hZ hW]
-  exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hW hκx
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I E ∞ s
+  have hYx : MDiffAt (T% Y) x := hY.mdifferentiableAt (by simp)
+  have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)
+  have hσx : MDiffAt (T% σ) x := hσ.mdifferentiableAt (by simp)
+  set P : Π y : M, TangentSpace I y := fun y ↦ ⟪Z y, σ y⟫_ℝ • Y y - ⟪Y y, σ y⟫_ℝ • Z y
+  have hP : MDiffAt (T% P) x :=
+    mdifferentiableAt_sub_section
+      (TauCeti.Manifold.mdifferentiableAt_inner hZx hσx |>.smul_section hYx)
+      (TauCeti.Manifold.mdifferentiableAt_inner hYx hσx |>.smul_section hZx)
+  -- The curvature and `κ • P` agree near `x`, so their covariant derivatives agree at `x`.
+  have hR : cov (curvatureOperator cov Y Z σ) x = cov (κ • P) x :=
+    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      ((cov.contMDiff_curvatureOperator hY hZ hσ).mdifferentiableAt (by simp))
+      (hκx.smul_section hP) Filter.univ_mem
+      (hκ.mono fun y hy ↦ by rw [← curvatureTensor_apply cov y hY hZ hσ, hy, Pi.smul_apply'])
+  have hκ₀ := hκ.self_of_nhds
+  have hP' := hcov.covariantDerivative_inner_smul_sub_inner_smul (FiberBundle.extend E v) hYx hZx
+    hσx
+  simp only [FiberBundle.extend_apply_self] at hP'
+  -- Leibniz splits off `dκ(v)`; the parallel model tensor accounts for the rest.
+  rw [derivCurvatureTensor_apply cov cov x v hY hZ hσ, hR,
+    cov.isCovariantDerivativeOnUniv.leibniz hP hκx, add_apply, smul_apply]
+  rw [hP', hκ₀, hκ₀, hκ₀]
+  simp only [ContinuousLinearMap.smulRight_apply, P]
+  module
 
 /-- A metric-compatible torsion-free connection of constant sectional curvature, such as the
 Levi-Civita connection of a space form, has parallel curvature. -/
