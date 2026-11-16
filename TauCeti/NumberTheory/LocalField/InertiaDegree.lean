@@ -96,16 +96,6 @@ cardinalities here are genuine. -/
 theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
 
-variable (K L) in
-/-- The residue degree is unchanged by an equivalence of extensions over the base field. -/
-theorem inertiaDegree_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
-    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
-    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
-    inertiaDegree K L = inertiaDegree K M := by
-  have := finite_of_valuativeExtension K M
-  rw [inertiaDegree_def, inertiaDegree_def]
-  exact (IsLocalRing.ResidueField.mapAlgEquiv' e.integerRingEquiv).toLinearEquiv.finrank_eq
-
 /-- A valuation-preserving ring isomorphism of valued fields identifies their residue-field
 cardinalities. -/
 theorem natCard_residueField_eq_of_vle_iff {F F' : Type*}
@@ -113,9 +103,8 @@ theorem natCard_residueField_eq_of_vle_iff {F F' : Type*}
     (e : F ≃+* F') (he : ∀ a b : F, e a ≤ᵥ e b ↔ a ≤ᵥ b) :
     Nat.card 𝓀[F] = Nat.card 𝓀[F'] := by
   have hmem (a : F) : a ∈ 𝒪[F] ↔ e a ∈ 𝒪[F'] := by
-    rw [Valuation.mem_integer_iff, Valuation.mem_integer_iff, ← map_one (valuation F),
-      ← map_one (valuation F'), ← (valuation F).vle_iff_le, ← (valuation F').vle_iff_le,
-      ← map_one e, he]
+    simp only [Valuation.mem_integer_iff, ← Valuation.vle_one_iff]
+    rw [← map_one e, he]
   exact Nat.card_congr (ResidueField.mapEquiv (e.restrict 𝒪[F] 𝒪[F'] hmem)).toEquiv
 
 /-- **Transport of the residue degree along a valuation-preserving ring isomorphism.** Given ring
@@ -135,6 +124,15 @@ theorem inertiaDegree_eq_of_vle_iff {K' L' : Type*}
   dsimp only
   rw [← natCard_residueField K L, natCard_residueField_eq_of_vle_iff eL hvle,
     natCard_residueField K' L', ← natCard_residueField_eq_of_vle_iff e he]
+
+variable (K L) in
+/-- The residue degree is unchanged by an equivalence of extensions over the base field. -/
+theorem inertiaDegree_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    inertiaDegree K L = inertiaDegree K M :=
+  inertiaDegree_eq_of_vle_iff (RingEquiv.refl K) (fun _ _ ↦ Iff.rfl) e.toRingEquiv
+    (fun c ↦ by simp [e.commutes])
 
 /-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
 cardinalities of the residue fields of `K` and `L`. -/
@@ -170,17 +168,6 @@ theorem ramificationIndex_mul_inertiaDegree :
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
 
-variable (K L) in
-/-- The ramification index is unchanged by an equivalence of extensions over the base field. -/
-theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
-    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
-    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
-    ramificationIndex K L = ramificationIndex K M := by
-  apply Nat.eq_of_mul_eq_mul_right (inertiaDegree_pos (K := K) (L := L))
-  rw [ramificationIndex_mul_inertiaDegree K L, inertiaDegree_eq_of_algEquiv K L M e,
-    ramificationIndex_mul_inertiaDegree K M]
-  exact e.toLinearEquiv.finrank_eq
-
 /-- **Transport of the ramification index along a valuation-preserving ring isomorphism.** Given
 ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap` such that `e`
 preserves `≤ᵥ`, the extensions `L/K` and `L'/K'` have the same ramification index. -/
@@ -195,6 +182,15 @@ theorem ramificationIndex_eq_of_vle_iff {K' L' : Type*}
   rw [ramificationIndex_mul_inertiaDegree K L, inertiaDegree_eq_of_vle_iff e he eL heL,
     ramificationIndex_mul_inertiaDegree K' L']
   exact Algebra.finrank_eq_of_equiv_equiv e eL (RingHom.ext fun c ↦ (heL c).symm)
+
+variable (K L) in
+/-- The ramification index is unchanged by an equivalence of extensions over the base field. -/
+theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    ramificationIndex K L = ramificationIndex K M :=
+  ramificationIndex_eq_of_vle_iff (RingEquiv.refl K) (fun _ _ ↦ Iff.rfl) e.toRingEquiv
+    (fun c ↦ by simp [e.commutes])
 
 variable (K L) in
 /-- The wild ramification exponent is an invariant of the extension up to algebra equivalence. -/

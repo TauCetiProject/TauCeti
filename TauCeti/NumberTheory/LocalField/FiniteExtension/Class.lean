@@ -36,8 +36,10 @@ structure action of `F ≃ₐ[K] F`.
 
 ## Main results
 
-* `TauCeti.FiniteExtensionClass.induction_on_localField`: elimination principle representing any
-  `c : FiniteExtensionClass K` by a compatible nonarchimedean local-field extension `L : Type u`.
+* `TauCeti.FiniteExtensionClass.induction_on_localField` and
+  `TauCeti.FiniteExtensionClass.induction_on_localField_tower`: elimination principles representing
+  any `c : FiniteExtensionClass K` (or `FiniteExtensionClass F` over `F/K`) by a compatible
+  nonarchimedean local-field extension.
 * `TauCeti.FiniteExtensionClass.inertiaDegree_mk`,
   `TauCeti.FiniteExtensionClass.ramificationIndex_mk`,
   `TauCeti.FiniteExtensionClass.isUnramified_mk_iff`,
@@ -143,6 +145,7 @@ theorem inertiaDegree_pos (c : FiniteExtensionClass K) : 0 < c.inertiaDegree := 
   rw [inertiaDegree_mk]; exact TauCeti.inertiaDegree_pos
 
 /-- The residue degree of a finite extension class of a local field is nonzero. -/
+@[simp]
 theorem inertiaDegree_ne_zero (c : FiniteExtensionClass K) : c.inertiaDegree ≠ 0 :=
   c.inertiaDegree_pos.ne'
 
@@ -152,6 +155,7 @@ theorem ramificationIndex_pos (c : FiniteExtensionClass K) : 0 < c.ramificationI
   rw [ramificationIndex_mk]; exact TauCeti.ramificationIndex_pos
 
 /-- The ramification index of a finite extension class of a local field is nonzero. -/
+@[simp]
 theorem ramificationIndex_ne_zero (c : FiniteExtensionClass K) : c.ramificationIndex ≠ 0 :=
   c.ramificationIndex_pos.ne'
 
@@ -258,10 +262,11 @@ variable (K : Type u) {F : Type v}
   [Algebra K F] [ValuativeExtension K F] [Module.Finite K F]
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- Auxiliary elimination principle equipping a local-field representative `L/F` of `c` with the
-composed `K`-algebra, scalar-tower, finiteness, and valuative-extension instances for `K/F/L`. -/
+/-- Elimination principle for `FiniteExtensionClass F` over a local-field tower `F/K`: every class
+is `mk F L` for a compatible local-field extension `L : Type v` equipped with the composed
+`K`-algebra, scalar-tower, finiteness, and valuative-extension instances for `K/F/L`. -/
 @[elab_as_elim]
-private theorem induction_on_localField_tower {motive : FiniteExtensionClass F → Prop}
+theorem induction_on_localField_tower {motive : FiniteExtensionClass F → Prop}
     (c : FiniteExtensionClass F)
     (h : ∀ (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L]
       [IsNonarchimedeanLocalField L] [Algebra K L] [Algebra F L] [IsScalarTower K F L]
@@ -271,10 +276,7 @@ private theorem induction_on_localField_tower {motive : FiniteExtensionClass F �
   let := RingHom.toAlgebra ((algebraMap F L).comp (algebraMap K F))
   have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq' rfl
   have : Module.Finite K L := Module.Finite.trans F L
-  have : ValuativeExtension K L :=
-    ⟨fun {a b} ↦ by
-      rw [IsScalarTower.algebraMap_apply K F L a, IsScalarTower.algebraMap_apply K F L b,
-        ValuativeExtension.vle_iff_vle, ValuativeExtension.vle_iff_vle]⟩
+  have : ValuativeExtension K L := ValuativeExtension.trans K F L
   exact h L
 
 /-- **Multiplicativity of the residue degree under restriction of scalars.** -/
@@ -367,8 +369,9 @@ variable {K : Type u} {F : Type v}
 theorem inertiaDegree_smul (τ : F ≃ₐ[K] F) (c : FiniteExtensionClass F) :
     (τ • c).inertiaDegree = c.inertiaDegree := by
   have := finite_of_valuativeExtension K F
-  exact inertiaDegree_mapEquiv_of_vle_iff (τ : F ≃+* F)
-    (fun _ _ ↦ (τ.toAlgHom : F →ₐ[K] F).valuativeExtension.vle_iff_vle) c
+  rw [smul_def]
+  exact inertiaDegree_mapEquiv_of_vle_iff (τ : F ≃+* F) (fun a b ↦ by
+    simp only [AlgEquiv.coe_toRingEquiv, (valuation F).vle_iff_le, τ.valuation_eq]) c
 
 /-- The transport-of-structure action of `F ≃ₐ[K] F` preserves ramification index. -/
 @[simp]

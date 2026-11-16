@@ -64,15 +64,15 @@ same classification restricts to separable extension classes, where `{x : Totall
 
 ## Main results
 
-* `TauCeti.TotallyRamifiedClass.restrictScalars_eq_restrictScalars_iff`: two totally ramified
-  `F`-extension classes have the same underlying `K`-class if and only if they lie in the same
-  `(F ≃ₐ[K] F)`-orbit.
+* `TauCeti.TotallyRamifiedClass.restrictScalars_eq_restrictScalars_iff`: over a normal extension
+  `F/K`, two totally ramified `F`-extension classes have the same underlying `K`-class if and only
+  if they lie in the same `(F ≃ₐ[K] F)`-orbit.
 * `TauCeti.exists_totallyRamifiedClass_restrictScalars_eq`: every `K`-extension class of degree
   `[F : K] * e` and residue degree `[F : K]` arises by restricting scalars from
   `TotallyRamifiedClass F e`.
 * `TauCeti.TotallyRamifiedClass.natCard_orbit_mul_natCard_stabilizer_eq_finrank` and
-  `TauCeti.TotallyRamifiedClass.natCardAut_restrictScalars`: orbit-stabilizer and automorphism-count
-  formulas in the unramified--totally ramified tower.
+  `TauCeti.TotallyRamifiedClass.natCardAut_restrictScalars`: orbit-stabilizer (for Galois `F/K`)
+  and automorphism-count (for normal `F/K`) formulas for totally ramified extension classes.
 * `TauCeti.tsum_extensionClass_inertiaDegree_div_natCardAut` and
   `TauCeti.tsum_separable_extensionClass_inertiaDegree_div_natCardAut`: `ℝ≥0∞` weighted class-sum
   reductions from `K`-extension classes of residue degree `[F : K]` to `TotallyRamifiedClass F e`.
@@ -107,6 +107,8 @@ structure TotallyRamifiedClass (F : Type u) [Field F] [ValuativeRel F] [Topologi
   finrank_eq : toExtensionClass.finrank = e
   /-- The extension is totally ramified over `F`. -/
   isTotallyRamified : toExtensionClass.IsTotallyRamified
+
+attribute [simp] TotallyRamifiedClass.finrank_eq TotallyRamifiedClass.isTotallyRamified
 
 namespace TotallyRamifiedClass
 
@@ -178,11 +180,13 @@ def ofExtension (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L]
 @[simp]
 theorem toExtensionClass_ofExtension (L : Type v) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra F L] [ValuativeExtension F L]
-    [Module.Finite F L] (he : Module.finrank F L = e) (hL : IsTotallyRamified F L) :
+    (he : Module.finrank F L = e) (hL : IsTotallyRamified F L) :
+    haveI : Module.Finite F L := finite_of_valuativeExtension F L
     (ofExtension F L he hL).toExtensionClass = FiniteExtensionClass.mk F L := (rfl)
 
 /-- Two degree-`e` totally ramified extensions of `F` define the same `TotallyRamifiedClass F e`
 if and only if they are `F`-isomorphic. -/
+@[simp]
 theorem ofExtension_eq_ofExtension_iff (L₁ : Type v) (L₂ : Type w)
     [Field L₁] [ValuativeRel L₁] [TopologicalSpace L₁] [IsNonarchimedeanLocalField L₁]
     [Algebra F L₁] [ValuativeExtension F L₁]
@@ -250,15 +254,11 @@ theorem natCardAut_pos (x : TotallyRamifiedClass F e) : 0 < x.natCardAut :=
   x.toExtensionClass.natCardAut_pos
 
 /-- The automorphism count of a totally ramified extension class is nonzero. -/
+@[simp]
 theorem natCardAut_ne_zero (x : TotallyRamifiedClass F e) : x.natCardAut ≠ 0 :=
   x.natCardAut_pos.ne'
 
-end Basic
-
 section SeparableClosure
-
-variable {F : Type u} [Field F] [ValuativeRel F] [TopologicalSpace F]
-  [IsNonarchimedeanLocalField F] {e : ℕ}
 
 /-- Canonical map sending a member `L` of `σ_F(e) = totallyRamifiedOfDegree F e` to its separable
 totally ramified `F`-isomorphism class. -/
@@ -291,6 +291,7 @@ theorem natCardAut_ofTotallyRamifiedOfDegree (L : totallyRamifiedOfDegree F e) :
 
 /-- Two members of `totallyRamifiedOfDegree F e` map to the same separable `TotallyRamifiedClass F
 e` if and only if they are `F`-isomorphic. -/
+@[simp]
 theorem ofTotallyRamifiedOfDegree_eq_iff (L M : totallyRamifiedOfDegree F e) :
     ofTotallyRamifiedOfDegree L = ofTotallyRamifiedOfDegree M ↔ Nonempty (L.1 ≃ₐ[F] M.1) := by
   have : Module.Finite F L.1 := (mem_totallyRamifiedOfDegree_iff.1 L.2).2.finite
@@ -318,9 +319,13 @@ theorem ofTotallyRamifiedOfDegree_surjective :
     rw [isTotallyRamified_iff_inertiaDegree_eq_one, ← inertiaDegree_eq_of_algEquiv F L _ φ]
     exact hL.inertiaDegree_eq_one
   refine ⟨⟨ι.fieldRange, mem_totallyRamifiedOfDegree_iff.2 ⟨hdeg, htot⟩⟩, Subtype.ext ?_⟩
-  exact TotallyRamifiedClass.ext ((FiniteExtensionClass.mk_eq_mk_iff _ _).2 ⟨φ.symm⟩)
+  rw [TotallyRamifiedClass.ext_iff, toExtensionClass_ofTotallyRamifiedOfDegree,
+    toExtensionClass_ofExtension, FiniteExtensionClass.mk_eq_mk_iff]
+  exact ⟨φ.symm⟩
 
 end SeparableClosure
+
+end Basic
 
 end TotallyRamifiedClass
 
@@ -407,7 +412,8 @@ def restrictScalars (x : TotallyRamifiedClass F e) : FiniteExtensionClass K :=
   x.toExtensionClass.restrictScalars K
 
 /-- Definitional unfolding of `TotallyRamifiedClass.restrictScalars` via `toExtensionClass`. -/
-theorem restrictScalars_def [Module.Finite K F] (x : TotallyRamifiedClass F e) :
+theorem restrictScalars_def (x : TotallyRamifiedClass F e) :
+    haveI : Module.Finite K F := finite_of_valuativeExtension K F
     x.restrictScalars K = x.toExtensionClass.restrictScalars K := (rfl)
 
 /-- Restricting scalars of `ofExtension F L he hL` along a tower `K/F/L` gives
@@ -415,8 +421,11 @@ theorem restrictScalars_def [Module.Finite K F] (x : TotallyRamifiedClass F e) :
 @[simp]
 theorem restrictScalars_ofExtension (L : Type w) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [Algebra F L]
-    [IsScalarTower K F L] [ValuativeExtension F L] [Module.Finite K L]
+    [IsScalarTower K F L] [ValuativeExtension F L]
     (he : Module.finrank F L = e) (hL : IsTotallyRamified F L) :
+    haveI : Module.Finite K F := finite_of_valuativeExtension K F
+    haveI : Module.Finite F L := finite_of_valuativeExtension F L
+    haveI : Module.Finite K L := Module.Finite.trans F L
     (ofExtension F L he hL).restrictScalars K = FiniteExtensionClass.mk K L := by
   have : Module.Finite K F := finite_of_valuativeExtension K F
   have : Module.Finite F L := finite_of_valuativeExtension F L
@@ -440,6 +449,42 @@ theorem restrictScalars_smul (τ : F ≃ₐ[K] F) (x : TotallyRamifiedClass F e)
   rw [restrictScalars_def, restrictScalars_def, toExtensionClass_smul,
     FiniteExtensionClass.restrictScalars_smul]
 
+/-- **Tower law for separability of totally ramified extension classes.** `x.restrictScalars K` is
+separable over `K` if and only if both `F/K` and `x` are separable. -/
+theorem isSeparable_restrictScalars_iff (x : TotallyRamifiedClass F e) :
+    (x.restrictScalars K).IsSeparable ↔ Algebra.IsSeparable K F ∧ x.IsSeparable := by
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  rw [restrictScalars_def, FiniteExtensionClass.isSeparable_restrictScalars_iff, isSeparable_def]
+
+/-- **Orbit characterization of `restrictScalars` over a normal base.** When `F/K` is normal, two
+totally ramified `F`-extension classes induce the same `K`-extension class if and only if they lie
+in the same `(F ≃ₐ[K] F)`-orbit. -/
+theorem restrictScalars_eq_restrictScalars_iff [Normal K F] (x y : TotallyRamifiedClass F e) :
+    x.restrictScalars K = y.restrictScalars K ↔ ∃ τ : F ≃ₐ[K] F, τ • x = y := by
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  rw [restrictScalars_def, restrictScalars_def,
+    FiniteExtensionClass.restrictScalars_eq_restrictScalars_iff]
+  simp [TotallyRamifiedClass.ext_iff]
+
+/-- **Orbit-stabilizer identity for `TotallyRamifiedClass F e`.** For a Galois extension `F/K`, the
+orbit size of `x` under `F ≃ₐ[K] F` times its stabilizer size equals `[F : K]`. -/
+theorem natCard_orbit_mul_natCard_stabilizer_eq_finrank [IsGalois K F]
+    (x : TotallyRamifiedClass F e) :
+    Nat.card (MulAction.orbit (F ≃ₐ[K] F) x) *
+      Nat.card (MulAction.stabilizer (F ≃ₐ[K] F) x) = Module.finrank K F := by
+  have : FiniteDimensional K F := finite_of_valuativeExtension K F
+  rw [← Nat.card_prod, Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup (F ≃ₐ[K] F) x),
+    IsGalois.card_aut_eq_finrank K F]
+
+/-- **Automorphism count in a tower with normal bottom step.** For `x : TotallyRamifiedClass F e`
+over a normal extension `F/K`, `#Aut_K(x.restrictScalars K) = #Aut_F(x) · #Stab(x)`. -/
+theorem natCardAut_restrictScalars [Normal K F] (x : TotallyRamifiedClass F e) :
+    (x.restrictScalars K).natCardAut =
+      x.natCardAut * Nat.card (MulAction.stabilizer (F ≃ₐ[K] F) x) := by
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  rw [restrictScalars_def, FiniteExtensionClass.natCardAut_restrictScalars, natCardAut_def,
+    stabilizer_eq_stabilizer_toExtensionClass]
+
 /-- Transport of structure by `F ≃ₐ[K] F` restricts to the subtype of separable totally ramified
 classes. -/
 instance instMulActionSeparable :
@@ -460,14 +505,9 @@ theorem stabilizer_separable_eq (x : {x : TotallyRamifiedClass F e // x.IsSepara
     MulAction.stabilizer (F ≃ₐ[K] F) x = MulAction.stabilizer (F ≃ₐ[K] F) x.1 := by
   ext τ; simp [MulAction.mem_stabilizer_iff, Subtype.ext_iff]
 
-end ActionAndRestrictScalars
-
 section UnramifiedBase
 
-variable {K : Type u} {F : Type v}
-  [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [Field F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
-  [Algebra K F] [ValuativeExtension K F] [IsUnramified K F] {e : ℕ}
+variable [IsUnramified K F]
 
 /-- Over an unramified base `F/K`, restricting scalars of `x : TotallyRamifiedClass F e` yields a
 `K`-extension class of residue degree `[F : K]`. -/
@@ -487,48 +527,9 @@ theorem ramificationIndex_restrictScalars (x : TotallyRamifiedClass F e) :
   rw [restrictScalars_def, FiniteExtensionClass.ramificationIndex_restrictScalars,
     IsUnramified.ramificationIndex_eq_one, one_mul, x.ramificationIndex_toExtensionClass]
 
-/-- Over an unramified base `F/K`, `x.restrictScalars K` is separable over `K` if and only if `x`
-is separable over `F`. -/
-@[simp]
-theorem isSeparable_restrictScalars_iff (x : TotallyRamifiedClass F e) :
-    (x.restrictScalars K).IsSeparable ↔ x.IsSeparable := by
-  have : Module.Finite K F := finite_of_valuativeExtension K F
-  have hG : IsGalois K F := IsUnramified.isGalois K F
-  rw [restrictScalars_def, FiniteExtensionClass.isSeparable_restrictScalars_iff, isSeparable_def,
-    and_iff_right hG.to_isSeparable]
-
-/-- **Orbit characterization of `restrictScalars` over an unramified base.** Two totally ramified
-`F`-extension classes induce the same `K`-extension class if and only if they lie in the same
-`(F ≃ₐ[K] F)`-orbit. -/
-theorem restrictScalars_eq_restrictScalars_iff (x y : TotallyRamifiedClass F e) :
-    x.restrictScalars K = y.restrictScalars K ↔ ∃ τ : F ≃ₐ[K] F, τ • x = y := by
-  have : Module.Finite K F := finite_of_valuativeExtension K F
-  have := IsUnramified.isGalois K F
-  rw [restrictScalars_def, restrictScalars_def,
-    FiniteExtensionClass.restrictScalars_eq_restrictScalars_iff]
-  simp [TotallyRamifiedClass.ext_iff]
-
-/-- **Orbit-stabilizer identity for `TotallyRamifiedClass F e`.** For an unramified extension
-`F/K`, the orbit size of `x` under `F ≃ₐ[K] F` times its stabilizer size equals `[F : K]`. -/
-theorem natCard_orbit_mul_natCard_stabilizer_eq_finrank (x : TotallyRamifiedClass F e) :
-    Nat.card (MulAction.orbit (F ≃ₐ[K] F) x) *
-      Nat.card (MulAction.stabilizer (F ≃ₐ[K] F) x) = Module.finrank K F := by
-  have : FiniteDimensional K F := finite_of_valuativeExtension K F
-  have := IsUnramified.isGalois K F
-  rw [← Nat.card_prod, Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup (F ≃ₐ[K] F) x),
-    IsGalois.card_aut_eq_finrank K F]
-
-/-- **Automorphism count in the unramified--totally ramified tower.** For `x : TotallyRamifiedClass
-F e` over an unramified extension `F/K`, `#Aut_K(x.restrictScalars K) = #Aut_F(x) · #Stab(x)`. -/
-theorem natCardAut_restrictScalars (x : TotallyRamifiedClass F e) :
-    (x.restrictScalars K).natCardAut =
-      x.natCardAut * Nat.card (MulAction.stabilizer (F ≃ₐ[K] F) x) := by
-  have : Module.Finite K F := finite_of_valuativeExtension K F
-  have := IsUnramified.isGalois K F
-  rw [restrictScalars_def, FiniteExtensionClass.natCardAut_restrictScalars, natCardAut_def,
-    stabilizer_eq_stabilizer_toExtensionClass]
-
 end UnramifiedBase
+
+end ActionAndRestrictScalars
 
 end TotallyRamifiedClass
 
@@ -558,24 +559,15 @@ theorem exists_totallyRamifiedClass_restrictScalars_eq {e : ℕ} {c : FiniteExte
   have := isUnramified_unramifiedExtension_inertiaDegree K L
   obtain ⟨ψ⟩ : Nonempty (F ≃ₐ[K] L₀) := IsUnramified.nonempty_algEquiv_of_finrank_eq
     (hinert.symm.trans (finrank_unramifiedExtension_inertiaDegree K L).symm)
-  have hψ_vle (a b : F) : ψ a ≤ᵥ ψ b ↔ a ≤ᵥ b :=
-    (ψ.toAlgHom : F →ₐ[K] L₀).valuativeExtension.vle_iff_vle
   let := RingHom.toAlgebra ((algebraMap L₀ L).comp ψ.toRingHom)
   have : IsScalarTower K F L := IsScalarTower.of_algebraMap_eq fun k ↦ by
     simp [RingHom.algebraMap_toAlgebra, AlgEquiv.commutes]
-  have : ValuativeExtension F L := ⟨fun {a b} ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, RingHom.coe_comp, Function.comp_apply]
-    exact ValuativeExtension.vle_iff_vle.trans (hψ_vle a b)⟩
-  have htot_F : IsTotallyRamified F L := by
-    rw [isTotallyRamified_iff_inertiaDegree_eq_one,
-      inertiaDegree_eq_of_vle_iff ψ.toRingEquiv hψ_vle (RingEquiv.refl L) fun _ ↦ rfl]
-    exact (isTotallyRamified_unramifiedExtension_inertiaDegree K L).inertiaDegree_eq_one
-  have he_L₀ : Module.finrank L₀ L = e := by
-    rw [finrank_unramifiedExtension_inertiaDegree_eq_ramificationIndex]
-    apply Nat.eq_of_mul_eq_mul_right (inertiaDegree_pos (K := K) (L := L))
-    rw [ramificationIndex_mul_inertiaDegree, hdeg, hinert, mul_comm]
+  have : ValuativeExtension F L := ValuativeExtension.of_isScalarTower (K := K)
+  have : Module.Finite F L := finite_of_valuativeExtension F L
+  have htot_F : IsTotallyRamified F L :=
+    (IsUnramified.isTotallyRamified_iff_finrank_eq K F L).2 hinert.symm
   have he_F : Module.finrank F L = e :=
-    (Algebra.finrank_eq_of_equiv_equiv ψ.toRingEquiv (RingEquiv.refl L) rfl).trans he_L₀
+    Nat.eq_of_mul_eq_mul_left Module.finrank_pos ((Module.finrank_mul_finrank K F L).trans hdeg)
   exact ⟨TotallyRamifiedClass.ofExtension F L he_F htot_F,
     TotallyRamifiedClass.restrictScalars_ofExtension L he_F htot_F⟩
 
@@ -587,6 +579,7 @@ def totallyRamifiedOrbitEquiv (e : ℕ) :
     MulAction.orbitRel.Quotient (F ≃ₐ[K] F) (TotallyRamifiedClass F e) ≃
       {c : FiniteExtensionClass K //
         c.finrank = Module.finrank K F * e ∧ c.inertiaDegree = Module.finrank K F} :=
+  haveI := IsUnramified.isGalois K F
   Equiv.ofBijective
     (Quotient.lift
       (fun x ↦ ⟨x.restrictScalars K, x.finrank_restrictScalars, x.inertiaDegree_restrictScalars⟩)
@@ -630,9 +623,11 @@ def separableTotallyRamifiedOrbitEquiv (e : ℕ) :
       {c : FiniteExtensionClass K //
         c.IsSeparable ∧
           c.finrank = Module.finrank K F * e ∧ c.inertiaDegree = Module.finrank K F} :=
+  haveI := IsUnramified.isGalois K F
   Equiv.ofBijective
     (Quotient.lift
-      (fun x ↦ ⟨x.1.restrictScalars K, (x.1.isSeparable_restrictScalars_iff).2 x.2,
+      (fun x ↦ ⟨x.1.restrictScalars K,
+        (x.1.isSeparable_restrictScalars_iff).2 ⟨inferInstance, x.2⟩,
         x.1.finrank_restrictScalars, x.1.inertiaDegree_restrictScalars⟩)
       fun _ y ⟨τ, hτ⟩ ↦ Subtype.ext (hτ ▸ TotallyRamifiedClass.restrictScalars_smul τ y.1))
     ⟨Quotient.ind₂ fun x y h ↦ Quotient.sound <| by
@@ -641,7 +636,7 @@ def separableTotallyRamifiedOrbitEquiv (e : ℕ) :
         exact ⟨τ, Subtype.ext hτ⟩,
       fun ⟨_, hsep, hdeg, hinert⟩ ↦ by
         obtain ⟨x, rfl⟩ := exists_totallyRamifiedClass_restrictScalars_eq K F hdeg hinert
-        exact ⟨⟦⟨x, (x.isSeparable_restrictScalars_iff).1 hsep⟩⟧, rfl⟩⟩
+        exact ⟨⟦⟨x, ((x.isSeparable_restrictScalars_iff).1 hsep).2⟩⟧, rfl⟩⟩
 
 /-- On the orbit `⟦x⟧`, `separableTotallyRamifiedOrbitEquiv K F e` evaluates to
 `x.1.restrictScalars K`. -/
@@ -686,6 +681,21 @@ def extensionClassFinrankEquivSigma (n : ℕ) :
   left_inv _ := rfl
   right_inv := fun ⟨⟨_, _⟩, ⟨_, _, rfl⟩⟩ ↦ rfl
 
+/-- Evaluating `extensionClassFinrankEquivSigma K n` tags a class with its residue degree. -/
+@[simp]
+theorem extensionClassFinrankEquivSigma_apply (n : ℕ)
+    (c : {c : FiniteExtensionClass K // c.finrank = n}) :
+    extensionClassFinrankEquivSigma K n c =
+      ⟨⟨c.1.inertiaDegree, c.1.inertiaDegree_dvd_finrank.trans (dvd_of_eq c.2)⟩,
+        ⟨c.1, c.2, rfl⟩⟩ := (rfl)
+
+/-- The inverse of `extensionClassFinrankEquivSigma K n` forgets the residue-degree fibre tag. -/
+@[simp]
+theorem extensionClassFinrankEquivSigma_symm_apply (n : ℕ)
+    (p : Σ f : {f : ℕ // f ∣ n},
+      {c : FiniteExtensionClass K // c.finrank = n ∧ c.inertiaDegree = f.1}) :
+    (extensionClassFinrankEquivSigma K n).symm p = ⟨p.2.1, p.2.2.1⟩ := (rfl)
+
 /-- Partition of the separable degree-`n` extension classes of `K` by their residue degree
 `f ∣ n`. -/
 def separableExtensionClassFinrankEquivSigma (n : ℕ) :
@@ -699,6 +709,23 @@ def separableExtensionClassFinrankEquivSigma (n : ℕ) :
   invFun p := ⟨p.2.1, p.2.2.1, p.2.2.2.1⟩
   left_inv _ := rfl
   right_inv := fun ⟨⟨_, _⟩, ⟨_, _, _, rfl⟩⟩ ↦ rfl
+
+/-- Evaluating `separableExtensionClassFinrankEquivSigma K n` tags a separable class with its
+residue degree. -/
+@[simp]
+theorem separableExtensionClassFinrankEquivSigma_apply (n : ℕ)
+    (c : {c : FiniteExtensionClass K // c.IsSeparable ∧ c.finrank = n}) :
+    separableExtensionClassFinrankEquivSigma K n c =
+      ⟨⟨c.1.inertiaDegree, c.1.inertiaDegree_dvd_finrank.trans (dvd_of_eq c.2.2)⟩,
+        ⟨c.1, c.2.1, c.2.2, rfl⟩⟩ := (rfl)
+
+/-- The inverse of `separableExtensionClassFinrankEquivSigma K n` forgets the residue-degree fibre
+tag. -/
+@[simp]
+theorem separableExtensionClassFinrankEquivSigma_symm_apply (n : ℕ)
+    (p : Σ f : {f : ℕ // f ∣ n},
+      {c : FiniteExtensionClass K // c.IsSeparable ∧ c.finrank = n ∧ c.inertiaDegree = f.1}) :
+    (separableExtensionClassFinrankEquivSigma K n).symm p = ⟨p.2.1, p.2.2.1, p.2.2.2.1⟩ := (rfl)
 
 variable (F : Type v) [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F] [Algebra K F] [ValuativeExtension K F] [IsUnramified K F]
@@ -742,8 +769,8 @@ theorem tsum_extensionClass_inertiaDegree_div_natCardAut (e : ℕ)
         c.finrank = Module.finrank K F * e ∧ c.inertiaDegree = Module.finrank K F},
         w c.1 / (c.1.natCardAut : ℝ≥0∞) =
       (Module.finrank K F : ℝ≥0∞)⁻¹ *
-        ∑' x : TotallyRamifiedClass F e,
-          w (x.restrictScalars K) / (x.natCardAut : ℝ≥0∞) :=
+        ∑' x : TotallyRamifiedClass F e, w (x.restrictScalars K) / (x.natCardAut : ℝ≥0∞) :=
+  haveI := IsUnramified.isGalois K F
   tsum_extensionClass_div_natCardAut_of_orbitEquiv K F
     (TotallyRamifiedClass.restrictScalars K) TotallyRamifiedClass.natCardAut
     TotallyRamifiedClass.natCardAut_smul TotallyRamifiedClass.natCardAut_restrictScalars
@@ -753,16 +780,13 @@ theorem tsum_extensionClass_inertiaDegree_div_natCardAut (e : ℕ)
 `[F : K]`. -/
 theorem tsum_extensionClass_inertiaDegree_div_natCardAut_of_dvd {n : ℕ}
     (hn : Module.finrank K F ∣ n) (w : FiniteExtensionClass K → ℝ≥0∞) :
-    ∑' c : {c : FiniteExtensionClass K //
-        c.finrank = n ∧ c.inertiaDegree = Module.finrank K F},
+    ∑' c : {c : FiniteExtensionClass K // c.finrank = n ∧ c.inertiaDegree = Module.finrank K F},
         w c.1 / (c.1.natCardAut : ℝ≥0∞) =
       (Module.finrank K F : ℝ≥0∞)⁻¹ *
         ∑' x : TotallyRamifiedClass F (n / Module.finrank K F),
-          w (x.restrictScalars K) / (x.natCardAut : ℝ≥0∞) :=
-  tsum_extensionClass_div_natCardAut_of_orbitEquiv K F
-    (TotallyRamifiedClass.restrictScalars K) TotallyRamifiedClass.natCardAut
-    TotallyRamifiedClass.natCardAut_smul TotallyRamifiedClass.natCardAut_restrictScalars
-    (totallyRamifiedOrbitEquivOfDvd K F hn) (coe_totallyRamifiedOrbitEquivOfDvd_mk K F hn) w
+          w (x.restrictScalars K) / (x.natCardAut : ℝ≥0∞) := by
+  have h := tsum_extensionClass_inertiaDegree_div_natCardAut K F (n / Module.finrank K F) w
+  rwa [Nat.mul_div_cancel' hn] at h
 
 /-- **Separable weighted class-sum reduction along the unramified part.** For any `ℝ≥0∞`-valued
 invariant `w` on `FiniteExtensionClass K`, summing `w(c) / #Aut_K(c)` over the separable
@@ -778,6 +802,7 @@ theorem tsum_separable_extensionClass_inertiaDegree_div_natCardAut (e : ℕ)
       (Module.finrank K F : ℝ≥0∞)⁻¹ *
         ∑' x : {x : TotallyRamifiedClass F e // x.IsSeparable},
           w (x.1.restrictScalars K) / (x.1.natCardAut : ℝ≥0∞) :=
+  haveI := IsUnramified.isGalois K F
   tsum_extensionClass_div_natCardAut_of_orbitEquiv K F
     (fun x : {x : TotallyRamifiedClass F e // x.IsSeparable} ↦ x.1.restrictScalars K)
     (fun x ↦ x.1.natCardAut) (fun τ x ↦ TotallyRamifiedClass.natCardAut_smul τ x.1)
@@ -793,14 +818,10 @@ theorem tsum_separable_extensionClass_inertiaDegree_div_natCardAut_of_dvd {n : �
         w c.1 / (c.1.natCardAut : ℝ≥0∞) =
       (Module.finrank K F : ℝ≥0∞)⁻¹ *
         ∑' x : {x : TotallyRamifiedClass F (n / Module.finrank K F) // x.IsSeparable},
-          w (x.1.restrictScalars K) / (x.1.natCardAut : ℝ≥0∞) :=
-  tsum_extensionClass_div_natCardAut_of_orbitEquiv K F
-    (fun x : {x : TotallyRamifiedClass F (n / Module.finrank K F) // x.IsSeparable} ↦
-      x.1.restrictScalars K)
-    (fun x ↦ x.1.natCardAut) (fun τ x ↦ TotallyRamifiedClass.natCardAut_smul τ x.1)
-    (fun x ↦ by rw [TotallyRamifiedClass.stabilizer_separable_eq, x.1.natCardAut_restrictScalars])
-    (separableTotallyRamifiedOrbitEquivOfDvd K F hn)
-    (coe_separableTotallyRamifiedOrbitEquivOfDvd_mk K F hn) w
+          w (x.1.restrictScalars K) / (x.1.natCardAut : ℝ≥0∞) := by
+  have h := tsum_separable_extensionClass_inertiaDegree_div_natCardAut K F
+    (n / Module.finrank K F) w
+  rwa [Nat.mul_div_cancel' hn] at h
 
 end DecompositionAndWeightedSums
 
