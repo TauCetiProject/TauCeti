@@ -88,20 +88,9 @@ def wignerCoordinateIndex (n : ℕ) : Fin n ⊕ FinStrictUpper n → StrictUpper
 /-- The embedding of finite `n × n` Wigner coordinates into `StrictUpper ⊕ ℕ` is injective. -/
 theorem wignerCoordinateIndex_injective (n : ℕ) :
     Function.Injective (wignerCoordinateIndex n) := by
-  intro a b h
-  cases a with
-  | inl i =>
-    cases b with
-    | inl j =>
-      simp only [wignerCoordinateIndex, Sum.inr.injEq] at h
-      exact congrArg Sum.inl (Fin.ext h)
-    | inr j => simp [wignerCoordinateIndex] at h
-  | inr i =>
-    cases b with
-    | inl j => simp [wignerCoordinateIndex] at h
-    | inr j =>
-      simp only [wignerCoordinateIndex, Sum.inl.injEq, Subtype.mk.injEq, Prod.mk.injEq] at h
-      exact congrArg Sum.inr (Subtype.ext (Prod.ext (Fin.ext h.1) (Fin.ext h.2)))
+  rintro (i | i) (j | j) h <;>
+    simp only [wignerCoordinateIndex, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, Subtype.ext_iff,
+      Prod.ext_iff, Fin.ext_iff] at h ⊢ <;> exact h
 
 variable {Ω : Type*}
 
@@ -419,7 +408,6 @@ section Entries
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-
 /-- If the entries of the top-left `n × n` corner are centred, every entry of the Wigner matrix of
 size `n` has expectation zero. -/
 theorem integral_wignerMatrix_apply_eq_zero_of_lt {n : ℕ}
@@ -444,16 +432,12 @@ theorem integral_wignerMatrix_apply_eq_zero (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P
 matrix of size `n`. -/
 theorem memLp_wignerMatrix_apply_of_lt {p : ℝ≥0∞} {n : ℕ}
     (hξ : ∀ ij, ij.1.2 < n → MemLp (ξ ij) p P) (hη : ∀ i, i < n → MemLp (η i) p P)
-    (i j : Fin n) :
-    MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P := by
+    (i j : Fin n) : MemLp (fun ω ↦ wignerMatrix ξ η n ω i j) p P := by
   rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h]
-    exact (hξ ⟨(i.val, j.val), h⟩ j.2).const_mul _
+  · simpa [wignerMatrix_apply_of_lt _ _ _ h] using (hξ ⟨(i.val, j.val), h⟩ j.2).const_mul _
   · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self]
-    exact (hη i.val i.2).ofReal.const_mul _
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h]
-    exact (hξ ⟨(j.val, i.val), h⟩ i.2).star.const_mul _
+    simp only [wignerMatrix_apply_self]; exact (hη i.val i.2).ofReal.const_mul _
+  · simpa [wignerMatrix_apply_of_gt _ _ _ h] using (hξ ⟨(j.val, i.val), h⟩ i.2).star.const_mul _
 
 /-- If the entries of the array lie in `Lᵖ`, so does every entry of the Wigner matrix. -/
 theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p P)
@@ -471,25 +455,20 @@ theorem memLp_prod_wignerMatrix_apply [IsFiniteMeasure P] {p : ℝ≥0∞} {ι :
   · simpa using memLp_const (1 : ℂ)
   · have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
     have htop : (Fintype.card ι : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
-    have h := MemLp.fun_prod (s := Finset.univ)
-      (p := fun _ : ι ↦ p * (Fintype.card ι : ℝ≥0∞))
+    have h := MemLp.fun_prod (s := Finset.univ) (p := fun _ : ι ↦ p * Fintype.card ι)
       fun s _ ↦ memLp_wignerMatrix_apply_of_lt hξ hη (u s) (v s)
-    have hexp : ∑ _s : ι, (p * (Fintype.card ι : ℝ≥0∞))⁻¹ = p⁻¹ := by
-      rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-        ENNReal.mul_inv (Or.inr htop) (Or.inr hcard),
-        mul_left_comm (Fintype.card ι : ℝ≥0∞) p⁻¹ _,
-        ENNReal.mul_inv_cancel hcard htop, mul_one]
-    rwa [hexp, inv_inv] at h
+    rwa [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+      ENNReal.mul_inv (.inr htop) (.inr hcard), mul_left_comm (Fintype.card ι : ℝ≥0∞) p⁻¹ _,
+      ENNReal.mul_inv_cancel hcard htop, mul_one, inv_inv] at h
 
 /-- A product of `k` entries of a Wigner matrix, indexed by a finite type `ι` of cardinality `k`,
 is integrable when the entries of the array lie in `Lᵏ`. -/
 theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι]
     (hξ : ∀ ij, MemLp (ξ ij) (Fintype.card ι) P) (hη : ∀ i, MemLp (η i) (Fintype.card ι) P)
     {n : ℕ} (u v : ι → Fin n) :
-    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
-  rw [← memLp_one_iff_integrable]
-  exact memLp_prod_wignerMatrix_apply (fun ij _ ↦ by simpa using hξ ij)
-    (fun i _ ↦ by simpa using hη i) u v
+    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P :=
+  memLp_one_iff_integrable.mp <| memLp_prod_wignerMatrix_apply
+    (fun ij _ ↦ by simpa using hξ ij) (fun i _ ↦ by simpa using hη i) u v
 
 end Entries
 

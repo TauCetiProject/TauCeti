@@ -247,34 +247,26 @@ theorem norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow {Ω ι 𝕜 : T
   simpa only [integral_finsetSum _ fun i hi ↦ (hf i hi).const_mul _, integral_const_mul,
     Finset.mul_sum] using hbound
 
-/-- On a finite measure space, for `j ≤ m` and `f ∈ L^m(μ)`, the `j`th absolute moment `∫ ‖f‖ ^ j`
-is at most `μ.real Set.univ + ∫ ‖f‖ ^ m`. -/
+/-- On a finite measure space, for `j ≤ m` and `f ∈ L^m(μ)`,
+`∫ ‖f‖ ^ j ≤ μ.real Set.univ + ∫ ‖f‖ ^ m`. -/
 theorem integral_norm_pow_le_measureReal_univ_add_of_le {Ω E : Type*} [MeasurableSpace Ω]
     [NormedAddCommGroup E] {μ : Measure Ω} [IsFiniteMeasure μ] {f : Ω → E}
     {j m : ℕ} (hjm : j ≤ m) (hfp : MemLp f (m : ℕ) μ) :
     ∫ ω, ‖f ω‖ ^ j ∂μ ≤ μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ := by
   have hfj : MemLp f (j : ℕ) μ := hfp.mono_exponent (by exact_mod_cast hjm)
-  calc
-    ∫ ω, ‖f ω‖ ^ j ∂μ
-      ≤ ∫ ω, (1 + ‖f ω‖ ^ m) ∂μ :=
-        integral_mono hfj.integrable_norm_pow'
-          ((integrable_const 1).add hfp.integrable_norm_pow')
-          fun ω ↦ TauCeti.pow_le_one_add_pow_of_le (norm_nonneg _) hjm
+  calc ∫ ω, ‖f ω‖ ^ j ∂μ
+      ≤ ∫ ω, (1 + ‖f ω‖ ^ m) ∂μ := integral_mono hfj.integrable_norm_pow'
+        ((integrable_const 1).add hfp.integrable_norm_pow')
+        fun ω ↦ TauCeti.pow_le_one_add_pow_of_le (norm_nonneg _) hjm
     _ = μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ := by
-        rw [integral_add (integrable_const 1) hfp.integrable_norm_pow', integral_const, smul_eq_mul,
-          mul_one]
+        rw [integral_add (integrable_const 1) hfp.integrable_norm_pow', integral_const,
+          smul_eq_mul, mul_one]
 
-/-- On a probability space, for `j ≤ m` and `f ∈ L^m(μ)` with `∫ ‖f‖ ^ m ≤ B`, the `j`th absolute
-moment satisfies `∫ ‖f‖ ^ j ≤ 1 + B`. -/
+/-- On a probability space, for `j ≤ m`, `f ∈ L^m(μ)` and `∫ ‖f‖ ^ m ≤ B`, `∫ ‖f‖ ^ j ≤ 1 + B`. -/
 theorem integral_norm_pow_le_one_add_of_le {Ω E : Type*} [MeasurableSpace Ω]
     [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
     {j m : ℕ} {B : ℝ} (hjm : j ≤ m) (hfp : MemLp f (m : ℕ) μ)
-    (hf : ∫ ω, ‖f ω‖ ^ m ∂μ ≤ B) :
-    ∫ ω, ‖f ω‖ ^ j ∂μ ≤ 1 + B := by
-  calc
-    ∫ ω, ‖f ω‖ ^ j ∂μ ≤ μ.real Set.univ + ∫ ω, ‖f ω‖ ^ m ∂μ :=
-      integral_norm_pow_le_measureReal_univ_add_of_le hjm hfp
-    _ = 1 + ∫ ω, ‖f ω‖ ^ m ∂μ := by simp
-    _ ≤ 1 + B := by gcongr
+    (hf : ∫ ω, ‖f ω‖ ^ m ∂μ ≤ B) : ∫ ω, ‖f ω‖ ^ j ∂μ ≤ 1 + B := by
+  simpa using (integral_norm_pow_le_measureReal_univ_add_of_le hjm hfp).trans (add_le_add le_rfl hf)
 
 end MeasureTheory

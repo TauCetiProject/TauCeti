@@ -89,8 +89,7 @@ private def orientEntry {n : ℕ} (i j : Fin n) (z : ℂ) : ℂ :=
   if i.val < j.val then z else if j.val < i.val then star z else (z.re : ℂ)
 
 private theorem measurable_orientEntry {n : ℕ} (i j : Fin n) : Measurable (orientEntry i j) := by
-  unfold orientEntry
-  split_ifs
+  unfold orientEntry; split_ifs
   · exact measurable_id
   · exact continuous_star.measurable
   · exact Complex.measurable_ofReal.comp Complex.measurable_re
@@ -102,21 +101,32 @@ private theorem wignerMatrix_apply_eq_orientEntry {n : ℕ} (ω : Ω) (i j : Fin
         (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex n (entryIndex i j)) ω) := by
   rcases lt_trichotomy i.val j.val with h | h | h
   · simp [orientEntry, entryIndex, h]
-  · obtain rfl := Fin.ext h
-    simp [orientEntry, entryIndex]
+  · obtain rfl := Fin.ext h; simp [orientEntry, entryIndex]
   · simp [orientEntry, entryIndex, h, h.not_gt]
 
 private theorem aemeasurable_wignerCoordinate {n : ℕ}
     (hξ : ∀ ij, ij.1.2 < n → AEMeasurable (ξ ij) P)
-    (hη : ∀ i, i < n → AEMeasurable (η i) P) (k : Fin n ⊕ FinStrictUpper n) :
-    AEMeasurable (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex n k)) P := by
-  cases k with
-  | inl i =>
+    (hη : ∀ i, i < n → AEMeasurable (η i) P) :
+    ∀ k : Fin n ⊕ FinStrictUpper n,
+      AEMeasurable (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex n k)) P
+  | .inl i => by
     simp only [wignerCoordinateIndex_inl, Sum.elim_inr]
     exact Complex.measurable_ofReal.comp_aemeasurable (hη i.val i.2)
-  | inr p =>
-    simp only [wignerCoordinateIndex_inr, Sum.elim_inl]
-    exact hξ ⟨(p.1.1.val, p.1.2.val), p.2⟩ p.1.2.2
+  | .inr p => by
+    simpa only [wignerCoordinateIndex_inr, Sum.elim_inl] using
+      hξ ⟨(p.1.1.val, p.1.2.val), p.2⟩ p.1.2.2
+
+private noncomputable def prodOrientEntry {ι : Type*} [Fintype ι] {n : ℕ}
+    [DecidableEq (Fin n ⊕ FinStrictUpper n)] (u v : ι → Fin n)
+    (g : (Finset.univ.image fun s ↦ entryIndex (u s) (v s)) → ℂ) : ℂ :=
+  ∏ s, (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s)
+    (g ⟨entryIndex (u s) (v s), Finset.mem_image_of_mem _ (Finset.mem_univ s)⟩)
+
+private theorem measurable_prodOrientEntry {ι : Type*} [Fintype ι] {n : ℕ}
+    [DecidableEq (Fin n ⊕ FinStrictUpper n)] (u v : ι → Fin n) :
+    Measurable (prodOrientEntry u v) :=
+  Finset.measurable_prod _ fun _ _ ↦
+    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
 
 /-- Products of Wigner matrix entries over two finite index families whose unordered edge sets are
 disjoint are independent whenever the corner entries are independent, so the expectation of their
@@ -134,41 +144,28 @@ theorem integral_prod_mul_prod_wignerMatrix_apply_eq_mul_integral
       (∫ ω, ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s) ∂P) *
         (∫ ω, ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t) ∂P) := by
   classical
-  let X (k : Fin n ⊕ FinStrictUpper n) : Ω → ℂ :=
-    Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex n k)
-  let e₁ : ι₁ → Fin n ⊕ FinStrictUpper n := fun s ↦ entryIndex (u₁ s) (v₁ s)
-  let e₂ : ι₂ → Fin n ⊕ FinStrictUpper n := fun t ↦ entryIndex (u₂ t) (v₂ t)
-  let S₁ : Finset (Fin n ⊕ FinStrictUpper n) := Finset.univ.image e₁
-  let S₂ : Finset (Fin n ⊕ FinStrictUpper n) := Finset.univ.image e₂
-  have hS₁₂ : Disjoint S₁ S₂ := by
-    rw [Finset.disjoint_left]
-    intro k hk₁ hk₂
+  let X k := Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex n k)
+  let S₁ := Finset.univ.image fun s ↦ entryIndex (u₁ s) (v₁ s)
+  let S₂ := Finset.univ.image fun t ↦ entryIndex (u₂ t) (v₂ t)
+  have hS₁₂ : Disjoint S₁ S₂ := Finset.disjoint_left.2 fun k hk₁ hk₂ ↦ by
     obtain ⟨s, -, rfl⟩ := Finset.mem_image.mp hk₁
     obtain ⟨t, -, het⟩ := Finset.mem_image.mp hk₂
     exact hdisj s t (entryIndex_eq_entryIndex_iff.mp het.symm)
-  have hX (k : Fin n ⊕ FinStrictUpper n) : AEMeasurable (X k) P :=
-    aemeasurable_wignerCoordinate hξm hηm k
-  let c : ℂ := (Real.sqrt n : ℂ)⁻¹
-  let φ₁ : (S₁ → ℂ) → ℂ := fun g ↦ ∏ s : ι₁,
-    c * orientEntry (u₁ s) (v₁ s) (g ⟨e₁ s, Finset.mem_image_of_mem e₁ (Finset.mem_univ s)⟩)
-  let φ₂ : (S₂ → ℂ) → ℂ := fun g ↦ ∏ t : ι₂,
-    c * orientEntry (u₂ t) (v₂ t) (g ⟨e₂ t, Finset.mem_image_of_mem e₂ (Finset.mem_univ t)⟩)
-  have hφ₁ : Measurable φ₁ := Finset.measurable_prod _ fun s _ ↦
-    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
-  have hφ₂ : Measurable φ₂ := Finset.measurable_prod _ fun t _ ↦
-    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
-  have hXS₁ : AEMeasurable (fun ω (k : S₁) ↦ X k ω) P := aemeasurable_pi_iff.2 fun k ↦ hX k
-  have hXS₂ : AEMeasurable (fun ω (k : S₂) ↦ X k ω) P := aemeasurable_pi_iff.2 fun k ↦ hX k
-  have hind := (hindep.indepFun_finset₀ S₁ S₂ hS₁₂ hX).comp hφ₁ hφ₂
-  have heq₁ (ω : Ω) : (∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s)) = φ₁ (fun k : S₁ ↦ X k ω) := by
-    simp only [wignerMatrix_apply_eq_orientEntry, φ₁, X, e₁, c]
-  have heq₂ (ω : Ω) : (∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) = φ₂ (fun k : S₂ ↦ X k ω) := by
-    simp only [wignerMatrix_apply_eq_orientEntry, φ₂, X, e₂, c]
+  have hX := aemeasurable_wignerCoordinate hξm hηm
+  have heq₁ (ω : Ω) : (∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s)) =
+      prodOrientEntry u₁ v₁ (fun k ↦ X k ω) := by
+    simp only [wignerMatrix_apply_eq_orientEntry, prodOrientEntry, X]
+  have heq₂ (ω : Ω) : (∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) =
+      prodOrientEntry u₂ v₂ (fun k ↦ X k ω) := by
+    simp only [wignerMatrix_apply_eq_orientEntry, prodOrientEntry, X]
   simp_rw [heq₁, heq₂]
-  have hmul := hind.integral_fun_mul_eq_mul_integral
-    (hφ₁.comp_aemeasurable hXS₁).aestronglyMeasurable
-    (hφ₂.comp_aemeasurable hXS₂).aestronglyMeasurable
-  simpa only [Function.comp_apply] using hmul
+  have hind := (hindep.indepFun_finset₀ S₁ S₂ hS₁₂ hX).comp
+    (measurable_prodOrientEntry u₁ v₁) (measurable_prodOrientEntry u₂ v₂)
+  simpa only [Function.comp_apply] using hind.integral_fun_mul_eq_mul_integral
+    ((measurable_prodOrientEntry u₁ v₁).comp_aemeasurable
+      (aemeasurable_pi_iff.2 fun k ↦ hX k)).aestronglyMeasurable
+    ((measurable_prodOrientEntry u₂ v₂).comp_aemeasurable
+      (aemeasurable_pi_iff.2 fun k ↦ hX k)).aestronglyMeasurable
 
 /-- **Singleton edges vanish (corner hypotheses).** Let the entries of the `n × n` corner be
 independent and centred. For a finite family of positions `(u s, v s)`, if the unordered position
@@ -188,18 +185,15 @@ theorem integral_prod_wignerMatrix_apply_eq_zero_of_lt {ι : Type*} [Fintype ι]
       (∏ s : {s : ι // s = t}, wignerMatrix ξ η n ω (u s.1) (v s.1)) *
         (∏ s : {s : ι // s ≠ t}, wignerMatrix ξ η n ω (u s.1) (v s.1)) := by
     convert (Fintype.prod_subtype_mul_prod_subtype (· = t)
-      (fun s ↦ wignerMatrix ξ η n ω (u s) (v s))).symm
+      fun s ↦ wignerMatrix ξ η n ω (u s) (v s)).symm
   simp_rw [hsplit]
   rw [integral_prod_mul_prod_wignerMatrix_apply_eq_mul_integral hξm hηm hindep
     (fun s : {s // s = t} ↦ u s.1) (fun s : {s // s = t} ↦ v s.1)
     (fun s : {s // s ≠ t} ↦ u s.1) (fun s : {s // s ≠ t} ↦ v s.1)
     fun s₁ s₂ h ↦ s₂.2 (ht s₂.1 (h.symm.trans (by rw [s₁.2])))]
-  have huniq (ω : Ω) :
-      (∏ s : {s : ι // s = t}, wignerMatrix ξ η n ω (u s.1) (v s.1)) =
-        wignerMatrix ξ η n ω (u t) (v t) :=
-    Fintype.prod_unique _
-  simp_rw [huniq]
-  rw [integral_wignerMatrix_apply_eq_zero_of_lt hξ hη (u t) (v t), zero_mul]
+  simp_rw [Fintype.prod_unique]
+  rw [show (default : {s // s = t}).1 = t from rfl,
+    integral_wignerMatrix_apply_eq_zero_of_lt hξ hη (u t) (v t), zero_mul]
 
 /-- **Singleton edges vanish.** Let the entries of the array be independent and centred. For a
 finite family of positions `(u s, v s)`, if the unordered position `s(u t, v t)` is read by no

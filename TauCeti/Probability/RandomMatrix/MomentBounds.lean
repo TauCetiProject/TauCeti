@@ -53,15 +53,13 @@ theorem integral_norm_wignerMatrix_apply_pow_le_of_lt {k n : ℕ} {B : ℝ}
   have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
     simp [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
   rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hc, integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hξ ⟨_, h⟩ j.2) (by positivity)
+  · simpa only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hc, integral_const_mul] using
+      mul_le_mul_of_nonneg_left (hξ ⟨_, h⟩ j.2) (by positivity)
   · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hc, Complex.norm_real,
-      integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hη i.val i.2) (by positivity)
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hc,
-      integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hξ ⟨_, h⟩ i.2) (by positivity)
+    simpa only [wignerMatrix_apply_self, norm_mul, mul_pow, hc, Complex.norm_real,
+      integral_const_mul] using mul_le_mul_of_nonneg_left (hη i.val i.2) (by positivity)
+  · simpa only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hc,
+      integral_const_mul] using mul_le_mul_of_nonneg_left (hξ ⟨_, h⟩ i.2) (by positivity)
 
 /-- A bound on the `k`th absolute moments of the entry array passes to Wigner entries with
 normalization factor `(√n)⁻ᵏ`. -/
@@ -82,16 +80,14 @@ theorem norm_integral_prod_wignerMatrix_apply_le_of_lt {ι : Type*} [Fintype ι]
     ‖∫ ω, ∏ t, wignerMatrix ξ η n ω (u t) (v t) ∂P‖ ≤
       (Real.sqrt n)⁻¹ ^ Fintype.card ι * B := by
   have hk : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  calc
-    _ ≤ (Fintype.card ι : ℝ)⁻¹ *
-        ∑ t, ∫ ω, ‖wignerMatrix ξ η n ω (u t) (v t)‖ ^ Fintype.card ι ∂P := by
-      simpa using norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow _ univ_nonempty
-        (fun t _ ↦ (memLp_wignerMatrix_apply_of_lt hξp hηp (u t) (v t)).integrable_norm_pow
-          (by simp))
-    _ ≤ (Fintype.card ι : ℝ)⁻¹ *
-        ∑ _t : ι, (Real.sqrt n)⁻¹ ^ Fintype.card ι * B := by
-      gcongr with t
-      exact integral_norm_wignerMatrix_apply_pow_le_of_lt hξ hη (u t) (v t)
+  calc ‖∫ ω, ∏ t, wignerMatrix ξ η n ω (u t) (v t) ∂P‖
+      ≤ (Fintype.card ι : ℝ)⁻¹ *
+          ∑ t, ∫ ω, ‖wignerMatrix ξ η n ω (u t) (v t)‖ ^ Fintype.card ι ∂P := by
+        simpa using norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow _ univ_nonempty
+          fun t _ ↦ (memLp_wignerMatrix_apply_of_lt hξp hηp (u t) (v t)).integrable_norm_pow
+            (by simp)
+    _ ≤ (Fintype.card ι : ℝ)⁻¹ * ∑ _t : ι, (Real.sqrt n)⁻¹ ^ Fintype.card ι * B := by
+        gcongr with t; exact integral_norm_wignerMatrix_apply_pow_le_of_lt hξ hη (u t) (v t)
     _ = _ := by simp [hk]
 
 /-- Uniform `k`th absolute moments bound every expected product of `k` Wigner entries.
@@ -283,21 +279,18 @@ private theorem wignerMatrix_padZero_eq (n : ℕ) (ω : Ω) :
 private theorem iIndepFun_padZero {n : ℕ}
     (hindep : iIndepFun
       (fun k ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (wignerCoordinateIndex n k)) P) :
-    iIndepFun
-      (fun r : StrictUpper ⊕ ℕ ↦
+    iIndepFun (fun r : StrictUpper ⊕ ℕ ↦
         Sum.elim (padZeroOffDiag ξ n) (fun i ω ↦ (padZeroDiag η n i ω : ℂ)) r) P := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  refine TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_range
-    (e := wignerCoordinateIndex n) (hindep.congr fun k ↦ .of_forall fun ω ↦ ?_) ?_
-  · cases k with
-    | inl i => simp [padZeroDiag, i.2]
-    | inr p => simp [padZeroOffDiag, p.1.2.2]
-  · rintro (ij | i) hnot
-    · have hij : ¬ ij.1.2 < n := fun h ↦
-        hnot ⟨.inr ⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, by simp⟩
-      exact ⟨0, .of_forall fun ω ↦ by simp [padZeroOffDiag, hij]⟩
-    · have hi : ¬ i < n := fun h ↦ hnot ⟨.inl ⟨i, h⟩, by simp⟩
-      exact ⟨0, .of_forall fun ω ↦ by simp [padZeroDiag, hi]⟩
+  refine TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_range (e := wignerCoordinateIndex n)
+    (hindep.congr fun k ↦ .of_forall fun _ ↦ by
+      cases k with | inl i => simp [padZeroDiag, i.2] | inr p => simp [padZeroOffDiag, p.1.2.2]) ?_
+  rintro (ij | i) hnot
+  · refine ⟨0, .of_forall fun _ ↦ by
+      simp [padZeroOffDiag, show ¬ ij.1.2 < n from fun h ↦
+        hnot ⟨.inr ⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, by simp⟩]⟩
+  · exact ⟨0, .of_forall fun _ ↦ by
+      simp [padZeroDiag, show ¬ i < n from fun h ↦ hnot ⟨.inl ⟨i, h⟩, by simp⟩]⟩
 
 /-- Summing the expected entry products over all leading cyclic Wigner words of length `2 * m`
 (`m ≠ 0`) yields `(catalan m * n.descFactorial (m + 1)) * n⁻ᵐ` whenever the strict-upper entries of
@@ -308,32 +301,21 @@ theorem sum_integral_prod_wignerMatrix_leading_eq {m n : ℕ} (hm : m ≠ 0)
     ∑ w : Fin (2 * m) → Fin n with TreeWalk.IsLeadingCyclicWord m w,
       (∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P) =
       (catalan m * n.descFactorial (m + 1) : ℂ) * (n : ℂ)⁻¹ ^ m := by
-  have : NeZero m := ⟨hm⟩
-  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have : NeZero m := ⟨hm⟩; have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
   let ξ' : StrictUpper → Ω → ℂ := fun ij ω ↦ if ij.1.2 < n then ξ ij ω else 1
-  let e : FinStrictUpper n → StrictUpper := fun p ↦ ⟨(p.val.1.val, p.val.2.val), p.property⟩
-  have hindep' : iIndepFun ξ' P :=
-    TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_range (e := e)
-      (hindep.congr fun p ↦ .of_forall fun ω ↦ by simp [ξ', e, p.1.2.2])
-      fun ij hnot ↦ ⟨1, .of_forall fun ω ↦ by
-        have hij : ¬ ij.1.2 < n := fun h ↦
-          hnot ⟨⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, rfl⟩
-        simp [ξ', hij]⟩
-  have hsecond' (ij : StrictUpper) : ∫ ω, ‖ξ' ij ω‖ ^ 2 ∂P = 1 := by
-    dsimp only [ξ']
-    split_ifs with hij
-    · exact hsecond ij hij
-    · simp
+  have hindep' : iIndepFun ξ' P := TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_range
+    (e := fun p : FinStrictUpper n ↦ ⟨(p.val.1.val, p.val.2.val), p.property⟩)
+    (hindep.congr fun p ↦ .of_forall fun _ ↦ by simp [ξ', p.1.2.2])
+    fun ij hnot ↦ ⟨1, .of_forall fun _ ↦ by
+      simp [ξ', show ¬ ij.1.2 < n from fun h ↦
+        hnot ⟨⟨(⟨ij.1.1, ij.2.trans h⟩, ⟨ij.1.2, h⟩), ij.2⟩, rfl⟩]⟩
   have hcongr (ω : Ω) : wignerMatrix ξ η n ω = wignerMatrix ξ' η n ω :=
     wignerMatrix_congr ω (fun ij hij ↦ by simp [ξ', hij]) (fun _ _ ↦ rfl)
-  have hterm : ∀ w ∈ ({w : Fin (2 * m) → Fin n | TreeWalk.IsLeadingCyclicWord m w} : Finset _),
-      (∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P) = (n : ℂ)⁻¹ ^ m := by
-    intro w hw
-    obtain ⟨hns, hv⟩ := (mem_filter.mp hw).2
-    simp_rw [hcongr]
-    exact integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one
-      hindep' hsecond' w hns hv
-  rw [sum_congr rfl hterm, sum_const, TreeWalk.card_filter_leadingCyclicWord]
+  rw [sum_congr rfl fun w hw ↦ by
+    obtain ⟨hns, hv⟩ := (mem_filter.mp hw).2; simp_rw [hcongr]
+    exact integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one hindep'
+      (fun ij ↦ by dsimp only [ξ']; split_ifs with hij; exacts [hsecond ij hij, by simp]) w hns hv,
+    sum_const, TreeWalk.card_filter_leadingCyclicWord]
   simp [Fintype.card_fin]
 
 /-- Quantitative `O(n⁻¹)` error bound between the expected even normalized Wigner trace of degree
@@ -353,48 +335,20 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le {m n
     ‖(n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - (catalan m : ℂ)‖ ≤
       ((catalan m * (m + 1).choose 2 : ℝ) + (m : ℝ) ^ (2 * m) * B) / n := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have hB : 0 ≤ B :=
-    (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans
-      (hη 0 (Nat.pos_of_ne_zero hn))
+  have hB : 0 ≤ B := (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans
+    (hη 0 (Nat.pos_of_ne_zero hn))
   rcases eq_or_ne m 0 with rfl | hm
-  · have hnc : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-    simp [hnc, div_nonneg hB (Nat.cast_nonneg n)]
+  · simp [Nat.cast_ne_zero.mpr hn, div_nonneg hB (Nat.cast_nonneg n)]
   · let S := ∑ w : Fin (2 * m) → Fin n with TreeWalk.IsLeadingCyclicWord m w,
         ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P
     have hrem := norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le
-      (ξ := padZeroOffDiag ξ n) (η := padZeroDiag η n) (n := n)
-      (iIndepFun_padZero hindep)
-      (fun ij ↦ by
-        dsimp [padZeroOffDiag]
-        split_ifs with h
-        · exact hξzero ij h
-        · simp)
-      (fun i ↦ by
-        dsimp [padZeroDiag]
-        split_ifs with h
-        · exact hηzero i h
-        · simp)
-      hm
-      (fun ij ↦ by
-        dsimp [padZeroOffDiag]
-        split_ifs with h
-        · exact hξp ij h
-        · exact MemLp.zero)
-      (fun i ↦ by
-        dsimp [padZeroDiag]
-        split_ifs with h
-        · exact hηp i h
-        · exact MemLp.zero)
-      (fun ij ↦ by
-        dsimp [padZeroOffDiag]
-        split_ifs with h
-        · exact hξ ij h
-        · simpa [zero_pow (by omega : 2 * m ≠ 0)] using hB)
-      (fun i ↦ by
-        dsimp [padZeroDiag]
-        split_ifs with h
-        · exact hη i h
-        · simpa [zero_pow (by omega : 2 * m ≠ 0)] using hB)
+      (ξ := padZeroOffDiag ξ n) (η := padZeroDiag η n) (n := n) (iIndepFun_padZero hindep)
+      (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξzero ij h, by simp])
+      (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hηzero i h, by simp]) hm
+      (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξp ij h, .zero])
+      (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hηp i h, .zero])
+      (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξ ij h, by simp [hm, hB]])
+      (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hη i h, by simp [hm, hB]])
     simp_rw [wignerMatrix_padZero_eq] at hrem
     have hindepξ : iIndepFun (fun p : FinStrictUpper n ↦
         ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩) P := by
@@ -403,32 +357,22 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le {m n
     have hlead : (n : ℂ)⁻¹ * S - (catalan m : ℂ) =
         (catalan m : ℂ) * (((n.descFactorial (m + 1) : ℂ) / (n : ℂ) ^ (m + 1)) - 1) := by
       dsimp only [S]
-      rw [sum_integral_prod_wignerMatrix_leading_eq (η := η) hm hindepξ hsecond]
-      rw [inv_pow, pow_succ', div_eq_mul_inv, mul_inv]
-      ring
+      rw [sum_integral_prod_wignerMatrix_leading_eq (η := η) hm hindepξ hsecond,
+        inv_pow, pow_succ', div_eq_mul_inv, mul_inv]; ring
     have hdesc : ‖((n.descFactorial (m + 1) : ℂ) / (n : ℂ) ^ (m + 1)) - 1‖ ≤
         ((m + 1).choose 2 : ℝ) / n := by
-      have hcast : ((n.descFactorial (m + 1) : ℂ) / (n : ℂ) ^ (m + 1)) - 1 =
-          ((((n.descFactorial (m + 1) : ℝ) / (n : ℝ) ^ (m + 1)) - 1 : ℝ) : ℂ) := by
-        push_cast
-        rfl
-      rw [hcast, Complex.norm_real, Real.norm_eq_abs]
-      exact Nat.abs_descFactorial_div_pow_sub_one_le hn (m + 1)
-    have hsplit : (n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - (catalan m : ℂ) =
-        (n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S) +
-          ((n : ℂ)⁻¹ * S - (catalan m : ℂ)) := by ring
-    rw [hsplit]
-    calc
-      ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S) +
-          ((n : ℂ)⁻¹ * S - (catalan m : ℂ))‖
-        ≤ ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S)‖ +
+      simpa only [← Complex.ofReal_natCast, ← Complex.ofReal_pow, ← Complex.ofReal_div,
+        ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] using
+        Nat.abs_descFactorial_div_pow_sub_one_le hn (m + 1)
+    rw [show (n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - (catalan m : ℂ) =
+      (n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S) +
+        ((n : ℂ)⁻¹ * S - (catalan m : ℂ)) by ring]
+    calc _ ≤ ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - S)‖ +
             ‖(n : ℂ)⁻¹ * S - (catalan m : ℂ)‖ := norm_add_le _ _
-      _ ≤ (m : ℝ) ^ (2 * m) * B / n +
-            (catalan m : ℝ) * (((m + 1).choose 2 : ℝ) / n) := by
-        gcongr
-        rw [hlead, norm_mul, Complex.norm_natCast]
-        exact mul_le_mul_of_nonneg_left hdesc (by positivity)
-      _ = ((catalan m * (m + 1).choose 2 : ℝ) + (m : ℝ) ^ (2 * m) * B) / n := by ring
+      _ ≤ (m : ℝ) ^ (2 * m) * B / n + (catalan m : ℝ) * (((m + 1).choose 2 : ℝ) / n) :=
+        add_le_add hrem (by rw [hlead, norm_mul, Complex.norm_natCast]
+                            exact mul_le_mul_of_nonneg_left hdesc (by positivity))
+      _ = _ := by ring
 
 /-- For independent centered entries on the `n × n` corner with `(2m + 1)`st absolute moments
 bounded by `B`, the expected normalized odd Wigner moment has norm at most
@@ -448,44 +392,17 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le_of_lt {m
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   · have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-    have hB : 0 ≤ B :=
-      (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans
-        (hη 0 (Nat.pos_of_ne_zero hn))
+    have hB : 0 ≤ B := (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans
+      (hη 0 (Nat.pos_of_ne_zero hn))
     have h := norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le
-      (ξ := padZeroOffDiag ξ n) (η := padZeroDiag η n) (n := n)
-      (iIndepFun_padZero hindep)
-      (fun ij ↦ by
-        dsimp [padZeroOffDiag]
-        split_ifs with h
-        · exact hξzero ij h
-        · simp)
-      (fun i ↦ by
-        dsimp [padZeroDiag]
-        split_ifs with h
-        · exact hηzero i h
-        · simp)
-      (fun ij ↦ by
-        dsimp [padZeroOffDiag]
-        split_ifs with h
-        · exact hξp ij h
-        · exact MemLp.zero)
-      (fun i ↦ by
-        dsimp [padZeroDiag]
-        split_ifs with h
-        · exact hηp i h
-        · exact MemLp.zero)
-      (fun ij ↦ by
-        dsimp [padZeroOffDiag]
-        split_ifs with h
-        · exact hξ ij h
-        · simpa [zero_pow (by omega : 2 * m + 1 ≠ 0)] using hB)
-      (fun i ↦ by
-        dsimp [padZeroDiag]
-        split_ifs with h
-        · exact hη i h
-        · simpa [zero_pow (by omega : 2 * m + 1 ≠ 0)] using hB)
-    simp_rw [wignerMatrix_padZero_eq] at h
-    exact h
+      (ξ := padZeroOffDiag ξ n) (η := padZeroDiag η n) (n := n) (iIndepFun_padZero hindep)
+      (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξzero ij h, by simp])
+      (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hηzero i h, by simp])
+      (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξp ij h, .zero])
+      (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hηp i h, .zero])
+      (fun ij ↦ by dsimp [padZeroOffDiag]; split_ifs with h; exacts [hξ ij h, by simp [hB]])
+      (fun i ↦ by dsimp [padZeroDiag]; split_ifs with h; exacts [hη i h, by simp [hB]])
+    simpa only [wignerMatrix_padZero_eq] using h
 
 end LeadingAndCatalan
 
