@@ -37,10 +37,11 @@ of the closed orbits in a compact window is an open condition on the parameter.
   the parameters for which this holds form an open set
   (`TauCeti.isOpen_setOf_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivative`).
 
-This is the openness half of the Kupka–Smale theorem for closed orbits, stated for families: for
-a family of perturbations of a field, small perturbations keep the closed orbits in a compact
-window nondegenerate. By `TauCeti.finite_image_fst_setOf_flowOf_eq`, the perturbed fields then have
-finitely many periods of closed orbits in the window.
+This is the openness step for nondegenerate closed orbits (a weaker condition than the
+hyperbolicity in the Kupka–Smale theorem), stated for families: for a family of perturbations of a
+field, small perturbations keep the closed orbits in a compact window nondegenerate. By
+`TauCeti.finite_image_fst_setOf_flowOf_eq`, the perturbed fields then have finitely many periods
+of closed orbits in the window.
 
 ## Main results
 
@@ -56,8 +57,8 @@ finitely many periods of closed orbits in the window.
 ## References
 
 * J. Palis, W. de Melo, *Geometric Theory of Dynamical Systems*, Springer 1982, Chapter 3, §3
-  (persistence of closed orbits under perturbation) and §4 (the Kupka–Smale theorem, whose
-  openness step is the compactness argument used here).
+  (persistence of hyperbolic closed orbits) and §4 (the Kupka–Smale theorem, whose openness step
+  for hyperbolic closed orbits is the compactness argument adapted here).
 * M. M. Peixoto, *On an approximation theorem of Kupka and Smale*, J. Differential Equations 3
   (1967), 214–227, §2.
 -/
@@ -85,8 +86,7 @@ include hv
 family of vector fields, and let `g` be `C¹` at `p` with `dg_p (v a₀ p) ≠ 0`, so that `{g = g p}`
 is a local section through `p` transverse to `v a₀`. Then each `x` near `p` reaches the section
 under the flow of each `v a` with `a` near `a₀`, at a time `σ (a, x)`, and the point reached tends
-to `p` as `(a, x)` tends to `(a₀, p)`. The time is the hitting time of the vertical field of the
-family. -/
+to `p` as `(a, x)` tends to `(a₀, p)`. -/
 theorem exists_eventually_flowOf_mem_level_and_tendsto {g : M → ℝ} {p : M}
     (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v a₀ p) ≠ 0) :
     ∃ σ : N × M → ℝ, (∀ᶠ z in 𝓝 (a₀, p), (σ z, z.2) ∈ flowDomain (v z.1) ∧
@@ -95,9 +95,8 @@ theorem exists_eventually_flowOf_mem_level_and_tendsto {g : M → ℝ} {p : M}
   set V := verticalField J v
   have hV : CMDiff 1 (fun z : N × M ↦ (⟨z, V z⟩ : TangentBundle (J.prod I) (N × M))) :=
     contMDiff_verticalField hv
-  have hva (a : N) : CMDiff 1 (fun y ↦ (⟨y, v a y⟩ : TangentBundle I M)) :=
-    hv.comp (contMDiff_const.prodMk contMDiff_id)
-  -- The time-`0` transition of the vertical field onto the section `{g ∘ Prod.snd = g p}`.
+  -- The time is the hitting time of the vertical field, and the point reached is read off from
+  -- the time-`0` transition of the vertical field onto the section `{g ∘ Prod.snd = g p}`.
   have h0 : ((0 : ℝ), (a₀, p)) ∈ flowDomain V := mem_flowDomain_zero hV _
   have hflow0 : flowOf V 0 (a₀, p) = (a₀, p) := flowOf_zero V _
   have hG : ContMDiffAt (J.prod I) 𝓘(ℝ) 1 (g ∘ Prod.snd) (flowOf V 0 (a₀, p)) := by
@@ -109,12 +108,12 @@ theorem exists_eventually_flowOf_mem_level_and_tendsto {g : M → ℝ} {p : M}
   refine ⟨flowHittingTime V (g ∘ Prod.snd) 0 (a₀, p), ?_, ?_⟩
   · filter_upwards [eventually_flowHittingTime hV h0 hG hGV] with ⟨a, x⟩ ⟨hdom, hlev⟩
     rw [mem_flowDomain_verticalField_iff] at hdom
-    rw [hflow0, comp_apply, comp_apply, flowOf_verticalField (hva a)] at hlev
+    rw [hflow0, comp_apply, comp_apply, flowOf_verticalField (hv.apply_param a)] at hlev
     exact ⟨hdom, hlev⟩
   · have h := (continuousAt_flowTransition hV h0 hG hGV).tendsto
     rw [flowTransition_self, hflow0] at h
     refine (continuous_snd.tendsto _).comp h |>.congr fun ⟨a, x⟩ ↦ ?_
-    rw [comp_apply, flowTransition_apply, flowOf_verticalField (hva a)]
+    rw [comp_apply, flowTransition_apply, flowOf_verticalField (hv.apply_param a)]
 
 /-- **Closed orbits near a nondegenerate closed orbit are nondegenerate.** Let `v` be a jointly
 `C¹` family of vector fields, and let `p` return to itself at time `T₀` under the flow of `v a₀`.
@@ -133,39 +132,30 @@ theorem eventually_not_hasEigenvalue_returnDerivative_of_flowOf_eq {g : M → �
   obtain ⟨τ, c, -, -, -, -, horbit, huniq⟩ :=
     exists_contMDiffAt_closedOrbit_continuation (n := 1) le_rfl hv hP hp hg hgv hnd
   obtain ⟨σ, hlev, hπ⟩ := exists_eventually_flowOf_mem_level_and_tendsto hv hg hgv
-  have hva (a : N) : CMDiff 1 (fun y ↦ (⟨y, v a y⟩ : TangentBundle I M)) :=
-    hv.comp (contMDiff_const.prodMk contMDiff_id)
   -- Pull every local statement back to `𝓝 (a₀, T₀, p)`, along the map flowing `x` into the
-  -- section through `p` and along the map reading `(a, t, x)` in the flow domain of the vertical
-  -- field.
+  -- section through `p`.
   have hpair : Tendsto (fun y : N × ℝ × M ↦ (y.1, y.2.2)) (𝓝 (a₀, T₀, p)) (𝓝 (a₀, p)) :=
     (continuous_fst.prodMk continuous_snd.snd).tendsto _
   have hproj : Tendsto (fun y : N × ℝ × M ↦ (y.1, y.2.1, flowOf (v y.1) (σ (y.1, y.2.2)) y.2.2))
       (𝓝 (a₀, T₀, p)) (𝓝 (a₀, T₀, p)) :=
     (continuous_fst.tendsto _).prodMk_nhds
       ((continuous_snd.fst.tendsto _).prodMk_nhds (hπ.comp hpair))
-  have hdom : Tendsto (fun y : N × ℝ × M ↦ (y.2.1, (y.1, y.2.2))) (𝓝 (a₀, T₀, p))
-      (𝓝 (T₀, (a₀, p))) :=
-    ((continuous_snd.fst).prodMk (continuous_fst.prodMk continuous_snd.snd)).tendsto _
   -- Near `(a₀, p)`, `g` is still `C¹` and transverse to the fields of the family.
   have hgnear :=
     eventually_contMDiffAt_and_mvfderiv_apply_ne_zero hv.continuous.continuousAt hg hgv
   filter_upwards [hpair.eventually hlev, hproj.eventually huniq,
     (continuous_fst.tendsto _).eventually horbit,
-    hdom.eventually ((isOpen_flowDomain (contMDiff_verticalField hv)).mem_nhds
-      (mem_flowDomain_verticalField_iff.2 hP)),
-    hpair.eventually hgnear, (hpair.comp hproj).eventually hgnear]
+    eventually_mem_flowDomain hv hP, hpair.eventually hgnear, (hpair.comp hproj).eventually hgnear]
     with ⟨a, t, x⟩ ⟨hσdom, hσg⟩ hu ⟨_, _, _, _, hndc⟩ htx ⟨hgx, hgvx⟩ ⟨hgx', hgvx'⟩ hper
-  replace htx : (t, x) ∈ flowDomain (v a) := mem_flowDomain_verticalField_iff.1 htx
   dsimp only [comp_apply] at hσdom hσg hu hndc hgx hgvx hgx' hgvx' hper ⊢
   -- The point `x' = flowOf (v a) (σ (a, x)) x` lies on the section through `p` and returns to
   -- itself at time `t`, so it is the continued orbit `c a`, with return time `τ a = t`.
   set x' := flowOf (v a) (σ (a, x)) x
-  obtain ⟨-, hper'⟩ := flowOf_flowOf_of_flowOf_eq (hva a) hσdom htx hper
+  obtain ⟨-, hper'⟩ := flowOf_flowOf_of_flowOf_eq (hv.apply_param a) hσdom htx hper
   obtain ⟨ht, hx'⟩ := hu.1 ⟨hper', hσg⟩
   rw [← ht, ← hx'] at hndc
   refine ⟨hgx, hgvx, ?_⟩
-  rwa [hasEigenvalue_returnDerivative_iff (hva a) hσdom rfl htx hper hgx hgvx hgx' hgvx']
+  rwa [hasEigenvalue_returnDerivative_iff (hv.apply_param a) hσdom rfl htx hper hgx hgvx hgx' hgvx']
 
 variable {S : Set (ℝ × M)}
 
@@ -183,13 +173,6 @@ theorem eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivati
     ∀ᶠ a in 𝓝 a₀, S ⊆ flowDomain (v a) ∧ ∀ x ∈ S, flowOf (v a) x.1 x.2 = x.2 →
       ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g x.2 ∧ mvfderiv I g x.2 (v a x.2) ≠ 0 ∧
         ¬(returnDerivative (v a) g x.1 x.2).HasEigenvalue 1 := by
-  have hV := contMDiff_verticalField (J := J) hv
-  have hva (a : N) : CMDiff 1 (fun y ↦ (⟨y, v a y⟩ : TangentBundle I M)) :=
-    hv.comp (contMDiff_const.prodMk contMDiff_id)
-  -- Read a pair `(a, (t, x))` as the point `(t, (a, x))` of the flow domain of the vertical field.
-  have hmap (y : ℝ × M) : Tendsto (fun z : N × (ℝ × M) ↦ (z.2.1, (z.1, z.2.2))) (𝓝 (a₀, y))
-      (𝓝 (y.1, (a₀, y.2))) :=
-    ((continuous_snd.fst).prodMk (continuous_fst.prodMk continuous_snd.snd)).tendsto _
   suffices h : ∀ y ∈ S, ∀ᶠ z : N × (ℝ × M) in 𝓝 (a₀, y), z.2 ∈ flowDomain (v z.1) ∧
       (flowOf (v z.1) z.2.1 z.2.2 = z.2.2 → ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g z.2.2 ∧
         mvfderiv I g z.2.2 (v z.1 z.2.2) ≠ 0 ∧
@@ -200,11 +183,7 @@ theorem eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivati
           ¬(returnDerivative (v a) g y.1 y.2).HasEigenvalue 1)) h] with a ha
     exact ⟨fun y hy ↦ (ha y hy).1, fun y hy ↦ (ha y hy).2⟩
   rintro ⟨t, x⟩ hy
-  have hT : (t, (a₀, x)) ∈ flowDomain (verticalField J v) :=
-    mem_flowDomain_verticalField_iff.2 (hSD hy)
-  have hdom : ∀ᶠ z : N × (ℝ × M) in 𝓝 (a₀, (t, x)), z.2 ∈ flowDomain (v z.1) := by
-    filter_upwards [(hmap (t, x)).eventually ((isOpen_flowDomain hV).mem_nhds hT)] with z hz
-    exact mem_flowDomain_verticalField_iff.1 hz
+  have hdom := eventually_mem_flowDomain hv (hSD hy)
   by_cases hper : flowOf (v a₀) t x = x
   · -- A closed orbit of `v a₀`: the nearby closed orbits are nondegenerate.
     obtain ⟨g, hg, hgv, hndg⟩ := hnd (t, x) hy hper
@@ -214,18 +193,10 @@ theorem eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivati
     exact ⟨hz, fun hzper ↦ ⟨g, hzg hzper⟩⟩
   · -- Not a closed orbit of `v a₀`: by continuity of the flow, nor of the nearby fields.
     have hcont : ContinuousAt (fun z : N × (ℝ × M) ↦ (flowOf (v z.1) z.2.1 z.2.2, z.2.2))
-        (a₀, (t, x)) := by
-      have hflow : ContinuousAt (fun w : ℝ × (N × M) ↦ flowOf (verticalField J v) w.1 w.2)
-          (t, (a₀, x)) :=
-        ((contMDiffOn_flowOf le_rfl hV).continuousOn.continuousAt
-          ((isOpen_flowDomain hV).mem_nhds hT))
-      refine ContinuousAt.prodMk ?_ continuous_snd.snd.continuousAt
-      refine (continuous_snd.continuousAt.comp
-        (hflow.comp (f := fun z : N × (ℝ × M) ↦ (z.2.1, (z.1, z.2.2))) (hmap (t, x)))).congr
-        (Eventually.of_forall fun z ↦ ?_)
-      simp only [comp_apply, flowOf_verticalField (hva z.1)]
+        (a₀, (t, x)) :=
+      (contMDiffAt_flowOf le_rfl hv (hSD hy)).continuousAt.prodMk continuous_snd.snd.continuousAt
     filter_upwards [hdom, hcont.eventually ((isClosed_diagonal (X := M)).isOpen_compl.mem_nhds
-      (show (flowOf (v a₀) t x, x) ∉ diagonal M from hper))] with z hz hzper
+      (mt mem_diagonal_iff.1 hper))] with z hz hzper
     exact ⟨hz, fun h ↦ absurd h hzper⟩
 
 /-- **The parameters with nondegenerate closed orbits in a compact window form an open set.** For
