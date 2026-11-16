@@ -33,7 +33,11 @@ scheme `D` give
 More generally, for a vector bundle `E` of constant rank `r` on `X`, tensoring the sequence with
 `E` gives `0 ⟶ E ⊗ I ⟶ E ⟶ E ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the
 direct image of the pullback of `E` to `D`, a vector bundle of rank `r` on a scheme finite over `k`
-and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`). So `E ⊗ I` has
+and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`): it has
+finite-dimensional `H⁰`, vanishing `H¹` and Euler characteristic `r · dim_k Γ(D, 𝒪_D)`
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_zero_tensor_pushforward`,
+`Scheme.IdealSheafData.subsingleton_cohomology_one_tensor_pushforward` and
+`Scheme.IdealSheafData.eulerCharBelow_tensor_pushforward`). So `E ⊗ I` has
 finite-dimensional `H⁰` and `H¹` exactly when `E` does
 (`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`), and then
 
@@ -227,6 +231,31 @@ private lemma subsingleton_cohomology_one_tensorSequence_X₃ :
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
   have := subsingleton_cohomology_one_freePushforward k I (r := r)
   exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
+
+/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
+`H⁰(X, E ⊗ ι_* 𝒪_{V(I)})` is finite-dimensional. -/
+theorem finiteDimensional_cohomology_zero_tensor_pushforward :
+    FiniteDimensional k (Cohomology (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 0) :=
+  finiteDimensional_cohomology_zero_tensorSequence_X₃ k I E
+
+include k in
+/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
+`H¹(X, E ⊗ ι_* 𝒪_{V(I)})` vanishes. -/
+theorem subsingleton_cohomology_one_tensor_pushforward :
+    Subsingleton (Cohomology (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 1) :=
+  subsingleton_cohomology_one_tensorSequence_X₃ k I E
+
+/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank `r`, then
+`χ(X, E ⊗ ι_* 𝒪_{V(I)}) = r · dim_k Γ(V(I), 𝒪_{V(I)})`, the dimension being the rank of
+`V(I) ⟶ Spec k` at the point `s`. -/
+theorem eulerCharBelow_tensor_pushforward (s : Spec (.of k)) :
+    eulerCharBelow k X (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 =
+      r * (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
+  rw [eulerCharBelow_congr k e₃ 2, eulerCharBelow_freePushforward k I s]
 
 variable {k E} in
 /-- **Twisting by an ideal sheaf preserves finiteness of cohomology.** If `I ⊆ 𝒪_X` cuts out a
