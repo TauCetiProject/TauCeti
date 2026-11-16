@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Positive and negative roots
@@ -46,7 +47,10 @@ positive root is a nonnegative integer combination of the simple coroots.
   `TauCeti.reflectionPerm_self_notMem_posRoots`, `TauCeti.reflectionPerm_self_notMem_negRoots` say
   neither contains a root together with its negative.
 * `TauCeti.eq_of_isPos_of_reflection_eq` says that, in a reduced root pairing, a positive root is
-  determined by the effect of its reflection on any weight it moves.
+  determined by the effect of its reflection on any weight it moves;
+  `RootPairing.ker_coroot'_eq_iff_of_mem_posRoots` and
+  `RootPairing.ofIdx_eq_ofIdx_iff_of_mem_posRoots` deduce that distinct positive roots have
+  distinct coroot hyperplanes and distinct reflections in the Weyl group.
 * `TauCeti.bijOn_reflectionPerm_posRoots_diff_singleton` says a simple reflection permutes the
   positive roots other than its own simple root, and
   `TauCeti.sum_posRootsFinset_erase_comp_reflectionPerm` is the resulting reindexing rule for sums
@@ -312,6 +316,29 @@ theorem eq_of_isPos_of_reflection_eq [P.IsReduced] {β γ : ι} (hβ : b.IsPos �
     have hneg : β = P.reflectionPerm γ γ := P.root.injective (by
       rw [heq, RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self])
     exact ((isPos_reflectionPerm_self_iff_mem_negRoots P b γ).mp (hneg ▸ hβ) hγ).elim
+
+/-- Two positive roots have the same coroot hyperplane if and only if they are equal. -/
+theorem _root_.RootPairing.ker_coroot'_eq_iff_of_mem_posRoots [P.flip.IsReduced] {α β : ι}
+    (hα : α ∈ posRoots P b) (hβ : β ∈ posRoots P b) :
+    LinearMap.ker (P.coroot' α) = LinearMap.ker (P.coroot' β) ↔ α = β := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  rcases P.eq_or_eq_reflectionPerm_self_of_ker_coroot'_le h.le with rfl | rfl
+  · rfl
+  · exact absurd hβ (reflectionPerm_self_notMem_posRoots P b hα)
+
+/-- Two positive roots define the same reflection in `P.weylGroup` if and only if they are equal. -/
+theorem _root_.RootPairing.ofIdx_eq_ofIdx_iff_of_mem_posRoots [P.IsReduced] {α β : ι}
+    (hα : α ∈ posRoots P b) (hβ : β ∈ posRoots P b) :
+    RootPairing.weylGroup.ofIdx P α = RootPairing.weylGroup.ofIdx P β ↔ α = β := by
+  refine ⟨fun h ↦ eq_of_isPos_of_reflection_eq (x := P.root α) hα hβ ?_ ?_, fun h ↦ h ▸ rfl⟩
+  · simpa using congrArg (· • P.root α) h
+  · intro hfix
+    have hcor := congrArg (P.coroot' α) hfix
+    rw [P.reflection_apply_self, map_neg, P.coroot_root_two] at hcor
+    have h4 : ((2 + 2 : ℕ) : R) = 0 := by
+      rw [Nat.cast_add, Nat.cast_ofNat]
+      exact neg_eq_iff_add_eq_zero.mp hcor
+    exact Nat.cast_ne_zero.mpr (by decide : 2 + 2 ≠ 0) h4
 
 /-- The positive roots are closed under addition: a root that is the sum of two positive roots is
 positive, because heights add. -/
