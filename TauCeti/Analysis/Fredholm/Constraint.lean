@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
-public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.Analysis.Fredholm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Finiteness.Finsupp
 
@@ -66,7 +66,7 @@ property.
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
   Publications 52, 2012, Section 3.4 (evaluation maps and transversality to cycles) and
-  Appendix A.2 (Fredholm operators).
+  Appendix A.1 (Fredholm operators).
 -/
 
 public section
@@ -102,6 +102,11 @@ noncomputable def kerProdEquiv :
 /-- The identification of kernels does not move the underlying vector. -/
 theorem kerProdEquiv_apply (x : (L.domRestrict D.ker).ker) :
     ((kerProdEquiv D L x : (D.prod L).ker) : E) = ((x : D.ker) : E) :=
+  (rfl)
+
+/-- The inverse identification of kernels does not move the underlying vector either. -/
+theorem kerProdEquiv_symm_apply (v : (D.prod L).ker) :
+    (((kerProdEquiv D L).symm v : D.ker) : E) = v :=
   (rfl)
 
 /-! ### Exactness at the constraint space -/
@@ -201,8 +206,8 @@ theorem surjective_prod_iff :
   · rintro ⟨hD, hL⟩ ⟨y, g⟩
     obtain ⟨x, rfl⟩ := hD y
     obtain ⟨⟨k, hk⟩, hkg⟩ := hL (g - L x)
-    have hk : D k = 0 := hk
-    have hkg : L k = g - L x := hkg
+    rw [LinearMap.mem_ker, coe_coe] at hk
+    rw [domRestrict_apply] at hkg
     exact ⟨x + k, by simp [hk, hkg]⟩
 
 /-- If `D` is onto, so is the map from the constraint space onto the cokernel of the extended
@@ -240,15 +245,12 @@ theorem constraintCokerEquiv_mk (hD : Function.Surjective D) (g : G) :
 theorem surjective_prod_mkQL_comp_iff (ev : E →L[𝕜] G) (N : Submodule 𝕜 G) :
     Function.Surjective (D.prod (N.mkQL ∘L ev)) ↔
       Function.Surjective D ∧ D.ker.map (ev : E →ₗ[𝕜] G) ⊔ N = ⊤ := by
-  have hs : Function.Surjective ((N.mkQL ∘L ev).domRestrict D.ker) ↔
-      ((N.mkQL ∘L ev).domRestrict D.ker).range = ⊤ :=
-    (LinearMap.range_eq_top
-      (f := ((N.mkQL ∘L ev).domRestrict D.ker : D.ker →ₗ[𝕜] G ⧸ N))).symm
   have hrange : ((N.mkQL ∘L ev).domRestrict D.ker).range =
       (D.ker.map (ev : E →ₗ[𝕜] G)).map N.mkQ := by
     ext z
     simp
-  rw [surjective_prod_iff, hs, hrange, Submodule.map_mkQ_eq_top, sup_comm]
+  rw [surjective_prod_iff, ← coe_coe ((N.mkQL ∘L ev).domRestrict D.ker),
+    ← LinearMap.range_eq_top, hrange, Submodule.map_mkQ_eq_top, sup_comm]
 
 end Ring
 
@@ -269,8 +271,6 @@ theorem finrank_ker_prod_add_finrank_range_domRestrict [FiniteDimensional 𝕜 D
       finrank 𝕜 D.ker := by
   have h := (L.domRestrict D.ker : D.ker →ₗ[𝕜] G).finrank_range_add_finrank_ker
   rw [(kerProdEquiv D L).finrank_eq] at h
-  have : LinearMap.range (L.domRestrict D.ker : D.ker →ₗ[𝕜] G) =
-      (L.domRestrict D.ker).range := rfl
   omega
 
 /-- The cokernel of the extended operator is finite dimensional when the cokernel of `D` and the
@@ -314,9 +314,8 @@ theorem surjective_prod_iff_finrank_ker_add [FiniteDimensional 𝕜 D.ker] [Fini
     (hD : Function.Surjective D) :
     Function.Surjective (D.prod L) ↔ finrank 𝕜 (D.prod L).ker + finrank 𝕜 G = finrank 𝕜 D.ker := by
   have h := finrank_ker_prod_add_finrank_range_domRestrict D L
-  have hs : Function.Surjective (L.domRestrict D.ker) ↔ (L.domRestrict D.ker).range = ⊤ :=
-    (LinearMap.range_eq_top (f := (L.domRestrict D.ker : D.ker →ₗ[𝕜] G))).symm
-  rw [surjective_prod_iff, and_iff_right hD, hs]
+  rw [surjective_prod_iff, and_iff_right hD, ← coe_coe (L.domRestrict D.ker),
+    ← LinearMap.range_eq_top]
   constructor
   · intro htop
     rw [htop, finrank_top] at h
@@ -327,27 +326,6 @@ theorem surjective_prod_iff_finrank_ker_add [FiniteDimensional 𝕜 D.ker] [Fini
 end DivisionRing
 
 /-! ### Fredholmness -/
-
-section Inclusion
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-variable (F G : Type*)
-variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-variable [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [T1Space G] [FiniteDimensional 𝕜 G]
-
-/-- The inclusion `y ↦ (y, 0)` of `F` into `F × G` is Fredholm when `G` is finite dimensional. -/
-theorem isFredholm_inl : IsFredholm (inl 𝕜 F G) := by
-  refine Topology.IsClosedEmbedding.isFredholm ⟨isEmbedding_prodMkLeft 0, ?_⟩ ?_
-  · have : Set.range (inl 𝕜 F G) = Prod.snd ⁻¹' {0} := by
-      ext ⟨y, g⟩
-      simp [eq_comm]
-    rw [this]
-    exact isClosed_singleton.preimage continuous_snd
-  · change (LinearMap.range (LinearMap.inl 𝕜 F G)).CoFG
-    rw [LinearMap.range_inl]
-    exact Submodule.CoFG.ker _
-
-end Inclusion
 
 section Fredholm
 
@@ -371,7 +349,7 @@ theorem isFredholm_prod_iff {D : E →L[𝕜] F} {L : E →L[𝕜] G} :
     simp
   have hfin (M : E →L[𝕜] G) : ((inr 𝕜 F G).comp M).toLinearMap.HasFiniteRange :=
     LinearMap.HasFiniteRange.of_finite_dom.comp_right _
-  rw [hsplit, ← (isFredholm_inl (𝕜 := 𝕜) F G).comp_iff_right (f := D)]
+  rw [hsplit, ← (isFredholm_inl (K := 𝕜) F G).comp_iff_right (f := D)]
   exact ⟨fun h ↦ by simpa using h.add_hasFiniteRange (hfin (-L)),
     fun h ↦ h.add_hasFiniteRange (hfin L)⟩
 
