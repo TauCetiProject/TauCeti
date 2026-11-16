@@ -102,25 +102,18 @@ private theorem shiftGap_of_le {a l v : ℕ} (h : a ≤ v) : shiftGap a l v = v 
   simp [shiftGap, Nat.not_lt.mpr h]
 
 private theorem insertFn_of_lt {a b l q : ℕ} (φ ψ : ℕ → ℕ) (h : q < a) :
-    insertFn a b l φ ψ q = shiftGap a l (φ q) := by
-  simp [insertFn, h]
+    insertFn a b l φ ψ q = shiftGap a l (φ q) := by simp [insertFn, h]
 
 private theorem insertFn_of_le_of_lt {a b l q : ℕ} (φ ψ : ℕ → ℕ) (h₁ : a ≤ q) (h₂ : q < a + l) :
-    insertFn a b l φ ψ q = a + ψ (q - a) := by
-  simp [insertFn, Nat.not_lt.mpr h₁, h₂]
+    insertFn a b l φ ψ q = a + ψ (q - a) := by simp [insertFn, Nat.not_lt.mpr h₁, h₂]
 
 private theorem insertFn_of_le_of_lt_add {a b l q : ℕ} (φ ψ : ℕ → ℕ) (h₁ : a + l ≤ q)
     (h₂ : q < a + l + b) : insertFn a b l φ ψ q = shiftGap a l (φ (q - l)) := by
-  have hlt₁ : ¬q < a := by omega
-  have hlt₂ : ¬q < a + l := by omega
-  simp [insertFn, hlt₁, hlt₂, h₂]
+  simp [insertFn, show ¬q < a by omega, show ¬q < a + l by omega, h₂]
 
 private theorem insertFn_of_le {a b l q : ℕ} (φ ψ : ℕ → ℕ) (h : a + l + b ≤ q) :
     insertFn a b l φ ψ q = q := by
-  have hlt₁ : ¬q < a := by omega
-  have hlt₂ : ¬q < a + l := by omega
-  have hlt₃ : ¬q < a + l + b := by omega
-  simp [insertFn, hlt₁, hlt₂, hlt₃]
+  simp [insertFn, show ¬q < a by omega, show ¬q < a + l by omega, show ¬q < a + l + b by omega]
 
 private theorem insertFn_shiftGap {a b l z : ℕ} (φ ψ : ℕ → ℕ) (hz : z < a + b) :
     insertFn a b l φ ψ (shiftGap a l z) = shiftGap a l (φ z) := by
@@ -128,6 +121,26 @@ private theorem insertFn_shiftGap {a b l z : ℕ} (φ ψ : ℕ → ℕ) (hz : z 
   · rw [shiftGap_of_lt h, insertFn_of_lt _ _ h]
   · rw [shiftGap_of_le (by omega), insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
       Nat.add_sub_cancel]
+
+private theorem insertFn_zero_right {a l : ℕ} (x : PlanarMatching a) (ψ : ℕ → ℕ) :
+    insertFn a 0 l (pv x) ψ = appendFn a l (pv x) ψ := by
+  funext q
+  by_cases h1 : q < a
+  · rw [insertFn_of_lt _ _ h1, appendFn_of_lt _ _ h1, shiftGap_of_lt (pv_lt x h1)]
+  · by_cases h2 : q < a + l
+    · rw [insertFn_of_le_of_lt _ _ (by omega) h2, appendFn_of_le_of_lt _ _ (by omega) h2]
+    · rw [insertFn_of_le _ _ (by omega), appendFn_of_le _ _ (by omega)]
+
+private theorem pv_nested_apply (n q : ℕ) :
+    pv (nested n) q = if q < n + n then n + n - 1 - q else q := by
+  split_ifs with h
+  · exact pv_nested n h
+  · exact pv_of_le (nested n) (by omega)
+
+private theorem contractFn_apply (a : ℕ) (φ : ℕ → ℕ) (q : ℕ) :
+    contractFn a φ q = unskipN a (rejoin φ a (φ (skipN a q))) := by
+  simp only [contractFn, erasePair_apply]
+  rw [splice_of_ne] <;> (simp only [skipN]; split_ifs <;> omega)
 
 private theorem rotate_pow_val_apply {K : ℕ} (j : ℕ) (x : PlanarMatching K) (i : Fin K) :
     ((rotate K ^ j) x).1.val ((finRotate K ^ j) i) = (finRotate K ^ j) (x.1.val i) := by
@@ -144,63 +157,54 @@ private theorem mod_shiftGap_add {a b l v : ℕ} (hv : v < a + b) :
     (shiftGap a l v + b) % (a + b + l) = (v + b) % (a + b) := by
   by_cases h : v < a
   · rw [shiftGap_of_lt h, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  · rw [shiftGap_of_le (by omega)]
-    have h₁ : v + l + b = (v - a) + (a + b + l) := by omega
-    have h₂ : v + b = (v - a) + (a + b) := by omega
-    rw [h₁, h₂, Nat.add_mod_right, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+  · rw [shiftGap_of_le (by omega), show v + l + b = (v - a) + (a + b + l) by omega,
+      show v + b = (v - a) + (a + b) by omega, Nat.add_mod_right, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
 
 private theorem pv_insert_eq {a b l : ℕ} (x : PlanarMatching (a + b)) (y : PlanarMatching l) :
     pv (insert x y) = insertFn a b l (pv x) (pv y) := by
   funext q
   by_cases hq : q < a + l + b
   · rw [insert, pv_cast, pv_of_lt _ (by omega : q < a + b + l)]
-    set z := ((rotate (a + b) ^ b) x).append y
     have hr : insertFn a b l (pv x) (pv y) q < a + b + l := by
-      by_cases h₁ : q < a
-      · have := pv_lt x (by omega : q < a + b)
-        rw [insertFn_of_lt _ _ h₁, shiftGap]
-        split_ifs <;> omega
-      · by_cases h₂ : q < a + l
-        · have := pv_lt y (by omega : q - a < l)
-          rw [insertFn_of_le_of_lt _ _ (by omega) h₂]
-          omega
-        · have := pv_lt x (by omega : q - l < a + b)
-          rw [insertFn_of_le_of_lt_add _ _ (by omega) hq, shiftGap]
-          split_ifs <;> omega
-    suffices hfin : (((rotate (a + b + l) ^ b)⁻¹) z).1.val ⟨q, by omega⟩ =
-        ⟨insertFn a b l (pv x) (pv y) q, hr⟩ from congrArg Fin.val hfin
+      simp only [insertFn, shiftGap]
+      split_ifs
+      all_goals first | omega | (have := pv_lt x (by omega : q < a + b); omega) |
+        (have := pv_lt y (by omega : q - a < l); omega) |
+        (have := pv_lt x (by omega : q - l < a + b); omega)
+    suffices hfin :
+        (((rotate (a + b + l) ^ b)⁻¹) (((rotate (a + b) ^ b) x).append y)).1.val ⟨q, by omega⟩ =
+          ⟨insertFn a b l (pv x) (pv y) q, hr⟩ from congrArg Fin.val hfin
     rw [rotate_pow_inv_val_apply_eq_iff, Fin.ext_iff, Fin.coe_finRotate_pow, ← pv_coe,
       Fin.coe_finRotate_pow]
     dsimp only
+    have hrot : ∀ r, r < a + b →
+        pv ((rotate (a + b) ^ b) x) ((r + b) % (a + b)) = (pv x r + b) % (a + b) := by
+      intro r hr'
+      have h := congrArg Fin.val (rotate_pow_val_apply b x ⟨r, hr'⟩)
+      simpa only [Fin.coe_finRotate_pow, ← pv_coe] using h
     by_cases h₁ : q < a
-    · have hxlt := pv_lt x (by omega : q < a + b)
-      have hrot := congrArg Fin.val (rotate_pow_val_apply b x ⟨q, by omega⟩)
-      rw [Fin.coe_finRotate_pow, ← pv_coe, Fin.coe_finRotate_pow, ← pv_coe] at hrot
-      simp only [Nat.mod_eq_of_lt (by omega : q + b < a + b)] at hrot
+    · have h0 := hrot q (by omega)
+      rw [Nat.mod_eq_of_lt (by omega)] at h0
       rw [insertFn_of_lt _ _ h₁, Nat.mod_eq_of_lt (by omega : q + b < a + b + l),
-        pv_append_left _ _ (by omega : q + b < a + b), hrot, mod_shiftGap_add hxlt]
+        pv_append_left _ _ (by omega : q + b < a + b), h0, mod_shiftGap_add (pv_lt x (by omega))]
     · by_cases h₂ : q < a + l
-      · have hylt := pv_lt y (by omega : q - a < l)
+      · have := pv_lt y (by omega : q - a < l)
         rw [insertFn_of_le_of_lt _ _ (by omega) h₂,
           Nat.mod_eq_of_lt (by omega : q + b < a + b + l),
           pv_append_right _ _ (by omega) (by omega),
-          Nat.mod_eq_of_lt (by omega : a + pv y (q - a) + b < a + b + l)]
-        have : q + b - (a + b) = q - a := by omega
-        rw [this]
+          Nat.mod_eq_of_lt (by omega : a + pv y (q - a) + b < a + b + l),
+          show q + b - (a + b) = q - a by omega]
         omega
-      · have hxlt := pv_lt x (by omega : q - l < a + b)
-        have hmod : (q + b) % (a + b + l) = q - (a + l) := by
-          have : q + b = (q - (a + l)) + (a + b + l) := by omega
-          rw [this, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-        have hmod' : (q - l + b) % (a + b) = q - (a + l) := by
-          have : q - l + b = (q - (a + l)) + (a + b) := by omega
-          rw [this, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-        have hrot := congrArg Fin.val (rotate_pow_val_apply b x ⟨q - l, by omega⟩)
-        rw [Fin.coe_finRotate_pow, ← pv_coe, Fin.coe_finRotate_pow, ← pv_coe] at hrot
-        simp only [hmod'] at hrot
+      · have hmod : (q + b) % (a + b + l) = q - (a + l) := by
+          rw [show q + b = (q - (a + l)) + (a + b + l) by omega, Nat.add_mod_right,
+            Nat.mod_eq_of_lt (by omega)]
+        have h0 := hrot (q - l) (by omega)
+        rw [show q - l + b = (q - (a + l)) + (a + b) by omega, Nat.add_mod_right,
+          Nat.mod_eq_of_lt (by omega)] at h0
         rw [insertFn_of_le_of_lt_add _ _ (by omega) hq, hmod,
-          pv_append_left _ _ (by omega : q - (a + l) < a + b), hrot, mod_shiftGap_add hxlt]
+          pv_append_left _ _ (by omega : q - (a + l) < a + b), h0,
+          mod_shiftGap_add (pv_lt x (by omega))]
   · rw [pv_of_le _ (by omega), insertFn_of_le _ _ (by omega)]
 
 end InsertFn
@@ -239,11 +243,7 @@ theorem insert_zero_right {a b : ℕ} (x : PlanarMatching (a + b)) (y : PlanarMa
   rw [pv_insert_eq, pv_cast_eq]
   funext q
   simp only [insertFn, shiftGap, add_zero, Nat.sub_zero]
-  by_cases h₁ : q < a
-  · simp [h₁]
-  · by_cases h₂ : q < a + b
-    · simp [h₁, h₂]
-    · simp [h₁, h₂, pv_of_le x (show a + b ≤ q by omega)]
+  split_ifs <;> first | rfl | exact (pv_of_le x (by omega)).symm
 
 /-- Inserting into the empty matching returns the inserted matching. -/
 theorem insert_zero_left {l : ℕ} (x : PlanarMatching (0 + 0)) (y : PlanarMatching l) :
@@ -252,9 +252,7 @@ theorem insert_zero_left {l : ℕ} (x : PlanarMatching (0 + 0)) (y : PlanarMatch
   rw [pv_insert_eq, pv_cast_eq]
   funext q
   simp only [insertFn, zero_add, add_zero, Nat.not_lt_zero, ↓reduceIte, Nat.sub_zero]
-  by_cases h : q < l
-  · simp [h]
-  · simp [h, pv_of_le y (show l ≤ q by omega)]
+  split_ifs <;> first | rfl | exact (pv_of_le y (by omega)).symm
 
 /-- Inserting a fully nested matching into the middle of another produces the larger fully nested
 matching. -/
@@ -263,19 +261,8 @@ theorem insert_nested (a b : ℕ) :
   apply eq_of_pv_eq
   rw [pv_insert_eq, pv_cast_eq]
   funext q
-  by_cases h₁ : q < a
-  · rw [insertFn_of_lt _ _ h₁, pv_nested a (by omega), pv_nested (a + b) (by omega),
-      shiftGap_of_le (by omega)]
-    omega
-  · by_cases h₂ : q < a + (b + b)
-    · rw [insertFn_of_le_of_lt _ _ (by omega) h₂, pv_nested b (by omega),
-        pv_nested (a + b) (by omega)]
-      omega
-    · by_cases h₃ : q < a + (b + b) + a
-      · rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃, pv_nested a (by omega),
-          pv_nested (a + b) (by omega), shiftGap_of_lt (by omega)]
-        omega
-      · rw [insertFn_of_le _ _ (by omega), pv_of_le _ (by omega)]
+  simp only [insertFn, shiftGap, pv_nested_apply]
+  split_ifs <;> omega
 
 /-! ### Contracting and gluing in the presence of an inserted block -/
 
@@ -293,74 +280,59 @@ private theorem glueFn_add (n j k : ℕ) (φ : ℕ → ℕ) :
     rw [← Nat.add_assoc, ih₁, ih₂]
     exact ⟨rfl, by omega⟩
 
-private theorem splice_insertFn_right {a b l c z : ℕ} (x : PlanarMatching (a + b)) (ψ : ℕ → ℕ)
-    (hc₁ : a ≤ c) (hc₂ : c + 1 < a + b) (hz : z < a + b) :
-    splice (c + l) (insertFn a b l (pv x) ψ) (shiftGap a l z) =
-      shiftGap a l (splice c (pv x) z) := by
-  have heq₁ : shiftGap a l z = c + l ↔ z = c := by simp only [shiftGap]; split_ifs <;> omega
-  have heq₂ : shiftGap a l z = c + l + 1 ↔ z = c + 1 := by
-    simp only [shiftGap]; split_ifs <;> omega
-  by_cases hzc : z = c
-  · rw [splice_of_eq_left _ (heq₁.mpr hzc), splice_of_eq_left _ hzc,
-      shiftGap_of_le (by omega)]
-    omega
-  by_cases hzc' : z = c + 1
-  · rw [splice_of_eq_right _ (heq₂.mpr hzc'), splice_of_eq_right _ hzc',
-      shiftGap_of_le (by omega)]
-  rw [splice_of_ne _ (mt heq₁.mp hzc) (mt heq₂.mp hzc'), splice_of_ne _ hzc hzc',
-    insertFn_shiftGap _ _ hz]
-  have e₁ : insertFn a b l (pv x) ψ (c + l) = shiftGap a l (pv x c) := by
-    rw [← shiftGap_of_le hc₁, insertFn_shiftGap _ _ (by omega)]
-  have e₂ : insertFn a b l (pv x) ψ (c + l + 1) = shiftGap a l (pv x (c + 1)) := by
-    rw [show c + l + 1 = shiftGap a l (c + 1) by rw [shiftGap_of_le (by omega)]; omega,
-      insertFn_shiftGap _ _ (by omega)]
-  unfold rejoin
-  rw [e₁, e₂]
-  have h₁ : shiftGap a l (pv x z) = c + l ↔ pv x z = c := by
-    simp only [shiftGap]; split_ifs <;> omega
-  have h₂ : shiftGap a l (pv x z) = c + l + 1 ↔ pv x z = c + 1 := by
-    simp only [shiftGap]; split_ifs <;> omega
-  simp only [h₁, h₂]
-  split_ifs <;> rfl
-
-private theorem unskipN_shiftGap_right {a l c w : ℕ} (hc : a ≤ c) (h₁ : w ≠ c) (h₂ : w ≠ c + 1) :
-    unskipN (c + l) (shiftGap a l w) = shiftGap a l (unskipN c w) := by
-  simp only [unskipN, shiftGap]
-  split_ifs <;> omega
+private theorem rejoin_pv_ne {K c z : ℕ} (x : PlanarMatching K) (hc : c + 1 < K) (h₁ : z ≠ c)
+    (h₂ : z ≠ c + 1) :
+    rejoin (pv x) c (pv x z) ≠ c ∧ rejoin (pv x) c (pv x z) ≠ c + 1 := by
+  have := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < K)) (pv_ne x hc) h₁ h₂
+  simpa only [splice_of_ne _ h₁ h₂] using this
 
 private theorem contractFn_insertFn_right {a b l c : ℕ} (x : PlanarMatching (a + b))
     (y : PlanarMatching l) (hc₁ : a ≤ c) (hc₂ : c + 1 < a + b) :
     contractFn (c + l) (insertFn a b l (pv x) (pv y)) =
       insertFn a (b - 2) l (contractFn c (pv x)) (pv y) := by
+  let φ := insertFn a b l (pv x) (pv y)
+  have e₁ : φ (c + l) = shiftGap a l (pv x c) := by
+    rw [← shiftGap_of_le hc₁]; exact insertFn_shiftGap _ _ (by omega)
+  have e₂ : φ (c + l + 1) = shiftGap a l (pv x (c + 1)) := by
+    rw [show c + l + 1 = shiftGap a l (c + 1) by rw [shiftGap_of_le (by omega)]; omega]
+    exact insertFn_shiftGap _ _ (by omega)
+  have hmain : ∀ r, r < a + b - 2 →
+      unskipN (c + l) (rejoin φ (c + l) (φ (shiftGap a l (skipN c r)))) =
+        shiftGap a l (contractFn c (pv x) r) := by
+    intro r hr
+    have hlt : skipN c r < a + b := by simp only [skipN]; split_ifs <;> omega
+    have hne : skipN c r ≠ c ∧ skipN c r ≠ c + 1 := by simp only [skipN]; split_ifs <;> omega
+    have hre : rejoin φ (c + l) (shiftGap a l (pv x (skipN c r))) =
+        shiftGap a l (rejoin (pv x) c (pv x (skipN c r))) := by
+      simp only [rejoin, e₁, e₂,
+        show shiftGap a l (pv x (skipN c r)) = c + l ↔ pv x (skipN c r) = c by
+          simp only [shiftGap]; split_ifs <;> omega,
+        show shiftGap a l (pv x (skipN c r)) = c + l + 1 ↔ pv x (skipN c r) = c + 1 by
+          simp only [shiftGap]; split_ifs <;> omega]
+      split_ifs <;> rfl
+    have hw := rejoin_pv_ne x hc₂ hne.1 hne.2
+    rw [show φ (shiftGap a l (skipN c r)) = shiftGap a l (pv x (skipN c r)) from
+      insertFn_shiftGap _ _ hlt, hre, contractFn_apply]
+    generalize rejoin (pv x) c (pv x (skipN c r)) = w at hw
+    simp only [unskipN, shiftGap]; split_ifs <;> omega
   funext q
-  simp only [contractFn, erasePair_apply]
+  rw [contractFn_apply]
   by_cases h₁ : q < a
-  · have hsk : skipN c q = q := skipN_of_lt (by omega)
-    have hsk' : skipN (c + l) q = shiftGap a l (skipN c q) := by
-      rw [hsk, skipN_of_lt (by omega), shiftGap_of_lt h₁]
-    have hsne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < a + b))
-      (pv_ne x (by omega : c + 1 < a + b)) (by omega : skipN c q ≠ c)
-      (by omega : skipN c q ≠ c + 1)
-    rw [insertFn_of_lt _ _ h₁, erasePair_apply, hsk',
-      splice_insertFn_right x (pv y) hc₁ hc₂ (by omega),
-      unskipN_shiftGap_right hc₁ hsne.1 hsne.2]
+  · rw [insertFn_of_lt _ _ h₁,
+      show skipN (c + l) q = shiftGap a l (skipN c q) by
+        simp only [skipN, shiftGap]; split_ifs <;> omega]
+    exact hmain q (by omega)
   by_cases h₂ : q < a + l
-  · have hylt := pv_lt y (by omega : q - a < l)
+  · have := pv_lt y (by omega : q - a < l)
     rw [insertFn_of_le_of_lt _ _ (by omega) h₂, skipN_of_lt (by omega),
-      splice_of_ne _ (by omega) (by omega), insertFn_of_le_of_lt _ _ (by omega) h₂,
-      rejoin_of_ne _ (by omega) (by omega), unskipN_of_lt (by omega)]
+      insertFn_of_le_of_lt _ _ (by omega) h₂, rejoin_of_ne _ (by omega) (by omega),
+      unskipN_of_lt (by omega)]
   by_cases h₃ : q < a + l + (b - 2)
-  · have hsk' : skipN (c + l) q = shiftGap a l (skipN c (q - l)) := by
-      simp only [skipN, shiftGap]; split_ifs <;> omega
-    have hlt : skipN c (q - l) < a + b := by simp only [skipN]; split_ifs <;> omega
-    have hne : skipN c (q - l) ≠ c ∧ skipN c (q - l) ≠ c + 1 := by
-      simp only [skipN]; split_ifs <;> omega
-    have hsne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < a + b))
-      (pv_ne x (by omega : c + 1 < a + b)) hne.1 hne.2
-    rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃, erasePair_apply, hsk',
-      splice_insertFn_right x (pv y) hc₁ hc₂ hlt, unskipN_shiftGap_right hc₁ hsne.1 hsne.2]
-  · rw [insertFn_of_le _ _ (by omega), skipN_of_le (by omega),
-      splice_of_ne _ (by omega) (by omega), insertFn_of_le _ _ (by omega),
+  · rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃,
+      show skipN (c + l) q = shiftGap a l (skipN c (q - l)) by
+        simp only [skipN, shiftGap]; split_ifs <;> omega]
+    exact hmain (q - l) (by omega)
+  · rw [skipN_of_le (by omega), insertFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega),
       rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
     omega
 
@@ -370,138 +342,99 @@ private theorem circleInd_insertFn_right {a b l c : ℕ} (φ ψ : ℕ → ℕ) (
   have e : insertFn a b l φ ψ (c + l) = shiftGap a l (φ c) := by
     rw [← shiftGap_of_le hc₁, insertFn_shiftGap _ _ (by omega)]
   rw [circleInd, circleInd, e]
-  simp only [shiftGap]
-  split_ifs <;> omega
-
-private theorem splice_insertFn_left {a b l c z : ℕ} (x : PlanarMatching (a + b)) (ψ : ℕ → ℕ)
-    (hc : c + 1 < a) (hz : z < a + b) :
-    splice c (insertFn a b l (pv x) ψ) (shiftGap a l z) =
-      shiftGap a l (splice c (pv x) z) := by
-  have heq₁ : shiftGap a l z = c ↔ z = c := by simp only [shiftGap]; split_ifs <;> omega
-  have heq₂ : shiftGap a l z = c + 1 ↔ z = c + 1 := by simp only [shiftGap]; split_ifs <;> omega
-  by_cases hzc : z = c
-  · rw [splice_of_eq_left _ (heq₁.mpr hzc), splice_of_eq_left _ hzc, shiftGap_of_lt hc]
-  by_cases hzc' : z = c + 1
-  · rw [splice_of_eq_right _ (heq₂.mpr hzc'), splice_of_eq_right _ hzc',
-      shiftGap_of_lt (by omega)]
-  rw [splice_of_ne _ (mt heq₁.mp hzc) (mt heq₂.mp hzc'), splice_of_ne _ hzc hzc',
-    insertFn_shiftGap _ _ hz]
-  have e₁ : insertFn a b l (pv x) ψ c = shiftGap a l (pv x c) :=
-    insertFn_of_lt _ _ (by omega)
-  have e₂ : insertFn a b l (pv x) ψ (c + 1) = shiftGap a l (pv x (c + 1)) :=
-    insertFn_of_lt _ _ hc
-  unfold rejoin
-  rw [e₁, e₂]
-  have h₁ : shiftGap a l (pv x z) = c ↔ pv x z = c := by simp only [shiftGap]; split_ifs <;> omega
-  have h₂ : shiftGap a l (pv x z) = c + 1 ↔ pv x z = c + 1 := by
-    simp only [shiftGap]; split_ifs <;> omega
-  simp only [h₁, h₂]
-  split_ifs <;> rfl
-
-private theorem unskipN_shiftGap_left {a l c w : ℕ} (hc : c + 1 < a) (h₁ : w ≠ c) (h₂ : w ≠ c + 1) :
-    unskipN c (shiftGap a l w) = shiftGap (a - 2) l (unskipN c w) := by
-  simp only [unskipN, shiftGap]
-  split_ifs <;> omega
+  simp only [shiftGap]; split_ifs <;> omega
 
 private theorem contractFn_insertFn_left {a b l c : ℕ} (x : PlanarMatching (a + b))
     (y : PlanarMatching l) (hc : c + 1 < a) :
     contractFn c (insertFn a b l (pv x) (pv y)) =
       insertFn (a - 2) b l (contractFn c (pv x)) (pv y) := by
+  let φ := insertFn a b l (pv x) (pv y)
+  have e₁ : φ c = shiftGap a l (pv x c) := insertFn_of_lt _ _ (by omega)
+  have e₂ : φ (c + 1) = shiftGap a l (pv x (c + 1)) := insertFn_of_lt _ _ hc
+  have hmain : ∀ r, r < a + b - 2 →
+      unskipN c (rejoin φ c (φ (shiftGap a l (skipN c r)))) =
+        shiftGap (a - 2) l (contractFn c (pv x) r) := by
+    intro r hr
+    have hlt : skipN c r < a + b := by simp only [skipN]; split_ifs <;> omega
+    have hne : skipN c r ≠ c ∧ skipN c r ≠ c + 1 := by simp only [skipN]; split_ifs <;> omega
+    have hre : rejoin φ c (shiftGap a l (pv x (skipN c r))) =
+        shiftGap a l (rejoin (pv x) c (pv x (skipN c r))) := by
+      simp only [rejoin, e₁, e₂,
+        show shiftGap a l (pv x (skipN c r)) = c ↔ pv x (skipN c r) = c by
+          simp only [shiftGap]; split_ifs <;> omega,
+        show shiftGap a l (pv x (skipN c r)) = c + 1 ↔ pv x (skipN c r) = c + 1 by
+          simp only [shiftGap]; split_ifs <;> omega]
+      split_ifs <;> rfl
+    have hw := rejoin_pv_ne x (by omega) hne.1 hne.2
+    rw [show φ (shiftGap a l (skipN c r)) = shiftGap a l (pv x (skipN c r)) from
+      insertFn_shiftGap _ _ hlt, hre, contractFn_apply]
+    generalize rejoin (pv x) c (pv x (skipN c r)) = w at hw
+    simp only [unskipN, shiftGap]; split_ifs <;> omega
   funext q
-  simp only [contractFn, erasePair_apply]
+  rw [contractFn_apply]
   by_cases h₁ : q < a - 2
-  · have hsk' : shiftGap a l (skipN c q) = skipN c q := by
-      simp only [skipN, shiftGap]; split_ifs <;> omega
-    have hlt : skipN c q < a + b := by simp only [skipN]; split_ifs <;> omega
-    have hne : skipN c q ≠ c ∧ skipN c q ≠ c + 1 := by simp only [skipN]; split_ifs <;> omega
-    have hsne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < a + b))
-      (pv_ne x (by omega : c + 1 < a + b)) hne.1 hne.2
-    rw [insertFn_of_lt _ _ h₁, erasePair_apply, ← unskipN_shiftGap_left hc hsne.1 hsne.2,
-      ← splice_insertFn_left x (pv y) hc hlt, hsk']
+  · rw [insertFn_of_lt _ _ h₁,
+      show skipN c q = shiftGap a l (skipN c q) by simp only [skipN, shiftGap]; split_ifs <;> omega]
+    exact hmain q (by omega)
   by_cases h₂ : q < a - 2 + l
-  · have hsub : q + 2 - a = q - (a - 2) := by omega
-    rw [insertFn_of_le_of_lt _ _ (by omega) h₂, skipN_of_le (by omega),
-      splice_of_ne _ (by omega) (by omega), insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      hsub, rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
+  · rw [insertFn_of_le_of_lt _ _ (by omega) h₂, skipN_of_le (by omega),
+      insertFn_of_le_of_lt _ _ (by omega) (by omega), show q + 2 - a = q - (a - 2) by omega,
+      rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
     omega
   by_cases h₃ : q < a - 2 + l + b
-  · have hsk' : skipN c q = shiftGap a l (skipN c (q - l)) := by
-      simp only [skipN, shiftGap]; split_ifs <;> omega
-    have hlt : skipN c (q - l) < a + b := by simp only [skipN]; split_ifs <;> omega
-    have hne : skipN c (q - l) ≠ c ∧ skipN c (q - l) ≠ c + 1 := by
-      simp only [skipN]; split_ifs <;> omega
-    have hsne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < a + b))
-      (pv_ne x (by omega : c + 1 < a + b)) hne.1 hne.2
-    rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃, erasePair_apply, hsk',
-      splice_insertFn_left x (pv y) hc hlt, unskipN_shiftGap_left hc hsne.1 hsne.2]
-  · rw [insertFn_of_le _ _ (by omega), skipN_of_le (by omega),
-      splice_of_ne _ (by omega) (by omega), insertFn_of_le _ _ (by omega),
+  · rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃,
+      show skipN c q = shiftGap a l (skipN c (q - l)) by
+        simp only [skipN, shiftGap]; split_ifs <;> omega]
+    exact hmain (q - l) (by omega)
+  · rw [skipN_of_le (by omega), insertFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega),
       rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
     omega
 
 private theorem circleInd_insertFn_left {a b l c : ℕ} (φ ψ : ℕ → ℕ) (hc : c + 1 < a) :
     circleInd c (insertFn a b l φ ψ) = circleInd c φ := by
   rw [circleInd, circleInd, insertFn_of_lt _ _ (by omega)]
-  simp only [shiftGap]
-  split_ifs <;> omega
-
-private theorem splice_insertFn_middle {a b l c z : ℕ} (φ : ℕ → ℕ) (y : PlanarMatching l)
-    (hc : c + 1 < l) (hz : z < l) :
-    splice (a + c) (insertFn a b l φ (pv y)) (a + z) = a + splice c (pv y) z := by
-  by_cases hzc : z = c
-  · rw [splice_of_eq_left _ (by omega), splice_of_eq_left _ hzc, Nat.add_assoc]
-  by_cases hzc' : z = c + 1
-  · rw [splice_of_eq_right _ (by omega), splice_of_eq_right _ hzc']
-  have e₀ : insertFn a b l φ (pv y) (a + z) = a + pv y z := by
-    rw [insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
-  have e₁ : insertFn a b l φ (pv y) (a + c) = a + pv y c := by
-    rw [insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
-  have e₂ : insertFn a b l φ (pv y) (a + c + 1) = a + pv y (c + 1) := by
-    rw [insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_assoc, Nat.add_sub_cancel_left]
-  rw [splice_of_ne _ (by omega) (by omega), splice_of_ne _ hzc hzc', e₀]
-  unfold rejoin
-  rw [e₁, e₂]
-  split_ifs <;> omega
-
-private theorem unskipN_shiftGap_middle {a l c v : ℕ} (hc : c + 1 < l) :
-    unskipN (a + c) (shiftGap a l v) = shiftGap a (l - 2) v := by
-  simp only [unskipN, shiftGap]
-  split_ifs <;> omega
+  simp only [shiftGap]; split_ifs <;> omega
 
 private theorem contractFn_insertFn_middle {a b l c : ℕ} (x : PlanarMatching (a + b))
     (y : PlanarMatching l) (hc : c + 1 < l) :
     contractFn (a + c) (insertFn a b l (pv x) (pv y)) =
       insertFn a b (l - 2) (pv x) (contractFn c (pv y)) := by
-  funext q
-  simp only [contractFn, erasePair_apply]
-  by_cases h₁ : q < a
-  · have hne : shiftGap a l (pv x q) ≠ a + c ∧ shiftGap a l (pv x q) ≠ a + c + 1 := by
+  let φ := insertFn a b l (pv x) (pv y)
+  have hout : ∀ v, unskipN (a + c) (rejoin φ (a + c) (shiftGap a l v)) = shiftGap a (l - 2) v := by
+    intro v
+    have hne : shiftGap a l v ≠ a + c ∧ shiftGap a l v ≠ a + c + 1 := by
       simp only [shiftGap]; split_ifs <;> omega
-    rw [insertFn_of_lt _ _ h₁, skipN_of_lt (by omega), splice_of_ne _ (by omega) (by omega),
-      insertFn_of_lt _ _ h₁, rejoin_of_ne _ hne.1 hne.2, unskipN_shiftGap_middle hc]
+    rw [rejoin_of_ne _ hne.1 hne.2]
+    simp only [unskipN, shiftGap]; split_ifs <;> omega
+  funext q
+  rw [contractFn_apply]
+  by_cases h₁ : q < a
+  · rw [insertFn_of_lt _ _ h₁, skipN_of_lt (by omega), insertFn_of_lt _ _ h₁, hout]
   by_cases h₂ : q < a + (l - 2)
-  · have hsk : skipN (a + c) q = a + skipN c (q - a) := by
-      simp only [skipN]; split_ifs <;> omega
+  · have hsk : skipN (a + c) q = a + skipN c (q - a) := by simp only [skipN]; split_ifs <;> omega
     have hs₁ : skipN c (q - a) < l := by simp only [skipN]; split_ifs <;> omega
     have hs₂ : skipN c (q - a) ≠ c ∧ skipN c (q - a) ≠ c + 1 := by
       simp only [skipN]; split_ifs <;> omega
-    have hw := splice_ne (pv_pv_eq y) (pv_ne y (by omega : c < l))
-      (pv_ne y (by omega : c + 1 < l)) hs₂.1 hs₂.2
-    rw [insertFn_of_le_of_lt _ _ (by omega) h₂, hsk, splice_insertFn_middle _ _ hc hs₁,
-      erasePair_apply]
-    generalize splice c (pv y) (skipN c (q - a)) = w at hw
-    simp only [unskipN]
-    split_ifs <;> omega
+    have hw := rejoin_pv_ne y hc hs₂.1 hs₂.2
+    have e₁ : φ (a + c) = a + pv y c := by
+      rw [show φ (a + c) = a + pv y (a + c - a) from insertFn_of_le_of_lt _ _ (by omega) (by omega),
+        Nat.add_sub_cancel_left]
+    have e₂ : φ (a + c + 1) = a + pv y (c + 1) := by
+      rw [show φ (a + c + 1) = a + pv y (a + c + 1 - a) from
+        insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_assoc, Nat.add_sub_cancel_left]
+    rw [insertFn_of_le_of_lt _ _ (by omega) h₂, hsk,
+      insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left, contractFn_apply]
+    have hre : rejoin φ (a + c) (a + pv y (skipN c (q - a))) =
+        a + rejoin (pv y) c (pv y (skipN c (q - a))) := by
+      simp only [rejoin, e₁, e₂]; split_ifs <;> omega
+    rw [hre]
+    generalize rejoin (pv y) c (pv y (skipN c (q - a))) = w at hw
+    simp only [unskipN]; split_ifs <;> omega
   by_cases h₃ : q < a + (l - 2) + b
-  · have hsub : q + 2 - l = q - (l - 2) := by omega
-    have hne : shiftGap a l (pv x (q - (l - 2))) ≠ a + c ∧
-        shiftGap a l (pv x (q - (l - 2))) ≠ a + c + 1 := by
-      simp only [shiftGap]; split_ifs <;> omega
-    rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃, skipN_of_le (by omega),
-      splice_of_ne _ (by omega) (by omega), insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      hsub, rejoin_of_ne _ hne.1 hne.2, unskipN_shiftGap_middle hc]
-  · rw [insertFn_of_le _ _ (by omega), skipN_of_le (by omega),
-      splice_of_ne _ (by omega) (by omega), insertFn_of_le _ _ (by omega),
+  · rw [insertFn_of_le_of_lt_add _ _ (by omega) h₃, skipN_of_le (by omega),
+      insertFn_of_le_of_lt_add _ _ (by omega) (by omega), show q + 2 - l = q - (l - 2) by omega,
+      hout]
+  · rw [skipN_of_le (by omega), insertFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega),
       rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
     omega
 
@@ -516,17 +449,16 @@ private theorem glueFn_insertFn_right {a l n : ℕ} (y : PlanarMatching l) :
       glueFn (n + l) m (insertFn a b l (pv x) (pv y)) =
         insertFn a (b - 2 * m) l (glueFn n m (pv x)) (pv y) ∧
       glueCircles (n + l) m (insertFn a b l (pv x) (pv y)) = glueCircles n m (pv x)
-  | 0, b, x, _, _ => ⟨rfl, rfl⟩
+  | 0, _, _, _, _ => ⟨rfl, rfl⟩
   | m + 1, b, x, han, hK => by
     obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := n + m) (by omega)
     let x'' : PlanarMatching (a + (b - 2)) := cast (by omega) x'
     have hx'' : pv x'' = contractFn (n + m) (pv x) := by rw [pv_cast_eq, hx']
     obtain ⟨ih₁, ih₂⟩ := glueFn_insertFn_right (a := a) (n := n) y m (b - 2) x'' han (by omega)
-    have hb : b - 2 - 2 * m = b - 2 * (m + 1) := by omega
-    have hidx : n + l + m = n + m + l := by omega
     simp only [glueFn, glueCircles]
-    rw [hidx, contractFn_insertFn_right x y (by omega) (by omega), ← hx'', ih₁, ih₂,
-      circleInd_insertFn_right _ _ (by omega) (by omega), hb]
+    rw [show n + l + m = n + m + l by omega, contractFn_insertFn_right x y (by omega) (by omega),
+      ← hx'', ih₁, ih₂, circleInd_insertFn_right _ _ (by omega) (by omega),
+      show b - 2 - 2 * m = b - 2 * (m + 1) by omega]
     exact ⟨rfl, rfl⟩
 
 private theorem glueFn_insertFn_left {b l n : ℕ} (y : PlanarMatching l) :
@@ -534,16 +466,15 @@ private theorem glueFn_insertFn_left {b l n : ℕ} (y : PlanarMatching l) :
       glueFn n m (insertFn a b l (pv x) (pv y)) =
         insertFn (a - 2 * m) b l (glueFn n m (pv x)) (pv y) ∧
       glueCircles n m (insertFn a b l (pv x) (pv y)) = glueCircles n m (pv x)
-  | 0, a, x, _ => ⟨rfl, rfl⟩
+  | 0, _, _, _ => ⟨rfl, rfl⟩
   | m + 1, a, x, hK => by
     obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := n + m) (by omega)
     let x'' : PlanarMatching (a - 2 + b) := cast (by omega) x'
     have hx'' : pv x'' = contractFn (n + m) (pv x) := by rw [pv_cast_eq, hx']
     obtain ⟨ih₁, ih₂⟩ := glueFn_insertFn_left (b := b) (n := n) y m (a - 2) x'' (by omega)
-    have ha : a - 2 - 2 * m = a - 2 * (m + 1) := by omega
     simp only [glueFn, glueCircles]
     rw [contractFn_insertFn_left x y (by omega), ← hx'', ih₁, ih₂,
-      circleInd_insertFn_left _ _ (by omega), ha]
+      circleInd_insertFn_left _ _ (by omega), show a - 2 - 2 * m = a - 2 * (m + 1) by omega]
     exact ⟨rfl, rfl⟩
 
 private theorem glueFn_insertFn_middle {a b n : ℕ} (x : PlanarMatching (a + b)) :
@@ -551,14 +482,13 @@ private theorem glueFn_insertFn_middle {a b n : ℕ} (x : PlanarMatching (a + b)
       glueFn (a + n) m (insertFn a b l (pv x) (pv y)) =
         insertFn a b (l - 2 * m) (pv x) (glueFn n m (pv y)) ∧
       glueCircles (a + n) m (insertFn a b l (pv x) (pv y)) = glueCircles n m (pv y)
-  | 0, l, y, _ => ⟨rfl, rfl⟩
+  | 0, _, _, _ => ⟨rfl, rfl⟩
   | m + 1, l, y, hK => by
     obtain ⟨y', hy'⟩ := exists_pv_eq_contractFn y (a := n + m) (by omega)
     obtain ⟨ih₁, ih₂⟩ := glueFn_insertFn_middle (n := n) x m (l - 2) y' (by omega)
-    have hl : l - 2 - 2 * m = l - 2 * (m + 1) := by omega
     simp only [glueFn, glueCircles]
     rw [Nat.add_assoc a n m, contractFn_insertFn_middle x y (by omega), ← hy', ih₁, ih₂,
-      circleInd_insertFn_middle _ _ (by omega), hl]
+      circleInd_insertFn_middle _ _ (by omega), show l - 2 - 2 * m = l - 2 * (m + 1) by omega]
     exact ⟨rfl, rfl⟩
 
 private theorem appendFn_insertFn_left {a b l k : ℕ} (x : PlanarMatching (a + b))
@@ -566,23 +496,9 @@ private theorem appendFn_insertFn_left {a b l k : ℕ} (x : PlanarMatching (a + 
     appendFn (a + l + b) k (insertFn a b l (pv x) (pv y)) (pv z) =
       insertFn a (b + k) l (appendFn (a + b) k (pv x) (pv z)) (pv y) := by
   funext q
-  by_cases h1 : q < a
-  · rw [appendFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h1, insertFn_of_lt _ _ h1,
-      appendFn_of_lt _ _ (by omega)]
-  by_cases h2 : q < a + l
-  · rw [appendFn_of_lt _ _ (by omega), insertFn_of_le_of_lt _ _ (by omega) h2,
-      insertFn_of_le_of_lt _ _ (by omega) h2]
-  by_cases h3 : q < a + l + b
-  · have := pv_lt x (by omega : q - l < a + b)
-    rw [appendFn_of_lt _ _ h3, insertFn_of_le_of_lt_add _ _ (by omega) h3,
-      insertFn_of_le_of_lt_add _ _ (by omega) (by omega), appendFn_of_lt _ _ (by omega)]
-  by_cases h4 : q < a + l + b + k
-  · rw [appendFn_of_le_of_lt _ _ (by omega) h4,
-      insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), shiftGap_of_le (by omega)]
-    have hsub : q - l - (a + b) = q - (a + l + b) := by omega
-    rw [hsub]; omega
-  · rw [appendFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega)]
+  simp only [appendFn, insertFn, shiftGap]
+  split_ifs
+  all_goals first | rfl | omega | (rw [show q - l - (a + b) = q - (a + l + b) by omega]; omega)
 
 private theorem appendFn_insertFn_right {k a b l : ℕ} (x : PlanarMatching k)
     (y : PlanarMatching (a + b)) (z : PlanarMatching l) :
@@ -599,18 +515,14 @@ private theorem appendFn_insertFn_right {k a b l : ℕ} (x : PlanarMatching k)
     simp only [shiftGap]; split_ifs <;> omega
   by_cases h3 : q < k + a + l
   · rw [appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) h3]
-    have hsub : q - k - a = q - (k + a) := by omega
-    rw [hsub]; omega
+      insertFn_of_le_of_lt _ _ (by omega) (by omega), insertFn_of_le_of_lt _ _ (by omega) h3,
+      show q - k - a = q - (k + a) by omega]
+    omega
   by_cases h4 : q < k + a + l + b
-  · have := pv_lt y (by omega : q - k - l < a + b)
-    rw [appendFn_of_le_of_lt _ _ (by omega) (by omega),
+  · rw [appendFn_of_le_of_lt _ _ (by omega) (by omega),
       insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt_add _ _ (by omega) h4,
-      appendFn_of_le_of_lt _ _ (by omega) (by omega)]
-    have hsub : q - l - k = q - k - l := by omega
-    rw [hsub]
+      insertFn_of_le_of_lt_add _ _ (by omega) h4, appendFn_of_le_of_lt _ _ (by omega) (by omega),
+      show q - l - k = q - k - l by omega]
     simp only [shiftGap]; split_ifs <;> omega
   · rw [appendFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega)]
 
@@ -623,46 +535,8 @@ private theorem appendFn_insertFn_insertFn {n₁ m₁ p₁ l₁ l₂ : ℕ}
       (insertFn n₁ (m₁ + m₁ + p₁) l₁
         (appendFn (n₁ + m₁) (m₁ + p₁) (pv x₁) (pv x₂)) (pv y₁))
       (pv y₂) := by
-  funext q
-  by_cases h₁ : q < n₁
-  · have := pv_lt x₁ (by omega : q < n₁ + m₁)
-    rw [appendFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ (by omega),
-      insertFn_of_lt _ _ h₁, appendFn_of_lt _ _ (by omega)]
-    simp only [shiftGap]; split_ifs <;> omega
-  by_cases h₂ : q < n₁ + l₁
-  · have := pv_lt y₁ (by omega : q - n₁ < l₁)
-    rw [appendFn_of_lt _ _ (by omega), insertFn_of_le_of_lt _ _ (by omega) h₂,
-      insertFn_of_lt _ _ (by omega), insertFn_of_le_of_lt _ _ (by omega) h₂]
-    simp only [shiftGap]; split_ifs <;> omega
-  by_cases h₃ : q < n₁ + l₁ + m₁
-  · have := pv_lt x₁ (by omega : q - l₁ < n₁ + m₁)
-    rw [appendFn_of_lt _ _ h₃, insertFn_of_le_of_lt_add _ _ (by omega) h₃,
-      insertFn_of_lt _ _ (by omega), insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      appendFn_of_lt _ _ (by omega)]
-    simp only [shiftGap]; split_ifs <;> omega
-  by_cases h₄ : q < n₁ + l₁ + (m₁ + m₁)
-  · have hsub : q - l₁ - (n₁ + m₁) = q - (n₁ + l₁ + m₁) := by omega
-    have := pv_lt x₂ (by omega : q - (n₁ + l₁ + m₁) < m₁ + p₁)
-    rw [appendFn_of_le_of_lt _ _ (by omega) (by omega), insertFn_of_lt _ _ (by omega),
-      insertFn_of_lt _ _ h₄, insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
-    simp only [shiftGap]; split_ifs <;> omega
-  by_cases h₅ : q < n₁ + l₁ + (m₁ + m₁) + l₂
-  · have hsub : q - (n₁ + l₁ + m₁) - m₁ = q - (n₁ + l₁ + (m₁ + m₁)) := by omega
-    rw [appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) h₅, hsub]
-    omega
-  by_cases h₆ : q < n₁ + l₁ + (m₁ + m₁) + l₂ + p₁
-  · have hsub : q - l₂ - l₁ - (n₁ + m₁) = q - (n₁ + l₁ + m₁) - l₂ := by omega
-    have := pv_lt x₂ (by omega : q - (n₁ + l₁ + m₁) - l₂ < m₁ + p₁)
-    rw [appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt_add _ _ (by omega) h₆,
-      insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
-    simp only [shiftGap]; split_ifs <;> omega
-  · rw [appendFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega)]
+  rw [← pv_insert_eq x₁ y₁, appendFn_insertFn_right (x₁.insert y₁) x₂ y₂, pv_insert_eq,
+    appendFn_insertFn_left x₁ y₁ x₂, Nat.add_assoc (n₁ + l₁) m₁ m₁, Nat.add_assoc m₁ m₁ p₁]
 
 private theorem insertFn_insertFn_adjacent {a b l₁ l₂ : ℕ}
     (x : PlanarMatching (a + b)) (y₁ : PlanarMatching l₁) (y₂ : PlanarMatching l₂) :
@@ -670,25 +544,21 @@ private theorem insertFn_insertFn_adjacent {a b l₁ l₂ : ℕ}
       insertFn a b (l₁ + l₂) (pv x) (appendFn l₁ l₂ (pv y₁) (pv y₂)) := by
   funext q
   by_cases h₁ : q < a
-  · have := pv_lt x (by omega : q < a + b)
-    rw [insertFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁]
+  · rw [insertFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁]
     simp only [shiftGap]; split_ifs <;> omega
   by_cases h₂ : q < a + l₁
   · have := pv_lt y₁ (by omega : q - a < l₁)
     rw [insertFn_of_lt _ _ h₂, insertFn_of_le_of_lt _ _ (by omega) h₂,
-      insertFn_of_le_of_lt _ _ (by omega) (by omega), appendFn_of_lt _ _ (by omega)]
-    simp only [shiftGap]; split_ifs <;> omega
+      insertFn_of_le_of_lt _ _ (by omega) (by omega), appendFn_of_lt _ _ (by omega),
+      shiftGap_of_lt (by omega)]
   by_cases h₃ : q < a + l₁ + l₂
-  · have hsub : q - a - l₁ = q - (a + l₁) := by omega
-    rw [insertFn_of_le_of_lt _ _ (by omega) h₃, insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
+  · rw [insertFn_of_le_of_lt _ _ (by omega) h₃, insertFn_of_le_of_lt _ _ (by omega) (by omega),
+      appendFn_of_le_of_lt _ _ (by omega) (by omega), show q - a - l₁ = q - (a + l₁) by omega]
     omega
   by_cases h₄ : q < a + l₁ + l₂ + b
-  · have hsub : q - (l₁ + l₂) = q - l₂ - l₁ := by omega
-    have := pv_lt x (by omega : q - l₂ - l₁ < a + b)
-    rw [insertFn_of_le_of_lt_add _ _ (by omega) h₄,
+  · rw [insertFn_of_le_of_lt_add _ _ (by omega) h₄,
       insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt_add _ _ (by omega) (by omega), hsub]
+      insertFn_of_le_of_lt_add _ _ (by omega) (by omega), show q - (l₁ + l₂) = q - l₂ - l₁ by omega]
     simp only [shiftGap]; split_ifs <;> omega
   · rw [insertFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega)]
 
@@ -698,33 +568,27 @@ private theorem insertFn_assoc {a₁ b₁ a₂ b₂ l₃ : ℕ}
       insertFn a₁ b₁ (a₂ + l₃ + b₂) (pv x₁) (insertFn a₂ b₂ l₃ (pv x₂) (pv x₃)) := by
   funext q
   by_cases h₁ : q < a₁
-  · have := pv_lt x₁ (by omega : q < a₁ + b₁)
-    rw [insertFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁]
+  · rw [insertFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁]
     simp only [shiftGap]; split_ifs <;> omega
   by_cases h₂ : q < a₁ + a₂
-  · have := pv_lt x₂ (by omega : q - a₁ < a₂ + b₂)
-    rw [insertFn_of_lt _ _ h₂, insertFn_of_le_of_lt _ _ (by omega) (by omega),
+  · rw [insertFn_of_lt _ _ h₂, insertFn_of_le_of_lt _ _ (by omega) (by omega),
       insertFn_of_le_of_lt _ _ (by omega) (by omega), insertFn_of_lt _ _ (by omega)]
     simp only [shiftGap]; split_ifs <;> omega
   by_cases h₃ : q < a₁ + a₂ + l₃
-  · have hsub : q - a₁ - a₂ = q - (a₁ + a₂) := by omega
-    rw [insertFn_of_le_of_lt _ _ (by omega) h₃, insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
+  · rw [insertFn_of_le_of_lt _ _ (by omega) h₃, insertFn_of_le_of_lt _ _ (by omega) (by omega),
+      insertFn_of_le_of_lt _ _ (by omega) (by omega), show q - a₁ - a₂ = q - (a₁ + a₂) by omega]
     omega
   by_cases h₄ : q < a₁ + (a₂ + l₃ + b₂)
-  · have hsub : q - a₁ - l₃ = q - l₃ - a₁ := by omega
-    have := pv_lt x₂ (by omega : q - l₃ - a₁ < a₂ + b₂)
-    rw [insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
+  · rw [insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
       insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) h₄,
-      insertFn_of_le_of_lt_add _ _ (by omega) (by omega), hsub]
+      insertFn_of_le_of_lt _ _ (by omega) h₄, insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
+      show q - a₁ - l₃ = q - l₃ - a₁ by omega]
     simp only [shiftGap]; split_ifs <;> omega
   by_cases h₅ : q < a₁ + (a₂ + l₃ + b₂) + b₁
-  · have hsub : q - (a₂ + l₃ + b₂) = q - l₃ - (a₂ + b₂) := by omega
-    have := pv_lt x₁ (by omega : q - l₃ - (a₂ + b₂) < a₁ + b₁)
-    rw [insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
+  · rw [insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
       insertFn_of_le_of_lt_add _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt_add _ _ (by omega) h₅, hsub]
+      insertFn_of_le_of_lt_add _ _ (by omega) h₅,
+      show q - (a₂ + l₃ + b₂) = q - l₃ - (a₂ + b₂) by omega]
     simp only [shiftGap]; split_ifs <;> omega
   · rw [insertFn_of_le _ _ (by omega), insertFn_of_le _ _ (by omega)]
 
@@ -790,18 +654,9 @@ theorem matching_tensor_assoc (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂
       (f.tensor (g.tensor h)).matching := by
   apply PlanarMatching.eq_of_pv_eq
   simp only [matching_tensor, PlanarMatching.pv_cast_eq, PlanarMatching.pv_insert_eq]
-  have hcast :
-      PlanarMatching.insertFn (n₁ + n₂) (m₁ + m₂) (n₃ + m₃)
-        (PlanarMatching.insertFn n₁ m₁ (n₂ + m₂) (PlanarMatching.pv f.matching)
-          (PlanarMatching.pv g.matching))
-        (PlanarMatching.pv h.matching) =
-      PlanarMatching.insertFn (n₁ + n₂) (m₂ + m₁) (n₃ + m₃)
-        (PlanarMatching.insertFn n₁ m₁ (n₂ + m₂) (PlanarMatching.pv f.matching)
-          (PlanarMatching.pv g.matching))
-        (PlanarMatching.pv h.matching) := by
-    rw [Nat.add_comm m₁ m₂]
-  have hlen : n₂ + (n₃ + m₃) + m₂ = n₂ + n₃ + (m₂ + m₃) := by omega
-  rw [hcast, PlanarMatching.insertFn_assoc f.matching g.matching h.matching, hlen]
+  rw [show m₁ + m₂ = m₂ + m₁ from Nat.add_comm m₁ m₂,
+    PlanarMatching.insertFn_assoc f.matching g.matching h.matching,
+    show n₂ + (n₃ + m₃) + m₂ = n₂ + n₃ + (m₂ + m₃) by omega]
 
 open PlanarMatching in
 /-- **The interchange law** for Temperley–Lieb diagrams: horizontally juxtaposing two pairs of
@@ -814,64 +669,46 @@ theorem tensor_comp (f₁ : TLDiagram n₁ m₁) (f₂ : TLDiagram m₁ p₁) (g
   let l₂ := m₂ + p₂
   let x₁₂ : PlanarMatching (n₁ + (m₁ + m₁ + p₁)) := cast (by omega) (f₁.matching.append f₂.matching)
   let mid : PlanarMatching ((n₁ + l₁ + (m₁ + m₁)) + p₁) := cast (by omega) (x₁₂.insert g₁.matching)
-  -- Split the `m₁ + m₂` middle contractions into two phases: the innermost `m₁` contractions glue
-  -- `f₁` to `f₂` across the gap between `g₁` and `g₂`, and the remaining `m₂` contractions glue
-  -- `g₁` to `g₂` strictly inside the resulting contiguous inserted block.
   have hsplit := glueFn_add (n₁ + n₂) m₂ m₁
     (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching))
   rw [Nat.add_comm m₂ m₁] at hsplit
   have hApp : pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching) =
       insertFn (n₁ + l₁ + (m₁ + m₁)) p₁ l₂ (pv mid) (pv g₂.matching) := by
     rw [pv_append_eq, matching_tensor, matching_tensor, pv_cast_eq, pv_cast_eq, pv_insert_eq,
-      pv_insert_eq]
-    have h₁ : n₁ + n₂ + (m₁ + m₂) = n₁ + l₁ + m₁ := by omega
-    have h₂ : m₁ + m₂ + (p₁ + p₂) = m₁ + l₂ + p₁ := by omega
-    rw [h₁, h₂, appendFn_insertFn_insertFn f₁.matching f₂.matching g₁.matching g₂.matching]
+      pv_insert_eq, show n₁ + n₂ + (m₁ + m₂) = n₁ + l₁ + m₁ by omega,
+      show m₁ + m₂ + (p₁ + p₂) = m₁ + l₂ + p₁ by omega,
+      appendFn_insertFn_insertFn f₁.matching f₂.matching g₁.matching g₂.matching]
     simp only [mid, x₁₂, l₁, l₂, pv_cast_eq, pv_insert_eq, pv_append_eq]
-  -- Phase 1a: the `m₁` contractions lie strictly to the left of `g₂`.
   have hP1a := glueFn_insertFn_left (b := p₁) (n := n₁ + l₁) g₂.matching m₁
     (n₁ + l₁ + (m₁ + m₁)) mid (by omega)
-  -- Phase 1b: inside `mid`, the `m₁` contractions lie strictly to the right of `g₁`.
   have hP1b := glueFn_insertFn_right (a := n₁) (n := n₁) g₁.matching m₁ (m₁ + m₁ + p₁) x₁₂
     le_rfl (by omega)
-  -- Merge the now-adjacent inserted blocks `g₁` and `g₂` into `g₁.append g₂`.
-  have hfg : glueFn n₁ m₁ (pv x₁₂) = pv (f₁.comp f₂).matching := by
-    simp only [x₁₂, matching_comp, pv_glueMiddle, pv_cast_eq]
-  have hfgc :
-      glueCircles n₁ m₁ (pv x₁₂) = glueMiddleCircles m₁ (f₁.matching.append f₂.matching) := by
-    simp only [x₁₂, glueMiddleCircles_eq, pv_cast_eq]
-  have hMerge :
-      insertFn (n₁ + l₁ + (m₁ + m₁) - 2 * m₁) p₁ l₂
-        (insertFn n₁ (m₁ + m₁ + p₁ - 2 * m₁) l₁ (glueFn n₁ m₁ (pv x₁₂)) (pv g₁.matching))
-        (pv g₂.matching) =
-      insertFn n₁ p₁ (l₁ + l₂) (pv (f₁.comp f₂).matching)
-        (pv (g₁.matching.append g₂.matching)) := by
-    have e₁ : n₁ + l₁ + (m₁ + m₁) - 2 * m₁ = n₁ + l₁ := by omega
-    have e₂ : m₁ + m₁ + p₁ - 2 * m₁ = p₁ := by omega
-    rw [e₁, e₂, hfg, pv_append_eq,
-      insertFn_insertFn_adjacent (f₁.comp f₂).matching g₁.matching g₂.matching]
-  -- Phase 2: the remaining `m₂` contractions happen strictly inside `g₁.append g₂`.
-  have hP2 := glueFn_insertFn_middle (a := n₁) (b := p₁) (n := n₂) (f₁.comp f₂).matching
-    m₂ (l₁ + l₂) (g₁.matching.append g₂.matching) (by omega)
   have hPhase1 :
       glueFn (n₁ + l₁) m₁ (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching)) =
         insertFn n₁ p₁ (l₁ + l₂) (pv (f₁.comp f₂).matching)
           (pv (g₁.matching.append g₂.matching)) := by
     rw [hApp, hP1a.1]
     simp only [mid, pv_cast_eq, pv_insert_eq]
-    rw [hP1b.1, hMerge]
+    rw [hP1b.1, show n₁ + l₁ + (m₁ + m₁) - 2 * m₁ = n₁ + l₁ by omega,
+      show m₁ + m₁ + p₁ - 2 * m₁ = p₁ by omega,
+      show glueFn n₁ m₁ (pv x₁₂) = pv (f₁.comp f₂).matching by
+        simp only [x₁₂, matching_comp, pv_glueMiddle, pv_cast_eq],
+      pv_append_eq, insertFn_insertFn_adjacent (f₁.comp f₂).matching g₁.matching g₂.matching]
   have hPhase1c :
       glueCircles (n₁ + l₁) m₁ (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching)) =
         glueMiddleCircles m₁ (f₁.matching.append f₂.matching) := by
     rw [hApp, hP1a.2]
     simp only [mid, pv_cast_eq, pv_insert_eq]
-    rw [hP1b.2, hfgc]
+    rw [hP1b.2]
+    simp only [x₁₂, glueMiddleCircles_eq, pv_cast_eq]
+  have hP2 := glueFn_insertFn_middle (a := n₁) (b := p₁) (n := n₂) (f₁.comp f₂).matching
+    m₂ (l₁ + l₂) (g₁.matching.append g₂.matching) (by omega)
   have hidx : n₁ + n₂ + m₂ = n₁ + l₁ := by omega
-  have hlen : l₁ + l₂ - 2 * m₂ = n₂ + p₂ := by omega
   ext : 1
   · apply eq_of_pv_eq
-    rw [matching_comp, pv_glueMiddle, hsplit.1, hidx, hPhase1, hP2.1, hlen, matching_tensor,
-      pv_cast_eq, pv_insert_eq, matching_comp, pv_glueMiddle, matching_comp, pv_glueMiddle]
+    rw [matching_comp, pv_glueMiddle, hsplit.1, hidx, hPhase1, hP2.1,
+      show l₁ + l₂ - 2 * m₂ = n₂ + p₂ by omega, matching_tensor, pv_cast_eq, pv_insert_eq,
+      matching_comp, pv_glueMiddle, matching_comp, pv_glueMiddle]
   · simp only [circles_comp, circles_tensor]
     rw [glueMiddleCircles_eq, hsplit.2, hidx, hPhase1, hPhase1c, hP2.2, ← glueMiddleCircles_eq]
     omega
