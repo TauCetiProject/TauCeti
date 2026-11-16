@@ -54,9 +54,10 @@ The construction and the proof of `TauCeti.plWithinAtProp_localInvariantProp` fo
   identities and constant maps are PL, and PL maps compose.
 * `TauCeti.isPLMap_iff_isPLOn_univ`: a map between real normed spaces is a PL map exactly
   when it is piecewise linear on the whole space.
-* `TauCeti.isPLMap_iff_isPLOn_range`: a map between model spaces is a PL map exactly when it is
-  continuous and, read in the model vector spaces, piecewise linear on the range of the source
-  model.
+* `TauCeti.isPLMap_iff_isPLOn_range`: a map between model spaces is a PL map exactly when, read
+  in the model vector spaces, it is piecewise linear on the range of the source model.
+* `TauCeti.isPLMap_of_comp_eq`: a map between model spaces which reads as a continuous affine map
+  in the model vector spaces is PL.
 
 ## References
 
@@ -254,20 +255,32 @@ theorem IsPLMap.comp {g : M' → M''} {f : M → M'} (hg : IsPLMap I' I'' g) (hf
     IsPLMap I I'' (g ∘ f) :=
   fun x => IsPLMapAt.comp (hg (f x)) (hf x)
 
+/-- A map between model spaces, with their trivial charts, is PL exactly when its reading
+`I' ∘ f ∘ I.symm` in the model vector spaces is PL on the range of `I`. Continuity of `f` follows
+from that of its reading. -/
+theorem isPLMap_iff_isPLOn_range {f : H → H'} :
+    IsPLMap I I' f ↔ IsPLOn (I' ∘ f ∘ I.symm) (range I) := by
+  have key : IsPLMap I I' f ↔ Continuous f ∧ IsPLOn (I' ∘ f ∘ I.symm) (range I) := by
+    simp only [isPLMap_iff_forall_isPLMapAt, isPLMapAt_iff, chartAt_self_eq, mfld_simps,
+      forall_and, ← continuous_iff_continuousAt]
+    rw [isPLOn_iff_forall_isPLWithinAt, forall_mem_range]
+  refine key.trans (and_iff_right_of_imp fun h => ?_)
+  exact (I'.continuous_symm.comp (h.continuousOn.comp_continuous I.continuous mem_range_self)).congr
+    fun x => by simp
+
 /-- Between real normed spaces with their trivial charts, the PL maps are exactly the maps
 piecewise linear on the whole space. -/
 theorem isPLMap_iff_isPLOn_univ {f : E → E'} :
     IsPLMap 𝓘(ℝ, E) 𝓘(ℝ, E') f ↔ IsPLOn f univ := by
-  simp only [IsPLMap, liftProp_iff, PLWithinAtProp, mfld_simps]
-  refine ⟨fun h => isPLOn_iff_forall_isPLWithinAt.2 fun x _ => h.2 x, fun h =>
-    ⟨continuousOn_univ.1 h.continuousOn, fun x => h.isPLWithinAt (mem_univ x)⟩⟩
+  simp only [isPLMap_iff_isPLOn_range, modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
+    Function.id_comp, Function.comp_id, range_id]
 
-/-- A map between model spaces, with their trivial charts, is PL exactly when it is continuous and
-its reading `I' ∘ f ∘ I.symm` in the model vector spaces is PL on the range of `I`. -/
-theorem isPLMap_iff_isPLOn_range {f : H → H'} :
-    IsPLMap I I' f ↔ Continuous f ∧ IsPLOn (I' ∘ f ∘ I.symm) (range I) := by
-  simp only [isPLMap_iff_forall_isPLMapAt, isPLMapAt_iff, chartAt_self_eq, mfld_simps,
-    forall_and, ← continuous_iff_continuousAt]
-  rw [isPLOn_iff_forall_isPLWithinAt, forall_mem_range]
+/-- A map between model spaces which, read in the model vector spaces, is a continuous affine map
+`A`, that is `I' ∘ f = A ∘ I`, is PL. -/
+theorem isPLMap_of_comp_eq {f : H → H'} (A : E →ᴬ[ℝ] E') (hA : ∀ x, I' (f x) = A (I x)) :
+    IsPLMap I I' f :=
+  isPLMap_iff_isPLOn_range.2 <| (isPLOn_continuousAffineMap A _).congr <| by
+    rintro _ ⟨x, rfl⟩
+    simp [hA]
 
 end TauCeti

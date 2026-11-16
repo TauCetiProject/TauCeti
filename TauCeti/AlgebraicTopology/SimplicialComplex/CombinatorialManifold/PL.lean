@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.Ha
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.ChartedSpace
 public import TauCeti.Geometry.Manifold.PLGroupoid.Transition
 public import TauCeti.Geometry.Manifold.ModelTransport.PL
+public import TauCeti.Geometry.Manifold.PLGroupoid.HalfSpace
 
 /-!
 # PL structures on combinatorial manifolds
@@ -109,10 +110,7 @@ theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid
   · simpa only [modelWithCornersHalfSpace_apply] using hgc v
 
 /-- The weak realization of a positive-dimensional combinatorial manifold is a PL manifold,
-possibly with boundary, modelled on Mathlib's half-space `EuclideanHalfSpace (n + 1)`. The atlas
-is the product half-space atlas of
-`PreAbstractSimplicialComplex.IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid`
-followed by `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`. -/
+possibly with boundary, modelled on Mathlib's half-space `EuclideanHalfSpace (n + 1)`. -/
 theorem IsCombinatorialManifold.exists_chartedSpace_euclideanHalfSpace_hasGroupoid_PLGroupoid
     {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {n : ℕ}
     (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1)) :

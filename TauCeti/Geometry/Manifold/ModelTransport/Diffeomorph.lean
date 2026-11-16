@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.ModelTransport.HasGroupoid
 
 /-!
 # Changing the model space along a diffeomorphism
@@ -15,7 +16,8 @@ Let `Φ : H ≃ₘ^n⟮I, I'⟯ H'` be a `C^n` diffeomorphism between two model 
 `C^n` chart change of `H` by `Φ` gives a `C^n` chart change of `H'`
 (`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Consequently, a `C^n` manifold modelled on
 `I` is a `C^n` manifold modelled on `I'` for the composite charts `ChartedSpace.comp H' H M`, where
-`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`).
+`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`, an instance of
+`Homeomorph.hasGroupoid_chartedSpaceComp`).
 
 For instance, a model with corners described as a subset of `ℂ` can be compared with Mathlib's
 native half-spaces in this way.
@@ -70,12 +72,8 @@ theorem isManifold_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) 
     IsManifold I' n M := by
   let := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
   let := ChartedSpace.comp H' H M
-  refine { compatible := ?_ }
-  rintro _ _ ⟨c, hc, φ, hφ, rfl⟩ ⟨c', hc', φ', hφ', rfl⟩
-  obtain rfl := OpenPartialHomeomorph.singletonChartedSpace_mem_atlas_eq _ _ φ hφ
-  obtain rfl := OpenPartialHomeomorph.singletonChartedSpace_mem_atlas_eq _ _ φ' hφ'
-  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
-    ← OpenPartialHomeomorph.trans_assoc c.symm]
-  exact Φ.symm_trans_trans_mem_contDiffGroupoid (HasGroupoid.compatible hc hc')
+  have := Φ.toHomeomorph.hasGroupoid_chartedSpaceComp
+    (fun _ he ↦ Φ.symm_trans_trans_mem_contDiffGroupoid he) M
+  exact IsManifold.mk' I' n M
 
 end Diffeomorph

@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Model
+public import TauCeti.Geometry.Manifold.ModelTransport.Boundary
 
 /-!
 # A product half-space model
@@ -26,8 +27,16 @@ coordinate into a half-space chart missing the boundary.
 For `E = Fin n → ℝ` the product half-space is homeomorphic to Mathlib's half-space
 `EuclideanHalfSpace (n + 1)`, by moving the height to coordinate `0`
 (`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`). Read in the model vector spaces this
-homeomorphism is the restriction of a continuous linear equivalence, so it identifies the two
-models in every regularity class that is invariant under linear changes of coordinates.
+homeomorphism is the restriction of the continuous linear equivalence
+`TauCeti.prodCommEuclideanFinConsEquiv`
+(`TauCeti.modelWithCornersEuclideanHalfSpace_halfSpaceHomeomorphEuclideanHalfSpace`), so it
+identifies the two models in every regularity class that is invariant under linear changes of
+coordinates. In particular, moving a charted space over the product half-space to
+`EuclideanHalfSpace (n + 1)` keeps its manifold interior and boundary
+(`TauCeti.modelWithCornersEuclideanHalfSpace_interior_chartedSpaceComp`,
+`TauCeti.modelWithCornersEuclideanHalfSpace_boundary_chartedSpaceComp`). The range of
+`𝓡∂ n` is a convex polyhedron as well
+(`TauCeti.isConvexPolyhedron_range_modelWithCornersEuclideanHalfSpace`).
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 1.
 -/
@@ -35,6 +44,7 @@ Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapte
 public section
 
 open Set
+open scoped Manifold
 
 namespace TauCeti
 
@@ -126,28 +136,49 @@ noncomputable def halfSpaceInteriorChart :
 
 /-! ### Comparison with `EuclideanHalfSpace` -/
 
+/-- The range of Mathlib's half-space model `𝓡∂ n` is a convex polyhedron: it is cut out by the
+single inequality `-y 0 ≤ 0`. -/
+theorem isConvexPolyhedron_range_modelWithCornersEuclideanHalfSpace (n : ℕ) [NeZero n] :
+    IsConvexPolyhedron (range (𝓡∂ n)) := by
+  rw [range_modelWithCornersEuclideanHalfSpace]
+  convert isConvexPolyhedron_setOf_le
+    (-(EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin n)).toContinuousAffineMap) using 1
+  ext y
+  simp
+
+/-- The continuous linear equivalence `q ↦ TauCeti.euclideanFinConsEquiv rfl (q.2, q.1)` of
+`(Fin n → ℝ) × ℝ` with `ℝⁿ⁺¹`, which moves the last factor to coordinate `0`. It restricts to the
+homeomorphism `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` of half-spaces. -/
+noncomputable def prodCommEuclideanFinConsEquiv (n : ℕ) :
+    ((Fin n → ℝ) × ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+  (ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans (euclideanFinConsEquiv rfl)
+
 /-- The product half-space `{q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}` is homeomorphic to Mathlib's
 half-space `EuclideanHalfSpace (n + 1)`: the height `q.2` becomes coordinate `0` and the
 tangential coordinates `q.1` become coordinates `1, …, n`. It is the restriction of the
-continuous linear equivalence `q ↦ TauCeti.euclideanFinConsEquiv rfl (q.2, q.1)`. -/
+continuous linear equivalence `TauCeti.prodCommEuclideanFinConsEquiv n`. -/
 noncomputable def halfSpaceHomeomorphEuclideanHalfSpace (n : ℕ) :
     {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} ≃ₜ EuclideanHalfSpace (n + 1) :=
-  ((ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans
-    (euclideanFinConsEquiv rfl)).toHomeomorph.subtype fun q => by simp
+  (prodCommEuclideanFinConsEquiv n).toHomeomorph.subtype fun q => by
+    simp [prodCommEuclideanFinConsEquiv]
 
 variable {n : ℕ}
 
 /-- In ambient coordinates, `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` is
 `q ↦ TauCeti.euclideanFinConsEquiv rfl (q.2, q.1)`. -/
 theorem coe_halfSpaceHomeomorphEuclideanHalfSpace (q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}) :
-    (halfSpaceHomeomorphEuclideanHalfSpace n q).1 = euclideanFinConsEquiv rfl (q.1.2, q.1.1) :=
-  (rfl)
+    (halfSpaceHomeomorphEuclideanHalfSpace n q).1 = euclideanFinConsEquiv rfl (q.1.2, q.1.1) := by
+  rw [halfSpaceHomeomorphEuclideanHalfSpace, ← Homeomorph.coe_toEquiv, Homeomorph.subtype_toEquiv]
+  simp [prodCommEuclideanFinConsEquiv, Prod.swap]
 
 /-- In ambient coordinates, the inverse of `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` is
 `y ↦ ((TauCeti.euclideanFinConsEquiv rfl).symm y).swap`. -/
 theorem coe_halfSpaceHomeomorphEuclideanHalfSpace_symm (y : EuclideanHalfSpace (n + 1)) :
     ((halfSpaceHomeomorphEuclideanHalfSpace n).symm y).1 =
-      ((euclideanFinConsEquiv rfl).symm y.1).swap := (rfl)
+      ((euclideanFinConsEquiv rfl).symm y.1).swap := by
+  rw [halfSpaceHomeomorphEuclideanHalfSpace, ← Homeomorph.coe_symm_toEquiv,
+    Homeomorph.subtype_toEquiv, Equiv.subtypeEquiv_symm, Equiv.subtypeEquiv_apply]
+  simp [prodCommEuclideanFinConsEquiv]
 
 /-- `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` puts the height in coordinate `0`. -/
 @[simp]
@@ -178,5 +209,55 @@ coordinate `0`. -/
 theorem halfSpaceHomeomorphEuclideanHalfSpace_symm_apply_snd (y : EuclideanHalfSpace (n + 1)) :
     ((halfSpaceHomeomorphEuclideanHalfSpace n).symm y).1.2 = y.1 0 := by
   simp [coe_halfSpaceHomeomorphEuclideanHalfSpace_symm]
+
+/-- The product half-space `{q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}` and `EuclideanHalfSpace (n + 1)`, read
+in their model vector spaces, are identified by `TauCeti.prodCommEuclideanFinConsEquiv n`. -/
+theorem modelWithCornersEuclideanHalfSpace_halfSpaceHomeomorphEuclideanHalfSpace
+    (q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}) :
+    (𝓡∂ (n + 1)) (halfSpaceHomeomorphEuclideanHalfSpace n q) =
+      prodCommEuclideanFinConsEquiv n (modelWithCornersHalfSpace (Fin n → ℝ) q) := by
+  simp [coe_halfSpaceHomeomorphEuclideanHalfSpace, prodCommEuclideanFinConsEquiv, Prod.swap]
+
+/-- The inverse of `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`, read in the model vector
+spaces, is the inverse of `TauCeti.prodCommEuclideanFinConsEquiv n`. -/
+theorem modelWithCornersHalfSpace_halfSpaceHomeomorphEuclideanHalfSpace_symm
+    (y : EuclideanHalfSpace (n + 1)) :
+    modelWithCornersHalfSpace (Fin n → ℝ) ((halfSpaceHomeomorphEuclideanHalfSpace n).symm y) =
+      (prodCommEuclideanFinConsEquiv n).symm ((𝓡∂ (n + 1)) y) := by
+  rw [ContinuousLinearEquiv.eq_symm_apply,
+    ← modelWithCornersEuclideanHalfSpace_halfSpaceHomeomorphEuclideanHalfSpace,
+    Homeomorph.apply_symm_apply]
+
+/-- `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` matches the interior points of the two
+half-space models. -/
+theorem preimage_interior_halfSpaceHomeomorphEuclideanHalfSpace :
+    halfSpaceHomeomorphEuclideanHalfSpace n ⁻¹' (𝓡∂ (n + 1)).interior (EuclideanHalfSpace (n + 1)) =
+      (modelWithCornersHalfSpace (Fin n → ℝ)).interior {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} :=
+  (halfSpaceHomeomorphEuclideanHalfSpace n).preimage_interior_of_comp_eq
+    (prodCommEuclideanFinConsEquiv n).toHomeomorph fun q => by
+      rw [ContinuousLinearEquiv.coe_toHomeomorph]
+      exact modelWithCornersEuclideanHalfSpace_halfSpaceHomeomorphEuclideanHalfSpace q
+
+/-- Moving a charted space over the product half-space to `EuclideanHalfSpace (n + 1)` along
+`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` keeps its manifold interior. -/
+theorem modelWithCornersEuclideanHalfSpace_interior_chartedSpaceComp (M : Type*)
+    [TopologicalSpace M] [ChartedSpace {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} M] :
+    letI := (halfSpaceHomeomorphEuclideanHalfSpace n).toOpenPartialHomeomorph.singletonChartedSpace
+      (by simp)
+    letI := ChartedSpace.comp (EuclideanHalfSpace (n + 1)) {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} M
+    (𝓡∂ (n + 1)).interior M = (modelWithCornersHalfSpace (Fin n → ℝ)).interior M :=
+  (halfSpaceHomeomorphEuclideanHalfSpace n).interior_chartedSpaceComp
+    preimage_interior_halfSpaceHomeomorphEuclideanHalfSpace M
+
+/-- Moving a charted space over the product half-space to `EuclideanHalfSpace (n + 1)` along
+`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` keeps its manifold boundary. -/
+theorem modelWithCornersEuclideanHalfSpace_boundary_chartedSpaceComp (M : Type*)
+    [TopologicalSpace M] [ChartedSpace {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} M] :
+    letI := (halfSpaceHomeomorphEuclideanHalfSpace n).toOpenPartialHomeomorph.singletonChartedSpace
+      (by simp)
+    letI := ChartedSpace.comp (EuclideanHalfSpace (n + 1)) {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} M
+    (𝓡∂ (n + 1)).boundary M = (modelWithCornersHalfSpace (Fin n → ℝ)).boundary M :=
+  (halfSpaceHomeomorphEuclideanHalfSpace n).boundary_chartedSpaceComp
+    preimage_interior_halfSpaceHomeomorphEuclideanHalfSpace M
 
 end TauCeti
