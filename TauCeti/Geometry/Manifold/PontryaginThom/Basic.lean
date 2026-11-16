@@ -150,6 +150,20 @@ theorem pontryaginThomCollapse_eq_zero_iff (h : IsFramedTube f τ) {m : M} :
     pontryaginThomCollapse τ m = (0 : V) ↔ m ∈ range f := by
   simp [pontryaginThomCollapse_eq_coe_iff h.isOpenEmbedding.injective, h.apply_zero, mem_range]
 
+/-- The core of a framed tube lies in the tube. -/
+theorem range_subset_range (h : IsFramedTube f τ) : range f ⊆ range τ :=
+  range_subset_iff.2 fun x ↦ ⟨(x, 0), h.apply_zero x⟩
+
+/-- The core of a framed tube is continuous: it is the tube on the zero section. -/
+protected theorem continuous (h : IsFramedTube f τ) : Continuous f := by
+  rw [show f = fun x ↦ τ (x, 0) from funext fun x ↦ (h.apply_zero x).symm]
+  exact h.isOpenEmbedding.continuous.comp (continuous_id.prodMk continuous_const)
+
+/-- The core of a framed tube with compact domain in a Hausdorff space is closed. -/
+theorem isClosed_range [CompactSpace S] [T2Space M] (h : IsFramedTube f τ) :
+    IsClosed (range f) :=
+  (isCompact_range h.continuous).isClosed
+
 end IsFramedTube
 
 variable [TopologicalSpace S] [TopologicalSpace M] [TopologicalSpace V]
