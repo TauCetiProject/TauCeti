@@ -7,9 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Stable
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.BoundedPlus
-public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Mk
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Stalk
-public import TauCeti.CategoryTheory.Exact.Frobenius
 public import TauCeti.CategoryTheory.Exact.Stable.Autoequivalence
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 

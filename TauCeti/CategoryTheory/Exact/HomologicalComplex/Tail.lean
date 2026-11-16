@@ -11,11 +11,11 @@ public import TauCeti.CategoryTheory.Exact.Injective
 public import TauCeti.Algebra.Homology.HomotopyCategory.EventuallyNullHomotopic
 
 /-!
-# Complexes acyclic in nonnegative degrees
+# Complexes acyclic in positive degrees
 
 A **tail** of a cochain complex `I` for an exact structure `E` is a family of conflations
 `Zᵏ ↣ Iᵏ ↠ Zᵏ⁺¹`, `k ≥ 0`, factoring the differentials `dᵏ = pᵏ ≫ iᵏ⁺¹`: the complex is acyclic in
-nonnegative degrees, and `Z⁰` is the object it resolves. An injective resolution of an object
+positive degrees, and `Z⁰` is the object it resolves. An injective resolution of an object
 `M`, with `Z⁰ = M`, is the basic example.
 
 A map of complexes `φ : I ⟶ J` with tails restricts to maps of cycles `Zᵏ ⟶ Z'ᵏ`
