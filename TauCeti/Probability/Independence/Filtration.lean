@@ -8,10 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Probability.Independence.BoundedContinuousFunction
-import Mathlib.Probability.Independence.Integration
 import TauCeti.MeasureTheory.Group.Arithmetic
+import TauCeti.Probability.Independence.Limit
 import TauCeti.Probability.Independence.Sup
 import TauCeti.Probability.Process.Filtration.RightCont
 
@@ -165,7 +163,7 @@ theorem indep_comap_shift_sub [Add ι] [CanonicallyOrderedAdd ι] (hX : Adapted 
 section RightCont
 
 open Filter Set
-open scoped Topology _root_.BoundedContinuousFunction ENNReal
+open scoped Topology
 
 private lemma indep_rightCont_pi_sub_of_lt (hX : Adapted ℱ X)
     (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ)
@@ -191,43 +189,25 @@ theorem indep_comap_sub_Ioi_rightCont (hX : Adapted ℱ X)
     (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) {s : ι}
     (hcont : ∀ᵐ ω ∂μ, ContinuousWithinAt (X · ω) (Ioi s) s) :
     Indep (.comap (fun ω (t : Ioi s) ↦ X t ω - X s ω) inferInstance) (ℱ.rightCont s) μ := by
-  rcases eq_zero_or_isProbabilityMeasure μ with rfl | hμ
-  · simp [Indep_iff]
-  refine (indep_comap_process_of_prod_bcf (ℱ.rightCont.le s)
-    (fun _ ↦ (hX.measurable.sub hX.measurable).aemeasurable) fun A hA I f ↦ ?_).symm
-  rcases I.eq_empty_or_nonempty with rfl | hne
-  · simp [integral_const, smul_eq_mul, mul_comm]
-  have hg : Measurable fun z : I → E ↦ ∏ t : I, f t (z t) :=
-    Finset.measurable_prod _ fun t _ ↦ (f t).continuous.measurable.comp (measurable_pi_apply t)
-  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).2
-  have hu' : Tendsto u atTop (𝓝[>] s) :=
-    tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n ↦ (hu n).1⟩
-  have hUn (n : ℕ) : Measurable fun ω (t : I) ↦ X (t : ι) ω - X (u n) ω :=
-    measurable_pi_iff.2 fun _ ↦ hX.measurable.sub hX.measurable
-  have hmeas (n : ℕ) :
-      AEStronglyMeasurable (fun ω ↦ ∏ t : I, f t (X (t : ι) ω - X (u n) ω)) μ :=
-    (hg.comp (hUn n)).aestronglyMeasurable
-  have hbound (n : ℕ) :
-      ∀ᵐ ω ∂μ, ‖∏ t : I, f t (X (t : ι) ω - X (u n) ω)‖ ≤ ∏ t : I, ‖f t‖ :=
-    Eventually.of_forall fun ω ↦ by
-      rw [norm_prod]
-      gcongr with t
-      exact (f t).norm_coe_le_norm _
-  have hconv : ∀ᵐ ω ∂μ, Tendsto (fun n ↦ ∏ t : I, f t (X (t : ι) ω - X (u n) ω))
-      atTop (𝓝 (∏ t : I, f t (X (t : ι) ω - X s ω))) :=
-    hcont.mono fun ω hω ↦ tendsto_finsetProd _ fun t _ ↦
-      (f t).continuous.continuousAt.tendsto.comp (tendsto_const_nhds.sub (hω.tendsto.comp hu'))
-  have hall := tendsto_integral_of_dominated_convergence (fun _ ↦ ∏ t : I, ‖f t‖)
-    hmeas (integrable_const _) hbound hconv
-  have hset := tendsto_integral_of_dominated_convergence (μ := μ.restrict A)
-    (fun _ ↦ ∏ t : I, ‖f t‖) (fun n ↦ (hmeas n).restrict) (integrable_const _)
-    (fun n ↦ ae_restrict_of_ae (hbound n)) (ae_restrict_of_ae hconv)
-  have heq (n : ℕ) : ∫ ω in A, (∏ t : I, f t (X (t : ι) ω - X (u n) ω)) ∂μ =
-      μ.real A * ∫ ω, (∏ t : I, f t (X (t : ι) ω - X (u n) ω)) ∂μ :=
-    (indep_rightCont_pi_sub_of_lt hX hindep (hu n).1 I fun t ht ↦
-      (hu n).2.le.trans (I.min'_le t ht)).symm.setIntegral_eq_mul
-      (ℱ.rightCont.le s) (hUn n).aemeasurable hA hg.aestronglyMeasurable
-  exact tendsto_nhds_unique hset ((tendsto_const_nhds.mul hall).congr fun n ↦ (heq n).symm)
+  classical
+  rw [MeasurableSpace.comap_process_pi, iSup_eq_iSup_finset]
+  refine indep_iSup_of_monotone (fun I ↦ ?_) (fun _ ↦ ?_) (ℱ.rightCont.le s)
+    (fun _ _ h ↦ iSup_le_iSup_of_subset h)
+  · rcases I.eq_empty_or_nonempty with rfl | hne
+    · simpa using indep_bot_left (ℱ.rightCont s)
+    · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' (I.min' hne).2
+      have hu' : Tendsto u atTop (𝓝[>] s) :=
+        tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n ↦ (hu n).1⟩
+      have hfin := (indep_comap_process_of_ae_tendsto
+        (X := fun n (t : I) ω ↦ X (t : ι) ω - X (u n) ω)
+        (Y := fun (t : I) ω ↦ X (t : ι) ω - X s ω) (ℱ.rightCont.le s)
+        (fun _ ↦ .of_forall fun _ ↦ (hX.measurable.sub hX.measurable).aemeasurable)
+        (fun _ ↦ (hX.measurable.sub hX.measurable).aemeasurable)
+        (.of_forall fun n ↦ (indep_rightCont_pi_sub_of_lt hX hindep (hu n).1 I fun t ht ↦
+          (hu n).2.le.trans (I.min'_le t ht)).symm)
+        (fun _ ↦ hcont.mono fun ω hω ↦ tendsto_const_nhds.sub (hω.tendsto.comp hu'))).symm
+      simpa only [MeasurableSpace.comap_process_pi, iSup_subtype'] using hfin
+  · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
 
 /-- If an adapted process on a densely ordered first-countable time index into a Borel additive
 group with outer closed approximation and continuous subtraction has increments independent of the

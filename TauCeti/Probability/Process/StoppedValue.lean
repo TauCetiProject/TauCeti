@@ -96,8 +96,8 @@ theorem stoppedValue_add_const_sub_stoppedValue_of_eq_top [Add ι] [AddGroup β]
     stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω = 0 := by
   simp [stoppedValue, h]
 
-/-- If `u · ω` is continuous, then the restarted increment path
-`t ↦ stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω` is continuous at `ω`: it shifts and
+/-- If `u · ω` is continuous, then for fixed `ω` the restarted increment path
+`t ↦ stoppedValue u (fun ω' ↦ τ ω' + t) ω - stoppedValue u τ ω` is continuous: it shifts and
 recenters `u · ω` when `τ ω` is finite and vanishes identically when `τ ω = ⊤`. -/
 theorem continuous_stoppedValue_add_const_sub_stoppedValue [TopologicalSpace ι] [Add ι]
     [ContinuousAdd ι] [TopologicalSpace β] [AddGroup β] [ContinuousSub β] (τ : Ω → WithTop ι)

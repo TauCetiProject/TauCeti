@@ -10,8 +10,6 @@ public import TauCeti.Probability.Process.Filtration.AmbientNullAugmentation
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Independence.Completion
 import TauCeti.Probability.Independence.Filtration
-import TauCeti.Probability.Independence.Limit
-import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Brownian motion on the usual augmentation
@@ -38,7 +36,7 @@ that time.
 
 public section
 
-open MeasureTheory ProbabilityTheory Filter Set
+open MeasureTheory ProbabilityTheory Set
 open scoped NNReal
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
@@ -53,24 +51,13 @@ theorem rightCont (hW : IsFilteredPreBrownianReal ℱ W P)
     IsFilteredPreBrownianReal ℱ.rightCont W P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   refine ⟨hW.toIsPreBrownianReal,
-    fun t => (hW.adapted t).mono (ℱ.le_rightCont t) le_rfl, ?_⟩
-  intro s t hst
-  apply Indep.symm
-  rcases hst.eq_or_lt with rfl | hst
-  · have hzero : W s - W s = fun _ => (0 : ℝ) := funext fun ω => sub_self _
-    rw [hzero, MeasurableSpace.comap_const]
-    exact indep_bot_right (ℱ.rightCont s)
-  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' hst
-  have hind (n : ℕ) : Indep (ℱ.rightCont s) (.comap (W t - W (u n)) inferInstance) P :=
-    indep_of_indep_of_le_left (hW.indep_sub (hu n).2.le).symm
-      (ℱ.rightCont_le_of_lt (hu n).1)
-  refine indep_comap_of_ae_tendsto (ℱ.rightCont.le s)
-    (fun n => (hW.adapted.measurable.sub hW.adapted.measurable).aemeasurable)
-    (hW.adapted.measurable.sub hW.adapted.measurable).aemeasurable hind ?_
-  filter_upwards [hcont s] with ω hω
-  have hu' : Tendsto u atTop (nhdsWithin s (Ioi s)) :=
-    tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n => (hu n).1⟩
-  exact tendsto_const_nhds.sub (hω.tendsto.comp hu')
+    fun t => (hW.adapted t).mono (ℱ.le_rightCont t) le_rfl, fun s t hst => ?_⟩
+  refine indep_of_indep_of_le_left
+    (hW.adapted.indep_comap_sub_Ici_rightCont hW.indep_sub (hcont s)) ?_
+  have hcomp : W t - W s =
+      (fun f : Ici s → ℝ => f ⟨t, hst⟩) ∘ fun ω (u : Ici s) => W u ω - W s ω := rfl
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  exact MeasurableSpace.comap_mono (measurable_pi_apply (⟨t, hst⟩ : Ici s)).comap_le
 
 /-- If paths are almost surely right-continuous at `s`, the entire shifted increment process
 `t ↦ W (s + t) - W s` is independent of the right-continuous slice `ℱ.rightCont s`. -/

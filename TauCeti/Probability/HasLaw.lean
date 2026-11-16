@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
-import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 /-!
@@ -323,7 +323,7 @@ end Projective
 section Limit
 
 open Filter
-open scoped Topology BoundedContinuousFunction ENNReal
+open scoped Topology
 
 /-- An almost-sure limit along a countably generated nontrivial filter preserves a common law
 into a Borel space with outer closed approximation. Only finiteness of the source measure is
@@ -335,18 +335,44 @@ theorem _root_.ProbabilityTheory.HasLaw.of_ae_tendsto {ι Ω E : Type*} [Measura
     (hX : ∀ᶠ i in l, HasLaw (X i) ν μ) (hY : AEMeasurable Y μ)
     (hlim : ∀ᵐ ω ∂μ, Tendsto (fun i ↦ X i ω) l (𝓝 (Y ω))) :
     HasLaw Y ν μ := by
-  refine ⟨hY, ext_of_forall_lintegral_eq_of_IsFiniteMeasure fun f ↦ ?_⟩
-  have hf_meas : Measurable fun x ↦ (f x : ℝ≥0∞) := f.continuous.measurable.coe_nnreal_ennreal
-  rw [lintegral_map' hf_meas.aemeasurable hY]
-  have htend := tendsto_lintegral_filter_of_dominated_convergence' (fun _ ↦ edist 0 f)
-    (hX.mono fun _ hi ↦ hf_meas.comp_aemeasurable hi.aemeasurable)
-    (Eventually.of_forall fun _ ↦ Eventually.of_forall fun _ ↦ f.apply_le_edist_zero _)
-    (by simpa using ENNReal.mul_ne_top (edist_ne_top 0 f) (measure_ne_top μ Set.univ))
-    (hlim.mono fun _ hω ↦
-      (ENNReal.continuous_coe.tendsto _).comp ((f.continuous.tendsto _).comp hω))
-  have hconst : Tendsto (fun i ↦ ∫⁻ ω, (f (X i ω) : ℝ≥0∞) ∂μ) l (𝓝 (∫⁻ x, (f x : ℝ≥0∞) ∂ν)) :=
-    tendsto_const_nhds.congr' (hX.mono fun _ hi ↦ (hi.lintegral_comp hf_meas.aemeasurable).symm)
-  exact tendsto_nhds_unique htend hconst
+  classical
+  obtain ⟨i₀, hi₀⟩ := hX.exists
+  by_cases hμ0 : μ Set.univ = 0
+  · have hμ : μ = 0 := Measure.measure_univ_eq_zero.1 hμ0
+    subst hμ
+    have hν : ν = 0 := by simpa using hi₀.map_eq.symm
+    exact hν ▸ ⟨hY, by simp⟩
+  · let P : Measure Ω := (μ Set.univ)⁻¹ • μ
+    have : IsProbabilityMeasure P :=
+      ⟨by simp [P, ENNReal.inv_mul_cancel hμ0 (measure_ne_top μ Set.univ)]⟩
+    let X' : ι → Ω → E := fun i ↦ if HasLaw (X i) ν μ then X i else X i₀
+    have hX' (i : ι) : HasLaw (X' i) ν μ := by
+      dsimp only [X']
+      split_ifs with hi
+      · exact hi
+      · exact hi₀
+    have hX'P (i : ι) : HasLaw (X' i) ((μ Set.univ)⁻¹ • ν) P :=
+      ⟨(hX' i).aemeasurable.smul_measure _, by
+        rw [Measure.map_smul _ (hX' i).aemeasurable, (hX' i).map_eq]⟩
+    have hYP : AEMeasurable Y P := hY.smul_measure _
+    have hlim' : ∀ᵐ ω ∂P, Tendsto (fun i ↦ X' i ω) l (𝓝 (Y ω)) := by
+      filter_upwards [Measure.ae_smul_measure hlim _] with ω hω
+      exact hω.congr' (hX.mono fun i hi ↦ by simp [X', hi])
+    have h1 : TendstoInDistribution X' l Y (fun _ ↦ P) P :=
+      tendstoInDistribution_of_ae_tendsto (fun i ↦ (hX'P i).aemeasurable) hYP hlim'
+    have h2 : TendstoInDistribution X' l (X' i₀) (fun _ ↦ P) P :=
+      tendstoInDistribution_of_identDistrib i₀
+        (fun j ↦ ⟨(hX'P i₀).aemeasurable, (hX'P j).aemeasurable,
+          (hX'P i₀).map_eq.trans (hX'P j).map_eq.symm⟩)
+        (IdentDistrib.refl (hX'P i₀).aemeasurable)
+    have hmap : P.map Y = P.map (X' i₀) := tendstoInDistribution_unique X' h1 h2
+    refine ⟨hY, ?_⟩
+    have hsmul : (μ Set.univ)⁻¹ • μ.map Y = (μ Set.univ)⁻¹ • ν := by
+      rw [Measure.map_smul _ hY, Measure.map_smul _ (hX' i₀).aemeasurable,
+        (hX' i₀).map_eq] at hmap
+      exact hmap
+    have h := congrArg (μ Set.univ • ·) hsmul
+    simpa [smul_smul, ENNReal.mul_inv_cancel hμ0 (measure_ne_top μ Set.univ)] using h
 
 /-- In a pseudo-metrizable Borel space, almost-everywhere measurability of the limit is automatic,
 so an almost-sure limit of random variables eventually sharing a law retains that law. -/
