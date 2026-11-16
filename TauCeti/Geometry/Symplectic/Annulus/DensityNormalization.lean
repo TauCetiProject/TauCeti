@@ -21,6 +21,7 @@ import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.Topology.Algebra.Module.Determinant
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # Normalizing a periodic area form on the annulus strip
@@ -162,16 +163,6 @@ theorem stripColumnMean_periodic (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x
     Periodic (stripColumnMean ρ) 1 := fun x ↦
   integral_congr fun y hy ↦ hper x y (by rwa [uIcc_of_le zero_le_one] at hy)
 
-/-- A function continuous on the strip agrees there with a function continuous on the plane: clamp
-the second coordinate to `[0, 1]`. -/
-private theorem exists_continuous_eqOn_univ_prod_Icc (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) :
-    ∃ ρ' : ℝ × ℝ → ℝ, Continuous ρ' ∧ EqOn ρ' ρ (univ ×ˢ Icc 0 1) :=
-  ⟨fun p ↦ ρ (p.1, projIcc 0 1 zero_le_one p.2),
-    hρ.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp
-      ((continuous_projIcc (a := (0 : ℝ)) (b := 1) (h := zero_le_one)).comp continuous_snd)))
-      fun p ↦ ⟨mem_univ _, Subtype.coe_prop _⟩,
-    fun p hp ↦ by simp [projIcc_of_mem _ hp.2]⟩
-
 /-- The column means only read `ρ` on the strip. -/
 private theorem stripColumnMean_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
     stripColumnMean ρ' = stripColumnMean ρ :=
@@ -180,7 +171,7 @@ private theorem stripColumnMean_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' �
 
 theorem continuous_stripColumnMean (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) :
     Continuous (stripColumnMean ρ) := by
-  obtain ⟨ρ', hρ', h⟩ := exists_continuous_eqOn_univ_prod_Icc hρ
+  obtain ⟨ρ', hρ', h⟩ := hρ.exists_continuous_eqOn_univ_prod_Icc zero_le_one
   rw [← stripColumnMean_congr h]
   exact continuous_parametric_intervalIntegral_of_continuous' (f := fun x r ↦ ρ' (x, r)) hρ' 0 1
 
@@ -520,7 +511,7 @@ theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     BijOn (stripDensityNormalization ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) := by
   -- On the strip the normalization only reads `ρ` there, so `ρ` may be taken continuous.
-  obtain ⟨ρ', hc, hρρ'⟩ := exists_continuous_eqOn_univ_prod_Icc hρ
+  obtain ⟨ρ', hc, hρρ'⟩ := hρ.exists_continuous_eqOn_univ_prod_Icc zero_le_one
   have hcm := stripColumnMean_congr hρρ'
   refine BijOn.congr (f₁ := stripDensityNormalization ρ') ?_ fun p hp ↦ Prod.ext ?_ ?_
   rotate_left
