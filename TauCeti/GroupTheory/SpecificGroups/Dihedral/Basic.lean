@@ -47,7 +47,8 @@ rotation `r 2`, so it is central exactly when `n` divides `4`.
 * `TauCeti.dihedralGroupMulEquiv`: that homomorphism as an isomorphism, when the two involutions
   generate `G` and neither is the identity.
 * `TauCeti.dihedralReflectionParity`, `TauCeti.dihedralRotations`: the reflection parity and the
-  rotation subgroup it cuts out, with `TauCeti.dihedralRotationsMulEquiv` its cyclic coordinate.
+  rotation subgroup it cuts out, with `TauCeti.dihedralRotationsMulEquiv` its cyclic coordinate and
+  `TauCeti.dihedralQuotientEquiv` the quotient identification with `Multiplicative (ZMod 2)`.
 
 ## Main results
 
@@ -534,6 +535,21 @@ theorem coe_dihedralRotationsMulEquiv_symm (i : Multiplicative (ZMod n)) :
 commutative. -/
 instance isCyclic_dihedralRotations (n : ℕ) : IsCyclic (dihedralRotations n) :=
   isCyclic_of_surjective _ (dihedralRotationsMulEquiv n).symm.surjective
+
+/-- The quotient of `DihedralGroup n` by its rotation subgroup is `Multiplicative (ZMod 2)`, via
+the reflection parity homomorphism. -/
+noncomputable def dihedralQuotientEquiv (n : ℕ) :
+    DihedralGroup n ⧸ dihedralRotations n ≃* Multiplicative (ZMod 2) :=
+  QuotientGroup.quotientKerEquivOfSurjective (dihedralReflectionParity n)
+    (dihedralReflectionParity_surjective n)
+
+/-- On a coset representative `g`, `TauCeti.dihedralQuotientEquiv` is the reflection parity of
+`g`. -/
+@[simp]
+theorem dihedralQuotientEquiv_mk (n : ℕ) (g : DihedralGroup n) :
+    dihedralQuotientEquiv n (g : DihedralGroup n ⧸ dihedralRotations n) =
+      dihedralReflectionParity n g :=
+  (rfl)
 
 end Rotations
 
