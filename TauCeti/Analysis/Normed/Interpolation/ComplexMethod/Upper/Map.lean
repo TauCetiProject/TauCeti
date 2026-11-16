@@ -185,13 +185,27 @@ private theorem ibpCurve_add_const {E : Type*} [NormedAddCommGroup E] [NormedSpa
     ibpCurve M₀ M₁ c (fun u => y u + v) t = ibpCurve M₀ M₁ c y t + scaleFactor M₀ M₁ c • v := by
   have hs : Continuous fun u : ℝ => scaleFactor M₀ M₁ (c + u * I) :=
     (differentiable_scaleFactor M₀ M₁).continuous.comp (by fun_prop)
-  have hsy : Continuous fun u : ℝ => scaleFactor M₀ M₁ (c + u * I) • y u := hs.smul hy_cont
-  have hsv : Continuous fun u : ℝ => scaleFactor M₀ M₁ (c + u * I) • v := hs.smul continuous_const
-  dsimp only [ibpCurve]; simp_rw [smul_add]
-  rw [intervalIntegral.integral_add (hsy.intervalIntegrable _ _) (hsv.intervalIntegrable _ _),
-    intervalIntegral.integral_smul_const, smul_add, ← smul_assoc, smul_eq_mul,
-    ← intervalIntegral.integral_const_mul, integral_mul_scaleFactor_add_mul_I,
-    ofReal_zero, zero_mul, add_zero, sub_smul]; abel
+  have hsplit : (∫ u in (0 : ℝ)..t,
+        scaleFactor M₀ M₁ (c + u * I) • y u + scaleFactor M₀ M₁ (c + u * I) • v) =
+      (∫ u in (0 : ℝ)..t, scaleFactor M₀ M₁ (c + u * I) • y u) +
+        ∫ u in (0 : ℝ)..t, scaleFactor M₀ M₁ (c + u * I) • v :=
+    intervalIntegral.integral_add ((hs.smul hy_cont).intervalIntegrable _ _)
+      ((hs.smul continuous_const).intervalIntegrable _ _)
+  have hconst : ((Real.log M₀ - Real.log M₁ : ℂ) * I) •
+      (∫ u in (0 : ℝ)..t, scaleFactor M₀ M₁ (c + u * I) • v) =
+        scaleFactor M₀ M₁ (c + t * I) • v - scaleFactor M₀ M₁ c • v := by
+    rw [intervalIntegral.integral_smul_const, ← mul_smul, ← intervalIntegral.integral_const_mul,
+      integral_mul_scaleFactor_add_mul_I]
+    simp [sub_smul]
+  simp only [ibpCurve, smul_add, hsplit, hconst]
+  abel
+
+private theorem ibpCurve_add_const_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] (M₀ M₁ c : ℝ) {y : ℝ → E} (hy_cont : Continuous y) (v : E) (t t₀ : ℝ) :
+    ibpCurve M₀ M₁ c (fun u => y u + v) t - ibpCurve M₀ M₁ c (fun u => y u + v) t₀ =
+      ibpCurve M₀ M₁ c y t - ibpCurve M₀ M₁ c y t₀ := by
+  simp only [ibpCurve_add_const M₀ M₁ c hy_cont v]
+  abel
 
 private theorem map_ibpCurve {E F : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
@@ -213,14 +227,13 @@ private theorem norm_ibpCurve_sub_le_quad {E : Type*} [NormedAddCommGroup E] [No
   have hy_cont : Continuous y := (LipschitzWith.of_dist_le' fun u v => by
     simpa [dist_eq_norm, Real.dist_eq] using hy_lip u v).continuous
   have hy₀ : Continuous fun u => y u - y t₀ := hy_cont.sub continuous_const
-  have hy_eq : y = fun u => (y u - y t₀) + y t₀ := funext fun u => (sub_add_cancel _ _).symm
   have hrem : ibpCurve M₀ M₁ c y t - ibpCurve M₀ M₁ c y t₀ =
       scaleFactor M₀ M₁ (c + t * I) • (y t - y t₀) -
         ((Real.log M₀ - Real.log M₁ : ℂ) * I) •
           ∫ u in t₀..t, scaleFactor M₀ M₁ (c + u * I) • (y u - y t₀) := by
-    conv_lhs => rw [hy_eq]
-    rw [ibpCurve_add_const M₀ M₁ c hy₀, ibpCurve_add_const M₀ M₁ c hy₀, add_sub_add_right_eq_sub,
-      ibpCurve_sub M₀ M₁ c hy₀, sub_self, smul_zero, sub_zero]
+    have hshift := ibpCurve_add_const_sub M₀ M₁ c hy₀ (y t₀) t t₀
+    simp only [sub_add_cancel] at hshift
+    simpa [hshift] using ibpCurve_sub M₀ M₁ c hy₀ t t₀
   have h1 : ‖scaleFactor M₀ M₁ (c + t * I) • (y t - y t₀)‖ ≤ (L : ℝ) * |t - t₀| := by
     rw [norm_smul, hs_norm t, inv_mul_le_iff₀ hM]; exact (hy_lip t t₀).trans_eq (mul_assoc _ _ _)
   have hint_le : ‖∫ u in t₀..t, scaleFactor M₀ M₁ (c + u * I) • (y u - y t₀)‖ ≤
@@ -290,11 +303,14 @@ private theorem ibpStripFunction_sub_eq {E F : Type*}
       I • ∫ u in t₀..t, scaleFactor M₀ M₁ (c + u * I) • H (c + u * I) := by
     rw [hf.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_verticalClosedStrip zero_lt_one hθ
       (by simpa using hc) (by simpa using hc)]; simp [wedgeIntegral]
-  unfold ibpStripFunction
-  rw [sub_sub_sub_comm, ← smul_sub, hwedge, smul_smul, ← ibpCurve_sub M₀ M₁ c hHc_cont, hH_line,
-    ibpCurve_add_const M₀ M₁ c hiy_cont, ibpCurve_add_const M₀ M₁ c hiy_cont,
-    add_sub_add_right_eq_sub, map_ibpCurve M₀ M₁ c ι hy_cont, map_ibpCurve M₀ M₁ c ι hy_cont,
-    ← map_sub]
+  have hibp : ibpStripFunction θ M₀ M₁ H (c + t * I) - ibpStripFunction θ M₀ M₁ H (c + t₀ * I) =
+      ibpCurve M₀ M₁ c (fun u => H (c + u * I)) t -
+        ibpCurve M₀ M₁ c (fun u => H (c + u * I)) t₀ := by
+    rw [ibpCurve_sub M₀ M₁ c hHc_cont]
+    simp only [ibpStripFunction, sub_eq_iff_eq_add.1 hwedge, smul_add, smul_smul]
+    abel
+  rw [hibp, hH_line, ibpCurve_add_const_sub M₀ M₁ c hiy_cont]
+  simp [map_ibpCurve M₀ M₁ c ι hy_cont]
 
 namespace UpperComplexMethodSpace
 
