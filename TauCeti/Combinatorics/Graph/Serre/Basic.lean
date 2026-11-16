@@ -80,8 +80,10 @@ theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
 @[simp] theorem tgt_rev (e : Γ.E) : Γ.tgt (Γ.rev e) = Γ.src e := by
   simp only [tgt, Γ.rev_rev]
 
-theorem rev_injective : Function.Injective Γ.rev :=
-  Function.Involutive.injective Γ.rev_rev
+/-- Reversing darts is an involution. -/
+theorem rev_involutive : Function.Involutive Γ.rev := Γ.rev_rev
+
+theorem rev_injective : Function.Injective Γ.rev := Γ.rev_involutive.injective
 
 /-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
 def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
@@ -122,6 +124,45 @@ theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
   · rintro (rfl | rfl)
     · rfl
     · exact (Γ.toGeomEdge_rev e).symm
+
+/-- The geometric edge of a dart is the geometric edge of a dart of a list exactly when the dart or
+its reverse lies in the list. -/
+theorem toGeomEdge_mem_map_iff {l : List Γ.E} {e : Γ.E} :
+    Γ.toGeomEdge e ∈ l.map Γ.toGeomEdge ↔ e ∈ l ∨ Γ.rev e ∈ l := by
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain ⟨d, hd, hde⟩ := List.mem_map.1 h
+    rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 hde with rfl | rfl
+    · exact .inl hd
+    · exact .inr (by rwa [Γ.rev_rev])
+  · rintro (h | h)
+    · exact List.mem_map_of_mem h
+    · exact List.mem_map.2 ⟨_, h, Γ.toGeomEdge_rev e⟩
+
+/-- A list of darts with distinct geometric edges never contains a dart together with its
+reverse. -/
+theorem rev_notMem_of_nodup_map_toGeomEdge {l : List Γ.E} (hl : (l.map Γ.toGeomEdge).Nodup)
+    {e : Γ.E} (he : e ∈ l) : Γ.rev e ∉ l := fun hr =>
+  Γ.rev_ne e (List.inj_on_of_nodup_map hl hr he (Γ.toGeomEdge_rev e))
+
+/-- A list of darts with distinct geometric edges contains a dart and its reverse at most once
+altogether. -/
+theorem count_add_count_rev_le_one_of_nodup_map_toGeomEdge [BEq Γ.E] [LawfulBEq Γ.E]
+    {l : List Γ.E} (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) :
+    l.count e + l.count (Γ.rev e) ≤ 1 := by
+  by_cases hm : e ∈ l
+  · rw [List.count_eq_one_of_mem hl.of_map hm,
+      List.count_eq_zero_of_not_mem (Γ.rev_notMem_of_nodup_map_toGeomEdge hl hm)]
+  · rw [List.count_eq_zero_of_not_mem hm, zero_add]
+    exact List.nodup_iff_count_le_one.1 hl.of_map _
+
+/-- A list of darts with distinct geometric edges contains a dart and its reverse exactly once
+altogether when it contains one of them. -/
+theorem count_add_count_rev_eq_one_iff_of_nodup_map_toGeomEdge [BEq Γ.E] [LawfulBEq Γ.E]
+    {l : List Γ.E} (hl : (l.map Γ.toGeomEdge).Nodup) (e : Γ.E) :
+    l.count e + l.count (Γ.rev e) = 1 ↔ e ∈ l ∨ Γ.rev e ∈ l := by
+  have := Γ.count_add_count_rev_le_one_of_nodup_map_toGeomEdge hl e
+  rw [← List.count_pos_iff, ← List.count_pos_iff]
+  omega
 
 /-- A function on darts taking the same value on mutually reverse darts descends to geometric
 edges. -/
