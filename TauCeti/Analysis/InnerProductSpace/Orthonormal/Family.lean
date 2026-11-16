@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.InnerProductSpace.Frame
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Coordinate isometries of orthonormal families
@@ -149,13 +150,6 @@ theorem orthonormal_sum_smul_iff_mem_unitaryGroup [DecidableEq ι] (hv : Orthono
   rw [hv.orthonormal_sum_smul_iff, Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
 
 end Orthonormal
-
-/-- Two successive changes of frame, by `A` and then by `B`, are the change of frame by `B * A`. -/
-theorem Matrix.sum_mul_apply_smul {R M ι κ μ : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [Fintype ι] [Fintype κ] (B : Matrix μ κ R) (A : Matrix κ ι R) (v : ι → M)
-    (j : μ) : ∑ l, (B * A) j l • v l = ∑ i, B j i • ∑ l, A i l • v l := by
-  simp_rw [Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum, smul_smul]
-  exact Finset.sum_comm
 
 namespace TauCeti
 

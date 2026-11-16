@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Basic
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Orthonormal frames and compactness of finite Grassmannians
