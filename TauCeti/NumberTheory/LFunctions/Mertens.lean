@@ -23,9 +23,9 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Ded
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Tail
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.NumberField.DedekindZeta
-import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Mertens' theorems for a number field
@@ -508,9 +508,16 @@ private theorem exists_isBigO_primeSummatory_inv_absNorm_sub_log_log_sub :
   have key := primeSummatory_div_log_eq_div_log_add_integral K
     (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) x
   rw [hw] at key
-  rw [key, Real.norm_eq_abs, Real.norm_of_nonneg (inv_nonneg.mpr hlogx.le), ← div_eq_mul_inv]
-  convert hB x hx using 5
-  exact setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ by ring
+  have hint : ∫ t in Set.Ioc 2 x, primeSummatory K
+        (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) t /
+          (t * Real.log t ^ 2) =
+      ∫ t in Set.Ioc 2 x, primeSummatory K
+        (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) t *
+          (t⁻¹ / Real.log t ^ 2) :=
+    setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ by ring
+  rw [key, hint, Real.norm_eq_abs, Real.norm_of_nonneg (inv_nonneg.mpr hlogx.le),
+    ← div_eq_mul_inv]
+  exact hB x hx
 
 /-- **Mertens' constant of a number field**: the limit `B_K` of
 `∑_{N𝔭 ≤ x} 1 / N𝔭 - log log x` as `x → ∞`, the sum over the nonzero prime ideals of `𝓞 K`.
@@ -543,25 +550,6 @@ theorem tendsto_primeSummatory_inv_absNorm_sub_log_log :
   simpa using h
 
 /-! ### The rational primes -/
-
-/-- Over `ℚ`, the sum of a weight depending only on the norm over the primes of norm at most `x` is
-the corresponding sum over the rational primes in `Nat.primesLE ⌊x⌋₊`. -/
-theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : ℕ → M) (x : ℝ) :
-    primeSummatory ℚ (fun v ↦ f (Ideal.absNorm v.asIdeal)) x = ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
-  have hprime (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) : (Ideal.absNorm v.asIdeal).Prime := by
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal]
-    exact Rat.HeightOneSpectrum.prime_natGenerator v
-  have hmem (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) :
-      v ∈ primesLE ℚ x ↔ Ideal.absNorm v.asIdeal ∈ Nat.primesLE ⌊x⌋₊ := by
-    rw [mem_normLE, Nat.mem_primesLE, Nat.le_floor_iff' (hprime v).ne_zero]
-    exact (and_iff_left (hprime v)).symm
-  rw [primeSummatory_apply]
-  refine Finset.sum_bij (fun v _ ↦ Ideal.absNorm v.asIdeal) (fun v hv ↦ (hmem v).mp hv)
-    (fun v _ w _ h ↦ ?_) (fun p hp ↦ ?_) fun _ _ ↦ rfl
-  · simp only [Rat.HeightOneSpectrum.absNorm_asIdeal] at h
-    exact Rat.HeightOneSpectrum.primesEquiv.injective (Subtype.ext h)
-  · obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq (Nat.prime_of_mem_primesLE hp)
-    exact ⟨v, (hmem v).mpr (hv ▸ hp), hv⟩
 
 /-- **Mertens' second theorem for the rational primes, with its constant.** For every real
 `x ≥ 2`, `|∑_{p ≤ x} 1 / p - log log x - B_ℚ| ≤ 2 (log 4 + 4) / log x`, the sum running over the

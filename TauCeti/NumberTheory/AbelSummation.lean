@@ -20,8 +20,9 @@ import TauCeti.Analysis.SpecialFunctions.LogIntegral
 Mathlib's `Mathlib/NumberTheory/AbelSummation.lean` proves the summation-by-parts identity
 `∑_{k ≤ x} f k c k = f x ∑_{k ≤ x} c k - ∫ f' (t) ∑_{k ≤ t} c k dt` and derives convergence
 criteria from it. This file records the elementary properties of the partial-sum step function
-`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws two further consequences from a growth
-hypothesis on it.
+`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws three further consequences from growth
+hypotheses on partial sums; the last of them, for the weight `1 / log t`, starts its partial sums
+at `k = 2`, where `log k > 0`.
 
 * **The step function.** It vanishes for `t < 1`, hence is `O(g)` near `0` for every `g`, and it
   is locally integrable on `[0, ∞)`. Together with a bound `O(t ^ r)` at infinity (see
