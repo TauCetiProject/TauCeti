@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
-public import Mathlib.Analysis.SpecificLimits.Normed
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 
 /-!
@@ -19,20 +18,20 @@ defect:
 * **Projection stability** (`IsSelfAdjoint.exists_isStarProjection_and_norm_sub_le`): if `b` is
   self-adjoint in a non-unital normed `⋆`-ring with an isometric real functional calculus and
   `‖b * b - b‖ < 1 / 9`, then there exists a star projection `p` with `‖p - b‖ ≤ 2 * ‖b * b - b‖`.
-* **Inverse square root near `1`**
-  (`IsSelfAdjoint.exists_isUnit_mul_self_eq_one_and_norm_sub_le`): if `h` is self-adjoint in a
-  unital normed `⋆`-algebra with an isometric real functional calculus and `‖h - 1‖ < 1 / 2`, then
-  there exists an invertible self-adjoint element `k` satisfying `k * h * k = 1` and
-  `‖k - 1‖ ≤ ‖h - 1‖`.
+* **Invertibility and inverse square root near `1`**
+  (`IsSelfAdjoint.isUnit_of_norm_sub_one_lt_one`,
+  `IsSelfAdjoint.exists_isSelfAdjoint_isUnit_mul_mul_eq_one_and_norm_sub_le`): if `h` is
+  self-adjoint in a unital normed `⋆`-algebra with an isometric real functional calculus, then
+  `‖h - 1‖ < 1` implies `IsUnit h`, and `‖h - 1‖ < 1 / 2` yields an invertible self-adjoint element
+  `k` satisfying `k * h * k = 1` and `‖k - 1‖ ≤ ‖h - 1‖`.
 * **Isometry and unitary stability**
   (`TauCeti.exists_star_mul_self_eq_one_and_norm_sub_le`, `TauCeti.exists_unitary_and_norm_sub_le`):
   if `‖star a * a - 1‖ < 1 / 2`, then there exists `v` satisfying `star v * v = 1` and
-  `‖v - a‖ ≤ ‖a‖ * ‖star a * a - 1‖`; if in addition `A` is complete and `‖a * star a - 1‖ < 1`,
-  then there exists a unitary `u` satisfying `‖(u : A) - a‖ ≤ ‖a‖ * ‖star a * a - 1‖`.
+  `‖v - a‖ ≤ ‖a‖ * ‖star a * a - 1‖`; if in addition `‖a * star a - 1‖ < 1`, then there exists a
+  unitary `u` satisfying `‖(u : A) - a‖ ≤ ‖a‖ * ‖star a * a - 1‖`.
 
-These quantitative bounds require neither `[Nontrivial A]` nor C⋆-completeness (except in the
-unitary case), and underlie lifting of projections, isometries, and unitaries from C⋆-sequence
-algebras and ultrapowers.
+These quantitative bounds require neither `[Nontrivial A]` nor `[CompleteSpace A]`, and underlie
+lifting of projections, isometries, and unitaries from C⋆-sequence algebras and ultrapowers.
 
 ## References
 
@@ -121,12 +120,16 @@ section Polar
 private noncomputable def invSqrtCut (t : ℝ) : ℝ :=
   (√(max t (1 / 2)))⁻¹
 
-private theorem continuous_invSqrtCut : Continuous invSqrtCut := by
-  unfold invSqrtCut
-  refine Continuous.inv₀ (Real.continuous_sqrt.comp (continuous_id.max continuous_const)) fun t ↦ ?_
-  exact (Real.sqrt_pos.2 (lt_of_lt_of_le (by positivity) (le_max_right t (1 / 2)))).ne'
+private theorem sqrt_max_ne_zero (t : ℝ) : √(max t (1 / 2)) ≠ 0 :=
+  (Real.sqrt_pos.2 (lt_of_lt_of_le (by positivity) (le_max_right t (1 / 2)))).ne'
 
-private theorem invSqrtCut_mul_self_of_abs_lt {t : ℝ} (ht : |t - 1| < 1 / 2) :
+private theorem invSqrtCut_ne_zero (t : ℝ) : invSqrtCut t ≠ 0 :=
+  inv_ne_zero (sqrt_max_ne_zero t)
+
+private theorem continuous_invSqrtCut : Continuous invSqrtCut :=
+  Continuous.inv₀ (Real.continuous_sqrt.comp (continuous_id.max continuous_const)) sqrt_max_ne_zero
+
+private theorem invSqrtCut_mul_mul_of_abs_lt {t : ℝ} (ht : |t - 1| < 1 / 2) :
     invSqrtCut t * t * invSqrtCut t = 1 := by
   have ht_gt : 1 / 2 < t := by linarith [(abs_lt.1 ht).1]
   have ht_pos : 0 < t := by linarith
@@ -163,11 +166,22 @@ private theorem abs_invSqrtCut_sub_one_le_of_abs_lt {t : ℝ} (ht : |t - 1| < 1 
 variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
   [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
 
+/-- If `h` is self-adjoint in a normed `⋆`-algebra with an isometric real functional calculus and
+`‖h - 1‖ < 1`, then `h` is invertible (without assuming completeness). -/
+theorem IsSelfAdjoint.isUnit_of_norm_sub_one_lt_one {h : A} (hh : IsSelfAdjoint h)
+    (hd : ‖h - 1‖ < 1) : IsUnit h := by
+  refine spectrum.isUnit_of_zero_notMem ℝ fun h0 ↦ ?_
+  have hpoly : cfc (fun s : ℝ ↦ s - 1) h = h - 1 := by
+    rw [cfc_sub .., cfc_id' ℝ h, cfc_const_one ℝ h]
+  have hle := norm_apply_le_norm_cfc (fun s : ℝ ↦ s - 1) h h0
+  rw [hpoly, zero_sub, norm_neg, norm_one] at hle
+  exact hd.not_ge hle
+
 /-- **Quantitative inverse square root near `1`.** If `h` is self-adjoint and `‖h - 1‖ < 1 / 2`,
 then there exists an invertible self-adjoint element `k : A` satisfying `k * h * k = 1` and
 `‖k - 1‖ ≤ ‖h - 1‖`. -/
-theorem IsSelfAdjoint.exists_isUnit_mul_self_eq_one_and_norm_sub_le {h : A} (hh : IsSelfAdjoint h)
-    (hd : ‖h - 1‖ < 1 / 2) :
+theorem IsSelfAdjoint.exists_isSelfAdjoint_isUnit_mul_mul_eq_one_and_norm_sub_le {h : A}
+    (hh : IsSelfAdjoint h) (hd : ‖h - 1‖ < 1 / 2) :
     ∃ k : A, IsSelfAdjoint k ∧ IsUnit k ∧ k * h * k = 1 ∧ ‖k - 1‖ ≤ ‖h - 1‖ := by
   have hpoly : cfc (fun s : ℝ ↦ s - 1) h = h - 1 := by
     rw [cfc_sub .., cfc_id' ℝ h, cfc_const_one ℝ h]
@@ -176,9 +190,8 @@ theorem IsSelfAdjoint.exists_isUnit_mul_self_eq_one_and_norm_sub_le {h : A} (hh 
     simpa [Real.norm_eq_abs, hpoly] using hle
   have hcont : ContinuousOn invSqrtCut (spectrum ℝ h) := continuous_invSqrtCut.continuousOn
   set k : A := cfc invSqrtCut h
-  have hk_sa : IsSelfAdjoint k := by
-    rw [IsSelfAdjoint, ← cfc_star]
-    rfl
+  have hk_sa : IsSelfAdjoint k := IsSelfAdjoint.cfc
+  have hk_unit : IsUnit k := isUnit_cfc invSqrtCut h hcont hh fun t _ ↦ invSqrtCut_ne_zero t
   have hk_eq : k * h * k = 1 := by
     calc cfc invSqrtCut h * h * cfc invSqrtCut h
         = cfc invSqrtCut h * cfc (fun s : ℝ ↦ s) h * cfc invSqrtCut h := by rw [cfc_id' ℝ h]
@@ -186,17 +199,8 @@ theorem IsSelfAdjoint.exists_isUnit_mul_self_eq_one_and_norm_sub_le {h : A} (hh 
           rw [← cfc_mul invSqrtCut (fun s : ℝ ↦ s) h hcont,
             ← cfc_mul (fun s : ℝ ↦ invSqrtCut s * s) invSqrtCut h (by fun_prop) hcont]
       _ = cfc (fun _ : ℝ ↦ (1 : ℝ)) h :=
-          cfc_congr fun t ht ↦ invSqrtCut_mul_self_of_abs_lt ((hspec ht).trans_lt hd)
+          cfc_congr fun t ht ↦ invSqrtCut_mul_mul_of_abs_lt ((hspec ht).trans_lt hd)
       _ = 1 := cfc_const_one ℝ h
-  have hk_comm : h * k = k * h := by
-    calc h * cfc invSqrtCut h
-        = cfc (fun s : ℝ ↦ s) h * cfc invSqrtCut h := by rw [cfc_id' ℝ h]
-      _ = cfc (fun s : ℝ ↦ s * invSqrtCut s) h := (cfc_mul _ _ h (by fun_prop) hcont).symm
-      _ = cfc (fun s : ℝ ↦ invSqrtCut s * s) h := cfc_congr fun t _ ↦ mul_comm _ _
-      _ = cfc invSqrtCut h * cfc (fun s : ℝ ↦ s) h := cfc_mul _ _ h hcont (by fun_prop)
-      _ = k * h := by rw [cfc_id' ℝ h]
-  have hk_unit : IsUnit k :=
-    isUnit_iff_exists.2 ⟨h * k, by rwa [← mul_assoc], by rwa [hk_comm]⟩
   have hk_norm : ‖k - 1‖ ≤ ‖h - 1‖ := by
     have hsub : k - 1 = cfc (fun s : ℝ ↦ invSqrtCut s - 1) h := by
       calc cfc invSqrtCut h - 1
@@ -216,7 +220,7 @@ theorem exists_star_mul_self_eq_one_and_norm_sub_le {a : A}
     (ha : ‖star a * a - 1‖ < 1 / 2) :
     ∃ v : A, star v * v = 1 ∧ ‖v - a‖ ≤ ‖a‖ * ‖star a * a - 1‖ := by
   obtain ⟨k, hk_sa, -, hk_eq, hk_norm⟩ :=
-    (IsSelfAdjoint.star_mul_self a).exists_isUnit_mul_self_eq_one_and_norm_sub_le ha
+    (IsSelfAdjoint.star_mul_self a).exists_isSelfAdjoint_isUnit_mul_mul_eq_one_and_norm_sub_le ha
   refine ⟨a * k, ?_, ?_⟩
   · calc star (a * k) * (a * k) = k * (star a * a) * k := by
           rw [star_mul, hk_sa.star_eq]
@@ -226,21 +230,19 @@ theorem exists_star_mul_self_eq_one_and_norm_sub_le {a : A}
       _ ≤ ‖a‖ * ‖k - 1‖ := norm_mul_le _ _
       _ ≤ ‖a‖ * ‖star a * a - 1‖ := mul_le_mul_of_nonneg_left hk_norm (norm_nonneg a)
 
-/-- **Quantitative stability of unitaries.** In a complete normed `⋆`-algebra with an isometric
-real functional calculus (such as any unital C⋆-algebra), if `‖star a * a - 1‖ < 1 / 2` and
+/-- **Quantitative stability of unitaries.** In a normed `⋆`-algebra with an isometric real
+functional calculus (such as any unital C⋆-algebra), if `‖star a * a - 1‖ < 1 / 2` and
 `‖a * star a - 1‖ < 1`, then there exists `u : unitary A` with
 `‖(u : A) - a‖ ≤ ‖a‖ * ‖star a * a - 1‖`. -/
-theorem exists_unitary_and_norm_sub_le [CompleteSpace A] {a : A}
+theorem exists_unitary_and_norm_sub_le {a : A}
     (ha₁ : ‖star a * a - 1‖ < 1 / 2) (ha₂ : ‖a * star a - 1‖ < 1) :
     ∃ u : unitary A, ‖(u : A) - a‖ ≤ ‖a‖ * ‖star a * a - 1‖ := by
   obtain ⟨k, hk_sa, hk_unit, hk_eq, hk_norm⟩ :=
-    (IsSelfAdjoint.star_mul_self a).exists_isUnit_mul_self_eq_one_and_norm_sub_le ha₁
-  obtain ⟨u₁, hu₁⟩ : IsUnit (star a * a) := by
-    have hlt : ‖1 - star a * a‖ < 1 := by rw [norm_sub_rev]; linarith
-    simpa [sub_sub_self] using isUnit_one_sub_of_norm_lt_one hlt
-  obtain ⟨u₂, hu₂⟩ : IsUnit (a * star a) := by
-    have hlt : ‖1 - a * star a‖ < 1 := by rwa [norm_sub_rev]
-    simpa [sub_sub_self] using isUnit_one_sub_of_norm_lt_one hlt
+    (IsSelfAdjoint.star_mul_self a).exists_isSelfAdjoint_isUnit_mul_mul_eq_one_and_norm_sub_le ha₁
+  obtain ⟨u₁, hu₁⟩ : IsUnit (star a * a) :=
+    (IsSelfAdjoint.star_mul_self a).isUnit_of_norm_sub_one_lt_one (ha₁.trans (by norm_num))
+  obtain ⟨u₂, hu₂⟩ : IsUnit (a * star a) :=
+    (IsSelfAdjoint.mul_star_self a).isUnit_of_norm_sub_one_lt_one ha₂
   have ha_unit : IsUnit a := isUnit_iff_exists_and_exists.2
     ⟨⟨star a * ↑u₂⁻¹, by rw [← mul_assoc, ← hu₂, Units.mul_inv]⟩,
      ⟨↑u₁⁻¹ * star a, by rw [mul_assoc, ← hu₁, Units.inv_mul]⟩⟩

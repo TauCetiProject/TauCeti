@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
 import Mathlib.Topology.Compactness.Compact
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
 # Filter-null ideals and the `c₀` ideal of a bounded product
@@ -19,31 +20,34 @@ import Mathlib.Topology.Separation.Hausdorff
 For a family of normed rings `A i` and any filter `l` on `ι`, the filter-null ideal
 `lp.nullIdeal A l` of the bounded product `lp A ∞` consists of the bounded families whose
 coordinate norms tend to `0` along `l`. It is a closed two-sided ideal, closed under `star` when
-the factors are normed star rings, so for C⋆-algebras `A i` the quotient
+the factors are normed star groups, so for C⋆-algebras `A i` the quotient
 `lp A ∞ ⧸ lp.nullIdeal A l` is a C⋆-algebra by `TwoSidedIdeal.Quotient.nonUnitalCStarAlgebra`
-(unital when the factors are unital C⋆-algebras, by `lp.inftyCStarAlgebra` and
+(unital when the factors are nonzero unital C⋆-algebras, by `lp.inftyCStarAlgebra` and
 `TwoSidedIdeal.Quotient.cstarAlgebra`).
 
 When `l` is nontrivial (`[l.NeBot]`), the quotient norm of the class of `a` is `limsup_i ‖a i‖`
 along `l` (`lp.norm_mk_nullIdeal`). For an ultrafilter `ω`, boundedness forces the coordinate
 norms to converge along `ω`, so the quotient norm equals the ultralimit `lim_ω ‖a i‖`
-(`lp.tendsto_norm_mk_nullIdeal`, `lp.norm_mk_nullIdeal_ultrafilter`). Over `ℝ`, radial truncation
+(`lp.tendsto_norm_mk_nullIdeal`, `lp.norm_mk_nullIdeal_ultrafilter`). Over `ℝ`, radial retraction
 produces for every quotient class a representative in `lp A ∞` of the exact same norm
 (`lp.exists_mk_nullIdeal_eq_and_norm_eq`).
 
-Specializing `l` to `cofinite` recovers the `c₀` ideal `lp.c0Ideal A` and its quotient norm
-formula `lp.norm_mk_c0Ideal`.
+Specializing `l` to `cofinite` recovers the `c₀` ideal `lp.c0Ideal A`.
 
 ## Main declarations
 
 * `lp.nullIdeal`: the families in `lp A ∞` whose coordinate norms tend to `0` along `l`.
 * `lp.isClosed_nullIdeal`: `lp.nullIdeal A l` is closed in `lp A ∞`.
+* `lp.mk_nullIdeal_eq_mk_iff`: quotient equality modulo `lp.nullIdeal A l` via coordinatewise
+  norm convergence to `0`.
 * `lp.norm_mk_nullIdeal`: for `[l.NeBot]`, the quotient norm is `limsup_i ‖a i‖` along `l`.
+* `lp.eventually_norm_lt_of_norm_mk_nullIdeal_lt`: a strict upper bound on the quotient norm
+  eventually bounds the coordinate norms along `l`.
 * `lp.tendsto_norm_mk_nullIdeal`, `lp.norm_mk_nullIdeal_ultrafilter`: for an ultrafilter `ω`, the
   coordinate norms converge along `ω` to the quotient norm.
 * `lp.exists_mk_nullIdeal_eq_and_norm_eq`: every quotient class has a representative of the same
   norm.
-* `lp.c0Ideal`: specialization of `lp.nullIdeal` to `cofinite`.
+* `lp.c0Ideal`: abbreviation specializing `lp.nullIdeal` to `cofinite`.
 
 ## References
 
@@ -72,12 +76,20 @@ def nullIdeal (l : Filter ι) : TwoSidedIdeal (lp A ∞) :=
       (fun i ↦ by simpa using norm_add_le (a i) (b i)) (by simpa using ha.add hb))
     (fun {a} ha ↦ by simpa using ha)
     (fun {a b} hb ↦ squeeze_zero (fun _ ↦ norm_nonneg _)
-      (fun i ↦ (norm_mul_le (a i) (b i)).trans
-        (mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero a i) (norm_nonneg _)))
+      (fun i ↦ by
+        calc ‖(a * b) i‖ = ‖a i * b i‖ := by rw [infty_coeFn_mul, Pi.mul_apply]
+          _ ≤ ‖a i‖ * ‖b i‖ := norm_mul_le (a i) (b i)
+          _ ≤ ‖a‖ * ‖b i‖ :=
+              mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero a i)
+                (norm_nonneg _))
       (by simpa using hb.const_mul ‖a‖))
     (fun {a b} ha ↦ squeeze_zero (fun _ ↦ norm_nonneg _)
-      (fun i ↦ (norm_mul_le (a i) (b i)).trans
-        (mul_le_mul_of_nonneg_left (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _)))
+      (fun i ↦ by
+        calc ‖(a * b) i‖ = ‖a i * b i‖ := by rw [infty_coeFn_mul, Pi.mul_apply]
+          _ ≤ ‖a i‖ * ‖b i‖ := norm_mul_le (a i) (b i)
+          _ ≤ ‖a i‖ * ‖b‖ :=
+              mul_le_mul_of_nonneg_left (norm_apply_le_norm ENNReal.top_ne_zero b i)
+                (norm_nonneg _))
       (by simpa using ha.mul_const ‖b‖))
 
 variable {A}
@@ -88,6 +100,15 @@ along `l`. -/
 theorem mem_nullIdeal {l : Filter ι} {a : lp A ∞} :
     a ∈ nullIdeal A l ↔ Tendsto (fun i ↦ ‖a i‖) l (𝓝 0) :=
   TwoSidedIdeal.mem_mk' _ _ _ _ _ _ a
+
+/-- Two bounded families define the same class modulo `lp.nullIdeal A l` if and only if the norms of
+their coordinatewise differences tend to `0` along `l`. -/
+theorem mk_nullIdeal_eq_mk_iff {l : Filter ι} {a b : lp A ∞} :
+    TwoSidedIdeal.Quotient.mk (nullIdeal A l) a =
+      TwoSidedIdeal.Quotient.mk (nullIdeal A l) b ↔
+      Tendsto (fun i ↦ ‖a i - b i‖) l (𝓝 0) := by
+  rw [← sub_eq_zero, ← map_sub, TwoSidedIdeal.Quotient.eq_zero_iff_mem, mem_nullIdeal]
+  simp only [lp.coeFn_sub, Pi.sub_apply]
 
 /-- Along the bottom filter, every bounded family lies in the filter-null ideal. -/
 @[simp]
@@ -120,7 +141,7 @@ instance (l : Filter ι) : IsClosed (nullIdeal A l : Set (lp A ∞)) :=
   isClosed_nullIdeal A l
 
 /-- The filter-null ideal is closed under `star`. -/
-theorem star_mem_nullIdeal [∀ i, StarRing (A i)] [∀ i, NormedStarGroup (A i)] {l : Filter ι}
+theorem star_mem_nullIdeal [∀ i, StarAddMonoid (A i)] [∀ i, NormedStarGroup (A i)] {l : Filter ι}
     {a : lp A ∞} (ha : a ∈ nullIdeal A l) : star a ∈ nullIdeal A l :=
   mem_nullIdeal.2 (by simpa [lp.star_apply] using mem_nullIdeal.1 ha)
 
@@ -174,6 +195,17 @@ theorem norm_mk_nullIdeal {l : Filter ι} [l.NeBot] (a : lp A ∞) :
     calc ‖a i‖ ≤ ‖a i + z i‖ + ‖z i‖ := by simpa using norm_sub_le (a i + z i) (z i)
       _ ≤ ‖a + z‖ + ε := add_le_add (by simpa using h) hi.le
 
+/-- If the quotient norm of `a` modulo `lp.nullIdeal A l` is strictly less than `ε`, then
+`‖a i‖ < ε` eventually along `l`. -/
+theorem eventually_norm_lt_of_norm_mk_nullIdeal_lt {l : Filter ι} (a : lp A ∞) {ε : ℝ}
+    (ha : ‖TwoSidedIdeal.Quotient.mk (nullIdeal A l) a‖ < ε) :
+    ∀ᶠ i in l, ‖a i‖ < ε := by
+  rcases eq_or_neBot l with rfl | hl
+  · simp
+  rw [norm_mk_nullIdeal] at ha
+  exact eventually_lt_of_limsup_lt ha
+    (isBoundedUnder_of ⟨‖a‖, fun i ↦ norm_apply_le_norm ENNReal.top_ne_zero a i⟩)
+
 /-- **Ultralimit norm convergence.** Along an ultrafilter `ω`, the coordinate norms `‖a i‖` of any
 bounded family `a : lp A ∞` converge to the quotient norm of `a` modulo `lp.nullIdeal A ω`. -/
 theorem tendsto_norm_mk_nullIdeal (ω : Ultrafilter ι) (a : lp A ∞) :
@@ -192,112 +224,37 @@ theorem norm_mk_nullIdeal_ultrafilter (ω : Ultrafilter ι) (a : lp A ∞) :
     ‖TwoSidedIdeal.Quotient.mk (nullIdeal A ω) a‖ = limUnder (ω : Filter ι) (fun i ↦ ‖a i‖) :=
   (tendsto_norm_mk_nullIdeal ω a).limUnder_eq.symm
 
-private def radialTruncate {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    (r : ℝ) (x : E) : E := by
-  classical
-  exact if ‖x‖ ≤ r then x else (r / ‖x‖) • x
-
-private theorem norm_radialTruncate_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    {r : ℝ} (hr : 0 ≤ r) (x : E) : ‖radialTruncate r x‖ ≤ r := by
-  classical
-  unfold radialTruncate
-  split_ifs with hx
-  · exact hx
-  · have hxi : 0 < ‖x‖ := hr.trans_lt (not_le.1 hx)
-    rw [norm_smul, Real.norm_of_nonneg (div_nonneg hr hxi.le), div_mul_cancel₀ _ hxi.ne']
-
-private theorem norm_radialTruncate_sub {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    {r : ℝ} (hr : 0 ≤ r) (x : E) : ‖radialTruncate r x - x‖ = max (‖x‖ - r) 0 := by
-  classical
-  unfold radialTruncate
-  split_ifs with hx
-  · simp [sub_nonpos.2 hx]
-  · have hxi : 0 < ‖x‖ := hr.trans_lt (not_le.1 hx)
-    have h1 : (r / ‖x‖) • x - x = (r / ‖x‖ - 1) • x := by rw [sub_smul, one_smul]
-    have hlt : r / ‖x‖ - 1 < 0 := sub_neg.2 ((div_lt_one hxi).2 (not_le.1 hx))
-    rw [h1, norm_smul, Real.norm_eq_abs, abs_of_neg hlt, neg_sub, sub_mul, one_mul,
-      div_mul_cancel₀ _ hxi.ne', max_eq_left (sub_pos.2 (not_le.1 hx)).le]
-
 /-- **Norm-attaining bounded representative.** Over `ℝ`, every element `x` of
 `lp A ∞ ⧸ lp.nullIdeal A l` admits a representative `a : lp A ∞` with `‖a‖ = ‖x‖` (and hence
 `‖a i‖ ≤ ‖x‖` for every `i`). -/
 theorem exists_mk_nullIdeal_eq_and_norm_eq [∀ i, NormedSpace ℝ (A i)] (l : Filter ι)
     (x : lp A ∞ ⧸ nullIdeal A l) :
     ∃ a : lp A ∞, TwoSidedIdeal.Quotient.mk (nullIdeal A l) a = x ∧ ‖a‖ = ‖x‖ := by
-  rcases eq_or_neBot l with rfl | hl
-  · have hx0 : x = 0 := by
-      obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective _ x
-      exact (TwoSidedIdeal.Quotient.eq_zero_iff_mem).2 (by simp)
-    exact ⟨0, by simp [hx0], by simp [hx0]⟩
   obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (nullIdeal A l) x
   set r := ‖TwoSidedIdeal.Quotient.mk (nullIdeal A l) b‖
   have hr : 0 ≤ r := norm_nonneg _
+  have hrad_le (i : ι) : ‖TauCeti.radialRetraction r (b i)‖ ≤ r :=
+    (TauCeti.norm_radialRetraction hr (b i)).trans_le (min_le_right _ _)
   let a : lp A ∞ :=
-    ⟨fun i ↦ radialTruncate r (b i),
-      memℓp_infty ⟨r, by rintro _ ⟨i, rfl⟩; exact norm_radialTruncate_le hr (b i)⟩⟩
+    ⟨fun i ↦ TauCeti.radialRetraction r (b i),
+      memℓp_infty ⟨r, by rintro _ ⟨i, rfl⟩; exact hrad_le i⟩⟩
   have ha_mk : TwoSidedIdeal.Quotient.mk (nullIdeal A l) a =
       TwoSidedIdeal.Quotient.mk (nullIdeal A l) b := by
-    rw [← sub_eq_zero, ← map_sub, TwoSidedIdeal.Quotient.eq_zero_iff_mem, mem_nullIdeal]
+    rw [mk_nullIdeal_eq_mk_iff]
     refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-    have hbdd : IsBoundedUnder (· ≤ ·) l (fun i ↦ ‖b i‖) :=
-      isBoundedUnder_of ⟨‖b‖, fun i ↦ norm_apply_le_norm ENNReal.top_ne_zero b i⟩
-    have hev : ∀ᶠ i in l, ‖b i‖ < r + ε := by
-      have hr_eq : r = limsup (fun i ↦ ‖b i‖) l := norm_mk_nullIdeal b
-      exact eventually_lt_of_limsup_lt (by linarith) hbdd
-    filter_upwards [hev] with i hi
-    have ha_i : a i = radialTruncate r (b i) := rfl
-    rw [Real.dist_eq, sub_zero, abs_norm, lp.coeFn_sub, Pi.sub_apply, ha_i,
-      norm_radialTruncate_sub hr (b i)]
+    filter_upwards [eventually_norm_lt_of_norm_mk_nullIdeal_lt b (by linarith : r < r + ε)]
+      with i hi
+    have ha_i : a i = TauCeti.radialRetraction r (b i) := rfl
+    rw [Real.dist_eq, sub_zero, abs_norm, ha_i, norm_sub_rev,
+      TauCeti.norm_sub_radialRetraction hr (b i)]
     exact max_lt (by linarith) hε
-  refine ⟨a, ha_mk,
-    le_antisymm (norm_le_of_forall_le hr fun i ↦ norm_radialTruncate_le hr (b i)) ?_⟩
+  refine ⟨a, ha_mk, le_antisymm (norm_le_of_forall_le hr hrad_le) ?_⟩
   simpa [ha_mk, r] using TwoSidedIdeal.Quotient.norm_mk_le (nullIdeal A l) a
 
 variable (A) in
 /-- The `c₀` ideal of the bounded product `lp A ∞`: the bounded families whose coordinate norms
 tend to `0` along the cofinite filter. -/
-def c0Ideal : TwoSidedIdeal (lp A ∞) :=
+abbrev c0Ideal : TwoSidedIdeal (lp A ∞) :=
   nullIdeal A cofinite
-
-/-- `lp.c0Ideal A` is the filter-null ideal along `cofinite`. -/
-theorem c0Ideal_eq_nullIdeal : c0Ideal A = nullIdeal A cofinite :=
-  (rfl)
-
-/-- A bounded family lies in the `c₀` ideal when its coordinate norms tend to `0` along the
-cofinite filter. -/
-@[simp]
-theorem mem_c0Ideal {a : lp A ∞} :
-    a ∈ c0Ideal A ↔ Tendsto (fun i ↦ ‖a i‖) cofinite (𝓝 0) :=
-  mem_nullIdeal
-
-variable (A) in
-/-- The `c₀` ideal is closed in the bounded product: a uniform limit of families vanishing at
-infinity vanishes at infinity. -/
-theorem isClosed_c0Ideal : IsClosed (c0Ideal A : Set (lp A ∞)) :=
-  isClosed_nullIdeal A cofinite
-
-/-- The closedness of the `c₀` ideal as an instance, so that the quotient
-`lp A ∞ ⧸ c0Ideal A` is a normed ring, and a C⋆-algebra when the factors are. -/
-instance : IsClosed (c0Ideal A : Set (lp A ∞)) :=
-  isClosed_c0Ideal A
-
-/-- The `c₀` ideal is closed under `star`. -/
-theorem star_mem_c0Ideal [∀ i, StarRing (A i)] [∀ i, NormedStarGroup (A i)] {a : lp A ∞}
-    (ha : a ∈ c0Ideal A) : star a ∈ c0Ideal A :=
-  star_mem_nullIdeal ha
-
-/-- **The quotient norm of the bounded product by the `c₀` ideal** is the limit superior of the
-coordinate norms along the cofinite filter. The index type is infinite; for a finite one the
-quotient is zero. -/
-theorem norm_mk_c0Ideal [Infinite ι] (a : lp A ∞) :
-    ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) a‖ = limsup (fun i ↦ ‖a i‖) cofinite :=
-  norm_mk_nullIdeal a
-
-/-- Over `ℝ`, every element of `lp A ∞ ⧸ lp.c0Ideal A` has a representative in `lp A ∞` of the
-same norm. -/
-theorem exists_mk_c0Ideal_eq_and_norm_eq [∀ i, NormedSpace ℝ (A i)]
-    (x : lp A ∞ ⧸ c0Ideal A) :
-    ∃ a : lp A ∞, TwoSidedIdeal.Quotient.mk (c0Ideal A) a = x ∧ ‖a‖ = ‖x‖ :=
-  exists_mk_nullIdeal_eq_and_norm_eq cofinite x
 
 end lp

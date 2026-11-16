@@ -27,8 +27,9 @@ variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
   [SeparatelyContinuousMul A] [T2Space A]
 
 /-- The centralizer of any subset as a non-unital `⋆`-subalgebra is closed. -/
-instance isClosed_centralizer (s : Set A) : IsClosed (centralizer R s : Set A) :=
-  Set.isClosed_centralizer _
+instance isClosed_centralizer (s : Set A) : IsClosed (centralizer R s : Set A) := by
+  rw [coe_centralizer]
+  exact Set.isClosed_centralizer _
 
 end NonUnitalStarSubalgebra
 
@@ -38,7 +39,8 @@ variable {R A : Type*} [CommSemiring R] [StarRing R] [Semiring A] [Algebra R A] 
   [StarModule R A] [TopologicalSpace A] [SeparatelyContinuousMul A] [T2Space A]
 
 /-- The centralizer of any subset as a unital `⋆`-subalgebra is closed. -/
-instance isClosed_centralizer (s : Set A) : IsClosed (centralizer R s : Set A) :=
-  Set.isClosed_centralizer _
+instance isClosed_centralizer (s : Set A) : IsClosed (centralizer R s : Set A) := by
+  rw [coe_centralizer]
+  exact Set.isClosed_centralizer _
 
 end StarSubalgebra

@@ -9,8 +9,6 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Analysis.CStarAlgebra.BoundedProduct
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
-public import TauCeti.Order.Filter.Ultrafilter
-public import TauCeti.Topology.Algebra.Star.Centralizer
 
 /-!
 # Norm sequence algebras and C⋆-ultrapowers
@@ -21,8 +19,9 @@ the quotient
 
 `TauCeti.CStarFilterQuotient A l := lp (fun _ : ι ↦ A) ∞ ⧸ lp.nullIdeal (fun _ : ι ↦ A) l`
 
-is a C⋆-algebra (unital and nontrivial whenever `A` is unital and nontrivial). Two specializations
-play a central role in the structure and classification of nuclear C⋆-algebras:
+is a C⋆-algebra (unital whenever `A` is unital and nontrivial, and nontrivial whenever both `A` and
+`l` are nontrivial). Two specializations play a central role in the structure and classification of
+nuclear C⋆-algebras:
 
 * `TauCeti.CStarSequenceAlgebra A := CStarFilterQuotient A (atTop : Filter ℕ)`, the **norm sequence
   algebra** `A_∞ = ℓ^∞(ℕ, A) / c₀(ℕ, A)`, with quotient norm `‖[a]‖ = limsup_{n → ∞} ‖a n‖`;
@@ -72,8 +71,7 @@ namespace CStarFilterQuotient
 
 section NonUnital
 
-variable {ι ι' : Type*} {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  [NonUnitalCStarAlgebra C]
+variable {ι ι' : Type*} {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
 
 variable (A) in
 /-- The canonical quotient `⋆`-homomorphism `ℓ^∞(ι, A) →⋆ₙₐ[ℂ] CStarFilterQuotient A l`. -/
@@ -94,8 +92,7 @@ theorem mk_eq_zero_iff {l : Filter ι} {a : lp (fun _ : ι ↦ A) ∞} :
 
 theorem mk_eq_mk_iff {l : Filter ι} {a b : lp (fun _ : ι ↦ A) ∞} :
     mk A l a = mk A l b ↔ Tendsto (fun i ↦ ‖a i - b i‖) l (𝓝 0) := by
-  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
-  simp only [lp.coeFn_sub, Pi.sub_apply]
+  rw [mk_apply, mk_apply, lp.mk_nullIdeal_eq_mk_iff]
 
 /-- **Quotient norm formula.** For any nontrivial filter `l`, `‖mk A l a‖ = limsup_i ‖a i‖` along
 `l`. -/
@@ -108,6 +105,12 @@ theorem norm_mk_le (l : Filter ι) (a : lp (fun _ : ι ↦ A) ∞) : ‖mk A l a
   rw [mk_apply]
   exact TwoSidedIdeal.Quotient.norm_mk_le _ a
 
+/-- If `‖mk A l a‖ < ε`, then `‖a i‖ < ε` eventually along `l`. -/
+theorem eventually_norm_lt_of_norm_mk_lt {l : Filter ι} (a : lp (fun _ : ι ↦ A) ∞) {ε : ℝ}
+    (ha : ‖mk A l a‖ < ε) : ∀ᶠ i in l, ‖a i‖ < ε := by
+  rw [mk_apply] at ha
+  exact lp.eventually_norm_lt_of_norm_mk_nullIdeal_lt a ha
+
 /-- **Bounded norm-attaining representative.** Every element `x : CStarFilterQuotient A l` lifts to
 a bounded family `a : lp (fun _ : ι ↦ A) ∞` with `‖a‖ = ‖x‖`. -/
 theorem exists_mk_eq_and_norm_eq (l : Filter ι) (x : CStarFilterQuotient A l) :
@@ -118,10 +121,10 @@ variable (A) in
 /-- The diagonal embedding `A →⋆ₙₐ[ℂ] CStarFilterQuotient A l` sending `a` to the class of the
 constant family `fun _ ↦ a`. -/
 def diag (l : Filter ι) : A →⋆ₙₐ[ℂ] CStarFilterQuotient A l :=
-  (mk A l).comp (lp.constStarAlgHom ℂ ι A)
+  (mk A l).comp (lp.constNonUnitalStarAlgHom ℂ ι A)
 
 theorem diag_eq_mk_const (l : Filter ι) (a : A) :
-    diag A l a = mk A l (lp.constStarAlgHom ℂ ι A a) :=
+    diag A l a = mk A l (lp.constNonUnitalStarAlgHom ℂ ι A a) :=
   (rfl)
 
 @[simp]
@@ -146,17 +149,17 @@ instance nontrivial [Nontrivial A] {l : Filter ι} [l.NeBot] :
 def map (l : Filter ι) (φ : A →⋆ₙₐ[ℂ] B) :
     CStarFilterQuotient A l →⋆ₙₐ[ℂ] CStarFilterQuotient B l :=
   TwoSidedIdeal.Quotient.liftStarAlgHom (lp.nullIdeal (fun _ : ι ↦ A) l)
-    ((mk B l).comp (lp.mapStarAlgHom fun _ ↦ φ)) fun a ha ↦ by
+    ((mk B l).comp (lp.mapNonUnitalStarAlgHom fun _ ↦ φ)) fun a ha ↦ by
       rw [NonUnitalStarAlgHom.comp_apply, mk_eq_zero_iff]
       exact squeeze_zero (fun _ ↦ norm_nonneg _)
         (fun i ↦ by
-          rw [lp.mapStarAlgHom_apply]
+          rw [lp.mapNonUnitalStarAlgHom_apply]
           exact NonUnitalStarAlgHom.norm_apply_le φ (a i))
         (lp.mem_nullIdeal.1 ha)
 
 @[simp]
 theorem map_mk (l : Filter ι) (φ : A →⋆ₙₐ[ℂ] B) (a : lp (fun _ : ι ↦ A) ∞) :
-    map l φ (mk A l a) = mk B l (lp.mapStarAlgHom (fun _ ↦ φ) a) := by
+    map l φ (mk A l a) = mk B l (lp.mapNonUnitalStarAlgHom (fun _ ↦ φ) a) := by
   rw [mk_apply]
   exact TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ _ _ a
 
@@ -181,8 +184,8 @@ theorem map_id (l : Filter ι) :
   obtain ⟨a, rfl⟩ := mk_surjective l x
   simp
 
-theorem map_comp (l : Filter ι) (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
-    (map l ψ).comp (map l φ) = map l (ψ.comp φ) := by
+theorem map_comp {C : Type*} [NonUnitalCStarAlgebra C] (l : Filter ι) (ψ : B →⋆ₙₐ[ℂ] C)
+    (φ : A →⋆ₙₐ[ℂ] B) : (map l ψ).comp (map l φ) = map l (ψ.comp φ) := by
   refine NonUnitalStarAlgHom.ext fun x ↦ ?_
   obtain ⟨a, rfl⟩ := mk_surjective l x
   simp only [NonUnitalStarAlgHom.comp_apply, map_mk]
@@ -207,21 +210,25 @@ def mapEquiv (l : Filter ι) (e : A ≃⋆ₐ[ℂ] B) :
     CStarFilterQuotient A l ≃⋆ₐ[ℂ] CStarFilterQuotient B l :=
   StarAlgEquiv.ofNonUnitalStarAlgHom (map l e.toNonUnitalStarAlgHom)
     (map l e.symm.toNonUnitalStarAlgHom)
-    (by
-      rw [map_comp]
-      convert map_id (A := A) l
-      ext a
-      exact e.symm_apply_apply a)
-    (by
-      rw [map_comp]
-      convert map_id (A := B) l
-      ext b
-      exact e.apply_symm_apply b)
+    (by rw [map_comp, ← map_id (A := A) l]; congr 1; ext; simp)
+    (by rw [map_comp, ← map_id (A := B) l]; congr 1; ext; simp)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_mapEquiv (l : Filter ι) (e : A ≃⋆ₐ[ℂ] B) :
+    (mapEquiv l e).toNonUnitalStarAlgHom = map l e.toNonUnitalStarAlgHom :=
+  StarAlgEquiv.toNonUnitalStarAlgHom_ofNonUnitalStarAlgHom _ _ _ _
 
 @[simp]
 theorem mapEquiv_mk (l : Filter ι) (e : A ≃⋆ₐ[ℂ] B) (a : lp (fun _ : ι ↦ A) ∞) :
-    mapEquiv l e (mk A l a) = mk B l (lp.mapStarAlgHom (fun _ ↦ e.toNonUnitalStarAlgHom) a) :=
+    mapEquiv l e (mk A l a) =
+      mk B l (lp.mapNonUnitalStarAlgHom (fun _ ↦ e.toNonUnitalStarAlgHom) a) :=
   map_mk l e.toNonUnitalStarAlgHom a
+
+@[simp]
+theorem mapEquiv_diag (l : Filter ι) (e : A ≃⋆ₐ[ℂ] B) (a : A) :
+    mapEquiv l e (diag A l a) = diag B l (e a) := by
+  rw [← StarAlgEquiv.toNonUnitalStarAlgHom_apply, toNonUnitalStarAlgHom_mapEquiv, map_diag,
+    StarAlgEquiv.toNonUnitalStarAlgHom_apply]
 
 @[simp]
 theorem mapEquiv_symm (l : Filter ι) (e : A ≃⋆ₐ[ℂ] B) :
@@ -255,21 +262,39 @@ theorem factor_comp_diag {l l' : Filter ι} (h : l' ≤ l) :
   refine NonUnitalStarAlgHom.ext fun a ↦ ?_
   simp [diag_eq_mk_const]
 
+@[simp]
+theorem factor_diag {l l' : Filter ι} (h : l' ≤ l) (a : A) :
+    factor A h (diag A l a) = diag A l' a :=
+  DFunLike.congr_fun (factor_comp_diag (A := A) h) a
+
+@[simp]
+theorem factor_refl (l : Filter ι) :
+    factor A (le_refl l) = NonUnitalStarAlgHom.id ℂ (CStarFilterQuotient A l) := by
+  refine NonUnitalStarAlgHom.ext fun x ↦ ?_
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  simp
+
+theorem factor_trans {l₁ l₂ l₃ : Filter ι} (h₂₃ : l₃ ≤ l₂) (h₁₂ : l₂ ≤ l₁) :
+    (factor A h₂₃).comp (factor A h₁₂) = factor A (h₂₃.trans h₁₂) := by
+  refine NonUnitalStarAlgHom.ext fun x ↦ ?_
+  obtain ⟨a, rfl⟩ := mk_surjective l₁ x
+  simp
+
 variable (A) in
 /-- Reindexing `a ↦ a ∘ r` descends to `CStarFilterQuotient A l →⋆ₙₐ[ℂ] CStarFilterQuotient A l'`
 whenever `Tendsto r l' l`, and fixes the diagonal subalgebra. -/
 def reindex {l : Filter ι} {l' : Filter ι'} {r : ι' → ι} (hr : Tendsto r l' l) :
     CStarFilterQuotient A l →⋆ₙₐ[ℂ] CStarFilterQuotient A l' :=
   TwoSidedIdeal.Quotient.liftStarAlgHom (lp.nullIdeal (fun _ : ι ↦ A) l)
-    ((mk A l').comp (lp.reindexStarAlgHom ℂ A r)) fun a ha ↦ by
+    ((mk A l').comp (lp.reindexNonUnitalStarAlgHom ℂ A r)) fun a ha ↦ by
       rw [NonUnitalStarAlgHom.comp_apply, mk_eq_zero_iff]
-      simpa only [Function.comp_def, lp.reindexStarAlgHom_apply] using
+      simpa only [Function.comp_def, lp.reindexNonUnitalStarAlgHom_apply] using
         (lp.mem_nullIdeal.1 ha).comp hr
 
 @[simp]
 theorem reindex_mk {l : Filter ι} {l' : Filter ι'} {r : ι' → ι} (hr : Tendsto r l' l)
     (a : lp (fun _ : ι ↦ A) ∞) :
-    reindex A hr (mk A l a) = mk A l' (lp.reindexStarAlgHom ℂ A r a) := by
+    reindex A hr (mk A l a) = mk A l' (lp.reindexNonUnitalStarAlgHom ℂ A r a) := by
   rw [mk_apply]
   exact TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ _ _ a
 
@@ -287,11 +312,28 @@ theorem reindex_diag {l : Filter ι} {l' : Filter ι'} {r : ι' → ι} (hr : Te
     reindex A hr (diag A l a) = diag A l' a :=
   DFunLike.congr_fun (reindex_comp_diag (A := A) hr) a
 
-/-- **Asymptotic-commutator characterization of relative commutants.** Given `φ : C →⋆ₙₐ[ℂ] A`, the
-class `mk A l a` belongs to the relative commutant of `diag A l ∘ φ` in `CStarFilterQuotient A l` if
-and only if `‖φ c * a i - a i * φ c‖ → 0` along `l` for every `c : C`. -/
-theorem mem_centralizer_range_diag_comp_iff (l : Filter ι) (φ : C →⋆ₙₐ[ℂ] A)
-    (a : lp (fun _ : ι ↦ A) ∞) :
+@[simp]
+theorem reindex_id (l : Filter ι) :
+    reindex A (tendsto_id : Tendsto id l l) =
+      NonUnitalStarAlgHom.id ℂ (CStarFilterQuotient A l) := by
+  refine NonUnitalStarAlgHom.ext fun x ↦ ?_
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  simp
+
+theorem reindex_comp {ι'' : Type*} {l : Filter ι} {l' : Filter ι'} {l'' : Filter ι''}
+    {r : ι' → ι} {s : ι'' → ι'} (hs : Tendsto s l'' l') (hr : Tendsto r l' l) :
+    (reindex A hs).comp (reindex A hr) = reindex A (hr.comp hs) := by
+  refine NonUnitalStarAlgHom.ext fun x ↦ ?_
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [NonUnitalStarAlgHom.comp_apply, reindex_mk, reindex_mk, reindex_mk,
+    ← lp.reindexNonUnitalStarAlgHom_comp, NonUnitalStarAlgHom.comp_apply]
+
+/-- **Asymptotic-commutator characterization of relative commutants.** Given a `⋆`-homomorphism
+`φ : C → A`, the class `mk A l a` belongs to the relative commutant of `diag A l ∘ φ` in
+`CStarFilterQuotient A l` if and only if `‖φ c * a i - a i * φ c‖ → 0` along `l` for every
+`c : C`. -/
+theorem mem_centralizer_range_diag_comp_iff {F C : Type*} [Star C] [FunLike F C A]
+    [StarHomClass F C A] (l : Filter ι) (φ : F) (a : lp (fun _ : ι ↦ A) ∞) :
     mk A l a ∈ NonUnitalStarSubalgebra.centralizer ℂ (Set.range fun c ↦ diag A l (φ c)) ↔
       ∀ c : C, Tendsto (fun i ↦ ‖φ c * a i - a i * φ c‖) l (𝓝 0) := by
   rw [NonUnitalStarSubalgebra.mem_centralizer_iff]
@@ -299,14 +341,15 @@ theorem mem_centralizer_range_diag_comp_iff (l : Filter ι) (φ : C →⋆ₙₐ
   · intro h c
     have hc := (h (diag A l (φ c)) ⟨c, rfl⟩).1
     rw [diag_eq_mk_const, ← map_mul, ← map_mul, mk_eq_mk_iff] at hc
-    simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.constStarAlgHom_apply] using hc
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.constNonUnitalStarAlgHom_apply] using hc
   · rintro h _ ⟨c, rfl⟩
     dsimp only
     refine ⟨?_, ?_⟩
     · rw [diag_eq_mk_const, ← map_mul, ← map_mul, mk_eq_mk_iff]
-      simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.constStarAlgHom_apply] using h c
+      simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.constNonUnitalStarAlgHom_apply] using h c
     · rw [← map_star, ← map_star, diag_eq_mk_const, ← map_mul, ← map_mul, mk_eq_mk_iff]
-      simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.constStarAlgHom_apply] using h (star c)
+      simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.constNonUnitalStarAlgHom_apply] using
+        h (star c)
 
 /-- Special case `φ = id`: `mk A l a` belongs to the central sequence algebra
 `CStarFilterQuotient A l ∩ A′` if and only if `‖b * a i - a i * b‖ → 0` along `l` for every
@@ -320,8 +363,8 @@ end NonUnital
 
 section Unital
 
-variable {ι ι' : Type*} {A B C : Type*} [CStarAlgebra A] [Nontrivial A]
-  [CStarAlgebra B] [Nontrivial B] [NonUnitalCStarAlgebra C]
+variable {ι ι' : Type*} {A B : Type*} [CStarAlgebra A] [Nontrivial A]
+  [CStarAlgebra B] [Nontrivial B]
 
 variable (A) in
 /-- The canonical unital quotient `⋆`-homomorphism `ℓ^∞(ι, A) →⋆ₐ[ℂ] CStarFilterQuotient A l`. -/
@@ -333,10 +376,14 @@ theorem toNonUnitalStarAlgHom_unitalMk (l : Filter ι) :
     (unitalMk A l).toNonUnitalStarAlgHom = mk A l :=
   TwoSidedIdeal.Quotient.toNonUnitalStarAlgHom_mkUnitalStarAlgHom _
 
-@[simp]
+@[simp low]
 theorem unitalMk_apply (l : Filter ι) (a : lp (fun _ : ι ↦ A) ∞) :
     unitalMk A l a = mk A l a := by
   rw [unitalMk, TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply, mk_apply]
+
+@[simp]
+theorem mk_one (l : Filter ι) : mk A l 1 = 1 := by
+  rw [← unitalMk_apply, map_one]
 
 theorem unitalMk_surjective (l : Filter ι) : Function.Surjective (unitalMk A l) :=
   TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _
@@ -344,85 +391,195 @@ theorem unitalMk_surjective (l : Filter ι) : Function.Surjective (unitalMk A l)
 variable (A) in
 /-- The unital diagonal embedding `A →⋆ₐ[ℂ] CStarFilterQuotient A l`. -/
 def unitalDiag (l : Filter ι) : A →⋆ₐ[ℂ] CStarFilterQuotient A l :=
-  (unitalMk A l).comp (lp.unitalConstStarAlgHom ℂ ι A)
+  (unitalMk A l).comp (lp.constStarAlgHom ℂ ι A)
+
+@[simp low]
+theorem unitalDiag_apply (l : Filter ι) (a : A) : unitalDiag A l a = diag A l a := by
+  rw [unitalDiag, StarAlgHom.comp_apply, unitalMk_apply, diag_eq_mk_const]
+  congr 1
+  ext i
+  rw [lp.constStarAlgHom_apply, lp.constNonUnitalStarAlgHom_apply]
 
 @[simp]
 theorem toNonUnitalStarAlgHom_unitalDiag (l : Filter ι) :
     (unitalDiag A l).toNonUnitalStarAlgHom = diag A l :=
   NonUnitalStarAlgHom.ext fun a ↦
-    (unitalMk_apply l (lp.unitalConstStarAlgHom ℂ ι A a)).trans <|
-      (congrArg (mk A l) (lp.ext <| funext fun i ↦ by simp)).trans (diag_eq_mk_const l a).symm
+    (congrFun (StarAlgHom.coe_toNonUnitalStarAlgHom (unitalDiag A l)) a).trans
+      (unitalDiag_apply l a)
 
 @[simp]
-theorem unitalDiag_apply (l : Filter ι) (a : A) : unitalDiag A l a = diag A l a :=
-  congrFun (congrArg (fun f : A →⋆ₙₐ[ℂ] CStarFilterQuotient A l ↦ (f : A → _))
-    (toNonUnitalStarAlgHom_unitalDiag l)) a
+theorem diag_one (l : Filter ι) : diag A l 1 = 1 := by
+  rw [← unitalDiag_apply, map_one]
 
 /-- Unital functoriality of `CStarFilterQuotient` along `φ : A →⋆ₐ[ℂ] B`. -/
 def unitalMap (l : Filter ι) (φ : A →⋆ₐ[ℂ] B) :
     CStarFilterQuotient A l →⋆ₐ[ℂ] CStarFilterQuotient B l :=
   TwoSidedIdeal.Quotient.liftUnitalStarAlgHom (lp.nullIdeal (fun _ : ι ↦ A) l)
-    ((unitalMk B l).comp (lp.unitalMapStarAlgHom fun _ ↦ φ)) fun a ha ↦ by
+    ((unitalMk B l).comp (lp.mapStarAlgHom fun _ ↦ φ)) fun a ha ↦ by
       rw [StarAlgHom.comp_apply, unitalMk_apply, mk_eq_zero_iff]
       exact squeeze_zero (fun _ ↦ norm_nonneg _)
         (fun i ↦ by
-          rw [lp.unitalMapStarAlgHom_apply]
+          rw [lp.mapStarAlgHom_apply]
           exact NonUnitalStarAlgHom.norm_apply_le φ (a i))
         (lp.mem_nullIdeal.1 ha)
 
-@[simp]
 theorem unitalMap_mk (l : Filter ι) (φ : A →⋆ₐ[ℂ] B) (a : lp (fun _ : ι ↦ A) ∞) :
-    unitalMap l φ (mk A l a) = mk B l (lp.unitalMapStarAlgHom (fun _ ↦ φ) a) := by
-  rw [mk_apply]
-  exact (TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk _ _ _ a).trans (unitalMk_apply l _)
+    unitalMap l φ (mk A l a) = mk B l (lp.mapStarAlgHom (fun _ ↦ φ) a) := by
+  rw [mk_apply, unitalMap, TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk, StarAlgHom.comp_apply,
+    unitalMk_apply]
+
+@[simp low]
+theorem unitalMap_apply (l : Filter ι) (φ : A →⋆ₐ[ℂ] B) (x : CStarFilterQuotient A l) :
+    unitalMap l φ x = map l φ.toNonUnitalStarAlgHom x := by
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [unitalMap_mk, map_mk]
+  congr 1
+  ext i
+  rw [lp.mapStarAlgHom_apply, lp.mapNonUnitalStarAlgHom_apply, StarAlgHom.coe_toNonUnitalStarAlgHom]
 
 @[simp]
 theorem toNonUnitalStarAlgHom_unitalMap (l : Filter ι) (φ : A →⋆ₐ[ℂ] B) :
-    (unitalMap l φ).toNonUnitalStarAlgHom = map l φ.toNonUnitalStarAlgHom := by
-  refine NonUnitalStarAlgHom.ext fun x ↦ ?_
+    (unitalMap l φ).toNonUnitalStarAlgHom = map l φ.toNonUnitalStarAlgHom :=
+  NonUnitalStarAlgHom.ext fun x ↦
+    (congrFun (StarAlgHom.coe_toNonUnitalStarAlgHom (unitalMap l φ)) x).trans
+      (unitalMap_apply l φ x)
+
+@[simp]
+theorem unitalMap_comp_unitalDiag (l : Filter ι) (φ : A →⋆ₐ[ℂ] B) :
+    (unitalMap l φ).comp (unitalDiag A l) = (unitalDiag B l).comp φ := by
+  ext a
+  rw [StarAlgHom.comp_apply, StarAlgHom.comp_apply, unitalMap_apply, unitalDiag_apply,
+    unitalDiag_apply, map_diag, StarAlgHom.coe_toNonUnitalStarAlgHom]
+
+@[simp]
+theorem unitalMap_id (l : Filter ι) :
+    unitalMap l (StarAlgHom.id ℂ A) = StarAlgHom.id ℂ (CStarFilterQuotient A l) := by
+  ext x
   obtain ⟨a, rfl⟩ := mk_surjective l x
-  exact (unitalMap_mk l φ a).trans <|
-    (congrArg (mk B l) (lp.ext <| funext fun _ ↦ by simp)).trans
-      (map_mk l φ.toNonUnitalStarAlgHom a).symm
+  rw [unitalMap_mk, lp.mapStarAlgHom_id, StarAlgHom.coe_id, id_eq, StarAlgHom.coe_id, id_eq]
+
+theorem unitalMap_comp {C : Type*} [CStarAlgebra C] [Nontrivial C] (l : Filter ι)
+    (ψ : B →⋆ₐ[ℂ] C) (φ : A →⋆ₐ[ℂ] B) :
+    (unitalMap l ψ).comp (unitalMap l φ) = unitalMap l (ψ.comp φ) := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [StarAlgHom.comp_apply, unitalMap_mk, unitalMap_mk, unitalMap_mk,
+    ← lp.mapStarAlgHom_comp, StarAlgHom.comp_apply]
+
+variable (A) in
+/-- Canonical surjective unital quotient `⋆`-homomorphism when passing to a finer filter
+`l' ≤ l`. -/
+def unitalFactor {l l' : Filter ι} (h : l' ≤ l) :
+    CStarFilterQuotient A l →⋆ₐ[ℂ] CStarFilterQuotient A l' :=
+  TwoSidedIdeal.Quotient.liftUnitalStarAlgHom (lp.nullIdeal (fun _ : ι ↦ A) l)
+    (unitalMk A l') fun _ ha ↦ by
+      rw [unitalMk_apply, mk_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem]
+      exact lp.nullIdeal_antitone h ha
+
+theorem unitalFactor_mk {l l' : Filter ι} (h : l' ≤ l) (a : lp (fun _ : ι ↦ A) ∞) :
+    unitalFactor A h (mk A l a) = mk A l' a := by
+  rw [mk_apply, unitalFactor, TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk, unitalMk_apply]
+
+@[simp low]
+theorem unitalFactor_apply {l l' : Filter ι} (h : l' ≤ l) (x : CStarFilterQuotient A l) :
+    unitalFactor A h x = factor A h x := by
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [unitalFactor_mk, factor_mk]
+
+@[simp]
+theorem toNonUnitalStarAlgHom_unitalFactor {l l' : Filter ι} (h : l' ≤ l) :
+    (unitalFactor A h).toNonUnitalStarAlgHom = factor A h :=
+  NonUnitalStarAlgHom.ext fun x ↦
+    (congrFun (StarAlgHom.coe_toNonUnitalStarAlgHom (unitalFactor A h)) x).trans
+      (unitalFactor_apply h x)
+
+/-- Passing to a finer filter `l' ≤ l` gives a surjective unital quotient map on
+`CStarFilterQuotient`. -/
+theorem unitalFactor_surjective {l l' : Filter ι} (h : l' ≤ l) :
+    Function.Surjective (unitalFactor A h) := by
+  intro x
+  obtain ⟨y, rfl⟩ := factor_surjective (A := A) h x
+  exact ⟨y, unitalFactor_apply h y⟩
+
+@[simp]
+theorem unitalFactor_comp_unitalDiag {l l' : Filter ι} (h : l' ≤ l) :
+    (unitalFactor A h).comp (unitalDiag A l) = unitalDiag A l' := by
+  ext a
+  rw [StarAlgHom.comp_apply, unitalFactor_apply, unitalDiag_apply, unitalDiag_apply, factor_diag]
+
+@[simp]
+theorem unitalFactor_refl (l : Filter ι) :
+    unitalFactor A (le_refl l) = StarAlgHom.id ℂ (CStarFilterQuotient A l) := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [unitalFactor_mk, StarAlgHom.coe_id, id_eq]
+
+theorem unitalFactor_trans {l₁ l₂ l₃ : Filter ι} (h₂₃ : l₃ ≤ l₂) (h₁₂ : l₂ ≤ l₁) :
+    (unitalFactor A h₂₃).comp (unitalFactor A h₁₂) = unitalFactor A (h₂₃.trans h₁₂) := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective l₁ x
+  rw [StarAlgHom.comp_apply, unitalFactor_mk, unitalFactor_mk, unitalFactor_mk]
 
 variable (A) in
 /-- Unital reindexing `a ↦ a ∘ r` along `Tendsto r l' l`. -/
 def unitalReindex {l : Filter ι} {l' : Filter ι'} {r : ι' → ι} (hr : Tendsto r l' l) :
     CStarFilterQuotient A l →⋆ₐ[ℂ] CStarFilterQuotient A l' :=
   TwoSidedIdeal.Quotient.liftUnitalStarAlgHom (lp.nullIdeal (fun _ : ι ↦ A) l)
-    ((unitalMk A l').comp (lp.unitalReindexStarAlgHom ℂ A r)) fun a ha ↦ by
+    ((unitalMk A l').comp (lp.reindexStarAlgHom ℂ A r)) fun a ha ↦ by
       rw [StarAlgHom.comp_apply, unitalMk_apply, mk_eq_zero_iff]
-      simpa only [Function.comp_def, lp.unitalReindexStarAlgHom_apply] using
+      simpa only [Function.comp_def, lp.reindexStarAlgHom_apply] using
         (lp.mem_nullIdeal.1 ha).comp hr
 
-@[simp]
 theorem unitalReindex_mk {l : Filter ι} {l' : Filter ι'} {r : ι' → ι} (hr : Tendsto r l' l)
     (a : lp (fun _ : ι ↦ A) ∞) :
-    unitalReindex A hr (mk A l a) = mk A l' (lp.unitalReindexStarAlgHom ℂ A r a) := by
-  rw [mk_apply]
-  exact (TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk _ _ _ a).trans (unitalMk_apply l' _)
+    unitalReindex A hr (mk A l a) = mk A l' (lp.reindexStarAlgHom ℂ A r a) := by
+  rw [mk_apply, unitalReindex, TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk,
+    StarAlgHom.comp_apply, unitalMk_apply]
+
+@[simp low]
+theorem unitalReindex_apply {l : Filter ι} {l' : Filter ι'} {r : ι' → ι} (hr : Tendsto r l' l)
+    (x : CStarFilterQuotient A l) :
+    unitalReindex A hr x = reindex A hr x := by
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [unitalReindex_mk, reindex_mk]
+  congr 1
+  ext j
+  rw [lp.reindexStarAlgHom_apply, lp.reindexNonUnitalStarAlgHom_apply]
 
 @[simp]
 theorem toNonUnitalStarAlgHom_unitalReindex {l : Filter ι} {l' : Filter ι'} {r : ι' → ι}
     (hr : Tendsto r l' l) :
-    (unitalReindex A hr).toNonUnitalStarAlgHom = reindex A hr := by
-  refine NonUnitalStarAlgHom.ext fun x ↦ ?_
-  obtain ⟨a, rfl⟩ := mk_surjective l x
-  exact (unitalReindex_mk hr a).trans <|
-    (congrArg (mk A l') (lp.ext <| funext fun _ ↦ by simp)).trans (reindex_mk hr a).symm
+    (unitalReindex A hr).toNonUnitalStarAlgHom = reindex A hr :=
+  NonUnitalStarAlgHom.ext fun x ↦
+    (congrFun (StarAlgHom.coe_toNonUnitalStarAlgHom (unitalReindex A hr)) x).trans
+      (unitalReindex_apply hr x)
 
 @[simp]
 theorem unitalReindex_comp_unitalDiag {l : Filter ι} {l' : Filter ι'} {r : ι' → ι}
     (hr : Tendsto r l' l) :
     (unitalReindex A hr).comp (unitalDiag A l) = unitalDiag A l' := by
   ext a
-  exact (congrArg (unitalReindex A hr) (unitalDiag_apply l a)).trans <|
-    (congrFun (congrArg (fun f : _ →⋆ₙₐ[ℂ] _ ↦ (f : _ → _))
-      (toNonUnitalStarAlgHom_unitalReindex (A := A) hr)) (diag A l a)).trans
-        ((reindex_diag hr a).trans (unitalDiag_apply l' a).symm)
+  rw [StarAlgHom.comp_apply, unitalReindex_apply, unitalDiag_apply, unitalDiag_apply, reindex_diag]
+
+@[simp]
+theorem unitalReindex_id (l : Filter ι) :
+    unitalReindex A (tendsto_id : Tendsto id l l) =
+      StarAlgHom.id ℂ (CStarFilterQuotient A l) := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [unitalReindex_mk, lp.reindexStarAlgHom_id, StarAlgHom.coe_id, id_eq, StarAlgHom.coe_id, id_eq]
+
+theorem unitalReindex_comp {ι'' : Type*} {l : Filter ι} {l' : Filter ι'} {l'' : Filter ι''}
+    {r : ι' → ι} {s : ι'' → ι'} (hs : Tendsto s l'' l') (hr : Tendsto r l' l) :
+    (unitalReindex A hs).comp (unitalReindex A hr) = unitalReindex A (hr.comp hs) := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective l x
+  rw [StarAlgHom.comp_apply, unitalReindex_mk, unitalReindex_mk, unitalReindex_mk,
+    ← lp.reindexStarAlgHom_comp, StarAlgHom.comp_apply]
 
 /-- Unital `StarSubalgebra.centralizer` version of the asymptotic-commutator characterization. -/
-theorem mem_starSubalgebra_centralizer_range_diag_comp_iff (l : Filter ι) (φ : C →⋆ₙₐ[ℂ] A)
+theorem mem_starSubalgebra_centralizer_range_diag_comp_iff {F C : Type*} [Star C]
+    [FunLike F C A] [StarHomClass F C A] (l : Filter ι) (φ : F)
     (a : lp (fun _ : ι ↦ A) ∞) :
     mk A l a ∈ StarSubalgebra.centralizer ℂ (Set.range fun c ↦ diag A l (φ c)) ↔
       ∀ c : C, Tendsto (fun i ↦ ‖φ c * a i - a i * φ c‖) l (𝓝 0) := by
@@ -430,7 +587,85 @@ theorem mem_starSubalgebra_centralizer_range_diag_comp_iff (l : Filter ι) (φ :
     (R := ℂ), SetLike.mem_coe]
   exact mem_centralizer_range_diag_comp_iff l φ a
 
+/-- Special case `φ = id`: `mk A l a` belongs to the unital central sequence subalgebra
+`StarSubalgebra.centralizer ℂ (Set.range (diag A l))` if and only if `‖b * a i - a i * b‖ → 0`
+along `l` for every `b : A`. -/
+theorem mem_starSubalgebra_centralizer_range_diag_iff (l : Filter ι)
+    (a : lp (fun _ : ι ↦ A) ∞) :
+    mk A l a ∈ StarSubalgebra.centralizer ℂ (Set.range (diag A l)) ↔
+      ∀ b : A, Tendsto (fun i ↦ ‖b * a i - a i * b‖) l (𝓝 0) :=
+  mem_starSubalgebra_centralizer_range_diag_comp_iff l (NonUnitalStarAlgHom.id ℂ A) a
+
 end Unital
+
+section ParitySeparation
+
+variable (A : Type*) [CStarAlgebra A]
+
+/-- The parity indicator sequence `n ↦ if Even n then 1 else 0` in `ℓ^∞(ℕ, A)`, which separates
+`CStarSequenceAlgebra A` from `CStarUltrapower A ω`. -/
+def evenIndicatorOne : lp (fun _ : ℕ ↦ A) ∞ := by
+  classical
+  exact ⟨fun n ↦ if Even n then 1 else 0, memℓp_infty ⟨1, by
+    rintro _ ⟨n, rfl⟩
+    by_cases hn : Even n <;> simp [hn, IsStarProjection.norm_le (1 : A) (.one A)]⟩⟩
+
+theorem evenIndicatorOne_apply (n : ℕ) [Decidable (Even n)] :
+    evenIndicatorOne A n = if Even n then 1 else 0 := by
+  classical
+  simp [evenIndicatorOne]
+
+/-- The parity indicator sequence `evenIndicatorOne A` is a star projection in `ℓ^∞(ℕ, A)`. -/
+theorem isStarProjection_evenIndicatorOne : IsStarProjection (evenIndicatorOne A) := by
+  classical
+  rw [lp.isStarProjection_iff]
+  intro n
+  rw [evenIndicatorOne_apply]
+  split_ifs <;> simp [IsStarProjection.one, IsStarProjection.zero]
+
+variable [Nontrivial A]
+
+/-- In `CStarSequenceAlgebra A`, the parity indicator sequence `(1, 0, 1, 0, …)` has norm `1`. -/
+@[simp]
+theorem norm_mk_atTop_evenIndicatorOne :
+    ‖mk A atTop (evenIndicatorOne A)‖ = 1 := by
+  have hp : IsStarProjection (mk A atTop (evenIndicatorOne A)) :=
+    (isStarProjection_evenIndicatorOne A).map (mk A atTop)
+  refine le_antisymm (IsStarProjection.norm_le _ hp) ?_
+  rw [norm_mk]
+  refine le_limsup_of_frequently_le ?_
+    (isBoundedUnder_of ⟨‖evenIndicatorOne A‖,
+      fun n ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero _ n⟩)
+  rw [frequently_atTop]
+  intro N
+  classical
+  refine ⟨2 * N, by omega, ?_⟩
+  simp [evenIndicatorOne_apply]
+
+/-- In `CStarUltrapower A ω`, the parity indicator sequence equals `1` if `{n | Even n} ∈ ω`. -/
+theorem mk_ultrafilter_evenIndicatorOne_of_mem {ω : Ultrafilter ℕ}
+    (hω : {n | Even n} ∈ ω) :
+    mk A (ω : Filter ℕ) (evenIndicatorOne A) = 1 := by
+  rw [← mk_one (A := A) (ω : Filter ℕ), mk_eq_mk_iff]
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [hω] with n hn
+  have hn' : Even n := hn
+  classical
+  simp [evenIndicatorOne_apply, hn']
+
+/-- In `CStarUltrapower A ω`, the parity indicator sequence equals `0` if `{n | Even n} ∉ ω`. -/
+theorem mk_ultrafilter_evenIndicatorOne_of_notMem {ω : Ultrafilter ℕ}
+    (hω : {n | Even n} ∉ ω) :
+    mk A (ω : Filter ℕ) (evenIndicatorOne A) = 0 := by
+  rw [mk_eq_zero_iff]
+  have hcompl : ({n | Even n}ᶜ : Set ℕ) ∈ ω := Ultrafilter.compl_mem_iff_notMem.2 hω
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [hcompl] with n hn
+  have hn' : ¬ Even n := hn
+  classical
+  simp [evenIndicatorOne_apply, hn']
+
+end ParitySeparation
 
 end CStarFilterQuotient
 
@@ -443,8 +678,7 @@ variable (A) in
 `lp.c0Ideal` (`cofinite` on `ℕ`). -/
 def equivQuotientC0Ideal :
     CStarSequenceAlgebra A ≃⋆ₐ[ℂ] lp (fun _ : ℕ ↦ A) ∞ ⧸ lp.c0Ideal (fun _ : ℕ ↦ A) :=
-  TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq <| by
-    rw [lp.c0Ideal_eq_nullIdeal, Nat.cofinite_eq_atTop]
+  TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq <| by rw [← Nat.cofinite_eq_atTop]
 
 @[simp]
 theorem equivQuotientC0Ideal_mk (a : lp (fun _ : ℕ ↦ A) ∞) :
@@ -452,6 +686,13 @@ theorem equivQuotientC0Ideal_mk (a : lp (fun _ : ℕ ↦ A) ∞) :
       TwoSidedIdeal.Quotient.mk (lp.c0Ideal (fun _ : ℕ ↦ A)) a := by
   rw [CStarFilterQuotient.mk_apply]
   exact TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_mk _ a
+
+@[simp]
+theorem equivQuotientC0Ideal_symm_mk (a : lp (fun _ : ℕ ↦ A) ∞) :
+    (equivQuotientC0Ideal A).symm (TwoSidedIdeal.Quotient.mk (lp.c0Ideal (fun _ : ℕ ↦ A)) a) =
+      CStarFilterQuotient.mk A atTop a := by
+  rw [equivQuotientC0Ideal, TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_symm,
+    TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_mk, CStarFilterQuotient.mk_apply]
 
 /-- The harmonic sequence `n ↦ ((n + 1)⁻¹ : ℝ) • a` in `ℓ^∞(ℕ, A)`. -/
 def invSuccSmul (a : A) : lp (fun _ : ℕ ↦ A) ∞ :=
@@ -501,76 +742,6 @@ theorem norm_mk_eq_limUnder (ω : Ultrafilter ι) (a : lp (fun _ : ι ↦ A) ∞
   exact lp.norm_mk_nullIdeal_ultrafilter ω a
 
 end CStarUltrapower
-
-section ParitySeparation
-
-variable (A : Type*) [CStarAlgebra A]
-
-/-- The parity indicator sequence `n ↦ if Even n then 1 else 0` in `ℓ^∞(ℕ, A)`, which separates
-`CStarSequenceAlgebra A` from `CStarUltrapower A ω`. -/
-def evenIndicatorOne : lp (fun _ : ℕ ↦ A) ∞ := by
-  classical
-  exact ⟨fun n ↦ if Even n then 1 else 0, memℓp_infty ⟨1, by
-    rintro _ ⟨n, rfl⟩
-    by_cases hn : Even n <;> simp [hn, IsStarProjection.norm_le (1 : A) (.one A)]⟩⟩
-
-theorem evenIndicatorOne_apply (n : ℕ) [Decidable (Even n)] :
-    evenIndicatorOne A n = if Even n then 1 else 0 := by
-  classical
-  simp [evenIndicatorOne]
-
-/-- The parity indicator sequence `evenIndicatorOne A` is a star projection in `ℓ^∞(ℕ, A)`. -/
-theorem isStarProjection_evenIndicatorOne : IsStarProjection (evenIndicatorOne A) := by
-  classical
-  rw [lp.isStarProjection_iff]
-  intro n
-  rw [evenIndicatorOne_apply]
-  split_ifs <;> simp [IsStarProjection.one, IsStarProjection.zero]
-
-variable [Nontrivial A]
-
-/-- In `CStarSequenceAlgebra A`, the parity indicator sequence `(1, 0, 1, 0, …)` has norm `1`. -/
-@[simp]
-theorem norm_mk_atTop_evenIndicatorOne :
-    ‖CStarFilterQuotient.mk A atTop (evenIndicatorOne A)‖ = 1 := by
-  have hp : IsStarProjection (CStarFilterQuotient.mk A atTop (evenIndicatorOne A)) :=
-    (isStarProjection_evenIndicatorOne A).map (CStarFilterQuotient.mk A atTop)
-  refine le_antisymm (IsStarProjection.norm_le _ hp) ?_
-  rw [CStarFilterQuotient.norm_mk]
-  refine le_limsup_of_frequently_le ?_
-    (isBoundedUnder_of ⟨‖evenIndicatorOne A‖,
-      fun n ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero _ n⟩)
-  rw [frequently_atTop]
-  intro N
-  classical
-  refine ⟨2 * N, by omega, ?_⟩
-  simp [evenIndicatorOne_apply]
-
-/-- In `CStarUltrapower A ω`, the parity indicator sequence equals `1` if `{n | Even n} ∈ ω`. -/
-theorem mk_ultrafilter_evenIndicatorOne_of_mem {ω : Ultrafilter ℕ}
-    (hω : {n | Even n} ∈ ω) :
-    CStarFilterQuotient.mk A (ω : Filter ℕ) (evenIndicatorOne A) = 1 := by
-  rw [← map_one (CStarFilterQuotient.unitalMk A (ω : Filter ℕ)),
-    CStarFilterQuotient.unitalMk_apply, CStarFilterQuotient.mk_eq_mk_iff]
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [hω] with n hn
-  have hn' : Even n := hn
-  classical
-  simp [evenIndicatorOne_apply, hn']
-
-/-- In `CStarUltrapower A ω`, the parity indicator sequence equals `0` if `{n | Even n} ∉ ω`. -/
-theorem mk_ultrafilter_evenIndicatorOne_of_notMem {ω : Ultrafilter ℕ}
-    (hω : {n | Even n} ∉ ω) :
-    CStarFilterQuotient.mk A (ω : Filter ℕ) (evenIndicatorOne A) = 0 := by
-  rw [CStarFilterQuotient.mk_eq_zero_iff]
-  have hcompl : ({n | Even n}ᶜ : Set ℕ) ∈ ω := Ultrafilter.compl_mem_iff_notMem.2 hω
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [hcompl] with n hn
-  have hn' : ¬ Even n := hn
-  classical
-  simp [evenIndicatorOne_apply, hn']
-
-end ParitySeparation
 
 end
 

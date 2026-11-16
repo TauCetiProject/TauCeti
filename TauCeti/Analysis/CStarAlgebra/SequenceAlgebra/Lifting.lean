@@ -122,25 +122,15 @@ theorem exists_isSelfAdjoint_mk_nullIdeal_eq_and_norm_eq (l : Filter ι)
     ∃ a : lp A ∞, IsSelfAdjoint a ∧ TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) a = x ∧
       ‖a‖ = ‖x‖ := by
   obtain ⟨b, rfl, hb⟩ := exists_mk_nullIdeal_eq_and_norm_eq l x
-  let a : lp A ∞ := (2⁻¹ : ℂ) • (b + star b)
-  have ha_sa : IsSelfAdjoint a := by
-    rw [IsSelfAdjoint, star_smul, star_add, star_star, add_comm]
-    simp [a]
-  have ha_mk : TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) a =
+  have ha_mk : TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) (realPart b : lp A ∞) =
       TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) b := by
-    rw [← TwoSidedIdeal.Quotient.mkStarAlgHom_apply, map_smul, map_add, map_star,
-      TwoSidedIdeal.Quotient.mkStarAlgHom_apply, hx.star_eq, ← two_smul ℂ, smul_smul]
-    norm_num
-  refine ⟨a, ha_sa, ha_mk, le_antisymm ?_ ?_⟩
-  · calc ‖a‖ = ‖(2⁻¹ : ℂ)‖ * ‖b + star b‖ := norm_smul _ _
-      _ ≤ 2⁻¹ * (‖b‖ + ‖star b‖) := by
-          gcongr
-          · norm_num
-          · exact norm_add_le _ _
-      _ = ‖b‖ := by rw [norm_star]; ring
-      _ = ‖TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) b‖ := hb
+    rw [← TwoSidedIdeal.Quotient.mkStarAlgHom_apply, map_realPart,
+      TwoSidedIdeal.Quotient.mkStarAlgHom_apply, hx.coe_realPart]
+  refine ⟨(realPart b : lp A ∞), (realPart b).2, ha_mk, le_antisymm ?_ ?_⟩
+  · rw [AddSubgroup.norm_coe]
+    exact (realPart.norm_le b).trans_eq hb
   · rw [← ha_mk]
-    exact TwoSidedIdeal.Quotient.norm_mk_le _ a
+    exact TwoSidedIdeal.Quotient.norm_mk_le _ _
 
 /-- **Projection lifting.** Every star projection in `lp A ∞ ⧸ lp.nullIdeal A l` lifts to a star
 projection in `lp A ∞`. -/
@@ -156,21 +146,17 @@ theorem exists_isStarProjection_mk_nullIdeal_eq (l : Filter ι)
       exact IsStarProjection.norm_le _ (isStarProjection_liftProjCoord (b i) (hb_i i))⟩⟩
   have hq_proj : IsStarProjection q :=
     isStarProjection_iff.2 fun i ↦ isStarProjection_liftProjCoord (b i) (hb_i i)
-  have hmem : b * b - b ∈ nullIdeal A l := by
-    rw [← TwoSidedIdeal.Quotient.eq_zero_iff_mem, map_sub, map_mul, hb_mk,
-      hp.isIdempotentElem.eq, sub_self]
   have htend : Tendsto (fun i ↦ ‖b i * b i - b i‖) l (𝓝 0) := by
-    simpa only [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply] using
-      mem_nullIdeal.1 hmem
-  have hdiff : q - b ∈ nullIdeal A l := by
-    rw [mem_nullIdeal]
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
-      (by simpa using htend.const_mul 2)
-    filter_upwards [htend.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 9))] with i hi
-    simpa only [lp.coeFn_sub, Pi.sub_apply] using norm_liftProjCoord_sub_le (hb_i i) hi
+    have hbb : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (b * b) =
+        TwoSidedIdeal.Quotient.mk (nullIdeal A l) b := by
+      rw [map_mul, hb_mk, hp.isIdempotentElem.eq]
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply] using mk_nullIdeal_eq_mk_iff.1 hbb
   refine ⟨q, hq_proj, ?_⟩
-  rw [← hb_mk, ← sub_eq_zero, ← map_sub, TwoSidedIdeal.Quotient.eq_zero_iff_mem]
-  exact hdiff
+  rw [← hb_mk, mk_nullIdeal_eq_mk_iff]
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
+    (by simpa using htend.const_mul 2)
+  filter_upwards [htend.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 9))] with i hi
+  exact norm_liftProjCoord_sub_le (hb_i i) hi
 
 end NonUnital
 
@@ -188,26 +174,23 @@ theorem exists_star_mul_self_eq_one_and_mk_nullIdeal_eq (l : Filter ι)
     ⟨fun i ↦ liftIsometryCoord (b i), memℓp_infty ⟨1, by
       rintro _ ⟨i, rfl⟩
       exact norm_liftIsometryCoord_le (b i)⟩⟩
-  have hv_iso : star v * v = 1 :=
-    lp.ext <| funext fun i ↦ star_liftIsometryCoord_mul_self (b i)
-  have hmem : star b * b - 1 ∈ nullIdeal A l := by
-    rw [← TwoSidedIdeal.Quotient.eq_zero_iff_mem, map_sub, map_mul, TwoSidedIdeal.Quotient.mk_star,
-      TwoSidedIdeal.Quotient.mk_one, hb_mk, hx, sub_self]
+  have hv_iso : star v * v = 1 := by
+    ext i
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
+      Pi.one_apply] using star_liftIsometryCoord_mul_self (b i)
   have htend : Tendsto (fun i ↦ ‖star (b i) * b i - 1‖) l (𝓝 0) := by
-    simpa only [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply,
-      lp.infty_coeFn_one, Pi.one_apply] using mem_nullIdeal.1 hmem
-  have hdiff : v - b ∈ nullIdeal A l := by
-    rw [mem_nullIdeal]
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
-      (by simpa using htend.const_mul ‖b‖)
-    filter_upwards [htend.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2))] with i hi
-    calc ‖(v - b) i‖ = ‖liftIsometryCoord (b i) - b i‖ := by rw [lp.coeFn_sub, Pi.sub_apply]
-      _ ≤ ‖b i‖ * ‖star (b i) * b i - 1‖ := norm_liftIsometryCoord_sub_le hi
-      _ ≤ ‖b‖ * ‖star (b i) * b i - 1‖ :=
-          mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _)
+    have hb1 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (star b * b) =
+        TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
+      rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk, hx]
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
+      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.1 hb1
   refine ⟨v, hv_iso, ?_⟩
-  rw [← hb_mk, ← sub_eq_zero, ← map_sub, TwoSidedIdeal.Quotient.eq_zero_iff_mem]
-  exact hdiff
+  rw [← hb_mk, mk_nullIdeal_eq_mk_iff]
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
+    (by simpa using htend.const_mul ‖b‖)
+  filter_upwards [htend.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2))] with i hi
+  exact (norm_liftIsometryCoord_sub_le hi).trans
+    (mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _))
 
 /-- **Unitary lifting.** For any filter `l : Filter ι`, the quotient map from `lp A ∞` to
 `lp A ∞ ⧸ lp.nullIdeal A l` is surjective on unitary groups. -/
@@ -218,34 +201,30 @@ theorem unitary_map_mkUnitalStarAlgHom_surjective (l : Filter ι) :
   intro U
   obtain ⟨b, hb_mk⟩ := TwoSidedIdeal.Quotient.mk_surjective (lp.nullIdeal A l) (U : _)
   let V : unitary (lp A ∞) := unitaryEquiv.symm fun i ↦ liftUnitaryCoord (b i)
-  have hmem₁ : star b * b - 1 ∈ nullIdeal A l := by
-    rw [← TwoSidedIdeal.Quotient.eq_zero_iff_mem, map_sub, map_mul, TwoSidedIdeal.Quotient.mk_star,
-      TwoSidedIdeal.Quotient.mk_one, hb_mk, (Unitary.mem_iff.1 U.2).1, sub_self]
-  have hmem₂ : b * star b - 1 ∈ nullIdeal A l := by
-    rw [← TwoSidedIdeal.Quotient.eq_zero_iff_mem, map_sub, map_mul, TwoSidedIdeal.Quotient.mk_star,
-      TwoSidedIdeal.Quotient.mk_one, hb_mk, (Unitary.mem_iff.1 U.2).2, sub_self]
   have htend₁ : Tendsto (fun i ↦ ‖star (b i) * b i - 1‖) l (𝓝 0) := by
-    simpa only [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply,
-      lp.infty_coeFn_one, Pi.one_apply] using mem_nullIdeal.1 hmem₁
+    have hb1 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (star b * b) =
+        TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
+      rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk,
+        (Unitary.mem_iff.1 U.2).1]
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
+      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.1 hb1
   have htend₂ : Tendsto (fun i ↦ ‖b i * star (b i) - 1‖) l (𝓝 0) := by
-    simpa only [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply,
-      lp.infty_coeFn_one, Pi.one_apply] using mem_nullIdeal.1 hmem₂
-  have hdiff : (V : lp A ∞) - b ∈ nullIdeal A l := by
-    rw [mem_nullIdeal]
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
-      (by simpa using htend₁.const_mul ‖b‖)
-    filter_upwards [htend₁.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2)),
-      htend₂.eventually (gt_mem_nhds zero_lt_one)] with i hi₁ hi₂
-    calc ‖((V : lp A ∞) - b) i‖ = ‖(liftUnitaryCoord (b i) : A i) - b i‖ := by
-          rw [lp.coeFn_sub, Pi.sub_apply, coe_unitaryEquiv_symm_apply]
-      _ ≤ ‖b i‖ * ‖star (b i) * b i - 1‖ := norm_liftUnitaryCoord_sub_le hi₁ hi₂
-      _ ≤ ‖b‖ * ‖star (b i) * b i - 1‖ :=
-          mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _)
+    have hb2 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (b * star b) =
+        TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
+      rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk,
+        (Unitary.mem_iff.1 U.2).2]
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
+      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.1 hb2
   refine ⟨V, Subtype.ext ?_⟩
-  have hmk : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (V : lp A ∞) = U := by
-    rw [← hb_mk, ← sub_eq_zero, ← map_sub, TwoSidedIdeal.Quotient.eq_zero_iff_mem]
-    exact hdiff
-  simpa [TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply] using hmk
+  rw [Unitary.coe_map, StarMonoidHom.ofClass_coe, TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply,
+    ← hb_mk, mk_nullIdeal_eq_mk_iff]
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
+    (by simpa using htend₁.const_mul ‖b‖)
+  filter_upwards [htend₁.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2)),
+    htend₂.eventually (gt_mem_nhds zero_lt_one)] with i hi₁ hi₂
+  rw [coe_unitaryEquiv_symm_apply]
+  exact (norm_liftUnitaryCoord_sub_le hi₁ hi₂).trans
+    (mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _))
 
 end Unital
 
@@ -313,11 +292,9 @@ variable {A : Type*} [CStarAlgebra A] [Nontrivial A]
 
 /-- In `CStarSequenceAlgebra A`, the sequence `n ↦ 1 - (n + 1)⁻¹ • 1` represents `1` (hence a
 unitary), even though it vanishes at `n = 0`. -/
-@[simp]
 theorem mk_one_sub_invSuccSmul_one :
     CStarFilterQuotient.mk A atTop (1 - invSuccSmul (1 : A)) = 1 := by
-  rw [map_sub, ← CStarFilterQuotient.unitalMk_apply, map_one,
-    mk_invSuccSmul_eq_zero le_rfl, sub_zero]
+  rw [map_sub, CStarFilterQuotient.mk_one, mk_invSuccSmul_eq_zero le_rfl, sub_zero]
 
 /-- The bounded representative `1 - invSuccSmul (1 : A)` of `(1 : CStarSequenceAlgebra A)` is not
 itself unitary in `lp (fun _ : ℕ ↦ A) ∞`, because its `0`-th coordinate is `0`. -/
