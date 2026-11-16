@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.SelfDual
+public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 

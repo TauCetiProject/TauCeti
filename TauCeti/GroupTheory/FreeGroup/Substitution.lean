@@ -170,6 +170,14 @@ theorem substituteVars_map_inl (U : X → List (A × Bool)) (l : List X) :
     substituteVars U (l.map fun x => (Sum.inl x, true)) = l.flatMap U := by
   simp [substituteVars, List.flatMap_map]
 
+/-- Renaming the variables of a word along `g` and then substituting `U` is substituting
+`U ∘ g`. -/
+@[simp]
+theorem substituteVars_map {Y : Type*} (U : X → List (A × Bool)) (g : Y → X)
+    (w : List ((Y ⊕ A) × Bool)) :
+    substituteVars U (w.map (Prod.map (Sum.map g id) id)) = substituteVars (U ∘ g) w := by
+  simp [substituteVars, Sum.elim_comp_map]
+
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     substituteVars U (invRev w) = invRev (substituteVars U w) :=
@@ -197,6 +205,24 @@ theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × B
   funext y
   -- `of a` is the one-letter word `mk [(a, true)]` by definition.
   cases y <;> rfl
+
+/-- If substituting nonempty words for the variables, without free reduction, gives a reduced
+word, then the word in variables and letters was already reduced: a cancelling pair of letters
+is replaced by a nonempty word followed by its formal inverse. -/
+theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} (hU : ∀ x, U x ≠ [])
+    {w : List ((X ⊕ A) × Bool)} (h : IsReduced (substituteVars U w)) : IsReduced w := by
+  refine IsReduced.of_forall_not_step fun w' hstep => ?_
+  obtain @⟨L₁, L₂, y, b⟩ := hstep
+  have hinv : substituteVars U [(y, !b)] = FreeGroup.invRev (substituteVars U [(y, b)]) := by
+    rw [← substituteVars_invRev]
+    simp [FreeGroup.invRev]
+  have hred : IsReduced (substituteVars U [(y, b)] ++ substituteVars U [(y, !b)]) := by
+    refine h.infix ⟨substituteVars U L₁, substituteVars U L₂, ?_⟩
+    rw [← substituteVars_append, ← substituteVars_append, ← substituteVars_append]
+    simp
+  have hnil := hred.eq_of_mk_eq .nil <| by
+    rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
+  obtain x | a := y <;> cases b <;> simp [hU] at hnil
 
 end Vars
 
