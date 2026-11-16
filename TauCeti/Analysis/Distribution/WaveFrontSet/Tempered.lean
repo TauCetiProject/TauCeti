@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ToDistribution
+public import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 
@@ -23,7 +23,8 @@ transform with a cutoff `φ` is the value `S (φ e_η)` of `S` on the modulated 
 `φ e_η`, `e_η x = 𝐞 (-⟪x, η⟫)` (`TemperedDistribution.localFourier_toDistribution`).
 
 For an element `u` of the Bessel-potential space `H^s` this value decays like `⟨η⟩ ^ (-s)`: the
-Fourier transform of `φ e_η` is the translate `𝓕 φ (· + η)`, so by Peetre's inequality the
+Fourier transform of `φ e_η` is the translate `𝓕 φ (· + η)`
+(`TestFunction.fourier_fourierAtomMulSchwartzMap`), so by Peetre's inequality the
 `H^{-s}` norm of `φ e_η` is at most a constant times `⟨η⟩ ^ (-s)`, and `u` pairs `H^s` with
 `H^{-s}` (`TemperedDistribution.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`). In particular a
 tempered distribution lying in every `H^s` has empty wave front set
@@ -34,8 +35,6 @@ tempered distribution lying in every `H^s` has empty wave front set
 * `TemperedDistribution.localFourier_toDistribution`: the localized Fourier transform of the
   restriction of `S` is `η ↦ S (φ e_η)`, with `φ e_η` the Schwartz function
   `TestFunction.fourierAtomMulSchwartzMap`.
-* `TestFunction.fourier_fourierAtomMulSchwartzMap`: the Fourier transform of `φ e_η` is
-  `𝓕 φ (· + η)`.
 * `TestFunction.exists_norm_toBesselPotentialSpaceCLM_fourierAtomMulSchwartzMap_le`:
   `‖φ e_η‖_{H^{-s}} ≤ C ⟨η⟩ ^ (-s)`.
 * `TemperedDistribution.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`:
@@ -58,33 +57,6 @@ open scoped Distributions SchwartzMap BesselPotentialSpace RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
 
-namespace TestFunction
-
-/-- The modulated cutoff `x ↦ φ x e_η x`, the product of `φ` with the Fourier atom
-`e_η x = 𝐞 (-⟪x, η⟫)` (`TauCeti.fourierAtom η`), as a Schwartz function. Pairing a distribution
-with it is the localized Fourier transform `Distribution.localFourier`. -/
-def fourierAtomMulSchwartzMap (φ : 𝓓(Ω, ℂ)) (η : E) : 𝓢(E, ℂ) :=
-  toSchwartzMapCLM ℂ (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
-
-@[simp]
-theorem fourierAtomMulSchwartzMap_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
-    φ.fourierAtomMulSchwartzMap η x = φ x * TauCeti.fourierAtom η x := by
-  simp [fourierAtomMulSchwartzMap, bilinLeftCLM_apply]
-
-/-- **Modulation is translation in frequency.** The Fourier transform of `φ e_η` is
-`ξ ↦ 𝓕 φ (ξ + η)`. -/
-theorem fourier_fourierAtomMulSchwartzMap [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    (φ : 𝓓(Ω, ℂ)) (η ξ : E) :
-    𝓕 (φ.fourierAtomMulSchwartzMap η) ξ = 𝓕 (toSchwartzMapCLM ℂ φ) (ξ + η) := by
-  have hmod : ⇑(φ.fourierAtomMulSchwartzMap η) = fun y ↦ 𝐞 ⟪y, -η⟫ • toSchwartzMapCLM ℂ φ y := by
-    ext y
-    rw [fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
-      inner_neg_right, Circle.smul_def, smul_eq_mul, mul_comm]
-  rw [SchwartzMap.fourier_coe, hmod, TauCeti.fourier_fourierChar_smul, sub_neg_eq_add,
-    SchwartzMap.fourier_coe]
-
-end TestFunction
-
 namespace TemperedDistribution
 
 /-- **The localized Fourier transform of a restricted tempered distribution.** The localized
@@ -92,7 +64,10 @@ Fourier transform of the restriction of `S` to `Ω`, with cutoff `φ`, is `η �
 @[simp]
 theorem localFourier_toDistribution (S : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (toDistribution Ω S).localFourier φ η = S (φ.fourierAtomMulSchwartzMap η) := by
-  rw [Distribution.localFourier_def, complexPairing_toDistribution, fourierAtomMulSchwartzMap]
+  rw [Distribution.localFourier_def, complexPairing_toDistribution]
+  congr 1
+  ext x
+  simp [bilinLeftCLM_apply]
 
 end TemperedDistribution
 
