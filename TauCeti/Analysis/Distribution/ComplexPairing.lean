@@ -41,7 +41,8 @@ conjugation of the values, `mapCLM conjCLE`, is an involution on complex distrib
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
   integration against a locally integrable function, so is its extension.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
-  function along `dsupport T`.
+  function along `dsupport T`, and `Distribution.complexPairing_eq_zero_of_disjoint_dsupport`:
+  it vanishes on test functions supported away from `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
   back.
@@ -215,5 +216,15 @@ theorem complexPairing_eq_of_eventuallyEq (T : 𝓓'^{n}(Ω, ℂ)) {φ ψ : 𝓓
     map_eq_map_of_eventuallyEq T (φ := postcompCLM (𝕜 := ℝ) imCLM φ)
       (ψ := postcompCLM (𝕜 := ℝ) imCLM ψ)
       (by simpa only [postcompCLM_apply] using h.fun_comp imCLM)]
+
+/-- The complex-linear extension of `T` vanishes on a test function whose support is disjoint from
+the support of `T`. -/
+theorem complexPairing_eq_zero_of_disjoint_dsupport (T : 𝓓'^{n}(Ω, ℂ)) {φ : 𝓓^{n}(Ω, ℂ)}
+    (h : Disjoint (tsupport φ) (dsupport T)) : T.complexPairing φ = 0 := by
+  rw [← map_zero T.complexPairing]
+  -- The test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
+  exact complexPairing_eq_of_eventuallyEq T (eventuallyEq_of_mem
+    ((isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2 h.subset_compl_left) fun _ hy ↦
+      image_eq_zero_of_notMem_tsupport hy)
 
 end Distribution

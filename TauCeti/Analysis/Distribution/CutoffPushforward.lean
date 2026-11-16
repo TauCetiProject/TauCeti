@@ -55,7 +55,8 @@ whatever the regularity of `T`.
 * `Distribution.dsupport_comp_cutoffPullbackCLM_subset`: `spt (Φ_# T) ⊆ Φ (tsupport χ ∩ spt T)`.
 * `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`.
 * `Distribution.cutoffPushforwardCLM`: the pushforward of distributions with a cutoff, with its
-  independence of the cutoff `Distribution.cutoffPushforwardCLM_congr`, its support
+  independence of the cutoff `Distribution.cutoffPushforwardCLM_congr` and of the map away from
+  the cutoff `Distribution.cutoffPushforwardCLM_congr_map`, its support
   `Distribution.dsupport_cutoffPushforwardCLM_subset`, its complex-linear extension
   `Distribution.complexPairing_cutoffPushforwardCLM`, its functoriality
   `Distribution.cutoffPushforwardCLM_id`, `Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM`,
@@ -270,6 +271,20 @@ theorem cutoffPushforwardCLM_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, F))
       (isClosed_tsupport χ₂).isOpen_compl.mem_nhds fun h₂ ↦ hxΩ (χ₂.tsupport_subset h₂)]
       with y hy₁ hy₂
     simp [image_eq_zero_of_notMem_tsupport hy₁, image_eq_zero_of_notMem_tsupport hy₂]
+
+/-- **Independence of the map away from the cutoff**: the pushforward `T ∘ (χ Φ^*)` depends only
+on the values of `Φ` on the support of `χ`. -/
+theorem cutoffPushforwardCLM_congr_map {Φ' : E → E'} {hΦ' : ContDiffOn ℝ (⊤ : ℕ∞) Φ' Ω}
+    (T : 𝓓'(Ω, F)) (h : EqOn Φ Φ' (tsupport χ)) :
+    (cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', F)) = cutoffPushforwardCLM χ Φ' hΦ' T := by
+  ext f
+  simp only [cutoffPushforwardCLM_apply]
+  congr 1
+  ext x
+  simp only [cutoffCompCLM_apply]
+  by_cases hx : χ x = 0
+  · simp [hx]
+  · rw [h (subset_tsupport _ hx)]
 
 /-- **The support of a pushforward**: the support of `T ∘ (χ Φ^*)` lies in the image under `Φ` of
 the part of the support of `T` in the support of `χ`. In particular it is compact, and when `χ` is
