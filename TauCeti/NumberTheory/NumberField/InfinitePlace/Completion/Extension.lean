@@ -74,9 +74,8 @@ theorem completionNormalizedAbsValue_completionMap
   rw [completionNormalizedAbsValue_apply, AbsoluteValue.Completion.norm_map,
     completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
 
-variable [NumberField K] [NumberField L]
+variable [NumberField L]
 
-omit [NumberField K] in
 open Classical in
 /-- The product of normalized absolute values over the infinite places above `v` is the
 normalized absolute value at `v` raised to the global degree. -/
