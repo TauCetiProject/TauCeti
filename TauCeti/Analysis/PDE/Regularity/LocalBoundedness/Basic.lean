@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.SpecificLimits.FastGeometric
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LocalBoundsOnBalls
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
