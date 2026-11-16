@@ -202,7 +202,8 @@ theorem iteratedDeriv_two_sq_add_pow_four_zero :
   rw [iteratedDeriv_succ, iteratedDeriv_one,
     funext fun x ↦ (hasDerivAt_sq_add_pow_four x).deriv, hd.deriv]
 
-/-- `0` is a nondegenerate critical point of `x² + x⁴`, so `x² + x⁴` is a Morse function. -/
+/-- `0` is a nondegenerate critical point of `x² + x⁴`; by `deriv_sq_add_pow_four_eq_zero_iff`
+it is the only critical point. -/
 theorem isNondegenerateCriticalPoint_sq_add_pow_four :
     IsNondegenerateCriticalPoint (fun x : ℝ ↦ x ^ 2 + x ^ 4) 0 :=
   (isNondegenerateCriticalPoint_real_iff (by fun_prop)).2
@@ -242,9 +243,7 @@ private theorem hasDerivWithinAt_inv_sq {s : Set ℝ} {t : ℝ}
   ring
 
 /-- **Escape in finite backward time.** A negative gradient trajectory of `x² + x⁴` through `1`
-defined on the interval `[T, 0]` has `log (2 / 3) / 4 < T`. Writing `y = γ⁻²`, the function
-`(y + 2) e^{-4t}` is constant, so `y(t) = 3 e^{4t} - 2`, which is positive only for
-`t > log (2 / 3) / 4`. -/
+defined on the interval `[T, 0]` has `log (2 / 3) / 4 < T`. -/
 theorem log_div_four_lt_of_isIntegralCurveOn
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ (fun x : ℝ ↦ x ^ 2 + x ^ 4) x) (Icc T 0))
     (h0 : γ 0 = 1) : log (2 / 3) / 4 < T := by
