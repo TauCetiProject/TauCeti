@@ -100,7 +100,8 @@ def geodesicSegmentUnitPath : C({p : M × M // dist p.1 p.2 < r}, C(unitInterval
   ContinuousMap.curry
     ⟨fun x : {p : M × M // dist p.1 p.2 < r} × unitInterval ↦
         riemannianExp I M x.1.1.1 ((x.2 : ℝ) • riemannianLog I M x.1.1.1 (ball 0 r) x.1.1.2),
-      (contMDiffOn_riemannianExp_smul_riemannianLog_of_edist_lt hr).continuousOn.comp_continuous
+      (contMDiffOn_riemannianExp_smul_riemannianLog_of_forall_isNormalDomain
+        hr).continuousOn.comp_continuous
         (f := fun x : {p : M × M // dist p.1 p.2 < r} × unitInterval ↦ ((x.1 : M × M), (x.2 : ℝ)))
         (by fun_prop) fun x ↦ ⟨edist_lt_ofReal.2 x.1.2, x.2.2⟩⟩
 
@@ -141,7 +142,7 @@ def geodesicSegment : C({p : M × M // dist p.1 p.2 < r}, MoorePath M) where
     simp only [Function.comp_apply, MoorePath.ofUnitPath_apply, MoorePath.source_ofUnitPath,
       geodesicSegmentUnitPath_of_eq hr p hxy]
 
-theorem geodesicSegment_eq (p : {p : M × M // dist p.1 p.2 < r}) :
+theorem geodesicSegment_def (p : {p : M × M // dist p.1 p.2 < r}) :
     geodesicSegment hr p =
       (MoorePath.ofUnitPath (geodesicSegmentUnitPath hr p)).rescale (nndist p.1.1 p.1.2) :=
   (rfl)
@@ -149,36 +150,36 @@ theorem geodesicSegment_eq (p : {p : M × M // dist p.1 p.2 < r}) :
 @[simp]
 theorem length_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
     (geodesicSegment hr p).length = nndist p.1.1 p.1.2 := by
-  rw [geodesicSegment_eq, MoorePath.length_rescale]
+  rw [geodesicSegment_def, MoorePath.length_rescale]
 
 /-- The geodesic segment from `x` to `y` is at `exp_x (min (t / dist x y) 1 • log_x y)` at time
 `t`. -/
 theorem geodesicSegment_apply (p : {p : M × M // dist p.1 p.2 < r}) (t : ℝ≥0) :
     geodesicSegment hr p t = riemannianExp I M p.1.1
       (min ((t : ℝ) / dist p.1.1 p.1.2) 1 • riemannianLog I M p.1.1 (ball 0 r) p.1.2) := by
-  rw [geodesicSegment_eq, MoorePath.rescale_apply, MoorePath.ofUnitPath_apply,
+  rw [geodesicSegment_def, MoorePath.rescale_apply, MoorePath.ofUnitPath_apply,
     geodesicSegmentUnitPath_apply, Set.coe_projIcc]
   simp [min_comm, div_nonneg]
 
 @[simp]
 theorem source_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
     (geodesicSegment hr p).source = p.1.1 := by
-  rw [geodesicSegment_eq, MoorePath.source_rescale, MoorePath.source_ofUnitPath,
+  rw [geodesicSegment_def, MoorePath.source_rescale, MoorePath.source_ofUnitPath,
     geodesicSegmentUnitPath_zero]
 
 @[simp]
 theorem target_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
     (geodesicSegment hr p).target = p.1.2 := by
   rcases eq_or_ne (nndist p.1.1 p.1.2) 0 with hp | hp
-  · rw [geodesicSegment_eq, hp, MoorePath.rescale_zero, MoorePath.target_refl,
+  · rw [geodesicSegment_def, hp, MoorePath.rescale_zero, MoorePath.target_refl,
       MoorePath.source_ofUnitPath, geodesicSegmentUnitPath_zero, nndist_eq_zero.1 hp]
-  · rw [geodesicSegment_eq, MoorePath.target_rescale _ hp, MoorePath.target_ofUnitPath,
+  · rw [geodesicSegment_def, MoorePath.target_rescale _ hp, MoorePath.target_ofUnitPath,
       geodesicSegmentUnitPath_one]
 
 /-- The geodesic segment between equal points is the constant Moore path of length zero. -/
 theorem geodesicSegment_of_eq (p : {p : M × M // dist p.1 p.2 < r}) (hp : p.1.1 = p.1.2) :
     geodesicSegment hr p = MoorePath.refl p.1.1 := by
-  rw [geodesicSegment_eq, nndist_eq_zero.2 hp, MoorePath.rescale_zero,
+  rw [geodesicSegment_def, nndist_eq_zero.2 hp, MoorePath.rescale_zero,
     MoorePath.source_ofUnitPath, geodesicSegmentUnitPath_zero]
 
 /-- The geodesic segment from a point to itself is the constant Moore path of length zero. -/

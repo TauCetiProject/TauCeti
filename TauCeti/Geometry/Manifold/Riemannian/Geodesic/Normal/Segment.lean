@@ -62,9 +62,9 @@ smoothly varying segments interpolate broken geodesics through finitely many nea
 * `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_riemannianLog`,
   `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog`: the short geodesic segments are
   jointly smooth in both endpoints and time.
-* `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog_of_edist_lt`: when every tangent
-  ball of radius `r` is a normal domain, the segments are smooth on the pairs at distance less
-  than `r`.
+* `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog_of_forall_isNormalDomain`: when
+  every tangent ball of radius `r` is a normal domain, the segments are smooth on the pairs at
+  distance less than `r`.
 * `IsCompact.exists_pos_contMDiffAt_riemannianExp_smul_riemannianLog`,
   `TauCeti.Manifold.exists_pos_contMDiffAt_riemannianExp_smul_riemannianLog`: a single radius
   gives smooth segments from each point of a compact set, or between any two points of a compact
@@ -200,7 +200,7 @@ theorem setOf_mem_riemannianExp_image_ball_eq
 radius `r` at every point is a normal domain, the radial geodesic segment
 `t ↦ exp_x (t • log_x y)`, `t ∈ [0, 1]`, from `x` to `y` is smooth in `(x, y, t)` on the pairs of
 points at distance less than `r`. -/
-theorem contMDiffOn_riemannianExp_smul_riemannianLog_of_edist_lt
+theorem contMDiffOn_riemannianExp_smul_riemannianLog_of_forall_isNormalDomain
     (hW : ∀ q : M, IsNormalDomain I M q (Metric.ball 0 r)) :
     ContMDiffOn ((I.prod I).prod 𝓘(ℝ)) I ∞
       (fun x : (M × M) × ℝ ↦
