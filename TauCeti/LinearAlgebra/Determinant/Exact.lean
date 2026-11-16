@@ -154,6 +154,20 @@ theorem coe_detLineShortExactEquiv_tmul_eq_map_mul (a : detLine K U)
 
 end ShortExact
 
+/-- `TauCeti.coe_detLineShortExactEquiv_tmul` for a sequence starting at the range of a linear map
+`f`, with the vectors of the range given as `f.rangeRestrict ∘ u`. -/
+private theorem coe_detLineShortExactEquiv_range_tmul {X V W : Type*} [AddCommGroup X]
+    [Module K X] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+    [FiniteDimensional K W] (f : X →ₗ[K] V) [FiniteDimensional K (LinearMap.range f)]
+    {g : V →ₗ[K] W} (hfg : Function.Exact (LinearMap.range f).subtype g)
+    (hg : Function.Surjective g) (u : Fin (finrank K (LinearMap.range f)) → X)
+    (v : Fin (finrank K W) → V) :
+    (detLineShortExactEquiv (LinearMap.range f).injective_subtype hfg hg
+        (exteriorPower.ιMulti K _ (f.rangeRestrict ∘ u) ⊗ₜ exteriorPower.ιMulti K _ (g ∘ v)) :
+        ExteriorAlgebra K V) = ExteriorAlgebra.ιMulti K _ (Fin.append (f ∘ u) v) := by
+  rw [coe_detLineShortExactEquiv_tmul, ← Function.comp_assoc, ← LinearMap.coe_comp,
+    LinearMap.subtype_comp_rangeRestrict]
+
 section CommonQuotient
 
 variable {U V U' V' W : Type*} [AddCommGroup U] [Module K U] [AddCommGroup V] [Module K V]
@@ -245,8 +259,7 @@ theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
   -- Join the two halves of `γ` along `0 → range g → C → D → 0`.
   have hγ' : detLineShortExactEquiv (LinearMap.range g).injective_subtype hgh.range_subtype hh
       (exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v) ⊗ₜ exteriorPower.ιMulti K _ (h ∘ z)) = γ :=
-    Subtype.ext (by rw [hγ, coe_detLineShortExactEquiv_tmul, ← Function.comp_assoc,
-      ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
+    Subtype.ext (by rw [hγ, coe_detLineShortExactEquiv_range_tmul])
   simp only [detLineFourTermEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, hβ',
     LinearEquiv.lTensor_tmul, TensorProduct.assoc_tmul, LinearMap.lTensor_tmul,
     TensorProduct.rid_tmul, Dual.eval_apply, Module.Invertible.leftCancelDualEquiv_tmul_apply,
@@ -296,14 +309,6 @@ theorem eq_smul_of_tmul_eq_tmul {L N P : Type*} [AddCommGroup L] [Module K L] [A
     rw [← hM, ← map_smul, smul_tmul', ← hyy]
   rw [LinearMap.smul_apply, ← smul_tmul', map_smul, map_smul, h₀, smul_comm]
 
-/-- The exterior product of vectors lifting the vectors of `Module.finBasis` is nonzero. -/
-private theorem ιMulti_comp_ne_zero_of_eq_finBasis {M N : Type*} [AddCommGroup M] [Module K M]
-    [AddCommGroup N] [Module K N] [FiniteDimensional K N] (g : M →ₗ[K] N)
-    {z : Fin (finrank K N) → M} (hz : ∀ i, g (z i) = Module.finBasis K N i) :
-    exteriorPower.ιMulti K _ (g ∘ z) ≠ 0 := by
-  rw [show g ∘ z = ⇑(Module.finBasis K N) from funext hz]
-  exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K N).linearIndependent
-
 section Naturality
 
 /-! ### Naturality under isomorphisms of exact sequences -/
@@ -348,7 +353,7 @@ theorem detLineFourTermEquiv_congr (hfA : f' ∘ₗ eA.toLinearMap = eB.toLinear
   choose v hv using fun i ↦ g.surjective_rangeRestrict (Module.finBasis K (LinearMap.range g) i)
   choose z hz using fun i ↦ hh (Module.finBasis K D i)
   set u := ⇑(Module.finBasis K A)
-  have hω := ιMulti_comp_ne_zero_of_eq_finBasis h hz
+  have hω := exteriorPower.ιMulti_comp_ne_zero_of_eq_basis hz
   obtain ⟨ξ, hξ⟩ := Projective.exists_dual_eq_one K hω
   -- The exterior products of the first sequence entering `TauCeti.detLineFourTermEquiv_tmul`.
   set β := detLineShortExactEquiv hf hfg.rangeRestrict g.surjective_rangeRestrict
@@ -443,7 +448,7 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
   have : FiniteDimensional K B' := finiteDimensional_of_exact hjπ
   -- Vectors `z` of `C` lifting a basis of `D`, whose images span the line `det D`.
   choose z hz using fun i ↦ hh (Module.finBasis K D i)
-  have hω := ιMulti_comp_ne_zero_of_eq_finBasis h hz
+  have hω := exteriorPower.ιMulti_comp_ne_zero_of_eq_basis hz
   refine rid_lTensor_eval_injective (finrank_detLine K D) hω ?_
   dsimp only
   -- The exterior products entering the two four-term isomorphisms.
@@ -753,27 +758,23 @@ theorem detLineSixTermEquiv_congr (h₁ : f₁' ∘ₗ e₁.toLinearMap = e₂.t
   choose w hw using fun i ↦ f₃.surjective_rangeRestrict (Module.finBasis K (LinearMap.range f₃) i)
   choose x hx using fun i ↦ f₄.surjective_rangeRestrict (Module.finBasis K (LinearMap.range f₄) i)
   choose y hy using fun i ↦ hf₅ (Module.finBasis K A₆ i)
-  have hιw := ιMulti_comp_ne_zero_of_eq_finBasis f₃.rangeRestrict hw
-  have hιx := ιMulti_comp_ne_zero_of_eq_finBasis f₄.rangeRestrict hx
+  have hιw := exteriorPower.ιMulti_comp_ne_zero_of_eq_basis hw
+  have hιx := exteriorPower.ιMulti_comp_ne_zero_of_eq_basis hx
   -- The exterior products of `γ`, `δ`, `ε` entering `TauCeti.detLineSixTermEquiv_tmul`.
   obtain ⟨γ, hγ⟩ : ∃ γ : detLine K A₃,
       (γ : ExteriorAlgebra K A₃) = ExteriorAlgebra.ιMulti K _ (Fin.append (f₂ ∘ v) w) :=
-    ⟨_, by rw [coe_detLineShortExactEquiv_tmul (LinearMap.range f₂).injective_subtype
-      h₂₃.rangeRestrict.range_subtype f₃.surjective_rangeRestrict (f₂.rangeRestrict ∘ v) w,
-      ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict]⟩
+    ⟨_, coe_detLineShortExactEquiv_range_tmul f₂ h₂₃.rangeRestrict.range_subtype
+      f₃.surjective_rangeRestrict v w⟩
   obtain ⟨δ, hδ, hδ₀⟩ : ∃ δ : detLine K A₄,
       (δ : ExteriorAlgebra K A₄) = ExteriorAlgebra.ιMulti K _ (Fin.append (f₃ ∘ w) x) ∧ δ ≠ 0 :=
-    ⟨_, by rw [coe_detLineShortExactEquiv_tmul (LinearMap.range f₃).injective_subtype
-      h₃₄.rangeRestrict.range_subtype f₄.surjective_rangeRestrict (f₃.rangeRestrict ∘ w) x,
-      ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict],
-      (LinearEquiv.map_ne_zero_iff _).2 (tmul_ne_zero hιw hιx)⟩
+    ⟨_, coe_detLineShortExactEquiv_range_tmul f₃ h₃₄.rangeRestrict.range_subtype
+      f₄.surjective_rangeRestrict w x, (LinearEquiv.map_ne_zero_iff _).2 (tmul_ne_zero hιw hιx)⟩
   obtain ⟨ε, hε⟩ : ∃ ε : detLine K A₅,
       (ε : ExteriorAlgebra K A₅) = ExteriorAlgebra.ιMulti K _ (Fin.append (f₄ ∘ x) y) :=
-    ⟨_, by rw [coe_detLineShortExactEquiv_tmul (LinearMap.range f₄).injective_subtype
-      h₄₅.range_subtype hf₅ (f₄.rangeRestrict ∘ x) y, ← Function.comp_assoc, ← LinearMap.coe_comp,
-      LinearMap.subtype_comp_rangeRestrict]⟩
+    ⟨_, coe_detLineShortExactEquiv_range_tmul f₄ h₄₅.range_subtype hf₅ x y⟩
   obtain ⟨ψ, hψ⟩ := Projective.exists_dual_eq_one K hδ₀
-  obtain ⟨χ, hχ⟩ := Projective.exists_dual_eq_one K (ιMulti_comp_ne_zero_of_eq_finBasis f₅ hy)
+  obtain ⟨χ, hχ⟩ :=
+    Projective.exists_dual_eq_one K (exteriorPower.ιMulti_comp_ne_zero_of_eq_basis hy)
   -- Both sides are linear in `t`, and `det A₂` is spanned by the exterior products of `f₁ ∘ u`
   -- followed by `v`.
   induction t using TensorProduct.inductionOn with
