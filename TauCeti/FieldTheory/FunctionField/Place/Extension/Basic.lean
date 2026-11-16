@@ -14,6 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+import TauCeti.RingTheory.LocalRing.ResidueField.Finrank
 import TauCeti.RingTheory.Valuation.NontrivialComap
 
 /-!
@@ -718,20 +719,11 @@ theorem relativeDegree_def :
 @[simp]
 theorem relativeDegree_restrictConstants :
     relativeDegree k F (P'.restrictConstants k) = relativeDegree k F P' := by
-  let eBelow := RingEquiv.subringCongr
-    (congrArg (fun P ↦ P.integers.toSubring) (restrict_restrictConstants k F P'))
-  let eAbove := RingEquiv.subringCongr
-    (congrArg ValuationSubring.toSubring (integers_restrictConstants (k := k) P'))
   rw [relativeDegree_def, relativeDegree_def]
-  refine Algebra.finrank_eq_of_equiv_equiv (IsLocalRing.ResidueField.mapEquiv eBelow)
-    (IsLocalRing.ResidueField.mapEquiv eAbove) (RingHom.ext fun x ↦ ?_)
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, IsLocalRing.ResidueField.algebraMap_residue,
-    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue]
-  refine congrArg (IsLocalRing.residue P'.integers) (Subtype.ext ?_)
-  rw [RingEquiv.coe_subringCongr_apply, coe_algebraMap_integers, coe_algebraMap_integers,
-    RingEquiv.coe_subringCongr_apply]
+  exact TauCeti.finrank_residueField_eq_of_eq
+    (congrArg Place.integers (restrict_restrictConstants k F P'))
+    (integers_restrictConstants P')
+    fun x y hxy ↦ by rw [coe_algebraMap_integers, coe_algebraMap_integers, hxy]
 
 omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra. This is not an

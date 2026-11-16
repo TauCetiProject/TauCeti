@@ -137,9 +137,14 @@ theorem integralSemilocalHom_surjective : Function.Surjective (integralSemilocal
     (denseRange_algebraMap_integers_pi_liesOver L v y)
 
 omit [Field L] [NumberField L] [Algebra K L] in
+/-- The `𝒪 K`-action on `K_v` factors through the completed integers `𝒪_v`. -/
 instance isScalarTower_ringOfIntegers_adicCompletionIntegers (v : HeightOneSpectrum (𝒪 K)) :
     IsScalarTower (𝒪 K) (v.adicCompletionIntegers K) (v.adicCompletion K) :=
-  ⟨fun _ _ _ ↦ by simp only [Algebra.smul_def, map_mul]; exact mul_assoc _ _ _⟩
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
+      IsScalarTower.algebraMap_apply (𝒪 K) K (v.adicCompletion K),
+      algebraMap_adicCompletion (𝒪 K) K (S := K) v, Function.comp_apply,
+      Algebra.algebraMap_self_apply]
 
 /-- The canonical inclusion of the integral tensor product in the field tensor product. -/
 def integralSemilocalToField :

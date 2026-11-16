@@ -112,39 +112,24 @@ theorem completionEmbedding_mem_traceDual_completionIntegers
       Submodule.traceDual P.completionPlace.integers P.Completion
         (1 : Submodule P'.completionPlace.integers P'.Completion) := by
   classical
-  have hmem (z : P'.completionPlace.integers) :
-      (@Algebra.trace P.Completion P'.Completion _ _ (P.completionExtensionAlgebra P' hP))
-          ((z : P'.Completion) * P'.completionEmbedding d) ∈
-        (algebraMap P.completionPlace.integers P.Completion).range := by
-    set Q₀ : {Q : Place k F' // Q.restrict k F = P} :=
-      ⟨P'.restrictConstants k, (restrict_restrictConstants k F P').trans hP⟩
-    let z₀ : Q₀.1.completionPlace.integers :=
-      ⟨(z : P'.Completion),
-        by simpa only [Q₀, integers_completionPlace_restrictConstants] using z.2⟩
-    let f : ∀ Q : {Q : Place k F' // Q.restrict k F = P}, Q.1.completionPlace.integers :=
-      Pi.single Q₀ z₀
-    have hcoe : (fun Q ↦ (f Q : Q.1.Completion)) = Pi.single Q₀ (z₀ : Q₀.1.Completion) :=
-      funext fun Q' ↦ by obtain rfl | hQ' := eq_or_ne Q' Q₀ <;> simp [f, Pi.single_eq_of_ne, *]
-    have htr := trace_semilocalEquiv_symm_single_mul P Q₀ (z₀ : Q₀.1.Completion) d
-    rw [← hcoe, ← integralSemilocalToField_integralSemilocalEquiv_symm P f,
-      integralSemilocalToField_eq_baseChangeOfTower] at htr
-    have htr' : (@Algebra.trace P.Completion P'.Completion _ _
-          (P.completionExtensionAlgebra P' hP))
-          ((z : P'.Completion) * P'.completionEmbedding d) =
-        (@Algebra.trace P.Completion Q₀.1.Completion _ _ (fiberCompletionAlgebra Q₀))
-          ((z₀ : Q₀.1.Completion) * Q₀.1.completionEmbedding d) := by
-      rw [← P.completionExtensionAlgebra_restrictConstants P' hP]
-      simp only [Q₀, completionEmbedding_restrictConstants, z₀]
-    rw [htr', ← htr]
-    exact trace_baseChangeOfTower_mul_mem hd ((integralSemilocalEquiv k F' P).symm f)
   let := P.completionExtensionAlgebra P' hP
   let := P.completionIntegersExtensionAlgebra P' hP
   have := P.isScalarTower_completionIntegersExtension P' hP
   rw [Submodule.mem_traceDual]
   intro _ hz
   obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hz
-  rw [Algebra.traceForm_apply, mul_comm, ValuationSubring.algebraMap_apply]
-  exact hmem z
+  rw [Algebra.traceForm_apply, mul_comm, ValuationSubring.algebraMap_apply,
+    ← trace_semilocalEquiv_symm_single_restrictConstants_mul P P' hP]
+  set Q₀ : {Q : Place k F' // Q.restrict k F = P} :=
+    ⟨P'.restrictConstants k, (restrict_restrictConstants k F P').trans hP⟩
+  let f : ∀ Q : {Q : Place k F' // Q.restrict k F = P}, Q.1.completionPlace.integers :=
+    Pi.single Q₀ ⟨(z : P'.Completion),
+      by simpa only [Q₀, integers_completionPlace_restrictConstants] using z.2⟩
+  have hcoe : (fun Q ↦ (f Q : Q.1.Completion)) = Pi.single Q₀ (z : P'.Completion) :=
+    funext fun Q' ↦ by obtain rfl | hQ' := eq_or_ne Q' Q₀ <;> simp [f, Pi.single_eq_of_ne, *]
+  rw [← hcoe, ← integralSemilocalToField_integralSemilocalEquiv_symm P f,
+    integralSemilocalToField_eq_baseChangeOfTower]
+  exact trace_baseChangeOfTower_mul_mem hd ((integralSemilocalEquiv k F' P).symm f)
 
 /-- **The completed trace dual is spanned by the complementary module.** The trace dual of `𝒪̂_{P'}`
 over `𝒪̂_P` is the `𝒪̂_{P'}`-span of the image under `P'.completionEmbedding` of the complementary
@@ -276,11 +261,10 @@ theorem differentIdeal_completionIntegers_eq_pow
   have := (P'.restrict k F).isTorsionFree_completionIntegersExtension P' rfl
   rw [← map_differentIdeal_eq_differentIdeal_completionIntegers (P'.restrict k F) P' rfl]
   refine (P'.restrict k F).map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow P' rfl
-    (fun y hy hy0 ↦ ?_) ?_
-  · simpa only [Subalgebra.algebraMap_apply] using
-      differentExponent_le_ord_of_mem_differentIdeal k F P' hy hy0
-  · obtain ⟨y, hy, hy0, hord⟩ := exists_mem_differentIdeal_ord_eq k F P'
-    exact ⟨y, hy, hy0, hord⟩
+    (fun y hy hy0 ↦ ?_)
+    (by simpa only [Subalgebra.algebraMap_apply] using exists_mem_differentIdeal_ord_eq k F P')
+  simpa only [Subalgebra.algebraMap_apply] using
+    differentExponent_le_ord_of_mem_differentIdeal k F P' hy hy0
 
 /-- **Completion preserves the different exponent**, read as the multiplicity of `𝔪̂_{P'}` in the
 completed different ideal `𝔇(𝒪̂_{P'} / 𝒪̂_P)`. -/

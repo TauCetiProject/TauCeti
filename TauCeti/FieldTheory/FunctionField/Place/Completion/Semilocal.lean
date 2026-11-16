@@ -78,8 +78,10 @@ declarations use `open scoped PlaceCompletion` (`fiberCompletionAlgebra`,
   `TauCeti.Place.completionEmbedding_norm_eq_prod_norm`: tensor-product trace and norm
   decompositions (when `F' / F` is finite separable and `k' / k` is integral).
 * `TauCeti.Place.trace_integralSemilocalToField_tmul_mul`,
-  `TauCeti.Place.sum_trace_mul_smul_completionEmbedding_eq`: integral-tensor trace pairing and
-  transfer of trace-dual expansions to completions (without `[Algebra.IsIntegral k k']`).
+  `TauCeti.Place.trace_semilocalEquiv_symm_single_restrictConstants_mul`,
+  `TauCeti.Place.sum_trace_mul_smul_completionEmbedding_eq`: integral-tensor trace pairing,
+  single-place trace comparison without `[Algebra.IsIntegral k k']`, and transfer of trace-dual
+  expansions to completions.
 
 ## References
 
@@ -660,8 +662,7 @@ noncomputable def semilocalHom :
   have (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       IsScalarTower F P.Completion Q.1.Completion :=
     IsScalarTower.of_algebraMap_eq fun x ↦ by
-      rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
-        ← Q.1.completionEmbedding_apply, algebraMap_fiberCompletionAlgebra,
+      rw [Q.1.algebraMap_completion_apply, algebraMap_fiberCompletionAlgebra,
         P.algebraMap_completion_eq_completionEmbedding,
         P.completionExtension_completionEmbedding Q.1 Q.2]
   Algebra.TensorProduct.lift (Algebra.ofId _ _)
@@ -669,8 +670,7 @@ noncomputable def semilocalHom :
       { Q.1.completionEmbedding.toRingHom with
         commutes' := fun x ↦ by
           rw [RingHom.toFun_eq_coe, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-            UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
-            ← Q.1.completionEmbedding_apply] })
+            Q.1.algebraMap_completion_apply] })
     fun _ _ ↦ .all _ _
 
 variable {k' F' P} in
@@ -883,6 +883,26 @@ section SinglePlaceTrace
 
 variable [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 
+/-- For any place `P'` of `F' / k'` lying over `P` (without assuming `k' / k` is integral),
+placing `z ∈ F̂'_{P'}` in the `P'.restrictConstants k`-component of `F̂_P ⊗[F] F'` has the same
+trace pairing with `1 ⊗ x` as the local trace pairing of `z` with `P'.completionEmbedding x` in
+`F̂'_{P'}`. -/
+theorem trace_semilocalEquiv_symm_single_restrictConstants_mul
+    (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
+    [DecidableEq {Q : Place k F' // Q.restrict k F = P}]
+    (z : P'.Completion) (x : F') :
+    letI := P.completionExtensionAlgebra P' hP
+    Algebra.trace P.Completion (P.Completion ⊗[F] F')
+        ((semilocalEquiv k F' P).symm
+          (Pi.single ⟨P'.restrictConstants k, (restrict_restrictConstants k F P').trans hP⟩ z) *
+          (1 ⊗ₜ x)) =
+      Algebra.trace P.Completion P'.Completion (z * P'.completionEmbedding x) := by
+  let Q₀ : {Q : Place k F' // Q.restrict k F = P} :=
+    ⟨P'.restrictConstants k, (restrict_restrictConstants k F P').trans hP⟩
+  have htr := trace_semilocalEquiv_symm_single_mul P Q₀ z x
+  rw [← P.completionExtensionAlgebra_restrictConstants P' hP]
+  simpa only [Q₀, fiberCompletionAlgebra, completionEmbedding_restrictConstants] using htr
+
 /-- **Trace-dual expansions pass to completions.** If `x = ∑ᵢ Tr_{F'/F}(x bᵢ) • yᵢ` for every
 `x ∈ F'`, then the same expansion holds in `F̂'_{P'}` over `F̂_P` after applying
 `P'.completionEmbedding`, without assuming `k' / k` is integral. -/
@@ -901,9 +921,11 @@ theorem sum_trace_mul_smul_completionEmbedding_eq
       ((semilocalEquiv k F' P).symm (Pi.single Q₀ z)))
   simp only [AlgEquiv.apply_symm_apply, Pi.single_eq_same, map_sum, map_smul,
     Finset.sum_apply, Pi.smul_apply, semilocalEquiv_tmul, map_one, one_mul,
-    trace_semilocalEquiv_symm_single_mul] at h'
-  rw [← P.completionExtensionAlgebra_restrictConstants P' hP]
-  simpa only [Q₀, fiberCompletionAlgebra, completionEmbedding_restrictConstants] using h'
+    Q₀, trace_semilocalEquiv_symm_single_restrictConstants_mul P P' hP,
+    completionEmbedding_restrictConstants] at h'
+  simpa only [Algebra.smul_def, algebraMap_fiberCompletionAlgebra,
+    algebraMap_completionExtensionAlgebra,
+    P.completionExtension_restrictConstants P' hP] using h'
 
 end SinglePlaceTrace
 

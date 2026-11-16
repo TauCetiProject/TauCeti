@@ -77,19 +77,26 @@ instance uniformContinuousConstSMul_integers_withVal :
     UniformContinuousConstSMul P.integers (WithVal P.valuation) :=
   WithVal.uniformContinuousConstSMul_of_isScalarTower P.integers P.valuation
 
+/-- For any `CommSemiring R` acting on `F` as an algebra with uniformly continuous scalar
+multiplication on `WithVal P.valuation`, the `R`-algebra map into `P.Completion` is
+`P.completionEmbedding ∘ algebraMap R F`. -/
+theorem algebraMap_completion_apply {R : Type*} [CommSemiring R] [Algebra R F]
+    [UniformContinuousConstSMul R (WithVal P.valuation)] (r : R) :
+    algebraMap R P.Completion r = P.completionEmbedding (algebraMap R F r) := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    ← P.completionEmbedding_apply]
+
 /-- The canonical `F`-algebra map into `P.Completion` agrees with `P.completionEmbedding`. -/
 @[simp]
 theorem algebraMap_completion_eq_completionEmbedding (x : F) :
     algebraMap F P.Completion x = P.completionEmbedding x := by
-  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
-    Algebra.algebraMap_self_apply, ← P.completionEmbedding_apply]
+  rw [P.algebraMap_completion_apply, Algebra.algebraMap_self_apply]
 
 /-- The canonical `𝒪_P`-algebra map into `P.Completion` agrees with `P.completionEmbedding`. -/
 @[simp]
 theorem algebraMap_integers_completion_eq_completionEmbedding (r : P.integers) :
     algebraMap P.integers P.Completion r = P.completionEmbedding r := by
-  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
-    ValuationSubring.algebraMap_apply, ← P.completionEmbedding_apply]
+  rw [P.algebraMap_completion_apply, ValuationSubring.algebraMap_apply]
 
 /-- The action of `𝒪_P` on `P.Completion` factors through `F`. -/
 instance isScalarTower_integers_completion : IsScalarTower P.integers F P.Completion :=

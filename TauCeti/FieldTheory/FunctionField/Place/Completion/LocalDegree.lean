@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
 import TauCeti.RingTheory.AdicCompletion.Pi
+import TauCeti.RingTheory.LocalRing.ResidueField.Finrank
 
 /-!
 # The local degree of a completed extension of function fields
@@ -532,17 +533,20 @@ theorem adjoin_range_completionEmbedding_eq_top :
     IntermediateField.adjoin P.Completion (Set.range P'.completionEmbedding) = ⊤ := by
   let := P.completionExtensionAlgebra P' hP
   obtain ⟨u, t', _, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
-  have htop := P.span_completion_eq_top P' hP u hsp (t := t') ht
-  rw [eq_top_iff]
-  intro x _
   have hsub : Set.range (fun p : Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
       P'.completionEmbedding ((u p.1 : F') * (t' : F') ^ (p.2 : ℕ))) ⊆
       Set.range P'.completionEmbedding := by
-    rintro _ ⟨p, rfl⟩; exact ⟨_, rfl⟩
-  exact Submodule.span_le (p := (IntermediateField.adjoin P.Completion
-      (Set.range P'.completionEmbedding)).toSubalgebra.toSubmodule)
-    |>.mpr (fun _ hy ↦ IntermediateField.subset_adjoin P.Completion _ hy)
-    (Submodule.span_mono hsub (htop ▸ Submodule.mem_top))
+    rintro _ ⟨p, rfl⟩
+    exact ⟨_, rfl⟩
+  have hspan : Submodule.span P.Completion (Set.range P'.completionEmbedding) = ⊤ :=
+    top_unique ((P.span_completion_eq_top P' hP u hsp (t := t') ht).ge.trans
+      (Submodule.span_mono hsub))
+  have hle : (⊤ : Submodule P.Completion P'.Completion) ≤
+      (IntermediateField.adjoin P.Completion
+        (Set.range P'.completionEmbedding)).toSubalgebra.toSubmodule := by
+    rw [← hspan, Submodule.span_le]
+    exact IntermediateField.subset_adjoin P.Completion _
+  exact eq_top_iff.mpr fun x _ ↦ hle Submodule.mem_top
 
 end Degree
 
@@ -582,19 +586,12 @@ of completed places over `k`. -/
   let := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   have := (P'.restrict k F).isScalarTower_completionExtensionAlgebra P' rfl
   have := (P'.restrict k F).isIntegral_completion P' rfl
-  let eInt := RingEquiv.subringCongr
-    (congrArg (fun Q ↦ Q.integers.toSubring) ((P'.restrict k F).restrict_completionPlace P' rfl))
   rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
-  refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv eInt) (RingEquiv.refl _) ?_
-  ext x
-  obtain ⟨x, rfl⟩ := residue_surjective x
-  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, RingEquiv.refl_apply, ResidueField.algebraMap_residue,
-    ResidueField.mapEquiv_apply, ResidueField.map_residue]
-  refine congrArg (residue P'.completionPlace.integers) (Subtype.ext ?_)
-  rw [coe_algebraMap_completionIntegersExtensionAlgebra, coe_algebraMap_integers,
-    (P'.restrict k F).algebraMap_completionExtensionAlgebra P' rfl,
-    RingEquiv.coe_subringCongr_apply]
+  exact TauCeti.finrank_residueField_eq_of_eq
+    (congrArg Place.integers ((P'.restrict k F).restrict_completionPlace P' rfl)) rfl
+    fun x y hxy ↦ by
+      rw [coe_algebraMap_integers, coe_algebraMap_completionIntegersExtensionAlgebra,
+        (P'.restrict k F).algebraMap_completionExtensionAlgebra P' rfl, hxy]
 
 end Constants
 
