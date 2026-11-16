@@ -67,16 +67,12 @@ otherwise. For `k = 2t + 1` this is the staircase of the partition `(t, …, 1)`
 vertex `0`. -/
 def stair (k : ℕ) : Fin k → Fin k → S3 := fun p q => if stEdge p.val q.val then t01 else 1
 
-/-- The sign of a permutation of three points, as a Boolean (`true` for a transposition). -/
-private def oddPerm (σ : S3) : Bool := decide (σ = t01) || decide (σ = t12) || decide (σ = t02)
-
-/-- `oddPerm` is the sign: `true` exactly for the odd permutations. -/
-private theorem oddPerm_eq_decide : ∀ σ : S3, oddPerm σ = decide (Equiv.Perm.sign σ = -1) := by
-  decide
+/-- The sign of a permutation of three points, as a Boolean (`true` for an odd permutation). -/
+private def oddPerm (σ : S3) : Bool := decide (Equiv.Perm.sign σ = -1)
 
 /-- The sign of a permutation as a Boolean is additive (`xor`) along products. -/
 private theorem oddPerm_mul (σ τ : S3) : oddPerm (σ * τ) = xor (oddPerm σ) (oddPerm τ) := by
-  rw [oddPerm_eq_decide, oddPerm_eq_decide, oddPerm_eq_decide, Equiv.Perm.sign_mul]
+  rw [oddPerm, oddPerm, oddPerm, Equiv.Perm.sign_mul]
   rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ <;>
     rcases Int.units_eq_one_or (Equiv.Perm.sign τ) with hτ | hτ <;> simp [hσ, hτ, Units.ext_iff]
 
@@ -89,7 +85,7 @@ private theorem movedNorm_parityRetract_t01 (σ : S3) :
     Equiv.Perm.movedNorm (Fin 3) (Equiv.Perm.parityRetract t01_isSwap σ) =
       2 * (Bool.toNat (oddPerm σ) : ℝ) := by
   have ht := t01_isSwap
-  rw [oddPerm_eq_decide]
+  rw [oddPerm]
   rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ
   · rw [Equiv.Perm.parityRetract_of_sign_eq_one ht hσ, hσ]
     simp [Units.ext_iff]
@@ -104,7 +100,7 @@ private theorem st_par_bound (a b : S3) (e : Bool) :
   have hodd :
       xor (xor (oddPerm a) (oddPerm b)) e = oddPerm (a⁻¹ * (if e then t01 else 1) * b) := by
     have ha : oddPerm a⁻¹ = oddPerm a := by
-      rw [oddPerm_eq_decide, oddPerm_eq_decide, Equiv.Perm.sign_inv]
+      rw [oddPerm, oddPerm, Equiv.Perm.sign_inv]
     have he : oddPerm (if e then t01 else 1) = e := by cases e <;> decide
     rw [oddPerm_mul, oddPerm_mul, ha, he]
     cases oddPerm a <;> cases oddPerm b <;> cases e <;> rfl
