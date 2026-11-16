@@ -6,23 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.LinearAlgebra.RootSystem.SpecialNodePermutations
 
 /-!
-# Classification of diagram symmetries of finite Dynkin types
+# Classification and cycle orthogonality of simply-laced diagram symmetries
 
 `TauCeti.DynkinType.diagramSymmetry` is the group of permutations of the Bourbaki-numbered simple
 roots preserving the standard Cartan matrix of a `TauCeti.DynkinType`. The individual graph
 permutations `TauCeti.graphPermA`, `TauCeti.graphPermD`, `TauCeti.graphPermE6`, and
-`TauCeti.trialityPermD4` are defined in `TauCeti.LinearAlgebra.RootSystem.DiagramPermutations`,
-together with triviality of the symmetry group for `E₈`. This file completes the classification of
-`diagramSymmetry` across all valid Dynkin types and derives the cycle-orthogonality dichotomy that
-governs diagram folding of irreducible root systems:
+`TauCeti.trialityPermD4` are defined in
+`TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic`, together with triviality of the
+symmetry group for `E₈`, while triviality for the non-simply-laced types `Bₙ`, `Cₙ`, `F₄`, and `G₂`
+is proved in `TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.NonSimplyLaced`. This file
+completes the classification of `diagramSymmetry` across all simply-laced Dynkin types and derives
+the cycle-orthogonality dichotomy that governs diagram folding of irreducible root systems:
 
-* **Non-simply-laced rigidity**: `Bₙ`, `Cₙ`, `F₄`, and `G₂` have trivial diagram symmetry group
-  (`TauCeti.DynkinType.diagramSymmetry_eq_bot_of_not_isSimplyLaced`), as does `E₇`
+* **Type `E₇`**: `E₇` has trivial diagram symmetry group
   (`TauCeti.DynkinType.diagramSymmetry_E7_eq_bot`).
 * **Type `Aₙ`**: a permutation preserves `CartanMatrix.A n` if and only if it is `1` or the chain
   reversal `TauCeti.graphPermA n` (`TauCeti.DynkinType.mem_diagramSymmetry_A_iff`).
@@ -158,77 +158,6 @@ theorem mem_diagramSymmetry_A_iff {n : ℕ} {σ : Equiv.Perm (Fin n)} :
   · rintro (rfl | rfl)
     · exact (A n).diagramSymmetry.one_mem
     · exact graphPermA_mem_diagramSymmetry n
-
-/-! ### Non-simply-laced types: `Bₙ`, `Cₙ`, `F₄`, and `G₂` -/
-
-/-- Every diagram symmetry of `Bₙ` is the identity: for `n ≤ 1` the node type is subsingleton, and
-for `2 ≤ n` replacing the single `-2` entry of `CartanMatrix.B n` by `-1` recovers
-`CartanMatrix.A n` while chain reversal moves the oriented double edge `(n - 2, n - 1)` to `(1, 0)`,
-whose entry in `CartanMatrix.B n` is `-1`. -/
-theorem eq_one_of_cartanMatrix_B {n : ℕ} {σ : Equiv.Perm (Fin n)}
-    (hσ : ∀ i j : Fin n, (B n).cartanMatrix (σ i) (σ j) = (B n).cartanMatrix i j) : σ = 1 := by
-  rcases le_or_gt n 1 with hn | hn
-  · have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr hn
-    exact Subsingleton.elim σ 1
-  · have hAB (i j : Fin n) :
-        CartanMatrix.A n i j = if CartanMatrix.B n i j = -2 then -1 else CartanMatrix.B n i j := by
-      simp only [CartanMatrix.A, CartanMatrix.B, Matrix.of_apply]
-      split_ifs <;> simp_all
-    have hA (i j : Fin n) : (A n).cartanMatrix (σ i) (σ j) = (A n).cartanMatrix i j := by
-      have hij : CartanMatrix.B n (σ i) (σ j) = CartanMatrix.B n i j := by
-        simpa only [cartanMatrix_B] using hσ i j
-      simp only [cartanMatrix_A, hAB (σ i) (σ j), hAB i j, hij]
-    rcases mem_diagramSymmetry_A_iff.mp (mem_diagramSymmetry_iff.mpr hA) with rfl | rfl
-    · rfl
-    · exfalso
-      have h := hσ ⟨n - 2, by omega⟩ ⟨n - 1, by omega⟩
-      simp only [cartanMatrix_B, graphPermA_apply] at h
-      have hrev1 : (⟨n - 2, by omega⟩ : Fin n).rev = ⟨1, by omega⟩ := by
-        ext; simp [Fin.val_rev]; omega
-      have hrev2 : (⟨n - 1, by omega⟩ : Fin n).rev = ⟨0, by omega⟩ := by
-        ext; simp [Fin.val_rev]; omega
-      rw [hrev1, hrev2] at h
-      simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff] at h
-      (split_ifs at h <;> simp_all); omega
-
-/-- **The Dynkin diagram of `Bₙ` has no nontrivial symmetry.** -/
-theorem diagramSymmetry_B_eq_bot (n : ℕ) : (B n).diagramSymmetry = ⊥ :=
-  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
-    eq_one_of_cartanMatrix_B (mem_diagramSymmetry_iff.mp hσ)
-
-/-- Every diagram symmetry of `Cₙ` is the identity, since `CartanMatrix.C n` is the transpose of
-`CartanMatrix.B n`. -/
-theorem eq_one_of_cartanMatrix_C {n : ℕ} {σ : Equiv.Perm (Fin n)}
-    (hσ : ∀ i j : Fin n, (C n).cartanMatrix (σ i) (σ j) = (C n).cartanMatrix i j) : σ = 1 :=
-  eq_one_of_cartanMatrix_B fun i j ↦ by
-    have hij := hσ j i
-    simpa only [cartanMatrix_B, cartanMatrix_C, ← CartanMatrix.B_transpose,
-      Matrix.transpose_apply] using hij
-
-/-- **The Dynkin diagram of `Cₙ` has no nontrivial symmetry.** -/
-theorem diagramSymmetry_C_eq_bot (n : ℕ) : (C n).diagramSymmetry = ⊥ :=
-  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
-    eq_one_of_cartanMatrix_C (mem_diagramSymmetry_iff.mp hσ)
-
-/-- **The Dynkin diagram of `F₄` has no nontrivial symmetry.** -/
-theorem diagramSymmetry_F4_eq_bot : F4.diagramSymmetry = ⊥ :=
-  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
-    eq_one_of_cartanMatrix_F4 (mem_diagramSymmetry_iff.mp hσ)
-
-/-- **The Dynkin diagram of `G₂` has no nontrivial symmetry.** -/
-theorem diagramSymmetry_G2_eq_bot : G2.diagramSymmetry = ⊥ :=
-  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
-    eq_one_of_cartanMatrix_G2 (mem_diagramSymmetry_iff.mp hσ)
-
-/-- **Every non-simply-laced Dynkin type has trivial diagram symmetry group.** -/
-theorem diagramSymmetry_eq_bot_of_not_isSimplyLaced {t : DynkinType} (hsl : ¬ t.IsSimplyLaced) :
-    t.diagramSymmetry = ⊥ := by
-  cases t with
-  | A _ | D _ | E6 | E7 | E8 => exact absurd (by simp) hsl
-  | B n => exact diagramSymmetry_B_eq_bot n
-  | C n => exact diagramSymmetry_C_eq_bot n
-  | F4 => exact diagramSymmetry_F4_eq_bot
-  | G2 => exact diagramSymmetry_G2_eq_bot
 
 /-! ### Types `D₄` and `Dₙ` (`5 ≤ n`) -/
 
@@ -439,6 +368,7 @@ open _root_.Matrix in
 /-- **The Dynkin diagram of `E₇` has no nontrivial symmetry.** Three multiplications of the
 all-ones vector by `CartanMatrix.E 7` produce `(4, 9, 1, -10, 6, -5, 5)`, whose entries are
 pairwise distinct. -/
+@[simp]
 theorem diagramSymmetry_E7_eq_bot : E7.diagramSymmetry = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).mpr fun σ hσ ↦ ?_
   have hsub : (CartanMatrix.E 7).submatrix σ σ = CartanMatrix.E 7 :=
