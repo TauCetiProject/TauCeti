@@ -176,7 +176,6 @@ theorem hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection [IB.Bound
       (0 : (EB × FV) →L[ℝ] (EB × FV) [⋀^Fin k]→L[ℝ] F)
       (extChartAt (IB.prod 𝓘(ℝ, FV)) (zeroSection FV V b) (zeroSection FV V b)) := by
   have h := hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection hη hb
-  rwa [ModelWithCorners.range_prod, IB.range_eq_univ, modelWithCornersSelf_coe, range_id,
-    univ_prod_univ, hasFDerivWithinAt_univ] at h
+  rwa [ModelWithCorners.range_eq_univ, hasFDerivWithinAt_univ] at h
 
 end TauCeti
