@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 import Mathlib.RingTheory.MvPowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.Inverse
-import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.MvPowerSeries.Equiv
 
 /-!
@@ -48,14 +48,6 @@ private theorem p_ne_zero : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out 
 private theorem exists_zpow_neg_lt {ε : ℝ} (hε : 0 < ε) : ∃ N : ℕ, (p : ℝ) ^ (-(N : ℤ)) < ε := by
   obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one hε (inv_lt_one_of_one_lt₀ (one_lt_p (p := p)))
   exact ⟨N, by simpa [zpow_neg, zpow_natCast, inv_pow] using hN⟩
-
-private theorem summable_pow_mul (f : ℕ → ℤ_[p]) : Summable fun k : ℕ ↦ (p : ℤ_[p]) ^ k * f k := by
-  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p)) (g := fun k : ℕ ↦ -(k : ℤ)) (fun k ↦ ?_) ?_
-  · rw [norm_mul, PadicInt.norm_p_pow]
-    exact mul_le_of_le_one_right (zpow_p_nonneg _) (PadicInt.norm_le_one _)
-  · rw [Nat.cofinite_eq_atTop]
-    exact Filter.tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
 
 /-! ### Two-variable power-series evaluation `X 0 ↦ T, X 1 ↦ U` -/
 
@@ -236,7 +228,7 @@ theorem coeff_evalTU (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) :
     (evalTU F).coeff m = (p : ℤ_[p]) ^ (-m).toNat *
       ∑' k : ℕ, (p : ℤ_[p]) ^ k * MvPowerSeries.coeff (diagIdx m k) F := by
   rw [evalTU_apply, coeff_evalTUAux,
-    ← ((summable_pow_mul fun k ↦ MvPowerSeries.coeff (diagIdx m k) F).hasSum.mul_left
+    ← ((PadicInt.summable_pow_mul fun k ↦ MvPowerSeries.coeff (diagIdx m k) F).hasSum.mul_left
       ((p : ℤ_[p]) ^ (-m).toNat)).tsum_eq, ← (diagIdx_injective m).tsum_eq]
   · refine tsum_congr fun k ↦ ?_
     simp only [evalTUTerm, diagIdx_apply_zero, diagIdx_apply_one, coeff_T_pow_mul_U_pow]
@@ -293,9 +285,9 @@ private def evalTUKerQuot (F : MvPowerSeries (Fin 2) ℤ_[p]) : MvPowerSeries (F
 private theorem tsum_pow_mul_coeff_add_nsmul (F : MvPowerSeries (Fin 2) ℤ_[p]) (d : Fin 2 →₀ ℕ) :
     (∑' k : ℕ, (p : ℤ_[p]) ^ k * MvPowerSeries.coeff (d + k • diagStep) F) =
       MvPowerSeries.coeff d F + (p : ℤ_[p]) * MvPowerSeries.coeff d (evalTUKerQuot F) := by
-  rw [(summable_pow_mul _).tsum_eq_zero_add]
+  rw [(PadicInt.summable_pow_mul _).tsum_eq_zero_add]
   simp only [pow_zero, zero_nsmul, add_zero, one_mul, pow_succ', mul_assoc]
-  rw [((summable_pow_mul _).hasSum.mul_left (p : ℤ_[p])).tsum_eq]
+  rw [((PadicInt.summable_pow_mul _).hasSum.mul_left (p : ℤ_[p])).tsum_eq]
   rfl
 
 /-- The kernel of `evalTU` is the principal ideal `(X 0 * X 1 - p)`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
+public import TauCeti.Algebra.MonoidAlgebra.MvPowerSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Filtration
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Prod
 
@@ -22,7 +22,8 @@ ring over the group ring `ℤ_p[C]`:
 ```
 
 This is `TauCeti.completedGroupAlgebra.prodPowerSeriesCoordinate`, the composite of three
-isomorphisms: `ℤ_p[C]⟦X⟧ ≅ ℤ_p⟦X⟧[C]` (`MonoidAlgebra.powerSeriesAlgEquiv`, `C` finite),
+isomorphisms: `ℤ_p[C]⟦X⟧ ≅ ℤ_p⟦X⟧[C]` (`MonoidAlgebra.mvPowerSeriesAlgEquiv` at `σ = Unit`, `C`
+finite),
 the power-series coordinate `ℤ_p⟦X⟧ ≅ ℤ_p[[Γ]]` of the Iwasawa algebra applied to the
 coefficients (`TauCeti.completedGroupAlgebra.powerSeriesCoordinate`), and
 `ℤ_p[[Γ]][C] ≅ ℤ_p[[C × Γ]]` (`TauCeti.completedGroupAlgebra.monoidAlgebraProdEquiv`). As for
@@ -90,7 +91,7 @@ completed group algebra of `C × Γ` is the power-series ring over the group rin
 `X ↦ (1, γ) - 1` and the group element `c` going to `(c, 1)`. The coordinate depends on `γ`. -/
 noncomputable def prodPowerSeriesCoordinate :
     PowerSeries (MonoidAlgebra ℤ_[p] C) ≃ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] (C × Γ) :=
-  (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm.trans
+  (MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] Unit ℤ_[p] C).symm.trans
     ((MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)).trans
       (monoidAlgebraProdEquiv ℤ_[p] C Γ))
 
@@ -98,7 +99,7 @@ noncomputable def prodPowerSeriesCoordinate :
 each coefficient, and identifies the resulting group algebra with the completed product. -/
 theorem prodPowerSeriesCoordinate_def :
     prodPowerSeriesCoordinate C hΓ hγ =
-      (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm.trans
+      (MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] Unit ℤ_[p] C).symm.trans
         ((MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)).trans
           (monoidAlgebraProdEquiv ℤ_[p] C Γ)) :=
   (rfl)
@@ -112,8 +113,8 @@ theorem prodPowerSeriesCoordinate_X :
       (MonoidAlgebra.single 1 PowerSeries.X) =
         MonoidAlgebra.single 1 (powerSeriesCoordinate hΓ hγ PowerSeries.X) :=
     MonoidAlgebra.mapAlgHom_single (powerSeriesCoordinate hΓ hγ).toAlgHom 1 PowerSeries.X
-  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    MonoidAlgebra.powerSeriesAlgEquiv_symm_X, h, powerSeriesCoordinate_X,
+  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply, PowerSeries.X_apply,
+    MonoidAlgebra.mvPowerSeriesAlgEquiv_symm_X, ← PowerSeries.X_apply, h, powerSeriesCoordinate_X,
     coe_monoidAlgebraProdEquiv, monoidAlgebraProdHom_single_one, map_sub, map_of, map_one,
     MonoidHom.inr_apply]
 
@@ -133,9 +134,10 @@ theorem prodPowerSeriesCoordinate_C_single (c : C) (a : ℤ_[p]) :
       (MonoidAlgebra.single c (PowerSeries.C a)) =
         MonoidAlgebra.single c (powerSeriesCoordinate hΓ hγ (PowerSeries.C a)) :=
     MonoidAlgebra.mapAlgHom_single (powerSeriesCoordinate hΓ hγ).toAlgHom c (PowerSeries.C a)
-  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    MonoidAlgebra.powerSeriesAlgEquiv_symm_C_single, h, PowerSeries.C_eq_algebraMap,
-    AlgEquiv.commutes, coe_monoidAlgebraProdEquiv, monoidAlgebraProdHom_single, AlgHom.commutes]
+  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply, PowerSeries.C_apply,
+    MonoidAlgebra.mvPowerSeriesAlgEquiv_symm_C_single, ← PowerSeries.C_apply, h,
+    PowerSeries.C_eq_algebraMap, AlgEquiv.commutes, coe_monoidAlgebraProdEquiv,
+    monoidAlgebraProdHom_single, AlgHom.commutes]
 
 /-- The coordinate sends the group element `c` of the group ring to the group element `(c, 1)`. -/
 theorem prodPowerSeriesCoordinate_C_single_one (c : C) :
@@ -172,12 +174,13 @@ theorem proj_prodPowerSeriesCoordinate_eq_zero_iff (U : OpenNormalSubgroup Γ)
   -- series at the elements of `C`.
   have hω : ((1 + PowerSeries.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 :
       PowerSeries (MonoidAlgebra ℤ_[p] C)) =
-        PowerSeries.map MonoidAlgebra.singleOneRingHom
+        MvPowerSeries.map MonoidAlgebra.singleOneRingHom
           ((1 + PowerSeries.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 : PowerSeries ℤ_[p]) := by
-    rw [map_sub, map_pow, map_add, map_one, PowerSeries.map_X]
-  rw [hω, MonoidAlgebra.map_singleOneRingHom_dvd_iff ℤ_[p], prodPowerSeriesCoordinate,
-    AlgEquiv.trans_apply, AlgEquiv.trans_apply, coe_monoidAlgebraProdEquiv]
-  set f := (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm ψ
+    simp only [map_sub, map_pow, map_add, map_one, PowerSeries.X_apply, MvPowerSeries.map_X]
+  rw [hω, MonoidAlgebra.map_singleOneRingHom_dvd_mvPowerSeries_iff ℤ_[p],
+    prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    coe_monoidAlgebraProdEquiv]
+  set f := (MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] Unit ℤ_[p] C).symm ψ
   -- At the level `{1} × U`, the coefficient at the class of `(c, δ)` is the coefficient at the
   -- class of `δ` of the level `U` of the coordinate of the coefficient series at `c`.
   have hcoeff (c : C) (δ : Γ) : (proj ℤ_[p] (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U)

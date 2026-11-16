@@ -14,7 +14,9 @@ public import Mathlib.RingTheory.MvPowerSeries.Basic
 For a commutative semiring `R`, an index type `σ`, an `R`-algebra `A`, and a monoid `M`, collecting
 coefficients for each `d : σ →₀ ℕ` defines an injective `R`-algebra homomorphism
 `MonoidAlgebra.toMvPowerSeries : (MvPowerSeries σ A)[M] →ₐ[R] MvPowerSeries σ (A[M])`, which is an
-isomorphism `MonoidAlgebra.mvPowerSeriesAlgEquiv` when `M` is finite.
+isomorphism `MonoidAlgebra.mvPowerSeriesAlgEquiv` when `M` is finite. Taking `σ = Unit` recovers
+the one-variable power-series isomorphism `A⟦X⟧[M] ≃ₐ[R] A[M]⟦X⟧` (`PowerSeries A =
+MvPowerSeries Unit A`).
 
 ## Main declarations
 

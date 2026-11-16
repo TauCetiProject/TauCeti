@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.Padics.AnnularRing.Quotient
 import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 import TauCeti.Algebra.MonoidAlgebra.LocalRing
 import TauCeti.Algebra.MonoidAlgebra.MvPowerSeries
-import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 import TauCeti.Algebra.MonoidAlgebra.Quotient
 
 /-!
@@ -113,12 +112,12 @@ def quotientSpanSingleOneTEquiv :
   (Ideal.quotEquivOfEq (span_single_one_T_eq_map M)).trans <|
     (MonoidAlgebra.quotientAlgEquiv ℤ M (Ideal.span {(T : AnnularRing p)})).toRingEquiv.trans <|
       (MonoidAlgebra.mapRingEquiv M (quotientSpanTEquiv (p := p))).trans
-        (MonoidAlgebra.powerSeriesAlgEquiv (ZMod p) (ZMod p) M).toRingEquiv
+        (MonoidAlgebra.mvPowerSeriesAlgEquiv (ZMod p) Unit (ZMod p) M).toRingEquiv
 
 @[simp] theorem quotientSpanSingleOneTEquiv_mk_single_one_U :
     quotientSpanSingleOneTEquiv M
         (Ideal.Quotient.mk _ (MonoidAlgebra.single 1 (U : AnnularRing p))) = PowerSeries.X := by
-  simp [quotientSpanSingleOneTEquiv]
+  simp [quotientSpanSingleOneTEquiv, PowerSeries.X_apply]
 
 @[simp] theorem quotientSpanSingleOneTEquiv_mk_single_algebraMap (m : M) (c : ℤ_[p]) :
     quotientSpanSingleOneTEquiv M
@@ -135,7 +134,7 @@ def quotientSpanSingleOneTEquiv :
         mul_left_cancel₀ (pow_ne_zero n (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) <| by
           rw [pow_mul_uCoeff, coeff_algebraMap, ite_eq_right (by omega), mul_zero]
       simp [PowerSeries.coeff_C, hn, hu]
-  simp [quotientSpanSingleOneTEquiv, hq]
+  simp [quotientSpanSingleOneTEquiv, hq, PowerSeries.C_apply]
 
 end Finite
 end FiniteMonoid
