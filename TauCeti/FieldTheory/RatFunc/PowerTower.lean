@@ -23,6 +23,10 @@ extension of `K`.
 * `TauCeti.RatFunc.finrank_adjoin_X_pow`: `[K(X) : K(X ^ n)] = n`.
 * `TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`: `K(X) / K(X ^ q)` is purely inseparable
   for `q` the exponential characteristic of `K`.
+* `TauCeti.RatFunc.not_exists_pow_eq_X`: the indeterminate `X` is not an `n`-th power in `K(X)`
+  for any `n ≠ 1`.
+* `TauCeti.RatFunc.perfectField_iff_charZero`: `K(X)` is perfect if and only if `K` has
+  characteristic zero.
 * `Transcendental.relfinrank_adjoin_pow_adjoin`: `[K(x) : K(x ^ n)] = n` for `x` transcendental.
 
 ## Mathematical context
@@ -66,6 +70,44 @@ instance isPurelyInseparable_adjoin_X_pow (K : Type*) [Field K] (q : ℕ) [ExpCh
     (isPurelyInseparable_adjoin_simple_iff_pow_mem E (_root_.RatFunc K) q).mpr
       ⟨1, AdjoinSimple.gen K _, by rw [pow_one, AdjoinSimple.algebraMap_gen]⟩
   exact (_root_.RatFunc.IntermediateField.adjoinXEquiv E).isPurelyInseparable
+
+/-- The indeterminate `X` is not an `n`-th power in `K(X)` for any `n ≠ 1`. -/
+theorem not_exists_pow_eq_X (K : Type*) [Field K] {n : ℕ} (hn : n ≠ 1) :
+    ¬ ∃ y : _root_.RatFunc K, y ^ n = _root_.RatFunc.X := by
+  rintro ⟨y, hy⟩
+  set p := y.num
+  set q := y.denom
+  have hdiv : algebraMap K[X] (_root_.RatFunc K) p / algebraMap K[X] (_root_.RatFunc K) q = y :=
+    _root_.RatFunc.num_div_denom y
+  have hden : q ≠ 0 := _root_.RatFunc.denom_ne_zero y
+  have hden' : algebraMap K[X] (_root_.RatFunc K) q ≠ 0 := by
+    intro h0
+    exact hden (IsFractionRing.injective K[X] (_root_.RatFunc K) (by simpa using h0))
+  have h1 : p ^ n = X * q ^ n := by
+    apply IsFractionRing.injective K[X] (_root_.RatFunc K)
+    rw [map_pow, map_mul, map_pow, _root_.RatFunc.algebraMap_X, ← hy, ← hdiv, div_pow,
+      div_mul_cancel₀ _ (pow_ne_zero n hden')]
+  have hdeg := congrArg Polynomial.natDegree h1
+  rw [natDegree_pow, natDegree_mul X_ne_zero (pow_ne_zero n hden), natDegree_X, natDegree_pow]
+    at hdeg
+  have hdvd : n ∣ 1 := (Nat.dvd_add_left (dvd_mul_right n _)).mp (hdeg ▸ dvd_mul_right n _)
+  exact hn (Nat.eq_one_of_dvd_one hdvd)
+
+/-- The rational function field `K(X)` is perfect if and only if `K` has characteristic zero. -/
+theorem perfectField_iff_charZero (K : Type*) [Field K] :
+    PerfectField (_root_.RatFunc K) ↔ CharZero K := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ PerfectField.ofCharZero⟩
+  by_contra h0
+  have hpos : ringChar K ≠ 0 := fun h ↦ by
+    have : CharP K 0 := h ▸ ringChar.charP K
+    exact h0 (CharP.charP_to_charZero K)
+  have hp : (ringChar K).Prime := (CharP.char_is_prime_or_zero K (ringChar K)).resolve_right hpos
+  have : CharP (_root_.RatFunc K) (ringChar K) :=
+    charP_of_injective_algebraMap (algebraMap K (_root_.RatFunc K)).injective (ringChar K)
+  have : ExpChar (_root_.RatFunc K) (ringChar K) := .prime hp
+  have := PerfectField.toPerfectRing (K := _root_.RatFunc K) (ringChar K)
+  obtain ⟨y, hy⟩ := surjective_frobenius (_root_.RatFunc K) (ringChar K) _root_.RatFunc.X
+  exact not_exists_pow_eq_X K hp.ne_one ⟨y, by simpa [frobenius_def] using hy⟩
 
 end TauCeti.RatFunc
 

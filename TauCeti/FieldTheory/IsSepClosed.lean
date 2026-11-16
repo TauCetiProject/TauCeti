@@ -50,12 +50,19 @@ its conclusion, so instance search could not find it.
 
 * `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
   bottom subalgebra.
+* `IsSepClosed.algHom_mem_range_algebraMap`, `IsSepClosed.algHomEquiv`: algebra homomorphisms from
+  a separable algebra into a domain extending a separably closed field land in, and correspond
+  bijectively to maps into, that separably closed field.
 * `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`: a quadratic `a X² + b X + c` with `a ≠ 0`
   and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 * `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
+* `IsAlgClosed.iff_surjective_algebraMap`: a field is algebraically closed iff the algebra map
+  into an algebraically closed algebraic extension is surjective.
+* `IsSepClosed.isAlgClosed_iff_perfectField`: a separably closed separable extension of `K` is
+  algebraically closed iff `K` is perfect.
 -/
 
 public section
@@ -69,6 +76,55 @@ theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed 
   exact minpoly.mem_range_of_degree_eq_one K x <|
     IsSepClosed.degree_eq_one_of_irreducible K (minpoly.irreducible hx.isIntegral) hx
 
+/-- Every `F`-algebra homomorphism from a separable `F`-algebra into a domain extending a
+separably closed field `E` lands in the image of `E`. -/
+theorem IsSepClosed.algHom_mem_range_algebraMap {F K E A : Type*} [Field F] [Ring K]
+    [Algebra F K] [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
+    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A]
+    (f : K →ₐ[F] A) (x : K) :
+    f x ∈ Set.range (algebraMap E A) := by
+  have hF : IsSeparable F (f x) :=
+    (Algebra.IsSeparable.isSeparable F x).of_dvd <|
+      minpoly.dvd F (f x) (by rw [Polynomial.aeval_algHom_apply, minpoly.aeval, map_zero])
+  exact Algebra.mem_bot.mp (hF.tower_top E).mem_bot_of_isSepClosed
+
+/-- Postcomposition with `E →ₐ[F] A` identifies `F`-algebra homomorphisms from a separable
+`F`-algebra `K` into a separably closed field `E` with those into any domain `A` extending `E`. -/
+noncomputable def IsSepClosed.algHomEquiv {F : Type*} (K E A : Type*) [Field F] [Ring K]
+    [Algebra F K] [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
+    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A] :
+    (K →ₐ[F] E) ≃ (K →ₐ[F] A) :=
+  Equiv.ofBijective ((IsScalarTower.toAlgHom F E A).comp ·)
+    ⟨fun _ _ h ↦ AlgHom.ext fun x ↦ (algebraMap E A).injective (DFunLike.congr_fun h x),
+     fun f ↦ by
+      have hinj := (algebraMap E A).injective
+      choose g hg using IsSepClosed.algHom_mem_range_algebraMap (E := E) f
+      refine ⟨{
+        toFun := g
+        map_one' := hinj (by rw [hg, map_one, map_one])
+        map_mul' := fun x y ↦ hinj (by rw [hg, map_mul, map_mul, hg, hg])
+        map_zero' := hinj (by rw [hg, map_zero, map_zero])
+        map_add' := fun x y ↦ hinj (by rw [hg, map_add, map_add, hg, hg])
+        commutes' := fun r ↦ hinj (by rw [hg, f.commutes, ← IsScalarTower.algebraMap_apply])
+      }, AlgHom.ext hg⟩⟩
+
+/-- `IsSepClosed.algHomEquiv` acts by postcomposition with the algebra map `E →ₐ[F] A`. -/
+@[simp]
+theorem IsSepClosed.algHomEquiv_apply {F K E A : Type*} [Field F] [Ring K] [Algebra F K]
+    [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
+    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A] (g : K →ₐ[F] E) (x : K) :
+    IsSepClosed.algHomEquiv K E A g x = algebraMap E A (g x) :=
+  (rfl)
+
+/-- Composing the inverse of `IsSepClosed.algHomEquiv` with `algebraMap E A` recovers the
+original algebra homomorphism. -/
+@[simp]
+theorem IsSepClosed.algebraMap_algHomEquiv_symm_apply {F K E A : Type*} [Field F] [Ring K]
+    [Algebra F K] [Algebra.IsSeparable F K] [Field E] [IsSepClosed E] [Ring A] [IsDomain A]
+    [Algebra F E] [Algebra E A] [Algebra F A] [IsScalarTower F E A] (f : K →ₐ[F] A) (x : K) :
+    algebraMap E A ((IsSepClosed.algHomEquiv K E A).symm f x) = f x :=
+  DFunLike.congr_fun ((IsSepClosed.algHomEquiv K E A).apply_symm_apply f) x
+
 /-- `2` stays nonzero in the separable closure of a field in which it is nonzero, since the
 algebra map is injective. -/
 instance SeparableClosure.neZero_two {K : Type*} [Field K] [NeZero (2 : K)] :
@@ -81,6 +137,34 @@ theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed 
   splits_of_separable p hp := by
     simpa [Polynomial.map_map] using
       IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
+
+/-- A field `K` is algebraically closed if and only if the algebra map into an algebraically
+closed algebraic extension `E` of `K` is surjective. -/
+theorem IsAlgClosed.iff_surjective_algebraMap (K E : Type*) [Field K] [Field E] [Algebra K E]
+    [IsAlgClosed E] [Algebra.IsAlgebraic K E] :
+    IsAlgClosed K ↔ Function.Surjective (algebraMap K E) := by
+  refine ⟨fun _ ↦ IsAlgClosed.algebraMap_bijective_of_isIntegral.2, fun h ↦ ?_⟩
+  refine IsAlgClosed.of_exists_root K fun p _ hp ↦ ?_
+  obtain ⟨x, hx⟩ := IsAlgClosed.exists_aeval_eq_zero E p
+    (Polynomial.degree_pos_of_irreducible hp).ne'
+  obtain ⟨y, rfl⟩ := h x
+  exact ⟨y, (algebraMap K E).injective (by simpa [Polynomial.aeval_algebraMap_apply] using hx)⟩
+
+/-- A separably closed separable extension `Ω` of a field `K` is algebraically closed if and only
+if `K` is perfect. -/
+theorem IsSepClosed.isAlgClosed_iff_perfectField (K Ω : Type*) [Field K] [Field Ω] [Algebra K Ω]
+    [IsSepClosed Ω] [Algebra.IsSeparable K Ω] :
+    IsAlgClosed Ω ↔ PerfectField K := by
+  refine ⟨fun _ ↦ ⟨fun {f} hf ↦ ?_⟩, fun _ ↦ ?_⟩
+  · obtain ⟨α, hα⟩ := IsAlgClosed.exists_aeval_eq_zero Ω f
+      (Polynomial.degree_pos_of_irreducible hf).ne'
+    obtain ⟨q, hq⟩ := minpoly.dvd K α hα
+    obtain ⟨u, rfl⟩ : IsUnit q := (hf.isUnit_or_isUnit hq).resolve_left
+      (minpoly.irreducible (Algebra.IsIntegral.isIntegral α)).not_isUnit
+    exact (Algebra.IsSeparable.isSeparable K α).of_dvd
+      ⟨↑u⁻¹, by rw [hq, mul_assoc, Units.mul_inv, mul_one]⟩
+  · have : IsSepClosure K Ω := ⟨inferInstance, inferInstance⟩
+    exact IsAlgClosure.isAlgClosed K
 
 namespace TauCeti
 
