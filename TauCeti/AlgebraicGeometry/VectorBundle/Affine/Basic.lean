@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Dual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 import TauCeti.AlgebraicGeometry.Modules.Localization
+import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
 /-!
@@ -254,11 +255,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_projective_sections
       ((Scheme.Modules.restrictFunctorIsoPullback hU.fromSpec).app M).symm
       ⟨Scheme.Modules.isLocallyFree_pullback _ M,
         Scheme.Modules.isFinitePresentation_pullback _ M⟩
-  obtain ⟨hfin, hproj⟩ :=
-    FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ ⟨M.restrict hU.fromSpec, hN⟩
-  have : Module.Finite Γ(X, U) Γ(M.restrict hU.fromSpec, ⊤) := by convert! hfin
+  have hproj :=
+    (FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ ⟨M.restrict hU.fromSpec, hN⟩).2
   have : Module.Projective Γ(X, U) Γ(M.restrict hU.fromSpec, ⊤) := by convert! hproj
-  exact ⟨Module.Finite.equiv (M.fromSpecSectionsEquiv hU).symm,
+  exact ⟨M.finite_sections_of_isAffineOpen U hU,
     Module.Projective.of_equiv (M.fromSpecSectionsEquiv hU).symm⟩
 
 /-- A quasicoherent sheaf is finite locally free if its sections over each affine open form a

@@ -51,11 +51,10 @@ theorem isFiniteLocallyFree_pushforward (f : X ⟶ Y) [IsFinite f] [Flat f]
   have : ((pushforward f).obj M).IsQuasicoherent := isQuasicoherent_pushforward M f
   refine isFiniteLocallyFree_of_finite_projective_sections _ fun U hU ↦ ?_
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  obtain ⟨hfin, hproj⟩ := M.finite_projective_sections hM hV
+  have hproj := (M.finite_projective_sections hM hV).2
   let := (f.app U).hom.toAlgebra
   let : Module Γ(X, f ⁻¹ᵁ U) Γ((pushforward f).obj M, U) :=
     inferInstanceAs (Module Γ(X, f ⁻¹ᵁ U) Γ(M, f ⁻¹ᵁ U))
-  have : Module.Finite Γ(X, f ⁻¹ᵁ U) Γ((pushforward f).obj M, U) := hfin
   have : Module.Projective Γ(X, f ⁻¹ᵁ U) Γ((pushforward f).obj M, U) := hproj
   have : IsScalarTower Γ(Y, U) Γ(X, f ⁻¹ᵁ U) Γ((pushforward f).obj M, U) :=
     .of_algebraMap_smul fun _ _ ↦ rfl
@@ -72,7 +71,7 @@ theorem isFiniteLocallyFree_pushforward (f : X ⟶ Y) [IsFinite f] [Flat f]
     .of_finite_of_finitePresentation _ _
   have : Module.Projective Γ(Y, U) Γ(X, f ⁻¹ᵁ U) :=
     Module.Flat.projective_of_finitePresentation
-  exact ⟨Module.Finite.trans Γ(X, f ⁻¹ᵁ U) _, Module.Projective.trans Γ(X, f ⁻¹ᵁ U) _⟩
+  exact ⟨M.finite_sections_pushforward f U hU, Module.Projective.trans Γ(X, f ⁻¹ᵁ U) _⟩
 
 end AlgebraicGeometry.Scheme.Modules
 
