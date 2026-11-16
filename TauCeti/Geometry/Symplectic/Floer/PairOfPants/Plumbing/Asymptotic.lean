@@ -26,10 +26,10 @@ four outer circles at height `R`, `ℓ'_r(t) = u(ψ(φ_r(R + i t)))` for the inp
 `x_r` as `R → ∞`, and that the energy density and the area density of `u` are integrable over
 `P`. The truncations `Σ_R` of `P` (`TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation`)
 exhaust it (`TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`), the curvature of
-`K` is integrable over `P`, and by dominated convergence the integrals of the bounded Hamiltonians
-along the four outer loops converge to their integrals along the limit loops. Letting `R → ∞` in
-the energy identity over `Σ_R`
-(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`) gives
+`K` is integrable over `P` (`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`),
+and by dominated convergence the integrals of the bounded Hamiltonians along the four outer loops
+converge to their integrals along the limit loops. Letting `R → ∞` in the energy identity over
+`Σ_R` (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`) gives
 
 `∫_P E = ∫_P u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, x'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, x_r(t)) dt
   - ∫_P R_K(u)`,
@@ -49,12 +49,15 @@ here.
 
 * `TauCeti.Floer.tendsto_setIntegral_plumbedTruncation`: integrals over the plumbed sphere are
   limits of integrals over its truncations `Σ_R`.
+* `SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`: the curvature of the
+  plumbed perturbation is integrable over the whole plumbed sphere.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`: the energy
   identity on the whole plumbed sphere, for a map with asymptotic loops at its four ends.
 * `SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`: the
   resulting energy bound, uniform in the neck length.
-* `SmoothTwoForm.IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap`:
-  the lower bound on the topological energy of a Floer solution.
+* `neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbedPerturbation`, in
+  the namespace `SmoothTwoForm.IsNondegenerate`: the lower bound on the topological energy of a
+  Floer solution.
 
 ## References
 
@@ -107,7 +110,7 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 perturbation of bounded Hamiltonians is integrable over the whole four-punctured sphere: it is
 integrable over each truncation `Σ_R`, which exhaust the sphere, and its integral over the plane is
 bounded. -/
-private theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
+theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
@@ -176,7 +179,8 @@ converge pointwise to loops `x_r`, as `R → ∞`. Then
   - ∫_P R_K(u)`,
 
 with the sign `+` on the remaining input of the receiving pair of pants and `-` on its output,
-the curvature term being integrable over `P`. -/
+the curvature term being integrable over `P`
+(`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`). -/
 theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1)
@@ -323,6 +327,8 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_
   exact ω.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
     hBa hBb u _
 
+namespace IsNondegenerate
+
 /-- **The topological energy of a solution on the whole plumbed four-punctured sphere is bounded
 below, for a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on the
 four-punctured sphere for almost complex structures `J z` on the tangent spaces `T_{u(z)} M`
@@ -330,8 +336,7 @@ tamed by the two-form, under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`. Since its energy
 is nonnegative, its symplectic area plus the Hamiltonian terms at the four asymptotic loops is at
 least `-(∑ r, Ba r + ∑ r, Bb r)`, whatever the neck length `L > 4`. -/
-theorem
-    IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap
+theorem neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbedPerturbation
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
@@ -383,5 +388,7 @@ theorem
   have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le hq hHa hHb
     hHas hHbs hab hL hBa hBb hu hx' hx hE hA)).2
   linarith
+
+end IsNondegenerate
 
 end TauCeti.SmoothTwoForm
