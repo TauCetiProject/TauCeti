@@ -48,9 +48,9 @@ component counts are `{c, c + 1}`—inducting on the number of crossings proves 
 every planar oriented diagram
 (`TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_two_pow_componentCount`).
 
-Consequently, over every nontrivial Noetherian commutative ring `R` satisfying rank-nullity—and in
-particular over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)` evaluates to `2 ^ c` at
-`q = 1`, hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)` with
+Consequently, over every Noetherian commutative ring `R` satisfying rank-nullity—and in particular
+over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)` evaluates to `2 ^ c` at `q = 1`,
+hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)` with
 `i ∈ [-n₋, n₊]` for every planar link diagram, including the empty diagram.
 
 ## Main definitions
@@ -65,9 +65,8 @@ particular over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_changeCrossing` and
   `TauCeti.OrientedPDCode.enhancedStateEulerSum_mirror`: crossing-change and mirror invariance of
   `E(D)`.
-* `TauCeti.OrientedPDCode.negativeCrossingCount_mod_two_congr_toPDCode` and
-  `TauCeti.OrientedPDCode.enhancedStateEulerSum_congr_toPDCode`: reorientation invariance of
-  `n₋ % 2` and `E(D)` for planar diagrams.
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum_congr_toPDCode`: reorientation invariance of `E(D)`
+  for planar diagrams.
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing` and
   `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_resolveCrossingOriented`: the normalized parity
   recurrence across arbitrary oriented smoothings of a crossing.
@@ -76,8 +75,9 @@ particular over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)
 * `TauCeti.OrientedPDCode.eval₂_neg_one_jonesPolynomial`: for a nonempty planar code, evaluating
   the Jones polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`.
 * `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar` and
-  `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`: `χ_q Kh(D; R)` evaluates to `2 ^ c` at
-  `q = 1` and is nonzero, including for the empty diagram.
+  `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`: over any Noetherian commutative ring `R`
+  satisfying rank-nullity, `χ_q Kh(D; R)` evaluates to `2 ^ c` at `q = 1` and is nonzero,
+  including for the empty diagram.
 * `TauCeti.OrientedPDCode.exists_finrank_khovanovHomology_pos` and
   `TauCeti.OrientedPDCode.exists_not_isZero_khovanovHomology` (with explicit specializations to `ℤ`
   and `ℚ`): Khovanov homology is nonzero for every planar oriented link diagram, including the
@@ -88,9 +88,9 @@ particular over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)
 * M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), 359–426.
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*, Algebr. Geom. Topol. 2
   (2002), 337–370.
-* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Proposition 3.7.
+* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 3.
 * V. F. R. Jones, *A polynomial invariant for knots via von Neumann algebras*, Bull. Amer. Math.
-  Soc. 12 (1985), §12.
+  Soc. 12 (1985), 103–111, Theorems 14–15 (p. 107).
 -/
 
 public section
@@ -119,13 +119,6 @@ theorem enhancedStateEulerSum_def (D : OrientedPDCode n) :
     D.enhancedStateEulerSum = ∑ s : Fin n → Bool,
       (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) *
         2 ^ D.toPDCode.stateLoopCount s := (rfl)
-
-/-- The cochain-degree sign `(-1) ^ (|s| - n₋)` equals `(-1) ^ (|s| + n₋)`. -/
-theorem coe_negOnePow_stateCochainDegree (D : OrientedPDCode n) (s : Fin n → Bool) :
-    ((D.stateCochainDegree s).negOnePow : ℤ) =
-      (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) := by
-  rw [D.stateCochainDegree_def, Int.negOnePow_sub, ← Int.negOnePow_add, ← Nat.cast_add,
-    Int.coe_negOnePow_natCast]
 
 /-- **Evaluating the enhanced state sum at `q = 1`** yields the normalized enhanced-state Euler
 sum `E(D)`, without any planarity assumption. -/
@@ -158,20 +151,14 @@ theorem enhancedStateEulerSum_of_zero (D : OrientedPDCode 0) :
 
 /-- **Crossing-change invariance of `E(D)`.** Switching crossing `i` between over and under leaves
 `E(D)` unchanged, without any planarity assumption. -/
-theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) :
+@[simp] theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) :
     (D.changeCrossing i).enhancedStateEulerSum = D.enhancedStateEulerSum := by
   rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def,
     ← Equiv.sum_comp (PDCode.flipStateEquiv i)]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hmod := D.card_false_flipStateEquiv_add_negativeCrossingCount_mod_two i s
-  have hsign : (-1 : ℤ) ^ (#{j | PDCode.flipStateEquiv i s j = false} +
-        (D.changeCrossing i).negativeCrossingCount) =
-      (-1 : ℤ) ^ (#{j | s j = false} + D.negativeCrossingCount) := by
-    rw [← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
-    congr 1
-    rw [Int.negOnePow_eq_iff, Int.even_iff]
-    omega
-  rw [hsign, toPDCode_changeCrossing, D.toPDCode.stateLoopCount_changeCrossing_flipStateEquiv i s]
+  have hmod := D.card_false_flipStateEquiv_add_negativeCrossingCount_changeCrossing_mod_two i s
+  rw [neg_one_pow_eq_pow_mod_two, hmod, ← neg_one_pow_eq_pow_mod_two, toPDCode_changeCrossing,
+    D.toPDCode.stateLoopCount_changeCrossing_flipStateEquiv i s]
 
 /-- Reversing all component orientations preserves `E(D)`. -/
 @[simp] theorem enhancedStateEulerSum_reverse (D : OrientedPDCode n) :
@@ -201,13 +188,13 @@ theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) 
         (#{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} +
           D.mirror.negativeCrossingCount) =
       (-1 : ℤ) ^ (#{j | s j = false} + D.negativeCrossingCount) := by
-    rw [negativeCrossingCount_mirror, ← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
-    congr 1
-    rw [Int.negOnePow_eq_iff, Int.even_iff]
-    omega
+    rw [negativeCrossingCount_mirror]
+    exact neg_one_pow_congr (by simp only [Nat.even_iff]; omega)
   have hloop : D.mirror.toPDCode.stateLoopCount
       (Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s) = D.toPDCode.stateLoopCount s := by
-    have hfn : Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s = fun i ↦ !s i := rfl
+    have hfn : Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s = fun i ↦ !s i := by
+      funext i
+      simp [Equiv.arrowCongr_apply]
     rw [mirror_toPDCode, hfn, D.toPDCode.stateLoopCount_mirror]
     simp only [Bool.not_not]
   rw [hsign, hloop]
@@ -224,30 +211,13 @@ theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) 
     Finset.card_equiv cross.symm fun j ↦ by simp [Equiv.arrowCongr_apply]
   have hloop : (D.relabel half cross).toPDCode.stateLoopCount
       (Equiv.arrowCongr cross (Equiv.refl Bool) s) = D.toPDCode.stateLoopCount s := by
-    have hfn : Equiv.arrowCongr cross (Equiv.refl Bool) s = s ∘ cross.symm := rfl
-    rw [relabel_toPDCode, PDCode.stateLoopCount_relabel, hfn]
+    rw [relabel_toPDCode, PDCode.stateLoopCount_relabel]
     congr 1
     ext j
-    simp
+    simp [Equiv.arrowCongr_apply]
   rw [hcard, negativeCrossingCount_relabel, hloop]
 
 /-! ### Planar parity, reorientation invariance, and the normalized recurrence -/
-
-/-- Two oriented PD-codes sharing the same underlying planar PD-code have the same number of
-negative crossings modulo `2`. -/
-theorem negativeCrossingCount_mod_two_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
-    (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
-    D₁.negativeCrossingCount % 2 = D₂.negativeCrossingCount % 2 := by
-  have hD₂ : D₂.toPDCode.IsPlanar := h ▸ hD₁
-  have hp₁ := D₁.stateQuantumShift_add_stateLoopCount_mod_two hD₁ (fun _ ↦ true)
-  have hp₂ := D₂.stateQuantumShift_add_stateLoopCount_mod_two hD₂ (fun _ ↦ true)
-  have hc₁ := D₁.positiveCrossingCount_add_negativeCrossingCount
-  have hc₂ := D₂.positiveCrossingCount_add_negativeCrossingCount
-  have hloop : D₁.toPDCode.stateLoopCount (fun _ ↦ true) =
-      D₂.toPDCode.stateLoopCount (fun _ ↦ true) := by rw [h]
-  have hcomp : D₁.toPDCode.componentCount = D₂.toPDCode.componentCount := by rw [h]
-  rw [stateQuantumShift_def] at hp₁ hp₂
-  omega
 
 /-- **Reorientation invariance of `E(D)` for planar diagrams.** Two oriented PD-codes sharing the
 same underlying planar PD-code have the same enhanced-state Euler sum. -/
@@ -257,17 +227,14 @@ theorem enhancedStateEulerSum_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
   have hmod := negativeCrossingCount_mod_two_congr_toPDCode hD₁ h
   rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hsign : (-1 : ℤ) ^ (#{i | s i = false} + D₁.negativeCrossingCount) =
-      (-1 : ℤ) ^ (#{i | s i = false} + D₂.negativeCrossingCount) := by
-    rw [← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
-    congr 1
-    rw [Int.negOnePow_eq_iff, Int.even_iff]
-    omega
-  rw [hsign, h]
+  rw [h]
+  congr 1
+  exact neg_one_pow_congr (by simp only [Nat.even_iff]; omega)
 
 /-- At a single smoothing branch `t : Bool` of crossing `c` of a planar diagram `D`, the signed
-state sum over states sending `c ↦ t` equals `-(-1) ^ c(D) * (-1) ^ c(E) * E.enhancedStateEulerSum`
-for **any** orientation `E` of `D.toPDCode.resolveCrossing c t`. -/
+state sum over states sending `c ↦ t` equals
+`-(-1) ^ D.componentCount * (-1) ^ E.componentCount * E.enhancedStateEulerSum` for **any**
+orientation `E` of `D.toPDCode.resolveCrossing c t`. -/
 private theorem sum_insertNth_eq_of_toPDCode_resolveCrossing
     (D : OrientedPDCode (n + 1)) (hD : D.toPDCode.IsPlanar) (c : Fin (n + 1)) (t : Bool)
     {E : OrientedPDCode n} (hE : E.toPDCode = D.toPDCode.resolveCrossing c t) :
@@ -293,11 +260,8 @@ private theorem sum_insertNth_eq_of_toPDCode_resolveCrossing
   have hsign : (-1 : ℤ) ^ (#{j | Fin.insertNthEquiv (fun _ ↦ Bool) c (t, s) j = false} +
         D.negativeCrossingCount) =
       (-1 : ℤ) ^ (1 + D.toPDCode.componentCount + E.toPDCode.componentCount +
-        (#{j | s j = false} + E.negativeCrossingCount)) := by
-    rw [← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
-    congr 1
-    rw [Int.negOnePow_eq_iff, Int.even_iff]
-    omega
+        (#{j | s j = false} + E.negativeCrossingCount)) :=
+    neg_one_pow_congr (by simp only [Nat.even_iff]; omega)
   rw [hsign, hloop, pow_add, pow_add, pow_add, pow_one]
   ring
 
@@ -305,7 +269,8 @@ private theorem sum_insertNth_eq_of_toPDCode_resolveCrossing
 planar oriented diagram `D` with `n + 1` crossings, any crossing `c`, and any oriented diagrams
 `D_A` and `D_B` whose underlying unoriented codes are the `A`- and `B`-resolutions of `c`
 (regardless of how their components are reoriented),
-`E(D) = -(-1) ^ c(D) * ((-1) ^ c(D_A) * E(D_A) + (-1) ^ c(D_B) * E(D_B))`. -/
+`E(D) = -(-1) ^ D.componentCount * ((-1) ^ D_A.componentCount * E(D_A) +`
+`(-1) ^ D_B.componentCount * E(D_B))`. -/
 theorem enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing
     (D : OrientedPDCode (n + 1)) (hD : D.toPDCode.IsPlanar) (c : Fin (n + 1))
     {D_A D_B : OrientedPDCode n}
@@ -323,15 +288,18 @@ theorem enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing
 /-- Specialization of `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing`
 to `TauCeti.OrientedPDCode.resolveCrossingOriented`. -/
 theorem enhancedStateEulerSum_eq_resolveCrossingOriented
-    (D : OrientedPDCode (n + 1)) (hD : D.toPDCode.IsPlanar) (c : Fin (n + 1)) :
+    (D : OrientedPDCode (n + 1)) (hD : D.toPDCode.IsPlanar) (c : Fin (n + 1))
+    (detachedA : Multiset Bool) (hA : detachedA.card = D.toPDCode.detachedCircleCount c true)
+    (detachedB : Multiset Bool) (hB : detachedB.card = D.toPDCode.detachedCircleCount c false) :
     D.enhancedStateEulerSum =
       -(-1 : ℤ) ^ D.componentCount *
-        ((-1 : ℤ) ^ (D.resolveCrossingOriented c true).componentCount *
-            (D.resolveCrossingOriented c true).enhancedStateEulerSum +
-          (-1 : ℤ) ^ (D.resolveCrossingOriented c false).componentCount *
-            (D.resolveCrossingOriented c false).enhancedStateEulerSum) :=
+        ((-1 : ℤ) ^ (D.resolveCrossingOriented c true detachedA hA).componentCount *
+            (D.resolveCrossingOriented c true detachedA hA).enhancedStateEulerSum +
+          (-1 : ℤ) ^ (D.resolveCrossingOriented c false detachedB hB).componentCount *
+            (D.resolveCrossingOriented c false detachedB hB).enhancedStateEulerSum) :=
   D.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing hD c
-    (D.toPDCode_resolveCrossingOriented c true) (D.toPDCode_resolveCrossingOriented c false)
+    (D.toPDCode_resolveCrossingOriented c true detachedA hA)
+    (D.toPDCode_resolveCrossingOriented c false detachedB hB)
 
 /-! ### Closed form `E(D) = 2 ^ c` and evaluations -/
 
@@ -341,24 +309,27 @@ theorem enhancedStateEulerSum_eq_two_pow_componentCount :
       D.enhancedStateEulerSum = (2 : ℤ) ^ D.componentCount
   | 0, D, _ => D.enhancedStateEulerSum_of_zero
   | n + 1, D, hD => by
-    have hA_planar : (D.resolveCrossingOriented 0 true).toPDCode.IsPlanar := by
+    let detachedA := Multiset.replicate (D.toPDCode.detachedCircleCount 0 true) true
+    let detachedB := Multiset.replicate (D.toPDCode.detachedCircleCount 0 false) true
+    have hA : detachedA.card = D.toPDCode.detachedCircleCount 0 true := Multiset.card_replicate _ _
+    have hB : detachedB.card = D.toPDCode.detachedCircleCount 0 false := Multiset.card_replicate _ _
+    have hA_planar : (D.resolveCrossingOriented 0 true detachedA hA).toPDCode.IsPlanar := by
       rw [toPDCode_resolveCrossingOriented]
       exact PDCode.IsPlanar.resolveCrossing D.toPDCode 0 true hD
-    have hB_planar : (D.resolveCrossingOriented 0 false).toPDCode.IsPlanar := by
+    have hB_planar : (D.resolveCrossingOriented 0 false detachedB hB).toPDCode.IsPlanar := by
       rw [toPDCode_resolveCrossingOriented]
       exact PDCode.IsPlanar.resolveCrossing D.toPDCode 0 false hD
     have ihA := enhancedStateEulerSum_eq_two_pow_componentCount _ hA_planar
     have ihB := enhancedStateEulerSum_eq_two_pow_componentCount _ hB_planar
-    rw [D.enhancedStateEulerSum_eq_resolveCrossingOriented hD 0, ihA, ihB]
+    have hsq (m : ℕ) : (-1 : ℤ) ^ m * (-1 : ℤ) ^ m = 1 := by
+      rw [← pow_add]
+      exact (Even.add_self m).neg_one_pow
+    rw [D.enhancedStateEulerSum_eq_resolveCrossingOriented hD 0 detachedA hA detachedB hB, ihA, ihB]
     simp only [toPDCode_resolveCrossingOriented]
     by_cases hc : D.crossingComponentOfHalfEdge (D.crossing 0 0) =
         D.crossingComponentOfHalfEdge (D.crossing 0 1)
-    · have hsq : (-1 : ℤ) ^ D.toPDCode.componentCount *
-          (-1 : ℤ) ^ D.toPDCode.componentCount = 1 := by
-        rw [← pow_add, ← two_mul, pow_mul]
-        norm_num
-      rcases D.componentCount_resolveCrossing_true_and_false_of_eq 0 hc with
-          ⟨hcA, hcB⟩ | ⟨hcA, hcB⟩ <;>
+    · rcases D.componentCount_resolveCrossing_eq_and_eq_add_one_or_eq_add_one_and_eq_of_eq 0 hc
+          with ⟨hcA, hcB⟩ | ⟨hcA, hcB⟩ <;>
         rw [hcA, hcB, pow_succ (-1 : ℤ), pow_succ (2 : ℤ)] <;>
         calc _ = ((-1 : ℤ) ^ D.toPDCode.componentCount * (-1 : ℤ) ^ D.toPDCode.componentCount) *
               (2 : ℤ) ^ D.toPDCode.componentCount := by ring
@@ -368,9 +339,6 @@ theorem enhancedStateEulerSum_eq_two_pow_componentCount :
       set m := (D.toPDCode.resolveCrossing 0 true).componentCount
       have hmB : (D.toPDCode.resolveCrossing 0 false).componentCount = m := by omega
       have hmD : D.toPDCode.componentCount = m + 1 := hcA.symm
-      have hsq : (-1 : ℤ) ^ m * (-1 : ℤ) ^ m = 1 := by
-        rw [← pow_add, ← two_mul, pow_mul]
-        norm_num
       rw [hmB, hmD, pow_succ (-1 : ℤ) m, pow_succ (2 : ℤ) m]
       calc _ = ((-1 : ℤ) ^ m * (-1 : ℤ) ^ m) * ((2 : ℤ) ^ m * 2) := by ring
         _ = (2 : ℤ) ^ m * 2 := by rw [hsq, one_mul]
@@ -381,7 +349,7 @@ theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.t
   rw [D.eval₂_one_enhancedStateSum, D.enhancedStateEulerSum_eq_two_pow_componentCount hD]
 
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
-`2 ^ (c - 1)`** (Jones 1985, §12; Lickorish 1997, Proposition 3.7). -/
+`2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
 theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
     (hpos : 0 < D.toPDCode.componentCount) :
     eval₂ (RingHom.id ℤ) (-1 : ℤˣ) D.jonesPolynomial = (2 : ℤ) ^ (D.componentCount - 1) := by
@@ -408,15 +376,17 @@ theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.
 section Homology
 
 variable (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-variable (R : Type u) [CommRing R] [Nontrivial R] [IsNoetherianRing R] [HasRankNullity.{u} R]
+variable (R : Type u) [CommRing R] [IsNoetherianRing R] [HasRankNullity.{u} R]
 
-/-- **At `q = 1`, the graded Euler characteristic `χ_q Kh(D; R)` equals `2 ^ c`.** -/
+/-- **At `q = 1`, the graded Euler characteristic `χ_q Kh(D; R)` equals `2 ^ c`**, for every
+planar oriented diagram over any Noetherian commutative ring `R` satisfying rank-nullity. -/
 theorem eval₂_one_khovanovEulerChar :
     eval₂ (RingHom.id ℤ) 1 (D.khovanovEulerChar hD R) = (2 : ℤ) ^ D.componentCount := by
   rw [D.khovanovEulerChar_eq_enhancedStateSum hD R, D.eval₂_one_enhancedStateSum_eq_two_pow hD]
 
 /-- **The graded Euler characteristic of Khovanov homology is nonzero** for every planar oriented
-diagram, including the empty diagram. -/
+diagram (including the empty diagram) over any Noetherian commutative ring `R` satisfying
+rank-nullity. -/
 theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
   intro hzero
   have heval := D.eval₂_one_khovanovEulerChar hD R
@@ -424,8 +394,8 @@ theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
   exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ D.componentCount).ne heval
 
 /-- **Khovanov homology has positive rank in at least one bidegree `(i, j)` with `i ∈ [-n₋, n₊]`**,
-for every planar oriented diagram (including the empty diagram) over any nontrivial Noetherian
-ring satisfying rank-nullity. -/
+for every planar oriented diagram (including the empty diagram) over any Noetherian commutative
+ring `R` satisfying rank-nullity. -/
 theorem exists_finrank_khovanovHomology_pos :
     ∃ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
       ∃ j : ℤ, 0 < Module.finrank R (D.khovanovHomology hD R i j) := by
@@ -439,7 +409,7 @@ theorem exists_finrank_khovanovHomology_pos :
   simp [hzero]
 
 /-- **Nonvanishing of Khovanov homology**: for every planar oriented diagram (including the empty
-diagram) and every nontrivial Noetherian ring `R` satisfying rank-nullity, `Khⁱʲ(D; R)` is nonzero
+diagram) over any Noetherian commutative ring `R` satisfying rank-nullity, `Khⁱʲ(D; R)` is nonzero
 in at least one bidegree `(i, j)` with `i ∈ [-n₋, n₊]`. -/
 theorem exists_not_isZero_khovanovHomology :
     ∃ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,

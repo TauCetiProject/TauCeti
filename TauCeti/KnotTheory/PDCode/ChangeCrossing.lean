@@ -43,8 +43,9 @@ switching crossing `i` negates `crossingSign i`, leaves all other crossing signs
 * `TauCeti.OrientedPDCode.crossingSign_changeCrossing_self` and
   `TauCeti.OrientedPDCode.crossingSign_changeCrossing_of_ne`: switching crossing `i` negates its
   sign and preserves every other crossing sign.
-* `TauCeti.OrientedPDCode.card_false_flipStateEquiv_add_negativeCrossingCount_mod_two`: flipping
-  the state bit at `i` preserves the parity of `#{j | s j = false} + n₋` across a crossing change.
+* `OrientedPDCode.card_false_flipStateEquiv_add_negativeCrossingCount_changeCrossing_mod_two`:
+  flipping the state bit at `i` preserves the parity of `#{j | s j = false} + n₋` across a
+  crossing change.
 
 ## References
 
@@ -120,17 +121,10 @@ theorem card_false_flipStateEquiv_of_true (i : Fin n) {s : Fin n → Bool} (hs :
   rw [hset, card_insert_of_notMem hmem]
 
 /-- Flipping a state at `i` decreases the count of `false` entries by one when `s i = false`. -/
-theorem card_false_flipStateEquiv_of_false (i : Fin n) {s : Fin n → Bool} (hs : s i = false) :
+theorem card_false_flipStateEquiv_add_one_of_false (i : Fin n) {s : Fin n → Bool}
+    (hs : s i = false) :
     #{j | flipStateEquiv i s j = false} + 1 = #{j | s j = false} := by
-  have hmem : i ∈ filter (fun j ↦ s j = false) univ := by simp [hs]
-  have hset : filter (fun j ↦ flipStateEquiv i s j = false) univ =
-      (filter (fun j ↦ s j = false) univ).erase i := by
-    ext j
-    by_cases hj : j = i
-    · subst hj
-      simp [hs]
-    · simp [hj]
-  rw [hset, card_erase_add_one hmem]
+  simpa using (card_false_flipStateEquiv_of_true i (s := flipStateEquiv i s) (by simp [hs])).symm
 
 section ChangeCrossing
 
@@ -241,15 +235,15 @@ theorem changeCrossing_comm (j : Fin n) :
 /-- Switching a crossing keeps the counterclockwise slot rotation at every crossing. -/
 @[simp] theorem crossingRotation_changeCrossing :
     (D.changeCrossing i).crossingRotation = D.crossingRotation := by
-  ext h
-  obtain ⟨x, rfl⟩ := (D.changeCrossing i).halfEdge.surjective h
-  obtain ⟨⟨j, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
-  rw [crossingRotation_crossing]
-  simp [crossingRotation_crossing]
+  simp [crossingRotation_def]
 
 /-- Switching a crossing keeps the face traversal. -/
 @[simp] theorem facePerm_changeCrossing : (D.changeCrossing i).facePerm = D.facePerm := by
   simp [facePerm_def]
+
+/-- Switching a crossing keeps the number of faces. -/
+@[simp] theorem faceCount_changeCrossing : (D.changeCrossing i).faceCount = D.faceCount := by
+  simp [faceCount_def]
 
 /-- Switching a crossing keeps the permutation triple of the underlying `4`-valent graph. -/
 @[simp] theorem toPermutationTriple_changeCrossing :
@@ -289,7 +283,7 @@ half-edges; only which of the two local smoothings at `i` is the `A`-smoothing f
 
 /-- On `D.changeCrossing i`, a state `s` selects the same local smoothings as `flipStateEquiv i s`
 on `D`. -/
-theorem smoothingChoice_changeCrossing (s : Fin n → Bool) :
+@[simp] theorem smoothingChoice_changeCrossing (s : Fin n → Bool) :
     (D.changeCrossing i).smoothingChoice s = D.smoothingChoice (flipStateEquiv i s) := by
   funext j
   by_cases hj : j = i
@@ -299,31 +293,31 @@ theorem smoothingChoice_changeCrossing (s : Fin n → Bool) :
 
 /-- Flipping the state bit at `i` matches the local smoothings of `D.changeCrossing i` with those
 of `D`. -/
-@[simp] theorem smoothingChoice_changeCrossing_flipStateEquiv (s : Fin n → Bool) :
+theorem smoothingChoice_changeCrossing_flipStateEquiv (s : Fin n → Bool) :
     (D.changeCrossing i).smoothingChoice (flipStateEquiv i s) = D.smoothingChoice s := by
-  rw [smoothingChoice_changeCrossing, flipStateEquiv_flipStateEquiv]
+  simp
 
 /-- On `D.changeCrossing i`, a state `s` traverses the same smoothed circles as
 `flipStateEquiv i s` on `D`. -/
-theorem statePerm_changeCrossing (s : Fin n → Bool) :
+@[simp] theorem statePerm_changeCrossing (s : Fin n → Bool) :
     (D.changeCrossing i).statePerm s = D.statePerm (flipStateEquiv i s) := by
-  simp [statePerm_def, smoothingChoice_changeCrossing]
+  simp [statePerm_def]
 
 /-- Flipping the state bit at `i` preserves the smoothed traversal across a crossing change. -/
-@[simp] theorem statePerm_changeCrossing_flipStateEquiv (s : Fin n → Bool) :
+theorem statePerm_changeCrossing_flipStateEquiv (s : Fin n → Bool) :
     (D.changeCrossing i).statePerm (flipStateEquiv i s) = D.statePerm s := by
-  rw [statePerm_changeCrossing, flipStateEquiv_flipStateEquiv]
+  simp
 
 /-- On `D.changeCrossing i`, a state `s` produces the same number of circles as
 `flipStateEquiv i s` on `D`. -/
-theorem stateLoopCount_changeCrossing (s : Fin n → Bool) :
+@[simp] theorem stateLoopCount_changeCrossing (s : Fin n → Bool) :
     (D.changeCrossing i).stateLoopCount s = D.stateLoopCount (flipStateEquiv i s) := by
-  simp [stateLoopCount_def, statePerm_changeCrossing]
+  simp [stateLoopCount_def]
 
 /-- Flipping the state bit at `i` preserves the circle count across a crossing change. -/
-@[simp] theorem stateLoopCount_changeCrossing_flipStateEquiv (s : Fin n → Bool) :
+theorem stateLoopCount_changeCrossing_flipStateEquiv (s : Fin n → Bool) :
     (D.changeCrossing i).stateLoopCount (flipStateEquiv i s) = D.stateLoopCount s := by
-  rw [stateLoopCount_changeCrossing, flipStateEquiv_flipStateEquiv]
+  simp
 
 end ChangeCrossing
 
@@ -446,13 +440,13 @@ theorem negativeCrossingCount_changeCrossing_of_eq_one (hi : D.crossingSign i = 
   rw [hset, card_insert_of_notMem hmem]
 
 /-- Switching a negative crossing decreases `negativeCrossingCount` by one. -/
-theorem negativeCrossingCount_changeCrossing_of_eq_neg_one (hi : D.crossingSign i = -1) :
+theorem negativeCrossingCount_changeCrossing_add_one_of_eq_neg_one (hi : D.crossingSign i = -1) :
     (D.changeCrossing i).negativeCrossingCount + 1 = D.negativeCrossingCount := by
   have h := (D.changeCrossing i).negativeCrossingCount_changeCrossing_of_eq_one i (by simp [hi])
   simpa using h.symm
 
 /-- Switching a positive crossing decreases `positiveCrossingCount` by one. -/
-theorem positiveCrossingCount_changeCrossing_of_eq_one (hi : D.crossingSign i = 1) :
+theorem positiveCrossingCount_changeCrossing_add_one_of_eq_one (hi : D.crossingSign i = 1) :
     (D.changeCrossing i).positiveCrossingCount + 1 = D.positiveCrossingCount := by
   have h1 := D.positiveCrossingCount_add_negativeCrossingCount
   have h2 := (D.changeCrossing i).positiveCrossingCount_add_negativeCrossingCount
@@ -464,24 +458,25 @@ theorem positiveCrossingCount_changeCrossing_of_eq_neg_one (hi : D.crossingSign 
     (D.changeCrossing i).positiveCrossingCount = D.positiveCrossingCount + 1 := by
   have h1 := D.positiveCrossingCount_add_negativeCrossingCount
   have h2 := (D.changeCrossing i).positiveCrossingCount_add_negativeCrossingCount
-  have hneg := D.negativeCrossingCount_changeCrossing_of_eq_neg_one i hi
+  have hneg := D.negativeCrossingCount_changeCrossing_add_one_of_eq_neg_one i hi
   omega
 
 /-- **Across a crossing change, flipping the state bit at `i` preserves the parity of
 `#{j | s j = false} + n₋`.** -/
-theorem card_false_flipStateEquiv_add_negativeCrossingCount_mod_two (s : Fin n → Bool) :
+theorem card_false_flipStateEquiv_add_negativeCrossingCount_changeCrossing_mod_two
+    (s : Fin n → Bool) :
     (#{j | PDCode.flipStateEquiv i s j = false} + (D.changeCrossing i).negativeCrossingCount) % 2 =
       (#{j | s j = false} + D.negativeCrossingCount) % 2 := by
   rcases D.crossingSign_eq_one_or_neg_one i with hi | hi
   · have hn := D.negativeCrossingCount_changeCrossing_of_eq_one i hi
     rcases hsi : s i with _ | _
-    · have hs := PDCode.card_false_flipStateEquiv_of_false i hsi
+    · have hs := PDCode.card_false_flipStateEquiv_add_one_of_false i hsi
       omega
     · have hs := PDCode.card_false_flipStateEquiv_of_true i hsi
       omega
-  · have hn := D.negativeCrossingCount_changeCrossing_of_eq_neg_one i hi
+  · have hn := D.negativeCrossingCount_changeCrossing_add_one_of_eq_neg_one i hi
     rcases hsi : s i with _ | _
-    · have hs := PDCode.card_false_flipStateEquiv_of_false i hsi
+    · have hs := PDCode.card_false_flipStateEquiv_add_one_of_false i hsi
       omega
     · have hs := PDCode.card_false_flipStateEquiv_of_true i hsi
       omega

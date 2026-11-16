@@ -184,6 +184,13 @@ def stateCochainDegree (D : OrientedPDCode n) (s : Fin n → Bool) : ℤ :=
 theorem stateCochainDegree_def (D : OrientedPDCode n) (s : Fin n → Bool) :
     D.stateCochainDegree s = #{i | s i = false} - D.negativeCrossingCount := (rfl)
 
+/-- The cochain-degree sign `(-1) ^ (|s| - n₋)` equals `(-1) ^ (|s| + n₋)`. -/
+theorem coe_negOnePow_stateCochainDegree (D : OrientedPDCode n) (s : Fin n → Bool) :
+    ((D.stateCochainDegree s).negOnePow : ℤ) =
+      (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) := by
+  rw [D.stateCochainDegree_def, Int.negOnePow_sub, ← Int.negOnePow_add, ← Nat.cast_add,
+    Int.coe_negOnePow_natCast]
+
 /-- The quantum shift `|S| + n₊ - 2 n₋` of a state `s` of an oriented code, where `S` is the set
 of crossings at which `s` selects the `B`-smoothing. -/
 def stateQuantumShift (D : OrientedPDCode n) (s : Fin n → Bool) : ℤ :=

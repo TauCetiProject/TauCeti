@@ -17,12 +17,13 @@ Resolving one crossing `c` of an oriented PD-code `D` with `n + 1` crossings pro
 `n`-crossing codes `D.toPDCode.resolveCrossing c true` and `D.toPDCode.resolveCrossing c false`.
 At the coherent smoothing `t = D.seifertState c`, the local smoothing joins incoming half-edges to
 outgoing ones, so the orientations of `D` away from `c` descend directly to an oriented code
-`TauCeti.OrientedPDCode.resolveCrossingCoherent D c` keeping the crossing signs of the remaining
-crossings. At the opposite smoothing `!D.seifertState c`, strands are reversed along part of a
-component, so the resolved diagram must be reoriented; more generally, every unoriented `PDCode`
-admits a canonical choice of component orientations (`TauCeti.PDCode.orient`), because each
-undirected component splits into two opposite directed orbits of `componentPerm`. Combining the two
-gives `TauCeti.OrientedPDCode.resolveCrossingOriented D c t` for both `t : Bool`.
+`TauCeti.OrientedPDCode.resolveCrossingCoherent` keeping the crossing signs of the remaining
+crossings, with explicit orientation data supplied for any newly detached crossing-free circles. At
+the opposite smoothing `!D.seifertState c`, strands are reversed along part of a component, so the
+resolved diagram must be reoriented; every unoriented `PDCode` admits a consistent choice of
+component orientations (`TauCeti.PDCode.orient`), because each undirected component splits into two
+opposite directed orbits of `componentPerm`. Combining the two gives
+`TauCeti.OrientedPDCode.resolveCrossingOriented` for both `t : Bool`.
 
 Comparing `TauCeti.PDCode.two_mul_componentCount_resolveCrossing` with `D.componentCount` through
 the transposition step lemmas of `TauCeti.GroupTheory.Perm.SwapFactors` determines the component
@@ -38,29 +39,32 @@ counts of the two resolutions without any planarity assumption:
   `TauCeti.OrientedPDCode.componentCount_resolveCrossing_not_seifertState_of_eq`). Consequently
   the unordered pair of component counts of the `A`- and `B`-resolutions is
   `{D.componentCount, D.componentCount + 1}`
-  (`TauCeti.OrientedPDCode.componentCount_resolveCrossing_true_and_false_of_eq`).
+  (`OrientedPDCode.componentCount_resolveCrossing_eq_and_eq_add_one_or_eq_add_one_and_eq_of_eq`).
 
 ## Main definitions
 
-* `TauCeti.PDCode.orient`: equip every component of an unoriented PD-code with a consistent
-  orientation.
 * `TauCeti.OrientedPDCode.resolveCrossingCoherent`: resolve crossing `c` in the coherent direction
-  `D.seifertState c`, inheriting half-edge orientations and crossing signs from `D`.
+  `D.seifertState c`, inheriting half-edge orientations and crossing signs from `D` and equipping
+  any detached crossing-free circles with prescribed orientations.
 * `TauCeti.OrientedPDCode.resolveCrossingOriented`: orient either resolution `t : Bool` of
-  crossing `c`, agreeing with `resolveCrossingCoherent` at `t = D.seifertState c`.
+  crossing `c` with prescribed orientations on detached crossing-free circles, agreeing with
+  `resolveCrossingCoherent` at `t = D.seifertState c`.
 
 ## Main results
 
-* `TauCeti.PDCode.toPDCode_orient` and `TauCeti.PDCode.exists_toPDCode_eq`: every PD-code underlies
-  an oriented PD-code.
-* `TauCeti.OrientedPDCode.crossingSign_resolveCrossingCoherent`: coherent resolution preserves the
-  crossing signs of the remaining crossings.
+* `TauCeti.OrientedPDCode.crossingSign_resolveCrossingCoherent`,
+  `TauCeti.OrientedPDCode.writhe_resolveCrossingCoherent`,
+  `TauCeti.OrientedPDCode.mirror_resolveCrossingCoherent`, and
+  `TauCeti.OrientedPDCode.reverse_resolveCrossingCoherent`: coherent resolution preserves the
+  crossing signs of the remaining crossings, shifts writhe by `-D.crossingSign c`, and commutes
+  with mirroring and orientation reversal.
 * `TauCeti.OrientedPDCode.componentCount_resolveCrossing_add_one_of_ne`: at a crossing between two
-  different components, both smoothings have `c - 1` components.
+  different components, both smoothings have `D.componentCount - 1` components.
 * `TauCeti.OrientedPDCode.componentCount_resolveCrossing_seifertState_of_eq`,
   `TauCeti.OrientedPDCode.componentCount_resolveCrossing_not_seifertState_of_eq`, and
-  `TauCeti.OrientedPDCode.componentCount_resolveCrossing_true_and_false_of_eq`: at a self-crossing
-  of a component, the two smoothings have `c + 1` and `c` components.
+  `OrientedPDCode.componentCount_resolveCrossing_eq_and_eq_add_one_or_eq_add_one_and_eq_of_eq`:
+  at a self-crossing of a component, the two smoothings have `D.componentCount + 1` and
+  `D.componentCount` components.
 
 ## References
 
@@ -74,136 +78,11 @@ namespace TauCeti
 
 open Equiv Equiv.Perm
 
-namespace PDCode
-
-variable {n : ℕ}
-
-/-! ### Orienting an arbitrary PD-code -/
-
-/-- The undirected step relation joining each half-edge to its arc partner and to its opposite
-crossing-slot partner. -/
-private abbrev UndirectedComponentStep (P : PDCode n) (x y : Fin (4 * n)) : Prop :=
-  y = P.edgePair.val x ∨ y = P.crossingTurn x
-
-/-- A chosen representative half-edge in the undirected component of `x`. -/
-private noncomputable def undirectedComponentRep (P : PDCode n) (x : Fin (4 * n)) : Fin (4 * n) :=
-  (⟦x⟧ : Quotient (Relation.EqvGen.setoid P.UndirectedComponentStep)).out
-
-private theorem undirectedComponentRep_edgePair (P : PDCode n) (x : Fin (4 * n)) :
-    P.undirectedComponentRep (P.edgePair.val x) = P.undirectedComponentRep x :=
-  congrArg Quotient.out (Quotient.sound (.symm _ _ (.rel _ _ (Or.inl rfl))))
-
-private theorem undirectedComponentRep_crossingTurn (P : PDCode n) (x : Fin (4 * n)) :
-    P.undirectedComponentRep (P.crossingTurn x) = P.undirectedComponentRep x :=
-  congrArg Quotient.out (Quotient.sound (.symm _ _ (.rel _ _ (Or.inr rfl))))
-
-private theorem sameCycle_undirectedComponentRep_or (P : PDCode n) (x : Fin (4 * n)) :
-    P.componentPerm.SameCycle (P.undirectedComponentRep x) x ∨
-      P.componentPerm.SameCycle (P.edgePair.val (P.undirectedComponentRep x)) x := by
-  have hout : Relation.EqvGen P.UndirectedComponentStep (P.undirectedComponentRep x) x :=
-    Quotient.exact (Quotient.out_eq (⟦x⟧ : Quotient (Relation.EqvGen.setoid _)))
-  rw [P.componentPerm_def]
-  exact (P.isPerfectMatching_crossingTurn.involutive.eqvGen_iff_sameCycle
-    P.edgePair.prop.involutive).mp hout
-
-private theorem not_sameCycle_undirectedComponentRep_and (P : PDCode n) (x : Fin (4 * n)) :
-    ¬(P.componentPerm.SameCycle (P.undirectedComponentRep x) x ∧
-      P.componentPerm.SameCycle (P.edgePair.val (P.undirectedComponentRep x)) x) := by
-  rintro ⟨h₁, h₂⟩
-  have h := h₁.trans h₂.symm
-  rw [P.componentPerm_def] at h
-  exact P.isPerfectMatching_crossingTurn.not_sameCycle_self_apply P.edgePair.prop _ h
-
-private theorem sameCycle_undirectedComponentRep_edgePair_iff (P : PDCode n) (x : Fin (4 * n)) :
-    P.componentPerm.SameCycle (P.undirectedComponentRep x) (P.edgePair.val x) ↔
-      ¬P.componentPerm.SameCycle (P.undirectedComponentRep x) x := by
-  have hrev : P.componentPerm.SameCycle (P.undirectedComponentRep x) (P.edgePair.val x) ↔
-      P.componentPerm.SameCycle (P.edgePair.val (P.undirectedComponentRep x)) x := by
-    rw [P.componentPerm_def,
-      ← P.isPerfectMatching_crossingTurn.involutive.sameCycle_apply_apply_iff
-        P.edgePair.prop.involutive,
-      P.edgePair.apply_apply]
-  have hor := P.sameCycle_undirectedComponentRep_or x
-  have hand := P.not_sameCycle_undirectedComponentRep_and x
-  tauto
-
-private theorem sameCycle_undirectedComponentRep_crossingTurn_iff (P : PDCode n)
-    (x : Fin (4 * n)) :
-    P.componentPerm.SameCycle (P.undirectedComponentRep x) (P.crossingTurn x) ↔
-      ¬P.componentPerm.SameCycle (P.undirectedComponentRep x) x := by
-  have hturn : P.crossingTurn x = P.componentPerm (P.edgePair.val x) := by
-    simp [P.edgePair.apply_apply]
-  rw [hturn, sameCycle_apply_right]
-  exact P.sameCycle_undirectedComponentRep_edgePair_iff x
-
-/-- Equip an arbitrary unoriented PD-code `P` with a consistent orientation on every component:
-each undirected crossing-bearing component splits into two opposite directed orbits of
-`P.componentPerm`, one of which is selected as outgoing, and crossing-free circles are oriented by
-`true`. -/
-noncomputable def orient (P : PDCode n) : OrientedPDCode n where
-  toPDCode := P
-  orientation h :=
-    @decide (P.componentPerm.SameCycle (P.undirectedComponentRep h) h) (Classical.dec _)
-  orientation_edgePair h := by
-    classical
-    simp only [undirectedComponentRep_edgePair]
-    by_cases hc : P.componentPerm.SameCycle (P.undirectedComponentRep h) h
-    · have hnc := (P.sameCycle_undirectedComponentRep_edgePair_iff h).not.mpr (not_not.mpr hc)
-      simp [hc, hnc]
-    · have hc' := (P.sameCycle_undirectedComponentRep_edgePair_iff h).mpr hc
-      simp [hc, hc']
-  orientation_oppositeCrossingSlot i slot := by
-    classical
-    have hslot : P.halfEdge (crossingSlotEquiv n (i, oppositeCrossingSlot slot)) =
-        P.crossingTurn (P.halfEdge (crossingSlotEquiv n (i, slot))) := by
-      rw [P.crossingTurn_crossing, P.crossing_apply]
-    set h := P.halfEdge (crossingSlotEquiv n (i, slot))
-    rw [hslot, undirectedComponentRep_crossingTurn]
-    by_cases hc : P.componentPerm.SameCycle (P.undirectedComponentRep h) h
-    · have hnc := (P.sameCycle_undirectedComponentRep_crossingTurn_iff h).not.mpr (not_not.mpr hc)
-      simp [hc, hnc]
-    · have hc' := (P.sameCycle_undirectedComponentRep_crossingTurn_iff h).mpr hc
-      simp [hc, hc']
-  crossinglessComponents := Multiset.replicate P.crossinglessComponentCount true
-  card_crossinglessComponents := Multiset.card_replicate _ _
-
-/-- Forgetting the chosen orientation of `P.orient` recovers `P`. -/
-@[simp] theorem toPDCode_orient (P : PDCode n) : P.orient.toPDCode = P := (rfl)
-
-/-- `P.orient` labels every crossing-free circle by `true`. -/
-@[simp] theorem crossinglessComponents_orient (P : PDCode n) :
-    P.orient.crossinglessComponents = Multiset.replicate P.crossinglessComponentCount true := (rfl)
-
-/-- Every unoriented PD-code admits at least one compatible orientation. -/
-theorem exists_toPDCode_eq (P : PDCode n) : ∃ D : OrientedPDCode n, D.toPDCode = P :=
-  ⟨P.orient, rfl⟩
-
-end PDCode
-
 namespace OrientedPDCode
 
 variable {n : ℕ} (D : OrientedPDCode (n + 1)) (c : Fin (n + 1))
 
 /-! ### Coherent and general oriented vertex resolutions -/
-
-/-- No fifth slot can avoid two disjoint local-smoothing pairs on `Fin 4`. -/
-private theorem slotSmoothing_exhaust (b : Bool) (l₁ l₂ l₃ : Fin 4)
-    (hl₂₁ : l₂ ≠ l₁) (hl₂S₁ : l₂ ≠ PDCode.slotSmoothing b l₁)
-    (hl₃₁ : l₃ ≠ l₁) (hl₃S₁ : l₃ ≠ PDCode.slotSmoothing b l₁)
-    (hl₃₂ : l₃ ≠ l₂) (hl₃S₂ : l₃ ≠ PDCode.slotSmoothing b l₂) : False := by
-  have hs₁₁ := Fin.val_ne_of_ne (PDCode.slotSmoothing_ne b l₁)
-  have hs₂₂ := Fin.val_ne_of_ne (PDCode.slotSmoothing_ne b l₂)
-  have hs₂₁ : (PDCode.slotSmoothing b l₂).val ≠ l₁.val := Fin.val_ne_of_ne fun h ↦
-    hl₂S₁ (by rw [← h, PDCode.slotSmoothing_apply_apply])
-  have hs₂s₁ : (PDCode.slotSmoothing b l₂).val ≠ (PDCode.slotSmoothing b l₁).val :=
-    Fin.val_ne_of_ne ((PDCode.slotSmoothing b).injective.ne hl₂₁)
-  have := Fin.val_ne_of_ne hl₂₁
-  have := Fin.val_ne_of_ne hl₂S₁
-  have := Fin.val_ne_of_ne hl₃₁
-  have := Fin.val_ne_of_ne hl₃S₁
-  have := Fin.val_ne_of_ne hl₃₂
-  have := Fin.val_ne_of_ne hl₃S₂
-  omega
 
 /-- At crossing `c`, the local smoothing selected by `D.seifertState c` reverses orientation. -/
 private theorem orientation_crossing_slotSmoothing_seifertState (k : Fin 4) :
@@ -235,39 +114,6 @@ private theorem exists_crossing_eq (h : Fin (4 * (n + 1))) :
   obtain ⟨⟨j, l⟩, rfl⟩ := (PDCode.crossingSlotEquiv (n + 1)).surjective x
   exact ⟨j, l, (D.crossing_apply j l).symm⟩
 
-/-- Following `D.edgePair` and `slotSmoothing b` from a crossing `c.succAbove i ≠ c` through `c`
-twice cannot land at `c` a third time. -/
-private theorem crossing_ne_of_slotSmoothing_twice {b : Bool} {i : Fin n} {k l₁ l₂ l₃ : Fin 4}
-    {j₃ : Fin (n + 1)}
-    (h₁ : D.edgePair.val (D.crossing (c.succAbove i) k) = D.crossing c l₁)
-    (h₂ : D.edgePair.val (D.crossing c (PDCode.slotSmoothing b l₁)) = D.crossing c l₂)
-    (h₃ : D.edgePair.val (D.crossing c (PDCode.slotSmoothing b l₂)) = D.crossing j₃ l₃) :
-    j₃ ≠ c := by
-  intro hj₃c
-  subst j₃
-  have hl₂₁ : l₂ ≠ l₁ := fun h ↦ by
-    have := D.edgePair.val.injective (h₁.trans (h ▸ h₂.symm))
-    exact c.succAbove_ne i (D.toPDCode.crossing_eq_crossing_iff.mp this).1
-  have hl₂S₁ : l₂ ≠ PDCode.slotSmoothing b l₁ := fun h ↦
-    D.edgePair.apply_ne _ (h ▸ h₂)
-  have hl₃₁ : l₃ ≠ l₁ := fun h ↦ by
-    have := (D.edgePair.apply_eq_of_apply_eq h₁).symm.trans
-      (D.edgePair.apply_eq_of_apply_eq (h ▸ h₃))
-    exact c.succAbove_ne i (D.toPDCode.crossing_eq_crossing_iff.mp this).1
-  have hl₃S₁ : l₃ ≠ PDCode.slotSmoothing b l₁ := fun h ↦ by
-    have : D.crossing c (PDCode.slotSmoothing b l₂) = D.crossing c l₂ := by
-      rw [← D.edgePair.apply_apply (D.crossing c (PDCode.slotSmoothing b l₂)), h₃, h, h₂]
-    exact PDCode.slotSmoothing_ne b l₂ (D.toPDCode.crossing_eq_crossing_iff.mp this).2
-  have hl₃₂ : l₃ ≠ l₂ := fun h ↦ by
-    have := D.edgePair.val.injective (h₂.trans (h ▸ h₃).symm)
-    exact hl₂₁ ((PDCode.slotSmoothing_apply_apply b l₁ ▸
-      PDCode.slotSmoothing_apply_apply b l₂ ▸
-      congrArg (PDCode.slotSmoothing b)
-        (D.toPDCode.crossing_eq_crossing_iff.mp this).2).symm)
-  have hl₃S₂ : l₃ ≠ PDCode.slotSmoothing b l₂ := fun h ↦
-    D.edgePair.apply_ne _ (h ▸ h₃)
-  exact slotSmoothing_exhaust b l₁ l₂ l₃ hl₂₁ hl₂S₁ hl₃₁ hl₃S₁ hl₃₂ hl₃S₂
-
 /-- Every arc of the coherent resolution `D.toPDCode.resolveCrossing c (D.seifertState c)` joins
 half-edges of opposite `D`-orientations, whether it avoids `c` or traverses `c` once or twice. -/
 private theorem coherentOrientation_edgePair (x : Fin (4 * n)) :
@@ -287,7 +133,7 @@ private theorem coherentOrientation_edgePair (x : Fin (4 * n)) :
       obtain ⟨j₃, l₃, h₃⟩ := D.exists_crossing_eq
         (D.edgePair.val (D.crossing c (PDCode.slotSmoothing b l₂)))
       obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq
-        (D.crossing_ne_of_slotSmoothing_twice c h₁ h₂ h₃)
+        (D.toPDCode.crossing_ne_of_slotSmoothing_twice c h₁ h₂ h₃)
       rw [D.toPDCode.resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice c t h₁ h₂ h₃,
         coherentOrientation_crossingSlotEquiv, coherentOrientation_crossingSlotEquiv,
         ← h₃, D.orientation_edgePair, D.orientation_crossing_slotSmoothing_seifertState c l₂,
@@ -307,8 +153,10 @@ private theorem coherentOrientation_edgePair (x : Fin (4 * n)) :
 
 /-- **Coherent resolution of an oriented crossing.** Resolving crossing `c` in its Seifert direction
 `D.seifertState c` preserves the orientations of all remaining half-edges and crossings, and adjoins
-any detached circles with orientation `true`. -/
-def resolveCrossingCoherent : OrientedPDCode n where
+any newly detached crossing-free circles with the prescribed orientations `detached`. -/
+def resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    OrientedPDCode n where
   toPDCode := D.toPDCode.resolveCrossing c (D.seifertState c)
   orientation := D.coherentOrientation c
   orientation_edgePair := D.coherentOrientation_edgePair c
@@ -316,150 +164,232 @@ def resolveCrossingCoherent : OrientedPDCode n where
     simp only [PDCode.resolveCrossing_halfEdge, Perm.one_apply,
       coherentOrientation_crossingSlotEquiv, PDCode.crossing_apply,
       D.orientation_oppositeCrossingSlot]
-  crossinglessComponents := D.crossinglessComponents +
-    Multiset.replicate (D.toPDCode.detachedCircleCount c (D.seifertState c)) true
-  card_crossinglessComponents := by simp
+  crossinglessComponents := D.crossinglessComponents + detached
+  card_crossinglessComponents := by simp [hdetached]
 
-/-- Forgetting orientation on `D.resolveCrossingCoherent c` gives the Seifert resolution of `c`. -/
-@[simp] theorem toPDCode_resolveCrossingCoherent :
-    (D.resolveCrossingCoherent c).toPDCode =
+/-- Forgetting orientation on `D.resolveCrossingCoherent c detached hdetached` gives the Seifert
+resolution of `c`. -/
+@[simp] theorem toPDCode_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    (D.resolveCrossingCoherent c detached hdetached).toPDCode =
       D.toPDCode.resolveCrossing c (D.seifertState c) := (rfl)
 
-/-- Coherent resolution keeps the crossing-free circles of `D` and adjoins any detached circles
-oriented by `true`. -/
-@[simp] theorem crossinglessComponents_resolveCrossingCoherent :
-    (D.resolveCrossingCoherent c).crossinglessComponents = D.crossinglessComponents +
-      Multiset.replicate (D.toPDCode.detachedCircleCount c (D.seifertState c)) true := (rfl)
+/-- Coherent resolution keeps the crossing-free circles of `D` and adjoins `detached`. -/
+@[simp] theorem crossinglessComponents_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    (D.resolveCrossingCoherent c detached hdetached).crossinglessComponents =
+      D.crossinglessComponents + detached := (rfl)
 
-/-- Slot `k` of crossing `i` in `D.resolveCrossingCoherent c` keeps the orientation of slot `k` of
-crossing `c.succAbove i` in `D`. -/
-@[simp] theorem orientation_resolveCrossingCoherent (i : Fin n) (k : Fin 4) :
-    (D.resolveCrossingCoherent c).orientation (PDCode.crossingSlotEquiv n (i, k)) =
+/-- Slot `k` of crossing `i` in `D.resolveCrossingCoherent c detached hdetached` keeps the
+orientation of slot `k` of crossing `c.succAbove i` in `D`. -/
+@[simp] theorem orientation_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c))
+    (i : Fin n) (k : Fin 4) :
+    (D.resolveCrossingCoherent c detached hdetached).orientation
+        (PDCode.crossingSlotEquiv n (i, k)) =
       D.orientation (D.crossing (c.succAbove i) k) :=
   D.coherentOrientation_crossingSlotEquiv c i k
 
 /-- **Coherent resolution preserves every remaining crossing sign.** -/
-@[simp] theorem crossingSign_resolveCrossingCoherent (i : Fin n) :
-    (D.resolveCrossingCoherent c).crossingSign i = D.crossingSign (c.succAbove i) := by
+@[simp] theorem crossingSign_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) (i : Fin n) :
+    (D.resolveCrossingCoherent c detached hdetached).crossingSign i =
+      D.crossingSign (c.succAbove i) := by
   simp [crossingSign_def]
 
 /-- Coherent resolution restricts the Seifert state to the remaining crossings. -/
-@[simp] theorem seifertState_resolveCrossingCoherent (i : Fin n) :
-    (D.resolveCrossingCoherent c).seifertState i = D.seifertState (c.succAbove i) := by
+@[simp] theorem seifertState_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) (i : Fin n) :
+    (D.resolveCrossingCoherent c detached hdetached).seifertState i =
+      D.seifertState (c.succAbove i) := by
   rw [Bool.eq_iff_iff]
   simp
 
+/-- Coherent resolution subtracts the sign of the resolved crossing `c` from the writhe. -/
+theorem writhe_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    (D.resolveCrossingCoherent c detached hdetached).writhe = D.writhe - D.crossingSign c := by
+  rw [writhe_def, writhe_def, Fin.sum_univ_succAbove _ c]
+  simp
+
+/-- Coherent resolution of a positive crossing decreases `positiveCrossingCount` by one. -/
+theorem positiveCrossingCount_resolveCrossingCoherent_add_one_of_eq_one (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c))
+    (hc : D.crossingSign c = 1) :
+    (D.resolveCrossingCoherent c detached hdetached).positiveCrossingCount + 1 =
+      D.positiveCrossingCount := by
+  set R := D.resolveCrossingCoherent c detached hdetached
+  have hw : R.writhe = D.writhe - D.crossingSign c :=
+    D.writhe_resolveCrossingCoherent c detached hdetached
+  have := D.writhe_eq_positiveCrossingCount_sub_negativeCrossingCount
+  have := R.writhe_eq_positiveCrossingCount_sub_negativeCrossingCount
+  have := D.positiveCrossingCount_add_negativeCrossingCount
+  have := R.positiveCrossingCount_add_negativeCrossingCount
+  omega
+
+/-- Coherent resolution of a negative crossing preserves `positiveCrossingCount`. -/
+theorem positiveCrossingCount_resolveCrossingCoherent_of_eq_neg_one (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c))
+    (hc : D.crossingSign c = -1) :
+    (D.resolveCrossingCoherent c detached hdetached).positiveCrossingCount =
+      D.positiveCrossingCount := by
+  set R := D.resolveCrossingCoherent c detached hdetached
+  have hw : R.writhe = D.writhe - D.crossingSign c :=
+    D.writhe_resolveCrossingCoherent c detached hdetached
+  have := D.writhe_eq_positiveCrossingCount_sub_negativeCrossingCount
+  have := R.writhe_eq_positiveCrossingCount_sub_negativeCrossingCount
+  have := D.positiveCrossingCount_add_negativeCrossingCount
+  have := R.positiveCrossingCount_add_negativeCrossingCount
+  omega
+
+/-- Coherent resolution of a positive crossing preserves `negativeCrossingCount`. -/
+theorem negativeCrossingCount_resolveCrossingCoherent_of_eq_one (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c))
+    (hc : D.crossingSign c = 1) :
+    (D.resolveCrossingCoherent c detached hdetached).negativeCrossingCount =
+      D.negativeCrossingCount := by
+  have := D.positiveCrossingCount_resolveCrossingCoherent_add_one_of_eq_one c detached hdetached hc
+  have := D.positiveCrossingCount_add_negativeCrossingCount
+  have := (D.resolveCrossingCoherent c detached
+    hdetached).positiveCrossingCount_add_negativeCrossingCount
+  omega
+
+/-- Coherent resolution of a negative crossing decreases `negativeCrossingCount` by one. -/
+theorem negativeCrossingCount_resolveCrossingCoherent_add_one_of_eq_neg_one
+    (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c))
+    (hc : D.crossingSign c = -1) :
+    (D.resolveCrossingCoherent c detached hdetached).negativeCrossingCount + 1 =
+      D.negativeCrossingCount := by
+  have := D.positiveCrossingCount_resolveCrossingCoherent_of_eq_neg_one c detached hdetached hc
+  have := D.positiveCrossingCount_add_negativeCrossingCount
+  have := (D.resolveCrossingCoherent c detached
+    hdetached).positiveCrossingCount_add_negativeCrossingCount
+  omega
+
+/-- Mirroring commutes with coherent crossing resolution. -/
+@[simp] theorem mirror_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    (D.resolveCrossingCoherent c detached hdetached).mirror =
+      D.mirror.resolveCrossingCoherent c detached (by simpa using hdetached) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    obtain ⟨⟨i, k⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
+    simp
+  · simp
+
+/-- Reversing component orientations commutes with coherent crossing resolution, reversing the
+orientations of any detached crossing-free circles. -/
+@[simp] theorem reverse_resolveCrossingCoherent (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    (D.resolveCrossingCoherent c detached hdetached).reverse =
+      D.reverse.resolveCrossingCoherent c (detached.map (!·)) (by simpa using hdetached) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    obtain ⟨⟨i, k⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
+    simp
+  · simp
+
 /-- **Oriented crossing resolution in either direction.** At `t = D.seifertState c` this is the
 coherent resolution `TauCeti.OrientedPDCode.resolveCrossingCoherent`; at the other smoothing it
-equips `D.toPDCode.resolveCrossing c t` with a reorientation via `TauCeti.PDCode.orient`. -/
-noncomputable def resolveCrossingOriented (t : Bool) : OrientedPDCode n where
-  toPDCode := D.toPDCode.resolveCrossing c t
-  orientation := if t = D.seifertState c then D.coherentOrientation c
-    else (D.toPDCode.resolveCrossing c t).orient.orientation
-  orientation_edgePair h := by
-    split_ifs with ht
-    · subst ht
-      exact D.coherentOrientation_edgePair c h
-    · exact (D.toPDCode.resolveCrossing c t).orient.orientation_edgePair h
-  orientation_oppositeCrossingSlot i slot := by
-    split_ifs with ht
-    · subst ht
-      exact (D.resolveCrossingCoherent c).orientation_oppositeCrossingSlot i slot
-    · exact (D.toPDCode.resolveCrossing c t).orient.orientation_oppositeCrossingSlot i slot
-  crossinglessComponents := D.crossinglessComponents +
-    Multiset.replicate (D.toPDCode.detachedCircleCount c t) true
-  card_crossinglessComponents := by simp
+equips `D.toPDCode.resolveCrossing c t` with a reorientation via `TauCeti.PDCode.orient`. Newly
+detached crossing-free circles receive the prescribed orientations `detached`. -/
+noncomputable def resolveCrossingOriented (t : Bool) (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c t) : OrientedPDCode n :=
+  if ht : t = D.seifertState c then
+    D.resolveCrossingCoherent c detached (ht ▸ hdetached)
+  else
+    (D.toPDCode.resolveCrossing c t).orient (D.crossinglessComponents + detached) (by
+      simp [hdetached])
 
-/-- Forgetting orientation on `D.resolveCrossingOriented c t` recovers
+/-- Forgetting orientation on `D.resolveCrossingOriented c t detached hdetached` recovers
 `D.toPDCode.resolveCrossing c t`. -/
-@[simp] theorem toPDCode_resolveCrossingOriented (t : Bool) :
-    (D.resolveCrossingOriented c t).toPDCode = D.toPDCode.resolveCrossing c t := (rfl)
+@[simp] theorem toPDCode_resolveCrossingOriented (t : Bool) (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c t) :
+    (D.resolveCrossingOriented c t detached hdetached).toPDCode =
+      D.toPDCode.resolveCrossing c t := by
+  unfold resolveCrossingOriented
+  split_ifs with ht <;> simp [ht]
 
-/-- `D.resolveCrossingOriented c t` keeps the crossing-free circles of `D` and adjoins any detached
-circles oriented by `true`. -/
-@[simp] theorem crossinglessComponents_resolveCrossingOriented (t : Bool) :
-    (D.resolveCrossingOriented c t).crossinglessComponents = D.crossinglessComponents +
-      Multiset.replicate (D.toPDCode.detachedCircleCount c t) true := (rfl)
+/-- `D.resolveCrossingOriented c t detached hdetached` keeps the crossing-free circles of `D` and
+adjoins `detached`. -/
+@[simp] theorem crossinglessComponents_resolveCrossingOriented (t : Bool) (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c t) :
+    (D.resolveCrossingOriented c t detached hdetached).crossinglessComponents =
+      D.crossinglessComponents + detached := by
+  unfold resolveCrossingOriented
+  split_ifs <;> simp
 
 /-- At `t = D.seifertState c`, `resolveCrossingOriented` agrees with `resolveCrossingCoherent`. -/
-@[simp] theorem resolveCrossingOriented_seifertState :
-    D.resolveCrossingOriented c (D.seifertState c) = D.resolveCrossingCoherent c := by
-  apply OrientedPDCode.ext
-  · rfl
-  · simp [resolveCrossingOriented, resolveCrossingCoherent]
-  · rfl
+@[simp] theorem resolveCrossingOriented_seifertState (detached : Multiset Bool)
+    (hdetached : detached.card = D.toPDCode.detachedCircleCount c (D.seifertState c)) :
+    D.resolveCrossingOriented c (D.seifertState c) detached hdetached =
+      D.resolveCrossingCoherent c detached hdetached := by
+  simp [resolveCrossingOriented]
 
 /-! ### Component-count alternatives for crossing resolutions -/
 
-/-- The outgoing slot (`0` or `2`) on the `0`–`2` local strand at a crossing, given the orientation
-at slot `0`. -/
-private def outSlotEven (a : Bool) : Fin 4 := bif a then 0 else 2
+/-- The outgoing slot (`s` or its opposite slot) on the strand passing through slot `s`, given the
+orientation `a` at slot `s`. -/
+private def outSlot (s : Fin 4) (a : Bool) : Fin 4 :=
+  bif a then s else PDCode.oppositeCrossingSlot s
 
-/-- The outgoing slot (`1` or `3`) on the `1`–`3` local strand at a crossing, given the orientation
-at slot `1`. -/
-private def outSlotOdd (b : Bool) : Fin 4 := bif b then 1 else 3
+/-- The outgoing half-edge at crossing `c` on the strand passing through slot `s`. -/
+private def outgoingHalfEdge (s : Fin 4) : Fin (4 * (n + 1)) :=
+  D.crossing c (outSlot s (D.orientation (D.crossing c s)))
 
 private theorem slotSmoothing_xor_mul_oppositeCrossingSlot (a b : Bool) :
     PDCode.slotSmoothing (Bool.xor a b) * PDCode.oppositeCrossingSlot =
-      Equiv.swap (outSlotEven a) (outSlotOdd b) *
-        Equiv.swap (PDCode.oppositeCrossingSlot (outSlotEven a))
-          (PDCode.oppositeCrossingSlot (outSlotOdd b)) := by
+      Equiv.swap (outSlot 0 a) (outSlot 1 b) *
+        Equiv.swap (PDCode.oppositeCrossingSlot (outSlot 0 a))
+          (PDCode.oppositeCrossingSlot (outSlot 1 b)) := by
   ext k
   cases a <;> cases b <;>
-    simp only [outSlotEven, outSlotOdd, Bool.xor_false, Bool.xor_true, Bool.not_false,
-      Bool.not_true, Bool.cond_false, Bool.cond_true, PDCode.slotSmoothing_true,
-      PDCode.slotSmoothing_false, PDCode.oppositeCrossingSlot_eq_swap_mul_swap, Perm.mul_apply,
-      swap_apply_def] <;>
+    simp only [outSlot, Bool.xor_false, Bool.xor_true, Bool.not_false, Bool.not_true,
+      Bool.cond_false, Bool.cond_true, PDCode.slotSmoothing_true, PDCode.slotSmoothing_false,
+      PDCode.oppositeCrossingSlot_eq_swap_mul_swap, Perm.mul_apply, swap_apply_def] <;>
     revert k <;> decide
 
 private theorem slotSmoothing_not_xor_mul_oppositeCrossingSlot (a b : Bool) :
     PDCode.slotSmoothing (!Bool.xor a b) * PDCode.oppositeCrossingSlot =
-      Equiv.swap (outSlotOdd b) (PDCode.oppositeCrossingSlot (outSlotEven a)) *
-        Equiv.swap (outSlotEven a) (PDCode.oppositeCrossingSlot (outSlotOdd b)) := by
+      Equiv.swap (outSlot 1 b) (PDCode.oppositeCrossingSlot (outSlot 0 a)) *
+        Equiv.swap (outSlot 0 a) (PDCode.oppositeCrossingSlot (outSlot 1 b)) := by
   ext k
   cases a <;> cases b <;>
-    simp only [outSlotEven, outSlotOdd, Bool.xor_false, Bool.xor_true, Bool.not_false,
-      Bool.not_true, Bool.cond_false, Bool.cond_true, PDCode.slotSmoothing_true,
-      PDCode.slotSmoothing_false, PDCode.oppositeCrossingSlot_eq_swap_mul_swap, Perm.mul_apply,
-      swap_apply_def] <;>
+    simp only [outSlot, Bool.xor_false, Bool.xor_true, Bool.not_false, Bool.not_true,
+      Bool.cond_false, Bool.cond_true, PDCode.slotSmoothing_true, PDCode.slotSmoothing_false,
+      PDCode.oppositeCrossingSlot_eq_swap_mul_swap, Perm.mul_apply, swap_apply_def] <;>
     revert k <;> decide
 
-private theorem outSlotEven_ne_outSlotOdd (a b : Bool) : outSlotEven a ≠ outSlotOdd b := by
-  cases a <;> cases b <;> decide
+private theorem outSlot_zero_ne_one (a b : Bool) : outSlot 0 a ≠ outSlot 1 b := by
+  cases a <;> cases b <;>
+    simp only [outSlot, Bool.cond_false, Bool.cond_true, PDCode.oppositeCrossingSlot_apply] <;>
+    decide
 
-private theorem orientation_crossing_outSlotEven :
-    D.orientation (D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))) = true := by
-  cases ho : D.orientation (D.crossing c 0)
-  · rw [outSlotEven, Bool.cond_false,
-      D.orientation_crossing_of_add_two_eq c (s := 0) (t := 2) rfl, ho, Bool.not_false]
-  · rw [outSlotEven, Bool.cond_true, ho]
+private theorem outgoingHalfEdge_zero_ne_one :
+    D.outgoingHalfEdge c 0 ≠ D.outgoingHalfEdge c 1 := fun h ↦
+  outSlot_zero_ne_one _ _ (D.toPDCode.crossing_eq_crossing_iff.mp h).2
 
-private theorem orientation_crossing_outSlotOdd :
-    D.orientation (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) = true := by
-  cases ho : D.orientation (D.crossing c 1)
-  · rw [outSlotOdd, Bool.cond_false,
-      D.orientation_crossing_of_add_two_eq c (s := 1) (t := 3) rfl, ho, Bool.not_false]
-  · rw [outSlotOdd, Bool.cond_true, ho]
+private theorem orientation_outgoingHalfEdge (s : Fin 4) :
+    D.orientation (D.outgoingHalfEdge c s) = true := by
+  cases ho : D.orientation (D.crossing c s)
+  · rw [outgoingHalfEdge, ho, outSlot, Bool.cond_false, PDCode.crossing_apply,
+      D.orientation_oppositeCrossingSlot]
+    simpa [PDCode.crossing_apply] using ho
+  · rw [outgoingHalfEdge, ho, outSlot, Bool.cond_true, ho]
 
-private theorem crossingComponentOfHalfEdge_outSlotEven :
-    D.crossingComponentOfHalfEdge (D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))) =
-      D.crossingComponentOfHalfEdge (D.crossing c 0) := by
-  cases ho : D.orientation (D.crossing c 0)
-  · have h2 : D.crossing c 2 = D.crossingTurn (D.crossing c 0) := by
-      rw [D.crossing_apply c 0, D.crossingTurn_crossing, PDCode.oppositeCrossingSlot_apply]
-      rfl
-    rw [outSlotEven, Bool.cond_false, h2, D.crossingComponentOfHalfEdge_crossingTurn]
-  · rw [outSlotEven, Bool.cond_true]
-
-private theorem crossingComponentOfHalfEdge_outSlotOdd :
-    D.crossingComponentOfHalfEdge (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) =
-      D.crossingComponentOfHalfEdge (D.crossing c 1) := by
-  cases ho : D.orientation (D.crossing c 1)
-  · have h3 : D.crossing c 3 = D.crossingTurn (D.crossing c 1) := by
-      rw [D.crossing_apply c 1, D.crossingTurn_crossing, PDCode.oppositeCrossingSlot_apply]
-      rfl
-    rw [outSlotOdd, Bool.cond_false, h3, D.crossingComponentOfHalfEdge_crossingTurn]
-  · rw [outSlotOdd, Bool.cond_true]
+private theorem crossingComponentOfHalfEdge_outgoingHalfEdge (s : Fin 4) :
+    D.crossingComponentOfHalfEdge (D.outgoingHalfEdge c s) =
+      D.crossingComponentOfHalfEdge (D.crossing c s) := by
+  cases ho : D.orientation (D.crossing c s)
+  · have hct : D.crossing c (PDCode.oppositeCrossingSlot s) =
+        D.crossingTurn (D.crossing c s) := by
+      simp [PDCode.crossing_apply]
+    rw [outgoingHalfEdge, ho, outSlot, Bool.cond_false, hct,
+      D.crossingComponentOfHalfEdge_crossingTurn]
+  · rw [outgoingHalfEdge, ho, outSlot, Bool.cond_true]
 
 /-- Two half-edges in the same directed orbit of `D.toPDCode.componentPerm` have the same
 orientation. -/
@@ -510,23 +440,48 @@ private theorem sameCycle_swap_incoming_mul_componentPerm_iff
     · exact absurd (h₀.apply_eq_of_apply_eq hor) (by simp [hu₀, hv₀])
     · exact absurd (h₁.apply_eq_of_apply_eq hor) (by simp [hu₀, hv₁])
 
+/-- Swapping an outgoing half-edge `u₀` with an incoming half-edge `D.crossingTurn u₁` puts
+`u₁` and `D.crossingTurn u₀` in the same cycle iff `u₀` and `u₁` already share a `componentPerm`
+cycle. -/
+private theorem sameCycle_swap_outgoing_incoming_mul_componentPerm_iff
+    {u₀ u₁ : Fin (4 * (n + 1))}
+    (hu₀ : D.orientation u₀ = true) (hu₁ : D.orientation u₁ = true) :
+    (Equiv.swap u₀ (D.crossingTurn u₁) * D.toPDCode.componentPerm).SameCycle
+        u₁ (D.crossingTurn u₀) ↔
+      D.toPDCode.componentPerm.SameCycle u₀ u₁ := by
+  have hv₀ : D.orientation (D.crossingTurn u₀) = false := by simp [hu₀]
+  have hv₁ : D.orientation (D.crossingTurn u₁) = false := by simp [hu₁]
+  refine ⟨fun hm ↦ ?_, fun hu ↦ ?_⟩
+  · rcases hm.sameCycle_or_of_swap_mul with h₁ | ⟨h₂ | h₂, -⟩
+    · exact absurd h₁ (D.not_sameCycle_componentPerm_of_orientation hu₁ hv₀)
+    · exact h₂.symm
+    · exact absurd h₂ (D.not_sameCycle_componentPerm_of_orientation hu₁ hv₁)
+  · have hnot : ¬D.toPDCode.componentPerm.SameCycle u₀ (D.crossingTurn u₁) :=
+      D.not_sameCycle_componentPerm_of_orientation hu₀ hv₁
+    have hm₁ : (Equiv.swap u₀ (D.crossingTurn u₁) * D.toPDCode.componentPerm).SameCycle
+        u₀ (D.crossingTurn u₁) :=
+      sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle
+        (D.toPDCode.componentPerm.injective.mem_periodicPts _) hnot
+    have hv : D.toPDCode.componentPerm.SameCycle (D.crossingTurn u₀) (D.crossingTurn u₁) :=
+      D.sameCycle_componentPerm_crossingTurn_iff.mpr hu
+    exact (hm₁.swap_mul_of_sameCycle hu.symm).trans
+      (hm₁.trans (hm₁.swap_mul_of_sameCycle hv.symm))
+
 /-- The two strands at crossing `c` lie on the same component iff their outgoing half-edges lie in
 the same `componentPerm` orbit. -/
 private theorem crossingComponentOfHalfEdge_zero_eq_one_iff :
     D.crossingComponentOfHalfEdge (D.crossing c 0) =
         D.crossingComponentOfHalfEdge (D.crossing c 1) ↔
-      D.toPDCode.componentPerm.SameCycle
-        (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-        (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) := by
+      D.toPDCode.componentPerm.SameCycle (D.outgoingHalfEdge c 0) (D.outgoingHalfEdge c 1) := by
   have hsub : D.componentPermOutgoing =
       D.toPDCode.componentPerm.subtypePerm (fun h ↦ by rw [orientation_componentPerm]) := by
     ext x
     simp
-  rw [← D.crossingComponentOfHalfEdge_outSlotEven c, ← D.crossingComponentOfHalfEdge_outSlotOdd c,
-    D.crossingComponentOfHalfEdge_of_outgoing _ (D.orientation_crossing_outSlotEven c),
-    D.crossingComponentOfHalfEdge_of_outgoing _ (D.orientation_crossing_outSlotOdd c),
-    Quotient.eq]
-  change D.componentPermOutgoing.SameCycle _ _ ↔ _
+  rw [← D.crossingComponentOfHalfEdge_outgoingHalfEdge c 0,
+    ← D.crossingComponentOfHalfEdge_outgoingHalfEdge c 1,
+    D.crossingComponentOfHalfEdge_of_outgoing _ (D.orientation_outgoingHalfEdge c 0),
+    D.crossingComponentOfHalfEdge_of_outgoing _ (D.orientation_outgoingHalfEdge c 1)]
+  simp only [Quotient.eq, SameCycle.setoid]
   rw [hsub, sameCycle_subtypePerm]
 
 /-- At crossing `j`, `resolvedTurn c t * crossingTurn` acts on slot `k` by
@@ -581,10 +536,9 @@ private theorem resolvedTurn_mul_edgePair_eq_of_slotSmoothing_mul_eq (t : Bool)
 the two outgoing half-edges at `c` and swapping the two incoming half-edges at `c`. -/
 private theorem resolvedTurn_seifertState_mul_edgePair_eq :
     D.toPDCode.resolvedTurn c (D.seifertState c) * D.edgePair.val =
-      Equiv.swap (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-          (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) *
-        (Equiv.swap (D.crossingTurn (D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))))
-            (D.crossingTurn (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))) *
+      Equiv.swap (D.outgoingHalfEdge c 0) (D.outgoingHalfEdge c 1) *
+        (Equiv.swap (D.crossingTurn (D.outgoingHalfEdge c 0))
+            (D.crossingTurn (D.outgoingHalfEdge c 1)) *
           D.toPDCode.componentPerm) := by
   have hchoice : (bif D.seifertState c then D.overPair c else !D.overPair c) =
       Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) := by
@@ -593,7 +547,7 @@ private theorem resolvedTurn_seifertState_mul_edgePair_eq :
   have hct (s : Fin 4) : D.crossingTurn (D.crossing c s) =
       D.crossing c (PDCode.oppositeCrossingSlot s) := by
     rw [PDCode.crossing_apply, PDCode.crossingTurn_crossing]
-  simp only [hct]
+  simp only [outgoingHalfEdge, hct]
   exact D.resolvedTurn_mul_edgePair_eq_of_slotSmoothing_mul_eq c _ _ _ _ _
     (by rw [hchoice, slotSmoothing_xor_mul_oppositeCrossingSlot])
 
@@ -601,10 +555,8 @@ private theorem resolvedTurn_seifertState_mul_edgePair_eq :
 outgoing-to-incoming transpositions at `c`. -/
 private theorem resolvedTurn_not_seifertState_mul_edgePair_eq :
     D.toPDCode.resolvedTurn c (!D.seifertState c) * D.edgePair.val =
-      Equiv.swap (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))
-          (D.crossingTurn (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))) *
-        (Equiv.swap (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-            (D.crossingTurn (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))) *
+      Equiv.swap (D.outgoingHalfEdge c 1) (D.crossingTurn (D.outgoingHalfEdge c 0)) *
+        (Equiv.swap (D.outgoingHalfEdge c 0) (D.crossingTurn (D.outgoingHalfEdge c 1)) *
           D.toPDCode.componentPerm) := by
   have hchoice : (bif !D.seifertState c then D.overPair c else !D.overPair c) =
       !Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) := by
@@ -613,9 +565,20 @@ private theorem resolvedTurn_not_seifertState_mul_edgePair_eq :
   have hct (s : Fin 4) : D.crossingTurn (D.crossing c s) =
       D.crossing c (PDCode.oppositeCrossingSlot s) := by
     rw [PDCode.crossing_apply, PDCode.crossingTurn_crossing]
-  simp only [hct]
+  simp only [outgoingHalfEdge, hct]
   exact D.resolvedTurn_mul_edgePair_eq_of_slotSmoothing_mul_eq c _ _ _ _ _
     (by rw [hchoice, slotSmoothing_not_xor_mul_oppositeCrossingSlot])
+
+/-- Convert an orbit-count shift on `resolvedTurn * edgePair` into a component-count shift on
+`resolveCrossing`. -/
+private theorem componentCount_resolveCrossing_eq_of_orbitCount (t : Bool) {a b : ℕ}
+    (h : orbitCount (D.toPDCode.resolvedTurn c t * D.edgePair.val) + 2 * a =
+      orbitCount D.toPDCode.componentPerm + 2 * b) :
+    (D.toPDCode.resolveCrossing c t).componentCount + a = D.componentCount + b := by
+  have htwo := D.toPDCode.two_mul_componentCount_resolveCrossing c t
+  obtain ⟨r, hr⟩ := D.toPDCode.even_orbitCount_componentPerm
+  rw [D.toPDCode.componentCount_eq, D.toPDCode.crossingComponentCount_def]
+  omega
 
 /-- **Coherent resolution of a self-crossing splits the component.** When the two strands at `c`
 belong to the same component of `D`, smoothing `c` by `D.seifertState c` increases the number of
@@ -624,31 +587,20 @@ theorem componentCount_resolveCrossing_seifertState_of_eq
     (hc : D.crossingComponentOfHalfEdge (D.crossing c 0) =
       D.crossingComponentOfHalfEdge (D.crossing c 1)) :
     (D.toPDCode.resolveCrossing c (D.seifertState c)).componentCount = D.componentCount + 1 := by
-  have hu : D.toPDCode.componentPerm.SameCycle
-      (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-      (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) :=
-    (D.crossingComponentOfHalfEdge_zero_eq_one_iff c).mp hc
-  set u₀ := D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))
-  set u₁ := D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))
-  have hu₀ : D.orientation u₀ = true := D.orientation_crossing_outSlotEven c
-  have hu₁ : D.orientation u₁ = true := D.orientation_crossing_outSlotOdd c
-  have hv₀ : D.orientation (D.crossingTurn u₀) = false := by simp [hu₀]
-  have hv₁ : D.orientation (D.crossingTurn u₁) = false := by simp [hu₁]
-  have hu_ne : u₀ ≠ u₁ := fun h ↦
-    outSlotEven_ne_outSlotOdd _ _ (D.toPDCode.crossing_eq_crossing_iff.mp h).2
-  have hv_ne : D.crossingTurn u₀ ≠ D.crossingTurn u₁ := D.toPDCode.crossingTurn.injective.ne hu_ne
-  have hv : D.toPDCode.componentPerm.SameCycle (D.crossingTurn u₀) (D.crossingTurn u₁) :=
-    D.sameCycle_componentPerm_crossingTurn_iff.mpr hu
-  have hu' : (Equiv.swap (D.crossingTurn u₀) (D.crossingTurn u₁) *
-      D.toPDCode.componentPerm).SameCycle u₀ u₁ :=
-    (D.sameCycle_swap_incoming_mul_componentPerm_iff hv₀ hv₁ hu₀).mpr hu
-  have htwo := D.toPDCode.two_mul_componentCount_resolveCrossing c (D.seifertState c)
-  rw [D.resolvedTurn_seifertState_mul_edgePair_eq c,
-    orbitCount_swap_mul_of_sameCycle hu_ne hu',
-    orbitCount_swap_mul_of_sameCycle hv_ne hv] at htwo
-  obtain ⟨r, hr⟩ := D.toPDCode.even_orbitCount_componentPerm
-  rw [D.toPDCode.componentCount_eq, D.toPDCode.crossingComponentCount_def]
-  omega
+  have hu := (D.crossingComponentOfHalfEdge_zero_eq_one_iff c).mp hc
+  have hu₀ := D.orientation_outgoingHalfEdge c 0
+  have hu₁ := D.orientation_outgoingHalfEdge c 1
+  have hv₀ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 0)) = false := by simp [hu₀]
+  have hv₁ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 1)) = false := by simp [hu₁]
+  have hu_ne := D.outgoingHalfEdge_zero_ne_one c
+  have hv_ne := D.toPDCode.crossingTurn.injective.ne hu_ne
+  have hv := D.sameCycle_componentPerm_crossingTurn_iff.mpr hu
+  have hu' := (D.sameCycle_swap_incoming_mul_componentPerm_iff hv₀ hv₁ hu₀).mpr hu
+  simpa using D.componentCount_resolveCrossing_eq_of_orbitCount c (D.seifertState c)
+    (a := 0) (b := 1) (by
+      rw [D.resolvedTurn_seifertState_mul_edgePair_eq c,
+        orbitCount_swap_mul_of_sameCycle hu_ne hu',
+        orbitCount_swap_mul_of_sameCycle hv_ne hv])
 
 /-- **Non-coherent resolution of a self-crossing keeps the component count.** When the two strands
 at `c` belong to the same component of `D`, smoothing `c` by `!D.seifertState c` reconnects that
@@ -657,40 +609,25 @@ theorem componentCount_resolveCrossing_not_seifertState_of_eq
     (hc : D.crossingComponentOfHalfEdge (D.crossing c 0) =
       D.crossingComponentOfHalfEdge (D.crossing c 1)) :
     (D.toPDCode.resolveCrossing c (!D.seifertState c)).componentCount = D.componentCount := by
-  have hu : D.toPDCode.componentPerm.SameCycle
-      (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-      (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) :=
-    (D.crossingComponentOfHalfEdge_zero_eq_one_iff c).mp hc
-  set u₀ := D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))
-  set u₁ := D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))
-  have hu₀ : D.orientation u₀ = true := D.orientation_crossing_outSlotEven c
-  have hu₁ : D.orientation u₁ = true := D.orientation_crossing_outSlotOdd c
-  have hv₀ : D.orientation (D.crossingTurn u₀) = false := by simp [hu₀]
-  have hv₁ : D.orientation (D.crossingTurn u₁) = false := by simp [hu₁]
-  have hnot₁ : ¬D.toPDCode.componentPerm.SameCycle u₀ (D.crossingTurn u₁) :=
-    D.not_sameCycle_componentPerm_of_orientation hu₀ hv₁
-  have hm₁ : (Equiv.swap u₀ (D.crossingTurn u₁) * D.toPDCode.componentPerm).SameCycle
-      u₀ (D.crossingTurn u₁) :=
-    sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle
-      (D.toPDCode.componentPerm.injective.mem_periodicPts _) hnot₁
-  have hv : D.toPDCode.componentPerm.SameCycle (D.crossingTurn u₀) (D.crossingTurn u₁) :=
-    D.sameCycle_componentPerm_crossingTurn_iff.mpr hu
-  have hm₂ : (Equiv.swap u₀ (D.crossingTurn u₁) * D.toPDCode.componentPerm).SameCycle
-      u₁ (D.crossingTurn u₀) :=
-    (hm₁.swap_mul_of_sameCycle hu.symm).trans (hm₁.trans (hm₁.swap_mul_of_sameCycle hv.symm))
-  have hne₂ : u₁ ≠ D.crossingTurn u₀ := fun h ↦ by
-    have := congrArg D.orientation h
-    simp [hu₁, hv₀] at this
+  have hu := (D.crossingComponentOfHalfEdge_zero_eq_one_iff c).mp hc
+  have hu₀ := D.orientation_outgoingHalfEdge c 0
+  have hu₁ := D.orientation_outgoingHalfEdge c 1
+  have hv₀ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 0)) = false := by simp [hu₀]
+  have hv₁ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 1)) = false := by simp [hu₁]
+  have hnot₁ := D.not_sameCycle_componentPerm_of_orientation hu₀ hv₁
+  have hm₂ := (D.sameCycle_swap_outgoing_incoming_mul_componentPerm_iff hu₀ hu₁).mpr hu
+  have hne₂ : D.outgoingHalfEdge c 1 ≠ D.crossingTurn (D.outgoingHalfEdge c 0) :=
+    fun h ↦ by simpa [hu₁, hv₀] using congrArg D.orientation h
   have hstep₁ := orbitCount_swap_mul_add_one_of_not_sameCycle hnot₁
   have hstep₂ := orbitCount_swap_mul_of_sameCycle hne₂ hm₂
-  have htwo := D.toPDCode.two_mul_componentCount_resolveCrossing c (!D.seifertState c)
-  rw [D.resolvedTurn_not_seifertState_mul_edgePair_eq c, hstep₂] at htwo
-  obtain ⟨r, hr⟩ := D.toPDCode.even_orbitCount_componentPerm
-  rw [D.toPDCode.componentCount_eq, D.toPDCode.crossingComponentCount_def]
-  omega
+  simpa using D.componentCount_resolveCrossing_eq_of_orbitCount c (!D.seifertState c)
+    (a := 0) (b := 0) (by
+      rw [D.resolvedTurn_not_seifertState_mul_edgePair_eq c, hstep₂]
+      omega)
 
-/-- **At a self-crossing, the `A`- and `B`-resolutions have component counts `c` and `c + 1`.** -/
-theorem componentCount_resolveCrossing_true_and_false_of_eq
+/-- **At a self-crossing, the `A`- and `B`-resolutions have component counts `D.componentCount` and
+`D.componentCount + 1` in some order** (with `D.componentCount + 1` at `D.seifertState c`). -/
+theorem componentCount_resolveCrossing_eq_and_eq_add_one_or_eq_add_one_and_eq_of_eq
     (hc : D.crossingComponentOfHalfEdge (D.crossing c 0) =
       D.crossingComponentOfHalfEdge (D.crossing c 1)) :
     ((D.toPDCode.resolveCrossing c true).componentCount = D.componentCount ∧
@@ -709,68 +646,36 @@ private theorem componentCount_resolveCrossing_seifertState_add_one_of_ne
     (hc : D.crossingComponentOfHalfEdge (D.crossing c 0) ≠
       D.crossingComponentOfHalfEdge (D.crossing c 1)) :
     (D.toPDCode.resolveCrossing c (D.seifertState c)).componentCount + 1 = D.componentCount := by
-  have hnu : ¬D.toPDCode.componentPerm.SameCycle
-      (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-      (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) :=
-    fun h ↦ hc ((D.crossingComponentOfHalfEdge_zero_eq_one_iff c).mpr h)
-  set u₀ := D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))
-  set u₁ := D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))
-  have hu₀ : D.orientation u₀ = true := D.orientation_crossing_outSlotEven c
-  have hu₁ : D.orientation u₁ = true := D.orientation_crossing_outSlotOdd c
-  have hv₀ : D.orientation (D.crossingTurn u₀) = false := by simp [hu₀]
-  have hv₁ : D.orientation (D.crossingTurn u₁) = false := by simp [hu₁]
-  have hnv : ¬D.toPDCode.componentPerm.SameCycle (D.crossingTurn u₀) (D.crossingTurn u₁) :=
-    D.sameCycle_componentPerm_crossingTurn_iff.not.mpr hnu
-  have hnu' : ¬(Equiv.swap (D.crossingTurn u₀) (D.crossingTurn u₁) *
-      D.toPDCode.componentPerm).SameCycle u₀ u₁ :=
-    (D.sameCycle_swap_incoming_mul_componentPerm_iff hv₀ hv₁ hu₀).not.mpr hnu
+  have hnu := (D.crossingComponentOfHalfEdge_zero_eq_one_iff c).not.mp hc
+  have hu₀ := D.orientation_outgoingHalfEdge c 0
+  have hu₁ := D.orientation_outgoingHalfEdge c 1
+  have hv₀ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 0)) = false := by simp [hu₀]
+  have hv₁ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 1)) = false := by simp [hu₁]
+  have hnv := D.sameCycle_componentPerm_crossingTurn_iff.not.mpr hnu
+  have hnu' := (D.sameCycle_swap_incoming_mul_componentPerm_iff hv₀ hv₁ hu₀).not.mpr hnu
   have hstep₁ := orbitCount_swap_mul_add_one_of_not_sameCycle hnv
   have hstep₂ := orbitCount_swap_mul_add_one_of_not_sameCycle hnu'
-  have horb : orbitCount (D.toPDCode.resolvedTurn c (D.seifertState c) * D.edgePair.val) + 2 =
-      orbitCount D.toPDCode.componentPerm := by
-    rw [D.resolvedTurn_seifertState_mul_edgePair_eq c]
-    dsimp only [u₀, u₁] at hstep₁ hstep₂
-    omega
-  have htwo := D.toPDCode.two_mul_componentCount_resolveCrossing c (D.seifertState c)
-  obtain ⟨r, hr⟩ := D.toPDCode.even_orbitCount_componentPerm
-  rw [D.toPDCode.componentCount_eq, D.toPDCode.crossingComponentCount_def]
-  omega
+  simpa using D.componentCount_resolveCrossing_eq_of_orbitCount c (D.seifertState c)
+    (a := 1) (b := 0) (by
+      rw [D.resolvedTurn_seifertState_mul_edgePair_eq c]
+      omega)
 
 private theorem componentCount_resolveCrossing_not_seifertState_add_one_of_ne
     (hc : D.crossingComponentOfHalfEdge (D.crossing c 0) ≠
       D.crossingComponentOfHalfEdge (D.crossing c 1)) :
     (D.toPDCode.resolveCrossing c (!D.seifertState c)).componentCount + 1 = D.componentCount := by
-  have hnu : ¬D.toPDCode.componentPerm.SameCycle
-      (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-      (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) :=
-    fun h ↦ hc ((D.crossingComponentOfHalfEdge_zero_eq_one_iff c).mpr h)
-  set u₀ := D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))
-  set u₁ := D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))
-  have hu₀ : D.orientation u₀ = true := D.orientation_crossing_outSlotEven c
-  have hu₁ : D.orientation u₁ = true := D.orientation_crossing_outSlotOdd c
-  have hv₀ : D.orientation (D.crossingTurn u₀) = false := by simp [hu₀]
-  have hv₁ : D.orientation (D.crossingTurn u₁) = false := by simp [hu₁]
-  have hnot₁ : ¬D.toPDCode.componentPerm.SameCycle u₀ (D.crossingTurn u₁) :=
-    D.not_sameCycle_componentPerm_of_orientation hu₀ hv₁
-  have hnot₂ : ¬(Equiv.swap u₀ (D.crossingTurn u₁) * D.toPDCode.componentPerm).SameCycle
-      u₁ (D.crossingTurn u₀) := by
-    intro hm
-    rcases hm.sameCycle_or_of_swap_mul with h1 | ⟨h2, -⟩
-    · exact D.not_sameCycle_componentPerm_of_orientation hu₁ hv₀ h1
-    · rcases h2 with h2a | h2b
-      · exact hnu h2a.symm
-      · exact D.not_sameCycle_componentPerm_of_orientation hu₁ hv₁ h2b
+  have hnu := (D.crossingComponentOfHalfEdge_zero_eq_one_iff c).not.mp hc
+  have hu₀ := D.orientation_outgoingHalfEdge c 0
+  have hu₁ := D.orientation_outgoingHalfEdge c 1
+  have hv₁ : D.orientation (D.crossingTurn (D.outgoingHalfEdge c 1)) = false := by simp [hu₁]
+  have hnot₁ := D.not_sameCycle_componentPerm_of_orientation hu₀ hv₁
+  have hnot₂ := (D.sameCycle_swap_outgoing_incoming_mul_componentPerm_iff hu₀ hu₁).not.mpr hnu
   have hstep₁ := orbitCount_swap_mul_add_one_of_not_sameCycle hnot₁
   have hstep₂ := orbitCount_swap_mul_add_one_of_not_sameCycle hnot₂
-  have horb : orbitCount (D.toPDCode.resolvedTurn c (!D.seifertState c) * D.edgePair.val) + 2 =
-      orbitCount D.toPDCode.componentPerm := by
-    rw [D.resolvedTurn_not_seifertState_mul_edgePair_eq c]
-    dsimp only [u₀, u₁] at hstep₁ hstep₂
-    omega
-  have htwo := D.toPDCode.two_mul_componentCount_resolveCrossing c (!D.seifertState c)
-  obtain ⟨r, hr⟩ := D.toPDCode.even_orbitCount_componentPerm
-  rw [D.toPDCode.componentCount_eq, D.toPDCode.crossingComponentCount_def]
-  omega
+  simpa using D.componentCount_resolveCrossing_eq_of_orbitCount c (!D.seifertState c)
+    (a := 1) (b := 0) (by
+      rw [D.resolvedTurn_not_seifertState_mul_edgePair_eq c]
+      omega)
 
 /-- **Resolving a crossing between two different components merges them**, so both the `A`- and
 `B`-resolutions have `D.componentCount - 1` components. -/
@@ -781,8 +686,7 @@ theorem componentCount_resolveCrossing_add_one_of_ne
   by_cases ht : t = D.seifertState c
   · subst ht
     exact D.componentCount_resolveCrossing_seifertState_add_one_of_ne c hc
-  · have ht' : t = !D.seifertState c := by cases t <;> cases h : D.seifertState c <;> simp_all
-    subst ht'
+  · obtain rfl := Bool.eq_not_of_ne ht
     exact D.componentCount_resolveCrossing_not_seifertState_add_one_of_ne c hc
 
 /-- Subtracted form of `TauCeti.OrientedPDCode.componentCount_resolveCrossing_add_one_of_ne`. -/
