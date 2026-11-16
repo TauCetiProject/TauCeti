@@ -127,6 +127,20 @@ noncomputable def fromIdeal :
     ideal A B →ₗ[CompletedTensor A B B] ContinuousKaehlerDifferential A B :=
   (ideal A B).toCotangent
 
+/-- The completed-diagonal presentation of continuous differentials. This equivalence exposes
+its cotangent carrier without unfolding the opaque public module constructor. -/
+noncomputable def cotangentEquiv :
+    ContinuousKaehlerDifferential A B ≃ₗ[CompletedTensor A B B] (ideal A B).Cotangent :=
+  LinearEquiv.refl _ _
+
+/-- The cotangent presentation sends a diagonal class to the native cotangent class. -/
+@[simp] theorem cotangentEquiv_fromIdeal (x : ideal A B) :
+    cotangentEquiv A B (fromIdeal A B x) = (ideal A B).toCotangent x := (rfl)
+
+/-- Native cotangent classes represent the corresponding continuous differentials. -/
+@[simp] theorem cotangentEquiv_symm_toCotangent (x : ideal A B) :
+    (cotangentEquiv A B).symm ((ideal A B).toCotangent x) = fromIdeal A B x := (rfl)
+
 /-- Every continuous differential is the class of an element of the completed diagonal ideal. -/
 theorem fromIdeal_surjective : Function.Surjective (fromIdeal A B) :=
   (ideal A B).toCotangent_surjective

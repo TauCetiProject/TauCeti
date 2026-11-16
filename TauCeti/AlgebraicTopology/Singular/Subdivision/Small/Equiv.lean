@@ -37,7 +37,9 @@ the space.  The inclusion itself is natural, hence so is the induced isomorphism
   `TauCeti.comp_singularPrismX_mem_chainRange`: barycentric subdivision and its prism operator
   preserve the chains of every affinely stable subcomplex.
 * `TauCeti.smallSingularChainHomotopyEquiv`: the small-chain inclusion is a chain homotopy
-  equivalence, and `TauCeti.smallSingularHomologyIso` the induced isomorphism on homology.
+  equivalence, and `TauCeti.smallSingularHomologyIso` the induced isomorphism on homology. Its
+  homotopy inverse is a strict retraction
+  (`TauCeti.chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv`).
 
 ## References
 
@@ -106,6 +108,15 @@ lemma smallSingularChainHomotopyEquiv_hom :
     (smallSingularChainHomotopyEquiv R U hU hcov).hom =
       SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
   chainComplexMapHomotopyEquivOfSubdivision_hom _ _ _
+
+/-- The homotopy inverse of the small-chain homotopy equivalence is a strict retraction of the
+inclusion of the chains subordinate to the cover. -/
+@[reassoc (attr := simp)]
+lemma chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv :
+    SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫
+      (smallSingularChainHomotopyEquiv R U hU hcov).inv = 𝟙 _ := by
+  rw [smallSingularChainHomotopyEquiv, chainComplexMapHomotopyEquivOfSubdivision_inv,
+    chainComplexMap_comp_subdivisionRetraction]
 
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the

@@ -14,6 +14,10 @@ Two parallel edges between `0` and `1` are combined with a loop at `0`. The vert
 to both input graphs, but their edge identities are disjoint. The incidence count there is three,
 whereas the nonloop incidence count is two and the loop count is one.
 
+Selecting only vertex `0` gives one internal edge but three incident edges. Selecting both
+endpoints makes all three edges internal, without counting any edge identity twice. An ambient
+vertex outside the graph contributes nothing.
+
 Both ambient types are `ℕ`. Thus the example also checks that finiteness of the actual vertex
 and edge sets, rather than the ambient types, suffices for the counting API.
 -/
@@ -84,5 +88,49 @@ theorem incidenceCount_one : graph.incidenceCount 1 = 2 := by
   have hp : parallel.incidenceSet 1 = {0, 1} := by ext e; simp
   have hl : loop.incidenceSet 1 = ∅ := by ext e; simp
   simp [graph, Graph.incidenceCount_def, hp, hl]
+
+/-- The links are the two parallel edges and the loop at `0`. -/
+@[simp]
+theorem graph_isLink (e x y : ℕ) :
+    graph.IsLink e x y ↔
+      ((e = 0 ∨ e = 1) ∧ ((x = 0 ∧ y = 1) ∨ (x = 1 ∧ y = 0))) ∨
+        (e = 2 ∧ x = 0 ∧ y = 0) := by
+  simp [graph, parallel, loop]
+
+/-- Enumerate the actual edge identities for finite edge-set computations. -/
+noncomputable instance : Fintype E(graph) := Fintype.ofFinite _
+
+open Classical in
+/-- Only the loop is internal to the singleton vertex set. -/
+theorem internal_singleton :
+    (graph.internalEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).map
+      (Function.Embedding.subtype _) = {2} := by
+  ext e
+  simp [graph_isLink]
+
+open Classical in
+/-- The loop and both parallel edges are incident with `0`. -/
+theorem incident_singleton :
+    (graph.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).map
+      (Function.Embedding.subtype _) = {0, 1, 2} := by
+  ext e
+  simp [Graph.Inc, graph_isLink]
+  aesop
+
+open Classical in
+/-- Selecting both endpoints still counts each edge identity only once. -/
+theorem internal_pair :
+    (graph.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(graph)))).map
+      (Function.Embedding.subtype _) = {0, 1, 2} := by
+  ext e
+  simp [graph_isLink]
+  tauto
+
+open Classical in
+/-- An ambient vertex outside the graph cannot contribute an incident edge. -/
+theorem incident_outside :
+    graph.incidentEdges (({42} : Finset ℕ).subtype (· ∈ V(graph))) = ∅ := by
+  ext e
+  simp [Graph.Inc, graph_isLink]
 
 end TauCeti.Examples.IncidenceUnion

@@ -60,6 +60,12 @@ example.
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
   relations characterized fiber by fiber through the linear theory.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`: a map into a vector space pulling a
+  constant symplectic form back to a nondegenerate form at a point, such as a Darboux chart, is an
+  immersion there.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`: such a map with
+  surjective differential carries a tamed almost complex structure to one tamed by the constant
+  form.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
   symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
   partial-diffeomorphism pullback characterizations
@@ -362,6 +368,43 @@ space. -/
 lemma Compatible.compatibleAt (h : form.Compatible J) (x : M) :
     (h.isNondegenerate.symplecticFormAt x).Compatible (J.almostComplexStructureAt x) :=
   h.isNondegenerate.compatible_iff.mp h x
+
+section Chart
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω₀ : SymplecticForm V} {φ : M → V}
+  {x : M}
+
+/-- **A symplectic chart is an immersion.** If `φ` pulls the symplectic form `ω₀` back to the
+nondegenerate form `form` at `x`, its differential at `x` is injective. -/
+theorem IsNondegenerate.injective_mvfderiv (h : form.IsNondegenerate)
+    (hform : ∀ v w : TangentSpace I x,
+      form.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w)) :
+    Function.Injective (mvfderiv I φ x) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  -- `v` pairs to zero with every tangent vector, so it vanishes by nondegeneracy of `form_x`.
+  refine (h.symplecticFormAt x).separatingLeft v fun w ↦ ?_
+  have hvw := (h.symplecticFormAt_apply x v w).trans (hform v w)
+  rw [hv] at hvw
+  exact hvw.trans (LinearMap.map_zero₂ _ _)
+
+/-- **Taming in a symplectic chart.** Let `φ` have surjective differential at `x` and pull the
+symplectic form `ω₀` back to the nondegenerate form `form` at `x`. If `J` is tamed by `form_x` and
+`J'` is `J` read in the chart, `dφ ∘ J = J' ∘ dφ`, then `J'` is tamed by `ω₀`. -/
+theorem IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv (h : form.IsNondegenerate)
+    (hsurj : Function.Surjective (mvfderiv I φ x))
+    (hform : ∀ v w : TangentSpace I x,
+      form.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    {J : AlmostComplexStructure (TangentSpace I x)} {J' : AlmostComplexStructure V}
+    (hJ : IsComplexLinearMap J J' (mvfderiv I φ x).toLinearMap)
+    (hJt : (h.symplecticFormAt x).Tames J) : ω₀.Tames J' := by
+  intro w hw
+  obtain ⟨v, rfl⟩ := hsurj w
+  have hJv := LinearMap.congr_fun hJ v
+  simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
+  rw [← hJv, ← hform, ← IsNondegenerate.symplecticFormAt_apply]
+  exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
+
+end Chart
 
 end SmoothTwoForm
 
