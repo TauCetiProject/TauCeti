@@ -20,7 +20,6 @@ import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.ContinuousMap.Ascoli
 
@@ -1052,7 +1051,6 @@ theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_set
     (fun n ↦ hfloer _) hwin (fun α β ↦ (hen α β).comp hχ) hv
   set x : ℝ → V := fun t ↦ g (0, t)
   have hxper : Periodic x 1 := fun t ↦ hgper (0, t)
-  have hxc : Continuous x := g.continuous.comp (continuous_const.prodMk continuous_id)
   have hgx : (g : ℝ × ℝ → V) = fun z ↦ x z.2 := funext fun z ↦
     calc g z = g (z.1, Int.fract z.2) :=
           (Periodic.apply_fract (f := fun t ↦ g (z.1, t)) (fun t ↦ hgper (z.1, t)) z.2).symm
@@ -1060,15 +1058,9 @@ theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_set
       _ = x z.2 := hxper.apply_fract z.2
   -- `x' = X_{H_t}(x)` on `[0, 1]` and periodicity give the equation on all of `ℝ`.
   set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
-  have hY : Continuous Y :=
-    (ω.continuous_uncurry_hamiltonianVectorField hH1).comp (continuous_id.prodMk hxc)
   have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
-  have hint : ∀ t ∈ Icc (0 : ℝ) 1, x t - x 0 = ∫ τ in 0..t, Y τ := fun t ht ↦
-    (intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1 hxc.continuousOn
-      (fun τ hτ ↦ (hder τ ⟨hτ.1.le, hτ.2.le.trans ht.2⟩).hasDerivAt
-        (Icc_mem_nhds hτ.1 (hτ.2.trans_le ht.2))) (hY.intervalIntegrable _ _)).symm
   exact ⟨fun n ↦ φ (ψ n), hφ.comp hψ, x, hxper,
-    hasDerivAt_of_periodic_of_sub_eq_integral one_pos hxper hY hYper hint, hgx ▸ htr⟩
+    hasDerivAt_of_periodic_of_hasDerivWithinAt one_pos hxper hYper hder, hgx ▸ htr⟩
 
 /-- **A finite-energy Floer half-cylinder breaks off an orbit along every sequence.** Under the
 hypotheses of `TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`, let `σ_n → ∞`.

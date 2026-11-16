@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 
 /-!
 # The fundamental theorem of calculus for nonnegative derivatives
@@ -19,7 +19,8 @@ at an endpoint, such as `1 / √(x - a)`. This file records the combined stateme
 
 In the converse direction, FTC-1 recovers the derivative of a `T`-periodic function `x` from the
 integral equation `x(t) - x(0) = ∫₀ᵗ Y` over a single period `[0, T]`, when `Y` is continuous and
-`T`-periodic: periodicity propagates the equation to all of `ℝ`.
+`T`-periodic: FTC-1 gives the derivative within `[0, T]`, and periodicity extends it to all of `ℝ`
+(`TauCeti.hasDerivAt_of_periodic_of_hasDerivWithinAt`).
 
 It also records that along a loop `f` (with `f a = f b`) the integral of `B (f x) (f' x)` for a
 continuous bilinear map `B` is unchanged by subtracting a constant from `f`, because `∫ f' = 0`.
@@ -59,29 +60,11 @@ theorem hasDerivAt_of_periodic_of_sub_eq_integral {E : Type*} [NormedAddCommGrou
     [NormedSpace ℝ E] [CompleteSpace E] {x Y : ℝ → E} {T : ℝ} (hT : 0 < T)
     (hxper : Function.Periodic x T) (hY : Continuous Y) (hYper : Function.Periodic Y T)
     (hint : ∀ t ∈ Icc 0 T, x t - x 0 = ∫ τ in 0..t, Y τ) (t : ℝ) : HasDerivAt x (Y t) t := by
-  have hxT : x T = x 0 := by simpa using hxper 0
-  have hintT : ∫ τ in 0..T, Y τ = 0 := by
-    rw [← hint T ⟨hT.le, le_rfl⟩, hxT, sub_self]
-  -- The difference of the two sides of the integral equation is periodic and vanishes on
-  -- `[0, T)`, so it vanishes everywhere.
-  have hall : ∀ t, x t = x 0 + ∫ τ in 0..t, Y τ := by
-    set Φ : ℝ → E := fun t ↦ x 0 + (∫ τ in 0..t, Y τ) - x t
-    have hΦper : Function.Periodic Φ T := fun t ↦ by
-      have h := hYper.intervalIntegral_add_eq t 0
-      rw [zero_add, hintT] at h
-      simp only [Φ, hxper t]
-      rw [← _root_.intervalIntegral.integral_add_adjacent_intervals (hY.intervalIntegrable 0 t)
-        (hY.intervalIntegrable t (t + T)), h, add_zero]
-    intro t
-    obtain ⟨r, hr, htr⟩ := hΦper.exists_mem_Ico₀ hT t
-    have h0 : Φ r = 0 := by
-      simp only [Φ]
-      rw [← hint r (Ico_subset_Icc_self hr)]
-      abel
-    exact (sub_eq_zero.1 (htr.trans h0)).symm
-  have h := (_root_.intervalIntegral.integral_hasDerivAt_right (hY.intervalIntegrable 0 t)
-    (hY.stronglyMeasurableAtFilter _ _) hY.continuousAt).const_add (x 0)
-  exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall hall)
+  refine hasDerivAt_of_periodic_of_hasDerivWithinAt hT hxper hYper (fun s hs ↦ ?_) t
+  -- On `[0, T]`, `x` agrees with `x 0 + ∫₀ᵗ Y`, which has derivative `Y` by FTC-1.
+  exact ((_root_.intervalIntegral.integral_hasDerivAt_right (hY.intervalIntegrable 0 s)
+    (hY.stronglyMeasurableAtFilter _ _) hY.continuousAt).const_add (x 0)).hasDerivWithinAt
+    |>.congr_of_mem (fun r hr ↦ by rw [← hint r hr, add_sub_cancel]) hs
 
 end TauCeti
 
