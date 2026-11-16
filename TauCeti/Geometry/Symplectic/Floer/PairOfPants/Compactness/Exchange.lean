@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the input-exchange family
@@ -38,7 +37,7 @@ applies on every compact window `D` of `S`.
 * `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_exchangeAlmostComplex`,
   in the same namespace, applies it to the almost complex structures
   `TauCeti.Floer.exchangeAlmostComplex` of the family, built from an `ω`-compatible base structure
-  and period-one `C²` end structures (`TauCeti.Floer.contMDiffAt_exchangeAlmostComplex`).
+  and period-one `C²` end structures (`TauCeti.Floer.contDiffAt_exchangeAlmostComplex`).
 
 Both give a threshold `δ > 0` such that every sequence of solutions for parameters `cₖ` in a
 compact window `C ⊆ [0, 1]`, with action differences `aₖ(0) + aₖ(1) - aₖ(∞) ≤ A` and images of
@@ -59,7 +58,6 @@ breaking along the three ends are not treated here.
 public section
 
 open Complex Filter Function MeasureTheory Metric Set Topology TauCeti.ThricePuncturedSphere
-open scoped Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -67,66 +65,6 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
-
-/-- The energy of a solution for a member `c ∈ [0, 1]` of the input-exchange family over an open
-subset `Ω` of `S`, as a Bochner integral: it is integrable and at most `a_0 + a_1 - a_∞ + B_0 + B_1
-+ B_∞`, where `a_q` are the limiting actions of the end loops. -/
-private theorem integrableOn_and_setIntegral_floerEnergyDensity_exchangePerturbation_le
-    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 3 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
-    {c : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z))
-    (hu : ContDiffOn ℝ 3 u thricePuncturedSphereReal)
-    (hfl : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv
-          (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I)
-          u z : ℝ × ℝ →ₗ[ℝ] V))
-    {a : Puncture → ℝ}
-    (ha₀ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H .zero) (fun t ↦ u (equivRealProdCLM
-      (Puncture.zero.cylindricalEndLift (↑R + ↑t * I))))) atTop (𝓝 (a .zero)))
-    (ha₁ : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H .one) (fun t ↦ u (equivRealProdCLM
-      (Puncture.one.cylindricalEndLift (↑R + ↑t * I))))) atTop (𝓝 (a .one)))
-    (ha : Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (H .inf) (fun t ↦ u (equivRealProdCLM
-      (↑c + Puncture.inf.cylindricalEndLift (↑(-R) + ↑t * I))))) atTop (𝓝 (a .inf)))
-    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hΩS : Ω ⊆ thricePuncturedSphereReal) :
-    IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u) Ω ∧
-    ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u z ≤
-      a .zero + a .one - a .inf + ∑ q, B q := by
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
-  have hHs₁ (q : Puncture) : ContDiff ℝ 1 (uncurry (H q)) := (hHs q).of_le (by norm_num)
-  have hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u z :=
-    fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hΩS hz)) (hfl z (hΩS hz))
-  -- The action bound `a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` makes the energy bound nonnegative.
-  have hE0 : 0 ≤ a .zero + a .one - a .inf + ∑ q, B q := by
-    linarith [le_add_add_sum_of_tendsto_hamiltonianAction_exchangePerturbation ω hH hHs₁ hB hc.1
-      hc.2 (hu.of_le (by norm_num)) hJ hfl ha₀ ha₁ ha]
-  -- The energy over `Ω` is at most the energy over `S`.
-  have hlin := (lintegral_mono_set hΩS).trans
-    (lintegral_floerEnergyDensity_exchangePerturbation_le ω hH hHs₁ hB hc.1 hc.2
-      (hu.of_le (by norm_num)) hJ hfl ha₀ ha₁ ha)
-  have hKc (v : ℂ) : ContDiffOn ℝ 1
-      (uncurry fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
-    (contDiffAt_uncurry_exchangePerturbation hH hHs₁ c hp.1 p.2 v).contDiffWithinAt
-  have hint : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x I) u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
-      (hu.of_le (by norm_num)) (hKc 1) (hKc I)).mono hΩS).aestronglyMeasurable hΩm,
-      (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩm hf0)).2
-        (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hΩm hf0)
-    hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
 
 /-- **Solutions of the input-exchange family converge off finitely many bubbling points.** Let
 `K_c` be the input-exchange family of period-one `C³` Hamiltonians `H_q` with `|H_q| ≤ B_q`, and
@@ -191,12 +129,28 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ex
     hW (hK' 1) (hK' I) hJ hC hD hK (prod_mono hCU (prod_mono hDS (subset_univ K)))
     fun c hc z hz x _ ↦ hJt c hc z (hDS hz) x
   refine ⟨δ, hδ, fun Ω c u a A hΩ hΩD hcC hu hfl ha₀ ha₁ ha hA huK ↦ ?_⟩
-  have hE (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_exchangePerturbation_le ω hH
-    hHs hB (hC₀₁ (hcC k)) (fun z hz ↦ hJt _ (hcC k) z hz (u k z)) (hu k) (hfl k) (ha₀ k)
-    (ha₁ k) (ha k) hΩ (hΩD.trans hDS)
-  exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono (hΩD.trans hDS))
-    (fun k z hz ↦ hfl k z (hΩD.trans hDS hz)) huK (fun k ↦ (hE k).1)
-    fun k ↦ (hE k).2.trans (by linarith [hA k])
+  have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
+  have hHs₁ (q : Puncture) : ContDiff ℝ 1 (uncurry (H q)) := (hHs q).of_le (by norm_num)
+  have hJk (k : ℕ) : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J (c k) z (u k z)) :=
+    fun z hz ↦ hJt _ (hcC k) z hz _
+  have hKc (k : ℕ) (v : ℂ) : ContDiffOn ℝ 1
+      (uncurry fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
+    (contDiffAt_uncurry_exchangePerturbation hH hHs₁ (c k) hp.1 p.2 v).contDiffWithinAt
+  -- The action bound `a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` makes the energy bound nonnegative.
+  have hE0 : 0 ≤ A + ∑ q, B q := by
+    linarith [hA 0, le_add_add_sum_of_tendsto_hamiltonianAction_exchangePerturbation ω hH hHs₁ hB
+      (hC₀₁ (hcC 0)).1 (hC₀₁ (hcC 0)).2 ((hu 0).of_le (by norm_num)) (hJk 0) (hfl 0) (ha₀ 0)
+      (ha₁ 0) (ha 0)]
+  -- The energy over `Ω` is at most the energy over `S`, hence at most `A + B_0 + B_1 + B_∞`.
+  have hE (k : ℕ) := ω.integrableOn_and_setIntegral_floerEnergyDensity_le
+    isOpen_thricePuncturedSphereReal hΩ.measurableSet hΩS ((hu k).of_le (by norm_num)) (hKc k 1)
+    (hKc k I) (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJk k z (hΩS hz)) (hfl k z (hΩS hz)))
+    hE0 <| (lintegral_floerEnergyDensity_exchangePerturbation_le ω hH hHs₁ hB (hC₀₁ (hcC k)).1
+      (hC₀₁ (hcC k)).2 ((hu k).of_le (by norm_num)) (hJk k) (hfl k) (ha₀ k) (ha₁ k)
+      (ha k)).trans (ENNReal.ofReal_le_ofReal (by linarith [hA k]))
+  exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
+    (fun k ↦ (hE k).1) fun k ↦ (hE k).2
 
 /-- **Solutions of the input-exchange family converge off finitely many bubbling points**, for the
 almost complex structures `TauCeti.Floer.exchangeAlmostComplex` of the family. Let `H_q` be
@@ -252,15 +206,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ex
       (equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap)
       (Ioo (-1) 2 ×ˢ (thricePuncturedSphereReal ×ˢ univ)) := by
     rintro ⟨c, z, x⟩ ⟨hc, hz, -⟩
-    have h := contMDiffAt_exchangeAlmostComplex (I := 𝓘(ℝ, V)) (n := 2) (hJ := hJ) h₀ hJp
-      (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff) hc ⟨_, hz⟩ x
-    have hg : ContMDiffAt 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) 2
-        (fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (equivRealProdCLM.symm p.2.1, p.2.2)))
-        (c, (z, x)) :=
-      contDiff_fst.contMDiff.contMDiffAt.prodMk
-        ((equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)
-          ).contMDiff.contMDiffAt.prodMk (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffAt)
-    exact (contMDiffAt_iff_contDiffAt.1 (h.comp (c, (z, x)) hg)).contDiffWithinAt
+    exact (contDiffAt_exchangeAlmostComplex h₀ hJp hJs hc hz x).contDiffWithinAt
   exact ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_exchange hH hHs hB
     (J := fun c z x ↦ exchangeAlmostComplex h₀ J hJ c (equivRealProdCLM.symm z) x)
     (U := Ioo (-1) 2) isOpen_Ioo hJ' hC

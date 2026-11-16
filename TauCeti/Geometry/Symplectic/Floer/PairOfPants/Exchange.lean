@@ -396,6 +396,18 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
+/-- Reading the domain point in real coordinates is smooth: the map `(c, z, x) ↦ (c, z, x)` from
+`ℝ × (ℝ × ℝ) × V` to `ℝ × ℂ × V` is `C^n` from the self-model of the product to the product of the
+self-models. Composing with it turns the smoothness of data on `ℝ × ℂ × V` into smoothness in real
+coordinates. -/
+theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      (Prod.map id (Prod.map Complex.equivRealProdCLM.symm id) :
+        ℝ × ((ℝ × ℝ) × V) → ℝ × (ℂ × V)) :=
+  contDiff_fst.contMDiff.prodMk
+    ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+      (contDiff_snd.comp contDiff_snd).contMDiff)
+
 /-- **The family is smooth in real coordinates.** For period-one `C^n` Hamiltonians on a normed
 space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
 `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
@@ -406,13 +418,8 @@ theorem contDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic
       exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) (c, (z, x)) := by
   have h := contMDiffAt_exchangePerturbation (I := 𝓘(ℝ, V)) hH
     (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c ⟨_, hz⟩ x
-  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
-      (fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2)))
-      (c, (z, x)) :=
-    contDiff_fst.contMDiff.contMDiffAt.prodMk
-      ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)
-        ).contMDiff.contMDiffAt.prodMk (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffAt)
-  exact contMDiffAt_iff_contDiffAt.1 ((h.comp (c, (z, x)) hg).clm_apply contMDiffAt_const)
+  exact contMDiffAt_iff_contDiffAt.1 ((h.comp (c, (z, x))
+    contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const)
 
 /-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
 space, the member `c` of the family is `C¹` jointly in the domain point of
