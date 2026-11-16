@@ -91,27 +91,27 @@ open scoped BesselPotentialSpace SchwartzMap ZeroAtInfty
 variable {s : ℝ}
 
 /-- The imaginary part of the inclusion `H^s(ℂ) ⊆ L²(ℂ)`, whose kernel is `realPhaseSpace`. -/
-private def imInclusionCLM (hs : 1 < s) : H^{s}(ℂ) →L[ℝ] Lp ℝ 2 (volume : Measure ℂ) :=
+private def imInclusionCLM (hs : 0 ≤ s) : H^{s}(ℂ) →L[ℝ] Lp ℝ 2 (volume : Measure ℂ) :=
   (imCLM.compLpL 2 (volume : Measure ℂ)).comp
-    ((inclusionLp (zero_le_one.trans hs.le) : H^{s}(ℂ) →L[ℂ] _).restrictScalars ℝ)
+    ((inclusionLp hs : H^{s}(ℂ) →L[ℂ] _).restrictScalars ℝ)
 
-/-- **The real phases `H^s(ℂ; ℝ)`**, `s > 1`: the elements of `H^s(ℂ)` whose `L²` function is
+/-- **The real phases `H^s(ℂ; ℝ)`**, `s ≥ 0`: the elements of `H^s(ℂ)` whose `L²` function is
 real almost everywhere (`mem_realPhaseSpace`). It is the kernel of the imaginary part of the
 inclusion `H^s(ℂ) ⊆ L²(ℂ)`, so it is a closed real subspace (`isClosed_realPhaseSpace`), and a
-real Banach space. It is the model space of the charts of the Sobolev framed gauge group `G_s`
-(`gaugeChart`), whence the order condition `s > 1`. -/
-def realPhaseSpace (hs : 1 < s) : Submodule ℝ H^{s}(ℂ) :=
+real Banach space. For `s > 1` it is the model space of the charts of the Sobolev framed gauge
+group `G_s` (`gaugeChart`). -/
+def realPhaseSpace (hs : 0 ≤ s) : Submodule ℝ H^{s}(ℂ) :=
   LinearMap.ker (imInclusionCLM hs : H^{s}(ℂ) →ₗ[ℝ] Lp ℝ 2 (volume : Measure ℂ))
 
 /-- An element of `H^s(ℂ)` is a real phase exactly when its `L²` function is real almost
 everywhere. -/
-theorem mem_realPhaseSpace {hs : 1 < s} {F : H^{s}(ℂ)} :
+theorem mem_realPhaseSpace {hs : 0 ≤ s} {F : H^{s}(ℂ)} :
     F ∈ realPhaseSpace hs ↔
-      ∀ᵐ z ∂volume, ((inclusion (zero_le_one.trans hs.le) F).toLp z).im = 0 := by
+      ∀ᵐ z ∂volume, ((inclusion hs F).toLp z).im = 0 := by
   rw [realPhaseSpace, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, imInclusionCLM,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', toLp_inclusion,
     Lp.eq_zero_iff_ae_eq_zero]
-  have him := imCLM.coeFn_compLpL (p := 2) (μ := volume) (inclusionLp (zero_le_one.trans hs.le) F)
+  have him := imCLM.coeFn_compLpL (p := 2) (μ := volume) (inclusionLp hs F)
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · filter_upwards [h, him] with z hz h₁
     rw [h₁] at hz
@@ -121,110 +121,114 @@ theorem mem_realPhaseSpace {hs : 1 < s} {F : H^{s}(ℂ)} :
     simpa using hz
 
 /-- The real phases form a closed subspace of `H^s(ℂ)`. -/
-theorem isClosed_realPhaseSpace (hs : 1 < s) : IsClosed (realPhaseSpace hs : Set H^{s}(ℂ)) :=
+theorem isClosed_realPhaseSpace (hs : 0 ≤ s) : IsClosed (realPhaseSpace hs : Set H^{s}(ℂ)) :=
   ContinuousLinearMap.isClosed_ker (imInclusionCLM hs)
 
-instance instCompleteSpaceRealPhaseSpace (hs : 1 < s) : CompleteSpace (realPhaseSpace hs) :=
+instance instCompleteSpaceRealPhaseSpace (hs : 0 ≤ s) : CompleteSpace (realPhaseSpace hs) :=
   (isClosed_realPhaseSpace hs).completeSpace_coe
 
 namespace realPhaseSpace
 
-variable {hs : 1 < s}
+variable (hs : 1 < s)
 
 /-- A continuous representative of a real phase, vanishing at infinity, by the Sobolev
 embedding. -/
-private def contRep (F : realPhaseSpace hs) : C₀(ℂ, ℂ) :=
+private def contRep (F : realPhaseSpace (zero_le_one.trans hs.le)) : C₀(ℂ, ℂ) :=
   (MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq (finrank_real_complex_lt_two_mul hs)
     (memSobolev_toLp_inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ)))).choose
 
-private theorem coeFn_toLp_inclusion_ae_eq_contRep (F : realPhaseSpace hs) :
-    ⇑(inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))).toLp =ᵐ[volume] contRep F :=
+private theorem coeFn_toLp_inclusion_ae_eq_contRep (F : realPhaseSpace (zero_le_one.trans hs.le)) :
+    ⇑(inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))).toLp =ᵐ[volume] contRep hs F :=
   (MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq (finrank_real_complex_lt_two_mul hs)
     (memSobolev_toLp_inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ)))).choose_spec
 
 /-- The continuous representative of a real phase is real everywhere. -/
-private theorem im_contRep (F : realPhaseSpace hs) (z : ℂ) : (contRep F z).im = 0 := by
-  have hae : (fun z ↦ (contRep F z).im) =ᵐ[volume] fun _ ↦ (0 : ℝ) := by
-    filter_upwards [coeFn_toLp_inclusion_ae_eq_contRep F, mem_realPhaseSpace.1 F.2]
+private theorem im_contRep (F : realPhaseSpace (zero_le_one.trans hs.le)) (z : ℂ) :
+    (contRep hs F z).im = 0 := by
+  have hae : (fun z ↦ (contRep hs F z).im) =ᵐ[volume] fun _ ↦ (0 : ℝ) := by
+    filter_upwards [coeFn_toLp_inclusion_ae_eq_contRep hs F, mem_realPhaseSpace.1 F.2]
       with z h₁ h₂
     rw [← h₁, h₂]
-  exact congrFun ((continuous_im.comp (contRep F).continuous).ae_eq_iff_eq volume
+  exact congrFun ((continuous_im.comp (contRep hs F).continuous).ae_eq_iff_eq volume
     continuous_const |>.1 hae) z
 
 /-- The continuous representative of a real phase is real: its complexification is the `L²`
 function of the phase almost everywhere. -/
-private theorem coeFn_toLp_inclusion_ae_eq_re_contRep (F : realPhaseSpace hs) :
+private theorem coeFn_toLp_inclusion_ae_eq_re_contRep
+    (F : realPhaseSpace (zero_le_one.trans hs.le)) :
     ⇑(inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))).toLp =ᵐ[volume]
-      fun z ↦ ((contRep F z).re : ℂ) := by
-  filter_upwards [coeFn_toLp_inclusion_ae_eq_contRep F] with z hz
+      fun z ↦ ((contRep hs F z).re : ℂ) := by
+  filter_upwards [coeFn_toLp_inclusion_ae_eq_contRep hs F] with z hz
   rw [hz]
-  exact Complex.ext (by simp) (by simp [im_contRep F z])
+  exact Complex.ext (by simp) (by simp [im_contRep hs F z])
 
 /-- A continuous real function whose complexification agrees almost everywhere with the `L²`
 function of `F` is the real part of the continuous representative. -/
-private theorem re_contRep_eq_of_ae_eq (F : realPhaseSpace hs) {f : ℂ → ℝ} (hf : Continuous f)
+private theorem re_contRep_eq_of_ae_eq (F : realPhaseSpace (zero_le_one.trans hs.le)) {f : ℂ → ℝ}
+    (hf : Continuous f)
     (h : ⇑(inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))).toLp =ᵐ[volume]
       fun z ↦ (f z : ℂ)) :
-    (fun z ↦ (contRep F z).re) = f := by
-  have hae : (fun z ↦ ((contRep F z).re : ℂ)) =ᵐ[volume] fun z ↦ (f z : ℂ) :=
-    (coeFn_toLp_inclusion_ae_eq_re_contRep F).symm.trans h
+    (fun z ↦ (contRep hs F z).re) = f := by
+  have hae : (fun z ↦ ((contRep hs F z).re : ℂ)) =ᵐ[volume] fun z ↦ (f z : ℂ) :=
+    (coeFn_toLp_inclusion_ae_eq_re_contRep hs F).symm.trans h
   funext z
   exact ofReal_injective (congrFun
-    ((continuous_ofReal.comp (continuous_re.comp (contRep F).continuous)).ae_eq_iff_eq
+    ((continuous_ofReal.comp (continuous_re.comp (contRep hs F).continuous)).ae_eq_iff_eq
       volume (continuous_ofReal.comp hf) |>.1 hae) z)
 
-variable (hs) in
 /-- **The continuous real representative** of a real phase `F ∈ H^s(ℂ; ℝ)`, `s > 1`: the
 continuous real function whose complexification is the `L²` function of `F` almost everywhere
 (`realPhaseSpace.coeFn_toLp_inclusion`). It is unique (`realPhaseSpace.phase_eq_of_ae_eq`), and
 it depends linearly on `F`. -/
-def phase : realPhaseSpace hs →ₗ[ℝ] ℂ → ℝ where
-  toFun F z := (contRep F z).re
+def phase : realPhaseSpace (zero_le_one.trans hs.le) →ₗ[ℝ] ℂ → ℝ where
+  toFun F z := (contRep hs F z).re
   map_add' F G := by
-    refine re_contRep_eq_of_ae_eq _ ((continuous_re.comp (contRep F).continuous).add
-      (continuous_re.comp (contRep G).continuous)) ?_
+    refine re_contRep_eq_of_ae_eq hs _ ((continuous_re.comp (contRep hs F).continuous).add
+      (continuous_re.comp (contRep hs G).continuous)) ?_
     filter_upwards [coeFn_toLp_inclusion_add (zero_le_one.trans hs.le) (F : H^{s}(ℂ))
-        (G : H^{s}(ℂ)), coeFn_toLp_inclusion_ae_eq_re_contRep F,
-      coeFn_toLp_inclusion_ae_eq_re_contRep G] with z h h₁ h₂
+        (G : H^{s}(ℂ)), coeFn_toLp_inclusion_ae_eq_re_contRep hs F,
+      coeFn_toLp_inclusion_ae_eq_re_contRep hs G] with z h h₁ h₂
     rw [Submodule.coe_add, h, Pi.add_apply, h₁, h₂, Pi.add_apply, ofReal_add]
   map_smul' c F := by
-    refine re_contRep_eq_of_ae_eq _ ((continuous_re.comp (contRep F).continuous).const_smul c) ?_
+    refine re_contRep_eq_of_ae_eq hs _
+      ((continuous_re.comp (contRep hs F).continuous).const_smul c) ?_
     filter_upwards [coeFn_toLp_inclusion_smul (zero_le_one.trans hs.le) (c : ℂ) (F : H^{s}(ℂ)),
-      coeFn_toLp_inclusion_ae_eq_re_contRep F] with z h h₁
+      coeFn_toLp_inclusion_ae_eq_re_contRep hs F] with z h h₁
     rw [Submodule.coe_smul, ← Complex.coe_smul, h, Pi.smul_apply, h₁, RingHom.id_apply,
       Pi.smul_apply, smul_eq_mul, smul_eq_mul, ofReal_mul]
 
-theorem continuous_phase (F : realPhaseSpace hs) : Continuous (phase hs F) :=
-  continuous_re.comp (contRep F).continuous
+theorem continuous_phase (F : realPhaseSpace (zero_le_one.trans hs.le)) : Continuous (phase hs F) :=
+  continuous_re.comp (contRep hs F).continuous
 
 /-- The `L²` function of a real phase is almost everywhere its continuous real representative. -/
-theorem coeFn_toLp_inclusion (F : realPhaseSpace hs) :
+theorem coeFn_toLp_inclusion (F : realPhaseSpace (zero_le_one.trans hs.le)) :
     ⇑(inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))).toLp =ᵐ[volume]
       fun z ↦ (phase hs F z : ℂ) :=
-  coeFn_toLp_inclusion_ae_eq_re_contRep F
+  coeFn_toLp_inclusion_ae_eq_re_contRep hs F
 
 /-- The continuous real representative of a real phase lies in `realSobolevFunctions ℂ s 2`. -/
-theorem phase_mem_realSobolevFunctions (F : realPhaseSpace hs) :
+theorem phase_mem_realSobolevFunctions (F : realPhaseSpace (zero_le_one.trans hs.le)) :
     phase hs F ∈ realSobolevFunctions ℂ s 2 :=
   mem_realSobolevFunctions_of_ae_eq_ofReal
-    (memSobolev_toLp_inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))) (coeFn_toLp_inclusion F)
+    (memSobolev_toLp_inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))) (coeFn_toLp_inclusion hs F)
 
 /-- **Uniqueness of the continuous representative.** A continuous real function whose
 complexification agrees almost everywhere with the `L²` function of the real phase `F` is the
 continuous representative of `F`. -/
-theorem phase_eq_of_ae_eq (F : realPhaseSpace hs) {f : ℂ → ℝ} (hf : Continuous f)
+theorem phase_eq_of_ae_eq (F : realPhaseSpace (zero_le_one.trans hs.le)) {f : ℂ → ℝ}
+    (hf : Continuous f)
     (h : ⇑(inclusion (zero_le_one.trans hs.le) (F : H^{s}(ℂ))).toLp =ᵐ[volume]
       fun z ↦ (f z : ℂ)) :
     phase hs F = f :=
-  re_contRep_eq_of_ae_eq F hf h
+  re_contRep_eq_of_ae_eq hs F hf h
 
 /-- A real phase is determined by its continuous real representative. -/
 theorem phase_injective : Function.Injective (phase hs) := by
   intro F G hFG
   refine Subtype.ext (toLp_inclusion_injective (zero_le_one.trans hs.le) (Lp.ext ?_))
-  refine (coeFn_toLp_inclusion F).trans ?_
+  refine (coeFn_toLp_inclusion hs F).trans ?_
   rw [hFG]
-  exact (coeFn_toLp_inclusion G).symm
+  exact (coeFn_toLp_inclusion hs G).symm
 
 end realPhaseSpace
 
@@ -236,14 +240,14 @@ variable (hs : 1 < s)
 `H^s(ℂ; ℝ)` to the Sobolev framed gauge group `G_s` with its Sobolev topology, `s > 1`. The
 exponential is taken of the continuous real representative `realPhaseSpace.phase F`
 (`expGauge_apply`). It is an open embedding (`isOpenEmbedding_expGauge`). -/
-def expGauge (F : realPhaseSpace hs) : SobolevTopologicalGaugeGroup hs :=
+def expGauge (F : realPhaseSpace (zero_le_one.trans hs.le)) : SobolevTopologicalGaugeGroup hs :=
   (toSubgroup hs).symm ⟨fun z ↦ Circle.exp (phase hs F z),
-    exp_mem_sobolevGaugeGroup hs (continuous_phase F) (phase_mem_realSobolevFunctions F)⟩
+    exp_mem_sobolevGaugeGroup hs (continuous_phase hs F) (phase_mem_realSobolevFunctions hs F)⟩
 
 variable {hs}
 
 @[simp]
-theorem expGauge_apply (F : realPhaseSpace hs) (z : ℂ) :
+theorem expGauge_apply (F : realPhaseSpace (zero_le_one.trans hs.le)) (z : ℂ) :
     (toSubgroup hs (expGauge hs F) : ℂ → Circle) z = Circle.exp (phase hs F z) := by
   simp [expGauge]
 
@@ -254,7 +258,7 @@ theorem expGauge_zero : expGauge hs 0 = 1 := by
   simp [expGauge]
 
 @[simp]
-theorem expGauge_add (F G : realPhaseSpace hs) :
+theorem expGauge_add (F G : realPhaseSpace (zero_le_one.trans hs.le)) :
     expGauge hs (F + G) = expGauge hs F * expGauge hs G := by
   apply (toSubgroup hs).injective
   ext z
@@ -263,35 +267,46 @@ theorem expGauge_add (F G : realPhaseSpace hs) :
 variable (hs) in
 /-- The exponential `F ↦ exp (i F)` as a group homomorphism from the additive group of real
 phases (`expGauge`). -/
-def expGaugeHom : Multiplicative (realPhaseSpace hs) →* SobolevTopologicalGaugeGroup hs where
+def expGaugeHom : Multiplicative (realPhaseSpace (zero_le_one.trans hs.le)) →*
+    SobolevTopologicalGaugeGroup hs where
   toFun F := expGauge hs F.toAdd
   map_one' := expGauge_zero
   map_mul' F G := expGauge_add F.toAdd G.toAdd
 
 @[simp]
-theorem expGaugeHom_apply (F : Multiplicative (realPhaseSpace hs)) :
+theorem expGaugeHom_apply (F : Multiplicative (realPhaseSpace (zero_le_one.trans hs.le))) :
     expGaugeHom hs F = expGauge hs F.toAdd :=
   (rfl)
+
+@[simp]
+theorem expGauge_neg (F : realPhaseSpace (zero_le_one.trans hs.le)) :
+    expGauge hs (-F) = (expGauge hs F)⁻¹ :=
+  map_inv (expGaugeHom hs) (Multiplicative.ofAdd F)
+
+@[simp]
+theorem expGauge_sub (F G : realPhaseSpace (zero_le_one.trans hs.le)) :
+    expGauge hs (F - G) = expGauge hs F * (expGauge hs G)⁻¹ := by
+  rw [sub_eq_add_neg, expGauge_add, expGauge_neg]
 
 /-- **The exponential is injective** on real phases, since continuous phases tending to zero at
 infinity are determined by their exponentials (`TauCeti.Vortex.injOn_exp`). -/
 theorem expGauge_injective : Function.Injective (expGauge hs) := by
   intro F G hFG
-  apply phase_injective
-  refine injOn_exp hs ⟨continuous_phase F, phase_mem_realSobolevFunctions F⟩
-    ⟨continuous_phase G, phase_mem_realSobolevFunctions G⟩ ?_
+  apply phase_injective hs
+  refine injOn_exp hs ⟨continuous_phase hs F, phase_mem_realSobolevFunctions hs F⟩
+    ⟨continuous_phase hs G, phase_mem_realSobolevFunctions hs G⟩ ?_
   funext z
   simpa using congrFun (congrArg (fun u ↦ (toSubgroup hs u : ℂ → Circle)) hFG) z
 
 /-- **Local Lipschitz bound for the exponential.** There is `C ≥ 0` such that real phases `F, G`
 of `H^s` norm at most `R` satisfy `‖exp (i F) - exp (i G)‖_{H^s} ≤ exp (C R) ‖F - G‖_{H^s}`. -/
 theorem exists_norm_subOne_expGauge_sub_le :
-    ∃ C, 0 ≤ C ∧ ∀ {F G : realPhaseSpace hs} {R : ℝ}, ‖F‖ ≤ R → ‖G‖ ≤ R →
+    ∃ C, 0 ≤ C ∧ ∀ {F G : realPhaseSpace (zero_le_one.trans hs.le)} {R : ℝ}, ‖F‖ ≤ R → ‖G‖ ≤ R →
       ‖subOne (expGauge hs F) - subOne (expGauge hs G)‖ ≤ Real.exp (C * R) * ‖F - G‖ := by
   have h₀ := zero_le_one.trans hs.le
   obtain ⟨C, hC, hlip⟩ := exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp hs
   refine ⟨C, hC, fun {F G R} hF hG ↦ ?_⟩
-  have key := hlip (coeFn_toLp_inclusion F) (coeFn_toLp_inclusion G)
+  have key := hlip (coeFn_toLp_inclusion hs F) (coeFn_toLp_inclusion hs G)
     (memSobolev_toLp_inclusion h₀ (F : H^{s}(ℂ))) (memSobolev_toLp_inclusion h₀ (G : H^{s}(ℂ)))
     (R := R) (by rw [toBesselPotentialSpace_memSobolev_toLp_inclusion]; exact hF)
     (by rw [toBesselPotentialSpace_memSobolev_toLp_inclusion]; exact hG)
@@ -360,7 +375,7 @@ theorem exists_memSobolev_ae_eq_arg_and_norm_le :
 with `‖F‖_{H^s} ≤ 2 ‖u - 1‖_{H^s}`; the phase is `arg u`. -/
 theorem exists_expGauge_eq_and_norm_le :
     ∃ δ, 0 < δ ∧ ∀ u : SobolevTopologicalGaugeGroup hs, ‖subOne u‖ < δ →
-      ∃ F : realPhaseSpace hs, expGauge hs F = u ∧ ‖F‖ ≤ 2 * ‖subOne u‖ := by
+      ∃ F : realPhaseSpace (zero_le_one.trans hs.le), expGauge hs F = u ∧ ‖F‖ ≤ 2 * ‖subOne u‖ := by
   have h₀ := zero_le_one.trans hs.le
   obtain ⟨C, hC, harg⟩ := exists_memSobolev_ae_eq_arg_and_norm_le (hs := hs)
   obtain ⟨C₂, hC₂, hsup⟩ := exists_norm_coe_sub_one_le_mul_norm_subOne (hs := hs)
@@ -376,14 +391,14 @@ theorem exists_expGauge_eq_and_norm_le :
       simpa using mem_slitPlane_of_norm_lt_one ((hsup u z).trans_lt (by nlinarith))
   -- The phase `arg u` is a real phase with norm at most `2 ‖u - 1‖`.
   obtain ⟨F, hFu, hF, hbound⟩ := harg u (by nlinarith)
-  have hFmem : hF.toBesselPotentialSpace ∈ realPhaseSpace hs := by
+  have hFmem : hF.toBesselPotentialSpace ∈ realPhaseSpace (zero_le_one.trans hs.le) := by
     refine mem_realPhaseSpace.2 ?_
     rw [toLp_inclusion_toBesselPotentialSpace h₀ hF rfl]
     filter_upwards [hFu] with z hz
     simp [hz]
-  set Φ : realPhaseSpace hs := ⟨hF.toBesselPotentialSpace, hFmem⟩
+  set Φ : realPhaseSpace (zero_le_one.trans hs.le) := ⟨hF.toBesselPotentialSpace, hFmem⟩
   have hphase : phase hs Φ = fun z ↦ arg ((toSubgroup hs u : ℂ → Circle) z : ℂ) := by
-    refine phase_eq_of_ae_eq Φ hcont ?_
+    refine phase_eq_of_ae_eq hs Φ hcont ?_
     rw [toLp_inclusion_toBesselPotentialSpace h₀ hF rfl]
     exact hFu
   refine ⟨Φ, ?_, ?_⟩
@@ -399,7 +414,8 @@ theorem exists_expGauge_eq_and_norm_le :
 
 /-- **The exponential maps neighbourhoods of `0` onto neighbourhoods of the identity.** -/
 theorem nhds_one_le_map_expGauge :
-    𝓝 (1 : SobolevTopologicalGaugeGroup hs) ≤ (𝓝 (0 : realPhaseSpace hs)).map (expGauge hs) := by
+    𝓝 (1 : SobolevTopologicalGaugeGroup hs) ≤
+      (𝓝 (0 : realPhaseSpace (zero_le_one.trans hs.le))).map (expGauge hs) := by
   obtain ⟨δ, hδ, hexp⟩ := exists_expGauge_eq_and_norm_le (hs := hs)
   refine (nhds_basis_ball.map _).ge_iff.2 fun ε hε ↦ ?_
   have hU : {u : SobolevTopologicalGaugeGroup hs | ‖subOne u‖ < min δ (ε / 2)} ∈ 𝓝 1 :=
@@ -433,7 +449,8 @@ variable (hs) in
 `u exp (i F)` to the real phase `F`. Its source is the open coset `u · exp (H^s(ℂ; ℝ))`
 (`source_gaugeChart`) and its inverse is `F ↦ u exp (i F)` (`gaugeChart_symm_apply`). -/
 def gaugeChart (u : SobolevTopologicalGaugeGroup hs) :
-    OpenPartialHomeomorph (SobolevTopologicalGaugeGroup hs) (realPhaseSpace hs) :=
+    OpenPartialHomeomorph (SobolevTopologicalGaugeGroup hs)
+      (realPhaseSpace (zero_le_one.trans hs.le)) :=
   (Homeomorph.mulLeft u⁻¹).toOpenPartialHomeomorph.trans
     (isOpenEmbedding_expGauge.toOpenPartialHomeomorph (expGauge hs)).symm
 
@@ -454,27 +471,31 @@ theorem expGauge_gaugeChart {u v : SobolevTopologicalGaugeGroup hs}
   simpa [gaugeChart] using isOpenEmbedding_expGauge.toOpenPartialHomeomorph_right_inv _ hv
 
 @[simp]
-theorem gaugeChart_symm_apply (u : SobolevTopologicalGaugeGroup hs) (F : realPhaseSpace hs) :
+theorem gaugeChart_symm_apply (u : SobolevTopologicalGaugeGroup hs)
+    (F : realPhaseSpace (zero_le_one.trans hs.le)) :
     (gaugeChart hs u).symm F = u * expGauge hs F := by
   simp [gaugeChart, Homeomorph.mulLeft_symm]
 
 @[simp]
-theorem gaugeChart_mul_expGauge (u : SobolevTopologicalGaugeGroup hs) (F : realPhaseSpace hs) :
+theorem gaugeChart_mul_expGauge (u : SobolevTopologicalGaugeGroup hs)
+    (F : realPhaseSpace (zero_le_one.trans hs.le)) :
     gaugeChart hs u (u * expGauge hs F) = F := by
   simp [gaugeChart, IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
 
 /-- **The transition maps between exponential charts are translations.** If
 `v⁻¹ u = exp (i H)`, then the chart at `v` sends the point with coordinate `F` in the chart at
 `u` to `H + F`. -/
-theorem gaugeChart_gaugeChart_symm {u v : SobolevTopologicalGaugeGroup hs} {H : realPhaseSpace hs}
-    (h : v⁻¹ * u = expGauge hs H) (F : realPhaseSpace hs) :
+theorem gaugeChart_gaugeChart_symm {u v : SobolevTopologicalGaugeGroup hs}
+    {H : realPhaseSpace (zero_le_one.trans hs.le)}
+    (h : v⁻¹ * u = expGauge hs H) (F : realPhaseSpace (zero_le_one.trans hs.le)) :
     gaugeChart hs v ((gaugeChart hs u).symm F) = H + F := by
   rw [gaugeChart_symm_apply, ← mul_inv_cancel_left v u, mul_assoc, h, ← expGauge_add,
     gaugeChart_mul_expGauge]
 
 /-- **`G_s` is a charted space** modelled on the real Hilbert space `H^s(ℂ; ℝ)` of phases, with
 the exponential charts `gaugeChart hs u` at the points `u ∈ G_s`. -/
-instance : ChartedSpace (realPhaseSpace hs) (SobolevTopologicalGaugeGroup hs) where
+instance : ChartedSpace (realPhaseSpace (zero_le_one.trans hs.le))
+    (SobolevTopologicalGaugeGroup hs) where
   atlas := Set.range (gaugeChart hs)
   chartAt := gaugeChart hs
   mem_chart_source u := by
@@ -484,7 +505,7 @@ instance : ChartedSpace (realPhaseSpace hs) (SobolevTopologicalGaugeGroup hs) wh
 
 @[simp]
 theorem chartAt_eq_gaugeChart (u : SobolevTopologicalGaugeGroup hs) :
-    chartAt (realPhaseSpace hs) u = gaugeChart hs u :=
+    chartAt (realPhaseSpace (zero_le_one.trans hs.le)) u = gaugeChart hs u :=
   (rfl)
 
 end TauCeti.Vortex
