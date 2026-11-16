@@ -269,22 +269,27 @@ end PositiveForm
 
 section Kernel
 
-/-- If `δ : ℂ` is a nonzero self-adjoint loop parameter and a `⋆`-algebra homomorphism
-`ρ : TemperleyLieb ℂ δ n →⋆ₐ[ℂ] B` pulls back a positive functional `σ` with trivial GNS null space
-to `δ⁻ⁿ • tr n`, then `RingHom.ker ρ` equals the trace radical of `tr n`. Surjectivity of `ρ` and
-traciality of `σ` on `B` are not required. -/
+/-- If `δ : ℂ` is a nonzero self-adjoint loop parameter and a unital `⋆`-algebra homomorphism `ρ`
+from `TemperleyLieb ℂ δ n` into a complex `⋆`-algebra `B` pulls back a positive functional `σ` with
+trivial GNS null space to `δ⁻ⁿ • tr n`, then `RingHom.ker ρ` equals the trace radical of `tr n`.
+Surjectivity of `ρ` and traciality of `σ` on `B` are not required. -/
 theorem IsMarkovTrace.ker_eq_traceRadical_of_pullback {δ : ℂ} [Fact (IsSelfAdjoint δ)]
     {tr : ∀ n : ℕ, TemperleyLieb ℂ δ n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ δ tr) (hδ : δ ≠ 0) {n : ℕ}
     {B : Type*} [Ring B] [Algebra ℂ B] [StarRing B] [StarModule ℂ B]
-    (σ : StarPositiveFunctional B) (hσ : σ.nullSubmodule = ⊥)
-    (ρ : TemperleyLieb ℂ δ n →⋆ₐ[ℂ] B)
+    {F : Type*} [FunLike F (TemperleyLieb ℂ δ n) B]
+    [AlgHomClass F ℂ (TemperleyLieb ℂ δ n) B] [StarHomClass F (TemperleyLieb ℂ δ n) B]
+    (σ : StarPositiveFunctional B) (hσ : σ.nullSubmodule = ⊥) (ρ : F)
     (hpull : ∀ x : TemperleyLieb ℂ δ n, σ (ρ x) = (δ⁻¹) ^ n * tr n x) :
     RingHom.ker ρ = (tr n).traceRadical (htr.map_mul_comm n) := by
   have hcomm (x y : TemperleyLieb ℂ δ n) :
       ((δ⁻¹ ^ n) • tr n) (x * y) = ((δ⁻¹ ^ n) • tr n) (y * x) := by
     simp [htr.map_mul_comm n x y]
-  rw [← ((δ⁻¹ ^ n) • tr n).traceRadical_eq_ker_of_nullSubmodule_eq_bot hcomm σ hσ ρ hpull]
+  have hker : RingHom.ker ρ = RingHom.ker (StarAlgHom.ofClass (R := ℂ) ρ) := by
+    ext x
+    simp
+  rw [hker, ← ((δ⁻¹ ^ n) • tr n).traceRadical_eq_ker_of_nullSubmodule_eq_bot hcomm σ hσ
+    (StarAlgHom.ofClass ρ) hpull]
   ext x
   simp [hδ]
 

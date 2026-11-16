@@ -148,6 +148,17 @@ theorem IsSqWalkEigenvectorUpTo.sum_neighborFinset_apply {δ : K} {n m : ℕ}
   rw [Function.comp_apply, hlast] at h
   exact h
 
+/-- Mapping vertex weights and eigenvalue along a non-unital ring homomorphism preserves
+`TauCeti.TemperleyLieb.IsSqWalkEigenvectorUpTo`. -/
+theorem IsSqWalkEigenvectorUpTo.map {L : Type*} [Semiring L]
+    {F : Type*} [FunLike F K L] [NonUnitalRingHomClass F K L] (f : F) {δ : K} {n : ℕ}
+    (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) :
+    IsSqWalkEigenvectorUpTo G v₀ (fun v ↦ f (r v)) (f δ) n := by
+  intro k hk s hs
+  have h := congrArg f (hδ hk s hs)
+  simp only [map_sum, sq, map_mul] at h ⊢
+  exact h
+
 end Eigenvector
 
 variable {K : Type*} [Field K] {V : Type*} [Fintype V] (G : SimpleGraph V)

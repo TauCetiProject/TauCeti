@@ -10,9 +10,9 @@ public import TauCeti.QuantumGroups.QuantumInteger.Real
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 
-import TauCeti.Algebra.TemperleyLieb.PathModel
+import TauCeti.Algebra.TemperleyLieb.PathModel.PathGraph
 import TauCeti.Algebra.TemperleyLieb.SpinPositivity
-import Mathlib.Combinatorics.SimpleGraph.Hasse
+import TauCeti.QuantumGroups.QuantumInteger.PathGraph
 
 /-!
 # Jones's positivity theorem
@@ -184,80 +184,6 @@ theorem qInt_floor_add_one_neg_of_notMem_jonesLoopParameters (hδ : 0 < δ)
   have h := qInt_two_mul_cos_floor_add_one_neg hθ₀ (by linarith [pi_pos])
   rwa [hcos] at h
 
-open SimpleGraph in
-/-- On the path graph `pathGraph (k + 1)` with vertices `0, …, k`, the sum of the quantum integers
-`[u + 1]` over the neighbours `u` of `v` equals `δ * [v + 1]` minus the missing top term `[k + 2]`
-when `v = k`, over any commutative ring. -/
-private theorem sum_neighborFinset_pathGraph_qInt_eq {R : Type*} [CommRing R] (δ : R) {k : ℕ}
-    (v : Fin (k + 1)) :
-    ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt R δ (u + 1) =
-      δ * qInt R δ (v + 1) - if v.val = k then qInt R δ (k + 2) else 0 := by
-  rw [neighborFinset_eq_filter, Finset.sum_filter]
-  simp only [pathGraph_adj]
-  rw [Fin.sum_univ_eq_sum_range
-    (fun j ↦ if v.val + 1 = j ∨ j + 1 = v.val then qInt R δ (j + 1) else 0)]
-  have h (j : ℕ) : (if v.val + 1 = j ∨ j + 1 = v.val then qInt R δ (j + 1) else 0) =
-      (if v.val + 1 = j then qInt R δ (j + 1) else 0) +
-        (if j + 1 = v.val then qInt R δ (j + 1) else 0) := by
-    split_ifs <;> first | ring1 | (exfalso; omega)
-  simp_rw [h]
-  rw [Finset.sum_add_distrib, Finset.sum_ite_eq]
-  have h1 : (if v.val + 1 ∈ Finset.range (k + 1) then qInt R δ (v + 1 + 1) else 0) =
-      qInt R δ (v + 2) - if v.val = k then qInt R δ (k + 2) else 0 := by
-    split_ifs with hv hvk hvk
-    · exfalso; simp at hv; omega
-    · exact (sub_zero _).symm
-    · rw [hvk, sub_self]
-    · exfalso; simp at hv; omega
-  have h2 : ∑ j ∈ Finset.range (k + 1), (if j + 1 = v.val then qInt R δ (j + 1) else 0) =
-      qInt R δ v := by
-    obtain ⟨_ | w, hw⟩ := v
-    · simp
-    · simp only [Nat.add_right_cancel_iff]
-      rw [Finset.sum_ite_eq', ite_eq_left (Finset.mem_range.2 (by omega))]
-  rw [h1, h2, qInt_add_two]
-  ring
-
-open SimpleGraph in
-/-- At every interior vertex `v < k` of `pathGraph (k + 1)`, the quantum integers `[t + 1]` satisfy
-the adjacency recurrence `[v] + [v + 2] = δ * [v + 1]` over any commutative ring. -/
-private theorem sum_neighborFinset_pathGraph_qInt_of_lt {R : Type*} [CommRing R] (δ : R) {k : ℕ}
-    {v : Fin (k + 1)} (hv : v.val < k) :
-    ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt R δ (u + 1) = δ * qInt R δ (v + 1) := by
-  rw [sum_neighborFinset_pathGraph_qInt_eq, ite_eq_right hv.ne, sub_zero]
-
-open SimpleGraph in
-/-- At `δ = 2 cos (π / (k + 2))`, the quantum integers `[t + 1]` on the vertices `t` of the path
-graph on `k + 1` vertices, the Dynkin graph `A_(k+1)`, form an eigenvector of its adjacency
-matrix with eigenvalue `δ`: this is the recurrence `[t] + [t + 2] = δ [t + 1]`, with `[0] = 0` at
-one end of the graph and `[k + 2] = 0` at the other. -/
-private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
-    ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (u + 1) =
-      2 * cos (π / (k + 2 : ℕ)) * qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (v + 1) := by
-  rw [sum_neighborFinset_pathGraph_qInt_eq, qInt_two_mul_cos_pi_div_eq_zero (by omega),
-    ite_self, sub_zero]
-
-/-- When the quantum integers `[1], …, [n + 1]` are nonnegative, the weights `√[t + 1]` on
-`pathGraph (n + 1)` satisfy the walk-endpoint eigenvector equation from `0` up to `n` steps: every
-walk of `k < n` steps from `0` ends at a vertex `< n`, away from the boundary vertex `n`. -/
-private theorem isSqWalkEigenvectorUpTo_pathGraph_sqrt_qInt {n : ℕ}
-    (hnonneg : ∀ j ∈ Finset.Icc 1 (n + 1), 0 ≤ qInt ℝ δ j) :
-    IsSqWalkEigenvectorUpTo (SimpleGraph.pathGraph (n + 1)) 0
-      (fun t : Fin (n + 1) ↦ ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ)) (δ : ℂ) n := by
-  rw [isSqWalkEigenvectorUpTo_iff]
-  intro k hk s hs
-  have hv : (s (Fin.last k)).val < n := by
-    have hle := hs.apply_le_add (f := Fin.val)
-      (fun _ _ huv ↦ by rw [SimpleGraph.pathGraph_adj] at huv; omega) (Fin.last k)
-    simp only [Fin.val_zero, zero_add, Fin.val_last] at hle
-    omega
-  have hsq (t : Fin (n + 1)) :
-      (((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ)) ^ 2 = (qInt ℝ δ (t + 1) : ℂ) := by
-    rw [← Complex.ofReal_pow,
-      Real.sq_sqrt (hnonneg (t + 1) (Finset.mem_Icc.2 ⟨by omega, by omega⟩))]
-  simp only [hsq]
-  exact_mod_cast sum_neighborFinset_pathGraph_qInt_of_lt δ hv
-
 end QuantumInteger
 
 namespace IsMarkovTrace
@@ -354,7 +280,8 @@ theorem map_star_mul_self_nonneg_of_qInt_pos (htr : IsMarkovTrace ℂ (δ : ℂ)
     (r := fun t ↦ ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ))
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (ht t)).ne')
     (fun _ ↦ Complex.conj_ofReal _) 0
-    (isSqWalkEigenvectorUpTo_pathGraph_sqrt_qInt fun j hj ↦ (hpos j hj).le) le_rfl x
+    ((isSqWalkEigenvectorUpTo_pathGraph_sqrt_qInt fun j hj ↦ (hpos j hj).le).map
+      Complex.ofRealHom) le_rfl x
 
 /-- **Positivity at the discrete loop parameters.** For `δ = 2 cos (π / m)` with `m ≥ 2`, the
 Hermitian forms `(x, y) ↦ tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every
@@ -373,7 +300,7 @@ theorem map_star_mul_self_nonneg_of_eq_two_mul_cos (htr : IsMarkovTrace ℂ (δ 
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hpos t)).ne')
     (fun _ ↦ Complex.conj_ofReal _) (fun v ↦ ?_) x
   simp only [← Complex.ofReal_pow, Real.sq_sqrt (hpos _).le]
-  exact_mod_cast sum_neighborFinset_pathGraph_qInt v
+  exact_mod_cast sum_neighborFinset_pathGraph_qInt_two_mul_cos_pi_div v
 
 /-- **Jones's positivity theorem.** For `δ > 0`, the Hermitian forms `(x, y) ↦ tr n (x⋆ * y)` of a
 Markov trace are positive semidefinite on every number of strands exactly when `δ` is an admissible
