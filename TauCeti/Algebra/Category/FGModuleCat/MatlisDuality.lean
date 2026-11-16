@@ -13,6 +13,7 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.RingTheory.Artinian.FiniteLength
 public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
+import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 
@@ -235,8 +236,8 @@ instance IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular (hf : IsInje
   exact inferInstanceAs (Injective (unop _))
 
 /-- **Finitely generated injective modules are summands of finite sums of `D A`**: an injective
-object of `mod A` lies in `add (D A)`. This is the dual of
-`FGModuleCat.additiveClosure_regular_of_projective` over `Aᵐᵒᵖ`. -/
+object of `mod A` lies in `add (D A)`. This is the dual of the
+statement that finitely generated projective modules over `Aᵐᵒᵖ` lie in `add Aᵐᵒᵖ`. -/
 theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective
     (hf : IsInjectiveEnvelope f) (I : FGModuleCat.{v} A) [Injective I] :
     additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I := by
@@ -245,7 +246,8 @@ theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_inje
   rw [← Φ.additiveClosure_functor_obj_op_iff]
   exact (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).symm.retract
     |>.additiveClosure_le _
-      (FGModuleCat.additiveClosure_regular_of_projective (Φ.functor.obj (op I)))
+      (FGModuleCat.additiveClosure_of_isGenerator_of_projective (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)
+        (Φ.functor.obj (op I)))
 
 end Regular
 

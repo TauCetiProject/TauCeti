@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Shrink
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 
 /-!
 # Projective objects and projective dimension of finitely generated modules
@@ -39,8 +38,6 @@ every short exact sequence of finite-dimensional modules splits.
   projective `R`-module, provided `R` is small relative to the universe of the modules.
 * `CategoryTheory.Equivalence.moduleProjective_functor_obj_regular`: an equivalence between the
   categories of finitely generated modules carries the regular module to a projective module.
-* `FGModuleCat.additiveClosure_regular_of_projective`: a finitely generated projective module lies
-  in the additive closure `add R` of the regular module.
 * `FGModuleCat.hasProjectiveDimensionLE_of_forget₂`: over a left noetherian ring, a finitely
   generated module of projective dimension at most `n` among all modules has projective dimension
   at most `n` in `FGModuleCat R`.
@@ -111,24 +108,6 @@ theorem _root_.CategoryTheory.Equivalence.moduleProjective_functor_obj_regular
   have : Projective (FGModuleCat.of A A) := FGModuleCat.projective_of_free A _
   have : Projective (e.functor.obj (FGModuleCat.of A A)) := (e.map_projective_iff _).mpr this
   exact FGModuleCat.moduleProjective_of_projective _
-
-variable {R} in
-/-- **Finitely generated projective modules are summands of finite free modules**: a projective
-object of `FGModuleCat R` lies in the additive closure of the regular module. -/
-theorem additiveClosure_regular_of_projective (P : FGModuleCat.{u} R) [Projective P] :
-    additiveClosure (FGModuleCat.of R R) P := by
-  -- A finite generating family gives an epimorphism from a finite sum of copies of `R`, which
-  -- splits since `P` is projective.
-  obtain ⟨n, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := P)
-  let p : (⨁ fun _ : Fin n ↦ FGModuleCat.of R R) ⟶ P := biproduct.desc fun i ↦
-    ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.toSpanSingleton R P (x i)))
-  have : Epi p := Preadditive.epi_of_cancel_zero p fun {Z} g hg ↦ by
-    have hgi (i : Fin n) : g.hom.hom (x i) = 0 := by
-      have h := congr((biproduct.ι _ i ≫ $hg).hom.hom 1)
-      simpa [p] using h
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext_on_range hx fun i ↦ ?_))
-    simpa using hgi i
-  exact additiveClosure_iff.2 ⟨n, ⟨⟨Projective.factorThru (𝟙 P) p, p, by simp⟩⟩⟩
 
 variable {R} in
 /-- `FGModuleCat R` has enough projectives: every finitely generated module is a quotient of a
