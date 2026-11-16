@@ -12,8 +12,8 @@ import TauCeti.MeasureTheory.Function.RankOne
 /-!
 # Unique continuation and isolated point preimages of J-holomorphic curves
 
-Let `E` be a finite-dimensional real normed space, `J : E → E →L[ℝ] E` a field of complex
-structures, and `u : ℂ → E` a map of class `C¹` on an open set `Ω ⊆ ℂ` solving the
+Let `E` be a finite-dimensional real normed space, `J : E → E →L[ℝ] E` a field of
+endomorphisms, and `u : ℂ → E` a map of class `C¹` on an open set `Ω ⊆ ℂ` solving the
 Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` on `Ω` in the coordinate `z = s + i t`. This file
 shows that the preimages of points under `u` behave like the zeros of a holomorphic function
 (McDuff–Salamon, Lemma 2.4.1, the part about point preimages). For the preimage of a point `x₀`
@@ -24,7 +24,7 @@ used (for instance, `J` of class `C¹` near `x₀`), and the theorems assume not
   with `x₀` to infinite order there, then `u ≡ x₀` on `Ω`
   (`TauCeti.eqOn_const_of_cauchyRiemann_of_eventually_eq`,
   `TauCeti.eqOn_const_of_cauchyRiemann_of_forall_isBigO`);
-* **isolated preimages**: otherwise every preimage `u⁻¹(x₀)` is a discrete subset of `Ω`
+* **isolated preimages**: otherwise the preimage `u⁻¹(x₀)` is a discrete subset of `Ω`
   (`TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann`), so it meets every compact subset of
   `Ω` in finitely many points (`TauCeti.finite_inter_preimage_singleton_of_cauchyRiemann`);
 * **local multiplicity**: each point `z₀` of `u⁻¹(x₀)` has a finite positive order `m`, with
