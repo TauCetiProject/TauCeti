@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
-import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
+import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 

@@ -155,6 +155,15 @@ theorem eq_zero_of_mfderiv_apply_eq (h : IsNondegenerateFixedPt I f x) {v : Tang
     (hv : mfderiv I I f x v = v) : v = 0 :=
   h.2.2 v hv
 
+/-- Being a nondegenerate fixed point only depends on the germ of the map at the point. -/
+theorem congr_of_eventuallyEq {g : M → M} (h : IsNondegenerateFixedPt I f x) (hfg : g =ᶠ[𝓝 x] f) :
+    IsNondegenerateFixedPt I g x :=
+  ⟨hfg.eq_of_nhds.trans h.isFixedPt, h.mdifferentiableAt.congr_of_eventuallyEq hfg,
+    fun v hv ↦ h.eq_zero_of_mfderiv_apply_eq <| by
+      -- `tangentSpaceCast` between the tangent spaces at `g x` and `f x` is the identity of `E`.
+      rw [hfg.mfderiv_eq] at hv
+      exact hv⟩
+
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 
 /-- **Nondegenerate fixed points are isolated.** On a manifold modelled on a finite-dimensional
