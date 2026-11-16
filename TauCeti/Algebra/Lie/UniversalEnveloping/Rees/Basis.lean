@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basis
+import TauCeti.Algebra.Polynomial.BigOperators
 
 /-!
 # The ordered PBW basis of the PBW Rees algebra
@@ -75,15 +76,6 @@ theorem coeff_pbwReesBasis_repr_apply (f : reesAlgebra R L) (n : ι →₀ ℕ) 
     (b.pbwReesBasis.repr f n).coeff j = b.pbwBasis.repr ((f : U[X]).coeff (j + n.degree)) n :=
   coeffSubalgebra.coeff_basis_repr_apply _ _ _ _ _ f n j
 
-/-- A product of monomials over a list is the monomial of the summed degrees and the product
-of the coefficients, in the same order. -/
-private theorem list_prod_map_monomial {α A : Type*} [Semiring A] (l : List α) (e : α → ℕ)
-    (a : α → A) : (l.map fun i ↦ monomial (e i) (a i)).prod =
-      monomial (l.map e).sum (l.map a).prod := by
-  induction l with
-  | nil => simp
-  | cons i l ih => simp [ih, monomial_mul_monomial]
-
 /-- **The Rees basis vectors are ordered products of Rees generators.** The basis vector at `n`
 is the product of `j(bᵢ) ^ nᵢ`, with the support of `n` traversed in increasing order. -/
 theorem pbwReesBasis_eq_prod_pow (n : ι →₀ ℕ) :
@@ -93,8 +85,11 @@ theorem pbwReesBasis_eq_prod_pow (n : ι →₀ ℕ) :
   rw [coe_pbwReesBasis_apply, pbwBasis_eq_prod_pow, SubmonoidClass.coe_list_prod, List.map_map]
   simp only [Function.comp_def, SubmonoidClass.coe_pow, coe_reesGenerator, monomial_pow,
     one_mul]
-  rw [list_prod_map_monomial, Finsupp.degree_apply, ← Multiset.sum_coe, ← Multiset.map_coe,
-    Finset.sort_eq, Finset.sum_eq_multiset_sum]
+  -- The exponents along the sorted support add up to the total degree.
+  have hdeg : ((n.support.sort (· ≤ ·)).map n).sum = n.degree := by
+    rw [Finsupp.degree_apply, ← Multiset.sum_coe, ← Multiset.map_coe, Finset.sort_eq,
+      Finset.sum_eq_multiset_sum]
+  rw [list_prod_map_monomial, hdeg]
 
 /-- The Rees basis vector at the zero exponent is the unit. -/
 @[simp]

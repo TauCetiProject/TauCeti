@@ -62,7 +62,6 @@ private theorem repr_coeff_linearCombination (l : κ →₀ R[X]) (k : κ) (j : 
       (fun i ↦ monomial M (d i) (v i) (basis_mem M v d hv i)) l : coeffSubalgebra M) :
         B[X]).coeff (j + d k)) k = (l k).coeff j := by
   let := algebra M h1
-  classical
   induction l using Finsupp.induction_linear with
   | zero => simp
   | add f g hf hg => simp [hf, hg]
@@ -72,12 +71,9 @@ private theorem repr_coeff_linearCombination (l : κ →₀ R[X]) (k : κ) (j : 
       ← C_mul_X_pow_eq_monomial, ← (commute_X_pow _ (d i)).eq, ← mul_assoc, coeff_mul_C,
       coeff_mul_X_pow']
     split_ifs with h
-    · rw [coeff_map, ← Algebra.smul_def, map_smul, Module.Basis.repr_self, Finsupp.smul_apply,
-        Finsupp.single_apply, Finsupp.single_apply]
-      by_cases hik : i = k
-      · subst hik
-        simp
-      · simp [hik]
+    · rcases eq_or_ne i k with rfl | hik
+      · simp [← Algebra.smul_def]
+      · simp [← Algebra.smul_def, hik]
     · have hik : i ≠ k := by
         rintro rfl
         omega
@@ -110,17 +106,18 @@ private theorem top_le_span_monomial :
     rintro _ ⟨k, hk, rfl⟩
     refine ⟨Polynomial.X ^ (n - d k) • monomial M (d k) (v k) (basis_mem M v d hv k),
       Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self k)), ?_⟩
-    simp only [AlgHom.toLinearMap_apply, Subalgebra.coe_val, LinearMap.coe_restrictScalars]
-    rw [coe_smul M h1, coe_monomial, Polynomial.map_pow, map_X, X_pow_mul_monomial,
-      Nat.add_sub_of_le hk]
+    simp [coe_smul M h1, X_pow_mul_monomial, Nat.add_sub_of_le hk]
   rintro f -
   induction f using DirectSum.Decomposition.inductionOn (grade M) with
   | zero => exact zero_mem _
   | add f g hf hg => exact add_mem hf hg
   | @homogeneous n f =>
     obtain ⟨b, hb, hf⟩ := mem_grade_iff.mp f.2
-    obtain ⟨g, hg, hgf⟩ := hgrade n hb
-    rwa [show g = f from Subtype.ext (hgf.trans hf)] at hg
+    have hbf := hgrade n hb
+    simp only [Submodule.mem_comap, Submodule.mem_map, Submodule.restrictScalars_mem,
+      AlgHom.toLinearMap_apply, Subalgebra.coe_val, LinearMap.coe_restrictScalars] at hbf
+    obtain ⟨g, hg, hgf⟩ := hbf
+    rwa [Subtype.ext (hgf.trans hf)] at hg
 
 /-- **The `R[X]`-basis of a coefficient subalgebra from an adapted basis.** If `v` is an
 `R`-basis of `B` and each `M n` is spanned by the `v k` with `d k ≤ n`, then the monomials
