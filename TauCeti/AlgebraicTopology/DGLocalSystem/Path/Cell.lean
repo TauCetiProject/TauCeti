@@ -208,19 +208,12 @@ theorem isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv (q : ℕ)
     rw [moduleCat_iCycles_cyclesMap_apply, iCycles_cyclesMap_cubicalCrossProductRel_cyclesCross
       k _ _ rfl z _ _ ((iCycles_cubeBoundaryPairCycle k m).trans
         (TopPair.cubicalChainOfCube_def k _)), normalizedCubicalChainComplexXEquiv_symm_apply]
-    -- and the map of pairs acts on relative chains through the map of ambient spaces
-    have h := ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f (q + (m + 1)))
-      (TopPair.π_cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)))
-      (NormalizedCubicalChain.cast k (rfl : q + (m + 1) = q + (m + 1))
-        (NormalizedCubicalChain.crossProduct _ _ k q (m + 1)
-          (normalizedCubicalChainComplexXEquiv _ q
-            (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles q z))
-          (NormalizedCubicalChain.ofCube _ k (upCube.{0} (m + 1)))))
-    simp only [comp_f, ModuleCat.hom_comp] at h
-    refine Eq.trans ?_ h.symm
-    refine (congrArg _ ?_).trans (LinearMap.comp_apply _ _ _).symm
-    rw [NormalizedCubicalChain.cast_rfl]
-    exact (map_crossProduct_upCube τ h₀ h₁ k _).symm
+    -- and the map of pairs acts on relative chains through the map of ambient spaces; the
+    -- identity cube here is typed at the cube model rather than at the ambient space of the cube
+    -- pair, so `rw` cannot abstract it and the steps are chained up to definitional unfolding
+    refine (congrArg _ ?_).trans (TopPair.π_cubicalChainComplexMap_f_apply k _ _ _).symm
+    exact (map_crossProduct_upCube τ h₀ h₁ k _).symm.trans
+      (congrArg _ (NormalizedCubicalChain.cast_rfl k _).symm)
   · rw [cubicalHomologyCubeBoundaryEquiv, LinearEquiv.trans_apply,
       cubicalHomologyCubeBoundaryPairProdLeftEquiv_homologyπ, Iso.toLinearEquiv_apply, asIso_hom,
       ← ModuleCat.comp_apply, ← homologyπ_naturality, ModuleCat.comp_apply]
