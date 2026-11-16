@@ -52,6 +52,11 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   homomorphism is determined by its values on a topological generating set.
 * `MonoidHom.eq_of_eqOn_of_isOpen_ker`: the same uniqueness statement for a homomorphism with
   open kernel, for which the target carries no topology.
+* `TauCeti.IsTopologicallyFinitelyGenerated.prod`,
+  `TauCeti.isTopologicallyFinitelyGenerated_prod_iff`,
+  `TauCeti.IsTopologicallyFinitelyGenerated.pi`,
+  `TauCeti.isTopologicallyFinitelyGenerated_pi_iff`:
+  topological finite generation is preserved and reflected by binary and finite indexed products.
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`: only finitely many
   homomorphisms with open kernel go from a topologically finitely generated group to a fixed
   finite monoid.
@@ -281,6 +286,69 @@ theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :
     IsTopologicallyFinitelyGenerated G ↔ IsTopologicallyFinitelyGenerated H :=
   ⟨fun hG ↦ hG.of_surjective (f := (e : G →* H)) e.continuous e.surjective,
     fun hH ↦ hH.of_surjective (f := (e.symm : H →* G)) e.symm.continuous e.symm.surjective⟩
+
+/-- A binary product of topologically finitely generated groups is topologically finitely
+generated. -/
+theorem IsTopologicallyFinitelyGenerated.prod (hG : IsTopologicallyFinitelyGenerated G)
+    (hH : IsTopologicallyFinitelyGenerated H) : IsTopologicallyFinitelyGenerated (G × H) := by
+  obtain ⟨s, hs⟩ := hG
+  obtain ⟨t, ht⟩ := hH
+  let S : Set (G × H) := MonoidHom.inl G H '' (s : Set G) ∪ MonoidHom.inr G H '' (t : Set H)
+  have hS : S.Finite :=
+    (s.finite_toSet.image (MonoidHom.inl G H)).union (t.finite_toSet.image (MonoidHom.inr G H))
+  refine hS.isTopologicallyFinitelyGenerated ?_
+  set T := (Subgroup.closure S).topologicalClosure
+  have hinl : (MonoidHom.inl G H).range ≤ T :=
+    (MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top hs
+      (continuous_id.prodMk continuous_const) (Subgroup.isClosed_topologicalClosure _)).mpr
+        fun x hx ↦ Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inl ⟨x, hx, rfl⟩))
+  have hinr : (MonoidHom.inr G H).range ≤ T :=
+    (MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top ht
+      (continuous_const.prodMk continuous_id) (Subgroup.isClosed_topologicalClosure _)).mpr
+        fun y hy ↦ Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inr ⟨y, hy, rfl⟩))
+  refine eq_top_iff.mpr fun ⟨x, y⟩ _ ↦ ?_
+  have hxy : (x, y) = MonoidHom.inl G H x * MonoidHom.inr G H y := by simp
+  rw [hxy]
+  exact mul_mem (hinl ⟨x, rfl⟩) (hinr ⟨y, rfl⟩)
+
+/-- A binary product of topological groups is topologically finitely generated if and only if both
+factors are. -/
+theorem isTopologicallyFinitelyGenerated_prod_iff :
+    IsTopologicallyFinitelyGenerated (G × H) ↔
+      IsTopologicallyFinitelyGenerated G ∧ IsTopologicallyFinitelyGenerated H :=
+  ⟨fun h ↦ ⟨h.of_surjective (f := MonoidHom.fst G H) continuous_fst Prod.fst_surjective,
+      h.of_surjective (f := MonoidHom.snd G H) continuous_snd Prod.snd_surjective⟩,
+    fun ⟨hG, hH⟩ ↦ hG.prod hH⟩
+
+/-- A finite product of topologically finitely generated groups is topologically finitely
+generated. -/
+theorem IsTopologicallyFinitelyGenerated.pi {ι : Type*} [Finite ι] {F : ι → Type*}
+    [∀ i, Group (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)]
+    (hF : ∀ i, IsTopologicallyFinitelyGenerated (F i)) :
+    IsTopologicallyFinitelyGenerated (∀ i, F i) := by
+  classical
+  choose s hs using hF
+  let S : Set (∀ i, F i) := ⋃ i, MonoidHom.mulSingle F i '' (s i : Set (F i))
+  have hS : S.Finite :=
+    Set.finite_iUnion fun i ↦ (s i).finite_toSet.image (MonoidHom.mulSingle F i)
+  refine hS.isTopologicallyFinitelyGenerated ?_
+  set T := (Subgroup.closure S).topologicalClosure
+  have hle : ⨆ i, (MonoidHom.mulSingle F i).range ≤ T := iSup_le fun i ↦
+    (MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top (hs i) (continuous_mulSingle i)
+      (Subgroup.isClosed_topologicalClosure _)).mpr fun x hx ↦
+        Subgroup.le_topologicalClosure _
+          (Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨i, x, hx, rfl⟩))
+  exact eq_top_iff.mpr (topologicalClosure_iSup_range_mulSingle_eq_top.ge.trans
+    (Subgroup.topologicalClosure_minimal _ hle (Subgroup.isClosed_topologicalClosure _)))
+
+/-- A finite product of topological groups is topologically finitely generated if and only if each
+factor is. -/
+theorem isTopologicallyFinitelyGenerated_pi_iff {ι : Type*} [Finite ι] {F : ι → Type*}
+    [∀ i, Group (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)] :
+    IsTopologicallyFinitelyGenerated (∀ i, F i) ↔ ∀ i, IsTopologicallyFinitelyGenerated (F i) :=
+  ⟨fun h i ↦ h.of_surjective (f := Pi.evalMonoidHom F i) (continuous_apply i)
+      (Function.surjective_eval i),
+    IsTopologicallyFinitelyGenerated.pi⟩
 
 section OpenKernel
 
