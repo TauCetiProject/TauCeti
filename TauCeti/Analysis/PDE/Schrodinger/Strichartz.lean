@@ -238,7 +238,7 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
   obtain ⟨C, hC⟩ :=
     exists_lintegral_lintegral_enorm_inner_schrodingerPropagator_sub_le (r' := r') hq hpq hqr
   exact ⟨C, fun F G hF hG =>
-    (enorm_integral_setIntegral_Iio_le_lintegral_lintegral _).trans (hC F G hF hG)⟩
+    (enorm_integral_setIntegral_le_lintegral_lintegral _).trans (hC F G hF hG)⟩
 
 /-- **The dual Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
 non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and `r'` the

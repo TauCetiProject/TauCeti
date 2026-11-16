@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.RieszThorin
@@ -214,12 +215,9 @@ private theorem halfWavePropagator_comp_adjoint_apply {j : ℤ} {m : Lp ℂ ∞ 
 /-- The multiplier `W₊(τ) Pⱼ²` is a contraction on `L²`. -/
 private theorem norm_fourierMultiplierCLM_pairingSymbol_le (j : ℤ) (τ : ℝ) :
     ‖Lp.fourierMultiplierCLM (E := E) ℂ ((φ.pairingSymbol j τ).toLp ∞)‖ ≤ 1 := by
-  refine (Lp.norm_fourierMultiplierCLM_le _).trans ?_
-  rw [SchwartzMap.norm_toLp]
-  refine ENNReal.toReal_le_of_le_ofReal zero_le_one ?_
-  rw [eLpNorm_exponent_top (φ.pairingSymbol j τ).continuous.aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_bound (Eventually.of_forall fun ξ ↦ ?_)
-  rw [coe_pairingSymbol, norm_mul, norm_phaseSymbol, one_mul, Complex.norm_real,
+  refine (Lp.norm_fourierMultiplierCLM_le _).trans (Lp.norm_top_le_of_ae_bound zero_le_one ?_)
+  filter_upwards [(φ.pairingSymbol j τ).coeFn_toLp ∞] with ξ h
+  rw [h, coe_pairingSymbol, norm_mul, norm_phaseSymbol, one_mul, Complex.norm_real,
     Real.norm_eq_abs, abs_pow]
   exact pow_le_one₀ (abs_nonneg _) (φ.abs_littlewoodPaley_le_one j ξ)
 
@@ -472,7 +470,7 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_le (h
   obtain ⟨C, hC⟩ :=
     φ.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_le (r' := r') hq hpq hqr
   exact ⟨C, fun j m hm F G hF hG ↦
-    (enorm_integral_setIntegral_Iio_le_lintegral_lintegral _).trans (hC j m hm F G hF hG)⟩
+    (enorm_integral_setIntegral_le_lintegral_lintegral _).trans (hC j m hm F G hF hG)⟩
 
 end Admissible
 
