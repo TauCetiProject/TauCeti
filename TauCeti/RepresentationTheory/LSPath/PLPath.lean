@@ -68,6 +68,9 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   middle of a segment list, does not change the presented path.
 * `TauCeti.PLPath.ofSegments_div_smul_cons_sub_div_smul_cons`: subdividing a segment of a segment
   list at a fraction `d / e` with `0 ≤ d ≤ e`.
+* `TauCeti.PLPath.map_injective`, `TauCeti.PLPath.map_smul_id_injective`: injective linear maps
+  (in particular nonzero scalar dilations) commute with normalization and act injectively on
+  piecewise-linear paths.
 
 ## References
 
@@ -686,6 +689,58 @@ theorem map_reverse (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) :
     p.reverse.map g = (p.map g).reverse := by
   simp [map, segments_reverse, List.map_reverse, List.map_map, reverse_ofSegments,
     Function.comp_def]
+
+/-- Mapping by the zero linear map collapses every piecewise-linear path to the constant path
+`1`. -/
+@[simp]
+theorem map_zero_linearMap (p : PLPath 𝕜 V) : p.map (0 : V →ₗ[𝕜] W) = 1 := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  apply PLPath.ext
+  simp [segments_ofSegments, normalize_eq_nil_iff]
+
+/-- An injective linear map commutes with the single normalization step `consMerge`, since it
+preserves and reflects both zero segments and collinear rays. -/
+theorem consMerge_map_of_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g)
+    (v : V) (l : List V) :
+    consMerge 𝕜 (g v) (l.map g) = (consMerge 𝕜 v l).map g := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  have hgv : g v ≠ 0 := by simpa [map_zero] using hg.ne hv
+  cases l with
+  | nil => simp [consMerge_nil_of_ne_zero hv, consMerge_nil_of_ne_zero hgv]
+  | cons w l =>
+    by_cases hvw : SameRay 𝕜 v w
+    · rw [List.map_cons, consMerge_cons_of_sameRay (hg.sameRay_map_iff.mpr hvw),
+        consMerge_cons_of_sameRay hvw, List.map_cons, map_add]
+    · rw [List.map_cons, consMerge_cons_of_not_sameRay (mt hg.sameRay_map_iff.mp hvw),
+        consMerge_cons_of_not_sameRay hvw, List.map_cons, List.map_cons]
+
+/-- Segment normalization commutes with any injective linear map. -/
+theorem normalize_map_of_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g) (l : List V) :
+    normalize 𝕜 (l.map g) = (normalize 𝕜 l).map g := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    rw [List.map_cons, normalize_cons, normalize_cons, ih, consMerge_map_of_injective hg]
+
+/-- An injective linear map preserves the reduced segment list of a path without further merging or
+erasure. -/
+theorem segments_map_of_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g) (p : PLPath 𝕜 V) :
+    (p.map g).segments = p.segments.map g := by
+  rw [map_def, segments_ofSegments, normalize_map_of_injective hg, p.isReduced.normalize_eq]
+
+/-- An injective linear map acts injectively on piecewise-linear paths. -/
+theorem map_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g) :
+    Function.Injective (fun p : PLPath 𝕜 V ↦ p.map g) := by
+  intro p q (h : p.map g = q.map g)
+  apply PLPath.ext
+  apply List.map_injective_iff.mpr hg
+  rw [← segments_map_of_injective hg, ← segments_map_of_injective hg, h]
+
+/-- Nonzero scalar dilation acts injectively on piecewise-linear paths. -/
+theorem map_smul_id_injective {a : 𝕜} (ha : a ≠ 0) :
+    Function.Injective (fun p : PLPath 𝕜 V ↦ p.map (a • LinearMap.id)) :=
+  map_injective fun _ _ h ↦ smul_right_injective V ha h
 
 end Images
 
