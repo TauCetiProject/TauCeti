@@ -46,11 +46,12 @@ At a vortex the infinitesimal gauge transformations solve the linearized equatio
 `d₁ d₀ = 0` (`TauCeti.Vortex.linearizedEquation_gaugeDirection_eq_zero`). The splitting then
 carries a solution `y ∈ H^k` of the linearized equation `d₁ y = 0` to the element `y - d₀ u` of the
 kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁`
-(`TauCeti.Vortex.exists_gaugeFixedOperator_sub_gaugeDirection_eq_zero`). With uniqueness, the
-continuous solutions of `d₁ y = 0` in `H^k` are the direct sum of the infinitesimal gauge
-transformations `d₀ u`, `u ∈ H^(k+1)` continuous, and the kernel of `L_x`. As a consequence of
-these results, not a statement of this file, the kernel of the gauge-fixed operator represents the
-first cohomology `ker d₁ / im d₀` of the deformation complex at `x`.
+(`TauCeti.Vortex.exists_gaugeFixedOperator_sub_gaugeDirection_eq_zero`). As consequences of
+these results, not statements of this file: with uniqueness, the continuous solutions of
+`d₁ y = 0` in `H^k` are the direct sum of the infinitesimal gauge transformations `d₀ u`,
+`u ∈ H^(k+1)` continuous, and the continuous variations in `H^k` lying in the kernel of `L_x`;
+so these elements of the kernel of the gauge-fixed operator represent the first cohomology
+`ker d₁ / im d₀` of the deformation complex at `x`.
 
 The statements concern the linearized gauge action on fields as functions; the nonlinear slice,
 which puts a field of `A_m^k` near `x` into the Coulomb slice `d₀* (· - x) = 0` by an element of
