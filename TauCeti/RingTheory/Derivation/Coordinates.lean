@@ -120,6 +120,12 @@ theorem multiIndexDeriv_add_single [DecidableEq ι] (α : ι → ℕ) (i : ι) :
     multiIndexDeriv d hd (α + Pi.single i 1) = multiIndexDeriv d hd α * d i := by
   rw [multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
 
+/-- A submonoid of `Module.End R A` containing the derivations `∂ᵢ` contains every monomial `∂^α`
+in them. -/
+theorem multiIndexDeriv_mem {S : Submonoid (Module.End R A)}
+    (h : ∀ i, (d i : Module.End R A) ∈ S) (α : ι → ℕ) : multiIndexDeriv d hd α ∈ S :=
+  S.noncommProd_mem _ _ _ fun i _ ↦ pow_mem (h i) _
+
 /-- A monomial `∂^α` in derivations is a differential operator of order at most `|α|`. -/
 theorem multiIndexDeriv_mem_differentialOperators (α : ι → ℕ) :
     multiIndexDeriv d hd α ∈ differentialOperators R A A A (∑ i, α i) := by
