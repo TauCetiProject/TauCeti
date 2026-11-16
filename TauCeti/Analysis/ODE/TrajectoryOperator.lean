@@ -19,11 +19,13 @@ both the value and its weak derivative. No new Sobolev carrier is introduced.
 
 `WeakDerivStep.trajectoryOperator` is a continuous linear map. Its operator norm is at most
 `1 + ‖A‖`, and changing the coefficient changes the operator by at most the `L∞` distance
-between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary differential
-equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
-the operator agrees almost everywhere with the classical expression `u' + A u`. In particular,
-for a path in `W^{1,2}(ℝ, F)` with a `C¹` representative `φ`, the squared norms of the path, of
-its weak derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
+between coefficients; as a function of the coefficient it is smooth
+(`TauCeti.WeakDerivStep.contDiff_trajectoryOperator`). Solving `D_A u = f` is equivalent to the
+weak ordinary differential equation `u' = f - A u`. For differentiable representatives with
+locally integrable derivative, the operator agrees almost everywhere with the classical
+expression `u' + A u`. In particular, for a path in `W^{1,2}(ℝ, F)` with a `C¹`
+representative `φ`, the squared norms of the path, of its weak derivative and of its image under
+`D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
 (`TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
 `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral` and
 `TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
@@ -201,6 +203,19 @@ theorem lipschitzWith_trajectoryOperator :
     LipschitzWith 1 (trajectoryOperator (F := F) (mu := mu) (Omega := Omega) (p := p)) :=
   LipschitzWith.of_dist_le_mul fun A B ↦ by
     simpa only [dist_eq_norm, NNReal.coe_one, one_mul] using norm_trajectoryOperator_sub_le A B
+
+/-- The trajectory operator depends smoothly on its `L∞` coefficient: it is the operator with
+coefficient `0` plus a continuous linear function of the coefficient. -/
+theorem contDiff_trajectoryOperator {n : WithTop ℕ∞} :
+    ContDiff ℝ n (trajectoryOperator (F := F) (mu := mu) (Omega := Omega) (p := p)) := by
+  have h : trajectoryOperator (F := F) (mu := mu) (Omega := Omega) (p := p) = fun A ↦
+      trajectoryOperator 0 +
+        ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holderL (mu.restrict Omega) ∞ p p A).comp
+          (prevL (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) := by
+    funext A
+    rw [← sub_eq_iff_eq_add', trajectoryOperator_sub, sub_zero]
+  rw [h]
+  exact contDiff_const.add ((ContinuousLinearMap.contDiff _).clm_comp contDiff_const)
 
 /-- Solving the bounded trajectory equation is equivalent to solving the weak ordinary
 differential equation `u' = f - A u`. -/
