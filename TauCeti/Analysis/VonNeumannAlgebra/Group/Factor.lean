@@ -14,26 +14,19 @@ import TauCeti.GroupTheory.FreeGroup.Conjugacy.Infinite
 /-!
 # The center of a group von Neumann algebra and the Murray–von Neumann ICC factor theorem
 
-Let `Γ` be a group with measurable multiplication and measurable singletons on its counting-measure
-space (in particular any discrete group `[DiscreteMeasurableSpace Γ]`, countable or uncountable).
+For a group `Γ` with measurable multiplication and measurable singletons on its counting-measure
+space (in particular any discrete group `[DiscreteMeasurableSpace Γ]`, countable or uncountable),
+an operator `x ∈ groupVonNeumannAlgebra Γ` lies in the center
+`(groupVonNeumannAlgebra Γ).commutant` if and only if its Fourier coefficients are constant on
+conjugacy classes (`TauCeti.mem_commutant_groupVonNeumannAlgebra_iff_of_mem`).
 
-Conjugating an operator `x ∈ groupVonNeumannAlgebra Γ` by a left regular unitary `λ_k` conjugates
-its Fourier coefficients: `c_g(λ_k * x * λ_{k⁻¹}) = c_{k⁻¹ * g * k}(x)`
-(`TauCeti.groupVonNeumannCoeff_leftRegular_conj`). Because Fourier coefficients separate elements of
-`groupVonNeumannAlgebra Γ`, an element `x ∈ groupVonNeumannAlgebra Γ` belongs to the commutant
-`(groupVonNeumannAlgebra Γ).commutant` if and only if `groupVonNeumannCoeff x` is constant on the
-conjugacy classes of `Γ` (`TauCeti.mem_commutant_groupVonNeumannAlgebra_iff`).
-
-Comparing this conjugacy-invariance with the square-summability of `groupVonNeumannCoeff x` yields
-**Murray and von Neumann's ICC factor criterion** (`TauCeti.isFactor_groupVonNeumannAlgebra_iff`):
-`groupVonNeumannAlgebra Γ` is a factor if and only if every nonidentity element of `Γ` has an
-infinite conjugacy class. As immediate consequences:
-
-* `TauCeti.not_isFactor_groupVonNeumannAlgebra_of_isMulCommutative`: for a nontrivial commutative
-  group, `groupVonNeumannAlgebra Γ` is not a factor.
-* `TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup` and
-  `TauCeti.isFactor_groupVonNeumannAlgebra_freeGroup`: for any nonabelian free group (in particular
-  `FreeGroup α` with `[Nontrivial α]`), `groupVonNeumannAlgebra` is a factor.
+Comparing conjugacy-invariance with `ℓ²` square-summability yields **Murray and von Neumann's ICC
+factor theorem** (`TauCeti.isFactor_groupVonNeumannAlgebra_iff`): `groupVonNeumannAlgebra Γ` is a
+factor if and only if every nonidentity conjugacy class of `Γ` is infinite. Consequently,
+nontrivial commutative groups never give factors
+(`TauCeti.not_isFactor_groupVonNeumannAlgebra_of_isMulCommutative`), while nonabelian free groups
+yield II₁ factors (`TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup`,
+`TauCeti.isFactor_groupVonNeumannAlgebra_freeGroup`).
 
 ## References
 
@@ -72,33 +65,28 @@ theorem groupVonNeumannCoeff_leftRegular_conj
 /-- **Center characterization of `groupVonNeumannAlgebra Γ`.** An operator
 `x ∈ groupVonNeumannAlgebra Γ` lies in `(groupVonNeumannAlgebra Γ).commutant` if and only if its
 Fourier coefficients are constant on conjugacy classes of `Γ`. -/
-theorem mem_commutant_groupVonNeumannAlgebra_iff
+theorem mem_commutant_groupVonNeumannAlgebra_iff_of_mem
     {x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)}
     (hx : x ∈ groupVonNeumannAlgebra Γ) :
     x ∈ (groupVonNeumannAlgebra Γ).commutant ↔
       ∀ g h : Γ, IsConj g h → groupVonNeumannCoeff x g = groupVonNeumannCoeff x h := by
   refine ⟨fun hx' g h hgh => ?_, fun hconj => ?_⟩
   · obtain ⟨k, rfl⟩ := isConj_iff.1 hgh
-    have hcomm : (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k * x =
-        x * (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k :=
-      mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.1 hx' k
     have hconj_eq :
         (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k * x *
           (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k⁻¹ = x := by
-      rw [hcomm, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
+      rw [mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.1 hx' k, mul_assoc, ← map_mul,
+        mul_inv_cancel, map_one, mul_one]
     have hcoeff := groupVonNeumannCoeff_leftRegular_conj hx k (k * g * k⁻¹)
-    have hkg : k⁻¹ * (k * g * k⁻¹) * k = g := by group
-    rw [hconj_eq, hkg] at hcoeff
+    rw [hconj_eq, show k⁻¹ * (k * g * k⁻¹) * k = g by group] at hcoeff
     exact hcoeff.symm
   · refine mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.2 fun k => ?_
     let lk := (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k
     let lki := (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k⁻¹
-    have hconj_mem : lk * x * lki ∈ groupVonNeumannAlgebra Γ :=
-      (groupVonNeumannAlgebra Γ).mul_mem
-        ((groupVonNeumannAlgebra Γ).mul_mem (leftRegular_mem_groupVonNeumannAlgebra k) hx)
-        (leftRegular_mem_groupVonNeumannAlgebra k⁻¹)
     have hconj_eq : lk * x * lki = x := by
-      refine eq_of_groupVonNeumannCoeff_eq hconj_mem hx fun g => ?_
+      refine eq_of_groupVonNeumannCoeff_eq
+        (mul_mem (mul_mem (leftRegular_mem_groupVonNeumannAlgebra k) hx)
+          (leftRegular_mem_groupVonNeumannAlgebra k⁻¹)) hx fun g => ?_
       rw [groupVonNeumannCoeff_leftRegular_conj hx k g]
       exact hconj (k⁻¹ * g * k) g (isConj_iff.2 ⟨k, by group⟩)
     calc lk * x = (lk * x * lki) * lk := by
@@ -106,7 +94,7 @@ theorem mem_commutant_groupVonNeumannAlgebra_iff
       _ = x * lk := by rw [hconj_eq]
 
 variable (Γ) in
-/-- **The ICC factor theorem** (Murray–von Neumann). The group von Neumann algebra
+/-- **The ICC factor theorem** (Murray–von Neumann). When singletons in `Γ` are measurable,
 `groupVonNeumannAlgebra Γ` is a factor if and only if every conjugacy class of `Γ` other than `{1}`
 is infinite. No countability of `Γ` is assumed. -/
 theorem isFactor_groupVonNeumannAlgebra_iff :
@@ -119,45 +107,40 @@ theorem isFactor_groupVonNeumannAlgebra_iff :
     let z := ∑ h ∈ hfin.toFinset, (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 h
     have hz : z ∈ groupVonNeumannAlgebra Γ :=
       sum_mem fun h _ => leftRegular_mem_groupVonNeumannAlgebra h
-    have hz_coeff (x : Γ) :
-        groupVonNeumannCoeff z x = if IsConj g x then 1 else 0 := by
+    have hz_coeff (x : Γ) : groupVonNeumannCoeff z x = if IsConj g x then 1 else 0 := by
       simpa only [z, Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using
         groupVonNeumannCoeff_sum_leftRegular hfin.toFinset x
     have hz' : z ∈ (groupVonNeumannAlgebra Γ).commutant :=
-      (mem_commutant_groupVonNeumannAlgebra_iff hz).2 fun x y hxy => by
-        have hiff : IsConj g x ↔ IsConj g y := ⟨fun h => h.trans hxy, fun h => h.trans hxy.symm⟩
-        simp only [hz_coeff, hiff]
+      (mem_commutant_groupVonNeumannAlgebra_iff_of_mem hz).2 fun x y hxy => by
+        simp only [hz_coeff, show IsConj g x ↔ IsConj g y from
+          ⟨fun h => h.trans hxy, fun h => h.trans hxy.symm⟩]
     obtain ⟨c, hzc⟩ := hcenter z hz hz'
     have hc0 : c = 0 := by
-      have h1 := congr_arg (fun w => groupVonNeumannCoeff w 1) hzc
-      simpa [hz_coeff, hg] using h1.symm
-    have hg_eq := congr_arg (fun w => groupVonNeumannCoeff w g) hzc
-    rw [hz_coeff, hc0, zero_smul, groupVonNeumannCoeff_zero] at hg_eq
-    simp only [IsConj.refl g, ↓reduceIte, one_ne_zero] at hg_eq
+      simpa [hz_coeff, hg] using (congr_arg (groupVonNeumannCoeff · 1) hzc).symm
+    have hg_eq := congr_arg (groupVonNeumannCoeff · g) hzc
+    rw [hz_coeff, ite_eq_left (IsConj.refl g), hc0, zero_smul, groupVonNeumannCoeff_zero] at hg_eq
+    exact one_ne_zero hg_eq
   · intro h10
-    have h := congr_arg (fun w => groupVonNeumannCoeff w 1) h10
-    simp only [groupVonNeumannCoeff_one_one, groupVonNeumannCoeff_zero, one_ne_zero] at h
+    simpa using congr_arg (groupVonNeumannCoeff · 1) h10
   · refine ⟨groupVonNeumannCoeff x 1, eq_of_groupVonNeumannCoeff_eq hx
       ((groupVonNeumannAlgebra Γ).toStarSubalgebra.smul_mem
         (groupVonNeumannAlgebra Γ).one_mem _) fun g => ?_⟩
     by_cases hg : g = 1
-    · subst hg
-      simp
+    · subst hg; simp
     · rw [groupVonNeumannCoeff_smul, groupVonNeumannCoeff_one_of_ne hg, mul_zero]
       have : Infinite {h : Γ // IsConj g h} := (hicc g hg).to_subtype
-      have hconst (h : {h : Γ // IsConj g h}) :
-          groupVonNeumannCoeff x h.1 = groupVonNeumannCoeff x g :=
-        ((mem_commutant_groupVonNeumannAlgebra_iff hx).1 hx' g h.1 h.2).symm
       have hsum : Summable fun _ : {h : Γ // IsConj g h} => ‖groupVonNeumannCoeff x g‖ ^ 2 :=
         ((summable_norm_sq_groupVonNeumannCoeff x).comp_injective Subtype.val_injective).congr
-          fun h => by simp [hconst h]
+          fun h => congr_arg (‖·‖ ^ 2)
+            ((mem_commutant_groupVonNeumannAlgebra_iff_of_mem hx).1 hx' h.1 g h.2.symm)
       exact norm_eq_zero.1 (sq_eq_zero_iff.1 ((summable_const_iff _).1 hsum))
 
 end Center
 
 /-! ### Abelian and free-group corollaries -/
 
-/-- For a nontrivial commutative group, `groupVonNeumannAlgebra Γ` is not a factor. -/
+/-- For a nontrivial commutative group with measurable singletons, `groupVonNeumannAlgebra Γ` is
+not a factor. -/
 theorem not_isFactor_groupVonNeumannAlgebra_of_isMulCommutative (Γ : Type*) [Group Γ]
     [Nontrivial Γ] [IsMulCommutative Γ] [MeasurableSpace Γ] [MeasurableMul Γ]
     [MeasurableSingletonClass Γ] :
@@ -170,14 +153,16 @@ theorem not_isFactor_groupVonNeumannAlgebra_of_isMulCommutative (Γ : Type*) [Gr
   rw [Set.mem_singleton_iff, isMulCommutative_iff.1 ‹_› k g]
   group
 
-/-- The group von Neumann algebra of a nonabelian free group is a factor. -/
+/-- For a nonabelian free group with measurable singletons, `groupVonNeumannAlgebra Γ` is a
+factor. -/
 theorem isFactor_groupVonNeumannAlgebra_of_isFreeGroup (Γ : Type*) [Group Γ] [IsFreeGroup Γ]
     [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ]
     (h : ¬ IsMulCommutative Γ) :
     (groupVonNeumannAlgebra Γ).IsFactor :=
   (isFactor_groupVonNeumannAlgebra_iff Γ).2 fun _ => IsFreeGroup.infinite_setOf_isConj h
 
-/-- When `α` has at least two elements, `groupVonNeumannAlgebra (FreeGroup α)` is a factor. -/
+/-- When `α` has at least two elements and `FreeGroup α` has measurable singletons,
+`groupVonNeumannAlgebra (FreeGroup α)` is a factor. -/
 theorem isFactor_groupVonNeumannAlgebra_freeGroup (α : Type*) [Nontrivial α]
     [MeasurableSpace (FreeGroup α)] [MeasurableMul (FreeGroup α)]
     [MeasurableSingletonClass (FreeGroup α)] :

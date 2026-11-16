@@ -10,15 +10,14 @@ public import Mathlib.Analysis.VonNeumannAlgebra.Basic
 /-!
 # Cyclic and separating vectors for von Neumann algebras
 
-Let `M` be a concrete von Neumann algebra acting on a complex Hilbert space `H`.
-
-* `ξ : H` is **cyclic** for `M` (`VonNeumannAlgebra.IsCyclic`) when the orbit `M ξ` is dense in `H`.
-* `ξ : H` is **separating** for `M` (`VonNeumannAlgebra.IsSeparating`) when `x ξ = 0` forces `x = 0`
-  for `x ∈ M`.
-* Using the orthogonal projection onto the closed orbit `closure (M ξ)`, which belongs to the
-  commutant `M'`, `ξ` is cyclic for `M` if and only if it is separating for `M'`
-  (`VonNeumannAlgebra.isCyclic_iff_isSeparating_commutant`,
-  `VonNeumannAlgebra.isSeparating_iff_isCyclic_commutant`).
+Cyclic and separating vectors are fundamental tools in standard-form and group von Neumann algebra
+theory (for example, showing that the identity point mass `δ₁` is cyclic and separating for `L(Γ)`
+and `R(Γ)`, which yields faithfulness of the canonical trace and uniqueness of Fourier
+coefficients). A vector `ξ : H` is **cyclic** (`VonNeumannAlgebra.IsCyclic`) when `M ξ` is dense in
+`H`, and **separating** (`VonNeumannAlgebra.IsSeparating`) when `x ξ = 0` forces `x = 0` for
+`x ∈ M`; these two properties are dual under passing to the commutant `M'`
+(`VonNeumannAlgebra.isCyclic_iff_isSeparating_commutant`,
+`VonNeumannAlgebra.isSeparating_iff_isCyclic_commutant`).
 
 ## References
 
@@ -48,15 +47,26 @@ theorem IsCyclic.dense {M : VonNeumannAlgebra H} {ξ : H} (hξ : M.IsCyclic ξ) 
 /-- Set-image form of `VonNeumannAlgebra.IsCyclic`. -/
 theorem isCyclic_iff (M : VonNeumannAlgebra H) (ξ : H) :
     M.IsCyclic ξ ↔ Dense ((· ξ) '' (M : Set (H →L[ℂ] H))) := by
-  rw [isCyclic_def]
-  congr! 1
-  ext v
-  exact ⟨fun ⟨⟨x, hx⟩, hxv⟩ => ⟨x, hx, hxv⟩, fun ⟨x, hx, hxv⟩ => ⟨⟨x, hx⟩, hxv⟩⟩
+  rw [isCyclic_def, Set.image_eq_range]
+  rfl
 
 /-- For a cyclic vector `ξ`, the orbit `(· ξ) '' (M : Set (H →L[ℂ] H))` is dense in `H`. -/
 theorem IsCyclic.dense_image {M : VonNeumannAlgebra H} {ξ : H} (hξ : M.IsCyclic ξ) :
     Dense ((· ξ) '' (M : Set (H →L[ℂ] H))) :=
   (M.isCyclic_iff ξ).1 hξ
+
+/-- If the orbit `M ξ` contains a set `s` whose linear span is dense in `H`, then `ξ` is cyclic
+for `M`. -/
+theorem IsCyclic.of_topologicalClosure_span_eq_top {M : VonNeumannAlgebra H} {ξ : H} {s : Set H}
+    (hs : (Submodule.span ℂ s).topologicalClosure = ⊤) (h : ∀ v ∈ s, ∃ x ∈ M, x ξ = v) :
+    M.IsCyclic ξ := by
+  rw [M.isCyclic_iff]
+  have hsub : Submodule.span ℂ s ≤
+      M.toStarSubalgebra.toSubalgebra.toSubmodule.map
+        (ContinuousLinearMap.apply ℂ H ξ).toLinearMap :=
+    Submodule.span_le.2 h
+  exact (Submodule.dense_iff_topologicalClosure_eq_top.2 hs).mono fun w hw => by
+    obtain ⟨x, hx, rfl⟩ := hsub hw; exact ⟨x, hx, rfl⟩
 
 /-- A vector `ξ : H` is **separating** for `M` when `x ξ = 0` forces `x = 0` for `x ∈ M`. -/
 def IsSeparating (M : VonNeumannAlgebra H) (ξ : H) : Prop :=
@@ -87,23 +97,17 @@ the commutant `M'`. -/
 theorem isCyclic_iff_isSeparating_commutant (M : VonNeumannAlgebra H) (ξ : H) :
     M.IsCyclic ξ ↔ M.commutant.IsSeparating ξ := by
   refine ⟨fun hcyc => (M.commutant.isSeparating_iff ξ).2 fun y hy hy0 => ?_, fun hsep => ?_⟩
-  · have hzero : Set.EqOn y (0 : H →L[ℂ] H) (Set.range fun x : M => (x : H →L[ℂ] H) ξ) := by
-      rintro _ ⟨⟨x, hx⟩, rfl⟩
-      have hcomm : x * y = y * x := mem_commutant_iff.1 hy x hx
-      calc y (x ξ) = (y * x) ξ := rfl
-        _ = (x * y) ξ := by rw [hcomm]
-        _ = x (y ξ) := rfl
-        _ = 0 := by rw [hy0, map_zero]
-    have hall : closure (Set.range fun x : M => (x : H →L[ℂ] H) ξ) ⊆ {v : H | y v = 0} :=
-      closure_minimal hzero (isClosed_eq y.continuous continuous_zero)
-    exact ContinuousLinearMap.ext fun v => hall (hcyc v)
+  · refine ContinuousLinearMap.ext (congrFun
+      (DenseRange.equalizer hcyc y.continuous continuous_zero ?_))
+    funext ⟨x, hx⟩
+    calc y (x ξ) = (y * x) ξ := rfl
+      _ = (x * y) ξ := by rw [mem_commutant_iff.1 hy x hx]
+      _ = 0 := by rw [mul_apply_eq_comp, hy0, map_zero]
   · set K : Submodule ℂ H :=
       (M.toStarSubalgebra.toSubalgebra.toSubmodule.map
         (ContinuousLinearMap.apply ℂ H ξ).toLinearMap).topologicalClosure with hK
     have hKcoe : (K : Set H) = closure ((· ξ) '' (M : Set (H →L[ℂ] H))) := by
-      rw [hK, Submodule.topologicalClosure_coe, Submodule.map_coe]
-      -- The carrier of `M.toStarSubalgebra.toSubalgebra.toSubmodule` equals `(M : Set _)`.
-      rfl
+      rw [hK, Submodule.topologicalClosure_coe, Submodule.map_coe]; rfl
     have hp : K.starProjection ∈ M.commutant := by
       rw [VonNeumannAlgebra.IsStarProjection.mem_iff (isStarProjection_starProjection (U := K))
         M.commutant, M.commutant_commutant, K.range_starProjection]

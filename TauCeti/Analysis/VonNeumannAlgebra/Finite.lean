@@ -12,16 +12,13 @@ import TauCeti.Analysis.CStarAlgebra.DedekindFinite
 /-!
 # Tracial states and finite von Neumann algebras
 
-Let `M` be a concrete von Neumann algebra on a complex Hilbert space `H`.
-
-* `VonNeumannAlgebra.IsTracialState` collects normalization (`τ 1 = 1`), positivity
-  (`0 ≤ τ (star x * x)`), and traciality (`τ (x * y) = τ (y * x)`) for a linear functional
-  `τ : M.toStarSubalgebra →ₗ[ℂ] ℂ`.
-* `VonNeumannAlgebra.IsFinite` states that every isometry in `M` is unitary
-  (`star v * v = 1 → v * star v = 1`). Any von Neumann algebra whose underlying star subalgebra is
-  Dedekind-finite (`VonNeumannAlgebra.IsFinite.of_isDedekindFiniteMonoid`), and in particular any
-  von Neumann algebra carrying a projection-faithful additive trace
-  (`VonNeumannAlgebra.IsFinite.of_tracial`), is finite.
+Tracial states and von Neumann finiteness underpin the theory of finite and II₁ von Neumann
+algebras, in particular proving that discrete group von Neumann algebras `L(Γ)` are finite
+(`TauCeti.isFinite_groupVonNeumannAlgebra`). `VonNeumannAlgebra.IsTracialState` packages
+normalization, positivity, and traciality; `VonNeumannAlgebra.IsFinite` states that every isometry
+in `M` is unitary, which follows from Dedekind-finiteness
+(`VonNeumannAlgebra.IsFinite.of_isDedekindFiniteMonoid`) and hence from any projection-faithful
+additive trace (`VonNeumannAlgebra.IsFinite.of_tracial`).
 
 ## References
 
@@ -67,15 +64,15 @@ theorem IsFinite.mul_star_self {M : VonNeumannAlgebra H} (hM : M.IsFinite) {v : 
 
 /-- Any von Neumann algebra whose underlying star subalgebra is Dedekind-finite is finite. -/
 theorem IsFinite.of_isDedekindFiniteMonoid (M : VonNeumannAlgebra H)
-    [IsDedekindFiniteMonoid M.toStarSubalgebra] : M.IsFinite := by
-  intro v hv hvv
-  have hsub : (star ⟨v, hv⟩ : M.toStarSubalgebra) * ⟨v, hv⟩ = 1 := Subtype.ext hvv
-  exact congr_arg Subtype.val (mul_eq_one_symm hsub)
+    [IsDedekindFiniteMonoid M.toStarSubalgebra] : M.IsFinite := fun v hv hvv =>
+  congr_arg Subtype.val
+    (mul_eq_one_symm (a := (star ⟨v, hv⟩ : M.toStarSubalgebra)) (b := ⟨v, hv⟩) (Subtype.ext hvv))
 
 /-- A von Neumann algebra carrying a projection-faithful additive trace on `M.toStarSubalgebra` is
 finite. -/
-theorem IsFinite.of_tracial (M : VonNeumannAlgebra H) {G : Type*} [AddZeroClass G]
-    (τ : M.toStarSubalgebra →+ G) (htr : ∀ x y, τ (x * y) = τ (y * x))
+theorem IsFinite.of_tracial (M : VonNeumannAlgebra H) {F G : Type*} [AddZero G]
+    [FunLike F M.toStarSubalgebra G] [AddMonoidHomClass F M.toStarSubalgebra G] (τ : F)
+    (htr : ∀ x y, τ (x * y) = τ (y * x))
     (hfaith : ∀ q : M.toStarSubalgebra, IsStarProjection q → τ q = 0 → q = 0) :
     M.IsFinite := by
   have := CStarAlgebra.isDedekindFiniteMonoid_of_tracial τ htr hfaith

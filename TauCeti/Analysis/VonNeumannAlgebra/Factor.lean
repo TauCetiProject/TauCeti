@@ -10,13 +10,14 @@ public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 /-!
 # Factors of von Neumann algebras
 
-Let `M` be a concrete von Neumann algebra on a complex Hilbert space `H`.
-
-`M.IsFactor` holds when `(1 : H →L[ℂ] H) ≠ 0` and every central element `x ∈ M ∩ M'` is a complex
-scalar multiple of `1`, equivalently `Nontrivial H` and `M ⊓ M.commutant = ⊥`
-(`VonNeumannAlgebra.isFactor_iff_inf_commutant_eq_bot`). Taking the commutant preserves factorhood
-(`VonNeumannAlgebra.isFactor_commutant_iff`), and on a nontrivial Hilbert space both `⊤` and `⊥` are
-factors (`VonNeumannAlgebra.isFactor_top`, `VonNeumannAlgebra.isFactor_bot`).
+Factors—von Neumann algebras with trivial center—are the indecomposable building blocks of von
+Neumann algebra classification and the target of the Murray–von Neumann ICC factor theorem
+(`TauCeti.isFactor_groupVonNeumannAlgebra_iff`). `VonNeumannAlgebra.IsFactor` holds when
+`(1 : H →L[ℂ] H) ≠ 0` and every central element `x ∈ M ∩ M'` is a scalar multiple of `1`,
+equivalently `Nontrivial H` and `M ⊓ M.commutant = ⊥`
+(`VonNeumannAlgebra.isFactor_iff_inf_commutant_eq_bot`). Factorhood is preserved under commutants
+(`VonNeumannAlgebra.isFactor_commutant_iff`) and holds for `⊤` and `⊥` on any nontrivial Hilbert
+space.
 
 ## References
 
@@ -60,27 +61,25 @@ theorem IsFactor.exists_eq_smul_one {M : VonNeumannAlgebra H} (hM : M.IsFactor) 
 
 /-- No von Neumann algebra on a subsingleton Hilbert space is a factor. -/
 @[simp]
-theorem not_isFactor_of_subsingleton [Subsingleton H] (M : VonNeumannAlgebra H) :
-    ¬ M.IsFactor :=
+theorem not_isFactor_of_subsingleton [Subsingleton H] (M : VonNeumannAlgebra H) : ¬ M.IsFactor :=
   fun hM => hM.1 (Subsingleton.elim _ _)
 
 /-- `M` is a factor if and only if `H` is nontrivial and the center `M ⊓ M'` is the scalar algebra
 `⊥`. -/
 theorem isFactor_iff_inf_commutant_eq_bot (M : VonNeumannAlgebra H) :
     M.IsFactor ↔ Nontrivial H ∧ M ⊓ M.commutant = ⊥ := by
-  refine ⟨fun hM => ⟨hM.nontrivial, le_antisymm (fun x hx => ?_) bot_le⟩, fun ⟨hH, hbot⟩ => ?_⟩
-  · rw [mem_inf] at hx
-    obtain ⟨c, rfl⟩ := hM.2 x hx.1 hx.2
+  refine ⟨fun hM => ⟨hM.nontrivial, le_antisymm (fun x hx => ?_) bot_le⟩, fun ⟨_, hbot⟩ => ?_⟩
+  · obtain ⟨c, rfl⟩ := hM.2 x (mem_inf.1 hx).1 (mem_inf.1 hx).2
     exact mem_bot.2 ⟨c, Algebra.algebraMap_eq_smul_one c⟩
   · refine ⟨one_ne_zero, fun x hx hx' => ?_⟩
-    have hxbot : x ∈ (⊥ : VonNeumannAlgebra H) := hbot ▸ mem_inf.2 ⟨hx, hx'⟩
-    obtain ⟨c, rfl⟩ := mem_bot.1 hxbot
+    obtain ⟨c, rfl⟩ := mem_bot.1 (hbot ▸ mem_inf.2 ⟨hx, hx'⟩)
     exact ⟨c, (Algebra.algebraMap_eq_smul_one c).symm⟩
 
 /-- The commutant of a factor is a factor. -/
 theorem IsFactor.commutant {M : VonNeumannAlgebra H} (hM : M.IsFactor) : M.commutant.IsFactor :=
   ⟨hM.1, fun x hx hx' => hM.2 x (by simpa using hx') hx⟩
 
+/-- A von Neumann algebra's commutant is a factor if and only if the algebra itself is a factor. -/
 @[simp]
 theorem isFactor_commutant_iff (M : VonNeumannAlgebra H) : M.commutant.IsFactor ↔ M.IsFactor :=
   ⟨fun h => by simpa using h.commutant, IsFactor.commutant⟩
@@ -94,7 +93,6 @@ theorem isFactor_top [Nontrivial H] : (⊤ : VonNeumannAlgebra H).IsFactor := by
 /-- On a nontrivial Hilbert space, the scalar algebra `⊥ = ℂ • 1` is a factor. -/
 @[simp]
 theorem isFactor_bot [Nontrivial H] : (⊥ : VonNeumannAlgebra H).IsFactor := by
-  rw [← commutant_top, isFactor_commutant_iff]
-  exact isFactor_top
+  rw [← commutant_top, isFactor_commutant_iff]; exact isFactor_top
 
 end VonNeumannAlgebra

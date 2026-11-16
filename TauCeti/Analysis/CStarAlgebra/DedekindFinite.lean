@@ -14,18 +14,14 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Star projections from idempotents and Dedekind finiteness of tracial C⋆-algebras
 
-In a unital C⋆-algebra `A`, `1 + star a * a` is invertible for every `a : A` because the real
-spectrum of `star a * a` is nonnegative. Kaplansky showed that every idempotent `p` (`p * p = p`) in
-a C⋆-algebra admits a star projection `q` sharing its right ideal (`q * p = p` and `p * q = q`): in
-the unital case, setting `z = 1 + star (p - star p) * (p - star p)` gives
-`p * z = p * star p * p = z * p` and `q = p * star p * z⁻¹`, and the non-unital case reduces to the
-unitization `Unitization ℂ A` via `(p : Unitization ℂ A) * q' = q'`.
+Every idempotent `p` (`p * p = p`) in a (possibly non-unital) C⋆-algebra admits a star projection
+`q` generating the same principal right ideal (`q * p = p` and `p * q = q`), proved in the unital
+case using invertibility of `1 + star a * a` and extended to non-unital C⋆-algebras via
+`Unitization ℂ A`.
 
-Consequently, if a unital C⋆-algebra `A` carries an additive tracial map `τ : A →+ G` that vanishes
-on no nonzero star projection, then `A` is Dedekind-finite (`a * b = 1 → b * a = 1`): for
-`a * b = 1`, the idempotent `p = 1 - b * a` has trace `τ p = τ (a * b) - τ (b * a) = 0`, so its
-associated star projection `q` satisfies `τ q = τ (p * q) = τ (q * p) = τ p = 0`, forcing `q = 0`,
-`p = 0`, and `b * a = 1`.
+As an application to operator algebras and group von Neumann algebras, any unital C⋆-algebra
+carrying a projection-faithful additive tracial map is Dedekind-finite (`a * b = 1 → b * a = 1`),
+which immediately yields von Neumann finiteness for tracial von Neumann algebras such as `L(Γ)`.
 
 ## Main results
 
@@ -49,8 +45,7 @@ theorem CStarAlgebra.isUnit_one_add_star_mul_self {A : Type*} [CStarAlgebra A] (
   by_contra h
   have hneg : (-1 : A) - star a * a = -(1 + star a * a) := by abel
   have hmem : (-1 : ℝ) ∈ spectrum ℝ (star a * a) := by
-    rw [spectrum.mem_iff, map_neg, map_one, hneg, IsUnit.neg_iff]
-    exact h
+    rw [spectrum.mem_iff, map_neg, map_one, hneg, IsUnit.neg_iff]; exact h
   linarith [spectrum_star_mul_self_nonneg (-1) hmem]
 
 private theorem exists_isStarProjection_mul_eq_unital {A : Type*} [CStarAlgebra A] {p : A}
@@ -60,46 +55,33 @@ private theorem exists_isStarProjection_mul_eq_unital {A : Type*} [CStarAlgebra 
   obtain ⟨u, hu⟩ := CStarAlgebra.isUnit_one_add_star_mul_self (p - s)
   have hpp : p * p = p := hp.eq
   have hss : s * s = s := hp.star.eq
+  have hss' : Star.star s = p := star_star p
   have hz : (u : A) = 1 - p + p * s + s * p - s := by
-    rw [hu, star_sub]
-    have hss' : Star.star s = p := star_star p
-    rw [hss']
-    calc 1 + (s - p) * (p - s)
-        = 1 - p * p + p * s + s * p - s * s := by noncomm_ring
+    rw [hu, star_sub, hss']
+    calc 1 + (s - p) * (p - s) = 1 - p * p + p * s + s * p - s * s := by noncomm_ring
       _ = 1 - p + p * s + s * p - s := by rw [hpp, hss]
   have hpz : p * (u : A) = p * s * p := by
-    rw [hz]
-    calc p * (1 - p + p * s + s * p - s)
-        = p - p * p + (p * p) * s + p * s * p - p * s := by noncomm_ring
+    calc p * (u : A) = p - p * p + (p * p) * s + p * s * p - p * s := by rw [hz]; noncomm_ring
       _ = p * s * p := by rw [hpp]; noncomm_ring
   have hzp : (u : A) * p = p * s * p := by
-    rw [hz]
-    calc (1 - p + p * s + s * p - s) * p
-        = p - p * p + p * s * p + s * (p * p) - s * p := by noncomm_ring
+    calc (u : A) * p = p - p * p + p * s * p + s * (p * p) - s * p := by rw [hz]; noncomm_ring
       _ = p * s * p := by rw [hpp]; noncomm_ring
   have hspz : s * (u : A) = s * p * s := by
-    rw [hz]
-    calc s * (1 - p + p * s + s * p - s)
-        = s - s * p + s * p * s + (s * s) * p - s * s := by noncomm_ring
+    calc s * (u : A) = s - s * p + s * p * s + (s * s) * p - s * s := by rw [hz]; noncomm_ring
       _ = s * p * s := by rw [hss]; noncomm_ring
   have hpu : (↑u⁻¹ : A) * p = p * ↑u⁻¹ := u.inv_mul_eq_iff_eq_mul.2
     (by rw [← mul_assoc (u : A) p, hzp, ← hpz, mul_assoc, u.mul_inv, mul_one])
-  have hpsu : (↑u⁻¹ : A) * (p * s) = p * s * ↑u⁻¹ := by
-    refine u.inv_mul_eq_iff_eq_mul.2 ?_
-    have hassoc : p * s * p * s = p * (s * p * s) := by simp [mul_assoc]
-    rw [← mul_assoc (u : A), ← mul_assoc (u : A) p, hzp, hassoc, ← hspz]
+  have hpsu : (↑u⁻¹ : A) * (p * s) = p * s * ↑u⁻¹ := u.inv_mul_eq_iff_eq_mul.2 <| by
+    rw [← mul_assoc (u : A), ← mul_assoc (u : A) p, hzp, show p * s * p * s = p * (s * p * s) by
+      simp [mul_assoc], ← hspz]
     simp [mul_assoc]
   have huinv_sa : Star.star (↑u⁻¹ : A) = ↑u⁻¹ :=
     (u.mul_eq_one_iff_inv_eq.1 <| by simpa [hu] using congr_arg Star.star u.inv_mul).symm
   have hqp : p * s * ↑u⁻¹ * p = p := by
     rw [mul_assoc (p * s), hpu, ← mul_assoc, ← hpz, mul_assoc, u.mul_inv, mul_one]
   refine ⟨p * s * ↑u⁻¹, ⟨?_, ?_⟩, hqp, by rw [← mul_assoc, ← mul_assoc, hpp]⟩
-  · rw [IsIdempotentElem, ← mul_assoc (p * s * ↑u⁻¹), ← mul_assoc (p * s * ↑u⁻¹) p,
-      hqp, mul_assoc]
-  · have hstar : Star.star (p * s * ↑u⁻¹) = ↑u⁻¹ * (p * s) := by
-      have hss' : Star.star s = p := star_star p
-      rw [star_mul, star_mul, hss', huinv_sa]
-    rw [IsSelfAdjoint, hstar, hpsu]
+  · rw [IsIdempotentElem, ← mul_assoc (p * s * ↑u⁻¹), ← mul_assoc (p * s * ↑u⁻¹) p, hqp, mul_assoc]
+  · rw [IsSelfAdjoint, star_mul, star_mul, hss', huinv_sa, hpsu]
 
 /-- **Kaplansky's theorem on idempotents in C⋆-algebras.** Every idempotent `p` in a C⋆-algebra
 admits a star projection `q` sharing its principal right ideal (`q * p = p` and `p * q = q`). -/
@@ -118,23 +100,20 @@ theorem IsIdempotentElem.exists_isStarProjection_mul_eq {A : Type*} [NonUnitalCS
 
 /-- A unital C⋆-algebra admitting an additive tracial map that vanishes on no nonzero star
 projection is Dedekind-finite (`a * b = 1 → b * a = 1`). -/
-theorem CStarAlgebra.isDedekindFiniteMonoid_of_tracial {A G : Type*} [CStarAlgebra A]
-    [AddZeroClass G] (τ : A →+ G)
+theorem CStarAlgebra.isDedekindFiniteMonoid_of_tracial {A F G : Type*} [CStarAlgebra A]
+    [AddZero G] [FunLike F A G] [AddMonoidHomClass F A G] (τ : F)
     (htr : ∀ x y : A, τ (x * y) = τ (y * x))
     (hfaith : ∀ q : A, IsStarProjection q → τ q = 0 → q = 0) :
     IsDedekindFiniteMonoid A where
   mul_eq_one_symm {a b} hab := by
     have hp : IsIdempotentElem (1 - b * a) := by
-      rw [IsIdempotentElem]
       calc (1 - b * a) * (1 - b * a) = 1 - b * a - b * a + b * (a * b) * a := by noncomm_ring
         _ = 1 - b * a := by rw [hab, mul_one, sub_add_cancel]
     obtain ⟨q, hq, hqp, hpq⟩ := hp.exists_isStarProjection_mul_eq
     have hτp : τ (1 - b * a) = 0 := by
-      calc τ (1 - b * a)
-          = τ (-(b * a) + (b * a + (1 - b * a))) := by rw [neg_add_cancel_left]
+      calc τ (1 - b * a) = τ (-(b * a) + (b * a + (1 - b * a))) := by rw [neg_add_cancel_left]
         _ = τ (-(b * a)) + τ (a * b) := by rw [map_add, add_sub_cancel, hab]
         _ = τ (-(b * a) + b * a) := by rw [htr a b, ← map_add]
         _ = 0 := by rw [neg_add_cancel, map_zero]
     have hq0 : q = 0 := hfaith q hq (by rw [← hpq, htr, hqp, hτp])
-    have hp0 : 1 - b * a = 0 := by rw [← hqp, hq0, zero_mul]
-    exact (sub_eq_zero.mp hp0).symm
+    exact (sub_eq_zero.mp (by rw [← hqp, hq0, zero_mul])).symm

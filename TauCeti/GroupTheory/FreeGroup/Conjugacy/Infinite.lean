@@ -13,18 +13,12 @@ import TauCeti.GroupTheory.FreeGroup.CSA
 /-!
 # Infinite conjugacy classes in nonabelian free groups
 
-Every nonidentity element of a nonabelian free group has an infinite conjugacy class (the infinite
-conjugacy class, or ICC, property). Since free groups are torsion-free and commutative transitive
-(`IsFreeGroup.isCommTransitive`), this is an instance of
-`Group.IsCommTransitive.infinite_setOf_isConj`. For `FreeGroup α`, noncommutativity holds whenever
-`α` has at least two elements (`Nontrivial α`).
-
-## Main results
-
-* `IsFreeGroup.infinite_setOf_isConj`: in a nonabelian group satisfying `IsFreeGroup G`, every
-  nonidentity element has an infinite conjugacy class.
-* `FreeGroup.infinite_setOf_isConj`: when `α` is nontrivial, every nonidentity element of
-  `FreeGroup α` has an infinite conjugacy class.
+Nonabelian free groups are the canonical examples of ICC (infinite conjugacy class) groups, yielding
+the free-group II₁ factors `L(F_n)` via Murray and von Neumann's ICC factor theorem
+(`TauCeti.isFactor_groupVonNeumannAlgebra_of_isFreeGroup`). Since free groups are torsion-free and
+commutative transitive (`IsFreeGroup.isCommTransitive`), `IsFreeGroup.infinite_setOf_isConj` and
+`FreeGroup.infinite_setOf_isConj` follow immediately from
+`Group.IsCommTransitive.infinite_setOf_isConj`.
 -/
 
 public section

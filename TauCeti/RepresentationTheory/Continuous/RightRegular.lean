@@ -11,38 +11,17 @@ import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 /-!
 # The right regular representation on vector-valued `Lᵖ`
 
-Let `μ` be a right-invariant measure on a group `G`, and `E` a normed space. Parallel to
-`MeasureTheory.Measure.leftRegular`, the group `G` acts on `Lᵖ(G, E)` by right translation,
-`(ρ g f) x = f (x * g)`. Because `(f (· * h)) (x * g) = f (x * (g * h))`, we have
-`ρ g (ρ h f) = ρ (g * h) f`, so no inverse is needed in the group argument for `g ↦ ρ g` to be a
-homomorphism. Each right translation is an isometry, so the action is unitary on `L²(G, E)` for an
-inner product space `E`. For a topological group, `1 ≤ p < ∞`, and a locally finite measure that is
-inner regular with respect to compact sets on sets of finite measure, the action is strongly
-continuous (`MeasureTheory.Measure.continuous_rightRegular_apply`). When `μ` is bi-invariant, every
-left translation `μ.leftRegular 𝕜 E p g` commutes with every right translation
-`μ.rightRegular 𝕜 E p h` by associativity of multiplication in `G`.
+Parallel to `MeasureTheory.Measure.leftRegular`, this file defines the right regular representation
+`MeasureTheory.Measure.rightRegular` (`(ρ g f) x = f (x * g)`) on `Lᵖ(G, E)` for any right-invariant
+measure `μ`. This single construction unifies compact-group Peter–Weyl theory (via
+`(haarProb G).rightRegular`) with discrete group von Neumann algebras (where
+`(Measure.count : Measure Γ).rightRegular` generates the commutant `R(Γ) = L(Γ)'`).
 
-On singleton indicators of finite measure (and on the point-mass Hilbert basis of counting-measure
-`L²`), `rightRegular` sends the indicator at `h` to that at `h * g⁻¹`.
-
-## Main definitions
-
-* `MeasureTheory.Measure.rightRegular`: the right regular representation of `G` on `Lp E p μ`.
-
-## Main statements
-
-* `MeasureTheory.Measure.rightRegular_apply` and `MeasureTheory.Measure.coeFn_rightRegular`:
-  `ρ g` is `Lp.compMeasurePreserving (· * g)`, represented by `x ↦ f (x * g)`.
-* `MeasureTheory.Measure.rightRegular_toLp`: on a compact group with a finite measure, `ρ g` acts
-  on the `Lp` class of a continuous function by right translation.
-* `MeasureTheory.Measure.isUnitary_rightRegular` and `MeasureTheory.Measure.star_rightRegular`: the
-  action on `L²(G, E)` is unitary and `star (ρ g) = ρ g⁻¹`.
-* `MeasureTheory.Measure.continuous_rightRegular_apply`: the action is strongly continuous.
-* `MeasureTheory.Measure.commute_leftRegular_rightRegular`: left and right regular operators
-  commute for any bi-invariant measure.
-* `MeasureTheory.Measure.rightRegular_indicatorConstLp_singleton` and
-  `MeasureTheory.Measure.rightRegular_countHilbertBasis`: action on singleton indicators and
-  point-mass basis vectors.
+We prove unitarity and `star` on `L²(G, E)` (`isUnitary_rightRegular`, `star_rightRegular`), strong
+continuity (`continuous_rightRegular_apply`), commutativity with `leftRegular` for bi-invariant
+measures (`commute_leftRegular_rightRegular`), and the action on continuous functions, singleton
+indicators, and the point-mass Hilbert basis (`rightRegular_toLp`,
+`rightRegular_indicatorConstLp_singleton`, `rightRegular_countHilbertBasis`).
 -/
 
 public section
@@ -70,10 +49,8 @@ noncomputable def rightRegular : ContRepresentation 𝕜 G (Lp E p μ) :=
           Lp.compMeasurePreservingₗᵢ_apply, mul_one, ← Function.id_def]
         exact Lp.compMeasurePreserving_id_apply f
       map_mul' g h := ContinuousLinearMap.ext fun f => by
-        have hfun : (fun x : G => x * (g * h)) =
-            (fun x : G => x * h) ∘ (fun x : G => x * g) := by
-          funext x
-          simp only [Function.comp_apply, mul_assoc]
+        have hfun : (fun x : G => x * (g * h)) = (· * h) ∘ (· * g) :=
+          funext fun x => (mul_assoc x g h).symm
         simp only [mul_apply_eq_comp, LinearIsometry.coe_toContinuousLinearMap,
           Lp.compMeasurePreservingₗᵢ_apply, hfun]
         exact Lp.compMeasurePreserving_comp_apply f
@@ -87,9 +64,8 @@ theorem rightRegular_apply (g : G) (f : Lp E p μ) :
 
 /-- Right translation on `Lᵖ(G, E)` is represented by right translation of functions. -/
 theorem coeFn_rightRegular (g : G) (f : Lp E p μ) :
-    μ.rightRegular 𝕜 E p g f =ᵐ[μ] fun x => f (x * g) := by
-  rw [rightRegular_apply]
-  exact Lp.coeFn_compMeasurePreserving f _
+    μ.rightRegular 𝕜 E p g f =ᵐ[μ] fun x => f (x * g) :=
+  Lp.coeFn_compMeasurePreserving f (measurePreserving_mul_right μ g)
 
 /-- On a compact group with a finite right-invariant Borel measure, right translation sends the
 `Lp` class of a continuous function `F` to the class of `x ↦ F (x * g)`. -/
@@ -97,21 +73,18 @@ theorem coeFn_rightRegular (g : G) (f : Lp E p μ) :
 theorem rightRegular_toLp [TopologicalSpace G] [ContinuousMul G] [CompactSpace G] [BorelSpace G]
     [SecondCountableTopologyEither G E] [IsFiniteMeasure μ] (F : C(G, E)) (g : G) :
     μ.rightRegular 𝕜 E p g (ContinuousMap.toLp p μ 𝕜 F) =
-      ContinuousMap.toLp p μ 𝕜 (F.comp (.mulRight g)) := by
-  rw [rightRegular_apply]
-  exact Lp.compMeasurePreserving_toLp 𝕜 F (.mulRight g) (measurePreserving_mul_right μ g)
+      ContinuousMap.toLp p μ 𝕜 (F.comp (.mulRight g)) :=
+  Lp.compMeasurePreserving_toLp 𝕜 F (.mulRight g) (measurePreserving_mul_right μ g)
 
 /-- Right translation preserves the `Lᵖ` norm. -/
 @[simp]
-theorem norm_rightRegular_apply (g : G) (f : Lp E p μ) : ‖μ.rightRegular 𝕜 E p g f‖ = ‖f‖ := by
-  rw [rightRegular_apply]
-  exact Lp.norm_compMeasurePreserving f _
+theorem norm_rightRegular_apply (g : G) (f : Lp E p μ) : ‖μ.rightRegular 𝕜 E p g f‖ = ‖f‖ :=
+  Lp.norm_compMeasurePreserving f (measurePreserving_mul_right μ g)
 
 /-- **The right regular representation on `L²(G, E)` is unitary.** -/
 theorem isUnitary_rightRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] : (μ.rightRegular 𝕜 E 2).IsUnitary := by
-  rw [ContRepresentation.isUnitary_iff_norm_map]
-  exact norm_rightRegular_apply μ 2
+    [InnerProductSpace 𝕜 E] : (μ.rightRegular 𝕜 E 2).IsUnitary :=
+  (ContRepresentation.isUnitary_iff_norm_map _).2 (norm_rightRegular_apply μ 2)
 
 /-- On a Hilbert space `E`, the operator `star` of right translation by `g` is right translation by
 `g⁻¹`. -/
@@ -130,7 +103,6 @@ theorem continuous_rightRegular_apply [TopologicalSpace G] [IsTopologicalGroup G
   have hg : Continuous fun g : G => ContinuousMap.mulRight (X := G) g :=
     (ContinuousMap.curry
       ⟨fun q : G × G => q.2 * q.1, continuous_snd.mul continuous_fst⟩).continuous
-  simp only [rightRegular_apply]
   exact continuous_const.compMeasurePreservingLp hg _ hp
 
 /-- For a bi-invariant measure, every left regular operator commutes with every right regular
@@ -155,9 +127,7 @@ theorem rightRegular_indicatorConstLp_singleton (g h : G)
         (by simpa using
           ((measurePreserving_mul_right μ g).measure_preimage hs.nullMeasurableSet).trans_ne hμ)
         c := by
-  rw [rightRegular_apply, Lp.indicatorConstLp_compMeasurePreserving]
-  congr! 1
-  simp
+  rw [rightRegular_apply, Lp.indicatorConstLp_compMeasurePreserving]; congr! 1; simp
 
 end RightInvariant
 

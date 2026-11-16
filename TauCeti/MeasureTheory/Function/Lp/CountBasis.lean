@@ -15,33 +15,19 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 /-!
 # The point-mass Hilbert basis and Parseval identities on counting-measure `L²`
 
-For any measurable space `α` with measurable singletons and `𝕜` satisfying `RCLike 𝕜`, the
-singleton indicator classes `indicatorConstLp 2 (measurableSet_singleton a) _ 1` form a Hilbert
-basis `MeasureTheory.L2.countHilbertBasis 𝕜 α` of `Lp 𝕜 2 (Measure.count : Measure α)`. No
-countability of `α` is assumed: every `L²` class for the counting measure has countable support and
-its coordinate at `a` is its pointwise value `f a`.
+Counting-measure `L²(α)` supplies the Hilbert space of discrete harmonic analysis and group von
+Neumann algebras `L(Γ)`, where Fourier expansions, convolution formulas, and trace calculations
+rely on the point-mass orthonormal basis and unconditional Parseval sums without countability
+hypotheses.
 
-For an arbitrary measurable space `α` (without assuming measurable singletons), using strongly
-measurable `Lp` representatives and integration against `Measure.count = Measure.sum Measure.dirac`
-shows that every vector-valued `f : Lp E 2 (Measure.count : Measure α)` has square-summable
-pointwise norms with `‖f‖ ^ 2 = ∑' a, ‖f a‖ ^ 2`, and that vector-valued and scalar `L²` inner
-products expand unconditionally as `∑' a, ⟪f a, g a⟫_𝕜` and `∑' a, conj (f a) * g a`.
-
-## Main definitions
-
-* `MeasureTheory.L2.countHilbertBasis 𝕜 α`: the singleton-indicator `HilbertBasis` of
-  `Lp 𝕜 2 (Measure.count : Measure α)`.
-
-## Main results
-
-* `MeasureTheory.L2.inner_countHilbertBasis_left`, `MeasureTheory.L2.countHilbertBasis_repr_apply`:
-  the inner product `⟪countHilbertBasis 𝕜 α a, f⟫_𝕜` and `a`-th coordinate of `f` equal `f a`.
-* `MeasureTheory.L2.hasSum_countHilbertBasis`: `f` is the unconditional `L²`-sum
-  `∑' a, f a • countHilbertBasis 𝕜 α a`.
-* `MeasureTheory.L2.hasSum_norm_sq_apply`, `MeasureTheory.L2.summable_norm_sq_apply`,
-  `MeasureTheory.L2.norm_sq_eq_tsum_apply`, `MeasureTheory.L2.hasSum_inner_apply`,
-  `MeasureTheory.L2.hasSum_conj_mul_apply`: square-summability of values and Parseval's identities
-  without measurable-singleton assumptions.
+When singletons are measurable (`[MeasurableSingletonClass α]`), the unit singleton indicators form
+a Hilbert basis `MeasureTheory.L2.countHilbertBasis 𝕜 α` whose coordinates are pointwise values
+(`MeasureTheory.L2.inner_countHilbertBasis_left`, `MeasureTheory.L2.countHilbertBasis_repr_apply`,
+`MeasureTheory.L2.hasSum_countHilbertBasis`). On any measurable space `α` (without measurable
+singletons), every vector-valued `f : Lp E 2 (Measure.count : Measure α)` satisfies the
+unconditional norm-square and polarized Parseval identities
+(`MeasureTheory.L2.hasSum_norm_sq_apply`, `MeasureTheory.L2.norm_sq_eq_tsum_apply`,
+`MeasureTheory.L2.hasSum_inner_apply`, `MeasureTheory.L2.hasSum_conj_mul_apply`).
 -/
 
 public section
@@ -64,17 +50,15 @@ theorem orthonormal_indicatorConstLp_singleton :
   rw [L2.inner_indicatorConstLp_one_indicatorConstLp_one (measurableSet_singleton a)
     (measurableSet_singleton b) (by simp) (by simp)]
   by_cases hab : a = b
-  · subst hab
-    simp
-  · have hmem : a ∉ ({b} : Set α) := hab
-    simp [Set.singleton_inter_eq_empty.2 hmem, hab]
+  · subst hab; simp
+  · simp [Set.singleton_inter_eq_empty.2 (show a ∉ ({b} : Set α) from hab), hab]
 
 private theorem orthogonal_span_indicatorConstLp_singleton_eq_bot :
     (Submodule.span 𝕜 (Set.range fun a : α =>
       (indicatorConstLp 2 (measurableSet_singleton a) (by simp) 1 :
         Lp 𝕜 2 (Measure.count : Measure α))))ᗮ = ⊥ := by
-  refine (Submodule.eq_bot_iff _).2 fun f hf => ?_
-  refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) f fun a c => ?_
+  refine (Submodule.eq_bot_iff _).2 fun f hf =>
+    Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) f fun a c => ?_
   have h1 : ⟪(indicatorConstLp 2 (measurableSet_singleton a) (by simp) 1 :
       Lp 𝕜 2 (Measure.count : Measure α)), f⟫_𝕜 = 0 :=
     (Submodule.mem_orthogonal _ f).1 hf _ (Submodule.subset_span ⟨a, rfl⟩)
@@ -111,12 +95,12 @@ theorem countHilbertBasis_apply (a : α) :
 /-- Representative function of the `a`-th point-mass basis vector on `α`. -/
 @[simp]
 theorem coeFn_countHilbertBasis (a : α) :
-    (countHilbertBasis 𝕜 α a : α → 𝕜) = ({a} : Set α).indicator 1 := by
-  funext x
-  rw [countHilbertBasis_apply]
-  exact Measure.ae_count_iff.1
-    (indicatorConstLp_coeFn (p := 2) (μ := (Measure.count : Measure α))
-      (hs := measurableSet_singleton a) (hμs := by simp) (c := (1 : 𝕜))) x
+    (countHilbertBasis 𝕜 α a : α → 𝕜) = ({a} : Set α).indicator 1 :=
+  funext fun x => by
+    rw [countHilbertBasis_apply]
+    exact Measure.ae_count_iff.1 (indicatorConstLp_coeFn (p := 2)
+      (μ := (Measure.count : Measure α)) (hs := measurableSet_singleton a) (hμs := by simp)
+      (c := (1 : 𝕜))) x
 
 @[simp]
 theorem norm_countHilbertBasis (a : α) : ‖countHilbertBasis 𝕜 α a‖ = 1 :=
@@ -135,6 +119,7 @@ theorem inner_countHilbertBasis_right (f : Lp 𝕜 2 (Measure.count : Measure α
     ⟪f, countHilbertBasis 𝕜 α a⟫_𝕜 = conj (f a) := by
   rw [← inner_conj_symm, inner_countHilbertBasis_left]
 
+/-- The `a`-th Hilbert-basis coordinate of `f ∈ L²(count)` is its pointwise value `f a`. -/
 @[simp]
 theorem countHilbertBasis_repr_apply (f : Lp 𝕜 2 (Measure.count : Measure α)) (a : α) :
     (countHilbertBasis 𝕜 α).repr f a = f a := by
