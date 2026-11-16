@@ -17,36 +17,14 @@ import TauCeti.AlgebraicTopology.Singular.Fibration.AcyclicFiber
 /-!
 # Acyclicity and torsion homology of Eilenberg--Mac Lane spaces `K(A, n)`
 
-Let `A` be an abelian group and `R` a commutative ring in which the order of every element of `A`
-is a unit. Then every Eilenberg--Mac Lane space `K(A, n + 1)` has vanishing positive-degree
-`R`-homology: `H_{k + 1}(K(A, n + 1); R) = 0` for all `n, k : ℕ`
-(`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf`).
-
-The proof proceeds by induction on `n`:
-* For `n = 0`, `K(A, 1)` has the homology of the group `A`
-  (`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_singularHomologyIsoGroupHomology`), which vanishes
-  in positive degrees by `TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`.
-* For `n + 1`, the loop space `Ω K(A, n + 2)` is a `K(A, n + 1)` space
-  (`TauCeti.IsEilenbergMacLaneSpace.loopSpace`), hence path-connected and `R`-acyclic by the
-  induction hypothesis. The path-fibration acyclicity transfer
-  (`TauCeti.subsingleton_singularHomology_of_loopSpace`) then implies
-  `H_{k + 1}(K(A, n + 2); R) = 0`.
-
-When `A` is `S`-torsion for a submonoid `S : Submonoid ℤ` and `R` is a localization of `ℤ` at
-`S`, every element order of `A` is a unit in `R` (`Submonoid.isUnit_addOrderOf_of_isTorsion'`).
-Thus:
-* `H_{k + 1}(K(A, n + 1); R) = 0` for every localization `R` of `ℤ` at `S`
-  (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'`), and
-* the integral homology `H_{k + 1}(K(A, n + 1); ℤ)` is `S`-torsion
-  (`TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`, and in Serre-class form
-  `TauCeti.IsEilenbergMacLaneSpace.isSubmonoidTorsion_singularHomology`), by flat base change for
-  singular homology (`TopCat.isTorsion'_singularHomology_int_iff_subsingleton`).
-
-Specializing to `S = nonZeroDivisors ℤ` and `R = ℚ` yields the rational acyclicity and integral
-torsion of `K(A, n + 1)` for every torsion abelian group `A`
-(`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_rat`,
-`TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`,
-`TauCeti.IsEilenbergMacLaneSpace.isTorsion_singularHomology`).
+If `A` is an abelian group and `R` is a commutative ring in which the additive order of every
+element of `A` is a unit, then `H_{k + 1}(K(A, n + 1); R) = 0` for all `n, k : ℕ`. The proof
+inducts on `n`: the base case `n = 0` reduces via `K(A, 1)` to group homology
+(`TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`), and the inductive step uses
+`Ω K(A, n + 2) ≃ K(A, n + 1)` and path-fibration acyclicity transfer
+(`TauCeti.subsingleton_singularHomology_of_loopSpace`). Combining this with flat base change to a
+localization of `ℤ` at a submonoid `S` verifies Serre's `K(A, n + 1)` property for `S`-torsion
+(and in particular for torsion abelian groups over `ℚ`).
 
 ## Main results
 
@@ -55,10 +33,12 @@ torsion of `K(A, n + 1)` for every torsion abelian group `A`
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'`:
   `H_{k + 1}(K(A, n + 1); R) = 0` for an `S`-torsion abelian group `A` and a localization `R` of
   `ℤ` at `S`.
-* `TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`:
+* `TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`,
+  `TauCeti.IsEilenbergMacLaneSpace.isSubmonoidTorsion_singularHomology`:
   if `A` is `S`-torsion, then `H_{k + 1}(K(A, n + 1); ℤ)` is `S`-torsion.
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_rat`,
-  `TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`:
+  `TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`,
+  `TauCeti.IsEilenbergMacLaneSpace.isTorsion_singularHomology`:
   if `A` is torsion, then `H_{k + 1}(K(A, n + 1); ℚ) = 0` and `H_{k + 1}(K(A, n + 1); ℤ)` is
   torsion.
 
@@ -94,19 +74,15 @@ theorem subsingleton_singularHomology_of_forall_isUnit_addOrderOf
     Subsingleton (((singularChains R).obj (TopCat.of X)).homology (k + 1)) := by
   induction n generalizing X x k with
   | zero =>
-    have h1 : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x :=
-      isEilenbergMacLaneSpace_one_iff.1 hX
     have := subsingleton_groupHomology_of_forall_isUnit_addOrderOf R hA k
-    exact (h1.nonempty_singularHomologyIsoGroupHomology R
+    exact ((isEilenbergMacLaneSpace_one_iff.1 hX).nonempty_singularHomologyIsoGroupHomology R
       (k + 1)).some.toLinearEquiv.toEquiv.subsingleton
   | succ n ih =>
     have := hX.pathConnectedSpace
-    have hΩ : IsEilenbergMacLaneSpace (Multiplicative A) (n + 1) (Ω X x) (Path.refl x) :=
-      hX.loopSpace
-    have := hΩ.pathConnectedSpace
+    have := hX.loopSpace.pathConnectedSpace
     refine subsingleton_singularHomology_of_loopSpace x R k fun q hq1 _ ↦ ?_
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hq1)
-    exact ih hΩ j
+    exact ih hX.loopSpace j
 
 /-- **Acyclicity of `K(A, n + 1)` over a localization `R` of `ℤ` at `S` when `A` is
 `S`-torsion.** -/
@@ -128,14 +104,10 @@ theorem subsingleton_singularHomology_of_isTorsion'_additive
     (hX : IsEilenbergMacLaneSpace G (n + 1) X x)
     {S : Submonoid ℤ} (hG : Module.IsTorsion' (Additive G) S)
     (R : Type) [CommRing R] [Algebra ℤ R] [IsLocalization S R] (k : ℕ) :
-    Subsingleton (((singularChains R).obj (TopCat.of X)).homology (k + 1)) := by
-  let e : G ≃* Multiplicative (Additive G) :=
-    { toFun := fun g ↦ Multiplicative.ofAdd (Additive.ofMul g)
-      invFun := fun g ↦ Additive.toMul (Multiplicative.toAdd g)
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_mul' := fun _ _ ↦ rfl }
-  exact (hX.of_mulEquiv e).subsingleton_singularHomology_of_isTorsion' hG R k
+    Subsingleton (((singularChains R).obj (TopCat.of X)).homology (k + 1)) :=
+  (hX.of_mulEquiv (MulEquiv.mk (Equiv.mk (fun g ↦ Multiplicative.ofAdd (Additive.ofMul g))
+    (fun g ↦ Additive.toMul (Multiplicative.toAdd g)) (fun _ ↦ rfl) (fun _ ↦ rfl))
+    (fun _ _ ↦ rfl))).subsingleton_singularHomology_of_isTorsion' hG R k
 
 /-- **Integral positive-degree homology of `K(A, n + 1)` is `S`-torsion when `A` is `S`-torsion.**
 This verifies Serre's `K(A, n)` property for every submonoid-torsion class. -/
@@ -154,9 +126,9 @@ theorem isSubmonoidTorsion_singularHomology
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) (n + 1) X x)
     {S : Submonoid ℤ} (hA : AddCommGrpCat.isSubmonoidTorsion S A) (k : ℕ) :
     AddCommGrpCat.isSubmonoidTorsion S
-      (AddCommGrpCat.of (((singularChains ℤ).obj (TopCat.of X)).homology (k + 1))) := by
-  rw [AddCommGrpCat.prop_isSubmonoidTorsion_iff] at hA ⊢
-  exact hX.isTorsion'_singularHomology hA k
+      (AddCommGrpCat.of (((singularChains ℤ).obj (TopCat.of X)).homology (k + 1))) :=
+  (AddCommGrpCat.prop_isSubmonoidTorsion_iff S _).2 <|
+    hX.isTorsion'_singularHomology ((AddCommGrpCat.prop_isSubmonoidTorsion_iff S A).1 hA) k
 
 /-- **Rational acyclicity of `K(A, n + 1)` for a torsion abelian group `A`**:
 `H_{k + 1}(K(A, n + 1); ℚ) = 0` for all `n, k : ℕ`. -/

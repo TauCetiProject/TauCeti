@@ -45,18 +45,11 @@ namespace Submodule
 theorem isTorsion'_quotient_iff {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
     (p : Submodule R N) (S : Submonoid R) :
     Module.IsTorsion' (N ⧸ p) S ↔ ∀ y : N, ∃ s ∈ S, s • y ∈ p := by
-  constructor
-  · intro h y
-    obtain ⟨⟨s, hs⟩, hsy⟩ := @h (Submodule.Quotient.mk y)
-    refine ⟨s, hs, ?_⟩
-    rw [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hsy
-    exact hsy
-  · intro h q
-    induction q using Submodule.Quotient.induction_on with | _ y =>
-      obtain ⟨s, hs, hsy⟩ := h y
-      refine ⟨⟨s, hs⟩, ?_⟩
-      rw [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-      exact hsy
+  refine ⟨fun h y ↦ ?_, fun h q ↦ Submodule.Quotient.induction_on p q fun y ↦ ?_⟩
+  · obtain ⟨⟨s, hs⟩, hsy⟩ := @h (Submodule.Quotient.mk y)
+    exact ⟨s, hs, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
+  · obtain ⟨s, hs, hsy⟩ := h y
+    exact ⟨⟨s, hs⟩, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
 
 end Submodule
 
@@ -74,13 +67,11 @@ theorem exists_isTorsionBy_of_finite {R M : Type*} [CommSemiring R] [AddCommMono
   refine ⟨r, S.prod_mem fun g _ ↦ (s g).2, ?_⟩
   rw [Module.isTorsionBy_iff_torsionBy_eq_top, eq_top_iff, ← hG, Submodule.span_le]
   intro x hx
-  rw [SetLike.mem_coe, Submodule.mem_torsionBy_iff]
   obtain ⟨c, hc⟩ :=
     Finset.dvd_prod_of_mem (fun g : G ↦ (s g : R)) (Finset.mem_attach G ⟨x, hx⟩)
-  dsimp only [r]
-  rw [hc, mul_comm, mul_smul]
-  have hgx : (s ⟨x, hx⟩ : R) • x = 0 := hs ⟨x, hx⟩
-  rw [hgx, smul_zero]
+  change r • x = 0
+  rw [show r = (s ⟨x, hx⟩ : R) * c from hc, mul_comm, mul_smul,
+    show (s ⟨x, hx⟩ : R) • x = 0 from hs ⟨x, hx⟩, smul_zero]
 
 end Module.IsTorsion'
 
@@ -91,20 +82,17 @@ yields an `S`-torsion module. -/
 theorem isTorsion'_tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
     [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
-    Module.IsTorsion' (M ⊗[R] N) S := by
-  intro t
+    Module.IsTorsion' (M ⊗[R] N) S := fun t ↦ by
   induction t using TensorProduct.inductionOn with
   | tmul x y =>
     obtain ⟨s, hs⟩ := @hM x
-    refine ⟨s, ?_⟩
-    rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
-      TensorProduct.zero_tmul]
+    exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
+      TensorProduct.zero_tmul]⟩
   | add x y hx hy =>
     obtain ⟨s₁, hs₁⟩ := hx
     obtain ⟨s₂, hs₂⟩ := hy
-    refine ⟨s₁ * s₂, ?_⟩
-    rw [smul_add, mul_smul, mul_smul, hs₂, smul_zero, add_zero, ← mul_smul, mul_comm, mul_smul,
-      hs₁, smul_zero]
+    exact ⟨s₁ * s₂, by rw [smul_add, mul_smul, mul_smul, hs₂, smul_zero, add_zero, ← mul_smul,
+      mul_comm, mul_smul, hs₁, smul_zero]⟩
 
 end TauCeti
 
@@ -126,13 +114,10 @@ theorem injective_baseChange_iff_isTorsion'_ker (f : M →ₗ[R] N) (S : Submono
   rw [S.isTorsion'_iff_subsingleton_tensorProduct A]
   change Function.Injective (f.lTensor A) ↔ Subsingleton (A ⊗[R] LinearMap.ker f)
   rw [← LinearMap.ker_eq_bot, hex.linearMap_ker_eq, LinearMap.range_eq_bot]
-  constructor
-  · intro h
-    refine subsingleton_of_forall_eq 0 fun x ↦ hinj ?_
-    rw [map_zero]
-    exact LinearMap.congr_fun h x
-  · intro _
-    exact LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]
+  refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun x ↦ hinj ?_,
+    fun _ ↦ LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]⟩
+  rw [map_zero]
+  exact LinearMap.congr_fun h x
 
 /-- Base change of `f : M →ₗ[R] N` to a localization `A` of `R` at `S` is surjective if and only
 if the cokernel `N ⧸ LinearMap.range f` is `S`-torsion. -/
@@ -146,13 +131,10 @@ theorem surjective_baseChange_iff_isTorsion'_quotient (f : M →ₗ[R] N) (S : S
   rw [S.isTorsion'_iff_subsingleton_tensorProduct A]
   change Function.Surjective (f.lTensor A) ↔ Subsingleton (A ⊗[R] (N ⧸ LinearMap.range f))
   rw [← LinearMap.range_eq_top, ← hex.linearMap_ker_eq, LinearMap.ker_eq_top]
-  constructor
-  · intro h
-    refine subsingleton_of_forall_eq 0 fun y ↦ ?_
-    obtain ⟨x, rfl⟩ := hsurj y
-    exact LinearMap.congr_fun h x
-  · intro _
-    exact LinearMap.ext fun x ↦ Subsingleton.elim _ _
+  refine ⟨fun h ↦ subsingleton_of_forall_eq 0 fun y ↦ ?_,
+    fun _ ↦ LinearMap.ext fun _ ↦ Subsingleton.elim _ _⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact LinearMap.congr_fun h x
 
 /-- Base change of `f : M →ₗ[R] N` to a localization `A` of `R` at `S` is bijective if and only
 if both its kernel and its cokernel are `S`-torsion. -/
@@ -176,16 +158,12 @@ theorem isUnit_addOrderOf_of_isTorsion' (S : Submonoid ℤ) (A : Type*)
   have hnsmul : s.natAbs • a = 0 := by
     rw [← natCast_zsmul]
     rcases Int.natAbs_eq s with h | h
-    · rw [← h]
-      exact hsa
+    · exact h ▸ hsa
     · rw [← neg_eq_iff_eq_neg.2 h, neg_smul, show s • a = 0 from hsa, neg_zero]
-  have hdvd : (addOrderOf a : A) ∣ (s.natAbs : A) :=
-    Nat.cast_dvd_cast (addOrderOf_dvd_of_nsmul_eq_zero hnsmul)
-  have hunit : IsUnit (s.natAbs : A) := by
-    have hu : IsUnit (algebraMap ℤ A s) := IsLocalization.map_units A ⟨s, hs⟩
-    rcases Int.natAbs_eq s with h | h
-    · simpa [← Int.cast_natCast (R := A), ← h] using hu
-    · simpa [← Int.cast_natCast (R := A), ← neg_eq_iff_eq_neg.2 h] using hu.neg
-  exact isUnit_of_dvd_unit hdvd hunit
+  have hu : IsUnit (algebraMap ℤ A s) := IsLocalization.map_units A ⟨s, hs⟩
+  refine isUnit_of_dvd_unit (Nat.cast_dvd_cast (addOrderOf_dvd_of_nsmul_eq_zero hnsmul)) ?_
+  rcases Int.natAbs_eq s with h | h
+  · simpa [← Int.cast_natCast (R := A), ← h] using hu
+  · simpa [← Int.cast_natCast (R := A), ← neg_eq_iff_eq_neg.2 h] using hu.neg
 
 end Submonoid

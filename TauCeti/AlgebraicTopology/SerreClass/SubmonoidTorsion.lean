@@ -62,28 +62,21 @@ lemma prop_isSubmonoidTorsion_iff (S : Submonoid ℤ) (M : AddCommGrpCat.{u}) :
 and extensions, so they form a Serre class. -/
 instance (S : Submonoid ℤ) : (isSubmonoidTorsion.{u} S).IsSerreClass where
   exists_zero := ⟨AddCommGrpCat.of PUnit, isZero_of_subsingleton _, fun _ ↦ ⟨1, rfl⟩⟩
-  prop_of_mono {M N} f hf hN := by
-    rw [AddCommGrpCat.mono_iff_injective] at hf
-    intro x
+  prop_of_mono {M N} f hf hN x := by
     obtain ⟨s, hs⟩ := @hN (f x)
-    refine ⟨s, hf ?_⟩
+    refine ⟨s, (AddCommGrpCat.mono_iff_injective f).1 hf ?_⟩
     rw [map_zero, Submonoid.smul_def, map_zsmul]
     exact hs
-  prop_of_epi {M N} f hf hM := by
-    rw [AddCommGrpCat.epi_iff_surjective] at hf
-    intro y
-    obtain ⟨x, rfl⟩ := hf y
+  prop_of_epi {M N} f hf hM y := by
+    obtain ⟨x, rfl⟩ := (AddCommGrpCat.epi_iff_surjective f).1 hf y
     obtain ⟨s, hs⟩ := @hM x
     refine ⟨s, ?_⟩
     rw [Submonoid.smul_def, ← map_zsmul]
     exact (congrArg f.hom hs).trans (map_zero f.hom)
-  prop_X₂_of_shortExact {C} hC h₁ h₃ := by
-    intro x₂
+  prop_X₂_of_shortExact {C} hC h₁ h₃ x₂ := by
     obtain ⟨s₃, hs₃⟩ := @h₃ (C.g x₂)
-    have hker : C.g (s₃ • x₂) = 0 := by
-      rw [Submonoid.smul_def, map_zsmul]
-      exact hs₃
-    obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff C).1 hC.exact (s₃ • x₂) hker
+    obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff C).1 hC.exact (s₃ • x₂)
+      (by rw [Submonoid.smul_def, map_zsmul]; exact hs₃)
     obtain ⟨s₁, hs₁⟩ := @h₁ x₁
     refine ⟨s₁ * s₃, ?_⟩
     rw [mul_smul, ← hx₁, Submonoid.smul_def, ← map_zsmul]
@@ -100,17 +93,13 @@ lemma isSubmonoidTorsion_nonZeroDivisors :
 
 /-- Whenever `0 ∉ S`, every `S`-torsion abelian group is a torsion group. -/
 lemma isSubmonoidTorsion_le_isTorsion {S : Submonoid ℤ} (h0 : (0 : ℤ) ∉ S) :
-    isSubmonoidTorsion.{u} S ≤ isTorsion := by
-  intro M hM
-  rw [prop_isTorsion_iff]
-  intro x
+    isSubmonoidTorsion.{u} S ≤ isTorsion := fun _ hM ↦ (prop_isTorsion_iff _).2 fun x ↦ by
   obtain ⟨⟨s, hs⟩, hsx⟩ := @hM x
-  have hs0 : s ≠ 0 := fun h ↦ h0 (h ▸ hs)
-  refine isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨s.natAbs, Int.natAbs_pos.2 hs0, ?_⟩
+  refine isOfFinAddOrder_iff_nsmul_eq_zero.2
+    ⟨s.natAbs, Int.natAbs_pos.2 fun h ↦ h0 (h ▸ hs), ?_⟩
   rw [← natCast_zsmul]
   rcases Int.natAbs_eq s with h | h
-  · rw [← h]
-    exact hsx
+  · exact h ▸ hsx
   · rw [← neg_eq_iff_eq_neg.2 h, neg_smul, show s • x = 0 from hsx, neg_zero]
 
 /-- Uniform `d`-power torsion is contained in elementwise `d`-power torsion. -/

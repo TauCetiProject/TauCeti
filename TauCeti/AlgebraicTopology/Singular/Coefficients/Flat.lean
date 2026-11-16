@@ -82,13 +82,11 @@ lemma extendScalarsAlgebraMapIso_inv_naturality {R S : Type u} [CommRing R] [Com
   refine LinearMap.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | tmul s m =>
-    change (extendScalarsAlgebraMapIso N).inv (s ⊗ₜ[R] g m) =
-      (extendScalars (algebraMap R S)).map g ((extendScalarsAlgebraMapIso M).inv (s ⊗ₜ[R] m))
-    exact (extendScalarsAlgebraMapIso_inv_tmul N s (g m)).trans
-      ((ExtendScalars.map_tmul (algebraMap R S) g s m).symm.trans
-        (congrArg ((extendScalars (algebraMap R S)).map g)
-          (extendScalarsAlgebraMapIso_inv_tmul M s m).symm))
-  | add x y hx hy => rw [map_add, map_add, hx, hy]
+    exact (extendScalarsAlgebraMapIso_inv_tmul N s (g m)).trans <|
+      (ExtendScalars.map_tmul (algebraMap R S) g s m).symm.trans <|
+        congrArg ((extendScalars (algebraMap R S)).map g)
+          (extendScalarsAlgebraMapIso_inv_tmul M s m).symm
+  | add _ _ hx hy => rw [map_add, map_add, hx, hy]
 
 end ModuleCat
 
@@ -163,8 +161,7 @@ theorem isTorsion'_singularHomology_int_iff_subsingleton (X : TopCat.{0}) (S : S
       Subsingleton
         (((singularHomologyFunctor (ModuleCat.{0} A) n).obj (ModuleCat.of A A)).obj X) := by
   convert X.isTorsion'_singularHomology_iff_subsingleton S A n
-  exact congrArg (fun m : Module ℤ _ ↦ m.toSMul)
-    (Subsingleton.elim (AddCommGroup.toIntModule _) _)
+  exact congrArg (fun m : Module ℤ _ ↦ m.toSMul) (Subsingleton.elim (AddCommGroup.toIntModule _) _)
 
 /-- Integral singular homology `Hₙ(X; ℤ)` is torsion if and only if rational singular homology
 `Hₙ(X; ℚ)` is trivial. -/
@@ -199,7 +196,6 @@ theorem singularHomologyTensorIso_hom_naturality (R S : Type u) [CommRing R] [Co
     (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n).hom.naturality f
   have h₂ := ((singularHomologyFunctor (ModuleCat.{u} S) n).map
     (TopCat.extendScalarsSelfIso R S).hom).naturality f
-  dsimp only [Functor.comp_map] at h₁
   rw [Category.assoc, reassoc_of% h₁, h₂, Category.assoc]
 
 /-- The base-changed homology map `Hₙ(f; R).baseChange S` is bijective if and only if `Hₙ(f; S)`
@@ -210,15 +206,10 @@ theorem bijective_singularHomologyMap_baseChange_iff_isIso (R S : Type u) [CommR
         ((((singularHomologyFunctor (ModuleCat.{u} R) n).obj
           (ModuleCat.of R R)).map f).hom.baseChange S) ↔
       IsIso (((singularHomologyFunctor (ModuleCat.{u} S) n).obj (ModuleCat.of S S)).map f) := by
-  have hbij :
-      Function.Bijective
-          ((((singularHomologyFunctor (ModuleCat.{u} R) n).obj
-            (ModuleCat.of R R)).map f).hom.baseChange S) ↔
-        IsIso (ModuleCat.ofHom
-          ((((singularHomologyFunctor (ModuleCat.{u} R) n).obj
-            (ModuleCat.of R R)).map f).hom.baseChange S)) :=
-    (ConcreteCategory.isIso_iff_bijective (ModuleCat.ofHom _)).symm
-  rw [hbij, ← isIso_comp_right_iff _ (Y.singularHomologyTensorIso R S n).hom,
+  let g := (((singularHomologyFunctor (ModuleCat.{u} R) n).obj
+    (ModuleCat.of R R)).map f).hom.baseChange S
+  refine (ConcreteCategory.isIso_iff_bijective (ModuleCat.ofHom g)).symm.trans ?_
+  rw [← isIso_comp_right_iff _ (Y.singularHomologyTensorIso R S n).hom,
     singularHomologyTensorIso_hom_naturality, isIso_comp_left_iff]
 
 /-- A continuous map `f : X ⟶ Y` induces an isomorphism on `Hₙ(-; A)`, for a localization `A` of

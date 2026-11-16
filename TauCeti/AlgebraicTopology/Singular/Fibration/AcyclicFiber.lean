@@ -12,23 +12,11 @@ import TauCeti.AlgebraicTopology.Singular.Contractible
 /-!
 # Serre fibrations with acyclic fibres and the path fibration
 
-Let `R` be a ring. A path-connected space `F` has the `R`-homology of a point in degrees at most `k`
-if and only if `H_q(F; R)` vanishes for `1 ≤ q ≤ k`
-(`TauCeti.TopCat.isIso_singularHomologyMap_to_point_of_subsingleton`). Combined with the homology
-comparison theorem for Serre fibrations
-(`TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`), this gives:
-
-* If `p : E ⟶ B` is a Serre fibration whose fibres are path-connected with vanishing `R`-homology
-  in degrees `1 ≤ q ≤ k`, then `p` induces an isomorphism `H_k(E; R) ≅ H_k(B; R)`
-  (`TauCeti.TopCat.isIso_singularHomologyMap_of_subsingleton_fiber`).
-* More generally, if every fibre of `p` is homotopy equivalent to a fixed path-connected space `F`
-  with `H_q(F; R) = 0` for `1 ≤ q ≤ k`, then `p` induces an isomorphism
-  `H_k(E; R) ≅ H_k(B; R)` (`TauCeti.TopCat.isIso_singularHomologyMap_of_homotopyEquiv_fiber`).
-* Applied to the fixed-end path fibration `MappingPathFiber (ContinuousMap.id X) x ⟶ X` over a
-  path-connected space `X`, whose total space is contractible and whose fibres are homotopy
-  equivalent to the loop space `Ω X x`, vanishing of `H_q(Ω X x; R)` for `1 ≤ q ≤ k + 1` (with
-  `Ω X x` path-connected) implies vanishing of `H_{k + 1}(X; R)`
-  (`TauCeti.subsingleton_singularHomology_of_loopSpace`).
+A path-connected space `F` has the `R`-homology of a point through degree `k` whenever
+`H_q(F; R) = 0` for `1 ≤ q ≤ k`. Combined with the Serre-fibration homology comparison theorem
+(`TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`), this yields homology
+isomorphisms for Serre fibrations with `R`-acyclic fibres and acyclicity transfer from a loop space
+`Ω X x` to its base `X` via the fixed-end path fibration.
 
 ## Main results
 
@@ -74,14 +62,10 @@ theorem isIso_singularHomologyMap_to_point_of_subsingleton (X : _root_.TopCat.{u
       (_root_.TopCat.isTerminalPUnit.from X)) := by
   cases k with
   | zero =>
-    exact IsIso.of_isIso_fac_right
-      (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R)
-        (_root_.TopCat.isTerminalPUnit.from X))
+    exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R)
+      (_root_.TopCat.isTerminalPUnit.from X))
   | succ m =>
-    have : Subsingleton
-        (((singularHomologyFunctor (ModuleCat.{u} R) (m + 1)).obj (ModuleCat.of R R)).obj X) :=
-      hX m.succ_ne_zero
-    exact (ModuleCat.isZero_iff_subsingleton.mpr this).isIso
+    exact (ModuleCat.isZero_iff_subsingleton.mpr (hX m.succ_ne_zero)).isIso
       (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R)
         (_root_.TopCat.of PUnit) m.succ_ne_zero) _
 
@@ -95,16 +79,14 @@ theorem isIso_singularHomologyMap_to_point_of_homotopyEquiv {X F : Type u} [Topo
         (ModuleCat.of R R)).obj (_root_.TopCat.of F))) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)).map
       (_root_.TopCat.isTerminalPUnit.from (_root_.TopCat.of X))) := by
-  have hfac :
-      _root_.TopCat.ofHom e.toFun ≫ _root_.TopCat.isTerminalPUnit.from (_root_.TopCat.of F) =
-        _root_.TopCat.isTerminalPUnit.from (_root_.TopCat.of X) :=
-    _root_.TopCat.isTerminalPUnit.hom_ext _ _
   have he : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)).map
       (_root_.TopCat.ofHom e.toFun)) :=
     e.singularHomologyIso_hom (ModuleCat.of R R) k ▸
       (e.singularHomologyIso (ModuleCat.of R R) k).isIso_hom
-  have hpt := isIso_singularHomologyMap_to_point_of_subsingleton (_root_.TopCat.of F) R k hF
-  rw [← hfac, Functor.map_comp]
+  have := isIso_singularHomologyMap_to_point_of_subsingleton (_root_.TopCat.of F) R k hF
+  rw [← _root_.TopCat.isTerminalPUnit.hom_ext
+      (_root_.TopCat.ofHom e.toFun ≫ _root_.TopCat.isTerminalPUnit.from (_root_.TopCat.of F))
+      (_root_.TopCat.isTerminalPUnit.from (_root_.TopCat.of X)), Functor.map_comp]
   exact IsIso.comp_isIso
 
 /-- **A Serre fibration with `R`-acyclic path-connected fibres induces an isomorphism on
@@ -147,17 +129,15 @@ theorem subsingleton_singularHomology_of_loopSpace {X : Type u} [TopologicalSpac
     Subsingleton (((singularChains R).obj (TopCat.of X)).homology (k + 1)) := by
   let p : TopCat.of (MappingPathFiber (ContinuousMap.id X) x) ⟶ TopCat.of X :=
     TopCat.ofHom (MappingPathFiber.proj (ContinuousMap.id X) x)
-  have hp : TopCat.serreFibrations p :=
-    (MappingPathFiber.isHurewiczFibration_proj.{0} (ContinuousMap.id X) x).mem_serreFibrations
-  have hiso : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) (k + 1)).obj
+  have : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) (k + 1)).obj
       (ModuleCat.of R R)).map p) :=
-    TopCat.isIso_singularHomologyMap_of_homotopyEquiv_fiber hp
+    TopCat.isIso_singularHomologyMap_of_homotopyEquiv_fiber
+      (MappingPathFiber.isHurewiczFibration_proj.{0} (ContinuousMap.id X) x).mem_serreFibrations
       (fun b ↦ ⟨MappingPathFiber.projFiberHomotopyEquivLoopSpace (ContinuousMap.id X) x b
         (PathConnectedSpace.somePath b x)⟩)
       R (k + 1) hΩ
-  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{u} R) (k + 1)).obj
-      (ModuleCat.of R R)).obj (TopCat.of (MappingPathFiber (ContinuousMap.id X) x))) :=
-    ModuleCat.subsingleton_singularHomology_of_contractibleSpace (ModuleCat.of R R) _ k
+  have := ModuleCat.subsingleton_singularHomology_of_contractibleSpace (ModuleCat.of R R)
+    (TopCat.of (MappingPathFiber (ContinuousMap.id X) x)) k
   exact (asIso (((singularHomologyFunctor (ModuleCat.{u} R) (k + 1)).obj
     (ModuleCat.of R R)).map p)).toLinearEquiv.toEquiv.symm.subsingleton
 
