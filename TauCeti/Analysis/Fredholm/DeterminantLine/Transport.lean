@@ -56,7 +56,9 @@ characterized by `TauCeti.detLineOrientationTransport_rayOfNeZero` and satisfies
 (`TauCeti.detLineOrientationTransport_trans`) laws, and is the identity along a constant path
 (`TauCeti.detLineOrientationTransport_const`). Since the negative of a coherent family is coherent
 (`TauCeti.IsDetLineCoherentOn.neg`), the opposite orientation is transported to the opposite
-orientation (`TauCeti.detLineOrientationTransport_neg`). Only orientations are transported: a line
+orientation (`TauCeti.detLineOrientationTransport_neg`). Transport only depends on the path up to
+homotopy with fixed endpoint operators (`TauCeti.detLineOrientationTransport_eq_of_homotopy`, in
+`TauCeti.Analysis.Fredholm.DeterminantLine.Homotopy`). Only orientations are transported: a line
 bundle carries no canonical linear isomorphism between distant fibres, and none is constructed
 here.
 
@@ -78,6 +80,8 @@ operator of interest.
 ## Main results
 
 * `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart.
+* `TauCeti.isDetLineCoherentOn_of_detLineChartEquiv_eq`: a family read as a constant by one kernel
+  chart is coherent.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
@@ -207,6 +211,28 @@ theorem IsDetLineCoherentWithinAt.comp {Y : Type*} [TopologicalSpace Y] {f : Y �
     IsDetLineCoherentWithinAt (T ∘ f) (fun y ↦ v (f y)) t y₀ := by
   obtain ⟨hv0, S, hS, G, hG, q, h₀, hev⟩ := hv
   exact ⟨hv0, S, hS, G, hG, q, h₀, hf.eventually hev⟩
+
+/-- Coherence on `s` pulls back along a map which is continuous on `t` and maps `t` into `s`. -/
+theorem IsDetLineCoherentOn.comp {Y : Type*} [TopologicalSpace Y] {f : Y → X} {t : Set Y}
+    (hv : IsDetLineCoherentOn T v s) (hf : ContinuousOn f t) (hts : MapsTo f t s) :
+    IsDetLineCoherentOn (T ∘ f) (fun y ↦ v (f y)) t :=
+  fun y hy ↦ (hv (f y) (hts hy)).comp ((hf y hy).tendsto_nhdsWithin hts)
+
+/-- A family which one kernel chart, valid at every point of `s`, reads as the same nonzero element
+at every point of `s` is coherent on `s`. -/
+theorem isDetLineCoherentOn_of_detLineChartEquiv_eq {S : Submodule ℝ F} [FiniteDimensional ℝ S]
+    {G : Submodule ℝ (E × S)} [FiniteDimensional ℝ G] {q : E × S →L[ℝ] G}
+    {w₀ : detLine ℝ G ⊗[ℝ] Dual ℝ (detLine ℝ S)} (hw₀ : w₀ ≠ 0)
+    (hv : ∀ x ∈ s, ∃ h : (((T x).coprod S.subtypeL).prod q).IsInvertible,
+      detLineChartEquiv (T x) S.subtypeL q h (v x) = w₀) :
+    IsDetLineCoherentOn T v s := by
+  intro x hx
+  obtain ⟨h, hx'⟩ := hv x hx
+  refine ⟨fun h0 ↦ hw₀ (by rw [← hx', h0, LinearEquiv.map_zero]), S, inferInstance, G,
+    inferInstance, q, h, ?_⟩
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  obtain ⟨h', hy'⟩ := hv y hy
+  exact ⟨h', by rw [hy', hx']⟩
 
 variable [CompleteSpace E]
 
