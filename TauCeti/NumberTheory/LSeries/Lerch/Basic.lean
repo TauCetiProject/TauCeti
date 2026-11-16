@@ -314,7 +314,7 @@ theorem lerchSeries_eq_sum_add_pow_mul {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) 
       z ^ k * lerchSeries z s (k + c) := by
   rw [lerchSeries_def z s c, ← (hasSum_lerchSeries hz s c).summable.sum_add_tsum_nat_add k,
     lerchSeries_def, ← tsum_mul_left]
-  exact congrArg _ (tsum_congr fun n => by push_cast; ring_nf)
+  exact congrArg _ (tsum_congr fun n => by rw [Nat.cast_add, add_assoc, pow_add]; ring)
 
 /-- The shift relation `Φ(z, s, c) = exp (-s log c) + z Φ(z, s, c + 1)`; for `0 < re c` the
 first term is `c ^ (-s)`. -/
@@ -363,6 +363,17 @@ private theorem hasFDerivAt_lerchSeries {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1�
     (fun n q hq => (hb n q hq).2) hpU (summable_norm_term hz hc).of_norm hpU,
     .of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => (hb n p hpU).2) hu⟩
 
+/-- Along a curve `f` through a point `p = f t` of the initial domain with velocity `v`, the
+Lerch series has derivative `∑ term' n p v`. -/
+private theorem hasDerivAt_lerchSeries_comp {f : ℂ → ℂ × ℂ × ℂ} {v : ℂ × ℂ × ℂ} {t : ℂ}
+    (hf : HasDerivAt f v t) (hz : ‖(f t).2.1‖ < 1) (hc : 0 < (f t).2.2.re) :
+    HasDerivAt (fun t => lerchSeries (f t).2.1 (f t).1 (f t).2.2)
+      (∑' n, term' n (f t) v) t := by
+  obtain ⟨hF, hsum⟩ := hasFDerivAt_lerchSeries hz hc
+  have happ := (ContinuousLinearMap.apply ℂ ℂ v).map_tsum hsum.of_norm
+  simp only [ContinuousLinearMap.apply_apply] at happ
+  exact happ ▸ hF.comp_hasDerivAt t hf
+
 /-- **Joint holomorphy of the Lerch series.** The map `(s, z, c) ↦ Φ(z, s, c)` is complex
 differentiable on the initial domain `s ∈ ℂ`, `‖z‖ < 1`, `0 < re c`. -/
 theorem differentiableOn_lerchSeries :
@@ -398,14 +409,9 @@ private theorem hasDerivAt_lerchSeries_exponent_of_re_pos {z c : ℂ} (hz : ‖z
     (hc : 0 < c.re) (s : ℂ) :
     HasDerivAt (fun s => lerchSeries z s c)
       (-∑' n : ℕ, z ^ n * log (n + c) * exp (-s * log (n + c))) s := by
-  obtain ⟨hF, hsum⟩ := hasFDerivAt_lerchSeries (p := (s, z, c)) hz hc
-  have h : HasDerivAt (fun s => lerchSeries z s c) ((∑' n, term' n (s, z, c)) ((1 : ℂ), 0)) s :=
-    hF.comp_hasDerivAt (f := fun s => (s, z, c)) s
-      ((hasDerivAt_id s).prodMk (hasDerivAt_const s (z, c)))
-  convert h using 1
-  have happ := (ContinuousLinearMap.apply ℂ ℂ ((1 : ℂ), (0 : ℂ × ℂ))).map_tsum hsum.of_norm
-  simp only [ContinuousLinearMap.apply_apply, term'_apply_one_zero] at happ
-  rw [happ, tsum_neg]
+  simpa only [term'_apply_one_zero, tsum_neg] using
+    hasDerivAt_lerchSeries_comp (f := fun s => (s, z, c)) (v := ((1 : ℂ), (0 : ℂ × ℂ)))
+      ((hasDerivAt_id s).prodMk (hasDerivAt_const s (z, c))) hz hc
 
 /-- The derivative of the Lerch series in `s` is the termwise derivative
 `∂ₛ Φ(z, s, c) = -∑ zⁿ log (n + c) exp (-s log (n + c))`, for `‖z‖ < 1` and every `c`. -/
@@ -424,22 +430,16 @@ theorem hasDerivAt_lerchSeries_exponent {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ)
     neg_add, ← Finset.sum_neg_distrib, mul_neg, ← tsum_mul_left]
   congr 1
   · exact Finset.sum_congr rfl fun i _ => by ring
-  · exact congrArg _ (tsum_congr fun n => by push_cast; ring_nf)
+  · exact congrArg _ (tsum_congr fun n => by rw [Nat.cast_add, add_assoc, pow_add]; ring)
 
 /-- The derivative of the Lerch series in `z` is the termwise derivative
 `∂_z Φ(z, s, c) = ∑ n zⁿ⁻¹ exp (-s log (n + c))` on the initial domain `‖z‖ < 1`, `0 < re c`. -/
 theorem hasDerivAt_lerchSeries_left {z c : ℂ} (hz : ‖z‖ < 1) (hc : 0 < c.re) (s : ℂ) :
     HasDerivAt (fun z => lerchSeries z s c)
       (∑' n : ℕ, n * z ^ (n - 1) * exp (-s * log (n + c))) z := by
-  obtain ⟨hF, hsum⟩ := hasFDerivAt_lerchSeries (p := (s, z, c)) hz hc
-  have h : HasDerivAt (fun z => lerchSeries z s c)
-      ((∑' n, term' n (s, z, c)) ((0 : ℂ), (1 : ℂ), (0 : ℂ))) z :=
-    hF.comp_hasDerivAt (f := fun z => (s, z, c)) z
-      ((hasDerivAt_const z s).prodMk ((hasDerivAt_id z).prodMk (hasDerivAt_const z c)))
-  convert h using 1
-  have happ := (ContinuousLinearMap.apply ℂ ℂ ((0 : ℂ), (1 : ℂ), (0 : ℂ))).map_tsum hsum.of_norm
-  simp only [ContinuousLinearMap.apply_apply, term'_apply_zero_one_zero] at happ
-  exact happ.symm
+  simpa only [term'_apply_zero_one_zero] using
+    hasDerivAt_lerchSeries_comp (f := fun z => (s, z, c)) (v := ((0 : ℂ), (1 : ℂ), (0 : ℂ)))
+      ((hasDerivAt_const z s).prodMk ((hasDerivAt_id z).prodMk (hasDerivAt_const z c))) hz hc
 
 /-- The derivative of the Lerch series in `c` is the termwise derivative
 `∂_c Φ(z, s, c) = ∑ -s zⁿ (n + c)⁻¹ exp (-s log (n + c))` on the initial domain `‖z‖ < 1`,
@@ -447,14 +447,8 @@ theorem hasDerivAt_lerchSeries_left {z c : ℂ} (hz : ‖z‖ < 1) (hc : 0 < c.r
 theorem hasDerivAt_lerchSeries_param {z c : ℂ} (hz : ‖z‖ < 1) (hc : 0 < c.re) (s : ℂ) :
     HasDerivAt (fun c => lerchSeries z s c)
       (∑' n : ℕ, -s * z ^ n * (n + c)⁻¹ * exp (-s * log (n + c))) c := by
-  obtain ⟨hF, hsum⟩ := hasFDerivAt_lerchSeries (p := (s, z, c)) hz hc
-  have h : HasDerivAt (fun c => lerchSeries z s c)
-      ((∑' n, term' n (s, z, c)) ((0 : ℂ), (0 : ℂ), (1 : ℂ))) c :=
-    hF.comp_hasDerivAt (f := fun c => (s, z, c)) c
-      ((hasDerivAt_const c s).prodMk ((hasDerivAt_const c z).prodMk (hasDerivAt_id c)))
-  convert h using 1
-  have happ := (ContinuousLinearMap.apply ℂ ℂ ((0 : ℂ), (0 : ℂ), (1 : ℂ))).map_tsum hsum.of_norm
-  simp only [ContinuousLinearMap.apply_apply, term'_apply_zero_zero_one] at happ
-  exact happ.symm
+  simpa only [term'_apply_zero_zero_one] using
+    hasDerivAt_lerchSeries_comp (f := fun c => (s, z, c)) (v := ((0 : ℂ), (0 : ℂ), (1 : ℂ)))
+      ((hasDerivAt_const c s).prodMk ((hasDerivAt_const c z).prodMk (hasDerivAt_id c))) hz hc
 
 end TauCeti
