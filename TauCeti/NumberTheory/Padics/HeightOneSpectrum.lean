@@ -19,7 +19,8 @@ import TauCeti.NumberTheory.LocalField.InertiaDegree
 Let `R` be the ring of integers of `ℚ` in the sense of `IsIntegralClosure R ℤ ℚ`, and let `v` be a
 height-one prime of `R`, corresponding to the rational prime
 `p = Rat.HeightOneSpectrum.primesEquiv v`.
-This file compares the `v`-adic valuation with `padicValRat p`, identifies the residue field
+This file records that `ℤ` has infinitely many height-one prime ideals, compares the `v`-adic
+valuation with the `p`-adic valuation `padicValRat p`, identifies the residue field
 `R ⧸ v.asIdeal` with `ZMod p`, shows that Mathlib's continuous `ℚ`-algebra equivalences
 `Rat.HeightOneSpectrum.adicCompletion.padicEquiv` and `Padic.adicCompletionEquiv` preserve and
 reflect the valuative relations on `v.adicCompletion ℚ` and `ℚ_[p]`, and packages
@@ -37,6 +38,7 @@ reflect the valuative relations on `v.adicCompletion ℚ` and `ℚ_[p]`, and pac
 
 ## Main results
 
+* `Infinite (HeightOneSpectrum ℤ)`: `ℤ` has infinitely many height-one prime ideals.
 * `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
   a unit at `v` exactly when its `p`-adic valuation vanishes.
 * `Rat.HeightOneSpectrum.quotientEquivZMod_mk`, `Rat.HeightOneSpectrum.finite_quotient`,
@@ -65,6 +67,14 @@ local instance (q : ℕ) [Fact q.Prime] : StrongRankCondition ℚ_[q] :=
   let hfield : Field ℚ_[q] := @NormedField.toField _ (Padic.normedField q)
   @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
 attribute [local instance high] HeightOneSpectrum.instAlgebraAdicCompletion
+
+namespace TauCeti
+
+/-- `ℤ` has infinitely many height-one prime ideals, in bijection with the rational primes. -/
+instance : Infinite (HeightOneSpectrum ℤ) :=
+  Infinite.of_surjective _ Rat.HeightOneSpectrum.primesEquiv.surjective
+
+end TauCeti
 
 namespace Rat.HeightOneSpectrum
 
