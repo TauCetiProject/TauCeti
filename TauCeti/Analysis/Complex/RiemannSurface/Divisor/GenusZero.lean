@@ -18,7 +18,7 @@ import TauCeti.Topology.Sheaves.Cech.Functoriality
 A compact connected Riemann surface `X` whose holomorphic structure sheaf has finite-dimensional
 first Čech cohomology has analytic genus `g_an = dim H¹(X, 𝒪)` equal to `0` exactly when it is
 biholomorphic to the Riemann sphere `OnePoint ℂ`
-(`TauCeti.RiemannSurface.analyticGenus_eq_zero_iff_nonempty_diffeomorph`).
+(`TauCeti.RiemannSurface.analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint`).
 
 * **Genus zero gives the sphere.** For a point `p`, Riemann–Roch for divisor sheaves
   (`TauCeti.RiemannSurface.degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf`) gives
@@ -48,9 +48,9 @@ argument. The comparison of the analytic genus with the topological genus
 
 * `Diffeomorph.analyticGenus_eq`: biholomorphic Riemann surfaces have the same analytic genus.
 * `TauCeti.RiemannSurface.analyticGenus_onePoint`: the Riemann sphere has analytic genus `0`.
-* `TauCeti.RiemannSurface.analyticGenus_eq_zero_iff_nonempty_diffeomorph`: a compact connected
-  Riemann surface with finite-dimensional `H¹(X, 𝒪)` has analytic genus `0` exactly when it is
-  biholomorphic to the Riemann sphere.
+* `TauCeti.RiemannSurface.analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint`: a compact
+  connected Riemann surface with finite-dimensional `H¹(X, 𝒪)` has analytic genus `0` exactly when
+  it is biholomorphic to the Riemann sphere.
 
 ## References
 
@@ -120,7 +120,7 @@ variable [CompactSpace X] [T2Space X] [ConnectedSpace X]
 /-- **Riemann surfaces of genus zero are the Riemann sphere.** A compact connected Riemann surface
 with finite-dimensional `H¹(X, 𝒪)` has analytic genus `0` exactly when it is biholomorphic to the
 Riemann sphere `OnePoint ℂ`. -/
-theorem analyticGenus_eq_zero_iff_nonempty_diffeomorph :
+theorem analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint :
     analyticGenus X = 0 ↔ Nonempty (X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ OnePoint ℂ) := by
   refine ⟨fun h ↦ ?_, fun ⟨φ⟩ ↦ (φ.analyticGenus_eq (by simp)).trans analyticGenus_onePoint⟩
   obtain ⟨p⟩ := ConnectedSpace.toNonempty (α := X)
