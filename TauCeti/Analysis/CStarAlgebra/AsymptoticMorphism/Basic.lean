@@ -1,0 +1,819 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
+public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Analysis.CStarAlgebra.Quotient
+public import TauCeti.Topology.ContinuousMap.Bounded.TendstoZeroIdeal
+
+/-!
+# Asymptotic morphisms of C⋆-algebras
+
+An *asymptotic morphism* from a (possibly nonunital) complex C⋆-algebra `A` to `B` is a family of
+maps `φ : Set.Ici (1 : ℝ) → A → B`, continuous in `t ∈ [1, ∞)` for each fixed `a ∈ A`, whose
+pointwise addition, `ℂ`-scalar, multiplication, and involution defects converge to `0` in norm as
+`t → ∞` (Connes–Higson; Blackadar, *K-Theory for Operator Algebras*, Definition 25.1.1).
+
+Remarkably, no boundedness or continuity hypothesis in `a` is assumed in the definition:
+lifting `φ` to minimal unitizations `Unitization ℂ A → Unitization ℂ B` and decomposing unital
+self-adjoint contractions via `a² + (√(1 - a²))² = 1` forces `t ↦ ‖φ t a‖` to be eventually
+bounded for every `a ∈ A`, hence bounded on all of `[1, ∞)` by compactness of initial intervals.
+Passing to the asymptotic C⋆-algebra
+`AsymptoticAlgebra B := (Set.Ici (1 : ℝ) →ᵇ B) ⧸ BoundedContinuousFunction.tendstoZeroIdeal B atTop`
+then yields a genuine `⋆`-algebra homomorphism `φ.toAsymptoticHom : A →⋆ₙₐ[ℂ] AsymptoticAlgebra B`.
+Contractivity of C⋆-homomorphisms together with the quotient norm formula
+`BoundedContinuousFunction.norm_mk_tendstoZeroIdeal_Ici_eq_limsup` immediately gives the sharp
+asymptotic contractivity bound `limsup (fun t ↦ ‖φ t a‖) atTop ≤ ‖a‖` for all `a ∈ A`
+(Blackadar, Proposition 25.1.3), and identifies asymptotic equivalence classes of asymptotic
+morphisms `A → B` with `A →⋆ₙₐ[ℂ] AsymptoticAlgebra B` (Blackadar, Proposition 25.1.4(a)).
+
+## Main definitions and results
+
+* `TauCeti.AsymptoticAlgebra`: the asymptotic C⋆-algebra `C_b([1, ∞), B) / C₀([1, ∞), B)`,
+  inheriting `NonUnitalCStarAlgebra` and `CStarAlgebra` instances from
+  `TwoSidedIdeal.Quotient`.
+* `TauCeti.AsymptoticMorphism`: bundled asymptotic morphisms `A → B` parameterized by
+  `Set.Ici (1 : ℝ)`.
+* `TauCeti.AsymptoticMorphism.unitization`: canonical lift of an asymptotic morphism `A → B` to
+  minimal unitizations `Unitization ℂ A → Unitization ℂ B`.
+* `TauCeti.AsymptoticMorphism.exists_eventually_norm_le`,
+  `TauCeti.AsymptoticMorphism.toBounded`, and `TauCeti.AsymptoticMorphism.toAsymptoticHom`:
+  automatic boundedness in `t` and the induced `⋆`-homomorphism `A →⋆ₙₐ[ℂ] AsymptoticAlgebra B`.
+* `TauCeti.AsymptoticMorphism.limsup_norm_le`: automatic asymptotic contractivity
+  `limsup (fun t ↦ ‖φ t a‖) atTop ≤ ‖a‖`.
+* `TauCeti.AsymptoticMorphism.Equiv` and `TauCeti.AsymptoticMorphism.quotientEquivAsymptoticHom`:
+  asymptotic equivalence `φ t a - ψ t a → 0` and the canonical bijection between equivalence
+  classes of asymptotic morphisms and `A →⋆ₙₐ[ℂ] AsymptoticAlgebra B`.
+* `NonUnitalStarAlgHom.toAsymptoticMorphism`, `NonUnitalStarAlgHom.rescaledAsymptoticMorphism`,
+  `TauCeti.AsymptoticMorphism.compStarAlgHom`, `TauCeti.AsymptoticMorphism.postcompStarAlgHom`,
+  and `TauCeti.AsymptoticMorphism.reparam`: constant and rescaled examples, pre/post-composition
+  with `⋆`-homomorphisms, and reparameterizations `r : C(Set.Ici 1, Set.Ici 1)` tending to `∞`.
+
+## References
+
+* Alain Connes and Nigel Higson, *Déformations, morphismes asymptotiques et K-théorie bivariante*,
+  C. R. Acad. Sci. Paris Sér. I Math. **311** (1990), no. 2, 101–106.
+* Bruce Blackadar, *K-Theory for Operator Algebras*, 2nd ed., MSRI Publications **5**, Cambridge
+  University Press, 1998, §25.1 (Definition 25.1.1, Propositions 25.1.3 and 25.1.4(a)).
+-/
+
+public section
+
+open Filter Set Topology
+open scoped BoundedContinuousFunction ComplexStarModule CStarAlgebra
+
+namespace TauCeti
+
+/-- The asymptotic C⋆-algebra `C_b([1, ∞), B) ⧸ C₀([1, ∞), B)` of a (possibly nonunital) C⋆-algebra
+`B`, realized as the quotient of `Set.Ici (1 : ℝ) →ᵇ B` by the closed two-sided ideal of bounded
+continuous functions tending to `0` along `atTop`. -/
+abbrev AsymptoticAlgebra (B : Type*) [NonUnitalCStarAlgebra B] : Type _ :=
+  (Ici (1 : ℝ) →ᵇ B) ⧸ BoundedContinuousFunction.tendstoZeroIdeal B atTop
+
+namespace AsymptoticAlgebra
+
+variable {B : Type*} [NonUnitalCStarAlgebra B]
+
+/-- The canonical surjective `⋆`-homomorphism `(Set.Ici (1 : ℝ) →ᵇ B) →⋆ₙₐ[ℂ] AsymptoticAlgebra B`.
+-/
+noncomputable def mk : (Ici (1 : ℝ) →ᵇ B) →⋆ₙₐ[ℂ] AsymptoticAlgebra B :=
+  TwoSidedIdeal.Quotient.mkStarAlgHom (BoundedContinuousFunction.tendstoZeroIdeal B atTop)
+
+theorem mk_apply (f : Ici (1 : ℝ) →ᵇ B) :
+    mk f = TwoSidedIdeal.Quotient.mk (BoundedContinuousFunction.tendstoZeroIdeal B atTop) f := by
+  unfold mk
+  exact TwoSidedIdeal.Quotient.mkStarAlgHom_apply _ f
+
+theorem mk_surjective : Function.Surjective (mk (B := B)) :=
+  TwoSidedIdeal.Quotient.mkStarAlgHom_surjective
+    (BoundedContinuousFunction.tendstoZeroIdeal B atTop)
+
+@[simp]
+theorem mk_eq_zero_iff {f : Ici (1 : ℝ) →ᵇ B} :
+    mk f = 0 ↔ Tendsto f atTop (𝓝 0) := by
+  rw [mk_apply]
+  exact BoundedContinuousFunction.mk_tendstoZeroIdeal_eq_zero_iff
+
+theorem mk_eq_iff {f g : Ici (1 : ℝ) →ᵇ B} :
+    mk f = mk g ↔ Tendsto (fun t ↦ f t - g t) atTop (𝓝 0) := by
+  rw [mk_apply, mk_apply]
+  exact BoundedContinuousFunction.mk_tendstoZeroIdeal_eq_iff
+
+theorem norm_mk_eq_limsup (f : Ici (1 : ℝ) →ᵇ B) :
+    ‖mk f‖ = limsup (fun t : Ici (1 : ℝ) ↦ ‖f t‖) atTop := by
+  rw [mk_apply]
+  exact BoundedContinuousFunction.norm_mk_tendstoZeroIdeal_Ici_eq_limsup f
+
+end AsymptoticAlgebra
+
+/-- An asymptotic morphism between (possibly nonunital) complex C⋆-algebras `A` and `B` is a family
+of maps `φ : Set.Ici (1 : ℝ) → A → B`, continuous in `t` for each fixed `a : A`, that preserves
+addition, `ℂ`-scalar multiplication, multiplication, and involution asymptotically as `t → ∞`. No
+continuity, linearity, or norm bound at finite `t` is assumed. -/
+structure AsymptoticMorphism (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] where
+  /-- The underlying family of maps `[1, ∞) → A → B`. -/
+  toFun : Ici (1 : ℝ) → A → B
+  continuous_apply' : ∀ a, Continuous (fun t ↦ toFun t a)
+  map_add_tendsto' : ∀ a b,
+    Tendsto (fun t ↦ toFun t (a + b) - (toFun t a + toFun t b)) atTop (𝓝 0)
+  map_smul_tendsto' : ∀ (c : ℂ) a,
+    Tendsto (fun t ↦ toFun t (c • a) - c • toFun t a) atTop (𝓝 0)
+  map_mul_tendsto' : ∀ a b,
+    Tendsto (fun t ↦ toFun t (a * b) - toFun t a * toFun t b) atTop (𝓝 0)
+  map_star_tendsto' : ∀ a,
+    Tendsto (fun t ↦ toFun t (star a) - star (toFun t a)) atTop (𝓝 0)
+
+namespace AsymptoticMorphism
+
+section Basic
+
+variable {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C]
+
+instance instCoeFun : CoeFun (AsymptoticMorphism A B) (fun _ ↦ Ici (1 : ℝ) → A → B) :=
+  ⟨AsymptoticMorphism.toFun⟩
+
+@[simp]
+theorem mk_apply (f : Ici (1 : ℝ) → A → B) (hcont hadd hsmul hmul hstar)
+    (t : Ici (1 : ℝ)) (a : A) :
+    (AsymptoticMorphism.mk f hcont hadd hsmul hmul hstar) t a = f t a :=
+  (rfl)
+
+@[ext]
+theorem ext {φ ψ : AsymptoticMorphism A B} (h : ∀ t a, φ t a = ψ t a) : φ = ψ := by
+  cases φ; cases ψ
+  simp only [mk.injEq]
+  ext t a
+  exact h t a
+
+theorem continuous_apply (φ : AsymptoticMorphism A B) (a : A) :
+    Continuous (fun t ↦ φ t a) :=
+  φ.continuous_apply' a
+
+theorem map_add_tendsto (φ : AsymptoticMorphism A B) (a b : A) :
+    Tendsto (fun t ↦ φ t (a + b) - (φ t a + φ t b)) atTop (𝓝 0) :=
+  φ.map_add_tendsto' a b
+
+theorem map_smul_tendsto (φ : AsymptoticMorphism A B) (c : ℂ) (a : A) :
+    Tendsto (fun t ↦ φ t (c • a) - c • φ t a) atTop (𝓝 0) :=
+  φ.map_smul_tendsto' c a
+
+theorem map_mul_tendsto (φ : AsymptoticMorphism A B) (a b : A) :
+    Tendsto (fun t ↦ φ t (a * b) - φ t a * φ t b) atTop (𝓝 0) :=
+  φ.map_mul_tendsto' a b
+
+theorem map_star_tendsto (φ : AsymptoticMorphism A B) (a : A) :
+    Tendsto (fun t ↦ φ t (star a) - star (φ t a)) atTop (𝓝 0) :=
+  φ.map_star_tendsto' a
+
+theorem map_zero_tendsto (φ : AsymptoticMorphism A B) :
+    Tendsto (fun t ↦ φ t 0) atTop (𝓝 0) := by
+  have h : Tendsto (fun t ↦ -φ t 0) atTop (𝓝 0) := by
+    simpa only [zero_add, sub_add_cancel_left] using φ.map_add_tendsto 0 0
+  simpa only [neg_neg, neg_zero] using h.neg
+
+theorem map_neg_tendsto (φ : AsymptoticMorphism A B) (a : A) :
+    Tendsto (fun t ↦ φ t (-a) - -φ t a) atTop (𝓝 0) := by
+  simpa only [neg_one_smul] using φ.map_smul_tendsto (-1 : ℂ) a
+
+theorem map_sub_tendsto (φ : AsymptoticMorphism A B) (a b : A) :
+    Tendsto (fun t ↦ φ t (a - b) - (φ t a - φ t b)) atTop (𝓝 0) := by
+  have h := (φ.map_add_tendsto a (-b)).add (φ.map_neg_tendsto b)
+  rw [add_zero] at h
+  refine h.congr fun t ↦ ?_
+  rw [sub_eq_add_neg a b]
+  abel
+
+instance instZero : Zero (AsymptoticMorphism A B) where
+  zero :=
+    { toFun := fun _ _ ↦ 0
+      continuous_apply' := fun _ ↦ continuous_const
+      map_add_tendsto' := fun _ _ ↦ by simp
+      map_smul_tendsto' := fun _ _ ↦ by simp
+      map_mul_tendsto' := fun _ _ ↦ by simp
+      map_star_tendsto' := fun _ ↦ by simp }
+
+instance instInhabited : Inhabited (AsymptoticMorphism A B) :=
+  ⟨0⟩
+
+@[simp]
+theorem zero_apply (t : Ici (1 : ℝ)) (a : A) : (0 : AsymptoticMorphism A B) t a = 0 :=
+  (rfl)
+
+/-- The identity asymptotic morphism on `A`, constant in `t`. -/
+def id (A : Type*) [NonUnitalCStarAlgebra A] : AsymptoticMorphism A A where
+  toFun _ a := a
+  continuous_apply' _ := continuous_const
+  map_add_tendsto' _ _ := by simp
+  map_smul_tendsto' _ _ := by simp
+  map_mul_tendsto' _ _ := by simp
+  map_star_tendsto' _ := by simp
+
+@[simp]
+theorem id_apply (t : Ici (1 : ℝ)) (a : A) : AsymptoticMorphism.id A t a = a :=
+  (rfl)
+
+/-- Precompose an asymptotic morphism `φ : AsymptoticMorphism B C` with a `⋆`-homomorphism
+`f : A →⋆ₙₐ[ℂ] B`. -/
+def compStarAlgHom (φ : AsymptoticMorphism B C) (f : A →⋆ₙₐ[ℂ] B) : AsymptoticMorphism A C where
+  toFun t a := φ t (f a)
+  continuous_apply' a := φ.continuous_apply (f a)
+  map_add_tendsto' a b := by simpa only [map_add] using φ.map_add_tendsto (f a) (f b)
+  map_smul_tendsto' c a := by simpa only [map_smul] using φ.map_smul_tendsto c (f a)
+  map_mul_tendsto' a b := by simpa only [map_mul] using φ.map_mul_tendsto (f a) (f b)
+  map_star_tendsto' a := by simpa only [map_star] using φ.map_star_tendsto (f a)
+
+@[simp]
+theorem compStarAlgHom_apply (φ : AsymptoticMorphism B C) (f : A →⋆ₙₐ[ℂ] B)
+    (t : Ici (1 : ℝ)) (a : A) :
+    φ.compStarAlgHom f t a = φ t (f a) :=
+  (rfl)
+
+/-- Postcompose an asymptotic morphism `φ : AsymptoticMorphism A B` with a `⋆`-homomorphism
+`g : B →⋆ₙₐ[ℂ] C`. Continuity of `g` is automatic because `⋆`-homomorphisms of C⋆-algebras are
+contractive. -/
+def postcompStarAlgHom (φ : AsymptoticMorphism A B) (g : B →⋆ₙₐ[ℂ] C) : AsymptoticMorphism A C where
+  toFun t a := g (φ t a)
+  continuous_apply' a := (map_continuous g).comp (φ.continuous_apply a)
+  map_add_tendsto' a b := by
+    have hg : Tendsto g (𝓝 0) (𝓝 0) := by simpa only [map_zero] using (map_continuous g).tendsto 0
+    exact (hg.comp (φ.map_add_tendsto a b)).congr fun t ↦ by simp
+  map_smul_tendsto' c a := by
+    have hg : Tendsto g (𝓝 0) (𝓝 0) := by simpa only [map_zero] using (map_continuous g).tendsto 0
+    exact (hg.comp (φ.map_smul_tendsto c a)).congr fun t ↦ by simp
+  map_mul_tendsto' a b := by
+    have hg : Tendsto g (𝓝 0) (𝓝 0) := by simpa only [map_zero] using (map_continuous g).tendsto 0
+    exact (hg.comp (φ.map_mul_tendsto a b)).congr fun t ↦ by simp
+  map_star_tendsto' a := by
+    have hg : Tendsto g (𝓝 0) (𝓝 0) := by simpa only [map_zero] using (map_continuous g).tendsto 0
+    exact (hg.comp (φ.map_star_tendsto a)).congr fun t ↦ by simp [map_star]
+
+@[simp]
+theorem postcompStarAlgHom_apply (φ : AsymptoticMorphism A B) (g : B →⋆ₙₐ[ℂ] C)
+    (t : Ici (1 : ℝ)) (a : A) :
+    φ.postcompStarAlgHom g t a = g (φ t a) :=
+  (rfl)
+
+/-- Reparameterize an asymptotic morphism along a continuous map `r : C(Set.Ici 1, Set.Ici 1)`
+satisfying `Tendsto r atTop atTop`. -/
+def reparam (φ : AsymptoticMorphism A B) (r : C(Ici (1 : ℝ), Ici (1 : ℝ)))
+    (hr : Tendsto r atTop atTop) : AsymptoticMorphism A B where
+  toFun t a := φ (r t) a
+  continuous_apply' a := (φ.continuous_apply a).comp r.continuous
+  map_add_tendsto' a b := (φ.map_add_tendsto a b).comp hr
+  map_smul_tendsto' c a := (φ.map_smul_tendsto c a).comp hr
+  map_mul_tendsto' a b := (φ.map_mul_tendsto a b).comp hr
+  map_star_tendsto' a := (φ.map_star_tendsto a).comp hr
+
+@[simp]
+theorem reparam_apply (φ : AsymptoticMorphism A B) (r : C(Ici (1 : ℝ), Ici (1 : ℝ)))
+    (hr : Tendsto r atTop atTop) (t : Ici (1 : ℝ)) (a : A) :
+    φ.reparam r hr t a = φ (r t) a :=
+  (rfl)
+
+end Basic
+
+section UnitizationAndBoundedness
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- Lift an asymptotic morphism `φ : AsymptoticMorphism A B` to minimal unitizations
+`Unitization ℂ A → Unitization ℂ B` by sending `(c, a) ↦ (c, φ t a)`. -/
+def unitization (φ : AsymptoticMorphism A B) :
+    AsymptoticMorphism (Unitization ℂ A) (Unitization ℂ B) where
+  toFun t x := Unitization.inl x.fst + (φ t x.snd : Unitization ℂ B)
+  continuous_apply' x :=
+    continuous_const.add (Unitization.continuous_inr.comp (φ.continuous_apply x.snd))
+  map_add_tendsto' x y := by
+    have hinr : Tendsto ((↑) : B → Unitization ℂ B) (𝓝 0) (𝓝 0) := by
+      simpa only [Unitization.inr_zero] using Unitization.continuous_inr.tendsto (0 : B)
+    refine (hinr.comp (φ.map_add_tendsto x.snd y.snd)).congr fun t ↦ ?_
+    simp only [Function.comp_apply, Unitization.fst_add, Unitization.snd_add, Unitization.inl_add,
+      Unitization.inr_sub, Unitization.inr_add]
+    abel
+  map_smul_tendsto' c x := by
+    have hinr : Tendsto ((↑) : B → Unitization ℂ B) (𝓝 0) (𝓝 0) := by
+      simpa only [Unitization.inr_zero] using Unitization.continuous_inr.tendsto (0 : B)
+    refine (hinr.comp (φ.map_smul_tendsto c x.snd)).congr fun t ↦ ?_
+    simp only [Function.comp_apply, Unitization.fst_smul, Unitization.snd_smul, smul_eq_mul,
+      ← Unitization.inl_smul, Unitization.inr_sub, Unitization.inr_smul, smul_add]
+    abel
+  map_mul_tendsto' x y := by
+    have hinr : Tendsto ((↑) : B → Unitization ℂ B) (𝓝 0) (𝓝 0) := by
+      simpa only [Unitization.inr_zero] using Unitization.continuous_inr.tendsto (0 : B)
+    let u := x.fst • y.snd
+    let v := y.fst • x.snd
+    let w := x.snd * y.snd
+    have hb : Tendsto (fun t ↦ φ t (u + v + w) -
+        (x.fst • φ t y.snd + y.fst • φ t x.snd + φ t x.snd * φ t y.snd)) atTop (𝓝 0) := by
+      have h1 := φ.map_add_tendsto (u + v) w
+      have h2 := φ.map_add_tendsto u v
+      have h3 := φ.map_smul_tendsto x.fst y.snd
+      have h4 := φ.map_smul_tendsto y.fst x.snd
+      have h5 := φ.map_mul_tendsto x.snd y.snd
+      have hsum := (((h1.add h2).add h3).add h4).add h5
+      simp only [add_zero] at hsum
+      exact hsum.congr fun t ↦ by dsimp only [u, v, w]; abel
+    refine (hinr.comp hb).congr fun t ↦ ?_
+    ext
+    · simp [Unitization.fst_mul]
+    · simp [Unitization.snd_mul, u, v, w]
+  map_star_tendsto' x := by
+    have hinr : Tendsto ((↑) : B → Unitization ℂ B) (𝓝 0) (𝓝 0) := by
+      simpa only [Unitization.inr_zero] using Unitization.continuous_inr.tendsto (0 : B)
+    refine (hinr.comp (φ.map_star_tendsto x.snd)).congr fun t ↦ ?_
+    simp only [Function.comp_apply, Unitization.fst_star, Unitization.snd_star,
+      Unitization.inl_star, Unitization.inr_sub, Unitization.inr_star, star_add]
+    abel
+
+@[simp]
+theorem unitization_apply (φ : AsymptoticMorphism A B) (t : Ici (1 : ℝ)) (x : Unitization ℂ A) :
+    φ.unitization t x = Unitization.inl x.fst + (φ t x.snd : Unitization ℂ B) :=
+  (rfl)
+
+theorem unitization_inr (φ : AsymptoticMorphism A B) (t : Ici (1 : ℝ)) (a : A) :
+    φ.unitization t (a : Unitization ℂ A) = (φ t a : Unitization ℂ B) := by
+  simp [unitization_apply]
+
+theorem unitization_one_tendsto (φ : AsymptoticMorphism A B) :
+    Tendsto (fun t ↦ φ.unitization t 1) atTop (𝓝 1) := by
+  have hinr : Tendsto ((↑) : B → Unitization ℂ B) (𝓝 0) (𝓝 0) := by
+    simpa only [Unitization.inr_zero] using Unitization.continuous_inr.tendsto (0 : B)
+  have h := tendsto_const_nhds (x := (1 : Unitization ℂ B)).add (hinr.comp φ.map_zero_tendsto)
+  simpa only [add_zero, Function.comp_apply, unitization_apply, Unitization.fst_one,
+    Unitization.inl_one, Unitization.snd_one] using h
+
+/-- In any noncommutative ring with `ℝ`-module structure, symmetrizing `(x + α)²` and `(x - α)²`
+cancels the anticommutator `x * α + α * x`. -/
+private theorem half_smul_sq_add_sq {R : Type*} [Ring R] [Module ℝ R] (x α : R) :
+    (2⁻¹ : ℝ) • ((x + α) * (x + α) + (x - α) * (x - α)) = x * x + α * α := by
+  have hring : (x + α) * (x + α) + (x - α) * (x - α) = (x * x + α * α) + (x * x + α * α) := by
+    noncomm_ring
+  rw [hring, ← two_smul ℝ (x * x + α * α), smul_smul]
+  norm_num
+
+/-- Key step of Blackadar's Proposition 25.1.3: if `φ` is an asymptotic morphism between unital
+C⋆-algebras sending `1` asymptotically to `1`, then `t ↦ ‖φ t a‖` is eventually bounded for every
+self-adjoint contraction `a`. -/
+private theorem exists_eventually_norm_le_of_isSelfAdjoint_le_one
+    {A₁ B₁ : Type*} [CStarAlgebra A₁] [CStarAlgebra B₁]
+    (φ : AsymptoticMorphism A₁ B₁) (h1 : Tendsto (fun t ↦ φ t 1) atTop (𝓝 1))
+    {a : A₁} (ha : IsSelfAdjoint a) (ha_norm : ‖a‖ ≤ 1) :
+    ∃ C, ∀ᶠ t in atTop, ‖φ t a‖ ≤ C := by
+  let _ : PartialOrder A₁ := CStarAlgebra.spectralOrder A₁
+  let _ : StarOrderedRing A₁ := CStarAlgebra.spectralOrderedRing A₁
+  let _ : PartialOrder B₁ := CStarAlgebra.spectralOrder B₁
+  let _ : StarOrderedRing B₁ := CStarAlgebra.spectralOrderedRing B₁
+  have ha2_nonneg : 0 ≤ a ^ 2 := by
+    rw [sq]
+    nth_rw 1 [← ha.star_eq]
+    exact star_mul_self_nonneg a
+  have hsub_nonneg : 0 ≤ 1 - a ^ 2 := by
+    rw [sub_nonneg, ← CStarAlgebra.norm_le_one_iff_of_nonneg (a ^ 2) ha2_nonneg, sq,
+      ha.norm_mul_self]
+    exact pow_le_one₀ (norm_nonneg a) ha_norm
+  let b : A₁ := CFC.sqrt (1 - a ^ 2)
+  have hb : IsSelfAdjoint b := (CFC.sqrt_nonneg (1 - a ^ 2)).isSelfAdjoint
+  have hab : a * a + b * b = 1 := by
+    have hbb : b * b = 1 - a ^ 2 := CFC.sqrt_mul_sqrt_self (1 - a ^ 2)
+    rw [hbb, sq, add_sub_cancel]
+  -- `φ t a * φ t a + φ t b * φ t b → 1` in `B₁`.
+  have hsum_lim : Tendsto (fun t ↦ φ t a * φ t a + φ t b * φ t b) atTop (𝓝 1) := by
+    have hdef : Tendsto (fun t ↦ φ t (a * a + b * b) - (φ t a * φ t a + φ t b * φ t b))
+        atTop (𝓝 0) := by
+      have h := ((φ.map_add_tendsto (a * a) (b * b)).add (φ.map_mul_tendsto a a)).add
+        (φ.map_mul_tendsto b b)
+      simp only [add_zero] at h
+      exact h.congr fun t ↦ by abel
+    have h1' : Tendsto (fun t ↦ φ t (a * a + b * b)) atTop (𝓝 1) := by rwa [hab]
+    simpa only [sub_zero, sub_sub_cancel] using h1'.sub hdef
+  -- Decompose `φ t a = x t + α t` and `φ t b = y t + β t` into self-adjoint and skew-adjoint parts.
+  let x : Ici (1 : ℝ) → B₁ := fun t ↦ (2⁻¹ : ℝ) • (φ t a + star (φ t a))
+  let α : Ici (1 : ℝ) → B₁ := fun t ↦ (2⁻¹ : ℝ) • (φ t a - star (φ t a))
+  let y : Ici (1 : ℝ) → B₁ := fun t ↦ (2⁻¹ : ℝ) • (φ t b + star (φ t b))
+  let β : Ici (1 : ℝ) → B₁ := fun t ↦ (2⁻¹ : ℝ) • (φ t b - star (φ t b))
+  have hx_sa : ∀ t, IsSelfAdjoint (x t) := fun t ↦ by
+    rw [IsSelfAdjoint, star_smul, star_add, star_star, star_trivial, add_comm]
+  have hy_sa : ∀ t, IsSelfAdjoint (y t) := fun t ↦ by
+    rw [IsSelfAdjoint, star_smul, star_add, star_star, star_trivial, add_comm]
+  have hα_zero : Tendsto α atTop (𝓝 0) := by
+    have h : Tendsto (fun t ↦ φ t a - star (φ t a)) atTop (𝓝 0) := by
+      simpa only [ha.star_eq] using φ.map_star_tendsto a
+    simpa only [smul_zero] using h.const_smul (2⁻¹ : ℝ)
+  have hβ_zero : Tendsto β atTop (𝓝 0) := by
+    have h : Tendsto (fun t ↦ φ t b - star (φ t b)) atTop (𝓝 0) := by
+      simpa only [hb.star_eq] using φ.map_star_tendsto b
+    simpa only [smul_zero] using h.const_smul (2⁻¹ : ℝ)
+  have hsym_lim : Tendsto (fun t ↦ (x t * x t + α t * α t) + (y t * y t + β t * β t))
+      atTop (𝓝 1) := by
+    have hstar_lim : Tendsto (fun t ↦ star (φ t a * φ t a + φ t b * φ t b)) atTop (𝓝 1) := by
+      simpa only [star_one] using hsum_lim.star
+    have havg : Tendsto (fun t ↦ (2⁻¹ : ℝ) •
+        ((φ t a * φ t a + φ t b * φ t b) + star (φ t a * φ t a + φ t b * φ t b)))
+        atTop (𝓝 1) := by
+      have h := (hsum_lim.add hstar_lim).const_smul (2⁻¹ : ℝ)
+      have htwo : (2⁻¹ : ℝ) • ((1 : B₁) + 1) = 1 := by
+        rw [← two_smul ℝ (1 : B₁), smul_smul]
+        norm_num
+      rwa [htwo] at h
+    refine havg.congr fun t ↦ ?_
+    have hza : φ t a = x t + α t := by
+      simp only [x, α, ← smul_add, add_add_sub_cancel, ← two_smul ℝ (φ t a), smul_smul]
+      norm_num
+    have hza_star : star (φ t a) = x t - α t := by
+      simp only [x, α, ← smul_sub, add_sub_sub_cancel, ← two_smul ℝ (star (φ t a)), smul_smul]
+      norm_num
+    have hzb : φ t b = y t + β t := by
+      simp only [y, β, ← smul_add, add_add_sub_cancel, ← two_smul ℝ (φ t b), smul_smul]
+      norm_num
+    have hzb_star : star (φ t b) = y t - β t := by
+      simp only [y, β, ← smul_sub, add_sub_sub_cancel, ← two_smul ℝ (star (φ t b)), smul_smul]
+      norm_num
+    rw [star_add, star_mul, star_mul, hza_star, hzb_star, hza, hzb]
+    have harrange : ((x t + α t) * (x t + α t) + (y t + β t) * (y t + β t)) +
+        ((x t - α t) * (x t - α t) + (y t - β t) * (y t - β t)) =
+        ((x t + α t) * (x t + α t) + (x t - α t) * (x t - α t)) +
+        ((y t + β t) * (y t + β t) + (y t - β t) * (y t - β t)) := by
+      abel
+    rw [harrange, smul_add, half_smul_sq_add_sq, half_smul_sq_add_sq]
+  have hxy_lim : Tendsto (fun t ↦ x t * x t + y t * y t) atTop (𝓝 1) := by
+    have herr : Tendsto (fun t ↦ α t * α t + β t * β t) atTop (𝓝 0) := by
+      simpa only [mul_zero, add_zero] using (hα_zero.mul hα_zero).add (hβ_zero.mul hβ_zero)
+    have hsub := hsym_lim.sub herr
+    rw [sub_zero] at hsub
+    exact hsub.congr fun t ↦ by abel
+  -- Order comparison `0 ≤ x t * x t ≤ x t * x t + y t * y t` bounds `‖x t‖ ^ 2`.
+  have hxy_norm : Tendsto (fun t ↦ ‖x t * x t + y t * y t‖) atTop (𝓝 ‖(1 : B₁)‖) :=
+    hxy_lim.norm
+  have hev_xy : ∀ᶠ t in atTop, ‖x t * x t + y t * y t‖ < ‖(1 : B₁)‖ + 1 :=
+    (tendsto_order.mp hxy_norm).2 _ (lt_add_one _)
+  have hev_α : ∀ᶠ t in atTop, ‖α t‖ < 1 :=
+    (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp hα_zero)).2 1 zero_lt_one
+  refine ⟨(‖(1 : B₁)‖ + 1) + 1, ?_⟩
+  filter_upwards [hev_xy, hev_α] with t htxy htα
+  have hxx_nonneg : 0 ≤ x t * x t := by
+    simpa only [(hx_sa t).star_eq] using star_mul_self_nonneg (x t)
+  have hyy_nonneg : 0 ≤ y t * y t := by
+    simpa only [(hy_sa t).star_eq] using star_mul_self_nonneg (y t)
+  have hxx_le : x t * x t ≤ x t * x t + y t * y t :=
+    le_add_of_nonneg_right hyy_nonneg
+  have hsq : ‖x t‖ ^ 2 ≤ ‖(1 : B₁)‖ + 1 := by
+    calc
+      ‖x t‖ ^ 2 = ‖x t * x t‖ := ((hx_sa t).norm_mul_self).symm
+      _ ≤ ‖x t * x t + y t * y t‖ := CStarAlgebra.norm_le_norm_of_le_of_nonneg hxx_le hxx_nonneg
+      _ ≤ ‖(1 : B₁)‖ + 1 := htxy.le
+  have hx_le : ‖x t‖ ≤ ‖(1 : B₁)‖ + 1 := by
+    have hM1 : 1 ≤ ‖(1 : B₁)‖ + 1 := le_add_of_nonneg_left (norm_nonneg _)
+    rcases le_or_gt ‖x t‖ 1 with hx1 | hx1
+    · exact hx1.trans hM1
+    · calc
+        ‖x t‖ ≤ ‖x t‖ * ‖x t‖ := le_mul_of_one_le_left (norm_nonneg _) hx1.le
+        _ = ‖x t‖ ^ 2 := (sq ‖x t‖).symm
+        _ ≤ ‖(1 : B₁)‖ + 1 := hsq
+  have hza : φ t a = x t + α t := by
+    simp only [x, α, ← smul_add, add_add_sub_cancel, ← two_smul ℝ (φ t a), smul_smul]
+    norm_num
+  calc
+    ‖φ t a‖ = ‖x t + α t‖ := by rw [hza]
+    _ ≤ ‖x t‖ + ‖α t‖ := norm_add_le _ _
+    _ ≤ (‖(1 : B₁)‖ + 1) + 1 := add_le_add hx_le htα.le
+
+/-- Every asymptotic morphism `φ : AsymptoticMorphism A B` is eventually bounded in `t` at each
+element `a : A`. -/
+theorem exists_eventually_norm_le (φ : AsymptoticMorphism A B) (a : A) :
+    ∃ C, ∀ᶠ t in atTop, ‖φ t a‖ ≤ C := by
+  let ψ := φ.unitization
+  have h1 : Tendsto (fun t ↦ ψ t 1) atTop (𝓝 1) := φ.unitization_one_tendsto
+  -- Step 1: Any self-adjoint element of `Unitization ℂ A` is eventually bounded under `ψ`.
+  have hsa : ∀ {x : Unitization ℂ A}, IsSelfAdjoint x → ∃ C, ∀ᶠ t in atTop, ‖ψ t x‖ ≤ C := by
+    intro x hx
+    rcases eq_or_ne ‖x‖ 0 with hx0 | hx0
+    · rw [norm_eq_zero] at hx0
+      subst hx0
+      refine ⟨1, ?_⟩
+      filter_upwards [(tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp
+        ψ.map_zero_tendsto)).2 1 zero_lt_one] with t ht using ht.le
+    · have hpos : 0 < ‖x‖ := lt_of_le_of_ne (norm_nonneg x) (Ne.symm hx0)
+      let x' : Unitization ℂ A := ((‖x‖⁻¹ : ℝ) : ℂ) • x
+      have hx'_sa : IsSelfAdjoint x' := by
+        rw [IsSelfAdjoint, star_smul, hx.star_eq, Complex.star_def, Complex.conj_ofReal]
+      have hx'_norm : ‖x'‖ ≤ 1 := by
+        rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.mpr hpos.le),
+          inv_mul_cancel₀ hx0]
+      obtain ⟨C₀, hC₀⟩ := exists_eventually_norm_le_of_isSelfAdjoint_le_one ψ h1 hx'_sa hx'_norm
+      have hscale : ((‖x‖ : ℂ) • x') = x := by
+        simp only [x', smul_smul, ← Complex.ofReal_mul, mul_inv_cancel₀ hx0, Complex.ofReal_one,
+          one_smul]
+      have hdef := ψ.map_smul_tendsto (‖x‖ : ℂ) x'
+      rw [hscale] at hdef
+      have hev_def : ∀ᶠ t in atTop, ‖ψ t x - (‖x‖ : ℂ) • ψ t x'‖ < 1 :=
+        (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp hdef)).2 1 zero_lt_one
+      refine ⟨1 + ‖x‖ * max C₀ 0, ?_⟩
+      filter_upwards [hev_def, hC₀] with t htd htc
+      calc
+        ‖ψ t x‖ = ‖(ψ t x - (‖x‖ : ℂ) • ψ t x') + (‖x‖ : ℂ) • ψ t x'‖ := by rw [sub_add_cancel]
+        _ ≤ ‖ψ t x - (‖x‖ : ℂ) • ψ t x'‖ + ‖(‖x‖ : ℂ) • ψ t x'‖ := norm_add_le _ _
+        _ ≤ 1 + ‖x‖ * ‖ψ t x'‖ := by
+          rw [norm_smul, Complex.norm_of_nonneg hpos.le]
+          exact add_le_add_left htd.le _
+        _ ≤ 1 + ‖x‖ * max C₀ 0 :=
+          add_le_add_right (mul_le_mul_of_nonneg_left (htc.trans (le_max_left _ _)) hpos.le) 1
+  -- Step 2: Decompose `(a : Unitization ℂ A)` into its real and imaginary parts.
+  let z : Unitization ℂ A := (a : Unitization ℂ A)
+  obtain ⟨C₁, hC₁⟩ := hsa (ℜ z).2
+  obtain ⟨C₂, hC₂⟩ := hsa (ℑ z).2
+  have hz_eq : (ℜ z : Unitization ℂ A) + Complex.I • (ℑ z : Unitization ℂ A) = z :=
+    realPart_add_I_smul_imaginaryPart z
+  have hdef : Tendsto (fun t ↦ ψ t z - (ψ t (ℜ z) + Complex.I • ψ t (ℑ z))) atTop (𝓝 0) := by
+    have h := (ψ.map_add_tendsto (ℜ z) (Complex.I • (ℑ z : Unitization ℂ A))).add
+      (ψ.map_smul_tendsto Complex.I (ℑ z))
+    rw [hz_eq, add_zero] at h
+    exact h.congr fun t ↦ by abel
+  have hev_def : ∀ᶠ t in atTop, ‖ψ t z - (ψ t (ℜ z) + Complex.I • ψ t (ℑ z))‖ < 1 :=
+    (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp hdef)).2 1 zero_lt_one
+  refine ⟨1 + C₁ + C₂, ?_⟩
+  filter_upwards [hev_def, hC₁, hC₂] with t htd ht1 ht2
+  have hnorm_eq : ‖φ t a‖ = ‖ψ t z‖ := by
+    simp only [ψ, z, unitization_inr, Unitization.norm_inr]
+  rw [hnorm_eq]
+  calc
+    ‖ψ t z‖ = ‖(ψ t z - (ψ t (ℜ z) + Complex.I • ψ t (ℑ z))) +
+        (ψ t (ℜ z) + Complex.I • ψ t (ℑ z))‖ := by rw [sub_add_cancel]
+    _ ≤ ‖ψ t z - (ψ t (ℜ z) + Complex.I • ψ t (ℑ z))‖ +
+        ‖ψ t (ℜ z) + Complex.I • ψ t (ℑ z)‖ := norm_add_le _ _
+    _ ≤ 1 + (‖ψ t (ℜ z)‖ + ‖Complex.I • ψ t (ℑ z)‖) :=
+      add_le_add htd.le (norm_add_le _ _)
+    _ = 1 + ‖ψ t (ℜ z)‖ + ‖ψ t (ℑ z)‖ := by
+      rw [norm_smul, Complex.norm_I, one_mul, add_assoc]
+    _ ≤ 1 + C₁ + C₂ := add_le_add (add_le_add_right ht1 1) ht2
+
+/-- For each `a : A`, the trajectory `t ↦ φ t a` of an asymptotic morphism is a bounded continuous
+function on `Set.Ici (1 : ℝ)`. -/
+noncomputable def toBounded (φ : AsymptoticMorphism A B) (a : A) : Ici (1 : ℝ) →ᵇ B :=
+  BoundedContinuousFunction.ofEventuallyBoundedIci (fun t ↦ φ t a)
+    (φ.continuous_apply a) (φ.exists_eventually_norm_le a)
+
+@[simp]
+theorem toBounded_apply (φ : AsymptoticMorphism A B) (a : A) (t : Ici (1 : ℝ)) :
+    φ.toBounded a t = φ t a := by
+  unfold toBounded
+  exact BoundedContinuousFunction.ofEventuallyBoundedIci_apply _ _ _ t
+
+@[simp]
+theorem coe_toBounded (φ : AsymptoticMorphism A B) (a : A) :
+    ⇑(φ.toBounded a) = fun t ↦ φ t a := by
+  unfold toBounded
+  exact BoundedContinuousFunction.coe_ofEventuallyBoundedIci _ _ _
+
+/-- The `⋆`-homomorphism `A →⋆ₙₐ[ℂ] AsymptoticAlgebra B` into `C_b([1, ∞), B) ⧸ C₀([1, ∞), B)`
+induced by an asymptotic morphism `φ`. -/
+noncomputable def toAsymptoticHom (φ : AsymptoticMorphism A B) :
+    A →⋆ₙₐ[ℂ] AsymptoticAlgebra B where
+  toFun a := AsymptoticAlgebra.mk (φ.toBounded a)
+  map_smul' c a := by
+    rw [← map_smul, AsymptoticAlgebra.mk_eq_iff]
+    exact (φ.map_smul_tendsto c a).congr fun t ↦ by simp [toBounded_apply]
+  map_zero' := by
+    rw [AsymptoticAlgebra.mk_eq_zero_iff, coe_toBounded]
+    exact φ.map_zero_tendsto
+  map_add' a b := by
+    rw [← map_add, AsymptoticAlgebra.mk_eq_iff]
+    exact (φ.map_add_tendsto a b).congr fun t ↦ by simp [toBounded_apply]
+  map_mul' a b := by
+    rw [← map_mul, AsymptoticAlgebra.mk_eq_iff]
+    exact (φ.map_mul_tendsto a b).congr fun t ↦ by simp [toBounded_apply]
+  map_star' a := by
+    rw [← map_star, AsymptoticAlgebra.mk_eq_iff]
+    exact (φ.map_star_tendsto a).congr fun t ↦ by simp [toBounded_apply]
+
+@[simp]
+theorem toAsymptoticHom_apply (φ : AsymptoticMorphism A B) (a : A) :
+    φ.toAsymptoticHom a = AsymptoticAlgebra.mk (φ.toBounded a) :=
+  (rfl)
+
+/-- The quotient norm of `φ.toAsymptoticHom a` in `AsymptoticAlgebra B` equals
+`limsup (fun t ↦ ‖φ t a‖) atTop`. -/
+theorem norm_toAsymptoticHom_eq_limsup (φ : AsymptoticMorphism A B) (a : A) :
+    ‖φ.toAsymptoticHom a‖ = limsup (fun t : Ici (1 : ℝ) ↦ ‖φ t a‖) atTop := by
+  rw [toAsymptoticHom_apply, AsymptoticAlgebra.norm_mk_eq_limsup]
+  simp only [toBounded_apply]
+
+/-- **Asymptotic contractivity** (Blackadar, Proposition 25.1.3): for every asymptotic morphism
+`φ : AsymptoticMorphism A B` and every `a : A`, `limsup (fun t ↦ ‖φ t a‖) atTop ≤ ‖a‖`. -/
+theorem limsup_norm_le (φ : AsymptoticMorphism A B) (a : A) :
+    limsup (fun t : Ici (1 : ℝ) ↦ ‖φ t a‖) atTop ≤ ‖a‖ := by
+  rw [← φ.norm_toAsymptoticHom_eq_limsup a]
+  exact NonUnitalStarAlgHom.norm_apply_le φ.toAsymptoticHom a
+
+/-- Pointwise eventual form of asymptotic contractivity: for every `a : A` and `ε > 0`, eventually
+`‖φ t a‖ < ‖a‖ + ε`. -/
+theorem eventually_norm_lt_add (φ : AsymptoticMorphism A B) (a : A) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ t : Ici (1 : ℝ) in atTop, ‖φ t a‖ < ‖a‖ + ε := by
+  have hb : IsBoundedUnder (· ≤ ·) (atTop : Filter (Ici (1 : ℝ))) (fun t ↦ ‖φ t a‖) := by
+    refine ⟨‖φ.toBounded a‖, eventually_map.mpr (Eventually.of_forall fun t ↦ ?_)⟩
+    simpa only [toBounded_apply] using (φ.toBounded a).norm_coe_le_norm t
+  exact eventually_lt_of_limsup_lt ((φ.limsup_norm_le a).trans_lt (lt_add_of_pos_right ‖a‖ hε)) hb
+
+end UnitizationAndBoundedness
+
+section Equivalence
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- Two asymptotic morphisms `φ, ψ : AsymptoticMorphism A B` are *asymptotically equivalent* if
+`φ t a - ψ t a → 0` as `t → ∞` for every `a : A`. -/
+def Equiv (φ ψ : AsymptoticMorphism A B) : Prop :=
+  ∀ a, Tendsto (fun t ↦ φ t a - ψ t a) atTop (𝓝 0)
+
+theorem equiv_def {φ ψ : AsymptoticMorphism A B} :
+    φ.Equiv ψ ↔ ∀ a, Tendsto (fun t ↦ φ t a - ψ t a) atTop (𝓝 0) :=
+  Iff.rfl
+
+theorem Equiv.tendsto {φ ψ : AsymptoticMorphism A B} (h : φ.Equiv ψ) (a : A) :
+    Tendsto (fun t ↦ φ t a - ψ t a) atTop (𝓝 0) :=
+  h a
+
+@[refl]
+theorem Equiv.refl (φ : AsymptoticMorphism A B) : φ.Equiv φ :=
+  fun _ ↦ by simp
+
+@[symm]
+theorem Equiv.symm {φ ψ : AsymptoticMorphism A B} (h : φ.Equiv ψ) : ψ.Equiv φ :=
+  fun a ↦ by simpa only [neg_sub, neg_zero] using (h a).neg
+
+@[trans]
+theorem Equiv.trans {φ ψ χ : AsymptoticMorphism A B} (h₁ : φ.Equiv ψ) (h₂ : ψ.Equiv χ) :
+    φ.Equiv χ :=
+  fun a ↦ by
+    simpa only [sub_add_sub_cancel, add_zero] using (h₁ a).add (h₂ a)
+
+/-- The setoid of asymptotic equivalence on `AsymptoticMorphism A B`. -/
+def equivSetoid (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] :
+    Setoid (AsymptoticMorphism A B) where
+  r := Equiv
+  iseqv := ⟨Equiv.refl, Equiv.symm, Equiv.trans⟩
+
+/-- Two asymptotic morphisms are asymptotically equivalent if and only if they induce the same
+`⋆`-homomorphism `A →⋆ₙₐ[ℂ] AsymptoticAlgebra B`. -/
+theorem equiv_iff_toAsymptoticHom_eq {φ ψ : AsymptoticMorphism A B} :
+    φ.Equiv ψ ↔ φ.toAsymptoticHom = ψ.toAsymptoticHom := by
+  rw [DFunLike.ext_iff, Equiv]
+  refine forall_congr' fun a ↦ ?_
+  rw [toAsymptoticHom_apply, toAsymptoticHom_apply, AsymptoticAlgebra.mk_eq_iff]
+  simp only [toBounded_apply]
+
+/-- Construct an asymptotic morphism `A → B` from any family of bounded continuous lifts
+`s : A → (Set.Ici (1 : ℝ) →ᵇ B)` of a `⋆`-homomorphism `Φ : A →⋆ₙₐ[ℂ] AsymptoticAlgebra B`. -/
+def ofAsymptoticHomSection {Φ : A →⋆ₙₐ[ℂ] AsymptoticAlgebra B}
+    (s : A → (Ici (1 : ℝ) →ᵇ B)) (hs : ∀ a, AsymptoticAlgebra.mk (s a) = Φ a) :
+    AsymptoticMorphism A B where
+  toFun t a := s a t
+  continuous_apply' a := (s a).continuous
+  map_add_tendsto' a b := by
+    have h : AsymptoticAlgebra.mk (s (a + b)) = AsymptoticAlgebra.mk (s a + s b) := by
+      rw [map_add, hs, hs, hs, map_add]
+    exact (AsymptoticAlgebra.mk_eq_iff.mp h).congr fun t ↦ by simp
+  map_smul_tendsto' c a := by
+    have h : AsymptoticAlgebra.mk (s (c • a)) = AsymptoticAlgebra.mk (c • s a) := by
+      rw [map_smul, hs, hs, map_smul]
+    exact (AsymptoticAlgebra.mk_eq_iff.mp h).congr fun t ↦ by simp
+  map_mul_tendsto' a b := by
+    have h : AsymptoticAlgebra.mk (s (a * b)) = AsymptoticAlgebra.mk (s a * s b) := by
+      rw [map_mul, hs, hs, hs, map_mul]
+    exact (AsymptoticAlgebra.mk_eq_iff.mp h).congr fun t ↦ by simp
+  map_star_tendsto' a := by
+    have h : AsymptoticAlgebra.mk (s (star a)) = AsymptoticAlgebra.mk (star (s a)) := by
+      rw [map_star, hs, hs, map_star]
+    exact (AsymptoticAlgebra.mk_eq_iff.mp h).congr fun t ↦ by simp
+
+@[simp]
+theorem ofAsymptoticHomSection_apply {Φ : A →⋆ₙₐ[ℂ] AsymptoticAlgebra B}
+    (s : A → (Ici (1 : ℝ) →ᵇ B)) (hs : ∀ a, AsymptoticAlgebra.mk (s a) = Φ a)
+    (t : Ici (1 : ℝ)) (a : A) :
+    ofAsymptoticHomSection s hs t a = s a t :=
+  (rfl)
+
+@[simp]
+theorem toBounded_ofAsymptoticHomSection {Φ : A →⋆ₙₐ[ℂ] AsymptoticAlgebra B}
+    (s : A → (Ici (1 : ℝ) →ᵇ B)) (hs : ∀ a, AsymptoticAlgebra.mk (s a) = Φ a) (a : A) :
+    (ofAsymptoticHomSection s hs).toBounded a = s a := by
+  ext t
+  rw [toBounded_apply, ofAsymptoticHomSection_apply]
+
+@[simp]
+theorem toAsymptoticHom_ofAsymptoticHomSection {Φ : A →⋆ₙₐ[ℂ] AsymptoticAlgebra B}
+    (s : A → (Ici (1 : ℝ) →ᵇ B)) (hs : ∀ a, AsymptoticAlgebra.mk (s a) = Φ a) :
+    (ofAsymptoticHomSection s hs).toAsymptoticHom = Φ := by
+  ext a
+  simp [toAsymptoticHom_apply, hs]
+
+/-- **Blackadar, Proposition 25.1.4(a)**: equivalence classes of asymptotic morphisms `A → B` are
+in canonical bijection with `⋆`-homomorphisms `A →⋆ₙₐ[ℂ] AsymptoticAlgebra B`. -/
+noncomputable def quotientEquivAsymptoticHom (A B : Type*) [NonUnitalCStarAlgebra A]
+    [NonUnitalCStarAlgebra B] :
+    Quotient (equivSetoid A B) ≃ (A →⋆ₙₐ[ℂ] AsymptoticAlgebra B) where
+  toFun := Quotient.lift toAsymptoticHom fun _ _ h ↦ equiv_iff_toAsymptoticHom_eq.mp h
+  invFun Φ := Quotient.mk (equivSetoid A B)
+    (ofAsymptoticHomSection (fun a ↦ Function.surjInv AsymptoticAlgebra.mk_surjective (Φ a))
+      fun a ↦ Function.surjInv_eq AsymptoticAlgebra.mk_surjective (Φ a))
+  left_inv q := by
+    obtain ⟨φ, rfl⟩ := Quotient.exists_rep q
+    exact Quotient.sound (equiv_iff_toAsymptoticHom_eq.mpr
+      (toAsymptoticHom_ofAsymptoticHomSection _ _))
+  right_inv Φ := toAsymptoticHom_ofAsymptoticHomSection _ _
+
+@[simp]
+theorem quotientEquivAsymptoticHom_mk (φ : AsymptoticMorphism A B) :
+    quotientEquivAsymptoticHom A B (Quotient.mk (equivSetoid A B) φ) = φ.toAsymptoticHom :=
+  (rfl)
+
+end Equivalence
+
+end AsymptoticMorphism
+
+end TauCeti
+
+namespace NonUnitalStarAlgHom
+
+variable {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C]
+
+/-- View a `⋆`-homomorphism `f : A →⋆ₙₐ[ℂ] B` as a constant asymptotic morphism. -/
+def toAsymptoticMorphism (f : A →⋆ₙₐ[ℂ] B) : TauCeti.AsymptoticMorphism A B where
+  toFun _ a := f a
+  continuous_apply' _ := continuous_const
+  map_add_tendsto' a b := by simp [map_add]
+  map_smul_tendsto' c a := by simp [map_smul]
+  map_mul_tendsto' a b := by simp [map_mul]
+  map_star_tendsto' a := by simp [map_star]
+
+@[simp]
+theorem toAsymptoticMorphism_apply (f : A →⋆ₙₐ[ℂ] B) (t : Ici (1 : ℝ)) (a : A) :
+    f.toAsymptoticMorphism t a = f a :=
+  (rfl)
+
+/-- Postcompose an asymptotic morphism `φ` with a `⋆`-homomorphism `g`. -/
+def compAsymptoticMorphism (g : B →⋆ₙₐ[ℂ] C) (φ : TauCeti.AsymptoticMorphism A B) :
+    TauCeti.AsymptoticMorphism A C :=
+  φ.postcompStarAlgHom g
+
+@[simp]
+theorem compAsymptoticMorphism_apply (g : B →⋆ₙₐ[ℂ] C) (φ : TauCeti.AsymptoticMorphism A B)
+    (t : Ici (1 : ℝ)) (a : A) :
+    g.compAsymptoticMorphism φ t a = g (φ t a) :=
+  (rfl)
+
+private theorem tendsto_inv_val_Ici_one :
+    Tendsto (fun t : Ici (1 : ℝ) ↦ (t : ℝ)⁻¹) atTop (𝓝 0) :=
+  tendsto_inv_atTop_zero.comp <| tendsto_atTop.mpr fun b ↦
+    eventually_atTop.mpr ⟨⟨max b 1, le_max_right b 1⟩, fun _ ht ↦ (le_max_left b 1).trans ht⟩
+
+/-- Concrete non-multiplicative perturbation `(t, a) ↦ (1 + t⁻¹) • f a` of a `⋆`-homomorphism
+`f : A →⋆ₙₐ[ℂ] B`: for every finite `t ≥ 1` and nonzero projection `p`, the map
+`a ↦ (1 + t⁻¹) • f a` fails to be multiplicative (`(1 + t⁻¹)² ≠ 1 + t⁻¹`), yet the family is an
+asymptotic morphism asymptotically equivalent to `f.toAsymptoticMorphism`. -/
+noncomputable def rescaledAsymptoticMorphism (f : A →⋆ₙₐ[ℂ] B) :
+    TauCeti.AsymptoticMorphism A B where
+  toFun t a := ((1 : ℝ) + (t : ℝ)⁻¹) • f a
+  continuous_apply' a := by
+    have hcoeff : Continuous (fun t : Ici (1 : ℝ) ↦ (1 : ℝ) + (t : ℝ)⁻¹) :=
+      continuous_const.add (continuous_subtype_val.inv₀ fun t ↦ (zero_lt_one.trans_le t.2).ne')
+    exact hcoeff.smul continuous_const
+  map_add_tendsto' a b := by simp [map_add, smul_add]
+  map_smul_tendsto' c a := by simp [map_smul, smul_comm ((1 : ℝ) + (_ : ℝ)⁻¹) c]
+  map_mul_tendsto' a b := by
+    have hinv := tendsto_inv_val_Ici_one
+    have hcoeff : Tendsto (fun t : Ici (1 : ℝ) ↦
+        (1 + (t : ℝ)⁻¹) - (1 + (t : ℝ)⁻¹) * (1 + (t : ℝ)⁻¹)) atTop (𝓝 0) := by
+      have h := ((tendsto_const_nhds (x := (1 : ℝ))).add hinv).sub
+        (((tendsto_const_nhds (x := (1 : ℝ))).add hinv).mul
+          ((tendsto_const_nhds (x := (1 : ℝ))).add hinv))
+      simpa using h
+    have hsmul : Tendsto (fun t : Ici (1 : ℝ) ↦
+        ((1 + (t : ℝ)⁻¹) - (1 + (t : ℝ)⁻¹) * (1 + (t : ℝ)⁻¹)) • (f a * f b)) atTop (𝓝 0) := by
+      simpa only [zero_smul] using hcoeff.smul_const (f a * f b)
+    refine hsmul.congr fun t ↦ ?_
+    rw [map_mul, sub_smul, smul_mul_smul_comm, mul_smul]
+  map_star_tendsto' a := by simp [map_star, star_smul]
+
+@[simp]
+theorem rescaledAsymptoticMorphism_apply (f : A →⋆ₙₐ[ℂ] B) (t : Ici (1 : ℝ)) (a : A) :
+    f.rescaledAsymptoticMorphism t a = ((1 : ℝ) + (t : ℝ)⁻¹) • f a :=
+  (rfl)
+
+/-- The rescaled family `(1 + t⁻¹) • f a` is asymptotically equivalent to `f.toAsymptoticMorphism`.
+-/
+theorem rescaledAsymptoticMorphism_equiv (f : A →⋆ₙₐ[ℂ] B) :
+    f.rescaledAsymptoticMorphism.Equiv f.toAsymptoticMorphism := by
+  intro a
+  have hsmul : Tendsto (fun t : Ici (1 : ℝ) ↦ (t : ℝ)⁻¹ • f a) atTop (𝓝 0) := by
+    simpa only [zero_smul] using tendsto_inv_val_Ici_one.smul_const (f a)
+  refine hsmul.congr fun t ↦ ?_
+  simp only [rescaledAsymptoticMorphism_apply, toAsymptoticMorphism_apply, add_smul, one_smul,
+    add_sub_cancel_left]
+
+end NonUnitalStarAlgHom
