@@ -179,7 +179,7 @@ root. -/
 @[simp] theorem isSquare_splitProperClassMk_iff (s : ℕ) [NeZero s] (c : ℤ)
     (hc : IsCoprime (s : ℤ) c) :
     IsSquare (splitProperClassMk s c hc) ↔ IsSquare (c : ZMod s) := by
-  rw [← (splitProperClassEquivUnits s).isSquare_apply_iff, splitProperClassEquivUnits_mk,
+  rw [← MulEquiv.isSquare_apply_iff (splitProperClassEquivUnits s), splitProperClassEquivUnits_mk,
     ← Units.isSquare_coe_iff, ZMod.coe_unitOfIsCoprime]
 
 /-- Two triangular classes differ by a square exactly when the coefficient of the second is a
@@ -188,7 +188,7 @@ theorem isSquare_inv_mul_splitProperClassMk_iff (s : ℕ) [NeZero s] (c d : ℤ)
     (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
     IsSquare ((splitProperClassMk s c hc)⁻¹ * splitProperClassMk s d hd) ↔
       ∃ z : ZMod s, (d : ZMod s) = c * z ^ 2 := by
-  rw [← (splitProperClassEquivUnits s).isSquare_apply_iff, map_mul, map_inv,
+  rw [← MulEquiv.isSquare_apply_iff (splitProperClassEquivUnits s), map_mul, map_inv,
     splitProperClassEquivUnits_mk, splitProperClassEquivUnits_mk, ← Units.isSquare_coe_iff,
     isSquare_iff_exists_sq]
   simp only [Units.val_mul, Units.inv_mul_eq_iff_eq_mul, ZMod.coe_unitOfIsCoprime]
