@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
@@ -28,7 +29,8 @@ norm or inner product instance on an exterior algebra is introduced.
 
 The vacuum has norm one, and the normalized real Clifford action has native adjoint
 `c(a)* = c(star a)`. Thus `c(v)* = -c(v)` for real vectors, with the normalization already
-built into the Fock action. These identities supply the Hermitian hypothesis of the
+built into the Fock action, so the real Fock action satisfies the geometric convention
+`AlgHom.IsGeometricClifford`. These identities supply the Hermitian hypothesis of the
 half-spin representation and its restriction to either chirality eigenspace.
 
 ## References
@@ -184,5 +186,15 @@ theorem adjoint_realFockAction_ι (v : V) :
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
   rw [J.adjoint_realFockAction hQJ hQnd hQ, star_ι, map_neg]
+
+/-- The native Hermitian Fock module satisfies the geometric convention: `Q v = -‖v‖²`, and real
+vectors act skew-Hermitianly. -/
+theorem isGeometricClifford_realFockAction :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    (J.realFockAction hQJ hQnd).IsGeometricClifford := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  exact AlgHom.isGeometricClifford_iff_adjoint.2 ⟨hQ, J.adjoint_realFockAction_ι hQJ hQnd hQ⟩
 
 end TauCeti.AlmostComplexStructure

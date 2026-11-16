@@ -42,6 +42,14 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
   (`TauCeti.UngradedAInfinityRightModuleHom.id`), and makes an `A`-linear chain map of differential
   right modules a morphism of the associated `A∞` modules
   (`TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom`).
+* **Sums and homotopies.** The relations are linear in the components, so morphisms add
+  componentwise. A homotopy between morphisms `f` and `g`
+  (`TauCeti.UngradedAInfinityRightModuleHom.Homotopy`) is a family `h_{n+1}` whose relation of
+  every length sums to `f_{n+1} + g_{n+1}` instead of `0`. Over a ring of characteristic two it
+  gives a morphism `(id, h)` from `M` into the mapping cone of `f + g`
+  (`TauCeti.UngradedAInfinityRightModuleHom.Homotopy.toConeHom`); through this morphism homotopic
+  morphisms induce homotopic maps of box tensor products
+  (`TauCeti.LowDimTopology.Bordered.TypeA.Homotopy`).
 * **Composition.** Over a ring of characteristic two, morphisms `f : M → M'` and `g : M' → M''`
   compose (`TauCeti.UngradedAInfinityRightModuleHom.comp`), with components
   `(g ∘ f)_{n+1}(m, a₁, …, aₙ) = ∑_{i + j = n} g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`.
@@ -57,6 +65,9 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
 * `TauCeti.UngradedAInfinityRightModuleHom.ofLinearMap`: the strict morphism of a linear map
   commuting with the operations.
 * `TauCeti.UngradedAInfinityRightModuleHom.id`: the identity morphism.
+* `TauCeti.UngradedAInfinityRightModuleHom.Homotopy`: a homotopy between two morphisms.
+* `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.toConeHom`: a homotopy between `f` and `g` as
+  a morphism into the mapping cone of `f + g`.
 * `TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom`: an `A`-linear chain map of
   differential modules as a morphism of `A∞` modules.
 * `TauCeti.UngradedAInfinityRightModuleHom.comp`: the composite of two morphisms.
@@ -76,7 +87,7 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  §2.1 (morphisms of `A∞` modules over `𝔽₂`).
+  §2.1 (morphisms of `A∞` modules over `𝔽₂` and their homotopies).
 * B. Keller, *Introduction to A-infinity algebras and modules*, Homology Homotopy Appl. **3**
   (2001), 1–35, Section 4 (morphisms of `A∞` modules).
 -/
@@ -219,6 +230,22 @@ private theorem strictMap_eq_zero (L : M →ₗ[R] M') {n : ℕ} (hn : n ≠ 0) 
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   rfl
 
+/-- Composing a family of maps after a strict morphism, in the composite terms of a relation,
+leaves only the map of full arity applied after `L`. -/
+private theorem sum_strictMap {N : Type*} [AddCommGroup N] [Module R N] (L : M →ₗ[R] M')
+    (φ : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M' →ₗ[R] N)) (n : ℕ)
+    (a : Fin n → A) (m : M) :
+    ∑ k : Fin (n + 1), φ (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+      (strictMap L k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) =
+        φ n a (L m) := by
+  rw [sum_eq_single 0 (fun k _ hk => by
+    rw [strictMap_eq_zero L (Fin.val_ne_zero_iff.mpr hk), zero_apply,
+      LinearMap.zero_apply, map_zero]) (by simp)]
+  rw [strictMap_apply_of_eq_zero L (Fin.val_zero (n + 1))]
+  simp only [Fin.val_zero, zero_add, Fin.eta]
+  -- The arity `n - 0` is `n` by definition.
+  rfl
+
 variable (Mm Mm') in
 /-- A **strict morphism**: over a ring of characteristic two, a linear map `L` commuting with all
 the operations, `L (m_{n+1}(m, a…)) = m'_{n+1}(L m, a…)`, is a morphism with `f₁ = L` and
@@ -236,16 +263,7 @@ noncomputable def ofLinearMap [CharP R 2] (L : M →ₗ[R] M')
         rw [strictMap_eq_zero L (by have := Fin.val_lt_last hk; omega), zero_apply,
           LinearMap.zero_apply]) (by simp), strictMap_apply_of_eq_zero L (by simp)]
       rfl
-    have h₂ : ∑ k : Fin (n + 1), Mm'.act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
-        (strictMap L k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) =
-          Mm'.act n a (L m) := by
-      rw [sum_eq_single 0 (fun k _ hk => by
-        rw [strictMap_eq_zero L (Fin.val_ne_zero_iff.mpr hk), zero_apply,
-          LinearMap.zero_apply, map_zero]) (by simp)]
-      rw [strictMap_apply_of_eq_zero L (Fin.val_zero (n + 1))]
-      simp only [Fin.val_zero, zero_add, Fin.eta]
-      -- The arity `n - 0` is `n` by definition.
-      rfl
+    have h₂ := sum_strictMap L Mm'.act n a m
     have hdiff : ungradedStasheffDiff (strictMap L) d n a m = 0 := by
       cases n with
       | zero => simp [ungradedStasheffDiff_def]
@@ -282,6 +300,121 @@ theorem id_map_zero [CharP R 2] (a : Fin 0 → A) (m : M) : (id Mm).map 0 a m = 
 @[simp]
 theorem id_map_add_one [CharP R 2] (n : ℕ) : (id Mm).map (n + 1) = 0 :=
   (rfl)
+
+/-- The components of the identity morphism are those of the strict morphism with `f₁ = id`, by
+the definition of `id` as `ofLinearMap Mm Mm LinearMap.id`. -/
+private theorem id_map_eq_strictMap [CharP R 2] : (id Mm).map = strictMap LinearMap.id :=
+  (rfl)
+
+/-- The components of the identity morphism vanish in every positive arity. -/
+theorem id_map_eq_zero [CharP R 2] {n : ℕ} (hn : n ≠ 0) : (id Mm).map n = 0 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  exact id_map_add_one n
+
+/-! ### Sums of morphisms -/
+
+/-- The **sum** of two morphisms, componentwise: `(f + g)_{n+1} = f_{n+1} + g_{n+1}`. Every term
+of the relations is additive in the components, so the relations of `f + g` are the sums of
+those of `f` and `g`. -/
+instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
+  add f g :=
+    { map := fun n => f.map n + g.map n
+      stasheff := fun n a m => by
+        convert congrArg₂ (· + ·) (f.stasheff n a m) (g.stasheff n a m) using 1
+        · rw [ungradedStasheffDiff_add, ungradedStasheffMul_add]
+          simp only [add_apply, LinearMap.add_apply, map_add, sum_add_distrib]
+          abel
+        · rw [add_zero] }
+
+@[simp]
+theorem add_map (f g : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) :
+    (f + g).map n = f.map n + g.map n :=
+  (rfl)
+
+/-! ### Homotopies -/
+
+/-- A **homotopy** between morphisms `f` and `g` of ungraded `A∞` right modules from `M` to `M'`: a
+family of maps `h_{n+1} : M ⊗ A^{⊗ n} → M'`, here `map n`, whose morphism relation of every length
+`n` sums to `f_{n+1} + g_{n+1}` instead of `0`:
+
+`∑_{i + j = n} h_{j+1}(m_{i+1}(m, a₁, …, aᵢ), …) + ∑_{i + j = n} m'_{j+1}(h_{i+1}(m, a₁, …, aᵢ), …)`
+`  + ∑_l h_{n+1}(m, …, d aₗ, …) + ∑_l h_n(m, …, aₗ aₗ₊₁, …) = f_{n+1}(m, a…) + g_{n+1}(m, a…)`.
+
+Over a ring of characteristic two this is the relation `f - g = ∂h` of a homotopy of `A∞`
+morphisms, every sign being `1`. Its length-zero case says that `h₁` is a chain homotopy between
+`f₁` and `g₁`. -/
+@[ext]
+structure Homotopy (f g : UngradedAInfinityRightModuleHom Mm Mm') where
+  /-- The component `h_{n+1}`, with `n` algebra inputs. -/
+  map : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')
+  /-- The homotopy relation of length `n`. -/
+  stasheff (n : ℕ) (a : Fin n → A) (m : M) :
+    ∑ k : Fin (n + 1), map (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+        (Mm.act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) +
+      ∑ k : Fin (n + 1), Mm'.act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+        (map k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) +
+      ungradedStasheffDiff map d n a m + ungradedStasheffMul map n a m =
+    f.map n a m + g.map n a m
+
+namespace Homotopy
+
+variable [CharP R 2] {f g : UngradedAInfinityRightModuleHom Mm Mm'} (H : Homotopy f g)
+
+/-- The components `(id_{n+1}, h_{n+1})` of the morphism
+`TauCeti.UngradedAInfinityRightModuleHom.Homotopy.toConeHom`. -/
+private noncomputable def coneHomMap (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M × M') where
+  toFun a := ((id Mm).map n a).prod (H.map n a)
+  map_update_add' a i x y := by
+    ext <;> simp [MultilinearMap.map_update_add]
+  map_update_smul' a i c x := by
+    ext <;> simp [MultilinearMap.map_update_smul]
+
+private theorem coneHomMap_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    H.coneHomMap n a m = ((id Mm).map n a m, H.map n a m) :=
+  (rfl)
+
+private theorem stasheffDiff_coneHomMap (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff H.coneHomMap d n a m =
+      (ungradedStasheffDiff (id Mm).map d n a m, ungradedStasheffDiff H.map d n a m) := by
+  refine Prod.ext ?_ ?_ <;>
+    simp [ungradedStasheffDiff_def, coneHomMap_apply, Prod.fst_sum, Prod.snd_sum]
+
+private theorem stasheffMul_coneHomMap (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMul H.coneHomMap n a m =
+      (ungradedStasheffMul (id Mm).map n a m, ungradedStasheffMul H.map n a m) := by
+  cases n with
+  | zero => simp [Prod.zero_eq_mk]
+  | succ n =>
+    refine Prod.ext ?_ ?_ <;>
+      simp [ungradedStasheffMul_succ, coneHomMap_apply, Prod.fst_sum, Prod.snd_sum]
+
+/-- **A homotopy as a morphism into a mapping cone.** Over a ring of characteristic two, a
+homotopy `h` between `f` and `g` gives the morphism `(id, h)` from `M` to the mapping cone of
+`f + g`, with components `(id_{n+1}, h_{n+1})`. The first component of its relation is that of
+the identity, and the second is the homotopy relation, where the cone contributes
+`(f + g)_{n+1}(m, a…)`, which cancels `f_{n+1} + g_{n+1}`. -/
+noncomputable def toConeHom : UngradedAInfinityRightModuleHom Mm (f + g).cone where
+  map := H.coneHomMap
+  stasheff n a m := by
+    rw [stasheffDiff_coneHomMap, stasheffMul_coneHomMap]
+    refine Prod.ext ?_ ?_
+    · simpa [coneHomMap_apply, Prod.fst_sum] using (id Mm).stasheff n a m
+    · simp only [coneHomMap_apply, cone_act_apply, Prod.snd_add, Prod.snd_sum, Prod.snd_zero,
+        sum_add_distrib]
+      rw [id_map_eq_strictMap, sum_strictMap]
+      simp only [add_map, add_apply, LinearMap.add_apply, LinearMap.id_apply]
+      have h := congrArg (· + (f.map n a m + g.map n a m)) (H.stasheff n a m)
+      simp only [add_self_eq_zero_of_charTwo R] at h
+      refine Eq.trans ?_ h
+      abel
+
+@[simp]
+theorem toConeHom_map_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    H.toConeHom.map n a m = ((id Mm).map n a m, H.map n a m) :=
+  (rfl)
+
+end Homotopy
 
 end UngradedAInfinityRightModuleHom
 

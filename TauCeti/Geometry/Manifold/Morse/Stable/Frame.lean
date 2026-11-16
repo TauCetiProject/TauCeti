@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 
 /-!
 # Normal coordinates of stable manifolds and frames of unstable manifolds
@@ -70,6 +71,12 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   space of the unstable manifold.
 * `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
   map carries the normal coordinates and the frame to positive multiples of themselves.
+* `coord_toChart_flow_neg_eq_zero_of_not_weight_neg`: once the backward orbit of a point of the
+  unstable manifold is linear in the chart, its coordinates of positive weight vanish.
+* `unstableFrame_exp_smul_negativeCoord`: the frame sends the direction in which a trajectory leaves
+  the critical point to its velocity.
+* `flow_log_eq_of_exp_smul_negativeCoord_eq`: two points of the unstable manifold whose directions
+  are positive multiples of each other lie on the same orbit.
 
 ## References
 
@@ -502,6 +509,125 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     rw [mfderiv_unstableFrame hφ hT, map_smul, smul_smul, ← Real.exp_add, neg_add_cancel,
       Real.exp_zero, one_smul]
     exact φ.negativeExtend_negativeCoord hv
+
+/-! ### The direction of a trajectory leaving the critical point -/
+
+/-- At a time `T` of linear backward flow of a point `y` of `W^u(x)`, the velocity `X y` is the
+unstable frame of some vector `a`, and the image of `X y` under the derivative of `φ ∘ Φ_{-T}`
+has the coordinates of the linear field at `Φ_{-T} y`. -/
+private theorem exists_unstableFrame_eq_and_coord (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) :
+    ∃ a, hX.unstableFrame φ y a = X y ∧ ∀ i, Real.exp (-T) * φ.coord (φ.negativeExtend a) i =
+      -(φ.weight i * φ.coord (φ.toChart (hX.flow (-T) y)) i) := by
+  -- The velocity is tangent to the invariant set `W^u(x)`, so it lies in the range of the frame.
+  have hXy : (X y : E) ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y) :=
+    Submodule.subset_span
+      (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet x) hy)
+  obtain ⟨a, ha⟩ : X y ∈ range (hX.unstableFrame φ y) := by
+    rw [range_unstableFrame hφ hf hy]
+    exact hXy
+  refine ⟨a, ha, fun i ↦ ?_⟩
+  have hd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow (-T)) y :=
+    (hX.contMDiff_flow_apply (-T)).mdifferentiable (by simp) y
+  have h := mfderiv_unstableFrame hφ hT a
+  rw [ha, mfderiv_comp_apply y (φ.mdifferentiableAt_toChart hT.1) hd,
+    hX.mfderiv_flow_apply_self] at h
+  have hi := congrFun (congrArg φ.coord h) i
+  rw [hφ _ hT.1, map_smul, Pi.smul_apply, smul_eq_mul] at hi
+  exact hi.symm
+
+/-- **Along the backward orbit, a point of the unstable manifold has no coordinates of positive
+weight.** If `T` is a time of linear backward flow of a point `y` of `W^u(x)`, then the
+coordinates of positive weight of `Φ_{-T} y` in the Morse chart vanish. -/
+theorem coord_toChart_flow_neg_eq_zero_of_not_weight_neg (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y)
+    {i : Fin (Module.finrank ℝ E)} (hi : ¬φ.weight i < 0) :
+    φ.coord (φ.toChart (hX.flow (-T) y)) i = 0 := by
+  obtain ⟨a, -, ha⟩ := exists_unstableFrame_eq_and_coord hφ hf hy hT
+  have h := ha i
+  rw [φ.coord_negativeExtend_of_not_weight_neg a hi, mul_zero] at h
+  have hw : φ.weight i = 1 := (φ.weight_eq_neg_one_or_eq_one i).resolve_left (by
+    intro h'
+    rw [h'] at hi
+    norm_num at hi)
+  rw [hw, one_mul] at h
+  linarith
+
+/-- **The unstable frame sends the direction of a trajectory to its velocity.** Let `T` be a time
+of linear backward flow of a point `y` of `W^u(x)`. The unstable frame at `y` sends `e^{T}` times
+the coordinates of negative weight of `Φ_{-T} y` to the velocity `X y`. These coordinates shrink
+like `e^{-T}` as `T` grows, so `e^{T}` times them is the direction in which the trajectory of `y`
+leaves `x`. -/
+theorem unstableFrame_exp_smul_negativeCoord (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) :
+    hX.unstableFrame φ y (Real.exp T • φ.negativeCoord (φ.toChart (hX.flow (-T) y))) = X y := by
+  obtain ⟨a, ha, hcoord⟩ := exists_unstableFrame_eq_and_coord hφ hf hy hT
+  -- In each direction of negative weight, of weight `-1`, the coordinates of `Φ_{-T} y` are
+  -- `e^{-T}` times those of `a`.
+  have he : φ.negativeCoord (φ.toChart (hX.flow (-T) y)) = Real.exp (-T) • a := by
+    funext i
+    have hw : φ.weight i = -1 :=
+      (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
+    have h := hcoord i
+    rw [φ.coord_negativeExtend_of_weight_neg a i, hw] at h
+    rw [φ.negativeCoord_apply, Pi.smul_apply, smul_eq_mul]
+    linarith
+  rw [he, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul, ha]
+
+/-- **Points leaving the critical point in the same direction lie on the same trajectory.** Let
+`T₁` and `T₂` be times of linear backward flow of points `y₁` and `y₂` of `W^u(x)`. If the direction
+`e^{T₂}` times the coordinates of negative weight of `Φ_{-T₂} y₂` is a positive multiple `μ` of the
+corresponding direction for `y₁`, then `y₂` is the image of `y₁` under the flow for the time
+`log μ`. -/
+theorem flow_log_eq_of_exp_smul_negativeCoord_eq (hf : IsMorse 𝓘(ℝ, E) f) {y₁ y₂ : M}
+    (hy₁ : y₁ ∈ hX.flow.unstableSet x) (hy₂ : y₂ ∈ hX.flow.unstableSet x) {T₁ T₂ : ℝ}
+    (hT₁ : T₁ ∈ hX.linearBackwardTimes φ y₁) (hT₂ : T₂ ∈ hX.linearBackwardTimes φ y₂) {μ : ℝ}
+    (hμ : 0 < μ)
+    (h : Real.exp T₂ • φ.negativeCoord (φ.toChart (hX.flow (-T₂) y₂)) =
+      μ • Real.exp T₁ • φ.negativeCoord (φ.toChart (hX.flow (-T₁) y₁))) :
+    hX.flow (Real.log μ) y₁ = y₂ := by
+  -- Flow both points back to the common time `S`, respectively `S + log μ`, where the linear flow
+  -- has shrunk both directions to the same vector.
+  set S := max T₁ (T₂ - Real.log μ)
+  have hs₁ : 0 ≤ S - T₁ := sub_nonneg.2 (le_max_left _ _)
+  have hs₂ : 0 ≤ S + Real.log μ - T₂ := by linarith [le_max_right T₁ (T₂ - Real.log μ)]
+  -- The coordinates of a point of the unstable manifold reached by linear backward flow are
+  -- those of `negativeExtend` of its coordinates of negative weight, and waiting a further time
+  -- `s` scales them by `e^{-s}`.
+  have hlin {y : M} (hy : y ∈ hX.flow.unstableSet x) {T s : ℝ}
+      (hT : T ∈ hX.linearBackwardTimes φ y) (hcs : φ.coord (φ.toChart (hX.flow (-(T + s)) y)) =
+        φ.linearFlow (-s) (φ.coord (φ.toChart (hX.flow (-T) y)))) :
+      φ.toChart (hX.flow (-(T + s)) y) =
+        φ.negativeExtend (Real.exp (-(T + s)) • Real.exp T •
+          φ.negativeCoord (φ.toChart (hX.flow (-T) y))) := by
+    set b := φ.negativeCoord (φ.toChart (hX.flow (-T) y))
+    have hz : φ.toChart (hX.flow (-T) y) = φ.negativeExtend b :=
+      (φ.negativeExtend_negativeCoord fun _ hi ↦
+        coord_toChart_flow_neg_eq_zero_of_not_weight_neg hφ hf hy hT hi).symm
+    refine φ.coord.injective ?_
+    rw [hcs, hz, φ.linearFlow_neg_coord_negativeExtend, smul_smul, map_smul, map_smul,
+      ← Real.exp_add]
+    congr 2
+    ring
+  obtain ⟨h₁, hc₁⟩ := add_mem_linearBackwardTimes hφ hT₁ hs₁
+  obtain ⟨h₂, hc₂⟩ := add_mem_linearBackwardTimes hφ hT₂ hs₂
+  have he₁ := hlin hy₁ hT₁ hc₁
+  have he₂ := hlin hy₂ hT₂ hc₂
+  rw [add_sub_cancel] at h₁ he₁
+  rw [add_sub_cancel] at h₂ he₂
+  have hk : Real.exp (-(S + Real.log μ)) * μ = Real.exp (-S) := by
+    rw [neg_add, Real.exp_add, Real.exp_neg (Real.log μ), Real.exp_log hμ,
+      inv_mul_cancel_right₀ hμ.ne']
+  -- Both points are in the chart, with the same image, so they agree.
+  have heq : hX.flow (-S) y₁ = hX.flow (-(S + Real.log μ)) y₂ := by
+    refine φ.toChart.injOn h₁.1 h₂.1 ?_
+    rw [he₁, he₂, h]
+    simp only [smul_smul]
+    congr 2
+    linear_combination (-Real.exp T₁) * hk
+  have := congrArg (hX.flow (S + Real.log μ)) heq
+  rwa [← Flow.map_add, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply,
+    show S + Real.log μ + -S = Real.log μ by ring] at this
 
 end IsAdaptedPseudoGradient
 

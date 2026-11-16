@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
+import TauCeti.AlgebraicTopology.Singular.Contractible
+import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Maps of Serre fibrations which are homology isomorphisms on the fibres
@@ -63,6 +65,8 @@ map over a weak homotopy equivalence `g : B ⟶ B'` factors as a map over `B` in
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`: a Serre fibration whose
   fibres have the homology of a point in degrees at most `k` is a homology isomorphism in
   degree `k`.
+* `TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber`: the same, with the hypothesis on the
+  fibres stated as path-connectedness and vanishing of positive-degree homology.
 
 ## References
 
@@ -393,6 +397,25 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
     _root_.TopCat.isTerminalPUnit.hom_ext _ _
   rw [← isIso_comp_right_iff _ (H.map t), ← H.map_comp, hfac]
   exact hfib b q hq
+
+/-- **A Serre fibration with acyclic fibres is a homology isomorphism.** Let `p : E ⟶ B` be a Serre
+fibration whose fibres are path-connected and have no `R`-homology in the positive degrees
+`q ≤ k`. Then `p` induces an isomorphism `Hₖ(E; R) ≅ Hₖ(B; R)`. -/
+theorem isIso_singularHomologyMap_of_isZero_fiber (hp : serreFibrations p) (R : Type u) [Ring R]
+    (k : ℕ) (hconn : ∀ b, PathConnectedSpace (p.fiber b))
+    (hfib : ∀ b, ∀ q, q ≠ 0 → q ≤ k → IsZero (((AlgebraicTopology.singularHomologyFunctor
+      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b))) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
+      (ModuleCat.of R R)).map p) := by
+  refine isIso_singularHomologyMap_of_isIso_fiber_to_point hp R k fun b q hq ↦ ?_
+  have := hconn b
+  rcases eq_or_ne q 0 with rfl | hq0
+  · -- In degree zero both augmentations are isomorphisms, and the map commutes with them.
+    exact IsIso.of_isIso_fac_right
+      (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _)
+  · -- In positive degrees both groups vanish; the point is contractible.
+    exact (hfib b q hq0 hq).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace _ (_root_.TopCat.of PUnit) hq0) _
 
 end TopCat
 

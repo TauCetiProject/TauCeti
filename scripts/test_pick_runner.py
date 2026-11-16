@@ -22,7 +22,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, pr_fleet=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, pr_fleet=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, fleet_enabled=True, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -37,7 +37,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, pr_fleet=pr_fleet, maintenance=maintenance, skip_build=skip_build, label_head=label_head), "fromJSON": json.loads,
                          "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
-                         "vars": SimpleNamespace(FLEET_CI_ENABLED="true", PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
+                         "vars": SimpleNamespace(FLEET_CI_ENABLED="true" if fleet_enabled else "", PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
 
 
 @unittest.skipUnless(MODERN, "project uses the standard GitHub-only picker")
@@ -68,13 +68,19 @@ class PickerWorkflow(unittest.TestCase):
 
     def test_slot_calculation_never_creates_an_extra_group(self):
         step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "hosted-slot")
+        self.assertEqual(step["env"]["BUDGET"], "${{ vars.HOSTED_RUNNER_BUDGET || '12' }}")
         with tempfile.TemporaryDirectory() as root:
-            for run_id in [*range(19), 42533533021, 999999999999999]:
-                output = Path(root) / "output"
-                output.unlink(missing_ok=True)
-                subprocess.run(["bash", "-e", "-c", step["run"]], check=True,
-                               env=dict(os.environ, HOSTED_RUN_ID=str(run_id), GITHUB_OUTPUT=str(output)))
-                self.assertEqual(output.read_text(), "slot=" + str(run_id % 19) + "\n")
+            for budget, expected_mod in (("", 12), ("12", 12), ("1", 1), ("8", 8), ("19", 19),
+                                         ("0", 1), ("25", 19), ("-5", 12), ("bogus", 12)):
+                for run_id in (*range(expected_mod), 42533533021, 999999999999999):
+                    output = Path(root) / "output"
+                    output.unlink(missing_ok=True)
+                    subprocess.run(["bash", "-e", "-c", step["run"]], check=True,
+                                   env=dict(os.environ, HOSTED_RUN_ID=str(run_id), BUDGET=budget,
+                                            GITHUB_OUTPUT=str(output)))
+                    slot = int(output.read_text().removeprefix("slot=").strip())
+                    self.assertEqual(slot, run_id % expected_mod)
+                    self.assertLess(slot, 19)
 
     def test_shared_pr_pool_target_is_used_for_this_attempt_only(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -177,6 +183,11 @@ class PickerWorkflow(unittest.TestCase):
         router = yaml.safe_load((ROOT / ".github/workflows/full-lint-label.yml").read_text())
         self.assertEqual(router[True]["pull_request_target"]["types"], ["labeled", "unlabeled"])
         job = router["jobs"]["rebuild"]
+        fleet_pr = dict(group="TauCetiFleet", labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr"])
+        self.assertEqual(expression(job["runs-on"]), fleet_pr)
+        self.assertEqual(expression(job["runs-on"], hosted_picker=True), "ubuntu-24.04")
+        self.assertEqual(expression(job["runs-on"], fleet_enabled=False), "ubuntu-24.04")
+        self.assertNotIn("secrets.APP_PRIVATE_KEY", yaml.dump(job))
         for action in ("labeled", "unlabeled"):
             for labels in ((), ("self-tested",)):
                 self.assertFalse(expression(job["if"], action=action, labels=labels))
@@ -212,8 +223,8 @@ class PickerWorkflow(unittest.TestCase):
     def test_fleet_pr_queue_configuration_is_valid_and_small(self):
         config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
         self.assertIs(type(config["pr_queue_limit"]), int)
-        self.assertEqual(config["pr_queue_limit"], 3)
-        self.assertEqual(config["pr_order"], ["github", "fleet", "namespace"])
+        self.assertEqual(config["pr_queue_limit"], 10)
+        self.assertEqual(config["pr_order"], ["fleet", "namespace", "github"])
         self.assertIs(config["namespace_enabled"], True)
         self.assertEqual(config["namespace_build_cap"], 8)
 
@@ -256,16 +267,18 @@ class PickerWorkflow(unittest.TestCase):
 
     def test_picker_is_small_control_job_and_calls_the_existing_selector(self):
         pick = PICKER["jobs"]["pick"]
-        priority_control = "ubuntu-24.04"
-        self.assertEqual(expression(pick["runs-on"]), priority_control)
+        fleet_pr = dict(group="TauCetiFleet", labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr"])
+        self.assertEqual(expression(pick["runs-on"]), fleet_pr)
         self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
+        self.assertEqual(expression(pick["runs-on"], fleet_enabled=False), "ubuntu-24.04")
         reserved_control = [
             "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
             "fleet-74773fc7f54d4877add11d80113fe340"]
         for flags in ({"staging": True}, {"pr_fleet": True}, {"staging": True, "pr_fleet": True}):
             with self.subTest(flags=flags):
                 self.assertEqual(expression(pick["runs-on"], **flags), reserved_control)
-        self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
+        self.assertEqual(expression(pick["runs-on"], maintenance=True), fleet_pr)
+        self.assertNotIn("secrets.APP_PRIVATE_KEY", yaml.dump(pick))
         self.assertFalse(any("create-github-app-token" in s.get("uses", "") for s in pick["steps"]))
         self.assertFalse(any("self_tested.py" in s.get("run", "") for s in pick["steps"]))
         self.assertNotIn("skip-pr-build", pick["outputs"])

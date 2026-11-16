@@ -65,6 +65,12 @@ theorem mappingSpaceEval_comp_const' (b : B) :
     (mappingSpaceEval (X := X) b).comp ContinuousMap.const' = ContinuousMap.id X :=
   ContinuousMap.ext (leftInverse_mappingSpaceEval_const b)
 
+/-- The constant maps send `X ∖ {x}` into the complement of the fibre of evaluation over `x`:
+the only constant map with value `x` at `b` is the constant map at `x`. -/
+theorem const'_preimage_mappingSpaceEval_preimage_subset (b : B) (x : X) :
+    (ContinuousMap.const' : C(X, C(B, X))) ⁻¹' (mappingSpaceEval b ⁻¹' {x}) ⊆ {x} :=
+  fun _ h ↦ by simpa using h
+
 /-- Evaluation at a point is a quotient map. Its continuous section by constant maps detects
 openness in the target. -/
 theorem isQuotientMap_mappingSpaceEval (b : B) :

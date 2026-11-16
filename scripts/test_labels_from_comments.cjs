@@ -16,13 +16,14 @@ const issue = { owner: 'TauCetiProject', repo: 'test-repo', number: 123 };
 // Evaluate the actual job condition with Actions' case-insensitive contains semantics.
 // Actions string literals have no escapes, so keep backslashes literal in the JS source.
 const jobCondition = workflow.match(/^    if: >-\n((?:      .*\n)+)/m)[1].replace(/\\/g, '\\\\');
-const admit = new Function('github', 'contains', 'format', 'fromJSON', `return (${jobCondition});`);
+const admit = new Function('github', 'contains', 'startsWith', 'format', 'fromJSON', `return (${jobCondition});`);
 const format = (template, ...args) => template.replace(/\{(\d+)\}/g, (_, i) => String(args[i]));
 const repository = workflow.match(/github.repository == '([^']+)'/)[1];
 const needsRunner = (body, repo = repository, commenter = 1, author = 1, isPR = true) => admit({
   repository: repo, event: { comment: { body, user: { id: commenter } },
     issue: { user: { id: author }, pull_request: isPR ? {} : null } },
-}, (value, search) => value.toLowerCase().includes(search.toLowerCase()), format, JSON.parse);
+}, (value, search) => value.toLowerCase().includes(search.toLowerCase()),
+  (value, prefix) => value.toLowerCase().startsWith(prefix.toLowerCase()), format, JSON.parse);
 
 async function commands(body) {
   let output;
@@ -145,9 +146,10 @@ test('unrecognized comments make no API calls', async () => {
   assert.deepEqual(calls, []);
 });
 
-test('ordinary conversation and queue merge notifications never request a runner', () => {
+test('ordinary conversation, AI review scoreboards, and queue merge notifications never request a runner', () => {
   for (const body of [
     'Thanks!', 'bors merge', '/review', '',
+    '<!--tauceti-scoreboard-->\n## AI review\n\nkeep\nDocumentation: please hold this clear.',
     'Pull request successfully merged into main.\n\nBuild succeeded:\n' +
       '  * [build](https://github.com/TauCetiProject/TauCeti/actions/runs/42531937757)\n\n' +
       'Merged revision: `1d5dafa62c122f5cce5cd8f1257ade2825f1ee87`.\n\n' +

@@ -40,7 +40,7 @@ on:
         description: Namespace build concurrency slot, below the runtime cap (maximum 64)
         value: ${{ jobs.pick.outputs.namespace-slot }}
       hosted-slot:
-        description: Native GitHub bulk-build concurrency slot, from 0 through 18
+        description: Native GitHub bulk-build concurrency slot, bounded by HOSTED_RUNNER_BUDGET (1 through 19)
         value: ${{ jobs.pick.outputs.hosted-slot }}
       runner:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
@@ -68,8 +68,11 @@ jobs:
   pick:
     if: ${{ !inputs.control_smoke }}
     # Every picker must reach the fleet without first waiting for a GitHub build slot.
-    # Keep control work small, high priority, and isolated to this workflow run.
-    runs-on: ${{ (inputs.fleet-staging || inputs.fleet-pr) && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
+    # Staging and Fleet PR pickers retain the reserved queue-control host; ordinary pickers use the Fleet PR
+    # pool when Fleet CI is enabled so GitHub-hosted backlogs cannot starve selection.
+    # Set vars.PICKER_GITHUB_FALLBACK='true' to fall back to ubuntu-24.04 without a PR.
+    # No App private key enters this job.
+    runs-on: ${{ (inputs.fleet-staging || inputs.fleet-pr) && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || ((vars.FLEET_CI_ENABLED == 'true' && vars.PICKER_GITHUB_FALLBACK != 'true') && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}') || 'ubuntu-24.04') }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -87,11 +90,15 @@ jobs:
         id: hosted-slot
         env:
           HOSTED_RUN_ID: ${{ github.run_id }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '12' }}
         run: |
           python3 - <<'PYTHON'
           import os
+          raw = (os.environ.get("BUDGET") or "").strip()
+          slots = int(raw) if raw.isdigit() else 12
+          slots = max(1, min(19, slots))
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 19), file=output)
+              print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % slots), file=output)
           PYTHON
       - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
@@ -113,7 +120,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
-          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '12' }}
           NAMESPACE_ENABLED: ${{ vars.NAMESPACE_ENABLED }}
           NAMESPACE_BUILD_CAP: ${{ vars.NAMESPACE_BUILD_CAP }}
           API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
