@@ -55,8 +55,9 @@ Finally, for `L > 4` the member `c = 1` of the family of Floer data is the pullb
 structures: if `u` solves the Floer equation for the latter at `1 - w`, then `u (1 - ·)` solves it
 at `w` for the member `c = 1`
 (`TauCeti.SmoothTwoForm.Compatible.isComplexLinearMap_perturbedMFDeriv_cappedExchange_one`).
-The perturbation side of this is
-`TauCeti.Floer.perturbationPullback_plumbedPerturbation_exchangeEndData`.
+This is the naturality of the Floer equation under the exchange,
+`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_one_sub`, applied to
+`TauCeti.Floer.cappedExchangePerturbation_one`.
 
 ## References
 
@@ -357,25 +358,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_cappedExchange_one {H : Puncture →
     apply Complex.ext <;> simp [e]
   -- The structure at `z` is the exchanged capping structure at `σ'(z)`.
   rw [cappedExchangeAlmostComplex_one h₀ J hJ (by linarith) hJp hJ', hσ]
-  -- The perturbation is the pullback along `σ'` of the exchanged capping perturbation.
-  set Ks : ℝ × ℝ → M → ℝ := fun z x ↦ Floer.plumbedPerturbation (Pi.single inf (H zero))
-    (Floer.exchangeEndData H) one L (e z) x 1
-  set Kt : ℝ × ℝ → M → ℝ := fun z x ↦ Floer.plumbedPerturbation (Pi.single inf (H zero))
-    (Floer.exchangeEndData H) one L (e z) x Complex.I
-  have hpull (v : ℝ × ℝ) : (fun z x ↦ Floer.cappedExchangePerturbation H L 1 (e z) x (e v)) =
-      Floer.perturbationPullback (fun z ↦ (1, 0) - z) Ks Kt v := by
-    funext z' x
-    rw [Floer.perturbationPullback_plumbedPerturbation_exchangeEndData (hH inf) (by linarith)]
-  have hD : σ.perturbedMFDeriv (fun z x ↦ Floer.cappedExchangePerturbation H L 1 (e z) x 1)
-      (fun z x ↦ Floer.cappedExchangePerturbation H L 1 (e z) x Complex.I)
-      (u ∘ fun z ↦ (1, 0) - z) z =
-      σ.perturbedMFDeriv (Floer.perturbationPullback (fun z ↦ (1, 0) - z) Ks Kt stdComplexLineReal)
-        (Floer.perturbationPullback (fun z ↦ (1, 0) - z) Ks Kt stdComplexLineImag)
-        (u ∘ fun z ↦ (1, 0) - z) z := by
-    conv_lhs => rw [← equivRealProdCLM_symm_stdComplexLineReal,
-      ← equivRealProdCLM_symm_stdComplexLineImag, hpull, hpull]
-  rw [hD]
-  -- The exchanged capping perturbation is differentiable in the target point at `σ'(z)`.
+  -- The perturbation is the pullback along `σ'` of the exchanged capping perturbation, which is
+  -- differentiable in the target point at `σ'(z)`.
   have hK (v : ℂ) : MDifferentiableAt I 𝓘(ℝ)
       (fun x ↦ Floer.plumbedPerturbation (Pi.single inf (H zero)) (Floer.exchangeEndData H) one L
         (e ((1, 0) - z)) x v) (u ((1, 0) - z)) := by
@@ -385,15 +369,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_cappedExchange_one {H : Puncture →
     rw [Floer.exchangeEndData_one] at hd
     exact ((hd.comp _ (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
       contMDiffAt_const).mdifferentiableAt one_ne_zero
-  -- The exchange is holomorphic: its derivative is `-1`.
-  have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
-    (differentiableAt_const _).sub differentiableAt_id
-  have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-    rw [fderiv_const_sub, fderiv_fun_id]
-    simp
-  exact σ.isComplexLinearMap_perturbedMFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I)
-    hφJ h
+  exact σ.isComplexLinearMap_perturbedMFDeriv_comp_one_sub
+    (Floer.cappedExchangePerturbation_one (hH inf) (by linarith)) hu hK h
 
 end TauCeti.SmoothTwoForm.Compatible

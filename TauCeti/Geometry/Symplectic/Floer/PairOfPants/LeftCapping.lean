@@ -185,15 +185,7 @@ theorem perturbationPullback_plumbedPerturbation_exchangeEndData (hH : Periodic 
           (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
       cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x
         (Complex.equivRealProdCLM.symm v) := by
-  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - z) = 1 - Complex.equivRealProdCLM.symm z := by
-    apply Complex.ext <;> simp
-  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
-    apply Complex.ext <;> simp
-  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id,
-    cappedExchangePerturbation_one hH hL, hσ, hv]
-  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg, Prod.snd_neg, map_add,
-    map_smul, smul_eq_mul]
-  ring
+  rw [perturbationPullback_one_sub, cappedExchangePerturbation_one hH hL, neg_apply]
 
 /-- **The family on the remaining input end.** For `L ≥ 0` and `0 ≤ c ≤ 1`, on the part `s ≥ 2`
 of the input end at `1`, the pullback of the capped datum along the end lift `φ_1` sends a tangent

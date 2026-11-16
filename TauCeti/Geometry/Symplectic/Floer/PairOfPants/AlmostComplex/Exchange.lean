@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Almost complex structures along the input-exchange family
@@ -77,10 +78,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 namespace TauCeti.Floer
 
 variable {M V : Type*}
-
-/-- The radius `2 exp (2π)` of the disc on which the negative plane data are trivial exceeds `3`. -/
-theorem three_lt_two_mul_exp_two_pi : 3 < 2 * Real.exp (2 * π) := by
-  nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
 
 section Algebraic
 
@@ -154,7 +151,7 @@ theorem cayley_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {c : ℝ} (hc :
       AlmostComplexStructure.cayley_self, add_zero]
   · obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_le_norm_sub (r := 2) (w := w)
       (abs_le.2 ⟨by linarith [hc.1], hc.2⟩) (abs_le.2 ⟨by linarith [hc.1], by linarith [hc.2]⟩)
-      (by linarith [three_lt_two_mul_exp_two_pi])
+      (by linarith [fourteen_le_two_mul_exp_two_pi])
     rw [exchangeAlmostComplex_of_lt_norm h₀ hw,
       pairOfPantsAlmostComplex_update_inf_base_eq (hJb := hJ) h₀ hw₀ hw₁,
       AlmostComplexStructure.cayley_self, zero_add]
@@ -214,7 +211,7 @@ theorem exchangeAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀) {q 
     exchangeAlmostComplex h₀ J hJ c (q.cylindricalEndLift z) x = J q z.im x := by
   have hw : ‖q.cylindricalEndLift z - c‖ ≤ 2 * Real.exp (2 * π) :=
     (norm_cylindricalEndLift_sub_le hq hc₀ hc₁ (by linarith)).trans
-      (by linarith [three_lt_two_mul_exp_two_pi])
+      (by linarith [fourteen_le_two_mul_exp_two_pi])
   rw [exchangeAlmostComplex_of_norm_le h₀ hw,
     pairOfPantsAlmostComplex_cylindricalEndLift h₀ (by simpa [update_of_ne hq] using hJp)
       (by rwa [endSign_eq_one hq, one_mul]) x, update_of_ne hq]
@@ -285,7 +282,7 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
         (f := fun p : ℝ × (ℂ × M) => (p.2.1 - (p.1 : ℂ), p.2.2)) _
         (hsub.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))
     refine hpl.congr_of_eventuallyEq ?_
-    have h3 : 3 < ‖(w : ℂ) - c‖ := three_lt_two_mul_exp_two_pi.trans_le hge
+    have h3 : 3 < ‖(w : ℂ) - c‖ := lt_of_lt_of_le (by linarith [fourteen_le_two_mul_exp_two_pi]) hge
     filter_upwards [hdist.continuousAt.eventually (lt_mem_nhds h3),
       continuous_fst.continuousAt.eventually (isOpen_Ioo.mem_nhds hc)] with p hp hpc
     rcases le_or_gt ‖p.2.1 - p.1‖ (2 * Real.exp (2 * π)) with hle | hgt
