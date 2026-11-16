@@ -28,10 +28,6 @@ orthogonal projection `U.starProjection`. Conversely, any bounded operator `T : 
 * `Submodule.extendByZero_one`: `U.extendByZero 1 = U.starProjection`.
 * `Submodule.norm_extendByZero` and `Submodule.isometry_extendByZero`: `U.extendByZero` preserves
   operator norms.
-* `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
-  `Submodule.mul_starProjection_eq_self`, and `Submodule.commute_starProjection_orthogonal_iff`:
-  operators vanishing on `Uᗮ` factor through `U.starProjection`, and commutation with
-  `U.starProjection` is equivalent to commutation with `Uᗮ.starProjection`.
 * `Submodule.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL` and
   `Submodule.mem_range_extendByZero_iff`: operators with range in `U` and kernel containing `Uᗮ`
   are recovered by compressing to `U` and extending by zero.
@@ -55,47 +51,6 @@ public section
 noncomputable section
 
 namespace Submodule
-
-section HasOrthogonalProjection
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- If an additive map `T` vanishes on `Uᗮ`, then `T (U.starProjection x) = T x` for every `x`. -/
-theorem apply_starProjection_eq_of_forall_mem_orthogonal
-    {F : Type*} [AddCommGroup F] {G : Type*} [FunLike G E F] [AddMonoidHomClass G E F]
-    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {T : G}
-    (hker : ∀ x ∈ Uᗮ, T x = 0) (x : E) :
-    T (U.starProjection x) = T x := by
-  have h := hker _ (U.sub_starProjection_mem_orthogonal x)
-  rwa [map_sub, sub_eq_zero, eq_comm] at h
-
-/-- A bounded operator vanishing on `Uᗮ` is fixed by right multiplication by `U.starProjection`. -/
-theorem mul_starProjection_eq_self {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    {T : E →L[𝕜] E} (hker : ∀ x ∈ Uᗮ, T x = 0) :
-    T * U.starProjection = T := by
-  ext x
-  simpa only [_root_.mul_apply_eq_comp] using
-    U.apply_starProjection_eq_of_forall_mem_orthogonal hker x
-
-/-- A bounded operator commutes with `Uᗮ.starProjection` if and only if it commutes with
-`U.starProjection`. -/
-theorem commute_starProjection_orthogonal_iff {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    {y : E →L[𝕜] E} :
-    Commute Uᗮ.starProjection y ↔ Commute U.starProjection y := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · have h' := (Commute.one_left y).sub_left h
-    rwa [U.starProjection_orthogonal', sub_sub_cancel] at h'
-  · rw [U.starProjection_orthogonal']
-    exact (Commute.one_left y).sub_left h
-
-/-- A bounded operator commuting with `U.starProjection` leaves `U` invariant. -/
-private theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    {y : E →L[𝕜] E} (hy : Commute U.starProjection y) {x : E} (hx : x ∈ U) :
-    y x ∈ U := by
-  rw [← U.starProjection_eq_self_iff, ← _root_.mul_apply_eq_comp, hy.eq,
-    _root_.mul_apply_eq_comp, U.starProjection_eq_self_iff.2 hx]
-
-end HasOrthogonalProjection
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [CompleteSpace E] (U : Submodule 𝕜 E) [CompleteSpace U]

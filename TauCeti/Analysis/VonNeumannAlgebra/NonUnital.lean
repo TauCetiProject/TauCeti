@@ -9,10 +9,8 @@ public import TauCeti.Analysis.InnerProductSpace.EssentialSubspace
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Adjoin
-public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
+public import TauCeti.Analysis.VonNeumannAlgebra.Density
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import TauCeti.Analysis.InnerProductSpace.Amplification
-import TauCeti.Analysis.VonNeumannAlgebra.Density
 
 /-!
 # Nonunital star subalgebras of operators, essential subspaces, and operator closures
@@ -25,17 +23,15 @@ essential subspace resolves this discrepancy.
 The essential subspace `A.essentialSubspace`, its identification with the orthogonal complement of
 the common annihilator `⨅ a ∈ A, ker a`, and the nondegenerate compression
 `A.restrictEssentialSubspace` with isometric isomorphism `A.restrictEssentialSubspaceEquiv` are
-developed in `TauCeti.Analysis.InnerProductSpace.EssentialSubspace`. Here we develop the commutant,
-double-commutant, density, and strong/weak operator closure theory on top of that core.
+developed in `TauCeti.Analysis.InnerProductSpace.EssentialSubspace`. The general nonunital von
+Neumann density theorems
+(`NonUnitalStarSubalgebra.apply_mem_closure_of_mem_centralizer_centralizer` and
+`NonUnitalStarSubalgebra.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer`) are
+proved in `TauCeti.Analysis.VonNeumannAlgebra.Density`. Here we develop the commutant,
+double-commutant, essential-projection approximation, and strong/weak operator closure theory on
+top of those results.
 
-Without assuming an operator-norm closure or approximate unit, the orbit-closure projection
-argument proves nonunital von Neumann density directly for one vector
-(`NonUnitalStarSubalgebra.apply_mem_closure_of_mem_centralizer_centralizer`), and diagonal
-amplification via `PiLp.diagStarAlgHom_mem_centralizer_centralizer` yields the finite-vector
-nonunital density theorem
-(`NonUnitalStarSubalgebra.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer`):
-every operator in `A''` that vanishes on `A.essentialSubspaceᗮ` is a strong-operator limit of
-elements of `A`. Specializing to `A.essentialSubspace.starProjection` approximates the essential
+Specializing nonunital density to `A.essentialSubspace.starProjection` approximates the essential
 projection on one or finitely many vectors
 (`NonUnitalStarSubalgebra.starProjection_essentialSubspace_apply_mem_closure`,
 `NonUnitalStarSubalgebra.exists_forall_norm_starProjection_essentialSubspace_sub_apply_lt`).
@@ -74,34 +70,6 @@ open scoped InnerProductSpace Topology
 
 namespace NonUnitalStarSubalgebra
 
-section EssentialSubspace
-
-variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-
-/-- Any unital star subalgebra viewed as a nonunital star subalgebra has essential subspace `⊤`. -/
-@[simp]
-theorem essentialSubspace_toNonUnitalStarSubalgebra (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
-    S.toNonUnitalStarSubalgebra.essentialSubspace = ⊤ :=
-  eq_top_iff.2 fun ξ _ => by
-    simpa using S.toNonUnitalStarSubalgebra.apply_mem_essentialSubspace S.one_mem ξ
-
-/-- Taking the operator-norm closure of `A` does not change its essential subspace. -/
-@[simp]
-theorem essentialSubspace_topologicalClosure (A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H)) :
-    A.topologicalClosure.essentialSubspace = A.essentialSubspace := by
-  refine le_antisymm ((A.topologicalClosure.essentialSubspace_le_iff
-      A.isClosed_essentialSubspace).2 fun a ha ξ => ?_)
-    (essentialSubspace_mono A.le_topologicalClosure)
-  have ha' : a ∈ _root_.closure (A : Set (H →L[𝕜] H)) := by
-    rwa [← NonUnitalStarSubalgebra.topologicalClosure_coe]
-  have hmem : a ξ ∈ _root_.closure ((fun b : H →L[𝕜] H => b ξ) '' (A : Set (H →L[𝕜] H))) :=
-    mem_closure_image (ContinuousLinearMap.apply 𝕜 H ξ).continuous.continuousAt ha'
-  refine A.isClosed_essentialSubspace.closure_subset_iff.2 ?_ hmem
-  rintro _ ⟨b, hb, rfl⟩
-  exact A.apply_mem_essentialSubspace hb ξ
-
-end EssentialSubspace
-
 section Commutant
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
@@ -119,14 +87,9 @@ the commutant of `A`. -/
 theorem extendByZero_orthogonal_mem_centralizer (A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H))
     (Q : A.essentialSubspaceᗮ →L[𝕜] A.essentialSubspaceᗮ) :
     A.essentialSubspaceᗮ.extendByZero Q ∈ (A : Set (H →L[𝕜] H)).centralizer := by
-  intro a ha
-  have ha_eq : a = A.essentialSubspace.extendByZero
-      (A.essentialSubspace.orthogonalProjectionOnto ∘L a ∘L A.essentialSubspace.subtypeL) :=
-    (A.essentialSubspace.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL
-      (A.apply_mem_essentialSubspace ha) fun _ hξ =>
-        A.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ ha).symm
-  rw [ha_eq]
-  exact A.essentialSubspace.commute_extendByZero_extendByZero_orthogonal _ Q
+  rw [← A.image_extendByZero_restrictEssentialSubspace]
+  rintro _ ⟨S, -, rfl⟩
+  exact A.essentialSubspace.commute_extendByZero_extendByZero_orthogonal S Q
 
 /-- `A.essentialSubspace` reduces every operator in the commutant of `A`. -/
 theorem isReducing_essentialSubspace_of_mem_centralizer {y : H →L[𝕜] H}
@@ -259,12 +222,10 @@ theorem mem_centralizer_centralizer_iff {x : H →L[𝕜] H} :
         (A : Set (H →L[𝕜] H)).centralizer.centralizer :=
       A.extendByZero_mem_centralizer_centralizer_iff.2 hS
     have hp_orth : A.essentialSubspaceᗮ.starProjection ∈
-        (A : Set (H →L[𝕜] H)).centralizer.centralizer := by
-      rw [Submodule.starProjection_orthogonal']
-      exact (Subalgebra.centralizer 𝕜 (A : Set (H →L[𝕜] H)).centralizer).sub_mem
-        (Subalgebra.one_mem _) A.starProjection_essentialSubspace_mem_centralizer_centralizer
-    exact (Subalgebra.centralizer 𝕜 (A : Set (H →L[𝕜] H)).centralizer).add_mem hS'
-      (Subalgebra.smul_mem _ hp_orth c)
+        (A : Set (H →L[𝕜] H)).centralizer.centralizer :=
+      fun _ hy => (A.essentialSubspace.commute_starProjection_orthogonal_iff.2
+        (A.commute_starProjection_essentialSubspace_of_mem_centralizer hy)).symm.eq
+    exact Set.add_mem_centralizer hS' (Set.smul_mem_centralizer c hp_orth)
 
 /-- Extending `(A.restrictEssentialSubspace)''` by zero on `A.essentialSubspaceᗮ` cuts out
 precisely the operators in `A''` that vanish on the common annihilator `A.essentialSubspaceᗮ`. -/
@@ -293,55 +254,6 @@ section Density
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
-/-- **Nonunital von Neumann density for one vector.** If `x ∈ A''` vanishes on the common
-annihilator `A.essentialSubspaceᗮ`, then `x v` lies in the closure of the orbit `A v` for every
-`v : H`. -/
-theorem apply_mem_closure_of_mem_centralizer_centralizer
-    (A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H)) {x : H →L[𝕜] H}
-    (hx : x ∈ (A : Set (H →L[𝕜] H)).centralizer.centralizer)
-    (hker : ∀ ξ ∈ A.essentialSubspaceᗮ, x ξ = 0) (v : H) :
-    x v ∈ closure ((fun a : H →L[𝕜] H => a v) '' A) := by
-  set K : Submodule 𝕜 H :=
-    (A.toNonUnitalSubalgebra.toSubmodule.map
-      (ContinuousLinearMap.apply 𝕜 H v).toLinearMap).topologicalClosure
-  have hKcoe : (K : Set H) = closure ((fun a : H →L[𝕜] H => a v) '' A) :=
-    A.coe_topologicalClosure_map_apply v
-  have hKle : K ≤ A.essentialSubspace := by
-    refine Submodule.topologicalClosure_minimal _ ?_ A.isClosed_essentialSubspace
-    rintro _ ⟨a, ha, rfl⟩
-    exact A.apply_mem_essentialSubspace ha v
-  have hp : K.starProjection ∈ (A : Set (H →L[𝕜] H)).centralizer :=
-    A.starProjection_topologicalClosure_map_apply_mem_centralizer v
-  -- `A.essentialSubspace.starProjection v - K.starProjection v` lies in both `A.essentialSubspace`
-  -- and `A.essentialSubspaceᗮ`, so it vanishes.
-  have hdiff_orth :
-      A.essentialSubspace.starProjection v - K.starProjection v ∈ A.essentialSubspaceᗮ := by
-    refine A.mem_orthogonal_essentialSubspace_iff.2 fun a ha => ?_
-    have haK : K.starProjection (a v) = a v :=
-      K.starProjection_eq_self_iff.2 (Submodule.le_topologicalClosure _ ⟨a, ha, by simp⟩)
-    calc a (A.essentialSubspace.starProjection v - K.starProjection v)
-        = (a * A.essentialSubspace.starProjection) v - (a * K.starProjection) v := by
-          rw [map_sub, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp]
-      _ = a v - K.starProjection (a v) := by
-          rw [A.mul_starProjection_essentialSubspace ha, hp a ha, _root_.mul_apply_eq_comp]
-      _ = 0 := by rw [haK, sub_self]
-  have hdiff_mem :
-      A.essentialSubspace.starProjection v - K.starProjection v ∈ A.essentialSubspace :=
-    A.essentialSubspace.sub_mem (A.essentialSubspace.starProjection_apply_mem v)
-      (hKle (K.starProjection_apply_mem v))
-  have hpv_eq : A.essentialSubspace.starProjection v = K.starProjection v :=
-    sub_eq_zero.1 <| (Submodule.mem_bot 𝕜).1 <|
-      A.essentialSubspace.inf_orthogonal_eq_bot ▸ ⟨hdiff_mem, hdiff_orth⟩
-  have hcomm : K.starProjection (x v) = x (K.starProjection v) := by
-    simpa only [_root_.mul_apply_eq_comp] using DFunLike.congr_fun (hx _ hp) v
-  have hxv : x v = K.starProjection (x v) :=
-    calc x v = x (A.essentialSubspace.starProjection v) :=
-          (A.essentialSubspace.apply_starProjection_eq_of_forall_mem_orthogonal hker v).symm
-      _ = x (K.starProjection v) := by rw [hpv_eq]
-      _ = K.starProjection (x v) := hcomm.symm
-  rw [← hKcoe, SetLike.mem_coe, hxv]
-  exact K.starProjection_apply_mem (x v)
-
 /-- For every vector `v : H`, `A.essentialSubspace.starProjection v` lies in the closure of the
 orbit `A v`. -/
 theorem starProjection_essentialSubspace_apply_mem_closure
@@ -350,45 +262,6 @@ theorem starProjection_essentialSubspace_apply_mem_closure
   A.apply_mem_closure_of_mem_centralizer_centralizer
     A.starProjection_essentialSubspace_mem_centralizer_centralizer
     (fun _ hξ => A.essentialSubspace.starProjection_apply_eq_zero_iff.2 hξ) v
-
-/-- **The nonunital von Neumann density theorem.** Every operator `x` in `A''` that vanishes on the
-common annihilator `A.essentialSubspaceᗮ` is a strong-operator limit of elements of `A`: for every
-finite family of vectors `v : ι → H` and every `ε > 0`, some `a ∈ A` satisfies
-`‖x (v i) - a (v i)‖ < ε` for all `i`. -/
-theorem exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer
-    (A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H)) {x : H →L[𝕜] H}
-    (hx : x ∈ (A : Set (H →L[𝕜] H)).centralizer.centralizer)
-    (hker : ∀ ξ ∈ A.essentialSubspaceᗮ, x ξ = 0) {ι : Type*} [Finite ι]
-    (v : ι → H) {ε : ℝ} (hε : 0 < ε) : ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
-  classical
-  have := Fintype.ofFinite ι
-  let φ := (PiLp.diagStarAlgHom 𝕜 H ι).toNonUnitalStarAlgHom
-  have hdiag : PiLp.diagStarAlgHom 𝕜 H ι x ∈
-      ((A.map φ : NonUnitalStarSubalgebra 𝕜 _) : Set _).centralizer.centralizer := by
-    rw [coe_map]
-    simpa only [φ, StarAlgHom.coe_toNonUnitalStarAlgHom] using
-      PiLp.diagStarAlgHom_mem_centralizer_centralizer (ι := ι) hx
-  have hdiag_ker : ∀ z ∈ (A.map φ).essentialSubspaceᗮ, PiLp.diagStarAlgHom 𝕜 H ι x z = 0 := by
-    intro z hz
-    ext i
-    have hzi : z i ∈ A.essentialSubspaceᗮ := by
-      refine A.mem_orthogonal_essentialSubspace_iff.2 fun a ha => ?_
-      have hza := (A.map φ).apply_eq_zero_of_mem_orthogonal_essentialSubspace hz
-        (mem_map.2 ⟨a, ha, rfl⟩)
-      simpa [φ] using congrArg (fun y : PiLp 2 (fun _ : ι => H) => y i) hza
-    simpa using hker (z i) hzi
-  obtain ⟨_, ⟨T, hT, rfl⟩, hlt⟩ := Metric.mem_closure_iff.1
-    ((A.map φ).apply_mem_closure_of_mem_centralizer_centralizer hdiag hdiag_ker (WithLp.toLp 2 v))
-    ε hε
-  obtain ⟨a, ha, rfl⟩ := mem_map.1 hT
-  refine ⟨a, ha, fun i => ?_⟩
-  have hlt' : ‖PiLp.diagStarAlgHom 𝕜 H ι (x - a) (WithLp.toLp 2 v)‖ < ε := by
-    simpa only [φ, StarAlgHom.coe_toNonUnitalStarAlgHom, dist_eq_norm, ← _root_.sub_apply,
-      ← map_sub] using hlt
-  calc ‖x (v i) - a (v i)‖
-      = ‖PiLp.diagStarAlgHom 𝕜 H ι (x - a) (WithLp.toLp 2 v) i‖ := by simp
-    _ ≤ ‖PiLp.diagStarAlgHom 𝕜 H ι (x - a) (WithLp.toLp 2 v)‖ := PiLp.norm_apply_le _ _
-    _ < ε := hlt'
 
 /-- The orthogonal projection onto `A.essentialSubspace` can be approximated simultaneously on any
 finite family of vectors in `H` by elements of `A`. -/
@@ -399,17 +272,6 @@ theorem exists_forall_norm_starProjection_essentialSubspace_sub_apply_lt
   A.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer
     A.starProjection_essentialSubspace_mem_centralizer_centralizer
     (fun _ hξ => A.essentialSubspace.starProjection_apply_eq_zero_iff.2 hξ) v hε
-
-/-- When `A.essentialSubspace = ⊤`, every operator in `A''` (including `1`) is a strong-operator
-limit of elements of `A`. -/
-theorem exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer_of_essentialSubspace_eq_top
-    {A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H)} (hA : A.essentialSubspace = ⊤) {x : H →L[𝕜] H}
-    (hx : x ∈ (A : Set (H →L[𝕜] H)).centralizer.centralizer) {ι : Type*} [Finite ι]
-    (v : ι → H) {ε : ℝ} (hε : 0 < ε) : ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε :=
-  A.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer hx
-    (fun ξ hξ => by
-      rw [hA, Submodule.top_orthogonal_eq_bot, Submodule.mem_bot] at hξ
-      rw [hξ, map_zero]) v hε
 
 end Density
 
@@ -585,9 +447,7 @@ theorem one_mem_closure_image_ofCLM_iff (A : NonUnitalStarSubalgebra 𝕜 (H →
       closure (ContinuousLinearMapWOT.ofCLM '' (A : Set (H →L[𝕜] H))) ↔
       A.essentialSubspace = ⊤ := by
   rw [A.closure_image_ofCLM, ContinuousLinearMapWOT.ofCLM_injective.mem_set_image, Set.mem_sep_iff]
-  have h1 : (1 : H →L[𝕜] H) ∈ (A : Set (H →L[𝕜] H)).centralizer.centralizer :=
-    (Subalgebra.centralizer 𝕜 (A : Set (H →L[𝕜] H)).centralizer).one_mem
-  simp only [h1, true_and, one_apply_eq_self, ← Submodule.eq_bot_iff,
+  simp only [Set.one_mem_centralizer, true_and, one_apply_eq_self, ← Submodule.eq_bot_iff,
     Submodule.orthogonal_eq_bot_iff]
 
 /-- The ambient identity operator `1 : H →L[𝕜] H` lies in the strong operator closure of `A` if and
@@ -600,9 +460,7 @@ theorem one_mem_closure_image_toPointwiseConvergenceCLM_iff
       A.essentialSubspace = ⊤ := by
   rw [A.closure_image_toPointwiseConvergenceCLM,
     ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image, Set.mem_sep_iff]
-  have h1 : (1 : H →L[𝕜] H) ∈ (A : Set (H →L[𝕜] H)).centralizer.centralizer :=
-    (Subalgebra.centralizer 𝕜 (A : Set (H →L[𝕜] H)).centralizer).one_mem
-  simp only [h1, true_and, one_apply_eq_self, ← Submodule.eq_bot_iff,
+  simp only [Set.one_mem_centralizer, true_and, one_apply_eq_self, ← Submodule.eq_bot_iff,
     Submodule.orthogonal_eq_bot_iff]
 
 /-- The weak operator closure of `A` equals the full double commutant `A''` on `H` if and only if
@@ -616,7 +474,7 @@ theorem closure_image_ofCLM_eq_centralizer_centralizer_iff
   refine ⟨fun h => A.one_mem_closure_image_ofCLM_iff.1 ?_,
     A.closure_image_ofCLM_of_essentialSubspace_eq_top⟩
   rw [h]
-  exact ⟨1, (Subalgebra.centralizer 𝕜 (A : Set (H →L[𝕜] H)).centralizer).one_mem, rfl⟩
+  exact ⟨1, Set.one_mem_centralizer, rfl⟩
 
 /-- The strong operator closure of `A` equals the full double commutant `A''` on `H` if and only if
 `A.essentialSubspace = ⊤`. -/
@@ -630,7 +488,7 @@ theorem closure_image_toPointwiseConvergenceCLM_eq_centralizer_centralizer_iff
   refine ⟨fun h => A.one_mem_closure_image_toPointwiseConvergenceCLM_iff.1 ?_,
     A.closure_image_toPointwiseConvergenceCLM_of_essentialSubspace_eq_top⟩
   rw [h]
-  exact ⟨1, (Subalgebra.centralizer 𝕜 (A : Set (H →L[𝕜] H)).centralizer).one_mem, rfl⟩
+  exact ⟨1, Set.one_mem_centralizer, rfl⟩
 
 /-- **Supported bicommutant criterion (weak operator topology).** A nonunital star subalgebra `A`
 is weak operator closed if and only if it equals the set of operators in `A''` vanishing on
@@ -825,18 +683,13 @@ theorem isClosed_image_ofCLM_range_extendByZero (U : Submodule 𝕜 H) [Complete
   let A := NonUnitalStarAlgHom.range U.extendByZero
   refine A.isClosed_image_ofCLM_iff.2
     (subset_antisymm (NonUnitalStarSubalgebra.subset_supported A) ?_)
-  rintro x ⟨hx, hker⟩
-  rw [NonUnitalStarSubalgebra.essentialSubspace_range_extendByZero] at hker
-  have hx_comm : Commute U.starProjection x := by
-    have hp_cent : U.starProjection ∈ (A : Set (H →L[𝕜] H)).centralizer := by
-      simpa [A, NonUnitalStarSubalgebra.essentialSubspace_range_extendByZero] using
-        A.starProjection_essentialSubspace_mem_centralizer
-    exact hx _ hp_cent
-  refine (NonUnitalStarAlgHom.mem_range U.extendByZero).2
-    ⟨U.orthogonalProjectionOnto ∘L x ∘L U.subtypeL, ?_⟩
-  rw [
-    U.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL_eq_mul_starProjection_of_commute
-      hx_comm, U.mul_starProjection_eq_self hker]
+  rw [← A.image_extendByZero_centralizer_centralizer, NonUnitalStarAlgHom.coe_range]
+  rintro _ ⟨S, -, rfl⟩
+  have hU := NonUnitalStarSubalgebra.essentialSubspace_range_extendByZero U
+  exact U.mem_range_extendByZero_iff.2
+    ⟨fun x => hU.le (A.essentialSubspace.extendByZero_apply_mem S x),
+      fun x hx => A.essentialSubspace.extendByZero_apply_of_mem_orthogonal S
+        (Submodule.orthogonal_le hU.le hx)⟩
 
 /-- For any complete subspace `U` of `H`, the full supported algebra
 `NonUnitalStarAlgHom.range U.extendByZero` is strong operator closed on `H`. -/

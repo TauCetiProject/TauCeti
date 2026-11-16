@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
+import TauCeti.Analysis.VonNeumannAlgebra.NonUnital
 
 /-!
 # The bicommutant theorem
@@ -27,8 +28,9 @@ first is essential for a set not closed under adjoints.
 Since operator balls are weak operator compact, weak operator closedness makes every closed
 norm ball of a concrete von Neumann algebra weak operator compact.
 
-The approximation input is the finite-vector density theorem in
-`TauCeti.Analysis.VonNeumannAlgebra.Density`.
+The strong and weak operator closures are obtained as the nondegenerate special case of the
+nonunital operator-closure theorems in `TauCeti.Analysis.VonNeumannAlgebra.NonUnital` (built on
+the finite-vector density theorem in `TauCeti.Analysis.VonNeumannAlgebra.Density`).
 
 The same holds for self-adjoint parts: the strong and weak operator closures of the self-adjoint
 elements of the algebra are the self-adjoint elements of the double commutant. The weak form
@@ -58,25 +60,23 @@ theorem closure_image_toPointwiseConvergenceCLM
       (S : Set (H →L[𝕜] H))) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
         (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
-  refine subset_antisymm
-    (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer)
-      (ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM
-        (S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer)) ?_
-  rintro _ ⟨x, hx, rfl⟩
-  rw [ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff]
-  intro F₀ ε hε
-  obtain ⟨s, hs, happrox⟩ := S.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer
-    hx (fun v : F₀ => (v : H)) hε
-  exact ⟨s, hs, fun v hv => happrox ⟨v, hv⟩⟩
+  have hScoe : (S.toNonUnitalStarSubalgebra : Set (H →L[𝕜] H)) = (S : Set (H →L[𝕜] H)) :=
+    Set.ext fun _ => StarSubalgebra.mem_toNonUnitalStarSubalgebra
+  rw [← hScoe]
+  open NonUnitalStarSubalgebra in
+  exact closure_image_toPointwiseConvergenceCLM_of_essentialSubspace_eq_top
+    (essentialSubspace_toNonUnitalStarSubalgebra S)
 
 /-- The weak operator closure of a unital star subalgebra is its double commutant. -/
 theorem closure_image_ofCLM (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
     closure (ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H))) =
-      ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer :=
-  ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM
-    Set.subset_centralizer_centralizer
-    (S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer
-    S.closure_image_toPointwiseConvergenceCLM.superset
+      ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
+  have hScoe : (S.toNonUnitalStarSubalgebra : Set (H →L[𝕜] H)) = (S : Set (H →L[𝕜] H)) :=
+    Set.ext fun _ => StarSubalgebra.mem_toNonUnitalStarSubalgebra
+  rw [← hScoe]
+  open NonUnitalStarSubalgebra in
+  exact closure_image_ofCLM_of_essentialSubspace_eq_top
+    (essentialSubspace_toNonUnitalStarSubalgebra S)
 
 /-- The weak operator closure of the self-adjoint part of a unital star subalgebra is the
 self-adjoint part of its double commutant. -/

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Subalgebra
 public import TauCeti.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Analysis.InnerProductSpace.Projection.ExtendByZero
+public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Essential subspaces of nonunital star subalgebras of operators
@@ -28,7 +30,9 @@ common annihilator `⨅ a ∈ A, LinearMap.ker a.toLinearMap`
 * `NonUnitalStarSubalgebra.essentialSubspace`: the closed linear span of all ranges `Set.range a`
   for `a ∈ A`, with `mem_orthogonal_essentialSubspace_iff` and
   `orthogonal_essentialSubspace_eq_iInf_ker` identifying its orthogonal complement with the common
-  annihilator.
+  annihilator, `essentialSubspace_toNonUnitalStarSubalgebra` showing unital star subalgebras have
+  essential subspace `⊤`, and `essentialSubspace_topologicalClosure` showing operator-norm closure
+  preserves the essential subspace.
 * `NonUnitalStarSubalgebra.ext_of_orthogonal_essentialSubspace`: bounded operators agreeing after
   right multiplication by every `a ∈ A` and on `A.essentialSubspaceᗮ` are equal.
 * `NonUnitalStarSubalgebra.starProjection_essentialSubspace_mul` and
@@ -162,6 +166,28 @@ theorem essentialSubspace_eq_bot_iff : A.essentialSubspace = ⊥ ↔ A = ⊥ := 
     exact Submodule.mem_top
   simpa using A.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ ha
 
+/-- Any unital star subalgebra viewed as a nonunital star subalgebra has essential subspace `⊤`. -/
+@[simp]
+theorem essentialSubspace_toNonUnitalStarSubalgebra (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    S.toNonUnitalStarSubalgebra.essentialSubspace = ⊤ :=
+  eq_top_iff.2 fun ξ _ => by
+    simpa using S.toNonUnitalStarSubalgebra.apply_mem_essentialSubspace S.one_mem ξ
+
+/-- Taking the operator-norm closure of `A` does not change its essential subspace. -/
+@[simp]
+theorem essentialSubspace_topologicalClosure (A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    A.topologicalClosure.essentialSubspace = A.essentialSubspace := by
+  refine le_antisymm ((A.topologicalClosure.essentialSubspace_le_iff
+      A.isClosed_essentialSubspace).2 fun a ha ξ => ?_)
+    (essentialSubspace_mono A.le_topologicalClosure)
+  have ha' : a ∈ _root_.closure (A : Set (H →L[𝕜] H)) := by
+    rwa [← NonUnitalStarSubalgebra.topologicalClosure_coe]
+  have hmem : a ξ ∈ _root_.closure ((fun b : H →L[𝕜] H => b ξ) '' (A : Set (H →L[𝕜] H))) :=
+    mem_closure_image (ContinuousLinearMap.apply 𝕜 H ξ).continuous.continuousAt ha'
+  refine A.isClosed_essentialSubspace.closure_subset_iff.2 ?_ hmem
+  rintro _ ⟨b, hb, rfl⟩
+  exact A.apply_mem_essentialSubspace hb ξ
+
 /-- Bounded operators on `H` that agree after right multiplication by every `a ∈ A` and agree on
 `A.essentialSubspaceᗮ` are equal everywhere on `H`. -/
 theorem ext_of_orthogonal_essentialSubspace {S T : H →L[𝕜] H}
@@ -225,36 +251,39 @@ theorem mem_restrictEssentialSubspace
     S ∈ A.restrictEssentialSubspace ↔ A.essentialSubspace.extendByZero S ∈ A :=
   Iff.rfl
 
+/-- Every operator in `A` is recovered by compressing to `A.essentialSubspace` and extending by
+zero on `A.essentialSubspaceᗮ`. -/
+theorem extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL {a : H →L[𝕜] H} (ha : a ∈ A) :
+    A.essentialSubspace.extendByZero
+        (A.essentialSubspace.orthogonalProjectionOnto ∘L a ∘L A.essentialSubspace.subtypeL) =
+      a :=
+  A.essentialSubspace.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL
+    (A.apply_mem_essentialSubspace ha) fun _ hξ =>
+      A.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ ha
+
 /-- Compressing any operator `a ∈ A` to `A.essentialSubspace` produces an element of
 `A.restrictEssentialSubspace`. -/
 theorem orthogonalProjectionOnto_comp_mem_restrictEssentialSubspace {a : H →L[𝕜] H} (ha : a ∈ A) :
     A.essentialSubspace.orthogonalProjectionOnto ∘L a ∘L A.essentialSubspace.subtypeL ∈
       A.restrictEssentialSubspace := by
-  rw [mem_restrictEssentialSubspace,
-    A.essentialSubspace.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL
-      (A.apply_mem_essentialSubspace ha) fun _ hξ =>
-        A.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ ha]
+  rw [mem_restrictEssentialSubspace, A.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL ha]
   exact ha
 
 /-- The canonical star-algebra isomorphism `A.restrictEssentialSubspace ≃⋆ₐ[𝕜] A` extending
 operators on `A.essentialSubspace` by zero on `A.essentialSubspaceᗮ`, with inverse given by
 compression to `A.essentialSubspace`. -/
 def restrictEssentialSubspaceEquiv (A : NonUnitalStarSubalgebra 𝕜 (H →L[𝕜] H)) :
-    A.restrictEssentialSubspace ≃⋆ₐ[𝕜] A where
-  toFun S := ⟨A.essentialSubspace.extendByZero S.1, S.2⟩
-  invFun a :=
-    ⟨A.essentialSubspace.orthogonalProjectionOnto ∘L a.1 ∘L A.essentialSubspace.subtypeL,
-      A.orthogonalProjectionOnto_comp_mem_restrictEssentialSubspace a.2⟩
-  left_inv S := Subtype.ext <|
-    A.essentialSubspace.orthogonalProjectionOnto_comp_extendByZero_comp_subtypeL S.1
-  right_inv a := Subtype.ext <|
-    A.essentialSubspace.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL
-      (A.apply_mem_essentialSubspace a.2) fun _ hξ =>
-        A.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ a.2
-  map_mul' S T := Subtype.ext (map_mul A.essentialSubspace.extendByZero S.1 T.1)
-  map_add' S T := Subtype.ext (map_add A.essentialSubspace.extendByZero S.1 T.1)
-  map_smul' c S := Subtype.ext (map_smul A.essentialSubspace.extendByZero c S.1)
-  map_star' S := Subtype.ext (map_star A.essentialSubspace.extendByZero S.1)
+    A.restrictEssentialSubspace ≃⋆ₐ[𝕜] A :=
+  { (A.essentialSubspace.extendByZero.comp
+      (NonUnitalStarSubalgebraClass.subtype A.restrictEssentialSubspace)).codRestrict A
+      (fun S => S.2) with
+    invFun := fun a =>
+      ⟨A.essentialSubspace.orthogonalProjectionOnto ∘L a.1 ∘L A.essentialSubspace.subtypeL,
+        A.orthogonalProjectionOnto_comp_mem_restrictEssentialSubspace a.2⟩
+    left_inv := fun S => Subtype.ext <|
+      A.essentialSubspace.orthogonalProjectionOnto_comp_extendByZero_comp_subtypeL S.1
+    right_inv := fun a => Subtype.ext <|
+      A.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL a.2 }
 
 /-- `A.restrictEssentialSubspaceEquiv` acts by `A.essentialSubspace.extendByZero`. -/
 @[simp]
@@ -292,10 +321,10 @@ theorem map_extendByZero_restrictEssentialSubspace
   ext a
   simp only [mem_map, mem_restrictEssentialSubspace]
   exact ⟨by rintro ⟨S, hS, rfl⟩; exact hS, fun ha =>
-    ⟨_, A.orthogonalProjectionOnto_comp_mem_restrictEssentialSubspace ha,
-      A.essentialSubspace.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL
-        (A.apply_mem_essentialSubspace ha) fun _ hξ =>
-          A.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ ha⟩⟩
+    ⟨(A.restrictEssentialSubspaceEquiv.symm ⟨a, ha⟩).1,
+      (A.restrictEssentialSubspaceEquiv.symm ⟨a, ha⟩).2,
+      by simpa only [coe_restrictEssentialSubspaceEquiv_apply] using
+        congrArg Subtype.val (A.restrictEssentialSubspaceEquiv.apply_symm_apply ⟨a, ha⟩)⟩⟩
 
 /-- The image of `A.restrictEssentialSubspace` under `A.essentialSubspace.extendByZero` is `A`. -/
 @[simp]

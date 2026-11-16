@@ -17,16 +17,13 @@ The identity from the pointwise-convergence copy of continuous linear maps to th
 operator copy is continuous (`ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM`).
 Consequently, every weak-operator closed set of operators is closed in the topology of pointwise
 convergence
-(`ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM`),
+(`ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM`), and
 pointwise-convergence closure implies weak-operator closure
 (`ContinuousLinearMapWOT.ofCLM_mem_closure_image_of_toPointwiseConvergenceCLM`,
-`ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM`), and
-for seminormed codomains pointwise-convergence closure is characterized by simultaneous norm
-approximation on finite sets of vectors
-(`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff`). Centralizers of sets of
-operators are weak-operator closed (`Set.isClosed_image_ofCLM_centralizer`). These facts allow
-strong approximation results to identify strong and weak operator closures without changing the
-norm topology on the original operator space.
+`ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM`).
+Centralizers of sets of operators are weak-operator closed
+(`Set.isClosed_image_ofCLM_centralizer`). These facts allow strong approximation results to identify
+strong and weak operator closures without changing the norm topology on the original operator space.
 
 The two topologies have the same continuous linear functionals: every functional continuous for
 pointwise convergence is a finite sum `T ↦ ∑ x ∈ s, g x (T x)` of continuous functionals of
@@ -101,39 +98,6 @@ theorem closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM [Cont
     hx_eq ▸ ofCLM_mem_closure_image_of_toPointwiseConvergenceCLM (hsot ⟨x, hx, rfl⟩)
 
 end ContinuousLinearMapWOT
-
-namespace ContinuousLinearMap
-
-variable {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
-    [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E]
-    [SeminormedAddCommGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F]
-
-/-- An operator `T` lies in the pointwise-convergence (strong operator) closure of `s` if and only
-if for every finite set of vectors `F₀` and every `ε > 0`, some `a ∈ s` satisfies
-`‖T v - a v‖ < ε` for all `v ∈ F₀`. -/
-theorem toPointwiseConvergenceCLM_mem_closure_image_iff {s : Set (E →SL[σ] F)} {T : E →SL[σ] F} :
-    toPointwiseConvergenceCLM 𝕜₂ σ E F T ∈ closure (toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) ↔
-      ∀ (F₀ : Finset E) {ε : ℝ}, 0 < ε → ∃ a ∈ s, ∀ v ∈ F₀, ‖T v - a v‖ < ε := by
-  let q := toPointwiseConvergenceCLM 𝕜₂ σ E F
-  rw [mem_closure_iff_nhds_basis
-    ((PointwiseConvergenceCLM.hasBasis_nhds_zero_of_basis
-      (σ := σ) (E := E) Metric.nhds_basis_ball).nhds_of_zero (q T))]
-  constructor
-  · intro h F₀ ε hε
-    obtain ⟨_, ⟨a, ha, rfl⟩, hball⟩ := h ⟨(F₀ : Set E), ε⟩ ⟨F₀.finite_toSet, hε⟩
-    refine ⟨a, ha, fun v hv => ?_⟩
-    have hv' := hball v hv
-    rw [Metric.mem_ball, dist_zero_right, _root_.sub_apply, norm_sub_rev] at hv'
-    exact hv'
-  · rintro h ⟨F₀, ε⟩ ⟨hF₀, hε⟩
-    classical
-    have hF : F₀.Finite := hF₀
-    obtain ⟨a, ha, happrox⟩ := h hF.toFinset hε
-    refine ⟨q a, ⟨a, ha, rfl⟩, fun v hv => ?_⟩
-    rw [Metric.mem_ball, dist_zero_right, _root_.sub_apply, norm_sub_rev]
-    exact happrox v (hF.mem_toFinset.2 hv)
-
-end ContinuousLinearMap
 
 namespace Set
 
