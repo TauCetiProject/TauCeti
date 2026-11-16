@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LineDeriv
+import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.MetricSpace.Holder
@@ -833,10 +834,8 @@ theorem exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith (k : ℕ) (α : 
     -- The order-zero case is `exists_toDistr_eq_and_norm_le_of_holderWith`.
     obtain ⟨C, hC, h⟩ := exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ α
     refine ⟨C, hC, fun f _ M H hM hH ↦ ?_⟩
-    have hf : HolderWith H α f := fun x y ↦ by
-      have h := hH x y
-      rwa [iteratedFDeriv_zero_eq_comp, Function.comp_apply, Function.comp_apply,
-        LinearIsometryEquiv.edist_map] at h
+    have hf : HolderWith H α f :=
+      holderOnWith_univ.1 (holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_univ.2 hH))
     rw [Nat.cast_zero, zero_add]
     obtain ⟨w, hw, hwn⟩ := h f hf
     exact ⟨w, hw, hwn.trans (by gcongr; exact norm_le_of_norm_iteratedFDeriv_zero_le (hM 0 le_rfl))⟩
@@ -875,10 +874,9 @@ def ofCkHolderSpace (k : ℕ) (α : ℝ≥0) : CkHolderSpace k α E F →L[ℝ] 
           CkHolderSpace.toBoundedContinuousFunction_add,
           map_add, Lp.toTemperedDistribution_add]
       map_smul' c f := ext <| by
-        rw [MemBesov.toDistr_toBesovSpace, RingHom.id_apply, ← Complex.coe_smul c,
-          toDistr_smul, MemBesov.toDistr_toBesovSpace,
-          CkHolderSpace.toBoundedContinuousFunction_smul,
-          ← Complex.coe_smul c, map_smul, Lp.toTemperedDistribution_smul] } <| by
+        simp only [MemBesov.toDistr_toBesovSpace, RingHom.id_apply, toDistr_smul,
+          CkHolderSpace.toBoundedContinuousFunction_smul, map_smul,
+          Lp.toTemperedDistribution_smul, ← Complex.coe_smul] } <| by
     obtain ⟨C, hC⟩ := exists_toDistr_eq_and_norm_le_of_ckHolderSpace (F := F) φ k α
     refine ⟨C, fun f ↦ ?_⟩
     obtain ⟨w, hw, hwn⟩ := hC f
