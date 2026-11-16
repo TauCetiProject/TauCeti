@@ -70,7 +70,7 @@ private theorem setLAverage_enorm_sub_setAverage_rpow_le_of_pos {f : (ι → ℝ
   -- Closed and open balls agree up to a null set, so the BMO bound applies to closed balls.
   have hMc : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
       ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M := fun y ρ _ => by
-    rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball y ρ)]
+    rw [μ.restrict_closedBall_eq_restrict_ball y ρ]
     exact (setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y ρ).trans hM
   -- John–Nirenberg at the rate `σ` with `exp (2ⁿ⁺¹ σ M) = 3 / 2`.
   set σ : ℝ := Real.log (3 / 2) / (2 ^ (n + 1) * M)
@@ -79,7 +79,7 @@ private theorem setLAverage_enorm_sub_setAverage_rpow_le_of_pos {f : (ι → ℝ
     rw [div_mul_cancel₀ _ (by positivity), Real.exp_log (by norm_num)]
   have hJN := setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le (μ := μ)
     (hf.integrableOn_isCompact (isCompact_closedBall c r)) hMc (σ := σ) (by rw [hσM]; norm_num)
-  rw [hσM, Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball c r),
+  rw [hσM, μ.restrict_closedBall_eq_restrict_ball c r,
     measure_congr (μ.addHaar_closedBall_ae_eq_ball c r)] at hJN
   norm_num at hJN
   have h0 : μ (ball c r) ≠ 0 := (measure_ball_pos μ c hr).ne'
