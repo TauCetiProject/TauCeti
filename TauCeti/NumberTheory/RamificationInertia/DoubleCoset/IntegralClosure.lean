@@ -89,7 +89,7 @@ variable (Q : Ideal B) [Q.IsPrime] (p : Ideal A) [Q.LiesOver p]
 
 section Bijection
 
-variable [IsDomain A] [IsIntegrallyClosed A]
+variable [IsIntegrallyClosed A]
 
 /-- **The double coset law over an integrally closed base.** For `M / K` finite Galois with
 group `G`, a subgroup `H` of `G`, the integral closures `B` and `C` of `A` in `M` and in `M ^ H`,
@@ -101,6 +101,7 @@ The class of `σ` corresponds to the contraction `σ Q ∩ C`, by
 noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
     DoubleCoset.Quotient (H : Set Gal(M/K)) (stabilizer Gal(M/K) Q : Set Gal(M/K)) ≃
       p.primesOver C :=
+  have := IsDomain.of_faithfulSMul A K
   have := IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M
   have := (TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
     (A := A) (B := B) H C).1
@@ -113,6 +114,7 @@ noncomputable def doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure :
 theorem doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure_mk (σ : Gal(M/K)) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsIntegralClosure p H C
       (DoubleCoset.mk H _ σ) : Ideal C) = (σ • Q).under C := by
+  have := IsDomain.of_faithfulSMul A K
   have := IsGaloisGroup.of_isIntegralClosure Gal(M/K) A B K M
   obtain ⟨_, _⟩ := TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul
     (A := A) (B := B) H C
