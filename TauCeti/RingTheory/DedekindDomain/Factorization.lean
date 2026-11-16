@@ -58,6 +58,11 @@ the divisors of a nonzero element. All of them hold in an arbitrary Dedekind dom
 * `FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation`: the multiplicity at `v` of the
   principal fractional ideal of `u : Kˣ` is `-WithZero.log (v.valuation K u)`. This links Mathlib's
   `count` and the adic valuation.
+* `FractionalIdeal.count_spanSingleton_eq_neg_log_valuation`: the same equality for any `x : K`
+  (including `0`).
+* `IsDedekindDomain.HeightOneSpectrum.hasFiniteMulSupport_zpow_neg_log_valuation`: a prime-indexed
+  family of powers with exponents `-WithZero.log (v.valuation K x)` has finite multiplicative
+  support.
 * `FractionalIdeal.valuation_le_one_of_mem_of_count_nonneg`: nonnegative multiplicity makes
   every element of a fractional ideal integral at that prime.
 
@@ -290,6 +295,15 @@ theorem count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOneSpectrum A) (u
     WithZero.log_div (v.intValuation_ne_zero n hn) (v.intValuation_ne_zero (d : A) hd)]
   ring
 
+/-- **The multiplicity of the principal fractional ideal of any `x : K` is the sign-flipped
+logarithm of its valuation.** For `x = 0` both sides vanish, since `WithZero.log 0 = 0`. -/
+theorem count_spanSingleton_eq_neg_log_valuation (v : HeightOneSpectrum A) (x : K) :
+    count K v (spanSingleton A⁰ x) = -WithZero.log (v.valuation K x) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [count_zero]
+  · simpa only [coe_toPrincipalIdeal, Units.val_mk0] using
+      count_toPrincipalIdeal_eq_neg_log_valuation K v (Units.mk0 x hx)
+
 end PrincipalIdeal
 
 /-- Nonnegative multiplicity at a prime makes every element of a fractional ideal integral
@@ -302,11 +316,28 @@ theorem valuation_le_one_of_mem_of_count_nonneg {R K : Type*} [CommRing R]
   · simp
   have hcount := count_mono K v (spanSingleton_ne_zero_iff.mpr hx0)
     (spanSingleton_le_iff_mem.mpr hx)
-  have hprincipal := count_toPrincipalIdeal_eq_neg_log_valuation K v (Units.mk0 x hx0)
-  rw [coe_toPrincipalIdeal, Units.val_mk0] at hprincipal
-  rw [hprincipal] at hcount
+  rw [count_spanSingleton_eq_neg_log_valuation] at hcount
   exact WithZero.le_exp_of_log_le (neg_nonneg.mp (hI.trans hcount))
 
 end FractionalIdeal
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+open scoped nonZeroDivisors
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- **A prime-indexed family of powers with valuation orders `-log (v x)` as exponents has finite
+multiplicative support.** For `x = 0` every exponent vanishes; for `x ≠ 0` the exponents are the
+factorisation multiplicities of the principal fractional ideal `(x)`. -/
+theorem hasFiniteMulSupport_zpow_neg_log_valuation {G : Type*} [DivInvMonoid G] (x : K)
+    (f : HeightOneSpectrum R → G) :
+    Function.HasFiniteMulSupport
+      fun v : HeightOneSpectrum R ↦ f v ^ (-WithZero.log (v.valuation K x)) := by
+  simpa only [← FractionalIdeal.count_spanSingleton_eq_neg_log_valuation] using
+    FractionalIdeal.hasFiniteMulSupport_zpow_count (FractionalIdeal.spanSingleton R⁰ x) f
+
+end IsDedekindDomain.HeightOneSpectrum
 
 end

@@ -27,6 +27,8 @@ Everything here concerns one completion. The comparison of two completions along
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
   characteristic zero has characteristic zero.
+* `IsDedekindDomain.HeightOneSpectrum.valued_algebraMap_adicCompletion`: the embedding `K → K_v`
+  preserves the `v`-adic valuation.
 * `algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers` (in the same namespace): an
   element of `R` maps to `K_v` through `K` as it does through `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
@@ -188,6 +190,13 @@ section SingleCompletion
 
 variable (v : HeightOneSpectrum R)
 
+/-- The canonical embedding `K → K_v` into the `v`-adic completion preserves the `v`-adic
+valuation. This is `IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion_eq_valuation'` stated
+for `algebraMap K (v.adicCompletion K)` rather than the completion coercion. -/
+theorem valued_algebraMap_adicCompletion (x : K) :
+    Valued.v (algebraMap K (v.adicCompletion K) x) = v.valuation K x :=
+  v.valuedAdicCompletion_eq_valuation' x
+
 /-- An element of `R`, mapped to `K_v` through `K`, is the image of its image in `𝒪_v`. -/
 @[simp]
 theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (r : R) :
@@ -196,15 +205,15 @@ theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (r : R) :
         (algebraMap R (v.adicCompletionIntegers K) r) := by
   rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
     algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
+
 /-- An element of `K` with valuation one is the image of a unit in the ring of integers of its
 completion at `v`. -/
 theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}
     (hc : v.valuation K c = 1) :
     ∃ u : v.adicCompletionIntegers K, IsUnit u ∧
       (u : v.adicCompletion K) = algebraMap K (v.adicCompletion K) c := by
-  have hv : Valued.v (algebraMap K (v.adicCompletion K) c) = 1 := by
-    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
-    simpa using hc
+  have hv : Valued.v (algebraMap K (v.adicCompletion K) c) = 1 :=
+    (v.valued_algebraMap_adicCompletion c).trans hc
   exact ⟨⟨_, (mem_adicCompletionIntegers _ K v).mpr hv.le⟩,
     adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hv, rfl⟩
 
@@ -455,7 +464,7 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
   have hz : v.valuation K z ≤ 1 := by
     have hy1 : Valued.v (algebraMap K (v.adicCompletion K) z) ≤ 1 :=
       hyz ▸ (mem_adicCompletionIntegers R K v).mp y.2
-    rwa [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation'] at hy1
+    rwa [v.valued_algebraMap_adicCompletion] at hy1
   -- and `z` is approximated by an element of `R`
   obtain ⟨a, ha⟩ := v.exists_valuation_sub_lt_of_integer hz (Units.mk0 (exp (-(n : ℤ))) exp_ne_zero)
   refine ⟨a, ?_⟩
@@ -465,8 +474,7 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
   have hza : Valued.v ((y : v.adicCompletion K) - algebraMap R (v.adicCompletion K) a) ≤
       exp (-(n : ℤ)) := by
     rw [hyz, IsScalarTower.algebraMap_apply R K (v.adicCompletion K), ← map_sub,
-      algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-      Algebra.algebraMap_self, RingHom.id_apply, Valuation.map_sub_swap]
+      v.valued_algebraMap_adicCompletion, Valuation.map_sub_swap]
     exact ha.le
   rw [← sub_add_sub_cancel _ (y : v.adicCompletion K)]
   exact Valuation.map_add_le _ hxy hza

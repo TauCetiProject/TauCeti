@@ -7,11 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 
-import Mathlib.Data.ZMod.QuotientRing
-import Mathlib.RingTheory.DedekindDomain.Factorization
+import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
@@ -21,6 +19,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AdicCompletion
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GlobalExistence
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
+import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
 # Local Kummer ratios via Tamagawa numbers and the global period–Tamagawa formula
@@ -55,16 +54,11 @@ isogeny `φ.dual`.
 
 ## Main results
 
-* `TauCeti.Isogeny.kummerRatio_variableChangeIsogeny`,
-  `TauCeti.Isogeny.finiteKummerRatio_variableChangeIsogeny`,
-  `TauCeti.Isogeny.realKummerRatio_variableChangeIsogeny`, and
-  `TauCeti.Isogeny.kummerRatioProduct_variableChangeIsogeny`: changes of Weierstrass variables
-  have local and global Kummer ratio `1`.
 * `TauCeti.Isogeny.kummerRatio_eq_of_isMinimal_adicCompletionIntegers`: local Kummer ratio of an
   isogeny between minimal equations over `O_u` in terms of `#(A ⧸ u)` and local Tamagawa numbers.
 * `TauCeti.Isogeny.finiteKummerRatio_eq` and
-  `TauCeti.Isogeny.finiteKummerRatio_eq_tamagawaNumberAt`: the finite local Kummer ratio of an
-  isogeny between arbitrary equations over `F`, expressed via any locally minimal changes of
+  `TauCeti.Isogeny.finiteKummerRatio_eq_mul_tamagawaNumberAt_div`: the finite local Kummer ratio of
+  an isogeny between arbitrary equations over `F`, expressed via any locally minimal changes of
   variables at `u`.
 * `TauCeti.Isogeny.abs_mul_minimalRealPeriod_mul_realKummerRatio`: the archimedean counterpart,
   `|c u₂ / u₁| Ω(E₁) · φ.realKummerRatio = Ω(E₂)`.
@@ -90,67 +84,37 @@ open IsDedekindDomain IsLocalRing WeierstrassCurve WeierstrassCurve.Affine Valua
 
 namespace TauCeti.Isogeny
 
-/-! ### Changes of Weierstrass variables -/
-
-section VariableChange
-
-variable {F K : Type*} [Field F] [Field K]
-  {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
-
-/-- The isomorphism induced by a change of Weierstrass variables has Kummer ratio one. -/
-@[simp]
-theorem kummerRatio_variableChangeIsogeny (C : VariableChange F) (h : C • W₁ = W₂) :
-    (variableChangeIsogeny C h).kummerRatio = 1 := by
-  have h' : C⁻¹ • W₂ = W₁ := by rw [← h, inv_smul_smul]
-  refine kummerRatio_eq_one_of_comp_eq_id (variableChangeIsogeny_inv_comp C h h') ?_
-  rw [variableChangeIsogeny_comp C⁻¹ C h' h]
-  convert variableChangeIsogeny_one (one_smul _ W₂) using 2
-  exact mul_inv_cancel C
-
-/-- Base-changing the isomorphism of a change of variables preserves Kummer ratio one. -/
-@[simp]
-theorem kummerRatio_map_variableChangeIsogeny (C : VariableChange F) (h : C • W₁ = W₂)
-    (f : F →+* K) :
-    ((variableChangeIsogeny C h).map f).kummerRatio = 1 := by
-  have h' : C⁻¹ • W₂ = W₁ := by rw [← h, inv_smul_smul]
-  have hcomp : (variableChangeIsogeny C h).comp (variableChangeIsogeny C⁻¹ h') = id W₂ := by
-    rw [variableChangeIsogeny_comp C⁻¹ C h' h]
-    convert variableChangeIsogeny_one (one_smul _ W₂) using 2
-    exact mul_inv_cancel C
-  refine kummerRatio_eq_one_of_comp_eq_id (ψ := (variableChangeIsogeny C⁻¹ h').map f) ?_ ?_
-  · rw [← comp_map, variableChangeIsogeny_inv_comp C h h', id_map]
-  · rw [← comp_map, hcomp, id_map]
-
-/-- A change of variables has finite local Kummer ratio one at every height-one prime. -/
-@[simp]
-theorem finiteKummerRatio_variableChangeIsogeny {R : Type*} [CommRing R] [IsDedekindDomain R]
-    [Algebra R F] [IsFractionRing R F] {V₁ V₂ : WeierstrassCurve F} [V₁.IsElliptic] [V₂.IsElliptic]
-    (C : VariableChange F) (h : C • V₁.toAffine = V₂.toAffine) (v : HeightOneSpectrum R) :
-    (variableChangeIsogeny C h).finiteKummerRatio v = 1 := by
-  rw [finiteKummerRatio_def, kummerRatio_map_variableChangeIsogeny]
-
-/-- A change of variables over `ℚ` has real local Kummer ratio one. -/
-@[simp]
-theorem realKummerRatio_variableChangeIsogeny {E₁ E₂ : WeierstrassCurve ℚ}
-    [E₁.IsElliptic] [E₂.IsElliptic] (C : VariableChange ℚ) (h : C • E₁.toAffine = E₂.toAffine) :
-    (variableChangeIsogeny C h).realKummerRatio = 1 := by
-  rw [realKummerRatio_def, kummerRatio_map_variableChangeIsogeny]
-
-/-- A change of variables over `ℚ` has global product of local Kummer ratios one. -/
-@[simp]
-theorem kummerRatioProduct_variableChangeIsogeny {E₁ E₂ : WeierstrassCurve ℚ}
-    [E₁.IsElliptic] [E₂.IsElliptic] (C : VariableChange ℚ) (h : C • E₁.toAffine = E₂.toAffine) :
-    (variableChangeIsogeny C h).kummerRatioProduct = 1 := by
-  simp [kummerRatioProduct_def]
-
-end VariableChange
-
 /-! ### Finite places: formal filtrations and local Tamagawa numbers -/
 
 section FinitePlace
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
+
+open scoped Classical in
+/-- For a minimal equation `C` over `O_u` at a height-one prime `u` with finite residue field, the
+index of `C.formalPointFiltration u (k + 1)` splits into `#(A ⧸ u) ^ k`, the nonsingular point
+count on the reduction over `𝒪[F_u]`, and the local Tamagawa number for `ValuativeRel.valuation`. -/
+private theorem index_formalPointFiltration_eq_mul_tamagawaNumber_valuation
+    (u : HeightOneSpectrum A) [Finite (A ⧸ u.asIdeal)]
+    (C : WeierstrassCurve (u.adicCompletionIntegers F))
+    [(C.baseChange (u.adicCompletion F)).IsElliptic]
+    [IsMinimal (u.adicCompletionIntegers F) (C.baseChange (u.adicCompletion F))] (k : ℕ) :
+    (C.formalPointFiltration u (k + 1)).index =
+      Nat.card (A ⧸ u.asIdeal) ^ k *
+        Nat.card
+          ((C.baseChange (u.adicCompletion F)).reduction 𝒪[u.adicCompletion F]).toAffine.Point *
+        (C.baseChange (u.adicCompletion F)).tamagawaNumber (valuation (u.adicCompletion F)) := by
+  let F_u := u.adicCompletion F
+  have hres : Nat.card (ResidueField (u.adicCompletionIntegers F)) = Nat.card (A ⧸ u.asIdeal) :=
+    (Nat.card_congr (u.residueFieldEquivAdicCompletionIntegers (K := F)).toEquiv).symm
+  let : IsDiscreteValuationRing (valuation F_u).valuationSubring :=
+    inferInstanceAs (IsDiscreteValuationRing 𝒪[F_u])
+  have hequiv := (ValuativeRel.isEquiv (valuation F_u)
+    (Valued.v : Valuation F_u (WithZero (Multiplicative ℤ)))).symm
+  rw [C.index_formalPointFiltration_eq_mul_tamagawaNumber u k, hres,
+    C.natCard_point_reduction_baseChange_adicCompletion_of_isMinimal,
+    (C.baseChange F_u).tamagawaNumber_congr Valued.v hequiv]
 
 /-- **The local Kummer ratio on minimal equations over `O_u`.** Let `V₁`, `V₂` be minimal elliptic
 equations over `O_u = u.adicCompletionIntegers F` at a height-one prime `u` with finite residue
@@ -172,7 +136,6 @@ theorem kummerRatio_eq_of_isMinimal_adicCompletionIntegers
   classical
   let O_u := u.adicCompletionIntegers F
   let F_u := u.adicCompletion F
-  let R_u := (Valued.v : Valuation F_u (WithZero (Multiplicative ℤ))).valuationSubring
   obtain ⟨C₁, rfl⟩ := (inferInstance : IsIntegral O_u V₁).integral
   obtain ⟨C₂, rfl⟩ := (inferInstance : IsIntegral O_u V₂).integral
   -- `c * c' = deg φ ≠ 0` in `F_u`, so `Valued.v c ≠ 0`
@@ -190,37 +153,20 @@ theorem kummerRatio_eq_of_isMinimal_adicCompletionIntegers
     (eventually_index_range_pointMapHom_mul_index_formalPointFiltration u
       (C₁ := C₁) (C₂ := C₂) hc h2 hn)
   set m : ℤ := WithZero.log (Valued.v c)
+  have hm : WithZero.exp m = Valued.v c := WithZero.exp_log hvc
   let k₀ : ℕ := N + m.natAbs
   let j₀ : ℕ := ((k₀ : ℤ) - m).toNat
   have hj₀ : (j₀ : ℤ) = (k₀ : ℤ) - m := Int.toNat_of_nonneg (by omega)
   have hjk : Valued.v c * WithZero.exp ((j₀ + 1 : ℕ) : ℤ) = WithZero.exp ((k₀ + 1 : ℕ) : ℤ) := by
-    rw [← WithZero.exp_log hvc, ← WithZero.exp_add, WithZero.exp_inj]
-    change m + ((j₀ : ℤ) + 1) = (k₀ : ℤ) + 1
+    rw [← hm, ← WithZero.exp_add, WithZero.exp_inj]
+    push_cast
     omega
   have hdeep := hN (k₀ + 1) (by omega) (j₀ + 1) hjk
   -- Expand both formal filtration indices and identify the nonsingular reduction counts.
-  rw [C₁.index_formalPointFiltration_eq_mul_tamagawaNumber u k₀,
-    C₂.index_formalPointFiltration_eq_mul_tamagawaNumber u j₀] at hdeep
-  have hcard : Nat.card ((integralModel R_u (C₁.baseChange F_u)).map (residue R_u)).toAffine.Point =
-      Nat.card ((integralModel R_u (C₂.baseChange F_u)).map (residue R_u)).toAffine.Point :=
-    (C₁.natCard_point_reduction_baseChange_adicCompletion_of_isMinimal).symm.trans
-      (φ.natCard_point_reduction_eq.trans
-        C₂.natCard_point_reduction_baseChange_adicCompletion_of_isMinimal)
-  have hres : Nat.card (ResidueField O_u) = Nat.card (A ⧸ u.asIdeal) :=
-    (Nat.card_congr (u.residueFieldEquivAdicCompletionIntegers (K := F)).toEquiv).symm
-  let : IsDiscreteValuationRing (valuation F_u).valuationSubring :=
-    inferInstanceAs (IsDiscreteValuationRing 𝒪[F_u])
-  have hequiv := (ValuativeRel.isEquiv (valuation F_u)
-    (Valued.v : Valuation F_u (WithZero (Multiplicative ℤ)))).symm
-  have htam₁ : (C₁.baseChange F_u).tamagawaNumber Valued.v =
-      (C₁.baseChange F_u).tamagawaNumber (valuation F_u) :=
-    (C₁.baseChange F_u).tamagawaNumber_congr Valued.v hequiv
-  have htam₂ : (C₂.baseChange F_u).tamagawaNumber Valued.v =
-      (C₂.baseChange F_u).tamagawaNumber (valuation F_u) :=
-    (C₂.baseChange F_u).tamagawaNumber_congr Valued.v hequiv
-  rw [hres, hcard, htam₁, htam₂] at hdeep
+  rw [index_formalPointFiltration_eq_mul_tamagawaNumber_valuation u C₁ k₀,
+    index_formalPointFiltration_eq_mul_tamagawaNumber_valuation u C₂ j₀,
+    φ.natCard_point_reduction_eq] at hdeep
   -- Positivity of the cancelled factors: residue cardinality, reduced points, kernel, Tamagawa.
-  have : Finite (ResidueField R_u) := inferInstanceAs (Finite (ResidueField O_u))
   have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
   let : HenselianLocalRing (valuation F_u).valuationSubring :=
     inferInstanceAs (HenselianLocalRing 𝒪[F_u])
@@ -228,8 +174,7 @@ theorem kummerRatio_eq_of_isMinimal_adicCompletionIntegers
     inferInstanceAs (Finite 𝓀[F_u])
   have hq0 : (Nat.card (A ⧸ u.asIdeal) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hqpow : (Nat.card (A ⧸ u.asIdeal) : ℚ) ^ k₀ ≠ 0 := pow_ne_zero k₀ hq0
-  have hred0 : (Nat.card
-      ((integralModel R_u (C₂.baseChange F_u)).map (residue R_u)).toAffine.Point : ℚ) ≠ 0 :=
+  have hred0 : (Nat.card ((C₂.baseChange F_u).reduction 𝒪[F_u]).toAffine.Point : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hker0 : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
@@ -291,10 +236,6 @@ theorem finiteKummerRatio_eq {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] 
     have := hC₁; infer_instance
   have : IsMinimal (u.adicCompletionIntegers F) ((C₂ • W₂).baseChange (u.adicCompletion F)) := by
     have := hC₂; infer_instance
-  have hval : Valued.v (algebraMap F (u.adicCompletion F) (c * C₂.u / C₁.u)) =
-      u.valuation F (c * C₂.u / C₁.u) := by
-    rw [u.algebraMap_adicCompletion (K := F), Function.comp_apply,
-      u.valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
   have hk := kummerRatio_eq_of_isMinimal_adicCompletionIntegers u
     (V₁ := (C₁ • W₁).baseChange (u.adicCompletion F))
     (V₂ := (C₂ • W₂).baseChange (u.adicCompletion F))
@@ -309,8 +250,8 @@ theorem finiteKummerRatio_eq {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] 
           (valuation (u.adicCompletion F)) := by
     rw [finiteKummerRatio_def]
     exact hk
-  rw [← hψ_ratio, hk', hval, ← baseChange_smul_baseChange, ← baseChange_smul_baseChange,
-    tamagawaNumber_smul, tamagawaNumber_smul]
+  rw [← hψ_ratio, hk', u.valued_algebraMap_adicCompletion, ← baseChange_smul_baseChange,
+    ← baseChange_smul_baseChange, tamagawaNumber_smul, tamagawaNumber_smul]
 
 /-- **The finite local Kummer ratio on locally minimal equations.** When `W₁` and `W₂` are already
 minimal over `A_(u)`, no scaling-factor correction `u₂ / u₁` appears. -/
@@ -336,7 +277,7 @@ theorem finiteKummerRatio_eq_of_isMinimal {W₁ W₂ : WeierstrassCurve F}
 
 /-- **The finite local Kummer ratio in terms of `WeierstrassCurve.tamagawaNumberAt`**, over a
 Dedekind domain with finite quotients. -/
-theorem finiteKummerRatio_eq_tamagawaNumberAt [Ring.HasFiniteQuotients A]
+theorem finiteKummerRatio_eq_mul_tamagawaNumberAt_div [Ring.HasFiniteQuotients A]
     {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) (u : HeightOneSpectrum A) {c : F}
     (hc : φ.pullbackDifferential (invariantDifferential W₂.toAffine) =
@@ -352,7 +293,7 @@ theorem finiteKummerRatio_eq_tamagawaNumberAt [Ring.HasFiniteQuotients A]
   simp only [tamagawaNumberAt_def, φ.finiteKummerRatio_eq u hc hC₁ hC₂ h2 hn]
 
 /-- **The finite local Kummer ratio on locally minimal equations via `tamagawaNumberAt`.** -/
-theorem finiteKummerRatio_eq_tamagawaNumberAt_of_isMinimal [Ring.HasFiniteQuotients A]
+theorem finiteKummerRatio_eq_mul_tamagawaNumberAt_div_of_isMinimal [Ring.HasFiniteQuotients A]
     {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) (u : HeightOneSpectrum A)
     [h₁ : IsMinimal (Localization.AtPrime u.asIdeal) W₁]
@@ -367,7 +308,8 @@ theorem finiteKummerRatio_eq_tamagawaNumberAt_of_isMinimal [Ring.HasFiniteQuotie
   simp only [tamagawaNumberAt_def, φ.finiteKummerRatio_eq_of_isMinimal u hc h2 hn]
 
 /-- **The finite local Kummer ratio on globally minimal equations via `tamagawaNumberAt`.** -/
-theorem finiteKummerRatio_eq_tamagawaNumberAt_of_isGlobalMinimal [Ring.HasFiniteQuotients A]
+theorem finiteKummerRatio_eq_mul_tamagawaNumberAt_div_of_isGlobalMinimal
+    [Ring.HasFiniteQuotients A]
     {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) (u : HeightOneSpectrum A) {c : F}
     (hc : φ.pullbackDifferential (invariantDifferential W₂.toAffine) =
@@ -379,7 +321,7 @@ theorem finiteKummerRatio_eq_tamagawaNumberAt_of_isGlobalMinimal [Ring.HasFinite
         (W₂.tamagawaNumberAt u : ℚ) / W₁.tamagawaNumberAt u := by
   have := h₁.isMinimal u
   have := h₂.isMinimal u
-  exact φ.finiteKummerRatio_eq_tamagawaNumberAt_of_isMinimal u hc h2 hn
+  exact φ.finiteKummerRatio_eq_mul_tamagawaNumberAt_div_of_isMinimal u hc h2 hn
 
 end FinitePlace
 
@@ -424,94 +366,6 @@ theorem abs_mul_minimalRealPeriod_mul_realKummerRatio_of_isGlobalMinimal
   simpa [VariableChange.one_def] using
     φ.abs_mul_minimalRealPeriod_mul_realKummerRatio hc hC₁ hC₂
 
-/-- For a nonzero integer `a`, `#(ℤ ⧸ v) ^ (-log v(a))` equals the absolute norm of
-`v.maxPowDividing (Ideal.span {a})` at every height-one prime `v` of `ℤ`. -/
-private theorem card_quotient_zpow_neg_log_valuation_int {a : ℤ} (ha : a ≠ 0)
-    (v : HeightOneSpectrum ℤ) :
-    (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ (a : ℚ))) =
-      (Ideal.absNorm (v.maxPowDividing (Ideal.span ({a} : Set ℤ))) : ℚ) := by
-  change (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^
-    (-WithZero.log (v.valuation ℚ (algebraMap ℤ ℚ a))) = _
-  rw [v.valuation_of_algebraMap, v.intValuation_if_neg ha, WithZero.log_exp, neg_neg,
-    zpow_natCast, HeightOneSpectrum.maxPowDividing, map_pow, Ideal.absNorm_eq_natCard,
-    Nat.cast_pow]
-
-/-- The prime-power factor `p ^ ord_p(a)` of a nonzero integer `a` has finite multiplicative
-support over `HeightOneSpectrum ℤ`. -/
-private theorem hasFiniteMulSupport_card_quotient_zpow_int {a : ℤ} (ha : a ≠ 0) :
-    Function.HasFiniteMulSupport fun v : HeightOneSpectrum ℤ ↦
-      (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ (a : ℚ))) := by
-  have hJ : (Ideal.span ({a} : Set ℤ) : Ideal ℤ) ≠ 0 := by
-    simpa [Ideal.zero_eq_bot] using ha
-  refine (Ideal.hasFiniteMulSupport hJ).subset fun v hv h1 ↦ ?_
-  rw [Function.mem_mulSupport, card_quotient_zpow_neg_log_valuation_int ha v] at hv
-  exact hv (by simp [h1])
-
-/-- The product over all primes `v` of `ℤ` of `#(ℤ ⧸ v) ^ (-log v(a))` equals `|a|` for any nonzero
-integer `a`. -/
-private theorem finprod_card_quotient_zpow_int {a : ℤ} (ha : a ≠ 0) :
-    (∏ᶠ v : HeightOneSpectrum ℤ,
-      (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ (a : ℚ)))) = |(a : ℚ)| := by
-  have hJ : (Ideal.span ({a} : Set ℤ) : Ideal ℤ) ≠ 0 := by
-    simpa [Ideal.zero_eq_bot] using ha
-  have hcast : (∏ᶠ v : HeightOneSpectrum ℤ,
-      (Ideal.absNorm (v.maxPowDividing (Ideal.span ({a} : Set ℤ))) : ℚ)) =
-      (Ideal.absNorm (∏ᶠ v : HeightOneSpectrum ℤ,
-        v.maxPowDividing (Ideal.span ({a} : Set ℤ))) : ℚ) :=
-    (((Nat.castRingHom ℚ).toMonoidHom.comp Ideal.absNorm.toMonoidHom).map_finprod
-      (Ideal.hasFiniteMulSupport hJ)).symm
-  simp_rw [card_quotient_zpow_neg_log_valuation_int ha]
-  rw [hcast, Ideal.finprod_heightOneSpectrum_factorization hJ, Ideal.absNorm_eq_natCard,
-    Nat.card_congr (Int.quotientSpanEquivZMod a).toEquiv, Nat.card_zmod, Nat.cast_natAbs,
-    Int.cast_abs]
-
-/-- At every prime `v` of `ℤ`, `#(ℤ ⧸ v) ^ (-log v(x))` splits as numerator divided by denominator
-for any nonzero rational `x`. -/
-private theorem card_quotient_zpow_neg_log_valuation_rat {x : ℚ} (hx : x ≠ 0)
-    (v : HeightOneSpectrum ℤ) :
-    (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ x)) =
-      (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ (x.num : ℚ))) /
-        (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ ((x.den : ℤ) : ℚ))) := by
-  have : Finite (ℤ ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  have hq0 : (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have ha : x.num ≠ 0 := Rat.num_ne_zero.mpr hx
-  have hb : (x.den : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr x.den_nz
-  have hva : v.valuation ℚ (x.num : ℚ) ≠ 0 :=
-    (v.valuation ℚ).ne_zero_iff.mpr (Int.cast_ne_zero.mpr ha)
-  have hvb : v.valuation ℚ ((x.den : ℤ) : ℚ) ≠ 0 :=
-    (v.valuation ℚ).ne_zero_iff.mpr (Int.cast_ne_zero.mpr hb)
-  have hxab : x = (x.num : ℚ) / ((x.den : ℤ) : ℚ) := by simpa using (Rat.num_div_den x).symm
-  conv_lhs => rw [hxab]
-  rw [map_div₀, WithZero.log_div hva hvb, neg_sub, ← zpow_sub₀ hq0, sub_eq_add_neg, add_comm,
-    ← sub_neg_eq_add]
-
-/-- The prime-power factor `p ^ ord_p(x)` of a nonzero rational `x` has finite multiplicative
-support over `HeightOneSpectrum ℤ`. -/
-private theorem hasFiniteMulSupport_card_quotient_zpow_neg_log_valuation {x : ℚ} (hx : x ≠ 0) :
-    Function.HasFiniteMulSupport fun v : HeightOneSpectrum ℤ ↦
-      (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ x)) := by
-  have hnum := hasFiniteMulSupport_card_quotient_zpow_int (Rat.num_ne_zero.mpr hx)
-  have hden := hasFiniteMulSupport_card_quotient_zpow_int (Nat.cast_ne_zero.mpr x.den_nz)
-  refine (hnum.union hden).subset fun v hv ↦ ?_
-  rw [Function.mem_mulSupport, card_quotient_zpow_neg_log_valuation_rat hx v] at hv
-  rw [Set.mem_union, Function.mem_mulSupport, Function.mem_mulSupport]
-  by_contra! h
-  exact hv (by rw [h.1, h.2, div_one])
-
-/-- The product over all primes `v` of `ℤ` of `#(ℤ ⧸ v) ^ (-log v(x))` equals `|x|` for any nonzero
-rational `x`. -/
-private theorem finprod_card_quotient_zpow_neg_log_valuation {x : ℚ} (hx : x ≠ 0) :
-    (∏ᶠ v : HeightOneSpectrum ℤ,
-      (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ x))) = |x| := by
-  have ha : x.num ≠ 0 := Rat.num_ne_zero.mpr hx
-  have hb : (x.den : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr x.den_nz
-  simp_rw [card_quotient_zpow_neg_log_valuation_rat hx]
-  rw [finprod_div_distrib (hasFiniteMulSupport_card_quotient_zpow_int ha)
-      (hasFiniteMulSupport_card_quotient_zpow_int hb),
-    finprod_card_quotient_zpow_int ha, finprod_card_quotient_zpow_int hb, ← abs_div]
-  congr 1
-  simpa using Rat.num_div_den x
-
 /-- **The product of finite local Kummer ratios over `ℚ`.** If `φ^*ω₂ = c ω₁` and `C₁`, `C₂` carry
 `E₁`, `E₂` to globally minimal equations over `ℤ` with scaling factors `u₁`, `u₂`, then
 `∏_p φ.finiteKummerRatio p = |c u₂ / u₁| · tamagawaProduct E₂ / tamagawaProduct E₁`. -/
@@ -529,38 +383,17 @@ theorem finprod_finiteKummerRatio_eq (φ : Isogeny E₁.toAffine E₂.toAffine)
   have hfactor (v : HeightOneSpectrum ℤ) : φ.finiteKummerRatio v =
       (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ x)) *
         (E₂.tamagawaNumberAt v : ℚ) / E₁.tamagawaNumberAt v :=
-    φ.finiteKummerRatio_eq_tamagawaNumberAt v hc (hC₁.isMinimal v) (hC₂.isMinimal v)
+    φ.finiteKummerRatio_eq_mul_tamagawaNumberAt_div v hc (hC₁.isMinimal v) (hC₂.isMinimal v)
       two_ne_zero (Nat.cast_ne_zero.mpr φ.degree_pos.ne')
-  have hfq := hasFiniteMulSupport_card_quotient_zpow_neg_log_valuation hx
-  have hft₁ : Function.HasFiniteMulSupport
-      (fun v : HeightOneSpectrum ℤ ↦ (E₁.tamagawaNumberAt v : ℚ)) :=
-    (E₁.hasFiniteMulSupport_tamagawaNumberAt (R := ℤ)).subset fun v hv h1 ↦
-      hv (by simp [h1])
-  have hft₂ : Function.HasFiniteMulSupport
-      (fun v : HeightOneSpectrum ℤ ↦ (E₂.tamagawaNumberAt v : ℚ)) :=
-    (E₂.hasFiniteMulSupport_tamagawaNumberAt (R := ℤ)).subset fun v hv h1 ↦
-      hv (by simp [h1])
-  have hfq₂ : Function.HasFiniteMulSupport (fun v : HeightOneSpectrum ℤ ↦
-      (Nat.card (ℤ ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation ℚ x)) *
-        (E₂.tamagawaNumberAt v : ℚ)) :=
-    (hfq.union hft₂).subset fun v hv ↦ by
-      rw [Function.mem_mulSupport] at hv
-      rw [Set.mem_union, Function.mem_mulSupport, Function.mem_mulSupport]
-      by_contra! h
-      exact hv (by rw [h.1, h.2, mul_one])
-  have hprod₁ : (∏ᶠ v : HeightOneSpectrum ℤ, (E₁.tamagawaNumberAt v : ℚ)) =
-      E₁.tamagawaProduct (R := ℤ) := by
-    rw [E₁.tamagawaProduct_def]
-    exact ((Nat.castRingHom ℚ).toMonoidHom.map_finprod
-      (E₁.hasFiniteMulSupport_tamagawaNumberAt (R := ℤ))).symm
-  have hprod₂ : (∏ᶠ v : HeightOneSpectrum ℤ, (E₂.tamagawaNumberAt v : ℚ)) =
-      E₂.tamagawaProduct (R := ℤ) := by
-    rw [E₂.tamagawaProduct_def]
-    exact ((Nat.castRingHom ℚ).toMonoidHom.map_finprod
-      (E₂.hasFiniteMulSupport_tamagawaNumberAt (R := ℤ))).symm
+  have hfq := HeightOneSpectrum.hasFiniteMulSupport_zpow_neg_log_valuation x
+    fun v : HeightOneSpectrum ℤ ↦ (Nat.card (ℤ ⧸ v.asIdeal) : ℚ)
+  have hft₁ := (E₁.hasFiniteMulSupport_tamagawaNumberAt (R := ℤ)).fun_comp (Nat.cast_one (R := ℚ))
+  have hft₂ := (E₂.hasFiniteMulSupport_tamagawaNumberAt (R := ℤ)).fun_comp (Nat.cast_one (R := ℚ))
   simp_rw [hfactor]
-  rw [finprod_div_distrib hfq₂ hft₁, finprod_mul_distrib hfq hft₂,
-    finprod_card_quotient_zpow_neg_log_valuation hx, hprod₂, hprod₁]
+  rw [finprod_div_distrib (hfq.fun_mul hft₂) hft₁, finprod_mul_distrib hfq hft₂,
+    HeightOneSpectrum.finprod_natCard_quotient_zpow_neg_log_valuation_eq_abs_norm (R := ℤ) hx,
+    Algebra.norm_self, MonoidHom.id_apply, E₁.tamagawaProduct_def, E₂.tamagawaProduct_def,
+    Nat.cast_finprod', Nat.cast_finprod']
 
 /-- **The product of finite local Kummer ratios between globally minimal equations over `ℚ`.** -/
 theorem finprod_finiteKummerRatio_eq_of_isGlobalMinimal (φ : Isogeny E₁.toAffine E₂.toAffine)

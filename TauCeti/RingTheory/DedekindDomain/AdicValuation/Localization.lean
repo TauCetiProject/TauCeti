@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Localization.AtPrime
+import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 
 /-!
 # A local ring inside the completed integer ring
@@ -38,6 +39,8 @@ subring of the completed discrete valuation ring `𝒪_v`.
   the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.maximalIdeal_pow_map_completion`: the same is true for
   every power of the maximal ideal.
+* `IsDedekindDomain.HeightOneSpectrum.exists_algebraMap_adicCompletionIntegers_iff`: an element of
+  `K` lifts to `𝒪_v` in `K_v` if and only if it lifts to `R_v` in `K`.
 
 ## References
 
@@ -146,6 +149,28 @@ theorem denseRange_localizationToCompletionIntegers (v : HeightOneSpectrum R) :
     exact v.localizationToCompletionIntegers_algebraMap (K := K) x
   rw [hcomp]
   exact v.denseRange_algebraMap_adicCompletionIntegers (K := K)
+
+/-- An element of `K` lifts to the completed valuation ring `𝒪_v` inside `K_v` if and only if it
+lifts to the localization `R_v` inside `K`. -/
+theorem exists_algebraMap_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (x : K) :
+    (∃ r : v.adicCompletionIntegers K,
+      algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) r =
+        algebraMap K (v.adicCompletion K) x) ↔
+      ∃ r : Localization.AtPrime v.asIdeal,
+        algebraMap (Localization.AtPrime v.asIdeal) K r = x := by
+  have hvLoc := v.integers_valuation_of_isLocalizationAtPrime
+    (Localization.AtPrime v.asIdeal) (K := K)
+  have hvComp : (Valued.v : Valuation (v.adicCompletion K) _).Integers
+      (v.adicCompletionIntegers K) := adicCompletionIntegers.integers K v
+  have hComp : (∃ r : v.adicCompletionIntegers K,
+      algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) r =
+        algebraMap K (v.adicCompletion K) x) ↔
+      Valued.v (algebraMap K (v.adicCompletion K) x) ≤ 1 :=
+    ⟨fun ⟨r, hr⟩ ↦ hr ▸ hvComp.map_le_one r, fun h ↦ hvComp.exists_of_le_one h⟩
+  have hLoc : (∃ r : Localization.AtPrime v.asIdeal,
+      algebraMap (Localization.AtPrime v.asIdeal) K r = x) ↔ v.valuation K x ≤ 1 :=
+    ⟨fun ⟨r, hr⟩ ↦ hr ▸ hvLoc.map_le_one r, fun h ↦ hvLoc.exists_of_le_one h⟩
+  rw [hComp, hLoc, v.valued_algebraMap_adicCompletion]
 
 end IsDedekindDomain.HeightOneSpectrum
 
