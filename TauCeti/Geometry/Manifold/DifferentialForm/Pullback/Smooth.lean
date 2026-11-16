@@ -26,7 +26,9 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
-not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
+not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`), so a
+smooth map between open subsets whose ambient differential intertwines two ambient forms pulls one
+restriction back to the other at that point (`TauCeti.SmoothForm.mpullback_apply_eq_of_mfderiv_eq`).
 Pullback along a smooth map with a
 smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
 preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
@@ -460,6 +462,38 @@ theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M �
 theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x = σ.1 x :=
   TauCeti.mpullback_subtype_val_apply σ.1 x
+
+/-- **Ambient differential-form agreement at a point of an open subset.** Let `f : U → V` be a
+smooth map between open subsets of `M` and `M'`. If at `x : U` we have `(f x : M') = y`,
+`mfderiv I I' (Subtype.val ∘ f) x = A`, and `(τ.1 y).compContinuousLinearMap A = σ.1 (x : M)` for
+smooth `k`-forms `σ` on `M` and `τ` on `M'`, then `f^* (τ|_V)` and `σ|_U` agree at `x`. -/
+theorem mpullback_apply_eq_of_mfderiv_eq
+    {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens M'}
+    {f : U → V} (hf : ContMDiff I I' ∞ f)
+    (σ : SmoothForm I M F k) (τ : SmoothForm I' M' F k)
+    {x : U} {y : M'} (hxy : (f x : M') = y)
+    {A : TangentSpace I (x : M) →L[ℝ] TangentSpace I' y}
+    (hA : mfderiv I I' ((Subtype.val : V → M') ∘ f) x = A)
+    (hform : (τ.1 y).compContinuousLinearMap A = σ.1 (x : M)) :
+    (mpullback f hf
+        (mpullback (Subtype.val : V → M') contMDiff_subtype_val τ)).1 x =
+      (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x := by
+  subst hxy
+  rw [mpullback_mpullback]
+  ext v
+  have hL : (mpullback ((Subtype.val : V → M') ∘ f) (contMDiff_subtype_val.comp hf) τ).1 x v =
+      ((τ.1 (f x : M')).compContinuousLinearMap A)
+        (fun j ↦ Manifold.tangentSpaceOpenEquiv x (v j)) := by
+    rw [coe_mpullback, TauCeti.mpullback_apply,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply]
+    congr 1; funext j
+    exact (DFunLike.congr_fun hA (v j)).trans <| by
+      simp only [Function.comp_apply, Manifold.tangentSpaceOpenEquiv_apply]; rfl
+  have hR : (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x v =
+      σ.1 (x : M) (fun j ↦ Manifold.tangentSpaceOpenEquiv x (v j)) := by
+    rw [coe_mpullback, TauCeti.mpullback_apply]
+    simp only [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+  exact hL.trans ((congrFun (congrArg DFunLike.coe hform) _).trans hR.symm)
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}

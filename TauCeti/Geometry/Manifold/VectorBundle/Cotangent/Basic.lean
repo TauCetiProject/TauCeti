@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
@@ -24,7 +25,8 @@ manifold structure, modelled on `I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)`, are thos
 continuous linear maps from the tangent bundle to the trivial line bundle. In particular, the
 projection is a submersion by `Bundle.isSubmersion_proj`, the zero section is smooth by
 `Bundle.contMDiff_zeroSection`, and the fibrewise addition and scalar multiplication are the vector
-space structures of the fibres.
+space structures of the fibres. Continuous linear functionals separate points of `TangentSpace I x`
+whenever they separate points of `E` (`TangentSpace.instSeparatingDual`).
 
 This file computes the trivializations and charts in coordinates. The canonical trivialization at
 `x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
@@ -72,6 +74,18 @@ public section
 
 open Bundle Set
 open scoped Manifold
+
+/-- Continuous linear functionals separate points of `TangentSpace I x` whenever they separate
+points of the model space `E` (for instance over `ℝ` or `ℂ`). -/
+instance TangentSpace.instSeparatingDual {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeparatingDual 𝕜 E]
+    [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    [TopologicalSpace M] [ChartedSpace H M] {x : M} :
+    SeparatingDual 𝕜 (TangentSpace I x) where
+  exists_ne_zero' v hv :=
+    let ⟨f, hf⟩ := SeparatingDual.exists_ne_zero (R := 𝕜) (V := E)
+      (fun h ↦ hv ((tangentSpaceCastModel I x).injective (h.trans (map_zero _).symm)))
+    ⟨f.comp (tangentSpaceCastModel I x).toContinuousLinearMap, by simpa using hf⟩
 
 namespace TauCeti
 

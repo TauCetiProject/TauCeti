@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Lift
 
 /-!
 # The differential of the normal exponential at zero
@@ -61,41 +61,13 @@ theorem mfderiv_normalExp_zeroSection_apply
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle (m := 1) hn h2 hdim
-  have he : MDifferentiableAt (I.prod 𝓘(ℝ, P)) J (f.normalExp (P := P) hn)
-      (zeroSection P (fun x ↦ f.NormalSpace x hn) x) :=
-    ((f.contMDiffOn_normalExp (m := 1) hn h2 hdim).contMDiffAt
-      ((f.isOpen_normalExpDomain hn hdim).mem_nhds
-        (f.zeroSection_mem_normalExpDomain hn x))).mdifferentiableAt one_ne_zero
-  rw [Bundle.zeroSectionTangentEquiv_symm_eq, map_add]
-  congr 1
-  · have h := mfderiv_comp_apply x he (mdifferentiableAt_zeroSection ℝ _) u
-    have hfun : f.normalExp (P := P) hn ∘ zeroSection P (fun x ↦ f.NormalSpace x hn) = f :=
-      funext (f.normalExp_zeroSection hn)
-    rw [hfun] at h
-    exact h.symm
-  · rw [Bundle.zeroSectionTangentEquiv_symm_inr]
-    let line : ℝ → TotalSpace P (fun x ↦ f.NormalSpace x hn) := fun t ↦ ⟨x, t • v⟩
-    have hl : ContMDiff 𝓘(ℝ) (I.prod 𝓘(ℝ, P)) 1 line :=
-      contMDiff_id.smul_totalSpace (contMDiff_const (c := (⟨x, v⟩ :
-        TotalSpace P (fun x ↦ f.NormalSpace x hn))))
-    have h := mfderiv_comp_apply_of_eq (0 : ℝ) he
-      (hl.mdifferentiableAt one_ne_zero) (by simp [line, zeroSection]) (1 : ℝ)
-    have hfun : f.normalExp (P := P) hn ∘ line =
-        Manifold.riemannianExp J N (f x) ∘ (fun t : ℝ ↦ t • f.normalRepresentative x hn v) := by
-      funext t
-      simp only [Function.comp_apply, line, normalExp_apply, map_smul]
-    rw [hfun] at h
-    have hexp₀ := Manifold.hasMFDerivAt_riemannianExp_zero (I := J) (f x)
-    have hvec : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, TangentSpace J (f x))
-        (fun t : ℝ ↦ t • f.normalRepresentative x hn v) 0
-        (ContinuousLinearMap.toSpanSingleton ℝ (f.normalRepresentative x hn v)) :=
-      (ContinuousLinearMap.toSpanSingleton ℝ (f.normalRepresentative x hn v)).hasMFDerivAt
-    have hc := mfderiv_comp_apply_of_eq (0 : ℝ) hexp₀.mdifferentiableAt
-      hvec.mdifferentiableAt (by simp) (1 : ℝ)
-    erw [Manifold.mfderiv_riemannianExp_apply_zero (I := J) (f x), hvec.mfderiv] at hc
-    have hone := ContinuousLinearMap.toSpanSingleton_apply_one (M₁ := TangentSpace J (f x))
-      ℝ (f.normalRepresentative x hn v)
-    exact h.symm.trans (hc.trans hone)
+  have hexp : f.normalExp (P := P) hn =
+      TauCeti.Bundle.liftExp f (fun x ↦ f.normalRepresentative x hn) :=
+    funext fun p ↦ by rw [f.normalExp_apply, TauCeti.Bundle.liftExp_apply]
+  rw [mfderiv_congr hexp]
+  exact TauCeti.Bundle.mfderiv_liftExp_zeroSection_apply (P := P) (g := f)
+    (L := fun x ↦ f.normalRepresentative x hn)
+    (f.contMDiff_normalRepresentative (m := 1) hn h2 hdim) x u v
 
 /-- The total differential of the normal exponential at every zero normal vector is
 invertible. This does not require compactness or a global normal framing. -/

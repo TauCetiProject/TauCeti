@@ -5,26 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.Cotangent.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
-
 /-!
 # The canonical symplectic form on a continuous-dual cotangent space
 
-For a real normed space `V`, the continuous-dual cotangent model `V × StrongDual ℝ V` carries
-the canonical symplectic form
+For a real topological vector space `V` whose continuous dual separates points
+(`[SeparatingDual ℝ V]`, including every normed space and every manifold `TangentSpace`), the
+continuous-dual cotangent model `V × StrongDual ℝ V` carries the canonical symplectic form
 
 `ω((v, α), (w, β)) = β(v) - α(w)`.
 
 The form is obtained by restricting `TauCeti.cotangentSymplecticForm` along the coercion of the
 continuous dual into the algebraic dual, which is why the two models agree by construction; only
-nondegeneracy is new, and it comes from Hahn--Banach rather than from a basis. In finite
-dimension the two models are moreover identified as symplectic vector spaces.
+nondegeneracy is new, and it comes from point separation by continuous linear functionals rather
+than from a basis. In finite dimension the two models are moreover identified as symplectic vector
+spaces.
 
 A continuous linear equivalence `g : V ≃L[ℝ] W` lifts to the symplectomorphism
 `(q, p) ↦ (g q, p ∘ g⁻¹)` of the continuous-dual cotangent models, compatibly with identities,
@@ -53,7 +54,7 @@ noncomputable section
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [AddCommGroup V] [TopologicalSpace V] [Module ℝ V]
 
 /-- The bilinear form underlying the canonical symplectic form on
 `V × StrongDual ℝ V`. -/
@@ -73,7 +74,7 @@ private lemma strongDualCotangentBilinForm_isAlt :
   intro x
   simp
 
-private lemma strongDualCotangentBilinForm_nondegenerate :
+private lemma strongDualCotangentBilinForm_nondegenerate [SeparatingDual ℝ V] :
     (strongDualCotangentBilinForm (V := V)).Nondegenerate := by
   refine (LinearMap.IsAlt.isRefl
     strongDualCotangentBilinForm_isAlt).nondegenerate_iff_separatingLeft.mpr ?_
@@ -89,9 +90,9 @@ private lemma strongDualCotangentBilinForm_nondegenerate :
       simpa using this
   exact Prod.ext hv hα
 
-/-- The canonical symplectic form on the normed linear cotangent space
+/-- The canonical symplectic form on the continuous-dual cotangent space
 `V × StrongDual ℝ V`. -/
-noncomputable def strongDualCotangentSymplecticForm :
+noncomputable def strongDualCotangentSymplecticForm [SeparatingDual ℝ V] :
     SymplecticForm (V × StrongDual ℝ V) where
   toBilinForm := strongDualCotangentBilinForm
   isAlt := strongDualCotangentBilinForm_isAlt
@@ -99,7 +100,7 @@ noncomputable def strongDualCotangentSymplecticForm :
 
 /-- The canonical symplectic form on the continuous-dual model has the usual evaluation formula. -/
 @[simp]
-lemma strongDualCotangentSymplecticForm_apply (x y : V × StrongDual ℝ V) :
+lemma strongDualCotangentSymplecticForm_apply [SeparatingDual ℝ V] (x y : V × StrongDual ℝ V) :
     strongDualCotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 := by
   exact strongDualCotangentBilinForm_apply x y
 
@@ -131,8 +132,9 @@ theorem ker_fst_eq_strongDualCotangentFiber :
 
 /-- The vertical subspace `{0} × V*` is Lagrangian for the canonical symplectic form on the
 continuous-dual model. A vector `ω`-orthogonal to every vertical vector has base coordinate killed
-by every continuous functional, so it vanishes by Hahn--Banach; no finite dimension is needed. -/
-theorem isLagrangian_strongDualCotangentFiber :
+by every continuous functional, so it vanishes by point separation; no finite dimension is
+needed. -/
+theorem isLagrangian_strongDualCotangentFiber [SeparatingDual ℝ V] :
     strongDualCotangentSymplecticForm.IsLagrangian (strongDualCotangentFiber (V := V)) := by
   rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isIsotropic_iff,
     SymplecticForm.isCoisotropic_iff]
@@ -145,10 +147,10 @@ theorem isLagrangian_strongDualCotangentFiber :
 
 section FiniteDimensional
 
-variable [FiniteDimensional ℝ V]
+variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] [FiniteDimensional ℝ V]
 
-/-- Identify the normed linear cotangent space, formed with the continuous dual, with the
-algebraic linear cotangent space. -/
+/-- Identify the continuous-dual linear cotangent space with the algebraic linear cotangent
+space. -/
 noncomputable def strongDualCotangentEquiv :
     (V × StrongDual ℝ V) ≃ₗ[ℝ] (V × Module.Dual ℝ V) :=
   (LinearEquiv.refl ℝ V).prodCongr LinearMap.toContinuousLinearMap.symm
@@ -167,7 +169,7 @@ lemma strongDualCotangentEquiv_symm_apply (x : V × Module.Dual ℝ V) :
 
 /-- The finite-dimensional identification of cotangent models is a symplectomorphism from the
 continuous-dual model to the algebraic one. -/
-lemma isSymplectomorphism_strongDualCotangentEquiv :
+lemma isSymplectomorphism_strongDualCotangentEquiv [SeparatingDual ℝ V] :
     SymplecticForm.IsSymplectomorphism (strongDualCotangentSymplecticForm (V := V))
       (cotangentSymplecticForm (V := V)) (strongDualCotangentEquiv (V := V)) := by
   rw [SymplecticForm.isSymplectomorphism_iff]
@@ -182,8 +184,8 @@ namespace ContinuousLinearEquiv
 
 open TauCeti
 
-variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
-  [NormedSpace ℝ W] [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {V W X : Type*} [AddCommGroup V] [TopologicalSpace V] [Module ℝ V] [AddCommGroup W]
+  [TopologicalSpace W] [Module ℝ W] [AddCommGroup X] [TopologicalSpace X] [Module ℝ X]
 
 /-- The **cotangent lift** `(q, p) ↦ (g q, p ∘ g⁻¹)` of a continuous linear equivalence
 `g : V ≃L[ℝ] W`, as a continuous linear equivalence of the linear cotangent spaces
@@ -191,11 +193,13 @@ variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCo
 def cotangent (g : V ≃L[ℝ] W) : (V × StrongDual ℝ V) ≃L[ℝ] (W × StrongDual ℝ W) :=
   g.prodCongr (g.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
 
+/-- The base component of `g.cotangent x` is `g x.1`. -/
 @[simp]
 theorem cotangent_apply_fst (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V) :
     (g.cotangent x).1 = g x.1 :=
   (rfl)
 
+/-- Evaluating the covector component of `g.cotangent x` at `w` gives `x.2 (g.symm w)`. -/
 @[simp]
 theorem cotangent_apply_snd_apply (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V) (w : W) :
     (g.cotangent x).2 w = x.2 (g.symm w) :=
@@ -220,14 +224,15 @@ theorem cotangent_symm (g : V ≃L[ℝ] W) : g.cotangent.symm = g.symm.cotangent
 
 /-- The cotangent lift of a continuous linear equivalence preserves the canonical symplectic
 forms. -/
-theorem strongDualCotangentSymplecticForm_cotangent (g : V ≃L[ℝ] W) (x y : V × StrongDual ℝ V) :
+theorem strongDualCotangentSymplecticForm_cotangent [SeparatingDual ℝ V] [SeparatingDual ℝ W]
+    (g : V ≃L[ℝ] W) (x y : V × StrongDual ℝ V) :
     strongDualCotangentSymplecticForm (g.cotangent x) (g.cotangent y) =
       strongDualCotangentSymplecticForm x y := by
   simp
 
 /-- The cotangent lift of a continuous linear equivalence is a symplectomorphism of the linear
 cotangent spaces. -/
-theorem isSymplectomorphism_cotangent (g : V ≃L[ℝ] W) :
+theorem isSymplectomorphism_cotangent [SeparatingDual ℝ V] [SeparatingDual ℝ W] (g : V ≃L[ℝ] W) :
     SymplecticForm.IsSymplectomorphism strongDualCotangentSymplecticForm
       strongDualCotangentSymplecticForm g.cotangent.toLinearEquiv :=
   SymplecticForm.isSymplectomorphism_iff.2 g.strongDualCotangentSymplecticForm_cotangent
