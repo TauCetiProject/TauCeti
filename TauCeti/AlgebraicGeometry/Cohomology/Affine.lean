@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
-public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.Topology.Sheaves.Cartan
 import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 import TauCeti.AlgebraicGeometry.Modules.Localization
-import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.AddCommGrp
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
-import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
 
 /-!
 # Serre's vanishing theorem on affine opens
@@ -70,9 +67,7 @@ induction on the number of members.
 
 public section
 
-noncomputable section
-
-open CategoryTheory Limits Opposite TopologicalSpace AlgebraicGeometry TauCeti.CategoryTheory
+open CategoryTheory Limits TauCeti.CategoryTheory
 
 universe u
 

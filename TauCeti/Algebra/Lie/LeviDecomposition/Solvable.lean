@@ -114,7 +114,8 @@ private theorem exists_lieSubalgebra_isCompl_of_isSolvable_of_finrank_eq [CharZe
     have hAI' : A ≤ I.mkQ.ker := by rwa [LieIdeal.mkQ_ker]
     rw [← I.ker_liftQ_mkQ hAI']
     exact isKilling_of_equiv
-      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective (A.liftQ_surjective _ _ I.surjective_mkQ)).symm
+      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective
+        ((A.liftQ_surjective_iff _ _).2 I.surjective_mkQ)).symm
   have hlt : finrank K (L ⧸ A) < n := by
     have h := Submodule.finrank_quotient_add_finrank A.toSubmodule
     have hpos : 0 < finrank K A.toSubmodule := Nat.pos_of_ne_zero fun h0 ↦

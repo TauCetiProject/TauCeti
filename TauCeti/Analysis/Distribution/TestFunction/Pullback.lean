@@ -52,8 +52,10 @@ used to push forward currents whose support is compact, see
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
 * `TestFunction.cutoffCompCLM`: the composition with a cutoff `f ↦ χ (f ∘ Φ)` of test functions,
-  the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`. It
-  is used to push forward distributions whose support is compact.
+  the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`,
+  its composition law `TestFunction.cutoffCompCLM_cutoffCompCLM` and its commutation
+  `TestFunction.postcompCLM_cutoffCompCLM` with postcomposition. It is used to push forward
+  distributions whose support is compact.
 
 ## Implementation notes
 
@@ -519,6 +521,29 @@ theorem tsupport_cutoffCompCLM_subset (f : 𝓓(Ω', F)) :
   simpa only [cutoffCompCLM, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     tsupport_postcompCLE] using tsupport_cutoffPullbackCLM_subset (χ := χ) (hΦ := hΦ)
       (postcompCLE (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv f)
+
+/-- The composition with a cutoff commutes with postcomposition by a continuous linear map. -/
+theorem postcompCLM_cutoffCompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : F →L[ℝ] G) (f : 𝓓(Ω', F)) :
+    postcompCLM L (cutoffCompCLM χ Φ hΦ f) = cutoffCompCLM χ Φ hΦ (postcompCLM L f) := by
+  ext x
+  simp
+
+/-- **Composition of compositions with cutoffs**: composing with the cutoff `χ'` along `Ψ` and then
+with the cutoff `χ` along `Φ` is composing with the cutoff `χ (χ' ∘ Φ)` along `Ψ ∘ Φ`. -/
+theorem cutoffCompCLM_cutoffCompCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
+    {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω} (f : 𝓓(Ω'', F)) :
+    cutoffCompCLM χ Φ hΦ (cutoffCompCLM χ' Ψ hΨ f) =
+      cutoffCompCLM (cutoffCompCLM χ Φ hΦ χ') (Ψ ∘ Φ) hΨΦ f := by
+  ext x
+  simp [smul_smul]
+
+/-- The composition with a cutoff along the constant map at `y₀` is the multiple `f y₀ • χ` of the
+cutoff. -/
+theorem cutoffCompCLM_const {y₀ : E'} {hc : ContDiffOn ℝ (⊤ : ℕ∞) (fun _ : E ↦ y₀) Ω}
+    (f : 𝓓(Ω', ℝ)) : cutoffCompCLM χ (fun _ : E ↦ y₀) hc f = f y₀ • χ := by
+  ext x
+  simp [mul_comm]
 
 end CutoffPullback
 

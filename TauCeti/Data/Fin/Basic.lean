@@ -68,6 +68,7 @@ range, so the value is a `dite` rather than a plain application.
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
+* `Fin.succ_sub_one_eq_castSucc`: subtracting one from `i.succ` gives `i.castSucc`.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
@@ -118,6 +119,14 @@ range, so the value is a `dite` rather than a plain application.
   `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `Fin.last_mul_partialProd`: the last entry times the final partial product of the initial
+  segment is the product of all the entries of a tuple in a commutative monoid.
+* `Fin.apply_last_mul_inv_mul_partialProd_last`: in a group, for a tuple `y` and an element `g`,
+  `y (last n) * (g * partialProd y (last (n + 1)))⁻¹ = (g * partialProd (init y) (last n))⁻¹`,
+  that is, the last entry of `y` cancels on the left of the inverse of `g` times the final partial
+  product.
+* `Fin.partialProd_contractNth_castSucc`: multiplying two adjacent entries of a tuple does not
+  change its final partial product.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -138,7 +147,7 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
   entries lexicographically.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
-* `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
+* `TauCeti.notMem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
 * `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
   ends below it and never equals it drops below the level at some step.
@@ -544,6 +553,11 @@ theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
 theorem zero_sub_one_eq_last {n : ℕ} : (0 : Fin (n + 1)) - 1 = last n :=
   (eq_sub_of_add_eq (last_add_one n)).symm
 
+/-- Subtracting one from a successor gives the corresponding `Fin.castSucc`. -/
+@[simp]
+theorem succ_sub_one_eq_castSucc {n : ℕ} (i : Fin n) : i.succ - 1 = castSucc i :=
+  (eq_sub_of_add_eq coeSucc_eq_succ).symm
+
 /-- The last index of `Fin (n + 1)` is not `0` when `n ≠ 0`. -/
 theorem last_ne_zero {n : ℕ} (hn : n ≠ 0) : last n ≠ (0 : Fin (n + 1)) :=
   mt last_eq_zero_iff.1 hn
@@ -837,7 +851,7 @@ theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
 open Set
 
 /-- No value of a monotone `Fin` family lies strictly between consecutive entries. -/
-theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
+theorem notMem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
     (ha : Monotone a) (i : Fin n) (k : Fin (n + 1)) :
     a k ∉ Set.Ioo (a i.castSucc) (a i.succ) := by
   intro hk
