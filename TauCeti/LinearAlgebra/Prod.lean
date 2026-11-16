@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Product linear maps
@@ -52,6 +53,8 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
 * `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
   coercion of `f.prodMap g`.
+* `LinearMap.finite_ker_prodMap`, `LinearMap.finrank_ker_prodMap`: the kernel of `f.prodMap g` is
+  finite when those of `f` and `g` are, with the summed rank.
 * `LinearMap.surjective_coprod_of_comp_left`, `LinearMap.surjective_coprod_of_comp_right`,
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
@@ -231,6 +234,21 @@ variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
 theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Injective f)
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
   hf.prodMap hg
+
+variable (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄)
+
+variable {f g} in
+/-- The kernel of `f.prodMap g` is `ker f × ker g`, so it is finite when they are. -/
+instance finite_ker_prodMap [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
+    Module.Finite R (ker (f.prodMap g)) :=
+  .equiv ((Submodule.prodEquiv _ _).symm.trans (LinearEquiv.ofEq _ _ (ker_prodMap f g).symm))
+
+/-- The kernel of `f.prodMap g` has rank `finrank (ker f) + finrank (ker g)`. -/
+@[simp]
+theorem finrank_ker_prodMap [StrongRankCondition R] [Module.Free R (ker f)]
+    [Module.Free R (ker g)] [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
+    Module.finrank R (ker (f.prodMap g)) = Module.finrank R (ker f) + Module.finrank R (ker g) := by
+  rw [ker_prodMap, (Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod]
 
 /-- If `(x, y) ↦ f (h x) + g y` is surjective, then so is `(x, y) ↦ f x + g y`. -/
 theorem surjective_coprod_of_comp_left {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₃} {h : M₄ →ₗ[R] M₁}
