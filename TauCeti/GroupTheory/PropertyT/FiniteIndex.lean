@@ -61,6 +61,7 @@ namespace Subgroup
 universe u v
 
 open ContRepresentation
+open scoped ComplexOrder
 
 variable {Γ : Type v} [Group Γ]
 
