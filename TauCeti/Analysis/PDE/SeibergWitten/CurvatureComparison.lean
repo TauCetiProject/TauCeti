@@ -16,7 +16,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
 import TauCeti.LinearAlgebra.Basis.Fin
-import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The cutoff current and the curvature current against test forms
@@ -343,10 +343,8 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_compContinuousLinearMap_w
   -- The Cauchy–Schwarz inequality on `S`, whose volume is `|det L| Vol K`.
   have hf : Continuous fun y ↦ ‖covariantDBar J b α y‖ :=
     (continuous_covariantDBar J (hα.of_le one_le_two) hb.continuous).norm
-  have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hS.measure_lt_top.ne
-  obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hf.continuousOn
-  have hCS := sq_setIntegral_le_measureReal_mul_setIntegral_sq (μ := μ) hS.measure_lt_top.ne
-    (MemLp.of_bound hf.aestronglyMeasurable B (ae_restrict_of_forall_mem hS.measurableSet hB))
+  have hCS := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq (μ := μ) _ S
+    hS.measure_lt_top.ne ((hf.pow 2).continuousOn.integrableOn_compact hS)
   have hvol : μ.real S = |L.det| * μ.real K := by
     simp [S, measureReal_def, Measure.addHaar_image_continuousLinearMap, ENNReal.toReal_mul,
       abs_nonneg]

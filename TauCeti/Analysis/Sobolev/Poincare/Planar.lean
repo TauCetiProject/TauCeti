@@ -312,9 +312,12 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
     linarith
   -- Cauchy–Schwarz over `s`: `(∫_s |w|)² ≤ μ(s) ∫ w²`.
   have hZ : (∫ x in s, |w x| ∂μ) ^ 2 ≤ μ.real s * ∫ x, w x ^ 2 ∂μ := by
-    have hCS := sq_setIntegral_le_measureReal_mul_setIntegral_sq hμs
+    have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.mpr hμs
+    have hCS := sq_integral_mul_le_integral_sq_mul_integral_sq (μ := μ.restrict s)
+      (f := fun _ ↦ (1 : ℝ)) (g := fun x ↦ |w x|) (memLp_const 1)
       ((hwc.abs.memLp_of_hasCompactSupport habs).restrict s)
-    simp only [sq_abs] at hCS
+    simp only [one_mul, one_pow, integral_const, smul_eq_mul, mul_one, sq_abs,
+      measureReal_restrict_apply_univ] at hCS
     refine hCS.trans (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg)
     have hc2 : Continuous fun x ↦ w x ^ 2 := hwc.pow 2
     exact setIntegral_le_integral

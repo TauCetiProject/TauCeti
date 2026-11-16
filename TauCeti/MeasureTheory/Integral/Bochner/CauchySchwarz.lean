@@ -19,9 +19,7 @@ For square-integrable real functions `f` and `g`,
 (`TauCeti.sq_integral_mul_le_integral_sq_mul_integral_sq`). Mathlib states Hölder's inequality
 for real integrals with real exponents and roots
 (`MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`); this is the squared form for `p = q = 2`,
-without roots or sign conditions, as it is used in energy estimates. Against the constant
-function `1` it bounds an integral over a set of finite measure by the integral of the square:
-`(∫_s f)² ≤ μ(s) ∫_s f²` (`TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq`).
+without roots or sign conditions, as it is used in energy estimates.
 -/
 
 public section
@@ -29,7 +27,6 @@ public section
 namespace TauCeti
 
 open MeasureTheory
-open scoped ENNReal
 
 /-- **The Cauchy–Schwarz inequality** `(∫ f g)² ≤ (∫ f²) (∫ g²)` for square-integrable real
 functions. -/
@@ -52,13 +49,5 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
         pow_le_pow_left₀ (integral_nonneg fun x ↦ by positivity) h 2
     _ = (∫ x, f x ^ 2 ∂μ) * ∫ x, g x ^ 2 ∂μ := by
         rw [mul_pow, Real.sq_sqrt hF, Real.sq_sqrt hG]
-
-/-- **The Cauchy–Schwarz inequality on a set of finite measure** `(∫_s f)² ≤ μ(s) ∫_s f²`, for
-`f` square-integrable on `s`. -/
-theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f : α → ℝ} {s : Set α} (hs : μ s ≠ ∞) (hf : MemLp f 2 (μ.restrict s)) :
-    (∫ x in s, f x ∂μ) ^ 2 ≤ μ.real s * ∫ x in s, f x ^ 2 ∂μ := by
-  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  simpa using sq_integral_mul_le_integral_sq_mul_integral_sq (memLp_const (1 : ℝ)) hf
 
 end TauCeti
