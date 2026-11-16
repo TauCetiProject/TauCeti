@@ -197,6 +197,18 @@ theorem isLocallyConstant_windingNumber (C : Cycle) :
   rw [heq]
   exact hsum
 
+/-- For any value `w`, the set of points outside `trace C` where `C` has winding number `w` is
+open. -/
+theorem isOpen_setOf_notMem_trace_and_windingNumber_eq (C : Cycle) (w : ℂ) :
+    IsOpen {z : ℂ | z ∉ trace C ∧ windingNumber z C = w} := by
+  have heq : {z : ℂ | z ∉ trace C ∧ windingNumber z C = w} =
+      Subtype.val '' ((fun z : {z : ℂ // z ∉ trace C} ↦ windingNumber z C) ⁻¹' {w}) := by
+    ext z
+    simp [and_comm]
+  rw [heq]
+  exact (isCompact_trace C).isClosed.isOpen_compl.isOpenMap_subtype_val _
+    ((isLocallyConstant_windingNumber C).isOpen_fiber w)
+
 /-- The winding number of a contour cycle is constant on each connected component of the
 complement of its trace. -/
 theorem windingNumber_eq_of_mem_connectedComponentIn {C : Cycle} {z₀ z₁ : ℂ}

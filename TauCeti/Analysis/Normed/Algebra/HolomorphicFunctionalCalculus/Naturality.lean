@@ -9,18 +9,19 @@ public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniq
 public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 
 /-!
-# Naturality, scalar evaluation, and unitized nonunital holomorphic calculus
+# Naturality, scalar and character evaluation, and unitized nonunital holomorphic calculus
 
 Continuous unital `ℂ`-algebra homomorphisms intertwine `holomorphicCalculusOn` and
 `holomorphicCalculus`. Applying uniqueness to evaluation at a complex scalar identifies
-`holomorphicCalculus z` on `ℂ` with point evaluation at `z`, and naturality along `algebraMap ℂ A`
-evaluates the calculus on scalar multiples of the identity.
+`holomorphicCalculus z` on `ℂ` with point evaluation at `z`; naturality then evaluates the calculus
+at scalar multiples of the identity and under arbitrary complex characters (which are automatically
+continuous on Banach algebras).
 
-For an element `a` of a nonunital complex Banach algebra `A` embedded into its ℓ¹ unitization
-`WithLp 1 (Unitization ℂ A)` via `WithLp.unitizationInrL ℂ A a`, naturality along the continuous
-scalar-part homomorphism `(Unitization.fstHom ℂ A).comp (WithLp.unitizationAlgEquiv ℂ)` identifies
-the scalar component of `holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g` with `g(0)`.
-Consequently the unitized calculus lands in `A` precisely when `g(0) = 0`.
+For an element `a` of a nonunital complex Banach algebra `A` canonically included into its ℓ¹
+unitization `WithLp 1 (Unitization ℂ A)` as `WithLp.toLp 1 (a : Unitization ℂ A)`, character
+evaluation along the scalar projection identifies the scalar component of
+`holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g` with `g(0)`. Consequently the
+unitized calculus lands in `A` precisely when `g(0) = 0`.
 
 ## References
 
@@ -44,13 +45,14 @@ variable {A B F : Type*}
   [NormedRing B] [NormedAlgebra ℂ B] [CompleteSpace B]
 
 /-- Continuous unital `ℂ`-algebra homomorphisms commute with `holomorphicCalculusOn`. -/
-theorem map_holomorphicCalculusOn_of_continuous [FunLike F A B] [AlgHomClass F ℂ A B]
-    (φ : F) (hφ : Continuous φ) (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
-    (f : holomorphicFunctions U) :
+theorem map_holomorphicCalculusOn [FunLike F A B] [AlgHomClass F ℂ A B]
+    (φ : F) (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U)
+    (hφ : Continuous φ := by fun_prop) :
     φ (holomorphicCalculusOn a U ha f) =
       holomorphicCalculusOn (φ a) U ((AlgHom.spectrum_apply_subset φ a).trans ha) f := by
-  let φL : A →L[ℂ] B := { (AlgHom.ofClass φ : A →ₐ[ℂ] B).toLinearMap with cont := hφ }
-  have hφL_apply (x : A) : φL x = φ x := rfl
+  let φL : A →L[ℂ] B := ContinuousLinearMap.mk (LinearMap.ofClass φ)
+    (by simpa only [LinearMap.toFun_eq_coe, LinearMap.coe_ofClass] using hφ)
+  have hφL_apply (x : A) : φL x = φ x := by simp [φL, ContinuousLinearMap.coe_mk']
   obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
   have hsub : spectrum ℂ (φ a) ⊆ spectrum ℂ a := AlgHom.spectrum_apply_subset φ a
   have hΓ' : Γ.IsIn (U \ spectrum ℂ (φ a)) :=
@@ -76,55 +78,32 @@ theorem map_holomorphicCalculusOn_of_continuous [FunLike F A B] [AlgHomClass F �
   rw [map_smul, hφL_apply, resolvent, (spectrum.mem_resolventSet_iff.mp hz_res).map_ringInverse φ,
     map_sub, AlgHomClass.commutes, ← resolvent]
 
-/-- Bundled continuous unital `ℂ`-algebra homomorphisms commute with `holomorphicCalculusOn`. -/
-theorem map_holomorphicCalculusOn [FunLike F A B] [AlgHomClass F ℂ A B] [ContinuousMapClass F A B]
-    (φ : F) (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) :
-    φ (holomorphicCalculusOn a U ha f) =
-      holomorphicCalculusOn (φ a) U ((AlgHom.spectrum_apply_subset φ a).trans ha) f :=
-  map_holomorphicCalculusOn_of_continuous φ (map_continuous φ) a U ha f
-
 /-- Continuous unital `ℂ`-algebra homomorphisms commute with `holomorphicCalculus`, restricting
 the germ from `spectrum ℂ a` to `spectrum ℂ (φ a)`. -/
-theorem map_holomorphicCalculus_of_continuous [FunLike F A B] [AlgHomClass F ℂ A B]
-    (φ : F) (hφ : Continuous φ) (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
+theorem map_holomorphicCalculus [FunLike F A B] [AlgHomClass F ℂ A B]
+    (φ : F) (a : A) (g : holomorphicGerms (spectrum ℂ a))
+    (hφ : Continuous φ := by fun_prop) :
     φ (holomorphicCalculus a g) =
       holomorphicCalculus (φ a)
         (holomorphicGerms.restrict (AlgHom.spectrum_apply_subset φ a) g) := by
   obtain ⟨U, ha, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
-  rw [holomorphicCalculus_toGerm, map_holomorphicCalculusOn_of_continuous φ hφ a U ha f,
+  rw [holomorphicCalculus_toGerm, map_holomorphicCalculusOn φ a U ha f hφ,
     restrict_toGerm, holomorphicCalculus_toGerm]
-
-/-- Bundled continuous unital `ℂ`-algebra homomorphisms commute with `holomorphicCalculus`. -/
-theorem map_holomorphicCalculus [FunLike F A B] [AlgHomClass F ℂ A B] [ContinuousMapClass F A B]
-    (φ : F) (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
-    φ (holomorphicCalculus a g) =
-      holomorphicCalculus (φ a)
-        (holomorphicGerms.restrict (AlgHom.spectrum_apply_subset φ a) g) :=
-  map_holomorphicCalculus_of_continuous φ (map_continuous φ) a g
 
 /-- Naturality of `holomorphicCalculus` on represented germs under continuous unital `ℂ`-algebra
 homomorphisms. -/
-theorem map_holomorphicCalculus_ofFun_of_continuous [FunLike F A B] [AlgHomClass F ℂ A B]
-    (φ : F) (hφ : Continuous φ) (a : A) (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) :
+theorem map_holomorphicCalculus_ofFun [FunLike F A B] [AlgHomClass F ℂ A B]
+    (φ : F) (a : A) (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f (spectrum ℂ a))
+    (hφ : Continuous φ := by fun_prop) :
     φ (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) =
       holomorphicCalculus (φ a)
         (holomorphicGerms.ofFun f (hf.mono (AlgHom.spectrum_apply_subset φ a))) := by
-  rw [map_holomorphicCalculus_of_continuous φ hφ a (holomorphicGerms.ofFun f hf),
+  rw [map_holomorphicCalculus φ a (holomorphicGerms.ofFun f hf) hφ,
     holomorphicGerms.restrict_ofFun]
-
-/-- Naturality of `holomorphicCalculus` on represented germs for bundled continuous homomorphisms.
--/
-theorem map_holomorphicCalculus_ofFun [FunLike F A B] [AlgHomClass F ℂ A B]
-    [ContinuousMapClass F A B] (φ : F) (a : A) (f : ℂ → ℂ)
-    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) :
-    φ (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) =
-      holomorphicCalculus (φ a)
-        (holomorphicGerms.ofFun f (hf.mono (AlgHom.spectrum_apply_subset φ a))) :=
-  map_holomorphicCalculus_ofFun_of_continuous φ (map_continuous φ) a f hf
 
 end Naturality
 
-section Scalar
+section ScalarAndCharacter
 
 /-- On `ℂ`, the holomorphic germ calculus at `z` is evaluation at `z`. -/
 @[simp]
@@ -150,8 +129,27 @@ theorem holomorphicCalculusOn_complex (z : ℂ) (U : Opens ℂ) (hz : spectrum �
     holomorphicCalculusOn z U hz f = f.val ⟨z, hz (by simp [spectrum.mem_iff])⟩ := by
   rw [← holomorphicCalculus_toGerm, holomorphicCalculus_complex, eval_toGerm]
 
+/-- Every complex character `φ` on a Banach algebra `A` evaluates `holomorphicCalculus a g` by
+evaluating `g` at `φ a ∈ spectrum ℂ a`. -/
+theorem algHom_apply_holomorphicCalculus {A F : Type*} [NormedRing A] [NormedAlgebra ℂ A]
+    [CompleteSpace A] [FunLike F A ℂ] [AlgHomClass F ℂ A ℂ]
+    (φ : F) (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
+    φ (holomorphicCalculus a g) =
+      holomorphicGerms.eval (φ a) (AlgHom.apply_mem_spectrum φ a) g := by
+  rw [map_holomorphicCalculus φ a g, holomorphicCalculus_complex, holomorphicGerms.eval_restrict]
+
+/-- Every complex character `φ` on a Banach algebra `A` evaluates `holomorphicCalculusOn a U ha f`
+to `f(φ a)`. -/
+theorem algHom_apply_holomorphicCalculusOn {A F : Type*} [NormedRing A] [NormedAlgebra ℂ A]
+    [CompleteSpace A] [FunLike F A ℂ] [AlgHomClass F ℂ A ℂ]
+    (φ : F) (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) :
+    φ (holomorphicCalculusOn a U ha f) =
+      f.val ⟨φ a, ha (AlgHom.apply_mem_spectrum φ a)⟩ := by
+  rw [← holomorphicCalculus_toGerm, algHom_apply_holomorphicCalculus, eval_toGerm]
+
 /-- Evaluating the holomorphic calculus at `algebraMap ℂ A c` in a nontrivial Banach algebra sends
 `g` to `algebraMap ℂ A (g c)`. -/
+@[simp]
 theorem holomorphicCalculus_algebraMap {A : Type*} [NormedRing A] [NormedAlgebra ℂ A]
     [CompleteSpace A] [Nontrivial A] (c : ℂ)
     (g : holomorphicGerms (spectrum ℂ (algebraMap ℂ A c))) :
@@ -162,121 +160,100 @@ theorem holomorphicCalculus_algebraMap {A : Type*} [NormedRing A] [NormedAlgebra
     intro z hz
     have hzc : z = c := by simpa [spectrum.mem_iff, sub_eq_zero] using hz
     simp [hzc, spectrum.scalar_eq]
-  have h := map_holomorphicCalculus_ofFun_of_continuous (Algebra.ofId ℂ A)
-    (algebraMapCLM ℂ A).continuous c f (hf.mono hsub)
+  have h := map_holomorphicCalculus_ofFun (Algebra.ofId ℂ A) c f (hf.mono hsub)
+    (algebraMapCLM ℂ A).continuous
   rw [holomorphicCalculus_complex, holomorphicGerms.eval_ofFun, Algebra.ofId_apply] at h
   rw [holomorphicGerms.eval_ofFun]
   exact h.symm
 
-end Scalar
+/-- Open-domain evaluation of `holomorphicCalculusOn` at `algebraMap ℂ A c` in a nontrivial Banach
+algebra. -/
+@[simp]
+theorem holomorphicCalculusOn_algebraMap {A : Type*} [NormedRing A] [NormedAlgebra ℂ A]
+    [CompleteSpace A] [Nontrivial A] (c : ℂ) (U : Opens ℂ)
+    (hc : spectrum ℂ (algebraMap ℂ A c) ⊆ U) (f : holomorphicFunctions U) :
+    holomorphicCalculusOn (algebraMap ℂ A c) U hc f =
+      algebraMap ℂ A (f.val ⟨c, hc (by simp [spectrum.scalar_eq])⟩) := by
+  rw [← holomorphicCalculus_toGerm, holomorphicCalculus_algebraMap, eval_toGerm]
+
+end ScalarAndCharacter
 
 section Nonunital
 
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [CompleteSpace A]
 
-/-- The scalar component of `holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g` in the ℓ¹
-unitization is `g(0)`. -/
-@[simp]
-theorem fst_holomorphicCalculus_unitizationInrL (a : A)
-    (g : holomorphicGerms (spectrum ℂ (WithLp.unitizationInrL ℂ A a))) :
-    (WithLp.ofLp (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g)).fst =
-      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g := by
+/-- For any element `u` of the ℓ¹ unitization `WithLp 1 (Unitization ℂ A)`, the scalar component of
+`holomorphicCalculus u g` evaluates `g` at the scalar coordinate `(WithLp.ofLp u).fst`. -/
+theorem fst_holomorphicCalculus_unitization (u : WithLp 1 (Unitization ℂ A))
+    (g : holomorphicGerms (spectrum ℂ u)) :
+    (WithLp.ofLp (holomorphicCalculus u g)).fst =
+      holomorphicGerms.eval (WithLp.ofLp u).fst (WithLp.fst_mem_spectrum_unitization u) g := by
   let π : WithLp 1 (Unitization ℂ A) →ₐ[ℂ] ℂ :=
     (Unitization.fstHom ℂ A).comp (WithLp.unitizationAlgEquiv ℂ).toAlgHom
-  have hπ_cont : Continuous π :=
-    (WithLp.unitizationFstL ℂ A).continuous.congr fun u ↦ WithLp.unitizationFstL_apply ℂ A u
-  have hπ_inr : π (WithLp.unitizationInrL ℂ A a) = 0 := by
-    simp [π]
-  have h := map_holomorphicCalculus_of_continuous π hπ_cont
-    (WithLp.unitizationInrL ℂ A a) g
-  have hrhs :
-      holomorphicCalculus (π (WithLp.unitizationInrL ℂ A a))
-        (holomorphicGerms.restrict
-          (AlgHom.spectrum_apply_subset π (WithLp.unitizationInrL ℂ A a)) g) =
-      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g := by
-    have hgen : ∀ (c : ℂ), c = 0 →
-        ∀ (hsub' : spectrum ℂ c ⊆ spectrum ℂ (WithLp.unitizationInrL ℂ A a)),
-          holomorphicCalculus c (holomorphicGerms.restrict hsub' g) =
-            holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g := by
-      rintro _ rfl hsub'
-      rw [holomorphicCalculus_complex, holomorphicGerms.eval_restrict]
-    exact hgen _ hπ_inr _
-  have hfst : π (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g) =
-      (WithLp.ofLp (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g)).fst := rfl
-  exact hfst.symm.trans (h.trans hrhs)
+  have hπ (x : WithLp 1 (Unitization ℂ A)) : π x = (WithLp.ofLp x).fst := by simp [π]
+  obtain ⟨f, hf, rfl⟩ := holomorphicGerms.exists_ofFun_eq g
+  simpa only [hπ, holomorphicGerms.eval_ofFun] using
+    algHom_apply_holomorphicCalculus π u (holomorphicGerms.ofFun f hf)
+
+/-- Open-domain form of `fst_holomorphicCalculus_unitization` for an arbitrary element `u` of the
+ℓ¹ unitization. -/
+theorem fst_holomorphicCalculusOn_unitization (u : WithLp 1 (Unitization ℂ A)) (U : Opens ℂ)
+    (hu : spectrum ℂ u ⊆ U) (f : holomorphicFunctions U) :
+    (WithLp.ofLp (holomorphicCalculusOn u U hu f)).fst =
+      f.val ⟨(WithLp.ofLp u).fst, hu (WithLp.fst_mem_spectrum_unitization u)⟩ := by
+  rw [← holomorphicCalculus_toGerm, fst_holomorphicCalculus_unitization, eval_toGerm]
+
+/-- The scalar component of `holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g` in the
+ℓ¹ unitization is `g(0)`. -/
+@[simp]
+theorem fst_holomorphicCalculus_unitization_toLp_inr (a : A)
+    (g : holomorphicGerms (spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)))) :
+    (WithLp.ofLp (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g)).fst =
+      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitization_toLp_inr a) g := by
+  obtain ⟨f, hf, rfl⟩ := holomorphicGerms.exists_ofFun_eq g
+  simpa using fst_holomorphicCalculus_unitization
+    (WithLp.toLp 1 (a : Unitization ℂ A)) (holomorphicGerms.ofFun f hf)
 
 /-- The scalar component of `holomorphicCalculusOn (WithLp.toLp 1 (a : Unitization ℂ A)) U ha f` is
 `f(0)`. -/
 @[simp]
-theorem fst_holomorphicCalculusOn_toLp_inr (a : A) (U : Opens ℂ)
+theorem fst_holomorphicCalculusOn_unitization_toLp_inr (a : A) (U : Opens ℂ)
     (ha : spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)) ⊆ U) (f : holomorphicFunctions U) :
     (WithLp.ofLp (holomorphicCalculusOn (WithLp.toLp 1 (a : Unitization ℂ A)) U ha f)).fst =
-      f.val ⟨0, ha (WithLp.zero_mem_spectrum_toLp_inr a)⟩ := by
-  have ha' : spectrum ℂ (WithLp.unitizationInrL ℂ A a) ⊆ U := by
-    simpa only [WithLp.unitizationInrL_apply] using ha
-  have heq : holomorphicCalculusOn (WithLp.toLp 1 (a : Unitization ℂ A)) U ha f =
-      holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U ha' f := by
-    have hgen : ∀ (x : WithLp 1 (Unitization ℂ A)), x = WithLp.unitizationInrL ℂ A a →
-        ∀ (hx : spectrum ℂ x ⊆ U),
-          holomorphicCalculusOn x U hx f =
-            holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U ha' f := by
-      rintro _ rfl _
-      rfl
-    exact hgen _ (WithLp.unitizationInrL_apply ℂ A a).symm ha
-  rw [heq, ← holomorphicCalculus_toGerm, fst_holomorphicCalculus_unitizationInrL, eval_toGerm]
+      f.val ⟨0, ha (WithLp.zero_mem_spectrum_unitization_toLp_inr a)⟩ := by
+  rw [← holomorphicCalculus_toGerm, fst_holomorphicCalculus_unitization_toLp_inr, eval_toGerm]
 
-/-- The scalar component of `holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U ha f` is
-`f(0)`. -/
-theorem fst_holomorphicCalculusOn_unitizationInrL (a : A) (U : Opens ℂ)
-    (ha : spectrum ℂ (WithLp.unitizationInrL ℂ A a) ⊆ U) (f : holomorphicFunctions U) :
-    (WithLp.ofLp (holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U ha f)).fst =
-      f.val ⟨0, ha (WithLp.zero_mem_spectrum_unitizationInrL a)⟩ := by
-  rw [← holomorphicCalculus_toGerm, fst_holomorphicCalculus_unitizationInrL, eval_toGerm]
+/-- When `g(0) = 0`, the unitized holomorphic calculus equals the canonical inclusion of its
+`A`-component. -/
+theorem holomorphicCalculus_unitization_toLp_inr_eq_toLp_inr (a : A)
+    {g : holomorphicGerms (spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)))}
+    (hg0 : holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitization_toLp_inr a) g = 0) :
+    holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g =
+      WithLp.toLp 1
+        ((WithLp.ofLp (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g)).snd :
+          Unitization ℂ A) :=
+  WithLp.eq_unitization_toLp_inr_of_fst_eq_zero
+    ((fst_holomorphicCalculus_unitization_toLp_inr a g).trans hg0)
 
 /-- For a nonunital Banach algebra `A`, the unitized holomorphic calculus
-`holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g` lies in the image of `A` if and only if
-`g(0) = 0`. -/
-theorem holomorphicCalculus_unitizationInrL_mem_range_iff (a : A)
-    (g : holomorphicGerms (spectrum ℂ (WithLp.unitizationInrL ℂ A a))) :
-    holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g ∈
+`holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g` lies in the image of `A` if and only
+if `g(0) = 0`. -/
+theorem holomorphicCalculus_unitization_toLp_inr_mem_range_iff (a : A)
+    (g : holomorphicGerms (spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)))) :
+    holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g ∈
         Set.range (WithLp.unitizationInrL ℂ A) ↔
-      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g = 0 := by
-  constructor
-  · rintro ⟨b, hb⟩
-    rw [← fst_holomorphicCalculus_unitizationInrL a g, ← hb]
-    simp
-  · intro hg0
-    refine ⟨WithLp.unitizationSndL ℂ A
-      (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g), ?_⟩
-    conv_rhs =>
-      rw [WithLp.unitization_eq_fst_smul_one_add_inr
-        (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g)]
-    rw [fst_holomorphicCalculus_unitizationInrL, hg0, zero_smul, zero_add]
-    simp [WithLp.unitizationInrL_apply, WithLp.unitizationSndL_apply]
+      holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitization_toLp_inr a) g = 0 := by
+  rw [WithLp.mem_range_unitizationInrL_iff, fst_holomorphicCalculus_unitization_toLp_inr]
 
-/-- When `g(0) = 0`, the unitized holomorphic calculus equals the inclusion of its `A`-component. -/
-theorem holomorphicCalculus_unitizationInrL_eq_inr (a : A)
-    {g : holomorphicGerms (spectrum ℂ (WithLp.unitizationInrL ℂ A a))}
-    (hg0 : holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g = 0) :
-    holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g =
-      WithLp.unitizationInrL ℂ A
-        (WithLp.unitizationSndL ℂ A
-          (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g)) := by
-  conv_lhs =>
-    rw [WithLp.unitization_eq_fst_smul_one_add_inr
-      (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g)]
-  rw [fst_holomorphicCalculus_unitizationInrL, hg0, zero_smul, zero_add]
-  simp [WithLp.unitizationInrL_apply, WithLp.unitizationSndL_apply]
-
-/-- Open-domain form of `holomorphicCalculus_unitizationInrL_mem_range_iff`: the unitized calculus
-of `f : holomorphicFunctions U` lies in `A` if and only if `f(0) = 0`. -/
-theorem holomorphicCalculusOn_unitizationInrL_mem_range_iff (a : A) (U : Opens ℂ)
-    (ha : spectrum ℂ (WithLp.unitizationInrL ℂ A a) ⊆ U) (f : holomorphicFunctions U) :
-    holomorphicCalculusOn (WithLp.unitizationInrL ℂ A a) U ha f ∈
+/-- Open-domain form of `holomorphicCalculus_unitization_toLp_inr_mem_range_iff`: the unitized
+calculus of `f : holomorphicFunctions U` lies in `A` if and only if `f(0) = 0`. -/
+theorem holomorphicCalculusOn_unitization_toLp_inr_mem_range_iff (a : A) (U : Opens ℂ)
+    (ha : spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)) ⊆ U) (f : holomorphicFunctions U) :
+    holomorphicCalculusOn (WithLp.toLp 1 (a : Unitization ℂ A)) U ha f ∈
         Set.range (WithLp.unitizationInrL ℂ A) ↔
-      f.val ⟨0, ha (WithLp.zero_mem_spectrum_unitizationInrL a)⟩ = 0 := by
-  rw [← holomorphicCalculus_toGerm, holomorphicCalculus_unitizationInrL_mem_range_iff, eval_toGerm]
+      f.val ⟨0, ha (WithLp.zero_mem_spectrum_unitization_toLp_inr a)⟩ = 0 := by
+  rw [WithLp.mem_range_unitizationInrL_iff, fst_holomorphicCalculusOn_unitization_toLp_inr]
 
 end Nonunital
 

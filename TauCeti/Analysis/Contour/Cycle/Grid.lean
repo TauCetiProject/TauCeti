@@ -476,25 +476,18 @@ theorem IsCompact.exists_nested_cycles_windingNumber_eq_one {K G : Set ℂ} (hK 
       (∀ z ∈ Cycle.trace Γ₂, Cycle.windingNumber z Γ₁ = 0) ∧
       (∀ z ∈ Cycle.trace Γ₁, Cycle.windingNumber z Γ₂ = 1) := by
   obtain ⟨Γ₂, h₂, hn₂, hw₂⟩ := hK.exists_cycle_windingNumber_eq_one hG hKG
-  let V := G ∩ Subtype.val ''
-    {z : {z : ℂ // z ∉ Cycle.trace Γ₂} | Cycle.windingNumber z Γ₂ = 1}
-  have hV : IsOpen V := hG.inter <|
-    (Cycle.isCompact_trace Γ₂).isClosed.isOpen_compl.isOpenMap_subtype_val _
-      ((Cycle.isLocallyConstant_windingNumber Γ₂).isOpen_fiber 1)
+  let V := G ∩ {z : ℂ | z ∉ Cycle.trace Γ₂ ∧ Cycle.windingNumber z Γ₂ = 1}
+  have hV : IsOpen V :=
+    hG.inter (Cycle.isOpen_setOf_notMem_trace_and_windingNumber_eq Γ₂ 1)
   have hKV : K ⊆ V := fun z hz =>
-    ⟨hKG hz, ⟨⟨z, fun ht => (Cycle.isIn_iff.mp h₂ ht).2 hz⟩, hw₂ z hz, rfl⟩⟩
+    ⟨hKG hz, fun ht => (Cycle.isIn_iff.mp h₂ ht).2 hz, hw₂ z hz⟩
   obtain ⟨Γ₁, h₁, hn₁, hw₁⟩ := hK.exists_cycle_windingNumber_eq_one hV hKV
   have htrace : ∀ z ∈ Cycle.trace Γ₁, z ∈ G ∧ z ∉ Cycle.trace Γ₂ ∧
-      Cycle.windingNumber z Γ₂ = 1 := by
-    intro z hz
-    obtain ⟨⟨hzG, w, hw, rfl⟩, -⟩ := Cycle.isIn_iff.mp h₁ hz
-    exact ⟨hzG, w.property, hw⟩
+      Cycle.windingNumber z Γ₂ = 1 := fun z hz => (Cycle.isIn_iff.mp h₁ hz).1
   refine ⟨Γ₁, Γ₂, Cycle.isIn_iff.mpr (fun z hz =>
     ⟨(htrace z hz).1, (Cycle.isIn_iff.mp h₁ hz).2⟩), h₂,
     hn₁.mono inter_subset_left, hn₂, hw₁, hw₂,
     Set.disjoint_left.mpr (fun z hz => (htrace z hz).2.1), ?_,
     fun z hz => (htrace z hz).2.2⟩
   intro z hz
-  apply Cycle.isNullHomologous_iff.mp hn₁ z
-  rintro ⟨-, w, -, hw⟩
-  exact w.property (hw.symm ▸ hz)
+  exact Cycle.isNullHomologous_iff.mp hn₁ z fun hV₂ => hV₂.2.1 hz

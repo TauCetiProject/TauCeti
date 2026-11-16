@@ -169,8 +169,8 @@ theorem unitizationInrL_apply (a : A) :
 noncomputable def unitizationFstL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] 𝕜 :=
   LinearMap.mkContinuous
     { toFun := fun u ↦ (ofLp u).fst
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
+      map_add' := fun _ _ ↦ by simp
+      map_smul' := fun _ _ ↦ by simp }
     1 fun u ↦ by
       rw [one_mul, unitization_norm_def]
       exact le_add_of_nonneg_right (norm_nonneg (ofLp u).snd)
@@ -196,6 +196,32 @@ noncomputable def unitizationSndL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] A :
 theorem unitizationSndL_apply (u : WithLp 1 (Unitization 𝕜 A)) :
     unitizationSndL 𝕜 A u = (ofLp u).snd := (rfl)
 
+section Range
+
+variable {𝕜 A}
+
+/-- Any element of the external ℓ¹ unitization with vanishing scalar part is the canonical
+inclusion of its nonunital coordinate. -/
+theorem eq_unitization_toLp_inr_of_fst_eq_zero {u : WithLp 1 (Unitization 𝕜 A)}
+    (hu : (ofLp u).fst = 0) :
+    u = toLp 1 ((ofLp u).snd : Unitization 𝕜 A) := by
+  apply (WithLp.linearEquiv 1 𝕜 (Unitization 𝕜 A)).injective
+  ext
+  · simpa using hu
+  · simp
+
+/-- An element of the external ℓ¹ unitization lies in the range of `unitizationInrL 𝕜 A` if and
+only if its scalar coordinate is zero. -/
+theorem mem_range_unitizationInrL_iff {u : WithLp 1 (Unitization 𝕜 A)} :
+    u ∈ Set.range (unitizationInrL 𝕜 A) ↔ (ofLp u).fst = 0 := by
+  refine ⟨?_, fun hu ↦ ⟨(ofLp u).snd, ?_⟩⟩
+  · rintro ⟨a, rfl⟩
+    simp
+  · rw [unitizationInrL_apply]
+    exact (eq_unitization_toLp_inr_of_fst_eq_zero hu).symm
+
+end Range
+
 variable [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
 /-- The bounded inclusion into the ℓ¹ unitization preserves multiplication. -/
@@ -213,6 +239,12 @@ theorem unitization_eq_fst_smul_one_add_inr (u : WithLp 1 (Unitization 𝕜 A)) 
   simp [← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
     Unitization.inl_fst_add_inr_snd_eq]
 
+/-- The scalar coordinate of any element in the external ℓ¹ unitization belongs to its spectrum. -/
+theorem fst_mem_spectrum_unitization (u : WithLp 1 (Unitization 𝕜 A)) :
+    (ofLp u).fst ∈ spectrum 𝕜 u := by
+  simpa using AlgHom.apply_mem_spectrum
+    ((Unitization.fstHom 𝕜 A).comp (unitizationAlgEquiv 𝕜).toAlgHom) u
+
 /-- The spectrum of an element in its external ℓ¹ unitization coincides with its quasispectrum. -/
 @[simp]
 theorem spectrum_unitization_toLp_inr (a : A) :
@@ -221,21 +253,11 @@ theorem spectrum_unitization_toLp_inr (a : A) :
     ← AlgEquiv.spectrum_eq (unitizationAlgEquiv 𝕜) (toLp 1 (a : Unitization 𝕜 A))]
   simp
 
-/-- Formulation of `spectrum_unitization_toLp_inr` for the bundled inclusion `unitizationInrL`. -/
-theorem spectrum_unitizationInrL (a : A) :
-    spectrum 𝕜 (unitizationInrL 𝕜 A a) = quasispectrum 𝕜 a := by
-  simp
-
 /-- Zero belongs to the spectrum of every element in its external ℓ¹ unitization. -/
-theorem zero_mem_spectrum_toLp_inr (a : A) :
+theorem zero_mem_spectrum_unitization_toLp_inr (a : A) :
     (0 : 𝕜) ∈ spectrum 𝕜 (toLp 1 (a : Unitization 𝕜 A)) := by
   rw [spectrum_unitization_toLp_inr]
   exact quasispectrum.zero_mem 𝕜 a
-
-/-- Zero belongs to the spectrum of every element included via `unitizationInrL`. -/
-theorem zero_mem_spectrum_unitizationInrL (a : A) :
-    (0 : 𝕜) ∈ spectrum 𝕜 (unitizationInrL 𝕜 A a) :=
-  zero_mem_spectrum_toLp_inr a
 
 variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]

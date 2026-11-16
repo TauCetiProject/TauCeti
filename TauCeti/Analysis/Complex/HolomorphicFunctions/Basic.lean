@@ -16,7 +16,8 @@ functions on the open set `U`. Holomorphy can be checked on any ambient represen
 in particular, extension by zero outside `U` gives the same condition. The topology and
 uniformity are inherited from continuous maps, so convergence means locally uniform
 convergence. This subalgebra is closed and complete, and restriction to a smaller open
-set is a continuous algebra homomorphism.
+set is a continuous algebra homomorphism. On any open set omitting a pole `w`, the Cauchy kernel
+`z ↦ (w - z)⁻¹` (`HolomorphicFunctions.cauchyKernel`) provides the two-sided inverse to `w - z`.
 
 These algebras provide domains for continuous holomorphic functional calculi without
 choosing a supremum norm on a possibly noncompact open set.
@@ -166,6 +167,49 @@ theorem tendsto_iff_tendstoLocallyUniformlyOn {ι : Type*} {p : Filter ι}
     tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe]
   simp only [Function.comp_def, extend_apply]
   rfl
+
+section CauchyKernel
+
+variable {w : ℂ}
+
+private theorem differentiableOn_cauchyKernel (hw : w ∉ (V : Set ℂ)) :
+    DifferentiableOn ℂ (fun z : ℂ ↦ (w - z)⁻¹) V :=
+  (differentiableOn_const w).sub differentiableOn_id |>.inv
+    fun _ hz ↦ sub_ne_zero.mpr (ne_of_mem_of_not_mem hz hw).symm
+
+/-- The Cauchy kernel `z ↦ (w - z)⁻¹` as a holomorphic function on an open set `V` omitting `w`. -/
+noncomputable def cauchyKernel (hw : w ∉ (V : Set ℂ)) : holomorphicFunctions V :=
+  of V (fun z ↦ (w - z)⁻¹) (differentiableOn_cauchyKernel hw)
+
+@[simp]
+theorem cauchyKernel_apply (hw : w ∉ (V : Set ℂ)) (z : V) :
+    (cauchyKernel hw).val z = (w - (z : ℂ))⁻¹ :=
+  of_apply _ _ z
+
+/-- On an open set omitting `w`, `w - z` is a left inverse to the Cauchy kernel `z ↦ (w - z)⁻¹`. -/
+@[simp]
+theorem sub_id_mul_cauchyKernel (hw : w ∉ (V : Set ℂ)) :
+    (algebraMap ℂ (holomorphicFunctions V) w - of V id differentiableOn_id) * cauchyKernel hw =
+      1 := by
+  ext z
+  have hne : w - (z : ℂ) ≠ 0 := sub_ne_zero.mpr (ne_of_mem_of_not_mem z.property hw).symm
+  simp [Subalgebra.coe_mul, mul_inv_cancel₀ hne]
+
+/-- On an open set omitting `w`, the Cauchy kernel `z ↦ (w - z)⁻¹` is a left inverse to `w - z`. -/
+@[simp]
+theorem cauchyKernel_mul_sub_id (hw : w ∉ (V : Set ℂ)) :
+    cauchyKernel hw * (algebraMap ℂ (holomorphicFunctions V) w - of V id differentiableOn_id) =
+      1 := by
+  rw [mul_comm, sub_id_mul_cauchyKernel]
+
+/-- Restricting a Cauchy kernel to a smaller open set gives the Cauchy kernel on the smaller set. -/
+@[simp]
+theorem restrict_cauchyKernel (hWV : W ≤ V) (hw : w ∉ (V : Set ℂ)) :
+    restrict hWV (cauchyKernel hw) = cauchyKernel (fun h ↦ hw (hWV h)) := by
+  ext z
+  simp
+
+end CauchyKernel
 
 end HolomorphicFunctions
 
