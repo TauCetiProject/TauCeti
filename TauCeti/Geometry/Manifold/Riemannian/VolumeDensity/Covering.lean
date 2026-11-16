@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
+public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 
 /-!
 # Riemannian volume under finite quotient coverings
@@ -39,6 +40,8 @@ isometries, or that `q` is differentiable, is needed.
 * `IsQuotientCoveringMap.lintegral_comp_riemannianVolume`,
   `IsQuotientCoveringMap.integral_comp_riemannianVolume`: `∫ f ∘ q = |G| ∫ f`.
 * `IsQuotientCoveringMap.eLpNorm_comp_riemannianVolume`: `‖f ∘ q‖_p = |G| ^ (1/p) ‖f‖_p`.
+* `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
+  linear isometry `Lᵖ(N) →ₗᵢ Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
 
 ## References
 
@@ -188,5 +191,61 @@ theorem eLpNorm_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
   have h := hq.map_riemannianVolume hinner
   rw [← eLpNorm_map_measure (by rw [h]; exact hf.smul_measure _) hq.continuous.aemeasurable, h,
     eLpNorm_smul_measure_of_ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne'), smul_eq_mul]
+
+/-! ### The normalized pullback on `Lᵖ` -/
+
+section Lp
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Pullback along a finite quotient covering map which is a local isometry, on `Lᵖ`, before
+normalization: precomposition with a map pushing the volume forward to `|G|` times the volume. -/
+private def pullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    Lp F p (riemannianVolume I' N) →L[ℝ] Lp F p (riemannianVolume I M) :=
+  Lp.compOfMapLeSmul ℝ hq.continuous.measurable (ENNReal.natCast_ne_top _)
+    (hq.map_riemannianVolume hinner).le
+
+private theorem norm_pullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (g : Lp F p (riemannianVolume I' N)) :
+    ‖pullbackLp hq hinner g‖ = (Nat.card G : ℝ) ^ (1 / p).toReal * ‖g‖ := by
+  rw [pullbackLp, Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (Lp.coeFn_compOfMapLeSmul _ _ _ g),
+    hq.eLpNorm_comp_riemannianVolume hinner (Lp.aestronglyMeasurable g), ENNReal.toReal_mul,
+    ← ENNReal.toReal_rpow, ENNReal.toReal_natCast]
+
+variable (p) in
+/-- The **normalized pullback** `|G| ^ (-1/p) q^*` along a finite quotient covering map which is a
+local isometry, as a linear isometry from `Lᵖ(N)` to `Lᵖ(M)`
+(`IsQuotientCoveringMap.coeFn_normalizedPullbackLp`). For `p = 2` it is the normalized pullback
+used to transplant eigenfunctions of the Laplacian between quotients. -/
+def normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    Lp F p (riemannianVolume I' N) →ₗᵢ[ℝ] Lp F p (riemannianVolume I M) where
+  toLinearMap := (Nat.card G : ℝ) ^ (-(1 / p).toReal) • (pullbackLp hq hinner).toLinearMap
+  norm_map' g := by
+    have hG : (0 : ℝ) < Nat.card G := Nat.cast_pos.2 Nat.card_pos
+    rw [LinearMap.smul_apply, norm_smul, ContinuousLinearMap.coe_coe, norm_pullbackLp,
+      Real.norm_of_nonneg (by positivity), ← mul_assoc, Real.rpow_neg hG.le,
+      inv_mul_cancel₀ (by positivity), one_mul]
+
+/-- The normalized pullback of `g ∈ Lᵖ(N)` is almost everywhere `|G| ^ (-1/p) • g ∘ q`. -/
+theorem coeFn_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (g : Lp F p (riemannianVolume I' N)) :
+    normalizedPullbackLp p hq hinner g =ᵐ[riemannianVolume I M]
+      fun x ↦ (Nat.card G : ℝ) ^ (-(1 / p).toReal) • g (q x) := by
+  filter_upwards [Lp.coeFn_smul ((Nat.card G : ℝ) ^ (-(1 / p).toReal)) (pullbackLp hq hinner g),
+    Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hq.continuous.measurable (ENNReal.natCast_ne_top _)
+      (hq.map_riemannianVolume hinner).le g] with x hx hx'
+  simp only [normalizedPullbackLp, LinearIsometry.coe_mk, LinearMap.smul_apply,
+    ContinuousLinearMap.coe_coe, hx, Pi.smul_apply]
+  exact congrArg _ hx'
+
+end Lp
 
 end IsQuotientCoveringMap
