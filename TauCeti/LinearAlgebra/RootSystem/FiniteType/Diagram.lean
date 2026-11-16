@@ -151,13 +151,6 @@ theorem diagramGraph_cartanMatrix_G2 :
   ext i j
   fin_cases i <;> fin_cases j <;> decide
 
-/-- The unweighted diagram of `DynkinType.A n` is the path graph on `n` nodes. -/
-theorem diagramGraph_A_eq_pathGraph (n : ℕ) :
-    (diagramGraph (DynkinType.A n).cartanMatrix : _root_.SimpleGraph (Fin n)) =
-      _root_.SimpleGraph.pathGraph n := by
-  rw [cartanMatrix_A]
-  exact diagramGraph_cartanMatrix_A n
-
 /-- The unweighted diagram of every multiply-laced `DynkinType` is the path graph of its rank. -/
 theorem diagramGraph_cartanMatrix_of_not_isSimplyLaced {t : DynkinType} (ht : ¬ t.IsSimplyLaced) :
     (diagramGraph t.cartanMatrix : _root_.SimpleGraph (Fin t.rank)) =

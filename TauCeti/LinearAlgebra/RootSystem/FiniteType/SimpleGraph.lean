@@ -146,8 +146,8 @@ theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : Dyn
   · exact ⟨t, ht, id, ⟨Iso.refl⟩⟩
   · refine ⟨.A t.rank, by simp, fun hv => ?_, ⟨?_⟩⟩
     · cases t <;> simp_all <;> omega
-    · rw [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced ht,
-        ← DynkinType.diagramGraph_A_eq_pathGraph]
+    · simp only [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced ht,
+        DynkinType.rank_A, DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A]
       exact Iso.refl
 
 omit [Finite V] in

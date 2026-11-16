@@ -201,8 +201,9 @@ theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_iso
           (hbad 5 (Or.inr (Or.inr rfl)))) x hx
     | B _ | C _ | F4 | G2 => simp at hsl
   · have e' : G ≃g diagramGraph (DynkinType.A t.rank).cartanMatrix := by
-      rwa [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced hsl,
-        ← DynkinType.diagramGraph_A_eq_pathGraph] at e
+      simp only [DynkinType.rank_A, DynkinType.cartanMatrix_A,
+        DynkinType.diagramGraph_cartanMatrix_A]
+      rwa [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced hsl] at e
     exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e'
       (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
 
