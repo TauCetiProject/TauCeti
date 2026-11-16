@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.FieldTheory.PurelyInseparable.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Connected
+import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Solvable
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.CharP
 import TauCeti.Algebra.AlgebraicGroup.Torus.Recognition
@@ -22,9 +24,9 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 # The Weil restriction of `𝔾ₘ` along a purely inseparable extension
 
 For a nontrivial finite purely inseparable extension `K / k`, the Weil restriction `Res_{K/k} 𝔾ₘ`
-is the standard example of a commutative pseudo-reductive group which is not reductive. This file
-proves both properties, in characteristic `p > 0`; a nontrivial purely inseparable extension
-forces this.
+is the standard example of a commutative pseudo-reductive group which is not reductive; in
+particular, its geometric unipotent radical does not descend to `k`. This file proves these
+properties in characteristic `p > 0` (which a nontrivial purely inseparable extension forces).
 
 **Not reductive.** Let `B` be a finite-dimensional commutative `k`-algebra and `k'` an algebraic
 closure of `k`. The `k'`-points of `Res_{B/k} 𝔾ₘ` are the units of `B ⊗[k] k'`. If this ring has a
@@ -58,12 +60,16 @@ smoothness and geometric connectedness are `TauCeti.Algebra.WeilRestriction.inst
 * `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`: in
   characteristic `p > 0`, `Res_{K/k} 𝔾ₘ` is pseudo-reductive for every finite field extension
   `K / k`.
+* `TauCeti.Algebra.WeilRestriction.
+    not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup`:
+  for a nontrivial finite purely inseparable extension `K / k`, the geometric unipotent radical of
+  `Res_{K/k} 𝔾ₘ` does not descend to `k`.
 
 ## References
 
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), Example 1.1.3 and
   Proposition 1.1.10.
-* J. S. Milne, *Algebraic Groups* (2017), §§2.i and 19.b.
+* J. S. Milne, *Algebraic Groups* (2017), §§2.i, 6.47–6.48, and 19.b.
 -/
 
 public section
@@ -199,5 +205,29 @@ theorem pseudoReductive_multiplicativeGroup (p : ℕ) [Fact p.Prime] [CharP k p]
   rw [← FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff]
   have := congrArg (fun f ↦ f.ofConv x) h1
   simpa [AlgHom.convOne_apply, hx] using this
+
+/-- **Failure of descent of the geometric unipotent radical.** For a nontrivial finite purely
+inseparable extension `K / k`, the geometric unipotent radical of `Res_{K/k} 𝔾ₘ` does not descend
+to any closed `k`-subgroup of `Res_{K/k} 𝔾ₘ`. -/
+theorem not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup
+    {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
+    (hK : 1 < Module.finrank k K) :
+    ¬ ∃ J : HopfIdeal k (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])),
+        CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) J =
+          FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
+            (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+              (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
+  obtain ⟨p, hp⟩ := CharP.exists k
+  rcases CharP.char_is_prime_or_zero k p with hprime | rfl
+  · have : Fact p.Prime := ⟨hprime⟩
+    have hpr := pseudoReductive_multiplicativeGroup (k := k) p (K := K)
+    rw [← hpr.reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
+    exact not_reductive_multiplicativeGroup_of_isPurelyInseparable hK
+  · -- In characteristic zero a purely inseparable extension is trivial.
+    have : CharZero k := CharP.charP_to_charZero k
+    have hbij := IsPurelyInseparable.bijective_algebraMap_of_isSeparable k K
+    have := (LinearEquiv.ofBijective (Algebra.linearMap k K) hbij).finrank_eq
+    rw [Module.finrank_self] at this
+    omega
 
 end TauCeti.Algebra.WeilRestriction

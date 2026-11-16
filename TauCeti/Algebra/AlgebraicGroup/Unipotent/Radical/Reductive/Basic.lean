@@ -5,9 +5,11 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent
 
 /-!
 # The unipotent radical and reductivity
@@ -15,20 +17,24 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
 This file connects the construction of the geometric unipotent radical to the definition of a
 reductive finite-type affine group. It records that reductivity is equivalent to smoothness,
 geometric connectedness, and triviality of the unipotent radical after base change to an
-algebraic closure. It also records that the unipotent radical of a reductive group over its
-ground field is trivial.
+algebraic closure; over a perfect field, Galois descent of the unipotent radical reduces this to
+triviality of the unipotent radical over the ground field. It also records that the unipotent
+radical of a reductive group over its ground field is trivial.
 
 ## Main declarations
 
 * `reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation`:
   reductivity is equivalent to smoothness, geometric connectedness, and triviality of the
   geometric unipotent radical.
+* `reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation`: over a
+  perfect field, reductivity is equivalent to smoothness, geometric connectedness, and triviality
+  of the unipotent radical over the ground field.
 * `TauCeti.reductiveCommHopfAlgProperty.unipotentRadicalDefiningIdeal_eq_augmentation`:
   a reductive group's unipotent radical over the ground field is trivial.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §§6.45--6.46.
+* J. S. Milne, *Algebraic Groups* (2017), §§6.45--6.46 and Proposition 19.9.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 -/
 
@@ -64,6 +70,18 @@ theorem reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChang
     exact (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_iff
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)).mp hradical I
         (HopfIdeal.IsUnipotentRadicalCandidate.mk hnormal hIconnected hIunipotent)
+
+/-- Over a perfect field, reductivity is equivalent to smoothness, geometric connectedness, and
+triviality of the unipotent radical over the ground field. -/
+theorem reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation
+    (k : Type u) [Field k] [PerfectField k] (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    reductiveCommHopfAlgProperty k H ↔
+      Algebra.Smooth k H ∧
+        geometricallyConnectedCommHopfAlgProperty k H.obj ∧
+          FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H =
+            HopfIdeal.augmentation k H := by
+  rw [reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation,
+    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_eq_augmentation_iff]
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
