@@ -76,6 +76,15 @@ apply to all three ends.
 * `TauCeti.Floer.image_endChart_prod_Ico`: the image of `P × [0, 1)` under the end chart is the
   set of points of `S` whose longitudinal coordinate lies in `P`, for any set `P` of positive
   signed longitudinal coordinates.
+* `TauCeti.Floer.equivRealProdCLM_symm_endChart_ne_endCenter`,
+  `TauCeti.Floer.equivRealProdCLM_symm_endChart_zero_ne_zero`,
+  `TauCeti.Floer.endChart_re_endCoord_fract_im_endCoord`: the end chart avoids the center of the
+  end, and every other point is its image at the point `(s, t)` with `t ∈ [0, 1)` given by the end
+  coordinate.
+* `TauCeti.Floer.image_endChart_prod_Icc_zero_one`,
+  `TauCeti.Floer.exists_subset_image_endChart_Icc_prod_Ico`: closing a band `P × [0, 1)` does not
+  change its image, and a compact set avoiding the center of the end lies in the image of a finite
+  band `[-N, N] × [0, 1)`.
 * `TauCeti.Floer.preimage_truncation_inter_eq_image_endChart`: the part `±s > c` of the end `q`
   in the truncation `S_R` is the image under the end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
@@ -329,6 +338,17 @@ theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
       q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) := by
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply]
 
+/-- The end chart of `q` avoids the center of the end. -/
+theorem equivRealProdCLM_symm_endChart_ne_endCenter (q : Puncture) (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (endChart q z) ≠ q.endCenter := by
+  rw [equivRealProdCLM_symm_endChart]
+  exact sub_ne_zero.1 (q.cylindricalEndLift_sub_endCenter_ne_zero _)
+
+/-- The end chart of `0` lands in `ℂ ∖ {0}`. -/
+theorem equivRealProdCLM_symm_endChart_zero_ne_zero (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (endChart .zero z) ≠ 0 := by
+  simpa only [Puncture.endCenter_zero] using equivRealProdCLM_symm_endChart_ne_endCenter .zero z
+
 /-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
 theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
     (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
@@ -503,6 +523,20 @@ theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereRea
     q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
 
+/-- Every point other than the center of the end `q` is the image under the end chart of the
+point `(s, t)` whose longitudinal coordinate `s` is that of the end at the point and whose angular
+coordinate `t` is the fractional part of the angular coordinate there, in `[0, 1)`. -/
+theorem endChart_re_endCoord_fract_im_endCoord {q : Puncture} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    endChart q ((q.endCoord (Complex.equivRealProdCLM.symm z)).re,
+      Int.fract (q.endCoord (Complex.equivRealProdCLM.symm z)).im) = z := by
+  set w := q.endCoord (Complex.equivRealProdCLM.symm z)
+  -- Move the angular coordinate into `[0, 1)` by an integer shift.
+  have hper := (q.periodic_cylindricalEndLift w.re).sub_int_mul_eq (x := w.im) ⌊w.im⌋
+  rw [mul_one] at hper
+  rw [endChart_apply, Complex.equivRealProdCLM_symm_apply, Int.fract, hper, Complex.re_add_im,
+    q.cylindricalEndLift_endCoord hz, ContinuousLinearEquiv.apply_symm_apply]
+
 /-- The points of `S` at which the longitudinal coordinate of the end `q` lies in a set `P` of
 positive signed values are exactly the images under the end chart of `P × [0, 1)`. -/
 theorem image_endChart_prod_Ico {q : Puncture} {P : Set ℝ} (hP : ∀ s ∈ P, 0 < q.endSign * s) :
@@ -514,15 +548,31 @@ theorem image_endChart_prod_Ico {q : Puncture} {P : Set ℝ} (hP : ∀ s ∈ P, 
   · rintro ⟨ζ, ⟨hζ, -⟩, rfl⟩
     exact ⟨endChart_mem_thricePuncturedSphereReal (hP _ hζ), by rwa [re_endCoord_endChart]⟩
   · rintro ⟨hz, hzP⟩
-    set w := q.endCoord (Complex.equivRealProdCLM.symm z)
-    -- Move the angular coordinate into `[0, 1)` by an integer shift.
-    refine ⟨(w.re, Int.fract w.im), ⟨hzP, Int.fract_nonneg _, Int.fract_lt_one _⟩, ?_⟩
-    have hper := (q.periodic_cylindricalEndLift w.re).sub_int_mul_eq (x := w.im) ⌊w.im⌋
-    rw [mul_one] at hper
-    rw [endChart_apply, Complex.equivRealProdCLM_symm_apply, Int.fract, hper,
-      Complex.re_add_im, q.cylindricalEndLift_endCoord
-        (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
-      ContinuousLinearEquiv.apply_symm_apply]
+    exact ⟨_, ⟨hzP, Int.fract_nonneg _, Int.fract_lt_one _⟩,
+      endChart_re_endCoord_fract_im_endCoord
+        (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)⟩
+
+/-- Closing a band of angular width one does not change its image under the end chart: the
+circles `t = 0` and `t = 1` have the same image. -/
+theorem image_endChart_prod_Icc_zero_one (q : Puncture) (P : Set ℝ) :
+    endChart q '' (P ×ˢ Icc 0 1) = endChart q '' (P ×ˢ Ico 0 1) := by
+  refine Subset.antisymm ?_ (image_mono (prod_mono subset_rfl Ico_subset_Icc_self))
+  rintro _ ⟨⟨s, t⟩, ⟨hs, ht⟩, rfl⟩
+  rcases ht.2.eq_or_lt with rfl | ht₁
+  · exact ⟨(s, 0), ⟨hs, left_mem_Ico.2 one_pos⟩, by simpa using (endChart_add_one q s 0).symm⟩
+  · exact ⟨(s, t), ⟨hs, ht.1, ht₁⟩, rfl⟩
+
+/-- A compact set of points other than the center of the end `q` lies in the image under the end
+chart of a finite band `[-N, N] × [0, 1)`. -/
+theorem exists_subset_image_endChart_Icc_prod_Ico {q : Puncture} {D : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (hDq : ∀ z ∈ D, Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ∃ N, D ⊆ endChart q '' (Icc (-N) N ×ˢ Ico 0 1) := by
+  have hre : ContinuousOn (fun z ↦ (q.endCoord (Complex.equivRealProdCLM.symm z)).re) D :=
+    fun z hz ↦ ((q.contDiffAt_re_endCoord (hDq z hz) (n := 0)).continuousAt.comp
+      Complex.equivRealProdCLM.symm.continuous.continuousAt).continuousWithinAt
+  obtain ⟨N, hN⟩ := hD.exists_bound_of_continuousOn hre
+  exact ⟨N, fun z hz ↦ ⟨_, ⟨abs_le.1 ((Real.norm_eq_abs _).symm.trans_le (hN z hz)),
+    Int.fract_nonneg _, Int.fract_lt_one _⟩, endChart_re_endCoord_fract_im_endCoord (hDq z hz)⟩⟩
 
 /-- For `0 ≤ c`, the part `±s > c` of the end `q` in the truncation `S_R` is the image under the
 end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`. -/
