@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Integrals over a compact manifold of parameters
@@ -34,6 +36,14 @@ cover.
 
 The manifold `M` is assumed boundaryless, so that its chart targets are open in the model space.
 The parameter manifold `N` may have boundary and corners.
+
+The derivative itself can be taken under the integral sign. If `(z, a) ↦ g z a` is `C¹` on
+`u × N` for an open subset `u` of a normed space, its derivative in `z` is jointly continuous
+there (`TauCeti.continuousOn_fderiv_of_contMDiffOn`), and Mathlib's
+`hasFDerivAt_integral_of_continuousOn_fderiv` computes the derivative of `z ↦ ∫ a, g z a ∂μ` as
+the integral of the derivatives (`TauCeti.hasFDerivAt_integral_of_contMDiffOn`). Since the flat
+exterior derivative `extDeriv` is the alternation of the derivative, a continuous linear
+operation, the same holds for it (`TauCeti.extDeriv_integral_of_contMDiffOn`).
 -/
 
 public section
@@ -169,5 +179,71 @@ theorem _root_.ContMDiff.parametric_integral
     (hf : ContMDiff (I.prod J) 𝓘(ℝ, F) n (uncurry f)) :
     ContMDiff I 𝓘(ℝ, F) n (fun x ↦ ∫ a, f x a ∂μ) := fun _ ↦
   contMDiffAt_parametric_integral fun _ ↦ hf _
+
+/-! ### Differentiation under the integral sign -/
+
+section Deriv
+
+-- Cache the canonical alternating-map instances: instance search for the measure-theoretic
+-- structure on the nested operator space `E →L[ℝ] E [⋀^Fin k]→L[ℝ] F` otherwise fails.
+private noncomputable local instance {k : ℕ} : NormedAddCommGroup (E [⋀^Fin k]→L[ℝ] F) :=
+  ContinuousAlternatingMap.instNormedAddCommGroup
+private noncomputable local instance {k : ℕ} : NormedSpace ℝ (E [⋀^Fin k]→L[ℝ] F) :=
+  ContinuousAlternatingMap.instNormedSpace
+
+variable [IsManifold J 1 N] {g : E → N → F} {u : Set E} {z₀ : E}
+
+omit [I.Boundaryless] [MeasurableSpace N] [OpensMeasurableSpace N] [CompactSpace N] [T2Space N] in
+/-- The derivative in the first variable of a function on `E × N` that is `C¹` on `u × N`, for an
+open set `u`, is jointly continuous on `u × N`. -/
+theorem continuousOn_fderiv_of_contMDiffOn (hu : IsOpen u)
+    (hg : ContMDiffOn (𝓘(ℝ, E).prod J) 𝓘(ℝ, F) 1 (uncurry g) (u ×ˢ univ)) :
+    ContinuousOn (fun p : E × N ↦ fderiv ℝ (fun z ↦ g z p.2) p.1) (u ×ˢ univ) := by
+  intro p hp
+  have hg' : ContMDiffAt (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, F) 1 (uncurry fun (a : N) (z : E) ↦ g z a)
+      p.swap :=
+    (hg.contMDiffAt ((hu.prod isOpen_univ).mem_nhds hp)).comp p.swap
+      (contMDiffAt_snd.prodMk contMDiffAt_fst)
+  have h := (hg'.fderiv_right (n := 0) (by norm_num)).continuousAt.comp
+    continuous_swap.continuousAt
+  exact h.continuousWithinAt
+
+omit [I.Boundaryless] [T2Space N] in
+/-- **Differentiation under the integral sign over a compact manifold of parameters.** If
+`(z, a) ↦ g z a` is `C¹` on `u × N` for an open set `u ∋ z₀`, with the parameter `a` ranging over a
+compact manifold carrying a finite measure `μ`, then the derivative of `z ↦ ∫ a, g z a ∂μ` at `z₀`
+is the integral of the derivatives of the functions `z ↦ g z a`. -/
+theorem hasFDerivAt_integral_of_contMDiffOn (hu : IsOpen u) (hz₀ : z₀ ∈ u)
+    (hg : ContMDiffOn (𝓘(ℝ, E).prod J) 𝓘(ℝ, F) 1 (uncurry g) (u ×ˢ univ)) :
+    HasFDerivAt (fun z ↦ ∫ a, g z a ∂μ) (∫ a, fderiv ℝ (fun z ↦ g z a) z₀ ∂μ) z₀ := by
+  have hdiff (a : N) : DifferentiableOn ℝ (fun z ↦ g z a) u := by
+    have h : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) 1 (fun z ↦ g z a) u :=
+      hg.comp (contMDiffOn_id.prodMk contMDiffOn_const) fun z hz ↦ ⟨hz, mem_univ a⟩
+    exact (contMDiffOn_iff_contDiffOn.1 h).differentiableOn one_ne_zero
+  simpa only [Measure.restrict_univ] using
+    hasFDerivAt_integral_of_continuousOn_fderiv (μ := μ) (hu.mem_nhds hz₀) isCompact_univ
+      MeasurableSet.univ (measure_ne_top μ univ) subset_rfl hg.continuousOn
+      (fun a _ ↦ hdiff a) (continuousOn_fderiv_of_contMDiffOn hu hg)
+
+omit [I.Boundaryless] [T2Space N] in
+/-- **Exterior derivative under the integral sign.** For a family of flat differential forms
+`φ · a` on a normed space, depending on a parameter `a` in a compact manifold carrying a finite
+measure `μ`, and jointly `C¹` in the point and the parameter on `u × N` for an open set `u ∋ z₀`,
+the exterior derivative of `z ↦ ∫ a, φ z a ∂μ` at `z₀` is the integral of the exterior derivatives
+of the forms `φ · a`. -/
+theorem extDeriv_integral_of_contMDiffOn [CompleteSpace F] {k : ℕ}
+    {φ : E → N → E [⋀^Fin k]→L[ℝ] F} (hu : IsOpen u) (hz₀ : z₀ ∈ u)
+    (hφ : ContMDiffOn (𝓘(ℝ, E).prod J) 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F) 1 (uncurry φ) (u ×ˢ univ)) :
+    extDeriv (fun z ↦ ∫ a, φ z a ∂μ) z₀ = ∫ a, extDeriv (fun z ↦ φ z a) z₀ ∂μ := by
+  have hint : Integrable (fun a ↦ fderiv ℝ (fun z ↦ φ z a) z₀) μ :=
+    integrableOn_univ.1 <| ContinuousOn.integrableOn_compact' isCompact_univ MeasurableSet.univ <|
+      (continuousOn_fderiv_of_contMDiffOn hu hφ).comp (continuousOn_const.prodMk continuousOn_id)
+        fun a _ ↦ ⟨hz₀, mem_univ a⟩
+  simp only [extDeriv, (hasFDerivAt_integral_of_contMDiffOn hu hz₀ hφ).fderiv,
+    ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply]
+  exact (ContinuousLinearMap.integral_comp_comm
+    (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F) hint).symm
+
+end Deriv
 
 end TauCeti
