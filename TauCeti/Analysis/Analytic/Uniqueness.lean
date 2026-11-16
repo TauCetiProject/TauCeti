@@ -44,6 +44,11 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticAt.mul_eventuallyEq_zero_iff`, `Finset.prod_eventuallyEq_zero_iff`: in a domain, a
+  product of analytic functions vanishes near `p` exactly when one of the factors does.
+* `TauCeti.exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top`: after a single linear
+  change of coordinates, finitely many analytic functions on `E × 𝕜` none of which vanishes near
+  `p` all have finite order in the last variable.
 
 ## References
 
@@ -134,5 +139,87 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+/-- **Integrity of the ring of analytic germs.** A product of two analytic functions valued in a
+normed domain vanishes near `p` if and only if one of the factors vanishes near `p`. -/
+theorem AnalyticAt.mul_eventuallyEq_zero_iff {A : Type*} [NormedRing A]
+    [NoZeroDivisors A] [NormedAlgebra 𝕜 A] {f g : E → A} {p : E} (hf : AnalyticAt 𝕜 f p)
+    (hg : AnalyticAt 𝕜 g p) : f * g =ᶠ[𝓝 p] 0 ↔ f =ᶠ[𝓝 p] 0 ∨ g =ᶠ[𝓝 p] 0 := by
+  refine ⟨fun hfg ↦ ?_, ?_⟩
+  · by_contra! h
+    -- Embed `A` as a normed `𝕜`-vector space into its completion to obtain balls of analyticity,
+    -- while using `NoZeroDivisors A` directly in `A`.
+    let e : A →L[𝕜] UniformSpace.Completion A := UniformSpace.Completion.toComplL
+    have he_inj : Function.Injective e := UniformSpace.Completion.coe_injective A
+    obtain ⟨r₁, hr₁, hfB⟩ := ((e.analyticAt _).comp hf).exists_ball_analyticOnNhd
+    obtain ⟨r₂, hr₂, hgB⟩ := ((e.analyticAt _).comp hg).exists_ball_analyticOnNhd
+    obtain ⟨r₃, hr₃, hfgB⟩ := Metric.eventually_nhds_iff_ball.1 hfg
+    set r := min r₁ (min r₂ r₃)
+    have hr : 0 < r := lt_min hr₁ (lt_min hr₂ hr₃)
+    have hy : ∃ y ∈ ball p r, f y ≠ 0 := by
+      by_contra! hall
+      exact h.1 (Filter.eventually_of_mem (ball_mem_nhds p hr) hall)
+    obtain ⟨y, hyr, hfy⟩ := hy
+    have hefy : (e ∘ f) y ≠ 0 := fun h0 ↦ hfy (he_inj (by simpa [e] using h0))
+    have hfc : ContinuousAt (e ∘ f) y :=
+      (hfB y (ball_subset_ball (min_le_left _ _) hyr)).continuousAt
+    have hgy : (e ∘ g) =ᶠ[𝓝 y] 0 := by
+      filter_upwards [hfc.eventually_ne hefy, isOpen_ball.mem_nhds hyr] with z hefz hzr
+      have hfz : f z ≠ 0 := fun h0 ↦ hefz (by simp [h0])
+      have hz0 : f z * g z = 0 :=
+        hfgB z (ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hzr)
+      simp [(mul_eq_zero.1 hz0).resolve_left hfz]
+    let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+    have hg0 : Set.EqOn (e ∘ g) 0 (ball p r) :=
+      (hgB.mono (ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _))))
+        |>.eqOn_zero_of_preconnected_of_eventuallyEq_zero (convex_ball p r).isPreconnected hyr hgy
+    exact h.2 ((Filter.eventually_of_mem (ball_mem_nhds p hr) hg0).mono fun z hz ↦
+      he_inj (by simpa [e] using hz))
+  · rintro (hf0 | hg0)
+    · exact hf0.mono fun x hx ↦ by simp [hx]
+    · exact hg0.mono fun x hx ↦ by simp [hx]
+
+/-- A finite product of analytic functions valued in a nontrivial commutative normed domain vanishes
+near `p` if and only if one of its factors vanishes near `p`. -/
+theorem Finset.prod_eventuallyEq_zero_iff {ι A : Type*} [NormedCommRing A]
+    [NoZeroDivisors A] [Nontrivial A] [NormedAlgebra 𝕜 A] {f : ι → E → A} {p : E} (s : Finset ι)
+    (hf : ∀ i ∈ s, AnalyticAt 𝕜 (f i) p) :
+    ∏ i ∈ s, f i =ᶠ[𝓝 p] 0 ↔ ∃ i ∈ s, f i =ᶠ[𝓝 p] 0 := by
+  induction s using Finset.cons_induction with
+  | empty =>
+    simp only [Finset.prod_empty, Finset.notMem_empty, false_and, exists_false, iff_false]
+    exact fun h ↦ one_ne_zero (α := A) h.self_of_nhds
+  | cons a s ha ih =>
+    have hfa : AnalyticAt 𝕜 (f a) p := hf a (Finset.mem_cons_self a s)
+    have hfs : AnalyticAt 𝕜 (∏ i ∈ s, f i) p :=
+      s.analyticAt_prod fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)
+    rw [Finset.prod_cons, hfa.mul_eventuallyEq_zero_iff hfs,
+      ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)]
+    simp only [Finset.mem_cons, exists_eq_or_imp]
+
+/-- **Simultaneous general position for a finite family.** Finitely many analytic functions on
+`E × 𝕜` valued in a nontrivial commutative normed domain, none of which vanishes near `p`, all
+become regular in the last variable after a single linear change of coordinates: there are a
+continuous linear automorphism `L` and a point `q` with `L q = p` such that every vertical slice
+`t ↦ f i (L (q.1, t))` has finite analytic order at `q.2`. -/
+theorem TauCeti.exists_continuousLinearEquiv_forall_analyticOrderAt_ne_top {ι A : Type*}
+    [Finite ι] [NormedCommRing A] [NoZeroDivisors A] [Nontrivial A]
+    [NormedAlgebra 𝕜 A] {f : ι → E × 𝕜 → A} {p : E × 𝕜} (hf : ∀ i, AnalyticAt 𝕜 (f i) p)
+    (hf0 : ∀ i, ¬f i =ᶠ[𝓝 p] 0) :
+    ∃ (L : (E × 𝕜) ≃L[𝕜] E × 𝕜) (q : E × 𝕜), L q = p ∧
+      ∀ i, analyticOrderAt (fun t ↦ f i (L (q.1, t))) q.2 ≠ ⊤ := by
+  cases nonempty_fintype ι
+  -- Place the product of the family in general position; a slice of the product cannot vanish
+  -- identically without one of its factors vanishing identically.
+  have hP : AnalyticAt 𝕜 (∏ i : ι, f i) p := Finset.univ.analyticAt_prod fun i _ ↦ hf i
+  have hP0 : ¬(∏ i : ι, f i) =ᶠ[𝓝 p] 0 := by
+    rw [Finset.univ.prod_eventuallyEq_zero_iff fun i _ ↦ hf i]
+    exact fun ⟨i, _, hi⟩ ↦ hf0 i hi
+  obtain ⟨L, q, rfl, hord⟩ := hP.exists_continuousLinearEquiv_analyticOrderAt_ne_top hP0
+  refine ⟨L, q, rfl, fun i hi ↦ hord ?_⟩
+  rw [analyticOrderAt_eq_top] at hi ⊢
+  filter_upwards [hi] with t ht
+  rw [Finset.prod_apply]
+  exact Finset.prod_eq_zero (Finset.mem_univ i) ht
 
 end

@@ -12,11 +12,11 @@ public import TauCeti.Topology.ClusterSet
 /-!
 # Continuous extension of bounded polynomial roots
 
-A bounded continuous real root section extends across the closure of its base if the
-specialized polynomial is nonzero there and the base has preconnected approach regions.
-Indeed, each cluster set is preconnected and is contained in the finite root set of the
-specialization, hence is a singleton. No simplicity or constant multiplicity of the roots
-is required: roots may merge at the boundary.
+A bounded continuous real root section extends across the closure of its base (or any subset
+thereof) if the specialized polynomial is nonzero there and the base has preconnected approach
+regions. Indeed, each cluster set is preconnected and is contained in the finite root set of the
+specialization, hence is a singleton. No simplicity or constant multiplicity of the roots is
+required: roots may merge at the boundary.
 
 The extension is Mathlib's `extendFrom`. Joint continuity of polynomial evaluation is the
 only continuity assumption on the polynomial family; this allows families restricted to
@@ -65,6 +65,24 @@ theorem subsingleton_clusterSetOn_of_polynomial_root
       eval_eq_zero_of_mem_clusterSetOn hp hf ht
   exact hconn.isDiscrete_iff_subsingleton.mp hfinite.isDiscrete
 
+/-- A bounded continuous root section extends continuously to any subset `B ⊆ closure U` where all
+specializations are nonzero and `U` has preconnected approach regions. This applies in local
+arguments where preconnected approach regions or nonvanishing are known only on the trace of
+`closure U` inside an ambient neighbourhood. -/
+theorem continuousOn_extendFrom_of_polynomial_root_of_subset {B : Set X} (hBU : B ⊆ closure U)
+    (hp : ContinuousOn (fun z : X × ℝ ↦ (p z.1).eval z.2) (closure U ×ˢ univ))
+    (hf : ContinuousOn f U) (hroot : ∀ y ∈ U, (p y).eval (f y) = 0)
+    (hbdd : Bornology.IsBounded (f '' U)) (hne : ∀ x ∈ B, p x ≠ 0)
+    (hconn : ∀ x ∈ B, IsPreconnectedApproachAt U x) :
+    ContinuousOn (extendFrom U f) B := by
+  refine continuousOn_extendFrom hBU fun x hx ↦ ?_
+  refine exists_tendsto_of_clusterSetOn_subsingleton hbdd.isCompact_closure
+    (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) (hBU hx) ?_
+  exact subsingleton_clusterSetOn_of_polynomial_root hp hroot (hne x hx)
+    (isPreconnected_clusterSetOn hbdd.isCompact_closure
+      (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) hf
+      (isPreconnectedApproachAt_def.mp (hconn x hx)))
+
 /-- A bounded continuous root section extends continuously to the closure of its base when
 all specializations there are nonzero and the base has preconnected approach regions.
 The base need not be open or full-dimensional. -/
@@ -73,14 +91,22 @@ theorem continuousOn_extendFrom_of_polynomial_root
     (hf : ContinuousOn f U) (hroot : ∀ y ∈ U, (p y).eval (f y) = 0)
     (hbdd : Bornology.IsBounded (f '' U)) (hne : ∀ x ∈ closure U, p x ≠ 0)
     (hconn : ∀ x ∈ closure U, IsPreconnectedApproachAt U x) :
-    ContinuousOn (extendFrom U f) (closure U) := by
-  refine continuousOn_extendFrom subset_rfl fun x hx ↦ ?_
-  refine exists_tendsto_of_clusterSetOn_subsingleton hbdd.isCompact_closure
-    (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) hx ?_
-  exact subsingleton_clusterSetOn_of_polynomial_root hp hroot (hne x hx)
-    (isPreconnected_clusterSetOn hbdd.isCompact_closure
-      (fun y hy ↦ subset_closure (mem_image_of_mem f hy)) hf
-      (isPreconnectedApproachAt_def.mp (hconn x hx)))
+    ContinuousOn (extendFrom U f) (closure U) :=
+  continuousOn_extendFrom_of_polynomial_root_of_subset subset_rfl hp hf hroot hbdd hne hconn
+
+/-- At any point `x ∈ closure U` where `extendFrom U f` is continuous along `U`, its value still
+solves the specialized polynomial equation, even where distinct roots coalesce. -/
+theorem eval_extendFrom_eq_zero_of_continuousWithinAt
+    (hp : ContinuousOn (fun z : X × ℝ ↦ (p z.1).eval z.2) (closure U ×ˢ univ))
+    (hf : ContinuousOn f U) (hroot : ∀ y ∈ U, (p y).eval (f y) = 0)
+    (hF : ContinuousWithinAt (extendFrom U f) U x) (hx : x ∈ closure U) :
+    (p x).eval (extendFrom U f x) = 0 := by
+  have heq := extendFrom_extends hf
+  have hlim' : Tendsto f (𝓝[U] x) (𝓝 (extendFrom U f x)) :=
+    hF.congr' (eventually_nhdsWithin_of_forall fun y hy ↦ heq y hy)
+  exact eval_eq_zero_of_mem_clusterSetOn hp hroot (by
+    rw [clusterSetOn_eq_singleton_of_tendsto hx hlim']
+    exact mem_singleton _)
 
 /-- The continuous extension of a root section still solves the same polynomial equation
 on the closure, even where distinct roots coalesce. -/
@@ -88,13 +114,8 @@ theorem eval_extendFrom_eq_zero
     (hp : ContinuousOn (fun z : X × ℝ ↦ (p z.1).eval z.2) (closure U ×ˢ univ))
     (hf : ContinuousOn f U) (hroot : ∀ y ∈ U, (p y).eval (f y) = 0)
     (hF : ContinuousOn (extendFrom U f) (closure U)) (hx : x ∈ closure U) :
-    (p x).eval (extendFrom U f x) = 0 := by
-  have hlim := (hF x hx).mono (subset_closure : U ⊆ closure U)
-  have heq := extendFrom_extends hf
-  have hlim' : Tendsto f (𝓝[U] x) (𝓝 (extendFrom U f x)) :=
-    hlim.congr' (eventually_nhdsWithin_of_forall fun y hy ↦ heq y hy)
-  exact eval_eq_zero_of_mem_clusterSetOn hp hroot (by
-    rw [clusterSetOn_eq_singleton_of_tendsto hx hlim']
-    exact mem_singleton _)
+    (p x).eval (extendFrom U f x) = 0 :=
+  eval_extendFrom_eq_zero_of_continuousWithinAt hp hf hroot
+    ((hF x hx).mono subset_closure) hx
 
 end TauCeti
