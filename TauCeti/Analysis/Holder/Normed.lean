@@ -587,21 +587,15 @@ variable (α Y) in
 /-- Precomposition with an isometric equivalence `g : X' ≃ᵢ X`, as a linear isometric equivalence
 between bounded Hölder spaces of the same exponent. Its inverse is precomposition with
 `g.symm`. -/
-def compIsometryEquivLIE (g : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace α X' Y where
-  __ := compLipschitzL g g.isometry.lipschitzWith
-  invFun := compLipschitzL g.symm g.symm.isometry.lipschitzWith
-  left_inv f := ext fun x ↦ by simp
-  right_inv f := ext fun x ↦ by simp
-  norm_map' f := by
-    have h₁ := (compLipschitzL g g.isometry.lipschitzWith).le_of_opNorm_le
-      (norm_compLipschitzL_le_one _) f
-    have h₂ := (compLipschitzL g.symm g.symm.isometry.lipschitzWith).le_of_opNorm_le
-      (norm_compLipschitzL_le_one _) (compLipschitzL g g.isometry.lipschitzWith f)
-    have hf : compLipschitzL g.symm g.symm.isometry.lipschitzWith
-        (compLipschitzL g g.isometry.lipschitzWith f) = f := ext fun x ↦ by simp
-    rw [hf, one_mul] at h₂
-    rw [one_mul] at h₁
-    exact le_antisymm h₁ h₂
+def compIsometryEquivLIE (g : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace α X' Y :=
+  LinearIsometryEquiv.ofBounds
+    { (compLipschitzL (α := α) (Y := Y) g g.isometry.lipschitzWith).toLinearMap with
+      invFun := compLipschitzL g.symm g.symm.isometry.lipschitzWith
+      left_inv f := ext fun x ↦ by simp
+      right_inv f := ext fun x ↦ by simp }
+    (fun f ↦ by simpa using (compLipschitzL g _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f)
+    (fun f ↦ by
+      simpa using (compLipschitzL g.symm _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f)
 
 @[simp]
 theorem compIsometryEquivLIE_apply (g : X' ≃ᵢ X) (f : HolderSpace α X Y) (x : X') :

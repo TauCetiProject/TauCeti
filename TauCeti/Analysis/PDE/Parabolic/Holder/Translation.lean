@@ -32,6 +32,7 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   traces.
 * `parabolicOperatorL_translateLIE` and `euclideanParabolicOperatorL_translateLIE`: translating
   the coefficients and the solution translates the forcing.
+* `ellipticity_compIsometryEquivLIE`: translated coefficients stay uniformly elliptic.
 * `euclideanInitialDataCLE_symm_translate`: translation covariance of the solution operator.
 * `euclideanInitialDataCLE_symm_translate_of_invariant`: the solution operator commutes with
   translations that leave the coefficients invariant.
@@ -222,6 +223,18 @@ theorem euclideanParabolicOperatorL_translateLIE {t₀ t₁ : ℝ} {ht : t₀ < 
 
 /-! ### Translation covariance of the solution operator -/
 
+/-- Precomposing the coefficients `aⁱʲ` with an isometric equivalence `g` of the slab preserves
+uniform ellipticity, with the same constant. -/
+theorem ellipticity_compIsometryEquivLIE {t₀ t₁ : ℝ}
+    (g : slab (E := EuclideanSpace ℝ ι) t₀ t₁ ≃ᵢ slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
+    ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤
+        (Matrix.of fun i j ↦ HolderSpace.compIsometryEquivLIE α ℝ g (a i j) p).toQuadraticForm' ξ :=
+  ha.imp fun _ h ↦ ⟨h.1, fun p ξ ↦ by simpa using h.2 (g p) ξ⟩
+
 variable {T : ℝ≥0} {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
 
 /-- **Translation covariance of the Cauchy problem.** The solution of the Cauchy problem
@@ -234,9 +247,6 @@ theorem euclideanInitialDataCLE_symm_translate (v : EuclideanSpace ℝ ι)
     {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
     (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    (ha' : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ HolderSpace.compIsometryEquivLIE α ℝ
-        (slabSpaceIsometryEquiv (IsometryEquiv.addRight v)) (a i j) p).toQuadraticForm' ξ)
     (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
     (euclideanInitialDataCLE hα₀ hα₁ hT
@@ -245,7 +255,8 @@ theorem euclideanInitialDataCLE_symm_translate (v : EuclideanSpace ℝ ι)
         (fun i ↦ HolderSpace.compIsometryEquivLIE α ℝ
           (slabSpaceIsometryEquiv (IsometryEquiv.addRight v)) (b i))
         (HolderSpace.compIsometryEquivLIE α ℝ
-          (slabSpaceIsometryEquiv (IsometryEquiv.addRight v)) c) ha').symm
+          (slabSpaceIsometryEquiv (IsometryEquiv.addRight v)) c)
+        (ellipticity_compIsometryEquivLIE _ ha)).symm
         (HolderSpace.compIsometryEquivLIE α ℝ (slabSpaceIsometryEquiv (IsometryEquiv.addRight v)) f,
           CkHolderSpace.translateLIE 2 α ℝ v g) =
       translateLIE α ℝ hT v ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) := by
@@ -277,7 +288,7 @@ theorem euclideanInitialDataCLE_symm_translate_of_invariant (v : EuclideanSpace 
           CkHolderSpace.translateLIE 2 α ℝ v g) =
       translateLIE α ℝ hT v ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) := by
   have h := euclideanInitialDataCLE_symm_translate (hα₀ := hα₀) (hα₁ := hα₁) (hT := hT) (b := b)
-    (c := c) v ha (by simpa only [ha_inv] using ha) f g
+    (c := c) v ha f g
   simpa only [ha_inv, hb_inv, hc_inv] using h
 
 end Euclidean
