@@ -22,6 +22,11 @@ Descending along restriction to germs gives `holomorphicGerms.compAlgHom`: if a 
 complex-algebra homomorphism `holomorphicGerms t →ₐ[ℂ] holomorphicGerms s` sending the coordinate
 germ on `t` to `φ` and intertwining point evaluation.
 
+This composition API underpins the composition law `ψ(φ(a)) = (ψ ∘ φ)(a)` of the holomorphic
+functional calculus: `holomorphicGerms.compAlgHom` furnishes the composed germ `ψ ∘ φ`, while
+`pullbackOpens` and `continuous_compAlgHom` supply compact-open continuity on shrunk open
+neighbourhoods so that uniqueness of the holomorphic functional calculus applies.
+
 ## Main definitions
 
 * `TauCeti.HolomorphicFunctions.pullbackOpens`: the open subset of `U` mapped by `f` into `V`.
@@ -119,11 +124,13 @@ theorem extend_compAlgHom_apply (f : holomorphicFunctions U) (hf : ∀ z : U, f.
     extend (compAlgHom f hf g) z = extend g (f.val z) := by
   rw [extend_apply, compAlgHom_apply, ← extend_apply g ⟨f.val z, hf z⟩]
 
+/-- Precomposition on explicit holomorphic representatives agrees with ordinary composition. -/
 @[simp]
-theorem compAlgHom_of (f : ℂ → ℂ) (hfU : DifferentiableOn ℂ f U) (hfV : MapsTo f U V)
+theorem compAlgHom_of (f : ℂ → ℂ) (hfU : DifferentiableOn ℂ f U)
+    (hf : ∀ z : U, (of U f hfU).val z ∈ V)
     (g : ℂ → ℂ) (hgV : DifferentiableOn ℂ g V) :
-    compAlgHom (of U f hfU) (fun z => by rw [of_apply]; exact hfV z.property) (of V g hgV) =
-      of U (g ∘ f) (hgV.comp hfU hfV) := by
+    compAlgHom (of U f hfU) hf (of V g hgV) =
+      of U (g ∘ f) (hgV.comp hfU fun z hz => by simpa using hf ⟨z, hz⟩) := by
   apply Subtype.ext
   ext z
   simp
@@ -241,11 +248,15 @@ theorem compAlgHom_toGerm {U V U' : Opens ℂ} (φ : holomorphicGerms s)
   have hzW := congrArg (fun k : holomorphicFunctions W => k.val ⟨z, z.property.1.1⟩) heq
   simpa only [HolomorphicFunctions.restrict_apply] using hzW
 
+/-- Precomposition of holomorphic germs agrees with ordinary composition `g ∘ f` on analytic
+representatives. -/
 @[simp]
-theorem compAlgHom_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) (hft : MapsTo f s t)
+theorem compAlgHom_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+    (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx (ofFun f hf) ∈ t)
     (g : ℂ → ℂ) (hg : AnalyticOnNhd ℂ g t) :
-    compAlgHom (ofFun f hf) (fun x hx => by simpa using hft hx) (ofFun g hg) =
-      ofFun (g ∘ f) (hg.comp hf hft) := by
+    compAlgHom (ofFun f hf) hφ (ofFun g hg) =
+      ofFun (g ∘ f) (hg.comp hf fun z hz => by simpa using hφ z hz) := by
+  have hft : MapsTo f s t := fun z hz => by simpa using hφ z hz
   let U : Opens ℂ := ⟨{z | AnalyticAt ℂ f z}, isOpen_analyticAt ℂ f⟩
   let V : Opens ℂ := ⟨{z | AnalyticAt ℂ g z}, isOpen_analyticAt ℂ g⟩
   have hfU : DifferentiableOn ℂ f U := fun _ hz => hz.differentiableAt.differentiableWithinAt
@@ -260,7 +271,7 @@ theorem compAlgHom_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) (hft : M
   have hU'U : U' ≤ U := pullbackOpens_le fH V
   have hfV : ∀ z : U', (HolomorphicFunctions.restrict hU'U fH).val z ∈ V :=
     apply_mem_of_mem_pullbackOpens fH V
-  have hfg := compAlgHom_toGerm (ofFun f hf) (fun x hx => by simpa using hft hx) hsU fH
+  have hfg := compAlgHom_toGerm (ofFun f hf) hφ hsU fH
     (toGerm_of hsU f hfU) htV (of V g hgV) hsU' hU'U hfV
   rw [toGerm_of htV g hgV] at hfg
   refine hfg.trans ?_
@@ -285,19 +296,28 @@ theorem eval_compAlgHom (φ : holomorphicGerms s)
     eval x hx (compAlgHom φ hφ ψ) = eval (eval x hx φ) (hφ x hx) ψ := by
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ
   obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ
-  have hft : MapsTo f s t := fun z hz => by simpa using hφ z hz
-  rw [compAlgHom_ofFun f hf hft g hg]
   simp
 
+/-- Restricting the source base set commutes with germ precomposition. -/
+@[simp]
+theorem restrict_compAlgHom {s' : Set ℂ} (hs's : s' ⊆ s) (φ : holomorphicGerms s)
+    (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx φ ∈ t) (ψ : holomorphicGerms t) :
+    restrict hs's (compAlgHom φ hφ ψ) =
+      compAlgHom (restrict hs's φ)
+        (fun x hx => by rw [eval_restrict]; exact hφ x (hs's hx)) ψ := by
+  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ
+  obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ
+  simp
+
+/-- Restricting the target base set before precomposition agrees with weakening the image
+hypothesis. -/
 @[simp]
 theorem compAlgHom_restrict {t' : Set ℂ} (htt' : t ⊆ t') (φ : holomorphicGerms s)
     (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx φ ∈ t) (ψ : holomorphicGerms t') :
     compAlgHom φ hφ (restrict htt' ψ) = compAlgHom φ (fun x hx => htt' (hφ x hx)) ψ := by
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ
   obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ
-  have hft : MapsTo f s t := fun z hz => by simpa using hφ z hz
-  rw [restrict_ofFun, compAlgHom_ofFun f hf hft g (hg.mono htt'),
-    compAlgHom_ofFun f hf (hft.mono_right htt') g hg]
+  simp
 
 end Comp
 

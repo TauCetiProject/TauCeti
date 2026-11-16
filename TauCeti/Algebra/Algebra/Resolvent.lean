@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 
+import Mathlib.Algebra.GroupWithZero.Units.Lemmas
+
 /-!
 # Algebraic identities for the resolvent
 
@@ -71,9 +73,5 @@ theorem Commute.resolvent_right {a b : A} (h : Commute b a) (r : R) :
 theorem AlgHom.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B]
     [AlgHomClass F R A B] (φ : F) {a : A} {r : R} (hr : r ∈ resolventSet R a) :
     φ (resolvent a r) = resolvent (φ a) r := by
-  have hr' : r ∈ resolventSet R (φ a) := AlgHom.mem_resolventSet_apply φ hr
-  refine (spectrum.mem_resolventSet_iff.mp hr').mul_right_inj.mp ?_
-  rw [← AlgHomClass.commutes φ r, ← map_sub, ← map_mul, resolvent,
-    Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr), map_one,
-    map_sub, AlgHomClass.commutes φ r, resolvent,
-    Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr')]
+  simpa only [resolvent, map_sub, AlgHomClass.commutes] using
+    (spectrum.mem_resolventSet_iff.mp hr).map_ringInverse φ

@@ -406,7 +406,7 @@ private theorem exists_balancedSegments_trace_subset_gridCover (hδ : 0 < δ)
   classical
   set S := (finite_gridIndices hδ hK).toFinset
   obtain ⟨E, hbal, hE, hoff⟩ := exists_balancedSegments_boundaryEdges hδ S
-  let Γ := Cycle.ofBalancedSegments hbal
+  set Γ := Cycle.ofBalancedSegments hbal with hΓ_def
   set U := boundaryEdgeSet δ S
   have htrace : Cycle.trace Γ ⊆ U := hE ▸ Cycle.trace_ofBalancedSegments_subset hbal
   -- The boundary edges lie in a square of `S` and in a square outside `S`, which misses `K`.
@@ -445,13 +445,11 @@ private theorem exists_balancedSegments_trace_subset_gridCover (hδ : 0 < δ)
       (isCompact_gridCover hδ hK).isClosed.isOpen_compl z hz
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx hxU ↦ hball hx (hU hxU).1
     have hwG : w ∉ gridCover δ K := hball hw
-    rw [show Cycle.ofBalancedSegments hbal = Γ from rfl]
-    simp [hzw, hwG]
+    simp [← hΓ_def, hzw, hwG]
   · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_interior.inter hUclosed.isOpen_compl) z
       ⟨subset_interior_gridCover hδ hz, fun h ↦ (hU h).2 hz⟩
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx ↦ (hball hx).2
-    rw [show Cycle.ofBalancedSegments hbal = Γ from rfl]
-    simp [hzw, interior_subset (hball hw).1]
+    simp [← hΓ_def, hzw, interior_subset (hball hw).1]
 
 /-- **A grid cycle around a bounded set.** For `δ > 0` and a bounded set `K`, there is a contour
 cycle in `gridCover δ K \ K`, where `gridCover δ K` is the union of the grid squares of side `δ`

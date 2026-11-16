@@ -26,7 +26,10 @@ In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
 (`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
-`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Shifting a scalar power series around a base
+point `z₀` in a complete normed algebra yields a power series expansion and analyticity on the
+shifted open ball of convergence (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`,
+`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
 -/
 
 public section
@@ -232,5 +235,27 @@ theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [Nontrivially
     convert hasSum_choose_mul_geometric_of_norm_lt_one' k hy using 1
     ext n
     rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
+
+/-- Shifting a scalar power series `FormalMultilinearSeries.ofScalarsSum c` by `z₀` gives a
+`HasFPowerSeriesOnBall` expansion around `z₀`. -/
+theorem hasFPowerSeriesOnBall_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] (c : ℕ → 𝕜) (z₀ : E)
+    (hr : 0 < (FormalMultilinearSeries.ofScalars E c).radius) :
+    HasFPowerSeriesOnBall (fun z : E ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀))
+      (FormalMultilinearSeries.ofScalars E c) z₀
+      (FormalMultilinearSeries.ofScalars E c).radius := by
+  simpa only [FormalMultilinearSeries.ofScalarsSum, zero_add] using
+    ((FormalMultilinearSeries.ofScalars E c).hasFPowerSeriesOnBall hr).comp_sub z₀
+
+/-- A shifted scalar power series `z ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀)` is analytic
+on its open ball of convergence around `z₀`. -/
+theorem analyticOnNhd_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] (c : ℕ → 𝕜) (z₀ : E) :
+    AnalyticOnNhd 𝕜 (fun z : E ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀))
+      (Metric.eball z₀ (FormalMultilinearSeries.ofScalars E c).radius) := by
+  intro z hz
+  have hr : 0 < (FormalMultilinearSeries.ofScalars E c).radius :=
+    bot_le.trans_lt (Metric.mem_eball.mp hz)
+  exact (hasFPowerSeriesOnBall_ofScalarsSum_sub c z₀ hr).analyticAt_of_mem hz
 
 end TauCeti

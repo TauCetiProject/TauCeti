@@ -19,10 +19,14 @@ uniform-partition Riemann sums
 converge uniformly for `x ∈ K` to `∫ t in a..b, g x t` as `n → ∞`, without assuming a metric or
 uniform structure on the parameter space `α`.
 
+This parametric uniform convergence is designed to approximate parameter-dependent integrals—such
+as Cauchy contour integrals—by finite linear combinations of point evaluations uniformly on compact
+subsets, yielding convergence in the compact-open topology on spaces of holomorphic functions.
+
 ## Main results
 
 * `TauCeti.intervalIntegral.norm_riemannSum_Icc_sub_integral_le`: quantitative error bound for the
-  `n`-point left-endpoint Riemann sum of a continuous function on `Icc a b`.
+  `n`-point left-endpoint Riemann sum of an interval-integrable function on `Icc a b`.
 * `TauCeti.intervalIntegral.tendstoUniformlyOn_riemannSum_Icc`: uniform convergence on compact
   parameter sets over `Icc a b`.
 * `TauCeti.intervalIntegral.tendstoUniformlyOn_riemannSum_unitInterval`: specialization to
@@ -44,11 +48,12 @@ section Parametric
 variable {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [CompleteSpace E]
 
-/-- Quantitative error bound for the `n`-point left-endpoint Riemann sum of a continuous function
-`f : ℝ → E` on `Icc a b` (`a ≤ b`, `1 ≤ n`): if `‖f s - f t‖ ≤ C` whenever `s, t ∈ Icc a b` satisfy
-`|s - t| ≤ (b - a) / n`, then the Riemann sum is within `C * (b - a)` of `∫ t in a..b, f t`. -/
+/-- Quantitative error bound for the `n`-point left-endpoint Riemann sum of an interval-integrable
+function `f : ℝ → E` on `Icc a b` (`a ≤ b`, `1 ≤ n`): if `‖f s - f t‖ ≤ C` whenever
+`s, t ∈ Icc a b` satisfy `|s - t| ≤ (b - a) / n`, then the Riemann sum is within `C * (b - a)` of
+`∫ t in a..b, f t`. -/
 theorem norm_riemannSum_Icc_sub_integral_le {a b C : ℝ} (hab : a ≤ b) {n : ℕ} (hn : 1 ≤ n)
-    {f : ℝ → E} (hf : ContinuousOn f (Icc a b))
+    {f : ℝ → E} (hf : IntervalIntegrable f volume a b)
     (hosc : ∀ ⦃s⦄, s ∈ Icc a b → ∀ ⦃t⦄, t ∈ Icc a b → |s - t| ≤ (b - a) / (n : ℝ) →
       ‖f s - f t‖ ≤ C) :
     ‖(((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, f (a + (k : ℝ) * (b - a) / (n : ℝ))) -
@@ -70,11 +75,11 @@ theorem norm_riemannSum_Icc_sub_integral_le {a b C : ℝ} (hab : a ≤ b) {n : �
     · dsimp [τ]
       have hk_le : (k : ℝ) * (b - a) / (n : ℝ) ≤ b - a := by
         rw [div_le_iff₀ hn_pos]
-        nlinarith [show (k : ℝ) ≤ n from Nat.cast_le.mpr hk]
+        nlinarith [(Nat.cast_le.mpr hk : (k : ℝ) ≤ n)]
       linarith
   have hint (k : ℕ) (hk : k < n) : IntervalIntegrable f volume (τ k) (τ (k + 1)) := by
-    refine (hf.mono ?_).intervalIntegrable
-    rw [uIcc_of_le (hτ_le k)]
+    refine hf.mono_set ?_
+    rw [uIcc_of_le (hτ_le k), uIcc_of_le hab]
     exact Icc_subset_Icc (hτ_mem hk.le).1 (hτ_mem (Nat.succ_le_of_lt hk)).2
   have hsum_int : (∫ t in a..b, f t) = ∑ k ∈ Finset.range n, ∫ t in τ k..τ (k + 1), f t := by
     have hτ0 : τ 0 = a := by simp [τ]
@@ -152,10 +157,11 @@ theorem tendstoUniformlyOn_riemannSum_Icc {K : Set α} (hK : IsCompact K) {a b :
   calc ‖(((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, g x (a + (k : ℝ) * (b - a) / (n : ℝ))) -
           ∫ t in a..b, g x t‖
       ≤ ε / (2 * (b - a)) * (b - a) :=
-        norm_riemannSum_Icc_sub_integral_le hab hn1 hg_cont fun s hs t ht hst => by
-          rw [← dist_eq_norm]
-          exact (hFδ ⟨s, hs⟩ ⟨t, ht⟩
-            (by simpa [Subtype.dist_eq, Real.dist_eq] using hst.trans_lt hstep_lt) ⟨x, hx⟩).le
+        norm_riemannSum_Icc_sub_integral_le hab hn1 (hg_cont.intervalIntegrable_of_Icc hab)
+          fun s hs t ht hst => by
+            rw [← dist_eq_norm]
+            exact (hFδ ⟨s, hs⟩ ⟨t, ht⟩
+              (by simpa [Subtype.dist_eq, Real.dist_eq] using hst.trans_lt hstep_lt) ⟨x, hx⟩).le
     _ = ε / 2 := by field_simp [hba.ne']
     _ < ε := half_lt_self hε
 
