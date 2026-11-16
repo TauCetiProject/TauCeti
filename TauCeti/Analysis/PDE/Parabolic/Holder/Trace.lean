@@ -504,24 +504,12 @@ open scoped NNReal BoundedContinuousFunction
 variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-/-- The spatial fields `D_x^m u`, `m ≤ k`, on a closed-slab time slice form a Taylor series up to
-order `k` for the slice. -/
-private theorem hasFTaylorSeriesUpTo_spatialSlice (f : ParabolicCkHolderSpace k α E F hab)
-    (t : Icc a b) :
-    HasFTaylorSeriesUpTo k (fun x ↦ f (slabMk x t)) fun x m ↦ mixedDerivL 0 m f (slabMk x t) where
-  zero_eq x := by
-    rw [ContinuousMultilinearMap.curry0_apply, mixedDerivL_zero_zero_apply]
-  fderiv m hm x := by
-    have hmk : m < k := by exact_mod_cast hm
-    exact hasFDerivAt_mixedDerivL f (by omega) t x
-  cont m _ := (mixedDerivL 0 m f).continuous.comp (continuous_slabMk.comp
-    (continuous_id.prodMk continuous_const))
-
 /-- Every closed-slab spatial slice of a map of order `k` is `k` times continuously
 differentiable. -/
 theorem contDiff_spatialSlice (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
-    ContDiff ℝ k (fun x ↦ f (slabMk x t)) :=
-  (f.hasFTaylorSeriesUpTo_spatialSlice t).contDiff
+    ContDiff ℝ k (fun x ↦ f (slabMk x t)) := by
+  simpa [ContinuousMultilinearMap.curry0_apply] using
+    (f.hasFTaylorSeriesUpTo_mixedDerivL 0 t).contDiff
 
 /-- The `k`-th spatial derivative of a slice has Hölder constant at most the parabolic Hölder
 seminorm of the top-order field `D_x^k u`. -/
