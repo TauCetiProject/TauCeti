@@ -6,21 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
-import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 
 /-!
 # Base change of tori
 
-Split tori remain split after extending scalars between commutative rings. Tori remain tori
-under arbitrary field extensions: embed an algebraic closure of the smaller field into one
-of the larger field and transport the splitting through the two base-change towers.
+Tori remain tori under arbitrary field extensions: embed an algebraic closure of the smaller
+field into one of the larger field, extend the splitting along that embedding with
+`TauCeti.splitTorusCommHopfAlgProperty.baseChange`, and transport it through the two
+base-change towers.
 
 This is the scalar-extension step used to descend maximality of tori along an arbitrary field
 extension in `TauCeti.Algebra.AlgebraicGroup.Torus.Maximal`.
 
 ## Main declarations
 
-* `TauCeti.splitTorusCommHopfAlgProperty.baseChange`: scalar extension preserves split tori.
 * `TauCeti.torusCommHopfAlgProperty.baseChange`: field extension preserves tori.
 
 ## References
@@ -36,17 +35,6 @@ namespace TauCeti
 
 universe u
 
-/-- A split torus remains split after extending scalars. -/
-theorem splitTorusCommHopfAlgProperty.baseChange
-    {k : Type u} [CommRing k] (K : Type u) [CommRing K] [Algebra k K]
-    {H : FiniteTypeCommHopfAlgCat.{u, u} k} (hH : splitTorusCommHopfAlgProperty k H) :
-    splitTorusCommHopfAlgProperty K (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) := by
-  rw [splitTorusCommHopfAlgProperty_iff] at hH ⊢
-  obtain ⟨n, ⟨i⟩⟩ := hH
-  exact ⟨n, ⟨(DiagonalizableGroup.baseChangeCoordinateRingIso k K
-    (SplitTorus.characterGroup (ULift.{u} (Fin n)))).symm ≪≫
-      (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := K)).mapIso i⟩⟩
-
 /-- A torus remains a torus after an arbitrary field extension. -/
 theorem torusCommHopfAlgProperty.baseChange
     {k : Type u} [Field k] (K : Type u) [Field K] [Algebra k K]
@@ -59,10 +47,9 @@ theorem torusCommHopfAlgProperty.baseChange
   -- The torus predicate supplies a splitting over the algebraic closure of the base field.
   rw [torusCommHopfAlgProperty_iff, ← splitTorusCommHopfAlgProperty_iff] at hH ⊢
   exact (splitTorusCommHopfAlgProperty (AlgebraicClosure K)).prop_of_iso
-    (ObjectProperty.isoMk _
-      ((CommHopfAlgCat.baseChangeTowerIso k (AlgebraicClosure K)
-        (E := AlgebraicClosure k) H.obj) ≪≫
-        (CommHopfAlgCat.baseChangeTowerIso k (AlgebraicClosure K) (E := K) H.obj).symm))
+    (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := AlgebraicClosure k) k
+        (AlgebraicClosure K) H ≪≫
+      (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K) k (AlgebraicClosure K) H).symm)
     (hH.baseChange (AlgebraicClosure K))
 
 end TauCeti
