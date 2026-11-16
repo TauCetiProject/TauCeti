@@ -62,7 +62,8 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
   `H^{0,p}(E, G) = Lᵖ` exhibits every element of `H^{s,p}(E, G)` as an `Lᵖ` function, which lies
   in `H^{s,p}` (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
-  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
+  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`); likewise for the
+  inclusion `inclusionLp` into `Lᵖ` (`BesselPotentialSpace.memSobolev_inclusionLp`).
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `Lᵖ` function of
   the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function `g` is `g`.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
@@ -227,6 +228,18 @@ theorem memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
     MemSobolev s p ((inclusion h u).toLp : 𝓢'(E, G)) := by
   rw [toTemperedDistribution_toLp_inclusion]
   exact u.memSobolev_toDistr
+
+/-- For `s ≥ 0`, the inclusion of `u ∈ H^{s,p}(E, G)` into `Lᵖ` lies in `H^{s,p}`. -/
+theorem memSobolev_inclusionLp (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
+    MemSobolev s p ((inclusionLp h u : Lp G p (volume : Measure E)) : 𝓢'(E, G)) := by
+  rw [toTemperedDistribution_inclusionLp]
+  exact u.memSobolev_toDistr
+
+/-- For `s ≥ 0`, the element of `H^{s,p}(E, G)` defined by the inclusion of `u` into `Lᵖ` is
+`u`. -/
+theorem toBesselPotentialSpace_memSobolev_inclusionLp (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
+    (memSobolev_inclusionLp h u).toBesselPotentialSpace = u :=
+  ext (by simp)
 
 /-- For `s ≥ 0`, the element of `H^{s,p}(E, G)` defined by the `Lᵖ` function of
 `u ∈ H^{s,p}(E, G)` is `u`. -/
