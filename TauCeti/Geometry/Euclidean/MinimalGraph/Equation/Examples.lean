@@ -59,7 +59,8 @@ theorem nondivergenceOperator_affineHeight (a : E) (c : ℝ) (x : E) :
     funext y
     change fderiv ℝ (fun z : E ↦ c + (InnerProductSpace.toDual ℝ E a) z) y = _
     rw [fderiv_const_add, ContinuousLinearMap.fderiv]
-  rw [nondivergenceOperator_eq, ← trace_fderiv_gradient_eq_laplacian]
+  rw [nondivergenceOperator_eq, TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
+    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero]
   rw [hgrad, hF]
   simp
 
@@ -141,7 +142,8 @@ theorem gradient_saddleHeight (x : Plane) : ∇ saddleHeight x = coordinateSwap 
 
 /-- The saddle height `xy` is harmonic. -/
 theorem laplacian_saddleHeight (x : Plane) : Δ saddleHeight x = 0 := by
-  rw [← trace_fderiv_gradient_eq_laplacian]
+  rw [TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
+    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero]
   have hgrad : (∇ saddleHeight) = coordinateSwap := funext gradient_saddleHeight
   rw [hgrad, ContinuousLinearMap.fderiv]
   rw [LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin 2) ℝ)]
@@ -299,13 +301,6 @@ private theorem iteratedDeriv_logCos {t : ℝ} (hc : Real.cos t ≠ 0) :
   rw [heq.deriv_eq]
   exact (Real.hasDerivAt_tan hc).neg.deriv
 
-private theorem one_add_tan_sq (t : ℝ) (hc : Real.cos t ≠ 0) :
-    1 + Real.tan t ^ 2 = 1 / Real.cos t ^ 2 := by
-  rw [Real.tan_eq_sin_div_cos]
-  have h := Real.sin_sq_add_cos_sq t
-  field_simp
-  nlinarith
-
 /-- Scherk's minimal graph on the open square where both cosines are positive. -/
 def scherkHeight (x : Plane) : ℝ :=
   Real.log (Real.cos (x 0)) - Real.log (Real.cos (x 1))
@@ -327,7 +322,8 @@ theorem nondivergenceOperator_scherkHeight (x : Plane)
   simp only [deriv.fun_neg, iteratedDeriv_fun_neg, neg_sq,
     deriv_logCos hcx, deriv_logCos hcy,
     iteratedDeriv_logCos hcx, iteratedDeriv_logCos hcy]
-  rw [one_add_tan_sq (x 0) hcx, one_add_tan_sq (x 1) hcy]
+  rw [← Real.inv_one_add_tan_sq hcx, ← Real.inv_one_add_tan_sq hcy]
+  simp only [one_div, inv_inv]
   ring
 
 /-- Scherk's height also solves the divergence form on the open square. -/

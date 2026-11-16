@@ -32,15 +32,6 @@ namespace TauCeti.MinimalGraph
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E]
 
-/-- The divergence of a radial scalar multiple of the identity map. -/
-theorem trace_fderiv_radial_smul (c : E → ℝ) (x : E)
-    (hc : DifferentiableAt ℝ c x) :
-    LinearMap.trace ℝ E (fderiv ℝ (fun y : E ↦ c y • y) x).toLinearMap =
-      (Module.finrank ℝ E : ℝ) * c x + fderiv ℝ c x x := by
-  change LinearMap.trace ℝ E (fderiv ℝ (fun y : E ↦ c y • id y) x).toLinearMap = _
-  rw [fderiv_fun_smul hc differentiableAt_id]
-  simp [LinearMap.trace_smulRight, LinearMap.trace_id, mul_comm]
-
 /-- The vector field `x / ‖x‖²` on a Euclidean plane. -/
 def inverseSquareRadialField (x : E) : E := (‖x‖ ^ 2)⁻¹ • x
 
@@ -72,8 +63,10 @@ theorem trace_fderiv_inverseSquareRadialField_eq_zero (hE : Module.finrank ℝ E
   have hc : DifferentiableAt ℝ (fun y : E ↦ (‖y‖ ^ 2)⁻¹) x :=
     (hasStrictFDerivAt_norm_sq x).differentiableAt.inv hn
   change LinearMap.trace ℝ E
-    (fderiv ℝ (fun y : E ↦ (‖y‖ ^ 2)⁻¹ • y) x).toLinearMap = 0
-  rw [trace_fderiv_radial_smul _ x hc, hE, fderiv_inv_norm_sq_self hx]
+    (fderiv ℝ (fun y : E ↦ (‖y‖ ^ 2)⁻¹ • id y) x).toLinearMap = 0
+  rw [TauCeti.trace_fderiv_smul hc differentiableAt_id]
+  simp only [fderiv_id, ContinuousLinearMap.coe_id, LinearMap.trace_id, hE,
+    Nat.cast_ofNat, id_eq, fderiv_inv_norm_sq_self hx]
   ring
 
 /-- The radial minimal-graph flux of the upper half-catenoid. -/
@@ -81,16 +74,11 @@ def catenoidRadialFlux (ρ : ℝ) : ℝ :=
   ρ * (Real.sqrt (ρ ^ 2 - 1))⁻¹ /
     Real.sqrt (1 + ((Real.sqrt (ρ ^ 2 - 1))⁻¹) ^ 2)
 
-/-- The derivative of the upper half-catenoid height on its graph domain. -/
-theorem hasDerivAt_arcosh_of_one_lt {ρ : ℝ} (hρ : 1 < ρ) :
-    HasDerivAt Real.arcosh (Real.sqrt (ρ ^ 2 - 1))⁻¹ ρ :=
-  Real.hasDerivAt_arcosh hρ
-
 /-- The radial flux is defined using the actual derivative of `arcosh` on `ρ > 1`. -/
 theorem catenoidRadialFlux_eq_deriv {ρ : ℝ} (hρ : 1 < ρ) :
     catenoidRadialFlux ρ = ρ * deriv Real.arcosh ρ /
       Real.sqrt (1 + (deriv Real.arcosh ρ) ^ 2) := by
-  rw [(hasDerivAt_arcosh_of_one_lt hρ).deriv]
+  rw [(Real.hasDerivAt_arcosh hρ).deriv]
   rfl
 
 /-- The radial flux is identically one above the neck of the catenoid. -/
@@ -129,7 +117,7 @@ private theorem hasGradientAt_norm_of_one_lt {x : E} (hx : 1 < ‖x‖) :
 private theorem hasGradientAt_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
     HasGradientAt upperCatenoidHeight
       ((Real.sqrt (‖x‖ ^ 2 - 1))⁻¹ • (‖x‖⁻¹ • x)) x := by
-  exact (hasDerivAt_arcosh_of_one_lt hx).comp_hasGradientAt
+  exact (Real.hasDerivAt_arcosh hx).comp_hasGradientAt
     (hasGradientAt_norm_of_one_lt hx)
 
 /-- The normalized gradient of the upper half-catenoid is the inverse-square radial field. -/

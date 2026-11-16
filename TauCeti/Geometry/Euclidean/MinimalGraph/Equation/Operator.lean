@@ -12,6 +12,8 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import TauCeti.Analysis.Distribution.TestFunction.Divergence
+public import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 
 /-!
 # The Euclidean minimal graph operator
@@ -81,17 +83,6 @@ private theorem differentiableAt_areaWeight {u : E → ℝ} {x : E}
   have hpos : 0 < 1 + ‖∇ u x‖ ^ 2 := by positivity
   exact hs.rpow_const (p := -(1 / 2 : ℝ)) (Or.inl hpos.ne')
 
-private theorem fluxDivergence_eq {u : E → ℝ} {x : E}
-    (hgrad : DifferentiableAt ℝ (∇ u) x) :
-    fluxDivergence u x = areaWeight u x *
-        LinearMap.trace ℝ E (fderiv ℝ (∇ u) x).toLinearMap +
-      fderiv ℝ (areaWeight u) x (∇ u x) := by
-  have hw := differentiableAt_areaWeight hgrad
-  change LinearMap.trace ℝ E
-    (fderiv ℝ (fun y : E ↦ areaWeight u y • ∇ u y) x).toLinearMap = _
-  rw [fderiv_fun_smul hw hgrad]
-  simp [LinearMap.trace_smulRight]
-
 /-- The nondivergence minimal graph operator in basis-free form. -/
 def nondivergenceOperator (u : E → ℝ) (x : E) : ℝ :=
   (1 + ‖∇ u x‖ ^ 2) *
@@ -110,7 +101,10 @@ theorem fluxDivergence_eq_nondivergence {u : E → ℝ} {x : E}
       _ = s ^ (1 + -(3 / 2 : ℝ)) := by congr 1; ring
       _ = s ^ 1 * s ^ (-(3 / 2 : ℝ)) := Real.rpow_add hs 1 _
       _ = _ := by simp
-  rw [fluxDivergence_eq hgrad, areaWeight_deriv hgrad]
+  change LinearMap.trace ℝ E
+    (fderiv ℝ (fun y : E ↦ areaWeight u y • ∇ u y) x).toLinearMap = _
+  rw [TauCeti.trace_fderiv_smul (differentiableAt_areaWeight hgrad) hgrad,
+    areaWeight_deriv hgrad]
   rw [areaWeight, nondivergenceOperator]
   change s ^ (-(1 / 2 : ℝ)) * _ + -(s ^ (-(3 / 2 : ℝ))) * _ =
     s ^ (-(3 / 2 : ℝ)) * (s * _ - _)
@@ -125,26 +119,14 @@ theorem fluxDivergence_eq_zero_iff {u : E → ℝ} {x : E}
   rw [fluxDivergence_eq_nondivergence hgrad]
   simp only [mul_eq_zero, hfactor, false_or]
 
-/-- The trace of the derivative of the Euclidean gradient is the flat Laplacian. -/
-theorem trace_fderiv_gradient_eq_laplacian (u : E → ℝ) (x : E) :
-    LinearMap.trace ℝ E (fderiv ℝ (∇ u) x).toLinearMap = Δ u x := by
-  let b := stdOrthonormalBasis ℝ E
-  rw [LinearMap.trace_eq_sum_inner _ b,
-    InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis u b]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [real_inner_comm, TauCeti.fderiv_gradient]
-  change inner ℝ (TauCeti.hessianOperator u x (b i)) (b i) = _
-  rw [TauCeti.inner_hessianOperator_left]
-  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
-
 /-- The nondivergence equation is `(1+|Du|²) Δu - D²u(Du,Du)`. -/
 theorem nondivergenceOperator_eq (u : E → ℝ) (x : E) :
     nondivergenceOperator u x = (1 + ‖∇ u x‖ ^ 2) * Δ u x -
       fderiv ℝ (fderiv ℝ u) x (∇ u x) (∇ u x) := by
-  rw [nondivergenceOperator, trace_fderiv_gradient_eq_laplacian,
-    TauCeti.fderiv_gradient]
+  rw [nondivergenceOperator, TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
+    TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero]
   congr 1
-  rw [real_inner_comm]
+  rw [TauCeti.fderiv_gradient, real_inner_comm]
   change inner ℝ (TauCeti.hessianOperator u x (∇ u x)) (∇ u x) = _
   exact TauCeti.inner_hessianOperator_left u x (∇ u x) (∇ u x)
 
