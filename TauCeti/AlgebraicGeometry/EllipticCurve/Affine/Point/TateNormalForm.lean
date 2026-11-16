@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateNormalForm
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 
 /-!
@@ -50,6 +49,10 @@ field-valued form of its universal property; the comparison with the scheme is n
 
 * `TauCeti.PointedWeierstrassCurve.exists_smul_eq_tateNormalForm`: a pointed curve with
   `2 • P ≠ 0` and `3 • P ≠ 0` is isomorphic to the Tate normal form with its coefficients.
+* `TauCeti.PointedWeierstrassCurve.existsUnique_smul_eq_tateNormalForm`: the change of variables
+  to the Tate normal form is unique.
+* `TauCeti.PointedWeierstrassCurve.smul_tateNormalForm_eq_iff`: the only change of variables between
+  two pointed Tate normal forms is the identity, between equal ones.
 * `TauCeti.PointedWeierstrassCurve.exists_smul_tateNormalForm_eq_iff`: two pointed Tate normal forms
   are isomorphic exactly when their coefficients agree.
 * `TauCeti.PointedWeierstrassCurve.tateNormalFormCoeffs_smul`: the coefficients are invariant under
@@ -66,29 +69,42 @@ public section
 
 namespace TauCeti
 
-open WeierstrassCurve.Affine.Point
-
 namespace PointedWeierstrassCurve
 
-section Field
+section CommRing
 
-variable {F : Type*} [Field F]
+variable {R : Type*} [CommRing R]
 
 /-- The **pointed Tate normal form**: the curve `Y² + aXY + bY = X³ + bX²` with the point
 `(0, 0)`, which is nonsingular since `b ≠ 0`. -/
-noncomputable def tateNormalForm (a : F) {b : F} (hb : b ≠ 0) : PointedWeierstrassCurve F :=
+noncomputable def tateNormalForm (a : R) {b : R} (hb : b ≠ 0) : PointedWeierstrassCurve R :=
   ⟨WeierstrassCurve.tateNormalForm a b,
     .some 0 0 (WeierstrassCurve.nonsingular_tateNormalForm_zero a hb)⟩
 
-theorem tateNormalForm_def (a : F) {b : F} (hb : b ≠ 0) :
+theorem tateNormalForm_def (a : R) {b : R} (hb : b ≠ 0) :
     tateNormalForm a hb = ⟨WeierstrassCurve.tateNormalForm a b,
       .some 0 0 (WeierstrassCurve.nonsingular_tateNormalForm_zero a hb)⟩ :=
   (rfl)
 
 @[simp]
-theorem tateNormalForm_curve (a : F) {b : F} (hb : b ≠ 0) :
+theorem tateNormalForm_curve (a : R) {b : R} (hb : b ≠ 0) :
     (tateNormalForm a hb).curve = WeierstrassCurve.tateNormalForm a b :=
   (rfl)
+
+/-- Pointed Tate normal forms are equal exactly when their coefficients are. -/
+@[simp]
+theorem tateNormalForm_inj {a a' b b' : R} (hb : b ≠ 0) (hb' : b' ≠ 0) :
+    tateNormalForm a hb = tateNormalForm a' hb' ↔ a = a' ∧ b = b' := by
+  refine ⟨fun h ↦ ?_, fun ⟨ha, hbb⟩ ↦ by subst ha hbb; rfl⟩
+  have h := congrArg PointedWeierstrassCurve.curve h
+  exact ⟨by simpa using congrArg WeierstrassCurve.a₁ h,
+    by simpa using congrArg WeierstrassCurve.a₂ h⟩
+
+end CommRing
+
+section Field
+
+variable {F : Type*} [Field F]
 
 /-- The **coefficients of the Tate normal form** of a pointed curve `(W, (x, y))`:
 `a = Ψ₃(x) ψ₂(x, y)⁻³ (a₁ + 2 s)` and `b = Ψ₃(x)³ ψ₂(x, y)⁻⁸`, where
@@ -130,13 +146,16 @@ theorem tateNormalFormCoeffs_tateNormalForm (a : F) {b : F} (hb : b ≠ 0) :
     ring
   · field_simp
 
-/-- Two pointed Tate normal forms are isomorphic exactly when their coefficients agree. -/
-theorem exists_smul_tateNormalForm_eq_iff {a a' b b' : F} (hb : b ≠ 0) (hb' : b' ≠ 0) :
-    (∃ C : WeierstrassCurve.VariableChange F, C • tateNormalForm a hb = tateNormalForm a' hb') ↔
-      a = a' ∧ b = b' := by
-  refine ⟨fun ⟨C, hC⟩ ↦ ?_, fun ⟨ha, hbb⟩ ↦ ⟨1, by subst ha hbb; exact one_smul _ _⟩⟩
-  rw [tateNormalForm_def, tateNormalForm_def, smul_mk_some_eq_mk_some_iff] at hC
-  obtain ⟨hC, hr, ht⟩ := hC
+/-- **Rigidity of the pointed Tate normal form**: the only change of variables between two pointed
+Tate normal forms is the identity, and it relates them only when their coefficients agree. -/
+@[simp]
+theorem smul_tateNormalForm_eq_iff {C : WeierstrassCurve.VariableChange F} {a a' b b' : F}
+    (hb : b ≠ 0) (hb' : b' ≠ 0) :
+    C • tateNormalForm a hb = tateNormalForm a' hb' ↔ C = 1 ∧ a = a' ∧ b = b' := by
+  refine ⟨fun hC ↦ ?_, fun ⟨hC, ha, hbb⟩ ↦ by subst hC ha hbb; exact one_smul _ _⟩
+  have hC' := hC
+  rw [tateNormalForm_def, tateNormalForm_def, smul_mk_some_eq_mk_some_iff] at hC'
+  obtain ⟨hC', hr, ht⟩ := hC'
   simp only [mul_zero, zero_add] at hr ht
   have hψ₂ : IsUnit ((WeierstrassCurve.tateNormalForm a b).ψ₂.evalEval 0 0) := by
     simpa using hb.isUnit
@@ -144,23 +163,16 @@ theorem exists_smul_tateNormalForm_eq_iff {a a' b b' : F} (hb : b ≠ 0) (hb' : 
     simpa using (hb.isUnit.pow 3)
   -- both `C` and the identity are the change of variables to Tate normal form at `(0, 0)`
   have h₁ : C = 1 :=
-    (WeierstrassCurve.eq_toTateNormalForm hψ₂ hΨ₃ hr ht hC).trans
+    (WeierstrassCurve.eq_toTateNormalForm hψ₂ hΨ₃ hr ht hC').trans
       (WeierstrassCurve.eq_toTateNormalForm hψ₂ hΨ₃ rfl rfl (one_smul _ _)).symm
-  rw [h₁, one_smul] at hC
-  exact ⟨by simpa using congrArg WeierstrassCurve.a₁ hC,
-    by simpa using congrArg WeierstrassCurve.a₂ hC⟩
+  rw [h₁, one_smul, tateNormalForm_inj] at hC
+  exact ⟨h₁, hC⟩
 
-/-- At an affine point, `ψ₂` vanishes exactly when the point is killed by `2`. -/
-private theorem evalEval_ψ₂_eq_zero_iff [DecidableEq F] {W : WeierstrassCurve F} {x y : F}
-    (h : W.toAffine.Nonsingular x y) : W.ψ₂.evalEval x y = 0 ↔ 2 • some x y h = 0 := by
-  rw [WeierstrassCurve.ψ₂, ← some_add_self_eq_zero_iff h, two_nsmul]
-
-/-- At an affine point, `Ψ₃` vanishes exactly when the point is killed by `3`. -/
-private theorem eval_Ψ₃_eq_zero_iff [DecidableEq F] {W : WeierstrassCurve F} {x y : F}
-    (h : W.toAffine.Nonsingular x y) : W.Ψ₃.eval x = 0 ↔ 3 • some x y h = 0 := by
-  rw [← pow_eq_zero_iff two_ne_zero, ← Polynomial.eval_pow, ← WeierstrassCurve.ΨSq_three,
-    WeierstrassCurve.eval_ΨSq_eq_zero_iff_zsmul_eq_zero W h,
-    WeierstrassCurve.zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero, ofNat_zsmul]
+/-- Two pointed Tate normal forms are isomorphic exactly when their coefficients agree. -/
+theorem exists_smul_tateNormalForm_eq_iff {a a' b b' : F} (hb : b ≠ 0) (hb' : b' ≠ 0) :
+    (∃ C : WeierstrassCurve.VariableChange F, C • tateNormalForm a hb = tateNormalForm a' hb') ↔
+      a = a' ∧ b = b' := by
+  simp
 
 /-- The coefficients vanish when the marked point is killed by `2` or by `3`. -/
 private theorem tateNormalFormCoeffs_eq_zero [DecidableEq F] {X : PointedWeierstrassCurve F}
@@ -168,8 +180,8 @@ private theorem tateNormalFormCoeffs_eq_zero [DecidableEq F] {X : PointedWeierst
   obtain ⟨W, _ | ⟨x, y, hxy⟩⟩ := X
   · rfl
   rcases h with h | h
-  · simp [(evalEval_ψ₂_eq_zero_iff hxy).mpr h]
-  · simp [(eval_Ψ₃_eq_zero_iff hxy).mpr h]
+  · simp [(WeierstrassCurve.evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero W hxy).mpr h]
+  · simp [(WeierstrassCurve.eval_Ψ₃_eq_zero_iff_nsmul_eq_zero W hxy).mpr h]
 
 variable [DecidableEq F]
 
@@ -182,12 +194,25 @@ theorem exists_smul_eq_tateNormalForm (X : PointedWeierstrassCurve F) (h₂ : 2 
       C • X = tateNormalForm X.tateNormalFormCoeffs.1 hb := by
   obtain ⟨W, _ | ⟨x, y, h⟩⟩ := X
   · exact absurd (nsmul_zero 2) h₂
-  have hψ₂ : W.ψ₂.evalEval x y ≠ 0 := (evalEval_ψ₂_eq_zero_iff h).not.mpr h₂
-  have hΨ₃ : W.Ψ₃.eval x ≠ 0 := (eval_Ψ₃_eq_zero_iff h).not.mpr h₃
+  have hψ₂ : W.ψ₂.evalEval x y ≠ 0 :=
+    (WeierstrassCurve.evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero W h).not.mpr h₂
+  have hΨ₃ : W.Ψ₃.eval x ≠ 0 := (WeierstrassCurve.eval_Ψ₃_eq_zero_iff_nsmul_eq_zero W h).not.mpr h₃
   refine ⟨by simp [hψ₂, hΨ₃], WeierstrassCurve.toTateNormalForm hψ₂.isUnit hΨ₃.isUnit, ?_⟩
   rw [tateNormalForm_def, smul_mk_some_eq_mk_some_iff,
     WeierstrassCurve.toTateNormalForm_smul hψ₂.isUnit hΨ₃.isUnit h.1]
   simp [Units.val_inv_eq_inv_val]
+
+/-- **The change of variables to Tate normal form is unique**: for a pointed curve with
+`2 • P ≠ 0` and `3 • P ≠ 0`, exactly one change of variables carries it to its Tate normal form. -/
+theorem existsUnique_smul_eq_tateNormalForm (X : PointedWeierstrassCurve F)
+    (h₂ : 2 • X.point ≠ 0) (h₃ : 3 • X.point ≠ 0) :
+    ∃ hb : X.tateNormalFormCoeffs.2 ≠ 0, ∃! C : WeierstrassCurve.VariableChange F,
+      C • X = tateNormalForm X.tateNormalFormCoeffs.1 hb := by
+  obtain ⟨hb, C, hC⟩ := exists_smul_eq_tateNormalForm X h₂ h₃
+  refine ⟨hb, C, hC, fun C' hC' ↦ ?_⟩
+  have h : (C' * C⁻¹) • (C • X) = C' • X := by rw [mul_smul, inv_smul_smul]
+  rw [hC, hC'] at h
+  exact mul_inv_eq_one.mp ((smul_tateNormalForm_eq_iff hb hb).mp h).1
 
 omit [DecidableEq F] in
 /-- **The coefficients of the Tate normal form are isomorphism invariants**: a change of variables

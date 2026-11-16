@@ -36,7 +36,7 @@ and the comparison with the scheme are not made here.
   (`TauCeti.EisensteinSeries.mdifferentiable_weierstrassP_periodPair_div`) and of `℘'`
   (`TauCeti.EisensteinSeries.mdifferentiable_derivWeierstrassP_periodPair_div`). For `N ≥ 3` the
   value `℘'(1 / N)` does not vanish (`UpperHalfPlane.derivWeierstrassP_periodPair_one_div_ne_zero`),
-  so `a` and `b` are holomorphic.
+  so `a` and `b` are holomorphic; for `N < 3` they vanish identically.
 * **The bijection.** It is the composite of the moduli bijection
   `TauCeti.gamma1QuotientEquivExactOrder` with the classification of points of order `N ≥ 4` by
   their Tate normal form, `TauCeti.PointedWeierstrassCurve.exactOrderQuotientEquivTateNormalForm`.
@@ -58,8 +58,10 @@ and the comparison with the scheme are not made here.
   `(E_z, 1 / N)`.
 * `UpperHalfPlane.derivWeierstrassP_periodPair_one_div_ne_zero`: for `N ≥ 3`, `℘'(1 / N) ≠ 0`.
 * `UpperHalfPlane.mdifferentiable_fst_tateNormalFormCoeffs_pointedWeierstrassCurve`,
-  `UpperHalfPlane.mdifferentiable_snd_tateNormalFormCoeffs_pointedWeierstrassCurve`: for `N ≥ 3`
-  the coefficients are holomorphic on `ℍ`.
+  `UpperHalfPlane.mdifferentiable_snd_tateNormalFormCoeffs_pointedWeierstrassCurve`: the
+  coefficients are holomorphic on `ℍ`.
+* `UpperHalfPlane.tateNormalFormCoeffs_pointedWeierstrassCurve_smul`: the coefficients are
+  `Γ₁(N)`-invariant.
 * `UpperHalfPlane.tateNormalFormCoeffs_pointedWeierstrassCurve_eq_iff`: for `N ≥ 4` the
   coefficients at `z` and `z'` agree exactly when `z' ∈ Γ₁(N) z`.
 
@@ -119,6 +121,20 @@ theorem tateNormalFormCoeffs_pointedWeierstrassCurve (z : ℍ) :
           ℘'[z.periodPair] (1 / N) ^ 8) := by
   rw [pointedWeierstrassCurve_def, tateNormalFormCoeffs_mk_weierstrassPoint]
 
+/-- For `N < 3` the point `1 / N` is a half-period of `ℤ z + ℤ`, and the coefficients vanish. -/
+private theorem tateNormalFormCoeffs_pointedWeierstrassCurve_of_lt_three (hN : N < 3) (z : ℍ) :
+    (z.pointedWeierstrassCurve N).tateNormalFormCoeffs = (0, 0) := by
+  have h : ℘'[z.periodPair] (1 / N) = 0 := by
+    have h₁ : (1 : ℂ) ∈ z.periodPair.lattice := by simpa using z.periodPair.ω₂_mem_lattice
+    rw [derivWeierstrassP_eq_zero_iff]
+    interval_cases N
+    · simp
+    · convert add_mem h₁ h₁ using 1
+      norm_num
+    · simpa using h₁
+  rw [tateNormalFormCoeffs_pointedWeierstrassCurve, h]
+  simp
+
 /-- The division value `℘'(1 / N; ℤ z + ℤ)` is holomorphic. -/
 private theorem mdifferentiable_derivWeierstrassP_periodPair_one_div :
     MDiff fun z : ℍ ↦ ℘'[z.periodPair] (1 / N) := by
@@ -147,10 +163,12 @@ private theorem mdifferentiable_eval_Ψ₃_weierstrassP_one_div :
       ((mdifferentiable_const.mul hg₃).mul hx)).sub
         ((hg₂.pow 2).div mdifferentiable_const fun _ ↦ by norm_num)
 
-/-- For `N ≥ 3`, the first Tate normal form coefficient `a(z)` of `(E_z, 1 / N)` is holomorphic on
-`ℍ`. -/
-theorem mdifferentiable_fst_tateNormalFormCoeffs_pointedWeierstrassCurve (hN : 3 ≤ N) :
+/-- The first Tate normal form coefficient `a(z)` of `(E_z, 1 / N)` is holomorphic on `ℍ`. For
+`N < 3` it is identically `0`. -/
+theorem mdifferentiable_fst_tateNormalFormCoeffs_pointedWeierstrassCurve :
     MDiff fun z : ℍ ↦ (z.pointedWeierstrassCurve N).tateNormalFormCoeffs.1 := by
+  obtain hN | hN := lt_or_ge N 3
+  · simpa [tateNormalFormCoeffs_pointedWeierstrassCurve_of_lt_three hN] using mdifferentiable_const
   simp only [tateNormalFormCoeffs_pointedWeierstrassCurve]
   exact ((mdifferentiable_const.mul mdifferentiable_eval_Ψ₃_weierstrassP_one_div).mul
     ((mdifferentiable_const.mul (mdifferentiable_weierstrassP_periodPair_one_div.pow 2)).sub
@@ -158,14 +176,45 @@ theorem mdifferentiable_fst_tateNormalFormCoeffs_pointedWeierstrassCurve (hN : 3
     (mdifferentiable_derivWeierstrassP_periodPair_one_div.pow 4)
     fun z ↦ pow_ne_zero 4 (derivWeierstrassP_periodPair_one_div_ne_zero hN z)
 
-/-- For `N ≥ 3`, the second Tate normal form coefficient `b(z)` of `(E_z, 1 / N)` is holomorphic on
-`ℍ`. -/
-theorem mdifferentiable_snd_tateNormalFormCoeffs_pointedWeierstrassCurve (hN : 3 ≤ N) :
+/-- The second Tate normal form coefficient `b(z)` of `(E_z, 1 / N)` is holomorphic on `ℍ`. For
+`N < 3` it is identically `0`. -/
+theorem mdifferentiable_snd_tateNormalFormCoeffs_pointedWeierstrassCurve :
     MDiff fun z : ℍ ↦ (z.pointedWeierstrassCurve N).tateNormalFormCoeffs.2 := by
+  obtain hN | hN := lt_or_ge N 3
+  · simpa [tateNormalFormCoeffs_pointedWeierstrassCurve_of_lt_three hN] using mdifferentiable_const
   simp only [tateNormalFormCoeffs_pointedWeierstrassCurve]
   exact (mdifferentiable_eval_Ψ₃_weierstrassP_one_div.pow 3).div
     (mdifferentiable_derivWeierstrassP_periodPair_one_div.pow 8)
     fun z ↦ pow_ne_zero 8 (derivWeierstrassP_periodPair_one_div_ne_zero hN z)
+
+/-- **The Tate normal form coefficients are `Γ₁(N)`-invariant**: those of `(E_{γ z}, 1 / N)` and
+`(E_z, 1 / N)` agree for `γ ∈ Γ₁(N)`. -/
+theorem tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma1 N) (z : ℍ) :
+    ((γ • z).pointedWeierstrassCurve N).tateNormalFormCoeffs =
+      (z.pointedWeierstrassCurve N).tateNormalFormCoeffs := by
+  obtain rfl | hN := eq_zero_or_neZero N
+  · simp [tateNormalFormCoeffs_pointedWeierstrassCurve_of_lt_three]
+  obtain ⟨C, hC⟩ := exists_smul_pointedWeierstrassCurve_eq_iff.mpr ⟨γ, hγ, rfl⟩
+  rw [← hC, PointedWeierstrassCurve.tateNormalFormCoeffs_smul]
+
+/-- **The Tate normal form coefficients are `Γ₁(N)`-invariant**: those of `(E_{γ z}, 1 / N)` and
+`(E_z, 1 / N)` agree for `γ : Γ₁(N)`. -/
+@[simp]
+theorem tateNormalFormCoeffs_pointedWeierstrassCurve_smul (γ : Gamma1 N) (z : ℍ) :
+    ((γ • z).pointedWeierstrassCurve N).tateNormalFormCoeffs =
+      (z.pointedWeierstrassCurve N).tateNormalFormCoeffs :=
+  tateNormalFormCoeffs_pointedWeierstrassCurve_smul_of_mem γ.2 z
+
+/-- For `N ≥ 4`, the Tate normal form coefficients of `(E_z, 1 / N)` are those of an elliptic curve
+on which `(0, 0)` has exact order `N`. -/
+theorem tateNormalFormCoeffs_pointedWeierstrassCurve_mem_tateNormalFormExactOrder (hN : 4 ≤ N)
+    (z : ℍ) :
+    (z.pointedWeierstrassCurve N).tateNormalFormCoeffs ∈
+      PointedWeierstrassCurve.tateNormalFormExactOrder ℂ N :=
+  have : NeZero N := ⟨by omega⟩
+  PointedWeierstrassCurve.tateNormalFormCoeffs_mem_tateNormalFormExactOrder hN
+    (pointedWeierstrassCurve_mem_exactOrder z)
 
 end UpperHalfPlane
 
@@ -181,15 +230,23 @@ elliptic and `(0, 0)` has exact order `N`. -/
 noncomputable def gamma1QuotientEquivTateNormalForm (hN : 4 ≤ N) :
     MulAction.orbitRel.Quotient (Gamma1 N) ℍ ≃
       PointedWeierstrassCurve.tateNormalFormExactOrder ℂ N :=
-  haveI : NeZero N := ⟨by omega⟩
+  have : NeZero N := ⟨by omega⟩
   (gamma1QuotientEquivExactOrder N).trans
     (PointedWeierstrassCurve.exactOrderQuotientEquivTateNormalForm ℂ hN)
+
+/-- `gamma1QuotientEquivTateNormalForm` is the moduli bijection `gamma1QuotientEquivExactOrder`
+followed by the classification of points of order `N ≥ 4` by their Tate normal form. -/
+theorem gamma1QuotientEquivTateNormalForm_def [NeZero N] (hN : 4 ≤ N) :
+    gamma1QuotientEquivTateNormalForm N hN = (gamma1QuotientEquivExactOrder N).trans
+      (PointedWeierstrassCurve.exactOrderQuotientEquivTateNormalForm ℂ hN) :=
+  (rfl)
 
 @[simp]
 theorem coe_gamma1QuotientEquivTateNormalForm_mk (hN : 4 ≤ N) (z : ℍ) :
     (gamma1QuotientEquivTateNormalForm N hN ⟦z⟧ : ℂ × ℂ) =
       (z.pointedWeierstrassCurve N).tateNormalFormCoeffs := by
-  rw [gamma1QuotientEquivTateNormalForm, Equiv.trans_apply, gamma1QuotientEquivExactOrder_mk,
+  have : NeZero N := ⟨by omega⟩
+  rw [gamma1QuotientEquivTateNormalForm_def, Equiv.trans_apply, gamma1QuotientEquivExactOrder_mk,
     PointedWeierstrassCurve.coe_exactOrderQuotientEquivTateNormalForm_mk]
 
 end TauCeti
