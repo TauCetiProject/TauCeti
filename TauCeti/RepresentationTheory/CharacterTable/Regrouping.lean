@@ -60,7 +60,7 @@ namespace Representation
 
 open TauCeti
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
   [Invertible (Nat.card G : k)]
 variable {V : Type w} [AddCommGroup V] [Module k V] (ρ : Representation k G V)
 
@@ -98,7 +98,7 @@ namespace FDRep
 
 open TauCeti
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
   [Invertible (Nat.card G : k)]
 
 /-- **The regrouping in `FDRep k G`.** Every object `V` of `FDRep k G` is isomorphic to the direct
