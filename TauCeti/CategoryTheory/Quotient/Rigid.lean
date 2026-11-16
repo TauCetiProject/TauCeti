@@ -19,7 +19,9 @@ right rigidity and rigidity descend to the quotient.
 The duals follow `CategoryTheory.Functor.mapHasLeftDual` and
 `CategoryTheory.Functor.mapHasRightDual` along the strong monoidal quotient functor. The
 pairings are defined directly by mapping evaluations and coevaluations, without identity
-comparison morphisms, so that dual comparisons compute on the nose.
+comparison morphisms. These evaluations and coevaluations compute to the mapped source
+morphisms, as do exposed `ExactPairing.rightDualIso` comparisons built directly from them,
+such as `TauCeti.drinfeldIso`.
 The per-object dual instances use the caller's dual of the underlying object `X.as`, so they
 need a dual only on the corresponding side, not rigidity of the whole source category.
 
@@ -117,7 +119,8 @@ theorem coevaluation_rightDual (X : Quotient r) [HasRightDual X.as] :
 
 -- Keep dual-object equalities as explicit rewrites: simplifying dual arguments first would
 -- prevent the simplifier from recognizing dual-indexed trace and dimension identities.
--- Only evaluation and coevaluation at mapped objects are simplification rules.
+-- Keep their morphism descent equations explicit too, so inner rewrites do not obstruct
+-- outer rigid cancellation laws.
 /-- The left dual of the image of an object is the image of its chosen left dual. -/
 theorem leftDual_obj (X : C) [HasLeftDual X] :
     (ᘁ((functor r).obj X) : Quotient r) = (functor r).obj (ᘁX) :=
@@ -129,25 +132,21 @@ theorem rightDual_obj (X : C) [HasRightDual X] :
   rightDual_eq (Quotient.mk X)
 
 /-- Evaluation on the image of an object with its descended left dual. -/
-@[simp]
 theorem evaluation_leftDual_obj (X : C) [HasLeftDual X] :
     ε_ (ᘁ((functor r).obj X)) ((functor r).obj X) = (functor r).map (ε_ (ᘁX) X) :=
   evaluation_leftDual (Quotient.mk X)
 
 /-- Coevaluation on the image of an object with its descended left dual. -/
-@[simp]
 theorem coevaluation_leftDual_obj (X : C) [HasLeftDual X] :
     η_ (ᘁ((functor r).obj X)) ((functor r).obj X) = (functor r).map (η_ (ᘁX) X) :=
   coevaluation_leftDual (Quotient.mk X)
 
 /-- Evaluation on the image of an object with its descended right dual. -/
-@[simp]
 theorem evaluation_rightDual_obj (X : C) [HasRightDual X] :
     ε_ ((functor r).obj X) ((functor r).obj X)ᘁ = (functor r).map (ε_ X Xᘁ) :=
   evaluation_rightDual (Quotient.mk X)
 
 /-- Coevaluation on the image of an object with its descended right dual. -/
-@[simp]
 theorem coevaluation_rightDual_obj (X : C) [HasRightDual X] :
     η_ ((functor r).obj X) ((functor r).obj X)ᘁ = (functor r).map (η_ X Xᘁ) :=
   coevaluation_rightDual (Quotient.mk X)
@@ -192,19 +191,45 @@ theorem rightAdjointMate_map {X Y : C} [HasRightDual X] [HasRightDual Y] (f : X 
 
 /-- The dual comparison for the quotient functor is the identity: its chosen duals are
 exactly the images of the source duals. -/
-@[simp]
 theorem functor_mapRightDualIso (X : C) [HasRightDual X] :
     (functor r).mapRightDualIso X = Iso.refl _ := by
   apply Iso.ext
   apply ExactPairing.rightHom_ext (X := (functor r).obj X)
-  simpa using Functor.mapRightDualIso_hom_whiskerRight_evaluation (F := functor r) X
+  simpa [evaluation_rightDual_obj] using
+    Functor.mapRightDualIso_hom_whiskerRight_evaluation (F := functor r) X
+
+/-- The forward dual comparison is the identity on the image of the source dual. -/
+@[simp]
+theorem functor_mapRightDualIso_hom (X : C) [HasRightDual X] :
+    ((functor r).mapRightDualIso X).hom = 𝟙 ((functor r).obj Xᘁ) := by
+  rw [functor_mapRightDualIso, Iso.refl_hom]
+
+/-- The inverse dual comparison is the identity on the descended dual. -/
+@[simp]
+theorem functor_mapRightDualIso_inv (X : C) [HasRightDual X] :
+    ((functor r).mapRightDualIso X).inv = 𝟙 (((functor r).obj X)ᘁ) := by
+  exact congrArg Iso.inv (functor_mapRightDualIso (r := r) X)
+
+private theorem rightDualIso_eq_mapIso {X Y₁ Y₂ : C}
+    (p₁ : ExactPairing X Y₁) (p₂ : ExactPairing X Y₂)
+    (q₁ : ExactPairing ((functor r).obj X) ((functor r).obj Y₁))
+    (q₂ : ExactPairing ((functor r).obj X) ((functor r).obj Y₂))
+    (h₁ : @ExactPairing.evaluation _ _ _ _ _ q₁ =
+      (functor r).map (@ExactPairing.evaluation _ _ _ _ _ p₁))
+    (h₂ : @ExactPairing.evaluation _ _ _ _ _ q₂ =
+      (functor r).map (@ExactPairing.evaluation _ _ _ _ _ p₂)) :
+    rightDualIso q₁ q₂ = (functor r).mapIso (rightDualIso p₁ p₂) := by
+  let := q₂
+  apply Iso.ext
+  apply ExactPairing.rightHom_ext (X := (functor r).obj X)
+  rw [ExactPairing.rightDualIso_hom_whiskerRight_evaluation, h₁, h₂, Functor.mapIso_hom,
+    map_whiskerRight, ← Functor.map_comp, ExactPairing.rightDualIso_hom_whiskerRight_evaluation]
 
 section RightRigid
 
 variable [RightRigidCategory C]
 
 /-- The bidual comparison for the quotient functor is the identity. -/
-@[simp]
 theorem functor_mapDoubleRightDualIso (X : C) :
     (functor r).mapDoubleRightDualIso X = Iso.refl _ := by
   apply Iso.ext
@@ -212,57 +237,71 @@ theorem functor_mapDoubleRightDualIso (X : C) :
     Iso.refl_hom, Iso.refl_inv, Category.id_comp]
   exact rightAdjointMate_id
 
-/-- The tensor comparison of the right dual descends to the quotient. -/
+/-- The forward bidual comparison is the identity on the image of the source bidual. -/
 @[simp]
-theorem rightDualTensorIso_obj_hom (X Y : C) :
+theorem functor_mapDoubleRightDualIso_hom (X : C) :
+    ((functor r).mapDoubleRightDualIso X).hom = 𝟙 ((functor r).obj Xᘁᘁ) := by
+  rw [functor_mapDoubleRightDualIso, Iso.refl_hom]
+
+/-- The inverse bidual comparison is the identity on the descended bidual. -/
+@[simp]
+theorem functor_mapDoubleRightDualIso_inv (X : C) :
+    ((functor r).mapDoubleRightDualIso X).inv =
+      𝟙 ((((functor r).obj X : Quotient r)ᘁ : Quotient r)ᘁ) := by
+  exact congrArg Iso.inv (functor_mapDoubleRightDualIso (r := r) X)
+
+/-- The tensor comparison of the right dual descends to the quotient. -/
+theorem rightDualTensorIso_hom_obj (X Y : C) :
     (rightDualTensorIso ((functor r).obj X) ((functor r).obj Y)).hom =
       (functor r).map (rightDualTensorIso X Y).hom := by
-  let := (functor r).mapExactPairing (X ⊗ Y) (Yᘁ ⊗ Xᘁ)
-  apply ExactPairing.rightHom_ext (X := (functor r).obj (X ⊗ Y))
-    (Y := (functor r).obj (Yᘁ ⊗ Xᘁ))
-  simp only [Functor.mapExactPairing_evaluation, functor_μ, functor_η,
-    Category.id_comp, Category.comp_id, map_whiskerRight, ← Functor.map_comp]
-  have h := TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation
-    (X := (functor r).obj X) (Y := (functor r).obj Y)
-  simp only [ExactPairing.tensor_evaluation, evaluation_rightDual] at h ⊢
-  -- With the descended evaluations explicit, the quotient's tensor and whiskering composites
-  -- are the source composites mapped as a whole, without transporting their dependent endpoints.
-  exact h.trans (congrArg (functor r).map
-    (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation (X := X) (Y := Y)).symm)
+  exact congrArg Iso.hom (rightDualIso_eq_mapIso (r := r)
+    (X := X ⊗ Y) (Y₁ := (X ⊗ Y)ᘁ) (Y₂ := Yᘁ ⊗ Xᘁ)
+    HasRightDual.exact (ExactPairing.tensor (X₁ := X) (X₂ := Y)
+      (Y₁ := Xᘁ) (Y₂ := Yᘁ)) HasRightDual.exact
+    (@ExactPairing.tensor _ _ _ _ _ _ _
+      (instHasRightDualObj (r := r) X).exact (instHasRightDualObj (r := r) Y).exact)
+    (evaluation_rightDual_obj (X ⊗ Y)) (by
+      have hQ := ExactPairing.tensor_evaluation
+        (X₁ := (functor r).obj X) (X₂ := (functor r).obj Y)
+        (Y₁ := ((functor r).obj X)ᘁ) (Y₂ := ((functor r).obj Y)ᘁ)
+      have hC := congrArg (functor r).map
+        (ExactPairing.tensor_evaluation (X₁ := X) (X₂ := Y) (Y₁ := Xᘁ) (Y₂ := Yᘁ))
+      simp only [monoidalComp, evaluation_rightDual_obj] at hQ
+      simp only [monoidalComp] at hC
+      -- After expanding coherence, only primitive quotient associators, unitors and
+      -- whiskering remain; these compute to the source composites with fixed endpoints.
+      exact hQ.trans hC.symm))
 
 /-- The inverse tensor comparison of the right dual also descends. -/
-@[simp]
-theorem rightDualTensorIso_obj_inv (X Y : C) :
+theorem rightDualTensorIso_inv_obj (X Y : C) :
     (rightDualTensorIso ((functor r).obj X) ((functor r).obj Y)).inv =
       (functor r).map (rightDualTensorIso X Y).inv := by
   have h : rightDualTensorIso ((functor r).obj X) ((functor r).obj Y) =
-      (functor r).mapIso (rightDualTensorIso X Y) := Iso.ext (rightDualTensorIso_obj_hom X Y)
+      (functor r).mapIso (rightDualTensorIso X Y) := Iso.ext (rightDualTensorIso_hom_obj X Y)
   exact congrArg Iso.inv h
 
 /-- The tensorator of the double right dual is the class of its original tensorator. -/
-@[simp]
 theorem doubleRightDualFunctor_μ_obj (X Y : C) :
     μ (doubleRightDualFunctor (Quotient r)) ((functor r).obj X) ((functor r).obj Y) =
       (functor r).map (μ (doubleRightDualFunctor C) X Y) := by
-  rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, rightDualTensorIso_obj_hom]
+  rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, rightDualTensorIso_hom_obj]
   -- Rewriting the inverse comparison cannot match the descended duals with mapped source
   -- duals at the rewriter's transparency, including the composite's fixed bidual endpoints.
   -- Compose the descent equations as terms, using the chosen duals' definitional identification.
-  exact (congrArg₂ (· ≫ ·) (rightDualTensorIso_obj_inv Yᘁ Xᘁ)
+  exact (congrArg₂ (· ≫ ·) (rightDualTensorIso_inv_obj Yᘁ Xᘁ)
     (rightAdjointMate_map (r := r) (rightDualTensorIso X Y).hom)).trans
       ((functor r).map_comp _ _).symm
 
 /-- The inverse tensorator of the double right dual descends to the quotient. -/
-@[simp]
 theorem doubleRightDualFunctor_δ_obj (X Y : C) :
     δ (doubleRightDualFunctor (Quotient r)) ((functor r).obj X) ((functor r).obj Y) =
       (functor r).map (δ (doubleRightDualFunctor C) X Y) := by
-  rw [doubleRightDualFunctor_δ, doubleRightDualFunctor_δ, rightDualTensorIso_obj_inv]
+  rw [doubleRightDualFunctor_δ, doubleRightDualFunctor_δ, rightDualTensorIso_inv_obj]
   -- As for the tensorator, rewriting cannot match the tensor comparison at descended duals
   -- with its mapped-source form while retaining the composite's fixed bidual endpoints.
   -- Term congruence uses their definitional identification without abstracting those endpoints.
   exact (congrArg₂ (· ≫ ·) (rightAdjointMate_map (r := r) (rightDualTensorIso X Y).inv)
-    (rightDualTensorIso_obj_hom Yᘁ Xᘁ)).trans ((functor r).map_comp _ _).symm
+    (rightDualTensorIso_hom_obj Yᘁ Xᘁ)).trans ((functor r).map_comp _ _).symm
 
 /-- The identification of the chosen right dual of the unit with the unit descends. The
 rigid category's choice is explicit, since the unit also has a canonical self-duality. -/
@@ -271,20 +310,14 @@ theorem rightDualIso_exactPairingUnit_hom :
       (functor r).map (rightDualIso
         (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom := by
   let : HasRightDual (𝟙_ C) := RightRigidCategory.rightDual _
-  let := (functor r).mapExactPairing (𝟙_ C) (𝟙_ C)
-  apply ExactPairing.rightHom_ext (X := (functor r).obj (𝟙_ C))
-    (Y := (functor r).obj (𝟙_ C))
-  simp only [Functor.mapExactPairing_evaluation, functor_μ, functor_η,
-    Category.id_comp, Category.comp_id, map_whiskerRight, ← Functor.map_comp]
-  have h := ExactPairing.rightDualIso_hom_whiskerRight_evaluation
-    (RightRigidCategory.rightDual (𝟙_ (Quotient r))).exact exactPairingUnit
-  have hC := ExactPairing.rightDualIso_hom_whiskerRight_evaluation
-    (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit
-  rw [ExactPairing.unit_evaluation] at h hC ⊢
-  -- The quotient right unitor and the rigid structure's chosen unit dual compute to
-  -- the mapped source unitor and dual, respectively, with no endpoint transport.
-  exact h.trans ((evaluation_rightDual_obj (𝟙_ C)).trans
-    (congrArg (functor r).map hC.symm))
+  exact congrArg Iso.hom (rightDualIso_eq_mapIso (r := r)
+    (RightRigidCategory.rightDual (𝟙_ C)).exact (exactPairingUnit (C := C))
+    (RightRigidCategory.rightDual (𝟙_ (Quotient r))).exact
+    (exactPairingUnit (C := Quotient r))
+    (evaluation_rightDual_obj (𝟙_ C)) (by
+      exact (ExactPairing.unit_evaluation (C := Quotient r)).trans
+        ((rightUnitor_hom_obj (r := r) (𝟙_ C)).trans
+          (congrArg (functor r).map (ExactPairing.unit_evaluation (C := C))).symm)))
 
 /-- The inverse identification of the chosen unit dual descends. -/
 theorem rightDualIso_exactPairingUnit_inv :

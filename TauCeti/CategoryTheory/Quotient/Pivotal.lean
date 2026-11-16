@@ -53,15 +53,14 @@ noncomputable instance instPivotalCategory : PivotalCategory (Quotient r) where
       exact congrArg (functor r).map h
     tensor := by
       rintro ⟨X⟩ ⟨Y⟩
-      -- Unfolding components alone leaves the bidual functor's object wrappers in their types.
-      change 𝟙 _ ≫ (functor r).map (PivotalCategory.pivotalIso.app (X ⊗ Y)).hom =
-        ((functor r).map (PivotalCategory.pivotalIso.app X).hom ⊗ₘ
-          (functor r).map (PivotalCategory.pivotalIso.app Y).hom) ≫
-          μ (doubleRightDualFunctor (Quotient r)) ((functor r).obj X) ((functor r).obj Y)
-      rw [Category.id_comp, doubleRightDualFunctor_μ_obj, map_tensorHom_map]
+      rw [Functor.LaxMonoidal.id_μ, Category.id_comp]
       have h := pivotalIsoApp_tensor_hom X Y
       simp only [← TauCeti.pivotalIso_hom_app] at h
-      exact (congrArg (functor r).map h).trans ((functor r).map_comp _ _) }
+      -- Components are definitionally mapped source components; term congruence keeps
+      -- their dependent bidual endpoints together when comparing the tensorators.
+      exact ((congrArg (functor r).map h).trans ((functor r).map_comp _ _)).trans
+        (congrArg₂ (· ≫ ·) (map_tensorHom_map _ _).symm
+          (doubleRightDualFunctor_μ_obj X Y).symm) }
 
 /-- Each descended pivotal component is the class of the original component. -/
 theorem pivotalIsoApp_hom (X : Quotient r) :
@@ -76,14 +75,12 @@ theorem pivotalIsoApp_inv (X : Quotient r) :
   rfl
 
 /-- The pivotal component at an image object is the image of its source component. -/
-@[simp]
-theorem pivotalIsoApp_obj_hom (X : C) :
+theorem pivotalIsoApp_hom_obj (X : C) :
     (pivotalIsoApp ((functor r).obj X)).hom = (functor r).map (pivotalIsoApp X).hom :=
   pivotalIsoApp_hom (Quotient.mk X)
 
 /-- The inverse pivotal component at an image object is the image of its source inverse. -/
-@[simp]
-theorem pivotalIsoApp_obj_inv (X : C) :
+theorem pivotalIsoApp_inv_obj (X : C) :
     (pivotalIsoApp ((functor r).obj X)).inv = (functor r).map (pivotalIsoApp X).inv :=
   pivotalIsoApp_inv (Quotient.mk X)
 
@@ -92,7 +89,7 @@ instance isPivotal_functor : (functor r).IsPivotal :=
   Functor.isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom.mpr fun X => by
     rw [functor_mapDoubleRightDualIso, Iso.refl_hom]
     -- Descended bidual endpoints are definitionally the images of source biduals.
-    exact (Category.comp_id _).trans (pivotalIsoApp_obj_hom X).symm
+    exact (Category.comp_id _).trans (pivotalIsoApp_hom_obj X).symm
 
 /-- A pivotal functor identifying related morphisms factors as a pivotal functor. -/
 instance isPivotal_lift {D : Type*} [Category* D] [MonoidalCategory D] [RigidCategory D]
