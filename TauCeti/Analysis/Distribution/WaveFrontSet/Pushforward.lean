@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
+import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.Basic
@@ -33,8 +34,8 @@ The localized Fourier transform of `Φ_* (χ T)` with cutoff `f` at `η` pairs `
 the atom `e_η ∘ A` is the atom of `E` at `Aᵀ η` (`Distribution.localFourier_cutoffPushforwardCLM`).
 For a nonlinear map it is not an atom, and near a point `x₀` the argument runs as follows. Let
 `φ` be a cutoff equal to one near `x₀` such that `η' ↦ T (φ e_η')` decays rapidly in an open cone
-`Γ` around `(DΦ x₀)ᵀ η`. Expanding `ψ (e_η ∘ Φ)` in a Fourier series on a compact set around the
-support of `φ` gives (`Distribution.exists_hasSum_complexPairing`)
+`Γ` around `(DΦ x₀)ᵀ η`. Expanding `ψ (e_η ∘ Φ)` in a Fourier series on the support of `φ`
+gives (`Distribution.hasSum_fourier_mul_localFourier`)
 
 `T (ψ (e_η ∘ Φ)) = ∑ m, c 𝓕(ψ (e_η ∘ Φ))(m) T (φ e_(-m))`
 
@@ -434,7 +435,13 @@ private theorem exists_nhds_cone_pullbackFourier {Φ : E → E'} (hΦ : ContDiff
   have hφU : tsupport φ ⊆ U :=
     hφs.trans (ball_subset_closedBall.trans (hρU.trans inter_subset_left))
   -- `T ψ` expands in the localized Fourier transforms of `T` with cutoff `φ`.
-  obtain ⟨L, hL, c₀, hexp⟩ := exists_hasSum_complexPairing T φ
+  obtain ⟨L₀, _, _, hL₀⟩ :=
+    ZLattice.exists_forall_add_mem_eq_zero_of_isBounded φ.hasCompactSupport.isCompact.isBounded
+  obtain ⟨L, hL, c₀, hexp⟩ : ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L) (c₀ : ℂ),
+      ∀ ψ : 𝓓(Ω, ℂ), EqOn (φ : E → ℂ) 1 (support ψ) →
+        HasSum (fun m : L ↦ c₀ * 𝓕 (ψ : E → ℂ) m * T.localFourier φ (-m))
+          (T.complexPairing ψ) :=
+    ⟨_, inferInstance, _, fun _ hψ => hasSum_fourier_mul_localFourier T φ L₀ hL₀ hψ⟩
   obtain ⟨C₁, k, hpoly⟩ := exists_norm_localFourier_le T φ
   have hw := ZLattice.summable_one_add_norm_pow_inv L (r := Module.finrank ℤ L + 1) (by omega)
   refine ⟨ball x₀ (ρ / 2), ball_mem_nhds x₀ (by positivity), Γ', hΓ'o, hηΓ', hΓ'cone,
@@ -448,7 +455,7 @@ private theorem exists_nhds_cone_pullbackFourier {Φ : E → E'} (hΦ : ContDiff
   refine ⟨‖c₀‖ * max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB) *
     ∑' m : L, ((1 + ‖(m : E)‖) ^ r)⁻¹, fun v hv => ?_⟩
   have hsum := (hexp (pullbackAtom hΦ ψ v) fun x hx => hφ1.self_of_nhdsSet x
-    (hψK (tsupport_bilinLeftCLM_subset _ _ ψ hx))).const_smul ((1 + ‖v‖) ^ N)
+    (hψK (tsupport_bilinLeftCLM_subset _ _ ψ (subset_tsupport _ hx)))).const_smul ((1 + ‖v‖) ^ N)
   have h := hsum.norm_le_of_bounded (hw.hasSum.mul_left (‖c₀‖ *
     max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB))) fun m =>
       norm_one_add_pow_smul_mul_le hΦ T φ ψ c₀ ha hCA hpoly v m (hCB v hv m)
