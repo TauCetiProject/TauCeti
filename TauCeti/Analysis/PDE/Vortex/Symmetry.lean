@@ -94,6 +94,11 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
   funext z
   simp [add_assoc]
 
+/-- A translated `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) :=
+  hx.comp (contDiff_id.add contDiff_const)
+
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
 theorem fderiv_translateField_apply (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ)
