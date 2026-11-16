@@ -530,34 +530,30 @@ variable {F K V : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
   [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
   [AddCommGroup V] [Module F V] [FiniteDimensional F V]
 
-/-- The base change of a symmetric positive definite form is positive definite: an orthogonal
-basis `v` base-changes to an orthogonal basis `w` of `B.baseChange K`, whose diagonal values are
-the images of the positive diagonal values of `B`. -/
 private theorem posDef_toQuadraticMap_baseChange_of_isSymm {B : LinearMap.BilinForm F V}
     (hB : B.IsSymm) (h : B.toQuadraticMap.PosDef) : (B.baseChange K).toQuadraticMap.PosDef := by
-  intro z hz
   let _ : Invertible (2 : F) := invertibleOfNonzero two_ne_zero
+  let _ : Invertible (2 : K) := (Invertible.map (algebraMap F K) 2).copy 2 (map_ofNat _ _).symm
+  -- An orthogonal basis `v` base-changes to an orthogonal basis `w` of `B.baseChange K`, whose
+  -- diagonal values are the images of the positive diagonal values of `B`.
   obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp hB)
   set w := v.baseChange K
+  have hassoc : QuadraticMap.associated (R := K) (B.baseChange K).toQuadraticMap = B.baseChange K :=
+    QuadraticMap.associated_left_inverse K (IsSymm.baseChange K (isSymm_iff.mp hB)).eq
   have hw (i j) : B.baseChange K (w i) (w j) = algebraMap F K (B (v i) (v j)) := by
     simp [w, Basis.baseChange_apply, baseChange_tmul, Algebra.algebraMap_eq_smul_one]
-  have hpos (i) : 0 < algebraMap F K (B (v i) (v i)) := by
-    rw [← LinearMap.BilinMap.toQuadraticMap_apply]
+  have hortho : (QuadraticMap.associated (R := K) (B.baseChange K).toQuadraticMap).IsOrthoᵢ w := by
+    intro i j hij
+    simp only [Function.onFun, hassoc, hw, hv hij, map_zero]
+  have hpos (i) : 0 < (B.baseChange K).toQuadraticMap (w i) := by
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hw]
     exact algebraMap_pos K (h _ (v.ne_zero i))
-  -- So in the basis `w`, the form is a sum of squares with positive weights.
-  have hz' : B.baseChange K z z =
-      ∑ i, w.repr z i * w.repr z i * algebraMap F K (B (v i) (v i)) := by
-    conv_lhs => rw [← w.sum_repr z]
-    simp only [sum_left, sum_right, smul_left, smul_right, hw]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [hv hji, map_zero, mul_zero]) (by simp)]
-    ring
-  obtain ⟨i, hi⟩ : ∃ i, w.repr z i ≠ 0 := by
-    by_contra! h0
-    exact hz (w.repr.injective (by ext i; simp [h0]))
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, hz']
-  exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (mul_self_nonneg _) (hpos j).le)
-    ⟨i, Finset.mem_univ _, mul_pos (mul_self_pos.mpr hi) (hpos i)⟩
+  have hQ : (B.baseChange K).toQuadraticMap =
+      ((B.baseChange K).toQuadraticMap.basisRepr w).comp w.equivFun.toLinearMap := by
+    ext z
+    simp [QuadraticMap.basisRepr]
+  rw [hQ, QuadraticMap.basisRepr_eq_of_iIsOrtho _ w hortho]
+  exact ((QuadraticMap.posDef_weightedSumSquares_iff _).mpr hpos).comp _ w.equivFun.injective
 
 /-- **Positive definiteness is preserved and reflected by an ordered scalar extension.** For a
 bilinear form on a finite-dimensional space over an ordered field `F`, and a linearly ordered
