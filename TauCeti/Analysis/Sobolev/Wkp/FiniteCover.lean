@@ -38,6 +38,8 @@ from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
 * `TauCeti.Wkp.norm_le_sum_norm_restrictL`: `‖u‖ ≤ ∑ᵢ ‖u|_{V i}‖` for a finite open cover.
 * `TauCeti.Wkp.restrictCompatibleEquiv`: `W^{k,p}(Ω) ≃L[ℝ]` compatible families over a finite
   open cover.
+* `TauCeti.Wkp.exists_continuousLinearMap_value_ae_eq`: continuous linear maps into the members
+  of a finite open cover with consistent values glue to a continuous linear map into `W^{k,p}(Ω)`.
 * `TauCeti.Wkp.isCompactOperator_of_restrictL`: compactness of maps into `W^{k,p}(Ω)` is local on
   a finite open cover.
 
@@ -225,6 +227,39 @@ theorem norm_restrictCompatibleEquiv_symm_le [Fintype ι] {V : ι → Opens E}
   have h := norm_le_card_mul_norm_restrictCompatibleL hle hcov k
     ((restrictCompatibleEquiv hle hcov k).symm w)
   rwa [← restrictCompatibleEquiv_apply hle hcov, ContinuousLinearEquiv.apply_symm_apply] at h
+
+/-- **Gluing continuous linear maps over a finite open cover.** If finitely many open sets
+`V i ⊆ Ω` cover `Ω` and the continuous linear maps `T i : X → W^{k,p}(V i)` give, for every `x`,
+elements whose values are those of one function `g x` almost everywhere on `V i`, then there is a
+continuous linear map `X → W^{k,p}(Ω)` whose value at `x` is `g x` almost everywhere on `Ω`. -/
+theorem exists_continuousLinearMap_value_ae_eq [Finite ι] {X : Type*} [TopologicalSpace X]
+    [AddCommMonoid X] [Module ℝ X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+    (hcov : Omega ≤ ⨆ i, V i) {k : ℕ} (T : ∀ i, X →L[ℝ] Wkp mu (V i) p k) (g : X → E → ℝ)
+    (hT : ∀ i x, (value k (T i x) : E → ℝ) =ᵐ[mu.restrict (V i)] g x) :
+    ∃ G : X →L[ℝ] Wkp mu Omega p k, ∀ x, (value k (G x) : E → ℝ) =ᵐ[mu.restrict Omega] g x := by
+  have := Fintype.ofFinite ι
+  -- The members of the family agree on overlaps, since they all have the values of `g x`.
+  have hcompat (x : X) : (fun i ↦ T i x) ∈ compatibleFamilies mu p V k :=
+    mem_compatibleFamilies.2 fun i j ↦ ext k <| Lp.ext <| by
+      filter_upwards [value_restrictL_ae inf_le_left k (T i x),
+        value_restrictL_ae inf_le_right k (T j x),
+        ae_restrict_of_ae_restrict_of_subset Set.inter_subset_left (hT i x),
+        ae_restrict_of_ae_restrict_of_subset Set.inter_subset_right (hT j x)] with y h₁ h₂ h₃ h₄
+      rw [h₁, h₂, h₃, h₄]
+  let G := (restrictCompatibleEquiv hle hcov k).symm.toContinuousLinearMap.comp
+    ((ContinuousLinearMap.pi T).codRestrict _ hcompat)
+  refine ⟨G, fun x ↦ ?_⟩
+  -- On each member of the cover, the glued function restricts to the corresponding member.
+  have hpiece (i : ι) : (value k (G x) : E → ℝ) =ᵐ[mu.restrict (V i)] g x := by
+    have hrestrict : restrictL (hle i) k (G x) = T i x :=
+      restrictL_restrictCompatibleEquiv_symm hle hcov k
+        ((ContinuousLinearMap.pi T).codRestrict _ hcompat x) i
+    refine (value_restrictL_ae (hle i) k (G x)).symm.trans ?_
+    rw [hrestrict]
+    exact hT i x
+  have hsub : (Omega : Set E) ⊆ ⋃ i, (V i : Set E) := by
+    simpa only [Opens.coe_iSup] using SetLike.coe_subset_coe.2 hcov
+  exact ae_restrict_of_ae_restrict_of_subset hsub ((ae_restrict_iUnion_iff _ _).2 hpiece)
 
 /-- **Compactness is local on a finite open cover.** If finitely many open sets `V i ⊆ Ω` cover
 `Ω`, a map into `W^{k,p}(Ω)` is a compact operator as soon as its restrictions to all `V i` are. -/
