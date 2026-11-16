@@ -188,7 +188,8 @@ distribution of `f ∈ Lᵖ(μ)` is the distribution of `f ∘ φ ∈ Lᵖ(μ)`,
 theorem exists_compCLM_toTemperedDistribution_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     {c : ℝ} (hc : 0 < c) (hdet : ∀ x, c ≤ |(fderiv ℝ φ x).det|) (f : Lp F p μ) :
-    ∃ v : Lp F p μ, compCLM F φ hφ hψ (f : 𝓢'(E, F)) = v ∧ ‖v‖ ≤ c⁻¹ ^ p.toReal⁻¹ * ‖f‖ := by
+    ∃ v : Lp F p μ, compCLM F φ hφ hψ (f : 𝓢'(E, F)) = v ∧ v =ᵐ[μ] f ∘ φ ∧
+      ‖v‖ ≤ c⁻¹ ^ p.toReal⁻¹ * ‖f‖ := by
   have hdiff : DifferentiableOn ℝ φ Set.univ := (hφ.1.differentiable (by simp)).differentiableOn
   have hle := eLpNorm_comp_restrict_le (μ := μ) (p := p) isOpen_univ hdiff φ.injective.injOn
     subset_rfl MeasurableSet.univ hc (fun x _ ↦ hdet x) f
@@ -196,7 +197,7 @@ theorem exists_compCLM_toTemperedDistribution_eq_and_norm_le [CompleteSpace F] {
     isOpen_univ hdiff φ.injective.injOn subset_rfl MeasurableSet.univ hc (fun x _ ↦ hdet x)
   rw [Set.image_univ_of_surjective φ.surjective, Measure.restrict_univ] at hle
   rw [Measure.restrict_univ] at hmem
-  refine ⟨hmem.toLp _, ?_, ?_⟩
+  refine ⟨hmem.toLp _, ?_, hmem.coeFn_toLp, ?_⟩
   · ext g
     rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
       SchwartzMap.integral_pushforwardCLM_smul ℂ μ hφ hψ g f]

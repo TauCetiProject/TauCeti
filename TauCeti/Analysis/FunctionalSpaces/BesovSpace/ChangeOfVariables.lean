@@ -139,7 +139,7 @@ private theorem exists_compCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] 
     (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth) {J : ℝ}
     (hJ : 1 ≤ J) (hdet : ∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) (f : Lp F p (volume : Measure E)) :
     ∃ v : Lp F p (volume : Measure E), compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)) = v ∧ ‖v‖ ≤ J * ‖f‖ := by
-  obtain ⟨v, hv, hvn⟩ := exists_compCLM_toTemperedDistribution_eq_and_norm_le volume hΦ hΨ
+  obtain ⟨v, hv, -, hvn⟩ := exists_compCLM_toTemperedDistribution_eq_and_norm_le volume hΦ hΨ
     (inv_pos.2 (zero_lt_one.trans_le hJ)) hdet f
   refine ⟨v, hv, hvn.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
   rw [inv_inv]
