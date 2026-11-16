@@ -193,6 +193,7 @@ theorem toStarPositiveFunctional_toLinearMap (h : AlgebraicHaar A) :
   (rfl)
 
 /-- An `AlgebraicHaar` integral on a complex star algebra commutes with `star`. -/
+@[simp]
 theorem map_star [StarModule ℂ A] (h : AlgebraicHaar A) (a : A) :
     h (star a) = star (h a) :=
   h.toStarPositiveFunctional.map_star a
