@@ -421,6 +421,14 @@ theorem bidegree_fst (x : GridState n) : (G.bidegree x).1 = G.1.maslovOℤ x :=
 theorem bidegree_snd (x : GridState n) : (G.bidegree x).2 = G.alexanderℤ x :=
   by rw [bidegree]
 
+/-- Diagonal reflection preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
+@[simp]
+theorem bidegree_transpose (x : GridState n) :
+    G.transpose.bidegree x.transpose = G.bidegree x := by
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst, val_transpose, GridDiagram.maslovOℤ_transpose]
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_transpose]
+
 /-- The finite set of bidegrees occupied by grid states. -/
 noncomputable def bidegreeSupport : Finset (ℤ × ℤ) :=
   Finset.univ.image G.bidegree

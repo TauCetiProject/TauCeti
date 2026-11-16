@@ -108,14 +108,6 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) {R : Type*} [CommSemiring R] {i : Fin n}
 
-/-- Diagonal reflection preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
-@[simp]
-theorem bidegree_transpose (x : GridState n) :
-    G.transpose.bidegree x.transpose = G.bidegree x := by
-  refine Prod.ext ?_ ?_
-  · rw [bidegree_fst, bidegree_fst, val_transpose, GridDiagram.maslovOℤ_transpose]
-  · rw [bidegree_snd, bidegree_snd, alexanderℤ_transpose]
-
 /-- Diagonal reflection, renaming the surviving variables along `G.O`, identifies the homogeneous
 pieces of the specialized complexes blocking `i` and `G.O i`.
 
@@ -124,26 +116,10 @@ theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff {g : ℤ × �
     {c : GridChainHat R n i} :
     G.1.simplyBlockedTransposeEquiv R i c ∈
         G.transpose.bigradedChainHatPiece R (G.1.O i) g ↔
-      c ∈ G.bigradedChainHatPiece R i g := by
-  classical
-  have hs (x : GridState n) :
-      (G.1.simplyBlockedTransposeEquiv R i c x.transpose).support =
-        (c x).support.image (Finsupp.mapDomain (G.1.O.toPerm.subtypeEquiv
-          fun _ => not_congr G.1.O.toPerm.injective.eq_iff.symm)) := by
-    rw [GridDiagram.simplyBlockedTransposeEquiv_apply, GridState.transpose_transpose,
-      simplyBlockedRenameEquiv_apply, support_rename_of_injective (Equiv.injective _)]
-  rw [mem_bigradedChainHatPiece, mem_bigradedChainHatPiece]
-  constructor
-  · intro hc x e he
-    have hx := hc x.transpose (e.mapDomain _)
-      (by rw [hs]; exact Finset.mem_image_of_mem _ he)
-    rwa [bidegree_transpose, Finsupp.degree_mapDomain] at hx
-  · intro hc x e he
-    obtain ⟨x, rfl⟩ : ∃ x', x'.transpose = x := ⟨x.transpose, GridState.transpose_transpose x⟩
-    rw [hs, Finset.mem_image] at he
-    obtain ⟨e, he, rfl⟩ := he
-    rw [bidegree_transpose, Finsupp.degree_mapDomain]
-    exact hc x e he
+      c ∈ G.bigradedChainHatPiece R i g :=
+  mem_bigradedChainHatPiece_iff_of_rename (φ := GridState.transpose) (κ := G.1.O.toPerm)
+    (fun x => ⟨x.transpose, GridState.transpose_transpose x⟩) G.bidegree_transpose
+    (fun x => by rw [GridDiagram.simplyBlockedTransposeEquiv_apply, GridState.transpose_transpose])
 
 end OddComponentGridDiagram
 

@@ -47,9 +47,11 @@ comparison with topological embeddings in `S³` is used here.
 * `TauCeti.GridLink.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_eq_of_toGridLink_eq` and
   `TauCeti.GridLink.IsKnot.gradedSimplyBlockedHomologyEulerChar_eq_of_toGridLink_eq`: evaluate both
   invariants on any presenting knot diagram and blocked column.
-* `TauCeti.GridDiagram.bigradedSimplyBlockedHomologyPoincareSeries_unknot` and
-  `TauCeti.GridLink.bigradedSimplyBlockedHomologyPoincareSeries_unknot`: both invariants equal `1`
-  on standard unknot grids of every size and on `GridLink.unknot`.
+* `TauCeti.GridDiagram.bigradedSimplyBlockedHomologyPoincareSeries_unknot`,
+  `TauCeti.GridLink.bigradedSimplyBlockedHomologyPoincareSeries_unknot`,
+  `TauCeti.GridDiagram.gradedSimplyBlockedHomologyEulerChar_unknot`, and
+  `TauCeti.GridLink.gradedSimplyBlockedHomologyEulerChar_unknot`: both invariants equal `1` on
+  standard unknot grids of every size and on `GridLink.unknot`.
 
 ## References
 

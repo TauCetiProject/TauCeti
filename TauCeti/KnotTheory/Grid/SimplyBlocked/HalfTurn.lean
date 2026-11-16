@@ -138,14 +138,6 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) {R : Type*} [CommSemiring R] {i : Fin n}
 
-/-- The half-turn preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
-@[simp]
-theorem bidegree_rotate_halfTurn (x : GridState n) :
-    G.rotate.bidegree x.halfTurn = G.bidegree x := by
-  refine Prod.ext ?_ ?_
-  · rw [bidegree_fst, bidegree_fst, val_rotate, GridDiagram.maslovOℤ_rotate_halfTurn]
-  · rw [bidegree_snd, bidegree_snd, alexanderℤ_rotate_halfTurn]
-
 /-- The half-turn, renaming the surviving variables along `Fin.revPerm`, identifies the
 homogeneous pieces of the specialized complexes blocking `i` and `i.rev`.
 
@@ -154,26 +146,10 @@ theorem simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff {g : ℤ × ℤ
     {c : GridChainHat R n i} :
     GridChain.simplyBlockedHalfTurnEquiv R i c ∈
         G.rotate.bigradedChainHatPiece R (Fin.revPerm i) g ↔
-      c ∈ G.bigradedChainHatPiece R i g := by
-  classical
-  have hs (x : GridState n) :
-      (GridChain.simplyBlockedHalfTurnEquiv R i c x.halfTurn).support =
-        (c x).support.image (Finsupp.mapDomain ((Fin.revPerm (n := n)).subtypeEquiv
-          fun _ => not_congr (Fin.revPerm (n := n)).injective.eq_iff.symm)) := by
-    rw [GridChain.simplyBlockedHalfTurnEquiv_apply, GridState.halfTurn_halfTurn,
-      simplyBlockedRenameEquiv_apply, support_rename_of_injective (Equiv.injective _)]
-  rw [mem_bigradedChainHatPiece, mem_bigradedChainHatPiece]
-  constructor
-  · intro hc x e he
-    have hx := hc x.halfTurn (e.mapDomain _)
-      (by rw [hs]; exact Finset.mem_image_of_mem _ he)
-    rwa [bidegree_rotate_halfTurn, Finsupp.degree_mapDomain] at hx
-  · intro hc x e he
-    obtain ⟨x, rfl⟩ : ∃ x', x'.halfTurn = x := ⟨x.halfTurn, GridState.halfTurn_halfTurn x⟩
-    rw [hs, Finset.mem_image] at he
-    obtain ⟨e, he, rfl⟩ := he
-    rw [bidegree_rotate_halfTurn, Finsupp.degree_mapDomain]
-    exact hc x e he
+      c ∈ G.bigradedChainHatPiece R i g :=
+  mem_bigradedChainHatPiece_iff_of_rename (φ := GridState.halfTurn) (κ := Fin.revPerm)
+    GridState.halfTurn_involutive.surjective G.bidegree_rotate_halfTurn
+    (fun x => by rw [GridChain.simplyBlockedHalfTurnEquiv_apply, GridState.halfTurn_halfTurn])
 
 end OddComponentGridDiagram
 

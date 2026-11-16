@@ -29,10 +29,10 @@ surjective because `v` acts by zero on homology.
 
 A surjection `π : N → P` with kernel `range f` for an injective chain map `f : M → N` makes
 `(a, b) ↦ π b` a quasi-isomorphism from `LinearMap.mappingCone d e f` to `P`
-(`LinearMap.mappingConeProjectionHomologyEquiv`), while a homotopy `e ∘ h + h ∘ d = f - g` gives a
-cone isomorphism `(a, b) ↦ (a, h a + b)` (`LinearMap.mappingConeHomotopyEquiv`). Composing them
-compares the quotients of `(M, d)` by homotopic injective endomorphisms `f₁` and `f₂`
-(`LinearMap.homologyEquivOfHomotopicInjective`), sending `[π₁ b]` (for `f₁ a + d b = 0`) to
+(`LinearMap.mappingConeProjectionHomologyEquiv`). Composing it with the mapping-cone shearing
+isomorphism `LinearMap.mappingConeHomologyEquivOfHomotopy` for a homotopy `e ∘ h + h ∘ d = f₁ - f₂`
+compares the quotients of `(N, e)` by homotopic injective chain maps `f₁, f₂ : M → N`
+(`LinearMap.homologyEquivOfHomotopicInjective`), sending `[π₁ b]` (for `f₁ a + e b = 0`) to
 `[π₂ (h a + b)]`.
 
 ## Main definitions
@@ -43,9 +43,9 @@ compares the quotients of `(M, d)` by homotopic injective endomorphisms `f₁` a
   along a surjection with kernel `N`.
 * `LinearMap.quotientHomologyMapOfLE`: the map `H(M ⧸ N) → H(M ⧸ N')` induced by `N ≤ N'`.
 * `LinearMap.quotientHomologyProdEquiv`: `H(M ⧸ N) × H(M ⧸ N) ≃ H(M ⧸ (N ⊔ range v))`.
-* `LinearMap.mappingConeHomotopyEquiv`, `LinearMap.mappingConeProjectionHomologyEquiv`, and
-  `LinearMap.homologyEquivOfHomotopicInjective`: the mapping-cone shearing equivalence, quotient
-  projection equivalence, and resulting homology comparison of homotopic injective quotients.
+* `LinearMap.mappingConeProjectionHomologyEquiv` and `LinearMap.homologyEquivOfHomotopicInjective`:
+  the mapping-cone quotient projection equivalence and resulting homology comparison of quotients
+  by homotopic injective chain maps.
 
 ## References
 
@@ -358,54 +358,6 @@ end Splitting
 
 /-! ### Quotients by chain-homotopic injective maps via mapping cones -/
 
-section MappingConeHomotopy
-
-variable {N : Type*} [AddCommGroup N] [Module S N]
-  {d : M →ₗ[S] M} {e : N →ₗ[S] N} {f g : M →ₗ[S] N}
-
-/-- The shearing automorphism `(a, b) ↦ (a, h a + b)` of `M × N` associated to a linear map
-`h : M →ₗ[S] N`. When `e ∘ h + h ∘ d = f - g`, it intertwines `mappingCone d e f` and
-`mappingCone d e g`. -/
-def mappingConeHomotopyEquiv (h : M →ₗ[S] N) : (M × N) ≃ₗ[S] M × N :=
-  LinearEquiv.ofLinearMap ((fst S M N).prod (h.coprod id)) ((fst S M N).prod ((-h).coprod id))
-    (LinearMap.ext fun ⟨a, b⟩ => Prod.ext rfl (add_neg_cancel_left (h a) b))
-    (LinearMap.ext fun ⟨a, b⟩ => Prod.ext rfl (neg_add_cancel_left (h a) b))
-
-/-- Evaluating `mappingConeHomotopyEquiv h` on a pair `(a, b)`. -/
-@[simp]
-theorem mappingConeHomotopyEquiv_apply (h : M →ₗ[S] N) (x : M × N) :
-    mappingConeHomotopyEquiv h x = (x.1, h x.1 + x.2) :=
-  (rfl)
-
-/-- Evaluating the inverse of `mappingConeHomotopyEquiv h` on a pair `(a, b)`. -/
-@[simp]
-theorem mappingConeHomotopyEquiv_symm_apply (h : M →ₗ[S] N) (x : M × N) :
-    (mappingConeHomotopyEquiv h).symm x = (x.1, -h x.1 + x.2) :=
-  (rfl)
-
-/-- A chain homotopy `e ∘ h + h ∘ d = f - g` makes `mappingConeHomotopyEquiv h` intertwine the
-mapping cones of `f` and `g`. -/
-theorem mappingConeHomotopyEquiv_comp_mappingCone {h : M →ₗ[S] N}
-    (hhom : e ∘ₗ h + h ∘ₗ d = f - g) :
-    (mappingConeHomotopyEquiv h).toLinearMap ∘ₗ mappingCone d e f =
-      mappingCone d e g ∘ₗ (mappingConeHomotopyEquiv h).toLinearMap := by
-  refine LinearMap.ext fun ⟨a, b⟩ => Prod.ext (by simp) ?_
-  have ha : e (h a) + h (d a) = f a - g a := congr($hhom a)
-  simp only [comp_apply, LinearEquiv.coe_coe, mappingCone_apply,
-    mappingConeHomotopyEquiv_apply, map_neg, map_add, eq_sub_of_add_eq ha]
-  abel
-
-/-- Chain-homotopic maps induce isomorphic mapping-cone homologies. -/
-noncomputable def mappingConeHomologyEquivOfHomotopy (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
-    (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) {h : M →ₗ[S] N}
-    (hhom : e ∘ₗ h + h ∘ₗ d = f - g) :
-    (mappingCone d e f).homology (mappingCone_comp_self f hd he hf) ≃ₗ[S]
-      (mappingCone d e g).homology (mappingCone_comp_self g hd he hg) :=
-  (mappingConeHomotopyEquiv h).homologyEquiv (mappingCone_comp_self f hd he hf)
-    (mappingCone_comp_self g hd he hg) (mappingConeHomotopyEquiv_comp_mappingCone hhom)
-
-end MappingConeHomotopy
-
 section MappingConeProjection
 
 variable {N P : Type*} [AddCommGroup N] [Module S N] [AddCommGroup P] [Module S P]
@@ -421,8 +373,9 @@ has `d a = 0` and so is a cycle of `mappingCone d e f`. -/
 theorem mem_ker_mappingCone_of_add_eq_zero {a : M} {b : N} (hab : f a + e b = 0) :
     (a, b) ∈ ker (mappingCone d e f) := by
   have hda : d a = 0 := hinj <| by
-    rw [← comp_apply, hf, comp_apply, eq_neg_of_add_eq_zero_left hab, map_neg, ← comp_apply, he,
-      LinearMap.zero_apply, neg_zero, map_zero]
+    have hf' : f (d a) = e (f a) := congr($hf a)
+    have he' : e (e b) = 0 := congr($he b)
+    simp [hf', eq_neg_of_add_eq_zero_left hab, he']
   simp [mem_ker, hda, hab]
 
 include hexact hπe in
@@ -443,9 +396,9 @@ private theorem bijective_homologyMap_comp_snd :
     obtain ⟨u, hu⟩ := (hexact (b - e c)).mp <| by
       rw [map_sub, (congr($hπe c) : π (e c) = q (π c)), hc', comp_apply, snd_apply, sub_self]
     have hfdu : -d u = a := hinj <| by
-      rw [map_neg, ← comp_apply, hf, comp_apply, hu, map_sub, ← comp_apply, he,
-        LinearMap.zero_apply, sub_zero, neg_eq_iff_add_eq_zero, add_comm]
-      exact hab.2
+      have hf' : f (d u) = e (f u) := congr($hf u)
+      have he' : e (e c) = 0 := congr($he c)
+      simp [hf', hu, he', neg_eq_iff_add_eq_zero, add_comm, hab.2]
     exact ⟨(u, c), by rw [mappingCone_apply, Prod.fst, Prod.snd, hfdu, hu, sub_add_cancel]⟩
   · obtain ⟨b, rfl⟩ := hπ z
     obtain ⟨a', ha'⟩ := (hexact (e b)).mp <| by
@@ -464,9 +417,10 @@ noncomputable def mappingConeProjectionHomologyEquiv :
 theorem mappingConeProjectionHomologyEquiv_mk (z : ker (mappingCone d e f)) :
     mappingConeProjectionHomologyEquiv hd he hq hf hinj hπ hexact hπe (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨π z.1.2,
-        map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact hπe) z.2⟩ := by
-  rw [mappingConeProjectionHomologyEquiv, LinearEquiv.ofBijective_apply, homologyMap_mk]
-  rfl
+        map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact hπe) z.2⟩ :=
+  (LinearEquiv.ofBijective_apply _ _).trans <|
+    (homologyMap_mk _ _ _ _ z).trans <|
+      congrArg Submodule.Quotient.mk (Subtype.ext (by simp only [comp_apply, snd_apply]))
 
 /-- If `f a + e b = 0`, the inverse of `mappingConeProjectionHomologyEquiv` lifts the cycle class of
 `π b` to the mapping-cone cycle class of `(a, b)`. -/
@@ -482,49 +436,49 @@ end MappingConeProjection
 
 section HomotopicInjective
 
-variable {P₁ P₂ : Type*} [AddCommGroup P₁] [Module S P₁] [AddCommGroup P₂] [Module S P₂]
-  {d : M →ₗ[S] M} (hd : d ∘ₗ d = 0)
+variable {N P₁ P₂ : Type*} [AddCommGroup N] [Module S N]
+  [AddCommGroup P₁] [Module S P₁] [AddCommGroup P₂] [Module S P₂]
+  {d : M →ₗ[S] M} {e : N →ₗ[S] N} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
   {q₁ : P₁ →ₗ[S] P₁} {q₂ : P₂ →ₗ[S] P₂} (hq₁ : q₁ ∘ₗ q₁ = 0) (hq₂ : q₂ ∘ₗ q₂ = 0)
-  {f₁ f₂ h : M →ₗ[S] M} (hf₁ : f₁ ∘ₗ d = d ∘ₗ f₁) (hf₂ : f₂ ∘ₗ d = d ∘ₗ f₂)
+  {f₁ f₂ h : M →ₗ[S] N} (hf₁ : f₁ ∘ₗ d = e ∘ₗ f₁) (hf₂ : f₂ ∘ₗ d = e ∘ₗ f₂)
   (hinj₁ : Function.Injective f₁) (hinj₂ : Function.Injective f₂)
-  (hhom : d ∘ₗ h + h ∘ₗ d = f₁ - f₂)
-  {π₁ : M →ₗ[S] P₁} {π₂ : M →ₗ[S] P₂}
+  (hhom : e ∘ₗ h + h ∘ₗ d = f₁ - f₂)
+  {π₁ : N →ₗ[S] P₁} {π₂ : N →ₗ[S] P₂}
   (hπ₁ : Function.Surjective π₁) (hπ₂ : Function.Surjective π₂)
   (hexact₁ : Function.Exact f₁ π₁) (hexact₂ : Function.Exact f₂ π₂)
-  (hπ₁d : π₁ ∘ₗ d = q₁ ∘ₗ π₁) (hπ₂d : π₂ ∘ₗ d = q₂ ∘ₗ π₂)
+  (hπ₁e : π₁ ∘ₗ e = q₁ ∘ₗ π₁) (hπ₂e : π₂ ∘ₗ e = q₂ ∘ₗ π₂)
 
-/-- **Two quotients of a differential module by chain-homotopic injective endomorphisms have
-isomorphic homology.** Given injective chain maps `f₁, f₂ : M → M` with `d ∘ h + h ∘ d = f₁ - f₂`
-and surjections `π₁ : M → P₁`, `π₂ : M → P₂` with kernels `range f₁` and `range f₂`, composing the
-two mapping-cone projections with `mappingConeHomologyEquivOfHomotopy` gives an explicit linear
+/-- **Two quotients of a differential module by chain-homotopic injective maps have isomorphic
+homology.** Given injective chain maps `f₁, f₂ : M → N` with `e ∘ h + h ∘ d = f₁ - f₂` and
+surjections `π₁ : N → P₁`, `π₂ : N → P₂` with kernels `range f₁` and `range f₂`, composing the two
+mapping-cone projections with `mappingConeHomologyEquivOfHomotopy` gives an explicit linear
 equivalence between the homologies of `q₁` and `q₂`. -/
 noncomputable def homologyEquivOfHomotopicInjective :
     q₁.homology hq₁ ≃ₗ[S] q₂.homology hq₂ :=
-  (mappingConeProjectionHomologyEquiv hd hd hq₁ hf₁ hinj₁ hπ₁ hexact₁ hπ₁d).symm.trans <|
-    (mappingConeHomologyEquivOfHomotopy hd hd hf₁ hf₂ hhom).trans
-      (mappingConeProjectionHomologyEquiv hd hd hq₂ hf₂ hinj₂ hπ₂ hexact₂ hπ₂d)
+  (mappingConeProjectionHomologyEquiv hd he hq₁ hf₁ hinj₁ hπ₁ hexact₁ hπ₁e).symm.trans <|
+    (mappingConeHomologyEquivOfHomotopy hd he hf₁ hf₂ hhom).trans
+      (mappingConeProjectionHomologyEquiv hd he hq₂ hf₂ hinj₂ hπ₂ hexact₂ hπ₂e)
 
-include hd hf₁ hinj₁ hhom hexact₂ hπ₂d in
-/-- If `f₁ a + d b = 0` and `d ∘ h + h ∘ d = f₁ - f₂`, then `π₂ (h a + b)` is a cycle of `q₂`. -/
-theorem map_add_mem_ker_of_homotopy {a b : M} (hab : f₁ a + d b = 0) :
-    π₂ (h a + b) ∈ ker q₂ :=
-  map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact₂ hπ₂d)
-    (map_mem_ker_of_comp_eq _ (mappingConeHomotopyEquiv_comp_mappingCone hhom)
-      (mem_ker_mappingCone_of_add_eq_zero hd hf₁ hinj₁ hab))
+include he hf₁ hinj₁ hhom hexact₂ hπ₂e in
+/-- If `f₁ a + e b = 0` and `e ∘ h + h ∘ d = f₁ - f₂`, then `π₂ (h a + b)` is a cycle of `q₂`. -/
+theorem map_add_mem_ker_of_homotopy {a : M} {b : N} (hab : f₁ a + e b = 0) :
+    π₂ (h a + b) ∈ ker q₂ := by
+  simpa only [comp_apply, snd_apply, LinearEquiv.coe_coe, mappingConeHomotopyEquiv_apply] using
+    map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact₂ hπ₂e)
+      (map_mem_ker_of_comp_eq _ (mappingConeHomotopyEquiv_comp_mappingCone hhom)
+        (mem_ker_mappingCone_of_add_eq_zero he hf₁ hinj₁ hab))
 
-/-- If `f₁ a + d b = 0`, then `homologyEquivOfHomotopicInjective` sends the homology class of `π₁ b`
+/-- If `f₁ a + e b = 0`, then `homologyEquivOfHomotopicInjective` sends the homology class of `π₁ b`
 to the homology class of `π₂ (h a + b)`. -/
-theorem homologyEquivOfHomotopicInjective_mk {a b : M} (hab : f₁ a + d b = 0)
+theorem homologyEquivOfHomotopicInjective_mk {a : M} {b : N} (hab : f₁ a + e b = 0)
     (hz₁ : π₁ b ∈ ker q₁) :
-    homologyEquivOfHomotopicInjective hd hq₁ hq₂ hf₁ hf₂ hinj₁ hinj₂ hhom
-        hπ₁ hπ₂ hexact₁ hexact₂ hπ₁d hπ₂d (Submodule.Quotient.mk ⟨π₁ b, hz₁⟩) =
+    homologyEquivOfHomotopicInjective hd he hq₁ hq₂ hf₁ hf₂ hinj₁ hinj₂ hhom
+        hπ₁ hπ₂ hexact₁ hexact₂ hπ₁e hπ₂e (Submodule.Quotient.mk ⟨π₁ b, hz₁⟩) =
       Submodule.Quotient.mk ⟨π₂ (h a + b),
-        map_add_mem_ker_of_homotopy hd hf₁ hinj₁ hhom hexact₂ hπ₂d hab⟩ := by
+        map_add_mem_ker_of_homotopy he hf₁ hinj₁ hhom hexact₂ hπ₂e hab⟩ := by
   rw [homologyEquivOfHomotopicInjective, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    mappingConeProjectionHomologyEquiv_symm_mk hd hd hq₁ hf₁ hinj₁ hπ₁ hexact₁ hπ₁d hab hz₁,
-    mappingConeHomologyEquivOfHomotopy, LinearEquiv.homologyEquiv_mk,
-    mappingConeProjectionHomologyEquiv_mk]
-  rfl
+    mappingConeProjectionHomologyEquiv_symm_mk hd he hq₁ hf₁ hinj₁ hπ₁ hexact₁ hπ₁e hab hz₁,
+    mappingConeHomologyEquivOfHomotopy_mk, mappingConeProjectionHomologyEquiv_mk]
 
 end HomotopicInjective
 

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.KnotTheory.Grid.Chain.Complex
 public import TauCeti.KnotTheory.Grid.Diagram.Components
 
@@ -31,6 +33,10 @@ every grid diagram as `GridDiagram.simplyBlockedComplex`.
 
 * `TauCeti.GridDiagram.oneVariableSpecializationHomologyClass`: the cycle-class map of the
   one-variable specialization for arbitrary grids.
+* `TauCeti.GridDiagram.simplyBlockedDifferentialHomologyEquiv` and
+  `TauCeti.GridDiagram.simplyBlockedDifferentialRestrictScalarsHomologyEquiv`: canonical
+  identifications between the concrete homology of `simplyBlockedDifferential` (before and after
+  restricting scalars to `R`) and the categorical homology of `simplyBlockedComplex`.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomology`: the simply blocked homology `G-hat`.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedCycles`: its cycles as a kernel.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyQuotient`: the concrete cycles-modulo-boundaries
@@ -169,6 +175,108 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
     refine ⟨(G.simplyBlockedChainEquiv R i).symm w, Subtype.ext ?_⟩
     apply (G.simplyBlockedChainEquiv R i).injective
     rw [hd, LinearEquiv.apply_symm_apply, hw]
+
+/-- The concrete homology of `simplyBlockedDifferential` is canonically isomorphic, over the
+surviving polynomial ring, to the categorical homology of `simplyBlockedComplex`. -/
+noncomputable def simplyBlockedDifferentialHomologyEquiv (i : Fin n) :
+    (G.simplyBlockedDifferential R i).homology (G.simplyBlockedDifferential_comp_self_eq_zero R i)
+      ≃ₗ[MvPolynomial {c : Fin n // c ≠ i} R]
+    (G.simplyBlockedComplex R i).homology () :=
+  ((G.simplyBlockedChainEquiv R i).symm.homologyEquiv
+    (G.simplyBlockedDifferential_comp_self_eq_zero R i)
+    (G.simplyBlockedComplex R i).hom_d_comp_hom_d
+    (LinearMap.ext fun c => by
+      apply (G.simplyBlockedChainEquiv R i).injective
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, G.simplyBlockedChainEquiv_d,
+        LinearEquiv.apply_symm_apply])).trans
+    (G.simplyBlockedComplex R i).moduleCatHomologyIso.symm.toLinearEquiv
+
+/-- `simplyBlockedDifferentialHomologyEquiv` sends a quotient class to the categorical class of
+the corresponding cycle. -/
+@[simp]
+theorem simplyBlockedDifferentialHomologyEquiv_mk (i : Fin n)
+    (z : LinearMap.ker (G.simplyBlockedDifferential R i)) :
+    G.simplyBlockedDifferentialHomologyEquiv R i (Submodule.Quotient.mk z) =
+      G.oneVariableSpecializationHomologyClass R i
+        ⟨(G.simplyBlockedChainEquiv R i).symm z.1, by
+          rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+          exact z.2⟩ := by
+  rw [simplyBlockedDifferentialHomologyEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.homologyEquiv_mk, Iso.toLinearEquiv_apply, Iso.symm_hom,
+    ← LinearMap.homologyπ_apply]
+  exact (G.simplyBlockedComplex R i).moduleCatHomologyIso_inv_homologyπ _
+
+/-- The inverse of `simplyBlockedDifferentialHomologyEquiv` sends the categorical class of a
+cycle to the quotient class of its explicit specialized chain. -/
+@[simp]
+theorem simplyBlockedDifferentialHomologyEquiv_symm_class (i : Fin n)
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    (G.simplyBlockedDifferentialHomologyEquiv R i).symm
+        (G.oneVariableSpecializationHomologyClass R i z) =
+      Submodule.Quotient.mk ⟨G.simplyBlockedChainEquiv R i z.1,
+        (G.mem_ker_simplyBlockedComplex_d_iff R i z.1).mp z.2⟩ := by
+  rw [LinearEquiv.symm_apply_eq, simplyBlockedDifferentialHomologyEquiv_mk]
+  congr 1
+  exact Subtype.ext ((G.simplyBlockedChainEquiv R i).symm_apply_apply z.1).symm
+
+/-- The concrete homology of the `R`-linear restriction of `simplyBlockedDifferential` is
+canonically isomorphic over `R` to the restricted-scalar homology of `simplyBlockedComplex`. -/
+noncomputable def simplyBlockedDifferentialRestrictScalarsHomologyEquiv (i : Fin n) :
+    ((G.simplyBlockedDifferential R i).restrictScalars R).homology
+        (by rw [← LinearMap.restrictScalars_comp,
+          G.simplyBlockedDifferential_comp_self_eq_zero R i, LinearMap.restrictScalars_zero]) ≃ₗ[R]
+      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
+        ((G.simplyBlockedComplex R i).homology ()) :=
+  letI : Module R ((G.simplyBlockedComplex R i).homology ()) :=
+    Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+  letI : IsScalarTower R (MvPolynomial {c : Fin n // c ≠ i} R)
+      ((G.simplyBlockedComplex R i).homology ()) :=
+    IsScalarTower.of_compHom R _ _
+  ((G.simplyBlockedDifferential R i).homologyRestrictScalarsEquiv R
+    (G.simplyBlockedDifferential_comp_self_eq_zero R i)).trans
+    ((G.simplyBlockedDifferentialHomologyEquiv R i).restrictScalars R)
+
+/-- `simplyBlockedDifferentialRestrictScalarsHomologyEquiv` sends a quotient class to the
+categorical class of the corresponding cycle. -/
+@[simp]
+theorem simplyBlockedDifferentialRestrictScalarsHomologyEquiv_mk (i : Fin n)
+    (z : LinearMap.ker ((G.simplyBlockedDifferential R i).restrictScalars R)) :
+    G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R i (Submodule.Quotient.mk z) =
+      G.oneVariableSpecializationHomologyClass R i
+        ⟨(G.simplyBlockedChainEquiv R i).symm z.1, by
+          rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+          exact z.2⟩ :=
+  letI : Module R ((G.simplyBlockedComplex R i).homology ()) :=
+    Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+  letI : IsScalarTower R (MvPolynomial {c : Fin n // c ≠ i} R)
+      ((G.simplyBlockedComplex R i).homology ()) :=
+    IsScalarTower.of_compHom R _ _
+  (LinearEquiv.trans_apply
+    (e₁₂ := (G.simplyBlockedDifferential R i).homologyRestrictScalarsEquiv R
+      (G.simplyBlockedDifferential_comp_self_eq_zero R i))
+    (e₂₃ := (G.simplyBlockedDifferentialHomologyEquiv R i).restrictScalars R)
+    (Submodule.Quotient.mk z)).trans <|
+    (congrArg ((G.simplyBlockedDifferentialHomologyEquiv R i).restrictScalars R)
+      ((G.simplyBlockedDifferential R i).homologyRestrictScalarsEquiv_mk R _ z)).trans <|
+      (LinearEquiv.restrictScalars_apply R (G.simplyBlockedDifferentialHomologyEquiv R i) _).trans
+        (G.simplyBlockedDifferentialHomologyEquiv_mk R i ⟨z.1, z.2⟩)
+
+/-- The inverse of `simplyBlockedDifferentialRestrictScalarsHomologyEquiv` sends the categorical
+class of a cycle to the quotient class of its explicit specialized chain. -/
+@[simp]
+theorem simplyBlockedDifferentialRestrictScalarsHomologyEquiv_symm_class (i : Fin n)
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R i).symm
+        (G.oneVariableSpecializationHomologyClass R i z :
+          (ModuleCat.restrictScalars
+            (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
+            ((G.simplyBlockedComplex R i).homology ())) =
+      Submodule.Quotient.mk ⟨G.simplyBlockedChainEquiv R i z.1,
+        (G.mem_ker_simplyBlockedComplex_d_iff R i z.1).mp z.2⟩ :=
+  (G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv R i).symm_apply_eq.mpr
+    ((G.simplyBlockedDifferentialRestrictScalarsHomologyEquiv_mk R i _).trans
+      (congrArg (G.oneVariableSpecializationHomologyClass R i)
+        (Subtype.ext ((G.simplyBlockedChainEquiv R i).symm_apply_apply z.1)))).symm
 
 end TauCeti.GridDiagram
 
