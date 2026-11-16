@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Moments.Chebyshev
 
-/-! # Convergence in measure: high-probability bounds and algebraic operations
+/-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
 
 A standard way to consume concentration inequalities: if for each index `i` the
 deviation `edist (f i x) (g x)` exceeds some deterministic `rate i` only on a
@@ -24,16 +24,21 @@ filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 Convergence in mean square also implies convergence in measure, with integrability of the
 squared deviations required only eventually along the filter.
 
-This file also develops the algebraic stability of `MeasureTheory.TendstoInMeasure`:
-* Uniformly continuous maps and binary operations (`TendstoInMeasure.uniformContinuous_comp`,
-  `TendstoInMeasure.uniformContinuous₂_comp`), hence addition, negation, subtraction, and
-  constant scalar multiplication, preserve convergence in measure on an arbitrary measure space
-  without measurability hypotheses.
-* On a finite measure space, almost-everywhere strongly measurable functions are tight in
-  distance (`MeasureTheory.tendsto_measure_dist_ge_atTop`), so bounded scalar multiplication
+This file also develops continuous and algebraic stability of `MeasureTheory.TendstoInMeasure`:
+* Pairing (`TendstoInMeasure.prodMk`), uniformly continuous unary and binary maps
+  (`TendstoInMeasure.uniformContinuous_comp`, `TendstoInMeasure.uniformContinuous₂_comp`), and
+  uniform-group and constant-scalar operations (`add`, `neg`, `sub`, `const_smul`) preserve
+  convergence in measure along arbitrary filters on arbitrary measure spaces without measurability
+  hypotheses.
+* On finite measure spaces, continuous unary and binary transformations preserve convergence along
+  arbitrary filters whenever the transformed functions are eventually almost everywhere strongly
+  measurable (`TendstoInMeasure.continuous_comp`, `TendstoInMeasure.continuous_comp₂`).
+* On finite measure spaces, almost-everywhere strongly measurable functions are tight in distance
+  (`MeasureTheory.tendsto_measure_dist_ge_atTop`), so bounded scalar multiplication
   (`TendstoInMeasure.smul`, `Filter.Tendsto.smul_tendstoInMeasure`) and bounded multiplication
   (`TendstoInMeasure.mul`) preserve convergence in measure along an arbitrary filter when the
-  limits are almost-everywhere strongly measurable.
+  limits are almost-everywhere strongly measurable (without measurability assumptions on the
+  approximating families).
 
 ## Main results
 
@@ -48,17 +53,26 @@ This file also develops the algebraic stability of `MeasureTheory.TendstoInMeasu
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
+  for arbitrary measures and filters, without measurability assumptions.
+* `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
+  finite measure spaces along arbitrary filters.
+* `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
+  theorem, obtained by pairing and unary composition.
 * `MeasureTheory.TendstoInMeasure.uniformContinuous_comp` and
   `MeasureTheory.TendstoInMeasure.uniformContinuous₂_comp`: post-composition with uniformly
-  continuous unary and binary maps.
+  continuous unary and binary maps on arbitrary measure spaces.
 * `MeasureTheory.TendstoInMeasure.add`, `neg`, `sub`, `const_smul`: uniform-group and constant
   scalar operations on arbitrary measure spaces.
-* `MeasureTheory.TendstoInMeasure.smul` and `MeasureTheory.TendstoInMeasure.mul`: joint
-  scalar multiplication and multiplication on finite measure spaces.
+* `MeasureTheory.tendsto_measure_dist_ge_atTop`: distance tightness of almost-everywhere strongly
+  measurable functions on finite measure spaces.
+* `MeasureTheory.TendstoInMeasure.smul`, `Filter.Tendsto.smul_tendstoInMeasure`, and
+  `MeasureTheory.TendstoInMeasure.mul`: joint bounded scalar multiplication and multiplication on
+  finite measure spaces.
 
 ## Source
 
-The rate-squeeze lemmas in `namespace TauCeti` are adapted from the Davis--Kahan/DKPS
+The high-probability rate lemmas in `namespace TauCeti` are adapted from the Davis--Kahan/DKPS
 formalization, `ForMathlib/MeasureTheory/Function/ConvergenceInMeasure.lean` at `fc38eb4`,
 by Claude Fable 5 (Kitware, Inc., Apache-2.0).
 -/
@@ -133,6 +147,80 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
 
 end TauCeti
 
+namespace MeasureTheory.TendstoInMeasure
+
+open Filter
+open scoped Topology ENNReal
+
+/-- Pairing functions preserves convergence in measure, without measurability or finiteness
+assumptions on the measure, and along an arbitrary filter. -/
+theorem prodMk {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂] {l : Filter ι}
+    {f₁ : ι → α → E₁} {f₂ : ι → α → E₂} {g₁ : α → E₁} {g₂ : α → E₂}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun i x ↦ (f₁ i x, f₂ i x)) l (fun x ↦ (g₁ x, g₂ x)) := by
+  intro ε hε
+  have hsum := (h₁ ε hε).add (h₂ ε hε)
+  rw [zero_add] at hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun _ ↦ zero_le) fun i ↦ ?_
+  simpa only [Prod.edist_eq, le_max_iff, Set.ofPred_or] using
+    measure_union_le {x | ε ≤ edist (f₁ i x) (g₁ x)} {x | ε ≤ edist (f₂ i x) (g₂ x)}
+
+/-- A continuous transformation preserves convergence in measure on a finite measure space
+along an arbitrary filter, provided the transformed functions are eventually almost everywhere
+strongly measurable. The transformation need not be uniformly continuous or bounded. -/
+theorem continuous_comp {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
+    {l : Filter ι} {f : ι → α → E₁} {g : α → E₁}
+    (h : TendstoInMeasure μ f l g) {φ : E₁ → E₂} (hφ : Continuous φ)
+    (hf : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ φ (f i x)) μ) :
+    TendstoInMeasure μ (fun i x ↦ φ (f i x)) l (fun x ↦ φ (g x)) := by
+  classical
+  rw [tendstoInMeasure_iff_tendsto_toNNReal]
+  intro ε hε
+  by_contra hbad
+  obtain ⟨s, hs, hfreq⟩ := not_tendsto_iff_exists_frequently_notMem.1 hbad
+  obtain ⟨δ, hδ, hsub⟩ := NNReal.nhds_zero_basis.mem_iff.1 hs
+  let r : ℕ → ℝ≥0∞ := fun n ↦ (2⁻¹ : ℝ≥0∞) ^ n
+  have hr : Tendsto r atTop (𝓝 0) :=
+    ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num)
+  have hselect (n : ℕ) : ∃ i, AEStronglyMeasurable (fun x ↦ φ (f i x)) μ ∧
+      μ {x | r n ≤ edist (f i x) (g x)} ≤ r n ∧
+      δ ≤ (μ {x | ε ≤ edist (φ (f i x)) (φ (g x))}).toNNReal := by
+    have hrpos : 0 < r n := ENNReal.pow_pos (by norm_num) _
+    have hevent := (h (r n) hrpos).eventually (gt_mem_nhds hrpos)
+    obtain ⟨i, hi, hfi, hri⟩ := (hfreq.and_eventually (hf.and hevent)).exists
+    exact ⟨i, hfi, hri.le, Set.notMem_Iio.1 (Set.notMem_subset hsub hi)⟩
+  choose ns hmeas hbound hbadbound using hselect
+  have hseq : TendstoInMeasure μ (fun n ↦ f (ns n)) atTop g := by
+    apply TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist hr
+    apply tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hr (fun _ ↦ zero_le)
+    intro n
+    exact (measure_mono (s := {x | r n < edist (f (ns n) x) (g x)})
+      (fun x hx ↦ show r n ≤ edist (f (ns n) x) (g x) from le_of_lt hx)).trans (hbound n)
+  obtain ⟨ks, _, hlim⟩ := hseq.exists_seq_tendsto_ae
+  have hcomp := tendstoInMeasure_of_tendsto_ae (fun n ↦ hmeas (ks n))
+    (hlim.mono fun x hx ↦ (hφ.tendsto (g x)).comp hx)
+  have hzero := tendstoInMeasure_iff_tendsto_toNNReal.mp hcomp ε hε
+  exact (not_lt_of_ge (ge_of_tendsto' hzero (fun n ↦ hbadbound (ks n)))) hδ
+
+/-- A continuous binary transformation preserves convergence in measure on a finite measure
+space along an arbitrary filter, provided the transformed functions are eventually
+almost everywhere strongly measurable. -/
+theorem continuous_comp₂ {α ι E₁ E₂ E₃ : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
+    [PseudoEMetricSpace E₃] {l : Filter ι}
+    {f₁ : ι → α → E₁} {f₂ : ι → α → E₂} {g₁ : α → E₁} {g₂ : α → E₂}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂)
+    {φ : E₁ → E₂ → E₃} (hφ : Continuous (Function.uncurry φ))
+    (hf : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ φ (f₁ i x) (f₂ i x)) μ) :
+    TendstoInMeasure μ (fun i x ↦ φ (f₁ i x) (f₂ i x)) l
+      (fun x ↦ φ (g₁ x) (g₂ x)) :=
+  (h₁.prodMk h₂).continuous_comp hφ hf
+
+end MeasureTheory.TendstoInMeasure
+
 namespace MeasureTheory
 
 open Filter Topology
@@ -196,20 +284,8 @@ theorem TendstoInMeasure.uniformContinuous₂_comp [PseudoEMetricSpace E₁] [Ps
     [PseudoEMetricSpace F] {Ψ : E₁ → E₂ → F} (hΨ : UniformContinuous₂ Ψ)
     {f₁ : ι → α → E₁} {g₁ : α → E₁} {f₂ : ι → α → E₂} {g₂ : α → E₂}
     (hf₁ : TendstoInMeasure μ f₁ l g₁) (hf₂ : TendstoInMeasure μ f₂ l g₂) :
-    TendstoInMeasure μ (fun i x ↦ Ψ (f₁ i x) (f₂ i x)) l (fun x ↦ Ψ (g₁ x) (g₂ x)) := by
-  intro ε hε
-  obtain ⟨δ, hδ, hΨδ⟩ := EMetric.uniformContinuous_iff.mp hΨ ε hε
-  have hsum : Tendsto (fun i ↦ μ {x | δ ≤ edist (f₁ i x) (g₁ x)} +
-      μ {x | δ ≤ edist (f₂ i x) (g₂ x)}) l (𝓝 0) := by
-    simpa only [add_zero] using (hf₁ δ hδ).add (hf₂ δ hδ)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
-    (fun _ ↦ zero_le) fun i ↦ (measure_mono ?_).trans (measure_union_le _ _)
-  intro x hx
-  rw [Set.mem_ofPred_eq] at hx
-  by_contra hnot
-  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
-  have hprod : edist (f₁ i x, f₂ i x) (g₁ x, g₂ x) < δ := max_lt hnot.1 hnot.2
-  exact hx.not_gt (hΨδ hprod)
+    TendstoInMeasure μ (fun i x ↦ Ψ (f₁ i x) (f₂ i x)) l (fun x ↦ Ψ (g₁ x) (g₂ x)) :=
+  (hf₁.prodMk hf₂).uniformContinuous_comp hΨ
 
 /-- Pointwise addition preserves convergence in measure in any uniform additive group and on
 any measure space. -/

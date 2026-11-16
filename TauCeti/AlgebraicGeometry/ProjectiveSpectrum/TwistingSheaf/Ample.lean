@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
-public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 
 /-!
