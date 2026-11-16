@@ -17,7 +17,7 @@ linear-algebra constructions to morphisms of Lie modules: transposition, which m
 a contravariant functor, and evaluation into the double dual:
 
 * the transpose `f.dualMap : N* → M*` of a morphism of Lie modules `f : M → N` is again a morphism
-  of Lie modules;
+  of Lie modules, and the transpose of an equivalence is an equivalence;
 * the evaluation map `M → M**` is a morphism of Lie modules, hence an equivalence of Lie modules
   when `M` is reflexive (for instance finite-dimensional over a field).
 
@@ -29,6 +29,7 @@ multiplicity of an irreducible module in `M*` with a morphism space out of `M`.
 ## Main definitions
 
 * `LieModuleHom.dualMap`: the transpose of a morphism of Lie modules.
+* `LieModuleEquiv.dualMap`: the transpose of an equivalence of Lie modules.
 * `TauCeti.LieModule.dualEval`: the evaluation morphism `M → M**`.
 * `TauCeti.LieModule.evalEquiv`: the evaluation equivalence `M ≃ M**` of a reflexive Lie module.
 * `TauCeti.LieModule.dualMapEquiv`: transposition, as a linear equivalence between
@@ -105,6 +106,49 @@ theorem dualMap_smul (r : R) (f : M →ₗ⁅R,L⁆ N) : (r • f).dualMap = r �
   simp
 
 end LieModuleHom
+
+namespace LieModuleEquiv
+
+variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁} {P : Type w₂}
+variable [CommRing R] [LieRing L] [LieAlgebra R L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+variable [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
+variable [AddCommGroup P] [Module R P] [LieRingModule L P] [LieModule R L P]
+
+/-- **The transpose of an equivalence of Lie modules.** For an equivalence `e : M ≃ N`, this is the
+equivalence `φ ↦ φ ∘ e` between the duals with their contragredient actions, lifting
+`LinearEquiv.dualMap`. -/
+def dualMap (e : M ≃ₗ⁅R,L⁆ N) : Dual R N ≃ₗ⁅R,L⁆ Dual R M where
+  __ := (e : M →ₗ⁅R,L⁆ N).dualMap
+  __ := e.toLinearEquiv.dualMap
+
+@[simp]
+theorem dualMap_apply (e : M ≃ₗ⁅R,L⁆ N) (φ : Dual R N) (m : M) : e.dualMap φ m = φ (e m) :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_dualMap (e : M ≃ₗ⁅R,L⁆ N) :
+    e.dualMap.toLinearEquiv = e.toLinearEquiv.dualMap :=
+  (rfl)
+
+@[simp]
+theorem toLieModuleHom_dualMap (e : M ≃ₗ⁅R,L⁆ N) :
+    (e.dualMap : Dual R N →ₗ⁅R,L⁆ Dual R M) = (e : M →ₗ⁅R,L⁆ N).dualMap :=
+  (rfl)
+
+@[simp]
+theorem dualMap_refl : (refl : M ≃ₗ⁅R,L⁆ M).dualMap = refl :=
+  (rfl)
+
+@[simp]
+theorem dualMap_symm (e : M ≃ₗ⁅R,L⁆ N) : e.dualMap.symm = e.symm.dualMap :=
+  (rfl)
+
+theorem dualMap_trans (e : M ≃ₗ⁅R,L⁆ N) (e' : N ≃ₗ⁅R,L⁆ P) :
+    (e.trans e').dualMap = e'.dualMap.trans e.dualMap :=
+  (rfl)
+
+end LieModuleEquiv
 
 namespace TauCeti.LieModule
 

@@ -8,9 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.Schur
 public import TauCeti.Algebra.Lie.Submodule.DirectSum
--- Non-public: the source additivity and the decomposition of a completely reducible module enter
--- only the proofs of the morphism counts.
-import TauCeti.Algebra.Lie.DirectSum.LieModuleHom
+-- Non-public: the decomposition of a completely reducible module enters only the proofs of the
+-- morphism counts.
 import TauCeti.Algebra.Lie.Submodule.Decomposition
 
 /-!
