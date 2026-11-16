@@ -93,30 +93,23 @@ def hurwitzMul (a b : ℕ → R) (n : ℕ) : R :=
 
 /-- Unfolding `hurwitzMul` at index `n`. -/
 theorem hurwitzMul_apply (a b : ℕ → R) (n : ℕ) :
-    hurwitzMul a b n = ∑ k ∈ range (n + 1), (n.choose k : R) * a k * b (n - k) :=
-  (rfl)
+    hurwitzMul a b n = ∑ k ∈ range (n + 1), (n.choose k : R) * a k * b (n - k) := (rfl)
 
 /-- Antidiagonal presentation of `hurwitzMul`. -/
 theorem hurwitzMul_eq_sum_antidiagonal (a b : ℕ → R) (n : ℕ) :
     hurwitzMul a b n =
       ∑ ij ∈ antidiagonal n, ((ij.1 + ij.2).choose ij.1 : R) * a ij.1 * b ij.2 := by
-  rw [Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun i j ↦ ((i + j).choose i : R) * a i * b j) n, hurwitzMul_apply]
-  refine sum_congr rfl fun k hk ↦ ?_
-  have hle : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
-  rw [Nat.add_sub_of_le hle]
+  rw [Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ ((i + j).choose i : R) * a i * b j) n,
+    hurwitzMul_apply]
+  exact sum_congr rfl fun k hk ↦ by rw [Nat.add_sub_of_le (Nat.lt_succ_iff.mp (mem_range.mp hk))]
 
 /-- Left multiplication by the zero sequence gives zero. -/
 @[simp]
-theorem zero_hurwitzMul (b : ℕ → R) : hurwitzMul 0 b = 0 := by
-  ext n
-  simp [hurwitzMul_apply]
+theorem zero_hurwitzMul (b : ℕ → R) : hurwitzMul 0 b = 0 := by ext n; simp [hurwitzMul_apply]
 
 /-- Right multiplication by the zero sequence gives zero. -/
 @[simp]
-theorem hurwitzMul_zero (a : ℕ → R) : hurwitzMul a 0 = 0 := by
-  ext n
-  simp [hurwitzMul_apply]
+theorem hurwitzMul_zero (a : ℕ → R) : hurwitzMul a 0 = 0 := by ext n; simp [hurwitzMul_apply]
 
 /-- At `n = 0`, the Hurwitz product is `a 0 * b 0`. -/
 @[simp]
@@ -126,56 +119,42 @@ theorem hurwitzMul_apply_zero (a b : ℕ → R) : hurwitzMul a b 0 = a 0 * b 0 :
 /-- Left distributivity of `hurwitzMul` over addition. -/
 theorem add_hurwitzMul (a₁ a₂ b : ℕ → R) :
     hurwitzMul (a₁ + a₂) b = hurwitzMul a₁ b + hurwitzMul a₂ b := by
-  ext n
-  simp only [Pi.add_apply, hurwitzMul_apply, ← sum_add_distrib]
-  refine sum_congr rfl fun k _ ↦ ?_
-  rw [mul_add, add_mul]
+  ext n; simp only [Pi.add_apply, hurwitzMul_apply, ← sum_add_distrib]
+  exact sum_congr rfl fun k _ ↦ by rw [mul_add, add_mul]
 
 /-- Right distributivity of `hurwitzMul` over addition. -/
 theorem hurwitzMul_add (a b₁ b₂ : ℕ → R) :
     hurwitzMul a (b₁ + b₂) = hurwitzMul a b₁ + hurwitzMul a b₂ := by
-  ext n
-  simp only [Pi.add_apply, hurwitzMul_apply, ← sum_add_distrib]
-  refine sum_congr rfl fun k _ ↦ ?_
-  rw [mul_add]
+  ext n; simp only [Pi.add_apply, hurwitzMul_apply, ← sum_add_distrib]
+  exact sum_congr rfl fun k _ ↦ by rw [mul_add]
 
 /-- A sequence supported at `0` acts on the left by scalar multiplication. -/
 @[simp]
 theorem single_zero_hurwitzMul (c : R) (b : ℕ → R) (n : ℕ) :
     hurwitzMul (Pi.single 0 c) b n = c * b n := by
-  rw [hurwitzMul_apply, sum_eq_single 0]
-  · simp
-  · intro k _ hk
-    simp [Pi.single_eq_of_ne hk]
-  · simp
+  rw [hurwitzMul_apply, sum_eq_single 0 (fun k _ hk ↦ by simp [Pi.single_eq_of_ne hk]) (by simp)]
+  simp
 
 /-- A sequence supported at `0` acts on the right by scalar multiplication. -/
 @[simp]
 theorem hurwitzMul_single_zero (a : ℕ → R) (c : R) (n : ℕ) :
     hurwitzMul a (Pi.single 0 c) n = a n * c := by
-  rw [hurwitzMul_apply, sum_eq_single n]
+  rw [hurwitzMul_apply, sum_eq_single n (fun k hk hkn ↦ ?_) (by simp)]
   · simp
-  · intro k hk hkn
-    have hlt : k < n := lt_of_le_of_ne (Nat.lt_succ_iff.mp (mem_range.mp hk)) hkn
-    simp [Pi.single_eq_of_ne (Nat.sub_ne_zero_of_lt hlt)]
-  · simp
+  · simp [Pi.single_eq_of_ne (Nat.sub_ne_zero_of_lt
+      (lt_of_le_of_ne (Nat.lt_succ_iff.mp (mem_range.mp hk)) hkn))]
 
 /-- `Pi.single 0 1` is the left identity for `hurwitzMul`. -/
 @[simp]
-theorem single_zero_one_hurwitzMul (b : ℕ → R) : hurwitzMul (Pi.single 0 1) b = b := by
-  ext n
-  simp
+theorem single_zero_one_hurwitzMul (b : ℕ → R) : hurwitzMul (Pi.single 0 1) b = b := by ext n; simp
 
 /-- `Pi.single 0 1` is the right identity for `hurwitzMul`. -/
 @[simp]
-theorem hurwitzMul_single_zero_one (a : ℕ → R) : hurwitzMul a (Pi.single 0 1) = a := by
-  ext n
-  simp
+theorem hurwitzMul_single_zero_one (a : ℕ → R) : hurwitzMul a (Pi.single 0 1) = a := by ext n; simp
 
 /-- Ring homomorphisms commute with `hurwitzMul`. -/
 theorem map_hurwitzMul (f : R →+* S) (a b : ℕ → R) (n : ℕ) :
-    f (hurwitzMul a b n) = hurwitzMul (f ∘ a) (f ∘ b) n := by
-  simp [hurwitzMul_apply]
+    f (hurwitzMul a b n) = hurwitzMul (f ∘ a) (f ∘ b) n := by simp [hurwitzMul_apply]
 
 /-- **Associativity of Hurwitz multiplication**, proved from the trinomial identity
 `n.choose m * m.choose k = n.choose k * (n - k).choose (m - k)`. -/
@@ -189,29 +168,20 @@ theorem hurwitzMul_assoc (a b c : ℕ → R) :
           ((n.choose m * m.choose k : ℕ) : R) * a k * b (m - k) * c (n - m) := by
         refine sum_congr rfl fun m _ ↦ ?_
         rw [mul_sum, sum_mul]
-        refine sum_congr rfl fun k _ ↦ ?_
-        push_cast
-        simp only [mul_assoc]
+        exact sum_congr rfl fun k _ ↦ by push_cast; simp only [mul_assoc]
     _ = ∑ k ∈ range (n + 1), ∑ j ∈ range (n - k + 1),
           ((n.choose k * (n - k).choose j : ℕ) : R) * a k * b j * c (n - k - j) := by
         -- Reindex `(m, k)` with `k ≤ m ≤ n` to `(k, j)` with `m = k + j` and `j ≤ n - k`.
         rw [sum_sigma', sum_sigma']
         refine sum_bij (fun p _ ↦ ⟨p.2, p.1 - p.2⟩) ?_ ?_ ?_ ?_
-        · rintro ⟨m, k⟩ hp
-          simp only [mem_sigma, mem_range, Nat.lt_succ_iff] at hp ⊢
-          omega
+        · rintro ⟨m, k⟩ hp; simp only [mem_sigma, mem_range, Nat.lt_succ_iff] at hp ⊢; omega
         · rintro ⟨m₁, k₁⟩ hp₁ ⟨m₂, k₂⟩ hp₂ heq
           simp only [mem_sigma, mem_range, Nat.lt_succ_iff] at hp₁ hp₂
           simp only [Sigma.mk.inj_iff, heq_eq_eq] at heq
-          obtain ⟨rfl, hsub⟩ := heq
-          congr
-          omega
+          obtain ⟨rfl, hsub⟩ := heq; congr; omega
         · rintro ⟨k, j⟩ hp
           simp only [mem_sigma, mem_range, Nat.lt_succ_iff] at hp
-          refine ⟨⟨k + j, k⟩, ?_, ?_⟩
-          · simp only [mem_sigma, mem_range, Nat.lt_succ_iff]
-            omega
-          · simp
+          exact ⟨⟨k + j, k⟩, by simp only [mem_sigma, mem_range, Nat.lt_succ_iff]; omega, by simp⟩
         · rintro ⟨m, k⟩ hp
           simp only [mem_sigma, mem_range, Nat.lt_succ_iff] at hp
           rw [Nat.choose_mul hp.2, show n - m = n - k - (m - k) by omega]
@@ -220,8 +190,7 @@ theorem hurwitzMul_assoc (a b c : ℕ → R) :
         refine sum_congr rfl fun k _ ↦ ?_
         rw [mul_sum]
         refine sum_congr rfl fun j _ ↦ ?_
-        push_cast
-        simp only [mul_assoc]
+        push_cast; simp only [mul_assoc]
         rw [(Nat.cast_commute ((n - k).choose j) (a k)).left_comm]
 
 /-- **Leibniz shift rule for Hurwitz multiplication**: shifting the index by `1` acts as a
@@ -239,8 +208,7 @@ theorem hurwitzMul_succ (a b : ℕ → R) (n : ℕ) :
   simp only [Nat.choose_zero_right, Nat.cast_one, one_mul, Nat.sub_zero]
   congr 1
   refine sum_congr rfl fun k hk ↦ ?_
-  have hlt : k < n := mem_range.mp hk
-  rw [show n - (k + 1) + 1 = n - k by omega]
+  have := mem_range.mp hk; rw [show n - (k + 1) + 1 = n - k by omega]
 
 /-- Hurwitz product of two constant-one sequences: `(hurwitzMul 1 1) n = 2 ^ n`. -/
 @[simp]
@@ -251,13 +219,10 @@ theorem hurwitzMul_const_one (n : ℕ) : hurwitzMul (fun _ ↦ (1 : R)) (fun _ �
 /-- Hurwitz multiplication is commutative over a commutative semiring. -/
 theorem hurwitzMul_comm {R : Type*} [CommSemiring R] (a b : ℕ → R) :
     hurwitzMul a b = hurwitzMul b a := by
-  ext n
-  rw [hurwitzMul_apply, ← sum_range_reflect]
+  ext n; rw [hurwitzMul_apply, ← sum_range_reflect]
   refine sum_congr rfl fun k hk ↦ ?_
   have hle : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
-  simp only [Nat.succ_sub_succ_eq_sub, tsub_zero]
-  rw [Nat.sub_sub_self hle, Nat.choose_symm hle]
-  ring
+  simp only [Nat.succ_sub_succ_eq_sub, tsub_zero, Nat.sub_sub_self hle, Nat.choose_symm hle]; ring
 
 /-- Geometric scaling distributes across `hurwitzMul`: multiplying both inputs by `c ^ n` scales
 the `n`-th Hurwitz coefficient by `c ^ n`. -/
@@ -284,71 +249,54 @@ noncomputable def ePowerSeries (a : ℕ → K) : K⟦X⟧ :=
 
 /-- Unfolding `ePowerSeries`. -/
 theorem ePowerSeries_def (a : ℕ → K) :
-    ePowerSeries a = PowerSeries.mk fun n ↦ a n / n.factorial :=
-  (rfl)
+    ePowerSeries a = PowerSeries.mk fun n ↦ a n / n.factorial := (rfl)
 
 /-- The `n`-th coefficient of `ePowerSeries a` is `a n / n!`. -/
 @[simp]
 theorem coeff_ePowerSeries (a : ℕ → K) (n : ℕ) :
-    coeff n (ePowerSeries a) = a n / n.factorial :=
-  coeff_mk n _
+    coeff n (ePowerSeries a) = a n / n.factorial := coeff_mk n _
 
 /-- The constant coefficient of `ePowerSeries a` is `a 0`. -/
 @[simp]
 theorem constantCoeff_ePowerSeries (a : ℕ → K) :
-    constantCoeff (ePowerSeries a) = a 0 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_ePowerSeries]
-  simp
+    constantCoeff (ePowerSeries a) = a 0 := by simp [← coeff_zero_eq_constantCoeff_apply]
 
 /-- Zero sequence gives the zero power series. -/
 @[simp]
-theorem ePowerSeries_zero : ePowerSeries (0 : ℕ → K) = 0 := by
-  ext n
-  simp
+theorem ePowerSeries_zero : ePowerSeries (0 : ℕ → K) = 0 := by ext n; simp
 
 /-- `ePowerSeries` preserves addition. -/
 theorem ePowerSeries_add (a b : ℕ → K) :
-    ePowerSeries (a + b) = ePowerSeries a + ePowerSeries b := by
-  ext n
-  simp [add_div]
+    ePowerSeries (a + b) = ePowerSeries a + ePowerSeries b := by ext n; simp [add_div]
 
 /-- `ePowerSeries` preserves negation. -/
 theorem ePowerSeries_neg (a : ℕ → K) : ePowerSeries (-a) = -ePowerSeries a := by
-  ext n
-  simp [neg_div]
+  ext n; simp [neg_div]
 
 /-- `ePowerSeries` preserves subtraction. -/
 theorem ePowerSeries_sub (a b : ℕ → K) :
-    ePowerSeries (a - b) = ePowerSeries a - ePowerSeries b := by
-  ext n
-  simp [sub_div]
+    ePowerSeries (a - b) = ePowerSeries a - ePowerSeries b := by ext n; simp [sub_div]
 
 /-- `ePowerSeries` commutes with scalar multiplication. -/
 theorem ePowerSeries_smul (c : K) (a : ℕ → K) :
-    ePowerSeries (c • a) = c • ePowerSeries a := by
-  ext n
-  simp [mul_div_assoc]
+    ePowerSeries (c • a) = c • ePowerSeries a := by ext n; simp [mul_div_assoc]
 
 /-- A sequence supported at a single index `k` gives the monomial `(c / k!) Xᵏ`. -/
 theorem ePowerSeries_single (k : ℕ) (c : K) :
     ePowerSeries (Pi.single k c) = monomial k (c / k.factorial) := by
-  ext n
-  rw [coeff_ePowerSeries, coeff_monomial]
+  ext n; rw [coeff_ePowerSeries, coeff_monomial]
   split_ifs with h
   · subst h; simp
   · simp [Pi.single_eq_of_ne h]
 
 /-- Field homomorphisms act coefficientwise on `ePowerSeries`. -/
 theorem map_ePowerSeries {L : Type*} [Field L] (f : K →+* L) (a : ℕ → K) :
-    PowerSeries.map f (ePowerSeries a) = ePowerSeries (f ∘ a) := by
-  ext n
-  simp
+    PowerSeries.map f (ePowerSeries a) = ePowerSeries (f ∘ a) := by ext n; simp
 
 /-- Rescaling the variable of `ePowerSeries a` by `c` multiplies `a n` by `c ^ n`. -/
 theorem rescale_ePowerSeries (c : K) (a : ℕ → K) :
     rescale c (ePowerSeries a) = ePowerSeries fun n ↦ c ^ n * a n := by
-  ext n
-  simp [coeff_rescale, mul_div_assoc]
+  ext n; simp [coeff_rescale, mul_div_assoc]
 
 section CharZero
 
@@ -360,19 +308,15 @@ theorem ePowerSeries_eq_iff {a b : ℕ → K} : ePowerSeries a = ePowerSeries b 
   refine ⟨fun h ↦ funext fun n ↦ ?_, fun h ↦ h ▸ rfl⟩
   have hn : a n / n.factorial = b n / n.factorial := by
     simpa only [coeff_ePowerSeries] using congrArg (coeff n) h
-  have hfact : (n.factorial : K) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
-  exact (div_left_inj₀ hfact).mp hn
+  exact (div_left_inj₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n))).mp hn
 
 /-- Constant-one data give the formal exponential series `PowerSeries.exp K`. -/
 @[simp]
-theorem ePowerSeries_one : ePowerSeries (fun _ ↦ (1 : K)) = PowerSeries.exp K := by
-  ext n
-  simp
+theorem ePowerSeries_one : ePowerSeries (fun _ ↦ (1 : K)) = PowerSeries.exp K := by ext n; simp
 
 /-- Constant data `c` give `C c * exp K`. -/
 theorem ePowerSeries_const (c : K) : ePowerSeries (fun _ ↦ c) = C c * PowerSeries.exp K := by
-  ext n
-  simp [coeff_C_mul, div_eq_mul_inv]
+  ext n; simp [coeff_C_mul, div_eq_mul_inv]
 
 /-- Formal differentiation of `ePowerSeries a` shifts the sequence by one step:
 `d⁄dX (ePowerSeries a) = ePowerSeries (fun n ↦ a (n + 1))`. -/
@@ -452,44 +396,34 @@ section Field
 variable {K : Type*} [Field K] [TopologicalSpace K]
 
 /-- Unfolding `eFun`. -/
-theorem eFun_def (a : ℕ → K) (z : K) : eFun a z = ∑' n, a n * z ^ n / n.factorial :=
-  (rfl)
+theorem eFun_def (a : ℕ → K) (z : K) : eFun a z = ∑' n, a n * z ^ n / n.factorial := (rfl)
 
 /-- `eFun a z` is `PowerSeries.evalAt (ePowerSeries a) z`. -/
 theorem evalAt_ePowerSeries (a : ℕ → K) (z : K) : (ePowerSeries a).evalAt z = eFun a z := by
   rw [evalAt_def, eFun_def]
-  refine tsum_congr fun n ↦ ?_
-  rw [coeff_ePowerSeries, smul_eq_mul, div_mul_eq_mul_div]
+  exact tsum_congr fun n ↦ by rw [coeff_ePowerSeries, smul_eq_mul, div_mul_eq_mul_div]
 
 /-- The zero sequence evaluates to `0` at every point. -/
 @[simp]
-theorem eFun_zero (z : K) : eFun (0 : ℕ → K) z = 0 := by
-  simp [eFun_def]
+theorem eFun_zero (z : K) : eFun (0 : ℕ → K) z = 0 := by simp [eFun_def]
 
 /-- At `z = 0`, `eFun a 0 = a 0` unconditionally, since all higher terms vanish identically. -/
 @[simp]
 theorem eFun_apply_zero (a : ℕ → K) : eFun a 0 = a 0 := by
-  rw [eFun_def, tsum_eq_single 0]
-  · simp
-  · intro n hn
-    simp [zero_pow hn]
+  rw [eFun_def, tsum_eq_single 0 (fun _ hn ↦ by simp [zero_pow hn])]; simp
 
 /-- A sequence supported at index `k` sums to the single term `c * z ^ k / k!`. -/
 @[simp]
 theorem eFun_single (k : ℕ) (c z : K) :
     eFun (Pi.single k c) z = c * z ^ k / k.factorial := by
-  rw [eFun_def, tsum_eq_single k]
-  · simp
-  · intro n hn
-    simp [Pi.single_eq_of_ne hn]
+  rw [eFun_def, tsum_eq_single k (fun _ hn ↦ by simp [Pi.single_eq_of_ne hn])]; simp
 
 end Field
 
 /-- Over `ℂ`, constant-one data sum to `Complex.exp`. -/
 @[simp]
 theorem eFun_one_complex (z : ℂ) : eFun (fun _ ↦ (1 : ℂ)) z = Complex.exp z := by
-  rw [Complex.exp_eq_exp_ℂ, NormedSpace.exp_eq_tsum_div, eFun_def]
-  simp
+  simp [Complex.exp_eq_exp_ℂ, NormedSpace.exp_eq_tsum_div, eFun_def]
 
 section Entire
 
@@ -618,16 +552,12 @@ example : coeff 2 (ePowerSeries fun _ : ℕ ↦ (1 : ℂ)) = 1 / 2 := by
   norm_num [coeff_ePowerSeries, Nat.factorial]
 
 example : ePowerSeries (Pi.single 2 (1 : ℂ)) = monomial 2 (1 / 2) := by
-  rw [ePowerSeries_single]
-  norm_num [Nat.factorial]
+  rw [ePowerSeries_single]; norm_num [Nat.factorial]
 
-example (z : ℂ) : eFun (Pi.single 1 (1 : ℂ)) z = z := by
-  simp
+example (z : ℂ) : eFun (Pi.single 1 (1 : ℂ)) z = z := by simp
 
-example (c z : ℂ) : eFun (Pi.single 0 c) z = c := by
-  simp
+example (c z : ℂ) : eFun (Pi.single 0 c) z = c := by simp
 
-example : hurwitzMul (Pi.single 1 (1 : ℕ)) (Pi.single 1 1) 2 = 2 := by
-  decide
+example : hurwitzMul (Pi.single 1 (1 : ℕ)) (Pi.single 1 1) 2 = 2 := by decide
 
 end TauCeti

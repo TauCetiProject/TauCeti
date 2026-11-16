@@ -81,16 +81,12 @@ private theorem one_le_and_isIntegral_natDenominator {c : ℂ} (hc : IsAlgebraic
 /-- The zero sequence is a G-function. -/
 theorem IsGFunction.zero : IsGFunction 0 :=
   IsGFunction.of_house_le (fun _ ↦ isAlgebraic_zero)
-    (by
-      have h0 : PowerSeries.mk (0 : ℕ → ℂ) = 0 := by ext; simp
-      rw [h0]
-      exact PowerSeries.isDFinite_zero)
+    (by rw [show PowerSeries.mk (0 : ℕ → ℂ) = 0 by ext; simp]; exact PowerSeries.isDFinite_zero)
     ⟨1, zero_lt_one, fun n ↦ by simp⟩
     ⟨1, zero_lt_one, fun _ ↦ 1, fun n ↦ ⟨le_rfl, by simp, fun _ _ ↦ by simp [isIntegral_zero]⟩⟩
 
 /-- The zero sequence is an E-function. -/
-theorem IsEFunction.zero : IsEFunction 0 :=
-  isGFunction_iff_isEFunction.mp .zero
+theorem IsEFunction.zero : IsEFunction 0 := isGFunction_iff_isEFunction.mp .zero
 
 /-- A sequence supported at a single index `k` with `ℚ`-algebraic value `c` is a G-function. -/
 theorem IsGFunction.single (k : ℕ) {c : ℂ} (hc : IsAlgebraic ℚ c) :
@@ -105,17 +101,14 @@ theorem IsGFunction.single (k : ℕ) {c : ℂ} (hc : IsAlgebraic ℚ c) :
     (?_)
     ⟨max 1 (house c), by positivity, fun n ↦ ?_⟩
     ⟨b, Nat.cast_pos.mpr hb1, fun _ ↦ b, fun n ↦ ⟨hb1, ?_, fun m _ ↦ ?_⟩⟩
-  · have hmk : PowerSeries.mk (Pi.single k c) = ((Polynomial.monomial k c : ℂ[X]) : ℂ⟦X⟧) := by
-      ext n
-      simp [Pi.single_apply, PowerSeries.coeff_monomial]
-    rw [hmk]
+  · rw [show PowerSeries.mk (Pi.single k c) = ((Polynomial.monomial k c : ℂ[X]) : ℂ⟦X⟧) by
+      ext n; simp [Pi.single_apply, PowerSeries.coeff_monomial]]
     exact PowerSeries.isDFinite_polynomial (algebraicClosure ℚ ℂ) _
   · rcases eq_or_ne n k with rfl | hnk
     · simp only [Pi.single_eq_same]
       exact (le_max_right 1 (house c)).trans
         (le_self_pow₀ (le_max_left 1 (house c)) (Nat.succ_ne_zero n))
-    · simp only [Pi.single_eq_of_ne hnk, house_zero]
-      positivity
+    · simp only [Pi.single_eq_of_ne hnk, house_zero]; positivity
   · exact le_self_pow₀ (by exact_mod_cast hb1) (Nat.succ_ne_zero n)
   · rcases eq_or_ne m k with rfl | hmk
     · simpa using hbc
@@ -134,8 +127,7 @@ theorem IsEFunction.one : IsEFunction fun _ ↦ (1 : ℂ) :=
     ⟨1, zero_lt_one, fun _ ↦ 1, fun n ↦ ⟨le_rfl, by simp, fun _ _ ↦ by simp [isIntegral_one]⟩⟩
 
 /-- Constant-one data `fun _ ↦ 1` define a G-function (the geometric series `(1 - X)⁻¹`). -/
-theorem IsGFunction.one : IsGFunction fun _ ↦ (1 : ℂ) :=
-  isGFunction_iff_isEFunction.mpr .one
+theorem IsGFunction.one : IsGFunction fun _ ↦ (1 : ℂ) := isGFunction_iff_isEFunction.mpr .one
 
 /-- G-functions are closed under addition. -/
 theorem IsGFunction.add {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
@@ -146,10 +138,8 @@ theorem IsGFunction.add {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFuncti
   obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
   refine IsGFunction.of_house_le
     (fun n ↦ ((ha.isAlgebraic n).isIntegral.add (hb.isAlgebraic n).isIntegral).isAlgebraic)
-    (by
-      have hmk : PowerSeries.mk (a + b) = PowerSeries.mk a + PowerSeries.mk b := by ext; simp
-      rw [hmk]
-      exact ha.isDFinite.add hb.isDFinite)
+    (by rw [show PowerSeries.mk (a + b) = PowerSeries.mk a + PowerSeries.mk b by ext; simp]
+        exact ha.isDFinite.add hb.isDFinite)
     ⟨2 * max C₁ C₂, by positivity, fun n ↦ ?_⟩
     ⟨D₁ * D₂, mul_pos hD₁ hD₂, fun n ↦ d₁ n * d₂ n, fun n ↦ ?_⟩
   · calc house (a n + b n) ≤ house (a n) + house (b n) :=
@@ -160,16 +150,14 @@ theorem IsGFunction.add {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFuncti
             (pow_le_pow_left₀ hC₂.le (le_max_right _ _) _)
       _ = 2 * max C₁ C₂ ^ (n + 1) := (two_mul _).symm
       _ ≤ 2 ^ (n + 1) * max C₁ C₂ ^ (n + 1) := by
-          gcongr
-          exact le_self_pow₀ (by norm_num) (Nat.succ_ne_zero n)
+          gcongr; exact le_self_pow₀ (by norm_num) (Nat.succ_ne_zero n)
       _ = (2 * max C₁ C₂) ^ (n + 1) := (mul_pow _ _ _).symm
   · refine ⟨Nat.mul_le_mul (hd₁ n).1 (hd₂ n).1, ?_, fun m hm ↦ ?_⟩
     · rw [Nat.cast_mul, mul_pow]
       exact mul_le_mul (hd₁ n).2.1 (hd₂ n).2.1 (Nat.cast_nonneg _) (by positivity)
     · simp only [Pi.add_apply, Nat.cast_mul, mul_add]
-      have h1 : ((d₁ n : ℂ) * d₂ n) * a m = (d₂ n : ℂ) * ((d₁ n : ℂ) * a m) := by ring
-      have h2 : ((d₁ n : ℂ) * d₂ n) * b m = (d₁ n : ℂ) * ((d₂ n : ℂ) * b m) := by ring
-      rw [h1, h2]
+      rw [show ((d₁ n : ℂ) * d₂ n) * a m = (d₂ n : ℂ) * ((d₁ n : ℂ) * a m) by ring,
+        show ((d₁ n : ℂ) * d₂ n) * b m = (d₁ n : ℂ) * ((d₂ n : ℂ) * b m) by ring]
       exact ((isIntegral_natCast (d₂ n)).mul ((hd₁ n).2.2 m hm)).add
         ((isIntegral_natCast (d₁ n)).mul ((hd₂ n).2.2 m hm))
 
@@ -198,19 +186,12 @@ theorem IsEFunction.sum {ι : Type*} (s : Finset ι) {f : ι → ℕ → ℂ}
 theorem IsGFunction.of_eventually_eq_zero {a : ℕ → ℂ} (halg : ∀ n, IsAlgebraic ℚ (a n))
     {N : ℕ} (hN : ∀ n ≥ N, a n = 0) : IsGFunction a := by
   have ha : a = ∑ k ∈ range N, Pi.single k (a k) := by
-    ext n
-    rw [Finset.sum_apply]
+    ext n; rw [Finset.sum_apply]
     by_cases hn : n < N
-    · rw [Finset.sum_eq_single n]
-      · simp
-      · intro k _ hkn
-        exact Pi.single_eq_of_ne (Ne.symm hkn) _
-      · intro hn'
-        exact absurd (mem_range.mpr hn) hn'
-    · rw [hN n (Nat.le_of_not_lt hn), Finset.sum_eq_zero]
-      intro k hk
-      have hlt : k < N := mem_range.mp hk
-      exact Pi.single_eq_of_ne (by omega) _
+    · rw [Finset.sum_eq_single n (fun _ _ hkn ↦ Pi.single_eq_of_ne hkn.symm _)
+        (fun hn' ↦ absurd (mem_range.mpr hn) hn')]; simp
+    · rw [hN n (Nat.le_of_not_lt hn), Finset.sum_eq_zero fun k hk ↦ ?_]
+      have := mem_range.mp hk; exact Pi.single_eq_of_ne (by omega) _
   rw [ha]
   exact IsGFunction.sum (range N) fun k _ ↦ IsGFunction.single k (halg k)
 
@@ -242,10 +223,7 @@ theorem IsGFunction.neg {a : ℕ → ℂ} (ha : IsGFunction a) : IsGFunction (-a
   obtain ⟨D, hD, d, hd⟩ := ha.den_le
   refine IsGFunction.of_house_le
     (fun n ↦ (ha.isAlgebraic n).isIntegral.neg.isAlgebraic)
-    (by
-      have hmk : PowerSeries.mk (-a) = -PowerSeries.mk a := by ext; simp
-      rw [hmk]
-      exact ha.isDFinite.neg)
+    (by rw [show PowerSeries.mk (-a) = -PowerSeries.mk a by ext; simp]; exact ha.isDFinite.neg)
     ⟨C, hC, fun n ↦ by simpa only [Pi.neg_apply, house_neg] using hh n⟩
     ⟨D, hD, d, fun n ↦ ⟨(hd n).1, (hd n).2.1, fun m hm ↦ ?_⟩⟩
   simpa only [Pi.neg_apply, mul_neg] using ((hd n).2.2 m hm).neg
@@ -256,15 +234,11 @@ theorem IsEFunction.neg {a : ℕ → ℂ} (ha : IsEFunction a) : IsEFunction (-a
 
 /-- G-functions are closed under subtraction. -/
 theorem IsGFunction.sub {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
-    IsGFunction (a - b) := by
-  rw [sub_eq_add_neg]
-  exact ha.add hb.neg
+    IsGFunction (a - b) := by simpa only [sub_eq_add_neg] using ha.add hb.neg
 
 /-- E-functions are closed under subtraction. -/
 theorem IsEFunction.sub {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) :
-    IsEFunction (a - b) := by
-  rw [sub_eq_add_neg]
-  exact ha.add hb.neg
+    IsEFunction (a - b) := by simpa only [sub_eq_add_neg] using ha.add hb.neg
 
 /-- Multiplying every coefficient of a G-function by an algebraic scalar `c` gives a G-function. -/
 theorem IsGFunction.smul {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsGFunction a) :
@@ -275,12 +249,9 @@ theorem IsGFunction.smul {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (h
   set b := Algebra.natDenominator c
   refine IsGFunction.of_house_le
     (fun n ↦ (hc.isIntegral.mul (ha.isAlgebraic n).isIntegral).isAlgebraic)
-    (by
-      have hmk : PowerSeries.mk (c • a) = ((Polynomial.C c : ℂ[X]) : ℂ⟦X⟧) * PowerSeries.mk a := by
-        ext n
-        simp
-      rw [hmk]
-      exact (PowerSeries.isDFinite_polynomial (algebraicClosure ℚ ℂ) _).mul ha.isDFinite)
+    (by rw [show PowerSeries.mk (c • a) = ((Polynomial.C c : ℂ[X]) : ℂ⟦X⟧) * PowerSeries.mk a by
+          ext n; simp]
+        exact (PowerSeries.isDFinite_polynomial (algebraicClosure ℚ ℂ) _).mul ha.isDFinite)
     ⟨max 1 (house c) * C, by positivity, fun n ↦ ?_⟩
     ⟨b * D, by positivity, fun n ↦ b * d n, fun n ↦ ?_⟩
   · calc house (c * a n) ≤ house c * house (a n) := house_mul_le hc (ha.isAlgebraic n)
