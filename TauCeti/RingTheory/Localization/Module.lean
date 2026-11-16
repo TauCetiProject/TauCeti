@@ -9,7 +9,10 @@ public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
+import Mathlib.Algebra.Module.LocalizedModule.Exact
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.Localization.Ideal
 
 /-!
@@ -19,6 +22,9 @@ Facts about the localization `LocalizedModule.map S f : Mₛ → Nₛ` of a line
 submonoid `S`:
 
 * `LocalizedModule.map_comp`: localization is functorial, `(g ∘ f)ₛ = gₛ ∘ fₛ`.
+* `LocalizedModule.surjective_map_of_exact_of_subsingleton`,
+  `LocalizedModule.bijective_map_of_exact_of_subsingleton`: in an exact sequence `M → N → P` with
+  `P_S` a subsingleton, `M_S → N_S` is surjective (and bijective when `M → N` is injective).
 * `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
   after localizing at `S`.
 * `LocalizedModule.bijective_map_single`: the inclusion of a factor of a finite product becomes
@@ -58,6 +64,23 @@ theorem map_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
   ext x
   induction x using induction_on with
   | h m s => simp
+
+/-- In an exact sequence `M → N → P`, if `P_S` is a subsingleton, then `M_S → N_S` is
+surjective. -/
+theorem surjective_map_of_exact_of_subsingleton {f : M →ₗ[R] N} {g : N →ₗ[R] P}
+    (hex : Function.Exact f g) [Subsingleton (LocalizedModule S P)] :
+    Function.Surjective (map S f) :=
+  (IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective
+    (mkLinearMap S M) (mkLinearMap S N)).mp
+    fun y ↦ (LocalizedModule.map_exact S f g hex y).mp (Subsingleton.elim _ 0)
+
+/-- In an exact sequence `0 → M → N → P`, if `f : M → N` is injective and `P_S` is a
+subsingleton, then `M_S → N_S` is bijective. -/
+theorem bijective_map_of_exact_of_subsingleton {f : M →ₗ[R] N} {g : N →ₗ[R] P}
+    (hf : Function.Injective f) (hex : Function.Exact f g)
+    [Subsingleton (LocalizedModule S P)] :
+    Function.Bijective (map S f) :=
+  ⟨map_injective S f hf, surjective_map_of_exact_of_subsingleton S hex⟩
 
 variable {S} (M) in
 /-- Multiplication by an element of `S` becomes bijective after localizing at `S`. -/
@@ -127,6 +150,8 @@ namespace LinearMap
 
 open LocalizedModule
 
+section
+
 variable {R : Type*} [CommRing R] {S : Submonoid R} {M N : Type*} [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N]
 
@@ -155,76 +180,64 @@ theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
   ext n
   simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
 
+end
+
+section Semiring
+
+variable {R : Type*} [CommSemiring R] {S : Submonoid R} {M N : Type*}
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  {A : Type*} [CommSemiring A] [Algebra R A]
+
 open TensorProduct in
 /-- If the localization of `f : M →ₗ[R] N` at `S` is surjective, then the localization of its base
 change `f.baseChange A` at the image of `S` in `A` is surjective. -/
-theorem surjective_localizedModuleMap_map_baseChange {A : Type*} [CommRing A] [Algebra R A]
-    (f : M →ₗ[R] N) (hf : Function.Surjective (LocalizedModule.map S f)) :
+theorem surjective_localizedModuleMap_map_baseChange (f : M →ₗ[R] N)
+    (hf : Function.Surjective (LocalizedModule.map S f)) :
     Function.Surjective (LocalizedModule.map (S.map (algebraMap R A)) (f.baseChange A)) := by
-  let S' : Submonoid A := S.map (algebraMap R A)
-  let locAM := LocalizedModule.mkLinearMap S' (A ⊗[R] M)
-  let locAN := LocalizedModule.mkLinearMap S' (A ⊗[R] N)
-  let F := LocalizedModule.map S' (f.baseChange A)
-  have hpure (a : A) (x : N) : locAN (a ⊗ₜ[R] x) ∈ LinearMap.range F := by
-    obtain ⟨z, hz⟩ := hf (LocalizedModule.mk x 1)
-    induction z using LocalizedModule.induction_on with
-    | h m t =>
-      simp only [LocalizedModule.map_mk] at hz
-      have hclear : LocalizedModule.mkLinearMap S N (f m) =
-          LocalizedModule.mkLinearMap S N ((t : R) • x) := by
-        have := congrArg (fun u ↦ t • u) hz
-        rwa [IsLocalizedModule.mk_eq_mk', IsLocalizedModule.mk'_cancel',
-          IsLocalizedModule.mk_eq_mk', Submonoid.smul_def, ← IsLocalizedModule.mk_eq_mk',
-          LocalizedModule.smul'_mk, IsLocalizedModule.mk_eq_mk', IsLocalizedModule.mk'_one] at this
-      obtain ⟨u, hu⟩ := (IsLocalizedModule.eq_iff_exists S (LocalizedModule.mkLinearMap S N)).mp
-        hclear
-      let c : S' := ⟨algebraMap R A ((u * t : S) : R), ⟨u * t, (u * t).2, rfl⟩⟩
-      refine ⟨LocalizedModule.mk (a ⊗ₜ[R] ((u : R) • m)) c, ?_⟩
-      apply IsLocalizedModule.smul_injective locAN c
-      dsimp only [F, locAN]
-      rw [LocalizedModule.map_mk, IsLocalizedModule.mk_eq_mk', IsLocalizedModule.mk'_cancel',
-        Submonoid.smul_def, ← LinearMap.map_smul, LinearMap.baseChange_tmul, f.map_smul,
-        ← Submonoid.smul_def, hu]
-      congr 1
-      dsimp only [c]
-      rw [Submonoid.coe_mul, algebraMap_smul, ← TensorProduct.tmul_smul, Submonoid.smul_def,
-        mul_smul]
-  have hy_mem (y : A ⊗[R] N) : locAN y ∈ LinearMap.range F := by
-    induction y using TensorProduct.inductionOn with
-    | tmul a x => exact hpure a x
-    | add u v hu hv =>
-      rw [map_add]
-      exact Submodule.add_mem _ hu hv
-  intro w
-  induction w using LocalizedModule.induction_on with
-  | h y c =>
-    obtain ⟨z, hz⟩ := hy_mem y
-    induction z using LocalizedModule.induction_on with
-    | h t b =>
-      refine ⟨LocalizedModule.mk t (b * c), ?_⟩
-      apply IsLocalizedModule.smul_injective locAN (b * c)
-      have hbz : (b : A) • LocalizedModule.mk t b = locAM t := by
-        rw [← Submonoid.smul_def, IsLocalizedModule.mk_eq_mk', IsLocalizedModule.mk'_cancel']
-      have hcy : c • LocalizedModule.mk y c = locAN y := by
-        rw [IsLocalizedModule.mk_eq_mk', IsLocalizedModule.mk'_cancel']
-      have h1 : (b * c) • F (LocalizedModule.mk t (b * c)) = F (locAM t) := by
-        dsimp only [F]
-        rw [LocalizedModule.map_mk, IsLocalizedModule.mk_eq_mk', IsLocalizedModule.mk'_cancel']
-        exact (LocalizedModule.map_mk S' (f.baseChange A) t 1).symm
-      have h2 : (b * c) • LocalizedModule.mk y c = F (locAM t) := by
-        rw [mul_smul, hcy, ← hz, Submonoid.smul_def]
-        exact ((F.restrictScalars A).map_smul (b : A) (LocalizedModule.mk t b)).symm.trans
-          (congrArg F hbz)
-      exact h1.trans h2.symm
+  let lM : A ⊗[R] M →ₗ[R] LocalizedModule S M ⊗[R] A :=
+    TensorProduct.AlgebraTensorModule.rTensor R A (mkLinearMap S M) ∘ₗ
+      (TensorProduct.comm R A M).toLinearMap
+  let lN : A ⊗[R] N →ₗ[R] LocalizedModule S N ⊗[R] A :=
+    TensorProduct.AlgebraTensorModule.rTensor R A (mkLinearMap S N) ∘ₗ
+      (TensorProduct.comm R A N).toLinearMap
+  have hl : IsLocalizedModule.map S lM lN ((f.baseChange A).restrictScalars R) =
+      ((LocalizedModule.map S f).restrictScalars R).rTensor A := by
+    apply IsLocalizedModule.linearMap_ext S lM lN
+    rw [IsLocalizedModule.map_comp]
+    ext a m
+    simp [lM, lN]
+  have hsurj_R :
+      Function.Surjective (LocalizedModule.map S ((f.baseChange A).restrictScalars R)) :=
+    (IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective lM lN).mp
+      (hl ▸ LinearMap.rTensor_surjective A (hf : Function.Surjective (LocalizedModule.map S f)))
+  -- `Algebra.algebraMapSubmonoid A S` is `S.map (algebraMap R A)` by definition.
+  let S' : Submonoid A := Algebra.algebraMapSubmonoid A S
+  let m' : A ⊗[R] M →ₗ[R] LocalizedModule S' (A ⊗[R] M) :=
+    (mkLinearMap S' (A ⊗[R] M)).restrictScalars R
+  let n' : A ⊗[R] N →ₗ[R] LocalizedModule S' (A ⊗[R] N) :=
+    (mkLinearMap S' (A ⊗[R] N)).restrictScalars R
+  have : IsLocalizedModule S m' := IsLocalizedModule.restrictScalars S _
+  have : IsLocalizedModule S n' := IsLocalizedModule.restrictScalars S _
+  have hm : IsLocalizedModule.map S m' n' ((f.baseChange A).restrictScalars R) =
+      (LocalizedModule.map S' (f.baseChange A)).restrictScalars R := by
+    apply IsLocalizedModule.linearMap_ext S m' n'
+    refine LinearMap.ext fun x ↦ ?_
+    exact (IsLocalizedModule.map_apply S m' n' _ x).trans
+      (LocalizedModule.map_mk S' (f.baseChange A) x 1).symm
+  have hsurj_S' :=
+    (IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective m' n').mpr hsurj_R
+  rwa [hm] at hsurj_S'
 
 open TensorProduct in
 /-- If `LocalizedModule.map (.powers r) f` is surjective, then the localization of `f.baseChange A`
 at `algebraMap R A r` is surjective. -/
-theorem surjective_localizedModuleMap_powers_baseChange {A : Type*} [CommRing A] [Algebra R A]
-    (f : M →ₗ[R] N) (r : R) (hf : Function.Surjective (LocalizedModule.map (.powers r) f)) :
+theorem surjective_localizedModuleMap_powers_baseChange (f : M →ₗ[R] N) (r : R)
+    (hf : Function.Surjective (LocalizedModule.map (.powers r) f)) :
     Function.Surjective (LocalizedModule.map (.powers (algebraMap R A r)) (f.baseChange A)) := by
   rw [← Submonoid.map_powers]
   exact surjective_localizedModuleMap_map_baseChange f hf
+
+end Semiring
 
 end LinearMap
 

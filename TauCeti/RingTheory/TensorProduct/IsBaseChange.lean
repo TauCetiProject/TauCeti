@@ -49,6 +49,8 @@ The image of a base change map spans its target over the extended scalars.
   that is compatible with the base-change maps is bijective.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
+* `IsBaseChange.subtype_range`: the inclusion of the range of an injective base-change map is
+  itself a base-change map.
 * `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
@@ -121,6 +123,18 @@ theorem IsBaseChange.injective_of_tensorProduct_mk_injective {f : M →ₗ[R] N}
   apply hinj
   apply hf.equiv.injective
   simpa only [TensorProduct.mk_apply, hf.equiv_tmul, one_smul] using hxy
+
+/-- If an injective linear map `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along
+`R → S`, then the inclusion of `LinearMap.range f` into `N` exhibits `N` as the base change of
+`LinearMap.range f`. -/
+theorem IsBaseChange.subtype_range {f : M →ₗ[R] N} (hf : IsBaseChange S f)
+    (hinj : Function.Injective f) :
+    IsBaseChange S (LinearMap.range f).subtype := by
+  let e : M ≃ₗ[R] LinearMap.range f := LinearEquiv.ofInjective f hinj
+  refine IsBaseChange.of_equiv (e.symm.baseChange R S _ _ |>.trans hf.equiv) fun x ↦ ?_
+  have hx : f (e.symm x) = (LinearMap.range f).subtype x :=
+    congrArg (LinearMap.range f).subtype (e.apply_symm_apply x)
+  simpa [IsBaseChange.equiv_tmul] using hx
 
 section
 

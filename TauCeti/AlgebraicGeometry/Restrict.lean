@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.LocalizedModule.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
-import Mathlib.AlgebraicGeometry.QuasiAffine
+import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 
 /-!
 # Restricting local properties of scheme morphisms
@@ -29,15 +29,19 @@ global functions of the base change.
   passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
-* `AlgebraicGeometry.Scheme.Hom.bijective_localizedModuleMap_of_basicOpen_le_opensRange`: on qcqs
-  schemes, if an open immersion `f` contains `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)` in its range,
-  the induced `R`-algebra map on global sections becomes bijective after inverting `s`.
+* `AlgebraicGeometry.Scheme.Hom.bijective_localizedModuleMap_of_isIso_morphismRestrict`: on qcqs
+  schemes, if `f` restricts to an isomorphism over `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)`, the
+  induced `R`-algebra map on global sections becomes bijective after inverting `s`;
+  `AlgebraicGeometry.Scheme.Hom.bijective_localizedModuleMap_of_basicOpen_le_opensRange` specializes
+  this to open immersions containing that basic open in their range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
+* `AlgebraicGeometry.Scheme.Hom.appLE_top_top`: on global sections, `f.appLE ⊤ ⊤` agrees with
+  `f.appTop` regardless of the inclusion proof.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
   `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
@@ -79,14 +83,14 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_le_opensRange [IsOpenImmersion f] {
     Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
 
 /-- On quasi-compact quasi-separated schemes `X` and `Y` with `R`-algebra structures on their
-global sections, if `f : X ⟶ Y` is an open immersion inducing `g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)` and
-containing `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)` in its range, then `g` becomes bijective after
+global sections, if `f : X ⟶ Y` induces `g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)` and restricts to an
+isomorphism over `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)`, then `g` becomes bijective after
 inverting `s`. -/
-theorem Scheme.Hom.bijective_localizedModuleMap_of_basicOpen_le_opensRange {R : Type u} [CommRing R]
-    [CompactSpace X] [QuasiSeparatedSpace X] [CompactSpace Y] [QuasiSeparatedSpace Y]
-    [IsOpenImmersion f] [Algebra R Γ(Y, ⊤)] [Algebra R Γ(X, ⊤)] (g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤))
-    (hg : g.toRingHom = f.appTop.hom) (s : R)
-    (hs : Y.basicOpen (algebraMap R Γ(Y, ⊤) s) ≤ f.opensRange) :
+theorem Scheme.Hom.bijective_localizedModuleMap_of_isIso_morphismRestrict {R : Type*}
+    [CommSemiring R] [CompactSpace X] [QuasiSeparatedSpace X] [CompactSpace Y]
+    [QuasiSeparatedSpace Y] [Algebra R Γ(Y, ⊤)] [Algebra R Γ(X, ⊤)]
+    (g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)) (hg : g.toRingHom = f.appTop.hom) (s : R)
+    [IsIso (f ∣_ Y.basicOpen (algebraMap R Γ(Y, ⊤) s))] :
     Function.Bijective (LocalizedModule.map (.powers s) g.toLinearMap) := by
   have hgx (y : Γ(Y, ⊤)) : f.appTop y = g y := congr($hg.symm y)
   let UY := Y.basicOpen (algebraMap R Γ(Y, ⊤) s)
@@ -109,7 +113,6 @@ theorem Scheme.Hom.bijective_localizedModuleMap_of_basicOpen_le_opensRange {R : 
   let lX := (Algebra.linearMap Γ(X, ⊤) Γ(X, UX)).restrictScalars R
   have : IsLocalizedModule (.powers s) lY := IsLocalizedModule.restrictScalars_powers s _
   have : IsLocalizedModule (.powers s) lX := IsLocalizedModule.restrictScalars_powers s _
-  have : IsIso (f ∣_ UY) := f.isIso_morphismRestrict_of_le_opensRange hs
   let fLE := f.appLE UY UX hUX.le
   have hfLE_iso : IsIso fLE := by
     have h1 : IsIso ((f ∣_ UY).app ⊤) := inferInstance
@@ -136,6 +139,19 @@ theorem Scheme.Hom.bijective_localizedModuleMap_of_basicOpen_le_opensRange {R : 
     exact (congrArg resX (hgx y).symm).trans (congr($hcomm y)).symm
   rw [← IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective lY lX, hmap]
   exact (ConcreteCategory.isIso_iff_bijective fLE).mp hfLE_iso
+
+/-- On quasi-compact quasi-separated schemes `X` and `Y` with `R`-algebra structures on their
+global sections, if `f : X ⟶ Y` is an open immersion inducing `g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)` and
+containing `Y.basicOpen (algebraMap R Γ(Y, ⊤) s)` in its range, then `g` becomes bijective after
+inverting `s`. -/
+theorem Scheme.Hom.bijective_localizedModuleMap_of_basicOpen_le_opensRange {R : Type*}
+    [CommSemiring R] [CompactSpace X] [QuasiSeparatedSpace X] [CompactSpace Y]
+    [QuasiSeparatedSpace Y] [IsOpenImmersion f] [Algebra R Γ(Y, ⊤)] [Algebra R Γ(X, ⊤)]
+    (g : Γ(Y, ⊤) →ₐ[R] Γ(X, ⊤)) (hg : g.toRingHom = f.appTop.hom) (s : R)
+    (hs : Y.basicOpen (algebraMap R Γ(Y, ⊤) s) ≤ f.opensRange) :
+    Function.Bijective (LocalizedModule.map (.powers s) g.toLinearMap) := by
+  have := f.isIso_morphismRestrict_of_le_opensRange hs
+  exact f.bijective_localizedModuleMap_of_isIso_morphismRestrict g hg s
 
 /-- Restricting `f` over an open `U` of the target, with source the open `V = f ⁻¹ᵁ U` (up to a
 propositional equality), gives a pullback of `f` along the inclusion of `U`. -/
@@ -167,6 +183,13 @@ theorem HasRingHomProperty.resLE_iff (P : MorphismProperty Scheme.{u})
   rw [HasRingHomProperty.iff_of_isAffine (P := P)]
   exact (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso.arrow_mk_iso_iff
     (arrowResLEAppIso f U V hVU)
+
+/-- On global sections, `f.appLE ⊤ ⊤` agrees with `f.appTop` regardless of the inclusion proof. -/
+theorem Scheme.Hom.appLE_top_top (h : (⊤ : X.Opens) ≤ f ⁻¹ᵁ ⊤ := le_top) :
+    f.appLE ⊤ ⊤ h = f.appTop :=
+  -- `f ⁻¹ᵁ ⊤` is definitionally `⊤`, so `h` agrees with `(Scheme.Hom.preimage_top f).ge` by proof
+  -- irrelevance and `f.app ⊤` is definitionally `f.appTop`.
+  (Scheme.Hom.app_eq_appLE f).symm
 
 /-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
 `f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/

@@ -36,13 +36,33 @@ change `X ×_k Spec K`, over `Spec K`.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback`: the base change
   of an affine chart is an affine chart of the base change.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
-  identifies an affine base change over its new base.
+  identifies an affine base change over its new base;
+  `TauCeti.AlgebraicGeometry.exists_pullbackSpecIso_of_isPushout` packages the resulting
+  isomorphism with an affine `Spec T`-scheme whose global sections form an `Algebra.IsPushout`.
+* `AlgebraicGeometry.Scheme.Hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop`: any morphism
+  `p : X ⟶ Spec R` factors through `X.toSpecΓ` followed by `Spec.map` of
+  `(ΓSpecIso R).inv ≫ p.appTop`.
 -/
 
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
 open scoped TensorProduct
+
+namespace AlgebraicGeometry
+
+universe u
+
+/-- Any morphism `p : X ⟶ Spec R` factors through `X.toSpecΓ` followed by `Spec.map` of the
+induced ring map `R ⟶ Γ(X, ⊤)`. -/
+@[reassoc]
+theorem Scheme.Hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop {R : CommRingCat.{u}} {X : Scheme.{u}}
+    (p : X ⟶ Spec R) :
+    X.toSpecΓ ≫ Spec.map ((Scheme.ΓSpecIso R).inv ≫ p.appTop) = p := by
+  rw [Spec.map_comp, ← Scheme.toSpecΓ_naturality_assoc, toSpecΓ_SpecMap_ΓSpecIso_inv,
+    Category.comp_id]
+
+end AlgebraicGeometry
 
 namespace TauCeti
 
@@ -123,6 +143,46 @@ theorem pullbackSpecIsoOfAlgEquiv_inv_left (R B T C : Type u)
         (pullbackSpecIso R T B).inv ≫
           (pullbackSymmetry (Spec.algebraMap R B) (Spec.algebraMap R T)).inv :=
   (rfl)
+
+/-- If the global sections of an affine `Spec T`-scheme `Y'` form a pushout `T ⊗[R] B`, then
+`Spec B ×_{Spec R} Spec T` is isomorphic to `Y'` over `Spec T`, with inverse first projection
+induced by `algebraMap B Γ(Y'.left, ⊤)`. -/
+theorem exists_pullbackSpecIso_of_isPushout (R B T : Type u)
+    [CommRing R] [CommRing B] [CommRing T] [Algebra R B] [Algebra R T]
+    (Y' : Over (Spec (.of T))) [IsAffine Y'.left]
+    [Algebra R Γ(Y'.left, ⊤)] [Algebra B Γ(Y'.left, ⊤)] [Algebra T Γ(Y'.left, ⊤)]
+    [IsScalarTower R B Γ(Y'.left, ⊤)] [IsScalarTower R T Γ(Y'.left, ⊤)]
+    [Algebra.IsPushout R T B Γ(Y'.left, ⊤)]
+    (hY' : algebraMap T Γ(Y'.left, ⊤) = ((Scheme.ΓSpecIso (.of T)).inv ≫ Y'.hom.appTop).hom) :
+    ∃ eSpec : Over.mk (pullback.snd (Spec.algebraMap R B) (Spec.algebraMap R T)) ≅ Y',
+      eSpec.inv.left ≫ pullback.fst (Spec.algebraMap R B) (Spec.algebraMap R T) =
+        Y'.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom (algebraMap B Γ(Y'.left, ⊤))) := by
+  have hY'_isoSpec : Y'.left.isoSpec.hom ≫ Spec.algebraMap T Γ(Y'.left, ⊤) = Y'.hom := by
+    rw [Scheme.isoSpec_hom, Spec.algebraMap, hY', CommRingCat.ofHom_hom]
+    exact Y'.hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop
+  let eSpec : Over.mk (pullback.snd (Spec.algebraMap R B) (Spec.algebraMap R T)) ≅ Y' :=
+    pullbackSpecIsoOfAlgEquiv R B T Γ(Y'.left, ⊤)
+      (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤)) ≪≫
+      Over.isoMk Y'.left.isoSpec.symm (by
+        rw [Iso.symm_hom, ← cancel_epi Y'.left.isoSpec.hom, Iso.hom_inv_id_assoc]
+        exact hY'_isoSpec.symm)
+  refine ⟨eSpec, ?_⟩
+  have hval : (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤)).toRingHom.comp
+      ↑(Algebra.TensorProduct.includeRight : B →ₐ[R] T ⊗[R] B) =
+      algebraMap B Γ(Y'.left, ⊤) := by
+    ext b
+    exact (Algebra.IsPushout.equiv_tmul R T B Γ(Y'.left, ⊤) 1 b).trans (by simp)
+  have hproj :
+      (pullbackSpecIsoOfAlgEquiv R B T Γ(Y'.left, ⊤)
+          (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤))).inv.left ≫
+        pullback.fst (Spec.algebraMap R B) (Spec.algebraMap R T) =
+        Spec.map (CommRingCat.ofHom (algebraMap B Γ(Y'.left, ⊤))) := by
+    rw [pullbackSpecIsoOfAlgEquiv_inv_left, Category.assoc, Category.assoc,
+      pullbackSymmetry_inv_comp_fst, pullbackSpecIso_inv_snd, ← Spec.map_comp,
+      ← CommRingCat.ofHom_comp, hval]
+  dsimp only [eSpec, Iso.trans_inv, Over.comp_left]
+  rw [Category.assoc]
+  exact congrArg (Y'.left.toSpecΓ ≫ ·) hproj
 
 end AlgebraicGeometry
 
