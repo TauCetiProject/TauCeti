@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.SU2.Polynomial
+public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial
 
 /-!
 # Binary monomials, substitution and the symmetric-power dictionary in small degree
 
 Checks of `TauCeti.RingTheory.MvPolynomial.BinaryMonomial`,
-`TauCeti.RingTheory.MvPolynomial.LinearSubst`,
-`TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial` and
-`TauCeti.RepresentationTheory.SU2.Polynomial` in two complex variables `x = X 0` and
-`y = X 1`. Each value below excludes a plausible wrong convention.
+`TauCeti.RingTheory.MvPolynomial.LinearSubst` and
+`TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial` in two complex variables
+`x = X 0` and `y = X 1`. Each value below excludes a plausible wrong convention.
 
 * The monomial `e_0^0` is `1`, not an empty product read as `0`; `e_1^2` is `x y` with
   coefficient `1`, not `2 x y`; `e_2^1` is `0`, not `y²` from truncated subtraction.

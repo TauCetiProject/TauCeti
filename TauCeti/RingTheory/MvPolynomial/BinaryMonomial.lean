@@ -23,7 +23,7 @@ standard vectors `TauCeti.polynomialAction` scales `x ^ (d - i) * y ^ i` by
 ## Main results
 
 * `TauCeti.coeff_polynomialMonomial`: the binary monomial has coefficient `1` at the exponent
-  `(d - i, i)` and `0` elsewhere.
+  `(d - i, i)` when `i ≤ d`, and `0` elsewhere.
 * `TauCeti.polynomialAction_diagonal_polynomialMonomial`: the binary monomial has weight
   `(d - i, i)`.
 
@@ -62,7 +62,8 @@ theorem polynomialMonomial_of_le (h : i ≤ d) :
 theorem polynomialMonomial_of_lt (h : d < i) : polynomialMonomial R d i = 0 := by
   simp [polynomialMonomial, h.not_ge]
 
-/-- The binary monomial `e_i^d` is the monomial with exponent `(d - i, i)` and coefficient `1`. -/
+/-- For `i ≤ d`, the binary monomial `e_i^d` is the monomial with exponent `(d - i, i)` and
+coefficient `1`. -/
 theorem polynomialMonomial_eq_monomial (h : i ≤ d) :
     polynomialMonomial R d i =
       monomial (Finsupp.single 0 (d - i) + Finsupp.single 1 i) 1 := by
@@ -108,7 +109,7 @@ theorem coeff_polynomialMonomial (s : Fin 2 →₀ ℕ) :
   · simp [polynomialMonomial_eq_monomial h, coeff_monomial, h]
   · simp [polynomialMonomial_of_lt (not_le.mp h), h]
 
-/-- The binary monomial `e_i^d` has coefficient `1` at the exponent `(d - i, i)`. -/
+/-- For `i ≤ d`, the binary monomial `e_i^d` has coefficient `1` at the exponent `(d - i, i)`. -/
 theorem coeff_polynomialMonomial_self (h : i ≤ d) :
     (polynomialMonomial R d i).coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) = 1 := by
   simp [h]
