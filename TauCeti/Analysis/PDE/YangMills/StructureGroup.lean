@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
+public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Compact matrix structure groups
@@ -104,15 +106,13 @@ theorem innerForm_self_pos {X : S.group.matrixLieAlgebra} (hX : X ≠ 0) :
   S.posDef_innerForm X hX
 
 /-- The inner product of an element with itself is nonnegative. -/
-theorem innerForm_self_nonneg (X : S.group.matrixLieAlgebra) : 0 ≤ S.innerForm X X := by
-  rcases eq_or_ne X 0 with rfl | hX
-  · simp
-  · exact (S.innerForm_self_pos hX).le
+theorem innerForm_self_nonneg (X : S.group.matrixLieAlgebra) : 0 ≤ S.innerForm X X :=
+  S.posDef_innerForm.nonneg X
 
 /-- An element is zero exactly when its inner product with itself vanishes. -/
 @[simp]
 theorem innerForm_self_eq_zero {X : S.group.matrixLieAlgebra} : S.innerForm X X = 0 ↔ X = 0 :=
-  ⟨fun h ↦ by_contra fun hX ↦ (S.innerForm_self_pos hX).ne' h, fun h ↦ by simp [h]⟩
+  S.posDef_innerForm.anisotropic.eq_zero_iff
 
 section OfTraceForm
 
@@ -155,8 +155,8 @@ def restrict (S : CompactMatrixStructureGroup n) (hH : H ≤ S.group) :
     (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH)).toLinearMap
     (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH)).toLinearMap
   isSymm_innerForm := ⟨fun X Y ↦ S.innerForm_comm _ _⟩
-  posDef_innerForm X hX := S.innerForm_self_pos fun h ↦ hX <|
-    LieSubalgebra.inclusion_injective (ClosedSubgroup.matrixLieAlgebra_mono hH) (by simpa using h)
+  posDef_innerForm := LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂ _ S.posDef_innerForm _
+    (LieSubalgebra.inclusion_injective (ClosedSubgroup.matrixLieAlgebra_mono hH))
   isInvariantForm_innerForm := Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
     have hAd (Z : H.matrixLieAlgebra) :
         LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH)
@@ -201,16 +201,12 @@ def prod (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGr
   isSymm_innerForm := ⟨fun X Y ↦ by
     simp only [LinearMap.compl₁₂_apply, LinearMap.add_apply, LinearMap.fst_apply,
       LinearMap.snd_apply, S₁.innerForm_comm, S₂.innerForm_comm]⟩
-  posDef_innerForm X hX := by
-    simp only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compl₁₂_apply,
-      LinearMap.add_apply, LinearMap.fst_apply, LinearMap.snd_apply, LinearEquiv.coe_coe,
-      LieEquiv.coe_toLinearEquiv]
-    have he : S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group X ≠ 0 := by simpa using hX
-    rcases ne_or_eq (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group X).1 0 with h₁ | h₁
-    · exact add_pos_of_pos_of_nonneg (S₁.innerForm_self_pos h₁) (S₂.innerForm_self_nonneg _)
-    · have h₂ : (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group X).2 ≠ 0 :=
-        fun h₂ ↦ he (Prod.ext h₁ h₂)
-      exact add_pos_of_nonneg_of_pos (S₁.innerForm_self_nonneg _) (S₂.innerForm_self_pos h₂)
+  posDef_innerForm := by
+    refine LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂ _ ?_ _
+      (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group).toLinearEquiv.injective
+    -- The quadratic map of the orthogonal sum of the two forms is, by definition, the product
+    -- `QuadraticMap.prod` of their quadratic maps.
+    exact S₁.posDef_innerForm.prod S₂.posDef_innerForm
   isInvariantForm_innerForm := Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
     obtain ⟨g₁, h₁, g₂, h₂, hg⟩ := ClosedSubgroup.mem_fromBlocksProd_iff.mp g.2
     have hg' : g = ⟨Matrix.UnitaryGroup.sum (g₁, g₂),
