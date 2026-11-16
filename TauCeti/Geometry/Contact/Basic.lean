@@ -47,9 +47,10 @@ interior point the condition can be checked in the preferred chart
 manifolds, such as the existence of Darboux charts, to open subsets of the model space. On a normed
 space this is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the bilinear
 form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`). In finite dimension, since
-linear contactness is open (`TauCeti.isOpen_setOf_isContact`), a `C¹` one-form that is contact at
-`x` remains contact on a neighbourhood of `x` (`TauCeti.IsContactFormAt.eventually`,
-`TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`, `TauCeti.IsContactFormAt.eventually_modelSpace`).
+linear contactness is open (`TauCeti.isOpen_setOf_isContact_continuousAlternatingMap`), a `C¹`
+one-form that is contact at `x` remains contact on a neighbourhood of `x`
+(`TauCeti.IsContactFormAt.eventually`, `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`,
+`TauCeti.IsContactFormAt.eventually_modelSpace`).
 
 ## Main declarations
 
@@ -390,21 +391,6 @@ private theorem isContactFormAt_iff_isContact_of_equiv {α : RoughForm I M ℝ 1
       rw [map_zero]
       exact h (L v) (by simpa using RoughForm.mem_ker.1 hv) fun w hw ↦ by
         simpa using hvw (L.symm w) (RoughForm.mem_ker.2 hw)⟩⟩
-
-private theorem isOpen_setOf_isContact_continuousAlternatingMap [FiniteDimensional ℝ E] :
-    IsOpen {p : (E [⋀^Fin 1]→L[ℝ] ℝ) × (E [⋀^Fin 2]→L[ℝ] ℝ) |
-      Module.Dual.IsContact (ContinuousAlternatingMap.toDual p.1 : E →ₗ[ℝ] ℝ)
-        (ContinuousAlternatingMap.flatL ℝ E ℝ p.2).toLinearMap₁₂} :=
-  isOpen_setOf_isContact
-    (fun v ↦ by
-      simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply]
-      exact (ContinuousAlternatingMap.apply ℝ E ℝ (![v] : Fin 1 → E)).continuous.comp
-        continuous_fst)
-    (fun v w ↦ by
-      simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-        ContinuousAlternatingMap.flatL_apply_apply]
-      exact (ContinuousAlternatingMap.apply ℝ E ℝ (![v, w] : Fin 2 → E)).continuous.comp
-        continuous_snd)
 
 open scoped Topology in
 /-- **Openness of the pointwise contact condition.** On a finite-dimensional `C²` manifold, a `C¹`

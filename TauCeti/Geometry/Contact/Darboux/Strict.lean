@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.TwoForm.Kernel
+import TauCeti.Geometry.Symplectic.Liouville.Linear
 import TauCeti.Geometry.Symplectic.Manifold.Darboux
 
 /-!
@@ -107,62 +108,6 @@ section PrimitiveShift
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- The zero-section embedding `(q, p) ↦ (q, p, 0)` of `V × V` into `V × V × ℝ`. -/
-private def momentumSectionCLM : V × V →L[ℝ] V × V × ℝ :=
-  (ContinuousLinearMap.fst ℝ V V).prod
-    ((ContinuousLinearMap.snd ℝ V V).prod (0 : V × V →L[ℝ] ℝ))
-
-/-- The smooth one-form `y ↦ (u ↦ ⟪y.2, u.1⟫)` on `V × V`, obtained by pulling
-`-innerProductContactForm V` back along `momentumSectionCLM`. -/
-private def momentumOneForm : SmoothForm 𝓘(ℝ, V × V) (V × V) ℝ 1 :=
-  SmoothForm.mpullback (momentumSectionCLM (V := V))
-    (momentumSectionCLM (V := V)).contDiff.contMDiff (-innerProductContactForm V)
-
-private def momentumOneFormFun : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ :=
-  (momentumOneForm (V := V)).1
-
-private theorem contDiff_momentumOneFormFun : ContDiff ℝ ∞ (momentumOneFormFun (V := V)) :=
-  isSmoothForm_modelSpace_iff.1 (momentumOneForm (V := V)).isSmoothForm
-
-private theorem momentumOneFormFun_apply (y u : V × V) :
-    momentumOneFormFun y ![u] = ⟪y.2, u.1⟫_ℝ := by
-  have h := SmoothForm.mpullback_apply_one (momentumSectionCLM (V := V))
-    (momentumSectionCLM (V := V)).contDiff.contMDiff (-innerProductContactForm V) y
-    ((NormedSpace.fromTangentSpace y).symm u)
-  rw [(momentumSectionCLM (V := V)).mfderiv_eq, SmoothForm.neg_toRoughForm, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, innerProductContactForm_apply] at h
-  have hlhs : momentumOneFormFun y ![u] =
-      (momentumOneForm (V := V)).1 y ![(NormedSpace.fromTangentSpace y).symm u] := by
-    dsimp only [momentumOneFormFun]
-    simp only [NormedSpace.fromTangentSpace_symm_apply]
-    -- `TangentSpace 𝓘(ℝ, V × V) y` and `V × V` share the same carrier.
-    rfl
-  refine hlhs.trans (h.trans ?_)
-  -- `ContinuousLinearMap.mfderiv_eq` views `momentumSectionCLM` on `TangentSpace`, which shares
-  -- the same carrier as `V × V` and `V × V × ℝ`.
-  rw [neg_sub]
-  exact sub_zero _
-
-private theorem extDeriv_momentumOneFormFun_apply (y u w : V × V) :
-    extDeriv (momentumOneFormFun (V := V)) y ![u, w] = -stdSymplecticForm u w := by
-  have h := SmoothForm.mextDeriv_mpullback_apply_two (momentumSectionCLM (V := V))
-    (momentumSectionCLM (V := V)).contDiff.contMDiff (-innerProductContactForm V) y
-    ((NormedSpace.fromTangentSpace y).symm u) ((NormedSpace.fromTangentSpace y).symm w)
-  rw [(momentumSectionCLM (V := V)).mfderiv_eq, SmoothForm.neg_toRoughForm, mextDeriv_neg,
-    Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
-    mextDeriv_innerProductContactForm_apply] at h
-  have hlhs : extDeriv (momentumOneFormFun (V := V)) y ![u, w] =
-      mextDeriv (momentumOneForm (V := V)).1 y
-        ![(NormedSpace.fromTangentSpace y).symm u, (NormedSpace.fromTangentSpace y).symm w] := by
-    dsimp only [momentumOneFormFun]
-    rw [← mextDeriv_eq_extDeriv]
-    simp only [NormedSpace.fromTangentSpace_symm_apply]
-    -- `TangentSpace 𝓘(ℝ, V × V) y` and `V × V` share the same carrier.
-    rfl
-  -- `ContinuousLinearMap.mfderiv_eq` views `momentumSectionCLM` on `TangentSpace`, which shares
-  -- the same carrier as `V × V` and `V × V × ℝ`.
-  exact hlhs.trans h
-
 /-- On a star-convex open subset `B` of `V × V` centred at `y₀`, any smooth one-form `β₁` whose
 exterior derivative is `stdSymplecticForm` differs from `-⟪p, dq⟫` by the differential of a smooth
 function `f` vanishing at `y₀`. -/
@@ -172,17 +117,27 @@ private theorem exists_primitive_add_inner_eq {B : Set (V × V)} {y₀ : V × V}
     (hdβ₁ : ∀ y ∈ B, ∀ u w : V × V, extDeriv β₁ y ![u, w] = stdSymplecticForm u w) :
     ∃ f : V × V → ℝ, ContDiffOn ℝ ∞ f B ∧ f y₀ = 0 ∧
       ∀ y ∈ B, ∀ u : V × V, fderiv ℝ f y u = β₁ y ![u] + ⟪y.2, u.1⟫_ℝ := by
-  set η₀ : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ := β₁ + momentumOneFormFun
-  have hη₀ : ContDiffOn ℝ ∞ η₀ B := hβ₁.add (contDiff_momentumOneFormFun (V := V)).contDiffOn
+  let B₀ : (V × V) →L[ℝ] (V × V) →L[ℝ] ℝ :=
+    (innerSL ℝ).bilinearComp (ContinuousLinearMap.snd ℝ V V) (ContinuousLinearMap.fst ℝ V V)
+  let θ₀ := ContinuousLinearMap.liouvilleFormCLM ((2 : ℝ) • B₀)
+  have hθ₀_apply (y u : V × V) : θ₀ y ![u] = ⟪y.2, u.1⟫_ℝ := by
+    simp [θ₀, B₀, ContinuousLinearMap.liouvilleFormCLM_apply]
+  have hdθ₀ (y u w : V × V) : extDeriv θ₀ y ![u, w] = -stdSymplecticForm u w := by
+    dsimp only [θ₀]
+    rw [ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply]
+    simp [B₀, stdSymplecticForm_apply, real_inner_comm w.2 u.1]
+    ring
+  set η₀ : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ := β₁ + ⇑θ₀
+  have hη₀ : ContDiffOn ℝ ∞ η₀ B := hβ₁.add θ₀.contDiff.contDiffOn
   have hdη₀ : ∀ y ∈ B, extDeriv η₀ y = 0 := by
     intro y hy
     have hdiff₁ : DifferentiableAt ℝ β₁ y :=
       (hβ₁.differentiableOn (by simp) y hy).differentiableAt (hB.mem_nhds hy)
-    have hdiff₂ : DifferentiableAt ℝ (momentumOneFormFun (V := V)) y :=
-      (contDiff_momentumOneFormFun (V := V)).differentiable (by simp) y
     refine ContinuousAlternatingMap.ext_fin_two fun u w ↦ ?_
     dsimp only [η₀]
-    simp [extDeriv_add hdiff₁ hdiff₂, hdβ₁ y hy, extDeriv_momentumOneFormFun_apply]
+    rw [extDeriv_add hdiff₁ θ₀.differentiableAt, ContinuousAlternatingMap.add_apply,
+      hdβ₁ y hy, hdθ₀]
+    simp
   obtain ⟨γ, hγ, hγ₀, hdγ⟩ :=
     hstar.exists_contDiffOn_forall_extDeriv_eq hB (r := ⊤) le_top hη₀ hdη₀
   let ev₀ : ((V × V) [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ :=
@@ -197,7 +152,7 @@ private theorem exists_primitive_add_inner_eq {B : Set (V × V)} {y₀ : V × V}
   have heq := congrArg (fun A : (V × V) [⋀^Fin 1]→L[ℝ] ℝ ↦ A ![u]) (hdγ y hy)
   rw [extDeriv_apply_fin_one] at heq
   rw [hdf.fderiv, ContinuousLinearMap.comp_apply]
-  simpa [ev₀, η₀, momentumOneFormFun_apply] using heq
+  simpa [ev₀, η₀, hθ₀_apply] using heq
 
 /-- The smooth partial diffeomorphism `((q, p), t) ↦ (q, p, t + f (q, p))` from `(V × V) × ℝ`
 (with product model `𝓘(ℝ, V × V).prod 𝓘(ℝ)`) to `V × V × ℝ` (with self model `𝓘(ℝ, V × V × ℝ)`),

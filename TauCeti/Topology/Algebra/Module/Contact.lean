@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.LinearAlgebra.BilinearForm.Contact
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Compactness.Compact
@@ -14,14 +15,17 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 # Openness of the contact condition
 
 For a continuous family of covectors and bilinear forms on a finite-dimensional space,
-the contact condition is open. Continuity of each evaluation suffices. The test is the
-determinant of the symplectization form on one extra dimension, using
-`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`.
+the contact condition is open (`TauCeti.isOpen_setOf_isContact`). Continuity of each evaluation
+suffices. The test is the determinant of the symplectization form on one extra dimension, using
+`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. In particular, on a
+finite-dimensional normed space, the pairs of a continuous alternating one-form and two-form
+satisfying the linear contact condition form an open set
+(`TauCeti.isOpen_setOf_isContact_continuousAlternatingMap`).
 
 Consequently, if two such pairs agree and are contact along a subset, their affine
 interpolation is contact on a neighborhood of that subset, uniformly over any compact
-set of interpolation parameters. The subset need not be compact or closed. This is
-the neighborhood-shrinking step for contact deformations.
+set of interpolation parameters (`TauCeti.exists_isOpen_isContact_affine`). The subset need not be
+compact or closed. This is the neighborhood-shrinking step for contact deformations.
 
 ## References
 
@@ -36,6 +40,8 @@ open Set
 open scoped Topology
 
 namespace TauCeti
+
+section
 
 variable {𝕜 V X : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
   [T1Space 𝕜] [AddCommGroup V] [Module 𝕜 V] [FiniteDimensional 𝕜 V] [TopologicalSpace X]
@@ -86,5 +92,26 @@ theorem exists_isOpen_isContact_affine
   dsimp [W]
   rw [ha x hx, hB x hx, ← add_smul, ← add_smul, sub_add_cancel, one_smul, one_smul]
   exact hcontact x hx
+
+end
+
+/-- In finite dimensions, the pairs of a continuous alternating one-form and two-form satisfying
+the linear contact condition form an open set. -/
+theorem isOpen_setOf_isContact_continuousAlternatingMap
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [FiniteDimensional 𝕜 E] :
+    IsOpen {p : (E [⋀^Fin 1]→L[𝕜] 𝕜) × (E [⋀^Fin 2]→L[𝕜] 𝕜) |
+      Module.Dual.IsContact (ContinuousAlternatingMap.toDual p.1 : E →ₗ[𝕜] 𝕜)
+        (ContinuousAlternatingMap.flatL 𝕜 E 𝕜 p.2).toLinearMap₁₂} :=
+  isOpen_setOf_isContact
+    (fun v ↦ by
+      simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply]
+      exact (ContinuousAlternatingMap.apply 𝕜 E 𝕜 (![v] : Fin 1 → E)).continuous.comp
+        continuous_fst)
+    (fun v w ↦ by
+      simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+        ContinuousAlternatingMap.flatL_apply_apply]
+      exact (ContinuousAlternatingMap.apply 𝕜 E 𝕜 (![v, w] : Fin 2 → E)).continuous.comp
+        continuous_snd)
 
 end TauCeti
