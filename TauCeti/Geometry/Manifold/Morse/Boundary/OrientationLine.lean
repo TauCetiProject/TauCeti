@@ -209,13 +209,11 @@ signed count of the trajectories from `p` to `q`. The product does not depend on
 a basis. -/
 noncomputable def trajectoryLineMap :
     φp.unstableOrientationLine R →ₗ[R] φq.unstableOrientationLine R where
-  toFun g := ⟨fun oq ↦ g.1
-      (Module.finBasisOfFinrankEq ℝ _ φp.finrank_negativeWeight_fun).orientation *
-    hX.signedTrajectoryCount φp φq
-      (Module.finBasisOfFinrankEq ℝ _ φp.finrank_negativeWeight_fun).orientation oq hpq,
+  toFun g := ⟨fun oq ↦ g.1 φp.negativeOrientation *
+      hX.signedTrajectoryCount φp φq φp.negativeOrientation oq hpq,
     mem_orientationLine_iff.2 fun oq ↦ by simp⟩
-  map_add' g g' := Subtype.ext (funext fun oq ↦ add_mul _ _ _)
-  map_smul' r g := Subtype.ext (funext fun oq ↦ mul_assoc _ _ _)
+  map_add' g g' := by ext; simp [add_mul]
+  map_smul' r g := by ext; simp [mul_assoc]
 
 variable {hX φp φq hpq R}
 
@@ -228,10 +226,8 @@ theorem trajectoryLineMap_apply (g : φp.unstableOrientationLine R)
     (hX.trajectoryLineMap φp φq hpq R g).1 oq =
       g.1 op * hX.signedTrajectoryCount φp φq op oq hpq := by
   simp only [trajectoryLineMap, LinearMap.coe_mk, AddHom.coe_mk]
-  rcases (Module.finBasisOfFinrankEq ℝ _ φp.finrank_negativeWeight_fun).orientation
-    |>.eq_or_eq_neg_of_card_eq_finrank op φp.card_fin_manifoldMorseIndex_eq_finrank with h | h <;>
-    rw [h]
-  simp
+  rcases φp.negativeOrientation.eq_or_eq_neg_of_card_eq_finrank op
+    φp.card_fin_manifoldMorseIndex_eq_finrank with h | h <;> simp [h]
 
 end TrajectoryMap
 
@@ -353,7 +349,7 @@ theorem orientationLineChartEquiv_orientationLineBoundary (hf : IsMorse 𝓘(ℝ
   -- read the boundary in the charts `φ'` at the transports of the orientations `o`.
   obtain ⟨o⟩ : Nonempty ((p : criticalPoints 𝓘(ℝ, E) f) →
       Orientation ℝ ({i // (φ p).weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :=
-    ⟨fun p ↦ (Module.finBasisOfFinrankEq ℝ _ (φ p).finrank_negativeWeight_fun).orientation⟩
+    ⟨fun p ↦ (φ p).negativeOrientation⟩
   refine orientationLine_ext (φ' q).card_fin_manifoldMorseIndex_eq_finrank
     (Orientation.map _ ((φ q).negativeChange (φ' q)) (o q)) ?_
   rw [orientationLineChartEquiv_apply, LinearEquiv.orientationLineCongr_apply_map,
