@@ -98,6 +98,20 @@ private theorem detLineTensorDualPUnitEquiv_tmul (γ : TauCeti.detLine 𝕜 Λ) 
   simp [detLineTensorDualPUnitEquiv]
 
 variable (D₁ D₂) in
+/-- The six-term isomorphism `TauCeti.detLineSixTermEquiv` of the exact sequence
+`0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁ → F ⧸ range (D₁.coprod D₂) → 0 → 0`
+of the extension. -/
+private noncomputable def detLineCoprodSixTermEquiv :
+    ((D₁.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F).detLine ≃ₗ[𝕜]
+      (TauCeti.detLine 𝕜 D₁.ker ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 (F ⧸ D₁.range))) ⊗[𝕜]
+        (TauCeti.detLine 𝕜 Λ ⊗[𝕜] Dual 𝕜 (TauCeti.detLine 𝕜 PUnit.{1})) :=
+  TauCeti.detLineSixTermEquiv (kerCoprodHom_injective D₁ D₂)
+    (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
+    (exact_parameterToCoker_cokerCoprodHom D₁ D₂)
+    ((LinearMap.exact_zero_iff_surjective PUnit.{1} _).2 (cokerCoprodHom_surjective D₁ D₂))
+    (Function.surjective_to_subsingleton _)
+
+variable (D₁ D₂) in
 /-- **The determinant line of an extended operator.** For `D₁ : E →L[𝕜] F` with
 finite-dimensional kernel and cokernel and finitely many directions `D₂ : Λ →L[𝕜] F`, the
 canonical isomorphism `det (D₁.coprod D₂) ≃ det D₁ ⊗ det Λ`. It is `TauCeti.detLineSixTermEquiv`
@@ -109,23 +123,14 @@ need not be onto. -/
 noncomputable def detLineCoprodTensorEquiv :
     ((D₁.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F).detLine ≃ₗ[𝕜]
       (D₁ : E →ₗ[𝕜] F).detLine ⊗[𝕜] TauCeti.detLine 𝕜 Λ :=
-  TauCeti.detLineSixTermEquiv (kerCoprodHom_injective D₁ D₂)
-      (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
-      (exact_parameterToCoker_cokerCoprodHom D₁ D₂)
-      ((LinearMap.exact_zero_iff_surjective PUnit.{1} _).2 (cokerCoprodHom_surjective D₁ D₂))
-      (Function.surjective_to_subsingleton _) ≪≫ₗ
-    (detLineTensorDualPUnitEquiv 𝕜 Λ).lTensor _
+  detLineCoprodSixTermEquiv D₁ D₂ ≪≫ₗ (detLineTensorDualPUnitEquiv 𝕜 Λ).lTensor _
 
 /-- `ContinuousLinearMap.detLineCoprodTensorEquiv` is the six-term isomorphism of the exact
 sequence of the extension, followed by the identification of `det 0` with `𝕜`. -/
 private theorem detLineCoprodTensorEquiv_apply
     (t : ((D₁.coprod D₂ : E × Λ →L[𝕜] F) : E × Λ →ₗ[𝕜] F).detLine) :
-    detLineCoprodTensorEquiv D₁ D₂ t = (detLineTensorDualPUnitEquiv 𝕜 Λ).lTensor _
-      (TauCeti.detLineSixTermEquiv (kerCoprodHom_injective D₁ D₂)
-        (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
-        (exact_parameterToCoker_cokerCoprodHom D₁ D₂)
-        ((LinearMap.exact_zero_iff_surjective PUnit.{1} _).2 (cokerCoprodHom_surjective D₁ D₂))
-        (Function.surjective_to_subsingleton _) t) :=
+    detLineCoprodTensorEquiv D₁ D₂ t =
+      (detLineTensorDualPUnitEquiv 𝕜 Λ).lTensor _ (detLineCoprodSixTermEquiv D₁ D₂ t) :=
   (rfl)
 
 /-- **The value of `ContinuousLinearMap.detLineCoprodTensorEquiv` on exterior products.** Choose
@@ -159,7 +164,7 @@ theorem detLineCoprodTensorEquiv_tmul (u : Fin (finrank 𝕜 D₁.ker) → D₁.
       ExteriorAlgebra.ιMulti 𝕜 _ (Fin.append (cokerCoprodHom D₁ D₂ ∘ x) y) := by
     rw [hε, ← ExteriorAlgebra.ιMulti_mul_ιMulti, TauCeti.ExteriorAlgebra.ιMulti_comp_cast,
       ExteriorAlgebra.ιMulti_zero_apply, mul_one]
-  rw [detLineCoprodTensorEquiv_apply,
+  rw [detLineCoprodTensorEquiv_apply, detLineCoprodSixTermEquiv,
     TauCeti.detLineSixTermEquiv_tmul _ _ _ _ _ _ u v w x y hβ hγ hδ hε' φ hψ
       (TauCeti.detLineEquivOfFinrankEqZero_ιMulti finrank_punit _),
     LinearEquiv.map_smul, LinearEquiv.lTensor_tmul, detLineTensorDualPUnitEquiv_tmul]
@@ -209,19 +214,13 @@ private theorem detLineCoprodTensorEquiv_congr (eΛ : Λ' ≃ₗ[𝕜] Λ)
       TensorProduct.congr (LinearEquiv.refl 𝕜 _) eΛ.detLineCongr
         (detLineCoprodTensorEquiv D₁ D₂' t) := by
   rw [detLineCoprodTensorEquiv_apply, detLineCoprodTensorEquiv_apply,
-    TauCeti.detLineSixTermEquiv_congr (kerCoprodHom_injective D₁ D₂')
-      (exact_kerCoprodHom_parameterProj D₁ D₂') (exact_parameterProj_parameterToCoker D₁ D₂')
-      (exact_parameterToCoker_cokerCoprodHom D₁ D₂')
-      ((LinearMap.exact_zero_iff_surjective PUnit.{1} _).2 (cokerCoprodHom_surjective D₁ D₂'))
-      (Function.surjective_to_subsingleton _) (kerCoprodHom_injective D₁ D₂)
-      (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
-      (exact_parameterToCoker_cokerCoprodHom D₁ D₂)
-      ((LinearMap.exact_zero_iff_surjective PUnit.{1} _).2 (cokerCoprodHom_surjective D₁ D₂))
-      (Function.surjective_to_subsingleton _) (LinearEquiv.refl 𝕜 D₁.ker) e₂ eΛ
-      (LinearEquiv.refl 𝕜 (F ⧸ D₁.range)) e₅ (LinearEquiv.refl 𝕜 PUnit.{1})
-      (LinearMap.ext fun x ↦ (h₁ x).symm) (LinearMap.ext h₂) (LinearMap.ext h₃)
-      (LinearMap.ext fun z ↦ (h₄ z).symm) (LinearMap.ext fun _ ↦ rfl)]
-  exact lTensor_detLineTensorDualPUnitEquiv_congr eΛ _
+    ← lTensor_detLineTensorDualPUnitEquiv_congr eΛ]
+  refine congrArg ((detLineTensorDualPUnitEquiv 𝕜 Λ).lTensor _) ?_
+  -- The exactness data of both sequences is read off `detLineCoprodSixTermEquiv`.
+  refine TauCeti.detLineSixTermEquiv_congr _ _ _ _ _ _ _ _ _ _ _ _ (LinearEquiv.refl 𝕜 D₁.ker) e₂
+    eΛ (LinearEquiv.refl 𝕜 (F ⧸ D₁.range)) e₅ (LinearEquiv.refl 𝕜 PUnit.{1}) ?_ ?_ ?_ ?_ ?_ t
+  exacts [LinearMap.ext fun x ↦ (h₁ x).symm, LinearMap.ext h₂, LinearMap.ext h₃,
+    LinearMap.ext fun z ↦ (h₄ z).symm, LinearMap.ext fun _ ↦ rfl]
 
 /-- **Independence of the extension data.** Let `e : E × Λ' ≃ E × Λ` fix `E × 0` pointwise, induce
 `eΛ : Λ' ≃ Λ` on the second factor, and intertwine `D₁.coprod D₂'` with `D₁.coprod D₂`. Then
