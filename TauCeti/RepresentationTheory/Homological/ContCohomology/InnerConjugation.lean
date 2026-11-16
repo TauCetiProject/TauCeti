@@ -358,9 +358,8 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-  [DistribMulAction G N] [ContinuousSMul G N]
+  [DistribMulAction G N]
 
-omit [ContinuousSMul G N] in
 /-- **The inner compatible pair on a discrete `G`-module**: the pair `(x ↦ g⁻¹ x g, m ↦ g • m)`
 consisting of conjugation on `G` and the action of `g` on `N` induces the identity on `Hⁿ(G, N)`.
 This packages `TauCeti.ContinuousCohomology.map_eq_id_of_inner` for this pair, for use when the
