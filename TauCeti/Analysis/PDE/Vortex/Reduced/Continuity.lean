@@ -27,8 +27,8 @@ on `H¹(ℂ)`, where `h_P = ‖P‖² / (1 + ‖P‖²)` and `c_P = 2 ‖P'‖²
 (`TauCeti.Vortex.sobolevReducedFunctional`). This file proves that `w_P` depends continuously on
 `P`: if the coefficients of `P i` converge to those of `Q`, of positive degree, with eventually
 `deg P i ≤ deg Q`, then `w_(P i) → w_Q` in `H¹(ℂ)` (`TauCeti.Vortex.tendsto_reducedMinimizer`).
-In particular the minimizer is continuous on every family of polynomials of a fixed degree with
-continuous coefficients (`TauCeti.Vortex.continuous_reducedMinimizer`), such as the monic
+In particular the minimizer is continuous on every family of polynomials of a fixed positive degree
+with continuous coefficients (`TauCeti.Vortex.continuous_reducedMinimizer`), such as the monic
 polynomials `∏ (X - aⱼ)` written in the elementary symmetric functions of their roots, collisions
 of roots included.
 
@@ -46,13 +46,17 @@ The proof compares the two functionals at the two minimizers, with every constan
    `Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`. So `Δw ≥ -1 / 8`, and the mean-value
    inequality bounds `w` above by its `L²` norm
    (`TauCeti.le_sqrt_integral_sq_div_add_of_neg_le_laplacian`); then `Δw` is bounded above too,
-   which bounds `-w`. This gives `|w_(P i)|, |w_Q| ≤ M` almost everywhere, uniformly in `i`.
+   which bounds `-w`. This gives `|w_(P i)|, |w_Q| ≤ M` almost everywhere, uniformly in `i`
+   (`TauCeti.Vortex.exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le`).
 3. **Comparison.** For `u ≤ M` the potentials are dominated by `2 exp (2M) u²`
    (`Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`), so `|I_(P i)(u) - I_Q(u)| ≤ C δᵢ` on the
    uniform bounds. Since `w_(P i)` minimizes `I_(P i)`, `I_Q(w_(P i)) - I_Q(w_Q) ≤ C δᵢ`.
 4. **Growth.** At the midpoint the potential has the exact convexity defect
    `Φ(a) + Φ(b) - 2 Φ((a + b) / 2) = (exp a - exp b)²`, `Φ(t) = exp (2t) - 1 - 2t`
-   (`Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect`), so at the minimizer `w_Q`
+   (`Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect_eq_sq`), which carries over to
+   Taubes's functional
+   (`TauCeti.Vortex.sobolevReducedFunctional_midpoint_add_add_exp_sub_exp_sq_le`), so at the
+   minimizer `w_Q`
    `I_Q(v) - I_Q(w_Q) ≥ ‖∇(v - w_Q)‖₂² / 4 + (1 / 16) ∫ h_Q (exp v - exp w_Q)²`.
    For `v = w_(P i)` this bounds the gradient of `w_(P i) - w_Q`, and, since `h_Q ≥ 1 / 2`
    outside a disc and `exp (-M) |a - b| ≤ |exp a - exp b|` for `a, b ≥ -M`
@@ -67,10 +71,14 @@ representatives and the corresponding statements for the vortex fields are not t
 
 ## Main results
 
-* `TauCeti.Vortex.tendsto_reducedMinimizer`: the minimizer of Taubes's functional is continuous
-  in the coefficients of the polynomial, for polynomials of positive degree.
+* `TauCeti.Vortex.tendsto_reducedMinimizer`: the minimizer of Taubes's functional converges along
+  polynomials whose coefficients converge, with eventually `deg P i ≤ deg Q` and `Q` of positive
+  degree.
 * `TauCeti.Vortex.continuous_reducedMinimizer`: the minimizer is continuous on families of
   polynomials of a fixed positive degree with continuous coefficients.
+* `TauCeti.Vortex.exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le`: minimizers
+  of Taubes's functional are bounded in `L∞`, uniformly over polynomials with a common bound on
+  `2 ‖P'‖² / (1 + ‖P‖²)²` and minimizers with a common `L²` bound.
 
 ## References
 
@@ -212,6 +220,12 @@ private theorem coefficient_bounds {a b a' b' δ : ℝ} (ha : 0 ≤ a) (hb : 0 �
 
 /-! ### Uniform bounds on the minimizers -/
 
+/-- The integral of the square of an element of `H¹(ℂ)` is its squared `L²` norm. -/
+private theorem integral_value_sq (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    ∫ z, W1p.value u z ^ 2 = ‖W1p.value u‖ ^ 2 := by
+  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+  simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+
 /-- The mean-value bound on the plane: a `C²` square-integrable function with `‖w‖₂ ≤ A` and
 `Δw ≥ -K` satisfies `w ≤ A / √|B₁| + K / 8`, where `|B₁|` is the area of the unit disc. -/
 private theorem le_div_sqrt_add_of_neg_le_laplacian {w : ℂ → ℝ} {A K : ℝ} (hw : ContDiff ℝ 2 w)
@@ -230,7 +244,7 @@ minimizer `u` of Taubes's functional for any polynomial `P` of positive degree w
 representative `w` of `u` solves `Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`, so
 `Δw ≥ -1 / 8`, and the mean-value inequality bounds `w` above by its `L²` norm; then `Δw` is
 bounded above as well, which bounds `-w`. -/
-private theorem exists_forall_abs_value_le (B G : ℝ) :
+theorem exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le (B G : ℝ) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ P : Polynomial ℂ, 0 < P.natDegree →
       (∀ z, 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ G) →
       ∀ u : W1p (volume : Measure ℂ) ⊤ 2,
@@ -247,8 +261,7 @@ private theorem exists_forall_abs_value_le (B G : ℝ) :
   have hw2' : ContDiff ℝ 2 w := hw.of_le (by simp)
   have hint : √(∫ z, w z ^ 2) ≤ |B| := by
     have h : ∫ z, w z ^ 2 = ‖W1p.value u‖ ^ 2 := by
-      rw [← W1p.integral_value_sq_eq_norm_value_sq]
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+      rw [← integral_value_sq]
       exact integral_congr_ae (hae'.mono fun z hz ↦ by simp only [hz])
     rw [h, Real.sqrt_sq (norm_nonneg _)]
     exact hB.trans (le_abs_self B)
@@ -297,10 +310,6 @@ private theorem sobolevReducedFunctional_eq_realFunctional {P : Polynomial ℂ}
     sobolevReducedFunctional P u = realFunctional P u :=
   sobolevReducedFunctional_eq_coe hu
 
-private theorem potential_nonneg (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) (z : ℂ) :
-    0 ≤ potential P u z :=
-  mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-
 /-- Where `u ≤ M`, the potential is at most `2 exp (2M) u²`. -/
 private theorem potential_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2} {M : ℝ}
     (hM : 0 ≤ M) {z : ℂ} (hz : W1p.value u z ≤ M) :
@@ -316,15 +325,10 @@ private theorem potential_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ
 private theorem integrable_potential {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
     {M : ℝ} (hM : 0 ≤ M) (hu : ∀ᵐ z, W1p.value u z ≤ M) : Integrable (potential P u) := by
   refine Integrable.mono' (((W1p.memLp_value u).integrable_sq).const_mul (2 * Real.exp (2 * M)))
-    ?_ ?_
-  · have hh : Continuous fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
-      fun_prop (disch := intro z; positivity)
-    exact hh.aestronglyMeasurable.mul ((by fun_prop : Continuous fun t : ℝ ↦
-      Real.exp (2 * t) - 1 - 2 * t).comp_aestronglyMeasurable
-        (W1p.memLp_value u).aestronglyMeasurable)
-  · filter_upwards [hu] with z hz
-    rw [Real.norm_of_nonneg (potential_nonneg P u z)]
-    exact potential_le hM hz
+    (aestronglyMeasurable_potential u) ?_
+  filter_upwards [hu] with z hz
+  rw [Real.norm_of_nonneg (r := potential P u z) (potential_nonneg (W1p.value u) z)]
+  exact potential_le hM hz
 
 /-- If the weights `h` of `P` and `Q` differ by at most `ε`, then for `u ≤ M` the potentials
 differ by at most `2 ε exp (2M) ‖u‖₂²`. -/
@@ -333,12 +337,9 @@ private theorem integral_potential_sub_le {P Q : Polynomial ℂ} {ε M : ℝ} (h
     {u : W1p (volume : Measure ℂ) ⊤ 2} (hu : ∀ᵐ z, W1p.value u z ≤ M) :
     (∫ z, potential P u z) - ∫ z, potential Q u z ≤
       ε * (2 * Real.exp (2 * M) * ‖W1p.value u‖ ^ 2) := by
-  have hv2 : ∫ z, W1p.value u z ^ 2 = ‖W1p.value u‖ ^ 2 := by
-    rw [← W1p.integral_value_sq_eq_norm_value_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
   have hiP := integrable_potential (P := P) hM hu
   have hiQ := integrable_potential (P := Q) hM hu
-  rw [← integral_sub hiP hiQ, ← hv2, ← integral_const_mul, ← integral_const_mul]
+  rw [← integral_sub hiP hiQ, ← integral_value_sq, ← integral_const_mul, ← integral_const_mul]
   refine integral_mono_ae (hiP.sub hiQ)
     (((W1p.memLp_value u).integrable_sq.const_mul _).const_mul _) ?_
   filter_upwards [hu] with z hz
@@ -361,14 +362,11 @@ private theorem integral_linearCoeff_mul_sub_le {P Q : Polynomial ℂ} {ε : ℝ
     (∫ z, linearCoeff P z * W1p.value u z) - ∫ z, linearCoeff Q z * W1p.value u z ≤
       ε * (√(∫ z, β z ^ 2) * ‖W1p.value u‖) := by
   have hv := W1p.memLp_value u
-  have hv2 : ∫ z, W1p.value u z ^ 2 = ‖W1p.value u‖ ^ 2 := by
-    rw [← W1p.integral_value_sq_eq_norm_value_sq]
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
   have hcs : ∫ z, β z * |W1p.value u z| ≤ √(∫ z, β z ^ 2) * ‖W1p.value u‖ := by
     have h : (∫ z, β z * |W1p.value u z|) ^ 2 ≤ (∫ z, β z ^ 2) * ∫ z, |W1p.value u z| ^ 2 :=
       sq_integral_mul_le_integral_sq_mul_integral_sq hβ hv.abs
     simp only [sq_abs] at h
-    rw [hv2] at h
+    rw [integral_value_sq] at h
     calc ∫ z, β z * |W1p.value u z| ≤ √((∫ z, β z ^ 2) * ‖W1p.value u‖ ^ 2) :=
           Real.le_sqrt_of_sq_le h
       _ = √(∫ z, β z ^ 2) * ‖W1p.value u‖ := by
@@ -403,47 +401,25 @@ private theorem realFunctional_le_add {P Q : Polynomial ℂ} {ε M : ℝ} {β : 
   simp only [realFunctional]
   linarith
 
-/-- The convexity defect of the potential at the midpoint `m` of `u, v ≤ M`: the function
-`h (exp v - exp u)²` is integrable with integral `∫ Φ_h(u) + ∫ Φ_h(v) - 2 ∫ Φ_h(m)`, where
-`Φ_h(w) = h (exp (2w) - 1 - 2w)`. -/
-private theorem integrable_and_integral_eq_midpoint {Q : Polynomial ℂ} {M : ℝ} (hM : 0 ≤ M)
-    {u v : W1p (volume : Measure ℂ) ⊤ 2} (hu : ∀ᵐ z, W1p.value u z ≤ M)
-    (hv : ∀ᵐ z, W1p.value v z ≤ M) :
-    Integrable (fun z ↦ ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) *
-        (Real.exp (W1p.value v z) - Real.exp (W1p.value u z)) ^ 2) ∧
-      ∫ z, ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) *
-          (Real.exp (W1p.value v z) - Real.exp (W1p.value u z)) ^ 2 =
-        (∫ z, potential Q u z) + (∫ z, potential Q v z) -
-          2 * ∫ z, potential Q (midpoint ℝ u v) z := by
-  set m := midpoint ℝ u v
-  have hval : (W1p.value m : ℂ → ℝ) =ᵐ[volume] fun z ↦ (W1p.value u z + W1p.value v z) / 2 := by
-    simpa using W1p.value_midpoint_ae u v
-  have hm : ∀ᵐ z, W1p.value m z ≤ M := by
-    filter_upwards [hval, hu, hv] with z hz hzu hzv
-    rw [hz]; linarith
-  have hpu := integrable_potential (P := Q) hM hu
-  have hpv := integrable_potential (P := Q) hM hv
-  have hpm := integrable_potential (P := Q) hM hm
-  have hdef : (fun z ↦ ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) *
-      (Real.exp (W1p.value v z) - Real.exp (W1p.value u z)) ^ 2) =ᵐ[volume]
-      fun z ↦ potential Q u z + potential Q v z - 2 * potential Q m z := by
-    filter_upwards [hval] with z hz
-    simp only [potential]
-    rw [hz]
-    linear_combination (-(‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2))) *
-      Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect (W1p.value u z) (W1p.value v z)
-  have hsum : Integrable fun z ↦ potential Q u z + potential Q v z := hpu.add hpv
-  have h2m : Integrable fun z ↦ 2 * potential Q m z := hpm.const_mul 2
-  refine ⟨(hsum.sub h2m).congr hdef.symm, ?_⟩
-  rw [integral_congr_ae hdef, integral_sub hsum h2m, integral_add hpu hpv, integral_const_mul]
+/-- Minimality of `u` compares the real-valued functional at `u` and at `v` when `u, v ≤ M`. -/
+private theorem realFunctional_le_of_forall_le {P : Polynomial ℂ} {M : ℝ} (hM : 0 ≤ M)
+    {u v : W1p (volume : Measure ℂ) ⊤ 2}
+    (hmin : ∀ w, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P w)
+    (hu : ∀ᵐ z, W1p.value u z ≤ M) (hv : ∀ᵐ z, W1p.value v z ≤ M) :
+    realFunctional P u ≤ realFunctional P v := by
+  have h := hmin v
+  rwa [sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hu),
+    sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hv),
+    EReal.coe_le_coe_iff] at h
 
 /-- **Quadratic growth with the convexity defect of the potential.** If `u` minimizes Taubes's
 functional and `u, v ≤ M`, then
 `I(u) + ‖∇(v - u)‖₂² / 4 + (1 / 16) ∫ h (exp v - exp u)² ≤ I(v)`, and the last integrand is
-integrable. At the midpoint `m = (u + v) / 2` the potential has the exact defect
-`Φ(u) + Φ(v) - 2 Φ(m) = (exp u - exp v)²`, `Φ(t) = exp (2t) - 1 - 2t`, and `I(u) ≤ I(m)`. -/
+integrable. This combines the midpoint convexity of the functional with its defect
+(`TauCeti.Vortex.sobolevReducedFunctional_midpoint_add_add_exp_sub_exp_sq_le`) with `I(u) ≤ I(m)`
+at the midpoint `m` of `v` and `u`. -/
 private theorem realFunctional_add_add_le {Q : Polynomial ℂ} {M : ℝ} (hM : 0 ≤ M)
-    (hQ : MemLp (linearCoeff Q) 2) {u v : W1p (volume : Measure ℂ) ⊤ 2}
+    (hQ : 0 < Q.natDegree) {u v : W1p (volume : Measure ℂ) ⊤ 2}
     (hmin : ∀ w, sobolevReducedFunctional Q u ≤ sobolevReducedFunctional Q w)
     (hu : ∀ᵐ z, W1p.value u z ≤ M) (hv : ∀ᵐ z, W1p.value v z ≤ M) :
     Integrable (fun z ↦ ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) *
@@ -452,42 +428,20 @@ private theorem realFunctional_add_add_le {Q : Polynomial ℂ} {M : ℝ} (hM : 0
           (∫ z, ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) *
             (Real.exp (W1p.value v z) - Real.exp (W1p.value u z)) ^ 2) / 16 ≤
         realFunctional Q v := by
-  set m := midpoint ℝ u v
-  have hval : (W1p.value m : ℂ → ℝ) =ᵐ[volume] fun z ↦ (W1p.value u z + W1p.value v z) / 2 := by
-    simpa using W1p.value_midpoint_ae u v
-  have hm : ∀ᵐ z, W1p.value m z ≤ M := by
+  have hval : (W1p.value (midpoint ℝ v u) : ℂ → ℝ) =ᵐ[volume]
+      fun z ↦ (W1p.value v z + W1p.value u z) / 2 := by
+    simpa using W1p.value_midpoint_ae v u
+  have hm : ∀ᵐ z, W1p.value (midpoint ℝ v u) z ≤ M := by
     filter_upwards [hval, hu, hv] with z hz hzu hzv
     rw [hz]; linarith
-  obtain ⟨hint, hpot⟩ := integrable_and_integral_eq_midpoint (Q := Q) hM hu hv
-  refine ⟨hint, ?_⟩
-  -- The linear term is linear in the value.
-  have hcu : Integrable fun z ↦ linearCoeff Q z * W1p.value u z :=
-    hQ.integrable_mul (W1p.memLp_value u)
-  have hcv : Integrable fun z ↦ linearCoeff Q z * W1p.value v z :=
-    hQ.integrable_mul (W1p.memLp_value v)
-  have hlin : 2 * ∫ z, linearCoeff Q z * W1p.value m z =
-      (∫ z, linearCoeff Q z * W1p.value u z) + ∫ z, linearCoeff Q z * W1p.value v z := by
-    rw [← integral_add hcu hcv, ← integral_const_mul]
-    refine integral_congr_ae ?_
-    filter_upwards [hval] with z hz
-    rw [hz]
-    ring
-  -- The Dirichlet energy satisfies the parallelogram law.
-  have hgrad : ‖W1p.gradient m‖ ^ 2 + ‖W1p.gradient (v - u)‖ ^ 2 / 4 =
-      (‖W1p.gradient u‖ ^ 2 + ‖W1p.gradient v‖ ^ 2) / 2 := by
-    have hpar := parallelogram_law_with_norm ℝ (W1p.gradient u) (W1p.gradient v)
-    rw [W1p.gradient_midpoint, midpoint_eq_smul_add, norm_smul, W1p.gradient_sub, invOf_eq_inv,
-      Real.norm_of_nonneg (by norm_num), norm_sub_rev]
-    nlinarith [hpar]
-  -- Minimality at the midpoint.
-  have hle : realFunctional Q u ≤ realFunctional Q m := by
-    have h := hmin m
-    rwa [sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hu),
-      sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hm),
-      EReal.coe_le_coe_iff] at h
-  simp only [realFunctional] at hle ⊢
-  rw [hpot]
-  linarith
+  have hpu := integrable_potential (P := Q) hM hu
+  have hpv := integrable_potential (P := Q) hM hv
+  have h := sobolevReducedFunctional_midpoint_add_add_exp_sub_exp_sq_le hQ v u
+  rw [sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hm),
+    sobolevReducedFunctional_eq_realFunctional hpv, sobolevReducedFunctional_eq_realFunctional hpu,
+    ← EReal.coe_add, ← EReal.coe_add, ← EReal.coe_add, EReal.coe_le_coe_iff] at h
+  have hle := realFunctional_le_of_forall_le hM hmin hu hm
+  exact ⟨(integrable_and_integral_mul_exp_sub_exp_sq_eq hpv hpu).1, by linarith⟩
 
 /-! ### The comparison weight -/
 
@@ -520,6 +474,13 @@ private theorem exists_comparisonWeight_le (Q : Polynomial ℂ) :
     linarith
   simp only [comparisonWeight]
   linarith
+
+/-- The source term `2 ‖Q'‖² / (1 + ‖Q‖²)²` is at most `1024 β` for the comparison weight `β`. -/
+private theorem two_mul_le_comparisonWeight (Q : Polynomial ℂ) (z : ℂ) :
+    2 * ‖Q.derivative.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) ^ 2 ≤ 1024 * comparisonWeight Q z :=
+  (coefficient_bounds (norm_nonneg (Q.eval z)) (norm_nonneg (Q.eval z))
+    (norm_nonneg (Q.derivative.eval z)) (norm_nonneg (Q.derivative.eval z)) le_rfl
+    (by norm_num) (by simp) (by simp)).2.2
 
 /-! ### Converging polynomials -/
 
@@ -582,13 +543,8 @@ private theorem exists_eventually_coefficient_bounds {ι : Type*} {l : Filter ι
   have hQ0 : Q ≠ 0 := by rintro rfl; simp at hQ
   obtain ⟨δ, hδ0, hδ, hab⟩ := exists_tendsto_eventually_abs_norm_eval_sub_le hQ hdeg hcoeff
   -- `‖Q‖ ≥ 3` outside a closed disc.
-  obtain ⟨R, -, hR⟩ := (hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp
-    (by
-      rw [cobounded_eq_cocompact]
-      exact (Q.tendsto_norm_atTop (Polynomial.natDegree_pos_iff_degree_pos.mp hQ)
-        tendsto_norm_cocompact_atTop).eventually_ge_atTop 3 :
-      ∀ᶠ z in Bornology.cobounded ℂ, 3 ≤ ‖Q.eval z‖)
-  refine ⟨δ, R, hδ, fun z hz ↦ le_trans (by norm_num) (hR hz), ?_⟩
+  obtain ⟨R, hR⟩ := Polynomial.exists_forall_le_norm_eval hQ 3
+  refine ⟨δ, R, hδ, fun z hz ↦ le_trans (by norm_num) (hR z hz), ?_⟩
   have hlead : ∀ᶠ i in l, (P i).coeff Q.natDegree ≠ 0 :=
     (hcoeff Q.natDegree).eventually_ne (by simpa using hQ0)
   filter_upwards [hab, hδ.eventually (eventually_le_nhds (by norm_num : (0 : ℝ) < 1 / 2)),
@@ -600,7 +556,7 @@ private theorem exists_eventually_coefficient_bounds {ι : Type*} {l : Filter ι
     fun z ↦ (hcb z).1.trans (by linarith [hδ0 i]), fun z ↦ (hcb z).2.1, fun z ↦ (hcb z).2.2,
     fun z hz ↦ ?_⟩
   -- `‖P i‖ ≥ ‖Q‖ - δ (1 + ‖Q‖) ≥ (‖Q‖ - 1) / 2 ≥ 1`.
-  have h3 := hR hz
+  have h3 := hR z hz
   have h := (abs_le.1 (hi z).1).1
   have : δ i * (1 + ‖Q.eval z‖) ≤ (1 + ‖Q.eval z‖) / 2 := by
     nlinarith [norm_nonneg (Q.eval z)]
@@ -636,7 +592,7 @@ most `ε β`. Then `‖∇(v - u)‖₂² / 4 + (1 / 16) ∫ h_Q (exp v - exp u)
 where `X_w = exp (2M) ‖w‖₂² / 8 + ‖β‖₂ ‖w‖₂`; the last integrand is integrable. -/
 private theorem norm_gradient_sq_div_four_add_le {P Q : Polynomial ℂ} {ε M : ℝ} {β : ℂ → ℝ}
     (hε : 0 ≤ ε) (hM : 0 ≤ M) (hβ : MemLp β 2) (hcP : MemLp (linearCoeff P) 2)
-    (hcQ : MemLp (linearCoeff Q) 2)
+    (hQ : 0 < Q.natDegree)
     (hh : ∀ z, |‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) - ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2)| ≤ ε)
     (hc : ∀ z, |linearCoeff P z - linearCoeff Q z| ≤ ε * β z)
     {u v : W1p (volume : Measure ℂ) ⊤ 2}
@@ -650,15 +606,13 @@ private theorem norm_gradient_sq_div_four_add_le {P Q : Polynomial ℂ} {ε M : 
         ε * ((Real.exp (2 * M) * ‖W1p.value u‖ ^ 2 / 8 + √(∫ z, β z ^ 2) * ‖W1p.value u‖) +
           (Real.exp (2 * M) * ‖W1p.value v‖ ^ 2 / 8 + √(∫ z, β z ^ 2) * ‖W1p.value v‖)) := by
   -- `I_Q(v) ≤ I_P(v) + ε X_v ≤ I_P(u) + ε X_v ≤ I_Q(u) + ε (X_u + X_v)`.
+  have hcQ : MemLp (linearCoeff Q) 2 :=
+    memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hQ
   have A1 := realFunctional_le_add (P := Q) (Q := P) hε hM hβ hcQ hcP
     (fun z ↦ by rw [abs_sub_comm]; exact hh z) (fun z ↦ by rw [abs_sub_comm]; exact hc z) hvM
   have A3 := realFunctional_le_add (P := P) (Q := Q) hε hM hβ hcP hcQ hh hc huM
-  have A2 : realFunctional P v ≤ realFunctional P u := by
-    have h := hv u
-    rwa [sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hvM),
-      sobolevReducedFunctional_eq_realFunctional (integrable_potential hM huM),
-      EReal.coe_le_coe_iff] at h
-  obtain ⟨hint, hgrowth⟩ := realFunctional_add_add_le hM hcQ hu huM hvM
+  have A2 := realFunctional_le_of_forall_le hM hv hvM huM
+  obtain ⟨hint, hgrowth⟩ := realFunctional_add_add_le hM hQ hu huM hvM
   exact ⟨hint, by linarith⟩
 
 /-- Outside a disc where `‖Q‖ ≥ 1`, so that `h_Q ≥ 1 / 2`, the squared difference of two
@@ -720,6 +674,29 @@ private theorem mul_sq_div_eight_add_mul_le {E A t B : ℝ} (hE : 0 ≤ E) (hA :
   have h2 := mul_le_mul_of_nonneg_left ht hA
   linarith
 
+/-- The arithmetic closing the uniform estimates: if `G² / 4 + D / 16 ≤ E` for
+`E = 1632 δ (X + X)`, with `0 ≤ D` and `I ≤ 2 exp (2M) D`, then `I ≤ 2 exp (2M) (16 E) + 4 E` and
+`G² ≤ 4 E ≤ 2 exp (2M) (16 E) + 4 E`, which is `K δ` for the displayed `K`. -/
+private theorem le_mul_and_sq_le_mul {G D I X M δ : ℝ}
+    (hGD : G ^ 2 / 4 + D / 16 ≤ 1632 * δ * (X + X)) (hD0 : 0 ≤ D)
+    (hI : I ≤ 2 * Real.exp (2 * M) * D) :
+    I ≤ (2 * Real.exp (2 * M) * (16 * (2 * 1632 * X)) + 4 * (2 * 1632 * X)) * δ ∧
+      G ^ 2 ≤ (2 * Real.exp (2 * M) * (16 * (2 * 1632 * X)) + 4 * (2 * 1632 * X)) * δ := by
+  have hK : (2 * Real.exp (2 * M) * (16 * (2 * 1632 * X)) + 4 * (2 * 1632 * X)) * δ =
+      2 * Real.exp (2 * M) * (16 * (1632 * δ * (X + X))) + 4 * (1632 * δ * (X + X)) := by ring
+  rw [hK]
+  generalize 1632 * δ * (X + X) = E at hGD ⊢
+  have hE0 : 0 ≤ E := by linarith [sq_nonneg G]
+  have he : 0 ≤ 2 * Real.exp (2 * M) := by positivity
+  constructor
+  · calc I ≤ 2 * Real.exp (2 * M) * D := hI
+      _ ≤ 2 * Real.exp (2 * M) * (16 * E) :=
+        mul_le_mul_of_nonneg_left (by linarith [sq_nonneg G]) he
+      _ ≤ 2 * Real.exp (2 * M) * (16 * E) + 4 * E := by linarith
+  · calc G ^ 2 ≤ 4 * E := by linarith
+      _ ≤ 2 * Real.exp (2 * M) * (16 * E) + 4 * E :=
+        le_add_of_nonneg_left (mul_nonneg he (by linarith))
+
 /-- **Uniform estimates along converging polynomials.** Under the hypotheses of
 `TauCeti.Vortex.tendsto_reducedMinimizer`, with `δ i → 0` and the radius `R` of
 `TauCeti.Vortex.exists_eventually_coefficient_bounds`, the difference of the minimizers has
@@ -751,12 +728,10 @@ private theorem exists_eventually_le_mul {ι : Type*} {l : Filter ι} {P : ι �
   obtain ⟨B₀, hB₀⟩ :=
     exists_norm_le_of_sobolevReducedFunctional_le_of_forall_one_le_norm_eval R K 0
   set B := max B₀ ‖w‖
-  obtain ⟨M, hM0, hMb⟩ := exists_forall_abs_value_le B (1024 * Cβ)
+  obtain ⟨M, hM0, hMb⟩ :=
+    exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le B (1024 * Cβ)
   have hgQ (z : ℂ) : 2 * ‖Q.derivative.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) ^ 2 ≤ 1024 * Cβ :=
-    (coefficient_bounds (norm_nonneg (Q.eval z)) (norm_nonneg (Q.eval z))
-      (norm_nonneg (Q.derivative.eval z)) (norm_nonneg (Q.derivative.eval z)) le_rfl
-      (by norm_num) (by simp) (by simp)).2.2.trans
-      (mul_le_mul_of_nonneg_left (hCβ z) (by norm_num))
+    (two_mul_le_comparisonWeight Q z).trans (mul_le_mul_of_nonneg_left (hCβ z) (by norm_num))
   have hwM₀ := hMb Q hQ hgQ w hw ((W1p.norm_value_le w).trans (le_max_right _ _))
   set X := Real.exp (2 * M) * B ^ 2 / 8 + √(∫ z, β z ^ 2) * B
   have hX (u : W1p (volume : Measure ℂ) ⊤ 2) (hu : ‖W1p.value u‖ ≤ B) :
@@ -774,12 +749,13 @@ private theorem exists_eventually_le_mul {ι : Type*} {l : Filter ι} {P : ι �
     exact (hc z).trans (by nlinarith)
   have hwiB : ‖W1p.value wi‖ ≤ B :=
     (W1p.norm_value_le wi).trans ((hB₀ (P i) hPi hRP (integral_linearCoeff_sq_le hcP hcQ hβ hc')
-      wi ((hwi 0).trans (by rw [sobolevReducedFunctional_zero]; rfl))).trans (le_max_left _ _))
+      wi ((hwi 0).trans (by rw [sobolevReducedFunctional_zero, EReal.coe_zero]))).trans
+        (le_max_left _ _))
   have hwiM₀ := hMb (P i) hPi (fun z ↦ (hg z).trans
     (mul_le_mul_of_nonneg_left (hCβ z) (by norm_num))) wi hwi hwiB
   -- Stability, then the exterior bound.
   have hε : 0 ≤ 1632 * δ i := by positivity
-  obtain ⟨hint, hstab⟩ := norm_gradient_sq_div_four_add_le hε hM0 hβ hcP hcQ hh hc hw hwi
+  obtain ⟨hint, hstab⟩ := norm_gradient_sq_div_four_add_le hε hM0 hβ hcP hQ hh hc hw hwi
     (hwM₀.mono fun z hz ↦ (abs_le.1 hz).2) (hwiM₀.mono fun z hz ↦ (abs_le.1 hz).2)
   have hext := setIntegral_compl_value_sub_sq_le hRQ (hwM₀.mono fun z hz ↦ (abs_le.1 hz).1)
     (hwiM₀.mono fun z hz ↦ (abs_le.1 hz).1) hint
@@ -788,7 +764,7 @@ private theorem exists_eventually_le_mul {ι : Type*} {l : Filter ι} {P : ι �
   have hD0 : 0 ≤ ∫ z, ‖Q.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) *
       (Real.exp (W1p.value wi z) - Real.exp (W1p.value w z)) ^ 2 :=
     integral_nonneg fun z ↦ by positivity
-  constructor <;> nlinarith [(Real.exp_pos (2 * M)).le]
+  exact le_mul_and_sq_le_mul (hstab.trans hXε) hD0 hext
 
 /-- **Continuity of the minimizer of Taubes's functional in the polynomial.** If the coefficients
 of the polynomials `P i` converge to those of a polynomial `Q` of positive degree, and eventually

@@ -38,10 +38,15 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   zero at infinity.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
+* `Polynomial.exists_forall_le_norm_eval`: a nonconstant polynomial has modulus at least `c`
+  outside a closed ball, for every `c`.
 * `Polynomial.exists_norm_eval_le_mul_one_add_norm_eval`: a polynomial of degree at most that of
-  `Q` is bounded by a multiple of `1 + ‖Q‖` on the whole plane.
+  `Q` is bounded by a multiple of `1 + ‖Q‖` everywhere.
 * `Polynomial.exists_tendsto_eventually_forall_norm_eval_le`: polynomials of bounded degree whose
-  coefficients tend to zero are bounded by `δ (1 + ‖Q‖)` on the whole plane, with `δ → 0`.
+  coefficients tend to zero are bounded by `δ (1 + ‖Q‖)` everywhere, with `δ → 0`.
+
+These three hold over normed rings `R` with multiplicative norm; the last two assume `R` proper,
+and the last also nontrivial.
 -/
 
 public section
@@ -203,18 +208,32 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     exact pow_le_pow_right₀ h₁ (by omega)
   linarith [hpow.trans ha]
 
-/-- A complex polynomial `A` of degree at most that of `Q` is bounded by a multiple of
-`1 + ‖Q‖` on the whole plane. -/
-theorem exists_norm_eval_le_mul_one_add_norm_eval {A Q : Polynomial ℂ}
+section NormedRing
+
+variable {R : Type*} [NormedRing R] [NormMulClass R]
+
+/-- A nonconstant polynomial has modulus at least `c` outside a closed ball. -/
+theorem exists_forall_le_norm_eval {P : Polynomial R} (hP : 0 < P.natDegree) (c : ℝ) :
+    ∃ r : ℝ, ∀ z ∉ Metric.closedBall (0 : R) r, c ≤ ‖P.eval z‖ := by
+  obtain ⟨r, -, hr⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : R)).eventually_iff.mp
+    ((P.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.mp hP)
+      tendsto_norm_cobounded_atTop).eventually_ge_atTop c)
+  exact ⟨r, hr⟩
+
+variable [ProperSpace R]
+
+/-- A polynomial `A` of degree at most that of `Q` is bounded by a multiple of `1 + ‖Q‖`
+everywhere. -/
+theorem exists_norm_eval_le_mul_one_add_norm_eval {A Q : Polynomial R}
     (h : A.degree ≤ Q.degree) : ∃ C : ℝ, 0 ≤ C ∧ ∀ z, ‖A.eval z‖ ≤ C * (1 + ‖Q.eval z‖) := by
   obtain ⟨c, hc, hO⟩ := (isBigO_cobounded_of_degree_le h).exists_pos
   obtain ⟨r, -, hr⟩ :=
-    (Metric.hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.mp hO.bound
-  obtain ⟨C₁, hC₁⟩ := (isCompact_closedBall (0 : ℂ) r).exists_bound_of_continuousOn
+    (Metric.hasBasis_cobounded_compl_closedBall (0 : R)).eventually_iff.mp hO.bound
+  obtain ⟨C₁, hC₁⟩ := (isCompact_closedBall (0 : R) r).exists_bound_of_continuousOn
     A.continuous.continuousOn
   refine ⟨max c (max C₁ 0), by positivity, fun z ↦ ?_⟩
   have hQ : 0 ≤ ‖Q.eval z‖ := norm_nonneg _
-  by_cases hz : z ∈ Metric.closedBall (0 : ℂ) r
+  by_cases hz : z ∈ Metric.closedBall (0 : R) r
   · calc ‖A.eval z‖ ≤ max C₁ 0 := (hC₁ z hz).trans (le_max_left _ _)
       _ ≤ max c (max C₁ 0) * (1 + ‖Q.eval z‖) := by
         nlinarith [le_max_right c (max C₁ 0), le_max_right C₁ 0]
@@ -223,16 +242,16 @@ theorem exists_norm_eval_le_mul_one_add_norm_eval {A Q : Polynomial ℂ}
         mul_le_mul (le_max_left _ _) (by linarith) hQ (by positivity)
 
 /-- If the polynomials `A i` eventually have degree at most `n`, where `n` is at most the degree
-of `Q`, and their coefficients tend to zero, then `‖A i‖ ≤ δ i (1 + ‖Q‖)` on the whole plane for
-some nonnegative `δ i → 0`. -/
-theorem exists_tendsto_eventually_forall_norm_eval_le {ι : Type*} {l : Filter ι}
-    {A : ι → Polynomial ℂ} {Q : Polynomial ℂ} {n : ℕ} (hn : (n : WithBot ℕ) ≤ Q.degree)
+of `Q`, and their coefficients tend to zero, then `‖A i‖ ≤ δ i (1 + ‖Q‖)` everywhere for some
+nonnegative `δ i → 0`. -/
+theorem exists_tendsto_eventually_forall_norm_eval_le [Nontrivial R] {ι : Type*} {l : Filter ι}
+    {A : ι → Polynomial R} {Q : Polynomial R} {n : ℕ} (hn : (n : WithBot ℕ) ≤ Q.degree)
     (hA : ∀ᶠ i in l, (A i).natDegree ≤ n) (hc : ∀ k, Tendsto (fun i ↦ (A i).coeff k) l (𝓝 0)) :
     ∃ δ : ι → ℝ, (∀ i, 0 ≤ δ i) ∧ Tendsto δ l (𝓝 0) ∧
       ∀ᶠ i in l, ∀ z, ‖(A i).eval z‖ ≤ δ i * (1 + ‖Q.eval z‖) := by
   -- Each monomial `z ^ k`, `k ≤ n`, is bounded by a multiple `C k` of `1 + ‖Q‖`.
   have hX : ∀ k : Fin (n + 1), ∃ C : ℝ, 0 ≤ C ∧
-      ∀ z, ‖((X : Polynomial ℂ) ^ (k : ℕ)).eval z‖ ≤ C * (1 + ‖Q.eval z‖) := fun k ↦
+      ∀ z, ‖((X : Polynomial R) ^ (k : ℕ)).eval z‖ ≤ C * (1 + ‖Q.eval z‖) := fun k ↦
     exists_norm_eval_le_mul_one_add_norm_eval <| by
       rw [degree_X_pow]
       exact (WithBot.coe_le_coe.2 (Nat.lt_succ_iff.1 k.2)).trans hn
@@ -246,6 +265,8 @@ theorem exists_tendsto_eventually_forall_norm_eval_le {ι : Type*} {l : Filter �
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
     rw [norm_mul, mul_assoc, mul_comm (C k), mul_assoc]
     refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-    simpa [mul_comm] using hC k z
+    simpa [mul_comm, eval_X_pow] using hC k z
+
+end NormedRing
 
 end Polynomial

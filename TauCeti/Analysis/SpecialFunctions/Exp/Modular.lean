@@ -30,7 +30,7 @@ In the other direction, the potential is quadratic on every half-line `t ≤ M`:
 `exp (2t) - 1 - 2t ≤ 2 exp (2M) t²` for `0 ≤ M`
 (`Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`). Its midpoint convexity defect is exactly a
 square: `Φ(a) + Φ(b) - 2 Φ((a + b) / 2) = (exp a - exp b)²` for `Φ(t) = exp (2t) - 1 - 2t`
-(`Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect`), the strict convexity behind the
+(`Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect_eq_sq`), the strict convexity behind the
 stability of the minimizer of such a functional.
 
 ## Main results
@@ -41,7 +41,7 @@ stability of the minimizer of such a functional.
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
 * `Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`: for `t ≤ M` with `0 ≤ M`,
   `exp (2t) - 1 - 2t ≤ 2 exp (2M) t²`.
-* `Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect`: the midpoint convexity defect of
+* `Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect_eq_sq`: the midpoint convexity defect of
   `exp (2t) - 1 - 2t` is `(exp a - exp b)²`.
 -/
 
@@ -99,7 +99,7 @@ theorem exp_two_mul_sub_one_sub_two_mul_le_mul_sq {M t : ℝ} (hM : 0 ≤ M) (ht
 
 /-- The midpoint convexity defect of the potential `Φ(t) = exp (2t) - 1 - 2t` is a square:
 `Φ(a) + Φ(b) - 2 Φ((a + b) / 2) = (exp a - exp b)²`. -/
-theorem exp_two_mul_sub_one_sub_two_mul_midpoint_defect (a b : ℝ) :
+theorem exp_two_mul_sub_one_sub_two_mul_midpoint_defect_eq_sq (a b : ℝ) :
     (exp (2 * a) - 1 - 2 * a) + (exp (2 * b) - 1 - 2 * b) -
         2 * (exp (2 * ((a + b) / 2)) - 1 - 2 * ((a + b) / 2)) =
       (exp a - exp b) ^ 2 := by
