@@ -5,23 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 
 /-!
 # Rank-one lattice theta series
 
-The theta series of `ℤ ∙ 1 ⊆ ℝ` is Mathlib's `jacobiTheta`, with exponent `π i n² τ`.
-Consequently, for any `c ≠ 0` the theta series of `c ℤ` is `jacobiTheta (c² τ)`
-(`ZLattice.thetaSeries_span_singleton`); in particular the theta series of `√2 ℤ` is
-`jacobiTheta (2 τ)`. The period-two expansion of `Θ_ℤ` has constant coefficient one, coefficient
-two at each positive square, and zero elsewhere. The coefficient two counts the two signs of a
-nonzero integer, as in Mathlib's `hasSum_nat_jacobiTheta`.
+For any nonzero vector `v` in a real normed space `E`, the theta series of the rank-one lattice
+`ℤ v` is Mathlib's `jacobiTheta` evaluated at `‖v‖² τ` (`ZLattice.thetaSeries_span_singleton`).
+In particular, the theta series of `ℤ ∙ 1 ⊆ ℝ` is `jacobiTheta τ`, and the theta series of
+`√2 ℤ` is `jacobiTheta (2 τ)`. The period-two expansion of `Θ_ℤ` has constant coefficient one,
+coefficient two at each positive square, and zero elsewhere. The coefficient two counts the two
+signs of a nonzero integer, as in Mathlib's `hasSum_nat_jacobiTheta`.
 
 For the non-integral lattice `L = ½ ℤ`, the dual lattice `L^∨ = 2 ℤ` is strictly contained in `L`
 (`ZLattice.dual_span_inv_two_lt`) and the discriminant group `L^∨ ⧸ (L ∩ L^∨)` is trivial
-(`ZLattice.instUniqueDiscriminantGroupSpanInvTwo`). On the imaginary axis
+(`ZLattice.instSubsingletonDiscriminantGroupSpanInvTwo`). On the imaginary axis
 `Θ_{2ℤ}(τ) < Θ_{½ℤ}(τ)` (`ZLattice.re_thetaSeries_span_two_lt_span_inv_two`), so
 `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)` (`ZLattice.thetaSeries_span_two_I_ne_span_inv_two`) and the dual coset
 decomposition `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` fails at `τ = i`
@@ -41,29 +40,34 @@ open scoped Real UpperHalfPlane Pointwise
 
 namespace ZLattice
 
+/-- The theta series of the rank-one lattice `ℤ v` (`v ≠ 0`) in a real normed space is Jacobi's
+theta function at `‖v‖² τ`. -/
+theorem thetaSeries_span_singleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {v : E} (hv : v ≠ 0) (τ : ℍ) :
+    thetaSeries (span ℤ {v}) τ = jacobiTheta ((‖v‖ ^ 2 : ℝ) * (τ : ℂ)) := by
+  have : Module.IsTorsionFree ℤ E := Module.IsTorsionFree.trans ℝ
+  rw [thetaSeries_apply, jacobiTheta,
+    ← (LinearEquiv.toSpanNonzeroSingleton ℤ E v hv).toEquiv.tsum_eq]
+  refine tsum_congr fun n ↦ ?_
+  simp only [LinearEquiv.coe_toEquiv, LinearEquiv.toSpanNonzeroSingleton_apply, norm_zsmul ℝ,
+    Real.norm_eq_abs, mul_pow, sq_abs]
+  congr 1
+  push_cast
+  ring
+
 /-- The theta series of the integer lattice, with exponent `π i n² τ`, is Jacobi's theta
 function. -/
 theorem thetaSeries_span_one (τ : ℍ) :
     thetaSeries (span ℤ {1} : Submodule ℤ ℝ) τ = jacobiTheta τ := by
-  rw [thetaSeries_apply, jacobiTheta,
-    ← (LinearEquiv.toSpanNonzeroSingleton ℤ ℝ 1 one_ne_zero).toEquiv.tsum_eq]
-  refine tsum_congr fun n ↦ ?_
-  simp [Real.norm_eq_abs, sq_abs]
-
-/-- The theta series of the rank-one lattice `c ℤ ⊆ ℝ` (`c ≠ 0`) is Jacobi's theta function at
-`c² τ`. -/
-theorem thetaSeries_span_singleton {c : ℝ} (hc : c ≠ 0) (τ : ℍ) :
-    thetaSeries (span ℤ {c} : Submodule ℤ ℝ) τ = jacobiTheta ((c ^ 2 : ℝ) * (τ : ℂ)) := by
-  have hspan : c • (span ℤ {1} : Submodule ℤ ℝ) = span ℤ {c} := by simp [smul_span]
-  rw [← hspan, thetaSeries_smul _ hc, thetaSeries_span_one, UpperHalfPlane.coe_pos_real_smul,
-    Complex.real_smul]
+  simpa using thetaSeries_span_singleton (one_ne_zero (α := ℝ)) τ
 
 /-- Scaling the integer lattice by `√2` gives Jacobi's theta function at `2τ`. -/
 theorem thetaSeries_sqrt_two_smul_span_one (τ : ℍ) :
     thetaSeries (Real.sqrt 2 • (span ℤ {1} : Submodule ℤ ℝ)) τ = jacobiTheta (2 * (τ : ℂ)) := by
-  rw [thetaSeries_smul _ (Real.sqrt_ne_zero'.mpr two_pos), thetaSeries_span_one]
-  congr 1
-  simp [Complex.real_smul]
+  have hspan : Real.sqrt 2 • (span ℤ {1} : Submodule ℤ ℝ) = span ℤ {Real.sqrt 2} := by
+    simp [smul_span]
+  rw [hspan, thetaSeries_span_singleton (Real.sqrt_ne_zero'.mpr two_pos)]
+  simp
 
 /-- The period-two coefficients of the rank-one lattice theta series, explicitly supported at
 the squares. -/
@@ -92,7 +96,7 @@ theorem hasSum_thetaSeries_span_one_qParam (τ : ℍ) :
 theorem re_thetaSeries_span_two_lt_span_inv_two {τ : ℍ} (hτ : τ.re = 0) :
     (thetaSeries (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) τ).re <
       (thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) τ).re :=
-  re_thetaSeries_strictMono (dual_span_inv_two ▸ dual_span_inv_two_lt) hτ
+  re_thetaSeries_lt_of_lt (dual_span_inv_two ▸ dual_span_inv_two_lt) hτ
 
 /-- At `τ = i`, the theta series of `2 ℤ` and `½ ℤ` differ: `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`. -/
 theorem thetaSeries_span_two_I_ne_span_inv_two :
@@ -119,4 +123,3 @@ theorem thetaSeries_dual_span_inv_two_I_ne_sum :
     not_isIntegral_span_inv_two
 
 end ZLattice
-

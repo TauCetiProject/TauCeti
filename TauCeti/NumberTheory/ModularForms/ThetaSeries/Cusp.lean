@@ -56,7 +56,7 @@ sublattice of `L` can share its theta series.
   `ZLattice.re_thetaCoset_pos`, `ZLattice.re_thetaSeries_pos`, `ZLattice.one_le_re_thetaSeries`:
   on the imaginary axis `θ_{γ+L}` and `Θ_L` are real and positive, and `Θ_L ≥ 1`.
 * `ZLattice.re_thetaCoset_mono`, `ZLattice.re_thetaSeries_mono`,
-  `ZLattice.re_thetaCoset_strictMono`, `ZLattice.re_thetaSeries_strictMono`,
+  `ZLattice.re_thetaCoset_lt_of_lt`, `ZLattice.re_thetaSeries_lt_of_lt`,
   `ZLattice.thetaCoset_eq_iff_eq_of_le`, `ZLattice.thetaSeries_eq_iff_eq_of_le`: on the imaginary
   axis `θ_{γ+L}` and `Θ_L` are strictly increasing under subgroup inclusion, so for `M ≤ L` they
   agree if and only if `M = L`.
@@ -295,7 +295,7 @@ variable {L} {M : Submodule ℤ E}
 /-- On the imaginary axis, passing to a strictly larger discrete subgroup strictly increases the
 theta series of every translate: every nontrivial coset of `M` in `L` contributes a strictly
 positive sum. -/
-theorem re_thetaCoset_strictMono (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+theorem re_thetaCoset_lt_of_lt (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
     (thetaCoset M γ τ).re < (thetaCoset L γ τ).re := by
   classical
   have : DiscreteTopology M :=
@@ -315,16 +315,16 @@ theorem re_thetaCoset_strictMono (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re 
 
 /-- On the imaginary axis, passing to a strictly larger discrete subgroup strictly increases the
 theta series. -/
-theorem re_thetaSeries_strictMono (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+theorem re_thetaSeries_lt_of_lt (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
     (thetaSeries M τ).re < (thetaSeries L τ).re := by
-  simpa using re_thetaCoset_strictMono hML 0 hτ
+  simpa using re_thetaCoset_lt_of_lt hML 0 hτ
 
 /-- On the imaginary axis, the theta series of a translate is monotone in the subgroup `M ≤ L`. -/
 theorem re_thetaCoset_mono (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
     (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re := by
   rcases eq_or_lt_of_le hML with rfl | hlt
   · exact le_rfl
-  · exact (re_thetaCoset_strictMono hlt γ hτ).le
+  · exact (re_thetaCoset_lt_of_lt hlt γ hτ).le
 
 /-- On the imaginary axis, the theta series is monotone in the subgroup `M ≤ L`. -/
 theorem re_thetaSeries_mono (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
@@ -335,7 +335,7 @@ theorem re_thetaSeries_mono (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
 and only if `M = L`. -/
 theorem thetaCoset_apply_eq_iff_eq_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
     thetaCoset M γ τ = thetaCoset L γ τ ↔ M = L :=
-  ⟨fun h ↦ hML.eq_of_not_lt fun hlt ↦ (re_thetaCoset_strictMono hlt γ hτ).ne (congrArg re h),
+  ⟨fun h ↦ hML.eq_of_not_lt fun hlt ↦ (re_thetaCoset_lt_of_lt hlt γ hτ).ne (congrArg re h),
     fun h ↦ h ▸ rfl⟩
 
 /-- At any point of the imaginary axis, for `M ≤ L` with `L` discrete, `Θ_M(τ) = Θ_L(τ)` if and
