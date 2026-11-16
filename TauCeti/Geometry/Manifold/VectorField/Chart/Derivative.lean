@@ -135,10 +135,8 @@ theorem hasFDerivAt_mpullback_extChartAt_symm_of_eq_zero
   -- vanishes.
   have hU : DifferentiableAt 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
       (extChartAt I x x) := by
-    have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-      (s := univ) hV.mdifferentiableWithinAt
-    rw [I.range_eq_univ, mpullbackWithin_univ, preimage_univ, inter_univ] at h
-    exact h.differentiableAt univ_mem
+    have h := hV.differentiableAt_mpullbackWithin_extChartAt_symm
+    rwa [I.range_eq_univ, mpullbackWithin_univ] at h
   have hU₀ : mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V (extChartAt I x x) = 0 := by
     rw [mpullback_extChartAt_symm_apply_eq_mfderiv V (mem_extChartAt_source x)
       (by simp [I.range_eq_univ]), hV₀]

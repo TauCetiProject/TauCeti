@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.ClassFormation
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
-public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.GroupTheory.Abelianization.Basic

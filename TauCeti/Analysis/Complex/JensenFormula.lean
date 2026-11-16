@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.JensenFormula
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 
 /-!
 # Jensen's inequality at a zero of the centre, and relative zero counts
@@ -28,6 +29,10 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
 `r = 1/4`, `R = 1/2` and `M = 1` there is one zero in `closedBall 0 (1/4)` while
 `log (M / ‖a‖) / log (R / r) = 0`. Here the bound is `1 + log 2 / log 2 = 2`.
 
+When `f` is holomorphic and zero-free on a closed disc, the mean value property of Jensen's
+formula replaces the circle average of `log ‖f‖` by `log ‖f c‖`, so the boundary `L¹` norm of
+`log ‖f‖` is determined by the mean of `log⁺ ‖f‖`.
+
 ## Main results
 
 * `AnalyticOnNhd.sum_divisor_le_analyticOrderNatAt_add` — Jensen's bound for the number of zeros
@@ -42,6 +47,9 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
   its trailing coefficient there.
 * `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm`: for `f` analytic on `ball c R` and
   `s > 0`, a uniform lower bound for these averages on the circles with radii in `[s, R)`.
+* `AnalyticOnNhd.circleAverage_abs_log_norm_of_ne_zero`: for `f` holomorphic and zero-free on a
+  closed disc about `c`, the circle average of `|log ‖f‖|` is twice that of `log⁺ ‖f‖` minus
+  `log ‖f c‖`.
 
 ## Implementation notes
 
@@ -227,6 +235,17 @@ theorem exists_forall_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (ball 
     exact hr.1
   · rw [abs_of_pos (hs.trans_le hr.1)]
     exact closedBall_subset_ball hr.2
+
+/-- If `f` is holomorphic and zero-free on the closed disc of radius `|r|` about `c`, then the
+circle average of `|log ‖f‖|` is twice the circle average of `log⁺ ‖f‖` minus `log ‖f c‖`. In
+particular, if `‖f c‖ = 1`, then the circle average of `|log ‖f‖|` is twice that of `log⁺ ‖f‖`:
+the positive and negative parts of `log ‖f‖` have the same mean. -/
+theorem circleAverage_abs_log_norm_of_ne_zero
+    (h₁f : AnalyticOnNhd ℂ f (closedBall c |r|)) (h₂f : ∀ u ∈ closedBall c |r|, f u ≠ 0) :
+    circleAverage (fun z ↦ |Real.log ‖f z‖|) c r =
+      2 * circleAverage (fun z ↦ log⁺ ‖f z‖) c r - Real.log ‖f c‖ := by
+  rw [(h₁f.mono sphere_subset_closedBall).meromorphicOn.circleAverage_abs_log_norm,
+    h₁f.circleAverage_log_norm_of_ne_zero h₂f]
 
 end AnalyticOnNhd
 

@@ -8,12 +8,16 @@ module
 public import Mathlib.Algebra.Ring.Periodic
 
 /-!
-# Periodicity under integer combinations of two periods, and of single-index families
+# Periodicity under integer combinations of two periods, under reflection, and of single-index
+families
 
 A function periodic under `c₁` and `c₂` is periodic under every integer combination
 `m c₁ + n c₂` (`Function.Periodic.int_mul_add_int_mul`). For the periods `1` and `i` of a
 function on `ℂ` these are the vectors of the lattice `ℤ + ℤ i`; for the periods `τ` and `1` of a
 function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
+
+A function with period `c` composed with the reflection `x ↦ -x` still has period `c`
+(`Function.Periodic.comp_neg`).
 
 The family which is a `c`-periodic function `g` at one index and zero at the others is
 `c`-periodic at every index (`Function.Periodic.piSingle_apply`).
@@ -30,6 +34,11 @@ variable {α β : Type*} [NonAssocRing α] {f : α → β} {c₁ c₂ : α}
 theorem Periodic.int_mul_add_int_mul (h₁ : Periodic f c₁) (h₂ : Periodic f c₂) (m n : ℤ) :
     Periodic f (m * c₁ + n * c₂) :=
   (h₁.int_mul m).add_period (h₂.int_mul n)
+
+/-- A function with period `c`, composed with the reflection `x ↦ -x`, has period `c`. -/
+theorem Periodic.comp_neg {γ : Type*} [AddCommGroup γ] {f : γ → β} {c : γ} (h : Periodic f c) :
+    Periodic (fun x ↦ f (-x)) c := by
+  simpa only [zero_sub] using h.const_sub 0
 
 /-- The family which is a `c`-periodic function `g` at the index `i` and zero at the other indices
 is `c`-periodic at every index. -/
