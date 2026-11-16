@@ -273,21 +273,21 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_of_le [Nonempty ι] {κ : ℝ} (h
   set n := Fintype.card ι
   have hR : 0 < R := by linarith [pos_of_mem_ball hy]
   have hn1 : 1 ≤ √(n : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
-  set A := R / (4 * √(n : ℝ)) with hA_def
+  set A := R / (4 * √(n : ℝ))
   have hA : 0 ≤ A := by positivity
   -- Take the `p`-th root of the integral bound, and use `A ≤ R`.
   refine (eLpNorm_le_of_lintegral_rpow_le (t := ENNReal.ofReal (K ^ p⁻¹ * A ^ ((n : ℝ) / p) * m))
     (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top
     (((hcont.mono (ball_div_sixteen_mul_sqrt_subset_closedBall c hR.le)).aestronglyMeasurable
       measurableSet_ball)) ?_).trans (ENNReal.ofReal_le_ofReal ?_)
-  · rw [ENNReal.toReal_ofReal hp.le, ENNReal.ofReal_rpow_of_nonneg (by positivity) hp.le,
-      Real.mul_rpow (by positivity) hm.le, Real.mul_rpow (by positivity) (by positivity),
-      Real.rpow_inv_rpow hK.le hp.ne', ← Real.rpow_mul hA, div_mul_cancel₀ _ hp.ne',
-      Real.rpow_natCast]
-    refine (H hm ha hLam hcont hu hnonneg hsuper hf hy hum).trans_eq ?_
-    rw [hA_def]
-    congr 1
-    ring
+  · -- `(K^(1/p) A^(n/p) m)^p = m^p K Aⁿ`.
+    have hpow : (K ^ p⁻¹ * A ^ ((n : ℝ) / p) * m) ^ p = m ^ p * (K * A ^ n) := by
+      rw [Real.mul_rpow (by positivity) hm.le, Real.mul_rpow (by positivity) (by positivity),
+        Real.rpow_inv_rpow hK.le hp.ne', ← Real.rpow_mul hA, div_mul_cancel₀ _ hp.ne',
+        Real.rpow_natCast]
+      ring
+    rw [ENNReal.toReal_ofReal hp.le, ENNReal.ofReal_rpow_of_nonneg (by positivity) hp.le, hpow]
+    exact H hm ha hLam hcont hu hnonneg hsuper hf hy hum
   · gcongr
     exact div_le_self hR.le (by linarith)
 
@@ -297,6 +297,15 @@ private theorem le_ofReal_mul_add_ofReal_mul_top {X : ℝ≥0∞} {D r : ℝ} (h
   rw [ENNReal.mul_top (ENNReal.ofReal_pos.2 hr).ne', add_top,
     ENNReal.mul_top (ENNReal.ofReal_pos.2 hD).ne']
   exact le_top
+
+/-- Fold `ofReal D * (ofReal s + ofReal r * ofReal F)` into a single `ofReal`, for the right-hand
+sides of the weak Harnack inequalities. -/
+private theorem ofReal_mul_ofReal_add_ofReal_mul_ofReal (D : ℝ) {s r F : ℝ} (hs : 0 ≤ s)
+    (hr : 0 ≤ r) (hF : 0 ≤ F) :
+    ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ENNReal.ofReal F) =
+      ENNReal.ofReal (D * (s + r * F)) := by
+  rw [← ENNReal.ofReal_mul hr, ← ENNReal.ofReal_add hs (mul_nonneg hr hF),
+    ← ENNReal.ofReal_mul' (add_nonneg hs (mul_nonneg hr hF))]
 
 /-- **The weak Harnack inequality of Krylov and Safonov** (Gilbarg–Trudinger, Theorem 9.22;
 Caffarelli–Cabré, Theorem 4.8). Let `κ > 0`. There are `p > 0` and `C > 0`, depending only on the
@@ -353,8 +362,7 @@ theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (hκ : 0 <
       (by linarith)
   rw [add_zero] at hle
   refine hle.trans ?_
-  rw [hEF, ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_add huy (by positivity),
-    ← ENNReal.ofReal_mul (by positivity)]
+  rw [hEF, ofReal_mul_ofReal_add_ofReal_mul_ofReal _ huy (by positivity) ENNReal.toReal_nonneg]
   refine ENNReal.ofReal_le_ofReal ?_
   -- `m₀ ≤ max 1 ε₀⁻¹ (u(y) + R F / λ)`.
   have h1 : u y ≤ max 1 ε₀⁻¹ * u y := le_mul_of_one_le_left huy (le_max_left _ _)
@@ -428,9 +436,9 @@ private theorem exists_eLpNorm_le_of_wkp_of_pos [Fact (1 ≤ (Fintype.card ι : 
         gcongr
         exact (hwū y hyR).2
     _ = _ := by
-        rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_add
-          (div_nonneg (by linarith [hnonneg y hyR]) hσ.le) (by positivity),
-          ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hσ.le]
+        rw [ofReal_mul_ofReal_add_ofReal_mul_ofReal _
+          (div_nonneg (by linarith [hnonneg y hyR]) hσ.le) (by positivity) (by linarith),
+          ← ENNReal.ofReal_mul hσ.le]
         congr 1
         field_simp
 
@@ -480,8 +488,7 @@ theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart_of_wkp
       (ū y + 2 * ζ + (1 + 3 * ζ) * (R / lam * (F + ζ)))) (by fun_prop)
     fun ζ hζ ↦ H u hRΩ ha hLam hcont hū hnonneg hsuper ENNReal.toReal_nonneg hEF.le hζ y hy
   refine hle.trans_eq ?_
-  rw [hEF, ← ENNReal.ofReal_mul (by positivity),
-    ← ENNReal.ofReal_add huy (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+  rw [hEF, ofReal_mul_ofReal_add_ofReal_mul_ofReal _ huy (by positivity) ENNReal.toReal_nonneg]
   congr 1
   ring
 
