@@ -47,6 +47,9 @@ hypothesis on it.
   the von Mangoldt coefficients `Λ(n) / n`. Writing `S(t) = log t + R(t)`, the main part `log t`
   integrates against `1 / (t log² t)` to `log log x`, the integral of `R(t) / (t log² t)` over
   `[2, ∞)` converges absolutely and enters `B`, and its tail beyond `x` is at most `C / log x`.
+  This estimate is stated for an arbitrary measurable `S`, so that the same argument serves the
+  partial sums over `ℕ` here and those over the prime ideals of a number field in
+  `TauCeti.NumberTheory.LFunctions.Mertens`, from whose proof it is extracted.
 
 ## Main declarations
 
@@ -60,6 +63,9 @@ hypothesis on it.
 * `TauCeti.tendsto_rpow_inv_mul_sum_Icc_rpow_mul`: if `x⁻¹ ∑_{1 ≤ n ≤ x} c n → κ`, then
   `(x ^ (τ + 1))⁻¹ ∑_{1 ≤ n ≤ x} n ^ τ c n → κ / (τ + 1)` for `τ > -1`.
 * `TauCeti.sum_Icc_div_log_eq`: the exact Abel-summation identity for the weight `1 / log t`.
+* `TauCeti.exists_abs_div_log_add_integral_sub_log_log_sub_le`: if a measurable `S` satisfies
+  `S(t) = log t + O(1)`, then `S(x) / log x + ∫_2^x S(t) / (t log² t) dt` is
+  `log log x + B + O(1 / log x)`.
 * `TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le`: if `∑_{2 ≤ k ≤ t} c k = log t + O(1)`,
   then `∑_{2 ≤ k ≤ x} c k / log k = log log x + B + O(1 / log x)`.
 
@@ -456,45 +462,41 @@ theorem sum_Icc_div_log_eq (c : ℕ → ℝ) (x : ℝ) :
   refine setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ ?_
   ring
 
-/-- If the partial sums `∑_{2 ≤ k ≤ t} c k` differ from `log t` by at most `C` for `t ≥ 2`, then
-the error weighted by `1 / (t log² t)` is integrable on `(a, ∞)` for `a ≥ 2`, and its integral there
-is at most `C / log a`. -/
-private lemma integrableOn_Ioi_sum_Icc_sub_log_mul {c : ℕ → ℝ} {C a : ℝ}
-    (h : ∀ t : ℝ, 2 ≤ t → |∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t| ≤ C) (ha : 2 ≤ a) :
-    IntegrableOn (fun t ↦ (∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t) * (t⁻¹ / Real.log t ^ 2))
-        (Ioi a) ∧
-      |∫ t in Ioi a, (∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t) * (t⁻¹ / Real.log t ^ 2)| ≤
-        C / Real.log a := by
+/-- If `S` differs from `log t` by at most `C` for `t ≥ 2`, then the error weighted by
+`1 / (t log² t)` is integrable on `(a, ∞)` for `a ≥ 2`, and its integral there is at most
+`C / log a`. -/
+private lemma integrableOn_Ioi_sub_log_mul {S : ℝ → ℝ} {C a : ℝ} (hS : Measurable S)
+    (h : ∀ t : ℝ, 2 ≤ t → |S t - Real.log t| ≤ C) (ha : 2 ≤ a) :
+    IntegrableOn (fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)) (Ioi a) ∧
+      |∫ t in Ioi a, (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)| ≤ C / Real.log a := by
   have ha1 : (1 : ℝ) < a := by linarith
   -- The integrand is dominated by `C / (t log² t)`, which is integrable at infinity.
   have hle : ∀ᵐ t ∂volume.restrict (Ioi a),
-      ‖(∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t) * (t⁻¹ / Real.log t ^ 2)‖ ≤
-        C * (t⁻¹ / Real.log t ^ 2) := by
+      ‖(S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)‖ ≤ C * (t⁻¹ / Real.log t ^ 2) := by
     refine (ae_restrict_mem measurableSet_Ioi).mono fun t (ht : a < t) ↦ ?_
     have hw : 0 ≤ t⁻¹ / Real.log t ^ 2 := div_nonneg (inv_nonneg.mpr (by linarith)) (sq_nonneg _)
     rw [norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg hw]
     exact mul_le_mul_of_nonneg_right (h t (ha.trans ht.le)) hw
-  have hmeas : Measurable fun t : ℝ ↦ ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k :=
-    (measurable_from_nat (f := fun n ↦ ∑ k ∈ Finset.Icc 2 n, c k)).comp Nat.measurable_floor
   refine ⟨((integrableOn_inv_div_log_sq_Ioi ha1).const_mul C).mono'
-    ((hmeas.sub Real.measurable_log).mul
+    ((hS.sub Real.measurable_log).mul
       (measurable_inv.div (Real.measurable_log.pow_const 2))).aestronglyMeasurable hle, ?_⟩
   rw [div_eq_mul_inv, ← integral_inv_div_log_sq_Ioi ha1, ← integral_const_mul,
     ← Real.norm_eq_abs]
   exact norm_integral_le_of_norm_le ((integrableOn_inv_div_log_sq_Ioi ha1).const_mul C) hle
 
-/-- **Partial sums weighted by `1 / log`.** If the partial sums `∑_{2 ≤ k ≤ t} c k` differ from
-`log t` by at most `C` for every `t ≥ 2`, then there is a constant `B` with
-`|∑_{2 ≤ k ≤ x} c k / log k - log log x - B| ≤ 2 C / log x` for every `x ≥ 2`. Applied to the
-coefficients `log p / p` on the primes, this turns Mertens' first theorem into his second. -/
-theorem exists_abs_sum_Icc_div_log_sub_log_log_sub_le {c : ℕ → ℝ} {C : ℝ}
-    (h : ∀ t : ℝ, 2 ≤ t → |∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t| ≤ C) :
+/-- **The right-hand side of partial summation against `1 / log`.** If a measurable `S` differs
+from `log t` by at most `C` for every `t ≥ 2`, then there is a constant `B` with
+`|S(x) / log x + ∫_2^x S(t) / (t log² t) dt - log log x - B| ≤ 2 C / log x` for every `x ≥ 2`.
+When `S` is the partial-sum function of a sequence `c`, the left-hand expression is
+`∑_{2 ≤ k ≤ x} c k / log k` by Abel summation (`sum_Icc_div_log_eq` over `ℕ`,
+`primeSummatory_div_log_eq_div_log_add_integral` over the prime ideals of a number field). -/
+theorem exists_abs_div_log_add_integral_sub_log_log_sub_le {S : ℝ → ℝ} {C : ℝ}
+    (hS : Measurable S) (h : ∀ t : ℝ, 2 ≤ t → |S t - Real.log t| ≤ C) :
     ∃ B, ∀ x : ℝ, 2 ≤ x →
-      |∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k / Real.log k - Real.log (Real.log x) - B| ≤
-        2 * C / Real.log x := by
-  set S : ℝ → ℝ := fun t ↦ ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k
+      |S x / Real.log x + (∫ t in Ioc 2 x, S t * (t⁻¹ / Real.log t ^ 2)) -
+        Real.log (Real.log x) - B| ≤ 2 * C / Real.log x := by
   set R : ℝ → ℝ := fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)
-  have hRint {a : ℝ} (ha : 2 ≤ a) := integrableOn_Ioi_sum_Icc_sub_log_mul h ha
+  have hRint {a : ℝ} (ha : 2 ≤ a) := integrableOn_Ioi_sub_log_mul hS h ha
   refine ⟨1 - Real.log (Real.log 2) + ∫ t in Ioi 2, R t, fun x hx ↦ ?_⟩
   have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
   have hIcc : Icc (2 : ℝ) x ⊆ Ioi 1 := fun t ht ↦ one_lt_two.trans_le ht.1
@@ -519,9 +521,23 @@ theorem exists_abs_sum_Icc_div_log_sub_log_log_sub_le {c : ℕ → ℝ} {C : ℝ
   have hSx : |S x / Real.log x - 1| ≤ C / Real.log x := by
     rw [← div_self hlogx.ne', ← sub_div, abs_div, abs_of_pos hlogx]
     exact div_le_div_of_nonneg_right (h x hx) hlogx.le
-  rw [sum_Icc_div_log_eq c x, hmain, hsplit]
+  rw [hmain, hsplit]
   calc _ = |(S x / Real.log x - 1) - ∫ t in Ioi x, R t| := by congr 1; ring
     _ ≤ |S x / Real.log x - 1| + |∫ t in Ioi x, R t| := abs_sub _ _
     _ ≤ 2 * C / Real.log x := by rw [mul_div_assoc]; linarith [(hRint hx).2]
+
+/-- **Partial sums weighted by `1 / log`.** If the partial sums `∑_{2 ≤ k ≤ t} c k` differ from
+`log t` by at most `C` for every `t ≥ 2`, then there is a constant `B` with
+`|∑_{2 ≤ k ≤ x} c k / log k - log log x - B| ≤ 2 C / log x` for every `x ≥ 2`. Applied to the
+coefficients `log p / p` on the primes, this turns Mertens' first theorem into his second. -/
+theorem exists_abs_sum_Icc_div_log_sub_log_log_sub_le {c : ℕ → ℝ} {C : ℝ}
+    (h : ∀ t : ℝ, 2 ≤ t → |∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t| ≤ C) :
+    ∃ B, ∀ x : ℝ, 2 ≤ x →
+      |∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k / Real.log k - Real.log (Real.log x) - B| ≤
+        2 * C / Real.log x := by
+  obtain ⟨B, hB⟩ := exists_abs_div_log_add_integral_sub_log_log_sub_le
+    (S := fun t ↦ ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k)
+    ((measurable_from_nat (f := fun n ↦ ∑ k ∈ Finset.Icc 2 n, c k)).comp Nat.measurable_floor) h
+  exact ⟨B, fun x hx ↦ by simpa only [← sum_Icc_div_log_eq] using hB x hx⟩
 
 end TauCeti

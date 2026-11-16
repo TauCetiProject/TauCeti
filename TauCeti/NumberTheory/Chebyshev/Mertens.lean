@@ -45,7 +45,9 @@ turns the uniform bound `log 4 + 4` of the first theorem into Mertens' second th
 explicit error: there is a constant `B` with `|∑_{p ≤ x} 1 / p - log log x - B| ≤
 2 (log 4 + 4) / log x` for every real `x ≥ 2`. The same argument applied to the von Mangoldt form
 gives `|∑_{2 ≤ n ≤ x} Λ(n) / (n log n) - log log x - B'| ≤ 2 (log 4 + 4) / log x` with another
-constant `B'`.
+constant `B'`. The constant `B` is the Meissel–Mertens constant `mertensConstant ℚ` of
+`TauCeti.NumberTheory.LFunctions.Mertens`, where the bound is restated with it
+(`TauCeti.LFunctions.abs_sum_primesLE_one_div_sub_log_log_sub_mertensConstant_le`).
 
 ## Main results
 
@@ -379,7 +381,8 @@ theorem not_summable_prime_log_div_gt (y : ℝ) :
 
 /-- **Mertens' second theorem.** There is a constant `B` such that for every real `x ≥ 2`,
 `|∑_{p ≤ x} 1 / p - log log x - B| ≤ 2 (log 4 + 4) / log x`, the sum running over the primes in
-`Nat.primesLE ⌊x⌋₊`. -/
+`Nat.primesLE ⌊x⌋₊`. The constant is `TauCeti.LFunctions.mertensConstant ℚ`
+(`TauCeti.LFunctions.abs_sum_primesLE_one_div_sub_log_log_sub_mertensConstant_le`). -/
 theorem exists_abs_sum_primesLE_one_div_sub_log_log_sub_le :
     ∃ B : ℝ, ∀ x : ℝ, 2 ≤ x →
       |∑ p ∈ Nat.primesLE ⌊x⌋₊, 1 / (p : ℝ) - Real.log (Real.log x) - B| ≤
