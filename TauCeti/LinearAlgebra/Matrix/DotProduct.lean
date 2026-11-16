@@ -36,6 +36,8 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
+* `Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem`: over a star-ordered ring with proper
+  star, any rectangular matrix `v` with idempotent `vᴴ * v` satisfies `v * vᴴ * v = v`.
 -/
 
 public section
@@ -98,3 +100,20 @@ theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [Ring R
       ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
         rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
     _ = _ := by rw [eq_neg_of_add_eq_zero_right hv, mul_neg, neg_mul]
+
+/-- Over a star-ordered ring with proper star, any rectangular matrix `v` whose `vᴴ * v` is
+idempotent satisfies the partial-isometry identity `v * vᴴ * v = v`. -/
+theorem Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem {m n R : Type*}
+    [Fintype m] [Fintype n] [PartialOrder R] [NonUnitalRing R] [StarRing R]
+    [StarOrderedRing R] [IsProperStar R] {v : Matrix m n R}
+    (hv : IsIdempotentElem (vᴴ * v)) :
+    v * vᴴ * v = v := by
+  set p := vᴴ * v with hp
+  have hp_sa : pᴴ = p := by simp [hp]
+  rw [Matrix.mul_assoc, ← sub_eq_zero, ← conjTranspose_mul_self_eq_zero]
+  calc (v * p - v)ᴴ * (v * p - v)
+      = (p * vᴴ - vᴴ) * (v * p - v) := by rw [conjTranspose_sub, conjTranspose_mul, hp_sa]
+    _ = p * (vᴴ * (v * p)) - vᴴ * (v * p) - (p * (vᴴ * v) - vᴴ * v) := by
+          simp only [Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc]
+    _ = 0 := by
+          rw [← Matrix.mul_assoc vᴴ v p, ← hp, hv.eq, hv.eq, sub_self]
