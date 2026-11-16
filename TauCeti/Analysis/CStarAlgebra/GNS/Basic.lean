@@ -8,6 +8,10 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
+public import Mathlib.Analysis.Matrix.Order
+import Mathlib.Analysis.InnerProductSpace.GramMatrix
+import TauCeti.Analysis.StarAlgebra.GNS.Basic
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The GNS class map and cyclic vector
@@ -21,6 +25,12 @@ transported to the GNS space. Composed with the embedding into the completion, i
 continuous linear class map `f.toGNS : A →L[ℂ] f.GNS`, `a ↦ [a]`, which has dense range.
 Its norm is at most the square root of the norm of `f`, so for a norm-one functional
 `‖[a]‖ ≤ ‖a‖`. If `A` is separable, this dense continuous image makes `f.GNS` separable.
+
+For any order-positive functional `f : B →ₚ[ℂ] ℂ` on a `StarOrderedRing`, the GNS semi-inner
+product also shows that every `⋆`-moment matrix `(i, j) ↦ f (star (s i) * s j)` is positive
+semidefinite (`PositiveLinearMap.posSemidef_apply_star_mul`), and hence so is any complex or real
+second-moment matrix of self-adjoint elements (`PositiveLinearMap.posSemidef_of_forall_apply_mul_eq`
+and `PositiveLinearMap.posSemidef_of_forall_apply_mul_eq_ofReal`).
 
 For a unital algebra, `PositiveLinearMap.gnsVector` is the class of the unit. Its orbit under
 Mathlib's GNS representation is dense and its vector functional recovers the original positive
@@ -147,5 +157,55 @@ theorem norm_gnsVector (f : B →ₚ[ℂ] ℂ) (hf : f 1 = 1) : ‖f.gnsVector�
   nlinarith [norm_nonneg f.gnsVector]
 
 end Unital
+
+section PosSemidef
+
+variable {B ι : Type*} [NonUnitalRing B] [PartialOrder B] [StarRing B] [StarOrderedRing B]
+  [Module ℂ B] [StarModule ℂ B] [IsScalarTower ℂ B B] (f : B →ₚ[ℂ] ℂ)
+
+/-- For any order-positive complex-linear functional `f` on a `StarOrderedRing` and any family
+`s : ι → B`, the `⋆`-moment matrix `(i, j) ↦ f (star (s i) * s j)` is positive semidefinite. -/
+theorem posSemidef_apply_star_mul (s : ι → B) :
+    (Matrix.of fun i j => f (star (s i) * s j)).PosSemidef := by
+  let φ := TauCeti.StarPositiveFunctional.ofPositiveLinearMap f
+  have hgram : Matrix.gram ℂ (fun i => φ.toPreGNS (s i)) =
+      Matrix.of fun i j => f (star (s i) * s j) := by
+    ext i j
+    simp [φ]
+  exact hgram ▸ Matrix.posSemidef_gram ℂ (fun i => φ.toPreGNS (s i))
+
+/-- Any complex matrix `C : Matrix ι ι ℂ` whose entries are the `⋆`-moments
+`f (star (s i) * s j)` of a family `s : ι → B` under a positive functional `f` is positive
+semidefinite. -/
+theorem posSemidef_of_forall_apply_star_mul_eq {s : ι → B} {C : Matrix ι ι ℂ}
+    (hC : ∀ i j, f (star (s i) * s j) = C i j) :
+    C.PosSemidef := by
+  have h : (Matrix.of fun i j => f (star (s i) * s j)) = C := Matrix.ext hC
+  exact h ▸ f.posSemidef_apply_star_mul s
+
+/-- For a family of self-adjoint elements `s : ι → B`, the second-moment matrix
+`(i, j) ↦ f (s i * s j)` under a positive functional `f` is positive semidefinite. -/
+theorem posSemidef_apply_mul_of_isSelfAdjoint {s : ι → B} (hs : ∀ i, IsSelfAdjoint (s i)) :
+    (Matrix.of fun i j => f (s i * s j)).PosSemidef :=
+  f.posSemidef_of_forall_apply_star_mul_eq fun i j => by rw [Matrix.of_apply, (hs i).star_eq]
+
+/-- If a complex matrix `C : Matrix ι ι ℂ` gives the second moments `f (s i * s j) = C i j` of a
+family of self-adjoint elements `s : ι → B` under a positive functional `f`, then `C` is positive
+semidefinite. -/
+theorem posSemidef_of_forall_apply_mul_eq {s : ι → B} (hs : ∀ i, IsSelfAdjoint (s i))
+    {C : Matrix ι ι ℂ} (hC : ∀ i j, f (s i * s j) = C i j) :
+    C.PosSemidef :=
+  f.posSemidef_of_forall_apply_star_mul_eq fun i j => by rw [(hs i).star_eq, hC]
+
+/-- If a real matrix `C : Matrix ι ι ℝ` gives the second moments `f (s i * s j) = C i j` of a
+family of self-adjoint elements `s : ι → B` under a positive functional `f`, then `C` is positive
+semidefinite. -/
+theorem posSemidef_of_forall_apply_mul_eq_ofReal {s : ι → B} (hs : ∀ i, IsSelfAdjoint (s i))
+    {C : Matrix ι ι ℝ} (hC : ∀ i j, f (s i * s j) = (C i j : ℂ)) :
+    C.PosSemidef :=
+  Matrix.posSemidef_map_ofReal_iff (𝕜 := ℂ).mp <|
+    f.posSemidef_of_forall_apply_mul_eq hs fun i j => by simpa using hC i j
+
+end PosSemidef
 
 end PositiveLinearMap

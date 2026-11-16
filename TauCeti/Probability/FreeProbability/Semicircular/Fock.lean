@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Complexification
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.InnerProductSpace.FullFockSpace.Field
 public import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
@@ -14,6 +15,7 @@ public import TauCeti.Probability.FreeProbability.Semicircular.Law
 public import TauCeti.Probability.FreeProbability.Semicircular.System
 public import TauCeti.Probability.FreeProbability.StarIndependence
 public import TauCeti.Probability.FreeProbability.WeakClosure
+import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -34,26 +36,21 @@ vector functional `T ↦ ⟪vacuum, T vacuum⟫_𝕜` on `FullFockSpace 𝕜 H �
    `Matrix.gram 𝕜 h`; in particular each `field 𝕜 h` is semicircular of variance `(‖h‖ ^ 2 : 𝕜)`
    and `(field 𝕜 (h i))` is freely independent if and only if `(h i)` is pairwise orthogonal.
    Strengthening to generating sets `S : ι → Set H`, the unital `⋆`-subalgebras
-   `StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)` (as well as the unital subalgebras
-   `Algebra.adjoin 𝕜 (field 𝕜 '' S i)`, their norm closures, and their weak operator closures) are
-   freely independent under `vacuumState 𝕜 H` if and only if the sets `S i` are pairwise orthogonal.
+   `StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)`, their norm closures, and their weak operator
+   closures — as well as the unital subalgebras `Algebra.adjoin 𝕜 (field 𝕜 '' S i)` — are freely
+   independent under `vacuumState 𝕜 H` if and only if the sets `S i` are pairwise orthogonal.
 
 3. **Semicircle C⋆-laws, real Hilbert space complexification, and covariance realization.** Over
    `ℂ`, `field ℂ h` has law `semicircleReal 0 (‖h‖₊ ^ 2)` and `r • field ℂ h + m` has law
    `semicircleReal m (Real.toNNReal (r ^ 2) * ‖h‖₊ ^ 2)`. Embedding a real inner product space `X`
-   into its `L²` complexification `WithLp 2 (Complexification X)` defines `realField x`, turning
-   every family `x : ι → X` into a self-adjoint semicircular system in a complex C⋆-probability
-   space with covariance `(Matrix.gram ℝ x).map ((↑) : ℝ → ℂ)`, and turning pairwise orthogonal
-   real subspaces into `⋆`-free subalgebras. Combining this with the RKHS Gram realization
-   `Matrix.PosSemidef.exists_gram_eq` shows that a real matrix `C : Matrix ι ι ℝ` of arbitrary index
-   type `ι` is positive semidefinite if and only if `C.map ((↑) : ℝ → ℂ)` is the covariance of a
-   self-adjoint semicircular system in a C⋆-probability space, realized on full Fock space.
-
-## Main definitions
-
-* `TauCeti.FullFockSpace.realField`: the self-adjoint field operator on
-  `FullFockSpace ℂ (WithLp 2 (Complexification X))` attached to `x : X` in a real inner product
-  space `X`.
+   into its `L²` complexification `WithLp 2 (Complexification X)` via `realField` turns every
+   family `x : ι → X` into a self-adjoint semicircular system in a complex C⋆-probability space
+   with covariance `(Matrix.gram ℝ x).map ((↑) : ℝ → ℂ)`, and turns pairwise orthogonal real
+   subspaces into `⋆`-free subalgebras. Combining this with the Gram realization
+   `Matrix.PosSemidef.exists_gram_eq` and GNS `⋆`-moment positivity characterizes positive
+   semidefiniteness for both complex and real matrices `C` of arbitrary index type `ι` by the
+   existence of a self-adjoint semicircular system in a C⋆-probability space with covariance `C`
+   (respectively `C.map ((↑) : ℝ → ℂ)`).
 
 ## Main results
 
@@ -67,21 +64,28 @@ vector functional `T ↦ ⟪vacuum, T vacuum⟫_𝕜` on `FullFockSpace 𝕜 H �
 * `TauCeti.FullFockSpace.isSemicircularSystem_vacuumState_field`,
   `TauCeti.FullFockSpace.isSemicircular_vacuumState_field`: field operators form a semicircular
   system with Gram covariance.
-* `TauCeti.FullFockSpace.isFreelyIndependent_vacuumState_starAdjoin_creation_iff`,
-  `TauCeti.FullFockSpace.isStarFreelyIndependentElements_vacuumState_creation_iff`,
-  `TauCeti.FullFockSpace.isFreelyIndependent_vacuumState_adjoin_field_iff`: `⋆`-freeness and
-  subalgebra freeness are equivalent to pairwise orthogonality.
+* In `TauCeti.FullFockSpace`, `isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff`,
+  `isStarFreelyIndependentElements_vacuumState_creation_iff`,
+  `isFreelyIndependent_vacuumState_adjoin_field_iff`,
+  `isFreelyIndependent_vacuumState_topologicalClosure_starAlgebraAdjoin_creation_iff`, and
+  `isFreelyIndependent_vacuumState_weakOperatorClosure_starAlgebraAdjoin_creation_iff`:
+  `⋆`-freeness and subalgebra freeness are equivalent to pairwise orthogonality.
 * `TauCeti.FullFockSpace.law_vacuumState_field`,
-  `TauCeti.FullFockSpace.law_vacuumState_smul_field_add_algebraMap`: C⋆-algebraic semicircle laws of
-  field operators and their affine images.
-* `TauCeti.FullFockSpace.isSemicircularSystem_vacuumState_realField`,
-  `TauCeti.FullFockSpace.isFreelyIndependent_vacuumState_starAdjoin_complexifyL2_iff`: Fock
-  realization over complexified real inner product spaces.
-* `Matrix.PosSemidef.exists_fock_isSemicircularSystem`,
-  `Matrix.PosSemidef.exists_fock_realField_isSemicircularSystem`,
-  `Matrix.posSemidef_real_iff_exists_cstar_isSemicircularSystem`: every positive-semidefinite
-  covariance matrix is realized on full Fock space, and for real matrices this characterizes
-  positive semidefiniteness.
+  `TauCeti.FullFockSpace.law_vacuumState_smul_field_add_algebraMap`,
+  `TauCeti.FullFockSpace.law_vacuumState_field_ofReal_sqrt_add_algebraMap`: C⋆-algebraic semicircle
+  laws of field operators and their affine images.
+* In `TauCeti.FullFockSpace`, `isSemicircularSystem_vacuumState_realField`,
+  `law_vacuumState_smul_realField_add_algebraMap`,
+  `isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_complexifyL2_iff`, and
+  `isFreelyIndependent_vacuumState_adjoin_realField_iff`: Fock realization over complexified real
+  inner product spaces.
+* `Matrix.PosSemidef.exists_isSemicircularSystem_vacuumState_field`,
+  `Matrix.PosSemidef.exists_isSemicircularSystem_vacuumState_realField`,
+  `Matrix.PosSemidef.exists_euclideanSpace_isSemicircularSystem_vacuumState_realField`,
+  `Matrix.posSemidef_iff_exists_cstar_isSelfAdjoint_and_isSemicircularSystem`,
+  `Matrix.posSemidef_real_iff_exists_cstar_isSelfAdjoint_and_isSemicircularSystem`: every
+  positive-semidefinite covariance matrix is realized on full Fock space, characterizing complex
+  and real positive-semidefinite matrices via C⋆-semicircular systems.
 
 ## References
 
@@ -101,7 +105,7 @@ open scoped ComplexOrder InnerProductSpace Pointwise
 
 namespace TauCeti
 
-universe u v w
+universe u v
 
 namespace FullFockSpace
 
@@ -266,8 +270,7 @@ theorem vacuumState_prod_creation_add_annihilation (s : Finset α) (u w : α →
     vacuumState 𝕜 H ((s.sort.map fun i => creation 𝕜 (u i) + annihilation 𝕜 (w i)).prod) =
       ∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
         ∏ B ∈ P.1.1.parts, NoncrossingPartition.pairWeight (fun i j => ⟪w i, u j⟫_𝕜) B := by
-  rw [vacuumState_apply]
-  change ⟪vacuum, prodGenOp (𝕜 := 𝕜) u w s vacuum⟫_𝕜 = _
+  rw [vacuumState_apply, ← prodGenOp]
   induction hn : #s using Nat.strong_induction_on generalizing s with
   | _ n ih =>
   obtain rfl | hs := s.eq_empty_or_nonempty
@@ -378,7 +381,7 @@ private theorem exists_creation_add_annihilation_of_mem_union {S : Set H}
 /-- **`⋆`-freeness of creation/annihilation algebras is pairwise orthogonality.** For a family of
 subsets `S : ι → Set H`, the unital `⋆`-subalgebras `StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)` are
 freely independent under `vacuumState 𝕜 H` if and only if the sets `S i` are pairwise orthogonal. -/
-theorem isFreelyIndependent_vacuumState_starAdjoin_creation_iff (S : ι → Set H) :
+theorem isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff (S : ι → Set H) :
     IsFreelyIndependent (vacuumState 𝕜 H).toLinearMap
         (fun i => (StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)).toSubalgebra) ↔
       Pairwise fun i j => ∀ x ∈ S i, ∀ y ∈ S j, ⟪x, y⟫_𝕜 = 0 := by
@@ -419,7 +422,7 @@ theorem isStarFreelyIndependentElements_vacuumState_creation_iff (h : ι → H) 
     IsStarFreelyIndependentElements (vacuumState 𝕜 H).toLinearMap (fun i => creation 𝕜 (h i)) ↔
       Pairwise fun i j => ⟪h i, h j⟫_𝕜 = 0 := by
   simpa [isStarFreelyIndependentElements_iff] using
-    isFreelyIndependent_vacuumState_starAdjoin_creation_iff fun i => {h i}
+    isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff fun i => {h i}
 
 /-- The unital subalgebras `Algebra.adjoin 𝕜 (field 𝕜 '' S i)` generated by field operators on
 subsets `S i` are freely independent under `vacuumState 𝕜 H` if and only if the sets `S i` are
@@ -436,11 +439,9 @@ theorem isFreelyIndependent_vacuumState_adjoin_field_iff (S : ι → Set H) :
     have hword := isFreelyIndependent_iff.1 hfree
       [(i, field 𝕜 x), (j, field 𝕜 y)] (by simp) (by simp [hij])
       (by simp [hx_mem, hy_mem]) (by simp)
-    rw [List.map_cons, List.map_cons, List.map_nil, List.prod_cons, List.prod_cons, List.prod_nil,
-      mul_one] at hword
-    change vacuumState 𝕜 H (field 𝕜 x * field 𝕜 y) = 0 at hword
-    rwa [vacuumState_field_mul_field] at hword
-  · refine ((isFreelyIndependent_vacuumState_starAdjoin_creation_iff S).2 horth).mono fun i => ?_
+    simpa using hword
+  · refine ((isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff S).2 horth).mono
+      fun i => ?_
     refine Algebra.adjoin_le ?_
     rintro _ ⟨x, hx, rfl⟩
     have hc : creation 𝕜 x ∈ StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i) :=
@@ -450,22 +451,19 @@ theorem isFreelyIndependent_vacuumState_adjoin_field_iff (S : ι → Set H) :
 
 /-- Norm-closed C⋆-subalgebras generated by creation operators on subsets `S i` are freely
 independent under `vacuumState 𝕜 H` if and only if the sets `S i` are pairwise orthogonal. -/
-theorem isFreelyIndependent_vacuumState_topologicalClosure_starAdjoin_creation_iff (S : ι → Set H) :
+theorem isFreelyIndependent_vacuumState_topologicalClosure_starAlgebraAdjoin_creation_iff
+    (S : ι → Set H) :
     IsFreelyIndependent (vacuumState 𝕜 H).toLinearMap
         (fun i => (StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)).topologicalClosure.toSubalgebra) ↔
       Pairwise fun i j => ∀ x ∈ S i, ∀ y ∈ S j, ⟪x, y⟫_𝕜 = 0 := by
-  have hcl (i : ι) :
-      (StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)).topologicalClosure.toSubalgebra =
-        (StarAlgebra.adjoin 𝕜 (creation 𝕜 '' S i)).toSubalgebra.topologicalClosure :=
-    Subalgebra.ext fun _ => Iff.rfl
-  simp_rw [hcl]
+  simp_rw [StarSubalgebra.topologicalClosure_toSubalgebra_comm]
   rw [isFreelyIndependent_topologicalClosure_iff vacuumState_one continuous_vacuumState,
-    isFreelyIndependent_vacuumState_starAdjoin_creation_iff]
+    isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff]
 
 /-- Weak-operator closures of the unital `⋆`-subalgebras generated by creation operators on subsets
 `S i` are freely independent under `vacuumState 𝕜 H` if and only if the sets `S i` are pairwise
 orthogonal. -/
-theorem isFreelyIndependent_vacuumState_weakOperatorClosure_starAdjoin_creation_iff
+theorem isFreelyIndependent_vacuumState_weakOperatorClosure_starAlgebraAdjoin_creation_iff
     (S : ι → Set H) :
     IsFreelyIndependent
         ((vacuumState 𝕜 H).toLinearMap.comp (ContinuousLinearMapWOT.algEquiv 𝕜).toLinearMap)
@@ -473,7 +471,7 @@ theorem isFreelyIndependent_vacuumState_weakOperatorClosure_starAdjoin_creation_
           (ContinuousLinearMapWOT.algEquiv 𝕜).symm.toAlgHom).topologicalClosure) ↔
       Pairwise fun i j => ∀ x ∈ S i, ∀ y ∈ S j, ⟪x, y⟫_𝕜 = 0 :=
   (isFreelyIndependent_weakOperatorClosure_iff_of_vectorState vacuumState_one vacuum
-    vacuumState_apply).trans (isFreelyIndependent_vacuumState_starAdjoin_creation_iff S)
+    vacuumState_apply).trans (isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff S)
 
 end SemicircularAndStarFree
 
@@ -519,6 +517,19 @@ theorem law_vacuumState_smul_field_add_algebraMap (h : H) (r m : ℝ) :
     simp [nnNorm_smul, mul_pow, Real.coe_toNNReal _ (sq_nonneg r)]
   rw [← field_complex_real_smul, law_vacuumState_field_add_algebraMap, hnorm]
 
+/-- Every semicircle law `semicircleReal m v` on `ℝ` is realized by the canonical shifted field
+operator `field ℂ (√v : ℂ) + m` on the full Fock space `FullFockSpace ℂ ℂ` over the one-dimensional
+one-particle space `ℂ`. -/
+theorem law_vacuumState_field_ofReal_sqrt_add_algebraMap (m : ℝ) (v : ℝ≥0) :
+    PositiveLinearMap.law (vacuumState ℂ ℂ)
+        (field ℂ ((√(v : ℝ) : ℝ) : ℂ) +
+          algebraMap ℝ (FullFockSpace ℂ ℂ →L[ℂ] FullFockSpace ℂ ℂ) m) =
+      semicircleReal m v := by
+  rw [law_vacuumState_field_add_algebraMap (H := ℂ)]
+  congr 1
+  ext
+  simp
+
 end ComplexLaw
 
 /-! ### Real inner product spaces via complexification -/
@@ -526,61 +537,6 @@ end ComplexLaw
 section RealComplexification
 
 variable {X : Type v} [NormedAddCommGroup X] [InnerProductSpace ℝ X] {ι : Type*}
-
-/-- The self-adjoint field operator on `FullFockSpace ℂ (WithLp 2 (Complexification X))` attached
-to a vector `x : X` in a real inner product space `X` via `x ↦ x + i 0`. -/
-def realField (x : X) :
-    FullFockSpace ℂ (WithLp 2 (Complexification X)) →L[ℂ]
-      FullFockSpace ℂ (WithLp 2 (Complexification X)) :=
-  field ℂ (WithLp.complexificationOfRealₗᵢ X x)
-
-theorem realField_def (x : X) :
-    realField x = field ℂ (WithLp.complexificationOfRealₗᵢ X x) :=
-  (rfl)
-
-theorem isSelfAdjoint_realField (x : X) : IsSelfAdjoint (realField x) :=
-  isSelfAdjoint_field _
-
-@[simp]
-theorem star_realField (x : X) : star (realField x) = realField x :=
-  star_field _
-
-@[simp]
-theorem norm_realField (x : X) : ‖realField x‖ = 2 * ‖x‖ := by
-  rw [realField_def, norm_field, LinearIsometry.norm_map]
-
-@[simp]
-theorem realField_zero : realField (0 : X) = 0 := by
-  simp [realField_def]
-
-@[simp]
-theorem realField_add (x y : X) : realField (x + y) = realField x + realField y := by
-  rw [realField_def, map_add, field_add, ← realField_def, ← realField_def]
-
-@[simp]
-theorem realField_neg (x : X) : realField (-x) = -realField x := by
-  rw [realField_def, map_neg, field_neg, ← realField_def]
-
-@[simp]
-theorem realField_sub (x y : X) : realField (x - y) = realField x - realField y := by
-  rw [realField_def, map_sub, field_sub, ← realField_def, ← realField_def]
-
-@[simp]
-theorem realField_smul (r : ℝ) (x : X) : realField (r • x) = r • realField x := by
-  rw [realField_def, map_smul, field_complex_real_smul, ← realField_def]
-
-@[simp]
-theorem vacuumState_realField (x : X) :
-    vacuumState ℂ (WithLp 2 (Complexification X)) (realField x) = 0 :=
-  vacuumState_field _
-
-@[simp]
-theorem vacuumState_realField_mul_realField (x y : X) :
-    vacuumState ℂ (WithLp 2 (Complexification X)) (realField x * realField y) =
-      (⟪x, y⟫_ℝ : ℂ) := by
-  rw [realField_def, realField_def, vacuumState_field_mul_field,
-    WithLp.complexificationOfRealₗᵢ_apply, WithLp.complexificationOfRealₗᵢ_apply,
-    WithLp.complexification_inner_toLp_ofReal]
 
 /-- For any family `x : ι → X` in a real inner product space, `i ↦ realField (x i)` is a
 self-adjoint semicircular system in the complex C⋆-algebra
@@ -596,16 +552,37 @@ theorem isSemicircularSystem_vacuumState_realField (x : ι → X) :
   simp_rw [realField_def, ← hgram]
   exact isSemicircularSystem_vacuumState_field (𝕜 := ℂ) _
 
+/-- Every `realField x` is semicircular of variance `(‖x‖ ^ 2 : ℂ)` under the vacuum state. -/
 theorem isSemicircular_vacuumState_realField (x : X) :
     IsSemicircular (vacuumState ℂ (WithLp 2 (Complexification X))).toLinearMap
       (realField x) ((‖x‖ ^ 2 : ℝ) : ℂ) := by
   simpa [realField_def] using
     isSemicircular_vacuumState_field (𝕜 := ℂ) (WithLp.complexificationOfRealₗᵢ X x)
 
+/-- Under the vacuum state, `realField x` has law `semicircleReal 0 (‖x‖₊ ^ 2)`. -/
 theorem law_vacuumState_realField (x : X) :
     PositiveLinearMap.law (vacuumState ℂ (WithLp 2 (Complexification X))) (realField x) =
       semicircleReal 0 (‖x‖₊ ^ 2) := by
   rw [realField_def, law_vacuumState_field, LinearIsometry.nnNorm_map]
+
+/-- Shifting `realField x` by a real scalar `m` gives law `semicircleReal m (‖x‖₊ ^ 2)`. -/
+theorem law_vacuumState_realField_add_algebraMap (x : X) (m : ℝ) :
+    PositiveLinearMap.law (vacuumState ℂ (WithLp 2 (Complexification X)))
+        (realField x + algebraMap ℝ
+          (FullFockSpace ℂ (WithLp 2 (Complexification X)) →L[ℂ]
+            FullFockSpace ℂ (WithLp 2 (Complexification X))) m) =
+      semicircleReal m (‖x‖₊ ^ 2) := by
+  rw [realField_def, law_vacuumState_field_add_algebraMap, LinearIsometry.nnNorm_map]
+
+/-- Affine rescaling and shifting of `realField x` realizes `semicircleReal` with centre `m` and
+variance `Real.toNNReal (r ^ 2) * ‖x‖₊ ^ 2`. -/
+theorem law_vacuumState_smul_realField_add_algebraMap (x : X) (r m : ℝ) :
+    PositiveLinearMap.law (vacuumState ℂ (WithLp 2 (Complexification X)))
+        (r • realField x + algebraMap ℝ
+          (FullFockSpace ℂ (WithLp 2 (Complexification X)) →L[ℂ]
+            FullFockSpace ℂ (WithLp 2 (Complexification X))) m) =
+      semicircleReal m (Real.toNNReal (r ^ 2) * ‖x‖₊ ^ 2) := by
+  rw [realField_def, law_vacuumState_smul_field_add_algebraMap, LinearIsometry.nnNorm_map]
 
 /-- Real-vector field operators `(realField (x i))` are freely independent if and only if `(x i)`
 is pairwise orthogonal in `X`. -/
@@ -620,7 +597,8 @@ theorem isFreelyIndependentElements_vacuumState_realField_iff (x : ι → X) :
 /-- For real subspaces `S : ι → Submodule ℝ X`, the unital `⋆`-subalgebras generated by creation
 operators on their complexifications `(S i).complexifyL2` are freely independent under the vacuum
 state if and only if the subspaces `S i` are pairwise orthogonal (`S i ≤ (S j)ᗮ`). -/
-theorem isFreelyIndependent_vacuumState_starAdjoin_complexifyL2_iff (S : ι → Submodule ℝ X) :
+theorem isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_complexifyL2_iff
+    (S : ι → Submodule ℝ X) :
     IsFreelyIndependent (vacuumState ℂ (WithLp 2 (Complexification X))).toLinearMap
         (fun i => (StarAlgebra.adjoin ℂ
           (creation ℂ ''
@@ -629,13 +607,10 @@ theorem isFreelyIndependent_vacuumState_starAdjoin_complexifyL2_iff (S : ι → 
   have horth (i j : ι) :
       (∀ z ∈ ((S i).complexifyL2 : Set (WithLp 2 (Complexification X))),
           ∀ w ∈ ((S j).complexifyL2 : Set (WithLp 2 (Complexification X))), ⟪z, w⟫_ℂ = 0) ↔
-        S i ≤ (S j)ᗮ := by
-    rw [← Submodule.complexifyL2_le_orthogonal_iff]
-    exact ⟨fun h z hz => ((S j).complexifyL2.mem_orthogonal z).2 fun w hw => by
-        rw [← inner_eq_zero_symm]; exact h z hz w hw,
-      fun h z hz w hw => by
-        rw [← inner_eq_zero_symm]; exact ((S j).complexifyL2.mem_orthogonal z).1 (h hz) w hw⟩
-  rw [isFreelyIndependent_vacuumState_starAdjoin_creation_iff]
+        S i ≤ (S j)ᗮ :=
+    ((S i).complexifyL2.isOrtho_iff_inner_eq (V := (S j).complexifyL2)).symm.trans
+      (Submodule.isOrtho_complexifyL2_iff.trans Submodule.isOrtho_iff_le)
+  rw [isFreelyIndependent_vacuumState_starAlgebraAdjoin_creation_iff]
   simp_rw [horth]
 
 /-- For real subspaces `S : ι → Submodule ℝ X`, the unital subalgebras generated by `realField` on
@@ -648,18 +623,15 @@ theorem isFreelyIndependent_vacuumState_adjoin_realField_iff (S : ι → Submodu
   have himage (i : ι) :
       realField '' (S i : Set X) =
         field ℂ '' (WithLp.complexificationOfRealₗᵢ X '' (S i : Set X)) := by
-    rw [← Set.image_comp]
-    rfl
+    rw [← Set.image_comp, Function.comp_def]
+    simp_rw [← realField_def]
   have horth (i j : ι) :
       (∀ z ∈ WithLp.complexificationOfRealₗᵢ X '' (S i : Set X),
           ∀ w ∈ WithLp.complexificationOfRealₗᵢ X '' (S j : Set X), ⟪z, w⟫_ℂ = 0) ↔
         S i ≤ (S j)ᗮ := by
     simp only [Set.forall_mem_image, WithLp.complexificationOfRealₗᵢ_apply,
       WithLp.complexification_inner_toLp_ofReal, Complex.ofReal_eq_zero]
-    exact ⟨fun h x hx => ((S j).mem_orthogonal x).2 fun y hy => by
-        rw [real_inner_comm]; exact h hx hy,
-      fun h x hx y hy => by
-        rw [real_inner_comm]; exact ((S j).mem_orthogonal x).1 (h hx) y hy⟩
+    exact ((S i).isOrtho_iff_inner_eq (V := S j)).symm.trans Submodule.isOrtho_iff_le
   simp_rw [himage, isFreelyIndependent_vacuumState_adjoin_field_iff, horth]
 
 end RealComplexification
@@ -674,28 +646,17 @@ namespace PositiveLinearMap
 
 open TauCeti TauCeti.FullFockSpace
 
-/-- Every semicircle law `semicircleReal m v` on `ℝ` is realized by the canonical shifted field
-operator `field ℂ (√v : ℂ) + m` on the one-particle Fock space `FullFockSpace ℂ ℂ`. -/
-theorem law_vacuumState_oneDim_field (m : ℝ) (v : ℝ≥0) :
-    law (vacuumState ℂ ℂ)
-        (field ℂ ((√(v : ℝ) : ℝ) : ℂ) +
-          algebraMap ℝ (FullFockSpace ℂ ℂ →L[ℂ] FullFockSpace ℂ ℂ) m) =
-      semicircleReal m v := by
-  rw [law_vacuumState_field_add_algebraMap (H := ℂ)]
-  congr 1
-  ext
-  simp
-
 /-- An element `a` of a C⋆-algebra has law `semicircleReal m v` if and only if it has the same law
 as the canonical shifted Fock field operator `field ℂ (√v : ℂ) + m` on `FullFockSpace ℂ ℂ`. -/
-theorem law_eq_semicircleReal_iff_law_vacuumState_field {A : Type*} [CStarAlgebra A]
-    [PartialOrder A] [StarOrderedRing A] (φ : A →ₚ[ℂ] ℂ) {a : A} (m : ℝ) (v : ℝ≥0) :
+theorem law_eq_semicircleReal_iff_law_eq_law_vacuumState_field_ofReal_sqrt_add_algebraMap
+    {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] (φ : A →ₚ[ℂ] ℂ) {a : A}
+    (m : ℝ) (v : ℝ≥0) :
     law φ a = semicircleReal m v ↔
       law φ a =
         law (vacuumState ℂ ℂ)
           (field ℂ ((√(v : ℝ) : ℝ) : ℂ) +
             algebraMap ℝ (FullFockSpace ℂ ℂ →L[ℂ] FullFockSpace ℂ ℂ) m) := by
-  rw [law_vacuumState_oneDim_field]
+  rw [law_vacuumState_field_ofReal_sqrt_add_algebraMap]
 
 end PositiveLinearMap
 
@@ -705,23 +666,23 @@ namespace Matrix
 
 open TauCeti TauCeti.FullFockSpace
 
-/-- Every complex positive-semidefinite matrix `C : Matrix ι ι ℂ` of arbitrary index type `ι` is
-the covariance of a Fock semicircular system of self-adjoint field operators over a complete
-complex Hilbert space. -/
-theorem PosSemidef.exists_fock_isSemicircularSystem {ι : Type u} {C : Matrix ι ι ℂ}
-    (hC : C.PosSemidef) :
-    ∃ (H : Type u) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H) (_ : CompleteSpace H)
-      (h : ι → H),
-      IsSemicircularSystem (vacuumState ℂ H).toLinearMap (fun i => field ℂ (h i)) C := by
+/-- Every positive-semidefinite matrix `C : Matrix ι ι 𝕜` of arbitrary index type `ι` over `𝕜`
+(`ℝ` or `ℂ`) is the covariance of a Fock semicircular system of self-adjoint field operators over a
+complete Hilbert space over `𝕜`. -/
+theorem PosSemidef.exists_isSemicircularSystem_vacuumState_field {𝕜 : Type u} {ι : Type v}
+    [RCLike 𝕜] {C : Matrix ι ι 𝕜} (hC : C.PosSemidef) :
+    ∃ (H : Type (max u v)) (_ : NormedAddCommGroup H) (_ : InnerProductSpace 𝕜 H)
+      (_ : CompleteSpace H) (h : ι → H),
+      IsSemicircularSystem (vacuumState 𝕜 H).toLinearMap (fun i => field 𝕜 (h i)) C := by
   obtain ⟨H, _, _, _, h, rfl⟩ := hC.exists_gram_eq
   exact ⟨H, inferInstance, inferInstance, inferInstance, h,
     isSemicircularSystem_vacuumState_field h⟩
 
 /-- Every real positive-semidefinite matrix `C : Matrix ι ι ℝ` of arbitrary index type `ι` is
-realized via `realField` on the complexified RKHS Hilbert space by self-adjoint operators in a
-complex C⋆-probability space with covariance `C.map ((↑) : ℝ → ℂ)`. -/
-theorem PosSemidef.exists_fock_realField_isSemicircularSystem {ι : Type u} {C : Matrix ι ι ℝ}
-    (hC : C.PosSemidef) :
+realized via self-adjoint `realField` operators on the full Fock space over the complexification of
+a complete real Hilbert space `X`, with covariance `C.map ((↑) : ℝ → ℂ)`. -/
+theorem PosSemidef.exists_isSemicircularSystem_vacuumState_realField {ι : Type u}
+    {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
     ∃ (X : Type u) (_ : NormedAddCommGroup X) (_ : InnerProductSpace ℝ X) (_ : CompleteSpace X)
       (x : ι → X),
       IsSemicircularSystem (vacuumState ℂ (WithLp 2 (Complexification X))).toLinearMap
@@ -731,9 +692,10 @@ theorem PosSemidef.exists_fock_realField_isSemicircularSystem {ι : Type u} {C :
     isSemicircularSystem_vacuumState_realField x⟩
 
 /-- Every finite-index real positive-semidefinite matrix `C : Matrix ι ι ℝ` is realized by
-self-adjoint `realField` operators on the finite-dimensional space `EuclideanSpace ℝ ι`. -/
-theorem PosSemidef.exists_euclidean_fock_realField_isSemicircularSystem {ι : Type u} [Fintype ι]
-    {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
+self-adjoint `realField` operators on the full Fock space over the complexification of
+`EuclideanSpace ℝ ι`. -/
+theorem PosSemidef.exists_euclideanSpace_isSemicircularSystem_vacuumState_realField {ι : Type u}
+    [Fintype ι] {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
     ∃ x : ι → EuclideanSpace ℝ ι,
       IsSemicircularSystem
         (vacuumState ℂ (WithLp 2 (Complexification (EuclideanSpace ℝ ι)))).toLinearMap
@@ -741,58 +703,36 @@ theorem PosSemidef.exists_euclidean_fock_realField_isSemicircularSystem {ι : Ty
   obtain ⟨x, rfl⟩ := hC.exists_gram_euclideanSpace_eq
   exact ⟨x, isSemicircularSystem_vacuumState_realField x⟩
 
-/-- If a real matrix `C : Matrix ι ι ℝ` gives the second moments `φ (s i * s j) = C i j` of a
-family of self-adjoint elements `s : ι → A` under a positive linear functional `φ : A →ₚ[ℂ] ℂ` on a
-C⋆-algebra, then `C` is positive semidefinite. -/
-theorem posSemidef_of_forall_apply_mul_eq_ofReal {ι : Type u} {A : Type v} [CStarAlgebra A]
-    [PartialOrder A] [StarOrderedRing A] (φ : A →ₚ[ℂ] ℂ) {s : ι → A}
-    (hs : ∀ i, IsSelfAdjoint (s i)) {C : Matrix ι ι ℝ}
-    (hC : ∀ i j, φ (s i * s j) = (C i j : ℂ)) :
-    C.PosSemidef := by
-  have hsymm : C.IsHermitian := by
-    ext i j
-    apply Complex.ofReal_injective
-    have hstar : star (φ (s j * s i)) = φ (s i * s j) := by
-      rw [← map_star, star_mul, (hs i).star_eq, (hs j).star_eq]
-    simpa [hC] using hstar
-  refine ⟨hsymm, fun x => ?_⟩
-  let b : A := x.sum fun i xi => (xi : ℂ) • s i
-  have hb : IsSelfAdjoint b := by
-    rw [isSelfAdjoint_iff]
-    simp only [b, Finsupp.sum, star_sum, star_smul, RCLike.star_def, Complex.conj_ofReal]
-    exact sum_congr rfl fun i _ => by rw [(hs i).star_eq]
-  have hnonneg : 0 ≤ (φ (star b * b)).re :=
-    (Complex.nonneg_iff.1 (φ.map_nonneg (star_mul_self_nonneg b))).1
-  have hexpand : φ (star b * b) =
-      ((x.sum fun i xi => x.sum fun j xj => xi * C i j * xj : ℝ) : ℂ) := by
-    rw [hb.star_eq]
-    simp only [b, Finsupp.sum, sum_mul, mul_sum, smul_mul_assoc, mul_smul_comm,
-      map_sum, LinearMapClass.map_smul, smul_eq_mul, hC, Complex.ofReal_sum, Complex.ofReal_mul]
-    refine sum_congr rfl fun i _ => sum_congr rfl fun j _ => ?_
-    have hji : C j i = C i j := by simpa using congrFun (congrFun hsymm.eq i) j
-    rw [hji]
-    ring
-  simpa [hexpand] using hnonneg
+/-- **Characterization of complex semicircular covariance matrices.** A complex matrix
+`C : Matrix ι ι ℂ` of arbitrary index type `ι` is positive semidefinite if and only if `C` is the
+covariance of a self-adjoint semicircular system in a complex C⋆-probability space. -/
+theorem posSemidef_iff_exists_cstar_isSelfAdjoint_and_isSemicircularSystem {ι : Type u}
+    {C : Matrix ι ι ℂ} :
+    C.PosSemidef ↔
+      ∃ (A : Type u) (_ : CStarAlgebra A) (_ : PartialOrder A) (_ : StarOrderedRing A)
+        (φ : A →ₚ[ℂ] ℂ) (s : ι → A),
+        (∀ i, IsSelfAdjoint (s i)) ∧ IsSemicircularSystem φ.toLinearMap s C := by
+  refine ⟨fun hC => ?_, fun ⟨A, _, _, _, φ, s, hs, hsys⟩ =>
+    φ.posSemidef_of_forall_apply_mul_eq hs fun i j => hsys.apply_mul i j⟩
+  obtain ⟨H, _, _, _, h, hsys⟩ := hC.exists_isSemicircularSystem_vacuumState_field
+  exact ⟨FullFockSpace ℂ H →L[ℂ] FullFockSpace ℂ H,
+    inferInstance, inferInstance, inferInstance,
+    vacuumState ℂ H,
+    fun i => field ℂ (h i),
+    fun i => isSelfAdjoint_field (h i),
+    hsys⟩
 
 /-- **Characterization of real semicircular covariance matrices.** A real matrix `C : Matrix ι ι ℝ`
 of arbitrary index type `ι` is positive semidefinite if and only if `C.map ((↑) : ℝ → ℂ)` is the
-covariance of a self-adjoint semicircular system in a complex C⋆-probability space (and when it is,
-full Fock space provides a canonical realization). -/
-theorem posSemidef_real_iff_exists_cstar_isSemicircularSystem {ι : Type u} {C : Matrix ι ι ℝ} :
+covariance of a self-adjoint semicircular system in a complex C⋆-probability space. -/
+theorem posSemidef_real_iff_exists_cstar_isSelfAdjoint_and_isSemicircularSystem {ι : Type u}
+    {C : Matrix ι ι ℝ} :
     C.PosSemidef ↔
       ∃ (A : Type u) (_ : CStarAlgebra A) (_ : PartialOrder A) (_ : StarOrderedRing A)
         (φ : A →ₚ[ℂ] ℂ) (s : ι → A),
         (∀ i, IsSelfAdjoint (s i)) ∧
           IsSemicircularSystem φ.toLinearMap s (C.map ((↑) : ℝ → ℂ)) := by
-  refine ⟨fun hC => ?_, fun ⟨A, _, _, _, φ, s, hs, hsys⟩ =>
-    posSemidef_of_forall_apply_mul_eq_ofReal φ hs fun i j => by simpa using hsys.apply_mul i j⟩
-  obtain ⟨X, _, _, _, x, hsys⟩ := hC.exists_fock_realField_isSemicircularSystem
-  exact ⟨FullFockSpace ℂ (WithLp 2 (Complexification X)) →L[ℂ]
-      FullFockSpace ℂ (WithLp 2 (Complexification X)),
-    inferInstance, inferInstance, inferInstance,
-    vacuumState ℂ (WithLp 2 (Complexification X)),
-    fun i => realField (x i),
-    fun i => isSelfAdjoint_realField (x i),
-    hsys⟩
+  rw [← posSemidef_map_complex_ofReal_iff,
+    posSemidef_iff_exists_cstar_isSelfAdjoint_and_isSemicircularSystem]
 
 end Matrix

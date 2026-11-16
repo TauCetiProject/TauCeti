@@ -45,7 +45,8 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
 * `Submodule.complexifyL2`: the `L²` complexification of a real subspace, with
-  `Submodule.span_complexificationOfRealₗᵢ_image` and `Submodule.complexifyL2_le_orthogonal_iff`.
+  `Submodule.span_complexificationOfRealₗᵢ_image`, `Submodule.orthogonal_complexifyL2`,
+  `Submodule.isOrtho_complexifyL2_iff`, and `Submodule.complexifyL2_le_orthogonal_iff`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
@@ -233,6 +234,29 @@ def complexifyL2 (S : Submodule ℝ E) : Submodule ℂ (WithLp 2 (Complexificati
 theorem mem_complexifyL2 (S : Submodule ℝ E) (z : WithLp 2 (Complexification E)) :
     z ∈ S.complexifyL2 ↔ z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S := Iff.rfl
 
+@[simp]
+theorem complexifyL2_le_iff {S T : Submodule ℝ E} :
+    S.complexifyL2 ≤ T.complexifyL2 ↔ S ≤ T := by
+  refine ⟨fun h x hx ↦ ?_, fun h z hz ↦ ⟨h hz.1, h hz.2⟩⟩
+  simpa using (h (by simpa using hx : toLp 2 (Complexification.ofReal x) ∈ S.complexifyL2)).1
+
+@[simp]
+theorem complexifyL2_inj {S T : Submodule ℝ E} :
+    S.complexifyL2 = T.complexifyL2 ↔ S = T := by
+  rw [le_antisymm_iff, le_antisymm_iff, complexifyL2_le_iff, complexifyL2_le_iff]
+
+@[simp]
+theorem complexifyL2_bot : (⊥ : Submodule ℝ E).complexifyL2 = ⊥ := by
+  ext z
+  simp only [mem_complexifyL2, mem_bot]
+  exact ⟨fun ⟨hre, him⟩ ↦ ofLp_injective 2 (Complexification.ext hre him),
+    fun h ↦ by subst h; exact ⟨rfl, rfl⟩⟩
+
+@[simp]
+theorem complexifyL2_top : (⊤ : Submodule ℝ E).complexifyL2 = ⊤ := by
+  ext z
+  simp
+
 /-- The complexification `S.complexifyL2` is the complex linear span of the real image of `S`. -/
 theorem span_complexificationOfRealₗᵢ_image (S : Submodule ℝ E) :
     Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) = S.complexifyL2 := by
@@ -287,19 +311,31 @@ theorem forall_inner_eq_zero_complexifyL2_iff {S T : Submodule ℝ X} :
     exact h _ (by simp [hx]) _ (by simp [hy])
   · apply Complex.ext <;> simp [h _ hz.1 _ hw.1, h _ hz.2 _ hw.2, h _ hz.1 _ hw.2, h _ hz.2 _ hw.1]
 
-/-- Complexifying real subspaces preserves and reflects orthogonality (`S ≤ Tᗮ`). -/
+/-- Complexifying real subspaces preserves and reflects `Submodule.IsOrtho`. -/
 @[simp]
+theorem isOrtho_complexifyL2_iff {S T : Submodule ℝ X} :
+    S.complexifyL2 ⟂ T.complexifyL2 ↔ S ⟂ T := by
+  rw [isOrtho_iff_inner_eq, isOrtho_iff_inner_eq, forall_inner_eq_zero_complexifyL2_iff]
+
+/-- The orthogonal complement of `S.complexifyL2` is `Sᗮ.complexifyL2`. -/
+@[simp]
+theorem orthogonal_complexifyL2 (S : Submodule ℝ X) :
+    S.complexifyL2ᗮ = Sᗮ.complexifyL2 := by
+  ext z
+  simp only [mem_orthogonal, mem_complexifyL2]
+  refine ⟨fun h ↦ ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩, fun ⟨hre, him⟩ w hw ↦ ?_⟩
+  · have hz := h (toLp 2 (Complexification.ofReal x)) (by simp [hx])
+    simpa using congrArg Complex.re hz
+  · have hz := h (toLp 2 (Complexification.ofReal x)) (by simp [hx])
+    simpa using congrArg Complex.im hz
+  · apply Complex.ext <;> simp [hre w.ofLp.re hw.1, hre w.ofLp.im hw.2,
+      him w.ofLp.re hw.1, him w.ofLp.im hw.2]
+
+/-- Complexifying real subspaces preserves and reflects orthogonality (`S ≤ Tᗮ`). -/
 theorem complexifyL2_le_orthogonal_iff {S T : Submodule ℝ X} :
     S.complexifyL2 ≤ T.complexifyL2ᗮ ↔ S ≤ Tᗮ := by
-  constructor
-  · intro h x hx
-    exact (T.mem_orthogonal x).2 fun y hy ↦
-      forall_inner_eq_zero_complexifyL2_iff.1
-        (fun w hw z hz ↦ (T.complexifyL2.mem_orthogonal z).1 (h hz) w hw) y hy x hx
-  · intro h z hz
-    exact (T.complexifyL2.mem_orthogonal z).2 fun w hw ↦
-      forall_inner_eq_zero_complexifyL2_iff.2
-        (fun y hy x hx ↦ (T.mem_orthogonal x).1 (h hx) y hy) w hw z hz
+  rw [← isOrtho_iff_le, ← isOrtho_iff_le, isOrtho_iff_inner_eq, isOrtho_iff_inner_eq,
+    forall_inner_eq_zero_complexifyL2_iff]
 
 end InnerProductSpace
 

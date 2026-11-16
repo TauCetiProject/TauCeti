@@ -78,6 +78,11 @@ theorem pairWeight_pair [Zero M] (K : α → α → M) {a b : α} (hab : a < b) 
     pairWeight K {a, b} = K a b := by
   rw [pairWeight, sort_pair _ hab.le hab.ne]
 
+@[simp]
+theorem pairWeight_pair_of_gt [Zero M] (K : α → α → M) {a b : α} (hba : b < a) :
+    pairWeight K {a, b} = K b a := by
+  rw [pair_comm, pairWeight_pair K hba]
+
 theorem pairWeight_eq_zero_of_card_ne_two [Zero M] (K : α → α → M) {B : Finset α}
     (hB : #B ≠ 2) : pairWeight K B = 0 := by
   rw [pairWeight]
@@ -96,19 +101,37 @@ theorem pairWeight_empty [Zero M] (K : α → α → M) : pairWeight K (∅ : Fi
 theorem pairWeight_singleton [Zero M] (K : α → α → M) (a : α) : pairWeight K {a} = 0 := by
   simp [pairWeight]
 
+@[simp]
+theorem pairWeight_zero [Zero M] (B : Finset α) : pairWeight (0 : α → α → M) B = 0 := by
+  rw [pairWeight_def]
+  split <;> rfl
+
+@[simp]
+theorem pairWeight_const_zero [Zero M] (B : Finset α) :
+    pairWeight (fun _ _ : α => (0 : M)) B = 0 :=
+  pairWeight_zero B
+
+/-- Applying a zero-preserving map commutes with `pairWeight`. -/
+theorem apply_pairWeight {N : Type*} [Zero M] [Zero N] {f : M → N} (hf : f 0 = 0)
+    (K : α → α → M) (B : Finset α) :
+    f (pairWeight K B) = pairWeight (fun a b => f (K a b)) B := by
+  rw [pairWeight_def, pairWeight_def]
+  generalize B.sort = l
+  rcases l with _ | ⟨a, _ | ⟨b, _ | ⟨c, l⟩⟩⟩ <;> simp [hf]
+
+@[simp]
+theorem map_pairWeight {F N : Type*} [Zero M] [Zero N] [FunLike F M N] [ZeroHomClass F M N]
+    (f : F) (K : α → α → M) (B : Finset α) :
+    f (pairWeight K B) = pairWeight (fun a b => f (K a b)) B :=
+  apply_pairWeight (map_zero f) K B
+
 /-- On a two-element set `B`, `pairWeight K B` evaluates `K` at `(B.min', B.max')`. -/
 theorem pairWeight_eq_min'_max' [Zero M] (K : α → α → M) {B : Finset α} (hB : #B = 2) :
     pairWeight K B = K (B.min' (card_pos.1 (by omega))) (B.max' (card_pos.1 (by omega))) := by
   obtain ⟨a, b, hne, rfl⟩ := card_eq_two.1 hB
-  have hpair {x y : α} (hxy : x < y) :
-      ({x, y} : Finset α).min' (by simp) = x ∧ ({x, y} : Finset α).max' (by simp) = y := by
-    refine ⟨le_antisymm (min'_le _ _ (by simp)) ?_, le_antisymm ?_ (le_max' _ _ (by simp))⟩
-    · simp [hxy.le]
-    · simp [hxy.le]
   rcases lt_or_gt_of_ne hne with hab | hba
-  · rw [pairWeight_pair K hab, (hpair hab).1, (hpair hab).2]
-  · simp_rw [pair_comm a b]
-    rw [pairWeight_pair K hba, (hpair hba).1, (hpair hba).2]
+  · rw [pairWeight_pair K hab, min'_pair, max'_pair, min_eq_left hab.le, max_eq_right hab.le]
+  · rw [pairWeight_pair_of_gt K hba, min'_pair, max'_pair, min_eq_right hba.le, max_eq_left hba.le]
 
 /-- `pairWeight` commutes with strictly monotone embeddings of the index order. -/
 @[simp]

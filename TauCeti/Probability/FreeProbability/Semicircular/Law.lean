@@ -26,9 +26,9 @@ integration against the semicircle law, the coordinate function is semicircular 
 ## Main results
 
 * `PositiveLinearMap.law_eq_semicircleReal_iff`,
-  `PositiveLinearMap.law_eq_semicircleReal_iff_sub` — for selfadjoint `a`,
-  `μ_a = semicircleReal 0 v` (respectively `semicircleReal m v`) if and only if `a` (respectively
-  `a - m`) is semicircular of variance `v`.
+  `PositiveLinearMap.law_eq_semicircleReal_iff_isSemicircular_sub_algebraMap` — for selfadjoint
+  `a`, `μ_a = semicircleReal 0 v` (respectively `semicircleReal m v`) if and only if `a`
+  (respectively `a - m`) is semicircular of variance `v`.
 * `PositiveLinearMap.law_eq_semicircleReal_iff_freeCumulant` — characterization of
   `law φ a = semicircleReal m v` by normalisation, mean `m`, variance `v`, and vanishing higher free
   cumulants.
@@ -68,12 +68,11 @@ theorem law_eq_semicircleReal_iff (ha : IsSelfAdjoint a) (v : ℝ≥0) :
 /-- A selfadjoint element `a` has the semicircle law `semicircleReal m v` of centre `m` and
 variance `v` if and only if the centred element `a - algebraMap ℝ A m` is semicircular of variance
 `v`. -/
-theorem law_eq_semicircleReal_iff_sub (ha : IsSelfAdjoint a) (m : ℝ) (v : ℝ≥0) :
+theorem law_eq_semicircleReal_iff_isSemicircular_sub_algebraMap (ha : IsSelfAdjoint a) (m : ℝ)
+    (v : ℝ≥0) :
     law φ a = semicircleReal m v ↔
       IsSemicircular φ.toLinearMap (a - algebraMap ℝ A m) ((v : ℝ) : ℂ) := by
-  have hm : IsSelfAdjoint (algebraMap ℝ A m) := by
-    rw [isSelfAdjoint_iff, Algebra.algebraMap_eq_smul_one, star_smul, star_trivial, star_one]
-  have ha' : IsSelfAdjoint (a - algebraMap ℝ A m) := ha.sub hm
+  have ha' : IsSelfAdjoint (a - algebraMap ℝ A m) := ha.sub ((IsSelfAdjoint.all m).algebraMap A)
   have hsub : a - algebraMap ℝ A m = (1 : ℝ) • a + algebraMap ℝ A (-m) := by
     simp [sub_eq_add_neg]
   rw [← law_eq_semicircleReal_iff φ ha' v]
@@ -92,7 +91,8 @@ theorem law_eq_semicircleReal_iff_freeCumulant (ha : IsSelfAdjoint a) (m : ℝ) 
       φ 1 = 1 ∧ φ a = m ∧ ∀ n : ℕ, 2 ≤ n →
         freeCumulant φ.toLinearMap (fun _ : Fin n => a) Finset.univ =
           if n = 2 then ((v : ℝ) : ℂ) else 0 := by
-  rw [law_eq_semicircleReal_iff_sub φ ha m v, IsScalarTower.algebraMap_apply ℝ ℂ A m]
+  rw [law_eq_semicircleReal_iff_isSemicircular_sub_algebraMap φ ha m v,
+    IsScalarTower.algebraMap_apply ℝ ℂ A m]
   exact ⟨fun h => ⟨h.apply_one,
       (isSemicircular_sub_algebraMap_iff_freeCumulant_const h.apply_one).1 h⟩,
     fun ⟨hφ, h⟩ => (isSemicircular_sub_algebraMap_iff_freeCumulant_const hφ).2 h⟩

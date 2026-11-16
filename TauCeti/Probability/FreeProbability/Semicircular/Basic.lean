@@ -187,7 +187,7 @@ theorem isSemicircular_add_algebraMap_iff_freeCumulant_const (hφ : φ 1 = 1) {c
       exact h n (by omega)
 
 /-- *Shifted semicircular elements via free cumulants*: in an `R`-algebra ring, for a normalised
-`φ`, `b - algebraMap R B m` is semicircular of variance `v` if and only if `φ b = m`,
+`ψ`, `b - algebraMap R B m` is semicircular of variance `v` if and only if `ψ b = m`,
 `κ₂(b, b) = v`, and `κ_n(b, …, b) = 0` for every `n > 2`. -/
 theorem isSemicircular_sub_algebraMap_iff_freeCumulant_const {B : Type*} [Ring B] [Algebra R B]
     {ψ : B →ₗ[R] R} {b : B} (hψ : ψ 1 = 1) {m : R} :
