@@ -75,9 +75,7 @@ Marcinkiewicz interpolation at the height `t / 2` produces the constant
 `2 * p * 2 ^ (p - 1) / (p - 1)` times that constant.
 
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
-closed intervals for a reciprocal radius parameter `α / r`. With an exponent in `[0, 1]`, a power
-of any `x : ℝ≥0` is at most `max 1 x`, which bounds constants such as `(b - a) ^ (1 - γ)` by one
-expression for all exponents `γ ∈ [0, 1]`.
+closed intervals for a reciprocal radius parameter `α / r`.
 
 On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
 
@@ -119,7 +117,6 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   finite `x`.
 * `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul`: the Marcinkiewicz constant at height `t / 2`,
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
-* `NNReal.rpow_le_max_one`: `x ^ e ≤ max 1 x` for `e ∈ [0, 1]`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 * `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
@@ -423,15 +420,6 @@ theorem rpow_le_rpow_iff_of_one_lt {b : ℝ≥0} (hb : 1 < b) {x y : ℝ} :
   · contrapose!
     exact rpow_lt_rpow_of_exponent_lt hb
   · exact rpow_le_rpow_of_exponent_le hb.le
-
-/-- A power of `x` with exponent in `[0, 1]` is at most `max 1 x`: at most `1` for `x ≤ 1`, and at
-most `x` for `1 ≤ x`. -/
-theorem rpow_le_max_one {x : ℝ≥0} {e : ℝ} (he₀ : 0 ≤ e) (he₁ : e ≤ 1) : x ^ e ≤ max 1 x := by
-  rcases le_total x 1 with hx | hx
-  · exact (rpow_le_one hx he₀).trans (le_max_left _ _)
-  · calc x ^ e ≤ x ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le hx he₁
-      _ = x := rpow_one x
-      _ ≤ max 1 x := le_max_right _ _
 
 /-- **Reciprocal radius interval dictionary.** For a base `c > 1`, the interval
 `c ^ (-α/a) ≤ c ^ (-r) ≤ c ^ (-α/b)` is equivalent to `a ≤ α / r ≤ b` when

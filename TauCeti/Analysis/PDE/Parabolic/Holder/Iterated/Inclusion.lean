@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
-import Mathlib.Analysis.Calculus.MeanValue
-import TauCeti.Analysis.Holder.MeanValue
-import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
-import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Interpolation
 
 /-!
 # Inclusions between parabolic Hölder spaces of consecutive orders
@@ -20,10 +17,10 @@ of order `k + 1` is one of order `k`, and the inclusion
 `C_{par,b}^{(k+1)+α} → C_{par,b}^{k+α}`
 
 is a bounded linear map (`TauCeti.ParabolicCkHolderSpace.inclusionL`). It keeps the map and its
-mixed derivatives `D_t^r D_x^m u` of parabolic order `2 r + m ≤ k`. Its norm is at most
-`N (5 + max 1 (b - a))`, where `N` is the number of pairs `(r, m)` with `2 r + m ≤ k`
-(`TauCeti.ParabolicCkHolderSpace.norm_inclusionL_le`). The bound depends on the slab only through
-its length `b - a`, and not on `E`, `F` or the position of the slab.
+mixed derivatives `D_t^r D_x^m u` of parabolic order `2 r + m ≤ k`. Its norm is at most `8 N`,
+where `N` is the number of pairs `(r, m)` with `2 r + m ≤ k`
+(`TauCeti.ParabolicCkHolderSpace.norm_inclusionL_le`). The bound depends neither on `E` and `F`
+nor on the slab.
 
 Only the two top orders of the smaller space need an argument; below them the conditions of both
 spaces are the same derivative identities.
@@ -31,14 +28,17 @@ spaces are the same derivative identities.
 * A field `D_t^r D_x^m u` with `2 r + m = k - 1` must have uniformly `(1 + α) / 2`-Hölder time
   slices. In the larger space its time derivative `D_t^(r+1) D_x^m u` is a bounded field, so by
   the mean value inequality the time slices are Lipschitz with the supremum of that field as
-  constant. On the interval `[a, b]`, of length `b - a`, a Lipschitz map is `γ`-Hölder for every
-  `γ ≤ 1`, with constant multiplied by `(b - a)^(1 - γ)`; here `γ = (1 + α) / 2 ≤ 1`.
+  constant (`TauCeti.ParabolicSpaceTime.timeEHolderNorm_one_le_of_hasDerivWithinAt`). A bounded
+  Lipschitz map is `γ`-Hölder for every `γ ≤ 1`, with constant the Lipschitz constant plus twice
+  the supremum (`TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_timeEHolderNorm_le` at scale
+  one); here `γ = (1 + α) / 2 ≤ 1`.
 * A field `D_t^r D_x^m u` with `2 r + m = k` must be parabolically `α`-Hölder. In the larger space
-  its time slices are `(1 + α) / 2`-Hölder, hence `α / 2`-Hölder on `[a, b]`, and its spatial
-  derivative `D_t^r D_x^(m+1) u` is a bounded field, so its spatial slices are bounded and
-  Lipschitz, hence `α`-Hölder (`TauCeti.holderWith_of_norm_le_of_norm_fderiv_le`). A spatial
-  `α`-Hölder bound and a temporal `α / 2`-Hölder bound give a parabolic `α`-Hölder bound
-  (`TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`).
+  its time slices are `(1 + α) / 2`-Hölder, and its spatial derivative `D_t^r D_x^(m+1) u` is a
+  bounded field, so its spatial slices are Lipschitz
+  (`TauCeti.ParabolicSpaceTime.spaceEHolderNorm_one_le_of_hasFDerivAt`). Since the field is
+  bounded, these give a parabolic `α`-Hölder bound
+  (`TauCeti.ParabolicSpaceTime.eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le`
+  at scale one).
 
 The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`-Hölder only for
 `α ≤ 1`.
@@ -73,88 +73,64 @@ open scoped NNReal ENNReal
 variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-/-- A map on `[a, b]` that is `γ`-Hölder with constant `C` is `β`-Hölder for every `β ≤ γ` with
-`γ - β ≤ 1`, with constant `C max 1 (b - a)`. -/
-private theorem holderWith_mul_max_one {G : Type*} [PseudoEMetricSpace G] {g : Icc a b → G}
-    {C γ β : ℝ≥0} (hg : HolderWith C γ g) (hβγ : β ≤ γ) (hγβ : (γ : ℝ) - β ≤ 1) :
-    HolderWith (C * max 1 (b - a).toNNReal) β g :=
-  (hg.of_le (D := (b - a).toNNReal) (fun t s ↦ by
-    rw [Subtype.edist_eq, edist_dist]
-    exact ENNReal.ofReal_le_ofReal (Real.dist_le_of_mem_Icc t.2 s.2)) hβγ).mono
-    (mul_le_mul_of_nonneg_left
-      (NNReal.rpow_le_max_one (sub_nonneg.2 (by exact_mod_cast hβγ)) hγβ) (zero_le : 0 ≤ C))
-
-/-- For `2 r + m + 2 ≤ k`, the time slices of `D_t^r D_x^m u` are Lipschitz, with constant the
-supremum of `D_t^(r+1) D_x^m u`. -/
-private theorem lipschitzWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
-    {r m : ℕ} (h : 2 * r + m + 2 ≤ k) (x : E) :
-    LipschitzWith ‖mixedDerivL (r + 1) m f‖₊ fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
-  have hL : LipschitzOnWith ‖mixedDerivL (r + 1) m f‖₊
-      (ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL r m f) x) (Icc a b) :=
-    (convex_Icc a b).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
-      (f' := ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL (r + 1) m f) x)
-      (fun t ht ↦ (f.hasDerivWithinAt_mixedDerivL h x ⟨t, ht⟩).congr_deriv
-        (ParabolicC2HolderSpace.timeExtension_of_mem hab.le _ x ⟨t, ht⟩).symm)
-      (fun t ht ↦ by
-        rw [ParabolicC2HolderSpace.timeExtension_of_mem hab.le _ x ⟨t, ht⟩]
-        exact (mixedDerivL (r + 1) m f).nnNorm_coe_le_nnNorm _)
-  intro t s
-  simpa only [ParabolicC2HolderSpace.timeExtension_of_mem, Subtype.edist_eq] using hL t.2 s.2
-
 /-- For `2 r + m + 2 ≤ k` and `α ≤ 1`, the time slices of `D_t^r D_x^m u` are
-`(1 + α) / 2`-Hölder, uniformly in space. -/
+`(1 + α) / 2`-Hölder, uniformly in space, with constant `‖D_t^(r+1) D_x^m u‖ + 2 ‖D_t^r D_x^m u‖`:
+they are Lipschitz with the first constant, and at time differences larger than one the
+oscillation bound wins. -/
 private theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m + 2 ≤ k) (hα : α ≤ 1) (x : E) :
-    HolderWith (‖mixedDerivL (r + 1) m f‖₊ * max 1 (b - a).toNNReal) ((1 + α) / 2)
+    HolderWith (‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) ((1 + α) / 2)
       fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
   have hγ : (1 + α) / 2 ≤ 1 := by
     rw [div_le_one (by norm_num)]
     calc 1 + α ≤ 1 + 1 := by gcongr
       _ = 2 := one_add_one_eq_two
-  refine holderWith_mul_max_one (lipschitzWith_mixedDerivL_slabMk f h x).holderWith hγ ?_
-  have : (0 : ℝ) ≤ ((1 + α) / 2 : ℝ≥0) := NNReal.coe_nonneg _
-  push_cast at this ⊢
-  linarith
+  have hlip := timeEHolderNorm_one_le_of_hasDerivWithinAt (C := ‖mixedDerivL (r + 1) m f‖₊)
+    (w := ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL r m f))
+    (wₜ := ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL (r + 1) m f))
+    (fun y t ht ↦ (f.hasDerivWithinAt_mixedDerivL h y ⟨t, ht⟩).congr_deriv
+      (ParabolicC2HolderSpace.timeExtension_of_mem hab.le _ y ⟨t, ht⟩).symm)
+    (fun y t ht ↦ by
+      rw [ParabolicC2HolderSpace.timeExtension_of_mem hab.le _ y ⟨t, ht⟩, coe_nnNorm]
+      exact (mixedDerivL (r + 1) m f).norm_coe_le_norm _)
+  rw [ParabolicC2HolderSpace.timeExtension_space_slabTime] at hlip
+  have hle := timeEHolderNorm_le_of_timeEHolderNorm_le (D := 2 * ‖mixedDerivL r m f‖₊) hlip
+    (fun p q ↦ by simpa using (mixedDerivL r m f).dist_le_two_norm p q) hγ one_pos
+  rw [NNReal.one_rpow, NNReal.one_rpow, mul_one, mul_one] at hle
+  exact timeEHolderNorm_le_iff.1 hle x
 
 /-- For `2 r + m + 1 = k` and `α ≤ 1`, the field `D_t^r D_x^m u` is parabolically `α`-Hölder:
-its spatial slices are bounded and Lipschitz, and its time slices are `(1 + α) / 2`-Hölder. -/
+it is bounded, Lipschitz in space, and `(1 + α) / 2`-Hölder in time. -/
 private theorem holderWith_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m + 1 = k) (hα : α ≤ 1) :
     HolderWith (‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
-      ‖timeSliceL r m f‖₊ * max 1 (b - a).toNNReal) α ⇑(mixedDerivL r m f) := by
-  set v : slab (E := E) a b → E [×m]→L[ℝ] F := ⇑(mixedDerivL r m f)
-  -- The spatial slices are bounded by `‖D_t^r D_x^m u‖` and have derivative bounded by
-  -- `‖D_t^r D_x^(m+1) u‖`.
-  have hspace (t : Icc a b) : HolderWith (‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊)
-      α fun y ↦ v (slabMk y t) := by
-    have hd (y : E) := f.hasFDerivAt_mixedDerivL (r := r) (m := m) h.le t y
-    refine holderWith_of_norm_le_of_norm_fderiv_le (g := fun y ↦ v (slabMk y t))
-      (N₀ := ‖mixedDerivL r m f‖₊) (N₁ := ‖mixedDerivL r (m + 1) f‖₊) hα
-      (fun y ↦ (hd y).differentiableAt)
-      (fun y ↦ (mixedDerivL r m f).norm_coe_le_norm _) fun y ↦ ?_
-    rw [(hd y).fderiv, ContinuousMultilinearMap.curryLeft_norm, coe_nnNorm]
-    exact (mixedDerivL r (m + 1) f).norm_coe_le_norm _
-  -- The time slices are `(1 + α) / 2`-Hölder with constant the norm of the family of slices,
-  -- hence `α / 2`-Hölder on `[a, b]`.
-  have htime (x : E) : HolderWith (‖timeSliceL r m f‖₊ * max 1 (b - a).toNNReal) (α / 2)
-      fun t : Icc a b ↦ v (slabMk x t) := by
-    have hx : HolderWith ‖timeSliceL r m f‖₊ ((1 + α) / 2) fun t : Icc a b ↦ v (slabMk x t) := by
+      (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊)) α ⇑(mixedDerivL r m f) := by
+  -- The spatial derivative of `D_t^r D_x^m u` is `D_t^r D_x^(m+1) u`, curried on the left.
+  have hspace := spaceEHolderNorm_one_le_of_hasFDerivAt (C := ‖mixedDerivL r (m + 1) f‖₊)
+    (w := ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL r m f))
+    (w' := fun y t ↦ (ParabolicC2HolderSpace.timeExtension hab.le
+      (mixedDerivL r (m + 1) f) y t).curryLeft)
+    (fun t ht y ↦ by
+      simpa only [ParabolicC2HolderSpace.timeExtension_of_mem hab.le _ _ ⟨t, ht⟩] using
+        f.hasFDerivAt_mixedDerivL h.le ⟨t, ht⟩ y)
+    (fun y t ht ↦ by
+      rw [ParabolicC2HolderSpace.timeExtension_of_mem hab.le _ y ⟨t, ht⟩,
+        ContinuousMultilinearMap.curryLeft_norm, coe_nnNorm]
+      exact (mixedDerivL r (m + 1) f).norm_coe_le_norm _)
+  rw [ParabolicC2HolderSpace.timeExtension_space_slabTime] at hspace
+  -- The time slices are `(1 + α) / 2`-Hölder with constant the norm of the family of slices.
+  have htime : timeEHolderNorm ((1 + α) / 2) ⇑(mixedDerivL r m f) ≤ ‖timeSliceL r m f‖₊ :=
+    timeEHolderNorm_le_iff.2 fun x ↦ by
       have hslice := (timeSliceL r m f x).holderWith_nnnorm.mono
         (show ‖timeSliceL r m f x‖₊ ≤ ‖timeSliceL r m f‖₊ from
           lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
-      rwa [show ⇑(timeSliceL r m f x) = fun t : Icc a b ↦ v (slabMk x t) from
+      rwa [show ⇑(timeSliceL r m f x) = fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) from
         funext (timeSliceL_apply f h x)] at hslice
-    refine holderWith_mul_max_one hx ?_ ?_
-    · rw [div_le_div_iff_of_pos_right (by norm_num)]
-      exact le_add_self
-    · push_cast
-      linarith
-  have hle : eHolderNorm α v ≤ ((‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
-      ‖timeSliceL r m f‖₊ * max 1 (b - a).toNNReal : ℝ≥0) : ℝ≥0∞) := by
-    refine (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v).trans ?_
-    rw [ENNReal.coe_add]
-    exact add_le_add (spaceEHolderNorm_le_iff.2 fun t ↦ hspace t)
-      (timeEHolderNorm_le_iff.2 fun x ↦ htime x)
+  have hle := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le
+    (D := 2 * ‖mixedDerivL r m f‖₊) hspace htime
+    (fun p q ↦ by simpa using (mixedDerivL r m f).dist_le_two_norm p q) hα
+    (by rw [div_le_div_iff_of_pos_right (by norm_num)]; exact le_add_self) one_pos one_pos
+  simp only [NNReal.one_rpow, mul_one] at hle
   exact eHolderNorm_le_iff.1 hle
 
 /-- The map of order `k + 1` read as a map of order `k`. -/
@@ -174,26 +150,22 @@ private theorem ofSucc_apply (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1
   rw [ofSucc, mk_apply, ContinuousMultilinearMap.curry0_apply, mixedDerivL_zero_zero_apply]
 
 /-- At the two top orders of the space of order `k`, the norms of the family of time slices and of
-the Hölder field of a map of order `k + 1` are at most `(4 + max 1 (b - a)) ‖u‖`. -/
+the Hölder field of a map of order `k + 1` are at most `7 ‖u‖`. -/
 private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α ≤ 1)
     (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
-    ‖timeSliceL r m (ofSucc hα f)‖ + ‖mixedDerivHolderL r m (ofSucc hα f)‖ ≤
-      (4 + max 1 (b - a)) * ‖f‖ := by
-  have hL : ((max 1 (b - a).toNNReal : ℝ≥0) : ℝ) = max 1 (b - a) := by
-    rw [NNReal.coe_max, NNReal.coe_one, Real.coe_toNNReal _ (sub_nonneg.2 hab.le)]
+    ‖timeSliceL r m (ofSucc hα f)‖ + ‖mixedDerivHolderL r m (ofSucc hα f)‖ ≤ 7 * ‖f‖ := by
   have hf := norm_nonneg f
-  have hM : (1 : ℝ) ≤ max 1 (b - a) := le_max_left _ _
   have hD (r m : ℕ) := f.norm_mixedDerivL_le r m
   by_cases hs : 2 * r + m + 1 = k
   · -- The order `k - 1`: the Hölder field vanishes, and the time slices are those of the
     -- `(1 + α) / 2`-Hölder field `D_t^r D_x^m u`.
     rw [mixedDerivHolderL_of_ne (by omega), zero_apply, norm_zero, add_zero]
     have hholder := holderWith_mixedDerivL_slabMk f (r := r) (m := m) (by omega) hα
-    have hK : ((‖mixedDerivL (r + 1) m f‖₊ * max 1 (b - a).toNNReal : ℝ≥0) : ℝ) ≤
-        max 1 (b - a) * ‖f‖ := by
-      rw [NNReal.coe_mul, coe_nnNorm, hL, mul_comm]
-      exact mul_le_mul_of_nonneg_left (hD _ _) (zero_le_one.trans hM)
-    refine (lp.norm_le_of_forall_le (C := ‖mixedDerivL r m f‖ + max 1 (b - a) * ‖f‖)
+    have hK : ((‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊ : ℝ≥0) : ℝ) ≤
+        3 * ‖f‖ := by
+      rw [NNReal.coe_add, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, NNReal.coe_ofNat]
+      nlinarith [hD (r + 1) m, hD r m]
+    refine (lp.norm_le_of_forall_le (C := ‖mixedDerivL r m f‖ + 3 * ‖f‖)
       (by positivity) fun x ↦ ?_).trans (by nlinarith [hD r m])
     refine (HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg (mixedDerivL r m f))
       (fun t ↦ ?_) ?_).trans (add_le_add le_rfl hK)
@@ -208,9 +180,8 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
     · -- The order `k`: the Hölder field is the parabolically `α`-Hölder field `D_t^r D_x^m u`.
       have hholder := holderWith_mixedDerivL f (r := r) (m := m) (by omega) hα
       have hK : ((‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
-          ‖timeSliceL r m f‖₊ * max 1 (b - a).toNNReal : ℝ≥0) : ℝ) ≤
-          (3 + max 1 (b - a)) * ‖f‖ := by
-        rw [NNReal.coe_add, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_mul, hL, coe_nnNorm,
+          (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) : ℝ≥0) : ℝ) ≤ 6 * ‖f‖ := by
+        rw [NNReal.coe_add, NNReal.coe_add, NNReal.coe_add, NNReal.coe_mul, coe_nnNorm,
           coe_nnNorm, coe_nnNorm, NNReal.coe_ofNat]
         have := f.norm_timeSliceL_le r m
         nlinarith [hD r (m + 1), hD r m]
@@ -224,10 +195,10 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
     · rw [mixedDerivHolderL_of_ne hh, zero_apply, norm_zero]
       positivity
 
-/-- The norm of a map of order `k + 1`, read as a map of order `k`, is at most
-`N (5 + max 1 (b - a))` times its norm, with `N` the number of pairs `(r, m)`, `2 r + m ≤ k`. -/
+/-- The norm of a map of order `k + 1`, read as a map of order `k`, is at most `8 N` times its
+norm, with `N` the number of pairs `(r, m)`, `2 r + m ≤ k`. -/
 private theorem norm_ofSucc_le (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F hab) :
-    ‖ofSucc hα f‖ ≤ (parabolicDerivPairs k).card * (5 + max 1 (b - a)) * ‖f‖ := by
+    ‖ofSucc hα f‖ ≤ (parabolicDerivPairs k).card * 8 * ‖f‖ := by
   rw [norm_eq, mul_assoc, ← nsmul_eq_mul, ← Finset.sum_const]
   refine Finset.sum_le_sum fun p hp ↦ ?_
   rw [mixedDerivL_ofSucc hα f (mem_parabolicDerivPairs.1 hp)]
@@ -245,7 +216,7 @@ def inclusionL (hα : α ≤ 1) :
       map_add' f g := ext fun p ↦ by simp only [ofSucc_apply, coe_add, Pi.add_apply]
       map_smul' c f := ext fun p ↦ by
         simp only [ofSucc_apply, coe_smul, Pi.smul_apply, RingHom.id_apply] }
-    ((parabolicDerivPairs k).card * (5 + max 1 (b - a))) (norm_ofSucc_le hα)
+    ((parabolicDerivPairs k).card * 8) (norm_ofSucc_le hα)
 
 /-- The inclusion keeps the map. -/
 @[simp]
@@ -261,10 +232,10 @@ theorem mixedDerivL_inclusionL (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k +
   mixedDerivL_ofSucc hα f h
 
 /-- **The norm of the inclusion.** The inclusion `C_{par,b}^{(k+1)+α} → C_{par,b}^{k+α}` has norm
-at most `N (5 + max 1 (b - a))`, where `N` is the number of pairs `(r, m)` with `2 r + m ≤ k`. -/
+at most `8 N`, where `N` is the number of pairs `(r, m)` with `2 r + m ≤ k`. -/
 theorem norm_inclusionL_le (hα : α ≤ 1) :
     ‖inclusionL (k := k) (E := E) (F := F) (hab := hab) hα‖ ≤
-      (parabolicDerivPairs k).card * (5 + max 1 (b - a)) :=
+      (parabolicDerivPairs k).card * 8 :=
   LinearMap.mkContinuous_norm_le _ (by positivity) _
 
 /-- The inclusion is injective. -/
