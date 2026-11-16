@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Block
-public import Mathlib.Order.Interval.Finset.Defs
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import TauCeti.Data.Fintype.Fiber
@@ -27,8 +26,6 @@ any lower-triangular factor.
 
 * `TauCeti.mulTransposeExpansionChoice`: the column choices indexing the expansion.
 * `TauCeti.mulTransposeExpansionPower`: the multi-index in `L` of the term for one choice.
-* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic`: an entry of `L * Lᵀ` as a sum over
-  the columns `k ≤ min i j`.
 * `Matrix.IsLowerTriangular.prod_mul_transpose_apply_pow_eq_sum`: the monomial expansion.
 -/
 
@@ -115,19 +112,6 @@ namespace Matrix.IsLowerTriangular
 open TauCeti
 
 variable {ι R : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
-
-/-- An entry of `L * Lᵀ` for lower-triangular `L` only involves the columns `k ≤ min i j`. -/
-theorem mul_transpose_apply_eq_sum_Iic [NonUnitalNonAssocSemiring R] {L : Matrix ι ι R}
-    (hL : L.IsLowerTriangular) (i j : ι) :
-    (L * Lᵀ) i j = ∑ k ∈ Finset.Iic (min i j), L i k * L j k := by
-  rw [Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  symm
-  apply Finset.sum_subset (Finset.subset_univ _)
-  intro k _ hk
-  rcases min_lt_iff.mp (not_le.mp (Finset.mem_Iic.not.mp hk)) with h | h
-  · rw [hL h, zero_mul]
-  · rw [hL h, mul_zero]
 
 /-- A monomial in the entries of `L * Lᵀ` for lower-triangular `L` is the finite sum, over all
 choices of a column `k ≤ min i j` for each occurrence of each entry `(i, j)`, of the
