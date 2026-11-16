@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of pairs of pants in a symplectic chart of a manifold
