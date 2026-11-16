@@ -102,6 +102,28 @@ theorem Homotopy.reparam_refl_eval (f : I → I) (hf : Continuous f) (hf₀ : f 
   ext
   rfl
 
+/-- The reparametrization of `[0, 1]` taking `γ₁ ⬝ (γ₂ ⬝ γ₃)` to `(γ₁ ⬝ γ₂) ⬝ γ₃`
+(`Path.Homotopy.trans_assoc_reparam`), as a map of the unit interval. -/
+def transAssocReparam (t : I) : I :=
+  ⟨Homotopy.transAssocReparamAux t, Homotopy.transAssocReparamAux_mem_I t⟩
+
+@[simp]
+theorem coe_transAssocReparam (t : I) :
+    (transAssocReparam t : ℝ) = Homotopy.transAssocReparamAux t :=
+  (rfl)
+
+@[fun_prop]
+theorem continuous_transAssocReparam : Continuous transAssocReparam :=
+  Homotopy.continuous_transAssocReparamAux.subtype_mk _
+
+@[simp]
+theorem transAssocReparam_zero : transAssocReparam 0 = 0 :=
+  Subtype.ext Homotopy.transAssocReparamAux_zero
+
+@[simp]
+theorem transAssocReparam_one : transAssocReparam 1 = 1 :=
+  Subtype.ext Homotopy.transAssocReparamAux_one
+
 /-- **The associativity homotopy of concatenation.** The straight-line homotopy, continuous in
 the three paths, from `γ₁ ⬝ (γ₂ ⬝ γ₃)` to `(γ₁ ⬝ γ₂) ⬝ γ₃`: the second is the first
 reparametrized by a map of `[0, 1]` that does not depend on the paths
@@ -115,10 +137,8 @@ def transAssocHomotopy (w x y z : X) :
       ⟨fun γ : Path w x × Path x y × Path y z => (γ.1.trans γ.2.1).trans γ.2.2,
         (continuous_fst.path_trans (continuous_fst.comp continuous_snd)).path_trans
           (continuous_snd.comp continuous_snd)⟩ :=
-  ((reparamHomotopy (fun t => ⟨Homotopy.transAssocReparamAux t,
-        Homotopy.transAssocReparamAux_mem_I t⟩) (by fun_prop)
-      (Subtype.ext Homotopy.transAssocReparamAux_zero)
-      (Subtype.ext Homotopy.transAssocReparamAux_one)).compContinuousMap _).cast
+  ((reparamHomotopy transAssocReparam continuous_transAssocReparam transAssocReparam_zero
+      transAssocReparam_one).compContinuousMap _).cast
     (ContinuousMap.id_comp _) (by
       ext γ : 1
       exact (Homotopy.trans_assoc_reparam γ.1 γ.2.1 γ.2.2).symm)
@@ -126,10 +146,8 @@ def transAssocHomotopy (w x y z : X) :
 @[simp]
 theorem transAssocHomotopy_apply (s : I) (γ : Path w x × Path x y × Path y z) :
     transAssocHomotopy w x y z (s, γ) =
-      reparamHomotopy
-        (fun t => ⟨Homotopy.transAssocReparamAux t, Homotopy.transAssocReparamAux_mem_I t⟩)
-        (by fun_prop) (Subtype.ext Homotopy.transAssocReparamAux_zero)
-        (Subtype.ext Homotopy.transAssocReparamAux_one) (s, γ.1.trans (γ.2.1.trans γ.2.2)) :=
+      reparamHomotopy transAssocReparam continuous_transAssocReparam transAssocReparam_zero
+        transAssocReparam_one (s, γ.1.trans (γ.2.1.trans γ.2.2)) :=
   (rfl)
 
 /-- Reparametrizing every loop of a loop `L` at the constant loop in `Ω X x` by the same map `f`

@@ -185,9 +185,7 @@ private theorem evalAt_conjLoopReflHomotopy (x : X) :
   refine Path.ext (funext fun u => ?_)
   have h : (conjLoopReflHomotopy x).evalAt (refl x) u = refl x := by
     rw [ContinuousMap.Homotopy.evalAt_apply]
-    ext t
-    -- `Path.Homotopy.reparam` evaluates the constant loop, so it is constant by definition
-    exact (congrArg (fun ℓ : Ω X x => ℓ t) (reparamHomotopy_apply _ _ _ _ u _)).trans rfl
+    exact (reparamHomotopy_apply _ _ _ _ u _).trans (Homotopy.reparam_refl_eval _ _ _ _ u)
   exact h.trans (conjLoopContraction_refl_apply (σ u)).symm
 
 /-- The double loop `c⁻¹ ⬝ (conj_p α ⬝ c)` representing the conjugation transport of the class
