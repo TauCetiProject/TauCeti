@@ -546,12 +546,14 @@ theorem integral_toSphere_coe_eq_zero :
   have h := integral_map (μ := μ.toSphere) hg.aemeasurable
     (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtype_val.aestronglyMeasurable
   rw [hmap] at h
-  have hneg : ∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere =
-      -∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere := by
-    rw [← integral_neg]
-    exact h
-  rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ] at hneg
-  exact (smul_eq_zero.mp hneg).resolve_left two_ne_zero
+  have hg' : ∀ θ : sphere (0 : E) 1, (g θ : E) = -(θ : E) := fun θ ↦ by
+    simp only [g]
+    rw [Subtype.map_coe]
+    simp [ι]
+  -- `h : ∫ θ = -∫ θ`.
+  simp_rw [hg', integral_neg] at h
+  rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ] at h
+  exact (smul_eq_zero.mp h).resolve_left two_ne_zero
 
 end Radial
 

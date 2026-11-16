@@ -9,12 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Group.Integral
-import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # The divergence theorem on a ball
@@ -62,45 +62,6 @@ namespace TauCeti
 
 open MeasureTheory Metric Set Filter Topology Module
 open scoped RealInnerProductSpace ContDiff
-
-/-! ### Integrability of the divergence pairing -/
-
-section Integrability
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The trace of the derivative of `V` is continuous on a set where `V` is `C¹`. -/
-private lemma continuousOn_trace_fderiv {V : E → E} {s : Set E}
-    (hV : ∀ x ∈ s, ContDiffAt ℝ 1 V x) :
-    ContinuousOn (fun x ↦ LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) s := fun x hx ↦ by
-  simpa only [Function.comp_def, traceCLM_apply] using ((traceCLM ℝ E).continuous.continuousAt.comp
-    ((hV x hx).fderiv_right (m := 0) le_rfl).continuousAt).continuousWithinAt
-
-/-- If `χ` is continuous with compact support inside an open set `U` on which `V` is `C¹`, then
-`χ tr (DV)` is integrable. -/
-private lemma integrable_mul_trace_fderiv {U : Set E} (hU : IsOpen U) {χ : E → ℝ} {V : E → E}
-    (hχ : Continuous χ) (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U)
-    (hV : ∀ x ∈ U, ContDiffAt ℝ 1 V x) :
-    Integrable (fun x ↦ χ x * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) μ :=
-  ((hχ.continuousOn.mul (continuousOn_trace_fderiv hV)).continuous_of_tsupport_subset hU
-    (tsupport_mul_subset_left.trans hχU)).integrable_of_hasCompactSupport hχc.mul_right
-
-omit [FiniteDimensional ℝ E] in
-/-- If `χ` is `C¹` with compact support inside an open set `U` on which `V` is continuous, then
-`x ↦ Dχ(x) (V x)` is integrable. -/
-private lemma integrable_fderiv_apply {U : Set E} (hU : IsOpen U) {χ : E → ℝ} {V : E → E}
-    (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U)
-    (hV : ContinuousOn V U) : Integrable (fun x ↦ fderiv ℝ χ x (V x)) μ := by
-  have hsupp : tsupport (fun x ↦ fderiv ℝ χ x (V x)) ⊆ tsupport χ :=
-    (closure_mono (Function.support_subset_iff'.mpr fun x hx ↦ by
-      simp [Function.notMem_support.mp hx])).trans (tsupport_fderiv_subset ℝ)
-  exact (((hχ.continuous_fderiv one_ne_zero).continuousOn.clm_apply hV
-    ).continuous_of_tsupport_subset hU (hsupp.trans hχU)).integrable_of_hasCompactSupport
-      (hχc.mono' (subset_closure.trans hsupp))
-
-end Integrability
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -151,8 +112,12 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {R : ℝ} {V : E →
     simp only [χ, hnorm s hs, smul_eq_mul, integral_const_mul]
     ring
   -- `Dχ (V) = ψ' (‖x‖) ⟪x, V x⟫ / ‖x‖`.
-  have hint₂ := integrable_fderiv_apply (μ := μ) isOpen_ball (hχ.of_le (by simp)) hχc hχs
-    fun x hx ↦ (hV x hx).continuousAt.continuousWithinAt
+  have hVc : ContinuousOn V (tsupport χ) := fun x hx ↦
+    (hV x (hχs hx)).continuousAt.continuousWithinAt
+  have hint₂ : Integrable (fun x ↦ fderiv ℝ χ x (V x)) μ :=
+    integrable_fderiv_apply_of_tsupport_subset (G := id) (hχ.of_le (by simp)) hχc subset_rfl
+      aestronglyMeasurable_id ((integrable_indicator_iff (isClosed_tsupport χ).measurableSet).mpr
+        (hVc.integrableOn_compact hχc))
   have h₂ : ∫ x, fderiv ℝ χ x (V x) ∂μ = ∫ s, deriv ψ s • (s ^ (finrank ℝ E - 1) •
       ∫ θ : sphere (0 : E) 1, ⟪V (s • (θ : E)), θ⟫ ∂μ.toSphere) := by
     refine (integral_eq_integral_Ioi_integral_toSphere _ hint₂).trans <| Eq.trans ?_

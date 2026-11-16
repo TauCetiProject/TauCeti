@@ -309,10 +309,10 @@ theorem setIntegral_ball_le_mul_integral_toSphere_add {J : AlmostComplexStructur
   linear_combination hball + hsphere
 
 /-- **Taubes's monotonicity inequality for the defect measure.** Let `J`, `e` and the closed
-two-form field `F` be as in `setIntegral_ball_le_mul_integral_toSphere_add`, on the closed ball
-`closedBall c R`, and let `δ ≥ 0` be a continuous density bounded by the Kähler component of `F`,
-`δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`, which bounds the Hermitian part of `F`,
-`F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`, on the open ball. Then the measure `ν = δ dμ` satisfies, at
+two-form field `F` be as in `setIntegral_ball_le_mul_integral_toSphere_add`, on the open ball
+`ball c R`, and let `δ ≥ 0` be a continuous density on that ball bounded by the Kähler component of
+`F`, `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`, which bounds the Hermitian part of `F`,
+`F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`. Then the measure `ν = δ dμ` satisfies, at
 every radius `0 < σ < R`, the differential inequality
 
 `ν(B_σ) ≤ (σ / 2) (1 + κ) d/dσ ν(B_σ) + K (|S| / 2 + |B₁|) σ⁴`
@@ -320,8 +320,8 @@ every radius `0 < σ < R`, the differential inequality
 for the closed balls `B_σ = closedBall c σ`. -/
 theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
     (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) {δ : E → ℝ} {R κ K σ : ℝ}
-    (hF : ∀ x ∈ closedBall c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
-    (hδ : ContinuousOn δ (closedBall c R)) (hδ₀ : ∀ x ∈ closedBall c R, 0 ≤ δ x)
+    (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
+    (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
     (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
     (hB : ∀ x ∈ ball c R, ∀ v, F x ![v, J v] ≤ ((1 + κ) * δ x + K) * ‖v‖ ^ 2)
     (hσ : σ ∈ Ioo 0 R) :
@@ -332,26 +332,29 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
   have hn := finrank_eq_four e
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hn
   set ν := μ.withDensity fun x ↦ ENNReal.ofReal (δ x)
-  -- On radii in `[0, R]`, the measure of the closed ball is the integral of `δ` over the ball.
-  have hνball : ∀ s ∈ Icc 0 R, (ν (closedBall c s)).toReal = ∫ x in ball c s, δ x ∂μ := by
+  -- Work inside the closed ball of an intermediate radius `σ < R' < R`.
+  obtain ⟨R', hσR', hR'R⟩ := exists_between hσ.2
+  have hσ' : σ ∈ Ioo 0 R' := ⟨hσ.1, hσR'⟩
+  have hR' : closedBall c R' ⊆ ball c R := closedBall_subset_ball hR'R
+  -- On radii in `[0, R']`, the measure of the closed ball is the integral of `δ` over the ball.
+  have hνball : ∀ s ∈ Icc 0 R', (ν (closedBall c s)).toReal = ∫ x in ball c s, δ x ∂μ := by
     intro s hs
-    have hsub : closedBall c s ⊆ closedBall c R := closedBall_subset_closedBall hs.2
+    have hsub : closedBall c s ⊆ ball c R := (closedBall_subset_closedBall hs.2).trans hR'
     rw [withDensity_apply _ measurableSet_closedBall, ← integral_eq_lintegral_of_nonneg_ae
       ((ae_restrict_iff' measurableSet_closedBall).mpr (ae_of_all _ fun x hx ↦ hδ₀ x (hsub hx)))
       ((hδ.mono hsub).aestronglyMeasurable measurableSet_closedBall),
       setIntegral_congr_set (Measure.addHaar_closedBall_ae_eq_ball μ c s)]
-  have hderiv := hδ.hasDerivAt_setIntegral_ball (μ := μ) hσ
+  have hderiv := (hδ.mono hR').hasDerivAt_setIntegral_ball (μ := μ) hσ'
   rw [hn, smul_eq_mul] at hderiv
   have hderiv' : deriv (fun s ↦ (ν (closedBall c s)).toReal) σ =
       σ ^ 3 * ∫ θ : sphere (0 : E) 1, δ (c + σ • (θ : E)) ∂μ.toSphere := by
     refine (hderiv.congr_of_eventuallyEq ?_).deriv
-    filter_upwards [isOpen_Ioo.mem_nhds hσ] with s hs
+    filter_upwards [isOpen_Ioo.mem_nhds hσ'] with s hs
     exact hνball s (Ioo_subset_Icc_self hs)
-  rw [hderiv', hνball σ (Ioo_subset_Icc_self hσ)]
-  have hsub : closedBall c σ ⊆ closedBall c R := closedBall_subset_closedBall hσ.2.le
+  rw [hderiv', hνball σ (Ioo_subset_Icc_self hσ')]
   have hsubo : closedBall c σ ⊆ ball c R := closedBall_subset_ball hσ.2
-  exact setIntegral_ball_le_mul_integral_toSphere_add h₀ h₂ hσ.1.le (fun x hx ↦ hF x (hsub hx))
-    (fun x hx ↦ hdF x (hsubo (ball_subset_closedBall hx))) (hδ.mono hsub)
+  exact setIntegral_ball_le_mul_integral_toSphere_add h₀ h₂ hσ.1.le (fun x hx ↦ hF x (hsubo hx))
+    (fun x hx ↦ hdF x (hsubo (ball_subset_closedBall hx))) (hδ.mono hsubo)
     (fun x hx ↦ hω x (hsubo (ball_subset_closedBall hx)))
     (fun x hx ↦ hB x (hsubo (sphere_subset_closedBall hx)))
 
