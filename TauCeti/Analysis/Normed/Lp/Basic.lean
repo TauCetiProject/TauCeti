@@ -7,31 +7,35 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Coordinates on `lp`
 
-The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
-with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
-the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
-extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q`
-the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
-form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
-bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
+The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute with
+`lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is the sum
+of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for extended
+norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q` the `ℓ^q`
+norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm form of
+Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are bounded by a
+geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
 (`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
-(`lp.norm_le_of_norm_le_geometric`). Membership in `ℓᵖ` is unchanged by a unit scalar factor
-(`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
-multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
+(`lp.norm_le_of_norm_le_geometric`). Rescaling an infinite linearly independent sequence, an
+infinite-dimensional normed space therefore contains, for each `p ≠ 0`, a linearly independent
+sequence in `ℓᵖ` (`lp.exists_linearIndependent`). Membership in `ℓᵖ` is unchanged by a unit scalar
+factor (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a
+nonzero multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and
-vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
-to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
-most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+linearly independent, and vectors in their span vanish outside the corresponding indices. These
+algebraic facts hold over normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum
+of single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
+many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
+`lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
 operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
@@ -47,7 +51,7 @@ operators on `lp E p` that converges on every `single i x` converges at every ve
 
 public section
 
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal lp Topology
 open Filter
 
 namespace ContinuousLinearMap
@@ -334,6 +338,28 @@ theorem lp.norm_le_of_norm_le_geometric [Fact (1 ≤ p)] {f : lp E p} (hr0 : 0 �
     _ ≤ ∑' i, C * r ^ i :=
         (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf).tsum_le_tsum hf hgeom
     _ = C * (1 - r)⁻¹ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
+
+/-- An infinite-dimensional normed space contains a linearly independent sequence lying in `ℓᵖ`,
+for every `p ≠ 0`. -/
+theorem lp.exists_linearIndependent {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {p : ℝ≥0∞} (hp : p ≠ 0)
+    (hE : ¬ FiniteDimensional 𝕜 E) : ∃ ξ : ℓ^p(ℕ, E), LinearIndependent 𝕜 fun n ↦ ξ n := by
+  -- An infinite linearly independent sequence `v`, taken from a basis of `E`.
+  let b := Module.Basis.ofVectorSpace 𝕜 E
+  have : Infinite (Module.Basis.ofVectorSpaceIndex 𝕜 E) := by
+    by_contra h
+    have := not_infinite_iff_finite.1 h
+    exact hE (Module.Finite.of_basis b)
+  obtain ⟨v, hv⟩ : ∃ v : ℕ → E, LinearIndependent 𝕜 v :=
+    ⟨_, b.linearIndependent.comp _ (Infinite.natEmbedding _).injective⟩
+  -- Rescaled to norms below `2⁻ⁿ`, it lies in `ℓᵖ`.
+  choose c hc0 hc using fun n ↦ NormedField.exists_norm_lt 𝕜
+    (div_pos (pow_pos (by norm_num : (0 : ℝ) < 2⁻¹) n) (norm_pos_iff.2 (hv.ne_zero n)))
+  have hmem : Memℓp (fun n ↦ c n • v n) p :=
+    Memℓp.of_norm_le_geometric (C := 1) (r := 2⁻¹) (by norm_num) (by norm_num) (fun n ↦ by
+      rw [norm_smul, one_mul]
+      exact (le_div_iff₀ (norm_pos_iff.2 (hv.ne_zero n))).1 (hc n).le) hp
+  exact ⟨⟨_, hmem⟩, hv.units_smul fun n ↦ Units.mk0 (c n) (norm_pos_iff.1 (hc0 n))⟩
 
 namespace TauCeti
 
