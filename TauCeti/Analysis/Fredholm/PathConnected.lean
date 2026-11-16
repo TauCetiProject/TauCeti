@@ -13,10 +13,11 @@ import Mathlib.Tactic.Abel
 /-!
 # Norm-path classification of Fredholm operators
 
-Two Fredholm operators from a complete complex inner-product space `E` to a complex Banach space
-`F` are joined by a continuous path through Fredholm operators exactly when their indices agree.
+Two Fredholm operators from a complete complex inner-product space `E` to a complex normed space `F`
+are joined by a continuous path through Fredholm operators exactly when their indices agree.
 All paths use the native operator-norm topology, and the two spaces may differ. No separability,
-dimension or nontriviality assumption is imposed.
+dimension, nontriviality, or completeness assumption on `F` is imposed (any Fredholm operator out
+of complete `E` automatically forces `F` to be complete).
 
 A fixed parametrix reduces the converse to completing the finite-dimensional defect of
 an index-zero Fredholm operator. An affine compact perturbation followed by composition
@@ -30,7 +31,7 @@ dimensions):
 * over `RCLike 𝕜`, when `E` is an infinite-dimensional Hilbert space and `F` is a normed space with
   nonempty Fredholm locus `{T : E →L[𝕜] F // T.IsFredholm}`, `ZerothHomotopy.fredholmIndex` is
   surjective (`ZerothHomotopy.fredholmIndex_surjective`);
-* from a complex Hilbert space `E` to a complex Banach space `F`, `ZerothHomotopy.fredholmIndex` is
+* from a complex Hilbert space `E` to a complex normed space `F`, `ZerothHomotopy.fredholmIndex` is
   always injective (`ZerothHomotopy.fredholmIndex_injective`), so when `E` is infinite-dimensional
   and the Fredholm locus is nonempty (in particular for `F = E` or whenever `E ≃L[ℂ] F`), it
   identifies `ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm}` bijectively with `ℤ`
@@ -46,14 +47,15 @@ same path-component classification by first making the Fredholm endpoints surjec
 
 * `ContinuousLinearMap.IsFredholm.exists_path_of_index_eq`,
   `ContinuousLinearMap.nonempty_path_iff_index_eq`: two Fredholm operators from a complex Hilbert
-  space to a complex Banach space are joined by a norm-continuous Fredholm path if and only if
+  space to a complex normed space are joined by a norm-continuous Fredholm path if and only if
   their indices agree.
-* `ZerothHomotopy.mk_eq_mk_iff_index_eq`, `ZerothHomotopy.fredholmIndex_injective`,
-  `ZerothHomotopy.fredholmIndex_surjective`, `ZerothHomotopy.fredholmIndex_bijective`:
-  injectivity, surjectivity, and bijectivity of the Fredholm index on path components.
+* `ContinuousLinearMap.zerothHomotopy_mk_eq_mk_iff_index_eq`,
+  `ZerothHomotopy.fredholmIndex_injective`, `ZerothHomotopy.fredholmIndex_surjective`,
+  `ZerothHomotopy.fredholmIndex_bijective`: injectivity, surjectivity, and bijectivity of the
+  Fredholm index on path components.
 * `ZerothHomotopy.fredholmIndexEquiv`: the canonical bijection
   `ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm} ≃ ℤ` when `E` is an infinite-dimensional complex
-  Hilbert space, `F` is a complex Banach space, and the Fredholm locus is nonempty.
+  Hilbert space, `F` is a complex normed space, and the Fredholm locus is nonempty.
 
 ## References
 
@@ -93,13 +95,22 @@ end RCLike
 section Hilbert
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- Equal-index Fredholm operators from a complex Hilbert space to a complex Banach space are
+/-- Equal-index Fredholm operators from a complex Hilbert space to a complex normed space are
 joined by an operator-norm continuous path consisting entirely of Fredholm operators. -/
 theorem ContinuousLinearMap.IsFredholm.exists_path_of_index_eq {T₀ T₁ : E →L[ℂ] F}
     (hT₀ : T₀.IsFredholm) (hT₁ : T₁.IsFredholm) (hind : T₀.index = T₁.index) :
     ∃ γ : Path T₀ T₁, ∀ t, (γ t).IsFredholm := by
+  have : CompleteSpace F := by
+    obtain ⟨pkg⟩ := hT₀.nonempty_fredholmPackage
+    have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
+    have : CompleteSpace pkg.decCodom.X₁ :=
+      (pkg.equiv.isUniformEmbedding.completeSpace_congr pkg.equiv.surjective).mp ‹_›
+    have := pkg.decCodom.finite_X₀
+    have : CompleteSpace pkg.decCodom.X₀ := FiniteDimensional.completeSpace ℂ pkg.decCodom.X₀
+    let eF := pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl
+    exact (eF.isUniformEmbedding.completeSpace_congr eF.surjective).mp inferInstance
   -- A parametrix for T₁ reduces equality of indices to an index-zero operator on E.
   obtain ⟨Q, hQT, hTQ⟩ := hT₁.exists_isCompactOperator_comp_sub_one
   have hQ : Q.IsFredholm := .of_isCompactOperator_comp_sub_one hTQ hQT
@@ -147,31 +158,31 @@ theorem ContinuousLinearMap.nonempty_path_iff_index_eq
       (x := S.val) (y := T.val) S.property T.property).mp
       (S.property.exists_path_of_index_eq T.property hind)
 
-/-- Two Fredholm operators from a complex Hilbert space to a complex Banach space define the same
+/-- Two Fredholm operators from a complex Hilbert space to a complex normed space define the same
 path component in `ZerothHomotopy` if and only if they have the same Fredholm index. -/
 @[simp]
-theorem ZerothHomotopy.mk_eq_mk_iff_index_eq
+theorem ContinuousLinearMap.zerothHomotopy_mk_eq_mk_iff_index_eq
     (S T : {T : E →L[ℂ] F // T.IsFredholm}) :
     ZerothHomotopy.mk S = ZerothHomotopy.mk T ↔ S.val.index = T.val.index :=
   ⟨fun h ↦ by simpa using congrArg ZerothHomotopy.fredholmIndex h,
     fun h ↦ let ⟨γ⟩ := (ContinuousLinearMap.nonempty_path_iff_index_eq S T).mpr h
       ZerothHomotopy.sound γ⟩
 
-/-- From a complex Hilbert space `E` to a complex Banach space `F`, the Fredholm index is injective
+/-- From a complex Hilbert space `E` to a complex normed space `F`, the Fredholm index is injective
 on the path components of the Fredholm locus. -/
 theorem ZerothHomotopy.fredholmIndex_injective :
     Function.Injective (ZerothHomotopy.fredholmIndex (𝕜 := ℂ) (E := E) (F := F)) :=
   ZerothHomotopy.rec fun S ↦ ZerothHomotopy.rec fun T h ↦
-    (ZerothHomotopy.mk_eq_mk_iff_index_eq S T).mpr (by simpa using h)
+    (ContinuousLinearMap.zerothHomotopy_mk_eq_mk_iff_index_eq S T).mpr (by simpa using h)
 
-/-- From an infinite-dimensional complex Hilbert space `E` to a complex Banach space `F` with
+/-- From an infinite-dimensional complex Hilbert space `E` to a complex normed space `F` with
 nonempty Fredholm locus, `ZerothHomotopy.fredholmIndex` is bijective onto `ℤ`. -/
 theorem ZerothHomotopy.fredholmIndex_bijective [Nonempty {T : E →L[ℂ] F // T.IsFredholm}]
     (hE : ¬ FiniteDimensional ℂ E) :
     Function.Bijective (ZerothHomotopy.fredholmIndex (𝕜 := ℂ) (E := E) (F := F)) :=
   ⟨ZerothHomotopy.fredholmIndex_injective, ZerothHomotopy.fredholmIndex_surjective hE⟩
 
-/-- When `E` is an infinite-dimensional complex Hilbert space, `F` is a complex Banach space, and
+/-- When `E` is an infinite-dimensional complex Hilbert space, `F` is a complex normed space, and
 the Fredholm locus `{T : E →L[ℂ] F // T.IsFredholm}` is nonempty (in particular for `F = E` or
 whenever `E ≃L[ℂ] F`), the Fredholm index identifies the norm-path components of the Fredholm locus
 bijectively with `ℤ`. -/

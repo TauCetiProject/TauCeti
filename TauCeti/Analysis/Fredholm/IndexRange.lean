@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Fredholm.Prod
 public import TauCeti.Analysis.Fredholm.Shift
-public import TauCeti.Analysis.Fredholm.Zero
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
@@ -21,17 +20,17 @@ in finite and infinite dimensions (complementing the mixed-dimension emptiness r
 * **Finite-dimensional spaces** (`ContinuousLinearMap.range_index_isFredholm_of_finiteDimensional`):
   between finite-dimensional topological modules over a nontrivially normed field whenever the
   Fredholm locus is nonempty (for instance when `F` is `T₁`, by
-  `ContinuousLinearMap.instNonemptyIsFredholmOfFiniteDimensional`), the image of the index on the
-  Fredholm locus is the singleton `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`.
+  `ContinuousLinearMap.instNonemptyIsFredholmOfFiniteDimensional` in
+  `TauCeti.Analysis.Fredholm.Zero`), the image of the index on the Fredholm locus is the singleton
+  `{(finrank 𝕜 E : ℤ) - finrank 𝕜 F}`.
 * **Infinite-dimensional Hilbert spaces**
   (`ContinuousLinearMap.exists_isFredholm_and_index_eq_self`,
   `ContinuousLinearMap.IsFredholm.exists_isFredholm_and_index_eq`,
   `ContinuousLinearMap.index_isFredholm_surjective`,
   `ContinuousLinearMap.range_index_isFredholm_of_not_finiteDimensional`,
-  `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`,
-  `ContinuousLinearEquiv.exists_index_eq`): if `E` is an infinite-dimensional real or complex
-  Hilbert space (with no separability assumption), every integer `n : ℤ` is the index of a Fredholm
-  endomorphism of `E`, and hence of a Fredholm map `E →L[𝕜] F` whenever `F` is a Hausdorff
+  `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`): if `E` is an infinite-dimensional real or
+  complex Hilbert space (with no separability assumption), every integer `n : ℤ` is the index of a
+  Fredholm endomorphism of `E`, and hence of a Fredholm map `E →L[𝕜] F` whenever `F` is a Hausdorff
   topological vector space with nonempty Fredholm locus `{T : E →L[𝕜] F // T.IsFredholm}` (or along
   any continuous linear equivalence `E ≃L[𝕜] F` without topological-group or separation hypotheses
   on `F`).
@@ -52,9 +51,8 @@ orthogonal complement across `LinearIsometry.prodOrthogonalRangeEquiv`.
   `ContinuousLinearMap.range_index_isFredholm_of_not_finiteDimensional`: every integer is realized
   on any nonempty Fredholm locus out of an infinite-dimensional Hilbert space into a Hausdorff
   topological vector space.
-* `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`,
-  `ContinuousLinearEquiv.exists_index_eq`: every integer is a Fredholm index along a continuous
-  linear equivalence out of an infinite-dimensional Hilbert space.
+* `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`: every integer is a Fredholm index along a
+  continuous linear equivalence out of an infinite-dimensional Hilbert space.
 
 ## References
 
@@ -171,13 +169,6 @@ theorem exists_isFredholm_and_index_eq (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimen
     ∃ T : E →L[𝕜] F, T.IsFredholm ∧ T.index = n := by
   obtain ⟨T₀, hT₀, hind₀⟩ := ContinuousLinearMap.exists_isFredholm_and_index_eq_self hE n
   exact ⟨(e : E →L[𝕜] F).comp T₀, hT₀.equiv_comp e, (T₀.index_equiv_comp e).trans hind₀⟩
-
-/-- Subtype form of `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`: every integer is
-realized on the Fredholm locus `{T : E →L[𝕜] F // T.IsFredholm}`. -/
-theorem exists_index_eq (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) (n : ℤ) :
-    ∃ T : {T : E →L[𝕜] F // T.IsFredholm}, T.val.index = n := by
-  obtain ⟨T, hT, hind⟩ := e.exists_isFredholm_and_index_eq hE n
-  exact ⟨⟨T, hT⟩, hind⟩
 
 end ContinuousLinearEquiv
 

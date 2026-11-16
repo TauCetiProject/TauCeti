@@ -84,30 +84,18 @@ theorem IsFredholm.finiteDimensional_iff {T : E →L[𝕜] F} (hT : T.IsFredholm
   have : FiniteDimensional 𝕜 (E ⧸ T.ker) := T.quotKerEquivRange.symm.finiteDimensional
   exact Module.Finite.of_submodule_quotient T.ker
 
-/-- No Fredholm operator exists from a finite-dimensional space to an infinite-dimensional space. -/
-theorem not_exists_isFredholm_of_finiteDimensional_of_not_finiteDimensional [FiniteDimensional 𝕜 E]
-    (hF : ¬ FiniteDimensional 𝕜 F) : ¬ ∃ T : E →L[𝕜] F, T.IsFredholm :=
-  fun ⟨_, hT⟩ ↦ hF (hT.finiteDimensional_iff.1 inferInstance)
-
-/-- No Fredholm operator exists from an infinite-dimensional space to a finite-dimensional space. -/
-theorem not_exists_isFredholm_of_not_finiteDimensional_of_finiteDimensional
-    (hE : ¬ FiniteDimensional 𝕜 E) [FiniteDimensional 𝕜 F] : ¬ ∃ T : E →L[𝕜] F, T.IsFredholm :=
-  fun ⟨_, hT⟩ ↦ hE (hT.finiteDimensional_iff.2 inferInstance)
-
 /-- The Fredholm locus is empty when the domain is finite-dimensional and the codomain is
 infinite-dimensional. -/
 theorem isEmpty_isFredholm_of_finiteDimensional_of_not_finiteDimensional [FiniteDimensional 𝕜 E]
     (hF : ¬ FiniteDimensional 𝕜 F) : IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
-  ⟨fun T ↦ not_exists_isFredholm_of_finiteDimensional_of_not_finiteDimensional hF
-    ⟨T.val, T.property⟩⟩
+  ⟨fun T ↦ hF (T.property.finiteDimensional_iff.1 inferInstance)⟩
 
 /-- The Fredholm locus is empty when the domain is infinite-dimensional and the codomain is
 finite-dimensional. -/
 theorem isEmpty_isFredholm_of_not_finiteDimensional_of_finiteDimensional
     (hE : ¬ FiniteDimensional 𝕜 E) [FiniteDimensional 𝕜 F] :
     IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
-  ⟨fun T ↦ not_exists_isFredholm_of_not_finiteDimensional_of_finiteDimensional hE
-    ⟨T.val, T.property⟩⟩
+  ⟨fun T ↦ hE (T.property.finiteDimensional_iff.2 inferInstance)⟩
 
 section FiniteDimensional
 

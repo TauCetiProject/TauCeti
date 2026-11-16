@@ -18,7 +18,7 @@ value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
 (`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`).
+(`TauCeti.memℓp_nat_add_iff`), with no larger norm (`lp.norm_le_of_forall_eq_nat_add`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -111,6 +111,13 @@ theorem memℓp_nat_add_iff {f : ℕ → G} (d : ℕ) : Memℓp (fun j ↦ f (j 
       fun a _ b _ h ↦ add_right_cancel h
 
 end TauCeti
+
+/-- **Dropping the first terms does not increase the norm.** For `p ≠ 0`, a sequence in `ℓᵖ` that
+reads `f` shifted by `d` has norm at most `‖f‖`. -/
+theorem lp.norm_le_of_forall_eq_nat_add (hp : p ≠ 0) {f f' : lp (fun _ : ℕ ↦ G) p} (d : ℕ)
+    (h : ∀ j, f' j = f (j + d)) : ‖f'‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp hp (g := fun j ↦ j + d) (s := Set.univ)
+    (fun _ _ _ _ hab ↦ Nat.add_right_cancel hab) fun j ↦ by simp [h j]
 
 /-- **Window sums in `ℓᵖ`.** If `f ∈ ℓᵖ`, then so is `j ↦ ∑_{j - L ≤ k < j + L} f k`. -/
 theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :

@@ -13,7 +13,9 @@ import TauCeti.Analysis.Normed.Operator.Dense
 /-!
 # Coordinates on `lp`
 
-The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
+The characteristic equation and single-coordinate retraction identities for Mathlib's bundled
+coordinate evaluation (`lp.evalCLM_apply`, `lp.evalCLM_comp_singleContinuousLinearMap`,
+`lp.leftInverse_evalCLM_singleContinuousLinearMap`, `lp.evalCLM_surjective`) let users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
 extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q`
@@ -161,6 +163,26 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
 end Single
+
+/-- Evaluating a single-coordinate vector at its own coordinate is the identity continuous linear
+map. -/
+@[simp]
+theorem evalCLM_comp_singleContinuousLinearMap [Fact (1 ≤ p)] [DecidableEq ι] (i : ι) :
+    (evalCLM 𝕜 E p i).comp (singleContinuousLinearMap 𝕜 E p i) = .id 𝕜 (E i) := by
+  ext x
+  simp
+
+/-- Bundled coordinate evaluation at `i` is a left inverse to the single-coordinate inclusion at
+`i`. -/
+theorem leftInverse_evalCLM_singleContinuousLinearMap [Fact (1 ≤ p)] [DecidableEq ι] (i : ι) :
+    Function.LeftInverse (evalCLM 𝕜 E p i) (singleContinuousLinearMap 𝕜 E p i) :=
+  fun x ↦ by simp
+
+/-- Bundled coordinate evaluation on `lp E p` is surjective at every coordinate. -/
+theorem evalCLM_surjective [Fact (1 ≤ p)] (i : ι) :
+    Function.Surjective (evalCLM 𝕜 E p i) := by
+  classical
+  exact fun x ↦ ⟨lp.single p i x, by simp⟩
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/
