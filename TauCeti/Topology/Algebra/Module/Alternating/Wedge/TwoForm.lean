@@ -32,9 +32,6 @@ nondegenerate, through the volume criterion `ContinuousAlternatingMap.wedgePow_n
 
 ## Main results
 
-* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
-  `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
-  a basis, and its six-term form on a four-dimensional space.
 * `ContinuousAlternatingMap.pairedWedge_mul_apply_two_two`: the six-term formula for `ω ∧ β`.
 * `ContinuousAlternatingMap.wedgePow_two_eq`: the square of a two-form is its wedge with itself.
 * `ContinuousAlternatingMap.wedgePow_two_apply`: the Pfaffian formula for `ω²`.
@@ -49,62 +46,6 @@ nondegenerate, through the volume criterion `ContinuousAlternatingMap.wedgePow_n
 public section
 
 namespace ContinuousAlternatingMap
-
-section Coordinates
-
-variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-  [AddCommGroup N] [Module R N] [TopologicalSpace N]
-
-/-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
-`ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/
-theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
-    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
-    ω ![u, v] = ∑ i, ∑ j, (b.repr u i * b.repr v j) • ω ![b i, b j] := by
-  -- `ω` is linear in its first argument, and by antisymmetry also in its second one.
-  have hfst (x y : M) : ω ![x, y] = ∑ i, b.repr x i • ω ![b i, y] := by
-    let L : M →ₗ[R] N :=
-      { toFun := fun x ↦ ω ![x, y]
-        map_add' := fun x x' ↦ ω.vecCons_add _ x x'
-        map_smul' := fun c x ↦ ω.vecCons_smul _ c x }
-    have h := _root_.map_sum L (fun i ↦ b.repr x i • b i) Finset.univ
-    simpa only [b.sum_repr, _root_.map_smul, L, LinearMap.coe_mk, AddHom.coe_mk] using h
-  have hsnd (x y : M) : ω ![x, y] = ∑ j, b.repr y j • ω ![x, b j] := by
-    have hs (z : M) : ω ![x, z] = -ω ![z, x] := apply_vecCons_swap ω z x
-    rw [hs, hfst y x]
-    simp only [hs, smul_neg, Finset.sum_neg_distrib]
-  rw [hfst u v]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [hsnd, Finset.smul_sum]
-  simp only [smul_smul]
-
-end Coordinates
-
-section FinFour
-
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
-  [AddCommGroup N] [Module R N] [TopologicalSpace N]
-
-/-- **A two-form on a four-dimensional space in coordinates.** In the coordinates of a basis `b`
-indexed by `Fin 4`, a two-form `ω` is `ω(u, v) = ∑_{i < j} (uᵢ vⱼ - uⱼ vᵢ) ω(bᵢ, bⱼ)`. -/
-theorem apply_vecCons_eq_sum_repr_fin_four (b : Module.Basis (Fin 4) R M)
-    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
-    ω ![u, v] =
-      (b.repr u 0 * b.repr v 1 - b.repr u 1 * b.repr v 0) • ω ![b 0, b 1] +
-      (b.repr u 0 * b.repr v 2 - b.repr u 2 * b.repr v 0) • ω ![b 0, b 2] +
-      (b.repr u 0 * b.repr v 3 - b.repr u 3 * b.repr v 0) • ω ![b 0, b 3] +
-      (b.repr u 1 * b.repr v 2 - b.repr u 2 * b.repr v 1) • ω ![b 1, b 2] +
-      (b.repr u 1 * b.repr v 3 - b.repr u 3 * b.repr v 1) • ω ![b 1, b 3] +
-      (b.repr u 2 * b.repr v 3 - b.repr u 3 * b.repr v 2) • ω ![b 2, b 3] := by
-  have hzero : ∀ i, ω ![b i, b i] = 0 := fun i ↦
-    ω.map_eq_zero_of_eq ![b i, b i] (i := 0) (j := 1) rfl zero_ne_one
-  rw [apply_vecCons_eq_sum_repr b]
-  simp only [Fin.sum_univ_four, hzero, smul_zero, apply_vecCons_swap ω (b 0) (b 1),
-    apply_vecCons_swap ω (b 0) (b 2), apply_vecCons_swap ω (b 0) (b 3),
-    apply_vecCons_swap ω (b 1) (b 2), apply_vecCons_swap ω (b 1) (b 3),
-    apply_vecCons_swap ω (b 2) (b 3), smul_neg, sub_smul]
-  abel
-
-end FinFour
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
 

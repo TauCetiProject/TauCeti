@@ -259,7 +259,8 @@ theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
 omit [InnerProductSpace ℝ E] in
 /-- A function `ψ` on the line vanishing near `0` gives a radial function `x ↦ ψ ‖x‖` vanishing
 near the origin. -/
-private theorem comp_norm_eventuallyEq_zero {ψ : ℝ → ℝ} (hψ0 : 0 ∉ tsupport ψ) :
+private theorem comp_norm_eventuallyEq_zero {F : Type*} [Zero F] {ψ : ℝ → F}
+    (hψ0 : 0 ∉ tsupport ψ) :
     (fun y : E ↦ ψ ‖y‖) =ᶠ[𝓝 0] fun _ ↦ 0 :=
   (continuous_norm.tendsto' (0 : E) 0 norm_zero).eventually
     (notMem_tsupport_iff_eventuallyEq.mp hψ0)
@@ -278,8 +279,9 @@ theorem _root_.DifferentiableAt.hasFDerivAt_comp_norm {ψ : ℝ → ℝ} {x : E}
 
 /-- The radial function `x ↦ ψ ‖x‖` of a `Cⁿ` function `ψ` on the line vanishing near `0` is
 `Cⁿ`, including at the origin. -/
-theorem _root_.ContDiff.comp_norm {n : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContDiff ℝ n ψ)
-    (hψ0 : 0 ∉ tsupport ψ) : ContDiff ℝ n fun x : E ↦ ψ ‖x‖ := by
+theorem _root_.ContDiff.comp_norm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {ψ : ℝ → F} (hψ : ContDiff ℝ n ψ) (hψ0 : 0 ∉ tsupport ψ) :
+    ContDiff ℝ n fun x : E ↦ ψ ‖x‖ := by
   refine contDiff_iff_contDiffAt.mpr fun x ↦ ?_
   rcases eq_or_ne x 0 with rfl | hx
   · exact contDiffAt_const.congr_of_eventuallyEq (comp_norm_eventuallyEq_zero hψ0)

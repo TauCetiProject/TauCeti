@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Taubes's monotonicity inequality for the defect energy
