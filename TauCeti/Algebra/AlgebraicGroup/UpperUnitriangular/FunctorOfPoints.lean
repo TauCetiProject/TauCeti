@@ -105,8 +105,8 @@ noncomputable def upperUnitriangularToPoint
         (coordinateHopfAlgebraAlgEquiv R m).symm.toAlgHom)
 
 /-- The point associated to an upper-unitriangular matrix sends each strict-upper coordinate
-to the corresponding entry. -/
-@[simp]
+to the corresponding entry. This is the special case of `upperUnitriangularToPoint_apply_eq_aeval`
+at `MvPolynomial.X ij`, so `simp` already proves it and it is not tagged `@[simp]`. -/
 theorem upperUnitriangularToPoint_apply_X
     (g : upperUnitriangularGroup m A) (ij : Index m) :
     (upperUnitriangularToPoint R m g).ofConv

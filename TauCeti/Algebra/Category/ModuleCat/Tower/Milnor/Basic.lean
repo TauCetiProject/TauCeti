@@ -171,8 +171,9 @@ theorem limComplex_d_hom (i j : ι) :
     (C.limComplex.d i j).hom = ModuleTower.limMap (C.dTower i j) :=
   (rfl)
 
-/-- The differential of the limit complex acts coordinatewise on the projections to the tower. -/
-@[simp]
+/-- The differential of the limit complex acts coordinatewise on the projections to the tower.
+Not tagged `@[simp]`: `simp` rewrites the codomain of `limπ` to `(C.obj (op n)).X j`, so the
+left-hand side is not in simp normal form. -/
 theorem limComplex_d_hom_apply (i j : ι) (x : C.limComplex.X i) (n : ℕ) :
     (C.term j).limπ n ((C.limComplex.d i j).hom x) =
       (C.obj (op n)).d i j ((C.term i).limπ n x) :=
