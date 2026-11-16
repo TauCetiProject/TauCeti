@@ -16,7 +16,10 @@ public import TauCeti.RingTheory.Derivation.Matrix
 
 A derivation `D` differentiates a finite product termwise (`Derivation.leibniz_prod`), and hence
 a determinant by **Jacobi's formula** `D (det M) = tr (adj M * D M)`, where `D M` applies `D` to
-every entry of the square matrix `M` (`Derivation.leibniz_det`).
+every entry of the square matrix `M` (`Derivation.leibniz_det`). When `M` satisfies a linear
+Sylvester differential equation `M.map D = M * P - Q * M`, substituting into Jacobi's formula
+yields the **Abel–Jacobi–Liouville formula** `D (det M) = det M * (tr P - tr Q)`
+(`Derivation.leibniz_det_of_map_eq_mul_sub_mul`, `Derivation.leibniz_det_of_matrixGauge_eq`).
 
 Let `S` be a finite free algebra over a commutative ring `A`, and let `D'` be a derivation of `S`
 extending a derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`.
@@ -64,6 +67,36 @@ theorem leibniz_det {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n A) :
   simp only [htrace, det_apply, map_sum, map_zsmul_unit, leibniz_prod, smul_eq_mul, hcol,
     smul_sum]
   exact sum_comm
+
+/-- **Abel–Jacobi–Liouville formula** for linear matrix differential equations: if `M` satisfies
+the Sylvester differential equation `M.map D = M * P - Q * M` over any commutative ring `A`, then
+`D M.det = M.det * (P.trace - Q.trace)` without requiring `M` to be invertible. -/
+theorem leibniz_det_of_map_eq_mul_sub_mul {n : Type*} [Fintype n] [DecidableEq n]
+    {M P Q : Matrix n n A} (hM : M.map D = M * P - Q * M) :
+    D M.det = M.det * (P.trace - Q.trace) := by
+  rw [leibniz_det, hM, mul_sub, trace_sub, ← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul,
+    Matrix.one_mul, trace_smul, ← Matrix.mul_assoc, trace_mul_cycle M.adjugate Q M, mul_adjugate,
+    Matrix.smul_mul, Matrix.one_mul, trace_smul, smul_eq_mul, smul_eq_mul, mul_sub]
+
+/-- **Liouville's formula**: if `M.map D = M * P`, then `D M.det = M.det * P.trace`. -/
+theorem leibniz_det_of_map_eq_mul {n : Type*} [Fintype n] [DecidableEq n]
+    {M P : Matrix n n A} (hM : M.map D = M * P) :
+    D M.det = M.det * P.trace := by
+  simpa using D.leibniz_det_of_map_eq_mul_sub_mul (Q := 0) (by simpa using hM)
+
+/-- If `g : GL n A` gauges `P` to `Q` along `D`, then `D (det g) = det g * (tr P - tr Q)`. -/
+theorem leibniz_det_of_matrixGauge_eq {n : Type*} [Fintype n] [DecidableEq n]
+    {g : Matrix.GeneralLinearGroup n A} {P Q : Matrix n n A} (h : D.matrixGauge g P = Q) :
+    D (g : Matrix n n A).det = (g : Matrix n n A).det * (P.trace - Q.trace) :=
+  D.leibniz_det_of_map_eq_mul_sub_mul ((D.matrixGauge_eq_iff).mp h)
+
+/-- A gauge transformation between connection matrices of equal trace has determinant killed by
+`D`. -/
+theorem leibniz_det_eq_zero_of_matrixGauge_eq {n : Type*} [Fintype n] [DecidableEq n]
+    {g : Matrix.GeneralLinearGroup n A} {P Q : Matrix n n A} (h : D.matrixGauge g P = Q)
+    (htr : P.trace = Q.trace) :
+    D (g : Matrix n n A).det = 0 := by
+  rw [D.leibniz_det_of_matrixGauge_eq h, htr, sub_self, mul_zero]
 
 variable {S : Type*} [CommRing S] [Algebra A S] [Algebra R S] (D' : Derivation R S S)
   (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
