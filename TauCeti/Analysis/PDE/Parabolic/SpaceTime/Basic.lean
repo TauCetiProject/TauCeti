@@ -50,7 +50,7 @@ public section
 noncomputable section
 
 open Set Metric
-open scoped ENNReal NNReal
+open scoped NNReal
 
 namespace TauCeti
 
@@ -152,6 +152,21 @@ def slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b)
 @[simp]
 theorem slabSpaceMap_slabMk {E' : Type*} {a b : ℝ} (f : E → E') (x : E) (t : Icc a b) :
     slabSpaceMap f (slabMk x t) = slabMk (f x) t :=
+  (rfl)
+
+@[simp]
+theorem slabTime_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    slabTime (slabSpaceMap f p) = slabTime p :=
+  (rfl)
+
+@[simp]
+theorem space_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    (slabSpaceMap f p : ParabolicSpaceTime E').space = f (p : ParabolicSpaceTime E).space :=
+  (rfl)
+
+@[simp]
+theorem time_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    (slabSpaceMap f p : ParabolicSpaceTime E').time = (p : ParabolicSpaceTime E).time :=
   (rfl)
 
 @[simp]

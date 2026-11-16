@@ -191,6 +191,24 @@ theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
       ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) m :=
   (rfl)
 
+/-- The differential terms of a sum of families are the sums of their differential terms. -/
+theorem ungradedStasheffDiff_add
+    (act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
+    (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff (fun k => act k + act' k) d n a m =
+      ungradedStasheffDiff act d n a m + ungradedStasheffDiff act' d n a m := by
+  simp [ungradedStasheffDiff_def, Finset.sum_add_distrib]
+
+/-- The product terms of a sum of families are the sums of their product terms. -/
+theorem ungradedStasheffMul_add
+    (act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
+    (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMul (fun k => act k + act' k) n a m =
+      ungradedStasheffMul act n a m + ungradedStasheffMul act' n a m := by
+  cases n with
+  | zero => simp
+  | succ n => simp [ungradedStasheffMul_succ, Finset.sum_add_distrib]
+
 end StasheffTerms
 
 /-- An **ungraded `A∞` right module** over the algebra `A` with differential `d`. The operation

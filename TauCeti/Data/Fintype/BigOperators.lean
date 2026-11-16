@@ -39,7 +39,9 @@ on `Fin (n + 1)` splits as a sum over their first `n` values and their last valu
 `r p.1.1 p.2.1` splits over pairs in `α × γ` satisfying `r` and both second coordinates
 (`Fintype.sum_filter_fst`), and on a lexicographic product `V ×ₗ ι` over a preordered base `V`, a
 sum over strictly increasing pairs `p.1 < p.2` splits into intra-cluster and inter-cluster pairs
-(`Fintype.sum_filter_lt_lex`).
+(`Fintype.sum_filter_lt_lex`). A sum over strictly increasing triples of a function of the clusters
+that vanishes when two consecutive clusters coincide counts each strictly increasing triple of
+clusters `(Fintype.card ι) ^ 3` times (`Fintype.sum_filter_lt_lex_triple`).
 -/
 
 public section
@@ -264,5 +266,43 @@ theorem prod_filter_lt_lex {V ι M : Type*} [Fintype V] [Preorder V] [DecidableL
         ∏ p : (V × ι) × (V × ι) with p.1.1 < p.2.1, f (toLex p.1, toLex p.2) :=
       Finset.prod_equiv (Equiv.prodCongr ofLex ofLex) (by simp) (by simp)
     rw [hinter, prod_filter_fst]
+
+/-- On a lexicographic product `V ×ₗ ι`, a product over strictly increasing triples of a function
+of the clusters `(ofLex x).1` that is trivial as soon as two consecutive clusters coincide takes
+each strictly increasing triple of clusters `(Fintype.card ι) ^ 3` times. -/
+@[to_additive /-- On a lexicographic product `V ×ₗ ι`, a sum over strictly increasing triples of a
+function of the clusters `(ofLex x).1` that vanishes as soon as two consecutive clusters coincide
+counts each strictly increasing triple of clusters `(Fintype.card ι) ^ 3` times. -/]
+theorem prod_filter_lt_lex_triple {V ι M : Type*} [Fintype V] [PartialOrder V] [DecidableLT V]
+    [Fintype ι] [Preorder ι] [DecidableLT (V ×ₗ ι)] [CommMonoid M] (g : V × V × V → M)
+    (hg₁ : ∀ i k, g (i, i, k) = 1) (hg₂ : ∀ i j, g (i, j, j) = 1) :
+    ∏ p : (V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2.1 ∧ p.2.1 < p.2.2,
+        g ((ofLex p.1).1, (ofLex p.2.1).1, (ofLex p.2.2).1) =
+      (∏ t : V × V × V with t.1 < t.2.1 ∧ t.2.1 < t.2.2, g t) ^ (Fintype.card ι ^ 3) := by
+  -- Only triples meeting three distinct clusters contribute.
+  have hsub : ({p | (ofLex p.1).1 < (ofLex p.2.1).1 ∧ (ofLex p.2.1).1 < (ofLex p.2.2).1} :
+        Finset ((V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι))) ⊆
+      ({p | p.1 < p.2.1 ∧ p.2.1 < p.2.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι))) := by
+    intro p hp
+    simp only [mem_filter, mem_univ, true_and] at hp ⊢
+    exact ⟨Prod.Lex.lt_iff.mpr (Or.inl hp.1), Prod.Lex.lt_iff.mpr (Or.inl hp.2)⟩
+  rw [← Finset.prod_subset hsub fun p hp hnot => ?_]
+  · -- Split each vertex into its cluster and its position inside the cluster.
+    let e : (V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι) ≃ (V × V × V) × (ι × ι × ι) :=
+      { toFun p := (((ofLex p.1).1, (ofLex p.2.1).1, (ofLex p.2.2).1),
+          (ofLex p.1).2, (ofLex p.2.1).2, (ofLex p.2.2).2)
+        invFun q := (toLex (q.1.1, q.2.1), toLex (q.1.2.1, q.2.2.1), toLex (q.1.2.2, q.2.2.2))
+        left_inv _ := rfl
+        right_inv _ := rfl }
+    rw [Finset.prod_filter, Finset.prod_filter, ← Finset.prod_pow]
+    refine (Fintype.prod_equiv e _
+      (fun q => if q.1.1 < q.1.2.1 ∧ q.1.2.1 < q.1.2.2 then g q.1 else 1) fun _ => rfl).trans ?_
+    rw [Fintype.prod_prod_type]
+    refine Finset.prod_congr rfl fun t _ => ?_
+    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_prod, pow_three]
+  · simp only [mem_filter, mem_univ, true_and, not_and_or] at hp hnot
+    rcases hnot with h | h
+    · rw [(Prod.Lex.monotone_fst _ _ hp.1.le).eq_of_not_lt h]; exact hg₁ _ _
+    · rw [(Prod.Lex.monotone_fst _ _ hp.2.le).eq_of_not_lt h]; exact hg₂ _ _
 
 end Fintype
