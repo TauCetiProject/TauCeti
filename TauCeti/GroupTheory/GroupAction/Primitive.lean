@@ -42,6 +42,12 @@ nontrivial normal subgroup transitive.  This is the first step of the simplicity
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton`: a nontrivial point stabilizer in a
   faithful primitive action fixes exactly its base point.
 * `TauCeti.MulAction.exists_mem_stabilizer_smul_ne`: such a stabilizer moves every other point.
+* `TauCeti.MulAction.eq_of_normal_of_le_of_stabilizer_eq_bot`,
+  `TauCeti.MulAction.eq_top_of_characteristic_of_stabilizer_eq_bot`: in a quasi-primitive action,
+  a subgroup acting regularly contains no nontrivial normal subgroup of the whole group other
+  than itself, so a regular normal subgroup is characteristically simple.
+* `MulAction.stabilizer_smul_eq_conjNormal_smul`: for a normal subgroup `N`, the stabilizer of
+  `g • a` in `N` is the conjugate by `g` of the stabilizer of `a` in `N`.
 * `MulAction.IsBlock.setOf_stabilizer_eq_of_normal`: for a normal subgroup `N`, the points with a
   given stabilizer in `N` form a block.
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton_of_normal`: in a faithful primitive
@@ -80,32 +86,22 @@ theorem _root_.MulAction.IsBlock.orbit_inf_stabilizer_subset {H : Subgroup G}
   rw [← stabilizer_subgroupOf H a, ← orbitRel_apply, orbitRel_subgroupOf, inf_comm]
   exact orbitRel_apply.mpr hy
 
-/-- For a normal subgroup `N`, the points whose stabilizer in `N` is that of `a` form a block:
-conjugation by `g` carries the stabilizer of `z` in `N` to the stabilizer of `g • z`. -/
+/-- For a normal subgroup `N`, the stabilizer of `g • a` in `N` is the conjugate by `g` of the
+stabilizer of `a` in `N`. This is the form of `MulAction.stabilizer_smul_eq_stabilizer_map_conj`
+for the action of a normal subgroup. -/
+theorem _root_.MulAction.stabilizer_smul_eq_conjNormal_smul {N : Subgroup G} [N.Normal] (g : G)
+    (a : X) : stabilizer N (g • a) = (MulAut.conjNormal g : MulAut N) • stabilizer N a := by
+  ext n
+  simp [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, Subgroup.smul_def, mul_smul,
+    inv_smul_eq_iff]
+
+/-- For a normal subgroup `N`, the points whose stabilizer in `N` is that of `a` form a block. -/
 theorem _root_.MulAction.IsBlock.setOf_stabilizer_eq_of_normal {N : Subgroup G} [N.Normal]
-    (a : X) : IsBlock G {z : X | stabilizer N z = stabilizer N a} := by
-  have hconj (g : G) (z : X) :
-      stabilizer N (g • z) = (stabilizer N z).map (MulAut.conjNormal g).toMonoidHom := by
-    ext n
-    rw [Subgroup.mem_map_equiv, mem_stabilizer_iff, mem_stabilizer_iff, Subgroup.smul_def,
-      Subgroup.smul_def, MulAut.conjNormal_symm_apply, mul_smul, mul_smul, inv_smul_eq_iff]
-  rw [isBlock_iff_smul_eq_of_mem]
-  intro g b hb hgb
-  have hfix : (stabilizer N a).map (MulAut.conjNormal g).toMonoidHom = stabilizer N a :=
-    calc (stabilizer N a).map (MulAut.conjNormal g).toMonoidHom
-      _ = (stabilizer N b).map (MulAut.conjNormal g).toMonoidHom := by rw [Set.mem_ofPred.mp hb]
-      _ = stabilizer N (g • b) := (hconj g b).symm
-      _ = stabilizer N a := Set.mem_ofPred.mp hgb
-  ext w
-  rw [Set.mem_smul_set, Set.mem_ofPred]
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    rw [hconj, Set.mem_ofPred.mp hz, hfix]
-  · intro hw
-    refine ⟨g⁻¹ • w, Set.mem_ofPred.mpr ?_, smul_inv_smul g w⟩
-    apply Subgroup.map_injective (f := (MulAut.conjNormal g).toMonoidHom)
-      (MulAut.conjNormal g).injective
-    rw [← hconj, smul_inv_smul, hw, hfix]
+    (a : X) : IsBlock G {z : X | stabilizer N z = stabilizer N a} :=
+  -- The preimage of a point under `z ↦ stabilizer N z`, which is equivariant along conjugation.
+  (IsBlock.singleton (a := stabilizer N a)).preimage
+    (⟨stabilizer N, stabilizer_smul_eq_conjNormal_smul⟩ :
+      X →ₑ[(MulAut.conjNormal : G → MulAut N)] Subgroup N)
 
 end Blocks
 
@@ -142,6 +138,43 @@ theorem _root_.MulAction.IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot
   IsQuasiPreprimitive.isPretransitive_of_normal (fixedPoints_ne_univ_of_ne_bot hN)
 
 end Normal
+
+section Regular
+
+variable {G X : Type*} [Group G] [MulAction G X] [IsQuasiPreprimitive G X]
+
+/-- In a quasi-primitive action, let `N` be a subgroup with a trivial point stabilizer. Then a
+nontrivial normal subgroup of the whole group that is contained in `N` is equal to `N`. -/
+theorem eq_of_normal_of_le_of_stabilizer_eq_bot {N H : Subgroup G} [H.Normal] {x : X}
+    (hx : stabilizer N x = ⊥) (hHN : H ≤ N) (hH : H ≠ ⊥) : H = N := by
+  -- A nonidentity element of `H` lies in `N`, so it moves `x`; hence `H` is transitive.
+  have : IsPretransitive H X := by
+    refine IsQuasiPreprimitive.isPretransitive_of_normal fun hfix ↦ hH ?_
+    refine (Subgroup.eq_bot_iff_forall _).mpr fun h hh ↦ ?_
+    have hmem : (⟨h, hHN hh⟩ : N) ∈ stabilizer N x := by
+      rw [mem_stabilizer_iff, Subgroup.mk_smul, ← Subgroup.mk_smul h hh]
+      exact mem_fixedPoints.mp (hfix ▸ Set.mem_univ x) ⟨h, hh⟩
+    rw [hx, Subgroup.mem_bot] at hmem
+    exact congrArg Subtype.val hmem
+  refine le_antisymm hHN fun n hn ↦ ?_
+  obtain ⟨⟨h, hh⟩, hhn⟩ := exists_smul_eq H x (n • x)
+  -- The elements `h` and `n` of `N` move `x` to the same point, so they are equal.
+  have hmem : (⟨h⁻¹ * n, N.mul_mem (N.inv_mem (hHN hh)) hn⟩ : N) ∈ stabilizer N x := by
+    rw [mem_stabilizer_iff, Subgroup.mk_smul, mul_smul, inv_smul_eq_iff, ← hhn, Subgroup.mk_smul]
+  rw [hx, Subgroup.mem_bot] at hmem
+  exact inv_mul_eq_one.mp (congrArg Subtype.val hmem) ▸ hh
+
+/-- In a quasi-primitive action, a normal subgroup `N` with a trivial point stabilizer is
+characteristically simple: every nontrivial characteristic subgroup `K` of `N` equals `⊤`. -/
+theorem eq_top_of_characteristic_of_stabilizer_eq_bot {N : Subgroup G} [N.Normal] {x : X}
+    (hx : stabilizer N x = ⊥) {K : Subgroup N} [K.Characteristic] (hK : K ≠ ⊥) : K = ⊤ := by
+  have hmap : K.map N.subtype = N :=
+    eq_of_normal_of_le_of_stabilizer_eq_bot hx (Subgroup.map_subtype_le K)
+      (by rwa [Ne, Subgroup.map_eq_bot_iff_of_injective _ N.subtype_injective])
+  apply Subgroup.map_injective N.subtype_injective
+  rw [hmap, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
+
+end Regular
 
 variable {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X]
   [IsPreprimitive G X]
@@ -188,29 +221,29 @@ common fixed point. For `N = ⊤` this is `fixedPoints_stabilizer_eq_singleton`.
 @[simp]
 theorem fixedPoints_stabilizer_eq_singleton_of_normal [Finite X] {N : Subgroup G} [N.Normal]
     (a : X) (ha : stabilizer N a ≠ ⊥) : fixedPoints (stabilizer N a) X = {a} := by
-  refine Set.Subset.antisymm (fun b hb ↦ ?_) (Set.singleton_subset_iff.mpr fun g ↦ g.property)
+  refine Set.Subset.antisymm (fun b hb ↦ ?_) (Set.singleton_subset_iff.mpr fun g ↦
+    (Subgroup.smul_def g a).trans (mem_stabilizer_iff.mp g.property))
   have hN : N ≠ ⊥ := by
     rintro rfl
     exact ha (Subsingleton.elim _ _)
   have : IsPretransitive N X := IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot N hN
   have : Nonempty X := ⟨a⟩
   -- The stabilizers of `a` and of `b` in `N` have the same finite index, so they are equal.
-  have hle : stabilizer N a ≤ stabilizer N b := fun n hn ↦ hb ⟨n, hn⟩
-  have hindex : (stabilizer N a).relIndex (stabilizer N b) = 1 := by
-    have hmul := Subgroup.relIndex_mul_index hle
-    rw [index_stabilizer_of_transitive, index_stabilizer_of_transitive] at hmul
-    exact (mul_eq_right₀ Nat.card_pos.ne').mp hmul
-  have heq : stabilizer N b = stabilizer N a :=
-    le_antisymm (Subgroup.relIndex_eq_one.mp hindex) hle
+  have hle : stabilizer N a ≤ stabilizer N b := fun n hn ↦
+    mem_stabilizer_iff.mpr ((Subgroup.mk_smul n hn b).symm.trans (mem_fixedPoints.mp hb ⟨n, hn⟩))
+  have : (stabilizer N b).FiniteIndex :=
+    ⟨by rw [index_stabilizer_of_transitive]; exact Nat.card_pos.ne'⟩
+  have heq : stabilizer N a = stabilizer N b :=
+    Subgroup.eq_of_index_dvd_index hle
+      (by rw [index_stabilizer_of_transitive, index_stabilizer_of_transitive])
   -- The points with this stabilizer in `N` form a block containing `a` and `b`.
   rcases (IsBlock.setOf_stabilizer_eq_of_normal (N := N) a).subsingleton_or_eq_univ with hs | hu
-  · exact hs (Set.mem_ofPred.mpr heq) (Set.mem_ofPred.mpr rfl)
+  · exact hs (Set.mem_ofPred.mpr heq.symm) (Set.mem_ofPred.mpr rfl)
   · -- The block is everything, so the stabilizer of `a` in `N` fixes every point.
-    refine (ha ((Subgroup.eq_bot_iff_forall _).mpr fun n hn ↦ ?_)).elim
-    refine FaithfulSMul.eq_of_smul_eq_smul (α := X) fun z ↦ ?_
+    refine (fixedPoints_ne_univ_of_ne_bot (α := X) ha (Set.eq_univ_iff_forall.mpr fun z ↦
+      mem_fixedPoints.mpr fun n ↦ ?_)).elim
     have hz : z ∈ {z : X | stabilizer N z = stabilizer N a} := hu ▸ Set.mem_univ z
-    rw [Set.mem_ofPred] at hz
-    rw [one_smul]
-    exact (hz ▸ hn : n ∈ stabilizer N z)
+    rw [Subgroup.smul_def, ← mem_stabilizer_iff, Set.mem_ofPred.mp hz]
+    exact n.property
 
 end TauCeti.MulAction

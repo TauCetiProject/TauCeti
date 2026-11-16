@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.GroupTheory.Subgroup.Simple
 public import TauCeti.GroupTheory.GroupAction.Primitive
 public import TauCeti.GroupTheory.GroupAction.Transitive
-public import TauCeti.GroupTheory.Sylow.Basic
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Simplicity from primitive actions
@@ -45,11 +44,10 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card
   have : IsPretransitive N X := IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot N hN
   have : Nontrivial X := nontrivial_of_fixedPoints_ne_univ (fixedPoints_ne_univ_of_ne_bot hN)
   have hdiv : p ∣ Nat.card N := hdegree.trans (natCard_dvd_natCard_of_isPretransitive N)
-  have : Fact p.Prime := ⟨hp⟩
   apply top_unique
   rw [← hgen]
   exact Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr
-    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hcard hdiv ha))
+    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hp ha hdiv hcard))
 
 /-- If `G` acts faithfully and transitively on a set of prime size `p` with `p ^ 2` not dividing
 `|G|`, and an element `a` with `a ^ p = 1` normally generates `G`, then `G` is simple. -/

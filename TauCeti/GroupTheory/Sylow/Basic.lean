@@ -30,9 +30,6 @@ to an element of any chosen Sylow subgroup for that prime.
 * `TauCeti.exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd`: if `p ^ 2` does not divide the order of
   the group, some conjugate of an element of order `p` is a power of any other element of
   order `p`.
-* `TauCeti.mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd`: if `p ^ 2` does not divide the order
-  of the group, a normal subgroup of order divisible by `p` contains every element whose `p`-th
-  power is `1`.
 * `Sylow.subsingleton_of_forall_dvd_natCard_modEq_one`: the Sylow `p`-subgroup is unique when no
   divisor of the group order other than `1` is congruent to `1` modulo `p`.
 -/
@@ -87,8 +84,8 @@ theorem mul_card_sylow_dvd_card (hdvd : p ∣ Nat.card G) :
   exact Nat.mul_dvd_mul_left _ hN
 
 /-- A group has a unique Sylow `p`-subgroup when `1` is the only divisor of its order congruent
-to `1` modulo `p`: by Sylow's theorems, the number of Sylow `p`-subgroups is such a divisor. The
-hypothesis forces the group to be finite, since every number divides `Nat.card G = 0`. -/
+to `1` modulo `p`. The hypothesis forces the group to be finite, since every number divides
+`Nat.card G = 0`. -/
 theorem subsingleton_of_forall_dvd_natCard_modEq_one
     (h : ∀ d, d ∣ Nat.card G → d ≡ 1 [MOD p] → d = 1) : Subsingleton (Sylow p G) := by
   have : Finite G := Nat.finite_of_card_ne_zero fun h0 ↦
@@ -118,23 +115,5 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
   simp only [Pg, Sylow.coe_ofCard] at hmem
   exact ⟨y, hy ▸ hmem⟩
-
-/-- If `p ^ 2` does not divide the order of a group, then a normal subgroup whose order is
-divisible by `p` contains every element whose `p`-th power is `1`: the index of the subgroup is
-coprime to `p`. -/
-theorem mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.card G)
-    {N : Subgroup G} [N.Normal] (hN : p ∣ Nat.card N) {a : G} (ha : a ^ p = 1) : a ∈ N := by
-  have hindex : ¬ p ∣ N.index := by
-    intro hi
-    apply hsq
-    rw [← N.card_mul_index, pow_two]
-    exact Nat.mul_dvd_mul hN hi
-  have hpow : (a : G ⧸ N) ^ p = 1 := by
-    rw [← QuotientGroup.mk_pow, ha, QuotientGroup.mk_one]
-  have horder : orderOf (a : G ⧸ N) = 1 := by
-    rcases hp.out.eq_one_or_self_of_dvd _ (orderOf_dvd_of_pow_eq_one hpow) with h | h
-    · exact h
-    · exact (hindex (by rw [N.index_eq_card, ← h]; exact orderOf_dvd_natCard _)).elim
-  exact (QuotientGroup.eq_one_iff a).mp (orderOf_eq_one_iff.mp horder)
 
 end TauCeti

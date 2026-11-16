@@ -13,7 +13,7 @@ public import TauCeti.GroupTheory.GroupAction.Simple.Basic
 Let a group `G` act faithfully and primitively on a finite set, let `x` be a point, and let `O` be
 an orbit of the stabilizer `G_x` on which `G_x` acts quasi-primitively. This file shows that, for
 every normal subgroup `N` of `G` in which the stabilizer `N_x` of `x` is nontrivial, `N_x` is
-transitive on `O`, so the length of `O` divides the order of `N`. It deduces a simplicity
+transitive on `O`, so the length of `O` divides the order of `N_x`. It deduces a simplicity
 criterion that needs neither a prime dividing the degree exactly once in the group order nor an
 identification of the point stabilizer.
 
@@ -31,8 +31,8 @@ be supplied by `TauCeti.stabilizer_ne_bot_of_forall_dvd_natCard_modEq_one`.
 * `TauCeti.isPretransitive_subgroupOf_stabilizer_orbit`: a normal subgroup with a nontrivial
   stabilizer of `x` meets the stabilizer of `x` in a subgroup acting transitively on each of its
   quasi-primitive orbits.
-* `TauCeti.natCard_orbit_stabilizer_dvd_natCard_of_normal`: the length of such an orbit divides
-  the order of the normal subgroup.
+* `TauCeti.natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal`: the length of such an
+  orbit divides the order of the stabilizer of `x` in the normal subgroup.
 * `TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card_orbit_stabilizer`: the
   simplicity criterion.
 
@@ -48,14 +48,12 @@ namespace TauCeti
 
 open _root_.MulAction TauCeti.MulAction
 
-variable {G X : Type*} [Group G] [MulAction G X] [Finite X] [FaithfulSMul G X]
-  [IsPreprimitive G X]
+variable {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X] [IsPreprimitive G X]
 
 /-- In a faithful primitive action on a finite set, let the stabilizer of `x` act
 quasi-primitively on its orbit `O` of `y`, and let `N` be a normal subgroup in which the
-stabilizer of `x` is nontrivial. Then the elements of `N` fixing `x` act transitively on `O`: they
-form a normal subgroup of the stabilizer of `x`, and they do not all fix `y` unless `y = x`. -/
-theorem isPretransitive_subgroupOf_stabilizer_orbit {x : X} (y : X)
+stabilizer of `x` is nontrivial. Then the elements of `N` fixing `x` act transitively on `O`. -/
+theorem isPretransitive_subgroupOf_stabilizer_orbit [Finite X] {x : X} (y : X)
     [IsQuasiPreprimitive (stabilizer G x) (orbit (stabilizer G x) y)]
     {N : Subgroup G} [N.Normal] (hN : stabilizer N x ≠ ⊥) :
     IsPretransitive (N.subgroupOf (stabilizer G x)) (orbit (stabilizer G x) y) := by
@@ -64,43 +62,47 @@ theorem isPretransitive_subgroupOf_stabilizer_orbit {x : X} (y : X)
   · -- The orbit of `x` under its own stabilizer is a single point.
     subst hyx
     have : Subsingleton (orbit (stabilizer G y) y) :=
-      ⟨fun u v ↦ by
-        obtain ⟨u, g, rfl⟩ := u
-        obtain ⟨v, k, rfl⟩ := v
-        exact Subtype.ext (g.2.trans k.2.symm)⟩
-    exact ⟨fun u v ↦ ⟨1, Subsingleton.elim _ _⟩⟩
+      (subsingleton_orbit_iff_mem_fixedPoints.mpr (mem_fixedPoints.mpr fun g ↦
+        (Subgroup.smul_def g y).trans (mem_stabilizer_iff.mp g.property))).coe_sort
+    infer_instance
   -- Otherwise the elements of `N` fixing `x` would all fix `y`, a second fixed point.
   refine IsQuasiPreprimitive.isPretransitive_of_normal fun hfix ↦ hyx ?_
-  have hy : (⟨y, mem_orbit_self y⟩ : orbit (stabilizer G x) y) ∈
-      fixedPoints (N.subgroupOf (stabilizer G x)) (orbit (stabilizer G x) y) :=
-    hfix ▸ Set.mem_univ _
-  have hmem : y ∈ fixedPoints (stabilizer N x) X := fun n ↦
-    congrArg Subtype.val (hy ⟨⟨n, n.2⟩, n.1.2⟩)
+  have hmem : y ∈ fixedPoints (stabilizer N x) X := by
+    refine mem_fixedPoints.mpr fun n ↦ ?_
+    have hn : (n : G) ∈ stabilizer G x :=
+      mem_stabilizer_iff.mpr ((Subgroup.smul_def (n : N) x).symm.trans
+        (mem_stabilizer_iff.mp n.property))
+    have hy := mem_fixedPoints.mp
+      (hfix ▸ Set.mem_univ (⟨y, mem_orbit_self y⟩ : orbit (stabilizer G x) y))
+      ⟨⟨n, hn⟩, Subgroup.mem_subgroupOf.mpr (n : N).property⟩
+    rw [Subtype.ext_iff, Subgroup.smul_def, orbit.coe_smul, Subgroup.mk_smul] at hy
+    rw [Subgroup.smul_def, Subgroup.smul_def]
+    exact hy
   rwa [fixedPoints_stabilizer_eq_singleton_of_normal x hN, Set.mem_singleton_iff] at hmem
 
 /-- In a faithful primitive action on a finite set, let the stabilizer of `x` act
-quasi-primitively on its orbit of `y`. Then the length of this orbit divides the order of every
-normal subgroup in which the stabilizer of `x` is nontrivial. -/
-theorem natCard_orbit_stabilizer_dvd_natCard_of_normal {x : X} (y : X)
+quasi-primitively on its orbit of `y`, and let `N` be a normal subgroup in which the stabilizer
+of `x` is nontrivial. Then the length of this orbit divides the order of the stabilizer of `x`
+in `N`. -/
+theorem natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal [Finite X] {x : X} (y : X)
     [IsQuasiPreprimitive (stabilizer G x) (orbit (stabilizer G x) y)]
     {N : Subgroup G} [N.Normal] (hN : stabilizer N x ≠ ⊥) :
-    Nat.card (orbit (stabilizer G x) y) ∣ Nat.card N := by
+    Nat.card (orbit (stabilizer G x) y) ∣ Nat.card (stabilizer N x) := by
   have := isPretransitive_subgroupOf_stabilizer_orbit y hN
   have : Nonempty (orbit (stabilizer G x) y) := (nonempty_orbit y).to_subtype
-  -- The inclusion of the elements of `N` fixing `x` into `N`.
-  let f : N.subgroupOf (stabilizer G x) →* N :=
-    ((stabilizer G x).subtype.comp (N.subgroupOf (stabilizer G x)).subtype).codRestrict N
-      fun m ↦ m.2
-  have hf : Function.Injective f := fun m₁ m₂ hm ↦
-    Subtype.ext (Subtype.ext (congrArg (Subtype.val : N → G) hm))
-  exact (natCard_dvd_natCard_of_isPretransitive (N.subgroupOf (stabilizer G x))).trans
-    (Subgroup.card_dvd_of_injective f hf)
+  -- Both subgroups are copies of the intersection of `N` with the stabilizer of `x`.
+  have hcard : Nat.card (N.subgroupOf (stabilizer G x)) = Nat.card (stabilizer N x) := by
+    rw [← stabilizer_subgroupOf, ← Subgroup.inf_subgroupOf_right N,
+      ← Subgroup.inf_subgroupOf_left (stabilizer G x) N]
+    exact (Nat.card_congr (Subgroup.subgroupOfEquivOfLe inf_le_right).toEquiv).trans
+      (Nat.card_congr (Subgroup.subgroupOfEquivOfLe inf_le_left).toEquiv).symm
+  exact hcard ▸ natCard_dvd_natCard_of_isPretransitive (N.subgroupOf (stabilizer G x))
 
-/-- **Simplicity from a primitive suborbit.** Let `G` act faithfully and primitively on a finite
-set, and let the stabilizer of `x` act quasi-primitively on its orbit of `y`. Suppose that a prime
+/-- **Simplicity from a primitive suborbit.** Let `G` act faithfully and primitively on a set,
+and let the stabilizer of `x` act quasi-primitively on its orbit of `y`. Suppose that a prime
 `p` divides the length of this orbit, that `p ^ 2` does not divide the order of `G`, and that no
 normal subgroup of `G` acts regularly. If an element `a` with `a ^ p = 1` normally generates `G`,
-then `G` is simple. -/
+then `G` is simple. The set is finite, because `G` is finite and acts transitively on it. -/
 theorem isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card_orbit_stabilizer
     (x y : X) [IsQuasiPreprimitive (stabilizer G x) (orbit (stabilizer G x) y)]
     {p : ℕ} (hp : p.Prime) (hdvd : p ∣ Nat.card (orbit (stabilizer G x) y))
@@ -108,13 +110,15 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card_orbit_stabilizer
     (hreg : ∀ (N : Subgroup G) [N.Normal] [IsPretransitive N X], stabilizer N x ≠ ⊥)
     (a : G) (ha : a ^ p = 1)
     (hgen : Subgroup.normalClosure ({a} : Set G) = ⊤) : IsSimpleGroup G := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h0 ↦ hcard (h0 ▸ dvd_zero _)
+  have : Finite X := Finite.of_surjective (· • x) (exists_smul_eq G x)
   -- The orbit has at least `p` points, so two elements fixing `x` move `y` to different points.
   have : Nonempty (orbit (stabilizer G x) y) := (nonempty_orbit y).to_subtype
   have : Nontrivial (orbit (stabilizer G x) y) :=
     Finite.one_lt_card_iff_nontrivial.mp (hp.one_lt.trans_le (Nat.le_of_dvd Nat.card_pos hdvd))
   obtain ⟨⟨_, g, rfl⟩, ⟨_, k, rfl⟩, hgk⟩ := exists_pair_ne (orbit (stabilizer G x) y)
-  have : Nontrivial G := ⟨⟨g, k, fun h ↦ hgk (Subtype.ext (congrArg (fun c : G ↦ c • y) h))⟩⟩
-  have : Fact p.Prime := ⟨hp⟩
+  have : Nontrivial G :=
+    ⟨⟨g, k, fun h ↦ hgk (Subtype.ext (congrArg (· • y) (Subtype.ext h)))⟩⟩
   refine ⟨fun N _ ↦ ?_⟩
   by_cases hN : N = ⊥
   · exact Or.inl hN
@@ -123,7 +127,8 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card_orbit_stabilizer
   apply top_unique
   rw [← hgen]
   exact Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr
-    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hcard
-      (hdvd.trans (natCard_orbit_stabilizer_dvd_natCard_of_normal y (hreg N))) ha))
+    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hp ha
+      ((hdvd.trans (natCard_orbit_stabilizer_dvd_natCard_stabilizer_of_normal y (hreg N))).trans
+        (Subgroup.card_subgroup_dvd_card _)) hcard))
 
 end TauCeti
