@@ -318,9 +318,8 @@ theorem sectionPrincipalSymbol_mvfderiv_of_order_one (hx : I.IsInteriorPoint x)
     sectionPrincipalSymbol I hx P (mvfderiv I f x) (s x) =
       (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (f • s) x -
         f x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
-  rw [sectionPrincipalSymbol_mvfderiv, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
-    pow_one, smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContMDiffSection.smul_apply]
+  rw [sectionPrincipalSymbol_mvfderiv]
+  simp [smulCommutator_apply_apply, ContMDiffSection.smul_apply]
 
 /-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
 order at most `m`. -/
