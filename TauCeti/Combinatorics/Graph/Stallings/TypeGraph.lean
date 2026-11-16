@@ -233,11 +233,10 @@ theorem two_le_degree_typeGraph (h : ¬ S.graph.IsAcyclic) (u : S.typeVertices)
   obtain ⟨a, ha⟩ := a
   obtain ⟨x, y, hxC, hyC, hx, hy, hxy⟩ :=
     S.graph.exists_cyclicDarts_ne ((S.typeVertices_eq_cyclicVertices h).subset ha)
-  -- The type graph is a subgraph, in which the degree counts the darts kept.
-  have hdeg : (S.typeGraph u).graph.degree ⟨a, ha⟩ = _ := S.graph.degree_subgraph _ _
-    (fun _ => S.src_mem_typeVertices) (fun e => (S.graph.rev_mem_cyclicDarts_iff e).mpr) ha
-  rw [hdeg, ← one_add_one_eq_two, ENat.add_one_le_iff ENat.one_ne_top, Set.one_lt_encard_iff]
-  exact ⟨x, y, ⟨hxC, hx⟩, ⟨hyC, hy⟩, hxy⟩
+  -- The darts of the type graph are the darts on cyclically reduced closed paths, with their
+  -- origins in the original graph.
+  exact SerreGraph.two_le_degree_iff.mpr
+    ⟨⟨x, hxC⟩, ⟨y, hyC⟩, Subtype.ext hx, Subtype.ext hy, mt (congrArg Subtype.val) hxy⟩
 
 /-- The base vertex of a based core is deleted in its type graph exactly when it has degree
 one. -/

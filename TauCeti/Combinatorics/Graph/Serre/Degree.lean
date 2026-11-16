@@ -8,6 +8,8 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.Data.Set.Card
 
+import TauCeti.Combinatorics.SimpleGraph.Dart
+
 /-!
 # Degrees of vertices of Serre graphs
 
@@ -149,14 +151,8 @@ namespace SimpleGraph
 /-- The degree of a vertex in the Serre graph of a simple graph is the number of its neighbours:
 the darts issuing from it are determined by their second vertex. -/
 @[simp] theorem degree_toSerreGraph {V : Type*} (G : SimpleGraph V) (v : V) :
-    G.toSerreGraph.degree v = (G.neighborSet v).encard := by
-  have h : (·.snd) '' {d : G.Dart | d.fst = v} = G.neighborSet v := by
-    ext w
-    exact ⟨fun ⟨d, hd, hw⟩ => hd ▸ hw ▸ d.adj, fun h => ⟨⟨(v, w), h⟩, rfl, rfl⟩⟩
-  have hinj : Set.InjOn (·.snd) {d : G.Dart | d.fst = v} := fun d hd d' hd' h =>
-    Dart.ext _ _ (Prod.ext (hd.trans hd'.symm) h)
-  rw [← h, hinj.encard_image]
+    G.toSerreGraph.degree v = (G.neighborSet v).encard :=
   -- The darts of `G.toSerreGraph` are the darts of `G`, issuing from their first vertex.
-  exact TauCeti.SerreGraph.degree_def _ _
+  Set.encard_congr (s := {d : G.Dart | d.fst = v}) (G.dartFstEquivNeighborSet v)
 
 end SimpleGraph

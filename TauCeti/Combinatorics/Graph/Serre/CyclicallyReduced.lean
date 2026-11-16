@@ -700,8 +700,7 @@ theorem IsCore.two_le_degree_iff_mem_cyclicVertices {v : Γ.V} (hΓ : Γ.IsCore 
 closed path. -/
 theorem IsCore.degree_le_one_iff_notMem_cyclicVertices {v : Γ.V} (hΓ : Γ.IsCore v) :
     Γ.degree v ≤ 1 ↔ v ∉ Γ.cyclicVertices := by
-  rw [← hΓ.two_le_degree_iff_mem_cyclicVertices, not_le, ← one_add_one_eq_two,
-    ENat.lt_add_one_iff ENat.one_ne_top]
+  rw [← hΓ.two_le_degree_iff_mem_cyclicVertices, not_le, ENat.lt_two_iff]
 
 /-- The base vertex of a core has degree zero exactly when the core is acyclic, that is, when it
 is the base vertex alone. -/
