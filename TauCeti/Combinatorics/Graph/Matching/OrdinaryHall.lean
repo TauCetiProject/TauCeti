@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Graph.Matching.Hall
 
+import TauCeti.Combinatorics.Graph.Matching.VertexCover
+
 /-!
 # Hall's theorem for finite bipartite multigraphs
 
@@ -21,6 +23,8 @@ and `S ⊆ L` such that `|M| + |S| = |L| + |N(S)|`. Hall's theorem says that a m
 
 ## Main results
 
+* `Graph.IsMatching.card_add_card_le` and `Graph.IsMatching.card_add_card_right_le`: the Kőnig–Ore
+  inequality on each side, without edge-finiteness assumptions.
 * `Graph.IsBipartition.exists_isMatching_card_add_card_eq` and
   `Graph.IsBipartition.exists_isMatching_card_add_card_right_eq`: the ordinary Kőnig–Ore formula
   on each side.
@@ -51,8 +55,6 @@ namespace Graph
 variable {α : Type u} {β : Type v} {G : Graph α β}
 variable {L R : Finset V(G)}
 
-variable [Finite E(G)]
-
 namespace IsMatching
 
 /-- The Kőnig–Ore inequality for ordinary matchings. If `M` is a matching and `S ⊆ L`, then
@@ -61,9 +63,11 @@ theorem card_add_card_le {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G)))
     (hLR : G.IsBipartition L R) {S : Finset V(G)} (hS : S ⊆ L) :
     M.card + S.card ≤ L.card + (G.neighborsIn S R).card := by
   classical
-  let _ := Fintype.ofFinite E(G)
-  have hx := hM.isCapacitatedMatching_indicator
-  simpa [Set.indicator_apply] using hx.sum_add_sum_le hLR hS
+  have hcov :=
+    (hM.card_le_card_of_isVertexCover (hLR.isVertexCover_sdiff_union_neighborsIn S)).trans
+      (card_union_le _ _)
+  have hsdiff := card_sdiff_add_card_eq_card hS
+  omega
 
 /-- The Kőnig–Ore inequality for subsets of the right side: if `M` is a matching and `T ⊆ R`,
 then `|M| + |T| ≤ |R| + |N(T)|`, where `N(T)` is the set of neighbours of `T` in `L`. -/
@@ -75,6 +79,20 @@ theorem card_add_card_right_le {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G
 end IsMatching
 
 namespace IsBipartition
+
+/-- In a loopless graph with finitely many actual edges, if a matching `M` has an edge incident to
+`y`, then the indicator of `M` sums to `1` over the edges incident to `y`. -/
+private theorem sum_incidentEdges_indicator_eq_one [Fintype E(G)] [G.Loopless]
+    {M : Set E(G)} (hM : G.IsMatching M) {y : V(G)} (hy : ∃ e ∈ M, G.Inc e y) :
+    ∑ e ∈ G.incidentEdges {y}, M.indicator (1 : E(G) → ℕ) e = 1 := by
+  have hx := (G.isMatching_iff_isCapacitatedMatching_indicator M).1 hM
+  refine le_antisymm (isCapacitatedMatching_def.1 hx y) ?_
+  obtain ⟨e, heM, hey⟩ := hy
+  have he : e ∈ G.incidentEdges {y} := (mem_incidentEdges G).2 ⟨y, by simp, hey⟩
+  have hxe : M.indicator (1 : E(G) → ℕ) e = 1 := Set.indicator_of_mem heM _
+  exact hxe ▸ single_le_sum (fun _ _ ↦ Nat.zero_le _) he
+
+variable [Finite E(G)]
 
 /-- The ordinary Kőnig–Ore formula for finite bipartite multigraphs. There are a matching `M`
 and a set `S ⊆ L` attaining `|M| + |S| = |L| + |N(S)|`. -/
@@ -133,17 +151,14 @@ theorem exists_isMatching_saturating_left_iff (hLR : G.IsBipartition L R) :
       ∀ S ⊆ L, S.card ≤ (G.neighborsIn S R).card := by
   classical
   let _ := Fintype.ofFinite E(G)
+  let _ : G.Loopless := hLR.loopless
   constructor
   · rintro ⟨M, hM, hsat⟩
-    let x : E(G) → ℕ := (M : Set E(G)).indicator fun _ ↦ 1
-    have hx : G.IsCapacitatedMatching (fun _ ↦ 1) x := hM.isCapacitatedMatching_indicator
-    have hcap := (hLR.exists_isCapacitatedMatching_saturating_left_iff (fun _ ↦ 1)).1
-      ⟨x, hx, fun y hy ↦ le_antisymm (isCapacitatedMatching_def.1 hx y) (by
-        obtain ⟨e, heM, hey⟩ := hsat y hy
-        have he : e ∈ G.incidentEdges {y} :=
-          (mem_incidentEdges G).2 ⟨y, by simp, hey⟩
-        have hxe : x e = 1 := Set.indicator_of_mem heM _
-        exact hxe ▸ single_le_sum (fun _ _ ↦ Nat.zero_le _) he)⟩
+    have hx := (G.isMatching_iff_isCapacitatedMatching_indicator (M : Set E(G))).1 hM
+    have hcap := (hLR.exists_isCapacitatedMatching_saturating_left_iff 1).1
+      ⟨(M : Set E(G)).indicator 1, hx, fun y hy ↦
+        sum_incidentEdges_indicator_eq_one hM <|
+          let ⟨e, heM, hey⟩ := hsat y hy; ⟨e, mem_coe.2 heM, hey⟩⟩
     simpa using hcap
   · intro hHall
     have hHall' : ∀ S ⊆ L, ∑ _ ∈ S, 1 ≤ ∑ _ ∈ G.neighborsIn S R, 1 := by
@@ -179,17 +194,9 @@ theorem exists_isPerfectMatching_iff (hLR : G.IsBipartition L R) :
   constructor
   · rintro ⟨M, hM⟩
     obtain ⟨hM, hsat⟩ := isPerfectMatching_def.1 hM
-    let M' : Finset E(G) := M.toFinset
-    let x : E(G) → ℕ := (M' : Set E(G)).indicator fun _ ↦ 1
-    have hx : G.IsCapacitatedMatching (fun _ ↦ 1) x := by
-      refine IsMatching.isCapacitatedMatching_indicator ?_
-      simpa [M'] using hM
-    have hcap := (hLR.exists_isCapacitatedMatching_saturating_iff (fun _ ↦ 1)).1
-      ⟨x, hx, fun y ↦ le_antisymm (isCapacitatedMatching_def.1 hx y) (by
-        obtain ⟨e, heM, hey⟩ := hsat y
-        have he : e ∈ G.incidentEdges {y} := (mem_incidentEdges G).2 ⟨y, by simp, hey⟩
-        have hxe : x e = 1 := Set.indicator_of_mem (by simpa [M'] using heM) _
-        exact hxe ▸ single_le_sum (fun _ _ ↦ Nat.zero_le _) he)⟩
+    have hx := (G.isMatching_iff_isCapacitatedMatching_indicator M).1 hM
+    have hcap := (hLR.exists_isCapacitatedMatching_saturating_iff 1).1
+      ⟨M.indicator 1, hx, fun y ↦ sum_incidentEdges_indicator_eq_one hM (hsat y)⟩
     simpa using hcap
   · rintro ⟨hcard, hHall⟩
     have hcap : ∑ _ ∈ L, 1 = ∑ _ ∈ R, 1 ∧ ∀ S ⊆ L, ∑ _ ∈ S, 1 ≤ ∑ _ ∈ G.neighborsIn S R, 1 := by

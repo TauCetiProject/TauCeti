@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
+public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 public import Mathlib.Logic.Equiv.Bool
 
 /-!
@@ -32,6 +33,9 @@ independent of the colouring up to exchanging the two classes.
 * `SimpleGraph.IsBipartiteWith.compl_right`, `SimpleGraph.IsBipartiteWith.compl_left`, and
   `SimpleGraph.IsBipartite.exists_isBipartiteWith_compl`: enlarging one side of a bipartition to
   the complement of the other produces a covering bipartition without disturbing edges.
+* `SimpleGraph.IsBipartiteWith.isVertexCover_left` and
+  `SimpleGraph.IsBipartiteWith.isVertexCover_right`: each colour class of a bipartition is a
+  vertex cover.
 * `SimpleGraph.edgeFinset_between`, `SimpleGraph.card_edgeFinset_top_between`: edge finset of
   `G.between S T` and edge count of `(⊤ : SimpleGraph V).between S T` for disjoint `S` and `T`.
 * `SimpleGraph.card_edgeFinset_between`: the edges between disjoint finite sets `s` and `t` are
@@ -70,6 +74,16 @@ theorem IsBipartite.exists_isBipartiteWith_compl {G : SimpleGraph V} (h : G.IsBi
     ∃ s : Set V, G.IsBipartiteWith s sᶜ :=
   let ⟨s, _, hst⟩ := h.exists_isBipartiteWith
   ⟨s, hst.compl_right⟩
+
+/-- The left class of a bipartition of `G` is a vertex cover of `G`. -/
+theorem IsBipartiteWith.isVertexCover_left {G : SimpleGraph V} {s t : Set V}
+    (h : G.IsBipartiteWith s t) : G.IsVertexCover s :=
+  fun _ _ hadj ↦ (h.mem_of_adj hadj).imp And.left And.right
+
+/-- The right class of a bipartition of `G` is a vertex cover of `G`. -/
+theorem IsBipartiteWith.isVertexCover_right {G : SimpleGraph V} {s t : Set V}
+    (h : G.IsBipartiteWith s t) : G.IsVertexCover t :=
+  h.symm.isVertexCover_left
 
 /-- Restricting a graph to pairs between two sets is intersection with the corresponding
 restriction of the complete graph. -/

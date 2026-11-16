@@ -8,6 +8,8 @@ module
 public import TauCeti.Combinatorics.Graph.Matching.Capacitated
 public import TauCeti.Combinatorics.Graph.VertexCover.SimpleGraph
 
+import TauCeti.Data.Set.Card
+
 /-!
 # Matchings, vertex covers, and Kőnig's theorem for multigraphs
 
@@ -64,7 +66,7 @@ namespace IsMatching
 
 /-- Every matching has extended cardinality at most that of every vertex cover of the
 simplification `G.toSimpleGraph`, even if `G` carries loops outside the matching. -/
-theorem encard_le_encard_of_toSimpleGraph_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
+theorem encard_le_encard_of_isVertexCover_toSimpleGraph {M : Set E(G)} (hM : G.IsMatching M)
     {C : Set V(G)} (hC : G.toSimpleGraph.IsVertexCover C) :
     M.encard ≤ C.encard := by
   -- No edge of a matching is a loop, so each edge of `M` descends to an edge of `G.toSimpleGraph`.
@@ -89,27 +91,26 @@ of every vertex cover, without any finiteness or looplessness assumption. -/
 theorem encard_le_encard_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
     {C : Set V(G)} (hC : G.IsVertexCover C) :
     M.encard ≤ C.encard :=
-  hM.encard_le_encard_of_toSimpleGraph_isVertexCover hC.toSimpleGraph
+  hM.encard_le_encard_of_isVertexCover_toSimpleGraph hC.toSimpleGraph
 
 /-- Every matching has cardinality at most that of every finite vertex cover. -/
 theorem ncard_le_ncard_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
-    {C : Set V(G)} (hC : G.IsVertexCover C) (hCf : C.Finite) :
-    M.ncard ≤ C.ncard := by
-  rw [Set.ncard_def, Set.ncard_def]
-  exact ENat.toNat_le_toNat (hM.encard_le_encard_of_isVertexCover hC) hCf.encard_lt_top.ne
+    {C : Set V(G)} (hC : G.IsVertexCover C) (hCf : C.Finite := by toFinite_tac) :
+    M.ncard ≤ C.ncard :=
+  Set.ncard_le_ncard_of_encard_le (hM.encard_le_encard_of_isVertexCover hC) hCf
 
 /-- Every finite matching has cardinality at most that of every finite vertex cover. -/
 theorem card_le_card_of_isVertexCover {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G)))
     {C : Finset V(G)} (hC : G.IsVertexCover (C : Set V(G))) :
     M.card ≤ C.card := by
-  simpa only [Set.ncard_coe_finset] using hM.ncard_le_ncard_of_isVertexCover hC C.finite_toSet
+  simpa only [Set.ncard_coe_finset] using hM.ncard_le_ncard_of_isVertexCover hC
 
 /-- **Weak duality with the simple-graph cover number.** Every ordinary matching has extended
 cardinality at most the vertex cover number of the simplification `G.toSimpleGraph`. -/
 theorem encard_le_vertexCoverNum {M : Set E(G)} (hM : G.IsMatching M) :
     M.encard ≤ G.toSimpleGraph.vertexCoverNum := by
   obtain ⟨C, hCnum, hC⟩ := G.toSimpleGraph.vertexCoverNum_exists
-  exact hCnum ▸ hM.encard_le_encard_of_toSimpleGraph_isVertexCover hC
+  exact hCnum ▸ hM.encard_le_encard_of_isVertexCover_toSimpleGraph hC
 
 /-- Every finite matching has cardinality at most `G.toSimpleGraph.vertexCoverNum`. -/
 theorem card_le_vertexCoverNum {M : Finset E(G)} (hM : G.IsMatching (M : Set E(G))) :

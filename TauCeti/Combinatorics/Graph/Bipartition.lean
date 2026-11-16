@@ -42,8 +42,9 @@ usage of either side by edge multiplicities equals their sum.
   `SimpleGraph.IsBipartiteWith.exists_isBipartition_ofSimpleGraph_compl`, and
   `SimpleGraph.image_neighborsIn_ofSimpleGraph_of_isBipartiteWith`: correspondence between
   bipartitions and neighbourhoods of a simple graph `H` and those of `Graph.ofSimpleGraph H`.
-* `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and
-  similarly for `R`.
+* `Graph.IsBipartition.isVertexCover_left`, `Graph.IsBipartition.isVertexCover_right`, and
+  `Graph.IsBipartition.isVertexCover_sdiff_union_neighborsIn`: each side of a bipartition is a
+  vertex cover, as is `(L \ S) ∪ G.neighborsIn S R` for any `S`.
 * `Graph.IsBipartition.sum_sum_incidentEdges_left`: summing over `L` the values of the edges
   incident with each vertex sums every actual edge once, and similarly for `R`.
 * `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
@@ -125,6 +126,19 @@ theorem isVertexCover_left (h : G.IsBipartition L R) : G.IsVertexCover (L : Set 
 /-- The side `R` of a bipartition is a vertex cover. -/
 theorem isVertexCover_right (h : G.IsBipartition L R) : G.IsVertexCover (R : Set V(G)) :=
   h.symm.isVertexCover_left
+
+/-- For any subset `S` of actual vertices, the vertices of `L` outside `S` together with the
+neighbours of `S` in `R` form a vertex cover of `G`. -/
+theorem isVertexCover_sdiff_union_neighborsIn [DecidableEq V(G)] (h : G.IsBipartition L R)
+    (S : Finset V(G)) :
+    G.IsVertexCover ((L \ S ∪ G.neighborsIn S R : Finset V(G)) : Set V(G)) := by
+  refine isVertexCover_def.2 fun e y z he ↦ ?_
+  wlog hy : y ∈ L generalizing y z
+  · exact (this z y he.symm (h.notMem_left_iff.1 hy |> h.mem_left_of_isLink he)).symm
+  by_cases hyS : y ∈ S
+  · exact .inr <| mem_coe.2 <| mem_union_right _ <|
+      mem_neighborsIn.2 ⟨h.mem_right_of_isLink he hy, y, hyS, e, he⟩
+  · exact .inl <| mem_coe.2 <| mem_union_left _ <| mem_sdiff.2 ⟨hy, hyS⟩
 
 /-- Every actual edge has exactly one end in `L`. -/
 theorem existsUnique_mem_left_inc (h : G.IsBipartition L R) (e : E(G)) :
@@ -418,26 +432,6 @@ theorem IsBipartiteWith.exists_isBipartition_ofSimpleGraph_compl [Finite α] {H 
   rw [himg L, himg Lᶜ]
   exact ⟨h.compl_right, Set.union_compl_self L⟩
 
-/-- Under `Graph.ofSimpleGraph H`, `Graph.neighborsIn S T` corresponds to the vertices of `T`
-that belong to the `H`-neighbourhood union of `S`. -/
-theorem image_neighborsIn_ofSimpleGraph (H : SimpleGraph α)
-    (S T : Finset V(Graph.ofSimpleGraph H)) :
-    Subtype.val '' ((Graph.ofSimpleGraph H).neighborsIn S T : Set V(Graph.ofSimpleGraph H)) =
-      (Subtype.val '' (T : Set V(Graph.ofSimpleGraph H))) ∩
-        ⋃ x ∈ Subtype.val '' (S : Set V(Graph.ofSimpleGraph H)), H.neighborSet x := by
-  ext y
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    rw [Finset.mem_coe, Graph.mem_neighborsIn] at hz
-    obtain ⟨hzT, x, hxS, hxz⟩ := hz
-    rw [Graph.ofSimpleGraph_adj_iff] at hxz
-    exact ⟨⟨z, hzT, rfl⟩, Set.mem_biUnion ⟨x, hxS, rfl⟩ hxz⟩
-  · rintro ⟨⟨z, hzT, rfl⟩, hyN⟩
-    obtain ⟨_, ⟨x, hxS, rfl⟩, hxz⟩ := Set.mem_iUnion₂.mp hyN
-    refine ⟨z, ?_, rfl⟩
-    rw [Finset.mem_coe, Graph.mem_neighborsIn]
-    exact ⟨hzT, x, hxS, (Graph.ofSimpleGraph_adj_iff x.1 z.1).2 hxz⟩
-
 /-- When `H.IsBipartiteWith s t`, `S` lies in `s`, and `T` covers `t`, all `H`-neighbours of `S`
 already belong to `t`, so `Graph.neighborsIn S T` on `Graph.ofSimpleGraph H` projects onto the full
 `H`-neighbourhood union of `S`. -/
@@ -447,7 +441,7 @@ theorem image_neighborsIn_ofSimpleGraph_of_isBipartiteWith {H : SimpleGraph α} 
     (hT : t ⊆ Subtype.val '' (T : Set V(Graph.ofSimpleGraph H))) :
     Subtype.val '' ((Graph.ofSimpleGraph H).neighborsIn S T : Set V(Graph.ofSimpleGraph H)) =
       ⋃ x ∈ Subtype.val '' (S : Set V(Graph.ofSimpleGraph H)), H.neighborSet x := by
-  rw [image_neighborsIn_ofSimpleGraph, Set.inter_eq_right]
+  rw [Graph.image_neighborsIn_ofSimpleGraph, Set.inter_eq_right]
   exact Set.iUnion₂_subset fun x hx ↦ (isBipartiteWith_neighborSet_subset h (hS hx)).trans hT
 
 end SimpleGraph

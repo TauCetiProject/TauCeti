@@ -8,6 +8,8 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import TauCeti.Combinatorics.Graph.Matching.Basic
 
+import TauCeti.Data.Set.Card
+
 /-!
 # Matchings under the simple-graph to multigraph conversion
 
@@ -77,12 +79,12 @@ theorem edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
 /-- Tracing selected edges does not change their extended cardinality. -/
 theorem encard_edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
     (H.matchingSubgraph M).edgeSet.encard = M.encard := by
-  rw [edgeSet_matchingSubgraph, Subtype.val_injective.encard_image]
+  rw [edgeSet_matchingSubgraph, Set.encard_image_val]
 
 /-- Tracing selected edges does not change their cardinality. -/
 theorem ncard_edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
     (H.matchingSubgraph M).edgeSet.ncard = M.ncard := by
-  rw [edgeSet_matchingSubgraph, Set.ncard_image_of_injective _ Subtype.val_injective]
+  rw [edgeSet_matchingSubgraph, Set.ncard_image_val]
 
 /-- The selected actual edges corresponding to the edges of a simple-graph subgraph. -/
 def Subgraph.toGraphEdgeSet (S : H.Subgraph) : Set E(Graph.ofSimpleGraph H) :=

@@ -52,6 +52,11 @@ coinfiniteness from this counting invariant.
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
+
+Extended-cardinality inequalities `s.encard ≤ t.encard` descend to `Set.ncard` when `t` is finite
+(`Set.ncard_le_ncard_of_encard_le`), and projecting subtype sets or finsets along `Subtype.val`
+preserves cardinality (`Set.encard_image_val`, `Set.ncard_image_val`, and
+`Set.ncard_image_val_coe_finset`).
 -/
 
 public section
@@ -199,5 +204,28 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
+
+/-- Extended-cardinality comparison descends to `Set.ncard` whenever the larger set is finite. -/
+theorem ncard_le_ncard_of_encard_le {α β : Type*} {s : Set α} {t : Set β}
+    (h : s.encard ≤ t.encard) (ht : t.Finite := by toFinite_tac) :
+    s.ncard ≤ t.ncard := by
+  rw [ncard_def, ncard_def]
+  exact ENat.toNat_le_toNat h ht.encard_lt_top.ne
+
+/-- Projecting a set of subtype elements along `Subtype.val` preserves `Set.encard`. -/
+theorem encard_image_val {α : Type*} {p : α → Prop} (s : Set (Subtype p)) :
+    (Subtype.val '' s).encard = s.encard :=
+  Subtype.val_injective.encard_image s
+
+/-- Projecting a set of subtype elements along `Subtype.val` preserves `Set.ncard`. -/
+theorem ncard_image_val {α : Type*} {p : α → Prop} (s : Set (Subtype p)) :
+    (Subtype.val '' s).ncard = s.ncard :=
+  ncard_image_of_injective s Subtype.val_injective
+
+/-- Projecting a finset of subtype elements to an ambient set along `Subtype.val` preserves its
+cardinality. -/
+theorem ncard_image_val_coe_finset {α : Type*} {p : α → Prop} (s : Finset (Subtype p)) :
+    (Subtype.val '' (s : Set (Subtype p))).ncard = s.card := by
+  rw [ncard_image_val, ncard_coe_finset]
 
 end Set

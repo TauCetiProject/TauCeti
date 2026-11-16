@@ -47,8 +47,8 @@ capacitated matching is an ordinary matching, and these become the Kőnig–Ore 
   `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_right_iff`: **Hall's theorem** for
   multiset capacitated matchings.
 * `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff` and
-  `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff_right`: the conditions for a
-  multiset capacitated matching saturating every actual vertex.
+  `Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff_sum_eq_and_forall_subset_right`:
+  the conditions for a multiset capacitated matching saturating every actual vertex.
 
 ## Implementation notes
 
@@ -91,14 +91,7 @@ theorem sum_add_sum_le (hx : G.IsCapacitatedMatching b x) (hLR : G.IsBipartition
     ∑ e, x e + ∑ v ∈ S, b v ≤ ∑ v ∈ L, b v + ∑ v ∈ G.neighborsIn S R, b v := by
   classical
   -- The vertices of `L` outside `S` together with the neighbours of `S` cover every edge.
-  have hC : G.IsVertexCover ((L \ S ∪ G.neighborsIn S R : Finset V(G)) : Set V(G)) := by
-    refine isVertexCover_def.2 fun e y z he ↦ ?_
-    wlog hy : y ∈ L generalizing y z
-    · exact (this z y he.symm (hLR.notMem_left_iff.1 hy |> hLR.mem_left_of_isLink he)).symm
-    by_cases hyS : y ∈ S
-    · exact .inr <| mem_coe.2 <| mem_union_right _ <|
-        mem_neighborsIn.2 ⟨hLR.mem_right_of_isLink he hy, y, hyS, e, he⟩
-    · exact .inl <| mem_coe.2 <| mem_union_left _ <| mem_sdiff.2 ⟨hy, hyS⟩
+  have hC := hLR.isVertexCover_sdiff_union_neighborsIn S
   have := (hx.sum_le_sum_of_isVertexCover hC).trans (le_self_add.trans_eq sum_union_inter)
   have := sum_sdiff (f := b) hS
   omega
@@ -234,8 +227,8 @@ theorem exists_isCapacitatedMatching_saturating_iff (hLR : G.IsBipartition L R)
 /-- In a bipartite multigraph with sides `L` and `R`, some multiset capacitated matching saturates
 every actual vertex if and only if `b(L) = b(R)` and `b(T) ≤ b(N(T))` for every `T ⊆ R`, where
 `N(T)` is the set of neighbours of `T` in `L`. -/
-theorem exists_isCapacitatedMatching_saturating_iff_right (hLR : G.IsBipartition L R)
-    (b : V(G) → ℕ) :
+theorem exists_isCapacitatedMatching_saturating_iff_sum_eq_and_forall_subset_right
+    (hLR : G.IsBipartition L R) (b : V(G) → ℕ) :
     (∃ x : E(G) → ℕ, G.IsCapacitatedMatching b x ∧
         ∀ v, ∑ e ∈ G.incidentEdges {v}, x e = b v) ↔
       ∑ v ∈ L, b v = ∑ v ∈ R, b v ∧ ∀ T ⊆ R, ∑ v ∈ T, b v ≤ ∑ v ∈ G.neighborsIn T L, b v := by

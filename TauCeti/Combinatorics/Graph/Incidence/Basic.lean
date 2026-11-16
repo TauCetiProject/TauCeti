@@ -18,7 +18,9 @@ while `Graph.nonloopIncidenceCount` discards it.  Parallel edges are always coun
 Both definitions use `Set.ncard`, so they return zero when the set being counted is infinite.
 
 For finite sets of actual vertices, `Graph.neighborsIn G S T` is the set of vertices in `T`
-joined by an edge to a vertex in `S`, ignoring edge multiplicity.
+joined by an edge to a vertex in `S`, ignoring edge multiplicity; for `Graph.ofSimpleGraph H` it
+corresponds to intersecting `T` with the `H`-neighbourhood union of `S`
+(`Graph.image_neighborsIn_ofSimpleGraph`).
 
 For finite actual edge sets, `Graph.internalEdges` and `Graph.incidentEdges` provide the finite
 sets of edges internal to, or incident with, a finite set of actual vertices.  These are the
@@ -463,6 +465,25 @@ theorem incidenceSet_ofSimpleGraph (x : α) :
 theorem incidenceCount_ofSimpleGraph (x : α) [Fintype (H.neighborSet x)] :
     (Graph.ofSimpleGraph H).incidenceCount x = H.degree x := by
   rw [incidenceCount, incidenceSet_ofSimpleGraph, SimpleGraph.ncard_incidenceSet]
+
+/-- Under `Graph.ofSimpleGraph H`, `Graph.neighborsIn S T` corresponds to the vertices of `T`
+that belong to the `H`-neighbourhood union of `S`. -/
+theorem image_neighborsIn_ofSimpleGraph (S T : Finset V(Graph.ofSimpleGraph H)) :
+    Subtype.val '' ((Graph.ofSimpleGraph H).neighborsIn S T : Set V(Graph.ofSimpleGraph H)) =
+      (Subtype.val '' (T : Set V(Graph.ofSimpleGraph H))) ∩
+        ⋃ x ∈ Subtype.val '' (S : Set V(Graph.ofSimpleGraph H)), H.neighborSet x := by
+  ext y
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    rw [Finset.mem_coe, mem_neighborsIn] at hz
+    obtain ⟨hzT, x, hxS, hxz⟩ := hz
+    rw [ofSimpleGraph_adj_iff] at hxz
+    exact ⟨⟨z, hzT, rfl⟩, Set.mem_biUnion ⟨x, hxS, rfl⟩ hxz⟩
+  · rintro ⟨⟨z, hzT, rfl⟩, hyN⟩
+    obtain ⟨_, ⟨x, hxS, rfl⟩, hxz⟩ := Set.mem_iUnion₂.mp hyN
+    refine ⟨z, ?_, rfl⟩
+    rw [Finset.mem_coe, mem_neighborsIn]
+    exact ⟨hzT, x, hxS, (ofSimpleGraph_adj_iff x.1 z.1).2 hxz⟩
 
 end SimpleGraph
 
