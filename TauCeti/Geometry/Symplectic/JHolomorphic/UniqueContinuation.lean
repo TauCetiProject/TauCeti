@@ -20,8 +20,8 @@ shows that the preimages of points under `u` behave like the zeros of a holomorp
 only the identity `J(x₀)² = -1` at that point and a Lipschitz bound for `J` near that point are
 used (for instance, `J` of class `C¹` near `x₀`), and the theorems assume nothing more about `J`:
 
-* **unique continuation**: if `Ω` is connected and `u` is constant near one point of `Ω`, or agrees
-  with a constant to infinite order there, then `u` is constant on `Ω`
+* **unique continuation**: if `Ω` is connected and `u` equals `x₀` near one point of `Ω`, or agrees
+  with `x₀` to infinite order there, then `u ≡ x₀` on `Ω`
   (`TauCeti.eqOn_const_of_cauchyRiemann_of_eventually_eq`,
   `TauCeti.eqOn_const_of_cauchyRiemann_of_forall_isBigO`);
 * **isolated preimages**: otherwise every preimage `u⁻¹(x₀)` is a discrete subset of `Ω`
@@ -51,10 +51,10 @@ not proved here.
 
 ## Main results
 
-* `TauCeti.eqOn_const_of_cauchyRiemann_of_eventually_eq`: a solution constant near one point of a
-  connected domain is constant.
-* `TauCeti.eqOn_const_of_cauchyRiemann_of_forall_isBigO`: a solution agreeing with a constant to
-  infinite order at one point of a connected domain is constant.
+* `TauCeti.eqOn_const_of_cauchyRiemann_of_eventually_eq`: a solution equal to `x₀` near one point
+  of a connected domain equals `x₀` on the domain.
+* `TauCeti.eqOn_const_of_cauchyRiemann_of_forall_isBigO`: a solution agreeing with `x₀` to
+  infinite order at one point of a connected domain equals `x₀` on the domain.
 * `TauCeti.setOf_ne_mem_codiscreteWithin_of_cauchyRiemann`: a solution not identically equal to
   `x₀` on a connected domain takes the value `x₀` on a discrete set.
 * `TauCeti.finite_inter_preimage_singleton_of_cauchyRiemann`: such a solution takes the value `x₀`
@@ -220,7 +220,7 @@ private theorem symm_sub_eq_zero_iff {n : ℕ} (Ψ : EuclideanSpace ℂ (Fin n) 
 
 /-- **Unique continuation for J-holomorphic curves.** A `C¹` solution of the Cauchy–Riemann
 equation `∂ₜu = J(u) ∂ₛu` on a connected open set `Ω`, for a field `J` Lipschitz near `x₀` with
-`J(x₀)² = -1`, that is constant near one point of `Ω` is constant on `Ω`. -/
+`J(x₀)² = -1`, that equals `x₀` near one point of `Ω` equals `x₀` on `Ω`. -/
 theorem eqOn_const_of_cauchyRiemann_of_eventually_eq
     (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hJ₀ : J x₀ ∘L J x₀ = -ContinuousLinearMap.id ℝ E) (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
