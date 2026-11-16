@@ -190,14 +190,49 @@ theorem simpleReflection_apply_coreflection (i : I) (φ : Dual K H) (h : H) :
     R.simpleReflection hdiag i φ (R.coreflection hdiag i h) = φ h := by
   rw [simpleReflection_apply_apply, coreflection_coreflection]
 
-/-- Whenever `(2 : K) ≠ 0`, no simple reflection is the identity. -/
-theorem simpleReflection_ne_one [NeZero (2 : K)] (i : I) : R.simpleReflection hdiag i ≠ 1 := by
+/-- No simple coreflection is the identity. -/
+@[simp]
+theorem coreflection_ne_one (i : I) : R.coreflection hdiag i ≠ 1 := by
   intro h
-  have hi := congr(($(h) (R.root i)) (R.coroot i))
-  simp only [simpleReflection_root_self, LinearMap.neg_apply, one_apply_eq_self, root_coroot,
-    hdiag i] at hi
-  have hsq : (2 : K) * 2 = 0 := by linear_combination -hi
-  exact two_ne_zero (mul_self_eq_zero.mp hsq)
+  obtain ⟨x, hx⟩ : ∃ x : H, R.root i x ≠ 0 :=
+    not_forall.mp fun hall ↦ R.root_linearIndependent.ne_zero i (LinearMap.ext hall)
+  have h1 : x - R.root i x • R.coroot i = x := by
+    simpa [coreflection_apply] using congr($(h) x)
+  exact smul_ne_zero hx (R.coroot_linearIndependent.ne_zero i) (sub_eq_self.mp h1)
+
+/-- No simple reflection is the identity. -/
+@[simp]
+theorem simpleReflection_ne_one (i : I) : R.simpleReflection hdiag i ≠ 1 := by
+  intro h
+  apply R.coreflection_ne_one hdiag i
+  ext x
+  exact (Basis.ofVectorSpace K H).eval_injective <| LinearMap.ext fun φ ↦ by
+    simpa [simpleReflection_apply_apply] using congr(($(h) φ) x)
+
+@[simp]
+theorem orderOf_simpleReflection (i : I) : orderOf (R.simpleReflection hdiag i) = 2 :=
+  orderOf_eq_prime
+    (R.simpleReflection_mul_self hdiag i ▸ sq _) (R.simpleReflection_ne_one hdiag i)
+
+@[simp]
+theorem orderOf_coreflection (i : I) : orderOf (R.coreflection hdiag i) = 2 :=
+  orderOf_eq_prime (R.coreflection_mul_self hdiag i ▸ sq _) (R.coreflection_ne_one hdiag i)
+
+/-- If `A i j = 0` and `A j i = 0`, the simple reflections `sᵢ` and `sⱼ` commute. -/
+theorem commute_simpleReflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
+    Commute (R.simpleReflection hdiag i) (R.simpleReflection hdiag j) := by
+  ext φ h
+  simp only [mul_apply_eq_comp, simpleReflection_apply, map_sub, map_smul, root_coroot,
+    hij, hji, zero_smul, sub_zero]
+  exact sub_right_comm _ _ _
+
+/-- If `A i j = 0` and `A j i = 0`, the simple coreflections `sᵢ` and `sⱼ` commute. -/
+theorem commute_coreflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
+    Commute (R.coreflection hdiag i) (R.coreflection hdiag j) := by
+  ext h
+  simp only [mul_apply_eq_comp, coreflection_apply, map_sub, map_smul, root_coroot,
+    hij, hji, zero_smul, sub_zero]
+  exact sub_right_comm _ _ _
 
 /-! ### The Weyl group and its contragredient ambient action -/
 
@@ -227,9 +262,20 @@ theorem weylSimple_inv (i : I) :
     (R.weylSimple hdiag i)⁻¹ = R.weylSimple hdiag i :=
   Subtype.ext (R.simpleReflection_inv hdiag i)
 
-/-- Whenever `(2 : K) ≠ 0`, no simple reflection in the Weyl group is the identity. -/
-theorem weylSimple_ne_one [NeZero (2 : K)] (i : I) : R.weylSimple hdiag i ≠ 1 := fun h ↦
+/-- No simple reflection in the Weyl group is the identity. -/
+@[simp]
+theorem weylSimple_ne_one (i : I) : R.weylSimple hdiag i ≠ 1 := fun h ↦
   R.simpleReflection_ne_one hdiag i (congrArg Subtype.val h)
+
+@[simp]
+theorem orderOf_weylSimple (i : I) : orderOf (R.weylSimple hdiag i) = 2 :=
+  orderOf_eq_prime (R.weylSimple_mul_self hdiag i ▸ sq _) (R.weylSimple_ne_one hdiag i)
+
+/-- If `A i j = 0` and `A j i = 0`, the simple reflections `sᵢ` and `sⱼ` commute in the Weyl
+group. -/
+theorem commute_weylSimple_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
+    Commute (R.weylSimple hdiag i) (R.weylSimple hdiag j) :=
+  Subtype.ext (R.commute_simpleReflection_of_eq_zero hdiag hij hji)
 
 /-- The simple reflections generate the Weyl group. -/
 theorem closure_range_weylSimple : Subgroup.closure (Set.range (R.weylSimple hdiag)) = ⊤ := by
@@ -260,6 +306,13 @@ theorem weylGroup_induction {P : R.weylGroup hdiag → Prop} (one : P 1)
     simpa using simple i
   | mul _ _ _ _ ih₁ ih₂ => exact mul _ _ ih₁ ih₂
 
+/-- Two homomorphisms out of the Weyl group agree if they agree on all simple reflections. -/
+theorem weylGroup_hom_ext {G : Type*} [Monoid G] {f g : R.weylGroup hdiag →* G}
+    (h : ∀ i, f (R.weylSimple hdiag i) = g (R.weylSimple hdiag i)) : f = g := by
+  ext w
+  exact R.weylGroup_induction hdiag (P := fun w ↦ f w = g w)
+    (by simp) h (fun u v ihu ihv ↦ by simp [ihu, ihv]) w
+
 /-- With an empty index set, the Weyl group is trivial. -/
 instance [IsEmpty I] : Subsingleton (R.weylGroup hdiag) := by
   have eq_one : ∀ w : R.weylGroup hdiag, w = 1 :=
@@ -272,8 +325,8 @@ general linear group of the dual space. -/
 private def contragredientHom {V : Type*} [AddCommGroup V] [Module K V] :
     (V ≃ₗ[K] V) →* (Dual K V ≃ₗ[K] Dual K V) where
   toFun e := e.symm.dualMap
-  map_one' := LinearEquiv.ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
-  map_mul' _ _ := LinearEquiv.ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+  map_one' := by ext φ x; simp [← LinearEquiv.coe_inv]
+  map_mul' _ _ := by ext φ x; simp [← LinearEquiv.coe_inv, mul_apply_eq_comp]
 
 private theorem contragredientHom_injective {V : Type*} [AddCommGroup V] [Module K V] :
     Function.Injective (contragredientHom (K := K) (V := V)) := by
@@ -336,8 +389,8 @@ theorem apply_ambientAction (w : R.weylGroup hdiag) (φ : Dual K H) (h : H) :
 /-- Evaluating `w φ` on `h` is evaluating `φ` on `w⁻¹ h`. -/
 theorem weylGroup_apply_apply (w : R.weylGroup hdiag) (φ : Dual K H) (h : H) :
     (w : Dual K H ≃ₗ[K] Dual K H) φ h = φ (R.ambientAction hdiag w⁻¹ h) := by
-  rw [← R.ambientAction_symm_dualMap hdiag w, LinearEquiv.dualMap_apply, map_inv]
-  rfl
+  rw [← R.ambientAction_symm_dualMap hdiag w, LinearEquiv.dualMap_apply, map_inv,
+    LinearEquiv.coe_inv]
 
 /-- **The Weyl group fixes the Cartan center pointwise.** -/
 theorem ambientAction_of_mem_cartanCenter (w : R.weylGroup hdiag) {h : H}
@@ -426,7 +479,7 @@ theorem weylLength_weylSimple_le_one (i : I) :
   R.weylLength_le_of_prod_eq hdiag (l := [i]) (by simp)
 
 @[simp]
-theorem weylLength_weylSimple [NeZero (2 : K)] (i : I) :
+theorem weylLength_weylSimple (i : I) :
     R.weylLength hdiag (R.weylSimple hdiag i) = 1 := by
   have hle := R.weylLength_weylSimple_le_one hdiag i
   have hne : R.weylLength hdiag (R.weylSimple hdiag i) ≠ 0 :=
@@ -462,33 +515,40 @@ private def restrictSubmoduleHom {G S K V : Type*} [Group G] [Ring S] [Ring K] [
     [Module S V] [Module K V] [LinearMap.CompatibleSMul V V S K]
     (P : Submodule S V) (ρ : G →* (V ≃ₗ[K] V)) (hP : ∀ g, ∀ x ∈ P, ρ g x ∈ P) :
     G →* (P ≃ₗ[S] P) where
-  toFun g := LinearEquiv.ofLinearMap (((ρ g).toLinearMap.restrictScalars S).restrict (hP g))
-    (((ρ g⁻¹).toLinearMap.restrictScalars S).restrict (hP g⁻¹))
+  toFun g := LinearEquiv.ofLinearMap
+    (((ρ g).toLinearMap.restrictScalars S).restrict fun x hx ↦ by simpa using hP g x hx)
+    (((ρ g⁻¹).toLinearMap.restrictScalars S).restrict fun x hx ↦ by simpa using hP g⁻¹ x hx)
     (LinearMap.ext fun x ↦ Subtype.ext <| by
-      change ρ g (ρ g⁻¹ x) = x
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.restrict_apply,
+        LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
       rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self])
     (LinearMap.ext fun x ↦ Subtype.ext <| by
-      change ρ g⁻¹ (ρ g x) = x
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.restrict_apply,
+        LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
       rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self])
-  map_one' := LinearEquiv.ext fun x ↦ Subtype.ext <| by change ρ 1 x = x; simp
+  map_one' := LinearEquiv.ext fun x ↦ Subtype.ext <| by
+    simp [LinearEquiv.coe_ofLinearMap]
   map_mul' u v := LinearEquiv.ext fun x ↦ Subtype.ext <| by
-    change ρ (u * v) x = ρ u (ρ v x)
-    rw [map_mul, mul_apply_eq_comp]
+    simp [LinearEquiv.coe_ofLinearMap, mul_apply_eq_comp]
+
+private theorem coe_restrictSubmoduleHom_apply {G S K V : Type*} [Group G] [Ring S] [Ring K]
+    [AddCommGroup V] [Module S V] [Module K V] [LinearMap.CompatibleSMul V V S K]
+    (P : Submodule S V) (ρ : G →* (V ≃ₗ[K] V)) (hP : ∀ g, ∀ x ∈ P, ρ g x ∈ P)
+    (g : G) (x : P) :
+    (restrictSubmoduleHom P ρ hP g x : V) = ρ g x := rfl
 
 /-! ### Integral lattice stability -/
 
-section IntegralLattices
-
-variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
-
 /-- Cast an integral diagonal condition `∀ i, A i i = 2` to `(A.map Int.cast) i i = 2`. -/
-theorem diag_map_intCast (hdiag : ∀ i, A i i = 2) :
+theorem diag_map_intCast {I K : Type*} [AddGroupWithOne K] {A : Matrix I I ℤ}
+    (hdiag : ∀ i, A i i = 2) :
     ∀ i, (A.map (Int.cast : ℤ → K)) i i = 2 := fun i ↦ by
   simp [hdiag i]
 
 section RootLattice
 
-variable (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
+variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
+  (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
   (hdiag : ∀ i, (A.map (Int.cast : ℤ → K)) i i = 2)
 
 /-- Every simple reflection stabilizes the root lattice `Q = ⊕ᵢ ℤ αᵢ`. -/
@@ -522,13 +582,15 @@ def rootLatticeAction : R.weylGroup hdiag →* (R.rootLattice ≃ₗ[ℤ] R.root
 
 @[simp]
 theorem coe_rootLatticeAction_apply (w : R.weylGroup hdiag) (φ : R.rootLattice) :
-    (R.rootLatticeAction hdiag w φ : Dual K H) = (w : Dual K H ≃ₗ[K] Dual K H) φ := (rfl)
+    (R.rootLatticeAction hdiag w φ : Dual K H) = (w : Dual K H ≃ₗ[K] Dual K H) φ :=
+  coe_restrictSubmoduleHom_apply _ _ _ w φ
 
 end RootLattice
 
 namespace CoweightLattice
 
-variable [Module ℚ H] {R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H}
+variable {I H : Type*} [AddCommGroup H] [Module ℚ H] {A : Matrix I I ℤ}
+  {R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H}
   (L : R.CoweightLattice) (hdiag : ∀ i, (A.map (Int.cast : ℤ → ℚ)) i i = 2)
 
 /-- Every simple coreflection stabilizes the coweight lattice `Y`. -/
@@ -559,7 +621,7 @@ theorem weylGroup_mem_weightLattice (w : R.weylGroup hdiag) {φ : Dual ℚ H}
     (R.ambientAction hdiag w).symm.toLinearMap
     (fun y hy ↦ by
       have hw : (R.ambientAction hdiag w).symm y = R.ambientAction hdiag w⁻¹ y := by
-        rw [map_inv]; rfl
+        rw [map_inv, LinearEquiv.coe_inv]
       exact hw ▸ L.ambientAction_mem_lattice hdiag w⁻¹ hy)
     (L.weightLattice_def ▸ hφ)
 
@@ -575,11 +637,13 @@ def weightAction : R.weylGroup hdiag →* (L.weightLattice ≃ₗ[ℤ] L.weightL
 
 @[simp]
 theorem coe_coweightAction_apply (w : R.weylGroup hdiag) (y : L.lattice) :
-    (L.coweightAction hdiag w y : H) = R.ambientAction hdiag w y := (rfl)
+    (L.coweightAction hdiag w y : H) = R.ambientAction hdiag w y :=
+  coe_restrictSubmoduleHom_apply _ _ _ w y
 
 @[simp]
 theorem coe_weightAction_apply (w : R.weylGroup hdiag) (φ : L.weightLattice) :
-    (L.weightAction hdiag w φ : Dual ℚ H) = (w : Dual ℚ H ≃ₗ[ℚ] Dual ℚ H) φ := (rfl)
+    (L.weightAction hdiag w φ : Dual ℚ H) = (w : Dual ℚ H ≃ₗ[ℚ] Dual ℚ H) φ :=
+  coe_restrictSubmoduleHom_apply _ _ _ w φ
 
 /-- **The Weyl-group actions on `P` and `Y` preserve the perfect integral pairing.** -/
 @[simp]
@@ -591,8 +655,6 @@ theorem pairing_weightAction_coweightAction (w : R.weylGroup hdiag) (φ : L.weig
     R.apply_ambientAction hdiag]
 
 end CoweightLattice
-
-end IntegralLattices
 
 /-! ### Invariance under transport and central enlargement -/
 
@@ -614,31 +676,49 @@ theorem map_simpleReflection (e : H ≃ₗ[K] H') (i : I) :
 groups sending simple reflections to simple reflections. -/
 noncomputable def mapWeylGroupEquiv (e : H ≃ₗ[K] H') :
     R.weylGroup hdiag ≃* (R.map e).weylGroup hdiag := by
-  have h1 (φ : Dual K H) : e.dualMap (e.symm.dualMap φ) = φ := LinearMap.ext fun _ ↦ by simp
-  have h2 (φ' : Dual K H') : e.symm.dualMap (e.dualMap φ') = φ' := LinearMap.ext fun _ ↦ by simp
   let conj : (Dual K H ≃ₗ[K] Dual K H) ≃* (Dual K H' ≃ₗ[K] Dual K H') :=
-    { toFun g := e.dualMap.trans (g.trans e.dualMap.symm)
-      invFun g' := e.dualMap.symm.trans (g'.trans e.dualMap)
-      left_inv g := LinearEquiv.ext fun φ ↦ by simp [h1]
-      right_inv g' := LinearEquiv.ext fun φ' ↦ by simp [h2]
-      map_mul' g₁ g₂ := LinearEquiv.ext fun φ' ↦ by simp [mul_apply_eq_comp, h1] }
-  have hmap : (R.weylGroup hdiag).map conj.toMonoidHom = (R.map e).weylGroup hdiag := by
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv K (Dual K H)).symm.trans <|
+      (LinearMap.GeneralLinearGroup.congrLinearEquiv e.dualMap.symm).trans
+        (LinearMap.GeneralLinearGroup.generalLinearEquiv K (Dual K H'))
+  have hmap : (R.weylGroup hdiag).map (conj : _ →* _) = (R.map e).weylGroup hdiag := by
     rw [weylGroup_def, weylGroup_def, MonoidHom.map_closure, ← Set.range_comp]
     refine congrArg Subgroup.closure (congrArg Set.range (funext fun i ↦ ?_))
     exact (R.map_simpleReflection hdiag e i).symm
-  exact (Subgroup.equivMapOfInjective (R.weylGroup hdiag) conj.toMonoidHom conj.injective).trans
-    (MulEquiv.subgroupCongr hmap)
+  exact (conj.subgroupMap (R.weylGroup hdiag)).trans (MulEquiv.subgroupCongr hmap)
 
 @[simp]
 theorem mapWeylGroupEquiv_apply_apply (e : H ≃ₗ[K] H') (w : R.weylGroup hdiag)
     (φ : Dual K H') :
     ((R.mapWeylGroupEquiv hdiag e w : Dual K H' ≃ₗ[K] Dual K H') φ) =
-      e.symm.dualMap ((w : Dual K H ≃ₗ[K] Dual K H) (e.dualMap φ)) := (rfl)
+      e.symm.dualMap ((w : Dual K H ≃ₗ[K] Dual K H) (e.dualMap φ)) := by
+  dsimp only [mapWeylGroupEquiv]
+  rw [MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply]
+  simp [LinearMap.GeneralLinearGroup.generalLinearEquiv]
 
 @[simp]
 theorem mapWeylGroupEquiv_weylSimple (e : H ≃ₗ[K] H') (i : I) :
     R.mapWeylGroupEquiv hdiag e (R.weylSimple hdiag i) = (R.map e).weylSimple hdiag i :=
-  Subtype.ext (R.map_simpleReflection hdiag e i).symm
+  Subtype.ext <| LinearEquiv.ext fun φ ↦ by
+    simp [R.map_simpleReflection hdiag e i]
+
+@[simp]
+theorem mapWeylGroupEquiv_symm_weylSimple (e : H ≃ₗ[K] H') (i : I) :
+    (R.mapWeylGroupEquiv hdiag e).symm ((R.map e).weylSimple hdiag i) =
+      R.weylSimple hdiag i :=
+  (R.mapWeylGroupEquiv hdiag e).symm_apply_eq.mpr (R.mapWeylGroupEquiv_weylSimple hdiag e i).symm
+
+/-- Transporting along `e : H ≃ₗ[K] H'` intertwines the ambient actions of `R.weylGroup` and
+`(R.map e).weylGroup`. -/
+theorem ambientAction_mapWeylGroupEquiv (e : H ≃ₗ[K] H') (w : R.weylGroup hdiag) (h : H) :
+    (R.map e).ambientAction hdiag (R.mapWeylGroupEquiv hdiag e w) (e h) =
+      e (R.ambientAction hdiag w h) := by
+  refine R.weylGroup_induction hdiag
+    (P := fun w ↦ ∀ x : H, (R.map e).ambientAction hdiag (R.mapWeylGroupEquiv hdiag e w) (e x) =
+      e (R.ambientAction hdiag w x))
+    (fun x ↦ by simp) (fun i x ↦ ?_)
+    (fun u v ihu ihv x ↦ by
+      simp only [map_mul, mul_apply_eq_comp, ihv, ihu]) w h
+  simp [coreflection_apply]
 
 /-- Any isomorphism of Weyl groups matching simple reflections index-by-index preserves
 `weylLength`, even across distinct scalar fields. -/
@@ -689,8 +769,7 @@ private theorem restrictAmbientHom_weylSimple (i : I) :
     R.restrictAmbientHom hdiag M hc (R.weylSimple hdiag i) =
       (R.restrict M hc hs).coreflection hdiag i := by
   ext m
-  change (R.ambientAction hdiag (R.weylSimple hdiag i) (m : H) : H) = _
-  rw [R.ambientAction_weylSimple hdiag i]
+  rw [restrictAmbientHom, coe_restrictSubmoduleHom_apply, R.ambientAction_weylSimple hdiag i]
   simp [coreflection_apply]
 
 /-- The contragredient of `R.restrictAmbientHom`, sending `R.weylGroup hdiag` injectively into
@@ -701,8 +780,8 @@ private noncomputable def restrictDualHom : R.weylGroup hdiag →* (Dual K M ≃
 private theorem restrictDualHom_weylSimple (i : I) :
     R.restrictDualHom hdiag M hc (R.weylSimple hdiag i) =
       (R.restrict M hc hs).simpleReflection hdiag i := by
-  change contragredientHom (R.restrictAmbientHom hdiag M hc (R.weylSimple hdiag i)) = _
-  rw [R.restrictAmbientHom_weylSimple hdiag M hc hs i, contragredientHom_coreflection]
+  rw [restrictDualHom, MonoidHom.comp_apply, R.restrictAmbientHom_weylSimple hdiag M hc hs i,
+    contragredientHom_coreflection]
 
 private theorem range_restrictDualHom :
     (R.restrictDualHom hdiag M hc).range = (R.restrict M hc hs).weylGroup hdiag := by
@@ -731,6 +810,28 @@ theorem restrictWeylGroupEquiv_weylSimple (i : I) :
       (R.restrict M hc hs).weylSimple hdiag i :=
   Subtype.ext <| (R.coe_restrictWeylGroupEquiv hdiag M hc hs _).trans
     (R.restrictDualHom_weylSimple hdiag M hc hs i)
+
+@[simp]
+theorem restrictWeylGroupEquiv_symm_weylSimple (i : I) :
+    (R.restrictWeylGroupEquiv hdiag M hc hs).symm ((R.restrict M hc hs).weylSimple hdiag i) =
+      R.weylSimple hdiag i :=
+  (R.restrictWeylGroupEquiv hdiag M hc hs).symm_apply_eq.mpr
+    (R.restrictWeylGroupEquiv_weylSimple hdiag M hc hs i).symm
+
+/-- The ambient action of `(R.restrict M hc hs).weylGroup` on `M` is the restriction of
+`R.ambientAction` to `M`. -/
+@[simp]
+theorem coe_ambientAction_restrictWeylGroupEquiv (w : R.weylGroup hdiag) (m : M) :
+    (((R.restrict M hc hs).ambientAction hdiag
+        (R.restrictWeylGroupEquiv hdiag M hc hs w) m : M) : H) =
+      R.ambientAction hdiag w m := by
+  have h : (R.restrict M hc hs).ambientAction hdiag
+      (R.restrictWeylGroupEquiv hdiag M hc hs w) = R.restrictAmbientHom hdiag M hc w :=
+    contragredientHom_injective <| by
+      simp only [contragredientHom, MonoidHom.coe_mk, OneHom.coe_mk,
+        (R.restrict M hc hs).ambientAction_symm_dualMap hdiag,
+        R.coe_restrictWeylGroupEquiv hdiag M hc hs w, restrictDualHom, MonoidHom.comp_apply]
+  rw [h, restrictAmbientHom, coe_restrictSubmoduleHom_apply]
 
 /-- Restriction of functionals to `M` intertwines the action of `R.weylGroup hdiag` on `Dual K H`
 with the action of `(R.restrict M hc hs).weylGroup hdiag` on `Dual K M`. -/
