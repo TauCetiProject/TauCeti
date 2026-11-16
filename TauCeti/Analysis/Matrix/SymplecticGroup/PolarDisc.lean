@@ -221,9 +221,13 @@ theorem val_polarDiscHomeomorph_symm_apply (p : ball (0 : EuclideanSpace ℝ (Fi
         (p.1 : EuclideanSpace ℝ (Fin 2))
       NormedSpace.exp (spSymmMatrix ι (y 0) (y 1)) *
         (diagonal fun _ : ι ↦ (p.2 : ℂ)).realify := by
+  -- `simp` cannot use these lemmas: `Homeomorph.unitBall` types the ball as `ball 0 1`, not as
+  -- `univUnitBall.target`, so they only match up to unfolding.
   have hy : (Homeomorph.unitBall.symm p.1 : EuclideanSpace ℝ (Fin 2)) =
       (√(1 - ‖(p.1 : EuclideanSpace ℝ (Fin 2))‖ ^ 2))⁻¹ • (p.1 : EuclideanSpace ℝ (Fin 2)) :=
-    (rfl)
+    (OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
+      OpenPartialHomeomorph.univUnitBall p.1).trans
+      (OpenPartialHomeomorph.univUnitBall_symm_apply _)
   simp [polarDiscHomeomorph, ContinuousMulEquiv.toHomeomorph_eq_coe, hy]
 
 /-- The identity has disc coordinate `0` and circle coordinate `1`. -/
