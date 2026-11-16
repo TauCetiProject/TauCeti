@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -64,6 +65,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
   inverse act as the identity on the fibre over `x`.
 * `TauCeti.Manifold.extChartAt_tangent_self_snd`: in the tangent-bundle chart at `v`, the fibre
   coordinate of `v` is `v` itself.
+* `TauCeti.Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd`: a point with coordinates `y` in
+  the tangent-bundle chart at `v` lies over the base set of the trivialization at `v.proj`, with
+  fibre coordinate `y.2` there.
 * `TauCeti.Manifold.extend_eq_trivializationAt_symm`: the extension of a tangent vector `w` at `x`
   is the vector field with constant coordinates `w` in the canonical trivialization at `x`.
 * `TauCeti.Manifold.inTangentCoordinates_eq_self_of_eq`: a field of linear maps read in the tangent
@@ -268,6 +272,19 @@ theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
   simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
     modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
+
+/-- A point with coordinates `y` in the tangent-bundle chart at `v` lies over the base set of the
+trivialization at `v.proj`, and its fibre coordinate there is `y.2`. -/
+theorem extChartAt_tangent_symm_mem_baseSet_and_snd (v : TangentBundle I M) {y : E × E}
+    (hy : y ∈ (extChartAt I.tangent v).target) :
+    ((extChartAt I.tangent v).symm y).proj ∈ (trivializationAt E (TangentSpace I) v.proj).baseSet ∧
+      (trivializationAt E (TangentSpace I) v.proj ((extChartAt I.tangent v).symm y)).2 = y.2 := by
+  set w := (extChartAt I.tangent v).symm y
+  have hb : w.proj ∈ (trivializationAt E (TangentSpace I) v.proj).baseSet :=
+    Bundle.proj_extChartAt_symm v hy ▸ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet
+      (Bundle.fst_mem_extChartAt_target v hy)
+  refine ⟨hb, ?_⟩
+  rw [← (extChartAt I.tangent v).right_inv hy, Bundle.extChartAt_apply_of_mem_baseSet v hb]
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` takes the value `u` at `x`. -/

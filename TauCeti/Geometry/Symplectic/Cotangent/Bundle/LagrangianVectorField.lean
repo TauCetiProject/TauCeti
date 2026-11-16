@@ -261,7 +261,7 @@ private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegral
     (((hL (γ t)).contDiffAt_comp_extChartAt_symm).of_le (by norm_num)) hchart hX₁ fun W ↦
     (eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap hL (γ t) _ W).symm.trans
       ((SmoothTwoForm.isHamiltonianVectorField_iff.1 hX (γ t) W).trans
-        (DFunLike.congr_fun (mvfderiv_lagrangianEnergy_eq_fderiv hL (γ t)) W))
+        (DFunLike.congr_fun (mvfderiv_lagrangianEnergy_eq_fderiv hL (by simp) (γ t)) W))
 
 /-- **Integral curves of the Lagrangian vector field solve the Euler–Lagrange equations in every
 chart.** Let `L` be a smooth regular Lagrangian on a boundaryless manifold, and let `γ` be an
