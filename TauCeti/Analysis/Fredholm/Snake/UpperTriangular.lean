@@ -446,14 +446,6 @@ theorem isFredholm_compSnakeMid_iff [IsTopologicalAddGroup E] [IsTopologicalAddG
   rw [isFredholm_iff_of_comp_eq domShear codShear hshear,
     isFredholm_prodMap_iff, and_iff_left IsFredholm.id]
 
-/-- Comparing the snake index formula with `IsFredholm.index_comp`: applying
-`index_upperTriangular_of_diag` to `compSnakeMid T S` recovers `(S ∘L T).index = T.index + S.index`.
--/
-theorem index_comp_of_snake {T : E →L[𝕜] F} {S : F →L[𝕜] G}
-    (hT : T.IsFredholm) (hS : S.IsFredholm) : (S.comp T).index = T.index + S.index := by
-  rw [← index_compSnakeMid T S, compSnakeMid]
-  exact index_upperTriangular_of_diag (-ContinuousLinearMap.id 𝕜 F) hT hS
-
 end CompFredholm
 
 end CompSnake
