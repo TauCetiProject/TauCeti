@@ -21,8 +21,9 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 
 ## Main results
 
-* `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
-  or `1`.
+* `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing` and
+  `TauCeti.IsLocalRing.isIdempotentElem_iff`: an element of a local ring is idempotent if and
+  only if it is `0` or `1`.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
 * `TauCeti.isUnit_add_of_isUnit_of_not_isUnit`: adding a nonunit to a unit in a local ring
   yields a unit.
@@ -86,6 +87,13 @@ theorem IsLocalRing.sq_add_self_eq_zero_iff {R : Type*} [Ring R] [IsLocalRing R]
   constructor
   · exact IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
   · rintro (rfl | rfl) <;> simp
+
+/-- An element of a possibly noncommutative local ring is idempotent if and only if it is `0` or
+`1`. -/
+theorem IsLocalRing.isIdempotentElem_iff {R : Type*} [Ring R] [IsLocalRing R] {a : R} :
+    IsIdempotentElem a ↔ a = 0 ∨ a = 1 :=
+  ⟨IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing,
+    by rintro (rfl | rfl) <;> simp [IsIdempotentElem]⟩
 
 end TauCeti
 

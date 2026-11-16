@@ -453,6 +453,30 @@ theorem dense_span_range_of :
   rw [coeffFamily_apply, this, ← coeffFamily_apply]
   exact mem_of_mem_nhds (hs U)
 
+/-- Two continuous ring homomorphisms from `completedGroupAlgebra R Γ` into a Hausdorff semiring
+that agree on the coefficient ring `R` and on all group elements `of R Γ g` are equal. -/
+theorem ringHom_ext_of_continuous {R Γ A : Type*} [CommRing R] [TopologicalSpace R]
+    [Group Γ] [TopologicalSpace Γ] [Semiring A] [TopologicalSpace A] [T2Space A]
+    {φ ψ : completedGroupAlgebra R Γ →+* A} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (hR : ∀ r : R, φ (algebraMap R _ r) = ψ (algebraMap R _ r))
+    (hΓ : ∀ g : Γ, φ (of R Γ g) = ψ (of R Γ g)) : φ = ψ := by
+  refine DFunLike.coe_injective <| Continuous.ext_on (dense_span_range_of R Γ) hφ hψ fun z hz ↦ ?_
+  induction hz using Submodule.span_induction with
+  | mem _ hz => obtain ⟨g, rfl⟩ := hz; exact hΓ g
+  | zero => simp
+  | add _ _ _ _ hx hy => simp [map_add, hx, hy]
+  | smul r _ _ hx => rw [Algebra.smul_def, map_mul, map_mul, hR r, hx]
+
+/-- Two continuous `R`-algebra homomorphisms from `completedGroupAlgebra R Γ` into a Hausdorff
+`R`-algebra that agree on all group elements `of R Γ g` are equal. -/
+theorem algHom_ext_of_continuous {R Γ A : Type*} [CommRing R] [TopologicalSpace R]
+    [Group Γ] [TopologicalSpace Γ] [Semiring A] [TopologicalSpace A] [T2Space A] [Algebra R A]
+    {φ ψ : completedGroupAlgebra R Γ →ₐ[R] A} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (hΓ : ∀ g : Γ, φ (of R Γ g) = ψ (of R Γ g)) : φ = ψ :=
+  AlgHom.ext <| RingHom.congr_fun <|
+    ringHom_ext_of_continuous (φ := φ.toRingHom) (ψ := ψ.toRingHom) hφ hψ
+      (fun r ↦ by simp) hΓ
+
 section FiniteQuotients
 
 /-! The results of this section assume that every open normal quotient `Γ ⧸ U` is finite, so
@@ -525,30 +549,27 @@ instance [T2Space R] [CompactSpace R] [ContinuousAdd R] :
     CompactSpace (completedGroupAlgebra R Γ) :=
   (isClosedEmbedding_coeffFamily R Γ).compactSpace
 
-/-- When every open normal quotient of `Γ` is finite, the completed group algebra over a linearly
-topologised commutative ring is linearly topologised: the elements whose projections at finitely
-many levels have coefficients in an open ideal of `R` form a basis of left ideals at `0`. -/
-instance [IsLinearTopology R R] :
-    IsLinearTopology (completedGroupAlgebra R Γ) (completedGroupAlgebra R Γ) := by
+private noncomputable def levelTwoSidedIdeal (F : Finset (OpenNormalSubgroup Γ)) (I : Ideal R) :
+    TwoSidedIdeal (completedGroupAlgebra R Γ) :=
+  TwoSidedIdeal.mk' {x | ∀ U ∈ F, ∀ g : Γ ⧸ U.toSubgroup, (proj R Γ U x).coeff g ∈ I}
+    (fun _ _ _ ↦ by simp)
+    (fun hx hy U hU g ↦ by simpa [MonoidAlgebra.coeff_add] using I.add_mem (hx U hU g) (hy U hU g))
+    (fun hx U hU g ↦ by simpa [MonoidAlgebra.coeff_neg] using I.neg_mem (hx U hU g))
+    (fun hy U hU g ↦ by
+      let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+      rw [coeff_proj_mul]; exact I.sum_mem fun _ _ ↦ I.mul_mem_left _ (hy U hU _))
+    (fun hx U hU g ↦ by
+      let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+      rw [coeff_proj_mul]; exact I.sum_mem fun _ _ ↦ I.mul_mem_right _ (hx U hU _))
+
+private theorem hasBasis_levelTwoSidedIdeal [IsLinearTopology R R] :
+    (𝓝 (0 : completedGroupAlgebra R Γ)).HasBasis
+      (fun p : Finset (OpenNormalSubgroup Γ) × Ideal R ↦ (p.2 : Set R) ∈ 𝓝 0)
+      (fun p ↦ (levelTwoSidedIdeal (R := R) (Γ := Γ) p.1 p.2 : Set _)) := by
   classical
-  let levelIdeal (F : Finset (OpenNormalSubgroup Γ)) (I : Ideal R) :
-      Ideal (completedGroupAlgebra R Γ) :=
-    { carrier := {x | ∀ U ∈ F, ∀ g : Γ ⧸ U.toSubgroup, (proj R Γ U x).coeff g ∈ I}
-      add_mem' := fun hx hy U hU g ↦ by
-        simpa only [map_add, MonoidAlgebra.coeff_add, Finsupp.add_apply] using
-          I.add_mem (hx U hU g) (hy U hU g)
-      zero_mem' := fun U _ g ↦ by simp
-      smul_mem' := fun c {x} hx U hU g ↦ by
-        let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
-        rw [smul_eq_mul, coeff_proj_mul]
-        exact I.sum_mem fun h _ ↦ I.mul_mem_left _ (hx U hU _) }
-  refine IsLinearTopology.mk_of_hasBasis (completedGroupAlgebra R Γ)
-    (p := fun p : Finset (OpenNormalSubgroup Γ) × Ideal R ↦ (p.2 : Set R) ∈ 𝓝 0)
-    (s := fun p ↦ levelIdeal p.1 p.2) (Filter.hasBasis_iff.mpr fun s ↦ ⟨fun hs ↦ ?_, ?_⟩)
+  refine Filter.hasBasis_iff.mpr fun s ↦ ⟨fun hs ↦ ?_, ?_⟩
   · rw [(isInducing_coeffFamily R Γ).nhds_eq_comap, map_zero, Filter.mem_comap] at hs
-    obtain ⟨t, ht, hts⟩ := hs
-    rw [nhds_pi, Filter.mem_pi'] at ht
-    obtain ⟨F, tU, htU, hFt⟩ := ht
+    obtain ⟨t, ht, hts⟩ := hs; rw [nhds_pi, Filter.mem_pi'] at ht; obtain ⟨F, tU, htU, hFt⟩ := ht
     have hex : ∀ U : OpenNormalSubgroup Γ, ∃ J : Ideal R, (J : Set R) ∈ 𝓝 0 ∧
         (Set.univ : Set (Γ ⧸ U.toSubgroup)).pi (fun _ ↦ (J : Set R)) ⊆ tU U := fun U ↦ by
       have htU' := htU U; rw [nhds_pi] at htU'
@@ -559,14 +580,28 @@ instance [IsLinearTopology R R] :
     obtain ⟨I, hI, hIK⟩ := (IsLinearTopology.hasBasis_ideal (R := R)).mem_iff.mp
       ((Filter.biInter_finset_mem F).mpr fun U _ ↦ (hJ U).1)
     exact ⟨(F, I), hI, fun x hx ↦ hts <| hFt fun U hU ↦ (hJ U).2 fun g _ ↦
-      Set.mem_iInter₂.mp (hIK (hx U hU g)) U hU⟩
+      Set.mem_iInter₂.mp (hIK ((TwoSidedIdeal.mem_mk' ..).mp hx U hU g)) U hU⟩
   · rintro ⟨⟨F, I⟩, hI, hsub⟩
-    suffices (levelIdeal F I : Set _) =
+    suffices (levelTwoSidedIdeal (R := R) (Γ := Γ) F I : Set _) =
         ⋂ U ∈ F, ⋂ g : Γ ⧸ U.toSubgroup, (fun x ↦ (proj R Γ U x).coeff g) ⁻¹' (I : Set R) from
       Filter.mem_of_superset (this ▸ (Filter.biInter_finset_mem F).mpr fun U _ ↦
         Filter.iInter_mem.mpr fun g ↦
           (continuous_coeff_proj R Γ U g).continuousAt.preimage_mem_nhds (by simpa using hI)) hsub
-    ext; simp [levelIdeal]
+    ext; simp [levelTwoSidedIdeal]
+
+/-- When every open normal quotient of `Γ` is finite, `completedGroupAlgebra R Γ` over a linearly
+topologised ring `R` is left linearly topologised via the two-sided ideals `levelTwoSidedIdeal`. -/
+instance [IsLinearTopology R R] :
+    IsLinearTopology (completedGroupAlgebra R Γ) (completedGroupAlgebra R Γ) :=
+  IsLinearTopology.mk_of_hasBasis' (completedGroupAlgebra R Γ)
+    (hasBasis_levelTwoSidedIdeal (R := R) (Γ := Γ)) fun J r x hx ↦ J.mul_mem_left r x hx
+
+/-- When every open normal quotient of `Γ` is finite, `completedGroupAlgebra R Γ` over a linearly
+topologised ring `R` is also right linearly topologised via the same two-sided ideal basis. -/
+instance [IsLinearTopology R R] :
+    IsLinearTopology (completedGroupAlgebra R Γ)ᵐᵒᵖ (completedGroupAlgebra R Γ) :=
+  IsLinearTopology.mk_of_hasBasis' (completedGroupAlgebra R Γ)ᵐᵒᵖ
+    (hasBasis_levelTwoSidedIdeal (R := R) (Γ := Γ)) fun J r x hx ↦ J.mul_mem_right x r.unop hx
 
 end FiniteQuotients
 

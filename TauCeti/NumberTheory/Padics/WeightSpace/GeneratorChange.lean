@@ -116,6 +116,19 @@ theorem weightCoordChangeEquiv_apply_zero (u : ℤ_[p]ˣ)
   apply Subtype.ext
   simp [coe_weightCoordChangeEquiv_apply, ← h]
 
+/-- Substituting `(1 + X) ^ u - 1` before evaluating `φ ∈ ℤ_p⟦X⟧` at a topologically nilpotent
+coordinate `t` equals evaluating `φ` directly at `weightCoordChangeEquiv p R u t`. -/
+theorem padicPowerSeriesEval_subst_binomialSeries_sub_one_weightCoordChangeEquiv (u : ℤ_[p]ˣ)
+    (t : {t : R // Tendsto (t ^ ·) atTop (𝓝 0)}) (φ : PowerSeries ℤ_[p]) :
+    padicPowerSeriesEval p t.2 (φ.subst (PowerSeries.binomialSeries ℤ_[p] (u : ℤ_[p]) - 1)) =
+      padicPowerSeriesEval p (weightCoordChangeEquiv p R u t).2 φ := by
+  have heval : padicPowerSeriesEval p t.2 (PowerSeries.binomialSeries ℤ_[p] (u : ℤ_[p]) - 1) =
+      (weightCoordChangeEquiv p R u t : R) := by
+    rw [map_sub, map_one, padicPowerSeriesEval_binomialSeries, coe_weightCoordChangeEquiv_apply]
+  rw [padicPowerSeriesEval_subst p t.2 (hasSubst_binomialSeries_sub_one (S := ℤ_[p]) (u : ℤ_[p]))
+    (heval ▸ (weightCoordChangeEquiv p R u t).2)]
+  simpa only [padicPowerSeriesEval_apply] using congrArg φ.evalAt heval
+
 namespace WeightSpace
 
 section Ring
@@ -161,6 +174,17 @@ theorem coord_eq_addChar_of_value_at_one_coordAt_inv (κ : WeightSpace p R) (u :
   simp only [Units.mul_inv, PadicInt.addChar_of_value_at_one_def] at h
   simpa only [← coordAt_eq_weightCoordChangeEquiv, add_sub_cancel_left] using
     congrArg (fun x : R ↦ x - 1) h.symm
+
+/-- Substituting `(1 + X) ^ u - 1` before evaluating `φ ∈ ℤ_p⟦X⟧` at `κ.coord` equals evaluating
+directly at `κ.coordAt u = (1 + κ.coord) ^ u - 1`. -/
+theorem padicPowerSeriesEval_subst_binomialSeries_sub_one (κ : WeightSpace p R) (u : ℤ_[p]ˣ)
+    (φ : PowerSeries ℤ_[p]) :
+    padicPowerSeriesEval p κ.tendsto_coord_pow
+        (φ.subst (PowerSeries.binomialSeries ℤ_[p] (u : ℤ_[p]) - 1)) =
+      padicPowerSeriesEval p (κ.tendsto_coordAt_pow u) φ := by
+  rw [padicPowerSeriesEval_subst_binomialSeries_sub_one_weightCoordChangeEquiv u
+    ⟨κ.coord, κ.tendsto_coord_pow⟩ φ, padicPowerSeriesEval_apply, padicPowerSeriesEval_apply,
+    κ.coordAt_eq_weightCoordChangeEquiv u]
 
 end WeightSpace
 

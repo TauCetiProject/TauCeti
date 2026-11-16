@@ -82,31 +82,26 @@ instance [CompleteSpace K] : CompleteSpace (MaxDualNumber K) :=
 
 instance {R : Type*} [SMul R K] : SMul R (MaxDualNumber K) :=
   inferInstanceAs (SMul R (DualNumber K))
-
 instance {R S : Type*} [SMul R K] [SMul S K] [SMul R S] [IsScalarTower R S K] :
-    IsScalarTower R S (MaxDualNumber K) :=
-  inferInstanceAs (IsScalarTower R S (DualNumber K))
-
+    IsScalarTower R S (MaxDualNumber K) := inferInstanceAs (IsScalarTower R S (DualNumber K))
+instance {R : Type*} [Semiring R] [Module R K] : Module R (MaxDualNumber K) :=
+  inferInstanceAs (Module R (DualNumber K))
 instance {R : Type*} [CommSemiring R] [Algebra R K] : Algebra R (MaxDualNumber K) :=
   inferInstanceAs (Algebra R (DualNumber K))
-
-instance {R : Type*} [SeminormedRing R] [SMul R K] [IsBoundedSMul R K] :
-    IsBoundedSMul R (MaxDualNumber K) :=
-  inferInstanceAs (IsBoundedSMul R (K × K))
-
-instance {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 K] : NormedAlgebra 𝕜 (MaxDualNumber K) where
-  norm_smul_le r x := norm_smul_le r (x : K × K)
+instance {R : Type*} [PseudoMetricSpace R] [Zero R] [SMul R K] [IsBoundedSMul R K] :
+    IsBoundedSMul R (MaxDualNumber K) := inferInstanceAs (IsBoundedSMul R (K × K))
+instance {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 K] : NormedSpace 𝕜 (MaxDualNumber K) :=
+  ⟨fun r x ↦ norm_smul_le r (x : K × K)⟩
+instance {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 K] : NormedAlgebra 𝕜 (MaxDualNumber K) :=
+  ⟨fun r x ↦ norm_smul_le r (x : K × K)⟩
 
 /-- The identification of `MaxDualNumber K` with Mathlib's dual numbers, as `R`-algebras. -/
 def ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] :
     DualNumber K ≃ₐ[R] MaxDualNumber K := AlgEquiv.refl
 
-@[simp]
-theorem coe_ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] (x : DualNumber K) :
-    ofDualNumberAlgEquiv R x = ofDualNumber x := (rfl)
-
-@[simp]
-theorem norm_algebraMap_self (a : K) : ‖algebraMap K (MaxDualNumber K) a‖ = ‖a‖ := by
+@[simp] theorem ofDualNumberAlgEquiv_apply (R : Type*) [CommSemiring R] [Algebra R K]
+    (x : DualNumber K) : ofDualNumberAlgEquiv R x = ofDualNumber x := (rfl)
+@[simp] theorem norm_algebraMap (a : K) : ‖algebraMap K (MaxDualNumber K) a‖ = ‖a‖ := by
   simp [← (ofDualNumberAlgEquiv K).commutes, TrivSqZeroExt.algebraMap_eq_inl]
 
 section NormOneClass

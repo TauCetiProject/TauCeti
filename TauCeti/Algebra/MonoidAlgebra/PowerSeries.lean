@@ -196,4 +196,15 @@ theorem map_singleOneRingHom_dvd_iff (φ : PowerSeries A) (ψ : PowerSeries (Mon
   rw [← map_singleOneRingHom_dvd_toPowerSeries_iff R, ← coe_powerSeriesAlgEquiv,
     AlgEquiv.apply_symm_apply]
 
+/-- `liftNCAlgHom f g h_comm` on `(powerSeriesAlgEquiv R A M).symm ψ` is a finite sum over `M`. -/
+theorem liftNCAlgHom_powerSeriesAlgEquiv_symm_apply {B : Type*} [Semiring B] [Algebra R B]
+    [Fintype M] (f : PowerSeries A →ₐ[R] B) (g : M →* B)
+    (h_comm : ∀ x y, Commute (f x) (g y)) (ψ : PowerSeries (MonoidAlgebra A M)) :
+    liftNCAlgHom f g h_comm ((powerSeriesAlgEquiv R A M).symm ψ) =
+      ∑ m : M, f (((powerSeriesAlgEquiv R A M).symm ψ).coeff m) * g m := by
+  classical
+  conv_lhs => rw [← sum_coeff_single ((powerSeriesAlgEquiv R A M).symm ψ),
+    Finsupp.sum_fintype _ _ (fun m ↦ single_zero m), map_sum]
+  exact Finset.sum_congr rfl fun _ _ ↦ by simp
+
 end MonoidAlgebra

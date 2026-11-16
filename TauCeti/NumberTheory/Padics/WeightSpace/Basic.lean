@@ -452,6 +452,19 @@ theorem ofCoord_finiteChar_coord (κ : WeightSpace p R) :
   rw [coe_ofCoord_apply, ← principalChar_eq_addChar_of_value_at_one,
     apply_eq_finiteChar_mul_principalChar]
 
+/-- **The normed universal property of the weights of `ℤ_pˣ`.** Over a complete ultrametric normed
+commutative `ℤ_p`-algebra `R` with contractive scalar action, every finite part `η` and
+topologically nilpotent coordinate `t` determine a unique weight. -/
+theorem existsUnique_character_of_tendsto_pow (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) {t : R}
+    (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : ∃! κ : WeightSpace p R, κ.finiteChar = η ∧ κ.coord = t :=
+  ⟨ofCoord η t ht, ⟨by simp, by simp⟩, fun κ ⟨hη, ht'⟩ ↦
+    ext_finiteChar_coord (by rw [hη, finiteChar_ofCoord]) (by rw [ht', coord_ofCoord])⟩
+
+/-- When `‖t‖ < 1`, every finite part `η` and `t ∈ R` determine a unique weight. -/
+theorem existsUnique_character_of_norm_lt_one (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) {t : R}
+    (ht : ‖t‖ < 1) : ∃! κ : WeightSpace p R, κ.finiteChar = η ∧ κ.coord = t :=
+  existsUnique_character_of_tendsto_pow η (tendsto_pow_atTop_nhds_zero_of_norm_lt_one ht)
+
 end Construction
 
 section Adic
@@ -552,6 +565,60 @@ theorem ofHasEval_eq_ofCoord (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) {z
     ((coord_ofHasEval η hz).trans (coord_ofCoord η z hz).symm)
 
 end AdicNormed
+
+section NormedPadicAlgebra
+
+variable {K : Type*} [NormedCommRing K] [NormedAlgebra ℚ_[p] K]
+
+variable (p K) in
+@[instance_reducible] private noncomputable def padicAlg : Algebra ℤ_[p] K :=
+  Algebra.compHom K (algebraMap ℤ_[p] ℚ_[p])
+
+variable (p K) in
+private theorem padicBoundedSMul : letI := padicAlg p K; IsBoundedSMul ℤ_[p] K :=
+  letI := padicAlg p K; .of_norm_smul_le fun r x ↦ norm_smul_le (r : ℚ_[p]) x
+
+variable [IsUltrametricDist K]
+
+/-- Over an ultrametric normed commutative `ℚ_p`-algebra `K`, the coordinate of a weight is
+topologically nilpotent, without requiring an `Algebra ℤ_[p] K` instance. -/
+theorem tendsto_coord_pow_of_normedAlgebra (κ : WeightSpace p K) :
+    Tendsto (κ.coord ^ ·) atTop (𝓝 0) :=
+  letI := padicAlg p K; haveI := padicBoundedSMul p K; κ.tendsto_coord_pow
+
+variable [CompleteSpace K]
+
+/-- The weight in a complete ultrametric normed commutative `ℚ_p`-algebra `K` with finite part `η`
+and topologically nilpotent coordinate `t`, avoiding `Algebra ℤ_[p] K` diamonds. -/
+noncomputable def ofCoordOfNormedAlgebra (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) (t : K)
+    (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : WeightSpace p K :=
+  letI := padicAlg p K; haveI := padicBoundedSMul p K; ofCoord η t ht
+
+@[simp] theorem finiteChar_ofCoordOfNormedAlgebra (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ)
+    (t : K) (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : (ofCoordOfNormedAlgebra η t ht).finiteChar = η :=
+  letI := padicAlg p K; haveI := padicBoundedSMul p K; finiteChar_ofCoord η t ht
+@[simp] theorem coord_ofCoordOfNormedAlgebra (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) (t : K)
+    (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : (ofCoordOfNormedAlgebra η t ht).coord = t :=
+  letI := padicAlg p K; haveI := padicBoundedSMul p K; coord_ofCoord η t ht
+@[simp] theorem ofCoordOfNormedAlgebra_finiteChar_coord (κ : WeightSpace p K) :
+    ofCoordOfNormedAlgebra κ.finiteChar κ.coord κ.tendsto_coord_pow_of_normedAlgebra = κ :=
+  letI := padicAlg p K; haveI := padicBoundedSMul p K; κ.ofCoord_finiteChar_coord
+
+/-- **Universal property of weights in a complete ultrametric normed `ℚ_p`-algebra.** -/
+theorem existsUnique_character_of_tendsto_pow_of_normedAlgebra
+    (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    ∃! κ : WeightSpace p K, κ.finiteChar = η ∧ κ.coord = t :=
+  letI := padicAlg p K; haveI := padicBoundedSMul p K; existsUnique_character_of_tendsto_pow η ht
+
+/-- Every `η : Δ →* Kˣ` and `t ∈ K` with `‖t‖ < 1` determine a unique weight in a complete
+ultrametric normed `ℚ_p`-algebra `K`. -/
+theorem existsUnique_character_of_norm_lt_one_of_normedAlgebra
+    (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K} (ht : ‖t‖ < 1) :
+    ∃! κ : WeightSpace p K, κ.finiteChar = η ∧ κ.coord = t :=
+  existsUnique_character_of_tendsto_pow_of_normedAlgebra η
+    (tendsto_pow_atTop_nhds_zero_of_norm_lt_one ht)
+
+end NormedPadicAlgebra
 
 end WeightSpace
 

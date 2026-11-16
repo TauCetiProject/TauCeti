@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 import Mathlib.Algebra.Order.Archimedean.Basic
@@ -203,5 +204,13 @@ theorem norm_sub_div_le_of_dist_div_le {𝕜 : Type*} [NormedField 𝕜] {F w c 
   rw [heq] at hmul
   calc ‖F - w / c‖ ≤ η / ‖c‖ * ‖w‖ := hmul
     _ = η * ‖w / c‖ := by rw [norm_div]; ring
+
+/-- Every normed algebra with `‖1‖ = 1` over a nontrivially normed field contains an element of
+norm strictly greater than `1`. -/
+theorem exists_one_lt_norm_of_normedAlgebra (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    (K : Type*) [SeminormedRing K] [NormedAlgebra 𝕜 K] [NormOneClass K] :
+    ∃ x : K, 1 < ‖x‖ := by
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  exact ⟨algebraMap 𝕜 K c, by rwa [norm_algebraMap']⟩
 
 end TauCeti

@@ -138,35 +138,30 @@ theorem toCompletedGroupAlgebra_dirac (γ : Γ) :
   ext U
   simp
 
-/-- Pushing a measure forward along a continuous group homomorphism commutes with passing to the
-completed group algebra. -/
+/-- Pushing a measure forward along `f : Γ →ₜ* Δ` commutes with `toCompletedGroupAlgebra`. -/
 theorem toCompletedGroupAlgebra_mapAlgHom {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
     [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ] (f : Γ →ₜ* Δ) (μ : D(Γ, R)) :
     toCompletedGroupAlgebra (f.mapAlgHom μ) =
       completedGroupAlgebra.map R f.toMonoidHom f.continuous (toCompletedGroupAlgebra μ) := by
   refine completedGroupAlgebra.ext fun V ↦ ?_
-  let U : OpenNormalSubgroup Γ := V.comap f.toMonoidHom f.continuous
-  let q : Γ ⧸ U.toSubgroup →* Δ ⧸ V.toSubgroup :=
-    QuotientGroup.map U.toSubgroup V.toSubgroup f.toMonoidHom
-      (V.toSubgroup_comap f.toMonoidHom f.continuous).le
+  let U := V.comap f.toMonoidHom f.continuous
+  let q := QuotientGroup.map U.toSubgroup V.toSubgroup f.toMonoidHom
+    (V.toSubgroup_comap f.toMonoidHom f.continuous).le
   have hq : (V.toSubgroup.quotientMkContinuousMonoidHom : C(Δ, Δ ⧸ V.toSubgroup)).comp (f : C(Γ, Δ))
       = (⟨q, continuous_of_discreteTopology⟩ : C(_, _)).comp
         U.toSubgroup.quotientMkContinuousMonoidHom := by ext; simp [q]
   rw [proj_toCompletedGroupAlgebra, completedGroupAlgebra.proj_map, proj_toCompletedGroupAlgebra]
   refine MonoidAlgebra.coeff_injective ?_
-  rw [MonoidAlgebra.coeff_mapDomain, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
-    ContinuousMonoidHom.finiteProjectionAlgHom_apply, MonoidAlgebra.coeff_ofCoeff,
-    MonoidAlgebra.coeff_ofCoeff, ContinuousMonoidHom.mapAlgHom_apply,
-    finiteProjection_map, hq, finiteProjection_comp]
-  rfl
+  simp only [MonoidAlgebra.coeff_mapDomain, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
+    MonoidAlgebra.coeff_ofCoeff, ContinuousMonoidHom.mapAlgHom_apply, finiteProjection_map, hq,
+    finiteProjection_comp]; rfl
 
 /-- Pushing a measure forward along a topological group isomorphism corresponds to `domCongr`. -/
 theorem toCompletedGroupAlgebra_continuousMulEquiv {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
     [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ] (e : Γ ≃ₜ* Δ) (μ : D(Γ, R)) :
-    toCompletedGroupAlgebra ((⟨(e : Γ →* Δ), map_continuous e⟩ : Γ →ₜ* Δ).mapAlgHom μ) =
+    toCompletedGroupAlgebra ((e : Γ →ₜ* Δ).mapAlgHom μ) =
       completedGroupAlgebra.domCongr R e (toCompletedGroupAlgebra μ) :=
-  completedGroupAlgebra.coe_domCongr R e ▸
-    toCompletedGroupAlgebra_mapAlgHom ⟨(e : Γ →* Δ), map_continuous e⟩ μ
+  completedGroupAlgebra.coe_domCongr R e ▸ toCompletedGroupAlgebra_mapAlgHom (e : Γ →ₜ* Δ) μ
 
 /-- Integrating a function that factors through `Γ ⧸ U` as `g` is the finite sum of the values
 of `g` against the coefficients of the projection of `toCompletedGroupAlgebra μ` at level `U`,
@@ -489,6 +484,14 @@ theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
     completedGroupAlgebraEquiv μ = toCompletedGroupAlgebra μ :=
   AlgEquiv.ofBijective_apply _ _ _
 
+@[simp] theorem toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm
+    (x : completedGroupAlgebra ℤ_[p] Γ) :
+    toCompletedGroupAlgebra (completedGroupAlgebraEquiv.symm x) = x := by
+  rw [← completedGroupAlgebraEquiv_apply, AlgEquiv.apply_symm_apply]
+@[simp] theorem completedGroupAlgebraEquiv_symm_of (g : Γ) :
+    completedGroupAlgebraEquiv.symm (completedGroupAlgebra.of ℤ_[p] Γ g) = dirac ℤ_[p] g :=
+  completedGroupAlgebraEquiv.symm_apply_eq.mpr (by simp)
+
 open Topology in
 /-- **The comparison is a homeomorphism.** For a profinite group `Γ`, the comparison of integral
 measures with the completed group algebra `ℤ_p[[Γ]]` is a homeomorphism from the weak topology on
@@ -527,6 +530,15 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak :
     ⟨le_antisymm (continuous_iff_le_induced.mp continuous_toCompletedGroupAlgebra) hle⟩
   exact isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨⟨hind, toCompletedGroupAlgebra_injective⟩, toCompletedGroupAlgebra_surjective⟩
+
+open Topology in
+/-- The inverse of `completedGroupAlgebraEquiv` is continuous to `WeakTopology`. -/
+theorem continuous_completedGroupAlgebraEquiv_symm_weak :
+    @Continuous _ _ _ (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p]))
+      (completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm := by
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  exact isHomeomorph_toCompletedGroupAlgebra_weak.isInducing.continuous_iff.mpr <|
+    continuous_id.congr fun _ ↦ by simp
 
 open Topology in
 /-- Integral measures on a profinite group form a topological ring for the weak topology. -/
