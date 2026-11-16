@@ -91,15 +91,16 @@ theorem coe_collaredSmoothTransitionUnit (t : ℝ) :
     (collaredSmoothTransitionUnit t : ℝ) = collaredSmoothTransition t :=
   (rfl)
 
-/-- The collared smooth transition is `C^n` into the unit interval for every `n ≤ ∞`. -/
-theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
-    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
-  ((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff.smoothTransition hn
-
 /-- The collared smooth transition into the unit interval is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
   continuous_collaredSmoothTransition.subtype_mk _
+
+/-- The collared smooth transition is `C^n` into the unit interval for every `n ≤ ∞`. -/
+theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
+    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
+  contMDiff_iff_comp_subtypeVal_Icc.2
+    ⟨continuous_collaredSmoothTransitionUnit, (contDiff_collaredSmoothTransition hn).contMDiff⟩
 
 /-- The collared smooth transition into the unit interval is `0` up to time `1 / 4`. -/
 theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :

@@ -145,8 +145,8 @@ private theorem capModel_eq_of_mem (s t : unitInterval) :
       (collaredSmoothTransitionLineMapUnit (projIcc 0 1 zero_le_one (capRamp s)) t) := by
   rw [projIcc_of_mem _ (capRamp_mem s)]
   rcases le_or_gt (s : ℝ) (1 / 3) with hs | hs
-  · rw [capModel_of_le hs, projIcc_of_le_left _ (by linarith), Icc.mk_zero, P.source,
-      ← hgγ, coe_collaredSmoothTransitionLineMapUnit]
+  · simp [capModel_of_le (z := ((s : ℝ), (t : ℝ))) hs,
+      projIcc_of_le_left _ (by linarith : 3 * (s : ℝ) - 1 ≤ 0), ← hgγ]
   · have hr : (⟨capRamp s, capRamp_mem s⟩ : unitInterval) = 1 :=
       Subtype.ext (capRamp_of_ge (by linarith))
     rw [capModel_of_lt hs, hr, collaredSmoothTransitionLineMapUnit_one_left]
@@ -160,24 +160,23 @@ private theorem continuous_capModel (hg : Continuous g) : Continuous (capModel g
   refine Continuous.if_le (hg.comp hr) ((continuous_uncurry_path P).comp
     (hs.prodMk (continuous_collaredSmoothTransitionUnit.comp continuous_snd)))
     continuous_fst continuous_const fun z hz ↦ ?_
-  rw [hz, capRamp_of_ge (by norm_num), collaredSmoothTransitionLineMap_one_left,
-    projIcc_of_le_left _ (by norm_num), Icc.mk_zero, P.source, ← hgγ,
-    coe_collaredSmoothTransitionUnit]
+  simp [capRamp_of_ge (by linarith : 1 / 4 ≤ z.1),
+    projIcc_of_le_left _ (by linarith : 3 * z.1 - 1 ≤ 0), ← hgγ]
 
 /-- The model is `x` beyond `s = 2/3`, and near the seam beyond `s = 1/4`. -/
 private theorem capModel_eq_base {z : ℝ × ℝ}
     (hz : 2 / 3 < z.1 ∨ 1 / 4 < z.1 ∧ (z.2 ≤ 1 / 4 ∨ 3 / 4 ≤ z.2)) : capModel g P z = x := by
   rcases le_or_gt z.1 (1 / 3) with hs | hs
   · have hz' : 1 / 4 < z.1 ∧ (z.2 ≤ 1 / 4 ∨ 3 / 4 ≤ z.2) := hz.resolve_left (by linarith)
-    rw [capModel_of_le hs, capRamp_of_ge hz'.1.le, collaredSmoothTransitionLineMap_one_left]
     rcases hz'.2 with ht | ht
-    · rw [collaredSmoothTransition_eq_zero_of_le ht, apply_zero_eq_base hgγ]
-    · rw [collaredSmoothTransition_eq_one_of_ge ht, apply_one_eq_base hgγ]
-  · rw [capModel_of_lt hs]
-    rcases hz with hz | ⟨-, ht | ht⟩
-    · rw [projIcc_of_right_le _ (by linarith), Icc.mk_one, P.target, Path.refl_apply]
-    · rw [collaredSmoothTransitionUnit_eq_zero_of_le ht, Path.source]
-    · rw [collaredSmoothTransitionUnit_eq_one_of_ge ht, Path.target]
+    · simp [capModel_of_le hs, capRamp_of_ge hz'.1.le, collaredSmoothTransition_eq_zero_of_le ht,
+        apply_zero_eq_base hgγ]
+    · simp [capModel_of_le hs, capRamp_of_ge hz'.1.le, collaredSmoothTransition_eq_one_of_ge ht,
+        apply_one_eq_base hgγ]
+  · rcases hz with hz | ⟨-, ht | ht⟩
+    · simp [capModel_of_lt hs, projIcc_of_right_le _ (by linarith : 1 ≤ 3 * z.1 - 1)]
+    · simp [capModel_of_lt hs, collaredSmoothTransitionUnit_eq_zero_of_le ht]
+    · simp [capModel_of_lt hs, collaredSmoothTransitionUnit_eq_one_of_ge ht]
 
 private theorem capModel_one (t : ℝ) : capModel g P (1, t) = x :=
   capModel_eq_base hgγ (Or.inl (by norm_num))
