@@ -48,7 +48,8 @@ is a principal logarithm.
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
-* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.natCast_add_mem_slitPlane_iff`,
+  `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
@@ -191,6 +192,13 @@ theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
   refine (mem_slitPlane_iff.mp hz).imp (fun h ↦ ?_) (fun h ↦ by simpa using h)
   rw [add_re, ofReal_re]
   positivity
+
+/-- Every nonnegative-integer shift `n + z` lies in the slit plane if and only if `z` itself lies
+in the slit plane. -/
+theorem natCast_add_mem_slitPlane_iff {z : ℂ} :
+    (∀ n : ℕ, (n : ℂ) + z ∈ slitPlane) ↔ z ∈ slitPlane :=
+  ⟨fun h => by simpa using h 0, fun hz n => by
+    simpa only [Complex.ofReal_natCast] using ofReal_add_mem_slitPlane hz (Nat.cast_nonneg n)⟩
 
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/

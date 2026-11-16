@@ -33,16 +33,27 @@ rational continuations are jointly holomorphic on `{p : ℂ × ℂ | p.1 ≠ 1}`
 
 * `TauCeti.mul_deriv_lerchSeries_left_add_mul`, `TauCeti.mul_deriv_deriv_lerchSeries_right_add_mul`:
   the lowering relation `(z ∂_z + c) Φ = Φ(·, s - 1, ·)` and PDE `(z ∂_z + c) ∂_c Φ = -s Φ`.
-* `TauCeti.lerchNegNatPoly`, `TauCeti.lerchSeries_neg_nat`, `TauCeti.lerchSeries_neg_nat_eq_div`,
-  `TauCeti.lerchSeries_neg_one`, `TauCeti.analyticOnNhd_lerchNegNatPoly_div`: numerator polynomials,
-  rational nonpositive-integer formulas, and joint analyticity on `{p : ℂ × ℂ | p.1 ≠ 1}`.
+* `TauCeti.lerchSeries_neg_nat`, `TauCeti.lerchSeries_neg_nat_eq_div`,
+  `TauCeti.lerchSeries_neg_one`,
+  `TauCeti.tendsto_one_sub_pow_mul_iterate_mul_deriv_add_mul_inv_one_sub_nhdsNE_one`,
+  `TauCeti.iterate_mul_deriv_add_mul_inv_one_sub`, `TauCeti.analyticOnNhd_lerchNegNatPoly_div`:
+  rational nonpositive-integer formulas (using `TauCeti.lerchNegNatPoly` from
+  `TauCeti/RingTheory/Polynomial/Eulerian.lean`), pole asymptotics at `z = 1`, and joint analyticity
+  on `{p : ℂ × ℂ | p.1 ≠ 1}`.
 * `TauCeti.polylog_one_eq_mul_lerchSeries`, `TauCeti.polylog_neg_nat_eq_mul_lerchSeries`:
   comparison with `TauCeti.Polylog.polylog` on `‖z‖ < 1`.
 
 ## References
 
-* [A. Erdélyi et al., *Higher Transcendental Functions*, Vol. 1][erdelyi1953vol1], Chapter 1.11.
-* [J. C. Lagarias and W.-C. W. Li, *The Lerch zeta function I. Zeta integrals*][lagariasli2012].
+* A. Erdélyi, W. Magnus, F. Oberhettinger, and F. G. Tricomi, *Higher Transcendental Functions*,
+  Vol. 1, McGraw-Hill, 1953, Chapter 1.11.
+* J. C. Lagarias and W.-C. W. Li, *The Lerch zeta function III. Polylogarithms and special values*,
+  arXiv:1506.06161, (1.8)–(1.9), Theorem 2.3 (2.3), (2.5), §4 Theorem 4.1, §5 Theorem 5.1
+  (5.2)–(5.5).
+* The rational nonpositive-integer continuation and totalized-pole argument at `z = 1` adapt
+  `TauCeti/Analysis/SpecialFunctions/Polylogarithm/Nonpositive.lean`
+  (`Polylog.tendsto_one_sub_pow_mul_polylog_neg_nat_nhdsNE_one`,
+  `Polylog.not_continuousAt_polylog_neg_nat_one`, and `Polylog.polylog_neg_nat_eq_div`).
 -/
 
 public section
@@ -118,47 +129,10 @@ theorem lerchSeries_neg_nat (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
     rw [hloc.deriv_eq, ← ih hz, mul_deriv_lerchSeries_left_add_mul hz (-(m : ℂ)) hc]
     congr 2; push_cast; ring
 
-/-- Shifted Eulerian numerator polynomial `P_m(X; c)` satisfying
-`((w ∂_w + c)^[m] (1 - w)⁻¹) = P_m(w; c) / (1 - w) ^ (m + 1)`. At `c = 1` this recovers
-`TauCeti.eulerianPolynomial m`. -/
-noncomputable def lerchNegNatPoly {R : Type*} [CommRing R] (c : R) : ℕ → R[X]
-  | 0 => 1
-  | m + 1 => (C c * (1 - X) + C (m + 1 : R) * X) * lerchNegNatPoly c m +
-      X * (1 - X) * (lerchNegNatPoly c m).derivative
-
-/-- Base case `lerchNegNatPoly c 0 = 1`. -/
-@[simp]
-theorem lerchNegNatPoly_zero {R : Type*} [CommRing R] (c : R) :
-    lerchNegNatPoly c 0 = 1 := by rfl
-
-/-- Differential recurrence for `lerchNegNatPoly c (m + 1)` induced by `X ∂_X + c`. -/
-theorem lerchNegNatPoly_succ {R : Type*} [CommRing R] (c : R) (m : ℕ) :
-    lerchNegNatPoly c (m + 1) =
-      (C c * (1 - X) + C (m + 1 : R) * X) * lerchNegNatPoly c m +
-        X * (1 - X) * (lerchNegNatPoly c m).derivative := by rfl
-
-/-- First numerator polynomial `lerchNegNatPoly c 1 = c (1 - X) + X`. -/
-@[simp]
-theorem lerchNegNatPoly_one_order {R : Type*} [CommRing R] (c : R) :
-    lerchNegNatPoly c 1 = C c * (1 - X) + X := by simp [lerchNegNatPoly_succ]
-
-/-- Evaluating `lerchNegNatPoly c m` at `1` gives `m!` independently of the shift `c`. -/
-@[simp]
-theorem lerchNegNatPoly_eval_one {R : Type*} [CommRing R] (c : R) (m : ℕ) :
-    (lerchNegNatPoly c m).eval 1 = (m.factorial : R) := by
-  induction m with
-  | zero => simp
-  | succ m ih => simp [lerchNegNatPoly_succ, ih, Nat.factorial_succ]
-
-/-- At shift `c = 1 : ℤ`, `lerchNegNatPoly` coincides with `TauCeti.eulerianPolynomial`. -/
-@[simp]
-theorem lerchNegNatPoly_one_int (m : ℕ) :
-    lerchNegNatPoly (1 : ℤ) m = eulerianPolynomial m := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    simp only [lerchNegNatPoly_succ, eulerianPolynomial_succ, ih, map_add, map_one]; ring
-
+-- The rational form, pole limit, and totalized-pole continuation at `z = 1` below adapt
+-- `TauCeti/Analysis/SpecialFunctions/Polylogarithm/Nonpositive.lean`
+-- (`Polylog.tendsto_one_sub_pow_mul_polylog_neg_nat_nhdsNE_one`,
+-- `Polylog.not_continuousAt_polylog_neg_nat_one`, and `Polylog.polylog_neg_nat_eq_div`).
 private theorem iterate_mul_deriv_add_mul_eq_div_of_ne_one (m : ℕ) {z : ℂ} (hz : z ≠ 1) (c : ℂ) :
     ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z =
       (lerchNegNatPoly c m).eval z / (1 - z) ^ (m + 1) := by
@@ -173,14 +147,12 @@ private theorem iterate_mul_deriv_add_mul_eq_div_of_ne_one (m : ℕ) {z : ℂ} (
     have hd := ((lerchNegNatPoly c m).hasDerivAt z).div
       (((hasDerivAt_const z (1 : ℂ)).sub (hasDerivAt_id z)).pow (m + 1)) (pow_ne_zero _ hne)
     rw [Function.iterate_succ_apply', (hd.congr_of_eventuallyEq hloc).deriv, ih hz]
-    dsimp only [id_eq, Pi.sub_apply, Pi.pow_apply]
-    simp only [lerchNegNatPoly_succ, eval_add, eval_mul, eval_sub, eval_one, eval_C, eval_X,
-      pow_succ]
-    push_cast; field_simp; ring
+    simp [lerchNegNatPoly_succ, pow_succ]
+    field_simp; ring
 
 /-- Removing the pole `(1 - z) ^ (m + 1)` at `z = 1` of the `m`-th iterated shifted Euler
 derivative yields the nonzero residue-like limit `m!` independently of `c`. -/
-theorem tendsto_one_sub_pow_mul_iterate_lerchEuler_nhdsNE_one (m : ℕ) (c : ℂ) :
+theorem tendsto_one_sub_pow_mul_iterate_mul_deriv_add_mul_inv_one_sub_nhdsNE_one (m : ℕ) (c : ℂ) :
     Tendsto (fun z : ℂ => (1 - z) ^ (m + 1) *
         (((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z))
       (𝓝[≠] 1) (𝓝 (m.factorial : ℂ)) := by
@@ -193,7 +165,7 @@ theorem tendsto_one_sub_pow_mul_iterate_lerchEuler_nhdsNE_one (m : ℕ) (c : ℂ
   have : 1 - z ≠ 0 := sub_ne_zero.mpr hne.symm
   rw [iterate_mul_deriv_add_mul_eq_div_of_ne_one m hne c]; field_simp
 
-private theorem not_continuousAt_iterate_lerchEuler_one (m : ℕ) (c : ℂ) :
+private theorem not_continuousAt_iterate_mul_deriv_add_mul_inv_one_sub_one (m : ℕ) (c : ℂ) :
     ¬ ContinuousAt
       (((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹)) 1 := by
   intro hc
@@ -205,7 +177,8 @@ private theorem not_continuousAt_iterate_lerchEuler_one (m : ℕ) (c : ℂ) :
       (𝓝[≠] 1) (𝓝 0) := by
     simpa using hcont.tendsto.mono_left (nhdsWithin_le_nhds (a := (1 : ℂ)) (s := {1}ᶜ))
   exact (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m) : (m.factorial : ℂ) ≠ 0)
-    (tendsto_nhds_unique hzero (tendsto_one_sub_pow_mul_iterate_lerchEuler_nhdsNE_one m c)).symm
+    (tendsto_nhds_unique hzero
+      (tendsto_one_sub_pow_mul_iterate_mul_deriv_add_mul_inv_one_sub_nhdsNE_one m c)).symm
 
 /-- Closed rational form of the `m`-fold shifted Euler derivative of `(1 - w)⁻¹` for all `z, c : ℂ`,
 including at the totalized pole `z = 1` where both sides vanish. -/
@@ -218,7 +191,8 @@ theorem iterate_mul_deriv_add_mul_inv_one_sub (m : ℕ) (z c : ℂ) :
     | zero => simp
     | succ m ih =>
       rw [Function.iterate_succ_apply', deriv_zero_of_not_differentiableAt
-        (mt DifferentiableAt.continuousAt (not_continuousAt_iterate_lerchEuler_one m c)), ih]
+        (mt DifferentiableAt.continuousAt
+          (not_continuousAt_iterate_mul_deriv_add_mul_inv_one_sub_one m c)), ih]
       simp
   · exact iterate_mul_deriv_add_mul_eq_div_of_ne_one m hz c
 
@@ -232,11 +206,12 @@ theorem lerchSeries_neg_nat_eq_div (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : �
 `(n : ℂ) + c ≠ 0` for all `n : ℕ`. -/
 theorem lerchSeries_neg_one {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ} (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     lerchSeries z (-1) c = c / (1 - z) + z / (1 - z) ^ 2 := by
-  have h := lerchSeries_neg_nat_eq_div 1 hz hc
   have : 1 - z ≠ 0 := sub_ne_zero.mpr fun h1 => by rw [← h1, norm_one] at hz; exact lt_irrefl 1 hz
-  simp only [Nat.cast_one, lerchNegNatPoly_one_order, eval_add, eval_mul, eval_sub, eval_one,
-    eval_C, eval_X, Nat.reduceAdd] at h
-  rw [h]; field_simp
+  calc lerchSeries z (-1) c
+      = (lerchNegNatPoly c 1).eval z / (1 - z) ^ 2 := by
+          simpa using lerchSeries_neg_nat_eq_div 1 hz hc
+    _ = (c * (1 - z) + z) / (1 - z) ^ 2 := by simp [lerchNegNatPoly_one]
+    _ = c / (1 - z) + z / (1 - z) ^ 2 := by field_simp
 
 /-- The rational nonpositive-integer continuation `(z, c) ↦ P_m(z; c) / (1 - z) ^ (m + 1)` is
 jointly analytic on `{p : ℂ × ℂ | p.1 ≠ 1}` across all `c ∈ ℂ`. -/
@@ -248,7 +223,7 @@ theorem analyticOnNhd_lerchNegNatPoly_div (m : ℕ) :
     ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + p.2 * f w)^[k]) (fun w => (1 - w)⁻¹) p.1
   have hUo : IsOpen {p : ℂ × ℂ | p.1 ≠ 1} := isOpen_ne.preimage continuous_fst
   suffices hF : AnalyticOnNhd ℂ (F m) {p : ℂ × ℂ | p.1 ≠ 1} by
-    convert hF using 1; ext p; exact (iterate_mul_deriv_add_mul_inv_one_sub m p.1 p.2).symm
+    exact hF.congr hUo fun p hp => iterate_mul_deriv_add_mul_eq_div_of_ne_one m hp p.2
   induction m with
   | zero =>
     exact DifferentiableOn.analyticOnNhd_of_finiteDimensional

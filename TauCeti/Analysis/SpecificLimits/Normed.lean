@@ -13,7 +13,8 @@ import TauCeti.Analysis.Normed.Ring.InfiniteSum
 # Geometric series in seminormed rings and normed fields
 
 The norms of the powers of an element in the open unit ball form a summable series, even when
-the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
+the seminorm is not normalized. The same holds after multiplication by bounded coefficients or
+shifted polynomial weights `(n + 1) ^ m`.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
 test.
@@ -59,6 +60,20 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
     {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ b n * q ^ n) :=
   (summable_norm_mul_pow_of_norm_le hb hq).of_norm
+
+/-- In a normed ring with summable geometric series, the shifted polynomial-geometric series
+`∑ n, (n + 1) ^ m * r ^ n` is summable whenever `‖r‖ < 1`. -/
+theorem summable_add_one_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
+    [HasSummableGeomSeries R] (m : ℕ) {r : R} (hr : ‖r‖ < 1) :
+    Summable (fun n : ℕ ↦ ((n : R) + 1) ^ m * r ^ n) := by
+  have h : Summable (fun n : ℕ ↦
+      ∑ j ∈ Finset.range (m + 1), (m.choose j : R) * ((n : R) ^ j * r ^ n)) :=
+    summable_sum fun j _ ↦ (summable_pow_mul_geometric_of_norm_lt_one j hr).mul_left _
+  refine h.congr fun n ↦ ?_
+  rw [Commute.add_pow (Commute.one_right (n : R)), Finset.sum_mul]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [one_pow, mul_one, ← mul_assoc]
+  rw [Nat.cast_commute (m.choose j) ((n : R) ^ j)]
 
 /-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
 theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]
