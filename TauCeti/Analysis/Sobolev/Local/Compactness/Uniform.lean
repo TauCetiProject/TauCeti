@@ -240,7 +240,7 @@ private theorem exists_opens_of_isCompact {K : Set ℂ} (hK : IsCompact K) (hKΩ
 
 /-- Under the boundedness hypothesis of `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`, every `u m`
 lies in `MemWkpLoc p Ω (k + 1)`. -/
-private theorem memWkpLoc_of_forall_exists_wkp_norm_le {u : ℕ → ℂ → ℝ}
+theorem memWkpLoc_of_forall_exists_wkp_norm_le {u : ℕ → ℂ → ℝ}
     (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
       ∃ R : ℝ, ∀ m, ∃ y : Wkp volume W p (k + 1),
         ‖y‖ ≤ R ∧ Wkp.value (k + 1) y =ᵐ[volume.restrict W] u m) (m : ℕ) :
