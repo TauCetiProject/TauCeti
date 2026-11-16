@@ -199,6 +199,21 @@ theorem principalSymbol_def {ι : Type*} (s : Finset ι) (b : ι → E → ℂ) 
     principalSymbol s b m M x ξ = constCoeffPrincipalSymbol s (fun i ↦ b i x) m M ξ :=
   (rfl)
 
+/-- With continuous coefficients, the principal symbol is jointly continuous in the position and
+the frequency. -/
+@[fun_prop]
+theorem continuous_principalSymbol {ι : Type*} (s : Finset ι) {b : ι → E → ℂ}
+    (hb : ∀ i, Continuous (b i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) (M : ℕ) :
+    Continuous fun p : E × E ↦ principalSymbol s b m M p.1 p.2 := by
+  simp only [principalSymbol, constCoeffPrincipalSymbol]
+  fun_prop
+
+/-- The principal symbol is homogeneous of degree `M` in the frequency variable. -/
+theorem principalSymbol_smul {ι : Type*} (s : Finset ι) (b : ι → E → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (x : E) (t : ℝ) (η : E) :
+    principalSymbol s b m M x (t • η) = (t : ℂ) ^ M * principalSymbol s b m M x η :=
+  constCoeffPrincipalSymbol_smul s _ m M t η
+
 /-- With constant coefficients, the principal symbol is `constCoeffPrincipalSymbol`. -/
 @[simp]
 theorem principalSymbol_const {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
@@ -230,7 +245,7 @@ theorem characteristicSet_const {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k
 theorem smul_mem_characteristicSet_iff {ι : Type*} {s : Finset ι} {b : ι → E → ℂ}
     {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} {x ξ : E} {t : ℝ} (ht : t ≠ 0) :
     (x, t • ξ) ∈ characteristicSet s b m M ↔ (x, ξ) ∈ characteristicSet s b m M := by
-  simp [principalSymbol_def, constCoeffPrincipalSymbol_smul, ht]
+  simp [principalSymbol_smul, ht]
 
 /-- **An elliptic cone, uniformly near a point.** Let the coefficients `b i` of a differential
 operator depend continuously on the position. If the principal symbol with the coefficients frozen
@@ -242,7 +257,6 @@ theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
     {x ξ : E} (hξ : principalSymbol s b m M x ξ ≠ 0) :
     ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
       ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖principalSymbol s b m M y η‖ := by
-  simp only [principalSymbol_def] at hξ ⊢
   -- `‖ξ‖ ^ M ≠ 0`: otherwise `ξ = 0` and `M ≠ 0`, and every term of the principal symbol at `ξ`
   -- has a factor `⟪_, 0⟫ = 0`.
   have hξM : 0 < ‖ξ‖ ^ M := by
@@ -253,10 +267,8 @@ theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
         have hki : k i = M := (Finset.mem_filter.1 hi).2
         rw [Finset.prod_eq_zero (i := ⟨0, hki ▸ hM⟩) (Finset.mem_univ _) (by simp), mul_zero]
     · exact pow_pos (norm_pos_iff.2 hξ0) M
-  set σ : E × E → ℂ := fun p ↦ constCoeffPrincipalSymbol s (fun i ↦ b i p.1) m M p.2
-  have hσ : Continuous σ := by
-    simp only [σ, constCoeffPrincipalSymbol]
-    fun_prop
+  set σ : E × E → ℂ := fun p ↦ principalSymbol s b m M p.1 p.2
+  have hσ : Continuous σ := continuous_principalSymbol s hb m M
   set c₀ : ℝ := ‖σ (x, ξ)‖ / (2 * ‖ξ‖ ^ M)
   have hc₀ : 0 < c₀ := div_pos (norm_pos_iff.2 hξ) (by positivity)
   -- A product neighbourhood `U × V` of `(x, ξ)` on which `c₀ ‖η‖ ^ M < ‖σ (y, η)‖`.
@@ -280,7 +292,7 @@ theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
     exact ⟨u / t, div_pos hu ht, by rwa [smul_smul, div_mul_cancel₀ _ ht.ne']⟩
   · rintro y hy η ⟨t, ht, hη⟩
     have h : c₀ * ‖t • η‖ ^ M < ‖σ (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
-    simp only [σ, constCoeffPrincipalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
+    simp only [σ, principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
       norm_smul, Real.norm_of_nonneg ht.le, mul_pow] at h
     refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht M).le).le
     linarith
