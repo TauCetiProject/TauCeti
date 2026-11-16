@@ -38,8 +38,7 @@ an isomorphism in `TauCeti.LinearAlgebra.Matrix.Cartan.Realization.WeylGroup.Cox
 * `TauCeti.CartanRealization.simpleReflection`, `TauCeti.CartanRealization.simpleCoreflection`,
   `TauCeti.CartanRealization.weylGroup`, `TauCeti.CartanRealization.weylSimple`,
   `TauCeti.CartanRealization.length`, `TauCeti.CartanRealization.corootAction`.
-* `TauCeti.CartanRealization.restrictWeylEquiv`,
-  `TauCeti.CartanRealization.restrictRootLatticeEquiv`.
+* `TauCeti.CartanRealization.restrictWeylEquiv`.
 * `TauCeti.CartanRealization.rootLatticeAction`,
   `TauCeti.CartanRealization.CoweightLattice.coweightAction`,
   `TauCeti.CartanRealization.CoweightLattice.weightAction`,
@@ -47,6 +46,8 @@ an isomorphism in `TauCeti.LinearAlgebra.Matrix.Cartan.Realization.WeylGroup.Cox
 
 ## Main results
 
+* `TauCeti.CartanRealization.weylSimple_injective`: distinct simple indices yield distinct simple
+  reflections.
 * `TauCeti.CartanRealization.smul_apply_corootAction`: `(w • φ)(w • h) = φ(h)`.
 * `TauCeti.CartanRealization.restrictRootLatticeEquiv_smul`: equivariance of restriction to `Q`.
 * `TauCeti.CartanRealization.weylSimple_mul_weylSimple_pow` and
@@ -285,13 +286,37 @@ theorem weylSimple_sq (i : I) : R.weylSimple hdiag i ^ 2 = 1 := by rw [sq, weylS
 theorem weylSimple_inv (i : I) : (R.weylSimple hdiag i)⁻¹ = R.weylSimple hdiag i :=
   Subtype.ext (R.simpleReflection_inv hdiag i)
 
-/-- Over a characteristic-zero field, no simple reflection is the identity. -/
-theorem weylSimple_ne_one [CharZero K] (i : I) : R.weylSimple hdiag i ≠ 1 := by
+/-- Over a field of characteristic not `2`, no simple reflection is the identity. -/
+theorem weylSimple_ne_one [NeZero (2 : K)] (i : I) : R.weylSimple hdiag i ≠ 1 := by
   intro h
   have hα := congrArg (fun w : R.weylGroup hdiag ↦ (w • R.root i) (R.coroot i)) h
   simp only [weylSimple_smul, simpleReflection_root_self, LinearMap.neg_apply, one_smul,
     R.root_coroot, hdiag i] at hα
-  norm_num at hα
+  have h4 : (2 : K) * 2 = 0 := by
+    calc (2 : K) * 2 = 2 + 2 := two_mul 2
+      _ = 2 + (-2) := by rw [hα]
+      _ = 0 := add_neg_cancel 2
+  exact two_ne_zero (mul_self_eq_zero.mp h4)
+
+/-- Over a field of characteristic not `2`, simple reflections for distinct indices are distinct in
+`R.weylGroup hdiag`. -/
+theorem weylSimple_injective [NeZero (2 : K)] : Function.Injective (R.weylSimple hdiag) := by
+  intro i j hij
+  by_contra hne
+  have hact : R.simpleReflection hdiag i (R.root i) = R.simpleReflection hdiag j (R.root i) :=
+    congrArg (fun w : R.weylGroup hdiag ↦ w • R.root i) hij
+  rw [simpleReflection_root_self, simpleReflection_root] at hact
+  have hcomb : Finsupp.linearCombination K R.root
+      (Finsupp.single i (2 : K) - Finsupp.single j (A j i)) = 0 := by
+    rw [map_sub, Finsupp.linearCombination_single, Finsupp.linearCombination_single, two_smul]
+    calc R.root i + R.root i - A j i • R.root j
+        = R.root i + (R.root i - A j i • R.root j) := add_sub_assoc _ _ _
+      _ = R.root i + (-R.root i) := by rw [← hact]
+      _ = 0 := add_neg_cancel _
+  have hzero := linearIndependent_iff.mp R.root_linearIndependent _ hcomb
+  have hi : (Finsupp.single i (2 : K) - Finsupp.single j (A j i)) i = 0 := by rw [hzero]; rfl
+  rw [Finsupp.sub_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne hne, sub_zero] at hi
+  exact two_ne_zero hi
 
 /-- The simple elements `R.weylSimple hdiag i` generate `R.weylGroup hdiag`. -/
 theorem closure_range_weylSimple : Subgroup.closure (Set.range (R.weylSimple hdiag)) = ⊤ := by
@@ -494,7 +519,7 @@ theorem length_eq_zero_iff {w : R.weylGroup hdiag} : R.length hdiag w = 0 ↔ w 
   exact Subtype.ext hprod.symm
 
 @[simp]
-theorem length_weylSimple [CharZero K] (i : I) : R.length hdiag (R.weylSimple hdiag i) = 1 := by
+theorem length_weylSimple [NeZero (2 : K)] (i : I) : R.length hdiag (R.weylSimple hdiag i) = 1 := by
   refine le_antisymm (R.length_le_of_prod_eq hdiag (l := [i]) (by simp)) ?_
   have hne := mt (R.length_eq_zero_iff hdiag).mp (R.weylSimple_ne_one hdiag i)
   omega
@@ -543,26 +568,24 @@ noncomputable def restrictWeylEquiv (M : Submodule K H) (hc : R.corootSpan ≤ M
   let R' := R.restrict M hc hs
   let toSub : R.weylGroup hdiag →* (M ≃ₗ[K] M) :=
     { toFun w :=
-        { toFun m := ⟨R.corootAction hdiag w m.1,
-            R.corootAction_mem_of_corootSpan_le hdiag M hc w m.2⟩
-          invFun m := ⟨R.corootAction hdiag w⁻¹ m.1,
-            R.corootAction_mem_of_corootSpan_le hdiag M hc w⁻¹ m.2⟩
-          left_inv m := Subtype.ext <| by
-            dsimp only; rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
-              one_apply_eq_self]
-          right_inv m := Subtype.ext <| by
-            dsimp only; rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
-              one_apply_eq_self]
-          map_add' _ _ := Subtype.ext (map_add _ _ _)
-          map_smul' _ _ := Subtype.ext (map_smul _ _ _) }
+        (R.corootAction hdiag w).ofSubmodules M M <| Submodule.ext fun x ↦ by
+          rw [Submodule.mem_map_equiv]
+          have hsymm : (R.corootAction hdiag w).symm = R.corootAction hdiag w⁻¹ :=
+            (map_inv (R.corootAction hdiag) w).symm
+          rw [hsymm]
+          exact ⟨fun hx ↦ by
+              have h := R.corootAction_mem_of_corootSpan_le hdiag M hc w hx
+              rwa [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
+                one_apply_eq_self] at h,
+            R.corootAction_mem_of_corootSpan_le hdiag M hc w⁻¹⟩
       map_one' := by ext; simp
       map_mul' _ _ := by ext; simp [map_mul] }
   have hinj : Function.Injective toSub := by
     refine (injective_iff_map_eq_one _).mpr fun w hw ↦
       R.corootAction_injective hdiag <| LinearEquiv.ext fun x ↦ ?_
     obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
-    have hm' : R.corootAction hdiag w m = m :=
-      congrArg Subtype.val (DFunLike.congr_fun hw ⟨m, hm⟩)
+    have hm' : R.corootAction hdiag w m = m := by
+      simpa [toSub] using congrArg Subtype.val (DFunLike.congr_fun hw ⟨m, hm⟩)
     rw [map_add, hm', R.corootAction_of_mem_cartanCenter hdiag w hz, map_one, one_apply_eq_self]
   have hsimple (i : I) : toSub (R.weylSimple hdiag i) = R'.simpleCoreflection hdiag i := by
     ext m; simp [toSub, R', simpleCoreflection_apply]
@@ -609,50 +632,6 @@ theorem subtype_dualMap_smul (M : Submodule K H) (hc : R.corootSpan ≤ M)
       subtype_dualMap_simpleReflection]
   | mul u v ihu ihv => rw [mul_smul, ihu, ihv, map_mul, mul_smul]
 
-omit hdiag in
-/-- Every element of `R.rootLattice` vanishes on the Cartan center. -/
-theorem eval_eq_zero_of_mem_rootLattice {φ : Dual K H} (hφ : φ ∈ R.rootLattice)
-    {z : H} (hz : z ∈ R.cartanCenter) : φ z = 0 := by
-  rw [R.rootLattice_def] at hφ
-  induction hφ using Submodule.span_induction with
-  | mem _ hx => obtain ⟨i, rfl⟩ := hx; exact (R.mem_cartanCenter_iff z).mp hz i
-  | zero => rfl
-  | add _ _ _ _ ihx ihy => simp [ihx, ihy]
-  | smul n _ _ ihx => simp [ihx]
-
-omit hdiag in
-/-- Restriction of functionals from `H` to `M` identifies `R.rootLattice` with
-`(R.restrict M hc hs).rootLattice` as `ℤ`-modules. -/
-noncomputable def restrictRootLatticeEquiv (M : Submodule K H) (hc : R.corootSpan ≤ M)
-    (hs : M ⊔ R.cartanCenter = ⊤) :
-    R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice := by
-  let f : Dual K H →ₗ[ℤ] Dual K M := M.subtype.dualMap.restrictScalars ℤ
-  have hcomp : f ∘ R.root = (R.restrict M hc hs).root := by ext i m; simp [f]
-  have hmap : R.rootLattice.map f = (R.restrict M hc hs).rootLattice := by
-    rw [R.rootLattice_def, (R.restrict M hc hs).rootLattice_def, Submodule.map_span,
-      ← Set.range_comp, hcomp]
-  let g : R.rootLattice →ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
-    { toFun φ := ⟨M.subtype.dualMap φ.1, hmap ▸ Submodule.mem_map_of_mem φ.2⟩
-      map_add' _ _ := Subtype.ext (map_add _ _ _)
-      map_smul' _ _ := Subtype.ext (map_zsmul _ _ _) }
-  refine LinearEquiv.ofBijective g ⟨fun φ₁ φ₂ h12 ↦ Subtype.ext ?_, fun ψ ↦ ?_⟩
-  · rw [← sub_eq_zero]
-    ext x
-    obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
-    have hm' : (φ₁.1 - φ₂.1) m = 0 := by
-      simpa [g, sub_eq_zero] using
-        congrArg (fun ξ : Dual K M ↦ ξ ⟨m, hm⟩) (congrArg Subtype.val h12)
-    rw [map_add, hm', R.eval_eq_zero_of_mem_rootLattice (sub_mem φ₁.2 φ₂.2) hz, add_zero,
-      LinearMap.zero_apply]
-  · obtain ⟨φ, hφ, hφψ⟩ := Submodule.mem_map.mp (hmap.symm ▸ ψ.2 : ψ.1 ∈ R.rootLattice.map f)
-    exact ⟨⟨φ, hφ⟩, Subtype.ext hφψ⟩
-
-@[simp]
-theorem coe_restrictRootLatticeEquiv (M : Submodule K H) (hc : R.corootSpan ≤ M)
-    (hs : M ⊔ R.cartanCenter = ⊤) (φ : R.rootLattice) :
-    ((R.restrictRootLatticeEquiv M hc hs φ : (R.restrict M hc hs).rootLattice) : Dual K M) =
-      M.subtype.dualMap φ := (rfl)
-
 end SimpleReflections
 
 /-! ### Stability of lattices and the braid relations -/
@@ -665,18 +644,6 @@ theorem mapIntCast_diag {I K : Type*} [Ring K] {A : Matrix I I ℤ} (hdiag : ∀
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-
-/-- Every functional in `R.rootLattice` takes integer-cast values on simple coroots. -/
-theorem exists_intCast_eval_coroot_of_mem_rootLattice {φ : Dual K H} (hφ : φ ∈ R.rootLattice)
-    (i : I) : ∃ n : ℤ, (n : K) = φ (R.coroot i) := by
-  rw [R.rootLattice_def] at hφ
-  induction hφ using Submodule.span_induction with
-  | mem _ hx => obtain ⟨j, rfl⟩ := hx; exact ⟨A i j, by simp⟩
-  | zero => exact ⟨0, by simp⟩
-  | add _ _ _ _ ihx ihy =>
-    obtain ⟨nx, hnx⟩ := ihx; obtain ⟨ny, hny⟩ := ihy
-    exact ⟨nx + ny, by simp [← hnx, ← hny]⟩
-  | smul c _ _ ihx => obtain ⟨nx, hnx⟩ := ihx; exact ⟨c * nx, by simp [← hnx]⟩
 
 /-- The Weyl group stabilizes the root lattice `Q`. -/
 theorem smul_mem_rootLattice (hdiag : ∀ i, A i i = 2)
@@ -700,14 +667,12 @@ theorem smul_mem_rootLattice_iff (hdiag : ∀ i, A i i = 2)
 def rootLatticeAction (hdiag : ∀ i, A i i = 2) :
     R.weylGroup (mapIntCast_diag hdiag) →* (R.rootLattice ≃ₗ[ℤ] R.rootLattice) where
   toFun w :=
-    { toFun φ := ⟨w • φ.1, R.smul_mem_rootLattice hdiag w φ.2⟩
-      invFun φ := ⟨w⁻¹ • φ.1, R.smul_mem_rootLattice hdiag w⁻¹ φ.2⟩
-      left_inv φ := Subtype.ext (inv_smul_smul w φ.1)
-      right_inv φ := Subtype.ext (smul_inv_smul w φ.1)
-      map_add' _ _ := Subtype.ext (smul_add w _ _)
-      map_smul' _ _ := Subtype.ext (smul_comm w _ _) }
+    (w.1.restrictScalars ℤ).ofSubmodules R.rootLattice R.rootLattice <|
+      Submodule.ext fun φ ↦ by
+        rw [Submodule.mem_map_equiv]
+        exact R.smul_mem_rootLattice_iff hdiag w⁻¹
   map_one' := by ext; simp
-  map_mul' _ _ := by ext; simp [mul_smul]
+  map_mul' _ _ := by ext; simp
 
 @[simp]
 theorem coe_rootLatticeAction_apply (hdiag : ∀ i, A i i = 2)
@@ -773,16 +738,16 @@ theorem smul_mem_weightLattice_iff (hdiag : ∀ i, A i i = 2)
 noncomputable def coweightAction (hdiag : ∀ i, A i i = 2) :
     R.weylGroup (mapIntCast_diag hdiag) →* (L.lattice ≃ₗ[ℤ] L.lattice) where
   toFun w :=
-    { toFun y := ⟨R.corootAction (mapIntCast_diag hdiag) w y.1,
-        L.corootAction_mem_lattice hdiag w y.2⟩
-      invFun y := ⟨R.corootAction (mapIntCast_diag hdiag) w⁻¹ y.1,
-        L.corootAction_mem_lattice hdiag w⁻¹ y.2⟩
-      left_inv y := Subtype.ext <| by
-        dsimp only; rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
-      right_inv y := Subtype.ext <| by
-        dsimp only; rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
-      map_add' _ _ := Subtype.ext (map_add _ _ _)
-      map_smul' _ _ := Subtype.ext (map_zsmul _ _ _) }
+    ((R.corootAction (mapIntCast_diag hdiag) w).restrictScalars ℤ).ofSubmodules
+      L.lattice L.lattice <|
+      Submodule.ext fun y ↦ by
+        rw [Submodule.mem_map_equiv]
+        have hsymm :
+            ((R.corootAction (mapIntCast_diag hdiag) w).restrictScalars ℤ).symm y =
+              R.corootAction (mapIntCast_diag hdiag) w⁻¹ y :=
+          DFunLike.congr_fun (map_inv (R.corootAction (mapIntCast_diag hdiag)) w).symm y
+        rw [hsymm]
+        exact L.corootAction_mem_lattice_iff hdiag w⁻¹
   map_one' := by ext; simp
   map_mul' _ _ := by ext; simp [map_mul]
 
@@ -795,14 +760,12 @@ theorem coe_coweightAction_apply (hdiag : ∀ i, A i i = 2)
 def weightAction (hdiag : ∀ i, A i i = 2) :
     R.weylGroup (mapIntCast_diag hdiag) →* (L.weightLattice ≃ₗ[ℤ] L.weightLattice) where
   toFun w :=
-    { toFun φ := ⟨w • φ.1, L.smul_mem_weightLattice hdiag w φ.2⟩
-      invFun φ := ⟨w⁻¹ • φ.1, L.smul_mem_weightLattice hdiag w⁻¹ φ.2⟩
-      left_inv φ := Subtype.ext (inv_smul_smul w φ.1)
-      right_inv φ := Subtype.ext (smul_inv_smul w φ.1)
-      map_add' _ _ := Subtype.ext (smul_add w _ _)
-      map_smul' _ _ := Subtype.ext (smul_comm w _ _) }
+    (w.1.restrictScalars ℤ).ofSubmodules L.weightLattice L.weightLattice <|
+      Submodule.ext fun φ ↦ by
+        rw [Submodule.mem_map_equiv]
+        exact L.smul_mem_weightLattice_iff hdiag w⁻¹
   map_one' := by ext; simp
-  map_mul' _ _ := by ext; simp [mul_smul]
+  map_mul' _ _ := by ext; simp
 
 @[simp]
 theorem coe_weightAction_apply (hdiag : ∀ i, A i i = 2)

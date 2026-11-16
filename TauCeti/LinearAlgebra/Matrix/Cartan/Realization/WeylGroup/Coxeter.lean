@@ -5,17 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Order
 public import Mathlib.GroupTheory.Coxeter.Inversion
 public import Mathlib.GroupTheory.Coxeter.Length
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.WeylGroup.Basic
+import Mathlib.Data.Finsupp.Order
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
 import TauCeti.GroupTheory.Coxeter.Dihedral
 import TauCeti.GroupTheory.Coxeter.Geometric.Basic
+import TauCeti.GroupTheory.Coxeter.Length
 import TauCeti.GroupTheory.Coxeter.Parabolic
 import TauCeti.GroupTheory.Coxeter.StrongExchange
 
@@ -55,7 +56,10 @@ or finite-dimensionality of `H`:
   `TauCeti.CartanRealization.length_mul_weylSimple_eq_add_one_iff`,
   `TauCeti.CartanRealization.rootLatticeAction_injective`.
 * `TauCeti.CartanRealization.realCoroot_smul_root`, `TauCeti.CartanRealization.realCoroot_smul`,
-  `TauCeti.CartanRealization.realReflection_smul_root`.
+  `TauCeti.CartanRealization.realCoroot_neg`,
+  `TauCeti.CartanRealization.realReflection_smul_root`,
+  `TauCeti.CartanRealization.realReflection_neg`,
+  `TauCeti.CartanRealization.realReflection_smul_eq_conj`.
 
 ## References
 
@@ -76,48 +80,6 @@ section CoordRepresentation
 
 variable {I K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
   {A : Matrix I I ℤ}
-
-section Prelim
-
-variable (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-
-private theorem rootLinearCombination_injective :
-    Function.Injective (Finsupp.linearCombination ℤ R.root) :=
-  (R.root_linearIndependent.restrict_scalars' ℤ).finsuppLinearCombination_injective
-
-/-- An integral combination of simple roots lies in `R.posRootCone` iff its coordinates are
-nonnegative. -/
-private theorem rootLinearCombination_mem_posRootCone_iff (x : I →₀ ℤ) :
-    Finsupp.linearCombination ℤ R.root x ∈ R.posRootCone ↔ 0 ≤ x := by
-  let castNat : (I →₀ ℕ) →+ (I →₀ ℤ) := Finsupp.mapRange.addMonoidHom (Nat.castAddMonoidHom ℤ)
-  have hcast_apply (y : I →₀ ℕ) (i : I) : castNat y i = (y i : ℤ) := by simp [castNat]
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · rw [R.posRootCone_def] at hx
-    have hex : ∀ φ ∈ Submodule.span ℕ (Set.range R.root),
-        ∃ y : I →₀ ℕ, Finsupp.linearCombination ℤ R.root (castNat y) = φ := by
-      intro φ hφ
-      induction hφ using Submodule.span_induction with
-      | mem _ h => obtain ⟨i, rfl⟩ := h; exact ⟨Finsupp.single i 1, by simp [castNat]⟩
-      | zero => exact ⟨0, by simp⟩
-      | add _ _ _ _ ih₁ ih₂ =>
-        obtain ⟨y₁, hy₁⟩ := ih₁; obtain ⟨y₂, hy₂⟩ := ih₂
-        exact ⟨y₁ + y₂, by rw [map_add, map_add, hy₁, hy₂]⟩
-      | smul n _ _ ih => obtain ⟨y, hy⟩ := ih; exact ⟨n • y, by rw [map_nsmul, map_nsmul, hy]⟩
-    obtain ⟨y, hy⟩ := hex _ hx
-    rw [← R.rootLinearCombination_injective hy]
-    intro i; rw [hcast_apply]; exact Nat.cast_nonneg (y i)
-  · let y : I →₀ ℕ := x.mapRange Int.toNat rfl
-    have hyx : castNat y = x := by ext i; rw [hcast_apply]; exact Int.toNat_of_nonneg (hx i)
-    rw [← hyx]
-    induction y using Finsupp.induction_linear with
-    | zero => simp
-    | add y₁ y₂ ih₁ ih₂ => rw [map_add, map_add]; exact add_mem ih₁ ih₂
-    | single i n =>
-      have hsingle : castNat (Finsupp.single i n) = Finsupp.single i (n : ℤ) := by simp [castNat]
-      rw [hsingle, Finsupp.linearCombination_single, natCast_zsmul]
-      exact Submodule.smul_mem _ n (R.root_mem_posRootCone i)
-
-end Prelim
 
 /-- The simple coordinate reflection `x ↦ x - (∑ⱼ xⱼ A i j) eᵢ` on `I →₀ ℤ`. -/
 private noncomputable def coordReflection (A : Matrix I I ℤ) (hdiag : ∀ i, A i i = 2) (i : I) :
@@ -483,35 +445,15 @@ theorem orderOf_weylSimple_mul_weylSimple (hdiag : ∀ i, A i i = 2)
   rw [← R.weylCoxeterSystem_simple hdiag hoff hzero, ← R.weylCoxeterSystem_simple hdiag hoff hzero]
   exact (R.weylCoxeterSystem hdiag hoff hzero).orderOf_simple_mul_simple i j
 
-/-- Simple reflections for distinct indices are distinct in `R.weylGroup`. -/
-theorem weylSimple_injective (hdiag : ∀ i, A i i = 2)
-    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) :
-    Function.Injective (R.weylSimple (mapIntCast_diag hdiag)) := by
-  have h : R.weylSimple (mapIntCast_diag hdiag) = (R.weylCoxeterSystem hdiag hoff hzero).simple :=
-    funext fun i ↦ (R.weylCoxeterSystem_simple hdiag hoff hzero i).symm
-  rw [h]; exact (R.weylCoxeterSystem hdiag hoff hzero).simple_injective
-
 private theorem length_weylCoxeterSystem_eq (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     (g : (cartanCoxeterMatrix A).Group) :
     (R.weylCoxeterSystem hdiag hoff hzero).length (R.coxeterEquivWeyl hdiag hoff hzero g) =
       (cartanCoxeterMatrix A).toCoxeterSystem.length g := by
-  let cs := R.weylCoxeterSystem hdiag hoff hzero
-  let cs₀ := (cartanCoxeterMatrix A).toCoxeterSystem
-  have hword (ω : List I) :
-      R.coxeterEquivWeyl hdiag hoff hzero (cs₀.wordProd ω) = cs.wordProd ω := by
-    induction ω with
-    | nil => simp
-    | cons i ω ih =>
-      rw [cs₀.wordProd_cons, cs.wordProd_cons, map_mul, ih,
-        CoxeterMatrix.toCoxeterSystem_simple, R.coxeterEquivWeyl_simple, R.weylCoxeterSystem_simple]
-  refine le_antisymm ?_ ?_
-  · obtain ⟨ω, hred, rfl⟩ := cs₀.exists_isReduced g
-    rw [hred.eq, hword]; exact cs.length_wordProd_le ω
-  · obtain ⟨ω, hred, hw⟩ := cs.exists_isReduced (R.coxeterEquivWeyl hdiag hoff hzero g)
-    have hg : cs₀.wordProd ω = g :=
-      (R.coxeterEquivWeyl hdiag hoff hzero).injective ((hword ω).trans hw.symm)
-    rw [hw, hred.eq, ← hg]; exact cs₀.length_wordProd_le ω
+  have hcs : R.weylCoxeterSystem hdiag hoff hzero =
+      (cartanCoxeterMatrix A).toCoxeterSystem.map (R.coxeterEquivWeyl hdiag hoff hzero) := by
+    ext; rfl
+  rw [hcs, CoxeterSystem.length_map]
 
 private theorem isRightDescent_weylCoxeterSystem_iff (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
@@ -641,8 +583,10 @@ theorem ne_zero_of_mem_realRoots {α : Dual K H} (hα : α ∈ R.realRoots hdiag
   obtain ⟨w, i, rfl⟩ := hα
   exact (map_ne_zero_iff w.1 w.1.injective).mpr (R.root_linearIndependent.ne_zero i)
 
-/-- **The real coroot `α^∨ ∈ H`** attached to a real root `α ∈ R.realRoots`: if `α = w(αᵢ)`, then
-`α^∨ = w(hᵢ)`, independently of the choice of `(w, i)`. -/
+/-- **The real coroot `α^∨ ∈ H`** attached to a real root `α ∈ R.realRoots hdiag`, defined as
+`w(hᵢ)` for a chosen presentation `α = w(αᵢ)`. Over a characteristic-zero field for a generalized
+Cartan matrix, this value is independent of the choice of `(w, i)` (see
+`CartanRealization.realCoroot_eq_of_smul_root` and `CartanRealization.realCoroot_smul_root`). -/
 noncomputable def realCoroot {α : Dual K H} (hα : α ∈ R.realRoots hdiag) : H :=
   R.corootAction (mapIntCast_diag hdiag) hα.choose (R.coroot hα.choose_spec.choose)
 
@@ -656,8 +600,11 @@ theorem apply_realCoroot_self {α : Dual K H} (hα : α ∈ R.realRoots hdiag) :
   exact (congrFun (congrArg DFunLike.coe hα.choose_spec.choose_spec.symm)
     (R.realCoroot hdiag hα)).trans h
 
-/-- **The reflection `s_α ∈ R.weylGroup` attached to a real root `α ∈ R.realRoots`** (not defined
-for imaginary roots): if `α = w(αᵢ)`, then `s_α = w sᵢ w⁻¹`. -/
+/-- **The reflection `s_α ∈ R.weylGroup` attached to a real root `α ∈ R.realRoots hdiag`** (not
+defined for imaginary roots), defined as `w sᵢ w⁻¹` for a chosen presentation `α = w(αᵢ)`. Over a
+characteristic-zero field for a generalized Cartan matrix, this equals `w sᵢ w⁻¹` independently of
+the choice of `(w, i)` (see `CartanRealization.realReflection_eq_of_smul_root` and
+`CartanRealization.realReflection_smul_root`). -/
 noncomputable def realReflection {α : Dual K H}
     (hα : α ∈ R.realRoots hdiag) : R.weylGroup (mapIntCast_diag hdiag) :=
   hα.choose * R.weylSimple (mapIntCast_diag hdiag) hα.choose_spec.choose * hα.choose⁻¹
@@ -755,6 +702,8 @@ private theorem corootAction_coroot_eq_of_smul_root_eq (hdiag : ∀ i, A i i = 2
   rw [← map_sub] at hsub
   exact (smul_eq_zero.mp hsub).resolve_right (R.ne_zero_of_mem_realRoots hdiag ⟨w₁, i, rfl⟩)
 
+/-- For a generalized Cartan matrix over a characteristic-zero field, `R.realCoroot` equals
+`w(hᵢ)` for every presentation `α = w(αᵢ)`. -/
 theorem realCoroot_eq_of_smul_root (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots hdiag)
@@ -789,6 +738,22 @@ theorem realCoroot_smul (hdiag : ∀ i, A i i = 2)
   rw [R.realCoroot_smul_root hdiag hoff hzero u i, ← mul_apply_eq_comp, ← map_mul]
   exact R.realCoroot_eq_of_smul_root hdiag hoff hzero _ (mul_smul w u (R.root i))
 
+/-- Negating a real root negates its real coroot: `(-α)^∨ = -α^∨`. -/
+@[simp]
+theorem realCoroot_neg (hdiag : ∀ i, A i i = 2)
+    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
+    {α : Dual K H} (hα : -α ∈ R.realRoots hdiag) :
+    R.realCoroot hdiag hα = -R.realCoroot hdiag ((R.neg_mem_realRoots_iff hdiag).mp hα) := by
+  have hmem : α ∈ R.realRoots hdiag := (R.neg_mem_realRoots_iff hdiag).mp hα
+  obtain ⟨w, i, rfl⟩ := hmem
+  rw [R.realCoroot_smul_root hdiag hoff hzero w i]
+  have hneg : (w * R.weylSimple (mapIntCast_diag hdiag) i) • R.root i = -(w • R.root i) := by
+    rw [mul_smul, weylSimple_smul, simpleReflection_root_self, smul_neg]
+  rw [R.realCoroot_eq_of_smul_root hdiag hoff hzero hα hneg, map_mul, mul_apply_eq_comp,
+    corootAction_weylSimple, simpleCoreflection_coroot_self, map_neg]
+
+/-- For a generalized Cartan matrix over a characteristic-zero field, `R.realReflection` equals
+`w sᵢ w⁻¹` for every presentation `α = w(αᵢ)`. -/
 theorem realReflection_eq_of_smul_root (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots hdiag)
@@ -797,6 +762,8 @@ theorem realReflection_eq_of_smul_root (hdiag : ∀ i, A i i = 2)
   R.conj_weylSimple_eq_of_smul_root_eq hdiag hoff hzero
     (hα.choose_spec.choose_spec.trans hw.symm)
 
+/-- The reflection attached to `w(αᵢ)` equals `w sᵢ w⁻¹`, independently of the presentation of the
+real root. -/
 @[simp]
 theorem realReflection_smul_root (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
@@ -812,6 +779,31 @@ theorem realReflection_root (hdiag : ∀ i, A i i = 2)
       R.weylSimple (mapIntCast_diag hdiag) i := by
   simpa using R.realReflection_eq_of_smul_root hdiag hoff hzero (R.root_mem_realRoots hdiag i)
     (one_smul _ _)
+
+/-- **Weyl equivariance of real reflections**: `s_{w • α} = w * s_α * w⁻¹`. -/
+theorem realReflection_smul_eq_conj (hdiag : ∀ i, A i i = 2)
+    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
+    (w : R.weylGroup (mapIntCast_diag hdiag)) {α : Dual K H} (hα : α ∈ R.realRoots hdiag) :
+    R.realReflection hdiag ((R.smul_mem_realRoots_iff hdiag w).mpr hα) =
+      w * R.realReflection hdiag hα * w⁻¹ := by
+  obtain ⟨u, i, rfl⟩ := hα
+  rw [R.realReflection_smul_root hdiag hoff hzero u i,
+    R.realReflection_eq_of_smul_root hdiag hoff hzero _ (mul_smul w u (R.root i))]
+  simp [mul_assoc]
+
+/-- Negating a real root preserves its real reflection: `s_{-α} = s_α`. -/
+@[simp]
+theorem realReflection_neg (hdiag : ∀ i, A i i = 2)
+    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
+    {α : Dual K H} (hα : -α ∈ R.realRoots hdiag) :
+    R.realReflection hdiag hα = R.realReflection hdiag ((R.neg_mem_realRoots_iff hdiag).mp hα) := by
+  have hmem : α ∈ R.realRoots hdiag := (R.neg_mem_realRoots_iff hdiag).mp hα
+  obtain ⟨w, i, rfl⟩ := hmem
+  rw [R.realReflection_smul_root hdiag hoff hzero w i]
+  have hneg : (w * R.weylSimple (mapIntCast_diag hdiag) i) • R.root i = -(w • R.root i) := by
+    rw [mul_smul, weylSimple_smul, simpleReflection_root_self, smul_neg]
+  rw [R.realReflection_eq_of_smul_root hdiag hoff hzero hα hneg]
+  simp [mul_assoc]
 
 /-- Every real reflection is a Coxeter reflection in `R.weylCoxeterSystem`. -/
 theorem isReflection_realReflection (hdiag : ∀ i, A i i = 2)
