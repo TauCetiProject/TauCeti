@@ -405,14 +405,12 @@ private theorem ae_jetField_eq_zero_of_ae_value_eq_zero (hν : ν ≠ 0)
     (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {u : W1p mu U 2}
     (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) :
     ∀ᵐ x ∂mu.restrict U, x ∉ H → jetField u x = 0 := by
-  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed
-    (K := {x | c₀ ≤ ⟪x, ν⟫_ℝ}) (isClosed_le continuous_const (continuous_id.inner continuous_const))
-    (hu0.mono fun x hx hxK => hx fun hxH => hxK ((hH x).1 hxH).le)
+  have hgrad := W1p.ae_gradient_eq_zero_of_inner_lt hH hu0
   filter_upwards [hu0, hgrad, ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
     (Measure.addHaar_setOf_inner_eq mu hν c₀))] with x hv hg hx hxH
   have hlt : ⟪x, ν⟫_ℝ < c₀ :=
     lt_of_le_of_ne (not_lt.1 fun h => hxH ((hH x).2 h)) hx
-  rw [jetField_apply, hv hxH, hg (not_le.2 hlt), Prod.mk_zero_zero]
+  rw [jetField_apply, hv hxH, hg hlt, Prod.mk_zero_zero]
 
 /-- For a Sobolev function `u` on `U` vanishing on `U ∖ H`, the energy form of the reflected
 coefficients on `U` is the energy form of the original coefficients on `U ∩ H`. -/
