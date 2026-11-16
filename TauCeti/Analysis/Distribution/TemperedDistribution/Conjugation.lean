@@ -79,6 +79,10 @@ theorem conjPostcompCLM_conjPostcompCLM {H : Type*} [NormedAddCommGroup H] [Norm
       PointwiseConvergenceCLM.postcomp _ (L'.comp L) u := by
   ext φ
   simp only [conjPostcompCLM_apply_apply, SchwartzMap.conjCLM_conjCLM]
+  -- `PointwiseConvergenceCLM.postcomp _ M u` is `M.comp u` by definition, so its value at `φ` is
+  -- `M (u φ)`. Mathlib's simps lemma `PointwiseConvergenceCLM.postcomp_apply` states this only
+  -- with an ill-typed `M.comp u` (it treats `u : 𝓢'(E, F)` as a plain continuous linear map), so
+  -- simp cannot use it here and the definitional unfolding closes the goal instead.
   rfl
 
 end NormedSpace
