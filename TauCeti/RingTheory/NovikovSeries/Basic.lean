@@ -700,12 +700,19 @@ def geometric [Zero R] (N : H →+ ℝ) {h : H} (hh : 0 < N h) (r : R) :
     rw [map_nsmul, nsmul_eq_mul] at hgC
     exact (lt_div_iff₀ hh).2 hgC
 
+/-- The coefficients of the geometric series `∑ₖ r e^(k h)`: `r` at the natural multiples of `h`
+and `0` elsewhere. -/
+@[simp]
+theorem coeff_geometric [Zero R] {h : H} (hh : 0 < N h) (r : R) (g : H) :
+    (geometric N hh r).coeff g = (range fun k : ℕ => k • h).indicator (fun _ => r) g :=
+  (rfl)
+
 /-- With a nonzero coefficient, the support of the geometric series `∑ₖ r e^(k h)` consists of the
 natural multiples of `h`. -/
 theorem support_geometric [Zero R] {h : H} (hh : 0 < N h) {r : R} (hr : r ≠ 0) :
     (geometric N hh r).support = range fun k : ℕ => k • h := by
   ext g
-  simp [support, geometric, hr]
+  simp [support, hr]
 
 private theorem infinite_support_geometric [Zero R] {h : H} (hh : 0 < N h) {r : R} (hr : r ≠ 0) :
     (geometric N hh r).support.Infinite := by

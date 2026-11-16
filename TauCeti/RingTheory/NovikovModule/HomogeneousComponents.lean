@@ -69,29 +69,6 @@ theorem isClosed_gradeBy (d : S → D) (k : D) :
   rw [heq]
   exact isClosed_biInter fun s _ => (isLocallyConstant_apply_val s).isClosed_fiber 0
 
-/-- A completed combination is a finite sum of homogeneous combinations exactly when its nonzero
-coefficients occur at generators of only finitely many degrees. -/
-theorem mem_iSup_gradeBy_iff_finite {a : NovikovModule R F} :
-    a ∈ ⨆ k, gradeBy R F d k ↔ (d '' Function.support a.val).Finite := by
-  classical
-  refine ⟨fun ha => ?_, fun ha => ?_⟩
-  · refine Submodule.iSup_induction (motive := fun b => (d '' Function.support b.val).Finite) _ ha
-      (fun k b hb => (finite_singleton k).subset ?_) (by simp) fun b c hb hc => ?_
-    · rintro _ ⟨s, hs, rfl⟩
-      exact mem_gradeBy_iff.1 hb s hs
-    · exact (hb.union hc).subset
-        ((image_mono (Function.support_add b.val c.val)).trans (image_union d _ _).subset)
-  · -- `a` is the sum of its homogeneous parts of the finitely many degrees it meets.
-    have hsum : ∑ k ∈ ha.toFinset, gradeProj R F d k a = a := by
-      ext s
-      simp only [Submodule.coe_sum, Finset.sum_apply, gradeProj_val, Finset.sum_ite_eq]
-      split_ifs with hs
-      · rfl
-      · by_contra hne
-        exact hs (ha.mem_toFinset.2 ⟨s, Ne.symm hne, rfl⟩)
-    rw [← hsum]
-    exact Submodule.sum_mem _ fun k _ => Submodule.mem_iSup_of_mem k (gradeProj_mem_gradeBy d k a)
-
 section Proj
 
 variable [DecidableEq D]
@@ -115,7 +92,7 @@ theorem hasSum_gradeProj (d : S → D) (a : NovikovModule R F) :
   rw [HasSum, SummationFilter.unconditional_filter, tendsto_nhds_iff]
   intro C
   filter_upwards [eventually_ge_atTop ((finite_gt a C).toFinset.image d)] with T hT s hs
-  simp only [Submodule.coe_sum, Finset.sum_apply, gradeProj_val, Finset.sum_ite_eq]
+  rw [sum_gradeProj_val]
   split_ifs with hsT
   · rfl
   · by_contra hne
@@ -146,13 +123,6 @@ theorem dense_iSup_gradeBy (d : S → D) :
   exact mem_closure_of_tendsto ha (Eventually.of_forall fun T =>
     Submodule.sum_mem _ fun k _ => Submodule.mem_iSup_of_mem k (gradeProj_mem_gradeBy d k a))
 
-/-- The homogeneous combinations span the completed module exactly when every completed
-combination meets only finitely many degrees. -/
-theorem iSup_gradeBy_eq_top_iff :
-    ⨆ k, gradeBy R F d k = ⊤ ↔
-      ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite := by
-  simp only [Submodule.eq_top_iff', mem_iSup_gradeBy_iff_finite]
-
 /-- The sum of the homogeneous pieces is closed in the potential-cutoff topology exactly when it
 is everything, that is, when every completed combination meets only finitely many degrees. -/
 theorem isClosed_iSup_gradeBy_iff :
@@ -162,13 +132,5 @@ theorem isClosed_iSup_gradeBy_iff :
   rw [← iSup_gradeBy_eq_top_iff]
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
   rw [← Submodule.coe_eq_univ, ← h.closure_eq, (dense_iSup_gradeBy d).closure_eq]
-
-/-- The completed module is the internal direct sum of its homogeneous pieces exactly when every
-completed combination meets only finitely many degrees. -/
-theorem isInternal_gradeBy_iff [DecidableEq D] :
-    DirectSum.IsInternal (gradeBy R F d) ↔
-      ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite := by
-  rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top, iSup_gradeBy_eq_top_iff]
-  exact and_iff_right (iSupIndep_of_forall_mem_iff fun _ _ => Iff.rfl)
 
 end TauCeti.NovikovModule

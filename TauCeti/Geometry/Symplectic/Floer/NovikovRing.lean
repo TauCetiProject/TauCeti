@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
-public import TauCeti.RingTheory.NovikovSeries.HomogeneousComponents
+public import TauCeti.RingTheory.NovikovSeries.Grading
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Data.Int.Interval
 
@@ -156,8 +156,6 @@ theorem mem_iSup_gradeBy_degree_iff {a : NovikovRing R ω c} :
 
 end KerLE
 
-end Semiring
-
 /-- **The Floer Novikov ring is internally graded only in the degenerate cases.** For nontrivial
 coefficients, the Floer Novikov ring is the internal direct sum of its homogeneous pieces exactly
 when the symplectic area or the first Chern number vanishes on the spherical classes. Otherwise
@@ -165,10 +163,12 @@ some class has positive area and nonzero Chern number, and its geometric series 
 many degrees; the ring is then only the completion of the sum of its homogeneous pieces, each
 series being the convergent sum of its homogeneous components
 (`TauCeti.NovikovSeries.hasSum_gradeProj`). -/
-theorem isInternal_gradeBy_degree_iff [Ring R] [Nontrivial R] :
+theorem isInternal_gradeBy_degree_iff [Nontrivial R] :
     DirectSum.IsInternal (NovikovSeries.gradeBy R (-area ω c) (degree ω c)) ↔ ω = 0 ∨ c = 0 := by
   rw [NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_eq_zero, neg_eq_zero, area_eq_zero_iff,
     degree_eq_zero_iff]
+
+end Semiring
 
 section Monotone
 
