@@ -41,6 +41,8 @@ when endomorphisms are identified with tensors, without adding an instance on th
 * `TensorProduct.norm_mapL`: the tensor product `f ⊗ g` of bounded operators has norm
   `‖f‖ * ‖g‖`; `ContinuousLinearMap.norm_rTensor` and `ContinuousLinearMap.norm_lTensor` are the
   cases `f ⊗ 1` and `1 ⊗ g` for a nonzero other factor.
+* `TensorProduct.inner_mapL_left`: if `f'` and `g'` are formal adjoints of `f` and `g`, then
+  `mapL f' g'` is a formal adjoint of `mapL f g`.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
 * `ContinuousLinearMap.denseRange_rTensor`: if `f` has dense range then so does `f ⊗ 1`.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
@@ -53,7 +55,7 @@ when endomorphisms are identified with tensors, without adding an instance on th
 
 public section
 
-open scoped TensorProduct ComplexOrder
+open scoped TensorProduct ComplexOrder InnerProductSpace
 
 namespace TauCeti
 
@@ -165,6 +167,18 @@ theorem norm_mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ =
     refine (le_div_iff₀ hpos).1 <| g.opNorm_le_bound (by positivity) fun y ↦ ?_
     rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
     exact (mul_comm _ _).trans_le (hy y)
+
+/-- If `f'` and `g'` are formal adjoints of `f` and `g`, then `mapL f' g'` is a formal adjoint of
+`mapL f g`. No completeness is needed. -/
+theorem inner_mapL_left {f : E →L[𝕜] E'} {f' : E' →L[𝕜] E} {g : F →L[𝕜] F'} {g' : F' →L[𝕜] F}
+    (hf : ∀ x y, ⟪f x, y⟫_𝕜 = ⟪x, f' y⟫_𝕜) (hg : ∀ x y, ⟪g x, y⟫_𝕜 = ⟪x, g' y⟫_𝕜)
+    (u : E ⊗[𝕜] F) (v : E' ⊗[𝕜] F') : ⟪mapL f g u, v⟫_𝕜 = ⟪u, mapL f' g' v⟫_𝕜 := by
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul x y =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul x' y' => simp [hf, hg]
 
 end mapL
 

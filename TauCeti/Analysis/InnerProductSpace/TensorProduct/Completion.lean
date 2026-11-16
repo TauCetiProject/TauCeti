@@ -342,18 +342,6 @@ theorem mapLCompletion_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') 
     mapLCompletion (f₂ ∘L f₁) (g₂ ∘L g₁) = mapLCompletion f₂ g₂ ∘L mapLCompletion f₁ g₁ :=
   completion_ext fun _ _ ↦ by simp
 
-/-- If `f'` and `g'` are formal adjoints of `f` and `g`, then `mapL f' g'` is a formal adjoint of
-`mapL f g`. No completeness is needed. -/
-theorem inner_mapL_left {f : E →L[𝕜] E'} {f' : E' →L[𝕜] E} {g : F →L[𝕜] F'} {g' : F' →L[𝕜] F}
-    (hf : ∀ x y, ⟪f x, y⟫_𝕜 = ⟪x, f' y⟫_𝕜) (hg : ∀ x y, ⟪g x, y⟫_𝕜 = ⟪x, g' y⟫_𝕜)
-    (u : E ⊗[𝕜] F) (v : E' ⊗[𝕜] F') : ⟪mapL f g u, v⟫_𝕜 = ⟪u, mapL f' g' v⟫_𝕜 := by
-  induction u using TensorProduct.inductionOn with
-  | add u₁ u₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
-  | tmul x y =>
-    induction v using TensorProduct.inductionOn with
-    | add v₁ v₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
-    | tmul x' y' => simp [hf, hg]
-
 /-- The tensor product `f† ⊗ g†` is the adjoint of `f ⊗ g`. -/
 @[simp]
 theorem adjoint_mapLCompletion [CompleteSpace E] [CompleteSpace E'] [CompleteSpace F]
