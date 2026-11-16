@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Averaging differential forms over a compact group action
@@ -91,12 +92,6 @@ private def pullbackSMulForm (α : SmoothForm I M F k) (a : G) (x : M) : E [⋀^
   -- the value as an alternating map on `E`, so that it can be integrated in the fixed normed space
   -- `E [⋀^Fin k]→L[ℝ] F`, which carries the norm that the fibre `T_x M [⋀^Fin k]→L[ℝ] F` lacks.
   @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) α.1 x)
-
-omit [IsManifold I ∞ M] in
-/-- A point of the target of the extended chart at `x₀` is sent back into the chart domain. -/
-private theorem extChartAt_symm_mem_chart_source {x₀ : M} {z : E}
-    (hz : z ∈ (extChartAt I x₀).target) : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
-  simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
 
 variable (I) in
 /-- At a point `x` of the chart domain at `x₀`, the trivialization at `x₀` of the bundle of
