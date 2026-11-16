@@ -279,6 +279,28 @@ theorem measureReal_map_uniformOn_finset_apply (s : Finset α) (f : α → β)
     integral_map (s.aemeasurable_uniformOn_finset f) (by fun_prop), integral_uniformOn_finset]
   simp [Set.indicator, sum_boole, div_eq_mul_inv, mul_comm]
 
+/-- Every function of the labels is integrable against a labelled finite uniform law. Neither
+the labelling nor the observable needs to be measurable. -/
+@[simp]
+theorem integrable_map_uniformOn_finset [MeasurableSingletonClass β] {E : Type*}
+    [SeminormedAddGroup E] (s : Finset α) (label : α → β) (f : β → E) :
+    Integrable f ((uniformOn (s : Set α)).map label) := by
+  have hlabel := s.aemeasurable_uniformOn_finset label
+  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset] at hlabel ⊢
+  rw [Measure.map_finset_sum hlabel]
+  refine integrable_finsetSum_measure.2 fun i hi ↦ ?_
+  rw [Measure.map_smul _ (by fun_prop), Measure.map_dirac]
+  exact (integrable_dirac (by simp)).smul_measure (by simp [s.ne_empty_of_mem hi])
+
+/-- Integration against a labelled finite uniform law is the normalized finite sum over the
+sampling set, with repeated labels counted with their multiplicities. -/
+theorem integral_map_uniformOn_finset [MeasurableSingletonClass β] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] (s : Finset α) (label : α → β)
+    (f : β → E) :
+    ∫ x, f x ∂(uniformOn (s : Set α)).map label = (s.card : ℝ)⁻¹ • ∑ i ∈ s, f (label i) := by
+  rw [integral_map (s.aemeasurable_uniformOn_finset label)
+    (s.integrable_map_uniformOn_finset label f).aestronglyMeasurable, integral_uniformOn_finset]
+
 open Classical in
 /-- The cdf of a finitely labeled uniform sample counts inputs with label at most the argument. -/
 theorem cdf_map_uniformOn_finset (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) (x : ℝ) :
