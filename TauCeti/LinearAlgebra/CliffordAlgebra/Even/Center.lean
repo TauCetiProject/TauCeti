@@ -125,7 +125,11 @@ theorem prod_map_ι_mem_center_even_of_even_length {l : List M} (hl : l.Pairwise
 
 end CommRing
 
-variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+
+section Volume
+
+variable {Q : QuadraticForm K V}
 
 /-- **The volume element of even positive length is not a scalar.** The ordered product `ω` of a
 nonempty pairwise orthogonal anisotropic list of even length anticommutes with each member `v` of
@@ -426,18 +430,24 @@ theorem nonempty_center_even_algEquiv_prod_iff_isSquare_discriminant [NeZero (2 
         (Polynomial.quotientSpanXSubCAlgEquiv t)
         (Polynomial.quotientSpanXSubCAlgEquiv (-t))⟩
 
+end Volume
+
 section FiniteDimensional
 
-variable [FiniteDimensional K V] [NeZero (2 : K)]
+variable [FiniteDimensional K V]
 
-omit [NeZero (2 : K)] in
 /-- The even Clifford algebra of a finite-dimensional quadratic space is module-finite over its
 center. -/
 theorem finite_even_over_center (Q : QuadraticForm K V) :
     Module.Finite (Subalgebra.center K (even Q)) (even Q) :=
   Subalgebra.finite_centerAlgebra_of_finite
 
-omit [FiniteDimensional K V] in
+end FiniteDimensional
+
+section Finrank
+
+variable [NeZero (2 : K)]
+
 /-- The centre of the even Clifford algebra of a regular, positive even-dimensional quadratic
 space has dimension two over the base field. -/
 theorem finrank_center_even (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
@@ -456,7 +466,6 @@ theorem finrank_center_even (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     _ = p.natDegree := (AdjoinRoot.powerBasis (X_pow_sub_C_ne_zero two_pos _)).finrank
     _ = 2 := natDegree_X_pow_sub_C _
 
-omit [FiniteDimensional K V] in
 /-- If the centre of a regular, positive even-dimensional even Clifford algebra is a field, then
 the algebra has dimension `2 ^ (finrank K V - 2)` over its centre. -/
 theorem finrank_even_over_center (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
@@ -479,7 +488,6 @@ theorem finrank_even_over_center (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     omega
   omega
 
-omit [FiniteDimensional K V] in
 /-- If the discriminant centre of a regular four-dimensional even Clifford algebra is a field,
 then the even Clifford algebra has dimension four over that centre. -/
 theorem finrank_even_over_center_of_finrank_eq_four (Q : QuadraticForm K V)
@@ -490,7 +498,7 @@ theorem finrank_even_over_center_of_finrank_eq_four (Q : QuadraticForm K V)
     (by simp [hV]) hfield, hV]
   norm_num
 
-end FiniteDimensional
+end Finrank
 
 end CliffordAlgebra
 
@@ -498,10 +506,9 @@ namespace TauCeti.CliffordAlgebra
 
 open _root_.CliffordAlgebra Module
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [NeZero (2 : K)] {Q : QuadraticForm K V}
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [NeZero (2 : K)]
+  {Q : QuadraticForm K V}
 
-omit [FiniteDimensional K V] in
 /-- The centre of the even Clifford algebra of a regular quadratic space of even positive
 dimension contains a non-scalar element. -/
 theorem exists_mem_center_even_forall_ne_algebraMap (hQ : Q.Nondegenerate)
