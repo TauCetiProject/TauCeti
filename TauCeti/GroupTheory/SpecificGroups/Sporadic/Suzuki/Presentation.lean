@@ -633,9 +633,50 @@ def presentationImage (i : Fin SporadicName.Suz.presentation.generatorCount) :
   [imageA, imageB, imageC, imageD, imageE, imageF, imageG].getD i 1
 
 /-- The explicit assignment underlying `presentationImage`. -/
-@[simp]
-theorem presentationImage_apply (i : Fin SporadicName.Suz.presentation.generatorCount) :
+theorem presentationImage_def (i : Fin SporadicName.Suz.presentation.generatorCount) :
     presentationImage i = [imageA, imageB, imageC, imageD, imageE, imageF, imageG].getD i 1 :=
+  (rfl)
+
+/-- The generator of index `0` goes to `imageA`. -/
+@[simp]
+theorem presentationImage_zero (h : 0 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨0, h⟩ = imageA :=
+  (rfl)
+
+/-- The generator of index `1` goes to `imageB`. -/
+@[simp]
+theorem presentationImage_one (h : 1 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨1, h⟩ = imageB :=
+  (rfl)
+
+/-- The generator of index `2` goes to `imageC`. -/
+@[simp]
+theorem presentationImage_two (h : 2 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨2, h⟩ = imageC :=
+  (rfl)
+
+/-- The generator of index `3` goes to `imageD`. -/
+@[simp]
+theorem presentationImage_three (h : 3 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨3, h⟩ = imageD :=
+  (rfl)
+
+/-- The generator of index `4` goes to `imageE`. -/
+@[simp]
+theorem presentationImage_four (h : 4 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨4, h⟩ = imageE :=
+  (rfl)
+
+/-- The generator of index `5` goes to `imageF`. -/
+@[simp]
+theorem presentationImage_five (h : 5 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨5, h⟩ = imageF :=
+  (rfl)
+
+/-- The generator of index `6` goes to `imageG`. -/
+@[simp]
+theorem presentationImage_six (h : 6 < SporadicName.Suz.presentation.generatorCount) :
+    presentationImage ⟨6, h⟩ = imageG :=
   (rfl)
 
 /-- The assignment has precisely the seven chosen images as its values. -/
