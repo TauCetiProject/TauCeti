@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Submersion
+public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
 
@@ -34,7 +35,11 @@ the derivative of the projection in a bundle chart,
 `Bundle.mfderiv_proj_comp_mfderivWithin_extChartAt_symm`; it gives smoothness of `λ`, and that
 of `ω` follows from the linear identity `TauCeti.neg_extDeriv_cotangentLiouvilleForm`. The sign
 conventions are therefore those of the linear model. Consequently `ω` is closed and nondegenerate
-(`TauCeti.CotangentBundle.isSymplectic_symplecticForm`).
+(`TauCeti.CotangentBundle.isSymplectic_symplecticForm`). Along the zero section, the tangent space
+of `T*M` at the zero covector over `x` splits as `T_x M × T*_x M`
+(`TauCeti.Bundle.zeroSectionTangentEquiv`), and in this splitting
+`ω((u, α), (u', α')) = α'(u) - α(u')`
+(`TauCeti.CotangentBundle.eval₂_symplecticForm_zeroSection`).
 
 The form `λ` is tautological: its pullback along the section of `T*M` defined by a one-form `α`
 is `α` itself (`TauCeti.CotangentBundle.mpullback_liouvilleForm`, and its pointwise version
@@ -48,6 +53,7 @@ and nothing here assumes finite dimension.
 * `TauCeti.CotangentBundle.mpullback_liouvilleForm`: its pullback by the section of a one-form.
 * `TauCeti.CotangentBundle.symplecticForm`: the canonical symplectic form `ω = -dλ`.
 * `TauCeti.CotangentBundle.inChartAt_symplecticForm_apply`: its chart formula.
+* `TauCeti.CotangentBundle.eval₂_symplecticForm_zeroSection`: `ω` along the zero section.
 * `TauCeti.CotangentBundle.isSymplectic_symplecticForm`: `ω` is symplectic.
 * `TauCeti.CotangentBundle.isLagrangian_ker_mfderiv_proj`: the fibres of `T*M → M` are
   Lagrangian.
@@ -342,6 +348,20 @@ theorem eval₂_symplecticForm (z : CotangentBundle I M)
     SmoothBundleForm.eval₂ (symplecticForm I M) z v w =
       strongDualCotangentSymplecticForm (V := E) v w := by
   simp
+
+/-- **The canonical symplectic form along the zero section.** In the splitting
+`T_x M × T*_x M` of the tangent space of `T*M` at the zero covector over `x` into horizontal and
+vertical parts, the canonical form is `ω((u, α), (u', α')) = α'(u) - α(u')`. -/
+theorem eval₂_symplecticForm_zeroSection (x : M) (u u' : TangentSpace I x)
+    (α α' : TangentSpace I x →L[ℝ] ℝ) :
+    SmoothBundleForm.eval₂ (symplecticForm I M)
+        (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x)
+        ((Bundle.zeroSectionTangentEquiv (I := I) x).symm (u, α))
+        ((Bundle.zeroSectionTangentEquiv (I := I) x).symm (u', α')) = α' u - α u' := by
+  rw [eval₂_symplecticForm, Bundle.zeroSectionTangentEquiv_symm_apply,
+    Bundle.zeroSectionTangentEquiv_symm_apply]
+  simp only [continuousLinearMapAt_trivializationAt_self]
+  exact strongDualCotangentSymplecticForm_apply (V := E) (u, α) (u', α')
 
 /-- The canonical symplectic form of the cotangent bundle is closed and nondegenerate. -/
 theorem isSymplectic_symplecticForm : (symplecticForm I M).IsSymplectic where
