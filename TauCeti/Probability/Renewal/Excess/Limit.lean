@@ -18,7 +18,10 @@ excess tail, distribution function, and law to the equilibrium excess-life distr
 
 The interval limit is an explicit input. No nonlattice Blackwell theorem is asserted here,
 and the result must not be applied to a lattice law merely because its mean is finite.
-Zero increments are allowed. The distributional statement uses the real-valued excess
+Almost surely zero increments are allowed in the tail limit, where both sides vanish; the
+distribution function statements assume they are not, and the distributional statement derives
+this, and the finite positive mean, from the existence of a realization of the equilibrium law.
+The distributional statement uses the real-valued excess
 and any realization of the equilibrium law, along any countably generated filter of
 observation times tending to infinity.
 
@@ -38,12 +41,11 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
 
 /-- Renewal interval limits imply convergence of the excess tail to the equilibrium tail.
-Only finiteness of the extended mean is required; the positive mean follows from the
-nondegeneracy assumption on the increments. -/
+Only finiteness of the extended mean is required. If the increments are almost surely zero, the
+excess is almost surely zero and the equilibrium law is the zero measure, so both sides vanish. -/
 theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
     (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1)
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) ≠ ∞)
     (hlim : ∀ d : ℝ≥0, Tendsto (fun t : ℝ≥0 ↦
       (P.map (T 0)).renewalMeasure.real (Ioc t (t + d))) atTop
@@ -51,6 +53,14 @@ theorem tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
     Tendsto (fun t ↦ P.real {ω | x < renewalExcess T t ω}) atTop
       (𝓝 ((P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)))) := by
   have := hindep.isProbabilityMeasure
+  by_cases hzero : P {ω | T 0 ω = 0} < 1
+  swap
+  · have hlaw := hasLaw_dirac_zero_of_not_lt (hid 0).aemeasurable_fst hzero
+    have hE : (P.map (T 0)).equilibriumExcessLaw = 0 := by
+      rw [← Measure.measure_univ_eq_zero, Measure.equilibriumExcessLaw_univ, hlaw.map_eq]
+      simp
+    rw [hlaw.map_eq] at hE
+    simp [measureReal_lt_renewalExcess hindep hid, hlaw.map_eq, hE]
   have hF : (P.map (T 0)) {0} < 1 := by
     rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have htail : Antitone (fun u : ℝ≥0 ↦ (P.map (T 0)).real (Ioi (u + x))) :=
@@ -93,7 +103,7 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
   rw [hcomp]
   exact tendsto_const_nhds.sub
     (tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
-      hindep hid hzero hmean hlim x)
+      hindep hid hmean hlim x)
 
 /-- Renewal interval limits give convergence of the CDF of the real-valued excess at every
 real threshold, including negative thresholds and zero. This also supplies the CDF input
@@ -140,13 +150,13 @@ theorem tendsto_cdf_renewalExcess_of_tendsto_measureReal_Ioc
 
 /-- The excess converges in distribution to any realization of the equilibrium law,
 along any countably generated filter of observation times tending to infinity, provided
-the renewal interval limits hold. Both processes may live on arbitrary probability spaces. -/
+the renewal interval limits hold. Both processes may live on arbitrary probability spaces. The
+finite positive mean and the nondegeneracy of the increments follow from `hZ`, because the
+equilibrium law is a probability measure only in that case. -/
 theorem tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
     [IsProbabilityMeasure P]
     (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1)
-    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) ≠ ∞)
     (hlim : ∀ d : ℝ≥0, Tendsto (fun t : ℝ≥0 ↦
       (P.map (T 0)).renewalMeasure.real (Ioc t (t + d))) atTop
         (𝓝 (((∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0))⁻¹).toReal * d)))
@@ -156,6 +166,17 @@ theorem tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
     (ht : Tendsto t l atTop) :
     TendstoInDistribution (fun i ω ↦ (renewalExcess T (t i) ω : ℝ)) l
       Z (fun _ ↦ P) Q := by
+  have hprob : IsProbabilityMeasure (P.map (T 0)).equilibriumExcessLaw := by
+    rw [← hZ.map_eq]
+    infer_instance
+  obtain ⟨hne, hmean⟩ := (Measure.isProbabilityMeasure_equilibriumExcessLaw_iff _).1 hprob
+  have hzero : P {ω | T 0 ω = 0} < 1 := by
+    refine lt_of_le_of_ne prob_le_one fun h ↦ hne ?_
+    have hae : ∀ᵐ ω ∂P, T 0 ω = 0 :=
+      (mem_ae_iff_prob_eq_one₀ ((hid 0).aemeasurable_fst.nullMeasurable
+        (measurableSet_singleton 0))).2 h
+    rw [lintegral_map' measurable_coe_nnreal_ennreal.aemeasurable (hid 0).aemeasurable_fst]
+    exact (lintegral_congr_ae (hae.mono fun ω hω ↦ by simp [hω])).trans (lintegral_zero)
   apply TendstoInDistribution.of_tendsto_cdf
     (fun i ↦ measurable_coe_nnreal_real.comp_aemeasurable
       (aemeasurable_renewalExcess (fun n ↦ (hid n).aemeasurable_fst) (t i))) hZ.aemeasurable

@@ -205,7 +205,7 @@ private lemma measure_arrival_le_lt_arrival_succ (hindep : iIndepFun T P)
     simp [B, hs]
 
 /-- If `T 0 = 0` almost surely, the common law of the increments is the Dirac mass at `0`. -/
-private lemma hasLaw_dirac_zero_of_not_lt [IsProbabilityMeasure P] (hT : AEMeasurable (T 0) P)
+lemma hasLaw_dirac_zero_of_not_lt [IsProbabilityMeasure P] (hT : AEMeasurable (T 0) P)
     (hzero : ¬ P {ω | T 0 ω = 0} < 1) : HasLaw (T 0) (Measure.dirac 0) P :=
   hasLaw_dirac_of_ae_eq <| (mem_ae_iff_prob_eq_one₀ (hT.nullMeasurable
     (measurableSet_singleton 0))).2 (one_le_prob_iff.1 (not_lt.1 hzero))
