@@ -27,6 +27,13 @@ carries the normalized Haar measure of the first to that of the second.
   is the Dirac mass at `0`.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
+
+## Attribution
+
+`Module.Basis.measurePreserving_equiv` generalizes the measure-preservation lemma for the chart
+coordinate change in the closed pull request
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
+`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`) from one pair of bases to any two.
 -/
 
 public section

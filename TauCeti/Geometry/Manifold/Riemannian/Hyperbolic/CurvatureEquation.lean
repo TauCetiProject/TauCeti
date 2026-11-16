@@ -57,6 +57,14 @@ for every constant negative scalar curvature `c`, the hyperbolic case being `c =
   (1974), 14–47.
 * M. S. Berger, *Riemannian structures of prescribed Gaussian curvature for compact
   2-manifolds*, J. Differential Geom. 5 (1971), 325–332.
+
+## Attribution
+
+`TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero` is adapted from the uniqueness
+argument in the closed pull request
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536) (branch
+`chrisflav:roadmap/closed-surface-hyperbolic-metric-worker-73`), stated here separately for `C²`
+solutions and arbitrary `K`.
 -/
 
 public section
