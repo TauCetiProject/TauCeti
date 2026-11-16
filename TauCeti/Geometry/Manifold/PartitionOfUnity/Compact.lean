@@ -8,9 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
-# Smooth cutoff functions around compact sets
+# Smooth cutoff functions and finite partitions of unity on compact sets
 
 On a Hausdorff manifold modelled on a finite-dimensional real space, a compact set `K` inside an
 open set `W` has a smooth cutoff function: a smooth `σ : M → [0, 1]`, equal to `1` on a
@@ -24,10 +25,12 @@ form extend a vector field given near a compact set to a compactly supported one
 complete one. For the same reason a compact set has a smooth bump covering indexed by a finite type
 and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
-`SmoothBumpCovering.embeddingPiTangent`.
+`SmoothBumpCovering.embeddingPiTangent`, as well as a finite `C^n` partition of unity subordinate
+to any open cover of `K` (`IsCompact.exists_finset_contMDiff_sum_eq_one`), requiring neither
+σ-compactness nor `C^∞` regularity of the manifold (`SmoothBumpFunction.contMDiff_of_le`).
 
-The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
-bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
+The cutoff construction, smoothing a finite sum of bump functions by `Real.smoothTransition`,
+follows the bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
 -/
 
 public section
@@ -98,3 +101,98 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
     locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.1).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
+
+omit [IsManifold I ∞ M] in
+/-- A smooth bump function is `C^n` on any `C^n` manifold for `n ≤ ∞`. -/
+theorem SmoothBumpFunction.contMDiff_of_le {n : ℕ∞ω} [IsManifold I n M] (hn : n ≤ ∞)
+    {c : M} (f : SmoothBumpFunction I c) : ContMDiff I 𝓘(ℝ) n f := by
+  refine contMDiff_of_tsupport fun x hx ↦ ?_
+  have hx' : x ∈ (chartAt H c).source := f.tsupport_subset_chartAt_source hx
+  refine ContMDiffAt.congr_of_eventuallyEq ?_ <| f.eqOn_source.eventuallyEq_of_mem <|
+    (chartAt H c).open_source.mem_nhds hx'
+  exact (f.contDiffAt.of_le hn).contMDiffAt.comp _ (contMDiffAt_extChartAt' hx')
+
+omit [IsManifold I ∞ M] in
+variable (I) in
+/-- **A finite `C^n` partition of unity on a compact set.** Let `K` be a compact subset of a
+Hausdorff `C^n` manifold (`n ≤ ∞`) modelled on a finite-dimensional real space, covered by open
+sets `U j`. Then finitely many compactly supported `C^n` functions, subordinate to `U` and indexed
+directly by the cover, are nonnegative, sum to at most `1` everywhere, and sum to `1` on `K`.
+
+Unlike `SmoothPartitionOfUnity.exists_isSubordinate`, this requires neither σ-compactness of the
+manifold nor `C^∞` regularity of the atlas. -/
+theorem IsCompact.exists_finset_contMDiff_sum_eq_one
+    {n : ℕ∞ω} [IsManifold I n M] (hn : n ≤ ∞)
+    {K : Set M} (hK : IsCompact K) {κ : Type*} {U : κ → Set M}
+    (hU : ∀ j, IsOpen (U j)) (hcover : ∀ x ∈ K, ∃ j, x ∈ U j) :
+    ∃ (s : Finset κ) (ρ : κ → C^n⟮I, M; ℝ⟯),
+      (∀ j, tsupport (ρ j) ⊆ U j) ∧
+      (∀ j, HasCompactSupport (ρ j)) ∧
+      (∀ j x, 0 ≤ ρ j x) ∧
+      (∀ x, ∑ j ∈ s, ρ j x ≤ 1) ∧
+      (∀ x ∈ K, ∑ j ∈ s, ρ j x = 1) := by
+  classical
+  -- Choose a cover member for each point of `K`, then a finite subordinate bump covering.
+  let W : M → Set M := fun x ↦ if hx : x ∈ K then U (hcover x hx).choose else univ
+  have hW : ∀ x ∈ K, W x ∈ 𝓝 x := fun x hx ↦ by
+    simpa only [W, dite_eq_left hx] using (hU _).mem_nhds (hcover x hx).choose_spec
+  obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I hW
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  let j₀ : Fin (Fintype.card ι) → κ := fun k ↦ (hcover (f.c (e k)) (f.c_mem' (e k))).choose
+  -- Standard finite partition of unity built from the ordered bump functions.
+  let g : Fin (Fintype.card ι) → C^n⟮I, M; ℝ⟯ := fun k ↦
+    ⟨fun x ↦ f (e k) x * ∏ l ∈ Finset.univ with l < k, (1 - f (e l) x),
+      ((f (e k)).contMDiff_of_le hn).mul <|
+        ContMDiff.prod fun l _ ↦ contMDiff_const.sub ((f (e l)).contMDiff_of_le hn)⟩
+  have hg_nonneg (k : Fin (Fintype.card ι)) (x : M) : 0 ≤ g k x :=
+    mul_nonneg (f (e k)).nonneg <| Finset.prod_nonneg fun l _ ↦ sub_nonneg.2 (f (e l)).le_one
+  have hg_tsupp (k : Fin (Fintype.card ι)) : tsupport (g k) ⊆ tsupport (f (e k)) :=
+    closure_minimal (fun x hx ↦ subset_tsupport _ fun h0 ↦ hx (by simp [g, h0]))
+      (isClosed_tsupport _)
+  have hg_sub (k : Fin (Fintype.card ι)) : tsupport (g k) ⊆ U (j₀ k) := by
+    have hfk : tsupport (f (e k)) ⊆ W (f.c (e k)) := hf (e k)
+    simpa only [W, dite_eq_left (f.c_mem' (e k)), j₀] using (hg_tsupp k).trans hfk
+  have hg_cpt (k : Fin (Fintype.card ι)) : HasCompactSupport (g k) :=
+    (f (e k)).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) (hg_tsupp k)
+  -- Group the partition functions by their assigned cover index.
+  let s : Finset κ := Finset.univ.image j₀
+  let ρ : κ → C^n⟮I, M; ℝ⟯ := fun j ↦
+    ⟨fun x ↦ ∑ k ∈ Finset.univ with j₀ k = j, g k x,
+      ContMDiff.sum fun k _ ↦ (g k).contMDiff⟩
+  have hρ (j : κ) (x : M) : ρ j x = ∑ k ∈ Finset.univ with j₀ k = j, g k x := rfl
+  have hsupp (j : κ) :
+      tsupport (ρ j) ⊆ ⋃ k ∈ Finset.univ.filter (fun k ↦ j₀ k = j), tsupport (g k) :=
+    closure_minimal (fun x hx ↦ by
+      obtain ⟨k, hk, hgk⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hρ j x ▸ mem_support.1 hx)
+      exact mem_biUnion hk (subset_tsupport _ hgk))
+      (isClosed_biUnion_finset fun _ _ ↦ isClosed_tsupport _)
+  have hsum_eq (x : M) :
+      ∑ j ∈ s, ρ j x = 1 - ∏ k : Fin (Fintype.card ι), (1 - f (e k) x) := by
+    have hgroup : ∑ j ∈ s, ρ j x = ∑ k : Fin (Fintype.card ι), g k x := by
+      simp_rw [hρ]
+      exact Finset.sum_fiberwise_of_maps_to
+        (fun k _ ↦ Finset.mem_image_of_mem j₀ (Finset.mem_univ k)) (fun k ↦ g k x)
+    rw [hgroup, Finset.prod_one_sub_ordered (Finset.univ : Finset (Fin (Fintype.card ι)))
+      (fun k ↦ f (e k) x), sub_sub_cancel]
+    rfl
+  refine ⟨s, ρ, ?_, ?_, ?_, ?_, ?_⟩
+  · intro j
+    refine (hsupp j).trans (iUnion₂_subset fun k hk ↦ ?_)
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+    exact hk ▸ hg_sub k
+  · intro j
+    exact (Finset.isCompact_biUnion _ fun k _ ↦ hg_cpt k).of_isClosed_subset
+      (isClosed_tsupport _) (hsupp j)
+  · intro j x
+    rw [hρ]
+    exact Finset.sum_nonneg fun k _ ↦ hg_nonneg k x
+  · intro x
+    rw [hsum_eq]
+    exact sub_le_self 1 <| Finset.prod_nonneg fun k _ ↦ sub_nonneg.2 (f (e k)).le_one
+  · intro x hx
+    rw [hsum_eq]
+    obtain ⟨i, hi⟩ := f.eventuallyEq_one' x hx
+    have hfi : f i x = 1 := hi.self_of_nhds
+    have hprod : ∏ k : Fin (Fintype.card ι), (1 - f (e k) x) = 0 :=
+      Finset.prod_eq_zero (Finset.mem_univ (e.symm i)) (by rw [e.apply_symm_apply, hfi, sub_self])
+    rw [hprod, sub_zero]
