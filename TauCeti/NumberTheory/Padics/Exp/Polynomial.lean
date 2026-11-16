@@ -16,6 +16,7 @@ import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Polynomial.ExpDerivFactor
 import TauCeti.NumberTheory.Padics.Exp.Basic
+import TauCeti.NumberTheory.Padics.Factorial
 
 /-!
 # Exponential polynomials over `p`-adic fields
@@ -23,7 +24,7 @@ import TauCeti.NumberTheory.Padics.Exp.Basic
 In a normed field `L` over `ℚ_[p]` of characteristic zero, an exponential polynomial
 `Q(X) exp(ψ X)` is represented formally as the power series
 `(Q : PowerSeries L) * PowerSeries.rescale ψ (PowerSeries.exp L)`. By Legendre's factorial bound
-(`TauCeti.PadicExp.norm_inv_factorial_mul_pow_le`), whenever `0 ≤ r` and
+(`TauCeti.norm_inv_factorial_mul_pow_le`), whenever `0 ≤ r` and
 `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has `r`-weighted coefficients
 bounded by `1`, so multiplying `(Q : PowerSeries L)` by `exp(ψ X)` preserves any `r`-weighted bound
 `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M` (`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
@@ -77,7 +78,7 @@ theorem norm_coeff_rescale_exp_mul_pow_le [CharZero L] {ψ : L} {r : ℝ} (hr : 
   calc
     ‖ψ‖ ^ k * ‖(k.factorial : L)⁻¹‖ * r ^ k
         = ‖(k.factorial : L)⁻¹‖ * (‖ψ‖ * r) ^ k := by rw [mul_pow]; ring
-    _ ≤ 1 := TauCeti.PadicExp.norm_inv_factorial_mul_pow_le (mul_nonneg (norm_nonneg ψ) hr) hψ k
+    _ ≤ 1 := TauCeti.norm_inv_factorial_mul_pow_le (mul_nonneg (norm_nonneg ψ) hr) hψ k
 
 /-- **Coefficient bound for a `p`-adic exponential polynomial.** If `‖Q.coeff j‖ * r ^ j ≤ M` for
 all `j` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))` (`r ≥ 0`), then the coefficients of `Q(X) exp(ψ X)`

@@ -15,19 +15,19 @@ import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Factorial
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The `p`-adic exponential on its disc of convergence
 
-In any normed field `L` over `ℚ_[p]` (including infinite or non-locally-compact extensions such as
-`ℂ_[p]`), every natural number has the same norm as in `ℚ_[p]`, so Legendre's formula bounds the
-factorial denominators of the exponential series below by
-`‖n!‖ ≥ p ^ (-n / (p - 1))` (and by `p ^ (-(n - 1) / (p - 1))` for `n ≥ 1`), with equality along
-`n = p ^ k`. Consequently, for any nontrivially normed field `K` over `ℚ_[p]` and normed `K`-algebra
-`A`, `NormedSpace.expSeries K A` has radius of convergence at least `ρ = p ^ (-1 / (p - 1))`
-(`TauCeti.PadicExp.le_radius_expSeries_of_normedAlgebra`), and `NormedSpace.expSeries L L` has exact
-radius `ρ` (`TauCeti.PadicExp.radius_expSeries`, `TauCeti.PadicExp.le_radius_expSeries`).
+Using the `p`-adic factorial norm estimates from `TauCeti.NumberTheory.Padics.Factorial`, for any
+nontrivially normed field `K` over `ℚ_[p]` and normed `K`-algebra `A`, `NormedSpace.expSeries K A`
+has radius of convergence at least `ρ = p ^ (-1 / (p - 1))`
+(`TauCeti.PadicExp.le_radius_expSeries_of_normedAlgebra`, `TauCeti.PadicExp.radius_expSeries_pos`),
+so when `A` is complete `NormedSpace.exp` has the power series expansion `NormedSpace.expSeries K A`
+on the open ball of radius `ρ` (`TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`). Over any nontrivially
+normed field `L` over `ℚ_[p]` (including infinite or non-locally-compact extensions such as
+`ℂ_[p]`), `NormedSpace.expSeries L L` has exact radius `ρ`
+(`TauCeti.PadicExp.radius_expSeries`, `TauCeti.PadicExp.le_radius_expSeries`).
 
 When `L` is complete, `NormedSpace.exp` on the open disc `{x : L | ‖x‖ < p ^ (-1 / (p - 1))}`
 satisfies the functional equation `exp (x + y) = exp x * exp y` (`TauCeti.PadicExp.exp_add`),
@@ -49,8 +49,9 @@ contrast, `‖p‖ = p ^ (-1) < p ^ (-1 / (p - 1))` lies strictly inside the dis
 ## Main results
 
 * `TauCeti.PadicExp.le_radius_expSeries_of_normedAlgebra`, `TauCeti.PadicExp.le_radius_expSeries`,
-  `TauCeti.PadicExp.radius_expSeries`: `(NormedSpace.expSeries L L).radius` equals
-  `ENNReal.ofReal (p ^ (-(p - 1)⁻¹))`.
+  `TauCeti.PadicExp.radius_expSeries`, `TauCeti.PadicExp.radius_expSeries_pos`,
+  `TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`: radius of convergence and power-series expansion of
+  `NormedSpace.expSeries K A` (exact radius `ENNReal.ofReal (p ^ (-(p - 1)⁻¹))` for `L L`).
 * `TauCeti.PadicExp.exp_add`, `TauCeti.PadicExp.exp_neg`, `TauCeti.PadicExp.exp_sub`,
   `TauCeti.PadicExp.exp_nsmul`, `TauCeti.PadicExp.exp_zsmul`, `TauCeti.PadicExp.exp_sum`:
   homomorphism properties of `NormedSpace.exp` on `{x : L | ‖x‖ < p ^ (-(p - 1)⁻¹)}`.
@@ -77,143 +78,6 @@ public section
 open scoped Nat NNReal Topology
 
 namespace TauCeti.PadicExp
-
-section Factorial
-
-variable {p : ℕ} [hp : Fact p.Prime] {D : Type*} [NormedDivisionRing D] [NormedAlgebra ℚ_[p] D]
-
-/-- Legendre's lower bound `p ^ (-n / (p - 1)) ≤ ‖n!‖` in any normed division algebra over
-`ℚ_[p]`. -/
-theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
-    (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : D)‖ := by
-  rw [TauCeti.norm_natCast_eq_norm_padic (p := p)]
-  exact Padic.rpow_neg_div_le_norm_factorial n
-
-/-- Sharpened Legendre bound for `n ≠ 0`: since `(p - 1) v_p(n!) < n`, we have
-`(p - 1) v_p(n!) ≤ n - 1`, hence `p ^ (-(n - 1) / (p - 1)) ≤ ‖n!‖`. -/
-theorem rpow_neg_sub_one_div_le_norm_factorial {n : ℕ} (hn : n ≠ 0) :
-    (p : ℝ) ^ (-(((n : ℝ) - 1) / ((p : ℝ) - 1))) ≤ ‖(n ! : D)‖ := by
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  rw [TauCeti.norm_natCast_eq_norm_padic (p := p),
-    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero n), ← Real.rpow_intCast]
-  simp only [Int.cast_neg, Int.cast_natCast]
-  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
-  rw [le_div_iff₀ (sub_pos.mpr hp1)]
-  have hleg : (p - 1) * padicValNat p n ! ≤ n - 1 := by
-    rw [Nat.padicValNat_def]
-    exact Nat.le_sub_one_of_lt (sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn)
-  have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn
-  have hcast : (((p - 1) * padicValNat p n ! : ℕ) : ℝ) ≤ (n : ℝ) - 1 := by
-    simpa [Nat.cast_sub hn1] using (Nat.cast_le (α := ℝ)).mpr hleg
-  have hp_sub : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
-    rw [Nat.cast_sub hp.out.one_le, Nat.cast_one]
-  simpa only [Nat.cast_mul, hp_sub, mul_comm] using hcast
-
-/-- Upper bound `‖(n!)⁻¹‖ ≤ p ^ (n / (p - 1))` in a normed division algebra over `ℚ_[p]`. -/
-theorem norm_inv_factorial_le (n : ℕ) :
-    ‖(n ! : D)⁻¹‖ ≤ (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) := by
-  have hpos : (0 : ℝ) < (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) :=
-    Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _
-  rw [norm_inv]
-  refine (inv_anti₀ hpos (rpow_neg_div_le_norm_factorial (p := p) n)).trans_eq ?_
-  rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
-
-/-- Exact norm of `((p ^ k)!)⁻¹` in any normed division algebra over `ℚ_[p]`: since `p ^ k` has
-base-`p` digit sum `1`, `‖((p ^ k)!)⁻¹‖ = p ^ ((p ^ k - 1) / (p - 1))`. -/
-theorem norm_inv_factorial_pow_prime (k : ℕ) :
-    ‖(((p ^ k)! : ℕ) : D)⁻¹‖ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  have hpow1 : 1 ≤ p ^ k := Nat.one_le_pow k p hp.out.pos
-  have hdiv : (padicValNat p (p ^ k)! : ℝ) = (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) := by
-    rw [eq_div_iff (sub_pos.mpr hp1).ne']
-    have hcast : (((p - 1) * padicValNat p (p ^ k)! : ℕ) : ℝ) = ((p ^ k - 1 : ℕ) : ℝ) :=
-      congrArg Nat.cast (TauCeti.sub_one_mul_padicValNat_factorial_pow p k)
-    rwa [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_sub hpow1, Nat.cast_one,
-      mul_comm] at hcast
-  rw [norm_inv, TauCeti.norm_natCast_eq_norm_padic (p := p),
-    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _), ← Real.rpow_intCast,
-    Int.cast_neg, Int.cast_natCast, hdiv, Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
-
-/-- Whenever `p ^ (-1 / (p - 1)) ≤ r`, the `r`-weighted inverse factorials along `n = p ^ k` stay
-bounded below by `p ^ (-1 / (p - 1))`. -/
-theorem le_norm_inv_factorial_pow_prime_mul_pow {r : ℝ}
-    (hr : (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) ≤ r) (k : ℕ) :
-    (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) ≤ ‖(((p ^ k)! : ℕ) : D)⁻¹‖ * r ^ (p ^ k) := by
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
-  have hρ0 : 0 ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) := Real.rpow_nonneg hp0.le _
-  have hsplit : (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) +
-      -((p : ℝ) - 1)⁻¹ * ((p ^ k : ℕ) : ℝ) = -((p : ℝ) - 1)⁻¹ := by ring
-  rw [norm_inv_factorial_pow_prime]
-  calc
-    (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)
-        = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) +
-            -((p : ℝ) - 1)⁻¹ * ((p ^ k : ℕ) : ℝ)) := by rw [hsplit]
-    _ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) *
-          ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ (p ^ k) := by
-          rw [Real.rpow_add hp0, Real.rpow_mul hp0.le, Real.rpow_natCast]
-    _ ≤ (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) * r ^ (p ^ k) :=
-          mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hρ0 hr _) (Real.rpow_nonneg hp0.le _)
-
-/-- On the closed critical radius `0 ≤ r ≤ p ^ (-1 / (p - 1))`, the weighted inverse factorials
-satisfy `‖(n!)⁻¹‖ * r ^ n ≤ 1` for every `n`. -/
-theorem norm_inv_factorial_mul_pow_le {r : ℝ} (hr0 : 0 ≤ r)
-    (hr : r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) (n : ℕ) :
-    ‖(n ! : D)⁻¹‖ * r ^ n ≤ 1 := by
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
-  calc
-    ‖(n ! : D)⁻¹‖ * r ^ n
-        ≤ (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) * ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ n :=
-          mul_le_mul (norm_inv_factorial_le n) (pow_le_pow_left₀ hr0 hr n)
-            (pow_nonneg hr0 n) (Real.rpow_nonneg hp0.le _)
-    _ = (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ)) := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_add hp0]
-    _ = 1 := by
-          have hexp : (n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ) = 0 := by ring
-          rw [hexp, Real.rpow_zero]
-
-/-- For `n ≥ 2` and any `x : D` with `‖x‖ ≤ p ^ (-1 / (p - 1))`, the `n`-th exponential term is
-bounded by `‖x ^ n * (n!)⁻¹‖ ≤ ‖x‖ ^ 2 * p ^ (1 / (p - 1))`. -/
-theorem norm_pow_mul_inv_factorial_le_sq {x : D}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) {n : ℕ} (hn : 2 ≤ n) :
-    ‖x ^ n * (n ! : D)⁻¹‖ ≤ ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := Nat.exists_eq_add_of_le' hn
-  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
-  have hpos : (0 : ℝ) < (p : ℝ) ^ (-((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1))) :=
-    Real.rpow_pos_of_pos hp0 _
-  have hinv : ‖((k + 2)! : D)⁻¹‖ ≤ (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
-    rw [norm_inv]
-    refine (inv_anti₀ hpos (rpow_neg_sub_one_div_le_norm_factorial (p := p)
-      (Nat.succ_ne_zero _))).trans_eq ?_
-    rw [Real.rpow_neg hp0.le, inv_inv]
-  have hpow_k : ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) ≤ 1 := by
-    calc
-      ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))
-          ≤ ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) :=
-            mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg x) hx k)
-              (Real.rpow_nonneg hp0.le _)
-      _ = (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹ * (k : ℝ) + (k : ℝ) / ((p : ℝ) - 1)) := by
-            rw [← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_add hp0]
-      _ = 1 := by
-            have hexp : -((p : ℝ) - 1)⁻¹ * (k : ℝ) + (k : ℝ) / ((p : ℝ) - 1) = 0 := by ring
-            rw [hexp, Real.rpow_zero]
-  have hsplit : (((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) =
-      (k : ℝ) / ((p : ℝ) - 1) + ((p : ℝ) - 1)⁻¹ := by
-    push_cast
-    ring
-  rw [norm_mul, norm_pow]
-  calc
-    ‖x‖ ^ (k + 2) * ‖((k + 2)! : D)⁻¹‖
-        ≤ ‖x‖ ^ (k + 2) * (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) :=
-          mul_le_mul_of_nonneg_left hinv (by positivity)
-    _ = (‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))) *
-          (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) := by
-          rw [pow_add, hsplit, Real.rpow_add hp0]
-          ring
-    _ ≤ 1 * (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) :=
-          mul_le_mul_of_nonneg_right hpow_k (by positivity)
-    _ = ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := one_mul _
-
-end Factorial
 
 section Radius
 
@@ -284,13 +148,13 @@ theorem radius_expSeries {L : Type*} [NontriviallyNormedField L] [NormedAlgebra 
     (NormedSpace.expSeries L L).radius = ENNReal.ofReal ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :=
   le_antisymm radius_expSeries_le_of_normOneClass le_radius_expSeries
 
-/-- The exponential series on a nontrivially normed field over `ℚ_[p]` has positive radius of
-convergence. -/
-theorem radius_expSeries_pos (p : ℕ) [hp : Fact p.Prime] {L : Type*} [NontriviallyNormedField L]
-    [NormedAlgebra ℚ_[p] L] :
-    0 < (NormedSpace.expSeries L L).radius :=
+/-- The exponential series on a normed algebra over a nontrivially normed `ℚ_[p]`-algebra field
+has positive radius of convergence. -/
+theorem radius_expSeries_pos (p : ℕ) [hp : Fact p.Prime] {K A : Type*}
+    [NontriviallyNormedField K] [NormedAlgebra ℚ_[p] K] [NormedRing A] [NormedAlgebra K A] :
+    0 < (NormedSpace.expSeries K A).radius :=
   (ENNReal.ofReal_pos.mpr (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _)).trans_le
-    (le_radius_expSeries (p := p))
+    (le_radius_expSeries_of_normedAlgebra (p := p))
 
 /-- Any element of norm `< p ^ (-1 / (p - 1))` lies in the `eball` of convergence of
 `NormedSpace.expSeries K A`. -/
@@ -303,18 +167,19 @@ theorem mem_eball_expSeries_of_norm_lt {K A : Type*} [NontriviallyNormedField K]
     (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _)).mpr hx |>.trans_le
     le_radius_expSeries_of_normedAlgebra
 
-/-- In a complete nontrivially normed field `L` over `ℚ_[p]`, `NormedSpace.exp` has the power
-series expansion `NormedSpace.expSeries L L` on the open ball of radius `p ^ (-1 / (p - 1))`. -/
-theorem hasFPowerSeriesOnBall_exp {L : Type*} [NontriviallyNormedField L] [NormedAlgebra ℚ_[p] L]
-    [CompleteSpace L] :
-    HasFPowerSeriesOnBall NormedSpace.exp (NormedSpace.expSeries L L) 0
+/-- In a complete normed algebra `A` over a nontrivially normed `ℚ_[p]`-algebra field `K`,
+`NormedSpace.exp` has the power series expansion `NormedSpace.expSeries K A` on the open ball of
+radius `p ^ (-1 / (p - 1))`. -/
+theorem hasFPowerSeriesOnBall_exp {K A : Type*} [NontriviallyNormedField K]
+    [NormedAlgebra ℚ_[p] K] [NormedRing A] [NormedAlgebra K A] [CompleteSpace A] :
+    HasFPowerSeriesOnBall NormedSpace.exp (NormedSpace.expSeries K A) 0
       (ENNReal.ofReal ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹))) := by
-  have : CharZero L := charZero_of_inj_zero fun n hn ↦
-    Nat.cast_eq_zero.mp ((algebraMap ℚ_[p] L).injective (by rw [map_natCast, map_zero]; exact hn))
-  exact (NormedSpace.hasFPowerSeriesOnBall_exp_of_radius_pos (𝕂 := L) (𝔸 := L)
+  have : CharZero K := charZero_of_inj_zero fun n hn ↦
+    Nat.cast_eq_zero.mp ((algebraMap ℚ_[p] K).injective (by rw [map_natCast, map_zero]; exact hn))
+  exact (NormedSpace.hasFPowerSeriesOnBall_exp_of_radius_pos (𝕂 := K) (𝔸 := A)
     (radius_expSeries_pos p)).mono
     (ENNReal.ofReal_pos.mpr (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _))
-    le_radius_expSeries
+    le_radius_expSeries_of_normedAlgebra
 
 end Radius
 
@@ -417,8 +282,7 @@ theorem norm_exp_sub_one_sub_le {x : L} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ)
   have h2 := hasSum_exp hx
   rw [← hasSum_nat_add_iff' 2] at h2
   have hrange : ∑ i ∈ Finset.range 2, x ^ i / (i ! : L) = 1 + x := by
-    rw [Finset.sum_range_succ, Finset.sum_range_one, pow_zero, Nat.factorial_zero,
-      Nat.cast_one, div_one, pow_one, Nat.factorial_one, Nat.cast_one, div_one]
+    simp [Finset.sum_range_succ]
   rw [hrange, sub_add_eq_sub_sub] at h2
   rw [← h2.tsum_eq]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le fun k ↦ ?_
@@ -482,7 +346,7 @@ theorem norm_exp_sub_exp {x y : L} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)
   have hfactor : NormedSpace.exp x - NormedSpace.exp y =
       NormedSpace.exp y * (NormedSpace.exp (x - y) - 1) := by
     rw [mul_sub, mul_one, ← exp_add hy hsub, add_sub_cancel]
-  rw [hfactor, norm_mul, norm_exp hy, one_mul, norm_exp_sub_one hsub]
+  simp [hfactor, norm_exp hy, norm_exp_sub_one hsub]
 
 /-- On the open disc of convergence, `exp x = 1` if and only if `x = 0`. -/
 theorem exp_eq_one_iff {x : L} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
@@ -494,7 +358,8 @@ theorem exp_eq_one_iff {x : L} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻�
 theorem injOn_exp :
     Set.InjOn (NormedSpace.exp : L → L) {x | ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)} := by
   intro x hx y hy hxy
-  rw [← sub_eq_zero, ← norm_eq_zero, ← norm_exp_sub_exp hx hy, hxy, sub_self, norm_zero]
+  rw [← sub_eq_zero, ← norm_eq_zero, ← norm_exp_sub_exp hx hy, hxy]
+  simp
 
 omit [CompleteSpace L] in
 /-- For every odd prime `p ≠ 2`, `(p : L)` has norm `p⁻¹ < p ^ (-1 / (p - 1))` and therefore lies

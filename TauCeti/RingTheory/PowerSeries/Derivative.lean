@@ -372,8 +372,8 @@ theorem derivative_rescale_exp (ψ : A) :
 theorem derivative_coe_mul_rescale_exp (Q : Polynomial A) (ψ : A) :
     d⁄dX ((Q : A⟦X⟧) * rescale ψ (exp A)) =
       (Polynomial.expDerivFactor ψ 1 Q : A⟦X⟧) * rescale ψ (exp A) := by
-  rw [Derivation.leibniz, derivative_coe, derivative_rescale_exp, smul_eq_mul, smul_eq_mul,
-    Polynomial.expDerivFactor_one_apply, Polynomial.coe_add, Polynomial.coe_mul, Polynomial.coe_C]
+  rw [Derivation.leibniz, Polynomial.expDerivFactor_one_apply]
+  simp [derivative_coe]
   ring
 
 /-- Over a commutative `ℚ`-algebra, the `m`-th formal derivative of an exponential polynomial

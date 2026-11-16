@@ -129,8 +129,10 @@ theorem expDerivFactor_C (c a : R) (m : ℕ) :
     expDerivFactor c m (C a) = C (c ^ m * a) := by
   induction m with
   | zero => simp
-  | succ m ih => rw [expDerivFactor_succ_apply, ih, derivative_C, zero_add, ← C_mul, pow_succ',
-      mul_assoc]
+  | succ m ih =>
+    rw [expDerivFactor_succ_apply, ih, derivative_C]
+    simp
+    ring
 
 @[simp]
 theorem expDerivFactor_one_right (c : R) (m : ℕ) :
@@ -152,11 +154,9 @@ theorem expDerivFactor_eq_sum (c : R) (m : ℕ) (P : R[X]) :
     simp
   rw [expDerivFactor_def, hcomm.add_pow, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [mul_apply_eq_comp, natCast_apply_eq_smul, smul_pow, LinearMap.smul_apply]
-  have hid : ((LinearMap.id : R[X] →ₗ[R] R[X]) ^ (m - j)) (m.choose j • P) = m.choose j • P := by
-    simp
-  rw [hid, map_smul, map_nsmul, _root_.pow_apply_eq_iterate, smul_eq_C_mul, nsmul_eq_mul,
-    ← C_eq_natCast, ← mul_assoc, ← C_mul, mul_comm (c ^ (m - j))]
+  simp [mul_apply_eq_comp, natCast_apply_eq_smul, smul_pow, _root_.pow_apply_eq_iterate,
+    smul_eq_C_mul]
+  ring
 
 /-- Explicit binomial expansion of `expDerivFactor c m (X ^ d)`, the polynomial factor of the
 `m`-th derivative of `X ^ d exp(c X)`. -/
@@ -187,8 +187,8 @@ theorem map_expDerivFactor {S : Type*} [CommSemiring S] (f : R →+* S) (c : R) 
   induction m with
   | zero => simp
   | succ m ih =>
-    rw [expDerivFactor_succ_apply, expDerivFactor_succ_apply, Polynomial.map_add,
-      Polynomial.map_mul, map_C, ← derivative_map, ih]
+    rw [expDerivFactor_succ_apply, expDerivFactor_succ_apply]
+    simp [← derivative_map, ih]
 
 /-- Applying `expDerivFactor c m` does not increase `natDegree`. -/
 theorem natDegree_expDerivFactor_le (c : R) (m : ℕ) (P : R[X]) :
@@ -220,8 +220,9 @@ theorem coeff_expDerivFactor_natDegree (c : R) (m : ℕ) (P : R[X]) :
     have hzero : (expDerivFactor c m P).coeff (P.natDegree + 1) = 0 :=
       coeff_eq_zero_of_natDegree_lt
         ((natDegree_expDerivFactor_le c m P).trans_lt (Nat.lt_succ_self _))
-    rw [expDerivFactor_succ_apply, coeff_add, coeff_derivative, hzero, zero_mul, zero_add,
-      coeff_C_mul, ih, pow_succ', mul_assoc]
+    rw [expDerivFactor_succ_apply]
+    simp [coeff_derivative, hzero, ih]
+    ring
 
 section NoZeroDivisors
 
