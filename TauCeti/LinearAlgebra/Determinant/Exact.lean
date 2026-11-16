@@ -71,7 +71,9 @@ that enlarging the stabilization changes the identification of determinant lines
 ## Main declarations
 
 * `TauCeti.detLineShortExactEquiv`: the isomorphism `det U ⊗ det W ≃ det V` of a short exact
-  sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`.
+  sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`; the
+  image of the exterior products of bases spans `det V`
+  (`TauCeti.exists_eq_smul_detLineShortExactEquiv`).
 * `TauCeti.detLineFourTermEquiv`: the isomorphism `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` of a
   four-term exact sequence `0 → A → B → C → D → 0`.
 * `TauCeti.detLineFourTermEquiv_tmul`, `TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`: its value
@@ -147,6 +149,24 @@ theorem coe_detLineShortExactEquiv_tmul_eq_map_mul (a : detLine K U)
     ext u
     simp [ExteriorAlgebra.ιMulti_mul_ιMulti]
   exact LinearMap.congr_fun key a
+
+/-- The determinant line of the middle term `V` of a short exact sequence `0 → U → V → W → 0` is
+spanned by the image under `TauCeti.detLineShortExactEquiv` of the exterior products of bases of
+`U` and `W`. -/
+theorem exists_eq_smul_detLineShortExactEquiv (y : detLine K V) :
+    ∃ r : K, y = r • detLineShortExactEquiv hf hfg hg
+      (exteriorPower.ιMulti K _ (Module.finBasis K U) ⊗ₜ
+        exteriorPower.ιMulti K _ (Module.finBasis K W)) := by
+  obtain ⟨w, rfl⟩ := (detLineShortExactEquiv hf hfg hg).surjective y
+  induction w using TensorProduct.inductionOn with
+  | add w w' hw hw' =>
+    obtain ⟨r, hr⟩ := hw
+    obtain ⟨r', hr'⟩ := hw'
+    exact ⟨r + r', by rw [map_add, hr, hr', add_smul]⟩
+  | tmul α ρ =>
+    obtain ⟨a, rfl⟩ := (Module.finBasis K U).exists_smul_ιMulti_eq α
+    obtain ⟨b, rfl⟩ := (Module.finBasis K W).exists_smul_ιMulti_eq ρ
+    exact ⟨a * b, by rw [TensorProduct.smul_tmul_smul, map_smul]⟩
 
 end ShortExact
 

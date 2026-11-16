@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Contraction
 public import TauCeti.LinearAlgebra.Determinant.Exact
+public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.LinearAlgebra.Quotient.Prod
 import TauCeti.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basic
@@ -34,6 +35,18 @@ the isomorphism by `(-1) ^ (ind f * ind g)`, where `ind = dim ker - dim coker`
 orientations of the determinant lines of Fredholm operators, and so of moduli spaces cut out by
 them, are compared for split operators.
 
+The product of two four-term exact sequences `0 → Aᵢ → Bᵢ → Cᵢ → Dᵢ → 0` is exact, and its
+isomorphism `det (B₁ × B₂) ⊗ (det (C₁ × C₂))^* ≃ det (A₁ × A₂) ⊗ (det (D₁ × D₂))^*`
+(`TauCeti.detLineFourTermEquiv`) is the product of the isomorphisms of the two sequences, read
+through the isomorphism `TauCeti.detLineTensorDualProdEquiv` which gathers the determinant lines
+and the dual lines of the two sequences, up to the Koszul sign
+`(-1) ^ (dim A₂ * dim (range g₁) + dim (range g₂) * dim D₁)`
+(`TauCeti.detLineFourTermEquiv_prodMap`). A Fredholm operator `T` stabilized by finitely many
+directions `D : Λ → F` has the exact sequence `0 → ker T → ker (T.coprod D) → Λ → coker T → 0`
+through which its determinant line is computed, so this compares the stabilized determinant
+lines of a direct sum of operators, stabilized by the direct sum of the stabilizers, with those of
+the summands.
+
 ## Main declarations
 
 * `TauCeti.detLineProdEquiv`: `det U ⊗ det W ≃ det (U × W)`, with its value
@@ -44,6 +57,12 @@ them, are compared for split operators.
   `LinearMap.detLineProdMapEquiv_tmul`.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodComm`: exchanging the summands costs
   `(-1) ^ (ind f * ind g)`.
+* `TauCeti.coe_detLineProdEquiv_tmul_eq_mul`: `TauCeti.detLineProdEquiv` sends `a ⊗ b` to the
+  product of the images of `a` and `b` in the exterior algebra.
+* `TauCeti.detLineTensorDualProdEquiv`: the isomorphism
+  `(det U₁ ⊗ (det V₁)^*) ⊗ (det U₂ ⊗ (det V₂)^*) ≃ det (U₁ × U₂) ⊗ (det (V₁ × V₂))^*`.
+* `TauCeti.detLineFourTermEquiv_prodMap`: the four-term isomorphism of a product of exact
+  sequences is the product of the four-term isomorphisms, up to a Koszul sign.
 
 ## References
 
@@ -131,7 +150,309 @@ theorem detLineCongr_prodComm_detLineProdEquiv (t : detLine K U ⊗[K] detLine K
         push_cast
         rw [mul_comm (finrank K W)]
 
+/-- `TauCeti.detLineProdEquiv` sends `a ⊗ b` to the product of the images of `a` and `b` under the
+inclusions of `U` and `W` into `U × W`, in the exterior algebra of `U × W`. -/
+theorem coe_detLineProdEquiv_tmul_eq_mul (a : detLine K U) (b : detLine K W) :
+    (detLineProdEquiv K U W (a ⊗ₜ b) : ExteriorAlgebra K (U × W)) =
+      ExteriorAlgebra.map (LinearMap.inl K U W) (a : ExteriorAlgebra K U) *
+        ExteriorAlgebra.map (LinearMap.inr K U W) (b : ExteriorAlgebra K W) := by
+  obtain ⟨s, rfl⟩ := (Module.finBasis K U).exists_smul_ιMulti_eq a
+  obtain ⟨t, rfl⟩ := (Module.finBasis K W).exists_smul_ιMulti_eq b
+  rw [smul_tmul_smul, map_smul, Submodule.coe_smul, coe_detLineProdEquiv_tmul,
+    Submodule.coe_smul, Submodule.coe_smul, map_smul, map_smul, smul_mul_smul_comm,
+    exteriorPower.ιMulti_apply_coe, exteriorPower.ιMulti_apply_coe,
+    ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.map_apply_ιMulti,
+    ExteriorAlgebra.ιMulti_mul_ιMulti]
+
 end Prod
+
+section TensorDual
+
+variable (K : Type*) [Field K] (U₁ V₁ U₂ V₂ : Type*) [AddCommGroup U₁] [Module K U₁]
+  [AddCommGroup V₁] [Module K V₁] [AddCommGroup U₂] [Module K U₂] [AddCommGroup V₂] [Module K V₂]
+  [FiniteDimensional K U₁] [FiniteDimensional K V₁] [FiniteDimensional K U₂]
+  [FiniteDimensional K V₂]
+
+/-- The product of two tensors of a determinant line with a dual determinant line:
+`(det U₁ ⊗ (det V₁)^*) ⊗ (det U₂ ⊗ (det V₂)^*) ≃ det (U₁ × U₂) ⊗ (det (V₁ × V₂))^*`. It gathers
+the two determinant lines and the two dual lines, with no sign, and identifies them by
+`TauCeti.detLineProdEquiv`. It sends `(a₁ ⊗ φ₁) ⊗ (a₂ ⊗ φ₂)` to `a ⊗ φ`, where `a` is the image of
+`a₁ ⊗ a₂` and `φ` takes the value `φ₁ c₁ * φ₂ c₂` at the image of `c₁ ⊗ c₂`
+(`TauCeti.detLineTensorDualProdEquiv_tmul`, `TauCeti.detLineTensorDualProdEquiv_dual_apply`). -/
+def detLineTensorDualProdEquiv :
+    (detLine K U₁ ⊗[K] Dual K (detLine K V₁)) ⊗[K] (detLine K U₂ ⊗[K] Dual K (detLine K V₂)) ≃ₗ[K]
+      detLine K (U₁ × U₂) ⊗[K] Dual K (detLine K (V₁ × V₂)) :=
+  TensorProduct.tensorTensorTensorComm K _ _ _ _ ≪≫ₗ
+    TensorProduct.congr (detLineProdEquiv K U₁ U₂)
+      (dualDistribEquiv K _ _ ≪≫ₗ (detLineProdEquiv K V₁ V₂).symm.dualMap)
+
+variable {K U₁ V₁ U₂ V₂}
+
+/-- The dual factor of `TauCeti.detLineTensorDualProdEquiv`: the product of the functionals `φ₁`
+and `φ₂` takes the value `φ₁ c₁ * φ₂ c₂` at the image of `c₁ ⊗ c₂` in `det (V₁ × V₂)`. -/
+theorem detLineTensorDualProdEquiv_dual_apply (φ₁ : Dual K (detLine K V₁))
+    (φ₂ : Dual K (detLine K V₂)) (c₁ : detLine K V₁) (c₂ : detLine K V₂) :
+    (dualDistribEquiv K _ _ ≪≫ₗ (detLineProdEquiv K V₁ V₂).symm.dualMap) (φ₁ ⊗ₜ φ₂)
+        (detLineProdEquiv K V₁ V₂ (c₁ ⊗ₜ c₂)) = φ₁ c₁ * φ₂ c₂ := by
+  rw [LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, LinearEquiv.symm_apply_apply,
+    dualDistribEquiv_tmul_tmul, mul_comm]
+
+/-- `TauCeti.detLineTensorDualProdEquiv` on pure tensors. -/
+@[simp]
+theorem detLineTensorDualProdEquiv_tmul (a₁ : detLine K U₁) (φ₁ : Dual K (detLine K V₁))
+    (a₂ : detLine K U₂) (φ₂ : Dual K (detLine K V₂)) :
+    detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ ((a₁ ⊗ₜ φ₁) ⊗ₜ (a₂ ⊗ₜ φ₂)) =
+      detLineProdEquiv K U₁ U₂ (a₁ ⊗ₜ a₂) ⊗ₜ
+        (dualDistribEquiv K _ _ ≪≫ₗ (detLineProdEquiv K V₁ V₂).symm.dualMap) (φ₁ ⊗ₜ φ₂) := by
+  simp [detLineTensorDualProdEquiv]
+
+end TensorDual
+
+section FourTerm
+
+/-! ### Products of four-term exact sequences -/
+
+variable {K : Type*} [Field K]
+
+/-- The exterior product of an appended family of vectors of the two factors of `V₁ × V₂`,
+renumbered along `Fin.cast`, is the product of the exterior products of the two parts. -/
+private theorem ιMulti_append_inl_inr {V₁ V₂ : Type*} [AddCommGroup V₁] [Module K V₁]
+    [AddCommGroup V₂] [Module K V₂] {m n N : ℕ} (p : Fin m → V₁) (q : Fin n → V₂)
+    (hN : N = m + n) :
+    ExteriorAlgebra.ιMulti K N
+        (Fin.append (LinearMap.inl K V₁ V₂ ∘ p) (LinearMap.inr K V₁ V₂ ∘ q) ∘ Fin.cast hN) =
+      ExteriorAlgebra.ιMulti K m (LinearMap.inl K V₁ V₂ ∘ p) *
+        ExteriorAlgebra.ιMulti K n (LinearMap.inr K V₁ V₂ ∘ q) := by
+  rw [ExteriorAlgebra.ιMulti_comp_cast, ExteriorAlgebra.ιMulti_mul_ιMulti]
+
+/-- The product map `f₁ × f₂` sends an appended family of vectors of the two factors to the
+appended family of their images. -/
+private theorem prodMap_comp_append {V₁ V₂ W₁ W₂ : Type*} [AddCommGroup V₁] [Module K V₁]
+    [AddCommGroup V₂] [Module K V₂] [AddCommGroup W₁] [Module K W₁] [AddCommGroup W₂]
+    [Module K W₂] (φ₁ : V₁ →ₗ[K] W₁) (φ₂ : V₂ →ₗ[K] W₂) {m n N : ℕ} (p : Fin m → V₁)
+    (q : Fin n → V₂) (hN : N = m + n) :
+    ⇑(φ₁.prodMap φ₂) ∘
+        (Fin.append (LinearMap.inl K V₁ V₂ ∘ p) (LinearMap.inr K V₁ V₂ ∘ q) ∘ Fin.cast hN) =
+      Fin.append (LinearMap.inl K W₁ W₂ ∘ (φ₁ ∘ p)) (LinearMap.inr K W₁ W₂ ∘ (φ₂ ∘ q)) ∘
+        Fin.cast hN := by
+  funext i
+  simp only [Function.comp_apply]
+  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) (Fin.cast hN i) <;> simp
+
+/-- If `b₁` and `b₂` are the exterior products of the appended families `p₁, q₁` and `p₂, q₂`, then
+`(-1) ^ (m₂ * n₁)` times the image of `b₁ ⊗ b₂` in `det (V₁ × V₂)` is the exterior product of the
+families `p₁, p₂` followed by `q₁, q₂`: the blocks `q₁` and `p₂` are exchanged. -/
+private theorem coe_smul_detLineProdEquiv_tmul {V₁ V₂ : Type*} [AddCommGroup V₁] [Module K V₁]
+    [AddCommGroup V₂] [Module K V₂] [FiniteDimensional K V₁] [FiniteDimensional K V₂]
+    {m₁ n₁ m₂ n₂ M N : ℕ} {b₁ : detLine K V₁} {b₂ : detLine K V₂} {p₁ : Fin m₁ → V₁}
+    {q₁ : Fin n₁ → V₁} {p₂ : Fin m₂ → V₂} {q₂ : Fin n₂ → V₂}
+    (hb₁ : (b₁ : ExteriorAlgebra K V₁) = ExteriorAlgebra.ιMulti K _ (Fin.append p₁ q₁))
+    (hb₂ : (b₂ : ExteriorAlgebra K V₂) = ExteriorAlgebra.ιMulti K _ (Fin.append p₂ q₂))
+    (hM : M = m₁ + m₂) (hN : N = n₁ + n₂) :
+    (((-1 : K) ^ (m₂ * n₁) • detLineProdEquiv K V₁ V₂ (b₁ ⊗ₜ b₂) : detLine K (V₁ × V₂)) :
+        ExteriorAlgebra K (V₁ × V₂)) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append
+        (Fin.append (LinearMap.inl K V₁ V₂ ∘ p₁) (LinearMap.inr K V₁ V₂ ∘ p₂) ∘ Fin.cast hM)
+        (Fin.append (LinearMap.inl K V₁ V₂ ∘ q₁) (LinearMap.inr K V₁ V₂ ∘ q₂) ∘ Fin.cast hN)) := by
+  rw [← ExteriorAlgebra.ιMulti_mul_ιMulti, ιMulti_append_inl_inr, ιMulti_append_inl_inr,
+    Submodule.coe_smul, coe_detLineProdEquiv_tmul_eq_mul, hb₁, hb₂,
+    ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.map_apply_ιMulti,
+    ExteriorAlgebra.ιMulti_comp_append, ExteriorAlgebra.ιMulti_comp_append]
+  -- Exchange the middle blocks `q₁` and `p₂`; the two signs cancel.
+  rw [mul_assoc, ← mul_assoc (ExteriorAlgebra.ιMulti K n₁ _),
+    ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul (LinearMap.inl K V₁ V₂ ∘ q₁)
+      (LinearMap.inr K V₁ V₂ ∘ p₂),
+    smul_mul_assoc, mul_smul_comm, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
+    one_smul]
+  simp only [mul_assoc]
+
+variable {A₁ B₁ C₁ D₁ A₂ B₂ C₂ D₂ : Type*} [AddCommGroup A₁] [Module K A₁] [AddCommGroup B₁]
+  [Module K B₁] [AddCommGroup C₁] [Module K C₁] [AddCommGroup D₁] [Module K D₁] [AddCommGroup A₂]
+  [Module K A₂] [AddCommGroup B₂] [Module K B₂] [AddCommGroup C₂] [Module K C₂] [AddCommGroup D₂]
+  [Module K D₂] [FiniteDimensional K A₁] [FiniteDimensional K B₁] [FiniteDimensional K C₁]
+  [FiniteDimensional K D₁] [FiniteDimensional K A₂] [FiniteDimensional K B₂]
+  [FiniteDimensional K C₂] [FiniteDimensional K D₂] {f₁ : A₁ →ₗ[K] B₁} {g₁ : B₁ →ₗ[K] C₁}
+  {h₁ : C₁ →ₗ[K] D₁} {f₂ : A₂ →ₗ[K] B₂} {g₂ : B₂ →ₗ[K] C₂} {h₂ : C₂ →ₗ[K] D₂}
+  (hf₁ : Function.Injective f₁) (hfg₁ : Function.Exact f₁ g₁) (hgh₁ : Function.Exact g₁ h₁)
+  (hh₁ : Function.Surjective h₁) (hf₂ : Function.Injective f₂) (hfg₂ : Function.Exact f₂ g₂)
+  (hgh₂ : Function.Exact g₂ h₂) (hh₂ : Function.Surjective h₂)
+
+include hf₁ hfg₁ hgh₁ hh₁ hf₂ hfg₂ hgh₂ hh₂ in
+/-- `TauCeti.detLineFourTermEquiv_prodMap` on the exterior products of
+`TauCeti.detLineFourTermEquiv_tmul`. -/
+private theorem detLineFourTermEquiv_prodMap_tmul (u₁ : Fin (finrank K A₁) → A₁)
+    (v₁ : Fin (finrank K (LinearMap.range g₁)) → B₁) (z₁ : Fin (finrank K D₁) → C₁)
+    (u₂ : Fin (finrank K A₂) → A₂) (v₂ : Fin (finrank K (LinearMap.range g₂)) → B₂)
+    (z₂ : Fin (finrank K D₂) → C₂) {β₁ : detLine K B₁} {β₂ : detLine K B₂} {γ₁ : detLine K C₁}
+    {γ₂ : detLine K C₂}
+    (hβ₁ : (β₁ : ExteriorAlgebra K B₁) = ExteriorAlgebra.ιMulti K _ (Fin.append (f₁ ∘ u₁) v₁))
+    (hβ₂ : (β₂ : ExteriorAlgebra K B₂) = ExteriorAlgebra.ιMulti K _ (Fin.append (f₂ ∘ u₂) v₂))
+    (hγ₁ : (γ₁ : ExteriorAlgebra K C₁) = ExteriorAlgebra.ιMulti K _ (Fin.append (g₁ ∘ v₁) z₁))
+    (hγ₂ : (γ₂ : ExteriorAlgebra K C₂) = ExteriorAlgebra.ιMulti K _ (Fin.append (g₂ ∘ v₂) z₂))
+    {ξ₁ : Dual K (detLine K D₁)} {ξ₂ : Dual K (detLine K D₂)}
+    (hξ₁ : ξ₁ (exteriorPower.ιMulti K _ (h₁ ∘ z₁)) = 1)
+    (hξ₂ : ξ₂ (exteriorPower.ιMulti K _ (h₂ ∘ z₂)) = 1) (φ₁ : Dual K (detLine K C₁))
+    (φ₂ : Dual K (detLine K C₂)) :
+    detLineFourTermEquiv (f := f₁.prodMap f₂) (g := g₁.prodMap g₂) (h := h₁.prodMap h₂)
+        (hf₁.prodMap hf₂) (Function.Exact.prodMap hfg₁ hfg₂) (Function.Exact.prodMap hgh₁ hgh₂)
+        (hh₁.prodMap hh₂)
+        (detLineTensorDualProdEquiv K B₁ C₁ B₂ C₂ ((β₁ ⊗ₜ φ₁) ⊗ₜ (β₂ ⊗ₜ φ₂))) =
+      (-1 : K) ^ (finrank K A₂ * finrank K (LinearMap.range g₁) +
+          finrank K (LinearMap.range g₂) * finrank K D₁) •
+        detLineTensorDualProdEquiv K A₁ D₁ A₂ D₂
+          (detLineFourTermEquiv hf₁ hfg₁ hgh₁ hh₁ (β₁ ⊗ₜ φ₁) ⊗ₜ
+            detLineFourTermEquiv hf₂ hfg₂ hgh₂ hh₂ (β₂ ⊗ₜ φ₂)) := by
+  -- Plan: evaluate both sides with `TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`, for the
+  -- product sequence with the interleaved families `u`, `v`, `z` below and for each factor.
+  -- The exterior products of the interleaved families are `± β₁ β₂` and `± γ₁ γ₂`
+  -- (`coe_smul_detLineProdEquiv_tmul`), and these two signs give the stated one.
+  -- The families of the product sequence.
+  have hA : finrank K (A₁ × A₂) = finrank K A₁ + finrank K A₂ := Module.finrank_prod
+  have hR : finrank K (LinearMap.range (g₁.prodMap g₂)) =
+      finrank K (LinearMap.range g₁) + finrank K (LinearMap.range g₂) := by
+    rw [LinearMap.range_prodMap, (Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod]
+  have hD : finrank K (D₁ × D₂) = finrank K D₁ + finrank K D₂ := Module.finrank_prod
+  set u := Fin.append (LinearMap.inl K A₁ A₂ ∘ u₁) (LinearMap.inr K A₁ A₂ ∘ u₂) ∘ Fin.cast hA
+  set v := Fin.append (LinearMap.inl K B₁ B₂ ∘ v₁) (LinearMap.inr K B₁ B₂ ∘ v₂) ∘ Fin.cast hR
+  set z := Fin.append (LinearMap.inl K C₁ C₂ ∘ z₁) (LinearMap.inr K C₁ C₂ ∘ z₂) ∘ Fin.cast hD
+  set s := finrank K A₂ * finrank K (LinearMap.range g₁)
+  set s' := finrank K (LinearMap.range g₂) * finrank K D₁
+  -- The exterior products of the product sequence. They are introduced as opaque variables:
+  -- unification would otherwise unfold their definitions, which is too slow.
+  obtain ⟨β, hβdef⟩ : ∃ β : detLine K (B₁ × B₂),
+      β = (-1 : K) ^ s • detLineProdEquiv K B₁ B₂ (β₁ ⊗ₜ β₂) := ⟨_, rfl⟩
+  obtain ⟨γ, hγdef⟩ : ∃ γ : detLine K (C₁ × C₂),
+      γ = (-1 : K) ^ s' • detLineProdEquiv K C₁ C₂ (γ₁ ⊗ₜ γ₂) := ⟨_, rfl⟩
+  obtain ⟨Ξ, hΞdef⟩ : ∃ Ξ : Dual K (detLine K (D₁ × D₂)),
+      Ξ = (dualDistribEquiv K _ _ ≪≫ₗ (detLineProdEquiv K D₁ D₂).symm.dualMap) (ξ₁ ⊗ₜ ξ₂) :=
+    ⟨_, rfl⟩
+  have hβ : (β : ExteriorAlgebra K (B₁ × B₂)) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (⇑(f₁.prodMap f₂) ∘ u) v) := by
+    rw [hβdef, prodMap_comp_append]
+    exact coe_smul_detLineProdEquiv_tmul hβ₁ hβ₂ hA hR
+  have hγ : (γ : ExteriorAlgebra K (C₁ × C₂)) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (⇑(g₁.prodMap g₂) ∘ v) z) := by
+    rw [hγdef, prodMap_comp_append]
+    exact coe_smul_detLineProdEquiv_tmul hγ₁ hγ₂ hR hD
+  have hu : exteriorPower.ιMulti K _ u =
+      detLineProdEquiv K A₁ A₂ (exteriorPower.ιMulti K _ u₁ ⊗ₜ exteriorPower.ιMulti K _ u₂) :=
+    Subtype.ext (by rw [coe_detLineProdEquiv_tmul, exteriorPower.ιMulti_apply_coe,
+      ExteriorAlgebra.ιMulti_comp_cast])
+  have hξ : Ξ (exteriorPower.ιMulti K _ (⇑(h₁.prodMap h₂) ∘ z)) = 1 := by
+    have hz : exteriorPower.ιMulti K _ (⇑(h₁.prodMap h₂) ∘ z) =
+        detLineProdEquiv K D₁ D₂
+          (exteriorPower.ιMulti K _ (h₁ ∘ z₁) ⊗ₜ exteriorPower.ιMulti K _ (h₂ ∘ z₂)) :=
+      Subtype.ext (by rw [coe_detLineProdEquiv_tmul, exteriorPower.ιMulti_apply_coe,
+        prodMap_comp_append, ExteriorAlgebra.ιMulti_comp_cast])
+    rw [hΞdef, hz, detLineTensorDualProdEquiv_dual_apply, hξ₁, hξ₂, mul_one]
+  have hsq (n : ℕ) : (-1 : K) ^ n * (-1) ^ n = 1 := by
+    rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  have hββ : detLineProdEquiv K B₁ B₂ (β₁ ⊗ₜ β₂) = (-1 : K) ^ s • β := by
+    rw [hβdef, smul_smul, hsq, one_smul]
+  have hγγ : detLineProdEquiv K C₁ C₂ (γ₁ ⊗ₜ γ₂) = (-1 : K) ^ s' • γ := by
+    rw [hγdef, smul_smul, hsq, one_smul]
+  have e := detLineFourTermEquiv_tmul_eq_smul_tmul (f := f₁.prodMap f₂) (g := g₁.prodMap g₂)
+      (h := h₁.prodMap h₂) (hf₁.prodMap hf₂) (Function.Exact.prodMap hfg₁ hfg₂)
+      (Function.Exact.prodMap hgh₁ hgh₂) (hh₁.prodMap hh₂) u v z hβ hγ
+      ((dualDistribEquiv K _ _ ≪≫ₗ (detLineProdEquiv K C₁ C₂).symm.dualMap) (φ₁ ⊗ₜ φ₂)) hξ
+  have e₁ := detLineFourTermEquiv_tmul_eq_smul_tmul hf₁ hfg₁ hgh₁ hh₁ u₁ v₁ z₁ hβ₁ hγ₁ φ₁ hξ₁
+  have e₂ := detLineFourTermEquiv_tmul_eq_smul_tmul hf₂ hfg₂ hgh₂ hh₂ u₂ v₂ z₂ hβ₂ hγ₂ φ₂ hξ₂
+  have hφ : (dualDistribEquiv K _ _ ≪≫ₗ (detLineProdEquiv K C₁ C₂).symm.dualMap) (φ₁ ⊗ₜ φ₂) γ =
+      (-1 : K) ^ s' * (φ₁ γ₁ * φ₂ γ₂) := by
+    rw [← detLineTensorDualProdEquiv_dual_apply, hγγ, LinearMap.map_smul, smul_eq_mul,
+      ← mul_assoc, hsq, one_mul]
+  rw [detLineTensorDualProdEquiv_tmul, hββ, ← smul_tmul', LinearEquiv.map_smul, e]
+  simp only [e₁, e₂, TensorProduct.smul_tmul_smul, LinearEquiv.map_smul,
+    detLineTensorDualProdEquiv_tmul, ← hu]
+  rw [hφ, smul_smul, smul_smul, pow_add, hΞdef, mul_assoc]
+
+include hf₁ hfg₁ hgh₁ hh₁ hf₂ hfg₂ hgh₂ hh₂ in
+/-- **The four-term isomorphism of a product of exact sequences.** The product of two four-term
+exact sequences `0 → Aᵢ → Bᵢ → Cᵢ → Dᵢ → 0` is exact, and its isomorphism
+`det (B₁ × B₂) ⊗ (det (C₁ × C₂))^* ≃ det (A₁ × A₂) ⊗ (det (D₁ × D₂))^*`
+(`TauCeti.detLineFourTermEquiv`) is the product of the isomorphisms of the two sequences, read
+through `TauCeti.detLineTensorDualProdEquiv`, up to the sign
+`(-1) ^ (dim A₂ * dim (range g₁) + dim (range g₂) * dim D₁)`. The isomorphism of a sequence puts
+the directions of `A` before those spanning the range of `g` in `det B`, and those spanning the
+range of `g` before the lifts of `D` in `det C`; the sign comes from interleaving the blocks of the
+two sequences. -/
+theorem detLineFourTermEquiv_prodMap (x₁ : detLine K B₁ ⊗[K] Dual K (detLine K C₁))
+    (x₂ : detLine K B₂ ⊗[K] Dual K (detLine K C₂)) :
+    detLineFourTermEquiv (f := f₁.prodMap f₂) (g := g₁.prodMap g₂) (h := h₁.prodMap h₂)
+        (hf₁.prodMap hf₂) (Function.Exact.prodMap hfg₁ hfg₂) (Function.Exact.prodMap hgh₁ hgh₂)
+        (hh₁.prodMap hh₂)
+        (detLineTensorDualProdEquiv K B₁ C₁ B₂ C₂ (x₁ ⊗ₜ x₂)) =
+      (-1 : K) ^ (finrank K A₂ * finrank K (LinearMap.range g₁) +
+          finrank K (LinearMap.range g₂) * finrank K D₁) •
+        detLineTensorDualProdEquiv K A₁ D₁ A₂ D₂
+          (detLineFourTermEquiv hf₁ hfg₁ hgh₁ hh₁ x₁ ⊗ₜ
+            detLineFourTermEquiv hf₂ hfg₂ hgh₂ hh₂ x₂) := by
+  -- Vectors of `Bᵢ` lifting a basis of `range gᵢ`, and of `Cᵢ` lifting a basis of `Dᵢ`.
+  choose v₁ hv₁ using fun i ↦
+    g₁.surjective_rangeRestrict (Module.finBasis K (LinearMap.range g₁) i)
+  choose v₂ hv₂ using fun i ↦
+    g₂.surjective_rangeRestrict (Module.finBasis K (LinearMap.range g₂) i)
+  choose z₁ hz₁ using fun i ↦ hh₁ (Module.finBasis K D₁ i)
+  choose z₂ hz₂ using fun i ↦ hh₂ (Module.finBasis K D₂ i)
+  have hω₁ : exteriorPower.ιMulti K _ (h₁ ∘ z₁) ≠ 0 := by
+    rw [show h₁ ∘ z₁ = ⇑(Module.finBasis K D₁) from funext hz₁]
+    exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K D₁).linearIndependent
+  have hω₂ : exteriorPower.ιMulti K _ (h₂ ∘ z₂) ≠ 0 := by
+    rw [show h₂ ∘ z₂ = ⇑(Module.finBasis K D₂) from funext hz₂]
+    exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K D₂).linearIndependent
+  obtain ⟨ξ₁, hξ₁⟩ := Projective.exists_dual_eq_one K hω₁
+  obtain ⟨ξ₂, hξ₂⟩ := Projective.exists_dual_eq_one K hω₂
+  have hv₁' : ⇑(Module.finBasis K (LinearMap.range g₁)) = g₁.rangeRestrict ∘ v₁ :=
+    (funext hv₁).symm
+  have hv₂' : ⇑(Module.finBasis K (LinearMap.range g₂)) = g₂.rangeRestrict ∘ v₂ :=
+    (funext hv₂).symm
+  -- `det Bᵢ` is spanned by the exterior product of a basis of `Aᵢ` followed by `vᵢ`.
+  obtain ⟨β₁, hβ₁def⟩ : ∃ β₁ : detLine K B₁,
+      β₁ = detLineShortExactEquiv hf₁ hfg₁.rangeRestrict g₁.surjective_rangeRestrict
+        (exteriorPower.ιMulti K _ (Module.finBasis K A₁) ⊗ₜ
+          exteriorPower.ιMulti K _ (Module.finBasis K (LinearMap.range g₁))) := ⟨_, rfl⟩
+  obtain ⟨β₂, hβ₂def⟩ : ∃ β₂ : detLine K B₂,
+      β₂ = detLineShortExactEquiv hf₂ hfg₂.rangeRestrict g₂.surjective_rangeRestrict
+        (exteriorPower.ιMulti K _ (Module.finBasis K A₂) ⊗ₜ
+          exteriorPower.ιMulti K _ (Module.finBasis K (LinearMap.range g₂))) := ⟨_, rfl⟩
+  have hβ₁ : (β₁ : ExteriorAlgebra K B₁) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f₁ ∘ Module.finBasis K A₁) v₁) := by
+    rw [hβ₁def, hv₁']
+    exact coe_detLineShortExactEquiv_tmul _ _ _ _ v₁
+  have hβ₂ : (β₂ : ExteriorAlgebra K B₂) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f₂ ∘ Module.finBasis K A₂) v₂) := by
+    rw [hβ₂def, hv₂']
+    exact coe_detLineShortExactEquiv_tmul _ _ _ _ v₂
+  have hγ₁ := coe_detLineShortExactEquiv_tmul (LinearMap.range g₁).injective_subtype
+    hgh₁.range_subtype hh₁ (g₁.rangeRestrict ∘ v₁) z₁
+  have hγ₂ := coe_detLineShortExactEquiv_tmul (LinearMap.range g₂).injective_subtype
+    hgh₂.range_subtype hh₂ (g₂.rangeRestrict ∘ v₂) z₂
+  rw [← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict] at hγ₁ hγ₂
+  -- Both sides are linear in `x₁` and `x₂`.
+  induction x₁ using TensorProduct.inductionOn with
+  | add x x' hx hx' =>
+    rw [TensorProduct.add_tmul, LinearEquiv.map_add, LinearEquiv.map_add, hx, hx',
+      LinearEquiv.map_add, TensorProduct.add_tmul, LinearEquiv.map_add, smul_add]
+  | tmul y₁ φ₁ =>
+    induction x₂ using TensorProduct.inductionOn with
+    | add x x' hx hx' =>
+      rw [TensorProduct.tmul_add, LinearEquiv.map_add, LinearEquiv.map_add, hx, hx',
+        LinearEquiv.map_add, TensorProduct.tmul_add, LinearEquiv.map_add, smul_add]
+    | tmul y₂ φ₂ =>
+      obtain ⟨r₁, hr₁⟩ := exists_eq_smul_detLineShortExactEquiv hf₁ hfg₁.rangeRestrict
+        g₁.surjective_rangeRestrict y₁
+      obtain ⟨r₂, hr₂⟩ := exists_eq_smul_detLineShortExactEquiv hf₂ hfg₂.rangeRestrict
+        g₂.surjective_rangeRestrict y₂
+      rw [← hβ₁def] at hr₁
+      rw [← hβ₂def] at hr₂
+      subst hr₁ hr₂
+      simp only [← smul_tmul', TensorProduct.tmul_smul, LinearEquiv.map_smul, smul_smul,
+        detLineFourTermEquiv_prodMap_tmul hf₁ hfg₁ hgh₁ hh₁ hf₂ hfg₂ hgh₂ hh₂ _ v₁ z₁ _ v₂ z₂
+          hβ₁ hβ₂ hγ₁ hγ₂ hξ₁ hξ₂]
+      congr 1
+      ring
+
+end FourTerm
 
 end TauCeti
 
