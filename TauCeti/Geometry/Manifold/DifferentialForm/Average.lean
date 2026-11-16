@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -149,12 +150,6 @@ omit [IsManifold I ∞ M] [IsManifold J ∞ G] in
 /-- Each element of the group acts by a smooth map. -/
 private theorem contMDiff_smul_left (a : G) : ContMDiff I I ∞ (a • · : M → M) :=
   ContMDiffSMul.contMDiff_const_smul (I := J) (I' := I) a
-
-omit [IsManifold I ∞ M] [IsManifold J ∞ G] in
-/-- Each element of the group acts by a differentiable map. -/
-private theorem mdifferentiableAt_smul_left (a : G) (x : M) :
-    MDifferentiableAt I I (a • · : M → M) x :=
-  (contMDiff_smul_left J a).mdifferentiableAt (by simp)
 
 /-- The pullbacks of a smooth form by the action are jointly smooth in the point and the group
 element, as a section of the bundle of alternating maps along `(x, a) ↦ x`. -/
@@ -298,8 +293,9 @@ theorem mpullback_smul_measureAverage [MeasurableMul G] [μ.IsMulRightInvariant]
   refine Eq.trans ?_ (integral_mul_right_eq_self (μ := μ) (fun a : G ↦
     α.1 (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i))) b)
   refine integral_congr_ae (Eventually.of_forall fun a ↦ ?_)
-  have h := mpullback_comp_at (F := F) (mdifferentiableAt_smul_left J b x)
-    (mdifferentiableAt_smul_left J a (b • x)) α.1
+  have h := mpullback_comp_at (F := F)
+    (ContMDiffSMul.mdifferentiable_const_smul (I := J) (n := ∞) (by simp) b x)
+    (ContMDiffSMul.mdifferentiable_const_smul (I := J) (n := ∞) (by simp) a (b • x)) α.1
   rw [show (fun y : M ↦ a • y) ∘ (b • ·) = ((a * b) • ·) from
     funext fun y ↦ (mul_smul a b y).symm] at h
   simpa only [TauCeti.mpullback_apply] using (DFunLike.congr_fun h v).symm
