@@ -61,7 +61,7 @@ filtered.
 
 public section
 
-universe u v
+universe u v w
 
 open CategoryTheory Limits Opposite Set Topology TopologicalSpace
 
@@ -74,21 +74,26 @@ variable (X : TopCat.{u}) (M : Type v)
 /-- The K-presheaf of locally constant functions with values in `M`: its value on a compact set
 `K` is `LocallyConstant K M`, and its restriction maps restrict functions to smaller compact sets.
 -/
-abbrev locallyConstant : KPresheaf (Type (max u v)) X where
+@[expose] def locallyConstant : KPresheaf (Type (max u v)) X where
   obj K := LocallyConstant (K.unop : Set X) M
   map f := TypeCat.ofHom fun g =>
     g.comap ⟨inclusion (leOfHom f.unop), continuous_inclusion (leOfHom f.unop)⟩
   map_id _ := rfl
   map_comp _ _ := rfl
 
+@[simp]
+theorem locallyConstant_obj (K : (Compacts X)ᵒᵖ) :
+    (locallyConstant X M).obj K = LocallyConstant (K.unop : Set X) M :=
+  (rfl)
+
 variable {X M}
 
 @[simp]
 theorem locallyConstant_map_apply {K L : (Compacts X)ᵒᵖ} (f : K ⟶ L)
-    (g : LocallyConstant (K.unop : Set X) M) (x : (L.unop : Set X)) :
-    ((locallyConstant X M).map f g : LocallyConstant (L.unop : Set X) M) x =
-      g (inclusion (leOfHom f.unop) x) :=
-  rfl
+    (g : LocallyConstant (K.unop : Set X) M) :
+    (locallyConstant X M).map f g =
+      g.comap ⟨inclusion (leOfHom f.unop), continuous_inclusion (leOfHom f.unop)⟩ :=
+  (rfl)
 
 /-- On a locally compact Hausdorff space, the locally constant functions with values in a type `M`
 form a K-sheaf. -/
@@ -101,9 +106,10 @@ theorem isKSheaf_locallyConstant [T2Space X] [LocallyCompactSpace X] :
         uniq := fun _ => LocallyConstant.ext isEmptyElim }⟩
   isPullback {K₁ K₂ K₃ K₄} sq := by
     rw [Types.isPullback_iff]
-    refine ⟨by rw [← Functor.map_comp, ← Functor.map_comp], ?_, ?_⟩
+    refine ⟨by rw [← Functor.map_comp, ← Functor.map_comp]; congr 1, ?_, ?_⟩
     · -- Two functions on `K₄ = K₂ ∪ K₃` agreeing on `K₂` and on `K₃` are equal.
       rintro (f g : LocallyConstant (K₄ : Set X) M) ⟨h₂, h₃⟩
+      simp only [locallyConstant_map_apply] at h₂ h₃
       refine LocallyConstant.ext fun ⟨x, hx⟩ => ?_
       rw [← sq.sup_eq, Compacts.coe_sup] at hx
       rcases hx with hx | hx
@@ -111,6 +117,7 @@ theorem isKSheaf_locallyConstant [T2Space X] [LocallyCompactSpace X] :
       · exact congr($h₃ ⟨x, hx⟩)
     · -- Functions on `K₂` and `K₃` agreeing on `K₁ = K₂ ∩ K₃` glue along the closed cover.
       rintro (f₂ : LocallyConstant (K₂ : Set X) M) (f₃ : LocallyConstant (K₃ : Set X) M) h
+      simp only [locallyConstant_map_apply] at h
       classical
       have h₀ : (K₄ : Set X) ⊆ K₂ ∪ K₃ := by rw [← sq.sup_eq, Compacts.coe_sup]
       have hf : ∀ x (hx : x ∈ (K₂ : Set X) ∩ K₃), f₂ ⟨x, hx.1⟩ = f₃ ⟨x, hx.2⟩ := fun x hx => by
@@ -138,24 +145,36 @@ end Types
 
 section Module
 
-variable (X : TopCat.{u}) (R : Type v) [Ring R] (M : Type v) [AddCommGroup M] [Module R M]
+variable (X : TopCat.{u}) (R : Type w) [Ring R] (M : Type v) [AddCommGroup M] [Module R M]
 
 /-- The K-presheaf of `R`-modules of locally constant functions with values in an `R`-module `M`.
 Its underlying K-presheaf of types is `TopCat.KPresheaf.locallyConstant X M`. -/
-abbrev locallyConstantModule : KPresheaf (ModuleCat.{max u v} R) X where
+@[expose] def locallyConstantModule : KPresheaf (ModuleCat.{max u v} R) X where
   obj K := ModuleCat.of R (LocallyConstant (K.unop : Set X) M)
   map f := ModuleCat.ofHom <|
     LocallyConstant.comapₗ R ⟨inclusion (leOfHom f.unop), continuous_inclusion (leOfHom f.unop)⟩
   map_id _ := rfl
   map_comp _ _ := rfl
 
+@[simp]
+theorem locallyConstantModule_obj (K : (Compacts X)ᵒᵖ) :
+    (locallyConstantModule X R M).obj K = ModuleCat.of R (LocallyConstant (K.unop : Set X) M) :=
+  (rfl)
+
 /-- The underlying K-presheaf of types of `TopCat.KPresheaf.locallyConstantModule X R M` is
 `TopCat.KPresheaf.locallyConstant X M`. -/
 theorem locallyConstantModule_comp_forget :
     locallyConstantModule X R M ⋙ forget (ModuleCat.{max u v} R) = locallyConstant X M :=
-  rfl
+  (rfl)
 
 variable {X R M}
+
+@[simp]
+theorem locallyConstantModule_map_apply {K L : (Compacts X)ᵒᵖ} (f : K ⟶ L)
+    (g : LocallyConstant (K.unop : Set X) M) :
+    (locallyConstantModule X R M).map f g =
+      g.comap ⟨inclusion (leOfHom f.unop), continuous_inclusion (leOfHom f.unop)⟩ :=
+  (rfl)
 
 /-- On a locally compact Hausdorff space, the locally constant functions with values in an
 `R`-module `M` form a K-sheaf of `R`-modules. -/
@@ -174,9 +193,11 @@ theorem isKSheaf_locallyConstantModule [T2Space X] [LocallyCompactSpace X] :
   · have : IsEmpty ((⊥ : Compacts X) : Set X) := isEmpty_coe_sort.2 Compacts.coe_bot
     have : Subsingleton (LocallyConstant ((⊥ : Compacts X) : Set X) M) :=
       ⟨fun _ _ => LocallyConstant.ext isEmptyElim⟩
+    rw [locallyConstantModule_obj]
     exact ⟨(ModuleCat.isZero_of_subsingleton _).isTerminal⟩
   · refine IsPullback.of_map (forget (ModuleCat.{max u v} R)) ?_ (h.isPullback sq)
     rw [← Functor.map_comp, ← Functor.map_comp]
+    congr 1
   · -- The compact neighbourhoods of `K` form a nonempty codirected set, so the diagram is filtered
     -- and the forgetful functor, which factors through abelian groups, reflects its colimits.
     have : Nonempty K.compactNhds := by
