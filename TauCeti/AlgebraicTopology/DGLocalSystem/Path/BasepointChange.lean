@@ -288,18 +288,6 @@ theorem tensorPathChainPoint_tensorPathChainAct
     rw [tensorPathChainAct_tmul, tensorPathChainPoint_apply, balance,
       pathChainToLoopChain_smul_pathChainPoint, h, add_assoc, tensorPathChainHomotopy]
 
-/-- Without Moore paths from `a` to `b` there are no path chains, so tensoring with them gives
-the zero module. -/
-instance [IsEmpty (MoorePathBetween B a b)]
-    (L : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    Subsingleton (tensorBimoduleObj L (pathChainBimodule B a b R)) :=
-  subsingleton_of_forall_eq 0 fun z ↦ by
-    induction z using BalancedTensorProduct.induction_on with
-    | ht m c =>
-      rw [Subsingleton.elim (α := cubicalChainModule (MoorePathBetween B a b)
-        (MooreLoopSpace B b) R) c 0, tmul_zero]
-    | ha z z' ih ih' => rw [ih, ih', add_zero]
-
 /-- **Changing the basepoint preserves quasi-isomorphisms.** For every quasi-isomorphism
 `f : M → N` of DG local systems at `a`, the tensored morphism
 `f ⊗ 1 : M ⊗ C_*(P_{a→b} B) → N ⊗ C_*(P_{a→b} B)` of DG local systems at `b` is a
