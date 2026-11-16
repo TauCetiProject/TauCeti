@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Symplectic.Annulus.GeneratingFunction
 import Mathlib.Analysis.Calculus.Darboux
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+import TauCeti.Analysis.Calculus.FDeriv.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -27,7 +27,7 @@ band, satisfying the generating equations everywhere.
 
 * Each vertical slice `t ↦ X(x, t)` has a derivative of constant sign on `J`, by Darboux's
   theorem, so it is strictly monotone or strictly antitone
-  (`TauCeti.strictMonoOn_or_strictAntiOn_stripTwistCoord`), and `G` is injective on the strip
+  (`TauCeti.strictMonoOn_or_strictAntiOn_fst_slice`), and `G` is injective on the strip
   (`TauCeti.injOn_stripTwistCoord`).
 * For heights `c, d ∈ J`, `G` maps the closed strip `ℝ × [c, d]` onto the band between the two
   boundary graphs, `{(x, X) | X ∈ [X(x, c), X(x, d)]}`
@@ -47,10 +47,11 @@ band, and when `F` preserves area and the line `y = 0`:
 * it is `C^n` on the band when `F` is `C^(n + 1)`
   (`TauCeti.contDiffAt_stripBandGeneratingFunction`);
 * it vanishes on the lower boundary graph `X = X(x, 0)`
-  (`TauCeti.stripBandGeneratingFunction_mk_zero`), which fixes its additive constant;
+  (`TauCeti.stripBandGeneratingFunction_stripTwistCoord_mk_zero`), which fixes its additive
+  constant;
 * it is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` when `F` commutes
   with `(x, y) ↦ (x + a, y)` on the strip, as a lift of an annulus map does for `a = 1`
-  (`TauCeti.stripBandGeneratingFunction_add`);
+  (`TauCeti.stripBandGeneratingFunction_add_diag`);
 * its mixed second derivative is `∂₁ ∂₂ S' = -1 / ∂_y X`
   (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its sign is opposite to that of
   the twist.
@@ -80,27 +81,16 @@ variable {F : ℝ × ℝ → ℝ × ℝ} {J : Set ℝ}
 
 /-! ### The twist coordinates on a strip -/
 
-/-- The derivative of a vertical slice `t ↦ X(x, t)` is the twist `∂_y X(x, t)`. -/
-private theorem hasDerivAt_fst_slice {x t : ℝ} (hF : DifferentiableAt ℝ F (x, t)) :
-    HasDerivAt (fun s ↦ (F (x, s)).1) (fderiv ℝ F (x, t) (0, 1)).1 t := by
-  have h : HasDerivAt (fun s : ℝ ↦ (x, s)) ((0 : ℝ), (1 : ℝ)) t :=
-    HasDerivAt.prodMk (hasDerivAt_const t x) (hasDerivAt_id t)
-  exact ((ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp (x, t) hF.hasFDerivAt).comp_hasDerivAt t h
-
-/-- A map twisting at `q` is differentiable there, since otherwise its derivative is zero. -/
-private theorem differentiableAt_of_twist {q : ℝ × ℝ} (htwist : (fderiv ℝ F q (0, 1)).1 ≠ 0) :
-    DifferentiableAt ℝ F q := by
-  by_contra h
-  simp [fderiv_zero_of_not_differentiableAt h] at htwist
-
 /-- On a strip `ℝ × J` over an interval `J`, where `F = (X, Y)` twists,
 each vertical slice `t ↦ X(x, t)` is strictly monotone or strictly antitone on `J`: by Darboux's
 theorem the twist `∂_y X` has constant sign along it. -/
-theorem strictMonoOn_or_strictAntiOn_stripTwistCoord (hJ : J.OrdConnected)
+theorem strictMonoOn_or_strictAntiOn_fst_slice (hJ : J.OrdConnected)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) (x : ℝ) :
     StrictMonoOn (fun t ↦ (F (x, t)).1) J ∨ StrictAntiOn (fun t ↦ (F (x, t)).1) J := by
-  have hd (t : ℝ) (ht : t ∈ J) :=
-    hasDerivAt_fst_slice (differentiableAt_of_twist (htwist (x, t) (mem_preimage.2 ht)))
+  have hd (t : ℝ) (ht : t ∈ J) :
+      HasDerivAt (fun s ↦ (F (x, s)).1) (fderiv ℝ F (x, t) (0, 1)).1 t :=
+    (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt t <| hasDerivAt_slice_right <|
+      differentiableAt_of_fderiv_ne_zero fun h ↦ htwist (x, t) (mem_preimage.2 ht) (by simp [h])
   have hc : ContinuousOn (fun t ↦ (F (x, t)).1) J :=
     fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt
   have hd' (t : ℝ) (ht : t ∈ interior J) :=
@@ -122,7 +112,7 @@ theorem injOn_stripTwistCoord (hJ : J.OrdConnected)
   rw [stripTwistCoord_apply, stripTwistCoord_apply] at h
   obtain ⟨rfl, h⟩ := Prod.mk.inj h
   simp only [mem_preimage] at hs ht
-  rcases strictMonoOn_or_strictAntiOn_stripTwistCoord hJ htwist x with hm | ha
+  rcases strictMonoOn_or_strictAntiOn_fst_slice hJ htwist x with hm | ha
   · rw [hm.injOn hs ht h]
   · rw [ha.injOn hs ht h]
 
@@ -141,13 +131,14 @@ theorem image_stripTwistCoord_preimage_snd_uIcc (hJ : J.OrdConnected)
     rw [stripTwistCoord_apply] at h
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
     simp only [mem_preimage] at ht
-    rcases strictMonoOn_or_strictAntiOn_stripTwistCoord hJ htwist x' with hm | ha
+    rcases strictMonoOn_or_strictAntiOn_fst_slice hJ htwist x' with hm | ha
     · exact (hm.monotoneOn.mono hsub).mapsTo_uIcc ht
     · exact (ha.antitoneOn.mono hsub).mapsTo_uIcc ht
   · intro hX
     have hcont : ContinuousOn (fun t ↦ (F (x, t)).1) [[c, d]] := fun t ht ↦
-      (hasDerivAt_fst_slice (differentiableAt_of_twist
-        (htwist (x, t) (mem_preimage.2 (hsub ht))))).continuousAt.continuousWithinAt
+      ((ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt t <| hasDerivAt_slice_right <|
+        differentiableAt_of_fderiv_ne_zero fun h ↦ htwist (x, t) (mem_preimage.2 (hsub ht))
+          (by simp [h])).continuousAt.continuousWithinAt
     obtain ⟨t, ht, htX⟩ := intermediate_value_uIcc hcont hX
     exact ⟨(x, t), mem_preimage.2 ht, by simp [htX]⟩
 
@@ -200,9 +191,11 @@ theorem stripBandGeneratingFunction_stripTwistCoord
     stripBandGeneratingFunction F J (stripTwistCoord F q) = stripGeneratingFunction F q := by
   rw [stripBandGeneratingFunction_def, hinj.leftInvOn_invFunOn hq]
 
-/-- The band generating function vanishes on the lower boundary graph `X = X(x, 0)`. -/
-theorem stripBandGeneratingFunction_mk_zero (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J))
-    (h0 : 0 ∈ J) (x : ℝ) : stripBandGeneratingFunction F J (x, (F (x, 0)).1) = 0 := by
+/-- The band generating function vanishes on the lower boundary graph `X = X(x, 0)`, the image
+of the line `y = 0` under the twist coordinates. -/
+theorem stripBandGeneratingFunction_stripTwistCoord_mk_zero
+    (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) (h0 : 0 ∈ J) (x : ℝ) :
+    stripBandGeneratingFunction F J (stripTwistCoord F (x, 0)) = 0 := by
   simpa using stripBandGeneratingFunction_stripTwistCoord hinj (q := (x, 0)) (mem_preimage.2 h0)
 
 /-- **Periodicity of the band generating function.** Let `J` be an open interval containing `0`.
@@ -210,7 +203,7 @@ If `F` commutes on the strip `ℝ × J` with the translation `(x, y) ↦ (x + a,
 annulus map does for `a = 1`, and the twist coordinates are injective there, then the band
 generating function is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` of
 the band. -/
-theorem stripBandGeneratingFunction_add (hJ : IsOpen J) (hJc : J.OrdConnected) (h0 : 0 ∈ J)
+theorem stripBandGeneratingFunction_add_diag (hJ : IsOpen J) (hJc : J.OrdConnected) (h0 : 0 ∈ J)
     (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {a : ℝ}
     (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) {z : ℝ × ℝ}
     (hz : z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J)) :
