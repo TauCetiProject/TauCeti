@@ -18,7 +18,9 @@ Let `A : ℝ → End(F)` be a continuous family of operators whose limits `A±` 
 kernel, as for the linearized negative gradient flow of a Morse–Bott function along a trajectory
 between critical manifolds `C` and `D`, where `ker A⁻ = T C` and `ker A⁺ = T D`. On exponentially
 weighted spaces `{u | exp w • u ∈ Lᵖ}`, with a weight `w` growing at the ends, the trajectory
-operator `D_A u = u' + A u` is Fredholm, but it only sees solutions decaying to `0`. The solutions
+operator `D_A u = u' + A u` is Fredholm for suitable weights (for finite-dimensional `F`, when
+the slopes of `w` at `±∞` are not real parts of eigenvalues of `A±`; the general index formula below
+takes this as a hypothesis), but it only sees solutions decaying to `0`. The solutions
 converging to a nonzero vector `v ∈ ker A±` are recovered by adjoining `v` as a free variable,
 extended into the line by a cutoff `χ` that is `1` near the corresponding end and `0` near the
 other:
