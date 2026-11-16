@@ -87,26 +87,28 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 omit [CompleteSpace F] in
 /-- For an integrable kernel `K`, a test function `φ` and `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the function
-`(y, x) ↦ (K (y - x) * φ x) • f y` is integrable on `E × E`: its integral in `x` is `‖f y‖` times
-the convolution of `‖φ‖` with `‖K‖`, which lies in the conjugate space of `Lᵖ` by Young's
-inequality. -/
+`(y, x) ↦ (K (x - y) * φ x) • f y` is integrable on `E × E`: its integral in `x` is `‖f y‖` times
+the convolution of `‖φ‖` with the reflection `z ↦ ‖K (-z)‖`, which lies in the conjugate space of
+`Lᵖ` by Young's inequality. -/
 private theorem integrable_uncurry_sub_mul_smul {K : E → ℂ} (hK : Integrable K) (φ : 𝓢(E, ℂ))
     (f : Lp F p (volume : Measure E)) :
-    Integrable (Function.uncurry fun y x ↦ (K (y - x) * φ x) • f y)
+    Integrable (Function.uncurry fun y x ↦ (K (x - y) * φ x) • f y)
       ((volume : Measure E).prod volume) := by
-  have hmeas : AEStronglyMeasurable (Function.uncurry fun y x ↦ (K (y - x) * φ x) • f y)
+  have hmeas : AEStronglyMeasurable (Function.uncurry fun y x ↦ (K (x - y) * φ x) • f y)
       ((volume : Measure E).prod volume) :=
     ((hK.aestronglyMeasurable.comp_quasiMeasurePreserving
-      (quasiMeasurePreserving_sub_of_right_invariant volume volume)).mul
+      ((quasiMeasurePreserving_sub_of_right_invariant volume volume).comp
+        Measure.measurePreserving_swap.quasiMeasurePreserving)).mul
       (φ.continuous.comp continuous_snd).aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable f).comp_fst
   refine ⟨hmeas, ?_⟩
-  set H : E → ℝ≥0∞ := (fun x ↦ ‖φ x‖ₑ) ⋆ₗ[volume] fun x ↦ ‖K x‖ₑ
-  have hinner : ∀ y, ∫⁻ x, ‖(K (y - x) * φ x) • f y‖ₑ = ‖f y‖ₑ * H y := fun y ↦ by
+  have hK' : Integrable (fun z ↦ K (-z)) := hK.comp_neg
+  set H : E → ℝ≥0∞ := (fun x ↦ ‖φ x‖ₑ) ⋆ₗ[volume] fun z ↦ ‖K (-z)‖ₑ
+  have hinner : ∀ y, ∫⁻ x, ‖(K (x - y) * φ x) • f y‖ₑ = ‖f y‖ₑ * H y := fun y ↦ by
     simp only [H, lconvolution_def]
     rw [← lintegral_const_mul' _ _ eNorm_ne_top]
     refine lintegral_congr fun x ↦ ?_
-    rw [eNorm_smul, eNorm_mul, neg_add_eq_sub]
+    rw [eNorm_smul, eNorm_mul, neg_add_eq_sub, neg_sub]
     ring
   rw [HasFiniteIntegral, lintegral_prod _ hmeas.eNorm]
   simp only [Function.uncurry_apply_pair, hinner]
@@ -117,7 +119,7 @@ private theorem integrable_uncurry_sub_mul_smul {K : E → ℂ} (hK : Integrable
   have hp' : 1 ≤ p' := ENNReal.one_le_inv.2 tsub_le_self
   have hHm : AEMeasurable H volume :=
     aemeasurable_lconvolution φ.continuous.eNorm.aemeasurable
-      hK.aestronglyMeasurable.eNorm
+      hK'.aestronglyMeasurable.eNorm
   have hfH : AEStronglyMeasurable (fun y ↦ ‖f y‖ₑ * H y) volume :=
     ((Lp.aestronglyMeasurable f).eNorm.mul hHm).aestronglyMeasurable
   calc ∫⁻ y, ‖f y‖ₑ * H y
@@ -130,16 +132,16 @@ private theorem integrable_uncurry_sub_mul_smul {K : E → ℂ} (hK : Integrable
           (Lp.aestronglyMeasurable f) hHm.aestronglyMeasurable
           (Filter.Eventually.of_forall fun _ ↦ by simp)
     _ ≤ 1 * eLpNorm f p volume *
-          (eLpNorm (fun x ↦ ‖φ x‖ₑ) p' volume * eLpNorm (fun x ↦ ‖K x‖ₑ) 1 volume) := by
+          (eLpNorm (fun x ↦ ‖φ x‖ₑ) p' volume * eLpNorm (fun z ↦ ‖K (-z)‖ₑ) 1 volume) := by
         gcongr
         exact eLpNorm_lconvolution_le hp' le_rfl (by rw [inv_one, add_comm])
-          φ.continuous.eNorm.aemeasurable hK.aestronglyMeasurable.eNorm
+          φ.continuous.eNorm.aemeasurable hK'.aestronglyMeasurable.eNorm
     _ < ∞ := by
         rw [eLpNorm_eNorm _ φ.continuous.aestronglyMeasurable,
-          eLpNorm_eNorm _ hK.aestronglyMeasurable, one_mul]
+          eLpNorm_eNorm _ hK'.aestronglyMeasurable, one_mul]
         exact ENNReal.mul_lt_top (Lp.eLpNorm_lt_top f)
           (ENNReal.mul_lt_top (φ.eLpNorm_lt_top p' volume)
-            (memLp_one_iff_integrable.2 hK).eLpNorm_lt_top)
+            (memLp_one_iff_integrable.2 hK').eLpNorm_lt_top)
 
 /-- **A Fourier multiplier whose symbol is the Fourier transform of an integrable kernel acts on
 `Lᵖ` by convolution.** If the symbol `g` of temperate growth is `𝓕 K` for an integrable kernel
@@ -158,10 +160,8 @@ theorem fourierMultiplierCLM_toTemperedDistribution_apply_of_fourier_eq {K : E �
   calc ∫ y, (∫ x, K (x - y) * φ x) • f y
       = ∫ y, ∫ x, (K (x - y) * φ x) • f y := by
         simp_rw [integral_smul_const]
-    _ = ∫ x, ∫ y, (K (x - y) * φ x) • f y := by
-        refine integral_integral_swap ?_
-        simpa only [neg_sub] using integrable_uncurry_sub_mul_smul (K := fun z ↦ K (-z))
-          (hK.comp_neg) φ f
+    _ = ∫ x, ∫ y, (K (x - y) * φ x) • f y :=
+        integral_integral_swap (integrable_uncurry_sub_mul_smul hK φ f)
     _ = ∫ x, φ x • ∫ y, K (x - y) • f y := by
         simp_rw [← integral_smul, mul_comm (K _), mul_smul]
 
