@@ -481,19 +481,11 @@ theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R�
       MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
     rw [subst_sub hS, subst_sub hS, subst_X hS, X_subst, hCs]
     ring
-  have hC : MvPowerSeries.homogeneousComponent n
-      (MvPowerSeries.C (algebraMap R S (constantCoeff φ)) : MvPowerSeries Unit S) = 0 := by
-    refine MvPowerSeries.ext fun d ↦ ?_
-    simp only [MvPowerSeries.coeff_homogeneousComponent, MvPowerSeries.coeff_C, map_zero]
-    split_ifs with h₁ h₂
-    · subst h₂
-      simp at h₁
-      exact absurd h₁.symm hn₀
-    all_goals rfl
   rw [hsplit, map_add, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
     homogeneousComponent_subst_left_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
-    Algebra.algebraMap_self, RingHom.id_apply, hC, add_zero]
+    Algebra.algebraMap_self, RingHom.id_apply,
+    MvPowerSeries.homogeneousComponent_C_of_ne_zero hn₀, add_zero]
 
 end Algebra
 

@@ -100,16 +100,16 @@ private theorem isAddCocycle₂_homogeneousComponentPolynomial (F : FormalGroup 
       (fun i ↦ by fin_cases i <;> simp [hF₀])
       (fun i ↦ by
         fin_cases i <;>
-          simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
-            F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
+          simp [homogeneousComponent_one_subst_pair F.lin_coeff_X F.lin_coeff_Y (hX₀ 0) (hX₀ 1),
+            homogeneousComponent_one_X]),
     homogeneousComponent_subst_eq_coe_aeval hΦ
       (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
       (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
       (fun i ↦ by fin_cases i <;> simp [hF₀])
       (fun i ↦ by
         fin_cases i <;>
-          simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
-            F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
+          simp [homogeneousComponent_one_subst_pair F.lin_coeff_X F.lin_coeff_Y (hX₀ 1) (hX₀ 2),
+            homogeneousComponent_one_X]),
     homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX 1) (hX 2))
       (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
