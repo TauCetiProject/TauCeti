@@ -16,26 +16,16 @@ import TauCeti.Geometry.Symplectic.Transport
 /-!
 # Frame trivialization of the Hamiltonian Floer asymptotic and cylinder operators
 
-The Fourier-series Sobolev operators `TauCeti.CircleSobolev.loopOperator` and
+The Sobolev operators `TauCeti.CircleSobolev.loopOperator` and
 `TauCeti.CircleSobolev.cylinderOperator` act on loops and cylinders valued in a fixed complex
 Hilbert model `(F, I, Im ⟪·, ·⟫)`, whereas linearized Hamiltonian Floer operators along an orbit in
-`(V, ω)` carry time-dependent almost complex structures `J_t` and real-linear Hamiltonian
-linearizations `S_t = dX_{H_t}(x(t))`. Pulling back along a differentiable frame
+`(V, ω)` carry time-dependent `J_t` and `S_t = dX_{H_t}(x(t))`. Pulling back along a frame
 `Φ : ℝ → F →L[ℝ] V` via `S_Φ(t) = Φ(t)⁻¹ (S(t) Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff`) reduces
-those operators to the model space `F`, feeding the Sobolev stationary-cylinder theory in
-`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`:
-
-* **Pointwise operator intertwining.** When `Φ` intertwines `J₀` on `F` with `J` on `V`, applying
-  `Φ` pulls `Floer.asymptoticOperator` and `Floer.stationaryCylinderOperator` back to coefficient
-  `S_Φ` (`Floer.asymptoticOperator_frame_apply`, `Floer.stationaryCylinderOperator_frame_apply`).
-* **Symplectic and nondegeneracy transport.** Along a Hamiltonian trajectory in a symplectic frame
-  pulling `ω` back to `Im ⟪·, ·⟫`, the trivialized loop `S` on `AddCircle 1` is infinitesimally
-  symplectic (`SymplecticForm.im_inner_apply_add_eq_zero_of_trivializedCoeff`); along a `1`-periodic
-  orbit in a `1`-periodic frame, `CircleSobolev.loopOperator 1 S` is invertible iff `x(0)` is a
-  nondegenerate fixed point of the time-one flow
-  (`SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff`).
-
-Adapts `TauCeti.orbitTorusVerticalOperator_frame_apply`
+them to `F`, feeding `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`:
+intertwining `Floer.asymptoticOperator` and `Floer.stationaryCylinderOperator`, preserving
+infinitesimal symplecticity on `AddCircle 1`, and transporting `1`-periodic loop invertibility to
+fixed-point nondegeneracy of the time-one flow. Adapts
+`TauCeti.orbitTorusVerticalOperator_frame_apply`
 (`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`) and
 `TauCeti.SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt`
 (`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator.lean`).
@@ -61,9 +51,8 @@ namespace Floer
 variable {F V : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V]
   [NormedSpace ℝ V]
 
-/-- **Intertwining `asymptoticOperator`:** when `Φ` and `ζ` are differentiable at `t` and `Φ t` is
-invertible and intertwines `J₀ t` with `J t`, applying `Φ` pulls `asymptoticOperator J S` back to
-`asymptoticOperator J₀ (trivializedCoeff Φ S)`. -/
+/-- When `Φ` and `ζ` are differentiable at `t` and invertible `Φ t` intertwines `J₀ t` with `J t`,
+`Φ` pulls `asymptoticOperator J S` back to `asymptoticOperator J₀ (trivializedCoeff Φ S)`. -/
 theorem asymptoticOperator_frame_apply {Φ : ℝ → F →L[ℝ] V} {J : ℝ → AlmostComplexStructure V}
     {J₀ : ℝ → AlmostComplexStructure F} {S : ℝ → V →L[ℝ] V} {ζ : ℝ → F} {t : ℝ}
     (hΦd : DifferentiableAt ℝ Φ t) (hΦ : (Φ t).IsInvertible)
@@ -73,9 +62,8 @@ theorem asymptoticOperator_frame_apply {Φ : ℝ → F →L[ℝ] V} {J : ℝ →
   rw [asymptoticOperator_def, deriv_clm_apply_sub_eq_apply_deriv_sub_trivializedCoeff hΦd hΦ hζ,
     hJ, asymptoticOperator_def]
 
-/-- **Intertwining `stationaryCylinderOperator`:** when `Φ` is differentiable at `z.2` with
-invertible value `Φ z.2` intertwining `J₀ z.2` with `J z.2` and `η` is differentiable at `z`,
-applying `Φ` pulls `stationaryCylinderOperator J S` back to
+/-- When `Φ` is differentiable at `z.2` with invertible `Φ z.2` intertwining `J₀ z.2` with `J z.2`
+and `η` is differentiable at `z`, `Φ` pulls `stationaryCylinderOperator J S` back to
 `stationaryCylinderOperator J₀ (trivializedCoeff Φ S)`. -/
 theorem stationaryCylinderOperator_frame_apply {Φ : ℝ → F →L[ℝ] V}
     {J : ℝ → AlmostComplexStructure V} {J₀ : ℝ → AlmostComplexStructure F} {S : ℝ → V →L[ℝ] V}
@@ -124,11 +112,10 @@ variable {F V : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensi
 
 local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
-/-- **Loop invertibility equivalence in a `1`-periodic frame:** along a `1`-periodic orbit `x` of a
-`1`-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz suspended vector field, for a
-differentiable `1`-periodic invertible frame `Φ` trivializing `dX_{H_t}(x(t))` as `S`,
-`CircleSobolev.loopOperator 1 S` is invertible iff `x(0)` is a nondegenerate fixed point of the
-time-one flow. -/
+/-- Along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally
+Lipschitz suspended vector field, in a differentiable `1`-periodic invertible frame `Φ` trivializing
+`dX_{H_t}(x(t))` as `S`, `CircleSobolev.loopOperator 1 S` is invertible iff `x(0)` is a
+nondegenerate fixed point of the time-one flow. -/
 theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -170,8 +157,7 @@ theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
       (Floer.asymptoticOperator_eq_zero_iff (hξd t)).2 <|
         (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζd t)).2
           (by simpa only [hS t] using hζ t)
-    ext θ
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    ext θ; obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
     exact (hΦ t).injective (by simpa using congrFun h0 t)
 
 end LoopInvertibility

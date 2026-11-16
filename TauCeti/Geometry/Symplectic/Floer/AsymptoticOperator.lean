@@ -954,10 +954,8 @@ theorem eventually_isInvertible_loopOperator_sub_smul (ω : SymplecticForm E) {H
   exact congrFun h0 t
 
 /-- **The loop operator is invertible if and only if the orbit is nondegenerate.** Along a
-one-periodic orbit `x` of a one-periodic, jointly `C²` time-dependent Hamiltonian `H` on a
-finite-dimensional complex normed space whose suspended vector field is globally Lipschitz, the
-loop operator `ζ ↦ ζ' - S_t ζ` of the linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))`
-is a continuous linear isomorphism `H¹ → H⁰` of one-periodic loops if and only if `x(0)` is a
+one-periodic orbit `x` of a one-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
+suspended vector field, `loopOperator 1 S` (`S_t = dX_{H_t}(x(t))`) is invertible iff `x(0)` is a
 nondegenerate fixed point of the time-one flow. -/
 theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm E)
     {H : ℝ → E → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
@@ -967,7 +965,6 @@ theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt (ω : SymplecticFor
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) :
     (CircleSobolev.loopOperator 1 S).IsInvertible ↔
       IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) := by
-  -- Any family of almost complex structures may be used, for instance multiplication by `i`.
   let J₀ : AlmostComplexStructure E :=
     ⟨(Complex.I • LinearMap.id : E →ₗ[ℂ] E).restrictScalars ℝ, by ext v; simp [smul_smul]⟩
   rw [CircleSobolev.isInvertible_loopOperator_iff,
@@ -978,17 +975,13 @@ theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt (ω : SymplecticFor
       ⟨hξp.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hξd.continuous⟩
     have hζeq (t : ℝ) : ζ t = ξ t := by simp [ζ]
     have h0 := hloop ζ fun t ↦ by
-      rw [funext hζeq, hS t]
-      exact (Floer.asymptoticOperator_eq_zero_iff (hξd t)).1 (hA t)
-    funext t
-    rw [Pi.zero_apply, ← hζeq t, h0, ContinuousMap.zero_apply]
+      rw [funext hζeq, hS t]; exact (Floer.asymptoticOperator_eq_zero_iff (hξd t)).1 (hA t)
+    funext t; rw [Pi.zero_apply, ← hζeq t, h0, ContinuousMap.zero_apply]
   · have hζd : Differentiable ℝ fun y : ℝ ↦ ζ y := fun y ↦ (hζ y).differentiableAt
     have hζp : Periodic (fun y : ℝ ↦ ζ y) 1 := fun y ↦ by simp only [AddCircle.coe_add_period]
     have h0 := hnd (fun y : ℝ ↦ ζ y) hζd hζp fun t ↦
       (Floer.asymptoticOperator_eq_zero_iff (hζd t)).2 (by simpa only [hS t] using hζ t)
-    ext θ
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-    exact congrFun h0 t
+    ext θ; obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ; exact congrFun h0 t
 
 end Sobolev
 

@@ -12,28 +12,17 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # Sobolev invertibility of the stationary cylinder operator at a Hamiltonian orbit
 
-Let `(V, ω)` be a finite-dimensional symplectic vector space, `x` a `1`-periodic orbit of `H`, and
+Let `(V, ω)` be a finite-dimensional symplectic space, `x` a `1`-periodic orbit of `H`, and
 `Φ : ℝ → F →L[ℝ] V` a differentiable symplectic frame from a finite-dimensional complex inner
-product space `F` (`ω₀(v, w) = Im ⟪v, w⟫`). Pulling back `S_t = dX_{H_t}(x(t))` along `Φ` gives
-`S_Φ(t) = Φ(t)⁻¹ (S_t Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff` in
-`TauCeti/Analysis/ODE/FrameTrivialization.lean`), and realizing `∂s + I (∂t - S_Φ)` on
-`L²(ℝ, H¹) ∩ W^{1,2}(ℝ, H⁰)` as `TauCeti.CircleSobolev.cylinderOperator 1 S` yields:
-
-1. **Unconditional injectivity** whenever each `H t` is `C²` at `x t`, even at a degenerate orbit
-   (`injective_cylinderOperator_of_trivializedCoeff`, `injective_cylinderOperator`).
-2. **Invertibility and Fredholm equivalences:** for `1`-periodic `x`, `H`, and `Φ` with jointly `C²`
-   `H`, `cylinderOperator 1 S` is invertible — and equivalently Fredholm — iff `x(0)` is a
-   nondegenerate fixed point of the time-one flow
-   (`isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff`,
-   `isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff`).
-3. **Uniform perturbed cylinder inverses:** at a nondegenerate orbit, for any `Jc`,
-   `cylinderOperator 1 (S - δ • Jc)` has uniformly bounded inverse for small `|δ|`
-   (`exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_trivializedCoeff`,
-   `eventually_isInvertible_cylinderOperator_sub_smul_of_trivializedCoeff`).
-
-Specializing to the identity frame on `(F, ω)` with `ω(v, w) = Im ⟪v, w⟫` gives frame-free theorems
-in `TauCeti.SymplecticForm`, complementing `isInvertible_loopOperator_iff_isNondegenerateFixedPt`
-and `eventually_isInvertible_loopOperator_sub_smul`
+product space `F` (`ω₀(v, w) = Im ⟪v, w⟫`). Pulling `S_t = dX_{H_t}(x(t))` back along `Φ` via
+`TauCeti.trivializedCoeff` (`TauCeti/Analysis/ODE/FrameTrivialization.lean`) and realizing
+`∂s + I (∂t - S_Φ)` on `L²(ℝ, H¹) ∩ W^{1,2}(ℝ, H⁰)` as `CircleSobolev.cylinderOperator 1 S` gives
+unconditional injectivity (when each `H t` is `C²` at `x t`), equivalence of cylinder invertibility
+and Fredholmness with fixed-point nondegeneracy of the time-one flow, and uniform inverse bounds for
+`cylinderOperator 1 (S - δ • Jc)` near a nondegenerate orbit. Specializing to the identity frame on
+`(F, ω)` with `ω(v, w) = Im ⟪v, w⟫` gives frame-free corollaries complementing
+`isInvertible_loopOperator_iff_isNondegenerateFixedPt` and
+`eventually_isInvertible_loopOperator_sub_smul`
 (`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator.lean`).
 
 ## References
@@ -47,6 +36,7 @@ public section
 
 noncomputable section
 
+open TauCeti.CircleSobolev (cylinderOperator)
 open Complex ContinuousLinearMap Filter Function Topology
 open scoped Manifold NNReal
 
@@ -59,23 +49,22 @@ variable {F V : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteD
 
 local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
-/-- **Unconditional injectivity of `cylinderOperator 1 S` along a curve** where each `H t` is `C²`
-at `x t` and `S` trivializes `dX_{H_t}(x(t))` in a differentiable symplectic frame `Φ`. -/
+/-- Unconditional injectivity of `cylinderOperator 1 S` along `x` where each `H t` is `C²` at `x t`
+and `S` trivializes `dX_{H_t}(x(t))` in a differentiable invertible symplectic frame `Φ`. -/
 theorem injective_cylinderOperator_of_trivializedCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     {x : ℝ → V} (hH : ∀ t, ContDiffAt ℝ 2 (H t) (x t)) {Φ : ℝ → F →L[ℝ] V}
     (hΦd : Differentiable ℝ Φ) (hΦ : ∀ t, (Φ t).IsInvertible)
     (hω : ∀ t v w, ω (Φ t v) (Φ t w) = (inner ℂ v w).im) {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (hS : ∀ t : ℝ, S t =
       trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t) :
-    Function.Injective (CircleSobolev.cylinderOperator 1 S) :=
+    Function.Injective (cylinderOperator 1 S) :=
   CircleSobolev.injective_cylinderOperator 1
     (ω.im_inner_apply_add_eq_zero_of_trivializedCoeff hH hΦd hΦ hω hS)
 
-/-- **Stationary cylinder invertibility equivalence in a `1`-periodic symplectic frame:** along a
-`1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
-suspended vector field, in a differentiable invertible `1`-periodic symplectic frame `Φ`,
-`CircleSobolev.cylinderOperator 1 S` is invertible iff `x(0)` is a nondegenerate fixed point of the
-time-one flow. -/
+/-- Along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally
+Lipschitz suspended vector field, in a differentiable invertible `1`-periodic symplectic frame `Φ`,
+`cylinderOperator 1 S` is invertible iff `x(0)` is a nondegenerate fixed point of the time-one
+flow. -/
 theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -85,7 +74,7 @@ theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedC
     (hΦ : ∀ t, (Φ t).IsInvertible) (hω : ∀ t v w, ω (Φ t v) (Φ t w) = (inner ℂ v w).im)
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)} (hS : ∀ t : ℝ, S t =
       trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t) :
-    (CircleSobolev.cylinderOperator 1 S).IsInvertible ↔
+    (cylinderOperator 1 S).IsInvertible ↔
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) :=
   (CircleSobolev.isInvertible_cylinderOperator_iff_isInvertible_loopOperator 1
     (ω.im_inner_apply_add_eq_zero_of_trivializedCoeff
@@ -93,11 +82,10 @@ theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedC
     (ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff hX hH hHp hx hxp
       hΦd hΦp hΦ hS)
 
-/-- **Stationary cylinder Fredholm equivalence in a `1`-periodic symplectic frame:** along a
-`1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally Lipschitz
-suspended vector field, in a differentiable invertible `1`-periodic symplectic frame `Φ`,
-`CircleSobolev.cylinderOperator 1 S` is Fredholm iff `x(0)` is a nondegenerate fixed point of the
-time-one flow. -/
+/-- Along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally
+Lipschitz suspended vector field, in a differentiable invertible `1`-periodic symplectic frame `Φ`,
+`cylinderOperator 1 S` is Fredholm iff `x(0)` is a nondegenerate fixed point of the time-one
+flow. -/
 theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -107,7 +95,7 @@ theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoe
     (hΦ : ∀ t, (Φ t).IsInvertible) (hω : ∀ t v w, ω (Φ t v) (Φ t w) = (inner ℂ v w).im)
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)} (hS : ∀ t : ℝ, S t =
       trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t) :
-    (CircleSobolev.cylinderOperator 1 S).IsFredholm ↔
+    (cylinderOperator 1 S).IsFredholm ↔
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) :=
   (CircleSobolev.isFredholm_cylinderOperator_iff_isInvertible_loopOperator 1
     (ω.im_inner_apply_add_eq_zero_of_trivializedCoeff
@@ -115,10 +103,9 @@ theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoe
     (ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff hX hH hHp hx hxp
       hΦd hΦp hΦ hS)
 
-/-- **Uniform perturbed cylinder inverses at a nondegenerate orbit:** in a differentiable invertible
-`1`-periodic symplectic frame along a nondegenerate `1`-periodic orbit of a `1`-periodic, jointly
-`C²` Hamiltonian with globally Lipschitz suspended vector field, for any `Jc`,
-`CircleSobolev.cylinderOperator 1 (S - δ • Jc)` has inverse norm at most `C` for `|δ| ≤ ε`. -/
+/-- In a differentiable invertible `1`-periodic symplectic frame along a nondegenerate `1`-periodic
+orbit of a `1`-periodic, jointly `C²` Hamiltonian with globally Lipschitz suspended vector field,
+`cylinderOperator 1 (S - δ • Jc)` has inverse norm at most `C` for `|δ| ≤ ε`. -/
 theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_trivializedCoeff
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -131,8 +118,8 @@ theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_tri
       trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t)
     (Jc : C(AddCircle (1 : ℝ), F →L[ℝ] F)) :
     ∃ ε > 0, ∃ C ≥ 0, ∀ δ : ℝ, |δ| ≤ ε →
-      (CircleSobolev.cylinderOperator 1 (S - δ • Jc)).IsInvertible ∧
-        ‖(CircleSobolev.cylinderOperator 1 (S - δ • Jc)).inverse‖ ≤ C := by
+      (cylinderOperator 1 (S - δ • Jc)).IsInvertible ∧
+        ‖(cylinderOperator 1 (S - δ • Jc)).inverse‖ ≤ C := by
   open CircleSobolev in
   obtain ⟨ε, hε, C, hC, h⟩ :=
     exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isInvertible_loopOperator
@@ -156,7 +143,7 @@ theorem eventually_isInvertible_cylinderOperator_sub_smul_of_trivializedCoeff
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)} (hS : ∀ t : ℝ, S t =
       trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t)
     (Jc : C(AddCircle (1 : ℝ), F →L[ℝ] F)) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ), (CircleSobolev.cylinderOperator 1 (S - δ • Jc)).IsInvertible := by
+    ∀ᶠ δ in 𝓝 (0 : ℝ), (cylinderOperator 1 (S - δ • Jc)).IsInvertible := by
   obtain ⟨ε, hε, _, _, h⟩ :=
     ω.exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_trivializedCoeff
       hX hH hHp hx hxp hnd hΦd hΦp hΦ hω hS Jc
@@ -169,21 +156,20 @@ section ComplexInnerProductSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
 
-/-- Frame-free unconditional injectivity of `CircleSobolev.cylinderOperator 1 S` on `(F, ω)` with
+/-- Frame-free unconditional injectivity of `cylinderOperator 1 S` on `(F, ω)` with
 `ω(v, w) = Im ⟪v, w⟫` where each `H t` is `C²` at `x t`. -/
 theorem injective_cylinderOperator (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     {H : ℝ → F → ℝ} {x : ℝ → F} (hH : ∀ t, ContDiffAt ℝ 2 (H t) (x t))
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) :
-    Function.Injective (CircleSobolev.cylinderOperator 1 S) :=
-  ω.injective_cylinderOperator_of_trivializedCoeff (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) hH
-    (differentiable_const _) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F))
-    (fun _ ↦ hω) fun t ↦ by simp [hS t]
+    Function.Injective (cylinderOperator 1 S) :=
+  ω.injective_cylinderOperator_of_trivializedCoeff (Φ := fun _ ↦ .id ℝ F) hH
+    (differentiable_const _) (fun _ ↦ isInvertible_equiv (f := .refl ℝ F)) (fun _ ↦ hω) fun t ↦ by
+      simp [hS t]
 
-/-- **Frame-free stationary cylinder invertibility equivalence:** on `(F, ω)` with
-`ω(v, w) = Im ⟪v, w⟫`, along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian
-`H` with globally Lipschitz suspended vector field, `CircleSobolev.cylinderOperator 1 S` is
-invertible iff `x(0)` is a nondegenerate fixed point of the time-one flow. -/
+/-- On `(F, ω)` (`ω(v, w) = Im ⟪v, w⟫`), along a `1`-periodic orbit of a `1`-periodic, jointly `C²`
+Hamiltonian with globally Lipschitz suspension, `cylinderOperator 1 S` is invertible iff `x(0)` is
+a nondegenerate fixed point of the time-one flow. -/
 theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -191,17 +177,15 @@ theorem isInvertible_cylinderOperator_iff_isNondegenerateFixedPt (ω : Symplecti
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) :
-    (CircleSobolev.cylinderOperator 1 S).IsInvertible ↔
+    (cylinderOperator 1 S).IsInvertible ↔
       IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) :=
   ω.isInvertible_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
-    (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) hX hH hHp hx hxp (differentiable_const _)
-    (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
-    fun t ↦ by simp [hS t]
+    (Φ := fun _ ↦ .id ℝ F) hX hH hHp hx hxp (differentiable_const _) (fun _ ↦ rfl)
+    (fun _ ↦ isInvertible_equiv (f := .refl ℝ F)) (fun _ ↦ hω) fun t ↦ by simp [hS t]
 
-/-- **Frame-free stationary cylinder Fredholm equivalence:** on `(F, ω)` with
-`ω(v, w) = Im ⟪v, w⟫`, along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian
-`H` with globally Lipschitz suspended vector field, `CircleSobolev.cylinderOperator 1 S` is
-Fredholm iff `x(0)` is a nondegenerate fixed point of the time-one flow. -/
+/-- On `(F, ω)` (`ω(v, w) = Im ⟪v, w⟫`), along a `1`-periodic orbit of a `1`-periodic, jointly `C²`
+Hamiltonian with globally Lipschitz suspension, `cylinderOperator 1 S` is Fredholm iff `x(0)` is a
+nondegenerate fixed point of the time-one flow. -/
 theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -209,17 +193,15 @@ theorem isFredholm_cylinderOperator_iff_isNondegenerateFixedPt (ω : SymplecticF
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) :
-    (CircleSobolev.cylinderOperator 1 S).IsFredholm ↔
+    (cylinderOperator 1 S).IsFredholm ↔
       IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) :=
   ω.isFredholm_cylinderOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
-    (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) hX hH hHp hx hxp (differentiable_const _)
-    (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
-    fun t ↦ by simp [hS t]
+    (Φ := fun _ ↦ .id ℝ F) hX hH hHp hx hxp (differentiable_const _) (fun _ ↦ rfl)
+    (fun _ ↦ isInvertible_equiv (f := .refl ℝ F)) (fun _ ↦ hω) fun t ↦ by simp [hS t]
 
-/-- **Frame-free uniform perturbed cylinder inverses:** on `(F, ω)` with `ω(v, w) = Im ⟪v, w⟫`,
-along a nondegenerate `1`-periodic orbit of a `1`-periodic, jointly `C²` Hamiltonian with globally
-Lipschitz suspended vector field, `CircleSobolev.cylinderOperator 1 (S - δ • Jc)` has uniformly
-bounded inverse for small `|δ|`. -/
+/-- On `(F, ω)` (`ω(v, w) = Im ⟪v, w⟫`), along a nondegenerate `1`-periodic orbit of a `1`-periodic,
+jointly `C²` Hamiltonian with globally Lipschitz suspension, `cylinderOperator 1 (S - δ • Jc)` has
+uniformly bounded inverse for small `|δ|`. -/
 theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isNondegenerateFixedPt
     (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -229,16 +211,14 @@ theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isN
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t))
     (Jc : C(AddCircle (1 : ℝ), F →L[ℝ] F)) :
-    ∃ ε > 0, ∃ C ≥ 0, ∀ δ : ℝ, |δ| ≤ ε →
-      (CircleSobolev.cylinderOperator 1 (S - δ • Jc)).IsInvertible ∧
-        ‖(CircleSobolev.cylinderOperator 1 (S - δ • Jc)).inverse‖ ≤ C :=
+    ∃ ε > 0, ∃ C ≥ 0, ∀ δ : ℝ, |δ| ≤ ε → (cylinderOperator 1 (S - δ • Jc)).IsInvertible ∧
+      ‖(cylinderOperator 1 (S - δ • Jc)).inverse‖ ≤ C :=
   ω.exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_trivializedCoeff
-    (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) hX hH hHp hx hxp hnd (differentiable_const _)
-    (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
-    (fun t ↦ by simp [hS t]) Jc
+    (Φ := fun _ ↦ .id ℝ F) hX hH hHp hx hxp hnd (differentiable_const _) (fun _ ↦ rfl)
+    (fun _ ↦ isInvertible_equiv (f := .refl ℝ F)) (fun _ ↦ hω) (fun t ↦ by simp [hS t]) Jc
 
-/-- Filter form of frame-free perturbed cylinder invertibility on `(F, ω)` with
-`ω(v, w) = Im ⟪v, w⟫` along a nondegenerate `1`-periodic orbit for `δ` near `0`. -/
+/-- Filter form of frame-free perturbed cylinder invertibility on `(F, ω)` (`ω(v, w) = Im ⟪v, w⟫`)
+along a nondegenerate `1`-periodic orbit for `δ` near `0`. -/
 theorem eventually_isInvertible_cylinderOperator_sub_smul (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
@@ -248,11 +228,10 @@ theorem eventually_isInvertible_cylinderOperator_sub_smul (ω : SymplecticForm F
     {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (hS : ∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t))
     (Jc : C(AddCircle (1 : ℝ), F →L[ℝ] F)) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ), (CircleSobolev.cylinderOperator 1 (S - δ • Jc)).IsInvertible :=
-  ω.eventually_isInvertible_cylinderOperator_sub_smul_of_trivializedCoeff
-    (Φ := fun _ ↦ ContinuousLinearMap.id ℝ F) hX hH hHp hx hxp hnd (differentiable_const _)
-    (fun _ ↦ rfl) (fun _ ↦ isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ F)) (fun _ ↦ hω)
-    (fun t ↦ by simp [hS t]) Jc
+    ∀ᶠ δ in 𝓝 (0 : ℝ), (cylinderOperator 1 (S - δ • Jc)).IsInvertible :=
+  ω.eventually_isInvertible_cylinderOperator_sub_smul_of_trivializedCoeff (Φ := fun _ ↦ .id ℝ F) hX
+    hH hHp hx hxp hnd (differentiable_const _) (fun _ ↦ rfl)
+    (fun _ ↦ isInvertible_equiv (f := .refl ℝ F)) (fun _ ↦ hω) (fun t ↦ by simp [hS t]) Jc
 
 end ComplexInnerProductSpace
 

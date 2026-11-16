@@ -14,36 +14,21 @@ import TauCeti.Analysis.Normed.Operator.ComplexSmulI
 # The stationary cylinder operator over periodic circle Sobolev spaces
 
 In a unitary frame on a finite-dimensional complex space `E`, the linearized Cauchy–Riemann /
-stationary Hamiltonian Floer operator on the infinite cylinder `ℝ × AddCircle T` (`T > 0`) takes
-the autonomous form `∂s + I (∂t - S_t)` for a continuous loop `S : C(AddCircle T, E →L[ℝ] E)`.
-Feeding the Sobolev inclusion `ι = (CircleSobolev.inclusion zero_le_one).restrictScalars ℝ :
-H¹(AddCircle T, E) →L[ℝ] H⁰(AddCircle T, E)` and `I • CircleSobolev.loopOperator T S` into
+stationary Hamiltonian Floer operator on `ℝ × AddCircle T` (`T > 0`) takes the autonomous form
+`∂s + I (∂t - S_t)` for `S : C(AddCircle T, E →L[ℝ] E)`. Feeding
+`ι = (CircleSobolev.inclusion zero_le_one).restrictScalars ℝ` and `I • loopOperator T S` into
 `TauCeti.WeakDerivStep.domainTrajectoryOperator` gives its `W^{1,2}` realization
 `TauCeti.CircleSobolev.cylinderOperator T S` on
-`L²(ℝ, H¹(AddCircle T, E)) ∩ W^{1,2}(ℝ, H⁰(AddCircle T, E))`. Perturbations `S - δ • J` encode
-conjugation by exponential weights `e^{±δ s}` on cylindrical ends, feeding the symplectic orbit
-realization in `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`.
+`L²(ℝ, H¹(AddCircle T, E)) ∩ W^{1,2}(ℝ, H⁰(AddCircle T, E))`; perturbations `S - δ • J` encode
+exponential weight shifts `e^{±δ s}` on cylindrical ends, feeding
+`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`.
 
 When `F` is a finite-dimensional complex inner product space and `S` is infinitesimally symplectic
-(`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and Fredholm of
-index zero, so `CommonDomain.lean` yields:
-
-* **Injectivity and equivalences.** `cylinderOperator T S` is unconditionally injective
-  (`injective_cylinderOperator`), and its closed range, Fredholmness, and invertibility are each
-  equivalent to invertibility of `loopOperator T S` and absence of nonzero `T`-periodic solutions
-  of `ζ' = S ζ` (`isInvertible_cylinderOperator_iff_isInvertible_loopOperator`,
-  `isInvertible_cylinderOperator_iff`).
-* **Pythagorean identity and bounds.** `‖cylinderOperator T S u‖² = ‖(ι ∘ u)'‖² + ‖(I • L_S) ∘ u‖²`
-  (`norm_cylinderOperator_sq`), `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S)⁻¹‖²)`
-  (`norm_inverse_cylinderOperator_le`), and spectral-gap bounds
-  (`norm_compLpL_inclusion_le_inv_mul_norm_cylinderOperator`).
-* **Compact families and eigenmodes.** Over compact `K` with continuous `S, J` and nondegenerate
-  `S p`, `cylinderOperator T (S p - δ • J p)` has uniformly bounded inverse for small `|δ|`
-  (`exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le`,
-  `exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isInvertible_loopOperator`,
-  adapting `TauCeti.CircleSobolev.exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le` in
-  `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmodes intertwine
-  `cylinderOperator T S` with `w' + λ w`.
+(`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and index-`0`
+Fredholm, yielding unconditional injectivity, equivalence of closed range / Fredholmness /
+invertibility with `loopOperator T S` invertibility, the Pythagorean identity and inverse bound
+`√(1 + ‖(loopOperator T S)⁻¹‖²)`, uniform weighted inverses over compact families (adapting
+`TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode intertwining (`w' + λ w`).
 
 ## References
 
@@ -62,6 +47,8 @@ open scoped ENNReal InnerProductSpace Topology
 
 namespace TauCeti.CircleSobolev
 
+local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+
 section Normed
 
 variable (T : ℝ) [Fact (0 < T)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -69,12 +56,12 @@ variable (T : ℝ) [Fact (0 < T)] {E : Type*} [NormedAddCommGroup E] [NormedSpac
 
 local instance : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
 
-/-- **The stationary cylinder operator** `∂s ∘ ι + I • L_S` from
+/-- The stationary cylinder operator `∂s ∘ ι + I • L_S` from
 `L²(ℝ, H¹(AddCircle T, E)) ∩ W^{1,2}(ℝ, H⁰(AddCircle T, E))` to `L²(ℝ, H⁰(AddCircle T, E))`. -/
 def cylinderOperator (S : C(AddCircle T, E →L[ℝ] E)) :
-    WeakDerivStep volume ⊤ 2 (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) →L[ℝ]
-      Lp (CircleSobolev 0 E) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
+    WeakDerivStep volume ⊤ 2
+      (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀) →L[ℝ]
+      Lp (CircleSobolev 0 E) 2 μ₀ :=
   WeakDerivStep.domainTrajectoryOperator
     ((inclusion (E := E) zero_le_one).restrictScalars ℝ) (I • loopOperator T S)
 
@@ -85,21 +72,18 @@ theorem cylinderOperator_def (S : C(AddCircle T, E →L[ℝ] E)) :
 
 /-- Explicit `L²` decomposition of `cylinderOperator T S u` into `s`-derivative and slice parts. -/
 theorem cylinderOperator_apply (S : C(AddCircle T, E →L[ℝ] E))
-    (u : WeakDerivStep volume ⊤ 2 (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
+    (u : WeakDerivStep volume ⊤ 2
+      (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)) :
     cylinderOperator T S u =
-      (ContinuousLinearMap.apply ℝ (CircleSobolev 0 E) (1 : ℝ)).compLpL 2
-        (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-        (WeakDerivStep.weakFDeriv (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-          (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u) +
-      (I • loopOperator T S).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-        (WeakDerivStep.prev (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-          (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u) :=
+      (ContinuousLinearMap.apply ℝ (CircleSobolev 0 E) (1 : ℝ)).compLpL 2 μ₀
+        (WeakDerivStep.weakFDeriv
+          (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀) u) +
+      (I • loopOperator T S).compLpL 2 μ₀ (WeakDerivStep.prev
+        (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀) u) :=
   WeakDerivStep.domainTrajectoryOperator_apply _ _ u
 
 /-- `cylinderOperator T` depends continuously in operator norm on `S`. -/
-@[fun_prop]
-theorem continuous_cylinderOperator : Continuous (cylinderOperator (E := E) T) :=
+@[fun_prop] theorem continuous_cylinderOperator : Continuous (cylinderOperator (E := E) T) :=
   (WeakDerivStep.continuous_domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2)
     ((inclusion (E := E) zero_le_one).restrictScalars ℝ)).comp
     ((continuous_loopOperator T).const_smul I)
@@ -107,9 +91,8 @@ theorem continuous_cylinderOperator : Continuous (cylinderOperator (E := E) T) :
 /-- Subtracting `S₂` from the loop adds `(I • mulLoop T _ S₂) ∘ prev` to `cylinderOperator T S₁`. -/
 theorem cylinderOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
     cylinderOperator T (S₁ - S₂) = cylinderOperator T S₁ +
-      ((I • mulLoop T (by norm_num) S₂).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).comp
-        (WeakDerivStep.prevL (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-          (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) := by
+      ((I • mulLoop T (by norm_num) S₂).compLpL 2 μ₀).comp (WeakDerivStep.prevL
+        (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)) := by
   have hsub := WeakDerivStep.domainTrajectoryOperator_sub (mu := volume) (Omega := ⊤) (p := 2)
     ((inclusion (E := E) zero_le_one).restrictScalars ℝ)
     (I • loopOperator T (S₁ - S₂)) (I • loopOperator T S₁)
@@ -118,33 +101,29 @@ theorem cylinderOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
   rw [← cylinderOperator_def, ← cylinderOperator_def, hdiff] at hsub
   exact sub_eq_iff_eq_add'.mp hsub
 
-/-- **Weighted cylinder shift:** replacing `S` by `S - δ • const (I • id)` subtracts
-`δ • (ι ∘ prev)` from `cylinderOperator T S`. -/
+/-- Replacing `S` by `S - δ • const (I • id)` subtracts `δ • (ι ∘ prev)` from
+`cylinderOperator T S`. -/
 theorem cylinderOperator_sub_smul_const_I (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
     cylinderOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
-      cylinderOperator T S - δ • ((((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-        (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).comp (WeakDerivStep.prevL
-          (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2
-            (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) := by
-  rw [cylinderOperator_sub, sub_eq_add_neg]
-  ext u : 1
-  simp only [add_apply, neg_apply, smul_apply, ContinuousLinearMap.comp_apply]
-  congr 1
+      cylinderOperator T S -
+        δ • ((((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀).comp
+          (WeakDerivStep.prevL
+            (((inclusion (E := E) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀))) := by
+  rw [cylinderOperator_sub, sub_eq_add_neg]; ext u : 1
+  simp only [add_apply, neg_apply, smul_apply, ContinuousLinearMap.comp_apply]; congr 1
   have hloop :
       I • mulLoop T (by norm_num) (δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
         (-δ) • (inclusion (E := E) zero_le_one).restrictScalars ℝ := by
     have h := I_smul_loopOperator_sub_smul_const_I T S δ
     rw [loopOperator_sub, smul_add, sub_eq_add_neg, ← neg_smul] at h
     exact add_left_cancel h
-  refine (congrArg (fun L ↦ L.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-    (WeakDerivStep.prevL _ u)) hloop).trans ?_
-  exact (congrArg (· (WeakDerivStep.prevL _ u)) (ContinuousLinearMap.smul_compLpL (p := 2)
-    (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) (-δ)
-    ((inclusion (E := E) zero_le_one).restrictScalars ℝ))).trans (by rw [smul_apply, neg_smul])
+  refine (congrArg (fun L ↦ L.compLpL 2 μ₀ (WeakDerivStep.prevL _ u)) hloop).trans ?_
+  exact (congrArg (· (WeakDerivStep.prevL _ u))
+    (ContinuousLinearMap.smul_compLpL (p := 2) (μ := μ₀) (-δ)
+      ((inclusion (E := E) zero_le_one).restrictScalars ℝ))).trans (by rw [smul_apply, neg_smul])
 
-/-- **Uniform weighted cylinder inverses over a compact family.** If `S` and `J` are continuous on
-compact `K` and each `cylinderOperator T (S p)` is invertible, `cylinderOperator T (S p - δ • J p)`
-has inverse norm at most `C` for `p ∈ K` and `|δ| ≤ ε`. -/
+/-- If `S` and `J` are continuous on compact `K` and each `cylinderOperator T (S p)` is invertible,
+`cylinderOperator T (S p - δ • J p)` has inverse norm at most `C` for `p ∈ K` and `|δ| ≤ ε`. -/
 theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le
     {P : Type*} [TopologicalSpace P] {K : Set P} (hK : IsCompact K)
     (S J : P → C(AddCircle T, E →L[ℝ] E)) (hS : ContinuousOn S K) (hJ : ContinuousOn J K)
@@ -155,14 +134,14 @@ theorem exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le
   hK.exists_pos_isInvertible_map_sub_smul_norm_inverse_le
     (continuous_cylinderOperator T) S J hS hJ hinv
 
-/-- **Eigenmode injection on the cylinder** along `I • loopOperator T S a = λ • ι a`. -/
+/-- Eigenmode injection on the cylinder along `I • loopOperator T S a = λ • ι a`. -/
 theorem cylinderOperator_smulRightBaseW1pL_ae_of_I_smul_loopOperator_eq_smul
     {S : C(AddCircle T, E →L[ℝ] E)} {a : CircleSobolev 1 E} {lam : ℝ}
     (ha : I • loopOperator T S a = lam • inclusion zero_le_one a) (w : W1p volume ⊤ 2) :
     cylinderOperator T S
         (WeakDerivStep.smulRightBaseW1pL ((inclusion (E := E) zero_le_one).restrictScalars ℝ) a w)
-      =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ (⟪W1p.gradient w s, (1 : ℝ)⟫_ℝ + lam * W1p.value w s) • inclusion zero_le_one a := by
+      =ᵐ[μ₀] fun s ↦ (⟪W1p.gradient w s, (1 : ℝ)⟫_ℝ + lam * W1p.value w s) •
+        inclusion zero_le_one a := by
   filter_upwards [WeakDerivStep.domainTrajectoryOperator_smulRightBaseW1pL_ae
     ((inclusion (E := E) zero_le_one).restrictScalars ℝ) (I • loopOperator T S) a w] with s hs
   rw [cylinderOperator, hs, smul_apply, ha, ContinuousLinearMap.coe_restrictScalars', smul_smul,
@@ -177,42 +156,40 @@ variable (T : ℝ) [Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [InnerProdu
 
 local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
-/-- **Pythagorean identity on the cylinder:** `‖cylinderOperator T S u‖² = ‖(ι ∘ u)'‖² +
-‖(I • L_S) ∘ u‖²` for an infinitesimally symplectic loop `S`. -/
+/-- Pythagorean identity `‖cylinderOperator T S u‖² = ‖(ι ∘ u)'‖² + ‖(I • L_S) ∘ u‖²` for an
+infinitesimally symplectic loop `S`. -/
 theorem norm_cylinderOperator_sq {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (u : WeakDerivStep volume ⊤ 2 (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
+    (u : WeakDerivStep volume ⊤ 2
+      (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)) :
     ‖cylinderOperator T S u‖ ^ 2 =
-      ‖WeakDerivStep.weakFDeriv (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-          (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u‖ ^ 2 +
-        ‖(I • loopOperator T S).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-          (WeakDerivStep.prev (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-            (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u)‖ ^ 2 :=
+      ‖WeakDerivStep.weakFDeriv
+          (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀) u‖ ^ 2 +
+        ‖(I • loopOperator T S).compLpL 2 μ₀ (WeakDerivStep.prev
+          (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀) u)‖ ^ 2 :=
   WeakDerivStep.norm_domainTrajectoryOperator_sq (real_inner_I_smul_loopOperator_comm T S hS) u
 
-/-- **Injectivity on the cylinder** for any infinitesimally symplectic loop `S`. -/
+/-- Injectivity of `cylinderOperator T S` for any infinitesimally symplectic loop `S`. -/
 theorem injective_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     Function.Injective (cylinderOperator T S) :=
   WeakDerivStep.injective_domainTrajectoryOperator_of_symmetric
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
 
-/-- **Closed-range equivalence:** for infinitesimally symplectic `S`, `(cylinderOperator T S).range`
-is closed iff `loopOperator T S` is invertible. -/
+/-- For infinitesimally symplectic `S`, `(cylinderOperator T S).range` is closed iff
+`loopOperator T S` is invertible. -/
 theorem isClosed_range_cylinderOperator_iff_isInvertible_loopOperator
     {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
-    IsClosed ((cylinderOperator T S).range :
-      Set (Lp (CircleSobolev 0 F) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ↔
+    IsClosed ((cylinderOperator T S).range : Set (Lp (CircleSobolev 0 F) 2 μ₀)) ↔
       (loopOperator T S).IsInvertible := by
   rw [cylinderOperator, WeakDerivStep.isClosed_range_domainTrajectoryOperator_iff
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
     ContinuousLinearMap.isInvertible_I_smul_iff]
 
-/-- **Invertibility equivalence:** for infinitesimally symplectic `S`, `cylinderOperator T S` is
-invertible iff `loopOperator T S` is invertible. -/
+/-- For infinitesimally symplectic `S`, `cylinderOperator T S` is invertible iff `loopOperator T S`
+is invertible. -/
 theorem isInvertible_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (cylinderOperator T S).IsInvertible ↔ (loopOperator T S).IsInvertible := by
@@ -221,8 +198,8 @@ theorem isInvertible_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCi
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
     ContinuousLinearMap.isInvertible_I_smul_iff]
 
-/-- **Fredholm equivalence:** for infinitesimally symplectic `S`, `cylinderOperator T S` is Fredholm
-iff `loopOperator T S` is invertible. -/
+/-- For infinitesimally symplectic `S`, `cylinderOperator T S` is Fredholm iff `loopOperator T S`
+is invertible. -/
 theorem isFredholm_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (cylinderOperator T S).IsFredholm ↔ (loopOperator T S).IsInvertible := by
@@ -231,8 +208,8 @@ theorem isFredholm_cylinderOperator_iff_isInvertible_loopOperator {S : C(AddCirc
     (isFredholm_I_smul_loopOperator T S) (index_I_smul_loopOperator T S),
     ContinuousLinearMap.isInvertible_I_smul_iff]
 
-/-- **Classical ODE criterion:** for infinitesimally symplectic `S`, `cylinderOperator T S` is
-invertible iff `ζ' = S ζ` has no nonzero continuous `T`-periodic solution. -/
+/-- For infinitesimally symplectic `S`, `cylinderOperator T S` is invertible iff `ζ' = S ζ` has no
+nonzero continuous `T`-periodic solution. -/
 theorem isInvertible_cylinderOperator_iff {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (cylinderOperator T S).IsInvertible ↔
@@ -248,9 +225,8 @@ theorem index_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
   WeakDerivStep.index_domainTrajectoryOperator (real_inner_I_smul_loopOperator_comm T S hS)
     ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
-/-- **Inverse norm bound:**
-`‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖²)` for infinitesimally
-symplectic nondegenerate `S`. -/
+/-- Inverse norm bound `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖²)` for
+infinitesimally symplectic nondegenerate `S`. -/
 theorem norm_inverse_cylinderOperator_le {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
@@ -261,26 +237,24 @@ theorem norm_inverse_cylinderOperator_le {S : C(AddCircle T, F →L[ℝ] F)}
       (real_inner_I_smul_loopOperator_comm T S hS)
       ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
-/-- **Spectral-gap `L²` bound:** if `S` is infinitesimally symplectic and
-`c ‖ι a‖ ≤ ‖loopOperator T S a‖` (`c > 0`), then
+/-- If `S` is infinitesimally symplectic and `c ‖ι a‖ ≤ ‖loopOperator T S a‖` (`c > 0`), then
 `‖ι ∘ u‖_{L²} ≤ c⁻¹ ‖cylinderOperator T S u‖_{L²}`. -/
 theorem norm_compLpL_inclusion_le_inv_mul_norm_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) {c : ℝ} (hc : 0 < c)
     (hgap : ∀ a : CircleSobolev 1 F, c * ‖inclusion zero_le_one a‖ ≤ ‖loopOperator T S a‖)
-    (u : WeakDerivStep volume ⊤ 2 (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
-    ‖((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-        (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-        (WeakDerivStep.prev (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-          (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) u)‖ ≤ c⁻¹ * ‖cylinderOperator T S u‖ := by
+    (u : WeakDerivStep volume ⊤ 2
+      (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)) :
+    ‖((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀ (WeakDerivStep.prev
+      (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀) u)‖ ≤
+      c⁻¹ * ‖cylinderOperator T S u‖ := by
   refine WeakDerivStep.norm_compLpL_le_inv_mul_norm_domainTrajectoryOperator
     (real_inner_I_smul_loopOperator_comm T S hS) hc (fun a ↦ ?_) u
   rw [smul_apply, norm_smul, norm_I, one_mul, ContinuousLinearMap.coe_restrictScalars']
   exact hgap a
 
-/-- **Uniform weighted cylinder inverses from loop nondegeneracy.** Over compact `K` where both `S`
-and `J` are continuous and each `S p` is infinitesimally symplectic with invertible `loopOperator`,
-`cylinderOperator T (S p - δ • J p)` has uniformly bounded inverse for all `p ∈ K` and `|δ| ≤ ε`. -/
+/-- Over compact `K` where `S, J` are continuous and each `S p` is infinitesimally symplectic with
+invertible `loopOperator`, `cylinderOperator T (S p - δ • J p)` has uniformly bounded inverse for
+`p ∈ K` and `|δ| ≤ ε`. -/
 theorem
     exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le_of_isInvertible_loopOperator
     {P : Type*} [TopologicalSpace P] {K : Set P} (hK : IsCompact K)
@@ -293,24 +267,21 @@ theorem
   exists_pos_isInvertible_cylinderOperator_sub_smul_norm_inverse_le T hK S J hS hJ fun p hp ↦
     (isInvertible_cylinderOperator_iff_isInvertible_loopOperator T (hSymm p hp)).2 (hinv p hp)
 
-/-- **Eigenmode projection on the cylinder:** for infinitesimally symplectic `S` and an eigenmode
-`I • loopOperator T S a = λ • ι a`, projecting `cylinderOperator T S u` onto `ι a` yields
-`s ↦ w'(s) + λ w(s)` almost everywhere for `w(s) = ⟪ι a, (ι ∘ u)(s)⟫_ℝ`. -/
+/-- For infinitesimally symplectic `S` and an eigenmode `I • loopOperator T S a = λ • ι a`,
+projecting `cylinderOperator T S u` onto `ι a` yields `s ↦ w'(s) + λ w(s)` a.e. for
+`w(s) = ⟪ι a, (ι ∘ u)(s)⟫_ℝ`. -/
 theorem compLpL_innerSL_cylinderOperator_ae_of_I_smul_loopOperator_eq_smul
     {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     {a : CircleSobolev 1 F} {lam : ℝ} (ha : I • loopOperator T S a = lam • inclusion zero_le_one a)
-    (u : WeakDerivStep volume ⊤ 2 (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :
-    (innerSL ℝ (inclusion zero_le_one a)).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-        (cylinderOperator T S u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+    (u : WeakDerivStep volume ⊤ 2
+      (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)) :
+    (innerSL ℝ (inclusion zero_le_one a)).compLpL 2 μ₀ (cylinderOperator T S u) =ᵐ[μ₀]
       fun s ↦ ⟪W1p.gradient (WeakDerivStep.toW1pL
-            (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-              (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+            (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)
             (innerSL ℝ (inclusion zero_le_one a)) u) s, (1 : ℝ)⟫_ℝ +
         lam * W1p.value (WeakDerivStep.toW1pL
-          (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2
-            (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+          (((inclusion (E := F) zero_le_one).restrictScalars ℝ).compLpL 2 μ₀)
           (innerSL ℝ (inclusion zero_le_one a)) u) s := by
   refine WeakDerivStep.compLpL_domainTrajectoryOperator_ae
     ((inclusion (E := F) zero_le_one).restrictScalars ℝ) (I • loopOperator T S)
