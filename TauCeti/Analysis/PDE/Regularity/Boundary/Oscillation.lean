@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
-public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
+import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.SpecificLimits.DecayIteration
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # De Giorgi's oscillation decay at the boundary
@@ -43,7 +40,7 @@ The proof reduces the boundary estimate to the interior one.
   (`TauCeti.PDE.energyFormH1_extendByZeroL_posPart_le_setIntegral`).
 * **Splitting off the datum.** Extending `a` by `λ I` off `Ω`, `ū` is a weak subsolution on the
   whole space. On `U = B(x₀, 2R)` let `w ∈ H¹₀(U)` solve `-∂ᵢ(aⁱʲ ∂ⱼw) = f₀`; Stampacchia's
-  estimate (`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow`) gives
+  estimate on a ball (`TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_ae_abs_le`) gives
   `|w| ≤ E = C R^(2 - n/r) ‖f‖_{Lʳ} / λ`, and `ū - w` is a weak subsolution of the homogeneous
   equation on `U`. The test functions `v ∈ H¹₀(U)` make `f₀ v` integrable
   (`TauCeti.W1p0.integrable_mul_value_of_memLp`).
@@ -599,33 +596,18 @@ private theorem exists_energyFormH1_restrictL_sub_nonpos_and_ae_abs_le [Nonempty
   have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
   have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
   have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
-  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
-  set e : ℝ := 2 / n - (r : ℝ)⁻¹
-  have hγ : n * e = 2 - n / r := by
-    simp only [e]
-    field_simp
-  set ω : ℝ := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
-  have hω : 0 < ω := measureReal_ball_pos _ _ one_pos
-  refine ⟨C * ω ^ e * 2 ^ (2 - n / r), by positivity, ?_⟩
+  obtain ⟨K, hK, hsolve⟩ := exists_forall_energyFormH1_eq_setIntegral_ae_abs_le (mu := mu) hr hrn
+  refine ⟨K * 2 ^ (2 - n / r), by positivity, ?_⟩
   intro U a' g ub x₀ R hUdef hR h' ha' hsubsol hg
-  have hUm : MeasurableSet (U : Set (EuclideanSpace ℝ ι)) := hUdef ▸ measurableSet_ball
-  have hUfin : mu U ≠ ⊤ := by
-    rw [hUdef]
-    exact measure_ball_lt_top.ne
-  obtain ⟨w, hw, -⟩ :=
-    h'.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0) (gamma := 0) ha'
-      aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hUfin hr hrn' hg
-  refine ⟨w, fun v hv => energyFormH1_restrictL_sub_nonpos h' ha' hsubsol hUm hUfin hr
-    (by rwa [finrank_euclideanSpace]) hg hw v hv, ?_⟩
-  -- `|U|^e = (2R)^(n e) |B(0, 1)|^e`, with `n e = 2 - n/r`.
-  have hmeas : mu.real (U : Set (EuclideanSpace ℝ ι)) ^ e = 2 ^ (2 - n / r) * R ^ (2 - n / r) *
-      ω ^ e := by
-    rw [hUdef, Measure.addHaar_real_ball_rpow _ _ (by positivity), finrank_euclideanSpace, hγ,
-      Real.mul_rpow (by norm_num) hR.le]
-  filter_upwards [hstamp (Omega := U) (c := 0) (gamma := 0) hUfin h' ha'
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hg hw] with x hx
+  obtain rfl : U = ⟨ball x₀ (2 * R), isOpen_ball⟩ := Opens.ext hUdef
+  obtain ⟨w, hw, hwbound⟩ := hsolve h' ha' hg (by positivity)
+  refine ⟨w, fun v hv => energyFormH1_restrictL_sub_nonpos h' ha' hsubsol measurableSet_ball
+    measure_ball_lt_top.ne hr (by rwa [finrank_euclideanSpace]) hg hw v hv, ?_⟩
+  -- `(2R)^(2 - n/r) = 2^(2 - n/r) R^(2 - n/r)`.
+  filter_upwards [hwbound] with x hx
   refine hx.trans_eq ?_
-  rw [hmeas]
+  simp only [n, Opens.coe_mk]
+  rw [Real.mul_rpow (by norm_num) hR.le]
   ring
 
 /-- **Reduction of the supremum at the boundary, with a right-hand side (De Giorgi).** Let `n ≥ 1`
@@ -991,7 +973,8 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
   filter_upwards [ae_restrict_of_ae_restrict_of_subset
     (inter_subset_inter_right _ (ball_subset_ball hρj)) hdisc] with x hx
   refine hx.trans ?_
-  have hpow : q ^ (j + 1) ≤ (ρ / R) ^ α := pow_succ_le_div_rpow_logb (by norm_num) hq0 hq1 hρ hR hj2
+  have hpow : q ^ (j + 1) ≤ (ρ / R) ^ α :=
+    pow_le_div_rpow_logb (by norm_num) hq0 hq1.le hρ hR hj2.le
   have hB : 0 ≤ R ^ γ * F / lam := by positivity
   have hX : M + D * (K * R ^ γ * F / lam) ≤ max 1 (D * K) * (M + R ^ γ * F / lam) := by
     calc M + D * (K * R ^ γ * F / lam) = M + D * K * (R ^ γ * F / lam) := by ring

@@ -39,7 +39,7 @@ theorem and Campanato's characterization of Hölder continuity turn into Hölder
 * `TauCeti.exists_le_mul_rpow_of_essOsc_step`: the iteration lemma for an oscillation function with
   an additive inhomogeneity, turned into a bound `φ s ≤ C (s / R)^β (Q + R^γ F)`.
 * `TauCeti.one_sub_mul_pow_mul_add_le_pow_succ_mul`,
-  `TauCeti.rpow_div_pow_le_mul_pow` and `TauCeti.pow_succ_le_div_rpow_logb`: the bookkeeping of
+  `TauCeti.rpow_div_pow_le_mul_pow` and `TauCeti.pow_le_div_rpow_logb`: the bookkeeping of
   a geometric iteration along the radii `R / bʲ`, in which the bound shrinks by `1 - δ` and an
   additive datum term `(R / bʲ)^γ` by `b^(-γ)` at each step, and the passage from the radii `R / bʲ`
   to a power `(ρ / R)^α` of an arbitrary radius.
@@ -289,21 +289,21 @@ theorem rpow_div_pow_le_mul_pow {R b γ q : ℝ} (hR : 0 ≤ R) (hb : 0 < b) (hq
           div_eq_mul_inv]
     _ ≤ R ^ γ * q ^ j := by gcongr
 
-/-- Passing from the radii `R / bʲ` to arbitrary radii: if `R / ρ < bʲ⁺¹` with `b > 1` and
-`0 < q < 1`, then `qʲ⁺¹ ≤ (ρ / R)^α` for `α = log_b (1 / q) > 0`. -/
-theorem pow_succ_le_div_rpow_logb {b q ρ R : ℝ} {j : ℕ} (hb : 1 < b) (hq0 : 0 < q) (hq1 : q < 1)
-    (hρ : 0 < ρ) (hR : 0 < R) (hj : R / ρ < b ^ (j + 1)) :
-    q ^ (j + 1) ≤ (ρ / R) ^ Real.logb b q⁻¹ := by
+/-- Passing from the radii `R / bᵏ` to arbitrary radii: if `R / ρ ≤ bᵏ` with `b > 1` and
+`0 < q ≤ 1`, then `qᵏ ≤ (ρ / R)^α` for `α = log_b (1 / q) ≥ 0`. -/
+theorem pow_le_div_rpow_logb {b q ρ R : ℝ} {k : ℕ} (hb : 1 < b) (hq0 : 0 < q) (hq1 : q ≤ 1)
+    (hρ : 0 < ρ) (hR : 0 < R) (hk : R / ρ ≤ b ^ k) :
+    q ^ k ≤ (ρ / R) ^ Real.logb b q⁻¹ := by
   have hb0 : 0 < b := one_pos.trans hb
   set α : ℝ := Real.logb b q⁻¹
-  have hbα : (b ^ (j + 1)) ^ α = q⁻¹ ^ (j + 1) := by
+  have hbα : (b ^ k) ^ α = q⁻¹ ^ k := by
     rw [← Real.rpow_pow_comm hb0.le, Real.rpow_logb hb0 hb.ne' (inv_pos.2 hq0)]
-  have hlt : (b ^ (j + 1))⁻¹ ≤ ρ / R := by
+  have hle : (b ^ k)⁻¹ ≤ ρ / R := by
     rw [inv_le_comm₀ (by positivity) (by positivity), inv_div]
-    exact hj.le
-  have hα : 0 < α := Real.logb_pos hb ((one_lt_inv₀ hq0).2 hq1)
-  calc q ^ (j + 1) = ((b ^ (j + 1)) ^ α)⁻¹ := by rw [hbα, inv_pow, inv_inv]
-    _ = ((b ^ (j + 1))⁻¹) ^ α := (Real.inv_rpow (by positivity) _).symm
-    _ ≤ (ρ / R) ^ α := Real.rpow_le_rpow (by positivity) hlt hα.le
+    exact hk
+  have hα : 0 ≤ α := Real.logb_nonneg hb ((one_le_inv₀ hq0).2 hq1)
+  calc q ^ k = ((b ^ k) ^ α)⁻¹ := by rw [hbα, inv_pow, inv_inv]
+    _ = ((b ^ k)⁻¹) ^ α := (Real.inv_rpow (by positivity) _).symm
+    _ ≤ (ρ / R) ^ α := Real.rpow_le_rpow (by positivity) hle hα
 
 end TauCeti
