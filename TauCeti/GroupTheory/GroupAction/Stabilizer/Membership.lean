@@ -153,8 +153,8 @@ theorem ncard_orbit_stabilizerChain_eq_length_of_siftCheck {gens : List G}
     (orbit (H.stabilizerChain b i) (b i)).ncard = (T i).length := by
   rw [orbit_stabilizerChain_eq_image_of_siftCheck hT hH htrans hgens hsift hi]
   have hnodup := (TauCeti.transversalCheck_eq_true_iff.1 htrans i hi).2.2
-  simpa only [Set.image, Set.mem_ofPred_eq, List.mem_map, hnodup.dedup, List.length_map] using
-    (List.ncard_ofPred_mem (l := (T i).map (· • b i)))
+  have hinj : Set.InjOn (· • b i) {r | r ∈ T i} := List.inj_on_of_nodup_map hnodup
+  rw [hinj.ncard_image, List.ncard_ofPred_mem, (hnodup.of_map _).dedup]
 
 /-- The structured sifting hypotheses certify exact subgroup membership, without assuming
 completeness of the listed transversals or triviality of the terminal stabilizer in advance. -/
