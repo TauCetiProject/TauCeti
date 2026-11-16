@@ -107,25 +107,15 @@ theorem sum_interlacingFinset_three {M : Type*} [AddCommMonoid M] (l : Fin 3 →
     ∑ m ∈ interlacingFinset l, f m =
       ∑ a ∈ Finset.Icc (l 1) (l 0), ∑ b ∈ Finset.Icc (l 2) (l 1), f ![a, b] := by
   rw [← Finset.sum_product']
-  refine Finset.sum_nbij' (fun m => (m 0, m 1)) (fun p => ![p.1, p.2]) ?_ ?_ ?_ ?_ fun m _ =>
-    congrArg f (by ext i; fin_cases i <;> rfl)
-  · intro m hm
-    rw [mem_interlacingFinset] at hm
-    exact Finset.mem_product.mpr
-      ⟨Finset.mem_Icc.mpr ⟨hm.succ_le 0, hm.le_castSucc 0⟩,
-        Finset.mem_Icc.mpr ⟨hm.succ_le 1, hm.le_castSucc 1⟩⟩
-  · intro p hp
-    obtain ⟨hp₀, hp₁⟩ := Finset.mem_product.mp hp
-    rw [Finset.mem_Icc] at hp₀ hp₁
+  refine Finset.sum_nbij' (fun m => (m 0, m 1)) (fun p => ![p.1, p.2]) ?_ ?_
+    (fun m _ => by ext i; fin_cases i <;> rfl) (fun _ _ => rfl)
+    fun m _ => congrArg f (by ext i; fin_cases i <;> rfl)
+  · intro m hm; rw [mem_interlacingFinset] at hm
+    exact Finset.mem_product.mpr ⟨Finset.mem_Icc.mpr ⟨hm.succ_le 0, hm.le_castSucc 0⟩,
+      Finset.mem_Icc.mpr ⟨hm.succ_le 1, hm.le_castSucc 1⟩⟩
+  · intro p hp; obtain ⟨hp₀, hp₁⟩ := Finset.mem_product.mp hp; rw [Finset.mem_Icc] at hp₀ hp₁
     refine mem_interlacingFinset.mpr (interlaces_iff.mpr fun i => ?_)
-    fin_cases i
-    · exact ⟨hp₀.2, hp₀.1⟩
-    · exact ⟨hp₁.2, hp₁.1⟩
-  · intro m _
-    ext i
-    fin_cases i <;> rfl
-  · intro _ _
-    rfl
+    fin_cases i; exacts [⟨hp₀.2, hp₀.1⟩, ⟨hp₁.2, hp₁.1⟩]
 
 /-- The dominant weights interlacing a dominant weight `l`, as a `Finset`.
 
@@ -165,17 +155,13 @@ def truncateSigmaEquiv (l : Fin (n + 1) → ℤ) :
         subst hm'
         rfl }
 
-@[simp]
-theorem truncateSigmaEquiv_apply_fst_coe (l : Fin (n + 1) → ℤ)
+@[simp] theorem truncateSigmaEquiv_apply_fst_coe (l : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l}) :
-    ((truncateSigmaEquiv l P).1 : Fin n → ℤ) = P.1.truncate.topRow := by
-  simp [truncateSigmaEquiv]
+    ((truncateSigmaEquiv l P).1 : Fin n → ℤ) = P.1.truncate.topRow := by simp [truncateSigmaEquiv]
 
-@[simp]
-theorem truncateSigmaEquiv_apply_snd_coe (l : Fin (n + 1) → ℤ)
+@[simp] theorem truncateSigmaEquiv_apply_snd_coe (l : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l}) :
-    (truncateSigmaEquiv l P).2.1 = P.1.truncate := by
-  simp [truncateSigmaEquiv]
+    (truncateSigmaEquiv l P).2.1 = P.1.truncate := by simp [truncateSigmaEquiv]
 
 /-- **The branching recursion for the pattern count.**  The Gelfand-Tsetlin patterns with `n + 1`
 rows and top row `l` are counted by the patterns with `n` rows, summed over the sequences

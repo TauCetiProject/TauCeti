@@ -484,9 +484,7 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
     ofGTPattern ((0 : DominantWeight n).shift a) (GTPattern.const n b) h = affine n a (a + b) := by
   have hc : GTPattern.const n b = (0 : GTPattern n).shift b := by
     rw [GTPattern.shift_eq_add_const, zero_add]
-  revert h
-  rw [hc]
-  intro h
+  revert h; rw [hc]; intro h
   rw [ofGTPattern_shift a b (isGTCompletable_zero_right 0) h, ofGTPattern_zero, zero_add]
 
 @[simp] theorem toGTPattern_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
@@ -817,40 +815,38 @@ theorem gt_completion_of_uniform_input_gap {n : ℕ} (lam μ : DominantWeight (n
         gtCompletion lam P i (j + 1) + gtCompletion lam P (i + 1) (j + 1) :=
   isGTCompletable_of_uniform_input_gap (hTop ▸ hGap)
 
+section UniformInputGapEquiv
+
+variable {n : ℕ} (lam μ γ : DominantWeight (n + 1))
+  (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
+include hGap
+
 /-- Under the uniform input gap on `lam`, fixed-boundary integer hives with boundary
 `productBoundary lam μ γ` are equivalent to the entire weight-`(γ - λ)` Gelfand–Tsetlin fibre over
 `μ`. -/
-def fixedIntegerHiveEquivGTPatternOfUniformInputGap {n : ℕ} (lam μ γ : DominantWeight (n + 1))
-    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
+def fixedIntegerHiveEquivGTPatternOfUniformInputGap :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} :=
   (fixedIntegerHiveEquivGTPattern lam μ γ).trans <| Equiv.subtypeEquivRight fun _ =>
     ⟨fun ⟨ht, hw, _⟩ => ⟨ht, hw⟩,
       fun ⟨ht, hw⟩ => ⟨ht, hw, isGTCompletable_of_uniform_input_gap (by rwa [ht])⟩⟩
 
-@[simp] theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_apply_coe {n : ℕ}
-    (lam μ γ : DominantWeight (n + 1))
-    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
+@[simp] theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_apply_coe
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
     (fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap h).1 = h.1.toGTPattern := (rfl)
 
-@[simp] theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_symm_apply_coe {n : ℕ}
-    (lam μ γ : DominantWeight (n + 1))
-    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
+@[simp] theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_symm_apply_coe
     (P : {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1}) :
     ((fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap).symm P).1 =
       ofGTPattern lam P.1 (isGTCompletable_of_uniform_input_gap (by rwa [P.2.1])) := by
   simp [fixedIntegerHiveEquivGTPatternOfUniformInputGap]
 
-theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_symm_apply {n : ℕ}
-    (lam μ γ : DominantWeight (n + 1))
-    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ)
+theorem fixedIntegerHiveEquivGTPatternOfUniformInputGap_symm_apply
     (P : {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1}) (v : Vertex (n + 1)) :
     ((fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap).symm P).1 v =
       gtCompletion lam P.1 v.z (n + 1 - v.x) := by simp
 
-theorem hiveCount_eq_card_gtPattern_of_uniform_input_gap {n : ℕ} (lam μ γ : DominantWeight (n + 1))
-    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
+theorem hiveCount_eq_card_gtPattern_of_uniform_input_gap :
     hiveCount (productBoundary lam μ γ) =
       Nat.card {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} := by
   rw [← natCard_fixedIntegerHive]
@@ -858,13 +854,14 @@ theorem hiveCount_eq_card_gtPattern_of_uniform_input_gap {n : ℕ} (lam μ γ : 
 
 /-- In the stable range, the difference map gives an equivalence onto the full weight-`(γ - λ)`
 Gelfand–Tsetlin fibre over `μ` with `gtCompletion` as inverse chart formula. -/
-theorem exists_stable_gt_equiv {n : ℕ} (lam μ γ : DominantWeight (n + 1))
-    (hGap : ∀ r : Fin n, μ.1 0 - μ.1 (Fin.last n) ≤ lam.1 r.castSucc - lam.1 r.succ) :
+theorem exists_stable_gt_equiv :
     ∃ e : FixedIntegerHive (productBoundary lam μ γ) ≃
       {P : GTPattern (n + 1) // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1},
       ∀ h v, h.1 v = gtCompletion lam (e h).1 v.z (n + 1 - v.x) :=
   ⟨fixedIntegerHiveEquivGTPatternOfUniformInputGap lam μ γ hGap,
     fun h v => apply_eq_gtCompletion_of_productBoundary h.2 v⟩
+
+end UniformInputGapEquiv
 
 end UniformInputGap
 
@@ -900,21 +897,14 @@ def fixedIntegerHiveEquivGTPatternOfLeOne {n : ℕ} (hn : n ≤ 1) (lam μ γ : 
 theorem hiveCount_one_productBoundary (lam μ γ : DominantWeight 1) :
     hiveCount (productBoundary lam μ γ) = if lam.1 0 + μ.1 0 = γ.1 0 then 1 else 0 := by
   rw [hiveCount_eq_card_gtPattern_of_uniform_input_gap lam μ γ (fun r => r.elim0)]
-  let P₀ : {P : GTPattern 1 // P.topRow = μ.1} := default
-  have hw₀ : P₀.1.weight 0 = μ.1 0 := by
-    rw [P₀.1.weight_eq_topRow, P₀.2]
-  have : Subsingleton {P : GTPattern 1 // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} :=
-    ⟨fun P Q => Subtype.ext <| Subtype.mk.inj <|
-      Subsingleton.elim (⟨P.1, P.2.1⟩ : {R : GTPattern 1 // R.topRow = μ.1}) ⟨Q.1, Q.2.1⟩⟩
   split_ifs with hsum
-  · have : Unique {P : GTPattern 1 // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} :=
-      uniqueOfSubsingleton ⟨P₀.1, P₀.2, funext fun r => by
-        rw [Subsingleton.elim r 0, hw₀, Pi.sub_apply]; omega⟩
-    exact Nat.card_unique
-  · refine Nat.card_eq_zero.mpr (Or.inl ⟨fun ⟨Q, hQtop, hQw⟩ => hsum ?_⟩)
-    have hQeq : Q = P₀.1 := congrArg Subtype.val
-      (Subsingleton.elim (⟨Q, hQtop⟩ : {P : GTPattern 1 // P.topRow = μ.1}) P₀)
-    have hr := congrFun hQw 0; rw [hQeq, hw₀, Pi.sub_apply] at hr; omega
+  · have hμ : μ.1 = γ.1 - lam.1 :=
+      funext fun r => by rw [Subsingleton.elim r 0, Pi.sub_apply]; omega
+    exact (Nat.card_congr (β := {P : GTPattern 1 // P.topRow = μ.1}) <| Equiv.subtypeEquivRight
+      fun P => ⟨And.left, fun h => ⟨h, by rw [P.weight_eq_topRow, h, hμ]⟩⟩).trans Nat.card_unique
+  · refine Nat.card_eq_zero.mpr (Or.inl ⟨fun ⟨P, ht, hw⟩ => hsum ?_⟩)
+    have h0 := congrFun (P.weight_eq_topRow.symm.trans hw) 0
+    rw [ht, Pi.sub_apply] at h0; omega
 
 /-- **Rank-`2` remaining rhombus criterion**: for any `lam : DominantWeight 2` and
 `P : GTPattern 2`, `IsGTCompletable lam P` reduces to the single inequality
@@ -922,14 +912,12 @@ theorem hiveCount_one_productBoundary (lam μ γ : DominantWeight 1) :
 theorem isGTCompletable_two_iff (lam : DominantWeight 2) (P : GTPattern 2) :
     IsGTCompletable lam P ↔ lam.1 1 + P.topRow 0 ≤ lam.1 0 + P.weight 0 := by
   rw [isGTCompletable_iff_sum_sub_le]
-  have := P.weight_apply_zero
-  have : P.topRow 0 = P 0 2 := P.topRow_apply 0
+  have := P.weight_apply_zero; have : P.topRow 0 = P 0 2 := P.topRow_apply 0
   refine ⟨fun h => ?_, fun _ i j _ _ => ?_⟩
   · have h00 := h 0 0 le_rfl le_rfl
     simp only [Nat.reduceAdd, Finset.sum_range_one, Finset.sum_range_zero, add_zero, Fin.mk_zero,
       Fin.mk_one] at h00; omega
-  · obtain rfl : j = 0 := by omega
-    obtain rfl : i = 0 := by omega
+  · obtain ⟨rfl, rfl⟩ : j = 0 ∧ i = 0 := by omega
     simp only [Nat.reduceAdd, Finset.sum_range_one, Finset.sum_range_zero, add_zero, Fin.mk_zero,
       Fin.mk_one]; omega
 

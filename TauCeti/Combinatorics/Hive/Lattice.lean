@@ -199,12 +199,9 @@ theorem sqDist_eq_six_iff (b d : Vertex n) :
   rw [sqDist_comm, sqDist_def]
   refine ⟨fun hsq => ?_, fun h => ?_⟩
   · have hbnd {u v w : ℤ} (hu : u ^ 2 + v ^ 2 + w ^ 2 = 6) : -2 ≤ u ∧ u ≤ 2 :=
-      ⟨by by_contra _; linarith [sq_nonneg (u + 3), sq_nonneg v, sq_nonneg w,
-          (by ring : (u + 3) ^ 2 = u ^ 2 + 6 * u + 9), (by omega : u ≤ -3)],
-       by by_contra _; linarith [sq_nonneg (u - 3), sq_nonneg v, sq_nonneg w,
-          (by ring : (u - 3) ^ 2 = u ^ 2 - 6 * u + 9), (by omega : 3 ≤ u)]⟩
-    have hbx := hbnd hsq
-    have hby := hbnd (by linarith :
+      ⟨by by_contra _; nlinarith, by by_contra _; nlinarith⟩
+    have := hbnd hsq
+    have := hbnd (by linarith :
       ((d.y : ℤ) - b.y) ^ 2 + ((d.x : ℤ) - b.x) ^ 2 + ((d.z : ℤ) - b.z) ^ 2 = 6)
     rcases (by omega : (d.x : ℤ) - b.x = -2 ∨ (d.x : ℤ) - b.x = -1 ∨ (d.x : ℤ) - b.x = 0 ∨
         (d.x : ℤ) - b.x = 1 ∨ (d.x : ℤ) - b.x = 2) with hx | hx | hx | hx | hx <;>
@@ -326,40 +323,33 @@ theorem ofYZ_sub_left (n z : ℕ) (hz : z ≤ n) :
 
 /-- Product-chart parameterization `(i, j) ↦ (n - j, j - i, i)` of `Vertex n` for `0 ≤ i ≤ j ≤ n`,
 with inverse `p ↦ (p.z, n - p.x)`. -/
-def ofChart (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) : Vertex n :=
-  ⟨n - j, j - i, i, by omega⟩
+def ofChart (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) : Vertex n := ⟨n - j, j - i, i, by omega⟩
 
 @[simp] theorem ofChart_x (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
     (ofChart n i j hij hj).x = n - j := (rfl)
-
 @[simp] theorem ofChart_y (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
     (ofChart n i j hij hj).y = j - i := (rfl)
-
 @[simp] theorem ofChart_z (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
     (ofChart n i j hij hj).z = i := (rfl)
 
-@[simp]
-theorem ofChart_eq_iff {n i₁ j₁ i₂ j₂ : ℕ} {hi₁ : i₁ ≤ j₁} {hj₁ : j₁ ≤ n}
+@[simp] theorem ofChart_eq_iff {n i₁ j₁ i₂ j₂ : ℕ} {hi₁ : i₁ ≤ j₁} {hj₁ : j₁ ≤ n}
     {hi₂ : i₂ ≤ j₂} {hj₂ : j₂ ≤ n} :
     ofChart n i₁ j₁ hi₁ hj₁ = ofChart n i₂ j₂ hi₂ hj₂ ↔ i₁ = i₂ ∧ j₁ = j₂ := by
   refine ⟨fun h => ⟨congrArg Vertex.z h, ?_⟩, fun ⟨hi, hj⟩ => by subst hi; subst hj; rfl⟩
   have hx := congrArg Vertex.x h; simp only [ofChart_x] at hx; omega
 
 /-- Every lattice vertex `p : Vertex n` is recovered in the product chart at `(p.z, n - p.x)`. -/
-@[simp]
-theorem ofChart_z_sub_x {n : ℕ} (p : Vertex n) :
+@[simp] theorem ofChart_z_sub_x {n : ℕ} (p : Vertex n) :
     ofChart n p.z (n - p.x) (by have := p.sum_eq; omega) (Nat.sub_le n p.x) = p := by
   have hp := p.sum_eq; ext <;> simp <;> omega
 
 /-- A vertex `p : Vertex n` with `p.z = i` and `p.x + j = n` equals `ofChart n i j hij hj`. -/
 theorem eq_ofChart_of_z_x {n i j : ℕ} {p : Vertex n} {hij : i ≤ j} {hj : j ≤ n}
-    (hz : p.z = i) (hx : p.x + j = n) :
-    p = ofChart n i j hij hj := by
+    (hz : p.z = i) (hx : p.x + j = n) : p = ofChart n i j hij hj := by
   have := p.sum_eq; ext <;> simp <;> omega
 
 theorem ofChart_eq_ofYZ (n i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) :
-    ofChart n i j hij hj = ofYZ n (j - i) i (by omega) := by
-  ext <;> simp; omega
+    ofChart n i j hij hj = ofYZ n (j - i) i (by omega) := by ext <;> simp; omega
 
 @[simp] theorem ofChart_zero_zero (n : ℕ) : ofChart n 0 0 le_rfl (Nat.zero_le n) = cornerA n := by
   ext <;> simp
@@ -510,35 +500,16 @@ theorem diagonal_inner_eq_zero (h : IsRhombus a b c d) :
   have hmz : (a.z : ℤ) + c.z = (b.z : ℤ) + d.z := by exact_mod_cast h.midpoint_z
   have hab := h.side_ab; rw [Vertex.sqDist_def] at hab
   have hbc := Vertex.sqDist_comm b c ▸ h.side_bc; rw [Vertex.sqDist_def] at hbc
-  have hax : 2 * ((a.x : ℤ) - b.x) = ((d.x : ℤ) - b.x) - ((c.x : ℤ) - a.x) := by omega
-  have hay : 2 * ((a.y : ℤ) - b.y) = ((d.y : ℤ) - b.y) - ((c.y : ℤ) - a.y) := by omega
-  have haz : 2 * ((a.z : ℤ) - b.z) = ((d.z : ℤ) - b.z) - ((c.z : ℤ) - a.z) := by omega
-  have hcx : 2 * ((c.x : ℤ) - b.x) = ((d.x : ℤ) - b.x) + ((c.x : ℤ) - a.x) := by omega
-  have hcy : 2 * ((c.y : ℤ) - b.y) = ((d.y : ℤ) - b.y) + ((c.y : ℤ) - a.y) := by omega
-  have hcz : 2 * ((c.z : ℤ) - b.z) = ((d.z : ℤ) - b.z) + ((c.z : ℤ) - a.z) := by omega
-  have hab4 : (((d.x : ℤ) - b.x) - ((c.x : ℤ) - a.x)) ^ 2 +
-      (((d.y : ℤ) - b.y) - ((c.y : ℤ) - a.y)) ^ 2 +
-      (((d.z : ℤ) - b.z) - ((c.z : ℤ) - a.z)) ^ 2 = 8 := by
-    rw [← hax, ← hay, ← haz]; linear_combination 4 * hab
-  have hbc4 : (((d.x : ℤ) - b.x) + ((c.x : ℤ) - a.x)) ^ 2 +
-      (((d.y : ℤ) - b.y) + ((c.y : ℤ) - a.y)) ^ 2 +
-      (((d.z : ℤ) - b.z) + ((c.z : ℤ) - a.z)) ^ 2 = 8 := by
-    rw [← hcx, ← hcy, ← hcz]; linear_combination 4 * hbc
-  have horth4 : 4 * (((d.x : ℤ) - b.x) * ((c.x : ℤ) - a.x) +
-      ((d.y : ℤ) - b.y) * ((c.y : ℤ) - a.y) + ((d.z : ℤ) - b.z) * ((c.z : ℤ) - a.z)) = 0 := by
-    linear_combination hbc4 - hab4
-  omega
+  linear_combination hbc - hab - ((c.x : ℤ) - a.x) * hmx -
+    ((c.y : ℤ) - a.y) * hmy - ((c.z : ℤ) - a.z) * hmz
 
-private theorem obtuse_eq_of_inner_eq_two {a' c' : Vertex n}
-    (h : IsRhombus a b c d) (h' : IsRhombus a' b c' d)
-    (hip : ((c.x : ℤ) - a.x) * ((c'.x : ℤ) - a'.x) +
-      ((c.y : ℤ) - a.y) * ((c'.y : ℤ) - a'.y) +
-      ((c.z : ℤ) - a.z) * ((c'.z : ℤ) - a'.z) = 2) :
+private theorem obtuse_eq_of_inner_eq_two {a' c' : Vertex n} (h : IsRhombus a b c d)
+    (h' : IsRhombus a' b c' d) (hip : ((c.x : ℤ) - a.x) * ((c'.x : ℤ) - a'.x) +
+      ((c.y : ℤ) - a.y) * ((c'.y : ℤ) - a'.y) + ((c.z : ℤ) - a.z) * ((c'.z : ℤ) - a'.z) = 2) :
     a = a' ∧ c = c' := by
   have hd2 : ((c.x : ℤ) - a.x) ^ 2 + ((c.y : ℤ) - a.y) ^ 2 + ((c.z : ℤ) - a.z) ^ 2 = 2 := by
     simpa [Vertex.sqDist_def] using (Vertex.sqDist_comm a c).symm.trans h.short
-  have hd'2 :
-      ((c'.x : ℤ) - a'.x) ^ 2 + ((c'.y : ℤ) - a'.y) ^ 2 + ((c'.z : ℤ) - a'.z) ^ 2 = 2 := by
+  have hd'2 : ((c'.x : ℤ) - a'.x) ^ 2 + ((c'.y : ℤ) - a'.y) ^ 2 + ((c'.z : ℤ) - a'.z) ^ 2 = 2 := by
     simpa [Vertex.sqDist_def] using (Vertex.sqDist_comm a' c').symm.trans h'.short
   have hdiff : (((c.x : ℤ) - a.x) - ((c'.x : ℤ) - a'.x)) ^ 2 +
       (((c.y : ℤ) - a.y) - ((c'.y : ℤ) - a'.y)) ^ 2 +
@@ -555,21 +526,13 @@ private theorem obtuse_eq_of_inner_eq_two {a' c' : Vertex n}
 same obtuse corners up to swapping them. -/
 theorem obtuse_eq_or_eq {a' c' : Vertex n} (h : IsRhombus a b c d) (h' : IsRhombus a' b c' d) :
     (a = a' ∧ c = c') ∨ (a = c' ∧ c = a') := by
-  let wx : ℤ := (d.x : ℤ) - b.x
-  let wy : ℤ := (d.y : ℤ) - b.y
-  let wz : ℤ := (d.z : ℤ) - b.z
-  let dx : ℤ := (c.x : ℤ) - a.x
-  let dy : ℤ := (c.y : ℤ) - a.y
-  let dz : ℤ := (c.z : ℤ) - a.z
-  let dx' : ℤ := (c'.x : ℤ) - a'.x
-  let dy' : ℤ := (c'.y : ℤ) - a'.y
+  let wx : ℤ := (d.x : ℤ) - b.x; let wy : ℤ := (d.y : ℤ) - b.y; let wz : ℤ := (d.z : ℤ) - b.z
+  let dx : ℤ := (c.x : ℤ) - a.x; let dy : ℤ := (c.y : ℤ) - a.y; let dz : ℤ := (c.z : ℤ) - a.z
+  let dx' : ℤ := (c'.x : ℤ) - a'.x; let dy' : ℤ := (c'.y : ℤ) - a'.y
   let dz' : ℤ := (c'.z : ℤ) - a'.z
-  let nw : ℤ := wx ^ 2 + wy ^ 2 + wz ^ 2
-  let nd : ℤ := dx ^ 2 + dy ^ 2 + dz ^ 2
-  let nd' : ℤ := dx' ^ 2 + dy' ^ 2 + dz' ^ 2
-  let ow : ℤ := wx * dx + wy * dy + wz * dz
-  let ow' : ℤ := wx * dx' + wy * dy' + wz * dz'
-  let ip : ℤ := dx * dx' + dy * dy' + dz * dz'
+  let nw := wx ^ 2 + wy ^ 2 + wz ^ 2; let nd := dx ^ 2 + dy ^ 2 + dz ^ 2
+  let nd' := dx' ^ 2 + dy' ^ 2 + dz' ^ 2; let ow := wx * dx + wy * dy + wz * dz
+  let ow' := wx * dx' + wy * dy' + wz * dz'; let ip := dx * dx' + dy * dy' + dz * dz'
   have hwz : wz = -wx - wy := by have := b.sum_eq; have := d.sum_eq; omega
   have hdz : dz = -dx - dy := by have := a.sum_eq; have := c.sum_eq; omega
   have hdz' : dz' = -dx' - dy' := by have := a'.sum_eq; have := c'.sum_eq; omega
@@ -580,13 +543,11 @@ theorem obtuse_eq_or_eq {a' c' : Vertex n} (h : IsRhombus a b c d) (h' : IsRhomb
   have hd'2 : nd' = 2 := by
     simpa [Vertex.sqDist_def, nd', dx', dy', dz'] using
       (Vertex.sqDist_comm a' c').symm.trans h'.short
-  have horth : ow = 0 := h.diagonal_inner_eq_zero
-  have horth' : ow' = 0 := h'.diagonal_inner_eq_zero
-  -- In the 2D trace-zero plane `x + y + z = 0`, any three vectors satisfy `det(G(w, d, d')) = 0`;
-  -- orthogonality `ow = ow' = 0` with `nw = 6`, `nd = nd' = 2` reduces this identity to `ip² = 4`.
+  -- In the 2D plane `x + y + z = 0`, `det(G(w, d, d')) = 0`; `ow = ow' = 0` yields `ip² = 4`.
   have hgram : nw * (nd * nd' - ip ^ 2) - nd' * ow ^ 2 - nd * ow' ^ 2 + 2 * ip * ow * ow' = 0 := by
     dsimp only [nw, nd, nd', ow, ow', ip]; rw [hwz, hdz, hdz']; ring
-  rw [hw2, hd2, hd'2, horth, horth'] at hgram
+  have ho : ow = 0 := h.diagonal_inner_eq_zero; have ho' : ow' = 0 := h'.diagonal_inner_eq_zero
+  rw [hw2, hd2, hd'2, ho, ho'] at hgram
   rcases mul_eq_zero.mp (by linarith : (ip - 2) * (ip + 2) = 0) with hip | hip
   · exact Or.inl (h.obtuse_eq_of_inner_eq_two h' (by linarith))
   · exact Or.inr (h.obtuse_eq_of_inner_eq_two h'.swap_opposite.reverse
@@ -596,10 +557,9 @@ theorem obtuse_eq_or_eq {a' c' : Vertex n} (h : IsRhombus a b c d) (h' : IsRhomb
 for any function into a commutative additive semigroup. -/
 theorem add_obtuse_eq {R : Type*} [AddCommSemigroup R] {a' c' : Vertex n}
     (h : IsRhombus a b c d) (h' : IsRhombus a' b c' d) (f : Vertex n → R) :
-    f a + f c = f a' + f c' := by
-  rcases h.obtuse_eq_or_eq h' with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · rfl
-  · exact add_comm _ _
+    f a + f c = f a' + f c' :=
+  (h.obtuse_eq_or_eq h').elim (fun ⟨h1, h2⟩ => by rw [h1, h2])
+    (fun ⟨h1, h2⟩ => by rw [h1, h2, add_comm])
 
 end IsRhombus
 
@@ -716,42 +676,33 @@ theorem IsRhombus.elim_ofChart {n : ℕ} {P : Vertex n → Vertex n → Vertex n
         (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega))
         (Vertex.ofChart n (i + 1) (j + 2) (by omega) hj))
     {a b c d : Vertex n} (hr : IsRhombus a b c d) : P a b c d := by
-  have hmatch {a b b' c d d' a' c' : Vertex n} (hr : IsRhombus a b c d)
-      (hb : b = b') (hd : d = d') (hr' : IsRhombus a' b' c' d') (hp : P a' b' c' d') :
-      P a b c d := by
+  have hmatch {a b b' c d d' a' c' : Vertex n} (hr : IsRhombus a b c d) (hb : b = b')
+      (hd : d = d') (hr' : IsRhombus a' b' c' d') (hp : P a' b' c' d') : P a b c d := by
     subst hb; subst hd
-    rcases hr'.obtuse_eq_or_eq hr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · exact hp
-    · exact hsym_obtuse hp
+    exact (hr'.obtuse_eq_or_eq hr).elim (fun ⟨h1, h2⟩ => h1 ▸ h2 ▸ hp)
+      (fun ⟨h1, h2⟩ => h1 ▸ h2 ▸ hsym_obtuse hp)
   have hpos {a b c d : Vertex n} (hr : IsRhombus a b c d)
       (hcase : ((d.x : ℤ) - b.x = -1 ∧ (d.y : ℤ) - b.y = 2 ∧ (d.z : ℤ) - b.z = -1) ∨
         ((d.x : ℤ) - b.x = -1 ∧ (d.y : ℤ) - b.y = -1 ∧ (d.z : ℤ) - b.z = 2) ∨
-        ((d.x : ℤ) - b.x = -2 ∧ (d.y : ℤ) - b.y = 1 ∧ (d.z : ℤ) - b.z = 1)) :
-      P a b c d := by
+        ((d.x : ℤ) - b.x = -2 ∧ (d.y : ℤ) - b.y = 1 ∧ (d.z : ℤ) - b.z = 1)) : P a b c d := by
     have := b.sum_eq; have := d.sum_eq
     rcases hcase with ⟨_, _, _⟩ | ⟨_, _, _⟩ | ⟨_, _, _⟩
-    · have hij : b.z - 1 < n - b.x := by omega
-      have hj : n - b.x < n := by omega
-      exact hmatch hr (Vertex.eq_ofChart_of_z_x (by omega) (by omega))
+    · exact hmatch hr (Vertex.eq_ofChart_of_z_x (by omega) (by omega))
         (Vertex.eq_ofChart_of_z_x (by omega) (by omega))
-        (isRhombus_ofChart_diag_y hij hj) (hy (b.z - 1) (n - b.x) hij hj)
-    · have hij : b.z < n - b.x := by omega
-      have hj : n - b.x < n := by omega
-      exact hmatch hr (Vertex.eq_ofChart_of_z_x rfl (by omega))
+        (isRhombus_ofChart_diag_y (by omega) (by omega))
+        (hy (b.z - 1) (n - b.x) (by omega) (by omega))
+    · exact hmatch hr (Vertex.eq_ofChart_of_z_x rfl (by omega))
         (Vertex.eq_ofChart_of_z_x (by omega) (by omega))
-        (isRhombus_ofChart_diag_z hij hj) (hz b.z (n - b.x) hij hj)
-    · have hij : b.z ≤ n - b.x := by omega
-      have hj : n - b.x + 2 ≤ n := by omega
-      exact hmatch hr (Vertex.eq_ofChart_of_z_x rfl (by omega))
+        (isRhombus_ofChart_diag_z (by omega) (by omega)) (hz b.z (n - b.x) (by omega) (by omega))
+    · exact hmatch hr (Vertex.eq_ofChart_of_z_x rfl (by omega))
         (Vertex.eq_ofChart_of_z_x (by omega) (by omega))
-        (isRhombus_ofChart_diag_x hij hj) (hx b.z (n - b.x) hij hj)
-  rcases (Vertex.sqDist_eq_six_iff b d).mp hr.long with
-    ⟨hx', hy', hz'⟩ | ⟨_, _, _⟩ | ⟨hx', hy', hz'⟩ | ⟨_, _, _⟩ | ⟨hx', hy', hz'⟩ | ⟨_, _, _⟩
-  · exact hpos hr (Or.inl ⟨hx', hy', hz'⟩)
+        (isRhombus_ofChart_diag_x (by omega) (by omega)) (hx b.z (n - b.x) (by omega) (by omega))
+  rcases (Vertex.sqDist_eq_six_iff b d).mp hr.long with h | h | h | h | h | h
+  · exact hpos hr (Or.inl h)
   · exact hsym_acute (hpos hr.reverse (Or.inl ⟨by omega, by omega, by omega⟩))
-  · exact hpos hr (Or.inr (Or.inl ⟨hx', hy', hz'⟩))
+  · exact hpos hr (Or.inr (Or.inl h))
   · exact hsym_acute (hpos hr.reverse (Or.inr (Or.inl ⟨by omega, by omega, by omega⟩)))
-  · exact hpos hr (Or.inr (Or.inr ⟨hx', hy', hz'⟩))
+  · exact hpos hr (Or.inr (Or.inr h))
   · exact hsym_acute (hpos hr.reverse (Or.inr (Or.inr ⟨by omega, by omega, by omega⟩)))
 
 /-- A vector `v : Fin 3 → ℤ` is a **unit lattice edge step** if `∑ vᵢ = 0` and `∑ vᵢ² = 2`. -/
