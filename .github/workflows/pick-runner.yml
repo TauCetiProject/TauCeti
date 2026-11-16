@@ -36,6 +36,9 @@ on:
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
+      namespace-profile-limited:
+        description: Operator-confirmed provider profile enforces this runtime cap
+        value: ${{ jobs.pick.outputs.namespace-profile-limited }}
       namespace-slot:
         description: Namespace build concurrency slot, below the runtime cap (maximum 64)
         value: ${{ jobs.pick.outputs.namespace-slot }}
@@ -75,7 +78,8 @@ jobs:
     outputs:
       hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
       namespace-slot: ${{ steps.pick.outputs.namespace_slot }}
-      runner: ${{ steps.pick.outputs.runner }}
+      namespace-profile-limited: ${{ steps.namespace-profile.outputs.namespace_profile_limited }}
+      runner: ${{ steps.namespace-profile.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
       busy: ${{ steps.pick.outputs.busy }}
@@ -100,6 +104,7 @@ jobs:
           sparse-checkout: |
             tauceti.toml
             scripts/fleet_runner.py
+            scripts/namespace_runner_profile.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
@@ -123,6 +128,15 @@ jobs:
           FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
           FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
         run: python3 scripts/fleet_runner.py --route
+      - name: Apply the selected Namespace runner profile
+        id: namespace-profile
+        env:
+          PICKER_RUNNER: ${{ steps.pick.outputs.runner }}
+          PICKER_POOL: ${{ steps.pick.outputs.pool }}
+          PICKER_NAMESPACE_CAP: ${{ steps.pick.outputs.namespace_cap }}
+          NAMESPACE_RUNNER_PROFILE: ${{ vars.NAMESPACE_RUNNER_PROFILE }}
+          NAMESPACE_PROFILE_CAP: ${{ vars.NAMESPACE_PROFILE_CAP }}
+        run: python3 scripts/namespace_runner_profile.py
 
   queue-control-smoke:
     if: ${{ inputs.control_smoke && github.event_name == 'workflow_dispatch' }}

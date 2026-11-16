@@ -22,7 +22,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, pr_fleet=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, pr_fleet=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", namespace_profile_limited="", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -32,8 +32,8 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
-    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, namespace_cap=namespace_cap, pool=pool)))
-    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("inputs.fleet-pr", "inputs.pr_fleet").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot")
+    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, namespace_cap=namespace_cap, namespace_profile_limited=namespace_profile_limited, pool=pool)))
+    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("inputs.fleet-pr", "inputs.pr_fleet").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot").replace("outputs.namespace-profile-limited", "outputs.namespace_profile_limited")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, pr_fleet=pr_fleet, maintenance=maintenance, skip_build=skip_build, label_head=label_head), "fromJSON": json.loads,
                          "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
@@ -140,6 +140,29 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(step["env"]["NAMESPACE_ENABLED"], "${{ vars.NAMESPACE_ENABLED }}")
         self.assertEqual(step["env"]["NAMESPACE_BUILD_CAP"], "${{ vars.NAMESPACE_BUILD_CAP }}")
         self.assertEqual(job["outputs"]["namespace-slot"], "${{ steps.pick.outputs.namespace_slot }}")
+
+    def test_confirmed_provider_profile_uses_its_shared_queue(self):
+        target = json.dumps(["namespace-profile-ci"])
+        for name, job, picker in (("pr-build.yml", "sandboxed-build", "pick-runner"),
+                                  ("nightly-verify.yml", "reference", "pick-reference-runner")):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            group = workflow["jobs"][job]["concurrency"]["group"].replace("needs." + picker, "needs.pick-runner")
+            self.assertEqual(expression(group, target=target, pool="namespace", namespace_profile_limited="true"),
+                             "unlimited-sandboxed-build-42" if name == "pr-build.yml" else "unlimited-reference-42")
+            self.assertEqual(expression(group, target=target, pool="namespace", namespace_profile_limited=""),
+                             "tauceti-namespace-build-0")
+            self.assertEqual(expression(group, target=target, pool="namespace", namespace_profile_limited="true", attempt=2),
+                             "tauceti-hosted-bulk-0")
+
+    def test_profile_override_follows_selection_and_uses_trusted_configuration(self):
+        job = PICKER["jobs"]["pick"]
+        steps = job["steps"]
+        original = next(i for i, s in enumerate(steps) if s.get("id") == "pick")
+        override = next(i for i, s in enumerate(steps) if s.get("id") == "namespace-profile")
+        self.assertLess(original, override)
+        self.assertEqual(job["outputs"]["runner"], "${{ steps.namespace-profile.outputs.runner }}")
+        self.assertEqual(steps[override]["env"]["NAMESPACE_RUNNER_PROFILE"], "${{ vars.NAMESPACE_RUNNER_PROFILE }}")
+        self.assertEqual(steps[override]["env"]["NAMESPACE_PROFILE_CAP"], "${{ vars.NAMESPACE_PROFILE_CAP }}")
 
     def test_maintenance_build_capacity_is_limited_to_explicit_or_same_repo_bot_work(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]

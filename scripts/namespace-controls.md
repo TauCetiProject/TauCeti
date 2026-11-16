@@ -28,6 +28,33 @@ these groups consumes no runner. Fixed slots can leave capacity unused when jobs
 collide. The cap covers this repository's Namespace build jobs; staging retains
 its dedicated tauchonki2 runner.
 
+For a shared queue that fills every available runner, use one Namespace Runner
+Profile configured with a provider concurrency limit equal to `NAMESPACE_BUILD_CAP`.
+Set the limit in the profile's Advanced Settings; this uses Namespace's existing
+scheduler and requires no additional service. Keep the configured pool preference
+order, with Namespace last.
+
+Switch a live fleet in two stages, without pausing admissions:
+
+1. Configure the profile's shape and privileges to match the existing PR runner
+   (8 vCPU, 16 GiB, privileged containers), and set its concurrent-runner limit to
+   eight. Set `NAMESPACE_RUNNER_PROFILE` to its `namespace-profile-...` label.
+   Leave `NAMESPACE_PROFILE_CAP` unset. New Namespace selections use the profile
+   while retaining the existing GitHub slot groups shared with old generic jobs.
+2. Reissue only unassigned generic Namespace jobs on the current workflow after
+   verifying their current PR heads and absence of a running build. Let running
+   generic Namespace jobs finish. Once none remain, set `NAMESPACE_PROFILE_CAP`
+   to `8`, confirming the actual provider limit. New profile jobs then use the
+   provider's shared queue rather than separate GitHub slot queues. Existing
+   profile jobs are already covered by that same provider limit.
+
+The confirmation must match the runtime cap. Do not set it before verifying the
+provider setting and completing the generic-runner transition: the old generic
+runners are outside the profile's limit. All workflows sharing this build budget
+must use the same capped profile. Resizing requires updating the provider setting
+and confirmation together; an inconsistent configuration rejects new Namespace
+profile selection. Native fleet and GitHub choices are unaffected.
+
 Settings govern new work, with graceful drain on a reduction: jobs already
 admitted under an earlier policy, including jobs waiting in scheduler groups,
 finish with that policy. The new ceiling fully applies after that work drains.
