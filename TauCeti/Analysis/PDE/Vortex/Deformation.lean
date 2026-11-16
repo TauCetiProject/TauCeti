@@ -739,6 +739,11 @@ theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDire
 theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
 
+/-- The section of the vacuum field is `α = 1`. -/
+@[simp]
+theorem sectionValue_vacuumField (z : ℂ) : sectionValue vacuumField z = 1 := by
+  simp [sectionValue_apply, vacuumField_apply]
+
 /-- The zero phase acts as the identity. -/
 @[simp]
 theorem phaseGauge_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : phaseGauge x 0 = x := by
