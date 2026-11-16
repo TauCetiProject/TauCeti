@@ -242,6 +242,14 @@ theorem isComplexPositive_ιMulti_complexToRealFamily (b : Basis (Fin n) ℂ E)
     IsComplexPositive (exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑b ∘ Fin.cast h)) :=
   ⟨n, b, 1, one_pos, by simp⟩
 
+omit [IsScalarTower ℝ ℂ E] in
+/-- The determinant line of the zero complex vector space is oriented by its generator, the empty
+exterior product, which is complex positive. -/
+theorem isComplexPositive_ιMulti_of_subsingleton [Subsingleton E]
+    (v : Fin (finrank ℝ E) → E) : IsComplexPositive (exteriorPower.ιMulti ℝ _ v) := by
+  have h : finrank ℝ E = 2 * 0 := finrank_zero_of_subsingleton
+  convert isComplexPositive_ιMulti_complexToRealFamily (Basis.empty E : Basis (Fin 0) ℂ E) h
+
 /-- The exterior product of the image under a complex-linear map `f` of the real family underlying
 a family `v` is complex positive in `det F` when `f ∘ v` is a complex basis `b` of `F`. -/
 theorem isComplexPositive_ιMulti_comp_complexToRealFamily (f : E →ₗ[ℂ] F) {v : Fin n → E}
