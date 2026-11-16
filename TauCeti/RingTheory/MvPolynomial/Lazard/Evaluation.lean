@@ -351,9 +351,13 @@ noncomputable def lazardEvalHom (a : Fin n → S) : MvPolynomial (Fin n) S →*�
 theorem lazardEvalHom_apply (a : Fin n → S) (p : MvPolynomial (Fin n) S) :
     lazardEvalHom a p = p.lazardEval a := (rfl)
 
-/-- The exponents removed from a power of a nonzero polynomial are multiplied by the power. -/
-theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
-    (a : Fin n → S) (k : ℕ) : (p ^ k).lazardExponent a = k • p.lazardExponent a := by
+/-- The exponents removed from a power of a polynomial are multiplied by the power. -/
+theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (a : Fin n → S) (k : ℕ) :
+    (p ^ k).lazardExponent a = k • p.lazardExponent a := by
+  obtain rfl | hp := eq_or_ne p 0
+  · rcases k with _ | k
+    · simpa using lazardExponent_C (1 : S) a
+    · simp
   rcases subsingleton_or_nontrivial S with hS | _
   · exact False.elim (hp (by ext d; exact Subsingleton.elim _ _))
   induction k with
