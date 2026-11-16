@@ -105,7 +105,7 @@ theorem IsContactForm.eq_reebVectorField_iff_kerDistribution (hα : α.IsContact
 @[simp]
 theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
     α.1 x ![α.reebVectorField x] = 1 :=
-  hα.isStableHamiltonian.apply_characteristicVectorField x
+  apply_characteristicVectorField (isContactForm_def.1 hα x)
 
 /-- The Reeb vector field lies in the kernel of `dα`: `ι_(R_α) dα = 0`. -/
 @[simp]
@@ -131,23 +131,24 @@ theorem IsContactForm.eq_reebVectorField_iff (hα : α.IsContactForm) {x : M}
     {v : TangentSpace I x} :
     v = α.reebVectorField x ↔
       α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.1 x ![v, w] = 0 := by
-  rw [reebVectorField, hα.isStableHamiltonian.eq_characteristicVectorField_iff, mextDerivₗ_apply]
+  rw [reebVectorField, eq_characteristicVectorField_iff (isContactForm_def.1 hα x),
+    mextDerivₗ_apply]
 
 /-- The Reeb vector field of a contact form vanishes nowhere. -/
 theorem IsContactForm.reebVectorField_ne_zero (hα : α.IsContactForm) (x : M) :
     α.reebVectorField x ≠ 0 :=
-  hα.isStableHamiltonian.characteristicVectorField_ne_zero x
+  characteristicVectorField_ne_zero (isContactForm_def.1 hα x)
 
 /-- The Reeb vector field is transverse to the contact distribution. -/
 theorem IsContactForm.reebVectorField_notMem_kerDistribution (hα : α.IsContactForm) (x : M) :
     α.reebVectorField x ∉ α.kerDistribution x :=
-  hα.isStableHamiltonian.characteristicVectorField_notMem_kerDistribution x
+  characteristicVectorField_notMem_kerDistribution (isContactForm_def.1 hα x)
 
 /-- The tangent space of a contact manifold splits as the contact hyperplane plus the Reeb line,
 `T_x M = ξ_x ⊕ ℝ R_α(x)`. -/
 theorem IsContactForm.isCompl_kerDistribution_span_reebVectorField (hα : α.IsContactForm)
     (x : M) : IsCompl (α.kerDistribution x) (ℝ ∙ α.reebVectorField x) :=
-  hα.isStableHamiltonian.isCompl_kerDistribution_span_characteristicVectorField x
+  isCompl_kerDistribution_span_characteristicVectorField (isContactForm_def.1 hα x)
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in

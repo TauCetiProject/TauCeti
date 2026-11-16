@@ -30,7 +30,7 @@ its characteristic foliation (`TauCeti.SmoothForm.characteristicFoliation`), and
 
 `α(R) = 1`, `ι_R ω = 0`,
 
-(`TauCeti.SmoothForm.IsStableHamiltonian.eq_characteristicVectorField_iff`), and the stability
+(`TauCeti.SmoothForm.eq_characteristicVectorField_iff`), and the stability
 condition `ker ω ⊆ ker dα` is the further equation `ι_R dα = 0`
 (`TauCeti.SmoothForm.isStableHamiltonian_iff_mextDeriv_characteristicVectorField`). These are the
 end data of the cylindrical compactness theorem of Bourgeois–Eliashberg–Hofer–Wysocki–Zehnder:
@@ -55,13 +55,14 @@ Two cases are basic.
   and a two-form.
 * `TauCeti.SmoothForm.IsStableHamiltonian`: stable Hamiltonian structures.
 * `TauCeti.SmoothForm.isStableHamiltonian_iff`: the elementwise statement.
-* `TauCeti.SmoothForm.IsStableHamiltonian.apply_characteristicVectorField`,
-  `TauCeti.SmoothForm.IsStableHamiltonian.interior_characteristicVectorField`,
+* `TauCeti.SmoothForm.apply_characteristicVectorField`,
+  `TauCeti.SmoothForm.interior_characteristicVectorField`,
   `TauCeti.SmoothForm.IsStableHamiltonian.interior_mextDeriv_characteristicVectorField`: the
-  equations `α(R) = 1`, `ι_R ω = 0` and `ι_R dα = 0`.
-* `TauCeti.SmoothForm.IsStableHamiltonian.eq_characteristicVectorField_iff`: uniqueness.
-* `TauCeti.SmoothForm.IsStableHamiltonian.isCompl_kerDistribution_span_characteristicVectorField`:
-  the splitting `T_x M = ker α_x ⊕ ℝ R(x)`.
+  equations `α(R) = 1`, `ι_R ω = 0` and `ι_R dα = 0`. The first two, and the uniqueness and
+  splitting statements, need only that `α_x` is contact for `ω_x`.
+* `TauCeti.SmoothForm.eq_characteristicVectorField_iff`: uniqueness.
+* `TauCeti.SmoothForm.isCompl_kerDistribution_span_characteristicVectorField`: the splitting
+  `T_x M = ker α_x ⊕ ℝ R(x)`.
 * `TauCeti.SmoothForm.IsContactForm.isStableHamiltonian`,
   `TauCeti.SmoothForm.isStableHamiltonian_of_isClosed`: the contact and Levi-flat cases.
 
@@ -90,8 +91,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The **characteristic vector field** of a one-form `α` and a two-form `ω`: at each point `x`,
 the tangent vector `R` with `α_x(R) = 1` and `ω_x(R, w) = 0` for every `w ∈ ker α_x`, the Reeb
 vector `Module.Dual.reebVector` of the covector `α_x` for the bilinear form `ω_x`. For a stable
-Hamiltonian structure it exists and is unique, and spans the kernel of `ω`
-(`TauCeti.SmoothForm.IsStableHamiltonian.eq_characteristicVectorField_iff`). -/
+Hamiltonian structure, or whenever `α_x` is contact for `ω_x`, it exists and is unique, and spans
+the kernel of `ω` (`TauCeti.SmoothForm.eq_characteristicVectorField_iff`). -/
 def characteristicVectorField (α : SmoothForm I M ℝ 1) (ω : SmoothForm I M ℝ 2) (x : M) :
     TangentSpace I x :=
   Module.Dual.reebVector (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) (ω.bilinFormAt x)
@@ -160,38 +161,99 @@ theorem IsStableHamiltonian.odd_finrank (h : α.IsStableHamiltonian ω) (x : M) 
     Odd (finrank ℝ E) :=
   (h.isContact x).odd_finrank (isAlt_bilinFormAt _ x)
 
-/-- The one-form of a stable Hamiltonian structure takes the value `1` on the characteristic
-vector field. -/
+variable {x : M}
+
+/-- If `α_x` is contact for `ω_x`, then `α` takes the value `1` on the characteristic vector field
+at `x`. -/
 @[simp]
-theorem IsStableHamiltonian.apply_characteristicVectorField (h : α.IsStableHamiltonian ω)
-    (x : M) : α.1 x ![α.characteristicVectorField ω x] = 1 := by
+theorem apply_characteristicVectorField
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) :
+    α.1 x ![α.characteristicVectorField ω x] = 1 := by
   rw [← degreeOneEquiv_coe_apply]
-  exact (h.isContact x).apply_reebVector
+  exact hc.apply_reebVector
 
-/-- The characteristic vector field lies in the kernel of `ω`. -/
+/-- If `α_x` is contact for `ω_x`, then the characteristic vector field at `x` lies in the kernel
+of `ω_x`. -/
 @[simp]
-theorem IsStableHamiltonian.apply_characteristicVectorField_left (h : α.IsStableHamiltonian ω)
-    (x : M) (w : TangentSpace I x) : ω.1 x ![α.characteristicVectorField ω x, w] = 0 := by
-  have := (h.isContact x).apply_reebVector_left (isAlt_bilinFormAt _ x) w
+theorem apply_characteristicVectorField_left
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) (w : TangentSpace I x) :
+    ω.1 x ![α.characteristicVectorField ω x, w] = 0 :=
+  mem_ker_bilinFormAt_iff.1 (hc.reebVector_mem_ker (isAlt_bilinFormAt _ x)) w
+
+/-- If `α_x` is contact for `ω_x`, then `ω_x` vanishes when its second argument is the
+characteristic vector field at `x`. -/
+@[simp]
+theorem apply_characteristicVectorField_right
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) (w : TangentSpace I x) :
+    ω.1 x ![w, α.characteristicVectorField ω x] = 0 := by
+  have := hc.apply_reebVector_right (isAlt_bilinFormAt _ x) w
   rwa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply] at this
 
-/-- The characteristic vector field lies in the kernel of `ω`: `ω` vanishes when its second
-argument is the characteristic vector field. -/
-@[simp]
-theorem IsStableHamiltonian.apply_characteristicVectorField_right (h : α.IsStableHamiltonian ω)
-    (x : M) (w : TangentSpace I x) : ω.1 x ![w, α.characteristicVectorField ω x] = 0 := by
-  have := (h.isContact x).apply_reebVector_right (isAlt_bilinFormAt _ x) w
-  rwa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply] at this
+/-- The equation `ι_R ω = 0` as an identity of one-forms, when `α_x` is contact for `ω_x` at every
+point. -/
+theorem interior_characteristicVectorField
+    (hc : ∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) :
+    RoughForm.interior (α.characteristicVectorField ω) ω.1 = 0 :=
+  RoughForm.interior_eq_zero_iff.2 fun x ↦ apply_characteristicVectorField_left (hc x)
 
-/-- The characteristic vector field lies in the kernel of `dα`. -/
+/-- **Characterization of the characteristic vector field**: if `α_x` is contact for `ω_x`, then
+`R(x)` is the unique tangent vector `v` with `α(v) = 1` and `ι_v ω = 0`. -/
+theorem eq_characteristicVectorField_iff
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) {v : TangentSpace I x} :
+    v = α.characteristicVectorField ω x ↔
+      α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, ω.1 x ![v, w] = 0 := by
+  rw [characteristicVectorField_def, hc.eq_reebVector_iff_of_isAlt (isAlt_bilinFormAt _ x),
+    degreeOneEquiv_coe_apply, LinearMap.ext_iff]
+  simp only [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, LinearMap.zero_apply]
+
+/-- If `α_x` is contact for `ω_x`, then the kernel of `ω_x` is the line spanned by the
+characteristic vector field at `x`. -/
+theorem ker_bilinFormAt_eq_span_characteristicVectorField
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) :
+    LinearMap.ker (ω.bilinFormAt x) = ℝ ∙ α.characteristicVectorField ω x :=
+  hc.ker_eq_span_reebVector (isAlt_bilinFormAt _ x)
+
+/-- If `α_x` is contact for `ω_x`, then the characteristic vector field does not vanish at `x`. -/
+theorem characteristicVectorField_ne_zero
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) :
+    α.characteristicVectorField ω x ≠ 0 :=
+  hc.reebVector_ne_zero
+
+/-- If `α_x` is contact for `ω_x`, then the characteristic vector field at `x` is transverse to
+the hyperplane `ker α_x`. -/
+theorem characteristicVectorField_notMem_kerDistribution
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) :
+    α.characteristicVectorField ω x ∉ α.kerDistribution x := by
+  rw [kerDistribution_def]
+  exact hc.reebVector_notMem_ker
+
+/-- If `α_x` is contact for `ω_x`, then the tangent space splits as the hyperplane `ker α` plus the
+characteristic line, `T_x M = ker α_x ⊕ ℝ R(x)`. -/
+theorem isCompl_kerDistribution_span_characteristicVectorField
+    (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      (ω.bilinFormAt x)) :
+    IsCompl (α.kerDistribution x) (ℝ ∙ α.characteristicVectorField ω x) := by
+  rw [kerDistribution_def]
+  exact hc.isCompl_ker_span_reebVector
+
+/-- The characteristic vector field of a stable Hamiltonian structure lies in the kernel of
+`dα`. -/
 @[simp]
 theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_left
     (h : α.IsStableHamiltonian ω) (x : M) (w : TangentSpace I x) :
     mextDeriv α.1 x ![α.characteristicVectorField ω x, w] = 0 :=
-  h.mextDeriv_eq_zero (h.apply_characteristicVectorField_left x) w
+  h.mextDeriv_eq_zero (apply_characteristicVectorField_left (h.isContact x)) w
 
-/-- The characteristic vector field lies in the kernel of `dα`: `dα` vanishes when its second
-argument is the characteristic vector field. -/
+/-- The characteristic vector field of a stable Hamiltonian structure lies in the kernel of `dα`:
+`dα` vanishes when its second argument is the characteristic vector field. -/
 @[simp]
 theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_right
     (h : α.IsStableHamiltonian ω) (x : M) (w : TangentSpace I x) :
@@ -200,58 +262,11 @@ theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_right
   rw [mextDeriv_eq_bilinFormAt] at this ⊢
   rw [← (isAlt_bilinFormAt _ x).neg_eq, this, neg_zero]
 
-/-- The equation `ι_R ω = 0` as an identity of one-forms. -/
-theorem IsStableHamiltonian.interior_characteristicVectorField (h : α.IsStableHamiltonian ω) :
-    RoughForm.interior (α.characteristicVectorField ω) ω.1 = 0 := by
-  funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  simpa using h.apply_characteristicVectorField_left x w
-
 /-- The equation `ι_R dα = 0` as an identity of one-forms. -/
 theorem IsStableHamiltonian.interior_mextDeriv_characteristicVectorField
     (h : α.IsStableHamiltonian ω) :
-    (mextDeriv α.1).interior (α.characteristicVectorField ω) = 0 := by
-  funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  simpa using h.mextDeriv_characteristicVectorField_left x w
-
-/-- **Characterization of the characteristic vector field**: `R(x)` is the unique tangent vector
-`v` with `α(v) = 1` and `ι_v ω = 0`. -/
-theorem IsStableHamiltonian.eq_characteristicVectorField_iff (h : α.IsStableHamiltonian ω)
-    {x : M} {v : TangentSpace I x} :
-    v = α.characteristicVectorField ω x ↔
-      α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, ω.1 x ![v, w] = 0 := by
-  rw [characteristicVectorField_def,
-    (h.isContact x).eq_reebVector_iff_of_isAlt (isAlt_bilinFormAt _ x), degreeOneEquiv_coe_apply,
-    LinearMap.ext_iff]
-  simp only [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, LinearMap.zero_apply]
-
-/-- The kernel of `ω` at each point is the line spanned by the characteristic vector field. -/
-theorem IsStableHamiltonian.ker_bilinFormAt (h : α.IsStableHamiltonian ω) (x : M) :
-    LinearMap.ker (ω.bilinFormAt x) = ℝ ∙ α.characteristicVectorField ω x :=
-  (h.isContact x).ker_eq_span_reebVector (isAlt_bilinFormAt _ x)
-
-/-- The characteristic vector field of a stable Hamiltonian structure vanishes nowhere. -/
-theorem IsStableHamiltonian.characteristicVectorField_ne_zero (h : α.IsStableHamiltonian ω)
-    (x : M) : α.characteristicVectorField ω x ≠ 0 :=
-  (h.isContact x).reebVector_ne_zero
-
-/-- The characteristic vector field is transverse to the hyperplane field `ker α`. -/
-theorem IsStableHamiltonian.characteristicVectorField_notMem_kerDistribution
-    (h : α.IsStableHamiltonian ω) (x : M) :
-    α.characteristicVectorField ω x ∉ α.kerDistribution x := by
-  rw [kerDistribution_def]
-  exact (h.isContact x).reebVector_notMem_ker
-
-/-- The tangent space splits as the hyperplane `ker α` plus the characteristic line,
-`T_x M = ker α_x ⊕ ℝ R(x)`. -/
-theorem IsStableHamiltonian.isCompl_kerDistribution_span_characteristicVectorField
-    (h : α.IsStableHamiltonian ω) (x : M) :
-    IsCompl (α.kerDistribution x) (ℝ ∙ α.characteristicVectorField ω x) := by
-  rw [kerDistribution_def]
-  exact (h.isContact x).isCompl_ker_span_reebVector
+    (mextDeriv α.1).interior (α.characteristicVectorField ω) = 0 :=
+  RoughForm.interior_eq_zero_iff.2 h.mextDeriv_characteristicVectorField_left
 
 /-- **Stable Hamiltonian structures via the characteristic vector field.** `(α, ω)` is a stable
 Hamiltonian structure exactly when `ω` is closed, `α_x` is contact for `ω_x` at every point, and
@@ -264,7 +279,7 @@ theorem isStableHamiltonian_iff_mextDeriv_characteristicVectorField :
         ∀ x (w : TangentSpace I x), mextDeriv α.1 x ![α.characteristicVectorField ω x, w] = 0 := by
   refine ⟨fun h ↦ ⟨h.isClosed, h.isContact, h.mextDeriv_characteristicVectorField_left⟩,
     fun ⟨hω, hc, hR⟩ ↦ ⟨hω, hc, fun x v hv ↦ ?_⟩⟩
-  rw [(hc x).ker_eq_span_reebVector (isAlt_bilinFormAt _ x), ← characteristicVectorField_def] at hv
+  rw [ker_bilinFormAt_eq_span_characteristicVectorField (hc x)] at hv
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hv
   exact Submodule.smul_mem _ t (mem_ker_bilinFormAt_mextDerivₗ_iff.2 (hR x))
 
@@ -274,8 +289,7 @@ structure. Its characteristic vector field is the Reeb vector field
 (`TauCeti.SmoothForm.characteristicVectorField_mextDerivₗ`). -/
 theorem IsContactForm.isStableHamiltonian (hα : α.IsContactForm) :
     α.IsStableHamiltonian (mextDerivₗ I 1 α) :=
-  ⟨by rw [isClosed_def, mextDerivₗ_apply]; exact mextDeriv_mextDeriv α, isContactForm_def.1 hα,
-    fun _ ↦ le_rfl⟩
+  ⟨isClosed_mextDerivₗ α, isContactForm_def.1 hα, fun _ ↦ le_rfl⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **The Levi-flat case.** If `α` and `ω` are closed and, at every point, `α_x` is nonzero and
