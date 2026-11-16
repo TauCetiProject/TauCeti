@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
 public import TauCeti.Topology.Homotopy.Cube.Sphere
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.Sphere.Suspension
+public import TauCeti.Topology.VectorBundle.SphereBundle.Orthogonal
 import TauCeti.Topology.Homotopy.GenLoop.Loop
+import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 
 /-!
 # The family of two-spheres of a sphere carrying two orthonormal tangent fields
@@ -42,9 +44,15 @@ depends continuously on `(x, q)` and gives the family
 which lies over `Sⁿ`: evaluation at the north pole sends `σ (x, q)` to `x`
 (`TauCeti.mappingSpaceEval_comp_twoFieldSphereFamily`). This is the commutative square over
 `Sⁿ` required of a fibred family of two-spheres in the source's Definition 6.14, for the family
-of their Example 6.20. The other requirements of that definition, that `Σ → Sⁿ` be an oriented
-locally trivial bundle of closed manifolds and that the class of a fibre be nonvanishing, are not
-addressed here. The first cube coordinate `s` runs along the inner circle, as in
+of their Example 6.20. That definition also asks `Σ → Sⁿ` to be an oriented locally trivial
+bundle of closed manifolds, with nonvanishing class of a fibre. Over a finite-dimensional space,
+`Σ` is the space of unit vectors orthogonal to the frames `(u x, v x)`
+(`TauCeti.twoFieldEquators_eq_orthogonalSphereBundle`), so the projection `Σ → Sⁿ` is locally
+trivial with fibre a sphere of dimension `n - 2` (`TauCeti.exists_trivialization_twoFieldEquators`)
+and is a Serre fibration (`TauCeti.TopCat.mem_serreFibrations_twoFieldEquators`). The orientation,
+the smooth structure and the class of a fibre are not addressed here.
+
+The first cube coordinate `s` runs along the inner circle, as in
 `TauCeti.tangentCircleDoubleLoop`, so that under `Map_*(S², Sⁿ) ≃ₜ Ω²Sⁿ` it is the loop parameter
 of the loop of loops. On the square, `σ (x, q)` is therefore the generalized loop
 `tangentCircleGenLoop` of the inner circle with its two cube coordinates exchanged
@@ -55,6 +63,9 @@ itself lies on its equator, and its sphere is constant (`TauCeti.twoFieldSphereF
 ## Main declarations
 
 * `TauCeti.twoFieldEquators u v`: the space `Σ` of pairs `(x, q)` with `q ⊥ u x, v x`.
+* `TauCeti.exists_trivialization_twoFieldEquators`,
+  `TauCeti.TopCat.mem_serreFibrations_twoFieldEquators`: `Σ → Sⁿ` is a locally trivial bundle
+  and a Serre fibration.
 * `TauCeti.twoFieldInnerLoop`: the circle through `x` and `q` tangent to `v x`, as a loop in the
   equator orthogonal to `u x`.
 * `TauCeti.twoFieldSphereFamily`: the family `σ : Σ → Map(S², Sⁿ)`.
@@ -102,6 +113,51 @@ theorem isClosed_twoFieldEquators (hu : Continuous u) (hv : Continuous v) :
 theorem isCompact_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
     (hv : Continuous v) : IsCompact (twoFieldEquators u v) :=
   (isClosed_twoFieldEquators hu hv).isCompact
+
+/-- The space of equators is the space of unit vectors orthogonal to the frames `(u x, v x)`. -/
+theorem twoFieldEquators_eq_orthogonalSphereBundle :
+    twoFieldEquators u v = orthogonalSphereBundle fun x ↦ ![u x, v x] := by
+  ext
+  simp [Fin.forall_fin_two]
+
+/-- **The space of equators is a locally trivial bundle over the sphere.** For two continuous
+vector fields `u`, `v` on the unit sphere `Sⁿ` of a finite-dimensional space `E`, orthonormal at
+every point, every point of the sphere lies in the base set of a chart of the projection
+`(x, q) ↦ x` of the space of equators, with fibre the unit sphere of any real normed space `F` of
+dimension `dim E - 2`, a sphere of dimension `n - 2`. -/
+theorem exists_trivialization_twoFieldEquators [FiniteDimensional ℝ E] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] (hu : Continuous u)
+    (hv : Continuous v) (huv : ∀ x, Orthonormal ℝ ![u x, v x])
+    (hF : Module.finrank ℝ F + 2 = Module.finrank ℝ E) (x : sphere (0 : E) 1) :
+    ∃ e : Bundle.Trivialization (sphere (0 : F) 1)
+      (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v))),
+      x ∈ e.baseSet := by
+  obtain ⟨e, he⟩ := exists_trivialization_orthogonalSphereBundleProj (by fun_prop) huv
+    (by simpa using hF) x
+  -- Transport the chart along the identification of the space of equators.
+  have hproj : orthogonalSphereBundleProj (fun x ↦ ![u x, v x]) ∘
+      Homeomorph.setCongr twoFieldEquators_eq_orthogonalSphereBundle =
+      ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v)) := by
+    ext xq
+    simp only [Function.comp_apply, orthogonalSphereBundleProj_apply]
+    -- `Homeomorph.setCongr` has no evaluation lemma; it is the identity on underlying points.
+    rfl
+  rw [← hproj]
+  exact ⟨e.compHomeomorph _, he⟩
+
+/-- **The space of equators is a Serre fibration over the sphere.** For two continuous vector
+fields `u`, `v` on the unit sphere `Sⁿ` of `E`, orthonormal at every point, the projection
+`(x, q) ↦ x` of the space of equators is a Serre fibration with fibre `Sⁿ⁻²`. -/
+theorem TopCat.mem_serreFibrations_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
+    (hv : Continuous v) (huv : ∀ x, Orthonormal ℝ ![u x, v x]) :
+    TopCat.serreFibrations (_root_.TopCat.ofHom
+      (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v))) :
+        _root_.TopCat.of (twoFieldEquators u v) ⟶ _root_.TopCat.of (sphere (0 : E) 1)) :=
+  TopCat.mem_serreFibrations_of_exists_trivialization fun x ↦ by
+    -- The dimension of the fibre is read off the orthonormal pair at `x`.
+    have h := (huv x).linearIndependent.fintype_card_le_finrank
+    exact exists_trivialization_twoFieldEquators
+      (F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 2))) hu hv huv (by simp at h ⊢; omega) x
 
 section Pointwise
 

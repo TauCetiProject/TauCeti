@@ -117,18 +117,13 @@ theorem continuous_starProjection_toEuclidean :
   -- Test continuity on orthonormal frames `f`, where the projection onto the span is
   -- `x ↦ ∑ i, ⟪f i, x⟫ • f i`; the Grassmannian is a quotient of the orthonormal frames.
   refine isQuotientMap_frameSpan_toFullRankFrame.continuous_iff.2 <|
-    continuous_clm_apply.2 fun x ↦ ?_
-  have he (i : Fin r) : Continuous fun f : finiteOrthonormalFrame 𝕜 r N ↦
-      (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)) :=
-    (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
-  have hsum (f : finiteOrthonormalFrame 𝕜 r N) :
-      (frameSpan f.toFullRankFrame).toEuclidean.starProjection x =
-        ∑ i, inner 𝕜 (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)) x •
-          WithLp.toLp 2 (f.1 i) :=
-    f.2.starProjection_apply_eq_sum (by
-      rw [toEuclidean_frameSpan, finiteOrthonormalFrame.coe_toFullRankFrame]) x
-  simp only [Function.comp_def, hsum]
-  exact continuous_finsetSum _ fun i _ ↦ by have := he i; fun_prop
+    Orthonormal.continuous_starProjection
+      (f := fun f : finiteOrthonormalFrame 𝕜 r N ↦ fun i ↦
+        (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)))
+      (continuous_pi fun i ↦
+        (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val))
+      (fun f ↦ f.2) fun f ↦ ?_
+  rw [toEuclidean_frameSpan, finiteOrthonormalFrame.coe_toFullRankFrame]
 
 /-- The range of the complementary projection is the orthogonal complement. -/
 theorem range_one_sub_starProjection_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
