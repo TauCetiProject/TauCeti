@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
-public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -32,8 +32,10 @@ coproducts and homology.
 
 In abelian coefficients, the long exact sequence of a pair gives five lemmas comparing maps of
 pairs: on relative homology (`TopPair.isIso_singularHomologyMap_of_isIso`) and on the homology of
-the ambient spaces (`TopPair.isIso_homologyMap_fst_of_isIso`, and
-`TopPair.isIso_homologyMap_fst_of_isZero` when the relative homology vanishes).
+the ambient spaces when the relative homology vanishes (`TopPair.isIso_homologyMap_fst_of_isZero`).
+The five lemma for the ambient spaces, `TopPair.isIso_homologyMap_fst_of_isIso`, is the case of
+the zero objects of its form modulo a Serre class, in
+`TauCeti.AlgebraicTopology.Singular.SerreClass`.
 
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
@@ -649,26 +651,6 @@ lemma isIso_singularHomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n 
     have : IsIso (HomologicalComplex.homologyMap
         (SSet.chainComplexMap (toSSetPair.map f).right R) m) := hfst' m hm
     inferInstance
-
-/-- **The five lemma for the ambient space of a pair.** A map of pairs `f : (X, A) ⟶ (X', A')`
-inducing isomorphisms `Hₙ(A) ≅ Hₙ(A')` and `Hₙ(X, A) ≅ Hₙ(X', A')`, an epimorphism
-`Hₙ₊₁(X, A) ⟶ Hₙ₊₁(X', A')` and a monomorphism `Hₘ(A) ⟶ Hₘ(A')` for `m + 1 = n`, induces an
-isomorphism `Hₙ(X) ≅ Hₙ(X')`. -/
-lemma isIso_homologyMap_fst_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ)
-    (hrel' : Epi (TopPair.singularHomologyMap f R (n + 1)))
-    (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n))
-    (hrel : IsIso (TopPair.singularHomologyMap f R n))
-    (hsnd' : ∀ m, m + 1 = n → Mono (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m)) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
-  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₂
-    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R)
-    ((toSSetPair.obj P).shortExact_chainComplexShortComplex R)
-    ((toSSetPair.obj P').shortExact_chainComplexShortComplex R) n
-  simp only [SSetPair.chainComplexShortComplexMap_τ₁, SSetPair.chainComplexShortComplexMap_τ₂,
-    SSetPair.chainComplexShortComplexMap_τ₃, ComplexShape.down_Rel] at this
-  -- The homology maps of these chain maps are `SSet.homologyMap` and
-  -- `TopPair.singularHomologyMap` by definition.
-  exact this (fun i (hi : n + 1 = i) ↦ hi ▸ hrel') hsnd hrel fun m (hm : m + 1 = n) ↦ hsnd' m hm
 
 end LongExactSequence
 
