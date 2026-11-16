@@ -510,24 +510,6 @@ section Complexes
 variable {V : Type u} [CommRing V]
 variable {I : Type*} {c : ComplexShape I}
 
-/-- A complex `K` of `V`-modules becomes exact at degree `i` after almostification iff its
-homology `K.homology i` is almost zero. -/
-theorem Module.exactAt_mapHomologicalComplex_toAlmost_iff (S : BasicSetup V)
-    (K : HomologicalComplex (ModuleCat.{u} V) c) (i : I) :
-    (((Module.toAlmost S).mapHomologicalComplex c).obj K).ExactAt i ↔
-      S.IsAlmostZero (K.homology i) := by
-  rw [HomologicalComplex.exactAt_iff_isZero_homology]
-  exact (((K.sc i).mapHomologyIso (Module.toAlmost S))).isZero_iff.trans
-    (Module.isZero_toAlmost_obj_iff S _)
-
-/-- A complex `K` of `V`-modules becomes acyclic after almostification iff all of its homology
-modules are almost zero. -/
-theorem Module.acyclic_mapHomologicalComplex_toAlmost_iff (S : BasicSetup V)
-    (K : HomologicalComplex (ModuleCat.{u} V) c) :
-    (((Module.toAlmost S).mapHomologicalComplex c).obj K).Acyclic ↔
-      ∀ i : I, S.IsAlmostZero (K.homology i) := by
-  simp_rw [HomologicalComplex.acyclic_iff, Module.exactAt_mapHomologicalComplex_toAlmost_iff]
-
 /-- `invert S hϖ` preserves exactness of complexes of almost modules at each degree. -/
 theorem exactAt_mapHomologicalComplex_invert (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal)
     (C : HomologicalComplex (Module S) c) {i : I} (hC : C.ExactAt i) :
@@ -848,8 +830,11 @@ theorem invertToAlmostObjEquiv_symm_algebraMap {ϖ : V} (hϖ : ϖ ∈ S.ideal)
     (g := u.hom.toRingHom)
     (_root_.Algebra.algebraMapSubmonoid_le_comap (Submonoid.powers ϖ) u.hom) r
 
+-- Simplify top-down before `adj_unit_app_apply` expands `(adj S).unit.app R r` into a
+-- `toSpanSingleton` morphism.
 /-- `invertToAlmostObjEquiv` sends the canonical numerator of `(adj S).unit.app R r` in
 `(R^a)_*[1/ϖ]` to `algebraMap R R[1/ϖ] r`. -/
+@[simp↓]
 theorem invertToAlmostObjEquiv_algebraMap_unit_app {ϖ : V} (hϖ : ϖ ∈ S.ideal)
     (R : CommAlgCat.{u} V) (r : R) :
     invertToAlmostObjEquiv S hϖ R
