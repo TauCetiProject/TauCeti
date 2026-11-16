@@ -16,8 +16,9 @@ union `V(I ⊓ J)` and the intersection `V(I ⊔ J)`. Write `𝒪_{V(I)}` for th
 the structure sheaf of `V(I)`; it is the quotient `𝒪_X ⧸ I`
 (`Scheme.IdealSheafData.shortExact_toPushforwardSubscheme`). For `I ≤ J` the restriction
 `𝒪_X ⟶ 𝒪_{V(J)}` kills `I`, so it factors through `𝒪_{V(I)}`
-(`Scheme.IdealSheafData.pushforwardSubschemeMap`): this is restriction of functions from `V(I)` to
-the smaller closed subscheme `V(J)`.
+(`Scheme.IdealSheafData.pushforwardSubschemeMap`, characterized by
+`Scheme.IdealSheafData.toPushforwardSubscheme_pushforwardSubschemeMap`): this is restriction of
+functions from `V(I)` to the smaller closed subscheme `V(J)`.
 
 The restrictions give the sequence
 
@@ -37,10 +38,9 @@ hypothesis on `X`, `I` or `J` is needed.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Exercise II.5.6 and the proof of Theorem III.5.2 (the
-  exact sequence `0 → 𝒪_{Y ∪ Z} → 𝒪_Y ⊕ 𝒪_Z → 𝒪_{Y ∩ Z} → 0` of closed subschemes).
 * [The Stacks Project, Lemma 33.4.6, Tag 0C4J](https://stacks.math.columbia.edu/tag/0C4J): the
-  scheme-theoretic union of two closed subschemes.
+  scheme-theoretic union `Y ∪ Z` of two closed subschemes and the short exact sequence
+  `0 → 𝒪_{Y ∪ Z} → 𝒪_Y × 𝒪_Z → 𝒪_{Y ∩ Z} → 0`.
 -/
 
 public section
@@ -55,37 +55,8 @@ noncomputable section
 
 variable {X : Scheme.{u}} (I J : X.IdealSheafData)
 
-/-- The direct image `ι_* 𝒪_{V(I)}` on `X` of the structure sheaf of the closed subscheme
-`V(I)`. -/
-abbrev pushforwardSubscheme : X.Modules :=
-  (Scheme.Modules.pushforward I.subschemeι).obj (SheafOfModules.unit I.subscheme.ringCatSheaf)
-
-variable (X) in
-/-- The structure sheaf `𝒪_X` as an object of `X.Modules`. -/
-private abbrev unitModule : X.Modules := SheafOfModules.unit X.ringCatSheaf
-
-/-- The restriction `𝒪_X ⟶ ι_* 𝒪_{V(I)}` of regular functions to the closed subscheme `V(I)`, as
-a morphism of `𝒪_X`-modules. -/
-private def toPushforwardSubscheme : unitModule X ⟶ I.pushforwardSubscheme :=
-  SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom
-
-/-- A regular function restricts to zero on `V(I)` exactly when it is a section of `I`. -/
-@[simp]
-private lemma toPushforwardSubscheme_app_eq_zero_iff {U : X.Opens} {s : Γ(X, U)} :
-    Scheme.Modules.Hom.app I.toPushforwardSubscheme U s = 0 ↔ s ∈ I.sections U :=
-  I.subschemeι_app_eq_zero_iff
-
-/-- The exact sequence `0 ⟶ I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)} ⟶ 0` of the closed subscheme `V(I)`. -/
-private lemma shortExact_sheafι_toPushforwardSubscheme :
-    (ShortComplex.mk (C := X.Modules) (X₂ := unitModule X) I.sheafι I.toPushforwardSubscheme
-      I.sheafι_toPushforwardSubscheme).ShortExact :=
-  I.shortExact_toPushforwardSubscheme
-
-private instance : Epi I.toPushforwardSubscheme :=
-  I.shortExact_sheafι_toPushforwardSubscheme.epi_g
-
 /-- The inclusion `I ⟶ 𝒪_X`, with target the structure sheaf as an object of `X.Modules`. -/
-private abbrev sheafι' : I.sheaf ⟶ unitModule X := I.sheafι
+private abbrev sheafι' : I.sheaf ⟶ Scheme.Modules.unit X := I.sheafι
 
 variable {I J}
 
@@ -96,20 +67,20 @@ variable {I J}
 private lemma sheafι_comp_toPushforwardSubscheme_of_le (h : I ≤ J) :
     I.sheafι' ≫ J.toPushforwardSubscheme = 0 :=
   Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦
-    (J.toPushforwardSubscheme_app_eq_zero_iff).mpr (sections_mono h U (I.sheafι_app_mem U t))
+    (J.subschemeι_app_eq_zero_iff).mpr (sections_mono h U (I.sheafι_app_mem U t))
 
 /-- For `I ≤ J`, the restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` of functions on `V(I)` to the
 smaller closed subscheme `V(J)`. It is the morphism through which the restriction
 `𝒪_X ⟶ ι_* 𝒪_{V(J)}` factors (`toPushforwardSubscheme_pushforwardSubschemeMap`). -/
 def pushforwardSubschemeMap (h : I ≤ J) : I.pushforwardSubscheme ⟶ J.pushforwardSubscheme :=
-  (CokernelCofork.IsColimit.desc' I.shortExact_sheafι_toPushforwardSubscheme.gIsCokernel
+  (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
     J.toPushforwardSubscheme (sheafι_comp_toPushforwardSubscheme_of_le h)).1
 
 /-- Restricting functions from `X` to `V(I)` and then to `V(J)` is restricting them to `V(J)`. -/
 @[reassoc (attr := simp)]
-private lemma toPushforwardSubscheme_pushforwardSubschemeMap (h : I ≤ J) :
+lemma toPushforwardSubscheme_pushforwardSubschemeMap (h : I ≤ J) :
     I.toPushforwardSubscheme ≫ pushforwardSubschemeMap h = J.toPushforwardSubscheme :=
-  (CokernelCofork.IsColimit.desc' I.shortExact_sheafι_toPushforwardSubscheme.gIsCokernel
+  (CokernelCofork.IsColimit.desc' I.shortExact_toPushforwardSubscheme.gIsCokernel
     J.toPushforwardSubscheme (sheafι_comp_toPushforwardSubscheme_of_le h)).2
 
 /-- The restriction `ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(J)}` is an epimorphism. -/
@@ -118,6 +89,13 @@ instance epi_pushforwardSubschemeMap (h : I ≤ J) : Epi (pushforwardSubschemeMa
     rw [toPushforwardSubscheme_pushforwardSubschemeMap]
     infer_instance
   epi_of_epi I.toPushforwardSubscheme _
+
+variable (I) in
+/-- Restricting functions from `V(I)` to `V(I)` is the identity. -/
+@[simp]
+lemma pushforwardSubschemeMap_refl : pushforwardSubschemeMap (le_refl I) = 𝟙 _ := by
+  rw [← cancel_epi I.toPushforwardSubscheme, toPushforwardSubscheme_pushforwardSubschemeMap,
+    Category.comp_id]
 
 /-- Restriction from `V(I)` to `V(J)` and then to `V(K)` is restriction to `V(K)`. -/
 @[reassoc (attr := simp)]
@@ -147,38 +125,40 @@ private lemma inr_sumToSup_sheafι :
 map `I ⊞ J ⟶ I ⊔ J` is an epimorphism. -/
 private lemma epi_sumToSup : Epi (sumToSup (I := I) (J := J)) := by
   refine Scheme.Modules.Hom.epi_of_surjective_on_affineOpens _ fun U hU t ↦ ?_
-  have hsec : (I ⊔ J).sections U = I.ideal ⟨U, hU⟩ ⊔ J.ideal ⟨U, hU⟩ :=
-    (I ⊔ J).sections_eq_ideal ⟨U, hU⟩
-  obtain ⟨u, hu⟩ : ∃ u : Γ(X, U), u = Scheme.Modules.Hom.app (I ⊔ J).sheafι U t := ⟨_, rfl⟩
-  have ht : u ∈ I.ideal ⟨U, hU⟩ ⊔ J.ideal ⟨U, hU⟩ := hsec ▸ hu ▸ (I ⊔ J).sheafι_app_mem U t
+  -- On the affine open `U` the section `t` of `I ⊔ J` is a sum of sections of `I` and of `J`.
+  have ht : _ ∈ I.ideal ⟨U, hU⟩ ⊔ J.ideal ⟨U, hU⟩ :=
+    (SetLike.ext_iff.mp ((I ⊔ J).sections_eq_ideal ⟨U, hU⟩) _).mp ((I ⊔ J).sheafι_app_mem U t)
   obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ht
-  have ha : a ∈ I.sections U := (I.sections_eq_ideal ⟨U, hU⟩).symm ▸ ha
-  have hb : b ∈ J.sections U := (J.sections_eq_ideal ⟨U, hU⟩).symm ▸ hb
+  rw [← I.sections_eq_ideal ⟨U, hU⟩] at ha
+  rw [← J.sections_eq_ideal ⟨U, hU⟩] at hb
   refine ⟨Scheme.Modules.Hom.app (biprod.inl : I.sheaf ⟶ I.sheaf ⊞ J.sheaf) U (I.sectionMk a ha) +
     Scheme.Modules.Hom.app (biprod.inr : J.sheaf ⟶ I.sheaf ⊞ J.sheaf) U (J.sectionMk b hb), ?_⟩
   apply (I ⊔ J).sheafι_app_injective U
-  have hl := congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U (I.sectionMk a ha))
-    (inl_sumToSup_sheafι (I := I) (J := J))
-  have hr := congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U (J.sectionMk b hb))
-    (inr_sumToSup_sheafι (I := I) (J := J))
+  have hl : Scheme.Modules.Hom.app (biprod.inl ≫ sumToSup ≫ (I ⊔ J).sheafι') U (I.sectionMk a ha) =
+      Scheme.Modules.Hom.app I.sheafι' U (I.sectionMk a ha) := by
+    rw [inl_sumToSup_sheafι]
+  have hr : Scheme.Modules.Hom.app (biprod.inr ≫ sumToSup ≫ (I ⊔ J).sheafι') U (J.sectionMk b hb) =
+      Scheme.Modules.Hom.app J.sheafι' U (J.sectionMk b hb) := by
+    rw [inr_sumToSup_sheafι]
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at hl hr
-  rw [map_add, map_add, hl, hr]
-  exact (congrArg₂ (· + ·) (I.sheafι_app_sectionMk a ha) (J.sheafι_app_sectionMk b hb)).trans
-    (hab.trans hu)
+  rw [map_add, map_add, hl, hr, sheafι_app_sectionMk, sheafι_app_sectionMk]
+  exact hab
 
 /-- A regular function restricting to zero on `V(I)` and on `V(J)` restricts to zero on
 `V(I ⊓ J)`. -/
-private lemma toPushforwardSubscheme_inf_eq_zero {T : X.Modules} (x : T ⟶ unitModule X)
+private lemma toPushforwardSubscheme_inf_eq_zero {T : X.Modules} (x : T ⟶ Scheme.Modules.unit X)
     (hI : x ≫ I.toPushforwardSubscheme = 0) (hJ : x ≫ J.toPushforwardSubscheme = 0) :
     x ≫ (I ⊓ J).toPushforwardSubscheme = 0 := by
   refine Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_
-  have hI' : Scheme.Modules.Hom.app (x ≫ I.toPushforwardSubscheme) U t = 0 := by rw [hI]; rfl
-  have hJ' : Scheme.Modules.Hom.app (x ≫ J.toPushforwardSubscheme) U t = 0 := by rw [hJ]; rfl
-  have hIJ : Scheme.Modules.Hom.app x U t ∈ (I ⊓ J).sections U := by
-    rw [sections_inf]
-    exact ⟨I.toPushforwardSubscheme_app_eq_zero_iff.mp hI',
-      J.toPushforwardSubscheme_app_eq_zero_iff.mp hJ'⟩
-  exact ((I ⊓ J).toPushforwardSubscheme_app_eq_zero_iff.mpr hIJ).trans rfl
+  have hI' := ConcreteCategory.congr_hom (congrArg (Scheme.Modules.Hom.app · U) hI) t
+  have hJ' := ConcreteCategory.congr_hom (congrArg (Scheme.Modules.Hom.app · U) hJ) t
+  -- Evaluate the composites and the zero morphisms on `t`.
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.Hom.zero_app, AddCommGrpCat.hom_comp,
+    AddCommGrpCat.hom_zero, AddMonoidHom.coe_comp, Function.comp_apply,
+    AddMonoidHom.zero_apply] at hI' hJ' ⊢
+  refine (I ⊓ J).subschemeι_app_eq_zero_iff.mpr ?_
+  rw [sections_inf]
+  exact ⟨I.subschemeι_app_eq_zero_iff.mp hI', J.subschemeι_app_eq_zero_iff.mp hJ'⟩
 
 variable (I J) in
 /-- **The Mayer–Vietoris sequence of two closed subschemes**
@@ -195,10 +175,10 @@ abbrev mayerVietoris : ShortComplex X.Modules where
 /-- A regular function vanishing on `V(I ⊔ J)` is, after refining its source, a sum of a section of
 `I` and a section of `J`. -/
 private lemma exists_eq_add_of_comp_toPushforwardSubscheme_sup_eq_zero {A : X.Modules}
-    (y : A ⟶ unitModule X) (hy : y ≫ (I ⊔ J).toPushforwardSubscheme = 0) :
+    (y : A ⟶ Scheme.Modules.unit X) (hy : y ≫ (I ⊔ J).toPushforwardSubscheme = 0) :
     ∃ (A' : X.Modules) (π : A' ⟶ A) (_ : Epi π) (c : A' ⟶ I.sheaf) (e : A' ⟶ J.sheaf),
       π ≫ y = c ≫ I.sheafι' + e ≫ J.sheafι' := by
-  have hS := (I ⊔ J).shortExact_sheafι_toPushforwardSubscheme
+  have hS := (I ⊔ J).shortExact_toPushforwardSubscheme
   have := hS.mono_f
   have := epi_sumToSup (I := I) (J := J)
   -- `y` is a section of `I ⊔ J`, which is a sum after refinement since `I ⊞ J ⟶ I ⊔ J` is epi.

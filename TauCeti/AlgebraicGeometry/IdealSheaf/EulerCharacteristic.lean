@@ -32,7 +32,8 @@ scheme `D` give
 
 More generally, for a vector bundle `E` of constant rank `r` on `X`, tensoring the sequence with
 `E` gives `0 ⟶ E ⊗ I ⟶ E ⟶ E ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the
-direct image of the pullback of `E` to `D`, a vector bundle of rank `r` on a scheme finite over `k`
+direct image of the pullback of `E` to `D` (`Scheme.IdealSheafData.tensorPushforwardSubschemeIso`),
+a vector bundle of rank `r` on a scheme finite over `k`
 and hence free (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`): it has
 finite-dimensional `H⁰`, vanishing `H¹` and Euler characteristic `r · dim_k Γ(D, 𝒪_D)`
 (`Scheme.IdealSheafData.finiteDimensional_cohomology_zero_tensor_pushforward`,
@@ -79,6 +80,16 @@ private lemma algebraMap_eq :
     algebraMap k Γ(I.subscheme, ⊤) =
       ((Scheme.ΓSpecIso (.of k)).inv ≫ (I.subschemeι ≫ X ↘ Spec (.of k)).appTop).hom := by
   exact RingHom.ext fun r ↦ baseRingToGlobalSections_apply k I.subscheme r
+
+/-- The projection formula for the closed immersion `ι : V(I) ⟶ X`:
+`E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* (ι^* E)` for a vector bundle `E` on `X`. -/
+def tensorPushforwardSubschemeIso (E : FiniteLocallyFreeSheaf X) :
+    E.obj ⊗ I.pushforwardSubscheme ≅ (Scheme.Modules.pushforward I.subschemeι).obj
+      ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E).obj :=
+  -- The projection formula is stated for the monoidal unit of `V(I).Modules`.
+  eqToIso (congrArg (fun F ↦ E.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj F)
+      (TauCeti.SheafOfModules.tensorUnit_eq I.subscheme.sheaf).symm) ≪≫
+    FiniteLocallyFreeSheaf.tensorPushforwardUnitIso I.subschemeι E
 
 section Finite
 
@@ -138,17 +149,12 @@ trivial (`FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite`); so t
 `ι_* 𝒪_{V(I)}` with a vector bundle `E` of rank `r` on `X`, which by the projection formula is the
 direct image of the pullback of `E` to `V(I)`, gives `ι_* 𝒪_{V(I)}^r`. -/
 private lemma nonempty_tensor_pushforward_iso :
-    Nonempty (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
-        (SheafOfModules.unit I.subscheme.ringCatSheaf) ≅ freePushforward I r) := by
+    Nonempty (E.obj.obj ⊗ I.pushforwardSubscheme ≅ freePushforward I r) := by
   let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
     inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
   obtain ⟨e⟩ := FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isFinite k
     ((FiniteLocallyFreeSheaf.FixedRank.pullback I.subschemeι).obj E)
-  -- The projection formula is stated for the monoidal unit of `V(I).Modules`.
-  have hu : 𝟙_ I.subscheme.Modules = SheafOfModules.unit I.subscheme.ringCatSheaf :=
-    TauCeti.SheafOfModules.tensorUnit_eq I.subscheme.sheaf
-  rw [← hu]
-  exact ⟨FiniteLocallyFreeSheaf.tensorPushforwardUnitIso I.subschemeι E.obj ≪≫
+  exact ⟨I.tensorPushforwardSubschemeIso E.obj ≪≫
     (Scheme.Modules.pushforward I.subschemeι).mapIso
       (eqToIso (congrArg (·.obj)
           (FiniteLocallyFreeSheaf.FixedRank.pullback_obj_obj I.subschemeι E).symm) ≪≫
@@ -217,42 +223,28 @@ private lemma finiteDimensional_cohomology_tensorSequence_X₂_iff (i : ℕ) :
       FiniteDimensional k (Cohomology E.obj.obj i) :=
   finiteDimensional_cohomology_congr k (tensorUnitIso E) i
 
-/-- `H⁰` of the last term `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r` is finite-dimensional. -/
-private lemma finiteDimensional_cohomology_zero_tensorSequence_X₃ :
-    FiniteDimensional k (Cohomology (tensorSequence I E).X₃ 0) := by
+/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
+`H⁰(X, E ⊗ ι_* 𝒪_{V(I)})` is finite-dimensional, as `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r`. -/
+theorem finiteDimensional_cohomology_zero_tensor_pushforward :
+    FiniteDimensional k (Cohomology (E.obj.obj ⊗ I.pushforwardSubscheme) 0) := by
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
   exact (finiteDimensional_cohomology_congr k e₃ 0).mpr
     (finiteDimensional_cohomology_zero_freePushforward k I)
 
 include k in
-/-- `H¹` of the last term `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r` vanishes. -/
-private lemma subsingleton_cohomology_one_tensorSequence_X₃ :
-    Subsingleton (Cohomology (tensorSequence I E).X₃ 1) := by
+/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
+`H¹(X, E ⊗ ι_* 𝒪_{V(I)})` vanishes, as `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r`. -/
+theorem subsingleton_cohomology_one_tensor_pushforward :
+    Subsingleton (Cohomology (E.obj.obj ⊗ I.pushforwardSubscheme) 1) := by
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
   have := subsingleton_cohomology_one_freePushforward k I (r := r)
   exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
-
-/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
-`H⁰(X, E ⊗ ι_* 𝒪_{V(I)})` is finite-dimensional. -/
-theorem finiteDimensional_cohomology_zero_tensor_pushforward :
-    FiniteDimensional k (Cohomology (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
-      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 0) :=
-  finiteDimensional_cohomology_zero_tensorSequence_X₃ k I E
-
-include k in
-/-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank, then
-`H¹(X, E ⊗ ι_* 𝒪_{V(I)})` vanishes. -/
-theorem subsingleton_cohomology_one_tensor_pushforward :
-    Subsingleton (Cohomology (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
-      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 1) :=
-  subsingleton_cohomology_one_tensorSequence_X₃ k I E
 
 /-- If `V(I)` is finite over `k` and `E` is a vector bundle of constant rank `r`, then
 `χ(X, E ⊗ ι_* 𝒪_{V(I)}) = r · dim_k Γ(V(I), 𝒪_{V(I)})`, the dimension being the rank of
 `V(I) ⟶ Spec k` at the point `s`. -/
 theorem eulerCharBelow_tensor_pushforward (s : Spec (.of k)) :
-    eulerCharBelow k X (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
-      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 =
+    eulerCharBelow k X (E.obj.obj ⊗ I.pushforwardSubscheme) 2 =
       r * (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
   rw [eulerCharBelow_congr k e₃ 2, eulerCharBelow_freePushforward k I s]
@@ -266,8 +258,10 @@ theorem finiteDimensional_cohomology_tensor_sheaf_iff :
       ∀ i < 2, FiniteDimensional k (Cohomology E.obj.obj i) := by
   have hS := shortExact_tensorSequence I E
   have h₂ := finiteDimensional_cohomology_tensorSequence_X₂_iff k I E
-  have := finiteDimensional_cohomology_zero_tensorSequence_X₃ k I E
-  have := subsingleton_cohomology_one_tensorSequence_X₃ k I E
+  have : FiniteDimensional k (Cohomology (tensorSequence I E).X₃ 0) :=
+    finiteDimensional_cohomology_zero_tensor_pushforward k I E
+  have : Subsingleton (Cohomology (tensorSequence I E).X₃ 1) :=
+    subsingleton_cohomology_one_tensor_pushforward k I E
   -- The first term `(tensorLeft E.obj.obj).obj I.sheaf` of the sequence is `E.obj.obj ⊗ I.sheaf`
   -- by `tensorLeft_obj`, which holds by `rfl`.
   refine ⟨fun h i hi ↦ ?_, fun h i hi ↦ ?_⟩ <;> obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
@@ -292,8 +286,8 @@ theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology E.obj.obj 0
     eulerCharBelow k X (E.obj.obj ⊗ I.sheaf) 2 =
       eulerCharBelow k X E.obj.obj 2 - r * (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
   have hS := shortExact_tensorSequence I E
-  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I E
-  have := subsingleton_cohomology_one_tensorSequence_X₃ k I E
+  have : Subsingleton (Cohomology (tensorSequence I E).X₃ 1) :=
+    subsingleton_cohomology_one_tensor_pushforward k I E
   have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology (tensorSequence I E).X₂ i) := by
     refine (finiteDimensional_cohomology_tensorSequence_X₂_iff k I E i).mpr ?_
     interval_cases i <;> infer_instance
@@ -305,13 +299,10 @@ theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology E.obj.obj 0
     LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply]
   have h : eulerCharBelow k X (E.obj.obj ⊗ SheafOfModules.unit X.ringCatSheaf) 2 =
       eulerCharBelow k X (E.obj.obj ⊗ I.sheaf) 2 +
-      eulerCharBelow k X (E.obj.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
-        (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 :=
+      eulerCharBelow k X (E.obj.obj ⊗ I.pushforwardSubscheme) 2 :=
     eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1 h₁ h₂ hδ
-  -- The terms of the sequence are `E ⊗ I`, `E ⊗ 𝒪_X ≅ E` and
-  -- `E ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}^r`.
-  rw [eulerCharBelow_congr k (tensorUnitIso E) 2, eulerCharBelow_congr k e₃ 2,
-    eulerCharBelow_freePushforward k I s] at h
+  -- The terms of the sequence are `E ⊗ I`, `E ⊗ 𝒪_X ≅ E` and `E ⊗ ι_* 𝒪_{V(I)}`.
+  rw [eulerCharBelow_congr k (tensorUnitIso E) 2, eulerCharBelow_tensor_pushforward k I E s] at h
   exact eq_sub_of_add_eq h.symm
 
 end Tensor
