@@ -30,9 +30,10 @@ addition and multiplication of functions, and the zero weight becomes the consta
 `1`. Its values are continuous at every point of the torus, being finite sums of continuous
 monomials.
 
-By orthonormality of the monomials, the `n`-th Fourier coefficient of `χ_f` is the multiplicity
-of the weight with coordinates `n` (`Module.Basis.mFourierCoeff_torusEval`), so a finite
-character is recovered from its function on the torus (`Module.Basis.torusEval_injective`).
+By orthonormality of the monomials, the `n`-th Fourier coefficient of `χ_f` is the image in `ℂ`
+of the multiplicity of the weight with coordinates `n` (`Module.Basis.mFourierCoeff_torusEval`).
+So when `algebraMap R ℂ` is injective, for instance for `R = ℤ`, a finite character is recovered
+from its function on the torus (`Module.Basis.torusEval_injective`).
 Changing the lattice basis composes this function with the map of tori induced by the transpose
 of the change-of-basis matrix (`Module.Basis.torusEval_eq_comp_smulVecHom`); since each basis reads
 off the multiplicity of `μ` at the coordinates of `μ`, the Fourier coefficients of a weight do
@@ -45,8 +46,8 @@ not depend on the basis.
 ## Main results
 
 * `Module.Basis.torusEval_single`: `e^μ` evaluates to the monomial at the coordinates of `μ`.
-* `Module.Basis.mFourierCoeff_torusEval`: the Fourier coefficients of `χ_f` are the
-  coefficients of `f`.
+* `Module.Basis.mFourierCoeff_torusEval`: the Fourier coefficients of `χ_f` are the images in
+  `ℂ` of the coefficients of `f`.
 * `Module.Basis.torusEval_eq_comp_smulVecHom`: the change of lattice basis.
 -/
 
@@ -98,7 +99,7 @@ theorem torusEval_coe_apply (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (x : 
   simp [torusEval_apply, TauCeti.UnitAddTorus.mFourier_coe_apply]
 
 /-- The Fourier coefficient of the evaluation of `f` at the coordinates of a weight `μ` is the
-multiplicity of `μ` in `f`, whichever lattice basis is used. -/
+image in `ℂ` of the multiplicity of `μ` in `f`, whichever lattice basis is used. -/
 @[simp↓ high]
 theorem mFourierCoeff_torusEval_repr (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (μ : X) :
     mFourierCoeff (b.torusEval f) (b.repr μ) = algebraMap R ℂ (f.coeff μ) := by
@@ -117,7 +118,8 @@ theorem mFourierCoeff_torusEval_repr (b : Basis d ℤ X) (f : AddMonoidAlgebra R
     · simp [h, b.repr.injective.ne h]
 
 /-- **Fourier coefficients of a finite character.** The `n`-th Fourier coefficient of the
-evaluation of `f` on the torus is the coefficient of `f` at the weight with coordinates `n`. -/
+evaluation of `f` on the torus is the image in `ℂ` of the coefficient of `f` at the weight with
+coordinates `n`. -/
 @[simp↓]
 theorem mFourierCoeff_torusEval (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (n : d → ℤ) :
     mFourierCoeff (b.torusEval f) n = algebraMap R ℂ (f.coeff (b.equivFun.symm n)) := by
