@@ -325,6 +325,7 @@ theorem fiberHomologyTransport_congr {γ γ' : Path b₀ b₁}
     Category.id_comp]
 
 /-- **Transport along a concatenation is the composite of the transports.** -/
+@[simp]
 theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
     (δ : Path b₁ b₂) :
     fiberHomologyTransport hp M n (γ.trans δ) =
