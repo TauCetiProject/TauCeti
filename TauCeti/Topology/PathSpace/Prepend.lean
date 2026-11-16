@@ -94,8 +94,10 @@ theorem reparamHomotopy_apply (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0
     reparamHomotopy f hf hf₀ hf₁ (s, γ) = (Homotopy.reparam γ f hf hf₀ hf₁).eval s := (rfl)
 
 /-- Every reparametrization homotopy fixes the constant path. -/
-theorem reparamHomotopy_apply_refl (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0)
-    (hf₁ : f 1 = 1) (s : I) : reparamHomotopy f hf hf₀ hf₁ (s, refl x) = refl x := by
+@[simp]
+theorem Homotopy.reparam_refl_eval (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0)
+    (hf₁ : f 1 = 1) (s : I) :
+    (Homotopy.reparam (Path.refl x) f hf hf₀ hf₁).eval s = Path.refl x := by
   -- `Path.Homotopy.reparam` evaluates its path, here the constant path, at a convex combination.
   ext
   rfl
@@ -124,15 +126,11 @@ def transAssocHomotopy (w x y z : X) :
 @[simp]
 theorem transAssocHomotopy_apply (s : I) (γ : Path w x × Path x y × Path y z) :
     transAssocHomotopy w x y z (s, γ) =
-      (Homotopy.reparam (γ.1.trans (γ.2.1.trans γ.2.2))
+      reparamHomotopy
         (fun t => ⟨Homotopy.transAssocReparamAux t, Homotopy.transAssocReparamAux_mem_I t⟩)
         (by fun_prop) (Subtype.ext Homotopy.transAssocReparamAux_zero)
-        (Subtype.ext Homotopy.transAssocReparamAux_one)).eval s := (rfl)
-
-/-- The two concatenations of three constant paths agree: both are the constant path. -/
-theorem refl_trans_refl_trans_refl :
-    (refl x).trans ((refl x).trans (refl x)) = ((refl x).trans (refl x)).trans (refl x) := by
-  simp only [refl_trans_refl]
+        (Subtype.ext Homotopy.transAssocReparamAux_one) (s, γ.1.trans (γ.2.1.trans γ.2.2)) :=
+  (rfl)
 
 /-- Reparametrizing every loop of a loop `L` at the constant loop in `Ω X x` by the same map `f`
 does not change the homotopy class of `L`: `reparamHomotopy` acts on all loops at once and fixes
@@ -152,11 +150,11 @@ theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I
       -- unfolds the homotopy's value and the cast path at an endpoint.
       rcases hs with rfl | hs
       · change reparamHomotopy f hf hf₀ hf₁ (r, L 0) = L 0
-        rw [L.source, reparamHomotopy_apply_refl]
+        rw [L.source, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
       · rw [Set.mem_singleton_iff] at hs
         subst hs
         change reparamHomotopy f hf hf₀ hf₁ (r, L 1) = L 1
-        rw [L.target, reparamHomotopy_apply_refl] }⟩
+        rw [L.target, reparamHomotopy_apply, Homotopy.reparam_refl_eval] }⟩
 
 /-- Concatenating every loop of a loop of loops `L` at the constant loop with the constant loop
 does not change its homotopy class. -/

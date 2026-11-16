@@ -346,14 +346,9 @@ constant loop, so the associativity homotopy is constant there. -/
 @[simp]
 theorem loopTransAssoc_refl :
     loopTransAssoc (refl x) (refl x) (refl x) =
-      eqToHom (congrArg FundamentalGroupoid.mk refl_trans_refl_trans_refl) := by
-  rw [loopTransAssoc_def, FundamentalGroupoid.eqToHom_eq refl_trans_refl_trans_refl]
+      eqToHom (congrArg FundamentalGroupoid.mk (by simp)) := by
+  rw [loopTransAssoc_def, FundamentalGroupoid.eqToHom_eq (by simp)]
   refine congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun t => ?_))
-  simp only [ContinuousMap.Homotopy.evalAt, coe_mk', ContinuousMap.coe_mk,
-    transAssocHomotopy_apply]
-  rw [← reparamHomotopy_apply]
-  simp only [refl_trans_refl]
-  rw [reparamHomotopy_apply_refl]
-  simp
+  simp [ContinuousMap.Homotopy.evalAt]
 
 end Path

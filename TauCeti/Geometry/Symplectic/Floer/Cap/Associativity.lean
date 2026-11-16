@@ -118,29 +118,15 @@ theorem pantsGlue_assoc (P₁₂ : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) 
       P₁₂ ≫ HSpace.pathHmul Q₁₂ (𝟙 _))
     (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
     pantsGlue P₁₂ (pantsGlue Q₁₂ D₁ D₂) D₃ = pantsGlue P₂₃ D₁ (pantsGlue Q₂₃ D₂ D₃) := by
-  have h₁₂ : pantsGlue P₁₂ (pantsGlue Q₁₂ D₁ D₂) D₃ =
-      (P₁₂ ≫ HSpace.pathHmul Q₁₂ (𝟙 _)) ≫ pantsGlue (𝟙 _) (pantsGlue (𝟙 _) D₁ D₂) D₃ := by
-    calc pantsGlue P₁₂ (pantsGlue Q₁₂ D₁ D₂) D₃
-        = pantsGlue P₁₂ (Q₁₂ ≫ pantsGlue (𝟙 _) D₁ D₂) (𝟙 _ ≫ D₃) := by
-          rw [comp_pantsGlue, Category.comp_id, Category.id_comp]
-      _ = pantsGlue (P₁₂ ≫ HSpace.pathHmul Q₁₂ (𝟙 _)) (pantsGlue (𝟙 _) D₁ D₂) D₃ :=
-          pantsGlue_comp_comp P₁₂ Q₁₂ (𝟙 _) _ D₃
-      _ = _ := by rw [comp_pantsGlue, Category.comp_id]
-  have h₂₃ : pantsGlue P₂₃ D₁ (pantsGlue Q₂₃ D₂ D₃) =
-      (P₂₃ ≫ HSpace.pathHmul (𝟙 _) Q₂₃) ≫ pantsGlue (𝟙 _) D₁ (pantsGlue (𝟙 _) D₂ D₃) := by
-    calc pantsGlue P₂₃ D₁ (pantsGlue Q₂₃ D₂ D₃)
-        = pantsGlue P₂₃ (𝟙 _ ≫ D₁) (Q₂₃ ≫ pantsGlue (𝟙 _) D₂ D₃) := by
-          rw [comp_pantsGlue, Category.comp_id, Category.id_comp]
-      _ = pantsGlue (P₂₃ ≫ HSpace.pathHmul (𝟙 _) Q₂₃) D₁ (pantsGlue (𝟙 _) D₂ D₃) :=
-          pantsGlue_comp_comp P₂₃ (𝟙 _) Q₂₃ D₁ _
-      _ = _ := by rw [comp_pantsGlue, Category.comp_id]
-  rw [h₁₂, h₂₃, ← h]
-  simp only [Category.assoc]
   -- The groupoid objects here are written both as `γ ⬝ γ'` and as the H-space product `γ ⋀ γ'`,
   -- which is `γ ⬝ γ'` by definition of the H-space structure of the loop space; `rw` does not
-  -- match across the two spellings, so the three-cap identity is applied with `congrArg`.
-  exact congrArg (P₂₃ ≫ HSpace.pathHmul (𝟙 _) Q₂₃ ≫ ·)
+  -- match across the two spellings, so the three-cap identity is applied with `congrArg`, and
+  -- the trailing identity it leaves on the right is removed by `Category.comp_id` in a term.
+  have key := congrArg (P₂₃ ≫ HSpace.pathHmul (𝟙 _) Q₂₃ ≫ ·)
     (loopTransAssoc_comp_pantsGlue_pantsGlue D₁ D₂ D₃)
+  simp only [comp_pantsGlue, Category.comp_id] at key
+  rw [pantsGlue_pantsGlue_left, pantsGlue_pantsGlue_right, ← h]
+  exact key.trans (congrArg (pantsGlue · D₁ _) (congrArg (P₂₃ ≫ ·) (Category.comp_id _)))
 
 end RawCap
 
