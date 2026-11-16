@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
-public import TauCeti.RepresentationTheory.Pi
+public import TauCeti.RepresentationTheory.Pi.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
