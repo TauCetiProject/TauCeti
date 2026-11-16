@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.FreeProbability.Cumulant.Series
 public import TauCeti.Probability.FreeProbability.Law.Basic
-import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.Probability.Moments.CompactDeterminacy
 
 /-!
@@ -20,7 +19,8 @@ scalar laws `PositiveLinearMap.law` and compactly supported Borel probability me
 Mapping the real formal moment, free cumulant, and R-series of `id : ℝ → ℝ` under `φ.law a` into `ℂ`
 recovers the series of a selfadjoint element `a`. For compactly supported probability measures on
 `ℝ`, the formal R-series (equivalently, all positive-order free cumulants) uniquely determines the
-measure; its linear coefficient is the variance, and for `Measure.dirac a` it equals `C a`.
+measure, and for any square-integrable real random variable the linear coefficient of its formal
+R-series equals its variance.
 
 ## Main results
 
@@ -29,12 +29,11 @@ measure; its linear coefficient is the variance, and for `Measure.dirac a` it eq
   `PositiveLinearMap.ofReal_freeCumulant_integral_law`,
   `PositiveLinearMap.map_ofReal_rSeries_integral_law`: agreement of scalar-measure formal series and
   free cumulants of `φ.law a` with those of a selfadjoint element `a`.
-* `MeasureTheory.Measure.rSeries_integral_dirac`,
-  `MeasureTheory.Measure.rSeries_integral_dirac_zero`: formal R-series of Dirac masses on `ℝ`.
 * `MeasureTheory.Measure.ext_of_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_forall_freeCumulant_integral_eq`,
-  `MeasureTheory.Measure.coeff_one_rSeries_eq_variance`: R-series/cumulant determinacy and variance.
+  `MeasureTheory.Measure.coeff_one_rSeries_integral_eq_variance`: R-series/cumulant determinacy and
+  variance.
 
 ## References
 
@@ -94,15 +93,6 @@ end PositiveLinearMap
 
 namespace MeasureTheory.Measure
 
--- `simp` already reduces via `integral_dirac` and `TauCeti.rSeries_eval` (`simpNF`).
-/-- The formal R-series of a Dirac mass `Measure.dirac a` on `ℝ` is `PowerSeries.C a`. -/
-theorem rSeries_integral_dirac (a : ℝ) :
-    TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂Measure.dirac a) id = PowerSeries.C a := by simp
-
-/-- The formal R-series of `Measure.dirac 0` on `ℝ` vanishes. -/
-theorem rSeries_integral_dirac_zero :
-    TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂Measure.dirac (0 : ℝ)) id = 0 := by simp
-
 /-- Two compactly supported probability measures on `ℝ` with equal formal R-series coincide. -/
 theorem ext_of_rSeries_integral_eq {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support)
@@ -140,16 +130,12 @@ theorem eq_iff_forall_freeCumulant_integral_eq {μ ν : Measure ℝ} [IsProbabil
   · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn; simpa [TauCeti.coeff_rSeries] using h k
   · simpa [TauCeti.coeff_rSeries] using h (n + 1) n.succ_ne_zero
 
-/-- The linear coefficient of the formal R-series of a compactly supported probability measure on
-`ℝ` equals its variance. -/
-theorem coeff_one_rSeries_eq_variance {ρ : Measure ℝ} [IsProbabilityMeasure ρ]
-    (hρ : IsCompact ρ.support) :
-    PowerSeries.coeff 1 (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) id) = variance id ρ := by
-  obtain ⟨R, hR⟩ := hρ.isBounded.subset_closedBall 0
-  have hae : ∀ᵐ x ∂ρ, x ∈ Set.Icc (-R) R := by
-    filter_upwards [Measure.support_mem_ae (μ := ρ)] with x hx
-    simpa [Real.closedBall_eq_Icc] using hR hx
+/-- The linear coefficient of the formal R-series of a square-integrable real random variable `X`
+equals its variance. -/
+theorem coeff_one_rSeries_integral_eq_variance {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {X : Ω → ℝ} (hX : MemLp X 2 μ) :
+    PowerSeries.coeff 1 (TauCeti.rSeries (fun f : Ω → ℝ => ∫ ω, f ω ∂μ) X) = variance X μ := by
   rw [← TauCeti.coeff_succ_freeCumulantSeries, TauCeti.coeff_two_freeCumulantSeries]
-  exact (variance_eq_sub (memLp_of_bounded hae measurable_id.aestronglyMeasurable 2)).symm
+  exact (variance_eq_sub hX).symm
 
 end MeasureTheory.Measure

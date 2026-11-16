@@ -14,10 +14,8 @@ public import TauCeti.Probability.FreeProbability.Semicircular.Law
 
 The location-scale Wigner semicircle laws `TauCeti.Probability.semicircleReal m v` on `ℝ` form a
 two-parameter semigroup under `MeasureTheory.Measure.freeConv` (`⊞`): both centres and variances
-add, including in the degenerate zero-variance Dirac cases. Realizing centred semicircle laws via
-`Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv` reduces `m₁ = m₂ = 0` to
-`TauCeti.IsFreelyIndependentElements.isSemicircular_add`, and affine equivariance yields the general
-case and `n`-fold powers.
+add, including in the degenerate zero-variance Dirac cases. Consequently, taking the `n`-fold free
+additive convolution power scales both the centre and the variance by `n`, including `n = 0`.
 
 ## Main results
 

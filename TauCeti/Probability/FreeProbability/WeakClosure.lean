@@ -108,10 +108,7 @@ theorem isFreelyIndependent_vonNeumannAlgebra_adjoin_iff
       fun i => (VonNeumannAlgebra.adjoin (s i)).toSubalgebra.map
         (ContinuousLinearMapWOT.algEquiv ℂ).symm.toAlgHom := funext fun i =>
     SetLike.coe_injective <| by
-      rw [Subalgebra.topologicalClosure_coe, Subalgebra.coe_map, Subalgebra.coe_map,
-        AlgEquiv.coe_toAlgHom, he, StarSubalgebra.coe_toSubalgebra,
-        StarSubalgebra.coe_toSubalgebra, VonNeumannAlgebra.coe_toStarSubalgebra,
-        VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
+      simp [he, ← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
   have hcomp : (φ.comp (ContinuousLinearMapWOT.algEquiv ℂ).toLinearMap).comp
       (ContinuousLinearMapWOT.algEquiv ℂ).symm.toAlgHom.toLinearMap = φ := by ext T; simp
   rw [← isFreelyIndependent_weakOperatorClosure_iff

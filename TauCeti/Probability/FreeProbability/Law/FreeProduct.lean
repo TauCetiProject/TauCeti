@@ -24,7 +24,7 @@ C⋆-free product (`TauCeti.ReducedFreeProduct`) yields a C⋆-probability space
 `TauCeti.FreeLawRealization.algebra μ` on `TauCeti.FreeLawRealization.HilbertSpace μ` and generated
 concrete von Neumann algebra `TauCeti.FreeLawRealization.vonNeumannAlgebra μ` whose canonical
 selfadjoint generators are freely independent (with freely independent generated von Neumann
-subalgebras), have scalar laws `μ i` and real spectra in `(μ i).support`, and carry tracial vacuum
+subalgebras), have scalar laws `μ i` and real spectra `(μ i).support`, and carry tracial vacuum
 states.
 
 ## Main definitions
@@ -39,15 +39,20 @@ states.
 
 ## Main results
 
-* `TauCeti.FreeLawRealization.isFreelyIndependent_factor`,
+* `TauCeti.FreeLawRealization.denseRange_algebra_vacuum`,
+  `TauCeti.FreeLawRealization.topologicalClosure_iSup_range_factor`,
+  `TauCeti.FreeLawRealization.starAlgHom_ext`,
+  `TauCeti.FreeLawRealization.isFreelyIndependent_factor`,
   `TauCeti.FreeLawRealization.isFreelyIndependentElements_generator`,
   `TauCeti.FreeLawRealization.law_generator`,
-  `TauCeti.FreeLawRealization.spectrum_generator_subset_support`,
-  `TauCeti.FreeLawRealization.state_mul_comm`: freeness, laws, spectral bounds, and traciality in
-  `algebra μ`.
-* `TauCeti.FreeLawRealization.isFreelyIndependentElements_vonNeumannGenerator`,
+  `TauCeti.FreeLawRealization.spectrum_generator`,
+  `TauCeti.FreeLawRealization.state_mul_comm`: cyclicity, density, uniqueness, freeness, laws,
+  spectra, and traciality in `algebra μ`.
+* `TauCeti.FreeLawRealization.vonNeumannAlgebra_eq_adjoin`,
+  `TauCeti.FreeLawRealization.isFreelyIndependentElements_vonNeumannGenerator`,
   `TauCeti.FreeLawRealization.isFreelyIndependent_vonNeumannAlgebra_adjoin_vonNeumannGenerator`,
   `TauCeti.FreeLawRealization.law_vonNeumannGenerator`,
+  `TauCeti.FreeLawRealization.spectrum_vonNeumannGenerator`,
   `TauCeti.FreeLawRealization.vonNeumannState_mul_comm`: von Neumann counterparts.
 
 ## References
@@ -100,14 +105,6 @@ private theorem law_factorCoordinate (i : ι) :
     (Measure.measure_compl_support (μ := μ i))
 
 end Factor
-
-private theorem apply_mul_comm_of_mem_closure {R E : Type*} [TopologicalSpace R] [Ring R]
-    [IsSemitopologicalRing R] [TopologicalSpace E] [T2Space E] {f : R → E} (hf : Continuous f)
-    {s : Set R} (hs : ∀ x ∈ s, ∀ y ∈ s, f (x * y) = f (y * x))
-    {x y : R} (hx : x ∈ closure s) (hy : y ∈ closure s) : f (x * y) = f (y * x) :=
-  closure_minimal (fun a ha => closure_minimal (fun b hb => hs a ha b hb)
-    (isClosed_eq (hf.comp (continuous_const_mul a)) (hf.comp (continuous_mul_const a))) hy)
-    (isClosed_eq (hf.comp (continuous_mul_const y)) (hf.comp (continuous_const_mul y))) hx
 
 section Product
 
@@ -170,58 +167,72 @@ instance isClosed_algebra :
     IsClosed (algebra μ : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ)) := by
   exact ReducedFreeProduct.isClosed_algebra (factorFunctional μ) (factorFunctional_one μ)
 
+/-- The vacuum vector `vacuum μ` is cyclic for `algebra μ`. -/
+theorem denseRange_algebra_vacuum :
+    DenseRange (fun T : algebra μ =>
+      (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)) :=
+  ReducedFreeProduct.denseRange_algebra_vacuum (factorFunctional μ) (factorFunctional_one μ)
+
 /-- The vacuum state on the canonical C⋆-free product algebra realizing `μ`. -/
 def state : algebra μ →ₚ[ℂ] ℂ :=
   ReducedFreeProduct.state (factorFunctional μ) (factorFunctional_one μ)
 
 /-- Evaluation of `state μ` as the vacuum vector state restricted to `algebra μ`. -/
 theorem state_apply (T : algebra μ) :
-    state μ T = ⟪vacuum μ, (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)⟫_ℂ := by
-  exact ReducedFreeProduct.state_apply (factorFunctional μ) (factorFunctional_one μ) T
+    state μ T = ⟪vacuum μ, (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)⟫_ℂ :=
+  ReducedFreeProduct.state_apply (factorFunctional μ) (factorFunctional_one μ) T
 
 /-- The vacuum state on `algebra μ` is normalized. -/
-@[simp] theorem state_one : state μ 1 = 1 := by
-  exact ReducedFreeProduct.state_one (factorFunctional μ) (factorFunctional_one μ)
+@[simp] theorem state_one : state μ 1 = 1 :=
+  ReducedFreeProduct.state_one (factorFunctional μ) (factorFunctional_one μ)
 
 /-- The `i`-th canonical factor `⋆`-homomorphism from `C((μ i).support, ℂ)` into `algebra μ`. -/
 def factor (i : ι) : C((μ i).support, ℂ) →⋆ₐ[ℂ] algebra μ :=
   ReducedFreeProduct.factor (factorFunctional μ) (factorFunctional_one μ) i
 
+/-- The canonical factor subalgebras generate a norm-dense subalgebra of `algebra μ`. -/
+theorem topologicalClosure_iSup_range_factor :
+    (⨆ i, (factor μ i).toAlgHom.range).topologicalClosure = ⊤ := by
+  let f : LinearAlgebra.FreeProduct ℂ (fun i => C((μ i).support, ℂ)) →⋆ₐ[ℂ] algebra μ :=
+    ReducedFreeProduct.ofAlgebraic (factorFunctional μ) (factorFunctional_one μ)
+  have hranges : (⨆ i, (factor μ i).toAlgHom.range) = f.toAlgHom.range := by
+    have hcomp : ∀ i, (factor μ i).toAlgHom.range =
+        (LinearAlgebra.FreeProduct.ι ℂ _ i).range.map f.toAlgHom := fun i => by
+      have hf : (factor μ i).toAlgHom = f.toAlgHom.comp (LinearAlgebra.FreeProduct.ι ℂ _ i) :=
+        AlgHom.ext fun x => ReducedFreeProduct.factor_apply (factorFunctional μ)
+          (factorFunctional_one μ) i x
+      rw [hf, AlgHom.range_comp]
+    simp_rw [hcomp, ← (Subalgebra.gc_map_comap f.toAlgHom).l_iSup,
+      LinearAlgebra.FreeProduct.iSup_range_ι, Algebra.map_top]
+  exact SetLike.coe_injective <| by
+    rw [Subalgebra.topologicalClosure_coe, hranges, AlgHom.coe_range, Algebra.coe_top]
+    exact (ReducedFreeProduct.denseRange_ofAlgebraic (factorFunctional μ)
+      (factorFunctional_one μ)).closure_eq
+
+/-- Continuous `⋆`-algebra homomorphisms out of `algebra μ` are determined by their restrictions to
+the canonical factors `factor μ i`. -/
+theorem starAlgHom_ext {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
+    [TopologicalSpace B] [T2Space B] {f g : algebra μ →⋆ₐ[ℂ] B}
+    (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ i a, f (factor μ i a) = g (factor μ i a)) : f = g :=
+  ReducedFreeProduct.starAlgHom_ext (factorFunctional μ) (factorFunctional_one μ) hf hg h
+
 /-- Evaluating `state μ` on the `i`-th factor integrates against `μ i` on `(μ i).support`. -/
 @[simp] theorem state_factor (i : ι) (x : C((μ i).support, ℂ)) :
-    state μ (factor μ i x) = ∫ t, x t ∂(μ i).comap ((↑) : (μ i).support → ℝ) := by
-  exact (ReducedFreeProduct.state_factor (factorFunctional μ) (factorFunctional_one μ) i x).trans
+    state μ (factor μ i x) = ∫ t, x t ∂(μ i).comap ((↑) : (μ i).support → ℝ) :=
+  (ReducedFreeProduct.state_factor (factorFunctional μ) (factorFunctional_one μ) i x).trans
     ((StarPositiveFunctional.ofPositiveLinearMap_apply _ _).trans
       (ContinuousMap.integralPositiveLinearMap_apply _ x))
 
 /-- The canonical factor subalgebras in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependent_factor :
-    IsFreelyIndependent (state μ).toLinearMap (fun i => (factor μ i).toAlgHom.range) := by
-  exact ReducedFreeProduct.isFreelyIndependent_factor (factorFunctional μ) (factorFunctional_one μ)
+    IsFreelyIndependent (state μ).toLinearMap (fun i => (factor μ i).toAlgHom.range) :=
+  ReducedFreeProduct.isFreelyIndependent_factor (factorFunctional μ) (factorFunctional_one μ)
 
-/-- Commutativity of each factor `C((μ i).support, ℂ)`, freeness, and norm density make `state μ`
-tracial on `algebra μ`. -/
-theorem state_mul_comm (x y : algebra μ) : state μ (x * y) = state μ (y * x) := by
-  let S : Subalgebra ℂ (algebra μ) := ⨆ i, (factor μ i).toAlgHom.range
-  have htrS : ∀ a ∈ (S : Set (algebra μ)), ∀ b ∈ (S : Set (algebra μ)),
-      state μ (a * b) = state μ (b * a) := fun a ha b hb =>
-    (isFreelyIndependent_factor μ).apply_mul_comm_of_mem_iSup (state_one μ)
-      (by rintro i _ ⟨u, rfl⟩ _ ⟨v, rfl⟩; rw [← map_mul, mul_comm u v, map_mul]) ha hb
-  have hle : (⊤ : Subalgebra ℂ _) ≤ S.comap
-      (ReducedFreeProduct.ofAlgebraic (factorFunctional μ) (factorFunctional_one μ)).toAlgHom := by
-    rw [← LinearAlgebra.FreeProduct.iSup_range_ι]
-    refine iSup_le fun i => ?_
-    rintro _ ⟨f, rfl⟩
-    exact le_iSup (fun j => (factor μ j).toAlgHom.range) i
-      ⟨f, ReducedFreeProduct.factor_apply (factorFunctional μ) (factorFunctional_one μ) i f⟩
-  have hdense (z : algebra μ) : z ∈ closure (S : Set (algebra μ)) :=
-    closure_mono (by rintro _ ⟨w, rfl⟩; exact hle trivial)
-      (ReducedFreeProduct.denseRange_ofAlgebraic (factorFunctional μ) (factorFunctional_one μ) z)
-  have hcont : Continuous (state μ) := by
-    have hfn : (state μ : algebra μ → ℂ) = fun T : algebra μ =>
-        ⟪vacuum μ, (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)⟫_ℂ := funext (state_apply μ)
-    exact hfn ▸ continuous_const.inner (continuous_subtype_val.clm_apply continuous_const)
-  exact apply_mul_comm_of_mem_closure hcont htrS (hdense x) (hdense y)
+/-- The vacuum state `state μ` is tracial on `algebra μ`. -/
+theorem state_mul_comm (x y : algebra μ) : state μ (x * y) = state μ (y * x) :=
+  ReducedFreeProduct.state_mul_comm (factorFunctional μ) (factorFunctional_one μ)
+    (fun _ a b => by rw [mul_comm]) x y
 
 /-- The `i`-th canonical selfadjoint generator in `algebra μ` realizing `μ i`. -/
 def generator (i : ι) : algebra μ :=
@@ -234,8 +245,8 @@ theorem generator_eq_factor (i : ι) :
   rfl
 
 /-- Every canonical generator in `algebra μ` is selfadjoint. -/
-theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) := by
-  exact (isSelfAdjoint_factorCoordinate μ i).map (factor μ i)
+theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) :=
+  (isSelfAdjoint_factorCoordinate μ i).map (factor μ i)
 
 /-- The `i`-th canonical generator in the C⋆-free product realization has law `μ i`. -/
 @[simp] theorem law_generator (i : ι) : (state μ).law (generator μ i) = μ i := by
@@ -243,17 +254,17 @@ theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) := by
     (isSelfAdjoint_factorCoordinate μ i) fun x => ?_).trans (law_factorCoordinate μ i)
   exact (state_factor μ i x).trans (ContinuousMap.integralPositiveLinearMap_apply _ x).symm
 
-/-- The real spectrum of `generator μ i` is contained in `(μ i).support`. -/
-theorem spectrum_generator_subset_support (i : ι) :
-    spectrum ℝ (generator μ i) ⊆ (μ i).support := by
-  exact (AlgHom.spectrum_apply_subset ((factor μ i).toAlgHom.restrictScalars ℝ)
-    (factorCoordinate μ i)).trans (spectrum_factorCoordinate_subset_support μ i)
+/-- The real spectrum of `generator μ i` equals `(μ i).support`. -/
+@[simp] theorem spectrum_generator (i : ι) : spectrum ℝ (generator μ i) = (μ i).support :=
+  Set.Subset.antisymm
+    ((AlgHom.spectrum_apply_subset ((factor μ i).toAlgHom.restrictScalars ℝ)
+      (factorCoordinate μ i)).trans (spectrum_factorCoordinate_subset_support μ i))
+    (law_generator μ i ▸ PositiveLinearMap.support_law_subset_spectrum (state μ) (generator μ i))
 
 /-- The canonical generators in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependentElements_generator :
-    IsFreelyIndependentElements (state μ).toLinearMap (generator μ) := by
-  exact (isFreelyIndependent_factor μ).isFreelyIndependentElements fun i =>
-    ⟨factorCoordinate μ i, rfl⟩
+    IsFreelyIndependentElements (state μ).toLinearMap (generator μ) :=
+  (isFreelyIndependent_factor μ).isFreelyIndependentElements fun i => ⟨factorCoordinate μ i, rfl⟩
 
 /-! #### Concrete von Neumann algebra realization -/
 
@@ -261,11 +272,16 @@ theorem isFreelyIndependentElements_generator :
 def vonNeumannAlgebra : VonNeumannAlgebra (HilbertSpace μ) :=
   VonNeumannAlgebra.adjoin (algebra μ : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ))
 
+/-- `vonNeumannAlgebra μ` is the concrete von Neumann algebra generated by `algebra μ`. -/
+theorem vonNeumannAlgebra_eq_adjoin :
+    vonNeumannAlgebra μ =
+      VonNeumannAlgebra.adjoin (algebra μ : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ)) := by
+  rfl
+
 /-- The canonical `⋆`-algebra inclusion from `algebra μ` into `vonNeumannAlgebra μ`. -/
-def toVonNeumannAlgebra : algebra μ →⋆ₐ[ℂ] vonNeumannAlgebra μ where
-  toFun x := ⟨x.1, VonNeumannAlgebra.subset_adjoin _ x.2⟩
-  map_one' := rfl; map_mul' _ _ := rfl; map_zero' := rfl
-  map_add' _ _ := rfl; commutes' _ := rfl; map_star' _ := rfl
+def toVonNeumannAlgebra : algebra μ →⋆ₐ[ℂ] vonNeumannAlgebra μ :=
+  StarSubalgebra.inclusion (S₁ := algebra μ) (S₂ := (vonNeumannAlgebra μ).toStarSubalgebra)
+    (VonNeumannAlgebra.subset_adjoin _)
 
 /-- Coercing `toVonNeumannAlgebra μ T` to a bounded operator recovers `T`. -/
 @[simp] theorem coe_toVonNeumannAlgebra (T : algebra μ) :
@@ -274,9 +290,7 @@ def toVonNeumannAlgebra : algebra μ →⋆ₐ[ℂ] vonNeumannAlgebra μ where
 
 /-- The vacuum vector state restricted to `vonNeumannAlgebra μ`. -/
 def vonNeumannState : vonNeumannAlgebra μ →ₚ[ℂ] ℂ :=
-  PositiveLinearMap.mk₀
-    ((vectorState μ).toLinearMap.comp (vonNeumannAlgebra μ).toStarSubalgebra.subtype.toLinearMap)
-    fun _ hT => (vectorState μ).map_nonneg hT
+  (vectorState μ).comp (PositiveLinearMap.ofClass (vonNeumannAlgebra μ).toStarSubalgebra.subtype)
 
 /-- Evaluation of `vonNeumannState μ` via `vectorState μ`. -/
 theorem vonNeumannState_apply (T : vonNeumannAlgebra μ) :
@@ -291,7 +305,7 @@ theorem vonNeumannState_apply (T : vonNeumannAlgebra μ) :
     vonNeumannState μ (toVonNeumannAlgebra μ T) = state μ T := by
   rw [vonNeumannState_apply, coe_toVonNeumannAlgebra, vectorState_apply, state_apply]
 
-/-- Traciality of `state μ` extends by WOT density and continuity to `vonNeumannAlgebra μ`. -/
+/-- The vacuum state `vonNeumannState μ` is tracial on `vonNeumannAlgebra μ`. -/
 theorem vonNeumannState_mul_comm (x y : vonNeumannAlgebra μ) :
     vonNeumannState μ (x * y) = vonNeumannState μ (y * x) := by
   let s : Set (HilbertSpace μ →WOT[ℂ] HilbertSpace μ) :=
@@ -308,8 +322,12 @@ theorem vonNeumannState_mul_comm (x y : vonNeumannAlgebra μ) :
     dsimp only [s]
     rw [← StarAlgebra.adjoin_eq (algebra μ), ← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
     exact ⟨z, z.2, rfl⟩
+  have hc := continuous_wot_vectorState μ
   simpa only [vonNeumannState_apply, MulMemClass.coe_mul, hmul] using
-    apply_mul_comm_of_mem_closure (continuous_wot_vectorState μ) hs (hmem x) (hmem y)
+    eqOn_closure₂' hs
+      (fun a => hc.comp (continuous_const_mul a)) (fun b => hc.comp (continuous_mul_const b))
+      (fun a => hc.comp (continuous_mul_const a)) (fun b => hc.comp (continuous_const_mul b))
+      _ (hmem x) _ (hmem y)
 
 /-- The `i`-th canonical selfadjoint element inside `vonNeumannAlgebra μ` realizing `μ i`. -/
 def vonNeumannGenerator (i : ι) : vonNeumannAlgebra μ :=
@@ -340,11 +358,14 @@ theorem isSelfAdjoint_vonNeumannGenerator (i : ι) : IsSelfAdjoint (vonNeumannGe
   exact (PositiveLinearMap.law_starAlgHom (state μ) (vonNeumannState μ) (toVonNeumannAlgebra μ)
     (isSelfAdjoint_generator μ i) (vonNeumannState_toVonNeumannAlgebra μ)).trans (law_generator μ i)
 
-/-- The real spectrum of `vonNeumannGenerator μ i` is contained in `(μ i).support`. -/
-theorem spectrum_vonNeumannGenerator_subset_support (i : ι) :
-    spectrum ℝ (vonNeumannGenerator μ i) ⊆ (μ i).support := by
-  exact (AlgHom.spectrum_apply_subset ((toVonNeumannAlgebra μ).toAlgHom.restrictScalars ℝ)
-    (generator μ i)).trans (spectrum_generator_subset_support μ i)
+/-- The real spectrum of `vonNeumannGenerator μ i` equals `(μ i).support`. -/
+@[simp] theorem spectrum_vonNeumannGenerator (i : ι) :
+    spectrum ℝ (vonNeumannGenerator μ i) = (μ i).support :=
+  Set.Subset.antisymm
+    ((AlgHom.spectrum_apply_subset ((toVonNeumannAlgebra μ).toAlgHom.restrictScalars ℝ)
+      (generator μ i)).trans (spectrum_generator μ i).subset)
+    (law_vonNeumannGenerator μ i ▸
+      PositiveLinearMap.support_law_subset_spectrum (vonNeumannState μ) (vonNeumannGenerator μ i))
 
 /-- The canonical generators in `vonNeumannAlgebra μ` are freely independent for
 `vonNeumannState μ`. -/

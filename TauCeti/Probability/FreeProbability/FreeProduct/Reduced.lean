@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.StarAlgebra.GNS.Bounded
 public import TauCeti.Probability.FreeProbability.FreeProduct.Positive
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 
 /-!
 # The reduced C⋆-free product associated to states
@@ -225,6 +227,19 @@ theorem isFreelyIndependent_factor :
     simpa only [factor, StarAlgHom.comp, ιStar_toAlgHom] using
       AlgHom.range_comp (ι ℂ A i) (ofAlgebraic φ hφ).toAlgHom
   simpa only [← hranges] using h
+
+/-- The reduced-product vacuum state is tracial whenever every factor state is tracial. -/
+theorem state_mul_comm (htr : ∀ i (a b : A i), φ i (a * b) = φ i (b * a))
+    (x y : algebra φ hφ) : state φ hφ (x * y) = state φ hφ (y * x) := by
+  have htrAlg : ∀ a ∈ Set.range (ofAlgebraic φ hφ), ∀ b ∈ Set.range (ofAlgebraic φ hφ),
+      state φ hφ (a * b) = state φ hφ (b * a) := by
+    rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
+    rw [← map_mul, ← map_mul, state_ofAlgebraic, state_ofAlgebraic,
+      freeProductPositiveFunctional_apply, freeProductPositiveFunctional_apply]
+    exact freeProductExpectation_mul_comm (fun i => (φ i).toLinearMap) hφ htr a b
+  exact eqOn_closure₂ htrAlg ((map_continuous (state φ hφ)).comp continuous_mul)
+    ((map_continuous (state φ hφ)).comp (continuous_mul.comp continuous_swap))
+    x (denseRange_ofAlgebraic φ hφ x) y (denseRange_ofAlgebraic φ hφ y)
 
 /-- The vacuum remains cyclic for the closed reduced product. -/
 theorem denseRange_algebra_vacuum :

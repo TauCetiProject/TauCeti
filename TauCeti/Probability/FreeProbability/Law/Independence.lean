@@ -48,10 +48,6 @@ namespace TauCeti
 variable {A B ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-private theorem injective_cond {α : Type*} {x y : α} (hxy : x ≠ y) :
-    Function.Injective (fun t : Bool => cond t x y) := by
-  rintro (_ | _) (_ | _) h <;> simp at h <;> tauto
-
 namespace IsFreelyIndependentElements
 
 /-- Freely independent families of selfadjoint elements in possibly different C⋆-probability spaces
@@ -76,8 +72,7 @@ theorem law_lift_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ
     φ.law (FreeAlgebra.lift ℂ a P) = ψ.law (FreeAlgebra.lift ℂ b P) := by
   have hjd := ha.jointDistribution_eq_of_forall_law_eq hb hφ hψ hasa hbsa hlaw
   refine (PositiveLinearMap.law_eq_law_iff_forall_apply_pow φ ψ hPa hPb).mpr fun n => ?_
-  simpa only [jointDistribution_apply, map_pow, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    PositiveLinearMap.coe_toLinearMap] using LinearMap.congr_fun hjd (P ^ n)
+  simpa using LinearMap.congr_fun hjd (P ^ n)
 
 /-- Finite sums of freely independent selfadjoint elements depend in law only on the individual laws
 of the summands. Only the summands indexed by `s` need be selfadjoint or match in law. -/
@@ -108,8 +103,10 @@ theorem law_add_eq_of_law_eq {κ : Type*} {φ : A →ₚ[ℂ] ℂ} {ψ : B →�
     (hb₁ : IsSelfAdjoint (b k₁)) (hb₂ : IsSelfAdjoint (b k₂))
     (h₁ : φ.law (a i₁) = ψ.law (b k₁)) (h₂ : φ.law (a i₂) = ψ.law (b k₂)) :
     φ.law (a i₁ + a i₂) = ψ.law (b k₁ + b k₂) := by
-  simpa using (ha.comp (injective_cond hi)).law_sum_eq_of_forall_law_eq
-    (hb.comp (injective_cond hk)) hφ hψ ({true, false} : Finset Bool)
+  simpa using (ha.comp ((Bool.injective_iff (f := (cond · i₁ i₂))).mpr
+    hi.symm)).law_sum_eq_of_forall_law_eq
+    (hb.comp ((Bool.injective_iff (f := (cond · k₁ k₂))).mpr hk.symm)) hφ hψ
+    ({true, false} : Finset Bool)
     (by rintro (_ | _) _ <;> assumption) (by rintro (_ | _) _ <;> assumption)
     (by rintro (_ | _) _ <;> assumption)
 

@@ -61,7 +61,7 @@ probability measures on `ℝ`.
   `PositiveLinearMap.law_smul_add_algebraMap`, `PositiveLinearMap.law_algebraMap`,
   `PositiveLinearMap.law_zero`, `PositiveLinearMap.law_one`, `PositiveLinearMap.law_neg`,
   `PositiveLinearMap.law_starAlgHom`: functoriality under functional calculus, scalars, negation,
-  and state-intertwining unital `⋆`-homomorphisms.
+  and positive-functional-intertwining unital `⋆`-homomorphisms.
 * `PositiveLinearMap.eq_law_iff_forall_integral_pow`: a compactly supported finite measure is
   `μ_a` exactly when its moments are the `φ (a ^ n)`.
 * `PositiveLinearMap.law_eq_law_iff_forall_apply_pow`: two selfadjoint elements have the same law
@@ -353,9 +353,8 @@ theorem law_algebraMap (c : ℝ) :
   have h1re : ((φ 1).re : ℂ) = φ 1 := Complex.ext rfl h1.2
   have : IsFiniteMeasure (ENNReal.ofReal (φ 1).re • Measure.dirac c) := ⟨by simp⟩
   refine (eq_law_iff.mpr fun f _ => ?_).symm
-  rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal h1.1, cfc_algebraMap c f,
-    Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul, smul_eq_mul, smul_eq_mul,
-    Complex.ofReal_mul, h1re, mul_comm]
+  rw [cfc_algebraMap, Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul]
+  simp [h1.1, h1re, mul_comm]
 
 /-- For a state (`φ 1 = 1`), the law of `algebraMap ℝ A c` is the Dirac mass at `c`. -/
 theorem law_algebraMap_of_apply_one (hφ : φ 1 = 1) (c : ℝ) :
