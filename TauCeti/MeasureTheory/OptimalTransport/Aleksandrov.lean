@@ -129,41 +129,6 @@ theorem exists_withDensity_div_le_mongeAmpereMeasure_of_isKantorovichOptimalTran
   exact ⟨u, hconv, hlsc, hbot, huniq T hT, hopt, hMA,
     withDensity_div_le_mongeAmpereMeasure hconv hbot hf hg hdom hopt.toHasLaw⟩
 
-/-- Rewrites `(ρ.restrict Y).withDensity g` for a convex set `Y` (which need not be measurable) as
-`ρ.withDensity ((interior Y).indicator g)`, recording measurability, concentration on `interior Y`
-and `closure Y`, and positivity on `closure Y`. -/
-private lemma withDensity_restrict_convex_eq_withDensity_indicator_interior
-    {Y : Set E} {g : E → ℝ≥0∞} (hY : Convex ℝ Y) (hg : Measurable g)
-    (hgpos : ∀ᵐ y ∂ρ.restrict Y, g y ≠ 0) :
-    Measurable ((interior Y).indicator g) ∧
-      (ρ.restrict Y).withDensity g = ρ.withDensity ((interior Y).indicator g) ∧
-      ((ρ.restrict Y).withDensity g) (closure Y)ᶜ = 0 ∧
-      (∀ᵐ y ∂(ρ.restrict Y).withDensity g, y ∈ interior Y) ∧
-      (∀ᵐ y ∂ρ, y ∈ closure Y → (interior Y).indicator g y ≠ 0) := by
-  have hYint : interior Y =ᵐ[ρ] Y := interior_ae_eq_of_null_frontier (hY.addHaar_frontier ρ)
-  have hrestY : ρ.restrict Y = ρ.restrict (interior Y) := Measure.restrict_congr_set hYint.symm
-  set g' := (interior Y).indicator g
-  have hg'm : Measurable g' := hg.indicator isOpen_interior.measurableSet
-  have hνeq : (ρ.restrict Y).withDensity g = ρ.withDensity g' := by
-    rw [hrestY, ← withDensity_indicator isOpen_interior.measurableSet]
-  have hcl : ((ρ.restrict Y).withDensity g) (closure Y)ᶜ = 0 := by
-    rw [hνeq, withDensity_apply _ isClosed_closure.measurableSet.compl]
-    exact (setLIntegral_eq_zero_iff isClosed_closure.measurableSet.compl hg'm).2 <|
-      .of_forall fun _ hy => indicator_of_notMem (fun h => hy (interior_subset_closure h)) g
-  have hint : ∀ᵐ y ∂(ρ.restrict Y).withDensity g, y ∈ interior Y := by
-    rw [hνeq]
-    refine (mem_ae_iff (s := interior Y)).2 ?_
-    rw [withDensity_apply _ isOpen_interior.measurableSet.compl]
-    exact (setLIntegral_eq_zero_iff isOpen_interior.measurableSet.compl hg'm).2 <|
-      .of_forall fun _ hy => indicator_of_notMem hy g
-  have hgpos_int : ∀ᵐ y ∂ρ.restrict (interior Y), g y ≠ 0 := by rwa [← hrestY]
-  have hg'cl : ∀ᵐ y ∂ρ, y ∈ closure Y → g' y ≠ 0 := by
-    filter_upwards [hYint, closure_ae_eq_of_null_frontier (hY.addHaar_frontier ρ),
-      ae_imp_of_ae_restrict hgpos_int] with y hyi hyc hy hycl
-    have hyint : y ∈ interior Y := hyi.mpr (hyc.mp hycl)
-    simpa [g', hyint] using hy hyint
-  exact ⟨hg'm, hνeq, hcl, hint, hg'cl⟩
-
 /-- **Optimal quadratic transport into a convex target is represented by an Aleksandrov solution.**
 Let `X` be open and `Y` convex (neither need be bounded, and `Y` need not be open, closed, or Borel
 measurable), let `μ = (ρ.restrict X).withDensity f` be a probability measure with `f ≠ 0` almost
@@ -194,11 +159,14 @@ theorem exists_mongeAmpereMeasure_eq_withDensity_div_of_isKantorovichOptimalTran
   set ν' := (ρ.restrict Y).withDensity g
   have hμ'ρ : μ' ≪ ρ :=
     (withDensity_absolutelyContinuous _ _).trans (absolutelyContinuous_of_le restrict_le_self)
-  obtain ⟨hg'm, hν'eq, hν'cl, hint, hg'cl⟩ :=
-    withDensity_restrict_convex_eq_withDensity_indicator_interior hY hg hgpos
+  have hg'm : Measurable ((interior Y).indicator g) := hg.indicator isOpen_interior.measurableSet
+  have hint : ∀ᵐ y ∂ν', y ∈ interior Y := hY.ae_withDensity_restrict_mem_interior ρ g
   obtain ⟨u, hconv, hlsc, hbot, hopt, hsubcl, hMA⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity
-      hμ'ρ hg'm hν'eq hY.closure isClosed_closure hν'cl hg'cl hfin
+      hμ'ρ hg'm (hY.withDensity_restrict_eq_withDensity_indicator_interior ρ g) hY.closure
+      isClosed_closure ((mem_ae_iff (s := closure Y)).1 (hint.mono fun _ hy =>
+        interior_subset_closure hy))
+      (hY.ae_mem_closure_imp_indicator_interior_ne_zero_iff.2 hgpos) hfin
   obtain ⟨_, -, -, -, -, -, -, huniq⟩ := exists_isKantorovichOptimalTransportMap_gradient hμ'ρ hfin
   have hXμ : ρ.restrict X ≪ μ' := withDensity_absolutelyContinuous' hf hfpos
   have hTu : T =ᵐ[ρ.restrict X] ∇ fun x => (u x).toReal :=

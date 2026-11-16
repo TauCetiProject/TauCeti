@@ -480,21 +480,14 @@ theorem subgradientImage_subset_and_restrict_mongeAmpereMeasure_eq_withDensity_d
   set G := ∇ fun x => (f x).toReal
   set μ' := (ρ.restrict X).withDensity f₀
   -- Replace `Y` by `interior Y` up to `ρ`-null frontier so the target has measurable density `g'`.
-  have hYint : interior Y =ᵐ[ρ] Y := interior_ae_eq_of_null_frontier (hY.addHaar_frontier ρ)
-  have hrestY : ρ.restrict Y = ρ.restrict (interior Y) := Measure.restrict_congr_set hYint.symm
   set g' := (interior Y).indicator g
   have hg'm : Measurable g' := hg.indicator isOpen_interior.measurableSet
-  have hνeq : (ρ.restrict Y).withDensity g = ρ.withDensity g' := by
-    rw [hrestY, ← withDensity_indicator isOpen_interior.measurableSet]
-  have hT' : HasLaw G (ρ.withDensity g') μ' := hνeq ▸ hT
+  have hT' : HasLaw G (ρ.withDensity g') μ' :=
+    hY.withDensity_restrict_eq_withDensity_indicator_interior ρ g ▸ hT
   -- Positivity of `f₀` transfers `μ'`-a.e. finiteness and target membership to `ρ`-a.e. on `X`.
   have hXμ : ρ.restrict X ≪ μ' := withDensity_absolutelyContinuous' hf₀ hf₀pos
-  have hGint : ∀ᵐ x ∂μ', G x ∈ interior Y := ae_of_ae_map hT'.aemeasurable <| by
-    rw [hT'.map_eq]
-    refine (mem_ae_iff (s := interior Y)).2 ?_
-    rw [withDensity_apply _ isOpen_interior.measurableSet.compl]
-    exact (setLIntegral_eq_zero_iff isOpen_interior.measurableSet.compl hg'm).2 <|
-      .of_forall fun _ hy => indicator_of_notMem hy g
+  have hGint : ∀ᵐ x ∂μ', G x ∈ interior Y :=
+    ae_of_ae_map hT.aemeasurable (hT.map_eq ▸ hY.ae_withDensity_restrict_mem_interior ρ g)
   obtain ⟨hXD, hsubY⟩ := subgradientImage_subset_closure_of_convex_of_ae_mem hf hbot hX hY
     (ae_imp_of_ae_restrict (hXμ.ae_le hdom))
     (ae_imp_of_ae_restrict (hXμ.ae_le (hGint.mono fun _ hx => interior_subset hx)))
@@ -507,12 +500,13 @@ theorem subgradientImage_subset_and_restrict_mongeAmpereMeasure_eq_withDensity_d
     filter_upwards [hμ'ρ.ae_le (ae_eventually_ne_top_and_differentiableAt_toReal hf hbot), hdom]
       with x hx hx' using hx hx'
   have hg'top : ∀ᵐ y ∂ρ, g' y ≠ ⊤ := by
-    filter_upwards [ae_imp_of_ae_restrict (hrestY ▸ hgtop)] with y hy
-    by_cases hyi : y ∈ interior Y <;> simp [g', hyi, hy]
-  have hg'pos : ∀ᵐ y ∂ρ, y ∈ Y → g' y ≠ 0 := by
-    filter_upwards [hYint, ae_imp_of_ae_restrict (hrestY ▸ hgpos)] with y hyi hy hyY
-    have hyint : y ∈ interior Y := hyi.mpr hyY
-    simpa [g', hyint] using hy hyint
+    filter_upwards [ae_imp_of_ae_restrict hgtop] with y hy
+    by_cases hyi : y ∈ interior Y
+    · simpa [g', hyi] using hy (interior_subset hyi)
+    · simp [g', hyi]
+  have hg'pos : ∀ᵐ y ∂ρ, y ∈ Y → g' y ≠ 0 :=
+    (hY.ae_mem_closure_imp_indicator_interior_ne_zero_iff.2 hgpos).mono fun _ h hy =>
+      h (subset_closure hy)
   have hMA := restrict_mongeAmpereMeasure_eq_withDensity_inv_of_convex hf hbot hg'm hg'top hT'
     (hdiff.mono fun _ hx => mem_interior_iff_mem_nhds.2 hx.1)
     (hdiff.mono fun _ hx => gradient_toReal_mem_subdifferential hf hbot hx.1.self_of_nhds hx.2)
