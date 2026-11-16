@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import TauCeti.Analysis.Distribution.TemperateGrowth
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -39,6 +41,16 @@ determinant (`SchwartzMap.pushforwardCLM_trans`), and the identity pushes forwar
 (`SchwartzMap.pushforwardCLM_refl`). Multiplication by `g ∘ φ` before the pushforward is
 multiplication by `g` after it (`SchwartzMap.pushforwardCLM_smulLeftCLM`).
 
+The pushforward of a derivative is a sum of derivatives of pushforwards: for a basis `b` of `E`,
+
+`φ_* (∂_v f) = ∑ᵢ ∂_{bᵢ} (φ_* (cᵢ f))`, where `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ`
+
+(`SchwartzMap.pushforwardCLM_lineDerivOp`). This is the transpose of the chain rule
+`∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)` (`SchwartzMap.lineDerivOp_compCLM_apply`), and it gives
+the chain rule for the pullback of tempered distributions. It is proved by pairing both sides with
+test functions and integrating by parts; the Jacobian factor of the pushforward is never
+differentiated.
+
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, §6.1 and §7.1.
@@ -47,6 +59,7 @@ multiplication by `g` after it (`SchwartzMap.pushforwardCLM_smulLeftCLM`).
 public noncomputable section
 
 open MeasureTheory
+open scoped ContDiff LineDeriv
 
 namespace SchwartzMap
 
@@ -122,5 +135,98 @@ theorem pushforwardCLM_smulLeftCLM (hφ : (φ : E → E).HasTemperateGrowth)
   ext y
   rw [pushforwardCLM_apply, smulLeftCLM_apply_apply (hg.comp hφ), smulLeftCLM_apply_apply hg,
     pushforwardCLM_apply, Function.comp_apply, Equiv.apply_symm_apply, smul_comm]
+
+section LineDeriv
+
+variable {ι : Type*} [Fintype ι]
+
+omit [FiniteDimensional ℝ E] in
+/-- **The chain rule for composition with `φ`.** If `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
+`∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)`. -/
+theorem lineDerivOp_compCLM_apply (b : Module.Basis ι ℝ E)
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (u : 𝓢(E, 𝕜)) (v x : E) :
+    ∂_{v} (compCLM 𝕜 hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u) x =
+      ∑ i, ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜) * (∂_{b i} u) (φ x) := by
+  rw [lineDerivOp_apply_eq_fderiv, compCLM_apply,
+    fderiv_comp x u.differentiableAt (hφ.1.differentiable (by simp) x),
+    ContinuousLinearMap.comp_apply]
+  calc fderiv ℝ u (φ x) (fderiv ℝ φ x v)
+      = fderiv ℝ u (φ x) (∑ i, b.repr (fderiv ℝ φ x v) i • b i) := by rw [b.sum_repr]
+    _ = _ := by
+      simp only [map_sum, map_smul, RCLike.real_smul_eq_coe_mul, lineDerivOp_apply_eq_fderiv]
+
+/-- The pushforward formula for a derivative, paired with a Schwartz function `u`: both sides are
+`-∫ f x ∂_v (u ∘ φ)(x) dx` after the change of variables and integration by parts. -/
+private theorem integral_pushforwardCLM_lineDerivOp_mul [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (b : Module.Basis ι ℝ E)
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (f u : 𝓢(E, 𝕜)) (v : E) :
+    ∫ y, pushforwardCLM 𝕜 φ hφ hψ (∂_{v} f) y * u y ∂μ =
+      ∫ y, (∑ i, ∂_{b i} (pushforwardCLM 𝕜 φ hφ hψ
+        (smulLeftCLM 𝕜 (fun x ↦ ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜)) f))) y * u y ∂μ := by
+  set w : 𝓢(E, 𝕜) := compCLM 𝕜 hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u
+  set c : ι → E → 𝕜 := fun i x ↦ ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜)
+  have hc (i : ι) : (c i).HasTemperateGrowth := hφ.basis_repr_fderiv_apply b v i
+  have hint (i : ι) : Integrable (fun x ↦ c i x * f x * (∂_{b i} u) (φ x)) μ := by
+    refine ((smulLeftCLM 𝕜 (c i) f).integrable (μ := μ)).mul_bdd
+      ((∂_{b i} u).continuous.comp hφ.1.continuous).aestronglyMeasurable
+      (c := SchwartzMap.seminorm ℝ 0 0 (∂_{b i} u)) (.of_forall fun x ↦ norm_le_seminorm ℝ _ _)
+      |>.congr (.of_forall fun x ↦ ?_)
+    simp [smulLeftCLM_apply_apply (hc i)]
+  calc ∫ y, pushforwardCLM 𝕜 φ hφ hψ (∂_{v} f) y * u y ∂μ
+      = ∫ x, w x * ∂_{v} f x ∂μ := by
+        simpa [smul_eq_mul, w, mul_comm] using integral_pushforwardCLM_smul 𝕜 μ hφ hψ (∂_{v} f) u
+    _ = -∫ x, ∂_{v} w x * f x ∂μ := integral_mul_lineDerivOp_right_eq_neg_left w f v
+    _ = -∑ i, ∫ x, c i x * f x * (∂_{b i} u) (φ x) ∂μ := by
+        rw [← integral_finsetSum _ fun i _ ↦ hint i]
+        congr 1
+        refine integral_congr_ae (.of_forall fun x ↦ ?_)
+        simp only [w, lineDerivOp_compCLM_apply 𝕜 b hφ hψ, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun i _ ↦ by ring
+    _ = -∑ i, ∫ y, pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM 𝕜 (c i) f) y * ∂_{b i} u y ∂μ := by
+        congr 1
+        refine Finset.sum_congr rfl fun i _ ↦ ?_
+        simpa [smul_eq_mul, smulLeftCLM_apply_apply (hc i)] using
+          (integral_pushforwardCLM_smul 𝕜 μ hφ hψ (smulLeftCLM 𝕜 (c i) f)
+            (fun y ↦ (∂_{b i} u : 𝓢(E, 𝕜)) y)).symm
+    _ = ∑ i, ∫ y, ∂_{b i} (pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM 𝕜 (c i) f)) y * u y ∂μ := by
+        simp only [integral_mul_lineDerivOp_right_eq_neg_left, Finset.sum_neg_distrib, neg_neg]
+    _ = _ := by
+        rw [← integral_finsetSum _ fun i _ ↦ ?_]
+        · simp [Finset.sum_mul, c]
+        · exact (∂_{b i} (pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM 𝕜 (c i) f))).integrable.mul_bdd
+            u.continuous.aestronglyMeasurable (c := SchwartzMap.seminorm ℝ 0 0 u)
+            (.of_forall fun x ↦ norm_le_seminorm ℝ _ _)
+
+/-- **The pushforward of a derivative.** If `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
+
+`φ_* (∂_v f) = ∑ᵢ ∂_{bᵢ} (φ_* (cᵢ f))`.
+
+This is the transpose of the chain rule `∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)`. -/
+theorem pushforwardCLM_lineDerivOp (b : Module.Basis ι ℝ E)
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (f : 𝓢(E, 𝕜)) (v : E) :
+    pushforwardCLM 𝕜 φ hφ hψ (∂_{v} f) = ∑ i, ∂_{b i} (pushforwardCLM 𝕜 φ hφ hψ
+      (smulLeftCLM 𝕜 (fun x ↦ ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜)) f)) := by
+  borelize E
+  set A := pushforwardCLM 𝕜 φ hφ hψ (∂_{v} f)
+  set B := ∑ i, ∂_{b i} (pushforwardCLM 𝕜 φ hφ hψ
+      (smulLeftCLM 𝕜 (fun x ↦ ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜)) f))
+  -- `A` and `B` have the same integrals against smooth compactly supported functions.
+  have hae : ∀ᵐ x ∂(Measure.addHaar : Measure E), A x = B x := by
+    refine ae_eq_of_integral_contDiff_smul_eq A.integrable.locallyIntegrable
+      B.integrable.locallyIntegrable fun g hg hgc ↦ ?_
+    have hg₁ : HasCompactSupport (fun x ↦ (g x : 𝕜)) := hgc.comp_left (by simp)
+    have hg₂ : ContDiff ℝ ∞ (fun x ↦ (g x : 𝕜)) := ((RCLike.ofRealCLM (K := 𝕜)).contDiff).comp hg
+    set u := hg₁.toSchwartzMap hg₂
+    have hu (x : E) : u x = g x := hg₁.toSchwartzMap_toFun hg₂ x
+    have := integral_pushforwardCLM_lineDerivOp_mul 𝕜 Measure.addHaar b hφ hψ f u v
+    simp only [hu] at this
+    simpa only [RCLike.real_smul_eq_coe_mul, mul_comm _ (A _), mul_comm _ (B _)] using this
+  ext x
+  exact congrFun ((Continuous.ae_eq_iff_eq _ A.continuous B.continuous).1 hae) x
+
+end LineDeriv
 
 end SchwartzMap

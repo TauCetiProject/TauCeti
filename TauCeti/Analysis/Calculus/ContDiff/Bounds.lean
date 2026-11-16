@@ -56,6 +56,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
+* `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
+  algebra, with one bound for all orders at most `N`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
@@ -261,6 +263,22 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
         rw [← Finset.sum_mul, ← Finset.sum_mul]
         push_cast [← Nat.cast_sum, Nat.sum_range_choose]
         ring
+
+/-- **Leibniz bound for a product with uniform constants.** If the derivatives of order at most
+`N` of `f` and `g` are bounded by `C` and `D` everywhere, those of `f * g` of order at most `N` are
+bounded by `2 ^ N * (C * D)`. -/
+theorem ContDiff.norm_iteratedFDeriv_mul_le_two_pow {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    {N : ℕ} {f g : E → A} (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {C D : ℝ}
+    (hfC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C)
+    (hgD : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p g x‖ ≤ D) :
+    ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p (f * g) x‖ ≤ 2 ^ N * (C * D) := by
+  intro p hp x
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _) x)
+  have hD : 0 ≤ D := (norm_nonneg _).trans (hgD 0 (Nat.zero_le _) x)
+  refine ((ContinuousLinearMap.mul 𝕜 A).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
+    (ContinuousLinearMap.opNorm_mul_le _ _) hf hg hfC hgD hp x).trans ?_
+  gcongr
+  exact one_le_two
 
 /-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
 of order at most `N` by at most `‖c‖ ^ N`. -/
