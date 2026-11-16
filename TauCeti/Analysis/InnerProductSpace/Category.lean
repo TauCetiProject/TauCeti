@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
-public import TauCeti.CategoryTheory.Dagger.Basic
+public import TauCeti.CategoryTheory.Dagger.Functor
 
 /-!
 # The dagger category of Hilbert spaces
@@ -17,10 +17,12 @@ Its morphisms are Mathlib continuous linear maps, with their existing Banach-spa
 structures. Composition and addition give the native linear category structure, and
 Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
-Unitary arrows are precisely the maps underlying linear isometric equivalences.
-The operator norm satisfies the C*-identity in categorical composition order, and the full
-subcategory `TauCeti.FDHilbertCat 𝕜` of finite-dimensional spaces inherits the linear dagger
-structure; these provide the Hilbert-space examples for analytic categories.
+Unitary arrows are precisely the maps underlying linear isometric equivalences, endomorphism
+algebras `End X` identify as `⋆`-algebras with `X →L[𝕜] X`, and categorical zero objects are
+characterized by `Subsingleton`. The operator norm satisfies the C*-identity in categorical
+composition order, and the full subcategory `TauCeti.FDHilbertCat 𝕜` of finite-dimensional spaces
+inherits the linear dagger structure with finite-dimensional Hom spaces; these provide the
+Hilbert-space examples for analytic categories.
 -/
 
 public section
@@ -343,6 +345,26 @@ theorem not_isZero_of_nontrivial (X : HilbertCat.{u, v} 𝕜) [Nontrivial X] :
   rw [isZero_iff_subsingleton]
   exact not_subsingleton X
 
+/-- Because `CategoryTheory.End X` multiplies in operator order while `HilbertCat 𝕜` composes
+arrows in diagrammatic order, `End X` is canonically `⋆`-algebra equivalent to `X →L[𝕜] X`. -/
+def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) where
+  toFun a := a.asHom
+  invFun f := End.of f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- Forward evaluation of `HilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_apply (X : HilbertCat.{u, v} 𝕜) (a : End X) :
+    X.endStarAlgEquiv a = a.asHom := (rfl)
+
+/-- Inverse evaluation of `HilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    X.endStarAlgEquiv.symm f = End.of f := (rfl)
+
 /-- Finite-dimensional Hilbert spaces, as an object property on `HilbertCat 𝕜`. -/
 abbrev isFiniteDimensional (𝕜 : Type u) [RCLike 𝕜] : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
   fun H => FiniteDimensional 𝕜 H
@@ -377,6 +399,64 @@ abbrev of (𝕜 : Type u) [RCLike 𝕜] (E : Type v) [NormedAddCommGroup E]
 @[simp] theorem of_carrier (E : Type v) [NormedAddCommGroup E]
     [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] :
     (of 𝕜 E : Type v) = E := (rfl)
+
+/-- Every Hom space between finite-dimensional Hilbert spaces is finite-dimensional. -/
+instance instFiniteDimensionalHom (X Y : FDHilbertCat.{u, v} 𝕜) :
+    FiniteDimensional 𝕜 (X ⟶ Y) := by
+  have : FiniteDimensional 𝕜 X.obj := X.property
+  have : FiniteDimensional 𝕜 Y.obj := Y.property
+  have : FiniteDimensional 𝕜 (X.obj ⟶ Y.obj) :=
+    inferInstanceAs (FiniteDimensional 𝕜 (X.obj →L[𝕜] Y.obj))
+  exact Module.Finite.equiv
+    (InducedCategory.homLinearEquiv (R := 𝕜) (F := ObjectProperty.FullSubcategory.obj)
+      (X := X) (Y := Y)).symm
+
+/-- An object of `FDHilbertCat 𝕜` is a categorical zero object if and only if its carrier is a
+subsingleton. -/
+theorem isZero_iff_subsingleton (X : FDHilbertCat.{u, v} 𝕜) :
+    Limits.IsZero X ↔ Subsingleton X := by
+  rw [Limits.IsZero.iff_id_eq_zero, ← X.obj.isZero_iff_subsingleton, Limits.IsZero.iff_id_eq_zero]
+  exact ⟨congrArg InducedCategory.Hom.hom, InducedCategory.hom_ext⟩
+
+/-- A subsingleton finite-dimensional Hilbert space is a zero object of `FDHilbertCat 𝕜`. -/
+theorem isZero_of_subsingleton (X : FDHilbertCat.{u, v} 𝕜) [Subsingleton X] :
+    Limits.IsZero X :=
+  (isZero_iff_subsingleton X).mpr inferInstance
+
+/-- A nontrivial finite-dimensional Hilbert space is not a zero object of `FDHilbertCat 𝕜`. -/
+theorem not_isZero_of_nontrivial (X : FDHilbertCat.{u, v} 𝕜) [Nontrivial X] :
+    ¬ Limits.IsZero X := by
+  rw [isZero_iff_subsingleton]
+  exact not_subsingleton X
+
+/-- Endomorphisms of `X : FDHilbertCat 𝕜` identify as a `⋆`-algebra with `X →L[𝕜] X`,
+composing `CategoryTheory.Functor.mapEndStarAlgEquiv` along the full subcategory inclusion
+with `HilbertCat.endStarAlgEquiv`. -/
+def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) :=
+  (((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι).mapEndStarAlgEquiv 𝕜 X).trans
+    X.obj.endStarAlgEquiv
+
+/-- Forward evaluation of `FDHilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_apply (X : FDHilbertCat.{u, v} 𝕜) (a : End X) :
+    X.endStarAlgEquiv a = a.asHom.hom :=
+  ((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι).mapEndStarAlgEquiv_apply_asHom 𝕜 X a
+
+/-- Inverse evaluation of `FDHilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_symm_apply (X : FDHilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    X.endStarAlgEquiv.symm f = End.of (ObjectProperty.homMk f) := by
+  apply End.ext
+  apply ObjectProperty.hom_ext
+  change (HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι.map
+    (((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι.mapEndStarAlgEquiv 𝕜 X).symm (End.of f)).asHom =
+      f
+  rw [Functor.mapEndStarAlgEquiv_symm_apply_asHom, Functor.map_preimage]
+
+/-- `FDHilbertCat.endStarAlgEquiv` factors through `Functor.mapEndStarAlgEquiv` along the full
+subcategory inclusion into `HilbertCat 𝕜`. -/
+theorem endStarAlgEquiv_eq_trans (X : FDHilbertCat.{u, v} 𝕜) :
+    X.endStarAlgEquiv =
+      (((HilbertCat.isFiniteDimensional.{u, v} 𝕜).ι).mapEndStarAlgEquiv 𝕜 X).trans
+        X.obj.endStarAlgEquiv := (rfl)
 
 end FDHilbertCat
 

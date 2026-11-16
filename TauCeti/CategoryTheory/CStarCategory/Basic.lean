@@ -31,7 +31,7 @@ composition and the C*-identity rather than assumed as an axiom. Pre- and post-c
 into a norm-contractive continuous bilinear map `compCLM`, whose specializations `leftCompCLM X f`
 and `rightCompCLM Z g` recover the exact morphism norms `‖f‖` and `‖g‖`. Left and right
 annihilators and intertwiner spaces are closed subspaces of Hom spaces, and identity, unitary,
-self-adjoint-idempotent, zero-object, and polarization formulas follow.
+self-adjoint-idempotent, zero-object, and polarization norm-bound formulas follow.
 
 ## References
 
@@ -49,55 +49,6 @@ open scoped ZeroObject
 universe v u
 
 namespace TauCeti
-
-section Polarization
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
-  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C] {X Y : C}
-
-/-- Scaled complex polarization identity for `f ≫ dagger g` in a complex-linear dagger category. -/
-theorem four_smul_comp_dagger (f g : X ⟶ Y) :
-    (4 : ℂ) • (f ≫ dagger g) =
-      (f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g) +
-        Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
-          (f - Complex.I • g) ≫ dagger (f - Complex.I • g)) := by
-  simp only [dagger_add, dagger_sub, dagger_smul, RCLike.star_def, Complex.conj_I,
-    Preadditive.add_comp, Preadditive.sub_comp, Preadditive.comp_add, Preadditive.comp_sub,
-    Linear.smul_comp, Linear.comp_smul, neg_smul, Preadditive.comp_neg,
-    smul_sub, smul_add, smul_neg, smul_smul, Complex.I_mul_I, one_smul]
-  module
-
-/-- Complex polarization expresses `f ≫ dagger g` as a linear combination of four positive-form
-endomorphisms `(f + c • g) ≫ dagger (f + c • g)`. -/
-theorem comp_dagger_eq_polarization (f g : X ⟶ Y) :
-    f ≫ dagger g =
-      (4 : ℂ)⁻¹ • ((f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g) +
-        Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
-          (f - Complex.I • g) ≫ dagger (f - Complex.I • g))) := by
-  rw [← four_smul_comp_dagger, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
-
-/-- Scaled complex polarization identity for `dagger f ≫ g` in a complex-linear dagger category. -/
-theorem four_smul_dagger_comp (f g : X ⟶ Y) :
-    (4 : ℂ) • (dagger f ≫ g) =
-      dagger (f + g) ≫ (f + g) - dagger (f - g) ≫ (f - g) -
-        Complex.I • (dagger (f + Complex.I • g) ≫ (f + Complex.I • g) -
-          dagger (f - Complex.I • g) ≫ (f - Complex.I • g)) := by
-  simp only [dagger_add, dagger_sub, dagger_smul, RCLike.star_def, Complex.conj_I,
-    Preadditive.add_comp, Preadditive.sub_comp, Preadditive.comp_add, Preadditive.comp_sub,
-    Linear.smul_comp, Linear.comp_smul, neg_smul, Preadditive.neg_comp,
-    smul_sub, smul_add, smul_neg, smul_smul, Complex.I_mul_I, one_smul]
-  module
-
-/-- Complex polarization expresses `dagger f ≫ g` as a linear combination of four endomorphisms
-`dagger (f + c • g) ≫ (f + c • g)`. -/
-theorem dagger_comp_eq_polarization (f g : X ⟶ Y) :
-    dagger f ≫ g =
-      (4 : ℂ)⁻¹ • (dagger (f + g) ≫ (f + g) - dagger (f - g) ≫ (f - g) -
-        Complex.I • (dagger (f + Complex.I • g) ≫ (f + Complex.I • g) -
-          dagger (f - Complex.I • g) ≫ (f - Complex.I • g))) := by
-  rw [← four_smul_dagger_comp, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
-
-end Polarization
 
 /-- A complex C*-category: a `ℂ`-linear dagger category with Banach Hom spaces, contractive
 composition, the C*-identity `‖f ≫ dagger f‖ = ‖f‖ ^ 2`, and positivity of `f ≫ dagger f` in
@@ -127,6 +78,8 @@ attribute [instance_reducible, instance]
   CStarCategory.homNorm CStarCategory.homMetricSpace
 
 attribute [instance] CStarCategory.homCompleteSpace
+
+attribute [simp] CStarCategory.norm_comp_dagger_self
 
 namespace CStarCategory
 

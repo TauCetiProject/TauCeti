@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Basic
+public import Mathlib.Basic.Complex.Basic
 public import Mathlib.CategoryTheory.Linear.Basic
+import Mathlib.Tactic.Module
 
 /-!
 # Dagger categories
@@ -16,9 +18,10 @@ Additive and conjugate-linear compatibility are separate properties of this data
 none of these interfaces imposes norm, completeness, or positivity assumptions.
 
 Unitary arrows have their dagger as a two-sided inverse. They compose, and define native
-categorical isomorphisms. Endomorphisms inherit the usual algebraic star structures, with
-Mathlib's operator-order multiplication on `CategoryTheory.End`, and induced and full
-subcategories inherit the dagger and its additive and scalar compatibilities.
+categorical isomorphisms. Complex-linear dagger categories satisfy the four-term polarization
+identities. Endomorphisms inherit the usual algebraic star structures, with Mathlib's
+operator-order multiplication on `CategoryTheory.End`, and induced and full subcategories inherit
+the dagger and its additive and scalar compatibilities.
 -/
 
 public section
@@ -203,6 +206,54 @@ def daggerLinearEquiv (A B : C) : (A ⟶ B) ≃ₛₗ[starRingEnd R] (B ⟶ A) w
     (daggerLinearEquiv R X Y).toAddEquiv = daggerAddEquiv X Y := (rfl)
 
 end Semilinear
+
+section Polarization
+
+variable [Preadditive C] [Linear ℂ C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+
+/-- Scaled complex polarization identity for `f ≫ dagger g` in a complex-linear dagger category. -/
+theorem four_smul_comp_dagger (f g : X ⟶ Y) :
+    (4 : ℂ) • (f ≫ dagger g) =
+      (f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g) +
+        Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
+          (f - Complex.I • g) ≫ dagger (f - Complex.I • g)) := by
+  simp only [dagger_add, dagger_sub, dagger_smul, Complex.star_def, Complex.conj_I,
+    Preadditive.add_comp, Preadditive.sub_comp, Preadditive.comp_add, Preadditive.comp_sub,
+    Linear.smul_comp, Linear.comp_smul, neg_smul, Preadditive.comp_neg,
+    smul_sub, smul_add, smul_neg, smul_smul, Complex.I_mul_I, one_smul]
+  module
+
+/-- Complex polarization expresses `f ≫ dagger g` as a linear combination of four positive-form
+endomorphisms `(f + c • g) ≫ dagger (f + c • g)`. -/
+theorem comp_dagger_eq_polarization (f g : X ⟶ Y) :
+    f ≫ dagger g =
+      (4 : ℂ)⁻¹ • ((f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g) +
+        Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
+          (f - Complex.I • g) ≫ dagger (f - Complex.I • g))) := by
+  rw [← four_smul_comp_dagger, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
+
+/-- Scaled complex polarization identity for `dagger f ≫ g` in a complex-linear dagger category. -/
+theorem four_smul_dagger_comp (f g : X ⟶ Y) :
+    (4 : ℂ) • (dagger f ≫ g) =
+      dagger (f + g) ≫ (f + g) - dagger (f - g) ≫ (f - g) -
+        Complex.I • (dagger (f + Complex.I • g) ≫ (f + Complex.I • g) -
+          dagger (f - Complex.I • g) ≫ (f - Complex.I • g)) := by
+  simp only [dagger_add, dagger_sub, dagger_smul, Complex.star_def, Complex.conj_I,
+    Preadditive.add_comp, Preadditive.sub_comp, Preadditive.comp_add, Preadditive.comp_sub,
+    Linear.smul_comp, Linear.comp_smul, neg_smul, Preadditive.neg_comp,
+    smul_sub, smul_add, smul_neg, smul_smul, Complex.I_mul_I, one_smul]
+  module
+
+/-- Complex polarization expresses `dagger f ≫ g` as a linear combination of four endomorphisms
+`dagger (f + c • g) ≫ (f + c • g)`. -/
+theorem dagger_comp_eq_polarization (f g : X ⟶ Y) :
+    dagger f ≫ g =
+      (4 : ℂ)⁻¹ • (dagger (f + g) ≫ (f + g) - dagger (f - g) ≫ (f - g) -
+        Complex.I • (dagger (f + Complex.I • g) ≫ (f + Complex.I • g) -
+          dagger (f - Complex.I • g) ≫ (f - Complex.I • g))) := by
+  rw [← four_smul_dagger_comp, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
+
+end Polarization
 
 /-- An arrow is unitary when its dagger is its two-sided inverse. -/
 def IsUnitary (f : X ⟶ Y) : Prop :=

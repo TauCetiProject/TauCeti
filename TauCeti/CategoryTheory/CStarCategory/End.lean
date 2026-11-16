@@ -373,10 +373,6 @@ instance instCStarCategoryFullSubcategory (P : ObjectProperty C) :
     CStarCategory P.FullSubcategory :=
   InducedCategory.instCStarCategory FullSubcategory.obj
 
-/-- The norm of the underlying arrow in a full subcategory equals the arrow's norm. -/
-theorem norm_hom {P : ObjectProperty C} {X Y : P.FullSubcategory} (f : X ⟶ Y) :
-    ‖f.hom‖ = ‖f‖ := by rfl
-
 /-- Bundling an arrow in a full subcategory preserves its norm. -/
 @[simp] theorem norm_homMk {P : ObjectProperty C} {X Y : P.FullSubcategory}
     (f : X.obj ⟶ Y.obj) :
