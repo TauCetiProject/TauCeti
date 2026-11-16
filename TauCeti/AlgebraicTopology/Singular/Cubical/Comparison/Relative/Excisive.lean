@@ -98,9 +98,9 @@ def cubicalChainComplexProdComparison :
   cokernel.desc _ (cubicalChainComplexMap k (P.prodLeftToProdSubspace Q)) (by
     rw [← cubicalChainComplexMap_comp]
     -- The ambient map `A × Y ⟶ X × Y` factors through `A × Y ∪ X × B`.
-    exact cubicalChainComplexMap_eq_zero_of_fac k _ (P.prodSubspaceInl Q)
-      ((P.prodSubspaceInl_comp_map Q).trans ((Category.comp_id _).symm.trans
-        (congrArg (_ ≫ ·) (P.prodLeftToProdSubspace_fst Q).symm))))
+    exact cubicalChainComplexMap_eq_zero_of_fac k _ (P.prodSubspaceInl Q) (by
+      rw [Hom.fst_comp, prodLeftToProdSubspace_fst]
+      exact P.prodSubspaceInl_comp_map Q))
 
 /-- The comparison map is induced by the map of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)`. -/
 @[reassoc (attr := simp)]
@@ -116,30 +116,29 @@ private abbrev prodSubspaceShortComplex : ShortComplex (ChainComplex (ModuleCat.
     (cubicalChainComplexMap k (P.prodLeftToProdSubspace Q)) (by
       rw [← cubicalChainComplexMap_comp]
       -- The ambient map is the inclusion of `A × Y ∪ X × B` into `X × Y`.
-      exact cubicalChainComplexMap_eq_zero_of_fac k _ (𝟙 _)
-        ((Category.id_comp _).trans ((P.prodExcisionPairToProdLeft_fst Q).symm.trans
-          ((Category.comp_id _).symm.trans
-            (congrArg (_ ≫ ·) (P.prodLeftToProdSubspace_fst Q).symm)))))
+      exact cubicalChainComplexMap_eq_zero_of_fac k _ (𝟙 _) (by
+        rw [Hom.fst_comp, prodExcisionPairToProdLeft_fst, prodLeftToProdSubspace_fst]
+        exact (Category.id_comp _).trans (Category.comp_id _).symm))
 
 /-- The sequence of the triple `X × B ⊆ A × Y ∪ X × B ⊆ X × Y` is short exact: each term is a
 quotient of chains, and the relative chains of `(X × Y, A × Y ∪ X × B)` are the quotient of those
 of `(X × Y, X × B)` by those of `(A × Y ∪ X × B, X × B)`. -/
 private theorem shortExact_prodSubspaceShortComplex :
-    (prodSubspaceShortComplex k P Q).ShortExact :=
-  shortExact_of_isColimit_cokernelCofork
-    (f := (normalizedCubicalChainComplex k).map (P.prodSubspaceInr Q))
-    (g := (normalizedCubicalChainComplex k).map (ofSubset (P.prodSubspace Q)).map)
+    (prodSubspaceShortComplex k P Q).ShortExact := by
+  have hu := π_cubicalChainComplexMap k (P.prodExcisionPairToProdLeft Q)
+  rw [prodExcisionPairToProdLeft_fst] at hu
+  -- The map of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` is the identity of `X × Y`.
+  have hv : cokernel.π _ ≫ cubicalChainComplexMap k (P.prodLeftToProdSubspace Q) =
+      cokernel.π _ := by
+    rw [π_cubicalChainComplexMap, prodLeftToProdSubspace_fst]
+    exact (congrArg (· ≫ _) ((normalizedCubicalChainComplex k).map_id _)).trans
+      (Category.id_comp _)
+  -- `X × B ⊆ A × Y ∪ X × B ⊆ X × Y` composes to the inclusion `X × B ⊆ X × Y`.
+  exact shortExact_of_isColimit_cokernelCofork
     (((normalizedCubicalChainComplex k).map_comp _ _).symm.trans
       (congrArg _ (P.prodSubspaceInr_comp_map Q)))
     (mono_normalizedCubicalChainComplex_map k _)
-    (cokernelIsCokernel _) (cokernelIsCokernel _) (cokernelIsCokernel _)
-    ((π_cubicalChainComplexMap k (P.prodExcisionPairToProdLeft Q)).trans
-      (congrArg (fun f ↦ (normalizedCubicalChainComplex k).map f ≫ _)
-        (P.prodExcisionPairToProdLeft_fst Q)))
-    -- The map of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` is the identity of `X × Y`.
-    ((π_cubicalChainComplexMap k (P.prodLeftToProdSubspace Q)).trans
-      ((congrArg (· ≫ _) ((congrArg _ (P.prodLeftToProdSubspace_fst Q)).trans
-        ((normalizedCubicalChainComplex k).map_id _))).trans (Category.id_comp _)))
+    (cokernelIsCokernel _) (cokernelIsCokernel _) (cokernelIsCokernel _) hu hv
 
 /-- The morphism from the sequence of the product of pairs to the sequence of the triple
 `X × B ⊆ A × Y ∪ X × B ⊆ X × Y`, given by the excision map, the identity and the comparison map. -/
@@ -184,12 +183,14 @@ theorem quasiIso_cubicalChainComplexProdComparison
     QuasiIso (P.cubicalChainComplexProdComparison k Q) := by
   refine quasiIso_cubicalChainComplexProdComparison_of_isIso k P Q fun n ↦
     isIso_singularHomologyMap_of_open_cover _ (P.prodExcisionMap Q)
-      (prodExcisionMap_fst P Q ▸ P.isEmbedding_prodSubspaceInl Q) ?_ _ (fun b ↦ ?_)
+      (by rw [prodExcisionMap_fst]; exact P.isEmbedding_prodSubspaceInl Q) ?_ _ (fun b ↦ ?_)
       (Set.union_eq_iUnion.symm.trans h) (fun b ↦ ?_) n
   · -- A point `(a, y)` of `A × Y` lying in `X × B` lies in `A × B`.
     rintro ⟨a, y⟩ ⟨⟨x, b⟩, hxb⟩
-    have hy : Q.map b = y := congrArg Prod.snd (((P.coe_prodSubspaceInr_apply Q _).symm.trans
-      (congrArg Subtype.val hxb)).trans (P.coe_prodExcisionMap_fst_apply Q _))
+    rw [prodExcisionMap_fst] at hxb
+    -- In `X × Y`, `hxb` says `(x, Q.map b) = (P.map a, y)`; compare second coordinates.
+    have hy : Q.map b = y := congrArg Prod.snd ((P.coe_prodSubspaceInr_apply Q _).symm.trans
+      ((congrArg Subtype.val hxb).trans (P.coe_prodSubspaceInl_apply Q _)))
     exact ⟨(a, b), Prod.ext rfl hy⟩
   · cases b <;> exact isOpen_interior
   · cases b
@@ -200,8 +201,8 @@ theorem quasiIso_cubicalChainComplexProdComparison
     · -- Points with first coordinate in `A` lie in `A × Y`.
       refine Or.inr fun x hx ↦ ?_
       obtain ⟨a, ha⟩ := interior_subset hx
-      exact ⟨(a, x.1.2),
-        Subtype.ext ((P.coe_prodExcisionMap_fst_apply Q _).trans (Prod.ext ha rfl))⟩
+      rw [prodExcisionMap_fst]
+      exact ⟨(a, x.1.2), Subtype.ext ((P.coe_prodSubspaceInl_apply Q _).trans (Prod.ext ha rfl))⟩
 
 /-- **The relative cubical chains of a product of pairs with open subspaces.** If `A` is open in
 `X` and `B` is open in `Y`, then the comparison map `N(P × Q) ⟶ N(X × Y, A × Y ∪ X × B)` is a

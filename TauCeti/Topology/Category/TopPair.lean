@@ -553,11 +553,6 @@ lemma prodExcisionMap_fst : Hom.fst (P.prodExcisionMap Q) = P.prodSubspaceInl Q 
 lemma prodExcisionMap_fst_apply (x : ↑(P.snd ⊗ Q.fst : TopCat.{u})) :
     Hom.fst (P.prodExcisionMap Q) x = P.prodSubspaceInl Q x := (rfl)
 
-lemma coe_prodExcisionMap_fst_apply (x : ↑(P.snd ⊗ Q.fst : TopCat.{u})) :
-    (Subtype.val (Hom.fst (P.prodExcisionMap Q) x) : ↑(P.fst ⊗ Q.fst : TopCat.{u})) =
-      (P.map x.1, x.2) :=
-  (rfl)
-
 lemma prodExcisionMap_snd : Hom.snd (P.prodExcisionMap Q) = P.map ▷ Q.snd := (rfl)
 
 @[simp]
