@@ -325,26 +325,20 @@ constant series. Scalars act as on the ambient formal series, and the coefficien
 commutative. -/
 noncomputable instance OnOpenDisc.instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
     Algebra S (OnOpenDisc.subring R R₀) where
-  smul s f := ⟨s • (f : R⟦X⟧), by
+  smul s f := ⟨s • (f : R⟦X⟧), OnOpenDisc.mem_subring.mpr <| by
     rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
     exact (onOpenDisc_C (algebraMap S R s)).mul f.2⟩
-  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ by
-    rw [PowerSeries.algebraMap_apply]
-    exact onOpenDisc_C _
-  commutes' s f := Subtype.ext <| by
-    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
-      Algebra.commutes s (f : R⟦X⟧)
+  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ OnOpenDisc.mem_subring.mpr <| by
+    rw [PowerSeries.algebraMap_apply]; exact onOpenDisc_C _
+  commutes' s f := Subtype.ext <| by simpa using Algebra.commutes s (f : R⟦X⟧)
   smul_def' s f := Subtype.ext <| by
-    rw [Subring.coe_mul, RingHom.codRestrict_apply]
-    convert Algebra.smul_def s (f : R⟦X⟧) using 1
+    rw [Subring.coe_mul, RingHom.codRestrict_apply]; exact (Algebra.smul_def s (f : R⟦X⟧)).symm.symm
 
 /-- A scalar maps to the constant open-disc series of its image in the coefficient ring. -/
 @[simp]
 theorem OnOpenDisc.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
-    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) := by
-  calc
-    _ = algebraMap S R⟦X⟧ s := (rfl)
-    _ = _ := PowerSeries.algebraMap_apply
+    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) :=
+  (rfl : _ = algebraMap S R⟦X⟧ s).trans PowerSeries.algebraMap_apply
 
 /-- Scalars act on open-disc series as on their underlying formal power series. -/
 @[simp]
@@ -356,9 +350,7 @@ theorem OnOpenDisc.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (
 instance OnOpenDisc.instIsScalarTowerSubring {S T : Type*} [CommSemiring S] [CommSemiring T]
     [Algebra S R] [Algebra T R] [SMul S T] [IsScalarTower S T R] :
     IsScalarTower S T (OnOpenDisc.subring R R₀) where
-  smul_assoc s t f := Subtype.ext <| by
-    simp only [OnOpenDisc.coe_smul_subring]
-    exact smul_assoc s t (f : R⟦X⟧)
+  smul_assoc s t f := Subtype.ext <| by simp [smul_assoc]
 
 /-- The inclusion of polynomials into series on the open disc. -/
 noncomputable def OnOpenDisc.polynomialHom : Polynomial R →+* OnOpenDisc.subring R R₀ :=
