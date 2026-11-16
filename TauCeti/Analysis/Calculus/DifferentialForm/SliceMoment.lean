@@ -8,7 +8,17 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Calculus.DifferentialForm.Integral
+import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
@@ -42,6 +52,24 @@ Suppose that `T` vanishes on `E × (ℂ \ K)` for a compact set `K`. Then:
   (`TauCeti.fderiv_sliceMoment_apply`). Here `v` is a base direction, lifted horizontally to
   `(v, 0)`. For `g = wᵏ` this is `dM_k = π_*(k w^(k-1) dw ∧ T)`
   (`TauCeti.fderiv_sliceMoment_pow_apply`).
+
+Two consequences of closedness concern the flux `M₀(z) = ∫ dμ_z` and the pairing of `T` with
+forms pulled back from the base, when `E` is two-dimensional with basis `b`:
+
+* the slice moment of a constant weight, in particular the flux, does not depend on the base point
+  (`TauCeti.sliceMoment_const_eq_sliceMoment_const`);
+* for a compactly supported base two-form `β`, the integral of `T ∧ π^*β` over `E × ℂ` is
+  `∫ M₀ β` (`TauCeti.integral_wedge_compContinuousLinearMap_fst`), and for a compactly supported
+  one-form `η` on `E × ℂ`, `∫ T ∧ (c π^*β + dη) = c M₀ ∫ β`
+  (`TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`). When `β` is the area
+  form of the curve and `c π^*β + dη` tames the almost complex structure, this is the pairing of a
+  closed current of transverse flux `m` with a taming form, `c m` times the area; it controls the
+  mass of an approximately positive current
+  (`TauCeti.AlmostComplexStructure.integral_norm_le_div_of_integral_infDist_le`).
+
+Top-degree coefficients on `E × ℂ` are taken on the product frame `(b₀, 0), (b₁, 0), (0, 1),
+(0, i)`, `(b.prod Complex.basisOneI).reindex finSumFinEquiv`, and integrated against its Haar
+measure, the product of the Haar measure of `b` and Lebesgue measure on `ℂ`.
 
 The derivative formula comes from differentiating under the integral sign and the closedness
 `dT = 0`, which trades the base derivative of the slice density for fibre derivatives of the
@@ -238,6 +266,136 @@ theorem fderiv_sliceMoment_pow_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
   simp only [((hasDerivAt_pow k w).hasFDerivAt.restrictScalars ℝ).fderiv,
     ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply,
     smul_eq_mul, real_smul]
+  ring
+
+/-! ### The flux of a closed form and its pairing with base forms -/
+
+/-- **The fibre flux of a closed form is constant.** If `T` is a closed `C¹` two-form on `E × ℂ`
+vanishing over the complement of a compact set `K`, then the slice moment of a constant weight,
+for instance the flux `M₀(z) = ∫ dμ_z`, takes the same value over every base point. -/
+theorem sliceMoment_const_eq_sliceMoment_const (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0) (c : F) (z z' : E) :
+    sliceMoment T (fun _ ↦ c) z = sliceMoment T (fun _ ↦ c) z' := by
+  refine is_const_of_fderiv_eq_zero
+    ((contDiff_sliceMoment (n := 1) hK hTc contDiff_const hT).differentiable one_ne_zero)
+    (fun z ↦ ?_) z z'
+  ext v
+  rw [fderiv_sliceMoment_apply hK hTc contDiff_const hT (fun w ↦ hdT _) v]
+  simp
+
+/-- The value of `T ∧ π^*β` on the product frame `(b₀, 0), (b₁, 0), (0, 1), (0, i)` is the slice
+density of `T` times the value of `β` on `b`: every other way of distributing the four vectors
+gives `β` a fibre vector, on which the pullback vanishes. -/
+private theorem wedge_compContinuousLinearMap_fst_apply (b : Module.Basis (Fin 2) ℝ E)
+    (θ : (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (β : E [⋀^Fin 2]→L[ℝ] ℝ) :
+    θ.wedge (β.compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ))
+        ((b.prod Complex.basisOneI).reindex finSumFinEquiv) =
+      θ ![(0, 1), (0, I)] * β b := by
+  have hframe : ⇑((b.prod Complex.basisOneI).reindex finSumFinEquiv) =
+      ![(b 0, 0), (b 1, 0), (0, 1), (0, I)] := by
+    ext i : 1
+    fin_cases i <;> simp [Module.Basis.prod_apply, Complex.coe_basisOneI, finSumFinEquiv] <;> rfl
+  have hb : ⇑b = ![b 0, b 1] := by
+    ext i : 1
+    fin_cases i <;> rfl
+  have h₁ (v : E) : β ![v, 0] = 0 := β.map_coord_zero 1 rfl
+  have h₀ (v : E) : β ![0, v] = 0 := β.map_coord_zero 0 rfl
+  have hfst (u v : E × ℂ) : Prod.fst ∘ ![u, v] = ![u.1, v.1] := by
+    ext i : 1
+    fin_cases i <;> rfl
+  rw [hframe, ContinuousAlternatingMap.wedge_def,
+    ContinuousAlternatingMap.pairedWedge_mul_apply_two_two, hb]
+  simp [hfst, h₀, h₁]
+
+/-- The coefficient of `T ∧ π^*β` on the product frame has compact support when `T` vanishes
+outside a compact set of the fibre and `β` has compact support. -/
+private theorem hasCompactSupport_mul_apply (hK : IsCompact K) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0)
+    {β : E → E [⋀^Fin 2]→L[ℝ] ℝ} (hβc : HasCompactSupport β) (v : Fin 2 → E) :
+    HasCompactSupport fun x : E × ℂ ↦ T x ![(0, 1), (0, I)] * β x.1 v := by
+  refine HasCompactSupport.intro (hβc.prod hK) fun x hx ↦ ?_
+  simp only [Set.mem_prod, not_and_or] at hx
+  rcases hx with hx | hx
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+  · simp [hT x.1 x.2 hx]
+
+/-- **The pairing of a two-form with a pulled-back base form.** Let `T` be a continuous two-form
+on `E × ℂ` vanishing over the complement of a compact set `K` of the fibre, and `β` a compactly
+supported continuous two-form on a two-dimensional base `E` with basis `b`. Then the integral of
+`T ∧ π^*β` is the integral over the base of the flux `M₀(z) = ∫ dμ_z` of `T` times `β`. Top-degree
+coefficients are taken on the product frame `(b₀, 0), (b₁, 0), (0, 1), (0, i)` and integrated
+against its Haar measure. -/
+theorem integral_wedge_compContinuousLinearMap_fst [MeasurableSpace E] [BorelSpace E]
+    (b : Module.Basis (Fin 2) ℝ E) (hK : IsCompact K) (hTc : Continuous T)
+    (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {β : E → E [⋀^Fin 2]→L[ℝ] ℝ} (hβ : Continuous β)
+    (hβc : HasCompactSupport β) :
+    ∫ x, (T x).wedge ((β x.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ))
+        ((b.prod Complex.basisOneI).reindex finSumFinEquiv)
+        ∂((b.prod Complex.basisOneI).reindex finSumFinEquiv).addHaar =
+      ∫ z, sliceMoment T (fun _ ↦ (1 : ℝ)) z * β z b ∂b.addHaar := by
+  have hI : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by
+    rw [← Complex.toBasis_orthonormalBasisOneI]
+    exact Complex.orthonormalBasisOneI.addHaar_eq_volume
+  set f : E × ℂ → ℝ := fun x ↦ T x ![(0, 1), (0, I)] * β x.1 b
+  have hf : Integrable f (b.addHaar.prod volume) :=
+    Continuous.integrable_of_hasCompactSupport (by fun_prop)
+      (hasCompactSupport_mul_apply hK hT hβc b)
+  simp only [wedge_compContinuousLinearMap_fst_apply, Module.Basis.addHaar_reindex,
+    Module.Basis.prod_addHaar, hI]
+  rw [integral_prod f hf]
+  refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
+  simp [f, sliceMoment_def, integral_mul_const]
+
+open ContinuousAlternatingMap in
+/-- **The pairing of a closed two-form with `c π^*β + dη`.** Let `T` be a closed `C¹` two-form on
+`E × ℂ` vanishing over the complement of a compact set `K` of the fibre, so that its flux
+`m = ∫ dμ_z` does not depend on the base point `z₀`
+(`TauCeti.sliceMoment_const_eq_sliceMoment_const`). For a compactly supported continuous base
+two-form `β` and a compactly supported `C¹` one-form `η` on `E × ℂ`,
+
+`∫ T ∧ (c π^*β + dη) = c m ∫ β`.
+
+The exact term integrates to zero because `T` is closed. In a tube around a pseudoholomorphic curve
+`C` with `β` its area form and `c π^*β + dη` a taming form, this is the identity
+`T(Ω) = c m area(C)` for a closed current of transverse flux `m`. -/
+theorem integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv [MeasurableSpace E]
+    [BorelSpace E] (b : Module.Basis (Fin 2) ℝ E) (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0)
+    {β : E → E [⋀^Fin 2]→L[ℝ] ℝ} (hβ : Continuous β) (hβc : HasCompactSupport β)
+    {η : E × ℂ → (E × ℂ) [⋀^Fin 1]→L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (c : ℝ) (z₀ : E) :
+    ∫ x, (T x).wedge (c • (β x.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ) +
+        extDeriv η x) ((b.prod Complex.basisOneI).reindex finSumFinEquiv)
+        ∂((b.prod Complex.basisOneI).reindex finSumFinEquiv).addHaar =
+      c * sliceMoment T (fun _ ↦ (1 : ℝ)) z₀ * ∫ z, β z b ∂b.addHaar := by
+  set e := (b.prod Complex.basisOneI).reindex finSumFinEquiv
+  -- The exact term vanishes: integrate by parts and use `dT = 0`.
+  have hparts := e.integral_extDeriv_wedge_eq_integral_wedge_extDeriv (k := 2) (l := 1)
+    (by norm_num) hTc hη hηc
+  have hzero (ψ : (E × ℂ) [⋀^Fin 1]→L[ℝ] ℝ) :
+      (0 : (E × ℂ) [⋀^Fin (2 + 1)]→L[ℝ] ℝ).wedge ψ = 0 := by
+    rw [wedge_def, pairedWedge_zero_left]
+  simp only [hdT, hzero, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, integral_zero]
+    at hparts
+  have hexact : ∫ x, (T x).wedge (extDeriv η x) e ∂e.addHaar = 0 := by
+    norm_num at hparts
+    exact hparts
+  have hint₁ : Integrable (fun x ↦ (T x).wedge
+      ((β x.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) e) e.addHaar := by
+    simp only [e, wedge_compContinuousLinearMap_fst_apply]
+    exact Continuous.integrable_of_hasCompactSupport (by fun_prop)
+      (hasCompactSupport_mul_apply hK hT hβc b)
+  have hint₂ : Integrable (fun x ↦ (T x).wedge (extDeriv η x) e) e.addHaar := by
+    refine Continuous.integrable_of_hasCompactSupport ?_ ?_
+    · exact (((hTc.of_le zero_le_one).wedge
+        (contDiff_extDeriv (r := 0) hη (by norm_num))).continuous).eval_const _
+    · exact (hηc.extDeriv.wedge_left (φ := T)).comp_left
+        (g := fun ω : (E × ℂ) [⋀^Fin (2 + (1 + 1))]→L[ℝ] ℝ ↦ ω e) rfl
+  simp only [wedge_add_right, wedge_smul_right, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  rw [integral_add (hint₁.const_mul c) hint₂, hexact, add_zero, integral_const_mul,
+    integral_wedge_compContinuousLinearMap_fst b hK hTc.continuous hT hβ hβc]
+  simp only [sliceMoment_const_eq_sliceMoment_const hK hTc hT hdT (1 : ℝ) _ z₀,
+    integral_const_mul]
   ring
 
 end TauCeti
