@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 
+import Mathlib.RingTheory.IntegralClosure.GoingDown
+
 /-!
-# The polynomial `(1 + X) ^ n - 1`
+# The polynomial `(1 + X) ^ n - 1` and distinguished polynomials
 
 The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
@@ -28,7 +30,8 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
-polynomials at `I` are closed under finite products, including the empty product `1`.
+polynomials at `I` are closed under finite products, including the empty product `1`, and under
+monic divisors when `I` is radical (via Mathlib's `Polynomial.coeff_mem_radical_span_coeff_of_dvd`).
 
 ## Main results
 
@@ -42,6 +45,14 @@ polynomials at `I` are closed under finite products, including the empty product
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
   `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
   polynomials are distinguished.
+* `Polynomial.IsDistinguishedAt.isDistinguishedAt_radical_of_dvd`,
+  `Polynomial.IsDistinguishedAt.of_dvd`: monic divisors of a polynomial distinguished at `I` are
+  distinguished at `I.radical`, hence at `I` when `I` is radical.
+* `Polynomial.IsDistinguishedAt.exists_C_mul_isDistinguishedAt_of_dvd`: over a ring without zero
+  divisors, any divisor of a polynomial distinguished at a radical ideal is a unit-constant
+  multiple of a distinguished polynomial.
+* `Polynomial.IsDistinguishedAt.isUnit_iff_coeff_zero_notMem`: a polynomial distinguished at a
+  proper ideal `I` is a unit if and only if its constant term lies outside `I`.
 -/
 
 public section
@@ -115,6 +126,47 @@ theorem isDistinguishedAt_prod {ι : Type*} {s : Finset ι} {f : ι → R[X]}
     (hf : ∀ i ∈ s, (f i).IsDistinguishedAt I) : (∏ i ∈ s, f i).IsDistinguishedAt I :=
   Finset.prod_induction f (·.IsDistinguishedAt I) (fun _ _ ↦ IsDistinguishedAt.mul)
     isDistinguishedAt_one hf
+
+/-- Every monic divisor of a polynomial distinguished at an ideal `I` is distinguished at the
+radical `I.radical`. -/
+theorem IsDistinguishedAt.isDistinguishedAt_radical_of_dvd {f p : R[X]}
+    (hf : f.IsDistinguishedAt I) (hp : p.Monic) (hpf : p ∣ f) :
+    p.IsDistinguishedAt I.radical :=
+  ⟨⟨fun {i} hi ↦ Ideal.radical_mono
+      (Ideal.span_le.2 (by rintro _ ⟨k, hk, rfl⟩; exact hf.mem hk))
+      (coeff_mem_radical_span_coeff_of_dvd f p hf.monic hp hpf i hi.ne)⟩, hp⟩
+
+/-- Every monic divisor of a polynomial distinguished at a radical ideal `I` is distinguished at
+`I`. -/
+theorem IsDistinguishedAt.of_dvd {f p : R[X]} (hf : f.IsDistinguishedAt I)
+    (hI : I.IsRadical) (hp : p.Monic) (hpf : p ∣ f) : p.IsDistinguishedAt I :=
+  hI.radical ▸ hf.isDistinguishedAt_radical_of_dvd hp hpf
+
+/-- Over a ring without zero divisors, every divisor of a polynomial distinguished at a radical
+ideal `I` is a unit-constant multiple of a polynomial distinguished at `I`. -/
+theorem IsDistinguishedAt.exists_C_mul_isDistinguishedAt_of_dvd [NoZeroDivisors R] {f d : R[X]}
+    (hf : f.IsDistinguishedAt I) (hI : I.IsRadical) (hdf : d ∣ f) :
+    ∃ (u : Rˣ) (p : R[X]), p.IsDistinguishedAt I ∧ d = C (u : R) * p := by
+  obtain ⟨q, hfq⟩ := hdf
+  obtain ⟨u, hu_eq⟩ := IsUnit.of_mul_eq_one q.leadingCoeff (by
+    rw [← leadingCoeff_mul, ← hfq, hf.monic.leadingCoeff])
+  refine ⟨u, C ((u⁻¹ : Rˣ) : R) * d, hf.of_dvd hI ?_ ?_, by
+    rw [← mul_assoc, ← map_mul, Units.mul_inv, map_one, one_mul]⟩
+  · rw [Monic, leadingCoeff_mul, leadingCoeff_C, ← hu_eq, Units.inv_mul]
+  · exact ⟨C (u : R) * q, by rw [hfq, ← mul_assoc, mul_right_comm (C ((u⁻¹ : Rˣ) : R)), ← map_mul,
+      Units.inv_mul, map_one, one_mul]⟩
+
+/-- A polynomial distinguished at a proper ideal `I` is a unit if and only if its constant term
+lies outside `I`. -/
+theorem IsDistinguishedAt.isUnit_iff_coeff_zero_notMem {f : R[X]} (hf : f.IsDistinguishedAt I)
+    (hI : I ≠ ⊤) : IsUnit f ↔ f.coeff 0 ∉ I := by
+  refine ⟨fun hu h0 ↦ hI ?_, fun h0 ↦ ?_⟩
+  · rw [hf.monic.isUnit_iff.1 hu] at h0
+    exact Ideal.eq_top_of_isUnit_mem I (by simpa using h0) isUnit_one
+  · rw [hf.monic.isUnit_iff]
+    refine eq_one_of_monic_natDegree_zero hf.monic ?_
+    by_contra hdeg
+    exact h0 (hf.mem (Nat.pos_of_ne_zero hdeg))
 
 end Polynomial
 
