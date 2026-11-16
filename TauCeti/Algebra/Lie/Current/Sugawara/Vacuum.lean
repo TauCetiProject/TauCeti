@@ -70,12 +70,13 @@ well as the quadratic Segal--Sugawara state `S₋₂ |0⟩` (`TauCeti.CurrentAlg
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.smoothModules_natCast_vacuumModule`: the vacuum module is smooth for the
-  natural-order left ideals `I_n`.
 * `TauCeti.CurrentAlgebra.limSmul_sugawaraMode_eq_smul_vacuumVectorField`,
-  `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_eq_vacuumVectorField`: `Sₘ` and `Lₘ` implement
-  the regular Witt vector fields `-t^{m+1} d/dt` on `V` for `m ≥ -1` (in particular `L₋₁ = T` and
-  `L₀ = -t d/dt`).
+  `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_eq_vacuumVectorField`,
+  `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_neg_one`,
+  `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_zero`: for `Φ = c • κ_L` and `m ≥ -1`, `Sₘ`
+  acts on `V` as `(1 - 2 a c)` times the regular Witt vector field `-t^{m+1} d/dt`, and away from
+  the critical level (`1 - 2 a c ≠ 0`), `Lₘ` acts as `-t^{m+1} d/dt`, with `L₋₁ = T` and
+  `L₀ = -t d/dt` as special cases.
 * `TauCeti.CurrentAlgebra.sugawaraVacuum_eq_sum`: `S₋₂ |0⟩ = ∑ᵢ (bᵢ)₋₁ (b'ᵢ)₋₁ |0⟩`.
 * `TauCeti.CurrentAlgebra.envelopingι_smul_sugawaraVacuum_eq_zero`,
   `TauCeti.CurrentAlgebra.not_forall_envelopingι_smul_sugawaraVacuum_eq_zero`: critical vs
@@ -84,7 +85,8 @@ well as the quadratic Segal--Sugawara state `S₋₂ |0⟩` (`TauCeti.CurrentAlg
   of `S₋₂ |0⟩` is the mode-`(-1)` image of `symmetricCasimir K L`.
 * `TauCeti.CurrentAlgebra.sugawaraVacuum_notMem_span_vacuum`: `S₋₂ |0⟩` is nonscalar in `V` at
   every level when `2 ≠ 0` and `L` is nontrivial.
-* `TauCeti.CurrentAlgebra.center_completedEnveloping_ne_bot`: at the critical level, `Z(Û) ≠ ⊥`.
+* `TauCeti.CurrentAlgebra.center_completedEnveloping_ne_bot`: at the critical level
+  `2 a Φ = κ_L`, `Z(Û) ≠ ⊥` when `2 ≠ 0` and `L` is nontrivial.
 
 ## References
 
@@ -98,32 +100,13 @@ public section
 noncomputable section
 
 open scoped TensorProduct LaurentSeries
-open CategoryTheory LieAlgebra TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra TauCeti.UniversalEnvelopingAlgebra
 open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace TauCeti.CurrentAlgebra
-
-/-! ### Smoothness of the vacuum module for the natural-order left ideals -/
-
-section Smooth
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
-
-local notation "UK" => CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a
-
-/-- **The vacuum module `U / I₀` is smooth** for the natural-order left ideals `I_n`, so the
-completed enveloping algebra `Û` acts on it via `TauCeti.ModuleTower.limSmul`. -/
-theorem smoothModules_natCast_vacuumModule :
-    smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n)
-      (ModuleCat.of UK (VacuumModule Φ hΦ hΦs a)) :=
-  (smoothModules_orderLeftIdeal_natCast Φ hΦ hΦs a).symm ▸
-    smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0
-
-end Smooth
 
 /-! ### Action of Segal--Sugawara and Virasoro modes on the vacuum module -/
 
@@ -156,18 +139,6 @@ theorem sugawaraVacuum_def :
   (rfl)
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem smul_limSmul_vacuumModule (r : K) (x : Û) (v : V) :
-    ModuleTower.limSmul hV (r • x) v = r • ModuleTower.limSmul hV x v := by
-  rw [Algebra.smul_def, ← (toCompletedEnveloping Φ hΦ hΦs a).commutes, mul_limSmul,
-    limSmul_toCompletedEnveloping, algebraMap_smul]
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem neg_limSmul_vacuumModule (x : Û) (v : V) :
-    ModuleTower.limSmul hV (-x) v = -ModuleTower.limSmul hV x v :=
-  eq_neg_of_add_eq_zero_left (by rw [← ModuleTower.add_limSmul, neg_add_cancel,
-    ModuleTower.zero_limSmul])
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 private theorem orderLeftIdeal_zero_smul_vacuum :
     ∀ u ∈ orderLeftIdeal Φ hΦ hΦs a (0 : ℕ), u • vacuum Φ hΦ hΦs a = 0 :=
   fun _ hu ↦ smul_vacuum_eq_zero_iff.2 (by simpa using hu)
@@ -183,14 +154,14 @@ theorem limSmul_sugawaraMode_vacuum_eq_zero {n : ℤ} (hn : -1 ≤ n) :
 /-- **Normalised Segal--Sugawara Virasoro modes of index `n ≥ -1` kill the vacuum vector.** -/
 theorem limSmul_sugawaraVirasoro_vacuum_eq_zero (c : K) {n : ℤ} (hn : -1 ≤ n) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c n) (vacuum Φ hΦ hΦs a) = 0 := by
-  rw [sugawaraVirasoro_def, smul_limSmul_vacuumModule, limSmul_sugawaraMode_vacuum_eq_zero hn,
+  rw [sugawaraVirasoro_def, ModuleTower.smul_limSmul, limSmul_sugawaraMode_vacuum_eq_zero hn,
     smul_zero]
 
 /-- **The Sugawara degree element `D_κ = -L₀` kills the vacuum vector.** -/
 @[simp]
 theorem limSmul_sugawaraDegree_vacuum_eq_zero (c : K) :
     ModuleTower.limSmul hV (sugawaraDegree Φ hΦ hΦs a c) (vacuum Φ hΦ hΦs a) = 0 := by
-  rw [sugawaraDegree_def, neg_limSmul_vacuumModule,
+  rw [sugawaraDegree_def, ModuleTower.neg_limSmul,
     limSmul_sugawaraVirasoro_vacuum_eq_zero c (by omega), neg_zero]
 
 /-- **For `Φ = c • κ_L` and `m ≥ -1`, `Sₘ` acts on the vacuum module as `(1 - 2 a c)` times the
@@ -212,7 +183,7 @@ theorem limSmul_sugawaraMode_eq_smul_vacuumVectorField {c : K}
   rw [sub_eq_iff_eq_add] at hd
   have hv := congrArg (fun x ↦ ModuleTower.limSmul hV x (vacuum Φ hΦ hΦs a)) hd
   simpa only [mul_limSmul, limSmul_toCompletedEnveloping, ModuleTower.add_limSmul,
-    smul_limSmul_vacuumModule, limSmul_sugawaraMode_vacuum_eq_zero hm, smul_zero, add_zero,
+    ModuleTower.smul_limSmul, limSmul_sugawaraMode_vacuum_eq_zero hm, smul_zero, add_zero,
     vacuumVectorField_smul_vacuum] using hv
 
 /-- **Away from the critical level, `Lₘ` (`m ≥ -1`) acts on the vacuum module as the regular Witt
@@ -222,7 +193,7 @@ theorem limSmul_sugawaraVirasoro_eq_vacuumVectorField {c : K}
     (hh : 0 ≤ (-HahnSeries.single (m + 1) (1 : K)).orderTop) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c m) v =
       vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single (m + 1) (1 : K)) hh v := by
-  rw [sugawaraVirasoro_def, smul_limSmul_vacuumModule,
+  rw [sugawaraVirasoro_def, ModuleTower.smul_limSmul,
     limSmul_sugawaraMode_eq_smul_vacuumVectorField h hm hh, smul_smul, inv_mul_cancel₀ hc, one_smul]
 
 /-- **Away from the critical level, `L₋₁` acts on the vacuum module as the translation operator
@@ -231,16 +202,13 @@ theorem limSmul_sugawaraVirasoro_neg_one {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c (-1)) v =
       vacuumTranslation Φ hΦ hΦs a v := by
-  have hh : 0 ≤ (-HahnSeries.single (-1 + 1 : ℤ) (1 : K)).orderTop := by
-    rw [HahnSeries.orderTop_neg]
-    exact HahnSeries.zero_le_orderTop_single (by omega) 1
   have h1 : (-HahnSeries.single (-1 + 1 : ℤ) (1 : K)) = -1 := by
     rw [neg_add_cancel, HahnSeries.single_zero_one]
-  have hvec (f g : K⸨X⸩) (hf : 0 ≤ f.orderTop) (hg : 0 ≤ g.orderTop) (hfg : f = g) :
-      vacuumVectorField Φ hΦ hΦs a f hf = vacuumVectorField Φ hΦ hΦs a g hg := by
-    subst hfg; rfl
-  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc le_rfl hh, hvec _ (-1) hh (h1 ▸ hh) h1,
-    ← vacuumTranslation_def]
+  have hh : 0 ≤ (-1 : K⸨X⸩).orderTop := by
+    rw [HahnSeries.orderTop_neg]
+    exact HahnSeries.zero_le_orderTop_one
+  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc le_rfl (h1.symm ▸ hh),
+    vacuumVectorField_congr _ hh h1, ← vacuumTranslation_def]
 
 /-- **Away from the critical level, `L₀` acts on the vacuum module as the degree operator
 `-t d/dt`.** -/
@@ -248,16 +216,13 @@ theorem limSmul_sugawaraVirasoro_zero {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c 0) v =
       vacuumDegreeOperator Φ hΦ hΦs a v := by
-  have hh : 0 ≤ (-HahnSeries.single (0 + 1 : ℤ) (1 : K)).orderTop := by
-    rw [HahnSeries.orderTop_neg]
-    exact HahnSeries.zero_le_orderTop_single (by omega) 1
   have h1 : (-HahnSeries.single (0 + 1 : ℤ) (1 : K)) = -HahnSeries.single 1 1 := by
     rw [zero_add]
-  have hvec (f g : K⸨X⸩) (hf : 0 ≤ f.orderTop) (hg : 0 ≤ g.orderTop) (hfg : f = g) :
-      vacuumVectorField Φ hΦ hΦs a f hf = vacuumVectorField Φ hΦ hΦs a g hg := by
-    subst hfg; rfl
-  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc (by omega) hh,
-    hvec _ (-HahnSeries.single 1 1) hh (h1 ▸ hh) h1, ← vacuumDegreeOperator_def]
+  have hh : 0 ≤ (-HahnSeries.single 1 1 : K⸨X⸩).orderTop := by
+    rw [HahnSeries.orderTop_neg]
+    exact HahnSeries.zero_le_orderTop_single zero_le_one 1
+  rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc (by omega) (h1.symm ▸ hh),
+    vacuumVectorField_congr _ hh h1, ← vacuumDegreeOperator_def]
 
 /-- **Away from the critical level, `D_κ = -L₀` acts on the vacuum module as `-vacuumDegreeOperator`
 (`t d/dt`).** -/
@@ -265,7 +230,7 @@ theorem limSmul_sugawaraDegree {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (v : V) :
     ModuleTower.limSmul hV (sugawaraDegree Φ hΦ hΦs a c) v =
       -vacuumDegreeOperator Φ hΦ hΦs a v := by
-  rw [sugawaraDegree_def, neg_limSmul_vacuumModule, limSmul_sugawaraVirasoro_zero h hc]
+  rw [sugawaraDegree_def, ModuleTower.neg_limSmul, limSmul_sugawaraVirasoro_zero h hc]
 
 /-! ### Basis expansion, conformal weight, and current action on `S₋₂ |0⟩` -/
 
@@ -274,7 +239,7 @@ theorem limSmul_sugawaraDegree {c : K}
 theorem limSmul_sugawaraVirasoro_neg_two_vacuum (c : K) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c (-2)) (vacuum Φ hΦ hΦs a) =
       (1 - 2 * a * c)⁻¹ • sugawaraVacuum Φ hΦ hΦs a := by
-  rw [sugawaraVirasoro_def, smul_limSmul_vacuumModule, sugawaraVacuum_def]
+  rw [sugawaraVirasoro_def, ModuleTower.smul_limSmul, sugawaraVacuum_def]
 
 /-- **In any basis `b` of `L` with Killing-dual basis `b'`, `S₋₂ |0⟩ = ∑ᵢ (bᵢ)₋₁ (b'ᵢ)₋₁ |0⟩`.** -/
 theorem sugawaraVacuum_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) :
@@ -319,7 +284,7 @@ theorem envelopingι_single_smul_sugawaraVacuum_of_nonneg {z w : L}
   have hzk : ι[z, k] • vacuum Φ hΦ hΦs a = 0 :=
     envelopingι_smul_vacuum (single_tmul_mem_orderSubmodule K L hk 1 z)
   simpa only [mul_limSmul, limSmul_toCompletedEnveloping, ← sugawaraVacuum_def,
-    ModuleTower.add_limSmul, smul_limSmul_vacuumModule, hzk, ModuleTower.limSmul_zero,
+    ModuleTower.add_limSmul, ModuleTower.smul_limSmul, hzk, ModuleTower.limSmul_zero,
     add_zero] using hv
 
 /-- **Zero-mode currents `z₀` annihilate `S₋₂ |0⟩` (`L`-invariance)**, at every level and central
@@ -411,18 +376,6 @@ theorem vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two :
   exact mul_mem_pbwFiltration K Nneg (ι_mem_pbwFiltration_one K Nneg _)
     (ι_mem_pbwFiltration_one K Nneg _)
 
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem pbwGradedPiece_mk_sum {ι : Type*} (s : Finset ι)
-    (q : ι → TauCeti.Algebra.wordFiltration
-      (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2) :
-    (Submodule.Quotient.mk (∑ i ∈ s, q i) : PBWGradedPiece K Nneg 2) =
-      ∑ i ∈ s, Submodule.Quotient.mk (q i) := by
-  induction s using Finset.cons_induction with
-  | empty => rfl
-  | cons j s hj ih =>
-    rw [Finset.sum_cons, Finset.sum_cons, ← ih]
-    rfl
-
 /-- **The degree-two PBW graded class of `S₋₂ |0⟩` is the PBW image of the mode-`(-1)` quadratic
 symmetric Casimir `SymmetricAlgebra.map K (negativeSingle ...) (symmetricCasimir K L)`.** -/
 theorem pbwHomogeneousComponentMap_symmetricCasimir_eq :
@@ -435,6 +388,8 @@ theorem pbwHomogeneousComponentMap_symmetricCasimir_eq :
           rw [← pbwFiltration_def]
           exact vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two⟩ :
         PBWGradedPiece K Nneg 2) := by
+  -- Expand both sides in `b = Module.finBasis K L`: each basis summand `p i` maps to `mk2 (q i)`
+  -- by `pbwHomogeneousComponentMap_prod_map_ι`, and summing recovers the PBW preimage of `S₋₂ |0⟩`.
   set b := Module.finBasis K L
   set e := negativeSingle Φ hΦ hΦs (neg_one_lt_zero : (-1 : ℤ) < 0)
   let p (i : Fin (Module.finrank K L)) :
@@ -447,33 +402,22 @@ theorem pbwHomogeneousComponentMap_symmetricCasimir_eq :
         (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2 :=
     ⟨([e (b i), e (killingDualBasis b i)].map (_root_.UniversalEnvelopingAlgebra.ι K)).prod,
       TauCeti.Algebra.prod_map_mem_wordFiltration _ le_rfl⟩
-  have hp : (⟨SymmetricAlgebra.map K e (symmetricCasimir K L),
-      TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
-        (symmetricCasimir_mem_homogeneousSubmodule K L)⟩ :
-      TauCeti.SymmetricAlgebra.homogeneousSubmodule K Nneg 2) = ∑ i, p i := by
-    apply Subtype.ext
-    simp only [Submodule.coe_sum, p, symmetricCasimir_eq_sum b, map_sum, map_mul,
-      SymmetricAlgebra.map_apply_ι, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-      mul_one]
-  have hq : (⟨(vacuumPBWEquiv Φ hΦ hΦs a).symm (sugawaraVacuum Φ hΦ hΦs a), by
-      rw [← pbwFiltration_def]
-      exact vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two⟩ :
-      TauCeti.Algebra.wordFiltration
-        (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2) = ∑ i, q i := by
-    apply Subtype.ext
+  let mk2 := Submodule.mkQ
+    (TauCeti.Algebra.wordFiltration.previousRestricted
+      (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2)
+  trans ∑ i, mk2 (q i)
+  · trans pbwHomogeneousComponentMap K Nneg 2 (∑ i, p i)
+    · refine congrArg _ (Subtype.ext ?_)
+      simp only [Submodule.coe_sum, p, symmetricCasimir_eq_sum b, map_sum, map_mul,
+        SymmetricAlgebra.map_apply_ι, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+        mul_one]
+    · rw [map_sum]
+      exact Finset.sum_congr rfl fun i _ ↦
+        pbwHomogeneousComponentMap_prod_map_ι K Nneg [e (b i), e (killingDualBasis b i)]
+  · rw [← map_sum mk2 q Finset.univ, Submodule.mkQ_apply]
+    refine congrArg (Submodule.Quotient.mk : _ → PBWGradedPiece K Nneg 2) (Subtype.ext ?_)
     simp only [Submodule.coe_sum, q, e, vacuumPBWEquiv_symm_sugawaraVacuum b,
       List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-  let mk2 : TauCeti.Algebra.wordFiltration
-      (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2 →
-      PBWGradedPiece K Nneg 2 := Submodule.Quotient.mk
-  have hlhs : pbwHomogeneousComponentMap K Nneg 2
-      ⟨SymmetricAlgebra.map K e (symmetricCasimir K L),
-        TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
-          (symmetricCasimir_mem_homogeneousSubmodule K L)⟩ = ∑ i, mk2 (q i) := by
-    rw [hp, map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦
-      pbwHomogeneousComponentMap_prod_map_ι K Nneg [e (b i), e (killingDualBasis b i)]
-  exact hlhs.trans ((congrArg mk2 hq).trans (pbwGradedPiece_mk_sum Finset.univ q)).symm
 
 /-- **Away from characteristic two, the PBW preimage of `S₋₂ |0⟩` for a nontrivial Lie algebra does
 not lie in PBW filtration degree `1`** (it has exact PBW degree `2`). -/
@@ -485,13 +429,8 @@ theorem vacuumPBWEquiv_symm_sugawaraVacuum_notMem_pbwFiltration_one
       TauCeti.Algebra.wordFiltrationPrevious
         (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2 := by
     rwa [← pbwFiltrationPrevious_def, pbwFiltrationPrevious_succ]
-  have hmk : (Submodule.Quotient.mk
-      ⟨(vacuumPBWEquiv Φ hΦ hΦs a).symm (sugawaraVacuum Φ hΦ hΦs a), by
-        rw [← pbwFiltration_def]
-        exact vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two⟩ :
-      PBWGradedPiece K Nneg 2) = 0 :=
-    (TauCeti.Algebra.wordFiltration.gradedPiece_mk_eq_zero_iff _ _).2 hprev
-  rw [← pbwHomogeneousComponentMap_symmetricCasimir_eq] at hmk
+  have hmk := (pbwHomogeneousComponentMap_symmetricCasimir_eq (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs)
+    (a := a)).trans ((TauCeti.Algebra.wordFiltration.gradedPiece_mk_eq_zero_iff _ _).2 hprev)
   have hsym := pbwHomogeneousComponentMap_injective K Nneg 2
     (hmk.trans (map_zero (pbwHomogeneousComponentMap K Nneg 2)).symm)
   have hmap : SymmetricAlgebra.map K (negativeSingle Φ hΦ hΦs neg_one_lt_zero)

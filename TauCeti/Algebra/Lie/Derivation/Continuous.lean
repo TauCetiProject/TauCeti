@@ -47,6 +47,8 @@ the center as anchor; the corresponding outer anchor identities are in `OuterCen
 
 ## Main results
 
+* `TauCeti.continuous_innerDerivation`: every inner derivation `ad z` is continuous as soon as
+  subtraction is continuous and multiplication is separately continuous.
 * `TauCeti.continuousDerivationLieAlgebra.continuous_iff`: a map into the continuous derivations is
   continuous exactly when each evaluation `D ↦ D a` of it is.
 * `TauCeti.continuousInnerDerivation_isIdealMorphism`: the inner derivations form a Lie ideal of
@@ -79,6 +81,23 @@ theorem derivationLieAlgebra.continuous_center_smul {R A : Type*} [CommRing R] [
     (hD : Continuous (D : Module.End R A)) :
     Continuous ((z • D : derivationLieAlgebra R A) : Module.End R A) :=
   (continuous_const_mul (z : A)).comp hD
+
+/-- Multiplying a continuous derivation by a scalar preserves continuity. -/
+theorem derivationLieAlgebra.continuous_smul {R A : Type*} [CommRing R] [Ring A]
+    [Algebra R A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+    (r : R) {D : derivationLieAlgebra R A}
+    (hD : Continuous (D : Module.End R A)) :
+    Continuous ((r • D : derivationLieAlgebra R A) : Module.End R A) :=
+  ((continuous_const_mul (algebraMap R A r)).comp hD).congr fun a => by
+    rw [Function.comp_apply, ← Algebra.smul_def, SetLike.val_smul, LinearMap.smul_apply]
+
+/-- **Inner derivations are continuous**: `ad z = (z * ·) - (· * z)` is continuous as soon as
+subtraction is continuous and multiplication is separately continuous. -/
+theorem continuous_innerDerivation (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
+    [TopologicalSpace A] [ContinuousSub A] [SeparatelyContinuousMul A] (z : A) :
+    Continuous (innerDerivation R z : Module.End R A) := by
+  refine ((continuous_const_mul z).sub (continuous_mul_const z)).congr fun a => ?_
+  simp [Ring.lie_def]
 
 section ContinuousDerivations
 
@@ -173,10 +192,8 @@ variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A] [Topologi
 /-- **Inner derivations are continuous**: `ad z = (z * ·) - (· * z)` is continuous as soon as
 multiplication is separately continuous. -/
 theorem innerDerivation_mem_continuousDerivationLieAlgebra (z : A) :
-    innerDerivation R z ∈ continuousDerivationLieAlgebra R A := by
-  rw [mem_continuousDerivationLieAlgebra]
-  refine ((continuous_const_mul z).sub (continuous_mul_const z)).congr fun a => ?_
-  simp [Ring.lie_def]
+    innerDerivation R z ∈ continuousDerivationLieAlgebra R A :=
+  continuous_innerDerivation R z
 
 /-- **The continuous inner derivations**: `z ↦ ad z = ⁅z, -⁆`, as a homomorphism of Lie algebras
 from `A` under its commutator bracket to the continuous derivations. -/

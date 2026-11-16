@@ -178,22 +178,6 @@ local notation "ι[" x ", " m "]" =>
 
 local notation "toC" => toCompletedEnveloping Φ hΦ hΦs a
 
-/-- **The commutator `[Sₘ, z_k]` for a multiple of the Killing form.** If `Φ = c • κ_L`, then
-`[Sₘ, z_k] = -k (1 - 2 a c) z_{m+k}`. -/
-theorem sugawaraMode_mul_toCompletedEnveloping_sub_mul_of_eq_smul_killingForm {c : K}
-    (h : Φ = c • killingForm K L) (z : L) (m k : ℤ) :
-    sugawaraMode Φ hΦ hΦs a m * toC ι[z, k] - toC ι[z, k] * sugawaraMode Φ hΦ hΦs a m =
-      (-((1 - 2 * a * c) * (k : K))) • toC ι[z, m + k] := by
-  have hcomm := toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm
-    (hΦ := hΦ) (hΦs := hΦs) (a := a) h z k m
-  calc sugawaraMode Φ hΦ hΦs a m * toC ι[z, k] - toC ι[z, k] * sugawaraMode Φ hΦ hΦs a m
-      = -(toC ι[z, k] * sugawaraMode Φ hΦ hΦs a m - sugawaraMode Φ hΦ hΦs a m * toC ι[z, k]) := by
-        abel
-    _ = (-((1 - 2 * a * c) * (k : K))) • toC ι[z, m + k] := by
-        rw [hcomm, ← neg_smul]
-        congr 1
-        ring
-
 /-- The commutator of `Sₘ` with the index-`j` summand of `:x y:_n` splits into the index-`(j + m)`
 summand of `:x y:_{m+n}` at the cut `m` weighted by `(1 - 2 a c) (-j)`, plus the index-`j` summand
 at the cut `0` weighted by `(1 - 2 a c) (j - n)`. -/
@@ -205,7 +189,7 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
         ((1 - 2 * a * c) * (j - n : K)) •
           toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) j x y) := by
   have hL (u v w : CompletedEnveloping Φ hΦ hΦs a) :
-      u * (v * w) - v * w * u = (u * v - v * u) * w + v * (u * w - w * u) := by
+      u * (v * w) - v * w * u = -((v * u - u * v) * w + v * (w * u - u * w)) := by
     simp only [mul_sub, sub_mul, mul_assoc]
     abel
   have hsub₁ : m + n - (j + m) = n - j := by ring
@@ -214,8 +198,8 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
   have hlt : j + m < m ↔ j < 0 := by omega
   simp only [normalOrderedSummand_apply, hsub₁, hlt]
   by_cases hj : j < 0 <;> simp only [hj, ↓reduceIte, map_mul] <;>
-  · rw [hL, sugawaraMode_mul_toCompletedEnveloping_sub_mul_of_eq_smul_killingForm h,
-      sugawaraMode_mul_toCompletedEnveloping_sub_mul_of_eq_smul_killingForm h, hadd, hsub₂]
+  · rw [hL, toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
+      toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h, hadd, hsub₂]
     simp only [Int.cast_sub, smul_mul_assoc, mul_smul_comm]
     module
 
@@ -244,32 +228,17 @@ private theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) 
       ring
     · simp
   simp only [hl, Finset.sum_add_distrib, ← Finset.sum_smul]
-  have hcard : ((Finset.Ico 0 m).card : ℤ) - (Finset.Ico m 0).card = m := by
-    simp only [Int.card_Ico]
-    omega
-  have hs₁ : ∑ l ∈ Finset.Ico 0 m, (m - l) - ∑ l ∈ Finset.Ico m 0, (m - l) =
-      m * (m + 1) / 2 := by
-    have h2s : 2 * (∑ l ∈ Finset.Ico 0 m, (m - l) - ∑ l ∈ Finset.Ico m 0, (m - l)) =
-        m * (m + 1) := by
-      rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, Finset.sum_const, Finset.sum_const,
-        nsmul_eq_mul, nsmul_eq_mul]
-      linear_combination 2 * m * hcard - Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero m
-    exact Int.eq_ediv_of_mul_eq_right two_ne_zero h2s
-  have hs₂ : ∑ l ∈ Finset.Ico 0 m, -(l * (m - l)) - ∑ l ∈ Finset.Ico m 0, -(l * (m - l)) =
-      -((m ^ 3 - m) / 6) := by
-    rw [Finset.sum_neg_distrib, Finset.sum_neg_distrib, ← Int.eq_ediv_of_mul_eq_right
-      (by decide : (6 : ℤ) ≠ 0) (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m)]
-    ring
-  have hw : algebraMap K UK (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) =
-      ((m ^ 3 - m) / 6 : ℤ) • algebraMap K UK (if m + n = 0 then a * Φ x y else 0) := by
-    split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
-  have key (c₀ c₁ s₀ s₁ M : ℤ) (v w : UK) (hc : c₀ - c₁ = m * (m + 1) / 2) (hs : s₀ - s₁ = -M) :
-      c₀ • v + s₀ • w - (c₁ • v + s₁ • w) = (m * (m + 1) / 2) • v - M • w := by
-    rw [← hc, show M = -(s₀ - s₁) by omega]
-    simp only [sub_smul, neg_smul]
-    abel
-  rw [hw, Int.cast_smul_eq_zsmul]
-  exact key _ _ _ _ _ _ _ hs₁ hs₂
+  rw [add_sub_add_comm, ← sub_smul, ← sub_smul,
+    Int.eq_ediv_of_mul_eq_right two_ne_zero
+      (Finset.two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub m),
+    Finset.sum_neg_distrib, Finset.sum_neg_distrib,
+    show -(∑ x ∈ Finset.Ico 0 m, x * (m - x)) - -(∑ x ∈ Finset.Ico m 0, x * (m - x)) =
+      -(∑ x ∈ Finset.Ico 0 m, x * (m - x) - ∑ x ∈ Finset.Ico m 0, x * (m - x)) by abel,
+    Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
+      (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m),
+    neg_smul, ← sub_eq_add_neg, Int.cast_smul_eq_zsmul]
+  congr 1
+  split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 /-- Reordering the cut-`m` summand into cut `0` splits the combined `l`-th summand into
@@ -465,8 +434,9 @@ theorem sugawaraVirasoro_mul_toCompletedEnveloping_sub_mul {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (z : L) (m k : ℤ) :
     sugawaraVirasoro Φ hΦ hΦs a c m * ιK[z, k] - ιK[z, k] * sugawaraVirasoro Φ hΦ hΦs a c m =
       (-(k : K)) • ιK[z, m + k] := by
-  rw [sugawaraVirasoro, smul_mul_assoc, mul_smul_comm, ← smul_sub,
-    sugawaraMode_mul_toCompletedEnveloping_sub_mul_of_eq_smul_killingForm h, smul_smul]
+  rw [sugawaraVirasoro, smul_mul_assoc, mul_smul_comm, ← smul_sub, ← neg_sub (ιK[z, k] * _),
+    toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
+    smul_neg, smul_smul, ← neg_smul]
   congr 1
   field_simp
 

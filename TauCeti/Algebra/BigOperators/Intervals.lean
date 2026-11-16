@@ -31,8 +31,8 @@ and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, t
 The sum of squares `∑_{r < n} r ^ 2 = n (n - 1) (2 n - 1) / 6` holds in `ℕ`, and with the
 denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r = n (n - 1)`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
-form of Gauss's sum; their squares sum to `k (k - 1) (2 k - 1) / 6`, and the products `j (k - j)`
-sum to `(k ^ 3 - k) / 6`.
+form of Gauss's sum; the differences `k - j` sum to `k (k + 1) / 2`, the squares sum to
+`k (k - 1) (2 k - 1) / 6`, and the products `j (k - j)` sum to `(k ^ 3 - k) / 6`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 
@@ -49,9 +49,10 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
   `1` for odd `n`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`,
+  `Finset.two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub`,
   `Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq`,
-  `Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub`: signed sums of `j`, `j ^ 2`, and
-  `j (k - j)` between `0` and `k : ℤ`, with denominators cleared.
+  `Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub`: signed sums of `j`, `k - j`,
+  `j ^ 2`, and `j (k - j)` between `0` and `k : ℤ`, with denominators cleared.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
 -/
@@ -188,6 +189,17 @@ theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
     rw [Ico_eq_empty_of_le hi] at ih
     simp only [sum_empty, zero_sub] at ih ⊢
     linear_combination ih
+
+/-- Counted with sign, the differences `k - j` for integers between `0` and `k` sum to
+`k (k + 1) / 2`: twice `∑_{0 ≤ j < k} (k - j) - ∑_{k ≤ j < 0} (k - j)` is `k (k + 1)` for every
+`k : ℤ`. -/
+theorem two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub (k : ℤ) :
+    2 * (∑ j ∈ Ico 0 k, (k - j) - ∑ j ∈ Ico k 0, (k - j)) = k * (k + 1) := by
+  have hcard : ((Ico 0 k).card : ℤ) - (Ico k 0).card = k := by
+    simp only [Int.card_Ico]
+    omega
+  rw [sum_sub_distrib, sum_sub_distrib, sum_const, sum_const, nsmul_eq_mul, nsmul_eq_mul]
+  linear_combination 2 * k * hcard - two_mul_sum_Ico_zero_sub_sum_Ico_zero k
 
 /-- Counted with sign, the squares of the integers between `0` and `k` sum to
 `k (k - 1) (2 k - 1) / 6`: six times `∑_{0 ≤ j < k} j ^ 2 - ∑_{k ≤ j < 0} j ^ 2` is

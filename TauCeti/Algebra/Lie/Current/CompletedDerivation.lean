@@ -124,14 +124,39 @@ theorem eq_vectorFieldCompletedEnvelopingDerivation (h : R⸨X⸩) {f : Û → �
   apply derivationLieAlgebra.eq_extend _ _ _ _ _ hf
   simpa only [coe_toCompletedEnveloping_toNonUnitalAlgHom] using he
 
+section WittMode
+
+attribute [local instance 1100] HahnSeries.instAlgebra
+
+/-- The Witt vector field `t^{m+1} d/dt` on completed current generators sends `x_k` to
+`k x_{m+k}`. -/
+theorem vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_single_tmul
+    (m k : ℤ) (r : R) (x : L) :
+    (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single (m + 1) 1) :
+        Module.End R Û)
+        (i (envelopingι c a (HahnSeries.single k r ⊗ₜ[R] x))) =
+      k • i (envelopingι c a (HahnSeries.single (m + k) r ⊗ₜ[R] x)) := by
+  have hcur : vectorFieldDerivation R L (HahnSeries.single (m + 1) 1)
+      (HahnSeries.single k r ⊗ₜ[R] x) = k • (HahnSeries.single (m + k) r ⊗ₜ[R] x) := by
+    rw [vectorFieldDerivation_tmul, LaurentSeries.derivative_apply,
+      LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one,
+      HahnSeries.single_mul_single, one_mul, show m + 1 + (k - 1) = m + k by ring,
+      TensorProduct.smul_tmul']
+    exact congrArg (· ⊗ₜ[R] x) (map_zsmul (HahnSeries.single.addMonoidHom (m + k)) k r)
+  simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
+    vectorFieldEnvelopingDerivation_envelopingι, hcur, map_zsmul]
+
+end WittMode
+
 /-- The degree derivation on completed current generators is `x_n ↦ n x_n`. -/
 theorem vectorFieldCompletedEnvelopingDerivation_single_one_envelopingι_single_tmul
     (n : ℤ) (r : R) (x : L) :
     (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) : Module.End R Û)
         (i (envelopingι c a (HahnSeries.single n r ⊗ₜ[R] x))) =
       n • i (envelopingι c a (HahnSeries.single n r ⊗ₜ[R] x)) := by
-  simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
-    vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul, map_zsmul]
+  simpa only [zero_add] using
+    vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_single_tmul Φ hΦ hΦs a
+      0 n r x
 
 /-- Completed vector fields of order at least one preserve every kernel of a current-order
 stage projection. -/
@@ -213,30 +238,6 @@ theorem vectorFieldCompletedEnvelopingDerivation_neg (h : R⸨X⸩) :
     vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
     vectorFieldEnvelopingDerivation_envelopingι, vectorFieldDerivation_neg,
     LieDerivation.neg_apply, map_neg]
-
-section WittMode
-
-attribute [local instance 1100] HahnSeries.instAlgebra
-
-/-- The Witt vector field `t^{m+1} d/dt` on completed current generators sends `x_k` to
-`k x_{m+k}`. -/
-theorem vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_single_tmul
-    (m k : ℤ) (r : R) (x : L) :
-    (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single (m + 1) 1) :
-        Module.End R Û)
-        (i (envelopingι c a (HahnSeries.single k r ⊗ₜ[R] x))) =
-      k • i (envelopingι c a (HahnSeries.single (m + k) r ⊗ₜ[R] x)) := by
-  have hcur : vectorFieldDerivation R L (HahnSeries.single (m + 1) 1)
-      (HahnSeries.single k r ⊗ₜ[R] x) = k • (HahnSeries.single (m + k) r ⊗ₜ[R] x) := by
-    rw [vectorFieldDerivation_tmul, LaurentSeries.derivative_apply,
-      LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one,
-      HahnSeries.single_mul_single, one_mul, show m + 1 + (k - 1) = m + k by ring,
-      TensorProduct.smul_tmul']
-    exact congrArg (· ⊗ₜ[R] x) (map_zsmul (HahnSeries.single.addMonoidHom (m + k)) k r)
-  simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
-    vectorFieldEnvelopingDerivation_envelopingι, hcur, map_zsmul]
-
-end WittMode
 
 end TauCeti.CurrentAlgebra
 

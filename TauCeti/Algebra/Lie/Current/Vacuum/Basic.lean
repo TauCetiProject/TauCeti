@@ -73,6 +73,8 @@ base ring is an arbitrary commutative ring.
 * `TauCeti.CurrentAlgebra.span_vacuum_eq_top`: the vacuum generates the vacuum module.
 * `TauCeti.CurrentAlgebra.vacuumModule_hom_ext`: `U`-linear maps out of `V` agree once they agree
   on the vacuum.
+* `TauCeti.CurrentAlgebra.smoothModules_natCast_vacuumModule`: the vacuum module is smooth for the
+  natural-order left ideals `I_n`.
 * `TauCeti.CurrentAlgebra.ncoeff_currentField_vacuum_eq_zero`: the nonnegative modes of the current
   fields kill the vacuum.
 * `TauCeti.CurrentAlgebra.vacuumCoordinateAction_smul`: the coordinate action is semilinear along
@@ -209,6 +211,15 @@ theorem vacuumHomEquiv_symm_apply
   (rfl)
 
 end Lift
+
+variable (Φ hΦ hΦs a) in
+/-- **The vacuum module `U / I₀` is smooth** for the natural-order left ideals `I_n`, so the
+completed enveloping algebra `Û` acts on it via `TauCeti.ModuleTower.limSmul`. -/
+theorem smoothModules_natCast_vacuumModule :
+    smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n)
+      (ModuleCat.of UK (VacuumModule Φ hΦ hΦs a)) :=
+  (smoothModules_orderLeftIdeal_natCast Φ hΦ hΦs a).symm ▸
+    smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0
 
 /-- **The vacuum axiom for current fields.** The nonnegative modes `J^x[[n]] = xₙ` of the current
 field of `x` on the vacuum module kill the vacuum, so `J^x(z)|0⟩` is a power series in `z`. -/

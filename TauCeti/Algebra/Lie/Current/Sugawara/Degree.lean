@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Current.CompletedDerivation
 public import TauCeti.Algebra.Lie.Current.Sugawara.Virasoro
 
+import TauCeti.Algebra.Lie.Derivation.Continuous
+
 /-!
 # Sugawara implementation of completed vector fields and the degree derivation
 
@@ -51,12 +53,15 @@ construction.
   `TauCeti.CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_sugawaraMode`:
   `t d/dt` acts by `n` on `:x y:_n` and `Sₙ` at every level.
 * `TauCeti.CurrentAlgebra.innerDerivation_sugawaraMode_of_eq_smul_killingForm`,
-  `TauCeti.CurrentAlgebra.innerDerivation_sugawaraVirasoro`: `Sₘ` and `Lₘ` implement the completed
-  Witt vector field `-t^{m+1} d/dt` on `Û`.
-* `TauCeti.CurrentAlgebra.innerDerivation_sugawaraDegree`: away from the critical level, `D_κ`
-  implements the completed degree derivation `t d/dt` as an inner derivation of `Û`.
-* `TauCeti.CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_eq_zero_of_mem_center`
-  — away from the critical level, `t d/dt` annihilates the completed center `Z(Û)`.
+  `TauCeti.CurrentAlgebra.innerDerivation_sugawaraVirasoro`: for `Φ = c • κ_L`, `ad(Sₘ)` is
+  `(1 - 2 a c)` times the completed Witt vector field `-t^{m+1} d/dt` on `Û`, and away from the
+  critical level (`1 - 2 a c ≠ 0`), `ad(Lₘ)` equals `-t^{m+1} d/dt`.
+* `TauCeti.CurrentAlgebra.innerDerivation_sugawaraDegree`: for `Φ = c • κ_L` away from the
+  critical level (`1 - 2 a c ≠ 0`), `D_κ` implements the completed degree derivation `t d/dt` as
+  an inner derivation of `Û`.
+* `CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_eq_zero_of_mem_center`:
+  for `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), `t d/dt` annihilates the
+  completed center `Z(Û)`.
 
 ## References
 
@@ -156,15 +161,6 @@ theorem sugawaraDegree_def (c : K) :
     sugawaraDegree Φ hΦ hΦs a c = -sugawaraVirasoro Φ hΦ hΦs a c 0 :=
   (rfl)
 
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem continuous_innerDerivation (z : Û) :
-    Continuous (innerDerivation K z : Module.End K Û) := by
-  have heq : ((innerDerivation K z : Module.End K Û) : Û → Û) = fun x ↦ z * x - x * z := by
-    funext x
-    simp only [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def]
-  rw [heq]
-  exact (continuous_const.mul continuous_id).sub (continuous_id.mul continuous_const)
-
 /-- **The completed degree derivation `t d/dt` multiplies `Sₙ` by `n`**, at every level (including
 the critical level and `a = 0`) and for every invariant symmetric form `Φ`. -/
 theorem vectorFieldCompletedEnvelopingDerivation_single_one_sugawaraMode (n : ℤ) :
@@ -197,22 +193,16 @@ theorem innerDerivation_sugawaraMode_of_eq_smul_killingForm {c : K}
     innerDerivation K (sugawaraMode Φ hΦ hΦs a m) =
       (1 - 2 * a * c) •
         vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (-HahnSeries.single (m + 1) 1) := by
-  let D := vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (-HahnSeries.single (m + 1) 1)
-  have hcont : Continuous (((1 - 2 * a * c) • D : derivationLieAlgebra K Û) : Module.End K Û) := by
-    have heq : (((1 - 2 * a * c) • D : derivationLieAlgebra K Û) : Û → Û) =
-        fun x ↦ algebraMap K Û (1 - 2 * a * c) * (D : Module.End K Û) x := by
-      funext x
-      rw [SetLike.val_smul, LinearMap.smul_apply, Algebra.smul_def]
-    rw [heq]
-    exact continuous_const.mul (continuous_vectorFieldCompletedEnvelopingDerivation ..)
   refine derivationLieAlgebra_ext_single Φ hΦ hΦs a
-    (continuous_innerDerivation (sugawaraMode Φ hΦ hΦs a m)) hcont fun k z ↦ ?_
-  rw [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def,
-    sugawaraMode_mul_toCompletedEnveloping_sub_mul_of_eq_smul_killingForm h,
+    (continuous_innerDerivation K (sugawaraMode Φ hΦ hΦs a m))
+    (derivationLieAlgebra.continuous_smul (1 - 2 * a * c)
+      (continuous_vectorFieldCompletedEnvelopingDerivation ..)) fun k z ↦ ?_
+  rw [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def, ← neg_sub,
+    toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h, ← neg_smul,
     SetLike.val_smul, LinearMap.smul_apply,
     vectorFieldCompletedEnvelopingDerivation_neg, NegMemClass.coe_neg, LinearMap.neg_apply,
     vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_single_tmul,
-    ← Int.cast_smul_eq_zsmul K, smul_neg, smul_smul, ← neg_smul]
+    ← Int.cast_smul_eq_zsmul K, smul_neg, smul_smul, ← neg_smul, mul_comm (k : K)]
 
 /-- **Away from the critical level, `Lₘ` implements the completed Witt vector field `-t^{m+1} d/dt`
 as an inner derivation of `Û`.** -/
