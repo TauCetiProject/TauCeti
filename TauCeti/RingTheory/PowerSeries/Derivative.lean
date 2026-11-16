@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Exp
-public import TauCeti.Algebra.Polynomial.ExpDerivFactor
+public import TauCeti.Algebra.Polynomial.Derivative
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.RingTheory.PowerSeries.Inverse
 

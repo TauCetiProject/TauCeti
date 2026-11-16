@@ -23,10 +23,11 @@ Using the `p`-adic factorial norm estimates from `TauCeti.NumberTheory.Padics.Fa
 nontrivially normed field `K` over `ℚ_[p]` and normed `K`-algebra `A`, `NormedSpace.expSeries K A`
 has radius of convergence at least `ρ = p ^ (-1 / (p - 1))`
 (`TauCeti.PadicExp.le_radius_expSeries_of_normedAlgebra`, `TauCeti.PadicExp.radius_expSeries_pos`),
+and exact radius `ρ` whenever `‖(1 : A)‖ = 1` (`TauCeti.PadicExp.radius_expSeries_of_normOneClass`),
 so when `A` is complete `NormedSpace.exp` has the power series expansion `NormedSpace.expSeries K A`
-on the open ball of radius `ρ` (`TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`). Over any nontrivially
-normed field `L` over `ℚ_[p]` (including infinite or non-locally-compact extensions such as
-`ℂ_[p]`), `NormedSpace.expSeries L L` has exact radius `ρ`
+on the open ball of radius `ρ` (`TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`). In particular, over
+any nontrivially normed field `L` over `ℚ_[p]` (including infinite or non-locally-compact extensions
+such as `ℂ_[p]`), `NormedSpace.expSeries L L` has exact radius `ρ`
 (`TauCeti.PadicExp.radius_expSeries`, `TauCeti.PadicExp.le_radius_expSeries`).
 
 When `L` is complete, `NormedSpace.exp` on the open disc `{x : L | ‖x‖ < p ^ (-1 / (p - 1))}`
@@ -49,9 +50,10 @@ contrast, `‖p‖ = p ^ (-1) < p ^ (-1 / (p - 1))` lies strictly inside the dis
 ## Main results
 
 * `TauCeti.PadicExp.le_radius_expSeries_of_normedAlgebra`, `TauCeti.PadicExp.le_radius_expSeries`,
-  `TauCeti.PadicExp.radius_expSeries`, `TauCeti.PadicExp.radius_expSeries_pos`,
-  `TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`: radius of convergence and power-series expansion of
-  `NormedSpace.expSeries K A` (exact radius `ENNReal.ofReal (p ^ (-(p - 1)⁻¹))` for `L L`).
+  `TauCeti.PadicExp.radius_expSeries_of_normOneClass`, `TauCeti.PadicExp.radius_expSeries`,
+  `TauCeti.PadicExp.radius_expSeries_pos`, `TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`: radius of
+  convergence and power-series expansion of `NormedSpace.expSeries K A` (exact radius
+  `ENNReal.ofReal (p ^ (-(p - 1)⁻¹))` whenever `NormOneClass A`, in particular for `L L`).
 * `TauCeti.PadicExp.exp_add`, `TauCeti.PadicExp.exp_neg`, `TauCeti.PadicExp.exp_sub`,
   `TauCeti.PadicExp.exp_nsmul`, `TauCeti.PadicExp.exp_zsmul`, `TauCeti.PadicExp.exp_sum`:
   homomorphism properties of `NormedSpace.exp` on `{x : L | ‖x‖ < p ^ (-(p - 1)⁻¹)}`.
@@ -142,11 +144,19 @@ theorem radius_expSeries_le_of_normOneClass {K A : Type*} [NontriviallyNormedFie
     exact le_norm_inv_factorial_pow_prime_mul_pow hρr'.le k
   exact not_le_of_gt hρ_pos (ge_of_tendsto' ht hge)
 
+/-- **Exact radius of the `p`-adic exponential series in a normed algebra.** For any nontrivially
+normed field `K` over `ℚ_[p]` and normed `K`-algebra `A` with `‖(1 : A)‖ = 1`,
+`(NormedSpace.expSeries K A).radius = ENNReal.ofReal (p ^ (-1 / (p - 1)))`. -/
+theorem radius_expSeries_of_normOneClass {K A : Type*} [NontriviallyNormedField K]
+    [NormedAlgebra ℚ_[p] K] [NormedRing A] [NormOneClass A] [NormedAlgebra K A] :
+    (NormedSpace.expSeries K A).radius = ENNReal.ofReal ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :=
+  le_antisymm radius_expSeries_le_of_normOneClass le_radius_expSeries_of_normedAlgebra
+
 /-- **Exact radius of the `p`-adic exponential series.** In any nontrivially normed field `L` over
 `ℚ_[p]`, `(NormedSpace.expSeries L L).radius = ENNReal.ofReal (p ^ (-1 / (p - 1)))`. -/
 theorem radius_expSeries {L : Type*} [NontriviallyNormedField L] [NormedAlgebra ℚ_[p] L] :
     (NormedSpace.expSeries L L).radius = ENNReal.ofReal ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :=
-  le_antisymm radius_expSeries_le_of_normOneClass le_radius_expSeries
+  radius_expSeries_of_normOneClass
 
 /-- The exponential series on a normed algebra over a nontrivially normed `ℚ_[p]`-algebra field
 has positive radius of convergence. -/
