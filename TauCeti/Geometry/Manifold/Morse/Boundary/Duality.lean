@@ -233,11 +233,8 @@ theorem bijective_morseCochainToNegChain {i k : ℕ} (hik : i + k = finrank ℝ 
         fun p ↦ ULift.up (c ((hf.morseIndexNegEquiv hik).symm p)))
     refine ⟨a, Finsupp.ext fun q ↦ ?_⟩
     rw [morseCochainToNegChain_apply_of_add_eq h hf hik]
-    -- The morphism `ModuleCat.ofHom g` applied to a chain is `g` applied to it, by definition.
-    calc _ = (Finsupp.linearCombination (ZMod 2)
-          (fun p ↦ ULift.up (c ((hf.morseIndexNegEquiv hik).symm p)))
-          (Finsupp.single (hf.morseIndexNegEquiv hik q) 1)).down := rfl
-      _ = c q := by simp
+    refine (congrArg ULift.down (ModuleCat.ofHom_apply _ _)).trans ?_
+    simp
 
 /-- **The coboundary of `f` is the boundary of `-f`.** Reading cochains of `f` as chains of `-f`
 carries the Morse coboundary `a ↦ a ∘ ∂` of `f` from index `i` to index `i + 1` to the mod-two
@@ -268,12 +265,13 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
     rw [← ULift.moduleEquiv_apply (R := ZMod 2), map_finsuppSum,
       Finsupp.sum_fintype _ _ fun _ ↦ by simp]
     refine Fintype.sum_equiv (hf.morseIndexNegEquiv hik).symm _ _ fun p ↦ ?_
-    rw [map_smul, RingHom.id_apply, ULift.moduleEquiv_apply, smul_eq_mul,
-      morseBoundaryAt_single_apply, one_mul, morseCochainToNegChain_apply_of_add_eq h hf hik,
-      Equiv.apply_symm_apply, h.morseBoundaryCoeff_neg hf, mul_comm,
-      IsMorse.coe_morseIndexNegEquiv_symm_apply, Equiv.apply_symm_apply]
-    -- Both sides read `q` as the same critical point `Set.equivOfEq criticalPoints_neg q` of `f`.
-    congr 2
+    -- After `simp`, both sides are the product of the value of `a` at `p` with the coefficient
+    -- `h.morseBoundaryCoeff hf q p`, in opposite orders: `ac_rfl` commutes them. The domain of
+    -- `a` is written as the Morse chains on one side and as the term of the Morse complex on the
+    -- other, which agree by definition.
+    simp [morseBoundaryAt_single_apply, morseCochainToNegChain_apply_of_add_eq h hf hik,
+      h.morseBoundaryCoeff_neg hf]
+    ac_rfl
   · -- Otherwise no trajectory of `X` joins `q` to a critical point of index `i` for `f`.
     refine (Finset.sum_eq_zero fun r _ ↦ ?_).symm
     rw [morseCochainToNegChain_apply]
