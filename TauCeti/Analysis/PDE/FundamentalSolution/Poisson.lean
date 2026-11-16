@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Poisson's equation with compactly supported data
@@ -24,8 +25,9 @@ For `d ≥ 2`, a solution is obtained as minus the Newtonian potential of `g`. T
 constructed on the model spaces `EuclideanSpace ℝ (Fin d)`
 (`TauCeti.laplacian_newtonianKernel_convolution`, for `d ≥ 3`) and `ℂ`
 (`TauCeti.laplacian_planarNewtonianKernel_convolution`, for `d = 2`). For `d = 1`, a solution is
-a double primitive of `g` on `ℝ`. These solutions are transported to `E` along a linear isometry,
-which commutes with the Laplacian (`TauCeti.laplacian_comp_linearIsometryEquiv_right`). For the
+a double primitive of `g` on `ℝ` (`TauCeti.exists_contDiff_laplacian_eq_real`, which needs no
+compact support). These solutions are transported to `E` along a linear isometry, which commutes
+with the Laplacian (`TauCeti.laplacian_comp_linearIsometryEquiv_right`). For the
 local statement, `f` is first replaced by a compactly supported `C^k` function equal to it near
 `K` (`ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact`).
 
@@ -37,6 +39,8 @@ open set `Ω` along a compact exhaustion
 
 * `TauCeti.exists_contDiff_laplacian_eq_of_hasCompactSupport`: for `g` of class `C^k` with
   compact support there is `u` of class `C^k` with `Δu = g`.
+* `TauCeti.exists_contDiff_laplacian_eq_real`: on `ℝ`, every `C^k` function `g` is `Δu` for
+  some `u` of class `C^k`.
 * `TauCeti.exists_contDiff_laplacian_eventuallyEq_nhdsSet`: for `f` of class `C^k` on an open
   set `Ω` and a compact `K ⊆ Ω` there is `u` of class `C^k` with `Δu = f` near `K`.
 
@@ -55,23 +59,15 @@ open scoped Convolution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- A primitive of a `C^k` function on `ℝ` is `C^(k+1)`, with derivative the function. -/
-private theorem contDiff_add_one_integral {k : ℕ∞} {g : ℝ → F} (hg : ContDiff ℝ k g) :
-    ContDiff ℝ (k + 1) (fun x ↦ ∫ t in (0 : ℝ)..x, g t) ∧
-      deriv (fun x ↦ ∫ t in (0 : ℝ)..x, g t) = g := by
-  have hd : deriv (fun x ↦ ∫ t in (0 : ℝ)..x, g t) = g :=
-    funext (hg.continuous.deriv_integral g 0)
-  exact ⟨contDiff_succ_iff_deriv.2 ⟨fun x ↦ (hg.continuous.integral_hasStrictDerivAt 0 x)
-    |>.hasDerivAt.differentiableAt, by simp, by rwa [hd]⟩, hd⟩
-
-/-- On `ℝ`, every `C^k` function is the Laplacian, that is the second derivative, of a `C^k`
-function. -/
-private theorem exists_contDiff_laplacian_eq_real {k : ℕ∞} {g : ℝ → F} (hg : ContDiff ℝ k g) :
+/-- **Poisson's equation on the line.** On `ℝ`, every `C^k` function is the Laplacian, that is
+the second derivative, of a `C^k` function; no compact support is needed. -/
+theorem exists_contDiff_laplacian_eq_real {k : ℕ∞} {g : ℝ → F} (hg : ContDiff ℝ k g) :
     ∃ u : ℝ → F, ContDiff ℝ k u ∧ Δ u = g := by
-  obtain ⟨hG, hG'⟩ := contDiff_add_one_integral hg
-  obtain ⟨hu, hu'⟩ := contDiff_add_one_integral hG
-  refine ⟨_, hu.of_le (by norm_cast; exact le_self_add.trans le_self_add), funext fun x ↦ ?_⟩
-  rw [laplacian_eq_iteratedDeriv_real, iteratedDeriv_succ, iteratedDeriv_one, hu', hG']
+  have hG := hg.contDiff_add_one_integral 0
+  have hk : (k : WithTop ℕ∞) ≤ k + 1 + 1 := by norm_cast; exact le_self_add.trans le_self_add
+  refine ⟨_, (hG.contDiff_add_one_integral 0).of_le hk, funext fun x ↦ ?_⟩
+  rw [laplacian_eq_iteratedDeriv_real, iteratedDeriv_succ, iteratedDeriv_one,
+    funext (hG.continuous.deriv_integral _ 0), funext (hg.continuous.deriv_integral g 0)]
 
 omit [CompleteSpace F] in
 /-- Solvability of `Δu = g` for compactly supported `C^k` data transfers along a linear isometry
