@@ -11,36 +11,31 @@ import TauCeti.Algebra.BigOperators.Associated
 /-!
 # Units in localizations away from prime elements
 
-In a domain `R`, inverting an element `x` creates new units only from divisors of powers of `x`.
-When `x` is prime, an element not divisible by `x` is a unit if it becomes one after inverting `x`,
-and every unit of the localization away from `x` has the form `c * x ^ n` (`c` a unit of `R`,
-`n : ℤ`), written with `selfZPow`. More generally, when `x` is associated to a finite product
-`∏ i ∈ t, p i` of primes, every unit of the localization is a unit of `R` times an integer-exponent
-product of the images of the `p i`.
+In a commutative semiring `R` with cancellative multiplication, inverting an element `x` creates new
+units only from divisors of powers of `x`. When `x` is prime, an element not divisible by `x` is a
+unit if it becomes one after inverting `x`, and every unit of the localization away from `x` has the
+form `c * x ^ n` (`c` a unit of `R`, `n : ℤ`), written with `selfZPow`. More generally, when `x` is
+associated to a finite product `∏ i ∈ t, p i` of primes, every unit of the localization is a unit of
+`R` times an integer-exponent product of the images of the `p i`.
 
 ## Main definitions and results
 
-* `isUnit_selfZPow`: every integer power `selfZPow x S n` in an away localization is a unit.
+* `IsLocalization.Away.isUnit_selfZPow`: every integer power `selfZPow x S n` in an away
+  localization is a unit.
 * `Prime.isUnit_of_isUnit_away_of_not_dvd`: an element not divisible by a prime `p` that becomes a
   unit after inverting `p` is already a unit.
-* `IsLocalization.Away.isUnit_iff_of_prime`: in a localization of a domain away from a prime `x`,
-  the units are the elements `algebraMap R S r * selfZPow x S n` with `r` a unit of `R` and `n : ℤ`.
-* `IsLocalization.Away.exists_unit_mul_prod_zpow_eq_of_associated_prod_prime`: in a localization of
-  a domain away from an element associated to a product `∏ i ∈ t, p i` of primes, every unit is a
-  unit of `R` times `∏ i ∈ t, v i ^ m i` (`m : ι → ℤ`).
+* `IsLocalization.Away.isUnit_iff_of_prime`: in a localization away from a prime `x`, the units are
+  the elements `algebraMap R S r * selfZPow x S n` with `r` a unit of `R` and `n : ℤ`.
+* `IsLocalization.Away.exists_unit_mul_prod_zpow_eq_of_associated_prod_prime`: in a localization
+  away from an element associated to a product `∏ i ∈ t, p i` of primes, every unit is a unit of `R`
+  times `∏ i ∈ t, v i ^ m i` (`m : ι → ℤ`).
 -/
 
 public section
 
-/-- Every integer power `selfZPow x S n` of `x` in a localization away from `x` is a unit. -/
-@[simp]
-theorem isUnit_selfZPow {R : Type*} [CommSemiring R] (x : R) (S : Type*) [CommSemiring S]
-    [Algebra R S] [IsLocalization.Away x S] (n : ℤ) : IsUnit (selfZPow x S n) :=
-  .of_mul_eq_one (selfZPow x S (-n)) (selfZPow_mul_neg x S n)
-
 namespace Prime
 
-variable {R S : Type*} [CommSemiring R] [IsDomain R] [CommSemiring S] [Algebra R S]
+variable {R S : Type*} [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Algebra R S]
   {p x : R} [IsLocalization.Away p S]
 
 /-- Inverting a prime element can only make its multiples into new units. -/
@@ -56,11 +51,17 @@ end Prime
 
 namespace IsLocalization.Away
 
-variable {R S : Type*} [CommSemiring R] [IsDomain R] [CommSemiring S] [Algebra R S]
+/-- Every integer power `selfZPow x S n` of `x` in a localization away from `x` is a unit. -/
+@[simp]
+theorem isUnit_selfZPow {R : Type*} [CommSemiring R] (x : R) (S : Type*) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away x S] (n : ℤ) : IsUnit (selfZPow x S n) :=
+  .of_mul_eq_one (selfZPow x S (-n)) (selfZPow_mul_neg x S n)
 
-/-- **Units of a localization away from a prime.** Over a domain `R`, an element of a localization
-`S` away from a prime `x` is a unit if and only if it has the form
-`algebraMap R S r * selfZPow x S n` for a unit `r` of `R` and an integer `n : ℤ`. -/
+variable {R S : Type*} [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Algebra R S]
+
+/-- **Units of a localization away from a prime.** Over a commutative semiring `R` with cancellative
+multiplication, an element of a localization `S` away from a prime `x` is a unit if and only if it
+has the form `algebraMap R S r * selfZPow x S n` for a unit `r` of `R` and an integer `n : ℤ`. -/
 theorem isUnit_iff_of_prime {x : R} [IsLocalization.Away x S] (hx : Prime x) {s : S} :
     IsUnit s ↔ ∃ r : R, IsUnit r ∧ ∃ n : ℤ, algebraMap R S r * selfZPow x S n = s := by
   refine ⟨fun hs ↦ ?_, fun ⟨r, hr, n, h⟩ ↦ h ▸ (hr.map _).mul (isUnit_selfZPow x S n)⟩
@@ -80,10 +81,10 @@ theorem isUnit_iff_of_prime {x : R} [IsLocalization.Away x S] (hx : Prime x) {s 
     IsLocalization.mk'_spec S (x ^ i) (Submonoid.pow x k)
   rw [mul_assoc, ← map_pow, hmk, ← map_mul, ← ha_eq, ← hka, map_pow]
 
-/-- **Units of a localization away from a product of primes.** Over a domain `R`, if `x` is
-associated to a finite product `∏ i ∈ t, p i` of primes and `v i : Sˣ` represents the image of
-`p i` in a localization `S` away from `x`, then every unit of `S` has the form
-`Units.map (algebraMap R S) c * ∏ i ∈ t, v i ^ m i` for `c : Rˣ` and `m : ι → ℤ`. -/
+/-- **Units of a localization away from a product of primes.** Over a commutative semiring `R` with
+cancellative multiplication, if `x` is associated to a finite product `∏ i ∈ t, p i` of primes and
+`v i : Sˣ` represents the image of `p i` in a localization `S` away from `x`, then every unit of `S`
+has the form `Units.map (algebraMap R S) c * ∏ i ∈ t, v i ^ m i` for `c : Rˣ` and `m : ι → ℤ`. -/
 theorem exists_unit_mul_prod_zpow_eq_of_associated_prod_prime {ι : Type*} {t : Finset ι}
     {p : ι → R} {x : R} [IsLocalization.Away x S] (hp : ∀ i ∈ t, Prime (p i))
     (hx : Associated x (∏ i ∈ t, p i)) {v : ι → Sˣ}

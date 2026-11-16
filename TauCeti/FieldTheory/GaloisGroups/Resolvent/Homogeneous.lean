@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The grading of a resolvent with a homogeneous invariant

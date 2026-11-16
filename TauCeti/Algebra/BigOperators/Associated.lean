@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Associated
+import TauCeti.Algebra.Prime.Basic
 
 /-!
 # Divisors of products of prime powers
@@ -17,8 +18,6 @@ needed: prime divisibility peels off one factor `p i` at a time.
 
 ## Main results
 
-* `Prime.dvd_pow_mul_iff`: for a prime `p`, a divisor of `p ^ n * r` has the form `p ^ i * s` with
-  `i ≤ n` and `s ∣ r`.
 * `Finset.dvd_prod_pow_iff_of_prime`: the divisors of `∏ i ∈ s, p i ^ n i` for primes `p i` are
   the elements associated to `∏ i ∈ s, p i ^ k i` with `k i ≤ n i`.
 * `Finset.dvd_prod_iff_of_prime`: the divisors of `∏ i ∈ s, p i` for primes `p i` are the elements
@@ -30,22 +29,6 @@ public section
 assert_not_exists Field
 
 variable {ι M₀ : Type*} [CommMonoidWithZero M₀] [IsCancelMulZero M₀]
-
-/-- For a prime `p` in a cancellative commutative monoid with zero, an element divides `p ^ n * r`
-if and only if it is `p ^ i * s` for some `i ≤ n` and some divisor `s` of `r`. -/
-theorem Prime.dvd_pow_mul_iff {p q r : M₀} (hp : Prime p) (n : ℕ) :
-    q ∣ p ^ n * r ↔ ∃ i ≤ n, ∃ s, s ∣ r ∧ q = p ^ i * s := by
-  induction n generalizing q with
-  | zero => simp
-  | succ n ih =>
-    refine ⟨fun h ↦ ?_, fun ⟨i, hi, s, hs, hq⟩ ↦ hq ▸ mul_dvd_mul (pow_dvd_pow p hi) hs⟩
-    rw [pow_succ', mul_assoc] at h
-    rcases hp.left_dvd_or_dvd_right_of_dvd_mul h with ⟨q', rfl⟩ | hno
-    · rw [mul_dvd_mul_iff_left hp.ne_zero, ih] at h
-      obtain ⟨i, hi, s, hs, rfl⟩ := h
-      exact ⟨i + 1, Nat.succ_le_succ hi, s, hs, by rw [pow_succ', mul_assoc]⟩
-    · obtain ⟨i, hi, s, hs, hq⟩ := ih.mp hno
-      exact ⟨i, Nat.le_succ_of_le hi, s, hs, hq⟩
 
 /-- In a cancellative commutative monoid with zero, an element divides a product of powers of prime
 elements `∏ i ∈ s, p i ^ n i` if and only if it is associated to `∏ i ∈ s, p i ^ k i` for some

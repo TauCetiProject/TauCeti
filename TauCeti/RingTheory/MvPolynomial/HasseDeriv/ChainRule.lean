@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # Hasse derivatives after a linear substitution

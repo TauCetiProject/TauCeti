@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import Mathlib.Algebra.MvPolynomial.Funext
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # Properties of elementary-symmetric coordinates in the fundamental theorem

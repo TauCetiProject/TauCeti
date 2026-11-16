@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Rescale
 -- Proof-only: multiplication series under base change, the coefficients after swapping the
 -- variables, and weighted homogeneity from scaling the variables.
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Radical.Basic
-import Mathlib.Algebra.BigOperators.Associated
+import TauCeti.Algebra.BigOperators.Associated
 
 /-!
 # Products over a finite set of primes
@@ -66,20 +66,7 @@ theorem finset_prod_eq_iff_of_prime (hS : ∀ p ∈ S, Prime p) (hT : ∀ p ∈ 
 /-- The divisors of a product of distinct primes are exactly the products of subsets of them. -/
 theorem dvd_finset_prod_iff_of_prime (hS : ∀ p ∈ S, Prime p) {a : α} :
     a ∣ ∏ p ∈ S, p ↔ ∃ T ⊆ S, a = ∏ p ∈ T, p := by
-  refine ⟨fun hdvd => ?_, fun ⟨T, hTS, ha⟩ => ha ▸ Finset.prod_dvd_prod_of_subset T S _ hTS⟩
-  induction S using Finset.cons_induction generalizing a with
-  | empty =>
-    exact ⟨∅, Finset.empty_subset _, isUnit_iff_eq_one.1 (isUnit_of_dvd_one (by simpa using hdvd))⟩
-  | cons p S hpS ih =>
-    have hp : Prime p := hS p (Finset.mem_cons_self p S)
-    have hS' : ∀ q ∈ S, Prime q := fun q hq => hS q (Finset.mem_cons.2 (Or.inr hq))
-    rw [Finset.prod_cons] at hdvd
-    rcases hp.left_dvd_or_dvd_right_of_dvd_mul hdvd with ⟨b, rfl⟩ | h
-    · obtain ⟨T, hTS, hb⟩ := ih hS' ((mul_dvd_mul_iff_left hp.ne_zero).1 hdvd)
-      exact ⟨Finset.cons p T (fun hp' => hpS (hTS hp')), Finset.cons_subset_cons.2 hTS, by
-        rw [Finset.prod_cons, hb]⟩
-    · obtain ⟨T, hTS, ha⟩ := ih hS' h
-      exact ⟨T, hTS.trans (Finset.subset_cons hpS), ha⟩
+  simp_rw [Finset.dvd_prod_iff_of_prime (p := fun x ↦ x) hS, associated_iff_eq]
 
 end UniqueUnitsCancel
 

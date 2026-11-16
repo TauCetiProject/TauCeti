@@ -24,9 +24,9 @@ is how absolute irreducibility, over an algebraic closure, gives irreducibility 
 intermediate field.
 
 Over a commutative semiring `R` without zero divisors, every unit of `MvPolynomial σ R` is a scalar
-unit `C c` (`isUnit_iff_eq_C_of_noZeroDivisors`, without needing subtraction on `R`). When `R` is
-also additively cancellative and a domain, `MvPolynomial σ R` is a domain, so localizing away from
-a prime polynomial `f` (or a polynomial associated to a finite product `∏ i ∈ t, p i` of primes)
+unit `C c` (`isUnit_iff_eq_C_of_noZeroDivisors`, without needing subtraction on `R`). When `R` has
+cancellative addition and multiplication, so does `MvPolynomial σ R`, so localizing away from a
+prime polynomial `f` (or a polynomial associated to a finite product `∏ i ∈ t, p i` of primes)
 yields units of the form `c * f ^ n` (`c ∈ Rˣ`, `n : ℤ`) or `c * ∏ i ∈ t, v i ^ m i`.
 
 ## Main results
@@ -41,9 +41,9 @@ yields units of the form `c * f ^ n` (`c ∈ Rˣ`, `n : ℤ`) or `c * ∏ i ∈ 
 * `MvPolynomial.isUnit_iff_eq_C_of_noZeroDivisors`: over a commutative semiring without zero
   divisors, a polynomial is a unit if and only if it is `C c` for a unit `c` of `R`.
 * `MvPolynomial.isUnit_away_iff_of_prime` and
-  `MvPolynomial.exists_unit_mul_prod_zpow_eq_of_associated_prod_prime`: over an additively
-  cancellative domain `R`, the units of a localization of `MvPolynomial σ R` away from a prime
-  polynomial or a product of prime polynomials.
+  `MvPolynomial.exists_unit_mul_prod_zpow_eq_of_associated_prod_prime`: over a commutative semiring
+  `R` with cancellative addition and multiplication, the units of a localization of
+  `MvPolynomial σ R` away from a prime polynomial or a product of prime polynomials.
 -/
 
 public section
@@ -101,13 +101,13 @@ end NoZeroDivisors
 
 section Away
 
-variable {R S σ : Type*} [CommSemiring R] [IsCancelAdd R] [IsDomain R] [CommSemiring S]
+variable {R S σ : Type*} [CommSemiring R] [IsCancelAdd R] [IsCancelMulZero R] [CommSemiring S]
   [Algebra R S] [Algebra (MvPolynomial σ R) S] [IsScalarTower R (MvPolynomial σ R) S]
 
-/-- **Units of a localized polynomial ring away from a prime.** Over an additively cancellative
-domain `R`, an element of a localization `S` of `MvPolynomial σ R` away from a prime polynomial `f`
-is a unit if and only if it has the form `algebraMap R S c * selfZPow f S n` for a scalar unit `c`
-of `R` and `n : ℤ`. -/
+/-- **Units of a localized polynomial ring away from a prime.** Over a commutative semiring `R` with
+cancellative addition and multiplication, an element of a localization `S` of `MvPolynomial σ R`
+away from a prime polynomial `f` is a unit if and only if it has the form
+`algebraMap R S c * selfZPow f S n` for a scalar unit `c` of `R` and `n : ℤ`. -/
 theorem isUnit_away_iff_of_prime {f : MvPolynomial σ R} [IsLocalization.Away f S] (hf : Prime f)
     {s : S} :
     IsUnit s ↔ ∃ c : R, IsUnit c ∧ ∃ n : ℤ, algebraMap R S c * selfZPow f S n = s := by
@@ -121,10 +121,11 @@ theorem isUnit_away_iff_of_prime {f : MvPolynomial σ R} [IsLocalization.Away f 
     refine ⟨C c, hc.map C, n, ?_⟩
     rw [← algebraMap_eq, ← IsScalarTower.algebraMap_apply R (MvPolynomial σ R) S]
 
-/-- **Units of a localized polynomial ring away from a product of primes.** Over an additively
-cancellative domain `R`, if `f : MvPolynomial σ R` is associated to a finite product
-`∏ i ∈ t, p i` of prime polynomials and `v i : Sˣ` represents `p i` in a localization `S` away from
-`f`, then every unit of `S` is a scalar unit `c : Rˣ` times `∏ i ∈ t, v i ^ m i` (`m : ι → ℤ`). -/
+/-- **Units of a localized polynomial ring away from a product of primes.** Over a commutative
+semiring `R` with cancellative addition and multiplication, if `f : MvPolynomial σ R` is associated
+to a finite product `∏ i ∈ t, p i` of prime polynomials and `v i : Sˣ` represents `p i` in a
+localization `S` away from `f`, then every unit of `S` is a scalar unit `c : Rˣ` times
+`∏ i ∈ t, v i ^ m i` (`m : ι → ℤ`). -/
 theorem exists_unit_mul_prod_zpow_eq_of_associated_prod_prime {ι : Type*} {t : Finset ι}
     {p : ι → MvPolynomial σ R} {f : MvPolynomial σ R} [IsLocalization.Away f S]
     (hp : ∀ i ∈ t, Prime (p i)) (hf : Associated f (∏ i ∈ t, p i)) {v : ι → Sˣ}
