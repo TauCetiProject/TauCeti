@@ -82,4 +82,12 @@ theorem rnDeriv_gammaMeasure (a r : ℝ) :
   unfold gammaMeasure
   exact Measure.rnDeriv_withDensity volume (measurable_gammaPDF a r)
 
+/-- The Gamma density of shape and rate one, the exponential density, is `exp (-s)` on `[0, ∞)`. -/
+theorem gammaPDF_one_one (s : ℝ) :
+    gammaPDF 1 1 s = (Set.Ici (0 : ℝ)).indicator (fun s ↦ ENNReal.ofReal (Real.exp (-s))) s := by
+  by_cases hs : 0 ≤ s
+  · simp [gammaPDF_of_nonneg hs, Set.indicator_of_mem (Set.mem_Ici.mpr hs)]
+  · rw [gammaPDF_of_neg (not_le.mp hs),
+      Set.indicator_of_notMem (show s ∉ Set.Ici 0 by simpa using hs)]
+
 end TauCeti.Probability

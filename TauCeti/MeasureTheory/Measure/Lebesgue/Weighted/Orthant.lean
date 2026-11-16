@@ -57,37 +57,6 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The tilt `exp (-s)` of Lebesgue measure on `[0, ∞)` is the exponential distribution, the
-Gamma distribution of shape and rate one. -/
-private theorem gammaPDF_one_one (s : ℝ) :
-    gammaPDF 1 1 s = (Ici (0 : ℝ)).indicator (fun s ↦ ENNReal.ofReal (Real.exp (-s))) s := by
-  by_cases hs : 0 ≤ s
-  · simp [gammaPDF_of_nonneg hs, indicator_of_mem (mem_Ici.mpr hs)]
-  · rw [gammaPDF_of_neg (not_le.mp hs), indicator_of_notMem (show s ∉ Ici 0 by simpa using hs)]
-
-/-- The product of `n` exponential distributions is Lebesgue measure on the closed positive orthant
-tilted by `exp (-∑ i, x i)`. -/
-private theorem pi_gammaMeasure_one_one :
-    (Measure.pi fun _ : ι ↦ gammaMeasure 1 1) =
-      (volume.restrict (univ.pi fun _ : ι ↦ Ici (0 : ℝ))).withDensity
-        ((fun s ↦ ENNReal.ofReal (Real.exp (-s))) ∘ fun x ↦ ∑ i, x i) := by
-  have hS : MeasurableSet (univ.pi fun _ : ι ↦ Ici (0 : ℝ)) :=
-    MeasurableSet.univ_pi fun _ ↦ measurableSet_Ici
-  rw [Probability.pi_gammaMeasure_eq_withDensity, ← withDensity_indicator hS]
-  congr 1
-  funext x
-  simp_rw [gammaPDF_one_one]
-  by_cases hx : x ∈ univ.pi fun _ : ι ↦ Ici (0 : ℝ)
-  · have hx' : ∀ i, 0 ≤ x i := fun i ↦ hx i (mem_univ i)
-    rw [indicator_of_mem hx, Function.comp_apply, Finset.prod_congr rfl fun i _ ↦
-      indicator_of_mem (mem_Ici.mpr (hx' i)) _, ← ENNReal.ofReal_prod_of_nonneg
-      fun i _ ↦ (Real.exp_pos _).le, ← Real.exp_sum, Finset.sum_neg_distrib]
-  · obtain ⟨i, hi⟩ : ∃ i, x i < 0 := by
-      simpa only [mem_univ_pi, mem_Ici, not_forall, not_le] using hx
-    rw [indicator_of_notMem hx]
-    exact Finset.prod_eq_zero (Finset.mem_univ i)
-      (indicator_of_notMem (by simpa using hi) _)
-
 /-- The Gamma density of shape `n + 1` and rate one, with its tilt `exp (-s)` removed, is the
 density `s^n / n!` on `[0, ∞)`. -/
 private theorem gammaPDF_mul_ofReal_exp (n : ℕ) (s : ℝ) :
@@ -119,18 +88,20 @@ theorem map_volume_restrict_pi_Ici_sum [Nonempty ι] :
   have hexp' : Measurable fun s : ℝ ↦ ENNReal.ofReal (Real.exp s) := by fun_prop
   -- Tilting by `exp (-s)` turns `ν` into the Gamma law of shape `m + 1`.
   have htilt : ν.withDensity (fun s ↦ ENNReal.ofReal (Real.exp (-s))) = gammaMeasure (m + 1) 1 := by
-    rw [← Measure.map_withDensity_comp hsum hexp, ← pi_gammaMeasure_one_one,
+    rw [← Measure.map_withDensity_comp hsum hexp, ← Probability.pi_gammaMeasure_one_one,
       Probability.map_sum_pi_gammaMeasure (fun _ ↦ one_pos) one_pos]
     simp [hm]
-  -- Untilting by `exp s` recovers `ν`.
+  -- Untilting by `exp s`, the inverse of `exp (-s)`, recovers `ν`.
+  have hinv : (fun s ↦ (ENNReal.ofReal (Real.exp (-s)))⁻¹) =
+      fun s ↦ ENNReal.ofReal (Real.exp s) := by
+    funext s
+    rw [← ENNReal.ofReal_inv_of_pos (Real.exp_pos _), Real.exp_neg, inv_inv]
   have huntilt : ν = (ν.withDensity fun s ↦ ENNReal.ofReal (Real.exp (-s))).withDensity
       fun s ↦ ENNReal.ofReal (Real.exp s) := by
-    rw [← withDensity_mul ν hexp hexp']
-    conv_lhs => rw [← withDensity_one (μ := ν)]
-    congr 1
-    funext s
-    rw [Pi.mul_apply, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, neg_add_cancel,
-      Real.exp_zero, ENNReal.ofReal_one, Pi.one_apply]
+    rw [← hinv]
+    exact (withDensity_inv_same hexp
+      (ae_of_all _ fun _ ↦ (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne')
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_ne_top)).symm
   rw [huntilt, htilt, gammaMeasure, ← withDensity_mul _ (Probability.measurable_gammaPDF _ _) hexp',
     ← withDensity_indicator measurableSet_Ici]
   congr 1
@@ -139,7 +110,7 @@ theorem map_volume_restrict_pi_Ici_sum [Nonempty ι] :
 
 /-- The diagonal linear map `x ↦ (a i * x i)_i` with positive entries rescales Lebesgue measure on
 the closed positive orthant by `(∏ i, a i)⁻¹`. -/
-private theorem map_volume_restrict_pi_Ici_mul {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+theorem map_volume_restrict_pi_Ici_mul {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     (volume.restrict (univ.pi fun _ : ι ↦ Ici (0 : ℝ))).map (fun x i ↦ a i * x i) =
       ENNReal.ofReal (∏ i, a i)⁻¹ • volume.restrict (univ.pi fun _ : ι ↦ Ici (0 : ℝ)) := by
   classical
@@ -196,28 +167,31 @@ theorem volume_setOf_forall_nonneg_and_sum_mul_le {a : ι → ℝ} (ha : ∀ i, 
   · simp [volume_pi, hc]
   obtain ⟨m, hm⟩ : ∃ m, Fintype.card ι = m + 1 :=
     Nat.exists_eq_add_one_of_ne_zero Fintype.card_ne_zero
+  have hpos : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
   have hsum : Measurable fun x : ι → ℝ ↦ ∑ i, a i * x i := by fun_prop
   have hset : {x : ι → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i ≤ c} =
       (fun x ↦ ∑ i, a i * x i) ⁻¹' Iic c ∩ univ.pi fun _ : ι ↦ Ici (0 : ℝ) := by
     ext x
     simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Iic, mem_univ_pi, mem_Ici]
     exact and_comm
-  have hdens : Continuous fun s : ℝ ↦
-      s ^ (Fintype.card ι - 1) / ((Fintype.card ι - 1).factorial * ∏ i, a i) := by fun_prop
-  -- The region is the preimage of `Iic c` under the pushforward, whose density is integrated
-  -- over `[0, c]` as an interval integral of a power.
-  rw [hset, ← Measure.restrict_apply (hsum measurableSet_Iic), ← Measure.map_apply hsum
-    measurableSet_Iic, map_volume_restrict_pi_Ici_sum_mul ha, withDensity_apply _
-    measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ici,
-    ← ofReal_integral_eq_lintegral_ofReal (hdens.integrableOn_Icc)
-      (ae_restrict_of_forall_mem measurableSet_Icc fun s hs ↦ by
-        have : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
-        exact div_nonneg (pow_nonneg hs.1 _) (by positivity)),
+  set f : ℝ → ℝ := fun s ↦ s ^ (Fintype.card ι - 1) / ((Fintype.card ι - 1).factorial * ∏ i, a i)
+  have hf : Continuous f := by fun_prop
+  have hf_nonneg : ∀ s ∈ Icc 0 c, 0 ≤ f s := fun s hs ↦
+    div_nonneg (pow_nonneg hs.1 _) (by positivity)
+  -- The region is the preimage of `Iic c` under the pushforward, so its volume is the integral
+  -- of the pushforward density over `[0, c]`.
+  have hpush : volume {x : ι → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i ≤ c} =
+      ∫⁻ s in Icc 0 c, ENNReal.ofReal (f s) := by
+    rw [hset, ← Measure.restrict_apply (hsum measurableSet_Iic), ← Measure.map_apply hsum
+      measurableSet_Iic, map_volume_restrict_pi_Ici_sum_mul ha, withDensity_apply _
+      measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ici]
+  -- The density is a multiple of a power, integrated as an interval integral.
+  rw [hpush, ← ofReal_integral_eq_lintegral_ofReal hf.integrableOn_Icc
+      (ae_restrict_of_forall_mem measurableSet_Icc hf_nonneg),
     integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hc,
     intervalIntegral.integral_div, integral_pow, hm, add_tsub_cancel_right, Nat.factorial_succ]
   congr 1
   push_cast
-  have : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
   field_simp
   ring
 

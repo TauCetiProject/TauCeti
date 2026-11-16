@@ -25,7 +25,8 @@ nonempty index type, coordinatewise positivity makes the coordinate sum positive
 
 Each factor is Lebesgue measure weighted by its density, so the product is Lebesgue measure on
 `ι → ℝ` weighted by the product of the densities.  This is the form a change of variables on the
-product needs.
+product needs.  For unit shapes and rates, the exponential distributions, that density is
+`exp (-∑ i, x i)` on the closed positive orthant.
 
 At a common rate the Gamma family is closed under convolution, so the total of the coordinates
 of a Gamma product is again Gamma, with the total shape.  Summing instead over the fibres of a
@@ -45,6 +46,8 @@ statement.
 * `TauCeti.Probability.pi_gammaMeasure_eq_withDensity` presents a finite Gamma product as Lebesgue
   measure
   weighted by the product of the coordinate densities.
+* `TauCeti.Probability.pi_gammaMeasure_one_one` presents a finite product of exponential
+  distributions as Lebesgue measure on the positive orthant tilted by `exp (-∑ i, x i)`.
 * `TauCeti.Probability.map_sum_pi_gammaMeasure` identifies the law of the total of the coordinates.
 * `TauCeti.Probability.map_funOnFinite_map_pi_gammaMeasure` identifies the joint law of the fibre
   sums of
@@ -92,6 +95,29 @@ theorem pi_gammaMeasure_eq_withDensity (a r : ι → ℝ) :
   rw [volume_pi]
   exact pi_withDensity (fun _ ↦ (volume : Measure ℝ))
     fun i ↦ Probability.measurable_gammaPDF (a i) (r i)
+
+/-- A finite product of exponential distributions, the Gamma distributions of shape and rate one,
+is Lebesgue measure on the closed positive orthant tilted by `exp (-∑ i, x i)`. -/
+theorem pi_gammaMeasure_one_one :
+    (Measure.pi fun _ : ι ↦ gammaMeasure 1 1) =
+      (volume.restrict (Set.univ.pi fun _ : ι ↦ Set.Ici (0 : ℝ))).withDensity
+        ((fun s ↦ ENNReal.ofReal (Real.exp (-s))) ∘ fun x ↦ ∑ i, x i) := by
+  have hS : MeasurableSet (Set.univ.pi fun _ : ι ↦ Set.Ici (0 : ℝ)) :=
+    MeasurableSet.univ_pi fun _ ↦ measurableSet_Ici
+  rw [pi_gammaMeasure_eq_withDensity, ← withDensity_indicator hS]
+  congr 1
+  funext x
+  simp_rw [gammaPDF_one_one]
+  by_cases hx : x ∈ Set.univ.pi fun _ : ι ↦ Set.Ici (0 : ℝ)
+  · have hx' : ∀ i, 0 ≤ x i := fun i ↦ hx i (Set.mem_univ i)
+    rw [Set.indicator_of_mem hx, Function.comp_apply, Finset.prod_congr rfl fun i _ ↦
+      Set.indicator_of_mem (Set.mem_Ici.mpr (hx' i)) _, ← ENNReal.ofReal_prod_of_nonneg
+      fun i _ ↦ (Real.exp_pos _).le, ← Real.exp_sum, Finset.sum_neg_distrib]
+  · obtain ⟨i, hi⟩ : ∃ i, x i < 0 := by
+      simpa only [Set.mem_univ_pi, Set.mem_Ici, not_forall, not_le] using hx
+    rw [Set.indicator_of_notMem hx]
+    exact Finset.prod_eq_zero (Finset.mem_univ i)
+      (Set.indicator_of_notMem (by simpa using hi) _)
 
 /-! ### The law of the coordinate sum -/
 
