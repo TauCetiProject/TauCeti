@@ -29,7 +29,7 @@ bounded spaces `TauCeti.CkHolderSpace` of the whole space into them.
 
 The Hölder seminorm is taken over all pairs of points of `Ω`, not locally. On
 `Ω = (-1, 0) ∪ (0, 1)` the sign function has vanishing derivatives, but its difference quotient
-between `-t` and `t` is `2 / (2t)^α`, so it does not lie in `C^{0,α}(Ω)`.
+between `-t` and `t` is `2 / (2t)^α`, so for `α > 0` it does not lie in `C^{0,α}(Ω)`.
 
 An element is represented, as for `TauCeti.CkHolderSpace`, by its family of derivative fields on
 `Ω`: bounded continuous fields `Ω →ᵇ (E [×i]→L[ℝ] F)` for `i < k` and a bounded Hölder field of
@@ -799,8 +799,8 @@ private theorem norm_lowerOrder_le (hα : α ≤ 1) (hΩ : Convex ℝ (Ω : Set 
 /-- On a convex open set `Ω` and for `α ≤ 1`, the inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, of
 operator norm at most `3`. Some hypothesis of this kind is needed: on the plane annulus
 `1 < ‖x‖ < 2` slit along the positive first axis, the angle function lies in `C^{1,α}`, since its
-derivative extends smoothly across the slit, but it jumps by `2π` across the slit, so it is not in
-`C^{0,α}`. -/
+derivative extends smoothly across the slit, but it jumps by `2π` across the slit, so for
+`0 < α ≤ 1` it is not in `C^{0,α}`. -/
 def lowerOrderL (hα : α ≤ 1) (hΩ : Convex ℝ (Ω : Set E)) :
     CkHolderSpaceOn (k + 1) α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
   LinearMap.mkContinuous
