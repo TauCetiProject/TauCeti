@@ -181,24 +181,22 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
       Nat.mul_div_assoc _ ((Nat.gcd_dvd_left _ _).mul_right _)]
   rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), hmul, ← hcyc, mul_left_comm]
 
-/-- **A torsion-free commutative group with a cyclic subgroup of finite index is cyclic.**
-Raising to the `H.index`-th power lands in `H` by `Subgroup.pow_index_mem` and is injective when
-`G` is torsion-free, embedding `G` into the cyclic group `H`. -/
+/-- **A torsion-free commutative group with a cyclic subgroup of finite index is cyclic.** -/
 @[to_additive
 /-- **A torsion-free additive commutative group with a cyclic subgroup of finite index is
 cyclic.** -/]
 theorem isCyclic_of_finiteIndex {G : Type*} [CommGroup G] [IsMulTorsionFree G]
     (H : Subgroup G) [IsCyclic H] [H.FiniteIndex] : IsCyclic G := by
+  -- Raising to the `H.index`-th power lands in `H` and is injective since `G` is torsion-free.
   let f : G →* H := (powMonoidHom H.index).codRestrict H H.pow_index_mem
   refine isCyclic_of_injective f fun x y hxy ↦ ?_
   exact (Commute.all x y).eq_of_pow_eq_pow FiniteIndex.index_ne_zero (congrArg Subtype.val hxy)
 
 /-- **A subgroup of a torsion-free commutative group in which a cyclic subgroup has finite relative
-index is cyclic.** No inclusion `H ≤ K` is needed: `H ⊓ K` embeds into `H`, so `H.subgroupOf K` is
-cyclic of finite index in the torsion-free commutative group `K`. -/
+index is cyclic.** No inclusion `H ≤ K` is needed. -/
 @[to_additive
 /-- **A subgroup of a torsion-free additive commutative group in which a cyclic subgroup has finite
-relative index is cyclic.** -/]
+relative index is cyclic.** No inclusion `H ≤ K` is needed. -/]
 theorem isCyclic_of_isFiniteRelIndex {G : Type*} [CommGroup G] [IsMulTorsionFree G]
     (H K : Subgroup G) [IsCyclic H] [H.IsFiniteRelIndex K] : IsCyclic K := by
   have : IsCyclic (H.subgroupOf K) :=

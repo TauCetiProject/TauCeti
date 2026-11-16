@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+public import Mathlib.RingTheory.Valuation.Discrete.Basic
+public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 
 import Mathlib.RingTheory.Polynomial.Subring
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.Valuation.Discrete.Extension
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -45,12 +48,14 @@ support.
 ## Main results
 
 * `TauCeti.coe_spectralValuation`: the spectral valuation is the spectral norm.
-* `TauCeti.spectralValuation_algebraMap` and `TauCeti.comap_spectralValuation`: it extends the
-  norm of `K`.
+* `TauCeti.spectralValuation_algebraMap`, `TauCeti.comap_spectralValuation`, and
+  `TauCeti.spectralValuation_hasExtension`: it extends the norm of `K`.
 * `Valuation.isEquiv_spectralValuation_iff`: a valuation on `L` is equivalent to the spectral
   valuation exactly when it compares elements of `K` by their norms.
 * `TauCeti.isContinuous_spectralValuation`: on a finite extension it is continuous for every
   Hausdorff topological `K`-vector space structure.
+* `TauCeti.isRankOneDiscrete_spectralValuation`: on a finite extension of a discretely normed
+  ultrametric field, the spectral valuation is rank-one discrete.
 -/
 
 public section
@@ -163,5 +168,26 @@ theorem isContinuous_spectralValuation [FiniteDimensional K L] [TopologicalSpace
     (spectralAlgNorm K L).toSeminorm.continuous_of_finiteDimensional
   refine Valuation.isContinuous_of_forall_isOpen_lt fun γ ↦ ?_
   simpa [← NNReal.coe_lt_coe] using isOpen_lt hcont continuous_const
+
+section Extension
+
+variable {K L}
+
+/-- The spectral valuation on an algebraic extension `L / K` extends `NormedField.valuation` on
+`K`. -/
+instance spectralValuation_hasExtension [Algebra.IsAlgebraic K L] :
+    (NormedField.valuation (K := K)).HasExtension (spectralValuation K L) where
+  val_isEquiv_comap := by
+    rw [comap_spectralValuation]
+    exact Valuation.IsEquiv.refl
+
+/-- **Discreteness of the spectral valuation.** For a finite extension `L` of a complete discretely
+normed ultrametric field `K`, `TauCeti.spectralValuation K L` is rank-one discrete. -/
+instance isRankOneDiscrete_spectralValuation [FiniteDimensional K L]
+    [(NormedField.valuation (K := K)).IsRankOneDiscrete] :
+    (spectralValuation K L).IsRankOneDiscrete :=
+  .of_finite (NormedField.valuation (K := K)) (spectralValuation K L)
+
+end Extension
 
 end TauCeti

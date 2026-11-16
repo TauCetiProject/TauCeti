@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NewtonPolygon.Ramification
 public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -51,6 +52,9 @@ the slope-`m` factor.
   `Polynomial.IsPureSlopeFactorization.pairwise_isCoprime` and
   `Polynomial.IsPureSlopeFactorization.unique`: degree determination, support, pairwise coprimality
   and uniqueness of pure slope factorisations.
+* `Polynomial.IsPureSlopeFactorization.den_dvd_of_aeval_eq_zero` and
+  `Polynomial.IsPureSlopeFactorization.den_dvd_ramificationIdx_of_aeval_eq_zero`: roots of a
+  rational-slope factor `g q` force `q.den` to divide the ramification index.
 * `Polynomial.exists_mul_newtonSlopes_filter_le`: threshold factorisation `f = P * Q` separating
   finite slopes `≤ σ` from finite slopes `> σ`.
 * `Polynomial.existsUnique_isPureSlopeFactorization`,
@@ -358,6 +362,43 @@ theorem isPureSlopeFactorization_one_iff :
   ⟨fun h => h.unique (.one v), fun h => h ▸ .one v⟩
 
 end Field
+
+section Ramification
+
+namespace IsPureSlopeFactorization
+
+/-- If `g` is a pure slope factorisation of `f : K[X]` for `v`, `w` on an extension `L / K`
+restricts to `v` with `e • w` integer-valued on the nonzero elements of `L`, and `α : L` is a root
+of the slope-`q` factor `g q`, then `q.den ∣ e`. -/
+theorem den_dvd_of_aeval_eq_zero {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {v : AddValuation K (WithTop ℝ)} {w : AddValuation L (WithTop ℝ)}
+    (hw : ∀ x, w (algebraMap K L x) = v x) {e : ℕ}
+    (hL : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e : ℝ) : WithTop ℝ)) {f : K[X]} {g : ℝ → K[X]}
+    (hg : f.IsPureSlopeFactorization v g) {q : ℚ} {α : L} (hroot : aeval α (g q) = 0) :
+    q.den ∣ e := by
+  have hα : α ≠ 0 := by
+    rintro rfl
+    simp [aeval_def, hg.coeff_zero q] at hroot
+  exact Polynomial.den_dvd_of_forall_mem_newtonSlopes_eq hw hL (hg.apply_ne_zero q)
+    (hg.newtonSlopes_eq q) hα hroot
+
+/-- If `g` is a pure slope factorisation of `f : K[X]` for `v.realAddVal`, `w` on an extension
+`L / K` extends the rank-one discrete valuation `v`, and `α : L` is a root of the slope-`q` factor
+`g q`, then `q.den ∣ w.ramificationIdx K`. -/
+theorem den_dvd_ramificationIdx_of_aeval_eq_zero {K L ΓK ΓL : Type*} [Field K] [Field L]
+    [Algebra K L] [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
+    (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w] {f : K[X]}
+    {g : ℝ → K[X]} (hg : f.IsPureSlopeFactorization v.realAddVal g) {q : ℚ} {α : L}
+    (hroot : aeval α (g q) = 0) : q.den ∣ w.ramificationIdx K := by
+  have hα : α ≠ 0 := by
+    rintro rfl
+    simp [aeval_def, hg.coeff_zero q] at hroot
+  exact Polynomial.den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq v w (hg.apply_ne_zero q)
+    (hg.newtonSlopes_eq q) hα hroot
+
+end IsPureSlopeFactorization
+
+end Ramification
 
 end PureSlopeFactorization
 

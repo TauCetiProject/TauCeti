@@ -33,7 +33,7 @@ hypotheses:
 
 ## Main results
 
-* `Polynomial.forall_mem_newtonSlopes_eq_realAddVal_of_irreducible`: irreducible polynomials over a
+* `Polynomial.forall_mem_newtonSlopes_realAddVal_eq_of_irreducible`: irreducible polynomials over a
   nonarchimedean local field have pure Newton polygons.
 * `Polynomial.existsUnique_isPureSlopeFactorization_realAddVal` and
   `Polynomial.splits_of_nodup_newtonSlopes_realAddVal`: unique pure slope factorisation and
@@ -42,9 +42,12 @@ hypotheses:
   compatible extension of local fields.
 * `Polynomial.den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq`,
   `Polynomial.den_dvd_finrank_of_forall_mem_newtonSlopes_eq`,
-  `Polynomial.isTotallyRamified_of_forall_mem_newtonSlopes_eq`, and
-  `Polynomial.IsPureSlopeFactorization.den_dvd_ramificationIndex_of_aeval_eq_zero`: ramification and
-  degree divisibility forced by rational Newton slopes over local fields.
+  `Polynomial.isTotallyRamified_of_forall_mem_newtonSlopes_eq`,
+  `Polynomial.IsPureSlopeFactorization.den_dvd_ramificationIndex_of_aeval_eq_zero`,
+  `minpoly.den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq`,
+  `minpoly.den_dvd_finrank_of_forall_mem_newtonSlopes_eq`, and
+  `minpoly.isTotallyRamified_of_forall_mem_newtonSlopes_eq`: ramification and degree divisibility
+  forced by rational Newton slopes over local fields.
 
 ## References
 
@@ -67,7 +70,7 @@ namespace Polynomial
 irreducible polynomial `f : K[X]` with respect to `(valuation K).realAddVal` equals
 `(((valuation K).realAddVal f.leadingCoeff).untop₀ - ((valuation K).realAddVal (f.coeff 0)).untop₀)
   / f.natDegree`. -/
-theorem forall_mem_newtonSlopes_eq_realAddVal_of_irreducible {f : K[X]} (hf : Irreducible f) :
+theorem forall_mem_newtonSlopes_realAddVal_eq_of_irreducible {f : K[X]} (hf : Irreducible f) :
     ∀ s ∈ f.newtonSlopes (valuation K).realAddVal,
       s = (((valuation K).realAddVal f.leadingCoeff).untop₀ -
         ((valuation K).realAddVal (f.coeff 0)).untop₀) / f.natDegree := by
@@ -110,26 +113,6 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
-namespace minpoly
-
-/-- In a compatible extension `L / K` of nonarchimedean local fields, the minimal polynomial over
-`K` of a nonzero `α : L` has the single Newton slope `-((valuation L).extRealAddVal K α).untop₀`
-with multiplicity `(minpoly K α).natDegree`. -/
-theorem newtonSlopes_realAddVal_eq_replicate {α : L} (hα : α ≠ 0) :
-    (minpoly K α).newtonSlopes (valuation K).realAddVal =
-      Multiset.replicate (minpoly K α).natDegree (-((valuation L).extRealAddVal K α).untop₀) := by
-  have : Module.Finite K L := finite_of_valuativeExtension K L
-  let _ : NontriviallyNormedField K := normalizedNontriviallyNormedField K
-  have : IsUltrametricDist K := normalizedNormedField_isUltrametricDist K
-  have : CompleteSpace K := normalizedNormedField_completeSpace K
-  exact newtonSlopes_eq_replicate (b := (Nat.card 𝓀[K] : ℝ))
-    (Nat.one_lt_cast.mpr Finite.one_lt_card)
-    (fun _ hx ↦ normalizedNormedField_norm_eq_rpow_neg_realAddVal hx)
-    (Valuation.extRealAddVal_algebraMap (valuation K) (valuation L))
-    (Algebra.IsIntegral.isIntegral α) hα
-
-end minpoly
-
 namespace Polynomial
 
 /-- **Pure Newton slopes divide `ramificationIndex K L`.** In a compatible extension `L / K` of
@@ -169,13 +152,61 @@ a root of the slope-`q` factor `g q`, then `q.den ∣ ramificationIndex K L`. -/
 theorem IsPureSlopeFactorization.den_dvd_ramificationIndex_of_aeval_eq_zero {f : K[X]}
     {g : ℝ → K[X]} (hg : f.IsPureSlopeFactorization (valuation K).realAddVal g) {q : ℚ} {α : L}
     (hroot : aeval α (g q) = 0) : q.den ∣ ramificationIndex K L := by
-  have hα : α ≠ 0 := by
-    rintro rfl
-    simp [aeval_def, hg.coeff_zero q] at hroot
-  exact den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq (hg.apply_ne_zero q)
-    (hg.newtonSlopes_eq q) hα hroot
+  rw [← ramificationIdx_valuation_eq_ramificationIndex]
+  exact hg.den_dvd_ramificationIdx_of_aeval_eq_zero (valuation K) (valuation L) hroot
 
 end Polynomial
+
+namespace minpoly
+
+/-- In a compatible extension `L / K` of nonarchimedean local fields, the minimal polynomial over
+`K` of a nonzero `α : L` has the single Newton slope `-((valuation L).extRealAddVal K α).untop₀`
+with multiplicity `(minpoly K α).natDegree`. -/
+theorem newtonSlopes_realAddVal_eq_replicate {α : L} (hα : α ≠ 0) :
+    (minpoly K α).newtonSlopes (valuation K).realAddVal =
+      Multiset.replicate (minpoly K α).natDegree (-((valuation L).extRealAddVal K α).untop₀) := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  let _ : NontriviallyNormedField K := normalizedNontriviallyNormedField K
+  have : IsUltrametricDist K := normalizedNormedField_isUltrametricDist K
+  have : CompleteSpace K := normalizedNormedField_completeSpace K
+  exact newtonSlopes_eq_replicate (b := (Nat.card 𝓀[K] : ℝ))
+    (Nat.one_lt_cast.mpr Finite.one_lt_card)
+    (fun _ hx ↦ normalizedNormedField_norm_eq_rpow_neg_realAddVal hx)
+    (Valuation.extRealAddVal_algebraMap (valuation K) (valuation L))
+    (Algebra.IsIntegral.isIntegral α) hα
+
+/-- **Pure minimal-polynomial Newton slopes divide `ramificationIndex K L`.** In a compatible
+extension `L / K` of nonarchimedean local fields, if `α : L` is nonzero and every finite slope of
+`minpoly K α` with respect to `(valuation K).realAddVal` equals `q`, then
+`q.den ∣ ramificationIndex K L`. -/
+theorem den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq {α : L} (hα : α ≠ 0) {q : ℚ}
+    (hq : ∀ m ∈ (minpoly K α).newtonSlopes (valuation K).realAddVal, m = q) :
+    q.den ∣ ramificationIndex K L := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  exact Polynomial.den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq
+    (minpoly.ne_zero (Algebra.IsIntegral.isIntegral α)) hq hα (minpoly.aeval K α)
+
+/-- **Pure minimal-polynomial Newton slopes divide `[L : K]`.** Under the hypotheses of
+`minpoly.den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq`, `q.den ∣ Module.finrank K L`. -/
+theorem den_dvd_finrank_of_forall_mem_newtonSlopes_eq {α : L} (hα : α ≠ 0) {q : ℚ}
+    (hq : ∀ m ∈ (minpoly K α).newtonSlopes (valuation K).realAddVal, m = q) :
+    q.den ∣ Module.finrank K L :=
+  (den_dvd_ramificationIndex_of_forall_mem_newtonSlopes_eq hα hq).trans
+    ⟨_, (ramificationIndex_mul_inertiaDegree K L).symm⟩
+
+/-- **Criterion for total ramification of local fields from a pure minimal polynomial.** In a
+compatible extension `L / K` of nonarchimedean local fields, if `α : L` is nonzero, `minpoly K α`
+is pure of rational slope `q` for `(valuation K).realAddVal`, and `Module.finrank K L ≤ q.den`,
+then `IsTotallyRamified K L`. -/
+theorem isTotallyRamified_of_forall_mem_newtonSlopes_eq {α : L} (hα : α ≠ 0) {q : ℚ}
+    (hq : ∀ m ∈ (minpoly K α).newtonSlopes (valuation K).realAddVal, m = q)
+    (hdeg : Module.finrank K L ≤ q.den) :
+    IsTotallyRamified K L := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  exact Polynomial.isTotallyRamified_of_forall_mem_newtonSlopes_eq
+    (minpoly.ne_zero (Algebra.IsIntegral.isIntegral α)) hq hα (minpoly.aeval K α) hdeg
+
+end minpoly
 
 end Extension
 

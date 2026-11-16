@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
-public import TauCeti.NumberTheory.NewtonPolygon.LocalField
+public import TauCeti.NumberTheory.LocalField.DiscreteValuation
 public import TauCeti.NumberTheory.NewtonPolygon.Ramification
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.Valuation.Denominator
@@ -126,7 +126,8 @@ theorem isTotallyRamified_of_pow_eq_of_finrank_eq [ValuativeRel L] [TopologicalS
     [IsNonarchimedeanLocalField L] [ValuativeExtension ℚ_[p] L]
     (hfin : Module.finrank ℚ_[p] L = p) {α : L} (hα : α ^ p = algebraMap ℚ_[p] L p) :
     IsTotallyRamified ℚ_[p] L := by
-  have : Module.Finite ℚ_[p] L := finite_of_valuativeExtension ℚ_[p] L
+  have : Module.Finite ℚ_[p] L :=
+    Module.finite_of_finrank_pos (by have := (Fact.out : p.Prime).pos; omega)
   rw [isTotallyRamified_iff_ramificationIdx_eq_finrank]
   refine Nat.le_antisymm (ValuativeRel.valuation L).ramificationIdx_le_finrank ?_
   rw [hfin, ramificationIdx_valuation_eq_ramificationIndex]

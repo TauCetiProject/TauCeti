@@ -7,38 +7,38 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
-public import TauCeti.RingTheory.Valuation.Denominator
 public import TauCeti.RingTheory.Valuation.Discrete.AddVal
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 public import TauCeti.RingTheory.Valuation.Extension
-public import TauCeti.RingTheory.Valuation.Spectral
+
+import TauCeti.Data.Rat.NumDenDvd
 
 /-!
 # Extensions of rank-one discrete valuations and ramification scaling
 
-Let `w` be a valuation on an algebra `L` over `K` extending a rank-one discrete valuation `v` on `K`
+Let `w` be a valuation on a `K`-algebra `L` extending a rank-one discrete valuation `v` on `K`
 (`v.HasExtension w`).
 
 * Whenever the value group of `w|_K` has finite relative index in `w.valueGroup` — in particular,
   whenever `L` is a finite division-ring extension of a field `K` — `w` is itself rank-one discrete,
-  and when `L` is a field its valuation subring is a discrete valuation ring. Applied to
-  `TauCeti.spectralValuation K L`, this makes the spectral valuation of a finite extension of a
-  complete discretely normed ultrametric field rank-one discrete.
-* When both `v` and `w` are rank-one discrete on division rings `K` and `L`, restricting
-  `w.intValuation` to `K` and normalizing via `Valuation.normalization` recovers `v.intValuation`,
-  and `w.ramificationIdx K` agrees with
-  `Valuation.ordIndex (w.intValuation.comap (algebraMap K L))`. Consequently
-  `0 < w.ramificationIdx K` and
+  and when `L` is a field its valuation subring is a discrete valuation ring.
+* When `K` is a commutative ring, `L` is a ring, and both `v` and `w` are rank-one discrete, the
+  generator of `(w.comap (algebraMap K L)).valueGroup` is the `(w.ramificationIdx K)`-th power of
+  the generator of `w.valueGroup`. Consequently `0 < w.ramificationIdx K` and
 
   `w.intAddVal (algebraMap K L x) = w.ramificationIdx K • v.intAddVal x`.
 
-  When `K` and `L` are fields, `w.ramificationIdx K` also equals the ideal-theoretic ramification
-  index `(maximalIdeal w.valuationSubring).ramificationIdx v.valuationSubring`.
+  When `K` is a field and `L` is a division ring over `K`, restricting `w.intValuation` to `K` and
+  normalizing via `Valuation.normalization` recovers `v.intValuation`, and `w.ramificationIdx K`
+  agrees with `Valuation.ordIndex (w.intValuation.comap (algebraMap K L))`. When `K` and `L` are
+  fields, `w.ramificationIdx K` also equals the ideal-theoretic ramification index
+  `(maximalIdeal w.valuationSubring).ramificationIdx v.valuationSubring`.
 * Dividing `w.intAddVal` by `w.ramificationIdx K` produces the base-normalized real additive
   valuation `w.extRealAddVal K : AddValuation L (WithTop ℝ)`, which restricts to `v.realAddVal` on
-  `K` and takes values in `(1 / w.ramificationIdx K) • ℤ` on `Lˣ`. Any element `α : L` whose
-  base-normalized valuation is a rational number `q` therefore satisfies
-  `q.den ∣ w.ramificationIdx K` and, when `L / K` is finite, `q.den ≤ Module.finrank K L`.
+  `K` and takes values in `(1 / w.ramificationIdx K) • ℤ` outside the valuation support of `w`. Any
+  element `α : L` whose base-normalized valuation is a rational number `q` therefore satisfies
+  `q.den ∣ w.ramificationIdx K` and, when `L` is a finite division-ring extension of a field `K`,
+  `q.den ≤ Module.finrank K L`.
 
 ## Main definitions
 
@@ -50,12 +50,12 @@ Let `w` be a valuation on an algebra `L` over `K` extending a rank-one discrete 
 
 * `Valuation.IsRankOneDiscrete.of_isFiniteRelIndex` and `Valuation.IsRankOneDiscrete.of_finite`:
   discreteness passes to finite-index and finite-degree extensions.
-* `TauCeti.isRankOneDiscrete_spectralValuation`: the spectral valuation on a finite extension of a
-  complete discretely normed ultrametric field is rank-one discrete.
+* `Valuation.generator_comap_eq_pow_ramificationIdx`, `Valuation.intAddVal_algebraMap`, and
+  `Valuation.ramificationIdx_eq_ideal_ramificationIdx`: generator scaling, additive ramification
+  scaling, and agreement with the ideal-theoretic ramification index.
 * `Valuation.normalization_comap_intValuation` and `Valuation.ramificationIdx_eq_ordIndex`:
-  compatibility of `ramificationIdx` with `ordIndex` and `normalization`.
-* `Valuation.intAddVal_algebraMap` and `Valuation.ramificationIdx_eq_ideal_ramificationIdx`:
-  additive ramification scaling and agreement with the ideal-theoretic ramification index.
+  compatibility of `ramificationIdx` with `ordIndex` and `normalization` on a division ring over a
+  field.
 * `Valuation.extRealAddVal_algebraMap`,
   `Valuation.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast`, and
   `Valuation.den_le_finrank_of_extRealAddVal_eq_ratCast`: restriction and rational-value denominator
@@ -70,7 +70,7 @@ Let `w` be a valuation on an algebra `L` over `K` extending a rank-one discrete 
 
 public section
 
-open scoped WithZero NNReal
+open scoped WithZero
 open MonoidWithZeroHom
 
 namespace Valuation
@@ -115,114 +115,9 @@ theorem valuationSubring_isDiscreteValuationRing_of_finite [Field K] [Field L] [
 
 end Discreteness
 
-end Valuation
-
-namespace TauCeti
-
-section SpectralValuation
-
-variable {K L : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  [Field L] [Algebra K L]
-
-/-- The spectral valuation on an algebraic extension `L / K` extends `NormedField.valuation` on
-`K`. -/
-instance spectralValuation_hasExtension [Algebra.IsAlgebraic K L] :
-    (NormedField.valuation (K := K)).HasExtension (spectralValuation K L) where
-  val_isEquiv_comap := by
-    rw [comap_spectralValuation]
-    exact Valuation.IsEquiv.refl
-
-/-- **Discreteness of the spectral valuation.** For a finite extension `L` of a complete discretely
-normed ultrametric field `K`, `TauCeti.spectralValuation K L` is rank-one discrete. -/
-instance isRankOneDiscrete_spectralValuation [FiniteDimensional K L]
-    [(NormedField.valuation (K := K)).IsRankOneDiscrete] :
-    (spectralValuation K L).IsRankOneDiscrete :=
-  .of_finite (NormedField.valuation (K := K)) (spectralValuation K L)
-
-/-- The valuation subring of `TauCeti.spectralValuation K L` is a discrete valuation ring when `K`
-is discretely normed and `L / K` is finite. -/
-instance isDiscreteValuationRing_valuationSubring_spectralValuation [FiniteDimensional K L]
-    [(NormedField.valuation (K := K)).IsRankOneDiscrete] :
-    IsDiscreteValuationRing (spectralValuation K L).valuationSubring :=
-  inferInstance
-
-end SpectralValuation
-
-end TauCeti
-
-namespace Valuation
-
-section OrdIndex
-
-variable {K L ΓL : Type*} [Field K] [DivisionRing L] [Algebra K L]
-  [LinearOrderedCommGroupWithZero ΓL] (w : Valuation L ΓL) [w.IsRankOneDiscrete]
-
-private theorem zpowers_exp_neg_one_eq_top :
-    Subgroup.zpowers (Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)) = (⊤ : Subgroup ℤᵐ⁰ˣ) := by
-  rw [eq_top_iff]
-  intro γ _
-  have hγ : (γ : ℤᵐ⁰) ≠ 0 := Units.ne_zero γ
-  refine Subgroup.mem_zpowers_iff.mpr ⟨-(WithZero.log (γ : ℤᵐ⁰)), Units.ext ?_⟩
-  simp [Units.val_zpow_eq_zpow_val, ← WithZero.exp_zsmul, WithZero.exp_log hγ]
-
-private theorem valueGroup_comap_intValuation_eq_zpowers :
-    (w.intValuation.comap (algebraMap K L)).valueGroup =
-      Subgroup.zpowers
-        ((Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)) ^
-          (ordIndex (w.intValuation.comap (algebraMap K L)) : ℤ)) := by
-  let u := w.intValuation.comap (algebraMap K L)
-  set e : ℕ := ordIndex u
-  refine le_antisymm ((Subgroup.closure_le _).mpr ?_) ?_
-  · rintro γ (⟨x, hx⟩ : ∃ x : K, u x = (γ : ℤᵐ⁰))
-    have hux : u x ≠ 0 := hx.trans_ne (Units.ne_zero γ)
-    refine Subgroup.mem_zpowers_iff.mpr ⟨ord (normalization u) x, Units.ext ?_⟩
-    rw [← zpow_mul, Units.val_zpow_eq_zpow_val, Units.val_mk0, ← WithZero.exp_zsmul,
-      zsmul_eq_mul, hx.symm, valuation_eq_exp_neg_ord u hux,
-      ← ord_normalization_mul_ordIndex u x]
-    congr 1
-    simp [e, mul_comm]
-  · rw [Subgroup.zpowers_le]
-    rcases eq_or_ne e 0 with he | he
-    · simp [he]
-    · obtain ⟨x, hx⟩ := ord_surjective (normalization u) (normalization_surjective u he) 1
-      have hnx : normalization u x ≠ 0 := by
-        intro h0
-        rw [ord_def, h0, WithZero.log_zero, neg_zero] at hx
-        omega
-      have hux : u x ≠ 0 := (isEquiv_normalization u).eq_zero.ne.mp hnx
-      refine mem_valueGroup _ ⟨x, ?_⟩
-      change u x = _
-      rw [valuation_eq_exp_neg_ord u hux, ← ord_normalization_mul_ordIndex u x, hx, one_mul,
-        Units.val_zpow_eq_zpow_val, Units.val_mk0, ← WithZero.exp_zsmul]
-      simp [e]
-
-/-- **Comparison with `Valuation.ordIndex`.** For any rank-one discrete valuation `w` on an algebra
-`L` (a division ring) over a field `K`, `w.ramificationIdx K` equals
-`ordIndex (w.intValuation.comap (algebraMap K L))`. -/
-theorem ramificationIdx_eq_ordIndex :
-    w.ramificationIdx K = ordIndex (w.intValuation.comap (algebraMap K L)) := by
-  let g₀ : ℤᵐ⁰ˣ := Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)
-  have htop : w.intValuation.valueGroup = ⊤ := by
-    rw [eq_top_iff]
-    intro γ _
-    obtain ⟨y, hy⟩ := w.intValuation_surjective (γ : ℤᵐ⁰)
-    exact mem_valueGroup _ ⟨y, hy⟩
-  have hg₀_ne : g₀ ≠ 1 := by
-    intro h
-    have hval := congrArg Units.val h
-    simp [g₀] at hval
-  have hord0 : orderOf g₀ = 0 :=
-    orderOf_eq_zero_iff.mpr (not_isOfFinOrder_of_isMulTorsionFree hg₀_ne)
-  rw [w.isEquiv_intValuation.symm.ramificationIdx_eq, ramificationIdx_def, htop,
-    Subgroup.relIndex_top_right, valueGroup_comap_intValuation_eq_zpowers w,
-    Subgroup.index_zpowers_zpow zpowers_exp_neg_one_eq_top, hord0]
-  simp
-
-end OrdIndex
-
 section Scaling
 
-variable {K L ΓK ΓL : Type*} [Field K] [DivisionRing L] [Algebra K L]
+variable {K L ΓK ΓL : Type*} [CommRing K] [Ring L] [Algebra K L]
   [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
 
 /-- Restricting `w.intValuation` along `algebraMap K L` produces a valuation equivalent to `v`. -/
@@ -239,49 +134,82 @@ theorem isRankOneDiscrete_comap_intValuation (v : Valuation K ΓK) [v.IsRankOneD
     (w.intValuation.comap (algebraMap K L)).IsRankOneDiscrete :=
   .of_isEquiv (isEquiv_comap_intValuation v w).symm
 
-/-- **Positivity of the ramification index** for any extension of rank-one discrete valuations on
-division rings, with no finiteness hypothesis on `L / K`. -/
+/-- When both `w` and its restriction `w.comap (algebraMap K L)` are rank-one discrete, the
+generator of `(w.comap (algebraMap K L)).valueGroup` is the `(w.ramificationIdx K)`-th power of
+the generator of `w.valueGroup`. -/
+theorem generator_comap_eq_pow_ramificationIdx (w : Valuation L ΓL) [hw : w.IsRankOneDiscrete]
+    [hu : (w.comap (algebraMap K L)).IsRankOneDiscrete] :
+    hu.generator = hw.generator ^ w.ramificationIdx K := by
+  have hmem : hu.generator ∈ Subgroup.zpowers hw.generator := by
+    rw [hw.generator_zpowers_eq_valueGroup]
+    exact w.valueGroup_comap_le (algebraMap K L) hu.generator_mem_valueGroup
+  obtain ⟨e, he⟩ := Subgroup.mem_zpowers_iff.mp hmem
+  have he_pos : 0 < e := by
+    have hlt : (hw.generator : ΓL) ^ e < 1 := by
+      rw [← Units.val_zpow_eq_zpow_val, he]
+      exact hu.generator_lt_one
+    exact (zpow_lt_one_iff_right_of_lt_one₀ (Units.zero_lt hw.generator)
+      hw.generator_lt_one).mp hlt
+  have he_nat : hw.generator ^ e.toNat = hu.generator := by
+    rw [← zpow_natCast, Int.toNat_of_nonneg he_pos.le, he]
+  have hsub : (w.comap (algebraMap K L)).valueGroup.subgroupOf w.valueGroup =
+      Subgroup.zpowers (hw.generator' ^ e) := by
+    ext g
+    rw [Subgroup.mem_subgroupOf, ← hu.generator_zpowers_eq_valueGroup,
+      Subgroup.mem_zpowers_iff, Subgroup.mem_zpowers_iff]
+    refine exists_congr fun k ↦ ?_
+    rw [Subtype.ext_iff, Subgroup.coe_zpow, Subgroup.coe_zpow, IsRankOneDiscrete.generator',
+      ← zpow_mul, ← he, ← zpow_mul]
+  have hord0 : orderOf hw.generator' = 0 :=
+    orderOf_eq_zero_iff.mpr (not_isOfFinOrder_of_isMulTorsionFree hw.generator'_lt_one.ne)
+  have hram : w.ramificationIdx K = e.toNat := by
+    rw [ramificationIdx_def, Subgroup.relIndex, hsub,
+      Subgroup.index_zpowers_zpow hw.generator'_zpowers_eq_top, hord0]
+    simp
+    omega
+  rw [hram, he_nat]
+
+/-- **Positivity of the ramification index** for any extension of rank-one discrete valuations on a
+`K`-algebra `L`, with no finiteness hypothesis on `L / K`. -/
 theorem HasExtension.ramificationIdx_pos (v : Valuation K ΓK) [v.IsRankOneDiscrete]
     (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] :
     0 < w.ramificationIdx K := by
-  have := isRankOneDiscrete_comap_intValuation v w
-  rw [ramificationIdx_eq_ordIndex w]
-  exact Nat.pos_of_ne_zero (ordIndex_ne_zero_of_isNontrivial _)
+  have : (w.comap (algebraMap K L)).IsRankOneDiscrete :=
+    .of_isEquiv (HasExtension.val_isEquiv_comap (vR := v) (vA := w))
+  refine Nat.pos_of_ne_zero fun h0 ↦
+    IsRankOneDiscrete.generator_ne_one (w.comap (algebraMap K L)) ?_
+  rw [generator_comap_eq_pow_ramificationIdx w, h0, pow_zero]
 
-variable (v : Valuation K ΓK) [v.IsRankOneDiscrete]
-  (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w]
-
-/-- Normalizing the restriction of `w.intValuation` to `K` recovers `v.intValuation`. -/
-theorem normalization_comap_intValuation :
-    normalization (w.intValuation.comap (algebraMap K L)) = v.intValuation := by
-  let u := w.intValuation.comap (algebraMap K L)
-  have hu : u.IsRankOneDiscrete := isRankOneDiscrete_comap_intValuation v w
-  exact eq_of_isEquiv_of_surjective
-    (normalization_surjective u (ordIndex_ne_zero_of_isNontrivial u))
-    v.intValuation_surjective
-    ((isEquiv_normalization u).trans ((isEquiv_comap_intValuation v w).trans
-      v.isEquiv_intValuation.symm))
-
-/-- On `algebraMap K L x`, the order for `w.intValuation` is `w.ramificationIdx K` times the order
-for `v.intValuation`. -/
-theorem ord_intValuation_algebraMap (x : K) :
-    ord w.intValuation (algebraMap K L x) = w.ramificationIdx K * ord v.intValuation x := by
-  have h := ord_normalization_mul_ordIndex (w.intValuation.comap (algebraMap K L)) x
-  rw [normalization_comap_intValuation v w, ← ramificationIdx_eq_ordIndex w, ord_comap,
-    mul_comm] at h
-  exact h.symm
+variable (v : Valuation K ΓK) [hv : v.IsRankOneDiscrete]
+  (w : Valuation L ΓL) [hw : w.IsRankOneDiscrete] [v.HasExtension w]
 
 /-- On `algebraMap K L x`, `w.intValuation` raises `v.intValuation x` to the power
 `w.ramificationIdx K`. -/
 theorem intValuation_algebraMap (x : K) :
     w.intValuation (algebraMap K L x) = v.intValuation x ^ w.ramificationIdx K := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [(HasExtension.ramificationIdx_pos v w).ne']
-  · have hvx : v.intValuation x ≠ 0 := v.intValuation_eq_zero_iff.not.mpr (v.ne_zero_iff.mpr hx)
-    have hwx : w.intValuation (algebraMap K L x) ≠ 0 :=
-      w.intValuation_eq_zero_iff.not.mpr (w.ne_zero_iff.mpr ((map_ne_zero (algebraMap K L)).mpr hx))
-    rw [valuation_eq_exp_neg_ord w.intValuation hwx, valuation_eq_exp_neg_ord v.intValuation hvx,
-      ord_intValuation_algebraMap v w x, ← WithZero.exp_nsmul, nsmul_eq_mul, neg_mul_eq_mul_neg]
+  have hequiv : v.IsEquiv (w.comap (algebraMap K L)) :=
+    HasExtension.val_isEquiv_comap (vR := v) (vA := w)
+  have hu : (w.comap (algebraMap K L)).IsRankOneDiscrete := .of_isEquiv hequiv
+  rcases eq_or_ne (v x) 0 with hx | hx
+  · have hwx : w (algebraMap K L x) = 0 := hequiv.eq_zero.mp hx
+    rw [w.intValuation_eq_zero_iff.mpr hwx, v.intValuation_eq_zero_iff.mpr hx,
+      zero_pow (HasExtension.ramificationIdx_pos v w).ne']
+  · have hux : (w.comap (algebraMap K L)) x ≠ 0 := hequiv.eq_zero.ne.mp hx
+    set u := w.comap (algebraMap K L)
+    set m := ord u.intValuation x
+    have hux_val : u x = (hu.generator : ΓL) ^ m := (u.ord_intValuation_eq_iff hux).mp rfl
+    have hwx_val : w (algebraMap K L x) = (hw.generator : ΓL) ^ (w.ramificationIdx K * m) := by
+      rw [← comap_apply (algebraMap K L) w x, hux_val, generator_comap_eq_pow_ramificationIdx w,
+        Units.val_pow_eq_pow_val, ← zpow_natCast, ← zpow_mul]
+    rw [w.intValuation_eq_exp_neg_iff.mpr hwx_val, hequiv.intValuation_eq,
+      u.intValuation_eq_exp_neg_iff.mpr hux_val, ← WithZero.exp_nsmul, nsmul_eq_mul,
+      neg_mul_eq_mul_neg]
+
+/-- On `algebraMap K L x`, the order for `w.intValuation` is `w.ramificationIdx K` times the order
+for `v.intValuation`. -/
+theorem ord_intValuation_algebraMap (x : K) :
+    ord w.intValuation (algebraMap K L x) = w.ramificationIdx K * ord v.intValuation x := by
+  rw [ord_def, intValuation_algebraMap v w x, WithZero.log_pow, nsmul_eq_mul, ord_def, mul_neg]
 
 /-- **Ramification scaling of `intAddVal`.** Restricting `w.intAddVal` along `algebraMap K L`
 multiplies `v.intAddVal` by `w.ramificationIdx K`. -/
@@ -310,12 +238,61 @@ theorem IsUniformizer.intAddVal_algebraMap {v : Valuation K ΓK} [v.IsRankOneDis
 theorem ramificationIdx_eq_iff_forall_intAddVal {e : ℕ} :
     w.ramificationIdx K = e ↔ ∀ x : K, w.intAddVal (algebraMap K L x) = e • v.intAddVal x := by
   refine ⟨fun h x ↦ h ▸ intAddVal_algebraMap v w x, fun h ↦ ?_⟩
-  obtain ⟨π, hπ⟩ := exists_isUniformizer_of_isCyclic_of_nontrivial v
-  have h1 := h (π : K)
-  rw [intAddVal_algebraMap v w, hπ.intAddVal_eq_one, nsmul_one, nsmul_one] at h1
-  exact Nat.cast_injective (WithTop.coe_inj.mp h1)
+  obtain ⟨r, hr, s, hs, hrs⟩ :=
+    (mem_valueGroup_iff_of_comm' (v : K →*₀ ΓK)).mp (IsRankOneDiscrete.generator_mem_valueGroup v)
+  rw [coe_toMonoidWithZeroHom] at hr hs hrs
+  have hord : ord v.intValuation s = ord v.intValuation r + 1 := by
+    rw [v.ord_intValuation_eq_iff hs, ← hrs, (v.ord_intValuation_eq_iff hr).mp rfl,
+      zpow_add_one₀ (Units.ne_zero _)]
+  have h1 := h r
+  have h2 := h s
+  rw [intAddVal_algebraMap v w, v.intAddVal_of_map_ne_zero hr, ← WithTop.coe_nsmul,
+    ← WithTop.coe_nsmul, WithTop.coe_inj, nsmul_eq_mul, nsmul_eq_mul] at h1
+  rw [intAddVal_algebraMap v w, v.intAddVal_of_map_ne_zero hs, ← WithTop.coe_nsmul,
+    ← WithTop.coe_nsmul, WithTop.coe_inj, nsmul_eq_mul, nsmul_eq_mul, hord] at h2
+  have heq : (w.ramificationIdx K : ℤ) = e := by linarith
+  exact_mod_cast heq
 
 end Scaling
+
+section OrdIndex
+
+variable {K L ΓK ΓL : Type*} [Field K] [DivisionRing L] [Algebra K L]
+  [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
+  (w : Valuation L ΓL) [w.IsRankOneDiscrete]
+
+/-- **Comparison with `Valuation.ordIndex`.** For any rank-one discrete valuation `w` on an algebra
+`L` (a division ring) over a field `K`, `w.ramificationIdx K` equals
+`ordIndex (w.intValuation.comap (algebraMap K L))`. -/
+theorem ramificationIdx_eq_ordIndex :
+    w.ramificationIdx K = ordIndex (w.intValuation.comap (algebraMap K L)) := by
+  set g₀ : ℤᵐ⁰ˣ := Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)
+  have htop : w.intValuation.valueGroup = ⊤ :=
+    valueGroup_eq_top_of_surjective w.intValuation w.intValuation_surjective
+  have hg₀ : IsRankOneDiscrete.generator w.intValuation = g₀ :=
+    IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective w.intValuation_surjective
+  have hzpow : Subgroup.zpowers g₀ = ⊤ := by
+    rw [← hg₀, IsRankOneDiscrete.generator_zpowers_eq_valueGroup, htop]
+  have hord0 : orderOf g₀ = 0 := orderOf_eq_zero_iff.mpr <|
+    not_isOfFinOrder_of_isMulTorsionFree (hg₀ ▸ IsRankOneDiscrete.generator_ne_one _)
+  rw [w.isEquiv_intValuation.symm.ramificationIdx_eq, ramificationIdx_def, htop,
+    Subgroup.relIndex_top_right, valueGroup_eq_zpowers_ordIndex,
+    Subgroup.index_zpowers_zpow hzpow, hord0]
+  simp
+
+/-- Normalizing the restriction of `w.intValuation` to `K` recovers `v.intValuation`. -/
+theorem normalization_comap_intValuation (v : Valuation K ΓK) [v.IsRankOneDiscrete]
+    [v.HasExtension w] :
+    normalization (w.intValuation.comap (algebraMap K L)) = v.intValuation := by
+  let u := w.intValuation.comap (algebraMap K L)
+  have hu : u.IsRankOneDiscrete := isRankOneDiscrete_comap_intValuation v w
+  exact eq_of_isEquiv_of_surjective
+    (normalization_surjective u (ordIndex_ne_zero_of_isNontrivial u))
+    v.intValuation_surjective
+    ((isEquiv_normalization u).trans ((isEquiv_comap_intValuation v w).trans
+      v.isEquiv_intValuation.symm))
+
+end OrdIndex
 
 section ValuationSubring
 
@@ -339,7 +316,8 @@ theorem map_maximalIdeal_valuationSubring :
       w (((πL ^ w.ramificationIdx K : w.valuationSubring) : L)) := by
     apply w.isEquiv_intValuation.eq_iff.mp
     rw [HasExtension.coe_algebraMap_valuationSubring_eq, intValuation_algebraMap v w,
-      hπK.intValuation_eq, ← hπL.intValuation_eq, SubmonoidClass.coe_pow, map_pow]
+      hπK.intValuation_eq_exp_neg_one, ← hπL.intValuation_eq_exp_neg_one, SubmonoidClass.coe_pow,
+      map_pow]
   exact associated_of_dvd_dvd
     ((Valuation.valuationSubring.integers w).dvd_iff_le.mpr hval.ge)
     ((Valuation.valuationSubring.integers w).dvd_iff_le.mpr hval.le)
@@ -375,14 +353,15 @@ section ExtRealAddVal
 
 section Ring
 
-variable {K L ΓL ΓL' : Type*} [CommRing K] [Ring L] [Algebra K L]
-  [LinearOrderedCommGroupWithZero ΓL] [LinearOrderedCommGroupWithZero ΓL']
+variable {K L ΓK ΓL ΓL' : Type*} [CommRing K] [Ring L] [Algebra K L]
+  [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
+  [LinearOrderedCommGroupWithZero ΓL']
   (w : Valuation L ΓL) [w.IsRankOneDiscrete]
 
 /-- The **base-normalized real additive valuation** attached to a rank-one discrete valuation `w`
 on a `K`-algebra `L`: it divides `w.intAddVal` by `w.ramificationIdx K`, sending `0` to `⊤` and an
 element of integer valuation `m` to `(m : ℝ) / w.ramificationIdx K`. When `w` extends a rank-one
-discrete valuation `v` on a field `K`, `w.extRealAddVal K` restricts to `v.realAddVal` along
+discrete valuation `v` on `K`, `w.extRealAddVal K` restricts to `v.realAddVal` along
 `algebraMap K L`. -/
 noncomputable def extRealAddVal (K : Type*) [CommRing K] [Algebra K L] :
     AddValuation L (WithTop ℝ) :=
@@ -424,6 +403,53 @@ theorem extRealAddVal_of_map_ne_zero {y : L} (hy : w y ≠ 0) :
       (((ord w.intValuation y : ℝ) / (w.ramificationIdx K : ℝ)) : WithTop ℝ) := by
   rw [extRealAddVal_apply, w.intAddVal_of_map_ne_zero hy, WithTop.map_coe]
 
+/-- Multiplying `w.extRealAddVal K` by `w.ramificationIdx K` recovers `w.realAddVal` whenever the
+ramification index is positive. -/
+theorem ramificationIdx_nsmul_extRealAddVal_of_pos (he : 0 < w.ramificationIdx K) (y : L) :
+    w.ramificationIdx K • w.extRealAddVal K y = w.realAddVal y := by
+  rw [extRealAddVal_eq_map_realAddVal]
+  cases h : w.realAddVal y with
+  | top =>
+    obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero he.ne'
+    rw [WithTop.map_top, hk, succ_nsmul, WithTop.add_top]
+  | coe t =>
+    rw [WithTop.map_coe, ← WithTop.coe_nsmul, nsmul_eq_mul,
+      mul_div_cancel₀ t (Nat.cast_ne_zero.mpr he.ne')]
+
+/-- When `0 < w.ramificationIdx K`, `w.extRealAddVal K` reverses the preorder of `w`. -/
+theorem extRealAddVal_le_extRealAddVal_iff_of_pos (he : 0 < w.ramificationIdx K) {x y : L} :
+    w.extRealAddVal K x ≤ w.extRealAddVal K y ↔ w y ≤ w x := by
+  rw [extRealAddVal_eq_map_realAddVal, extRealAddVal_eq_map_realAddVal,
+    (strictMono_div_right_of_pos (Nat.cast_pos.mpr he)).withTop_map.le_iff_le,
+    realAddVal_le_realAddVal_iff]
+
+/-- When `0 < w.ramificationIdx K`, `w.extRealAddVal K` reverses the strict order of `w`. -/
+theorem extRealAddVal_lt_extRealAddVal_iff_of_pos (he : 0 < w.ramificationIdx K) {x y : L} :
+    w.extRealAddVal K x < w.extRealAddVal K y ↔ w y < w x := by
+  rw [← not_le, extRealAddVal_le_extRealAddVal_iff_of_pos w he, not_le]
+
+/-- When `0 < w.ramificationIdx K`, `0 ≤ w.extRealAddVal K y` is equivalent to `w y ≤ 1`. -/
+theorem extRealAddVal_nonneg_iff_of_pos (he : 0 < w.ramificationIdx K) {y : L} :
+    0 ≤ w.extRealAddVal K y ↔ w y ≤ 1 := by
+  rw [← AddValuation.map_one (w.extRealAddVal K),
+    extRealAddVal_le_extRealAddVal_iff_of_pos w he, w.map_one]
+
+/-- When `0 < w.ramificationIdx K`, `0 < w.extRealAddVal K y` is equivalent to `w y < 1`. -/
+theorem extRealAddVal_pos_iff_of_pos (he : 0 < w.ramificationIdx K) {y : L} :
+    0 < w.extRealAddVal K y ↔ w y < 1 := by
+  rw [← AddValuation.map_one (w.extRealAddVal K),
+    extRealAddVal_lt_extRealAddVal_iff_of_pos w he, w.map_one]
+
+/-- When `0 < w.ramificationIdx K`, `w.extRealAddVal K` vanishes exactly on elements of valuation
+`1`. -/
+theorem extRealAddVal_eq_zero_iff_of_pos (he : 0 < w.ramificationIdx K) {y : L} :
+    w.extRealAddVal K y = 0 ↔ w y = 1 := by
+  rw [extRealAddVal_eq_map_realAddVal,
+    show (0 : WithTop ℝ) = (0 : WithTop ℝ).map (· / (w.ramificationIdx K : ℝ)) by
+      simp [← WithTop.coe_zero],
+    (strictMono_div_right_of_pos (Nat.cast_pos.mpr he)).withTop_map.injective.eq_iff,
+    realAddVal_eq_zero_iff]
+
 /-- Every uniformizer of `w` has base-normalized real additive valuation
 `(w.ramificationIdx K)⁻¹`. -/
 theorem IsUniformizer.extRealAddVal_eq_inv_ramificationIdx
@@ -431,13 +457,50 @@ theorem IsUniformizer.extRealAddVal_eq_inv_ramificationIdx
     w.extRealAddVal K π = (((w.ramificationIdx K : ℝ)⁻¹ : ℝ) : WithTop ℝ) := by
   simp [extRealAddVal_apply, hπ.intAddVal_eq_one, one_div]
 
+/-- **Equivalent discrete valuations on `L` have the same `extRealAddVal` over `K`.** -/
+theorem IsEquiv.extRealAddVal_eq {w₁ : Valuation L ΓL} {w₂ : Valuation L ΓL'}
+    [w₁.IsRankOneDiscrete] [w₂.IsRankOneDiscrete] (h : w₁.IsEquiv w₂) :
+    w₁.extRealAddVal K = w₂.extRealAddVal K := by
+  ext y
+  rw [extRealAddVal_apply, extRealAddVal_apply, h.intAddVal_eq, h.ramificationIdx_eq]
+
+/-- **Denominators of rational values divide the ramification index.** If `w.extRealAddVal K α = q`
+for `q : ℚ`, then `q.den ∣ w.ramificationIdx K`. -/
+theorem den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast {α : L} {q : ℚ}
+    (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) :
+    q.den ∣ w.ramificationIdx K := by
+  rcases eq_or_ne (w.ramificationIdx K) 0 with he | he
+  · exact he ▸ dvd_zero _
+  have hα₀ : w α ≠ 0 := fun h ↦ by
+    rw [(w.extRealAddVal_eq_top_iff (K := K)).mpr h] at hα
+    exact WithTop.top_ne_coe hα
+  have hval := w.extRealAddVal_of_map_ne_zero (K := K) hα₀
+  rw [hα, WithTop.coe_inj] at hval
+  exact (Rat.den_dvd_iff_exists_eq_intCast_div he).2
+    ⟨ord w.intValuation α, by exact_mod_cast hval⟩
+
+/-- **Restriction property of `extRealAddVal`.** When `w` extends `v`, `w.extRealAddVal K`
+restricts on `K` to `v.realAddVal`. -/
+theorem extRealAddVal_algebraMap (v : Valuation K ΓK) [v.IsRankOneDiscrete]
+    (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] (x : K) :
+    w.extRealAddVal K (algebraMap K L x) = v.realAddVal x := by
+  rcases eq_or_ne (v x) 0 with hx | hx
+  · have hwx : w (algebraMap K L x) = 0 :=
+      (HasExtension.val_isEquiv_comap (vR := v) (vA := w)).eq_zero.mp hx
+    rw [w.extRealAddVal_eq_top_iff.mpr hwx, v.realAddVal_eq_top_iff.mpr hx]
+  · have hwx : w (algebraMap K L x) ≠ 0 :=
+      (HasExtension.val_isEquiv_comap (vR := v) (vA := w)).eq_zero.ne.mp hx
+    have he : (w.ramificationIdx K : ℝ) ≠ 0 :=
+      Nat.cast_ne_zero.mpr (HasExtension.ramificationIdx_pos v w).ne'
+    rw [w.extRealAddVal_of_map_ne_zero hwx, ord_intValuation_algebraMap v w x,
+      v.realAddVal_of_map_ne_zero hx, Int.cast_mul, Int.cast_natCast, mul_div_cancel_left₀ _ he]
+
 end Ring
 
 section DivisionRing
 
-variable {K L ΓK ΓL ΓL' : Type*} [CommRing K] [DivisionRing L] [Algebra K L]
-  [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
-  [LinearOrderedCommGroupWithZero ΓL']
+variable {K L ΓL : Type*} [CommRing K] [DivisionRing L] [Algebra K L]
+  [LinearOrderedCommGroupWithZero ΓL]
   (w : Valuation L ΓL) [w.IsRankOneDiscrete]
 
 /-- On a division ring `L`, `w.extRealAddVal K y` equals
@@ -453,82 +516,22 @@ theorem exists_div_ramificationIdx_extRealAddVal {y : L} (hy : y ≠ 0) :
     ∃ n : ℤ, w.extRealAddVal K y = ((n / (w.ramificationIdx K : ℝ) : ℝ) : WithTop ℝ) :=
   ⟨ord w.intValuation y, w.extRealAddVal_of_ne_zero hy⟩
 
-/-- **Denominators of rational values divide the ramification index.** If `w.extRealAddVal K α = q`
-for `q : ℚ`, then `q.den ∣ w.ramificationIdx K`. -/
-theorem den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast {α : L} {q : ℚ}
-    (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) :
-    q.den ∣ w.ramificationIdx K :=
-  AddValuation.den_dvd_of_map_eq_ratCast (fun _ hy ↦ w.exists_div_ramificationIdx_extRealAddVal hy)
-    hα
-
-/-- **Equivalent discrete valuations on `L` have the same `extRealAddVal` over `K`.** -/
-theorem IsEquiv.extRealAddVal_eq {w₁ : Valuation L ΓL} {w₂ : Valuation L ΓL'}
-    [w₁.IsRankOneDiscrete] [w₂.IsRankOneDiscrete] (h : w₁.IsEquiv w₂) :
-    w₁.extRealAddVal K = w₂.extRealAddVal K := by
-  ext y
-  rw [extRealAddVal_apply, extRealAddVal_apply, h.intAddVal_eq, h.ramificationIdx_eq]
-
-/-- When `0 < w.ramificationIdx K`, `0 ≤ w.extRealAddVal K y` is equivalent to `w y ≤ 1`. -/
-theorem nonneg_extRealAddVal_iff_of_pos (he : 0 < w.ramificationIdx K) {y : L} :
-    0 ≤ w.extRealAddVal K y ↔ w y ≤ 1 := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simp
-  · have he' : (0 : ℝ) < w.ramificationIdx K := Nat.cast_pos.mpr he
-    rw [w.extRealAddVal_of_ne_zero hy, ← WithTop.coe_zero, WithTop.coe_le_coe,
-      ← zero_div (w.ramificationIdx K : ℝ), div_le_div_iff_of_pos_right he',
-      ← WithTop.coe_le_coe (α := ℝ), WithTop.coe_zero, ← w.realAddVal_of_ne_zero hy,
-      nonneg_realAddVal_iff]
-
-/-- When `0 < w.ramificationIdx K`, `0 < w.extRealAddVal K y` is equivalent to `w y < 1`. -/
-theorem pos_extRealAddVal_iff_of_pos (he : 0 < w.ramificationIdx K) {y : L} :
-    0 < w.extRealAddVal K y ↔ w y < 1 := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simp
-  · have he' : (0 : ℝ) < w.ramificationIdx K := Nat.cast_pos.mpr he
-    rw [w.extRealAddVal_of_ne_zero hy, ← WithTop.coe_zero, WithTop.coe_lt_coe,
-      div_pos_iff_of_pos_right he', ← WithTop.coe_lt_coe (α := ℝ), WithTop.coe_zero,
-      ← w.realAddVal_of_ne_zero hy, pos_realAddVal_iff]
-
-/-- When `0 < w.ramificationIdx K`, `w.extRealAddVal K` vanishes exactly on elements of valuation
-`1`. -/
-theorem extRealAddVal_eq_zero_iff_of_pos (he : 0 < w.ramificationIdx K) {y : L} :
-    w.extRealAddVal K y = 0 ↔ w y = 1 := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simp
-  · have he' : (w.ramificationIdx K : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr he.ne'
-    rw [w.extRealAddVal_of_ne_zero hy, ← WithTop.coe_zero, WithTop.coe_eq_coe,
-      div_eq_zero_iff, or_iff_left he', ← WithTop.coe_eq_coe (α := ℝ), WithTop.coe_zero,
-      ← w.realAddVal_of_ne_zero hy, realAddVal_eq_zero_iff]
-
 end DivisionRing
 
 section FieldBase
 
-variable {K L ΓK ΓL : Type*} [Field K] [DivisionRing L] [Algebra K L]
-  [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
+variable {K L ΓL : Type*} [Field K] [DivisionRing L] [Algebra K L]
+  [LinearOrderedCommGroupWithZero ΓL]
 
-/-- **Restriction property of `extRealAddVal`.** When `w` extends `v`, `w.extRealAddVal K`
-restricts on `K` to `v.realAddVal`. -/
-theorem extRealAddVal_algebraMap (v : Valuation K ΓK) [v.IsRankOneDiscrete]
-    (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] (x : K) :
-    w.extRealAddVal K (algebraMap K L x) = v.realAddVal x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · have hax : algebraMap K L x ≠ 0 := (map_ne_zero (algebraMap K L)).mpr hx
-    have he : (w.ramificationIdx K : ℝ) ≠ 0 :=
-      Nat.cast_ne_zero.mpr (HasExtension.ramificationIdx_pos v w).ne'
-    rw [w.extRealAddVal_of_ne_zero hax, ord_intValuation_algebraMap v w x,
-      v.realAddVal_of_ne_zero hx, Int.cast_mul, Int.cast_natCast, mul_div_cancel_left₀ _ he]
-
-/-- For a finite extension `L / K`, if `w.extRealAddVal K α = q` for `q : ℚ`, then the powers
-`1, α, …, α ^ (q.den - 1)` are linearly independent over `K`, so `q.den ≤ Module.finrank K L`. -/
+/-- For a finite division-ring extension `L / K` over a field `K` and a rank-one discrete
+valuation `w` on `L`, if `w.extRealAddVal K α = q` for `q : ℚ`, then
+`q.den ≤ Module.finrank K L`. -/
 theorem den_le_finrank_of_extRealAddVal_eq_ratCast [Module.Finite K L]
-    (v : Valuation K ΓK) [v.IsRankOneDiscrete]
-    (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] {α : L} {q : ℚ}
+    (w : Valuation L ΓL) [w.IsRankOneDiscrete] {α : L} {q : ℚ}
     (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) :
     q.den ≤ Module.finrank K L :=
-  AddValuation.den_le_finrank_of_map_eq_ratCast
-    (fun _ hx ↦ v.exists_int_realAddVal_of_ne_zero hx) (extRealAddVal_algebraMap v w) hα
+  (Nat.le_of_dvd w.ramificationIdx_pos
+    (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα)).trans w.ramificationIdx_le_finrank
 
 /-- **Criterion for total ramification from a rational value.** In a finite extension `L / K`, if an
 element `α : L` has rational base-normalized valuation `q` with `Module.finrank K L ≤ q.den`, then

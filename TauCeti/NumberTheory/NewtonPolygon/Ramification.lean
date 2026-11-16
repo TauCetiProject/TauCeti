@@ -25,9 +25,11 @@ constrains the arithmetic of `L`:
   `q.den ≤ [L : K]`, the bound complementing `e ≤ [L : K]`.
 
 When `v : Valuation K ΓK` is a rank-one discrete valuation and `w : Valuation L ΓL` extends `v`
-(`v.HasExtension w`), the base-normalised valuation `w.extRealAddVal K` supplies `w` canonically
-for `v.realAddVal`, yielding `q.den ∣ w.ramificationIdx K` and, when `[L : K] ≤ q.den`, total
-ramification `w.ramificationIdx K = [L : K]`.
+(`v.HasExtension w`), any pure polynomial over `K` of rational slope `q` for `v.realAddVal` with a
+nonzero root in `L` satisfies `q.den ∣ w.ramificationIdx K` (via the extended real additive
+valuation `w.extRealAddVal K` whenever `w` is rank-one discrete, and trivially when
+`w.ramificationIdx K = 0`). When in addition `L / K` is finite (`FiniteDimensional K L`) and
+`[L : K] ≤ q.den`, we obtain total ramification `w.ramificationIdx K = [L : K]`.
 
 The minimal polynomial of a nonzero algebraic element is a nonzero polynomial with that element as
 a root, so the same conclusions hold when it is pure. No completeness of `K` and no hypothesis on
@@ -47,7 +49,7 @@ extension of `ℚ_[p]` containing a `p`-th root of `p` has ramification index di
   `Polynomial.ramificationIdx_eq_finrank_of_forall_mem_newtonSlopes_eq`,
   `minpoly.den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq`, and
   `minpoly.ramificationIdx_eq_finrank_of_forall_mem_newtonSlopes_eq`: intrinsic versions for
-  rank-one discrete valuations and `Valuation.ramificationIdx`.
+  valuations extending a rank-one discrete valuation and `Valuation.ramificationIdx`.
 
 ## References
 
@@ -135,17 +137,21 @@ variable {K L ΓK ΓL : Type*} [Field K] [Field L] [Algebra K L]
 
 namespace Polynomial
 
-/-- **Pure Newton slopes force ramification of discrete valuations.** Let `w` be a rank-one
-discrete valuation on `L` extending a rank-one discrete valuation `v` on `K`. If every finite slope
-of a nonzero `f : K[X]` with respect to `v.realAddVal` equals `q` and `f` has a nonzero root in `L`,
-then `q.den ∣ w.ramificationIdx K`. -/
+/-- **Pure Newton slopes force ramification of discrete valuations.** Let `w` be a valuation on `L`
+extending a rank-one discrete valuation `v` on `K`. If every finite slope of a nonzero `f : K[X]`
+with respect to `v.realAddVal` equals `q` and `f` has a nonzero root in `L`, then
+`q.den ∣ w.ramificationIdx K`. -/
 theorem den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq
-    (v : Valuation K ΓK) [v.IsRankOneDiscrete]
-    (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] {f : K[X]} (hf : f ≠ 0)
-    {q : ℚ} (hq : ∀ m ∈ f.newtonSlopes v.realAddVal, m = q) {α : L} (hα : α ≠ 0)
-    (hroot : aeval α f = 0) : q.den ∣ w.ramificationIdx K :=
-  den_dvd_of_forall_mem_newtonSlopes_eq (Valuation.extRealAddVal_algebraMap v w)
-    (fun _ hy ↦ w.exists_div_ramificationIdx_extRealAddVal hy) hf hq hα hroot
+    (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w] {f : K[X]}
+    (hf : f ≠ 0) {q : ℚ} (hq : ∀ m ∈ f.newtonSlopes v.realAddVal, m = q) {α : L} (hα : α ≠ 0)
+    (hroot : aeval α f = 0) : q.den ∣ w.ramificationIdx K := by
+  rcases eq_or_ne (w.ramificationIdx K) 0 with he | he
+  · exact he ▸ dvd_zero _
+  · have : ((w.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w.valueGroup :=
+      w.ramificationIdx_ne_zero_iff.mp he
+    have := Valuation.IsRankOneDiscrete.of_isFiniteRelIndex v w
+    exact den_dvd_of_forall_mem_newtonSlopes_eq (Valuation.extRealAddVal_algebraMap v w)
+      (fun _ hy ↦ w.exists_div_ramificationIdx_extRealAddVal hy) hf hq hα hroot
 
 /-- **Criterion for total ramification from a pure Newton polygon.** In a finite extension `L / K`
 with a valuation `w` extending a rank-one discrete valuation `v` on `K`, if a nonzero `f : K[X]` is
@@ -165,13 +171,12 @@ end Polynomial
 
 namespace minpoly
 
-/-- For a rank-one discrete valuation `w` on `L` extending `v` on `K`, if `α ∈ L` is nonzero and
-integral over `K` and every finite slope of `minpoly K α` for `v.realAddVal` equals `q`, then
-`q.den ∣ w.ramificationIdx K`. -/
+/-- For a valuation `w` on `L` extending a rank-one discrete valuation `v` on `K`, if `α ∈ L` is
+nonzero and integral over `K` and every finite slope of `minpoly K α` for `v.realAddVal` equals
+`q`, then `q.den ∣ w.ramificationIdx K`. -/
 theorem den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq
-    (v : Valuation K ΓK) [v.IsRankOneDiscrete]
-    (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] {α : L} (hα : α ≠ 0)
-    (hαK : IsIntegral K α) {q : ℚ}
+    (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w] {α : L}
+    (hα : α ≠ 0) (hαK : IsIntegral K α) {q : ℚ}
     (hq : ∀ m ∈ (minpoly K α).newtonSlopes v.realAddVal, m = q) :
     q.den ∣ w.ramificationIdx K :=
   Polynomial.den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq v w (minpoly.ne_zero hαK) hq hα

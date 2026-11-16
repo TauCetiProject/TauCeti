@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.RingTheory.Valuation.Discrete.RankOne
 public import TauCeti.RingTheory.Valuation.Discrete.Order
@@ -32,10 +31,12 @@ valuation
 which agrees with `(v.intAddVal ·).map ((↑) : ℤ → ℝ)` and feeds directly into real-valued APIs such
 as Newton polygons.
 
-On a division ring, `v.intValuation` is surjective onto `ℤᵐ⁰`, so equivalent rank-one discrete
-valuations have literally equal `intValuation`, `intAddVal`, and `realAddVal`. On a field `K`, for
-any discrete valuation ring `R` with `v.Integers R` (in particular `v.valuationSubring`),
-`v.intAddVal` restricts on `R` to `IsDiscreteValuationRing.addVal R` cast from `ℕ∞` to `WithTop ℤ`.
+For any ring `R`, `v.intValuation` is rank-one discrete, preserves compatibility with a
+`ValuativeRel`, and depends only on the equivalence class of `v` (so equivalent rank-one discrete
+valuations have literally equal `intValuation`, `intAddVal`, and `realAddVal`). On a division ring,
+`v.intValuation` is surjective onto `ℤᵐ⁰`. On a field `K`, for any discrete valuation ring `R` with
+`v.Integers R` (in particular `v.valuationSubring`), `v.intAddVal` restricts on `R` to
+`IsDiscreteValuationRing.addVal R` cast from `ℕ∞` to `WithTop ℤ`.
 
 ## Main definitions
 
@@ -48,14 +49,19 @@ any discrete valuation ring `R` with `v.Integers R` (in particular `v.valuationS
 
 ## Main results
 
+* `Valuation.compatible_intValuation`: compatibility with a `ValuativeRel` passes from `v` to
+  `v.intValuation`.
 * `Valuation.intValuation_eq_exp_neg_iff`, `Valuation.intAddVal_eq_coe_iff`, and
   `Valuation.realAddVal_eq_intCast_iff`: characterization of values by powers of the generator of
   `v.valueGroup`.
 * `Valuation.IsUniformizer.intAddVal_eq_one`, `Valuation.isUniformizer_iff_intAddVal_eq_one`, and
   `Valuation.IsUniformizer.realAddVal_eq_one`: uniformizers are precisely the elements of normalized
   additive valuation `1`.
-* `Valuation.intValuation_surjective` and `Valuation.IsEquiv.intValuation_eq`: on a division ring,
-  `v.intValuation` is surjective and depends only on the equivalence class of `v`.
+* `Valuation.IsEquiv.intValuation_eq`, `Valuation.IsEquiv.intAddVal_eq`, and
+  `Valuation.IsEquiv.realAddVal_eq`: equivalent rank-one discrete valuations on a ring have equal
+  normalized valuations.
+* `Valuation.intValuation_surjective`: on a division ring, `v.intValuation` is surjective onto
+  `ℤᵐ⁰`.
 * `Valuation.Integers.intAddVal_algebraMap_eq_map_addVal` and
   `Valuation.intAddVal_coe_valuationSubring`: compatibility with `IsDiscreteValuationRing.addVal` on
   any discrete valuation ring of integers.
@@ -125,6 +131,16 @@ theorem isEquiv_intValuation : v.intValuation.IsEquiv v := by
     (IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt_strictMono v).injective).trans
     v.isEquiv_restrict.symm
 
+/-- `v.intValuation` is rank-one discrete. -/
+instance isRankOneDiscrete_intValuation : v.intValuation.IsRankOneDiscrete :=
+  .of_isEquiv v.isEquiv_intValuation.symm
+
+/-- If a rank-one discrete valuation `v` is compatible with `ValuativeRel R`, so is its normalized
+`ℤᵐ⁰`-valued valuation `v.intValuation`. -/
+instance compatible_intValuation [ValuativeRel R] [v.Compatible] :
+    v.intValuation.Compatible :=
+  v.isEquiv_intValuation.symm.compatible
+
 /-- `v.intValuation` vanishes on the same elements as `v`. -/
 @[simp]
 theorem intValuation_eq_zero_iff {x : R} : v.intValuation x = 0 ↔ v x = 0 :=
@@ -193,6 +209,16 @@ theorem exists_int_intAddVal {x : R} (hx : v x ≠ 0) :
     ∃ m : ℤ, v.intAddVal x = (m : WithTop ℤ) :=
   ⟨ord v.intValuation x, v.intAddVal_of_map_ne_zero hx⟩
 
+/-- `v.intAddVal` reverses the preorder of `v`. -/
+theorem intAddVal_le_intAddVal_iff {x y : R} :
+    v.intAddVal x ≤ v.intAddVal y ↔ v y ≤ v x := by
+  rw [intAddVal_apply, intAddVal_apply, WithZero.negLog_le_negLog, intValuation_le_intValuation_iff]
+
+/-- `v.intAddVal` reverses the strict order of `v`. -/
+theorem intAddVal_lt_intAddVal_iff {x y : R} :
+    v.intAddVal x < v.intAddVal y ↔ v y < v x := by
+  rw [← not_le, intAddVal_le_intAddVal_iff, not_le]
+
 /-- `v.intAddVal` vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem intAddVal_eq_zero_iff {x : R} : v.intAddVal x = 0 ↔ v x = 1 := by
@@ -200,21 +226,13 @@ theorem intAddVal_eq_zero_iff {x : R} : v.intAddVal x = 0 ↔ v x = 1 := by
 
 /-- `v.intAddVal x` is nonnegative exactly when `v x ≤ 1`. -/
 @[simp]
-theorem nonneg_intAddVal_iff {x : R} : 0 ≤ v.intAddVal x ↔ v x ≤ 1 := by
-  rcases eq_or_ne (v x) 0 with hx | hx
-  · simp [v.intAddVal_eq_top_iff.mpr hx, hx]
-  · rw [v.intAddVal_of_map_ne_zero hx, ← WithTop.coe_zero, WithTop.coe_le_coe, ord_def, neg_nonneg,
-      WithZero.log_le_iff_le_exp (v.intValuation_eq_zero_iff.not.mpr hx), WithZero.exp_zero,
-      intValuation_le_one_iff]
+theorem intAddVal_nonneg_iff {x : R} : 0 ≤ v.intAddVal x ↔ v x ≤ 1 := by
+  rw [← AddValuation.map_one v.intAddVal, intAddVal_le_intAddVal_iff, v.map_one]
 
 /-- `v.intAddVal x` is positive exactly when `v x < 1`. -/
 @[simp]
-theorem pos_intAddVal_iff {x : R} : 0 < v.intAddVal x ↔ v x < 1 := by
-  rcases eq_or_ne (v x) 0 with hx | hx
-  · simp [v.intAddVal_eq_top_iff.mpr hx, hx]
-  · rw [v.intAddVal_of_map_ne_zero hx, ← WithTop.coe_zero, WithTop.coe_lt_coe, ord_def, neg_pos,
-      ← WithZero.exp_lt_exp, WithZero.exp_log (v.intValuation_eq_zero_iff.not.mpr hx),
-      WithZero.exp_zero, intValuation_lt_one_iff]
+theorem intAddVal_pos_iff {x : R} : 0 < v.intAddVal x ↔ v x < 1 := by
+  rw [← AddValuation.map_one v.intAddVal, intAddVal_lt_intAddVal_iff, v.map_one]
 
 /-- `v.realAddVal` takes the value `⊤` exactly on the valuation support of `v`. -/
 @[simp]
@@ -239,6 +257,17 @@ theorem exists_int_realAddVal {x : R} (hx : v x ≠ 0) :
     ∃ m : ℤ, v.realAddVal x = ((m : ℝ) : WithTop ℝ) :=
   ⟨ord v.intValuation x, v.realAddVal_of_map_ne_zero hx⟩
 
+/-- `v.realAddVal` reverses the preorder of `v`. -/
+theorem realAddVal_le_realAddVal_iff {x y : R} :
+    v.realAddVal x ≤ v.realAddVal y ↔ v y ≤ v x := by
+  rw [realAddVal_eq_map, realAddVal_eq_map,
+    (Int.cast_strictMono (R := ℝ)).withTop_map.le_iff_le, intAddVal_le_intAddVal_iff]
+
+/-- `v.realAddVal` reverses the strict order of `v`. -/
+theorem realAddVal_lt_realAddVal_iff {x y : R} :
+    v.realAddVal x < v.realAddVal y ↔ v y < v x := by
+  rw [← not_le, realAddVal_le_realAddVal_iff, not_le]
+
 /-- `v.realAddVal` vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem realAddVal_eq_zero_iff {x : R} : v.realAddVal x = 0 ↔ v x = 1 := by
@@ -246,34 +275,26 @@ theorem realAddVal_eq_zero_iff {x : R} : v.realAddVal x = 0 ↔ v x = 1 := by
 
 /-- `v.realAddVal x` is nonnegative exactly when `v x ≤ 1`. -/
 @[simp]
-theorem nonneg_realAddVal_iff {x : R} : 0 ≤ v.realAddVal x ↔ v x ≤ 1 := by
-  rcases eq_or_ne (v x) 0 with hx | hx
-  · simp [v.realAddVal_eq_top_iff.mpr hx, hx]
-  · rw [v.realAddVal_of_map_ne_zero hx, ← WithTop.coe_zero, WithTop.coe_le_coe,
-      Int.cast_nonneg_iff, ← WithTop.coe_le_coe (α := ℤ), WithTop.coe_zero,
-      ← v.intAddVal_of_map_ne_zero hx, nonneg_intAddVal_iff]
+theorem realAddVal_nonneg_iff {x : R} : 0 ≤ v.realAddVal x ↔ v x ≤ 1 := by
+  rw [← AddValuation.map_one v.realAddVal, realAddVal_le_realAddVal_iff, v.map_one]
 
 /-- `v.realAddVal x` is positive exactly when `v x < 1`. -/
 @[simp]
-theorem pos_realAddVal_iff {x : R} : 0 < v.realAddVal x ↔ v x < 1 := by
-  rcases eq_or_ne (v x) 0 with hx | hx
-  · simp [v.realAddVal_eq_top_iff.mpr hx, hx]
-  · rw [v.realAddVal_of_map_ne_zero hx, ← WithTop.coe_zero, WithTop.coe_lt_coe, Int.cast_pos,
-      ← WithTop.coe_lt_coe (α := ℤ), WithTop.coe_zero, ← v.intAddVal_of_map_ne_zero hx,
-      pos_intAddVal_iff]
+theorem realAddVal_pos_iff {x : R} : 0 < v.realAddVal x ↔ v x < 1 := by
+  rw [← AddValuation.map_one v.realAddVal, realAddVal_lt_realAddVal_iff, v.map_one]
 
 section Uniformizer
 
 variable {v} {π : R}
 
 /-- A uniformizer of `v` has normalized `ℤᵐ⁰`-valuation `WithZero.exp (-1)`. -/
-theorem IsUniformizer.intValuation_eq (hπ : v.IsUniformizer π) :
+theorem IsUniformizer.intValuation_eq_exp_neg_one (hπ : v.IsUniformizer π) :
     v.intValuation π = WithZero.exp (-1) := by
   rw [v.intValuation_eq_exp_neg_iff, zpow_one, hπ.val]
 
 /-- Uniformizers of `v` are precisely the elements of normalized `ℤᵐ⁰`-valuation
 `WithZero.exp (-1)`. -/
-theorem isUniformizer_iff_intValuation_eq :
+theorem isUniformizer_iff_intValuation_eq_exp_neg_one :
     v.IsUniformizer π ↔ v.intValuation π = WithZero.exp (-1) := by
   rw [IsUniformizer.iff, v.intValuation_eq_exp_neg_iff, zpow_one]
 
@@ -281,7 +302,7 @@ theorem isUniformizer_iff_intValuation_eq :
 @[simp]
 theorem IsUniformizer.ord_intValuation (hπ : v.IsUniformizer π) :
     ord v.intValuation π = 1 := by
-  rw [ord_def, hπ.intValuation_eq, WithZero.log_exp, neg_neg]
+  rw [ord_def, hπ.intValuation_eq_exp_neg_one, WithZero.log_exp, neg_neg]
 
 /-- A uniformizer of `v` has normalized integer additive valuation `1`. -/
 @[simp]
@@ -314,6 +335,50 @@ theorem isUniformizer_iff_realAddVal_eq_one :
 
 end Uniformizer
 
+section IsEquiv
+
+variable {Γ₁ Γ₂ : Type*}
+  [LinearOrderedCommGroupWithZero Γ₁] [LinearOrderedCommGroupWithZero Γ₂]
+
+/-- **Equivalent rank-one discrete valuations on a ring have equal `intValuation`.** -/
+theorem IsEquiv.intValuation_eq {v₁ : Valuation R Γ₁} {v₂ : Valuation R Γ₂}
+    [hv₁ : v₁.IsRankOneDiscrete] [hv₂ : v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
+    v₁.intValuation = v₂.intValuation := by
+  have hgen : h.orderMonoidIso hv₁.generator' = hv₂.generator' := by
+    rw [LinearOrderedCommGroup.genLTOne_unique _ hv₁.generator'_lt_one
+          hv₁.generator'_zpowers_eq_top,
+        LinearOrderedCommGroup.genLTOne_unique _ hv₂.generator'_lt_one
+          hv₂.generator'_zpowers_eq_top]
+    exact h.orderMonoidIso.map_genLTOne'
+  ext x
+  rcases eq_or_ne (v₁ x) 0 with hx | hx
+  · rw [v₁.intValuation_eq_zero_iff.mpr hx, v₂.intValuation_eq_zero_iff.mpr (h.eq_zero.mp hx)]
+  · obtain ⟨g, hg⟩ := WithZero.ne_zero_iff_exists.mp (v₁.restrict_eq_zero_iff.not.mpr hx)
+    obtain ⟨m, rfl⟩ : g ∈ Subgroup.zpowers hv₁.generator' := by
+      rw [hv₁.generator'_zpowers_eq_top]
+      trivial
+    have h1 : v₁.restrict x = (hv₁.generator' : v₁.ValueGroup₀) ^ m := by
+      rw [← hg, WithZero.coe_zpow]
+    have h2 : v₂.restrict x = (hv₂.generator' : v₂.ValueGroup₀) ^ m := by
+      rw [← h.orderMonoidIso₀_spec x, h1, map_zpow₀, h.orderMonoidIso₀_coe, hgen]
+    rw [intValuation_apply, intValuation_apply, h1, h2,
+      IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt_apply_zpow,
+      IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt_apply_zpow]
+
+/-- **Equivalent rank-one discrete valuations on a ring have equal `intAddVal`.** -/
+theorem IsEquiv.intAddVal_eq {v₁ : Valuation R Γ₁} {v₂ : Valuation R Γ₂}
+    [v₁.IsRankOneDiscrete] [v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
+    v₁.intAddVal = v₂.intAddVal := by
+  rw [intAddVal_def, intAddVal_def, h.intValuation_eq]
+
+/-- **Equivalent rank-one discrete valuations on a ring have equal `realAddVal`.** -/
+theorem IsEquiv.realAddVal_eq {v₁ : Valuation R Γ₁} {v₂ : Valuation R Γ₂}
+    [v₁.IsRankOneDiscrete] [v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
+    v₁.realAddVal = v₂.realAddVal := by
+  rw [realAddVal, realAddVal, h.intAddVal_eq]
+
+end IsEquiv
+
 section SurjectiveWithZeroMulInt
 
 /-- A surjective `ℤᵐ⁰`-valued discrete valuation equals its own `intValuation`. -/
@@ -336,18 +401,13 @@ end Ring
 
 section DivisionRing
 
-variable {F Γ₁ Γ₂ : Type*} [DivisionRing F]
-  [LinearOrderedCommGroupWithZero Γ₁] [LinearOrderedCommGroupWithZero Γ₂]
-  (v : Valuation F Γ₁) [v.IsRankOneDiscrete]
+variable {F Γ : Type*} [DivisionRing F] [LinearOrderedCommGroupWithZero Γ]
+  (v : Valuation F Γ) [v.IsRankOneDiscrete]
 
 /-- On a division ring, `v.intValuation` is surjective onto `ℤᵐ⁰`. -/
 theorem intValuation_surjective : Function.Surjective v.intValuation :=
   (IsRankOneDiscrete.valueGroup₀_equiv_withZeroMulInt v).surjective.comp
-    (ValueGroup₀.restrict₀_surjective (f := (v : F →*₀ Γ₁)))
-
-/-- On a division ring, `v.intValuation` is rank-one discrete. -/
-instance isRankOneDiscrete_intValuation : v.intValuation.IsRankOneDiscrete :=
-  .of_isEquiv v.isEquiv_intValuation.symm
+    (ValueGroup₀.restrict₀_surjective (f := (v : F →*₀ Γ)))
 
 /-- On a division ring, `v.intAddVal` is surjective onto `WithTop ℤ`. -/
 theorem intAddVal_surjective : Function.Surjective v.intAddVal := by
@@ -372,25 +432,6 @@ theorem exists_int_realAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
     ∃ m : ℤ, v.realAddVal x = ((m : ℝ) : WithTop ℝ) :=
   v.exists_int_realAddVal (v.ne_zero_iff.mpr hx)
 
-/-- **Equivalent rank-one discrete valuations on a division ring have equal `intValuation`.** -/
-theorem IsEquiv.intValuation_eq {v₁ : Valuation F Γ₁} {v₂ : Valuation F Γ₂}
-    [v₁.IsRankOneDiscrete] [v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
-    v₁.intValuation = v₂.intValuation :=
-  eq_of_isEquiv_of_surjective v₁.intValuation_surjective v₂.intValuation_surjective
-    (v₁.isEquiv_intValuation.trans (h.trans v₂.isEquiv_intValuation.symm))
-
-/-- **Equivalent rank-one discrete valuations on a division ring have equal `intAddVal`.** -/
-theorem IsEquiv.intAddVal_eq {v₁ : Valuation F Γ₁} {v₂ : Valuation F Γ₂}
-    [v₁.IsRankOneDiscrete] [v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
-    v₁.intAddVal = v₂.intAddVal := by
-  rw [intAddVal_def, intAddVal_def, h.intValuation_eq]
-
-/-- **Equivalent rank-one discrete valuations on a division ring have equal `realAddVal`.** -/
-theorem IsEquiv.realAddVal_eq {v₁ : Valuation F Γ₁} {v₂ : Valuation F Γ₂}
-    [v₁.IsRankOneDiscrete] [v₂.IsRankOneDiscrete] (h : v₁.IsEquiv v₂) :
-    v₁.realAddVal = v₂.realAddVal := by
-  rw [realAddVal, realAddVal, h.intAddVal_eq]
-
 end DivisionRing
 
 section Field
@@ -406,40 +447,26 @@ theorem valuationSubring_intValuation : v.intValuation.valuationSubring = v.valu
 /-- If `R` is a discrete valuation ring of integers for `v`, every irreducible element of `R` maps
 to a uniformizer of `v` in `K`. -/
 theorem Integers.isUniformizer_algebraMap_of_irreducible [CommRing R] [IsDomain R]
-    [IsDiscreteValuationRing R] [Algebra R K] {v : Valuation K Γ} [hv : v.IsRankOneDiscrete]
+    [IsDiscreteValuationRing R] [Algebra R K] {v : Valuation K Γ} [v.IsRankOneDiscrete]
     (hvR : v.Integers R) {ϖ : R} (hϖ : Irreducible ϖ) :
     v.IsUniformizer (algebraMap R K ϖ) := by
-  obtain ⟨π, hπ⟩ := exists_isUniformizer_of_isCyclic_of_nontrivial v
-  obtain ⟨t, ht⟩ := hvR.exists_of_le_one π.2
-  have ht_nonunit : ¬ IsUnit t := fun hu ↦
-    hπ.val_lt_one.ne (ht ▸ hvR.one_of_isUnit hu)
-  have hϖ_dvd_t : ϖ ∣ t := by
-    rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq]
-    exact (IsLocalRing.mem_maximalIdeal t).mpr ht_nonunit
-  have hle₁ : (hv.generator : Γ) ≤ v (algebraMap R K ϖ) := by
-    rw [← hπ.val, ← ht]
-    exact hvR.dvd_iff_le.mp hϖ_dvd_t
-  have hϖ_ne : v (algebraMap R K ϖ) ≠ 0 :=
-    v.ne_zero_iff.mpr ((map_ne_zero_iff _ hvR.hom_inj).mpr hϖ.ne_zero)
-  have hϖ_lt_one : v (algebraMap R K ϖ) < 1 :=
-    lt_of_le_of_ne (hvR.map_le_one ϖ) fun h1 ↦ hϖ.not_isUnit (hvR.isUnit_of_one
-      (isUnit_iff_ne_zero.mpr ((map_ne_zero_iff _ hvR.hom_inj).mpr hϖ.ne_zero)) h1)
-  have hmem : Units.mk0 (v (algebraMap R K ϖ)) hϖ_ne ∈ Subgroup.zpowers hv.generator := by
-    rw [hv.generator_zpowers_eq_valueGroup]
-    exact mem_valueGroup _ ⟨algebraMap R K ϖ, rfl⟩
-  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp hmem
-  have hm_eq : v (algebraMap R K ϖ) = (hv.generator : Γ) ^ m := by
-    simpa using congrArg Units.val hm.symm
-  have hm_pos : 1 ≤ m := by
-    have hlt : (hv.generator : Γ) ^ m < 1 := hm_eq ▸ hϖ_lt_one
-    have h0 : 0 < m :=
-      (zpow_lt_one_iff_right_of_lt_one₀ (Units.zero_lt hv.generator) hv.generator_lt_one).mp hlt
-    omega
-  have hle₂ : v (algebraMap R K ϖ) ≤ (hv.generator : Γ) := by
-    rw [hm_eq]
-    simpa using zpow_le_zpow_right_of_le_one₀ (Units.zero_lt hv.generator)
-      hv.generator_lt_one.le hm_pos
-  exact IsUniformizer.iff.mpr (le_antisymm hle₂ hle₁)
+  let ϖ' : v.valuationSubring := ⟨algebraMap R K ϖ, hvR.map_le_one ϖ⟩
+  refine isUniformizer_of_maximalIdeal_eq_span v (r := ϖ') ?_
+  ext x
+  rw [Valuation.mem_maximalIdeal_iff, Ideal.mem_span_singleton,
+    (Valuation.valuationSubring.integers v).dvd_iff_le,
+    ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply]
+  obtain ⟨r, hr⟩ := hvR.exists_of_le_one x.2
+  rw [← hr]
+  constructor
+  · intro hlt
+    have hr_nonunit : ¬ IsUnit r := fun hu ↦ hlt.ne (hvR.one_of_isUnit hu)
+    have hϖ_dvd : ϖ ∣ r := by
+      rw [← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq]
+      exact (IsLocalRing.mem_maximalIdeal r).mpr hr_nonunit
+    exact hvR.dvd_iff_le.mp hϖ_dvd
+  · intro hle
+    exact hle.trans_lt (hvR.valuation_irreducible_lt_one hϖ)
 
 /-- **Compatibility with `IsDiscreteValuationRing.addVal`.** For any discrete valuation ring `R` of
 integers for `v` on `K`, `v.intAddVal` on `algebraMap R K r` agrees with
@@ -462,7 +489,6 @@ theorem Integers.intAddVal_algebraMap_eq_map_addVal [CommRing R] [IsDomain R]
 
 /-- On `v.valuationSubring`, `v.intAddVal` agrees with `IsDiscreteValuationRing.addVal` cast from
 `ℕ` to `ℤ`. -/
-@[simp]
 theorem intAddVal_coe_valuationSubring (x : v.valuationSubring) :
     v.intAddVal (x : K) =
       (IsDiscreteValuationRing.addVal v.valuationSubring x).map ((↑) : ℕ → ℤ) :=
