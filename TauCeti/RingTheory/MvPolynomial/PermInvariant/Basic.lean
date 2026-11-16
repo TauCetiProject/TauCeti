@@ -75,23 +75,20 @@ theorem mem_permInvariantSubalgebra {G : Subgroup (Perm σ)} {p : MvPolynomial �
 @[simp]
 theorem permInvariantSubalgebra_top :
     permInvariantSubalgebra (⊤ : Subgroup (Perm σ)) R = symmetricSubalgebra σ R := by
-  ext p
-  simp [mem_symmetricSubalgebra, IsSymmetric]
+  ext p; simp [mem_symmetricSubalgebra, IsSymmetric]
 
 @[simp]
 theorem permInvariantSubalgebra_bot :
     permInvariantSubalgebra (⊥ : Subgroup (Perm σ)) R = ⊤ := by
-  ext p
-  simp [rename_id]
+  ext p; simp [rename_id]
 
 theorem permInvariantSubalgebra_antitone {G H : Subgroup (Perm σ)} (h : G ≤ H) :
     permInvariantSubalgebra H R ≤ permInvariantSubalgebra G R :=
   fun _ hp g hg => hp g (h hg)
 
 theorem symmetricSubalgebra_le_permInvariantSubalgebra (G : Subgroup (Perm σ)) :
-    symmetricSubalgebra σ R ≤ permInvariantSubalgebra G R := by
-  rw [← permInvariantSubalgebra_top]
-  exact permInvariantSubalgebra_antitone le_top
+    symmetricSubalgebra σ R ≤ permInvariantSubalgebra G R :=
+  permInvariantSubalgebra_top (R := R) ▸ permInvariantSubalgebra_antitone le_top
 
 /-- Renaming a polynomial by a permutation `g` permutes its coefficients by
 `Finsupp.equivMapDomain`. -/
@@ -106,38 +103,27 @@ theorem coeff_rename_equivMapDomain (g : Perm σ) (p : MvPolynomial σ R) (d : �
 theorem mem_permInvariantSubalgebra_iff_coeff {G : Subgroup (Perm σ)} {p : MvPolynomial σ R} :
     p ∈ permInvariantSubalgebra G R ↔
       ∀ g ∈ G, ∀ d : σ →₀ ℕ, p.coeff (d.equivMapDomain g) = p.coeff d := by
-  constructor
-  · intro hp g hg d
-    rw [← coeff_rename_equivMapDomain g p d, hp g hg]
-  · intro h g hg
-    ext e
-    have he : e = (e.equivMapDomain g.symm).equivMapDomain g := by
-      rw [← Finsupp.equivMapDomain_trans, Equiv.symm_trans_self, Finsupp.equivMapDomain_refl]
-    conv_lhs => rw [he]
-    rw [coeff_rename_equivMapDomain, ← h g hg (e.equivMapDomain g.symm), ← he]
+  refine ⟨fun hp g hg d => by rw [← coeff_rename_equivMapDomain g p d, hp g hg], fun h g hg => ?_⟩
+  ext e
+  have he : e = (e.equivMapDomain g.symm).equivMapDomain g := by
+    rw [← Finsupp.equivMapDomain_trans, Equiv.symm_trans_self, Finsupp.equivMapDomain_refl]
+  conv_lhs => rw [he]
+  rw [coeff_rename_equivMapDomain, ← h g hg (e.equivMapDomain g.symm), ← he]
 
 /-- A polynomial is invariant under a subgroup `G` if and only if it is invariant under a
 generating set of `G`. -/
 theorem mem_permInvariantSubalgebra_closure_iff {S : Set (Perm σ)} {p : MvPolynomial σ R} :
     p ∈ permInvariantSubalgebra (Subgroup.closure S) R ↔ ∀ g ∈ S, rename g p = p := by
-  constructor
-  · intro hp g hg
-    exact hp g (Subgroup.subset_closure hg)
-  · intro h g hg
-    induction hg using Subgroup.closure_induction with
-    | mem s hs => exact h s hs
-    | one =>
-      change rename id p = p
-      rw [rename_id, AlgHom.id_apply]
-    | mul g₁ g₂ _ _ ih₁ ih₂ =>
-      change rename (⇑g₁ ∘ ⇑g₂) p = p
-      rw [← rename_rename, ih₂, ih₁]
-    | inv g _ ih =>
-      have h' := congrArg (rename (⇑g⁻¹)) ih
-      rw [rename_rename] at h'
-      have hcomp : (⇑g⁻¹ ∘ ⇑g) = id := funext g.symm_apply_apply
-      rw [hcomp, rename_id, AlgHom.id_apply] at h'
-      exact h'.symm
+  refine ⟨fun hp g hg => hp g (Subgroup.subset_closure hg), fun h g hg => ?_⟩
+  induction hg using Subgroup.closure_induction with
+  | mem s hs => exact h s hs
+  | one => change rename id p = p; simp [rename_id]
+  | mul g₁ g₂ _ _ ih₁ ih₂ =>
+    change rename (⇑g₁ ∘ ⇑g₂) p = p; rw [← rename_rename, ih₂, ih₁]
+  | inv g _ ih =>
+    have h' := congrArg (rename (⇑g⁻¹)) ih
+    rw [rename_rename, show (⇑g⁻¹ ∘ ⇑g) = id from funext g.symm_apply_apply, rename_id] at h'
+    exact h'.symm
 
 end Subalgebra
 
@@ -153,14 +139,12 @@ def permOrbitRel (G : Subgroup (Perm σ)) : Setoid (σ →₀ ℕ) where
     { refl := fun d => ⟨1, G.one_mem, Finsupp.equivMapDomain_refl d⟩
       symm := by
         rintro d₁ d₂ ⟨g, hg, rfl⟩
-        refine ⟨g⁻¹, G.inv_mem hg, ?_⟩
-        rw [← Finsupp.equivMapDomain_trans]
-        have h : g.trans g⁻¹ = Equiv.refl σ := Equiv.self_trans_symm g
-        rw [h, Finsupp.equivMapDomain_refl]
+        exact ⟨g⁻¹, G.inv_mem hg, by
+          rw [← Finsupp.equivMapDomain_trans, Perm.inv_def, Equiv.self_trans_symm,
+            Finsupp.equivMapDomain_refl]⟩
       trans := by
         rintro d₁ d₂ d₃ ⟨g₁, hg₁, rfl⟩ ⟨g₂, hg₂, rfl⟩
-        refine ⟨g₂ * g₁, G.mul_mem hg₂ hg₁, ?_⟩
-        exact Finsupp.equivMapDomain_trans g₁ g₂ d₁ }
+        exact ⟨g₂ * g₁, G.mul_mem hg₂ hg₁, Finsupp.equivMapDomain_trans g₁ g₂ d₁⟩ }
 
 theorem permOrbitRel_iff {G : Subgroup (Perm σ)} {d₁ d₂ : σ →₀ ℕ} :
     permOrbitRel G d₁ d₂ ↔ ∃ g ∈ G, d₁.equivMapDomain g = d₂ :=
@@ -179,23 +163,17 @@ theorem mem_permOrbit_self (G : Subgroup (Perm σ)) (d : σ →₀ ℕ) : d ∈ 
   ⟨1, G.one_mem, Finsupp.equivMapDomain_refl d⟩
 
 theorem permOrbit_eq_of_rel {G : Subgroup (Perm σ)} {d₁ d₂ : σ →₀ ℕ}
-    (h : permOrbitRel G d₁ d₂) : permOrbit G d₁ = permOrbit G d₂ := by
-  ext e
-  exact ⟨fun he => (permOrbitRel G).trans ((permOrbitRel G).symm h) he,
-    fun he => (permOrbitRel G).trans h he⟩
+    (h : permOrbitRel G d₁ d₂) : permOrbit G d₁ = permOrbit G d₂ :=
+  Set.ext fun _ => ⟨(permOrbitRel G).trans ((permOrbitRel G).symm h), (permOrbitRel G).trans h⟩
 
 theorem mem_permOrbit_iff_quotient_mk_eq {G : Subgroup (Perm σ)} {d e : σ →₀ ℕ} :
     e ∈ permOrbit G d ↔ Quotient.mk (permOrbitRel G) e = Quotient.mk (permOrbitRel G) d := by
-  rw [Quotient.eq]
-  exact ⟨fun h => (permOrbitRel G).symm h, fun h => (permOrbitRel G).symm h⟩
+  rw [Quotient.eq]; exact ⟨(permOrbitRel G).symm, (permOrbitRel G).symm⟩
 
 theorem permOrbit_finite (G : Subgroup (Perm σ)) [Finite G] (d : σ →₀ ℕ) :
     (permOrbit G d).Finite := by
-  have hrange : permOrbit G d = Set.range (fun g : G => d.equivMapDomain (g : Perm σ)) := by
-    ext e
-    simp [permOrbit]
-  rw [hrange]
-  exact Set.finite_range _
+  convert Set.finite_range (fun g : G => d.equivMapDomain (g : Perm σ))
+  ext e; simp [permOrbit]
 
 variable {R : Type*} [CommSemiring R]
 
@@ -210,30 +188,28 @@ theorem orbitSum_def (G : Subgroup (Perm σ)) [Finite G] (R : Type*) [CommSemiri
     orbitSum G R d = ∑ e ∈ (permOrbit_finite G d).toFinset, monomial e (1 : R) :=
   (rfl)
 
+/-- The coefficient of `X^e` in `orbitSum G R d` is `1` if `e` lies in the `G`-orbit of `d`,
+and `0` otherwise. -/
+theorem coeff_orbitSum (G : Subgroup (Perm σ)) [Finite G] (d e : σ →₀ ℕ)
+    [Decidable (e ∈ permOrbit G d)] :
+    (orbitSum G R d).coeff e = if e ∈ permOrbit G d then 1 else 0 := by
+  classical
+  rw [orbitSum_def, coeff_sum]
+  simp_rw [coeff_monomial]
+  rw [Finset.sum_ite_eq']
+  simp
+
 /-- The coefficient of `X^e` in `orbitSum G R d` is `1` when `e` lies in the `G`-orbit of `d`. -/
 theorem coeff_orbitSum_of_mem (G : Subgroup (Perm σ)) [Finite G] {d e : σ →₀ ℕ}
     (he : e ∈ permOrbit G d) :
     (orbitSum G R d).coeff e = 1 := by
-  classical
-  rw [orbitSum_def, coeff_sum]
-  simp_rw [coeff_monomial]
-  rw [Finset.sum_eq_single e]
-  · simp
-  · intro b _ hbe
-    simp [hbe]
-  · intro hnot
-    exact absurd ((Set.Finite.mem_toFinset _).mpr he) hnot
+  classical simp [coeff_orbitSum, he]
 
 /-- The coefficient of `X^e` in `orbitSum G R d` is `0` when `e` is outside the `G`-orbit of `d`. -/
 theorem coeff_orbitSum_of_notMem (G : Subgroup (Perm σ)) [Finite G] {d e : σ →₀ ℕ}
     (he : e ∉ permOrbit G d) :
     (orbitSum G R d).coeff e = 0 := by
-  classical
-  rw [orbitSum_def, coeff_sum]
-  simp_rw [coeff_monomial]
-  refine Finset.sum_eq_zero fun b hb => ?_
-  have hbe : b ≠ e := fun h => he (h ▸ (Set.Finite.mem_toFinset _).mp hb)
-  simp [hbe]
+  classical simp [coeff_orbitSum, he]
 
 @[simp]
 theorem coeff_orbitSum_self (G : Subgroup (Perm σ)) [Finite G] (d : σ →₀ ℕ) :
@@ -242,26 +218,20 @@ theorem coeff_orbitSum_self (G : Subgroup (Perm σ)) [Finite G] (d : σ →₀ �
 
 theorem support_orbitSum (G : Subgroup (Perm σ)) [Finite G] [Nontrivial R] (d : σ →₀ ℕ) :
     (orbitSum G R d).support = (permOrbit_finite G d).toFinset := by
+  classical
   ext e
-  rw [mem_support_iff, Set.Finite.mem_toFinset]
-  by_cases he : e ∈ permOrbit G d
-  · simp [he, coeff_orbitSum_of_mem G he]
-  · simp [he, coeff_orbitSum_of_notMem G he]
+  simp [mem_support_iff, coeff_orbitSum]
 
 theorem orbitSum_ne_zero (G : Subgroup (Perm σ)) [Finite G] [Nontrivial R] (d : σ →₀ ℕ) :
-    orbitSum G R d ≠ 0 := by
-  intro h
+    orbitSum G R d ≠ 0 := fun h => by
   have h1 := coeff_orbitSum_self (R := R) G d
   simp [h] at h1
 
 theorem orbitSum_eq_of_rel (G : Subgroup (Perm σ)) [Finite G] {d₁ d₂ : σ →₀ ℕ}
     (h : permOrbitRel G d₁ d₂) : orbitSum G R d₁ = orbitSum G R d₂ := by
+  classical
   ext e
-  by_cases he : e ∈ permOrbit G d₁
-  · have he₂ : e ∈ permOrbit G d₂ := permOrbit_eq_of_rel h ▸ he
-    rw [coeff_orbitSum_of_mem G he, coeff_orbitSum_of_mem G he₂]
-  · have he₂ : e ∉ permOrbit G d₂ := permOrbit_eq_of_rel h ▸ he
-    rw [coeff_orbitSum_of_notMem G he, coeff_orbitSum_of_notMem G he₂]
+  simp [coeff_orbitSum, permOrbit_eq_of_rel h]
 
 @[simp]
 theorem orbitSum_equivMapDomain (G : Subgroup (Perm σ)) [Finite G] {g : Perm σ} (hg : g ∈ G)
@@ -272,20 +242,15 @@ theorem orbitSum_equivMapDomain (G : Subgroup (Perm σ)) [Finite G] {g : Perm σ
 /-- Every orbit sum belongs to the `G`-invariant subalgebra. -/
 theorem orbitSum_mem_permInvariantSubalgebra (G : Subgroup (Perm σ)) [Finite G] (d : σ →₀ ℕ) :
     orbitSum G R d ∈ permInvariantSubalgebra G R := by
+  classical
   rw [mem_permInvariantSubalgebra_iff_coeff]
   intro g hg e
-  have hiff : e.equivMapDomain g ∈ permOrbit G d ↔ e ∈ permOrbit G d := by
-    constructor
-    · intro h
-      refine (permOrbitRel G).trans h ⟨g⁻¹, G.inv_mem hg, ?_⟩
-      rw [← Finsupp.equivMapDomain_trans]
-      have h' : g.trans g⁻¹ = Equiv.refl σ := Equiv.self_trans_symm g
-      rw [h', Finsupp.equivMapDomain_refl]
-    · intro h
-      exact (permOrbitRel G).trans h ⟨g, hg, rfl⟩
-  by_cases he : e ∈ permOrbit G d
-  · rw [coeff_orbitSum_of_mem G (hiff.mpr he), coeff_orbitSum_of_mem G he]
-  · rw [coeff_orbitSum_of_notMem G (mt hiff.mp he), coeff_orbitSum_of_notMem G he]
+  have hiff : e.equivMapDomain g ∈ permOrbit G d ↔ e ∈ permOrbit G d :=
+    ⟨fun h => (permOrbitRel G).trans h ⟨g⁻¹, G.inv_mem hg, by
+      rw [← Finsupp.equivMapDomain_trans, Perm.inv_def, Equiv.self_trans_symm,
+        Finsupp.equivMapDomain_refl]⟩,
+     fun h => (permOrbitRel G).trans h ⟨g, hg, rfl⟩⟩
+  simp [coeff_orbitSum, hiff]
 
 /-- The orbit sum indexed by a `G`-orbit of exponent vectors. -/
 noncomputable def orbitSumQuot (G : Subgroup (Perm σ)) [Finite G] (R : Type*) [CommSemiring R] :
@@ -295,8 +260,7 @@ noncomputable def orbitSumQuot (G : Subgroup (Perm σ)) [Finite G] (R : Type*) [
 @[simp]
 theorem orbitSumQuot_mk (G : Subgroup (Perm σ)) [Finite G] (d : σ →₀ ℕ) :
     orbitSumQuot G R (Quotient.mk (permOrbitRel G) d) = orbitSum G R d := by
-  rw [orbitSumQuot]
-  exact Quotient.lift_mk _ _ d
+  rw [orbitSumQuot]; exact Quotient.lift_mk _ _ d
 
 theorem orbitSumQuot_mem_permInvariantSubalgebra (G : Subgroup (Perm σ)) [Finite G]
     (q : Quotient (permOrbitRel G)) :
@@ -306,16 +270,13 @@ theorem orbitSumQuot_mem_permInvariantSubalgebra (G : Subgroup (Perm σ)) [Finit
 theorem coeff_orbitSumQuot_of_eq (G : Subgroup (Perm σ)) [Finite G]
     {q : Quotient (permOrbitRel G)} {e : σ →₀ ℕ} (he : Quotient.mk (permOrbitRel G) e = q) :
     (orbitSumQuot G R q).coeff e = 1 := by
-  subst he
-  exact coeff_orbitSum_self G e
+  subst he; exact coeff_orbitSum_self G e
 
 theorem coeff_orbitSumQuot_of_ne (G : Subgroup (Perm σ)) [Finite G]
     {q : Quotient (permOrbitRel G)} {e : σ →₀ ℕ} (he : Quotient.mk (permOrbitRel G) e ≠ q) :
-    (orbitSumQuot G R q).coeff e = 0 := by
-  induction q using Quotient.inductionOn with
-  | h d =>
-    rw [orbitSumQuot_mk]
-    exact coeff_orbitSum_of_notMem G (mt mem_permOrbit_iff_quotient_mk_eq.mp he)
+    (orbitSumQuot G R q).coeff e = 0 :=
+  Quotient.inductionOn q (fun _ he =>
+    coeff_orbitSum_of_notMem G (mt mem_permOrbit_iff_quotient_mk_eq.mp he)) he
 
 /-- For a `G`-invariant polynomial `p`, its coefficient at `d` depends only on the `G`-orbit of
 `d`. -/
@@ -327,8 +288,7 @@ private noncomputable def orbitCoeff (G : Subgroup (Perm σ)) (p : permInvariant
 private theorem orbitCoeff_mk (G : Subgroup (Perm σ)) (p : permInvariantSubalgebra G R)
     (d : σ →₀ ℕ) :
     orbitCoeff G p (Quotient.mk (permOrbitRel G) d) = (p : MvPolynomial σ R).coeff d := by
-  rw [orbitCoeff]
-  exact Quotient.lift_mk _ _ d
+  rw [orbitCoeff]; exact Quotient.lift_mk _ _ d
 
 /-- The coefficient of `X^d` in a linear combination of orbit sums is the weight on the orbit of
 `d`. -/
@@ -338,23 +298,23 @@ private theorem coeff_linearCombination_orbitSumQuot (G : Subgroup (Perm σ)) [F
         (fun q => (⟨orbitSumQuot G R q, orbitSumQuot_mem_permInvariantSubalgebra G q⟩ :
           permInvariantSubalgebra G R)) c : permInvariantSubalgebra G R) : MvPolynomial σ R).coeff d
       = c (Quotient.mk (permOrbitRel G) d) := by
+  classical
   rw [Finsupp.linearCombination_apply, Finsupp.sum,
     show (↑(∑ a ∈ c.support, c a •
         (⟨orbitSumQuot G R a, orbitSumQuot_mem_permInvariantSubalgebra G a⟩ :
           permInvariantSubalgebra G R)) : MvPolynomial σ R) =
       ∑ a ∈ c.support, (c a • orbitSumQuot G R a) from
       map_sum (permInvariantSubalgebra G R).val _ _, coeff_sum]
-  by_cases hmem : Quotient.mk (permOrbitRel G) d ∈ c.support
-  · rw [Finset.sum_eq_single (Quotient.mk (permOrbitRel G) d)]
-    · rw [coeff_smul, smul_eq_mul, coeff_orbitSumQuot_of_eq G rfl, mul_one]
-    · intro b _ hbd
-      rw [coeff_smul, smul_eq_mul, coeff_orbitSumQuot_of_ne G hbd.symm, mul_zero]
-    · intro hnot
-      exact absurd hmem hnot
-  · rw [Finsupp.notMem_support_iff.mp hmem]
-    refine Finset.sum_eq_zero fun b hb => ?_
-    have hne : Quotient.mk (permOrbitRel G) d ≠ b := fun h => hmem (h ▸ hb)
-    rw [coeff_smul, smul_eq_mul, coeff_orbitSumQuot_of_ne G hne, mul_zero]
+  have hterm : ∀ a, (c a • orbitSumQuot G R a).coeff d =
+      if a = Quotient.mk (permOrbitRel G) d then c a else 0 := fun a => by
+    rw [coeff_smul, smul_eq_mul]
+    split_ifs with ha
+    · rw [coeff_orbitSumQuot_of_eq G ha.symm, mul_one]
+    · rw [coeff_orbitSumQuot_of_ne G (Ne.symm ha), mul_zero]
+  simp_rw [hterm, Finset.sum_ite_eq']
+  split_ifs with h
+  · rfl
+  · exact (Finsupp.notMem_support_iff.mp h).symm
 
 /-- The coordinate linear equivalence identifying `permInvariantSubalgebra G R` with finitely
 supported `R`-valued functions on the `G`-orbits of exponent vectors. -/
@@ -365,31 +325,20 @@ private noncomputable def orbitSumRepr (G : Subgroup (Perm σ)) [Finite G] (R : 
   let toFun : permInvariantSubalgebra G R →ₗ[R] (Quotient (permOrbitRel G) →₀ R) :=
     { toFun := fun p =>
         Finsupp.onFinset ((p : MvPolynomial σ R).support.image (Quotient.mk (permOrbitRel G)))
-          (orbitCoeff G p) fun q hq => by
-            induction q using Quotient.inductionOn with
-            | h d => exact Finset.mem_image_of_mem _ (mem_support_iff.mpr hq)
-      map_add' := fun p₁ p₂ => by
-        ext q
-        induction q using Quotient.inductionOn with
-        | h d => simp [orbitCoeff_mk]
-      map_smul' := fun r p => by
-        ext q
-        induction q using Quotient.inductionOn with
-        | h d => simp [orbitCoeff_mk] }
+          (orbitCoeff G p) fun q hq => Quotient.inductionOn q (fun d hq =>
+            Finset.mem_image_of_mem _ (mem_support_iff.mpr hq)) hq
+      map_add' := fun _ _ => Finsupp.ext fun q =>
+        Quotient.inductionOn q fun _ => by simp [orbitCoeff_mk]
+      map_smul' := fun _ _ => Finsupp.ext fun q =>
+        Quotient.inductionOn q fun _ => by simp [orbitCoeff_mk] }
   let invFun : (Quotient (permOrbitRel G) →₀ R) →ₗ[R] permInvariantSubalgebra G R :=
     Finsupp.linearCombination R fun q =>
       ⟨orbitSumQuot G R q, orbitSumQuot_mem_permInvariantSubalgebra G q⟩
   refine LinearEquiv.ofLinearMap toFun invFun ?_ ?_
-  · refine LinearMap.ext fun c => Finsupp.ext fun q => ?_
-    induction q using Quotient.inductionOn with
-    | h d =>
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, toFun, LinearMap.coe_mk,
-        AddHom.coe_mk, Finsupp.onFinset_apply, orbitCoeff_mk]
-      exact coeff_linearCombination_orbitSumQuot G c d
+  · refine LinearMap.ext fun c => Finsupp.ext fun q => Quotient.inductionOn q fun d => ?_
+    simpa [toFun, orbitCoeff_mk] using coeff_linearCombination_orbitSumQuot G c d
   · refine LinearMap.ext fun p => Subtype.ext <| MvPolynomial.ext _ _ fun d => ?_
-    simp only [LinearMap.comp_apply, LinearMap.id_apply, invFun]
-    rw [coeff_linearCombination_orbitSumQuot]
-    simp [toFun, orbitCoeff_mk]
+    simpa [invFun, toFun, orbitCoeff_mk] using coeff_linearCombination_orbitSumQuot G (toFun p) d
 
 /-- **The orbit-sum basis** of the permutation-invariant subalgebra `permInvariantSubalgebra G R`:
 for a finite permutation subgroup `G ≤ Equiv.Perm σ` and any commutative semiring `R`, the orbit
@@ -404,26 +353,21 @@ theorem coe_orbitSumBasis_apply (G : Subgroup (Perm σ)) [Finite G]
     (orbitSumBasis G R q : MvPolynomial σ R) = orbitSumQuot G R q := by
   classical
   ext d
-  have h1 : (orbitSumBasis G R q : MvPolynomial σ R) =
-      ((orbitSumRepr G R).symm (Finsupp.single q 1) : MvPolynomial σ R) := rfl
-  rw [h1]
-  have h2 : ((orbitSumRepr G R).symm (Finsupp.single q 1) : MvPolynomial σ R).coeff d =
+  have h : ((orbitSumBasis G R q : permInvariantSubalgebra G R) : MvPolynomial σ R).coeff d =
       Finsupp.single q (1 : R) (Quotient.mk (permOrbitRel G) d) :=
     coeff_linearCombination_orbitSumQuot G (Finsupp.single q 1) d
-  rw [h2, Finsupp.single_apply]
-  by_cases h : q = Quotient.mk (permOrbitRel G) d
-  · simp [h]
-  · simp [h, coeff_orbitSumQuot_of_ne G (Ne.symm h)]
+  rw [h, Finsupp.single_apply]
+  split_ifs with heq
+  · exact (coeff_orbitSumQuot_of_eq G heq.symm).symm
+  · exact (coeff_orbitSumQuot_of_ne G (Ne.symm heq)).symm
 
 @[simp]
 theorem orbitSumBasis_repr_mk (G : Subgroup (Perm σ)) [Finite G]
     (p : permInvariantSubalgebra G R) (d : σ →₀ ℕ) :
     (orbitSumBasis G R).repr p (Quotient.mk (permOrbitRel G) d) =
       (p : MvPolynomial σ R).coeff d := by
-  have h : (orbitSumBasis G R).repr p (Quotient.mk (permOrbitRel G) d) =
-      orbitSumRepr G R p (Quotient.mk (permOrbitRel G) d) := rfl
-  rw [h, orbitSumRepr]
-  simp [orbitCoeff_mk]
+  change orbitSumRepr G R p (Quotient.mk (permOrbitRel G) d) = _
+  simp [orbitSumRepr, orbitCoeff_mk]
 
 end OrbitSum
 
@@ -450,13 +394,10 @@ theorem degree_orbitSum_of_forall_le [CommSemiring R] [Nontrivial R]
     (hd : ∀ g ∈ G, d.equivMapDomain g ≼[m] d) :
     m.degree (orbitSum G R d) = d := by
   apply m.toSyn.injective
-  refine le_antisymm (m.degree_le_iff.2 fun e he => ?_) ?_
-  · rw [support_orbitSum, Set.Finite.mem_toFinset, mem_permOrbit_iff] at he
-    obtain ⟨g, hg, rfl⟩ := he
-    exact hd g hg
-  · apply m.le_degree
-    rw [mem_support_iff, coeff_orbitSum_self]
-    exact one_ne_zero
+  refine le_antisymm (m.degree_le_iff.2 fun e he => ?_) (m.le_degree <| by simp)
+  rw [support_orbitSum, Set.Finite.mem_toFinset, mem_permOrbit_iff] at he
+  obtain ⟨g, hg, rfl⟩ := he
+  exact hd g hg
 
 /-- If `d` is `m`-maximal in its `G`-orbit, then `orbitSum G R d` is monic
 (leading coefficient `1`). -/
@@ -476,11 +417,9 @@ theorem mem_leadingExponents_permInvariantSubalgebra_iff
     d ∈ m.leadingExponents (permInvariantSubalgebra G R) ↔
       ∀ g ∈ G, d.equivMapDomain g ≼[m] d := by
   rw [mem_leadingExponents_iff]
-  constructor
-  · rintro ⟨p, hp, hp0, rfl⟩ g hg
-    exact m.equivMapDomain_degree_le_of_mem_permInvariantSubalgebra hp hp0 hg
-  · intro hd
-    exact ⟨orbitSum G R d, orbitSum_mem_permInvariantSubalgebra G d, orbitSum_ne_zero G d,
-      m.degree_orbitSum_of_forall_le hd⟩
+  exact ⟨fun ⟨_, hp, hp0, hd⟩ g hg => hd ▸ m.equivMapDomain_degree_le_of_mem_permInvariantSubalgebra
+      hp hp0 hg,
+    fun hd => ⟨orbitSum G R d, orbitSum_mem_permInvariantSubalgebra G d, orbitSum_ne_zero G d,
+      m.degree_orbitSum_of_forall_le hd⟩⟩
 
 end MonomialOrder
