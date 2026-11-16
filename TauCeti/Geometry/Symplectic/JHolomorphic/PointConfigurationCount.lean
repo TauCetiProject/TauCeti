@@ -27,7 +27,8 @@ of the point configurations. Without points this is the count of index-zero clas
 (`TauCeti.pointConfigurationCount_of_isEmpty`). The finiteness, area-cutoff and conditional
 comparison statements carry over, and the count does not depend on how the points are labelled
 (`TauCeti.pointConfigurationCount_map_equiv`). With at least one point, the count in class zero
-vanishes (`TauCeti.pointConfigurationCount_zero`).
+vanishes (`TauCeti.pointConfigurationCount_zero`), and with infinitely many points the count
+vanishes in every class (`TauCeti.pointConfigurationCount_eq_zero_of_infinite`).
 
 The geometry of curves through generic points supplies three numerical facts about the classes
 of the candidates in the intersection form `B` on integral homology, with canonical class `κ` and
@@ -114,6 +115,16 @@ theorem pointConfigurations_map_equiv (e : P ≃ Q) :
   ext l
   simp only [mem_pointConfigurations, Finset.mem_map_equiv, and_congr_right_iff]
   exact fun _ ↦ (e.forall_congr_left (p := fun p ↦ ∃ c ∈ l.support, p ∈ pts c)).symm
+
+/-- With infinitely many points there is no point configuration: the finitely many components
+of a configuration carry only finitely many points. -/
+theorem pointConfigurations_eq_empty_of_infinite [Infinite P] :
+    pointConfigurations r cls pts s A = ∅ := by
+  classical
+  refine Set.eq_empty_of_forall_notMem fun l hl ↦ ?_
+  obtain ⟨p, hp⟩ := Infinite.exists_notMem_finset (l.support.biUnion pts)
+  obtain ⟨c, hc, hpc⟩ := hl.2 p
+  exact hp (Finset.mem_biUnion.2 ⟨c, hc, hpc⟩)
 
 /-- The components of a point configuration are candidates. -/
 private theorem mem_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
@@ -208,6 +219,11 @@ theorem pointConfigurationCount_eq_sum (h : (pointConfigurations r cls pts s A).
 theorem pointConfigurationCount_of_isEmpty [IsEmpty P] :
     pointConfigurationCount r cls pts w s A = configurationCount r cls w s A := by
   rw [pointConfigurationCount_def, configurationCount_def, pointConfigurations_of_isEmpty]
+
+/-- With infinitely many points, the count through the points vanishes. -/
+theorem pointConfigurationCount_eq_zero_of_infinite [Infinite P] :
+    pointConfigurationCount r cls pts w s A = 0 := by
+  rw [pointConfigurationCount_def, pointConfigurations_eq_empty_of_infinite, finsum_mem_empty]
 
 /-- Relabelling the points along an equivalence does not change the count. -/
 theorem pointConfigurationCount_map_equiv (e : P ≃ Q) :
