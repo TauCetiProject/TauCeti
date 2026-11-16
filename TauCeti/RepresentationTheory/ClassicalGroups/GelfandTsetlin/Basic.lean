@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import Mathlib.Data.Int.Interval
 public import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Gelfand-Tsetlin patterns
@@ -281,11 +282,21 @@ def weight (P : GTPattern n) : Fin n → ℤ := fun r => P.rowSum (r + 1) - P.ro
 theorem weight_apply (P : GTPattern n) (r : Fin n) :
     P.weight r = P.rowSum (r + 1) - P.rowSum r := (rfl)
 
+/-- The first `j` coordinates of the weight add up to the sum of row `j`. -/
+theorem sum_weight_lt (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
+    ∑ r : Fin n with r.val < j, P.weight r = P.rowSum j := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have hsplit := prefixSum_succ hj P.weight
+    rw [prefixSum_def, prefixSum_def] at hsplit
+    rw [hsplit, ih (by omega), weight_apply]
+    exact add_sub_cancel _ _
+
 /-- The weight of a pattern has the same total as its top row. -/
 theorem sum_weight (P : GTPattern n) : ∑ r, P.weight r = ∑ i, P.topRow i := by
-  simp only [weight_apply]
-  rw [← rowSum_eq_sum_topRow, Fin.sum_univ_eq_sum_range (fun r => P.rowSum (r + 1) - P.rowSum r),
-    Finset.sum_range_sub, rowSum_zero, sub_zero]
+  rw [← rowSum_eq_sum_topRow, ← P.sum_weight_lt le_rfl,
+    Finset.filter_true_of_mem fun r _ => r.isLt]
 
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where

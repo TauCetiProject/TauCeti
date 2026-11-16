@@ -284,8 +284,8 @@ theorem ofGTPattern_apply (v : Vertex n) :
 
 theorem gtChart_ofGTPattern {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
     gtChart (⇑(ofGTPattern l P hP)) i j = gtCompletion l P i j := by
-  rw [gtChart_of_le _ hij hj, ofGTPattern_apply, Vertex.ofYZ_z, Vertex.sub_ofYZ_x,
-    Nat.sub_add_cancel hij]
+  rw [gtChart_of_le _ hij hj, ofGTPattern_apply]
+  exact apply_ofYZ_chart _ hij _
 
 /-- The pattern of the hive of a pattern is the pattern itself. -/
 @[simp]

@@ -274,7 +274,7 @@ section Chart
 variable {n : ℕ} {R : Type*}
 
 /-- The chart value of the vertex `(n - j, j - i, i)` is the value at `(i, j)`. -/
-private theorem apply_ofYZ (g : ℕ → ℕ → R) {i j : ℕ} (hij : i ≤ j) (h : j - i + i ≤ n) :
+theorem apply_ofYZ_chart (g : ℕ → ℕ → R) {i j : ℕ} (hij : i ≤ j) (h : j - i + i ≤ n) :
     g (Vertex.ofYZ n (j - i) i h).z (n - (Vertex.ofYZ n (j - i) i h).x) = g i j := by
   rw [Vertex.ofYZ_z, Vertex.sub_ofYZ_x, Nat.sub_add_cancel hij]
 
@@ -313,6 +313,43 @@ private theorem ChartRhombus₃.le
     show n - o₂.x = n - a₁.x + 1 by omega]
   exact h₃ _ _ (by omega) (by omega)
 
+private theorem ChartRhombus₁.le_of_isRhombusConcave
+    (hf : IsRhombusConcave fun v : Vertex n => g v.z (n - v.x)) {i j : ℕ} (hij : i < j)
+    (hj : j < n) : g (i + 1) j + g i (j + 1) ≤ g i j + g (i + 1) (j + 1) := by
+  rw [isRhombusConcave_def] at hf
+  have := hf (ChartRhombus₁.isRhombus (n := n) (o₁ := Vertex.ofYZ n (j - i) i (by omega))
+    (a₁ := Vertex.ofYZ n (j - (i + 1)) (i + 1) (by omega))
+    (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
+    (a₂ := Vertex.ofYZ n (j + 1 - i) i (by omega)) (chartRhombus₁_iff.mpr (by simp; omega)))
+  rwa [apply_ofYZ_chart g (by omega), apply_ofYZ_chart g (by omega),
+    apply_ofYZ_chart g (by omega), apply_ofYZ_chart g (by omega)] at this
+
+private theorem ChartRhombus₂.le_of_isRhombusConcave
+    (hf : IsRhombusConcave fun v : Vertex n => g v.z (n - v.x)) {i j : ℕ} (hij : i < j)
+    (hj : j < n) : g i j + g (i + 2) (j + 1) ≤ g (i + 1) j + g (i + 1) (j + 1) := by
+  rw [isRhombusConcave_def] at hf
+  have := hf (ChartRhombus₂.isRhombus (n := n)
+    (o₁ := Vertex.ofYZ n (j - (i + 1)) (i + 1) (by omega))
+    (a₁ := Vertex.ofYZ n (j - i) i (by omega))
+    (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
+    (a₂ := Vertex.ofYZ n (j + 1 - (i + 2)) (i + 2) (by omega))
+    (chartRhombus₂_iff.mpr (by simp; omega)))
+  rwa [apply_ofYZ_chart g (by omega), apply_ofYZ_chart g (by omega),
+    apply_ofYZ_chart g (by omega), apply_ofYZ_chart g (by omega)] at this
+
+private theorem ChartRhombus₃.le_of_isRhombusConcave
+    (hf : IsRhombusConcave fun v : Vertex n => g v.z (n - v.x)) {i j : ℕ} (hij : i ≤ j)
+    (hj : j + 2 ≤ n) : g i j + g (i + 1) (j + 2) ≤ g i (j + 1) + g (i + 1) (j + 1) := by
+  rw [isRhombusConcave_def] at hf
+  have := hf (ChartRhombus₃.isRhombus (n := n)
+    (o₁ := Vertex.ofYZ n (j + 1 - i) i (by omega))
+    (a₁ := Vertex.ofYZ n (j - i) i (by omega))
+    (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
+    (a₂ := Vertex.ofYZ n (j + 2 - (i + 1)) (i + 1) (by omega))
+    (chartRhombus₃_iff.mpr (by simp; omega)))
+  rwa [apply_ofYZ_chart g (by omega), apply_ofYZ_chart g (by omega),
+    apply_ofYZ_chart g (by omega), apply_ofYZ_chart g (by omega)] at this
+
 /-- **Rhombus concavity in the chart.** A lattice function read in the chart `(i, j)` through
 `g` is rhombus-concave iff `g` satisfies the inequalities of the three families of unit rhombi:
 `g(i+1, j) + g(i, j+1) ≤ g(i, j) + g(i+1, j+1)` and
@@ -324,32 +361,10 @@ theorem isRhombusConcave_chart_iff :
       (∀ i j, i < j → j < n → g i j + g (i + 2) (j + 1) ≤ g (i + 1) j + g (i + 1) (j + 1)) ∧
       (∀ i j, i ≤ j → j + 2 ≤ n →
         g i j + g (i + 1) (j + 2) ≤ g i (j + 1) + g (i + 1) (j + 1)) := by
-  rw [isRhombusConcave_def]
   constructor
-  · intro hf
-    refine ⟨fun i j hij hj => ?_, fun i j hij hj => ?_, fun i j hij hj => ?_⟩
-    · have := hf (ChartRhombus₁.isRhombus (n := n) (o₁ := Vertex.ofYZ n (j - i) i (by omega))
-        (a₁ := Vertex.ofYZ n (j - (i + 1)) (i + 1) (by omega))
-        (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
-        (a₂ := Vertex.ofYZ n (j + 1 - i) i (by omega)) (chartRhombus₁_iff.mpr (by simp; omega)))
-      rwa [apply_ofYZ g (by omega), apply_ofYZ g (by omega), apply_ofYZ g (by omega),
-        apply_ofYZ g (by omega)] at this
-    · have := hf (ChartRhombus₂.isRhombus (n := n)
-        (o₁ := Vertex.ofYZ n (j - (i + 1)) (i + 1) (by omega))
-        (a₁ := Vertex.ofYZ n (j - i) i (by omega))
-        (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
-        (a₂ := Vertex.ofYZ n (j + 1 - (i + 2)) (i + 2) (by omega))
-        (chartRhombus₂_iff.mpr (by simp; omega)))
-      rwa [apply_ofYZ g (by omega), apply_ofYZ g (by omega), apply_ofYZ g (by omega),
-        apply_ofYZ g (by omega)] at this
-    · have := hf (ChartRhombus₃.isRhombus (n := n)
-        (o₁ := Vertex.ofYZ n (j + 1 - i) i (by omega))
-        (a₁ := Vertex.ofYZ n (j - i) i (by omega))
-        (o₂ := Vertex.ofYZ n (j + 1 - (i + 1)) (i + 1) (by omega))
-        (a₂ := Vertex.ofYZ n (j + 2 - (i + 1)) (i + 1) (by omega))
-        (chartRhombus₃_iff.mpr (by simp; omega)))
-      rwa [apply_ofYZ g (by omega), apply_ofYZ g (by omega), apply_ofYZ g (by omega),
-        apply_ofYZ g (by omega)] at this
+  · exact fun hf => ⟨fun _ _ => ChartRhombus₁.le_of_isRhombusConcave g hf,
+      fun _ _ => ChartRhombus₂.le_of_isRhombusConcave g hf,
+      fun _ _ => ChartRhombus₃.le_of_isRhombusConcave g hf⟩
   · rintro ⟨h₁, h₂, h₃⟩ a b c d hr
     -- Each rhombus is one of the three families, with its obtuse and acute pairs in some order.
     rcases hr.chartRhombus with (H | H | H | H) | (H | H | H | H) | (H | H | H | H)
