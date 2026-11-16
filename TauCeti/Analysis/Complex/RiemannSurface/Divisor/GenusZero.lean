@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Sphere
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere
 import TauCeti.Topology.Sheaves.Cech.Functoriality
 
 /-!
@@ -110,11 +110,8 @@ namespace TauCeti.RiemannSurface
 
 /-- **The Riemann sphere has analytic genus zero**, since `H¹(ℙ¹, 𝒪) = 0`. -/
 @[simp]
-theorem analyticGenus_onePoint : analyticGenus (OnePoint ℂ) = 0 := by
-  have := ModuleCat.isZero_iff_subsingleton.1
-    isZero_cechCohomology_one_holomorphicStructureSheafModules_sphere
-  rw [analyticGenus_def]
-  exact Module.finrank_zero_of_subsingleton
+theorem analyticGenus_onePoint : analyticGenus (OnePoint ℂ) = 0 :=
+  analyticGenus_eq_finrank_divisorCechCohomology.trans finrank_divisorCechCohomology_zero_one_sphere
 
 variable [CompactSpace X] [T2Space X] [ConnectedSpace X]
   [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj

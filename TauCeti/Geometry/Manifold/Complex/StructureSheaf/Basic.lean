@@ -599,7 +599,7 @@ theorem homOfContMDiff_app (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y
 /-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` is bijective
 on sections: a holomorphic function `h` on `f ⁻¹' U` is the pullback of the holomorphic function
 `y ↦ h (g y)` on `U`, and only of it. -/
-theorem bijective_precompLinearMap (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → X)
+theorem precompLinearMap_bijective (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → X)
     (hg : ContMDiff J I ω g) (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f)
     (U : (Opens Y)ᵒᵖ) : Function.Bijective (precompLinearMap I X f hf U) := by
   -- `g` maps `U` into its inverse image under `f`.
@@ -622,7 +622,7 @@ theorem isIso_homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → 
     IsIso (homOfContMDiff I X f hf) := by
   refine (NatTrans.isIso_iff_isIso_app _).2 fun U ↦ ?_
   rw [homOfContMDiff_app, ConcreteCategory.isIso_iff_bijective]
-  exact bijective_precompLinearMap I X f hf g hg hgf hfg U
+  exact precompLinearMap_bijective I X f hf g hg hgf hfg U
 
 end holomorphicStructureSheafModules
 
