@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Holder.UniformContinuous
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Normed.Group.Submodule
+import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous
 
 /-!
 # The parabolic Cauchy problem with bounded uniformly continuous initial data
