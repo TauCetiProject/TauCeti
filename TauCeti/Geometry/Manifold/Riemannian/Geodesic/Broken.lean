@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
 public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
-import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
 
 /-!
@@ -118,9 +118,7 @@ theorem geodesicSegmentUnitPath_zero (p : {p : M × M // dist p.1 p.2 < r}) :
 theorem geodesicSegmentUnitPath_one (p : {p : M × M // dist p.1 p.2 < r}) :
     geodesicSegmentUnitPath hr p 1 = p.1.2 := by
   rw [geodesicSegmentUnitPath_apply, Set.Icc.coe_one, one_smul]
-  refine riemannianExp_riemannianLog ?_
-  rw [(hr p.1.1).image_riemannianExp_ball_eq_ball subset_rfl, mem_ball, dist_comm]
-  exact p.2
+  exact riemannianExp_riemannianLog ((hr p.1.1).mem_image_riemannianExp_ball subset_rfl p.2)
 
 theorem geodesicSegmentUnitPath_of_eq (p : {p : M × M // dist p.1 p.2 < r}) (hp : p.1.1 = p.1.2)
     (s : unitInterval) : geodesicSegmentUnitPath hr p s = p.1.1 := by
@@ -158,9 +156,9 @@ theorem length_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
 theorem geodesicSegment_apply (p : {p : M × M // dist p.1 p.2 < r}) (t : ℝ≥0) :
     geodesicSegment hr p t = riemannianExp I M p.1.1
       (min ((t : ℝ) / dist p.1.1 p.1.2) 1 • riemannianLog I M p.1.1 (ball 0 r) p.1.2) := by
-  rw [geodesicSegment_eq, MoorePath.rescale_apply, MoorePath.length_ofUnitPath, one_mul,
-    MoorePath.ofUnitPath_apply, geodesicSegmentUnitPath_apply, Set.coe_projIcc,
-    NNReal.coe_div, coe_nndist, max_eq_right (le_min zero_le_one (by positivity)), min_comm]
+  rw [geodesicSegment_eq, MoorePath.rescale_apply, MoorePath.ofUnitPath_apply,
+    geodesicSegmentUnitPath_apply, Set.coe_projIcc]
+  simp [min_comm, div_nonneg]
 
 @[simp]
 theorem source_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
@@ -200,9 +198,7 @@ theorem dist_geodesicSegment_apply (p : {p : M × M // dist p.1 p.2 < r}) {s t :
   · have hd : nndist x y = 0 := by rw [← NNReal.coe_eq_zero, coe_nndist, ← h0]
     rw [hd, nonpos_iff_eq_zero] at hs ht
     simp [hs, ht]
-  have hy : y ∈ riemannianExp I M x '' ball 0 r := by
-    rw [(hr x).image_riemannianExp_ball_eq_ball subset_rfl, mem_ball, dist_comm]
-    exact hxy
+  have hy := (hr x).mem_image_riemannianExp_ball subset_rfl hxy
   -- The logarithm `v = log_x y` has norm `dist x y`, and the segment is `exp_x ((t / ‖v‖) • v)`.
   have hnorm := (hr x).dist_eq_norm_riemannianLog_of_mem_ball subset_rfl
     (by rwa [mem_ball, dist_comm])
@@ -213,7 +209,8 @@ theorem dist_geodesicSegment_apply (p : {p : M × M // dist p.1 p.2 < r}) {s t :
   have ht' : (t : ℝ) / dist x y ≤ 1 := (div_le_one hpos).2 (by exact_mod_cast ht)
   rw [geodesicSegment_apply, geodesicSegment_apply, min_eq_left hs', min_eq_left ht',
     dist_riemannianExp_smul_riemannianExp_smul hmin ⟨by positivity, hs'⟩ ⟨by positivity, ht'⟩,
-    ← hnorm, ← sub_div, abs_div, abs_of_pos hpos, div_mul_cancel₀ _ hpos.ne']
+    ← hnorm, ← sub_div, abs_div, abs_of_pos hpos]
+  field_simp
 
 end Segment
 
@@ -363,16 +360,8 @@ private theorem forall_dist_snoc_lt {n : ℕ} {q : Fin (n + 1) → M}
     (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) :
     dist ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.castSucc)
       ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.succ) < r := by
-  induction i using Fin.lastCases with
-  | last =>
-    -- The closing edge from `q n` to `q 0`.
-    have h0 := h 0
-    rw [Fin.zero_sub_one_eq_last, dist_comm] at h0
-    rwa [Fin.snoc_castSucc, Fin.succ_last, Fin.snoc_last]
-  | cast j =>
-    have hj := h j.succ
-    rw [Fin.succ_sub_one_eq_castSucc, dist_comm] at hj
-    rwa [Fin.snoc_castSucc, Fin.succ_castSucc, Fin.snoc_castSucc]
+  rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ, dist_comm]
+  simpa only [add_sub_cancel_right] using h (i + 1)
 
 include hr
 
@@ -411,12 +400,9 @@ theorem length_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
     (brokenGeodesicLoop hr n q h).length = ∑ i, nndist (q i) (q (i - 1)) := by
   rw [← MooreFreeLoopSpace.length_toMoorePath,
     toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h), length_brokenGeodesic,
-    Fin.sum_univ_castSucc, Fin.sum_univ_succ, add_comm]
-  congr 1
-  · rw [Fin.snoc_castSucc, Fin.succ_last, Fin.snoc_last, Fin.zero_sub_one_eq_last, nndist_comm]
-  · refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Fin.snoc_castSucc, Fin.succ_castSucc, Fin.snoc_castSucc, Fin.succ_sub_one_eq_castSucc,
-      nndist_comm]
+    ← Equiv.sum_comp (Equiv.addRight 1) fun i ↦ nndist (q i) (q (i - 1))]
+  simp only [Fin.snoc_castSucc, Fin.snoc_self_zero_succ, Equiv.coe_addRight, add_sub_cancel_right,
+    nndist_comm]
 
 /-- The closed broken geodesic through a constant tuple is the constant loop of length zero. -/
 @[simp]
@@ -428,9 +414,9 @@ theorem brokenGeodesicLoop_const (n : ℕ) (x : M)
   rw [toMoorePath_brokenGeodesicLoop hr n _ h (forall_dist_snoc_lt h),
     MooreFreeLoopSpace.toMoorePath_const, ← brokenGeodesic_const hr (n + 1) x (fun _ ↦ h 0)]
   refine brokenGeodesic_congr hr _ _ (funext fun i ↦ ?_)
-  induction i using Fin.lastCases with
-  | last => rw [Fin.snoc_last]
-  | cast j => rw [Fin.snoc_castSucc]
+  induction i using Fin.cases with
+  | zero => rw [Fin.snoc_apply_zero]
+  | succ j => rw [Fin.snoc_self_zero_succ]
 
 /-- Repeating the first vertex of a cyclic tuple does not change its closed broken geodesic. -/
 theorem brokenGeodesicLoop_cons (n : ℕ) (q : Fin (n + 1) → M)
