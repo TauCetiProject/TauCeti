@@ -474,8 +474,7 @@ theorem mem_range_simplyBlockedDifferential_of_map_mem_range {x : GridChainHat R
     (f₁ := AddMonoidHom.ofClass f) (f := AddMonoidHom.ofClass f)
     (G'.isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
     (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
-    ?_ ?_ ?_ ?_ hsur hinj hinj hx h
-  · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hf
+    ?_ ?_ ?_ hsur hinj hinj hx h
   · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hf
   · simpa only [DistribSMul.toAddMonoidHom_apply, AddMonoidHom.coe_ofClass] using hX
   · simpa only [LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_ofClass] using hg

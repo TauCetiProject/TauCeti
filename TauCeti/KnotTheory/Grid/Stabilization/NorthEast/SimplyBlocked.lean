@@ -368,7 +368,7 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomo
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
 /-- The inverse north-east comparison preserves and reflects the absolute homology bidegree. -/
-@[simp]
+@[simp↓]
 theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_mem_bigradedHatHomologyPiece_iff
     (g : ℤ × ℤ) (y : (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) :
     (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y ∈

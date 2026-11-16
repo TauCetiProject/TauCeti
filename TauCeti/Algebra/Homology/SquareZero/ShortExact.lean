@@ -121,12 +121,14 @@ that a cycle of `d₁` or of `d` whose image under `f₁` or `f` is a boundary i
 cycle of `dP` whose image under `g` is a boundary is a boundary. -/
 theorem mem_range_of_map_mem_range_of_exact (g : P → Q)
     (hM : u.IsShortExactDifferential p d₁ d dP) (hN : v.IsShortExactDifferential q e₁ e eQ)
-    (hf₁d : ∀ m, f₁ (d₁ m) = e₁ (f₁ m)) (hfd : ∀ m, f (d m) = e (f m))
+    (hfd : ∀ m, f (d m) = e (f m))
     (hfu : ∀ m, f (u m) = v (f₁ m)) (hgp : ∀ m, g (p m) = q (f m))
     (hsurj₁ : ∀ n ∈ e₁.ker, ∃ m ∈ d₁.ker, n - f₁ m ∈ e₁.range)
     (hinj₁ : ∀ m ∈ d₁.ker, f₁ m ∈ e₁.range → m ∈ d₁.range)
     (hinj : ∀ m ∈ d.ker, f m ∈ e.range → m ∈ d.range) {x : P} (hx : x ∈ dP.ker)
     (hgx : g x ∈ eQ.range) : x ∈ dP.range := by
+  have hf₁d : ∀ m, f₁ (d₁ m) = e₁ (f₁ m) := fun m => hN.injective <| by
+    rw [← hfu, ← hM.comm_left, hfd, hfu, hN.comm_left]
   obtain ⟨c, rfl⟩ := hM.surjective x
   -- The boundary of a lift `c` of `x` is `u w` for a cycle `w` of `d₁`.
   obtain ⟨w, hw⟩ := (hM.exact (d c)).mp (by rw [hM.comm_right, mem_ker.mp hx])

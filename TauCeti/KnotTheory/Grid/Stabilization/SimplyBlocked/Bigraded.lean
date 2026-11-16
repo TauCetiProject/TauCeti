@@ -158,7 +158,6 @@ theorem coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_apply (g : ℤ
     (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
 
 /-- The inverse piece equivalence is the inverse of the total homology equivalence. -/
-@[simp]
 theorem coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
     (y : G.bigradedHatHomologyPiece R i g) :
     ((G.oneVariableSpecializationStabilizeXHomologyPieceEquiv s i R g).symm y :
