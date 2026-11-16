@@ -222,3 +222,30 @@ theorem map_comp (α' : A' →+* A'') (f' : Hom S' S'') (g' : Hom T' T'')
 end Pair.completedTensor
 
 end TauCeti.Huber
+
+namespace TauCeti.Huber.CompletedTensor
+
+variable {A B A' B' : Type*}
+  [CommRing A] [CommRing B] [CommRing A'] [CommRing B']
+  [Algebra A B] [Algebra A' B']
+  [TopologicalSpace A] [IsTopologicalRing A]
+  [TopologicalSpace A'] [IsTopologicalRing A']
+  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
+  [UniformSpace B'] [IsUniformAddGroup B'] [NonarchimedeanRing B'] [CompleteSpace B'] [T0Space B']
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A' B')]
+
+/-- The map on completed diagonals commutes with multiplication. -/
+@[simp] theorem mulRingHom_map (α : A →+* A') (φ : B →+* B')
+    (hφ : φ.comp (algebraMap A B) = (algebraMap A' B').comp α)
+    (hφc : Continuous φ) (x : CompletedTensor A B B) :
+    mulRingHom A' B' (CompletedTensor.map α φ φ hφ hφ hφc hφc x) =
+      φ (mulRingHom A B x) := by
+  have h : (mulRingHom A' B').comp (CompletedTensor.map α φ φ hφ hφ hφc hφc) =
+      φ.comp (mulRingHom A B) := by
+    apply CompletedTensor.hom_ext (f := (mulRingHom A' B').comp
+      (CompletedTensor.map α φ φ hφ hφ hφc hφc)) (g := φ.comp (mulRingHom A B))
+      ((continuous_mulRingHom A' B').comp (CompletedTensor.continuous_map ..))
+      (hφc.comp (continuous_mulRingHom A B)) <;> ext b <;> simp
+  exact congrArg (fun f : CompletedTensor A B B →+* B' ↦ f x) h
+
+end TauCeti.Huber.CompletedTensor

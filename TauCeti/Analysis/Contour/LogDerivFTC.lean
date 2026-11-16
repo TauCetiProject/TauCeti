@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Calculus.FDeriv.Analytic
-public import Mathlib.Analysis.Calculus.LogDeriv
+public import TauCeti.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Complex.UpperLogContinuity
@@ -51,7 +50,7 @@ argument principle above all — into a statement about how often an image curve
 
 ## Main results
 
-* `TauCeti.Contour.analyticAt_logDeriv_of_analyticAt` — `logDeriv f` is analytic wherever `f` is
+* `AnalyticAt.logDeriv` — `logDeriv f` is analytic wherever `f` is
   analytic and nonzero; the regularity input shared by the results below and by the argument
   principle.
 * `TauCeti.Contour.intervalIntegrable_deriv_div_and_integral_deriv_div_eq_log_sub_log_of_im_nonneg`
@@ -160,16 +159,6 @@ theorem integral_inv_sub_mul_deriv_eq_log {γ : ℝ → ℂ} {w : ℂ} {a b : �
   exact integral_deriv_div_sub_eq_log (γ' := deriv γ) hP hγ_cont
     (fun t ht ↦ (hγ_diff t ht).hasDerivAt) h_slit (by simpa only [inv_mul_eq_div] using h_int)
 
-/-- At a point where a function is analytic and non-vanishing, its logarithmic derivative
-`logDeriv f = deriv f / f` is analytic. This is the regularity input for every integrability and
-residue statement about a logarithmic-derivative integrand, from the interval-integrability lemma
-below to the residue form of the argument principle
-(`TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt`). -/
-lemma analyticAt_logDeriv_of_analyticAt {f : ℂ → ℂ} {z : ℂ} (hf : AnalyticAt ℂ f z)
-    (hz : f z ≠ 0) : AnalyticAt ℂ (logDeriv f) z := by
-  rw [logDeriv]
-  exact hf.deriv.div hf hz
-
 /-- The argument-principle integrand `deriv γ • (logDeriv h ∘ γ)` is interval-integrable along a
 piecewise-`C¹` curve `γ` on which `h` is analytic and zero-free. This supplies the integrability
 hypothesis of the logarithmic-derivative contour results — `IntervalIntegrable` is what
@@ -180,7 +169,7 @@ theorem intervalIntegrable_deriv_smul_logDeriv {γ : ℝ → ℂ} {h : ℂ → �
     IntervalIntegrable (fun t ↦ deriv γ t • logDeriv h (γ t)) volume a b := by
   refine hγ.intervalIntegrable_deriv_smul_comp ?_
   rintro _ ⟨t, ht, rfl⟩
-  exact (analyticAt_logDeriv_of_analyticAt (hh t ht) (hne t ht)).continuousAt.continuousWithinAt
+  exact ((hh t ht).logDeriv (hne t ht)).continuousAt.continuousWithinAt
 
 /-- **A slit-plane-valued function has a single-valued logarithm along a closed curve.** If `h` is
 analytic along a closed piecewise-`C¹` curve `γ` and takes its values there in

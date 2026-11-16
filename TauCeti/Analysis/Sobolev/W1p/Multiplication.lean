@@ -272,7 +272,8 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         2 * ∫ x in Omega, ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2 ∂mu := by
   have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
   have hI1 : Integrable (fun x => psi x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq u).bdd_mul (hpsi.continuous.pow 2).aestronglyMeasurable
+    (Lp.memLp (W1p.gradient u)).norm.integrable_sq.bdd_mul
+      (hpsi.continuous.pow 2).aestronglyMeasurable
       (c := M ^ 2) (hmem.mono fun x hx => by
         rw [Real.norm_eq_abs, abs_pow]
         exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
@@ -284,7 +285,7 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x hx) 2)
   rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, ← integral_const_mul,
     ← integral_const_mul, ← integral_add (hI1.const_mul 2) (hI2.const_mul 2)]
-  refine integral_mono_ae (W1p.integrable_norm_gradient_sq _)
+  refine integral_mono_ae (Lp.memLp (W1p.gradient _)).norm.integrable_sq
     ((hI1.const_mul 2).add (hI2.const_mul 2)) ?_
   filter_upwards [W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx
   have htri := norm_add_le (psi x • W1p.gradient u x) (W1p.value u x • ∇ psi x)
