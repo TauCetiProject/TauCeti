@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Ratios of Gram determinants
