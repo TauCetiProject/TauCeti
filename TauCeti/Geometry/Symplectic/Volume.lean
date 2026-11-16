@@ -11,6 +11,7 @@ import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basis
 import TauCeti.LinearAlgebra.Alternating.TopDegree
 import TauCeti.LinearAlgebra.Basis.Fin
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -92,18 +93,6 @@ section Prod
 variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [FiniteDimensional ℝ V]
   [AddCommGroup W] [Module ℝ W] [TopologicalSpace W] [FiniteDimensional ℝ W] {m : ℕ}
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
-/-- The two-form `pr₁^* ω₁ + pr₂^* ω₂` on `V × W` pairs `p` with `q` to
-`ω₁(p.1, q.1) + ω₂(p.2, q.2)`. -/
-private theorem fst_add_snd_apply (ω₁ : V [⋀^Fin 2]→L[ℝ] ℝ) (ω₂ : W [⋀^Fin 2]→L[ℝ] ℝ)
-    (p q : V × W) :
-    (ω₁.compContinuousLinearMap (ContinuousLinearMap.fst ℝ V W) +
-        ω₂.compContinuousLinearMap (ContinuousLinearMap.snd ℝ V W)) ![p, q] =
-      ω₁ ![p.1, q.1] + ω₂ ![p.2, q.2] := by
-  have h₁ : Prod.fst ∘ ![p, q] = ![p.1, q.1] := by ext i; fin_cases i <;> rfl
-  have h₂ : Prod.snd ∘ ![p, q] = ![p.2, q.2] := by ext i; fin_cases i <;> rfl
-  simp [h₁, h₂]
-
 /-- If the top power of `pr₁^* ω₁ + pr₂^* ω₂` is nonzero, both `ω₁` and `ω₂` are nondegenerate: a
 vector `v` in the kernel of `ω₁` or of `ω₂` gives the vector `(v, 0)` or `(0, v)` in the kernel of
 the sum. -/
@@ -116,8 +105,8 @@ private theorem nondegenerate_of_wedgePow_fst_add_snd_ne_zero (hn : finrank ℝ 
   have h' := (wedgePow_ne_zero_iff hnm _).1 h
   refine ⟨fun v hv ↦ congrArg Prod.fst (h' (v, 0) fun q ↦ ?_),
     fun v hv ↦ congrArg Prod.snd (h' (0, v) fun q ↦ ?_)⟩
-  · rw [fst_add_snd_apply, hv, ω₂.map_coord_zero 0 rfl, add_zero]
-  · rw [fst_add_snd_apply, hv, ω₁.map_coord_zero 0 rfl, zero_add]
+  · rw [compContinuousLinearMap_fst_add_snd_apply, hv, ω₂.map_coord_zero 0 rfl, add_zero]
+  · rw [compContinuousLinearMap_fst_add_snd_apply, hv, ω₁.map_coord_zero 0 rfl, zero_add]
 
 /-- **The normalized top power of a direct sum of two-forms.** For two-forms `ω₁` on a space `V`
 of dimension `2 n` and `ω₂` on a space `W` of dimension `2 m`, the form
@@ -150,7 +139,7 @@ theorem wedgePow_fst_add_snd_apply_append (hn : finrank ℝ V = 2 * n) (hm : fin
   -- basis of `ω`, and all three powers take the value of a factorial on these bases.
   obtain ⟨h₁, h₂⟩ := h₁₂
   have hω (p q : V × W) : ω ![p, q] = ω₁ ![p.1, q.1] + ω₂ ![p.2, q.2] :=
-    fst_add_snd_apply ω₁ ω₂ p q
+    compContinuousLinearMap_fst_add_snd_apply ω₁ ω₂ p q
   set s₁ := TauCeti.SymplecticForm.ofContinuousAlternatingMap ω₁ h₁
   set s₂ := TauCeti.SymplecticForm.ofContinuousAlternatingMap ω₂ h₂
   obtain ⟨d₁, hd₁⟩ := s₁.exists_isDarbouxBasis_of_finrank_eq (hn.trans (Nat.mul_comm 2 n))

@@ -31,8 +31,10 @@ but equal ways.
 
 The product of bases `b` of `M` and `c` of `N` indexed by `Fin m` and `Fin n`, reindexed by
 `Fin (m + n)`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))`
-(`Module.Basis.coe_prod_reindex_finSumFinEquiv`). After a further reindexing it begins with a
-chosen vector of either factor, followed by the remaining vectors in their order
+(`Module.Basis.coe_prod_reindex_finSumFinEquiv`), and similarly when it is reindexed by `Fin k`
+for `m + n = k` (`Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`). After a further
+reindexing it begins with a chosen vector of either factor, followed by the remaining vectors in
+their order
 (`Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
 `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`). These are the bases of `M × N` that
 begin with a vector transverse to a hyperplane of one factor.
@@ -58,7 +60,9 @@ the first factor before that of the second (`Module.Basis.coe_reindex_prod_finPr
   on `v`, then `v` followed by a basis of its kernel is a basis.
 * `Module.Basis.reindex_finCongr_comp_cast`: a basis reindexed along `finCongr` and precomposed
   with a `Fin.cast` is the original basis precomposed with a `Fin.cast`.
-* `Module.Basis.coe_prod_reindex_finSumFinEquiv`: the product basis indexed by `Fin (m + n)`.
+* `Module.Basis.coe_prod_reindex_finSumFinEquiv`,
+  `Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`: the product basis indexed by
+  `Fin (m + n)` or by `Fin k` for `m + n = k`.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
   `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`: the product basis beginning with the
   first vector of the first or of the second factor.
@@ -93,6 +97,17 @@ theorem coe_prod_reindex_finSumFinEquiv (b : Basis (Fin m) R M) (c : Basis (Fin 
     ⇑((b.prod c).reindex finSumFinEquiv) = Fin.append (fun i ↦ (b i, 0)) (fun j ↦ (0, c j)) := by
   funext i
   induction i using Fin.addCases <;> simp [prod_apply]
+
+/-- The product of bases `b` and `c` indexed by `Fin m` and `Fin n`, reindexed by `Fin k` for
+`m + n = k`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))` read through
+`Fin.cast`. -/
+theorem coe_prod_reindex_finSumFinEquiv_trans_finCongr {k : ℕ} (b : Basis (Fin m) R M)
+    (c : Basis (Fin n) R N) (h : m + n = k) :
+    ⇑((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))) =
+      fun r ↦ Fin.append (fun i ↦ (b i, 0)) (fun j ↦ (0, c j)) (Fin.cast h.symm r) := by
+  funext r
+  rw [← coe_prod_reindex_finSumFinEquiv]
+  simp [reindex_apply]
 
 /-- The product basis of `b` and `c` begins with `(b 0, 0)`: reindexed by `Fin (m + n + 1)`, it is
 `(b 0, 0)` followed by `(b 1, 0), …, (b m, 0), (0, c 0), …, (0, c (n - 1))`. -/

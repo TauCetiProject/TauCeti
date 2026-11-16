@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
+public import TauCeti.LinearAlgebra.Dimension.FactFinrank
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.MeasureTheory.Integral.Bochner.Alternating
@@ -77,12 +78,6 @@ private theorem inChartAt_volumeForm_prod_apply (hn : finrank ℝ E = 2 * n)
   have hq : (extChartAt (I.prod J) p).symm z =
       ((extChartAt I p.1).symm z.1, (extChartAt J p.2).symm z.2) := by
     rw [extChartAt_prod, PartialEquiv.prod_coe_symm]
-  have hb : ⇑((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm))) =
-      fun r ↦ Fin.append (α := E × F) (fun i ↦ (b₁ i, 0)) (fun j ↦ (0, b₂ j))
-        (Fin.cast (Nat.mul_add 2 n m) r) := by
-    funext r
-    simpa [Basis.reindex_apply] using
-      congrFun (Basis.coe_prod_reindex_finSumFinEquiv b₁ b₂) (Fin.cast (Nat.mul_add 2 n m) r)
   -- The inverse product chart differentiates componentwise.
   have hfam : (fun r ↦ mfderivWithin 𝓘(ℝ, E × F) (I.prod J) (extChartAt (I.prod J) p).symm
       (range (I.prod J)) z (Fin.append (α := E × F) (fun i ↦ (b₁ i, 0)) (fun j ↦ (0, b₂ j))
@@ -99,7 +94,8 @@ private theorem inChartAt_volumeForm_prod_apply (hn : finrank ℝ E = 2 * n)
     · simp only [Fin.append_right]
       rw [mfderivWithin_extChartAt_symm_prod_apply hz, Manifold.tangentSpaceProdEquiv_symm_apply]
       exact Prod.ext (map_zero _) rfl
-  rw [RoughForm.inChartAt_apply, RoughForm.inChartAt_apply, RoughForm.inChartAt_apply, hb]
+  rw [RoughForm.inChartAt_apply, RoughForm.inChartAt_apply, RoughForm.inChartAt_apply,
+    Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr]
   beta_reduce
   rw [hfam]
   refine (volumeForm_prod_apply_append hn hm σ τ _
@@ -114,13 +110,6 @@ attribute [local instance] TauCeti.extChartAtMeasurableSpaceE TauCeti.extChartAt
 variable [MeasurableSpace M] [BorelSpace M] [SecondCountableTopology M]
   [MeasurableSpace N] [BorelSpace N] [SecondCountableTopology N]
   [hn : Fact (finrank ℝ E = 2 * n)] [hm : Fact (finrank ℝ F = 2 * m)]
-
-omit [TopologicalSpace H] [TopologicalSpace H'] [FiniteDimensional ℝ E]
-  [FiniteDimensional ℝ F] in
-/-- The product of model spaces of dimensions `2 n` and `2 m` has dimension `2 (n + m)`. This
-is the dimension instance for the Liouville measure of a product form. -/
-instance fact_finrank_prod_eq_two_mul_add : Fact (finrank ℝ (E × F) = 2 * (n + m)) :=
-  ⟨by rw [finrank_prod, hn.out, hm.out, Nat.mul_add]⟩
 
 omit [MeasurableSpace M] [BorelSpace M] [SecondCountableTopology M] [MeasurableSpace N]
   [BorelSpace N] [SecondCountableTopology N] in
@@ -147,6 +136,7 @@ private theorem setLIntegral_inChartAt_volumeForm_prod [mEF : MeasurableSpace (E
     (BorelSpace.measurable_eq (α := E × F)).trans (Prod.borelSpace.measurable_eq (α := E × F)).symm
   set b₁ := finBasisOfFinrankEq ℝ E hn.out
   set b₂ := finBasisOfFinrankEq ℝ F hm.out
+  set b := (b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm))
   -- The coefficients of the factors are continuous on the chart targets.
   have hσ := ((σ.volumeForm n).isSmoothForm.of_le bot_le).continuousOn_inChartAt x
   have hτ := ((τ.volumeForm m).isSmoothForm.of_le bot_le).continuousOn_inChartAt y
@@ -160,8 +150,7 @@ private theorem setLIntegral_inChartAt_volumeForm_prod [mEF : MeasurableSpace (E
       ((continuous_eval_const _).comp_continuousOn (hτ.mono hS₂y))).aemeasurable hS₂
   -- On the rectangle, the coefficient in the concatenated basis is a product.
   have hcoeff : ∀ z ∈ S₁ ×ˢ S₂,
-      ENNReal.ofReal |RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).1 (x, y) z
-        ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm)))| =
+      ENNReal.ofReal |RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).1 (x, y) z b| =
         ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).1 x z.1 b₁| *
           ENNReal.ofReal |RoughForm.inChartAt (τ.volumeForm m).1 y z.2 b₂| := by
     intro z hz
@@ -170,8 +159,7 @@ private theorem setLIntegral_inChartAt_volumeForm_prod [mEF : MeasurableSpace (E
       exact prod_mono hS₁x hS₂y hz
     rw [inChartAt_volumeForm_prod_apply hn.out hm.out σ τ hz', abs_mul,
       ENNReal.ofReal_mul (abs_nonneg _)]
-  rw [← withDensity_apply _ (hS₁.prod hS₂), ← Basis.addHaar_withDensity_ofReal_abs_apply_eq _
-      ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm))),
+  rw [← withDensity_apply _ (hS₁.prod hS₂), ← Basis.addHaar_withDensity_ofReal_abs_apply_eq _ b,
     withDensity_apply _ (hS₁.prod hS₂), Basis.addHaar_reindex, Basis.prod_addHaar,
     setLIntegral_congr_fun (hS₁.prod hS₂) hcoeff, ← Measure.prod_restrict,
     lintegral_prod_mul hf hg]
