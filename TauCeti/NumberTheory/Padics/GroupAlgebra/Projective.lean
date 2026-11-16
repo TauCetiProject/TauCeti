@@ -16,6 +16,7 @@ import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
@@ -206,9 +207,6 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N]
   have : IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N :=
     IsScalarTower.of_compHom ℤ_[p] (MonoidAlgebra ℤ_[p] G) N
   have : Module.Finite ℤ_[p] N := .trans (MonoidAlgebra ℤ_[p] G) N
-  have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
-    rw [← PadicInt.maximalIdeal_eq_span_p]
-    infer_instance
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
     .of_finite _ _
   have : IsNoetherian (MonoidAlgebra ℤ_[p] G) N := isNoetherian_of_tower ℤ_[p] inferInstance

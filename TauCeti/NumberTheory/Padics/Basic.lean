@@ -34,7 +34,8 @@ For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
 nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
-(`TauCeti.norm_natCast_eq_norm_padic`).
+(`TauCeti.norm_natCast_eq_norm_padic`). It also registers `PadicInt.isAdicComplete_span_p`,
+packaging the `(p)`-adic completeness of `ℤ_[p]` alongside Mathlib's maximal-ideal instance.
 -/
 
 public section
@@ -63,6 +64,12 @@ end TauCeti
 namespace PadicInt
 
 variable {p : ℕ} [Fact (Nat.Prime p)]
+
+/-- `ℤ_[p]` is `(p)`-adically complete. -/
+instance isAdicComplete_span_p (p : ℕ) [Fact (Nat.Prime p)] :
+    IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
+  rw [← maximalIdeal_eq_span_p]
+  infer_instance
 
 /-- The structure map of the `ℤ_[p]`-algebra `ℚ_[p]` is the inclusion `PadicInt.Coe.ringHom`. -/
 theorem algebraMap_eq_coe_ringHom : algebraMap ℤ_[p] ℚ_[p] = Coe.ringHom :=

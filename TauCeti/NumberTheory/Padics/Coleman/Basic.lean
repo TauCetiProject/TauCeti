@@ -9,8 +9,10 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import Mathlib.RingTheory.PowerSeries.Substitution
 
-import Mathlib.Data.Nat.Choose.Dvd
+import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.PowerSeries.Cartier
+import TauCeti.RingTheory.PowerSeries.OneAddXPow
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -36,16 +38,22 @@ compactness assumption on `O`.
 * `TauCeti.Coleman.frobeniusHom_eq_expand`: when `(p : O) = 0`, `Φ` coincides with `expand p`.
 * `TauCeti.Coleman.sum_frobeniusHom_coord`, `TauCeti.Coleman.coord_unique`: unique expansion
   `f = ∑ i < p, Φ(cᵢ) * (1 + X) ^ i`.
+* `TauCeti.Coleman.frobeniusHom_injective`, `TauCeti.Coleman.frobeniusHom_mem_span_p_pow_iff`:
+  injectivity of `Φ` and reflection of `(p) ^ k`-congruences.
 * `TauCeti.Coleman.coord_one_add_X_pow`, `TauCeti.Coleman.map_coord`: coordinates of `(1 + X) ^ n`
   and functoriality along coefficient ring homomorphisms.
-* `TauCeti.Coleman.coeff_coord_mem_pow_of_coeff_mem_pow`: explicit `(p)`-adic modulus of
+* `TauCeti.Coleman.coeff_coord_mem_span_pow_of_coeff_mem_span_pow`: explicit `(p)`-adic modulus of
   continuity for the Coleman coordinates.
 
 ## References
 
-* R. F. Coleman, *Division Values in Local Fields*, Invent. Math. 53 (1979), §II.
-* J. Coates and R. Sujatha, *Cyclotomic Fields and Zeta Values*, Springer (2006), §3.3.
-* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions* (2025), §3.5.
+* R. F. Coleman, *Division Values in Local Fields*, Invent. Math. 53 (1979), §§II, IV (Lemma 6,
+  Theorem 11).
+* J. Coates and R. Sujatha, *Cyclotomic Fields and Zeta Values*, Springer (2006), §2.2
+  (Proposition 2.2.3).
+* R. Sharifi, *Iwasawa Theory*, §5.4 (Proposition 5.4.3).
+* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions* (2025), Chapter 10
+  (Lemma 10.8).
 -/
 
 public noncomputable section
@@ -58,8 +66,7 @@ section Frobenius
 
 variable (p : ℕ) (O : Type*) [CommRing O]
 
-/-- The series `(1 + X) ^ p - 1` has zero constant coefficient and can therefore be substituted
-into any power series over `O`. -/
+/-- The series `(1 + X) ^ p - 1` satisfies `HasSubst` over any commutative ring `O`. -/
 theorem hasSubst_one_add_X_pow_sub_one : HasSubst ((1 + X : O⟦X⟧) ^ p - 1) :=
   HasSubst.of_constantCoeff_zero' (by simp)
 
@@ -100,29 +107,16 @@ theorem map_frobeniusHom {O' : Type*} [CommRing O'] (φ : O →+* O') (f : O⟦X
     PowerSeries.map φ (frobeniusHom p O f) = frobeniusHom p O' (PowerSeries.map φ f) := by
   rw [frobeniusHom_apply, frobeniusHom_apply]
   have h := PowerSeries.map_subst (hasSubst_one_add_X_pow_sub_one p O) (h := φ) f
-  have hX : MvPowerSeries.map φ (X : O⟦X⟧) = (X : O'⟦X⟧) := PowerSeries.map_X φ
-  simpa only [PowerSeries.map, map_sub, map_pow, map_add, map_one, hX] using h
-
-private theorem C_p_dvd_one_add_X_pow_sub_one_sub_X_pow [Fact p.Prime] :
-    C (p : O) ∣ ((1 + X : O⟦X⟧) ^ p - 1) - X ^ p := by
-  have hp_eq : p = (p - 1) + 1 := (Nat.sub_add_cancel (Fact.out : p.Prime).pos).symm
-  have hpow : (1 + X : O⟦X⟧) ^ p - 1 - X ^ p =
-      ∑ m ∈ Finset.range (p - 1), X ^ (m + 1) * (p.choose (m + 1) : O⟦X⟧) := by
-    rw [add_comm 1 X, add_pow]
-    conv_lhs => rw [Finset.sum_range_succ, hp_eq, Finset.sum_range_succ']
-    simp only [one_pow, mul_one, pow_zero, Nat.choose_zero_right, Nat.cast_one, Nat.choose_self,
-      ← hp_eq]
-    ring
-  rw [hpow]
-  refine Finset.dvd_sum fun m hm ↦ ?_
-  obtain ⟨q, hq⟩ := (Fact.out : p.Prime).dvd_choose_self (Nat.succ_ne_zero m)
-    (by have := Finset.mem_range.mp hm; omega)
-  exact ⟨X ^ (m + 1) * (q : O⟦X⟧), by rw [hq, Nat.cast_mul, map_natCast]; ring⟩
+  -- `PowerSeries.map` is `MvPowerSeries.map` over `Unit`, the form in which Mathlib states
+  -- `PowerSeries.map_subst`.
+  change PowerSeries.map φ _ =
+    (PowerSeries.map φ f).subst (PowerSeries.map φ ((1 + X : O⟦X⟧) ^ p - 1)) at h
+  rw [h, map_sub, map_pow, map_add, map_one, PowerSeries.map_X]
 
 /-- When `(p : O) = 0`, `frobeniusHom` coincides with `PowerSeries.expand p`. -/
 theorem frobeniusHom_eq_expand [Fact p.Prime] (hp : (p : O) = 0) (f : O⟦X⟧) :
     frobeniusHom p O f = expand p (Fact.out : p.Prime).ne_zero f := by
-  obtain ⟨q, hq⟩ := C_p_dvd_one_add_X_pow_sub_one_sub_X_pow (p := p) (O := O)
+  obtain ⟨q, hq⟩ := C_dvd_one_add_X_pow_sub_one_sub_X_pow (O := O) (Fact.out : p.Prime)
   rw [hp, map_zero, zero_mul, sub_eq_zero] at hq
   rw [frobeniusHom_apply, expand_apply, hq]
 
@@ -153,25 +147,6 @@ private def expandOneAddXInv (p : ℕ) (O : Type*) [CommRing O] : O⟦X⟧ →�
     · rw [smul_comm]
     · rw [smul_zero]
 
-omit [Fact p.Prime] in
-private theorem sum_neg_one_pow_choose_mul_one_add_X_pow (k : Fin p) :
-    (∑ j : Fin p, if (j : ℕ) ≤ k then
-        C ((-1 : O) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O)) * (1 + X) ^ (j : ℕ)
-      else 0) = X ^ (k : ℕ) := by
-  have hfilt : (Finset.range p).filter (· ≤ (k : ℕ)) = Finset.range ((k : ℕ) + 1) := by
-    ext j; simp only [Finset.mem_filter, Finset.mem_range]; omega
-  calc (∑ j : Fin p, if (j : ℕ) ≤ k then
-          C ((-1 : O) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O)) * (1 + X) ^ (j : ℕ) else 0)
-      = ∑ j ∈ Finset.range ((k : ℕ) + 1),
-          (1 + X : O⟦X⟧) ^ j * (-1 : O⟦X⟧) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O⟦X⟧) := by
-        rw [Fin.sum_univ_eq_sum_range (fun j ↦ if j ≤ (k : ℕ) then
-          C ((-1 : O) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O)) * (1 + X) ^ j else 0),
-          ← Finset.sum_filter, hfilt]
-        exact Finset.sum_congr rfl fun j _ ↦ by
-          simp only [map_mul, map_pow, map_neg, map_one, map_natCast]; ring
-    _ = ((1 + X : O⟦X⟧) + (-1 : O⟦X⟧)) ^ (k : ℕ) := (add_pow _ _ _).symm
-    _ = X ^ (k : ℕ) := by simp
-
 private theorem expandOneAddX_rightInverse (f : O⟦X⟧) :
     expandOneAddXLinearMap p O (expandOneAddXInv p O f) = f := by
   have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
@@ -189,40 +164,40 @@ private theorem expandOneAddX_rightInverse (f : O⟦X⟧) :
           split_ifs
           · rw [map_smul, PowerSeries.smul_eq_C_mul]; ring
           · simp
+    _ = ∑ k : Fin p, X ^ (k : ℕ) * expand p hp (cartier O p k f) := by
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        have hfilt : (Finset.range p).filter (· ≤ (k : ℕ)) = Finset.range ((k : ℕ) + 1) := by
+          ext j; simp only [Finset.mem_filter, Finset.mem_range]; omega
+        have hbinom : (∑ j : Fin p, if (j : ℕ) ≤ k then
+            C ((-1 : O) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O)) * (1 + X) ^ (j : ℕ) else 0) =
+            X ^ (k : ℕ) := by
+          rw [Fin.sum_univ_eq_sum_range (fun j ↦ if j ≤ (k : ℕ) then
+            C ((-1 : O) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O)) * (1 + X) ^ j else 0),
+            ← Finset.sum_filter, hfilt]
+          calc ∑ j ∈ Finset.range ((k : ℕ) + 1),
+                C ((-1 : O) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : O)) * (1 + X) ^ j
+              = ∑ j ∈ Finset.range ((k : ℕ) + 1),
+                  (1 + X : O⟦X⟧) ^ j * (-1 : O⟦X⟧) ^ ((k : ℕ) - j) *
+                    ((k : ℕ).choose j : O⟦X⟧) :=
+                Finset.sum_congr rfl fun j _ ↦ by
+                  simp only [map_mul, map_pow, map_neg, map_one, map_natCast]; ring
+            _ = ((1 + X : O⟦X⟧) + (-1 : O⟦X⟧)) ^ (k : ℕ) := (add_pow _ _ _).symm
+            _ = X ^ (k : ℕ) := by simp
+        rw [hbinom, mul_comm]
     _ = f := by
-        simp_rw [sum_neg_one_pow_choose_mul_one_add_X_pow, mul_comm (expand p hp _)]
         rw [Fin.sum_univ_eq_sum_range (fun k ↦ X ^ k * expand p hp (cartier O p k f))]
         exact (sum_X_pow_mul_expand_cartier p hp f).symm
-
-omit [Fact p.Prime] in
-private theorem cartier_one_add_X_pow (k j : Fin p) :
-    cartier O p k ((1 + X : O⟦X⟧) ^ (j : ℕ)) =
-      if (k : ℕ) ≤ j then C (((j : ℕ).choose k : O)) else 0 := by
-  rw [add_comm 1 X, add_pow]
-  simp only [one_pow, mul_one, map_sum]
-  have hterm (m : ℕ) (hm : m ∈ Finset.range ((j : ℕ) + 1)) :
-      cartier O p k (X ^ m * ((j : ℕ).choose m : O⟦X⟧)) =
-        if m = (k : ℕ) then C (((j : ℕ).choose m : O)) else 0 := by
-    have hm_lt : m < p := lt_of_lt_of_le (Finset.mem_range.mp hm) j.isLt
-    have hmon : X ^ m * ((j : ℕ).choose m : O⟦X⟧) = monomial m (((j : ℕ).choose m : O)) := by
-      rw [monomial_eq_C_mul_X_pow, map_natCast, mul_comm]
-    rw [hmon, cartier_monomial p k m k.isLt, Nat.mod_eq_of_lt hm_lt, Nat.div_eq_of_lt hm_lt]
-    split_ifs <;> simp [monomial_zero_eq_C_apply]
-  rw [Finset.sum_congr rfl hterm, Finset.sum_ite_eq']
-  simp only [Finset.mem_range, Nat.lt_succ_iff]
 
 private theorem expandOneAddX_injective : Function.Injective (expandOneAddXLinearMap p O) := by
   have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
   rw [injective_iff_map_eq_zero]
   intro a ha
-  have hsys (k : Fin p) :
-      (∑ j : Fin p, if (k : ℕ) ≤ j then C (((j : ℕ).choose k : O)) * a j else 0) = 0 := by
+  have hsys (k : Fin p) : (∑ j : Fin p, C (((j : ℕ).choose k : O)) * a j) = 0 := by
     have hc := congrArg (cartier O p k) ha
     simp only [expandOneAddXLinearMap, LinearMap.coe_mk, AddHom.coe_mk, map_sum, map_zero] at hc
     conv_rhs => rw [← hc]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [cartier_expand_mul p k hp k.isLt, cartier_one_add_X_pow]
-    split_ifs <;> simp [mul_comm]
+    rw [cartier_expand_mul p k hp k.isLt, PowerSeries.cartier_one_add_X_pow p k j.isLt, mul_comm]
   suffices ∀ d : ℕ, ∀ k : Fin p, p - 1 - (k : ℕ) = d → a k = 0 from
     funext fun k ↦ this (p - 1 - (k : ℕ)) k rfl
   intro d
@@ -233,10 +208,9 @@ private theorem expandOneAddX_injective : Function.Injective (expandOneAddXLinea
     rw [Finset.sum_eq_single k] at hsplit
     · simpa using hsplit
     · intro j _ hjk
-      split_ifs with hle
-      · have hlt : (k : ℕ) < j := lt_of_le_of_ne hle (fun h ↦ hjk (Fin.ext h.symm))
-        rw [ih _ (by omega) j rfl, mul_zero]
-      · rfl
+      rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hjk) with hlt | hgt
+      · rw [Nat.choose_eq_zero_of_lt hlt, Nat.cast_zero, map_zero, zero_mul]
+      · rw [ih _ (by omega) j rfl, mul_zero]
     · simp
 
 private def expandOneAddXEquiv (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O] :
@@ -265,7 +239,8 @@ private theorem coeff_frobeniusHom_sub_expand_mem (J : Ideal O) {g : O⟦X⟧} {
   rw [smul_eq_mul, smul_eq_mul, ← mul_sub, ← map_sub]
   refine Ideal.mul_mem_mul_rev ?_ (hg k hk)
   obtain ⟨r, hr⟩ :=
-    (C_p_dvd_one_add_X_pow_sub_one_sub_X_pow (p := p) (O := O)).trans (sub_dvd_pow_sub_pow _ _ k)
+    (C_dvd_one_add_X_pow_sub_one_sub_X_pow (O := O) (Fact.out : p.Prime)).trans
+      (sub_dvd_pow_sub_pow _ _ k)
   rw [hr, coeff_C_mul]
   exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
 
@@ -321,6 +296,10 @@ private def assembly (p : ℕ) (O : Type*) [CommRing O] : (Fin p → O⟦X⟧) �
   map_smul' _ _ := by
     simp only [Pi.smul_apply, map_smul, smul_mul_assoc, Finset.smul_sum, RingHom.id_apply]
 
+omit [Fact p.Prime] in
+private theorem assembly_apply (a : Fin p → O⟦X⟧) :
+    assembly p O a = ∑ i : Fin p, frobeniusHom p O (a i) * (1 + X) ^ (i : ℕ) := rfl
+
 private theorem assembly_eq_expandOneAddXEquiv_add_neumannStep (a : Fin p → O⟦X⟧) :
     assembly p O a = expandOneAddXEquiv p O (a + neumannStep p O a) := by
   rw [map_add, neumannStep, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
@@ -342,13 +321,15 @@ private theorem id_add_neumannStep_injective [IsAdicComplete (Ideal.span {(p : O
     | succ m ih =>
       rw [pow_succ', mul_apply_eq_comp, ih, map_smul, hTa, pow_succ', neg_one_mul, smul_neg,
         neg_smul]
+  have hzero : (fun x : Fin p × ℕ ↦ coeff x.2 (a x.1)) = 0 :=
+    TauCeti.eq_zero_of_forall_pow_dvd (p : O) fun m ⟨i, n⟩ ↦ by
+      rw [← Ideal.mem_span_singleton, ← Ideal.span_singleton_pow]
+      have hmem : coeff n ((T ^ m) a i) ∈ I ^ m := coeff_neumannStep_pow_mem a m i n
+      rw [hpow m, Pi.smul_apply, map_smul, smul_eq_mul] at hmem
+      have hmul := Ideal.mul_mem_left (I ^ m) ((-1 : O) ^ m) hmem
+      rwa [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul] at hmul
   funext i; ext n
-  refine IsHausdorff.haus (I := I) inferInstance (coeff n (a i)) fun m ↦ ?_
-  rw [SModEq.zero, smul_eq_mul, Ideal.mul_top]
-  have hmem : coeff n ((T ^ m) a i) ∈ I ^ m := coeff_neumannStep_pow_mem a m i n
-  rw [hpow m, Pi.smul_apply, map_smul, smul_eq_mul] at hmem
-  have hmul := Ideal.mul_mem_left (I ^ m) ((-1 : O) ^ m) hmem
-  rwa [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul] at hmul
+  exact congrFun hzero (i, n)
 
 private def neumannPartialSum (b : Fin p → O⟦X⟧) (N : ℕ) : Fin p → O⟦X⟧ :=
   ∑ m ∈ Finset.range N, (-1 : O) ^ m • (neumannStep p O ^ m) b
@@ -356,71 +337,54 @@ private def neumannPartialSum (b : Fin p → O⟦X⟧) (N : ℕ) : Fin p → O�
 private theorem neumannPartialSum_telescoping (b : Fin p → O⟦X⟧) (M : ℕ) :
     neumannPartialSum b M + neumannStep p O (neumannPartialSum b M) =
       b - (-1 : O) ^ M • (neumannStep p O ^ M) b := by
-  induction M with
-  | zero => simp [neumannPartialSum]
-  | succ M ih =>
-    have hsucc : neumannPartialSum b (M + 1) =
-        neumannPartialSum b M + (-1 : O) ^ M • (neumannStep p O ^ M) b :=
-      Finset.sum_range_succ _ M
-    have hstep : neumannStep p O ((neumannStep p O ^ M) b) = (neumannStep p O ^ (M + 1)) b := by
-      rw [pow_succ', mul_apply_eq_comp]
-    rw [hsucc, map_add, map_smul, hstep, add_add_add_comm, ih, pow_succ' (-1 : O), neg_one_mul,
-      neg_smul]
-    abel
-
-private theorem coeff_neumannPartialSum_sub_mem (b : Fin p → O⟦X⟧) {M N : ℕ} (hMN : M ≤ N)
-    (i : Fin p) (n : ℕ) :
-    coeff n (neumannPartialSum b M i) - coeff n (neumannPartialSum b N i) ∈
-      Ideal.span {(p : O)} ^ M := by
-  have hsub : neumannPartialSum b N - neumannPartialSum b M =
-      ∑ m ∈ Finset.Ico M N, (-1 : O) ^ m • (neumannStep p O ^ m) b := by
-    simp only [neumannPartialSum]
-    rw [← Finset.sum_range_add_sum_Ico _ hMN, add_sub_cancel_left]
-  rw [← neg_mem_iff, neg_sub, ← map_sub, ← Pi.sub_apply, hsub, Finset.sum_apply, map_sum]
-  refine Ideal.sum_mem _ fun m hm ↦ ?_
-  rw [Pi.smul_apply, map_smul]
-  exact Ideal.pow_le_pow_right (Finset.mem_Ico.mp hm).1
-    ((Ideal.span {(p : O)} ^ m).smul_mem _ (coeff_neumannStep_pow_mem b m i n))
+  set T : Module.End O (Fin p → O⟦X⟧) := neumannStep p O
+  have hneg (m : ℕ) : (-T) ^ m = (-1 : O) ^ m • T ^ m := by
+    rw [← neg_one_smul O T, smul_pow]
+  have hgeom := congrArg (fun L : Module.End O (Fin p → O⟦X⟧) ↦ L b) (mul_neg_geom_sum (-T) M)
+  simp only [sub_neg_eq_add, mul_apply_eq_comp, LinearMap.add_apply, LinearMap.sub_apply,
+    one_apply_eq_self, LinearMap.sum_apply, hneg, LinearMap.smul_apply] at hgeom
+  exact hgeom
 
 private theorem id_add_neumannStep_surjective [IsAdicComplete (Ideal.span {(p : O)}) O] :
     Function.Surjective ((LinearMap.id : Module.End O (Fin p → O⟦X⟧)) + neumannStep p O) := by
   set I : Ideal O := Ideal.span {(p : O)}
   set T : Module.End O (Fin p → O⟦X⟧) := neumannStep p O
   intro b
-  have hex (i : Fin p) (n : ℕ) :
-      ∃ c : O, ∀ M : ℕ, coeff n (neumannPartialSum b M i) - c ∈ I ^ M := by
-    obtain ⟨c, hc⟩ := IsPrecomplete.prec (I := I) (M := O) inferInstance
-      (f := fun N ↦ coeff n (neumannPartialSum b N i)) (fun {M N} hMN ↦ by
-        rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
-        exact coeff_neumannPartialSum_sub_mem b hMN i n)
-    exact ⟨c, fun M ↦ by simpa [SModEq.sub_mem] using hc M⟩
-  choose c hc using hex
-  let a : Fin p → O⟦X⟧ := fun i ↦ mk (c i)
+  obtain ⟨c, hc⟩ := TauCeti.exists_forall_pow_dvd_sub (p : O)
+    (fun m (x : Fin p × ℕ) ↦ coeff x.2 (neumannPartialSum b m x.1)) fun m ⟨i, n⟩ ↦ by
+      rw [← Ideal.mem_span_singleton, ← Ideal.span_singleton_pow, ← map_sub, ← Pi.sub_apply,
+        neumannPartialSum, neumannPartialSum, Finset.sum_range_succ, add_sub_cancel_left,
+        Pi.smul_apply, map_smul]
+      exact (I ^ m).smul_mem _ (coeff_neumannStep_pow_mem b m i n)
+  let a : Fin p → O⟦X⟧ := fun i ↦ mk fun n ↦ c (i, n)
+  have hzero : (fun x : Fin p × ℕ ↦ coeff x.2 ((a + T a) x.1 - b x.1)) = 0 :=
+    TauCeti.eq_zero_of_forall_pow_dvd (p : O) fun M ⟨i, n⟩ ↦ by
+      rw [← Ideal.mem_span_singleton, ← Ideal.span_singleton_pow]
+      have htel : neumannPartialSum b M + T (neumannPartialSum b M) =
+          b - (-1 : O) ^ M • (T ^ M) b := neumannPartialSum_telescoping b M
+      have hdecomp : (a + T a) - b =
+          (a - neumannPartialSum b M) + T (a - neumannPartialSum b M) -
+            (-1 : O) ^ M • (T ^ M) b := by
+        calc (a + T a) - b
+            = (a + T a) - (neumannPartialSum b M + T (neumannPartialSum b M) +
+                (-1 : O) ^ M • (T ^ M) b) := by rw [htel, sub_add_cancel]
+          _ = (a - neumannPartialSum b M) + T (a - neumannPartialSum b M) -
+                (-1 : O) ^ M • (T ^ M) b := by rw [map_sub]; abel
+      rw [← Pi.sub_apply, hdecomp]
+      simp only [Pi.sub_apply, Pi.add_apply, map_sub, map_add]
+      have haS (j : Fin p) (r : ℕ) : coeff r ((a - neumannPartialSum b M) j) ∈ I ^ M := by
+        rw [Pi.sub_apply, map_sub, coeff_mk, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
+        exact hc M (j, r)
+      have hTaS : coeff n (T a i) - coeff n (T (neumannPartialSum b M) i) ∈ I ^ M := by
+        rw [← map_sub, ← Pi.sub_apply, ← map_sub]
+        exact Ideal.mul_le_right (coeff_neumannStep_mem (I ^ M) (fun j r _ ↦ haS j r) i)
+      have hTM : coeff n (((-1 : O) ^ M • (T ^ M) b) i) ∈ I ^ M := by
+        rw [Pi.smul_apply, map_smul]
+        exact (I ^ M).smul_mem _ (coeff_neumannStep_pow_mem b M i n)
+      exact sub_mem (add_mem (haS i n) hTaS) hTM
   refine ⟨a, funext fun i ↦ PowerSeries.ext fun n ↦ ?_⟩
   rw [← sub_eq_zero, ← map_sub]
-  refine IsHausdorff.haus (I := I) inferInstance (coeff n ((a + T a) i - b i)) fun M ↦ ?_
-  rw [SModEq.zero, smul_eq_mul, Ideal.mul_top]
-  have htel : neumannPartialSum b M + T (neumannPartialSum b M) =
-      b - (-1 : O) ^ M • (T ^ M) b := neumannPartialSum_telescoping b M
-  have hdecomp : (a + T a) - b =
-      (a - neumannPartialSum b M) + T (a - neumannPartialSum b M) -
-        (-1 : O) ^ M • (T ^ M) b := by
-    calc (a + T a) - b
-        = (a + T a) - (neumannPartialSum b M + T (neumannPartialSum b M) +
-            (-1 : O) ^ M • (T ^ M) b) := by rw [htel, sub_add_cancel]
-      _ = (a - neumannPartialSum b M) + T (a - neumannPartialSum b M) -
-            (-1 : O) ^ M • (T ^ M) b := by rw [map_sub]; abel
-  rw [← Pi.sub_apply, hdecomp]
-  simp only [Pi.sub_apply, Pi.add_apply, map_sub, map_add]
-  have haS (j : Fin p) (r : ℕ) : coeff r ((a - neumannPartialSum b M) j) ∈ I ^ M := by
-    rw [Pi.sub_apply, map_sub, coeff_mk, ← neg_mem_iff, neg_sub]; exact hc j r M
-  have hTaS : coeff n (T a i) - coeff n (T (neumannPartialSum b M) i) ∈ I ^ M := by
-    rw [← map_sub, ← Pi.sub_apply, ← map_sub]
-    exact Ideal.mul_le_right (coeff_neumannStep_mem (I ^ M) (fun j r _ ↦ haS j r) i)
-  have hTM : coeff n (((-1 : O) ^ M • (T ^ M) b) i) ∈ I ^ M := by
-    rw [Pi.smul_apply, map_smul]
-    exact (I ^ M).smul_mem _ (coeff_neumannStep_pow_mem b M i n)
-  exact sub_mem (add_mem (haS i n) hTaS) hTM
+  exact congrFun hzero (i, n)
 
 private theorem assembly_bijective [IsAdicComplete (Ideal.span {(p : O)}) O] :
     Function.Bijective (assembly p O) := by
@@ -438,7 +402,8 @@ section Coordinates
 variable (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
 
 /-- The `O`-linear equivalence sending a power series `f ∈ O⟦X⟧` to its unique tuple of Coleman
-coordinates `c : Fin p → O⟦X⟧` satisfying `∑ i < p, Φ(c i) * (1 + X) ^ i = f`. -/
+coordinates `c : Fin p → O⟦X⟧` satisfying `∑ i < p, Φ(c i) * (1 + X) ^ i = f` (Coleman,
+Theorem 11; Sharifi, Proposition 5.4.3; Rodrigues Jacinto–Williams, Lemma 10.8). -/
 def coordEquiv : O⟦X⟧ ≃ₗ[O] (Fin p → O⟦X⟧) :=
   (LinearEquiv.ofBijective (assembly p O) assembly_bijective).symm
 
@@ -451,16 +416,19 @@ variable {p O}
 
 /-- Evaluating `coordEquiv p O f` at `i` gives `coord p O i f`. -/
 @[simp]
-theorem coordEquiv_apply (f : O⟦X⟧) (i : Fin p) : coordEquiv p O f i = coord p O i f := by rfl
+theorem coordEquiv_apply (f : O⟦X⟧) (i : Fin p) : coordEquiv p O f i = coord p O i f := by
+  rw [coord, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearMap.proj_apply]
 
 /-- The inverse of `coordEquiv p O` assembles the Coleman expansion
 `∑ i < p, Φ(a i) * (1 + X) ^ i`. -/
 @[simp]
 theorem coordEquiv_symm_apply (a : Fin p → O⟦X⟧) :
-    (coordEquiv p O).symm a = ∑ i : Fin p, frobeniusHom p O (a i) * (1 + X) ^ (i : ℕ) := by rfl
+    (coordEquiv p O).symm a = ∑ i : Fin p, frobeniusHom p O (a i) * (1 + X) ^ (i : ℕ) := by
+  rw [coordEquiv, LinearEquiv.symm_symm, LinearEquiv.ofBijective_apply, assembly_apply]
 
-/-- Every power series `f ∈ O⟦X⟧` expands in the Coleman basis as
-`∑ i < p, Φ(coord p O i f) * (1 + X) ^ i`. -/
+/-- **Coleman's basis expansion.** Every power series `f ∈ O⟦X⟧` expands uniquely as
+`∑ i < p, Φ(coord p O i f) * (1 + X) ^ i` (Coleman, Theorem 11; Sharifi, Proposition 5.4.3;
+Rodrigues Jacinto–Williams, Lemma 10.8). -/
 theorem sum_frobeniusHom_coord (f : O⟦X⟧) :
     ∑ i : Fin p, frobeniusHom p O (coord p O i f) * (1 + X) ^ (i : ℕ) = f :=
   (LinearEquiv.ofBijective (assembly p O) assembly_bijective).apply_symm_apply f
@@ -480,6 +448,7 @@ theorem coord_frobeniusHom_mul (a f : O⟦X⟧) (i : Fin p) :
 
 /-- The Coleman coordinates of `(1 + X) ^ n` pick out the residue `n % p` with coefficient
 `(1 + X) ^ (n / p)`. -/
+@[simp]
 theorem coord_one_add_X_pow (n : ℕ) (j : Fin p) :
     coord p O j ((1 + X : O⟦X⟧) ^ n) =
       if (j : ℕ) = n % p then (1 + X) ^ (n / p) else 0 := by
@@ -493,6 +462,13 @@ theorem coord_one_add_X_pow (n : ℕ) (j : Fin p) :
     simp [hk]
   · simp
 
+/-- The Coleman coordinates of `1 + X` are `1` at `i = 1` and `0` elsewhere. -/
+@[simp]
+theorem coord_one_add_X (i : Fin p) :
+    coord p O i (1 + X) = if (i : ℕ) = 1 then 1 else 0 := by
+  simpa [Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt,
+    Nat.div_eq_of_lt (Fact.out : p.Prime).one_lt] using coord_one_add_X_pow (p := p) (O := O) 1 i
+
 /-- The Coleman coordinates of `1` are `1` at `i = 0` and `0` elsewhere. -/
 @[simp]
 theorem coord_one (i : Fin p) : coord p O i 1 = if (i : ℕ) = 0 then 1 else 0 := by
@@ -503,6 +479,11 @@ theorem coord_one (i : Fin p) : coord p O i 1 = if (i : ℕ) = 0 then 1 else 0 :
 theorem coord_frobeniusHom (a : O⟦X⟧) (i : Fin p) :
     coord p O i (frobeniusHom p O a) = if (i : ℕ) = 0 then a else 0 := by
   simpa using coord_frobeniusHom_mul (p := p) a 1 i
+
+/-- Over a `(p)`-adically complete ring `O`, Frobenius substitution `frobeniusHom p O` is
+injective. -/
+theorem frobeniusHom_injective : Function.Injective (frobeniusHom p O) := fun f g h ↦ by
+  simpa using congrArg (coord p O ⟨0, (Fact.out : p.Prime).pos⟩) h
 
 /-- Multiplying by a constant `C c` scales every Coleman coordinate by `C c`. -/
 @[simp]
@@ -517,6 +498,16 @@ theorem coord_C (c : O) (i : Fin p) : coord p O i (C c) = if (i : ℕ) = 0 then 
   conv_lhs => rw [← frobeniusHom_C (p := p) c]
   exact coord_frobeniusHom (C c) i
 
+/-- Frobenius substitution preserves and reflects membership in `(p) ^ k`. -/
+theorem frobeniusHom_mem_span_p_pow_iff (k : ℕ) {f : O⟦X⟧} :
+    frobeniusHom p O f ∈ Ideal.span {(p : O⟦X⟧)} ^ k ↔ f ∈ Ideal.span {(p : O⟦X⟧)} ^ k := by
+  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton, Ideal.mem_span_singleton]
+  refine ⟨fun ⟨g, hg⟩ ↦ ⟨coord p O ⟨0, (Fact.out : p.Prime).pos⟩ g, ?_⟩,
+    fun ⟨g, hg⟩ ↦ ⟨frobeniusHom p O g, by rw [hg, map_mul, map_pow, map_natCast]⟩⟩
+  have h := congrArg (coord p O ⟨0, (Fact.out : p.Prime).pos⟩) hg
+  simp only [coord_frobeniusHom, ↓reduceIte] at h
+  rwa [← map_natCast C, ← map_pow, coord_C_mul, map_pow, map_natCast] at h
+
 /-- Coefficientwise change of base ring commutes with Coleman coordinates. -/
 theorem map_coord {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O')}) O']
     (φ : O →+* O') (f : O⟦X⟧) (i : Fin p) :
@@ -529,7 +520,7 @@ theorem map_coord {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O
 /-- **Explicit `(p)`-adic modulus of continuity for Coleman coordinates.** If the first
 `p ^ k * (n + 1)` coefficients of `f` lie in `(p) ^ k`, then the `n`-th coefficient of every
 Coleman coordinate of `f` lies in `(p) ^ k`. -/
-theorem coeff_coord_mem_pow_of_coeff_mem_pow :
+theorem coeff_coord_mem_span_pow_of_coeff_mem_span_pow :
     ∀ k : ℕ, ∀ {f : O⟦X⟧} {n : ℕ},
       (∀ s < p ^ k * (n + 1), coeff s f ∈ Ideal.span {(p : O)} ^ k) →
       ∀ i : Fin p, coeff n (coord p O i f) ∈ Ideal.span {(p : O)} ^ k
@@ -552,7 +543,7 @@ theorem coeff_coord_mem_pow_of_coeff_mem_pow :
       exact hf s (lt_of_lt_of_le hs (by rw [pow_succ']; nlinarith))
     · rw [pow_succ']
       refine coeff_neumannStep_mem (Ideal.span {(p : O)} ^ k) (fun j m hm ↦ ?_) i
-      refine coeff_coord_mem_pow_of_coeff_mem_pow k (fun s hs ↦ ?_) j
+      refine coeff_coord_mem_span_pow_of_coeff_mem_span_pow k (fun s hs ↦ ?_) j
       refine Ideal.pow_le_pow_right (Nat.le_succ k) (hf s (lt_of_lt_of_le hs ?_))
       rw [pow_succ, mul_assoc]
       exact Nat.mul_le_mul_left _ hm

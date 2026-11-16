@@ -35,6 +35,8 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 
 ## Main results
 
+* `PowerSeries.C_dvd_one_add_X_pow_sub_one_sub_X_pow`: for a prime `p`, `C (p : O)` divides
+  `(1 + X) ^ p - 1 - X ^ p` in `O⟦X⟧`.
 * `PowerSeries.one_add_X_pow_sub_one_eq_X_pow`: in characteristic `p`, `ω_n = X ^ pⁿ`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot`: for a prime `ϖ` of a
   local domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
@@ -54,6 +56,13 @@ open IsLocalRing
 namespace PowerSeries
 
 variable {p : ℕ} {O : Type*} [CommRing O]
+
+/-- For a prime `p`, the constant series `C (p : O)` divides `(1 + X) ^ p - 1 - X ^ p` in
+`O⟦X⟧`. -/
+theorem C_dvd_one_add_X_pow_sub_one_sub_X_pow (hp : p.Prime) :
+    C (p : O) ∣ (1 + X : O⟦X⟧) ^ p - 1 - X ^ p := by
+  obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp (1 : O⟦X⟧) X
+  exact ⟨X * r, by rw [hr, one_pow, map_natCast]; ring⟩
 
 variable (p O) in
 /-- **`ω_n = X ^ pⁿ` in characteristic `p`.** Over a ring of characteristic `p` the series

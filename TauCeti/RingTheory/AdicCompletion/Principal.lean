@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import TauCeti.RingTheory.AdicCompletion.Pow
 
 /-!
@@ -14,8 +15,8 @@ An `I`-adically complete module is `(r)`-adically complete whenever `r ∈ I`. N
 finiteness or torsion hypothesis is needed. In particular, completeness for a parameter `π`
 implies completeness for any multiple of `π`, even when their powers are not cofinal.
 This allows the passage from pseudouniformiser-adic to `p`-adic completeness in integral rings.
-Every ring is complete for the zero ideal `(0)`, and in a nonzero `I`-adically complete ring no
-element of `I` is a unit.
+Every module is complete for the zero ideal `(0)` (and hence for `(n)` in characteristic `n`),
+and in a nonzero `I`-adically complete ring no element of `I` is a unit.
 
 The key point is to sum every tail of a series `∑ rⁿ • cₙ` in the `I`-adic filtration.
 Factoring out `rᴺ` from the tail proves divisibility of the remainder; this does not assume
@@ -94,6 +95,16 @@ theorem IsAdicComplete.span_singleton_of_dvd {π r : R}
 instance IsAdicComplete.span_singleton_zero : IsAdicComplete (Ideal.span {(0 : R)}) M := by
   rw [Ideal.span_singleton_eq_bot.mpr rfl]
   infer_instance
+
+/-- Every module is complete for the principal ideal `(r)` whenever `r = 0`. -/
+theorem IsAdicComplete.span_singleton_of_eq_zero {r : R} (hr : r = 0) :
+    IsAdicComplete (Ideal.span {r}) M :=
+  hr ▸ inferInstance
+
+/-- In characteristic `n`, every module is `(n)`-adically complete. -/
+instance IsAdicComplete.span_singleton_natCast_of_charP (n : ℕ) [CharP R n] :
+    IsAdicComplete (Ideal.span {(n : R)}) M :=
+  span_singleton_of_eq_zero (CharP.cast_eq_zero R n)
 
 /-- In a nonzero `I`-adically complete ring, no element of `I` is a unit, because `I` lies in the
 Jacobson radical. -/
