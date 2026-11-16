@@ -461,8 +461,10 @@ theorem exists_isPushout_union_image (hF : IsClosed F) (hFU : F ⊆ U) (hAD : A 
     ⟨fun y ↦ ⟨y, hFU y.2, Or.inl y.2⟩, continuous_subtype_val.subtype_mk _⟩
   refine ⟨α, χ, j, fun _ ↦ rfl, fun _ ↦ rfl, (IsPushout.of_isClosedEmbedding_of_union ?_ ?_ ?_ ?_
     fun y x hyx ↦ ?_).flip⟩
-  · ext x
-    rfl
+  · -- Both composites send `x ∈ A` to the point `Θ x`.
+    rw [← TopCat.ofHom_comp, ← TopCat.ofHom_comp]
+    refine congrArg TopCat.ofHom (ContinuousMap.ext fun x ↦ Subtype.ext ?_)
+    simp [α, χ, j]
   · -- `F` is closed.
     refine ⟨(IsEmbedding.subtypeVal.of_comp_iff).1 IsEmbedding.subtypeVal, ?_⟩
     convert hF.preimage (continuous_subtype_val (p := (· ∈ U ∩ (F ∪ Θ '' D)))) using 1
