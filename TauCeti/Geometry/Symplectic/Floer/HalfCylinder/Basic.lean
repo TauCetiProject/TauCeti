@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Topology.Order.MonotoneConvergence
-import TauCeti.Dynamics.Flow.Periodic.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip

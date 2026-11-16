@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
-import TauCeti.Dynamics.Flow.Periodic.Basic
 
 /-!
 # Convergence of the ends of a Floer pair of pants to nondegenerate orbits
