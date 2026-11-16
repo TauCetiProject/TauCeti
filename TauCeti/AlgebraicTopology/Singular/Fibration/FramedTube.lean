@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Disk
-public import TauCeti.AlgebraicTopology.Singular.Excision
+public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.Geometry.Manifold.PontryaginThom.Basic
 
 /-!
@@ -42,14 +41,12 @@ set `p⁻¹(U)` identifies `Hₖ(E, E ∖ E|_Y)` with `Hₖ(p⁻¹(U), p⁻¹(U)
 `U`, followed by the inverse of `τ` and the projection `Y × V → V`, is a Serre fibration over `V`,
 the **normal coordinate** of `p` (`TauCeti.IsFramedTube.normalProj`), as a composite of a
 restriction of `p`, a homeomorphism and a product projection. Its fibre over `0` is `E|_Y`
-(`TauCeti.IsFramedTube.normalProjFiberHomeomorph`), and the part of `p⁻¹(U)` over `V ∖ {0}` is
-`p⁻¹(U) ∖ E|_Y` (`TauCeti.IsFramedTube.normalProjComplPreimagePairIso`), because `τ` is injective.
-The homology of a Serre fibration over the convex neighbourhood `V` of `0` modulo the part over
-`V ∖ {0}` is the homology of the fibre over `0`, shifted by `r`
-(`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`), and vanishes below `r`
-(`TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero`). These are the steps of the computation
-at a point in `TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology`, with the tube in place
-of a chart ball.
+(`TauCeti.IsFramedTube.coe_normalProj_eq_zero_iff`), because `τ` is injective. The homology of
+`E` modulo `E ∖ E|_Y` is then the homology of the fibre over `0`, shifted by `r`, and vanishes
+below `r`, by the computation along a closed set with a normal coordinate
+(`TauCeti.TopCat.singularHomologyComplPreimageIsoOfProj` and
+`TauCeti.TopCat.isZero_singularHomology_complPreimage_of_proj`), which also gives the local
+homology at a point from a chart ball.
 
 ## Main definitions and results
 
@@ -135,87 +132,7 @@ theorem mem_serreFibrations_normalProj (h : IsFramedTube f τ) {p : E ⟶ B}
       ((mem_serreFibrations_iff.1 hp n).restrictPreimage (range τ)) hc) (e.continuous.comp hc))
     (continuous_snd.comp (e.continuous.comp hc))
 
-/-- Over the tube, the complement of the part of `E` over the core is the part over the punctured
-normal coordinate `V ∖ {0}`. -/
-def normalProjComplPreimagePairIso (h : IsFramedTube f τ) (p : E ⟶ B) :
-    TopPair.interPair (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ ≅
-      TopPair.ofSubset (h.normalProj p ⁻¹' {x | (x : V) ≠ 0}) :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun z ↦
-    (h.coe_normalProj_eq_zero_iff z).not.symm
-
-/-- The forward map of `TauCeti.IsFramedTube.normalProjComplPreimagePairIso` is induced by the
-identity of `p⁻¹(τ(Y × V))`. -/
-lemma normalProjComplPreimagePairIso_hom (h : IsFramedTube f τ) (p : E ⟶ B) :
-    (h.normalProjComplPreimagePairIso p).hom =
-      TopPair.ofSubsetMap (_root_.TopCat.ofHom (Homeomorph.refl (p ⁻¹' range τ)))
-        fun z hz ↦ (h.coe_normalProj_eq_zero_iff z).not.2 hz :=
-  TopPair.ofSubsetIso_hom _ _
-
-/-- The inverse map of `TauCeti.IsFramedTube.normalProjComplPreimagePairIso` is induced by the
-identity of `p⁻¹(τ(Y × V))`. -/
-lemma normalProjComplPreimagePairIso_inv (h : IsFramedTube f τ) (p : E ⟶ B) :
-    (h.normalProjComplPreimagePairIso p).inv =
-      TopPair.ofSubsetMap (_root_.TopCat.ofHom (Homeomorph.refl (p ⁻¹' range τ)))
-        fun z hz ↦ (h.coe_normalProj_eq_zero_iff z).not.1 hz :=
-  TopPair.ofSubsetIso_inv _ _
-
-/-- The fibre over `0` of the normal coordinate is the part `p⁻¹(f(Y))` of `E` over the core. -/
-def normalProjFiberHomeomorph (h : IsFramedTube f τ) (p : E ⟶ B) :
-    (h.normalProj p ⁻¹' {x | (x : V) = 0}) ≃ₜ (p ⁻¹' range f) where
-  toFun z := ⟨z.1.1, (h.coe_normalProj_eq_zero_iff z.1).1 z.2⟩
-  invFun y := ⟨⟨y.1, h.range_subset_range y.2⟩, (h.coe_normalProj_eq_zero_iff _).2 y.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-
-/-- `TauCeti.IsFramedTube.normalProjFiberHomeomorph` does not move the underlying point of `E`. -/
-lemma coe_normalProjFiberHomeomorph_apply (h : IsFramedTube f τ) (p : E ⟶ B)
-    (z : h.normalProj p ⁻¹' {x | (x : V) = 0}) :
-    (h.normalProjFiberHomeomorph p z : E) = z.1.1 :=
-  (rfl)
-
-/-- The inverse of `TauCeti.IsFramedTube.normalProjFiberHomeomorph` does not move the underlying
-point of `E`. -/
-lemma coe_normalProjFiberHomeomorph_symm_apply (h : IsFramedTube f τ) (p : E ⟶ B)
-    (y : p ⁻¹' range f) : ((h.normalProjFiberHomeomorph p).symm y).1.1 = y.1 :=
-  (rfl)
-
-variable {p : E ⟶ B} (R : Type u) [Ring R]
-
-/-- Excision onto the part of `E` over the tube is an isomorphism on homology. -/
-private lemma isIso_singularHomologyMap_excisionMap_tube (h : IsFramedTube f τ)
-    (hf : IsClosed (range f)) (m : ℕ) :
-    IsIso (TopPair.singularHomologyMap
-      (TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ) (ModuleCat.of R R) m) :=
-  TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (X := E) (h.isOpenEmbedding.isOpen_range.preimage p.hom.continuous)
-    (hf.preimage p.hom.continuous) (preimage_mono h.range_subset_range) m
-
-/-- Excision onto the part of `E` over the tube, followed by
-`TauCeti.IsFramedTube.normalProjComplPreimagePairIso`. -/
-private def excisionIso (h : IsFramedTube f τ) (hf : IsClosed (range f)) (m : ℕ) :
-    (TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomology (ModuleCat.of R R) m ≅
-      (TopPair.ofSubset (h.normalProj p ⁻¹' {x | (x : V) ≠ 0})).singularHomology
-        (ModuleCat.of R R) m :=
-  haveI := isIso_singularHomologyMap_excisionMap_tube (p := p) R h hf m
-  (asIso (TopPair.singularHomologyMap
-      (TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ) _ m)).symm ≪≫
-    TopPair.singularHomologyMapIso _ (h.normalProjComplPreimagePairIso p) m
-
-/-- The defining square of `excisionIso`: after the excision inclusion it is the map induced by
-`TauCeti.IsFramedTube.normalProjComplPreimagePairIso`. -/
-@[reassoc]
-private lemma singularHomologyMap_excisionMap_comp_excisionIso_hom (h : IsFramedTube f τ)
-    (hf : IsClosed (range f)) (m : ℕ) :
-    TopPair.singularHomologyMap
-        (TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ) (ModuleCat.of R R) m ≫
-        (excisionIso R h hf m).hom =
-      TopPair.singularHomologyMap (h.normalProjComplPreimagePairIso p).hom
-        (ModuleCat.of R R) m := by
-  simp [excisionIso]
-
-variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {p : E ⟶ B} (R : Type u) [Ring R] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- **The homology of a Serre fibration modulo the complement of the part over a framed
 submanifold vanishes below the codimension.** Let `τ : Y × V → B` be a framed tube around
@@ -224,17 +141,18 @@ submanifold vanishes below the codimension.** Let `τ : Y × V → B` be a frame
 theorem isZero_singularHomology_complPreimage (h : IsFramedTube f τ) (hf : IsClosed (range f))
     (hp : serreFibrations p) {m : ℕ} (hm : m < finrank ℝ V) :
     IsZero ((TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomology (ModuleCat.of R R) m) :=
-  (isZero_singularHomology_preimage_ne_zero R (h.mem_serreFibrations_normalProj hp) convex_univ
-    Filter.univ_mem hm).of_iso (excisionIso R h hf m)
+  isZero_singularHomology_complPreimage_of_proj R h.isOpenEmbedding.isOpen_range hf
+    h.range_subset_range h.coe_normalProj_eq_zero_iff (h.mem_serreFibrations_normalProj hp)
+    convex_univ Filter.univ_mem hm
 
 /-- **The local homology of a Serre fibration along the part over a framed submanifold is the
 shifted homology of that part.** Let `τ : Y × V → B` be a framed tube around `f : Y → B` with
 closed image, with `V` a real normed space of finite dimension `r`, and let `p : E ⟶ B` be a Serre
 fibration. Then `Hₘ(E, E ∖ p⁻¹(f(Y)); R) ≅ Hₙ(p⁻¹(f(Y)); R)` for `m = n + r`.
 
-The isomorphism is excision onto the part of `E` over the tube, followed by
-`TauCeti.TopCat.singularHomologyPreimageNeZeroIso` for the normal coordinate
-`TauCeti.IsFramedTube.normalProj` of `p`
+The isomorphism is `TauCeti.TopCat.singularHomologyComplPreimageIsoOfProj` for the normal
+coordinate `TauCeti.IsFramedTube.normalProj` of `p`, that is, excision onto the part of `E` over
+the tube, followed by `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` for the normal coordinate
 (`TauCeti.IsFramedTube.singularHomologyMap_excisionMap_comp_singularHomologyComplPreimageIso_hom`).
 -/
 def singularHomologyComplPreimageIso (h : IsFramedTube f τ) (hf : IsClosed (range f))
@@ -242,11 +160,9 @@ def singularHomologyComplPreimageIso (h : IsFramedTube f τ) (hf : IsClosed (ran
     (TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomology (ModuleCat.of R R) m ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' range f)) :=
-  excisionIso R h hf m ≪≫
-    singularHomologyPreimageNeZeroIso R (h.mem_serreFibrations_normalProj hp) convex_univ
-      Filter.univ_mem n m hnm ≪≫
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (h.normalProjFiberHomeomorph p))
+  singularHomologyComplPreimageIsoOfProj R h.isOpenEmbedding.isOpen_range hf h.range_subset_range
+    h.coe_normalProj_eq_zero_iff (h.mem_serreFibrations_normalProj hp) convex_univ
+    Filter.univ_mem n m hnm
 
 /-- The isomorphism `TauCeti.IsFramedTube.singularHomologyComplPreimageIso` commutes with excision
 onto the part of `E` over the tube: after excision it is
@@ -259,14 +175,15 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplPreimageIso_hom
     TopPair.singularHomologyMap
         (TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ) (ModuleCat.of R R) m ≫
         (h.singularHomologyComplPreimageIso R hf hp n m hnm).hom =
-      TopPair.singularHomologyMap (h.normalProjComplPreimagePairIso p).hom
+      TopPair.singularHomologyMap (complPreimagePairIso h.coe_normalProj_eq_zero_iff).hom
           (ModuleCat.of R R) m ≫
         (singularHomologyPreimageNeZeroIso R (h.mem_serreFibrations_normalProj hp) convex_univ
           Filter.univ_mem n m hnm).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map
-          (_root_.TopCat.isoOfHomeo (h.normalProjFiberHomeomorph p)).hom := by
-  simp [singularHomologyComplPreimageIso, excisionIso]
+          (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo
+            (preimageZeroHomeomorph h.coe_normalProj_eq_zero_iff h.range_subset_range)).hom :=
+  singularHomologyMap_excisionMap_comp_singularHomologyComplPreimageIsoOfProj_hom R _ _ _ _ _ _ _
+    n m hnm
 
 /-- The inverse of `TauCeti.IsFramedTube.singularHomologyComplPreimageIso` is the inverse of the
 identification of the fibre over `0` of the normal coordinate with the part of `E` over the core,
@@ -276,16 +193,16 @@ lemma singularHomologyComplPreimageIso_inv (h : IsFramedTube f τ) (hf : IsClose
     (hp : serreFibrations p) (n m : ℕ) (hnm : n + finrank ℝ V = m) :
     (h.singularHomologyComplPreimageIso R hf hp n m hnm).inv =
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map
-          (_root_.TopCat.isoOfHomeo (h.normalProjFiberHomeomorph p)).inv ≫
+          (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo
+            (preimageZeroHomeomorph h.coe_normalProj_eq_zero_iff h.range_subset_range)).inv ≫
         (singularHomologyPreimageNeZeroIso R (h.mem_serreFibrations_normalProj hp) convex_univ
           Filter.univ_mem n m hnm).inv ≫
-        TopPair.singularHomologyMap (h.normalProjComplPreimagePairIso p).inv
+        TopPair.singularHomologyMap (complPreimagePairIso h.coe_normalProj_eq_zero_iff).inv
           (ModuleCat.of R R) m ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ)
-          (ModuleCat.of R R) m := by
-  simp [singularHomologyComplPreimageIso, excisionIso]
+          (ModuleCat.of R R) m :=
+  singularHomologyComplPreimageIsoOfProj_inv R _ _ _ _ _ _ _ n m hnm
 
 /-! ### Naturality in maps of fibrations -/
 
@@ -306,65 +223,6 @@ lemma preimageMap_comp_normalProj (h : IsFramedTube f τ) (hg : g ≫ p' = p) :
   -- Both sides are the `V`-coordinate of `τ⁻¹` at the same point of the tube, by `hz`.
   congr 3
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The isomorphism `excisionIso` is natural in maps of fibrations over `B`: after excision, the
-map induced by `g` is the map induced by its restriction over the tube. -/
-@[reassoc]
-private lemma excisionIso_hom_naturality (h : IsFramedTube f τ) (hf : IsClosed (range f))
-    (hg : g ≫ p' = p) (m : ℕ) :
-    TopPair.singularHomologyMap
-        (TopPair.ofSubsetMap g (g.mapsTo_preimage_of_comp_eq hg (range f)ᶜ))
-        (ModuleCat.of R R) m ≫ (excisionIso (p := p') R h hf m).hom =
-      (excisionIso (p := p) R h hf m).hom ≫
-        TopPair.singularHomologyMap (TopPair.ofSubsetMap (g.preimageMap hg (range τ))
-          ((g.preimageMap hg (range τ)).mapsTo_preimage_of_comp_eq
-            (h.preimageMap_comp_normalProj hg) _)) (ModuleCat.of R R) m := by
-  -- The map of excision data induced by `g`.
-  let Q := TopPair.interPairMap g (g.mapsTo_preimage_of_comp_eq hg (range τ))
-    (g.mapsTo_preimage_of_comp_eq hg (range f)ᶜ)
-  have hQ : TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ ≫
-        TopPair.ofSubsetMap g (g.mapsTo_preimage_of_comp_eq hg (range f)ᶜ) =
-      Q ≫ TopPair.excisionMap (X := E') (p' ⁻¹' range τ) (p' ⁻¹' range f)ᶜ :=
-    (TopPair.interPairMap_comp_excisionMap g _ _).symm
-  have hQ' : (h.normalProjComplPreimagePairIso p).hom ≫
-        TopPair.ofSubsetMap (g.preimageMap hg (range τ))
-          ((g.preimageMap hg (range τ)).mapsTo_preimage_of_comp_eq
-            (h.preimageMap_comp_normalProj hg) _) =
-      Q ≫ (h.normalProjComplPreimagePairIso p').hom :=
-    TopPair.hom_ext_of_fst _ (by
-      ext x
-      apply Subtype.ext
-      rw [normalProjComplPreimagePairIso_hom, normalProjComplPreimagePairIso_hom,
-        TopPair.Hom.fst_comp, TopPair.Hom.fst_comp]
-      -- The ambient spaces of the pairs are `TopCat.of` of subtypes, which `rw` does not unfold.
-      erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply,
-        TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-      exact (TopCat.Hom.coe_preimageMap_apply g hg _ x).trans
-        (TopPair.interPairMap_fst_apply _ _ _ x).symm)
-  have := isIso_singularHomologyMap_excisionMap_tube (p := p) R h hf m
-  rw [← cancel_epi (TopPair.singularHomologyMap
-      (TopPair.excisionMap (X := E) (p ⁻¹' range τ) (p ⁻¹' range f)ᶜ) (ModuleCat.of R R) m),
-    singularHomologyMap_excisionMap_comp_excisionIso_hom_assoc,
-    ← TopPair.singularHomologyMap_comp_assoc, hQ, TopPair.singularHomologyMap_comp_assoc,
-    singularHomologyMap_excisionMap_comp_excisionIso_hom, ← TopPair.singularHomologyMap_comp,
-    ← TopPair.singularHomologyMap_comp, hQ']
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The identifications `TauCeti.IsFramedTube.normalProjFiberHomeomorph` of the fibres over `0`
-with the parts over the core carry the restriction of `g` over the tube to the restriction of `g`
-over the core. -/
-private lemma normalProjFiberHomeomorph_naturality (h : IsFramedTube f τ) (hg : g ≫ p' = p) :
-    (_root_.TopCat.isoOfHomeo (h.normalProjFiberHomeomorph p)).hom ≫ g.preimageMap hg (range f) =
-      (g.preimageMap hg (range τ)).preimageMap (h.preimageMap_comp_normalProj hg)
-          {x | (x : V) = 0} ≫
-        (_root_.TopCat.isoOfHomeo (h.normalProjFiberHomeomorph p')).hom := by
-  ext x
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.Hom.coe_preimageMap_apply]
-  -- The homeomorphism is applied through `TopCat.isoOfHomeo`, which `rw` does not see through.
-  erw [coe_normalProjFiberHomeomorph_apply]
-  exact ((congrArg Subtype.val (TopCat.Hom.coe_preimageMap_apply _ _ _ x)).trans
-    (TopCat.Hom.coe_preimageMap_apply _ _ _ x.1)).symm
-
 /-- **The local homology of a Serre fibration along the part over a framed submanifold is natural
 in maps of fibrations.** Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations, `τ` a framed tube
 around `f : Y → B` with closed image and `g : E ⟶ E'` a map over `B`. Under the isomorphisms
@@ -380,15 +238,10 @@ theorem singularHomologyComplPreimageIso_hom_naturality (h : IsFramedTube f τ)
         (ModuleCat.of R R) m ≫ (h.singularHomologyComplPreimageIso R hf hp' n m hnm).hom =
       (h.singularHomologyComplPreimageIso R hf hp n m hnm).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map (g.preimageMap hg (range f)) := by
-  simp only [singularHomologyComplPreimageIso, Iso.trans_hom, Functor.mapIso_hom, Category.assoc]
-  rw [excisionIso_hom_naturality_assoc R h hf hg m,
-    singularHomologyPreimageNeZeroIso_hom_naturality_assoc R
-      (h.mem_serreFibrations_normalProj hp) (h.mem_serreFibrations_normalProj hp') convex_univ
-      Filter.univ_mem (h.preimageMap_comp_normalProj hg)
-      ((g.preimageMap hg (range τ)).preimageMap (h.preimageMap_comp_normalProj hg)
-        {x | (x : V) = 0}) (fun x ↦ TopCat.Hom.coe_preimageMap_apply _ _ _ x) n m hnm,
-    ← Functor.map_comp, ← Functor.map_comp, normalProjFiberHomeomorph_naturality]
+          (ModuleCat.of R R)).map (g.preimageMap hg (range f)) :=
+  singularHomologyComplPreimageIsoOfProj_hom_naturality R h.isOpenEmbedding.isOpen_range hf
+    h.range_subset_range _ _ _ _ convex_univ Filter.univ_mem hg (h.preimageMap_comp_normalProj hg)
+    n m hnm
 
 end Naturality
 
