@@ -6,23 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.Topology.CWComplex.Classical.Map
 
 /-!
 # Actions on the cells of a relative CW complex
 
 A monoid action carrying each open cell onto an open cell of the same dimension induces an
 action on the cells. Continuous translations also carry closed cells onto the corresponding
-closed cells when the ambient space is Hausdorff. For a group action, trivial stabilizers of
-open cells give a free action on cells.
+closed cells when the ambient space is Hausdorff. On a CW complex, each translation preserves the
+complex and every skeleton, giving a cellular self-map (`TauCeti.cellActionSMul`,
+`TauCeti.isCellular_cellActionSMul`). For a group action, trivial stabilizers of open cells give a
+free action on cells.
 
 ## Main results
 
 * `TauCeti.cellMulAction`: the induced monoid action on cells.
 * `TauCeti.smul_openCell` and `TauCeti.smul_mem_openCell_smul`: compatibility with open cells.
 * `TauCeti.smul_closedCell`: compatibility with closed cells for continuous translations.
-* `TauCeti.smul_mem_skeletonLT`: a fixed translation carrying each open cell onto an open cell
-  of the same dimension preserves every skeleton of a CW complex.
+* `TauCeti.smul_mem_complex` and `TauCeti.smul_mem_skeletonLT`: a fixed translation carrying each
+  open cell onto an open cell of the same dimension preserves the CW complex and every skeleton.
+* `TauCeti.cellActionSMul` and `TauCeti.isCellular_cellActionSMul`: each continuous translation is
+  a cellular self-map of the CW complex.
 * `TauCeti.smul_closedCell_of_smul_openCell`: continuous translations carrying an open cell
   onto another also carry the corresponding closed cells onto each other.
 * `TauCeti.isCancelSMul_cell`: freeness of the induced group action on cells.
@@ -40,7 +44,7 @@ public section
 
 noncomputable section
 
-open Set Topology Topology.RelCWComplex
+open CategoryTheory Set Topology Topology.RelCWComplex
 open scoped Pointwise
 
 universe u
@@ -48,6 +52,19 @@ universe u
 namespace TauCeti
 
 variable {E : Type u} [TopologicalSpace E] {G : Type*}
+
+/-- Translation by a fixed element carrying each open cell onto an open cell of the same dimension
+preserves the CW complex. -/
+lemma smul_mem_complex {C : Set E} [CWComplex C] [SMul G E]
+    (g : G) (hcell : ∀ (n : ℕ) (i : cell C n),
+      ∃ j : cell C n, g • openCell n i = openCell n j)
+    {z : E} (hz : z ∈ C) :
+    g • z ∈ C := by
+  rw [← CWComplex.iUnion_openCell_eq_complex (C := C)] at hz ⊢
+  simp only [mem_iUnion] at hz ⊢
+  obtain ⟨m, i, hi⟩ := hz
+  obtain ⟨j, hj⟩ := hcell m i
+  exact ⟨m, j, hj ▸ smul_mem_smul_set hi⟩
 
 /-- Translation by a fixed element carrying each open cell onto an open cell of the same dimension
 preserves every skeleton of a CW complex. -/
@@ -122,6 +139,50 @@ theorem smul_closedCell [T2Space E] [ContinuousConstSMul G E] {n : ℕ} (g : G)
   smul_closedCell_of_smul_openCell (smul_openCell hcell g i)
 
 end CellAction
+
+section Translation
+
+variable (C : Set E) [CWComplex C] [Monoid G] [MulAction G E] [ContinuousConstSMul G E]
+  (hcell : ∀ (g : G) (n : ℕ) (i : cell C n),
+    ∃ j : cell C n, g • openCell n i = openCell n j)
+
+/-- Translation by `g`, restricted to a CW complex `C` whose open cells the action permutes. -/
+def cellActionSMul (g : G) : TopCat.of C ⟶ TopCat.of C :=
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, smul_mem_complex g (hcell g) x.2⟩,
+    ((continuous_const_smul g).comp continuous_subtype_val).subtype_mk _⟩
+
+/-- On underlying points, `TauCeti.cellActionSMul` is translation by `g`. -/
+@[simp]
+theorem coe_cellActionSMul_apply (g : G) (x : C) :
+    (cellActionSMul C hcell g x : E) = g • (x : E) :=
+  (rfl)
+
+/-- Translation by the identity is the identity on `C`. -/
+@[simp]
+theorem cellActionSMul_one : cellActionSMul C hcell (1 : G) = 𝟙 _ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (coe_cellActionSMul_apply C hcell 1 x).trans (one_smul G x.1)
+
+/-- Translation by a product is successive translation on `C`. -/
+theorem cellActionSMul_mul (g h : G) :
+    cellActionSMul C hcell (g * h) =
+      cellActionSMul C hcell h ≫ cellActionSMul C hcell g := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (coe_cellActionSMul_apply C hcell (g * h) x).trans ((mul_smul g h x.1).trans
+    ((coe_cellActionSMul_apply C hcell g (cellActionSMul C hcell h x)).trans
+      (congrArg (g • ·) (coe_cellActionSMul_apply C hcell h x))).symm)
+
+/-- **Translation by a group element is cellular** when it carries every open cell onto an open
+cell of the same dimension. -/
+theorem isCellular_cellActionSMul [T2Space E] (g : G) :
+    IsCellular C C (cellActionSMul C hcell g) :=
+  fun _ _ hx ↦ smul_mem_skeletonLT g (hcell g) hx
+
+end Translation
 
 section FreeCellAction
 

@@ -53,6 +53,8 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
 * `TauCeti.instCWComplexClassifyingSpace`: the CW structure on `classifyingSpace G`.
 * `TauCeti.classifyingSpaceCellEquiv`: its `n`-cells are the `G`-orbits of `n`-simplices of the
   countable join.
+* `TauCeti.classifyingSpaceProjCellularMap`: the universal covering projection `EG → BG` on the
+  universal subsets used by cellular maps.
 
 ## Main results
 
@@ -73,6 +75,8 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
   `TauCeti.closedCell_classifyingSpaceCellEquiv_symm_mk` and
   `TauCeti.cellFrontier_classifyingSpaceCellEquiv_symm_mk`: the open cells, closed cells and cell
   frontiers of the classifying space are the images of those of the countable join.
+* `TauCeti.isCellular_classifyingSpaceProj`: the universal covering projection `EG → BG` is
+  cellular.
 
 ## References
 
@@ -440,6 +444,33 @@ theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
       classifyingSpaceProj G '' {x : universalGSpace G | x.1.support ⊂ c.1.1} := by
   rw [← c.image_characteristicMap_sphere, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
+
+open CategoryTheory in
+variable (G) in
+/-- The universal covering projection `EG → BG`, restricted to the universal subsets used by
+cellular maps. -/
+def classifyingSpaceProjCellularMap :
+    TopCat.of (univ : Set (universalGSpace G)) ⟶
+      TopCat.of (univ : Set (classifyingSpace G)) :=
+  TopCat.ofHom ⟨fun x ↦ ⟨classifyingSpaceProj G x.1, mem_univ _⟩,
+    ((continuous_classifyingSpaceProj G).comp continuous_subtype_val).subtype_mk _⟩
+
+/-- On underlying points, `TauCeti.classifyingSpaceProjCellularMap` is `classifyingSpaceProj`. -/
+@[simp]
+theorem coe_classifyingSpaceProjCellularMap_apply
+    (x : (univ : Set (universalGSpace G))) :
+    (classifyingSpaceProjCellularMap G x : classifyingSpace G) = classifyingSpaceProj G x.1 :=
+  (rfl)
+
+variable (G) in
+/-- **The universal covering projection `EG → BG` is cellular.** For the CW structures on Milnor's
+countable join and classifying space, the projection `classifyingSpaceProj G` carries every
+skeleton of `universalGSpace G` into the corresponding skeleton of `classifyingSpace G`. -/
+theorem isCellular_classifyingSpaceProj :
+    IsCellular (univ : Set (universalGSpace G)) (univ : Set (classifyingSpace G))
+      (classifyingSpaceProjCellularMap G) :=
+  (isQuotientCoveringMap_classifyingSpaceProj G).isCellular_cwComplexQuotient
+    exists_smul_openCell_eq fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq
 
 end ClassifyingSpace
 

@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Classical.CellAction
+public import TauCeti.Topology.CWComplex.Classical.FreeAction
 public import TauCeti.Topology.CWComplex.Classical.OpenCells
 public import TauCeti.Topology.Covering.Quotient
+
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # The CW structure on the orbit space of a free cellular action
@@ -24,8 +27,13 @@ an open cell onto itself only when `g = 1`. Then `B` is a CW complex
   (`IsQuotientCoveringMap.cellQuotientEquiv`);
 * the characteristic map of an orbit is `p ∘ φ` for the characteristic map `φ` of its chosen
   representative (`IsQuotientCoveringMap.map_cellQuotientEquiv_symm`);
-* the covering map carries each open and each closed cell of `E` onto the open and closed cell of
-  its orbit (`IsQuotientCoveringMap.image_openCell` and `IsQuotientCoveringMap.image_closedCell`).
+* the covering map carries each open cell, closed cell, and skeleton of `E` onto the
+  corresponding open cell, closed cell, and skeleton of `B`
+  (`IsQuotientCoveringMap.image_openCell`, `IsQuotientCoveringMap.image_closedCell`, and
+  `IsQuotientCoveringMap.image_skeletonLT`), and is therefore cellular
+  (`IsQuotientCoveringMap.isCellular_cwComplexQuotient`);
+* choosing one lifted `n`-cell of `E` over each `n`-cell of `B` identifies the `n`-cells of `E`
+  with `(Σ _ : cell (univ : Set B) n, G)` (`IsQuotientCoveringMap.sigmaSMulCellEquiv`).
 
 Only the characteristic maps of the representatives are used, and the hypotheses on the action
 concern open cells rather than characteristic maps: a translation need not carry the
@@ -42,8 +50,10 @@ that misses every other closed `n`-cell and the `(n - 1)`-skeleton, so a point o
 `c` close to `p y` has exactly one preimage close to `y`, the one in `c`, and it is given by a
 local inverse of `p`.
 
-The construction does not use that `B` is Hausdorff; Mathlib's classical CW complexes do not
-require it.
+The CW construction itself does not use that `B` is Hausdorff; Mathlib's classical CW complexes do
+not require it. Hausdorffness of `B` (`IsQuotientCoveringMap.t2Space_of_cwComplex`) enters only
+for `IsQuotientCoveringMap.image_skeletonLT` and
+`IsQuotientCoveringMap.isCellular_cwComplexQuotient`.
 
 The action on cells is constructed more generally for a monoid acting on a relative CW complex
 and carrying each open cell onto an open cell of the same dimension. If its translations are
@@ -62,7 +72,7 @@ public section
 
 noncomputable section
 
-open Function Metric Set Topology Topology.RelCWComplex
+open CategoryTheory Function Metric Set Topology Topology.RelCWComplex
 open scoped Pointwise
 
 universe u
@@ -328,6 +338,100 @@ theorem _root_.IsQuotientCoveringMap.image_closedCell {n : ℕ} (i : cell (univ 
     p '' closedCell n i =
       closedCell n ((hp.cellQuotientEquiv hcell hfree n).symm (Quotient.mk'' i)) :=
   (image_quotientCellMap_mk_closedBall hp hcell hfree i).symm
+
+/-- An `n`-cell `i` of `E` projects onto an `n`-cell `b` of the orbit space `B` if and only if
+the orbit of `i` corresponds to `b` under `IsQuotientCoveringMap.cellQuotientEquiv`. -/
+theorem _root_.IsQuotientCoveringMap.image_openCell_eq_iff {n : ℕ} (i : cell (univ : Set E) n)
+    (b : letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n) :
+    letI := hp.cwComplexQuotient hcell hfree
+    letI := cellMulAction hcell n
+    p '' openCell n i = openCell n b ↔
+      Quotient.mk'' i = hp.cellQuotientEquiv hcell hfree n b := by
+  let := hp.cwComplexQuotient hcell hfree
+  let := cellMulAction hcell n
+  rw [hp.image_openCell hcell hfree i]
+  exact ⟨fun h ↦ (Equiv.symm_apply_eq _).1 (openCell_congr n h),
+    fun h ↦ by rw [h, Equiv.symm_apply_apply]⟩
+
+/-- Every `n`-cell of the orbit space is the image of an `n`-cell of `E`. -/
+theorem _root_.IsQuotientCoveringMap.exists_image_openCell_eq {n : ℕ}
+    (b : letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n) :
+    letI := hp.cwComplexQuotient hcell hfree
+    ∃ i : cell (univ : Set E) n, p '' openCell n i = openCell n b := by
+  let := hp.cwComplexQuotient hcell hfree
+  let := cellMulAction hcell n
+  obtain ⟨i, hi⟩ := Quotient.exists_rep (hp.cellQuotientEquiv hcell hfree n b)
+  exact ⟨i, (hp.image_openCell_eq_iff hcell hfree i b).2 hi⟩
+
+/-- The covering map carries every skeleton of `E` onto the corresponding skeleton of `B`. -/
+theorem _root_.IsQuotientCoveringMap.image_skeletonLT (n : ℕ∞) :
+    letI := hp.cwComplexQuotient hcell hfree
+    haveI := hp.t2Space_of_cwComplex hcell hfree
+    p '' (skeletonLT (univ : Set E) n : Set E) = (skeletonLT (univ : Set B) n : Set B) := by
+  let := hp.cwComplexQuotient hcell hfree
+  have := hp.t2Space_of_cwComplex hcell hfree
+  let := cellMulAction hcell
+  rw [← CWComplex.iUnion_openCell_eq_skeletonLT, ← CWComplex.iUnion_openCell_eq_skeletonLT]
+  ext b
+  simp only [mem_image, mem_iUnion]
+  constructor
+  · rintro ⟨x, ⟨m, hm, i, hx⟩, rfl⟩
+    exact ⟨m, hm, (hp.cellQuotientEquiv hcell hfree m).symm (Quotient.mk'' i),
+      hp.image_openCell hcell hfree i ▸ mem_image_of_mem p hx⟩
+  · rintro ⟨m, hm, j, hb⟩
+    obtain ⟨i, hi⟩ := hp.exists_image_openCell_eq hcell hfree j
+    obtain ⟨x, hx, rfl⟩ := hi ▸ hb
+    exact ⟨x, ⟨m, hm, i, hx⟩, rfl⟩
+
+/-- **The quotient covering map is cellular** for the orbit-space CW structure: it sends every
+skeleton of `E` onto the corresponding skeleton of `B`. -/
+theorem _root_.IsQuotientCoveringMap.isCellular_cwComplexQuotient :
+    letI := hp.cwComplexQuotient hcell hfree
+    haveI := hp.t2Space_of_cwComplex hcell hfree
+    IsCellular (univ : Set E) (univ : Set B)
+      (TopCat.ofHom ⟨fun x : (univ : Set E) ↦ ⟨p x.1, mem_univ _⟩,
+        (hp.continuous.comp continuous_subtype_val).subtype_mk _⟩) := by
+  let := hp.cwComplexQuotient hcell hfree
+  have := hp.t2Space_of_cwComplex hcell hfree
+  intro n x hx
+  have hmem : p x.1 ∈ (skeletonLT (univ : Set B) (n : ℕ∞) : Set B) :=
+    hp.image_skeletonLT hcell hfree (n : ℕ∞) ▸ mem_image_of_mem p hx
+  exact hmem
+
+/-- Given a choice `s b` of an `n`-cell of `E` projecting onto each `n`-cell `b` of the orbit
+space `B`, the `n`-cells of `E` are the translates `g • s b`, each occurring exactly once. -/
+def _root_.IsQuotientCoveringMap.sigmaSMulCellEquiv {n : ℕ}
+    (s : (letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n) →
+      cell (univ : Set E) n)
+    (hs : letI := hp.cwComplexQuotient hcell hfree; ∀ b, p '' openCell n (s b) = openCell n b) :
+    letI := hp.cwComplexQuotient hcell hfree
+    (Σ _ : cell (univ : Set B) n, G) ≃ cell (univ : Set E) n :=
+  letI := hp.cwComplexQuotient hcell hfree
+  letI := cellMulAction hcell n
+  haveI := isCancelSMul_cell hcell hfree n
+  have hs' :
+      Function.LeftInverse Quotient.mk'' (s ∘ (hp.cellQuotientEquiv hcell hfree n).symm) :=
+    fun o ↦ by
+      rw [Function.comp_apply, (hp.image_openCell_eq_iff hcell hfree _ _).1 (hs _),
+        Equiv.apply_symm_apply]
+  (Equiv.sigmaEquivProd _ G).trans <|
+    (Equiv.prodCongrLeft fun _ ↦ hp.cellQuotientEquiv hcell hfree n).trans
+      (MulAction.selfEquivOrbitsQuotientProd' hs' IsCancelSMul.stabilizer_eq_bot).symm
+
+/-- The cell indexed by `⟨b, g⟩` under `IsQuotientCoveringMap.sigmaSMulCellEquiv` is the
+translate `g • s b`. -/
+@[simp]
+theorem _root_.IsQuotientCoveringMap.sigmaSMulCellEquiv_apply {n : ℕ}
+    (s : (letI := hp.cwComplexQuotient hcell hfree; cell (univ : Set B) n) →
+      cell (univ : Set E) n)
+    (hs : letI := hp.cwComplexQuotient hcell hfree; ∀ b, p '' openCell n (s b) = openCell n b)
+    (x : letI := hp.cwComplexQuotient hcell hfree; Σ _ : cell (univ : Set B) n, G) :
+    letI := hp.cwComplexQuotient hcell hfree
+    letI := cellMulAction hcell n
+    hp.sigmaSMulCellEquiv hcell hfree s hs x = x.2 • s x.1 := by
+  let := hp.cwComplexQuotient hcell hfree
+  let := cellMulAction hcell n
+  simp [IsQuotientCoveringMap.sigmaSMulCellEquiv]
 
 end Quotient
 
