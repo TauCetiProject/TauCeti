@@ -42,8 +42,12 @@ commutativity is assumed.
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
+* `TauCeti.BalancedExtension.piEquiv`: extension of a finite product of modules,
+  `S ⊗_R (Π i, M i) ≃ Π i, (S ⊗_R M i)`.
 * `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
   matrix, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
+* `TauCeti.BalancedExtension.equivTensorProduct`: identification with Mathlib's tensor product
+  `S ⊗[R] P` when `R` is commutative and `S` is an `R`-algebra.
 
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
@@ -408,6 +412,63 @@ theorem piScalarRight_symm_apply [DecidableEq ι] (v : ι → S) :
   ext i
   simp [Pi.single_apply]
 
+/-- **Extension of a finite product of modules.** Extension of scalars commutes with finite
+products: `S ⊗_R (Π i, M i) ≃ Π i, (S ⊗_R M i)`. -/
+noncomputable def piEquiv (M : ι → Type*) [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] :
+    BalancedExtension f (∀ i, M i) ≃ₗ[S] ∀ i, BalancedExtension f (M i) :=
+  open scoped Classical in
+  LinearEquiv.ofLinearMap
+    (LinearMap.pi fun i ↦ map f (LinearMap.proj i))
+    (∑ i : ι, (map f (LinearMap.single R M i)).comp (LinearMap.proj i))
+    (LinearMap.ext fun y ↦ funext fun i ↦ by
+      classical
+      simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
+        LinearMap.proj_apply, LinearMap.id_apply, map_sum]
+      rw [Finset.sum_eq_single i]
+      · rw [← LinearMap.comp_apply, ← map_comp]
+        have hcomp : (LinearMap.proj i).comp (LinearMap.single R M i) = LinearMap.id :=
+          LinearMap.ext fun m ↦ by simp
+        rw [hcomp, map_id, LinearMap.id_apply]
+      · intro j _ hji
+        rw [← LinearMap.comp_apply, ← map_comp]
+        have hcomp : (LinearMap.proj i).comp (LinearMap.single R M j) = 0 :=
+          LinearMap.ext fun m ↦ by simp [Pi.single_eq_of_ne (Ne.symm hji)]
+        rw [hcomp]
+        have hzero : map f (0 : M j →ₗ[R] M i) = 0 := hom_ext fun m ↦ by simp
+        exact LinearMap.congr_fun hzero (y j)
+      · intro hi; exact (hi (Finset.mem_univ i)).elim)
+    (hom_ext fun x ↦ by
+      classical
+      simp only [LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.pi_apply,
+        LinearMap.proj_apply, LinearMap.id_apply, map_tmul, LinearMap.single_apply]
+      have hsum : ∑ i : ι, includeRight f (∀ j, M j) (Pi.single i (x i)) =
+          includeRight f (∀ j, M j) (∑ i : ι, Pi.single i (x i)) :=
+        (map_sum (includeRight f (∀ j, M j)) (fun i ↦ Pi.single i (x i)) Finset.univ).symm
+      simpa only [includeRight_apply, Finset.univ_sum_single] using hsum)
+
+@[simp]
+theorem piEquiv_tmul {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+    (s : S) (x : ∀ i, M i) (i : ι) :
+    piEquiv f ι M (tmul f s x) i = tmul f s (x i) := by
+  simp [piEquiv]
+
+@[simp]
+theorem piEquiv_symm_apply [DecidableEq ι] {M : ι → Type*} [∀ i, AddCommGroup (M i)]
+    [∀ i, Module R (M i)] (y : ∀ i, BalancedExtension f (M i)) :
+    (piEquiv f ι M).symm y = ∑ i, map f (LinearMap.single R M i) (y i) := by
+  rw [LinearEquiv.symm_apply_eq, map_sum]
+  ext i
+  simp only [Finset.sum_apply]
+  rw [Finset.sum_eq_single i]
+  · induction y i using induction_on with
+    | tmul s m => simp
+    | add a b ha hb => rw [_root_.map_add, _root_.map_add, Pi.add_apply, ← ha, ← hb]
+  · intro j _ hji
+    induction y j using induction_on with
+    | tmul s m => simp [Pi.single_eq_of_ne (Ne.symm hji)]
+    | add a b ha hb => rw [_root_.map_add, _root_.map_add, Pi.add_apply, ha, hb, add_zero]
+  · intro hi; exact (hi (Finset.mem_univ i)).elim
+
 end Pi
 
 section FiniteProjective
@@ -500,3 +561,71 @@ end Idempotent
 end BalancedExtension
 
 end TauCeti
+
+namespace TauCeti.BalancedExtension
+
+section Algebra
+
+open scoped TensorProduct
+
+variable (R : Type u₁) (S : Type u₂) [CommRing R] [Ring S] [Algebra R S]
+  (P : Type v) [AddCommGroup P] [Module R P]
+
+private noncomputable def equivTensorProductFwd :
+    P →ₛₗ[algebraMap R S] S ⊗[R] P where
+  toFun p := (1 : S) ⊗ₜ[R] p
+  map_add' p₁ p₂ := TensorProduct.tmul_add 1 p₁ p₂
+  map_smul' r p := by
+    rw [TensorProduct.tmul_smul]
+    exact (algebraMap_smul S r ((1 : S) ⊗ₜ[R] p)).symm
+
+private noncomputable def equivTensorProductInv :
+    S ⊗[R] P →ₗ[S] BalancedExtension (algebraMap R S) P :=
+  letI : Module R (BalancedExtension (algebraMap R S) P) :=
+    Module.compHom (BalancedExtension (algebraMap R S) P) (algebraMap R S)
+  let invR : S ⊗[R] P →ₗ[R] BalancedExtension (algebraMap R S) P :=
+    TensorProduct.lift <| LinearMap.mk₂ R (fun s p ↦ tmul (algebraMap R S) s p)
+      (fun s₁ s₂ p ↦ add_tmul s₁ s₂ p)
+      (fun r s p ↦ by rw [Algebra.smul_def, ← smul_tmul]; rfl)
+      (fun s p₁ p₂ ↦ tmul_add s p₁ p₂)
+      (fun r s p ↦ by rw [tmul_smul, ← Algebra.commutes, ← smul_tmul]; rfl)
+  { toFun := invR
+    map_add' := invR.map_add
+    map_smul' s x := by
+      induction x using TensorProduct.inductionOn with
+      | tmul s' p =>
+        simp only [TensorProduct.smul_tmul', smul_eq_mul, RingHom.id_apply, invR,
+          TensorProduct.lift.tmul, LinearMap.mk₂_apply, smul_tmul]
+      | add x y hx hy => simp only [smul_add, _root_.map_add, RingHom.id_apply, hx, hy] }
+
+/-- **Comparison with Mathlib's tensor product.** When `R` is commutative and `S` is an
+`R`-algebra, the balanced extension of scalars along `algebraMap R S` is `S`-linearly isomorphic
+to `S ⊗[R] P`, sending `s ⊗ p` to `s ⊗ₜ[R] p`. -/
+noncomputable def equivTensorProduct :
+    BalancedExtension (algebraMap R S) P ≃ₗ[S] S ⊗[R] P :=
+  LinearEquiv.ofLinearMap (lift (equivTensorProductFwd R S P)) (equivTensorProductInv R S P)
+    (LinearMap.ext fun x ↦ by
+      induction x using TensorProduct.inductionOn with
+      | tmul s p =>
+        simp only [LinearMap.comp_apply, LinearMap.id_apply, equivTensorProductInv,
+          LinearMap.coe_mk, AddHom.coe_mk, TensorProduct.lift.tmul, LinearMap.mk₂_apply,
+          lift_tmul, equivTensorProductFwd, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+      | add x y hx hy => simp only [_root_.map_add, hx, hy])
+    (hom_ext fun p ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, lift_tmul, one_smul,
+        equivTensorProductFwd, LinearMap.coe_mk, AddHom.coe_mk, equivTensorProductInv,
+        TensorProduct.lift.tmul, LinearMap.mk₂_apply])
+
+@[simp]
+theorem equivTensorProduct_tmul (s : S) (p : P) :
+    equivTensorProduct R S P (tmul (algebraMap R S) s p) = s ⊗ₜ[R] p := by
+  simp [equivTensorProduct, equivTensorProductFwd, TensorProduct.smul_tmul']
+
+@[simp]
+theorem equivTensorProduct_symm_tmul (s : S) (p : P) :
+    (equivTensorProduct R S P).symm (s ⊗ₜ[R] p) = tmul (algebraMap R S) s p := by
+  simp [equivTensorProduct, equivTensorProductInv]
+
+end Algebra
+
+end TauCeti.BalancedExtension
