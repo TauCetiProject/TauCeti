@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -34,7 +35,8 @@ and complex inner product spaces, without completeness or dimension assumptions.
 Orthogonal line coordinates associated with a unit vector identify the ambient space with
 the product of its orthogonal hyperplane and the scalar line. The `L²` product version is
 isometric; the ordinary product version is a continuous linear equivalence used for line
-sections and product integration.
+sections and product integration. In dimension one, affine coordinates along a unit vector give an
+affine isometric equivalence `𝕜 ≃ᵃⁱ[𝕜] E` (`TauCeti.coordEquivOfFinrankEqOne`).
 
 Along a smooth family of linear isometries of a finite-dimensional inner product space, the
 inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
@@ -43,7 +45,8 @@ diffeomorphisms.
 
 ## Main definitions
 
-* `TauCeti.orthogonalLineIsometry` and `TauCeti.orthogonalLineEquiv`: orthogonal line coordinates.
+* `TauCeti.orthogonalLineIsometry`, `TauCeti.orthogonalLineEquiv`, and
+  `TauCeti.coordEquivOfFinrankEqOne`: orthogonal and one-dimensional line coordinates.
 * `LinearIsometry.prodOrthogonalRangeEquiv`: the continuous linear equivalence
   `E × (range f)ᗮ ≃L[𝕜] F` given by `(u, w) ↦ f u + w`.
 * `LinearIsometry.orthogonalComplementSingletonMap`: the restriction of a linear isometry to a map
@@ -293,6 +296,41 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ⟪e, (y : E) + t • e⟫ = t := by
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
+
+section OneDimCoord
+
+open scoped InnerProductSpace
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- In a `1`-dimensional inner product space over `𝕜`, affine coordinates `t ↦ x + t • ν` along a
+unit vector `ν` give an affine isometric equivalence `𝕜 ≃ᵃⁱ[𝕜] F`. -/
+def coordEquivOfFinrankEqOne (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ‖ν‖ = 1) (x : F) :
+    𝕜 ≃ᵃⁱ[𝕜] F :=
+  haveI : FiniteDimensional 𝕜 F := Module.finite_of_finrank_pos (by omega)
+  ((LinearIsometryEquiv.toSpanUnitSingleton ν hν).trans
+    (LinearIsometryEquiv.ofTop F (𝕜 ∙ ν) (Submodule.eq_top_of_finrank_eq
+      ((finrank_span_singleton (norm_ne_zero_iff.1 (hν ▸ one_ne_zero))).trans
+        hdim.symm)))).toAffineIsometryEquiv.trans
+    (AffineIsometryEquiv.constVAdd 𝕜 F x)
+
+@[simp]
+theorem coordEquivOfFinrankEqOne_apply (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ‖ν‖ = 1)
+    (x : F) (t : 𝕜) :
+    coordEquivOfFinrankEqOne hdim hν x t = x + t • ν := by
+  simp [coordEquivOfFinrankEqOne]
+
+@[simp]
+theorem coordEquivOfFinrankEqOne_symm_apply (hdim : Module.finrank 𝕜 F = 1) {ν : F}
+    (hν : ‖ν‖ = 1) (x y : F) :
+    (coordEquivOfFinrankEqOne hdim hν x).symm y = ⟪ν, y - x⟫_𝕜 := by
+  let f := coordEquivOfFinrankEqOne hdim hν x
+  calc f.symm y = ⟪ν, f (f.symm y) - x⟫_𝕜 := by
+        rw [coordEquivOfFinrankEqOne_apply, add_sub_cancel_left, inner_smul_right,
+          inner_self_eq_norm_sq_to_K, hν, RCLike.ofReal_one, one_pow, mul_one]
+    _ = ⟪ν, y - x⟫_𝕜 := by rw [f.apply_symm_apply]
+
+end OneDimCoord
 
 end TauCeti
 

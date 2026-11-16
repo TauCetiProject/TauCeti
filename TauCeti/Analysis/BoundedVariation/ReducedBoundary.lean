@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.MeasureTheory.Covering.Besicovitch
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The reduced boundary and the measure-theoretic outer normal
@@ -535,23 +536,6 @@ private theorem measurable_setAverage_polarDensity (r : ℝ) :
   rw [havg]
   exact (ENNReal.measurable_toReal.comp hmeas_lam).inv.smul hmeas_int
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Pointwise right-continuity of indicators of `((↑) : Ω → E) ⁻¹' closedBall x r` as `q k → r`
-from above. -/
-private theorem tendsto_indicator_preimage_closedBall_of_tendsto_gt {r : ℝ} {q : ℕ → ℝ}
-    (hqr : ∀ k, r < q k) (hq : Tendsto q atTop (𝓝 r)) {F : Type*} [TopologicalSpace F] [Zero F]
-    (g : Ω → F) (y : Ω) :
-    Tendsto (fun k => (((↑) : Ω → E) ⁻¹' closedBall x (q k)).indicator g y) atTop
-      (𝓝 ((((↑) : Ω → E) ⁻¹' closedBall x r).indicator g y)) := by
-  by_cases hy : y ∈ ((↑) : Ω → E) ⁻¹' closedBall x r
-  · simp only [indicator_of_mem hy]
-    exact tendsto_const_nhds.congr fun k =>
-      (indicator_of_mem (preimage_mono (closedBall_subset_closedBall (hqr k).le) hy) g).symm
-  · rw [indicator_of_notMem hy]
-    have hlt : r < dist (y : E) x := not_le.1 hy
-    exact tendsto_const_nhds.congr' ((hq.eventually (gt_mem_nhds hlt)).mono fun k hk =>
-      (indicator_of_notMem (not_le.2 hk) g).symm)
-
 /-- Closed balls are right-continuous in the radius: if `q k → r` from above inside a compact closed
 ball in `Ω` and `|Dχ_s| (closedBall x r) ≠ 0`, the closed-ball averages at `q k` tend to the average
 at `r`. -/
@@ -567,46 +551,46 @@ private theorem tendsto_setAverage_polarDensity_of_tendsto_gt {r R : ℝ}
   set lam := variationMeasure μ Ω (s.indicator 1)
   set σ := polarDensity μ Ω (s.indicator 1)
   let S (ρ : ℝ) : Set Ω := ((↑) : Ω → E) ⁻¹' closedBall x ρ
+  obtain ⟨z, hz⟩ := nonempty_of_measure_ne_zero h0
+  have hrR : r ≤ R := (hqr 0).le.trans (hqR 0)
+  let x₀ : Ω :=
+    ⟨x, hRΩ (mem_closedBall_self (dist_nonneg.trans ((mem_closedBall.1 hz).trans hrR)))⟩
+  have hS (ρ : ℝ) : S ρ = closedBall x₀ ρ := Subtype.preimage_closedBall x₀ ρ
+  have hq' : Tendsto q atTop (𝓝[≥] r) :=
+    tendsto_nhdsWithin_iff.2 ⟨hq, Eventually.of_forall fun k => (hqr k).le⟩
   have hSR : IsCompact (S R) := Topology.IsInducing.subtypeVal.isCompact_preimage'
     (isCompact_closedBall x R) (by rwa [Subtype.range_coe])
-  have hSm (ρ : ℝ) : MeasurableSet (S ρ) := isClosed_closedBall.preimage continuous_subtype_val
-    |>.measurableSet
+  have hSm (ρ : ℝ) : MeasurableSet (S ρ) :=
+    (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
   have hvol : Tendsto (fun k => lam.real (S (q k))) atTop (𝓝 (lam.real (S r))) := by
-    have hdom := tendsto_integral_of_dominated_convergence (μ := lam)
-      (F := fun k => (S (q k)).indicator (1 : Ω → ℝ)) (f := (S r).indicator (1 : Ω → ℝ))
-      ((S R).indicator (1 : Ω → ℝ))
-      (fun k => aestronglyMeasurable_const.indicator (hSm _))
+    simpa only [integral_indicator_one (hSm _)] using tendsto_integral_of_dominated_convergence
+      (μ := lam) (F := fun k => (S (q k)).indicator (1 : Ω → ℝ)) (f := (S r).indicator (1 : Ω → ℝ))
+      ((S R).indicator (1 : Ω → ℝ)) (fun _ => aestronglyMeasurable_const.indicator (hSm _))
       ((integrable_indicator_iff (hSm R)).2 (integrableOn_const hSR.measure_lt_top.ne))
       (fun k => Eventually.of_forall fun y => by
         by_cases hy : y ∈ S (q k)
-        · have hyR : y ∈ S R := closedBall_subset_closedBall (hqR k) hy
-          simp [hy, hyR]
+        · have hyR : y ∈ S R := closedBall_subset_closedBall (hqR k) hy; simp [hy, hyR]
         · rw [indicator_of_notMem hy, norm_zero]
           exact indicator_nonneg (fun _ _ => zero_le_one) y)
-      (Eventually.of_forall (tendsto_indicator_preimage_closedBall_of_tendsto_gt hqr hq 1))
-    simpa only [integral_indicator_one (hSm _)] using hdom
+      (Eventually.of_forall fun y => by
+        simp_rw [hS]; exact (continuousWithinAt_Ici_indicator_closedBall 1 x₀ r y).tendsto.comp hq')
   have hint : Tendsto (fun k => ∫ y in S (q k), σ y ∂lam) atTop (𝓝 (∫ y in S r, σ y ∂lam)) := by
-    have hσint : IntegrableOn σ (S R) lam :=
-      locallyIntegrable_polarDensity.integrableOn_isCompact hSR
-    have hdom := tendsto_integral_of_dominated_convergence
+    simpa only [integral_indicator (hSm _)] using tendsto_integral_of_dominated_convergence
       (F := fun k => (S (q k)).indicator σ) (f := (S r).indicator σ)
       ((S R).indicator fun y => ‖σ y‖)
-      (fun k => measurable_polarDensity.aestronglyMeasurable.indicator (hSm _))
-      ((integrable_indicator_iff (hSm R)).2 hσint.norm)
+      (fun _ => measurable_polarDensity.aestronglyMeasurable.indicator (hSm _))
+      ((integrable_indicator_iff (hSm R)).2
+        (locallyIntegrable_polarDensity.integrableOn_isCompact hSR).norm)
       (fun k => Eventually.of_forall fun y => by
         by_cases hy : y ∈ S (q k)
-        · have hyR : y ∈ S R := closedBall_subset_closedBall (hqR k) hy
-          simp [hy, hyR]
+        · have hyR : y ∈ S R := closedBall_subset_closedBall (hqR k) hy; simp [hy, hyR]
         · rw [indicator_of_notMem hy, norm_zero]
           exact indicator_nonneg (fun _ _ => norm_nonneg _) y)
-      (Eventually.of_forall (tendsto_indicator_preimage_closedBall_of_tendsto_gt hqr hq σ))
-    simpa only [integral_indicator (hSm _)] using hdom
-  have hSr0 : lam.real (S r) ≠ 0 := by
-    have hrR : r ≤ R := (hqr 0).le.trans (hqR 0)
-    rw [measureReal_def]
-    exact ENNReal.toReal_ne_zero.2 ⟨h0,
-      ((measure_mono (preimage_mono (closedBall_subset_closedBall hrR))).trans_lt
-        hSR.measure_lt_top).ne⟩
+      (Eventually.of_forall fun y => by
+        simp_rw [hS]; exact (continuousWithinAt_Ici_indicator_closedBall σ x₀ r y).tendsto.comp hq')
+  have hSr0 : lam.real (S r) ≠ 0 := ENNReal.toReal_ne_zero.2
+    ⟨h0, ((measure_mono (preimage_mono (closedBall_subset_closedBall hrR))).trans_lt
+      hSR.measure_lt_top).ne⟩
   simpa only [setAverage_eq] using (hvol.inv₀ hSr0).smul hint
 
 /-- Convergence of closed-ball polar-density averages to a unit vector `ν` along positive rational
