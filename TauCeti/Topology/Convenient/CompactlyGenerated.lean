@@ -5,41 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
+public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 public import TauCeti.Topology.Convenient.GeneratedBy
+public import TauCeti.Topology.Convenient.Product
 
 /-!
-# Compact Hausdorff generators
+# Compact Hausdorff generators, locally compact products, and Hausdorff mapping spaces
 
-Mathlib provides both compact generation and generation by an arbitrary family of spaces.
-Here we identify these constructions for the family of compact Hausdorff spaces. This lets
-compactly generated sources use the generated-topology counit and its continuity adapters.
-In particular, finite cubes and their homotopies lift continuously through that counit.
-`Topology.isGeneratedBy_compHaus_iff` identifies the predicates, and the forward instance
-makes these continuity adapters available to compactly generated sources.
+Mathlib provides both compact generation (`TopologicalSpace.compactlyGenerated`,
+`UCompactlyGeneratedSpace`, `CompactlyGeneratedSpace`) and generation by an arbitrary family of
+spaces (`TopologicalSpace.generatedBy`, `Topology.IsGeneratedBy`). Identifying these for
+`fun K : CompHaus.{u} ↦ K` (`Topology.isGeneratedBy_compHaus_iff`) specializes generated-space
+product and mapping-space theorems to compactly generated spaces:
 
-The universe of the compact Hausdorff test spaces is explicit and independent of the universe
-of the space being refined.
+* `UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left` / `right` and
+  `CompactlyGeneratedSpace.prod_of_locallyCompactSpace_left` / `right`: Whitehead's theorem that an
+  ordinary product of compactly generated spaces is compactly generated when one factor is locally
+  compact.
+* `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2`: when `Y` is Hausdorff and
+  `(max v u)`-compactly generated, `ContinuousMapGeneratedBy (fun S : CompHaus.{max v u} ↦ S) Y T`
+  is homeomorphic to `C(Y, T)` with the compact-open topology without further refinement.
 
 ## References
 
+* R. H. Fox, *On topologies for function spaces*, Bull. Amer. Math. Soc. 51 (1945), 429–432.
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory* (1971).
-
-The constructions being compared are Mathlib's `TopologicalSpace.compactlyGenerated` and
-`TopologicalSpace.generatedBy`.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix,
+  Propositions A.15–A.16.
 -/
 
 public section
 
-universe u v
+universe u v v' w
 
 namespace TopologicalSpace
 
 /-- Generation by all compact Hausdorff spaces is compact generation. -/
 theorem generatedBy_compHaus (Y : Type v) [TopologicalSpace Y] :
     generatedBy (fun K : CompHaus.{u} ↦ K) (Y := Y) = compactlyGenerated.{u} Y := by
-  rw [generatedBy_eq_coinduced]
-  rfl
+  rw [generatedBy_eq_coinduced]; rfl
 
 end TopologicalSpace
 
@@ -57,3 +63,80 @@ instance (Y : Type v) [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y] :
   (isGeneratedBy_compHaus_iff Y).2 inferInstance
 
 end Topology
+
+/-- **Whitehead's product theorem (left factor locally compact)**: if `Y` and `Z` are
+`u`-compactly generated and `Y` is locally compact, then `Y × Z` is `u`-compactly generated. -/
+theorem UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left
+    {Y : Type v} {Z : Type v'} [TopologicalSpace Y] [TopologicalSpace Z]
+    [UCompactlyGeneratedSpace.{u} Y] [UCompactlyGeneratedSpace.{u} Z] [LocallyCompactSpace Y] :
+    UCompactlyGeneratedSpace.{u} (Y × Z) :=
+  (Topology.isGeneratedBy_compHaus_iff (Y × Z)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left (X := fun K : CompHaus.{u} ↦ K))
+
+/-- **Whitehead's product theorem (right factor locally compact)**: if `Y` and `Z` are
+`u`-compactly generated and `Z` is locally compact, then `Y × Z` is `u`-compactly generated. -/
+theorem UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_right
+    {Y : Type v} {Z : Type v'} [TopologicalSpace Y] [TopologicalSpace Z]
+    [UCompactlyGeneratedSpace.{u} Y] [UCompactlyGeneratedSpace.{u} Z] [LocallyCompactSpace Z] :
+    UCompactlyGeneratedSpace.{u} (Y × Z) :=
+  (Topology.isGeneratedBy_compHaus_iff (Y × Z)).1
+    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right (X := fun K : CompHaus.{u} ↦ K))
+
+/-- If `Y : Type u` and `Z : Type v` are compactly generated and `Y` is locally compact, then
+`Y × Z` is compactly generated. -/
+theorem CompactlyGeneratedSpace.prod_of_locallyCompactSpace_left {Y : Type u} {Z : Type v}
+    [TopologicalSpace Y] [TopologicalSpace Z] [CompactlyGeneratedSpace Y]
+    [CompactlyGeneratedSpace Z] [LocallyCompactSpace Y] : CompactlyGeneratedSpace (Y × Z) :=
+  have := UCompactlyGeneratedSpace.ulift.{v, u} (X := Y)
+  have := UCompactlyGeneratedSpace.ulift.{u, v} (X := Z)
+  UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_left
+
+/-- If `Y : Type u` and `Z : Type v` are compactly generated and `Z` is locally compact, then
+`Y × Z` is compactly generated. -/
+theorem CompactlyGeneratedSpace.prod_of_locallyCompactSpace_right {Y : Type u} {Z : Type v}
+    [TopologicalSpace Y] [TopologicalSpace Z] [CompactlyGeneratedSpace Y]
+    [CompactlyGeneratedSpace Z] [LocallyCompactSpace Z] : CompactlyGeneratedSpace (Y × Z) :=
+  have := UCompactlyGeneratedSpace.ulift.{v, u} (X := Y)
+  have := UCompactlyGeneratedSpace.ulift.{u, v} (X := Z)
+  UCompactlyGeneratedSpace.prod_of_locallyCompactSpace_right
+
+namespace Topology.ContinuousMapGeneratedBy
+
+variable {Y : Type v} {T : Type w} [TopologicalSpace Y] [TopologicalSpace T]
+  [UCompactlyGeneratedSpace.{max v u} Y] [T2Space Y]
+
+/-- When `Y` is Hausdorff and `(max v u)`-compactly generated, `toContinuousMap` into `C(Y, T)`
+(with the compact-open topology) is continuous, with no local compactness assumption on `Y`. -/
+@[continuity, fun_prop] theorem continuous_toContinuousMap_of_t2Space :
+    Continuous (toContinuousMap (X := fun S : CompHaus.{max v u} ↦ S) (Y := Y) (T := T)) := by
+  refine ContinuousMap.continuous_compactOpen.2 fun K hK U hU ↦ ?_
+  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
+  let ιK : C(CompHaus.of (ULift.{u} K), Y) :=
+    ⟨fun s ↦ s.down.1, continuous_subtype_val.comp continuous_uliftDown⟩
+  convert (ContinuousMap.isOpen_setOfPred_range_subset hU).preimage
+      (continuous_precomp (X := fun R : CompHaus.{max v u} ↦ R) ιK) using 1
+  ext g; simp only [Set.mem_ofPred_eq, Set.MapsTo, Set.mem_preimage, Set.range_subset_iff,
+    precomp_apply, Function.comp_apply, toContinuousMap_apply]
+  exact ⟨fun hg s ↦ hg s.down.2, fun hg x hx ↦ hg (ULift.up ⟨x, hx⟩)⟩
+
+/-- **Exact compact-open comparison for Hausdorff sources**: when `Y : Type v` is Hausdorff and
+`(max v u)`-compactly generated, `ContinuousMapGeneratedBy (fun S : CompHaus.{max v u} ↦ S) Y T` is
+homeomorphic to `C(Y, T)` with the compact-open topology, for any target space `T : Type w`. -/
+def homeomorphContinuousMapOfT2 :
+    ContinuousMapGeneratedBy (fun S : CompHaus.{max v u} ↦ S) Y T ≃ₜ C(Y, T) where
+  toFun := toContinuousMap
+  invFun f := f.toContinuousMapGeneratedBy (fun S : CompHaus.{max v u} ↦ S)
+  left_inv := toContinuousMapGeneratedBy_toContinuousMap
+  right_inv := toContinuousMap_toContinuousMapGeneratedBy
+  continuous_toFun := continuous_toContinuousMap_of_t2Space
+  continuous_invFun := ContinuousMap.continuous_toContinuousMapGeneratedBy
+
+@[simp] theorem homeomorphContinuousMapOfT2_apply
+    (g : ContinuousMapGeneratedBy (fun S : CompHaus.{max v u} ↦ S) Y T) :
+    homeomorphContinuousMapOfT2 g = g.toContinuousMap := (rfl)
+
+@[simp] theorem homeomorphContinuousMapOfT2_symm_apply (f : C(Y, T)) :
+    (homeomorphContinuousMapOfT2.{u, v, w} (Y := Y) (T := T)).symm f =
+      f.toContinuousMapGeneratedBy (fun S : CompHaus.{max v u} ↦ S) := (rfl)
+
+end Topology.ContinuousMapGeneratedBy

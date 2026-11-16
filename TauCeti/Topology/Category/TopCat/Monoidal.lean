@@ -8,12 +8,13 @@ module
 public import Mathlib.Topology.Category.TopCat.Monoidal
 
 /-!
-# Fibre inclusions of products in `TopCat`
+# Fibre inclusions of products and unit-interval nontriviality in `TopCat`
 
 For spaces `X` and `F` and a point `x : X`, `TopCat.prodFiberInclusion X F x : F ⟶ X ⊗ F` is the
 inclusion `f ↦ (x, f)` of the fibre of the first projection over `x`, built from the cartesian
 monoidal structure of `TopCat`. Its composites with the projections are the constant map at `x`
-and the identity, so it is a split monomorphism, and it is natural in `X` and in `F`.
+and the identity, so it is a split monomorphism, and it is natural in `X` and in `F`. We also
+record nontriviality of the universe-lifted unit interval `TopCat.I` and `(0 : TopCat.I) ≠ 1`.
 -/
 
 public section
@@ -23,6 +24,13 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory
 universe u
 
 namespace TopCat
+
+instance : Nontrivial TopCat.I.{u} := TopCat.I.homeomorph.toEquiv.nontrivial
+
+@[simp]
+theorem I.zero_ne_one : (0 : TopCat.I.{u}) ≠ 1 := fun h ↦
+  _root_.zero_ne_one (congrArg Subtype.val (by simpa using congrArg TopCat.I.homeomorph h :
+    (0 : unitInterval) = 1))
 
 variable (X F : TopCat.{u})
 
