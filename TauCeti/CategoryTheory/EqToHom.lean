@@ -18,6 +18,8 @@ and avoid exposing the definitional equality of the objects being transported.
 
 ## Main results
 
+* `TauCeti.eqToHom_self_comp`: transporting along an equality of an object with itself, which may
+  only be definitional, leaves a composite unchanged.
 * `TauCeti.eqToHom_conjugate_cancel`: transporting a morphism and then transporting it back leaves
   it unchanged.
 * `TauCeti.eqToHom_conjugate_eq_id`, `TauCeti.eqToHom_conjugate_eq_comp` and
@@ -45,6 +47,12 @@ public section
 namespace TauCeti
 
 open CategoryTheory
+
+/-- Composing with `eqToHom h` for `h : Y = Y` does nothing. This is useful when `h` is a proof
+between objects that are definitionally equal but not syntactically equal, so that `simp` with
+`eqToHom_refl` does not apply. -/
+theorem eqToHom_self_comp {C : Type*} [Category* C] {Y Z : C} (h : Y = Y) (f : Y ⟶ Z) :
+    eqToHom h ≫ f = f := by simp
 
 /-- Transporting a morphism along object equalities and then back leaves it unchanged. -/
 theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
