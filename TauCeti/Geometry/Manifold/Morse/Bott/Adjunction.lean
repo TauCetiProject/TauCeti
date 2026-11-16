@@ -223,16 +223,15 @@ private theorem exists_homotopyEquiv_pushout_of_deformation [T2Space S] [Compact
   -- So `Θ(D_ε)` lies in `M_c` and meets `M_{c-ε}` in `Θ(S_ε)`.
   obtain ⟨α, χ, j, hα, hj, sq⟩ := TopCat.exists_isPushout_union_image
     (F := {y | f y ≤ c - ε}) (U := {y | f y ≤ c + ε})
-    (isClosed_le hfs.continuous continuous_const) (fun y (hy : f y ≤ c - ε) ↦ by
-      change f y ≤ c + ε
+    (isClosed_le hfs.continuous continuous_const) (fun y hy ↦ by
+      rw [mem_ofPred_eq] at hy ⊢
       linarith)
     (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)
     (h.isCompact_negativeDiscBundle hn hfs hdim g ε) (Θ.contMDiffOn.continuousOn.mono hD)
     (Θ.toPartialEquiv.injOn.mono hD) (fun x hx ↦ by
-      change f (Θ x) ≤ c + ε
+      rw [mem_ofPred_eq]
       linarith [hfD hx, hq0 hx]) fun x hx ↦ by
-      change f (Θ x) ≤ c - ε ↔ _
-      rw [hfD hx, IsCriticalSubmanifold.mem_negativeSphereBundle]
+      rw [mem_ofPred_eq, hfD hx, IsCriticalSubmanifold.mem_negativeSphereBundle]
       have := ((IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 hx)
       exact ⟨fun h' ↦ ⟨this.1, le_antisymm this.2 (by linarith)⟩, fun h' ↦ by linarith [h'.2]⟩
   -- The pushout is identified with `M_{c-ε} ∪ Θ(D_ε)` compatibly with the inclusions of
@@ -242,8 +241,7 @@ private theorem exists_homotopyEquiv_pushout_of_deformation [T2Space S] [Compact
         (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε))) (TopCat.ofHom α) w) =
         j w := by
     rw [TopCat.homeoOfIso_apply, Iso.symm_hom, ← ConcreteCategory.comp_apply,
-      sq.inr_isoPushout_inv]
-    rfl
+      sq.inr_isoPushout_inv, TopCat.ofHom_apply]
   refine ⟨α, hα, (TopCat.homeoOfIso sq.isoPushout.symm).toHomotopyEquiv.trans
     (ContinuousMap.HomotopyEquiv.ofRetraction _ ρ hρ R.toHomotopy), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply]
@@ -307,27 +305,21 @@ theorem exists_homotopyEquiv_pushout_negativeDiscBundle [SecondCountableTopology
     linarith [(min_le_right (ε₀ / 2) _).trans (min_le_left (c - a) (b - c))]
   have hεb : c + ε ≤ b := by
     linarith [(min_le_right (ε₀ / 2) _).trans (min_le_right (c - a) (b - c))]
-  have hsub {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous)
-      (preimage_mono (Icc_subset_Icc hs ht))
   -- Attach `D_ε` to `M_{c-ε}`, giving a space homotopy equivalent to `M_{c+ε}`.
   obtain ⟨hD, ρ, hρ, ⟨R⟩⟩ := hmain ε ⟨hε, (min_le_left _ _).trans_lt (half_lt_self hε₀)⟩
-    (hsub (by linarith) (by linarith))
+    (hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous)
+      (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
     fun x hx ↦ hcrit ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩
   obtain ⟨α, hα, e₁, he₁⟩ :=
     h.exists_homotopyEquiv_pushout_of_deformation hn hfs hε hdim g Θ hΘf hD ρ hρ R
-  -- Points of the two collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` are not critical.
-  have hreg {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) (hst : t < c ∨ c < s) :
-      ∀ x, s ≤ f x → f x ≤ t → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x hsx hxt h0 ↦ by
-    obtain ⟨y, hy⟩ :=
-      hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, by linarith, by linarith⟩
-    have := hc y
-    rw [hy] at this
-    rcases hst with hst | hst <;> linarith
-  -- Move the attachment across the collars.
-  obtain ⟨r, hr, E, hE⟩ := exists_homotopyEquiv_pushout_comp_sublevelRetraction hfs hεa
-    (hsub le_rfl (by linarith)) (hreg le_rfl (by linarith) (Or.inl (by linarith))) hεb
-    (hsub (by linarith) le_rfl) (hreg (by linarith) le_rfl (Or.inr (by linarith)))
+  -- Move the attachment across the collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]`: the critical
+  -- points of the band lie on `i`, on the level `c`.
+  obtain ⟨r, hr, E, hE⟩ :=
+    exists_homotopyEquiv_pushout_comp_sublevelRetraction_of_isCompact_preimage_Icc hfs hεa
+      (by linarith) hεb hcompact fun x hx hxab ↦ by
+        obtain ⟨y, rfl⟩ := hcrit ⟨hx, hxab⟩
+        rw [hc y]
+        exact ⟨by linarith, by linarith⟩
     (TopCat.ofHom (ContinuousMap.inclusion
       (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε)))
     (IsEmbedding.inclusion (h.negativeSphereBundle_subset_negativeDiscBundle hn P gR ε))

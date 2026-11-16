@@ -454,9 +454,10 @@ theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
     fun x hx ↦ ⟨h.rescale hn gR a⁻¹ a⁻¹ x, ?_, ?_⟩
   · rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR] at hx ⊢
     refine ⟨by rw [h.posSq_rescale hn gR, hx.1, mul_zero], ?_⟩
-    rw [h.negSq_rescale hn gR, inv_pow, Real.sq_sqrt (div_nonneg (by linarith) (by linarith)),
-      inv_div, div_mul_eq_mul_div, div_le_iff₀ (by linarith)]
-    nlinarith [hx.2]
+    rw [h.negSq_rescale hn gR, inv_pow, Real.sq_sqrt (div_nonneg (by linarith) (by linarith))]
+    have : m ≠ 0 := hm.ne'
+    field_simp
+    exact (div_le_one (by linarith)).2 hx.2
   · exact (h.rescale_rescale hn gR x a a a⁻¹ a⁻¹).trans
       (by rw [mul_inv_cancel₀ ha.ne', h.rescale_one_one hn gR])
 
