@@ -105,6 +105,22 @@ theorem mk_preimage_timeShell_left (ρ t : ℝ) :
   ext s
   simp [and_comm]
 
+/-- On the line through `(s, t)` with first time `s`, the indicator of the dyadic time shell is
+the indicator of its section `ρ ≤ |s - t| < 2ρ`. -/
+theorem indicator_timeShell_mk_right {M : Type*} [Zero M] (ρ s t : ℝ) (φ : ℝ × ℝ → M) :
+    (timeShell ρ).indicator φ (s, t) =
+      (ball s (2 * ρ) \ ball s ρ).indicator (fun t ↦ φ (s, t)) t := by
+  rw [← mk_preimage_timeShell_right]
+  exact (indicator_comp_right (Prod.mk s)).symm
+
+/-- On the line through `(s, t)` with second time `t`, the indicator of the dyadic time shell is
+the indicator of its section `ρ ≤ |s - t| < 2ρ`. -/
+theorem indicator_timeShell_mk_left {M : Type*} [Zero M] (ρ s t : ℝ) (φ : ℝ × ℝ → M) :
+    (timeShell ρ).indicator φ (s, t) =
+      (ball t (2 * ρ) \ ball t ρ).indicator (fun s ↦ φ (s, t)) s := by
+  rw [← mk_preimage_timeShell_left]
+  exact (indicator_comp_right fun s ↦ (s, t)).symm
+
 /-- The two times of a pair in a dyadic time shell are distinct. -/
 theorem ne_of_mem_timeShell {ρ : ℝ} {p : ℝ × ℝ} (hp : p ∈ timeShell ρ) : p.1 ≠ p.2 :=
   dist_pos.1 (by linarith [hp.1, hp.2])
@@ -128,17 +144,12 @@ theorem timeShell_eq_empty_of_nonpos {ρ : ℝ} (hρ : ρ ≤ 0) : timeShell ρ 
 /-- The dyadic time shells `ρ = 2ʲ`, `j ∈ ℤ`, are pairwise disjoint. -/
 theorem pairwise_disjoint_timeShell_zpow :
     Pairwise (Function.onFun Disjoint fun j : ℤ ↦ timeShell ((2 : ℝ) ^ j)) := by
-  have key : ∀ i j : ℤ, i < j → Disjoint (timeShell ((2 : ℝ) ^ i)) (timeShell ((2 : ℝ) ^ j)) := by
-    intro i j hij
-    rw [Set.disjoint_left]
-    rintro p ⟨-, hi⟩ ⟨hj, -⟩
-    have h : (2 : ℝ) ^ (i + 1) ≤ 2 ^ j := zpow_le_zpow_right₀ one_le_two (by omega)
-    rw [zpow_add_one₀ two_ne_zero] at h
-    linarith
-  intro i j hij
-  rcases lt_or_gt_of_ne hij with h | h
-  · exact key i j h
-  · exact (key j i h).symm
+  refine (pairwise_disjoint_on _).2 fun i j hij ↦ ?_
+  rw [Set.disjoint_left]
+  rintro p ⟨-, hi⟩ ⟨hj, -⟩
+  have h : (2 : ℝ) ^ (i + 1) ≤ 2 ^ j := zpow_le_zpow_right₀ one_le_two (by omega)
+  rw [zpow_add_one₀ two_ne_zero] at h
+  linarith
 
 /-- The dyadic time shells `ρ = 2ʲ`, `j ∈ ℤ`, cover exactly the pairs of distinct times. -/
 theorem iUnion_timeShell_zpow : ⋃ j : ℤ, timeShell ((2 : ℝ) ^ j) = {p | p.1 ≠ p.2} := by
@@ -281,8 +292,8 @@ private theorem eLpNorm_indicator_ball_diff_eq {ρ : ℝ} {b : ℝ → ℝ≥0�
   rw [eLpNorm_two_eq (hb.indicator (measurableSet_ball.diff measurableSet_ball))]
   congr 1
   refine lintegral_congr fun t ↦ ?_
-  rw [← indicator_comp_right (Prod.mk s), mk_preimage_timeShell_right]
-  exact congr($(indicator_comp_of_zero (g := fun x : ℝ≥0∞ ↦ x ^ (2 : ℝ)) (by simp)) t).symm
+  rw [indicator_timeShell_mk_right]
+  by_cases ht : t ∈ ball s (2 * ρ) \ ball s ρ <;> simp [ht]
 
 private theorem aemeasurable_uncurry_indicator_timeShell (ρ : ℝ) {b : ℝ → ℝ≥0∞}
     (hb : AEMeasurable b) :
@@ -309,8 +320,7 @@ private theorem eLpNorm_eLpNorm_indicator_ball_diff {ρ : ℝ} (hρ : 0 ≤ ρ) 
     have : (fun s ↦ (timeShell ρ).indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) =
         (ball t (2 * ρ) \ ball t ρ).indicator fun _ ↦ b t ^ (2 : ℝ) := by
       ext s
-      rw [← indicator_comp_right fun s ↦ (s, t), mk_preimage_timeShell_left]
-      rfl
+      exact indicator_timeShell_mk_left ρ s t _
     rw [this, lintegral_indicator_const (measurableSet_ball.diff measurableSet_ball),
       volume_ball_sdiff_ball hρ (by linarith), show 2 * (2 * ρ - ρ) = 2 * ρ by ring]
   have hsq (x : ℝ≥0∞) : (x ^ (2⁻¹ : ℝ)) ^ (2 : ℝ) = x := by
@@ -342,9 +352,8 @@ private theorem integral_indicator_timeShell_inner_eq {ρ : ℝ} {U : ℝ → H 
       (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t)) =
         fun t ↦ ⟪((U s)†) (F s), ((U t)†) ((ball s (2 * ρ) \ ball s ρ).indicator G t)⟫_𝕜 := by
     ext t
-    rw [← indicator_comp_right (Prod.mk s), mk_preimage_timeShell_right]
-    exact congr($(indicator_comp_of_zero (g := fun v ↦ ⟪((U s)†) (F s), v⟫_𝕜)
-      (inner_zero_right _)) t).trans (congrArg _ (congrFun (adjoint_indicator_eq G _) t).symm)
+    rw [indicator_timeShell_mk_right]
+    by_cases ht : t ∈ ball s (2 * ρ) \ ball s ρ <;> simp [ht]
   rw [h, integral_inner]
   rw [adjoint_indicator_eq]
   exact hUG.indicator (measurableSet_ball.diff measurableSet_ball)
