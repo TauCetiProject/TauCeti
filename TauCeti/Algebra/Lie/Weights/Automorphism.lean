@@ -71,16 +71,12 @@ universe u v
 section RootSpace
 
 variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
-  {H : LieSubalgebra R L} [LieRing.IsNilpotent H]
+  {H : LieSubalgebra R L}
 
-variable (σ : L ≃ₗ⁅R⁆ L) (hσ : H.map (σ : L →ₗ⁅R⁆ L) = H)
-
-include hσ
-
-omit [LieRing.IsNilpotent H] in
 /-- A normalising automorphism intertwines the two `H`-endomorphisms cutting out the root spaces of
 `χ` and of `χ ∘ (σ|H)⁻¹`. -/
-private theorem comp_sub_smul_one (χ : H → R) (y : H) :
+private theorem comp_sub_smul_one (σ : L ≃ₗ⁅R⁆ L) (hσ : H.map (σ : L →ₗ⁅R⁆ L) = H)
+    (χ : H → R) (y : H) :
     (toEnd R H L y - (χ ∘ (σ.ofSubalgebras H H hσ).symm) y • (1 : Module.End R L)) ∘ₗ
         (σ.toLinearEquiv : L →ₗ[R] L) =
       (σ.toLinearEquiv : L →ₗ[R] L) ∘ₗ
@@ -91,6 +87,8 @@ private theorem comp_sub_smul_one (χ : H → R) (y : H) :
     rw [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket_of_module, σ.map_lie,
       LieEquiv.ofSubalgebras_symm_apply, LieEquiv.apply_symm_apply]
   simp [hy]
+
+variable [LieRing.IsNilpotent H] (σ : L ≃ₗ⁅R⁆ L) (hσ : H.map (σ : L →ₗ⁅R⁆ L) = H)
 
 /-- A normalising automorphism carries the root space of `χ` into the root space of the weight
 `χ ∘ (σ|H)⁻¹` obtained by precomposing with the inverse of its restriction. -/
@@ -137,17 +135,6 @@ restriction of a normalising automorphism. -/
 private def weightMap (χ : Weight R H L) : Weight R H L :=
   ⟨(χ : H → R) ∘ (σ.ofSubalgebras H H hσ).symm,
     genWeightSpace_comp_ofSubalgebras_symm_ne_bot σ hσ χ⟩
-
-end RootSpace
-
-section WeightPerm
-
-variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
-  {H : LieSubalgebra R L} [LieRing.IsNilpotent H]
-
-variable (σ : L ≃ₗ⁅R⁆ L) (hσ : H.map (σ : L →ₗ⁅R⁆ L) = H)
-
-include hσ
 
 /-- The permutation of the weights of `H` acting on `L` induced by an automorphism of `L`
 normalising `H`. -/
@@ -235,18 +222,16 @@ theorem weightPerm_symm_isNonZero {χ : Weight R H L} (hχ : χ.IsNonZero) :
     ((weightPerm σ hσ).symm χ).IsNonZero :=
   fun h => hχ ((weightPerm_symm_isZero_iff σ hσ).mp h)
 
-end WeightPerm
+end RootSpace
 
 section WeightInversion
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
 variable (ω : L ≃ₗ⁅K⁆ L) (hω : ∀ y ∈ H, ω y = -y)
 
-omit [CharZero K] in
-include hω in
 /-- **An automorphism acting by `-1` on the Cartan subalgebra inverts every weight.** The induced
 permutation of the weights is negation, so the automorphism carries the root space of `α` onto the
 root space of `-α`. -/
@@ -268,17 +253,14 @@ theorem weightPerm_eq_neg (α : Weight K H L) :
 
 end WeightInversion
 
-section Killing
+section WeightNeg
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
 variable (σ : L ≃ₗ⁅K⁆ L) (hσ : H.map (σ : L →ₗ⁅K⁆ L) = H)
 
-include hσ
-
-omit [CharZero K] in
 /-- The induced permutation of the weights commutes with negation, since precomposition with the
 restricted automorphism is linear in the weight. -/
 @[simp]
@@ -287,13 +269,22 @@ theorem weightPerm_neg (α : Weight K H L) :
   ext y
   simp
 
-omit [CharZero K] in
 /-- The inverse of the induced permutation of the weights also commutes with negation. -/
 @[simp]
 theorem weightPerm_symm_neg (α : Weight K H L) :
     (weightPerm σ hσ).symm (-α) = -((weightPerm σ hσ).symm α) :=
   (weightPerm σ hσ).injective <| by
     rw [Equiv.apply_symm_apply, weightPerm_neg, Equiv.apply_symm_apply]
+
+end WeightNeg
+
+section Killing
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
+
+variable (σ : L ≃ₗ⁅K⁆ L) (hσ : H.map (σ : L →ₗ⁅K⁆ L) = H)
 
 /-- A normalising automorphism sends the coroot of a root to the coroot of the permuted root. -/
 theorem map_coroot_weightPerm {α : Weight K H L} :
@@ -370,6 +361,32 @@ end IsSl2System
 
 end Sl2System
 
+section RootVector
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
+
+open LieAlgebra.IsKilling
+
+namespace IsSl2System
+
+variable {x : Weight K H L → L} (hx : IsSl2System x) {α : Weight K H L}
+
+include hx
+
+/-- An element of the Cartan subalgebra acts on the root vector of `α` by `α`. -/
+private theorem lie_coe_rootVector (y : H) : ⁅(y : L), x α⁆ = α y • x α :=
+  lie_eq_smul_of_mem_rootSpace (hx.mem_rootSpace α) y
+
+/-- An element of the Cartan subalgebra acts on the root vector of `-α` by `-α`. -/
+private theorem lie_coe_rootVector_neg (y : H) : ⁅(y : L), x (-α)⁆ = -(α y • x (-α)) := by
+  simpa using lie_eq_smul_of_mem_rootSpace (hx.mem_rootSpace (-α)) y
+
+end IsSl2System
+
+end RootVector
+
 section WeylAut
 
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
@@ -381,18 +398,6 @@ open LieAlgebra.IsKilling
 namespace IsSl2System
 
 variable {x : Weight K H L → L} (hx : IsSl2System x) {α : Weight K H L} (hα : α.IsNonZero)
-
-include hx
-
-omit [LieAlgebra ℚ L] in
-/-- An element of the Cartan subalgebra acts on the root vector of `α` by `α`. -/
-private theorem lie_coe_rootVector (y : H) : ⁅(y : L), x α⁆ = α y • x α :=
-  lie_eq_smul_of_mem_rootSpace (hx.mem_rootSpace α) y
-
-omit [LieAlgebra ℚ L] in
-/-- An element of the Cartan subalgebra acts on the root vector of `-α` by `-α`. -/
-private theorem lie_coe_rootVector_neg (y : H) : ⁅(y : L), x (-α)⁆ = -(α y • x (-α)) := by
-  simpa using lie_eq_smul_of_mem_rootSpace (hx.mem_rootSpace (-α)) y
 
 /-- **The Weyl automorphism of a root is the coreflection on the Cartan subalgebra.** It sends
 `y ∈ H` to `y - α(y) α^∨`. -/
