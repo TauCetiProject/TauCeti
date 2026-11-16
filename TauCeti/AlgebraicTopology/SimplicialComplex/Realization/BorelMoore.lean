@@ -20,12 +20,12 @@ and are cofinal among all open neighbourhoods of `|P|`
 (`exists_iteratedOpenSimplicialNeighborhood_subset`).
 
 Applying the compact-pair comparison theorem from
-`TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.CompactPair` yields:
-* a compact exhaustion `compactExhaustionRealizationCompl` of the complement `|K| \ |P|`, making
-  `|K| \ |P|` weakly locally compact and `σ`-compact;
-* for every local coefficient system `L` on `|K|` and every degree `j`, the canonical isomorphism
-  `realizationTwistedHomologyIsoBorelMooreHomologyCompl` between `H_j(|K|, |P|; L)` and
-  `H_j^{BM}(|K| \ |P|; L|_{|K| \ |P|})`.
+`TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.CompactPair` together with the
+locally-compact and `σ`-compact instances on `|K| \ |P|` from
+`TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.IteratedNeighborhood` yields, for every
+local coefficient system `L` on `|K|` and every degree `j`, the canonical isomorphism
+`realizationTwistedHomologyIsoBorelMooreHomologyCompl` between `H_j(|K|, |P|; L)` and
+`H_j^{BM}(|K| \ |P|; L|_{|K| \ |P|})`.
 
 ## References
 
@@ -48,37 +48,6 @@ universe u v w
 variable {R : Type u} [Ring R] {ι : Type v}
   (K : AbstractSimplicialComplex ι) (P : PreAbstractSimplicialComplex ι)
 
-/-- For an abstract simplicial complex `K` with finitely many faces, the complement in `|K|` of the
-polyhedron of `P` admits a compact exhaustion extracted from the iterated open simplicial
-neighbourhoods of `P`. -/
-def compactExhaustionRealizationCompl (hfin : K.faces.Finite) :
-    CompactExhaustion ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
-  have := K.compactSpace_realization_of_finite_faces hfin
-  CompactExhaustion.complOfCofinalNhds
-    (K.subcomplexNDRPair P).isClosed
-    (K.isOpen_iteratedOpenSimplicialNeighborhood P)
-    (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
-    (K.exists_iteratedOpenSimplicialNeighborhood_subset P hfin)
-
-/-- For a complex `K` with finitely many faces, the complement `|K| \ |P|` is `σ`-compact. -/
-theorem sigmaCompactSpace_realizationCompl (hfin : K.faces.Finite) :
-    SigmaCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
-  (K.compactExhaustionRealizationCompl P hfin).sigmaCompactSpace
-
-/-- For a complex `K` with finitely many faces, the complement `|K| \ |P|` is weakly locally
-compact. -/
-theorem weaklyLocallyCompactSpace_realizationCompl (hfin : K.faces.Finite) :
-    WeaklyLocallyCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
-  (K.compactExhaustionRealizationCompl P hfin).weaklyLocallyCompactSpace
-
-instance instSigmaCompactSpaceRealizationCompl [Finite (Face K)] :
-    SigmaCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
-  K.sigmaCompactSpace_realizationCompl P (Set.toFinite K.faces)
-
-instance instWeaklyLocallyCompactSpaceRealizationCompl [Finite (Face K)] :
-    WeaklyLocallyCompactSpace ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)) :=
-  K.weaklyLocallyCompactSpace_realizationCompl P (Set.toFinite K.faces)
-
 private lemma exists_retraction_iteratedOpenSimplicialNeighborhood (n : ℕ) :
     ∃ r : C(K.iteratedOpenSimplicialNeighborhood P n, {y : Realization K | y.1.support ∈ P}),
       (∀ a, r (ContinuousMap.inclusion
@@ -98,8 +67,9 @@ def realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion (hfin : K.f
     (TopPair.ofSubset (X := TopCat.of (Realization K))
         {y : Realization K | y.1.support ∈ P}).twistedHomology L j ≅
       borelMooreHomology
-        ((pullback (complInclusion (X := TopCat.of (Realization K))
-          {y : Realization K | y.1.support ∈ P}).hom).obj L) j :=
+        ((pullback
+          (X := TopCat.of ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)))
+          (ContinuousMap.subtypeVal _)).obj L) j :=
   have := K.compactSpace_realization_of_finite_faces hfin
   twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetraction
     (X := TopCat.of (Realization K))
@@ -134,9 +104,9 @@ def realizationTwistedHomologyIsoBorelMooreHomologyCompl [Finite (Face K)]
     (TopPair.ofSubset (X := TopCat.of (Realization K))
         {y : Realization K | y.1.support ∈ P}).twistedHomology L j ≅
       borelMooreHomology
-        ((pullback (complInclusion (X := TopCat.of (Realization K))
-          {y : Realization K | y.1.support ∈ P}).hom).obj L) j :=
-  have := K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
+        ((pullback
+          (X := TopCat.of ({y : Realization K | y.1.support ∈ P}ᶜ : Set (Realization K)))
+          (ContinuousMap.subtypeVal _)).obj L) j :=
   twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction
     (X := TopCat.of (Realization K)) (K.subcomplexNDRPair P).isClosed
     (K.isOpen_iteratedOpenSimplicialNeighborhood P)
@@ -150,7 +120,6 @@ theorem realizationTwistedHomologyIsoBorelMooreHomologyCompl_hom [Finite (Face K
     (K.realizationTwistedHomologyIsoBorelMooreHomologyCompl P L j).hom =
       twistedHomologyToBorelMooreHomologyCompl (X := TopCat.of (Realization K))
         (K.subcomplexNDRPair P).isClosed L j :=
-  have := K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
   twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction_hom
     (X := TopCat.of (Realization K)) (K.subcomplexNDRPair P).isClosed
     (K.isOpen_iteratedOpenSimplicialNeighborhood P)
@@ -158,7 +127,9 @@ theorem realizationTwistedHomologyIsoBorelMooreHomologyCompl_hom [Finite (Face K
     (K.exists_iteratedOpenSimplicialNeighborhood_subset P (Set.toFinite K.faces))
     (K.exists_retraction_iteratedOpenSimplicialNeighborhood P) L j
 
-theorem isIso_realizationTwistedHomologyToBorelMooreHomologyCompl [Finite (Face K)]
+/-- The canonical comparison map `H_j(|K|, |P|; L) ⟶ H_j^{BM}(|K| \ |P|; L|_{|K| \ |P|})` is an
+isomorphism for every finite abstract simplicial complex `K` and precomplex `P`. -/
+theorem isIso_twistedHomologyToBorelMooreHomologyCompl [Finite (Face K)]
     (L : LocalCoefficientSystem.{u, v, max v w} R (TopCat.of (Realization K))) (j : ℕ) :
     IsIso (twistedHomologyToBorelMooreHomologyCompl (X := TopCat.of (Realization K))
       (K.subcomplexNDRPair P).isClosed L j) :=

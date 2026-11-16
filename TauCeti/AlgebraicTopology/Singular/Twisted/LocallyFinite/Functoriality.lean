@@ -251,6 +251,31 @@ lemma locallyFiniteChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J)
     locallyFiniteChainComplexCoefficientMap, extendLocallyFiniteChainMap_comp]
   exact extendLocallyFiniteChainMap_congr _ _ (twistedChainComplexCoefficientMap_comp η θ)
 
+/-- An isomorphism of local coefficient systems induces an isomorphism of locally finite chain
+complexes. -/
+def locallyFiniteChainComplexCoefficientIso (e : L ≅ K) :
+    locallyFiniteChainComplex L ≅ locallyFiniteChainComplex K where
+  hom := locallyFiniteChainComplexCoefficientMap e.hom
+  inv := locallyFiniteChainComplexCoefficientMap e.inv
+  hom_inv_id := by rw [← locallyFiniteChainComplexCoefficientMap_comp, e.hom_inv_id]; simp
+  inv_hom_id := by rw [← locallyFiniteChainComplexCoefficientMap_comp, e.inv_hom_id]; simp
+
+@[simp]
+lemma locallyFiniteChainComplexCoefficientIso_hom (e : L ≅ K) :
+    (locallyFiniteChainComplexCoefficientIso e).hom =
+      locallyFiniteChainComplexCoefficientMap e.hom := (rfl)
+
+@[simp]
+lemma locallyFiniteChainComplexCoefficientIso_inv (e : L ≅ K) :
+    (locallyFiniteChainComplexCoefficientIso e).inv =
+      locallyFiniteChainComplexCoefficientMap e.inv := (rfl)
+
+/-- An isomorphism of local coefficient systems induces an isomorphism of locally finite chain
+complexes. -/
+instance isIso_locallyFiniteChainComplexCoefficientMap (η : L ⟶ K) [IsIso η] :
+    IsIso (locallyFiniteChainComplexCoefficientMap η) :=
+  inferInstanceAs (IsIso (locallyFiniteChainComplexCoefficientIso (asIso η)).hom)
+
 /-- Regarding finite chains as locally finite chains commutes with changing the coefficients. -/
 @[reassoc]
 lemma toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexCoefficientMap (η : L ⟶ K) :
@@ -282,6 +307,12 @@ lemma borelMooreHomologyCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (k : �
     borelMooreHomologyCoefficientMap (η ≫ θ) k =
       borelMooreHomologyCoefficientMap η k ≫ borelMooreHomologyCoefficientMap θ k := by
   simp [borelMooreHomologyCoefficientMap, HomologicalComplex.homologyMap_comp]
+
+/-- An isomorphism of local coefficient systems induces an isomorphism on Borel–Moore homology. -/
+instance isIso_borelMooreHomologyCoefficientMap (η : L ⟶ K) [IsIso η] (k : ℕ) :
+    IsIso (borelMooreHomologyCoefficientMap η k) := by
+  dsimp [borelMooreHomologyCoefficientMap]
+  infer_instance
 
 end Coefficients
 

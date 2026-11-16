@@ -46,25 +46,21 @@ variable {R : Type u} [Ring R] {X : TopCat.{v}}
 /-- Pointwise enlargement of a compact exhaustion induces a map of relative chain towers in
 the opposite direction, by taking further relative quotients. -/
 def relativeChainComplexTowerMap (h : ∀ n, K n ⊆ K' n) :
-    relativeChainComplexTower L K' ⟶ relativeChainComplexTower L K where
-  app n := (TopTriple.ofSubset
-    (Set.compl_subset_compl.2 (h n.unop))).twistedChainComplexTotalToOuter L
-  naturality {m n} f := by
-    apply (TopPair.ofSubset (K' m.unop)ᶜ).twistedChainComplex_hom_ext L
-    -- Term composition lets elaboration align the dependent ambient types of the triples.
-    exact (twistedChainComplexπ_comp_relativeChainComplexTower_map_assoc L K' f _).trans <|
-      (TopTriple.twistedChainComplexπ_comp_totalToOuter
-        (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n.unop))) L).trans <|
-        ((TopTriple.twistedChainComplexπ_comp_totalToOuter_assoc
-          (TopTriple.ofSubset (Set.compl_subset_compl.2 (h m.unop))) L _).trans
-          (twistedChainComplexπ_comp_relativeChainComplexTower_map L K f)).symm
+    relativeChainComplexTower L K' ⟶ relativeChainComplexTower L K :=
+  complChainComplexTowerMap L K.subset_succ K'.subset_succ h
+
+/-- `relativeChainComplexTowerMap` is the specialization of `complChainComplexTowerMap` to compact
+exhaustions. -/
+lemma relativeChainComplexTowerMap_eq_complChainComplexTowerMap (h : ∀ n, K n ⊆ K' n) :
+    relativeChainComplexTowerMap L h = complChainComplexTowerMap L K.subset_succ K'.subset_succ h :=
+  (rfl)
 
 /-- A component of the comparison is the quotient map for the corresponding triple. -/
 @[simp]
 theorem relativeChainComplexTowerMap_app (h : ∀ n, K n ⊆ K' n) (n : ℕ) :
     (relativeChainComplexTowerMap L h).app (op n) =
       (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n))).twistedChainComplexTotalToOuter L :=
-  (rfl)
+  complChainComplexTowerMap_app L K.subset_succ K'.subset_succ h n
 
 /-- The comparison preserves the classes of finite ambient chains. -/
 @[reassoc]
@@ -73,30 +69,20 @@ theorem twistedChainComplexπ_comp_relativeChainComplexTowerMap_app
     (TopPair.ofSubset (K' n)ᶜ).twistedChainComplexπ L ≫
         (relativeChainComplexTowerMap L h).app (op n) =
       (TopPair.ofSubset (K n)ᶜ).twistedChainComplexπ L :=
-  (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n))).twistedChainComplexπ_comp_totalToOuter L
+  twistedChainComplexπ_comp_complChainComplexTowerMap_app L K.subset_succ K'.subset_succ h n
 
 @[simp]
 theorem relativeChainComplexTowerMap_refl :
-    relativeChainComplexTowerMap L (fun n ↦ Set.Subset.refl (K n)) = 𝟙 _ := by
-  apply NatTrans.ext
-  funext n
-  apply (TopPair.ofSubset (K n.unop)ᶜ).twistedChainComplex_hom_ext L
-  exact (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L _ n.unop).trans
-    (Category.comp_id _).symm
+    relativeChainComplexTowerMap L (fun n ↦ Set.Subset.refl (K n)) = 𝟙 _ :=
+  complChainComplexTowerMap_refl L K K.subset_succ
 
 /-- Taking further relative quotients is transitive. -/
 @[reassoc (attr := simp)]
 theorem relativeChainComplexTowerMap_comp (h : ∀ n, K n ⊆ K' n)
     (h' : ∀ n, K' n ⊆ K'' n) :
     relativeChainComplexTowerMap L h' ≫ relativeChainComplexTowerMap L h =
-      relativeChainComplexTowerMap L (fun n ↦ (h n).trans (h' n)) := by
-  apply NatTrans.ext
-  funext n
-  apply (TopPair.ofSubset (K'' n.unop)ᶜ).twistedChainComplex_hom_ext L
-  exact (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app_assoc L h' n.unop _).trans <|
-    (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L h n.unop).trans
-      (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L
-        (fun n ↦ (h n).trans (h' n)) n.unop).symm
+      relativeChainComplexTowerMap L (fun n ↦ (h n).trans (h' n)) :=
+  complChainComplexTowerMap_comp L K.subset_succ K'.subset_succ K''.subset_succ h h'
 
 /-- Relative classes of locally finite chains commute with enlargement of the compact sets. -/
 @[reassoc]
@@ -107,9 +93,8 @@ theorem locallyFiniteChainComplexToRelative_comp_relativeChainComplexTowerMap_ap
         (relativeChainComplexTowerMap L h).app (op n) =
       (TopPair.ofSubset (K n)ᶜ).locallyFiniteChainComplexToRelative L
         (K.isCompact n).compl_range_ofSubset_compl_map :=
-  TopTriple.locallyFiniteChainComplexToRelative_comp_twistedChainComplexTotalToOuter
-    (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n))) L
-    (K'.isCompact n).compl_range_ofSubset_compl_map (K.isCompact n).compl_range_ofSubset_compl_map
+  locallyFiniteChainComplexToRelative_comp_complChainComplexTowerMap_app
+    L K.subset_succ K'.subset_succ K.isCompact K'.isCompact h n
 
 /-- The map of limit complexes is the identity on locally finite chains, through the canonical
 identifications with the limits of the two relative towers. -/
@@ -118,15 +103,9 @@ theorem locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap
     (h : ∀ n, K n ⊆ K' n) :
     (locallyFiniteChainComplexIsoLimComplex L K').hom ≫
         ComplexTower.limComplexMap (relativeChainComplexTowerMap L h) =
-      (locallyFiniteChainComplexIsoLimComplex L K).hom := by
-  apply (relativeChainComplexTower L K).isLimitLimComplexCone.hom_ext
-  rintro ⟨n⟩
-  -- Term composition aligns the dependent limit-cone and relative-pair wrappers.
-  exact (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) (ComplexTower.limComplexMap_comp_π _ n)).trans <|
-      (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ_assoc L K' n _).trans <|
-        (locallyFiniteChainComplexToRelative_comp_relativeChainComplexTowerMap_app L h n).trans
-          (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ L K n).symm
+      (locallyFiniteChainComplexIsoLimComplex L K).hom :=
+  (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap_compl L K' K.subset_succ
+    K.isCompact h).trans (locallyFiniteChainComplexIsoLimComplex_hom_eq_toComplLim L K).symm
 
 /-- The comparison on limit complexes preserves the inverse identification with locally finite
 chains. -/

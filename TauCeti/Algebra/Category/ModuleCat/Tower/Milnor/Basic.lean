@@ -301,6 +301,11 @@ def isLimitLimComplexCone : IsLimit C.limComplexCone :=
     IsLimit.ofIsoLimit (C.term i).isLimitLimCone <| Cone.ext (Iso.refl _) fun ⟨n⟩ ↦
       ModuleCat.hom_ext ((C.term i).limCone_π_app n)
 
+/-- Two chain maps into `C.limComplex` agree if they agree after every projection `limComplexπ`. -/
+theorem limComplex_hom_ext {X : HomologicalComplex (ModuleCat.{v} R) c} {f g : X ⟶ C.limComplex}
+    (h : ∀ n, f ≫ C.limComplexπ n = g ≫ C.limComplexπ n) : f = g :=
+  C.isLimitLimComplexCone.hom_ext fun ⟨n⟩ ↦ h n
+
 end Complexes
 
 section ShortExact

@@ -75,6 +75,11 @@ instance instCompactSpaceRealization [Finite ι] (K : AbstractSimplicialComplex 
   let := Fintype.ofFinite ι
   exact K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
 
+/-- The weak realization of a complex with finitely many faces is compact. -/
+instance instCompactSpaceRealizationOfFiniteFace (K : AbstractSimplicialComplex ι)
+    [Finite (Face K)] : CompactSpace (Realization K) :=
+  K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
+
 /-- Barycentric coordinates restrict to a closed embedding on every compact subset of
 the weak realization. This applies in particular to compact local chart domains. -/
 theorem isClosedEmbedding_realization_coe_restrict {s : Set (Realization K)} (hs : IsCompact s) :

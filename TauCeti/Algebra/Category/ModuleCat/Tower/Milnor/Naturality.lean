@@ -207,11 +207,6 @@ theorem limOneToHomology_naturality (f : C ⟶ D)
     simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hn
   exact congrArg ((D.shortComplex_shortExact hD).δ i j hij) hp
 
-/-- Two chain maps into `C.limComplex` agree if they agree after every projection `limComplexπ`. -/
-theorem limComplex_hom_ext {X : HomologicalComplex (ModuleCat.{v} R) c} {f g : X ⟶ C.limComplex}
-    (h : ∀ n, f ≫ C.limComplexπ n = g ≫ C.limComplexπ n) : f = g :=
-  C.isLimitLimComplexCone.hom_ext fun ⟨n⟩ ↦ h n
-
 /-- If a map of towers is a quasi-isomorphism in degree `i` at every stage, then the induced
 map of product complexes is a quasi-isomorphism in degree `i`. -/
 instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι)
@@ -223,10 +218,8 @@ instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι)
     (ConcreteCategory.isIso_iff_bijective _).1
       ((quasiIsoAt_iff_isIso_homologyMap (f.app (op n)) i).1 inferInstance)
   have hprod : Function.Bijective (ModuleTower.productMap g) :=
-    ⟨fun x y h ↦ funext fun n ↦ (hbij n).1
-        (by simpa [ModuleTower.productMap_apply] using congrFun h n),
-      fun y ↦ let ⟨z, hz⟩ := Classical.axiomOfChoice fun n ↦ (hbij n).2 (y n)
-        ⟨z, funext fun n ↦ (ModuleTower.productMap_apply g z n).trans (hz n)⟩⟩
+    ⟨ModuleTower.productMap_injective fun n ↦ (hbij n).1,
+      ModuleTower.productMap_surjective fun n ↦ (hbij n).2⟩
   have hnat : (D.productHomologyEquiv i : _ → _) ∘
       (HomologicalComplex.homologyMap (productComplexMap f) i).hom =
       ModuleTower.productMap g ∘ (C.productHomologyEquiv i : _ → _) :=

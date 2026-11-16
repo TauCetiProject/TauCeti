@@ -816,23 +816,34 @@ lemma twistedChainComplexCoefficientMap_f_ι_apply (η : L ⟶ K) (k : ℕ)
       (ιTwistedChainComplex K k σ).hom ((η.app (initialVertex σ)).hom v) :=
   congrArg (fun f ↦ f.hom v) (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f η k σ)
 
-/-- The identity morphism of a coefficient system induces the identity of twisted chain
-complexes. -/
+/-- A coefficient morphism acts on a simplex coefficient through its initial-vertex component. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff (η : L ⟶ K) {k : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) : (twistedChainComplexCoefficientMap η).f k ≫
+      twistedChainComplexCoeff K σ = twistedChainComplexCoeff L σ ≫ η.app (initialVertex σ) :=
+  twistedChainComplex_hom_ext L fun τ ↦ by rcases eq_or_ne τ σ with rfl | h <;> simp [*]
+
+@[simp]
+lemma twistedChainComplexCoeff_twistedChainComplexCoefficientMap_f_apply (η : L ⟶ K) {k : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) (a : (twistedChainComplex L).X k) :
+    (twistedChainComplexCoeff K σ).hom (((twistedChainComplexCoefficientMap η).f k).hom a) =
+      (η.app (initialVertex σ)).hom ((twistedChainComplexCoeff L σ).hom a) :=
+  congrArg (·.hom a) (twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff η σ)
+
+/-- The identity of a coefficient system induces the identity of twisted chain complexes. -/
 @[simp]
 lemma twistedChainComplexCoefficientMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     twistedChainComplexCoefficientMap (𝟙 L) = 𝟙 (twistedChainComplex L) :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map_id L
 
-/-- A composite of morphisms of coefficient systems induces the composite of the two induced
-morphisms of twisted chain complexes. -/
+/-- A composite of coefficient morphisms induces the composite on twisted chain complexes. -/
 @[simp, reassoc]
 lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
     twistedChainComplexCoefficientMap (η ≫ θ) =
       twistedChainComplexCoefficientMap η ≫ twistedChainComplexCoefficientMap θ :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).map_comp η θ
 
-/-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
-complexes. -/
+/-- An isomorphism of coefficient systems induces an isomorphism of twisted chain complexes. -/
 def twistedChainComplexCoefficientIso (e : L ≅ K) :
     twistedChainComplex L ≅ twistedChainComplex K :=
   (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
@@ -841,15 +852,13 @@ def twistedChainComplexCoefficientIso (e : L ≅ K) :
 `e.hom`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
-    (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
-  (rfl)
+    (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom := (rfl)
 
 /-- The inverse of the induced isomorphism of twisted chain complexes is the map induced by
 `e.inv`. -/
 @[simp]
 lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
-    (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
-  (rfl)
+    (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv := (rfl)
 
 /-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
 complexes. -/

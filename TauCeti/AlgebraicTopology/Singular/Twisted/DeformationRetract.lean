@@ -155,6 +155,17 @@ theorem quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_weakDeformationRetr
     (ContinuousMap.ext fun b ↦ Subtype.ext
       (ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply hBA H hH hHA h₀ h₁ hHB b))
 
+/-- For subsets `B ⊆ A` of `X`, a deformation retraction in the weak sense of `A` onto `B`
+makes the quotient map `Hₖ(X, B; L) ⟶ Hₖ(X, A; L)` an isomorphism in every degree. -/
+theorem isIso_twistedHomologyTotalToOuter_ofSubset_of_weakDeformationRetraction
+    (H : unitInterval × A → X) (hH : Continuous H) (hHA : ∀ p, H p ∈ A)
+    (h₀ : ∀ x : A, H (0, x) = x) (h₁ : ∀ x : A, H (1, x) ∈ B)
+    (hHB : ∀ t (x : A), (x : X) ∈ B → H (t, x) ∈ B) (k : ℕ) :
+    IsIso ((ofSubset hBA).twistedHomologyTotalToOuter L k) := by
+  have := quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_weakDeformationRetraction
+    hBA L H hH hHA h₀ h₁ hHB
+  infer_instance
+
 end Subsets
 
 end TauCeti.TopTriple
