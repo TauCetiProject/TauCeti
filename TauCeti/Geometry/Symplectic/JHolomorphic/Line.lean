@@ -38,8 +38,8 @@ energy and elliptic estimates.
   `TauCeti.equivRealProdCLM_I`.
 * `TauCeti.fderiv_comp_equivRealProdCLM_one` and `TauCeti.fderiv_comp_equivRealProdCLM_I`: read
   in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
-* `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
-  coordinate vectors.
+* `LinearMap.apply_stdComplexLine` and `ContinuousLinearMap.apply_stdComplexLine`: a real-linear
+  map is determined by its values on the coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
   complex line is equivalent to the coordinate Cauchy--Riemann equation
   `F (0, 1) = J (F (1, 0))`.
@@ -163,6 +163,14 @@ variable {J : AlmostComplexStructure V}
 /-- A real-linear map out of `ℝ × ℝ` is determined by its values on the real and imaginary
 coordinate vectors. -/
 lemma _root_.LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z : ℝ × ℝ) :
+    F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
+  simpa only [map_add, map_smul] using
+    congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
+
+/-- A continuous real-linear map out of `ℝ × ℝ` is determined by its values on the real and
+imaginary coordinate vectors. -/
+lemma _root_.ContinuousLinearMap.apply_stdComplexLine [TopologicalSpace V]
+    (F : (ℝ × ℝ) →L[ℝ] V) (z : ℝ × ℝ) :
     F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
   simpa only [map_add, map_smul] using
     congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)

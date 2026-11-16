@@ -94,8 +94,8 @@ theorem floerOperator_perturbationPullback (ω : SymplecticForm V)
   set P := ω.perturbedFDeriv Ks Kt u (φ w)
   set a := (fderiv ℝ φ w stdComplexLineReal).1
   set b := (fderiv ℝ φ w stdComplexLineReal).2
-  have hP (v : ℝ × ℝ) : P v = v.1 • P stdComplexLineReal + v.2 • P stdComplexLineImag := by
-    simpa using (P : ℝ × ℝ →ₗ[ℝ] V).apply_stdComplexLine v
+  have hP (v : ℝ × ℝ) : P v = v.1 • P stdComplexLineReal + v.2 • P stdComplexLineImag :=
+    P.apply_stdComplexLine v
   -- The perturbed derivative of `u ∘ φ` is `P ∘ dφ_w`.
   have hP' (v : ℝ × ℝ) : fderiv ℝ (u ∘ φ) w v - v.1 • ω.hamiltonianVectorField
       (perturbationPullback φ Ks Kt stdComplexLineReal w) (u (φ w)) - v.2 •
@@ -107,7 +107,8 @@ theorem floerOperator_perturbationPullback (ω : SymplecticForm V)
   have h2 := hP' stdComplexLineImag
   simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
     stdComplexLineImag_snd, one_smul, zero_smul, sub_zero] at h1 h2
-  have hLi : fderiv ℝ φ w stdComplexLineImag = (-b, a) := hφJ.apply_stdComplexLineImag_eq
+  have hLi : fderiv ℝ φ w stdComplexLineImag = (-b, a) := by
+    simpa only [ContinuousLinearMap.coe_coe] using hφJ.apply_stdComplexLineImag_eq
   rw [floerOperator_def, floerOperator_def, comp_apply, h1, h2, hLi,
     hP (fderiv ℝ φ w stdComplexLineReal), hP (-b, a),
     ← perturbedFDeriv_apply_stdComplexLineReal ω Ks Kt u (φ w),
@@ -147,7 +148,7 @@ theorem floerLinearization_perturbationPullback (ω : SymplecticForm V)
       fderiv ℝ (f ∘ φ) w v = (fderiv ℝ φ w v).1 • fderiv ℝ f (φ w) stdComplexLineReal +
         (fderiv ℝ φ w v).2 • fderiv ℝ f (φ w) stdComplexLineImag := by
     rw [fderiv_comp w hf hφ, ContinuousLinearMap.comp_apply]
-    simpa using (fderiv ℝ f (φ w) : ℝ × ℝ →ₗ[ℝ] V).apply_stdComplexLine (fderiv ℝ φ w v)
+    exact (fderiv ℝ f (φ w)).apply_stdComplexLine (fderiv ℝ φ w v)
   -- The derivative of the family of complex structures anticommutes with it.
   have hdJ (v : V) : fderiv ℝ (fun y ↦ (J (φ w) y).toLinearMap.toContinuousLinearMap) (u (φ w))
       (ξ (φ w)) (J (φ w) (u (φ w)) v) = -J (φ w) (u (φ w))
