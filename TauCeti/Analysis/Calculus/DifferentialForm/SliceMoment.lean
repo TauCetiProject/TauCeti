@@ -373,14 +373,9 @@ theorem conjWirtingerDeriv_sliceMoment_eq_zero (hK : IsCompact K) (hTc : ContDif
     neg_neg] at h₁ h₂
   -- `T` is linear in its second slot, so `T(v, -∂_y) = -T(v, ∂_y)`.
   have hneg : T (z, w) ![(v, 0), (0, -I)] = -T (z, w) ![(v, 0), (0, I)] := by
-    have h := (T (z, w)).map_update_smul ![(v, 0), (0, I)] 1 (-1 : ℝ) (0, I)
-    have e₁ : Function.update ![((v, 0) : V × ℂ), (0, I)] 1 ((-1 : ℝ) • ((0 : V), I)) =
-        ![(v, 0), (0, -I)] := by
-      ext i : 1; fin_cases i <;> simp
-    have e₂ : Function.update ![((v, 0) : V × ℂ), (0, I)] 1 ((0 : V), I) =
-        ![(v, 0), (0, I)] := by
-      ext i : 1; fin_cases i <;> simp
-    rwa [e₁, e₂, neg_one_smul] at h
+    simpa only [Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero, Prod.neg_mk, neg_zero,
+      ContinuousAlternatingMap.coe_toAlternatingMap] using
+      (T (z, w)).toAlternatingMap.map_update_neg ![(v, 0), (0, I)] (0 : Fin 1).succ (0, I)
   rw [h₁, h₂, hneg]
   push_cast
   ring
