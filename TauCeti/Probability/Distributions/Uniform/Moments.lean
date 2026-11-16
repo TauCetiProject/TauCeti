@@ -21,8 +21,13 @@ function, and characteristic function as normalized finite sums. Its exponential
 domain is all of `ℝ`.
 
 The results are stated for a `Finset`, so the finite-type law is obtained by taking `s = univ`.
-The formulas use `Finset.integral_uniformOn_finset`; no ordering or injectivity assumption is
+The formulas use `Finset.integral_map_uniformOn_finset`; no ordering or injectivity assumption is
 placed on the labels.
+
+## Implementation notes
+
+The statements and proofs follow those for labelled categorical laws in
+`TauCeti.Probability.Distributions.Categorical.Moments`.
 -/
 
 public section
@@ -36,20 +41,12 @@ namespace Finset
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
-private theorem integrable_comp_map_uniformOn_finset (s : Finset α) (label : α → ℝ)
-    (g : ℝ → ℝ) (hg : AEStronglyMeasurable g ((uniformOn (s : Set α)).map label)) :
-    Integrable g ((uniformOn (s : Set α)).map label) := by
-  rw [integrable_map_measure hg (s.aemeasurable_uniformOn_finset label)]
-  exact s.integrable_uniformOn_finset (g ∘ label)
-
 /-- Every natural raw moment of a real-labelled finite uniform law is the normalized finite
 power sum. The empty-set convention is also valid: both sides are zero. -/
 theorem integral_pow_id_map_uniformOn_finset (s : Finset α) (label : α → ℝ) (n : ℕ) :
     ∫ x : ℝ, x ^ n ∂(uniformOn (s : Set α)).map label =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ n := by
-  rw [integral_map (s.aemeasurable_uniformOn_finset label) (by fun_prop),
-    integral_uniformOn_finset]
-  simp only [smul_eq_mul]
+  rw [integral_map_uniformOn_finset, smul_eq_mul]
 
 /-- The mean of a real-labelled finite uniform law is the arithmetic mean of its labels. -/
 theorem integral_id_map_uniformOn_finset (s : Finset α) (label : α → ℝ) :
@@ -57,16 +54,17 @@ theorem integral_id_map_uniformOn_finset (s : Finset α) (label : α → ℝ) :
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i := by
   simpa only [pow_one] using s.integral_pow_id_map_uniformOn_finset label 1
 
-/-- The variance of a labelled nonempty finite uniform law is its mean square minus the square
-of its mean. -/
-theorem variance_id_map_uniformOn_finset (s : Finset α) (hs : s.Nonempty) (label : α → ℝ) :
+/-- The variance of a labelled finite uniform law is its mean square minus the square of its
+mean. The empty-set convention is also valid: both sides are zero. -/
+theorem variance_id_map_uniformOn_finset (s : Finset α) (label : α → ℝ) :
     variance id ((uniformOn (s : Set α)).map label) =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ 2 -
         ((s.card : ℝ)⁻¹ * ∑ i ∈ s, label i) ^ 2 := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
-  have hsq : Integrable (fun x : ℝ ↦ x ^ 2) ((uniformOn (s : Set α)).map label) :=
-    s.integrable_comp_map_uniformOn_finset label _ (by fun_prop)
-  rw [variance_eq_sub (X := id) ((memLp_two_iff_integrable_sq (by fun_prop)).2 hsq)]
+  rw [variance_eq_sub (X := id) ((memLp_two_iff_integrable_sq (by fun_prop)).2
+    (s.integrable_map_uniformOn_finset label (fun x : ℝ ↦ x ^ 2)))]
   simp only [Pi.pow_apply, id_eq, s.integral_pow_id_map_uniformOn_finset,
     s.integral_id_map_uniformOn_finset]
 
@@ -77,15 +75,14 @@ theorem integrableExpSet_id_map_uniformOn_finset (s : Finset α) (label : α →
     integrableExpSet id ((uniformOn (s : Set α)).map label) = Set.univ := by
   ext t
   simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  exact s.integrable_comp_map_uniformOn_finset label _ (by fun_prop)
+  exact s.integrable_map_uniformOn_finset label _
 
 /-- The moment-generating function of a labelled finite uniform law is the normalized finite
 sum of exponentials. -/
 theorem mgf_id_map_uniformOn_finset (s : Finset α) (label : α → ℝ) (t : ℝ) :
     mgf id ((uniformOn (s : Set α)).map label) t =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, Real.exp (t * label i) := by
-  rw [mgf, integral_map (s.aemeasurable_uniformOn_finset label) (by fun_prop),
-    integral_uniformOn_finset]
+  rw [mgf, integral_map_uniformOn_finset]
   simp only [id_eq, smul_eq_mul]
 
 /-- The cumulant-generating function of a labelled finite uniform law is the logarithm of its
@@ -100,8 +97,7 @@ of its character values. -/
 theorem charFun_map_uniformOn_finset (s : Finset α) (label : α → ℝ) (t : ℝ) :
     charFun ((uniformOn (s : Set α)).map label) t =
       (s.card : ℂ)⁻¹ * ∑ i ∈ s, Complex.exp (t * label i * Complex.I) := by
-  rw [charFun_apply_real, integral_map (s.aemeasurable_uniformOn_finset label) (by fun_prop),
-    integral_uniformOn_finset, Complex.real_smul]
+  rw [charFun_apply_real, integral_map_uniformOn_finset, Complex.real_smul]
   push_cast
   ring
 
@@ -123,7 +119,7 @@ theorem integral_comp_uniformOn_finset {E : Type*} [NormedAddCommGroup E] [Norme
       (s.integral_uniformOn_finset f)
 
 /-- The variance of a labelled uniform random element is the empirical variance of its labels. -/
-theorem variance_comp_uniformOn_finset {s : Finset α} (hs : s.Nonempty)
+theorem variance_comp_uniformOn_finset {s : Finset α}
     (hX : HasLaw X (uniformOn (s : Set α)) P) (label : α → ℝ) :
     variance (fun ω ↦ label (X ω)) P =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ 2 -
@@ -131,7 +127,7 @@ theorem variance_comp_uniformOn_finset {s : Finset α} (hs : s.Nonempty)
   have hlabel : HasLaw (fun ω ↦ label (X ω))
       ((uniformOn (s : Set α)).map label) P :=
     (hasLaw_map (s.aemeasurable_uniformOn_finset label)).fun_comp hX
-  rw [hlabel.variance_eq, s.variance_id_map_uniformOn_finset hs]
+  rw [hlabel.variance_eq, s.variance_id_map_uniformOn_finset]
 
 /-- Every exponential moment of a labelled uniform random element is finite. -/
 theorem integrableExpSet_comp_uniformOn_finset {s : Finset α}
