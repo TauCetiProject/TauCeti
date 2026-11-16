@@ -398,20 +398,17 @@ variable {E : Type uE} [Ring E] [Algebra R E] {ℰ : ℤ → Submodule R E} [Gra
   {dE : E →ₗ[R] E}
 
 /-- The bar--cobar correspondence commutes with postcomposition by a DG algebra morphism. -/
-@[simp]
-theorem cobarBarHomEquiv_comp_left {hD : IsDGAlgebra 𝒟 d} {hE : IsDGAlgebra ℰ dE}
+@[simp] theorem cobarBarHomEquiv_comp_left {hD : IsDGAlgebra 𝒟 d} {hE : IsDGAlgebra ℰ dE}
     (ψ : DGAlgHom hD hE) (g : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
     cobarBarHomEquiv 𝒜 hE (ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp g) =
       ψ.comp (cobarBarHomEquiv 𝒜 hD g) := by
   refine (𝒜.isNonCounitalDGCoalgebra_bar.cobarTwistingCochainEquiv hE).injective (Subtype.ext ?_)
   rw [IsNonCounitalDGCoalgebra.cobarTwistingCochainEquiv_comp]
   simp only [cobarBarHomEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
-  rw [homTwistingCochainEquiv_comp_left]
-  exact LinearMap.ext fun _ ↦ by simp
+  rw [homTwistingCochainEquiv_comp_left]; exact LinearMap.ext fun _ ↦ by simp
 
 /-- The inverse bar--cobar correspondence is natural in its target DG algebra. -/
-@[simp]
-theorem cobarBarHomEquiv_symm_comp {hD : IsDGAlgebra 𝒟 d} {hE : IsDGAlgebra ℰ dE}
+@[simp] theorem cobarBarHomEquiv_symm_comp {hD : IsDGAlgebra 𝒟 d} {hE : IsDGAlgebra ℰ dE}
     (ψ : DGAlgHom hD hE)
     (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
     (cobarBarHomEquiv 𝒜 hE).symm (ψ.comp φ) =
@@ -433,43 +430,32 @@ variable {R : Type uR} {A : Type uA} {A' : Type uA'} {A'' : Type uA''} {D : Type
   [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup A'] [Module R A']
   [AddCommGroup A''] [Module R A''] [Ring D] [Algebra R D] {𝒟 : ℤ → Submodule R D}
   [GradedAlgebra 𝒟] {d : D →ₗ[R] D}
+  {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'} {𝒜'' : AInfinityAlgebra R A''}
 
 namespace AInfinityHom
 
-private theorem isHomogeneous_barMap_grading {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    (k : AInfinityHom 𝒜 𝒜') :
-    LinearMap.IsHomogeneous k.barMap (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece
-      (ReducedTensorWords.grading (𝒜'.grading.shift 1)).piece 0 := by
-  simpa only [ReducedTensorWords.grading_piece] using k.isHomogeneous_barMap
-
 /-- An `A∞` morphism `k : A ⟶ A'` induces a DG algebra morphism `Ω Tᶜ(sA) ⟶ Ω Tᶜ(sA')` on
 cobar-bar constructions, sending `ι w` to `ι (k.barMap w)`. -/
-noncomputable def cobarBarMap {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    (k : AInfinityHom 𝒜 𝒜') :
+noncomputable def cobarBarMap (k : AInfinityHom 𝒜 𝒜') :
     DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential
       𝒜'.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarMap 𝒜'.isNonCounitalDGCoalgebra_bar k.barMap
-    k.isHomogeneous_barMap_grading (ReducedTensorWords.isCoalgHom_iff.1 k.isCoalgHom_barMap)
-    k.barDifferential_comp_barMap
+    (by simpa only [ReducedTensorWords.grading_piece] using k.isHomogeneous_barMap)
+    (ReducedTensorWords.isCoalgHom_iff.1 k.isCoalgHom_barMap) k.barDifferential_comp_barMap
 
 /-- `cobarBarMap` sends a desuspended bar generator `ι w` to `ι (k.barMap w)`. -/
-@[simp]
-theorem cobarBarMap_ι {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    (k : AInfinityHom 𝒜 𝒜') (w : ReducedTensorWords R A) :
+@[simp] theorem cobarBarMap_ι (k : AInfinityHom 𝒜 𝒜') (w : ReducedTensorWords R A) :
     k.cobarBarMap (TensorAlgebra.ι R w) = TensorAlgebra.ι R (k.barMap w) :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarMap_ι _ _ _ _ _ w
 
 /-- The identity `A∞` morphism induces the identity DG algebra morphism on `Ω Tᶜ(sA)`. -/
-@[simp]
-theorem cobarBarMap_id (𝒜 : AInfinityAlgebra R A) :
+@[simp] theorem cobarBarMap_id (𝒜 : AInfinityAlgebra R A) :
     (AInfinityHom.id 𝒜).cobarBarMap =
       DGAlgHom.id 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun _ ↦ by simp
 
 /-- `cobarBarMap` preserves composition of `A∞` morphisms. -/
-@[simp]
-theorem cobarBarMap_comp {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    {𝒜'' : AInfinityAlgebra R A''} (k₂ : AInfinityHom 𝒜' 𝒜'') (k₁ : AInfinityHom 𝒜 𝒜') :
+@[simp] theorem cobarBarMap_comp (k₂ : AInfinityHom 𝒜' 𝒜'') (k₁ : AInfinityHom 𝒜 𝒜') :
     (k₂.comp k₁).cobarBarMap = k₂.cobarBarMap.comp k₁.cobarBarMap :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun _ ↦ by simp
 
@@ -478,9 +464,8 @@ end AInfinityHom
 namespace AInfinityAlgebra
 
 /-- Precomposing `g : A ⟶ D` with `k : A' ⟶ A` precomposes its cobar lift with `k.cobarBarMap`. -/
-theorem cobarBarHomEquiv_comp_right {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    (hD : IsDGAlgebra 𝒟 d) (g : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra)
-    (k : AInfinityHom 𝒜' 𝒜) :
+theorem cobarBarHomEquiv_comp_right (hD : IsDGAlgebra 𝒟 d)
+    (g : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) (k : AInfinityHom 𝒜' 𝒜) :
     𝒜'.cobarBarHomEquiv hD (g.comp k) = (𝒜.cobarBarHomEquiv hD g).comp k.cobarBarMap := by
   refine (𝒜'.isNonCounitalDGCoalgebra_bar.cobarTwistingCochainEquiv hD).injective (Subtype.ext ?_)
   simp only [cobarBarHomEquiv, Equiv.trans_apply, Equiv.apply_symm_apply, AInfinityHom.cobarBarMap,
@@ -489,8 +474,7 @@ theorem cobarBarHomEquiv_comp_right {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfi
 
 /-- The inverse bar--cobar correspondence is natural in its source `A∞` algebra along
 `cobarBarMap`. -/
-theorem cobarBarHomEquiv_symm_comp_cobarBarMap {𝒜 : AInfinityAlgebra R A}
-    {𝒜' : AInfinityAlgebra R A'} (hD : IsDGAlgebra 𝒟 d) (k : AInfinityHom 𝒜' 𝒜)
+theorem cobarBarHomEquiv_symm_comp_cobarBarMap (hD : IsDGAlgebra 𝒟 d) (k : AInfinityHom 𝒜' 𝒜)
     (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
     (𝒜'.cobarBarHomEquiv hD).symm (φ.comp k.cobarBarMap) =
       ((𝒜.cobarBarHomEquiv hD).symm φ).comp k :=
@@ -499,8 +483,7 @@ theorem cobarBarHomEquiv_symm_comp_cobarBarMap {𝒜 : AInfinityAlgebra R A}
 end AInfinityAlgebra
 
 /-- The canonical `A∞` morphism `toCobarBar` is natural with respect to `cobarBarMap`. -/
-theorem AInfinityHom.cobarBarMap_comp_toCobarBar {𝒜 : AInfinityAlgebra R A}
-    {𝒜' : AInfinityAlgebra R A'} (k : AInfinityHom 𝒜' 𝒜) :
+theorem AInfinityHom.cobarBarMap_comp_toCobarBar (k : AInfinityHom 𝒜' 𝒜) :
     k.cobarBarMap.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜'.toCobarBar =
       𝒜.toCobarBar.comp k := by
   rw [← AInfinityAlgebra.cobarBarHomEquiv_symm_apply

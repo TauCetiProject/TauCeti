@@ -66,17 +66,17 @@ noncomputable def inclusion (ε : 𝒜.Augmentation) : AInfinityStrictHom ε.red
 @[simp] theorem inclusion_apply (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
     ε.inclusion x = x := (rfl)
 
-theorem reducedPart_comp_inclusion_toLinearMap (ε : 𝒜.Augmentation) :
-    ε.reducedPart ∘ₗ ε.inclusion.toLinearMap = LinearMap.id :=
+@[simp] theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
   LinearMap.ext fun _ ↦ by simp
 
 @[simp] theorem map_reducedPart_comp_inclusion_barMap (ε : 𝒜.Augmentation) :
     ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ ε.inclusion.barMap = LinearMap.id := by
-  rw [AInfinityStrictHom.barMap_def, ← ReducedTensorWords.map_comp,
-    ε.reducedPart_comp_inclusion_toLinearMap, ReducedTensorWords.map_id]
+  rw [AInfinityStrictHom.barMap_def, ← ReducedTensorWords.map_comp, ε.inclusion_toLinearMap,
+    ε.reducedPart_comp_subtype, ReducedTensorWords.map_id]
 
-theorem comp_inclusion_toLinearMap (ε : 𝒜.Augmentation) :
-    ε.toLinearMap ∘ₗ ε.inclusion.toLinearMap = 0 :=
+@[simp] theorem comp_subtype (ε : 𝒜.Augmentation) :
+    ε.toLinearMap ∘ₗ ε.augmentationIdeal.subtype = 0 :=
   LinearMap.ext fun x ↦ by simp [(ε.mem_augmentationIdeal).mp x.property]
 
 /-- Every bar word over `A` differs from its `ker ε` projection by a `ε.unit`-degenerate word. -/
@@ -95,8 +95,9 @@ theorem letter_sub_inclusion_barMap_map_reducedPart (ε : 𝒜.Augmentation)
   have hl := LinearMap.congr_fun
     (letter_comp_map (R := R) (ε.inclusion.toLinearMap ∘ₗ ε.reducedPart)) z
   rw [ReducedTensorWords.map_comp] at hl
-  simp only [map_sub, AInfinityStrictHom.barMap_def, LinearMap.comp_apply] at hl ⊢
-  rw [hl, ε.inclusion_toLinearMap, Submodule.subtype_apply, ε.coe_reducedPart, sub_sub_cancel]
+  simpa only [map_sub, AInfinityStrictHom.barMap_def, LinearMap.comp_apply,
+    ε.inclusion_toLinearMap, Submodule.subtype_apply, ε.coe_reducedPart, sub_sub_cancel] using
+    congrArg (letter R A z - ·) hl
 
 private theorem inclusion_comp_reducedPart_of_mem (ε' : ℬ.Augmentation) {g : AInfinityHom 𝒜 ℬ}
     (hg : ∀ w, g.taylor w ∈ ε'.augmentationIdeal) :
@@ -110,13 +111,9 @@ private theorem liftReducedHom_component_eq (ε' : ℬ.Augmentation) {g : AInfin
   have hinc := inclusion_comp_reducedPart_of_mem ε' hg
   have hcoalg : ε'.inclusion.barMap ∘ₗ coalgHom R (ε'.reducedPart ∘ₗ g.taylor) = g.barMap := by
     rw [AInfinityStrictHom.barMap_def, map_comp_coalgHom, hinc, g.barMap_eq_coalgHom]
-  have heq : ε'.inclusion.toLinearMap ∘ₗ
-      (ε'.reducedAlgebra.taylor ∘ₗ coalgHom R (ε'.reducedPart ∘ₗ g.taylor)) =
-      ε'.inclusion.toLinearMap ∘ₗ ((ε'.reducedPart ∘ₗ g.taylor) ∘ₗ 𝒜.barDifferential) := by
-    rw [← LinearMap.comp_assoc, ← ε'.inclusion.taylor_comp_barMap, LinearMap.comp_assoc, hcoalg,
-      g.taylor_comp_barMap, ← LinearMap.comp_assoc, hinc]
-  rw [ε'.inclusion_toLinearMap] at heq
-  exact (LinearMap.cancel_left (Submodule.injective_subtype _)).mp heq
+  apply (LinearMap.cancel_left (Submodule.injective_subtype _)).mp
+  rw [← ε'.inclusion_toLinearMap, ← LinearMap.comp_assoc, ← ε'.inclusion.taylor_comp_barMap,
+    LinearMap.comp_assoc, hcoalg, g.taylor_comp_barMap, ← LinearMap.comp_assoc, hinc]
 
 /-- **Universal property of the augmentation ideal**: `A∞` morphisms `A ⟶ ker ε'` correspond
 bijectively to `A∞` morphisms `g : A ⟶ B` whose Taylor map takes values in `ker ε'`. -/
@@ -130,7 +127,8 @@ noncomputable def liftReducedHomEquiv (𝒜 : AInfinityAlgebra R A) (ε' : ℬ.A
     (liftReducedHom_component_eq ε' g.property)
   left_inv k := AInfinityHom.ext <| by
     rw [AInfinityHom.taylor_ofTaylor, AInfinityStrictHom.taylor_toAInfinityHom_comp,
-      ← LinearMap.comp_assoc, ε'.reducedPart_comp_inclusion_toLinearMap, LinearMap.id_comp]
+      ← LinearMap.comp_assoc, ε'.inclusion_toLinearMap, ε'.reducedPart_comp_subtype,
+      LinearMap.id_comp]
   right_inv g := Subtype.ext <| AInfinityHom.ext <| by
     rw [AInfinityStrictHom.taylor_toAInfinityHom_comp, AInfinityHom.taylor_ofTaylor,
       inclusion_comp_reducedPart_of_mem ε' g.property]
@@ -161,7 +159,7 @@ structure IsAugmented (f : AInfinityHom 𝒜 ℬ) (ε : 𝒜.Augmentation) (ε' 
   /-- The morphism is strictly unital for the chosen strict units. -/
   isStrictlyUnital : f.IsStrictlyUnital ε.isStrictUnit ε'.isStrictUnit
   /-- The linear component intertwines the augmentations. -/
-  map_augmentation : ε'.toLinearMap ∘ₗ f.linearPart = ε.toLinearMap
+  augmentation_comp_linearPart : ε'.toLinearMap ∘ₗ f.linearPart = ε.toLinearMap
   /-- Every component above arity one lands in the target augmentation ideal. -/
   augmentation_component_eq_zero : ∀ {n : ℕ}, n ≠ 1 → ∀ x : Fin n → A, ε' (f.component n x) = 0
 
@@ -170,21 +168,20 @@ intertwines augmentations via `letter`. -/
 theorem isAugmented_iff_taylor {f : AInfinityHom 𝒜 ℬ} {ε : 𝒜.Augmentation} {ε' : ℬ.Augmentation} :
     f.IsAugmented ε ε' ↔ f.IsStrictlyUnital ε.isStrictUnit ε'.isStrictUnit ∧
       ε'.toLinearMap ∘ₗ f.taylor = ε.toLinearMap ∘ₗ letter R A := by
-  constructor
-  · intro hf; refine ⟨hf.isStrictlyUnital, linearMap_ext R A fun n x ↦ ?_⟩
-    simp only [LinearMap.comp_apply]
+  refine ⟨fun hf ↦ ⟨hf.isStrictlyUnital, linearMap_ext R A fun n x ↦ ?_⟩,
+    fun ⟨hsu, htaylor⟩ ↦ ⟨hsu, LinearMap.ext fun a ↦ by
+      simpa using LinearMap.congr_fun htaylor (ofLetter R A a), fun {n} hn x ↦ ?_⟩⟩
+  · simp only [LinearMap.comp_apply]
     by_cases hn1 : n.1 = 1
     · obtain ⟨k, hk⟩ := n; subst hn1
       rw [of_tprod_eq_subword R hk, subword_one R A x hk, letter_ofLetter, ← f.linearPart_apply]
-      exact LinearMap.congr_fun hf.map_augmentation (x 0)
-    · have htwist : f.component n.1 (fun i ↦ 𝒜.grading.koszulTwist ((n.1 : ℤ) - 1 - i) (x i)) =
-          f.taylor (of R A n (PiTensorProduct.tprod R x)) := by
-        simp [component_apply f n.1 n.2, InternalGrading.koszulTwist_koszulTwist]
-      rw [← htwist, of_tprod_eq_subword R n.2, letter_subword_of_ne_one R A x 0 hn1, map_zero]
+      exact LinearMap.congr_fun hf.augmentation_comp_linearPart (x 0)
+    · rw [← show f.component n.1 (fun i ↦ 𝒜.grading.koszulTwist ((n.1 : ℤ) - 1 - i) (x i)) =
+          f.taylor (of R A n (PiTensorProduct.tprod R x)) by
+        simp [component_apply f n.1 n.2, InternalGrading.koszulTwist_koszulTwist],
+        of_tprod_eq_subword R n.2, letter_subword_of_ne_one R A x 0 hn1, map_zero]
       exact hf.augmentation_component_eq_zero hn1 _
-  · rintro ⟨hsu, htaylor⟩; refine ⟨hsu, LinearMap.ext fun a ↦ by
-      simpa using LinearMap.congr_fun htaylor (ofLetter R A a), fun {n} hn x ↦ ?_⟩
-    rcases Nat.eq_zero_or_pos n with rfl | hnpos; · simp
+  · rcases Nat.eq_zero_or_pos n with rfl | hnpos; · simp
     simpa [component_apply f n hnpos, of_tprod_eq_subword R hnpos,
       letter_subword_of_ne_one R A _ 0 hn] using LinearMap.congr_fun htaylor (of R A ⟨n, hnpos⟩
         (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i)))
@@ -220,11 +217,9 @@ variable {D : Type uA} {E : Type uB} [Ring D] [Ring E] [Algebra R D] [Algebra R 
   {𝒟 : ℤ → Submodule R D} {ℰ : ℤ → Submodule R E} [GradedAlgebra 𝒟] [GradedAlgebra ℰ]
   {dD : D →ₗ[R] D} {dE : E →ₗ[R] E} {hD : IsDGAlgebra 𝒟 dD} {hE : IsDGAlgebra ℰ dE}
 
-namespace DGAlgHom
-
 /-- A DG algebra morphism induces an augmented `A∞` morphism iff it intertwines augmentations. -/
-@[simp] theorem isAugmented_toAInfinityHom_iff (φ : DGAlgHom hD hE) (eD : DGAlgAugmentation hD)
-    (eE : DGAlgAugmentation hE) :
+@[simp] theorem DGAlgHom.isAugmented_toAInfinityHom_iff (φ : DGAlgHom hD hE)
+    (eD : DGAlgAugmentation hD) (eE : DGAlgAugmentation hE) :
     φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.IsAugmented
       eD.toAInfinityAugmentation eE.toAInfinityAugmentation ↔ eE.comp φ = eD := by
   rw [(AInfinityHom.isStrict_toAInfinityHom _).isAugmented_iff]
@@ -233,7 +228,6 @@ namespace DGAlgHom
   exact ⟨fun h ↦ DGAlgHom.ext fun x ↦ by simpa using LinearMap.congr_fun h.2 x,
     fun h ↦ ⟨by simp, LinearMap.ext fun x ↦ by simpa using congrArg (· x) h⟩⟩
 
-end DGAlgHom
 end DG
 
 namespace AInfinityHom.IsStrictlyUnital
@@ -246,12 +240,12 @@ its scalar unit term plus its value on the reduced bar word. -/
 theorem taylor_apply (hf : f.IsStrictlyUnital ε.isStrictUnit hB) (z : ReducedTensorWords R A) :
     f.taylor z = ε (letter R A z) • eB +
       f.taylor (ε.inclusion.barMap (ReducedTensorWords.map (R := R) ε.reducedPart z)) := by
-  let z₀ := ε.inclusion.barMap (ReducedTensorWords.map (R := R) ε.reducedPart z)
-  have hdeg : f.taylor (z - z₀) = ε (letter R A z) • eB := by
-    rw [hf.taylor_eq_linearPart_letter
-        (ε.sub_inclusion_barMap_map_reducedPart_mem_degenerateWords z),
-      ε.letter_sub_inclusion_barMap_map_reducedPart z, map_smul, hf.map_unit]
-  simpa only [z₀, ← map_add, sub_add_cancel] using congrArg (· + f.taylor z₀) hdeg
+  conv_lhs =>
+    rw [← sub_add_cancel z (ε.inclusion.barMap (ReducedTensorWords.map (R := R) ε.reducedPart z)),
+      map_add]
+  rw [hf.taylor_eq_linearPart_letter
+      (ε.sub_inclusion_barMap_map_reducedPart_mem_degenerateWords z),
+    ε.letter_sub_inclusion_barMap_map_reducedPart z, map_smul, hf.map_unit]
 
 /-- Two strictly unital `A∞` morphisms out of an augmented `A∞` algebra are equal as soon as their
 restrictions to `ker ε` agree. -/
@@ -273,21 +267,22 @@ variable {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B} {𝒞 : AInf
   {f : AInfinityHom 𝒜 ℬ} {ε : 𝒜.Augmentation} {ε' : ℬ.Augmentation}
 
 /-- The linear part of an augmented `A∞` morphism intertwines the augmentations pointwise. -/
-theorem map_linearPart (hf : f.IsAugmented ε ε') (a : A) : ε' (f.linearPart a) = ε a :=
-  LinearMap.congr_fun hf.map_augmentation a
+theorem augmentation_comp_linearPart_apply (hf : f.IsAugmented ε ε') (a : A) :
+    ε' (f.linearPart a) = ε a :=
+  LinearMap.congr_fun hf.augmentation_comp_linearPart a
 
 /-- The Taylor map of an augmented `A∞` morphism intertwines the augmentations via `letter`. -/
-theorem comp_taylor (hf : f.IsAugmented ε ε') :
+theorem augmentation_comp_taylor (hf : f.IsAugmented ε ε') :
     ε'.toLinearMap ∘ₗ f.taylor = ε.toLinearMap ∘ₗ letter R A := (isAugmented_iff_taylor.1 hf).2
 
 /-- Pointwise augmentation compatibility of the Taylor map of an augmented `A∞` morphism. -/
-theorem map_taylor (hf : f.IsAugmented ε ε') (z : ReducedTensorWords R A) :
-    ε' (f.taylor z) = ε (letter R A z) := LinearMap.congr_fun hf.comp_taylor z
+theorem augmentation_comp_taylor_apply (hf : f.IsAugmented ε ε') (z : ReducedTensorWords R A) :
+    ε' (f.taylor z) = ε (letter R A z) := LinearMap.congr_fun hf.augmentation_comp_taylor z
 
 /-- The linear part of an augmented `A∞` morphism maps `ker ε` into `ker ε'`. -/
 theorem linearPart_mem_augmentationIdeal (hf : f.IsAugmented ε ε') {a : A}
     (ha : a ∈ ε.augmentationIdeal) : f.linearPart a ∈ ε'.augmentationIdeal := by
-  rw [AInfinityAlgebra.Augmentation.mem_augmentationIdeal, hf.map_linearPart]
+  rw [AInfinityAlgebra.Augmentation.mem_augmentationIdeal, hf.augmentation_comp_linearPart_apply]
   exact (ε.mem_augmentationIdeal).mp ha
 
 /-- Restricting an augmented `A∞` morphism to `ker ε` produces Taylor components in `ker ε'`. -/
@@ -295,9 +290,9 @@ theorem taylor_comp_inclusion_mem (hf : f.IsAugmented ε ε')
     (w : ReducedTensorWords R ε.augmentationIdeal) :
     (f.comp ε.inclusion.toAInfinityHom).taylor w ∈ ε'.augmentationIdeal := by
   have hzero : ε'.toLinearMap ∘ₗ f.taylor ∘ₗ ε.inclusion.barMap = 0 := by
-    rw [← LinearMap.comp_assoc, hf.comp_taylor, LinearMap.comp_assoc,
+    rw [← LinearMap.comp_assoc, hf.augmentation_comp_taylor, LinearMap.comp_assoc,
       AInfinityStrictHom.barMap_def, letter_comp_map, ← LinearMap.comp_assoc,
-      ε.comp_inclusion_toLinearMap, LinearMap.zero_comp]
+      ε.inclusion_toLinearMap, ε.comp_subtype, LinearMap.zero_comp]
   simpa [AInfinityAlgebra.Augmentation.mem_augmentationIdeal, AInfinityHom.taylor_comp] using
     LinearMap.congr_fun hzero w
 
@@ -337,7 +332,7 @@ noncomputable def reducedHom (hf : f.IsAugmented ε ε') :
 @[simp] theorem reducedHom_id (ε : 𝒜.Augmentation) :
     (isAugmented_id ε).reducedHom = AInfinityHom.id ε.reducedAlgebra := AInfinityHom.ext <| by
   rw [taylor_reducedHom, taylor_id, taylor_id, AInfinityStrictHom.barMap_def, letter_comp_map,
-    ← LinearMap.comp_assoc, ε.reducedPart_comp_inclusion_toLinearMap, LinearMap.id_comp]
+    ← LinearMap.comp_assoc, ε.inclusion_toLinearMap, ε.reducedPart_comp_subtype, LinearMap.id_comp]
 
 /-- Passing to `reducedHom` preserves composition of augmented `A∞` morphisms. -/
 theorem reducedHom_comp {g : AInfinityHom ℬ 𝒞} {ε'' : 𝒞.Augmentation}
@@ -361,8 +356,7 @@ theorem AInfinityHom.IsStrictlyUnital.isAugmented_iff_taylor_comp_inclusion_mem
       ∀ w : ReducedTensorWords R ε.augmentationIdeal,
         (f.comp ε.inclusion.toAInfinityHom).taylor w ∈ ε'.augmentationIdeal := by
   refine ⟨fun h ↦ h.taylor_comp_inclusion_mem,
-    fun hw ↦ AInfinityHom.isAugmented_iff_taylor.2 ⟨hf, ?_⟩⟩
-  refine LinearMap.ext fun z ↦ ?_
+    fun hw ↦ AInfinityHom.isAugmented_iff_taylor.2 ⟨hf, LinearMap.ext fun z ↦ ?_⟩⟩
   have hmem := (ε'.mem_augmentationIdeal).mp (hw (ReducedTensorWords.map (R := R) ε.reducedPart z))
   simp only [AInfinityHom.taylor_comp, AInfinityStrictHom.barMap_toAInfinityHom,
     LinearMap.comp_apply] at hmem
@@ -382,12 +376,11 @@ private noncomputable def extendStrictlyUnitalTaylor (ε : 𝒜.Augmentation) (e
 private theorem extendStrictlyUnitalTaylor_comp_inclusion_barMap (ε : 𝒜.Augmentation) (eB : B)
     (g : AInfinityHom ε.reducedAlgebra ℬ) :
     ε.extendStrictlyUnitalTaylor eB g ∘ₗ ε.inclusion.barMap = g.taylor := by
-  refine LinearMap.ext fun z ↦ ?_
-  have hl := LinearMap.congr_fun (letter_comp_map (R := R) ε.inclusion.toLinearMap) z
-  have hm := LinearMap.congr_fun ε.map_reducedPart_comp_inclusion_barMap z
-  simp only [AInfinityStrictHom.barMap_def, ε.inclusion_toLinearMap, LinearMap.comp_apply] at hl hm
-  simp [extendStrictlyUnitalTaylor, AInfinityStrictHom.barMap_def, hl, hm,
-    (ε.mem_augmentationIdeal).mp (letter _ _ z).property]
+  rw [extendStrictlyUnitalTaylor, LinearMap.add_comp, LinearMap.comp_assoc, LinearMap.comp_assoc,
+    AInfinityStrictHom.barMap_def, letter_comp_map, ε.inclusion_toLinearMap,
+    ← LinearMap.comp_assoc (letter R _), ε.comp_subtype, LinearMap.zero_comp,
+    LinearMap.comp_zero, zero_add, LinearMap.comp_assoc, ← map_comp, ε.reducedPart_comp_subtype,
+    map_id, LinearMap.comp_id]
 
 private theorem extendStrictlyUnitalTaylor_of_mem_degenerateWords (ε : 𝒜.Augmentation) (eB : B)
     (g : AInfinityHom ε.reducedAlgebra ℬ) {z : ReducedTensorWords R A}
@@ -395,13 +388,6 @@ private theorem extendStrictlyUnitalTaylor_of_mem_degenerateWords (ε : 𝒜.Aug
     ε.extendStrictlyUnitalTaylor eB g z = ε (letter R A z) • eB := by
   simp [extendStrictlyUnitalTaylor, LinearMap.mem_ker.mp
     (degenerateWords_le_ker_map ε.reducedPart ε.reducedPart_unit hz)]
-
-private theorem extendStrictlyUnitalTaylor_ofLetter_unit (ε : 𝒜.Augmentation) (eB : B)
-    (g : AInfinityHom ε.reducedAlgebra ℬ) :
-    ε.extendStrictlyUnitalTaylor eB g (ofLetter R A ε.unit) = eB := by
-  rw [extendStrictlyUnitalTaylor_of_mem_degenerateWords ε eB g
-      (ofLetter_mem_degenerateWords ε.unit),
-    letter_ofLetter, ε.map_unit, one_smul]
 
 private theorem extendStrictlyUnitalTaylor_of_tprod_eq_zero (ε : 𝒜.Augmentation) (eB : B)
     (g : AInfinityHom ε.reducedAlgebra ℬ) (m : {m : ℕ // 0 < m}) (hm : m.1 ≠ 1)
@@ -431,40 +417,26 @@ private theorem extendStrictlyUnitalTaylor_component_eq (ε : 𝒜.Augmentation)
       ε.extendStrictlyUnitalTaylor eB g ∘ₗ 𝒜.barDifferential := by
   let t := ε.extendStrictlyUnitalTaylor eB g
   have hcoalg : coalgHom R t ∘ₗ ε.inclusion.barMap = g.barMap := by
-    calc coalgHom R t ∘ₗ ε.inclusion.barMap
-        = coalgHom R (letter R B ∘ₗ (coalgHom R t ∘ₗ ε.inclusion.barMap)) := by
-          rw [AInfinityStrictHom.barMap_def]
-          exact ((isCoalgHom_coalgHom t).comp (isCoalgHom_map _)).eq_coalgHom
-      _ = coalgHom R (t ∘ₗ ε.inclusion.barMap) := by
-          simp only [← LinearMap.comp_assoc, letter_comp_coalgHom]
-      _ = coalgHom R g.taylor := by
-          rw [ε.extendStrictlyUnitalTaylor_comp_inclusion_barMap eB g]
-      _ = g.barMap := g.barMap_eq_coalgHom.symm
+    rw [AInfinityStrictHom.barMap_def,
+      ((isCoalgHom_coalgHom t).comp (isCoalgHom_map _)).eq_coalgHom,
+      ← LinearMap.comp_assoc, letter_comp_coalgHom, ← AInfinityStrictHom.barMap_def,
+      ε.extendStrictlyUnitalTaylor_comp_inclusion_barMap eB g, g.barMap_eq_coalgHom]
   have hred : (ℬ.taylor ∘ₗ coalgHom R t) ∘ₗ ε.inclusion.barMap =
       (t ∘ₗ 𝒜.barDifferential) ∘ₗ ε.inclusion.barMap := by
-    calc (ℬ.taylor ∘ₗ coalgHom R t) ∘ₗ ε.inclusion.barMap
-        = ℬ.taylor ∘ₗ (coalgHom R t ∘ₗ ε.inclusion.barMap) := by
-          simp only [LinearMap.comp_assoc]
-      _ = ℬ.taylor ∘ₗ g.barMap := by rw [hcoalg]
-      _ = g.taylor ∘ₗ ε.reducedAlgebra.barDifferential := g.taylor_comp_barMap
-      _ = (t ∘ₗ ε.inclusion.barMap) ∘ₗ ε.reducedAlgebra.barDifferential := by
-          rw [ε.extendStrictlyUnitalTaylor_comp_inclusion_barMap eB g]
-      _ = t ∘ₗ (ε.inclusion.barMap ∘ₗ ε.reducedAlgebra.barDifferential) := by
-          simp only [LinearMap.comp_assoc]
-      _ = t ∘ₗ (𝒜.barDifferential ∘ₗ ε.inclusion.barMap) := by
-          rw [ε.inclusion.barDifferential_comp_barMap]
-      _ = (t ∘ₗ 𝒜.barDifferential) ∘ₗ ε.inclusion.barMap := by
-          simp only [LinearMap.comp_assoc]
+    rw [LinearMap.comp_assoc, hcoalg, g.taylor_comp_barMap,
+      ← ε.extendStrictlyUnitalTaylor_comp_inclusion_barMap eB g, LinearMap.comp_assoc,
+      ← ε.inclusion.barDifferential_comp_barMap, ← LinearMap.comp_assoc]
   have hker := ε.isStrictUnit.degenerateWords_le_ker_taylor_coalgHom_sub_barDifferential hB t
     (ε.extendStrictlyUnitalTaylor_isHomogeneous hB g)
-    (ε.extendStrictlyUnitalTaylor_ofLetter_unit eB g)
+    (by
+      rw [extendStrictlyUnitalTaylor_of_mem_degenerateWords _ _ _ (ofLetter_mem_degenerateWords _),
+        letter_ofLetter, ε.map_unit, one_smul])
     (ε.extendStrictlyUnitalTaylor_of_tprod_eq_zero eB g)
   refine LinearMap.ext fun z ↦ ?_
-  let r := ReducedTensorWords.map (R := R) ε.reducedPart z
   have hsub := sub_eq_zero.mp <| LinearMap.mem_ker.mp <|
     hker (ε.sub_inclusion_barMap_map_reducedPart_mem_degenerateWords z)
-  have hredr := LinearMap.congr_fun hred r
-  dsimp only [t, r, LinearMap.comp_apply] at hsub hredr ⊢
+  have hredr := LinearMap.congr_fun hred (ReducedTensorWords.map (R := R) ε.reducedPart z)
+  dsimp only [t, LinearMap.comp_apply] at hsub hredr ⊢
   simpa only [← map_add, sub_add_cancel] using congrArg₂ (· + ·) hsub hredr
 
 /-- Extend any nonunital `A∞` morphism `g : ker ε ⟶ B` into a strictly unital `A∞` algebra
@@ -566,9 +538,9 @@ the reduced Taylor map along `ε.reducedPart`. -/
 /-- Extending a morphism `g : ker ε ⟶ ker ε'` yields a strictly unital augmented `A∞` morphism. -/
 @[simp] theorem isAugmented_extendReducedHom (ε : 𝒜.Augmentation) (ε' : ℬ.Augmentation)
     (g : AInfinityHom ε.reducedAlgebra ε'.reducedAlgebra) :
-    (ε.extendReducedHom ε' g).IsAugmented ε ε' := by
-  refine (ε.isStrictlyUnital_extendStrictlyUnitalHom ε'.isStrictUnit _
-    |>.isAugmented_iff_taylor_comp_inclusion_mem).2 fun _ ↦ by simp
+    (ε.extendReducedHom ε' g).IsAugmented ε ε' :=
+  (ε.isStrictlyUnital_extendStrictlyUnitalHom ε'.isStrictUnit
+    _).isAugmented_iff_taylor_comp_inclusion_mem.2 fun _ ↦ by simp
 
 @[simp] theorem extendReducedHom_comp_inclusion (ε : 𝒜.Augmentation) (ε' : ℬ.Augmentation)
     (g : AInfinityHom ε.reducedAlgebra ε'.reducedAlgebra) :
@@ -578,9 +550,8 @@ the reduced Taylor map along `ε.reducedPart`. -/
 
 @[simp] theorem reducedHom_extendReducedHom (ε : 𝒜.Augmentation) (ε' : ℬ.Augmentation)
     (g : AInfinityHom ε.reducedAlgebra ε'.reducedAlgebra) :
-    (ε.isAugmented_extendReducedHom ε' g).reducedHom = g := by
-  apply (liftReducedHomEquiv ε.reducedAlgebra ε').injective; ext1
-  simp
+    (ε.isAugmented_extendReducedHom ε' g).reducedHom = g :=
+  (liftReducedHomEquiv ε.reducedAlgebra ε').injective <| Subtype.ext <| by simp
 
 @[simp] theorem extendReducedHom_reducedHom {ε : 𝒜.Augmentation} {ε' : ℬ.Augmentation}
     {f : AInfinityHom 𝒜 ℬ} (hf : f.IsAugmented ε ε') : ε.extendReducedHom ε' hf.reducedHom = f := by
@@ -618,10 +589,13 @@ theorem extendReducedHom_comp (ε : 𝒜.Augmentation) (ε' : ℬ.Augmentation) 
     (h : AInfinityHom ε'.reducedAlgebra ε''.reducedAlgebra)
     (g : AInfinityHom ε.reducedAlgebra ε'.reducedAlgebra) :
     ε.extendReducedHom ε'' (h.comp g) =
-      (ε'.extendReducedHom ε'' h).comp (ε.extendReducedHom ε' g) := by
-  rw [← extendReducedHom_reducedHom ((ε'.isAugmented_extendReducedHom ε'' h).comp
-    (ε.isAugmented_extendReducedHom ε' g)), (ε'.isAugmented_extendReducedHom ε'' h).reducedHom_comp
-    (ε.isAugmented_extendReducedHom ε' g), reducedHom_extendReducedHom, reducedHom_extendReducedHom]
+      (ε'.extendReducedHom ε'' h).comp (ε.extendReducedHom ε' g) :=
+  (ε.isAugmented_extendReducedHom ε'' _).ext_comp_inclusion
+    ((ε'.isAugmented_extendReducedHom ε'' h).comp (ε.isAugmented_extendReducedHom ε' g))
+    (by
+      rw [extendReducedHom_comp_inclusion, AInfinityHom.comp_assoc, extendReducedHom_comp_inclusion,
+        ← AInfinityHom.comp_assoc (ε'.extendReducedHom ε'' h), extendReducedHom_comp_inclusion,
+        AInfinityHom.comp_assoc])
 
 end AInfinityAlgebra.Augmentation
 end TauCeti
