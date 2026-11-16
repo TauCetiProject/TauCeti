@@ -50,6 +50,11 @@ from `0` to `1` which is constant on neighborhoods of both ends of the unit inte
 def collaredSmoothTransition (t : ℝ) : ℝ :=
   Real.smoothTransition (2 * t - 1 / 2)
 
+/-- The defining formula of the collared smooth transition. -/
+theorem collaredSmoothTransition_def (t : ℝ) :
+    collaredSmoothTransition t = Real.smoothTransition (2 * t - 1 / 2) :=
+  (rfl)
+
 /-- The collared smooth transition takes values in the unit interval. -/
 theorem collaredSmoothTransition_mem (t : ℝ) : collaredSmoothTransition t ∈ Icc (0 : ℝ) 1 :=
   ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩

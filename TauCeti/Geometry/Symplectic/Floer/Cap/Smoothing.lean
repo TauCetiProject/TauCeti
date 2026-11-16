@@ -110,8 +110,7 @@ variable {M : Type*} [TopologicalSpace M] {x : M} {γ : Ω M x}
 near the edge `s = 0` and equal to `x` near the seam and near the edge `s = 1`. -/
 private def capModel (g : ℝ → M) (P : Path γ (Path.refl x)) (z : ℝ × ℝ) : M :=
   if z.1 ≤ 1 / 3 then g (collaredSmoothTransitionLineMap (capRamp z.1) z.2)
-  else P (projIcc 0 1 zero_le_one (3 * z.1 - 1))
-    (projIcc 0 1 zero_le_one (collaredSmoothTransition z.2))
+  else P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2)
 
 variable {g : ℝ → M} {P : Path γ (Path.refl x)}
 
@@ -121,8 +120,7 @@ private theorem capModel_of_le {z : ℝ × ℝ} (hz : z.1 ≤ 1 / 3) :
 
 private theorem capModel_of_lt {z : ℝ × ℝ} (hz : 1 / 3 < z.1) :
     capModel g P z =
-      P (projIcc 0 1 zero_le_one (3 * z.1 - 1))
-        (projIcc 0 1 zero_le_one (collaredSmoothTransition z.2)) := by
+      P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2) := by
   simp only [capModel, hz.not_ge, ↓reduceIte]
 
 private theorem continuous_uncurry_path (P : Path γ (Path.refl x)) :
@@ -151,10 +149,7 @@ private theorem capModel_eq_of_mem (s t : unitInterval) :
       ← hgγ, coe_collaredSmoothTransitionLineMapUnit]
   · have hr : (⟨capRamp s, capRamp_mem s⟩ : unitInterval) = 1 :=
       Subtype.ext (capRamp_of_ge (by linarith))
-    rw [capModel_of_lt hs, hr, projIcc_of_mem _ (collaredSmoothTransition_mem t),
-      collaredSmoothTransitionLineMapUnit_one_left]
-    congr 1
-    exact Subtype.ext (coe_collaredSmoothTransitionUnit t).symm
+    rw [capModel_of_lt hs, hr, collaredSmoothTransitionLineMapUnit_one_left]
 
 private theorem continuous_capModel (hg : Continuous g) : Continuous (capModel g P) := by
   have hr : Continuous fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (capRamp z.1) z.2 :=
@@ -162,14 +157,12 @@ private theorem continuous_capModel (hg : Continuous g) : Continuous (capModel g
       ((contDiff_capRamp.continuous.comp continuous_fst).prodMk continuous_snd)
   have hs : Continuous fun z : ℝ × ℝ ↦ projIcc (0 : ℝ) 1 zero_le_one (3 * z.1 - 1) :=
     continuous_projIcc.comp ((continuous_const.mul continuous_fst).sub continuous_const)
-  have ht : Continuous fun z : ℝ × ℝ ↦
-      projIcc (0 : ℝ) 1 zero_le_one (collaredSmoothTransition z.2) :=
-    continuous_projIcc.comp (continuous_collaredSmoothTransition.comp continuous_snd)
-  refine Continuous.if_le (hg.comp hr) ((continuous_uncurry_path P).comp (hs.prodMk ht))
+  refine Continuous.if_le (hg.comp hr) ((continuous_uncurry_path P).comp
+    (hs.prodMk (continuous_collaredSmoothTransitionUnit.comp continuous_snd)))
     continuous_fst continuous_const fun z hz ↦ ?_
   rw [hz, capRamp_of_ge (by norm_num), collaredSmoothTransitionLineMap_one_left,
-    projIcc_of_le_left _ (by norm_num), Icc.mk_zero, P.source,
-    projIcc_of_mem _ (collaredSmoothTransition_mem _), ← hgγ]
+    projIcc_of_le_left _ (by norm_num), Icc.mk_zero, P.source, ← hgγ,
+    coe_collaredSmoothTransitionUnit]
 
 /-- The model is `x` beyond `s = 2/3`, and near the seam beyond `s = 1/4`. -/
 private theorem capModel_eq_base {z : ℝ × ℝ}
@@ -183,8 +176,8 @@ private theorem capModel_eq_base {z : ℝ × ℝ}
   · rw [capModel_of_lt hs]
     rcases hz with hz | ⟨-, ht | ht⟩
     · rw [projIcc_of_right_le _ (by linarith), Icc.mk_one, P.target, Path.refl_apply]
-    · rw [collaredSmoothTransition_eq_zero_of_le ht, projIcc_left, Icc.mk_zero, Path.source]
-    · rw [collaredSmoothTransition_eq_one_of_ge ht, projIcc_right, Icc.mk_one, Path.target]
+    · rw [collaredSmoothTransitionUnit_eq_zero_of_le ht, Path.source]
+    · rw [collaredSmoothTransitionUnit_eq_one_of_ge ht, Path.target]
 
 private theorem capModel_one (t : ℝ) : capModel g P (1, t) = x :=
   capModel_eq_base hgγ (Or.inl (by norm_num))
@@ -192,14 +185,12 @@ private theorem capModel_one (t : ℝ) : capModel g P (1, t) = x :=
 private theorem capModel_seam_zero (s : ℝ) : capModel g P (s, 0) = x := by
   rcases le_or_gt s (1 / 3) with hs | hs
   · rw [capModel_of_le hs, collaredSmoothTransitionLineMap_zero_right, apply_zero_eq_base hgγ]
-  · rw [capModel_of_lt hs, collaredSmoothTransition_eq_zero_of_le (by norm_num), projIcc_left,
-      Icc.mk_zero, Path.source]
+  · rw [capModel_of_lt hs, collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num), Path.source]
 
 private theorem capModel_seam_one (s : ℝ) : capModel g P (s, 1) = x := by
   rcases le_or_gt s (1 / 3) with hs | hs
   · rw [capModel_of_le hs, collaredSmoothTransitionLineMap_one_right, apply_one_eq_base hgγ]
-  · rw [capModel_of_lt hs, collaredSmoothTransition_eq_one_of_ge (by norm_num), projIcc_right,
-      Icc.mk_one, Path.target]
+  · rw [capModel_of_lt hs, collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num), Path.target]
 
 /-- The model is periodic in `t` near the seam. -/
 private theorem capModel_add_one (hgp : Periodic g 1) (s : ℝ) {t : ℝ} (ht₀ : -1 / 4 ≤ t)
