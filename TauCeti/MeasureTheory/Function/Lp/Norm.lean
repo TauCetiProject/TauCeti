@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
@@ -25,6 +26,7 @@ bounds.
 
 ## Main declarations
 
+* `MeasureTheory.Lp.normLp`: the pointwise norm `x ↦ ‖f x‖` bundled as an element of `Lp ℝ p μ`.
 * `MeasureTheory.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
 * `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
@@ -88,6 +90,96 @@ bounds.
 -/
 
 public section
+
+namespace MeasureTheory.Lp
+
+open scoped ENNReal
+
+variable {α E : Type*} {m : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+
+/-- Pointwise norm `x ↦ ‖f x‖` bundled as an element of `Lp ℝ p μ`. -/
+noncomputable def normLp [NormedAddCommGroup E] (f : Lp E p μ) : Lp ℝ p μ :=
+  (Lp.memLp f).norm.toLp fun x ↦ ‖f x‖
+
+/-- `Lp.normLp f` equals `x ↦ ‖f x‖` almost everywhere. -/
+theorem coeFn_normLp [NormedAddCommGroup E] (f : Lp E p μ) :
+    normLp f =ᵐ[μ] fun x ↦ ‖f x‖ :=
+  (Lp.memLp f).norm.coeFn_toLp
+
+/-- `Lp.normLp f` is nonnegative in `Lp ℝ p μ`. -/
+@[simp]
+theorem normLp_nonneg [NormedAddCommGroup E] (f : Lp E p μ) : 0 ≤ normLp f := by
+  rw [← Lp.coeFn_nonneg]
+  filter_upwards [coeFn_normLp f] with x hx
+  rw [Pi.zero_apply, hx]
+  exact norm_nonneg _
+
+/-- Taking `Lp.normLp` preserves the `Lᵖ` norm. -/
+@[simp]
+theorem norm_normLp [NormedAddCommGroup E] (f : Lp E p μ) : ‖normLp f‖ = ‖f‖ := by
+  rw [normLp, Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable f), ← Lp.norm_def]
+
+/-- On `Lp ℝ p μ`, `Lp.normLp` agrees with the lattice absolute value `|f|`. -/
+@[simp]
+theorem normLp_real_eq_abs (f : Lp ℝ p μ) : normLp f = |f| := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp f, Lp.coeFn_abs f] with x h₁ h₂
+  rw [h₁, h₂, Real.norm_eq_abs]
+
+/-- `Lp.normLp` sends `0` to `0`. -/
+@[simp]
+theorem normLp_zero [NormedAddCommGroup E] : normLp (0 : Lp E p μ) = 0 := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (0 : Lp E p μ), Lp.coeFn_zero E p μ,
+    Lp.coeFn_zero ℝ p μ] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+  simp
+
+/-- `Lp.normLp f` vanishes if and only if `f` vanishes. -/
+@[simp]
+theorem normLp_eq_zero [NormedAddCommGroup E] (f : Lp E p μ) : normLp f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ Lp.ext ?_, fun h ↦ h ▸ normLp_zero⟩
+  filter_upwards [coeFn_normLp f, Lp.ext_iff.mp h, Lp.coeFn_zero ℝ p μ,
+    Lp.coeFn_zero E p μ] with x h₁ h₂ h₃ h₄
+  rw [h₄, Pi.zero_apply]
+  exact norm_eq_zero.mp (by rw [← h₁, h₂, h₃, Pi.zero_apply])
+
+/-- `Lp.normLp` is invariant under negation. -/
+@[simp]
+theorem normLp_neg [NormedAddCommGroup E] (f : Lp E p μ) : normLp (-f) = normLp f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (-f), Lp.coeFn_neg f, coeFn_normLp f] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+  simp
+
+/-- `Lp.normLp` is invariant under the pointwise `star` involution. -/
+@[simp]
+theorem normLp_star [NormedAddCommGroup E] [StarAddMonoid E] [NormedStarGroup E]
+    (f : Lp E p μ) : normLp (star f) = normLp f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (star f), Lp.coeFn_star f, coeFn_normLp f] with x h₁ h₂ h₃
+  simp [h₁, h₂, h₃]
+
+/-- Taking `Lp.normLp` after `Lp.ofRealLI` gives `|f|`. -/
+@[simp]
+theorem normLp_ofRealLI {𝕜 : Type*} [RCLike 𝕜] [Fact (1 ≤ p)] (f : Lp ℝ p μ) :
+    normLp (ofRealLI 𝕜 p μ f) = |f| := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (ofRealLI 𝕜 p μ f), coeFn_ofRealLI (𝕜 := 𝕜) f,
+    Lp.coeFn_abs f] with x h₁ h₂ h₃
+  simp [h₁, h₂, h₃]
+
+/-- `Lp.normLp` pulls scalar multiplication out as multiplication by `‖c‖`. -/
+@[simp]
+theorem normLp_smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
+    [NormSMulClass 𝕜 E] (c : 𝕜) (f : Lp E p μ) :
+    normLp (c • f) = ‖c‖ • normLp f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (c • f), Lp.coeFn_smul c f,
+    Lp.coeFn_smul ‖c‖ (normLp f), coeFn_normLp f] with x h₁ h₂ h₃ h₄
+  simp [h₁, h₂, h₃, h₄, norm_smul]
+
+end MeasureTheory.Lp
 
 namespace TauCeti
 
@@ -158,25 +250,20 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     (ha : 0 ≤ a) (hb : 0 ≤ b)
     (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
     ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
-  obtain ⟨A, hAnorm, hAcoe⟩ : ∃ A : Lp ℝ q m, ‖A‖ = ‖g‖ ∧ ∀ᵐ z ∂m, A z = ‖g z‖ :=
-    ⟨(Lp.memLp g).norm.toLp _,
-      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable g), ← Lp.norm_def],
-      (Lp.memLp g).norm.coeFn_toLp⟩
-  obtain ⟨B, hBnorm, hBcoe⟩ : ∃ B : Lp ℝ q m, ‖B‖ = ‖h‖ ∧ ∀ᵐ z ∂m, B z = ‖h z‖ :=
-    ⟨(Lp.memLp h).norm.toLp _,
-      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable h), ← Lp.norm_def],
-      (Lp.memLp h).norm.coeFn_toLp⟩
-  calc ‖f‖ ≤ ‖a • A + b • B‖ := by
+  calc ‖f‖ ≤ ‖a • Lp.normLp g + b • Lp.normLp h‖ := by
         refine Lp.norm_le_norm_of_ae_le ?_
-        filter_upwards [hle, hAcoe, hBcoe, Lp.coeFn_add (a • A) (b • B), Lp.coeFn_smul a A,
-          Lp.coeFn_smul b B] with z hz hA hB hadd hsA hsB
+        filter_upwards [hle, Lp.coeFn_normLp g, Lp.coeFn_normLp h,
+          Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
+          Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h)]
+          with z hz hA hB hadd hsA hsB
         rw [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, Pi.smul_apply, hA, hB, smul_eq_mul,
           smul_eq_mul, Real.norm_of_nonneg (add_nonneg (mul_nonneg ha (norm_nonneg _))
             (mul_nonneg hb (norm_nonneg _)))]
         exact hz
-    _ ≤ ‖a • A‖ + ‖b • B‖ := norm_add_le _ _
+    _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ := norm_add_le _ _
     _ = a * ‖g‖ + b * ‖h‖ := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
+        rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb,
+          Lp.norm_normLp, Lp.norm_normLp]
 
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
