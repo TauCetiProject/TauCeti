@@ -234,6 +234,26 @@ theorem subsingletonAlgEquiv_tprod {ι : Type*} [Subsingleton ι] (i₀ : ι) (A
     subsingletonAlgEquiv (R := R) i₀ A (tprod R a) = a i₀ := by
   simp [subsingletonAlgEquiv, subsingletonEquiv_apply_tprod]
 
+/-- `PiTensorProduct.subsingletonAlgEquiv` is left inverse to the factor inclusion at `i₀`. It is
+a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem subsingletonAlgEquiv_singleAlgHom {ι : Type*} [Subsingleton ι] [DecidableEq ι] (i₀ : ι)
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] (a : A i₀) :
+    subsingletonAlgEquiv (R := R) i₀ A (singleAlgHom i₀ a) = a := by
+  rw [singleAlgHom_apply, subsingletonAlgEquiv_tprod, MonoidHom.mulSingle_apply,
+    Pi.mulSingle_eq_same]
+
+/-- The inverse of `PiTensorProduct.subsingletonAlgEquiv` is the factor inclusion
+`PiTensorProduct.singleAlgHom i₀`, sending `a` to the pure tensor `tprod R (Pi.mulSingle i₀ a)`.
+
+This is an explicit rewrite rule rather than a `simp` lemma because
+`subsingletonAlgEquiv_symm_apply'` is the `simp` normal form for constant families, mirroring
+`PiTensorProduct.subsingletonEquiv_symm_apply`. -/
+theorem subsingletonAlgEquiv_symm_apply {ι : Type*} [Subsingleton ι] [DecidableEq ι] (i₀ : ι)
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] (a : A i₀) :
+    (subsingletonAlgEquiv (R := R) i₀ A).symm a = singleAlgHom i₀ a := by
+  rw [AlgEquiv.symm_apply_eq, subsingletonAlgEquiv_singleAlgHom]
+
 /-- For a constant family, the inverse of `PiTensorProduct.subsingletonAlgEquiv` sends `b` to the
 constant pure tensor with entry `b`. -/
 @[simp]

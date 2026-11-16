@@ -344,20 +344,17 @@ theorem tensorInducedChangeTransversalAlgEquiv_singleAlgHom [DecidableEq (G ⧸ 
 @[simp]
 theorem tensorInducedChangeTransversalAlgEquiv_self (s : U.LeftTransversal) :
     U.tensorInducedChangeTransversalAlgEquiv R A s s = AlgEquiv.refl := by
-  rw [tensorInducedChangeTransversalAlgEquiv_def, monomialChangeTransversal_self, map_one]
-  rfl
+  rw [tensorInducedChangeTransversalAlgEquiv_def, monomialChangeTransversal_self, map_one,
+    AlgEquiv.aut_one]
 
 /-- Change-of-transversal algebra equivalences compose across an intermediate transversal. -/
 theorem tensorInducedChangeTransversalAlgEquiv_trans (s t v : U.LeftTransversal) :
     (U.tensorInducedChangeTransversalAlgEquiv R A t v).trans
         (U.tensorInducedChangeTransversalAlgEquiv R A s t) =
       U.tensorInducedChangeTransversalAlgEquiv R A s v := by
-  -- In `(B ≃ₐ[R] B)`, multiplication is reversed `AlgEquiv.trans`.
-  change U.tensorInducedChangeTransversalAlgEquiv R A s t *
-      U.tensorInducedChangeTransversalAlgEquiv R A t v =
-    U.tensorInducedChangeTransversalAlgEquiv R A s v
-  rw [tensorInducedChangeTransversalAlgEquiv_def, tensorInducedChangeTransversalAlgEquiv_def,
-    tensorInducedChangeTransversalAlgEquiv_def, ← map_mul, monomialChangeTransversal_mul]
+  rw [← AlgEquiv.aut_mul, tensorInducedChangeTransversalAlgEquiv_def,
+    tensorInducedChangeTransversalAlgEquiv_def, tensorInducedChangeTransversalAlgEquiv_def,
+    ← map_mul, monomialChangeTransversal_mul]
 
 /-- Swapping the two transversals gives the inverse algebra equivalence. -/
 @[simp]
@@ -449,8 +446,8 @@ theorem tensorInducedMulAlgHom_def (s : U.LeftTransversal) [Fintype (G ⧸ U)] :
 theorem tensorInducedMulAlgHom_tprod (s : U.LeftTransversal) [Fintype (G ⧸ U)] (a : G ⧸ U → A) :
     U.tensorInducedMulAlgHom R A s (PiTensorProduct.tprod R a) =
       ∏ x, U.leftTransversalRep s x • a x := by
-  rw [tensorInducedMulAlgHom_def, PiTensorProduct.productMap_tprod]
-  rfl
+  simp only [tensorInducedMulAlgHom_def, PiTensorProduct.productMap_tprod,
+    MulSemiringAction.toAlgHom_apply]
 
 /-- On the factor inclusion at a coset `x`, `Subgroup.tensorInducedMulAlgHom` acts by the chosen
 coset representative `U.leftTransversalRep s x`. It is a pre-simp lemma since
@@ -710,7 +707,8 @@ example :
   let : Fintype (G ⧸ U) := Fintype.ofEquiv G QuotientGroup.quotientBot.toEquiv.symm
   let : DecidableEq (G ⧸ U) := Equiv.decidableEq QuotientGroup.quotientBot.toEquiv
   let : MulSemiringAction G ℤ := MulSemiringAction.compHom ℤ (1 : G →* (ℤ ≃+* ℤ))
-  have : SMulCommClass G ℤ ℤ := ⟨fun _ _ _ ↦ rfl⟩
+  have htriv : ∀ (g : G) (n : ℤ), g • n = n := fun g n ↦ by simp [MulAction.compHom_smul_def]
+  have : SMulCommClass G ℤ ℤ := ⟨fun g m n ↦ by simp [htriv]⟩
   let s : U.LeftTransversal :=
     ⟨Set.range QuotientGroup.quotientBot,
       Subgroup.isComplement_range_left fun x ↦ QuotientGroup.induction_on x fun _ ↦ rfl⟩
@@ -719,17 +717,18 @@ example :
     PiTensorProduct.tprod ℤ fun x ↦ if QuotientGroup.quotientBot x = 1 then 2 else 3
   let z₃₂ : ⨂[ℤ] _ : G ⧸ U, ℤ :=
     PiTensorProduct.tprod ℤ fun x ↦ if QuotientGroup.quotientBot x = 1 then 3 else 2
-  have htriv : ∀ (g : G) (n : ℤ), g • n = n := fun _ _ ↦ rfl
-  have htrivU : ∀ (u : U) (n : ℤ), u • n = n := fun _ _ ↦ rfl
+  have htrivU : ∀ (u : U) (n : ℤ), u • n = n := fun u n ↦ by
+    rw [Subgroup.smul_def]
+    exact htriv u n
   refine ⟨G, inferInstance, U, inferInstance, inferInstance, inferInstance,
     s, σ, z₂₃, z₃₂, ?_, ?_, ?_, by decide⟩
   · simp only [z₂₃, z₃₂, Subgroup.tensorInducedAlgAut_tprod, htrivU]
     congr 1
     funext x
     refine QuotientGroup.induction_on x fun g ↦ ?_
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul]
-    -- `QuotientGroup.quotientBot` evaluates on `QuotientGroup.mk x` to `x`.
-    change (if σ⁻¹ * g = 1 then (2 : ℤ) else 3) = if g = 1 then 3 else 2
+    dsimp only [U]
+    simp only [MulAction.Quotient.smul_mk, smul_eq_mul, MulEquiv.map_eq_one_iff,
+      QuotientGroup.eq_one_iff, Subgroup.mem_bot]
     fin_cases g <;> decide
   · rw [U.tensorInducedMulAlgHom_eq_mulAlgHom_of_smul_eq_self ℤ ℤ s htriv,
       PiTensorProduct.mulAlgHom_tprod, ← Equiv.prod_comp QuotientGroup.quotientBot.toEquiv.symm]
@@ -798,7 +797,8 @@ example :
       map_mul' g h := by
         fin_cases g <;> fin_cases h <;> first | rfl | exact hsq.symm }
   let : MulSemiringAction G (Polynomial ℤ) := MulSemiringAction.compHom _ actHom
-  have : SMulCommClass G ℤ (Polynomial ℤ) := ⟨fun g r p ↦ map_smul (actHom g) r p⟩
+  have : SMulCommClass G ℤ (Polynomial ℤ) := ⟨fun g r p ↦ by
+    simpa only [MulAction.compHom_smul_def, AlgEquiv.smul_def] using map_smul (actHom g) r p⟩
   let : Fintype (G ⧸ U) := Fintype.ofEquiv G QuotientGroup.quotientBot.toEquiv.symm
   let : DecidableEq (G ⧸ U) := Equiv.decidableEq QuotientGroup.quotientBot.toEquiv
   let hbot : ∀ u : G ⧸ U, (QuotientGroup.mk (QuotientGroup.quotientBot u) : G ⧸ U) = u :=
@@ -815,9 +815,7 @@ example :
     rfl
   have hσ_ne : σ ≠ 1 := by decide
   have hσ_X : σ • (Polynomial.X : Polynomial ℤ) = -Polynomial.X := by
-    -- Scalar multiplication comes from `MulSemiringAction.compHom _ actHom`.
-    change actHom σ Polynomial.X = -Polynomial.X
-    simp [actHom, hσ_ne, negX]
+    simp [MulAction.compHom_smul_def, actHom, hσ_ne, negX]
   refine ⟨G, inferInstance, U, inferInstance, inferInstance, inferInstance,
     s, σ, z₁, z₂, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [Subgroup.tensorInducedMulAlgHom_singleAlgHom, hs_rep 1, one_smul]
