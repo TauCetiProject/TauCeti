@@ -116,8 +116,8 @@ private theorem norm_famSMul_le (z : ℂ) (v : E) :
   · simpa [famSMul_zero] using Real.rpow_nonneg le_rfl _
   · have hpos : 0 < ‖v‖ := norm_pos_iff.2 hv
     refine le_of_eq ?_
-    rw [famSMul, norm_smul, norm_coeff, Real.rpow_add hpos, Real.rpow_one,
-      Real.rpow_def_of_pos hpos, mul_comm]
+    simp only [famSMul, norm_smul, norm_coeff, Real.rpow_add hpos, Real.rpow_def_of_pos hpos,
+      mul_one, Real.exp_log hpos]
     ring_nf
 
 end Family
@@ -251,6 +251,20 @@ private def fiberInter {f : SimpleFunc α E} (hf : MemLp f p μ) (hp_top : p ≠
   have h₁ : MemLp (fiber f c) p₁ μ := SimpleFunc.memLp_restrict_const_fiber hf hp0 hp_top p₁ c
   ⟨(h₀.toLp _, h₁.toLp _), mem_lebesgue_inter_iff.2 (h₀.coeFn_toLp.trans h₁.coeFn_toLp.symm)⟩
 
+private theorem interFst_fiberInter {f : SimpleFunc α E} (hf : MemLp f p μ) (hp_top : p ≠ ∞)
+    (c : E) : (lebesgue ℂ E μ p₀ p₁).interFst (fiberInter hf hp_top c) =
+      (SimpleFunc.memLp_restrict_const_fiber hf (zero_lt_one.trans_le Fact.out).ne' hp_top p₀
+        c).toLp (fiber f c) := by
+  rw [interFst_apply]
+  rfl
+
+private theorem interSnd_fiberInter {f : SimpleFunc α E} (hf : MemLp f p μ) (hp_top : p ≠ ∞)
+    (c : E) : (lebesgue ℂ E μ p₀ p₁).interSnd (fiberInter hf hp_top c) =
+      (SimpleFunc.memLp_restrict_const_fiber hf (zero_lt_one.trans_le Fact.out).ne' hp_top p₁
+        c).toLp (fiber f c) := by
+  rw [interSnd_apply]
+  rfl
+
 omit [Fact (1 ≤ p)] in
 /-- The boundary operators of the analytic family through a simple function `f`: on a line where
 `1 + (re z - θ) s = r` and `1 / q = r / p`, the operator `λ ↦ λ f_z` into `L^q` has norm at most
@@ -280,7 +294,8 @@ private theorem sumSpaceEmbed_sumFamily_self {s : ℝ} (f : SimpleFunc α E) (hf
       (coeff θ s) (fiberInter hf hp_top) θ ((refl ℂ ℂ).fstToSum 1)) =
         L1AddLinfty.ofLp (∑ c ∈ f.range, coeff θ s c θ • (h₀ c).toLp (fiber f c)) := by
     rw [sumFamily_apply_fstToSum, one_smul]
-    simp [fiberInter, interFst_apply, map_sum, map_smul, sumSpaceEmbed_fstToSum]
+    simp only [interFst_fiberInter]
+    simp [map_sum, map_smul, sumSpaceEmbed_fstToSum]
   rw [hG]
   refine L1AddLinfty.ofLp_eq_ofLp_iff.2
     ((coeFn_sum_coeff_smul_toLp f h₀ (θ : ℂ)).trans ?_)
@@ -326,8 +341,8 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le (hθ : θ ∈ Icc (0 :
     exact sumSpaceEmbed_sumFamily_self f hf hp_top g hfg
   · refine (ComplexMethodSpace.norm_analyticFamilyMap_le hT hθ (M₀ := N ^ (1 + (0 - θ) * s))
       (M₁ := N ^ (1 + (1 - θ) * s)) (by positivity) (by positivity)
-      (fun t c => by simpa only [fiberInter, interFst_apply] using h₀ t c)
-      (fun t c => by simpa only [fiberInter, interSnd_apply] using h₁ t c) _).trans ?_
+      (fun t c => by simpa only [interFst_fiberInter] using h₀ t c)
+      (fun t c => by simpa only [interSnd_fiberInter] using h₁ t c) _).trans ?_
     have hone : ‖ComplexMethodSpace.ofInter θ one‖ ≤ 1 :=
       (ComplexMethodSpace.norm_ofInter_le hθ one).trans (by simp [one])
     calc (N ^ (1 + (0 - θ) * s)) ^ (1 - θ) * (N ^ (1 + (1 - θ) * s)) ^ θ *
