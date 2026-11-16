@@ -101,6 +101,15 @@ theorem continuous_tangentCircle (p u : V) :
     Continuous fun x : V × ℝ ↦ tangentCircle p u x.1 x.2 := by
   fun_prop
 
+/-- A linear isometry carries the circle through `p` tangent to `u` and through `q` to the circle
+through the images. For the inclusion of a subspace, the circles of the subspace are the circles of
+the ambient space. -/
+@[simp]
+theorem _root_.LinearIsometry.map_tangentCircle {W : Type*} [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] (f : V →ₗᵢ[ℝ] W) (p u q : V) (θ : ℝ) :
+    f (tangentCircle p u q θ) = tangentCircle (f p) (f u) (f q) θ := by
+  simp [tangentCircle_def, ← map_sub]
+
 /-- A vector orthogonal to `p`, `q` and `u` is orthogonal to the whole circle. -/
 theorem inner_tangentCircle_eq_zero {p u q w : V} (hp : ⟪p, w⟫ = 0) (hu : ⟪u, w⟫ = 0)
     (hq : ⟪q, w⟫ = 0) (θ : ℝ) : ⟪tangentCircle p u q θ, w⟫ = 0 := by
