@@ -167,14 +167,24 @@ theorem evalGHomOfIsSeparatedBy_comp_coordGroupMap {K : Type*} [Group K] {κ : G
       CoordGroup.evalGHomOfIsSeparatedBy hK (p ∘ Sum.inl) (mem_V_jointSystem.1 hp).1 :=
   GHom.ext fun _ => by simp
 
+/-- Restricting a `G`-homomorphism `G_{R(S ∪ T)} → K` into a group separated by `H` along
+`coordGroupMap` restricts the corresponding solution of `S ∪ T` in `K` to its `X`-coordinates. -/
+@[simp]
+theorem homEquivOfIsSeparatedBy_comp_coordGroupMap {K : Type*} [Group K] {κ : G →* K}
+    (hK : IsSeparatedBy κ ι) (φ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ) :
+    (CoordGroup.homEquivOfIsSeparatedBy hK S (φ.comp (coordGroupMap ι S T)) : X → K) =
+      (CoordGroup.homEquivOfIsSeparatedBy hK (jointSystem S T) φ : X ⊕ Y → K) ∘ Sum.inl := by
+  funext x
+  simp
+
 /-- Restricting a `G`-homomorphism `G_{R(S ∪ T)} → H` along `coordGroupMap` restricts the
 corresponding solution of `S ∪ T` to its `X`-coordinates. -/
 @[simp]
 theorem homEquiv_comp_coordGroupMap (φ : GHom (CoordGroup.coeff ι (jointSystem S T)) ι) :
     (CoordGroup.homEquiv ι S (φ.comp (coordGroupMap ι S T)) : X → H) =
       (CoordGroup.homEquiv ι (jointSystem S T) φ : X ⊕ Y → H) ∘ Sum.inl := by
-  funext x
-  simp [← CoordGroup.genericPoint_apply]
+  simpa only [CoordGroup.homEquivOfIsSeparatedBy_self] using
+    homEquivOfIsSeparatedBy_comp_coordGroupMap (IsDiscriminatedBy.self ι).isSeparatedBy φ
 
 /-! ### Extensions along the canonical map -/
 
@@ -226,7 +236,7 @@ def extensionEquiv :
       (comp_coordGroupMap_eq_iff.1 ρ.2 x).symm, fun y => by simp [CoordGroup.genericPoint_apply]⟩
   right_inv w := Subtype.ext <| funext fun y => by simp
 
-variable {T hK φ}
+variable {T φ}
 
 @[simp]
 theorem extensionEquiv_apply_coe (ρ) (y : Y) :
