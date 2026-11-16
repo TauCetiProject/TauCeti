@@ -276,11 +276,7 @@ theorem ae_abs_gradient_le_of_forall_integral_eq (hx : x₀ < x₁) {lam M : ℝ
     exact setIntegral_mono_set hf.abs (ae_of_all _ fun _ => abs_nonneg _)
       (Ioc_subset_Ioo_right ht.2).eventuallySubset
   have hΦi : IntegrableOn (fun t => ∫ s in x₀..t, f s) (Ioo x₀ x₁) :=
-    Integrable.of_bound
-      (((TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-        (left_mem_Icc.2 hx.le)).mono Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo)
-      _ ((ae_restrict_mem measurableSet_Ioo).mono fun t ht => (Real.norm_eq_abs _).le.trans
-        (hΦ t ht))
+    TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo hf (left_mem_Icc.2 hx.le)
   have hkle := abs_le_of_ae_mul_gradient_add_eq hx hlam ha haM hF hΦi hΦ hk
   -- Solving the first integral for `u'` gives the bound.
   filter_upwards [hk, haM, ae_restrict_mem measurableSet_Ioo] with t ht hat htI

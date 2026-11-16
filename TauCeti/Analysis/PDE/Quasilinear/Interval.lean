@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Quasilinear divergence-form equations on an interval
@@ -350,15 +348,16 @@ theorem eventually_image_intervalRepresentativeL_setOf_forall_setIntegral_eq_sub
   -- Otherwise a subsequence of problems has solutions `uₖ` with `ūₖ ∉ U`.
   obtain ⟨ψ, hψ, hψU⟩ := extraction_of_frequently_atTop (not_eventually.1 h)
   choose un hun hunU using fun k => not_subset.1 (hψU k)
+  choose u' hu' hu'rep using hun
   have hψt := hψ.tendsto_atTop
   obtain ⟨u, hu, ψ', -, hlim⟩ :=
     exists_intervalTraceL_eq_and_forall_setIntegral_eq_and_tendsto_subseq hx hlam
       (fun k => hAm (ψ k)) (fun k => hAc (ψ k)) (fun k => hA (ψ k))
       (hAlim.mono fun t ht u hu y => (ht u hu y).imp fun _ h => ⟨h.1, hψt.eventually h.2⟩)
       (fun k => hfn (ψ k)) hf (hflim.comp hψt) (fun k => hFn (ψ k)) hF (hFlim.comp hψt)
-      (hglim.comp hψt) (un := fun k => (hun k).choose) fun k => (hun k).choose_spec.1
+      (hglim.comp hψt) (un := u') hu'
   -- Their limit lies in `U`, which is open, so the `ūₖ` eventually do too.
   obtain ⟨k, hk⟩ := (hlim.eventually (hU.mem_nhds (hSU ⟨u, hu, rfl⟩))).exists
-  exact hunU (ψ' k) ((hun (ψ' k)).choose_spec.2 ▸ hk)
+  exact hunU (ψ' k) (hu'rep (ψ' k) ▸ hk)
 
 end TauCeti.PDE

@@ -382,8 +382,7 @@ variable {p : ℝ≥0∞} {f F : ℝ → ℝ}
 theorem integrableOn_intervalIntegral_add (hx : x₀ < x₁) (hf : IntegrableOn f (Ioo x₀ x₁))
     (hF : IntegrableOn F (Ioo x₀ x₁)) :
     IntegrableOn (fun t => (∫ s in x₀..t, f s) + F t) (Ioo x₀ x₁) :=
-  ((intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-    (left_mem_Icc.2 hx.le)).integrableOn_Icc.mono_set Ioo_subset_Icc_self).add hF
+  (intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo hf (left_mem_Icc.2 hx.le)).add hF
 
 /-- The `L¹` distance of `G = ∫_{x₀}^x f + F` and `G' = ∫_{x₀}^x f' + F'` on `(x₀, x₁)` is at most
 `(x₁ - x₀) ‖f - f'‖₁ + ‖F - F'‖₁`. -/
@@ -394,20 +393,22 @@ private theorem integral_abs_intervalIntegral_add_sub_le (hx : x₀ < x₁) {f' 
       (x₁ - x₀) * (∫ t in Ioo x₀ x₁, |f t - f' t|) + ∫ t in Ioo x₀ x₁, |F t - F' t| := by
   have hff' : IntegrableOn (fun t => f t - f' t) (Ioo x₀ x₁) := hf.sub hf'
   have hFF' : IntegrableOn (fun t => F t - F' t) (Ioo x₀ x₁) := hF.sub hF'
-  calc _ ≤ ∫ t in Ioo x₀ x₁, ((∫ s in Ioo x₀ x₁, |f s - f' s|) + |F t - F' t|) := by
+  have hΦ : IntegrableOn (fun t => ∫ s in x₀..t, f s - f' s) (Ioo x₀ x₁) :=
+    intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo hff' (left_mem_Icc.2 hx.le)
+  calc _ ≤ ∫ t in Ioo x₀ x₁, (|∫ s in x₀..t, f s - f' s| + |F t - F' t|) := by
         refine setIntegral_mono_on ((integrableOn_intervalIntegral_add hx hf hF).sub
           (integrableOn_intervalIntegral_add hx hf' hF')).abs
-          ((integrable_const _).add hFF'.abs) measurableSet_Ioo fun t ht => ?_
-        have hft : ∀ g : ℝ → ℝ, IntegrableOn g (Ioo x₀ x₁) → IntervalIntegrable g volume x₀ t :=
-          fun g hg => (intervalIntegrable_iff_integrableOn_Ioc_of_le ht.1.le).2
-            (hg.mono_set (Ioc_subset_Ioo_right ht.2))
-        rw [add_sub_add_comm, ← intervalIntegral.integral_sub (hft f hf) (hft f' hf')]
-        refine (abs_add_le _ _).trans (add_le_add_left ?_ _)
-        simpa only [Real.norm_eq_abs] using intervalIntegral.norm_integral_le_setIntegral_norm hff'
-          (left_mem_Icc.2 hx.le) (Ioo_subset_Icc_self ht)
-    _ = _ := by
-        rw [integral_add (integrable_const _) hFF'.abs, setIntegral_const,
-          Real.volume_real_Ioo_of_le hx.le, smul_eq_mul]
+          (hΦ.abs.add hFF'.abs) measurableSet_Ioo fun t ht => ?_
+        rw [add_sub_add_comm, ← intervalIntegral.integral_sub
+          (hf.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx.le) (Ioo_subset_Icc_self ht))
+          (hf'.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx.le) (Ioo_subset_Icc_self ht))]
+        exact abs_add_le _ _
+    _ = (∫ t in Ioo x₀ x₁, |∫ s in x₀..t, f s - f' s|) + ∫ t in Ioo x₀ x₁, |F t - F' t| :=
+        integral_add hΦ.abs hFF'.abs
+    _ ≤ _ := by
+        gcongr
+        simpa only [Real.norm_eq_abs] using
+          intervalIntegral.integral_norm_primitive_le hff' (left_mem_Icc.2 hx.le)
 
 /-- The derivative `(k - G) / a` lies in `Lᵖ` when `G ∈ Lᵖ`, since
 `|(k - G) / a| ≤ λ⁻¹ (|k| + |G|)`. -/
@@ -484,8 +485,7 @@ theorem intervalRepresentativeL_eq_add_intervalIntegral_intervalDirichletSlope (
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   have hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t := haM.mono fun _ h => h.1
   have hΦ : IntegrableOn (fun t => ∫ s in x₀..t, f s) (Ioo x₀ x₁) :=
-    (intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-      (left_mem_Icc.2 hx.le)).integrableOn_Icc.mono_set Ioo_subset_Icc_self
+    intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo hf (left_mem_Icc.2 hx.le)
   -- The flux `a u' + F` is `k - ∫_{x₀}^t f`, and the endpoint values of `u` force `k` to be the
   -- flux constant.
   obtain ⟨k, hk⟩ := exists_ae_mul_gradient_add_eq_sub_intervalIntegral ha
@@ -506,9 +506,9 @@ theorem intervalRepresentativeL_eq_add_intervalIntegral_intervalDirichletSlope (
       W1p.intervalRepresentativeL hx u y -
         W1p.intervalRepresentativeL hx u ⟨x₀, left_mem_Icc.2 hx.le⟩ :=
     W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u ⟨x₀, left_mem_Icc.2 hx.le⟩ y
-  rw [intervalIntegral.integral_of_le y.2.1, integral_Ioc_eq_integral_Ioo,
-    integral_congr_ae (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right y.2.2) hgrad),
-    ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le y.2.1] at h
+  rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hgrad
+  rw [intervalIntegral.integral_congr_ae_restrict (ae_restrict_of_ae_restrict_of_subset
+    ((uIoc_of_le y.2.1).trans_subset (Ioc_subset_Ioc_right y.2.2)) hgrad)] at h
   have h₀ : (W1p.intervalTraceL hx u).1 =
       W1p.intervalRepresentativeL hx u ⟨x₀, left_mem_Icc.2 hx.le⟩ := by
     rw [W1p.intervalTraceL_apply]
