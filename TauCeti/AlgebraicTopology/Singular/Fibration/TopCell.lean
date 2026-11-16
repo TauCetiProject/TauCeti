@@ -242,8 +242,8 @@ private def cellDiskPullbackBallInv (e : (p ⁻¹' openCell n j : Set E)) :
     exact (openCellHomeomorph_apply n j _).symm.trans
       (congrArg Subtype.val ((openCellHomeomorph n j).apply_symm_apply ⟨p e, e.2⟩))⟩,
     by
-    rw [cellDiskPullbackBall, mem_preimage, mem_ofPred_eq, _root_.TopCat.pullbackFst_apply,
-      coe_uliftClosedBall_symm_apply, ULift.norm_up]
+    change ‖((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm _ : ULift.{u} (Fin n → ℝ))‖ < 1
+    rw [coe_uliftClosedBall_symm_apply, ULift.norm_up]
     exact mem_ball_zero_iff.1 ((openCellHomeomorph n j).symm ⟨p e, e.2⟩).2⟩
 
 omit [T2Space B] in
@@ -279,10 +279,7 @@ private lemma isEmbedding_cellDiskPullbackBallPairMap :
     IsEmbedding (TopPair.Hom.fst
       (cellDiskPullbackBallPairι p C n j ≫ cellDiskPullbackComplFiberPairMap p C n j)) := by
   have hsub : (p ⁻¹' openCell n j : Set E) ⊆ p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) :=
-    fun e he ↦ by
-      obtain ⟨y, hy, hye⟩ := he
-      rw [mem_preimage, ← hye]
-      exact map_mem_skeletonLT_succ j (mem_ball_zero_iff.1 hy).le
+    preimage_mono (openCell_subset_skeletonLT n j)
   have hg : IsEmbedding fun x : cellDiskPullbackBall p C n j ↦
       (⟨x.1.1.2, mem_preimage_openCell n j x⟩ : (p ⁻¹' openCell n j : Set E)) :=
     Function.LeftInverse.isEmbedding (cellDiskPullbackBallInv_apply n j)
